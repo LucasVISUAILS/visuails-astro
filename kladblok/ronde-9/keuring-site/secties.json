@@ -1,0 +1,618 @@
+{
+ "home-1280": {
+  "hoogte": 8539,
+  "secties": [
+   "7556px div.s22 \"Al je productbeelden.catalogfoto’s.lifestylebeelden.productv\"",
+   "1355px section.hero \"Al je productbeelden.catalogfoto’s.lifestylebeelden.productv\"",
+   "1267px section.paneel \"Dit stuur jij. Dit krijg je terug.\"",
+   "729px section.paneel \"Wat we maken.\"",
+   "791px section.paneel \"Kies een look.\"",
+   "377px section.paneel \"Een gezicht zit erbij.\"",
+   "862px section.kamer \"Editions. Elke maand nieuw beeld.\"",
+   "508px section.paneel \"Voor wie.\"",
+   "673px section.paneel \"Veelgestelde vragen.\"",
+   "634px section.paneel \"Eerst zien? Eén product voor €1.\""
+  ]
+ },
+ "plans-1280": {
+  "hoogte": 5223,
+  "secties": [
+   "4241px div.s22 \"Elke maand credits. Besteed ze aan wat je nodig hebt.\"",
+   "659px section.paneel \"Elke maand credits. Besteed ze aan wat je nodig hebt.\"",
+   "871px section.paneel \"Drie abonnementen. Of je eigen aantal.\"",
+   "725px section.paneel \"Stel je eigen abonnement samen.\"",
+   "531px section.kamer \"Waarom een abonnement.\"",
+   "382px section.paneel \"Per maand, per jaar of vooruit.\"",
+   "493px section.paneel \"En wat eraan komt.\"",
+   "408px section.paneel \"Begin met één product voor €1.\""
+  ]
+ },
+ "start-plan-1280": {
+  "hoogte": 3639,
+  "secties": [
+   "2657px div.s22 \"Je abonnement\"",
+   "2609px section.paneel \"Je abonnement\""
+  ]
+ },
+ "pricing-1280": {
+  "hoogte": 4938,
+  "secties": [
+   "3956px div.s22 \"Je betaalt per product. Hoe meer producten, hoe lager het ta\"",
+   "604px section.paneel \"Je betaalt per product. Hoe meer producten, hoe lager het ta\"",
+   "1126px section.paneel \"De prijs per product\"",
+   "1527px section.kamer \"Wat er verder een tarief heeft\"",
+   "175px section.paneel \"Elke maand nieuwe beelden?\"",
+   "352px section.paneel \"Eén product van jezelf, als catalogset of carrousel.\""
+  ]
+ },
+ "catalog-1280": {
+  "hoogte": 5384,
+  "secties": [
+   "4401px div.s22 \"Strakke, consistente catalogfoto’s — ook bij dertig producte\"",
+   "1096px section.paneel \"Strakke, consistente catalogfoto’s — ook bij dertig producte\"",
+   "828px section.paneel \"Dit is een telefoonfoto. Dit is wat eruit kwam.\"",
+   "1042px section.paneel \"Kies je Catalog-stijl.\"",
+   "242px section.paneel \"Wat een catalogset kost\"",
+   "663px section.paneel \"Vragen over catalog\"",
+   "368px section.paneel \"Bouw een catalogus die eruitziet als één merk.\""
+  ]
+ },
+ "lifestyle-1280": {
+  "hoogte": 6386,
+  "secties": [
+   "5404px div.s22 \"Jouw product, in scènes die verkopen.\"",
+   "1019px section.paneel \"Jouw product, in scènes die verkopen.\"",
+   "693px section.kamer \"Het assortiment, in beweging\"",
+   "1587px section.paneel \"Vier sferen — of je eigen.\"",
+   "901px section.paneel \"Eén product. Drie foto’s. Een carrousel.\"",
+   "663px section.paneel \"Vragen over lifestyle\"",
+   "368px section.paneel \"Zet je product in een scène die verkoopt.\""
+  ]
+ },
+ "video-1280": {
+  "hoogte": 4941,
+  "secties": [
+   "3959px div.s22 \"Korte productvideo’s die bewegen.\"",
+   "949px section.paneel \"Korte productvideo’s die bewegen.\"",
+   "1273px section.paneel \"Manieren om beweging toe te voegen.\"",
+   "568px section.paneel \"Strakke beweging, klaar om te publiceren.\"",
+   "612px section.paneel \"Vragen over video\"",
+   "394px section.paneel \"Breng je product in beweging.\""
+  ]
+ },
+ "custom-models-1280": {
+  "hoogte": 5215,
+  "secties": [
+   "4232px div.s22 \"Eigen gezichten. Alleen van jou.\"",
+   "791px section.paneel \"Eigen gezichten. Alleen van jou.\"",
+   "668px section.paneel \"Echt geleverd werk, geen mock-up.\"",
+   "944px section.paneel \"Jouw model, niet een model.\"",
+   "674px section.paneel \"Hoe een merkmodel tot stand komt\"",
+   "525px section.paneel \"Negen vertrekpunten om op te reageren.\"",
+   "155px section.paneel \"De standaardbibliotheek\"",
+   "312px section.paneel \"Ontwerp het gezicht van jouw merk.\""
+  ]
+ },
+ "how-it-works-1280": {
+  "hoogte": 4632,
+  "secties": [
+   "3649px div.s22 \"Eén map erin. Een hele bestelling eruit.\"",
+   "614px section.paneel \"Eén map erin. Een hele bestelling eruit.\"",
+   "1135px section.paneel \"Je bestelling, van begin tot eind.\"",
+   "536px section.paneel \"Meer dan AI. Met de hand afgewerkt.\"",
+   "707px section.paneel \"De details die ertoe doen\"",
+   "494px section.paneel \"Eén product van jezelf, als catalogset of carrousel.\""
+  ]
+ },
+ "studio-1280": {
+  "hoogte": 6194,
+  "secties": [
+   "5211px div.s22 \"Zo komen we aan een leverdatum. Dit is de agenda waar wij in\"",
+   "1251px section.paneel \"Zo komen we aan een leverdatum. Dit is de agenda waar wij in\"",
+   "1050px section.kamer \"We kijken eerst in de agenda, en pas daarna noemen we een da\"",
+   "827px section.paneel \"Reken terug vanaf de dag dat je live gaat.\"",
+   "1210px section.paneel \"Eén tabel, elke order.\"",
+   "428px section.paneel \"Wat dit niet doet.\"",
+   "312px section.paneel \"Boek een venster dat de planning heeft vrijgegeven.\""
+  ]
+ },
+ "start-1280": {
+  "hoogte": 4562,
+  "secties": [
+   "3580px div.s22 \"Wat gaan we maken?\"",
+   "1703px section.paneel \"Wat gaan we maken?\"",
+   "304px section.paneel \"Of betaal er maandelijks voor\"",
+   "766px section.kamer \"Wat er gebeurt nadat je erop drukt\"",
+   "322px section.paneel \"Merkmodel — je eigen gezicht\"",
+   "312px section.paneel \"Nog niet zeker welke?\""
+  ]
+ },
+ "compare-1280": {
+  "hoogte": 5396,
+  "secties": [
+   "4413px div.s22 \"Een shootdag, of een bestelling.\"",
+   "493px section.paneel \"Een shootdag, of een bestelling.\"",
+   "861px section.paneel \"Een productiedag vergeleken met een VISUAILS-bestelling\"",
+   "1227px section.kamer \"Wat op één lijn moet komen\"",
+   "586px section.paneel \"Waar een shootdag nog steeds wint\"",
+   "671px section.paneel \"En als je een self-serve tool overweegt\"",
+   "403px section.paneel \"Test het op je eigen product.\""
+  ]
+ },
+ "faq-1280": {
+  "hoogte": 2880,
+  "secties": [
+   "1897px div.s22 \"Vragen, beantwoord.\"",
+   "570px section.paneel \"Vragen, beantwoord.\"",
+   "864px section.paneel \"Aan de slag\"",
+   "339px section.paneel \"Nog een vraag?\""
+  ]
+ },
+ "gallery-1280": {
+  "hoogte": 5000,
+  "secties": [
+   "4018px div.s22 \"Zo ziet een levering eruit.\"",
+   "467px section.paneel \"Zo ziet een levering eruit.\"",
+   "3061px section.kamer \"Zo ziet een levering eruit.\"",
+   "394px section.paneel \"Zie je eigen product in deze reeks.\""
+  ]
+ },
+ "contact-1280": {
+  "hoogte": 2863,
+  "secties": [
+   "1881px div.s22 \"Neem contact op\"",
+   "1375px section.paneel \"Neem contact op\"",
+   "419px section.paneel \"Liever eerst één product van jezelf?\""
+  ]
+ },
+ "about-1280": {
+  "hoogte": 3623,
+  "secties": [
+   "2640px div.s22 \"Ik ben Lucas.\"",
+   "714px section.paneel \"Ik ben Lucas.\"",
+   "827px section.kamer \"Drie dingen waar we aan vasthouden.\"",
+   "653px section.paneel \"\"",
+   "312px section.paneel \"Klaar om te beginnen?\""
+  ]
+ },
+ "models-1280": {
+  "hoogte": 4015,
+  "secties": [
+   "3033px div.s22 \"Tien gezichten. Al inbegrepen.\"",
+   "646px section.paneel \"Tien gezichten. Al inbegrepen.\"",
+   "1216px section.paneel \"De volledige bibliotheek\"",
+   "724px section.kamer \"Inbegrepen, niet iets wat je erbij moet kopen.\"",
+   "312px section.paneel \"Kies een gezicht, start een bestelling.\""
+  ]
+ },
+ "portal-1280": {
+  "hoogte": 7145,
+  "secties": [
+   "6162px div.s22 \"Eén link. Je hele bestelling.\"",
+   "1256px section.paneel \"Eén link. Je hele bestelling.\"",
+   "1156px section.kamer \"Waar hij staat, zonder te vragen.\"",
+   "1294px section.paneel \"Beeld voor beeld goedkeuren.\"",
+   "704px section.paneel \"Eén map, en alles zit erin.\"",
+   "378px section.paneel \"Elke goedkeuring en revisie blijft terug te lezen.\"",
+   "726px section.paneel \"Waarom er geen wachtwoord is.\"",
+   "476px section.paneel \"Eerst één product van jezelf, als catalogset of carrousel.\""
+  ]
+ },
+ "per-product-1280": {
+  "hoogte": 3084,
+  "secties": [
+   "2102px div.s22 \"Per product, wat je terugkrijgt.\"",
+   "371px section.paneel \"Per product, wat je terugkrijgt.\"",
+   "518px section.paneel \"Zit er altijd bij · 4 foto’s\"",
+   "922px section.paneel \"Erbij te bestellen\"",
+   "166px section.paneel \"\""
+  ]
+ },
+ "hooks-1280": {
+  "hoogte": 4184,
+  "secties": [
+   "3201px div.s22 \"Video die de scroll onderbreekt.\"",
+   "949px section.paneel \"Video die de scroll onderbreekt.\"",
+   "552px section.paneel \"Wat er in je map komt te staan.\"",
+   "496px section.paneel \"Waar je op kunt rekenen.\"",
+   "612px section.paneel \"Vragen over Hooks\"",
+   "430px section.paneel \"Stuur de foto’s die je al hebt.\""
+  ]
+ },
+ "editions-1280": {
+  "hoogte": 4431,
+  "secties": [
+   "3614px div.s22 \"De maanden waarin je niets te fotograferen hebt.\"",
+   "1086px section.paneel \"De maanden waarin je niets te fotograferen hebt.\"",
+   "693px section.paneel \"Twee sets, en maar één ervan kost iets.\"",
+   "420px section.paneel \"Waar je op kunt rekenen.\"",
+   "663px section.paneel \"Vragen over Editions\"",
+   "590px section.paneel \"Vul de maand waar je niets voor hebt.\""
+  ]
+ },
+ "upload-guidelines-1280": {
+  "hoogte": 5157,
+  "secties": [
+   "4174px div.s22 \"Zo maak je de foto die wij nodig hebben\"",
+   "606px section.paneel \"Zo maak je de foto die wij nodig hebben\"",
+   "1056px section.paneel \"Welke foto welk beeld wordt.\"",
+   "762px section.paneel \"Wel doen\"",
+   "1273px section.kamer \"De set die we aanraden — en waarom\"",
+   "342px section.paneel \"Foto klaar? Stuur hem in.\""
+  ]
+ },
+ "lifestyle-dunes-1280": {
+  "hoogte": 5600,
+  "secties": [
+   "4617px div.s22 \"Dunes\"",
+   "724px section.paneel \"Dunes\"",
+   "722px section.paneel \"Wat Dunes kenmerkt.\"",
+   "879px section.kamer \"Voor en na: Dunes.\"",
+   "377px section.paneel \"Hoe Dunes tot stand komt.\"",
+   "548px section.paneel \"\"",
+   "347px section.paneel \"Wat je krijgt\"",
+   "251px section.paneel \"Bestel in Dunes.\""
+  ]
+ },
+ "catalog-classic-1280": {
+  "hoogte": 4701,
+  "secties": [
+   "3719px div.s22 \"Classic\"",
+   "757px section.paneel \"Classic\"",
+   "829px section.paneel \"Wat Classic kenmerkt.\"",
+   "741px section.kamer \"Wat Classic met een echte foto doet.\"",
+   "602px section.paneel \"Wat er in elk kader gaat.\"",
+   "308px section.paneel \"Wat je krijgt\"",
+   "307px section.paneel \"Bestel in Classic.\""
+  ]
+ },
+ "video-motion-1280": {
+  "hoogte": 5455,
+  "secties": [
+   "4473px div.s22 \"Motion\"",
+   "825px section.paneel \"Motion\"",
+   "680px section.paneel \"Wat Motion kenmerkt.\"",
+   "441px section.paneel \"\"",
+   "579px section.paneel \"Wat er in elk kader gaat.\"",
+   "308px section.paneel \"Wat je krijgt\"",
+   "334px section.paneel \"Bestel in Motion.\""
+  ]
+ },
+ "test-sample-1280": {
+  "hoogte": 4312,
+  "secties": [
+   "3330px div.s22 \"Test VISUAILS met 1 product\"",
+   "611px section.paneel \"Test VISUAILS met 1 product\"",
+   "371px section.paneel \"\"",
+   "631px section.paneel \"Hoe de proef werkt\"",
+   "393px section.paneel \"Liever gewoon even overleggen?\""
+  ]
+ },
+ "start-catalog-1280": {
+  "hoogte": 3697,
+  "secties": [
+   "2714px div.s22 \"Catalogsets\"",
+   "334px section.paneel \"Catalogsets\"",
+   "1438px section.paneel \"Deze bestelling staat al klaar\"",
+   "450px section.kamer \"Wat bij elk aantal hetzelfde is\"",
+   "358px section.paneel \"Nog niet klaar om te bestellen?\""
+  ]
+ },
+ "guides-1280": {
+  "hoogte": 2627,
+  "secties": [
+   "1811px div.s22 \"Alles over productbeeld, zonder shoot\"",
+   "1141px section.paneel \"Alles over productbeeld, zonder shoot\"",
+   "202px section.paneel \"\"",
+   "342px section.paneel \"Klaar wanneer jij dat bent.\""
+  ]
+ },
+ "home-390": {
+  "hoogte": 9906,
+  "secties": [
+   "7879px div.s22 \"Al je productbeelden.catalogfoto’s.lifestylebeelden.productv\"",
+   "830px section.hero \"Al je productbeelden.catalogfoto’s.lifestylebeelden.productv\"",
+   "1575px section.paneel \"Dit stuur jij. Dit krijg je terug.\"",
+   "1199px section.paneel \"Wat we maken.\"",
+   "736px section.paneel \"Kies een look.\"",
+   "398px section.paneel \"Een gezicht zit erbij.\"",
+   "477px section.kamer \"Editions. Elke maand nieuw beeld.\"",
+   "542px section.paneel \"Voor wie.\"",
+   "903px section.paneel \"Veelgestelde vragen.\"",
+   "776px section.paneel \"Eerst zien? Eén product voor €1.\""
+  ]
+ },
+ "plans-390": {
+  "hoogte": 8598,
+  "secties": [
+   "6635px div.s22 \"Elke maand credits. Besteed ze aan wat je nodig hebt.\"",
+   "1017px section.paneel \"Elke maand credits. Besteed ze aan wat je nodig hebt.\"",
+   "1998px section.paneel \"Drie abonnementen. Of je eigen aantal.\"",
+   "1014px section.paneel \"Stel je eigen abonnement samen.\"",
+   "784px section.kamer \"Waarom een abonnement.\"",
+   "546px section.paneel \"Per maand, per jaar of vooruit.\"",
+   "760px section.paneel \"En wat eraan komt.\"",
+   "431px section.paneel \"Begin met één product voor €1.\""
+  ]
+ },
+ "start-plan-390": {
+  "hoogte": 7053,
+  "secties": [
+   "5091px div.s22 \"Je abonnement\"",
+   "5067px section.paneel \"Je abonnement\""
+  ]
+ },
+ "pricing-390": {
+  "hoogte": 6662,
+  "secties": [
+   "4700px div.s22 \"Je betaalt per product. Hoe meer producten, hoe lager het ta\"",
+   "494px section.paneel \"Je betaalt per product. Hoe meer producten, hoe lager het ta\"",
+   "1311px section.paneel \"De prijs per product\"",
+   "2158px section.kamer \"Wat er verder een tarief heeft\"",
+   "296px section.paneel \"Elke maand nieuwe beelden?\"",
+   "353px section.paneel \"Eén product van jezelf, als catalogset of carrousel.\""
+  ]
+ },
+ "catalog-390": {
+  "hoogte": 7430,
+  "secties": [
+   "5468px div.s22 \"Strakke, consistente catalogfoto’s — ook bij dertig producte\"",
+   "1451px section.paneel \"Strakke, consistente catalogfoto’s — ook bij dertig producte\"",
+   "997px section.paneel \"Dit is een telefoonfoto. Dit is wat eruit kwam.\"",
+   "1637px section.paneel \"Kies je Catalog-stijl.\"",
+   "331px section.paneel \"Wat een catalogset kost\"",
+   "575px section.paneel \"Vragen over catalog\"",
+   "395px section.paneel \"Bouw een catalogus die eruitziet als één merk.\""
+  ]
+ },
+ "lifestyle-390": {
+  "hoogte": 10013,
+  "secties": [
+   "8050px div.s22 \"Jouw product, in scènes die verkopen.\"",
+   "1397px section.paneel \"Jouw product, in scènes die verkopen.\"",
+   "507px section.kamer \"Het assortiment, in beweging\"",
+   "3910px section.paneel \"Vier sferen — of je eigen.\"",
+   "1207px section.paneel \"Eén product. Drie foto’s. Een carrousel.\"",
+   "575px section.paneel \"Vragen over lifestyle\"",
+   "368px section.paneel \"Zet je product in een scène die verkoopt.\""
+  ]
+ },
+ "video-390": {
+  "hoogte": 8113,
+  "secties": [
+   "6150px div.s22 \"Korte productvideo’s die bewegen.\"",
+   "1397px section.paneel \"Korte productvideo’s die bewegen.\"",
+   "2742px section.paneel \"Manieren om beweging toe te voegen.\"",
+   "1005px section.paneel \"Strakke beweging, klaar om te publiceren.\"",
+   "530px section.paneel \"Vragen over video\"",
+   "394px section.paneel \"Breng je product in beweging.\""
+  ]
+ },
+ "custom-models-390": {
+  "hoogte": 7798,
+  "secties": [
+   "5835px div.s22 \"Eigen gezichten. Alleen van jou.\"",
+   "1147px section.paneel \"Eigen gezichten. Alleen van jou.\"",
+   "565px section.paneel \"Echt geleverd werk, geen mock-up.\"",
+   "1600px section.paneel \"Jouw model, niet een model.\"",
+   "1191px section.paneel \"Hoe een merkmodel tot stand komt\"",
+   "748px section.paneel \"Negen vertrekpunten om op te reageren.\"",
+   "219px section.paneel \"De standaardbibliotheek\"",
+   "286px section.paneel \"Ontwerp het gezicht van jouw merk.\""
+  ]
+ },
+ "how-it-works-390": {
+  "hoogte": 7220,
+  "secties": [
+   "5258px div.s22 \"Eén map erin. Een hele bestelling eruit.\"",
+   "761px section.paneel \"Eén map erin. Een hele bestelling eruit.\"",
+   "2063px section.paneel \"Je bestelling, van begin tot eind.\"",
+   "634px section.paneel \"Meer dan AI. Met de hand afgewerkt.\"",
+   "1197px section.paneel \"De details die ertoe doen\"",
+   "522px section.paneel \"Eén product van jezelf, als catalogset of carrousel.\""
+  ]
+ },
+ "studio-390": {
+  "hoogte": 8382,
+  "secties": [
+   "6420px div.s22 \"Zo komen we aan een leverdatum. Dit is de agenda waar wij in\"",
+   "1488px section.paneel \"Zo komen we aan een leverdatum. Dit is de agenda waar wij in\"",
+   "1607px section.kamer \"We kijken eerst in de agenda, en pas daarna noemen we een da\"",
+   "780px section.paneel \"Reken terug vanaf de dag dat je live gaat.\"",
+   "1697px section.paneel \"Eén tabel, elke order.\"",
+   "469px section.paneel \"Wat dit niet doet.\"",
+   "313px section.paneel \"Boek een venster dat de planning heeft vrijgegeven.\""
+  ]
+ },
+ "start-390": {
+  "hoogte": 8002,
+  "secties": [
+   "6039px div.s22 \"Wat gaan we maken?\"",
+   "3746px section.paneel \"Wat gaan we maken?\"",
+   "454px section.paneel \"Of betaal er maandelijks voor\"",
+   "1077px section.kamer \"Wat er gebeurt nadat je erop drukt\"",
+   "335px section.paneel \"Merkmodel — je eigen gezicht\"",
+   "341px section.paneel \"Nog niet zeker welke?\""
+  ]
+ },
+ "compare-390": {
+  "hoogte": 7033,
+  "secties": [
+   "5071px div.s22 \"Een shootdag, of een bestelling.\"",
+   "467px section.paneel \"Een shootdag, of een bestelling.\"",
+   "1420px section.paneel \"Een productiedag vergeleken met een VISUAILS-bestelling\"",
+   "1301px section.kamer \"Wat op één lijn moet komen\"",
+   "686px section.paneel \"Waar een shootdag nog steeds wint\"",
+   "744px section.paneel \"En als je een self-serve tool overweegt\"",
+   "367px section.paneel \"Test het op je eigen product.\""
+  ]
+ },
+ "faq-390": {
+  "hoogte": 4074,
+  "secties": [
+   "2112px div.s22 \"Vragen, beantwoord.\"",
+   "591px section.paneel \"Vragen, beantwoord.\"",
+   "1118px section.paneel \"Aan de slag\"",
+   "340px section.paneel \"Nog een vraag?\""
+  ]
+ },
+ "gallery-390": {
+  "hoogte": 7650,
+  "secties": [
+   "5687px div.s22 \"Zo ziet een levering eruit.\"",
+   "440px section.paneel \"Zo ziet een levering eruit.\"",
+   "4805px section.kamer \"Zo ziet een levering eruit.\"",
+   "394px section.paneel \"Zie je eigen product in deze reeks.\""
+  ]
+ },
+ "contact-390": {
+  "hoogte": 4432,
+  "secties": [
+   "2470px div.s22 \"Neem contact op\"",
+   "2007px section.paneel \"Neem contact op\"",
+   "419px section.paneel \"Liever eerst één product van jezelf?\""
+  ]
+ },
+ "about-390": {
+  "hoogte": 4494,
+  "secties": [
+   "2532px div.s22 \"Ik ben Lucas.\"",
+   "1089px section.paneel \"Ik ben Lucas.\"",
+   "791px section.kamer \"Drie dingen waar we aan vasthouden.\"",
+   "244px section.paneel \"\"",
+   "341px section.paneel \"Klaar om te beginnen?\""
+  ]
+ },
+ "models-390": {
+  "hoogte": 5462,
+  "secties": [
+   "3500px div.s22 \"Tien gezichten. Al inbegrepen.\"",
+   "889px section.paneel \"Tien gezichten. Al inbegrepen.\"",
+   "1695px section.paneel \"De volledige bibliotheek\"",
+   "563px section.kamer \"Inbegrepen, niet iets wat je erbij moet kopen.\"",
+   "286px section.paneel \"Kies een gezicht, start een bestelling.\""
+  ]
+ },
+ "portal-390": {
+  "hoogte": 10942,
+  "secties": [
+   "8980px div.s22 \"Eén link. Je hele bestelling.\"",
+   "1794px section.paneel \"Eén link. Je hele bestelling.\"",
+   "1261px section.kamer \"Waar hij staat, zonder te vragen.\"",
+   "2986px section.paneel \"Beeld voor beeld goedkeuren.\"",
+   "976px section.paneel \"Eén map, en alles zit erin.\"",
+   "431px section.paneel \"Elke goedkeuring en revisie blijft terug te lezen.\"",
+   "971px section.paneel \"Waarom er geen wachtwoord is.\"",
+   "475px section.paneel \"Eerst één product van jezelf, als catalogset of carrousel.\""
+  ]
+ },
+ "per-product-390": {
+  "hoogte": 4490,
+  "secties": [
+   "2527px div.s22 \"Per product, wat je terugkrijgt.\"",
+   "314px section.paneel \"Per product, wat je terugkrijgt.\"",
+   "717px section.paneel \"Zit er altijd bij · 4 foto’s\"",
+   "1288px section.paneel \"Erbij te bestellen\"",
+   "146px section.paneel \"\""
+  ]
+ },
+ "hooks-390": {
+  "hoogte": 6167,
+  "secties": [
+   "4205px div.s22 \"Video die de scroll onderbreekt.\"",
+   "1579px section.paneel \"Video die de scroll onderbreekt.\"",
+   "725px section.paneel \"Wat er in je map komt te staan.\"",
+   "826px section.paneel \"Waar je op kunt rekenen.\"",
+   "530px section.paneel \"Vragen over Hooks\"",
+   "463px section.paneel \"Stuur de foto’s die je al hebt.\""
+  ]
+ },
+ "editions-390": {
+  "hoogte": 6413,
+  "secties": [
+   "4759px div.s22 \"De maanden waarin je niets te fotograferen hebt.\"",
+   "1588px section.paneel \"De maanden waarin je niets te fotograferen hebt.\"",
+   "1086px section.paneel \"Twee sets, en maar één ervan kost iets.\"",
+   "652px section.paneel \"Waar je op kunt rekenen.\"",
+   "553px section.paneel \"Vragen over Editions\"",
+   "799px section.paneel \"Vul de maand waar je niets voor hebt.\""
+  ]
+ },
+ "upload-guidelines-390": {
+  "hoogte": 5574,
+  "secties": [
+   "3611px div.s22 \"Zo maak je de foto die wij nodig hebben\"",
+   "557px section.paneel \"Zo maak je de foto die wij nodig hebben\"",
+   "563px section.paneel \"Welke foto welk beeld wordt.\"",
+   "938px section.paneel \"Wel doen\"",
+   "1093px section.kamer \"De set die we aanraden — en waarom\"",
+   "393px section.paneel \"Foto klaar? Stuur hem in.\""
+  ]
+ },
+ "lifestyle-dunes-390": {
+  "hoogte": 5759,
+  "secties": [
+   "3797px div.s22 \"Dunes\"",
+   "815px section.paneel \"Dunes\"",
+   "786px section.paneel \"Wat Dunes kenmerkt.\"",
+   "604px section.kamer \"Voor en na: Dunes.\"",
+   "533px section.paneel \"Hoe Dunes tot stand komt.\"",
+   "183px section.paneel \"\"",
+   "385px section.paneel \"Wat je krijgt\"",
+   "227px section.paneel \"Bestel in Dunes.\""
+  ]
+ },
+ "catalog-classic-390": {
+  "hoogte": 6402,
+  "secties": [
+   "4439px div.s22 \"Classic\"",
+   "1093px section.paneel \"Classic\"",
+   "1304px section.paneel \"Wat Classic kenmerkt.\"",
+   "572px section.kamer \"Wat Classic met een echte foto doet.\"",
+   "728px section.paneel \"Wat er in elk kader gaat.\"",
+   "346px section.paneel \"Wat je krijgt\"",
+   "309px section.paneel \"Bestel in Classic.\""
+  ]
+ },
+ "video-motion-390": {
+  "hoogte": 7781,
+  "secties": [
+   "5818px div.s22 \"Motion\"",
+   "1347px section.paneel \"Motion\"",
+   "793px section.paneel \"Wat Motion kenmerkt.\"",
+   "465px section.paneel \"\"",
+   "683px section.paneel \"Wat er in elk kader gaat.\"",
+   "297px section.paneel \"Wat je krijgt\"",
+   "336px section.paneel \"Bestel in Motion.\""
+  ]
+ },
+ "test-sample-390": {
+  "hoogte": 5855,
+  "secties": [
+   "3893px div.s22 \"Test VISUAILS met 1 product\"",
+   "488px section.paneel \"Test VISUAILS met 1 product\"",
+   "465px section.paneel \"\"",
+   "986px section.paneel \"Hoe de proef werkt\"",
+   "367px section.paneel \"Liever gewoon even overleggen?\""
+  ]
+ },
+ "start-catalog-390": {
+  "hoogte": 4780,
+  "secties": [
+   "2817px div.s22 \"Catalogsets\"",
+   "291px section.paneel \"Catalogsets\"",
+   "1619px section.paneel \"Deze bestelling staat al klaar\"",
+   "482px section.kamer \"Wat bij elk aantal hetzelfde is\"",
+   "358px section.paneel \"Nog niet klaar om te bestellen?\""
+  ]
+ },
+ "guides-390": {
+  "hoogte": 3983,
+  "secties": [
+   "2328px div.s22 \"Alles over productbeeld, zonder shoot\"",
+   "1610px section.paneel \"Alles over productbeeld, zonder shoot\"",
+   "290px section.paneel \"\"",
+   "367px section.paneel \"Klaar wanneer jij dat bent.\""
+  ]
+ }
+}

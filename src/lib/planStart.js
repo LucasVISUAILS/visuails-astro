@@ -84,6 +84,8 @@ import {
    kop van vasteLook.js: tot vandaag droeg deze bestelling geen achtergrond,
    look, gezicht of verhouding, en moest de studio het opzoeken. */
 import { laadLocks, lookDetails } from './vasteLook.js';
+import { listBatch } from './uploads.js';
+import { GARMENTS } from '../data/garments.js';
 
 /* Zelfde vorm als makeRef() in functions/api/order.js: VIS-XXXX-XXX. Bewust
    hier herhaald en niet geïmporteerd — dat bestand is een Pages Function met
@@ -128,6 +130,32 @@ export function klaarOmTeStarten(state) {
  *
  * @returns {Promise<{ok: boolean, reden?: string, orderId?: number, ref?: string, aantal?: number}>}
  */
+async function koppelQueueFotos(env, orderId, rijen) {
+  if (!env?.DB) return;
+  const sql = `INSERT INTO files (order_id, kind, r2_key, filename, bytes, product_key, shot)
+               VALUES (?1, 'upload', ?2, ?3, ?4, ?5, ?6)`;
+  const stmts = [];
+  for (let i = 0; i < rijen.length; i++) {
+    const batch = String(rijen[i].upload_batch || '').trim();
+    if (!batch) continue;
+    const staged = await listBatch(env, batch);
+    for (const f of staged) {
+      /* Het vak staat vóór in de bestandsnaam ("…-voorkant-jas.jpg", safeName() maakt van -- één streep), zo zet
+         stageerFotos() in account.js hem neer; R2 kent hier geen shot-metadata. */
+      const vak = /(?:^|-)(voorkant|achterkant|detail|gedragen)-+/.exec(String(f.name || ''))?.[1];
+      const shot = f.shot || ({ voorkant: 'front', achterkant: 'back', detail: 'detail', gedragen: 'worn' })[vak] || null;
+      stmts.push(env.DB.prepare(sql).bind(orderId, f.key, f.name || null, f.bytes || null, f.product || `p${i + 1}`, shot));
+    }
+  }
+  if (!stmts.length) return;
+  try {
+    if (typeof env.DB.batch === 'function') await env.DB.batch(stmts);
+    else for (const st of stmts) await st.run();
+  } catch (e) {
+    console.error('[abonnement] foto\'s koppelen mislukt:', e?.message || e);
+  }
+}
+
 export async function startPlanWindow(env, customerId, { max = null } = {}) {
   if (!env?.DB || !customerId) return { ok: false, reden: 'geen-db' };
 
@@ -294,6 +322,14 @@ export async function startPlanWindow(env, customerId, { max = null } = {}) {
       details[`product_p${i + 1}`] = String(q.name || '').slice(0, 120);
       const note = String(q.note || '').trim();
       if (note) details[`note_p${i + 1}`] = note.slice(0, 500);
+      /* ── HET PRODUCTTYPE, TERUG UIT DE NOTITIE — ronde 9, F65b (3 okt 2026) ──
+         Studio zet de soort ("Jas of mantel") vóór de notitie, want plan_queue
+         heeft er geen kolom voor. Het bord in /admin leest `garment_pN` en
+         schreef daarom "type niet gekozen" bij elk abonnementsproduct, terwijl
+         de klant hem wél koos. Hier de naam terugvertalen naar het id. */
+      const soortNaam = note.split(' — ')[0].trim();
+      const garment = soortNaam ? GARMENTS.find((g) => g.name?.nl === soortNaam || g.name?.en === soortNaam) : null;
+      if (garment) details[`garment_p${i + 1}`] = garment.id;
       const batch = String(q.upload_batch || '').trim();
       if (batch) details[`batch_p${i + 1}`] = batch;
       /* Het gezicht per product (migratie 0050): alleen als het afwijkt van de
@@ -334,6 +370,15 @@ export async function startPlanWindow(env, customerId, { max = null } = {}) {
       continue;
     }
     await queueLinkOrder(env, rijen.map((q) => q.id), rij.id);
+    /* ── DE FOTO'S REIZEN MEE — ronde 9, F65 (3 oktober 2026) ─────────────────
+       De klant zette per product foto's bij zijn lijst (plan_queue.upload_batch,
+       in R2 onder uploads/<batch>/). Hierboven kwam alleen de batchnaam in
+       details_json terecht; /admin en Studio lezen "aangeleverd" uit de tabel
+       files, en daar kwam niets. Gevolg op live (VIS-QGM0-5MZ): "nog geen
+       foto's" bij een product waar de klant er drie bij had gezet. Hetzelfde
+       als attachUploads() in functions/api/order.js, met het product erbij
+       (p1, p2 …) zodat het bord ze bij het juiste product zet. */
+    await koppelQueueFotos(env, rij.id, rijen);
     bestellingen.push({ orderId: rij.id, ref, aantal: rijen.length, start: vensterStart, eind: vensterEind });
   }
 
