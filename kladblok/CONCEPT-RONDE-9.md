@@ -51,6 +51,12 @@ Volgorde: eerst wat geld of vertrouwen raakt, dan wat de site korter en duidelij
   ```
 - **Advies:** ja, vier en niet drie: "downloaden" is precies de stap waar klanten nu om mailen. Alternatief: drie stappen houden maar overal dezelfde drie.
 
+### B1b · De stappen geanimeerd (jouw vraag van 3 okt)
+- **Wat:** in "Dit stuur jij. Dit krijg je terug." per stap een korte lus van 3–5 seconden: 1 telefoonfoto's schuiven het uploadvak in · 2 de foto wordt een catalogset/lifestylebeeld (veeg van voor naar na) · 3 vinkjes op de tegels, één tegel "revisie" · 4 de zip valt in een map. Daarna dezelfde taal op /how-it-works, /portal en in de bestelflow ("wat moet ik nu doen").
+- **Hoe (mijn keuze):** gebouwd in de site zelf als SVG/CSS-animatie, zoals de laptop op home al werkt. Scherp op elk scherm, een paar kB in plaats van MB's, NL/EN-teksten blijven tekst, en met "minder beweging" aan staat hij stil op het eindbeeld.
+- **Alternatieven:** (a) Claude Design om eerst de look van de vier scènes te schetsen en samen te kiezen; daarna bouw ik hem na in de site — Claude Design levert een prototype, geen bestand dat zo in de site gaat; (b) echte schermopnames van Studio als WebM/MP4-lus (gedempt, met stilstaand eerste beeld) — het eerlijkst voor "zo ziet het eruit", maar zwaarder en bij elke Studio-wijziging opnieuw opnemen. **Geen GIF:** 5–10× zwaarder dan video en maar 256 kleuren, juist bij productfoto's zichtbaar.
+- **Kost:** middel (vier scènes + reduced-motion + beide talen); eerst één scène als proef ter goedkeuring.
+
 ### B2 · Menu inkorten
 - **Nu:** Wat we maken (5) · Hoe het werkt (5) · Prijzen · Galerij · Contact · Inloggen · NL/EN · Bestellen.
 - **Voorstel:** Wat we maken (Catalog, Lifestyle, Video, Merkmodel, Abonnement) · **Zo werkt het** (één pagina, met daarin planning, Studio, modellen en aanleveren als secties) · Prijzen · Galerij · Inloggen · Bestellen. Contact naar de voet en de WhatsApp-knop (die staat al op elke pagina).

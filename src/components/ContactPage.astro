@@ -40,13 +40,11 @@ const SAMPLE = nl ? TEST_SAMPLE.nl : TEST_SAMPLE.en;
 
 const c = nl ? {
   etiket: 'Contact',
-  h1: ['Laten we ', 'samen groeien'],
+  h1: ['Neem ', 'contact op'],
   lead: 'Een vraag of een speciaal verzoek? Stuur een bericht.',
   beeldAlt: 'Een lifestylebeeld van VISUAILS in de stijl Glow',
 
   kanalenKop: 'De snelste manier om ons te bereiken',
-  wieH: 'Je spreekt Lucas',
-  wieP: 'Oprichter van VISUAILS. Elk bericht komt bij mij binnen.',
   waKop: 'WhatsApp',
   waP: 'Meestal antwoord binnen het uur.',
   waCta: 'Chat via WhatsApp',
@@ -102,13 +100,11 @@ const c = nl ? {
   slotCta2: 'Bekijk prijzen',
 } : {
   etiket: 'Contact',
-  h1: ['Let’s grow ', 'together'],
+  h1: ['Get in ', 'touch'],
   lead: 'A question or a special request? Send a message.',
   beeldAlt: 'A VISUAILS lifestyle image in the Glow style',
 
   kanalenKop: 'The fastest way to reach us',
-  wieH: 'You talk to Lucas',
-  wieP: 'Founder of VISUAILS. Every message comes to me.',
   waKop: 'WhatsApp',
   waP: 'Usually replies within the hour.',
   waCta: 'Chat on WhatsApp',
@@ -179,12 +175,8 @@ const c = nl ? {
       <div class="ct-kanalen">
         <h2 class="hoog hoog-3">{c.kanalenKop}</h2>
 
-        {/* Wie je spreekt. Klein, en dezelfde foto als op /about (plaatshouder
-            tot /img/lucas.webp er is). */}
-        <div class="ct-wie">
-          <img src="/img/lucas.webp" alt="" width="1200" height="1500" loading="lazy" decoding="async" />
-          <p><b>{c.wieH}</b><span>{c.wieP}</span></p>
-        </div>
+        {/* Ronde 9: het blok "Je spreekt Lucas" met foto is weg — de naam van de
+            oprichter staat alleen nog op /about (Lucas: subtieler, niet op elke pagina). */}
 
         <div class="ct-vak">
           <h3 class="etiket">{c.waKop}</h3>

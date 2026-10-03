@@ -293,7 +293,9 @@ console.log('\nhet aantal clips heeft zijn eigen veld');
     ok(`  ${kolom} staat in allebei de varianten`,
       new RegExp(kolom).test(queryVan('wide')) && new RegExp(kolom).test(queryVan('narrow')), true);
   }
-  ok('  en zet het aantal clips op de regel bij de dienst', /\$\{esc\(String\(d\.clips\)\)\} clips/.test(admin), true);
+  /* Ronde 9, O77: "1 clip" in enkelvoud, en een antwoord in woorden ("Weet ik nog
+     niet") achter "clips:" in plaats van ervoor. */
+  ok('  en zet het aantal clips op de regel bij de dienst', /if \(d\.clips\) \{[\s\S]{0,400}?n === 1 \? 'clip' : 'clips'[\s\S]{0,200}?`clips: \$\{esc\(String\(d\.clips\)/.test(admin), true);
 }
 
 console.log('\nen video kan nog steeds geen venster krijgen, hoe groot ook');

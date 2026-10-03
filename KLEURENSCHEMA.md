@@ -1,6 +1,6 @@
 # VISUAILS — kleurenschema
 
-**Stand: 20 september 2026.** Dit is het ene bestand dat de kleuren draagt. De
+**Stand: 20 september 2026, aangevuld 3 oktober 2026 (Studio, privélink, /admin).** Dit is het ene bestand dat de kleuren draagt. De
 tokens in `src/styles/global.css` (site), `src/styles/studio.css` (Studio),
 `public/account.css` / `portal.css` / `admin.css` (portaal, admin),
 `src/lib/mailTemplate.js` (mail) en `scripts/make-*.mjs` (favicons, OG,
@@ -265,6 +265,30 @@ te passen — dat is precies waar het oude pakket op afdreef.
   --st-can-fill:#1B1E23;      --st-can-edge:#5C6066;                 --st-can-ink:#A0A4AA;
 }
 ```
+
+---
+
+## Studio, privélink en /admin — herontwerp 3 oktober 2026
+
+Lucas: *"een volledige front-end redesign van elke tab in VISUAILS Studio (…)
+teksten voelen te groot en het voelt uit proportie op meerdere plekken"*, met
+een donkere zijbalk "volgens het VISUAILS kleurenschema" en het violet
+spaarzaam. Wat er voor deze drie werkschermen bij komt:
+
+| Rol | Licht | Donker | Waar |
+|---|---|---|---|
+| Grond | `#F2F3F5` (`--paper`) | `#0C0D10` | De pagina |
+| Kaart | `#FFFFFF` | `#14161A` | Elk blok. **De enige plek waar puur wit een vlak is** — "wit bewust niet #FFFFFF" hierboven gaat over het logo |
+| Vulling in een kaart | `#F4F5F7` | `#1C1F25` | Een tweede laag binnen een kaart, nooit een tweede kader |
+| Haarlijn | `rgba(0,0,0,.09)` | `rgba(242,243,245,.10)` | Rand van een kaart, rijen |
+| Lijn, sterk | `rgba(0,0,0,.18)` | `rgba(242,243,245,.20)` | Secundaire knop, velden |
+| Zijbalk | `#0C0D10` | `#000000` (`--panel`) | Studio en /admin; letter `--on-panel` op 70 %, actief item 11 % wit |
+
+De hoek van een kaart is **10 px**, van een knop, veld of tegel **8 px**; een
+statuspil blijft een pil. Het actieve menu-item is een witte tint en geen violet
+("waar je bent" is een toestand, "Altijd 2"). Letters: alleen Figtree, in gewone
+zinsbouw; kleine kapitalen alleen voor etiketten bij data (cijfertegels,
+kolomkoppen).
 
 ---
 

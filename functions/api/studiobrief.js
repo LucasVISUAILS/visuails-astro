@@ -96,7 +96,7 @@ export function welkomMail(lang) {
         : 'You can unsubscribe at the bottom of every letter, in one click — or right now: ')}<a href="${esc(afmeldMailto(lang))}">${esc(nl ? 'meld me af' : 'unsubscribe me')}</a>.${esc(nl
         ? ' Heb je je niet zelf aangemeld, dan hoef je niets te doen.'
         : ' If you did not sign up yourself, you need not do anything.')}`, { muted: true }),
-      p(esc(nl ? '— Lucas, VISUAILS' : '— Lucas, VISUAILS')),
+      p(esc('— VISUAILS')),
     ].join(''),
   });
 }

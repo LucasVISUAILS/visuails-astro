@@ -189,15 +189,15 @@ console.log('\nde subverwerkers staan met naam, en de twee lijsten zijn gelijk')
    * helemaal niet. Samen zeggen ze wat er moet gelden: de partijen staan er, én ze komen
    * op de pagina terecht.
    */
-  const PARTIJEN = ['Freepik Company, S.L.U.', 'Cloudflare, Inc.', 'Resend'];
+  const PARTIJEN = ['Magnific AI, S.L.U.', 'Cloudflare, Inc.', 'Resend']; /* ronde 9: Freepik Company heet sinds 2026 Magnific AI (zelfde CIF B-93183366) */
   for (const naam of PARTIJEN) {
     ok(`EN de overeenkomst noemt ${naam}`, SRC.en.includes(naam), true);
     ok(`NL idem`, SRC.nl.includes(naam), true);
   }
   ok('EN en de lijst wordt op de pagina gerenderd', /\{SUBS\.map\(/.test(DPA.en), true);
   ok('NL idem', /\{SUBS\.map\(/.test(DPA.nl), true);
-  ok('EN het privacybeleid noemt Freepik', PRIV.en.includes('Freepik Company, S.L.U.'), true);
-  ok('NL idem', PRIV.nl.includes('Freepik Company, S.L.U.'), true);
+  ok('EN het privacybeleid noemt Magnific', PRIV.en.includes('Magnific AI, S.L.U.'), true);
+  ok('NL idem', PRIV.nl.includes('Magnific AI, S.L.U.'), true);
   ok('EN en Mollie, want die staat niet in de overeenkomst', PRIV.en.includes('Mollie B.V.'), true);
   ok('NL idem', PRIV.nl.includes('Mollie B.V.'), true);
 
@@ -521,7 +521,7 @@ console.log('\nde nabewerking is lokaal, en dus staan Adobe en Blackmagic niet i
     ok(`${lang}: Blackmagic ook niet`, /Blackmagic/i.test(blok), false);
     /* De controle op de controle: de partijen die er WEL in horen zitten in dit blok, want
        anders meet bovenstaande niets meer dan een leesfout. */
-    ok(`${lang}: en Freepik zit er wel in`, /Freepik/.test(blok), true);
+    ok(`${lang}: en Magnific zit er wel in`, /Magnific/.test(blok), true);
   }
 }
 

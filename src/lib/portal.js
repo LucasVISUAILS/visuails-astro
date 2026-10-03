@@ -184,7 +184,7 @@ const COPY = {
     rrLabel: 'What is wrong with the ones you ticked?',
     rrHint: 'One note for the whole round. Mention which image if it differs per image.',
     /* Ronde 9, F13: zonder vinkje of zonder notitie laadde de pagina stil opnieuw. */
-    rrNone: 'Nothing was sent: no image was ticked. Tick “Not right” under each image that needs work, then write your note again.',
+    rrNone: 'Nothing was sent: no image was ticked. Tick “Not right” under each image that needs work and send the round again — your note is still there.',
     rrPick: 'Not right',
     /* Wat de tegel zegt zodra het vinkje aanstaat. Zie de noot bij `tik`
        verderop: zonder deze regel gebeurde er bij het aanvinken niets zichtbaars. */
@@ -196,7 +196,7 @@ const COPY = {
     rrDoneTitle: 'Your revision round has been handled',
     /* Ronde 9, O44: dit blok staat ONDER de bestanden, dus "below" wees de verkeerde kant op. */
     rrDoneBody: (day, n) => `On ${day} you flagged ${n === 1 ? '1 image' : `${n} images`}; the new version${n === 1 ? ' is' : 's are'} above, with your files. That was this order's revision round. If something is still not right, send us a message.`,
-    rrUsedBody: (day, n) => `You sent ${n === 1 ? '1 image' : `${n} images`} on ${day}. That is the round that comes with this order, so the form is closed — but we are not. Anything else about this order, message us and we will sort it out.`,
+    rrUsedBody: (day, n, open) => `You sent ${n === 1 ? '1 image' : `${n} images`} on ${day}${open && open < n ? ` — ${open} still open, you withdrew the rest` : ''}. That is the round that comes with this order, so the form is closed — but we are not. Anything else about this order, message us and we will sort it out.`,
     rrUsedWa: 'Message us on WhatsApp',
     rrWaText: (ref) => `Hi VISUAILS, about order ${ref} — I have a question after my revision round.`,
     rrRevokedTitle: 'Revisions are paused on your account',
@@ -286,7 +286,7 @@ const COPY = {
     rrIntro: 'Vink elk beeld aan dat niet goed is, schrijf erbij wat eraan schort, en stuur het als één ronde. We kijken er in één keer naar en zetten het recht.',
     rrLabel: 'Wat klopt er niet aan wat je hebt aangevinkt?',
     rrHint: 'Eén notitie voor de hele ronde. Noem het beeld erbij als het per beeld verschilt.',
-    rrNone: 'Er is niets verstuurd: je had geen beeld aangevinkt. Vink onder elk beeld dat anders moet “Niet goed” aan en schrijf je opmerking dan opnieuw.',
+    rrNone: 'Er is niets verstuurd: je had geen beeld aangevinkt. Vink onder elk beeld dat anders moet “Niet goed” aan en verstuur de ronde opnieuw — je opmerking staat er nog.',
     rrPick: 'Niet goed',
     rrPicked: 'Staat in je revisieronde',
     rrSend: 'Verstuur deze revisieronde',
@@ -295,7 +295,7 @@ const COPY = {
     rrUsedTitle: 'Je revisieronde ligt bij ons',
     rrDoneTitle: 'Je revisieronde is verwerkt',
     rrDoneBody: (day, n) => `Je gaf op ${day} ${n === 1 ? '1 beeld' : `${n} beelden`} door; ${n === 1 ? 'de nieuwe versie staat' : 'de nieuwe versies staan'} hierboven, bij je bestanden. De revisieronde van deze bestelling is daarmee gebruikt. Klopt er toch nog iets niet, stuur ons een bericht.`,
-    rrUsedBody: (day, n) => `Je hebt op ${day} ${n === 1 ? '1 beeld' : `${n} beelden`} doorgegeven. Dat is de ronde die bij deze bestelling hoort, dus het formulier is dicht — wij niet. Is er verder iets met deze bestelling, stuur ons een bericht en we lossen het op.`,
+    rrUsedBody: (day, n, open) => `Je hebt op ${day} ${n === 1 ? '1 beeld' : `${n} beelden`} doorgegeven${open && open < n ? ` — daarvan ${open === 1 ? 'staat er nog 1' : `staan er nog ${open}`} open, de rest heb je ingetrokken` : ''}. Dat is de ronde die bij deze bestelling hoort, dus het formulier is dicht — wij niet. Is er verder iets met deze bestelling, stuur ons een bericht en we lossen het op.`,
     rrUsedWa: 'Stuur een WhatsApp-bericht',
     rrWaText: (ref) => `Hoi VISUAILS, over bestelling ${ref} — ik heb een vraag na mijn revisieronde.`,
     rrRevokedTitle: 'Revisies staan op je account op pauze',
@@ -709,7 +709,21 @@ async function handleRevisionRound(env, context, { order, form, home, lang, requ
       .map((v) => Number.parseInt(String(v), 10))
       .filter((n) => Number.isInteger(n) && n > 0)
   )];
-  if (!gekozen.length) return seeOther(leeg);
+  /* O43 (ronde 9): de melding kwam, maar de getypte toelichting was weg ("schrijf
+     je opmerking dan opnieuw"). Nu antwoordt de server met de pagina zelf, de
+     melding erop en de tekst nog in het vak — geen omleiding, dus ook geen
+     notitie in een URL. (Ververst de klant deze pagina, dan vraagt de browser of
+     hij opnieuw wil versturen; dat stuurt dezelfde lege ronde en geeft dezelfde
+     pagina.) */
+  if (!gekozen.length) {
+    const token = home.split('/').filter(Boolean).pop();
+    if (token) {
+      order.rrMelding = true;
+      order.rrNote = note;
+      return renderOrder(env, order, token, lang);
+    }
+    return seeOther(leeg);
+  }
 
   /*
    * ── ELK NUMMER MOET BIJ DÍT BESTELLING HOREN ──────────────────────────────
@@ -1284,7 +1298,7 @@ function roundBlock(t, lang, order, files) {
      */
     return `<section class="rr rr-used">
   <h2>${esc(t.rrUsedTitle)}</h2>
-  <p>${esc(t.rrUsedBody(dag, n))}</p>
+  <p>${esc(t.rrUsedBody(dag, n, files.filter((f) => f.review_state === 'revision_requested' && !f.superseded_at).length))}</p>
   ${order.revision_round_note ? `<p class="said">${esc(order.revision_round_note)}</p>` : ''}
   <p><a class="btn btn-wa" href="${esc(waHref(t.rrWaText(order.ref)))}" target="_blank" rel="noopener">${esc(t.rrUsedWa)}</a></p>
 </section>`;
@@ -1315,7 +1329,7 @@ function roundBlock(t, lang, order, files) {
   ${order.rrMelding ? `<p class="rr-fout" role="alert">${esc(t.rrNone)}</p>` : ''}
   <form method="post" action="" id="rr">
     <label class="sr-only" for="rrnote">${esc(t.rrLabel)}</label>
-    <textarea id="rrnote" name="note" rows="3" maxlength="${NOTE_MAX}" placeholder="${esc(t.rrHint)}" required></textarea>
+    <textarea id="rrnote" name="note" rows="3" maxlength="${NOTE_MAX}" placeholder="${esc(t.rrHint)}" required>${esc(order.rrNote || '')}</textarea>
     <div class="acts"><button class="btn btn-primary" type="submit" name="action" value="round">${esc(t.rrSend)}</button></div>
   </form>
 </section>`;
@@ -1754,8 +1768,24 @@ function timeline(t, lang, events) {
   // An event this file cannot name is dropped rather than printed. See
   // statusLabel: the alternative is a dated row with an empty subject, which
   // reads as something deliberately withheld from the client.
+  /* O8 (ronde 9): een ingediende revisie, "geen nieuw beeld nodig" en de
+     herlevering stonden alle drie onder de kop "Geleverd" — de status van de
+     bestelling op dat moment. Alleen de EERSTE levering heet zo; wat daarna op
+     dezelfde status binnenkomt, is een revisie of een bijwerking. */
+  let alGeleverd = false;
   const named = events
-    .map((e) => ({ ...e, what: statusLabel(e.status, lang) }))
+    .map((e) => {
+      let what = statusLabel(e.status, lang);
+      if (e.status === 'delivered') {
+        if (alGeleverd) {
+          what = /revisi|revision|herlever|redeliver|nieuw beeld|new image/i.test(String(e.note || ''))
+            ? (lang === 'nl' ? 'Revisie' : 'Revision')
+            : (lang === 'nl' ? 'Bijgewerkt' : 'Updated');
+        }
+        alGeleverd = true;
+      }
+      return { ...e, what };
+    })
     .filter((e) => e.what);
   if (!named.length) return '';
   const rows = named

@@ -773,7 +773,7 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
       'AI Act vraagt dat van wie publiceert, dus van jou. Op',
       'visuails.com/nl/ai-act staat een zin die je kunt overnemen.',
       '',
-      `Vragen? ${CONTACT} — je krijgt antwoord van een specialist.`,
+      `Vragen? ${CONTACT} — je krijgt een persoonlijk antwoord.`,
       '',
     ]);
   }
@@ -856,7 +856,7 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
     'with them — the EU AI Act asks that of whoever publishes, so of you.',
     'visuails.com/ai-act has a sentence you can use.',
     '',
-    `Questions? ${CONTACT} — a specialist answers.`,
+    `Questions? ${CONTACT} — you get a personal reply.`,
     '',
   ]);
 }

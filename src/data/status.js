@@ -48,7 +48,7 @@ export const STAND_VAN = {
   received: 'wait',            // binnen, nog niet opgepakt
   awaiting_payment: 'wait',    // wacht op de betaling; de productie start pas daarna
   in_production: 'work',
-  human_check: 'work',         // een specialist kijkt het na — nog steeds ONS werk,
+  human_check: 'work',         // onze beeldredactie kijkt het na — nog steeds ONS werk,
                                // en dus niet 'rev': dat is wat de KLANT terugstuurt
   delivered: 'done',
   cancelled: 'can',

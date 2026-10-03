@@ -1241,9 +1241,10 @@ const FORM = {
       lead: 'Read it back. Nothing has been created yet, and nothing has been charged.',
       afterH: 'What happens after you press the button',
       afterWindow: 'Your reserved delivery date is held for seven days while you pay.',
+      afterEu: 'Ordering from elsewhere in the EU without a VAT number? Then we check your details first, and the link follows by email within one working day.',
       after: [
         'You go straight to the payment page (Mollie). Production starts once the payment is in.',
-        'Your confirmation with the reference and the same payment link arrives by email — pay later if you prefer. Ordering from elsewhere in the EU without a VAT number? Then we check your details first, and the link follows by email within one working day.',
+        'Your confirmation with the reference and the same payment link arrives by email — pay later if you prefer.',
         'Every order lands in VISUAILS Studio, where you approve and download image by image — a standard order too. The direct link is in your email as well.',
       ],
       payNote: 'No card details here — you pay on the next page through Mollie (iDEAL, Bancontact or card).',
@@ -1509,9 +1510,12 @@ const FORM = {
       lead: 'Lees het terug. Er is nog niets aangemaakt en er is nog niets in rekening gebracht.',
       afterH: 'Wat er gebeurt nadat je op de knop drukt',
       afterWindow: 'Je vastgezette leverdatum blijft zeven dagen voor je staan terwijl je betaalt.',
+      /* O16 (ronde 9): alleen voor een ander EU-land — een klant buiten de EU las
+         hem ook, en voor hem klopt hij niet. syncReg() in pipeline.js zet hem aan. */
+      afterEu: 'Bestel je elders in de EU zonder btw-nummer, dan kijken we eerst kort naar je gegevens; de link volgt dan per mail, binnen een werkdag.',
       after: [
         'Je gaat meteen door naar de betaalpagina (Mollie). We beginnen zodra de betaling binnen is.',
-        'Je bevestiging met de referentie en dezelfde betaallink komt per mail — later betalen kan dus ook. Bestel je elders in de EU zonder btw-nummer, dan kijken we eerst kort naar je gegevens; de link volgt dan per mail, binnen een werkdag.',
+        'Je bevestiging met de referentie en dezelfde betaallink komt per mail — later betalen kan dus ook.',
         'Elke bestelling komt in VISUAILS Studio, waar je beeld voor beeld goedkeurt en downloadt — ook een standaardbestelling. De rechtstreekse link staat ook in je mail.',
       ],
       payNote: 'Hier vul je geen kaartgegevens in — betalen doe je op de volgende pagina via Mollie (iDEAL, Bancontact of creditcard).',
@@ -2964,7 +2968,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       <div class="pl-after">
         <h3 class="pl-sub-h">{f.s5.afterH}</h3>
         <ul class="pl-after-list">
-          {f.s5.after.map((t, i) => <li>{t}{i === 0 && <span data-pl-after-window hidden> {f.s5.afterWindow}</span>}</li>)}
+          {f.s5.after.map((t, i) => <li>{t}{i === 0 && <span data-pl-after-window hidden> {f.s5.afterWindow}</span>}{i === 1 && <span data-pl-after-eu> {f.s5.afterEu}</span>}</li>)}
         </ul>
         <p class="pl-pay-note">{f.s5.payNote}</p>
 

@@ -1267,7 +1267,7 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
    opvalt, wijst je nergens heen. Dezelfde regel als DESIGN.md voor de site. */
 .ag-nu { margin: 1rem 0 1.4rem; }
 .ag-nu .eyebrow {
-  margin: 0 0 .4rem; font-size: .7rem; font-weight: 700; letter-spacing: .12em;
+  margin: 0 0 .4rem; font-size: .72rem; font-weight: 700; letter-spacing: .12em;
   text-transform: uppercase; color: var(--warn-ink);
 }
 .ag-nu .meta { margin: .6rem 0 0; }
@@ -1457,7 +1457,7 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
   display: grid; align-items: center; gap: .8rem;
   grid-template-columns: 9.5rem minmax(9rem, 1.2fr) minmax(7rem, 1fr) minmax(11.5rem, 1fr) 8.5rem 6rem 7.5rem;
 }
-.or-kop { padding: .5rem 0 .4rem; font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); border-bottom: 1px solid var(--line); }
+.or-kop { padding: .5rem 0 .4rem; font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); border-bottom: 1px solid var(--line); }
 .or { border-bottom: 1px solid var(--line); }
 .or-rij { padding: .7rem 0; cursor: pointer; list-style: none; min-height: 48px; font-size: .9rem; color: var(--ink); }
 .or-rij::-webkit-details-marker { display: none; }
@@ -1534,7 +1534,7 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 .pl-last span[data-vol="80"] { width: 80%; }
 .pl-last span[data-vol="90"] { width: 90%; }
 .pl-last span[data-vol="100"] { width: 100%; }
-.pl-last-n, .pl-dag-dicht { margin: 0; font-size: .7rem; color: var(--ink-3); }
+.pl-last-n, .pl-dag-dicht { margin: 0; font-size: .72rem; color: var(--ink-3); }
 .pl-dag-dicht { color: var(--warn-ink); font-weight: 700; }
 .pl-chips { display: grid; gap: .3rem; margin-top: .2rem; }
 .pl-chip {
@@ -2008,7 +2008,7 @@ input, select, textarea { max-width: 100%; }
 .pl-zet.is-nee {
   min-height: 28px; display: grid; place-items: center;
   border: 1px dashed var(--line); border-radius: 4px;
-  font-size: .7rem; color: var(--ink-3); text-align: center;
+  font-size: .72rem; color: var(--ink-3); text-align: center;
 }
 .pl-pak-link { font-size: .8rem; color: var(--ink-2); }
 
@@ -2187,3 +2187,224 @@ details.admin-extra[open] > summary::after { content: "▴"; }
 .in-tekst { flex: 1; min-width: 12rem; margin: 0; }
 /* Ronde 9 (F49): het gezicht van een eigen merkmodel bij "Wat de klant koos". */
 .keuze-gezicht { display: inline-block; vertical-align: middle; margin-left: .5rem; border-radius: 6px; object-fit: cover; }
+
+
+/* ══ MELDING IN STUDIO — ronde 9 ═══════════════════════════════════════════
+   Dezelfde drie kleuren als de balk in Studio (src/styles/studio.css), zodat
+   je hier ziet wat de klant ziet. */
+.melding-balk { --mb-fill: #E4DFFF; --mb-ink: #3D17D6; --mb-edge: rgb(61 23 214 / .30);
+  margin: .5rem 0; padding: .55rem .9rem; border: 1px solid var(--mb-edge); border-radius: 8px;
+  background: var(--mb-fill); color: var(--mb-ink); line-height: 1.45; }
+.melding-balk a { color: inherit; margin-left: .5rem; }
+.melding-balk.is-druk { --mb-fill: #F6E7D1; --mb-ink: #8A4D06; --mb-edge: rgb(138 77 6 / .30); }
+.melding-balk.is-storing { --mb-fill: #FBE9E9; --mb-ink: #9B1C1C; --mb-edge: rgb(155 28 28 / .32); }
+.melding-l { font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin-right: .4rem; }
+.melding-voorbeeld { display: grid; gap: .35rem; margin: 1rem 0 1.5rem; }
+.melding-voorbeeld form { margin-top: .4rem; }
+.melding-form { display: grid; gap: .8rem; max-width: 40rem; }
+.melding-form label { display: grid; gap: .3rem; }
+:root[data-thema="donker"] .melding-balk { --mb-fill: #1E1840; --mb-ink: #A694FF; --mb-edge: rgb(166 148 255 / .34); }
+:root[data-thema="donker"] .melding-balk.is-druk { --mb-fill: #2B1D0A; --mb-ink: #E9963B; --mb-edge: rgb(233 150 59 / .34); }
+:root[data-thema="donker"] .melding-balk.is-storing { --mb-fill: #2A1414; --mb-ink: #FF9B93; --mb-edge: rgb(255 155 147 / .34); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HET HERONTWERP VAN 3 OKTOBER 2026 — DE SCHIL VAN VISUAILS STUDIO
+   ═══════════════════════════════════════════════════════════════════════════
+   Lucas vroeg om een rustiger Studio en nam /admin in hetzelfde verzoek mee.
+   Dit blok legt de taal van src/styles/studio.css over dit bestand heen; de
+   regels hierboven blijven staan voor hun noten, dit blok heeft het laatste
+   woord.
+
+     · een donkere zijbalk (adminNav() in admin.js, door page() naast <main>
+       gezet) en een smalle bovenbalk met waar je bent en het thema
+     · één letter, Figtree, in gewone zinsbouw; geen Anybody-kapitalen in de
+       koppen en geen Martian Mono in knoppen, pillen en etiketten
+     · 28 px titel · 16 px kop · 14 px tekst · 13 px meta · 12 px etiket
+     · de grond is --paper, een kaart is wit (donker: #14161A) met een haarlijn
+     · knoppen 34 px met een hoek van 8 px; violet alleen voor de hoofdactie
+   Kolomkoppen en etiketten bij data blijven kleine kapitalen: dat is in een
+   werkscherm vol tabellen een echte rol (etiket, geen kop), en het is de enige.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --paper-lift: #FFFFFF;
+  --paper-2: #F4F5F7;
+  --mist-teal: #F4F5F7;
+  --mist-slate: #F4F5F7;
+  --mist-stone: #F4F5F7;
+  --line: rgb(0 0 0 / .09);
+  --line-strong: rgb(0 0 0 / .18);
+  --ghost: rgb(0 0 0 / .04);
+  --adm-side: #0C0D10;
+  --adm-side-ink: rgb(242 243 245 / .70);
+  --adm-side-ink-1: #F2F3F5;
+  --adm-side-ink-3: rgb(242 243 245 / .55);
+  --adm-side-hover: rgb(242 243 245 / .06);
+  --adm-side-actief: rgb(242 243 245 / .11);
+  --adm-side-lijn: rgb(242 243 245 / .10);
+  --adm-r-kaart: 10px;
+  --adm-r: 8px;
+}
+:root[data-thema="donker"] {
+  --paper-lift: #14161A;
+  --paper-2: #1C1F25;
+  --mist-teal: #1C1F25;
+  --mist-slate: #1C1F25;
+  --mist-stone: #1C1F25;
+  --line: rgb(242 243 245 / .10);
+  --line-strong: rgb(242 243 245 / .20);
+  --ghost: rgb(242 243 245 / .05);
+  --adm-side: #000000;
+  --adm-side-lijn: rgb(242 243 245 / .09);
+}
+
+body { padding: 0; font-family: var(--font); font-size: .875rem; line-height: 1.5; background: var(--paper); }
+h1, h2, h3 { font-family: var(--font); font-stretch: 100%; text-transform: none; }
+h1 { margin: 1.75rem 0 1.25rem; font-size: 1.75rem; font-weight: 600; line-height: 1.2; letter-spacing: -.02em; }
+h2 { margin: 2rem 0 .75rem; font-size: 1rem; font-weight: 600; line-height: 1.35; letter-spacing: -.005em; }
+h3 { font-size: .875rem; font-weight: 600; letter-spacing: 0; }
+.lede { font-size: .875rem; }
+.meta { font-size: .8125rem; }
+
+/* ── DE SCHIL ──────────────────────────────────────────────────────────── */
+.adm-shell { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 100vh; }
+.adm-kolom { background: var(--adm-side); border-right: 1px solid var(--adm-side-lijn); min-width: 0; }
+.adm-side {
+  position: sticky; top: 0; height: 100vh; overflow-y: auto; box-sizing: border-box;
+  display: flex; flex-direction: column; gap: .2rem; padding: 1rem .75rem;
+}
+.adm-side .mark {
+  font-family: var(--font-kop); font-stretch: var(--stretch-kop); font-weight: 700; letter-spacing: .08em; font-size: .95rem;
+  color: var(--adm-side-ink-1); padding: .45rem .6rem 0;
+}
+.adm-sub { font-size: .75rem; color: var(--adm-side-ink-3); padding: 0 .6rem 1rem; }
+.adm-side .bar-nav { display: flex; flex-direction: column; gap: 0; flex: 0 0 auto; }
+.adm-groep { display: flex; flex-direction: column; gap: 2px; }
+.adm-groep-kop { margin: 1rem 0 .3rem; padding: 0 .6rem; font-size: .75rem; font-weight: 600; color: var(--adm-side-ink-3); }
+.adm-side .bar-link {
+  display: flex; align-items: center; width: 100%; box-sizing: border-box;
+  min-height: 34px; padding: 0 .6rem; border: 0; border-radius: var(--adm-r);
+  font: inherit; font-size: .875rem; font-weight: 500; color: var(--adm-side-ink); text-align: left;
+  background: none; cursor: pointer;
+}
+.adm-side .bar-link:hover, .adm-side .bar-link:focus-visible { background: var(--adm-side-hover); color: var(--adm-side-ink-1); }
+.adm-side .bar-link.is-active { background: var(--adm-side-actief); color: var(--adm-side-ink-1); font-weight: 500; border: 0; }
+.adm-side :focus-visible { outline-color: var(--adm-side-ink-1); }
+.adm-uit { margin: auto 0 0; padding-top: .75rem; border-top: 1px solid var(--adm-side-lijn); }
+
+.adm-romp { min-width: 0; display: flex; flex-direction: column; }
+.adm-balk {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; gap: 1rem; min-height: 56px; padding: 0 2rem; box-sizing: border-box;
+  background: var(--paper-lift); border-bottom: 1px solid var(--line);
+}
+.adm-kruim { margin: 0; display: flex; align-items: center; gap: .45rem; font-size: .8125rem; color: var(--ink-3); }
+.adm-kruim b { font-weight: 500; color: var(--ink); }
+.adm-kruim i { font-style: normal; color: var(--ink-4); }
+.adm-balk .bar-right { margin-left: auto; }
+.bar-thema {
+  min-height: 32px; padding: 0 .75rem; border-radius: var(--adm-r);
+  font-family: var(--font); font-stretch: 100%; font-size: .8125rem; font-weight: 600; letter-spacing: 0; text-transform: none;
+  border: 1px solid var(--line-strong); color: var(--ink-2);
+}
+
+/* Het werkvlak: geen paneel meer om de inhoud, de kaarten zijn het paneel. */
+.adm-romp > .wrap {
+  max-width: 1440px; width: 100%; box-sizing: border-box; margin: 0;
+  padding: 0 2rem 3rem; background: none; border-radius: 0;
+}
+.adm-romp > .wrap > h1:first-child { margin-top: 1.75rem; }
+.db-zij, .pl-zij { top: 72px; }
+
+/* ── DE BOUWSTENEN ─────────────────────────────────────────────────────── */
+.card { background: var(--paper-lift); border: 1px solid var(--line); border-radius: var(--adm-r-kaart); padding: 1.1rem 1.25rem; }
+.card.is-attention { border-color: var(--warn-ink); }
+.stat { background: var(--paper-lift); border: 1px solid var(--line); border-radius: var(--adm-r-kaart); padding: .9rem 1rem; }
+.stat.is-warn { border: 1px solid var(--warn-ink); }
+.stat-n { font-family: var(--font); font-stretch: 100%; font-size: 1.5rem; font-weight: 600; letter-spacing: -.02em; }
+.stats { gap: .75rem; background: none; padding: 0; border-radius: 0; overflow: visible; margin: 0 0 1.75rem; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+.stat { margin: 0; }
+.stat-l { font-size: .8125rem; font-weight: 500; color: var(--ink-3); }
+.stat.is-warn .stat-l { color: var(--warn-ink); font-weight: 600; }
+
+/* De zijbalk kost 232 px. De bestellijst wil zo'n 1000 px (zeven kolommen) en
+   de zijkolom 380: naast elkaar past dat pas vanaf 1600 px venster. Daaronder
+   staat de zijkolom onder de lijst, zoals hij dat eerder onder 1280 deed. */
+@media (max-width: 1600px) {
+  .adm-romp .db-vlakken, .adm-romp .pl-vlakken { grid-template-columns: 1fr; }
+  .adm-romp .db-zij, .adm-romp .pl-zij { position: static; }
+}
+
+.btn {
+  font-family: var(--font); font-stretch: 100%; font-weight: 600; font-size: .8125rem;
+  text-transform: none; letter-spacing: 0;
+  min-height: 34px; padding-left: .85rem; padding-right: .85rem; border-radius: var(--adm-r);
+}
+.btn-sm { min-height: 30px; padding-left: .7rem; padding-right: .7rem; font-size: .8125rem; }
+.btn-ghost, .btn:not(.btn-primary):not(.btn-quiet):not(.btn-dark):not(.btn-danger) {
+  background: var(--paper-lift); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+.btn-ghost:hover, .btn:not(.btn-primary):not(.btn-quiet):not(.btn-dark):not(.btn-danger):hover { background: var(--paper-2); }
+@media (pointer: coarse) { .btn { min-height: 44px; } }
+
+.stand {
+  min-height: 22px; padding: 0 .55rem; gap: .35rem;
+  font-family: var(--font); font-stretch: 100%; font-size: .75rem; font-weight: 500;
+  letter-spacing: 0; text-transform: none;
+}
+.pill, .or-let, .board-count {
+  font-family: var(--font); font-stretch: 100%; font-size: .75rem; font-weight: 600;
+  letter-spacing: 0; text-transform: none; padding: .1rem .5rem;
+}
+.ref, .pl-chip-ref { font-family: var(--font); font-stretch: 100%; font-size: .875rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.fl-chip { min-height: 30px; padding: 0 .7rem; font-size: .8125rem; background: var(--paper-lift); border-color: var(--line); }
+.fl-chip.is-active { background: var(--ink); border-color: var(--ink); color: var(--paper-lift); font-weight: 500; }
+.fl-chip.is-active .fl-n { color: inherit; }
+
+/* Etiketten bij data: kleine kapitalen, in de tekstletter. */
+table.files th, .ag-tabel th, .or-kop, .slot-label, .brief-kop, .brief-vak-l, .pl-dag-wd, .pl-dag-nu,
+.aanvraag-intake dt, .keuze-intake dt, .db-aflopend li .db-af-dag, .pl-pakbalk-l {
+  font-family: var(--font); font-stretch: 100%; font-size: .75rem; font-weight: 600; letter-spacing: .04em;
+}
+.melding-l { letter-spacing: 0; text-transform: none; font-size: .8125rem; }
+
+input[type="text"], input[type="email"], input[type="tel"], input[type="url"],
+input[type="search"], input[type="number"], input[type="password"], input[type="date"], textarea, select {
+  font-size: .875rem; border-radius: var(--adm-r); border-color: var(--line-strong); background: var(--paper-lift);
+}
+input[type="text"], input[type="email"], input[type="tel"], input[type="url"],
+input[type="search"], input[type="number"], input[type="password"], input[type="date"], select { min-height: 36px; }
+.werk input[type="file"]::file-selector-button {
+  font-size: .8125rem; font-weight: 600; letter-spacing: 0; text-transform: none; border-radius: var(--adm-r);
+  min-height: 30px; background: var(--paper-lift); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+/* ── DE TELEFOON ───────────────────────────────────────────────────────── */
+@media (max-width: 56.25em) {
+  .adm-shell { display: block; }
+  .adm-kolom { border-right: 0; }
+  .adm-side { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: .3rem; padding: .6rem .75rem .75rem; }
+  .adm-side .mark { padding: 0 .4rem; }
+  .adm-sub, .adm-groep-kop { display: none; }
+  .adm-side .bar-nav, .adm-groep { flex-direction: row; flex-wrap: wrap; gap: .3rem; width: 100%; }
+  .adm-side .bar-nav { order: 3; }
+  .adm-side .bar-link { width: auto; min-height: 32px; padding: 0 .7rem; border-radius: 999px; font-size: .8125rem; }
+  .adm-uit { margin: 0 0 0 auto; padding: 0; border: 0; order: 2; }
+  .adm-balk { position: static; padding: 0 1rem; min-height: 48px; }
+  .adm-romp > .wrap { padding: 0 1rem 2.5rem; }
+  h1 { font-size: 1.5rem; margin-top: 1.25rem; }
+  .db-zij, .pl-zij { position: static; }
+}
+
+/* Toestanden in de statusset, niet in het accent (KLEURENSCHEMA "Altijd 2"),
+   en geen streep aan één kant meer op een afgerond planningsblokje. */
+.warnline {
+  padding: .55rem .8rem; font-size: .8125rem; border-radius: var(--adm-r);
+  background: var(--st-rev-fill); border: 1px solid var(--st-rev-edge); color: var(--st-rev-ink);
+}
+.warnline.is-rood { background: #FBE9E9; border-color: rgb(155 28 28 / .32); color: #9B1C1C; }
+:root[data-thema="donker"] .warnline.is-rood { background: #2A1414; border-color: rgb(255 155 147 / .34); color: #FF9B93; }
+.slot.is-fresh { border-color: var(--st-work-edge); }
+.pl-chip.is-af { border-color: var(--st-done-edge); box-shadow: none; }
+/* "Te laat" in Aflopend was een verloop van klei naar niets — regel "Nooit 1".
+   Nu een gewone tint met de hoek van de rest. */
+.pl-item.is-laat { background: var(--st-rev-fill); border-radius: var(--adm-r); padding-left: .6rem; padding-right: .6rem; }

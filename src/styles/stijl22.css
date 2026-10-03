@@ -1554,7 +1554,7 @@
 
   .s22 .hero-clip { position: absolute; z-index: 2; right: clamp(1.25rem, 5vw, 4rem); bottom: clamp(3rem, 8vw, 6rem); width: min(32%, 260px); aspect-ratio: 16 / 10; border-radius: calc(var(--ronding) - 12px); overflow: hidden; background: var(--inkt); display: grid; place-items: center; }
   .s22 .hero-clip img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .62; }
-  .s22 .hero-clip .rond { position: relative; width: 40px; height: 40px; font-size: .7rem; }
+  .s22 .hero-clip .rond { position: relative; width: 40px; height: 40px; font-size: .72rem; }
   .s22 .hero-clip .mono { position: absolute; left: .85rem; bottom: .75rem; font-size: .72rem; color: var(--vel); }
 
   /* Geen tussenruimte en geen bovenhoeken: de maatlijn is de voortzetting van

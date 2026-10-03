@@ -130,8 +130,8 @@ produce them, the way a studio uses lighting and retouching — it is how the wo
 is made, not what is bought.
 
 We are not a photo studio and we do not run shoots either. There is no shoot
-day, no crew and no location. Every visual is made, corrected and checked by a
-specialist before it is delivered, and every delivered file carries a
+day, no crew and no location. Every visual is made and corrected by us and
+checked by our image editors before it is delivered, and every delivered file carries a
 machine-readable AI provenance tag.
 
 ## Prices

@@ -36,6 +36,7 @@ import { VAT_TREATMENT } from '../data/vat.js';
 import { VAT_RATE } from './quote.js';
 import { planName } from '../data/planNames.js';
 import { serviceLabel } from '../data/services.js';
+import { getStyle } from '../data/styles.js';
 
 /*
  * ── HOE SELLER_ADDRESS AANGELEVERD MAG WORDEN — 10 AUGUSTUS 2026 ────────────
@@ -295,7 +296,14 @@ export function snapshotFromOrder(order, env, { number, date, dueDate = null } =
         ? `${svc} — ${n} product${n === 1 ? '' : 'en'}`
         : `${svc} — ${n} product${n === 1 ? '' : 's'}`;
   const label = aanbetaling ? `${lang === 'nl' ? 'Aanbetaling' : 'Deposit'} · ${basis}` : basis;
-  const detail = lookNaam ? `${lang === 'nl' ? 'Eigen look' : 'Own look'}: ${lookNaam}` : '';
+  /* O45 (ronde 9): bij een huisstijl stond de look nergens op de factuur —
+     "Lifestyle — 2 producten" zonder Glow. Dezelfde tweede regel als bij een
+     eigen look. Een onbekende slug laat de regel weg in plaats van hem te raden. */
+  const huisstijl = !lookNaam && order.service === 'lifestyle' && d.style && d.style !== 'custom'
+    ? (getStyle(String(d.style))?.name || '') : '';
+  const detail = lookNaam
+    ? `${lang === 'nl' ? 'Eigen look' : 'Own look'}: ${lookNaam}`
+    : huisstijl ? `Look: ${huisstijl}` : '';
 
   return {
     number,

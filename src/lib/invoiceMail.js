@@ -74,7 +74,7 @@ const COPY = {
     outside: 'Deze levering valt buiten de Europese btw.',
     keep: 'Bewaar deze factuur voor je eigen administratie.',
     nextH: 'Wat nu',
-    next: (wanneer) => `Een specialist maakt je beelden en loopt elk beeld na. Je krijgt een mail zodra ze klaarstaan${wanneer}. Daarna keur je ze per beeld goed, of vraag je één gratis revisieronde aan.`,
+    next: (wanneer) => `We maken je beelden en onze beeldredactie loopt elk beeld na. Je krijgt een mail zodra ze klaarstaan${wanneer}. Daarna keur je ze per beeld goed, of vraag je één gratis revisieronde aan.`,
     /* Ronde 9 (F40): een offerte (video, eigen look) heeft geen uploadformulier
        gehad. Zonder deze zin wist de klant na betalen niet hoe zijn foto's bij
        ons komen. */
@@ -99,7 +99,7 @@ const COPY = {
     outside: 'This supply falls outside the scope of European VAT.',
     keep: 'Keep this invoice for your own records.',
     nextH: 'What happens next',
-    next: (when) => `A specialist makes your images and checks every one. You get an email as soon as they are ready${when}. Then you approve them image by image, or ask for one free revision round.`,
+    next: (when) => `We make your images and our image editors check every one. You get an email as soon as they are ready${when}. Then you approve them image by image, or ask for one free revision round.`,
     nextModel: 'First you get a few directions to react to, with one correction round. Then we build the face, run it through the uniqueness check and tie it to your brand. You get an email as soon as there is something to look at.',
     nextOfferte: 'We start as set out in the quote. Not sent your product photos yet? Reply to this email with the photos, or send them on WhatsApp. You get an email as soon as there is something to look at.',
     asap: ' (often within a day, sometimes a few days)',
@@ -278,7 +278,7 @@ const SUB_COPY = {
     rInvoice: 'Factuurnummer',
     rDate: 'Factuurdatum',
     rAmount: 'Afgeschreven',
-    attached: 'De factuur zit als pdf bij deze mail. Je vindt hem ook terug in VISUAILS Studio, onder <b>Abonnement &amp; facturering</b>.',
+    attached: 'De factuur zit als pdf bij deze mail. Je vindt hem ook terug in VISUAILS Studio, onder <b>Facturen</b>.',
     noAttach: 'Je factuur staat klaar in VISUAILS Studio, onder <b>Abonnement &amp; facturering</b>.',
     portal: 'Naar je abonnement in VISUAILS Studio',
     stop: 'Pauzeren of opzeggen doe je zelf in Studio, onder Abonnement — zonder mailtje, zonder wachttijd.',
@@ -307,7 +307,7 @@ const SUB_COPY = {
     rInvoice: 'Invoice number',
     rDate: 'Invoice date',
     rAmount: 'Charged',
-    attached: 'The invoice is attached as a PDF. You can also find it in VISUAILS Studio, under <b>Plan &amp; billing</b>.',
+    attached: 'The invoice is attached as a PDF. You can also find it in VISUAILS Studio, under <b>Invoices</b>.',
     noAttach: 'Your invoice is waiting in VISUAILS Studio, under <b>Plan &amp; billing</b>.',
     portal: 'Go to your plan in VISUAILS Studio',
     stop: 'Pausing or cancelling is something you do yourself in Studio, under Plan — no email, no waiting.',

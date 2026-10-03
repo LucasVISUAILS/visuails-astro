@@ -72,7 +72,7 @@ export const styles = [
     slug: 'flash',
     orderHref: '/nl/start/lifestyle/?style=flash',
     name: 'Flash',
-    tagline: 'Directe flits. Geen excuses.',
+    tagline: 'Directe flits, harde schaduwen.',
     heroPhoto: '/img/lifestyle-flash-01.webp',
     cardPhoto: '/img/lifestyle-flash-02.webp',
     beforeAfter: { before: '/img/lifestyle-flash-07.webp', after: '/img/lifestyle-flash-01.webp' },
@@ -80,7 +80,7 @@ export const styles = [
     cardDesc: 'Energieke flitsvisuals met een nightlife-/editorial-gevoel — pittig, contrastrijk, trendgedreven.',
     moodTitle: 'Hoe Flash eruitziet.',
     moodParagraphs: [
-      'Hard on-camera licht, diepe schaduwen, kleur die knalt. De nightlife-look, confronterend van opzet.',
+      'Hard on-camera licht, diepe schaduwen, verzadigde kleur. De nightlife-look, confronterend van opzet.',
       'Verkeerd toegepast is dit licht gewoon hard. Goed toegepast is het elektrisch. Wij hebben er een discipline van gemaakt.',
     ],
     steps: [

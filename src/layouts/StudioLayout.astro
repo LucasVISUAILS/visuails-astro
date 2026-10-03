@@ -42,6 +42,9 @@ import '@fontsource-variable/martian-mono/standard.css';
 const CHIP_STAND = { signal: 'in_production', warn: 'past_due' };
 
 import { studioHeaders, studioNav, STUDIO_ICONS } from '../lib/account.js';
+/* De melding bovenaan (ronde 9) — gezet in /admin/melding, zie src/lib/melding.js. */
+import { leesMelding, meldingTekst } from '../lib/melding.js';
+import { pagesContext } from '../lib/route.js';
 
 interface Props {
   lang: 'nl' | 'en';
@@ -67,9 +70,17 @@ const {
 
 for (const [k, v] of Object.entries(studioHeaders())) Astro.response.headers.set(k, v);
 
+const melding = await leesMelding(pagesContext(Astro).env);
+const meldingTxt = meldingTekst(melding, lang);
+/* Valt de Engelse tekst terug op de Nederlandse, dan ook het label in het Nederlands. */
+const MELDING_LABEL = (lang === 'nl' || !melding?.en)
+  ? { info: 'Mededeling', druk: 'Drukte', storing: 'Storing' }
+  : { info: 'Notice', druk: 'Busy', storing: 'Service issue' };
 const licht = thema === 'licht';
 const items = studioNav(t);
 const naam = customer ? (customer.brand || customer.name || customer.email) : '';
+const letter = (naam || '?').trim().charAt(0).toUpperCase();
+const huidig = items.find((n) => n.key === actief)?.label || '';
 const andereTaal = lang === 'nl' ? 'en' : 'nl';
 const andereTaalLabel = lang === 'nl' ? 'English' : 'Nederlands';
 const themaLabel = licht ? t.themaNaarDonker : t.themaNaarLicht;
@@ -106,6 +117,7 @@ const metParam = (k, v) => {
 <body class={`studio ${vorm === 'kaart' ? 'st-kaartvorm' : 'st-schilvorm'}${licht ? '' : ' on-ink'}`}>
   {vorm === 'kaart' ? (
     <div class="st-kaartveld">
+      {meldingTxt && <p class={`st-banner is-${melding.soort}`} role="status"><span class="st-banner-l">{MELDING_LABEL[melding.soort]}</span><span>{meldingTxt}</span></p>}
       <a class="st-merk st-merk-los" href="/" aria-label="VISUAILS">
         <svg class="st-woordmerk" viewBox={WORDMARK_VIEWBOX} aria-hidden="true" focusable="false"><g transform={WORDMARK_TRANSFORM}>{WORDMARK_PATHS.map((d) => <path d={d} />)}</g></svg>
       </a>
@@ -122,56 +134,71 @@ const metParam = (k, v) => {
             <svg class="st-woordmerk" viewBox={WORDMARK_VIEWBOX} aria-hidden="true" focusable="false"><g transform={WORDMARK_TRANSFORM}>{WORDMARK_PATHS.map((d) => <path d={d} />)}</g></svg>
           </a>
           <span class="st-sub">{t.dashSub}</span>
-          <a class="st-klap" href={metParam('nav', navDicht ? 'open' : 'dicht')} title={navDicht ? t.navExpand : t.navCollapse}>
-            <Fragment set:html={navDicht ? STUDIO_ICONS.expand : STUDIO_ICONS.collapse} /><span>{t.navCollapse}</span>
-          </a>
+        </div>
+        {/* Alleen op de telefoon: daar is er geen bovenbalk en geen zijbalkvoet. */}
+        <div class="st-mob">
+          <a href={metParam('lang', andereTaal)} lang={andereTaal} title={andereTaalLabel}>{andereTaal.toUpperCase()}</a>
+          <a href={metParam('thema', licht ? 'donker' : 'licht')} title={themaLabel} aria-label={themaLabel}><Fragment set:html={themaIcon} /></a>
+          <form method="post" action="/account/logout"><button type="submit">{t.signOut}</button></form>
         </div>
         <nav class="st-nav" aria-label="Studio">
           {items.map((n) => (
-            <a class={`st-navlink${n.key === actief ? ' is-actief' : ''}`} href={n.href} aria-current={n.key === actief ? 'page' : undefined}>
+            <a class={`st-navlink${n.key === actief ? ' is-actief' : ''}`} href={n.href} aria-current={n.key === actief ? 'page' : undefined} title={navDicht ? n.label : undefined}>
               <Fragment set:html={n.icon} /><span>{n.label}</span>
             </a>
           ))}
         </nav>
         <div class="st-side-voet">
           {customer && (
-            <div class="st-wie">
-              <span class="st-wie-naam">{naam}</span>
-              <span class="st-wie-mail">{customer.email}</span>
+            <div class="st-wie" title={navDicht ? `${naam} · ${customer.email}` : undefined}>
+              <span class="st-wie-letter" aria-hidden="true">{letter}</span>
+              <span class="st-wie-tekst">
+                <span class="st-wie-naam">{naam}</span>
+                <span class="st-wie-mail">{customer.email}</span>
+              </span>
             </div>
           )}
-          <a class="st-stand" href={metParam('lang', andereTaal)}>{andereTaalLabel}</a>
-          <a class="st-stand" href={metParam('thema', licht ? 'donker' : 'licht')} title={themaLabel}>
-            <Fragment set:html={themaIcon} /><span>{themaLabel}</span>
-          </a>
-          <form method="post" action="/account/logout"><button class="btn btn-ghost btn-block" type="submit">{t.signOut}</button></form>
+          <form method="post" action="/account/logout">
+            <button class="st-uit" type="submit" title={navDicht ? t.signOut : undefined}>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5"/><path d="M5 12h11"/></svg>
+              <span>{t.signOut}</span>
+            </button>
+          </form>
         </div>
       </aside>
       </div>
 
       <div class="st-romp">
+        {/* De bovenbalk (herontwerp 3 oktober 2026): inklappen, waar je bent, en
+            rechts de taal en het thema. De paginatitel staat eronder. */}
+        <div class="st-balk">
+          <a class="st-klap" href={metParam('nav', navDicht ? 'open' : 'dicht')} title={navDicht ? t.navExpand : t.navCollapse} aria-label={navDicht ? t.navExpand : t.navCollapse}>
+            <Fragment set:html={navDicht ? STUDIO_ICONS.expand : STUDIO_ICONS.collapse} />
+          </a>
+          <p class="st-kruim"><span>Studio</span>{huidig && <Fragment><i aria-hidden="true">/</i><b>{huidig}</b></Fragment>}</p>
+          <div class="st-schakel">
+            <span class="st-taal" aria-label={lang === 'nl' ? 'Taal' : 'Language'}>
+              {lang === 'nl' ? <span aria-current="true">NL</span> : <a href={metParam('lang', 'nl')} lang="nl" title="Nederlands">NL</a>}
+              {lang === 'en' ? <span aria-current="true">EN</span> : <a href={metParam('lang', 'en')} lang="en" title="English">EN</a>}
+            </span>
+            <a class="st-stand" href={metParam('thema', licht ? 'donker' : 'licht')} title={themaLabel}><Fragment set:html={themaIcon} /><span>{themaLabel}</span></a>
+          </div>
+        </div>
+        {meldingTxt && <p class={`st-banner is-${melding.soort}`} role="status"><span class="st-banner-l">{MELDING_LABEL[melding.soort]}</span><span>{meldingTxt}</span></p>}
         <header class="st-top">
           <div class="st-top-tekst">
             <h1 class="st-h1">{kop}</h1>
             {lede && <p class="st-lede">{lede}</p>}
           </div>
           {/* De kopchip zegt hoe de REKENING ervoor staat ("3 bestellingen lopen",
-              "abonnement gepauzeerd"). Dat is een status, dus hij draagt sinds
-              20 september het statuscomponent en niet zijn eigen vorm — anders
-              staat er twee centimeter naast een statuspil een bijna-identieke
-              pil met een andere maat en een andere stip. `toon` vertaalt hier
-              naar een stand; de tabel zelf kent alleen echte statuswaarden. */}
+              "abonnement gepauzeerd"). Dat is een status, dus hij draagt het
+              statuscomponent (20 september 2026). */}
           {chip && chip.tekst && <span class={standKlasse(CHIP_STAND[chip.toon] || 'received')}>{chip.tekst}</span>}
           {actie && <a class="btn btn-primary st-top-actie" href={actie.href}>{actie.label}</a>}
         </header>
         <main class="st-main" id="inhoud">
           <slot />
         </main>
-        <footer class="st-voet">
-          <a class="st-stand" href={metParam('lang', andereTaal)}>{andereTaalLabel}</a>
-          <a class="st-stand" href={metParam('thema', licht ? 'donker' : 'licht')}><Fragment set:html={themaIcon} /><span>{themaLabel}</span></a>
-          <form method="post" action="/account/logout"><button class="btn btn-ghost btn-sm" type="submit">{t.signOut}</button></form>
-        </footer>
       </div>
     </div>
   )}

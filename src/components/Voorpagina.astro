@@ -152,7 +152,7 @@ const COPY = {
        [nummer, woord, zin, link?] */
     vnRijen: [
       ['01', 'You send', `${FOTOS} phone photos are all you need: front, back and a detail. Shot on a table — no studio, no tripod.`, null],
-      ['02', 'We make', `Catalog, lifestyle or video, in the look you pick: ${levertijdDelen('unattended', 'en').join(', ').toLowerCase()}. A specialist checks every image.`, ['See more work', '/gallery']],
+      ['02', 'We make', `Catalog, lifestyle or video, in the look you pick: ${levertijdDelen('unattended', 'en').join(', ').toLowerCase()}. Our image editors check every image.`, ['See more work', '/gallery']],
       ['03', 'You approve', 'Approve each image or ask for a revision, then download everything at once — in the shape you picked, for your shop, ads and reels.', ['Look inside the portal', '/portal']],
     ],
     vnVormen: [['1:1', 'shop'], ['4:5', 'ad'], ['9:16', 'reel · lifestyle']],
@@ -187,11 +187,11 @@ const COPY = {
       ['You order for clients.', 'One account, a different brand per order.', 'How that works', '/faq#getting-started'],
     ],
 
-    qH: 'Straight answers.',
+    qH: 'Common questions.',
     qs: [
       /* Ronde 8 (C-6): elke vraag krijgt zijn antwoord in één zin, en de link
          is voor wie meer wil — niet de enige manier om het antwoord te lezen. */
-      ['What if the visuals are not right?', `You approve image by image. Whatever is off goes back to a specialist in one free correction round, within ${REVISIE_DAGEN} days.`, 'How approving works', '/portal'],
+      ['What if the visuals are not right?', `You approve image by image. Whatever is off goes back to our image editors in one free correction round, within ${REVISIE_DAGEN} days.`, 'How approving works', '/portal'],
       ['Will a customer see it is AI?', 'Every file carries an invisible AI label. Whether and how you mention it is on the AI Act page.', 'Read the AI Act page', '/ai-act'],
       ['Are my photos good enough?', 'A phone is enough: front, back and one close-up, on a calm surface in daylight.', 'What makes a photo usable', '/upload-guidelines'],
       ['Why not do it myself?', `A shoot day costs ${SHOOT_DAY.en.range} ${vatLabel('excl', 'en')}, everything counted. Here you send photos and approve.`, 'The honest comparison', '/compare'],
@@ -202,7 +202,7 @@ const COPY = {
     closeH: `See it first. One product for ${sample.price}.`,
     closeLede: `${sample.deliverable} · made from your own photo · ${sample.unit}.`,
     closeAlt: 'Or start an order',
-    trust: [['Made by Lucas, in Enschede', '/about'], 'Registered with the KVK', reviewClaim('attended', 'en'), 'Direct line on WhatsApp'],
+    trust: [['Made in Enschede', '/about'], 'Registered with the KVK', reviewClaim('attended', 'en'), 'Direct line on WhatsApp'],
   },
   nl: {
     plek: 'Enschede, NL',
@@ -239,7 +239,7 @@ const COPY = {
     vnStappenH: 'Van jouw foto naar je shop.',
     vnRijen: [
       ['01', 'Jij stuurt', `${FOTOS} telefoonfoto’s zijn genoeg om te beginnen: voorkant, achterkant en een detail. Op een tafel gemaakt — geen studio, geen statief.`, null],
-      ['02', 'Wij maken', `Catalog, lifestyle of video, in de look die je kiest: ${levertijdDelen('unattended', 'nl').join(', ').toLowerCase()}. Een specialist controleert elk beeld.`, ['Meer werk zien', '/gallery']],
+      ['02', 'Wij maken', `Catalog, lifestyle of video, in de look die je kiest: ${levertijdDelen('unattended', 'nl').join(', ').toLowerCase()}. Onze beeldredactie controleert elk beeld.`, ['Meer werk zien', '/gallery']],
       ['03', 'Jij keurt goed', 'Per beeld goedkeuren of een revisie vragen, en alles in één keer downloaden — in de vorm die je koos, voor je shop, advertenties en reels.', ['Het portaal van binnen', '/portal']],
     ],
     vnVormen: [['1:1', 'shop'], ['4:5', 'advertentie'], ['9:16', 'reel · lifestyle']],
@@ -274,9 +274,9 @@ const COPY = {
       ['Je bestelt voor klanten.', 'Eén account, per bestelling een ander merk.', 'Hoe dat werkt', '/faq#getting-started'],
     ],
 
-    qH: 'Direct antwoord.',
+    qH: 'Veelgestelde vragen.',
     qs: [
-      ['Wat als ze niet goed zijn?', `Je keurt per beeld goed. Wat niet klopt, gaat in één gratis correctieronde terug naar een specialist, binnen ${REVISIE_DAGEN} dagen.`, 'Zo werkt goedkeuren', '/portal'],
+      ['Wat als ze niet goed zijn?', `Je keurt per beeld goed. Wat niet klopt, gaat in één gratis correctieronde terug naar onze beeldredactie, binnen ${REVISIE_DAGEN} dagen.`, 'Zo werkt goedkeuren', '/portal'],
       ['Ziet een klant dat het AI is?', 'Elk bestand draagt een onzichtbaar AI-label. Of en hoe je het vermeldt, staat op de AI Act-pagina.', 'Lees de AI Act-pagina', '/ai-act'],
       ['Zijn mijn foto’s goed genoeg?', 'Een telefoon is genoeg: voorkant, achterkant en één close-up, op een rustige ondergrond bij daglicht.', 'Wat maakt een foto bruikbaar', '/upload-guidelines'],
       ['Waarom niet zelf?', `Een shootdag kost ${SHOOT_DAY.nl.range} ${vatLabel('excl', 'nl')}, alles meegerekend. Hier stuur je foto’s en keur je goed.`, 'De eerlijke vergelijking', '/compare'],
@@ -287,7 +287,7 @@ const COPY = {
     closeH: `Eerst zien? Eén product voor ${sample.price}.`,
     closeLede: `${sample.deliverable} · gemaakt van jouw eigen foto · ${sample.unit}.`,
     closeAlt: 'Of start een bestelling',
-    trust: [['Gemaakt door Lucas, in Enschede', '/about'], 'Ingeschreven bij de KVK', reviewClaim('attended', 'nl'), 'Directe lijn via WhatsApp'],
+    trust: [['Gemaakt in Enschede', '/about'], 'Ingeschreven bij de KVK', reviewClaim('attended', 'nl'), 'Directe lijn via WhatsApp'],
   },
 };
 const c = COPY[lang];

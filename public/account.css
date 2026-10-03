@@ -357,6 +357,15 @@
   --dur-2: 240ms;   /* element: reveal, expand, swap */
   --dur-3: 450ms;   /* section */
   --dur-4: 900ms;   /* chrome */
+  /* De losse kaartschermen (herontwerp 3 oktober 2026): dezelfde grond, kaart
+     en inkt als het inlogscherm van Studio (src/styles/studio.css). */
+  --kv-veld:   #0C0D10;
+  --kv-kaart:  #14161A;
+  --kv-lijn:   rgb(242 243 245 / .10);
+  --kv-veld-lijn: rgb(242 243 245 / .28);
+  --kv-ink-1:  #F2F3F5;
+  --kv-ink-2:  rgb(242 243 245 / .72);
+  --kv-ink-3:  rgb(242 243 245 / .58);
 }
 /* ══════════════════════════════════════════════════════════════════════════════
    HET LICHTE SCHERM
@@ -504,6 +513,14 @@
   --verify-ink:  var(--teal-text);
   --flag-ink:    var(--clay-text);
   --accent-bright: var(--accent-text);
+  /* De losse kaartschermen (herontwerp 3 oktober 2026) — zie onderaan. */
+  --kv-veld:   #F2F3F5;
+  --kv-kaart:  #FFFFFF;
+  --kv-lijn:   rgb(0 0 0 / .09);
+  --kv-veld-lijn: rgb(0 0 0 / .24);
+  --kv-ink-1:  #0C0D10;
+  --kv-ink-2:  rgb(12 13 16 / .72);
+  --kv-ink-3:  rgb(12 13 16 / .60);
 }
 
 /* De drie plekken die een PAPIER-alfa schrijven in plaats van een token. Ze
@@ -2106,7 +2123,7 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
 }
 .stat-i .i { width: 16px; height: 16px; }
 .stat-label {
-  display: block; font-size: .7rem; font-weight: 700;
+  display: block; font-size: .72rem; font-weight: 700;
   letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3);
 }
 /* Hier stond var(--font-display) toen dat token nergens gezet werd, dus viel de
@@ -3963,3 +3980,68 @@ main .lede, .main .lede { margin-bottom: 1.4rem; }
 .stand.is-rev  { background: var(--st-rev-fill);  color: var(--st-rev-ink);  box-shadow: inset 0 0 0 1px var(--st-rev-edge); }
 .stand.is-can  { background: var(--st-can-fill);  color: var(--st-can-ink);  box-shadow: inset 0 0 0 1px var(--st-can-edge); }
 a.stand:hover { box-shadow: inset 0 0 0 1px currentColor; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HERONTWERP 3 OKTOBER 2026 — DE LOSSE KAARTSCHERMEN
+   ═══════════════════════════════════════════════════════════════════════════
+   De schermen die nog uit src/lib/account.js komen en niet uit Astro: de
+   foutpagina (errorBody), de adreswijziging, "even rustig aan" en het nakijken
+   van een revisieronde. Ze stonden nog in de oude vorm: een balk met het woord
+   VISUAILS, een streep, en daaronder een grijze kaart of een losse oranje regel.
+   Nu dezelfde vorm als het inlogscherm van Studio (Inlogkaart.astro +
+   studio.css "HET INLOGSCHERM"): het getekende woordmerk boven één kaart in het
+   midden, kop in Figtree 600, uitleg in gewone tekstkleur.
+
+   Alles hangt aan body:not(.has-shell), zodat de oude schil (has-shell) niet
+   meeverandert. De kleuren komen uit de --kv-*-tokens bovenin, licht en donker. */
+body:not(.has-shell) {
+  min-height: 100vh; padding: 2rem 1rem; box-sizing: border-box;
+  background: var(--kv-veld); color: var(--kv-ink-2);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+body:not(.has-shell) > .wrap {
+  width: 100%; max-width: none;
+  display: flex; flex-direction: column; align-items: center; gap: 1.5rem;
+}
+body:not(.has-shell) .bar { padding: 0; box-shadow: none; justify-content: center; }
+body:not(.has-shell) .mark { display: block; width: 124px; height: 21px; color: var(--kv-ink-1); line-height: 0; }
+.mark .woordmerk { display: block; width: 100%; height: 100%; fill: currentColor; }
+.mark:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
+
+body:not(.has-shell) .authcard {
+  width: min(100%, 400px); max-width: none; margin: 0; box-sizing: border-box;
+  padding: 2rem; display: flex; flex-direction: column; gap: 1rem;
+  background: var(--kv-kaart); border: 1px solid var(--kv-lijn); border-radius: 10px;
+  font-size: .9375rem; line-height: 1.55;
+}
+body:not(.has-shell) .authcard.nakijk { width: min(100%, 46rem); }
+body:not(.has-shell) .authcard > * { margin: 0; }
+body:not(.has-shell) .authcard h1 {
+  font-family: var(--font); font-stretch: 100%; font-weight: 600;
+  font-size: 1.5rem; line-height: 1.2; letter-spacing: -.02em; color: var(--kv-ink-1);
+  text-wrap: balance;
+}
+body:not(.has-shell) .authcard .lede { font-size: .875rem; color: var(--kv-ink-2); max-width: 60ch; }
+body:not(.has-shell) .authcard .btn {
+  min-height: 38px; padding: 0 1rem; border-radius: 8px;
+  font-family: var(--font); font-stretch: 100%; font-size: .8125rem; font-weight: 600;
+  letter-spacing: 0; text-transform: none;
+}
+body:not(.has-shell) .authcard .btn-ghost {
+  background: var(--kv-kaart); color: var(--kv-ink-1); box-shadow: inset 0 0 0 1px var(--kv-veld-lijn);
+}
+body:not(.has-shell) .authcard .btn-ghost:hover { background: var(--kv-veld); }
+body:not(.has-shell) .authcard .error { font-size: .875rem; }
+body:not(.has-shell) .authcard form.login { margin: 0; }
+body:not(.has-shell) .authcard form.login input[type="email"] {
+  min-height: 38px; padding: 0 .75rem; border-radius: 8px;
+  background: var(--kv-kaart); color: var(--kv-ink-1); border-color: var(--kv-veld-lijn); font-size: .875rem;
+}
+body:not(.has-shell) .nakijk-knoppen { display: flex; flex-wrap: wrap; gap: .6rem; }
+@media (pointer: coarse) {
+  body:not(.has-shell) .authcard .btn,
+  body:not(.has-shell) .authcard form.login input[type="email"] { min-height: 44px; }
+}
+@media (max-width: 30em) {
+  body:not(.has-shell) .authcard { padding: 1.5rem; }
+}

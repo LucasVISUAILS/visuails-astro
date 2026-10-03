@@ -1,264 +1,311 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   VISUAILS Studio — het klantdashboard, bovenop global.css. 5 september 2026.
+   VISUAILS Studio — het klantdashboard, bovenop global.css.
 
-   WAT HIER STAAT EN WAT NIET. Geen enkel token: die komen uit global.css, dezelfde
-   als de site (grond, inkt, lijnen, accent, hoeken, fonts, duur en easing). Dit
-   bestand doet drie dingen: de lichte stand (een tweede waarde voor die tokens),
-   de schil (zijbalk, bovenbalk, tabrij op de telefoon) en de bouwstenen van de
-   secties (cijferrij, bestelkaart, tijdlijn, betaalblok, strook, activiteit,
-   inlogkaart). Alles met een st-voorvoegsel, zodat het naast de honderden
-   klassen van global.css kan bestaan zonder ze te raken.
+   ── HET HERONTWERP VAN 3 OKTOBER 2026 (ronde 9) ─────────────────────────────
+   Lucas: *"Ik denk dat ik een volledige front-end redesign van elke tab in
+   VISUAILS Studio wil hebben omdat het nu wat onoverzichtelijk oogt (teksten
+   voelen te groot en het voelt uit proportie op meerdere plekken)."* Met een
+   klantenportaal als voorbeeld van de rust die hij zocht, en vier keuzes:
+   een donkere zijbalk "volgens het VISUAILS kleurenschema", het violet
+   spaarzaam, alle tabs in één keer, en licht én donker.
 
-   REGISTER. Dit is een werkscherm, geen merkpagina: de tekstletter in de
-   bediening, Anybody alleen voor de paginatitel, de vier grote cijfers en de
-   knoppen (die zijn al zo in global.css). Geel op precies drie plekken: de primaire
-   knop, het actieve menu-item en het lopende punt in de tijdlijn. De rest
-   onderscheidt zich met wittinten en lijnen — zie PRODUCT.md, "Colour marks
-   the point".
+   Wat er veranderde, en waarom:
+
+   1. ÉÉN LETTER. Studio is een werkscherm, geen merkpagina. De koppen in
+      Anybody-kapitalen en de knoppen en pillen in Martian Mono-kapitalen waren
+      de stem van de site, en hier waren ze precies wat Lucas "te groot" en
+      "onoverzichtelijk" noemde: elk blok riep. Nu draagt Figtree alles, in
+      gewone zinsbouw, en doet het GEWICHT de hiërarchie (600 voor koppen, 500
+      voor labels, 400 voor tekst).
+   2. EEN VASTE TRAP, IN REM, ZONDER clamp(). 28 px paginatitel · 16 px kop van
+      een blok · 14 px tekst · 13 px meta · 12 px labels en pillen. Kleiner dan
+      12 komt niets (ondergrens van dit project: 11,5 px).
+   3. WITTE KAARTEN OP DE GROND. --paper (#F2F3F5) blijft de pagina; een kaart
+      is wit met een haarlijn en 10 px hoek. Dat is de ene afwijking van
+      KLEURENSCHEMA.md ("wit bewust niet #FFFFFF" gaat over het logo, niet over
+      een vlak), en hij staat daar sinds vandaag bij. Binnen een kaart is de
+      tweede laag een vulling (--surface-2), nooit een tweede kader.
+   4. DE ZIJBALK IS HET DONKERE PANEEL. #0C0D10 (de donkere grond uit het
+      schema) op licht, #000000 (--panel) op donker, met letters in --on-panel.
+      Het actieve item is een vulling van 10 % wit, geen violet: violet is voor
+      actie (regel "Altijd 2"), en "waar je bent" is een toestand.
+   5. EEN SMALLE BOVENBALK met de taal en het thema, zoals in het voorbeeld.
+      De paginatitel staat eronder in de inhoud, niet in de balk.
+   6. VIOLET OP DRIE PLEKKEN: de primaire knop, een link, en de stip "nu" in
+      de tijdlijn. Al het andere is inkt.
 
    GEEN JAVASCRIPT. Inklappen, taal en thema zijn cookies; open/dicht is
    <details>. Elke toestand hier is een klasse die de server zet.
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-/* ── LICHT EN DONKER — herzien 5 september 2026 (sectie 21) ────────────────
-   Lucas, 30 augustus 2026: "Ik wil een wit en donker scherm optie voor het
-   dashboard." Toen was de site donker en stond hier een lichte tweede waarde
-   voor elk token. Sinds sectie 20/21 is het omgekeerd: global.css IS licht
-   (#F5F5F5, Komma's grond), dus de lichte stand hoeft niets meer te
-   overschrijven — hij is de site. De donkere stand is de .on-ink-scope van
-   global.css (#111111, dezelfde die de donkere panelen op de voorpagina
-   dragen), gezet als klasse op <body> door StudioLayout. Zo blijven de twee
-   standen de twee gronden van de site en niet een derde en vierde palet.
+/* ── DE TOKENS VAN STUDIO ──────────────────────────────────────────────────
+   Studio verzet de rollen van global.css binnen body.studio, zodat elke regel
+   hieronder (en public/feedback.css) gewoon --surface, --line en --ink-2 kan
+   blijven lezen. --surface is nu de KAART, --surface-2 de vulling erbinnen,
+   --bg-0 de grond eronder. */
+body.studio {
+  --bg-0: #F2F3F5;
+  --bg: #F2F3F5;
+  --surface: #FFFFFF;
+  --surface-2: #F4F5F7;
+  --line: rgb(0 0 0 / .09);
+  --line-strong: rgb(0 0 0 / .18);
+  --line-ui: rgb(0 0 0 / .24);
+  --ghost: rgb(0 0 0 / .04);
+  --ink-4: rgb(0 0 0 / .30);
 
-   HET ACCENT IS EEN VLAK, GEEN LETTER. Geel op wit is 1,5:1; op de lichte
-   grond dragen --st-accent-tekst en --st-accent-lijn dus de inkt, en het geel
-   blijft voor de knop, het actieve menu-item en de stip in de tijdlijn. Op de
-   donkere grond is geel als letter 11,4:1 en mag hij wél. */
-/* ── EN SINDS 20 SEPTEMBER MAG HET ACCENT WÉL EEN LETTER ZIJN ─────────────
-   De noot hierboven zegt: "het accent is een vlak, geen letter", omdat geel op
-   wit 1,5:1 haalt. Dat argument hoort bij het geel. KLEURENSCHEMA.md zet er
-   met zoveel woorden tegenover: *"Anders dan het geel is het violet wél een
-   letterkleur op licht. Waar vroeger 'het accent als tekst' terugviel op inkt,
-   mag het nu gewoon violet zijn."* — 8,25:1 op de grond.
-
-   Deze drie tokens vielen daarom terug op de inkt en doen dat niet meer. */
-:root {
   --st-accent-tekst: var(--accent-text);
   --st-accent-lijn: var(--accent);
-  /* De accenttint is de tint uit het schema en geen eigen alfa meer. Eén vlak
-     per scherm — regel "Nooit 3": de tint is voor een statuslabel, niet voor
-     een oppervlak. */
   --st-accent-tint: var(--accent-tint);
   --st-clay-tekst: var(--st-rev-ink);
-  --st-side-w: 264px;
-  --st-side-dicht: 76px;
-  --st-pad: clamp(1.1rem, 2.6vw, 2.4rem);
+
+  /* Het donkere paneel van de zijbalk — in beide thema's donker. */
+  --sd-side: #0C0D10;
+  --sd-side-ink: rgb(242 243 245 / .70);
+  --sd-side-ink-1: #F2F3F5;
+  --sd-side-ink-3: rgb(242 243 245 / .55);
+  --sd-side-hover: rgb(242 243 245 / .06);
+  --sd-side-actief: rgb(242 243 245 / .11);
+  --sd-side-lijn: rgb(242 243 245 / .10);
+
+  --sd-r-kaart: 10px;
+  --sd-r: 8px;
+  --sd-r-klein: 6px;
+
+  --st-side-w: 240px;
+  --st-side-dicht: 64px;
+  --st-pad: 2rem;
+  --st-balk-h: 56px;
 }
 body.studio.on-ink {
-  --bg-0: var(--bg);
+  --bg-0: #0C0D10;
+  --bg: #0C0D10;
+  --surface: #14161A;
+  --surface-2: #1C1F25;
+  --ink: #F2F3F5;
+  --ink-1: #F2F3F5;
+  --ink-2: rgb(242 243 245 / .72);
+  --ink-3: rgb(242 243 245 / .58);
+  --ink-4: rgb(242 243 245 / .30);
+  --line: rgb(242 243 245 / .10);
+  --line-strong: rgb(242 243 245 / .20);
+  --line-ui: rgb(242 243 245 / .28);
+  --ghost: rgb(242 243 245 / .05);
+
   --st-accent-tekst: var(--accent-text);
   --st-accent-lijn: var(--accent);
   --st-accent-tint: var(--accent-tint);
   --st-clay-tekst: var(--st-rev-ink);
+
+  --sd-side: #000000;
+  --sd-side-lijn: rgb(242 243 245 / .09);
 }
 
-/* ── DE GROND ─────────────────────────────────────────────────────────────── */
-body.studio { background: var(--bg-0); color: var(--ink-2); min-height: 100vh; }
+/* De donkere stand is .on-ink op de body, en die klasse deelt in de gebouwde
+   CSS een regel met .op-nacht (global.css): 1,6rem binnenruimte, een hoek en
+   overflow: hidden. Op een figuur goed, op de body een donkere lijst rond het
+   hele scherm en een bovenbalk die niet meer bleef staan. */
+body.studio.on-ink { padding: 0; border-radius: 0; overflow: visible; }
+
+/* ── DE GROND EN DE LETTER ─────────────────────────────────────────────────── */
+body.studio {
+  background: var(--bg-0); color: var(--ink-2); min-height: 100vh;
+  font-family: var(--font-body); font-size: .875rem; line-height: 1.5;
+}
 /* `a` erft de tekstkleur — behalve als knop: `.btn-primary` zet zijn eigen
-   letter (--accent-ink) en `body.studio a` won daar op specificiteit van, dus
-   was elke knop-als-link op het donkere scherm geel op geel (1,2:1, gemeten
-   door scripts/dash-leesbaar.mjs op 6 september 2026). */
+   letter en `body.studio a` won daar op specificiteit van (6 september 2026). */
 body.studio a:not(.btn) { color: inherit; }
-.studio .st-link { color: var(--st-accent-tekst); text-decoration: underline; text-underline-offset: .18em; text-decoration-color: color-mix(in srgb, var(--st-accent-tekst) 45%, transparent); }
+.studio .st-link { color: var(--st-accent-tekst); text-decoration: underline; text-underline-offset: .2em; text-decoration-thickness: 1px; text-decoration-color: color-mix(in srgb, var(--st-accent-tekst) 40%, transparent); }
 .studio .st-link:hover { text-decoration-color: currentColor; }
-.studio .st-meta { color: var(--ink-3); font-size: .9rem; }
-/* ═══════════════════════════════════════════════════════════════════════════
-   DE KNOPPEN OP DE MAAT VAN DE SITE — 20 SEPTEMBER 2026
-   ═══════════════════════════════════════════════════════════════════════════
-   Lucas: *"Waar ik nog steeds tegenaan loop in /admin en visuails studio is dat
-   sommige knoppen overdreven groot zijn en andere elementen ook uit proportie
-   zijn. Dit moet echt veel consistenter met de website worden."*
-
-   Gemeten met kladblok/_knopmaat.mjs, elke knop op beide schermen:
-
-     de site   .knop / .btn    46 px hoog · 11,5 px letter · 24 px zijruimte
-     Studio    .btn            42 px hoog · 13,1 px letter
-     Studio    .btn-sm         36 px hoog · 14,4 px letter  ← groter dan .btn
-
-   De oorzaak is precies aan te wijzen. stijl22.css zet op élke sitepagina
-   `.s22.s22 .btn { font-size: .72rem; min-height: 46px; … }` — dat is de
-   huisknop. Studio draagt die klasse niet, dus viel hij terug op de basis in
-   global.css (.82rem/42px), en `.btn-sm` zette daar nog eens .9rem overheen.
-   Zo werd de KLEINE knop de grootste letter van de drie.
-
-   Hieronder staat dezelfde normalisatie als in stijl22.css, en met opzet
-   letterlijk dezelfde waarden: Studio is een klantscherm en hoort op de knop na
-   niet van de site te verschillen. `-sm` is voortaan een kleiner KADER met
-   dezelfde letter (40 px), want een knop verkleinen door zijn label te
-   vergroten is hoe dit misging. 11,5 px is de ondergrens die dit project
-   aanhoudt en precies wat de site zelf gebruikt. */
-.studio .btn {
-  border-radius: 999px;
-  font-family: var(--font-mono); font-size: .72rem; font-stretch: 82%;
-  letter-spacing: .05em; text-transform: uppercase;
-  min-height: 46px; padding-inline: 1.5rem;
-}
-.studio .btn-sm { min-height: 40px; padding-inline: 1.1rem; font-size: .72rem; }
+.studio .st-meta { color: var(--ink-3); font-size: .8125rem; }
 .studio .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.studio :focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   EEN KOP STAAT NIET TEGEN ZIJN ALINEA — 20 SEPTEMBER 2026
-   ═══════════════════════════════════════════════════════════════════════════
-   Lucas: *"per element te kijken waar te weinig ruimte zit tussen teksten,
-   blokken en andere elementen (…) zoals tussenlijnen waar tekst gelijk onder
-   staat, en wenkbrauwen die gelijk op de kop staan. Alles moet rustig ogen dus
-   ook whitespace bevatten."*
+/* ── DE KNOPPEN ─────────────────────────────────────────────────────────────
+   Eén vorm, drie rollen. Primair is violet met witte letter (op donker:
+   lichtviolet met zwarte letter, KLEURENSCHEMA "Altijd 8"). Alles wat geen
+   hoofdactie is — .btn, .btn-2nd, .btn-ghost — is dezelfde secundaire knop:
+   de kaartkleur met een haarlijn. Vroeger waren dat drie vormen (een grijze
+   pil, een omlijnde pil en een lichte pil) die naast elkaar stonden zonder dat
+   iemand het verschil kon benoemen. 36 px hoog op een muis, 44 op een vinger. */
+.studio .btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
+  min-height: 36px; padding: 0 .9rem;
+  font-family: var(--font-body); font-stretch: 100%; font-size: .8125rem; font-weight: 600;
+  letter-spacing: 0; text-transform: none; line-height: 1.2;
+  border: 0; border-radius: var(--sd-r);
+  background: var(--surface); color: var(--ink-1);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  transition: background var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.studio .btn:hover { background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line-ui); }
+.studio .btn-primary { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
+.studio .btn-primary:hover, .studio .btn-primary:focus-visible { background: var(--accent-dim, var(--accent)); box-shadow: none; filter: brightness(.94); }
+.studio .btn-sm { min-height: 32px; padding: 0 .75rem; font-size: .8125rem; }
+.studio .btn-block { width: 100%; }
+.studio .btn:disabled, .studio .btn[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+@media (pointer: coarse) {
+  .studio .btn { min-height: 44px; }
+  .studio .btn-sm { min-height: 40px; }
+}
 
-   Gemeten met kladblok/te-dicht-studio.mjs over tien Studio-schermen, breed en
-   op een telefoon: zevenendertig plekken, en bijna allemaal van hetzelfde
-   soort. Een kop met `margin: 0` en een alinea met `margin: 0` eronder komen op
-   nul tot vier pixels uit — de regelafstand doet dan de scheiding, en dat is
-   precies te weinig om nog als twee dingen te lezen. Voorbeelden:
-   "Leg je look vast" (3 px), "Nog geen eigen gezichten" (4 px), en een alinea
-   met zijn metaregel op nul.
+/* ── DE STATUSPIL IN STUDIO ─────────────────────────────────────────────────
+   Dezelfde .stand als overal (global.css, data/status.js), dezelfde vijf
+   standen en kleuren; in Studio alleen kleiner en in gewone letters, zodat
+   een pil een etiket is en geen roep. */
+.studio .stand {
+  min-height: 22px; padding: 0 .55rem; gap: .35rem;
+  font-family: var(--font-body); font-stretch: 100%; font-size: .75rem; font-weight: 500;
+  letter-spacing: 0; text-transform: none;
+}
+.studio .stand::before { width: 6px; height: 6px; }
 
-   Eén regel in plaats van twintig losse reparaties, en met opzet op de
-   OPVOLGER: zo hoeft geen enkel bestaand blok zijn eigen marges op te geven en
-   werkt het ook voor het blok dat er morgen bij komt. Marges klappen samen, dus
-   waar al meer ruimte staat, verandert er niets — dit is een bodem en geen
-   maat. */
+/* ── EEN KOP STAAT NIET TEGEN ZIJN ALINEA — 20 september 2026 ──────────────
+   Eén bodem op de OPVOLGER in plaats van twintig losse reparaties. */
 .studio :is(h1, h2, h3) + p,
 .studio :is(h1, h2, h3) + ul,
 .studio :is(h1, h2, h3) + ol,
 .studio p + .st-meta,
-.studio .st-meta + p { margin-top: .6rem; }
+.studio .st-meta + p { margin-top: .4rem; }
 
-/* ── DE SCHIL ─────────────────────────────────────────────────────────────── */
+/* ── DE SCHIL ───────────────────────────────────────────────────────────────── */
 .st-shell { display: grid; grid-template-columns: var(--st-side-w) minmax(0, 1fr); min-height: 100vh; }
 .st-shell.is-dicht { grid-template-columns: var(--st-side-dicht) minmax(0, 1fr); }
 
-/* De kolom draagt de grond en de lijn en loopt zo lang als de pagina; de
-   zijbalk zelf kleeft aan de bovenkant en is nooit hoger dan het venster. */
-.st-kolom { background: var(--surface); border-right: 1px solid var(--line); min-width: 0; }
+/* De kolom draagt het paneel en loopt zo lang als de pagina; de zijbalk zelf
+   kleeft aan de bovenkant en is nooit hoger dan het venster. */
+.st-kolom { background: var(--sd-side); border-right: 1px solid var(--sd-side-lijn); min-width: 0; color: var(--sd-side-ink); }
 .st-side {
   position: sticky; top: 0; height: 100vh; overflow-y: auto; box-sizing: border-box;
-  display: flex; flex-direction: column; gap: 1.4rem;
-  padding: 1.25rem 1rem;
+  display: flex; flex-direction: column; gap: 1.25rem;
+  padding: 1rem .75rem;
 }
-.st-side-kop { display: flex; flex-direction: column; gap: .5rem; padding-inline: .5rem; }
-/* Het woordmerk, sinds 19 september 2026 — het oude V-beeldmerk is uit de
-   roulatie (Lucas: nooit meer gebruiken). Breedte in plaats van een vierkant. */
-.st-merk { display: inline-flex; width: 132px; height: 22px; color: var(--ink-1); }
+.st-side-kop { display: flex; flex-direction: column; gap: .3rem; padding: .35rem .6rem .25rem; min-height: var(--st-balk-h); box-sizing: border-box; justify-content: center; }
+/* Het woordmerk (19 september 2026). Wit op het paneel — KLEURENSCHEMA,
+   "Bovenbalk op het zwarte paneel". */
+.st-merk { display: inline-flex; width: 104px; height: 18px; color: var(--sd-side-ink-1); }
 .st-glyph, .st-woordmerk { width: 100%; height: 100%; fill: currentColor; }
-.st-sub { font-size: .8rem; color: var(--ink-3); letter-spacing: .02em; }
-.st-klap {
-  margin-top: .4rem; display: inline-flex; align-items: center; gap: .55rem;
-  font-size: .82rem; color: var(--ink-3); min-height: 32px;
-}
-.st-klap:hover { color: var(--ink-1); }
+.st-sub { font-size: .75rem; color: var(--sd-side-ink-3); letter-spacing: 0; }
+.st-mob { display: none; }
 
-.st-nav { display: flex; flex-direction: column; gap: .15rem; }
+.st-nav { display: flex; flex-direction: column; gap: 2px; }
 .st-navlink {
-  display: flex; align-items: center; gap: .75rem;
-  min-height: 42px; padding: 0 .75rem; border-radius: var(--r-sm);
-  font-size: .95rem; font-weight: 500; color: var(--ink-2);
+  display: flex; align-items: center; gap: .65rem;
+  min-height: 36px; padding: 0 .6rem; border-radius: var(--sd-r);
+  font-size: .875rem; font-weight: 500; color: var(--sd-side-ink);
   transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
 }
-.st-navlink .i { width: 18px; height: 18px; stroke-width: 1.7; color: var(--ink-3); }
-.st-navlink:hover { background: var(--ghost); color: var(--ink-1); }
-.st-navlink.is-actief { background: var(--st-accent-tint); color: var(--ink-1); font-weight: 600; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--st-accent-lijn) 40%, transparent); }
-.st-navlink.is-actief .i { color: var(--st-accent-tekst); }
+body.studio .st-navlink { color: var(--sd-side-ink); }
+.st-navlink .i { width: 16px; height: 16px; stroke-width: 1.7; color: currentColor; opacity: .85; }
+body.studio .st-navlink:hover { background: var(--sd-side-hover); color: var(--sd-side-ink-1); }
+body.studio .st-navlink.is-actief { background: var(--sd-side-actief); color: var(--sd-side-ink-1); }
+.st-navlink.is-actief .i { opacity: 1; }
+.st-navlink:focus-visible { outline-color: var(--sd-side-ink-1); }
 
-.st-side-voet { margin-top: auto; display: flex; flex-direction: column; gap: .5rem; padding-inline: .5rem; }
-.st-wie { display: flex; flex-direction: column; gap: .1rem; padding-bottom: .6rem; margin-bottom: .2rem; border-bottom: 1px solid var(--line); min-width: 0; }
-.st-wie-naam { font-weight: 600; color: var(--ink-1); font-size: .95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.st-wie-mail { font-size: .8rem; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.st-stand { display: inline-flex; align-items: center; gap: .5rem; font-size: .85rem; color: var(--ink-3); min-height: 30px; }
-.st-stand svg { width: 16px; height: 16px; }
-.st-stand:hover { color: var(--ink-1); }
-.st-side-voet form { margin-top: .5rem; }
+.st-side-voet { margin-top: auto; display: flex; flex-direction: column; gap: .25rem; padding-top: .75rem; border-top: 1px solid var(--sd-side-lijn); }
+.st-wie { display: flex; align-items: center; gap: .65rem; padding: .4rem .6rem; min-width: 0; }
+.st-wie-letter {
+  flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--sd-side-actief); color: var(--sd-side-ink-1); font-size: .75rem; font-weight: 600;
+}
+.st-wie-tekst { display: flex; flex-direction: column; min-width: 0; }
+.st-wie-naam { font-weight: 600; color: var(--sd-side-ink-1); font-size: .8125rem; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-wie-mail { font-size: .75rem; color: var(--sd-side-ink-3); line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-side-voet form { margin: 0; }
+.st-uit {
+  display: flex; align-items: center; gap: .65rem; width: 100%; min-height: 36px; padding: 0 .6rem;
+  border: 0; border-radius: var(--sd-r); background: none; cursor: pointer;
+  font: inherit; font-size: .875rem; font-weight: 500; color: var(--sd-side-ink); text-align: left;
+}
+.st-uit:hover { background: var(--sd-side-hover); color: var(--sd-side-ink-1); }
+.st-uit svg { width: 16px; height: 16px; flex: none; }
 
-/* Ingeklapt: alleen het teken en de iconen. Het label van elk item blijft in
-   de DOM (schermlezers, tooltip) maar neemt geen ruimte. */
+/* Ingeklapt: alleen de iconen. Het label blijft in de DOM (schermlezers,
+   tooltip) maar neemt geen ruimte. Het woordmerk past niet in 64 px en wordt
+   niet verkleind tot iets onleesbaars — het verdwijnt; de bovenbalk zegt waar
+   je bent. */
 .is-dicht .st-side { padding-inline: .6rem; }
-.is-dicht .st-side-kop { align-items: center; padding-inline: 0; }
-.is-dicht .st-sub, .is-dicht .st-klap span, .is-dicht .st-navlink span,
-.is-dicht .st-wie, .is-dicht .st-stand span, .is-dicht .st-side-voet form { display: none; }
-.is-dicht .st-navlink { justify-content: center; padding: 0; }
-.is-dicht .st-side-voet { align-items: center; padding-inline: 0; }
-.is-dicht .st-stand:first-of-type { font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.is-dicht .st-side-kop { visibility: hidden; }
+.is-dicht .st-navlink span, .is-dicht .st-wie-tekst, .is-dicht .st-uit span { display: none; }
+.is-dicht .st-navlink, .is-dicht .st-uit, .is-dicht .st-wie { justify-content: center; padding: 0; }
 
-/* ── DE ROMP EN DE BOVENBALK ──────────────────────────────────────────────── */
+/* ── DE ROMP: BOVENBALK, MELDING, PAGINAKOP ───────────────────────────────── */
 .st-romp { display: flex; flex-direction: column; min-width: 0; }
-.st-top {
-  display: flex; align-items: flex-start; gap: 1rem 1.25rem; flex-wrap: wrap;
-  padding: calc(var(--st-pad) + .4rem) var(--st-pad) 1.3rem;
-  border-bottom: 1px solid var(--line);
+.st-balk {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; gap: .75rem;
+  min-height: var(--st-balk-h); padding: 0 var(--st-pad) 0 calc(var(--st-pad) - .5rem); box-sizing: border-box;
+  background: var(--surface); border-bottom: 1px solid var(--line);
 }
-.st-top-tekst { flex: 1 1 18rem; min-width: 0; }
-/* ── DE KOPPEN IN DE STEM VAN DE SITE — 22 september 2026 ─────────────────
-   Lucas: "/admin + Studio verhoudingen". Gemeten met kladblok/_kopmaat.mjs:
-   de site zet elke kop in Anybody 500 op 125 % breedte, in kapitalen
-   (.hoog in stijl22.css); Studio zette zijn h1 in Anybody 800 op 100 % en
-   zijn sectiekoppen in Figtree 600 — dezelfde letter, drie stemmen. Nu één:
-   h1 en de grote koppen als .hoog, de sectiekoppen als het labelkopje van de
-   site (Anybody 500, 125 %, kapitalen, 1,05rem — .hiw-details b). De cijfers
-   houden hun maat en nemen alleen het gewicht en de breedte over. */
-.st-h1 {
-  font-family: var(--font-heading); font-weight: 500; font-stretch: 125%; text-transform: uppercase;
-  font-size: clamp(1.6rem, 2.6vw, 2.2rem);
-  line-height: .94; letter-spacing: -.03em; color: var(--ink-1); margin: 0; text-wrap: balance;
+.st-klap {
+  display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: var(--sd-r);
+  color: var(--ink-3);
 }
-/* ── DE LOPENDE TEKST OP DE MAAT VAN DE SITE — 20 september 2026 ──────────
-   Gemeten met kladblok/_kopmaat.mjs, over vijf Studio-schermen en vier
-   sitepagina's: de site zet zijn lopende tekst op 17 px (--t-body) en Studio
-   zette de zijne op 14,4 tot 15,2. Dat is hetzelfde soort verschil als bij de
-   knoppen — niet gekozen, maar het gevolg van componentregels in .9rem en
-   .95rem die zich niets van de paginamaat aantrekken.
+.st-klap:hover { background: var(--ghost); color: var(--ink-1); }
+.st-klap .i { width: 16px; height: 16px; }
+.st-kruim { display: flex; align-items: center; gap: .45rem; font-size: .8125rem; color: var(--ink-3); min-width: 0; }
+.st-kruim b { font-weight: 500; color: var(--ink-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-kruim i { font-style: normal; color: var(--ink-4); }
+.st-schakel { margin-left: auto; display: flex; align-items: center; gap: .5rem; }
+/* Taal als twee segmenten: wat je nu hebt staat vast, het andere is een link. */
+.st-taal { display: inline-flex; padding: 2px; border-radius: var(--sd-r); background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); }
+.st-taal > * { min-width: 34px; height: 28px; display: inline-grid; place-items: center; padding: 0 .5rem; border-radius: var(--sd-r-klein); font-size: .75rem; font-weight: 600; color: var(--ink-3); }
+.st-taal > a:hover { color: var(--ink-1); }
+.st-taal > [aria-current] { background: var(--surface); color: var(--ink-1); box-shadow: 0 0 0 1px var(--line); }
+.st-stand {
+  display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: var(--sd-r);
+  color: var(--ink-3); box-shadow: inset 0 0 0 1px var(--line);
+}
+.st-stand:hover { background: var(--ghost); color: var(--ink-1); }
+.st-stand svg { width: 16px; height: 16px; }
+.st-stand span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-   Wat hieronder op 1rem gaat is alleen de tekst die je LEEST: de lead onder een
-   kop, een melding, een leeg vlak, de betaalstand. Etiketten, meta-regels en
-   tabelkolommen blijven kleiner — die zijn geen lopende tekst en op de site
-   ook niet. 1rem en niet 1,0625: Studio staat dichter op elkaar dan een
-   verkooppagina, en de laatste halve pixel is het herindelen van zes schermen
-   niet waard. */
-.st-lede { margin: .5rem 0 0; color: var(--ink-3); font-size: 1rem; max-width: 60ch; }
-/* .st-chip IS WEG — 20 september 2026. Het was een eigen pil met een eigen
-   maat (12,5px, stip van 7px) en één toon die CSS had: `is-signal`. `is-warn`
-   werd wel gezet en bestond hier niet, dus een gepauzeerd abonnement kreeg de
-   neutrale chip. De kop draagt nu .stand uit global.css, met dezelfde vijf
-   standen als de rest. De uitlijning die hier stond, staat één regel lager. */
+.st-top {
+  display: flex; align-items: center; gap: .75rem 1rem; flex-wrap: wrap;
+  padding: 1.75rem var(--st-pad) 0; max-width: calc(1200px + 2 * var(--st-pad)); box-sizing: border-box; width: 100%;
+}
+.st-top-tekst { flex: 1 1 20rem; min-width: 0; }
+.st-h1 {
+  font-family: var(--font-body); font-weight: 600; font-stretch: 100%; text-transform: none;
+  font-size: 1.75rem; line-height: 1.2; letter-spacing: -.02em; color: var(--ink-1); margin: 0; text-wrap: balance;
+}
+.st-lede { margin: .3rem 0 0; color: var(--ink-3); font-size: .875rem; max-width: 70ch; text-wrap: pretty; }
 .st-top .stand { align-self: center; }
 .st-top-actie { align-self: center; }
 
-.st-main { padding: var(--st-pad); display: flex; flex-direction: column; gap: clamp(1.6rem, 3vw, 2.4rem); max-width: 1180px; width: 100%; }
+.st-main { padding: 1.5rem var(--st-pad) 3rem; display: flex; flex-direction: column; gap: 2rem; max-width: calc(1200px + 2 * var(--st-pad)); width: 100%; box-sizing: border-box; }
 .st-voet { display: none; }
 
 /* ── DE BOUWSTENEN ───────────────────────────────────────────────────────── */
 /* global.css geeft elke <section> de verticale ruimte van een merkpagina
    (4,5–9rem). Dit is een werkscherm; de ruimte tussen blokken is de gap van
    .st-main en niets anders. */
-.studio section { padding: 0; margin: 0; }
-.st-blok { display: flex; flex-direction: column; gap: .8rem; min-width: 0; }
+/* :where() zodat de nul geen component overstemt: `.studio section` woog
+   (0,1,1) en won zo van `.st-map { padding }` — de map stond zonder
+   binnenruimte tegen zijn eigen rand (gevonden bij het herontwerp). */
+:where(.studio) section { padding: 0; margin: 0; }
+.st-blok { display: flex; flex-direction: column; gap: .75rem; min-width: 0; }
 .st-blok-kop { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
-.st-blok-kop h2 { font-family: var(--font-heading); font-weight: 500; font-stretch: 125%; text-transform: uppercase; font-size: 1.05rem; letter-spacing: -.01em; line-height: 1.15; color: var(--ink-1); margin: 0; }
+.st-blok-kop h2 { font-family: var(--font-body); font-weight: 600; font-size: .875rem; letter-spacing: -.005em; line-height: 1.35; color: var(--ink-1); margin: 0; }
 .st-blok-kop .st-tel { color: var(--ink-3); font-weight: 500; margin-left: .35rem; }
-.st-leeg { margin: 0; padding: 1.2rem 1.25rem; border: 1px dashed var(--line-strong); border-radius: var(--r-md); color: var(--ink-3); font-size: 1rem; }
+.st-leeg { margin: 0; padding: 1rem 1.25rem; border: 1px dashed var(--line-strong); border-radius: var(--sd-r-kaart); background: var(--surface); color: var(--ink-3); font-size: .875rem; }
 
-.st-kaart-vlak { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); }
+.st-kaart-vlak { background: var(--surface); border: 1px solid var(--line); border-radius: var(--sd-r-kaart); }
 
-/* De cijferrij: één vlak, vier vakken, lijnen ertussen. */
-.st-cijfers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+/* De cijferrij: vier losse tegels (herontwerp 3 oktober 2026). Het label
+   staat in kleine kapitalen — de ene plek in Studio waar dat mag: het is een
+   etiket bij een getal, geen kop boven een sectie. */
+.st-kaart-vlak.st-cijfers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; background: none; border: 0; border-radius: 0; }
 .st-cijfer {
-  display: flex; flex-direction: column; gap: .4rem; padding: 1.15rem 1.25rem 1.05rem;
-  border-right: 1px solid var(--line); min-width: 0;
-  transition: background var(--dur-1) var(--ease);
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .6rem .5rem;
+  padding: 1rem 1.1rem; min-width: 0;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--sd-r-kaart);
+  transition: border-color var(--dur-1) var(--ease);
 }
-.st-cijfer:last-child { border-right: 0; }
-a.st-cijfer:hover { background: var(--ghost); }
-.st-cijfer .i { width: 18px; height: 18px; color: var(--ink-3); }
-.st-cijfer-label { font-size: .8rem; color: var(--ink-3); line-height: 1.25; }
-.st-cijfer-n { font-family: var(--font-heading); font-weight: 500; font-stretch: 125%; font-size: 2.4rem; line-height: 1; color: var(--ink-1); font-variant-numeric: tabular-nums; }
+a.st-cijfer:hover { border-color: var(--line-strong); }
+.st-cijfer .i { grid-column: 2; grid-row: 1; width: 16px; height: 16px; color: var(--ink-4); }
+.st-cijfer-label { grid-column: 1; grid-row: 1; font-size: .75rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); line-height: 1.3; }
+.st-cijfer-n { grid-column: 1 / -1; font-family: var(--font-body); font-weight: 600; font-size: 1.75rem; line-height: 1.1; letter-spacing: -.02em; color: var(--ink-1); font-variant-numeric: tabular-nums; }
 .st-cijfer-n.is-nul { color: var(--ink-3); }
 
 /* DE STATUSPIL STAAT NIET MEER HIER — 20 september 2026.
@@ -270,11 +317,11 @@ a.st-cijfer:hover { background: var(--ghost); }
    status erbij kost daardoor nul regels CSS. */
 
 /* De bestelkaart op het overzicht. */
-.st-order { padding: 1.2rem 1.35rem 1.3rem; display: flex; flex-direction: column; gap: 1rem; }
+.st-order { padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
 .st-order-kop { display: flex; align-items: center; gap: .6rem .85rem; flex-wrap: wrap; }
-.st-ref { font-weight: 700; color: var(--ink-1); font-variant-numeric: tabular-nums; letter-spacing: .01em; white-space: nowrap; }
+.st-ref { font-weight: 600; color: var(--ink-1); font-variant-numeric: tabular-nums; letter-spacing: .01em; white-space: nowrap; }
 .st-order-kop .st-meta { flex: 1 1 auto; }
-.st-order-kop .st-link { font-size: .9rem; }
+.st-order-kop .st-link { font-size: .875rem; }
 .st-lopend .st-link { white-space: nowrap; }
 
 /* De tijdlijn: de zin, de vier (of vijf) stappen, de geschiedenis. */
@@ -297,53 +344,55 @@ a.st-cijfer:hover { background: var(--ghost); }
    deed — laten zien WELKE stap loopt — doet de stip nu met zijn eigen maat en
    een lijn eromheen. */
 .st-stap.is-now .st-stip { background: var(--st-accent-lijn); border-color: var(--st-accent-lijn); box-shadow: inset 0 0 0 1px var(--st-accent-lijn); outline: 2px solid var(--accent-tint); outline-offset: 1px; }
-.st-stap-label { font-size: .8rem; color: var(--ink-3); line-height: 1.25; padding-right: .5rem; }
+.st-stap-label { font-size: .75rem; color: var(--ink-3); line-height: 1.25; padding-right: .5rem; }
 .st-stap.is-done .st-stap-label { color: var(--ink-3); }
 .st-stap.is-now .st-stap-label { color: var(--ink-1); font-weight: 600; }
 .st-flow.is-cancelled .st-flow-nu { color: var(--ink-3); }
 
-.st-details > summary { cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: .45rem; font-size: .88rem; color: var(--ink-3); min-height: 32px; }
+.st-details > summary { cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: .45rem; font-size: .8125rem; color: var(--ink-3); min-height: 32px; }
 .st-details > summary::-webkit-details-marker { display: none; }
 .st-details > summary::before { content: ""; width: 7px; height: 7px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(-45deg); transition: transform var(--dur-1) var(--ease); margin-right: .1rem; }
 .st-details[open] > summary::before { transform: rotate(45deg); }
 .st-details > summary:hover { color: var(--ink-1); }
 .st-historie { list-style: none; margin: .5rem 0 0; padding: 0; display: flex; flex-direction: column; border-top: 1px solid var(--line); }
-.st-historie li { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: 1rem; padding: .55rem 0; border-bottom: 1px solid var(--line); font-size: .95rem; }
+.st-historie li { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: 1rem; padding: .55rem 0; border-bottom: 1px solid var(--line); font-size: .875rem; }
 .st-historie .st-wanneer { color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .st-historie .st-wat { color: var(--ink-2); }
 .st-historie .st-notitie { display: block; color: var(--ink-3); margin-top: .15rem; }
 
 /* De notitie van de studio. */
-.st-nota { border-left: 0; padding: .9rem 1rem; border-radius: var(--r-sm); background: var(--surface-2); display: flex; flex-direction: column; gap: .2rem; }
-.st-nota-wie { font-size: .74rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); }
+.st-nota { border-left: 0; padding: .75rem .9rem; border-radius: var(--r-sm); background: var(--surface-2); display: flex; flex-direction: column; gap: .2rem; }
+.st-nota-wie { font-size: .75rem; font-weight: 600; color: var(--ink-2); }
 .st-nota p { margin: 0; color: var(--ink-1); }
 
 /* Het betaalblok. */
 .st-betaal { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .6rem 1.5rem; align-items: center; padding: .95rem 1.1rem; border-radius: var(--r-sm); border: 1px solid var(--line-strong); }
 .st-betaal.is-unpaid { border-color: color-mix(in srgb, var(--st-clay-tekst) 55%, transparent); }
 .st-betaal-rijen { margin: 0; display: flex; flex-wrap: wrap; gap: .25rem 1.4rem; grid-column: 1; }
-.st-betaal-rij { display: flex; gap: .5rem; font-size: .9rem; }
+.st-betaal-rij { display: flex; gap: .5rem; font-size: .875rem; }
 .st-betaal-rij dt { color: var(--ink-3); }
 .st-betaal-rij dd { margin: 0; color: var(--ink-1); font-variant-numeric: tabular-nums; }
-.st-betaal-rij:last-child dd { font-weight: 700; }
-.st-betaal-staat { margin: 0; font-size: 1rem; color: var(--ink-2); grid-column: 1; }
+.st-betaal-rij:last-child dd { font-weight: 600; }
+.st-betaal-staat { margin: 0; font-size: .875rem; color: var(--ink-2); grid-column: 1; }
 .st-betaal.is-unpaid .st-betaal-staat { color: var(--st-clay-tekst); }
 .st-betaal form { grid-column: 2; grid-row: 1 / span 2; }
 
 /* De andere lopende bestellingen, compact. */
 .st-lopend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.st-lopend li { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: .85rem; padding: .8rem 1.35rem; border-top: 1px solid var(--line); }
+.st-lopend li { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: .85rem; padding: .8rem 1.25rem; border-top: 1px solid var(--line); }
 .st-lopend .st-meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-lopend li:first-child { border-top: 0; }
+.st-lopend .stand { justify-self: start; }
 
 /* De strook laatst geleverde beelden. */
-.st-strook { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: .6rem; }
+.st-strook { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: .5rem; }
 .st-strook a { display: block; aspect-ratio: 4 / 5; border-radius: var(--r-sm); overflow: hidden; background: var(--surface-2); border: 1px solid var(--line); transition: border-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease); }
-.st-strook a:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+.st-strook a:hover { border-color: var(--line-strong); }
 .st-strook img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
 /* De recente activiteit. */
 .st-activiteit { list-style: none; margin: 0; padding: 0; }
-.st-activiteit li { display: flex; align-items: center; gap: 1rem; padding: .85rem 1.35rem; border-top: 1px solid var(--line); }
+.st-activiteit li { display: flex; align-items: center; gap: 1rem; padding: .85rem 1.25rem; border-top: 1px solid var(--line); }
 .st-activiteit li:first-child { border-top: 0; }
 .st-activiteit a { display: flex; flex-direction: column; gap: .1rem; flex: 1 1 auto; min-width: 0; border-radius: var(--r-sm); }
 .st-activiteit a:hover .st-ref { color: var(--st-accent-tekst); }
@@ -353,29 +402,29 @@ a.st-cijfer:hover { background: var(--ghost); }
    het beeld (Beeld.astro). Dezelfde taal als het overzicht: één vlak met een
    haarlijn, cellen gescheiden door lijnen, geel alleen op de hoofdknop en de
    ene stip die "nu" zegt. */
-.st-melding { margin: 0; padding: .8rem 1rem; border-radius: var(--r-sm); border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-1); font-size: 1rem; }
+.st-melding { margin: 0; padding: .8rem 1rem; border-radius: var(--r-sm); border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-1); font-size: .875rem; }
 .st-melding.is-warn { border-color: color-mix(in srgb, var(--st-clay-tekst) 55%, transparent); color: var(--st-clay-tekst); }
 .st-melding.is-ok { border-color: var(--ink-1); }
 
 .st-filters { display: flex; flex-wrap: wrap; gap: .4rem; }
 .st-filter {
-  display: inline-flex; align-items: center; gap: .4rem; min-height: 34px; padding: 0 .85rem;
-  border-radius: var(--r-pill); border: 1px solid var(--line-strong); font-size: .85rem; color: var(--ink-2);
+  display: inline-flex; align-items: center; gap: .4rem; min-height: 30px; padding: 0 .75rem;
+  border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--surface); font-size: .8125rem; font-weight: 500; color: var(--ink-2);
   transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
 }
 a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
-.st-filter.is-actief { background: var(--ink-1); border-color: var(--ink-1); color: var(--surface); font-weight: 600; }
-.st-filter-n { font-family: var(--font-mono); font-stretch: 82%; font-size: .72rem; opacity: .75; }
+.st-filter.is-actief { background: var(--ink-1); border-color: var(--ink-1); color: var(--surface); }
+.st-filter-n { font-size: .75rem; font-variant-numeric: tabular-nums; opacity: .7; }
 
 .st-bestellingen { display: flex; flex-direction: column; gap: 1rem; }
 .st-bestelling { padding: 0; }
 .st-bestelling-kop {
   list-style: none; cursor: pointer; display: flex; align-items: center; gap: .6rem .9rem; flex-wrap: wrap;
-  padding: 1rem 1.35rem; min-height: 60px;
+  padding: 1rem 1.25rem; min-height: 60px;
 }
 .st-bestelling-kop::-webkit-details-marker { display: none; }
-.st-bestelling-kop .st-ref { font-family: var(--font-body); font-size: 1rem; margin: 0; line-height: 1.3; letter-spacing: .01em; }
-.st-bestelling-meta { flex: 1 1 auto; display: flex; flex-wrap: wrap; gap: .1rem .4rem; font-size: .9rem; color: var(--ink-3); min-width: 0; }
+.st-bestelling-kop .st-ref { font-family: var(--font-body); font-size: .875rem; margin: 0; line-height: 1.3; letter-spacing: .01em; }
+.st-bestelling-meta { flex: 1 1 auto; display: flex; flex-wrap: wrap; gap: .1rem .4rem; font-size: .875rem; color: var(--ink-3); min-width: 0; }
 .st-bit + .st-bit::before { content: "·"; margin-right: .4rem; color: var(--ink-4); }
 .st-bit-money { color: var(--st-clay-tekst); font-weight: 600; font-variant-numeric: tabular-nums; }
 .st-bit-brand { color: var(--ink-1); font-weight: 600; } /* ronde 9, O25: welk merk, bij een account met meer merken */
@@ -387,7 +436,7 @@ a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
 .st-bestelling[open] .st-chevron { transform: rotate(-135deg); margin-top: .3rem; }
 .st-bestelling-kop:hover { background: var(--ghost); }
 .st-bestelling[open] .st-bestelling-kop { border-bottom: 1px solid var(--line); }
-.st-bestelling-body { padding: 1.1rem 1.35rem 1.35rem; display: flex; flex-direction: column; gap: 1rem; }
+.st-bestelling-body { padding: 1.1rem 1.25rem 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
 .st-gesloten { padding-top: .2rem; }
 
 /* De producten: elk een klapper met omslag, naam, feiten. */
@@ -406,16 +455,16 @@ a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
 .st-product-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .st-product-tekst { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
 .st-product-naam { font-weight: 600; color: var(--ink-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.st-product-feiten { font-size: .85rem; color: var(--ink-3); }
-.st-product-vlag { font-size: .74rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--st-clay-tekst); }
-.st-product-cta { font-size: .85rem; color: var(--ink-3); white-space: nowrap; }
+.st-product-feiten { font-size: .8125rem; color: var(--ink-3); }
+.st-product-vlag { font-size: .75rem; font-weight: 600; color: var(--st-clay-tekst); }
+.st-product-cta { font-size: .8125rem; color: var(--ink-3); white-space: nowrap; }
 .st-product-cta .bij-open, .st-product[open] .st-product-cta .bij-dicht { display: none; }
 .st-product[open] .st-product-cta .bij-open { display: inline; }
 .st-product-paneel { border-top: 1px solid var(--line); padding: 1rem .9rem 1.1rem; display: flex; flex-direction: column; gap: 1rem; }
 .st-product-kolommen { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 1.4rem; }
-.st-product-kolom h3, .st-kant h3, .st-map h3, .st-ronde h3 { font-family: var(--font-body); font-size: .8rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 .7rem; }
+.st-product-kolom h3, .st-kant h3, .st-map h3, .st-ronde h3 { font-family: var(--font-body); font-size: .8125rem; font-weight: 600; color: var(--ink-1); margin: 0 0 .6rem; }
 .st-product-kolom.is-ref { border-left: 1px solid var(--line); padding-left: 1.4rem; }
-.st-product-hulp { margin: 0; font-size: .88rem; color: var(--ink-3); }
+.st-product-hulp { margin: 0; font-size: .8125rem; color: var(--ink-3); }
 
 /* De beelden: een raster van tegels, elk met bijschrift en knoppen eronder. */
 .st-beelden { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .9rem; }
@@ -423,8 +472,8 @@ a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
 .st-beeld { display: flex; flex-direction: column; gap: .5rem; min-width: 0; }
 .st-beeld-media { position: relative; display: block; aspect-ratio: 4 / 5; border-radius: var(--r-sm); overflow: hidden; background: var(--surface-2); border: 1px solid var(--line); }
 .st-beeld-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.st-beeld-media.is-bestand, .st-beeld-media.is-weg { display: grid; place-items: center; color: var(--ink-3); font-size: .8rem; }
-.st-beeld-ext { font-family: var(--font-mono); font-stretch: 82%; font-size: .8rem; letter-spacing: .06em; }
+.st-beeld-media.is-bestand, .st-beeld-media.is-weg { display: grid; place-items: center; color: var(--ink-3); font-size: .75rem; }
+.st-beeld-ext { font-size: .75rem; font-weight: 600; }
 /* Het merkje op een geleverd beeld. Het IS de statuspil (.stand in global.css)
    en draagt hier alleen nog zijn plek op de tegel — kleur, maat en stip komen
    van het component, en de stand komt uit standKlasse() in data/status.js.
@@ -432,17 +481,17 @@ a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
    een vierde antwoord op dezelfde vraag (20 september 2026). */
 .st-badge { position: absolute; left: 6px; bottom: 6px; }
 .st-beeld-body { display: flex; flex-direction: column; gap: .45rem; }
-.st-beeld-cap { font-size: .82rem; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.st-beeld-noot { font-size: .8rem; }
+.st-beeld-cap { font-size: .8125rem; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-beeld-noot { font-size: .75rem; }
 .st-keur { margin: 0; }
 .st-keur-alles { margin-top: .9rem; }
 .st-keur-bestelling { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin: 0 0 1rem; }
 .st-keur-bestelling .st-meta { margin: 0; flex: 1 1 18rem; }
 .st-aanmerk { display: flex; flex-direction: column; gap: .4rem; }
-.st-vink { display: flex; align-items: center; gap: .5rem; font-size: .82rem; color: var(--ink-2); cursor: pointer; }
+.st-vink { display: flex; align-items: center; gap: .5rem; font-size: .8125rem; color: var(--ink-2); cursor: pointer; }
 .st-vink input { width: 16px; height: 16px; margin: 0; accent-color: var(--ink-1); }
-.st-veld-klein { min-height: 0; padding: .5rem .7rem; font-size: .85rem; line-height: 1.4; resize: vertical; }
-.st-gezegd { margin: 0; font-size: .82rem; line-height: 1.45; color: var(--ink-2); padding: .5rem .7rem; border-radius: var(--r-sm); background: var(--surface-2); }
+.st-veld-klein { min-height: 0; padding: .5rem .7rem; font-size: .8125rem; line-height: 1.4; resize: vertical; }
+.st-gezegd { margin: 0; font-size: .8125rem; line-height: 1.45; color: var(--ink-2); padding: .5rem .7rem; border-radius: var(--r-sm); background: var(--surface-2); }
 .st-gezegd.is-antwoord b { color: var(--ink-1); font-weight: 600; }
 
 /* Zonder producten (oudere bestellingen): de twee kanten naast elkaar. */
@@ -453,19 +502,19 @@ a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
 .st-map { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 1rem 1.1rem; border: 1px solid var(--line-strong); border-radius: var(--r-md); }
 .st-map-tekst { display: flex; flex-direction: column; gap: .25rem; min-width: 0; }
 .st-map-tekst h3 { margin: 0; }
-.st-map-tekst p { margin: 0; font-size: .92rem; color: var(--ink-2); }
+.st-map-tekst p { margin: 0; font-size: .875rem; color: var(--ink-2); }
 
 /* De revisieronde: klaar, gebruikt, of het formulier. */
 .st-ronde { display: flex; flex-direction: column; gap: .5rem; padding: 1rem 1.1rem; border-radius: var(--r-md); border: 1px solid var(--line); }
-.st-ronde p { margin: 0; font-size: .92rem; color: var(--ink-2); }
-.st-ronde.is-ready { border-color: var(--st-accent-lijn); }
+.st-ronde p { margin: 0; font-size: .875rem; color: var(--ink-2); }
+.st-ronde.is-ready { border-color: var(--line-strong); }
 .st-ronde.is-form .btn { align-self: flex-start; margin-top: .3rem; }
 .st-fotos .btn { align-self: flex-start; }
-.st-fotos-kies input[type="file"] { max-width: 100%; font-size: .95rem; color: var(--ink-2); }
+.st-fotos-kies input[type="file"] { max-width: 100%; font-size: .875rem; color: var(--ink-2); }
 .st-ronde-waarschuwing { color: var(--ink-1) !important; font-weight: 500; }
 .st-beleid details { margin-top: .4rem; }
-.st-beleid summary { cursor: pointer; font-size: .85rem; color: var(--ink-3); }
-.st-beleid ul { margin: .5rem 0 0; padding-left: 1.1rem; font-size: .85rem; color: var(--ink-2); display: flex; flex-direction: column; gap: .3rem; }
+.st-beleid summary { cursor: pointer; font-size: .8125rem; color: var(--ink-3); }
+.st-beleid ul { margin: .5rem 0 0; padding-left: 1.1rem; font-size: .8125rem; color: var(--ink-2); display: flex; flex-direction: column; gap: .3rem; }
 
 @media (max-width: 56.25em) {
   .st-bestelling-kop, .st-bestelling-body { padding-inline: 1rem; }
@@ -476,30 +525,30 @@ a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
 }
 
 /* ── FACTUREN EN JE GEGEVENS — Studio fase 2 ────────────────────────────────── */
-.st-tabelvlak { padding: .2rem 1.35rem 1.1rem; display: flex; flex-direction: column; gap: .7rem; }
-.st-tabel { width: 100%; border-collapse: collapse; font-size: .92rem; }
-.st-tabel th { text-align: left; font-size: .74rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); padding: .9rem 0 .6rem; border-bottom: 1px solid var(--line); }
+.st-tabelvlak { padding: .2rem 1.25rem 1.1rem; display: flex; flex-direction: column; gap: .7rem; }
+.st-tabel { width: 100%; border-collapse: collapse; font-size: .875rem; }
+.st-tabel th { text-align: left; font-size: .75rem; font-weight: 600; color: var(--ink-3); padding: .9rem 0 .6rem; border-bottom: 1px solid var(--line); }
 .st-tabel td { padding: .8rem .8rem .8rem 0; border-bottom: 1px solid var(--line); vertical-align: middle; color: var(--ink-2); }
 .st-tabel td b { color: var(--ink-1); font-variant-numeric: tabular-nums; }
 .st-tabel .is-bedrag { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-1); }
 .st-tabel .is-actie { text-align: right; padding-right: 0; white-space: nowrap; }
-.st-vlag { display: inline-block; margin-left: .5rem; padding: .1rem .5rem; border-radius: var(--r-pill); border: 1px solid var(--line-strong); font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); vertical-align: middle; }
-.st-tabel-noot { margin: 0; font-size: .85rem; }
+.st-vlag { display: inline-block; margin-left: .5rem; padding: .1rem .5rem; border-radius: var(--r-pill); border: 1px solid var(--line-strong); font-size: .75rem; font-weight: 600; color: var(--ink-3); vertical-align: middle; }
+.st-tabel-noot { margin: 0; font-size: .8125rem; }
 
-.st-nudge { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 1rem 1.35rem; }
-.st-nudge h2 { font-family: var(--font-heading); font-weight: 500; font-stretch: 125%; text-transform: uppercase; font-size: 1.05rem; letter-spacing: -.01em; line-height: 1.15; margin: 0 0 .2rem; color: var(--ink-1); }
-.st-nudge p { margin: 0; font-size: .92rem; color: var(--ink-2); }
+.st-nudge { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 1rem 1.25rem; }
+.st-nudge h2 { font-family: var(--font-body); font-weight: 600; font-size: .875rem; letter-spacing: -.005em; line-height: 1.35; margin: 0 0 .2rem; color: var(--ink-1); }
+.st-nudge p { margin: 0; font-size: .875rem; color: var(--ink-2); }
 
-.st-formulier { padding: 1.35rem; display: flex; flex-direction: column; gap: 1.1rem; }
+.st-formulier { padding: 1.25rem; display: flex; flex-direction: column; gap: 1.1rem; }
 .st-rij { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 1.4rem; }
 .st-rij.is-acties { grid-template-columns: 1fr; justify-items: start; padding-top: .3rem; }
 .st-rij.is-mail { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
 .st-veldgroep { display: flex; flex-direction: column; gap: .4rem; min-width: 0; }
 .st-veldgroep.is-breed { grid-column: 1 / -1; }
-.st-veldgroep label, .st-label { font-size: .85rem; font-weight: 600; color: var(--ink-2); }
+.st-veldgroep label, .st-label { font-size: .8125rem; font-weight: 600; color: var(--ink-2); }
 .st-optioneel { font-weight: 400; color: var(--ink-3); }
-.st-vast { margin: 0; min-height: 46px; display: flex; align-items: center; padding: 0 .95rem; border-radius: var(--r-sm); background: var(--surface-2); color: var(--ink-1); }
-select.st-veld { appearance: none; -webkit-appearance: none; background-image: var(--select-caret); background-repeat: no-repeat; background-position: right .9rem center; padding-right: 2.4rem; }
+.st-vast { margin: 0; min-height: 38px; display: flex; align-items: center; padding: 0 .95rem; border-radius: var(--r-sm); background: var(--surface-2); color: var(--ink-1); }
+select.st-veld { appearance: none; -webkit-appearance: none; background-image: var(--select-caret); background-repeat: no-repeat; background-position: right .75rem center; background-size: 10px auto; padding-right: 2.2rem; }
 .st-btw:has(input[name="no_vat"]:checked) #det-vat { opacity: .45; }
 .st-veldgroep .st-vink { margin-top: .1rem; }
 
@@ -509,17 +558,17 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
   .st-tabel thead { display: none; }
   .st-tabel tr { display: grid; grid-template-columns: 1fr auto; gap: .15rem .8rem; padding: .8rem 0; border-bottom: 1px solid var(--line); }
   .st-tabel td { border: 0; padding: 0; }
-  .st-tabel td[data-label]::before { content: attr(data-label) " "; color: var(--ink-3); font-size: .8rem; }
+  .st-tabel td[data-label]::before { content: attr(data-label) " "; color: var(--ink-3); font-size: .75rem; }
   .st-tabel td:first-child { grid-column: 1 / -1; }
   .st-tabel .is-actie { grid-column: 1 / -1; text-align: left; padding-top: .4rem; }
 }
 
 /* ── JE VASTE LOOK — Studio fase 2 ──────────────────────────────────────────── */
 .st-blok-lede { margin: -.3rem 0 .2rem; max-width: 62ch; }
-.st-leegvlak { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; padding: 1.35rem; }
+.st-leegvlak { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; padding: 1.25rem; }
 .st-leegvlak > div { flex: 1 1 18rem; }
-.st-leegvlak h2 { font-family: var(--font-heading); font-weight: 500; font-stretch: 125%; text-transform: uppercase; font-size: 1.05rem; letter-spacing: -.01em; line-height: 1.15; margin: 0 0 .25rem; color: var(--ink-1); }
-.st-leegvlak p { margin: 0; font-size: 1rem; color: var(--ink-2); }
+.st-leegvlak h2 { font-family: var(--font-body); font-weight: 600; font-size: .875rem; letter-spacing: -.005em; line-height: 1.35; margin: 0 0 .25rem; color: var(--ink-1); }
+.st-leegvlak p { margin: 0; font-size: .875rem; color: var(--ink-2); }
 .st-leegvlak-fig { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: var(--surface-2); color: var(--ink-3); }
 .st-leegvlak-fig .i, .st-model-img.is-leeg .i, .st-tegel-img.is-leeg .i, .st-vl-gezicht.is-leeg .i { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.6; }
 
@@ -528,8 +577,8 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 .st-model-img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--surface-2); }
 .st-model-img.is-leeg { display: grid; place-items: center; color: var(--ink-4); }
 .st-model figcaption { display: flex; flex-direction: column; gap: .1rem; }
-.st-model-naam { font-weight: 600; color: var(--ink-1); font-size: .92rem; }
-.st-model-staat { font-size: .8rem; color: var(--ink-3); }
+.st-model-naam { font-weight: 600; color: var(--ink-1); font-size: .875rem; }
+.st-model-staat { font-size: .75rem; color: var(--ink-3); }
 .st-model.is-klaar .st-model-staat { color: var(--st-accent-tekst); }
 
 .st-eigenlooks { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: .9rem; }
@@ -537,9 +586,9 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 .st-eigenlook-fig { background: var(--surface-2); min-height: 100%; }
 .st-eigenlook-fig img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .st-eigenlook-body { padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: .4rem; align-items: flex-start; }
-.st-eigenlook-body h3 { margin: 0; font-family: var(--font-heading); font-weight: 500; font-stretch: 125%; text-transform: uppercase; font-size: 1.05rem; letter-spacing: -.01em; line-height: 1.15; color: var(--ink-1); }
-.st-eigenlook-body .st-meta { margin: 0; font-size: .85rem; }
-.st-eigenlook-lijn { margin: 0; font-size: .9rem; color: var(--ink-2); }
+.st-eigenlook-body h3 { margin: 0; font-family: var(--font-body); font-weight: 600; font-size: .875rem; letter-spacing: -.005em; line-height: 1.35; color: var(--ink-1); }
+.st-eigenlook-body .st-meta { margin: 0; font-size: .8125rem; }
+.st-eigenlook-lijn { margin: 0; font-size: .875rem; color: var(--ink-2); }
 .st-eigenlook.is-voorstel { border-style: dashed; }
 
 .st-vls { display: flex; flex-direction: column; gap: .8rem; }
@@ -554,16 +603,16 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 .st-vl-kleur, .st-vl-look { width: 42px; height: 42px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--surface-2); object-fit: cover; display: block; }
 .st-vl-kleur.is-leeg, .st-vl-look.is-leeg { background: repeating-linear-gradient(-45deg, transparent 0 5px, var(--line) 5px 6px); }
 .st-vl-tekst { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
-.st-vl-h { font-weight: 700; color: var(--ink-1); }
-.st-vl-nu { font-size: .9rem; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-vl-h { font-weight: 600; color: var(--ink-1); }
+.st-vl-nu { font-size: .875rem; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .st-vl-punt { margin: 0 .4rem; color: var(--ink-4); }
-.st-vl-ok { font-size: .8rem; color: var(--st-accent-tekst); font-weight: 600; }
+.st-vl-ok { font-size: .75rem; color: var(--st-accent-tekst); font-weight: 600; }
 .st-vl.is-opgeslagen { border-color: var(--st-accent-lijn); }
-.st-vl-cta { font-size: .85rem; color: var(--ink-3); white-space: nowrap; }
+.st-vl-cta { font-size: .8125rem; color: var(--ink-3); white-space: nowrap; }
 .st-vl-form { padding: 1.2rem; display: flex; flex-direction: column; gap: 1.4rem; }
 
 .st-groep { margin: 0; padding: 0; border: 0; min-width: 0; display: flex; flex-direction: column; gap: .7rem; }
-.st-groep legend { padding: 0; margin-bottom: .7rem; font-size: .85rem; font-weight: 600; color: var(--ink-2); }
+.st-groep legend { padding: 0; margin-bottom: .7rem; font-size: .8125rem; font-weight: 600; color: var(--ink-2); }
 .st-groep .st-hint { margin: 0; }
 
 /* Keuzetegels: het vinkje zit op de invoer, de rand toont het. */
@@ -576,22 +625,22 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 .st-tegel-img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: var(--r-sm); background: var(--surface-2); }
 .st-tegel-img.is-leeg { display: grid; place-items: center; color: var(--ink-4); }
 .st-tegel-meta { display: flex; flex-direction: column; gap: .05rem; padding: 0 .2rem .2rem; }
-.st-tegel-naam { font-size: .88rem; font-weight: 600; color: var(--ink-1); }
-.st-tegel-sub { font-size: .76rem; color: var(--ink-3); }
+.st-tegel-naam { font-size: .8125rem; font-weight: 600; color: var(--ink-1); }
+.st-tegel-sub { font-size: .75rem; color: var(--ink-3); }
 .st-tegel-vink { position: absolute; top: .7rem; right: .7rem; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: none; place-items: center; }
 .st-tegel-vink .i { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2.2; }
 .st-tegel:has(input:checked) .st-tegel-vink { display: grid; }
 .st-tegel.is-own .st-tegel-sub { color: var(--st-accent-tekst); }
 
-.st-stalen { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: .6rem; }
+.st-stalen { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: .6rem; }
 .st-staal { position: relative; display: flex; align-items: center; gap: .6rem; padding: .5rem .65rem; border-radius: var(--r-md); border: 1px solid var(--line); cursor: pointer; }
 .st-staal input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
 .st-staal:has(input:checked) { border-color: var(--ink-1); box-shadow: inset 0 0 0 1px var(--ink-1); }
 .st-staal:has(input:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .st-staal-chip { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line-strong); flex: none; display: block; }
 .st-staal-chip.is-leeg { background: repeating-linear-gradient(-45deg, transparent 0 4px, var(--line) 4px 5px); }
-.st-staal-naam { font-size: .85rem; font-weight: 600; color: var(--ink-1); }
-.st-staal-hex { font-family: var(--font-mono); font-stretch: 82%; font-size: .7rem; color: var(--ink-3); margin-left: auto; }
+.st-staal-naam { font-size: .8125rem; font-weight: 600; color: var(--ink-1); }
+.st-staal-hex { font-size: .75rem; color: var(--ink-3); margin-left: auto; }
 
 .st-looks { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: .7rem; }
 .st-look { position: relative; display: flex; flex-direction: column; gap: .3rem; padding: .45rem; border-radius: var(--r-md); border: 1px solid var(--line); cursor: pointer; }
@@ -603,8 +652,8 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 .st-look:has(input:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .st-look-img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: var(--r-sm); background: var(--surface-2); }
 .st-look-img.is-leeg { background: repeating-linear-gradient(-45deg, transparent 0 5px, var(--line) 5px 6px); }
-.st-look-naam { font-size: .88rem; font-weight: 600; color: var(--ink-1); padding: 0 .2rem; }
-.st-look-wat { font-size: .76rem; color: var(--ink-3); padding: 0 .2rem .2rem; }
+.st-look-naam { font-size: .8125rem; font-weight: 600; color: var(--ink-1); padding: 0 .2rem; }
+.st-look-wat { font-size: .75rem; color: var(--ink-3); padding: 0 .2rem .2rem; }
 
 .st-ratios { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: .7rem; }
 .st-ratio { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: .35rem; padding: .7rem; border-radius: var(--r-md); border: 1px solid var(--line); cursor: pointer; }
@@ -613,14 +662,14 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 .st-ratio:has(input:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .st-ratio-vorm { height: 44px; width: auto; max-width: 100%; border: 1.5px solid var(--ink-2); border-radius: 2px; background: var(--surface-2); display: block; }
 .st-ratio-vorm.is-none { border-style: dashed; border-color: var(--line-strong); background: none; }
-.st-ratio-naam { font-size: .88rem; font-weight: 600; color: var(--ink-1); }
-.st-ratio-wat { font-size: .76rem; color: var(--ink-3); }
+.st-ratio-naam { font-size: .8125rem; font-weight: 600; color: var(--ink-1); }
+.st-ratio-wat { font-size: .75rem; color: var(--ink-3); }
 
 .st-kanalen { display: flex; flex-wrap: wrap; gap: .5rem; }
-.st-kanaal { display: inline-flex; align-items: center; gap: .5rem; min-height: 36px; padding: 0 .85rem; border-radius: var(--r-pill); border: 1px solid var(--line-strong); font-size: .85rem; color: var(--ink-2); cursor: pointer; }
+.st-kanaal { display: inline-flex; align-items: center; gap: .5rem; min-height: 36px; padding: 0 .85rem; border-radius: var(--r-pill); border: 1px solid var(--line-strong); font-size: .8125rem; color: var(--ink-2); cursor: pointer; }
 .st-kanaal input { width: 15px; height: 15px; margin: 0; accent-color: var(--ink-1); }
 .st-kanaal:has(input:checked) { border-color: var(--ink-1); color: var(--ink-1); }
-.st-kanaal-vlag { font-family: var(--font-mono); font-stretch: 82%; font-size: .72rem; color: var(--ink-3); }
+.st-kanaal-vlag { font-size: .75rem; color: var(--ink-3); }
 
 @media (max-width: 56.25em) {
   .st-vl-kop { grid-template-columns: auto minmax(0, 1fr); padding-inline: 1rem; }
@@ -632,12 +681,12 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 }
 
 /* ── ABONNEMENT & FACTURERING — Studio fase 2 ──────────────────────────────── */
-.st-eyebrow { display: block; font-family: var(--font-mono); font-stretch: 82%; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
-.st-vlak { padding: 1.35rem; display: flex; flex-direction: column; gap: .8rem; }
-.st-vlak h2 { font-family: var(--font-heading); font-weight: 500; font-stretch: 125%; text-transform: uppercase; font-size: 1.05rem; letter-spacing: -.01em; line-height: 1.15; margin: 0; color: var(--ink-1); }
+.st-eyebrow { display: block; font-size: .75rem; font-weight: 500; color: var(--ink-3); }
+.st-vlak { padding: 1.25rem; display: flex; flex-direction: column; gap: .8rem; }
+.st-vlak h2 { font-family: var(--font-body); font-weight: 600; font-size: .875rem; letter-spacing: -.005em; line-height: 1.35; margin: 0; color: var(--ink-1); }
 .st-vlak > p { margin: 0; color: var(--ink-2); }
-.st-h3 { font-family: var(--font-body); font-size: .85rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); margin: .6rem 0 0; }
-.st-groot { font-family: var(--font-heading); font-weight: 500; font-stretch: 125%; font-size: 2rem; line-height: 1.1; letter-spacing: -.01em; color: var(--ink-1); }
+.st-h3 { font-family: var(--font-body); font-size: .8125rem; font-weight: 600; color: var(--ink-1); margin: .6rem 0 0; }
+.st-groot { font-family: var(--font-body); font-weight: 600; font-size: 1.5rem; line-height: 1.25; letter-spacing: -.015em; color: var(--ink-1); }
 .st-knoppen { display: flex; gap: .5rem; flex-wrap: wrap; }
 
 /* ── HET DONKERE BLOK DRAAGT ZIJN EIGEN TOKENS — 13 september 2026 ──────────
@@ -663,8 +712,8 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
    global.css dat doet. Dan klopt niet alleen deze knop maar alles wat hier ooit
    nog in komt te staan. */
 .st-geenabo {
-  padding: clamp(1.5rem, 4vw, 2.6rem);
-  display: flex; flex-direction: column; gap: .6rem; align-items: flex-start;
+  padding: 1.75rem;
+  display: flex; flex-direction: column; gap: .5rem; align-items: flex-start;
   background: var(--ink-900);
   color: var(--paper-soft-on-dark);
   border: 0;
@@ -689,21 +738,22 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 /* De secundaire knop is nu transparant met een witte rand, en dat is precies
    wat de tokens hierboven zeggen. Deze regel blijft staan als expliciete
    bevestiging van de rand — hij was tot vandaag het enige wat klopte. */
-.st-geenabo .st-eyebrow { color: var(--accent); }
-.st-geenabo h2 { font-family: var(--font-heading); font-weight: 500; font-stretch: 125%; text-transform: uppercase; font-size: clamp(1.5rem, 2.8vw, 2rem); line-height: .96; letter-spacing: -.03em; color: #FFFFFF; margin: 0; max-width: 24ch; }
+.st-geenabo .st-eyebrow { color: rgb(255 255 255 / .7); }
+.st-geenabo h2 { font-family: var(--font-body); font-weight: 600; font-size: 1.375rem; line-height: 1.25; letter-spacing: -.015em; color: #FFFFFF; margin: 0; max-width: 32ch; }
 .st-geenabo p { margin: 0; max-width: 56ch; }
 .st-geenabo .st-knoppen { margin-top: .6rem; }
-.st-geenabo .btn-2nd { color: #FFFFFF; border-color: rgb(255 255 255 / .42); }
+.st-geenabo .btn-2nd { color: #FFFFFF; background: transparent; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .42); }
+.st-geenabo .btn-2nd:hover { background: rgb(255 255 255 / .08); }
 
-.st-tabs { display: flex; gap: .2rem; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.st-tabs { display: inline-flex; flex-wrap: wrap; align-self: flex-start; gap: 2px; padding: 3px; border-radius: calc(var(--sd-r) + 2px); background: var(--surface); border: 1px solid var(--line); max-width: 100%; box-sizing: border-box; }
 .st-tabs::-webkit-scrollbar { display: none; }
-.st-tab { flex: 0 0 auto; min-height: 42px; display: inline-flex; align-items: center; padding: 0 .9rem; margin-bottom: -1px; border-bottom: 2px solid transparent; font-size: .92rem; font-weight: 500; color: var(--ink-3); white-space: nowrap; }
-.st-tab:hover { color: var(--ink-1); }
-.st-tab.is-nu { color: var(--ink-1); font-weight: 600; border-bottom-color: var(--st-accent-lijn); }
+.st-tab { flex: 0 0 auto; min-height: 30px; display: inline-flex; align-items: center; padding: 0 .8rem; border-radius: var(--sd-r); font-size: .8125rem; font-weight: 500; color: var(--ink-3); white-space: nowrap; }
+.st-tab:hover { color: var(--ink-1); background: var(--ghost); }
+.st-tab.is-nu { color: var(--ink-1); background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line-strong); }
 
-.st-saldo { padding: 1.35rem; display: flex; flex-direction: column; gap: 1rem; }
+.st-saldo { padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
 .st-saldo-kop { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: flex-start; }
-.st-saldo-kop h2 { font-family: var(--font-heading); font-weight: 500; font-stretch: 125%; text-transform: uppercase; font-size: 1.4rem; letter-spacing: -.02em; margin: .2rem 0 0; color: var(--ink-1); }
+.st-saldo-kop h2 { font-family: var(--font-body); font-weight: 600; font-size: 1.125rem; letter-spacing: -.01em; margin: .2rem 0 0; color: var(--ink-1); }
 .st-saldo-volgende { display: flex; flex-direction: column; gap: .2rem; text-align: right; }
 .st-saldo-volgende strong { color: var(--ink-1); font-variant-numeric: tabular-nums; }
 .st-saldo-rij { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: flex-start; padding-top: 1rem; border-top: 1px solid var(--line); }
@@ -714,10 +764,10 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 .st-slot { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr) auto; gap: .5rem 1.2rem; align-items: center; padding: .85rem 0; border-top: 1px solid var(--line); }
 .st-slot-naam { display: flex; flex-direction: column; gap: .1rem; }
 .st-slot-naam .n { font-weight: 600; color: var(--ink-1); }
-.st-slot-naam .u, .st-slot-verval { font-size: .8rem; color: var(--ink-3); }
+.st-slot-naam .u, .st-slot-verval { font-size: .75rem; color: var(--ink-3); }
 .st-slot-groepen { display: flex; gap: 1.2rem; flex-wrap: wrap; }
 .st-slot-groep { display: flex; flex-direction: column; gap: .3rem; }
-.st-slot-groep .lab { font-size: .74rem; color: var(--ink-3); }
+.st-slot-groep .lab { font-size: .75rem; color: var(--ink-3); }
 .st-pips { display: inline-flex; gap: 4px; }
 .st-pips i { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--line-strong); background: var(--surface); }
 .st-pips i.is-vast { background: var(--st-accent-lijn); border-color: var(--st-accent-lijn); }
@@ -725,7 +775,7 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 .st-slotbalk::-webkit-progress-bar { background: var(--surface-2); }
 .st-slotbalk::-webkit-progress-value { background: var(--st-accent-lijn); }
 .st-slotbalk::-moz-progress-bar { background: var(--st-accent-lijn); }
-.st-slot-tel { font-size: .85rem; color: var(--ink-3); white-space: nowrap; }
+.st-slot-tel { font-size: .8125rem; color: var(--ink-3); white-space: nowrap; }
 .st-slot-tel b { color: var(--ink-1); font-variant-numeric: tabular-nums; }
 .st-slot.is-vol .st-slot-tel { color: var(--st-clay-tekst); }
 
@@ -744,11 +794,11 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 .st-q:first-child { border-top: 0; }
 .st-q-tekst { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
 .st-q-tekst strong { color: var(--ink-1); }
-.st-q-staat { font-size: .8rem; color: var(--st-clay-tekst); }
+.st-q-staat { font-size: .75rem; color: var(--st-clay-tekst); }
 .st-q-staat.is-ok { color: var(--ink-3); }
-.st-q-merk { font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); padding: .2rem .6rem; border-radius: var(--r-pill); border: 1px solid var(--line); }
+.st-q-merk { font-size: .75rem; font-weight: 600; color: var(--ink-3); padding: .2rem .6rem; border-radius: var(--r-pill); border: 1px solid var(--line); }
 .st-q-merk.is-vast { color: var(--ink-1); border-color: var(--ink-1); }
-.st-q-wanneer { font-size: .85rem; color: var(--ink-3); text-decoration: underline; text-underline-offset: .18em; white-space: nowrap; }
+.st-q-wanneer { font-size: .8125rem; color: var(--ink-3); text-decoration: underline; text-underline-offset: .18em; white-space: nowrap; }
 .st-q-wanneer.is-vast { color: var(--ink-1); }
 /* .55rem en niet .35: gemeten 6 px tussen "Losmaken" en "Verwijderen" met
    kladblok/te-dicht-studio.mjs. Twee knoppen met zes pixels ertussen lezen als
@@ -761,7 +811,7 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 
 .st-kal-asap { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
 .st-kal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
-.st-kal-kop { font-family: var(--font-mono); font-stretch: 82%; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); padding: .3rem .4rem; }
+.st-kal-kop { font-size: .75rem; font-weight: 500; color: var(--ink-3); padding: .3rem .4rem; }
 .st-kal-dag { position: relative; display: flex; flex-direction: column; gap: .15rem; min-height: 64px; padding: .45rem .5rem; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); font: inherit; color: var(--ink-2); text-align: left; }
 button.st-kal-dag { cursor: pointer; }
 button.st-kal-dag:hover { border-color: var(--ink-1); }
@@ -769,7 +819,7 @@ button.st-kal-dag:hover { border-color: var(--ink-1); }
 .st-kal-dag.is-nu { box-shadow: inset 0 0 0 1px var(--ink-1); }
 .st-kal-dag.is-mijn { border-color: var(--st-accent-lijn); background: var(--st-accent-tint); color: var(--ink-1); }
 .st-kal-n { font-weight: 600; font-variant-numeric: tabular-nums; }
-.st-kal-l { font-size: .72rem; line-height: 1.2; }
+.st-kal-l { font-size: .75rem; line-height: 1.2; }
 .st-kal-vul { position: absolute; left: .5rem; right: .5rem; bottom: .4rem; height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
 .st-kal-vul i { display: block; height: 100%; background: var(--ink-3); }
 /* ── DE DAGBALK IN PROCENTEN — 20 september 2026 ───────────────────────────
@@ -779,7 +829,6 @@ button.st-kal-dag:hover { border-color: var(--ink-1); }
    band aan het eind: de 21 procent die voor de wachtrij gereserveerd blijft en
    waar een klant niet in kan boeken. Zonder die band leest "79 procent vol"
    als "er kan nog 21 procent bij", en dat kan niet. */
-.st-kal-vul { position: relative; }
 .st-kal-vul::after {
   content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 21%;
   background: repeating-linear-gradient(135deg, var(--line) 0 2px, transparent 2px 4px);
@@ -788,17 +837,17 @@ button.st-kal-dag:hover { border-color: var(--ink-1); }
 
 .st-ed-kop { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
 .st-ed-lijst { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.st-ed-lijst li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 1rem; padding: .7rem 0; border-top: 1px solid var(--line); font-size: .92rem; color: var(--ink-2); }
+.st-ed-lijst li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 1rem; padding: .7rem 0; border-top: 1px solid var(--line); font-size: .875rem; color: var(--ink-2); }
 .st-ed-lijst li:first-child { border-top: 0; }
 .st-ed-lijst strong { color: var(--ink-1); font-weight: 600; }
 
 .st-feiten { margin: 0; display: flex; flex-direction: column; }
-.st-feit { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 1rem; padding: .6rem 0; border-top: 1px solid var(--line); font-size: .92rem; }
+.st-feit { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 1rem; padding: .6rem 0; border-top: 1px solid var(--line); font-size: .875rem; }
 .st-feit:first-child { border-top: 0; }
 .st-feit dt { color: var(--ink-3); }
 .st-feit dd { margin: 0; color: var(--ink-1); font-variant-numeric: tabular-nums; }
 .st-feit dd.is-leeg { color: var(--ink-3); }
-.st-gedaan { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .3rem; font-size: .92rem; }
+.st-gedaan { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .3rem; font-size: .875rem; }
 .st-gedaan strong { color: var(--ink-1); font-weight: 600; }
 
 @media (max-width: 56.25em) {
@@ -824,35 +873,35 @@ button.st-kal-dag:hover { border-color: var(--ink-1); }
 .st-frame.is-vast { border-color: var(--ink-1); }
 .st-frame.is-vrij { background: none; border-style: dashed; border-color: var(--line-strong); color: var(--ink-4); }
 a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
-.st-frame.is-meer { display: grid; place-items: center; border-style: dashed; background: none; font-family: var(--font-mono); font-stretch: 82%; font-size: .8rem; color: var(--ink-3); }
+.st-frame.is-meer { display: grid; place-items: center; border-style: dashed; background: none; font-size: .75rem; font-weight: 600; color: var(--ink-3); }
 .st-frame-leeg { display: grid; place-items: center; width: 100%; height: 100%; font-size: 1.2rem; font-weight: 300; }
-.st-frame-legenda { display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; font-family: var(--font-mono); font-stretch: 82%; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); align-items: center; }
+.st-frame-legenda { display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; font-size: .75rem; font-weight: 500; color: var(--ink-3); align-items: center; }
 .st-frame-legenda span { display: inline-flex; align-items: center; gap: .4rem; }
 .st-frame-legenda i { width: 10px; height: 12px; border-radius: 2px; border: 1px solid var(--line-strong); background: var(--surface-2); }
 .st-frame-legenda i.is-vast { border-color: var(--ink-1); background: var(--ink-1); }
 .st-frame-legenda i.is-vrij { background: none; border-style: dashed; }
-.st-slot-oud { margin-left: auto; text-transform: none; letter-spacing: 0; font-family: var(--font-body); font-size: .8rem; }
+.st-slot-oud { margin-left: auto; text-transform: none; letter-spacing: 0; font-family: var(--font-body); font-size: .75rem; }
 
 .st-weekstrip { display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 3px; max-width: 34rem; }
-.st-dag { display: grid; place-items: center; aspect-ratio: 1; border-radius: 3px; font-family: var(--font-mono); font-stretch: 82%; font-size: .72rem; color: var(--ink-2); background: var(--surface-2); }
+.st-dag { display: grid; place-items: center; aspect-ratio: 1; border-radius: 3px; font-size: .75rem; color: var(--ink-2); background: var(--surface-2); }
 /* De eigen week van de klant: een toestand, dus uit de statusset en niet uit
    het accent — regel "Altijd 2". Het is de stand "in productie": getint. */
 .st-dag.is-week { background: var(--st-work-fill); color: var(--st-work-ink); }
-.st-dag.is-start { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.st-dag.is-start { background: var(--st-done-fill); color: var(--st-done-ink); font-weight: 600; }
 .st-dag.is-vandaag { box-shadow: inset 0 0 0 1.5px var(--ink-1); color: var(--ink-1); }
 
 .st-uitleg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .9rem; }
 .st-uitleg-blok { gap: .6rem; }
 .st-uitleg-blok .st-weekstrip { max-width: none; margin-bottom: .4rem; }
 .st-uitleg-blok .st-lookrij { margin-bottom: .4rem; }
-.st-uitleg-blok p { margin: 0; font-size: .92rem; color: var(--ink-2); }
+.st-uitleg-blok p { margin: 0; font-size: .875rem; color: var(--ink-2); }
 
 .st-lookrijen { display: flex; flex-direction: column; }
 .st-lookrij { display: grid; grid-template-columns: 7rem minmax(0, 1fr); gap: 1rem; align-items: center; padding: .9rem 0; border-top: 1px solid var(--line); }
 .st-lookrij:first-child { border-top: 0; padding-top: 0; }
 .st-uitleg-blok .st-lookrij { grid-template-columns: 1fr; border-top: 0; padding: 0; }
 .st-uitleg-blok .st-lookrij-naam { display: none; }
-.st-lookrij-naam { font-weight: 700; color: var(--ink-1); }
+.st-lookrij-naam { font-weight: 600; color: var(--ink-1); }
 .st-lookrij-vakken { display: flex; gap: .9rem; flex-wrap: wrap; }
 .st-lookvak { display: flex; flex-direction: column; gap: .2rem; width: 68px; }
 .st-lookvak img, .st-lookvak svg, .st-lookvak-leeg, .st-lookvak-vorm { display: block; width: 68px; height: 68px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--surface-2); object-fit: cover; }
@@ -861,8 +910,8 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
 .st-lookvak-leeg.is-arcering { background: repeating-linear-gradient(-45deg, transparent 0 5px, var(--line) 5px 6px); }
 .st-lookvak-vorm { display: grid; place-items: center; padding: 12px; box-sizing: border-box; }
 .st-lookvak-vorm .st-ratio-vorm { height: 100%; width: auto; max-width: 100%; }
-.st-lookvak-l { font-family: var(--font-mono); font-stretch: 82%; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); margin-top: .2rem; }
-.st-lookvak-w { font-size: .78rem; color: var(--ink-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-lookvak-l { font-size: .75rem; font-weight: 500; color: var(--ink-3); margin-top: .2rem; }
+.st-lookvak-w { font-size: .75rem; color: var(--ink-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .st-q { grid-template-columns: auto minmax(0, 1fr) auto auto auto; }
 .st-q-frame { display: block; width: 44px; aspect-ratio: 4 / 5; border-radius: var(--r-sm); overflow: hidden; border: 1px dashed var(--line-strong); }
@@ -872,15 +921,15 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
 /* ── HET ABONNEMENT ALS ÉÉN VERHAAL — 19 september 2026 ─────────────────── */
 /* De vrije slots als één tegel met het aantal, in plaats van twaalf plussen. */
 .st-frame.is-tel { aspect-ratio: auto; min-height: 3.6rem; align-self: stretch; }
-.st-frame.is-tel .st-frame-leeg { font-family: var(--font-mono); font-stretch: 82%; font-size: .78rem; letter-spacing: .04em; text-transform: uppercase; font-weight: 500; }
+.st-frame.is-tel .st-frame-leeg { font-size: .75rem; font-weight: 600; }
 /* De week als zin, met de dag van de maand ernaast. */
 .st-week { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem 2rem; align-items: start; }
 /* .6rem boven en niet .2: gemeten 3 px onder de kop "Jouw week". Deze regel
    wint van de algemene bodem hierboven (twee klassen tegen één), dus hij moet
    het zelf zeggen. */
-.st-week .st-groot { font-size: 1.35rem; margin: .6rem 0 .6rem; }
+.st-week .st-groot { font-size: 1.125rem; margin: .4rem 0 .5rem; }
 .st-week-dag { margin: 0; display: grid; gap: .2rem; text-align: right; }
-.st-week-dag strong { font-family: var(--font-heading); font-weight: 500; font-stretch: 125%; font-size: 1.6rem; line-height: 1; }
+.st-week-dag strong { font-family: var(--font-body); font-weight: 600; font-size: 1.375rem; line-height: 1.1; }
 @media (max-width: 640px) { .st-week { grid-template-columns: minmax(0, 1fr); } .st-week-dag { text-align: left; } }
 /* De vaste look als één regel feiten met een link. */
 .st-lookstrip-kop { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: .6rem; }
@@ -895,8 +944,8 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
    losse formulieren met elk een eigen handeling. */
 .st-q-gezicht { display: flex; align-items: center; gap: .5rem; margin-top: .6rem; }
 .st-q-gezicht .st-meta { margin: 0; }
-.st-veld.st-veld-kort { width: auto; min-width: 11rem; flex: 0 0 auto; padding: .35rem .6rem; font-size: .82rem; }
-.st-q-look-open { font-size: .78rem; color: var(--st-clay-tekst); }
+.st-veld.st-veld-kort { width: auto; min-width: 11rem; flex: 0 0 auto; padding: .35rem .6rem; font-size: .8125rem; }
+.st-q-look-open { font-size: .75rem; color: var(--st-clay-tekst); }
 .st-week-form { margin-top: .6rem; display: grid; gap: .4rem; }
 .st-week-kies { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
 .st-rij.is-acties { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .8rem; }
@@ -904,9 +953,9 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
 .st-q-fotos-veld { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; clip: rect(0 0 0 0); }
 /* De vier fotovakken van het lijstformulier. */
 .st-fotovakken { margin: .9rem 0 0; padding: 0; border: 0; min-width: 0; }
-.st-fotovakken legend { font-family: var(--font-mono); font-stretch: 82%; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); margin-bottom: .5rem; }
+.st-fotovakken legend { font-size: .75rem; font-weight: 500; color: var(--ink-3); margin-bottom: .5rem; }
 .st-rij.is-vakken { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: .6rem .9rem; }
-.st-fotovak label { font-size: .86rem; }
+.st-fotovak label { font-size: .8125rem; }
 .st-q-frame .st-ph { width: 100%; height: 100%; }
 
 @media (max-width: 56.25em) {
@@ -919,75 +968,75 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
 }
 
 /* ── HET INLOGSCHERM: ÉÉN KAART IN HET MIDDEN ────────────────────────────── */
-.st-kaartveld { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.6rem; padding: clamp(1.2rem, 4vw, 3rem) 1rem; }
-.st-merk-los { width: 150px; height: 25px; }
-.st-kaart { width: min(100%, 440px); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: clamp(1.5rem, 4vw, 2.4rem); display: flex; flex-direction: column; gap: 1.1rem; }
-.st-kaart h1 { font-family: var(--font-heading); font-weight: 500; font-stretch: 125%; text-transform: uppercase; font-size: 1.9rem; line-height: .94; letter-spacing: -.03em; color: var(--ink-1); margin: 0; }
-.st-kaart .st-lede { margin: 0; font-size: 1rem; color: var(--ink-2); }
-.st-gelukt { margin: 0 0 .9rem; padding: .75rem .9rem; border-radius: var(--r-sm); border: 1px solid var(--st-accent-lijn); background: var(--st-accent-tint); color: var(--ink-1); font-size: .92rem; line-height: 1.5; }
-.st-fout { margin: 0; padding: .75rem .9rem; border-radius: var(--r-sm); border: 1px solid color-mix(in srgb, var(--st-clay-tekst) 55%, transparent); color: var(--st-clay-tekst); font-size: .92rem; }
+.st-kaartveld { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.5rem; padding: 2rem 1rem; box-sizing: border-box; }
+.st-merk-los { width: 124px; height: 21px; color: var(--ink-1); }
+.st-kaart { width: min(100%, 400px); box-sizing: border-box; background: var(--surface); border: 1px solid var(--line); border-radius: var(--sd-r-kaart); padding: 2rem; display: flex; flex-direction: column; gap: 1rem; }
+.st-kaart h1 { font-family: var(--font-body); font-weight: 600; font-size: 1.5rem; line-height: 1.2; letter-spacing: -.02em; color: var(--ink-1); margin: 0; }
+.st-kaart .st-lede { margin: 0; font-size: .875rem; color: var(--ink-2); }
+.st-gelukt { margin: 0 0 .9rem; padding: .75rem .9rem; border-radius: var(--r-sm); border: 1px solid var(--st-accent-lijn); background: var(--st-accent-tint); color: var(--ink-1); font-size: .875rem; line-height: 1.5; }
+.st-fout { margin: 0; padding: .75rem .9rem; border-radius: var(--r-sm); border: 1px solid color-mix(in srgb, var(--st-clay-tekst) 55%, transparent); color: var(--st-clay-tekst); font-size: .875rem; }
 .st-form { display: flex; flex-direction: column; gap: .7rem; }
-.st-form label { font-size: .85rem; font-weight: 600; color: var(--ink-2); }
+.st-form label { font-size: .8125rem; font-weight: 600; color: var(--ink-2); }
 .st-veld {
-  width: 100%; box-sizing: border-box; min-height: 46px; padding: 0 .95rem;
-  font: inherit; font-size: 1rem; color: var(--ink-1); background: var(--bg-0);
-  border: 1px solid var(--line-ui); border-radius: var(--r-sm);
+  width: 100%; box-sizing: border-box; min-height: 38px; padding: 0 .75rem;
+  font: inherit; font-size: .875rem; color: var(--ink-1); background: var(--surface);
+  border: 1px solid var(--line-ui); border-radius: var(--sd-r);
   transition: border-color var(--dur-1) var(--ease);
 }
 .st-veld::placeholder { color: var(--ink-3); }
-.st-veld:hover { border-color: var(--ink-3); }
+.st-veld:hover { border-color: var(--ink-4); }
 .st-veld:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-color: var(--ink-3); }
-.st-veld.is-code { font-family: var(--font-heading); font-size: 1.8rem; font-weight: 500; font-stretch: 125%; letter-spacing: .18em; text-align: center; min-height: 58px; }
-.st-hint { margin: 0; font-size: .85rem; color: var(--ink-3); }
+.st-veld.is-code { font-family: var(--font-body); font-size: 1.5rem; font-weight: 600; letter-spacing: .3em; font-variant-numeric: tabular-nums; text-align: center; min-height: 52px; }
+.st-hint { margin: 0; font-size: .8125rem; color: var(--ink-3); }
 .st-kaart .st-details { border-top: 1px solid var(--line); padding-top: .6rem; }
 .st-kaart .st-details .st-form { margin-top: .6rem; }
-.st-wie-tekst { margin: 0; font-size: .85rem; color: var(--ink-3); }
+.st-wie-tekst { margin: 0; font-size: .8125rem; color: var(--ink-3); }
 
-/* ── DE TELEFOON: KOP, TABRIJ, VOET ──────────────────────────────────────── */
+/* ── DE TELEFOON: HET PANEEL ALS KOP, DE TABS ALS PILLEN ────────────────────
+   Onder 900 px wordt de zijbalk een donkere kop: woordmerk links, taal, thema
+   en uitloggen rechts (.st-mob — op een breed scherm staan die in de
+   bovenbalk en de zijbalkvoet), en de zes tabs eronder als pillen.
+   Ronde 9 (O49): de tabbalk breekt af naar een tweede regel in plaats van
+   opzij te scrollen — zonder script (CSP van Studio) kan hij niet naar de
+   actieve tab schuiven, en dan zie je niet waar je bent. */
 @media (max-width: 56.25em) {
   .st-shell, .st-shell.is-dicht { display: block; }
-  .st-kolom { border-right: 0; border-bottom: 1px solid var(--line); }
+  .st-kolom { border-right: 0; }
   .st-side {
     position: static; height: auto; overflow: visible;
-    display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "merk sub uit" "nav nav nav";
-    align-items: center; gap: .6rem .9rem;
-    padding: .7rem .9rem 0;
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "kop mob" "nav nav";
+    align-items: center; gap: .6rem .75rem;
+    padding: .6rem .75rem .75rem;
   }
-  .st-side-kop { display: contents; }
-  .st-merk { grid-area: merk; }
-  .st-sub { grid-area: sub; }
-  .st-nav { grid-area: nav; }
-  .st-side-voet form { grid-area: uit; }
-  .st-merk { width: 108px; height: 18px; }
-  .st-sub { font-size: .85rem; color: var(--ink-2); font-weight: 600; }
-  .st-klap { display: none; }
-  .st-side-voet { display: contents; }
-  .st-wie, .st-side-voet .st-stand { display: none; }
-  .st-side-voet form { margin: 0; }
-  .st-side-voet .btn { min-height: 34px; padding-inline: .9rem; font-size: .85rem; }
-  /* Ronde 9 (O49): de tabbalk scrolde opzij, en op Facturen, Je gegevens en
-     Abonnement stond de actieve tab buiten beeld — je zag niet waar je was.
-     Zonder script (CSP van Studio) kan hij niet naar de actieve tab schuiven,
-     dus breekt hij nu af naar een tweede regel: alles in beeld. */
+  .st-side-kop { grid-area: kop; min-height: 40px; padding: 0 .25rem; flex-direction: row; align-items: center; justify-content: flex-start; visibility: visible; }
+  .st-merk { width: 96px; height: 16px; }
+  .st-sub { display: none; }
+  .st-mob { grid-area: mob; display: flex; align-items: center; gap: .35rem; }
+  .st-mob form { margin: 0; }
+  .st-mob a, .st-mob button {
+    display: inline-grid; place-items: center; min-width: 36px; height: 36px; padding: 0 .55rem; box-sizing: border-box;
+    border: 0; border-radius: var(--sd-r); background: none; cursor: pointer;
+    font: inherit; font-size: .75rem; font-weight: 600; color: var(--sd-side-ink);
+    box-shadow: inset 0 0 0 1px var(--sd-side-lijn);
+  }
+  body.studio .st-mob a { color: var(--sd-side-ink); }
+  .st-mob svg { width: 16px; height: 16px; }
   .st-nav {
-    flex-direction: row; flex-wrap: wrap; gap: 0 .1rem; overflow-x: visible;
-    margin-inline: -.9rem; padding-inline: .6rem;
+    grid-area: nav;
+    flex-direction: row; flex-wrap: wrap; gap: .3rem; overflow-x: visible;
   }
-  .st-nav::-webkit-scrollbar { display: none; }
-  .st-navlink {
-    flex: 0 0 auto; min-height: 44px; padding: 0 .7rem; border-radius: 0; gap: .5rem;
-    border-bottom: 2px solid transparent; font-size: .9rem; box-shadow: none !important; background: none !important;
-  }
-  .st-navlink.is-actief { border-bottom-color: var(--st-accent-lijn); }
-  .st-navlink .i { width: 16px; height: 16px; }
-  .st-top { padding: 1.3rem 1rem 1rem; }
+  .st-navlink { flex: 0 0 auto; min-height: 34px; padding: 0 .75rem; border-radius: var(--r-pill); gap: .45rem; font-size: .8125rem; }
+  .st-navlink .i { width: 15px; height: 15px; }
+  .is-dicht .st-navlink span { display: inline; }
+  .is-dicht .st-navlink { padding: 0 .75rem; }
+  .st-side-voet, .st-balk { display: none; }
+  .st-top { padding: 1.25rem 1rem 0; }
+  .st-h1 { font-size: 1.5rem; }
   .st-top-actie { width: 100%; }
-  .st-main { padding: 1rem; gap: 1.6rem; }
-  .st-voet { display: flex; align-items: center; gap: 1.2rem; padding: 1rem 1rem 1.6rem; border-top: 1px solid var(--line); margin-top: auto; }
-  .st-voet form { margin-left: auto; }
-  .st-cijfers { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .st-cijfer:nth-child(2) { border-right: 0; }
-  .st-cijfer:nth-child(-n + 2) { border-bottom: 1px solid var(--line); }
+  .st-main { padding: 1rem 1rem 2.5rem; gap: 1.5rem; }
+  .st-romp > .st-banner { margin: .75rem 1rem 0; }
+  .st-kaart-vlak.st-cijfers { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+  .st-cijfer { padding: .85rem .9rem; }
   .st-stappen { grid-auto-flow: row; grid-auto-columns: auto; gap: .55rem; }
   .st-stap { flex-direction: row; align-items: center; gap: .7rem; padding: 0; }
   .st-stap::before { display: none; }
@@ -997,6 +1046,8 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
   .st-betaal { grid-template-columns: 1fr; }
   .st-betaal form { grid-column: 1; grid-row: auto; }
   .st-strook { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .st-kaart { padding: 1.5rem; }
+  .st-saldo-volgende { text-align: left; }
 }
 @media (max-width: 26em) {
   .st-cijfer-n { font-size: 2rem; }
@@ -1004,7 +1055,7 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
 @media (prefers-reduced-motion: reduce) {
   .st-strook a:hover { transform: none; }
 }
-.st-meer { margin: 0; padding: .7rem 1.35rem; border-top: 1px solid var(--line); }
+.st-meer { margin: 0; padding: .7rem 1.25rem; border-top: 1px solid var(--line); }
 
 /* ── LETTERS NOOIT OP --ink-4 — 6 september 2026 ─────────────────────────
    scripts/dash-leesbaar.mjs mat op de echte Worker: --ink-4 (42% inkt) is
@@ -1042,9 +1093,9 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
    Dat is dezelfde regel als in public/admin.css: een cel, geen doos.
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-:root {
-  --st-ronding: clamp(14px, 1.6vw, 20px);   /* het paneel zelf */
-  --st-ronding-in: 10px;                    /* wat erin ligt   */
+body.studio {
+  --st-ronding: var(--sd-r-kaart);   /* het paneel zelf (herontwerp: 10 px) */
+  --st-ronding-in: var(--sd-r);      /* wat erin ligt (8 px)            */
 }
 
 .st-kaart-vlak { border-radius: var(--st-ronding); }
@@ -1062,7 +1113,7 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
    nog een rand draagt binnen een kaart. */
 .st-betaal.is-unpaid { border-color: color-mix(in srgb, var(--st-clay-tekst) 55%, transparent); }
 .st-product.is-revisie { border-color: color-mix(in srgb, var(--st-clay-tekst) 55%, transparent); }
-.st-ronde.is-ready { border-color: var(--st-accent-lijn); }
+.st-ronde.is-ready { border-color: var(--line-strong); }
 
 /* Een productregel die openklapt, klapt open BINNEN zijn eigen vulling; de
    scheidingslijn tussen kop en paneel blijft, want die scheidt twee dingen in
@@ -1093,8 +1144,8 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
 .st-credit { display: flex; flex-direction: column; gap: .8rem; padding-top: 1rem; border-top: 1px solid var(--line); }
 .st-credit-kop { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: flex-start; }
 .st-credit-tel { margin: .15rem 0 0; display: flex; align-items: baseline; gap: .45rem; }
-.st-credit-tel b { font-family: var(--font-heading); font-size: 2.2rem; line-height: 1; font-weight: 500; font-stretch: 125%; letter-spacing: -.02em; color: var(--ink-1); font-variant-numeric: tabular-nums; }
-.st-credit-tel span { font-size: .92rem; color: var(--ink-3); }
+.st-credit-tel b { font-family: var(--font-body); font-size: 1.75rem; line-height: 1.1; font-weight: 600; letter-spacing: -.02em; color: var(--ink-1); font-variant-numeric: tabular-nums; }
+.st-credit-tel span { font-size: .875rem; color: var(--ink-3); }
 .st-credit-balk { height: 10px; border-radius: var(--r-pill); background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
 .st-credit-vul { display: block; height: 100%; background: var(--ink-2); border-radius: var(--r-pill); transition: width .35s ease; }
 @media (prefers-reduced-motion: reduce) { .st-credit-vul { transition: none; } }
@@ -1141,19 +1192,19 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
 .st-diensten { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0; border-top: 1px solid var(--line); }
 .st-dienst { display: flex; flex-direction: column; gap: .25rem; padding: 1rem 1rem 1rem 0; border-left: 1px solid var(--line); padding-left: 1rem; }
 .st-dienst:first-child { border-left: 0; padding-left: 0; }
-.st-dienst-prijs { font-family: var(--font-heading); font-size: 1.6rem; font-weight: 500; font-stretch: 125%; line-height: 1; letter-spacing: -.02em; color: var(--ink-1); font-variant-numeric: tabular-nums; }
-.st-dienst-naam { font-weight: 600; color: var(--ink-1); font-size: .95rem; }
-.st-dienst-per { font-size: .8rem; color: var(--ink-3); line-height: 1.35; }
-.st-dienst-knop { margin-top: .35rem; align-self: flex-start; font-size: .82rem; color: var(--ink-1); text-decoration: underline; text-underline-offset: .2em; }
+.st-dienst-prijs { font-family: var(--font-body); font-size: 1.25rem; font-weight: 600; line-height: 1.1; letter-spacing: -.015em; color: var(--ink-1); font-variant-numeric: tabular-nums; }
+.st-dienst-naam { font-weight: 600; color: var(--ink-1); font-size: .875rem; }
+.st-dienst-per { font-size: .75rem; color: var(--ink-3); line-height: 1.35; }
+.st-dienst-knop { margin-top: .35rem; align-self: flex-start; font-size: .8125rem; color: var(--ink-1); text-decoration: underline; text-underline-offset: .2em; }
 .st-dienst-knop:hover { text-decoration-thickness: 2px; }
-.st-dienst-kort { margin-top: .35rem; font-size: .8rem; color: var(--st-clay-tekst); }
+.st-dienst-kort { margin-top: .35rem; font-size: .75rem; color: var(--st-clay-tekst); }
 .st-dienst.is-uit .st-dienst-prijs, .st-dienst.is-uit .st-dienst-naam { color: var(--ink-3); }
 
 @media (max-width: 40.625em) {
   .st-diensten { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .st-dienst { padding: .8rem 0 .8rem 1rem; }
   .st-dienst:nth-child(odd) { border-left: 0; padding-left: 0; }
-  .st-credit-tel b { font-size: 1.8rem; }
+  .st-credit-tel b { font-size: 1.5rem; }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -1170,18 +1221,18 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
  * geldt onverkort.
  */
 .st-kal-groot .st-kal-dag { min-height: 92px; gap: .25rem; }
-.st-kal-pct { font-family: var(--font-mono); font-stretch: 82%; font-size: .72rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.st-kal-pct { font-size: .75rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .st-kal-dag.is-vol .st-kal-pct, .st-kal-dag.is-dicht .st-kal-pct { color: var(--st-clay-tekst); }
 .st-kal-item {
-  display: block; font-size: .7rem; line-height: 1.25; color: var(--ink-1);
-  background: var(--st-accent-tint); border-radius: var(--r-sm);
+  display: block; font-size: .75rem; line-height: 1.25; color: var(--ink-1);
+  background: var(--st-work-fill); color: var(--st-work-ink); border-radius: var(--sd-r-klein);
   padding: .1rem .3rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 /* Een aanwijsbare dag in verzet-stand. Hij is een <a> en geen <button>, want
    hij navigeert naar de bevestiging in plaats van iets te doen — en een knop
    die navigeert is een knop waarvan je de bestemming niet ziet. */
-a.st-kal-dag.is-kies { cursor: pointer; border-color: var(--st-accent-lijn); }
-a.st-kal-dag.is-kies:hover { background: var(--st-accent-tint); border-color: var(--ink-1); }
+a.st-kal-dag.is-kies { cursor: pointer; border-color: var(--line-strong); }
+a.st-kal-dag.is-kies:hover { background: var(--ghost); border-color: var(--ink-1); }
 
 .st-kop-rij { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
 
@@ -1198,7 +1249,7 @@ a.st-kal-dag.is-kies:hover { background: var(--st-accent-tint); border-color: va
 
 .st-plan-lijsten { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.4rem; padding-top: 1rem; border-top: 1px solid var(--line); }
 .st-plan-open { list-style: none; margin: .4rem 0 0; padding: 0; display: flex; flex-direction: column; }
-.st-plan-open li { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; padding: .5rem 0; border-top: 1px solid var(--line); font-size: .92rem; color: var(--ink-2); }
+.st-plan-open li { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; padding: .5rem 0; border-top: 1px solid var(--line); font-size: .875rem; color: var(--ink-2); }
 .st-plan-open li:first-child { border-top: 0; }
 .st-plan-open em { font-style: normal; color: var(--ink-3); }
 
@@ -1232,7 +1283,7 @@ a.st-kal-dag.is-kies:hover { background: var(--st-accent-tint); border-color: va
 .st-aanmerk:has(input:checked) .st-vink { color: var(--ink-1); }
 
 /* Eén vaste weg naar een mens, onder elke bestelling (ronde 8, S-B17). */
-.st-contact { display: flex; flex-wrap: wrap; align-items: baseline; gap: .35rem 1rem; margin: 1.1rem 0 0; padding-top: .9rem; border-top: 1px solid var(--line); font-size: .9rem; }
+.st-contact { display: flex; flex-wrap: wrap; align-items: baseline; gap: .35rem 1rem; margin: 1.1rem 0 0; padding-top: .9rem; border-top: 1px solid var(--line); font-size: .875rem; }
 .st-contact-h { font-weight: 600; color: var(--ink-1); }
 .st-contact a { color: var(--ink-1); text-decoration: underline; text-underline-offset: 3px; min-height: 24px; display: inline-flex; align-items: center; }
 .st-contact .st-meta { margin: 0; flex: 1 1 100%; }
@@ -1242,8 +1293,8 @@ a.st-kal-dag.is-kies:hover { background: var(--st-accent-tint); border-color: va
 /* Abonnement › product: foto's en gezicht met een eigen knop (ronde 8, S-K3),
    en verwijderen met een bevestiging (S-N9). */
 .st-q-actie { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem; }
-.st-q-fotos-kies { font-size: .82rem; max-width: 100%; color: var(--ink-2); }
-.st-q-fotos-kies::file-selector-button { font: inherit; font-weight: 600; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-1); border-radius: 999px; padding: .35rem .8rem; margin-right: .6rem; cursor: pointer; }
+.st-q-fotos-kies { font-size: .8125rem; max-width: 100%; color: var(--ink-2); }
+.st-q-fotos-kies::file-selector-button { font: inherit; font-weight: 600; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-1); border-radius: var(--sd-r); padding: .35rem .75rem; margin-right: .6rem; cursor: pointer; }
 .st-q-weg { position: relative; }
 .st-q-weg > summary { list-style: none; }
 .st-q-weg > summary::-webkit-details-marker { display: none; }
@@ -1251,3 +1302,39 @@ a.st-kal-dag.is-kies:hover { background: var(--st-accent-tint); border-color: va
 .st-q-weg form { margin-top: .4rem; }
 .st-q-weg-ja { background: var(--danger, #B42318); color: #fff; border-color: transparent; }
 @media (max-width: 760px) { .st-q-fotos-kies { font-size: 16px; } }
+
+
+/* ══ DE MELDING BOVENAAN STUDIO — ronde 9 (3 oktober 2026) ═════════════════
+   Eén smalle regel boven de kop, gezet vanuit /admin/melding (src/lib/melding.js).
+   Drie soorten, drie kleuren: info in de huiskleur, druk in de kleur van
+   "aandacht", storing in rood. Geen wegklikknop — zie de kop van melding.js. */
+.st-banner {
+  --bn-fill: var(--st-work-fill); --bn-ink: var(--st-work-ink); --bn-edge: var(--st-work-edge);
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .75rem;
+  margin: 0 0 1rem; padding: .55rem .9rem; border: 1px solid var(--bn-edge); border-radius: var(--sd-r);
+  background: var(--bn-fill); color: var(--bn-ink); font-size: .8125rem; line-height: 1.45;
+}
+.st-banner-l { font-size: .8125rem; font-weight: 600; }
+.st-banner.is-druk { --bn-fill: var(--st-rev-fill); --bn-ink: var(--st-rev-ink); --bn-edge: var(--st-rev-edge); }
+.st-banner.is-storing { --bn-fill: #FBE9E9; --bn-ink: #9B1C1C; --bn-edge: rgb(155 28 28 / .32); }
+.on-ink .st-banner.is-storing { --bn-fill: #2A1414; --bn-ink: #FF9B93; --bn-edge: rgb(255 155 147 / .34); }
+.st-kaartveld > .st-banner { width: min(100%, 34rem); margin: 0 auto 1rem; }
+/* In de schil: dezelfde zijmarge als de kop eronder, niet tegen de rand. */
+.st-romp > .st-banner { margin: 1rem var(--st-pad) 0; max-width: 1200px; box-sizing: border-box; }
+
+/* ══ HERONTWERP 3 OKTOBER 2026 — KLEINE AANVULLINGEN ═══════════════════════
+   Het bestandsveld kreeg de grijze standaardknop van de browser; nu is het
+   dezelfde secundaire knop als overal. En een kop in een cel heeft zijn ruimte
+   van de gap van die cel, niet ook nog van een eigen ondermarge. */
+.studio input[type="file"] { font: inherit; font-size: .8125rem; color: var(--ink-2); max-width: 100%; }
+.studio input[type="file"]::file-selector-button {
+  font: inherit; font-size: .8125rem; font-weight: 600; color: var(--ink-1); cursor: pointer;
+  min-height: 32px; padding: 0 .75rem; margin-right: .6rem;
+  border: 1px solid var(--line-strong); border-radius: var(--sd-r); background: var(--surface);
+}
+.studio input[type="file"]::file-selector-button:hover { background: var(--surface-2); }
+.st-ronde h3, .st-map h3 { margin: 0; }
+.st-eyebrow::first-letter { text-transform: uppercase; }
+.st-eyebrow { color: var(--ink-3); }
+body.studio .st-merk { color: var(--sd-side-ink-1); }
+body.studio .st-merk-los { color: var(--ink-1); }

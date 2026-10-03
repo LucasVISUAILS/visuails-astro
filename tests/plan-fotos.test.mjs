@@ -72,8 +72,9 @@ async function toevoegen(naam, bestanden) {
 
 console.log('\nfoto’s komen mee en het kenmerk komt op de rij');
 const a = await toevoegen('Winterjas, zwart', [nepBestand('voor.jpg', 2048), nepBestand('achter.png', 3072, 'image/png')]);
+// Ronde 9, O71: de terugweg draagt nu een bevestiging ("ok=toegevoegd").
 ok('de post stuurt door naar de besteltab', [a.status, a.headers.get('location')],
-  [303, '/account/plan?tab=bestellen']);
+  [303, '/account/plan?tab=bestellen&ok=toegevoegd']);
 let rij = (await loadQueue(env, 1))[0];
 ok('het item staat op de lijst', rij?.name, 'Winterjas, zwart');
 ok('met een batchkenmerk', Boolean(rij?.upload_batch), true);

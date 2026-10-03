@@ -184,7 +184,8 @@ const COPY = {
     // Two figures, not one. A single rate in a trust row is the exact claim
     // the ladder retired — see the note at the top of this file.
     trust: [
-      [`${euro(entry, 'en')} – ${euro(floor, 'en')}`, `per product · ${vatLabel('excl', 'en')}`],
+      /* Ronde 9 (3 okt 2026): één vanaf-prijs, geen bereik. Lucas, 9 aug: "liever vanaf €... en niet €39 - €19". Zie euroRange() in pricing.js. */
+      [`From ${euro(floor, 'en')}`, `per product · ${vatLabel('excl', 'en')}`],
       ['From 4 photos', 'per product'],
     ],
     // The queue line is deliberately in the trust row rather than buried in
@@ -253,7 +254,7 @@ const COPY = {
     baBeforeAlt: 'A raw phone photo of a t-shirt on a table before VISUAILS',
     baAfterAlt: 'The same t-shirt as a clean catalog image after VISUAILS',
     reviewH: "Fast means nothing if it isn’t right.",
-    reviewP: 'A specialist checks colour and detail on every image before you get it.',
+    reviewP: 'Our image editors check colour and detail on every image before you get it.',
     reviewChips: ['Consistent lighting & framing', 'Marketplace-ready', reviewClaim('unattended', 'en')],
     // The trust row carried the turnaround flag but not the review claim, while
     // /lifestyle and /video carried both. Three service pages making two
@@ -284,7 +285,8 @@ const COPY = {
     wa: waHref("Hoi VISUAILS, ik wil graag catalogfoto’s bestellen voor mijn producten."),
     waLabel: 'WhatsApp',
     trust: [
-      [`${euro(entry, 'nl')} – ${euro(floor, 'nl')}`, `per product · ${vatLabel('excl', 'nl')}`],
+      /* Ronde 9 (3 okt 2026): één vanaf-prijs, geen bereik. Lucas, 9 aug: "liever vanaf €... en niet €39 - €19". Zie euroRange() in pricing.js. */
+      [`Vanaf ${euro(floor, 'nl')}`, `per product · ${vatLabel('excl', 'nl')}`],
       ['Vanaf 4 foto’s', 'per product'],
     ],
     queueNote: `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD}: een vaste leverdatum.`,
@@ -337,7 +339,7 @@ const COPY = {
     baBeforeAlt: 'Een ruwe telefoonfoto van een t-shirt op een tafel vóór VISUAILS',
     baAfterAlt: 'Hetzelfde t-shirt als een strakke catalogfoto na VISUAILS',
     reviewH: 'Snel betekent niets als het niet klopt.',
-    reviewP: 'Een specialist controleert kleur en detail van elk beeld voordat jij het krijgt.',
+    reviewP: 'Onze beeldredactie controleert kleur en detail van elk beeld voordat jij het krijgt.',
     reviewChips: ['Consistente belichting & uitsnede', 'Klaar voor marktplaatsen', reviewClaim('unattended', 'nl')],
     reviewNote: reviewClaim('unattended', 'nl'),
     heroAlt: 'Een afgewerkte VISUAILS-catalogfoto: een product uitgesneden en belicht op wit',
@@ -483,7 +485,7 @@ const vasteLooks = styles.filter((s) => s.slug !== 'custom').map(naarRij);
       worden nu gebruikt als titel van de carrousel in de opening. */}
 
   {/* ── 2 · HET BEWIJS — NAAR VOREN, 23 september 2026 ────────────────────
-      Het voor/na-paar en wat de specialist eraan doet, naast elkaar. Stond
+      Het voor/na-paar en wat de beeldredactie eraan doet, naast elkaar. Stond
       als zevende blok; PAGINA-OPBOUW.md (door Lucas goedgekeurd): *"Dit is
       een telefoonfoto. Dit is wat eruit kwam"* is het antwoord op de vraag
       van deze pagina, dus komt het direct na de opening. */}

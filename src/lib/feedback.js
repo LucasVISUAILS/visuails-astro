@@ -73,7 +73,7 @@ const COPY = {
     fixPlaceholder: 'Wat ging er mis?',
     fixSend: 'Versturen',
     fixSkip: 'Liever niet, bedankt',
-    fixThanks: 'Bedankt — het staat bij ons in de inbox. Een specialist leest het en neemt contact met je op.',
+    fixThanks: 'Bedankt — het staat bij ons in de inbox. We lezen het zelf en nemen contact met je op.',
 
     // Hoge score: de drie acties.
     shareH: 'Wil je dat ergens kwijt?',
@@ -109,7 +109,7 @@ const COPY = {
     fixPlaceholder: 'What went wrong?',
     fixSend: 'Send',
     fixSkip: 'No thanks',
-    fixThanks: 'Thank you — it is in our inbox. A specialist reads it and gets in touch.',
+    fixThanks: 'Thank you — it is in our inbox. We read it ourselves and get in touch.',
 
     shareH: 'Want to say that somewhere?',
     shareLede: 'Everything below is optional. It helps us a lot.',

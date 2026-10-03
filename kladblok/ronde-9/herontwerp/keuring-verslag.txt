@@ -1,0 +1,11 @@
+CONTRAST studio licht nl /account/brand-kit: 2.11<4.5 span.st-vl-punt "·"
+FOCUS studio licht: 14 stops, zonder ring: geen
+NL-IN-EN licht /account/orders: De achtergronden zetten we op #F2F2F0, zoals je vroeg. De draagfoto va
+CONTRAST studio licht en /account/brand-kit: 2.11<4.5 span.st-vl-punt "·"
+FOCUS admin licht: 14 stops, zonder ring: geen
+CONTRAST studio donker nl /account/brand-kit: 2.55<4.5 span.st-vl-punt "·"
+FOCUS studio donker: 14 stops, zonder ring: geen
+NL-IN-EN donker /account/orders: De achtergronden zetten we op #F2F2F0, zoals je vroeg. De draagfoto va
+CONTRAST studio donker en /account/brand-kit: 2.55<4.5 span.st-vl-punt "·"
+CONTRAST admin donker /admin/planning: 1.74<4.5 a.btn "Mail VOLT"
+FOCUS admin donker: 14 stops, zonder ring: geen

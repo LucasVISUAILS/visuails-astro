@@ -76,7 +76,7 @@ export const styles = [
     slug: 'flash',
     orderHref: '/start/lifestyle/?style=flash',
     name: 'Flash',
-    tagline: 'Direct flash. No apologies.',
+    tagline: 'Direct flash, hard shadows.',
     heroPhoto: '/img/lifestyle-flash-01.webp',
     cardPhoto: '/img/lifestyle-flash-02.webp',
     beforeAfter: { before: '/img/lifestyle-flash-07.webp', after: '/img/lifestyle-flash-01.webp' },

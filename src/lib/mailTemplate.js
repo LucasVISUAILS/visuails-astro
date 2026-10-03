@@ -368,11 +368,17 @@ export function shell({ lang = 'en', preheader = '', body = '' }) {
 <!--tekst:uit--><div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden">${esc(preheader)}</div><!--/tekst:uit-->
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.page}" style="background:${C.page}">
   <tr><td align="center" style="padding:0">
-    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.paper}" style="width:600px;max-width:600px;background:${C.paper}">
+    ${/* Ronde 9 (3 okt 2026): op een telefoon van 390 breed stak de vaste 600 px
+       210 px buiten beeld — in een mailapp die niet zelf verkleint betekent dat
+       zijwaarts scrollen om de betaalknop te zien. Nu 100% tot een maximum van
+       600; Outlook voor Windows kent max-width niet en krijgt via de
+       mso-commentaren zijn eigen tabel van 600. */ ''}<!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.paper}" style="width:100%;max-width:600px;background:${C.paper}">
       <tr><td><!--tekst:uit-->${letterhead()}<!--/tekst:uit--></td></tr>
       <tr><td style="padding:34px 32px 26px">${body}</td></tr>
       <tr><td>${footer(lang)}</td></tr>
     </table>
+    <!--[if mso]></td></tr></table><![endif]-->
   </td></tr>
 </table>
 </body>

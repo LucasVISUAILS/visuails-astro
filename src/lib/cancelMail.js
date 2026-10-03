@@ -124,7 +124,7 @@ export function cancelEmail({ order = {}, reason = '', money = 'unpaid', grossCe
     p(greeting(order.name, lang)),
     p(esc(t.lede)),
     /* De reden staat als citaat en niet als lopende tekst: het zijn de woorden
-       van een specialist en niet van de site, en dat mag te zien zijn. */
+       van onze beeldredactie en niet van de site, en dat mag te zien zijn. */
     note(esc(String(reason || '').trim())),
     p(esc(geld), { top: 4 }),
     linkLine(`${SITE}${lang === 'nl' ? '/nl' : ''}/account`, t.portal),
@@ -360,8 +360,8 @@ export async function mailBetalingOntvangen(env, orderId) {
           h1(nl ? 'Je betaling is binnen' : 'We have your payment', esc(o.ref)),
           p(greeting(o.name, nl ? 'nl' : 'en')),
           p(nl
-            ? 'Bedankt. Een specialist maakt je beelden en loopt elk beeld na; je krijgt een mail zodra ze klaarstaan (vaak binnen een dag, soms een paar dagen). Je factuur komt in VISUAILS Studio, onder Facturen.'
-            : 'Thank you. A specialist makes your images and checks every one; you get an email as soon as they are ready (often within a day, sometimes a few days). Your invoice will be in VISUAILS Studio, under Invoices.'),
+            ? 'Bedankt. We maken je beelden en onze beeldredactie loopt elk beeld na; je krijgt een mail zodra ze klaarstaan (vaak binnen een dag, soms een paar dagen). Je factuur komt in VISUAILS Studio, onder Facturen.'
+            : 'Thank you. We make your images and our image editors check every one; you get an email as soon as they are ready (often within a day, sometimes a few days). Your invoice will be in VISUAILS Studio, under Invoices.'),
         ].join(''),
       }),
     });
@@ -387,8 +387,8 @@ export async function mailRondeOntvangen(env, o, n) {
           h1(nl ? 'Je revisieronde is binnen' : 'Your revision round is in', nl ? `Referentie ${esc(o.ref)}` : `Reference ${esc(o.ref)}`),
           p(greeting(o.name, nl ? 'nl' : 'en')),
           p(nl
-            ? `We hebben ${n} ${n === 1 ? 'beeld' : 'beelden'} genoteerd met je opmerkingen. Een specialist past ze aan; je krijgt een mail zodra de nieuwe versies klaarstaan (vaak binnen een dag, soms een paar dagen).`
-            : `We noted ${n} ${n === 1 ? 'image' : 'images'} with your comments. A specialist adjusts them; you get an email as soon as the new versions are ready (often within a day, sometimes a few days).`),
+            ? `We hebben ${n} ${n === 1 ? 'beeld' : 'beelden'} genoteerd met je opmerkingen. Onze beeldredactie past ze aan; je krijgt een mail zodra de nieuwe versies klaarstaan (vaak binnen een dag, soms een paar dagen).`
+            : `We noted ${n} ${n === 1 ? 'image' : 'images'} with your comments. Our image editors adjust them; you get an email as soon as the new versions are ready (often within a day, sometimes a few days).`),
           spamNote(nl ? 'nl' : 'en'),
         ].join(''),
       }),

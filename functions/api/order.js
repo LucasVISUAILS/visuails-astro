@@ -3305,7 +3305,10 @@ export function customerEmail(lang, ref, service, name,
     if (!aanvraag || !details) return null;
     if (service === 'custom' && details.request === 'custom-look') return nl ? 'een eigen look' : 'custom look';
     if (service === 'video') {
-      const stijl = (VIDEO_STYLES.find((v) => v.slug === details.style) || {}).name || '';
+      /* Ronde 9 (3 okt): "video (Custom)" in een Nederlandse mail. De andere
+         drie zijn productnamen; deze is een omschrijving en wordt vertaald. */
+      const stijl = details.style === 'custom' ? (nl ? 'eigen look' : 'custom look')
+        : (VIDEO_STYLES.find((v) => v.slug === details.style) || {}).name || '';
       const n = Number(details.clips);
       const clips = Number.isInteger(n) && n > 0 ? `${n} ${n === 1 ? 'clip' : 'clips'}` : '';
       const extra = [stijl, clips].filter(Boolean).join(', ');
@@ -3399,14 +3402,14 @@ export function customerEmail(lang, ref, service, name,
    * geplakt. In beide talen, sinds de regel bestaat: "door te voeren.." en
    * "any details..". Eén punt is genoeg. */
   const care = proef
-    ? (nl ? 'Een specialist controleert je proefbeeld voordat het bij je komt.' : 'A specialist checks your trial image before it reaches you.')
+    ? (nl ? 'Onze beeldredactie controleert je proefbeeld voordat het bij je komt.' : 'Our image editors check your trial image before it reaches you.')
     /* Een merkmodel heeft één correctieronde op het ontwerp, geen
        revisieronde per bestelling (ronde 9, O30). */
     : service === 'brand-model'
-    ? (nl ? 'Een specialist bekijkt elke richting voordat hij bij je komt. Op het ontwerp heb je één correctieronde.' : 'A specialist checks every direction before it reaches you. You get one correction round on the design.')
+    ? (nl ? 'Onze beeldredactie bekijkt elke richting voordat hij bij je komt. Op het ontwerp heb je één correctieronde.' : 'Our image editors check every direction before it reaches you. You get one correction round on the design.')
     : nl
-    ? `Een specialist controleert elke visual voordat hij bij je komt. ${aftercare(tier, 'nl')}`
-    : `A specialist checks every visual before it reaches you. ${aftercare(tier, 'en')}`;
+    ? `Onze beeldredactie controleert elke visual voordat hij bij je komt. ${aftercare(tier, 'nl')}`
+    : `Our image editors check every visual before it reaches you. ${aftercare(tier, 'en')}`;
 
   // SECTION 13 · "Factual, no pressure, once per quarter maximum." The styling
   // IS the "no pressure" half, and it is the half a copy review cannot enforce:
@@ -3441,8 +3444,8 @@ export function customerEmail(lang, ref, service, name,
   const portalNote = portal
     ? linkLine(portal, aanvraag ? (nl ? 'Bekijk je aanvraag' : 'View your request') : (nl ? 'Bekijk je bestelling' : 'View your order'))
       + note(nl
-        ? `Deze link is de sleutel tot je bestelling — iedereen die hem heeft, kan meekijken. Deel hem alleen met wie mee moet kijken.<br><span style="color:#8A8F98">${esc(portal)}</span>`
-        : `This link is the key to your order — anyone who has it can see it. Only share it with people who need to look.<br><span style="color:#8A8F98">${esc(portal)}</span>`)
+        ? `Deze link is de sleutel tot je bestelling — iedereen die hem heeft, kan meekijken. Deel hem alleen met wie mee moet kijken.<br><span style="color:#8A8F98;word-break:break-all">${esc(portal)}</span>`
+        : `This link is the key to your order — anyone who has it can see it. Only share it with people who need to look.<br><span style="color:#8A8F98;word-break:break-all">${esc(portal)}</span>`)
     : '';
 
   // THE AMOUNT AND THE LINK, in that order and never one without the other. A

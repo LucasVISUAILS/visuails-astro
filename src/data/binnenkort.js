@@ -68,7 +68,7 @@ export const BINNENKORT = {
         qBody: [
           ['You send photos', 'The same set as a catalog order: the front, the back and a detail close-up. A worn shot is welcome but not required. One photo alone isn’t sufficient because our formats build scene depth around the entire product.'],
           ['We build the video', 'Scroll-stopping, short-form vertical video, built to give a post its best chance at more engagement and new followers.'],
-          ['A specialist checks it', `Before final delivery, we verify product accuracy and ensure every image transition aligns seamlessly. Your assets land in VISUAILS Studio on the delivery time agreed in your quote — for your review, feedback, or instant approval.`],
+          ['Our image editors check it', `Before final delivery, we verify product accuracy and ensure every image transition aligns seamlessly. Your assets land in VISUAILS Studio on the delivery time agreed in your quote — for your review, feedback, or instant approval.`],
           ['What we sell', 'We guarantee the format and the execution — not the reach. How far a post travels depends on timing and algorithms, and those aren’t ours to promise.'],
         ],
       },
@@ -119,7 +119,7 @@ export const BINNENKORT = {
         qBody: [
           ['Je stuurt foto’s', 'Dezelfde set als bij een catalogbestelling: de voorkant, de achterkant en een close-up van een detail. Een draagfoto mag erbij, maar hoeft niet. Met één foto red je het niet, omdat de uiteindelijke weergave om het product heen beweegt.'],
           ['Wij bouwen de video', 'Korte, verticale video’s die opvallen — gebouwd om je post de beste kans te geven op meer betrokkenheid en nieuwe volgers.'],
-          ['Een specialist kijkt hem na', `Vóór oplevering garanderen we dat het product waarheidsgetrouw is en alle aansluitingen naadloos overlopen. Op de levertijd uit je offerte staat het resultaat klaar in VISUAILS Studio voor jouw goedkeuring of feedback.`],
+          ['Onze beeldredactie kijkt hem na', `Vóór oplevering garanderen we dat het product waarheidsgetrouw is en alle aansluitingen naadloos overlopen. Op de levertijd uit je offerte staat het resultaat klaar in VISUAILS Studio voor jouw goedkeuring of feedback.`],
           ['Wat wij verkopen', 'Wij garanderen het format en de uitvoering — niet het bereik. Of een post viraal gaat hangt af van het platform en de timing, en dat is iets wat we nooit valselijk zullen beloven.'],
         ],
       },

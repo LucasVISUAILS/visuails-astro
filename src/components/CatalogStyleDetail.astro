@@ -51,7 +51,7 @@ const c = nl ? {
   wa: 'WhatsApp',
   waTekst: `Hoi VISUAILS, ik wil graag praten over de ${style.name}-stijl.`,
   andere: 'Andere looks:',
-  voeltH: ['Hoe ', ' voelt'],
+  voeltH: ['Wat ', ' kenmerkt'],
   echtH: `Wat ${style.name} met een echte foto doet.`,
   echtP: 'Een van je eigen productfoto’s, precies zo behandeld.',
   voor: 'Jouw foto',
@@ -62,7 +62,7 @@ const c = nl ? {
   idealH: ['Ideaal ', 'voor'],
   krijgH: ['Wat je ', 'krijgt'],
   modelNoot: ['De foto op model in elke ', '-set: een standaardgezicht, of ', 'je eigen merkmodel', '.'],
-  slotH: ['Maak ', ' van jou.'],
+  slotH: ['Bestel in ', '.'],
   slotP: 'Probeer VISUAILS eerst, of plaats vandaag je bestelling.',
   slotPCustom: 'Vertel wat je voor ogen hebt: je krijgt eerst schriftelijk een voorstel en een prijs.',
   proef: 'Probeer VISUAILS',
@@ -72,7 +72,7 @@ const c = nl ? {
   wa: 'WhatsApp',
   waTekst: `Hi VISUAILS, I’d like to talk about the ${style.name} style.`,
   andere: 'Other looks:',
-  voeltH: ['What ', ' feels like'],
+  voeltH: ['What defines ', ''],
   echtH: `What ${style.name} does to a real photo.`,
   echtP: 'One of your own product photos, treated exactly like this.',
   voor: 'Your photo',
@@ -83,7 +83,7 @@ const c = nl ? {
   idealH: ['Best ', 'for'],
   krijgH: ['What you ', 'get'],
   modelNoot: ['The on-model shot in every ', ' set: a standard face, or ', 'your own Brand Model', '.'],
-  slotH: ['Make ', ' yours.'],
+  slotH: ['Order in ', '.'],
   slotP: 'Test sample, or place your order today.',
   slotPCustom: 'Tell us what you have in mind: you get a written proposal and a price first.',
   proef: 'Test sample',
@@ -220,7 +220,7 @@ const badge = `Catalog · ${style.name}`;
     {/* De eigen look heet "Eigen look" / "Custom", en dat gaf "Maak Eigen look van jou."
         Voor die ene look staat er daarom "Maak je eigen look." */}
     <h2 class="hoog hoog-2">{style.slug === 'custom'
-      ? <>{c.slotH[0]}<em>{lang === 'nl' ? 'je eigen look' : 'your own look'}</em>.</>
+      ? <>{lang === 'nl' ? <>Vraag <em>je eigen look</em> aan.</> : <>Request <em>your own look</em>.</>}</>
       : <>{c.slotH[0]}<em>{style.name}</em>{c.slotH[1]}</>}</h2>
     <p class="lopend">{style.slug === 'custom' ? c.slotPCustom : c.slotP}</p>
     <div class="acties">

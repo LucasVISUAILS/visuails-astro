@@ -178,6 +178,7 @@ import { leverVakken, vakIds, vakWoord, vakNaam, extraVakken } from '../data/lev
 import { CHANNELS as KANALEN, channelName } from '../data/channels.js';
 import { leveringIngetrokken } from './delivery.js';
 import { maybeCloseOrder } from './close.js';
+import { leesMelding, zetMelding, wisMelding, amsterdamKort, MELDING_MAX } from './melding.js';
 // Aliased for the same reason as in account.js: this module has its own `esc`
 // and page-level helpers, and the mail template exports overlapping names.
 import {
@@ -215,7 +216,7 @@ const STATUSES = ['received', 'in_production', 'human_check', 'delivered', 'canc
 
    De klantkant heeft zijn eigen vertaling — statusLabel() in account.js, per
    taal — en die is hier niet bruikbaar: daar heet human_check "Wordt nagekeken
-   door een specialist", wat de klant geruststelt en jou een woord te veel is. */
+   door onze beeldredactie", wat de klant geruststelt en jou een woord te veel is. */
 const STATUS_LABEL = {
   received: 'Binnen',
   in_production: 'In productie',
@@ -396,6 +397,8 @@ async function adminGetInner(context) {
   /* De diagnose. LEESROUTE: alleen vormen van secrets en een methodelijst — geen
      enkele bijwerking. Wat wél iets aanmaakt bij Mollie zit achter de POST
      hieronder. Zie de kop van renderDiagnose(). */
+  /* De melding bovenaan Studio (ronde 9). Leesroute; zetten en weghalen is de POST hieronder. */
+  if (path === '/admin/melding') return renderMelding(context, url);
   if (path === '/admin/diagnose') return renderDiagnose(context);
   /* De aanbevelingen. Een LEESROUTE, want goedkeuren gebeurt met een POST
      hieronder — zie de kop van renderTestimonials() voor waarom dit scherm er
@@ -452,9 +455,10 @@ async function adminGetInner(context) {
        alle adressen op de lijst, als merkteken op de regel — zie orderCard(). */
     const bounces = await bouncesFor(env, orders.map((o) => o.email));
     for (const o of orders) o.bounce = bounces.get(String(o.email || '').toLowerCase()) || null;
+    const studioMelding = await leesMelding(env);
     return html(page({
       title: statusFilter ? `Dashboard · ${STATUS_LABEL[statusFilter] || statusFilter}` : 'Dashboard',
-      body: dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter, { q, filter, hidden }, vatHeld, watch, tmWaiting, aflopend, aandacht),
+      body: dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter, { q, filter, hidden, studioMelding }, vatHeld, watch, tmWaiting, aflopend, aandacht),
       /* Een revisiekaart heeft een uploadvak voor de vervangende foto: dan ook
          hier het beoordeelbeeld maken (ronde 9, F18). Zonder revisies geen script. */
       voorvertoning: revisions.length > 0,
@@ -507,6 +511,7 @@ async function adminPostInner(context) {
      enkele klant meer krijgt aangeboden, en dan hoort in het logboek te staan wie
      hem dichtzette en waarom. */
   if (path === '/admin/agenda/dagen') return handleBlackoutDay(context, admin);
+  if (path === '/admin/melding') return handleMeldingPost(context, admin);
 
   /* HET VENSTER VAN ÉÉN BESTELLING VERZETTEN. Hoort bij de agenda en niet bij de
      status: dit verandert WANNEER het werk moet, niet HOE VER het is. */
@@ -3653,9 +3658,18 @@ async function renderFiles(context, orderId) {
       const vs = VIDEO_STIJLEN_NL.find((x) => x.slug === String(d.style));
       stukjes.push(`stijl <strong>${esc(vs ? vs.name : String(d.style))}</strong>`);
     }
-    if (d.clips) stukjes.push(`${esc(String(d.clips))} clips`);
+    /* Ronde 9 (3 okt): "1 clips" en "Weet ik nog niet clips". Een getal krijgt
+       enkelvoud of meervoud, een antwoord in woorden staat achter "clips:". */
+    if (d.clips) {
+      const n = Number(d.clips);
+      stukjes.push(Number.isInteger(n) && n > 0 ? `${n} ${n === 1 ? 'clip' : 'clips'}` : `clips: ${esc(String(d.clips).toLowerCase())}`);
+    }
     if (d.plan) stukjes.push(`abonnement ${esc(String(d.plan))}`);
-    if (d.request && d.request !== 'video') stukjes.push(`aanvraag: ${esc(String(d.request))}`);
+    /* O24 (ronde 9): hier stond de slug ("aanvraag: custom-look"). Een
+       leesbare naam voor wat er bestaat; een onbekende waarde blijft zichtbaar,
+       zodat er nooit stil iets verdwijnt. */
+    const AANVRAAG_NL = { 'custom-look': 'eigen look', 'brand-model': 'merkmodel', custom: 'op maat' };
+    if (d.request && d.request !== 'video') stukjes.push(`aanvraag: ${esc(AANVRAAG_NL[String(d.request)] || String(d.request))}`);
     return stukjes.length ? ` &middot; ${stukjes.join(' &middot; ')}` : '';
   })();
 
@@ -3730,7 +3744,7 @@ async function renderFiles(context, orderId) {
   <div class="bestel-kop">
     <p class="meta">${order.customer_id ? `<a href="/admin/customers/${order.customer_id}">${esc(order.brand || order.name || order.email || 'Klant')}</a>` : esc(order.brand || order.name || '')} &middot; ${esc(serviceLabel(order.service, 'nl') || order.service)}${order.product_count ? ` &middot; ${order.product_count} product${order.product_count === 1 ? '' : 'en'}` : ''} &middot; binnen ${esc(when(order.created_at || '').slice(0, 10))}${aanvraagRegel}</p>
     <p class="bestel-kop-pillen">${statPil(order.status, STATUS_LABEL[order.status] || order.status)} ${betaalKop}</p>
-    ${order.status === 'cancelled' ? `<p class="warnline">Geannuleerd${order.cancel_reason ? `: ${esc(order.cancel_reason)}` : ''}${order.cancel_payment ? ` &middot; ${esc(geldTerugStand(order))}` : ''}${leveringIngetrokken(order) ? ' &middot; de beelden zijn niet meer zichtbaar voor de klant' : ''}.</p>` : ''}
+    ${order.status === 'cancelled' ? `<p class="warnline">Geannuleerd${order.cancel_reason ? `: ${esc(order.cancel_reason)}` : ''}${order.cancel_payment ? ` &middot; ${esc(geldTerugStand(order))}` : ''}${leveringIngetrokken(order) && (files || []).some((f) => f.kind === 'delivery') ? ' &middot; de beelden zijn niet meer zichtbaar voor de klant' : ''}.</p>` : ''}
     ${order.status === 'delivered' && !order.delivery_mailed_at ? `<form class="controls" method="post" action="/admin/orders/${order.id}/delivery-mail"><p class="warnline in-grow">Op geleverd gezet, maar de klant heeft de leveringsmail niet gekregen.</p><button class="btn btn-primary" type="submit">Leveringsmail opnieuw proberen</button></form>` : ''}
     ${kanBetaallink ? `<form class="controls" method="post" action="/admin/orders/${order.id}/paylink"><p class="meta in-grow">Nog niet betaald. Kwijt of verlopen? Stuur de klant een nieuwe link.</p><button class="btn" type="submit">Betaallink opnieuw mailen</button></form>` : ''}
     ${statusKeuze}
@@ -7112,7 +7126,7 @@ ${adminNav('customers')}
     <input type="file" name="preview" accept="image/*">
     <button class="btn btn-primary" type="submit">Merkmodel toevoegen</button>
   </form>
-  <p class="meta">Zodra een model een foto heeft, verschijnt hij als tegel die de klant bij een bestelling kan kiezen; zonder foto ziet alleen jij hem.</p>
+  <p class="meta">Zodra je een model vastlegt, verschijnt hij als tegel die de klant bij een bestelling kan kiezen; tot die tijd ziet alleen jij hem.</p>
 
   <h2 id="eigen-looks">Eigen looks</h2>
   <p class="meta">Een look op maat, na intake en offerte. Wat hier op <em>actief</em> staat, ziet de klant in Studio onder &ldquo;Je eigen looks&rdquo; en als tegel in het gewone bestelformulier &mdash; bij lifestyle tussen de vier huisstijlen, bij catalog als keuze na de achtergrond.</p>
@@ -8900,7 +8914,7 @@ const LOG_LABEL = {
   'order.paylink': 'Betaallink opnieuw gemaild', 'order.paylink.niet': 'Betaallink niet verstuurd', 'order.delivery-mail': 'Levermail verstuurd',
   'order.delivery-mail.mislukt': 'Levermail mislukt', 'order.proef.hide': 'Proefbestellingen verborgen', 'order.created': 'Bestelling binnen',
   'payment.paid': 'Betaald', 'payment.tegoed': 'Betaald met tegoed', 'payment.refund': 'Terugbetaald', 'payment.short': 'Te weinig betaald',
-  'payment.dubbel': 'Dubbel betaald — teruggestort', 'payment.op-geannuleerd': 'Betaling op geannuleerde bestelling', 'payment.btw-twijfel': 'Btw nakijken', 'payment.chargeback': 'Terugboeking (chargeback)',
+  'payment.dubbel': 'Dubbel betaald — teruggestort', 'payment.op-geannuleerd': 'Betaling op geannuleerde bestelling', 'payment.btw-twijfel': 'Btw nakijken', 'payment.chargeback': 'Terugboeking (chargeback)', 'melding.zet': 'Melding in Studio gezet', 'melding.weg': 'Melding in Studio weggehaald',
   'payment-link.failed': 'Betaallink niet verstuurd', 'quote': 'Offerte vastgelegd', 'quote.restant': 'Restant gevraagd',
   'invoice.render': 'Factuur afgemaakt', 'invoice.resend': 'Factuur opnieuw verstuurd', 'invoice.blocked': 'Factuur tegengehouden',
   'credit-note.issued': 'Creditnota uitgegeven', 'credit-note.failed': 'Creditnota mislukt',
@@ -9093,6 +9107,72 @@ const BLACKOUT_MAX_DAYS = 730;
  * De bevestiging noemt dat met zoveel woorden, zodat de knop niet suggereert dat
  * het geregeld is.
  */
+/* ═══ DE MELDING BOVENAAN STUDIO — ronde 9 (3 oktober 2026) ══════════════════
+ * Eén regel die elke klant bovenaan VISUAILS Studio ziet (ook op het
+ * inlogscherm). Zie de kop van src/lib/melding.js voor de keuzes. */
+const MELDING_SOORT_LABEL = { info: 'Mededeling', druk: 'Drukte', storing: 'Storing' };
+const MELDING_VOORBEELDEN = {
+  info: ['Vrijdag 10 oktober zijn we gesloten. Bestellingen van die dag pakken we maandag op.', 'We are closed on Friday 10 October. Orders from that day are picked up on Monday.'],
+  druk: ['Het is druk: nieuwe bestellingen kunnen een paar dagen langer duren dan gewoonlijk.', 'It is busy: new orders may take a few days longer than usual.'],
+  storing: ['Downloaden van zip-bestanden hapert. We zijn ermee bezig; je beelden zijn veilig.', 'Downloading zip files is not working properly. We are on it; your images are safe.'],
+};
+
+async function renderMelding({ env }, url) {
+  const m = await leesMelding(env);
+  const klaar = url?.searchParams?.get('klaar') || '';
+  const fout = url?.searchParams?.get('fout') || '';
+  const voorbeeld = m ? `
+<div class="melding-voorbeeld">
+  <p class="meta">Zo staat hij nu bovenaan Studio${m.tot ? ` — tot <strong>${esc(amsterdamKort(m.tot))}</strong>, daarna verdwijnt hij vanzelf` : ' — tot je hem weghaalt'}:</p>
+  <p class="melding-balk is-${esc(m.soort)}"><span class="melding-l">${esc(MELDING_SOORT_LABEL[m.soort])}</span> ${esc(m.nl)}</p>
+  ${m.en ? `<p class="melding-balk is-${esc(m.soort)}"><span class="melding-l">EN</span> ${esc(m.en)}</p>` : '<p class="meta">Geen Engelse tekst: Engelstalige klanten zien de Nederlandse.</p>'}
+  <form method="post" action="/admin/melding"><input type="hidden" name="do" value="weg"><button class="btn btn-ghost" type="submit">Weghalen</button></form>
+</div>` : '<p class="meta">Er staat nu geen melding in Studio.</p>';
+  const opties = Object.entries(MELDING_SOORT_LABEL).map(([k, v]) => `<option value="${k}"${m?.soort === k ? ' selected' : ''}>${v}</option>`).join('');
+  const voorbeelden = Object.entries(MELDING_VOORBEELDEN).map(([k, [nl]]) => `<li><strong>${MELDING_SOORT_LABEL[k]}:</strong> ${esc(nl)}</li>`).join('');
+  const body = `
+${adminNav('melding')}
+<h1>Melding in Studio</h1>
+<p class="lede">Eén korte regel die elke klant bovenaan VISUAILS Studio ziet — ook op het inlogscherm. Voor een storing, drukte of een sluitingsdag. Niet op de website en niet in de privélinks.</p>
+${klaar === 'gezet' ? '<p class="okline">De melding staat in Studio.</p>' : ''}
+${klaar === 'weg' ? '<p class="okline">De melding is weg.</p>' : ''}
+${fout ? `<p class="warnline">${esc(fout)}</p>` : ''}
+${voorbeeld}
+<h2>${m ? 'Vervangen' : 'Nieuwe melding'}</h2>
+<form method="post" action="/admin/melding" class="melding-form">
+  <input type="hidden" name="do" value="zet">
+  <label>Soort <select name="soort">${opties}</select></label>
+  <label>Tekst (Nederlands) <textarea name="nl" rows="2" maxlength="${MELDING_MAX}" required>${esc(m?.nl || '')}</textarea></label>
+  <label>Tekst (Engels, mag leeg) <textarea name="en" rows="2" maxlength="${MELDING_MAX}">${esc(m?.en || '')}</textarea></label>
+  <label>Verdwijnt vanzelf op (mag leeg) <input type="datetime-local" name="tot"></label>
+  <p class="meta">Hooguit ${MELDING_MAX} tekens, één regel. Schrijf wat de klant merkt en wat hij moet doen — niet wat er technisch aan de hand is.</p>
+  <button class="btn btn-primary" type="submit">${m ? 'Melding vervangen' : 'Melding plaatsen'}</button>
+</form>
+<h2>Voorbeelden</h2>
+<ul class="meta">${voorbeelden}</ul>`;
+  return html(page({ title: 'Melding in Studio', body }));
+}
+
+async function handleMeldingPost(context, admin) {
+  const { request, env } = context;
+  const form = await request.formData().catch(() => null);
+  const doen = String(form?.get('do') || '');
+  if (doen === 'weg') {
+    await wisMelding(env);
+    await logAdmin(env, admin, 'melding.weg', {});
+    return seeOther('/admin/melding?klaar=weg');
+  }
+  const uit = await zetMelding(env, {
+    soort: String(form?.get('soort') || ''),
+    nl: String(form?.get('nl') || ''),
+    en: String(form?.get('en') || ''),
+    tot: String(form?.get('tot') || ''),
+  });
+  if (!uit.ok) return seeOther(`/admin/melding?fout=${encodeURIComponent(uit.fout)}`);
+  await logAdmin(env, admin, 'melding.zet', { detail: `${String(form?.get('soort') || '')}: ${String(form?.get('nl') || '').slice(0, 160)}` });
+  return seeOther('/admin/melding?klaar=gezet');
+}
+
 async function handleBlackoutDay(context, admin) {
   const { request, env } = context;
   const terug = '/admin/planning#dagen';
@@ -9472,11 +9552,11 @@ function contactTekst(o, vandaag) {
   if (nl) {
     return `Hoi${naam ? ` ${naam}` : ''}, over ${o.ref} (${wat}): we hebben iets meer tijd nodig dan gepland. `
       + (venster ? `De nieuwe leverdatum is ${venster}. ` : 'We verwachten het binnen een paar dagen af te hebben. ')
-      + 'Sorry voor het ongemak — je hoort van ons zodra het klaarstaat. Lucas, VISUAILS';
+      + 'Sorry voor het ongemak — je hoort van ons zodra het klaarstaat. VISUAILS';
   }
   return `Hi${naam ? ` ${naam}` : ''}, about ${o.ref} (${wat}): we need a little more time than planned. `
     + (venster ? `The new delivery date is ${venster}. ` : 'We expect to have it ready within a few days. ')
-    + 'Sorry for the inconvenience — you will hear from us the moment it is ready. Lucas, VISUAILS';
+    + 'Sorry for the inconvenience — you will hear from us the moment it is ready. VISUAILS';
 }
 
 function contactKnoppen(o, vandaag) {
@@ -11076,6 +11156,7 @@ function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts
   return `
 ${adminNav('dashboard')}
 <h1>Dashboard</h1>
+${view.studioMelding ? `<p class="melding-balk is-${esc(view.studioMelding.soort)}"><span class="melding-l">In Studio</span> ${esc(view.studioMelding.nl)} <a href="/admin/melding">Wijzigen of weghalen</a></p>` : ''}
 ${counts ? todayStrip(counts) : ''}
 <div class="db-vlakken">
 <section class="db-hoofd">
@@ -11453,35 +11534,46 @@ const NAV = [
   ['log', '/admin/log', 'Logboek'],
   ['security', '/admin/security', 'Twee stappen'],
   ['diagnose', '/admin/diagnose', 'Diagnose'],
+  ['melding', '/admin/melding', 'Melding in Studio'],
 ];
 /* ── ZES IN DE BALK, DE REST ONDER "MEER" — 29 september 2026 ──────────────
    Tien items passen niet op één regel, en Diagnose stond er niet eens in. Wat
    je elke dag gebruikt staat vooraan; wat je af en toe opzoekt achter één klik.
    Staat de pagina waar je bent onder Meer, dan staat Meer open. */
-const NAV_MEER = new Set(['facturen', 'funnel', 'berichten', 'log', 'security', 'diagnose']);
+const NAV_MEER = new Set(['facturen', 'funnel', 'berichten', 'log', 'security', 'diagnose', 'melding']);
 function adminNav(actief = '') {
+  /* ── DE ZIJBALK — herontwerp 3 oktober 2026 ──────────────────────────────
+     Dezelfde schil als VISUAILS Studio: een donkere zijbalk met het menu en een
+     smalle bovenbalk met waar je bent en de schakelaar voor het thema. Wat je
+     elke dag gebruikt staat bovenaan, wat je af en toe opzoekt onder "Meer" —
+     in een zijbalk is daar ruimte voor, dus het hoeft niet meer achter een klik.
+     page() haalt dit blok uit de body en zet het naast <main>. */
+  const item = ([k, href, label]) => (k === actief
+    ? `<span class="bar-link is-active" aria-current="page">${esc(label)}</span>`
+    : `<a class="bar-link" href="${href}">${esc(label)}</a>`);
+  const vast = NAV.filter(([k]) => !NAV_MEER.has(k)).map(item).join('');
+  const meer = NAV.filter(([k]) => NAV_MEER.has(k)).map(item).join('');
+  const label = (NAV.find(([k]) => k === actief) || [])[2] || '';
   return `
-<div class="bar">
-  <a class="mark" href="/">VISUAILS</a>
+<aside class="adm-side">
+  <a class="mark" href="/">VISUAILS</a><span class="adm-sub">Admin</span>
   <nav class="bar-nav" aria-label="Adminportaal">
-    ${(() => {
-      const item = ([k, href, label]) => (k === actief
-        ? `<span class="bar-link is-active" aria-current="page">${esc(label)}</span>`
-        : `<a class="bar-link" href="${href}">${esc(label)}</a>`);
-      const vast = NAV.filter(([k]) => !NAV_MEER.has(k)).map(item).join('');
-      const meer = NAV.filter(([k]) => NAV_MEER.has(k)).map(item).join('');
-      return `${vast}<details class="bar-meer"${NAV_MEER.has(actief) ? ' open' : ''}><summary class="bar-link">Meer</summary><div class="bar-meer-lijst">${meer}</div></details>`;
-    })()}
+    <div class="adm-groep">${vast}</div>
+    <p class="adm-groep-kop">Meer</p>
+    <div class="adm-groep">${meer}</div>
   </nav>
+  <form class="adm-uit" method="post" action="/admin/logout"><button class="bar-link" type="submit">Uitloggen</button></form>
+</aside>
+<header class="adm-balk">
+  <p class="adm-kruim"><span>Admin</span>${label ? `<i aria-hidden="true">/</i><b>${esc(label)}</b>` : ''}</p>
   <div class="bar-right">
     ${/* Allebei de standen staan er; CSS verbergt de stand waar je al in zit.
          Zie de noot bij themaCookie() voor waarom dat hier de enige manier is
          zonder JavaScript, en `.bar-thema` in public/admin.css voor de regel. */ ''}
     <a class="bar-thema is-donker" href="?thema=donker" title="Donker scherm">Donker</a>
     <a class="bar-thema is-licht" href="?thema=licht" title="Licht scherm">Licht</a>
-    <form method="post" action="/admin/logout"><button class="btn btn-ghost btn-sm" type="submit">Uitloggen</button></form>
   </div>
-</div>`;
+</header>`;
 }
 
 /* `voorvertoning` (ronde 9, F18): alleen de bestelpagina met het werkbord laadt
@@ -11515,9 +11607,22 @@ ${/* ── <main> EN NIET <div> — 2 september 2026 ────────�
 
      Het is dezelfde <div class="wrap"> als altijd — alleen het element is
      veranderd, en `.wrap` is een klasse, dus de opmaak beweegt niet mee. */ ''}
+${(() => {
+  /* Met menu: de schil van Studio (zie adminNav). Zonder menu — inloggen, de
+     tweede stap — blijft het één kolom in het midden. */
+  const m = body.match(/<aside class="adm-side">[\s\S]*?<\/aside>\s*<header class="adm-balk">[\s\S]*?<\/header>/);
+  if (!m) return `<main class="wrap">\n${body}\n</main>`;
+  const [zij, balk] = m[0].split(/(?=<header class="adm-balk">)/);
+  return `<div class="adm-shell">
+<div class="adm-kolom">${zij}</div>
+<div class="adm-romp">
+${balk}
 <main class="wrap">
-${body}
+${body.replace(m[0], '')}
 </main>
+</div>
+</div>`;
+})()}
 </body>
 </html>`;
 }

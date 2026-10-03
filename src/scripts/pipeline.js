@@ -1210,6 +1210,10 @@ function syncReg() {
     if (opt) opt.hidden = btw.dataset.plReq === '1';
   }
 
+  /* O16 (ronde 9): de EU-zin in stap 5 alleen bij een ander EU-land (of nog geen land). */
+  const naEu = q('[data-pl-after-eu]');
+  if (naEu) naEu.hidden = soort === 'nl' || soort === 'other';
+
   const noVat = !!(noVatBox && noVatBox.checked);
   const toon = soort === 'nl' || soort === 'other' || noVat;
   block.hidden = !toon;
@@ -6930,8 +6934,15 @@ function applyAccount(me) {
   }
   /* En het KVK-nummer erbij (migratie 0043): syncReg() wist het veld zodra het
      vinkje uit staat, dus alleen invullen als het blok zichtbaar is en leeg. */
+  /* O33 (ronde 9): sinds het KVK-nummer in Nederland altijd gevraagd wordt (29
+     september), stond het blok open zonder vinkje — en vulde deze regel het
+     niet meer in, omdat hij op het vinkje wachtte. Nu: invullen zodra het blok
+     te zien is, ongeacht waarom. syncReg() eerst, zodat het land dat hierboven
+     is ingevuld al heeft bepaald of het blok er staat. */
   const reg = q('input[name="reg_number"]');
-  if (reg && me.regNumber && noVat && noVat.checked && !reg.value) reg.value = me.regNumber;
+  syncReg();
+  const regBlok = q('[data-pl-reg]');
+  if (reg && me.regNumber && !reg.value && regBlok && !regBlok.hidden) reg.value = me.regNumber;
 
   applySavedBackground(me);
   // Tiles first: applyBrandKit() may want to preselect one of them.

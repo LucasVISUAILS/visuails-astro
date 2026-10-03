@@ -36,13 +36,27 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
     return null;
   }
   const o = await env.DB.prepare(
-    `SELECT id, ref, email, name, vat_number, address_line1, lang, service, product_count, total_cents, vat_cents, vat_rate, vat_treatment, payment_status, status, window_start, details_json
+    `SELECT id, ref, email, name, vat_number, address_line1, lang, service, product_count, total_cents, vat_cents, vat_rate, vat_treatment, payment_status, status, window_start, details_json, created_at, reviewed_at, review_state
        FROM orders WHERE id = ?1`
   ).bind(orderId).first();
   if (!o || !o.email) return null;
   /* Al betaald? Dan is er niets te sturen. Kan gebeuren als iemand twee tabbladen
      open heeft, of als de klant in de tussentijd via een eerdere link betaald heeft. */
   if (String(o.payment_status || '') === 'paid') return null;
+
+  /* ── WANNEER HIJ VERVALT — ronde 9, O57 ───────────────────────────────────
+     De herinnering zei "wil je hem niet meer, dan hoef je niets te doen", maar
+     niet tot wanneer hij openstaat. Dezelfde twee klokken als de nachtelijke
+     taak (cron/index.js, ONBETAALD_VERVAL_DAGEN en cancelStaleApprovals): zeven
+     dagen na de btw-goedkeuring, anders veertien dagen na het bestellen. */
+  const vervalOp = (() => {
+    const basis = o.review_state === 'approved' && o.reviewed_at ? o.reviewed_at : o.created_at;
+    const t = Date.parse(String(basis || '').replace(' ', 'T') + (/Z|[+-]\d\d:?\d\d$/.test(String(basis || '')) ? '' : 'Z'));
+    if (!Number.isFinite(t)) return '';
+    const dagen = o.review_state === 'approved' && o.reviewed_at ? 7 : 14;
+    return new Intl.DateTimeFormat(String(o.lang || 'nl') === 'en' ? 'en-GB' : 'nl-NL', { day: 'numeric', month: 'long', timeZone: 'Europe/Amsterdam' })
+      .format(new Date(t + dagen * 86400000));
+  })();
   /* Geannuleerd is niet meer te betalen (ronde 8, A-K7). */
   if (String(o.status || '') === 'cancelled') return null;
 
@@ -140,8 +154,8 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
            aanvraagpagina ("Nothing is charged ... until you say yes in writing"). */
         mailP(herinnering
           ? (lang === 'nl'
-            ? `Je bestelling <strong>${esc(o.ref)}</strong> staat nog open: er is nog niet betaald. Wil je hem nog? Dan is dit de link. Wil je hem niet meer, dan hoef je niets te doen: er wordt niets in rekening gebracht${o.window_start ? ', en een gereserveerde leverdatum komt na zeven dagen weer vrij voor anderen' : ''}.`
-            : `Your order <strong>${esc(o.ref)}</strong> is still open: it has not been paid yet. Still want it? This is the link. If not, there is nothing to do: nothing is charged${o.window_start ? ', and a reserved delivery date is released to others after seven days' : ''}.`)
+            ? `Je bestelling <strong>${esc(o.ref)}</strong> staat nog open: er is nog niet betaald. Wil je hem nog? Dan is dit de link. Wil je hem niet meer, dan hoef je niets te doen: er wordt niets in rekening gebracht${o.window_start ? ', en een gereserveerde leverdatum komt na zeven dagen weer vrij voor anderen' : ''}.${vervalOp ? ` Betaal je niet, dan vervalt de bestelling vanzelf na ${vervalOp}.` : ''}`
+            : `Your order <strong>${esc(o.ref)}</strong> is still open: it has not been paid yet. Still want it? This is the link. If not, there is nothing to do: nothing is charged${o.window_start ? ', and a reserved delivery date is released to others after seven days' : ''}.${vervalOp ? ` If it stays unpaid, the order lapses by itself after ${vervalOp}.` : ''}`)
           : offerte
           ? (lang === 'nl'
             ? `Hieronder staat de prijs voor <strong>${esc(o.ref)}</strong>, zoals besproken. ${offerteSoort} Betalen is je akkoord — daarna gaan we voor je aan het werk. Vragen? Beantwoord gewoon deze mail.`

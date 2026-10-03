@@ -11,6 +11,9 @@ import { deliveryReadme } from '../src/lib/delivery.js';
 import { ordersView, weergaveStatus } from '../src/lib/account.js';
 
 let fout = 0; let goed = 0;
+/* Vergelijken in plaats van alleen "waar" (ronde 9): ok() met een derde argument
+   negeerde dat argument, en dan is een lege lijst of een tekst altijd "waar". */
+function gelijk(naam, w, v) { const p = JSON.stringify(w) === JSON.stringify(v); ok(naam, p, p ? '' : `verwacht ${JSON.stringify(v)} kreeg ${JSON.stringify(w)}`); }
 function ok(naam, waar, extra = '') {
   if (waar) { goed++; console.log(` ok   ${naam}`); }
   else { fout++; console.log(` FAIL ${naam} ${extra}`); }
@@ -234,10 +237,10 @@ console.log('\nF40, O21 · na betalen van een offerte: hoe komen de foto\'s bij 
   const { invoiceEmail } = await import('../src/lib/invoiceMail.js');
   const inv = { number: 'PROEF-2026-0001' };
   const v = invoiceEmail({ lang: 'nl', order: { ref: 'VIS-X', service: 'video', name: 'Bram Bureau' }, invoice: inv, snap: { netCents: 13800, vatCents: 2898 } }).html;
-  ok('video: "Beantwoord dan deze mail met de foto’s"', /Beantwoord dan deze mail met de foto’s/.test(v) && !/Een specialist maakt je beelden/.test(v));
+  ok('video: "Beantwoord dan deze mail met de foto’s"', /Beantwoord dan deze mail met de foto’s/.test(v) && !/We maken je beelden en onze beeldredactie/.test(v));
   ok('O21: met aanhef', /Hoi Bram,/.test(v));
   const c = invoiceEmail({ lang: 'en', order: { ref: 'VIS-X', service: 'catalog' }, invoice: inv, snap: { netCents: 100, vatCents: 21 } }).html;
-  ok('catalog: de gewone zin, zonder naam geen "Hi,"', /A specialist makes your images/.test(c) && !/Hi,/.test(c));
+  ok('catalog: de gewone zin, zonder naam geen "Hi,"', /We make your images and our image editors check every one/.test(c) && !/Hi,/.test(c));
   ok('webhook leest de naam', /SELECT ref, email, name, lang, service, window_start, window_end FROM orders/.test(lees('functions/api/webhook/mollie.js')));
   const po = lees('src/lib/portal.js');
   ok('portaal: eigen lege staat voor video en eigen look', /emptyOfferte:/.test(po) && /emptyRequest:/.test(po) && /o\.payment_status,/.test(po));
@@ -417,7 +420,7 @@ console.log('\nF59 · bestelmatrix');
 
 console.log('\nO49–O51 · Studio');
 {
-  ok('O49: tabbalk breekt af op de telefoon', /flex-direction: row; flex-wrap: wrap; gap: 0 \.1rem; overflow-x: visible;/.test(lees('src/styles/studio.css')));
+  ok('O49: tabbalk breekt af op de telefoon', /flex-direction: row; flex-wrap: wrap; gap: \.3rem; overflow-x: visible;/.test(lees('src/styles/studio.css')));
   const acc = lees('src/lib/account.js');
   ok('O50: geen betaalknop op de btw-lijst', /!opBtwLijst \? `\/account\/orders\/\$\{o\.id\}\/pay` : ''/.test(acc) && /btwLijst: 'Je bestelling is binnen\. We kijken eerst je btw-gegevens na;/.test(acc));
   ok('O51: na de bewaartermijn zegt de Nu-regel dat', /closedExpired: 'Deze bestelling is afgerond en de downloadtermijn is voorbij\./.test(acc) && /allesVerlopen \? \(t\.flowNow\.closedExpired/.test(acc));
@@ -439,17 +442,62 @@ console.log('\nF62 · terugboeking (chargeback)');
 console.log('\nO54 · lage-score-mail');
 ok('O54: de zin noemt de echte score', /wie een \$\{score\} geeft en niets typt/.test(lees('src/lib/feedback.js')) && !/wie een 1 of 2 geeft/.test(lees('src/lib/feedback.js')));
 
+/* Dode bestanden: in de map, maar door niets geïmporteerd en dus niet in de
+   site. HomeV2.astro is de voorpagina van vóór sectie 21 (nu Voorpagina.astro);
+   hij staat nog in de map en hoort weg (zie de werklijst, 3 oktober). Tot dan
+   telt hij hier niet mee — een woord of maat erin bereikt geen bezoeker. */
+const DOOD = /(^|\/)HomeV2\.astro$/;
+
 console.log('\nO62 · leesbaarheidsvloer 11,5 px');
 {
   const { readdirSync, statSync } = await import('node:fs');
-  const loop = (d) => readdirSync(new URL(`../${d}`, import.meta.url)).flatMap((n) => { const pad = `${d}/${n}`; return statSync(new URL(`../${pad}`, import.meta.url)).isDirectory() ? loop(pad) : (/\.(css|astro)$/.test(n) ? [pad] : []); });
+  const loop = (d) => readdirSync(new URL(`../${d}`, import.meta.url)).flatMap((n) => { const pad = `${d}/${n}`; return statSync(new URL(`../${pad}`, import.meta.url)).isDirectory() ? loop(pad) : (/\.(css|astro)$/.test(n) && !DOOD.test(pad) ? [pad] : []); });
   const te = [];
   for (const f of [...loop('src'), 'public/account.css', 'public/admin.css', 'public/portal.css', 'public/admin-voorvertoning.css']) {
     const t = lees(f);
     for (const m of t.matchAll(/font-size: ?(0?\.\d+)rem/g)) if (Number(m[1]) < 0.72) te.push(`${f} ${m[0]}`);
     for (const m of t.matchAll(/font-size: ?(\d+(?:\.\d+)?)px/g)) if (Number(m[1]) < 11.5 && !/Stations\.astro/.test(f)) te.push(`${f} ${m[0]}`);
   }
-  ok('O62: geen tekst kleiner dan .72rem / 11,5 px in de stijlen (het vinkje in Stations is een teken, geen tekst)', te, []);
+  gelijk('O62: geen tekst kleiner dan .72rem / 11,5 px in de stijlen (het vinkje in Stations is een teken, geen tekst)', te, []);
+}
+
+console.log('\nRonde 9 · melding bovenaan Studio');
+{
+  const { d1, verseDb } = await import('./lib/d1sqlite.mjs');
+  const M = await import('../src/lib/melding.js');
+  const { db } = verseDb(new URL('../schema.sql', import.meta.url));
+  const env = { DB: d1(db) };
+  const nu = new Date('2026-10-03T10:00:00Z');
+  gelijk('zonder melding: null', await M.leesMelding(env, nu), null);
+  gelijk('zonder soort geweigerd', (await M.zetMelding(env, { soort: 'x', nl: 'a' }, nu)).ok, false);
+  gelijk('zonder Nederlandse tekst geweigerd', (await M.zetMelding(env, { soort: 'info', nl: '  ' }, nu)).ok, false);
+  gelijk('eindtijd in het verleden geweigerd', (await M.zetMelding(env, { soort: 'info', nl: 'a', tot: '2026-10-01T10:00' }, nu)).ok, false);
+  ok('storing met eindtijd gezet', (await M.zetMelding(env, { soort: 'storing', nl: 'Downloads haperen.\n<b>x</b>', en: '', tot: '2026-10-05T18:00' }, nu)).ok, true);
+  const m = await M.leesMelding(env, nu);
+  gelijk('gelezen: soort, één regel, eindtijd in UTC (Amsterdam 18:00 = 16:00Z)', [m.soort, m.nl, m.tot], ['storing', 'Downloads haperen. <b>x</b>', '2026-10-05T16:00:00.000Z']);
+  gelijk('Engels valt terug op Nederlands', M.meldingTekst(m, 'en'), 'Downloads haperen. <b>x</b>');
+  gelijk('na de eindtijd: weg', await M.leesMelding(env, new Date('2026-10-05T16:00:01Z')), null);
+  gelijk('vervangen houdt één rij', ((await M.zetMelding(env, { soort: 'druk', nl: 'Druk', en: 'Busy' }, nu)).ok && db.prepare("SELECT COUNT(*) AS n FROM app_settings WHERE key='studio_melding'").get().n), 1);
+  await M.wisMelding(env);
+  gelijk('weghalen', await M.leesMelding(env, nu), null);
+  gelijk('kapotte database breekt Studio niet', await M.leesMelding({ DB: { prepare() { throw new Error('weg'); } } }, nu), null);
+  const lay = lees('src/layouts/StudioLayout.astro');
+  gelijk('Studio-schil en inlogkaart tonen hem (Astro zet de tekst zelf om, dus geen HTML-injectie)', (lay.match(/meldingTxt && <p class=\{`st-banner is-\$\{melding\.soort\}`\} role="status">/g) || []).length, 2);
+  const adm = lees('src/lib/admin.js');
+  ok('/admin/melding: lezen, zetten en weghalen, met logboek', /if \(path === '\/admin\/melding'\) return renderMelding\(context, url\);/.test(adm) && /if \(path === '\/admin\/melding'\) return handleMeldingPost\(context, admin\);/.test(adm) && /'melding\.zet'/.test(adm));
+  ok('de klanttekst gaat in /admin door esc()', /\$\{esc\(m\.nl\)\}/.test(adm) && /\$\{esc\(view\.studioMelding\.nl\)\}/.test(adm));
+}
+
+console.log('\nRonde 9 · woordkeus');
+{
+  const { readdirSync, statSync } = await import('node:fs');
+  const loop = (d) => readdirSync(new URL(`../${d}`, import.meta.url)).flatMap((n) => { const pad = `${d}/${n}`; return statSync(new URL(`../${pad}`, import.meta.url)).isDirectory() ? loop(pad) : (/\.(js|astro|mjs)$/.test(n) && !DOOD.test(pad) ? [pad] : []); });
+  const bestanden = [...loop('src'), ...loop('functions'), 'scripts/llms-txt.mjs'];
+  const tekst = (f) => lees(f).replace(/\/\*[\s\S]*?\*\//g, '').replace(/<!--[\s\S]*?-->/g, '').replace(/(^|\s)\/\/[^\n]*/g, '$1');
+  const zoek = (re) => bestanden.filter((f) => re.test(tekst(f)));
+  gelijk('"specialist" staat nergens meer in een klanttekst', zoek(/\b[Ss]pecialist/), []);
+  gelijk('"Lucas" alleen nog op /about, in de juridische pagina\'s en in werknotities', zoek(/['"`][^'"`\n]*\bLucas\b[^'"`\n]*['"`]/).filter((f) => !/AboutPage|privacy|terms|data-processing/.test(f)), []);
+  ok('NL: carrousel met dubbele r', zoek(/carousels?: 'carousels'/).length === 1 && /carousels: 'carrousels'/.test(lees('src/components/PlansPage.astro')));
 }
 
 console.log('\nF63 · geen herinnering aan wat dezelfde nacht vervalt');
@@ -467,7 +515,7 @@ console.log('\nF63 · geen herinnering aan wat dezelfde nacht vervalt');
     : new Response('{"id":"x"}', { status: 200, headers: { 'content-type': 'application/json' } }); };
   const regel = await tasks.remindUnpaid({ DB: d1(db), MOLLIE_API_KEY: 'test_abcdefghijklmnopqrstuvwxyz0123', RESEND_API_KEY: 're_x', FROM_EMAIL: 'x <o@visuails.com>', PUBLIC_ORIGIN: 'https://visuails.com' });
   globalThis.fetch = echte;
-  ok('F63: dag 4 krijgt een herinnering, dag 20 (vervalt vannacht) niet', regel, '1 betaalherinnering verstuurd: VIS-DAG4-0001.');
+  gelijk('F63: dag 4 krijgt een herinnering, dag 20 (vervalt vannacht) niet', regel, '1 betaalherinnering verstuurd: VIS-DAG4-0001.');
 }
 
 console.log(`\n${goed}/${goed + fout} geslaagd`);

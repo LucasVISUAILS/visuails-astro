@@ -51,7 +51,7 @@ import {
 } from '../data/brandModelBrief.js';
 import { billingCopy } from '../data/billing.js';
 import { countryOptions } from '../data/vat.js';
-import { AMOUNT, euro, vatLabel, vatLead } from '../data/pricing.js';
+import { AMOUNT, euro, vatLabel, vatLead, vatPercent, withVat } from '../data/pricing.js';
 import { BUSINESS_VERSION, currentBusiness } from '../data/business.js';
 import { CONSENT_VERSION_BRAND_MODEL } from '../data/consent.js';
 import { localizedPath } from '../i18n/ui.js';
@@ -100,6 +100,11 @@ const gezichtRijen = [
 ];
 
 const prijs = euro(AMOUNT.brandModel, lang);
+/* O29 (ronde 9): stap 5 noemde alleen "€ 450 excl. btw", en bij Mollie stond
+   er € 544,50. Dezelfde regel als in het bestelformulier: wat je daar betaalt. */
+const prijsBijMollie = lang === 'nl'
+  ? `Je betaalt bij Mollie ${euro(withVat(AMOUNT.brandModel), lang)} incl. ${vatPercent()} btw. Met een geldig EU-btw-nummer of buiten de EU: ${prijs}.`
+  : `At Mollie you pay ${euro(withVat(AMOUNT.brandModel), lang)} incl. ${vatPercent()} VAT. With a valid EU VAT number or outside the EU: ${prijs}.`;
 
 /* Vier verschillende mensen staan in EXAMPLES op BrandModelPage.astro; hier
    staan er drie, want naast een prijs is een raster van vier al een galerij en
@@ -444,6 +449,7 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
           <span class="bm-total-l">{c.eyebrow}</span>
           <span class="bm-total-a">{prijs}</span>
           <span class="bm-total-v">{vatLead(lang)}</span>
+          <span class="bm-total-v">{prijsBijMollie}</span>
         </div>
 
         {/* Gevuld door het script uit het formulier zelf. Zonder script blijft

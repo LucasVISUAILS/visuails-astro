@@ -165,6 +165,13 @@ import { planName } from '../data/planNames.js';
 import { onRequestPost as orderPost } from '../../functions/api/order.js';
 import { tegoedBeschikbaar } from './tegoedVerrekening.js';
 import { STOCK_ON_BRAND, STOCK_OFF_BRAND } from '../data/pricing.js';
+import { WORDMARK_VIEWBOX, WORDMARK_TRANSFORM, WORDMARK_PATHS } from '../data/wordmarkPath.js';
+
+/* Het woordmerk boven elke losse kaart (inloggen, foutpagina, adreswijziging,
+   revisie nakijken). Herontwerp 3 oktober 2026: hetzelfde getekende merk als in
+   de zijbalk van Studio, in plaats van het woord in Figtree. Inline SVG, dus
+   geen extra verzoek en niets dat de CSP van deze pagina's hoeft toe te laten. */
+const MERKBALK = `<div class="bar"><a class="mark" href="/" aria-label="VISUAILS"><svg class="woordmerk" viewBox="${WORDMARK_VIEWBOX}" aria-hidden="true" focusable="false"><g transform="${WORDMARK_TRANSFORM}">${WORDMARK_PATHS.map((d) => `<path d="${d}"/>`).join('')}</g></svg></a></div>`;
 /* De twee bedragen van Editions. Uit pricing.js en niet ingetypt — zodra Lucas
    ze daar bijstelt, staat hier hetzelfde. Zie de noot bij AMOUNT.editions. */
 import { AMOUNT as BEDRAG, euro as euroBedrag, vatLabel as btwLabel } from '../data/pricing.js';
@@ -525,7 +532,7 @@ const COPY = {
        noemt ze daar). */
     folderBody: 'One folder per product with every visual of this order, in the shape you chose.',
     folderReview: 'The photos below are review copies, at screen size. They are there to approve or to point at when something is wrong. The folder holds the real files.',
-    contactH: 'Ask a specialist',
+    contactH: 'Ask a question',
     contactWa: 'WhatsApp',
     contactMail: 'Email',
     contactNote: 'Your order number is filled in already.',
@@ -645,7 +652,7 @@ const COPY = {
     bkRatioHint: 'Set it once and every order starts here. Catalog images sit next to each other in a grid, so one shape for the whole range is what keeps that grid straight. On lifestyle this is the starting point — you can still make a single image wide when you need a banner.',
     bkChLede: 'Where you sell it',
     bkChHint: 'Only on catalog for now. Pick a marketplace that requires a pure white main image and every order starts on white — Amazon and bol check that automatically on their side.',
-    bkChNone: 'Asked per order',
+    bkChNone: 'Sales channels asked per order',
     bkNoPref: 'No preference',
     bkNoPrefFace: 'Ask me per order',
     bkOwnFig: 'Your model',
@@ -827,8 +834,9 @@ const COPY = {
       received: 'We have your order and your files. We are scheduling it in.',
       request: 'This is a request, not an order yet. We reply in writing with a proposal and a price — usually within a working day.',
       requestPaid: 'Your quote is paid. We are working out your request and will let you know as soon as there is something to look at.',
+      brandModel: 'We have your brand model order. We are making your candidates and will let you know when you can choose.',
       in_production: 'Our studio is making your images.',
-      human_check: 'A specialist goes through every image before it reaches you.',
+      human_check: 'Our image editors go through every image before it reaches you.',
       delivered: 'Your images are ready. Look them over and tell us if anything is off.',
       closed: 'This order is complete. Your images are ready to download.',
       closedExpired: 'This order is complete and the download period has ended. Still need the images? Send us a message.',
@@ -840,7 +848,7 @@ const COPY = {
       cancelledRefunded: 'This order was cancelled and your payment has been refunded. The credit note is under Invoices.',
       cancelledCredit: 'This order was cancelled. The amount stays with us as credit for your next order.',
     },
-    flowStep: { awaiting_payment: 'Awaiting payment', received: 'Received', in_production: 'In production', human_check: 'Checked by a specialist', delivered: 'Delivered' },
+    flowStep: { awaiting_payment: 'Awaiting payment', received: 'Received', in_production: 'In production', human_check: 'Checked by our image editors', delivered: 'Delivered' },
     flowWindow: (from, to) => (from === to ? `Planned for ${from}.` : `Planned for ${from} – ${to}.`),
     flowHistory: 'Everything that happened',
     noteFrom: 'From the studio',
@@ -974,7 +982,7 @@ const COPY = {
     planAccountLabel: 'Account',
     planEmailLabel: 'Email',
     planBrandLabel: 'Brand',
-    planNote: 'Questions about pricing or an invoice? Reply to any order email, or reach us at hello@visuails.com.',
+    planNote: 'Your invoices are under Invoices in the menu. Questions about pricing or an invoice? Reply to any order email, or reach us at hello@visuails.com.',
 
     // ── The subscription. Only ever rendered for a customer who has one; the
     // pitch below it is what everyone else sees.
@@ -1210,6 +1218,9 @@ const COPY = {
     dbDown: 'We cannot reach your account right now. This is our end, not yours — try again in a few minutes.',
     notFound: 'This page does not exist. Go back to your overview.',
     notFoundTitle: 'Page not found',
+    // Herontwerp 3 oktober 2026: de losse foutpagina is een kaart met een kop en een weg terug.
+    errKop: 'This did not work',
+    errTerug: 'To VISUAILS Studio',
   },
 
   nl: {
@@ -1269,7 +1280,7 @@ const COPY = {
     folderH: 'Jouw bestanden',
     folderBody: 'Eén map per product met alle beelden van deze bestelling, in de beeldverhouding die je koos.',
     folderReview: 'De foto\'s hieronder zijn voorbeeldweergaven op schermformaat. Ze staan er om goed te keuren of om naar te wijzen als er iets niet klopt. De echte bestanden zitten in de map.',
-    contactH: 'Vraag een specialist',
+    contactH: 'Stel een vraag',
     contactWa: 'WhatsApp',
     contactMail: 'Mail',
     contactNote: 'Je bestelnummer staat er al in.',
@@ -1340,7 +1351,7 @@ const COPY = {
     bkRatioHint: 'Eén keer instellen en elke bestelling begint hier. Catalogbeelden staan naast elkaar in een grid, dus één verhouding voor je hele assortiment is wat dat grid recht houdt. Bij lifestyle is dit het startpunt — je kunt één beeld alsnog breed maken als je een banner wilt.',
     bkChLede: 'Waar je het verkoopt',
     bkChHint: 'Voorlopig alleen bij catalog. Kies je een marktplaats die een zuiver wit hoofdbeeld eist, dan begint elke bestelling op wit — Amazon en bol controleren dat aan hun kant automatisch.',
-    bkChNone: 'Wordt per bestelling gevraagd',
+    bkChNone: 'Verkoopkanalen per bestelling',
     bkNoPref: 'Geen voorkeur',
     bkNoPrefFace: 'Vraag het per bestelling',
     bkOwnFig: 'Jouw model',
@@ -1473,8 +1484,11 @@ const COPY = {
       /* Na de offerte én de betaling (24 september 2026): de kaart zei nog
          "dit is een aanvraag, nog geen bestelling" bij een betaalde offerte. */
       requestPaid: 'Je offerte is betaald. We werken je aanvraag uit en laten je weten zodra er iets te bekijken is.',
+      /* O32 (ronde 9): een merkmodel heeft geen aangeleverde bestanden, dus
+         "je bestelling en je bestanden binnen" klopte daar niet. */
+      brandModel: 'We hebben je merkmodelbestelling binnen. We maken je kandidaten en laten je weten wanneer je kunt kiezen.',
       in_production: 'Onze studio maakt je beelden.',
-      human_check: 'Een specialist loopt elk beeld na voordat het naar je toe gaat.',
+      human_check: 'Onze beeldredactie loopt elk beeld na voordat het naar je toe gaat.',
       delivered: 'Je beelden staan klaar. Bekijk ze en laat het weten als er iets niet klopt.',
       closed: 'Deze bestelling is afgerond. Je beelden staan klaar om te downloaden.',
       closedExpired: 'Deze bestelling is afgerond en de downloadtermijn is voorbij. Heb je de beelden nog nodig? Stuur ons een bericht.',
@@ -1484,7 +1498,7 @@ const COPY = {
       cancelledRefunded: 'Deze bestelling is geannuleerd en je betaling is teruggestort. De creditnota staat onder Facturen.',
       cancelledCredit: 'Deze bestelling is geannuleerd. Het bedrag blijft als tegoed staan voor je volgende bestelling.',
     },
-    flowStep: { awaiting_payment: 'Wacht op betaling', received: 'Ontvangen', in_production: 'In productie', human_check: 'Nagekeken door een specialist', delivered: 'Geleverd' },
+    flowStep: { awaiting_payment: 'Wacht op betaling', received: 'Ontvangen', in_production: 'In productie', human_check: 'Nagekeken door onze beeldredactie', delivered: 'Geleverd' },
     flowWindow: (from, to) => (from === to ? `Ingepland op ${from}.` : `Ingepland van ${from} tot ${to}.`),
     flowHistory: 'Alles wat er gebeurd is',
     noteFrom: 'Van de studio',
@@ -1579,7 +1593,7 @@ const COPY = {
     planAccountLabel: 'Account',
     planEmailLabel: 'E-mail',
     planBrandLabel: 'Merk',
-    planNote: 'Vragen over prijzen of een factuur? Reageer op een bestel-e-mail, of mail hello@visuails.com.',
+    planNote: 'Je facturen staan onder Facturen in het menu. Vragen over prijzen of een factuur? Reageer op een bestel-e-mail, of mail hello@visuails.com.',
 
     planNoneEyebrow: 'Je hebt nog geen abonnement lopen',
     planNoneH: 'Elke maand nieuwe beelden, zonder elke keer te bestellen',
@@ -1784,6 +1798,9 @@ const COPY = {
     dbDown: 'We kunnen je account nu niet bereiken. Dit ligt aan ons, niet aan jou — probeer het over een paar minuten opnieuw.',
     notFound: 'Deze pagina bestaat niet. Ga terug naar je overzicht.',
     notFoundTitle: 'Pagina niet gevonden',
+    // Herontwerp 3 oktober 2026: de losse foutpagina is een kaart met een kop en een weg terug.
+    errKop: 'Dit lukt nu even niet',
+    errTerug: 'Naar VISUAILS Studio',
   },
 };
 
@@ -2008,7 +2025,7 @@ export async function accountGet(context) {
   if (gok) return seeOther(`${gok}${url.search}`);
 
   const lang = negotiate(request);
-  return html(page({ thema: themaCookie(context.request), lang, title: COPY[lang].notFoundTitle, body: errorBody(COPY[lang], COPY[lang].notFound) }), 404);
+  return html(page({ thema: themaCookie(context.request), lang, title: COPY[lang].notFoundTitle, body: errorBody(COPY[lang], COPY[lang].notFound, COPY[lang].notFoundTitle) }), 404);
 }
 
 export async function accountPost(context) {
@@ -2084,7 +2101,7 @@ export async function accountPost(context) {
     if (asJson) return json({ error: 'rate' }, 429);
     const wacht = Math.max(1, gate.retryAfter || 60);
     const res = html(page({ thema: themaCookie(request), lang: negotiate(request), title: 'VISUAILS', body: `
-<div class="bar"><a class="mark" href="/">VISUAILS</a></div>
+${MERKBALK}
 <div class="authcard">
   <h1>${negotiate(request) === 'nl' ? 'Even rustig aan' : 'One moment'}</h1>
   <p class="lede">${negotiate(request) === 'nl'
@@ -2159,7 +2176,7 @@ export async function accountPost(context) {
 
   const lang = negotiate(request);
   if (asJson) return json({ error: 'not-found' }, 404);
-  return html(page({ thema: themaCookie(context.request), lang, title: COPY[lang].notFoundTitle, body: errorBody(COPY[lang], COPY[lang].notFound) }), 404);
+  return html(page({ thema: themaCookie(context.request), lang, title: COPY[lang].notFoundTitle, body: errorBody(COPY[lang], COPY[lang].notFound, COPY[lang].notFoundTitle) }), 404);
 }
 
 /**
@@ -4802,7 +4819,7 @@ async function handleRondeNakijken({ request, env }, customer, orderId) {
   }).join('');
 
   const body = `
-<div class="bar"><a class="mark" href="/">VISUAILS</a></div>
+${MERKBALK}
 <div class="authcard nakijk">
   <h1>${esc(t.rdCheckH)}</h1>
   <p class="lede">${esc(t.rdCheckB)}</p>
@@ -5716,7 +5733,7 @@ export async function studioAuth(context) {
 
 function loginBody(t, lang, error = null) {
   return `
-<div class="bar"><a class="mark" href="/">VISUAILS</a></div>
+${MERKBALK}
 <div class="authcard">
   <h1>${esc(t.loginTitle)}</h1>
   <p class="lede">${esc(t.loginLede)}</p>
@@ -5756,7 +5773,7 @@ function checkEmailBody(t, lang, email = '', message = null) {
   // thank-you page and the portal's no-link screen print. See that file for why
   // it is shared rather than written three times.
   return `
-<div class="bar"><a class="mark" href="/">VISUAILS</a></div>
+${MERKBALK}
 <div class="authcard">
   <h1>${esc(t.checkTitle)}</h1>
   <p class="lede">${esc(t.checkBody)}</p>
@@ -5814,7 +5831,7 @@ function checkEmailBody(t, lang, email = '', message = null) {
  */
 function badLinkBody(t, lang) {
   return `
-<div class="bar"><a class="mark" href="/">VISUAILS</a></div>
+${MERKBALK}
 <div class="authcard">
   <h1>${esc(t.badLinkTitle)}</h1>
   <p class="lede">${esc(t.badLinkBody)}</p>
@@ -7149,6 +7166,7 @@ async function handlePlanQueue({ request, env }, customer) {
     if (String(form?.get('meteen') || '') === '1') {
       const uit = await queueLock(env, customer.customer_id, rij.id);
       if (!uit.ok) return seeOther(`${lijst}&fout=${lockFout(uit)}`);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(form?.get('dag') || ''))) return seeOther(`${lijst}&ok=vastgezet`);
     }
 
     /* ── EN METEEN OP EEN DAG, ALS HIJ VAN DE PLANNING KOMT — 20 sept 2026 ──
@@ -7185,7 +7203,8 @@ async function handlePlanQueue({ request, env }, customer) {
       await queueWindow(env, customer.customer_id, rij.id, paar[0], paar[paar.length - 1]);
       return seeOther(`${terug}&ok=gepland`);
     }
-    return seeOther(lijst);
+    /* O71 (ronde 9): toevoegen gaf geen enkel teken dat het gelukt was. */
+    return seeOther(`${lijst}&ok=toegevoegd`);
   }
 
   /* ── HET GEZICHT VAN ÉÉN PRODUCT WIJZIGEN — ronde 4 ───────────────────────
@@ -7215,12 +7234,12 @@ async function handlePlanQueue({ request, env }, customer) {
       await env.DB.prepare('UPDATE plan_queue SET upload_batch = ?2 WHERE id = ?1 AND customer_id = ?3')
         .bind(id, batch, customer.customer_id).run().catch(() => {});
     }
-    return seeOther(lijst);
+    return seeOther(batch ? `${lijst}&ok=fotos` : lijst);
   }
 
   if (doen === 'remove') {
     await queueRemove(env, customer.customer_id, id);
-    return seeOther(lijst);
+    return seeOther(`${lijst}&ok=weg`);
   }
 
   /* ── WANNEER HET AAN DE BEURT IS — 31 augustus 2026 ────────────────────────
@@ -7350,13 +7369,13 @@ async function handlePlanQueue({ request, env }, customer) {
    * gokken welke van de drie het was. */
   if (doen === 'lock') {
     const uit = await queueLock(env, customer.customer_id, id);
-    if (uit.ok) return seeOther(lijst);
+    if (uit.ok) return seeOther(`${lijst}&ok=vastgezet`);
     return seeOther(`${lijst}&fout=${lockFout(uit)}`);
   }
 
   if (doen === 'unlock') {
     await queueUnlock(env, customer.customer_id, id);
-    return seeOther(lijst);
+    return seeOther(`${lijst}&ok=losgemaakt`);
   }
 
   /* OMHOOG EN OMLAAG ZIJN ÉÉN HERSCHIKKING. De hele volgorde wordt opnieuw
@@ -7928,7 +7947,7 @@ export function progressView(t, lang, o, events = [], files = []) {
   /* Ronde 9 (O51): na de bewaartermijn zei de regel nog "staan klaar om te downloaden". */
   const geleverdeBestanden = (files || []).filter((f) => f.kind === 'delivery' && !f.superseded_at);
   const allesVerlopen = geleverdeBestanden.length > 0 && geleverdeBestanden.every((f) => f.expires_at && isExpired(f.expires_at, null));
-  const now = geannuleerdGeld ? geannuleerdGeld : afgerond ? (allesVerlopen ? (t.flowNow.closedExpired || t.flowNow.closed) : t.flowNow.closed) : opBtwLijst ? (t.flowNow.btwLijst || t.flowNow.awaiting_payment) : unpaid ? t.flowNow.awaiting_payment : isAanvraag ? (betaald ? (t.flowNow.requestPaid || t.flowNow.received) : t.flowNow.request) : revising ? t.flowNow.revising : (t.flowNow[status] || t.flowNow.received);
+  const now = geannuleerdGeld ? geannuleerdGeld : afgerond ? (allesVerlopen ? (t.flowNow.closedExpired || t.flowNow.closed) : t.flowNow.closed) : opBtwLijst ? (t.flowNow.btwLijst || t.flowNow.awaiting_payment) : unpaid ? t.flowNow.awaiting_payment : isAanvraag ? (betaald ? (t.flowNow.requestPaid || t.flowNow.received) : t.flowNow.request) : revising ? t.flowNow.revising : (status === 'received' && o.service === 'brand-model' && t.flowNow.brandModel) ? t.flowNow.brandModel : (t.flowNow[status] || t.flowNow.received);
   const when = !cancelled && status !== 'delivered' && o.window_start
     ? ` ${t.flowWindow(shortDate(o.window_start, lang), shortDate(o.window_end || o.window_start, lang))}`
     : '';
@@ -8178,8 +8197,22 @@ function reviewControls(t, f, o) {
   ${ask}`;
 }
 
-function errorBody(t, message = null) {
-  return `<div class="bar"><a class="mark" href="/">VISUAILS</a></div><p class="error is-page">${esc(message || (t && t.dbDown) || 'We cannot show this page right now. Go back to your account and try again in a few minutes — nothing has changed in the meantime.')}</p>`;
+/*
+ * DE LOSSE FOUTPAGINA — herontwerp 3 oktober 2026.
+ * Was: een kale balk met "VISUAILS" en daaronder één regel in de waarschuwings-
+ * kleur, in de donkere stand oranje op zwart. Nu dezelfde vorm als het
+ * inlogscherm (Inlogkaart.astro): het woordmerk, één kaart in het midden, een
+ * kop, de uitleg in gewone tekstkleur en een knop terug. Wie hier landt zit
+ * vast; de knop is de weg eruit, niet de terugknop van de browser.
+ */
+function errorBody(t, message = null, kop = null) {
+  const tekst = message || (t && t.dbDown) || 'We cannot show this page right now. Go back to your account and try again in a few minutes — nothing has changed in the meantime.';
+  return `${MERKBALK}
+<div class="authcard is-fout">
+  <h1>${esc(kop || (t && t.errKop) || 'VISUAILS')}</h1>
+  <p class="lede">${esc(tekst)}</p>
+  <p><a class="btn btn-primary" href="/account">${esc((t && t.errTerug) || 'VISUAILS Studio')}</a></p>
+</div>`;
 }
 
 // `full` swaps the centered 940px `.wrap` column for the edge-to-edge shell
@@ -8701,11 +8734,11 @@ function emailChangePage(t, lang, uitkomst, adres = '', thema = 'licht') {
      `.authcard`. Niet de dashboardschil — wie hier komt is misschien niet
      ingelogd, en dan zou de navigatie ernaast nergens heen kunnen. */
   const body = `
-<div class="bar"><a class="mark" href="/">VISUAILS</a></div>
+${MERKBALK}
 <div class="authcard">
   <h1>${esc(kop)}</h1>
   <p class="lede">${esc(tekst)}</p>
-  <p><a class="btn${goed ? '' : ' btn-ghost'}" href="/account">${esc(t.navOverview)}</a></p>
+  <p><a class="btn ${goed ? 'btn-primary' : 'btn-ghost'}" href="/account">${esc(t.errTerug)}</a></p>
 </div>`;
   /* ALTIJD 200, ook bij een verlopen link. Deze URL's zitten in mail: ze worden
      dagen later aangeklikt, twee keer aangeklikt, en door scanners van
@@ -9010,8 +9043,20 @@ export async function studioSection(context) {
         const ref = String(u.searchParams.get('sub') || '').trim().toUpperCase();
         let loopt = false;
         if (/^SUB-[0-9A-Z-]{3,20}$/.test(ref)) {
-          const rij = await env.DB.prepare('SELECT status FROM subscriptions WHERE ref = ?1').bind(ref).first().catch(() => null);
-          loopt = rij?.status === 'active';
+          /* ── EVEN WACHTEN OP DE WEBHOOK — 3 oktober 2026 (ronde 9, F64) ──────
+             Mollie stuurt de browser en de webhook tegelijk. Live, op de eerste
+             betaling van een Pro-abonnement: betaald, en de klant las "We hebben
+             je eerste betaling nog niet binnen" — de welkomstmail kwam in
+             dezelfde seconde. De webhook was simpelweg nog bezig. Dus kijken we
+             tot vier keer, met driekwart seconde ertussen (hooguit drie seconden
+             wachten), voordat we zeggen dat het niet gelukt is. Loopt het al,
+             dan is de eerste blik genoeg en wacht er niemand. */
+          for (let poging = 0; poging < 4 && !loopt; poging += 1) {
+            if (poging) await new Promise((r) => setTimeout(r, 750));
+            const rij = await env.DB.prepare('SELECT status FROM subscriptions WHERE ref = ?1').bind(ref).first().catch(() => null);
+            loopt = rij?.status === 'active';
+            if (rij && rij.status !== 'pending' && rij.status !== 'active') break;
+          }
         }
         na = loopt ? '?na=abonnement' : '?na=abonnement-open';
       }
@@ -9534,6 +9579,12 @@ export async function planView(env, request, t, lang, customer, models = [], loc
     week: t.planWeekOk, pauze: jaar ? t.planPauseOkPrepaid : t.planPauseOk, hervat: jaar ? t.planResumeOkPrepaid : t.planResumeOk, opgezegd: t.planCancelOk, jaaropgezegd: t.planYearCancelOk,
     gepland: lang === 'nl' ? 'Ingepland. De dag staat in je planning.' : 'Scheduled. The day is in your planning.',
     verzet: lang === 'nl' ? 'Verzet. De nieuwe dag staat in je planning.' : 'Moved. The new day is in your planning.',
+    /* O71 (ronde 9): de lijst zei niets na toevoegen, vastzetten of losmaken. */
+    toegevoegd: lang === 'nl' ? 'Op je lijst gezet, als concept. Zet het vast als de foto\u2019s erbij staan.' : 'Added to your list as a draft. Lock it once the photos are in.',
+    vastgezet: lang === 'nl' ? 'Vastgezet. De credits zijn van je saldo af; tot we je week starten kun je het nog losmaken.' : 'Locked. The credits are off your balance; until we start your week you can still unlock it.',
+    losgemaakt: lang === 'nl' ? 'Losgemaakt. De credits staan weer op je saldo.' : 'Unlocked. The credits are back on your balance.',
+    fotos: lang === 'nl' ? 'De foto\u2019s staan erbij.' : 'The photos are added.',
+    weg: lang === 'nl' ? 'Van je lijst gehaald.' : 'Removed from your list.',
   }[ok] || '';
   /* "Los bestellen" ging naar /start/complete — Catalog + Lifestyle, die niet
      meer verkocht wordt (ronde 8, C-1A-17). Nu de keuzepagina. */

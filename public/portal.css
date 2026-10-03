@@ -982,3 +982,145 @@ a.stand:hover { box-shadow: inset 0 0 0 1px currentColor; }
 /* Ronde 9, F31: "Keur alle … resterende beelden goed" boven het raster. */
 .alles { display: grid; justify-items: start; gap: .4rem; margin: .4rem 0 1.2rem; }
 .alles .note { margin: 0; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HET HERONTWERP VAN 3 OKTOBER 2026 — DEZELFDE RUST ALS VISUAILS STUDIO
+   ═══════════════════════════════════════════════════════════════════════════
+   Lucas vroeg om een rustiger Studio, en noemde de privélink in hetzelfde
+   adem: dit is het scherm waar een klant vanuit zijn levermail binnenkomt en
+   daarna inlogt op Studio, dus het hoort er hetzelfde uit te zien. Wat hier
+   staat is precies de taal van src/styles/studio.css, als laag over de rest
+   van dit bestand — de oudere regels hierboven blijven staan voor hun noten,
+   maar dit blok heeft het laatste woord.
+
+     · één letter (Figtree), in gewone zinsbouw; het gewicht doet de hiërarchie
+     · 28 px titel · 16 px kop · 14 px tekst · 13 px meta · 12 px labels
+     · de grond is --paper; elk blok is een witte kaart met een haarlijn
+     · geen zwarte lijst meer rond de pagina: een smalle witte bovenbalk
+     · knoppen 34 px met een hoek van 8 px; violet alleen voor de hoofdactie
+   ═══════════════════════════════════════════════════════════════════════════ */
+body {
+  --surface: #FFFFFF;
+  --surface-2: #F4F5F7;
+  --paper-2: #F4F5F7;
+  --paper-lift: #F4F5F7;
+  --line: rgb(0 0 0 / .09);
+  --line-strong: rgb(0 0 0 / .18);
+  --ghost: rgb(0 0 0 / .04);
+  --pt-r-kaart: 10px;
+  --pt-r: 8px;
+  margin: 0; padding: 0;
+  background: var(--paper);
+  font-family: var(--font); font-size: .875rem; line-height: 1.5; color: var(--ink-2);
+}
+h1, h2, h3 { font-family: var(--font); font-stretch: 100%; text-transform: none; }
+.wrap {
+  max-width: 1040px; margin: 0 auto; padding: 0 1.5rem 3rem;
+  background: none; border-radius: 0;
+}
+
+/* De bovenbalk loopt over de volle breedte, ook al staat hij in .wrap. */
+.bar {
+  margin: 0 calc(50% - 50vw); padding: 0 calc(50vw - 50% + 1.5rem);
+  min-height: 56px; align-items: center;
+  background: var(--surface); box-shadow: inset 0 -1px 0 var(--line);
+}
+.mark { font-size: 1rem; font-weight: 700; letter-spacing: -.01em; }
+.ref { font-size: .8125rem; letter-spacing: 0; text-transform: none; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+.head { padding: 1.75rem 0 0; }
+h1 { margin: 0; font-size: 1.75rem; font-weight: 600; line-height: 1.2; letter-spacing: -.02em; }
+.lede { margin: .3rem 0 0; font-size: .875rem; color: var(--ink-3); max-width: 70ch; }
+
+/* De feiten: één witte kaart, de labels als kleine kapitalen — hetzelfde
+   etiket als de cijfertegels in Studio. */
+.facts {
+  margin: 1.5rem 0 0; padding: 1rem 1.25rem; gap: 1rem 2.5rem;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--pt-r-kaart);
+  box-shadow: none;
+}
+.fact dt { font-size: .75rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+.fact dd { margin: .3rem 0 0; font-size: .875rem; font-weight: 500; color: var(--ink); }
+
+.note {
+  margin: 1rem 0 0; padding: .65rem .9rem; max-width: 72ch;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--pt-r);
+  font-size: .8125rem; color: var(--ink-2);
+}
+
+/* Elk blok een kaart. */
+.work, .rr, .folder {
+  margin: 1.5rem 0 0; padding: 1.25rem;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--pt-r-kaart);
+}
+.work h2, .rr h2, .folder h2 {
+  margin: 0 0 1rem; padding: 0; box-shadow: none;
+  font-size: 1rem; font-weight: 600; letter-spacing: -.005em; line-height: 1.35; color: var(--ink);
+}
+.rr h2 { margin-bottom: .4rem; }
+.rr > p { margin: 0 0 .75rem; max-width: 72ch; }
+.tally { font-weight: 400; color: var(--ink-3); }
+.alles { margin: 0 0 1.25rem; gap: .5rem; }
+
+.shots { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem 1rem; }
+/* Elke tegel dezelfde maat, zodat het raster rijen vormt in plaats van een
+   trap. `contain` en niet `cover`: dit is het scherm waar je een beeld
+   goedkeurt, en een uitsnede keur je niet goed. */
+.shot img { width: 100%; aspect-ratio: 4 / 5; object-fit: contain; border-radius: var(--pt-r); background: var(--surface-2); }
+.shot .name { margin: .6rem 0 .1rem; font-size: .8125rem; font-weight: 500; }
+.shot .meta { font-size: .75rem; }
+.acts { margin-top: .6rem; gap: .4rem; }
+.state { font-size: .75rem; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.said { font-size: .8125rem; border-radius: var(--pt-r); }
+
+/* De knoppen van Studio. */
+.btn {
+  min-height: 34px; padding: 0 .85rem; border-radius: var(--pt-r);
+  font-family: var(--font); font-size: .8125rem; font-weight: 600; letter-spacing: 0; text-transform: none;
+  background: var(--surface); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+.btn:hover { background: var(--surface-2); }
+.btn-primary { background: var(--accent); color: var(--accent-on); box-shadow: none; }
+.btn-primary:hover, .btn-primary:focus-visible { background: var(--accent-dim); }
+.btn-quiet { box-shadow: none; background: none; }
+.pick {
+  min-height: 34px; padding: 0 .75rem; border-radius: var(--pt-r);
+  border: 1px solid var(--line-strong); font-size: .8125rem; font-weight: 600; background: var(--surface);
+}
+.pick:hover { border-color: var(--st-rev-ink); }
+.pick input { width: 15px; height: 15px; accent-color: var(--st-rev-ink); -webkit-appearance: auto; appearance: auto; }
+.shot:has(.pick input:checked) img { outline-color: var(--st-rev-ink); }
+@media (pointer: coarse) { .btn, .pick { min-height: 44px; } }
+
+textarea, input[type="text"], input[type="email"], input[type="tel"], select {
+  font-size: .875rem; border-radius: var(--pt-r); border-color: var(--line-strong); background: var(--surface);
+}
+
+.folder { display: grid; border: 1px solid var(--line); }
+.folder-n { font-size: .875rem; }
+.folder-meta { font-size: .75rem; }
+.folder .note { background: var(--surface-2); border: 1px solid var(--line); }
+
+.log li { padding: .7rem 0; }
+.log time { font-size: .8125rem; letter-spacing: 0; text-transform: none; }
+.log .what { font-size: .875rem; }
+.log .why { font-size: .8125rem; }
+
+.foot { margin: 2rem 0 0; padding-top: 1.25rem; font-size: .8125rem; }
+
+/* De statuspil zoals in Studio: kleiner, gewone letters. */
+.stand {
+  min-height: 22px; padding: 0 .55rem; gap: .35rem;
+  font-family: var(--font); font-stretch: 100%; font-size: .75rem; font-weight: 500;
+  letter-spacing: 0; text-transform: none;
+}
+.rr-fout { font-size: .8125rem; }
+
+@media (max-width: 560px) {
+  .wrap { padding: 0 1rem 2.5rem; }
+  .bar { padding: 0 calc(50vw - 50% + 1rem); }
+  h1 { font-size: 1.5rem; }
+  .work, .rr, .folder { padding: 1rem; }
+  .shots { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem .75rem; }
+  .acts .btn, .acts .pick { flex: 1 1 auto; justify-content: center; }
+}

@@ -23,7 +23,7 @@ const { t, k } = Astro.props;
     </span>
     <span class="st-vl-tekst">
       <span class="st-vl-h">{k.label}</span>
-      <span class="st-vl-nu">{k.samenvatting.map((s, i) => <Fragment>{i > 0 && <span class="st-vl-punt">·</span>}{s}</Fragment>)}</span>
+      <span class="st-vl-nu">{k.samenvatting.map((s, i) => <Fragment>{i > 0 && <span class="st-vl-punt" aria-hidden="true">·</span>}{s}</Fragment>)}</span>
       {k.saved && <span class="st-vl-ok" role="status">{t.bkSaved}</span>}
     </span>
     <span class="st-vl-cta">{t.bkChange}</span>

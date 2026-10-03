@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Schetsen stap 9</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@125,800&family=Figtree:wght@400;500;600;700&family=Martian+Mono:wdth,wght@82,500&display=swap">
+<style>
+/* Schetsen voor ronde 9, stap 9 (B3, B4, C1 uit CONCEPT-RONDE-9.md).
+   Kleuren en letters volgen KLEURENSCHEMA.md; de bedragen komen uit
+   src/data/pricing.js via kladblok/_r9-schetsen.mjs. */
+:root {
+  --veld: #F2F3F5; --kaart: #FFFFFF; --vul: #F4F5F7;
+  --ink-1: #0C0D10; --ink-2: rgb(12 13 16 / .72); --ink-3: rgb(12 13 16 / .60);
+  --lijn: rgb(0 0 0 / .09); --lijn-ui: rgb(0 0 0 / .24);
+  --accent: #4A1FFF; --accent-ink: #FFFFFF; --accent-tekst: #3A12E0; --accent-tint: rgb(74 31 255 / .08);
+  --goed: #13795B; --zij: #0C0D10; --zij-ink: rgb(242 243 245 / .70); --zij-ink-1: #F2F3F5; --zij-actief: rgb(242 243 245 / .11);
+  --font: "Figtree", "Helvetica Neue", Arial, sans-serif;
+  --kop: "Anybody", "Helvetica Neue", Arial, sans-serif;
+  --mono: "Martian Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --veld: #0C0D10; --kaart: #14161A; --vul: #1C1F25;
+    --ink-1: #F2F3F5; --ink-2: rgb(242 243 245 / .72); --ink-3: rgb(242 243 245 / .58);
+    --lijn: rgb(242 243 245 / .10); --lijn-ui: rgb(242 243 245 / .28);
+    --accent: #A694FF; --accent-ink: #0C0D10; --accent-tekst: #B7A9FF; --accent-tint: rgb(166 148 255 / .12);
+    --goed: #4CC69A; --zij: #000000; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --veld: #0C0D10; --kaart: #14161A; --vul: #1C1F25;
+  --ink-1: #F2F3F5; --ink-2: rgb(242 243 245 / .72); --ink-3: rgb(242 243 245 / .58);
+  --lijn: rgb(242 243 245 / .10); --lijn-ui: rgb(242 243 245 / .28);
+  --accent: #A694FF; --accent-ink: #0C0D10; --accent-tekst: #B7A9FF; --accent-tint: rgb(166 148 255 / .12);
+  --goed: #4CC69A; --zij: #000000; color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--veld); color: var(--ink-2); font: 15px/1.55 var(--font); -webkit-font-smoothing: antialiased; }
+.pagina { max-width: 1120px; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
+h1 { font-family: var(--kop); font-stretch: 125%; font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -.02em; line-height: 1.1; color: var(--ink-1); margin: 0 0 .6rem; text-wrap: balance; }
+.intro { max-width: 68ch; margin: 0 0 2rem; }
+.label { font-family: var(--mono); font-stretch: 82%; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.schets-tag { display: inline-block; padding: .2rem .55rem; border-radius: 999px; border: 1px dashed var(--lijn-ui); font-family: var(--mono); font-stretch: 82%; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+
+.tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1.2rem; }
+.tab { font: 600 .875rem/1 var(--font); color: var(--ink-1); background: var(--kaart); border: 0; box-shadow: inset 0 0 0 1px var(--lijn-ui); border-radius: 8px; padding: .7rem 1rem; cursor: pointer; }
+.tab[aria-selected="true"] { background: var(--ink-1); color: var(--veld); box-shadow: none; }
+.tab:focus-visible, button:focus-visible, input:focus-visible, label:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.paneel { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+.paneel[hidden] { display: none; }
+.uitleg { background: var(--kaart); border: 1px solid var(--lijn); border-radius: 10px; padding: 1.3rem; display: grid; gap: .9rem; }
+.uitleg h2 { margin: 0; font: 600 1.1rem/1.25 var(--font); color: var(--ink-1); }
+.uitleg dl { margin: 0; display: grid; gap: .7rem; }
+.uitleg dt { margin: 0 0 .15rem; }
+.uitleg dd { margin: 0; font-size: .875rem; }
+.podium { background: var(--kaart); border: 1px solid var(--lijn); border-radius: 10px; padding: clamp(1.2rem, 3vw, 2rem); min-width: 0; }
+.podium h3 { margin: 0 0 .3rem; font-family: var(--kop); font-stretch: 125%; font-weight: 800; font-size: 1.35rem; letter-spacing: -.02em; color: var(--ink-1); line-height: 1.15; }
+.podium .sub { margin: 0 0 1.4rem; font-size: .9rem; }
+
+/* keuzes */
+.groep { border: 0; margin: 0 0 1.3rem; padding: 0; }
+.groep legend { padding: 0; margin-bottom: .55rem; font-weight: 600; color: var(--ink-1); font-size: .9375rem; }
+.keuzes { display: flex; flex-wrap: wrap; gap: .45rem; }
+.keuze { position: relative; }
+.keuze input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.keuze > span { display: inline-flex; align-items: center; min-height: 38px; padding: 0 .9rem; border-radius: 8px; box-shadow: inset 0 0 0 1px var(--lijn-ui); background: var(--kaart); color: var(--ink-1); font-size: .875rem; font-weight: 500; }
+.keuze input:checked + span { background: var(--accent-tint); box-shadow: inset 0 0 0 2px var(--accent); color: var(--ink-1); }
+.keuze input:disabled + span { opacity: .45; }
+.keuze:focus-within > span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.keuze:focus-within { outline: 0; }
+
+.schuif { display: grid; grid-template-columns: 1fr auto; gap: .4rem 1rem; align-items: center; }
+.schuif input[type="range"] { width: 100%; accent-color: var(--accent); }
+.schuif output { font: 700 1.4rem/1 var(--font); color: var(--ink-1); font-variant-numeric: tabular-nums; min-width: 3ch; text-align: right; }
+.trede { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .3rem; }
+.trede div { padding: .45rem .5rem; border-radius: 6px; background: var(--vul); font-size: 12px; line-height: 1.3; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.trede div b { display: block; color: var(--ink-2); font-size: .875rem; }
+.trede div.is-nu { background: var(--accent-tint); color: var(--ink-1); box-shadow: inset 0 0 0 1px var(--accent); }
+.trede div.is-nu b { color: var(--accent-tekst); }
+
+.vinkje { display: flex; gap: .6rem; align-items: flex-start; margin: .5rem 0; font-size: .9rem; color: var(--ink-1); }
+.vinkje input { width: 18px; height: 18px; margin: .15rem 0 0; accent-color: var(--accent); flex: none; }
+.vinkje small { display: block; color: var(--ink-3); font-size: 12.5px; }
+.vinkje.is-uit { color: var(--ink-3); }
+
+.reken { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 1.5rem; }
+.bon { background: var(--vul); border-radius: 10px; padding: 1.2rem; align-self: start; position: sticky; top: 1rem; }
+.bon table { width: 100%; border-collapse: collapse; font-size: .875rem; font-variant-numeric: tabular-nums; }
+.bon td { padding: .45rem 0; vertical-align: top; }
+.bon td:last-child { text-align: right; white-space: nowrap; color: var(--ink-1); padding-left: 1rem; }
+.bon tr.streep td { border-top: 1px solid var(--lijn); }
+.bon .totaal td { padding-top: .8rem; font-weight: 700; color: var(--ink-1); font-size: 1.05rem; }
+.bon .hint { margin: .9rem 0 0; font-size: 12.5px; color: var(--ink-3); }
+.bon .duw { margin: .9rem 0 0; padding: .7rem .8rem; border-radius: 8px; background: var(--kaart); font-size: .8125rem; color: var(--ink-2); }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 38px; padding: 0 1rem; border-radius: 8px; border: 0; font: 600 .8125rem/1 var(--font); text-decoration: none; cursor: pointer; }
+.btn-primair { background: var(--accent); color: var(--accent-ink); }
+.btn-twee { background: var(--kaart); color: var(--ink-1); box-shadow: inset 0 0 0 1px var(--lijn-ui); }
+.knoppen { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+
+/* keuzehulp */
+.advies { margin-top: .4rem; border-radius: 10px; background: var(--vul); padding: 1.3rem; display: grid; gap: .8rem; }
+.advies h4 { margin: 0; font: 600 1.15rem/1.3 var(--font); color: var(--ink-1); }
+.advies p { margin: 0; font-size: .9rem; }
+.vergelijk { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+.vergelijk > div { background: var(--kaart); border-radius: 8px; padding: .8rem .9rem; border: 1px solid var(--lijn); }
+.vergelijk > div.is-beter { border: 2px solid var(--accent); }
+.vergelijk b { display: block; font-size: 1.25rem; color: var(--ink-1); font-variant-numeric: tabular-nums; margin: .2rem 0; }
+.vergelijk small { font-size: 12.5px; color: var(--ink-3); }
+
+/* startlijstje */
+.studio { display: grid; grid-template-columns: 200px minmax(0, 1fr); border-radius: 10px; overflow: hidden; border: 1px solid var(--lijn); min-height: 460px; }
+.studio-zij { background: var(--zij); padding: 1rem .7rem; display: grid; align-content: start; gap: .2rem; }
+.studio-zij .merk { color: var(--zij-ink-1); font-weight: 800; letter-spacing: .02em; padding: .2rem .55rem .8rem; }
+.studio-zij span { color: var(--zij-ink); font-size: .8125rem; padding: .5rem .55rem; border-radius: 6px; }
+.studio-zij span.is-nu { background: var(--zij-actief); color: var(--zij-ink-1); }
+.studio-hoofd { background: var(--veld); padding: 1.4rem; display: grid; gap: 1rem; align-content: start; }
+.studio-hoofd h3 { font-family: var(--font); font-weight: 600; font-size: 1.4rem; margin: 0; }
+.lijst { background: var(--kaart); border: 1px solid var(--lijn); border-radius: 10px; padding: 1.1rem 1.2rem; }
+.lijst-kop { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-bottom: .2rem; }
+.lijst-kop b { color: var(--ink-1); font-size: .9375rem; }
+.balk { height: 6px; border-radius: 3px; background: var(--vul); overflow: hidden; margin: .5rem 0 .9rem; }
+.balk i { display: block; height: 100%; background: var(--accent); border-radius: 3px; transition: width .35s cubic-bezier(.22, 1, .36, 1); }
+.lijst ol { list-style: none; margin: 0; padding: 0; display: grid; gap: .1rem; }
+.lijst li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: .7rem; align-items: center; padding: .55rem 0; border-top: 1px solid var(--lijn); }
+.lijst li:first-child { border-top: 0; }
+.stip { width: 20px; height: 20px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--lijn-ui); display: grid; place-items: center; }
+.lijst li.is-af .stip { background: var(--goed); box-shadow: none; }
+.lijst li.is-af .stip::after { content: ""; width: 8px; height: 5px; border: 2px solid #fff; border-top: 0; border-right: 0; transform: rotate(-45deg) translate(1px, -1px); }
+.lijst li .wat { font-size: .875rem; color: var(--ink-1); }
+.lijst li.is-af .wat { color: var(--ink-3); text-decoration: line-through; text-decoration-color: var(--lijn-ui); }
+.lijst li .wat small { display: block; font-size: 12.5px; color: var(--ink-3); text-decoration: none; }
+.lijst li a { font-size: .8125rem; font-weight: 600; color: var(--accent-tekst); text-decoration: none; white-space: nowrap; }
+.lijst li.is-af a { visibility: hidden; }
+.klaar { background: var(--kaart); border: 1px solid var(--lijn); border-radius: 10px; padding: 1rem 1.2rem; font-size: .875rem; color: var(--ink-1); }
+.tegels { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .6rem; }
+.tegels div { background: var(--kaart); border: 1px solid var(--lijn); border-radius: 10px; padding: .8rem; font-size: 12.5px; color: var(--ink-3); }
+.tegels b { display: block; font-size: 1.3rem; color: var(--ink-1); }
+.bedien { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin-bottom: 1rem; font-size: .8125rem; }
+
+@media (max-width: 56em) {
+  .paneel, .reken { grid-template-columns: 1fr; }
+  .bon { position: static; }
+  .studio { grid-template-columns: 1fr; }
+  .studio-zij { grid-auto-flow: column; overflow-x: auto; }
+  .tegels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 30em) { .trede { grid-template-columns: repeat(2, minmax(0, 1fr)); } .vergelijk { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .balk i { transition: none; } }
+</style>
+</head>
+<body>
+<main class="pagina">
+  <p class="schets-tag">Schets · niet gebouwd · ronde 9, stap 9</p>
+  <h1>Drie voorstellen om aan te klikken</h1>
+  <p class="intro">Bij elk voorstel uit <b>CONCEPT-RONDE-9.md</b> een werkende schets, zodat je ziet hoe het voelt voordat je ja of nee zegt. De bedragen zijn de echte: ze komen rechtstreeks uit <code>pricing.js</code>, met dezelfde rekenregels als het bestelformulier. Links per schets wat het is, waarom, en wat het kost.</p>
+
+  <div class="tabs" role="tablist" aria-label="Voorstellen">
+    <button class="tab" role="tab" id="t-b4" aria-controls="p-b4" aria-selected="true">B4 · Prijscalculator</button>
+    <button class="tab" role="tab" id="t-b3" aria-controls="p-b3" aria-selected="false" tabindex="-1">B3 · Keuzehulp</button>
+    <button class="tab" role="tab" id="t-c1" aria-controls="p-c1" aria-selected="false" tabindex="-1">C1 · Startlijstje in Studio</button>
+  </div>
+
+  <!-- ═══ B4 ═══ -->
+  <section class="paneel" id="p-b4" role="tabpanel" aria-labelledby="t-b4">
+    <aside class="uitleg">
+      <h2>Prijscalculator op /pricing</h2>
+      <dl>
+        <div><dt class="label">Wat</dt><dd>Een schuif voor het aantal producten en drie vinkjes. Het totaal ex. en in. btw staat ernaast en loopt mee.</dd></div>
+        <div><dt class="label">Waarom</dt><dd>De staffel staat nu als tabel. "Wat kost 14 producten met 4K?" moet je zelf uitrekenen, en extra foto's en voorrang staan er niet in.</dd></div>
+        <div><dt class="label">Kost</dt><dd>Klein tot middel. De rekenfunctie bestaat al (<code>quote()</code>); dit is een eiland op /pricing dat dezelfde functie aanroept.</dd></div>
+        <div><dt class="label">Mijn advies</dt><dd>Ja. Alternatief: drie uitgeschreven voorbeelden (5, 14 en 30 producten) onder de tabel.</dd></div>
+      </dl>
+    </aside>
+    <div class="podium">
+      <h3>Wat kost jouw bestelling?</h3>
+      <p class="sub">Kies het aantal producten en wat je erbij wilt. Het tarief per product zakt naarmate je er meer bestelt.</p>
+      <div class="reken">
+        <div>
+          <fieldset class="groep">
+            <legend>Dienst</legend>
+            <div class="keuzes">
+              <label class="keuze"><input type="radio" name="dienst" value="catalog" checked><span>Catalog · <span data-fotos="catalog"></span> foto's</span></label>
+              <label class="keuze"><input type="radio" name="dienst" value="lifestyle"><span>Lifestyle · <span data-fotos="lifestyle"></span> foto's</span></label>
+            </div>
+          </fieldset>
+          <fieldset class="groep">
+            <legend><label for="aantal">Aantal producten</label></legend>
+            <div class="schuif">
+              <input id="aantal" type="range" min="1" max="40" value="14">
+              <output for="aantal" id="aantal-uit">14</output>
+              <div class="trede" id="trede"></div>
+            </div>
+          </fieldset>
+          <fieldset class="groep">
+            <legend>Erbij</legend>
+            <div class="schuif">
+              <label for="extra" class="vinkje"><span>Extra foto's per product <small id="extra-prijs"></small></span></label>
+              <output for="extra" id="extra-uit">0</output>
+              <input id="extra" type="range" min="0" value="0" style="grid-column:1/-1">
+            </div>
+            <label class="vinkje" id="hoog-rij"><input type="checkbox" id="hoog"><span>4K voor elk product <small id="hoog-prijs"></small></span></label>
+            <label class="vinkje" id="voorrang-rij"><input type="checkbox" id="voorrang"><span>Voorrang <small id="voorrang-uitleg"></small></span></label>
+          </fieldset>
+        </div>
+        <div class="bon" aria-live="polite">
+          <table><tbody id="bon"></tbody></table>
+          <p class="duw" id="duw" hidden></p>
+          <p class="hint">Bedragen zoals het bestelformulier ze rekent. Btw: 21% voor Nederland; met een geldig EU-btw-nummer of buiten de EU betaal je het bedrag ex. btw.</p>
+          <div class="knoppen"><a class="btn btn-primair" href="#" onclick="return false">Bestel dit</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ B3 ═══ -->
+  <section class="paneel" id="p-b3" role="tabpanel" aria-labelledby="t-b3" hidden>
+    <aside class="uitleg">
+      <h2>Keuzehulp bovenaan /start</h2>
+      <dl>
+        <div><dt class="label">Wat</dt><dd>Drie vragen, één advies met prijs en een knop die het juiste formulier opent, al ingevuld.</dd></div>
+        <div><dt class="label">Waarom</dt><dd>/start heeft acht kaarten. Wie twijfelt tussen catalog en lifestyle, of tussen los en abonnement, kiest vaak niets.</dd></div>
+        <div><dt class="label">Kost</dt><dd>Middel. Alleen front-end, regels uit pricing.js en plans.js, geen eigen prijzen.</dd></div>
+        <div><dt class="label">Mijn advies</dt><dd>Ja, als kaart bovenaan /start. Alternatief: één vergelijkingstabel "los of abonnement" (bestaat deels op /compare).</dd></div>
+        <div><dt class="label">Open vraag aan jou</dt><dd>Bij "allebei" adviseert de schets catalog én lifestyle los. Wil je daar het abonnement harder naar voren, zeg het: dat is één regel.</dd></div>
+      </dl>
+    </aside>
+    <div class="podium">
+      <h3>Wat past bij jou?</h3>
+      <p class="sub">Drie vragen. Je kunt daarna nog alles aanpassen.</p>
+      <fieldset class="groep">
+        <legend>1. Wat verkoop je?</legend>
+        <div class="keuzes">
+          <label class="keuze"><input type="radio" name="wat" value="kleding" checked><span>Kleding</span></label>
+          <label class="keuze"><input type="radio" name="wat" value="accessoires"><span>Tassen, schoenen, sieraden</span></label>
+          <label class="keuze"><input type="radio" name="wat" value="anders"><span>Iets anders</span></label>
+        </div>
+      </fieldset>
+      <fieldset class="groep">
+        <legend>2. Waar komen de beelden te staan?</legend>
+        <div class="keuzes">
+          <label class="keuze"><input type="radio" name="waar" value="shop" checked><span>Mijn webshop</span></label>
+          <label class="keuze"><input type="radio" name="waar" value="markt"><span>Bol of Amazon</span></label>
+          <label class="keuze"><input type="radio" name="waar" value="social"><span>Social en advertenties</span></label>
+          <label class="keuze"><input type="radio" name="waar" value="beide"><span>Shop én social</span></label>
+        </div>
+      </fieldset>
+      <fieldset class="groep">
+        <legend>3. Hoeveel nieuwe producten per maand?</legend>
+        <div class="keuzes">
+          <label class="keuze"><input type="radio" name="hoeveel" value="3"><span>1 tot 4</span></label>
+          <label class="keuze"><input type="radio" name="hoeveel" value="8" checked><span>5 tot 12</span></label>
+          <label class="keuze"><input type="radio" name="hoeveel" value="20"><span>13 tot 30</span></label>
+          <label class="keuze"><input type="radio" name="hoeveel" value="40"><span>Meer dan 30</span></label>
+        </div>
+      </fieldset>
+      <div class="advies" aria-live="polite" id="advies"></div>
+    </div>
+  </section>
+
+  <!-- ═══ C1 ═══ -->
+  <section class="paneel" id="p-c1" role="tabpanel" aria-labelledby="t-c1" hidden>
+    <aside class="uitleg">
+      <h2>Startlijstje op het Studio-overzicht</h2>
+      <dl>
+        <div><dt class="label">Wat</dt><dd>Voor een nieuwe klant bovenaan het overzicht vier stappen die vanzelf afvinken. Verdwijnt als alles af is.</dd></div>
+        <div><dt class="label">Waarom</dt><dd>Studio heeft zes tabbladen; een nieuwe klant weet niet wat hij als eerste moet doen.</dd></div>
+        <div><dt class="label">Kost</dt><dd>Klein tot middel. Alleen lezen uit bestaande tabellen; geen nieuwe gegevens, geen script (Studio draait zonder JavaScript — de stappen zijn links).</dd></div>
+        <div><dt class="label">Mijn advies</dt><dd>Ja, vooral voor abonnees. Alternatief: één regel "Volgende stap: …" in plaats van een lijst.</dd></div>
+        <div><dt class="label">In deze schets</dt><dd>Klik op een stap om hem af te vinken, zoals het systeem dat zou doen als de klant het gedaan heeft.</dd></div>
+      </dl>
+    </aside>
+    <div class="podium">
+      <div class="bedien">
+        <span class="label">Klant</span>
+        <label class="keuze"><input type="radio" name="klant" value="los" checked><span>Losse bestellingen</span></label>
+        <label class="keuze"><input type="radio" name="klant" value="abo"><span>Abonnee</span></label>
+        <button class="btn btn-twee" type="button" id="opnieuw">Opnieuw</button>
+      </div>
+      <div class="studio">
+        <nav class="studio-zij" aria-label="Studio (schets)">
+          <div class="merk">VISUAILS</div>
+          <span class="is-nu">Overzicht</span><span>Bestellingen</span><span>Je vaste look</span><span>Je gegevens</span><span>Facturen</span><span>Abonnement</span>
+        </nav>
+        <div class="studio-hoofd">
+          <h3>Welkom, Anna</h3>
+          <div id="lijst-plek"></div>
+          <div class="tegels"><div><b>0</b>Te betalen</div><div><b>0</b>Te beoordelen</div><div><b>0</b>Bij ons in de maak</div><div><b>0</b>Geleverd</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+const D = {"ladder":{"catalog":[[1,4,89],[5,9,65],[10,19,51],[20,null,39]],"lifestyle":[[1,4,109],[5,9,82],[10,19,64],[20,null,49]]},"extra":[[1,4,39],[5,9,34],[10,19,29],[20,null,19]],"maxExtra":4,"hoog":9,"voorrang":{"deel":0.2,"bodem":49,"plafond":249,"max":20},"btw":0.21,"plannen":{"starter":{"naam":"Starter","bedrag":390,"credits":45},"studio":{"naam":"Pro","bedrag":790,"credits":120},"brand":{"naam":"Merk","bedrag":1690,"credits":290}},"credits":{"catalog":4,"lifestyle":5},"fotos":{"catalog":4,"lifestyle":3}};
+const eur = (n) => '€' + (Math.round(n * 100) % 100 ? n.toFixed(2).replace('.', ',') : String(Math.round(n))).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const rung = (lad, n) => lad.find(([lo, hi]) => n >= lo && (hi === null || n <= hi));
+const metBtw = (net) => Math.round(net * (1 + D.btw) * 100) / 100;
+
+/* tabs */
+const tabs = [...document.querySelectorAll('.tab')];
+function kies(t) {
+  tabs.forEach((x) => { const aan = x === t; x.setAttribute('aria-selected', aan); x.tabIndex = aan ? 0 : -1; document.getElementById(x.getAttribute('aria-controls')).hidden = !aan; });
+}
+tabs.forEach((t, i) => {
+  t.addEventListener('click', () => kies(t));
+  t.addEventListener('keydown', (e) => { const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (d) { const n = tabs[(i + d + tabs.length) % tabs.length]; kies(n); n.focus(); } });
+});
+document.querySelectorAll('[data-fotos]').forEach((s) => { s.textContent = D.fotos[s.dataset.fotos]; });
+
+/* ── B4 ── zelfde som als quote.js: n × tarief + extra's × extratarief + 4K × n, voorrang over dat geheel */
+const $ = (id) => document.getElementById(id);
+$('extra').max = D.maxExtra;
+function reken() {
+  const dienst = document.querySelector('input[name="dienst"]:checked').value;
+  const n = +$('aantal').value, x = +$('extra').value;
+  $('aantal-uit').value = n; $('extra-uit').value = x;
+  const lad = D.ladder[dienst]; const r = rung(lad, n); const rate = r[2];
+  const er = rung(D.extra, n)[2];
+  const hoogKan = dienst === 'lifestyle';
+  $('hoog').disabled = !hoogKan; if (!hoogKan) $('hoog').checked = false;
+  $('hoog-rij').classList.toggle('is-uit', !hoogKan);
+  $('hoog-prijs').textContent = hoogKan ? `${eur(D.hoog)} per product` : 'alleen bij lifestyle';
+  $('extra-prijs').textContent = `${eur(er)} per foto bij ${n} product${n > 1 ? 'en' : ''}`;
+  const vKan = n <= D.voorrang.max;
+  $('voorrang').disabled = !vKan; if (!vKan) $('voorrang').checked = false;
+  $('voorrang-rij').classList.toggle('is-uit', !vKan);
+  $('voorrang-uitleg').textContent = vKan ? `geleverd de volgende werkdag vóór 17:00 · ${Math.round(D.voorrang.deel * 100)}% van het bedrag, min. ${eur(D.voorrang.bodem)}, max. ${eur(D.voorrang.plafond)}` : `tot ${D.voorrang.max} producten`;
+  $('trede').innerHTML = lad.map(([lo, hi, p]) => `<div class="${lo === r[0] ? 'is-nu' : ''}"><b>${eur(p)}</b>${hi === null ? lo + '+' : lo + '–' + hi}</div>`).join('');
+  const regels = [[`${n} × ${dienst === 'catalog' ? 'catalogset' : 'lifestylecarrousel'} à ${eur(rate)}`, n * rate]];
+  if (x) regels.push([`${x * n} extra foto's à ${eur(er)}`, x * n * er]);
+  const h = $('hoog').checked ? n : 0;
+  if (h) regels.push([`4K voor ${h} product${h > 1 ? 'en' : ''}`, h * D.hoog]);
+  const net0 = regels.reduce((s, [, b]) => s + b, 0);
+  const v = $('voorrang').checked ? Math.min(D.voorrang.plafond, Math.max(D.voorrang.bodem, Math.ceil(net0 * D.voorrang.deel))) : 0;
+  if (v) regels.push(['Voorrang', v]);
+  const net = net0 + v; const bruto = metBtw(net);
+  $('bon').innerHTML = regels.map(([t, b]) => `<tr><td>${t}</td><td>${eur(b)}</td></tr>`).join('')
+    + `<tr class="streep"><td>Totaal ex. btw</td><td>${eur(net)}</td></tr>`
+    + `<tr><td>Btw ${Math.round(D.btw * 100)}%</td><td>${eur(Math.round((bruto - net) * 100) / 100)}</td></tr>`
+    + `<tr class="totaal"><td>Totaal in. btw</td><td>${eur(bruto)}</td></tr>`;
+  const volgende = lad.find(([lo]) => lo > n);
+  const duw = $('duw');
+  if (volgende && volgende[0] - n <= 3) {
+    const extraNet = volgende[0] * volgende[2] - n * rate;
+    duw.hidden = false;
+    duw.textContent = `Bij ${volgende[0]} producten zakt het tarief naar ${eur(volgende[2])}. ${volgende[0] - n} product${volgende[0] - n > 1 ? 'en' : ''} meer kost dan ${extraNet > 0 ? eur(extraNet) : 'niets'} extra.`;
+  } else duw.hidden = true;
+}
+document.querySelectorAll('#p-b4 input').forEach((i) => i.addEventListener('input', reken));
+reken();
+
+/* ── B3 ── */
+function advies() {
+  const wat = document.querySelector('input[name="wat"]:checked').value;
+  const waar = document.querySelector('input[name="waar"]:checked').value;
+  const n = +document.querySelector('input[name="hoeveel"]:checked').value;
+  const diensten = waar === 'social' ? ['lifestyle'] : waar === 'beide' ? ['catalog', 'lifestyle'] : ['catalog'];
+  const los = diensten.reduce((s, d) => s + n * rung(D.ladder[d], n)[2], 0);
+  const credits = diensten.reduce((s, d) => s + n * D.credits[d], 0);
+  const plan = Object.values(D.plannen).find((p) => p.credits >= credits);
+  const naam = { catalog: 'Catalog', lifestyle: 'Lifestyle' };
+  const waarom = {
+    shop: 'Voor een productpagina wil je het product van alle kanten, op een rustige achtergrond.',
+    markt: 'Bol en Amazon vragen een witte achtergrond en het product van voren — dat is precies een catalogset.',
+    social: 'Voor social en advertenties werkt een scène beter dan een witte achtergrond: één look, drie beelden.',
+    beide: 'Voor de shop de catalogset, voor social de lifestylecarrousel — van dezelfde productfoto.',
+  }[waar];
+  const model = wat === 'kleding' ? ' Kleding laten we op een model zien; dat zit erin.' : '';
+  const beter = plan && plan.bedrag < los;
+  let html = `<span class="label">Ons advies</span><h4>${diensten.map((d) => naam[d]).join(' + ')}${beter ? `, of het ${plan.naam}-abonnement` : ''}</h4><p>${waarom}${model}</p>`;
+  html += `<div class="vergelijk"><div class="${beter ? '' : 'is-beter'}"><span class="label">Los per maand</span><b>${eur(los)}</b><small>${n} producten · ${diensten.map((d) => `${naam[d].toLowerCase()} à ${eur(rung(D.ladder[d], n)[2])}`).join(' + ')} · ex. btw</small></div>`;
+  html += plan
+    ? `<div class="${beter ? 'is-beter' : ''}"><span class="label">${plan.naam}-abonnement</span><b>${eur(plan.bedrag)}</b><small>per maand · ${plan.credits} credits, jij gebruikt er ${credits} · ex. btw</small></div>`
+    : `<div><span class="label">Abonnement</span><b>Op maat</b><small>${credits} credits per maand is meer dan het grootste abonnement — dan maken we een eigen aantal.</small></div>`;
+  html += `</div><p>${beter ? `Het abonnement is ${eur(los - plan.bedrag)} per maand goedkoper, en je houdt ${plan.credits - credits} credits over.` : 'Los bestellen is bij dit aantal voordeliger dan een abonnement.'}</p>`;
+  html += `<div class="knoppen"><a class="btn btn-primair" href="#" onclick="return false">${beter ? `Bekijk het ${plan.naam}-abonnement` : `Start met ${diensten.map((d) => naam[d].toLowerCase()).join(' en ')}`}</a><a class="btn btn-twee" href="#" onclick="return false">${beter ? 'Toch los bestellen' : 'Vergelijk met een abonnement'}</a></div>`;
+  $('advies').innerHTML = html;
+}
+document.querySelectorAll('#p-b3 input').forEach((i) => i.addEventListener('change', advies));
+advies();
+
+/* ── C1 ── */
+const STAPPEN = {
+  los: [
+    ['gegevens', 'Vul je bedrijfsgegevens in', 'Dan staan ze op je facturen en hoef je ze niet bij elke bestelling te typen.', 'Naar je gegevens'],
+    ['bestel', 'Plaats je eerste bestelling', 'Catalog of lifestyle, vanaf één product.', 'Bestellen'],
+    ['keur', 'Keur je eerste beelden goed', 'Of vraag een aanpassing — je hebt één revisieronde per bestelling.', 'Naar je bestellingen'],
+    ['look', 'Leg je vaste look vast', 'Dan ziet elke volgende bestelling er hetzelfde uit.', 'Naar je vaste look'],
+  ],
+  abo: [
+    ['gegevens', 'Vul je bedrijfsgegevens in', 'Dan staan ze op je facturen.', 'Naar je gegevens'],
+    ['look', 'Leg je vaste look vast', 'Je abonnement gebruikt hem elke week.', 'Naar je vaste look'],
+    ['week', 'Zet je eerste week vast', 'Voeg producten toe; wij beginnen op de dag die je kiest.', 'Naar de planning'],
+    ['keur', 'Keur je eerste beelden goed', 'Of vraag een aanpassing.', 'Naar je bestellingen'],
+  ],
+};
+let af = new Set();
+function lijst() {
+  const soort = document.querySelector('input[name="klant"]:checked').value;
+  const s = STAPPEN[soort];
+  const klaar = s.filter(([k]) => af.has(k)).length;
+  const plek = $('lijst-plek');
+  if (klaar === s.length) { plek.innerHTML = '<div class="klaar">Alles staat. Dit lijstje verschijnt niet meer.</div>'; return; }
+  plek.innerHTML = `<div class="lijst"><div class="lijst-kop"><b>Zo begin je</b><span class="label">${klaar} van ${s.length}</span></div><div class="balk"><i style="width:${(klaar / s.length) * 100}%"></i></div><ol>${s.map(([k, t, u, l]) => `<li class="${af.has(k) ? 'is-af' : ''}"><span class="stip" aria-hidden="true"></span><span class="wat">${t}<small>${u}</small></span><a href="#" data-k="${k}">${l} →</a></li>`).join('')}</ol></div>`;
+  plek.querySelectorAll('a[data-k]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); af.add(a.dataset.k); lijst(); }));
+}
+document.querySelectorAll('input[name="klant"]').forEach((i) => i.addEventListener('change', () => { af = new Set(); lijst(); }));
+$('opnieuw').addEventListener('click', () => { af = new Set(); lijst(); });
+lijst();
+</script>
+</body>
+</html>

@@ -858,7 +858,7 @@ console.log('\nhet vraagteken naast hooks');
        het niet" en "One photo alone won't work" — hetzelfde, anders gezegd. */
     check(`${lang}: één foto is niet genoeg`,
       /(not enough|niet genoeg|red je het niet|won.t work|isn.t (enough|sufficient)|is not (enough|sufficient))/i.test(b), true);
-    check(`${lang}: een specialist kijkt hem na`, /specialist/.test(b), true);
+    check(`${lang}: de beeldredactie kijkt hem na`, /beeldredactie|image editors/.test(b), true);
     /* ── DE LEVERTIJD KOMT UIT DE BRON — 18 augustus 2026 ────────────────
        Hier stond `/24 (to|tot) 48/` en die toets hield een FOUTE belofte vast.
        De homepage zei "binnen 24 tot 48 uur" terwijl elke andere pagina

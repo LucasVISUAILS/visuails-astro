@@ -280,7 +280,7 @@ function algemeneGroepen(lang = 'en') {
         items: [
           {
             q: 'Wat is VISUAILS?',
-            a: 'VISUAILS maakt van een map met productfoto’s catalogsets, lifestylecarrousels en video voor een hele productlijn. Onze productie doet dat op schaal; een specialist controleert elke visual voordat die bij jou aankomt.',
+            a: 'VISUAILS maakt van een map met productfoto’s catalogsets, lifestylecarrousels en video voor een hele productlijn. Onze productie doet dat op schaal; onze beeldredactie controleert elke visual voordat die bij jou aankomt.',
           },
           {
             // DE ENIGE PLEK waar het woord "drop" nog staat, en het gaat daar
@@ -359,7 +359,7 @@ function algemeneGroepen(lang = 'en') {
              * slotzin is letterlijk `toolClose` van /compare, zodat de twee pagina's
              * op hetzelfde eindigen in plaats van elk hun eigen slot te verzinnen. */
             q: 'Waarom zou ik dit niet zelf doen met een AI-tool?',
-            a: 'Voor een deel moet je dat ook doen. Een snelle mock-up om een idee te testen, een schets van een layout, alles wat niet bij een klant terechtkomt — daar is een tool genoeg voor, en goedkoper. Hij kost je stilletjes geld zodra de beelden naast elkaar moeten staan: de kleur verschuift bij elke run een beetje, en over een hele catalogus is dat wat een shop onsamenhangend maakt. Wat je hier koopt is alles wat er ná het genereren van een beeld gebeurt. Een specialist controleert elk beeld voordat het weggaat. Het model, de achtergrond en de beeldverhouding die je hebt goedgekeurd worden bewaard en bij je volgende bestelling opnieuw gebruikt. Waar een marktplaats zuiver wit eist, krijg je zuiver wit. De AI Act-regel komt bij het bestand mee. Is een tool genoeg voor wat je nodig hebt, gebruik dan de tool — en zo niet, dan is de enige test die iets waard is je eigen product.',
+            a: 'Voor een deel moet je dat ook doen. Een snelle mock-up om een idee te testen, een schets van een layout, alles wat niet bij een klant terechtkomt — daar is een tool genoeg voor, en goedkoper. Hij kost je stilletjes geld zodra de beelden naast elkaar moeten staan: de kleur verschuift bij elke run een beetje, en over een hele catalogus is dat wat een shop onsamenhangend maakt. Wat je hier koopt is alles wat er ná het genereren van een beeld gebeurt. Onze beeldredactie controleert elk beeld voordat het weggaat. Het model, de achtergrond en de beeldverhouding die je hebt goedgekeurd worden bewaard en bij je volgende bestelling opnieuw gebruikt. Waar een marktplaats zuiver wit eist, krijg je zuiver wit. De AI Act-regel komt bij het bestand mee. Is een tool genoeg voor wat je nodig hebt, gebruik dan de tool — en zo niet, dan is de enige test die iets waard is je eigen product.',
             linkText: 'De eerlijke vergelijking',
             linkHref: '/compare',
           },
@@ -425,8 +425,8 @@ function algemeneGroepen(lang = 'en') {
             a: `${producttrouw('nl')} Wat we niet beloven, is dat AI je product tot op de draad kopieert — dat kan geen enkele tool, en zo’n belofte merk je pas bij levering. Wat we wél doen: elk verschil dat we zien met de hand rechtzetten, en bij twijfel nemen we contact met je op voordat we verdergaan, in plaats van te gokken. Lukt het alsnog niet, dan lees je bij “Wat als de visuals niet kloppen?” hieronder wat er dan gebeurt.`,
           },
           {
-            q: 'Wordt elk beeld echt door een specialist gecontroleerd?',
-            a: `${clause(reviewClaim('attended', 'nl'))} — een specialist bekijkt elk beeld en controleert het op juistheid, consistentie en artefacten voordat het wordt geleverd. Er gaat niets ongecontroleerd weg, via welke ingang dan ook.`,
+            q: 'Wordt elk beeld echt door onze beeldredactie gecontroleerd?',
+            a: `${clause(reviewClaim('attended', 'nl'))} — onze beeldredactie bekijkt elk beeld en controleert het op juistheid, consistentie en artefacten voordat het wordt geleverd. Er gaat niets ongecontroleerd weg, via welke ingang dan ook.`,
           },
           {
             q: 'Wat als de visuals niet kloppen?',
@@ -524,7 +524,7 @@ function algemeneGroepen(lang = 'en') {
       items: [
         {
           q: 'What is VISUAILS?',
-          a: 'VISUAILS turns a folder of product photos into catalog sets, lifestyle carousels and video for a whole product line. Our production does that at scale; a specialist checks every visual before it reaches you.',
+          a: 'VISUAILS turns a folder of product photos into catalog sets, lifestyle carousels and video for a whole product line. Our production does that at scale; our image editors check every visual before it reaches you.',
         },
         {
           // THE ONE PLACE the word "drop" still appears, and there it means the
@@ -559,7 +559,7 @@ function algemeneGroepen(lang = 'en') {
              het antwoord op de Engelse vraagtekst op en gebruikt de index die
              dat oplevert voor beide talen. */
           q: 'Why not just do this myself with an AI tool?',
-          a: 'For some of it you should. A quick mock-up to test an idea, a layout sketch, anything that is not going in front of a customer — a tool is enough for that, and it is cheaper. It starts to cost you once the images have to sit next to each other: the colour shifts a little on every run, and across a full catalog that is what makes a shop look inconsistent. What you buy here is everything that happens after the image is generated. A specialist checks every image before it ships. The model, the background and the aspect ratio you approved are stored and reused on your next order. Where a marketplace demands pure white, you get pure white. The AI Act line comes with the file. If a tool is enough for what you need, use the tool — and if it is not, the only test worth anything is your own product.',
+          a: 'For some of it you should. A quick mock-up to test an idea, a layout sketch, anything that is not going in front of a customer — a tool is enough for that, and it is cheaper. It starts to cost you once the images have to sit next to each other: the colour shifts a little on every run, and across a full catalog that is what makes a shop look inconsistent. What you buy here is everything that happens after the image is generated. Our image editors check every image before it ships. The model, the background and the aspect ratio you approved are stored and reused on your next order. Where a marketplace demands pure white, you get pure white. The AI Act line comes with the file. If a tool is enough for what you need, use the tool — and if it is not, the only test worth anything is your own product.',
           linkText: 'The honest comparison',
           linkHref: '/compare',
         },
@@ -656,8 +656,8 @@ function algemeneGroepen(lang = 'en') {
           a: `${producttrouw('en')} What we do not promise is that AI copies your product thread for thread — no tool does, and a promise like that only breaks on delivery. What we do: correct every difference we spot by hand, and when we are unsure we contact you before going further instead of guessing. If it still cannot be done, “What if the visuals are not right?” below says what happens then.`,
         },
         {
-          q: 'Is every image really checked by a specialist?',
-          a: `${clause(reviewClaim('attended', 'en'))} — a specialist selects and inspects each one for accuracy, consistency and artefacts before it is delivered. Nothing leaves unchecked, whichever way you order.`,
+          q: 'Is every image really checked by our image editors?',
+          a: `${clause(reviewClaim('attended', 'en'))} — our image editors select and inspect each one for accuracy, consistency and artefacts before it is delivered. Nothing leaves unchecked, whichever way you order.`,
         },
         {
           q: 'What if the visuals are not right?',
@@ -1162,7 +1162,7 @@ const HOOKS_FAQ = {
       },
       {
         q: 'Do you guarantee it will perform?',
-        a: 'No, and nobody honestly can. We guarantee the format, the execution and the check by a specialist before it goes out. Whether a post reaches anyone depends on the platform and on timing, and neither of those is ours to promise — a format can give a post a better chance, it cannot give it an audience.',
+        a: 'No, nobody can. We guarantee the format, the execution and the check by our image editors before it goes out. Whether a post reaches anyone depends on the platform and on timing, and neither of those is ours to promise — a format can give a post a better chance, it cannot give it an audience.',
       },
       {
         q: 'What do I have to send?',
@@ -1193,7 +1193,7 @@ const HOOKS_FAQ = {
       },
       {
         q: 'Garanderen jullie dat hij het goed doet?',
-        a: 'Nee, en dat kan eerlijk gezegd niemand. Wij garanderen het format, de uitvoering en de controle door een specialist voordat hij weggaat. Of een post iemand bereikt, hangt af van het platform en van timing, en die twee zijn niet aan ons om te beloven — een format kan een post een betere kans geven, geen publiek.',
+        a: 'Nee, dat kan niemand. Wij garanderen het format, de uitvoering en de controle door de beeldredactie voordat hij weggaat. Of een post iemand bereikt, hangt af van het platform en van timing, en die twee zijn niet aan ons om te beloven — een format kan een post een betere kans geven, geen publiek.',
       },
       {
         q: 'Wat moet ik aanleveren?',

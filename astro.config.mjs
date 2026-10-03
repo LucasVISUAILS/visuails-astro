@@ -14,6 +14,7 @@ import llmsTxt from './scripts/llms-txt.mjs';
 import avifNaastWebp from './scripts/avif-naast-webp.mjs';
 import stijlUitDePagina from './scripts/stijl-uit-de-pagina.mjs';
 import cspScripts from './scripts/csp-scripts.mjs';
+import commentaarUitDePagina from './scripts/commentaar-uit-de-pagina.mjs';
 import plaatshouders from './scripts/plaatshouders.mjs';
 // De woff2's voor Studio, portaal en /admin — die laden de sitebundel niet.
 import fontsVoorWorker from './scripts/fonts-voor-worker.mjs';
@@ -152,5 +153,8 @@ export default defineConfig({
   // plaatshouders() staat VÓÓR avifNaastWebp(): hij maakt van de oude foto's een
   // .svg, en de avif-stap laat alles wat geen .webp is met rust. Zie
   // src/data/beeld.js voor de knop en de lijst.
-  integrations: [brandLockupGuard(), gewijzigdOp(), sitemapAnd404(), llmsTxt(), plaatshouders(), avifNaastWebp(), fontsVoorWorker(), stijlUitDePagina(), cspScripts()],
+  // commentaarUitDePagina() (ronde 9): werknotities uit de gebouwde HTML — vóór de
+  // stijl- en CSP-stappen, want csp-scripts hasht de scripts zoals ze er ná deze
+  // stap uitzien. Zie de kop van scripts/commentaar-uit-de-pagina.mjs.
+  integrations: [brandLockupGuard(), gewijzigdOp(), sitemapAnd404(), llmsTxt(), plaatshouders(), avifNaastWebp(), fontsVoorWorker(), commentaarUitDePagina(), stijlUitDePagina(), cspScripts()],
 });

@@ -183,7 +183,7 @@ de verwerkersovereenkomst, en dat moet zo blijven:
 
 | Wie | Waar | Waarvoor |
 |---|---|---|
-| Freepik Company, S.L.U. | Málaga, Spanje (EU) | het genereren van de visuals; de modelaanbieder daarachter is subverwerker van Freepik en bewaart het beeld ten hoogste 30 dagen |
+| Magnific AI, S.L.U. | Málaga, Spanje (EU); voorheen Freepik Company, S.L.U., CIF B-93183366 | het genereren van de visuals; het aangeleverde beeld wordt direct na het genereren verwijderd, de gemaakte visual bewaard zolang wij klant zijn; de modelaanbieder daarachter is subverwerker van Magnific en bewaart het beeld ten hoogste 30 dagen. Verwerkersovereenkomst: Magnific "Data Processing Addendum — Individual Subscriptions", ontvangen 2 oktober 2026 (case 01765661) |
 | Cloudflare, Inc. | Verenigde Staten (wereldwijd netwerk) | opslag en het draaien van de site |
 | Plus Five Five, Inc. (Resend) | San Francisco, Verenigde Staten | e-mail; de bestelmelding aan de studio draagt het materiaal als bijlage; Resend bewaart verzonden mail 30 dagen |
 | Google Ireland Ltd. (Google Workspace) | Dublin, Ierland (EU); Google LLC in de VS | de mailbox hello@visuails.com, waarin die bestelmelding binnenkomt (MX-records wijzen naar Google, nagekeken 29 september 2026) |
@@ -200,7 +200,7 @@ de verwerkersovereenkomst, en dat moet zo blijven:
 
 **Welk AI-model er binnen het platform van de subverwerker wordt gebruikt, staat
 hier niet** — het wisselt. Art. 30 vraagt de *categorieën ontvangers*, en onze
-ontvanger is het platform. De modelaanbieder is wel een subverwerker van Freepik
+ontvanger is het platform. De modelaanbieder is wel een subverwerker van Magnific
 en dus een schakel in de keten: op verzoek krijgt een klant binnen vijf werkdagen
 naam en vestigingsplaats van de aanbieders die voor zijn bestellingen zijn
 gebruikt (§8 van de verwerkersovereenkomst, 29 september 2026). Houd daarom per
@@ -219,9 +219,9 @@ het bestand ontvangt doet dat wel.
 | Cloudflare, Inc. (VS) | EU-VS Data Privacy Framework (art. 45, gecertificeerd); standaardcontractbepalingen in de verwerkersovereenkomst als terugval. **R2 en D1 staan niet in een EU-jurisdictie** — een locatiehint is "best effort", dus wij beweren nergens meer dat de opslag in de EU staat |
 | Plus Five Five, Inc. (Resend) (VS) | EU-VS Data Privacy Framework; standaardcontractbepalingen (module 2/3) in de DPA van Resend. Resend slaat alle data in de VS op, ook bij een EU-verzendregio |
 | Google LLC (VS), via Google Ireland | EU-VS Data Privacy Framework; standaardcontractbepalingen in Google's Cloud Data Processing Addendum |
-| modelaanbieders buiten de EER, via Freepik | Freepik sluit daarvoor zelf standaardcontractbepalingen; wij dragen niet zelf over |
+| modelaanbieders buiten de EER, via Magnific | Magnific sluit daarvoor zelf standaardcontractbepalingen (DPA §6.3); wij dragen niet zelf over |
 
-Freepik zelf is in Spanje gevestigd, dus op dat niveau is er geen doorgifte.
+Magnific zelf is in Spanje gevestigd, dus op dat niveau is er geen doorgifte.
 
 ## 7 · Beveiligingsmaatregelen (art. 30 lid 1 sub g, art. 32)
 

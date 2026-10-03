@@ -72,9 +72,9 @@ const c = nl ? {
   waTekst: `Hoi VISUAILS, ik wil graag praten over de ${style.name}-stijl.`,
   andere: 'Andere looks:',
   heroAlt: `De ${style.name}-stijl van VISUAILS`,
-  voeltH: ['Hoe ', ' voelt'],
+  voeltH: ['Wat ', ' kenmerkt'],
   sfeerAlt: `Voorbeeld in de ${style.name}-stijl`,
-  vlakH: ['Vlak vs. '],
+  vlakH: ['Voor en na: '],
   vlakP: 'Wat de behandeling werkelijk verandert.',
   vlak: 'Vlak',
   vlakAlt: `Een vlakke, ongegradeerde ${style.name}-scène`,
@@ -83,7 +83,7 @@ const c = nl ? {
   idealH: ['Ideaal ', 'voor'],
   krijgH: ['Wat je ', 'krijgt'],
   modelNoot: ['Het model in een ', '-scène: een standaardgezicht, of ', 'je eigen merkmodel', '.'],
-  slotH: ['Maak ', ' van jou.'],
+  slotH: ['Bestel in ', '.'],
   proef: 'Probeer VISUAILS',
 } : {
   terug: 'Lifestyle styles',
@@ -92,9 +92,9 @@ const c = nl ? {
   waTekst: `Hi VISUAILS, I’d like to talk about the ${style.name} style.`,
   andere: 'Other looks:',
   heroAlt: `The VISUAILS ${style.name} style`,
-  voeltH: ['What ', ' feels like'],
+  voeltH: ['What defines ', ''],
   sfeerAlt: `${style.name}-style example`,
-  vlakH: ['Flat vs. '],
+  vlakH: ['Before and after: '],
   vlakP: 'What the treatment actually changes.',
   vlak: 'Flat',
   vlakAlt: `A flat, ungraded ${style.name} scene`,
@@ -103,7 +103,7 @@ const c = nl ? {
   idealH: ['Best ', 'for'],
   krijgH: ['What you ', 'get'],
   modelNoot: ['The model in a ', ' scene: a standard face, or ', 'your own Brand Model', '.'],
-  slotH: ['Make ', ' yours.'],
+  slotH: ['Order in ', '.'],
   proef: 'Test sample',
 };
 
@@ -247,7 +247,7 @@ const rasterFotos = alleRasterFotos.length >= 3 ? alleRasterFotos.slice(0, alleR
     {/* De eigen look heet "Eigen look" / "Custom", en dat gaf "Maak Eigen look van jou."
         Voor die ene look staat er daarom "Maak je eigen look." */}
     <h2 class="hoog hoog-2">{style.slug === 'custom'
-      ? <>{c.slotH[0]}<em>{lang === 'nl' ? 'je eigen look' : 'your own look'}</em>.</>
+      ? <>{lang === 'nl' ? <>Vraag <em>je eigen look</em> aan.</> : <>Request <em>your own look</em>.</>}</>
       : <>{c.slotH[0]}<em>{style.name}</em>{c.slotH[1]}</>}</h2>
     <div class="acties">
       <a class="knop knop-inkt" href={style.orderHref ?? lp('/start')}>{c.bestel}</a>

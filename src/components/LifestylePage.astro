@@ -132,7 +132,8 @@ const COPY = {
     // Two figures, not one. A single rate here is the exact claim the ladder
     // retired — see the note at the top of this file.
     trust: [
-      [`${euro(entry, 'en')} – ${euro(floor, 'en')}`, `per product · ${vatLabel('excl', 'en')}`],
+      /* Ronde 9 (3 okt 2026): één vanaf-prijs, geen bereik. Lucas, 9 aug: "liever vanaf €... en niet €39 - €19". Zie euroRange() in pricing.js. */
+      [`From ${euro(floor, 'en')}`, `per product · ${vatLabel('excl', 'en')}`],
       ['3 photos', 'per product'],
     ],
     // Visible, not buried. Section 13: a visitor must not be able to leave
@@ -180,7 +181,7 @@ const COPY = {
     onRequest: 'On request',
     // The mood cards are small, so they carry the two ends of the ladder and
     // nothing else — the full rung list is one section above them.
-    unitLabel: `${euro(entry, 'en')} – ${euro(floor, 'en')} / product · ${vatLabel('excl', 'en')}`,
+    unitLabel: `From ${euro(floor, 'en')} / product · ${vatLabel('excl', 'en')}`,
     edMeta: '( Where it fits )',
     edH: `Lifestyle photography: your product in a styled scene, ${LIFESTYLE_IMAGES} photos per product.`,
     edSub: 'The scenes that create want, not just clarity.',
@@ -229,7 +230,8 @@ const COPY = {
     waTalk: waHref("Hoi VISUAILS, ik wil graag praten over lifestylefoto’s voor mijn merk."),
     waLabel: 'WhatsApp',
     trust: [
-      [`${euro(entry, 'nl')} – ${euro(floor, 'nl')}`, `per product · ${vatLabel('excl', 'nl')}`],
+      /* Ronde 9 (3 okt 2026): één vanaf-prijs, geen bereik. Lucas, 9 aug: "liever vanaf €... en niet €39 - €19". Zie euroRange() in pricing.js. */
+      [`Vanaf ${euro(floor, 'nl')}`, `per product · ${vatLabel('excl', 'nl')}`],
       ['3 foto’s', 'per product'],
     ],
     queueNote: `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD}: een vaste leverdatum.`,
@@ -267,7 +269,7 @@ const COPY = {
     checkAlt: 'Een lifestylefoto van VISUAILS voor een carrousel, gestyled en kleurbewerkt',
     moodsH: 'Vier sferen — of <em>je eigen.</em>',
     onRequest: 'Op aanvraag',
-    unitLabel: `${euro(entry, 'nl')} – ${euro(floor, 'nl')} / product · ${vatLabel('excl', 'nl')}`,
+    unitLabel: `Vanaf ${euro(floor, 'nl')} / product · ${vatLabel('excl', 'nl')}`,
     edMeta: '( Waar het past )',
     edH: 'Lifestylefotografie: je product gedragen, in een echte omgeving.',
     edSub: 'Lifestylefoto’s voor je feed en je advertenties, niet voor je productpagina.',
