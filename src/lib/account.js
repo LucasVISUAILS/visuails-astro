@@ -4880,7 +4880,7 @@ async function handleOrderFotos({ request, env }, customer, orderId) {
   if (!Number.isInteger(orderId) || orderId <= 0) return seeOther(home);
   const form = await request.formData().catch(() => null);
   const o = await env.DB.prepare(
-    'SELECT id, ref, service, status FROM orders WHERE id = ?1 AND customer_id = ?2'
+    'SELECT id, ref, service, status, product_count FROM orders WHERE id = ?1 AND customer_id = ?2'
   ).bind(orderId, customer.customer_id).first().catch(() => null);
   if (!o) return seeOther(home);
   const geleverd = await env.DB.prepare(
@@ -4910,13 +4910,18 @@ async function handleOrderFotos({ request, env }, customer, orderId) {
         httpMetadata: { contentType: type },
         customMetadata: { bron: 'studio', original: naam },
       });
-      rijen.push([orderId, sleutel, naam, f.size]);
+      /* Ronde 9, F66 (3 okt): bij een bestelling van één product hoort een
+         nagestuurde foto bij dat product. Zonder product_key stond hij in
+         /admin alleen onder "Aangeleverd door de klant (3)" en zei het bord
+         bij Product 1 nog "nog geen foto's" (live, VIS-QGM0-5MZ). Bij meer
+         producten blijft hij ongeplaatst: de studio deelt hem in. */
+      rijen.push([orderId, sleutel, naam, f.size, Number(o.product_count) === 1 ? 'p1' : null]);
     } catch (e) {
       console.error('[account] foto niet opgeslagen:', e?.message || e);
     }
   }
   if (!rijen.length) return seeOther(anchor('fotos=0'));
-  const sql = "INSERT INTO files (order_id, kind, r2_key, filename, bytes) VALUES (?1, 'upload', ?2, ?3, ?4)";
+  const sql = "INSERT INTO files (order_id, kind, r2_key, filename, bytes, product_key) VALUES (?1, 'upload', ?2, ?3, ?4, ?5)";
   try {
     const stmt = env.DB.prepare(sql);
     await env.DB.batch(rijen.map((r) => stmt.bind(...r)));
