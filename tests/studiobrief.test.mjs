@@ -106,8 +106,8 @@ console.log('\n6 · waar het veld staat, en wat de verklaring zegt');
 {
   const layout = read('src/layouts/Layout.astro');
   ok('de voettekst draagt het veld', /<Studiobrief lang=\{lang\} bron="voet"/.test(layout), true);
-  ok('/guides', /<Studiobrief lang=\{lang\} bron="gidsen"/.test(read('src/components/GuidesPage.astro')), true);
-  ok('/editions', /<Studiobrief lang=\{lang\} bron="editions"/.test(read('src/components/EditionsPage.astro')), true);
+  ok('/guides', /<Studiobrief lang=\{lang\} bron="gidsen"/.test(read('src/components/GuidesHal.astro')), true);
+  ok('/editions', /<Studiobrief lang=\{lang\} bron="editions"/.test(read('src/components/EditionsHal.astro')), true);
   const comp = read('src/components/Studiobrief.astro');
   ok('het formulier post naar het eindpunt', /action="\/api\/studiobrief"/.test(comp), true);
   ok('en het anker bestaat in de HTML', /id=\{`brief-ok-\$\{bron\}`\}/.test(comp), true);

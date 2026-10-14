@@ -78,8 +78,165 @@ console.log('\nde query in het script is de privacygrens');
    hoort er weer een plek voor en komt deze toets terug. */
 console.log('\nde homepage verzint geen reviews');
 {
-  const home = lees('../src/components/Voorpagina.astro');
-  ok('er staat geen getypt citaat van een klant', /class="[^"]*(review|quote|zegt)[^"]*"/.test(home), false);
+  /* Sinds 12 oktober 2026 is de voorpagina VoorpaginaHal.astro (de hal). */
+  const home = lees('../src/components/VoorpaginaHal.astro');
+  /* Een klasse die met review, quote of zegt BEGINT (review-kaart, quote,
+     zegt-wie). Hier stond "ergens in de klasse", en dat ging in de hal rood op
+     `h-label-zegt`: de regel op de AI Act-kaart die zegt wat het IPTC-kenmerk
+     betekent — geen citaat van wie dan ook. */
+  ok('er staat geen getypt citaat van een klant', /class="(?:[^"]*\s)?(review|quote|zegt)[\w-]*/.test(home), false);
+}
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * HET BLOK OP DE SITE — 8 oktober 2026 (G3)
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"Graag wel bouwen maar onzichtbaar houden tot ik er 1 echt accepteer
+ * en erin zet."* En: stilstaand tot er "echt 5 of zoiets" zijn, dan een lopende
+ * band met een lichte fade aan de zijkant. Deze sectie legt vast:
+ *
+ *   · 0 gepubliceerd   → NIETS in de HTML: geen sectie, geen kop;
+ *   · 3                → stilstaand, één lijst, geen kopie;
+ *   · 5                → een band, met de lijst twee keer en de tweede aria-hidden;
+ *   · "TEST — niet plaatsen" en testnamen komen er NOOIT op, ook niet tussen echte.
+ *
+ * Het blok wordt ECHT gerenderd, met Astro's container-API in een kleine
+ * Vite-server (een paar seconden), en niet nagebootst: een toets die zijn eigen
+ * versie van de opmaak controleert, bewijst niets over de opmaak die er staat.
+ */
+import { fileURLToPath } from 'node:url';
+import { existsSync } from 'node:fs';
+import { aanbevelingenOpSite, blokVorm, isTestExemplaar, BAND_VANAF, maandLabel } from '../src/data/aanbevelingen.js';
+
+/* Verzonnen voorbeelden — onmiskenbaar verzonnen merken, geen echte personen. */
+const ECHT = [
+  { text: 'De catalogfoto’s van onze nieuwe jassen stonden binnen een dag online.', name: 'Noor', month: '2026-09' },
+  { text: 'Eén keer revisie gevraagd op een kraag, en die klopte daarna precies.', name: 'Merk Voorbeeldjas', month: '2026-09' },
+  { text: 'Fijn dat ik niet hoefde te regelen wie er model zou staan.', name: 'Teun van Proefmerk', month: '2026-08' },
+  { text: 'De lifestylecarrousel deed het beter dan onze eigen shoot.', name: 'Atelier Verzonnen', month: '2026-08' },
+  { text: 'Snel, duidelijk en zonder gedoe over bestanden.', name: 'Studio Nergens', month: '2026-07' },
+];
+const TESTEN = [
+  { text: 'TEST — niet plaatsen. Mooie beelden, alles klopte.', name: 'Lucas', month: '2026-10' },
+  { text: 'Geweldige service!', name: 'Test lifestyle', month: '2026-10' },
+  { text: 'Dit is een proef, do not publish.', name: 'Iemand', month: '2026-10' },
+];
+
+console.log('\nwie er op de site komt, en in welke vorm');
+{
+  ok('de band begint bij vijf', BAND_VANAF, 5);
+  ok('0 → niets', blokVorm(0), 'niets');
+  ok('1 → stil', blokVorm(1), 'stil');
+  ok('3 → stil', blokVorm(3), 'stil');
+  ok('4 → stil', blokVorm(4), 'stil');
+  ok('5 → band', blokVorm(5), 'band');
+  ok('"TEST — niet plaatsen" is een testexemplaar', isTestExemplaar(TESTEN[0]), true);
+  ok('een naam die met "Test" begint ook', isTestExemplaar(TESTEN[1]), true);
+  ok('"do not publish" ook', isTestExemplaar(TESTEN[2]), true);
+  ok('een gewone zin met "test" erin niet',
+    isTestExemplaar({ text: 'We hebben eerst de proef gedaan als test, daarna dertig producten.', name: 'Noor' }), false);
+  ok('geen enkel echt voorbeeld valt weg', aanbevelingenOpSite(ECHT).length, 5);
+  ok('tussen echte vallen de testen weg', aanbevelingenOpSite([...TESTEN, ...ECHT.slice(0, 2)]).length, 2);
+  ok('alleen testen → niets', aanbevelingenOpSite(TESTEN).length, 0);
+  ok('een lege tekst telt niet', aanbevelingenOpSite([{ text: '   ', name: 'Noor', month: '2026-09' }]).length, 0);
+  ok('de maand in het Nederlands', maandLabel('2026-10', 'nl'), 'oktober 2026');
+  ok('en in het Engels', maandLabel('2026-10', 'en'), 'October 2026');
+  ok('de site leest het gegenereerde bestand',
+    aanbevelingenOpSite().length, TESTIMONIALS.filter((r) => !isTestExemplaar(r) && String(r.text || '').trim()).slice(0, 12).length);
+}
+
+console.log('\nhet blok, echt gerenderd');
+{
+  const ROOT = fileURLToPath(new URL('..', import.meta.url));
+  let vite = null;
+  try {
+    const { createServer } = await import('vite');
+    const { getViteConfig } = await import('astro/config');
+    const cfg = await getViteConfig(
+      { server: { middlewareMode: true, hmr: false, ws: false }, appType: 'custom', logLevel: 'silent', optimizeDeps: { noDiscovery: true, include: [] } },
+      { root: ROOT, configFile: false, logLevel: 'silent' },
+    )({ mode: 'test', command: 'serve' });
+    vite = await createServer({ ...cfg, configFile: false, root: ROOT });
+    const { default: Aanbevelingen } = await vite.ssrLoadModule('/src/components/Aanbevelingen.astro');
+    const { experimental_AstroContainer } = await vite.ssrLoadModule('astro/container');
+    const container = await experimental_AstroContainer.create();
+    const render = (lijst, lang = 'nl') => container.renderToString(Aanbevelingen, { props: { lang, lijst, vervolg: true } });
+    const tel = (html, re) => (html.match(re) || []).length;
+
+    const nul = await render([]);
+    ok('0 gepubliceerd: niets in de HTML', nul.trim(), '');
+    ok('alleen testen: ook niets', (await render(TESTEN)).trim(), '');
+
+    const drie = await render(ECHT.slice(0, 3));
+    ok('3: het blok staat er, stilstaand', /data-aanbevelingen="stil"/.test(drie), true);
+    ok('3: drie kaarten', tel(drie, /<li class="ab-kaart"/g), 3);
+    ok('3: geen band en geen kopie', /ab-band|ab-kopie|aria-hidden="true"/.test(drie), false);
+    ok('3: met een kop', /<h2 id="ab-h"/.test(drie), true);
+    ok('3: hoort bij het hoofdstuk erboven', /class="paneel ab vervolg"/.test(drie), true);
+
+    const vijf = await render(ECHT);
+    ok('5: een band', /data-aanbevelingen="band"/.test(vijf), true);
+    ok('5: de lijst twee keer', tel(vijf, /<ul class="ab-spoor[^"]*"/g), 2);
+    ok('5: de tweede is aria-hidden', /<ul class="ab-spoor ab-kopie" role="list" aria-hidden="true"/.test(vijf), true);
+    ok('5: de eerste niet', /<ul class="ab-spoor" role="list"[^>]*aria-hidden/.test(vijf), false);
+    ok('5: tien kaarten, elk citaat precies twee keer', tel(vijf, /<li class="ab-kaart"/g) === 10
+      && ECHT.every((r) => vijf.split(r.text).length - 1 === 2), true);
+    ok('5: in de kopie staat niets wat focus kan krijgen',
+      /<a\b|<button\b|tabindex="0"/.test((vijf.split('ab-kopie')[1] || '')), false);
+    ok('5: het raam kan focus krijgen (en zet de band dan stil)', /class="ab-raam"[^>]*tabindex="0"/.test(vijf), true);
+
+    const gemengd = await render([...ECHT, ...TESTEN]);
+    ok('TEST-voorbeelden komen er nooit op, ook niet tussen echte',
+      /TEST|niet plaatsen|do not publish|Test lifestyle/.test(gemengd), false);
+    ok('  en de echte staan er wel', /data-aanbevelingen="band"/.test(gemengd), true);
+
+    const en = await render(ECHT.slice(0, 1), 'en');
+    ok('Engels: de kop en de maand', /What brands say\./.test(en) && /September 2026/.test(en), true);
+  } catch (e) {
+    ok(`het blok kon niet gerenderd worden (${String(e?.message || e).slice(0, 80)})`, false, true);
+  } finally {
+    if (vite) await vite.close();
+  }
+}
+
+console.log('\nde beweging: stil voor wie dat vraagt, en te pauzeren');
+{
+  const src = lees('../src/components/Aanbevelingen.astro');
+  const bewegend = (src.match(/@media \(prefers-reduced-motion: no-preference\) \{[\s\S]*?\n {2}\}/) || [''])[0];
+  ok('de animatie staat alleen onder no-preference', /animation:\s*ab-loop/.test(bewegend)
+    && (src.match(/animation:\s*ab-loop/g) || []).length === 1, true);
+  ok('van links naar rechts (van -50% naar 0)', /@keyframes ab-loop \{ from \{ transform: translateX\(-50%\); \} to \{ transform: translateX\(0\); \} \}/.test(src), true);
+  ok('een zachte fade aan beide zijkanten', /mask-image: linear-gradient\(to right, transparent 0,[^;]*transparent 100%\)/.test(bewegend), true);
+  ok('stil onder de muis en bij focus', /:hover \.ab-loop,[\s\S]*?:focus-within \.ab-loop[\s\S]*?animation-play-state: paused/.test(bewegend), true);
+  ok('zonder beweging: de kopie weg en zijwaarts te schuiven',
+    /\.ab-kopie \{ display: none; \}/.test(src) && /\.ab-raam \{[^}]*overflow-x: auto/.test(src), true);
+}
+
+console.log('\nop de gebouwde site');
+{
+  const verwacht = aanbevelingenOpSite().length > 0;
+  const paginas = ['dist/index.html', 'dist/nl/index.html', 'dist/pricing/index.html', 'dist/nl/pricing/index.html'];
+  if (!existsSync(new URL(`../${paginas[0]}`, import.meta.url))) {
+    console.log(' --   niet gecontroleerd: geen build (draai `npx astro build`)');
+  } else {
+    for (const p of paginas) {
+      const html = lees(`../${p}`);
+      ok(`${p}: blok ${verwacht ? 'aanwezig' : 'afwezig'} (${aanbevelingenOpSite().length} gepubliceerd)`,
+        /data-aanbevelingen=|id="ab-h"/.test(html), verwacht);
+      ok(`${p}: geen testexemplaar`, /TEST — niet plaatsen|TEST &mdash; niet plaatsen/.test(html), false);
+    }
+  }
+  /* En de drie plekken die de regel gebruiken, gebruiken dezelfde. */
+  ok('het script laat proefbestellingen weg', /order_id NOT IN \(SELECT id FROM orders WHERE testmodus = 1\)/.test(lees('../scripts/testimonials.mjs')), true);
+  ok('en leest de testregel uit de site', /import \{ isTestExemplaar \} from '\.\.\/src\/data\/aanbevelingen\.js'/.test(lees('../scripts/testimonials.mjs')), true);
+  ok('/admin toont hem als test', /isTestExemplaar\(\{ text: r\.testimonial_text/.test(lees('../src/lib/admin.js')), true);
+  /* De voorpagina is sinds 12 oktober 2026 de hal; daar staat het blok met
+     huid="hal" (de kop als de andere hal-secties), op dezelfde plek als op de
+     oude voorpagina: vlak voor de proef. */
+  ok('home en /pricing tonen het blok',
+    /<Aanbevelingen lang=\{lang\} huid="hal" \/>/.test(lees('../src/components/VoorpaginaHal.astro'))
+    && /<Aanbevelingen lang=\{lang\} huid="hal" \/>/.test(lees('../src/components/PricingHal.astro')), true);
 }
 
 console.log(`\n${goed}/${totaal} geslaagd`);

@@ -1,0 +1,294 @@
+---
+/* 14 oktober 2026, v26-video a: hier staat geen "Bestel opnieuw met je look". Die knop volgt
+   de laatste levering, en een video heeft geen formulier om naar terug te gaan
+   (herbestelDienst in src/lib/herbestel.js), dus hij zou altijd naar catalog of lifestyle
+   wijzen. */
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — een videostijl in de hal (/video/[slug]). 13 oktober 2026,
+ * afvinklijst 15 (v15-volgende = a).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * DEZELFDE INHOUD ALS VideoStyleDetail.astro: de frontmatter hieronder (de
+ * teksten, de beeldkaart per stijl, de feiten) is daar letterlijk uit
+ * overgenomen. De opbouw is die van een lookpagina in de hal (LookDetailHal):
+ *
+ *   kop       pil terug naar de videostijlen, naam, tagline, de andere stijlen,
+ *             de twee knoppen, de feiten
+ *   clips     VideoExamples: twee clipvlakken in de juiste verhouding (zolang er
+ *             geen clips zijn: "nog niet opgenomen") en wat er geleverd wordt
+ *   sfeer     wat de stijl kenmerkt en waar hij voor is
+ *   stappen   de drie stappen in de lichte band
+ *   beelden   foto's uit de studio (géén stills uit een clip: die bestaan nog niet)
+ *   kader     wat er in elk kader gaat, en waarom
+ *   slot      wat je krijgt, en de knoppen
+ * ═══════════════════════════════════════════════════════════════════════════ */
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/hal.css';
+import VideoExamples from './VideoExamples.astro';
+import HalBeweging from './HalBeweging.astro';
+/*
+ * VISUAILS — de detailpagina van een videostijl, gedeeld door /video/[slug] en
+ * /nl/video/[slug].
+ *
+ * ── ÉÉN COMPONENT SINDS 7 SEPTEMBER 2026 ─────────────────────────────────
+ *
+ * Twee sjablonen van 255 en 250 regels die elkaars vertaling hoorden te zijn.
+ * Derde en laatste van de drie stijlsjablonen; zie de kop van
+ * CatalogStyleDetail.astro voor de redenering.
+ *
+ * ── DE BEELDKAART STAAT HIER EN NIET IN DE PAGINA ────────────────────────
+ *
+ * `media` koppelt een stijl aan echte stills die voor videothumbnails
+ * doorgaan, met per bestand de INTRINSIEKE pixelmaat erbij — de werkelijke
+ * grootte in public/img, niet de maat waarop het raster hem toont. Ze staan er
+ * zodat de browser de ruimte kan reserveren voordat de bytes er zijn, en ze
+ * zijn per bestand omdat de bibliotheek in batches van verschillende maten is
+ * gemaakt. De kaart hoort bij het SJABLOON en niet bij de taal: dezelfde stijl
+ * toont in beide talen dezelfde beelden, en twee kopieën zouden precies daar
+ * uit elkaar lopen.
+ */
+import NieuwTabblad from './NieuwTabblad.astro';
+import { reviewClaim, TEST_SAMPLE } from '../data/pricing.js';
+import { localizedPath } from '../i18n/ui.js';
+
+/* hub: waar de pil terug naartoe wijst (op het voorbeeld /voorbeeld/video). */
+interface Props { lang: 'en' | 'nl'; style: any; zusters: { href: string; naam: string }[]; hub?: string; }
+const { lang, style, zusters, hub = '/video' } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+
+/* 30 september 2026: video is op aanvraag. Formaat en levertijd staan in de
+   schriftelijke offerte; de normale doorlooptijd van foto's geldt hier niet. */
+const TIMING = nl ? 'Formaat en levertijd afgesproken in de offerte' : 'Format and delivery time agreed in the quote';
+const REVIEW = reviewClaim('unattended', lang);
+const QUEUE = nl
+  ? 'Video is op aanvraag: standaard verticaal 9:16, andere verhoudingen op aanvraag.'
+  : 'Video is on request: vertical 9:16 as standard, other ratios on request.';
+
+const media: Record<string, { hero: string; strip: Array<{ src: string; w: number; h: number }> }> = {
+  motion: {
+    hero: '/img/banners-04.webp',
+    strip: [
+      { src: '/img/banners-02.webp', w: 928, h: 1152 },
+      { src: '/img/banners-05.webp', w: 928, h: 1152 },
+      { src: '/img/banners-01.webp', w: 928, h: 1152 },
+      { src: '/img/banners-06.webp', w: 928, h: 1152 },
+    ],
+  },
+  lifestyle: {
+    hero: '/img/lifestyle-glow-03.webp',
+    strip: [
+      { src: '/img/lifestyle-glow-02.webp', w: 2400, h: 1792 },
+      { src: '/img/lifestyle-glow-05.webp', w: 2400, h: 1792 },
+      { src: '/img/lifestyle-flash-06.webp', w: 2400, h: 1792 },
+      { src: '/img/lifestyle-dunes-01.webp', w: 928, h: 1152 },
+    ],
+  },
+  campaign: {
+    hero: '/img/banners-08.webp',
+    strip: [
+      { src: '/img/banners-03.webp', w: 928, h: 1152 },
+      { src: '/img/custom-models-01.webp', w: 800, h: 1071 },
+      { src: '/img/banners-07.webp', w: 928, h: 1152 },
+      { src: '/img/model-02.webp', w: 800, h: 1071 },
+    ],
+  },
+  custom: {
+    hero: '/img/banners-13.webp',
+    strip: [
+      { src: '/img/banners-14.webp', w: 2400, h: 1792 },
+      /* lifestyle-glow-06 (de hoodie) is weg sinds 13 oktober 2026 (afvinklijst 15, k-rechten): geen toestemming. */
+      { src: '/img/lifestyle-flash-06.webp', w: 2400, h: 1792 },
+      { src: '/img/banners-16.webp', w: 2400, h: 1792 },
+      { src: '/img/lifestyle-flash-03.webp', w: 1340, h: 2400 },
+    ],
+  },
+};
+const m = media[style.slug] ?? media.motion;
+
+const c = nl ? {
+  terug: 'Video-stijlen',
+  wa: 'WhatsApp',
+  waTekst: `Hoi VISUAILS, ik wil graag praten over de ${style.name}-stijl.`,
+  andere: 'Andere looks:',
+  heroAlt: `De ${style.name}-videostijl van VISUAILS`,
+  voeltH: ['Wat ', ' kenmerkt'],
+  stillAlt: `Voorbeeldstill uit ${style.name}`,
+  kaderH: 'Wat er in elk kader gaat.',
+  idealH: ['Ideaal ', 'voor'],
+  krijgH: ['Wat je ', 'krijgt'],
+  modelNoot: ['Iemand in een ', '-clip kan ', 'je eigen merkmodel', ' zijn.'],
+  slotH: ['Bestel in ', '.'],
+  /* Video is op aanvraag, en de proef is een beeld en geen clip
+     (24 september 2026): hier stond "plaats vandaag je bestelling".
+     Het bedrag van de proef uit TEST_SAMPLE en niet getypt (8 oktober 2026, §17.17). */
+  slotP: `Op aanvraag: je krijgt eerst schriftelijk een prijs. Eerst zien hoe we werken? Dat kan met één product in beeld, voor ${TEST_SAMPLE.nl.price}.`,
+  proef: 'Probeer VISUAILS',
+} : {
+  terug: 'Video styles',
+  wa: 'WhatsApp',
+  waTekst: `Hi VISUAILS, I’d like to talk about the ${style.name} style.`,
+  andere: 'Other looks:',
+  heroAlt: `The VISUAILS ${style.name} video style`,
+  voeltH: ['What defines ', ''],
+  stillAlt: `${style.name} example still`,
+  kaderH: 'What goes into every frame.',
+  idealH: ['Best ', 'for'],
+  krijgH: ['What you ', 'get'],
+  modelNoot: ['Someone in a ', ' clip can be ', 'your own Brand Model', '.'],
+  slotH: ['Order in ', '.'],
+  slotP: `On request: you get a written price first. Want to see how we work before that? Try one product in images, for ${TEST_SAMPLE.en.price}.`,
+  proef: 'Test sample',
+};
+
+const vink = 'M20 6L9 17l-5-5';
+
+/* ── DE HAL ────────────────────────────────────────────────────────────── */
+const H = nl ? {
+  stillAlt: 'Een foto uit de studio',
+  beeldenPil: 'Uit de studio', beeldenKop: ['Foto’s uit', 'de studio.'],
+  beeldenZin: 'Zolang de clips er niet zijn, staan hier foto’s uit de studio — geen beelden uit een clip.',
+  stappenPil: 'Hoe het tot stand komt', kaderPil: 'In elk kader', krijgPil: 'Deze look',
+  slotPil: style.name,
+} : {
+  stillAlt: 'A photo from the studio',
+  beeldenPil: 'From the studio', beeldenKop: ['Photos from', 'the studio.'],
+  beeldenZin: 'Until the clips are here, these are photos from the studio — not frames from a clip.',
+  stappenPil: 'How it comes together', kaderPil: 'In every frame', krijgPil: 'This look',
+  slotPil: style.name,
+};
+const DRIE = (n: number) => String(n).padStart(2, '0');
+const ICOON = {
+  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
+  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
+};
+const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+/* "Hoe Motion eruitziet." in twee tonen: tot en met de naam licht, de rest donker (k-vd, 13 okt) */
+const moodTonen = (() => { const m = style.moodTitle || ''; const i = m.toLowerCase().indexOf(String(style.name).toLowerCase()); return i < 0 ? [m, ''] : [m.slice(0, i + style.name.length), m.slice(i + style.name.length).trim()]; })();
+---
+<div class="h-pagina h-lk h-lk-video h-vs">
+
+  {/* ── KOP ────────────────────────────────────────────────────────────────── */}
+  <header class="h-paginakop h-lk-kop">
+    <p class="h-op"><a class="h-pil h-lk-terug" href={lp(hub)}><span>{c.terug}</span></a></p>
+    <h1 class="h-kop h-h1 h-op">{style.name}</h1>
+    <p class="h-lede h-lk-tagline h-op">{style.tagline}</p>
+    {zusters.length > 0 && (
+      <nav class="h-lk-zus h-op" aria-label={c.andere.replace(/:$/, '')}>
+        <span class="h-st-ook-l">{c.andere.replace(/:$/, '')}</span>
+        <ul class="h-st-ook-rij" role="list">
+          {zusters.map((z) => <li><a class="h-st-chip" href={lp(z.href)}>{z.naam}</a></li>)}
+        </ul>
+      </nav>
+    )}
+    <p class="h-acties h-op">
+      {style.ctaExternal
+        ? <a class="h-knop h-knop-inkt" href={style.ctaHref} target="_blank" rel="noopener">{style.ctaLabel}<span class="o" set:html={ik('rechts')} /><NieuwTabblad lang={lang} /></a>
+        : <a class="h-knop h-knop-inkt" href={style.ctaHref}>{style.ctaLabel}<span class="o" set:html={ik('rechts')} /></a>}
+      <a class="h-knop h-knop-lijn" href={lp('/test-sample')} data-vis-uit>{TEST_SAMPLE[lang].cta}</a>
+    </p>
+    <ul class="h-feiten h-vs-feiten h-op" role="list">
+      <li><i set:html={ik('check')} /><span><b>{style.priceTrust}{style.priceUnit}</b></span></li>
+      <li><i set:html={ik('check')} /><span>{TIMING}</span></li>
+      <li><i set:html={ik('check')} /><span>{REVIEW}</span></li>
+    </ul>
+    <p class="h-dienst-wacht h-op">{QUEUE}</p>
+  </header>
+
+  {/* ── DE CLIPS EN WAT ER GELEVERD WORDT ── VideoExamples is zelf een sectie
+      van de hal (sinds de rondgang van 13 oktober): pil, kop, de twee clips en de lijst. */}
+  <VideoExamples lang={lang} slug={style.slug} name={style.name} />
+
+  {/* ── WAT DE STIJL KENMERKT, EN WAAR HIJ VOOR IS ──────────────────────── */}
+  <section class="h-sec h-vs-sfeer-sec" aria-labelledby="vs-sfeer">
+    <div class="h-vs-twee">
+      <div class="h-in">
+        <h2 id="vs-sfeer" class="h-kop h-h2">{c.voeltH[0].trim() ? <span class="l">{c.voeltH[0].trim()}</span> : null} {style.name}{c.voeltH[1]}.</h2>
+        {style.moodParagraphs.slice(0, 1).map((p: string) => <p class="h-vs-zin">{p}</p>)}
+      </div>
+      <div class="h-vs-ideaal h-in" style="--d:1">
+        <h3 class="h-kop h-h3">{c.idealH[0]}{c.idealH[1]}</h3>
+        <ul class="h-bm-vink" role="list">
+          {style.bestFor.slice(0, 3).map((item: string) => <li><i set:html={ik('check')} /><span>{item}</span></li>)}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  {/* ── DE DRIE STAPPEN ── in de lichte band, zoals op /start ────────────── */}
+  <section class="h-sec h-vs-stappen-sec" aria-labelledby="vs-stappen">
+    <div class="h-st-band h-in">
+      <span class="h-korrel" aria-hidden="true"></span>
+      <header class="h-st-band-kop">
+        <p class="h-pil h-pil-wit"><span>{H.stappenPil}</span></p>
+        <h2 id="vs-stappen" class="h-kop h-h2">{moodTonen[1] ? <><span class="l">{moodTonen[0]}</span> {moodTonen[1]}</> : style.moodTitle}</h2>
+      </header>
+      <ol class="h-st-stappen h-vs-stappen" role="list">
+        {style.steps.map((s: any, i: number) => (
+          <li class="h-st-stap" style={`--d:${i}`}>
+            <p class="h-nr" aria-hidden="true"><b>{DRIE(i + 1)}</b><i></i><span>/ {DRIE(style.steps.length)}</span></p>
+            <span class="h-st-stap-naam">{s.title}</span>
+            <span class="h-bm-stap-zin">{s.body}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  {/* ── FOTO'S UIT DE STUDIO ── eerlijk benoemd: geen stills uit een clip. */}
+  <section class="h-sec h-vs-beelden-sec" aria-labelledby="vs-beelden">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{H.beeldenPil}</span></p>
+        <h2 id="vs-beelden" class="h-kop h-h2"><span class="l">{H.beeldenKop[0]}</span> {H.beeldenKop[1]}</h2>
+      </div>
+      <p class="h-vs-kopzin">{H.beeldenZin}</p>
+    </header>
+    <ul class="h-vs-beelden" role="list">
+      {m.strip.map((b, i) => (
+        <li class="h-in" style={`--d:${i}`}><img src={b.src} alt={H.stillAlt} loading="lazy" decoding="async" width={b.w} height={b.h} /></li>
+      ))}
+    </ul>
+  </section>
+
+  {/* ── WAT ER IN ELK KADER GAAT ─────────────────────────────────────────── */}
+  <section class="h-sec h-vs-kader-sec" aria-labelledby="vs-kader">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{H.kaderPil}</span></p>
+        <h2 id="vs-kader" class="h-kop h-h2"><span class="l">{nl ? 'Wat er' : 'What goes into'}</span> {nl ? 'in elk kader gaat.' : 'every frame.'}</h2>
+      </div>
+    </header>
+    <ul class="h-vs-kaarten" role="list">
+      {style.craft.slice(0, 3).map((k: any, i: number) => (
+        <li class="h-in" style={`--d:${i}`}><b>{k.title}</b><span>{k.body}</span></li>
+      ))}
+    </ul>
+    {style.why.slice(0, 1).map((w: any) => (
+      <p class="h-vs-waarom h-in"><b>{w.title}</b> {w.body}</p>
+    ))}
+  </section>
+
+  {/* ── HET SLOT: WAT JE KRIJGT, EN DE KNOPPEN ───────────────────────────── */}
+  <section class="h-sec h-lk-slot-sec" aria-labelledby="vs-slot">
+    <div class="h-lk-slot h-vs-slot h-in">
+      <span class="h-korrel" aria-hidden="true"></span>
+      <p class="h-pil h-pil-wit"><span>{H.krijgPil}</span></p>
+      <h2 id="vs-slot" class="h-kop h-h2">{style.slug === 'custom'
+        ? (nl ? <><span class="l">Vraag</span> je eigen look aan.</> : <><span class="l">Request</span> your own look.</>)
+        : <><span class="l">{c.slotH[0].trim()}</span> {style.name}{c.slotH[1]}</>}</h2>
+      <ul class="h-bm-vink" role="list">
+        {style.whatYouGet.map((item: string) => <li><i set:html={ik('check')} /><span>{item}</span></li>)}
+      </ul>
+      <p class="h-vs-slot-zin">{c.slotP}</p>
+      <p class="h-acties">
+        {style.ctaExternal
+          ? <a class="h-knop h-knop-inkt" href={style.ctaHref} target="_blank" rel="noopener">{style.ctaLabel}<span class="o" set:html={ik('rechts')} /><NieuwTabblad lang={lang} /></a>
+          : <a class="h-knop h-knop-inkt" href={style.ctaHref}>{style.ctaLabel}<span class="o" set:html={ik('rechts')} /></a>}
+        <a class="h-knop h-knop-lijn" href={lp('/test-sample')} data-vis-uit>{TEST_SAMPLE[lang].cta}</a>
+      </p>
+      <p class="h-vs-model">{c.modelNoot[0]}{style.name}{c.modelNoot[1]}<a href={lp('/custom-models')}>{c.modelNoot[2]}</a>{c.modelNoot[3]}</p>
+    </div>
+  </section>
+</div>
+<HalBeweging />

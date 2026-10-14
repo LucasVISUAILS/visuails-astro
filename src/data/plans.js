@@ -25,14 +25,13 @@
  * 1 · WELKE VORMEN ER ZIJN. Maandelijks of twaalf maanden vast. Zie TERMS.
  * 2 · WAT EEN JAARVERBINTENIS KOOPT, en dat is bijna nooit een lagere prijs —
  *     zie de kop van TERMS voor de rekensom die dat uitsluit.
- * 3 · HOEVEEL PLEKKEN ER ZIJN, uitgerekend uit capacity.js en niet ingetypt.
+ * 3 · HOEVEEL PLEKKEN ER ZIJN: één plafond in credits (6.05, 8 oktober 2026).
  * 4 · HOE HET SALDO WERKT: toekennen, verbruiken, doorschuiven, vervallen.
  */
 import {
   PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, PLAN_COMPARE_MONTHS, PLAN_ROLLOVER_MONTHS,
-  AMOUNT, ladderRate, LADDER, CUSTOM_MONTH_ID, plans,
+  AMOUNT, ladderRate, LADDER, CUSTOM_MONTH_ID, PLAN_CREDITS, planSaving,
 } from './pricing.js';
-import { ATTENDED_PER_DAY } from './capacity.js';
 
 /** De id's van de plannen, in de volgorde waarin ze op de pagina staan. */
 export const PLAN_IDS = ['starter', 'studio', 'brand'];
@@ -58,13 +57,12 @@ export const SUB_PLAN_IDS = [...PLAN_IDS, CUSTOM_MONTH_ID];
 /**
  * Welke dienst een abonnement levert.
  *
- * `complete` en niet 'catalog': elk plan belooft *"een catalogset én een
- * lifestyle-carousel voor elk"* (zie plans() in pricing.js). Dat is precies wat
- * de complete-ladder is, en het is de reden dat planSaving() daar tegen afzet.
- * Eén constante, zodat de vergelijking op de prijspagina en de bestelling die
- * eruit rolt dezelfde dienst betekenen.
+ * 'catalog' sinds 14 oktober 2026. Hier stond 'complete' (catalog + lifestyle per
+ * product), maar compleet bestaat sinds 14 oktober 2026 niet meer (afvinklijst 23), en een plan rekent sinds 19 september 2026 in credits die
+ * je vrij besteedt. planSaving() zet die credits af tegen catalogsets los besteld,
+ * de goedkoopste dienst per credit; deze constante zegt hetzelfde.
  */
-export const PLAN_SERVICE = 'complete';
+export const PLAN_SERVICE = 'catalog';
 
 /*
  * ── DE TERMIJNEN ───────────────────────────────────────────────────────────
@@ -100,7 +98,7 @@ export const PLAN_SERVICE = 'complete';
  *
  * ── WAAROM DE BODEM HIER EEN ANDERE IS ─────────────────────────────────────
  *
- * De bodem van LADDER.complete (€ 65) is het laagste tarief van een LOSSE
+ * De bodem PLAN_BODEM_CENTS (€ 65, het oude bundeltarief) is het laagste tarief van een LOSSE
  * bestelling, en die ladder stopt bij twintig producten omdat dat de grootste
  * losse bestelling is waar hij op gebouwd is. Een vooruitbetaald jaar op Studio
  * is honderdvierenveertig producten, in één keer betaald, twaalf maanden van
@@ -152,7 +150,9 @@ export const TERMS = {
      * het incassorisico en de mislukte betalingen dragen en ze kan er niets mee
      * doen; vooruitbetaald geld staat op de rekening. Deze termijn koopt daarom
      * VOORWAARDEN — drie maanden doorschuiven, een prijsslot, het merkmodel op
-     * Studio (de vaste week heeft sinds 29 september 2026 elk abonnement) — en `prepaid` koopt daar een PRIJS bij.
+     * Studio — en `prepaid` koopt daar een PRIJS bij. (De vaste week is weg sinds
+     * ronde 10; deze termijn zelf staat sinds 6.04 niet meer in het aanbod, zie
+     * OFFERED_TERM_IDS hieronder.)
      *
      * WAT HET KOST: Starter op de jaartermijn gaat van € 325 terug naar € 390 per
      * maand. Dat is een prijsverhoging op een bestaand aanbod, en het kan vandaag
@@ -208,7 +208,7 @@ export const TERMS = {
      *   Brand    € 1.408/mnd = € 46,93 per product ← 72% van die bodem
      *
      * Brand legt in zijn eentje 9,5% van de maandcapaciteit vast (zie DE PLEKKEN
-     * hieronder) en heeft het merkmodel van € 1.250 al inbegrepen. Twaalf maanden
+     * hieronder) en heeft het merkmodel (AMOUNT.brandModel) al inbegrepen. Twaalf maanden
      * dertig producten per maand op € 46,93, met een prijsslot erbovenop, is de
      * grootste klant op het laagste tarief vastzetten. Dat is Lucas' besluit en
      * niet dat van dit bestand — maar het staat hier opgeschreven, zodat het over
@@ -229,6 +229,18 @@ export const TERMS = {
 };
 
 export const TERM_IDS = ['monthly', 'yearly', 'prepaid'];
+
+/*
+ * ── TWEE TERMIJNEN IN HET AANBOD — 8 oktober 2026 (punt 6.04, V44 = a) ───────
+ *
+ * Lucas koos: de tussentermijn (12 maanden, maandelijks geïncasseerd, geen
+ * korting) gaat weg. /plans en /start/plan tonen alleen maandelijks en jaar
+ * vooruit, en handleSubscribeStart() weigert 'yearly' voor een NIEUW abonnement.
+ * TERMS.yearly en TERM_IDS blijven bestaan: een abonnement dat al op die termijn
+ * loopt, werkt gewoon door tot zijn einde (de webhook, Studio en /admin lezen
+ * de termijn van de rij). Pro houdt het merkmodel bij vooruit (perks hierboven).
+ */
+export const OFFERED_TERM_IDS = ['monthly', 'prepaid'];
 
 /** Eén termijn opzoeken, met de maandelijkse als terugval. */
 export function term(id) {
@@ -340,94 +352,106 @@ export function ladderFloorCents(service = PLAN_SERVICE) {
   return rungs[rungs.length - 1][2] * 100;
 }
 
+/*
+ * ── DE BODEM WAARTEGEN DE PLANNEN GEMETEN WORDEN — 14 oktober 2026 ─────────
+ *
+ * Tot vandaag was dit ladderFloorCents('complete'): € 65, het laagste tarief van
+ * een catalogset plus carrousel in één bestelling. Die dienst bestaat niet meer
+ * (afvinklijst 23), en PLAN_SERVICE is 'catalog' geworden. Zou deze controle
+ * gewoon meeschuiven naar de catalogbodem (€ 39), dan zakte de enige controle
+ * waar geld op staat stil van € 65 naar € 39 en beet hij nergens meer.
+ *
+ * Daarom staat het bedrag hier vast, met de hand, als de maat waarop de grenzen
+ * hieronder (PREPAY_FLOOR_SHARE, de tegenproef met drie gratis maanden) zijn
+ * afgesteld. De controle rekent nog per product van PLAN_PRODUCTS, terwijl een
+ * abonnement sinds 19 september in credits rekent; dat is een vraag voor Lucas
+ * (afvinklijst 24) en geen reden om de controle nu zachter te maken.
+ */
+export const PLAN_BODEM_CENTS = 6500;
+
 /**
  * Krijgt dit plan op deze termijn het merkmodel erbij?
  *
  * Brand heeft hem altijd — dat staat in plans() in pricing.js en is de reden dat
  * zijn korting op de ladder klein is. Op de jaartermijn komt Studio erbij, en dat
  * is een van de vier dingen die een jaarverbintenis koopt in plaats van een
- * korting: de setup van € 1.250 wordt over twaalf maanden toch al afgeschreven.
+ * korting: de eenmalige setup (AMOUNT.brandModel in pricing.js) wordt over twaalf
+ * maanden toch al afgeschreven. Hier stond een oud bedrag; sinds 8 oktober 2026
+ * (punt 9.01, §17.1) noemt dit commentaar de constante en geen getal.
  */
 export function hasBrandModel(planId, termId) {
   if (planId === 'brand') return true;
   return planId === 'studio' && term(termId).perks.includes('brandModel');
 }
 
-/* ── DE PLEKKEN ─────────────────────────────────────────────────────────────
+/* ── DE PLEKKEN: EEN PLAFOND IN CREDITS — 8 oktober 2026 (punt 6.05, V45 = a) ──
  *
- * HET GETAL DAT HET HELE ONTWERP BEPAALT. Uit capacity.js: 15 producten per dag
- * met een gereserveerd venster. Over 21 dagen is dat 315 producten per maand.
- * Wat één abonnee daarvan vastlegt:
+ * Hier stond "het abonnementsbudget": 30% van de begeleide capaciteit in
+ * producten (15 per dag × 21 dagen × 0,30 = 94, in punten ±231 per maand), en
+ * seatsLeft() rekende daar "nog 13 Starter-plekken" uit. Dat getal was niet na
+ * te rekenen, en met het weeksysteem (§28) verdween de reden voor een eigen
+ * abonnementscapaciteit: een abonnee bestelt via het gewone formulier, en de
+ * agenda vangt zijn vensters op zoals die van iedereen.
  *
- *   Starter  5 producten   1,6 %
- *   Studio  12 producten   3,8 %
- *   Brand   30 producten   9,5 %
+ * Wat blijft is een REM op het aantal abonnees, en Lucas koos (V45 = a) voor
+ * één plafond in CREDITS: de maandcredits van alle abonnementen die meetellen
+ * (bezetting() in subscription.js), tegen één getal dat hij zelf zet in /admin
+ * (Klanten). Staat daar nog niets, dan geldt ABO_CREDITS_PLAFOND hieronder.
+ * Credits meten het werk zelf: een Merk (290) is ruim zes keer een Starter (45),
+ * en elk product kost minstens zoveel credits als agendapunten.
  *
- * Tien Brand-abonnees en de hele venstercapaciteit is weg vóór er één losse
- * bestelling binnenkomt. Een abonnement verkoopt CAPACITEIT en geen software, en
- * dat is het hele verschil met een SaaS-abonnement.
+ * TER VERGELIJKING: 1.000 credits alleen aan catalogsets is 250 sets, ±83 uur
+ * per maand. Het plafond begrenst de maand, niet de dag.
  *
- * DERTIG PROCENT OM TE BEGINNEN, en dat is een bewuste ondergrens en geen
- * schatting van de vraag. Het laat zeventig procent over voor losse
- * bestellingen — die zijn er vandaag en de abonnees nog niet — en het is het
- * getal waarop een aanvraag met een handeling van Lucas erbij nog geen knelpunt
- * is: bij dertig procent zijn het een paar aanvragen per maand.
- *
- * EÉN GETAL EN GEEN CMS-VELD. Dit hoort mee te bewegen met capacity.js: gaat
- * PRODUCTS_PER_DAY omhoog, dan gaan de plekken automatisch mee. Een los ingetypt
- * maximum is het maximum dat na de eerste capaciteitswijziging niet meer klopt.
+ * WAAROM DE STANDAARD 1.200 IS (en niet de 1.000 uit de vraag). "Standaard
+ * ruim", en hoog genoeg dat er zonder één abonnee bij geen enkel plan "nog N
+ * plekken" staat: 1.200 / 290 (Merk) = 4, boven PLEKKEN_TONEN_TOT. Bij 1.000
+ * zou Merk vanaf de eerste dag "nog 3 plekken" zeggen. Lucas zet het echte
+ * getal zelf in /admin › Klanten, vanuit zijn uren (V45 = a).
  */
-export const WORKING_DAYS_PER_MONTH = 21;
-export const PLAN_CAPACITY_SHARE = 0.30;
+export const ABO_CREDITS_PLAFOND = 1200;
 
-/** Hoeveel producten per maand er met een gereserveerd venster gemaakt kunnen worden. */
-export function attendedProductsPerMonth() {
-  return ATTENDED_PER_DAY * WORKING_DAYS_PER_MONTH;
-}
+/**
+ * "Nog N plekken" staat pas op /start/plan als het er zo weinig zijn. Daarboven
+ * zegt de pagina niets: "nog 13 plekken" terwijl er geen abonnee is, leest als
+ * "niemand heeft het" (6.05).
+ */
+export const PLEKKEN_TONEN_TOT = 3;
 
-/** Hoeveel daarvan aan abonnementen mag worden vastgelegd. */
-export function planProductBudget() {
-  return Math.floor(attendedProductsPerMonth() * PLAN_CAPACITY_SHARE);
+/** Het plafond als getal: een stand uit /admin, of de constante. Nooit nul of onzin. */
+export function aboPlafond(stand = null) {
+  const n = Math.floor(Number(stand));
+  return Number.isFinite(n) && n > 0 ? n : ABO_CREDITS_PLAFOND;
 }
 
 /**
- * Is er nog plek voor dit plan, gegeven wat er al is vastgelegd?
- *
- * IN PRODUCTEN GEREKEND EN NIET IN ABONNEES, en dat is het hele punt. Acht
- * Starters en één Brand leggen niet hetzelfde vast; een teller op "aantal
- * abonnees" zou zeggen dat er nog plek is terwijl de agenda vol staat, of
- * omgekeerd. `committed` is de som van productsFor() over de lopende
- * abonnementen — die som staat in de database en wordt hier niet geschat.
+ * Past er nog een abonnement van `wil` credits per maand bij, gegeven wat er al
+ * vastligt? `vastgelegd` is de som uit bezetting(); `plafond` de stand uit /admin.
  */
-export function fitsBudget(planId, committedProducts) {
-  return fitsProducts(productsFor(planId), committedProducts);
+export function creditsPassen(wil, vastgelegd, plafond = ABO_CREDITS_PLAFOND) {
+  const nieuw = Math.max(0, Math.floor(Number(wil) || 0));
+  const al = Math.max(0, Math.floor(Number(vastgelegd) || 0));
+  return al + nieuw <= aboPlafond(plafond);
+}
+
+/** Past dit plan (starter, studio, brand) er nog bij? */
+export function planPast(planId, vastgelegd, plafond = ABO_CREDITS_PLAFOND) {
+  const cr = PLAN_CREDITS[planId];
+  if (!cr) throw new Error(`plans.js: onbekend plan "${planId}"`);
+  return creditsPassen(cr, vastgelegd, plafond);
 }
 
 /**
- * Dezelfde poort, maar met een AANTAL in plaats van een plan-id.
+ * Hoeveel abonnementen van dit plan er nog bij passen, in hele plekken.
  *
- * Een maand op maat heeft geen productsFor(): hoeveel hij vasthoudt, staat op de
- * rij en niet in een tabel. De poort blijft dezelfde som — hij hoort niet twee
- * keer te bestaan met twee kansen om uit elkaar te lopen — dus rekent
- * fitsBudget() hierboven er sinds vandaag doorheen.
+ * Sinds 6.05 per plan en in credits: "nog 2 plekken" voor Merk is iets anders
+ * dan voor Starter. De pagina toont het pas bij PLEKKEN_TONEN_TOT of minder.
  */
-export function fitsProducts(want, committedProducts) {
-  const wil = Math.max(0, Math.floor(Number(want) || 0));
-  const used = Math.max(0, Math.floor(Number(committedProducts) || 0));
-  return used + wil <= planProductBudget();
-}
-
-/**
- * Hoeveel plekken er nog zijn voor het KLEINSTE plan, voor de teller op /pricing.
- *
- * Waarom het kleinste: de teller moet zeggen of er nog íets kan, en het kleinste
- * plan is het laatste dat er nog in past. "Nog 3 plekken" met daarachter een
- * Brand-aanvraag die niet meer past, is een teller die liegt — daarom heeft de
- * pagina ook fitsBudget() per plan nodig en niet alleen dit getal.
- */
-export function seatsLeft(committedProducts) {
-  const over = planProductBudget() - Math.max(0, Math.floor(Number(committedProducts) || 0));
-  return Math.max(0, Math.floor(over / productsFor('starter')));
+export function seatsLeft(vastgelegd, planId = 'starter', plafond = ABO_CREDITS_PLAFOND) {
+  const cr = PLAN_CREDITS[planId];
+  if (!cr) throw new Error(`plans.js: onbekend plan "${planId}"`);
+  const over = aboPlafond(plafond) - Math.max(0, Math.floor(Number(vastgelegd) || 0));
+  return Math.max(0, Math.floor(over / cr));
 }
 
 /* ── HET SALDO ──────────────────────────────────────────────────────────────
@@ -541,34 +565,14 @@ export function addMonths(month, n) {
   return `${String(jaar).padStart(4, '0')}-${String(maand).padStart(2, '0')}`;
 }
 
-/* ── MEEDENKEN: DE ENIGE PLEK WAAR TIJD WORDT VERKOCHT ──────────────────────
+/* ── MEEDENKEN BESTAAT NIET — 8 oktober 2026 (punt 9.01, §17.6) ─────────────
  *
- * Lucas: *"dat wil ik denk ik voor duurdere abonnementen hebben, dat we dan echt
- * met de klant meedenken wat nog gedaan kan worden."*
- *
- * Een toevoeging en geen vierde plan, om twee redenen. Het schaarse goed hier is
- * niet capaciteit maar AANDACHT — en dat schaalt anders: vier keer een uur per
- * maand is in te plannen, veertig keer niet. En het is de eerlijke verkoop: bij
- * Starter en Studio koop je productie, hier koop je een gesprek. Twee dingen die
- * niet in één prijs horen.
- *
- * DE LIMIET IS HARD EN STAAT HIER. Vier is wat één persoon naast het werk kan
- * doen. Wordt het er ooit acht, dan is dat een besluit dat je in dit bestand
- * neemt en niet iets wat er ongemerkt in groeit.
+ * Hier stond ADVISORY ("Maandelijks meedenken": € 450 per maand bovenop Brand,
+ * hoogstens vier klanten) met advisoryAvailable() en een bouwcontrole onderaan.
+ * Lucas, 6 oktober: die dienst bestaat niet. Niets op de site of in Studio las
+ * hem; alleen een volgende lezer kon denken dat hij te koop was. Weg, met de
+ * controle erbij.
  */
-export const ADVISORY = {
-  id: 'advisory',
-  amount: 450,           // per maand, bovenop het plan
-  maxCustomers: 4,
-  minPlan: 'brand',      // alleen op het grootste plan
-  name: { en: 'Monthly session', nl: 'Maandelijks meedenken' },
-};
-
-/** Mag dit plan de meedenk-toevoeging kopen, en is er nog plek? */
-export function advisoryAvailable(planId, currentCount) {
-  if (planId !== ADVISORY.minPlan) return false;
-  return Math.max(0, Math.floor(Number(currentCount) || 0)) < ADVISORY.maxCustomers;
-}
 
 /* ── DE BOUWCONTROLES ───────────────────────────────────────────────────────
  *
@@ -578,7 +582,7 @@ export function advisoryAvailable(planId, currentCount) {
  * staan, de VERHOUDING ertussen moet gecontroleerd worden.
  */
 function assertPlans() {
-  const bodem = ladderFloorCents();
+  const bodem = PLAN_BODEM_CENTS;
 
   for (const id of PLAN_IDS) {
     if (!PLAN_AMOUNT[id] || !PLAN_PRODUCTS[id]) {
@@ -620,36 +624,20 @@ function assertPlans() {
     throw new Error('plans.js: de jaartermijn is niet langer dan de minimumtermijn');
   }
 
-  /* ── DE TERUGVAL IN plans() MOET DEZELFDE ZIJN — 1 september 2026 ──────────
-   *
-   * plans() in pricing.js schrijft op de kaart hoeveel maanden de jaartermijn
-   * doorschuift. Dat getal staat HIER, maar pricing.js mag plans.js niet
-   * importeren (dat is een kringetje — zie de kop van planNames.js), dus het komt
-   * als argument binnen met een terugval erin.
-   *
-   * Een terugval is precies waar drift begint: verandert `rollover` hierboven en
-   * vergeet iemand één aanroeper, dan staat er op die pagina een getal dat nergens
-   * meer op slaat, en niets valt om. Deze regel maakt daar een bouwfout van.
-   * pricing.js kan hem niet zelf zetten; plans.js kan dat wel, want die kant van
-   * de afhankelijkheid mag.
+  /* ── DE TERUGVAL IN plans() — WEG SINDS 6.03/6.04 (8 oktober 2026) ─────────
+   * Hier stond een controle dat de kaart in pricing.js "(3 op 12 maanden)"
+   * noemde, gelijk aan TERMS.yearly.rollover. De kaart noemt nu één getal voor
+   * iedereen (CREDITS_GELDIG_MAANDEN in pricing.js), en de tussentermijn staat
+   * niet meer in het aanbod; er valt hier dus niets meer gelijk te houden.
    */
-  const kaartZonderArgument = plans('nl')[0].includes.join(' | ');
-  /* Sinds 23 september 2026 zegt de kaart "(3 op 12 maanden)". */
-  if (!kaartZonderArgument.includes(`(${TERMS.yearly.rollover} op 12 maanden)`)) {
-    throw new Error(
-      `plans.js: de terugval van plans() in pricing.js noemt niet ${TERMS.yearly.rollover} maanden `
-      + 'doorschuiven op de jaartermijn. Werk de standaardwaarde van `jaarRollover` daar bij.'
-    );
-  }
 
   // En er moet ruimte zijn voor ten minste één abonnee van elk plan, anders is
-  // de plekkenlimiet een pagina die nooit iets aanbiedt.
-  const budget = planProductBudget();
+  // het plafond een pagina die nooit iets aanbiedt (6.05: in credits).
   for (const id of PLAN_IDS) {
-    if (productsFor(id) > budget) {
+    if (PLAN_CREDITS[id] > ABO_CREDITS_PLAFOND) {
       throw new Error(
-        `plans.js: ${id} vraagt ${productsFor(id)} producten en het budget is ${budget}. `
-        + 'Verhoog PLAN_CAPACITY_SHARE of de capaciteit in capacity.js.'
+        `plans.js: ${id} heeft ${PLAN_CREDITS[id]} credits per maand en het plafond is ${ABO_CREDITS_PLAFOND}. `
+        + 'Verhoog ABO_CREDITS_PLAFOND.'
       );
     }
   }
@@ -699,10 +687,6 @@ function assertPlans() {
     throw new Error('plans.js: het vooruitbetaalde jaar schuift korter door dan de jaartermijn');
   }
 
-  // De meedenk-toevoeging moet op een plan hangen dat bestaat.
-  if (!PLAN_IDS.includes(ADVISORY.minPlan)) {
-    throw new Error(`plans.js: ADVISORY.minPlan "${ADVISORY.minPlan}" is geen plan`);
-  }
 }
 
 assertPlans();
@@ -722,10 +706,11 @@ export function planShape(planId, termId = 'monthly') {
     rollover: t.rollover,
     brandModel: hasBrandModel(planId, t.id),
     perks: t.perks,
-    /* De vergelijking met los bestellen, uitgerekend en niet overgetypt. Wat
-       dit plan aan producten levert, tegen het laddertarief dat dát aantal zelf
-       al zou krijgen. */
-    ladderCents: productsFor(planId) * ladderRate(PLAN_SERVICE, productsFor(planId)) * 100,
+    /* De vergelijking met los bestellen, uitgerekend en niet overgetypt. Sinds
+       14 oktober 2026 dezelfde som als de prijspagina (planSaving): de credits
+       van het plan, los besteld aan catalogsets. Hier stond het aantal
+       producten tegen de complete-ladder; die bestaat niet meer. */
+    ladderCents: Math.round(planSaving(planId).onLadder * 100),
     brandModelSetupCents: hasBrandModel(planId, t.id) ? AMOUNT.brandModel * 100 : 0,
   };
 }

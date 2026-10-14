@@ -1,4 +1,6 @@
 ---
+// VISUAILS — /hooks: in de hal sinds 13 oktober 2026 (afvinklijst 16, alles doen). De pagina
+// staat in HooksHal.astro; de vorige (HooksPage.astro) staat op de opruimlijst.
 /*
  * VISUAILS — /hooks (Engels). Het lichaam staat in HooksPage.astro, zodat
  * /hooks en /nl/hooks niet uit elkaar kunnen lopen; alleen de meta verschilt.
@@ -23,7 +25,7 @@
  * hetzelfde beeld als /video — de dienst waar een hook het dichtst bij staat.
  */
 import Layout from '../../layouts/Layout.astro';
-import HooksPage from '../../components/HooksPage.astro';
+import HooksHal from '../../components/HooksHal.astro';
 import { euro, AMOUNT, vatLabel } from '../../data/pricing.js';
 
 /* Onder de 160 tekens — tests/nav.test.mjs meet elke pagina en Google knipt
@@ -34,10 +36,10 @@ const description =
   `From ${euro(AMOUNT.hooks, 'en')} per hook ${vatLabel('excl', 'en')} — you film nothing.`;
 ---
 
-<Layout
+<Layout huid="hal"
   title="Hook videos — your product in a proven format | VISUAILS"
   description={description}
   ogImage="/img/banners-16.webp"
 >
-  <HooksPage lang="en" />
+  <HooksHal lang="en" />
 </Layout>

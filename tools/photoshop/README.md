@@ -13,7 +13,7 @@ omdat het dan meelift op je versiebeheer en je back-ups.
 
 | # | Script | Waarvoor precies |
 |---|--------|------------------|
-| 01 | `01-catalog-afwerken.jsx` | (product uitsnijden, kader gelijktrekken, achtergrond op de door de klant gekozen hex, en een identieke schaduw — alles in één pass over alle open documenten) |
+| 01 | `01-catalog-afwerken.jsx` | (sinds 8 okt 2026, punt 4.07: één keer starten op de hele werkmap — leest achtergrond, verhouding en maat uit de INSTELLINGEN-regel in `_briefing.txt`, snijdt uit, zet achtergrond en schaduw, slaat op als `VIS-…-p1-voorkant.jpg` in het vak en zet het ruwe beeld in `_ruw/`; sneltoets: zie `LEESMIJ.txt`) |
 | 02 | `02-kader-normaliseren.jsx` | (alleen het kader: product overal even groot en op dezelfde plek — voor bestanden die al uitgesneden zijn of transparant zijn aangeleverd) |
 | 03 | `03-varianten-exporteren.jsx` | (één afgewerkt document wegschrijven naar alle leverformaten en -maten, in mappen per variant) |
 | 04 | `04-preflight-controle.jsx` | (laatste controle vóór levering: klopt de achtergrondkleur overal, het formaat, de kleurmodus en de marge — verandert zelf niets) |
@@ -25,13 +25,11 @@ fout die je pas na het exporteren ziet moet je twee keer opruimen.
 
 ## Wat je per order aanpast
 
-Bovenin elk script staat één `CFG`-blok. In de praktijk raak je maar
-twee dingen aan:
+Bij `01` niets meer: de achtergrond, de verhouding en de maat komen uit
+de INSTELLINGEN-regel van elke `_briefing.txt` in de werkmap (4.07).
 
-- **`backgroundHex`** in `01` — de achtergrondkleur die de klant koos.
-  Bij Amazon staat die vast op `FFFFFF`.
-- **`expectedHex`** in `04` — dezelfde waarde, zodat de controle weet
-  waar hij op moet meten.
+- **`expectedHex`** in `04` — nog wel met de hand: dezelfde waarde als
+  `achtergrond=` in de INSTELLINGEN-regel.
 
 ---
 
@@ -47,8 +45,8 @@ uit.
 
 **Select Subject is niet altijd het juiste gereedschap.**
 Het zoekt één opvallend object. In een close-up van stof pakt het de
-knoop in plaats van het kledingstuk. Daarom routeert `01` op je
-bestandsnaam: `model` krijgt Select Subject, `detail` krijgt alleen een
+knoop in plaats van het kledingstuk. Daarom routeert `01` op de
+vakmap: `op-model` krijgt Select Subject, `detail` krijgt alleen een
 schone achtergrond, de rest gaat via de hoeken.
 
 **Geen webp in de export, en dat is expres.**
@@ -71,9 +69,9 @@ buiten Photoshop passen.
   beeld. Dat hoort uit je merkbestanden te komen, niet uit code.
 - **Contactvel per order.** Alle beelden van één order op één blad, om
   consistentie te beoordelen vóór levering. Dubbelt als klantpreview.
-- **Orderbestand als invoer.** In plaats van routeren op bestandsnaam:
-  een klein JSON-bestand per order met klantnaam, ordernummer en
-  achtergrondkleur. Dan hoef je nooit meer iets met de hand in te stellen.
+- ~~**Orderbestand als invoer.**~~ Gebouwd in 4.07 (8 okt 2026): de
+  INSTELLINGEN-regel in `_briefing.txt` is dat orderbestand, als
+  `sleutel=waarde` omdat ExtendScript geen JSON kent.
 
 Formaten, conversies, contactvellen en controles horen op termijn
 **buiten** Photoshop, in een mapscript naast `scripts/`. Dat is sneller,

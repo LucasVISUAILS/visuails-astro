@@ -4,7 +4,9 @@
    laat de losse beelden zien en pas dáár staan de beoordeelknoppen — een
    revisie vraag je op een foto, niet op een stapel. Gegevens: productView(). */
 import Beeld from './Beeld.astro';
-const { t, v, orderId } = Astro.props;
+import NieuwTabblad from '../NieuwTabblad.astro';
+/* `lang` (8 oktober 2026, o26): alleen voor de zin "opent in een nieuw tabblad". */
+const { t, v, orderId, lang = 'en' } = Astro.props;
 ---
 <details class={`st-product${v.revising ? ' is-revisie' : ''}`} open={v.open}>
   <summary class="st-product-kop">
@@ -21,7 +23,7 @@ const { t, v, orderId } = Astro.props;
       <div class="st-product-kolom">
         <h3>{t.prodWeMade}</h3>
         {v.delivered.length
-          ? <ul class="st-beelden">{v.delivered.map((b) => <Beeld v={b} orderId={orderId} />)}</ul>
+          ? <ul class="st-beelden">{v.delivered.map((b) => <Beeld v={b} orderId={orderId} lang={lang} />)}</ul>
           : <p class="st-meta">{t.prodNothingYet}</p>}
         {v.allesGoed && (
           <form class="st-keur st-keur-alles" method="post" action="/account/review">
@@ -34,10 +36,10 @@ const { t, v, orderId } = Astro.props;
       {v.uploaded.length > 0 && (
         <div class="st-product-kolom is-ref">
           <h3>{t.prodYouSent}</h3>
-          <ul class="st-beelden is-ref">{v.uploaded.map((b) => <Beeld v={b} orderId={orderId} />)}</ul>
+          <ul class="st-beelden is-ref">{v.uploaded.map((b) => <Beeld v={b} orderId={orderId} lang={lang} />)}</ul>
         </div>
       )}
     </div>
-    <p class="st-product-hulp">{t.prodHelp} <a class="st-link" href={v.waHref} target="_blank" rel="noopener">{t.prodHelpCta}</a></p>
+    <p class="st-product-hulp">{t.prodHelp} <a class="st-link" href={v.waHref} target="_blank" rel="noopener">{t.prodHelpCta}<NieuwTabblad lang={lang} /></a></p>
   </div>
 </details>

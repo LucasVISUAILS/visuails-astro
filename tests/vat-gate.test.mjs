@@ -219,7 +219,7 @@ console.log('\neen bestelling in btw-beoordeling houdt zijn reservering');
   const zonderNoten = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
   const order = zonderNoten(lezen(new URL('../functions/api/order.js', import.meta.url), 'utf8'));
   check('de betaaltermijn start alleen als er betaald kan worden',
-    /if \(finalWindow && quote && vatReview\.payableNow && !review\.needsReview\)/.test(order), true);
+    /if \(finalWindow && quote && vatReview\.payableNow && !review\.needsReview(?: && !metCredits)?\)/.test(order), true);
   /* Woordelijk dezelfde voorwaarde als bij de betaallink zelf: twee plekken die
      hetzelfde moeten beslissen, horen dat met dezelfde woorden te doen. */
   check('en met dezelfde voorwaarde als de betaallink',

@@ -74,11 +74,11 @@
 
 /* Deze deuren gebruiken altijd de productfoto's van de klant.
  *
- * `complete` stond hier ook. Die dienst bestaat nog — de route /start/complete
- * en de sleutel in de ladder zijn ongemoeid — maar hij is sinds 10 september
- * geen DEUR meer op /start (zie de noot daar), en deze lijst gaat over de
- * deuren die daar staan. De combinatie erft haar etiket van catalog, want het
- * is dezelfde bestelling met lifestyle erbij. */
+ * `complete` stond hier ook. Hij is sinds 10 september geen DEUR meer op
+ * /start (zie de noot daar), en sinds 8 oktober 2026 wordt hij helemaal niet meer
+ * verkocht: /start/complete stuurt door naar /start (punt 9.01). De sleutel in de
+ * ladder blijft voor oude bestellingen; deze lijst gaat over de deuren die er
+ * staan. */
 export const MET_EIGEN_PRODUCT = [
   'catalog',
   'lifestyle',

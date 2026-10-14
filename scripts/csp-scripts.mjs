@@ -68,8 +68,27 @@ import { globSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+/* ── EN DE BOTCHECK VAN CLOUDFLARE — 8 oktober 2026 (o03) ─────────────────────
+ *
+ * Turnstile (src/scripts/botcheck.js) laadt één script en zet één iframe neer,
+ * allebei van challenges.cloudflare.com; daarom staat die host in script-src én
+ * in frame-src, en nergens anders (geen connect-src: het iframe praat zelf met
+ * Cloudflare, de pagina niet).
+ *
+ * WAAROM OP ELKE PAGINA EN NIET ALLEEN OP /start EN /contact: de aanmelding
+ * voor de Studiobrief staat in de voettekst van elke pagina, en die heeft de
+ * botcheck ook. Er is geen pagina met de voettekst zonder dat formulier. Het
+ * script wordt pas geladen als iemand een van die formulieren aanraakt; een
+ * bezoeker die alleen leest, haalt niets van Cloudflare. Studio (/account) en de
+ * privélink (/o/…) hebben hun eigen CSP zonder JavaScript en vallen hier buiten.
+ */
+export const TURNSTILE_HOST = 'https://challenges.cloudflare.com';
+
 /** De hosts die een script mogen leveren, buiten de site zelf. */
-export const SCRIPT_HOSTS = ['https://static.cloudflareinsights.com'];
+export const SCRIPT_HOSTS = ['https://static.cloudflareinsights.com', TURNSTILE_HOST];
+
+/** De hosts die in een iframe op de pagina mogen staan. */
+export const FRAME_HOSTS = [TURNSTILE_HOST];
 
 /*
  * De host waar de Cloudflare-beacon zijn meting naartoe stuurt. Dat is een
@@ -189,7 +208,9 @@ export function cspWaarde(hashes, stijlHashes = []) {
      *             moet, krijgt dus een tussenpagina (offsitePage() in
      *             src/lib/offsite.js) en nooit een 303 naar Mollie — zie
      *             naarKassa() in functions/api/order.js (24 september 2026).
-     *   frame-src 'none' — er staat geen enkele iframe in de build.
+     *   frame-src — er staat geen enkele iframe in de build; alleen het
+     *             iframe van de botcheck (FRAME_HOSTS, sinds 8 oktober 2026).
+     *             Was 'none'.
      *   worker-src 'none' — geen Worker, geen serviceWorker.
      *
      * GEEN default-src. Die zou al deze regels overbodig lijken maken en is
@@ -203,7 +224,7 @@ export function cspWaarde(hashes, stijlHashes = []) {
     ['connect-src', "'self'", ...CONNECT_HOSTS].join(' '),
     "media-src 'self'",
     "form-action 'self'",
-    "frame-src 'none'",
+    ['frame-src', ...FRAME_HOSTS].join(' '),
     "worker-src 'none'",
   ].join('; ');
 }

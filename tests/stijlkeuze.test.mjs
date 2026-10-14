@@ -42,16 +42,16 @@ function ok(naam, waar, verwacht = true, kreeg = '') {
   else { fail += 1; console.log(`FAIL   ${naam}`.padEnd(64) + `verwacht ${JSON.stringify(verwacht)} kreeg ${JSON.stringify(kreeg)}`); }
 }
 
-/* De zes bestelpagina's die een stijl kennen: drie diensten × twee talen. De
+/* De vier bestelpagina's die een stijl kennen: twee diensten × twee talen. De
    proefvisual staat er niet bij — die maakt één beeld en kiest zijn soort met
-   een eigen radiogroep (sample_type), niet met een stijl. */
+   een eigen radiogroep (sample_type), niet met een stijl. /start/complete stond
+   hier ook, met twee stijlregels; die pagina is op 8 oktober 2026 weg (punt 9.01,
+   catalog + lifestyle wordt niet meer verkocht). */
 const PAGINAS = [
   ['/start/catalog/', ['catalog_style']],
   ['/start/lifestyle/', ['style']],
-  ['/start/complete/', ['catalog_style', 'style']],
   ['/nl/start/catalog/', ['catalog_style']],
   ['/nl/start/lifestyle/', ['style']],
-  ['/nl/start/complete/', ['catalog_style', 'style']],
 ];
 
 console.log('elke bestelpagina vraagt een stijl, boven het aantal');

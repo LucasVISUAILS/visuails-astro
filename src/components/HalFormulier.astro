@@ -1,0 +1,20 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — een bestelformulier in de hal. 12 oktober 2026, afvinklijst 9
+ * (v9-form a: alle formulieren als volgende groep, vóór hoe het werkt).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Een omslag en niets meer. Wat erin staat (OrderFlow, PlanPicker,
+ * BrandModelBrief, HoldingPage, ThankYouPage) verandert niet van werking: zelfde
+ * velden, zelfde volgorde, zelfde scripts, dezelfde toetsen. De vorm van de hal
+ * komt uit hal.css (het blok "DE FORMULIEREN"), via de tokens die stijl22.css
+ * zelf leest en een paar vaste vormen, net als op de proef (.h-ts-form).
+ * ═══════════════════════════════════════════════════════════════════════════ */
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/hal.css';
+interface Props { soort?: string }
+const { soort = '' } = Astro.props;
+---
+<div class:list={['h-pagina', 'h-form', soort && `h-form-${soort}`]}>
+  <slot />
+</div>

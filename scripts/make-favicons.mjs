@@ -83,8 +83,8 @@ const DRAWER = path.join(ROOT, 'brand', 'logo');
    bestandsnamen die dit script schrijft veranderen niet mee; die zijn extern. */
 const ACCENT = '#4A1FFF';      // --accent (violet; heette hier GREEN tot 22 sep 2026)
 const ACCENT_DIM = '#A694FF';  // --accent in de donkere modus (violet-licht)
-const DARK = '#000000';        // --panel
-const WHITE = '#F2F3F5';       // --on-panel — bewust niet #FFFFFF, zie het schema
+const DARK = '#0F0C24';        // inkt van de hal (14 okt 2026; was #000000, --panel)
+const WHITE = '#FFFFFF';       // wit van de hal (14 okt 2026; was #F2F3F5, de oude grond)
 
 /** id → { ground, ink, note }. `ACTIVE` picks the one that ships. */
 const VARIANTS = {

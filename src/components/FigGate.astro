@@ -62,6 +62,8 @@
  * wat hier beweegt zou de aandacht wegtrekken van het enige dat gelezen moet
  * worden, namelijk welke dag geweigerd wordt.
  */
+/* Het woordmerk in de balk van het voorbeeldscherm (14 oktober 2026): het echte merk, niet het woord in een letter. */
+import Woordmerk from './Woordmerk.astro';
 import {
   ATTENDED_PER_DAY,
   LEAD_DAYS,
@@ -72,13 +74,17 @@ import {
 import {
   DEMO_ORDER,
   DEMO_SMALL_PRODUCTS,
+  DEMO_FIRST_OFFERABLE,
   demoRows,
   demoWindow,
   windowLabel,
 } from '../data/figdemo.js';
+import UitlegBalk from './UitlegBalk.astro';
 
-interface Props { lang?: 'en' | 'nl' }
-const { lang = 'en' } = Astro.props;
+/* `uitleg` (14 oktober 2026, voorbeeld): de figuur bouwt zich op in vijf stappen
+   (zie UitlegBalk.astro). Zonder `uitleg` staat hij er zoals altijd. */
+interface Props { lang?: 'en' | 'nl'; uitleg?: boolean }
+const { lang = 'en', uitleg = false } = Astro.props;
 const nl = lang === 'nl';
 
 const rows = demoRows(DEMO_ORDER.products, lang);
@@ -106,59 +112,106 @@ const C = nl
       side: 'Studiokant',
       badge: 'Voorbeeld met verzonnen gegevens',
       h: 'Wat de datumkiezer vraagt',
-      sub: `${PRODUCTS_PER_DAY} producten per studiodag, waarvan ${QUEUE_FLOOR_PER_DAY} vrij blijven voor kleine bestellingen. Een venster is ${WINDOW_DAYS} open studiodagen achter elkaar.`,
+      sub: `${PRODUCTS_PER_DAY} producten per studiodag, ${QUEUE_FLOOR_PER_DAY} daarvan blijven vrij voor kleine bestellingen. Een vaste datum beslaat ${WINDOW_DAYS} dagen achter elkaar.`,
+      perDag: (n) => `${n} per dag`,
+      vrij: (n) => `${n} vrij`,
+      sKrap: 'Te krap',
+      sPast: 'Past',
+      keyFloor: 'Vrij voor kleine bestellingen',
+      keyEarly: 'Te vroeg: eerst je foto’s binnen',
       askL: 'De aanvraag',
       askV: `${DEMO_ORDER.ref} · ${DEMO_ORDER.brand} · ${DEMO_ORDER.products} producten`,
       unit: (u, c) => `${u} / ${c}`,
       sEarly: 'Te vroeg',
       sFull: 'Vol',
       sOpen: 'Ruimte',
-      sWin: 'Venster',
-      floorNote: `De laatste ${QUEUE_FLOOR_PER_DAY} van elke dag zijn niet te boeken als venster. Die blijven voor bestellingen die in de normale doorlooptijd draaien.`,
-      leadNote: `Vandaag en de ${LEAD_DAYS} dagen daarna zijn geen productietijd: de foto’s moeten binnen zijn en bekeken worden voordat een datum iets betekent.`,
+      /* Voor een dag die de studio dichtzet. In de demo is er sinds 14 oktober
+         2026 geen: de studio werkt ook in het weekend. */
+      sClosed: 'Dicht',
+      sWin: 'Je datum',
       verdictL: 'Aangeboden',
-      verdictWhy: `${DEMO_ORDER.products} producten vragen ${perDay} op elke dag van het venster, dus twee dagen die helemaal vrij zijn. Vrijdag 7 heeft ruimte, maar niet genoeg — en dan wordt dat venster niet aangeboden.`,
-      cmpL: 'Zelfde agenda, kleinere bestelling',
-      cmpV: `${DEMO_SMALL_PRODUCTS} producten · ${windowLabel(small, lang)}${smallDicht ? ` (${WINDOW_DAYS} open studiodagen achter elkaar; de dagen ertussen zijn dicht)` : ''}`,
-      cmpWhy: 'Daarom wordt er in producten geteld en niet in bestellingen: het antwoord hangt af van wat er gemaakt moet worden, niet van hoeveel regels er in de tabel staan.',
-      noneNote: 'Past er binnen de horizon niets? Dan krijg je geen datum. Er is met opzet geen "dichtst mogelijke" uitkomst, want dat is de datum die later verzet moet worden.',
+      verdictWhy: () => `${perDay} per dag past op ${en(k4.map(naam))}.${k3.length ? ` ${hoofd(en(k3.map(naam)))} ${k3.length > 1 ? 'hebben' : 'heeft'} te weinig plek.` : ''}`,
+      cmpL: 'Kleinere bestelling',
+      cmpV: `${DEMO_SMALL_PRODUCTS} producten passen eerder: `,
+      cmpDicht: ' (met dichte dagen ertussen)',
     }
   : {
       side: 'Studio side',
       badge: 'Example with made-up data',
       h: 'What the date picker asks',
-      sub: `${PRODUCTS_PER_DAY} products per studio day, ${QUEUE_FLOOR_PER_DAY} of which stay free for small orders. A window is ${WINDOW_DAYS} consecutive open studio days.`,
+      sub: `${PRODUCTS_PER_DAY} products per studio day, ${QUEUE_FLOOR_PER_DAY} of them kept free for small orders. A fixed date takes ${WINDOW_DAYS} days in a row.`,
+      perDag: (n) => `${n} a day`,
+      vrij: (n) => `${n} free`,
+      sKrap: 'Too tight',
+      sPast: 'Fits',
+      keyFloor: 'Free for small orders',
+      keyEarly: 'Too soon: your photos first',
       askL: 'The request',
       askV: `${DEMO_ORDER.ref} · ${DEMO_ORDER.brand} · ${DEMO_ORDER.products} products`,
       unit: (u, c) => `${u} / ${c}`,
       sEarly: 'Too soon',
       sFull: 'Full',
       sOpen: 'Room',
-      sWin: 'Window',
-      floorNote: `The last ${QUEUE_FLOOR_PER_DAY} of every day cannot be booked as a window. They stay for orders running in the normal turnaround.`,
-      leadNote: `Today and the ${LEAD_DAYS} days after it are not production time: the photos have to be in and looked at before a date means anything.`,
+      sClosed: 'Closed',
+      sWin: 'Your date',
       verdictL: 'Offered',
-      verdictWhy: `${DEMO_ORDER.products} products ask for ${perDay} on each day of the window, so it needs two days that are completely free. Friday 7 has room, but not enough — so that window is not offered.`,
-      cmpL: 'Same calendar, smaller order',
-      cmpV: `${DEMO_SMALL_PRODUCTS} products · ${windowLabel(small, lang)}${smallDicht ? ` (${WINDOW_DAYS} open studio days in a row; the days between are closed)` : ''}`,
-      cmpWhy: 'This is why it is counted in products and not in orders: the answer depends on what has to be made, not on how many rows are in the table.',
-      noneNote: 'If nothing fits inside the horizon, you get no date. There is deliberately no "closest we can do", because that is the date that has to be moved later.',
+      verdictWhy: () => `${perDay} a day fits on ${en(k4.map(naam))}.${k3.length ? ` ${en(k3.map(naam))} ${k3.length > 1 ? 'have' : 'has'} too little room.` : ''}`,
+      cmpL: 'Smaller order',
+      cmpV: `${DEMO_SMALL_PRODUCTS} products fit sooner: `,
+      cmpDicht: ' (with closed days between)',
     };
 
 const stateWord = (r) =>
-  r.offered ? C.sWin : r.state === 'early' ? C.sEarly : r.state === 'full' ? C.sFull : C.sOpen;
+  r.offered ? C.sWin : r.state === 'closed' ? C.sClosed : r.state === 'early' ? C.sEarly : r.state === 'full' ? C.sFull : C.sOpen;
 
 /* De balk staat voor de HELE dag (18) en niet voor het verkoopbare deel (15),
    want anders is de gereserveerde staart niet te tekenen — en juist die staart is
    het deel dat uitgelegd moet worden. */
 const pct = (n) => `${Math.round((n / PRODUCTS_PER_DAY) * 100)}%`;
 const floorAt = pct(ATTENDED_PER_DAY);
+
+/* ── DE UITLEG IN STAPPEN ─────────────────────────────────────────────────
+   Elke rij krijgt de stap waarin hij meedoet: 2 te vroeg, 3 geprobeerd en te
+   klein, 4 het venster, 5 de rest. Op de rijen van stap 3 en 4 schuift het stuk
+   dat de bestelling per dag vraagt (perDay) op de balk; wat boven de verkoopbare
+   ruimte uitkomt, is het deel dat niet past. Alles uit dezelfde rijen als de figuur. */
+const uRij = (r) => (r.iso < DEMO_FIRST_OFFERABLE ? 2
+  : r.offered ? 4
+  : (r.state === 'open' && lastOffered && r.iso < lastOffered) ? 3 : 5);
+const uRijen = rows.map((r) => ({ ...r, u: uRij(r) }));
+const k3 = uRijen.filter((r) => r.u === 3);
+const k4 = uRijen.filter((r) => r.u === 4);
+const geest = (r) => {
+  const over = Math.max(0, r.used + perDay - r.cap);
+  return `--van: ${pct(r.used)}; --w: ${pct(perDay)}; --past: ${Math.round(((perDay - over) / perDay) * 100)}%`;
+};
+const DAGNAAM = nl
+  ? ['zondag', 'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag']
+  : ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const naam = (r) => `${DAGNAAM[new Date(`${r.iso}T00:00:00Z`).getUTCDay()]} ${Number(r.iso.slice(8))}`;
+const en = (xs) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} ${nl ? 'en' : 'and'} ${xs[xs.length - 1]}`);
+const hoofd = (t) => t.replace(/^./, (c) => c.toUpperCase());
+const ZINNEN = nl
+  ? [
+      `De aanvraag: ${DEMO_ORDER.products} producten. Een vaste datum beslaat ${WINDOW_DAYS} dagen, dus ${perDay} per dag.`,
+      `Vandaag en de ${LEAD_DAYS} dagen erna zijn te vroeg: eerst moeten je foto’s binnen zijn.`,
+      `${hoofd(en(k3.map((r) => `${naam(r)} heeft ${r.cap - r.used} vrij`)))}: te krap voor ${perDay} per dag.`,
+      `${hoofd(en(k4.map(naam)))} hebben genoeg plek: ${perDay} per dag past, ${WINDOW_DAYS} dagen achter elkaar.`,
+      `Aangeboden: ${windowLabel(win, lang)}. ${DEMO_SMALL_PRODUCTS} producten passen eerder: ${windowLabel(small, lang)}.`,
+    ]
+  : [
+      `The request: ${DEMO_ORDER.products} products. A fixed date takes ${WINDOW_DAYS} days, so ${perDay} a day.`,
+      `Today and the ${LEAD_DAYS} days after are too soon: your photos have to be in first.`,
+      `${en(k3.map((r) => `${naam(r)} has ${r.cap - r.used} free`))}: too tight for ${perDay} a day.`,
+      `${en(k4.map(naam))} have enough room: ${perDay} a day fits, ${WINDOW_DAYS} days in a row.`,
+      `Offered: ${windowLabel(win, lang)}. ${DEMO_SMALL_PRODUCTS} products fit sooner: ${windowLabel(small, lang)}.`,
+    ];
 ---
 
-<figure class="fgt" aria-label={C.h}>
+<figure class="fgt" aria-label={C.h} data-uitleg={uitleg ? '' : undefined} data-uitleg-maat="2000 2000 2700 2400 3200">
   <div class="fgt-frame">
     <div class="fgt-bar">
-      <span class="fgt-mark">VISUAILS</span>
+      <span class="fgt-mark"><Woordmerk klasse="fgt-wm" /><span class="fgt-sr">VISUAILS</span></span>
       <span class="fgt-side">{C.side}</span>
       <span class="fgt-badge">{C.badge}</span>
     </div>
@@ -174,11 +227,14 @@ const floorAt = pct(ATTENDED_PER_DAY);
       <div class="fgt-ask">
         <span class="fgt-ask-l">{C.askL}</span>
         <span class="fgt-ask-v">{C.askV}</span>
+        <b class="fgt-ask-per">{C.perDag(perDay)}</b>
       </div>
 
       <ul class="fgt-list">
-        {rows.map((r) => (
+        {uRijen.map((r) => (
           <li
+            data-u={uitleg ? r.u : undefined}
+            style={uitleg ? `--k: ${(r.u === 3 ? k3 : k4).findIndex((x) => x.iso === r.iso)}` : undefined}
             class:list={[
               'fgt-row',
               `is-${r.state}`,
@@ -193,23 +249,32 @@ const floorAt = pct(ATTENDED_PER_DAY);
               {/* De gereserveerde staart. Een aparte laag en geen tweede balk:
                   het is hetzelfde etmaal, alleen een deel dat niet te koop is. */}
               <span class="fgt-floor" style={`--floor: ${floorAt}`}></span>
+              {uitleg && (r.u === 3 || r.u === 4) && (
+                <span class="fgt-geest" style={geest(r)}><i class="g-past"></i><i class="g-over"></i></span>
+              )}
             </span>
-            <span class="fgt-n">{C.unit(r.used, r.cap)}</span>
+            {/* Een dichte dag heeft geen capaciteit: een streepje, geen "0 / 20". */}
+            {/* Tijdens de uitleg (stap 3 en 4) wordt het aantal "8 vrij": dan zie je naast de
+                "10 per dag" van de aanvraag waarom een dag wel of niet past. */}
+            <span class="fgt-n">{r.state === 'closed' ? '—' : <span class="n-gewoon">{C.unit(r.used, r.cap)}</span>}{uitleg && (r.u === 3 || r.u === 4) && <span class="n-vrij">{C.vrij(r.cap - r.used)}</span>}</span>
             {/* Het woord staat er altijd bij. Kleur alleen mag geen informatie
                 dragen — dezelfde regel die account.css aanhoudt voor zijn
                 statuspillen, en hier beslist die staat over een datum. */}
-            <span class="fgt-s">{stateWord(r)}</span>
+            <span class="fgt-s"><span class="s-gewoon">{stateWord(r)}</span>{uitleg && (r.u === 3 || r.u === 4) && <span class="s-uitleg">{r.u === 3 ? C.sKrap : C.sPast}</span>}</span>
           </li>
         ))}
       </ul>
 
-      <p class="fgt-fine">{C.floorNote} {C.leadNote}</p>
+      {/* AFVINKLIJST 24: "de tekst onderaan iets compacter en overzichtelijker". Hier
+          stonden vijf alinea's; nu een sleutel van twee woorden, de uitkomst met één
+          regel waarom, en de kleinere bestelling in één regel. */}
+      <p class="fgt-sleutel fgt-fine-a"><span><i class="k-streep" aria-hidden="true"></i>{C.keyFloor}</span><span><i class="k-vroeg" aria-hidden="true"></i>{C.keyEarly}</span></p>
 
       <div class="fgt-verdict">
         <span class="fgt-v-l">{C.verdictL}</span>
         <span class="fgt-v-v">{windowLabel(win, lang)}</span>
       </div>
-      <p class="fgt-fine">{C.verdictWhy}</p>
+      <p class="fgt-fine fgt-fine-na">{C.verdictWhy()}</p>
 
       {/* ── DE VERGELIJKING ────────────────────────────────────────────────
           Twee uitkomsten uit dezelfde agenda op dezelfde dag. Dit is het enige
@@ -218,13 +283,11 @@ const floorAt = pct(ATTENDED_PER_DAY);
           een aantoonbaar feit verandert. */}
       <div class="fgt-cmp">
         <span class="fgt-cmp-l">{C.cmpL}</span>
-        <span class="fgt-cmp-v">{C.cmpV}</span>
-        <p class="fgt-cmp-n">{C.cmpWhy}</p>
+        <span class="fgt-cmp-v">{C.cmpV}<span class="fgt-nw">{windowLabel(small, lang)}</span>{smallDicht ? C.cmpDicht : ''}</span>
       </div>
-
-      <p class="fgt-fine">{C.noneNote}</p>
     </div>
   </div>
+  {uitleg && <UitlegBalk zinnen={ZINNEN} lang={lang} />}
 </figure>
 
 <style>
@@ -286,6 +349,13 @@ const floorAt = pct(ATTENDED_PER_DAY);
     color: var(--ink-3);
   }
   .fgt-ask-v { font-size: .72rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+  /* Wat de aanvraag per dag vraagt: het getal waar elke rij hieronder aan gemeten wordt. */
+  .fgt-ask-per { margin-left: auto; padding: .14rem .55rem; border-radius: var(--r-pill); background: var(--accent); color: var(--accent-on); font-size: .72rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  /* Het aantal en het woord hebben tijdens de uitleg een tweede stand ("8 vrij", "Te krap"),
+     op dezelfde plek; de kolom krijgt de breedte van de langste. */
+  .fgt-n, .fgt-s { display: inline-grid; justify-items: end; }
+  .fgt-n > span, .fgt-s > span { grid-area: 1 / 1; }
+  .n-vrij, .s-uitleg { opacity: 0; font-weight: 700; }
 
   /* ── DE DAGEN ─────────────────────────────────────────────────────────────
      Twaalf rijen, één per dag in beeld. Rijen en geen kolommen: in een halve kolom is
@@ -298,7 +368,7 @@ const floorAt = pct(ATTENDED_PER_DAY);
   .fgt-list { list-style: none; margin: 0; padding: 0; display: grid; }
   .fgt-row {
     display: grid;
-    grid-template-columns: 4.6rem minmax(0, 1fr) auto 4.2rem;
+    grid-template-columns: 4.6rem minmax(0, 1fr) auto 4.9rem;
     align-items: center; gap: .55rem;
     padding: .32rem .4rem;
     font-size: .72rem;
@@ -378,7 +448,8 @@ const floorAt = pct(ATTENDED_PER_DAY);
      de rijen, niet om hoe zwak de zwakste mag zijn. Gemeten met leesbaar.mjs,
      dat de dekking van alle voorouders meerekent voordat het contrast bepaald
      wordt; zonder die optelsom is dit soort fout onzichtbaar. */
-  .fgt-row.is-early { opacity: .68; }
+  .fgt-row.is-early, .fgt-row.is-closed { opacity: .68; }
+  .fgt-row.is-closed .fgt-track { visibility: hidden; }
 
   /* Vol is de enige toestand met een waarschuwingskleur, en niet rood: er is
      niets stuk, de dag is bezet. Een rode balk op een verkooppagina leest als
@@ -403,6 +474,11 @@ const floorAt = pct(ATTENDED_PER_DAY);
   }
 
   .fgt-fine { margin: 0; font-size: .72rem; line-height: 1.55; color: var(--ink-3); }
+  .fgt-sleutel { margin: 0; display: flex; flex-wrap: wrap; gap: .35rem 1.1rem; font-size: .72rem; line-height: 1.4; color: var(--ink-2); }
+  .fgt-sleutel span { display: inline-flex; align-items: center; gap: .4rem; }
+  .fgt-sleutel i { flex: none; display: inline-block; }
+  .k-streep { width: 18px; height: 8px; border-radius: var(--r-pill); background: repeating-linear-gradient(-45deg, var(--line-strong) 0 2px, transparent 2px 5px); box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .k-vroeg { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); }
 
   .fgt-verdict {
     display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .6rem;
@@ -429,5 +505,81 @@ const floorAt = pct(ATTENDED_PER_DAY);
     color: var(--ink-3);
   }
   .fgt-cmp-v { font-size: .74rem; font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-  .fgt-cmp-n { margin: .1rem 0 0; font-size: .72rem; line-height: 1.55; color: var(--ink-3); }
+  .fgt-nw { white-space: nowrap; }
+
+  /* ── DE UITLEG (alleen met data-uitleg-staat; zie UitlegBalk.astro) ───────
+     Wat er nog niet aan de beurt is, staat zacht; de woorden komen pas als hun
+     stap er is. Na stap 5 is alles weer de figuur zoals hij altijd stond. */
+  .fgt[data-uitleg-staat] .fgt-row { transition: opacity .5s, background-color .6s, box-shadow .6s; }
+  .fgt[data-uitleg-staat] .fgt-s { transition: opacity .35s .25s; }
+  .fgt[data-uitleg-staat] .fgt-ask { transition: box-shadow .5s, background-color .5s; }
+  .fgt[data-uitleg-staat] :is(.fgt-verdict, .fgt-cmp, .fgt-fine) { transition: opacity .6s, transform .7s cubic-bezier(.22, .8, .2, 1); }
+
+  .fgt[data-uitleg-staat]:not(.u-s2) .fgt-row[data-u="2"],
+  .fgt[data-uitleg-staat]:not(.u-s3) .fgt-row[data-u="3"],
+  .fgt[data-uitleg-staat]:not(.u-s4) .fgt-row[data-u="4"],
+  .fgt[data-uitleg-staat]:not(.u-s5) .fgt-row[data-u="5"] { opacity: .3; }
+  .fgt[data-uitleg-staat]:not(.u-s2) .fgt-row[data-u="2"] .fgt-s,
+  .fgt[data-uitleg-staat]:not(.u-s3) .fgt-row[data-u="3"] .fgt-s,
+  .fgt[data-uitleg-staat]:not(.u-s4) .fgt-row[data-u="4"] .fgt-s,
+  .fgt[data-uitleg-staat]:not(.u-s5) .fgt-row[data-u="5"] .fgt-s { opacity: 0; }
+  /* De te-vroege dagen houden hun eigen demping (.68), ook tijdens de uitleg. */
+  .fgt.u-s2 .fgt-row[data-u="2"] { opacity: .68; }
+
+  /* AFVINKLIJST 24: "de story telling in de video mag iets beter te zien zijn". Per stap
+     staan alleen de rijen van die stap vol in beeld (de rest zakt naar .32), krijgen ze een
+     eigen ondergrond, en zeggen ze in hun eigen woorden waarom: "8 vrij · Te krap", "20 vrij
+     · Past". Daarna wordt het weer de figuur zoals hij altijd stond. */
+  .fgt[data-uitleg-staat] :is(.n-gewoon, .n-vrij, .s-gewoon, .s-uitleg) { transition: opacity .3s; }
+  .fgt.u-s2:not(.u-s3) .fgt-row:not([data-u="2"]),
+  .fgt.u-s3:not(.u-s4) .fgt-row:not([data-u="3"]),
+  .fgt.u-s4:not(.u-s5) .fgt-row:not([data-u="4"]) { opacity: .32; }
+  .fgt.u-s2:not(.u-s3) .fgt-row[data-u="2"] { opacity: 1; background: var(--surface-2); }
+  .fgt.u-s2:not(.u-s3) .fgt-row[data-u="2"] .fgt-s { color: var(--ink); }
+  .fgt.u-s3:not(.u-s4) .fgt-row[data-u="3"] { background: color-mix(in srgb, #C9A227 13%, transparent); }
+  .fgt.u-s4:not(.u-s5) .fgt-row[data-u="4"] { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+  .fgt.u-s3:not(.u-s4) .fgt-row[data-u="3"] :is(.n-gewoon, .s-gewoon),
+  .fgt.u-s4:not(.u-s5) .fgt-row[data-u="4"] :is(.n-gewoon, .s-gewoon) { opacity: 0; }
+  .fgt.u-s3:not(.u-s4) .fgt-row[data-u="3"] :is(.n-vrij, .s-uitleg),
+  .fgt.u-s4:not(.u-s5) .fgt-row[data-u="4"] :is(.n-vrij, .s-uitleg) { opacity: 1; }
+  .fgt.u-s3:not(.u-s4) .fgt-row[data-u="3"] :is(.n-vrij, .s-uitleg) { color: #8A4D06; transition-delay: calc(var(--k, 0) * .7s + .35s); }
+  .fgt.u-s4:not(.u-s5) .fgt-row[data-u="4"] :is(.n-vrij, .s-uitleg) { color: var(--accent-text); transition-delay: calc(var(--k, 0) * .45s + .3s); }
+  .fgt.u-s1:not(.u-s2) .fgt-ask-per { animation: per-in .6s cubic-bezier(.34, 1.4, .5, 1) .35s both; }
+  @keyframes per-in { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  /* Stap 1: de aanvraag licht op. */
+  .fgt.u-s1:not(.u-s2) .fgt-ask { box-shadow: 0 0 0 2px var(--accent); background: color-mix(in srgb, var(--accent) 6%, var(--surface-2)); }
+
+  /* Het venster ziet er pas uit als venster als het gevonden is. */
+  .fgt[data-uitleg-staat]:not(.u-s4) .fgt-row.is-win { background: transparent; box-shadow: inset 0 -1px 0 var(--line); }
+  .fgt[data-uitleg-staat]:not(.u-s4) .fgt-row.is-win .fgt-fill { background: var(--ink-3); }
+  .fgt.u-s4 .fgt-row.is-win { transition-delay: calc(var(--k, 0) * .45s + .6s); }
+
+  /* De uitkomst onderaan komt in stap 5; de regel over de staart al in stap 2. */
+  .fgt[data-uitleg-staat]:not(.u-s5) :is(.fgt-verdict, .fgt-cmp, .fgt-fine-na),
+  .fgt[data-uitleg-staat]:not(.u-s2) .fgt-fine-a { opacity: 0; transform: translateY(8px); }
+  .fgt.u-s5 .fgt-verdict { transition-delay: .1s; }
+  .fgt.u-s5 .fgt-cmp { transition-delay: .9s; }
+
+  /* Het stuk dat de bestelling per dag vraagt. */
+  .fgt-geest {
+    position: absolute; top: 0; bottom: 0; left: var(--van); width: var(--w);
+    display: flex; transform-origin: left center; transform: scaleX(0); opacity: 0;
+    border-radius: 0 var(--r-pill) var(--r-pill) 0; overflow: hidden;
+  }
+  .fgt-geest i { display: block; height: 100%; }
+  .fgt-geest .g-past { width: var(--past); background: var(--accent); }
+  .fgt-geest .g-over { flex: 1; background: repeating-linear-gradient(-45deg, #C9A227 0 3px, rgba(201, 162, 39, .3) 3px 6px); }
+  .fgt-row[data-u="3"] .g-past { background: var(--h-lila, #A694FF); }
+
+  .fgt.u-s3:not(.u-s4) .fgt-row[data-u="3"] .fgt-geest { animation: g-in .6s cubic-bezier(.34, 1.4, .5, 1) calc(var(--k) * .7s + .2s) forwards; }
+  .fgt.u-s3:not(.u-s4) .fgt-row[data-u="3"] .g-over { animation: g-te .4s ease-in-out calc(var(--k) * .7s + .75s) 3 alternate; }
+  .fgt.u-s4:not(.u-s5) .fgt-row[data-u="4"] .fgt-geest { animation: g-in .6s cubic-bezier(.34, 1.4, .5, 1) calc(var(--k) * .45s + .2s) forwards; }
+  .fgt[data-uitleg-staat="pauze"] :is(.fgt-geest, .g-over) { animation-play-state: paused; }
+  @keyframes g-in { from { transform: scaleX(0); opacity: .3; } to { transform: scaleX(1); opacity: 1; } }
+  @keyframes g-te { from { opacity: 1; } to { opacity: .35; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fgt-geest { display: none; }
+  }
 </style>

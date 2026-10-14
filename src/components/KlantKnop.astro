@@ -1,0 +1,40 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — de knop die een ingelogde klant krijgt waar de proef wegvalt.
+ * 14 oktober 2026, afvinklijst 23 (k-klant-vervang).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Staat `hidden` in de pagina en komt pas tevoorschijn als /account/me?stand=1
+ * antwoordt (interactions.js, pasKlantstandToe). Zonder inloggen, zonder
+ * script of zonder antwoord blijft de pagina wat hij was: de proefknop staat
+ * er, deze niet.
+ *
+ * Drie soorten:
+ *   herbestel           alleen als de klant een geleverde bestelling heeft:
+ *                       "Bestel opnieuw met je look", met de link uit Studio
+ *                       (dezelfde look, achtergrond, verhouding en gezicht).
+ *                       Voor naast een knop die al "Start een bestelling" is.
+ *   herbestel-of-start  altijd voor een klant: de herbestelknop als die er is,
+ *                       anders "Start een bestelling". Voor een plek waar de
+ *                       proef de HOOFDknop was (/upload-guidelines).
+ *   start-naast         "Start een bestelling", alleen als er ook een
+ *                       herbestelknop staat — de tweede knop naast
+ *                       herbestel-of-start.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+import { klantTekst } from '../data/klant.js';
+import { localizedPath } from '../i18n/ui.js';
+
+interface Props { lang: 'en' | 'nl'; soort: 'herbestel' | 'herbestel-of-start' | 'start-naast'; toon?: 'inkt' | 'lijn'; pijl?: boolean; }
+const { lang, soort, toon = 'lijn', pijl = false } = Astro.props;
+const k = klantTekst(lang);
+const start = localizedPath(lang, '/start');
+const label = soort === 'herbestel' ? k.herbestel : k.start;
+const PIJL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/></svg>';
+---
+<a
+  class={`h-knop h-knop-${toon}`}
+  href={start}
+  data-vis-klant={soort}
+  data-vis-herbestel={soort === 'herbestel-of-start' ? k.herbestel : undefined}
+  hidden
+><span data-vis-label>{label}</span>{pijl && <span class="o" set:html={PIJL} />}</a>

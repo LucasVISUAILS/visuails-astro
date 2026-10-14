@@ -2,12 +2,14 @@
 // VISUAILS — /nl/per-product. Zie de Engelse variant en de kop van
 // PerProductPage.astro; alleen de meta verschilt hier.
 import Layout from '../../layouts/Layout.astro';
-import PerProductPage from '../../components/PerProductPage.astro';
+// 12 oktober 2026 (afvinklijst 8, alles "doen"): deze pagina staat in de hal (huid="hal");
+// de vorige opmaak staat op _opruimen/LIJST.txt.
+import PerProductHal from '../../components/PerProductHal.astro';
 ---
 
-<Layout
+<Layout huid="hal"
   title="Wat je per product krijgt — VISUAILS"
   description="De vier foto’s die elk product krijgt, en de hoeken die je er per foto bij kunt bestellen. Eén keer bekijken, voordat je iets invult."
 >
-  <PerProductPage lang="nl" />
+  <PerProductHal lang="nl" />
 </Layout>

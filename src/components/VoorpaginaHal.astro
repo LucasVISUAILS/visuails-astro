@@ -1,0 +1,581 @@
+---
+/**
+ * VISUAILS — de voorpagina ("de witte hal"), sinds 12 oktober 2026.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Het ontwerpplan (versie 9) met Lucas' keuzes uit afvinklijst 5. Eerst een
+ * voorbeeld op /voorbeeld/ en /nl/voorbeeld/; Lucas, 12 oktober 17:42:
+ * *"Voorbeeld is goed"*, en om 18:26 koos hij "direct live bij je volgende
+ * UITROLLEN" — dus vóór prijzen, catalog, lifestyle en start (die volgen als
+ * eigen voorbeelden). Nu staat dit op / en /nl/; /voorbeeld/ stuurt met een 301
+ * door (public/_redirects). De oude Voorpagina.astro staat op de opruimlijst.
+ *
+ * ZES SECTIES, ÉÉN IDEE PER STUK (plan §08). Per scherm één groot element, twee
+ * middelgrote, de rest klein. De korte teksten zijn de teksten uit afvinklijst 5
+ * (tv-1 … tv-6, door Lucas goedgekeurd), met twee aanvullingen die in
+ * kladblok/TEKSTEN-VOORBEELD.md staan om na te lezen:
+ *   · "Wij doen de rest" onder de stappen — Lucas bij d-bellen: *"het moet
+ *     duidelijk worden dat het een service is waarbij de klant simpelweg alleen
+ *     een paar foto's … hoeft te sturen en wij de rest van creatie, editing, iptc
+ *     kenmerk verwerking en quality controles uitvoeren."*
+ *   · "vaak binnen een dag" staat overal mét "soms een paar dagen": dat is Lucas'
+ *     eigen regel (ronde 8, zie levertijdDelen() in pricing.js), en die gaat voor
+ *     de kortere tekst in de lijst.
+ *
+ * GEEN ENKEL GETAL IS GETYPT. Prijzen uit euro()/ladderFloor()/ladderRate(),
+ * levertijd uit levertijdDelen(), de maat uit RESOLUTIE, het aantal foto's uit
+ * shots.js, de gezichten uit ROSTER, de shootdag uit SHOOT_DAY.
+ *
+ * STAPNUMMERS ZONDER PUNTJES. Lucas (d-dot = nergens): *"Bedenk iets anders dan
+ * de puntjes cijfers omdat dit teveel op kopiëren gaat lijken."* Het nummer is nu
+ * een maatlijn, zoals op de posters: "01", een lijn van 0,6 px die zich vult als
+ * de stap in beeld komt, en "/ 03". Eigen, en uit ons eigen beeldschema.
+ *
+ * BEWEGING. Lucas (bij d-diensten): *"op alle plekken waar subtiele en
+ * satisfying/moderne animaties toegevoegd kunnen worden, ook deze toegevoegd
+ * worden … Creëer waar nodig ook custom animaties."* De lijst staat in het plan
+ * (§09) en in hal.css; bij "minder beweging" staat alles stil en is alles meteen
+ * zichtbaar. Geen bedragen die optellen.
+ */
+import HalProef from './HalProef.astro';
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/hal.css';
+import {
+  euro, TEST_SAMPLE, reviewClaim, ladderFloor, ladderRate, videoPrijsLabel, levertijdDelen, SHOOT_DAY, RESOLUTIE,
+} from '../data/pricing.js';
+import { MERK, TAGLINE } from '../data/brand.js';
+import { localizedPath } from '../i18n/ui.js';
+import { ROSTER, modelId, telwoord } from '../data/models.js';
+import { REQUIRED_SHOT_IDS, SHOTS } from '../data/shots.js';
+import { geleverd, ingestuurd } from '../data/voorbeeldset.js';
+import { styles as lifestyleEn } from '../data/styles.js';
+import { styles as lifestyleNl } from '../data/styles.nl.js';
+import { catalogStyles as catalogEn } from '../data/catalogStyles.js';
+import { catalogStyles as catalogNl } from '../data/catalogStyles.nl.js';
+import { LEVERTAG, TAG_WOORD, tagNaam } from '../lib/iptc.js';
+import HalLaptop from './HalLaptop.astro';
+import Aanbevelingen from './Aanbevelingen.astro';
+import FormatenHal from './FormatenHal.astro';
+import UitlegBalk from './UitlegBalk.astro';
+import { planKnop, waKlant } from '../data/klant.js';
+
+/* `uitleg` (14 oktober 2026, voorbeeld op /voorbeeld/voorpagina): "Hoe het werkt"
+   speelt zich af in drie stappen, en onder die sectie komt het formatenblok. */
+const { lang, uitleg = false } = Astro.props as { lang: 'en' | 'nl'; uitleg?: boolean };
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+const sample = TEST_SAMPLE[lang];
+const e = (n: number) => euro(n, lang);
+/* tests/uploadbelofte.test.mjs: het aantal foto's komt uit de verplichte hoeken. */
+const FOTOS = telwoord(REQUIRED_SHOT_IDS.length, lang, true);
+/* De namen van de verplichte foto's, als zin: "voorkant, achterkant en detail". Uit shots.js. */
+const shotNamen = (l: 'en' | 'nl') => {
+  const n = REQUIRED_SHOT_IDS.map((id) => SHOTS.find((x: any) => x.id === id)!.name[l].toLowerCase());
+  return n.length < 2 ? n.join('') : `${n.slice(0, -1).join(', ')} ${l === 'nl' ? 'en' : 'and'} ${n[n.length - 1]}`;
+};
+const SHOT_NAMEN = { nl: shotNamen('nl'), en: shotNamen('en') };
+/* Midden in een zin: zonder hoofdletter ("Je stuurt drie …", niet "Je stuurt Drie …"). */
+const fotos = telwoord(REQUIRED_SHOT_IDS.length, lang);
+const GEZICHTEN = telwoord(ROSTER.length, lang);
+const [snel, traag] = levertijdDelen('unattended', lang);
+const LEVERTIJD = traag ? `${snel}, ${traag}` : snel;
+
+/* De looks: dezelfde bron als Stijlstrook.astro, zonder "op maat" en zonder de
+   binnenkort-kaarten (die gaan naar /lifestyle, plan §01). Elke proefknop houdt
+   zijn link: /test-sample?style=<look> (tests/proef-look). */
+const lifestyle = nl ? lifestyleNl : lifestyleEn;
+const catalog = nl ? catalogNl : catalogEn;
+const CATALOG_BEELD: Record<string, string> = { classic: '/img/catalog-after.webp' };
+const proef = (slug: string) => `${lp('/test-sample')}?style=${encodeURIComponent(slug)}`;
+const LOOKS = [
+  ...catalog.filter((s: any) => s.slug !== 'custom').map((s: any) => ({ soort: 'Catalog', naam: s.name, beeld: CATALOG_BEELD[s.slug], href: lp(`/catalog/${s.slug}`), proef: proef(s.slug) })),
+  ...lifestyle.filter((s: any) => s.slug !== 'custom').map((s: any) => ({ soort: 'Lifestyle', naam: s.name, beeld: s.cardPhoto, href: lp(`/lifestyle/${s.slug}`), proef: proef(s.slug) })),
+].filter((k) => k.beeld);
+const GEZICHTEN_RIJ = ROSTER.slice(0, 5);
+const DRIE = (n: number) => String(n).padStart(2, '0');
+
+const COPY = {
+  nl: {
+    plek: 'Enschede, NL',
+    lede: 'Stuur je productfoto’s. Krijg catalog, lifestyle en video terug.',
+    ctaStart: 'Start een bestelling', planCta: 'Sluit een abonnement af',
+    feiten: [`Vanaf <b>${e(ladderFloor('catalog'))}</b> per product`, LEVERTIJD, 'Geen minimum'],
+    hoeLabel: 'Hoe het werkt', hoeKop: ['Dit stuur jij.', 'Dit krijg je terug.'],
+    stappen: [
+      ['Jij stuurt', `${FOTOS} telefoonfoto’s zijn genoeg om te beginnen.`, 'jouw telefoonfoto’s'],
+      ['Wij maken', `Catalog, lifestyle of video. ${LEVERTIJD}.`, 'Elk beeld dezelfde achtergrond'],
+      ['Jij keurt goed', 'Per beeld goedkeuren. Alles in één keer downloaden.', ''],
+    ],
+    goedgekeurd: (n: number) => `${n} van ${n} goedgekeurd`,
+    uitlegZinnen: [
+      `Je stuurt ${fotos} telefoonfoto’s per product: ${SHOT_NAMEN.nl}.`,
+      'Wij werken elk beeld af: uitknippen, jouw achtergrond eronder en een natuurlijke schaduw, bij elk beeld op dezelfde manier.',
+      'Je keurt per beeld goed en downloadt alles in één keer.',
+    ],
+    restJij: 'Jij stuurt alleen een paar foto’s.', restWij: 'Wij doen de rest:',
+    rest: [
+      ['Maken', 'Elk beeld in de look die je kiest.'],
+      ['Bewerken', 'Retouche, kleur en het formaat dat je kiest.'],
+      ['Het AI-kenmerk', 'Een machineleesbaar kenmerk in elk bestand (IPTC).'],
+      ['Controle', reviewClaim('unattended', 'nl')],
+    ],
+    restLink: 'Meer over de AI-markering',
+    makenLabel: 'Wat we maken', makenKop: ['Drie soorten beeld.', 'Per product geprijsd.'],
+    diensten: [
+      ['Productfoto’s', `vanaf ${e(ladderFloor('catalog'))} per product`, '/catalog'],
+      ['Lifestyle', `vanaf ${e(ladderFloor('lifestyle'))} per product`, '/lifestyle'],
+      ['Video', videoPrijsLabel('nl'), '/video'],
+    ],
+    eenProduct: `Eén product: ${e(ladderRate('catalog', 1))} (catalog) of ${e(ladderRate('lifestyle', 1))} (lifestyle). Meer producten, lager tarief.`,
+    vorige: 'Vorige', volgende: 'Volgende', veeg: 'Veeg voor de andere twee',
+    looksLabel: 'Looks', looksKop: ['Kies een look.', 'Je collectie als één shoot.'], probeer: `Probeer · ${sample.price}`,
+    vorigeLooks: 'Vorige looks', volgendeLooks: 'Volgende looks',
+    gezicht: ['Een gezicht zit erbij.', `${GEZICHTEN.charAt(0).toUpperCase() + GEZICHTEN.slice(1)} modellen, zonder meerprijs.`], alleGezichten: `Alle ${GEZICHTEN}`,
+    wetenLabel: 'Meer weten', wetenKop: ['Nog', 'vragen?'],
+    shootLabel: 'Shootdag vs VISUAILS', shootZin: 'kost één shootdag, alles meegerekend. Hier stuur je foto’s en keur je goed.',
+    faq: ['Veelgestelde vragen', ['Goedkeuren', 'Revisies', 'Levertijd', 'Rechten']],
+    aiact: ['AI en de AI Act', 'Hoe je het vermeldt, met een zin die je kunt gebruiken.'],
+    proefLabel: 'Proef', proefKop: ['Eerst zien?', 'Eén product voor'],
+    proefZin: `Gemaakt van jouw eigen foto · ${sample.unit}.`, proefAlt: 'Of start een bestelling',
+    vertrouwen: [['Gemaakt in Enschede', '/about'], 'Ingeschreven bij de KVK', 'Elk beeld door ons gecontroleerd', 'Vragen tussendoor via WhatsApp'],
+    stapAlt: ['', 'De roze jeans, uitgeknipt en op wit gezet, met de natuurlijke schaduw eronder'],
+    lagen: ['Uitgeknipt', 'Achtergrond', 'Natuurlijke schaduw'],
+    dienstAlt: ['Twaalf catalogbeelden op wit in een raster', 'Sfeerbeeld: een model met een violet vest en een tas loopt door een witte hal', 'Een bewogen opname van hetzelfde sfeerbeeld'],
+  },
+  en: {
+    plek: 'Enschede, NL',
+    lede: 'Send your product photos. Get catalog, lifestyle and video back.',
+    ctaStart: 'Start an order', planCta: 'Start a plan',
+    feiten: [`From <b>${e(ladderFloor('catalog'))}</b> per product`, LEVERTIJD, 'No minimum'],
+    hoeLabel: 'How it works', hoeKop: ['What you send.', 'What you get back.'],
+    stappen: [
+      ['You send', `${FOTOS} phone photos are all you need to start.`, 'your phone photos'],
+      ['We make', `Catalog, lifestyle or video. ${LEVERTIJD}.`, 'Same background on every image'],
+      ['You approve', 'Approve image by image. Download everything at once.', ''],
+    ],
+    goedgekeurd: (n: number) => `${n} of ${n} approved`,
+    uitlegZinnen: [
+      `You send ${fotos} phone photos per product: ${SHOT_NAMEN.en}.`,
+      'We finish every image: cut out, your background underneath and a natural shadow, the same way on every image.',
+      'You approve image by image and download everything at once.',
+    ],
+    restJij: 'You only send a few photos.', restWij: 'We do the rest:',
+    rest: [
+      ['Creating', 'Every image in the look you pick.'],
+      ['Editing', 'Retouching, colour and the format you choose.'],
+      ['The AI marking', 'A machine-readable marking in every file (IPTC).'],
+      ['Checking', reviewClaim('unattended', 'en')],
+    ],
+    restLink: 'More about the AI marking',
+    makenLabel: 'What we make', makenKop: ['Three kinds of image.', 'Priced per product.'],
+    diensten: [
+      ['Product photos', `from ${e(ladderFloor('catalog'))} per product`, '/catalog'],
+      ['Lifestyle', `from ${e(ladderFloor('lifestyle'))} per product`, '/lifestyle'],
+      ['Video', videoPrijsLabel('en'), '/video'],
+    ],
+    eenProduct: `One product: ${e(ladderRate('catalog', 1))} (catalog) or ${e(ladderRate('lifestyle', 1))} (lifestyle). More products, a lower rate.`,
+    vorige: 'Previous', volgende: 'Next', veeg: 'Swipe for the other two',
+    looksLabel: 'Looks', looksKop: ['Pick a look.', 'Your collection as one shoot.'], probeer: `Try · ${sample.price}`,
+    vorigeLooks: 'Previous looks', volgendeLooks: 'Next looks',
+    gezicht: ['A face comes with it.', `${GEZICHTEN.charAt(0).toUpperCase() + GEZICHTEN.slice(1)} models, at no extra cost.`], alleGezichten: `All ${GEZICHTEN}`,
+    wetenLabel: 'Learn more', wetenKop: ['Any', 'questions?'],
+    shootLabel: 'Shoot day vs VISUAILS', shootZin: 'is what one shoot day costs, all in. Here you send photos and approve.',
+    faq: ['Common questions', ['Approvals', 'Revisions', 'Delivery time', 'Rights']],
+    aiact: ['AI and the AI Act', 'How to disclose it, with a sentence you can use.'],
+    proefLabel: 'Trial', proefKop: ['See it first?', 'One product for'],
+    proefZin: `Made from your own photo · ${sample.unit}.`, proefAlt: 'Or start an order',
+    vertrouwen: [['Made in Enschede', '/about'], 'Registered with the KVK', 'Every image checked by us', 'Questions mid-order on WhatsApp'],
+    stapAlt: ['', 'The pink jeans, cut out and set on white, with the natural shadow underneath'],
+    lagen: ['Cut out', 'Background', 'Natural shadow'],
+    dienstAlt: ['Twelve catalog images on white in a grid', 'Mood image: a model in a violet cardigan with a bag walks through a white hall', 'A motion-blurred shot of the same mood image'],
+  },
+};
+const c = COPY[lang];
+const kop = TAGLINE[lang];
+const ICOON = {
+  label: '<path d="M2.5 8.6V2.5h6.1l5 5-6.1 6.1z"/><circle cx="5.6" cy="5.6" r="1"/>',
+  klok: '<circle cx="8" cy="8" r="6"/><path d="M8 4.8V8l2.2 1.6"/>',
+  doos: '<path d="M2.5 5L8 2.5 13.5 5v6L8 13.5 2.5 11zM2.5 5L8 7.5 13.5 5M8 7.5v6"/>',
+  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
+  pijl: '<path d="M4.5 11.5l7-7M5.5 4.5h6v6"/>',
+  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
+  links: '<path d="M13.5 8h-11M7 3.5L2.5 8 7 12.5"/>',
+  speel: '<path d="M5.5 3.8v8.4L12.5 8z" fill="currentColor" stroke="none"/>',
+  info: '<circle cx="8" cy="8" r="6.2"/><path d="M8 7.2v4.2M8 4.8v.1"/>',
+  maken: '<path d="M8 1.8l1.5 3.9 3.9 1.5-3.9 1.5L8 12.6 6.5 8.7 2.6 7.2l3.9-1.5zM12.8 11.2l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z"/>',
+  bewerken: '<path d="M2.5 4.5h7M12.5 4.5h1M2.5 11.5h1M6.5 11.5h7"/><circle cx="11" cy="4.5" r="1.6"/><circle cx="5" cy="11.5" r="1.6"/>',
+  kenmerk: '<path d="M3 2.5h6.5L13 6v7.5H3z"/><path d="M9.5 2.5V6H13M5.5 9h5M5.5 11.5h3"/>',
+  controle: '<path d="M8 2l5 2v4c0 3-2.2 5-5 6-2.8-1-5-3-5-6V4zM5.8 8l1.6 1.6 3-3"/>',
+};
+const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+const REST_ICOON: (keyof typeof ICOON)[] = ['maken', 'bewerken', 'kenmerk', 'controle'];
+/* Drie van de telefoonfoto's die ook in de laptop staan (laptopSlides.js): wat
+   een klant echt instuurt, geen voorbeeld dat er beter uitziet. */
+const JIJ_FOTOS = ['/img/ba2-voor-front.webp', '/img/ba2-voor-achter.webp', '/img/ba2-voor-detail.webp'];
+/* "Goedkeuren, revisies, levertijd, rechten." — de zin en de belletjes op de
+   FAQ-kaart komen uit dezelfde lijst, dus ze kunnen niet uit elkaar lopen. */
+const [faqTitel, faqOnderwerpen] = c.faq as [string, string[]];
+const faqZin = faqOnderwerpen.map((w, i) => (i === 0 ? w : w.toLowerCase())).join(', ') + '.';
+/* De AI-markering op de AI Act-kaart: de waarde die écht in elk bestand komt
+   (src/lib/iptc.js, LEVERTAG), met wat die zegt in gewone woorden. */
+const IPTC_WAARDE = tagNaam(LEVERTAG);
+const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
+---
+<div class="h-pagina">
+
+  {/* ── 01 · OPENING ─────────────────────────────────────────────────────────
+      Tekst links, het laptopbeeld rechts (N1); op een telefoon de tekst boven en
+      het beeld in een rond paneel eronder (N2). Zie HalLaptop.astro. */}
+  <section class="h-opening" aria-labelledby="h-h1">
+    <div class="h-open-tekst">
+      {/* De welkomstregel van een ingelogde klant stond hier tot 14 oktober
+          2026 (k-klant-stand) en is nu een melding onderin het scherm, op elke
+          pagina: KlantMelding.astro. Het label staat er weer voor iedereen. */}
+      <p class="h-pil h-op" style="--d:0"><span>{MERK} · {c.plek}</span></p>
+      <h1 id="h-h1" class="h-kop h-h1" aria-label={kop.plain}>
+        {kop.lines.map((regel: string, i: number) => (
+          <span class="h-regel" style={`--d:${i + 1}`} aria-hidden="true">
+            <span class="h-regel-in">
+              {regel.includes('<em>') ? (
+                <span class="h-wissel" style={`--n:${kop.wissel.length}`}>
+                  {kop.wissel.map((w: string, j: number) => <span class="h-wissel-woord" style={`--j:${j}`}>{w}.</span>)}
+                </span>
+              ) : <span class:list={[i === 0 && 'l']} set:html={regel} />}
+            </span>
+          </span>
+        ))}
+      </h1>
+      <p class="h-lede h-op" style="--d:4">{c.lede}</p>
+      <p class="h-acties h-op" style="--d:5">
+        <a class="h-knop h-knop-inkt" href={lp('/start')}>{c.ctaStart}<span class="o" set:html={ik('rechts')} /></a>
+        <a class="h-knop h-knop-lijn" href={lp('/test-sample')} data-vis-uit>{sample.cta}</a>
+        <a class="h-knop h-knop-lijn" href={lp('/start/plan')} {...planKnop(lang, lp)}><span data-vis-label>{c.planCta}</span></a>
+      </p>
+      <ul class="h-feiten h-op" style="--d:6" role="list">
+        {c.feiten.map((f, i) => <li><i set:html={ik((['label', 'klok', 'doos'] as const)[i])} /><span set:html={f} /></li>)}
+      </ul>
+    </div>
+    <div class="h-open-beeld h-op" style="--d:3">
+      <HalLaptop lang={lang} />
+    </div>
+  </section>
+
+  {/* ── 02 · HOE HET WERKT ───────────────────────────────────────────────── */}
+  <section class="h-sec h-hoe" id="hoe" aria-labelledby="h-hoe" data-uitleg={uitleg ? '' : undefined} data-uitleg-maat="2200 3800 2600" data-uitleg-start="400">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{c.hoeLabel}</span></p>
+        <h2 id="h-hoe" class="h-kop h-h2"><span class="l">{c.hoeKop[0]}</span> {c.hoeKop[1]}</h2>
+      </div>
+    </header>
+    <ol class="h-stappen" role="list" data-uitleg-zicht>
+      {c.stappen.map(([naam, regel, bij], i) => (
+        <li class="h-stap h-in" style={`--d:${i}`}>
+          <p class="h-nr" aria-hidden="true"><b>{DRIE(i + 1)}</b><i></i><span>/ {DRIE(c.stappen.length)}</span></p>
+          <h3 class="h-stap-naam">{naam}</h3>
+          <p class="h-stap-regel">{regel}</p>
+          <div class="h-stap-beeld">
+            {/* STAP 3: GOEDKEUREN. Hier stonden drie vormen (1:1, 4:5, 9:16) van
+                 één catalogbeeld, en dat las als "je krijgt alle drie" — dezelfde
+                 fout die ronde 8 al uit voorbeeldset.js haalde: de klant kiest
+                 één formaat per bestelling (ratios.js), en 9:16 bestaat voor
+                 catalog niet eens. Nu de set die een proef oplevert (voorkant,
+                 achterkant, detail, draagfoto), elk beeld met een eigen vinkje,
+                 zoals de stap zegt: per beeld goedkeuren. */}
+            {/* AFVINKLIJST 24 (14 oktober 2026). Lucas: *"De foto's kunnen iets logischer op
+                 elkaar aansluiten en de middelste foto bij 'Wij maken' mag … echt een soort
+                 proces (een soort van digitaal handmatig zoals we ook echt doen) … Het geeft
+                 nu het gevoel dat het een AI tool is en dit is het ZEKER NIET."* Dus één
+                 product door alle drie de stappen (de roze jeans, voorbeeldset.js), en in
+                 stap 2 de lagen waaruit een catalogbeeld bestaat: uitgeknipt, de achtergrond
+                 eronder, de schaduw erbij — met elke laag in het lijstje rechtsboven. */}
+            {i === 0 ? (
+              <figure class="h-well h-stuur">
+                <ul class="h-stuur-rij" role="list">
+                  {ingestuurd(lang).slice(0, REQUIRED_SHOT_IDS.length).map((b, k) => (
+                    <li style={`--d:${k}`}><img src={b.src} width={b.w} height={b.h} alt={b.alt} loading="lazy" decoding="async" /></li>
+                  ))}
+                </ul>
+                <figcaption class="h-chip h-glas">{bij}</figcaption>
+              </figure>
+            ) : i === 1 ? (
+              <figure class="h-well h-maak">
+                <span class="h-maak-dam" aria-hidden="true"></span>
+                <span class="h-maak-wit" aria-hidden="true"></span>
+                {/* Drie lagen op dezelfde plek, alle drie 760 × 760 en pixel voor pixel
+                    gelijk: de schaduw in wording (de uitsnede, zwart gemaakt en
+                    vervaagd), de uitsnede zelf, en het geleverde beeld. Lucas, 14
+                    oktober: *"Ik wil gewoon de normale schaduw van de normale foto
+                    hebben want dit is ook wat de klant krijgt."* Dus de schaduw schuift
+                    als laag op zijn plek, en dan vloeit alles over in de echte foto. */}
+                <span class="h-maak-vlak">
+                  <img class="h-maak-schaduw" src="/img/ba2-na-front-uitgeknipt.webp" width="760" height="760" alt="" aria-hidden="true" loading="lazy" decoding="async" />
+                  <img class="h-maak-broek" src="/img/ba2-na-front-uitgeknipt.webp" width="760" height="760" alt="" aria-hidden="true" loading="lazy" decoding="async" />
+                  <img class="h-maak-echt" src={geleverd(lang)[0].src} width={geleverd(lang)[0].w} height={geleverd(lang)[0].h} alt={c.stapAlt[1]} loading="lazy" decoding="async" />
+                </span>
+                <ol class="h-lagen h-glas" role="list">
+                  {c.lagen.map((l: string, k: number) => (
+                    <li style={`--l:${k}`}><i aria-hidden="true" set:html={ik('check')} /><span>{l}</span>{k === 1 && <b><s aria-hidden="true"></s>#FFFFFF</b>}</li>
+                  ))}
+                </ol>
+                <figcaption class="h-chip h-glas">{bij}</figcaption>
+              </figure>
+            ) : (
+              <figure class="h-well h-keur">
+                <ul class="h-keur-rij" role="list">
+                  {/* Voorkant en achterkant staan op wit en blijven heel (h-heel:
+                      passend in het vak); het detail en de draagfoto vullen hun vak. */}
+                  {geleverd(lang).map((b, k) => (
+                    <li class:list={[k < 2 && 'h-heel']} style={`--d:${k}`}><img src={b.src} width={b.w} height={b.h} alt="" loading="lazy" decoding="async" /><span class="h-vink" aria-hidden="true" set:html={ik('check')} /></li>
+                  ))}
+                </ul>
+                <figcaption class="h-chip h-glas">{c.goedgekeurd(geleverd(lang).length)}</figcaption>
+              </figure>
+            )}
+          </div>
+          {i < 2 && <span class="h-brug" aria-hidden="true" set:html={ik('rechts')} />}
+        </li>
+      ))}
+    </ol>
+    {uitleg && <UitlegBalk zinnen={c.uitlegZinnen} lang={lang} />}
+    {/* WIJ DOEN DE REST. Lucas bij d-bellen: *"het moet duidelijk worden dat het
+        een service is waarbij de klant simpelweg alleen een paar foto's … hoeft
+        te sturen en wij de rest … uitvoeren."* Daarom staat het als een
+        verhouding: links het kleine deel van de klant (een paar telefoonfoto's),
+        rechts de vier dingen die wij doen. Komt de band in beeld, dan waaieren de
+        foto's uit en loopt er een violette lijn langs de vier, één voor één. */}
+    <div class="h-rest h-in">
+      <div class="h-rest-jij">
+        <span class="h-rest-fotos" aria-hidden="true">
+          {JIJ_FOTOS.map((src) => <img src={src} width="760" height="1013" alt="" loading="lazy" decoding="async" />)}
+        </span>
+        <p class="h-rest-kop">{c.restJij}</p>
+      </div>
+      <span class="h-rest-pijl" aria-hidden="true" set:html={ik('rechts')} />
+      <div class="h-rest-wij">
+        <p class="h-rest-kop">{c.restWij}</p>
+        <a class="h-link" href={lp('/ai-act')}>{c.restLink}<span class="h-cirkel h-cirkel-mini" set:html={ik('pijl')} /></a>
+        <ul class="h-rest-rij" role="list">
+          {c.rest.map(([naam, regel], i) => (
+            <li style={`--d:${i}`}><i set:html={ik(REST_ICOON[i])} /><span><b>{naam}</b>{regel}</span></li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  {uitleg && <FormatenHal lang={lang} uitleg />}
+
+  {/* ── 03 · WAT WE MAKEN ────────────────────────────────────────────────────
+      Drie beelden: het middelste recht en vooraan, de zijkanten gedraaid. Komt
+      de sectie in beeld, dan vouwen ze open (60° → 46°). De pijlen draaien de
+      rij één plek. Zonder JavaScript: drie beelden naast elkaar, en op een
+      telefoon een rij om opzij te vegen. */}
+  <section class="h-sec h-maken" id="maken" aria-labelledby="h-maken" data-h-cf>
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{c.makenLabel}</span></p>
+        <h2 id="h-maken" class="h-kop h-h2">{c.makenKop[0]} <span class="l">{c.makenKop[1]}</span></h2>
+      </div>
+      <p class="h-sec-rechts">
+        <button type="button" class="h-cirkel" data-h-cf-stap="-1" aria-label={c.vorige} set:html={ik('links')} />
+        <button type="button" class="h-cirkel" data-h-cf-stap="1" aria-label={c.volgende} set:html={ik('rechts')} />
+      </p>
+    </header>
+    <ul class="h-cf h-in" role="list" data-h-cf-rij>
+      {c.diensten.map(([naam, prijs, href], i) => (
+        <li class:list={['h-cf-k', ['links', 'midden', 'rechts'][i]]} data-h-cf-k={i}>
+          <a href={lp(href)} class="h-cf-a">
+            <img src={['/img/catalog-raster-w760.webp', '/img/hal/sfeer-4x5.webp', '/img/hal/sfeer-bewogen.webp'][i]}
+                 srcset={i === 0 ? '/img/catalog-raster-w760.webp 760w, /img/catalog-raster-w1560.webp 1560w' : undefined}
+                 sizes="(max-width: 900px) 70vw, 36vw" width={[760, 921, 1600][i]} height={[573, 1152, 900][i]}
+                 alt={c.dienstAlt[i]} loading="lazy" decoding="async" class:list={[i === 1 && 'h-pos-1', i === 2 && 'h-pos-2']} />
+            {i > 0 && <span class:list={['h-korrel', i === 2 && 'h-tint']} aria-hidden="true"></span>}
+            {i === 2 && <span class="h-cirkel h-cirkel-glas h-speel" aria-hidden="true" set:html={ik('speel')} />}
+            <span class="h-cf-naam h-glas"><span><b>{naam}</b><span>{prijs}</span></span><span class="h-cirkel h-cirkel-violet" aria-hidden="true" set:html={ik('rechts')} /></span>
+          </a>
+        </li>
+      ))}
+    </ul>
+    <p class="h-onderregel h-in"><span class="h-cirkel h-cirkel-mini h-cirkel-mist" aria-hidden="true" set:html={ik('info')} />{c.eenProduct}</p>
+    <p class="h-veeg" aria-hidden="true">{c.veeg}</p>
+  </section>
+
+  {/* ── 04 · LOOKS EN HET GEZICHT ──────────────────────────────────────────── */}
+  <section class="h-sec h-looks" aria-labelledby="h-looks" data-h-strook>
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{c.looksLabel}</span></p>
+        <h2 id="h-looks" class="h-kop h-h2">{c.looksKop[0]} <span class="l">{c.looksKop[1]}</span></h2>
+      </div>
+      <p class="h-sec-rechts">
+        <span class="h-lijntje" aria-hidden="true"><i data-h-strook-stand></i></span>
+        <button type="button" class="h-cirkel" data-h-strook-stap="-1" aria-label={c.vorigeLooks} set:html={ik('links')} />
+        <button type="button" class="h-cirkel" data-h-strook-stap="1" aria-label={c.volgendeLooks} set:html={ik('rechts')} />
+      </p>
+    </header>
+    <ul class="h-strook" role="list" data-h-strook-rij>
+      {LOOKS.map((k, i) => (
+        <li class="h-look h-in" style={`--d:${Math.min(i, 5)}`}>
+          <a class="h-look-a" href={k.href} aria-label={`${k.naam} · ${k.soort}`}>
+            <img src={k.beeld} alt="" width="800" height="1000" loading="lazy" decoding="async" />
+            <span class="h-pil h-pil-glas h-pil-nr">{k.soort}</span>
+            <span class="h-cirkel h-cirkel-glas h-look-pijl" aria-hidden="true" set:html={ik('pijl')} />
+          </a>
+          <p class="h-look-paneel h-glas"><b>{k.naam}</b><a class="h-mini-knop" href={k.proef}>{c.probeer}</a></p>
+        </li>
+      ))}
+    </ul>
+    <div class="h-gezicht h-in">
+      <p class="h-kop h-h3">{c.gezicht[0]} <span class="l">{c.gezicht[1]}</span></p>
+      <p class="h-gezicht-rechts">
+        <span class="h-koppen">
+          {GEZICHTEN_RIJ.map((m: any) => <a href={`${lp('/models')}#${modelId(m.name)}`} aria-label={m.name}><img src={m.thumb} width={m.tw} height={m.th} alt="" loading="lazy" decoding="async" /></a>)}
+        </span>
+        <a class="h-knop h-knop-inkt h-knop-klein" href={lp('/models')}>{c.alleGezichten}<span class="o" set:html={ik('pijl')} /></a>
+      </p>
+    </div>
+  </section>
+
+  {/* ── 05 · MEER WETEN ──────────────────────────────────────────────────── */}
+  <section class="h-sec h-weten" aria-labelledby="h-weten">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{c.wetenLabel}</span></p>
+        <h2 id="h-weten" class="h-kop h-h2"><span class="l">{c.wetenKop[0]}</span> {c.wetenKop[1]}</h2>
+      </div>
+    </header>
+    <ul class="h-weten-rij" role="list">
+      <li class="h-in h-groot" style="--d:0">
+        <a href={lp('/compare')}>
+          <span class="h-korrel" aria-hidden="true"></span>
+          <span class="h-weten-boven"><span class="h-pil h-pil-wit"><span>{c.shootLabel}</span></span><span class="h-cirkel h-cirkel-wit" aria-hidden="true" set:html={ik('pijl')} /></span>
+          <span class="h-weten-onder"><span class="h-getal">{SHOOT_DAY[lang].range}</span><span class="h-weten-zin">{c.shootZin}</span></span>
+        </a>
+      </li>
+      {/* Twee kaarten met een klein, stil beeld erin, zodat ze niet leeg ogen naast
+          het grote getal. Beide beelden zijn versiering (aria-hidden): de kop en
+          de zin eronder zeggen hetzelfde in woorden. */}
+      <li class="h-in h-faq" style="--d:1">
+        <a href={lp('/faq')}>
+          <span class="h-weten-boven">
+            <span class="h-vragen" aria-hidden="true">
+              {faqOnderwerpen.map((w, i) => <span style={`--d:${i}`}>{w}?</span>)}
+            </span>
+            <span class="h-cirkel h-cirkel-wit" aria-hidden="true" set:html={ik('pijl')} />
+          </span>
+          <span class="h-weten-onder"><b>{faqTitel}</b><span class="h-weten-zin">{faqZin}</span></span>
+        </a>
+      </li>
+      <li class="h-in h-act" style="--d:2">
+        <a href={lp('/ai-act')}>
+          <span class="h-weten-boven">
+            <span class="h-label" aria-hidden="true">
+              <span class="h-label-kop"><i>IPTC</i>Digital Source Type</span>
+              <span class="h-label-waarde" style={`--n:${IPTC_WAARDE.length}`}>{IPTC_WAARDE}</span>
+              <span class="h-label-zegt"><span set:html={ik('check')} />{IPTC_WOORD}</span>
+            </span>
+            <span class="h-cirkel h-cirkel-wit" aria-hidden="true" set:html={ik('pijl')} />
+          </span>
+          <span class="h-weten-onder"><b>{c.aiact[0]}</b><span class="h-weten-zin">{c.aiact[1]}</span></span>
+        </a>
+      </li>
+    </ul>
+  </section>
+
+  {/* ── 05b · AANBEVELINGEN (G3, 8 oktober 2026) ─────────────────────────────
+      Lucas: *"Graag wel bouwen maar onzichtbaar houden tot ik er 1 echt accepteer
+      en erin zet."* Zolang er geen enkele gepubliceerd is, rendert dit letterlijk
+      niets (Aanbevelingen.astro). Op de oude voorpagina stond hij op dezelfde
+      plek: vlak voor de proef. huid="hal": de kop als de andere hal-secties. */}
+  <Aanbevelingen lang={lang} huid="hal" />
+
+  {/* ── 06 · HET SLOTBEELD: €1 ──────────────────────────────────────────────
+      Het enige donkere vlak (d-donker): diep violet met korrel, de reuzen-€1 in
+      Urbanist 300. De vier beelden zijn wat de proef oplevert. */}
+  {/* Sinds 14 oktober 2026 hetzelfde slotbeeld als op de andere pagina's
+      (HalProef.astro), want daar staat de versie voor een klant die al
+      bestelde: zijn eigen look en zijn eigen beelden, geen €1 (v26-proefblok a). */}
+  <HalProef lang={lang} id="h-proef" label={c.proefLabel} kop={c.proefKop} zin={c.proefZin} alt={{ label: c.proefAlt, href: '/start' }} />
+
+  <ul class="h-vertrouwen h-in" role="list">
+    {c.vertrouwen.map((t, i) => <li style={`--d:${i}`}><i set:html={ik('check')} />{Array.isArray(t) ? <a href={lp(t[1])}>{t[0]}</a> : t}</li>)}
+  </ul>
+</div>
+
+<script>
+  /* ── BEWEGING OP HET VOORBEELD — 12 oktober 2026 ───────────────────────────
+     Drie dingen, allemaal zonder luisteraar op window (tests/zachte-navigatie):
+     1. BINNENKOMEN: elk .h-in krijgt .is-in zodra het voor een vijfde in beeld
+        is, één keer. De beweging zelf (16 px omhoog, zichtbaar worden, met een
+        kleine vertraging per kaart) staat in hal.css. Zonder JavaScript, of bij
+        "minder beweging", staat alles er meteen (hal.css zet .h-in pas op
+        onzichtbaar als <html> de klasse h-js heeft).
+     2. DE DRIE DIENSTEN: in beeld vouwen de zijkanten open; de pijlen draaien de
+        rij één plek (de klassen links/midden/rechts schuiven door).
+     3. DE LOOKS: de pijlen schuiven de strook een kaart verder, en het lijntje
+        boven de pijlen laat zien hoe ver je bent. */
+  const zet = () => {
+    const html = document.documentElement;
+    html.classList.add('h-js');
+    const rustig = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const io = new IntersectionObserver((rijen) => {
+      for (const r of rijen) if (r.isIntersecting) { r.target.classList.add('is-in'); io.unobserve(r.target); }
+    }, { threshold: 0.2, rootMargin: '0px 0px -6% 0px' });
+    for (const el of document.querySelectorAll('.h-pagina .h-in:not(.is-in)')) {
+      if (rustig) el.classList.add('is-in'); else io.observe(el);
+    }
+
+    for (const cf of document.querySelectorAll<HTMLElement>('[data-h-cf]')) {
+      if (cf.dataset.hKlaar) continue;
+      cf.dataset.hKlaar = '1';
+      const kaarten = [...cf.querySelectorAll<HTMLElement>('[data-h-cf-k]')];
+      const plekken = ['links', 'midden', 'rechts'];
+      let start = 0;
+      const leg = () => kaarten.forEach((k, i) => {
+        const p = plekken[(i - start + 1 + 3) % 3];
+        for (const q of plekken) k.classList.toggle(q, q === p);
+      });
+      for (const b of cf.querySelectorAll<HTMLButtonElement>('[data-h-cf-stap]')) {
+        b.addEventListener('click', () => {
+          start = (start + Number(b.dataset.hCfStap) + 3) % 3;
+          leg();
+          /* Op een telefoon is het een veegrij: schuif de middelste in beeld. */
+          const midden = cf.querySelector<HTMLElement>('.h-cf-k.midden');
+          const rij = cf.querySelector<HTMLElement>('[data-h-cf-rij]');
+          if (rij && midden && rij.scrollWidth > rij.clientWidth) rij.scrollTo({ left: midden.offsetLeft - (rij.clientWidth - midden.clientWidth) / 2, behavior: rustig ? 'auto' : 'smooth' });
+        });
+      }
+      new IntersectionObserver(([e], o) => {
+        if (e.isIntersecting) { cf.classList.add('is-open'); o.disconnect(); }
+      }, { threshold: 0.35 }).observe(cf);
+    }
+
+    for (const st of document.querySelectorAll<HTMLElement>('[data-h-strook]')) {
+      if (st.dataset.hKlaar) continue;
+      st.dataset.hKlaar = '1';
+      const rij = st.querySelector<HTMLElement>('[data-h-strook-rij]');
+      const stand = st.querySelector<HTMLElement>('[data-h-strook-stand]');
+      if (!rij) continue;
+      const meet = () => {
+        const max = rij.scrollWidth - rij.clientWidth;
+        const deel = max > 0 ? rij.scrollLeft / max : 0;
+        const zicht = rij.scrollWidth > 0 ? rij.clientWidth / rij.scrollWidth : 1;
+        stand?.style.setProperty('--w', String(Math.max(0.12, Math.min(1, zicht))));
+        stand?.style.setProperty('--x', String(deel));
+      };
+      rij.addEventListener('scroll', meet, { passive: true });
+      new ResizeObserver(meet).observe(rij);
+      for (const b of st.querySelectorAll<HTMLButtonElement>('[data-h-strook-stap]')) {
+        b.addEventListener('click', () => {
+          const kaart = rij.querySelector<HTMLElement>('.h-look');
+          const stap = kaart ? kaart.offsetWidth + 16 : rij.clientWidth * 0.8;
+          rij.scrollBy({ left: stap * Number(b.dataset.hStrookStap), behavior: rustig ? 'auto' : 'smooth' });
+        });
+      }
+    }
+  };
+  zet();
+  document.addEventListener('astro:page-load', zet);
+</script>

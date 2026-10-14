@@ -1,0 +1,416 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — /how-it-works in de hal. 13 oktober 2026, afvinklijst 10
+ * (v10-volgende = a: "hoe het werkt" als volgende groep).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Dezelfde opbouw en dezelfde teksten als HowItWorksPage.astro en het
+ * planningsblok (PlanningBlok.astro), in de vorm van de voorpagina. Wat er in de
+ * tekst anders is, staat in kladblok/TEKSTEN-HOE-HET-WERKT.md (●-regels).
+ *
+ *   kop       pil, de kop in twee tonen, twee knoppen, het beeld ernaast
+ *   loop      de drie stappen van de voorpagina (maatlijn, nevelkaart, beeld),
+ *             hier met de roze jeans van begin tot eind: drie telefoonfoto's →
+ *             één afgewerkt beeld → vier beelden met elk een vinkje. Daaronder de
+ *             drie diensten, elk één regel.
+ *   planning  de belofte over de agenda als kop, de vier regels ingeklapt, de
+ *             agenda (FigGate, licht gemaakt met de tokens hieronder in hal.css)
+ *             en "reken terug" als drie maatlijnen. #planning blijft het anker.
+ *   hand      het echte voor-en-na (het T-shirt) in een nevelvlak
+ *   weten     de details en waar de beelden landen, als regels met haarlijnen
+ *   slot      de proef (HalProef), het enige donkere vlak
+ *
+ * GEEN ENKEL GETAL IS GETYPT: alles uit pricing.js, capacity.js (via FigGate en
+ * de regels), demo.js en voorbeeldset.js, zoals in de oude pagina.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/hal.css';
+import Compare from './Compare.astro';
+import Note from './Note.astro';
+import Disclose from './Disclose.astro';
+import FigGate from './FigGate.astro';
+import HalProef from './HalProef.astro';
+import HalBeweging from './HalBeweging.astro';
+import KlantKnop from './KlantKnop.astro';
+import {
+  TIERS, reviewClaim, turnaround, aftercare, WINDOW_THRESHOLD, vatLabel, vatLead, vatDetail, TEST_SAMPLE, clause,
+  CATALOG_IMAGES, LIFESTYLE_IMAGES, VIDEO_OP_AANVRAAG, RESOLUTIE,
+} from '../data/pricing.js';
+import { PRODUCTS_PER_DAY, QUEUE_FLOOR_PER_DAY, WINDOW_DAYS } from '../data/capacity.js';
+import { WALK_COPY, WALK_SERVICES, DEMO_BACKGROUNDS } from '../data/demo.js';
+import { ingestuurd, geleverd } from '../data/voorbeeldset.js';
+import { REQUIRED_SHOT_IDS } from '../data/shots.js';
+import { localizedPath } from '../i18n/ui.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+const t = WALK_COPY[lang] || WALK_COPY.en;
+const sample = TEST_SAMPLE[lang];
+const fase = (id: string) => t.fasen[id] || { n: '', duur: '', h: '' };
+
+/* "Waar de beelden landen": elk getal afgeleid (zie HowItWorksPage.astro). */
+const EX_FULL = 30;
+const EX_CATALOG = CATALOG_IMAGES * EX_FULL;
+const EX_LIFESTYLE = LIFESTYLE_IMAGES * EX_FULL;
+const achtergronden = DEMO_BACKGROUNDS.map((b: any) => t.backgroundNames[b.id] || b.id);
+const lijst = (xs: string[]) => xs.slice(0, -1).join(', ') + (nl ? ' of ' : ' or ') + xs[xs.length - 1];
+const DIENST_PAD: Record<string, string> = { catalog: '/catalog', lifestyle: '/lifestyle', video: '/video' };
+/* Stap 1 toont de verplichte foto's, zoveel als shots.js er verplicht stelt. */
+const FOTOS_IN = ingestuurd(lang).slice(0, REQUIRED_SHOT_IDS.length);
+const SET = geleverd(lang);
+const MODEL = SET[SET.length - 1];
+const DRIE = (n: number) => String(n).padStart(2, '0');
+
+const COPY = {
+  en: {
+    pil: 'How it works',
+    h1: ['One folder in.', 'A whole batch out.'],
+    lead: 'Send us your product photos. We make the images, check every one of them, and you approve them one by one.',
+    ctaStart: 'Start an order',
+    loopPil: 'Your order',
+    loopKop: ['Your order,', 'end to end.'],
+    stappen: [
+      { naam: fase('bestellen').h, zin: 'Your photos, the look and a delivery date, in one form.', bij: `Sent in · ${REQUIRED_SHOT_IDS.length} required · phone` },
+      { naam: fase('maken').h, zin: 'One matching series per product, checked before you see it.', bij: `Delivered · ${CATALOG_IMAGES} images · ${RESOLUTIE.standaard} px`, link: ['See more work', '/gallery'] },
+      { naam: 'You approve', zin: 'Approve each image or ask for a revision. Download straight away.', link: ['Look inside the portal', '/studio'] },
+    ],
+    goedgekeurd: (n: number) => `${n} of ${n} approved`,
+    dienstenH: 'Per service',
+    kiest: {
+      catalog: `Background: ${lijst(achtergronden)}`,
+      lifestyle: 'A look from the range',
+      video: VIDEO_OP_AANVRAAG ? 'On request' : 'A style from the range',
+    },
+    verderH: 'Behind the scenes:',
+    verderStudio: 'The calendar',
+    verderAbout: 'Who is behind it',
+
+    planPil: 'Planning',
+    planKop: ['You only see dates', 'that are still free.'],
+    planZin: `From ${WINDOW_THRESHOLD} products you pick a delivery date in the form. The calendar only offers days with room left. Your date is reserved once the order is in, and fixed once you have paid.`,
+    regelsH: 'The four rules the planning runs on',
+    agendaKnop: 'See the calendar',
+    regels: [
+      ['Counted in products, not orders', `A studio day holds ${PRODUCTS_PER_DAY} products; a reserved date takes ${WINDOW_DAYS} consecutive open studio days.`],
+      ['Room for small orders', `${QUEUE_FLOOR_PER_DAY} of every ${PRODUCTS_PER_DAY} stay free for small orders.`],
+      [`Size decides, at ${WINDOW_THRESHOLD} products`, `From ${WINDOW_THRESHOLD} products an order holds a committed date. Smaller orders run in the normal turnaround.`],
+      ['Nothing is promised twice', 'A date that is taken disappears from the picker at once.'],
+    ],
+    terugH: 'Work back from your launch date.',
+    terugZin: `From ${WINDOW_THRESHOLD} products we reserve your days in the calendar, so the date goes in writing.`,
+    terug: [
+      ['Your launch date', 'The day the collection goes live. We count back from here.'],
+      ['Your reserved date', `From ${WINDOW_THRESHOLD} products, reserved when you order and fixed once you have paid. Only force majeure can move it.`],
+      ['Your upload day', 'The day you send the photos. Your part is done.'],
+    ],
+
+    handPil: 'By hand',
+    handKop: ['More than AI.', 'Finished by hand.'],
+    handZin: 'Every image is finished by hand and checked in the studio before you see it.',
+    chips: ['Professional editing & retouch', 'Colour grading to your brand', reviewClaim('attended', 'en')],
+    beforeAlt: 'The T-shirt as it was sent in: a phone photo on a wooden table',
+    afterAlt: 'The same T-shirt, finished on off-white and checked by hand',
+
+    wetenPil: 'Good to know',
+    wetenKop: ['The details', 'that matter.'],
+    details: [
+      { t: 'Turnaround', b: `From ${WINDOW_THRESHOLD} products: ${clause(turnaround('attended', 'en')).toLowerCase()}. Below that: ${clause(turnaround('unattended', 'en')).toLowerCase()}, ${clause(TIERS.unattended.queue.en).toLowerCase()}.` },
+      { t: 'If something is off', b: `${aftercare('attended', 'en')}` },
+      { t: 'Your rights', b: `Full commercial rights. Every image at ${RESOLUTIE.standaard} px, in the aspect ratio you choose (one per catalog order, per image for lifestyle), as JPG; PNG or WebP on request, from your order in VISUAILS Studio.`, linkText: 'Terms', linkHref: '/terms' },
+    ],
+    landH: 'One order, every place it has to go.',
+    landZin: `${EX_FULL} products make ${EX_CATALOG} catalog images, or ${EX_LIFESTYLE} lifestyle images — in the aspect ratio you pick in the order form.`,
+    land: [
+      ['Product page', 'On white, on a model'],
+      ['Instagram', 'Carousel, four frames'],
+      ['Reels and TikTok', 'Vertical clips, on request'],
+      ['Ads', 'Square or portrait'],
+      ['Marketplaces', 'Zalando, Amazon, bol.com'],
+    ],
+    faqCta: 'Read the FAQ',
+    faqGuides: `longer reads in the <a href="${lp('/guides')}">guides</a>.`,
+
+    proefKop: ['One of your own products,', 'for'] as [string, string],
+    /* 14 oktober 2026: "as a set or a carousel" uit de kop naar de zin — de kop liep op een telefoon over drie regels. */
+    proefZin: `As a catalog set or a carousel · one test sample per business · ${vatLabel('excl', 'en')} · no commitment.`,
+    proefAlt: 'Or start an order',
+  },
+  nl: {
+    pil: 'Hoe het werkt',
+    h1: ['Eén map erin.', 'Een bestelling eruit.'],
+    lead: 'Stuur je productfoto’s. Wij maken de beelden, controleren ze allemaal, en jij keurt ze beeld voor beeld goed.',
+    ctaStart: 'Start een bestelling',
+    loopPil: 'Je bestelling',
+    loopKop: ['Je bestelling,', 'van begin tot eind.'],
+    stappen: [
+      { naam: fase('bestellen').h, zin: 'Je foto’s, de look en een leverdatum, in één formulier.', bij: `Ingestuurd · ${REQUIRED_SHOT_IDS.length} verplicht · telefoon` },
+      { naam: fase('maken').h, zin: 'Eén kloppende serie per product, nagekeken voordat jij hem ziet.', bij: `Geleverd · ${CATALOG_IMAGES} beelden · ${RESOLUTIE.standaard} px`, link: ['Meer werk zien', '/gallery'] },
+      { naam: 'Je keurt goed', zin: 'Keur elk beeld goed of vraag een revisie. Meteen downloaden.', link: ['Het portaal van binnen', '/studio'] },
+    ],
+    goedgekeurd: (n: number) => `${n} van ${n} goedgekeurd`,
+    dienstenH: 'Per dienst',
+    kiest: {
+      catalog: `Achtergrond: ${lijst(achtergronden)}`,
+      lifestyle: 'Een look uit de reeks',
+      video: VIDEO_OP_AANVRAAG ? 'Op aanvraag' : 'Een stijl uit de reeks',
+    },
+    verderH: 'Achter de schermen:',
+    verderStudio: 'De agenda',
+    verderAbout: 'Wie erachter zit',
+
+    planPil: 'Planning',
+    planKop: ['Je ziet alleen dagen', 'die nog vrij zijn.'],
+    planZin: `Vanaf ${WINDOW_THRESHOLD} producten kies je in het formulier een leverdatum. De agenda toont alleen dagen met ruimte. Je datum is gereserveerd zodra de bestelling binnen is, en ligt vast zodra je hebt betaald.`,
+    regelsH: 'De vier regels waar de planning op draait',
+    agendaKnop: 'Bekijk de agenda',
+    regels: [
+      ['Geteld in producten, niet in orders', `Een studiodag houdt ${PRODUCTS_PER_DAY} producten; een vastgezette datum beslaat ${WINDOW_DAYS} open studiodagen achter elkaar.`],
+      ['Ruimte voor kleine bestellingen', `${QUEUE_FLOOR_PER_DAY} van elke ${PRODUCTS_PER_DAY} blijven vrij voor kleine bestellingen.`],
+      [`Omvang beslist, bij ${WINDOW_THRESHOLD} producten`, `Vanaf ${WINDOW_THRESHOLD} producten houdt een bestelling een vastgelegde datum. Kleinere bestellingen volgen de normale doorlooptijd.`],
+      ['Niets wordt twee keer beloofd', 'Een datum die al bezet is, verdwijnt meteen uit de kiezer.'],
+    ],
+    terugH: 'Reken terug vanaf de dag dat je live gaat.',
+    terugZin: `Vanaf ${WINDOW_THRESHOLD} producten houden we je dagen vrij in de agenda, dus de datum staat op papier.`,
+    terug: [
+      ['De dag dat je live gaat', 'De dag dat de collectie online staat. Daar rekenen we vanaf terug.'],
+      ['Je vastgezette datum', `Vanaf ${WINDOW_THRESHOLD} producten, gereserveerd zodra je bestelt en vast zodra je hebt betaald. Alleen overmacht kan hem nog verzetten.`],
+      ['Je uploaddag', 'De dag dat jij de foto’s stuurt. Jouw deel is klaar.'],
+    ],
+
+    handPil: 'Met de hand',
+    handKop: ['Meer dan AI.', 'Met de hand afgewerkt.'],
+    handZin: 'Elk beeld wordt met de hand afgewerkt en in de studio gecontroleerd voordat jij het ziet.',
+    chips: ['Professionele editing & retouche', 'Kleurcorrectie naar je merk', reviewClaim('attended', 'nl')],
+    beforeAlt: 'Het T-shirt zoals het werd ingestuurd: een telefoonfoto op een houten tafel',
+    afterAlt: 'Hetzelfde T-shirt, afgewerkt op gebroken wit en met de hand gecontroleerd',
+
+    wetenPil: 'Goed om te weten',
+    wetenKop: ['De details', 'die ertoe doen.'],
+    details: [
+      { t: 'Levertijd', b: `Vanaf ${WINDOW_THRESHOLD} producten: ${clause(turnaround('attended', 'nl')).toLowerCase()}. Daaronder: ${clause(turnaround('unattended', 'nl')).toLowerCase()}, ${clause(TIERS.unattended.queue.nl).toLowerCase()}.` },
+      { t: 'Als iets niet klopt', b: `${aftercare('attended', 'nl')}` },
+      { t: 'Jouw rechten', b: `Volledige commerciële rechten. Elk beeld op ${RESOLUTIE.standaard} px, in de beeldverhouding die je kiest (één per catalogbestelling, per beeld bij lifestyle), als JPG; PNG of WebP op aanvraag, vanuit je bestelling in VISUAILS Studio.`, linkText: 'Voorwaarden', linkHref: '/terms' },
+    ],
+    landH: 'Eén bestelling, overal waar hij heen moet.',
+    landZin: `${EX_FULL} producten worden ${EX_CATALOG} catalogbeelden, of ${EX_LIFESTYLE} lifestylebeelden — in de beeldverhouding die je in het bestelformulier kiest.`,
+    land: [
+      ['Productpagina', 'Op wit, op een model'],
+      ['Instagram', 'Carrousel, vier beelden'],
+      ['Reels en TikTok', 'Verticale clips, op aanvraag'],
+      ['Advertenties', 'Vierkant of staand'],
+      ['Marktplaatsen', 'Zalando, Amazon, bol'],
+    ],
+    faqCta: 'Lees de FAQ',
+    faqGuides: `langere stukken bij de <a href="${lp('/guides')}">gidsen</a>.`,
+
+    proefKop: ['Eén product van jezelf,', 'voor'] as [string, string],
+    /* 14 oktober 2026: "als set of carrousel" uit de kop naar de zin — de kop liep op een telefoon over drie regels. */
+    proefZin: `Als catalogset of carrousel · één proef per bedrijf · ${vatLabel('excl', 'nl')} · zonder verplichting.`,
+    proefAlt: 'Of start een bestelling',
+  },
+};
+const c = COPY[lang];
+const ICOON = {
+  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
+  pijl: '<path d="M4.5 11.5l7-7M5.5 4.5h6v6"/>',
+  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
+};
+const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+---
+<div class="h-pagina h-hw">
+
+  {/* ── 1 · DE KOP ─────────────────────────────────────────────────────────── */}
+  <header class="h-paginakop h-hw-kop">
+    <div class="h-hw-kop-tekst">
+      <p class="h-pil h-op" style="--d:0"><span>{c.pil}</span></p>
+      <h1 class="h-kop h-h1 h-op" style="--d:1"><span class="l">{c.h1[0]}</span> <span>{c.h1[1]}</span></h1>
+      <p class="h-lede h-op" style="--d:2">{c.lead}</p>
+      <p class="h-acties h-op" style="--d:3">
+        <a class="h-knop h-knop-inkt" href={lp('/start')} data-track="hiw-start">{c.ctaStart}<span class="o" set:html={ik('rechts')} /></a>
+        <a class="h-knop h-knop-lijn" href={lp('/test-sample')} data-vis-uit>{sample.cta}</a>
+        <KlantKnop lang={lang} soort="herbestel" />
+      </p>
+    </div>
+    <figure class="h-hw-kop-beeld h-op" style="--d:2">
+      <img src="/img/banners-04.webp" alt="" width="928" height="1152" fetchpriority="high" decoding="async" />
+    </figure>
+  </header>
+
+  {/* ── 2 · JE BESTELLING, VAN BEGIN TOT EIND ───────────────────────────────
+      De drie stappen van de voorpagina (dezelfde maatlijn en kaarten), met één
+      product van begin tot eind: de roze jeans uit voorbeeldset.js. */}
+  <section class="h-sec h-hw-loop" aria-labelledby="hw-loop">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{c.loopPil}</span></p>
+        <h2 id="hw-loop" class="h-kop h-h2"><span class="l">{c.loopKop[0]}</span> {c.loopKop[1]}</h2>
+      </div>
+    </header>
+    <ol class="h-stappen" role="list">
+      {c.stappen.map((s, i) => (
+        <li class="h-stap h-in" style={`--d:${i}`}>
+          <p class="h-nr" aria-hidden="true"><b>{DRIE(i + 1)}</b><i></i><span>/ {DRIE(c.stappen.length)}</span></p>
+          <h3 class="h-stap-naam">{s.naam}</h3>
+          <p class="h-stap-regel">{s.zin}</p>
+          <p class="h-hw-duur">{fase(['bestellen', 'maken', 'goedkeuren'][i]).duur}</p>
+          <div class="h-stap-beeld">
+            {i === 0 && (
+              <figure class="h-well h-hw-in">
+                <ul class="h-hw-in-rij" role="list">
+                  {FOTOS_IN.map((b, k) => <li style={`--d:${k}`}><img src={b.src} width={b.w} height={b.h} alt={b.alt} loading="lazy" decoding="async" /></li>)}
+                </ul>
+                <figcaption class="h-chip h-glas">{s.bij}</figcaption>
+              </figure>
+            )}
+            {i === 1 && (
+              <figure class="h-well">
+                <img src={MODEL.src} width={MODEL.w} height={MODEL.h} alt={MODEL.alt} loading="lazy" decoding="async" />
+                <figcaption class="h-chip h-glas">{s.bij}</figcaption>
+              </figure>
+            )}
+            {i === 2 && (
+              <figure class="h-well h-keur">
+                <ul class="h-keur-rij" role="list">
+                  {SET.map((b, k) => (
+                    <li class:list={[k < 2 && 'h-heel']} style={`--d:${k}`}><img src={b.src} width={b.w} height={b.h} alt="" loading="lazy" decoding="async" /><span class="h-vink" aria-hidden="true" set:html={ik('check')} /></li>
+                  ))}
+                </ul>
+                <figcaption class="h-chip h-glas">{c.goedgekeurd(SET.length)}</figcaption>
+              </figure>
+            )}
+          </div>
+          {s.link && <a class="h-link h-hw-stap-link" href={lp(s.link[1])}>{s.link[0]}<span class="h-cirkel h-cirkel-mini" set:html={ik('pijl')} /></a>}
+          {i < 2 && <span class="h-brug" aria-hidden="true" set:html={ik('rechts')} />}
+        </li>
+      ))}
+    </ol>
+
+    {/* Per dienst één regel: wat je krijgt, wat je kiest. */}
+    <ul class="h-hw-diensten" role="list" aria-label={c.dienstenH}>
+      {WALK_SERVICES.map((svc: any, i: number) => (
+        <li class="h-in" style={`--d:${i}`}>
+          <a class="h-hw-dienst" href={lp(DIENST_PAD[svc.id])}>
+            <span class="h-hw-dienst-naam">{t.services[svc.id].name}</span>
+            <span class="h-hw-dienst-regel">{t.services[svc.id].line}</span>
+            <span class="h-hw-dienst-kiest">{(c.kiest as any)[svc.id]}</span>
+            <span class="h-cirkel h-cirkel-klein h-cirkel-wit" aria-hidden="true" set:html={ik('pijl')} />
+          </a>
+        </li>
+      ))}
+    </ul>
+    <p class="h-hw-verder h-in">
+      {c.verderH}{' '}
+      <a href="#planning">{c.verderStudio}</a>{' · '}
+      <a href={lp('/about')}>{c.verderAbout}</a>
+    </p>
+  </section>
+
+  {/* ── 3 · DE PLANNING ─────────────────────────────────────────────────────
+      De belofte over de agenda is de kop; de onderbouwing staat eronder en niet
+      meer achter een vraagteken. #planning is het anker van "De agenda" hierboven
+      en van oude links naar /studio#planning. */}
+  <section class="h-sec h-hw-plan-sec" id="planning" aria-labelledby="hw-plan">
+    <div class="h-hw-plan h-in">
+      <div class="h-hw-plan-tekst">
+        <p class="h-pil h-pil-wit"><span>{c.planPil}</span></p>
+        <h2 id="hw-plan" class="h-kop h-h2"><span class="l">{c.planKop[0]}</span> {c.planKop[1]}</h2>
+        <p class="h-hw-zin">{c.planZin}</p>
+        <div class="h-hw-regels">
+          <Disclose summary={c.regelsH} tone="plain">
+            <ul class="h-hw-regel-lijst" role="list">
+              {c.regels.map(([k, v]) => <li><b>{k}</b><span>{v}</span></li>)}
+            </ul>
+          </Disclose>
+        </div>
+      </div>
+      {/* v11-agenda = b (afvinklijst 11): op een telefoon is de tekening ±1.140 px hoog,
+          de helft van dit vlak. Daar staat hij ingeklapt onder "Bekijk de agenda"; op een
+          breder scherm is hij altijd open en is de knop weg. Zonder JavaScript: open. */}
+      <details class="h-hw-agenda" open data-hw-agenda>
+        <summary class="h-hw-agenda-knop"><span>{c.agendaKnop}</span><span class="h-cirkel h-cirkel-mini" aria-hidden="true">+</span></summary>
+        <FigGate lang={lang} uitleg />
+      </details>
+
+      <div class="h-hw-terug">
+        <h3 class="h-kop h-h3">{c.terugH}</h3>
+        <p class="h-hw-zin">{c.terugZin}</p>
+        <ol class="h-st-stappen h-hw-terug-rij" role="list">
+          {c.terug.map(([kop, zin], i) => (
+            <li class="h-st-stap" style={`--d:${i}`}>
+              <p class="h-nr" aria-hidden="true"><b>{DRIE(i + 1)}</b><i></i><span>/ {DRIE(c.terug.length)}</span></p>
+              <span class="h-st-stap-naam">{kop}</span>
+              <span class="h-hw-terug-zin">{zin}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  {/* ── 4 · MET DE HAND AFGEWERKT ────────────────────────────────────────── */}
+  <section class="h-sec h-hw-hand-sec" aria-labelledby="hw-hand">
+    <div class="h-hw-hand h-in">
+      <div class="h-bewijs-cmp">
+        <Compare ratio="5 / 4" before="/img/catalog-before-1x1.webp" after="/img/catalog-after.webp" beforeAlt={c.beforeAlt} afterAlt={c.afterAlt} />
+      </div>
+      <div class="h-hw-hand-tekst">
+        <p class="h-pil h-pil-wit"><span>{c.handPil}</span></p>
+        <h2 id="hw-hand" class="h-kop h-h2"><span class="l">{c.handKop[0]}</span> {c.handKop[1]}</h2>
+        <p class="h-hw-zin">{c.handZin}</p>
+        <ul class="h-feiten h-hw-chips" role="list">
+          {c.chips.map((chip) => <li><i set:html={ik('check')} /><span>{chip}</span></li>)}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  {/* ── 5 · GOED OM TE WETEN ─────────────────────────────────────────────── */}
+  <section class="h-sec h-hw-weten" aria-labelledby="hw-weten">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{c.wetenPil}</span></p>
+        <h2 id="hw-weten" class="h-kop h-h2"><span class="l">{c.wetenKop[0]}</span> {c.wetenKop[1]}</h2>
+      </div>
+    </header>
+    <div class="h-hw-twee">
+      <ul class="h-hw-details h-in" role="list">
+        {c.details.map((d) => (
+          <li>
+            <b>{d.t}</b>
+            <span>{d.b}{d.linkText ? <> <a href={lp(d.linkHref)}>{d.linkText}</a>.</> : null}</span>
+          </li>
+        ))}
+      </ul>
+      <div class="h-hw-land h-in" style="--d:1" role="group" aria-labelledby="hw-land">
+        <h3 id="hw-land" class="h-kop h-h3">{c.landH}</h3>
+        <p class="h-hw-zin">{c.landZin}</p>
+        <ul class="h-hw-land-rij" role="list">
+          {c.land.map(([waar, wat]) => <li><b>{waar}</b><span>{wat}</span></li>)}
+        </ul>
+      </div>
+    </div>
+    <p class="h-hw-meer h-in">
+      <a class="h-link" href={lp('/faq')}>{c.faqCta}<span class="h-cirkel h-cirkel-mini" set:html={ik('pijl')} /></a>
+      <span set:html={c.faqGuides} />
+    </p>
+    {/* vatNote() één keer per pagina, bij de enige prijs (de proef hieronder). */}
+    <p class="h-hw-btw h-in">{vatLead(lang)} <Note lang={lang} term={nl ? vatLabel('excl', lang) : 'VAT'} wide>{vatDetail(lang)}</Note></p>
+  </section>
+
+  {/* ── 6 · HET SLOT: DE PROEF ───────────────────────────────────────────── */}
+  <HalProef lang={lang} id="hw-proef" kop={c.proefKop} zin={c.proefZin} alt={{ label: c.proefAlt, href: '/start' }} />
+</div>
+<HalBeweging />
+<script>
+  /* De agenda: dicht op een telefoon, open op een breder scherm (zie de noot bij
+     data-hw-agenda). Wie hem op de telefoon opent en het scherm draait, houdt hem open. */
+  const agenda = document.querySelector<HTMLDetailsElement>('[data-hw-agenda]');
+  if (agenda) {
+    const smal = window.matchMedia('(max-width: 640px)');
+    const zet = () => { agenda.open = !smal.matches; };
+    zet();
+    smal.addEventListener('change', (e) => { if (!e.matches) agenda.open = true; });
+  }
+</script>

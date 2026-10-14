@@ -310,10 +310,28 @@ console.log('\nde melding naar de studio');
     await post({ fb: 'score', score: '1' });
     check('een lagere score is nieuw nieuws', sent.length, 3);
 
+
     // Een tevreden klant die daarna toch een testimonial geeft, mag niets sturen.
     await post({ fb: 'score', score: '5' });
     await post({ fb: 'quote', quote: 'prima', quote_consent: '1' });
     check('een testimonial mailt niet', sent.length, 3);
+
+    /* 8 oktober 2026: de merknaam komt van het bestelformulier en hoort als
+       TEKST in de mail, niet als HTML. */
+    {
+      const db3 = fresh();
+      for (const kol of ['ref', 'service', 'email', 'brand', 'first_name', 'last_name', 'name', 'lang']) {
+        db3.exec(`ALTER TABLE orders ADD COLUMN ${kol} TEXT`);
+      }
+      db3.prepare("UPDATE orders SET ref = 'VIS-TEST-007', service = 'catalog', email = 'a<b>@x.nl', brand = '<a href=\"https://evil.example\">Open in admin</a>' WHERE id = 7").run();
+      const env3 = { DB: d1(db3), RESEND_API_KEY: 'test', NOTIFY_EMAIL: 'studio@visuails.com' };
+      const voor = sent.length;
+      await handleFeedbackPost(env3, { orderId: 7, customerId: 1, form: form({ fb: 'score', score: '1' }) });
+      const mail = sent[voor];
+      check('een merknaam met HTML wordt geen link in de melding', /<a href="https:\/\/evil\.example"/.test(mail?.html || ''), false);
+      check('  maar staat er wel, als tekst', (mail?.html || '').includes('&lt;a href=&quot;https://evil.example&quot;&gt;'), true);
+      check('  en het e-mailadres ook als tekst', (mail?.html || '').includes('a&lt;b&gt;@x.nl'), true);
+    }
 
     // Zonder sleutel gaat er niets uit, en er gaat ook niets stuk.
     const quiet = { DB: d1(fresh()), NOTIFY_EMAIL: 'x@y.z' };

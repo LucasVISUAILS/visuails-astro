@@ -26,6 +26,13 @@ if (s instanceof Response) return s;
 const { st, v } = s;
 const { t, lang, customer, thema, navDicht, statusFilter, payFailed, payHeld, rondeFlag } = st;
 const { kaarten, rondeTekst } = v;
+/* Punt 2.03 (8 oktober 2026): lopende bestellingen bovenaan, afgeronde en
+   geannuleerde ingeklapt onder "Afgerond (N)" — een <details>, zonder script.
+   Wijst ?order= naar een afgeronde, dan staat die groep open. */
+const lopend = kaarten.filter((k) => !k.view.afgerond);
+const afgerond = kaarten.filter((k) => k.view.afgerond);
+const gevraagd = Number(Astro.url.searchParams.get('order')) || 0;
+const afgerondOpen = !lopend.length || afgerond.some((k) => Number(k.view.id) === gevraagd);
 ---
 <StudioLayout
   lang={lang} t={t} thema={thema} navDicht={navDicht} actief="orders" customer={customer}
@@ -49,7 +56,17 @@ const { kaarten, rondeTekst } = v;
   <section class="st-blok" aria-label={t.ordersHeading}>
     <div class="st-blok-kop"><h2>{t.ordersHeading}{v.shown.length ? <span class="st-tel">({v.shown.length})</span> : null}</h2></div>
     {kaarten.length
-      ? <div class="st-bestellingen">{kaarten.map((k) => <Bestelling t={t} lang={lang} v={k.view} order={k.o} events={k.events} files={k.files} />)}</div>
+      ? (
+        <Fragment>
+          {lopend.length > 0 && <div class="st-bestellingen">{lopend.map((k) => <Bestelling t={t} lang={lang} v={k.view} order={k.o} events={k.events} files={k.files} />)}</div>}
+          {afgerond.length > 0 && (
+            <details class="st-afgerond" open={afgerondOpen}>
+              <summary>{t.ordersAfgerond(afgerond.length)}</summary>
+              <div class="st-bestellingen">{afgerond.map((k) => <Bestelling t={t} lang={lang} v={k.view} order={k.o} events={k.events} files={k.files} />)}</div>
+            </details>
+          )}
+        </Fragment>
+      )
       : <p class="st-leeg">{v.empty.text} {v.empty.clear && <a class="st-link" href="/account/orders">{v.empty.clear}</a>}</p>}
   </section>
 </StudioLayout>

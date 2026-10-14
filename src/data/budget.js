@@ -45,15 +45,19 @@
  * ── WAT HET BUDGET IS ──────────────────────────────────────────────────────
  *
  * Het budget is de PRODUCTIEWAARDE van wat het plan belooft, niet de prijs ervan.
- * Starter belooft vijf producten; vijf producten kosten op de trede van Starter
- * € 545; dus is het budget € 545 en betaal je er € 390 voor. De korting zit in het
+ * SINDS 14 OKTOBER 2026 IN CREDITS: een plan belooft een aantal credits, en de
+ * productiewaarde is wat diezelfde credits los kosten als ze helemaal aan
+ * catalogsets opgaan — precies de vergelijking van planSaving() in pricing.js.
+ * Starter: 45 credits zijn 11 catalogsets, en die kosten los € 561. Hier stond de
+ * oude rekensom met "complete producten" (vijf stuks tegen € 545); die dienst
+ * bestaat niet meer. De korting zit in het
  * abonnement en niet in het budget, en daardoor blijft "vijf producten per maand"
  * letterlijk waar terwijl de klant er iets anders voor mag kiezen.
  *
  * ── EN HET KAN DE AGENDA NIET OPBLAZEN ─────────────────────────────────────
  *
  * Dat is niet gehoopt maar bewezen, in assertBudget() onderaan: van alles op het
- * menu is de eigen dienst van het abonnement (complete) het GOEDKOOPST per
+ * menu is de eigen dienst van het abonnement (catalog) het GOEDKOOPST per
  * agendapunt. Elke andere besteding van hetzelfde budget levert dus minder werk op
  * dan waar het plan al op gerekend was. Een klant kan zijn maand herverdelen zoveel
  * hij wil; de week loopt er nooit door vol.
@@ -64,9 +68,10 @@
  */
 import {
   PLAN_AMOUNT, AMOUNT, ladderRate, extraPhotoRate, HOOG_PER_PRODUCT,
-  KIND_PUNTEN, CATALOG_IMAGES, LIFESTYLE_IMAGES, COMPLETE_IMAGES, euro,
+  KIND_PUNTEN, CATALOG_IMAGES, LIFESTYLE_IMAGES, euro,
+  PLAN_CREDITS, SERVICE_CREDITS, creditsOneOffValue,
 } from './pricing.js';
-import { PLAN_IDS, PLAN_SERVICE, productsFor, clipsFor, hasBrandModel } from './plans.js';
+import { PLAN_IDS, PLAN_SERVICE, productsFor } from './plans.js';
 
 /*
  * ── HET MENU ───────────────────────────────────────────────────────────────
@@ -87,7 +92,6 @@ import { PLAN_IDS, PLAN_SERVICE, productsFor, clipsFor, hasBrandModel } from './
  * staan, zou op een dag iets anders zeggen dan de ladder.
  */
 export const BUDGET_MENU = [
-  { id: 'complete', kind: 'complete', beelden: COMPLETE_IMAGES, los: true },
   { id: 'catalog', kind: 'catalog', beelden: CATALOG_IMAGES, los: true },
   { id: 'lifestyle', kind: 'lifestyle', beelden: LIFESTYLE_IMAGES, los: true },
   { id: 'video', kind: 'video-motion', beelden: 0, los: true },
@@ -111,12 +115,16 @@ export function menuItem(id) {
  * de pagina beloofde. De trede is een eigenschap van het contract.
  */
 export function planRung(planId) {
+  /* DE TREDE IS HET AANTAL CATALOGSETS DAT DE CREDITS VAN HET PLAN KOPEN (sinds
+     14 oktober 2026; daarvoor het aantal "complete producten"). productsFor()
+     staat er nog voor de controle hieronder: een onbekend plan gooit. */
+  productsFor(planId);
+  return Math.floor(PLAN_CREDITS[planId] / SERVICE_CREDITS[PLAN_SERVICE]);
   /* GEEN TERUGVAL OP DE LAAGSTE TREDE. Deze functie stond eerst met een `|| 1`
      erin, en dat is precies de vorm waarin een prijsfout zich verstopt: een
      onbekende plan-id zou dan stilletjes de DUURSTE tarieven krijgen en er zou
      nergens iets misgaan. productsFor() gooit op een onbekend plan, en dat mag hier
      gewoon doorlopen — een plan dat niet bestaat, heeft geen trede. */
-  return productsFor(planId);
 }
 
 /**
@@ -131,7 +139,6 @@ export function menuRate(itemId, rung = 1) {
   if (!item) return null;
   const n = Math.max(1, Math.floor(Number(rung) || 1));
   switch (item.id) {
-    case 'complete':
     case 'catalog':
     case 'lifestyle':
       return ladderRate(item.kind, n);
@@ -168,10 +175,12 @@ export function menuPunten(itemId) {
  * dat is een eenmalige opbouw en geen maandelijkse levering. Zie SETUP_FEES.
  */
 export function planBudget(planId) {
-  const n = productsFor(planId);
-  const clips = clipsFor(planId) || 0;
+  /* De credits van het plan, los besteld aan de eigen dienst (catalog). Clips
+     staan er niet meer apart bij: sinds 19 september 2026 betaalt een abonnee
+     ook video met dezelfde credits. */
+  const n = planRung(planId);
   if (!Number.isFinite(n) || n < 1) return 0;
-  return n * ladderRate(PLAN_SERVICE, n) + clips * AMOUNT.video;
+  return creditsOneOffValue(PLAN_CREDITS[planId], PLAN_SERVICE);
 }
 
 /**
@@ -297,8 +306,11 @@ function assertBudget() {
         hele treden en de plannen staan op verschillende treden, dus wat exact
         gelijk zou moeten zijn, kan dat niet. Wat deze controle vangt is een plan
         dat er ECHT uit loopt — de vorm van de fout, niet de afronding. */
+  /* Sinds 14 oktober 2026 zonder het merkmodel erbij: in credits gerekend ligt
+     Merk al hoger (40% tegen 30 en 32), en met het merkmodel erbij liep hij er
+     juist uit. De kortingen op de prijspagina (planSaving) rekenen ook zonder. */
   const kortingen = PLAN_IDS.map((planId) => {
-    const waarde = planBudget(planId) + (hasBrandModel(planId, 'monthly') ? AMOUNT.brandModel : 0);
+    const waarde = planBudget(planId);
     return { planId, korting: 1 - PLAN_AMOUNT[planId] / waarde };
   });
   const laagste = Math.min(...kortingen.map((k) => k.korting));

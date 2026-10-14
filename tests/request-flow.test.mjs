@@ -315,7 +315,7 @@ console.log('\nen video kan nog steeds geen venster krijgen, hoe groot ook');
 
 console.log('\n/video belooft geen vastgezette leverdatum meer');
 {
-  const vid = read('src/components/VideoPage.astro');
+  const vid = read('src/components/VideoHal.astro');
 
   /* De drie oude formuleringen, elk letterlijk. Ze staan hier als tekst en niet
      als patroon-met-gaten, want juist de exacte woorden waren de belofte. */
@@ -407,62 +407,22 @@ console.log('\n/video belooft geen vastgezette leverdatum meer');
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
-   4 · /start/complete VRAAGT OM EEN LOOK
+   4 · /start/complete VRAAGT OM EEN LOOK — sinds 8 oktober 2026: BESTAAT NIET MEER
    ════════════════════════════════════════════════════════════════════════════ */
 
-console.log('\n/start/complete vraagt nu ook om een look');
+console.log('\n/start/complete is weg (8 oktober 2026, punt 9.01)');
 {
-  /* ── STylePicker WERD StijlRegel, EN HET WERDEN ER TWEE — 9 september 2026 ──
-     Lucas: *"Bij complete product bundle catalog + lifestyle beide stylen onder
-     elkaar zetten en hetzelfde systeem toepassen."*
-
-     Deze paragraaf eiste tot vandaag StylePicker — het beeldenraster van
-     /start/lifestyle — op deze pagina. Wat hij WILDE eisen staat in zijn eigen
-     kop: dat een complete-bestelling om een stijl vraagt in plaats van erover
-     te zwijgen. Dat is nog steeds de eis; alleen zijn het er nu twee, één per
-     helft, want deze bestelling heeft er twee. */
+  /* ── DE PAGINA BESTAAT NIET MEER — 8 oktober 2026 ──────────────────────────
+     Hier stond tot vandaag de eis dat /start/complete om twee stijlen vroeg (één
+     per helft), met de modelvraag in stap 2. Catalog + lifestyle in één
+     bestelling wordt niet meer verkocht; de route stuurt door naar /start (Lucas
+     koos V12 = a), en de pagina's zijn weg. Wat van deze paragraaf overblijft,
+     is de eis dat ze er ook echt niet meer staan — een regel in _redirects wint
+     het van een echte pagina, dus twee halve waarheden kunnen niet naast elkaar. */
+  const { existsSync } = await import('node:fs');
   for (const p of ['src/pages/start/complete.astro', 'src/pages/nl/start/complete.astro']) {
-    const src = read(p);
-    ok(`${p} importeert StijlRegel`, /import StijlRegel from/.test(src), true);
-    /* ── DE REGEX KEEK NAAR DE VOLGORDE VAN DE ATTRIBUTEN — 13 sept 2026 ────
-       Hij eiste letterlijk `lang="xx" categorie="catalog" toonHelft`, in die
-       volgorde. Toen deze twee regels vandaag `slot="look"` kregen (de stijl
-       staat nu bóven het aantal — zie tests/stijlkeuze.test.mjs), viel de toets
-       om terwijl de EIS gewoon klopte: de pagina rendert nog steeds beide
-       stijlen. Een toets die op schrijfwijze valt in plaats van op gedrag,
-       kost een reparatie zonder er een te vinden. Nu: het element, en de twee
-       attributen die ertoe doen, in welke volgorde dan ook. */
-    const stijlregel = (cat) => new RegExp(`<StijlRegel(?=[^>]*categorie="${cat}")(?=[^>]*toonHelft)[^>]*>`).test(src);
-    ok('  en rendert de catalogstijl', stijlregel('catalog'), true);
-    ok('  en de lifestylestijl', stijlregel('lifestyle'), true);
-    /* En allebei in de look-slot, want die staat boven het aantal. Zonder deze
-       regel schuift een volgende wijziging ze stilletjes terug naar onderen —
-       precies waar ze vandaan komen. */
-    ok('  allebei in de look-slot, dus boven het aantal',
-      (src.match(/<StijlRegel[^>]*slot="look"/g) || []).length === 2, true,
-      `${(src.match(/<StijlRegel[^>]*slot="look"/g) || []).length} van de 2`);
-    ok('  met `toonHelft`, want anders staat er twee keer "Stijl"',
-      (src.match(/toonHelft \/>/g) || []).length === 2, true);
-    ok('  naast Step1Options, want deze bestelling heeft beide helften',
-      /<Step1Options lang=/.test(src), true);
-    /* De stijlen staan boven de drie folds: dat zijn de enige blokken in stap 1
-       waar het antwoord van de klant zelf komt in plaats van uit een standaard. */
-    ok('  met de stijlen boven de optionele blokken',
-      src.indexOf('<StijlRegel') < src.indexOf('<Step1Options'), true);
-    /* En er is ÉÉN modelvraag, in stap 2. Er staat met opzet geen tweede kiezer:
-       elke kiezer post `name="model"`, dus twee op één pagina zijn in HTML één
-       radiogroep — een gezicht kiezen voor de carousel zou het gezicht voor de
-       catalogset uitvinken.
-
-       Tot 10 september stond de vraag in stap 1 en droeg hij een eigen label
-       voor deze bestelling (`modelSoort="beide"`, "de foto op een model, in de
-       set én in de carousel"). Sinds de verhuizing naar stap 2 stelt hij één
-       korte vraag — "wie draagt het?" — die voor allebei de helften geldt
-       zonder ze te noemen; zie ModelKeuze.astro. */
-    ok('  en de modelvraag staat in stap 2', /<ModelKeuze slot="model"/.test(src), true);
-    ok('  en er staat geen tweede modelkiezer', /<ModelPicker/.test(src), false);
+    ok(`${p} bestaat niet meer`, existsSync(new URL('../' + p, import.meta.url)), false);
   }
-
   /* De twee regels posten twee VERSCHILLENDE velden; ze staan tegelijk in
      dezelfde POST en één veld kan maar één antwoord dragen. */
   {
@@ -472,10 +432,6 @@ console.log('\n/start/complete vraagt nu ook om een look');
     ok('  en de stijl op maat staat niet in de keuzelijst',
       /slug !== 'custom'/.test(regel), true);
   }
-
-  /* En de meta description moet het meebeloven, want die stond er nog zonder. */
-  ok('de Engelse meta noemt de look', /Pick the count, the look and the background/.test(read('src/pages/start/complete.astro')), true);
-  ok('de Nederlandse ook', /Kies het aantal, de look en de achtergrond/.test(read('src/pages/nl/start/complete.astro')), true);
 
   /* Het veld dat StylePicker post, en waar het landt. Geen serverwijziging: dat
      is de reden dat dit een slot mocht zijn en geen migratie. */
@@ -490,9 +446,9 @@ console.log('\n/start/complete vraagt nu ook om een look');
   const pl = read('src/scripts/pipeline.js');
   ok('het bevestigingsscherm print de gekozen look al generiek',
     /input\[name="style"\]:checked/.test(pl), true);
-  /* En de achtergrond blijft van toepassing op complete — deze bestelling heeft
-     echt een catalog-helft, dus die vraag hoort er ook nog bij te staan. */
-  ok("bgApplies('complete') blijft waar", /kind === 'complete' \|\| kind === 'catalog'/.test(pl), true);
+  /* De achtergrond hoort bij catalog. Tot 14 oktober 2026 ook bij complete (die
+     had een catalog-helft); compleet bestaat niet meer (afvinklijst 23). */
+  ok("bgApplies() kent alleen catalog", /function bgApplies\(kind\) \{\s*return kind === 'catalog';/.test(pl), true);
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -536,7 +492,7 @@ console.log('\nde proefvisual: catalog krijgt de achtergrond, lifestyle de look'
      aanroept; de aanroep van de stroom staat daar. `lang={lang}` in plaats van
      een letterlijke taal is precies de winst: de twee talen KUNNEN niet meer
      uit elkaar lopen, want er is er nog maar één. */
-  for (const [pad, taal] of [['src/components/TestSamplePage.astro', 'de component']]) {
+  for (const [pad, taal] of [['src/components/TestSampleHal.astro', 'de component']]) {
     const src = read(pad);
     ok(`${taal}: gebruikt de gedeelde stroom in proefstand`,
       /<OrderFlow lang=\{lang\} service="lifestyle" mode="sample" hero=\{false\}>/.test(src), true);
@@ -591,8 +547,8 @@ console.log('\nde proefvisual: catalog krijgt de achtergrond, lifestyle de look'
   /* De achtergrond verdween al bij lifestyle; de look verdween NIET bij catalog,
      want op /start slot elke pagina er maar één in en viel er niets te
      verbergen. Dat is precies de helft die op de proef ontbrak. */
-  ok("styleApplies() kent lifestyle en complete",
-    /function styleApplies\(kind\) \{\s*return kind === 'complete' \|\| kind === 'lifestyle';/.test(pl), true);
+  ok("styleApplies() kent lifestyle (compleet bestaat sinds 14 oktober 2026 niet meer)",
+    /function styleApplies\(kind\) \{\s*return kind === 'lifestyle';/.test(pl), true);
   ok('syncStyle() verbergt de lookvraag', /field\.hidden = !applies;[\s\S]{0,120}field\.disabled = !applies;/.test(pl), true);
   /* `disabled` en niet alleen `hidden`: CSS houdt geen veld uit een POST. Dit is
      dezelfde regel die de opschoning hieronder op de server nog eens afdwingt. */
@@ -726,7 +682,7 @@ console.log('\nen wat er verborgen is, komt niet in het record');
   ok('en zonder geldige soort wordt hij geweigerd',
     /soort !== 'catalog' && soort !== 'lifestyle'/.test(api) && /error=sample-soort/.test(api), true);
   ok('  met een uitleg op de pagina zelf',
-    /data-form-refusal="sample-soort"/.test(read('src/components/TestSamplePage.astro')), true);
+    /data-form-refusal="sample-soort"/.test(read('src/components/TestSampleHal.astro')), true);
   ok('/api/order roept de opschoning aan',
     /if \(service === 'test-sample'\) tidyTestSampleDetails\(details\);/.test(api), true);
   /* Ná de details-lus en niet ervoor: de lus is wat details vult. */

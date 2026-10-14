@@ -79,8 +79,8 @@ await new Promise((r) => server.listen(PORT, r));
 const FLOWS = process.argv[2]
   ? [process.argv[2]]
   : [
-    '/start/catalog', '/start/lifestyle', '/start/complete', '/test-sample',
-    '/nl/start/catalog', '/nl/start/lifestyle', '/nl/start/complete', '/nl/test-sample',
+    '/start/catalog', '/start/lifestyle', '/test-sample',
+    '/nl/start/catalog', '/nl/start/lifestyle', '/nl/test-sample',
   ];
 
 /* ── WELKE CHROME — 26 augustus 2026 ─────────────────────────────────────────

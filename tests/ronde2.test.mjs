@@ -34,13 +34,21 @@ console.log('\n1 · de galerij met leveringen');
   ok('en geen soort in het menu zonder levering', gebruikteSoorten().every((s) => LEVERINGEN.some((l) => l.soort === s)), true);
   const html = dist('nl/gallery/index.html');
   if (html) {
-    const kaarten = (html.match(/class="gl-item"/g) || []).length;
-    ok('dist: elke levering staat als kaart op /nl/gallery', kaarten === LEVERINGEN.length, LEVERINGEN.length, kaarten);
-    const volgt = LEVERINGEN.filter((l) => l.beelden === 'volgt').length;
-    const tags = (html.match(/gl-volgt/g) || []).length;
+    /* 1.02 (8 oktober 2026, V13 = a): een videorij staat er pas als de still
+       van de clip er is — tot dan geen donker vlak met een afspeelteken. */
+    const stillEr = existsSync(new URL('../public/img/dienst-video-shirt.webp', import.meta.url));
+    const zichtbaar = LEVERINGEN.filter((l) => l.dienst !== 'video' || stillEr);
+    /* In de hal (13 oktober 2026, afvinklijst 17) heten de kaarten .h-gl-item, het vlak
+       "Beelden volgen" .h-gl-kaart.h-gl-volgt en de open levering .h-gl-kaart.h-gl-echt;
+       de beloftes zijn dezelfde. */
+    const hal = /<body[^>]*class="[^"]*\bhal\b/.test(html);
+    const kaarten = (html.match(hal ? /class="h-gl-item[\s"]/g : /class="gl-item"/g) || []).length;
+    ok('dist: elke levering staat als kaart op /nl/gallery', kaarten === zichtbaar.length, zichtbaar.length, kaarten);
+    const volgt = zichtbaar.filter((l) => l.beelden === 'volgt').length;
+    const tags = (html.match(hal ? /class="h-gl-kaart h-gl-volgt"/g : /gl-volgt/g) || []).length;
     ok('dist: elke plaatshouder zegt "Beelden volgen"', tags === volgt, volgt, tags);
     ok('dist: de filterbalk is verborgen tot het script draait', /data-gl-filters hidden/.test(html), true);
-    ok('dist: de eerste levering staat open', /<details class="gl-kaart[^"]*"[^>]*open/.test(html), true);
+    ok('dist: de eerste levering staat open', (hal ? /<details class="h-gl-kaart[^"]*"[^>]*open/ : /<details class="gl-kaart[^"]*"[^>]*open/).test(html), true);
   } else ok('dist/nl/gallery is gebouwd', false, 'bestand', 'ontbreekt');
 }
 
@@ -70,7 +78,7 @@ console.log('\n3 · /start/plan');
 
 console.log('\n4 · /faq');
 {
-  const faq = lees('src/components/FaqPage.astro');
+  const faq = lees('src/components/FaqHal.astro'); // sinds 13 oktober 2026 in de hal
   ok('de index draagt de tabs', /data-faq-tab=\{g\.id\}/.test(faq), true);
   ok('zonder script wordt er niets verborgen', !/faq-groep"[^>]*hidden/.test(faq), true);
   const html = dist('nl/faq/index.html');

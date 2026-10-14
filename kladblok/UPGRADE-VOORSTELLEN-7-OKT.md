@@ -1,0 +1,2128 @@
+# VISUAILS — upgradevoorstellen, 7 oktober 2026
+
+Ideeënronde volgens `kladblok/PROMPT-UPGRADE-VISUAILS.md`, met `VISUAILS-OVERZICHT-6-OKT.md` als enige bron. Er is geen code veranderd en niets gecommit of gepusht.
+
+**Hoe dit tot stand kwam.** Tien agents beoordeelden elk één gebied en leverden samen 107 voorstellen. Een elfde agent, de tegenspreker, las ze allemaal na: 46 blijven, 41 zijn voor later, 2 zijn geschrapt en 18 zijn samengevoegd met een ander voorstel. Elk bedrag is nagerekend tegen §22. Jouw besluiten van 6 okt die na het overzicht kwamen, zijn als gegeven meegenomen: complete mag helemaal uit de code, Editions blijft "binnenkort", eigen look wordt "vanaf het gewone tarief", `modelQuestion` gaat weg.
+
+**Let op.** Het overzicht dat in je map `kladblok/` staat, is een oudere versie zonder §28 (116 KB tegen 127 KB voor het exemplaar dat je uploadde). Vervang het, anders leest een volgende chat de oude versie.
+
+**Zo lees je dit.** Begin met §1 (top 10) en §7 (volgorde), samen ongeveer tien minuten. Beantwoord daarna §6.1; die vragen bepalen ronde A. §2 is het naslagwerk: elk voorstel volledig, met het oordeel van de tegenspreker erbij. §3, §4 en §5 bundelen uit §2 de gereedschappen, wat er weg kan en wat aan prijzen raakt.
+
+---
+
+## 1 · Top 10
+
+Gesorteerd op winst ÷ kosten (S = minder dan een halve dag bouwen, M = 1–2 dagen).
+
+| # | Voorstel | Kosten | Waarom het bovenaan staat |
+|---|---|---|---|
+| 1 | **8.01** Live-overgang in vaste volgorde, met een blok "Klaar voor live" | S | Moet af vóór de eerste klant. Zonder vaste volgorde maakt een open testbestelling na de sleutelwissel een echte betaling aan, en is een testabonnement niet meer te stoppen. |
+| 2 | **9.02** Uitrollen met één dubbelklik | S | De cron is nooit live gegaan omdat uitrollen CMD-werk is. Jij pusht nog steeds zelf, met één J/N vóór commit en migraties, en je ziet aan het eind of de site draait. |
+| 3 | **9.03** Cron, purge en webhook in vaste volgorde | S (jij ±30 min) | Dit zijn de drie open schakelaars van §16.1. Zonder cron vervalt en herinnert er niets, zonder purge klopt /privacy niet, zonder webhook hoor je een bounce pas van de klant. |
+| 4 | **9.01 pakket A** — zes punten uit §17 die een klant of het geld raken | S (±4 uur) | Op live staat €69 voor video, ook in Google, terwijl video op aanvraag is. En bij eigen look staat een tariefbelofte die de offerte tegenspreekt. |
+| 5 | **3.03** Stil afronden 7 dagen na de laatste levering | S | Eén stap in de cron, en de reviewvraag, de wisregel en de lijst "geleverd" kloppen ook voor de klant die nooit "Alles goed" klikt. |
+| 6 | **3.06** Review vragen met één klik via WhatsApp | S | Reviews zijn je grootste knelpunt. Een persoonlijk verzoek, vastgelegd in de bestelling, breekt §21 niet. |
+| 7 | **3.08** De privélink van de €1-proef als verkooppagina | S | De proef is de ingang van je eerste klanten. Als hij bij levering afgerond is, wordt die pagina meteen het moment voor een review en een eerste echte bestelling. |
+| 8 | **3.05** Afrondscherm met review en toestemming (samen met 10.05) | S | De klant schrijft zijn tekst één keer. Jij krijgt er een Google-review, een aanbeveling en toestemming voor echte voorbeelden voor terug. |
+| 9 | **1.07** Kosten, wat erbij zit en levertijd in het formulier zelf | S | Eerlijk bij 4, 8, 9 en 16–19 producten, waar meer producten minder kosten. En de vier vragen van een eerste klant krijgen antwoord op het moment dat hij ze stelt. |
+| 10 | **1.02** Eén product in vijf looks; de andere plaatshouders verbergen | S (jij 2–3 uur) | Elke koper moet langs de lookkeuze, en precies daar staan nu grijze vlakken. |
+
+**Net buiten de tien:**
+- **4.01** De herkomsttag bij elke upload (M). Dit is het antwoord op je vraag om een sleepvak voor `npm run tag:delivery`, zie §3.
+- **4.02** Werkmap met controle op de juiste bestelling (M). Een map van klant A belandt dan nooit meer bij klant B.
+- **3.01** Eén "wat nu"-blok bovenaan de privélink (S).
+- **7.01 + 1.05** "Zo gaat het verder" na het betalen (S).
+- **9.05** Een drukteproef met één grote bestelling (S).
+
+**Mijn oordeel in drie zinnen.**
+1. De beste upgrades zijn nu geen nieuwe functies, maar het dichtzetten van wat half open staat (uitrollen, cron, live-sleutel, verkeerde prijzen op live) en het moment ná de levering (afronden, review, proef).
+2. Je meeste tijd win je in je eigen productie, met het CATALOG-bord (5.09), en in de keten werkmap → Photoshop → tag (4.02, 4.07, 4.01). Niet in nieuwe /admin-schermen.
+3. Het abonnement van §28 klopt in de kern. Het wordt beter met minder: geen tabbladen (2.07), één geldigheidsregel (6.03) en een rem die je kiest vanuit je eigen uren (6.05).
+
+---
+
+## 2 · Per gebied
+
+Elk voorstel staat in het vaste format. Op de regel onder de titel staat het oordeel van de tegenspreker:
+
+- **blijft**: hoort in een van de drie rondes van §7.
+- **later**: goed, maar pas als het aan de beurt is; de reden staat er steeds bij.
+- **nee**: geschrapt, één regel onder "Geschrapt".
+
+Voorstellen die in een ander opgingen, staan onderaan hun gebied onder "Samengevoegd", met wat eruit is meegenomen. Binnen een gebied staan eerst de voorstellen die blijven en daarna die voor later. De vragen staan ook in de vragenlijst van §6.
+
+## 2.1 · Gebied 1 — Bestelstroom en website
+
+**Kern.** Elke koper moet langs de lookkeuze (§6.1), en juist daar staan grijze plaatshouders (§5, O65): dat is het grootste afhaakpunt, terwijl de omweg naar het formulier kleiner is dan eerst gedacht. Daarna is stap 2 het kwetsbaarst (§6.2): de uploadproef op telefoon en bij 20 producten gaat mee in 9.05, het onthouden van keuzes en foto's na wegklikken (O47) blijft hier. De grootste kans zit in het formulier zelf: eerlijk zeggen wat iets kost, wat erbij zit en wanneer het komt (§3.1, §6.2), en de €1-proef laten beginnen bij een look (§2.8).
+
+### 1.01. /start toont de vijf looks; een look kiezen opent meteen het formulier
+Gebied: 1 · Dient: klant / systeem · **Tegenspreker: blijft**
+
+- **Nu:** /start toont acht keuzes (§5); wie daar catalog of lifestyle kiest, gaat via de dienstpagina naar #looks en dan met "Kies deze look" naar het formulier. Volgens §6.1 gaat de menuknop "Bestellen" al naar /catalog#looks of /lifestyle#looks, dus vanaf die knop zijn het waarschijnlijk twee schermen, niet vier; eerst in de code nakijken waar hij echt heen gaat.
+- **Voorstel:** /start toont bovenaan vijf lookkaarten (Classic, Dunes, Flash, Glow, Phone-made), elk met één beeld uit 1.02, de bestaande zin uit styles.js (§2.11) en "Vanaf €39 per product" of "Vanaf €49 per product". "Kies deze look" gaat meteen naar `/start/<dienst>?style=<look>`. Daaronder staat één rustige rij met de rest: Video (op aanvraag) · Eigen look (op aanvraag) · Jouw merkmodel · Abonnement · Probeer VISUAILS · €1 · App ons. De dienstpagina's blijven zoals ze zijn.
+- **Waarom:** De regel "eerst een look" (§23 19 sep) blijft gelden, want de kaart is zelf de lookkeuze; alleen de omweg verdwijnt. De bezoeker ziet alle looks naast elkaar in plaats van per dienst.
+- **Winst:** Kleiner dan eerst gedacht: één pagina minder voor wie via /start binnenkomt, en een aparte keuzehulp (B3) is niet meer nodig. Via "Bestellen" verandert er waarschijnlijk weinig (§6.1).
+- **Kosten:** S — Start.astro (NL/EN); de lookdata komen uit styles.js, nieuwe tekst is niet nodig.
+- **Risico:** Als er looks "in de maak" bijkomen (§2.11), wordt /start een tweede galerij; toon daarom alleen bestelbare looks.
+- **Mening:** Goed: de goedkoopste manier om de weg korter te maken zonder de lookregel te breken, en vijf looks naast elkaar met hetzelfde product (1.02) beantwoorden "wat past bij mij" zonder vragenlijst. Haal ook "Beam" uit de galerijfilter (B7) zolang het geen bestelbare look is; tegenspreker: het voorstel blijft vooral omdat B3 dan vervalt, niet om de tijdwinst.
+- **Vraag aan Lucas:** Mag een lookkaart op /start meteen naar het formulier? — (a) ja, met de look voorgevinkt (b) nee, eerst naar de detailpagina van de look (c) zoals nu, via de dienstpagina — advies: (a); het formulier toont de gekozen look bovenaan, dus de klant ziet hem daar nog een keer.
+- **Vereenvoudiging:** de omweg dienstpagina → #looks voor wie via /start komt; concept B3 hoeft niet gebouwd te worden.
+
+### 1.02. Eén product in vijf looks voor het pad naar betalen; de andere plaatshouders verbergen
+Gebied: 1 · Dient: klant / Lucas · **Tegenspreker: blijft**
+
+- **Nu:** Sinds 5 sep staan er grijze plaatshouders op home ("Kies een look", "Een gezicht zit erbij"), bij de lifestyle-looks Dunes, Flash en Glow, bij Editions, bovenaan /hooks en /guides en op /about (§5, O65). Lucas maakt de beelden zelf, zonder vaste volgorde (§16.1 punt 6).
+- **Voorstel:** Maak eerst alleen de beelden op het pad naar betalen: één merkloos kledingstuk in de vijf looks, plus de telefoonfoto ervan voor "Dit stuur jij, dit krijg je terug". Die beelden vullen de lookkaarten op home, /start (1.01), /catalog#looks en /lifestyle#looks; "Een gezicht zit erbij" krijgt de portretten van /models, als die nog bij de huisstijl passen. Elke sectie buiten dat pad (Editions, de kop van /hooks en /guides, "Het assortiment in beweging", het portret op /about) blijft verborgen zolang het beeld ontbreekt. Een grijs vlak verschijnt nergens meer.
+- **Waarom:** Elke koper moet langs de lookkeuze (§6.1). Een grijs vlak juist daar ziet eruit als "nog niet af", voor iemand die moet beslissen of hij een onbekende dienst vertrouwt.
+- **Winst:** Lucas maakt vijf beelden in plaats van het hele lijstje, en daarna staat er nergens op de site nog een grijs vlak.
+- **Kosten:** S — een regel "toon alleen als het beeld er is" in de betrokken componenten, plus een lijstje in /admin/diagnose. Lucas-tijd ±2–3 uur, niet 1–1,5: Dunes heeft nog geen eigen bord (5.09), dus het Dunes-beeld vraagt eerst bordwerk.
+- **Risico:** Eén product in alle vijf de momenten (§24) kan gekunsteld ogen, vooral Flash (uitgaan) naast Dunes. Kies een stuk dat in alle vijf gedragen kan worden, zoals een jas of overshirt zonder logo.
+- **Mening:** Goed, en beter dan "alle plaatshouders vervangen": Lucas' werk krimpt tot de beelden die verkopen. Hetzelfde product in vijf looks laat het verschil tussen de looks beter zien dan vijf verschillende producten.
+- **Vraag aan Lucas:** Welke plaatshouders mogen verdwijnen in plaats van gevuld te worden? — (a) alles buiten het pad naar betalen, tot er een beeld is (b) alleen /about en /guides (c) niets, alles vullen — advies: (a).
+- **Gereedschap:** plek in de dag (§25): als een lookbeeld af is, vóór een deploy · input: beeld met de afgesproken naam in `public/img/looks/…` · output: de kaart of sectie verschijnt bij de volgende deploy · zo zie je dat het gelukt is: /admin/diagnose toont "Beelden op de site: 7 van 9 aanwezig", met de namen die nog ontbreken.
+- **Vereenvoudiging:** alle grijze plaatshouders; secties zonder beeld blijven weg tot het beeld er is.
+
+### 1.04. Het formulier onthoudt de keuzes en de foto's, niet de gegevens (O47, andere uitvoering)
+Gebied: 1 · Dient: klant · **Tegenspreker: blijft**
+
+- **Nu:** Na verversen is het formulier leeg (O47); het advies in §16.2 is sessionStorage per stap.
+- **Voorstel:** Bewaar look, aantal, opties en de sleutels van de al geüploade foto's in localStorage, niet in sessionStorage; stap 3 (naam, e-mail, telefoon, adres) wordt níet bewaard. Bij terugkomst kijkt het formulier eerst of de foto's nog in R2 staan. Na een geplaatste bestelling wordt alles gewist.
+> Je was bezig met een bestelling: catalog, 3 producten, 7 foto’s. [Verder gaan] [Opnieuw beginnen]
+> Zijn de foto’s weg: "Deze foto’s zijn niet meer bij ons; zet ze opnieuw neer."
+- **Waarom:** Op een telefoon gooit de browser het tabblad weg als de klant naar zijn camera of WhatsApp gaat, of hij komt via Instagram terug in een nieuw tabblad; in beide gevallen is sessionStorage leeg. De foto's zijn het werk; stap 3 is in een minuut opnieuw getypt, en voorgevuld als hij inlogt.
+- **Winst:** Bij 6 producten hoeft de klant 18–24 foto's niet opnieuw te kiezen (±3–5 minuten), en vaak blijft de bestelling zelf behouden.
+- **Kosten:** M (eerst S geschat) — het script van het formulier, plus fotokaarten herstellen uit de R2-sleutels: een bestaanscontrole, miniaturen en afstemming op de cron-opruiming van verlaten uploads.
+- **Risico:** Hoe snel de cron verlaten uploads opruimt, staat niet in het overzicht (§12); hoe lang een concept bewaard blijft, moet daarop aansluiten. Op een gedeelde computer zou bewaarde informatie zichtbaar zijn, daarom geen persoonsgegevens.
+- **Mening:** O47 klopt, maar sessionStorage lost alleen het geval op dat het minst voorkomt; dit dekt het meest voorkomende geval erbij. Een knop "stuur mezelf een link" (concept op de server) pas als de trechter laat zien dat klanten in stap 2 afhaken.
+- **Vraag aan Lucas:** Wat mag er op het apparaat van de klant blijven staan? — (a) look, aantal, opties en foto's, niet zijn gegevens (b) alles, ook stap 3 (c) sessionStorage per stap, zoals het advies in §16.2 — advies: (a).
+
+### 1.05. De bedankpagina wacht op Mollie en zegt wat er nu gebeurt
+Gebied: 1 · Dient: klant / Lucas · **Tegenspreker: blijft**
+
+- **Nu:** "Betaald — we gaan aan de slag." verschijnt na vier vragen aan /api/order-status (§6.4); wat de pagina toont als de webhook dan nog niet binnen is, staat niet in het overzicht. Al vóór Mollie kreeg de klant "We hebben je bestelling" mét betaallink (§6.3), en een minuut later "Betaling ontvangen" (§7).
+- **Voorstel:** De pagina krijgt drie standen: (1) betaald; (2) "Je betaling wordt bevestigd. Je hoeft niet opnieuw te betalen." zonder knop, die zichzelf ververst zoals F64 bij het abonnement en na ongeveer een minuut stopt met "We mailen je zodra de betaling binnen is"; (3) pas als Mollie zelf geannuleerd, verlopen of mislukt meldt: "De betaling is niet afgerond", met knop. Doet order-status dat nog niet, dan vraagt het bij Mollie na zolang de database "onbetaald" zegt. Onder de kop komt één blok, uit dezelfde bron als de betaalmail van 7.01:
+> **Zo gaat het verder**
+> 1. We kijken je foto’s na. Ontbreekt er iets, dan appen we je.
+> 2. Je beelden komen zo snel mogelijk (vaak binnen een dag, soms een paar dagen). *(vanaf 10 producten: op de datum die je koos)*
+> 3. Je factuur komt zo in je mail. Daarna mailen we pas weer als je beelden klaar zijn; de stand zie je in VISUAILS Studio of via de link in je mail.
+- **Waarom:** Toont de pagina na vier vragen "Nog één stap: betalen" met een knop, dan betaalt een klant die net betaald heeft misschien nog een keer; de webhook stort het terug (§7), maar dat kost extra mails en een terugboeking. En de regel uit §21 (geen mail bij een statuswissel) wordt zo een stilte die de klant van tevoren kent.
+- **Winst:** Geen dubbele betalingen meer door een trage webhook, en minder appjes met "is mijn bestelling binnen?".
+- **Kosten:** S — de bedankpagina en order-status; de tekst van de eerste mail is 7.02.
+- **Risico:** Een pagina die zichzelf ververst, moet ook ophouden; zonder grens blijft hij eindeloos vragen.
+- **Mening:** Goed: het F64-patroon bestaat al, dus dit is werk afmaken; O12: eens, "meestal binnen het uur" wordt "meestal dezelfde werkdag". Tegenspreker: "We kijken je foto's na" in plaats van "Onze beeldredactie kijkt je foto's na", want die naam staat voor wie de beelden nakijkt (§26).
+- **Vraag aan Lucas:** Wat gebeurt er met de eerste mail bij bestellen? — (a) houden, maar beginnen met waar de bestelling staat, met de regel "Al betaald bij Mollie? Dan hoef je niets te doen; je factuur volgt." (b) pas versturen na betalen, samen met de factuur, en bij een afgebroken betaling een mail met betaallink — advies: (a) nu, de kleine variant van 7.02; (b) leunt helemaal op de webhook en vraagt een uitzondering voor betalen per overboeking.
+
+### 1.06. De €1-proef begint bij een look en leidt naar de tweede bestelling
+Gebied: 1 · Dient: klant / Lucas · **Tegenspreker: blijft** — het vaste-lookdeel gaat naar 2.08, de herbestellink naar 3.07
+
+- **Nu:** /test-sample begint met de keuze "catalogset of lifestylecarrousel" (§6.2), en de proef staat in de voet, op home, als band onderaan pagina's en als popup die op /plans over de kop valt (§5, §15). Na de proef is er geen weg terug naar het formulier met dezelfde keuzes, en korting mag niet (§23 7 aug).
+- **Voorstel:** Elke lookkaart en lookpagina krijgt een tweede, stillere knop "Probeer VISUAILS · €1" naar `/test-sample?style=<look>`, zodat de eerste vraag van /test-sample vervalt; de popup verdwijnt. "Al eerder bij ons besteld? Log in" brengt de klant na de code terug naar hetzelfde formulier, als dat nog niet zo is. Dat een geplaatste proef zijn keuzes als vaste look bewaart, valt nu onder 2.08; de link "Bestel je andere producten in deze look" op de proeflevering onder 3.07 (en 3.08).
+- **Waarom:** De proef haalt het risico weg, maar daarna begint de tweede bestelling weer bij nul. Zonder korting is "alles staat al klaar" de reden om meteen door te gaan.
+- **Winst:** De proef volgt nu ook de lookregel en heeft één vraag minder. Samen met 2.08 en 3.07 kost de tweede bestelling ±1–2 minuten minder invullen.
+- **Kosten:** S–M — /test-sample met `?style=`, de popup weg en de terugweg na inloggen; het opslaan van de vaste look telt bij 2.08, de knop in privélink en mail bij 3.07.
+- **Risico:** Met een proefknop bij elke look wordt €1 de makkelijkste weg voor wie maar één product heeft (€89 → €1); dat kan nu ook (één per bedrijf), maar het valt meer op. Meer proeven betekent meer werk, en er is nog geen rem op proeven bij een piek (tegenspraak, gat 2).
+- **Mening:** Goed: dit is wat §23 toestaat, niet goedkoper maar sneller. O60: eens; hetzelfde `vis_in`-cookie kan het formulier vertellen dat de bezoeker ingelogd is, dan verdwijnt de regel "Log in".
+- **Vraag aan Lucas:** Mag de €1-proef altijd een account maken (nodig voor de vaste look van 2.08)? — (a) ja, zonder vinkje (b) alleen als "Bewaar mijn gegevens" aangevinkt is — advies: (a); de gegevens staan er voor de één-per-bedrijfcontrole en de factuur toch al.
+
+### 1.07. Wat het kost, wat erbij zit en wanneer het komt: in het formulier zelf
+Gebied: 1 · Dient: klant / Lucas · **Tegenspreker: blijft**
+
+- **Nu:** De site toont één vanaf-prijs (§3.1); stap 1 toont het lopende totaal en de volgende prijsstap (§6.2), maar niet dat bij 4, 8, 9 en 16–19 producten een bestelling met méér producten minder kost. Catalog: 4 × €89 = €356 tegen 5 × €65 = €325; 9 × €65 = €585 tegen 10 × €51 = €510; 19 × €51 = €969 tegen 20 × €39 = €780 (lifestyle net zo: 9 × €82 = €738 tegen 10 × €64 = €640).
+- **Voorstel:** Vier vaste regels in het formulier, met bedragen berekend uit LADDER en REVISIE_DAGEN, nooit getypt. Bij de €1-proef valt "één revisieronde" weg, in stap 1 én in stap 5 (§2.8: de proef heeft geen revisie).
+> Stap 1, onder het totaal: "Inbegrepen: een gezicht naar keuze, de styling eromheen, één revisieronde en volledige commerciële gebruiksrechten. Alle bedragen excl. btw."
+> Stap 1, bij 4, 8, 9 of 16–19 producten: "Met 5 producten betaal je €325 in plaats van €356." Bij 10 of meer erbij: "Vanaf 10 producten kies je zelf een vaste leverdatum; de vroegste ligt een paar dagen vooruit."
+> Stap 3, naast het KVK-veld: "VISUAILS werkt alleen voor bedrijven. Je KVK-nummer komt op je factuur."
+> Stap 5, boven de knop: "Je betaalt nu bij Mollie. Je beelden komen zo snel mogelijk (vaak binnen een dag, soms een paar dagen). Na levering heb je 7 dagen voor één revisieronde." Vanaf 10 producten met de gekozen datum.
+- **Waarom:** Een klant die na betaling ontdekt dat 10 producten goedkoper waren dan zijn 9, voelt zich gefopt. De vier vragen van een eerste klant (wat zit erbij, waarom KVK, wanneer, wat als het niet goed is) krijgen antwoord op het moment dat ze opkomen.
+- **Winst:** Minder vragen via WhatsApp vóór het betalen, en geen klacht achteraf over de prijs.
+- **Kosten:** S — teksten in het formulier (NL/EN), één berekening uit quote.js en de teksttoetsen.
+- **Risico:** Dit kost omzet als de klant ophoogt: van 9 naar 10 catalogproducten is €75 minder voor één product meer, en die bestelling krijgt een vaste datum in plaats van "zo snel mogelijk". Klanten die zelf rekenen, doen dat nu ook al.
+- **Mening:** Tonen is beter dan hopen dat niemand rekent: de vaste kosten per bestelling zijn bij 9 en 10 producten gelijk, en een grotere eerste bestelling vergroot de kans dat de klant terugkomt. B4 (prijscalculator) is niet nodig omdat het formulier al alles uitrekent, B5 (FAQ naar ±20 vragen) mag maar doet minder dan deze vier regels, en volgens de tegenspreker kan de nieuwe railnaam zonder "Materiaal" uit 1.09 hier nu al mee.
+- **Vraag aan Lucas:** Wat doen we met de grotere bestelling die goedkoper uitvalt? — (a) tonen zoals hierboven (b) niet tonen (c) de prijsopbouw laten herzien (gebied 8) — advies: (a).
+
+### 1.08. "App ons" in elke stap, met de stap al in het bericht
+Gebied: 1 · Dient: klant / Lucas · **Tegenspreker: blijft**
+
+- **Nu:** WhatsApp staat op /contact, op de bedankpagina en bij "meer dan 20" (§5, §6.2, §6.4), maar niet in de vijf stappen zelf.
+- **Voorstel:** Onder elke stap komt één rustige regel "Kom je er niet uit? App ons.", als gewone wa.me-link zonder script. Het klaargezette bericht noemt de stand, staat in de taal van de pagina en bevat geen persoonsgegevens:
+> Hoi, ik zit bij stap 2 (foto’s) van een catalogbestelling met 3 producten.
+- **Waarom:** De trechter (/admin/funnel) laat zien wáár bezoekers stoppen, niet waarom. Bij de eerste 5–10 klanten is een persoonlijk antwoord van Lucas op het moment van twijfel de sterkste reden om toch te betalen.
+- **Winst:** Lucas weet zonder terugvragen waar iemand vastzit, en bij de eerste klanten is elke geredde bestelling ook een kans op een review.
+- **Kosten:** S — één component in de stappen, NL/EN.
+- **Risico:** Meer onderbrekingen op een productiedag. Zet er geen tijdsbelofte bij (O12).
+- **Mening:** Goed voor nu en makkelijk terug te draaien: haal de regel weg zodra de appjes meer productietijd kosten dan ze opleveren. Het past bij de bewuste kanalen (e-mail en WhatsApp, geen livechat, §21); tegenspreker: het blijft los van de WhatsApp-knoppen van 7.05, want die gaan de andere kant op, van Lucas naar de klant.
+- **Vraag aan Lucas:** —
+
+### 1.09. Stap 1 is "wat je krijgt", stap 2 alleen "wat je stuurt"
+Gebied: 1 · Dient: klant / systeem · **Tegenspreker: later** — raakt formulier, vaste look en tests voor ±20 seconden winst; alleen de railnaam kan nu mee met 1.07
+
+- **Nu:** Het gezicht staat volgens §6.2 bovenaan stap 2 tussen de fotovakken (§19.2 zet het bij stap 1, dus een van de twee klopt niet), en de rail noemt stap 2 "Materiaal" terwijl die stap ook naar materiaal in de zin van stof vraagt.
+- **Voorstel:** Het gezicht gaat naar stap 1 naast look, achtergrond en verhouding (samen wat §18 een look noemt), de verkoopkanalen worden één vinkje "daar moet de achtergrond wit", en de rail wordt "Je look · Je foto's · Je gegevens · Levertijd · Betalen", ook in "zo werkt het" (B1).
+- **Waarom:** Op een telefoon staat nu een raster van tien gezichten tussen de fotovakken, en "materiaal" betekent in hetzelfde scherm twee dingen.
+- **Winst:** Eén vraag minder en een kortere stap 2 op de telefoon: ±20–30 seconden per bestelling.
+- **Kosten:** S–M — stap 1 en 2 van het formulier, de vaste look (kanalen worden "wel of geen marktplaats") en de formulier- en teksttoetsen.
+- **Risico:** Bestaande vaste looks bewaren kanalen als lijst; laat die lijst staan en verander alleen de vraag, zodat er geen gegevens verloren gaan.
+- **Mening:** Goed als de kanalen nergens anders voor dienen dan "wit verplicht"; B1 ja, B1b (geanimeerd) nee, want Lenis ging eruit omdat de site er traag van werd (§23 1 sep).
+- **Vraag aan Lucas:** Gebruik je de verkoopkanalen nog voor iets anders dan de witte achtergrond? — (a) nee, dan wordt het één vinkje (b) ja (bijvoorbeeld voor formaat of uitsnede), dan blijft de lijst onder "Meer opties" — advies: (a), tenzij (b) geldt.
+- **Vereenvoudiging:** de meerkeuzevraag over verkoopkanalen en het dubbelzinnige woord "Materiaal" in de rail.
+
+### 1.11. Een korter menu, en /studio wordt de pagina over VISUAILS Studio
+Gebied: 1 · Dient: klant / systeem · **Tegenspreker: later** — raakt de eerste klanten nauwelijks; als het gebeurt, dan vóór er links in mails van echte klanten staan
+
+- **Nu:** De URL /studio is de planningspagina en /portal de pagina over VISUAILS Studio, allebei onder "Hoe het werkt", en Abonnement staat onder "Wat we maken" (§5).
+- **Voorstel:** Het menu wordt Wat we maken (Catalog, Lifestyle, Video, Jouw merkmodel) · Hoe het werkt · Prijzen (met Abonnement) · Galerij · Contact · Inloggen · Bestellen, met de planningstekst als blok in /how-it-works, /studio als uitleg van VISUAILS Studio met "Inloggen" bovenaan, en /portal als doorverwijzing naar /studio.
+- **Waarom:** Wie in een mail "VISUAILS Studio" leest en visuails.com/studio typt, komt nu op een pagina over capaciteit, en na §28 is het abonnement een manier van betalen, geen apart product.
+- **Winst:** Twee menu-onderdelen en één pagina minder, en een klant vindt het inloggen via de naam die hij kent.
+- **Kosten:** M (eerst S geschat) — twee pagina's samenvoegen in NL en EN met doorverwijzing, de menucomponent en de sitemap- en linktoetsen.
+- **Risico:** Links naar /studio of /portal in oude mails of in toetsen; vóór de lancering is een URL wisselen goedkoop, erna niet meer.
+- **Mening:** Goed (B2: ja), en dan vóór de eerste echte klantmails, want daarna wordt elke URL-wissel duurder.
+- **Vraag aan Lucas:** Wat wordt /studio? — (a) een doorverwijzing naar het inlogscherm (/account) (b) de pagina over VISUAILS Studio met "Inloggen" bovenaan, en /portal stuurt door — advies: (b).
+- **Vereenvoudiging:** de menu-onderdelen "De planning en de capaciteit" en "VISUAILS Studio", en de aparte planningspagina.
+
+**Samengevoegd**
+- **1.03** → opgenomen in 9.05 (meegenomen: Lucas' eigen telefoontest vanuit de Instagram-app met een HEIC-foto en een foto van ±10 MB; alleen als de proef iets vindt, de reparatie in het formulierscript — minder uploads tegelijk, vanzelf opnieuw proberen, status per vak — en daarna de toetsen van F23 en F26 opnieuw).
+- **1.10** → opgenomen in 8.06 (meegenomen: het zakelijk-vinkje van stap 5 vervangt het aparte 0%-vinkje; land voorvullen met het land van de bezoeker, zichtbaar en te wijzigen, is een losse S die nu mee kan; de live VIES-controle hoort bij 8.05 (later), waar nog één storingstekst gekozen moet worden: "binnen 24 uur" of "meestal dezelfde werkdag").
+
+**Geschrapt**
+- Geen.
+
+**Bekeken en niet voorgesteld**
+- Eén fotoknop per product op de telefoon: de fotokiezer van iOS geeft geen zekere volgorde, dus foto's kunnen in het verkeerde vak belanden.
+- De lookstap overslaan bij catalog (er is maar één cataloglook): gaat tegen §6.1 en §23 19 sep in, en 1.01 maakt de weg korter binnen de regel.
+- €1 verrekenen met de eerste echte bestelling, of een eerste-bestelling-korting: past niet bij §23 7 aug ("de proef is genoeg").
+- "€89 bij 1 product" naast "vanaf €39" op de dienstpagina's: leest als een prijsbereik (§23 9 aug), en 1.07 zegt het in het formulier, waar het aantal bekend is.
+- Naam en adres ophalen uit het Handelsregister bij het KVK-nummer: de KVK-API is een betaalde dienst met eigen afspraken, niet de moeite voor de eerste 5–10 klanten.
+
+## 2.2 · Gebied 2 — VISUAILS Studio (klantportaal)
+
+**Kern.** Studio laat alles zien, maar zegt niet wat de klant nú moet doen (§8); de Nu-zin daarvoor komt als één functie `nuZin()` eerst op de privélink (3.01) en daarna in Studio, en herbestellen loopt voor iedereen via de link met lookparameters van 3.07. Wat hier blijft, maakt Studio precies: een saldo-strook waarin tegoed (euro's, §7) en credits (abonnement, §4) nooit hetzelfde woord delen, twee datums op elke bestelkaart, nasturen per vak, een vaste look die zichzelf vult en één abonnementspagina zonder tabbladen. Die pagina verbetert §28.3 met "genoeg voor 18 catalogsets" in plaats van "72 van 120" en hoort in ronde 10.
+
+### 2.02. Tegoed en credits: één saldo-strook, twee woorden die nooit wisselen
+Gebied: 2 · Dient: klant / systeem · **Tegenspreker: blijft** — neemt 8.10 op
+
+- **Nu:** Tegoed (euro's, `customer_credits`, §7) staat als vijfde tegel op het Overzicht als het boven €0 is; credits (abonnement, `subscription_slots`, §4) staan alleen op de abonnementstab. De tegoedtabel heet in de code "credits", en in het Engels ligt "credit" voor tegoed voor de hand, naast "credits" en "credit note".
+- **Voorstel:** Op het Overzicht, onder de Nu-zin, een strook "Je saldo" met twee vakken, elk alleen als het bestaat: tegoed altijd met € en het woord "tegoed" (EN "account balance"), credits altijd als getal zonder € (EN "credits"), nooit "credit" of "creditsaldo" voor tegoed, en dezelfde woorden in stap 5, het betaalblok van de bestelkaart en de factuurlijst. Vaste regels uit 8.10: tegoed betaalt nooit een creditsbestelling en wordt nooit credits, credits worden nooit euro's, en een geannuleerde of deels teruggedraaide creditsbestelling geeft credits terug. Bij elke creditsbestelling staat welke termijnfactuur hem dekt, met een link naar die pdf. Tegoedboekingen met reden staan op Facturen onder een eigen kopje, het creditboek op Abonnement (2.07).
+> **Je saldo** · €50 tegoed — Gaat automatisch van je volgende bestelling af. Waar komt dit vandaan? → (alleen als een deel binnen 60 dagen vervalt: "€20 hiervan vervalt op 6 dec. 2028")
+> 72 credits — Van je abonnement. Genoeg voor 18 catalogsets of 14 lifestylecarrousels. Naar je abonnement →
+> Bij een creditsbestelling: Betaald met 48 credits · uit je termijn van oktober (factuur VIS-…)
+- **Waarom:** Een klant die €50 tegoed ziet en denkt dat hij 50 credits heeft (of omgekeerd), bestelt verkeerd of mailt. Een klant en zijn boekhouder moeten bij elke creditsbestelling zien welke factuur die dekt, want §28.2 maakt er bewust geen tweede factuur bij.
+- **Winst:** De klant ziet in één oogopslag wat hij heeft en wat het oplevert. Lucas hoeft het verschil niet per mail uit te leggen en krijgt geen "waar is de factuur van deze bestelling?".
+- **Kosten:** S binnen ronde 10 — account.js (Overzicht, Facturen), order.js (betalen met credits), COPY en lexicon NL/EN en de tekstentest die "credit" voor tegoed weert; geen JS. De vertaling in producten is één functie die 2.07 en 6.01 delen; kijk eerst na welk Engels woord nu voor tegoed op het scherm staat.
+- **Risico:** In de code blijft `customer_credits` = tegoed, dus een volgende bouwer koppelt "credits" aan de verkeerde tabel; één regel commentaar in tegoed.js en slots.js en een regel in §18 voorkomen dat. Wat er gebeurt met credits uit een termijn die wordt terugbetaald of teruggeboekt, is de open vraag van 8.10 (advies daar: creditnota alleen voor het ongebruikte deel, die credits vervallen) en hoort bij 8.11.
+- **Mening:** Goed en klein: "genoeg voor 18 catalogsets of 14 lifestylecarrousels" is het stuk dat in §28 ontbreekt, en elk saldo krijgt één thuis (tegoed bij Facturen, credits bij Abonnement). Geen aparte bestelbevestiging-pdf per creditsbestelling (8.10): een tweede document dat op een factuur lijkt, verwart de boekhouder van de klant meer dan de link naar de termijnfactuur.
+- **Vraag aan Lucas:** Een abonnee heeft tegoed én credits en bestelt — wat gaat eerst? — (a) credits; het tegoed blijft staan en gaat alleen op als hij via Mollie betaalt (b) de klant kiest in stap 5 (c) tegoed eerst — advies: (a), één regel zonder keuze die past bij 8.10; stap 5 zegt dan "Je tegoed van €50 blijft staan voor een volgende bestelling."
+
+### 2.03. Bestelkaart: bovenaan de Nu-zin, één knop en twee datums
+Gebied: 2 · Dient: klant / Lucas · **Tegenspreker: blijft** — haalt zijn zin uit dezelfde `nuZin()` als 3.01
+
+- **Nu:** De uitklapkaart (§8) stopt kenmerk, betaalblok, tijdlijn, foto's, zip, goedkeuren per beeld, revisie en tevredenheid in één blok. De revisietermijn (7 dagen, §3.5) en de verwijderdatum (90 dagen, §3.6) staan er niet als datum bij.
+- **Voorstel:** De dichte kaart toont kenmerk · dienst · aantal · statuspil (+ pil "Credits" of "Probeer VISUAILS") en daaronder de Nu-zin uit `nuZin()` met één knop. Bij elke geleverde bestelling staan twee datums uit de code; bij de proef vervangt een regel zonder revisie de eerste. De open kaart begint met "Downloaden (zip)" en "Beelden bekijken", daarna als `<details>` "Je foto's", "Betaling en factuur" en "Tijdlijn". Op de Bestellingenpagina staan open bestellingen bovenaan, afgeronde onder "Afgerond (N)" in een `<details>`, en statusfilters pas vanaf zes bestellingen.
+> Revisie aanvragen kan tot en met 13 okt.
+> Je beelden staan hier tot 4 jan — download ze op tijd.
+> (proef) Bij de proef zit geen revisieronde. Iets niet goed? Stuur ons een appje of mail.
+- **Waarom:** De twee datums die voor de klant tellen zijn nu rekenwerk. De 90-dagenregel staat alleen in /privacy en mails, terwijl de purge straks echt wist (O55).
+- **Winst:** De klant mist geen revisietermijn en verliest geen beelden. Lucas krijgt minder "kan ik nog een revisie vragen?" en, zodra `PURGE_ENABLED` aan staat, minder "waar zijn mijn beelden gebleven?".
+- **Kosten:** S — account.js (bestelkaart, Bestellingenpagina), datums uit retention.js en `REVISIE_DAGEN` (nooit getypt, §26), COPY NL/EN; geen JS.
+- **Risico:** De datums moeten uit dezelfde bron komen als de cron die afrondt (3.03: 7 dagen na de laatste levering of het laatste revisieantwoord) en wist, anders belooft Studio iets wat niet klopt. §17.23 noemt al tegenstrijdige bewaarteksten in de code.
+- **Mening:** Goed: de twee datums kunnen meteen, de Nu-zin volgt zodra `nuZin()` op de privélink staat (3.01). Met O56 (7.09, later) noemen Studio en mail straks dezelfde datum.
+- **Vraag aan Lucas:** —
+- **Vereenvoudiging:** statusfilters bij minder dan zes bestellingen; afgeronde bestellingen uit het directe zicht.
+
+### 2.05. Foto's nasturen per leeg vak, met één lijst van wat ontbreekt
+Gebied: 2 · Dient: Lucas / klant · **Tegenspreker: blijft** — neemt 5.06 op
+
+- **Nu:** Stap 2 zegt alleen "N producten zijn nog niet af" en laat toch doorgaan (§6.2); Studio heeft "Je foto's (nasturen, max 12)" zonder vak. Alleen bij één product krijgen nagestuurde foto's een product mee (F66); bij meer producten telt /admin ze wel, maar het bord toont ze in geen vak.
+- **Voorstel:** Eén lijst "wat ontbreekt per vak", één keer gebouwd, vult het tussenscherm van stap 2 (zonder JS ook stap 5), Studio, de betaalmail (7.01), de studiomail (9.07) en in /admin de bestelrij ("2 foto's ontbreken") en een rood leeg vak op het bord. Zolang een bestelling niet geleverd is, toont Studio per product de vier vakken, gevuld (miniatuur) of leeg met een eigen bestandsveld, plus per product één veld "Andere foto (voorbeeld of detail)". Eén gewoon multipart-formulier per bestelling; de server schrijft `product_key` en vak zoals de bestelstroom (logica van F65/F66), en de studiomail "Foto's binnen · VIS-… · n" noemt de vakken ("p3 achterkant, p5 detail"). De Nu-zin wijst het eerste lege verplichte vak aan.
+> Nog niet compleet · Product 2 · achterkant — zonder achterkant raden wij hoe die eruitziet. · Product 5 · close-up — zonder close-up wordt het detailbeeld een stoffoto.
+> [Foto’s toevoegen] [Toch doorgaan — ik stuur ze na in VISUAILS Studio]
+> (Studio) Achterkant — nog niet ontvangen [Kies foto]
+- **Waarom:** Een losse stapel nagestuurde foto's moet Lucas zelf uitzoeken en in het juiste vak zetten, en bij meer producten ziet hij ze nu niet eens op het bord. "N producten zijn nog niet af" zegt de klant niet wát er mist, dus Lucas ontdekt het pas bij het maken.
+- **Winst:** Lucas: 2–5 minuten (2.05) tot ±10 minuten (5.06) per onvolledige bestelling aan uitzoeken, verslepen en appen. De klant weet zonder te vragen welke foto ontbreekt.
+- **Kosten:** S — account.js (formulier per vak), een handler die de bestaande upload naar R2 hergebruikt, tekst in het tussenscherm en stap 5, een telling in admin.js (dashboard en bord) en de studiomail; geen JS in Studio.
+- **Risico:** §23 (8 aug) zegt "geen materiaal achteraf opsturen", maar het formulier laat al doorgaan met gaten en Studio heeft al nasturen, dus dit maakt een bestaand pad precies; houd 12 bestanden per verzoek vanwege de verzoeklimiet van de Worker. Na te gaan: kan een klant die "Bewaar mijn gegevens" niet aanvinkte in Studio komen om na te sturen? Zo niet, dan hoort nasturen ook op de privélink (gebied 3).
+- **Mening:** Goed: het haalt een foutbron weg die in ronde 9 al live opdook (F66), en de tekst per vak doet het meeste werk omdat de klant ziet wat het ontbreken hem kost. Die tekst moet wel kloppen met wat Lucas echt doet als een vak leeg blijft (tweede vraag).
+- **Vraag aan Lucas:** Tot wanneer mag een klant nasturen? — (a) tot je "In productie" zet (b) tot "Geleverd" (c) altijd, ook na levering, als voorbeeld bij een revisie — advies: (b). Wat doe je als een achterkant ontbreekt? — (a) wachten tot hij er is (b) raden en leveren; revisie mag (c) één appje met een vaste tekst, en als er na een dag geen antwoord is maken wat er is — advies: (c), en de knoptekst daarop aanpassen.
+- **Gereedschap:** plek in de dag (§25): ochtend, dashboard · input: de bestelling · output: "N foto's ontbreken" op de bestelrij en een rood vak op het bord · zo zie je dat het gelukt is: de telling verdwijnt zodra de klant nastuurt (studiomail "Foto's binnen").
+
+### 2.07. De abonnementspagina: één pagina zonder tabbladen (verbeterde §28.3)
+Gebied: 2 · Dient: klant / Lucas / systeem · **Tegenspreker: blijft** — neemt 6.07 op; hoort in ronde 10
+
+- **Nu:** Vier tabbladen: Overzicht · Planning · Producten · Facturering (§8). §28.3 stelt voor: saldo-regel "72 van 120 credits over", drie tegels (plan · maandset · bestel met je look), creditboek, herbestellen, en Vaste look en Facturen als tabbladen eronder.
+- **Voorstel:** Eén pagina zonder tabbladen en zonder JS, van boven naar beneden: saldo → bestellen → maandset → creditboek → je plan; vaste look en facturen staan al in de zijbalk en krijgen hier een link, geen kopie. Het creditboek kent vijf soorten regels: credits voor een maand (+), bestelling met kenmerk en statuspil (−), terug na annulering (+), correctie door ons met reden (±) en vervallen (−). Wie op "Opzeggen" klikt, krijgt eerst pauzeren aangeboden: "Een rustige periode? Pauzeer: je betaalt niets en je credits blijven geldig tot hun datum." Op de klantpagina in /admin staat dezelfde weergave in plaats van "abonnementsweek", zodat Lucas en de klant naar dezelfde lijst kijken.
+
+```
+Abonnement · Pro
+
+Je hebt 72 credits
+Genoeg voor 18 catalogsets of 14 lifestylecarrousels.
+Te gebruiken tot en met 30 november. Op 1 november komen er 120 bij.
+(alleen als een deel eerder vervalt: "20 hiervan vervallen op 31 oktober — die gaan als eerste op.")
+
+Bestellen met credits
+[Catalog — Classic · gebroken wit · 4:5 · 4 credits per product]
+[Lifestyle — Glow · Ava · 4:5 · 5 credits per product]
+Extra foto 2 credits · 4K (lifestyle) 1 credit per product
+Andere look kiezen · Je vaste look aanpassen
+
+Maandset oktober
+20 beelden zonder product, inbegrepen. Voor je eigen kanalen.   [Downloaden (zip)]
+Editions — binnenkort, los te nemen: beelden op je eigen merk.
+
+Creditboek
+Datum    Wat                                                   Credits   Saldo
+12 okt   VIS-EF45-G6H · 8 lifestylecarrousels · In productie      −40       72
+3 okt    VIS-AB12-C3D · 12 catalogsets · Geleverd                 −48      112
+1 okt    Credits voor oktober                                    +120      160
+30 sep   Vervallen: credits van augustus                          −20       40
+▸ Eerdere maanden
+
+Je plan
+Pro · maandelijks · €790 per maand excl. btw
+Volgende afschrijving: 1 november, €955,90 incl. 21% btw
+Je termijnfacturen staan bij Facturen.
+[Pauzeren]   [Opzeggen]
+
+Andere standen, in plaats van "Je hebt 72 credits":
+pauze     Je abonnement staat op pauze sinds 3 okt. Er wordt niets afgeschreven en er komen
+          geen credits bij. Je 72 credits kun je gebruiken tot en met 30 november. [Hervatten]
+opgezegd  Je abonnement stopt op 31 okt. Je 72 credits kun je gebruiken tot en met 30 november.
+jaar      Pro · 12 maanden vooruit · maand 4 van 12
+```
+
+*De datums hierboven volgen de huidige doorschuifregel. Met 6.03 (3 maanden geldig, oudste eerst) wordt "tot en met 30 november" overal "tot en met 31 december", en staat "Vervallen" in het creditboek drie maanden na binnenkomst.*
+
+- **Waarom:** "72 van 120" klopt niet zodra credits doorschuiven (dan heb je er 152 "van 120"), en tabbladen die bestaande pagina's herhalen geven twee plekken voor dezelfde vaste look. Een plantegel bovenaan beantwoordt een vraag die bijna niemand stelt.
+- **Winst:** Klant: alles op één scherm, credits omgezet in producten, elke afschrijving herleidbaar tot een bestelling. Lucas: geen mail over "hoeveel heb ik nog / wanneer vervalt het / waarom staat er 72", en in /admin dezelfde lijst als de klant.
+- **Kosten:** M — onderdeel van ronde 10 (§28.6): account.js (abonnementsview), creditboek-query op `subscription_slots` + orders, dezelfde weergave op de klantpagina in /admin, reden verplicht bij "credits bijstellen", COPY NL/EN en tests. Geen JS (`<details>` voor eerdere maanden).
+- **Risico:** Het creditboek moet tot op de credit kloppen: een correctie zonder reden geeft een onverklaarbaar getal, en "vervallen" en "gaan als eerste op" kloppen alleen als de code de oudste credits eerst gebruikt (6.03). `subscription_slots` plus de credits per bestelling is genoeg als bron voor nu; een eigen tabel zoals bij tegoed is netter, maar §4.4 zegt "geen credit-ledger" (6.07).
+- **Mening:** §28.3 is sterk in saldo en creditboek; overbodig zijn de plantegel en de tabbladen, en wat mist is "genoeg voor …" (dezelfde functie als 2.02), een vervaldatum per partij, de standen pauze en opgezegd en een reden bij elke correctie. Houd de pagina een rekening plus twee bestelknoppen; de Editions-regel staat bewust zonder aantal, zodat hij niet op de maandset lijkt (tegenspreker, uit 6.07).
+- **Vraag aan Lucas:** Wat doen credits bij pauze en opzeggen? — (a) een credit vervalt altijd op zijn eigen datum, ook na pauze of opzeggen (b) bij opzeggen vervallen ze op de einddatum van het abonnement (c) bij pauze bevriezen ze tot hervatten — advies: (a), één regel zonder uitzondering, gelijk aan 6.08. Hoe lang mag een pauze duren (6.07)? — (a) tot de klant zelf hervat (b) hoogstens 3 maanden, daarna een mail "hervatten of opzeggen?" — advies: (b), want na 3 maanden zijn de credits toch vervallen.
+- **Vereenvoudiging:** alle tabbladen van de abonnementspagina (Planning en Producten zoals §28 al zegt, én Overzicht en Facturering), de plantegel bovenaan, de kopie van de vaste look en "abonnementsweek" op de klantpagina in /admin.
+
+### 2.08. Vaste look en gegevens vullen zichzelf; Studio vraagt alleen wat ontbreekt
+Gebied: 2 · Dient: klant / Lucas · **Tegenspreker: blijft** — neemt 6.09 en het vaste-lookdeel van 1.06 op
+
+- **Nu:** "Je vaste look" (§8) is een formulier per dienst (catalog, lifestyle, video) dat de klant zelf invult en dat voor abonnees verplicht is vóór de eerste bestelling (§28.2.1); het videoblok vraagt een gezicht, terwijl video op aanvraag is (§2.4, §24). "Je gegevens" is een altijd open formulier.
+- **Voorstel:** Na de eerste betaalde bestelling per dienst, ook de €1-proef, worden look, gezicht, verhouding, achtergrond en kanalen als vaste look bewaard als die voor die dienst nog leeg is, nooit overschreven; daarmee is de terugval "laatste bestelling" van 6.09 overbodig. De verplichte vaste look voor abonnees vervalt, want stap 1 vraagt look, gezicht en verhouding toch al, en het videoblok gaat uit "Je vaste look" tot video met vaste prijzen in het formulier staat. "Je gegevens" wordt een samenvatting met één knop "Wijzigen" (`<details>`); ontbreekt iets wat op een factuur moet (adres na een video- of lookaanvraag, F44), dan zegt de Nu-zin dat. Studio en stap 1 zeggen waar de keuzes vandaan komen:
+> (Studio) Overgenomen uit VIS-AB12-C3D (3 okt). Je volgende bestelling begint hiermee. [Aanpassen]
+> (stap 1) We hebben je keuzes van VIS-AB12-C3D ingevuld. Pas aan wat je wilt.
+> (Je gegevens) Dit komt op je volgende factuur: Merk BV · Teststraat 1, 1234 AB Teststad · KVK 12345678 [Wijzigen]
+> (Nu-zin) Vul je adres aan — dat moet op je factuur voor VIS-AB12-C3D.
+- **Waarom:** Een klant die al besteld heeft, heeft alles al gekozen, en een verplichte vaste look is een extra drempel vóór de eerste abonnementsbestelling. De poort van 19 sep (§23) was er voor bestellen via de lijst zonder formulier, en die lijst verdwijnt met §28.
+- **Winst:** Klant: niets apart instellen, en een herhaalbestelling begint met 4–6 keuzes minder (±2 min, 6.09). Lucas: geen abonnee die vastloopt op een lege vaste look, geen factuur zonder adres en minder bestellingen in een andere look dan de vorige.
+- **Kosten:** S — webhook of bestelstroom schrijft `customer_style_locks` bij de eerste betaalde bestelling, account.js (melding, videoblok weg, gegevens als samenvatting), de zin in stap 1 en de tekst van §28.2.1; geen JS in Studio.
+- **Risico:** De eerste bestelling kan een uitzondering zijn (één keer een andere look), maar omdat het alleen voorinvullen is en stap 1 alles toont, kost dat één klik; de look `custom` mag hier niet in terechtkomen (§17.18). Bij de proef werkt dit alleen met een account; of de proef altijd een account maakt, is de vraag van 1.06.
+- **Mening:** Goed, en een echte vereenvoudiging: de klant hoeft niets apart in te stellen en de poort uit §28.2.1 voegt met het gewone formulier niets meer toe. De herbestellink uit 6.09 (`zoals=<ref>`) gaat niet mee; die wordt de link met lookparameters van 3.07.
+- **Vraag aan Lucas:** —
+- **Vereenvoudiging:** de verplichte vaste look voor abonnees, het videoblok in "Je vaste look", het open gegevensformulier als standaardweergave en de terugval "laatste bestelling" uit 6.09.
+
+### 2.04. Beelden beoordelen op een eigen pagina, met hetzelfde scherm als de privélink
+Gebied: 2 · Dient: systeem / klant · **Tegenspreker: later** — goede opruiming, maar na ronde 10 en zonder klantwinst nu
+
+- **Nu:** Studio en de privélink (`portal.js` + portal.css, §9) beoordelen beelden elk met eigen code, en bij 20 producten × 4 beelden staan 80 beoordeelbeelden in uitklapblokken op één Bestellingenpagina.
+- **Voorstel:** "Beelden bekijken" opent `/account/bestellingen/<ref>` binnen de Studio-zijbalk met dezelfde weergavefunctie als de privélink; alleen de toegang verschilt (sessie of token).
+- **Waarom:** Twee implementaties van één handeling lopen uit elkaar; F13 en F66 waren dit soort fouten.
+- **Winst:** Eén plek om goedkeuren, revisie en tevredenheid te repareren en te testen, en een lichte Bestellingenpagina op de telefoon.
+- **Kosten:** M — account.js, portal.js (weergave losmaken van de token-toegang), account.css/portal.css en tests voor Studio en privélink; geen JS.
+- **Risico:** De privélink is op 3 okt herontworpen, en de token-route mag niets kunnen wat de sessie niet mag en omgekeerd (ingetrokken revisierechten, proef zonder revisie).
+- **Mening:** Goed voor het systeem, maar pas wanneer de privélink in gebied 3 toch wordt aangepakt; het lichte alternatief (eigen pagina met de huidige Studio-code) laat de twee weergaven bestaan.
+- **Vraag aan Lucas:** Hoe ver? — (a) eigen bestelpagina in Studio met de privélink-weergave erin (één code) (b) eigen bestelpagina met eigen Studio-code (c) laten zoals het is — advies: (a), na ronde 10.
+
+**Samengevoegd**
+- **2.01** → opgenomen in 3.01 (meegenomen: de volgorde van de Nu-zin in één `nuZin()`, eerst op de privélink en daarna op het Studio-Overzicht). Het besluit over de vier tegels op het Overzicht — (a) weg (b) alleen bij een getal boven 0, als link (c) laten — staat als vraag bij 3.01; het draait het herontwerp van 3 okt terug, en (b) is de veilige keuze.
+- **2.06** → opgenomen in 3.07 (meegenomen: knoptekst met looksamenvatting, "Catalog bestellen — Classic · gebroken wit · 4:5", en "4 credits per product" voor abonnees; de link met lookparameters vervangt `van=<ref>`).
+- **2.09** → opgenomen in 3.03 (stil afronden 7 dagen na de laatste levering laat het tevredenheidsblok vanzelf verschijnen, zonder tweede voorwaarde).
+
+**Geschrapt**
+- Geen.
+
+**Bekeken en niet voorgesteld**
+- Besparingsregel op de abonnementspagina ("los had dit €… gekost"): in een rustige maand laat hij zien dat het abonnement duurder was, en hem alleen tonen als het gunstig uitvalt is niet eerlijk.
+- Persoonlijke rekensom voor niet-abonnees ("met Starter had je …"): loont pas bij klanten met maanden bestelgeschiedenis, en die zijn er voorlopig niet.
+- Plan wijzigen of credits bijkopen vanuit de abonnementspagina: nog niet besloten (§21) en hoort bij gebied 6.
+- "In productie" automatisch tonen zodra Lucas het eerste beeld uploadt: botst met §21 (betaald ≠ opgepakt, Lucas zet de status).
+- Meerdere merken onder één account voor bureaus: pas zinvol bij de eerste bureauklant.
+
+## 2.3 · Gebied 3 — Privélink en levering naar de klant
+
+**Kern.** Een bestelling rondt nu alleen af als de klant álle beelden goedkeurt (§10.1 stap 6, §20). Wie downloadt en verder niets doet, ziet daardoor nooit de tevredenheidsvraag, zijn bronfoto's krijgen geen wisdatum (§22) en zijn privélink blijft tot 365 dagen open. De grootste kansen zitten in drie momenten die er al zijn maar niets vragen: de bovenkant van de privélink (één wat-nu-zin voor elke klant, ook zonder account), het afronden (stil na 7 dagen, daarna review en toestemming op één scherm) en de privélink van de €1-proef (§2.8), allemaal zonder nieuwe mail uit de cron (§21).
+
+### 3.01. Eén "wat nu"-blok bovenaan privélink en Studio, met de revisiedatum
+Gebied: 3 · Dient: klant / Lucas · **Tegenspreker: blijft** — neemt 2.01 en 3.09 op
+
+- **Nu:** De privélink opent met kenmerk, dienst, aantal, statuspil en een tevredenheidscheck-regel; de acties staan tussen en onder de tegels, het statuspad is korter dan in Studio (Ontvangen · Geleverd · Revisie · Bijgewerkt) en nergens staat tot wanneer een revisieronde kan (§9, §3.5). Het Studio-overzicht telt bestellingen in vier tegels, en de "Nu:"-zin bestaat alleen in de tijdlijn van één bestelling (§8).
+- **Voorstel:** Eén functie `nuZin(bestelling)` kiest één zin en hoogstens twee knoppen, in deze volgorde: notitie van ons die de klant mag lezen → wacht op betaling of btw-controle → revisietermijn loopt binnen 2 dagen af → geleverd, nog te bekijken → foto ontbreekt → beelden worden binnen 14 dagen verwijderd → revisieronde ligt bij ons → in de maak → afgerond zonder tevredenheidscijfer → niets open. Eerst komt het blok direct onder de kop van de privélink (elke klant, ook zonder account en bij de proef), met daaronder het statuspad van Studio, de leverregel en, zolang er niet betaald is, "Nu betalen" met de betaallink uit de mail. Daarna komt het bovenaan het Studio-overzicht (met "En nog 1 bestelling: …" en een lijst "Lopend") en op de bestelkaart van 2.03. De levermail zegt hetzelfde in dezelfde woorden, met één knop "Bekijk je beelden" (tekst voor gebied 7).
+> **Je 48 foto’s staan klaar.** Bekijk ze hieronder. Klopt alles, keur ze dan in één keer goed. Klopt iets niet, vink het beeld aan en schrijf erbij wat er anders moet. Je hebt één revisieronde, tot en met 13 oktober; daarna ronden we je bestelling af. Je beelden staan hier tot 4 januari.
+> [Alles goed — naar je downloads]   Eerst downloaden · Iets aanmerken ↓
+> Vóór de levering: "Nu: je hoeft niets te doen. We maken je 6 lifestylecarrousels, zo snel mogelijk (vaak binnen een dag, soms een paar dagen). Je krijgt een mail zodra ze klaarstaan."
+> Na een revisieronde: "Je revisieronde ligt bij onze beeldredactie. Je krijgt een mail als de nieuwe beelden klaarstaan."
+- **Waarom:** De klant moet nu zelf uitzoeken wat er van hem verwacht wordt, en zonder datum weet hij niet dat zijn revisieronde kan verlopen. Statuswissels sturen bewust geen mail (§21), dus voor een klant zonder account is de privélink de enige plek die kan zeggen of hij iets moet doen.
+- **Winst:** De klant weet binnen vijf seconden wat hij kan doen en tot wanneer. Lucas krijgt minder "wat moet ik nu?"- en "is het al opgepakt?"-appjes en hoeft minder na te bellen voor betaling en ontbrekende foto's (schatting 3–5 min per bestelling waar nu een vraag over komt).
+- **Kosten:** S voor de privélink (portal.js, portal.css, de tijdlijnfunctie uit account.js hergebruikt, levermailtekst NL/EN); M met het Studio-overzicht van 2.01 erbij (account.js, COPY NL/EN, Studio-tests). Datums uit `REVISIE_DAGEN` en retention.js, nooit getypt, en geen JS: "Iets aanmerken ↓" is een gewoon anker.
+- **Risico:** Een verkeerde volgorde (bijv. "in de maak" boven "betalen") geeft een kalme zin terwijl er actie nodig is, dus de volgorde moet in een test vast. Een datum kan als druk lezen, daarom "tot en met <datum>" en geen aftelling (§21); staat het pad lang op "In productie", dan houdt de leverregel de verwachting op "vaak binnen een dag, soms een paar dagen".
+- **Mening:** Goed, en het belangrijkste punt van dit gebied, want alles hierna hangt aan deze bovenkant; één functie voorkomt dat je elk punt twee keer bouwt en test (§8 en §9 hebben nu elk een eigen keurscherm). Tegenspreker: eerst op de privélink bouwen, omdat die elke klant bereikt; de vier Studio-tegels weghalen draait het herontwerp van 3 okt terug en is jouw besluit.
+- **Vraag aan Lucas:** 1. Welke knop wordt de violette? — (a) "Alles goed — naar je downloads", met downloaden als gewone link ernaast (b) "Downloaden" violet en "Alles goed" als tweede knop (c) twee gelijke knoppen — advies: (a), want na het goedkeuren staat de klant meteen bij de downloads. 2. Wat gebeurt er met de vier tegels op het Studio-overzicht? — (a) weg, "Lopend" vervangt ze (b) alleen tonen als het getal groter dan 0 is, als link naar de gefilterde Bestellingen (c) laten zoals ze zijn — advies: gebied 2 kiest (a); de tegenspreker noemt (b) de veilige keuze, omdat de tegels op 3 okt net zijn herontworpen.
+- **Vereenvoudiging:** de tevredenheidscheck-regel bovenaan een niet-afgeronde bestelling (verhuist naar 3.05), de korte tijdlijn van de privélink, en op het Studio-overzicht de chip "N bestellingen lopen", "Recente activiteit" en de grote kaart "Je laatste bestelling". Concept C1 ("startlijstje in Studio", §16.3) is dan overbodig.
+
+### 3.03. Stil afronden 7 dagen na de laatste levering
+Gebied: 3 · Dient: systeem / klant / Lucas · **Tegenspreker: blijft** — neemt 4.09 en 2.09 op
+
+- **Nu:** Zonder "Alles goed" blijft een bestelling voor altijd op Geleverd: geen `closed_at`, geen tevredenheidsvraag of reviewknop, geen wisdatum voor de bronfoto's en een privélink die tot 365 dagen open blijft (§20, §22). Revisie kan na 7 dagen toch al niet meer (§3.5).
+- **Voorstel:** De nachtelijke cron rondt een geleverde bestelling zonder openstaande revisie af als er 7 dagen niets is gebeurd sinds de laatste levering of het laatste revisieantwoord; abonnementsbestellingen gaan mee, geleverde maar onbetaalde bestellingen slaat hij over. Hij zet `closed_at`, schrijft de reden `stil` als regel in `order_events` (geen nieuwe kolom, geen migratie) en een regel in het nachtrapport; er gaat geen mail uit. De klant leest het vooraf met een datum in het blok van 3.01 en in de levermail ("tot en met 13 oktober; daarna ronden we je bestelling af. Je beelden staan hier tot 4 januari."), niet als "na 7 dagen". Daarna toont de privélink de afgeronde stand met de tevredenheidsvraag (3.05), zodat de aparte voorwaarde van 2.09 niet meer nodig is.
+- **Waarom:** Veel klanten downloaden en klikken verder niets (aanname, na te kijken bij de testklanten); juist die groep ziet nu nooit de reviewvraag, en voor hen geldt de 90-dagenregel van /privacy niet. De klok telt vanaf de láátste levering, zodat een herlevering op dag 6 niet de nacht erna al wordt afgerond voordat de klant de nieuwe beelden zag.
+- **Winst:** Elke bestelling is binnen ±7 dagen afgerond en de teller "geleverd" in /admin loopt leeg zonder dat Lucas achter klanten aan hoeft. Reviewmoment en wisregel kloppen voor iedereen.
+- **Kosten:** S. Raakt één cronstap, close.js, een regel in `order_events` en in het nachtrapport, de zin in levermail en privélink, één zin in /terms en de tests.
+- **Risico:** Code die "afgerond" afleidt uit "alles goedgekeurd" in plaats van uit `closed_at` moet worden nagekeken, en de cron staat nog uit (§12). /terms moet zeggen dat een levering zonder revisieverzoek binnen 7 dagen als aanvaard geldt.
+- **Mening:** Goed: de kleinste ingreep die review, wissen en privélink in één keer regelt. Tegenspreker: §20 noemt afronden niet bij "nooit automatisch", en de reden achter de handmatige weekstart (§21) geldt hier niet, want afronden raakt geen geld, stuurt geen mail en is omkeerbaar.
+- **Vraag aan Lucas:** Wie rondt stil af? — (a) de cron, met een regel in het nachtrapport (b) niemand schrijft iets; overal wordt gerekend met "`closed_at`, of laatste levering + 7 dagen" (c) /admin toont "7 dagen stil: N" en jij rondt af met één klik — advies: (a), omkeerbaar, zonder mail en elke ochtend zichtbaar; (c) wordt een nieuw ritueel.
+- **Gereedschap:** 's nachts (cron 03:10), te zien in het ochtendrapport (§25) · input: geleverde, betaalde bestellingen zonder open revisie die 7 dagen stil zijn · output: `closed_at` plus de regel `stil` in `order_events` · zo zie je dat het gelukt is: "2 bestellingen stil afgerond: VIS-…" in het nachtrapport en de pil Afgerond in /admin.
+- **Vereenvoudiging:** klanten najagen voor goedkeuring, en bestellingen die eindeloos op Geleverd blijven staan.
+
+### 3.05. "Alles goed" landt op een afrondscherm met downloads, review en toestemming
+Gebied: 3 · Dient: klant / Lucas · **Tegenspreker: blijft**
+
+- **Nu:** Na het afronden verschijnt op de privélink en in Studio een tevredenheidsblok: score 1–5, toelichting, aanbeveling met toestemming en knoppen voor Google en Trustpilot (§8, §9). Waar dat blok staat en wat er na het versturen gebeurt, is niet op dit moment afgestemd, en toestemming om de beelden te tonen kan de klant nergens geven.
+- **Voorstel:** "Alles goed" stuurt door naar `/o/<token>#afgerond`: bovenaan de downloads met de bewaardatum, direct daaronder het tevredenheidsblok met één toestemmingsblok met twee keuzes (je tekst · je beelden, elk met merknaam / zonder / liever niet), samen met 10.05 en met draagfoto's uitgezonderd. Na het versturen staat de eigen tekst van de klant in een alleen-lezen tekstvak (kopiëren werkt zonder script), met reviewknoppen die het reviewscherm direct openen: Google `writereview?placeid=…`, Trustpilot `/evaluate/visuails.com`. De knoppen staan er bij elke score.
+> **Afgerond — dank je.** [Downloaden · 48 foto’s · jpg]  Bewaard tot 4 januari 2027.
+> Hoe vond je het? ○1 ○2 ○3 ○4 ○5 · Wat wil je ons laten weten?
+> Mogen we dit laten zien op visuails.com en social? Je tekst: ○ Ja, met merknaam ○ Ja, zonder merknaam ○ Liever niet · Je beelden en productfoto’s: ○ Ja, met merknaam ○ Ja, zonder merknaam ○ Liever niet · Foto’s waarop iemand je product draagt, laten we nooit zien. · [Versturen]
+> Na versturen: **Dank je.** Wil je dit ook op Google zetten? Je tekst staat hieronder, kopieer hem gerust. [Review op Google]  Trustpilot
+- **Waarom:** Dit is het enige moment waarop de klant zelf laat weten dat het goed is. Moet hij zijn tekst daarna voor Google opnieuw typen, dan haakt hij af en mis je reviews.
+- **Winst:** De klant typt zijn review één keer voor twee plekken. Lucas krijgt uit dezelfde moeite een aanbeveling (O15), een Google-review en toestemming voor echte voorbeelden.
+- **Kosten:** S. Raakt de doorverwijzing na "Alles goed", de volgorde in portal.js/account.js, het tekstvak, twee vaste URL's en het toestemmingsveld bij `order_feedback` (gedeeld met 10.05); Lucas zoekt zelf zijn Google Place ID op.
+- **Risico:** Knoppen alleen bij 4–5 sterren is filteren op score (§21) en review-gating, wat Google en Trustpilot verbieden; bij een lage score blijft de mail "Lage score bij …" Lucas waarschuwen. Voor de persoon op een draagfoto kan de klant geen toestemming geven, dus die zijn uitgezonderd; de tekst noemt dat intrekken per mail kan, en /privacy moet mee (10.05).
+- **Mening:** Goed, en het sterkste reviewpunt binnen §21: geen mail, niets automatisch gepubliceerd en niets gefilterd; samen met 3.03 ziet ook de stille klant dit blok zodra hij terugkomt voor zijn downloads. Tegenspreker: één toestemmingsblok in plaats van twee vragen op twee plekken, en waar aanbevelingen en vrijgegeven beelden op de site komen (O15), heeft nog niemand ontworpen.
+- **Vraag aan Lucas:** Welke reviewplek komt eerst? — (a) Google groot, Trustpilot als tekstlink (b) beide even groot (c) alleen Google — advies: (a); je eerste vijf reviews op één plek tellen zwaarder, en Google toont ze als iemand op je naam zoekt.
+
+### 3.06. Review vragen met één klik uit /admin, eerst alleen via WhatsApp
+Gebied: 3 · Dient: Lucas / klant · **Tegenspreker: blijft** — neemt 7.06 op
+
+- **Nu:** Een tevredenheidsherinnering bestaat niet (A2, §16.3) en mag niet uit de cron, want "tekst in twee talen is een inhoudelijke keuze; geen kolom 'mail verstuurd' → dubbel sturen" (§21). /admin heeft al een knop met voorgeschreven WhatsApp-tekst waarbij niets automatisch verstuurd wordt (Planning, "Aflopend", §10).
+- **Voorstel:** Bij elke afgeronde bestelling, nooit gefilterd op score, staat op de bestelpagina in /admin en in de ochtendlijst onder "Afgerond gisteren" de knop "Vraag om een review via WhatsApp". De knop gaat naar een route in /admin achter de login, die "review gevraagd" in `order_events` schrijft en doorstuurt naar de wa.me-link van `waLink()` (7.05), in de taal van de bestelling; jij drukt zelf op verzenden. Daarna is de knop grijs: "Gevraagd op 14 okt via WhatsApp". Een mailvariant komt pas als klanten niet op WhatsApp reageren.
+> Hoi <voornaam>, je bestelling VIS-… is afgerond. Wil je in een paar zinnen op Google zetten hoe het ging? Een eerlijke review helpt ons het meest: <Google-link>
+- **Waarom:** Een persoonlijk bericht van de maker levert meer reviews op dan een knop die de klant zelf moet vinden. Het neemt beide redenen van §21 weg: jij ziet en kiest de tekst, en de regel in `order_events` voorkomt dat je dubbel stuurt.
+- **Winst:** ±30 seconden per afgeronde bestelling, en niemand krijgt de vraag twee keer. Zo kunnen de eerste 5–10 reviews binnenkomen zonder automatische mail.
+- **Kosten:** S. Raakt één route in admin.js achter de login, de tekst in NL en EN, de stand van de knop uit `order_events` (geen migratie) en het dashboard (gebied 4); gebruikt `waLink()` van 7.05.
+- **Risico:** Vraag je het alleen aan klanten met een hoge score, dan filter je op score (§21) en ga je tegen de regels van Google in; daarom de knop bij elke afgeronde bestelling, een tekst die om een eerlijke review vraagt, en bij een open klacht eerst de klacht. Het telefoonveld in stap 3 belooft nu alleen "we appen als iets onduidelijk is", dus die tekst moet eerst mee (vraag bij 7.05), anders gebruik je het nummer voor een ander doel dan waarvoor het is gegeven (AVG).
+- **Mening:** Goed en goedkoop, omdat het een bestaand /admin-patroon hergebruikt; zonder bouwen kan het ook als snel antwoord in WhatsApp Business, maar dan mis je het spoor van wie het al gevraagd is. Tegenspreker: een route achter de login in plaats van de ondertekende publieke `/api/wa`-link van 7.06, en `order_events` in plaats van een nieuwe kolom.
+- **Vraag aan Lucas:** Via welke kanalen? — (a) WhatsApp en mail (b) alleen WhatsApp (c) alleen mail — advies: (b) om mee te beginnen, mail pas als klanten niet op WhatsApp reageren (de agent adviseerde (a), de tegenspreker (b)).
+- **Gereedschap:** 's ochtends bij de ochtendlijst ("Afgerond gisteren", ook stil afgeronde bestellingen) of direct na een "Alles goed" (§25) · input: een afgeronde bestelling zonder regel "review gevraagd" in `order_events` · output: een WhatsApp-bericht klaar om te verzenden plus die regel · zo zie je dat het gelukt is: de knop wordt grijs met datum en kanaal, en "Review nog te vragen: N" op het dashboard gaat omlaag.
+
+### 3.07. "Bestel met dezelfde look": één link met de lookkeuzes, op drie plekken
+Gebied: 3 · Dient: klant / systeem · **Tegenspreker: blijft** — neemt 2.06 op
+
+- **Nu:** Na het afronden staat er op de privélink geen weg terug naar het formulier; een klant die "Bewaar mijn gegevens" niet aanvinkte (§6.2 stap 3) begint bij nul en kiest makkelijk een ander gezicht, een andere achtergrond of verhouding. §28.3 stelt een herbestelknop voor, maar alleen voor abonnees in Studio.
+- **Voorstel:** Eén functie `herbestelUrl(order)` maakt een gewone link met alleen lookparameters, bijv. `/start/catalog/?style=classic&bg=F7F5F1&ratio=4-5&face=ava&kanaal=…` (lifestyle: look, gezicht, verhouding), en het formulier vult die vooraf in, zoals het met `?style=` al doet. De knop zegt wat de klant krijgt — "Catalog bestellen — Classic · gebroken wit · 4:5" — en voor abonnees staat erbij "4 credits per product" (lifestyle: 5). De knop staat op de privélink na afronden, in Studio bij elke geleverde bestelling en op de proef-privélink (3.08); dezelfde functie levert de abonnementsknop van §28.3.
+- **Waarom:** Een merk dat terugkomt wil dat de nieuwe producten naast de oude passen, en dat lukt alleen als dezelfde keuzes terugkomen. Herbestellen is voor élke klant de reden om terug te komen, en de eerste 5–10 klanten zijn geen abonnees.
+- **Winst:** Een terugkerende klant slaat de keuzes van stap 1 en het gezicht over (±2–3 min) en krijgt een set die bij de vorige past. Lucas hoeft geen afwijkende look recht te zetten.
+- **Kosten:** S. Raakt de URL-opbouw in portal.js/account.js en het formulier, dat vijf extra parameters leest (daar mag JS; zonder JS blijven de keuzes leeg); raakt ook gebied 1 en 6.
+- **Risico:** In de link staan alleen lookkeuzes, geen naam, KVK of adres, want de privélink mag gedeeld worden (§9). Extra hoeken en 4K gaan niet mee: die kosten geld en mogen niet stil terugkomen (2.06).
+- **Mening:** Goed: de kleinste stap naar herhaalbestellingen, en binnen "eerst een look, dan het formulier" (§6.1), want de look is al gekozen. Tegenspreker: de lookparameters zijn beter dan `van=<ref>` (2.06) of `zoals=<ref>` (6.09), omdat ze zonder inloggen en zonder nieuwe serverroute werken.
+- **Vraag aan Lucas:** Neemt de knop ook de bedrijfsgegevens mee? — (a) nee, alleen de look; de gegevens komen via "Al eerder bij ons besteld? Log in" (b) ja, via een inlogcode naar het mailadres van de bestelling (c) ja, rechtstreeks uit de privélink — advies: (a).
+
+### 3.08. De privélink van de €1-proef als eerste verkooppagina
+Gebied: 3 · Dient: klant / Lucas · **Tegenspreker: blijft**
+
+- **Nu:** De proef heeft geen revisieronde (§2.8), maar loopt verder als elke andere bestelling: eerst wachten op "Alles goed", pas daarna tevredenheid en reviewknoppen. Er is geen stap van de proefset naar een echte bestelling in dezelfde look.
+- **Voorstel:** Een proefbestelling is afgerond op het moment van levering (`closed_at = delivered_at`, reden `proef` als regel in `order_events`). De privélink toont dan meteen de downloads, de herbestelknop van 3.07 en het afrondblok van 3.05; de prijsregel komt uit `LADDER` via `euro()` (§22).
+> **Je proefset staat klaar.** [Downloaden · 4 foto’s · jpg]
+> Meer producten in deze look? [Bestel in deze look] — catalogfoto’s vanaf €39 per product.
+> Hoe vond je het? …
+- **Waarom:** Voor de eerste 5–10 klanten is de proef de ingang. De pagina waar ze hun eigen product voor het eerst in een look zien, is de beste plek voor hun eerste bestelling en hun eerste review.
+- **Winst:** De proefklant hoeft niets goed te keuren om verder te kunnen. Lucas haalt reviews en bestellingen uit de groep klanten die er nu het meest is.
+- **Kosten:** S. Raakt het afronden bij levering voor `test_sample`, een variant van het afrondblok en de prijsregel (geen getypt bedrag); raakt ook gebied 1 en 10.
+- **Risico:** Een ontevreden proefklant heeft geen revisie. Zijn lage score komt als "Lage score bij …" bij Lucas binnen, en "onze fout lossen we altijd kosteloos op" blijft gelden (§3.5).
+- **Mening:** Goed, en vóór de lancering misschien het meest waard per uur bouwen in dit gebied; de tegenspreker zet het in de top 10, omdat de proef meteen review- en bestelmoment wordt. De prijsregel is optioneel: zonder bedrag is de pagina rustiger, met "vanaf" weet de klant meteen waar hij staat — jouw keuze.
+- **Vraag aan Lucas:** Wanneer is een proef afgerond? — (a) bij levering (b) na "Alles goed", zoals nu (c) na 7 dagen stilte, zoals 3.03 — advies: (a), want er is geen revisie om op te wachten (§2.8).
+
+### 3.04. Eén bewaardatum per bestelling, zichtbaar op de privélink
+Gebied: 3 · Dient: klant / systeem · **Tegenspreker: later** — met 3.03 rondt alles binnen ±7 dagen af, dus het 365-dagengat verdwijnt al, en /privacy en /terms kunnen na de lancering
+
+- **Nu:** Er lopen drie klokken: beelden 90 dagen na levering per beeld, bronfoto's 90 dagen na afronden, en de privélink 90 dagen na afronden met een maximum van 365 (§3.6, §22).
+- **Voorstel:** Eén veld `bewaard_tot` = afronden + 90 dagen voor beelden, bronfoto's en privélink tegelijk, getoond bij de downloads in Studio en op de privélink, met O56 als één mail per bestelling 7 dagen vóór die datum.
+- **Waarom:** Eén datum kun je op één plek uitleggen, en met de huidige klokken zou O56 per beeld moeten rekenen.
+- **Winst:** Minder "waar zijn mijn beelden?"-vragen (±10 min per geval) en één veld voor purge en O56, al is het na 3.03 vooral een interne zaak (tegenspreker: winst te hoog geschat).
+- **Kosten:** M: retention.js, de purge-query in de cron, token.js, /privacy en /terms (NL/EN), de toets voor juridische datums en de O56-mail.
+- **Risico:** /privacy moet mee, anders klopt de tekst niet; nu omzetten raakt alleen testdata, want `PURGE_ENABLED` staat nog uit (O55).
+- **Mening:** Goed, het liefst vóór `PURGE_ENABLED` aangaat; alles 90 dagen na de eerste levering is even simpel, maar dan staan herleverde beelden korter dan 90 dagen.
+- **Vraag aan Lucas:** Welke klok gaat gelden? — (a) alles 90 dagen na afronden (b) alles 90 dagen na de eerste levering (c) zoals nu — advies: (a).
+- **Gereedschap:** 's nachts (cron), te zien in het ochtendrapport (§25) · input: bestellingen met `bewaard_tot` over 7 dagen en nog beelden · output: één mail per bestelling (O56) · zo zie je dat het gelukt is: "3 klanten gewaarschuwd: beelden verdwijnen op …" in het nachtrapport.
+- **Vereenvoudiging:** de bewaarklok per beeld en het maximum van 365 dagen voor de privélink.
+
+### 3.11. Elk beeld los te openen, voor wie vanaf de telefoon post
+Gebied: 3 · Dient: klant · **Tegenspreker: later** — draait §23 9 aug ("/d weg") terug terwijl de reden onbekend is, dus eerst jouw woord
+
+- **Nu:** Downloaden kan alleen als zip (§9), en op een iPhone belandt een zip in Bestanden, terwijl Instagram uit Foto's kiest.
+- **Voorstel:** Elke tegel krijgt een linkje "Origineel" naar het volledige jpg-bestand achter dezelfde token; de zip blijft de hoofdweg bovenaan.
+- **Waarom:** Lifestylecarrousels worden vaak vanaf de telefoon geplaatst, en de omweg via de zip kost daar vijf tot acht tikken per set.
+- **Winst:** Twee tikken per beeld in plaats van uitpakken in Bestanden.
+- **Kosten:** S: één route in portal.js die het levende bestand uit R2 geeft, en een link per tegel.
+- **Risico:** §23 (9 aug) zegt alleen "klant ziet beelden alleen om revisie te vragen; downloaden via de map, `/d` weg", niet waarom.
+- **Mening:** Goed als de reden "één nette downloadweg" was, want de zip blijft die weg; was de reden dat originelen alleen via de zip mogen, dan vervalt dit voorstel.
+- **Vraag aan Lucas:** Waarom ging `/d` op 9 aug weg, en mag een losse link terugkomen? — (a) ja, bij elk beeld (b) alleen bij lifestyle (c) nee, de zip blijft de enige weg — advies: (a), want één regel voor alle diensten is makkelijker uit te leggen dan twee.
+
+**Samengevoegd**
+- **3.09** → opgenomen in 3.01 (meegenomen: het statuspad van Studio, de leverregel en "Nu betalen" met de betaallink uit de mail).
+- **3.10** → opgenomen in 4.01 (meegenomen: jpg als standaardformaat, een waarschuwing bij png/webp/avif en het ziplabel "met herkomsttag").
+
+**Geschrapt**
+- **3.02** — nee: "Alles goed" (3.01) en stil afronden (3.03) halen de extra klikken al weg, dus §23 7 aug (goedkeuren per beeld) terugdraaien levert niets meer op.
+
+**Bekeken en niet voorgesteld**
+- Een reviewherinnering uit de cron, ook als regel in de 90-dagenmail (O56): gaat tegen §21 in (tekst, dubbel sturen), en 3.06 doet hetzelfde met de hand en met een spoor.
+- Reviewknoppen alleen bij 4–5 sterren, of lage scores eerst naar WhatsApp: dat is filteren op score (§21) en review-gating, wat Google en Trustpilot verbieden.
+- Korting of tegoed in ruil voor een review: Google en Trustpilot verbieden het, en het botst met 7 aug ("zelfverzekerd over de prijzen", §23).
+- Aparte downloads per kanaal (wit voor Amazon, 4:5 voor Instagram): staat in §21, en kanaal en verhouding zijn in stap 1 al gekozen.
+- Voorbeeldbeelden in de levermail: die moeten openbaar gehost worden en veel mailprogramma's blokkeren ze, terwijl de knop naar de privélink hetzelfde doet.
+
+## 2.4 · Gebied 4 — Lucas' werkdag en /admin
+
+**Kern.** Los van het maken zelf (10–20+ minuten per product) gaat er rond één bestelling van 6 producten nu ±35 minuten op aan klikken, slepen, zoeken en overtypen in /admin, Verkenner, Photoshop en CMD, met vier plekken waar het ongemerkt misgaat: de map van klant A op de bestelling van klant B, een overgetypte achtergrond-hex, een vergeten vak en een herkomsttag die nooit gezet wordt (§10.1, §25, F30). De grootste winst: de werkmap bevat alles wat je nodig hebt en weigert een verkeerde bestelling (4.02), Photoshop leest de instellingen eruit (4.07) en /admin tagt elk beeld bij het uploaden (4.01); daarmee verdwijnt CMD uit je leverstap en gaat het beheer naar ±20 minuten. Vóór de eerste 5–10 klanten telt vooral de foutpreventie; de minuten tellen pas echt vanaf een paar bestellingen per week.
+
+**Telling nu — één catalogbestelling, 6 producten, Classic, gebroken wit, 4:5 (6 × €65 = €390 excl., €471,90 incl.).** Minuten zijn beheer, zonder het genereren; achter de pijl staat het voorstel dat de stap raakt.
+
+1. Studiomail "Nieuwe bestelling" lezen (fotobijlagen max 8 MB, dus meestal niet alle) — 1 min
+2. Wachten op "Betaald · VIS-… · €471,90" (§21: betaald ≠ opgepakt) — 0,5 min
+3. /admin openen, bestelling zoeken en openen (3–6 klikken) — 1 min → 4.05
+4. Status op In productie (3 klikken) — 0,5 min → 4.04, later
+5. Brief lezen: "Wat de klant koos" en per product het bord — 3 min → 4.02
+6. De 18–24 klantfoto's op de pc krijgen, uit de mail of per foto uit /admin [bevestigen] — 4 min → 4.02
+7. Lege werkmap downloaden, uitpakken, doelmap kiezen (6–8 klikken) — 1,5 min → 4.03, later
+8. Genereren per product en hoek — 10–20+ min per product, telt hier niet mee (gebied 5)
+9. `VISUAILS-afwerken.jsx`: hex invoeren, 4:5 en 2048 px nakijken, opslaan als — 6 min → 4.07
+10. 24 beelden naar de juiste vakmap slepen, soms hernoemen — 5 min → 4.07
+11. Herkomsttag: CMD, `cd`, `npm run tag:delivery` — 3 min, nog nooit gedaan (§25) → 4.01
+12. "Map uploaden", bladeren, wachten op 24 beoordeelbeelden — 3 min → 4.03, later
+13. "Indeling bijstellen" als de bestandsnaam-gok misging — 0–3 min, gem. 1 → 4.07
+14. (Optioneel) status In controle — 0,5 min → 4.04, later
+15. "Bekijken zoals de klant het ziet" — 2 min → 4.06, later
+16. "Op geleverd zetten en klant mailen" — 0,5 min
+17. Revisie (1 op 3 bestellingen, 3 beelden, ±10 min beheer per revisie) — gem. 3 min → 4.08
+18. Afronden: alleen als de klant alle 24 beelden goedkeurt, dus vaak nooit — 0 min → 3.03
+19. Periodiek (maandset, back-up, btw-CSV, testbestellingen opruimen) — per bestelling te verwaarlozen
+
+**Totaal beheer nu: ±35 min per bestelling** (±32 zolang stap 11 wordt overgeslagen). **Met de voorstellen die blijven (4.01, 4.02, 4.05, 4.07, 4.08): ±20 min.** ±12 min alleen met ook 4.03, 4.04 en 4.06 (alle drie later).
+
+### 4.01. Herkomsttag automatisch bij elke upload in /admin, jpg als standaard
+Gebied: 4 · Dient: systeem / Lucas / klant · **Tegenspreker: blijft** — neemt 3.10 en het tagdeel van 5.01 op
+
+- **Nu:** Alleen `scripts/tag-delivery.mjs` (exiftool via `npm run tag:delivery`) zet `DigitalSourceType = compositeWithTrainedAlgorithmicMedia`, en dat heb je nog nooit gedraaid. Via /admin, de hoofdweg, komt in de zip wat je uploadt (jpg, png, webp of avif) zonder tag, terwijl /ai-act hem belooft (F30, §3.7, §10.1, §25).
+- **Voorstel:** Leverbeelden zijn standaard jpg (sRGB, 2048 px, of 4096 bij 4K), en /admin waarschuwt bij een png, webp of avif in een vak. De Worker schrijft de tag in de XMP van elke jpg en png die in /admin binnenkomt (map uploaden, losse upload per vak, vervanging op een revisiekaart, maandset) vóór het bestand naar R2 gaat, met ±100 regels JavaScript zonder exiftool. Per beeld onthoudt de server "getagd ja/nee": het bord toont de chip **AI-tag** (of **geen tag** bij webp, avif en video), en het downloadblok voor de klant zegt "Downloaden · 48 foto’s · jpg · met herkomsttag (AI Act)". Dit beantwoordt je vraag om een knop, app of sleepvak voor `npm run tag:delivery`: de tag komt er zonder handeling bij, en `tag-delivery.mjs` blijft staan tot 4.01 live is.
+- **Waarom:** Een stap die je moet onthouden, gebeurt niet (nul keer gedraaid); een stap in de upload raakt ook lifestyle die niet door Photoshop gaat, revisievervangingen en de maandset. Jpg werkt op elk kanaal uit stap 1 (Amazon, bol, Zalando, eigen webshop, Instagram), png maakt de zip zwaar en webp wist de C2PA-markering (§25).
+- **Winst:** Nul handelingen voor de tag en CMD uit je leverstap (3 min per bestelling tegenover het script wél draaien). De klant krijgt één zip die overal past en aan de eis van Google Merchant en Amazon voldoet (§25), en /ai-act klopt.
+- **Kosten:** M (niet S): XMP samenvoegen in jpg met de grens van 64 KB per segment, een iTXt-chunk met CRC in png, een vlag per beeld op `files`, de formaatwaarschuwing, het ziplabel en de LEESMIJ-tekst, plus een test met een echte Photoshop-export. Raakt een klein `xmp.js`, admin.js en delivery.js; op Windows niets te installeren.
+- **Risico:** Elke metadatawijziging maakt een C2PA-handtekening ongeldig (exiftool net zo): bij catalog is die na Photoshop waarschijnlijk al weg, bij lifestyle rechtstreeks uit de generator niet [bevestigen]. Is het Photoshop-XMP groter dan één jpg-segment, dan vervangt de Worker het door een klein blok met alleen de tag.
+- **Mening:** Beste route: de Worker dekt elke uploadweg op één plek, werkt zonder JavaScript en draait mee in de testreeks; de browserroute alleen als bestanden buiten de Worker om naar R2 blijken te gaan. Tegenspreker: Worker boven taggen bij `saveAs` in Photoshop (5.01), want of Photoshop de XMP in jpg en png bewaart is onbekend, en een ExtendScript-stap zit niet in de testreeks.
+- **Vraag aan Lucas:** Moet de klant naast jouw jpg nog andere formaten krijgen? — (a) nee, de jpg zoals jij hem exporteert (b) een png erbij voor marktplaatsen (c) alleen op verzoek via WhatsApp — advies: (a), met (c) als uitzondering; bol, Zalando, Amazon en Shopify nemen jpg.
+- **Gereedschap:** plek in de dag (§25): Leveren, "Map uploaden" · input: de beelden die je toch al uploadt · output: dezelfde bestanden mét herkomsttag in R2 en in de klant-zip · zo zie je dat het gelukt is: chip "AI-tag" per beeld op het bord, een waarschuwing bij png, webp of avif, en het ziplabel "met herkomsttag".
+- **Vereenvoudiging:** Zodra 4.01 live is, kunnen weg: `scripts/tag-delivery.mjs`, `scripts/tag.mjs` en `scripts/deliver.mjs` (§17 punt 8, kapot) met hun npm-scripts, de geplande sleepvak-app en de zip per formaat; F30 is dan dicht. Tot dan blijft `tag-delivery.mjs` staan (9.01 regel 10) en pas je de tekst op /ai-act aan (F30-advies).
+
+### 4.02. Werkmap compleet met brief per product, en veilig terug te uploaden
+Gebied: 4 · Dient: systeem / Lucas / klant · **Tegenspreker: blijft** — neemt 5.02 op
+
+- **Nu:** De zip heeft lege vakmappen, LEESMIJ, LICENTIE, `_los/` en een `_briefing.txt` zonder achtergrond en kanaal; volgens §25 ook `_aangeleverd/`, maar of die gevuld is, is niet zeker, dus komen klantfoto's uit de studiomail (max 8 MB) of per foto uit /admin (§10.1). "Map uploaden" weet niet of een map bij déze bestelling hoort, en elke upload op een vak maakt het vorige beeld "superseded" (§10.1 stap 4).
+- **Voorstel:** De zip heet `VIS-XXXX-XXX - Merknaam.zip` en heeft per product `_aangeleverd/` met de originele klantfoto's (`p1-klant-voorkant.jpg` …). Elke `_briefing.txt` krijgt de vijf vaste blokken van 5.02, gelijk op het bord; de PLAKREGEL bevat alleen het kledingstuk uit `garments.js` plus kleur, kleurcode en materiaal zoals opgegeven, zonder productnaam (die kan als tekst op het kledingstuk belanden), en staat op het bord op een eigen regel die drie klikken selecteren. Bij "Map uploaden" leest de server het kenmerk uit de mapnaam en de bestandsnamen (een `werkmap.json` alleen als dat niet volstaat) en weigert hij een andere bestelling. Een bestand dat byte voor byte gelijk is aan het levende beeld in dat vak wordt overgeslagen ("ongewijzigd"), zodat een hele map opnieuw uploaden na een revisie geen goedgekeurde beelden vervangt [bevestigen of dat nu al gebeurt].
+  ```
+  VIS-TEST-001 · p2 · Hoodie
+  INSTELLINGEN  achtergrond=#F7F5F1 · verhouding=4:5 · lange_zijde=2048 · kanaal=webshop
+  PLAKREGEL     heavyweight hoodie, washed black (#2B2B2B), 100% katoen
+  MAKEN         gezicht Ava · uitsnede bovenlichaam · styling: effen rechte broek, lichtgrijs
+  LET OP        achterkant donker (klant liet hem zo) · kleur opgegeven: leidend
+  NAKIJKEN      kleur · print/logo · pasvorm · details · handen · randen
+  ```
+  > **Deze map hoort bij VIS-AB12-C3D, niet bij deze bestelling. Er is niets geüpload.**
+- **Waarom:** De zwaarste fout in je stroom is de map van klant A op de bestelling van klant B, want na de eerste levering is elk nieuw beeld meteen zichtbaar (§20). Met één vaste plek en één plakregel per product zoek je niet meer heen en weer tussen /admin, map en promptbestand, en wordt elke generatie op dezelfde manier opgebouwd.
+- **Winst:** ±4 min per bestelling voor de klantfoto's en 1–2 min per product aan opzoeken en overtypen; de verkeerde-map-fout kan niet meer. De INSTELLINGEN-regel is de bron voor 4.07.
+- **Kosten:** M (niet S): de zip wordt 70–120 MB en moet in een Worker van 128 MB streamen (zonder compressie, jpg's krimpen toch niet), plus de refcontrole en de byte-vergelijking. Raakt scaffold.js/zip.js [bevestigen hoe zip.js nu bouwt], de bordweergave in admin.js, de upload-handler en tests.
+- **Risico:** Klantfoto's staan daarna systematisch op je schijf, dus 4.10 (later) of een zin in /privacy over lokale kopieën hoort erbij. De plakregel staat in de taal van de klant: test gemengde talen op de proefset (5.09).
+- **Mening:** Goed, en in dit gebied de eerste die ik zou bouwen: geen nieuwe gewoonte, en hij haalt de enige fout weg waardoor je een klant echt kwijtraakt. Alleen het wisselende deel komt in de code, je promptgrammatica blijft op je Spaces-borden; nog beter met één gedeeld invoervak voor alle generators op het CATALOG-bord (5.09).
+- **Vraag aan Lucas:** Hoe krijg je nu de klantfoto's op je pc? — (a) uit de studiomail (b) per foto uit /admin (c) ze zitten al in `_aangeleverd/` van de werkmap — advies: als het al (c) is, alleen de briefblokken, de refcontrole en het overslaan van ongewijzigde bestanden bouwen.
+- **Gereedschap:** plek in de dag (§25): Leveren, "Het werk erin zetten", en Maken · input: één klik op de werkmapknop · output: één map per bestelling met klantfoto's, brief in vijf blokken en lege vakken, en een refcontrole bij terug-uploaden · zo zie je dat het gelukt is: de zipnaam noemt kenmerk en merk, je hebt /admin per product niet meer open, en een verkeerde map geeft de rode zin hierboven in plaats van een upload.
+- **Vereenvoudiging:** Het losse ophalen van klantfoto's uit mail of /admin; de fotobijlagen in de studiomail vallen al weg met 9.07.
+
+### 4.05. Nu-doen-lijst bovenaan het dashboard en in het nachtrapport, met een eindpunt
+Gebied: 4 · Dient: Lucas · **Tegenspreker: blijft** — neemt 7.04 op
+
+- **Nu:** Het dashboard heeft acht tegels, revisiekaarten, de bestellingenlijst en een zijkolom (§10), en de cron mailt om 03:10 UTC een logboek in de volgorde van zijn eigen stappen. 's Ochtends leg je rapport, dashboard, btw-lijst en offertes zelf naast elkaar (§12, §25).
+- **Voorstel:** Bovenaan het dashboard één lijst in vaste volgorde, eerst afmaken en dan beginnen, met één knop per regel: (1) btw-controle (belofte: binnen 24 uur) → **Beoordelen**; (2) klaar om te leveren, of revisie opgelost maar niet gemeld → **Leverkeuring** / **N nieuwe beelden melden**; (3) revisierondes, oudste eerst → **Revisie openen**; (4) betaald en nog niet opgepakt, vaste datum eerst, dan oudste → **Oppakken**; (5) aanvragen en briefings zonder offerte → **Offerte maken**; (6) afgerond, review nog niet gevraagd → **Review vragen** (3.06); onbetaalde bestellingen staan er niet in. Bovenaan elke bestelpagina staat dezelfde regel "Volgende stap: …", en offerte, merkmodel, administratie en onomkeerbaar klappen dicht onder `<details>` als ze voor die bestelling niet gelden. Eén query vult ook het nachtrapport: dat begint met dezelfde regels in de volgorde van 7.04 (datum → klant wacht → geld → systeem), lege blokken vallen weg en één link gaat naar deze lijst; een apart ontwerp van negen blokken is niet nodig. Een lege lijst zegt:
+  > **Niets wacht op jou. Nieuwe bestellingen komen hier vanzelf bij.**
+- **Waarom:** Je hebt een vaste volgorde en een stoppunt nodig; nu zoek je elke ochtend zelf uit wat eerst moet, en zegt /admin nooit dat je klaar bent.
+- **Winst:** ±5 min per ochtend (7.04 schat 5–10) en ±1 min zoeken per bestelling; belangrijker: een eindpunt, en mail en scherm verschillen nooit.
+- **Kosten:** S–M: de dashboardweergave in admin.js (de queries bestaan al voor de tegels), de kop van de bestelpagina, en het rapport in cron/index.js via een functie die het met admin.js deelt, plus tests. De cron-worker moet eerst gedeployd zijn (§16.1, 9.03).
+- **Risico:** De tegels schuiven omlaag, anders staan er twee overzichten naast elkaar; het rapport is een momentopname van 03:10 UTC en moet op 390 px leesbaar blijven (niets onder 11,5 px). Zolang 4.04 en 4.06 later zijn, openen **Oppakken** en **Leverkeuring** gewoon de bestelpagina, zonder statuswissel of controles.
+- **Mening:** Goed; het eindpunt is het eigenlijke voorstel, en met het rapport erbij begint je ochtend op één plek. In je planner-app hoogstens een teller "3 dingen wachten" met een link naar /admin, en dat pas als de planner er is; de hele lijst in de planner zetten maakt er een tweede beheerscherm van, met een eigen sleutel naast je login met tweestapscode.
+- **Vraag aan Lucas:** Moet het nachtrapport ook komen als er niets open is? — (a) altijd, met onderwerp "Vandaag · … — niets open" (b) alleen als er iets is — advies (7.04): (a), want een mail die niet komt is niet te onderscheiden van een cron die niet draait; de tegenspreker laat het aan jou, omdat de cron-bewaker in /admin dat al dekt.
+- **Gereedschap:** plek in de dag (§25): Ochtend en tussen elke bestelling door · input: niets · output: geordende lijst met per regel de volgende handeling, en dezelfde regels bovenaan het nachtrapport · zo zie je dat het gelukt is: de lijst zegt "Niets wacht op jou", en de mail noemt dezelfde regels als het dashboard.
+- **Vereenvoudiging:** De zijkolom "Eerst af" en de losse revisiekaarten bovenaan gaan op in de lijst. Uit het rapport gaan logboekregels als "vensters vrijgegeven: 0" en "N weken klaar om te starten" (§28).
+
+### 4.07. Photoshop-afwerken leest de werkmap: geen hex typen, geen hernoemen
+Gebied: 4 · Dient: Lucas / klant · **Tegenspreker: blijft** — neemt 5.01 op (het tagdeel ervan zit in 4.01)
+
+- **Nu:** `VISUAILS-afwerken.jsx` doet Select Subject, twee schaduwlagen en de vulkleur uit een hex die je per bestelling in het script zet (§25). Verhouding, 2048/4096 px, opslaan, naamgeving en het in de juiste vakmap zetten doe je zelf (§10.1).
+- **Voorstel:** Het script leest de INSTELLINGEN-regel bovenaan `_briefing.txt` (4.02: `achtergrond=#F7F5F1 · verhouding=4:5 · lange_zijde=2048 · kanaal=webshop`); sleutel=waarde, omdat ExtendScript geen JSON-parser heeft. Het snijdt bij, schaalt naar de bestelde maat, slaat op als `VIS-…-p1-voorkant.jpg` (sRGB) in hetzelfde vak en zet het ruwe beeld in `_ruw/`. Opschalen doet het nooit: is een beeld kleiner dan besteld, dan meldt het "2048 px, besteld 4096 — eerst opschalen". Je start het één keer op de hele werkmap met een sneltoets onder File > Scripts (of met een droplet op het bureaublad), en het eindigt met een slotmelding met aantallen.
+- **Waarom:** De hex per bestelling overtypen (of die van de vorige laten staan) geeft een hele bestelling de verkeerde achtergrond, een zekere revisie. 24 bestanden hernoemen en verslepen is het saaiste kwartier van je bestelling.
+- **Winst:** ±5 min per catalogbestelling, en de upload zet alles zonder "indeling bijstellen" in het goede vak. Geen verkeerde achtergrond meer door een typfout.
+- **Kosten:** S voor Claude (de scriptuitbreiding plus de INSTELLINGEN-regel in `src/lib/scaffold.js`), maar alleen te testen op jouw Photoshop: eenmalig ±30 min met een proefwerkmap. Eerst je huidige `.jsx` lezen, want het script staat lokaal.
+- **Risico:** ExtendScript verschilt per Photoshop-versie, en Select Subject wordt niet beter of slechter dan nu. Gaat lifestyle uit Magnific Spaces niet door Photoshop [bevestigen], dan geldt dit alleen voor catalog.
+- **Mening:** Goed: het grootste stuk handwerk tussen generator en upload, en de enige handmatige invoer gaat uit het batchscript. Sneltoets boven droplet, omdat alleen het script aan het eind kan zeggen wat het heeft gedaan; tegenspreker: het tagdeel van 5.01 vervalt, want 4.01 tagt elk bestand bij de upload, ook wat Photoshop overslaat.
+- **Vraag aan Lucas:** Gaan lifestylebeelden nu ook door Photoshop? — (a) ja, altijd (b) nee, ze komen rechtstreeks uit Spaces (c) soms — advies (5.01): bij (b) of (c) lifestyle ook door dit script halen voor naam en maat; de tag hangt er niet meer van af (4.01).
+- **Gereedschap:** plek in de dag (§25): Maken → Leveren, na het genereren en vóór "Map uploaden" · input: de werkmap met ruwe beelden in de vakmappen · output: afgewerkte jpg's met de eindnaam in elk vak, ruw in `_ruw/` · zo zie je dat het gelukt is: de slotmelding "24 beelden afgewerkt · 1 overgeslagen: p4 detail (geen beeld)", en in Verkenner alleen nog `VIS-…`-bestanden in de vakmappen.
+- **Vereenvoudiging:** De hex-constante in het script, en hex typen, bijsnijden, "opslaan als" en hernoemen met de hand.
+
+### 4.08. Revisie afhandelen op één plek, met antwoorden in de taal van de klant
+Gebied: 4 · Dient: Lucas / klant · **Tegenspreker: blijft**
+
+- **Nu:** Op een revisiekaart upload je een vervangend beeld of kies je "Geen nieuw beeld nodig" met een getypte reden, die in de taal van de bestelling naar de klant gaat; een Engelse klant krijgt je reden dus zoals jij hem typt (§10, §11). Daarna klik je op de bestelpagina "N nieuwe beelden melden" (§10.1 stap 5 en 7).
+- **Voorstel:** (1) Boven het redenveld staat de taal: **"Deze klant leest Engels — schrijf je reden in het Engels."** (2) Is de laatste revisiekaart van een bestelling afgehandeld, dan verschijnt in die kaart de knop **"3 nieuwe beelden melden"**, zodat je niet meer naar de bestelpagina hoeft. (3) Met 4.03 (later) zet "Naar werkmap" de notitie van de klant als `REVISIE - <notitie>.txt` in het vak. (4) Later: drie vaste redenen in NL én EN, door jou geschreven, als je weet welke vaak terugkomen.
+- **Waarom:** Revisie is het gevoeligste moment met een klant. Een vergeten melding (de klant ziet een nieuw beeld zonder uitleg, §20) of een Nederlandse zin in een Engelse mail komt slordig over.
+- **Winst:** ±3 min per revisie, geen vergeten meldingen, nooit de verkeerde taal.
+- **Kosten:** S: de revisiekaarten in admin.js en de kop van het redenveld; (4) raakt ook notify en COPY.
+- **Risico:** §21 blijft: uploaden en melden zijn twee knoppen, alleen dichter bij elkaar. Vaste redenen in twee talen zijn een inhoudelijke keuze, daarom schrijf jij ze, en pas later.
+- **Mening:** Goed; (1) en (2) leveren het meeste op en kosten bijna niets. (4) nu al bouwen is gokken naar redenen die je nog niet kent.
+- **Vraag aan Lucas:** Vaste redenen nu al, of later? — (a) nu drie (b) na ±10 echte revisies (c) nooit, alleen de taalregel — advies: nu (c), daarna (b).
+- **Gereedschap:** plek in de dag (§25): Leveren, na een revisieronde · input: de afgehandelde revisiekaarten · output: de meldknop op de plek waar je al bent · zo zie je dat het gelukt is: de kaart sluit met "Gemeld aan de klant — 3 beelden" en verdwijnt uit de Nu-doen-lijst.
+
+### 4.03. Werkmap zonder zip: direct op je schijf, en uploaden in één klik
+Gebied: 4 · Dient: Lucas / systeem · **Tegenspreker: later** — nieuwe vorm van vertrouwen, alleen Chrome/Edge, en pas zinvol na ±10 echte bestellingen
+
+- **Nu:** Je downloadt de zip, pakt hem uit en kiest een doelmap, en bij "Map uploaden" blader je opnieuw naar dezelfde map (§10.1 stap 1 en 3).
+- **Voorstel:** In Chrome en Edge krijgt het admin-script de knoppen "Oppakken: werkmap op je schijf" (zet de werkmap van 4.02 rechtstreeks in een eenmalig gekozen bestellingenmap) en "Uploaden uit werkmap" (stuurt alleen nieuwe en gewijzigde beelden), met zip en "Map uploaden" als terugval.
+- **Waarom:** Stap 1 en 3 van §10.1 worden elk één handeling, zonder Downloads, uitpakken of bladeren.
+- **Winst:** ±4 min per bestelling en ±2 min per revisie, en samen met 4.02 kies je de verkeerde map niet meer.
+- **Kosten:** M: `admin-voorvertoning.js` wordt groter maar blijft één bestand, met een JSON-ingang voor de werkmapinhoud en mogelijk `connect-src 'self'` in de admin-CSP, deels handmatig te testen.
+- **Risico:** Werkt niet in Firefox, vraagt per browsersessie één klik "Toestaan", en een site die op je schijf mag schrijven is nieuw vertrouwen, beperkt tot die ene map.
+- **Mening:** Goed, maar pas na 4.02 en ±10 echte bestellingen, als je weet of het uitpakken echt hindert.
+- **Vraag aan Lucas:** In welke browser werk je in /admin? — (a) Chrome of Edge (b) Firefox (c) wisselend — advies: bij (a) bouwen na 4.02; bij (b) of (c) vervalt dit.
+- **Gereedschap:** plek in de dag (§25): Leveren, begin en eind van elke bestelling · input: één klik (eenmalig de bestellingenmap kiezen) · output: werkmap op je schijf, daarna alleen gewijzigde beelden in R2 · zo zie je dat het gelukt is: een groene regel met het volledige pad, en na uploaden "3 nieuw · 21 ongewijzigd".
+- **Vereenvoudiging:** Zip downloaden, uitpakken en twee keer bladeren (in Chrome/Edge; de zip blijft als terugval).
+
+### 4.04. Status volgt je eigen handelingen
+Gebied: 4 · Dient: Lucas / klant · **Tegenspreker: later** — de reden van §21 blijft overeind, maar met de Nu-zin (3.01) maakt Ontvangen of In productie voor de klant weinig uit
+
+- **Nu:** In productie en In controle zet je met de statuslijst, en vergeet je het, dan ziet de klant in Studio "Ontvangen" terwijl je al bezig bent (§10.2, §8).
+- **Voorstel:** De werkmapknop heet "Oppakken" en zet een betaalde bestelling op In productie, de eerste upload zet hem op In controle, met een link "alleen downloaden" ernaast, een tijdlijnregel, geen mail en de statuslijst onder "Meer".
+- **Waarom:** De klant ziet een eerlijke status zonder dat jij eraan denkt.
+- **Winst:** 6 klikken en ±1 min per bestelling, en nooit een verouderde status in Studio.
+- **Kosten:** S: de werkmap- en upload-handler, `order_events` en tests.
+- **Risico:** §21 (betaald ≠ opgepakt) blijft overeind omdat de wissel jouw handeling volgt, en bij een onbetaalde bestelling verandert niets.
+- **Mening:** Goed en klein, omdat het alleen klikwerk weghaalt; de marge-meter (10.07) werkt pas als In productie op het juiste moment staat en wacht dus hierop.
+- **Vraag aan Lucas:** Mag het opvragen van de werkmap de bestelling op In productie zetten? — (a) ja, via de knop "Oppakken" (b) alleen met een aparte statusknop in de Nu-doen-lijst (c) nee, laten zoals het is — advies: (a).
+- **Gereedschap:** plek in de dag (§25): Leveren, begin en eerste upload · input: je klik op "Oppakken" of je eerste upload · output: status In productie / In controle · zo zie je dat het gelukt is: de statuspil op de bestelpagina en de regel in de tijdlijn.
+- **Vereenvoudiging:** De statuslijst uit de normale weg (blijft onder "Meer").
+
+### 4.06. Leverkeuring: één scherm met vier controles vóór "Op geleverd zetten"
+Gebied: 4 · Dient: Lucas / klant · **Tegenspreker: later** — maat en hoekkleur lezen is M in plaats van S, en bij weinig bestellingen dekt "bekijken zoals de klant" het
+
+- **Nu:** "Bekijken zoals de klant het ziet" en "Op geleverd zetten en klant mailen" zijn losse knoppen, en niets controleert of elk vak gevuld is, of maat en verhouding kloppen of de achtergrond de bestelde kleur heeft (§10, §10.1).
+- **Voorstel:** **Leverkeuring** opent het raster zoals de klant het ziet met vier controles die bij het uploaden zijn berekend (vakken gevuld, pixelmaat en verhouding, de bovenhoeken van catalogbeelden tegen de bestelde hex, de herkomsttag uit 4.01), en een afwijking geeft een amber regel met **Toch leveren**, zonder te blokkeren.
+- **Waarom:** Een verkeerde achtergrond of verhouding is een gegarandeerde revisie en een ontbrekend vak een mail van de klant.
+- **Winst:** ±1 min per bestelling, en één voorkomen revisie per ±10 bestellingen ≈ 30 min.
+- **Kosten:** M (niet S): maat uitlezen in de upload-handler, hoekkleur lezen in `admin-voorvertoning.js` en terugschrijven naar de server, en de bestelpagina, terwijl het admin-script één bestand blijft en /admin zonder script moet blijven werken.
+- **Risico:** Valse meldingen (een schaduw in de hoek, een kleurprofiel dat de canvas verschuift), daarom amber, "Toch leveren" en alleen de bovenhoeken.
+- **Mening:** Goed: een goedkope verzekering, en met 4.03 kunnen dezelfde controles al vóór het uploaden op de werkmap draaien.
+- **Vraag aan Lucas:** Mag een afwijking het leveren tegenhouden? — (a) nooit, alleen melden (b) alleen bij een ontbrekend vak (c) altijd tot je het oplost — advies: (a).
+- **Gereedschap:** plek in de dag (§25): Leveren, vlak vóór de levermail · input: de geüploade beelden · output: één scherm met raster, vier controles en de leverknop · zo zie je dat het gelukt is: vier groene regels (vakken, maat, achtergrond, tag).
+- **Vereenvoudiging:** "Bekijken zoals de klant het ziet" als losse knop.
+
+### 4.10. Klantfoto's ook op je eigen schijf na 120 dagen weg (Taakplanner)
+Gebied: 4 · Dient: systeem / Lucas · **Tegenspreker: later** — nieuw script dat op je schijf wist, pas nodig als 4.02 klantfoto's systematisch lokaal zet
+
+- **Nu:** Aangeleverde foto's verdwijnen 90 dagen na afronden uit R2 (met `PURGE_ENABLED`, §3.6, §12), maar kopieën op je eigen schijf hebben geen termijn, terwijl je verwerker bent voor de personen op die foto's (§14).
+- **Voorstel:** Een PowerShell-script als wekelijkse taak in de Taakplanner wist in je bestellingenmap alleen de mappen `_aangeleverd` in `VIS-…`-werkmappen waarin 120 dagen niets is gewijzigd, schrijft `laatst-opgeschoond.txt` en draait de eerste week als proefrun.
+- **Waarom:** Zonder dit belooft /privacy 90 dagen terwijl de klantfoto's bij jou blijven staan.
+- **Winst:** Geen minuten, wel een privacybelofte die klopt, zonder nieuw ritueel.
+- **Kosten:** S en niets aan de site: één `.ps1` en één `opruimen-installeren.cmd` die je zelf dubbelklikt en die de taak registreert met `schtasks` en `-ExecutionPolicy Bypass`.
+- **Risico:** Dat het verkeerde gewist wordt, daarom alleen mappen die precies `_aangeleverd` heten binnen een `VIS-`-map en eerst een proefrun; 120 dagen benadert "90 dagen na afronden", omdat je schijf `closed_at` niet kent.
+- **Mening:** Nodig zodra 4.02 gebouwd is (anders een zin in /privacy over lokale kopieën), en het raakt gebied 9 (AVG).
+- **Vraag aan Lucas:** Hoe lang mogen klantfoto's op je eigen schijf blijven? — (a) 120 dagen na de laatste wijziging (b) 90 dagen (c) tot je ze zelf weggooit — advies: (a).
+- **Gereedschap:** plek in de dag (§25): wekelijks, zonder dat je iets doet · input: je bestellingenmap · output: oude `_aangeleverd`-mappen gewist · zo zie je dat het gelukt is: `laatst-opgeschoond.txt` met datum en aantallen.
+
+**Samengevoegd**
+- **4.09** → opgenomen in 3.03 (meegenomen: geleverde maar onbetaalde bestellingen overslaan, abonnementsbestellingen meenemen, en de bewaardatum bij de zin in levermail en privélink).
+
+**Geschrapt**
+- geen.
+
+**Bekeken en niet voorgesteld**
+- **Lokaal programma dat de werkmap vanzelf uploadt:** na de eerste levering is elk nieuw beeld meteen zichtbaar (§20), het vraagt een admin-sleutel op je schijf plus Node, en het botst met "uploaden en aankondigen zijn twee beslissingen" (§21).
+- **Sleepvak-app voor de herkomsttag** (`.cmd` op het bureaublad met Node of `exiftool.exe`): overbodig zodra 4.01 er is, alleen zinnig als je ooit buiten /admin levert.
+- **Status automatisch op In productie na betaling:** §21 (betaald ≠ opgepakt); 4.04 doet het op jouw eigen klik.
+- **Levermail automatisch zodra alle controles groen zijn:** §21 (uploaden en aankondigen zijn twee beslissingen); de knop blijft van jou.
+- **Deploy en tests als knop op het bureaublad:** hoort bij gebied 9; voor je dagelijkse bestellingen is na 4.01 geen CMD meer nodig.
+
+## 2.5 · Gebied 5 — Productie en kwaliteit
+
+**Kern.** Catalog is het instapproduct én het traagste werk: meer dan 20 minuten per product tegen 5–10 voor lifestyle via Spaces, omdat de on-model-generators niet af zijn (§25). Het CATALOG-bord afmaken met een vaste proefset als stoppunt (5.09, met 10.01) levert de meeste uren op, en tot het af is gaat betaalde reclame naar lifestyle en de €1-proef. De revisieredenen kleur, print en pasvorm (§3.5) ontstaan grotendeels vóór de generatie, dus de goedkope stappen daar blijven (5.03, 5.07); de koppeling tussen brief, bord en afwerkscript is opgegaan in 4.02 en 4.07.
+
+### 5.03. Kleurtrouw: de opgegeven kleur is leidend, wit papier als ijkpunt
+Gebied: 5 · Dient: klant / Lucas · **Tegenspreker: blijft**
+
+- **Nu:** Per product kan de klant materiaal en kleur opgeven (§2.1, §6.2), maar de revisie geldt voor kleur "t.o.v. de eigen foto's" (§3.5). Lamplicht in die foto's verschuift de kleur, en het afwerkscript zet alleen de achtergrond (§25).
+- **Voorstel:** Het kleurveld en het close-upvak in stap 2 krijgen de teksten hieronder, en de brief (4.02) toont de kleur met code en een kleurvlakje. Jij opent de foto's van een product samen in Camera Raw, zet de witbalans met het pipet op het papier, past die toe op de andere foto's van dat product en snijdt het papier weg vóór je ze als `@img1` gebruikt. Je corrigeert dus de referentie, niet het resultaat.
+> Kleur — zoals je hem in je webshop noemt, en de kleurcode als je die hebt (Pantone of hex). Wijkt je foto af van je product, dan houden wij deze kleur aan.
+> Tip: leg een wit vel printpapier half in beeld. Dan zien wij welke kleur je lamp of raam geeft.
+- **Waarom:** Een kleurfout in de referentie komt in alle vier de beelden terug en is volgens §3.5 een revisie. Maak je een gele foto trouw na, dan is de kleur fout tegenover het product, en corrigeer je hem, dan is hij "anders dan mijn foto"; de opgegeven kleur legt vooraf vast welke van de twee geldt.
+- **Winst:** 30 seconden extra per product tegenover een kleurrevisie van ±15–30 minuten (opnieuw genereren, afwerken, melden). Bij onenigheid heb je een eerlijke maatstaf.
+- **Kosten:** S — twee teksten in stap 2 en de kleur met code in de brief; eventueel één zin in /terms en de FAQ.
+- **Risico:** Printpapier is geen grijskaart (optische witmakers maken het licht blauwig), maar ruim genoeg om een gele lamp te zien en te corrigeren. Blijft het papier in de referentie staan, dan kan het model het namaken; daarom eerst wegsnijden.
+- **Mening:** Goed: van dit gebied levert dit per minuut de meeste kwaliteit op, omdat het vóór de generatie gebeurt. Het rondt het kleurveld af dat je in augustus wilde: tekst voor iedereen, een code voor wie die heeft (vaak van de leverancier), papier voor wie geen van beide weet.
+- **Vraag aan Lucas:** Moet de revisieregel de opgegeven kleur noemen? — (a) ja, in /terms en de FAQ: "kleur t.o.v. je foto's, of t.o.v. de kleur die je opgaf" (b) alleen in het formulier, de voorwaarden blijven zoals ze zijn (c) niets veranderen — advies: (a), want bij onenigheid lees je de voorwaarden, niet het formulier.
+
+### 5.07. Fotogids op één A4 en een voorbeeld per vak in stap 2
+Gebied: 5 · Dient: klant / Lucas · **Tegenspreker: blijft**
+
+- **Nu:** /upload-guidelines toont wat wel en niet goed is en de vier shots, met een fotogids-pdf (§5), en de checklist-mail "Zo maak je de productfoto's die wij nodig hebben" bestaat (§11). In stap 2 hebben de vakken geen voorbeeld van een goede foto (§6.2).
+- **Voorstel:** Pagina, pdf en mail komen uit één bron: een A4 om naast je kast te hangen, in vier blokken. Licht: daglicht bij een raam, geen lamp of flits, alle producten in één keer op dezelfde plek · ondergrond: een lege vloer of deur, niet op een bed of bank, gestreken of gestoomd, hangkaartjes eraf · kader: recht ervoor of recht van boven, de 1×-lens, geen portretstand of filter, lens schoongeveegd, product helemaal in beeld met wat ruimte · close-up: het logo, de print of het label. Onderaan: "Voor je uploadt: licht? scherp? alles erin? voor en achter verschillend? kleur zoals in je hand?". In stap 2 krijgt elk vak een voorbeeldfoto van ±64 px en één regel; bij het draagvak staat wat je aanneemt als die foto ontbreekt.
+> Voorkant: "Plat op een lege vloer of tegen een deur, helemaal in beeld, bij daglicht." · Achterkant: "Zelfde plek en licht, product omgedraaid."
+> Close-up: "Het logo, de print of het label — wat in je beelden moet kloppen. Geen logo? Dan de stof."
+> Gedragen (optioneel): "Laat zien hoe het valt. Zonder draagfoto gaan we uit van een normale, rechte pasvorm."
+- **Waarom:** Bijna alles wat met telefoonfoto's misgaat, is vooraf in één zin te voorkomen en achteraf niet door software te herkennen: lamplicht, plooien van een bed, half in beeld, wazig door een vette lens, een prijskaartje dat het model namaakt.
+- **Winst:** Minder slechte referenties en minder appjes, bij elke bestelling en elke €1-proef. "Alle producten in één keer op dezelfde plek" maakt ook de foto's van een set gelijk, en daarmee de beelden.
+- **Kosten:** S voor Claude (pagina, pdf, teksten bij de vakken). Voor jou ±45 minuten eenmalig: vier goede en vier foute voorbeeldfoto's van één eigen kledingstuk met je telefoon.
+- **Risico:** Stap 2 wordt drukker, terwijl de lijn sinds 23 sep "minder tekst" is (§23). Daarom per vak één regel en een kleine miniatuur; de rest staat alleen in de pdf.
+- **Mening:** Goed: de aanname bij het draagvak geeft wat een pasvormvraag zou geven, zonder extra veld. De voorbeeldfoto's moeten echte telefoonfoto's zijn, geen gegenereerde, zodat een klant zijn eigen situatie erin herkent.
+- **Vraag aan Lucas:** —
+
+### 5.09. Volgorde voor de borden, met een vaste proefset als stoppunt
+Gebied: 5 · Dient: Lucas / klant · **Tegenspreker: blijft** — neemt 10.01 op (betaalde reclame eerst op lifestyle en de €1-proef, catalogcredits nu niet aanraken)
+
+- **Nu:** De catalog-on-model-generators met meerdere poses zijn niet af, dus catalog kost meer dan 20 minuten per product tegen 5–10 voor lifestyle via Spaces (§25), en catalog in het Merk-abonnement (4 credits) levert daardoor €47–70 per uur op (§22). Er zijn borden GLOW, FLASH, PHONE, AUGUST, HAZARD en CATALOG maar geen bord met de naam Dunes, terwijl Dunes maar twee voorbeeldfoto's heeft (§24), en daarnaast staan drie foto-looks in de maak (§2.11).
+- **Voorstel:** Maak eerst het CATALOG-bord af: twee à drie posegenerators (één stil, één die in de lens kijkt) plus de lege generator voor extra hoeken, elke pose uitgeschreven met wie het doet en met welk lichaamsdeel (§24); de zachte filter komt later via een voorinstelling (5.08). Daarna elke live look afmaken (bord, gezichtsreferenties, voorinstelling, drie voorbeeldbeelden), te beginnen met Dunes, pas dan één nieuwe look tegelijk (5.10), en de videostijlen als eigen spoor, omdat die de videoprijs bepalen (§2.4). Een stap is klaar als een vaste proefset van vijf producten uit je voorbeeldmerken, waarvan één met een tekstprint en één heel donker, zonder handwerk buiten het script door het bord gaat en catalog binnen de 10–20 minuten per product van §1 blijft. Tot het CATALOG-bord af is, gaat betaalde reclame naar lifestyle en de €1-proef (catalog via Google pas daarna) en blijven de catalogcredits zoals ze zijn.
+- **Waarom:** Catalog is het instapproduct (vanaf €39, en een van de twee keuzes bij de €1-proef) en het traagste werk, en elke groeistap vermenigvuldigt juist die uren: één Merk-abonnee die alles aan catalog besteedt, kost een week productie per maand. Zonder vaste proefset is er geen moment waarop een bord klaar is.
+- **Winst:** Van meer dan 20 naar 10–20 minuten per product scheelt 1–2 uur bij een bestelling van 12 producten, en bij 10 minuten levert catalog in het Merk-abonnement €140 per uur op, zodat de credits niet omhoog hoeven. De proefset levert meteen de ontbrekende voorbeeldbeelden (de derde Dunes-foto, O65), en 1.02 (het Dunes-beeld) en 10.06 (één vaste vorm voor voor- en achterkant) wachten op dit bordwerk.
+- **Kosten:** Voor Claude niets, of S voor een proefbestelling in de testomgeving met de proefsetfoto's, zodat een bordtest de hele keten doorloopt (brief → bord → script → upload). Voor jou L (het bordwerk, omvang onbekend), en daarna de capaciteitspunten (§3.6) naast de echte minuten leggen.
+- **Risico:** Nieuwe looks blijven trekken terwijl catalog niet af is; de volgorde werkt alleen als stap 1 echt eerst komt. Catalogreclame uitstellen vertraagt juist de doelgroep die catalog nodig heeft, maar bij de eerste 5–10 klanten zijn de uren nog geen knelpunt (dat wordt het pas boven ±10 uur catalog per week).
+- **Mening:** Dit levert van het hele gebied het meeste op: geen code, wel de meeste uren terug, en het raakt elke catalogbestelling; twee à drie poses is genoeg, want meer keuze is meer nakijkwerk terwijl de klant er niet om vraagt. Het bord sneller maken is beter dan de credits verhogen, want dat verandert /plans vlak vóór ronde 10.
+- **Vraag aan Lucas:** (1) Welk bord hoort bij Dunes? — (a) AUGUST is Dunes (b) Dunes heeft nog geen eigen bord (c) iets anders — advies: bij (b) Dunes meteen na het CATALOG-bord, want een look die je verkoopt zonder vast bord geeft sets waarvan de beelden niet op elkaar lijken. (2) Wat doen we met de catalogcredits? — (a) op 4 laten en eerst het bord afmaken (b) catalog naar 5 credits in ronde 10 (c) beslissen na de eerste drie abonnees — advies: (a); (b) alleen als het bord catalog niet onder de 15 minuten per product krijgt.
+- **Prijsvoorstel:** alleen bij vraag 2, optie (b) — nu: catalog 4 credits, lifestyle 5 (§22) · voorstel: catalog 5 credits · effect: Merk 58 catalogproducten per maand i.p.v. 72 (€29,14 per product), Pro 24 i.p.v. 30, Starter 9 i.p.v. 11; de klant krijgt 20% minder catalog.
+
+### 5.04. Nakijklijst per dienst, op de twee plekken waar je toch al kijkt
+Gebied: 5 · Dient: Lucas / klant · **Tegenspreker: later** — helpt pas als dezelfde fout terugkomt of iemand anders nakijkt
+
+- **Nu:** Er is een status "In controle" en een knop "Bekijken zoals de klant" (§10, §10.2), maar geen vaste lijst van wat je nakijkt, terwijl revisies over kleur, print en pasvorm gaan (§3.5).
+- **Voorstel:** Eén lijst per dienst in `src/data/nakijken.js` (catalog: kleur, print en logo, pasvorm, details geteld, handen en gezicht, randen; lifestyle daarbij de look), onderaan de brief, boven "Op geleverd zetten en klant mailen" en op "Bekijken zoals de klant".
+- **Waarom:** AI-fouten zijn voorspelbaar (verzonnen of gespiegelde tekst, een knoop te veel, een zesde vinger), en een lijst op het moment van leveren haalt ze eruit voordat de klant ze vindt.
+- **Winst:** Elke zo gevonden fout scheelt een revisieronde (±15–30 minuten plus een mail), en bij de €1-proef, die geen revisie heeft, telt dat dubbel.
+- **Kosten:** S — één databestand, de brief en twee plekken in `admin.js`, geen JavaScript.
+- **Risico:** Een lange lijst leest niemand, daarom zes korte groepen.
+- **Mening:** Goed omdat er geen vinkje of extra scherm bijkomt, want een verplicht vinkje klik je na een week zonder te lezen aan.
+- **Vraag aan Lucas:** Wil je bij de leverknop iets afvinken? — (a) nee, alleen de lijst (b) één verplicht vinkje "nagekeken" (c) per product een vinkje — advies: (a).
+
+### 5.05. Fotocheck bij het uploaden: donker, lamplicht, onscherp, klein, dubbel
+Gebied: 5 · Dient: klant / Lucas · **Tegenspreker: later** — M met kans op valse meldingen, en 5.07 doet het meeste vooraf
+
+- **Nu:** Stap 2 zet elke foto meteen in R2 en meldt alleen ontbrekende vakken, dus een slechte foto zie je pas bij het maken en dan moet je de klant appen (§6.2, §27).
+- **Voorstel:** Het formulier meet na het kiezen van een foto helderheid, kleurzweem, scherpte en afmetingen en zoekt dubbele foto's, toont bij een afwijking één regel met "Vervangen" en "Zo laten" zonder de klant tegen te houden, en zet wat hij zo liet in brief en bord onder LET OP.
+- **Waarom:** De klant herstelt een donkere of gele foto zelf in tien seconden terwijl hij hem nog bij de hand heeft, in plaats van een appje en vaak een dag wachten.
+- **Winst:** 10–20 minuten per tegengehouden foto, bij de eerste 10 klanten naar schatting 2–4 keer, dus pas echt rendabel bij volume.
+- **Kosten:** M — meetcode en melding in het formulier, vlaggen in `details_json`, weergave in brief en bord, en tests op echte goede en slechte telefoonfoto's.
+- **Risico:** Valse meldingen (een okergele trui lijkt lamplicht, een gladde stof onscherp), dus lage drempels en eerst afstellen op je eigen testfoto's; zonder JavaScript werkt alles zoals nu.
+- **Mening:** Goed, maar pas na de S-punten: begin met de drie metingen die niet vals alarmeren (klein, dubbel, donker) en voeg lamplicht en onscherp pas toe als je die in echte bestellingen tegenkomt.
+- **Vraag aan Lucas:** Neemt /api/upload HEIC-foto's aan? — (a) ja, en Photoshop opent ze (b) ja, maar jij kunt ze niet openen (c) nee — advies: één HEIC testen (dat zit al in de drukteproef van 9.05); bij (b) of (c) komt er een regel om de iPhone op "Meest compatibel" te zetten of de foto als jpg te sturen.
+- **Gereedschap:** ochtend, bij het oppakken van een bestelling (§25) · input: de foto's van de klant · output: per vak een vlag (donker / lamplicht / onscherp / klein / dubbel) in brief en bord · gelukt als er bij het vak "achterkant: donker (klant liet hem zo)" staat voordat je begint.
+
+### 5.08. Consistentie per set: gelijk in de nabewerking, variatie in de prompt
+Gebied: 5 · Dient: klant / Lucas · **Tegenspreker: later** — productietechniek met eigen proefwerk, pas na 5.09
+
+- **Nu:** Consistentie komt uit de borden per stijl, de promptgrammatica met `@img1` en het afwerkscript voor achtergrond en schaduw, terwijl de zachte filter voor catalog op model (23 sep) en de grade van Glow in de prompt zitten of nergens (§24, §25).
+- **Voorstel:** Wat in elk beeld gelijk moet zijn gaat in het afwerkscript (4.07): voor- en achterkant vullen het kader even ver (bij kanaal Amazon ±85%), per look zet één Camera Raw-voorinstelling alleen de modelbeelden in de grade, en het eerste goedgekeurde modelbeeld gaat als tweede referentie mee voor gezicht, licht en kader.
+- **Waarom:** Elke generatie verschuift iets in warmte en schaal, en twaalf producten naast elkaar op een collectiepagina laten elk verschil zien.
+- **Winst:** 1–2 minuten per product minder met de hand gelijktrekken en minder revisies van het soort "waarom is deze anders" bij sets vanaf 5 producten.
+- **Kosten:** S voor Claude (vulling en voorinstelling in het script) en ±15 minuten per look voor jou, zonder code in de site.
+- **Risico:** Een voorinstelling over het product verschuift zijn kleur (dus nooit op de close-up), en via de tweede referentie kan kleding van product 1 in product 2 belanden, dus eerst testen op de proefset van 5.09.
+- **Mening:** Goed, en het maakt het CATALOG-bord kleiner omdat de filter niet in vijf generators hoeft maar in één voorinstelling; vaste regel: in elke lifestylecarrousel is beeld 3 (de close-up) kleurecht.
+- **Vraag aan Lucas:** —
+- **Gereedschap:** Maken, in dezelfde scriptrun als 4.07 (§25) · input: de werkmap en per look een voorinstelling in je Prompts-map · output: even grote voor- en achterkanten, modelbeelden in de grade van de look, close-ups onaangeroerd · gelukt als in "Bekijken zoals de klant" twaalf producten even groot op één lijn staan.
+
+### 5.10. De looks in de maak door je eigen momenttoets
+Gebied: 5 · Dient: Lucas / klant / systeem · **Tegenspreker: later** — raakt de eerste klanten niet en is jouw eigen keuze over je looks
+
+- **Nu:** De teaser "in de maak" (`komendeStijlen.js`) noemt catalog Still, lifestyle Studio en Nacht, en video Draaitafel, Kleurwissel en Detail (§2.11), terwijl jouw regel is dat een stijl vertrekt vanuit een moment waarvoor mensen zich aankleden (§24).
+- **Voorstel:** Still wordt de stille pose van Classic (uit 5.09 stap 1), Nacht krijgt een eigen moment naast Flash (Flash binnen op het feest met flits, Nacht buiten onderweg met alleen het licht van de stad) of valt af, en Studio gaat uit de teaser tot hij een moment heeft.
+- **Waarom:** Elke teaser is een belofte op de site en open werk, en drie foto-looks in de maak naast een catalogbord dat niet af is, is meer dan één persoon afmaakt.
+- **Winst:** Twee looks minder open werk, en een klant ziet alleen wat er echt komt.
+- **Kosten:** S — `komendeStijlen.js` en de teaserteksten.
+- **Risico:** Een teaser schrappen voelt als terugkrabbelen, maar hij komt terug zodra de look de proefset haalt.
+- **Mening:** Goed als vereenvoudiging, want volgens je eigen regel valt Studio af; is AUGUST of HAZARD verder dan Nacht, dan is die een betere kandidaat voor de enige plek in de teaser.
+- **Vraag aan Lucas:** Wat wordt Still? — (a) een pose binnen Classic, zonder keuze voor de klant (b) een keuze binnen Classic: "stil" of "met houding" (c) een eigen cataloglook — advies: (a), want een keuze erbij is een vraag erbij in stap 1.
+- **Vereenvoudiging:** Studio en Still uit de teaser, en Nacht als hij geen eigen moment krijgt.
+
+**Samengevoegd**
+- **5.01** → opgenomen in 4.07 (meegenomen: niet opschalen, wel de melding "besteld 4096 — eerst opschalen"); het tagdeel → 4.01 (tag bij de upload in /admin, niet bij het opslaan in Photoshop).
+- **5.02** → opgenomen in 4.02 (meegenomen: de vijf vaste blokken van de brief, de plakregel zonder productnaam en de INSTELLINGEN-regel die het script van 4.07 leest).
+- **5.06** → opgenomen in 2.05 (meegenomen: de tekst per vak in het tussenscherm en het rode vak op het bord; dezelfde lijst vult ook de betaalmail van 7.01 en de studiomail van 9.07).
+
+**Geschrapt**
+- Geen.
+
+**Bekeken en niet voorgesteld**
+- Bij 10+ producten eerst één product ter goedkeuring sturen: een extra stap en wachttijd voor de klant, slecht te rijmen met "vaak binnen een dag, soms een paar dagen", en het vraagt een mail bij een statuswissel (§21).
+- Een kleurkiezer in het formulier: lijkt op een niet-gekalibreerd scherm preciezer dan hij is, en tekst plus code plus wit papier (5.03) is betrouwbaarder.
+- In de browser herkennen of een product op een bed ligt, half in beeld is of kreukels heeft: niet betrouwbaar zonder een zwaar herkenningsscript, en de fotogids met een voorbeeld per vak (5.07) doet het beter.
+- Extra invulvelden (pasvorm, "wat mag niet veranderen", tekst op het product): je koos in augustus bewust de kleinste versie, en de aanname bij het draagvak en de tip bij de close-up (5.07) geven hetzelfde zonder veld.
+- Bij elke opgeloste revisie een reden laten kiezen om per bord te leren: pas zinvol bij tientallen revisies, tot dan lees je de notities zelf.
+
+## 2.6 · Gebied 6 — Abonnement en herhaalomzet
+
+**Kern.** Na §28 heeft het abonnement geen week meer, maar nog geen zin die zegt waarom je het neemt en hoe je je maand uitrekent: "≈ producten" lijkt met complete te rekenen, video heeft creditprijzen terwijl het op aanvraag is, en er zijn twee doorschuifregels en drie termijnen plus op maat (§4.1, §4.2, §22). Het echte voordeel staat nergens: met credits kost een catalogset altijd 4, ook bij twee producten, terwijl de staffel dan €89 vraagt (Pro: €26). Voor ronde 10 blijven over: één creditkaart, één geldigheidsregel, twee termijnen als jij dat wilt, een rem die je kiest vanuit je uren, en vaste regels voor stap 5 en voor annuleren; de abonnementspagina en de vaste look lopen via 2.07 en 2.08.
+
+### 6.01. Eén creditkaart overal, met de vertaling in producten
+Gebied: 6 · Dient: klant / systeem · **Tegenspreker: blijft**
+
+- **Nu:** Plannen tonen "≈ producten" 5 / 12 (+2 clips) / 30 (§4.1), wat met complete lijkt te rekenen (4 + 5 = 9 credits per product), terwijl 45 credits 11 catalogsets of 9 carrousels zijn (§27). Video heeft creditprijzen (motion 5, clip 12, hook 10, §22) terwijl video op aanvraag is (§2.4).
+- **Voorstel:** Op /plans, /start/plan, in Studio en in stap 5 staat dezelfde creditkaart. Per plan staat de vertaling in plaats van "≈ producten", en achter elk saldo dezelfde vertaling, uit één functie die 2.02 en 2.07 ook gebruiken. Bovenaan /plans en de abonnementspagina komt de kernzin.
+
+> Catalogset 4 · Carrousel 5 · Extra foto 2 · 4K 1 · Video op aanvraag
+>
+> Pro · 120 credits — 30 catalogsets, 24 carrousels of een mix
+>
+> Met een abonnement kost een catalogset altijd 4 credits — ook als je er maar twee bestelt.
+
+- **Waarom:** De staffel maakt kleine bestellingen duur (1–4 producten: €89 per stuk), credits niet (Pro: 4 × €6,58 = €26). planSaving (30/32/40%, §22) vergelijkt alleen met één grote bestelling en laat juist dit voordeel weg.
+- **Winst:** De klant rekent zijn maand in één zin uit, en Lucas hoeft het niet per WhatsApp voor te rekenen (±10 min per abonnementsvraag).
+- **Kosten:** S — teksten in plans.js/pricing.js, /plans, /start/plan en Studio, plus één vertaalfunctie; de opbouw van /plans hoort bij gebied 1.
+- **Risico:** De videocredits blijven in `SERVICE_CREDITS` staan voor offertes die met credits betaald worden (§28.2.5); ze verdwijnen alleen uit beeld. Heet tegoed in de Engelse Studio "credit", dan botst het met "credits" (2.02 maakt er "account balance" van).
+- **Mening:** Goed, en de goedkoopste verduidelijking in dit gebied: houd het woord "credits", want "producten per maand" klopt niet bij mengen of een extra foto, en "punten" is al de capaciteitseenheid in /admin. Tegenspreker: dit lost het "of"-probleem op zonder prijswijziging, dus 6.02 is hiervoor niet nodig.
+- **Vraag aan Lucas:** —
+- **Vereenvoudiging:** de kolom "≈ producten", "+2 clips" en de videocredits op /plans en in Studio.
+
+### 6.03. Credits 3 maanden geldig voor iedereen; oudste eerst
+Gebied: 6 · Dient: klant / systeem · **Tegenspreker: blijft**
+
+- **Nu:** Bij een maandabonnement schuiven ongebruikte credits 1 maand door, bij 12 maanden en vooruit 3 (§4.2, §22), dus credits uit één termijn zijn 2 of 4 maanden bruikbaar. Herinneringen gaan 7 en 2 dagen vóór het vervallen (§22).
+- **Voorstel:** Eén regel op /plans, in de voorwaarden en bij elke regel in het creditboek: "Credits blijven 3 maanden geldig." Bij een bestelling gaan de oudste credits eerst, en stap 5 zegt welke vervallen. Er gaat één herinnering, 7 dagen vooraf; de mail van 2 dagen vooraf vervalt.
+- **Waarom:** Dit is §28.5 met "oudste eerst" erbij: een aparte regel per termijn is uitleg die niemand nodig heeft, en "3 maanden" past op een kaart.
+- **Winst:** Eén regel minder op /plans, in de FAQ en in de voorwaarden, en één mail minder per vervaldatum.
+- **Kosten:** S — `rollover` in plans.js, `herinnerCredits` in de cron, teksten en tests.
+- **Risico:** §28.5 zegt "de jaarklant verliest niets", maar voor hem is 3 maanden korter dan nu (4 → 3); er zijn nog geen jaarklanten, dus niemand merkt het. Saldi stapelen hoger op (bij Merk tot 870 credits ≈ 217 catalogsets ≈ 9 volle dagen van 100 punten), en bestellingen onder 10 producten vangt de agenda niet op (zie 6.05).
+- **Mening:** Goed, eens met §28.5. Zeg "3 maanden geldig" en niet "doorschuiven", en maak "oudste eerst" expliciet, anders vervallen oude credits terwijl de klant nieuwe gebruikt.
+- **Vraag aan Lucas:** Hoe lang precies? — (a) 3 maanden na binnenkomst, voor iedereen (b) tot het eind van de derde maand na binnenkomst, zodat de jaarklant ongeveer 4 maanden houdt — advies: (a).
+- **Vereenvoudiging:** één van de twee doorschuifregels en de herinneringsmail van 2 dagen.
+- **Prijsvoorstel:** nu 1 maand doorschuiven (maandelijks), 3 maanden (12 maanden en vooruit) · voorstel 3 maanden geldig voor iedereen · effect: bij maandelijks is een termijn 3 in plaats van 2 maanden bruikbaar (grootste saldo Pro 240 → 360), bij een jaar 3 in plaats van 4 (Pro 480 → 360); de omzet per abonnement blijft gelijk, en hoeveel credits er minder vervallen is zonder gegevens niet te zeggen.
+
+### 6.04. Twee termijnen; op maat als één regel
+Gebied: 6 · Dient: klant / systeem · **Tegenspreker: blijft**
+
+- **Nu:** Er zijn drie termijnen (§4.2): maandelijks; 12 maanden, maandelijks geïncasseerd zonder korting (3 maanden doorschuiven, prijsgarantie, merkmodel bij Pro); en vooruit, "betaal 10, krijg 12". Op maat (30–300 credits) staat als vierde kaart met een schuif (§4.1, §5).
+- **Voorstel:** Alleen maandelijks en jaar vooruit (€3.900 · €7.900 · €16.900, ongewijzigd); de tussentermijn vervalt en Pro houdt het merkmodel bij vooruit, zoals nu. Op maat blijft, maar als één regel onder de drie kaarten, met een link naar de schuif op /start/plan.
+
+> Iets anders nodig? Kies zelf tussen 30 en 300 credits per maand.
+
+- **Waarom:** Na 6.03 houdt de tussentermijn alleen de prijsgarantie en het merkmodel over. Voor Lucas is het een jaarverplichting die hij zelf moet innen als een klant een incasso terugboekt; bij vooruit is het geld al binnen.
+- **Winst:** Drie plannen met twee termijnen (6 keuzes) in plaats van negen combinaties plus op maat; /plans wordt korter.
+- **Kosten:** S — termijnen in plans.js, /plans, /start/plan, voorwaarden en tests; op de tussentermijn lopen alleen testabonnementen.
+- **Risico:** Een merk dat zich wil binden zonder €7.900 vooruit te betalen, kiest maandelijks, en Lucas mist dan op papier een jaarcontract (Pro: €9.480). Het draait je keuze van 10 sep (§23) terug: toen hield je de jaartermijn, alleen zonder korting.
+- **Mening:** Goed, eens met §28.5. Op maat werkt beter als regel dan als schuif onder de kaarten, want de schuif is een vierde keuze op het moment dat de klant al moet kiezen, en 30 credits voor €272 is de goedkoopste instap, en die wil je houden.
+- **Vraag aan Lucas:** De tussentermijn — (a) weg (b) één regel onder de tabel (c) houden als kolom — advies: (a); het blijft jouw besluit, want het draait 10 sep terug.
+- **Vereenvoudiging:** de tussentermijn en de vierde plankaart.
+- **Prijsvoorstel:** nu 3 termijnen; op maat als vierde kaart (30 → €272, 300 → €1.748) · voorstel maandelijks en vooruit; op maat met dezelfde prijzen, als regel · effect: geen bedrag verandert; Pro met merkmodel (€450) kan alleen nog via €7.900 vooruit, 16,7% onder 12 × €790 = €9.480.
+
+### 6.05. `seatsLeft` meet credits in plaats van een budget dat verdwijnt
+Gebied: 6 · Dient: systeem / Lucas · **Tegenspreker: blijft**
+
+- **Nu:** De beschikbaarheid vóór /start/plan rekent met "231 punten/maand → 13 Starter-plekken" (§22); §28.2 schrapt dat budget maar houdt `seatsLeft` "als rem", en §28.6 noemt het oude budget niet. De 13 is niet na te rekenen: een Starter is 27–44 punten per maand, dus met 231 punten passen er 5 tot 8.
+- **Voorstel:** De rem telt de maandcredits van alle actieve abonnementen op en vergelijkt die met één plafond dat jij zet (zie de vraag). /start/plan zegt per plan alleen "vol" als het niet past, en "nog N plekken" pas als er 3 of minder over zijn, dus nooit "nog 13 plekken" zolang er geen abonnee is. /admin toont één regel: hoeveel credits per maand de abonnees samen hebben, tegen het plafond.
+- **Waarom:** Een telling van abonnees rekent een Merk (290 credits) als één Starter (45), terwijl Merk 6,4 keer zoveel werk is; credits meten het werk zelf. Elk product kost minstens zoveel credits als punten (catalog 4/4, lifestyle 5/3), dus een plafond in credits zit in punten altijd aan de veilige kant.
+- **Winst:** Lucas ziet in één regel hoe vol abonnees zijn maand maken, en hoeft geen getal meer na te rekenen als een plan verandert.
+- **Kosten:** S — `seatsLeft` in plans.js, /start/plan en één regel in /admin; het oude budget en het commentaar uit §17.23 gaan weg.
+- **Risico:** Het voorgestelde plafond van 1.000 credits is veilig in punten, niet in uren: alleen catalog is dat 250 catalogsets van ruim 20 minuten, ±83 uur per maand, ±55% van je ±150 productie-uren (§25), bovenop de losse klanten. Het plafond begrenst de maand, niet de dag: bestellingen onder 10 producten gaan niet door de agenda (§3.6).
+- **Mening:** Goed, want de rem meet dan weer iets wat bestaat, maar kies het getal vanuit je uren en niet vanuit de punten (de 100 per dag zijn volgens §27 een aanname); tegenspreker: weet je dat deel nog niet, begin dan met een maximum aantal abonnees. Belangrijker dan het getal is nu dat /start/plan geen "nog 13 plekken" toont terwijl er geen abonnee is, want dan leest de bezoeker dat niemand het heeft.
+- **Vraag aan Lucas:** Welk deel van je productie-uren per maand wil je aan abonnees geven, en hoe begrens je dat? — (a) een plafond in credits dat jij kiest vanuit die uren (ter vergelijking: 1.000 credits alleen catalog is ±83 uur) (b) een maximum aantal abonnees, door jou gezet: het simpelst, maar het ziet niet welke plannen er zijn (c) geen rem, alleen de agenda: prima bij 0–5 abonnees, maar dan heeft "zo snel mogelijk" geen rem — advies: (a) met een getal uit je uren; weet je dat nog niet, dan (b).
+- **Prijsvoorstel:** nu 231 punten/maand → 13 Starter-plekken · voorstel één plafond in credits per maand voor alle abonnees samen, door jou gekozen (de agent stelde 1.000 voor) · effect bij 1.000: vol bij bijvoorbeeld 22 Starter (€8.580 per maand), 8 Pro (€6.320) of 3 Merk (€5.070), of een mix daarvan; daarboven staat er "vol".
+
+### 6.06. Stap 5 met credits: wat erbij kan, en wat als het niet past
+Gebied: 6 · Dient: klant / Lucas · **Tegenspreker: blijft**
+
+- **Nu:** Volgens §28.2 zegt stap 5 "kost 48 · je hebt 120 · daarna 72", en wie te weinig credits heeft, haalt producten weg of betaalt alles via Mollie, nooit gemengd. Niet beschreven is wat er gebeurt met opties die alleen in euro's bestaan (voorrang 20% met minimaal €49, outfit €50, toeslag voor een eigen look €0–500, §3.2) en met tegoed (§7).
+- **Voorstel:** Met credits betaal je alles wat op de creditkaart (6.01) staat. Kies je voorrang, outfit of een eigen look met toeslag, dan betaal je de hele bestelling via Mollie, en heb je te weinig credits, dan rekent stap 5 het voor. Tegoed telt alleen als je via Mollie betaalt.
+
+> Deze keuze gaat niet met credits — je betaalt deze bestelling via Mollie: €…
+>
+> Deze bestelling kost 48 credits, je hebt er 30. Daarmee kun je 7 catalogsets bestellen.
+>
+> Op 6 november komen er 120 bij. Of betaal deze bestelling via Mollie: €740,52 incl. 21% btw.
+
+- **Waarom:** Zonder deze regel loopt het formulier vast op bedragen zonder creditprijs, en "niet genoeg" zonder som laat de klant zonder volgende stap.
+- **Winst:** Geen WhatsApp met "hoe betaal ik dit?" meer (±10 min per keer); de klant ziet drie mogelijkheden in plaats van een foutmelding.
+- **Kosten:** M — valt binnen §28.6.6 (betalen met credits in stap 5); dit voegt de controle op opties en de uitgerekende zinnen toe. Zet in dezelfde migratie oude bestellingen met `payment_status = 'plan'` (alleen testdata) op `'credits'`, anders zijn er twee labels.
+- **Risico:** Alles of niets betekent dat een abonnee met 30 credits voor 12 producten de volle prijs betaalt (12 × €51 = €612) terwijl zijn credits blijven staan; door 6.03 vervallen die niet meteen.
+- **Mening:** §28.2.4 heeft gelijk: nooit mengen, anders komt er een factuur voor een deelbedrag. Het wordt beter als stap 5 het voorrekent in plaats van "haal 5 producten eraf" te zeggen; credits bijkopen pas als dit in de praktijk vaker gebeurt (6.11).
+- **Vraag aan Lucas:** Voorrang voor een abonnee — (a) niet met credits; wie voorrang wil, betaalt de bestelling via Mollie (b) voorrang in credits (nieuw getal, bijvoorbeeld 20% van de credits) (c) inbegrepen bij Merk (§28.4) — advies: (a), tot een abonnee erom vraagt.
+
+### 6.08. Vaste regels voor credits bij annuleren, terugbetalen en opzeggen
+Gebied: 6 · Dient: Lucas / klant · **Tegenspreker: blijft**
+
+- **Nu:** Bij annuleren kun je terugbetalen, tegoed geven of niets doen (§7), het revisiebeleid eindigt bij "(gedeeltelijke) terugbetaling" (§3.5), en na opzeggen loopt de betaalde maand uit (§4.2). Voor een bestelling die met credits is betaald, zegt nergens wat er dan met de credits gebeurt.
+- **Voorstel:** Vier regels, die elk een regel in "bij en af" opleveren: (1) annuleert Lucas een creditbestelling, dan komen de credits terug, 3 maanden geldig vanaf vandaag; (2) kan een product niet gemaakt worden, dan komen de credits van dat product terug; (3) na opzeggen of tijdens een pauze blijven credits bruikbaar tot hun datum; (4) "Credits bijstellen" in /admin vraagt een reden, net als tegoed. Bij een creditbestelling biedt het annuleerscherm in /admin de keuze "credits terug / niets".
+- **Waarom:** Zonder regels beslist Lucas per geval, en ziet de klant een saldo dat niet klopt met zijn bestellingen.
+- **Winst:** Geen beslissing per geval (±10 min elk), en het creditboek telt altijd op.
+- **Kosten:** S–M — annuleren in admin.js, de regels in het creditboek en twee zinnen in de voorwaarden; geld en creditnota's horen bij gebied 8.
+- **Risico:** Regel 3 betekent dat Lucas na het einde van een abonnement nog werk kan krijgen, hoogstens drie termijnen, en dat werk valt buiten het plafond van 6.05.
+- **Mening:** Dit moet vastliggen vóór de eerste echte abonnee, niet later. "Terug met 3 maanden vanaf vandaag" is simpeler dan de oude datum terugzetten, want die kan al voorbij zijn.
+- **Vraag aan Lucas:** Credits na opzeggen — (a) bruikbaar tot hun datum (b) vervallen aan het eind van de laatste betaalde maand; dan verliest de klant iets waarvoor hij betaald heeft, en dat wordt een discussie — advies: (a).
+
+### 6.02. Catalogset en carrousel allebei 4 credits
+Gebied: 6 · Dient: klant / systeem · **Tegenspreker: later** — de som klopt, maar het is een prijswijziging zonder nood vóór de eerste abonnee, en 6.01 lost het "of"-probleem al op.
+
+- **Nu:** Een catalogset kost 4 credits en een carrousel 5 (§22), terwijl lifestyle in de capaciteit juist minder kost: 3 punten tegen 4 (§3.6), en 5–10 minuten tegen ruim 20 voor catalog (§25).
+- **Voorstel:** Elk product kost 4 credits, catalog of lifestyle; extra foto (2) en 4K (1) blijven, en de plankaarten blijven in credits (besluit 23 sep, §23) met het aantal producten eronder.
+- **Waarom:** Met één prijs per product is het saldo gedeeld door 4 het aantal producten, dus verdwijnt de "of"-zin.
+- **Winst:** Eén getal per plan op /plans, al rekent de klant nog wel zodra hij een extra foto (2) of 4K (1) kiest.
+- **Kosten:** S — één constante, planSaving, teksten en de prijstests.
+- **Risico:** Lifestyle wordt in het abonnement 20% goedkoper per product, en 45 en 290 zijn niet deelbaar door 4, dus er blijven 1 en 2 credits over (te gebruiken voor 4K).
+- **Mening:** Goed als je accepteert dat de creditprijs je werk volgt en niet de losse prijs ("beide 5" maakt Pro-catalog maar 16% goedkoper dan een bestelling van 20 of meer), maar een kop in producten draait 23 sep terug en is daarom uit het voorstel gehaald.
+- **Vraag aan Lucas:** Eén creditprijs per product? — (a) beide 4 (b) 4 en 5 houden, met de vertaling uit 6.01 (c) beide 5 — advies: nu (b); (a) opnieuw bekijken als er abonnees zijn.
+- **Prijsvoorstel:** nu catalogset 4 · carrousel 5 credits · voorstel beide 4 · effect: carrousels per maand Starter 9 → 11, Pro 24 → 30, Merk 58 → 72, omzet per abonnement gelijk, en een Pro-abonnee die alles aan lifestyle besteedt kost Lucas 30–60 min extra per maand.
+
+### 6.10. Abonnementsregel uit de eigen bestellingen van een klant
+Gebied: 6 · Dient: klant / Lucas · **Tegenspreker: later** — werkt pas met bestelgeschiedenis, en die is er nog niet.
+
+- **Nu:** De bedankpagina toont vanaf 12 producten een regel over het abonnement (§6.4), en planSaving noemt een algemeen percentage van 30 / 32 / 40% (§22).
+- **Voorstel:** Op het Studio-overzicht verschijnt één regel, zonder pop-up, bij een klant zonder abonnement met minstens twee betaalde bestellingen in 30 dagen en alleen als een plan goedkoper was geweest, met de som in zijn eigen getallen en een link naar /plans.
+- **Waarom:** Een klant stapt over als hij het verschil in zijn eigen getallen ziet, niet als hij een percentage leest.
+- **Winst:** Lucas hoeft geen abonnementsvoorstel voor te rekenen, en de klant ziet de som zonder rekenmachine.
+- **Kosten:** S — één query en één zin in account.js, in NL en EN.
+- **Risico:** Het wordt opdringerig als de regel altijd staat, dus alleen bij een echt verschil, in de verleden tijd ("had gekost"), zonder belofte over volgende maand en met beide bedragen excl. btw.
+- **Mening:** Goed, eerlijk en goedkoop, en zinvol vanaf de tweede bestelling van de eerste klanten.
+- **Vraag aan Lucas:** —
+
+### 6.11. Van de drie ontbrekende functies eerst plan wijzigen, door Lucas
+Gebied: 6 · Dient: Lucas / klant · **Tegenspreker: later** — zinvol bij de eerste abonnee die wil groeien; de bijkoopprijzen kloppen.
+
+- **Nu:** Plan wijzigen, credits bijkopen en de betaalmethode wijzigen bestaan niet en zijn "nog niet besloten" (§4.4, §21).
+- **Voorstel:** Eerst "Plan wijzigen vanaf de volgende termijn" op de klantpagina in /admin (plan en Mollie-bedrag aanpassen, nieuwe credits vanaf de volgende termijn, zonder verrekening), credits bijkopen pas als een abonnee twee keer te weinig heeft (6.06), en voor de betaalmethode geen knop.
+- **Waarom:** Na §28 groeit een klant alleen door een groter plan, en nu moet hij daarvoor opzeggen en opnieuw beginnen, met een creditboek verdeeld over twee abonnementen.
+- **Winst:** Een upgrade kost ±1 minuut in plaats van ±15 minuten opzeggen en opnieuw afsluiten, en elk upgradegesprek is een verkoopmoment.
+- **Kosten:** M — de Mollie-subscription bijwerken, het plan laten gelden vanaf de volgende toekenning, een logregel en een test.
+- **Risico:** Mollie past het bedrag pas bij de volgende incasso aan en de termijnfactuur moet het nieuwe plan noemen; gaat een klant omlaag, dan vervalt zijn saldo gewoon op de datum.
+- **Mening:** Plan wijzigen gaat voor omdat een klant zo groeit en Lucas dat gesprek zelf wil voeren; zelf wijzigen in Studio pas als er genoeg abonnees zijn.
+- **Vraag aan Lucas:** Plan wijzigen — (a) alleen door jou in /admin (b) door de klant zelf in Studio — advies: (a).
+- **Gereedschap:** klantcontact via WhatsApp of mail (§25) · klant vraagt een ander plan · plan en Mollie-bedrag aangepast vanaf de volgende termijn, met een logregel · de klantpagina toont "Vanaf 6 november: Pro · €790".
+- **Prijsvoorstel:** nu bestaat bijkopen niet · voorstel (alleen voor stap 2) per 10 credits tegen de creditprijs van je plan: Starter €86,67 · Pro €65,83 · Merk €58,28 · effect: geen korting, en wie structureel meer nodig heeft is met een groter plan goedkoper uit (Starter plus 30 bijgekochte credits €650 voor 75 credits, op maat 75 €550).
+
+### 6.12. Maandset vooruit klaarzetten, zichtbaar vanaf de maand zelf
+Gebied: 6 · Dient: Lucas / klant · **Tegenspreker: later** — haalt een maandritueel weg, maar met nul abonnees hoeft er nog geen set.
+
+- **Nu:** Lucas uploadt elke maand 20 beelden in /admin/maandset en publiceert ze met de hand, en Studio toont alleen de set van deze maand (§2.10, §10, §25).
+- **Voorstel:** Bij het uploaden kiest Lucas de maand, de set staat vanaf de 1e van die maand vanzelf in Studio (terugtrekken blijft kunnen), en Studio houdt de laatste 3 maanden te downloaden.
+- **Waarom:** Een vaste maandelijkse publiceerhandeling is precies wat Lucas niet wil, en vooruit werken laat hem zelf kiezen wanneer.
+- **Winst:** 4 uploadmomenten per jaar in plaats van 12 publiceermomenten, en een nieuwe abonnee ziet bij de start tot 60 beelden in plaats van 20.
+- **Kosten:** S — een maandveld op `shared_sets` (zit er waarschijnlijk al), een query "maand ≤ nu, laatste 3" en het uploadformulier.
+- **Risico:** Een maandset raakt geen geld of klantgegevens en is terug te trekken, dus de reden van §21 geldt niet, maar controleer dat `retention.js` de gedeelde sets niet na 90 dagen wist.
+- **Mening:** Goed en klein; maak de eerste set pas als de eerste abonnee er is, daarna vult het archief zich vanzelf.
+- **Vraag aan Lucas:** Welke maandsets ziet een abonnee? — (a) alleen die van deze maand, zoals nu (b) die van de laatste 3 maanden (c) alle sets sinds hij begon — advies: (b).
+- **Gereedschap:** nu elke maand, straks één keer per kwartaal (§25) · een map met 20 beelden en de maand · de set staat klaar en verschijnt op de 1e · /admin/maandset toont "november · 20 beelden · zichtbaar vanaf 1 november".
+- **Vereenvoudiging:** de publiceerknop per maand.
+
+**Samengevoegd**
+- **6.07** → opgenomen in 2.07 (meegenomen: bij opzeggen eerst pauzeren aanbieden, dezelfde weergave op de klantpagina in /admin in plaats van "abonnementsweek", de Editions-regel zo dat hij niet op de maandset lijkt, en "Je hebt 72 credits" in plaats van "72 van 120").
+- **6.09** → opgenomen in 2.08 (meegenomen: de zin in stap 1 "We hebben je keuzes van VIS-… ingevuld"; de terugval op de laatste bestelling vervalt omdat de vaste look zich na de eerste bestelling vult, en de link "Opnieuw bestellen zo" gaat naar 3.07).
+
+**Geschrapt**
+- geen
+
+**Bekeken en niet voorgesteld**
+- Abonnement als tegoed in euro's met bonus: de waarde hangt dan af van hoe groot je bestelt en er komt een tweede factuur naast de termijnfactuur, dus het creditbesluit van 19 sep (§23) blijft beter.
+- Voorschot op de volgende maand (een negatief saldo): zegt de klant op, dan moet Lucas het zelf innen, en dat doe je als eenmanszaak niet.
+- "Rest bijbetalen" per product (§28.2.4): dat geeft een factuur voor een deelbedrag, en 6.06 en 6.11 dekken het al.
+- Voorrang inbegrepen bij Merk en een eigen look met korting (§28.4): nieuwe voordelen vóór er één abonnee is, en voorrang met een harde termijn en geld terug past niet als vast voordeel bij 72 producten per maand.
+- "Producten per maand" als naam in plaats van credits: klopt niet bij mengen en extra foto's; 6.01 geeft de vertaling in producten zonder het woord te vervangen.
+
+## 2.7 · Gebied 7 — Mails, meldingen en communicatie
+
+**Kern.** Het grootste gat is geen ontbrekende mail, maar wat de bestaande mails niet zeggen: na "Betaling ontvangen" weet de klant niet dat het stil blijft tot de levering (§11, §21), en de bestelmail vraagt om te betalen terwijl de klant al betaald heeft. Vóór de lancering blijven daarom de teksten (7.01, 7.02, 7.07) en de WhatsApp-knoppen op vaste momenten (7.05, met de onbetaald-knop van 8.02); de reviewvraag gaat op in 3.06 en de ochtendlijst in 4.05. Studiomails sorteren, de melding op meer plekken en de wis-mail wachten tot er volume of een echte purge is.
+
+### 7.01. De betaalmail zegt wat er nu gebeurt, en dat het tot de levering stil blijft
+Gebied: 7 · Dient: klant / Lucas · **Tegenspreker: blijft** — kondigt de bewuste stilte van §21 aan zonder nieuwe mail; het blok "Zo gaat het verder" komt uit één bron met 1.05 en 7.02
+
+- **Nu:** Na "Betaling ontvangen — VIS-…" (met factuur) hoort de klant bewust niets tot "Je bestelling staat klaar" (§11, §19.1, §21). De mail legt die stilte nergens uit, en de tijdlijn op de privélink kent vóór de levering alleen "Ontvangen" (§9).
+- **Voorstel:** De betaalmail krijgt bovenaan de knop "Bekijk je bestelling" (de privélink) en daaronder het vaste blok "Zo gaat het verder" met de leverregel van déze bestelling uit `turnaround()`; de tekst komt uit één bron met de bedankpagina (1.05) en de bestelmail (7.02). Hetzelfde blok staat in de creditbevestiging voor abonnees (§28.2) en in de bestelmail als het tegoed alles dekt. Twee regels verschijnen alleen als ze gelden: ontbrekende foto's per vak (de lijst van 2.05, één keer gebouwd) en een actieve Drukte- of Storingsmelding (pas met 7.08, later).
+> Je betaling van €740,52 is binnen. De factuur zit in de bijlage. **[Bekijk je bestelling]**
+> **Zo gaat het verder** — 1. We maken je beelden op je leverdatum: woensdag 14 en donderdag 15 oktober. *(onder 10 producten: "zo snel mogelijk — vaak binnen een dag, soms een paar dagen")* 2. Onze beeldredactie kijkt elk beeld na. 3. Je krijgt weer een mail als alles klaarstaat; tussendoor sturen we niets. Via de knop hierboven zie je wanneer we begonnen zijn.
+> *(alleen als het zo is)* Er ontbreken nog foto’s: Hoodie zwart — achterkant. Voeg ze toe bij je bestelling in VISUAILS Studio, dan beginnen we met alles compleet.
+> Vragen? Antwoord op deze mail of app ons: <WhatsApp-link>.
+- **Waarom:** Stilte is alleen een probleem als de klant hem niet verwacht. Zo staat de belofte uit §21 in de mail als een zin die de klant leest, in plaats van als een gat.
+- **Winst:** Naar schatting één "hoe staat het?"-bericht minder per drie à vier eerste klanten (±3 min per bericht). Ontbrekende foto's komen binnen vóór de productie, niet erna.
+- **Kosten:** S: notify.js/mailTemplate.js (betaalmail en creditbevestiging), de leverregel uit `turnaround()`, de lijst per vak uit 2.05 en tests op de woorden (§26).
+- **Risico:** De belofte mag niet harder worden dan `turnaround()`, en bij een vaste datum staan er alleen de gekozen dagen in. "Zie je wanneer we begonnen zijn" klopt nu alleen in Studio; op de privélink pas met het statuspad van 3.01.
+- **Mening:** Goed: het goedkoopste voorstel in dit gebied en het helpt een eerste klant het meest. Beter dan een "opgepakt"-mail, omdat het de belofte niet breekt en Lucas per bestelling niets kost.
+- **Vraag aan Lucas:** Waar voegt een klant zonder account ontbrekende foto's toe? — (a) in Studio, inloggen met een code (b) via WhatsApp als bestand (c) een nieuw uploadvak op de privélink — advies: nu (a), met (b) als tweede regel; (c) alleen als dat vak er toch komt.
+
+### 7.02. De bestelmail klopt ook als je al betaald hebt
+Gebied: 7 · Dient: klant · **Tegenspreker: blijft** — de kleine variant (alleen tekst) haalt de twijfel weg en is het antwoord op de vraag in 1.05
+
+- **Nu:** order.js stuurt "We hebben je bestelling — VIS-…" mét betaallink vlak voordat de klant naar Mollie gaat; wie meteen betaalt, krijgt een minuut later "Betaling ontvangen" (§6.3, §7). De eerste mail vraagt dus om te betalen, terwijl de tweede zegt dat het al gelukt is.
+- **Voorstel:** Kleine variant (advies): de bestelmail begint met waar de bestelling staat, niet met de betaalknop; daaronder komen de betaalknop en het overzicht van wat je koos, en de zin over wat er daarna gebeurt komt uit dezelfde bron "Zo gaat het verder" als 1.05 en 7.01. Dit is optie (a) van de vraag in 1.05; kies je daar (b), dan wordt het de grote variant. Grote variant: bij het doorsturen naar Mollie gaat er geen bestelmail uit, de webhook stuurt bij `paid` één mail (overzicht, factuur, het blok van 7.01) en bij `failed/expired/canceled` de bestelmail met betaallink, en de cron vangt 's nachts elke bestelling op die nog geen klantmail kreeg. Btw-controle, aanvragen en creditbestellingen houden hun mail zoals nu.
+> Je bestelling staat erin. Betaal je nu bij Mollie, dan krijg je zo een tweede mail met je factuur.
+> Nog niet betaald? **[Betaal €740,52]**
+- **Waarom:** Twee mails binnen een minuut, waarvan de eerste "betaal" zegt, laten een eerste klant twijfelen of zijn betaling gelukt is.
+- **Winst:** De klant hoeft zich niet af te vragen of hij dubbel betaald heeft. De grote variant scheelt ook één mail per bestelling.
+- **Kosten:** Kleine variant S (tekst in notify.js). Grote variant M (order.js, webhook, vangnet in de cron, tests op de bestelstroom).
+- **Risico:** In de grote variant heeft wie het Mollie-tabblad sluit tot de webhook of tot de nacht geen mail en geen privélink; de herinnering van dag 3 is dan het vangnet. Ook leunt die variant helemaal op de webhook en vraagt hij een uitzondering voor betalen per overboeking (1.05).
+- **Mening:** Doe nu de kleine variant en begin pas aan de grote als klanten er zelf over beginnen, want die haalt een mail weg die bij een afgebroken betaling juist nodig is. Tegenspreker: met één antwoord op de vraag in 1.05 liggen beide voorstellen vast.
+- **Vraag aan Lucas:** — (beantwoord met de vraag in 1.05)
+- **Vereenvoudiging:** alleen bij de grote variant: de bestelmail voor wie meteen betaalt.
+
+### 7.05. WhatsApp-knoppen met kant-en-klare tekst op vijf momenten, en nergens anders
+Gebied: 7 · Dient: Lucas / klant · **Tegenspreker: blijft** — neemt 8.02 op (de knop en "dag 5 van 14" in de zijkolom "wacht op betaling" worden moment 1); de vier termijnconstanten van 8.02 gaan naar 9.01 regel 6
+
+- **Nu:** Alleen Planning → "Aflopend" heeft een knop met voorgeschreven WhatsApp-tekst ("niets gaat automatisch", §10); de zijkolom "wacht op betaling" heeft geen contactknop. Het telefoonveld in stap 3 zegt "we appen als iets onduidelijk is" (§6.2), en bij ontbrekende foto's of een mislukte betaling zoekt Lucas zelf nummer en tekst.
+- **Voorstel:** Eén functie `waLink(moment, bestelling)` maakt een wa.me-link met het nummer in internationaal formaat en de tekst in de taal van de bestelling, achter dezelfde knop als in "Aflopend"; Lucas drukt zelf op verzenden. De knop staat op de bestelpagina in /admin, in de bijbehorende studiomail, in de ochtendlijst (4.05) en voor moment 1 per bestelling in "wacht op betaling", naast "dag 5 van 14" en een mailknop met dezelfde tekst (8.02). Moment 5 is de reviewvraag van 3.06; bij een klacht opent de knop alleen "Hoi Sanne,", en nooit gaat WhatsApp over statuswissels (§21), de levering, bedragen, facturen, btw, de inlogcode of iets wat vanzelf verstuurd wordt. Eerst verandert de tekst bij het telefoonveld (zie de vraag), want betalen en reviews vallen buiten "we appen als iets onduidelijk is".
+> 1 · Betaling open: "Hoi Sanne, je bestelling VIS-AB12-C3D staat nog open; de betaling is niet afgerond. Via deze link kan het opnieuw: <betaallink>. Na <datum> vervalt de bestelling; lukt het niet, laat het weten."
+> 2 · Foto’s ontbreken: "Hoi Sanne, bij je bestelling VIS-AB12-C3D missen we nog: Hoodie zwart — achterkant. Voeg hem toe in VISUAILS Studio, of stuur hem hier als bestand (niet als foto, dan blijft de kwaliteit goed)."
+> 3 · Mail kwam niet aan (pas na O59): "… onze mail over je bestelling kwam niet aan op s…@…. Je beelden staan klaar: <privélink>. Klopt je e-mailadres nog?"
+> 4 · Incasso mislukt: "… de betaling voor je VISUAILS-abonnement van oktober is niet gelukt. Wil je kijken of er iets is met je rekening?"
+- **Waarom:** Precies op deze momenten schiet een mail tekort: hij komt niet aan, wordt niet gelezen, of de klant moet iets doen. Op alle andere momenten is een WhatsApp alleen een kopie van een mail.
+- **Winst:** Per bericht ±10 seconden in plaats van ±2 minuten (nummer opzoeken, tekst typen, kenmerk overnemen). Elke teruggehaalde onbetaalde bestelling is bijvoorbeeld €107,69 (1 catalogproduct) of €740,52 (12 catalogproducten) waard, incl. btw (§3.3, §19.1).
+- **Kosten:** S: de knop met voorgeschreven tekst bestaat al in Planning; nodig zijn de teksten NL/EN in één bestand, het omzetten van het nummer, "dag N van 14" in de zijkolom en tests op de woorden (§26).
+- **Risico:** Zonder bredere tekst bij het telefoonveld botst een bericht over betalen of een review met het doel waarvoor het nummer is gegeven (AVG); dat geldt ook voor 3.06. Een WhatsApp binnen het uur na een mislukte betaling voelt als meekijken, daarom staat moment 1 in de zijkolom en niet in een directe mail.
+- **Mening:** Goed en klein: WhatsApp wordt een gereedschap in plaats van een tweede inbox, en houd het bij deze vijf, want elk extra moment leert de klant dat hij via WhatsApp op de hoogte gehouden wordt. Combineer moment 1 met C3/O57 (de vervaldatum in de herinneringsmail), dan noemen mail en appje dezelfde datum (8.02).
+- **Vraag aan Lucas:** Mag de tekst bij het telefoonveld in stap 3 breder worden? — (a) laten: "we appen als iets onduidelijk is" (dan alleen momenten 2 en 3) (b) "we appen als er iets met je bestelling is" (alle vijf) (c) geen WhatsApp voor betaling en review — advies: (b); dat dekt de vijf momenten eerlijk, zonder iets te beloven over snelheid.
+- **Gereedschap:** plek in de dag (§25): Klantcontact en Ochtend (zijkolom "wacht op betaling") · input: de bestelling en het moment · output: een wa.me-link die WhatsApp Business opent met nummer en tekst al ingevuld · zo zie je dat het gelukt is: WhatsApp opent met de tekst klaar, je drukt zelf op verzenden, en een bestelling verdwijnt uit de kolom zodra de webhook "betaald" meldt.
+
+### 7.07. Klantmails: één knop bovenaan en datums in plaats van termijnen
+Gebied: 7 · Dient: klant / systeem · **Tegenspreker: blijft** — de datums in de levermail en het btw-onderwerp zijn de winst; de contactenregel weghalen wijkt af van §26 en is, net als de inlogcode in het onderwerp, Lucas' keuze
+
+- **Nu:** Termijnen staan in de mails als "7 dagen" en "90 dagen", en de mail na de btw-goedkeuring heet "Je bestelling is nagekeken", terwijl "nagekeken" het woord van onze beeldredactie is (§11, §26). Bij een onbetaalde bestelling met een vaste datum volgen drie mails (dag 3, dag 7 "leverdatum vrijgegeven", dag 14), en elke klantmail bevat "Zet orders@visuails.com in je contacten" (§11, §26).
+- **Voorstel:** Elke klantmail krijgt dezelfde opbouw: aanhef · één zin over waar de bestelling staat · één knop · details · "Vragen? Antwoord op deze mail of app ons." · voet (geen ondertekening, §26). De levermail noemt de revisiedatum in dezelfde woorden als het blok van 3.01 plus de bewaardatum (uit `REVISIE_DAGEN` en retention.js), en de herinnering van dag 3 noemt beide datums, zodat de mail van dag 7 weg kan. De btw-mail heet "Je btw-gegevens zijn goedgekeurd — VIS-…", en "We hebben je revisieronde" herhaalt je notities of vervalt, want het scherm bevestigt het al. De contactenregel en de inlogcode in het onderwerp veranderen alleen als je dat kiest (zie de vraag).
+> Levermail: "Je hebt één revisieronde, tot en met 13 oktober; daarna ronden we je bestelling af. Je beelden staan online tot 4 jan; download ze op tijd."
+> Dag 3: "Je leverdatum houden we vast tot 13 okt; op 20 okt vervalt de bestelling."
+- **Waarom:** Een datum hoeft de klant niet zelf uit te rekenen, en een zin die in dertig mails staat, leest niemand meer.
+- **Winst:** Per mail één ding om te doen met de datums erbij, en één mail minder bij een onbetaalde bestelling. Lucas krijgt minder vragen als "tot wanneer kan ik een revisie vragen?".
+- **Kosten:** S: notify.js/mailTemplate.js, de cron-mails van dag 3 en dag 7, de datums uit retention.js en `REVISIE_DAGEN`, en de tests op woorden (§26).
+- **Risico:** Nog onbekend: krijgt wie na dag 7 toch betaalt "zo snel mogelijk" of een nieuwe datum? Dat bepaalt de zin in de mail van dag 3.
+- **Mening:** Goed; het belangrijkst zijn de datums in de levermail en het nieuwe btw-onderwerp. Tegenspreker: de contactenregel staat volgens §26 in elke klantmail, dus weghalen kan alleen als jij die regel loslaat, al klopt de reden (bezorging hangt af van SPF/DKIM/DMARC bij Resend, gebied 9, niet van die zin).
+- **Vraag aan Lucas:** Drie losse keuzes. (1) De contactenregel alleen nog in de eerste mail aan een nieuw adres, op /thank-you en op de "kijk in je mail"-kaart van Studio ("Niets binnen? Kijk in je spam en zet orders@visuails.com in je contacten.")? — (a) ja, je laat de regel uit §26 los (b) nee, in elke klantmail zoals nu — advies: (a). (2) De inlogcode in het onderwerp ("482913 is je inlogcode voor VISUAILS")? — (a) ja; hij staat dan op het vergrendelscherm, maar geldt 10 minuten en de mail zelf geeft dezelfde toegang (b) nee — advies: kleine winst, jouw afweging. (3) Kan de mail van dag 7 weg? — (a) weg, want de mail van dag 3 noemt de datum al (b) laten — advies: (a).
+- **Vereenvoudiging:** de mail "leverdatum vrijgegeven", eventueel "We hebben je revisieronde", en bij keuze (1a) de contactenregel in ±30 soorten mails.
+
+### 7.03. Studiomails: alleen direct wat iets van je vraagt
+Gebied: 7 · Dient: Lucas / systeem · **Tegenspreker: later** — het advies bij O10 ("laten") houdt stand zolang elke bestelling nieuws is
+
+- **Nu:** hello@ krijgt ruim 25 soorten studiomails, per betaalde bestelling minstens drie ("Nieuwe bestelling", "Betaald", de factuur in bcc), en de meeste laten Lucas niets doen (§3.4, §11).
+- **Voorstel:** Elke studiomail wordt **direct** (er is iets te doen of er ging iets fout; het onderwerp begint met het werkwoord, zoals "Maken" in plaats van "Nieuwe bestelling" plus "Betaald") of **dag** (één regel in de ochtendlijst van 4.05), en "Week gekozen/verzet" en "Dag naar voren" vallen weg (§28.6).
+- **Waarom:** Als elke mail in de inbox iets van Lucas vraagt, mag zijn telefoon bij elke mail trillen.
+- **Winst:** Per betaalde bestelling 1 mail in plaats van 3, bij 20 bestellingen per week ±40 mails en 15–20 minuten sorteren minder.
+- **Kosten:** M samen met de ochtendlijst (notify.js, webhook, cron, tests); de eerste stap (soort per mail, dag-mails naar `hello+info@` met een Gmail-filter) is S.
+- **Risico:** Een dag-mail ziet Lucas pas de volgende ochtend, dus alles waar een klant op wacht of waar geld bij hoort moet "direct" blijven.
+- **Mening:** Goed zodra er volume is; wat nu al kan zonder bouwen: Lucas zet zelf `INVOICE_BCC` op `hello+facturen@visuails.com` met een Gmail-filter "label Facturen, inbox overslaan".
+- **Vraag aan Lucas:** Wil je bij een nieuwe, nog onbetaalde bestelling meteen een mail? — (a) nee, pas "Maken" na de betaling (b) ja, zolang je nog geen tien klanten hebt (c) ja, altijd — advies: (a).
+- **Gereedschap:** plek in de dag (§25): de hele dag, op de telefoon · input: elke gebeurtenis in notify.js · output: één mail met het werkwoord vooraan of één regel in de ochtendlijst · zo zie je dat het gelukt is: per betaalde bestelling precies één "Maken"-mail, en de facturen onder het label Facturen.
+- **Vereenvoudiging:** "Nieuwe bestelling" en "Betaald" als losse mails, de factuur-bcc in de inbox, "Week gekozen/verzet", "Dag naar voren" en de dubbele revisiemail; ongeveer twaalf soorten gaan naar de ochtendlijst.
+
+### 7.08. De studiomelding ook waar de klant betaalt en wacht
+Gebied: 7 · Dient: klant / Lucas · **Tegenspreker: later** — pas nuttig bij drukte, en een melding in stap 5 kan een bestelling kosten
+
+- **Nu:** De ene melding (Mededeling, Drukte of Storing, NL/EN, met eindtijd) staat alleen bovenaan Studio, en dagen dichtzetten in Planning leidt niet tot een melding (§8, §10).
+- **Voorstel:** Dezelfde melding komt op de privélink, op /thank-you, in de betaalmail (7.01) en, alleen bij Drukte of Storing, in stap 5 via een klein `/api`-antwoord (zonder JS werkt het formulier gewoon door), met vaste teksten per soort en een link "Zet hier ook een melding van" bij dagen dichtzetten.
+- **Waarom:** "Soms een paar dagen" is pas eerlijk als de klant het hoort voordat hij betaalt.
+- **Winst:** Minder "waar blijft het?"-vragen in drukke weken, en geen losse Engelse tekst per melding.
+- **Kosten:** S–M: melding.js lezen in portal.js, op /thank-you en in de mail, plus de vaste teksten en de link vanuit Planning.
+- **Risico:** Een Drukte-melding in stap 5 kan een bestelling kosten, daarom staan daar alleen Drukte en Storing, en alleen met een eindtijd.
+- **Mening:** Goed omdat het iets bestaands hergebruikt; de automatische suggestie (betaalde "zo snel mogelijk"-bestellingen boven 100 punten, capacity.js) heeft pas zin bij echt volume en als de punten met de echte minuten kloppen (tegenspraak, Gaten 1).
+- **Vraag aan Lucas:** Mag een melding in stap 5 van het bestelformulier staan? — (a) alleen Drukte en Storing (b) alle drie (c) nergens in het formulier — advies: (a).
+- **Gereedschap:** plek in de dag (§25): Ochtend en Planning · input: soort melding plus vaste tekst of datums · output: één melding in Studio, op de privélink, op /thank-you, in stap 5 en in de betaalmail · zo zie je dat het gelukt is: "bekijken zoals de klant het ziet" toont de melding op de privélink.
+
+### 7.09. De mail vóór het wissen alleen aan wie nog niet gedownload heeft (O56 aangescherpt)
+Gebied: 7 · Dient: klant / systeem · **Tegenspreker: later** — moet er zijn vóór de eerste echte purge (±80 dagen na de eerste echte levering), niet nu
+
+- **Nu:** Er gaat geen mail uit voordat beelden na 90 dagen worden gewist; het advies bij O56/A1 is "7 dagen vooraf, alleen als er nog beelden staan", en het wissen staat uit zolang `PURGE_ENABLED` niet aan staat (§12, §16.2).
+- **Voorstel:** De zip-download in Studio en op de privélink schrijft `downloaded_at` weg, en de cron stuurt 7 dagen vooraf een mail met de wisdatum en de knop "Download alles", alleen als er nooit een zip is gedownload, en zet daarna `purge_warned_at`.
+- **Waarom:** Wie de zip al heeft, krijgt anders een mail waarin niets te doen is.
+- **Winst:** Bij de meeste bestellingen geen extra mail, terwijl de klant die het vergat de mail wel krijgt.
+- **Kosten:** S: de kolommen `downloaded_at` en `purge_warned_at`, één cronstap en één mail, afhankelijk van O55/O56.
+- **Risico:** Wie losse beelden via de browser opslaat, telt niet als download en krijgt de mail toch, wat geen kwaad kan.
+- **Mening:** Goed als aanvulling op O56, want zonder `purge_warned_at` gaat deze mail dubbel, net als de reviewmail in §21; volgens 9.03 (b) mag de purge nu al aan, zolang deze mail er is vóór de eerste echte levering 90 dagen oud is.
+- **Vraag aan Lucas:** —
+- **Vereenvoudiging:** de wis-mail aan klanten die al gedownload hebben.
+
+**Samengevoegd**
+- **7.04** → opgenomen in 4.05 (meegenomen: het nachtrapport opent met dezelfde regels uit dezelfde query plus een link naar het dashboard, in de volgorde datum → klant wacht → geld → systeem, zonder apart ontwerp van negen blokken; of de mail ook komt als er niets open is, kiest Lucas: 7.04 adviseert "altijd", de tegenspreker merkt op dat de cron-bewaker in /admin een stilgevallen cron al ziet).
+- **7.06** → opgenomen in 3.06 (meegenomen: vastleggen in `order_events` in plaats van een nieuwe kolom of een publieke `/api/wa`-link, alleen de Google-link in de tekst, en de tekst als moment 5 van `waLink()` uit 7.05; ook hier moet eerst de tekst bij het telefoonveld mee).
+
+**Geschrapt**
+- Geen.
+
+**Bekeken en niet voorgesteld**
+- "Je bestelling is opgepakt"-mail bij In productie: breekt de belofte uit §21, komt bij "zo snel mogelijk" vaak maar uren vóór de levermail en hangt af van of Lucas die status zet; 7.01 geeft dezelfde zekerheid zonder mail.
+- Vinkje "houd me op de hoogte" in het formulier: een extra vraag in een formulier dat korter moet, en twee soorten klanten met twee stromen.
+- Herinnering vóór de leverdatum bij 10+ producten als er niets ontbreekt: de datum staat al in de betaalmail en in Studio, dus het wordt een mail zonder actie.
+- Automatische WhatsApp (Business API) of een welkomstbericht per WhatsApp: gaat in tegen "niets gaat automatisch" (§10) en herhaalt de betaalmail.
+- Mail bij afronden ("alles goedgekeurd"): de klant deed het zelf en ziet het op het scherm; de reviewvraag loopt via 3.06.
+
+## 2.8 · Gebied 8 — Geld, btw, facturen, tegoed
+
+**Kern.** Vóór de eerste klant moet alleen de live-overgang af, in vaste volgorde (8.01): de live-sleutel moet op twee Workers, testabonnementen zijn na de wissel niet meer bij Mollie te stoppen, en een open testbestelling maakt anders een echte betaling aan (§3.4, §13, §16.1). Het aparte 0%-vinkje kan weg, want volgens Uitvoeringsverordening 282/2011 art. 18 is een door VIES bevestigd nummer het bewijs (8.06, na een bevestiging van je boekhouder). Deel terugbetalen, een factuur corrigeren, VIES vooraf, de ICP-lijst en de boekhoudkoppeling wachten tot de eerste EU-klanten, tot ronde 10 of tot je hebt gezegd wie je aangifte doet (8.08).
+
+### 8.01. Live-overgang in vaste volgorde, met een blok "Klaar voor live" op /admin/diagnose
+Gebied: 8 · Dient: systeem / Lucas · **Tegenspreker: blijft**
+
+- **Nu:** De Mollie-sleutel bepaalt of een factuur in de PROEF- of de VIS-reeks komt (§3.4, §21: geen testmodus-schakelaar), en hij staat apart op de site-Worker en op de cron-Worker (§13). "Testabonnementen opzeggen" staat in §16.1 punt 4, maar er staat niet bij of dat vóór of na de sleutelwissel moet.
+- **Voorstel:** Op /admin/diagnose komt een blok "Klaar voor live" met drie stappen in vaste volgorde, elke regel groen of rood en elke rode met een link naar de plek waar je het regelt. (1) Met de testsleutel nog actief zeg je testabonnementen op en annuleer je open testbestellingen, want met de live-sleutel bereikt /admin die bij Mollie niet meer en krijgt een open testbestelling op dag 3 een herinnering waarvan de link een echte betaling aanmaakt; (2) in Mollie live zet je de methoden aan die de code nodig heeft: iDEAL, kaart, Bancontact en PayPal voor bestellingen, SEPA-incasso voor de vervolgtermijnen. (3) Lucas zet de live-sleutel op beide Workers, en de cron schrijft bij elke run zijn modus weg, zodat het blok "site: live · cron: live" en "Volgende factuur: VIS-2026-0001 · PROEF-facturen tellen niet mee" toont. Daarna volgt één rookproef met een echte betaling en een volledige terugbetaling, zodat de eerste VIS-factuur en de eerste creditnota bestaan vóór de eerste klant.
+- **Waarom:** Het eerste echte geld moet in één keer goed binnenkomen. Een cron die nog op de testsleutel draait, ziet de echte betalingen niet, en een testabonnement dat niet meer te stoppen is, merk je pas weken later.
+- **Winst:** Het is eenmalig, maar het voorkomt een middag uitzoekwerk en een verkeerde eerste factuur. Lucas hoeft niets te onthouden: hij werkt alleen de rode regels af.
+- **Kosten:** S — diagnosepagina in admin.js, één stempel van de cron in `app_settings`, één toets.
+- **Risico:** De rookproef zet een echte factuur en een echte creditnota in de boeken (netto nul). §21 blijft staan: er komt geen schakelaar, de sleutel beslist.
+- **Mening:** Goed en dringend: dit is het enige voorstel in dit gebied dat vóór de eerste klant af moet, en de tegenspreker zet het op 1 van de top 10. Het blok verdwijnt vanzelf zodra alles groen is en VIS-2026-0001 bestaat, dus het wordt geen vast scherm.
+- **Vraag aan Lucas:** Wie doet de rookproefbetaling? — (a) een bevriend bedrijf dat €1,21 betaalt en terugkrijgt (b) jijzelf met VISUAILS: een factuur aan jezelf plus een creditnota (vraag je boekhouder of dat mag) (c) geen rookproef, de eerste klant is de proef — advies: (a), anders (b); niet (c).
+- **Gereedschap:** eenmalig, na de deploy van §16.1 en vóór de eerste echte klant (§25) · input: niets, de pagina leest de stand · output: groene en rode regels, elke rode met een link · zo zie je dat het gelukt is: alles is groen en VIS-2026-0001 staat in /admin/facturen.
+
+### 8.06. Het aparte 0%-vinkje weg, de verleggingszin in het zakelijk-vinkje van stap 5, het land voorgevuld
+Gebied: 8 · Dient: klant / Lucas / systeem · **Tegenspreker: blijft** — neemt 1.10 op (land voorvullen, het btw-nummer in de vinkjestekst); het live-VIES-deel van 1.10 gaat naar 8.05
+
+- **Nu:** Een EU-klant moet in stap 3 bij 0% een apart verklaringsvinkje zetten, terwijl stap 5 al het verplichte vinkje "ik bestel zakelijk" heeft, en zijn land kiest hij zelf (§6.2). Vergeet hij het eerste vinkje, dan komt de bestelling op de btw-lijst en krijgt hij geen betaallink tot Lucas ernaar heeft gekeken (§3.3, §19.2).
+- **Voorstel:** Het verklaringsvinkje in stap 3 vervalt. Voor EU-klanten krijgt het bestaande vinkje in stap 5 de tekst hieronder; voorwaarden, privacy en herroeping blijven in datzelfde vinkje (§23, 30 sep). Een VIES-geldig nummer plus dit vinkje betekent 0%, en de route "vinkje niet gezet" naar de btw-lijst verdwijnt. Daarnaast, als losse S-klus uit 1.10: het land staat voorgevuld met het land van de bezoeker (Cloudflare geeft dat mee, bijvoorbeeld via een bestaande aanroep als /api/step), zichtbaar en te wijzigen.
+  > Ik bestel zakelijk voor <merk>, het btw-nummer <nummer> is van dit bedrijf, en de btw wordt verlegd naar mijn bedrijf.
+- **Waarom:** Volgens Uitvoeringsverordening 282/2011 art. 18 lid 1 mag je een afnemer als ondernemer behandelen als je zijn btw-nummer hebt en VIES het bevestigt; het door VIES bevestigde nummer is dus het bewijs, en het tweede vinkje voegt een foutbron toe, geen zekerheid. De tekst van het zakelijk-vinkje wordt met de bestelling opgeslagen en is extra bewijs.
+- **Winst:** Een EU-klant heeft één veld minder, en na een vergeten vinkje hoeft hij niet meer een dag te wachten en terug te komen om te betalen. Door het voorgevulde land hoeft iedereen één keuze minder te maken; de tegenspreker schat de winst laag zolang er geen EU-klanten zijn.
+- **Kosten:** S — stap 3 en 5 van het formulier in NL en EN (raakt gebied 1), order.js, vat.js en toetsen. Het land voorvullen is een aparte S.
+- **Risico:** Laat je boekhouder bevestigen dat het aparte vinkje weg mag, vooral als het er op zijn advies staat. iDEAL blijft bij 0% uit (§3.4); het land uit het IP-adres kan fout zijn (VPN), daarom wordt het alleen voorgevuld.
+- **Mening:** Goed, en het past bij je eigen besluit van 30 sep (één vinkje voor zakelijk en herroeping); wil je het vinkje houden, laat een vergeten vinkje dan 21% met direct betalen betekenen in plaats van de btw-lijst. Volgens de tegenspreker is dit juridisch houdbaar, en het land voorvullen kan meteen, los van de live VIES-controle (8.05, later).
+- **Vraag aan Lucas:** Waarom staat het 0%-vinkje er apart? — (a) zonder bijzondere reden, het mag weg (b) op advies van een boekhouder: houden, maar vergeten = 21% met direct betalen (c) houden zoals nu — advies: (a), nadat je boekhouder het heeft bevestigd.
+- **Vereenvoudiging:** het verklaringsvinkje in stap 3, de btw-lijstroute "0%-vinkje niet gezet" en, door het voorgevulde land, meestal ook de landkeuze.
+
+### 8.03. "Geld terug" in /admin: deel terugbetalen met de reden erbij (O53, uitgebreid)
+Gebied: 8 · Dient: Lucas / klant / systeem · **Tegenspreker: later** — het Mollie-dashboard geeft bij een deel terugbetalen al een correcte evenredige creditnota; de voorrangsbewaker is pas nodig als er voorrangsbestellingen zijn
+
+- **Nu:** Een deel terugbetalen gaat via het Mollie-dashboard: de webhook boekt het en maakt een evenredige creditnota zonder reden en zonder wat er terugging (§7, §20), en de belofte "voorrang niet gehaald → toeslag terug" (§3.2) hangt van Lucas' geheugen af.
+- **Voorstel:** Op de bestelpagina komt een blok "Geld terug" met drie keuzes (de voorrangstoeslag, aangevinkte producten tegen het tarief van de bestelling, of een ander bedrag), dat naar de rekening of als tegoed teruggeeft met een verplichte reden op de creditnota en in de mail, plus een bewaker "Voorrang gemist" op het dashboard waarbij Lucas zelf beslist.
+- **Waarom:** De klant leest nu op de creditnota niet waarom hij geld terugkrijgt, en de enige harde belofte op de site heeft geen bewaker.
+- **Winst:** 5–10 minuten per terugbetaling, en de reden staat op de creditnota.
+- **Kosten:** S–M — admin.js (bestelpagina, dashboard), mollie.js (refund met een bedrag), creditnotaregels, mail en toetsen.
+- **Risico:** Een refund mislukt als het Mollie-saldo net is uitbetaald (dat wordt een rode regel); voor een gewone deelterugbetaling blijft het dashboard bruikbaar, alleen een btw-correctie gaat daar fout (8.04).
+- **Mening:** Goed: dit is O53 met vaste bedragen en de voorrangsbewaker erbij, maar omdat het dashboard de creditnota nu al correct maakt, zit de winst vooral in de reden op de creditnota en in de bewaker; na §28 wordt het op een creditsbestelling "N credits terug", zonder creditnota.
+- **Vraag aan Lucas:** Welk bedrag geldt als je producten terugbetaalt? — (a) het tarief dat de klant betaalde (bij 12 catalogproducten €51 per stuk excl. btw) (b) de staffel opnieuw rekenen voor wat overblijft (c) altijd een vrij bedrag — advies: (a), simpel en uit te leggen.
+- **Gereedschap:** bij een klacht of een revisie die niet na te maken is (§3.5), en 's ochtends bij de bewaker · input: keuze plus reden · output: Mollie-refund, creditnota-pdf en mail aan de klant · zo zie je dat het gelukt is: de creditnota staat onder Administratie en de betaalpil toont "deels terug €…".
+
+### 8.04. "Factuur corrigeren": creditnota en nieuwe factuur in één handeling
+Gebied: 8 · Dient: Lucas / klant / systeem · **Tegenspreker: later** — het klassieke EU-geval komt pas met EU-klanten; alleen het gegevensdeel (S) kan eerder als een klant erom vraagt
+
+- **Nu:** Een factuur is byte-identiek te herbouwen en mag alleen bij een betaling gerepareerd worden (§7, §21), en wie de btw terugstort via het Mollie-dashboard krijgt een evenredige creditnota (§20), terwijl er een volledige creditnota plus een nieuwe 0%-factuur hoort.
+- **Voorstel:** Onder Administratie komt een knop "Factuur corrigeren": je past naam, adres of btw-nummer aan (een btw-nummer gaat meteen langs VIES), het scherm toont vooraf wat er gebeurt (bijv. creditnota −€660,66, nieuwe factuur €546,00 met btw verlegd, €114,66 terug), en één klik maakt de creditnota, hangt de nieuwe factuur aan dezelfde betaling en mailt beide pdf's.
+- **Waarom:** Zonder dit gereedschap doet Lucas het buiten het systeem (dan ontstaat er een gat in de reeks) of via het dashboard (dan krijgt hij een verkeerde creditnota).
+- **Winst:** 20–30 minuten per geval, en de klant heeft dezelfde dag een factuur die zijn boekhouder accepteert; geschat bij één op de twintig eerste bestellingen.
+- **Kosten:** M — invoice.js, creditnota, Mollie-refund, mailtemplate en snapshottoetsen; alleen gegevens corrigeren, zonder geld, is S.
+- **Risico:** §21 blijft gerespecteerd, want er hoort altijd een betaling en een creditnota bij, maar een correctie in een later kwartaal valt in dat kwartaal onder 1a/3b en in de ICP (8.07).
+- **Mening:** Goed, en juist bij de btw-variant gaat het nu verkeerd; bouw het gegevensdeel (S) zodra een klant erom vraagt, en de btw-variant bij de eerste EU-klanten.
+- **Vraag aan Lucas:** Mag een EU-klant achteraf 0% krijgen als hij zijn btw-nummer vergat? — (a) ja, altijd via deze knop (b) alleen binnen hetzelfde kwartaal (c) nee, hij vraagt de Nederlandse btw zelf terug — advies: (a); met (c) verlies je de klant.
+- **Gereedschap:** bij een mail of WhatsApp "kan de factuur op … staan?" · input: de nieuwe gegevens · output: creditnota, nieuwe factuur, zo nodig een terugbetaling, en één mail · zo zie je dat het gelukt is: de oude factuur (doorgestreept), de creditnota en de nieuwe factuur staan onder elkaar onder Administratie.
+
+### 8.05. Btw-lijst alleen voor echte twijfel: VIES vooraf controleren, bij een storing vanzelf opnieuw
+Gebied: 8 · Dient: klant / Lucas · **Tegenspreker: later** — er zijn nu nul EU-klanten; neemt het live-VIES-deel van 1.10 op
+
+- **Nu:** VIES wordt pas gecontroleerd als de klant het formulier verstuurt (§6.3); bij een storing of twijfel wacht de bestelling zonder betaallink op de btw-lijst, en de mail belooft een besluit "uiterlijk" 24 uur later, ook in het weekend (§3.3, §19.2, §22).
+- **Voorstel:** Stap 3 controleert het nummer zodra de klant het invult, via een nieuw /api/vies met limiet en cache per nummer (uit 1.10; zonder JavaScript bij versturen, zoals nu) en met drie meldingen (bevestigd, met de bedrijfsnaam als VIES die geeft · onbekend · niet bereikbaar); een bestelling die door een storing wacht, wordt opnieuw gecontroleerd als de klant zijn privélink opent of Lucas /admin opent (hoogstens één keer per 10 minuten), en gaat bij "geldig" door naar 0% en een betaallink.
+- **Waarom:** Typfouten worden gevangen voordat de klant bestelt, en een storing verdwijnt van de lijst zonder dat Lucas iets hoeft te doen.
+- **Winst:** 3–5 minuten per storingsgeval en geen weekendplicht, maar dat telt pas vanaf de eerste EU-klant.
+- **Kosten:** S–M — vies.js en vat.js, een klein /api-eindpunt (raakt gebied 1), portal.js en de mailtekst in NL en EN (1.10 schatte het met cache en formulierwerk op M).
+- **Risico:** §21 blijft staan: alleen een echt "geldig" van VIES zet 0%, en omdat VIES eigen limieten heeft, is er de rem van 10 minuten.
+- **Mening:** Goed: de btw-lijst wordt een lijst met beslissingen in plaats van een plek waar bestellingen wachten, maar de eerste klanten zijn waarschijnlijk Nederlands, dus dit komt na 8.06.
+- **Vraag aan Lucas:** (1) Welke tekst geldt bij een VIES-storing? — (a) "binnen 24 uur" (de huidige termijn, §22) (b) "meestal dezelfde werkdag" — advies (8.05): (b), want "24 uur" is in het weekend niet te houden en staat in §26 bij de beloftes die nooit getypt worden. (2) Mag een bestelling na een geldige herhaalcontrole zonder jou door naar betalen? — (a) ja, net als bij bestellen (b) nee, jij klikt altijd (c) ja, met een regel in het nachtrapport — advies: (c).
+- **Gereedschap:** ochtend, btw-lijst (§25) · input: niets · output: storingsgevallen verdwijnen vanzelf van de lijst zodra VIES antwoordt · zo zie je dat het gelukt is: "VIES-herhaalcontrole: VIS-… goedgekeurd" staat in het nachtrapport.
+
+### 8.07. ICP-lijst kant-en-klaar per kwartaal, met de controle "ICP = 3b"
+Gebied: 8 · Dient: Lucas / systeem · **Tegenspreker: later** — er zijn nul EU-klanten; eerst de vraag van 8.08
+
+- **Nu:** /admin/facturen geeft per kwartaal de totalen 1a / 3b-ICP / buiten EU en een CSV (§7, §10), maar hoe Lucas de ICP-opgaaf doet, is nergens vastgelegd (§19.2, §25).
+- **Voorstel:** Per kwartaal komt er een blok "ICP-opgaaf" met per afnemer: landcode, btw-nummer uit `snapshot_json`, bedrag diensten (facturen min creditnota's) en aantal facturen; correcties op eerdere kwartalen staan apart, met de controle "Totaal ICP = rubriek 3b" (rood als het niet klopt), een CSV zoals het formulier vraagt, alleen de VIS-reeks, en een regel in het nachtrapport in de eerste nacht van elk nieuw kwartaal.
+- **Waarom:** De Belastingdienst legt rubriek 3b naast de ICP-opgaaf, en nu haalt Lucas die lijst met de hand uit de facturen.
+- **Winst:** 15–30 minuten per kwartaal zodra er EU-klanten zijn; nu nul.
+- **Kosten:** S — facturenoverzicht in admin.js en één regel in de cron.
+- **Risico:** Waar "buiten EU" in de aangifte hoort (rubriek 3a is voor goederen) en hoe een correctie op een eerder kwartaal in de ICP komt, moet je boekhouder bevestigen.
+- **Mening:** Goed en goedkoop, maar het dekt alleen de verkoopkant; de inkoopkant kent /admin niet (8.08).
+- **Vraag aan Lucas:** —
+- **Gereedschap:** eens per kwartaal, in de eerste week erna, aangekondigd in het nachtrapport (§25) · input: niets · output: ICP-tabel, CSV en de getallen voor de aangifte · zo zie je dat het gelukt is: de groene regel "Totaal ICP = 3b".
+
+### 8.08. Facturen naar de boekhouding — eerst weten wie de aangifte doet
+Gebied: 8 · Dient: Lucas · **Tegenspreker: later** — eerst het antwoord; niets bouwen voordat dat er is
+
+- **Nu:** Elke factuur gaat als pdf in bcc naar hello@ en /admin geeft een kwartaal-CSV (§3.4, §7), maar nergens staat of Lucas een pakket of een boekhouder gebruikt, en Mollie betaalt uit in partijen, min kosten.
+- **Voorstel:** Afhankelijk van het antwoord: (a) bij een pakket met API (bijv. Moneybird) zet /admin elke VIS-factuur en creditnota er bij betaling in, (b) bij een boekhouder geeft /admin per kwartaal één zip met de pdf's, de CSV, de ICP-lijst (8.07) en per Mollie-uitbetaling welke facturen, terugbetalingen en kosten erin zitten, (c) als je zelf aangifte doet, 8.07 plus die uitbetalingslijst.
+- **Waarom:** De CSV dekt alleen de verkoop, terwijl de aangifte ook om voorbelasting en verlegde btw op inkoop uit het buitenland vraagt (Magnific, Cloudflare, Resend), en zonder uitbetalingslijst is elke bijschrijving van Mollie uitzoekwerk.
+- **Winst:** (a) 1–2 uur per kwartaal vanaf ongeveer 20 bestellingen per maand; (b) en (c) besparen 30–60 minuten afstemmen per kwartaal.
+- **Kosten:** (a) M — API-koppeling, een secret en toetsen; (b)/(c) S — zip en CSV uit bestaande gegevens plus de settlements-API van Mollie.
+- **Risico:** Bij (a) wordt er dubbel geboekt als Lucas ook nog met de hand invoert, en de koppeling moet eerst in een testadministratie draaien.
+- **Mening:** Voor de eerste kwartalen is (b) of (c) genoeg; (a) loont pas bij volume, en alleen als je het pakket toch al gebruikt.
+- **Vraag aan Lucas:** Wie doet nu je btw-aangifte en boekhouding? — (a) Moneybird of een ander pakket (b) een boekhouder (c) ikzelf in Mijn Belastingdienst — advies: eerst het antwoord; tot ongeveer 20 bestellingen per maand (b) of (c) met het kwartaalpakket.
+- **Gereedschap:** eens per kwartaal (§25) · input: kwartaal kiezen · output: één zip, of bij (a) automatisch in het pakket · zo zie je dat het gelukt is: de som van de uitbetalingslijst is gelijk aan wat Mollie op de bank zette.
+
+### 8.09. Tegoed: achter elke euro tegoed zit een creditnota, of hij staat als korting op de factuur
+Gebied: 8 · Dient: systeem / Lucas · **Tegenspreker: later** — klopt btw-technisch, maar is pas nodig bij het eerste goodwilltegoed; tot dan geen goodwill via een handmatige tegoedboeking
+
+- **Nu:** Lucas boekt tegoed bij of af op de klantpagina (max. €1.000, reden verplicht) en het wordt van het bedrag incl. btw afgetrokken (§3.4, §7), maar of een handmatige goodwillboeking een creditnota krijgt, staat nergens ("creditnota bij tegoed", §23 19 sep, is alleen bij annuleren beschreven).
+- **Voorstel:** Tegoed krijgt een herkomst, "uit creditnota VIS-…" (op de factuur een betaalregel) of "korting" (een regel vóór de btw); de simpelste vorm is goodwill alleen nog via "Geld terug → als tegoed" (8.03) op een betaalde bestelling.
+- **Waarom:** Wordt goodwilltegoed als betaling verrekend, dan staat er btw op de factuur over geld dat nooit binnenkwam, en draagt Lucas te veel af.
+- **Winst:** Geen foute factuur die later een creditnota nodig heeft (ongeveer 20 minuten per geval); voor de klant verandert er niets.
+- **Kosten:** S — tegoed.js, klantpagina, factuurregels en toetsen.
+- **Risico:** §21 blijft staan (tegoedboekingen worden niet gewijzigd, er komt alleen een veld bij), en wat er boekhoudkundig gebeurt met vervallen tegoed uit een creditnota (24 maanden, §22) is een vraag voor je boekhouder.
+- **Mening:** Goed, met voorkeur voor de simpelste vorm; tot het er is, geef je geen goodwill via een handmatige tegoedboeking (tegenspreker).
+- **Vraag aan Lucas:** Hoe bedoel je goodwilltegoed? — (a) altijd via een creditnota op een betaalde bestelling (b) als twee soorten: tegoed en korting (c) zo laten, als je boekhouder het goedvindt — advies: (a).
+
+### 8.11. Terugboeking (chargeback of storno): automatisch alleen wat terug te draaien is
+Gebied: 8 · Dient: Lucas / systeem · **Tegenspreker: later** — hoort op de werklijst van ronde 10
+
+- **Nu:** Een chargeback levert alleen een logregel en een studiomail op (§7, §20), terwijl na §28 de termijn de enige betaling achter creditsbestellingen is en een klant een SEPA-incasso tot 8 weken lang zonder reden kan terugboeken.
+- **Voorstel:** De webhook doet bij een chargeback alleen omkeerbare dingen: de bestelling krijgt een rode pil "Betaling teruggeboekt — niet leveren" (met bevestiging bij "Op geleverd zetten"), bij een termijn gaat het abonnement op pauze en worden de credits van die termijn bevroren, de factuur blijft staan, alles verdwijnt weer als Mollie de chargeback terugdraait, en de studiomail krijgt een WhatsApp-knop.
+- **Waarom:** Zonder dit levert Lucas werk waarvoor het geld al weg is, en kan een abonnee na een storno gewoon doorbestellen met credits.
+- **Winst:** Bij één storno op Pro worden 120 credits (€790 netto) niet weggegeven; verder weinig.
+- **Kosten:** S–M — mollie.js (chargebacktak van de webhook), admin.js (pil), subscription/slots (credits blokkeren) en toetsen.
+- **Risico:** §7 zegt "niets automatisch teruggedraaid", maar pauzeren is omkeerbaar; een chargeback kan een bankfout zijn, dus de klant krijgt geen mail zonder Lucas, en het automatisch terugstorten bij dubbel betalen blijft zoals het is.
+- **Mening:** Goed, maar pas nodig met ronde 10, en of de btw op een vordering die nooit betaald wordt later terug kan (oninbaar), is een vraag voor je boekhouder.
+- **Vraag aan Lucas:** Mag een teruggeboekte termijn het abonnement automatisch op pauze zetten? — (a) ja, en de credits van die termijn worden bevroren (b) nee, alleen een melding; jij beslist (c) ja, maar de credits blijven bruikbaar — advies: (a).
+- **Gereedschap:** ochtend, dashboardbewaker en studiomail (§25) · input: niets (de webhook) · output: een rode pil of het abonnement op pauze, plus een WhatsApp-knop · zo zie je dat het gelukt is: de bewaker "Betaling teruggeboekt" blijft op het dashboard staan tot je hem afhandelt.
+
+### 8.12. Offertes: de prijs één keer typen, het restant komt vanzelf mee
+Gebied: 8 · Dient: Lucas / klant · **Tegenspreker: later** — bij de lancering zijn er weinig offertes; het S-deel zodra er video-aanvragen binnenkomen
+
+- **Nu:** Bij video, hooks en eigen look typt Lucas de prijs eerst in zijn antwoord en daarna nog eens in de offerte in /admin, en nergens staat of een onbetaalde offerte of een open restant een herinnering krijgt (§2.4, §2.6, §10).
+- **Voorstel:** Het offerteformulier wordt het antwoord zelf (regels, toelichting, volledig of aanbetaling, in één mail met de betaallink); offerte en restant volgen dezelfde termijnen als een bestelling (dag 3 en dag 14) en staan in "wacht op betaling", en het restant gaat automatisch mee in de mail die bij de dienst hoort.
+- **Waarom:** Nu typt Lucas elke prijs twee keer, en of het restant wordt verstuurd, hangt van zijn geheugen af.
+- **Winst:** Ongeveer 10 minuten per offerte en geen vergeten restant, en elke offerte is honderden euro's waard.
+- **Kosten:** S voor één keer typen plus herinneringen; M met het automatische restant (admin.js, notify, cron en webhook).
+- **Risico:** Video-offertes verdwijnen zodra video vaste prijzen per stijl krijgt (§2.4), dus bouw eerst het S-deel.
+- **Mening:** Goed: het S-deel bij de eerste video-aanvragen, het restant pas bij twee of meer offertes per maand; een eigen look die pas actief wordt als het restant binnen is, is de eerlijkste koppeling.
+- **Vraag aan Lucas:** Wanneer moet het restant betaald zijn? — (a) bij levering, met de link in de levermail en de beelden meteen zichtbaar (b) voordat de beelden of de look beschikbaar komen (c) per offerte kiezen — advies: (c), standaard (a) bij video en (b) bij eigen look.
+- **Gereedschap:** ochtend, offertes afhandelen (§25) · input: regels en toelichting · output: één mail met betaallink, later automatisch de restantlink · zo zie je dat het gelukt is: de offerte staat in "wacht op betaling" met "aanbetaling betaald · restant open".
+
+**Samengevoegd**
+- **8.02** → opgenomen in 7.05 (meegenomen: de WhatsApp- en mailknop met betaallink in "wacht op betaling" als moment 1, met "dag 5 van 14"; de vier benoemde termijnconstanten gaan naar 9.01 regel 6, met twee aparte zevens voor "leverdatum vasthouden" en "betalen na btw-akkoord").
+- **8.10** → opgenomen in 2.02 (meegenomen voor ronde 10: tegoed betaalt nooit een creditsbestelling en wordt nooit credits, credits worden nooit euro's, in het Engels heet tegoed "account balance" en een creditnota "credit note", bij elke creditsbestelling komt de link naar de termijnfactuur, en de vraag wat er gebeurt bij een terugbetaalde termijn met al gebruikte credits — advies: een creditnota alleen voor het ongebruikte deel).
+
+**Geschrapt**
+- geen
+
+**Bekeken en niet voorgesteld**
+- 21% rekenen bij een VIES-storing en later verrekenen: daar is in §23 (7 aug) bewust van afgestapt, en elk geval levert een creditnota en een terugbetaling op, wat meer werk is dan wachten.
+- De betaallink hergebruiken in plaats van bij elke klik een verse betaling: dubbel betalen wordt al automatisch teruggestort (§7), en een verlopen Mollie-pagina is erger.
+- De cron de voorrangstoeslag automatisch laten terugstorten: dan gaat er geld weg zonder dat iemand kijkt (§21), en te laat door ontbrekende foto's telt niet als "niet gehaald".
+- Een proforma of bestelbevestiging-pdf vóór de betaling: de regel is "nooit factureren vóór betaling" (§23, 20 aug); pas maken als een klant erom vraagt.
+- Een periodieke VIES-hercontrole voor EU-abonnees en een tweede automatische betaalherinnering: de eerste loont pas als er EU-abonnees zijn, en de tweede is vervangen door de WhatsApp-knop (nu in 7.05).
+
+## 2.9 · Gebied 9 — Techniek, risico en onderhoud
+
+**Kern.** Het grootste risico in dit gebied is niet de server maar de uitrol en het gebrek aan signalen: de cron is nooit gedeployed, uitrol en migraties hangen aan losse CMD-commando's, en bij bijna elke storing hoort Lucas het nu van de klant (§12, §13, §16.1). Van de 26 punten van §17 raken er zes een klant of het geld en horen vóór de lancering live (pakket A van 9.01); de rest kan wachten of verdwijnt met ronde 10. Volgorde: 9.02 (uitrollen, met één J/N vóór commit, push en migraties), met pakket A in de eerste uitrol → 9.03 (purge pas na #4 van pakket A) → 9.05; signalen, /admin-beveiliging, herstelkaart en kladblok komen na de lancering.
+
+### 9.01. §17 als opruimlijst in drie pakketten; ronde-10-punten niet apart repareren
+Gebied: 9 · Dient: systeem / klant · **Tegenspreker: blijft** — regel 6 wordt twee benoemde termijnen (uit 8.02)
+
+- **Nu:** §17 (26 punten) en §16.4 staan door elkaar en zonder volgorde; een deel verdwijnt met ronde 10 (§28.6) en drie punten zijn op 6 okt al besloten (complete uit de code, eigen look "vanaf het gewone tarief", `modelQuestion` weg).
+- **Voorstel:** Drie pakketten volgens de tabel: **A**, wat een klant ziet of het geld raakt (±4 uur); **B**, wat een volgende lezer of chat verkeerd informeert, samen met het ene cosmetische punt **C** (±4 uur); en **R10**, wat meegaat in ronde 10. A en B gaan elk als eigen uitrol (9.02), A eerst, zodat twijfel in B (PRODUCT.md herschrijven of weggooien) A nooit ophoudt. Per pakket legt een test het vast, en de controle op hardgetypte getallen (9.11) houdt het zo. §17.15 blijft (§21) en §17.26 wordt één regel in de begrippenlijst.
+- **Waarom:** Op live staat een vaste videoprijs (€69, ook in de Google-omschrijving) voor iets wat op aanvraag is, plus een tariefbelofte bij eigen look die de offerte tegenspreekt. De rest laat een volgende lezer met verkeerde getallen rekenen (merkmodel "€1.250" in plans.js).
+- **Winst:** De klant ziet nergens meer een prijs die niet geldt, en een volgende chat hoeft 26 punten niet opnieuw te wegen.
+- **Kosten:** M in totaal (A = S, B + C = S); raakt o.a. pricing.js, plans.js, videoStyles.js, order.js, vat.js, cron/index.js, retention.js, scripts/ en de schrijfregels (STIJL.md, SCHRIJFWIJZER.md, PRODUCT.md).
+- **Risico:** Oude (test)bestellingen en facturen met `complete`/`drop` moeten blijven tonen, dus eerst nakijken dat een factuur alleen uit `snapshot_json` wordt herbouwd. §17.22 is ook een datacorrectie op live (migratie), geen codewijziging alleen.
+- **Mening:** Goed en nodig, maar alleen pakket A is lanceringswerk: B kan tot na de eerste klanten wachten zonder dat iemand het merkt, en zo gaat het deel dat de klant raakt niet mee met het deel waarover nog te twijfelen valt. Tegenspreker: regel 6 is geen "alles uit `PAYMENT_DAYS`", want leverdatum vasthouden (order.js) en betalen na btw-akkoord (vat.js) zijn twee verschillende zevens; één constante voor beide verandert gedrag zodra iemand er één aanpast.
+- **Vraag aan Lucas:** Wat moet `/start/complete` doen als complete uit de code is? — (a) doorsturen naar `/start` (b) doorsturen naar `/catalog#looks` (c) 404 — advies: (a); oude links uit mails of bladwijzers landen dan op het keuzescherm.
+- **Vereenvoudiging:** complete-verkoop en `/start/complete`, `ADVISORY`, `scripts/deliver.mjs` + `npm run deliver`, `HomeV2.astro`, `modelQuestion`/`faceInFrame`, ongebruikte statuswaarden, PRODUCT.md als los document.
+
+**Opruimtabel bij 9.01** (volgorde = bouwvolgorde · A = klant of geld · B = misleidt een volgende lezer · C = cosmetisch · R10 = gaat mee in ronde 10)
+
+| # | §17 | Wat | Pakket · waarom | Tijd | Samen met |
+|---|---|---|---|---|---|
+| 1 | 2, 17 | €69 uit `priceTrust`/`cardPrice` en de meta-description van `/video/[slug]` zolang `VIDEO_OP_AANVRAAG` aan staat; "€1" uit `TEST_SAMPLE.price` | A · prijs die niet geldt, ook in Google | 45 min | #2; 9.11 |
+| 2 | 19 | "het gewone tarief" → "vanaf het gewone tarief": dienstpagina's, `/start/custom-look`, FAQ, voorwaarden, NL + EN | A · belofte die de offerte tegenspreekt | 30 min | #1 |
+| 3 | 5 (verkoop), §16.4 | Complete uit verkoop en code: `/start/complete` doorsturen, `LADDER.complete`, bundelregel /pricing, zin in de voorwaarden; alleen een weergavelabel voor oude bestellingen | A · verkoop die niet meer bestaat | 1,5 uur | #9; #19 |
+| 4 | 22 | `cancelStaleApprovals` zet ook `cancelled_at`; eenmalige migratie voor bestaande vervallen bestellingen | A · admin-filters missen ze; leunt de purge erop? | 45 min | vóór purge aan (9.03); #6 |
+| 5 | 18 | `custom` uit `LOOK_IDS` en `brandKitView`; bestaande vaste looks nakijken | A · abonnee kan een op-aanvraaglook vastzetten | 30 min | ronde 10 |
+| 6 | 16 | Twee benoemde termijnen i.p.v. alles uit `PAYMENT_DAYS`: `VENSTER_VASTHOUDEN_DAGEN` 7 (order.js ~1769) en `BETALEN_NA_BTW_AKKOORD` 7 (vat.js), met `HERINNERING_DAG` 3 en `VERVAL_DAG` 14 in één bestand; cron (2×, per regel nakijken welke) en mailtekst lezen eruit | B · geldgevolg pas als iemand één constante aanpast | 45 min | #7; 8.02; 9.11 |
+| 7 | 3 | `VOORRANG_COPY.limits` uit `VOORRANG.maxProducts/maxClips` | B · twee bronnen | 15 min | #6 |
+| 8 | 1, 4, 23 | Oude bedragen uit commentaar (merkmodel €1.250 2×, outfit); verwijzing naar `eigenStijlCredits()` weg | B · lezer rekent ermee | 15 min | #9 |
+| 9 | 6 | `ADVISORY` en de twee controles onderaan plans.js weg | B · dienst bestaat niet | 20 min | #3, #8 |
+| 10 | 8, 9 | `scripts/deliver.mjs` en `npm run deliver` weg; commentaar: /admin is de weg; `tag-delivery.mjs` blijft tot 4.01 live is | B · kapot pad dat als alternatief leest | 30 min | 4.01 |
+| 11 | 20 | `modelQuestion()`/`faceInFrame()` weg | B · dode code | 15 min | #15 |
+| 12 | 23 | `closed_at`-commentaar in retention.js rechtzetten; "12 maanden" in admin.js uit retention.js | B · verkeerde bewaartermijn | 15 min | #4; 9.03 |
+| 13 | 10 | Kopnotitie account.js: e-mailadres wijzigen bestaat wél | B · verkeerd commentaar | 5 min | #8 |
+| 14 | 7, 24 | PRODUCT.md laten opgaan in het overzicht; STIJL.md wint van SCHRIJFWIJZER.md: "naadloos" verboden; `euro()` wint van STIJL.md ~72: "€1" zonder spatie (§26) | B · tegenstrijdige schrijfregels | 30 min | 9.10 |
+| 15 | 13 | `HomeV2.astro` en de uitzondering in `tests/ronde9.test.mjs` weg (kan Claude doen, i.p.v. §16.1 stap 5) | B · dood bestand | 10 min | #11 |
+| 16 | 26 | Geen fout: één regel in §18 "In controle (admin) = wordt nagekeken door onze beeldredactie (klant)" | B · voorkomt een "reparatie" | 5 min | overzicht |
+| 17 | 25 | Thumb van Rae naar het kleine bestand, commentaar rechtzetten; #EDEDED alleen als label voor oude bestellingen | C · laadt een groot bestand | 15 min | #11 |
+| 18 | 21 | Ongebruikte waarden uit status.js en het schemacommentaar | R10 · status.js gaat toch om | 15 min | ronde 10 |
+| 19 | 5 (abonnement) | `PLAN_SERVICE = 'complete'`, `service = 'drop'` bij de weekstart | R10 · verdwijnt met planStart.js | 0 | ronde 10 |
+| 20 | 11 | `planReturnView` noemt "Deze maand" | R10 · tab wordt herbouwd | 0 | ronde 10 |
+| 21 | 12 | F67 | R10 · alleen uitrollen; `handlePlanQueue` verdwijnt | 0 | 9.02 |
+| 22 | 14 | Geen weekstartmail | R10 · weekstart vervalt (§28) | 0 | — |
+| 23 | 23 (plans.js ~358) | 15 producten/dag en 315/maand | R10 · budget vervalt (§28.2) | 0 | ronde 10 |
+| 24 | 15 | Geen "account verwijderen" voor de klant | geen actie · bewust (§21) | 0 | — |
+
+Totaal: A ±4 uur · B + C ±4 uur · R10 niets extra.
+
+### 9.02. Eén dubbelklik "Uitrollen": testen, tonen wat meegaat, committen, pushen, live zetten, nakijken
+Gebied: 9 · Dient: Lucas / systeem · **Tegenspreker: blijft** — binnen "ik push zelf", mits één J/N vóór commit, push en migraties
+
+- **Nu:** Na elke ronde typt Lucas vijf CMD-commando's (`git add -A`, commit, push, `npm run deploy`, `npm run cron:deploy`, §16.1) en kijkt Claude daarna live na (§13); hoe nieuwe migraties op de live-D1 komen, staat nergens. Daardoor is de cron nog nooit gedeployed.
+- **Voorstel:** Claude schrijft `UITROLLEN.bat` (bureaublad) plus `scripts/uitrol.mjs`; Lucas start het zelf met een dubbelklik in zijn eigen map, en Claude draait het nooit. Zeven stappen die elk stoppen bij een fout: (1) controle op geheimen (`.dev.vars`, dumps, back-ups), (2) tests, (3) commit van alleen wat .gitignore toelaat, geen blinde `git add -A`, met het bericht uit `kladblok/COMMIT-BERICHT.txt`, en push, (4) nieuwe migraties op live, alleen toevoegend, (5) site live, (6) nachtwerk (cron) live, (7) zes adressen op live nakijken (home, /nl, /start/catalog, Studio-inlog, /admin-inlog, /api/capacity). Na stap 2 stopt het script één keer: het toont in gewone woorden welke bestanden en welke nieuwe migraties (met naam) meegaan en vraagt "Doorgaan? J/N", want terugdraaien zet geen database terug. Daarna volgt een eindscherm plus een regel in `kladblok/uitrol-log.txt`, met ernaast `TERUGDRAAIEN.bat` (`wrangler rollback`) voor als stap 7 rood is.
+  > Dit gaat mee: <aantal> bestanden (lijst eronder) · nieuwe migraties: <namen> of "geen"
+  > Doorgaan? J/N
+  > LIVE EN NAGEKEKEN · 6 okt 14:32
+  > GESTOPT BIJ STAP 4 — er is niets live gezet
+- **Waarom:** Site en cron kunnen niet meer uit de pas lopen, en een vergeten migratie breekt anders de eerste bestelling na ronde 10 (`payment_status = 'credits'`). Met één Worker legt een fout in een gedeeld bestand site, Studio en /admin tegelijk plat, en stap 7 ziet dat binnen een minuut.
+- **Winst:** Vijf commando's en "hopen dat het gelukt is" worden één dubbelklik, één J/N en 3–6 minuten wachten. Claude kijkt daarna alleen de inhoud na, niet of de site draait.
+- **Kosten:** S; een nieuw .bat-bestand, `scripts/uitrol.mjs`, package.json (`npm run uitrollen` als dezelfde route), .gitignore nakijken.
+- **Risico:** Faalt stap 6 na stap 5, dan zegt het eindscherm "SITE LIVE, NACHTWERK NIET — klik nog een keer". Terugdraaien zet code terug, geen database: daarom staat de J/N vóór commit en migraties, en zijn migraties alleen toevoegend (nooit in dezelfde uitrol een kolom weghalen; §28.6 doet dat al goed met "na een maand droppen").
+- **Mening:** Goed, en het meeste rendement in dit gebied: het haalt de enige handeling weg die Lucas nu doet zonder te zien of ze gelukt is, en Claude raakt zijn machine en git niet aan. Tegenspreker: zonder de lijst van wat meegaat en de J/N verdwijnt het moment waarop Lucas ziet wat er live gaat; mét blijft het zijn eigen push.
+- **Vraag aan Lucas:** 1. Hoe komen migraties nu op de live-database? — (a) dat zit al in `npm run deploy` (b) Claude zegt het per keer en jij typt het commando (c) weet ik niet — advies: als vaste stap 4 in de knop; bij (a) wordt stap 4 alleen een melding.
+  2. Mag de knop de volledige testreeks draaien (build + 157 scripts)? — (a) altijd (b) een snelle set (9.11), de volledige alleen als Claude het zegt (c) geen tests in de knop — advies: (a) zolang het onder 5 minuten blijft, anders (b).
+- **Gereedschap:** na elke ronde, als Claude "klaar voor uitrol" meldt (§25) · dubbelklik en één J/N · site en nachtwerk live, regel in het uitrollog · groen eindscherm met tijd en zes groene adressen, en de volgende ochtend staat de cron-bewaker in /admin op 0 dagen.
+
+### 9.03. Cron, purge en webhook: vier stappen in vaste volgorde, elk met een controle
+Gebied: 9 · Dient: systeem / klant · **Tegenspreker: blijft**
+
+- **Nu:** §16.1 stap 1–3 staan open: de cron is nooit gedeployed, `PURGE_ENABLED` staat uit terwijl /privacy 90 dagen belooft (O55), de Resend-webhook en `RESEND_WEBHOOK_SECRET` ontbreken (O59), en O56 (mail vóór het wissen) is niet besloten.
+- **Voorstel:** (1) Uitrollen (9.02) en de volgende ochtend het eerste nachtrapport lezen: de purge staat in verslagmodus en noemt wat hij zóú wissen, en daar mogen alleen testbestellingen in staan. (2) Eén back-up (de Taakplanner-taak met de hand starten) → bewaker op 0 dagen; dan §17.22 (opruimtabel #4) live en de purge aan, als gewone variabele in de cron-configuratie in plaats van als secret, zodat in git te zien is of hij aanstaat. (3) Lucas maakt in Resend de webhook naar `https://visuails.com/api/webhook/resend` (bounced + complained) en zet het signing secret zelf in het Cloudflare-dashboard (Worker → Instellingen → Variabelen en secrets; geen CMD nodig). (4) Controle: in de voet van de site `bounced@resend.dev` (een testadres van Resend) aanmelden voor de Studiobrief → binnen een minuut een rode regel in /admin, daarna het testadres uit de lijst halen.
+- **Waarom:** Zonder cron vervallen onbetaalde bestellingen niet, komen er geen herinneringen en blijven gereserveerde leverdatums mogelijk bezet. Zonder purge klopt /privacy niet, en zonder webhook merkt alleen de klant dat zijn betaallink of levermail nooit aankwam (§12).
+- **Winst:** De privacybelofte klopt, een bounce zie je dezelfde dag in plaats van als de klant appt, en de drie open schakelaars van §16.1 zijn in twee ochtenden dicht.
+- **Kosten:** S; Lucas ±30 min (uitrollen, back-up starten, webhook en secret, testadres), Claude ±1 uur (de variabele, de migratie van §17.22, het nachtrapport mee nalezen).
+- **Risico:** Wissen in R2 is onomkeerbaar en de back-up bevat van R2 alleen de inventaris, niet de bestanden (§12), daarom eerst het verslag lezen. Staat `PURGE_ENABLED` nu als secret op de cron, dan eerst dat secret weghalen, anders botst de variabele.
+- **Mening:** Goed, met twee toevoegingen aan §16.1: O56 hoeft de purge niet op te houden, want de eerste echte levering wordt pas drie maanden na de lancering 90 dagen oud, en elke stap heeft een controle die Lucas zelf ziet. Tegenspreker: nummer 3 van de top 10, direct na 9.02, omdat zonder cron niets vervalt of herinnert.
+- **Vraag aan Lucas:** Wanneer moet de mail vóór het wissen (O56) er zijn? — (a) vóór de purge aangaat (b) uiterlijk twee maanden na de eerste echte levering (c) niet — advies: (b); purge nu aan, de mail (7.09, later) in de ronde na ronde 10.
+
+### 9.04. Back-up die je kunt terugzetten, zonder inloggeheimen en mét de prompts
+Gebied: 9 · Dient: systeem / Lucas · **Tegenspreker: blijft**
+
+- **Nu:** `npm run backup` maakt wekelijks via de Taakplanner een D1-dump plus R2-inventaris op een onversleutelde schijf, /admin waarschuwt na 10 dagen, en er is nooit een dump teruggezet (§12). De prompts, `VISUAILS-afwerken.jsx` en de video-opbouw staan alleen op Lucas' pc (§25).
+- **Voorstel:** Vier aanpassingen in het bestaande script, geen nieuwe dienst: (1) tabellen met inloggeheimen en sessies niet dumpen (`admin_users`, `admin_recovery_codes`, `admin_sessions`, `account_sessions`, `account_tokens`, `rate_limits`), en de dump naar de Google Drive-map van Workspace schrijven (buiten huis, al subverwerker, §14) of naar een schijf met BitLocker; (2) na elke dump lokaal inlezen, `integrity_check` en rijen tellen, zodat /admin toont "back-up 2 dagen oud · 41 tabellen · gecontroleerd"; (3) in de Taakplanner "zo snel mogelijk uitvoeren na een gemiste start" aanvinken; (4) de map Prompts en het .jsx-script mee kopiëren. Bij herstel is D1 Time Travel de eerste stap (elke minuut van de laatste 7 dagen op het gratis plan, 30 dagen op Workers Paid), de dump de tweede.
+- **Waarom:** Een onversleutelde dump met de wachtwoordhash én het TOTP-geheim van /admin geeft wie de schijf vindt ook de tweede factor. Wat VISUAILS onvervangbaar maakt (prompts, afwerkscript) zit in geen enkele back-up.
+- **Winst:** Herstel na een kapotte database of verloren laptop gaat van "onbekend" naar ±een uur, het AVG-risico van een verloren schijf verdwijnt, en er komt geen wekelijkse handeling bij.
+- **Kosten:** S; `scripts/backup*`, het stempel in `app_settings` en de bewakerregel in /admin; het Taakplanner-vinkje (en eventueel BitLocker) doet Lucas.
+- **Risico:** Na herstel uit de dump stelt Lucas zijn adminaccount en 2FA opnieuw in (nakijken dat er een manier is om een adminaccount aan te maken), en een back-up op dezelfde schijf als de code (E:) beschermt niet tegen een kapotte schijf. Tegenspreker: een dump op Drive bewaart gewiste klantgegevens langer dan 90 dagen, dus beperk het aantal bewaarde dumps of noem het in /privacy.
+- **Mening:** Goed en klein; onderdeel (4) telt het zwaarst, want de database kan Cloudflare zelf terugzetten, zijn prompts niet. Een aparte back-updienst is niet nodig.
+- **Vraag aan Lucas:** Waar komt de back-up nu terecht? — (a) op dezelfde schijf als de code (b) een losse USB-schijf (c) Google Drive — advies: (c), de Drive-map van Workspace; dan hoeft BitLocker niet en ligt er altijd een kopie buiten huis.
+- **Gereedschap:** wekelijks, vanzelf (§25) · geen input · dump zonder inloggeheimen plus kopie van Prompts en het afwerkscript, buiten huis, gecontroleerd · de bewaker in /admin toont "back-up N dagen oud · gecontroleerd" in groen.
+
+### 9.05. Drukteproef op live: meet de grenzen met één echte grote bestelling en Lucas' eigen telefoon
+Gebied: 9 · Dient: klant / systeem · **Tegenspreker: blijft** — neemt 1.03 op (telefoonproef vanuit de Instagram-app met een HEIC-foto; uploadreparaties alleen bij een vondst)
+
+- **Nu:** Ronde 9 speelde veertien klanttypes na met testfoto's (§15), maar geen bestelling met echte groottes (20 producten lifestyle in 4K, telefoonfoto's van 3–10 MB, een /admin-map met 60 beelden, de zip) ging door de live-Worker, en de cron draaide op live nooit. Onbekend is wat stap 2 doet bij een geweigerde upload (40 per minuut, §14, tegen 60–80 foto's bij 20 producten), op een trage verbinding, met een HEIC-foto of in de browser van de Instagram-app (§6.2).
+- **Voorstel:** Eén proef van ±een uur na 9.02 en 9.03: Claude maakt nepbeelden op echte grootte (4096 px, met ruis zodat ze niet kleiner worden) en een script in de vorm van `kladblok/_r9-*.mjs`, klant `hello+zwaar@visuails.com`, Mollie in testmodus, en Lucas kijkt zelf mee in /admin. Daarnaast opent Lucas het formulier op zijn eigen telefoon vanuit de Instagram-app en zet er een HEIC-foto in, door tot aan Mollie (testmodus). Gemeten per stap: klantupload, bestelknop, studiomail, /admin-map-upload, zip, levermail en de eerste cronnacht met deze bestelling erin; uitkomst is een verslag van tien regels "breekt bij …" of "houdt" per grens uit de tabel, daarna wordt de bestelling verborgen. Vindt de proef iets in de upload, dan pas de reparatie uit 1.03: een paar uploads tegelijk, bij een weigering vanzelf opnieuw proberen, per vak "Bezig… / Klaar / Mislukt — opnieuw", en "Volgende" wacht met "Nog 3 foto's onderweg".
+- **Waarom:** De eerste klant met 20 producten (€780–€980 excl.) is nu ook de eerste test van deze grenzen. Breekt de zip of mislukt een upload stil, dan merkt de klant het vóór Lucas.
+- **Winst:** Eén uur nu tegenover een mislukte levering bij de grootste klant, en per grens een gemeten getal in plaats van een gok. Geen bestellingen meer waarin stil foto's ontbreken (§27: materiaal vooraf compleet).
+- **Kosten:** S (script en nepbeelden) + een uur samen; de uploadreparatie is S–M, alleen bij een vondst, en raakt het script van het formulier, niet /api/upload.
+- **Risico:** Proefdata op live wordt gemarkeerd als proef en verborgen (bestaat al), en de proefmails tellen mee in het Resend-quotum van die dag. Wie aan de upload sleutelt, raakt ook de bulk-upload die eerder vakken door elkaar zette (F23, F26), dus die toetsen daarna opnieuw draaien.
+- **Mening:** Goed, vóór de lancering; liever één zware bestelling dan honderd nepklanten, want bij VISUAILS is de grootte van één bestelling het risico, niet het aantal. Tegenspreker: net buiten de top 10, en de vraag over het Workers-plan hoort er meteen bij.
+- **Vraag aan Lucas:** Op welk plan draaien Cloudflare Workers en Resend? — (a) beide gratis (b) Workers Paid, Resend gratis (c) beide betaald — advies: Workers Paid vóór de lancering (op het gratis plan krijgt de cron 10 ms rekentijd en 50 subverzoeken per run); Resend gratis volstaat tot ±12 bestellingen op één dag.
+
+**Wat breekt het eerst bij drukte** (volgorde = schatting van de gebied-agent van wat het eerst breekt)
+
+| Grens | Hoe hard | Wanneer | Wie merkt het nu | Hoe Lucas het eerder ziet |
+|---|---|---|---|---|
+| Lucas' eigen tijd voor "zo snel mogelijk" | onder 10 producten geen grens in de code (§3.6); een volle werkdag is ±20–30 producten bij 10–20 min per product, catalog vaak meer (§25) | één goede dag met vier of vijf bestellingen van 5 producten, of een rij €1-proeven | de klant: "vaak binnen een dag" wordt een paar dagen | tegel "±N dagen werk" en drukte-melding (9.06) |
+| Resend-quotum | gratis: 100 mails per dag, 3.000 per maand; bcc en studiomails tellen mee | ±6–9 mails per bestelling → ±12 bestellingen of proeven op één dag | de klant: geen inlogcode, betaallink of levermail | plan nakijken (vraag 9.05); geweigerde mail als rode regel (9.06) |
+| Cron op live | gratis: 10 ms rekentijd en 50 subverzoeken per run; Paid: 30 s | de eerste nacht met herinneringen, purge en abonnementswerk | niemand, alleen de cron-bewaker in /admin | uitrollen en het eerste nachtrapport lezen (9.03) |
+| Grote bestanden door één Worker | 128 MB geheugen; 100 MB per verzoek | zip van 20 × lifestyle in 4K; /admin-map in één verzoek; grote uploadbatches | de klant (zip of upload breekt) of Lucas (upload faalt) | deze proef |
+| Studiomail met foto's | 8 MB, in hetzelfde verzoek als de bestelknop | vanaf het tweede product | Lucas (onvolledige bijlage), de klant (tragere knop) | 9.07 |
+| Vensters zonder cron | onbetaalde reserveringen komen pas via de cron na 7 dagen vrij | nu al, tenzij de agenda verlopen reserveringen zelf overslaat (nakijken) | de klant: minder kiesbare dagen in stap 4 | cron live (9.03) |
+| Rate limits | bestellen 10 per 10 min, upload 40 per min (§14) | een bureau dat veel achter elkaar bestelt; een grote map in één keer | de klant | deze proef |
+| Opslag in R2 en D1 | groeit zolang de purge uit staat | maanden, niet weken | niemand | purge aan (9.03) |
+
+### 9.07. Studiomail zonder fotobijlagen, met wat er ontbreekt
+Gebied: 9 · Dient: systeem / Lucas / klant · **Tegenspreker: blijft**
+
+- **Nu:** Bij elke bestelling leest `order.js` de foto's uit R2 en hangt ze tot 8 MB aan de studiomail "Nieuwe bestelling", in hetzelfde verzoek als de klik op "Bestellen en betalen" (§6.3). Dezelfde foto's staan al op het bord ("Aangeleverd door de klant", §10) en in de werkmap (`_aangeleverd/`, §25).
+- **Voorstel:** Geen bijlagen meer, wel kenmerk, dienst, aantal, bedrag, per product één regel ("p1 Hoodie zwart · voorkant, achterkant, detail · 2 referenties"), wat ontbreekt ("p4: geen detail") en één knop "Open in /admin". De regel "wat ontbreekt" komt uit dezelfde lijst per vak als 2.05, die ook de betaalmail (7.01) vult, dus één keer bouwen; de mailtekst zelf hoort bij gebied 7.
+- **Waarom:** 8 MB is twee à drie telefoonfoto's, dus vanaf het tweede product is de bijlage al onvolledig en moet Lucas toch naar /admin. Ondertussen wacht de klant op een Worker die foto's inpakt.
+- **Winst:** Een snellere bestelknop, een mail die op de telefoon direct laadt en meteen zegt of er iets ontbreekt, ±8 MB minder per bestelling in hello@, en één codepad minder dat bij een grote bestelling kan breken.
+- **Kosten:** S; order.js (bijlagen eruit) en de studiomail.
+- **Risico:** Wie onderweg op zijn telefoon wil zien of de foto's bruikbaar zijn, kijkt nu in /admin (cookie 14 dagen, dus meestal al ingelogd).
+- **Mening:** Goed als vereenvoudiging; de regel "wat ontbreekt" is meer waard dan de foto's, want dat wil Lucas bij binnenkomst weten. Wil hij toch één beeld zien: alleen de voorkant van product 1 als bijlage, nooit te groot.
+- **Vraag aan Lucas:** Gebruik je de foto's in de studiomail? — (a) nee, ik werk vanuit /admin (b) ja, op mijn telefoon om te kijken of ze bruikbaar zijn (c) ja, ik sla ze op uit de mail — advies: bij (a) en (c) alle bijlagen weg; bij (b) alleen de voorkant van product 1.
+- **Vereenvoudiging:** het bijlagenpad in order.js en de 8 MB-grens.
+
+### 9.11. Tests goedkoper: één bedragentest, één controle op hardgetypte getallen, weeksysteemtests weg mét ronde 10
+Gebied: 9 · Dient: systeem · **Tegenspreker: blijft**
+
+- **Nu:** Er zijn 157 testscripts (§13), maar hardgetypte bedragen en termijnen komen telkens terug zonder dat een test het ziet (€69 in videoStyles.js, "€1" in VideoStyleDetail.astro, `'+7 days'` op vier plekken, §17). Ronde 10 maakt een groep tests overbodig (§28.6 punt 7).
+- **Voorstel:** (1) Eén bedragentest die §22 regel voor regel naloopt (staffels, extra foto, 4K, voorrang min/max, plannen, credits, jaar vooruit, btw, termijnen), zodat bij een prijswijziging precies één regel faalt met de vraag of §22 ook bij moet. (2) Een controle die `src/` en `cron/` doorzoekt op euro-bedragen en dagtermijnen buiten pricing.js, plans.js, vat.js, retention.js en het termijnenbestand van 9.01 regel 6, met een korte lijst toegestane uitzonderingen en hun reden. (3) De weeksysteemtests (plan-queue, planning*, planstart, planweek, planleeg, planfotos, de F65/F67-delen van ronde9) gaan in dezelfde commit weg als de code, zonder ze eerst te repareren. (4) `npm run test:snel` (prijzen, btw, factuur, bestelstroom) voor de uitrolknop als de volledige reeks te lang duurt.
+- **Waarom:** De duurste fout is een bedrag dat op de site anders staat dan op de factuur. Nu vangt geen test een nieuw hardgetypt bedrag in een .astro-bestand.
+- **Winst:** Een prijswijziging raakt één plek en één testregel, §17-achtige afwijkingen komen niet terug, en na ronde 10 zijn er ±8–10 scripts minder.
+- **Kosten:** S (bedragentest en controle samen ±3 uur); raakt alleen tests/.
+- **Risico:** Een te strenge controle geeft valse meldingen op "€" in juridische teksten of voorbeelden, daarom staat de uitzonderingenlijst met reden per regel in de test zelf.
+- **Mening:** Goed; de controle op hardgetypte getallen heeft het meeste rendement, want die maakt de opruimronde van 9.01 blijvend. Tegenspreker: de €69 en de losse `'+7 days'` zijn precies dit soort fout.
+- **Vraag aan Lucas:** —
+- **Vereenvoudiging:** ±8–10 testscripts van het weeksysteem.
+
+### 9.06. Vroeg-signaal: Lucas ziet een storing of drukte vóór de klant
+Gebied: 9 · Dient: Lucas / klant · **Tegenspreker: later** — 9.02 stap 7 ziet een kapotte uitrol al; deel 2 (geweigerde mail als rode regel) kan mee met O59
+
+- **Nu:** Storingen ziet Lucas via het nachtrapport, de bewakers en /admin/diagnose (§10, §12), maar een site die plat ligt of een mail die Resend weigert hoort hij van de klant, en drukte ziet hij als aantal in plaats van als tijd.
+- **Voorstel:** Drie signalen zonder nieuwe dienst: een tweede cronschema dat elke 30 minuten vier adressen op live opvraagt en na twee fouten op rij mailt (hoogstens één per twee uur) en een rode balk in /admin zet, elke geweigerde klantmail als rode regel naast de bounces (`mail_bounces`), en de tegel "open werk" ook in dagen (open punten ÷ 100, §3.6) met een drukte-melding die alleen Lucas aanzet.
+- **Waarom:** Bij een eenmanszaak is "de klant merkt het eerst" de duurste volgorde: hij appt, Lucas zoekt, en het vertrouwen is al weg.
+- **Winst:** Een kapotte uitrol binnen een uur gezien, geen klant die zonder betaallink blijft zitten, en drukte gemeld vóór de levertijdzin breekt.
+- **Kosten:** S–M (drie keer S); cron/index.js, de mail-laag en het dashboard (de tegel zelf is gebied 4).
+- **Risico:** Valse alarmen bij een korte hapering (daarom twee keer op rij), en als Resend zelf plat ligt, vangt alleen de rode balk het.
+- **Mening:** Goed: het opvragen van de adressen en de geweigerde mails zijn de kern van dit gebied, de dagentegel is de echte eerste breuk bij drukte (tabel bij 9.05), en de drukte-melding gaat nooit vanzelf aan (§21).
+- **Vraag aan Lucas:** Waar wil je een alarm krijgen? — (a) mail naar hello@ + rode balk in /admin (b) ook een pushmelding via een externe pinger (c) alleen de rode balk — advies: (a) nu, (b) erbij zodra er betalende klanten zijn.
+- **Gereedschap:** ochtend (dashboard) en tussendoor (mail), §25 · loopt vanzelf · alarm-mail en rode balk, een regel per niet-verstuurde mail, tegel "±N dagen werk" · Claude laat in de testomgeving één adres bewust falen en mail en balk verschijnen.
+
+### 9.08. /admin: inlogmelding, sessielijst en de code opnieuw bij terugbetalen en wissen
+Gebied: 9 · Dient: systeem / Lucas · **Tegenspreker: later** — echt, maar klein risico; na de lancering
+
+- **Nu:** /admin vraagt wachtwoord plus tweestapscode bij het inloggen (§10, §14), maar daarna wordt niets meer gecontroleerd en ziet Lucas nergens dat er is ingelogd.
+- **Voorstel:** Een studiomail bij een inlog vanaf een nieuw apparaat, de actieve sessies op /admin/security met "Alle andere uitloggen", en opnieuw de tweestapscode bij terugbetalen (ook via annuleren), AVG-wissen en wachtwoord wijzigen.
+- **Waarom:** /admin is het enige scherm waar geld en klantgegevens met één klik weg kunnen, en de tweede factor beschermt nu alleen het inloggen.
+- **Winst:** Een gestolen of op een gedeelde computer vergeten sessie kan niets meer terugstorten of wissen, voor ±2–5 keer per maand een code typen.
+- **Kosten:** S–M; admin.js, `admin_sessions` (land, browser, laatst gezien) en één studiomail.
+- **Risico:** Te veel codes vertragen het werk, daarom nooit bij status, upload of notities.
+- **Mening:** Goed: een indringer kan via Mollie geen geld stelen (terugbetalen gaat naar de oorspronkelijke betaler), maar wel alles terugstorten of klanten onherroepelijk wissen, en precies dat houdt de extra code tegen.
+- **Vraag aan Lucas:** Welke handelingen moeten opnieuw om de code vragen? — (a) terugbetalen, AVG-wissen en wachtwoord wijzigen (b) plus tegoed boeken en een klant deactiveren (c) alles onder "onomkeerbaar" op de bestelpagina — advies: (a); tegoed kan alleen bij VISUAILS besteed worden en deactiveren is terug te draaien.
+
+### 9.09. Herstelkaart: zes storingen in drie regels, plus "wat staat waar"
+Gebied: 9 · Dient: Lucas / systeem · **Tegenspreker: later** — verzekering die de eerste klanten niet raakt, plus een bijwerkafspraak per ronde
+
+- **Nu:** Het overzicht zegt hoe alles werkt (§13), niet wat je doet als het stuk is, en nergens staat welke accounts er zijn en waar de herstelcodes liggen.
+- **Voorstel:** `HERSTELKAART.md` in de privé-repo en geprint naast de pc: zes storingen in drie regels (wat je ziet · wat je doet · hoe je weet dat het weer goed is) plus een tabel "wat staat waar" per account (doel, 2FA, plek van de herstelcodes in woorden, secretnamen), nooit de codes of sleutels zelf.
+- **Waarom:** Bij een storing midden in de nacht is er geen tijd om te lezen, en "alleen Lucas weet het" is het grootste risico van een eenmanszaak.
+- **Winst:** Een storing gaat van "uitzoeken" naar ±10 minuten, ook voor een tweede persoon of een nieuwe chat.
+- **Kosten:** S; Claude schrijft hem uit de code, Lucas vult alleen de plekken van de herstelcodes in.
+- **Risico:** Een verouderde kaart is erger dan geen kaart, dus elke ronde die iets aan uitrol, secrets of accounts verandert, werkt hem bij.
+- **Mening:** Goed, mits zes storingen en geen draaiboek van twintig pagina's; of /admin een gemiste Mollie-betaling opnieuw kan ophalen is onbekend, en ontbreekt dat, dan is het het enige stukje code dat de kaart nodig maakt.
+- **Vraag aan Lucas:** Kun je in /admin een betaling opnieuw bij Mollie laten ophalen als de webhook gemist is? — (a) ja, er is een knop (b) nee, ik zou het in het Mollie-dashboard bekijken (c) weet ik niet — advies: Claude kijkt het na; ontbreekt hij, dan een kleine knop "Bij Mollie nakijken" op de bestelpagina.
+
+### 9.10. Kladblok: per ronde archiveren, testomgeving eruit, één "begin hier"
+Gebied: 9 · Dient: systeem · **Tegenspreker: later** — niet dringend; samen met pakket B van 9.01
+
+- **Nu:** `kladblok/` heeft ruim 300 losse bestanden, met de testomgeving ertussen en een oudere versie van het overzicht zonder §28 (§13).
+- **Voorstel:** Eén verplaatsronde zonder te wissen: de testomgeving naar `scripts/testomgeving/` (`npm run testomgeving`), afgesloten rondes naar `kladblok/archief/ronde-5` … `ronde-9`, en bovenaan alleen het nieuwste overzicht, de lopende werklijst en een `LEESMIJ.md` "begin hier".
+- **Waarom:** Elke nieuwe chat leest eerst de map, en een tweede overzicht tussen oude werklijsten is precies de verouderde kopie waar de werkafspraak (§0) voor waarschuwt.
+- **Winst:** Elke volgende chat zoekt ±10–20 minuten minder en leest minder snel een oude werklijst als stand van zaken.
+- **Kosten:** S; bestandslocaties, §13 van het overzicht en de imports van `kladblok/_dl.mjs`.
+- **Risico:** Imports naar `kladblok/_dl.mjs` breken bij het verhuizen, dus eerst zoeken, dan verplaatsen, dan de tests draaien.
+- **Mening:** Goed; archiveren is beter dan weggooien, want de bewijsschermen van ronde 9 zijn bruikbaar bij een klacht.
+- **Vraag aan Lucas:** Gaat `kladblok/` mee naar GitHub? — (a) ja, alles (b) nee (c) weet ik niet — advies: tekstbestanden wel, schermafbeeldingen en archief niet.
+- **Vereenvoudiging:** ±300 bestanden uit het zicht en de dubbele overzichtversie.
+
+**Samengevoegd**
+- Geen voorstel uit dit gebied ging op in een ander; 1.03 (gebied 1) is opgenomen in 9.05.
+
+**Geschrapt**
+- Geen.
+
+**Bekeken en niet voorgesteld**
+- **51 migraties samenvoegen** — `schema.sql` bestaat al voor een verse database en D1 houdt per bestandsnaam bij wat live gedraaid is, dus het geeft alleen risico bij de volgende migratie.
+- **Aparte Worker of stagingomgeving voor /admin en de API** — dubbele secrets en uitrol, terwijl de testomgeving op 4477 al de echte Worker met een verse database is.
+- **Cloudflare Access vóór /admin** — een extra inlogstap per sessie, terwijl 9.08 het echte gat (wat er ná het inloggen kan) gerichter dekt.
+- **Automatisch uitrollen bij elke push (Workers Builds)** — Lucas ziet het resultaat dan alleen in het Cloudflare-dashboard en site en cron worden twee koppelingen.
+- **Belastingtest met honderden nepbestellingen** — bij deze aantallen is de grootte van één bestelling het risico, niet het aantal (9.05).
+
+**Bronnen** (externe grenzen van Cloudflare en Resend, door de gebied-agent nagekeken op 6 okt)
+- [Workers limits](https://developers.cloudflare.com/workers/platform/limits/)
+- [D1 Time Travel](https://developers.cloudflare.com/d1/reference/time-travel/)
+- [Workers rollbacks](https://developers.cloudflare.com/workers/configuration/versions-and-deployments/rollbacks/)
+- [Resend quota's en limieten](https://resend.com/docs/knowledge-base/account-quotas-and-limits)
+- [Resend testadressen](https://resend.com/docs/knowledge-base/what-email-addresses-to-use-for-testing)
+
+## 2.10 · Gebied 10 — Groei en nieuwe diensten
+
+**Kern.** Catalog is wat de doelgroep het meest koopt, maar levert Lucas per uur 2,5 tot 7,5 keer minder op dan lifestyle omdat het nog met de hand gaat (20+ min tegen 5–10 min, §25), in het Merk-abonnement zelfs maar €47–70 per uur; het afmaken van het catalogbord gaat daarom als eerste productieklus op in 5.09. Van de groeivoorstellen blijft nu alleen de toestemming om echte bestellingen te tonen (10.05, één blok met 3.05), omdat sociale bewijskracht vóór de eerste 5–10 klanten het knelpunt is; de varianten op werk dat al af is (lifestyle bij dezelfde producten, een set op wit, kleurvarianten) wachten op catalogklanten en echte minuten. Tegenover concurrenten, die in self-serve naar centen per beeld zakken en met done-for-you naar boven schuiven, houdt wat VISUAILS bewust niet doet stand (§21, §23); alleen kleurvarianten en ghost mannequin/flat-lay bieden zij standaard aan en noemt VISUAILS nergens.
+
+**Marge per uur van Lucas' eigen tijd**
+
+| Dienst | Opbrengst netto (§22) | Tijd van Lucas (§25) | € per uur |
+|---|---|---|---|
+| Catalog, 4 foto's | €89 · €65 · €51 · €39 | 20–30 min, met de hand | 20 min: €267 · €195 · €153 · €117 — 30 min: €178 · €130 · €102 · €78 |
+| Lifestyle, 3 foto's | €109 · €82 · €64 · €49 | 5–10 min, via Spaces | 10 min: €654 · €492 · €384 · €294 — 5 min: €1.308 · €984 · €768 · €588 |
+| Extra foto per product | €39 · €34 · €29 · €19 | aanname 5 min | €468 · €408 · €348 · €228 |
+| 4K (alleen lifestyle) | €9 per product | aanname 2 min (opschalen) | €270 |
+| Voorrang | +20%, min €49, max €249 | geen extra productietijd | 1 catalogproduct: €414 i.p.v. €267 (20 min) |
+| Probeer VISUAILS | €1 | catalog 20–30 min · lifestyle 5–10 min | catalog €2–3 · lifestyle €6–12 |
+| Abonnement, catalog (4 credits) | Starter €34,67 · Pro €26,33 · Merk €23,31 | 20–30 min | 20 min: €104 · €79 · €70 — 30 min: €69 · €53 · €47 |
+| Abonnement, lifestyle (5 credits) | €43,33 · €32,92 · €29,14 | 5–10 min | 10 min: €260 · €198 · €175 — 5 min: €520 · €395 · €350 |
+| Merkmodel | €450 eenmalig | onbekend (10.08) | 3 uur: €150 · 6 uur: €75; onbetaald bij Merk en Pro-jaar |
+| Editions | €149/maand + €295 opzet | onbekend (10.12) | 1 uur per maand: €149 + opzet |
+| Outfit · eigen look · hooks · video · maandset | €50 · offerte · vanaf €119 · op aanvraag · in het abonnement | onbekend | niet te rekenen |
+
+*Aannames.*
+- Alleen productietijd van generatie tot afgewerkt beeld (§25); de vaste tijd per bestelling (status, uploaden, mails, revisie) zit er niet in, dus elk getal is een bovengrens, het meest bij bestellingen van 1–4 producten.
+- Catalog 20 min is de ondergrens uit §25, 30 min een aanname; netto zonder btw en zonder kosten voor Magnific/Freepik, Adobe, Mollie en Resend.
+- Abonnement: alle credits gebruikt (per credit Starter €8,67 · Pro €6,58 · Merk €5,83); vervallen credits maken het uurtarief hoger.
+
+*Wat de tabel zegt.*
+- Bij dezelfde trede verdient lifestyle per uur 2,5 tot 7,5 keer zoveel als catalog; dat komt van Magnific Spaces, niet van de prijs, en de beste uren zitten in toevoegingen op werk dat al af is (voorrang, 4K, extra foto's).
+- Het laagste uur, na de €1-proef (€2–12), is catalog in het Merk-abonnement (€47–70): één Merk-abonnee die alles aan catalog besteedt (72 producten) vraagt 24–36 uur per maand, ongeveer een week van Lucas' 35+ productie-uren.
+- De capaciteitspunten (catalog 4, lifestyle 3, §3.6) rekenen catalog maar een derde zwaarder: een dag van 79 punten aan catalog is 19 producten en 6,3–9,5 uur werk; volgens de tegenspreker heeft niemand dit opgepakt (gebied 4/9).
+
+**Concurrenten tegenover wat VISUAILS bewust niet doet (stand 6 okt)**
+
+| Wat zij doen | Wie | Klopt de reden van VISUAILS nog? |
+|---|---|---|
+| Self-serve met maandabonnement en credits; $0,02–$0,60 per beeld | Picjam ($29/$99 per maand), FASHN ($19–$199), SellerPic ($29–$99), Photta ($14–$249), WearView ($24–$82), Uwear ($0,10 per credit), Shootify ($5–$29), Botika (1 credit = 1 foto) | Ja, en sterker dan in augustus: op centen per beeld wint niemand die alles alleen maakt; VISUAILS blijft done-for-you per product (§1). |
+| Done-for-you als duurste laag | Picjam Concierge $599/maand (levering 1–2 dagen), Botika Enterprise, Pixelz $0,95–$1,45 per bewerkt beeld | Geen keuze uit §21, wel een verschuiving; wat VISUAILS nog onderscheidt: per product bestellen zonder abonnement, de €1-proef, een EU-bedrijf en vaste looks. |
+| Gratis beginnen (eerste beeld of 20 credits) | Picjam, SellerPic, Photta | Ja: bij een tool kost gratis niets, bij VISUAILS kost een catalogproef 20–30 min; de €1 houdt wie het niet meent buiten (§23 7 aug). |
+| Harde levertijd (48 uur, volgende ochtend, 24/48 uur) en 2–3 retoucherondes | Pixelz, Picjam Concierge, Botika | Ja: voorrang is de betaalde harde belofte (§3.2) en één revisieronde (§23 24 aug) is wat één persoon kan dragen. |
+| Video in hetzelfde creditsysteem | Botika (5 credits = 1 video), FASHN, WearView, SellerPic, Picjam | Ja: wat ontbreekt zijn de videostijlen, niet de prijs (§2.4); hier niet op voortbouwen (§28). |
+| Kleurvarianten of kleur wijzigen | Botika, WearView, Pixelz | Geen reden gevonden; bestaat niet en is geen keuze in §21 → 10.04. |
+| Ghost mannequin en flat-lay als dienst met eigen naam; flat-lay naar model | Photta, WearView, Pixelz; Picjam, Uwear | Geen keuze, maar de site noemt het niet bij naam → 10.06. |
+| Eigen gezicht | FASHN Agency ($99/maand, eigen gezichtsreferenties), Botika Enterprise (exclusieve modellen) | Vergelijkbaar met het merkmodel (€450 eenmalig, §2.7); eenmalig in plaats van een abonnement is een verschil om te noemen. |
+
+Dollarbedragen zoals gepubliceerd, deels via vergelijkingssites (Photta, Vantaige), en Photta is zelf een concurrent: **nakijken voordat ze ergens gebruikt worden.** Niet in de tabel omdat de reden standhoudt: modellen in maten (pas als een klant erom vraagt), één vanaf-prijs en geen AI-modellen noemen (§21), virtuele paskamer (zie onderaan). The New Black en WizStudio zijn niet bekeken.
+
+### 10.05. Toestemming om echte bestellingen te laten zien
+Gebied: 10 · Dient: Lucas / klant · **Tegenspreker: blijft** — één toestemmingsblok samen met de aanbevelingsvraag van 3.05; draagfoto's uitgezonderd
+
+- **Nu:** Plaatshouderfoto's zijn de grootste zichtbare zwakte van de site (O65), aanbevelingen worden goedgekeurd maar nergens geplaatst (O15), en een klant kan nergens toestemming geven om zijn beelden als voorbeeld te gebruiken. Het tevredenheidsblok heeft alleen het vinkje "Je mag dit met mijn merknaam op visuails.com zetten", en dat gaat over de tekst (3.05).
+- **Voorstel:** Het tevredenheidsblok op het afrondscherm van 3.05 (privélink en Studio, zonder JS) krijgt één toestemmingsblok met twee vrijwillige keuzes: je tekst en je beelden, elk met merknaam / zonder merknaam / liever niet. Het vervangt het losse vinkje van 3.05, zodat er geen twee vragen op twee plekken staan. "Je beelden" zijn de geleverde beelden en de aangeleverde productfoto's, nooit draagfoto's: de klant kan geen toestemming geven voor de persoon die erop staat. In /admin komt een filter "mag getoond worden"; publiceren blijft een aparte, bewuste stap van Lucas (§21).
+  > **Mogen we dit laten zien op visuails.com en social?**
+  > Je tekst: ○ Ja, met merknaam ○ Ja, zonder merknaam ○ Liever niet
+  > Je beelden en productfoto’s: ○ Ja, met merknaam ○ Ja, zonder merknaam ○ Liever niet
+  > Foto’s waarop iemand je product draagt, laten we nooit zien. Intrekken kan altijd met een mail.
+- **Waarom:** "Dit stuurde de klant, dit kreeg hij terug" met echte beelden overtuigt meer dan elke tekst, en zo kan elke €1-proef een voorbeeld worden. Eén blok laat de klant op één moment beslissen, nadat hij het resultaat heeft gezien.
+- **Winst:** Minder voorbeeldmerken zelf bouwen voor de galerij en advertenties; elke gelukte proef of bestelling levert bruikbaar materiaal op. Het geeft ook het voor-en-na-materiaal van de geschrapte Threads-insturing (10.11), zonder vaste handeling.
+- **Kosten:** S–M: de bestaande aanbevelingstoestemming wordt een keuze uit drie, er komt één veld voor de beelden bij `order_feedback`, een filter in /admin, een regel in de voorwaarden en een aanvulling op /privacy (toestemming, intrekken per mail, draagfoto's uitgezonderd). Raakt gebied 3 (3.05) en 8/9 (juridisch).
+- **Risico:** Merknaam en product zijn van de klant; de tekst noemt intrekken per mail, en Lucas moet nog beslissen wat er dan met een al geplaatste post gebeurt. Niet vragen vóór de levering, want dan geeft de klant toestemming voor iets wat hij nog niet heeft gezien.
+- **Mening:** Goed: van alles in dit gebied geeft dit het snelst sociale bewijskracht, en het is beter dan een "galerijkorting", want dat is een korting op de eerste bestelling via een omweg (§23 7 aug). Tegenspreker: samen met 3.05 een kandidaat voor de top 10, maar waar vrijgegeven beelden en aanbevelingen op de site komen (O15), zonder extern script en als bewuste aparte stap, heeft nog niemand ontworpen.
+- **Vraag aan Lucas:** Wanneer vragen? — (a) alleen op het afrondscherm, na het resultaat (b) ook als vinkje bij het bestellen van de €1-proef (c) beide — advies: (a); ook bij de proef liever ná het resultaat dan vooraf.
+
+### 10.02. Dezelfde producten ook als lifestylecarrousel, zonder opnieuw te uploaden
+Gebied: 10 · Dient: klant / Lucas · **Tegenspreker: later** — M en pas zinvol met catalogklanten; alleen als losse bestelling, nooit als pakket of korting (§23 1 okt)
+
+- **Nu:** Wie na catalog ook lifestyle wil, uploadt per product opnieuw voorkant, achterkant en detail en vult naam en soort opnieuw in (§6.2), terwijl de foto's nog 90 dagen bij VISUAILS staan (§3.6) en bestaande klanten lifestyle volgens Lucas vaak los nabestellen (aug).
+- **Voorstel:** Bij een geleverde catalogbestelling staat in Studio en op de privélink, zolang de bronfoto's bestaan, één gewone link naar `/lifestyle?van=VIS-…#looks` (eerst een look kiezen, §6.1), waarna het formulier opent met producten, namen, soorten en foto's ingevuld, als losse bestelling tegen het gewone tarief.
+- **Waarom:** Zo verkoopt VISUAILS de dienst met het hoogste uurtarief (lifestyle €294–1.308/u) aan iemand die het al vertrouwt, zonder reclame en zonder dat de klant iets opnieuw doet.
+- **Winst:** De klant scheelt ±2–3 min per product (bij 8 producten ±20 min); Lucas krijgt voor 3 producten €327 voor 15–30 min werk.
+- **Kosten:** M: het formulier vullen vanuit een eerdere bestelling, de R2-foto's aan de nieuwe bestelling koppelen en de link in Studio en op de privélink (geen JS); een latere uitbreiding van de herbestellink van 3.07.
+- **Risico:** Staat de link verkeerd, dan slaat de klant de lookkeuze over (§6.1), en na 90 dagen moet de regel samen met de foto's verdwijnen.
+- **Mening:** Goed, omdat het gedrag ondersteunt dat er al is (nog beter met dezelfde zin al op de bedankpagina van een catalogbestelling), mits het nooit naast catalog als pakket verschijnt; de andere kant op (lifestyle → catalog) pas als catalog sneller is (5.09).
+- **Vraag aan Lucas:** —
+- **Prijsvoorstel:** geen; de regel van optie (b) (binnen 30 dagen het tarief van de catalogbestelling ook voor lifestyle) is weggehaald, want dat is een korting via een omweg op catalog + lifestyle samen, en dat is complete onder een andere naam (§23 10 sep, 1 okt); alleen optie (a) blijft: het gewone tarief per bestelling.
+
+### 10.03. "Ook op wit": een tweede set voor marktplaatsen
+Gebied: 10 · Dient: klant / Lucas · **Tegenspreker: later** — nieuwe prijs en extra vraag in het formulier voor een randgeval
+
+- **Nu:** Catalog heeft één achtergrond per bestelling en een gekozen marktplaats geeft alles op wit (§2.1), dus een merk met een eigen webshop op beige én een bol-account moet kiezen of twee keer bestellen tegen het volle tarief.
+- **Voorstel:** Onder "Meer opties" (catalog) een vinkje dat alleen verschijnt bij een marktplaats én een eigen achtergrondkleur, waarna Lucas `VISUAILS-afwerken.jsx` een tweede keer laat lopen met #FFFFFF en de werkmap en de zip per product een submap `wit` krijgen.
+- **Waarom:** Een andere achtergrond kan de klant niet zelf maken, anders dan de uitsnedes die §21 met "downloads per kanaal op maat" uitsluit, en het script doet het meeste werk.
+- **Winst:** De klant betaalt bij 10 producten €90 in plaats van €510 voor een tweede bestelling; Lucas haalt bij een aanname van 1 min controle per product €540/u.
+- **Kosten:** S–M: optie in stap 1 en `quote.js`, submap in de werkmap, zip-indeling, factuurregel en een tweede uitvoer in het script (gebied 1 en 4).
+- **Risico:** De levering wordt twee keer zo groot, de bestandsnamen moeten de kleur noemen, en het script moet ook het beeld op model goed uitknippen (Select Subject op een model).
+- **Mening:** Goed en het hoogste uurtarief van alle voorstellen zonder nieuwe look, maar de tegenspreker heeft gelijk dat het een nieuwe prijs en een extra vraag is, dus pas bouwen als een klant erom vraagt.
+- **Vraag aan Lucas:** Welke tweede versie? — (a) alleen wit, en alleen bij een gekozen marktplaats (b) elke tweede kleur (c) ook een tweede verhouding — advies: (a); een andere verhouding vraagt aanvullen of bijsnijden, en dat doet het script niet.
+- **Gereedschap:** afwerken in Photoshop (§25) · input: de map met afgewerkte productbeelden · output: dezelfde beelden op #FFFFFF in submap `wit` · zo zie je dat het gelukt is: per product staan er in `wit` evenveel bestanden als in de hoofdmap.
+- **Prijsvoorstel:** nu bestaat het niet (vergelijkbaar: 4K €9 per product, §22) · voorstel tweede set op wit €9 per product, 1 credit · effect 10 producten +€90 netto, 20 producten +€180.
+
+### 10.04. Kleurvarianten: zelfde product, andere kleur
+Gebied: 10 · Dient: klant / Lucas · **Tegenspreker: later** — eerst meten of een variant echt minder tijd kost; raakt §23 17 sep (achterkant verplicht)
+
+- **Nu:** Een hoodie in vijf kleuren is vijf losse producten met elk verplichte voorkant, achterkant en close-up (§2.1, §27), zonder afspraak dat ze dezelfde pose, uitsnede en hetzelfde model krijgen, terwijl Botika, WearView en Pixelz kleurvarianten standaard aanbieden.
+- **Voorstel:** Op de productkaart in stap 2 een vinkje "hetzelfde product als product 1, in een andere kleur", waarna alleen voorkant, close-up en kleurveld verplicht zijn en Lucas de variant maakt met pose, model en uitsnede van product 1; elke kleur blijft een product tegen het gewone tarief.
+- **Waarom:** Kleurvarianten komen bij jonge merken en dropshippers het vaakst voor, en precies dezelfde pose per kleur ziet een webshop meteen en levert een self-serve tool moeilijk.
+- **Winst:** De klant levert per variant 1–2 foto's minder aan en weet zeker dat alle kleuren dezelfde pose hebben; Lucas' uurtarief stijgt zonder prijswijziging als een variant de helft van de tijd kost (aanname).
+- **Kosten:** M: vinkje en fotoregels in stap 2, de brief op het bord ("variant van product 1") en de werkmap (gebied 1 en 5).
+- **Risico:** De achterkant optioneel maken raakt §23 17 sep en §27 ("achterkant is niet af te leiden"), wat bij een kleurvariant alleen klopt als de print per kleur gelijk is, en een telefoonfoto geeft de kleur niet precies weer.
+- **Mening:** Goed en beter dan een aparte variantprijs (vijf kleuren vallen al in het tarief voor 5–9 producten), maar eerst testen op een voorbeeldmerk, want de winst hangt af van een tijd die niemand gemeten heeft.
+- **Vraag aan Lucas:** Hoe lang duurt een kleurvariant als product 1 al af is? — (a) ±de helft (b) even lang (c) weet ik nog niet — advies: (c), dus eerst testen; bij (b) alleen het vinkje voor de gelijke pose bouwen en de fotoregels houden zoals ze zijn.
+- **Vereenvoudiging:** de verplichte achterkant per kleurvariant, als die op de kleur na gelijk is.
+- **Prijsvoorstel:** nu elke kleur een product, €89 · €65 · €51 · €39 (§22) · voorstel zo laten · effect 5 kleuren = 5 × €65 = €325 netto; bij half de tijd €260–390/u per variant in plaats van €130–195.
+
+### 10.06. Noem wat catalog levert met de woorden waarop de doelgroep zoekt; geen aparte Flat Lay Set
+Gebied: 10 · Dient: klant / Lucas · **Tegenspreker: later** — eerst moet het CATALOG-bord één vaste vorm leveren (5.09)
+
+- **Nu:** Catalog levert voorkant, achterkant, detail en één beeld op model met flat-lay als extra hoek (§2.1), terwijl Photta, WearView en Pixelz "ghost mannequin" en "flat-lay" verkopen als diensten met een eigen naam, en dat zijn de zoekwoorden van webshops en dropshippers.
+- **Voorstel:** Leg in Classic één vaste vorm vast voor voorkant en achterkant (plat gelegd of op een onzichtbare paspop) en noem die op /catalog, /per-product en in de FAQ met het zoekwoord erbij, zonder derde dienst; wie beide vormen wil, bestelt de andere als extra hoek.
+- **Waarom:** Wie "ghost mannequin laten maken" zoekt, moet zien dat VISUAILS het levert, en nu staat het nergens.
+- **Winst:** Geen minuten, wel beter vindbaar en minder vragen als "doen jullie ook flat-lay?".
+- **Kosten:** S (tekst, FAQ, label in `angles.js`) als de vorm al vastligt; M als het CATALOG-bord ervoor moet veranderen (5.09).
+- **Risico:** Een naam belooft een vorm, dus als het bord nu soms plat en soms 3D levert, moet dat eerst één vorm worden.
+- **Mening:** Goed en goedkoop, en beter dan Lucas' Flat Lay Set van 12 sep, die drie van de vier catalogbeelden opnieuw verkoopt en als bundel met korting complete onder een andere naam is (§2.3, §23).
+- **Vraag aan Lucas:** Hoe zien voorkant en achterkant er nu uit? — (a) plat gelegd (b) 3D, als op een onzichtbare paspop (c) wisselend per product — advies: leg vast wat het bord nu het vaakst doet; dat het één vorm wordt, is belangrijker dan welke.
+- **Vereenvoudiging:** het idee van een losse Flat Lay Set als derde dienst.
+
+### 10.07. Minuten per product uit de statustijden (marge-meter in /admin)
+Gebied: 10 · Dient: Lucas / systeem · **Tegenspreker: later** — werkt alleen als Lucas "In productie" op het juiste moment zet; pas zinvol na 4.04
+
+- **Nu:** De tijden in de margetabel zijn schattingen uit gesprekken (§25) en voor merkmodel, eigen look, hooks, kleurvarianten en extra hoeken onbekend, terwijl /admin de statustijden al opslaat (`order_events`, §10.2).
+- **Voorstel:** Een tabel in /admin (bij Trechter of een tabblad "Marge") met per dienst over de laatste 30 dagen het aantal producten, de mediaan van de minuten per product tussen "In productie" en "In controle" en het nettobedrag per uur, plus één regel bij elke bestelling.
+- **Waarom:** Zonder echte minuten zijn alle prijsbesluiten in dit gebied gokwerk (credits, varianten, merkmodel, tweede set).
+- **Winst:** Eén getal per dienst waarmee Lucas elke prijsvraag in dit gebied zelf kan beantwoorden.
+- **Kosten:** S: één query op `order_events` en één tabel in /admin, zonder script (gebied 4).
+- **Risico:** Zet Lucas 's ochtends alles tegelijk op In productie of werkt hij aan twee bestellingen tegelijk, dan meet de tabel doorlooptijd in plaats van werk, vandaar de mediaan en alleen bestellingen die binnen een dag doorliepen.
+- **Mening:** Goed als hulpmiddel voor de eerste tien bestellingen; de tegenspreker voegt toe dat het pas betrouwbaar is als de status Lucas' eigen handelingen volgt (4.04, ook later).
+- **Vraag aan Lucas:** Zet je "In productie" op het moment dat je aan die bestelling begint? — (a) ja (b) nee, alles in één keer 's ochtends (c) soms — advies: bij (b) of (c) niet bouwen en de eerste tien met de hand timen.
+- **Gereedschap:** na het leveren, of eens per week een blik (§25) · input: de statustijden die /admin al opslaat · output: minuten per product en € per uur per dienst · zo zie je dat het gelukt is: bij een net geleverde bestelling staat een aantal minuten dat je herkent.
+
+### 10.08. Merkmodel als tweede stap — eerst weten hoeveel uur het kost
+Gebied: 10 · Dient: Lucas / klant · **Tegenspreker: later** — eerst de tijd van één merkmodel meten; de verkoopregel daarna
+
+- **Nu:** Het merkmodel kost €450 eenmalig en zit gratis bij Merk en bij Pro op jaar/vooruit (§2.7), maar hoeveel uur het kost, staat nergens (§25).
+- **Voorstel:** Time eerst het eerstvolgende merkmodel, en zet daarna vanaf de tweede betaalde bestelling één regel op Overzicht in Studio (zonder JS, alleen bij 2–4 bestellingen en zolang er geen merkmodel is) die een eigen gezicht aanbiedt naast het gezicht dat de klant al koos.
+- **Waarom:** Een eigen gezicht is de sterkste reden om terug te komen, maar zonder de tijd weet niemand of €450 en "gratis bij Pro-jaar" uit kunnen.
+- **Winst:** Bij 3 uur werk €150/u, bij 6 uur €75/u (dan minder dan catalog), en bij Pro-jaar en Merk zijn die uren onbetaald.
+- **Kosten:** S: één regel in Studio met een voorwaarde op het aantal bestellingen (gebied 2).
+- **Risico:** Een verkoopregel in Studio kan opdringerig lezen, daarom alleen bij 2–4 bestellingen en zonder mail.
+- **Mening:** Goed om het aan herhaalbestellingen te koppelen, maar de tijd bepaalt of dit een dienst is die laat groeien of een die geld kost, dus zonder die meting geen reclame ervoor.
+- **Vraag aan Lucas:** Hoeveel uur kost een merkmodel van briefing tot locked? — (a) minder dan 3 uur (b) 3–6 uur (c) meer — advies: time het eerstvolgende; bij (c) de prijs houden, maar het uit "gratis bij Pro-jaar" halen (gebied 6).
+- **Prijsvoorstel:** alleen bij uitkomst (c) — nu merkmodel €450, gratis bij Merk en bij Pro op jaar/vooruit (§2.7) · voorstel alleen nog gratis bij Merk · effect Pro-jaar verliest een voordeel van €450 en Lucas houdt per Pro-jaarklant de uren voor een merkmodel over.
+
+### 10.09. Bureaus bedienen zonder iets te bouwen
+Gebied: 10 · Dient: Lucas / klant · **Tegenspreker: later** — tekst voor een doelgroep die er nog niet is; de vraag over mengen in één bestelling wel nu stellen
+
+- **Nu:** §1 noemt bureaus als doelgroep en klanttype "bureau" is in ronde 9 doorlopen (§15), maar een account hoort bij één merk met één vaste look en één factuuradres (§8) en de site zegt nergens hoe een bureau bestelt.
+- **Voorstel:** Eén korte alinea op /pricing en /contact, die Lucas zelf schrijft: per klant een eigen account met eigen look en facturen, of de bestelling via WhatsApp laten klaarzetten met "bestelling namens de klant" in /admin (§10); meerdere merken onder één login pas als een bureau twee keer heeft besteld.
+- **Waarom:** Eén bureau brengt meerdere merken binnen zonder dat Lucas elk merk apart hoeft te verkopen.
+- **Winst:** Geen minuten, wel een verkoopkanaal dat nu niemand ziet.
+- **Kosten:** S (tekst).
+- **Risico:** Elk merk heeft een eigen e-mailadres nodig, en plus-adressen niet aanraden, want die hebben eerder een abonnement aan het verkeerde account gekoppeld (F50).
+- **Mening:** Goed als proef zonder bouwwerk, want een bureauportaal nu opent nieuw werk voor een klant die er nog niet is; volgens de tegenspreker moet de vraag hieronder wel nu beantwoord worden.
+- **Vraag aan Lucas:** Mag een bureau producten van verschillende klanten in één bestelling zetten om op een lager tarief te komen (de code staat dat nu al toe)? — (a) ja, als look en achtergrond gelijk zijn (b) nee, één bestelling per merk (c) ja, met per product een eigen achtergrond — advies: (a); het werk per product blijft gelijk en het tarief hangt af van het aantal producten, niet van het merk.
+
+### 10.10. Dropshippers: spreek ze aan op het product dat al verkoopt
+Gebied: 10 · Dient: Lucas / klant · **Tegenspreker: later** — advertentietekst die Lucas zelf schrijft; pas relevant als er reclame loopt
+
+- **Nu:** Dropshippers horen volgens de opdracht bij de doelgroep (gebied 10), al noemt het overzicht ze nergens (§1 noemt jonge merken, webshops en bureaus), maar self-serve tools leveren beelden op model voor $0,02–$0,60 per stuk en VISUAILS vraagt €39–€89 per product, wat een dropshipper die tien producten uitprobeert niet betaalt.
+- **Voorstel:** Spreek dropshippers in "Voor wie" en in advertenties aan op het moment dat een product verkoopt (eigen beelden in plaats van dezelfde leveranciersfoto's als twintig andere winkels, in Lucas' eigen woorden), zonder apart aanbod, want de bestaande prijzen en de €1-proef zijn genoeg.
+- **Waarom:** Zo trekt de reclame dropshippers die kunnen betalen, en niet degenen die nog uitproberen en bij een €1-proef blijven.
+- **Winst:** Minder proeven zonder vervolg, want elke catalogproef die niet tot een bestelling leidt, kost 20–30 min.
+- **Kosten:** S (tekst en doelgroep in de advertenties, gebied 1).
+- **Risico:** De lijn mag niet lezen als een belofte over verkoop (§26), dus houd het bij wat de klant krijgt.
+- **Mening:** Goed en eerlijk: VISUAILS kan niet concurreren op prijs per beeld en hoeft dat niet (geen self-serve, §1), dus voor done-for-you zijn alleen dropshippers met een product dat al verkoopt een echte klant.
+- **Vraag aan Lucas:** —
+
+### 10.12. Editions pas openen als de maandset laat zien dat het geen handwerk is
+Gebied: 10 · Dient: Lucas · **Tegenspreker: later** — Editions blijft toch "binnenkort"; het besluit kan wachten tot er abonnees zijn
+
+- **Nu:** De maandset (20 merkneutrale beelden per maand) bestaat en Editions (20 beelden per maand op het eigen merk, €149/maand + €295 opzet) blijft "binnenkort" (§2.10, besluit 6 okt), maar hoeveel tijd selecteren, nakijken en uploaden per maand kost, staat nergens.
+- **Voorstel:** Open Editions pas als (1) de maandset twee maanden op rij minder dan een uur kost van begin tot publiceren en (2) er een eerste klant met een eigen look of merkmodel is, bij wie het werk van de €295-opzet grotendeels gedaan is; tot dan wordt er niets aan gebouwd.
+- **Waarom:** Editions is de enige dienst die kan groeien zonder Lucas' uren, maar alleen als "op het eigen merk" niet per klant handwerk wordt.
+- **Winst:** Bij 1 uur per klant per maand €149/u plus €295 opzet; 10 Editions-klanten = €1.490 per maand.
+- **Kosten:** S (een besluit, niets te bouwen).
+- **Risico:** Is het elke maand opnieuw promptwerk per klant, dan betaalt de klant €7,45 per beeld (€149 / 20) voor handwerk, minder dan bij elke losse bestelling per beeld (catalog vanaf €9,75, lifestyle vanaf €16,33); alleen catalog in Pro en Merk (€6,58 en €5,83 per beeld) en de €1-proef zitten lager.
+- **Mening:** Goed als vast beslismoment, en de koppeling met eigen look maakt er een logische volgende stap van: proef → bestelling → eigen look of merkmodel → Editions.
+- **Vraag aan Lucas:** Hoeveel tijd kost de maandset je nu per maand? — (a) minder dan 1 uur (b) 1–3 uur (c) nog niet gemeten — advies: (c), dus de volgende maandset timen.
+
+**Samengevoegd**
+- **10.01** → opgenomen in 5.09 (meegenomen: betaalde reclame tot het catalogbord af is alleen op lifestyle en de €1-proef; catalogcredits nu niet aanraken, want bij 10 min per catalogproduct levert catalog in het Merk-abonnement €140 per uur op).
+
+**Geschrapt**
+- **10.11** — nee: de Threads-insturing is een nieuw weekritueel, en 10.05 levert hetzelfde voor-en-na-materiaal zonder vaste handeling (het alternatief dat de agent zelf noemde).
+
+**Bekeken en niet voorgesteld**
+- **Styled Set** (drie gestylede varianten, ±€30, idee 12 sep): dat is drie keer het beeld op model, het trage deel van catalog, voor een bedrag dat niet in §22 staat, en eigen stukken meesturen (gratis) en outfit (€50) dekken de behoefte al.
+- **Brand book-generator als dienst** (17 aug): een ander vak (identiteit, geen productbeeld) met eigen intake en revisies, dicht bij "geen logo's ontwerpen", en het beeldgedeelte zit al in eigen look.
+- **Drop- of lanceringspakket** (catalog + lifestyle samen) en **Flat Lay Set** als losse aankoop (12 sep): allebei complete onder een andere naam (§2.3; §23 10 sep, 1 okt); 10.02 vult de eerste behoefte zonder pakket in en 10.06 de tweede door de vorm bij naam te noemen.
+- **Self-serve laag of virtuele paskamer in de webshop van de klant** (Uwear, SellerPic): botst met done-for-you (§1) en met nul externe scripts (§21), en de prijs per beeld is daar centen.
+- **Beloning voor doorverwijzen** (tegoed voor wie een merk meebrengt): pas zinvol na de eerste tien klanten, en tegoed voor de nieuwe klant is een korting op de eerste bestelling via een omweg (§23 7 aug).
+
+**Bronnen**
+- [Picjam: AI Fashion Models — Shopify App Store](https://apps.shopify.com/picjam)
+- [Botika — Pricing](https://botika.com/pricing)
+- [Pixelz — Ghost mannequin services](https://www.pixelz.com/sem/ghost-mannequin-services/)
+- [FASHN — App pricing](https://help.fashn.ai/plans-and-pricing/app-pricing)
+- [Photta — SellerPic pricing & review (met Photta's eigen prijzen)](https://www.photta.app/pricing-and-reviews/sellerpic)
+- [Photta — Top ghost mannequin AI tools 2026](https://www.photta.app/blog/top-ghost-mannequin-ai-tools-comparison-2026)
+- [Shootify — Shopify App Store](https://apps.shopify.com/shootify)
+- [Vantaige — Uwear vs WearView](https://vantaige.io/compare/uwear-vs-wearview)
+- [Vantaige — AI clothing photoshoot cost 2026](https://vantaige.io/blog/ai-clothing-photoshoot-cost-2026)
+
+## 2.11 · Wat niemand oppakte (uit de tegenspraak)
+
+Vijf dingen die de opdracht wel vroeg, maar die geen gebied uitwerkte. Bij elk staat mijn oordeel.
+
+1. **De capaciteitspunten kloppen niet met de echte minuten.**
+   - Catalog telt 4 punten bij 20–30 minuten werk, lifestyle 3 punten bij 5–10 minuten (§3.6, §25). De 100 punten per dag zijn volgens §27 een aanname.
+   - Een venster van 158 punten kan 39 catalogproducten bevatten. Dat is 13–20 uur werk in twee dagen, naast "zo snel mogelijk".
+   - Mijn oordeel: dit is na voorrang de enige datumbelofte die kan breken. Nu is het nog geen probleem, want bestellingen van 10 producten of meer zijn er nog niet. Leg de punten opnieuw naast de echte minuten zodra 5.09 catalog sneller heeft gemaakt; tot dan let je zelf op bij een vaste datum. Vraag V8.
+2. **Geen rem op €1-proeven bij een piek.**
+   - Elke catalogproef kost je 20–30 minuten. Eén goede post kan een week vullen en "vaak binnen een dag" breken voor betalende klanten.
+   - Mijn oordeel: een schakelaar in /admin, "Proef tijdelijk dicht" (of alleen lifestyle), is S en past bij §21: jij zet hem aan en uit, er gebeurt niets vanzelf. Vraag V9.
+3. **Waar komen goedgekeurde aanbevelingen en vrijgegeven beelden op de site (O15)?**
+   - 3.05 en 10.05 verzamelen ze, maar niemand ontwierp de plek of de publiceerstap.
+   - Mijn oordeel: pas ontwerpen als er drie echte zijn; tot dan is de galerij genoeg. Vraag V10.
+4. **Bestellen namens de klant via WhatsApp (§10, §25).**
+   - Je eerste klanten komen waarschijnlijk via een DM. WhatsApp verkleint foto's, en daarna zet jij ze met de hand in de vakken.
+   - Mijn oordeel: niets bouwen. Zet in je snelle antwoorden van WhatsApp Business: "Stuur je foto's als document (bestand), niet als foto — dan blijft de kwaliteit goed." Dat is één minuut werk voor jou, in ronde A.
+5. **Tekstlast.**
+   - Ongeveer dertig voorstellen die blijven, voegen klantteksten toe in NL en EN of veranderen ze. Volgens §26 schrijf jij lanceringsteksten zelf, en geen gebied telde die tijd.
+   - Mijn oordeel: per ronde één tekstdocument. Claude zet alle nieuwe en gewijzigde klantteksten erin, NL en EN naast elkaar, volgens §26. Jij loopt ze in één keer na. Vraag V11.
+
+---
+
+## 3 · Kleine gereedschappen voor Lucas
+
+Alles wat een knop, venster, sleepvak, script of automatische stap kan worden, geordend naar het moment in je dag (§25). Per stuk staan erbij: wat je erin stopt, wat eruit komt en hoe je ziet dat het gelukt is. Het nummer verwijst naar het voorstel in §2.
+
+### Eerst je eigen voorbeeld: het sleepvak voor `npm run tag:delivery`
+
+**Advies: niet bouwen.** Laat de Worker de herkomsttag zelf in elke jpg en png zetten op het moment dat je in /admin uploadt (4.01). Dan is er niets meer om te slepen of te onthouden. De tag komt ook in lifestylebeelden die niet door Photoshop gaan, in vervangingen bij een revisie en in de maandset. Op het bord zie je per beeld een chip "AI-tag".
+
+Een sleepvak lost het echte probleem niet op: je moet het nog steeds onthouden, en daarom is het script nooit gedraaid.
+
+**Tussenoplossing, alleen als 4.01 naar ronde C schuift** (S, ±1 uur):
+- Wat: `TAGGEN.cmd` op je bureaublad. Je sleept de werkmap erop, en het draait het bestaande `tag-delivery.mjs`.
+- Hoe het eindigt: met "✓ 24 beelden getagd" of een rode regel, en het venster blijft open tot je op een toets drukt.
+- Waarom het werkt: Windows geeft het pad van een map die je op een `.cmd` sleept vanzelf door aan het script. Er hoeft niets geïnstalleerd te worden, mits exiftool er al staat.
+
+### Ochtend
+
+- **Nu-doen-lijst bovenaan /admin, met dezelfde regels in het nachtrapport** (4.05, blijft)
+  - Erin: niets.
+  - Eruit: één lijst in vaste volgorde (btw-controle → leveren of melden → revisies → oppakken → offertes → review vragen), met per regel één knop. Het nachtrapport begint met dezelfde regels.
+  - Gelukt als: de lijst zegt "Niets wacht op jou", en de mail noemt dezelfde regels als het scherm.
+- **Stil afronden in de nacht** (3.03, blijft)
+  - Erin: geleverde, betaalde bestellingen zonder open revisie, 7 dagen na de laatste levering.
+  - Eruit: `closed_at` en een regel in de tijdlijn.
+  - Gelukt als: "2 bestellingen stil afgerond: VIS-…" in het nachtrapport staat.
+- **Ontbrekende foto's per vak** (2.05, blijft)
+  - Erin: de bestelling.
+  - Eruit: "2 foto's ontbreken" op de bestelrij en een rood vak op het bord.
+  - Gelukt als: de telling verdwijnt zodra de klant nastuurt.
+- **WhatsApp-knop bij "wacht op betaling"** (7.05 moment 1, blijft)
+  - Erin: één klik.
+  - Eruit: WhatsApp opent met nummer, tekst, betaallink en vervaldatum al ingevuld, en "dag 5 van 14" ernaast. Je drukt zelf op verzenden.
+  - Gelukt als: de bestelling uit de kolom verdwijnt zodra de betaling binnen is.
+- **Proef tijdelijk dicht** (nieuw, uit de tegenspraak; V9)
+  - Erin: één schakelaar in /admin.
+  - Eruit: geen nieuwe €1-proeven, of alleen lifestyle.
+  - Gelukt als: /test-sample "Even niet beschikbaar" toont, totdat jij de schakelaar weer omzet.
+
+- **Fotocheck bij het uploaden** (5.05, later)
+  - Erin: de foto's van de klant.
+  - Eruit: per vak een vlag (donker / lamplicht / onscherp / klein / dubbel) in brief en bord.
+  - Gelukt als: bij het vak "achterkant: donker (klant liet hem zo)" staat voordat je begint.
+- **VIES-herhaalcontrole** (8.05, later)
+  - Erin: niets.
+  - Eruit: storingsgevallen verdwijnen vanzelf van de btw-lijst zodra VIES antwoordt.
+  - Gelukt als: "VIES-herhaalcontrole: VIS-… goedgekeurd" in het nachtrapport staat.
+- **Bewaker "Betaling teruggeboekt"** (8.11, later)
+  - Erin: niets; de webhook doet het.
+  - Eruit: een rode pil of het abonnement op pauze, plus een WhatsApp-knop.
+  - Gelukt als: de bewaker op het dashboard blijft staan tot je hem afhandelt.
+- **Offerte één keer typen** (8.12, later)
+  - Erin: regels en toelichting.
+  - Eruit: één mail met betaallink, later vanzelf de restantlink.
+  - Gelukt als: de offerte in "wacht op betaling" staat met "aanbetaling betaald · restant open".
+- **Melding op meer plekken** (7.08, later)
+  - Erin: soort melding plus vaste tekst of datums.
+  - Eruit: één melding in Studio, op de privélink, op /thank-you, in stap 5 en in de betaalmail.
+  - Gelukt als: "bekijken zoals de klant het ziet" de melding op de privélink toont.
+
+### Maken
+
+- **Werkmap compleet, met de brief per product en een controle bij het terug-uploaden** (4.02, blijft, M)
+  - Erin: één klik op de werkmapknop.
+  - Eruit: `VIS-… - Merknaam.zip` met per product de klantfoto's, een brief in vijf blokken (INSTELLINGEN · PLAKREGEL · MAKEN · LET OP · NAKIJKEN) en lege vakken.
+  - Gelukt als: je /admin per product niet meer open hoeft te hebben, en een verkeerde map de rode zin geeft "Deze map hoort bij VIS-…, niet bij deze bestelling. Er is niets geüpload."
+- **Photoshop-afwerken leest de werkmap** (4.07, blijft)
+  - Erin: de werkmap met ruwe beelden; je start het met een sneltoets onder File > Scripts.
+  - Eruit: afgewerkte jpg's met achtergrond, verhouding en maat uit de INSTELLINGEN-regel, met de eindnaam `VIS-…-p1-voorkant.jpg` in het goede vak en het ruwe beeld in `_ruw/`.
+  - Gelukt als: de slotmelding zegt "24 beelden afgewerkt · 1 overgeslagen: p4 detail (geen beeld)".
+- **Voorinstelling per look** (5.08, later)
+  - Erin: de werkmap en een Camera Raw-voorinstelling per look.
+  - Eruit: voor- en achterkant even groot, modelbeelden in de grade van de look, close-ups onaangeroerd.
+  - Gelukt als: twaalf producten even groot op één lijn staan.
+- **"Ook op wit" als tweede scriptuitvoer** (10.03, later)
+  - Erin: de afgewerkte beelden.
+  - Eruit: een submap `wit` op #FFFFFF.
+  - Gelukt als: er evenveel bestanden in `wit` staan als in de hoofdmap.
+
+### Leveren
+
+- **Herkomsttag bij elke upload** (4.01, blijft, M)
+  - Erin: de beelden die je toch al uploadt.
+  - Eruit: dezelfde bestanden mét tag, jpg als standaard, en de zip voor de klant met het label "met herkomsttag".
+  - Gelukt als: elk beeld de chip "AI-tag" heeft, en er een waarschuwing staat bij een png, webp of avif.
+- **Meldknop in de revisiekaart, met de taal van de klant erboven** (4.08, blijft)
+  - Erin: de afgehandelde revisiekaarten.
+  - Eruit: de knop "3 nieuwe beelden melden" op de plek waar je al bent, en de regel "Deze klant leest Engels — schrijf je reden in het Engels."
+  - Gelukt als: de kaart sluit met "Gemeld aan de klant — 3 beelden".
+- **Werkmap direct op je schijf, en uploaden in één klik** (4.03, later; alleen in Chrome of Edge)
+  - Erin: één klik.
+  - Eruit: de werkmap in je bestellingenmap, en bij uploaden alleen de nieuwe en gewijzigde beelden.
+  - Gelukt als: "3 nieuw · 21 ongewijzigd".
+- **"Oppakken" zet de status** (4.04, later)
+  - Erin: je klik op de werkmapknop of je eerste upload.
+  - Eruit: In productie of In controle.
+  - Gelukt als: de statuspil op de bestelpagina is bijgewerkt.
+- **Leverkeuring** (4.06, later)
+  - Erin: de geüploade beelden.
+  - Eruit: vier controles: vakken gevuld, maat en verhouding, achtergrond, tag.
+  - Gelukt als: er vier groene regels staan, of een amberkleurige regel met "Toch leveren".
+
+### Klantcontact
+
+- **Review vragen** (3.06, blijft)
+  - Erin: een afgeronde bestelling.
+  - Eruit: een WhatsApp-bericht met de Google-link, klaar om te verzenden, en de regel "review gevraagd" in de tijdlijn.
+  - Gelukt als: de knop grijs wordt met "Gevraagd op 14 okt via WhatsApp".
+- **WhatsApp-knoppen op vijf vaste momenten** (7.05, blijft): betaling open, foto's ontbreken, mail kwam niet aan, incasso mislukt, review.
+  - Erin: de bestelling en het moment.
+  - Eruit: WhatsApp met tekst in de taal van de klant.
+  - Gelukt als: WhatsApp opent met de tekst klaar, en jij drukt zelf op verzenden.
+- **Plan wijzigen vanaf de volgende termijn** (6.11, later)
+  - Erin: een klant die een ander plan vraagt.
+  - Eruit: plan en Mollie-bedrag aangepast.
+  - Gelukt als: de klantpagina toont "Vanaf 6 november: Pro · €790".
+- **"Geld terug" en "Factuur corrigeren"** (8.03 en 8.04, later)
+  - Erin: een keuze plus een reden, of de nieuwe gegevens.
+  - Eruit: een refund via Mollie, een creditnota en eventueel een nieuwe factuur, in één mail.
+  - Gelukt als: oude factuur, creditnota en nieuwe factuur onder elkaar staan.
+
+### Na elke ronde, wekelijks, per kwartaal
+
+- **`UITROLLEN.bat` op je bureaublad, met `TERUGDRAAIEN.bat` ernaast** (9.02, blijft)
+  - Erin: een dubbelklik en één keer J/N, nadat je hebt gezien welke bestanden en migraties meegaan.
+  - Eruit: tests, commit en push door jou, migraties, site en cron live, en zes adressen op live nagekeken.
+  - Gelukt als: het eindscherm "LIVE EN NAGEKEKEN · <tijd>" toont, of "GESTOPT BIJ STAP 4 — er is niets live gezet".
+- **"Klaar voor live" op /admin/diagnose** (8.01, blijft, eenmalig)
+  - Erin: niets.
+  - Eruit: groene en rode regels, elke rode met een link.
+  - Gelukt als: alles groen is en VIS-2026-0001 in /admin/facturen staat.
+- **Back-up die je kunt terugzetten, mét je prompts** (9.04, blijft)
+  - Erin: niets; het draait via de Taakplanner.
+  - Eruit: een dump zonder inloggeheimen, met een kopie van `Prompts` en `VISUAILS-afwerken.jsx`, buiten huis.
+  - Gelukt als: de bewaker "back-up N dagen oud · gecontroleerd" groen is.
+- **Beelden op de site** (1.02, blijft)
+  - Erin: een beeld met de afgesproken naam.
+  - Eruit: de sectie verschijnt bij de volgende uitrol.
+  - Gelukt als: /admin/diagnose "7 van 9 aanwezig" zegt, met de namen die nog ontbreken.
+- **Maandset vooruit klaarzetten** (6.12, later)
+  - Erin: een map met 20 beelden en de maand.
+  - Eruit: de set verschijnt vanzelf op de 1e.
+  - Gelukt als: "november · 20 beelden · zichtbaar vanaf 1 november".
+- **Klantfoto's op je eigen schijf opruimen** (4.10, later)
+  - Erin: je bestellingenmap; het draait wekelijks via de Taakplanner.
+  - Eruit: `_aangeleverd`-mappen ouder dan 120 dagen weg.
+  - Gelukt als: `laatst-opgeschoond.txt` de datum en de aantallen noemt.
+- **ICP-lijst en kwartaalpakket** (8.07 en 8.08, later)
+  - Erin: niets, of je kiest het kwartaal.
+  - Eruit: een ICP-tabel en CSV, of één zip voor je boekhouder.
+  - Gelukt als: de regel "Totaal ICP = 3b" groen is.
+- **Vroeg-signaal** (9.06, later)
+  - Erin: niets.
+  - Eruit: elke 30 minuten worden vier adressen op live nagekeken; bij een storing krijg je een mail en een rode balk, en elke geweigerde mail staat als regel in /admin.
+  - Gelukt als: een bewust gebroken adres in de testomgeving het alarm laat afgaan.
+- **Studiomails sorteren** (7.03, later)
+  - Erin: elke gebeurtenis in notify.js.
+  - Eruit: één mail met het werkwoord vooraan, of één regel in de ochtendlijst.
+  - Gelukt als: er per betaalde bestelling precies één "Maken"-mail komt, en de facturen onder het label Facturen staan.
+- **Waarschuwing vóór het wissen** (3.04, later)
+  - Erin: bestellingen met `bewaard_tot` over 7 dagen die nog beelden hebben.
+  - Eruit: één mail per bestelling (O56).
+  - Gelukt als: "3 klanten gewaarschuwd: beelden verdwijnen op …" in het nachtrapport staat.
+- **Marge-meter** (10.07, later)
+  - Erin: de statustijden.
+  - Eruit: minuten per product en € per uur, per dienst.
+  - Gelukt als: je bij een net geleverde bestelling een aantal minuten ziet dat je herkent.
+
+---
+
+## 4 · Vereenvoudigingen
+
+Wat er weg kan zonder dat iemand het mist. Tussen haakjes het voorstel en het oordeel van de tegenspreker.
+
+**Wat de klant niet meer ziet of hoeft te doen**
+- Grijze plaatshouders: een sectie zonder beeld blijft weg tot het beeld er is (1.02, blijft).
+- Het aparte 0%-vinkje voor EU-klanten. Het zakelijk-vinkje in stap 5 draagt de verleggingszin, en het land staat al ingevuld (8.06, blijft; eerst je boekhouder).
+- De €1-popup die op /plans over de kop valt, en de eerste vraag van /test-sample: de proef begint bij een look (1.06, blijft).
+- Een verplichte "vaste look" voor abonnees, en het videoblok in "Je vaste look". De vaste look vult zichzelf na de eerste bestelling (2.08, blijft).
+- Alle tabbladen van de abonnementspagina, de plantegel en de dubbele vaste look. Het wordt één pagina (2.07, blijft, ronde B).
+- "≈ producten", "+2 clips" en de videocredits op /plans (6.01, blijft).
+- Eén van de twee regels voor doorschuiven, en de herinneringsmail 2 dagen voor het vervallen. Het wordt "3 maanden geldig" (6.03, blijft).
+- De tussentermijn "12 maanden, maandelijks geïncasseerd" en de vierde plankaart (6.04, blijft; jouw besluit, want het draait 10 sep terug).
+- De mail "Je gereserveerde leverdatum is vrijgegeven": de mail van dag 3 noemt die datum al (7.07, blijft).
+- "Zet orders@visuails.com in je contacten" in ±30 soorten mails, als jij die regel van §26 loslaat (7.07, V21).
+- Statusfilters bij minder dan zes bestellingen; afgeronde bestellingen achter "Afgerond (N)" (2.03, blijft).
+- Op de privélink: de tevredenheidsregel bovenaan een bestelling die nog niet af is, en de korte tijdlijn (3.01, blijft).
+
+**Wat jij niet meer doet**
+- `npm run tag:delivery` in CMD, en de geplande sleepvak-app (4.01, blijft).
+- De hex typen in het Photoshop-script, bijsnijden, "opslaan als" en hernoemen (4.07, blijft).
+- Klantfoto's los ophalen uit de mail of uit /admin (4.02, blijft).
+- Vijf CMD-commando's na elke ronde (9.02, blijft).
+- Klanten najagen voor goedkeuring (3.03, blijft).
+- Foto's als bijlage in de studiomail; de 8 MB-grens verdwijnt mee (9.07, blijft).
+- De zijkolom "Eerst af" en de losse revisiekaarten bovenaan het dashboard; ze gaan op in de Nu-doen-lijst (4.05, blijft).
+- Logboekregels in het nachtrapport zoals "vensters vrijgegeven: 0" (4.05, blijft).
+- Elke maand de maandset publiceren (6.12, later).
+
+**Wat er uit de code en de regels kan**
+- Complete, `/start/complete`, `ADVISORY`, `scripts/deliver.mjs`, `HomeV2.astro`, `modelQuestion`/`faceInFrame` en ongebruikte statuswaarden (9.01, blijft).
+- ±8–10 testscripts van het weeksysteem, in dezelfde commit als de code (9.11, blijft).
+- PRODUCT.md als los document; STIJL.md wint van SCHRIJFWIJZER.md (9.01 pakket B).
+- `tag-delivery.mjs` en `tag.mjs` zodra 4.01 live is.
+- Ruim 300 bestanden in `kladblok/` uit het zicht, naar een archief per ronde (9.10, later).
+
+**Wat je niet hoeft te bouwen** (concepten en ideeën die hiermee vervallen)
+- B3, de keuzehulp "Wat past bij mij?": vijf looks naast elkaar met hetzelfde product beantwoorden dat (1.01, 1.02).
+- B1b, de geanimeerde versie van "zo werkt het in 4 stappen" (1.09).
+- B4, de prijscalculator: het formulier rekent al alles uit (1.07).
+- C1, het startlijstje in Studio: de Nu-zin beweegt mee met de bestelling (3.01).
+- C2, de weekstartmail: vervalt met §28.
+- 3.02, de goedkeurknop per beeld weghalen: geschrapt, het besluit van 7 aug blijft.
+- 10.11, de Threads-insturing: geschrapt, want het wordt een nieuw weekritueel.
+- Een losse Flat Lay Set, een Styled Set, een drop- of lanceringspakket, een brand book-generator als dienst (gebied 10, "Bekeken en niet voorgesteld").
+
+---
+
+## 5 · Prijs- en aanbodvoorstellen
+
+Niets hiervan geldt al. Elk getal in de kolom "nu" komt uit §22. Geen enkel voorstel is nodig vóór de eerste klant. 6.03, 6.04, 6.05 en 6.06 horen in ronde B, de rest wacht op abonnees, catalogklanten of gemeten minuten.
+
+| Nr | Wat | Nu (§22) | Voorstel | Effect | Oordeel |
+|---|---|---|---|---|---|
+| 6.03 | Hoe lang credits geldig zijn | 1 maand doorschuiven (maandelijks), 3 maanden (jaar en vooruit) | 3 maanden geldig voor iedereen, oudste eerst | Maandelijks: een termijn is 3 maanden bruikbaar in plaats van 2 (grootste saldo Pro 240 → 360). Jaar: 3 in plaats van 4 (Pro 480 → 360). Omzet per abonnement gelijk. | blijft (ronde B) |
+| 6.04 | Termijnen | maandelijks · 12 maanden maandelijks geïncasseerd · vooruit "betaal 10, krijg 12" (€3.900 · €7.900 · €16.900); op maat 30 → €272, 300 → €1.748 als vierde kaart | Alleen maandelijks en vooruit; op maat als één regel onder de kaarten | Geen bedrag verandert. Pro met merkmodel (€450) kan alleen nog via €7.900 vooruit, 16,7% onder 12 × €790 = €9.480. | blijft (ronde B); jouw besluit, want het draait 10 sep terug |
+| 6.05 | Rem op het aantal abonnees (`seatsLeft`) | 231 punten/maand → 13 Starter-plekken (niet na te rekenen: 5 tot 8) | Eén plafond in credits per maand voor alle abonnees samen, door jou gekozen vanuit je uren | Bij het voorbeeld van 1.000: vol bij 22 Starter (€8.580 per maand), 8 Pro (€6.320) of 3 Merk (€5.070). 1.000 credits alleen catalog is ±83 uur, ±55% van je productie-uren. | blijft (ronde B); getal = V45 |
+| 6.02 | Creditprijs per product | catalogset 4 · carrousel 5 | Beide 4 | Carrousels per maand Starter 9 → 11, Pro 24 → 30, Merk 58 → 72. Omzet gelijk. Een Pro-abonnee die alles aan lifestyle besteedt, kost 30–60 minuten extra per maand. | later; nu niet nodig, 6.01 maakt het al duidelijk |
+| 5.09 (vraag 2, optie b; uit 10.01) | Creditprijs catalog | catalogset 4 | Catalog 5, alleen als het CATALOG-bord catalog niet onder 15 minuten per product krijgt | Merk 58 catalogproducten per maand in plaats van 72 (€29,14 per product), Pro 24 in plaats van 30, Starter 9 in plaats van 11. | advies: nu op 4 laten (V47) |
+| 6.11 | Credits bijkopen | bestaat niet | Per 10 credits tegen de creditprijs van het plan: Starter €86,67 · Pro €65,83 · Merk €58,28 | Geen korting. Starter plus 30 bijgekochte credits = €650 voor 75 credits; op maat 75 = €550, dus een groter plan is goedkoper. | later; pas als een abonnee twee keer te weinig heeft |
+| 10.03 | Tweede set op wit voor marktplaatsen | bestaat niet (vergelijkbaar: 4K €9 per product) | €9 per product, 1 credit | 10 producten: +€90 in plaats van een tweede bestelling van €510. Bij 1 minuut controle per product €540 per uur. | later; pas als een klant erom vraagt |
+| 10.04 | Kleurvarianten | elke kleur is een product: €89 · €65 · €51 · €39 | Geen nieuw bedrag; alleen minder verplichte foto's per variant | 5 kleuren = 5 × €65 = €325. Kost een variant de helft van de tijd, dan €260–390 per uur in plaats van €130–195. | later; eerst meten |
+| 10.08 | Merkmodel inbegrepen | €450, gratis bij Merk en bij Pro op jaar of vooruit | Alleen nog gratis bij Merk, als één merkmodel meer dan 6 uur blijkt te kosten | Pro-jaar verliest een voordeel van €450; jij houdt die uren. | later; eerst het eerstvolgende merkmodel timen |
+| 6.06 | Voorrang voor abonnees | voorrang 20%, min €49, max €249, alleen in euro's | Niet met credits; wie voorrang wil, betaalt de bestelling via Mollie | Geen nieuw getal. | blijft (ronde B), V46 |
+| 10.02 | Lifestyle bij dezelfde producten na catalog | gewoon tarief per bestelling | Optie (b), het catalogtarief ook voor lifestyle, is geschrapt: dat is complete onder een andere naam | Geen prijswijziging; alleen gemak (foto's hergebruiken). | later |
+
+**Wat bewust niet verandert.** Geen korting op de eerste bestelling, geen bereik in plaats van één vanaf-prijs, geen korting of tegoed in ruil voor een review, geen beloning voor doorverwijzen vóór de eerste tien klanten (§23 7 aug en 9 aug; zie gebied 3 en gebied 10 in §2 van dit rapport).
+
+---
+
+## 6 · Vragenlijst aan Lucas
+
+Elke vraag heeft twee of drie antwoorden en een advies. Een antwoord als "V17: a" is genoeg. Een vraag zonder antwoord blijft open; dat punt bouwt Claude pas als je hebt gekozen. De vragen met een ✱ gaan over iets wat alleen jij weet.
+
+### 6.1 Nu beantwoorden: dit bepaalt ronde A
+
+**Uitrollen, live gaan, back-up**
+- **V1 ✱** (9.02) Hoe komen nieuwe migraties nu op de live-database? — (a) dat zit al in `npm run deploy` (b) Claude zegt het per keer en jij typt het commando (c) weet ik niet — **advies:** een vaste stap 4 in de uitrolknop; bij (a) wordt dat alleen een melding.
+- **V2** (9.02) Mag de uitrolknop de volledige testreeks draaien (build plus 157 scripts)? — (a) altijd (b) een snelle set, de volledige alleen als Claude het zegt (c) geen tests in de knop — **advies:** (a) zolang het onder 5 minuten blijft, anders (b).
+- **V3 ✱** (9.05) Op welk plan draaien Cloudflare Workers en Resend? — (a) beide gratis (b) Workers Paid, Resend gratis (c) beide betaald — **advies:** Workers Paid vóór de lancering, want op het gratis plan krijgt de cron 10 ms rekentijd en 50 subverzoeken per run. Resend gratis volstaat tot ±12 bestellingen op één dag.
+- **V4** (8.01) Wie doet de rookproefbetaling na de live-sleutel? — (a) een bevriend bedrijf dat €1,21 betaalt en terugkrijgt (b) jijzelf: een factuur aan jezelf plus een creditnota, als je boekhouder dat goedvindt (c) geen rookproef — **advies:** (a), anders (b), niet (c).
+- **V5** (9.03) Wanneer moet de mail vóór het wissen (O56) er zijn? — (a) vóór de purge aangaat (b) uiterlijk twee maanden na de eerste echte levering (c) niet — **advies:** (b). Purge nu aan, de mail (7.09) volgt later.
+- **V6 ✱** (9.04) Waar komt de back-up nu terecht? — (a) op dezelfde schijf als de code (b) op een losse USB-schijf (c) in Google Drive — **advies:** (c), de Drive-map van Workspace; dan ligt er altijd een kopie buiten huis.
+- **V7 ✱** (8.08) Wie doet nu je btw-aangifte en boekhouding? — (a) Moneybird of een ander pakket (b) een boekhouder (c) ikzelf in Mijn Belastingdienst — **advies:** eerst het antwoord. Heb je een boekhouder, leg hem dan ook 8.06 voor (het 0%-vinkje).
+
+**Wat niemand oppakte (2.11 in dit rapport)**
+- **V8** Capaciteitspunten tegen de echte minuten (catalog 4 punten bij 20–30 min, lifestyle 3 bij 5–10 min). — (a) opnieuw ijken zodra 5.09 catalog sneller heeft gemaakt, en tot dan zelf opletten bij een vaste datum (b) catalog nu al zwaarder laten tellen (c) laten zoals het is — **advies:** (a).
+- **V9** Een rem op €1-proeven bij een piek? — (a) een schakelaar "Proef tijdelijk dicht" in /admin (b) bij drukte alleen de lifestyleproef open laten (c) geen rem — **advies:** (a); S en terug te draaien.
+- **V10** Waar komen echte aanbevelingen en vrijgegeven beelden op de site (O15)? — (a) een blok op home en /pricing, per stuk door jou aangezet (b) alleen in de galerij (c) pas beslissen als er drie echte zijn — **advies:** (c), daarna (a).
+- **V11** Wie schrijft de nieuwe klantteksten (NL en EN)? — (a) Claude zet ze per ronde in één tekstdocument volgens §26, en jij loopt ze in één keer na (b) jij schrijft alles zelf vanaf leeg (c) Claude schrijft, jij kijkt steekproeven — **advies:** (a).
+
+**Site en formulier**
+- **V12** (9.01) Wat doet `/start/complete` als complete uit de code is? — (a) doorsturen naar `/start` (b) doorsturen naar `/catalog#looks` (c) 404 — **advies:** (a).
+- **V13** (1.02) Welke plaatshouders mogen verdwijnen in plaats van gevuld te worden? — (a) alles buiten het pad naar betalen, tot er een beeld is (b) alleen /about en /guides (c) niets, alles vullen — **advies:** (a).
+- **V14 ✱** (5.09) Welk bord hoort bij Dunes? — (a) AUGUST is Dunes (b) Dunes heeft nog geen eigen bord (c) iets anders — **advies:** bij (b) Dunes meteen na het CATALOG-bord.
+- **V15** (1.01) Mag een lookkaart op /start meteen naar het formulier gaan? — (a) ja, met de look al aangevinkt (b) nee, eerst naar de detailpagina van de look (c) zoals nu, via de dienstpagina — **advies:** (a).
+- **V16** (1.07) Tonen we dat een grotere bestelling soms goedkoper is (bij 4, 8, 9 en 16–19 producten)? — (a) ja, met de regel "Met 5 producten betaal je €325 in plaats van €356" (b) nee (c) de prijsopbouw laten herzien — **advies:** (a).
+- **V17** (1.05, 7.02) Wat gebeurt er met de eerste mail bij het bestellen? — (a) die blijft, maar begint met "Je bestelling staat erin" plus de regel "Al betaald bij Mollie? Dan hoef je niets te doen" (b) die gaat pas na de betaling uit, samen met de factuur — **advies:** (a) nu.
+- **V18** (1.06) Mag de €1-proef altijd een account aanmaken (de vaste look heeft dat nodig)? — (a) ja, zonder vinkje (b) alleen met "Bewaar mijn gegevens" — **advies:** (a).
+- **V19 ✱** (8.06) Waarom staat het 0%-vinkje voor EU-klanten er apart? — (a) zonder bijzondere reden, het mag weg (b) op advies van een boekhouder: houden, maar een vergeten vinkje betekent 21% en meteen betalen (c) houden zoals nu — **advies:** (a), nadat je boekhouder het bevestigt.
+- **V20 ✱** (9.07) Gebruik je de foto's in de studiomail? — (a) nee, ik werk vanuit /admin (b) ja, op mijn telefoon om te zien of ze bruikbaar zijn (c) ja, ik sla ze op uit de mail — **advies:** bij (a) en (c) alle bijlagen weg; bij (b) alleen de voorkant van product 1.
+- **V21** (7.07) Drie keuzes in de klantmails:
+  - (1) Moet "Zet orders@visuails.com in je contacten" alleen nog in de eerste mail aan een nieuw adres, op /thank-you en op de kaart "kijk in je mail"? (a) ja, je laat die regel uit §26 los (b) nee — **advies:** (a).
+  - (2) De inlogcode in het onderwerp van de mail? (a) ja (b) nee — **advies:** jouw afweging, want de code staat dan op het vergrendelscherm.
+  - (3) Mag de mail van dag 7 ("leverdatum vrijgegeven") weg? (a) ja (b) nee — **advies:** (a).
+
+**Na de levering: privélink, afronden, reviews**
+- **V22** (3.01) Welke knop bovenaan de privélink wordt violet? — (a) "Alles goed — naar je downloads" (b) "Downloaden" (c) twee gelijke knoppen — **advies:** (a).
+- **V23** (3.01, 2.01) Wat gebeurt er met de vier tellertegels op het Studio-overzicht? — (a) weg; de lijst "Lopend" vervangt ze (b) alleen tonen als het getal boven 0 is, als link naar de gefilterde bestellingen (c) laten — **advies:** (b). Zo blijft je herontwerp van 3 okt staan en verdwijnt de ruis van "0 · 0 · 1 · 0".
+- **V24** (3.03) Wie rondt een bestelling af na 7 stille dagen? — (a) de cron, met een regel in het nachtrapport (b) niemand; overal wordt "afgerond of 7 dagen stil" gerekend (c) jij, met één klik in /admin — **advies:** (a). Daar hoort één zin in /terms bij: een levering zonder revisieverzoek binnen 7 dagen geldt als aanvaard.
+- **V25** (3.05) Welke reviewplek komt eerst? — (a) Google groot, Trustpilot als tekstlink (b) beide even groot (c) alleen Google — **advies:** (a).
+- **V26** (7.05) Mag de tekst bij het telefoonveld in stap 3 breder worden? — (a) laten: "we appen als iets onduidelijk is" (b) "we appen als er iets met je bestelling is" (c) geen WhatsApp voor betaling en review — **advies:** (b). Dit moet vóór 3.06, anders gebruik je het nummer voor iets waarvoor de klant het niet gaf.
+- **V27** (3.06) Via welke kanalen vraag je om een review? — (a) WhatsApp en mail (b) alleen WhatsApp (c) alleen mail — **advies:** (b) om mee te beginnen.
+- **V28** (3.07) Neemt de knop "Bestel met dezelfde look" ook de bedrijfsgegevens mee? — (a) nee, alleen de look; de gegevens komen via inloggen (b) ja, via een inlogcode (c) ja, rechtstreeks uit de privélink — **advies:** (a), want een privélink mag gedeeld worden.
+- **V29** (3.08) Wanneer is een €1-proef afgerond? — (a) bij levering (b) na "Alles goed", zoals nu (c) na 7 stille dagen — **advies:** (a); er is geen revisie om op te wachten.
+- **V30** (10.05) Toestemming om tekst en beelden te tonen:
+  - (1) Wanneer vragen we het? (a) alleen op het afrondscherm (b) ook bij het bestellen van de proef (c) beide — **advies:** (a).
+  - (2) Wat gebeurt er als een klant zijn toestemming intrekt? (a) je haalt zijn beelden binnen een week van site en social (b) een geplaatste post blijft, er komt alleen niets nieuws bij — **advies:** (a), en zo staat het in /privacy.
+- **V31** (2.05, 7.01) Ontbrekende foto's:
+  - (1) Tot wanneer mag een klant foto's nasturen? (a) tot In productie (b) tot Geleverd (c) altijd — **advies:** (b).
+  - (2 ✱) Wat doe je als een achterkant ontbreekt? (a) wachten (b) raden en leveren; revisie mag (c) één appje met een vaste tekst, en na een dag zonder antwoord maken wat er is — **advies:** (c).
+  - (3) Waar stuurt een klant zonder account foto's na? (a) in Studio, via de inlogcode (b) via WhatsApp als bestand (c) een nieuw vak op de privélink — **advies:** (a), met (b) als tweede weg.
+- **V32** (5.03) Moet de revisieregel "kleur ten opzichte van de kleur die je opgaf" ook in /terms en de FAQ staan? — (a) ja (b) alleen in het formulier (c) niets veranderen — **advies:** (a).
+
+**Jouw werkdag**
+- **V33** (4.01) Moet de klant naast jouw jpg nog andere formaten krijgen? — (a) nee (b) ook een png voor marktplaatsen (c) alleen op verzoek via WhatsApp — **advies:** (a), met (c) als uitzondering.
+- **V34 ✱** (4.02) Hoe krijg je nu de klantfoto's op je pc? — (a) uit de studiomail (b) per foto uit /admin (c) ze zitten al in `_aangeleverd/` van de werkmap — **advies:** bij (c) alleen de briefblokken, de refcontrole en het overslaan van ongewijzigde bestanden bouwen; bij (a) of (b) 4.02 helemaal.
+- **V35 ✱** (4.07) Gaan lifestylebeelden nu ook door Photoshop? — (a) ja, altijd (b) nee, ze komen rechtstreeks uit Spaces (c) soms — **advies:** bij (b) of (c) ook door het script, voor naam en maat; de tag hangt er niet meer van af.
+- **V36** (4.05) Moet het nachtrapport ook komen als er niets open staat? — (a) altijd, met het onderwerp "niets open" (b) alleen als er iets is — **advies:** (a). Een mail die niet komt, kun je anders niet onderscheiden van een cron die niet draait.
+- **V37** (4.08) Vaste redenen voor "geen nieuw beeld nodig"? — (a) nu drie (b) na ±10 echte revisies (c) nooit, alleen de taalregel — **advies:** nu (c), daarna (b).
+- **V38** (10.09) Mag een bureau producten van verschillende klanten in één bestelling zetten voor een lager tarief? De code staat dat nu al toe. — (a) ja, als look en achtergrond gelijk zijn (b) nee, één bestelling per merk (c) ja, met per product een eigen achtergrond — **advies:** (a).
+- **V39** (1.11) Wat wordt de URL /studio? Bouwen is "later", maar beslis het vóór de lancering, want daarna staan de links in mails van echte klanten. — (a) een doorverwijzing naar het inlogscherm (b) de pagina over VISUAILS Studio, met "Inloggen" bovenaan; /portal stuurt door — **advies:** (b).
+
+### 6.2 Bij ronde B (abonnement zonder week)
+
+- **V40** (2.02) Een abonnee heeft tegoed én credits en bestelt. Wat gaat eerst? — (a) credits; het tegoed blijft staan voor een Mollie-betaling (b) de klant kiest in stap 5 (c) eerst tegoed — **advies:** (a).
+- **V41** (2.07, 6.08) Wat doen credits na een pauze of opzegging? — (a) een credit vervalt altijd op zijn eigen datum (b) bij opzeggen vervallen ze op de einddatum van het abonnement (c) bij pauze worden ze bevroren — **advies:** (a).
+- **V42** (2.07) Hoe lang mag een pauze duren? — (a) tot de klant zelf hervat (b) hoogstens 3 maanden, daarna een mail "hervatten of opzeggen?" — **advies:** (b).
+- **V43** (6.03) Wat betekent "3 maanden geldig" precies? — (a) 3 maanden na binnenkomst, voor iedereen (b) tot het eind van de derde maand na binnenkomst — **advies:** (a).
+- **V44** (6.04) Wat gebeurt er met de tussentermijn (12 maanden, maandelijks geïncasseerd)? — (a) weg (b) één regel onder de tabel (c) houden als kolom — **advies:** (a); jouw besluit, want het draait 10 sep terug.
+- **V45 ✱** (6.05) Welk deel van je productie-uren wil je aan abonnees geven, en hoe rem je dat af? — (a) een plafond in credits dat jij kiest vanuit die uren (ter vergelijking: 1.000 credits alleen aan catalog is ±83 uur) (b) een maximum aantal abonnees (c) geen rem — **advies:** (a) met een getal uit je uren; weet je dat nog niet, dan (b).
+- **V46** (6.06) Voorrang voor een abonnee? — (a) niet met credits; de bestelling gaat dan via Mollie (b) voorrang in credits (c) inbegrepen bij Merk — **advies:** (a).
+- **V47** (5.09) Wat doen we met de catalogcredits? — (a) op 4 laten en eerst het bord afmaken (b) naar 5 in ronde 10 (c) beslissen na de eerste drie abonnees — **advies:** (a).
+- **V48** (6.02) Eén creditprijs voor catalog en lifestyle? — (a) beide 4 (b) 4 en 5 houden, met de vertaling in producten (c) beide 5 — **advies:** nu (b).
+- **V49** (2.02, 8.10) Er wordt een termijn terugbetaald terwijl er al credits uit gebruikt zijn. Wat dan? — (a) een creditnota alleen voor het ongebruikte deel; die credits vervallen (b) een volledige creditnota; de gebruikte credits worden een openstaand bedrag (c) per geval beslissen — **advies:** (a).
+- **V50** (8.11) Mag een teruggeboekte termijn het abonnement automatisch op pauze zetten? — (a) ja, en de credits van die termijn worden bevroren (b) nee, alleen een melding (c) ja, maar de credits blijven bruikbaar — **advies:** (a).
+
+### 6.3 Pas als het punt aan de beurt is
+
+- **V51** (1.04) Wat mag er op het apparaat van de klant blijven staan? — (a) look, aantal, opties en foto's, niet zijn gegevens (b) alles (c) alleen per stap, zoals O47 — **advies:** (a).
+- **V52 ✱** (1.09) Gebruik je de verkoopkanalen nog voor iets anders dan de witte achtergrond? — (a) nee, dan wordt het één vinkje (b) ja, dan blijft de lijst onder "Meer opties" — **advies:** (a), tenzij (b) geldt.
+- **V53** (2.04) Hoe ver gaat het samenvoegen van beoordelen in Studio en op de privélink? — (a) één code voor beide (b) een eigen pagina met eigen Studio-code (c) laten — **advies:** (a), na ronde 10.
+- **V54** (3.04) Welke bewaarklok? — (a) alles 90 dagen na afronden (b) alles 90 dagen na de eerste levering (c) zoals nu — **advies:** (a).
+- **V55 ✱** (3.11) Waarom ging `/d` (losse download) op 9 aug weg, en mag een losse link per beeld terugkomen? — (a) ja, bij elk beeld (b) alleen bij lifestyle (c) nee — **advies:** (a), tenzij de reden was dat originelen alleen via de zip mogen.
+- **V56 ✱** (4.03) In welke browser werk je in /admin? — (a) Chrome of Edge (b) Firefox (c) wisselend — **advies:** bij (a) bouwen na 4.02; bij (b) of (c) vervalt 4.03.
+- **V57** (4.04) Mag de knop "Oppakken" een bestelling op In productie zetten? — (a) ja (b) alleen via een aparte statusknop (c) nee — **advies:** (a).
+- **V58** (4.06) Mag een afwijking in de leverkeuring het leveren tegenhouden? — (a) nooit, alleen melden (b) alleen bij een ontbrekend vak (c) altijd — **advies:** (a).
+- **V59** (4.10) Hoe lang mogen klantfoto's op je eigen schijf blijven? — (a) 120 dagen na de laatste wijziging (b) 90 dagen (c) tot je ze zelf weggooit — **advies:** (a).
+- **V60** (5.04) Wil je bij de leverknop iets afvinken? — (a) nee, alleen de nakijklijst (b) één verplicht vinkje (c) per product een vinkje — **advies:** (a).
+- **V61** (5.05) Neemt de upload HEIC-foto's aan? — (a) ja, en Photoshop opent ze (b) ja, maar jij kunt ze niet openen (c) nee — **advies:** je hoeft niets te antwoorden; de drukteproef (9.05) test één HEIC. Bij (b) of (c) komt er een regel om de iPhone op "Meest compatibel" te zetten.
+- **V62** (5.10) Wat wordt Still? — (a) een pose binnen Classic, zonder keuze voor de klant (b) een keuze binnen Classic (c) een eigen cataloglook — **advies:** (a).
+- **V63** (6.11) Wie wijzigt het plan van een abonnee? — (a) alleen jij, in /admin (b) de klant zelf, in Studio — **advies:** (a).
+- **V64** (6.12) Welke maandsets ziet een abonnee? — (a) alleen die van deze maand (b) die van de laatste 3 maanden (c) alle sets sinds hij begon — **advies:** (b).
+- **V65** (7.03) Wil je een mail bij een nieuwe, nog onbetaalde bestelling? — (a) nee, pas "Maken" na de betaling (b) ja, tot je tien klanten hebt (c) ja, altijd — **advies:** (a).
+- **V66** (7.08) Mag een melding in stap 5 van het bestelformulier staan? — (a) alleen Drukte en Storing (b) alle drie (c) nergens — **advies:** (a).
+- **V67** (8.03) Welk bedrag geldt als je losse producten terugbetaalt? — (a) het tarief dat de klant betaalde (b) de prijs opnieuw rekenen voor wat overblijft (c) altijd een vrij bedrag — **advies:** (a).
+- **V68** (8.04) Mag een EU-klant achteraf 0% krijgen als hij zijn btw-nummer vergat? — (a) ja, altijd (b) alleen binnen hetzelfde kwartaal (c) nee — **advies:** (a).
+- **V69** (8.05) VIES-storing:
+  - (1) Welke tekst geldt? (a) "binnen 24 uur" (b) "meestal dezelfde werkdag" — **advies:** (b); "24 uur" staat in §26 bij de beloftes die nooit getypt worden.
+  - (2) Mag een bestelling na een geldige herhaalcontrole zonder jou door naar betalen? (a) ja (b) nee (c) ja, met een regel in het nachtrapport — **advies:** (c).
+- **V70** (8.09) Hoe geef je goodwilltegoed? — (a) altijd via een creditnota op een betaalde bestelling (b) als twee soorten: tegoed en korting (c) zo laten — **advies:** (a); tot het gebouwd is geen goodwill via een handmatige tegoedboeking.
+- **V71** (8.12) Wanneer moet het restant van een offerte betaald zijn? — (a) bij levering (b) voordat beelden of de look beschikbaar komen (c) per offerte kiezen — **advies:** (c): standaard (a) bij video en (b) bij een eigen look.
+- **V72** (9.06) Waar wil je een alarm krijgen? — (a) mail plus een rode balk in /admin (b) ook een pushmelding (c) alleen de rode balk — **advies:** (a) nu, (b) zodra er betalende klanten zijn.
+- **V73** (9.08) Bij welke handelingen vraagt /admin opnieuw de tweestapscode? — (a) terugbetalen, AVG-wissen en wachtwoord wijzigen (b) plus tegoed boeken en deactiveren (c) alles wat onomkeerbaar is — **advies:** (a).
+- **V74** (9.09) Kun je in /admin een betaling opnieuw bij Mollie laten ophalen als de webhook gemist is? — (a) ja, er is een knop (b) nee, ik kijk in het Mollie-dashboard (c) weet ik niet — **advies:** Claude kijkt het na in de code; ontbreekt het, dan komt er een kleine knop "Bij Mollie nakijken".
+- **V75** (9.10) Gaat `kladblok/` mee naar GitHub? — (a) ja, alles (b) nee (c) weet ik niet — **advies:** de tekstbestanden wel, de schermafbeeldingen en het archief niet.
+- **V76** (10.03) Welke tweede versie bij catalog? — (a) alleen op wit, en alleen bij een gekozen marktplaats (b) elke tweede kleur (c) ook een tweede verhouding — **advies:** (a).
+- **V77 ✱** (10.04) Hoe lang duurt een kleurvariant als product 1 al af is? — (a) ±de helft (b) even lang (c) weet ik nog niet — **advies:** eerst testen op een voorbeeldmerk.
+- **V78 ✱** (10.06) Hoe zien voorkant en achterkant er nu uit? — (a) plat gelegd (b) 3D, op een onzichtbare paspop (c) wisselend — **advies:** leg vast wat het bord het vaakst doet.
+- **V79 ✱** (10.07) Zet je "In productie" op het moment dat je aan een bestelling begint? — (a) ja (b) nee, alles tegelijk 's ochtends (c) soms — **advies:** bij (a) bouwen; bij (b) of (c) niet bouwen en de eerste tien met de hand timen.
+- **V80 ✱** (10.08, 10.12) Hoeveel tijd kost een merkmodel van briefing tot klaar, en hoeveel de maandset per maand? — merkmodel: (a) minder dan 3 uur (b) 3–6 uur (c) meer · maandset: (a) minder dan 1 uur (b) 1–3 uur (c) nog niet gemeten — **advies:** time het eerstvolgende merkmodel en de volgende maandset; daar hangen 10.08 en 10.12 aan.
+
+---
+
+## 7 · Voorgestelde volgorde
+
+Drie rondes, elk met een stoppunt. De bouwtijden zijn schattingen. Een ronde is af als het stoppunt gehaald is, niet als alles perfect is. De nummers verwijzen naar §2, de V-nummers naar §6.
+
+Dit komt ná jouw werkschema van §16.1. Stap 1 daarvan, de deploy van F64–F67, gaat in ronde A1 mee met de eerste uitrol via de nieuwe knop. Je hoeft die dus niet eerst nog met de hand in CMD te doen.
+
+### Ronde A — S-punten die meteen helpen (vier blokken, in deze volgorde)
+
+**A1 · Live-klaar.** Claude ±2 dagen; jij ±1,5 uur verspreid over twee ochtenden.
+- **Claude:**
+  - 9.02: de uitrolknop met J/N.
+  - 9.01 pakket A: €69 van de videopagina's, "vanaf het gewone tarief", complete uit de verkoop, `cancelled_at`, `custom` uit de vaste look.
+  - 9.11: de bedragentest en de controle op hardgetypte getallen; de vier losse zevens van §17.16 staan op de uitzonderingenlijst tot regel 6 van de opruimtabel gedaan is.
+  - 9.04: de back-up.
+  - 9.03: `PURGE_ENABLED` als gewone variabele in de cron-configuratie.
+  - 8.01: het blok "Klaar voor live".
+  - 9.05: het script voor de drukteproef.
+- **Jij:**
+  - V1–V7 en V12 beantwoorden.
+  - Dubbelklikken op `UITROLLEN.bat`. Daarmee gaan de werkkopie van 3–6 okt, pakket A en de cron voor het eerst live.
+  - De volgende ochtend het eerste nachtrapport lezen.
+  - Eén back-up starten, dan de purge aanzetten.
+  - De Resend-webhook en het secret instellen in het Cloudflare-dashboard (9.03).
+  - De drukteproef: een uur samen, plus je telefoon met de Instagram-app (9.05).
+  - Met de testsleutel nog actief: testabonnementen opzeggen, open testbestellingen annuleren en in Mollie live de methoden aanzetten (8.01 stap 1–2).
+  - Als laatste de live-sleutel op beide Workers zetten en de rookproef doen (8.01 stap 3).
+  - In WhatsApp Business een snel antwoord "stuur je foto's als document" toevoegen (2.11 in dit rapport, punt 4).
+- **Stoppunt:** "Klaar voor live" is helemaal groen, VIS-2026-0001 staat in /admin/facturen, en het nachtrapport komt elke ochtend.
+
+**A2 · Een eerste klant begrijpt alles vóór het betalen.** Claude ±2–3 dagen; jij 2–3 uur beelden plus ±45 minuten voorbeeldfoto's.
+- **Claude:**
+  - 1.07: kosten, wat erbij zit en levertijd in het formulier.
+  - 1.05, 7.01 en 7.02: één tekst "Zo gaat het verder" op de bedankpagina en in de betaal- en bestelmail.
+  - 1.08: "App ons" in elke stap.
+  - 1.01: lookkaarten op /start.
+  - 1.02: secties zonder beeld verbergen, plus "Beelden op de site" in /admin/diagnose.
+  - 5.07: fotogids op één A4 (pagina, pdf en checklist-mail uit één bron) en een voorbeeld per vak in stap 2.
+  - 1.06: de proef begint bij een look.
+  - 7.07: datums in de mails; de zin "daarna ronden we je bestelling af" komt er pas bij met 3.03 in A3.
+  - 9.07: de studiomail zonder fotobijlagen.
+  - 2.05, eerste deel: de lijst van wat ontbreekt per vak, die 7.01 en 9.07 gebruiken.
+  - 2.03: twee datums op de bestelkaart.
+  - 8.06: het 0%-vinkje weg, nadat V19 beantwoord is.
+  - Als je V9 (a) kiest: de schakelaar "Proef tijdelijk dicht".
+  - Alle nieuwe klantteksten in één tekstdocument (V11).
+- **Jij:**
+  - V8–V11, V13–V21, V38 en V39 beantwoorden.
+  - Het tekstdocument nalopen.
+  - De beelden van 1.02 maken: één merkloos stuk in vijf looks, plus de telefoonfoto.
+  - De voorbeeldfoto's van 5.07 maken: vier goede en vier foute.
+- **Stoppunt:** nergens op het pad naar betalen staat nog een grijs vlak, en een testbestelling van 9 producten laat zien dat 10 goedkoper is.
+
+**A3 · Na de levering: afronden, review en terugkomen.** Claude ±3 dagen.
+- **Claude, in deze volgorde:**
+  1. 3.01: het "wat nu"-blok, eerst op de privélink.
+  2. 3.03: stil afronden, plus de zin in /terms.
+  3. 3.05 met 10.05: het afrondscherm met review en één toestemmingsblok.
+  4. 3.07: de herbestellink.
+  5. 3.08: de proef afgerond bij levering, met het afrondblok van 3.05 en de knop van 3.07.
+  6. 7.05 en 3.06: de WhatsApp-knoppen en de reviewknop, pas na V26; eerst op de bestelpagina en in "wacht op betaling", de regel in de ochtendlijst komt met 4.05 in A4.
+  7. 2.05: nasturen per vak in Studio (de lijst zelf staat er sinds A2).
+  8. 5.03: kleurtekst in stap 2.
+- **Jij:**
+  - V22–V32 beantwoorden.
+  - Je Google Place ID opzoeken.
+  - De reviewtekst in NL en EN goedkeuren.
+- **Stoppunt:** een testbestelling waar na levering niemand op klikt, rondt na 7 dagen vanzelf af. De klant ziet dan het afrondscherm, en jij ziet de knop "Review vragen".
+
+**A4 · Jouw werkdag.** Claude ±4–5 dagen. Dit is het enige blok met M-punten (4.02 en 4.01).
+- **Claude:**
+  - 4.05: de Nu-doen-lijst en het nachtrapport.
+  - 4.08: de meldknop in de revisiekaart.
+  - 4.07: het Photoshop-script leest de werkmap. Eerst je huidige `.jsx` lezen.
+  - 4.02 (M): werkmap compleet, met controle op de juiste bestelling, plus één zin in /privacy over lokale kopieën van klantfoto's zolang 4.10 er niet is.
+  - 4.01 (M): de herkomsttag bij elke upload.
+- **Jij:**
+  - V33–V37 beantwoorden.
+  - Het Photoshop-script ±30 minuten testen met een proefwerkmap.
+- **Stoppunt:** een proefbestelling gaat van werkmap via Photoshop naar upload zonder één getypte hex, zonder hernoemen en zonder CMD, en elk beeld op het bord heeft de chip "AI-tag".
+- **Wil je A korter houden?** Schuif 4.01 en 4.02 dan naar het begin van ronde C en pas tot die tijd de tekst op /ai-act aan (F30). Tot 4.01 live is, hoef je het CMD-commando dan niet te draaien, want /ai-act belooft niets meer wat niet gebeurt.
+
+**Parallel, alleen jij: het CATALOG-bord (5.09).** Begin hiermee zodra A1 af is; het hangt niet van Claude af.
+- Twee à drie posegenerators, elke pose uitgeschreven met wie het doet en met welk lichaamsdeel.
+- Klaar als de proefset van vijf producten zonder handwerk buiten het script doorloopt, binnen 10–20 minuten per product.
+- Tot die tijd gaat betaalde reclame naar lifestyle en de €1-proef.
+- Daarna Dunes (V14).
+
+### Ronde B — het abonnement zonder week (ronde 10, §28.6) en wat erbij hoort
+
+Claude ±3–4 dagen; jij V40–V50 beantwoorden en de teksten op /plans nalopen.
+- **De §28-omslag** zoals beschreven in §28.6: het weeksysteem weg, betalen met credits in stap 5, het label "Credits".
+- **Wat erbij hoort:**
+  - 2.07: één abonnementspagina met creditboek.
+  - 2.02: tegoed en credits nooit door elkaar.
+  - 2.08: de vaste look vult zichzelf; geen verplichte vaste look meer.
+  - 6.01: één creditkaart.
+  - 6.03: 3 maanden geldig, oudste eerst.
+  - 6.04: twee termijnen.
+  - 6.05: de rem, met jouw getal.
+  - 6.06: stap 5 met credits.
+  - 6.08: vaste regels voor annuleren en opzeggen.
+  - 8.11: een terugboeking zet het abonnement op pauze.
+  - 9.11 deel 3: de weeksysteemtests weg.
+  - De rijen R10 van de opruimtabel bij 9.01.
+- **Jij:** de testabonnementen zijn in A1 al opgezegd (8.01). Na de bouw dubbelklik je op de uitrolknop.
+- **Stoppunt:** een testabonnee bestelt via het gewone formulier met credits, het creditboek klopt tot op de credit, en nergens in Studio, /plans, de FAQ of de voorwaarden staat nog "week".
+
+### Ronde C — grotere klussen, elk op het moment dat de aanleiding er is
+
+Niet als één ronde bouwen. Pak elk punt op zodra de aanleiding er is; tot dan staat het op deze lijst en hoef je er niet aan te denken.
+
+- **Jij:** je ziet de aanleiding en noemt het nummer; je beantwoordt de vraag uit §6.3 die erbij hoort; bij 10.04, 10.07, 10.08 en 10.12 time of test je eerst zelf.
+- **Claude:** bouwt het punt met tests, zet nieuwe klantteksten in het tekstdocument en meldt "klaar voor uitrol"; de uitrolknop druk jij in.
+
+| Aanleiding | Wat dan |
+|---|---|
+| Uiterlijk twee maanden na de eerste echte levering (V5 b; de harde grens is dag 83) | 7.09: mail vóór het wissen, alleen aan wie niet downloadde. 3.04: één bewaardatum. |
+| ±10 echte bestellingen achter de rug | 4.03: werkmap direct op je schijf. 4.06: leverkeuring. 4.04: "Oppakken" zet de status. 10.07: marge-meter. 4.10: klantfoto's opruimen. 5.04: nakijklijst. |
+| Direct na ronde A (blijft, geen aanleiding nodig) | 1.04 (M): formulier onthoudt keuzes en foto's (O47). |
+| De trechter laat zien dat klanten in stap 2 afhaken | De knop "stuur mezelf een link" uit 1.04. 5.05: fotocheck. 1.09: gezicht naar stap 1. |
+| Eerste EU-klant | 8.05: VIES vooraf. 8.04: factuur corrigeren. 8.07: ICP-lijst. |
+| Antwoord op V7 | 8.08: kwartaalpakket of koppeling met je boekhouding. |
+| Eerste voorrangsbestelling of eerste deelterugbetaling | 8.03: "Geld terug" met reden. |
+| Eerste video-aanvraag | 8.12: offerte één keer typen. |
+| Eerste goodwill | 8.09: tegoed via een creditnota. |
+| Eerste abonnee die wil groeien, of twee keer te weinig credits heeft | 6.11: plan wijzigen; bijkopen pas daarna. |
+| Abonnees | 6.12: maandset vooruit. 6.10: abonnementsregel uit eigen bestellingen. 6.02: één creditprijs, opnieuw bekijken. |
+| Catalog sneller (5.09 af) | 10.06: ghost mannequin of flat-lay bij naam noemen. 10.02: lifestyle bij dezelfde producten. 10.04: kleurvarianten, eerst meten. 5.08: voorinstelling per look. 5.10: teaser opschonen. |
+| Een klant vraagt erom | 10.03: set op wit. 3.11: losse download per beeld (eerst V55). |
+| Eerste merkmodel en volgende maandset getimed | 10.08: merkmodel als tweede stap. 10.12: beslismoment Editions. |
+| Eerste bureau | 10.09: tekst voor bureaus. |
+| Reclame loopt | 10.10: dropshippers aanspreken op het product dat al verkoopt. |
+| Na de lancering, rustige week | 9.01 pakket B. 9.10: kladblok archiveren. 9.09: herstelkaart. 9.06: vroeg-signaal. 9.08: /admin-beveiliging. 7.03: studiomails sorteren. 7.08: melding op meer plekken. 2.04: beoordelen in één code. |
+| Vóór de lancering, alleen als je bij V39 (b) kiest | 1.11: menu en /studio, voordat er links in mails van echte klanten staan. |
+| Drie echte aanbevelingen of vrijgegeven beelden | O15: de plek op de site (V10). |
+
+**Werkafspraken die door alle rondes lopen**
+- **Teksten:** per ronde één tekstdocument met alle nieuwe en gewijzigde klantteksten in NL en EN. Claude zet het op, jij loopt het in één keer na (V11).
+- **Uitrollen:** je dubbelklikt op de uitrolknop. Claude commit en pusht niet en draait de knop niet.
+- **Het overzicht:** werk het na elke ronde bij, en vervang nu het oude exemplaar in `kladblok/`.

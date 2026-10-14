@@ -1,9 +1,12 @@
 ---
+// VISUAILS — /start/catalog: in de hal sinds 13 oktober 2026 (afvinklijst 10, alles doen). De vorm komt uit
+// HalFormulier.astro en het blok DE FORMULIEREN in hal.css; de werking blijft van de onderdelen.
 // VISUAILS — /start/catalog.
 // The page is four imports and a service name. Everything else — the five
 // steps, the copy in both languages, the config blob pipeline.js reads — is
 // OrderFlow.astro, which is the whole reason the split did not turn into five
 // near-identical files. The ONE block that differs is passed in as the slot.
+import HalFormulier from '../../components/HalFormulier.astro';
 import Layout from '../../layouts/Layout.astro';
 import OrderFlow from '../../components/order/OrderFlow.astro';
 import Step1Options from '../../components/order/Step1Options.astro';
@@ -12,7 +15,8 @@ import StijlRegel from '../../components/order/StijlRegel.astro';
 import ModelKeuze from '../../components/order/ModelKeuze.astro';
 ---
 
-<Layout title="Order catalog sets — VISUAILS" description="Product-page images, four per product. Pick the count and the background; the rate falls as the count rises.">
+<Layout huid="hal" title="Order catalog sets — VISUAILS" description="Product-page images, four per product. Pick the count and the background; the rate falls as the count rises.">
+  <HalFormulier soort="catalog">
   <OrderFlow lang="en" service="catalog">
     {/* Stap 2, boven de productkaarten — zie ModelKeuze.astro. De slot
         heet "model" en staat in OrderFlow bij stap 2; waar dit blok in
@@ -38,4 +42,5 @@ import ModelKeuze from '../../components/order/ModelKeuze.astro';
         hebben. Zie AnglePicker.astro. */}
     <AnglePicker slot="extra" lang="en" />
   </OrderFlow>
+  </HalFormulier>
 </Layout>

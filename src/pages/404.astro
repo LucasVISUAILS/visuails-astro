@@ -2,13 +2,14 @@
 // VISUAILS — /404 (English). De inhoud staat in NotFoundPage.astro; daar staat
 // ook waarom deze pagina moet bestaan en waarom Astro een bestand met precies
 // deze naam apart behandelt.
+// Sinds 13 oktober 2026 (afvinklijst 19, alles doen) in de hal: NotFoundHal.astro.
 import Layout from '../layouts/Layout.astro';
-import NotFoundPage from '../components/NotFoundPage.astro';
+import NotFoundHal from '../components/NotFoundHal.astro';
 
 const description =
   "This page doesn’t exist. The link may be old, or the address was mistyped — head back to the homepage or browse Catalog, Lifestyle and Video.";
 ---
 
-<Layout title="Page not found — VISUAILS" description={description} noindex>
-  <NotFoundPage lang="en" />
+<Layout huid="hal" title="Page not found — VISUAILS" description={description} noindex>
+  <NotFoundHal lang="en" />
 </Layout>

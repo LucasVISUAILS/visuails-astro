@@ -37,6 +37,7 @@
 // Nothing here is a reservation. The reservation is orders.window_start.
 
 import { readCalendar } from '../../src/lib/agenda.js';
+import { viaRandCache } from '../../src/lib/edgeCache.js';
 import { puntenVoor } from '../../src/data/pricing.js';
 import {
   MAX_PRODUCTS_ANY_SERVICE,
@@ -44,12 +45,33 @@ import {
   QUEUE_DAYS_MAX,
   QUEUE_DAYS_MIN,
   clearedWindows,
+  HORIZON_DAYS,
 } from '../../src/data/capacity.js';
 
 /** The queue's answer, in working days. See the note in handle() for why not dates. */
 const QUEUE = { minDays: QUEUE_DAYS_MIN, maxDays: QUEUE_DAYS_MAX, committed: false };
 
-export async function onRequestGet({ request, env }) {
+/* ── DE AGENDA ÉÉN KEER PER MINUUT PER VRAAG — 8 oktober 2026 ──────────────
+   De wachtrij (unattended) leest niets uit D1 en gaat direct door. Voor een
+   vaste datum gaat het antwoord via viaRandCache() in src/lib/edgeCache.js,
+   onder een sleutel van alleen de geknipte waarden: zie de kop van dat bestand
+   voor waarom `max-age=60` alleen geen rem was. */
+export async function onRequestGet(context) {
+  const url = new URL(context.request.url);
+  if (url.searchParams.get('tier') !== 'attended') return capaciteit(context);
+  const gevraagd = Number.parseInt(url.searchParams.get('products') ?? '', 10);
+  const products = Number.isInteger(gevraagd)
+    ? Math.min(Math.max(gevraagd, 1), MAX_PRODUCTS_ANY_SERVICE + 1)
+    : 'geen';
+  const gevraagdeDienst = url.searchParams.get('service') || 'catalog';
+  const service = puntenVoor(gevraagdeDienst, 1) === null ? 'catalog' : gevraagdeDienst;
+  const from = geldigeVanaf(url.searchParams.get('from'), todayUTC()) || '';
+  return viaRandCache(context, 'capacity',
+    { products, service, from, dag: todayUTC() },
+    () => capaciteit(context));
+}
+
+async function capaciteit({ request, env }) {
   const url = new URL(request.url);
   /* ── DE CACHESLEUTEL MOET BEGRENSD ZIJN — 31 augustus 2026 ────────────────
    *
@@ -78,9 +100,11 @@ export async function onRequestGet({ request, env }) {
      venster waar dertig complete producten (210) precies in gaan en eenendertig
      niet meer. Ontbreekt de parameter, dan is het antwoord 'complete': het
      zwaarste gewicht, en precies wat deze poort vóór vandaag voor elke order
-     aannam. Een oude aanroeper krijgt daarmee exact het antwoord van gisteren. */
-  const gevraagdeDienst = url.searchParams.get('service') || 'complete';
-  const service = puntenVoor(gevraagdeDienst, 1) === null ? 'complete' : gevraagdeDienst;
+     aannam. Een oude aanroeper krijgt daarmee exact het antwoord van gisteren.
+     SINDS 14 OKTOBER 2026 'catalog': compleet bestaat niet meer, en catalog en
+     lifestyle wegen allebei vier punten per product. */
+  const gevraagdeDienst = url.searchParams.get('service') || 'catalog';
+  const service = puntenVoor(gevraagdeDienst, 1) === null ? 'catalog' : gevraagdeDienst;
   const today = todayUTC();
 
   // Tier 0 does not use the gate at all. It is not "cleared for nothing" and it
@@ -128,8 +152,7 @@ export async function onRequestGet({ request, env }) {
      bestelpagina). Alleen een ISO-datum telt; alles anders is "vanaf de eerste
      dag". De cache-sleutel groeit hiermee met hooguit zestig waarden per
      aantal — zie de noot over normaliseren hierboven. */
-  const fromRaw = url.searchParams.get('from') || '';
-  const from = /^\d{4}-\d{2}-\d{2}$/.test(fromRaw) ? fromRaw : null;
+  const from = geldigeVanaf(url.searchParams.get('from'), today);
   const gate = clearedWindows({ today, products, service, booked, blackouts, from });
 
   return json({
@@ -166,6 +189,23 @@ export async function onRequestGet({ request, env }) {
  * — a local-time date built inside a worker whose timezone is not the studio's —
  * is wrong in the unsafe direction and much harder to see.
  */
+/* ── `from` ALLEEN BINNEN DE HORIZON — 8 oktober 2026 ──────────────────────
+   De vorm (jjjj-mm-dd) alleen liet honderd miljoen waarden door, elk een eigen
+   cache-sleutel, dus wie `from` liet oplopen, miste de cache steeds. Nu telt
+   alleen een echte datum na vandaag en binnen HORIZON_DAYS; alles anders is
+   "vanaf de eerste dag", wat clearedWindows() voor een datum vóór de eerste
+   bestelbare dag al deed. De bestelpagina vraagt nooit verder dan de horizon
+   (`more` is daar onwaar), dus voor een klant verandert er niets. */
+function geldigeVanaf(raw, today) {
+  const v = String(raw || '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
+  const t = Date.parse(`${v}T00:00:00Z`);
+  if (!Number.isFinite(t) || new Date(t).toISOString().slice(0, 10) !== v) return null;
+  const vandaag = Date.parse(`${today}T00:00:00Z`);
+  if (t <= vandaag || t > vandaag + HORIZON_DAYS * 86400000) return null;
+  return v;
+}
+
 function todayUTC() {
   return new Date().toISOString().slice(0, 10);
 }

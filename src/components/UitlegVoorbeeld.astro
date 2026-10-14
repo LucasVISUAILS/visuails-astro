@@ -1,0 +1,88 @@
+---
+/**
+ * VISUAILS — /voorbeeld/uitleg: de mockups in beweging (voorbeeld, 14 oktober 2026).
+ * Bewust verborgen: noindex en nergens een link ernaartoe. Elke mockup staat hier
+ * zoals hij straks op zijn eigen pagina komt, met erboven waar dat is. Zodra Lucas
+ * kiest, krijgen de mockups op hun eigen pagina `uitleg` en gaat dit voorbeeld weg.
+ */
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/hal.css';
+import HalBeweging from './HalBeweging.astro';
+import FormatenHal from './FormatenHal.astro';
+import FigGate from './FigGate.astro';
+import FigDash from './FigDash.astro';
+import FigGallery from './FigGallery.astro';
+import LeveringHal from './LeveringHal.astro';
+import HalControle from './HalControle.astro';
+import { localizedPath } from '../i18n/ui.js';
+
+interface Props { lang: 'en' | 'nl' }
+const { lang } = Astro.props as Props;
+const nl = lang === 'nl';
+const C = nl
+  ? { pil: 'Voorbeeld', h1: ['Hoe het werkt,', 'in beweging.'], lede: 'Elke mockup laat in een paar stappen zien wat er gebeurt. Daarna staat hij stil, zoals nu.', waar: 'Komt op' }
+  : { pil: 'Preview', h1: ['How it works,', 'in motion.'], lede: 'Every mock-up shows what happens in a few steps. Then it stands still, as it does now.', waar: 'Goes on' };
+const lp = (p: string) => localizedPath(lang, p);
+const W = nl
+  ? {
+      voorpagina: 'De voorpagina zelf, met "Hoe het werkt" in beweging en het formatenblok eronder:',
+      voorpaginaLink: 'bekijk /voorbeeld/voorpagina',
+      formaten: '/ · nieuw, onder "Hoe het werkt"',
+      controle: '/about · de controle in de opening',
+      agenda: '/how-it-works · de datumkiezer',
+      dash: '/studio · VISUAILS Studio, de rondleiding',
+      galerij: '/studio · beeld voor beeld goedkeuren',
+      levering: '/gallery · een levering, van foto tot map',
+    }
+  : {
+      voorpagina: 'The homepage itself, with How it works in motion and the formats block below it:',
+      voorpaginaLink: 'see /voorbeeld/voorpagina',
+      formaten: '/ · new, below "How it works"',
+      controle: '/about · the check in the opening',
+      agenda: '/how-it-works · the date picker',
+      dash: '/studio · VISUAILS Studio, the tour',
+      galerij: '/studio · approving image by image',
+      levering: '/gallery · a delivery, from photo to folder',
+    };
+---
+<div class="h-pagina h-uv">
+  <header class="h-paginakop">
+    <p class="h-pil h-op" style="--d:0"><span>{C.pil}</span></p>
+    <h1 class="h-kop h-h1 h-op" style="--d:1"><span class="l">{C.h1[0]}</span> <span>{C.h1[1]}</span></h1>
+    <p class="h-lede h-op" style="--d:2">{C.lede}</p>
+  </header>
+
+  <p class="h-uv-noot h-sec">{W.voorpagina} <a href={lp('/voorbeeld/voorpagina')}>{W.voorpaginaLink}</a></p>
+
+  <p class="h-uv-waar h-sec" id="formaten"><span>{C.waar}</span> {W.formaten}</p>
+  <FormatenHal lang={lang} uitleg />
+
+  <p class="h-uv-waar h-sec" id="controle"><span>{C.waar}</span> {W.controle}</p>
+  <section class="h-sec h-uv-fig"><div class="h-uv-smal"><HalControle lang={lang} uitleg d={0} /></div></section>
+
+  <p class="h-uv-waar h-sec" id="agenda"><span>{C.waar}</span> {W.agenda}</p>
+  <section class="h-sec h-uv-fig"><div class="h-uv-smal h-hw-agenda"><FigGate lang={lang} uitleg /></div></section>
+
+  <p class="h-uv-waar h-sec" id="studio"><span>{C.waar}</span> {W.dash}</p>
+  <section class="h-sec h-uv-fig"><div class="h-uv-breed h-sd-fig"><FigDash lang={lang} uitleg /></div></section>
+
+  <p class="h-uv-waar h-sec" id="goedkeuren"><span>{C.waar}</span> {W.galerij}</p>
+  <section class="h-sec h-uv-fig"><div class="h-uv-breed h-sd-fig"><FigGallery lang={lang} uitleg /></div></section>
+
+  <p class="h-uv-waar h-sec" id="levering"><span>{C.waar}</span> {W.levering}</p>
+  <section class="h-sec h-uv-fig"><LeveringHal lang={lang} uitleg id="lv-uitleg" /></section>
+</div>
+<HalBeweging />
+
+<style>
+  .h-uv-waar { padding-bottom: 0; margin-bottom: -70px; font: 500 14px/1.4 var(--h-letter); color: var(--h-inkt-3); }
+  .h-uv-waar span { display: inline-flex; height: 26px; padding: 0 10px; margin-right: 8px; align-items: center; border-radius: 999px; background: var(--h-mist); color: var(--h-nacht); font-weight: 600; }
+  /* Dezelfde omhulling als op hun eigen pagina (.h-hw-agenda op /how-it-works, .h-sd-fig op
+     /studio): die zet de kleuren van de hal. Zonder stonden de kleine grijze teksten hier
+     onder 4,5:1, terwijl ze op hun eigen pagina wel haalden. */
+  .h-uv-smal { max-width: 640px; margin: 0 auto; }
+  .h-uv-breed { max-width: 920px; margin: 0 auto; }
+  .h-uv-noot { padding-top: 40px; font: 500 16px/1.5 var(--h-letter); color: var(--h-inkt-2); }
+  .h-uv-noot a { color: var(--h-violet); font-weight: 600; }
+  @media (max-width: 900px) { .h-uv-waar { margin-bottom: -50px; } }
+</style>

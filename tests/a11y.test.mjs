@@ -311,9 +311,14 @@ console.log('\ngeen pagina slaat een kopniveau over');
      Dus wordt de controle daarheen verplaatst en niet geschrapt. Een pagina uit
      deze lijst halen omdat hij weg is, is juist; de MEETING kwijtraken die erop
      stond terwijl het gemeten onderdeel er nog is, is hoe een vangrail stilletjes
-     kleiner wordt. */
+     kleiner wordt.
+
+     Dezelfde regel op 8 oktober 2026 (1.11): /portal is een 301 naar /studio
+     geworden en de pagina die erop stond, staat nu op /studio — die blijft in
+     de lijst. De planning van de oude /studio staat op /how-it-works, ook in de
+     lijst. Er valt dus geen meting weg. */
   const paths = ['/', '/thank-you/', '/upload-guidelines/', '/lifestyle/', '/compare/', '/how-it-works/',
-                 '/pricing/', '/studio/', '/portal/', '/faq/', '/about/', '/ai-act/',
+                 '/pricing/', '/studio/', '/faq/', '/about/', '/ai-act/',
                  '/nl/', '/nl/upload-guidelines/', '/nl/lifestyle/', '/nl/compare/', '/nl/how-it-works/'];
   const skips = [];
   for (const path of paths) {
@@ -487,7 +492,7 @@ console.log('\ngeen tekst ligt over andere tekst heen');
   const page = await browser.newPage({ locale: 'en-US', viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
   const stuk = [];
   for (const path of ['/', '/ai-act/', '/privacy/', '/terms/', '/cookie-policy/',
-                      '/data-processing-agreement/', '/pricing/', '/about/', '/portal/',
+                      '/data-processing-agreement/', '/pricing/', '/about/', '/studio/',
                       '/nl/', '/nl/ai-act/', '/nl/privacy/', '/nl/terms/',
                       '/nl/cookie-policy/', '/nl/data-processing-agreement/']) {
     await page.goto(`${BASE}${path}`, { waitUntil: 'load' });
@@ -548,17 +553,37 @@ console.log('\ngeen tekst ligt over andere tekst heen');
         }
         return false;
       };
+      /* ── EN WAT OP EEN SCHEEF VLAK STAAT OOK NIET — 12 oktober 2026 ─────────
+         De laptop in de opening van de hal (HalLaptop.astro) legt nagebouwde
+         schermen in de foto met een matrix3d: een webshop in perspectief, onder
+         aria-hidden. De rechthoek van een element op zo'n vlak is de omhullende
+         van een scheve vorm, geen vorm: "Add to cart" en "Free returns within
+         30 days" lagen zo 2,1 px "over elkaar", terwijl er op het scherm ruimte
+         tussen zit (nagekeken op 3× vergroot). Wat hier telt is wat een bezoeker
+         ziet botsen, en dat meten deze rechthoeken niet. */
+      const opScheefVlak = (el) => {
+        for (let e = el.parentElement; e && e !== document.body; e = e.parentElement) {
+          if (getComputedStyle(e).transform.startsWith('matrix3d')) return true;
+        }
+        return false;
+      };
       const els = [...hero.querySelectorAll('h1, h2, p, span, strong, li, dt, dd')]
-        .filter((el) => draagtTekst(el) && !inDichteVouw(el) && !onzichtbaar(el))
-        .map((el) => ({ r: el.getBoundingClientRect(), t: el.textContent.trim().slice(0, 30) }))
-        .filter((x) => x.r.width > 0 && x.r.height > 0);
+        .filter((el) => draagtTekst(el) && !inDichteVouw(el) && !onzichtbaar(el) && !opScheefVlak(el))
+        /* ── PER REGEL, NIET DE OMHULLENDE — 13 oktober 2026 ──────────────────
+           Een <strong> die over twee regels loopt, heeft als rechthoek de omhullende
+           van beide regels: de volle breedte, twee regels hoog. Een tweede <strong>
+           op de tweede regel lag daarmee "eronder", terwijl er niets botst. Dat
+           gebeurde zodra de tekstmaat (5–7 woorden per regel) de zinnen smaller
+           maakte (/terms: "Paying up front, and stopping partway." en "not
+           refundable"). getClientRects geeft per regel een doos; een blok geeft er één. */
+        .map((el) => ({ rs: [...el.getClientRects()].filter((r) => r.width > 0 && r.height > 0), t: el.textContent.trim().slice(0, 30) }))
+        .filter((x) => x.rs.length);
       const uit = [];
       const M = 2;
+      const raak = (a, b) => a.left + M < b.right && b.left + M < a.right && a.top + M < b.bottom && b.top + M < a.bottom;
       for (let i = 0; i < els.length; i++) {
         for (let j = i + 1; j < els.length; j++) {
-          const a = els[i].r, b = els[j].r;
-          if (a.left + M < b.right && b.left + M < a.right
-           && a.top + M < b.bottom && b.top + M < a.bottom) {
+          if (els[i].rs.some((a) => els[j].rs.some((b) => raak(a, b)))) {
             uit.push(`"${els[i].t}" × "${els[j].t}"`);
           }
         }

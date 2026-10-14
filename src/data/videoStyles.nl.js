@@ -4,7 +4,7 @@ import { waHref } from './whatsapp.js';
 // strings are translated. Internal CTA paths are prefixed with /nl; external
 // wa.me links keep their domain, their ?text= message is translated.
 
-import { perProduct, vatLabel } from './pricing.js';
+import { perProduct, vatLabel, euro, AMOUNT, VIDEO_OP_AANVRAAG } from './pricing.js';
 
 // No euro figure and no delivery time may be typed into this file.
 // Both used to live here as literals, which is how the hub cards and the
@@ -17,6 +17,13 @@ const VID = perProduct('video', 'nl');
 // a flat figure; it just no longer prints it without saying which side of VAT
 // it sits on.
 const VID_VAT = vatLabel('excl', 'nl');
+/* ── GEEN BEDRAG ZOLANG VIDEO OP AANVRAAG IS — 8 oktober 2026 (§17.2, o23) ──
+   Zie de noot op dezelfde plek in videoStyles.js. */
+const OP_AANVRAAG = 'Op aanvraag';
+const MOTION_PRIJS = VIDEO_OP_AANVRAAG ? OP_AANVRAAG : VID.price;
+const LIFESTYLE_PRIJS = VIDEO_OP_AANVRAAG ? OP_AANVRAAG : `vanaf ${euro(AMOUNT.videoLifestyle, 'nl')}`;
+const PER_CLIP = VIDEO_OP_AANVRAAG ? '' : ' / clip';
+const VASTE_PRIJS = VIDEO_OP_AANVRAAG ? '' : ' Vaste prijs.';
 /* Levertijd en controle staan in de feitenrij van de detailpagina, niet
    meer ook in "Wat je krijgt" (29 september 2026: twee keer dezelfde zin). */
 
@@ -34,8 +41,8 @@ export const videoStyles = [
        src/data/orderDoors.js. */
     name: 'Motion',
     tagline: 'Acht seconden onverdeelde aandacht.',
-    priceTrust: VID.price,
-    priceUnit: ' / clip',
+    priceTrust: MOTION_PRIJS,
+    priceUnit: PER_CLIP,
     /* Naar het aanvraagformulier van Video en niet naar de keuzepagina.
        Video staat nog op 'in aanbouw' — er is geen bestelformulier maar een
        aanvraag, en dát is waar deze knop hoort te landen. "Order" beloofde
@@ -47,8 +54,8 @@ export const videoStyles = [
     heroWidth: '26%',
     cardIcon: 'bottle',
     cardWidth: '42%',
-    cardPrice: `${VID.price} / clip`,
-    cardDesc: 'Een clip van 8 seconden, subtiele beweging, strakke presentatie. Vaste prijs.',
+    cardPrice: `${MOTION_PRIJS}${PER_CLIP}`,
+    cardDesc: `Een clip van 8 seconden, subtiele beweging, strakke presentatie.${VASTE_PRIJS}`,
     moodTitle: 'Hoe Motion eruitziet.',
     moodParagraphs: [
       'Acht seconden, één product, één strakke beweging — genoeg om het oog vast te houden, nooit genoeg om af te leiden.',
@@ -81,7 +88,7 @@ export const videoStyles = [
     ],
     whatYouGet: [
       'Strakke productfilm van 8 seconden',
-      'Naadloze loop, subtiele beweging',
+      'Doorlopende loop, subtiele beweging',
       'Verticaal 9:16; andere verhoudingen op aanvraag',
     ],
   },
@@ -89,8 +96,8 @@ export const videoStyles = [
     slug: 'lifestyle',
     name: 'Lifestyle Video',
     tagline: 'De scène, in beweging gezet.',
-    priceTrust: VID.price,
-    priceUnit: ' / clip',
+    priceTrust: LIFESTYLE_PRIJS,
+    priceUnit: PER_CLIP,
     ctaLabel: 'Vraag Lifestyle Video aan',
     ctaHref: '/nl/start/video',
     ctaExternal: false,
@@ -98,8 +105,9 @@ export const videoStyles = [
     heroWidth: '26%',
     cardIcon: 'jar',
     cardWidth: '46%',
-    cardPrice: `${VID.price} / clip`,
-    cardDesc: 'Een gestylede scène, in beweging — voor social en advertenties. Vaste prijs.',
+    cardPrice: `${LIFESTYLE_PRIJS}${PER_CLIP}`,
+    /* Geen "Vaste prijs." meer: zie dezelfde plek in videoStyles.js. */
+    cardDesc: 'Een gestylede scène, in beweging — voor social en advertenties.',
     moodTitle: 'Hoe Lifestyle Video eruitziet.',
     moodParagraphs: [
       'Een gestylede scène, losgelaten: opstijgende stoom, verschuivend licht, een model dat zich naar de lens draait.',
@@ -142,7 +150,7 @@ export const videoStyles = [
     tagline: 'Je grootste moment, goed geproduceerd.',
     priceTrust: 'Offerte per project',
     priceUnit: '',
-    ctaLabel: 'Vraag een campagne-offerte aan',
+    ctaLabel: 'Vraag een offerte aan',
     ctaHref: waHref("Hoi VISUAILS, ik wil graag een offerte voor een campagnevideo."),
     ctaExternal: true,
     heroIcon: 'sneaker',

@@ -71,8 +71,10 @@
  * DRIE, EN ELK MET EEN EIGEN TAAK. Vier zou de vraag traag maken en twee zou de
  * klassieke webshop-portret missen. De volgorde is de volgorde waarin ze op het
  * formulier staan, en die begint bij het vierkant omdat dat de enige is die
- * ALTIJD werkt: Amazon, bol en Zalando nemen hem op een hoofdafbeelding zonder
- * discussie, en een merk dat het niet weet, zit daar goed.
+ * bijna altijd werkt: Amazon en bol nemen hem op een hoofdafbeelding zonder
+ * discussie, en een merk dat het niet weet, zit daar goed. Zalando niet: die eist
+ * zijn eigen staande maat, 1:1,44 (channels.js, `aspect`). Tot 14 oktober 2026
+ * stond hier dat Zalando hem ook nam; dat klopte niet.
  */
 export const CATALOG_RATIOS = [
   {
@@ -86,8 +88,8 @@ export const CATALOG_RATIOS = [
       nl: 'Marktplaatsen en advertenties. De veilige.',
     },
     what: {
-      en: 'Works everywhere. Amazon, bol.com and Zalando all accept it on a main image, and it is the safest choice if you are not sure.',
-      nl: 'Werkt overal. Amazon, bol en Zalando accepteren hem op een hoofdafbeelding, en het is de veiligste keuze als je twijfelt.',
+      en: 'Works on a main image at Amazon and bol.com, and in feeds and ads. The safest choice if you are not sure. Zalando asks for its own upright size, 1:1.44.',
+      nl: 'Werkt op een hoofdafbeelding bij Amazon en bol, en in feeds en advertenties. De veiligste keuze als je twijfelt. Zalando vraagt een eigen staande maat, 1:1,44.',
     },
   },
   {
@@ -101,8 +103,8 @@ export const CATALOG_RATIOS = [
       nl: 'Shopify en social feeds.',
     },
     what: {
-      en: 'The Shopify default and the tallest crop a feed will show without cutting. More of the product on the same screen width.',
-      nl: 'De standaard van Shopify en de hoogste uitsnede die een feed toont zonder af te snijden. Meer product op dezelfde schermbreedte.',
+      en: 'The portrait setting in Shopify\'s own themes and the upright size of Instagram and Facebook feeds. More of the product on the same screen width.',
+      nl: 'De staande stand in de thema\'s van Shopify zelf en het staande formaat van de feeds van Instagram en Facebook. Meer product op dezelfde schermbreedte.',
     },
   },
   {
@@ -116,8 +118,8 @@ export const CATALOG_RATIOS = [
       nl: 'Klassieke webshop-grids.',
     },
     what: {
-      en: 'The classic webshop portrait. A little squarer than 4:5, and what most older shop themes are built around.',
-      nl: 'Het klassieke webshop-portret. Iets vierkanter dan 4:5, en waar de meeste oudere shopthema\'s op gebouwd zijn.',
+      en: 'The classic webshop portrait. A little narrower and taller than 4:5, and since 2025 also the shape of Instagram\'s profile grid.',
+      nl: 'Het klassieke webshop-portret. Iets smaller en hoger dan 4:5, en sinds 2025 ook de vorm van het profielraster op Instagram.',
     },
   },
 ];
@@ -167,6 +169,71 @@ export const LIFESTYLE_RATIOS = [
   },
 ];
 
+/**
+ * En de verhouding die bij één kanaal hoort — 14 oktober 2026.
+ *
+ * Afvinklijst 24, vraag "Zalando · de verhouding in het bestelformulier", antwoord
+ * a: *"bij Zalando de verhouding vast op 1:1,44, zoals de achtergrond vast op
+ * wit"*. Zalando keurt elk beeld af dat niet 1:1,44 is (channels.js, `aspect`);
+ * Amazon en bol eisen geen vorm. Vinkt een klant Zalando aan, dan staat de
+ * verhouding hierop vast, ook naast Amazon of bol.
+ *
+ * GEEN VIERDE KEUZE IN CATALOG_RATIOS. Voor wie niet op Zalando verkoopt is een
+ * maat van één platform een vraag die niets oplevert, en de brand kit en de
+ * uitleg op de site tonen de drie gewone. Daarom een eigen lijst: de tegel staat
+ * in het bestelformulier verborgen tot het kanaal is aangevinkt (RatioPicker,
+ * syncRatio in pipeline.js), en /api/order zet de verhouding zelf vast als het
+ * kanaal in de bestelling staat (lockChannelRatio), ook zonder JavaScript.
+ *
+ * 25x36 en niet 1x1.44: ratioViewBox() leest twee hele getallen, en 25:36 is
+ * precies 1:1,44. Zalando raadt 1801 × 2600 aan (1:1,4436) — dezelfde vorm.
+ *
+ * `labels` per taal, omdat het Nederlands een komma schrijft. ratioLabel() leest
+ * het; `label` is de Engelse vorm, voor plekken zonder taal (de werkmap).
+ */
+export const CHANNEL_RATIOS = [
+  {
+    id: 'zalando',
+    channel: 'zalando',
+    ratio: '25x36',
+    label: '1:1.44',
+    labels: { en: '1:1.44', nl: '1:1,44' },
+    css: '25 / 36',
+    name: { en: 'Zalando 1:1.44', nl: 'Zalando 1:1,44' },
+    use: {
+      en: 'The shape Zalando requires.',
+      nl: 'De vorm die Zalando eist.',
+    },
+    what: {
+      en: 'The upright size Zalando requires for every image: 1:1.44, recommended at 1801 × 2600 px. Fixed for this order because you sell on Zalando.',
+      nl: 'De staande maat die Zalando voor elk beeld eist: 1:1,44, aanbevolen op 1801 × 2600 px. Vast voor deze bestelling, omdat je op Zalando verkoopt.',
+    },
+  },
+];
+
+/** Het label in de taal van de lezer: "1:1,44" in het Nederlands, anders `label`. */
+export function ratioLabel(r, lang) {
+  return (r && r.labels && r.labels[lang]) || (r && r.label) || '';
+}
+
+/** De verhouding die een kanaal vastzet, of undefined. */
+export function channelRatio(channelId) {
+  return CHANNEL_RATIOS.find((r) => r.channel === channelId);
+}
+
+/**
+ * De verhouding die de kanalen van een bestelling vastzetten, of undefined.
+ * `channels` is de kommalijst uit het formulier ('amazon,zalando') of een array.
+ */
+export function lockedRatio(channels) {
+  const ids = Array.isArray(channels) ? channels : String(channels || '').split(',');
+  for (const id of ids) {
+    const r = channelRatio(String(id).trim());
+    if (r) return r;
+  }
+  return undefined;
+}
+
 /** Waar een bestelling op staat als de klant niets kiest. Zie CATALOG_RATIOS[0]. */
 export const DEFAULT_RATIO_ID = 'square';
 
@@ -178,12 +245,12 @@ export const DEFAULT_RATIO_ID = 'square';
  * die op één van die drie ontbreekt, is een klant die per beeld kiest en een
  * studio die het nooit ziet.
  *
- * `complete` doet mee, en dat is met opzet: die bestelling is catalog ÉN lifestyle,
- * dus hij heeft de lifestyle-helft waar dit over gaat. Zie /start/complete.
+ * Alleen lifestyle. Tot 14 oktober 2026 deed 'complete' (catalog én lifestyle) mee;
+ * compleet bestaat sinds 14 oktober 2026 niet meer (afvinklijst 23).
  */
 export function ratiosPerImage(service) {
   const s = ladderish(service);
-  return s === 'lifestyle' || s === 'complete';
+  return s === 'lifestyle';
 }
 
 /**
@@ -223,9 +290,14 @@ export function ratiosFor(service) {
   return ratiosPerImage(service) ? LIFESTYLE_RATIOS : CATALOG_RATIOS;
 }
 
-/** Eén verhouding opzoeken, of undefined. Altijd binnen de lijst van de dienst. */
+/**
+ * Eén verhouding opzoeken, of undefined. Altijd binnen de lijst van de dienst —
+ * en bij catalog ook de kanaalverhouding (CHANNEL_RATIOS), want die kan een
+ * catalogbestelling dragen zonder dat hij in de keuzelijst staat.
+ */
 export function ratioById(id, service) {
-  return ratiosFor(service).find((r) => r.id === id);
+  return ratiosFor(service).find((r) => r.id === id)
+    || (ratiosPerImage(service) ? undefined : CHANNEL_RATIOS.find((r) => r.id === id));
 }
 
 /**
@@ -270,5 +342,5 @@ export function parseRatioField(key) {
  */
 function ladderish(service) {
   const s = String(service || '').toLowerCase();
-  return s === 'drop' ? 'complete' : s;
+  return s;
 }

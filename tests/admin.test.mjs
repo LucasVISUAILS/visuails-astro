@@ -88,6 +88,9 @@ function makeEnv(opts = {}) {
     if (s.includes('SELECT id, order_id FROM files WHERE id')) return { id: binds[0], order_id: 90 };
     if (s.includes('COUNT(*) AS n')) return { n: 1 };
     if (s.includes("review_state = 'revision_requested'")) return [];
+    /* De zijkolom "wacht op betaling" met knoppen (7.05, 8 oktober 2026): deze
+       nepdatabase kent geen betaalstand, dus geen wachtende bestellingen. */
+    if (s.includes('ORDER BY COALESCE(o.reviewed_at, o.created_at)')) return [];
     if (s.includes('FROM orders WHERE customer_id')) return ORDERS;
     if (s.includes('FROM orders WHERE id')) return ORDERS.find((o) => o.id === binds[0]) || null;
     if (s.includes('FROM orders')) return binds.length ? ORDERS.filter((o) => o.status === binds[0]) : ORDERS;

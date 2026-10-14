@@ -1,0 +1,401 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — de proef van €1 in de hal. 12 oktober 2026, afvinklijst 7 (groep
+ * proef, na start, prijzen, catalog en lifestyle). Eerst als voorbeeld op
+ * /voorbeeld/test-sample/; sinds afvinklijst 9 (alles "doen") de echte
+ * /test-sample en /nl/test-sample. Het voorbeeld stuurt met een 301 door.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * ZES DELEN IN PLAATS VAN DERTIEN (de bevinding uit afvinklijst 7):
+ *   1. de opening: hetzelfde violette vlak als het slot van de voorpagina
+ *      ("Eerst zien? Eén product voor €1"), want daar klikte de bezoeker op.
+ *      Met de vier beelden van één product en geen knop: het formulier staat
+ *      er direct onder (Lucas, 10 september: geen sprongknop);
+ *   2. het formulier (OrderFlow, mode="sample"), met de proefstand en de
+ *      weigeringen er direct boven, zoals nu;
+ *   3. hoe het werkt: de vier stappen met de maatlijn van de voorpagina. "Wat
+ *      je krijgt" zat er al half in (nakijken, levering) en staat er nu in:
+ *      de belichting bij stap 3, de maat en Studio bij stap 4;
+ *   4. de kleine lettertjes, onder in hetzelfde vlak;
+ *   5. het slot: liever overleggen, op WhatsApp.
+ *   (De dichte proef is geen deel maar een stand: hij vervangt deel 2.)
+ *
+ * DE WERKING IS DIE VAN TestSamplePage.astro (de vorige opmaak), regel voor regel: dezelfde
+ * haakjes (data-ts-dicht, data-ts-formulier, data-form-refusal, data-ts-anders,
+ * data-ts-looks), hetzelfde script voor ?style=<look> en voor de proefstand,
+ * dezelfde OrderFlow met dezelfde drie kiezers. Alleen de vorm en de woorden
+ * (kladblok/TEKSTEN-PROEF.md) zijn anders, zodat live gaan één regel per route
+ * is.
+ *
+ * HET FORMULIER zelf verandert niet van werking. Het krijgt hier de letter en
+ * de hoeken van de hal (.h-ts-form in hal.css, alleen tokens en een paar
+ * vormen); de eigen ronde van het bestelformulier komt later.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/hal.css';
+import OrderFlow from './order/OrderFlow.astro';
+import NieuwTabblad from './NieuwTabblad.astro';
+import StylePicker from './order/StylePicker.astro';
+import BackgroundPicker from './order/BackgroundPicker.astro';
+import ModelKeuze from './order/ModelKeuze.astro';
+import HalBeweging from './HalBeweging.astro';
+import { waHref } from '../data/whatsapp.js';
+import { TEST_SAMPLE, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES, RESOLUTIE, vatLabel } from '../data/pricing.js';
+import { geleverd } from '../data/voorbeeldset.js';
+import { localizedPath } from '../i18n/ui.js';
+import { SAMPLE_METHODS } from '../lib/mollie.js';
+import { catalogStyles as catalogEn } from '../data/catalogStyles.js';
+import { catalogStyles as catalogNl } from '../data/catalogStyles.nl.js';
+import { styles as lifestyleEn } from '../data/styles.js';
+import { styles as lifestyleNl } from '../data/styles.nl.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+const METHODE_NAAM: Record<string, string> = { ideal: 'iDEAL', bancontact: 'Bancontact', creditcard: nl ? 'creditcard' : 'card' };
+const SAMPLE = nl ? TEST_SAMPLE.nl : TEST_SAMPLE.en;
+const TIMING = turnaround('unattended', lang);
+/* Slug → soort en naam. Alleen bestelbare looks: niet de look op maat. Zelfde
+   regel als TestSamplePage.astro (tests/proef-look.test.mjs). */
+const bestelbaar = (s: any) => s.slug !== 'custom' && Boolean(s.orderHref) && !s.orderLabel;
+const PROEF_LOOKS = Object.fromEntries([
+  ...(nl ? catalogNl : catalogEn).filter(bestelbaar).map((s: any) => [s.slug, { soort: 'catalog', naam: s.name }]),
+  ...(nl ? lifestyleNl : lifestyleEn).filter(bestelbaar).map((s: any) => [s.slug, { soort: 'lifestyle', naam: s.name }]),
+]);
+const BEELDEN = geleverd(lang);
+
+const c = nl ? {
+  pil: 'Proef',
+  kop: ['Probeer VISUAILS', 'met één product voor'],
+  lead: `Stuur een voorkant, een achterkant en één close-up. Je krijgt ${SAMPLE.deliverable} terug, precies wat een betaalde bestelling oplevert.`,
+  feiten: [`${CATALOG_IMAGES} foto’s, of ${LIFESTYLE_IMAGES}`, `${vatLabel('excl', 'nl')} · ${SAMPLE.unit}`, 'Nagekeken vóór levering'],
+  bij: `Voorbeeld: een catalogset van ${CATALOG_IMAGES} foto’s, van één product.`,
+
+  weigerGebruiktKop: 'Je hebt VISUAILS al geprobeerd.',
+  weigerGebruikt: ['Het is er één per bedrijf, dus er is niets besteld en er is niets afgeschreven — je hebt hier niet voor betaald. Klaar voor het echte werk? De ', 'volledige diensten', ' beginnen bij één product, zonder minimumafname — of ', 'stuur ons een bericht', ' als de eerste proef nooit is aangekomen, of als een collega hem heeft aangevraagd zonder het te zeggen.'],
+  weigerMailKop: 'Dat e-mailadres kwam niet door.',
+  weigerMail: 'Controleer het even op een typefout en stuur het opnieuw — het is het adres waar de afgeronde visual op binnenkomt.',
+  weigerSoortKop: 'Kies eerst wat we gaan maken.',
+  weigerSoort: 'Een catalogset of een lifestylecarrousel — dat is ander werk, dus we kunnen er niet één van kiezen. Zet het hieronder aan en stuur het opnieuw.',
+
+  lookKop: 'Je proef in {look}',
+  anders: ['Andere look of soort?', 'Kies opnieuw'],
+  dichtH: 'De proef opent in rondes',
+  dichtP: 'Per ronde nemen we een beperkt aantal proeven aan, zodat elke proef en elke lopende bestelling de aandacht krijgt die hij nodig heeft. Deze ronde is gesloten. Laat je e-mailadres achter: wie op de lijst staat, krijgt als eerste bericht als de volgende ronde opengaat.',
+  lifestyleH: 'De catalogproef zit tussen twee rondes',
+  lifestyleP: 'De lifestyleproef is nu open: die kies je hieronder. De catalogproef opent in rondes, met een beperkt aantal plekken per ronde. Laat je e-mailadres achter: wie op de lijst staat, krijgt als eerste bericht als hij weer opengaat.',
+  wachtLabel: 'Je e-mailadres',
+  wachtMelding: 'Vul je e-mailadres in, dan krijg je als eerste bericht als de volgende ronde opengaat.',
+  wachtKnop: 'Zet me op de lijst',
+  wachtBezig: 'Even geduld…',
+  wachtOk: 'Je staat op de lijst. Gaat de volgende ronde open, dan mailen we je als eerste, één keer; daarna halen we je adres van de lijst.',
+  wachtFout: {
+    email: 'Dat e-mailadres klopt niet helemaal. Kijk het even na en probeer het opnieuw.',
+    rate: 'Er kwamen veel aanmeldingen tegelijk binnen. Probeer het over een paar minuten opnieuw.',
+    botcheck: 'We konden niet bevestigen dat deze aanmelding van een mens komt. Probeer het zo nog eens, of mail hello@visuails.com.',
+    fout: 'Dat lukte even niet. Probeer het zo nog eens.',
+  },
+  wachtNoot: 'We gebruiken je adres alleen voor deze ene mail.',
+  privacy: 'Privacy',
+
+  hoePil: 'Hoe het werkt',
+  hoeKop: ['Van foto’s', 'naar een set.'],
+  stappen: [
+    ['Upload je foto’s', 'Een voorkant, een achterkant en één close-up.'],
+    ['Kies een look', 'Of laat ons kiezen.'],
+    ['Wij maken het', 'Met onze echte belichting en afwerking, en we kijken het na vóór levering.'],
+    ['Keur goed en download', `${RESOLUTIE.standaard} px, in VISUAILS Studio en met de link in je mail. ${TIMING.charAt(0).toUpperCase()}${TIMING.slice(1)}.`],
+  ],
+  fijndruk: `Eén proef per bedrijf · ${SAMPLE.feeNote} (${vatLabel('excl', 'nl')}) · meer betaal je niet voor de proef.`,
+  account: 'Met de proef maken we je account in VISUAILS Studio aan: daar download je je beelden, en je volgende bestelling staat al ingevuld.',
+  betaal: 'Betalen met',
+  gidsLink: 'Lees de fotogids',
+  gidsPdf: 'Download de fotogids (pdf)',
+
+  slotPil: 'Liever overleggen',
+  slotKop: ['Eerst even overleggen?', 'App ons je product.'],
+  slotZin: 'We helpen je een look kiezen.',
+  slotWa: 'Hoi VISUAILS, ik wil VISUAILS graag eerst proberen.',
+  slotCta: 'WhatsApp',
+  slotCta2: 'Start een bestelling',
+} : {
+  pil: 'Trial',
+  kop: ['Try VISUAILS', 'with one product for'],
+  lead: `Send a front, a back and one close-up. You get ${SAMPLE.deliverable} back, exactly what a paid order delivers.`,
+  feiten: [`${CATALOG_IMAGES} photos, or ${LIFESTYLE_IMAGES}`, `${vatLabel('excl', 'en')} · ${SAMPLE.unit}`, 'Checked before delivery'],
+  bij: `Example: a catalog set of ${CATALOG_IMAGES} photos, of one product.`,
+
+  weigerGebruiktKop: 'You’ve already had your test sample.',
+  weigerGebruikt: ['It is one per business, so nothing has been ordered and nothing has been charged — you have not paid for this. Ready for the real thing? The ', 'full services', ' start at a single product, with no minimum order — or ', 'send us a message', ' if the first sample never arrived, or a colleague ordered it without telling you.'],
+  weigerMailKop: 'That email address didn’t go through.',
+  weigerMail: 'Check it for a typo and send it again — it is the address the finished images arrive at.',
+  weigerSoortKop: 'Pick what we should make first.',
+  weigerSoort: 'A catalog set or a lifestyle carousel — that is different work, so we cannot pick one for you. Choose below and send it again.',
+
+  lookKop: 'Your test sample in {look}',
+  anders: ['Different look or type?', 'Choose again'],
+  dichtH: 'The test sample opens in rounds',
+  dichtP: 'We take a limited number of test samples per round, so every sample and every running order gets the attention it needs. This round is closed. Leave your email address: whoever is on the list is the first to hear when the next round opens.',
+  lifestyleH: 'The catalog test sample is between rounds',
+  lifestyleP: 'The lifestyle test sample is open now: choose it below. The catalog one opens in rounds, with a limited number of places per round. Leave your email address: whoever is on the list is the first to hear when it opens again.',
+  wachtLabel: 'Your email address',
+  wachtMelding: 'Enter your email address and you will be the first to hear when the next round opens.',
+  wachtKnop: 'Put me on the list',
+  wachtBezig: 'One moment…',
+  wachtOk: 'You are on the list. When the next round opens, we email you first, once; after that we take your address off the list.',
+  wachtFout: {
+    email: 'That email address does not look quite right. Check it and try again.',
+    rate: 'A lot of sign-ups came in at once. Try again in a few minutes.',
+    botcheck: 'We could not confirm this sign-up came from a person. Try again in a moment, or email hello@visuails.com.',
+    fout: 'That did not work just now. Try again in a moment.',
+  },
+  wachtNoot: 'We use your address for this one email only.',
+  privacy: 'Privacy',
+
+  hoePil: 'How it works',
+  hoeKop: ['From photos', 'to a set.'],
+  stappen: [
+    ['Upload your photos', 'A front, a back and one close-up.'],
+    ['Choose a look', 'Or let us choose.'],
+    ['We make it', 'With our real lighting and finish, and we check it before delivery.'],
+    ['Approve and download', `${RESOLUTIE.standaard} px, in VISUAILS Studio and with the link in your email. ${TIMING.charAt(0).toUpperCase()}${TIMING.slice(1)}.`],
+  ],
+  fijndruk: `One sample per business · a ${SAMPLE.feeNote} (${vatLabel('excl', 'en')}) · that’s all you pay for the sample.`,
+  account: 'The test sample sets up your account in VISUAILS Studio: that is where you download your images, and your next order starts filled in.',
+  betaal: 'Pay with',
+  gidsLink: 'Read the photo guide',
+  gidsPdf: 'Download the photo guide (pdf)',
+
+  slotPil: 'Rather talk first',
+  slotKop: ['Rather talk it through?', 'Send us your product.'],
+  slotZin: 'On WhatsApp, and we help you pick a look.',
+  slotWa: 'Hi VISUAILS, I’d like to try a test sample.',
+  slotCta: 'WhatsApp',
+  slotCta2: 'Place a full order',
+};
+const ICOON = {
+  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
+  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
+};
+const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+const DRIE = (n: number) => String(n).padStart(2, '0');
+---
+<div class="h-pagina h-ts">
+
+  {/* ── 1 · DE OPENING ── het slotvlak van de voorpagina, als kop van de pagina. */}
+  <section class="h-proef h-ts-open h-in" aria-labelledby="ts-h1">
+    <span class="h-korrel" aria-hidden="true"></span>
+    <div class="h-proef-woord">
+      <p class="h-pil h-pil-donker"><span>{c.pil}</span></p>
+      <h1 id="ts-h1" class="h-kop h-proef-kop"><span class="l">{c.kop[0]}</span> <span class="d">{c.kop[1]}</span> <span class="h-een">{SAMPLE.price}</span></h1>
+      <p class="h-proef-zin">{c.lead}</p>
+      <ul class="h-ts-feiten" role="list">
+        {c.feiten.map((f) => <li><i set:html={ik('check')} />{f}</li>)}
+      </ul>
+    </div>
+    <figure class="h-ts-beelden">
+      <ul class="h-vier" role="list">
+        {BEELDEN.map((b, i) => <li class="h-well" style={`--d:${i}`}><img src={b.src} width={b.w} height={b.h} alt={b.alt} loading="eager" decoding="async" /></li>)}
+      </ul>
+      <figcaption class="h-ts-bij">{c.bij}</figcaption>
+    </figure>
+  </section>
+
+  {/* ── DE PROEF DICHT (G2) ── een stand, geen deel: het script onderaan haalt
+      hidden weg en verbergt dan het formulier. Werking als TestSamplePage.astro. */}
+  <section class="h-sec h-ts-dicht" id="even-dicht" data-ts-dicht hidden aria-labelledby="ts-dicht-h">
+    <div class="h-ts-dicht-in">
+      <p class="h-pil"><span>{c.pil}</span></p>
+      <h2 id="ts-dicht-h" class="h-kop h-h3" data-ts-dicht-kop data-dicht={c.dichtH} data-lifestyle={c.lifestyleH}>{c.dichtH}</h2>
+      <p class="h-ts-dicht-zin" data-ts-dicht-zin data-dicht={c.dichtP} data-lifestyle={c.lifestyleP}>{c.dichtP}</p>
+      <form class="ts-wacht h-ts-wacht" action="/api/proef-wachtlijst" method="post" data-ts-wacht-form data-botcheck="proef-wachtlijst" data-botcheck-post data-astro-reload data-bezig={c.wachtBezig}>
+        <input type="hidden" name="lang" value={lang} />
+        <label class="h-ts-wacht-l" for="ts-wacht-email">{c.wachtLabel}</label>
+        <div class="ts-wacht-rij h-ts-wacht-rij">
+          <input id="ts-wacht-email" type="email" name="email" required autocomplete="email" inputmode="email" data-melding={c.wachtMelding} />
+          <button type="submit" class="h-knop h-knop-inkt">{c.wachtKnop}</button>
+        </div>
+        <p class="ts-hp h-ts-hp" aria-hidden="true"><label>Website <input type="text" name="website_hp" tabindex="-1" autocomplete="off" /></label></p>
+        <div data-botcheck-plek></div>
+        <p class="h-ts-wacht-ok" data-ts-wacht="ok" role="status" hidden>{c.wachtOk}</p>
+        {Object.entries(c.wachtFout).map(([k, v]) => <p class="h-ts-wacht-fout" data-ts-wacht={k} role="alert" hidden>{v}</p>)}
+        <p class="h-ts-wacht-noot">{c.wachtNoot} <a href={lp('/privacy')}>{c.privacy}</a></p>
+      </form>
+    </div>
+  </section>
+
+  {/* ── DE WEIGERINGEN ── /api/order stuurt terug met ?error=…, initFormRefusal()
+      in interactions.js haalt hidden weg. Direct boven het formulier. */}
+  <div class="h-ts-weigeringen ts-weigeringen" id="aanvraag">
+    <div class="h-ts-geweigerd ts-refused" data-form-refusal="sample-used" role="status" tabindex="-1" hidden>
+      <strong>{c.weigerGebruiktKop}</strong>
+      <span>{c.weigerGebruikt[0]}<a href={lp('/start')}>{c.weigerGebruikt[1]}</a>{c.weigerGebruikt[2]}<a href={lp('/contact')}>{c.weigerGebruikt[3]}</a>{c.weigerGebruikt[4]}</span>
+    </div>
+    <div class="h-ts-geweigerd ts-refused" data-form-refusal="email" role="status" tabindex="-1" hidden>
+      <strong>{c.weigerMailKop}</strong>
+      <span>{c.weigerMail}</span>
+    </div>
+    <div class="h-ts-geweigerd ts-refused" data-form-refusal="sample-soort" role="status" tabindex="-1" hidden>
+      <strong>{c.weigerSoortKop}</strong>
+      <span>{c.weigerSoort}</span>
+    </div>
+  </div>
+
+  {/* ── 2 · HET FORMULIER ── OrderFlow in de proefstand, zonder eigen kop. */}
+  <div class="h-form h-ts-form" data-ts-formulier>
+    <OrderFlow lang={lang} service="lifestyle" mode="sample" hero={false}>
+      <StylePicker lang={lang} />
+      <BackgroundPicker lang={lang} />
+      <ModelKeuze slot="model" lang={lang} soort="proef" verplicht={false} />
+    </OrderFlow>
+  </div>
+
+  {/* ── DE PROEF BEGINT BIJ EEN LOOK (1.06) ── zie TestSamplePage.astro. */}
+  <p class="h-ts-anders ts-anders" data-ts-anders hidden>{c.anders[0]} <a href={lp('/test-sample')}>{c.anders[1]}</a></p>
+  <div hidden data-ts-looks={JSON.stringify(PROEF_LOOKS)} data-ts-kop={c.lookKop}></div>
+  <script is:inline data-astro-rerun>
+    (function () {
+      try {
+        var waarde = new URLSearchParams(location.search).get('style');
+        if (!waarde || !/^[a-z-]{2,24}$/.test(waarde)) return;
+        var bron = document.querySelector('[data-ts-looks]');
+        var looks = bron ? JSON.parse(bron.getAttribute('data-ts-looks') || '{}') : {};
+        var look = Object.prototype.hasOwnProperty.call(looks, waarde) ? looks[waarde] : null;
+        if (!look) return;
+        var radio = document.querySelector('input[data-pl-kind="' + look.soort + '"]');
+        if (!radio) return;
+        radio.checked = true;
+        radio.dispatchEvent(new Event('change', { bubbles: true }));
+        var vraag = radio.closest('.pl-kinds');
+        var stap = radio.closest('[data-pl-step]');
+        var kop = stap && stap.querySelector('[data-pl-head]');
+        if (kop && bron) {
+          if (!kop.hasAttribute('data-ts-origineel')) kop.setAttribute('data-ts-origineel', kop.textContent);
+          kop.textContent = (bron.getAttribute('data-ts-kop') || '').replace('{look}', look.naam);
+        }
+        if (vraag) {
+          vraag.hidden = true;
+          var anders = document.querySelector('[data-ts-anders]');
+          if (anders) { vraag.after(anders); anders.hidden = false; }
+        }
+      } catch (e) { /* dan blijft de vraag staan */ }
+    })();
+  </script>
+
+  {/* ── 3 + 4 · HOE HET WERKT, EN DE KLEINE LETTERTJES ── de maatlijn van de
+      voorpagina (StartHal: .h-st-band), vier stappen in plaats van vijf. */}
+  <section class="h-sec h-ts-hoe" aria-labelledby="ts-hoe">
+    <div class="h-st-band h-in">
+      <header class="h-st-band-kop">
+        <p class="h-pil h-pil-wit"><span>{c.hoePil}</span></p>
+        <h2 id="ts-hoe" class="h-kop h-h2"><span class="l">{c.hoeKop[0]}</span> {c.hoeKop[1]}</h2>
+      </header>
+      <ol class="h-st-stappen h-ts-stappen" role="list">
+        {c.stappen.map(([kop, tekst], i) => (
+          <li class="h-st-stap" style={`--d:${i}`}>
+            <p class="h-nr" aria-hidden="true"><b>{DRIE(i + 1)}</b><i></i><span>/ {DRIE(c.stappen.length)}</span></p>
+            <span class="h-st-stap-naam">{kop}</span>
+            <span class="h-ts-stap-zin">{tekst}</span>
+          </li>
+        ))}
+      </ol>
+      <div class="h-ts-fijn">
+        <p>{c.fijndruk}</p>
+        <p data-ts-account>{c.account}</p>
+        <p>{c.betaal} {SAMPLE_METHODS.map((m) => METHODE_NAAM[m] || m).join(' · ')}</p>
+        <p class="h-ts-gids">
+          <a href={lp('/upload-guidelines')}>{c.gidsLink}</a>
+          <a href={`/downloads/visuails-fotogids-${lang}.pdf`} download>{c.gidsPdf}</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  {/* ── 5 · HET SLOT ── rustig: het violet staat al bovenaan. */}
+  <section class="h-sec h-ts-slot" aria-labelledby="ts-slot">
+    <div class="h-ts-slot-in h-in">
+      <div class="h-ts-slot-woord">
+        <p class="h-pil h-pil-wit"><span>{c.slotPil}</span></p>
+        <h2 id="ts-slot" class="h-kop h-h3"><span class="l">{c.slotKop[0]}</span> {c.slotKop[1]}</h2>
+        <p class="h-ts-slot-zin">{c.slotZin}</p>
+      </div>
+      <p class="h-acties">
+        <a class="h-knop h-knop-inkt" href={waHref(c.slotWa)} target="_blank" rel="noopener">{c.slotCta}<NieuwTabblad lang={lang} /><span class="o" set:html={ik('rechts')} /></a>
+        <a class="h-knop h-knop-lijn" href={lp('/start')}>{c.slotCta2}</a>
+      </p>
+    </div>
+  </section>
+</div>
+<HalBeweging />
+
+<script>
+  /* ── DE STAND VAN DE PROEF — 8 oktober 2026 (G2) ─────────────────────────
+     Hetzelfde script als in TestSamplePage.astro: één vraag aan
+     /api/proef-stand per bezoek. Lukt die niet, dan blijft de pagina zoals hij
+     is: de echte rem staat in /api/order. */
+  import { bindBotcheckForms } from '../scripts/botcheck.js';
+  bindBotcheckForms();
+
+  const UITKOMSTEN = ['ok', 'email', 'rate', 'botcheck', 'fout'];
+
+  function toon(stand: string, uitkomst: string) {
+    const blok = document.querySelector<HTMLElement>('[data-ts-dicht]');
+    if (!blok) return;
+    if (stand === 'open' && !uitkomst) { blok.hidden = true; return; }
+    const variant = stand === 'lifestyle' ? 'lifestyle' : 'dicht';
+    const kop = blok.querySelector<HTMLElement>('[data-ts-dicht-kop]');
+    const zin = blok.querySelector<HTMLElement>('[data-ts-dicht-zin]');
+    if (kop) kop.textContent = kop.getAttribute(`data-${variant}`) || kop.textContent;
+    if (zin) zin.textContent = zin.getAttribute(`data-${variant}`) || zin.textContent;
+    blok.hidden = false;
+
+    if (stand === 'dicht') {
+      document.querySelector<HTMLElement>('[data-ts-formulier]')?.setAttribute('hidden', '');
+    }
+    if (stand === 'lifestyle') {
+      const cat = document.querySelector<HTMLInputElement>('input[data-pl-kind="catalog"]');
+      const ls = document.querySelector<HTMLInputElement>('input[data-pl-kind="lifestyle"]');
+      if (cat && ls) {
+        if (cat.checked) {
+          ls.checked = true;
+          ls.dispatchEvent(new Event('change', { bubbles: true }));
+          const vraag = ls.closest<HTMLElement>('.pl-kinds');
+          if (vraag?.hidden) {
+            vraag.hidden = false;
+            document.querySelector<HTMLElement>('[data-ts-anders]')?.setAttribute('hidden', '');
+            const stapKop = ls.closest('[data-pl-step]')?.querySelector<HTMLElement>('[data-pl-head]');
+            const was = stapKop?.getAttribute('data-ts-origineel');
+            if (stapKop && was) stapKop.textContent = was;
+          }
+        }
+        cat.disabled = true;
+        cat.closest('label')?.classList.add('is-dicht');
+      }
+    }
+
+    const form = blok.querySelector<HTMLFormElement>('[data-ts-wacht-form]');
+    if (uitkomst && form) {
+      form.querySelectorAll<HTMLElement>('[data-ts-wacht]').forEach((el) => { el.hidden = el.dataset.tsWacht !== uitkomst; });
+      if (uitkomst === 'ok') form.querySelector<HTMLElement>('.ts-wacht-rij')?.setAttribute('hidden', '');
+    }
+  }
+
+  function proefStand() {
+    if (!document.querySelector('[data-ts-dicht]')) return;
+    const q = new URLSearchParams(location.search);
+    const uitkomst = UITKOMSTEN.includes(q.get('wachtlijst') || '') ? (q.get('wachtlijst') as string) : '';
+    if (q.get('error') === 'proef-dicht') toon('dicht', uitkomst);
+    else if (uitkomst) toon('dicht', uitkomst);
+    if (typeof fetch !== 'function') return;
+    fetch('/api/proef-stand', { headers: { accept: 'application/json' } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d || !['open', 'dicht', 'lifestyle'].includes(d.stand)) return;
+        if (d.stand === 'open' && (q.get('error') === 'proef-dicht' || uitkomst)) return;
+        toon(d.stand, uitkomst);
+      })
+      .catch(() => { /* de pagina blijft zoals hij is */ });
+  }
+  document.addEventListener('astro:page-load', proefStand);
+</script>

@@ -12,7 +12,7 @@ import { LIFESTYLE_IMAGES } from './pricing.js';
 // survived a repricing nobody caught. Derive, never type.
 /* Wat een carousel IS, als eerste regel op elke stijlpagina — 4 september 2026.
    Geen van de vier zei hoeveel foto's je krijgt; dat stond alleen op de hub. */
-const SET = `${LIFESTYLE_IMAGES} photos per product — scene, on-model and detail`;
+const SET = `${LIFESTYLE_IMAGES} photos per product — on a model front and back, the product on its own, and a detail`;
 /* Levertijd en controle staan in de feitenrij van de detailpagina, niet
    meer ook in "Wat je krijgt" (29 september 2026: twee keer dezelfde zin). */
 
@@ -39,6 +39,13 @@ export const styles = [
     orderHref: '/start/lifestyle/?style=dunes',
     name: 'Dunes',
     tagline: 'Sun, sand and quiet luxury.',
+    /* De lookpagina, kort (k101, 11 oktober 2026): drie korte regels onder
+       vaste koppen — voor welke kleding, welk gevoel, welke kanalen. */
+    kort: {
+      kleding: 'Premium knitwear, linen and leather goods.',
+      gevoel: 'Sun-washed and calm: earthy tones, long soft shadows, quiet luxury.',
+      kanalen: 'Campaigns, ads and banners, with room left for your own text.',
+    },
     heroPhoto: '/img/lifestyle-dunes-01.webp',
     cardPhoto: '/img/lifestyle-dunes-01.webp',
     beforeAfter: { before: '/img/lifestyle-dunes-02.webp', after: '/img/lifestyle-dunes-01.webp' },
@@ -77,6 +84,13 @@ export const styles = [
     orderHref: '/start/lifestyle/?style=flash',
     name: 'Flash',
     tagline: 'Direct flash, hard shadows.',
+    /* De lookpagina, kort (k101, 11 oktober 2026): drie korte regels onder
+       vaste koppen — voor welke kleding, welk gevoel, welke kanalen. */
+    kort: {
+      kleding: 'Streetwear, sneakers and accessories.',
+      gevoel: 'Hard flash, deep shadows, colour that punches: the nightlife look.',
+      kanalen: 'Social ads and drops that need to stand out in a feed.',
+    },
     heroPhoto: '/img/lifestyle-flash-01.webp',
     cardPhoto: '/img/lifestyle-flash-02.webp',
     beforeAfter: { before: '/img/lifestyle-flash-07.webp', after: '/img/lifestyle-flash-01.webp' },
@@ -107,7 +121,7 @@ export const styles = [
       { title: 'An edge that repeats', body: 'The same intensity on lifestyle image one and lifestyle image one hundred.' },
       { title: 'Made for a launch', body: 'The look suits a release, a restock or a limited run.' },
     ],
-    bestFor: ['Streetwear, sneakers and accessories', 'Drops, launches and hype moments', 'Brands with an edge to keep', 'Social ads that need to stop thumbs'],
+    bestFor: ['Streetwear, sneakers and accessories', 'Drops, launches and hype moments', 'Brands with an edge to keep', 'Social ads that need to stand out in the feed'],
     whatYouGet: [SET, 'High-energy flash-lit scenes', 'Deep, deliberate shadow work', 'The same model through your whole set'],
   },
   {
@@ -115,9 +129,18 @@ export const styles = [
     orderHref: '/start/lifestyle/?style=glow',
     name: 'Glow',
     tagline: 'Golden hour, on demand.',
-    heroPhoto: '/img/lifestyle-glow-01.webp',
-    cardPhoto: '/img/lifestyle-glow-01.webp',
-    beforeAfter: { before: '/img/lifestyle-glow-03.webp', after: '/img/lifestyle-glow-01.webp' },
+    /* De lookpagina, kort (k101, 11 oktober 2026): drie korte regels onder
+       vaste koppen — voor welke kleding, welk gevoel, welke kanalen. */
+    kort: {
+      kleding: 'Eveningwear, swimwear and statement pieces.',
+      gevoel: 'Golden hour: low sun and warm amber light, an evening that went well.',
+      kanalen: 'Campaigns, launches and a feed people want to belong to.',
+    },
+    /* glow-01 (the text on the shirt) is gone since 12 October 2026 (afvinklijst 8, v8-glow b): glow-03 is the card and the hero. */
+    heroPhoto: '/img/lifestyle-glow-03.webp',
+    cardPhoto: '/img/lifestyle-glow-03.webp',
+    /* lifestyle-glow-06 (the hoodie with the red circle) is gone since 13 October 2026 (checklist 15, k-rechten): a real brand's product, tested without permission. */
+    beforeAfter: { before: '/img/lifestyle-glow-03.webp', after: '/img/lifestyle-glow-04.webp' },
     cardIcon: 'jar',
     /* This line described Flash — see the note in styles.nl.js. */
     cardDesc: 'Soft, low-angle sunlight across the whole set — warm, editorial and flattering, without looking filtered.',
@@ -132,7 +155,7 @@ export const styles = [
       { title: 'Grade for warmth', body: 'A consistent, editorial colour finish carried across the whole set.' },
     ],
     grid: grid(
-      ['/img/lifestyle-glow-01.webp', '/img/lifestyle-glow-02.webp', '/img/lifestyle-glow-03.webp', '/img/lifestyle-glow-04.webp', '/img/lifestyle-glow-05.webp', '/img/lifestyle-glow-06.webp'],
+      ['/img/lifestyle-glow-02.webp', '/img/lifestyle-glow-03.webp', '/img/lifestyle-glow-04.webp', '/img/lifestyle-glow-05.webp'],
       ['bottle', 'sneaker', 'jar', 'bag', 'bottle', 'sneaker', 'jar', 'bag', 'bottle']
     ),
     craft: [
@@ -154,9 +177,17 @@ export const styles = [
     orderHref: '/start/lifestyle/?style=phone-made',
     name: 'Phone-made',
     tagline: "Looks effortless. Isn’t.",
-    heroPhoto: '/img/lifestyle-phone-made-01.webp',
+    /* De lookpagina, kort (k101, 11 oktober 2026): drie korte regels onder
+       vaste koppen — voor welke kleding, welk gevoel, welke kanalen. */
+    kort: {
+      kleding: 'Pieces that sell on being relatable.',
+      gevoel: 'Daylight through a window, a slightly imperfect frame: it reads as real.',
+      kanalen: 'Organic posts and UGC-style ads, already in the Instagram ratio.',
+    },
+    /* phone-made-01 weg sinds 14 oktober 2026 (Lucas: de hoodie met de rode cirkel is van een ander, echt merk). */
+    heroPhoto: '/img/lifestyle-phone-made-03.webp',
     cardPhoto: '/img/lifestyle-phone-made-11.webp',
-    beforeAfter: { before: '/img/lifestyle-phone-made-05.webp', after: '/img/lifestyle-phone-made-01.webp' },
+    beforeAfter: { before: '/img/lifestyle-phone-made-05.webp', after: '/img/lifestyle-phone-made-09.webp' },
     cardIcon: 'bottle',
     cardDesc: 'Minimal lifestyle images that look like an everyday photo — natural and unpolished, like something someone just took.',
     moodTitle: 'What Phone-made feels like.',
@@ -191,6 +222,13 @@ export const styles = [
     slug: 'custom',
     name: 'Custom',
     tagline: 'Your own world, built around your product.',
+    /* De lookpagina, kort (k101, 11 oktober 2026): drie korte regels onder
+       vaste koppen — voor welke kleding, welk gevoel, welke kanalen. */
+    kort: {
+      kleding: 'Ranges where the scene is the story.',
+      gevoel: 'Your own world: a scene designed from your references.',
+      kanalen: 'Campaigns that need their own signature.',
+    },
     priceTrust: 'On request',
     priceUnit: '',
     heroPhoto: '/img/banners-13.webp',
@@ -229,7 +267,7 @@ export const styles = [
       'Scene, styling and light matched to your brand',
       'Consistent across every future order',
       'A clear price, agreed before we start',
-      'One design fee in writing; every carousel after it at the ordinary lifestyle rate for the count',
+      'One design fee in writing; every carousel after it from the ordinary lifestyle rate for the count',
       'Yours: we do not use the look for another brand',
       'Then a tile of its own in your account and in the order form',
     ],

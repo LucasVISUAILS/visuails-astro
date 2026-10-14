@@ -162,6 +162,13 @@ console.log('\neen restitutie op een al toegekende maand trekt die niet in');
   ok('de restitutie is wél vastgelegd', betaalrij('tr_LATER')?.refunded_cents, Math.round(Number(TERMIJN) * 100));
   ok('en er komt geen volgende maand bij: gepauzeerd',
     db.prepare('SELECT status FROM subscriptions WHERE id = ?').get(s3.id).status, 'paused');
+  /* V49 = a (8 oktober 2026, ronde B): de ongebruikte credits van deze termijn
+     vervallen; de termijn stond in het creditboek als partij. */
+  const partij = db.prepare("SELECT aantal, rest FROM credit_boek WHERE payment_id = 'tr_LATER' AND reden = 'termijn'").get();
+  ok('V49: de termijn stond als partij in het creditboek', !!partij && partij.aantal > 0, true);
+  ok('  en zijn ongebruikte credits zijn vervallen', partij && partij.rest, 0);
+  ok('  met een regel "terugbetaald"',
+    db.prepare("SELECT -aantal AS n FROM credit_boek WHERE payment_id = 'tr_LATER' AND reden = 'terugbetaald'").get()?.n, partij && partij.aantal);
 }
 
 console.log('\nen een gewone incasso is niet geraakt');

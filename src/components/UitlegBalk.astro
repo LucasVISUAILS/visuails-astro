@@ -1,0 +1,347 @@
+---
+/**
+ * VISUAILS — de uitlegbalk onder een geanimeerde mockup (14 oktober 2026).
+ *
+ * Lucas, 04:14: *"Wanneer mogelijk van alle mockups wellicht animaties maken van
+ * hoe het precies werkt en de klant visueel wordt meegenomen in hoe het werkt …
+ * satisfying, overzichtelijk en goed leesbaar voor de kijker."*
+ *
+ * ── HOE EEN UITLEG WERKT ───────────────────────────────────────────────────
+ * De mockup zelf is het eindbeeld: zonder JavaScript, bij "minder beweging" en
+ * na afloop staat hij er precies zoals hij nu staat. De animatie bouwt hem op in
+ * een paar stappen. Bij elke stap hoort één zin in deze balk, met een streepje
+ * per stap erboven (zoals bij een verhaal op Instagram), zodat de kijker altijd
+ * weet waar hij is en hoeveel er nog komt.
+ *
+ *   · Het element met `data-uitleg` is de wortel. `data-uitleg-maat` zegt hoe
+ *     lang elke stap duurt, in ms: "1800 2200 2600". `data-uitleg-start` is de
+ *     aanloop voor stap 1 (standaard 400).
+ *   · Bij stap k krijgt de wortel de klassen u-s1 … u-sk (opgeteld), en
+ *     `data-uitleg-staat` = wacht | speelt | pauze | klaar. De opmaak per mockup
+ *     verbergt alleen iets ZOLANG een stap nog niet geweest is
+ *     (`[data-uitleg-staat]:not(.u-s2) …`), dus het eindbeeld is altijd het
+ *     gewone beeld.
+ *   · Hij begint als de mockup voor bijna de helft in beeld is (of het halve scherm
+ *     vult), stopt als hij uit beeld gaat of het tabblad verdwijnt, en gaat daarna verder.
+ *   · Eén keer. Daarna wordt de knop "opnieuw". Langer dan vijf seconden beweging
+ *     moet je kunnen stilzetten (WCAG 2.2.2): de knop pauzeert.
+ *   · DE LUS (`data-uitleg-lus`). Alleen het formatenblok (Lucas, afvinklijst 24:
+ *     "een loop … zodat het einde het begin weer is. Dit is alleen voor deze
+ *     video"). Na de laatste stap begint hij weer bij stap 1, zonder tussenstand:
+ *     de opmaak van zo'n blok zorgt dat stap 0 en de laatste stap hetzelfde beeld
+ *     zijn. Pauze, uit beeld en "minder beweging" werken zoals altijd.
+ *   · Een element met `data-uitleg-stop` (een tab, een knop in de mockup) zet de
+ *     uitleg op het eindbeeld zodra de kijker er zelf op klikt.
+ *   · DE CURSOR. Een element met `data-uitleg-klik="k"` krijgt in stap k bezoek
+ *     van een getekende cursor die erheen schuift en "klikt" (het element krijgt
+ *     even .u-geklikt). `data-uitleg-wacht` is de vertraging binnen de stap (ms).
+ *     Met `data-uitleg-echt` wordt er ook echt geklikt (een tab die wisselt).
+ *     Sinds afvinklijst 24 ("animatie mag iets sneller") schuift hij in 0,5 s en
+ *     klikt hij na 0,56 s (was 0,7 en 0,72). Mockups die op de klik wachten,
+ *     rekenen met --u-klik (0,56 s), zodat dit op één plek staat.
+ *
+ * Geen luisteraar op window (tests/zachte-navigatie): alles hangt aan de
+ * elementen zelf en aan astro:page-load.
+ */
+interface Props { zinnen: string[]; lang: 'en' | 'nl' }
+const { zinnen, lang } = Astro.props as Props;
+const nl = lang === 'nl';
+const T = nl
+  ? { pauze: 'Zet de uitleg stil', speel: 'Speel de uitleg verder', opnieuw: 'Speel de uitleg opnieuw', van: 'van' }
+  : { pauze: 'Pause the walkthrough', speel: 'Resume the walkthrough', opnieuw: 'Play the walkthrough again', van: 'of' };
+---
+<div class="u-balk" data-uitleg-balk hidden
+     data-l-pauze={T.pauze} data-l-speel={T.speel} data-l-opnieuw={T.opnieuw}>
+  <button type="button" class="u-knop" data-uitleg-knop aria-label={T.pauze}>
+    <svg class="u-ik u-ik-pauze" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 3.5v9M10.5 3.5v9" /></svg>
+    <svg class="u-ik u-ik-speel" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.2v9.6L12.8 8z" /></svg>
+    <svg class="u-ik u-ik-opnieuw" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.2 8a4.8 4.8 0 1 0 1.5-3.5M3.5 2.5v2.6h2.6" /></svg>
+  </button>
+  <div class="u-rechts" aria-hidden="true">
+    <ol class="u-tijd">
+      {zinnen.map(() => <li><i></i></li>)}
+    </ol>
+    <p class="u-zin">
+      {zinnen.map((z, i) => (
+        <span data-k={i + 1}><b>{i + 1} {T.van} {zinnen.length}</b> {z}</span>
+      ))}
+    </p>
+  </div>
+</div>
+
+<style>
+  /* sticky — 14 oktober 2026: is de mockup hoger dan het scherm (de levering,
+     Studio op een telefoon), dan blijft de zin onderin het scherm staan terwijl
+     je meescrolt, en zakt hij terug op zijn plek als het blok ophoudt. Past het
+     blok, dan verandert er niets. Werkt alleen zonder `overflow: hidden` op een
+     voorouder; .fd en .h-lv gebruiken daarom `overflow: clip`. */
+  .u-balk {
+    bottom: 12px; z-index: 6;
+    display: flex; align-items: center; gap: 14px;
+    margin-top: 14px; padding: 10px 18px 10px 10px;
+    border-radius: 999px; background: #F5F5F9;
+    font-family: var(--h-letter, 'Urbanist Variable', system-ui, sans-serif);
+  }
+  .u-balk[hidden] { display: none; }
+  /* Alleen plakken terwijl hij speelt (of met de hand is stilgezet, zodat de knop niet
+     onder je vinger wegspringt). In de wachtstand zou de balk van een blok dat net
+     onderin het scherm komt al over het blok erboven hangen; na afloop staat hij weer
+     gewoon onder de mockup, met "opnieuw". */
+  :global([data-uitleg-staat="speelt"]) .u-balk,
+  :global([data-uitleg-staat="pauze"][data-uitleg-hand]) .u-balk { position: sticky; }
+  .u-knop {
+    flex: none; width: 40px; height: 40px; border-radius: 50%; border: 0; padding: 0;
+    display: grid; place-items: center; cursor: pointer;
+    background: #0F0C24; color: #fff;
+    transition: transform .35s cubic-bezier(.34, 1.4, .5, 1);
+  }
+  .u-knop:hover { transform: scale(1.06); }
+  .u-knop:active { transform: scale(.94); }
+  .u-knop:focus-visible { outline: 2px solid #4A1FFF; outline-offset: 3px; }
+  .u-ik { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; display: none; }
+  .u-ik-speel { fill: currentColor; stroke: none; }
+  .u-balk[data-knop="pauze"] .u-ik-pauze,
+  .u-balk[data-knop="speel"] .u-ik-speel,
+  .u-balk[data-knop="opnieuw"] .u-ik-opnieuw { display: block; }
+
+  .u-rechts { flex: 1; min-width: 0; display: grid; gap: 7px; }
+  .u-tijd { list-style: none; margin: 0; padding: 0; display: flex; gap: 4px; }
+  .u-tijd li { flex: 1; height: 3px; border-radius: 999px; background: #DEDCE8; overflow: hidden; }
+  .u-tijd i { display: block; height: 100%; width: 100%; background: #0F0C24; transform-origin: left; transform: scaleX(0); }
+  .u-tijd li.is-af i { transform: scaleX(1); }
+  .u-tijd li.is-nu i { animation: u-vul var(--u-duur, 2s) linear forwards; }
+  .u-balk[data-pauze] .u-tijd li.is-nu i { animation-play-state: paused; }
+  @keyframes u-vul { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+  /* De zinnen staan op elkaar in één cel: de balk springt niet als een zin
+     langer is dan de vorige, want de cel is zo hoog als de langste. */
+  .u-zin { margin: 0; display: grid; font-size: 14px; line-height: 1.35; color: #4B4960; }
+  .u-zin span { grid-area: 1 / 1; opacity: 0; transform: translateY(6px); transition: opacity .35s, transform .45s cubic-bezier(.22, .8, .2, 1); }
+  .u-zin span.is-nu { opacity: 1; transform: none; }
+  .u-zin b { font-weight: 600; color: #0F0C24; margin-right: .35em; font-variant-numeric: tabular-nums; }
+
+  @media (max-width: 640px) {
+    .u-balk { border-radius: 22px; padding: 10px 14px 10px 10px; align-items: flex-start; }
+    .u-zin { font-size: 13.5px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .u-balk { display: none !important; }
+  }
+
+  /* De cursor: een gewone pijl met een witte rand, en een kring bij de klik.
+     :global omdat het script hem maakt (hij draagt geen scope). */
+  :global(.u-cursor) {
+    position: absolute; left: 0; top: 0; z-index: 40; width: 26px; height: 26px; pointer-events: none;
+    transform: translate(var(--cx, 50%), var(--cy, 50%)); opacity: 0;
+    transition: transform .5s cubic-bezier(.65, 0, .25, 1), opacity .25s;
+    background: no-repeat center / contain url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M4 2.5l15 8.6-6.6 1.4 3.8 7.2-2.8 1.5-3.8-7.3L4.9 18z' fill='%230F0C24' stroke='white' stroke-width='1.6' stroke-linejoin='round'/></svg>");
+    filter: drop-shadow(0 4px 8px rgba(15, 12, 36, .25));
+  }
+  /* Wanneer de cursor klikt (zie KLIK_MS in het script): mockups die op de klik wachten, lezen dit. */
+  :global([data-uitleg]) { --u-klik: .56s; }
+  :global(.u-cursor.is-aan) { opacity: 1; }
+  :global(.u-cursor)::after {
+    content: ""; position: absolute; left: -9px; top: -9px; width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid #4A1FFF; opacity: 0; transform: scale(.4);
+  }
+  :global(.u-cursor.is-klik)::after { animation: u-klik .5s ease-out; }
+  @keyframes u-klik { 0% { opacity: .9; transform: scale(.4); } 100% { opacity: 0; transform: scale(1.6); } }
+  :global(.u-geklikt) { transform: scale(.96); transition: transform .15s; }
+</style>
+
+<script>
+  type Wortel = HTMLElement & { _u?: { stop: () => void; opnieuw: () => void } };
+  const rustig = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* Wanneer de cursor klikt, gerekend vanaf het moment dat hij vertrekt. Zie --u-klik. */
+  const KLIK_MS = 560;
+
+  function start(w: Wortel) {
+    if (w.dataset.uKlaar) return;
+    w.dataset.uKlaar = '1';
+    const maat = String(w.dataset.uitlegMaat || '').trim().split(/\s+/).map(Number).filter((n) => n > 0);
+    const n = maat.length;
+    const aanloop = Number(w.dataset.uitlegStart || 400);
+    const lus = w.hasAttribute('data-uitleg-lus');
+    const balk = w.querySelector<HTMLElement>('[data-uitleg-balk]');
+    const knop = balk?.querySelector<HTMLButtonElement>('[data-uitleg-knop]');
+    const streepjes = balk ? [...balk.querySelectorAll<HTMLElement>('.u-tijd li')] : [];
+    const zinnen = balk ? [...balk.querySelectorAll<HTMLElement>('.u-zin span')] : [];
+    if (getComputedStyle(w).position === 'static') w.style.position = 'relative';
+    const cursor = document.createElement('span');
+    cursor.className = 'u-cursor';
+    cursor.setAttribute('aria-hidden', 'true');
+    let klikKlokken: number[] = [];
+    const wisKlikken = () => { klikKlokken.forEach(clearTimeout); klikKlokken = []; cursor.classList.remove('is-aan', 'is-klik'); };
+    const bezoek = (k: number) => {
+      const doelen = [...w.querySelectorAll<HTMLElement>(`[data-uitleg-klik="${k}"]`)]
+        .sort((a, b) => Number(a.dataset.uitlegWacht || 0) - Number(b.dataset.uitlegWacht || 0));
+      for (const d of doelen) {
+        const t = Number(d.dataset.uitlegWacht || 0);
+        klikKlokken.push(window.setTimeout(() => {
+          if (!cursor.isConnected) w.append(cursor);
+          const rw = w.getBoundingClientRect();
+          const rd = d.getBoundingClientRect();
+          cursor.style.setProperty('--cx', `${rd.left - rw.left + rd.width * 0.62}px`);
+          cursor.style.setProperty('--cy', `${rd.top - rw.top + rd.height * 0.62}px`);
+          cursor.classList.add('is-aan');
+          klikKlokken.push(window.setTimeout(() => {
+            cursor.classList.add('is-klik');
+            d.classList.add('u-geklikt');
+            if (d.hasAttribute('data-uitleg-echt')) { echt = true; d.click(); echt = false; }
+            klikKlokken.push(window.setTimeout(() => { cursor.classList.remove('is-klik'); d.classList.remove('u-geklikt'); }, 380));
+          }, KLIK_MS));
+        }, t));
+      }
+    };
+    let echt = false;
+    let vorige = 0;
+    const zet = (k: number) => {
+      for (let i = 1; i <= n; i += 1) w.classList.toggle(`u-s${i}`, i <= k);
+      if (k > vorige && staat === 'speelt') bezoek(k);
+      vorige = k;
+      streepjes.forEach((s, i) => { s.classList.toggle('is-af', i < k - 1 || (k === n && staat === 'klaar')); s.classList.toggle('is-nu', i === k - 1 && staat !== 'klaar'); });
+      // In een lus is stap 0 hetzelfde beeld als de laatste stap, dus ook dezelfde zin.
+      const zin = lus && k === 0 ? n - 1 : Math.max(0, k - 1);
+      zinnen.forEach((z, i) => z.classList.toggle('is-nu', i === zin));
+    };
+    let staat: 'wacht' | 'speelt' | 'pauze' | 'klaar' = 'wacht';
+    let stap = 0;
+    let klok = 0;
+    let begon = 0;
+    let rest = 0;
+    let zichtbaar = false;
+    const knopStand = (s: 'pauze' | 'speel' | 'opnieuw') => {
+      if (!balk || !knop) return;
+      balk.dataset.knop = s;
+      knop.setAttribute('aria-label', balk.dataset[s === 'pauze' ? 'lPauze' : s === 'speel' ? 'lSpeel' : 'lOpnieuw'] || '');
+    };
+    const zetStaat = (s: typeof staat) => {
+      staat = s;
+      w.dataset.uitlegStaat = s;
+      if (balk) { if (s === 'pauze') balk.dataset.pauze = '1'; else delete balk.dataset.pauze; }
+      requestAnimationFrame(waBovenBalk);
+    };
+    const klaar = () => {
+      clearTimeout(klok);
+      wisKlikken();
+      stap = n;
+      zetStaat('klaar');
+      zet(n);
+      knopStand('opnieuw');
+    };
+    const volgende = (ms: number) => {
+      clearTimeout(klok);
+      begon = performance.now();
+      rest = ms;
+      klok = window.setTimeout(() => {
+        if (stap >= n) {
+          if (!lus) { klaar(); return; }
+          // Van de laatste stap terug naar stap 1: dezelfde cursor, dezelfde streepjes, opnieuw.
+          stap = 0;
+          vorige = 0;
+        }
+        stap += 1;
+        w.style.setProperty('--u-duur', `${maat[stap - 1]}ms`);
+        zet(stap);
+        volgende(maat[stap - 1]);
+      }, ms);
+    };
+    const speel = () => {
+      clearTimeout(klok);
+      wisKlikken();
+      vorige = 0;
+      w.dispatchEvent(new CustomEvent('uitleg-begin'));
+      stap = 0;
+      zetStaat('speelt');
+      zet(0);
+      knopStand('pauze');
+      // Eén frame wachten: de beginstand moet getekend zijn voor de eerste stap
+      // erin schuift, anders springt de browser meteen naar het eind.
+      requestAnimationFrame(() => requestAnimationFrame(() => volgende(aanloop)));
+    };
+    const pauze = () => {
+      if (staat !== 'speelt') return;
+      clearTimeout(klok);
+      rest = Math.max(0, rest - (performance.now() - begon));
+      zetStaat('pauze');
+      knopStand('speel');
+    };
+    const hervat = () => {
+      if (staat !== 'pauze') return;
+      zetStaat('speelt');
+      knopStand('pauze');
+      volgende(rest);
+    };
+    /* Voor de opnames in de afvinklijst: van voren af aan beginnen. */
+    w._u = { stop: klaar, opnieuw: () => speel() };
+
+    if (rustig() || !n) { zetStaat('klaar'); zet(n); return; }
+    if (balk) balk.hidden = false;
+    zetStaat('wacht');
+    zet(0);
+    knopStand('pauze');
+
+    knop?.addEventListener('click', () => {
+      if (staat === 'speelt') { w.dataset.uitlegHand = '1'; pauze(); }
+      else if (staat === 'pauze') { delete w.dataset.uitlegHand; hervat(); }
+      else speel();
+    });
+    for (const s of w.querySelectorAll<HTMLElement>('[data-uitleg-stop]')) {
+      s.addEventListener('click', () => { if (!echt && staat !== 'klaar') klaar(); });
+    }
+    /* In beeld = minstens 45% van de mockup, óf hij vult minstens het halve scherm. Dat
+       tweede is voor een telefoon: daar is een mockup als VISUAILS Studio langer dan het
+       scherm, en bij het openen van een langere tab zakte hij onder de 45% en zette de
+       uitleg zichzelf stil (gemeten 14 oktober, 390 px). */
+    const io = new IntersectionObserver((rijen) => {
+      for (const r of rijen) {
+        zichtbaar = r.isIntersecting && (r.intersectionRatio >= 0.45 || r.intersectionRect.height >= innerHeight * 0.5);
+        if (zichtbaar && staat === 'wacht') speel();
+        else if (zichtbaar && staat === 'pauze' && !w.dataset.uitlegHand) hervat();
+        else if (!zichtbaar && staat === 'speelt') pauze();
+      }
+    }, { threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.45, 0.5, 0.6, 0.7, 0.8, 0.9, 1] });
+    io.observe(w.querySelector<HTMLElement>('[data-uitleg-zicht]') || w);
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && staat === 'speelt') pauze();
+      else if (!document.hidden && zichtbaar && staat === 'pauze' && !w.dataset.uitlegHand) hervat();
+    });
+  }
+
+  /* ── DE WHATSAPP-KNOP BOVEN DE PLAKKENDE BALK — 14 oktober 2026 ─────────────
+     Plakt de balk onderin het scherm (hij speelt, of is met de hand stilgezet)
+     en ligt de zwevende WhatsApp-knop er horizontaal overheen — op een telefoon
+     altijd, want de balk is daar schermbreed — dan schuift de knop erboven:
+     body.hal[data-u-plakt] in hal.css, met --u-balk-boven als afstand tot de
+     onderkant. Eén keer gebonden, voor alle balken op de pagina. */
+  let waKlok = 0;
+  function waBovenBalk() {
+    const wa = document.querySelector<HTMLElement>('.wa-launcher');
+    let boven = 0;
+    if (wa) {
+      const rw = wa.getBoundingClientRect();
+      for (const b of document.querySelectorAll<HTMLElement>('.u-balk')) {
+        if (b.hidden) continue;
+        const cs = getComputedStyle(b);
+        if (cs.position !== 'sticky') continue;
+        const r = b.getBoundingClientRect();
+        const plakt = r.top < innerHeight && r.bottom >= innerHeight - (parseFloat(cs.bottom) || 0) - 2;
+        if (plakt && r.left < rw.right && r.right > rw.left) boven = Math.max(boven, innerHeight - r.top + 10);
+      }
+    }
+    if (boven) {
+      document.body.dataset.uPlakt = '';
+      document.documentElement.style.setProperty('--u-balk-boven', `${Math.round(boven)}px`);
+    } else if (document.body.hasAttribute('data-u-plakt')) {
+      delete document.body.dataset.uPlakt;
+      document.documentElement.style.removeProperty('--u-balk-boven');
+    }
+  }
+  const waLater = () => { cancelAnimationFrame(waKlok); waKlok = requestAnimationFrame(waBovenBalk); };
+  addEventListener('scroll', waLater, { passive: true });
+  addEventListener('resize', waLater, { passive: true });
+
+  const zoek = () => { for (const w of document.querySelectorAll<Wortel>('[data-uitleg]')) start(w); waLater(); };
+  zoek();
+  document.addEventListener('astro:page-load', zoek);
+</script>

@@ -71,7 +71,6 @@ const PAGINAS = [
   ['start/', 'start'],
   ['start/catalog/', 'start-catalog'],
   ['start/lifestyle/', 'start-lifestyle'],
-  ['start/complete/', 'start-allebei'],
   ['start/video/', 'start-video'],
   ['start/brand-model/', 'start-merkmodel'],
   ['start/custom-look/', 'start-eigen-look'],

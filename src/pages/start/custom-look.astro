@@ -1,14 +1,19 @@
 ---
+// VISUAILS — /start/custom-look: in de hal sinds 13 oktober 2026 (afvinklijst 10, alles doen). De vorm komt uit
+// HalFormulier.astro en het blok DE FORMULIEREN in hal.css; de werking blijft van de onderdelen.
 // VISUAILS — /start/custom-look. See the head of HoldingPage.astro, and the
 // note at its 'custom-look' entry for why this page exists at all: a custom
 // look has no standard rate, so it cannot sit in a form that prices itself.
+import HalFormulier from '../../components/HalFormulier.astro';
 import Layout from '../../layouts/Layout.astro';
 import HoldingPage from '../../components/order/HoldingPage.astro';
 ---
 
-<Layout
+<Layout huid="hal"
   title="A custom look — VISUAILS"
   description="A lifestyle world designed around your product rather than one of the four house styles. Priced per request, in writing, before anything runs."
 >
+  <HalFormulier soort="aanvraag">
   <HoldingPage lang="en" kind="custom-look" />
+  </HalFormulier>
 </Layout>

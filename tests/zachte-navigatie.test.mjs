@@ -212,14 +212,19 @@ console.log('\nde luisteraars op window en document stapelen zich niet op');
      bij de eerste zachte navigatie één keer en bindt dan zijn luisteraars —
      dat is geen stapeling maar een late start. Wat de meting hieronder moet
      vangen is wat er bij ELKE ronde bijkomt. */
-  await page.click('a[href="/pricing/"]');
+  /* Sinds 8 oktober 2026 (1.11) is Prijzen in de balk een uitklapper en geen
+     link meer: de eerste a[href="/pricing/"] staat dan in een dicht paneel en is
+     niet te klikken. De link in de voettekst is altijd zichtbaar en doet
+     dezelfde zachte navigatie. */
+  const NAAR_PRIJZEN = '.site-footer a[href="/pricing/"]';
+  await page.click(NAAR_PRIJZEN);
   await page.waitForTimeout(800);
   await page.click('a[href="/"]');
   await page.waitForTimeout(1000);
   const eerste = await tel();
 
   for (let i = 0; i < 3; i++) {
-    await page.click('a[href="/pricing/"]');
+    await page.click(NAAR_PRIJZEN);
     await page.waitForTimeout(800);
     await page.click('a[href="/"]');
     await page.waitForTimeout(1000);

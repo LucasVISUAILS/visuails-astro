@@ -195,15 +195,15 @@ const SUB_MONTHS = [
   { month: _deze, granted: 12, used: 2, clips_granted: 2, clips_used: 1 },
 ];
 const SUB_SLOTS = [
-  { month: _vorig, kind: 'complete', granted: 12, used: 9 },
-  { month: _deze, kind: 'complete', granted: 12, used: 2 },
+  { month: _vorig, kind: 'catalog', granted: 12, used: 9 },
+  { month: _deze, kind: 'catalog', granted: 12, used: 2 },
   { month: _deze, kind: 'video-motion', granted: 2, used: 1 },
 ];
 /* Drie toestanden, want het paneel kan er drie tonen: vastgezet, concept met
    foto's, en concept zonder. Alle drie op de afdruk of geen van drieën. */
 const QUEUE = [
-  { id: 61, position: 0, name: 'Winterjas, zwart', note: null, upload_batch: 'b-1', kind: 'complete', locked_at: `${_deze}-02 10:00:00`, order_id: null, taken_at: null, created_at: `${_deze}-01` },
-  { id: 62, position: 1, name: 'Cargobroek, sand', note: null, upload_batch: 'b-2', kind: 'complete', locked_at: null, order_id: null, taken_at: null, created_at: `${_deze}-01` },
+  { id: 61, position: 0, name: 'Winterjas, zwart', note: null, upload_batch: 'b-1', kind: 'catalog', locked_at: `${_deze}-02 10:00:00`, order_id: null, taken_at: null, created_at: `${_deze}-01` },
+  { id: 62, position: 1, name: 'Cargobroek, sand', note: null, upload_batch: 'b-2', kind: 'catalog', locked_at: null, order_id: null, taken_at: null, created_at: `${_deze}-01` },
   { id: 63, position: 2, name: 'Motion voor de winterjas', note: null, upload_batch: null, kind: 'video-motion', locked_at: null, order_id: null, taken_at: null, created_at: `${_deze}-02` },
 ];
 

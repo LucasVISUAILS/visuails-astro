@@ -36,7 +36,10 @@
  */
 
 import { sendMail, toBase64 } from './mail.js';
-import { shell, h1, p, rows, note, linkLine, greeting, esc, button, spamNote } from './mailTemplate.js';
+import { shell, h1, p, rows, note, linkLine, greeting, esc, button, spamNote, vragen } from './mailTemplate.js';
+import { verderBlokHtml } from './verder.js';
+import { levertijdDelen } from '../data/pricing.js';
+import { betaalMailContext } from './invoiceMail.js';
 import { formatDate } from './invoicePdf.js';
 
 const SITE = 'https://visuails.com';
@@ -59,8 +62,10 @@ function euro(cents, lang = 'nl') {
  *   'none'    — betaald, geen terugbetaling
  *   'plan'    — uit een abonnement: de slots gaan terug
  *   'unpaid'  — er was nog niets betaald
+ *   'credits'        — met credits betaald, de credits staan weer op het saldo (ronde B, 6.08)
+ *   'credits-niets'  — met credits betaald, de credits blijven afgeboekt
  */
-export const CANCEL_MONEY = Object.freeze(['refund', 'credit', 'none', 'plan', 'unpaid']);
+export const CANCEL_MONEY = Object.freeze(['refund', 'credit', 'none', 'plan', 'unpaid', 'credits', 'credits-niets']);
 
 const COPY = {
   nl: {
@@ -75,6 +80,15 @@ const COPY = {
       none: () => 'Er wordt niets terugbetaald. Heb je daar vragen over, dan beantwoorden we die graag — beantwoord deze mail.',
       plan: () => 'Deze bestelling kwam uit je abonnement. De producten staan weer op je lijst en de credits staan weer op je saldo; je kunt ze opnieuw vastzetten wanneer je wilt.',
       unpaid: () => 'Er was nog niets betaald, dus er hoeft niets terug.',
+      /* Ronde B (6.08): een bestelling die met credits betaald was. `c` is
+         { aantal, datum, zin } uit creditsTerugVoorBestelling(); `zin` komt uit
+         terugZin() (creditWeergave.js) en kent het spaarplafond (12 oktober
+         2026): bij een lopend abonnement geen datum, wel een waarschuwing als de
+         volgende termijn daardoor boven het plafond komt. */
+      credits: (_, c = {}) => (c.zin ? `Je betaalde deze bestelling met credits. ${c.zin}` : c.aantal && c.datum
+        ? `Je betaalde deze bestelling met credits. De ${c.aantal} credits staan weer op je saldo en zijn geldig tot ${c.datum}.`
+        : 'Je betaalde deze bestelling met credits. Die zetten we weer op je saldo; je ziet ze in VISUAILS Studio.'),
+      'credits-niets': () => 'Je betaalde deze bestelling met credits. Die blijven afgeboekt. Heb je daar vragen over, dan beantwoorden we die graag — beantwoord deze mail.',
     },
     portal: 'Naar VISUAILS Studio',
     tail: 'Wil je alsnog iets laten maken, of klopt er iets niet aan deze annulering? Beantwoord deze mail — we lezen elke reactie.',
@@ -87,10 +101,14 @@ const COPY = {
     lede: 'We have cancelled your order. This is the reason:',
     money: {
       refund: (bedrag) => `You paid ${bedrag}. We are refunding that amount to the account you paid with; depending on your bank it shows up within a few working days. We will email you the credit note as soon as the refund is confirmed.`,
-      credit: (bedrag) => `You paid ${bedrag}. That amount stays on your account as credit. Next time you order while signed in to VISUAILS Studio, it comes off the amount to pay automatically.`,
+      credit: (bedrag) => `You paid ${bedrag}. That amount stays on your account as account balance. Next time you order while signed in to VISUAILS Studio, it comes off the amount to pay automatically.`,
       none: () => 'Nothing is being refunded. If you have questions about that, reply to this email — we are happy to answer them.',
       plan: () => 'This order came out of your subscription. The products are back on your list and the credits are back on your balance; you can lock them in again whenever you like.',
       unpaid: () => 'Nothing had been paid yet, so there is nothing to return.',
+      credits: (_, c = {}) => (c.zin ? `You paid for this order with subscription credits. ${c.zin}` : c.aantal && c.datum
+        ? `You paid for this order with subscription credits. The ${c.aantal} credits are back on your balance and valid until ${c.datum}.`
+        : 'You paid for this order with subscription credits. We are putting them back on your balance; you will see them in VISUAILS Studio.'),
+      'credits-niets': () => 'You paid for this order with subscription credits. They stay used. If you have questions about that, reply to this email — we are happy to answer them.',
     },
     portal: 'Go to VISUAILS Studio',
     tail: 'Would you still like something made, or does something about this cancellation look wrong? Reply to this email — we read every reply.',
@@ -106,15 +124,15 @@ const COPY = {
  * @param {string} o.money    één van CANCEL_MONEY
  * @param {number} [o.grossCents]  wat er betaald was (voor 'refund' en 'credit')
  */
-export function cancelEmail({ order = {}, reason = '', money = 'unpaid', grossCents = 0, tegoedCents = 0 }) {
+export function cancelEmail({ order = {}, reason = '', money = 'unpaid', grossCents = 0, tegoedCents = 0, credits = null }) {
   const lang = order.lang === 'en' ? 'en' : 'nl';
   const t = COPY[lang];
-  let geld = t.money[CANCEL_MONEY.includes(money) ? money : 'unpaid'](euro(grossCents, lang));
+  let geld = t.money[CANCEL_MONEY.includes(money) ? money : 'unpaid'](euro(grossCents, lang), credits || {});
   /* Deels of helemaal met tegoed betaald (29 september 2026): dat deel komt
      terug als tegoed, en dat hoort de klant te lezen. */
   if (money === 'refund' && tegoedCents > 0) {
     geld = grossCents > 0
-      ? `${geld} ${lang === 'nl' ? `Daarnaast staat ${euro(tegoedCents, lang)} weer als tegoed op je account.` : `In addition, ${euro(tegoedCents, lang)} is back on your account as credit.`}`
+      ? `${geld} ${lang === 'nl' ? `Daarnaast staat ${euro(tegoedCents, lang)} weer als tegoed op je account.` : `In addition, ${euro(tegoedCents, lang)} is back on your account as account balance.`}`
       : (lang === 'nl'
         ? `Je betaalde deze bestelling met ${euro(tegoedCents, lang)} tegoed. Dat staat weer op je account.`
         : `You paid for this order with ${euro(tegoedCents, lang)} of credit. It is back on your account.`);
@@ -124,7 +142,7 @@ export function cancelEmail({ order = {}, reason = '', money = 'unpaid', grossCe
     p(greeting(order.name, lang)),
     p(esc(t.lede)),
     /* De reden staat als citaat en niet als lopende tekst: het zijn de woorden
-       van onze beeldredactie en niet van de site, en dat mag te zien zijn. */
+       van de studio en niet van de site, en dat mag te zien zijn. */
     note(esc(String(reason || '').trim())),
     p(esc(geld), { top: 4 }),
     linkLine(`${SITE}${lang === 'nl' ? '/nl' : ''}/account`, t.portal),
@@ -141,10 +159,10 @@ export function cancelEmail({ order = {}, reason = '', money = 'unpaid', grossCe
  * mag niet omvallen op een mailserver die hikt — zie de noot bij handleOrderCancel().
  * @returns {Promise<boolean>} of er iets is verstuurd.
  */
-export async function mailCancellation(env, { order, reason, money, grossCents, tegoedCents = 0 }) {
+export async function mailCancellation(env, { order, reason, money, grossCents, tegoedCents = 0, credits = null }) {
   try {
     if (!order?.email) return false;
-    const { subject, html } = cancelEmail({ order, reason, money, grossCents, tegoedCents });
+    const { subject, html } = cancelEmail({ order, reason, money, grossCents, tegoedCents, credits });
     await sendMail(env, { to: order.email, subject, html });
     return true;
   } catch (err) {
@@ -350,18 +368,26 @@ export async function mailBetalingOntvangen(env, orderId) {
     const o = await env.DB.prepare('SELECT ref, email, name, lang FROM orders WHERE id = ?1').bind(orderId).first();
     if (!o?.email) return false;
     const nl = o.lang === 'nl';
+    const lang = nl ? 'nl' : 'en';
+    /* Punt 7.01 (8 oktober 2026): dezelfde opbouw als de betaalmail met factuur —
+       de privélink als knop, "Zo gaat het verder" uit src/lib/verder.js (hier
+       stond de levertijd getypt), en wat er aan foto's ontbreekt. */
+    const ctx = await betaalMailContext(env, o.ref, lang);
     await sendMail(env, {
       to: o.email,
       subject: nl ? `Betaling ontvangen — ${o.ref}` : `Payment received — ${o.ref}`,
       html: shell({
-        lang: nl ? 'nl' : 'en',
+        lang,
         preheader: nl ? 'We zijn aan de slag.' : 'We have started.',
         body: [
           h1(nl ? 'Je betaling is binnen' : 'We have your payment', esc(o.ref)),
-          p(greeting(o.name, nl ? 'nl' : 'en')),
+          p(greeting(o.name, lang)),
           p(nl
-            ? 'Bedankt. We maken je beelden en onze beeldredactie loopt elk beeld na; je krijgt een mail zodra ze klaarstaan (vaak binnen een dag, soms een paar dagen). Je factuur komt in VISUAILS Studio, onder Facturen.'
-            : 'Thank you. We make your images and our image editors check every one; you get an email as soon as they are ready (often within a day, sometimes a few days). Your invoice will be in VISUAILS Studio, under Invoices.'),
+            ? 'Bedankt — je betaling is binnen. Je factuur komt in VISUAILS Studio, onder Facturen.'
+            : 'Thank you — your payment is in. Your invoice will be in VISUAILS Studio, under Invoices.'),
+          button(ctx.link || `https://visuails.com${nl ? '/nl' : ''}/account/orders`, nl ? 'Bekijk je bestelling' : 'See your order'),
+          verderBlokHtml({ lang, levering: ctx.levering, factuur: 'bijgevoegd', ontbreekt: ctx.ontbreekt }),
+          vragen(lang, o.ref),
         ].join(''),
       }),
     });
@@ -376,6 +402,9 @@ export async function mailBetalingOntvangen(env, orderId) {
 export async function mailRondeOntvangen(env, o, n) {
   if (!o?.email) return false;
   const nl = o.lang !== 'en';
+  /* De levertijd uit pricing.js en niet getypt (7.07, 8 oktober 2026). */
+  const [vaak, soms] = levertijdDelen('unattended', nl ? 'nl' : 'en');
+  const wanneer = soms ? ` (${vaak.charAt(0).toLowerCase()}${vaak.slice(1)}, ${soms})` : '';
   try {
     await sendMail(env, {
       to: o.email,
@@ -387,9 +416,10 @@ export async function mailRondeOntvangen(env, o, n) {
           h1(nl ? 'Je revisieronde is binnen' : 'Your revision round is in', nl ? `Referentie ${esc(o.ref)}` : `Reference ${esc(o.ref)}`),
           p(greeting(o.name, nl ? 'nl' : 'en')),
           p(nl
-            ? `We hebben ${n} ${n === 1 ? 'beeld' : 'beelden'} genoteerd met je opmerkingen. Onze beeldredactie past ze aan; je krijgt een mail zodra de nieuwe versies klaarstaan (vaak binnen een dag, soms een paar dagen).`
-            : `We noted ${n} ${n === 1 ? 'image' : 'images'} with your comments. Our image editors adjust them; you get an email as soon as the new versions are ready (often within a day, sometimes a few days).`),
-          spamNote(nl ? 'nl' : 'en'),
+            ? `We hebben ${n} ${n === 1 ? 'beeld' : 'beelden'} genoteerd met je opmerkingen. We passen ze aan; je krijgt een mail zodra de nieuwe versies klaarstaan${wanneer}.`
+            : `We noted ${n} ${n === 1 ? 'image' : 'images'} with your comments. We adjust them; you get an email as soon as the new versions are ready${wanneer}.`),
+          /* 7.07: de vragenregel in plaats van de contactenregel (V21-1). */
+          vragen(nl ? 'nl' : 'en', o.ref),
         ].join(''),
       }),
     });

@@ -4,12 +4,14 @@
 // daar voor waarom deze pagina bestaat en wat er hiervoor in het bestelformulier
 // stond.
 import Layout from '../layouts/Layout.astro';
-import PerProductPage from '../components/PerProductPage.astro';
+// 12 oktober 2026 (afvinklijst 8, alles "doen"): deze pagina staat in de hal (huid="hal");
+// de vorige opmaak staat op _opruimen/LIJST.txt.
+import PerProductHal from '../components/PerProductHal.astro';
 ---
 
-<Layout
+<Layout huid="hal"
   title="What you get per product — VISUAILS"
   description="The four photos every product gets, and the angles you can add per photo. Look at it once, before you fill anything in."
 >
-  <PerProductPage lang="en" />
+  <PerProductHal lang="en" />
 </Layout>

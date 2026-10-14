@@ -42,6 +42,8 @@ const tel = (html, re) => (html.match(re) || []).length;
 /* Alleen het middenvak: de zijbalk noemt elke sectie en de bovenbalk elke
    toestand, en een toets op de hele pagina zou daarop afgaan. */
 const main = (html) => (html.split('<main')[1] || html).split('</main>')[0];
+/* De kop als tekst: in de hal staat het eerste deel in een span (twee tonen, 14 okt). */
+const kop = (html) => ((html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
 
 const studio = await startStudio();
 const pagina = async (pad, opts) => { const r = await studio.fetch(pad, opts); return { status: r.status, html: await r.text(), headers: r.headers }; };
@@ -49,7 +51,11 @@ const pagina = async (pad, opts) => { const r = await studio.fetch(pad, opts); r
 try {
   /* ── 1 · DE VORM ─────────────────────────────────────────────────────────── */
   console.log('\nde vorm van elke pagina');
-  const SCHERMEN = ['/account', '/account/orders', '/account/brand-kit', '/account/details', '/account/invoices', '/account/plan', '/account/plan?tab=bestellen', '/account/plan?tab=edities', '/account/plan?tab=look', '/account/plan?tab=facturering'];
+  /* '/account/plan?tab=bestellen' staat hier niet meer: die tab is weg sinds
+     ronde 10 (8 oktober 2026) en stuurt door — zie "het abonnement" hieronder. */
+  /* Sinds 2.07 (8 oktober 2026) is /account/plan één pagina zonder tabbladen;
+     de oude ?tab=-links sturen door (zie "het abonnement" hieronder). */
+  const SCHERMEN = ['/account', '/account/orders', '/account/brand-kit', '/account/details', '/account/invoices', '/account/plan'];
   const html = {};
   for (const pad of SCHERMEN) {
     const p = await pagina(pad);
@@ -69,7 +75,7 @@ try {
   {
     const h = main(html['/account']);
     /* Ronde 8: de voornaam, niet het merk — "Welkom, VOLT" sprak het bedrijf aan. */
-    ok('begint met de voornaam', /<h1[^>]*>Welkom terug, Mara<\/h1>/.test(html['/account']));
+    ok('begint met de voornaam', kop(html['/account']) === 'Welkom terug, Mara');
     /* En de tellers beginnen bij wat de klant moet doen: te betalen, te beoordelen. */
     ok('telt wat er loopt', /1<\/span>/.test(h) && /status=awaiting_payment/.test(h) && /status=bij_ons/.test(h) && /status=delivered/.test(h));  // ronde 9, F10: de tegel 'Bij ons in de maak' telt betaald-en-nog-niet-geleverd en linkt naar dat filter
     ok('zet de lopende bestelling voorop, met haar tijdlijn', /VIS-2609-4471/.test(h) && /st-flow|is-now/.test(h));
@@ -103,13 +109,14 @@ try {
   console.log('\nje vaste look');
   {
     const h = main(html['/account/brand-kit']);
-    ok('drie diensten, elk als kaart', tel(h, /id="bk-(catalog|lifestyle|video)"/g), 3);
+    /* 2.08: het videoblok is weg (video is op aanvraag). */
+    ok('twee diensten, elk als kaart (geen video meer)', tel(h, /id="bk-(catalog|lifestyle|video)"/g), 2);
     ok('de gezichten worden aangeboden', tel(h, /name="face" value="r[a-z]+"/g) >= 5);
     /* Astro schrijft een lege waarde als kaal `value` — per HTML-spec dezelfde lege string. */
-    ok('"geen voorkeur" is een echte keuze', tel(h, /name="face" value(=""|[ >])/g) >= 3);
+    ok('"geen voorkeur" is een echte keuze', tel(h, /name="face" value(=""|[ >])/g) >= 2);
     ok('catalog kent een ondergrond, lifestyle een look', /name="background_hex"/.test(h) && /name="look"/.test(h));
     ok('de kleuren staan als svg en niet als style', tel(h, /<rect width="1" height="1" fill="#/g) >= 3);
-    ok('en opslaan gaat naar /account/lock', tel(h, /action="\/account\/lock"/g), 3);
+    ok('en opslaan gaat naar /account/lock', tel(h, /action="\/account\/lock"/g), 2);
   }
 
   console.log('\nje gegevens');
@@ -136,62 +143,31 @@ try {
   console.log('\nhet abonnement');
   {
     const h = main(html['/account/plan']);
-    /* ── DRIE TABBEN, ÉÉN VERHAAL — 19 september 2026 ───────────────────────
-       Vijf tabben werden er drie (overzicht, producten, facturering); de look
-       staat als feitenregel op het overzicht met een link naar /account/brand-kit,
-       Editions is één regel, de vrije slots zijn één tegel met het aantal en de
-       week is een zin met echte datums. Oude tab-links landen op het overzicht. */
-    ok('de drie tabben staan er', ['/account/plan"', 'tab=bestellen', 'tab=facturering'].every((t) => h.includes(t)));
-    ok('  en de twee oude niet meer', !/tab=edities|tab=look/.test(h));
-    /* ── ÉÉN BALK EN EEN STROOK — 20 september 2026 ────────────────────────
-       Hier werden vier kaders geteld: de gemaakte en vastgezette slots van de
-       maand, plus één tegel met het aantal vrije. Dat hing aan een saldo PER
-       SOORT, en dat bestaat niet meer — er is één creditsaldo en een prijs per
-       dienst (zie SERVICE_CREDITS in pricing.js).
-
-       Wat ervoor in de plaats komt en hier getoetst wordt: de balk met zijn
-       stand als klasse (geen inline stijl, want CSP), en een strook met wat er
-       ECHT gemaakt is. De "vrije" tegel is weg en dat is geen verlies maar een
-       correctie: een credit is geen product, dus een leeg vakje per credit zou
-       120 beelden beloven waar er geen 120 in zitten. */
-    ok('de creditbalk staat er met zijn stand als klasse', /class="st-credit-vul is-p\d+"/.test(h));
+    /* ── ÉÉN PAGINA ZONDER TABBLADEN — 8 oktober 2026 (punt 2.07) ──────────
+       Van boven naar beneden: saldo (uit het creditboek), twee bestelknoppen
+       met de vaste look, de creditkaart, de maandset, het creditboek en "Je
+       plan" met pauzeren en opzeggen. Zie ook tests/abonnementspagina.test.mjs. */
+    ok('geen tabbladen meer', !/st-tabs|tab=(facturering|bestellen|planning|look|edities)/.test(h));
+    ok('het saldo uit het creditboek', /class="[^"]*st-abo-saldo/.test(h) && /Je hebt (geen credits|\d+ credits?)/.test(h));
     ok('  en niet als inline stijl', !/style="[^"]*width:/.test(h));
-    ok('de strook toont echt werk en geen lege vakjes',
-      tel(h, /class="st-frame is-gemaakt"/g) >= 1 && tel(h, /class="st-frame is-vrij/g) === 0);
-    ok('elke dienst staat als kaart met zijn creditprijs', tel(h, /class="st-dienst["\s]/g) >= 4);
+    ok('twee bestelknoppen naar het gewone formulier', /href="(\/nl)?\/start\/catalog\//.test(h) && /href="(\/nl)?\/start\/lifestyle\//.test(h));
+    ok('de creditkaart staat erop (6.01)', /<section class="ck[\s"]/.test(h));
     ok('  en de complete bundel staat er niet meer bij', !/Complete bundel|Complete bundle/.test(h));
-    ok('de week is een zin met echte datums, geen strook', tel(h, /class="st-dag[ "]/g) === 0 && /loopt van|runs from/.test(h));
-    ok('de vaste look staat als regel op het overzicht, met een link', /st-lookstrip/.test(h) && /href="\/account\/brand-kit"/.test(h));
+    ok('het creditboek', /id="creditboek"/.test(h));
+    ok('je plan met termijn en bedrag', /id="je-plan"/.test(h) && /maandelijks|monthly/.test(h) && /€/.test(h));
+    ok('pauzeren en opzeggen, met een verplichte reden', /action="\/account\/plan\/pause"/.test(h) && /action="\/account\/plan\/cancel"/.test(h) && /name="reden" value="credits" required/.test(h));
+    ok('opzeggen biedt eerst pauzeren aan', /st-stop-aanbod/.test(h) && /formaction="\/account\/plan\/pause"/.test(h));
+    ok('er is geen vaste week meer: geen strook, geen zin, geen formulier', tel(h, /class="st-dag[ "]/g) === 0 && !/loopt van|runs from/.test(h) && !/\/account\/plan\/week/.test(h));
+    ok('de knop "Bestellen" wijst naar het gewone bestelformulier', /href="(\/nl)?\/start"[^>]*>(Bestellen|Order)</.test(html['/account/plan']));
     ok('en Editions als één regel', /st-editions-regel/.test(h));
-    ok('de maandset-kaart staat op de maandtab', /st-maandset|De maandset|monthly set/i.test(h));
+    ok('de maandset-kaart staat erop', /st-maandset|De maandset|monthly set/i.test(h));
 
-    const lijst = main(html['/account/plan?tab=bestellen']);
-    ok('de lijst noemt beide items', /Grijze hoodie/.test(lijst) && /Zwarte cargo/.test(lijst));
-    ok('met een vastzetknop en een merkje', /name="do" value="(lock|unlock)"/.test(lijst) && /st-q-merk/.test(lijst));
-    ok('elk item draagt een kader', tel(lijst, /class="st-q-frame/g), 2);
-    ok('het formulier vraagt per vak: voorkant, achterkant, detail, gedragen', ['fotos_voorkant', 'fotos_achterkant', 'fotos_detail', 'fotos_gedragen'].every((n) => lijst.includes(`name="${n}"`)));
-    ok('  en de productsoort', /name="soort"/.test(lijst));
-    ok('  en "foto\u2019s toevoegen" op een conceptregel', /name="do" value="fotos"/.test(lijst));
-    ok('de lijst staat niet op de maandtab', !/Zwarte cargo/.test(h));
-    /* ── RONDE 4, 19 september 2026: sneller bestellen in Studio ──────────────
-       Het gezicht per product (migratie 0050), "meteen vastzetten" op het
-       productvak, de poort op de look als regel bij het concept, en de week
-       verzetten op het overzicht. */
-    ok('het productvak heeft een gezicht per product', /name="model"/.test(lijst) && /<optgroup/.test(lijst) && /Ava/.test(lijst));
-    ok('  en een vinkje "meteen vastzetten"', /name="meteen" value="1"/.test(lijst));
-    ok('  en een gezicht-keuze op de conceptregel', /name="do" value="model"/.test(lijst));
-    ok('de poort op de look staat bij het concept, met een link naar de kaart', /st-q-look-open/.test(lijst) && /href="\/account\/brand-kit#bk-lifestyle"/.test(lijst) && /Lifestyle/.test(lijst));
-    ok('  en de vastzetknop van dat concept staat uit', /value="lock"[\s\S]{0,200}disabled/.test(lijst));
-    ok('het overzicht laat de week verzetten', /action="\/account\/plan\/week"/.test(h) && /name="dag"/.test(h) && /value="8" selected/.test(h));
-
-    const look = main(html['/account/plan?tab=look']);
-    ok('een oude look-link landt op het overzicht', /st-lookstrip/.test(look));
-    const ed = main(html['/account/plan?tab=edities']);
-    ok('een oude editions-link landt op het overzicht', /st-editions-regel/.test(ed));
-
-    const beheer = main(html['/account/plan?tab=facturering']);
-    ok('beheer toont de termijn en het bedrag', /maand/i.test(beheer) && /€/.test(beheer));
-    ok('en biedt pauzeren en opzeggen aan', /\/account\/plan\/pause/.test(beheer) && /\/account\/plan\/cancel/.test(beheer));
+    /* De oude tabbladen sturen door naar de ene pagina; Facturering naar "Je plan". */
+    for (const [tab, waar] of [['bestellen', '/account/plan'], ['look', '/account/plan'], ['edities', '/account/plan'], ['facturering', '/account/plan#je-plan']]) {
+      const oud = await pagina(`/account/plan?tab=${tab}`);
+      ok(`een oude link ?tab=${tab} stuurt door naar ${waar}`, [oud.status, oud.headers.get('location')], [303, waar]);
+    }
+    ok('de lijst staat niet op de pagina', !/Zwarte cargo/.test(h));
   }
 
   console.log('\nzonder abonnement');
@@ -200,8 +176,10 @@ try {
     const h = main(p.html);
     ok('NOORD ziet de lege stand, in het Engels', p.status === 200 && /st-geenabo/.test(h) && /plan/i.test(h) && !/Zwarte cargo/.test(h));
     ok('met twee knoppen naar bestaande pagina\'s', /href="\/plans"/.test(h) && /href="\/start"/.test(h));
-    ok('en de drie uitlegblokken als beeld', tel(h, /st-uitleg-blok/g), 3);
-    ok('de voorbeeldweek staat erin', tel(h, /class="st-dag[ "]/g), 28);
+    /* Twee blokken sinds ronde 10 (8 oktober 2026): de credits en de look. De
+       voorbeeldweek als derde blok is weg met de vaste week. */
+    ok('en de twee uitlegblokken als beeld', tel(h, /st-uitleg-blok/g), 2);
+    ok('zonder voorbeeldweek', tel(h, /class="st-dag[ "]/g), 0);
   }
 
   /* ── 3 · DE DEUREN ───────────────────────────────────────────────────────── */
@@ -211,14 +189,18 @@ try {
     ok('?lang= zet een cookie en stuurt terug zonder de parameter', [r.status, r.headers.get('location')], [303, '/account']);
     ok('en de cookie geldt voor het dashboard', /vis_lang=en/.test(r.headers.get('set-cookie') || '') && /Path=\/account/.test(r.headers.get('set-cookie') || ''));
     const en = (await pagina('/account', { cookie: 'vis_lang=en' })).html;
-    ok('de keuze wint van de taal van de laatste bestelling', /<h1[^>]*>Welcome back, Mara<\/h1>/.test(en));
+    ok('de keuze wint van de taal van de laatste bestelling', kop(en) === 'Welcome back, Mara');
     const nav = await studio.fetch('/account/orders?nav=dicht');
     ok('?nav=dicht doet hetzelfde voor de zijbalk', [nav.status, nav.headers.get('location'), /vis_nav=dicht/.test(nav.headers.get('set-cookie') || '')], [303, '/account/orders', true]);
+    /* 14 oktober 2026 (v26-donker a): Studio is alleen licht. Een oude link
+       met ?thema= stuurt nog terug, maar zonder cookie, en een oude vis_thema
+       maakt niets meer donker. */
     const thema = await studio.fetch('/account/plan?tab=look&thema=donker');
-    ok('?thema=donker ook, en houdt de tab vast', [thema.status, thema.headers.get('location')], [303, '/account/plan?tab=look']);
+    ok('?thema=donker stuurt terug, houdt de tab vast en zet geen cookie', [thema.status, thema.headers.get('location'), thema.headers.get('set-cookie')], [303, '/account/plan?tab=look', null]);
     const donker = (await pagina('/account', { cookie: 'vis_thema=donker' })).html;
-    ok('met de cookie is de pagina donker', /data-thema="donker"/.test(donker) && /class="[^"]*on-ink/.test(donker));
-    ok('zonder cookie licht', /data-thema="licht"/.test(html['/account']));
+    ok('een oude vis_thema maakt de pagina niet donker', /data-thema="licht"/.test(donker) && !/class="[^"]*on-ink/.test(donker) && /class="[^"]*st-hal/.test(donker));
+    ok('zonder cookie licht, in de hal', /data-thema="licht"/.test(html['/account']) && /class="[^"]*st-hal/.test(html['/account']));
+    ok('en er staat geen maantje meer', !/\?thema=/.test(html['/account']));
 
     const anon = await studio.fetch('/account/plan', { token: null });
     ok('zonder sessie is het de inlog', [anon.status, anon.headers.get('location')], [303, '/account/login']);

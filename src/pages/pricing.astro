@@ -6,7 +6,9 @@
 // body is: a price typed into a <meta> tag is still a price the ladder cannot
 // enforce, and it is the one place a stale figure survives a page rewrite.
 import Layout from '../layouts/Layout.astro';
-import PricingPage from '../components/PricingPage.astro';
+// 12 oktober 2026 (afvinklijst 8, alles "doen"): deze pagina staat in de hal (huid="hal");
+// de vorige opmaak staat op _opruimen/LIJST.txt.
+import PricingHal from '../components/PricingHal.astro';
 //
 // It named the two packages until August 2026. It names the shape of the
 // ladder now (section 0 of src/data/pricing.js): the entry rate, the floor,
@@ -24,6 +26,6 @@ const description =
   `${vatLabel('excl', 'en')}.`;
 ---
 
-<Layout title="Pricing — the rate per product, in full | VISUAILS" description={description}>
-  <PricingPage lang="en" />
+<Layout huid="hal" title="Pricing — the rate per product, in full | VISUAILS" description={description}>
+  <PricingHal lang="en" />
 </Layout>

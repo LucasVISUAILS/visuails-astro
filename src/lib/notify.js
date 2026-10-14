@@ -46,6 +46,12 @@
 import { serviceLabel } from '../data/services.js';
 import { sendMail } from './mail.js';
 import { shell, h1, p as mailP, rows as rijenHtml, quote as quoteHtml, statusPil, bedrag as mailBedrag, datum, esc } from './mailTemplate.js';
+/* De klant bereiken bij een open betaling of een mislukte incasso (punt 7.05,
+   8 oktober 2026): de knop met de vaste tekst, Bellen voorop bij een
+   Nederlandse klant. Zie src/lib/waLink.js. */
+import { button as mailKnop, linkLine } from './mailTemplate.js';
+import { waLink, contactMail } from './waLink.js';
+import { CREDITS_GELDIG_MAANDEN } from '../data/pricing.js';
 
 /* ── WAARDEN IN DE STUDIOMAIL WORDEN ONTSNAPT — 29 september 2026 ──────────
    rows() en quote() uit mailTemplate.js nemen HTML aan. Hier gingen merknamen,
@@ -66,7 +72,12 @@ async function orderFor(env, orderId) {
          Lucas te laten BELLEN, en een telefoonnummer dat je er zelf bij moet
          zoeken is een telefoonnummer dat niet gebeld wordt. */
       `SELECT id, ref, service, email, phone, brand, first_name, last_name, name,
-              product_count, total_cents, vat_cents, country, window_start, window_end
+              product_count, total_cents, vat_cents, country, window_start, window_end,
+              /* Voor de vaste tekst aan de klant (7.05): taal, betaalklok en het
+                 nummer van de klant als de bestelling er geen heeft. */
+              lang, created_at, review_state, reviewed_at, payment_status, status,
+              (SELECT c.phone FROM customers c WHERE c.id = orders.customer_id) AS c_phone,
+              (SELECT c.country FROM customers c WHERE c.id = orders.customer_id) AS c_country
          FROM orders WHERE id = ?1`
     ).bind(orderId).first();
   } catch {
@@ -157,6 +168,11 @@ export async function notifyPaymentFailed(env, orderId, reason = '') {
       mailP('De bestelling staat nog op onbetaald en de klant kan het opnieuw proberen '
         + 'in VISUAILS Studio. Meestal is dit geen afhaker maar iemand die zijn '
         + 'zakelijke rekening niet bij de hand had — één bericht lost het vaak op.'),
+      /* 7.05, moment 1: de knop met de vaste tekst (betaling staat open). Niet bij
+         een bestelling die inmiddels betaald of geannuleerd is. */
+      o && o.payment_status !== 'paid' && o.status !== 'cancelled'
+        ? contactMail(waLink('betaling', { ...o, country: o.country || o.c_country }), { wie: who(o), knop: mailKnop, regel: linkLine })
+        : '',
     ].join(''), o?.email || '');
   } catch (err) {
     console.error('[notify] mislukte-betaling-bericht niet verstuurd voor', orderId, '—', err?.message || err);
@@ -219,8 +235,12 @@ export async function notifyChargeback(env, { orderId, betaalId, bedragCents, to
         ['Betaling', betaalId || ''],
         ['Teruggeboekt', `${cents(bedragCents)}${totaalCents ? ` van ${cents(totaalCents)}` : ''}`],
       ]),
-      mailP('Mollie heeft het bedrag van je saldo afgeschreven (plus hun kosten). De bestelling staat nog op betaald en loopt door: '
-        + 'zet hem stil als je nog niet geleverd hebt, en neem contact op met de klant. In het Mollie-dashboard kun je de terugboeking betwisten.'),
+      mailP('Mollie heeft het bedrag van je saldo afgeschreven (plus hun kosten). De bestelling staat in /admin met de rode pil '
+        + '<strong>Betaling teruggeboekt — niet leveren</strong>; "Op geleverd zetten" vraagt dan om een extra bevestiging. '
+        + 'Draait Mollie de terugboeking terug, dan verdwijnt de pil vanzelf. Neem contact op met de klant: het kan ook een bankfout zijn. '
+        + 'In het Mollie-dashboard kun je de terugboeking betwisten.'),
+      /* 8.11: Bel/App met de vaste tekst (waLink.js, moment terugboeking). */
+      o ? contactMail(waLink('terugboeking', { ...o, tel: o.phone || o.c_phone, land: o.country || o.c_country }), { wie: who(o), knop: mailKnop, regel: linkLine }) : '',
     ].join(''), o?.email || '');
   } catch (err) {
     console.error('[notify] bericht over terugboeking niet verstuurd voor', orderId, '—', err?.message || err);
@@ -299,51 +319,6 @@ export async function notifySampleBlocked(env, { orderId, earlierRef, earlierAt,
   }
 }
 
-/**
- * Een abonnee heeft een ingeplande dag NAAR VOREN gehaald.
- *
- * Lucas, 19 september 2026: *"ze kunnen orders in de planning ook vooruit
- * slepen naar een andere datum (…) Zorg ervoor dat als dit gebeurt ik een
- * melding krijg en dat deze order ook in mijn planning is verplaatst."*
- *
- * Het tweede deel van die zin regelt zichzelf en het is goed om te weten
- * waarom: de dagen van een vastgezet item staan op `plan_queue.window_start`,
- * en src/lib/agenda.js leest diezelfde kolom voor de bezetting. Jouw planning
- * IS dus dezelfde rij — er valt niets te synchroniseren, alleen te melden.
- *
- * Waarom die melding er toch toe doet: de dag schuift naar VOREN en nooit naar
- * achteren, dus er komt werk dichter bij je toe dan je gisteren dacht. Dat is
- * precies het soort verandering waarvan je niet wilt dat hij alleen in een
- * kalender staat.
- */
-export async function notifyPlanMoved(env, { subRef, brand, email, product, van, naar, vrijgekomen }) {
-  try {
-    const ref = subRef || '(zonder kenmerk)';
-    await toStudio(
-      env,
-      `Dag naar voren · ${ref} · ${product} · ${van} → ${naar}`,
-      [
-        h1('Een abonnee haalde een dag naar voren', ref),
-        mailRows([
-          ['Abonnement', ref],
-          ['Klant', brand || email || '—'],
-          ['E-mail', email || ''],
-          ['Product', product || '—'],
-          ['Stond op', van || '—'],
-          ['Staat nu op', naar || '—'],
-          ['Komt vrij', vrijgekomen || '—'],
-        ]),
-        mailP('De klant deed dit zelf in Studio, en het kon alleen naar voren — '
-          + 'een datum naar achteren schuiven kan hij niet. De planning is hiermee '
-          + 'al bijgewerkt: een vastgezet item draagt zijn dagen zelf, en de agenda '
-          + 'leest diezelfde rij. Er hoeft niets van jou, behalve weten dat dit werk '
-          + 'eerder klaar moet zijn dan het gisteren stond.'),
-      ].join('')
-    );
-  } catch (err) {
-    console.error('[notify] verzetbericht niet verstuurd voor', subRef, '—', err?.message || err);
-  }
-}
 
 /**
  * Een klant heeft een revisie aangevraagd.
@@ -480,21 +455,30 @@ export async function notifyRevisionRound(env, { orderId, items = [] }) {
  * neer te zetten. Nu wel — en dan hoort de studio dat ze er zijn, want daar
  * wacht het werk op.
  */
-export async function notifyFotosToegevoegd(env, { orderId, count }) {
+/* Punt 2.05 (8 oktober 2026): `vakken` noemt waar elke foto terechtkwam
+   ("p3 achterkant, p5 detail"), `ontbreekt` wat er daarna nog mist (regels uit
+   ontbrekendRegels(); null = onbekend, dan geen regel). Beide optioneel. */
+export async function notifyFotosToegevoegd(env, { orderId, count, vakken = [], ontbreekt = null }) {
   try {
     const o = await orderFor(env, orderId);
     const ref = o?.ref || `#${orderId}`;
+    const rijen = [
+      ['Bestelling', ref],
+      ['Klant', who(o)],
+      ['Foto\u2019s', String(count)],
+    ];
+    const metVak = Array.isArray(vakken) && vakken.length > 0;
+    if (metVak) rijen.push(['Vakken', vakken.join(', ')]);
+    if (Array.isArray(ontbreekt)) rijen.push(['Ontbreekt nog', ontbreekt.length ? ontbreekt.join('; ') : 'niets']);
     await toStudio(
       env,
       `Foto's binnen · ${ref} · ${count}`,
       [
         h1('De klant heeft foto\u2019s toegevoegd', ref),
-        mailRows([
-          ['Bestelling', ref],
-          ['Klant', who(o)],
-          ['Foto\u2019s', String(count)],
-        ]),
-        mailP('Ze staan bij de bestelling onder \u201cAangeleverd door de klant\u201d.'),
+        mailRows(rijen),
+        mailP(metVak
+          ? 'Ze staan op het bord van de bestelling, elk in zijn vak, met \u201cnagestuurd\u201d erbij.'
+          : 'Ze staan bij de bestelling onder \u201cAangeleverd door de klant\u201d.'),
       ].join(''),
       o?.email || '',
     );
@@ -553,10 +537,36 @@ export async function notifySubscriptionFailed(env, {
           : mailP('Mollie probeert het binnenkort opnieuw. Het abonnement loopt gewoon door; de klant '
             + 'heeft een mail gekregen dat de afschrijving niet lukte. Komt dit bericht nog een keer, '
             + 'dan is er iets met de rekening van de klant.'),
+        /* 7.05, moment 4: de knop met de vaste tekst (incasso mislukt). */
+        await incassoContact(env, { email, brand }),
       ].join('')
     );
   } catch (err) {
     console.error('[notify] incassobericht niet verstuurd voor', subRef, '—', err?.message || err);
+  }
+}
+
+/* De klant van een abonnement bereiken (7.05, moment 4). Het nummer, het land
+   en de naam staan op `customers`; de taal is die van zijn laatste
+   abonnementsfactuur, anders van zijn laatste bestelling (zoals KLANT_TAAL_SQL
+   in cron/index.js). Lukt het lezen niet, dan geen knop: de mail gaat door. */
+async function incassoContact(env, { email, brand }, moment = 'incasso', extra = {}) {
+  if (!email || !env?.DB) return '';
+  try {
+    const k = await env.DB.prepare(
+      `SELECT c.name, c.first_name, c.phone, c.country,
+              COALESCE(
+                (SELECT si.lang FROM subscription_invoices si JOIN subscriptions s ON s.id = si.subscription_id
+                  WHERE s.customer_id = c.id ORDER BY si.id DESC LIMIT 1),
+                (SELECT o.lang FROM orders o WHERE o.customer_id = c.id ORDER BY o.id DESC LIMIT 1),
+                'nl') AS lang
+         FROM customers c WHERE lower(c.email) = lower(?1) LIMIT 1`
+    ).bind(email).first();
+    if (!k) return '';
+    return contactMail(waLink(moment, { ...k, email, ...(extra.o || {}) }, extra), { wie: brand || k.name || email, knop: mailKnop, regel: linkLine });
+  } catch (err) {
+    console.error('[notify] contactknop bij incasso niet gemaakt —', err?.message || err);
+    return '';
   }
 }
 
@@ -583,9 +593,17 @@ export async function notifySubscriptionFailed(env, {
  */
 export async function notifySubscriptionRefunded(env, {
   subRef, plan, brand, email, bedragCents = 0, terugCents = 0, maand = '', volledig = false, molliestatus = '',
+  credits = null,
 }) {
   try {
     const ref = subRef || '(zonder kenmerk)';
+    /* V49 = a (8 oktober 2026): de credits van deze termijn. `credits` komt uit
+       vervalTermijn() in src/lib/creditboek.js; null als er geen partij was. */
+    const creditRegels = credits ? [
+      ['Credits van deze termijn', `${credits.toegekend} toegekend · ${credits.gebruikt} gebruikt · ${credits.ongebruikt} ongebruikt`],
+      ['Nu vervallen', `${credits.vervielNu} credits`],
+      ['Creditnota (ongebruikt deel)', credits.ongebruiktCents === null ? '—' : cents(credits.ongebruiktCents)],
+    ] : [];
     await toStudio(
       env,
       `Geld terug op een abonnement · ${ref}${volledig ? ' · volledig' : ' · gedeeltelijk'}`,
@@ -600,13 +618,20 @@ export async function notifySubscriptionRefunded(env, {
           ['Afgeschreven', cents(bedragCents)],
           ['Terugbetaald', cents(terugCents)],
           ['Status bij Mollie', { html: molliestatus ? statusPil(molliestatus, mollieWoord(molliestatus)) : statusPil('unknown', 'onbekend') }],
+          ...creditRegels,
         ]),
+        credits
+          ? mailP('Volgens de regel van 8 oktober (V49): de creditnota is alleen voor het ongebruikte deel, '
+            + 'en de ongebruikte credits van deze termijn zijn nu vervallen (regel "terugbetaald" in het creditboek). '
+            + 'Wat al gebruikt is, blijft gebruikt.')
+          : '',
         mailP(volledig
           ? 'De hele termijn is terug. Het abonnement staat op pauze, dus er komt geen '
-            + 'volgende maand bij. De maand die al was toegekend is NIET ingetrokken — die kan '
-            + 'half besteed zijn, en dan haal je slots weg onder een bestelling die al loopt.'
-          : 'Een deel van de termijn is terug. Het abonnement loopt door; alleen het bedrag is '
-            + 'vastgelegd. Klopt dat niet, dan is dit het moment om het met de hand recht te zetten.'),
+            + 'volgende maand bij. Bestellingen die al met credits van deze termijn betaald zijn, '
+            + 'blijven staan; alleen wat er ongebruikt van over was, is vervallen.'
+          : 'Een deel van de termijn is terug. Het abonnement loopt door; het bedrag is vastgelegd '
+            + 'en de ongebruikte credits van deze termijn zijn vervallen. Klopt dat niet, dan zet je '
+            + 'ze terug met "Credits bijstellen" in /admin.'),
         mailP('Twee dingen die JIJ moet doen: de creditnota uitschrijven (abonnementsfacturen '
           + 'hebben nog geen automatische creditnotaroute — zie de noot bij deze functie), en de '
           + 'klant laten weten wat er is gebeurd.'),
@@ -617,41 +642,6 @@ export async function notifySubscriptionRefunded(env, {
   }
 }
 
-/*
- * ═══════════════════════════════════════════════════════════════════════════
- * EEN ABONNEE HEEFT ZIJN WEEK VERZET — RONDE 4, 19 SEPTEMBER 2026
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * Lucas: *"Week verzetten door de klant zelf."* Tot vandaag zei het scherm
- * "antwoord op een van onze mails, dan schuiven we hem" — er was geen route.
- * Nu verzet de klant hem zelf op /account/plan; dit bericht is er zodat jij
- * het ziet, want jouw planning (checkPlanQueues, de weekmail vijf dagen vooraf)
- * rekent met de nieuwe dag vanaf de eerstvolgende keer dat hij loopt.
- */
-export async function notifyPlanWeekMoved(env, { subRef, brand, email, van, naar }) {
-  try {
-    const ref = subRef || '(zonder kenmerk)';
-    await toStudio(
-      env,
-      (van ? `Week verzet · ${ref} · van de ${van}e naar de ${naar}e` : `Week gekozen · ${ref} · vanaf de ${naar}e`),
-      [
-        h1('Een abonnee verzette zijn week', ref),
-        mailRows([
-          ['Abonnement', ref],
-          ['Klant', brand || email || '—'],
-          ['E-mail', email || ''],
-          ['Was', van ? `vanaf de ${van}e van de maand` : '—'],
-          ['Wordt', `vanaf de ${naar}e van de maand`],
-        ]),
-        mailP('De klant deed dit zelf in Studio. Alles wat al vastgezet en op een dag '
-          + 'gepland stond, blijft staan; de weekmail en het oppakken van de lijst '
-          + 'volgen vanaf nu de nieuwe dag. Er hoeft niets van jou.'),
-      ].join('')
-    );
-  } catch (err) {
-    console.error('[notify] weekverzetbericht niet verstuurd voor', subRef, '—', err?.message || err);
-  }
-}
 
 /* ── EEN NIEUW ABONNEMENT — 23 september 2026 ──────────────────────────────
    Uit de doorloop: de studio hoorde niets van een nieuwe machtiging. Eén
@@ -669,13 +659,12 @@ export async function notifySubscriptionStarted(env, { subRef, plan, term, brand
         ['Plan', `${plan || ''}${term ? ` · ${({ monthly: 'maandelijks', yearly: '12 maanden', prepaid: '12 maanden vooruit' })[term] || term}` : ''}`],
         ['Credits per maand', String(credits ?? '')],
         ['Eerste afschrijving', cents(bedragCents)],
-        ['Vaste week rond dag', windowDay ? String(windowDay) : '—'],
       ]),
       mailP((term === 'prepaid'
         ? 'Het hele jaar is vooruitbetaald en de credits van de eerste maand staan op het account; elke volgende maand zet de nachtelijke taak erbij. '
         : 'De eerste maand is betaald en de credits staan op het account. ')
-        + 'De klant kreeg een welkomstmail met een inlogknop. Hij vult zijn lijst in Studio; '
-        + 'de week start jij vanuit /admin/customers zodra er genoeg op staat.'),
+        + 'De klant kreeg een welkomstmail met een inlogknop. Hij bestelt via het gewone formulier en '
+        + 'betaalt met credits; die bestellingen komen binnen zoals alle andere.'),
       twijfel
         ? mailP(`<strong>Even nakijken:</strong> dit abonnement staat op 0% (buiten de EU), maar ${esc(twijfel)}. `
           + 'Kijk of het echt een bedrijf buiten de EU is; klopt het niet, zeg het abonnement op en laat de klant opnieuw afsluiten met het juiste land.')
@@ -686,10 +675,38 @@ export async function notifySubscriptionStarted(env, { subRef, plan, term, brand
   }
 }
 
+/* ── EEN ABONNEMENT DAT OP JE WACHT: LAND BUITEN DE EU, IP IN DE EU — 8 oktober 2026 ──
+   o16 uit de afvinklijst. Een bestelling met deze combinatie gaat op de btw-lijst
+   in /admin; een abonnement heeft die lijst niet. Daarom dit bericht: er is
+   niets afgeschreven en er staat nog geen abonnement, de klant las "we kijken je
+   gegevens even na". Wat jij doet, staat in de mail zelf. */
+export async function notifyAboBtwNakijken(env, { customerId, email, brand, phone, plan, term, land, ipLand }) {
+  try {
+    const origin = env.PUBLIC_ORIGIN || 'https://visuails.com';
+    await toStudio(env, `Even nakijken: abonnement · ${brand || email || ''} · ${land} vanaf ${ipLand}`, [
+      h1('Een abonnement wacht op je: land buiten de EU, ip in de EU', brand || email || ''),
+      mailRows([
+        ['Klant', brand || '—'],
+        ['E-mail', email || ''],
+        ['Telefoon', phone || ''],
+        ['Plan', `${plan || ''}${term ? ` · ${({ monthly: 'maandelijks', yearly: '12 maanden', prepaid: '12 maanden vooruit' })[term] || term}` : ''}`],
+        ['Gekozen land', land || ''],
+        ['Land van het ip-adres', ipLand || ''],
+        ['Klantpagina', { html: `<a href="${esc(`${origin}/admin/customers/${customerId}`)}">${esc(`/admin/customers/${customerId}`)}</a>` }],
+      ]),
+      mailP('Er is niets afgeschreven en er staat nog geen abonnement. De klant las dat we zijn gegevens eerst nakijken en dat hij meestal binnen het uur van ons hoort (buiten openingstijden de volgende ochtend). '
+        + 'Klopt het land (een bedrijf buiten de EU, met iemand die nu in Europa is)? Druk dan op de klantpagina op "Land goedkeuren" en vraag de klant het formulier nog een keer te versturen; dan gaat hij gewoon door naar de betaling, met 0% btw. '
+        + 'Klopt het niet, vraag hem dan opnieuw af te sluiten met het land waar zijn bedrijf echt zit (dan met btw).'),
+    ].join(''), email || '');
+  } catch (err) {
+    console.error('[notify] nakijkbericht abonnement niet verstuurd voor', email, '—', err?.message || err);
+  }
+}
+
 /* ── PAUZEREN, HERVATTEN, OPZEGGEN — 24 september 2026 ──────────────────────
    Een klant die zijn abonnement stopt, is precies de klant waar je als studio
    iets over wilt horen — tot vandaag gebeurde het zonder bericht. */
-export async function notifyAboWijziging(env, { soort, subRef, plan, brand, email, jaarDoor = null, prepaid = false }) {
+export async function notifyAboWijziging(env, { soort, subRef, plan, brand, email, jaarDoor = null, prepaid = false, reden = '', vanaf = null, creditsBespreken = false }) {
   const woord = { pauze: 'gepauzeerd', hervat: 'hervat', opgezegd: 'opgezegd' }[soort] || soort;
   try {
     await toStudio(env, `Abonnement ${woord} · ${subRef || ''} · ${brand || email || ''}`, [
@@ -699,20 +716,104 @@ export async function notifyAboWijziging(env, { soort, subRef, plan, brand, emai
         ['Klant', brand || email || '—'],
         ['E-mail', email || ''],
         ['Plan', plan || ''],
+        /* 2.07: de reden is verplicht bij pauzeren en opzeggen. */
+        ...(reden ? [['Reden', reden]] : []),
+        ...(vanaf ? [['Pauze gaat in op', datum(vanaf, 'nl')]] : []),
       ]),
+      /* De klant weet niet wat hij met zijn credits moet: bellen of appen is
+         nu het meest waard (Lucas bij 2.07). */
+      creditsBespreken
+        ? mailP('De klant gaf als reden dat het niet duidelijk is wat te doen met de overige credits. Even meekijken (website, kanalen) en een dienst voorstellen is nu het meest waard.')
+          + await incassoContact(env, { email, brand }, 'credits')
+        : '',
       mailP(soort === 'opgezegd' && jaarDoor !== null
-        ? `De klant heeft zelf opgezegd in Studio. Het is een <strong>vooruitbetaald jaar</strong>: dat loopt gewoon door${jaarDoor && jaarDoor !== 'onbekend' ? ` tot ${datum(jaarDoor, 'nl')}` : ' tot het einde'}, met elke maand de credits en de vaste week, en stopt daarna vanzelf. Er hoeft niets met de hand te gebeuren — geen tegoed, geen terugbetaling. Even vragen waarom is nu het meest waard.`
+        ? `De klant heeft zelf opgezegd in Studio. Het is een <strong>vooruitbetaald jaar</strong>: dat loopt gewoon door${jaarDoor && jaarDoor !== 'onbekend' ? ` tot ${datum(jaarDoor, 'nl')}` : ' tot het einde'}, met elke maand de credits, en stopt daarna vanzelf. Er hoeft niets met de hand te gebeuren — geen tegoed, geen terugbetaling.`
         : soort === 'opgezegd'
-        ? 'De klant heeft zelf opgezegd in Studio. De incasso bij Mollie is gestopt; betaalde credits blijven tot het einde van de termijn te besteden. Even vragen waarom is nu het meest waard.'
+        ? `De klant heeft zelf opgezegd in Studio. De incasso bij Mollie is gestopt; de credits blijven geldig tot ${CREDITS_GELDIG_MAANDEN} maanden na de laatste termijn.`
         : soort === 'pauze'
           ? (prepaid
             ? 'De klant heeft zelf gepauzeerd in Studio. Het is een vooruitbetaald jaar, dus er is geen incasso: de nachtelijke taak kent geen nieuwe maanden toe tot hij hervat. Het saldo blijft staan.'
-            : 'De klant heeft zelf gepauzeerd in Studio. De incasso bij Mollie is gestopt; het saldo blijft staan.')
+            : `De klant heeft zelf gepauzeerd in Studio. De incasso bij Mollie is gestopt${vanaf ? `; de lopende termijn loopt door en de pauze gaat in op ${datum(vanaf, 'nl')}` : ''}. De credits blijven geldig tot ${CREDITS_GELDIG_MAANDEN} maanden na de laatste termijn.`)
           : (prepaid
             ? 'De klant heeft zelf hervat in Studio. Het is een vooruitbetaald jaar: de nachtelijke taak kent vanaf nu weer elke maand de credits toe.'
             : 'De klant heeft zelf hervat in Studio. Mollie incasseert weer volgens het gewone ritme.')),
     ].join(''));
   } catch (err) {
     console.error('[notify] abonnementswijziging niet gemeld voor', subRef, '—', err?.message || err);
+  }
+}
+
+/**
+ * ── DE KLANT WIL BESPREKEN WAT HIJ MET ZIJN CREDITS KAN DOEN — 8 oktober 2026 ──
+ *
+ * Punt 2.07, Lucas: "Ik kijk dan echt met de klant mee en wanneer ik bijvoorbeeld
+ * weinig website beelden op hun website zie staan dat ik aangeef wellicht daar
+ * wat voor doen […]". De klant drukte op de knop op /account/plan. Hier: wie,
+ * hoeveel credits, wanneer ze vervallen, de laatste reden als die er is, en
+ * Bel/App met een kant-en-klare tekst (waLink.js, moment `credits`).
+ */
+export async function notifyCreditsBespreken(env, { klant = {}, lang = 'nl', saldo = 0, vervalt = [], abonnement = null, reden = '' }) {
+  try {
+    const naam = klant.brand || [klant.first_name].filter(Boolean).join(' ') || klant.name || klant.email || '—';
+    const eerste = vervalt[0] || null;
+    const vervaltRegel = vervalt.length
+      ? vervalt.map((v) => `${v.aantal} op ${datum(v.op, 'nl')}`).join(' · ')
+      : '—';
+    const klantTaal = lang === 'en' ? 'en' : 'nl';
+    const link = waLink('credits', { ...klant, lang: klantTaal }, {
+      saldo, vervalt: eerste ? datum(eerste.op, klantTaal) : '',
+    });
+    await toStudio(env, `Credits bespreken · ${naam} · ${saldo} credits`, [
+      h1('Een klant wil bespreken wat hij met zijn credits kan doen', naam),
+      mailRows([
+        ['Klant', naam],
+        ['E-mail', klant.email || ''],
+        ['Telefoon', klant.phone || '—'],
+        ['Abonnement', abonnement ? `${abonnement.ref || ''} · ${abonnement.plan || ''} · ${abonnement.status || ''}` : '—'],
+        ['Credits nu', String(saldo)],
+        ['Vervallen', vervaltRegel],
+        ...(reden ? [['Laatste reden bij stoppen', reden]] : []),
+      ]),
+      mailP('De klant ziet "We nemen contact met je op." Kijk vooraf even naar de website en kanalen van het merk: waar ontbreken beelden, en welke dienst en formaten passen daar het best bij?'),
+      contactMail(link, { wie: naam, knop: mailKnop, regel: linkLine }),
+    ].join(''), klant.email || '');
+  } catch (err) {
+    console.error('[notify] vraag over credits niet gemeld —', err?.message || err);
+  }
+}
+
+/**
+ * ── EEN TERMIJN IS TERUGGEBOEKT — 8 oktober 2026 (8.11, V50 = a) ────────────
+ *
+ * Een chargeback of storno op een abonnementstermijn. De webhook heeft het
+ * abonnement op pauze gezet (pause_reason 'chargeback') en de credits van die
+ * termijn bevroren; de factuur blijft staan. Draait Mollie de terugboeking
+ * terug, dan gaat alles vanzelf terug (`terug: true`).
+ */
+export async function notifyTermijnTeruggeboekt(env, { subRef, plan, brand, email, bedragCents = 0, terugCents = 0, maand = '', bevroren = null, terug = false }) {
+  try {
+    const ref = subRef || '(zonder kenmerk)';
+    await toStudio(env, terug
+      ? `Terugboeking ongedaan · ${ref}`
+      : `Termijn teruggeboekt · ${ref} · ${cents(terugCents)}`, [
+      h1(terug ? 'Mollie heeft de terugboeking teruggedraaid' : 'Een termijn is via de bank teruggeboekt', ref),
+      mailRows([
+        ['Abonnement', ref],
+        ['Klant', brand || email || '—'],
+        ['E-mail', email || ''],
+        ['Plan', plan || ''],
+        ...(maand ? [['Termijn', maand]] : []),
+        ...(terug ? [] : [['Teruggeboekt', `${cents(terugCents)}${bedragCents ? ` van ${cents(bedragCents)}` : ''}`]]),
+        ...(bevroren !== null ? [[terug ? 'Credits weer vrij' : 'Credits bevroren', String(bevroren)]] : []),
+      ]),
+      terug
+        ? mailP('De credits van die termijn zijn weer vrij, met hun eigen vervaldatum, en het abonnement loopt weer. De factuur stond al.')
+        : mailP('Het abonnement staat op pauze en de credits van deze termijn zijn bevroren: niet bruikbaar, niet weg. De factuur blijft staan. '
+          + 'Draait Mollie de terugboeking terug, dan gaat dat allemaal vanzelf terug. Bestellingen van deze klant staan niet stil; kijk of er nog iets in productie is. '
+          + 'Neem contact op met de klant: het kan ook een bankfout zijn.'),
+      terug ? '' : await incassoContact(env, { email, brand }, 'terugboeking', { o: { ref } }),
+    ].join(''), email || '');
+  } catch (err) {
+    console.error('[notify] terugboeking op termijn niet gemeld voor', subRef, '—', err?.message || err);
   }
 }

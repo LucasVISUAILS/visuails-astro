@@ -1,9 +1,12 @@
 ---
+// VISUAILS — /thank-you: in de hal sinds 13 oktober 2026 (afvinklijst 10, alles doen). De vorm komt uit
+// HalFormulier.astro en het blok DE FORMULIEREN in hal.css; de werking blijft van de onderdelen.
 // VISUAILS — /thank-you (English). De inhoud staat in ThankYouPage.astro zodat
 // deze pagina en /nl/thank-you niet uit elkaar kunnen lopen; zie de kop daar.
 //
 // Deze pagina leest geen querystring. De enige parameter die /api/order hier
 // aanhangt is `ref`, en interactions.js leest die client-side.
+import HalFormulier from '../components/HalFormulier.astro';
 import Layout from '../layouts/Layout.astro';
 import ThankYouPage from '../components/ThankYouPage.astro';
 import { turnaroundShort } from '../data/pricing.js';
@@ -15,6 +18,8 @@ const description =
   `visuals follow from the normal turnaround — ${TIMING.toLowerCase()}.`;
 ---
 
-<Layout title="Thank you — VISUAILS" description={description} noindex>
+<Layout huid="hal" noindex title="Thank you — VISUAILS" description={description}>
+  <HalFormulier soort="bedankt">
   <ThankYouPage lang="en" />
+  </HalFormulier>
 </Layout>

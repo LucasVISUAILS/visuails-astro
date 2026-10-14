@@ -1124,3 +1124,129 @@ textarea, input[type="text"], input[type="email"], input[type="tel"], select {
   .shots { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem .75rem; }
   .acts .btn, .acts .pick { flex: 1 1 auto; justify-content: center; }
 }
+
+/* ── "WAT NU" BOVENAAN — 8 oktober 2026 (punt 3.01) ─────────────────────────
+   Eén zin, de datums, hoogstens twee knoppen; daaronder het statuspad van
+   Studio en de leverregel. Zie nuBlok() in src/lib/portal.js. Violet alleen
+   voor de ene hoofdknop; de rest zijn gewone links. */
+.nu {
+  margin: 1.5rem 0 0; padding: 1.25rem;
+  background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+  border-radius: var(--pt-r-kaart);
+}
+.nu-zin { margin: 0; max-width: 68ch; font-size: .9375rem; line-height: 1.55; font-weight: 500; color: var(--ink); }
+.nu-datums { margin: .5rem 0 0; display: flex; flex-wrap: wrap; gap: .2rem 1.25rem; font-size: .8125rem; color: var(--ink-2); }
+.nu-knoppen { margin: 1rem 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.1rem; }
+.nu-form { margin: 0; }
+.nu-link {
+  font-size: .8125rem; font-weight: 600; color: var(--accent-text);
+  text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px;
+}
+.nu-link:hover, .nu-link:focus-visible { color: var(--ink); }
+.nu-lever { margin: .85rem 0 0; font-size: .8125rem; color: var(--ink-2); max-width: 72ch; }
+
+/* Het statuspad: dezelfde stappen en woorden als de tijdlijn in Studio. */
+.pad {
+  list-style: none; margin: 1.1rem 0 0; padding: .9rem 0 0; border-top: 1px solid var(--line);
+  display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; font-size: .8125rem; color: var(--ink-3);
+}
+.pad li { display: inline-flex; align-items: center; gap: .45rem; }
+.pad-stip { width: 9px; height: 9px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--ink-4); }
+.pad .is-done { color: var(--ink-2); }
+.pad .is-done .pad-stip { background: var(--accent); box-shadow: none; }
+.pad .is-now { color: var(--ink); font-weight: 600; }
+.pad .is-now .pad-stip { background: var(--surface); box-shadow: inset 0 0 0 2.5px var(--accent); }
+@media (max-width: 560px) {
+  .nu { padding: 1rem; }
+  .nu-knoppen { flex-direction: column; align-items: stretch; }
+  .nu-knoppen .btn { width: 100%; white-space: normal; min-height: 44px; }
+  .nu-knoppen .nu-link { align-self: flex-start; padding: .35rem 0; }
+}
+
+/* ── HET AFRONDSCHERM — 8 oktober 2026 (punt 3.05) ─────────────────────────
+   /o/<token>#afgerond: de map met de bewaardatum bovenaan, daaronder het
+   tevredenheidsblok en "Bestel met dezelfde look"; het raster eronder. */
+.afrond { margin: 1.5rem 0 0; padding: 0 1.25rem 1.25rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--pt-r-kaart); scroll-margin-top: 1rem; }
+.afrond .folder { margin: 0; padding: 1.25rem 0 0; border: 0; border-radius: 0; background: none; }
+.afrond .fb { margin-top: 1.25rem; }
+.folder-datum { margin: .2rem 0 0; font-size: .8125rem; font-weight: 500; color: var(--ink); }
+@media (max-width: 560px) {
+  .afrond { padding: 0 1rem 1rem; }
+  .afrond .folder { padding-top: 1rem; }
+}
+
+/* ── "BESTEL MET DEZELFDE LOOK" — 8 oktober 2026 (punten 3.07 en 3.08) ──────── */
+.herbestel { margin: 1.25rem 0 0; padding: 1.25rem 0 0; box-shadow: inset 0 1px 0 var(--line); }
+.herbestel h2 { margin: 0 0 .6rem; font-size: 1rem; font-weight: 600; color: var(--ink); }
+.herbestel-knop { margin: 0; }
+.herbestel-knop .btn { white-space: normal; text-align: left; min-height: 40px; padding-block: .45rem; }
+.herbestel-delen { margin: .5rem 0 0; font-size: .8125rem; color: var(--ink-2); }
+.herbestel-regel { margin: .4rem 0 0; font-size: .8125rem; font-weight: 600; color: var(--ink); }
+.herbestel-uitleg { margin: .4rem 0 0; font-size: .75rem; color: var(--ink-3); max-width: 60ch; }
+@media (max-width: 560px) { .herbestel-knop .btn { width: 100%; justify-content: center; text-align: center; } }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DE HAL — 14 oktober 2026
+   ═══════════════════════════════════════════════════════════════════════════
+   Lucas: het nieuwe kleurenschema "volledig toevoegen". De privélink is wat een
+   klant als eerste ziet na de levermail, en hij stond nog in ronde 9: Figtree,
+   grijze grond, zwarte inkt, een violette streep links. Nu dezelfde hal als de
+   site en Studio (KLEURENSCHEMA.md, src/styles/studio-hal.css): Urbanist (uit
+   /fonts/gedeeld.css), wit met nevel, inkt #0F0C24, lijn #DEDCE8, violet alleen
+   op een knop, hoeken 28 / 22 / rond.
+
+   `html body` (0,0,2) wint van de `body {}` en `:root {}` hierboven, zonder dat
+   er een !important nodig is; alleen tokens die dit blad leest. */
+html body {
+  --h-letter: "Urbanist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font: var(--h-letter); --font-kop: var(--h-letter); --font-display: var(--h-letter); --stretch-kop: 100%;
+  --paper: #FFFFFF; --paper-2: #F5F5F9; --paper-lift: #F5F5F9; --bg: #FFFFFF; --bg-raise: #F5F5F9;
+  --surface: #FFFFFF; --surface-2: #F5F5F9; --surface-3: #ECEBF3; --sunken: #ECEBF3;
+  --ink-900: #0F0C24; --ink-100: #0F0C24; --ink-700: #4B4960; --ink-500: #6A6880; --ink-300: #C9C6D8; --ink-200: #DEDCE8;
+  --ink: #0F0C24; --ink-2: #4B4960; --ink-3: #6A6880; --ink-4: #C9C6D8; --ink-faint: #6A6880;
+  --line: #DEDCE8; --line-soft: #ECEBF3; --line-strong: #C9C6D8; --line-ui: #8E8BA2;
+  --ghost: rgb(15 12 36 / .04); --btn-ghost-fill: rgb(15 12 36 / .05); --btn-ghost-fill-hover: #ECEBF3;
+  --btn-2nd-ink: #0F0C24; --btn-2nd-border: #C9C6D8; --btn-2nd-border-hover: #0F0C24; --btn-2nd-fill-hover: #F5F5F9;
+  --panel: #0F0C24; --on-panel: #FFFFFF; --paper-on-dark: #FFFFFF;
+  --accent: #4A1FFF; --on-accent: #FFFFFF; --accent-on: #FFFFFF; --accent-ink: #FFFFFF;
+  --accent-text: #3D17D6; --accent-dim: #3D17D6; --accent-2: #3D17D6; --accent-word: #3D17D6; --accent-bright: #3D17D6;
+  --accent-tint: #F1EEFF; --on-accent-tint: #2A0E8F; --accent-soft: #F1EEFF; --accent-line: #A694FF;
+  --teal: #4A1FFF; --teal-hover: #3D17D6; --teal-text: #3D17D6; --brand: #0F0C24; --focus-ring: #4A1FFF;
+  --mist-teal: #F5F5F9; --mist-slate: #F5F5F9; --mist-stone: #F5F5F9;
+  --st-wait-fill: transparent; --st-wait-edge: #8E8BA2; --st-wait-ink: #4B4960;
+  --st-work-fill: #F1EEFF; --st-work-edge: #DCD5FF; --st-work-ink: #2A0E8F;
+  --st-done-fill: #2A0E8F; --st-done-edge: #2A0E8F; --st-done-ink: #FFFFFF;
+  --st-rev-fill: #F6E7D1; --st-rev-edge: rgb(138 77 6 / .30); --st-rev-ink: #8A4D06;
+  --st-can-fill: #ECEBF3; --st-can-edge: #8E8BA2; --st-can-ink: #4B4960;
+  --signal: #F1EEFF; --signal-ink: #2A0E8F; --verify: #2A0E8F; --verify-ink: #FFFFFF;
+  --warn: #F6E7D1; --warn-ink: #8A4D06; --flag: #F6E7D1; --flag-ink: #8A4D06; --clay: #8A4D06; --clay-text: #8A4D06; --mist-clay: #F6E7D1;
+  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%230F0C24' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --pt-r-kaart: 28px; --pt-r: 22px; --r-pill: 999px;
+  background: #FFFFFF; color: #4B4960; font-family: var(--h-letter); font-size: 1rem;
+}
+html body ::selection { background: #DCD5FF; color: #0F0C24; }
+html body .bar { min-height: 68px; background: rgb(255 255 255 / .94); box-shadow: inset 0 -1px 0 #DEDCE8; }
+html body .mark { display: block; color: #0F0C24; line-height: 0; }
+html body .mark .woordmerk { display: block; height: 22px; width: auto; aspect-ratio: 4651.24 / 813.83; fill: currentColor; }
+html body .ref { font-size: .875rem; color: #6A6880; }
+html body h1 { font-weight: 500; font-size: 2.25rem; letter-spacing: -.025em; color: #0F0C24; }
+html body .lede { font-size: 1rem; color: #6A6880; }
+html body :is(.facts, .work, .rr, .folder, .nu, .herbestel) { border-color: #DEDCE8; border-radius: 28px; }
+html body .work, html body .rr, html body .folder { padding: 1.5rem 1.6rem; }
+html body .work h2, html body .rr h2, html body .folder h2, html body .herbestel h2 { font-size: 1.125rem; font-weight: 600; color: #0F0C24; }
+/* De violette streep links was een gekleurde zijrand, en violet is voor een knop. */
+html body .nu { border-left: 1px solid #DEDCE8; padding: 1.4rem 1.6rem; }
+html body .nu-zin { font-size: 1.0625rem; color: #0F0C24; }
+html body .fact dt { font-size: .8125rem; font-weight: 500; letter-spacing: 0; text-transform: none; color: #6A6880; }
+html body .fact dt::first-letter { text-transform: uppercase; }
+html body .fact dd { font-size: 1rem; }
+html body .note { border-radius: 18px; border-color: #ECEBF3; }
+html body .btn { min-height: 42px; padding: 0 1.15rem; border-radius: 999px; font-family: var(--h-letter); font-weight: 600; font-size: .9375rem; }
+html body .btn-primary { background: #4A1FFF; color: #FFFFFF; }
+html body .btn-primary:hover, html body .btn-primary:focus-visible { background: #3D17D6; }
+html body .pick { border-radius: 999px; }
+html body .shot img { border-radius: 16px; background: #F5F5F9; }
+html body textarea, html body input[type="text"], html body input[type="email"], html body input[type="tel"], html body select { border-color: #8E8BA2; border-radius: 18px; font-family: var(--h-letter); }
+html body .stand { border-radius: 999px; font-family: var(--h-letter); font-weight: 600; }
+html body .pad .is-now .pad-stip { background: #4A1FFF; }
+html body .foot { color: #6A6880; }

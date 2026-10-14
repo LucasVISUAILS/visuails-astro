@@ -1,5 +1,6 @@
 ---
 import { waHref, WHATSAPP_DISPLAY } from '../../data/whatsapp.js';
+import NieuwTabblad from '../NieuwTabblad.astro';
 /* Het adres staat als tekst in schema.js en de voettekst; hier één constante. */
 const CONTACT_EMAIL = 'hello@visuails.com';
 // VISUAILS — the order pipeline, shared by every service that has a real flow.
@@ -45,7 +46,7 @@ import {
   WINDOW_THRESHOLD, FORM_MAX_PRODUCTS,
   OUTFIT_SURCHARGE, MAX_OUTFIT_PRODUCTS, OUTFIT_COPY,
   EXTRA_PHOTO_LADDER, MAX_EXTRA_PER_PRODUCT, EXTRA_PHOTO_COPY, extraPhotoRate,
-  AMOUNT, clause,
+  AMOUNT, clause, REVISIE_DAGEN,
   plans, planSaving, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, STOCK_OFF_BRAND, SERVICE_CREDITS, EXTRA_CREDITS,
 } from '../../data/pricing.js';
 import { ATTENDED_PUNTEN_PER_VENSTER, ATTENDED_PER_WINDOW } from '../../data/capacity.js';
@@ -53,22 +54,25 @@ import { puntenVoor, beeldenVoor, RESOLUTIE, HOOG_PER_PRODUCT, VOORRANG, VOORRAN
 /* De drie diensten die op de ladder staan; video en hooks hebben nog geen
    kassa in dit formulier, dus daar is voorrang nog geen knop maar een zin in
    het gesprek. Zie voorrangKan() in pricing.js. */
-const VOORRANG_DIENSTEN = new Set(['catalog', 'lifestyle', 'complete']);
+const VOORRANG_DIENSTEN = new Set(['catalog', 'lifestyle']);
 /* De drie stromen met een gezichtsvraag. Video en hooks hebben er geen — daar
    is het gezicht onderdeel van het concept en niet een keuze in een formulier. */
-const MODEL_DIENSTEN = new Set(['catalog', 'lifestyle', 'complete']);
+const MODEL_DIENSTEN = new Set(['catalog', 'lifestyle']);
 import '../../styles/stijl22.css';
 import { MAX_BATCH_FILES, MAX_FILE_BYTES, UPLOAD_TYPES } from '../../lib/uploads.js';
 /* De beeldkeuring reist NIET mee in cfg. pipeline.js importeert keurBeeld()
    rechtstreeks uit shots.js en leest de drempels daar; ze hier ook nog eens
    doorgeven zou een tweede weg naar dezelfde getallen zijn, en de tweede weg
    is altijd degene die achterloopt. Zie de kop bij MIN_LANGE_ZIJDE. */
-import { SHOTS, SHOT_IDS, MAX_REF_PER_PRODUCT, copy as shotCopy } from '../../data/shots.js';
+import { SHOTS, SHOT_IDS, MAX_REF_PER_PRODUCT, copy as shotCopy, vakRegel } from '../../data/shots.js';
+import { isEcht } from '../../lib/beeldAanwezig.js';
 import {
   PRODUCT_QUESTIONS, ORDER_QUESTIONS, copy as attrCopy,
 } from '../../data/attributes.js';
 import ProductUploader from './ProductUploader.astro';
-import Styling from './Styling.astro';
+/* Styling.astro ("Wat je opstuurt") staat sinds 11 oktober 2026 niet meer in
+   stap 2 — zie de noot bij <ProductUploader> verderop. Het bestand blijft
+   bestaan zolang Lucas het niet op de opruimlijst zet. */
 /* Het vraagteken: uitleg die geen verticale ruimte kost. Zie de kop van
    Uitleg.astro voor de regel wanneer een zin er wél en niet in mag. */
 import Uitleg from '../Uitleg.astro';
@@ -77,7 +81,7 @@ import BestelOverzicht from './BestelOverzicht.astro';
 /* De beeldverhouding — 13 augustus 2026. Niet in de slot maar hier, want deze
    vraag verschilt niet per dienst; zie de kop van RatioPicker.astro. */
 import RatioPicker from './RatioPicker.astro';
-import { LIFESTYLE_RATIOS, CATALOG_RATIOS, DEFAULT_RATIO_ID, ratiosPerImage, ratioById } from '../../data/ratios.js';
+import { LIFESTYLE_RATIOS, CATALOG_RATIOS, CHANNEL_RATIOS, DEFAULT_RATIO_ID, ratiosPerImage, ratioById, ratioLabel } from '../../data/ratios.js';
 const CATALOG_RATIO_IDS = CATALOG_RATIOS.map((r) => r.id);
 import { localizedPath } from '../../i18n/ui.js';
 import {
@@ -103,7 +107,8 @@ import Note from '../Note.astro';
 interface Props {
   lang: 'en' | 'nl';
   /** The ladder kind. Also what the config blob calls the service. */
-  service: 'complete' | 'catalog' | 'lifestyle';
+  /* 'complete' stond hier ook; compleet bestaat sinds 14 oktober 2026 niet meer. */
+  service: 'catalog' | 'lifestyle';
   /*
    * ── DE PROEFSTAND — 11 AUGUSTUS 2026 ──────────────────────────────────────
    *
@@ -213,7 +218,7 @@ if (!LADDER[service]) {
 // The wire format, which is NOT the ladder's vocabulary. `drop` is what
 // /api/order’s ORDER_SERVICES and the D1 `service` column call a catalog set
 // plus a lifestyle carousel; renaming it is a migration, not a form change.
-const WIRE = { complete: 'drop', catalog: 'catalog', lifestyle: 'lifestyle' } as const;
+const WIRE = { catalog: 'catalog', lifestyle: 'lifestyle' } as const;
 
 /*
  * De proef post ALTIJD 'test-sample', ongeacht welke soort de bezoeker kiest.
@@ -255,11 +260,6 @@ const sample = TEST_SAMPLE[lang];
 // plus a way back to the chooser for someone who picked wrong.
 const SERVICE = {
   en: {
-    complete: {
-      title: 'Catalog sets and lifestyle carousels',
-      gets: '7 images per product — 4 catalog, 3 lifestyle',
-      lead: `The rate falls as the count rises, from ${euro(ladderRate('complete', 1), 'en')} to ${euro(ladderFloor('complete'), 'en')} a product.`,
-    },
     catalog: {
       title: 'Catalog sets',
       gets: 'From 4 images per product — front, back, detail, on model',
@@ -267,17 +267,12 @@ const SERVICE = {
     },
     lifestyle: {
       title: 'Lifestyle carousels',
-      gets: '3 images per product — one styled look, ready to post',
+      gets: '4 images per product — one styled look, three on a model and one of the product on its own',
       lead: `The rate falls as the count rises, from ${euro(ladderRate('lifestyle', 1), 'en')} to ${euro(ladderFloor('lifestyle'), 'en')} a product.`,
     },
     change: 'Order something else',
   },
   nl: {
-    complete: {
-      title: 'Catalogsets en lifestylecarrousels',
-      gets: '7 beelden per product — 4 catalog, 3 lifestyle',
-      lead: `Het tarief daalt naarmate het aantal stijgt, van ${euro(ladderRate('complete', 1), 'nl')} naar ${euro(ladderFloor('complete'), 'nl')} per product.`,
-    },
     catalog: {
       title: 'Catalogsets',
       gets: 'Vanaf 4 beelden per product — voor, achter, detail, op model',
@@ -285,7 +280,7 @@ const SERVICE = {
     },
     lifestyle: {
       title: 'Lifestylecarrousels',
-      gets: '3 beelden per product — één gestylede look, klaar om te posten',
+      gets: '4 beelden per product — één gestylede look, drie op een model en één van het product alleen',
       lead: `Het tarief daalt naarmate het aantal stijgt, van ${euro(ladderRate('lifestyle', 1), 'nl')} naar ${euro(ladderFloor('lifestyle'), 'nl')} per product.`,
     },
     change: 'Iets anders bestellen',
@@ -298,6 +293,33 @@ const svc = SERVICE[lang][service];
 // Unchanged from the single-page version except for `err`, which is new: the
 // form had no rendered error state at all, so pressing Continue with nothing
 // answered left the step looking exactly as it had a moment before.
+/* Een afgeronde zin uit pricing.js als bijzin: zonder punt, kleine beginletter. */
+const bijzin = (zin: string) => { const t = clause(zin); return t.charAt(0).toLowerCase() + t.slice(1); };
+/* ── "APP ONS" ONDER ELKE STAP — 8 oktober 2026 (1.08) ────────────────────────
+   Het klaargezette WhatsApp-bericht noemt de stap en de bestelling, in de taal
+   van de pagina, en NOOIT iets over de klant (geen naam, merk, e-mail of
+   telefoon): het bericht staat in een link die iedereen kan zien en delen. De
+   stapnamen volgen de rail, dus bij de proef zonder "levertijd". Het nummer komt
+   uit src/data/whatsapp.js (waHref). */
+const APPONS_STAPPEN = {
+  en: ['order', 'photos', 'details', 'timing', 'payment'],
+  nl: ['bestelling', 'foto’s', 'gegevens', 'levertijd', 'betalen'],
+} as const;
+const APPONS_DIENST = {
+  en: { catalog: 'a catalog order', lifestyle: 'a lifestyle order' },
+  nl: { catalog: 'een catalogbestelling', lifestyle: 'een lifestylebestelling' },
+} as const;
+const appOnsStappen = (l: 'en' | 'nl') => Object.fromEntries(
+  APPONS_STAPPEN[l].filter((_, i) => !isSample || i !== 3).map((t, i) => [String(i + 1), t]),
+);
+const appOnsWat = (l: 'en' | 'nl') => (isSample
+  ? (l === 'nl' ? `de proef (${TEST_SAMPLE.nl.cta})` : `the trial (${TEST_SAMPLE.en.cta})`)
+  : (APPONS_DIENST[l] as Record<string, string>)[service] || (l === 'nl' ? 'een bestelling' : 'an order'));
+/* De link zoals hij zonder script staat: stap en dienst, nog zonder aantal. */
+function appOnsHref(stap: number) {
+  const a = PIPE[lang].appOns;
+  return waHref(a.bericht.replace('{stap}', String(stap)).replace('{naam}', a.stap[String(stap)] || '').replace('{wat}', a.wat));
+}
 const PIPE = {
   en: {
     total: {
@@ -319,6 +341,38 @@ const PIPE = {
       one: `One more product and every product drops from {now} to {rate} — {count} for {then}, ${vatLabel('excl', 'en')}.`,
       many: `{add} more products and every product drops from {now} to {rate} — {count} for {then}, ${vatLabel('excl', 'en')}.`,
     },
+    /* ── MEER PRODUCTEN VOOR HETZELFDE OF MINDER — 8 oktober 2026 (1.07) ──
+       Eén rustige regel, alleen bij de aantallen waar groterGoedkoper() in
+       pricing.js iets vindt. {knop} wordt een tekstknop die het aantal zet,
+       {dan} en {nu} worden vet; zie syncBesparing() in pipeline.js. */
+    besparing: {
+      /* Zonder "excl. VAT" erachter: de regel eronder zegt "All figures are excl.
+         VAT." al, en drie keer btw in vijf regels is ruis (Lucas: subtiel). */
+      minder: '{knop} you pay {dan} instead of {nu}.',
+      gelijk: '{knop} you pay the same: {dan}.',
+      knop: 'With {aantal} products',
+      knopLabel: 'With {aantal} products: set the count to {aantal}',
+      datum: `From ${WINDOW_THRESHOLD} products you choose a fixed delivery date yourself; the earliest is a few days ahead.`,
+    },
+    /* 1.08: het bericht achter "App ons". {aantal} is "1 product" of "3 products". */
+    appOns: {
+      bericht: 'Hi, I am at step {stap} ({naam}) of {wat}.',
+      wat: appOnsWat('en'),
+      watAantal: isSample ? appOnsWat('en') : `${appOnsWat('en')} with {aantal}`,
+      een: '1 product',
+      meer: '{n} products',
+      stap: appOnsStappen('en'),
+    },
+    /* ── WANNEER HET KOMT, IN STAP 5 — 8 oktober 2026 (1.07) ───────────────
+       Uit turnaround() en REVISIE_DAGEN, niet getypt. syncWanneer() in
+       pipeline.js kiest de vorm; bij de proef valt de revisieronde weg. */
+    wanneer: {
+      snel: `Your order is delivered ${bijzin(turnaround('unattended', 'en'))}.`,
+      venster: 'Your images arrive in the window you chose: {datum}.',
+      later: `Your images arrive on ${bijzin(turnaround('attended', 'en'))}.`,
+      voorrang: `Your order has priority: pay on a working day before ${VOORRANG.bestelVoorUur}:00 and we deliver by ${VOORRANG.klaarUur}:00 the next working day.`,
+      revisie: `After delivery you have ${REVISIE_DAGEN} days for one revision round.`,
+    },
     /* De abonnementsregel. Twee vormen, en het verschil is niet toon maar
        waarheid — zie de kop bij PLAN_ROWS. `compare` noemt twee bedragen die
        allebei over het ABONNEMENT gaan: wat het kost en wat diezelfde levering
@@ -334,7 +388,6 @@ const PIPE = {
       unattended: `${clause(TIERS.unattended.queue.en)}. From ${WINDOW_THRESHOLD} products we hold a delivery date for you instead.`,
     },
     kind: {
-      complete: 'Catalog set and lifestyle carousel',
       catalog: 'Catalog set',
       lifestyle: 'Lifestyle carousel',
     },
@@ -385,7 +438,8 @@ const PIPE = {
       bg: 'Background',
       bgLocked: 'fixed by where you sell',
       format: 'File format',
-      formatJpg: 'the formats that marketplace accepts (JPG and PNG for Amazon and bol, JPG only for Zalando; no WebP)',
+      /* 14 oktober 2026: JPG is sinds 11 oktober de standaard voor iedereen (k401). */
+      formatJpg: 'JPG, which every marketplace accepts (PNG on request for Amazon and bol; Zalando takes JPG only)',
       model: 'The on-model photo',
       modelAny: 'We pick a face that suits your brand',
       /* "Look" heet sinds 9 september "Style"; zie StijlRegel.astro. De twee
@@ -415,9 +469,10 @@ const PIPE = {
       payOutside: '{net} — no Dutch VAT outside the EU',
       payReverse: '{net} excl. VAT if your VAT number checks out (reverse charge); otherwise {gross} incl. {pct}% VAT',
       /* Ronde 9 (F52): het tegoed van een ingelogde klant gaat er bij het afrekenen af. */
-      tegoed: 'Your credit',
+      /* 2.02: tegoed heet in het Engels altijd "account balance", nooit "credit" (dat woord is van de abonnementscredits). */
+      tegoed: 'Your account balance',
       tegoedRest: '− {tegoed}: you pay {rest} at Mollie',
-      tegoedNul: '− {tegoed}: your credit covers it all, nothing to pay',
+      tegoedNul: '− {tegoed}: your account balance covers it all, nothing to pay',
       tegoedAf: '− {tegoed}, comes off the amount at checkout',
       files: 'Reference material',
       noFiles: 'Nothing sent yet — we will get back to you',
@@ -455,6 +510,11 @@ const PIPE = {
         // gets a sentence: a slot that fails silently is a photograph the
         // studio never receives and nobody ever missed.
         'bad-shot': 'We could not tell which photo this was meant to be. Try that slot again.',
+        /* o05, 8 oktober 2026: de daggrens van /api/upload. De uitleg met
+           WhatsApp en mail staat één keer onder de foto's (ProductUploader). */
+        'dag-limiet': 'Today’s upload limit is reached. Below the photos you can see how to place the order anyway.',
+        /* o03: Cloudflare zei uitdrukkelijk nee op de eerste upload. */
+        botcheck: 'We could not confirm this upload came from a person. Try again, or send your photos on WhatsApp or by email.',
         /* De enige weigering die over het BEELD gaat en niet over het bestand.
            Het getal staat erbij omdat "te klein" zonder maat een klant laat
            gokken welke foto hij dan wél moet zoeken. */
@@ -508,6 +568,31 @@ const PIPE = {
       one: `Nog één product en het tarief zakt van {now} naar {rate} per product — {count} voor {then}, ${vatLabel('excl', 'nl')}.`,
       many: `Nog {add} producten en het tarief zakt van {now} naar {rate} per product — {count} voor {then}, ${vatLabel('excl', 'nl')}.`,
     },
+    /* Zie de Engelse noot (1.07). */
+    besparing: {
+      minder: '{knop} betaal je {dan} in plaats van {nu}.',
+      gelijk: '{knop} betaal je hetzelfde: {dan}.',
+      knop: 'Met {aantal} producten',
+      knopLabel: 'Met {aantal} producten: zet het aantal op {aantal}',
+      datum: `Vanaf ${WINDOW_THRESHOLD} producten kies je zelf een vaste leverdatum; de vroegste ligt een paar dagen vooruit.`,
+    },
+    /* Zie de Engelse noot (1.08). */
+    appOns: {
+      bericht: 'Hoi, ik zit bij stap {stap} ({naam}) van {wat}.',
+      wat: appOnsWat('nl'),
+      watAantal: isSample ? appOnsWat('nl') : `${appOnsWat('nl')} met {aantal}`,
+      een: '1 product',
+      meer: '{n} producten',
+      stap: appOnsStappen('nl'),
+    },
+    /* Zie de Engelse noot (1.07). */
+    wanneer: {
+      snel: `Je beelden komen ${bijzin(turnaround('unattended', 'nl'))}.`,
+      venster: 'Je beelden komen in het venster dat je koos: {datum}.',
+      later: `Je beelden komen op ${bijzin(turnaround('attended', 'nl'))}.`,
+      voorrang: `Je bestelling heeft voorrang: betaal je op een werkdag vóór ${VOORRANG.bestelVoorUur}:00, dan leveren we uiterlijk de volgende werkdag om ${VOORRANG.klaarUur}:00.`,
+      revisie: `Na levering heb je ${REVISIE_DAGEN} dagen voor één revisieronde.`,
+    },
     /* Zie de Engelse noot hierboven. */
     plan: {
       compare: 'Elke maand hetzelfde? Dat is {need} credits — het {name}-abonnement geeft er {credits} voor {price} per maand.',
@@ -519,7 +604,6 @@ const PIPE = {
       unattended: `${clause(TIERS.unattended.queue.nl)}. Vanaf ${WINDOW_THRESHOLD} producten krijgt een bestelling in plaats daarvan een vastgezette leverdatum.`,
     },
     kind: {
-      complete: 'Catalogset en lifestylecarrousel',
       catalog: 'Catalogset',
       lifestyle: 'Lifestylecarrousel',
     },
@@ -542,7 +626,7 @@ const PIPE = {
       bg: 'Achtergrond',
       bgLocked: 'vastgezet door waar je verkoopt',
       format: 'Bestandsformaat',
-      formatJpg: 'de formaten die die marktplaats aanneemt (JPG en PNG bij Amazon en bol, alleen JPG bij Zalando; geen WebP)',
+      formatJpg: 'JPG, dat elke marktplaats aanneemt (PNG op aanvraag bij Amazon en bol; Zalando neemt alleen JPG)',
       model: 'De foto op een model',
       modelAny: 'Wij kiezen een gezicht dat bij je merk past',
       /* Zie de Engelse tegenhanger. */
@@ -600,6 +684,8 @@ const PIPE = {
         'bad-batch': 'Deze upload is de verbinding met je bestelling kwijt. Herlaad de pagina en kies de bestanden opnieuw.',
         'bad-request': 'Deze upload werd geweigerd. Herlaad de pagina en voeg het bestand opnieuw toe — je bestelling staat er nog.',
         'bad-shot': 'We konden niet zien welke foto dit moest zijn. Probeer dat vakje opnieuw.',
+        'dag-limiet': 'Het maximum aantal uploads voor vandaag is bereikt. Onder de foto’s staat hoe je de bestelling toch plaatst.',
+        botcheck: 'We konden niet bevestigen dat deze upload van een mens komt. Probeer het opnieuw, of stuur je foto’s via WhatsApp of per mail.',
         // Zie de noot bij de Engelse te-klein.
         'te-klein': 'Te klein — {lang} pixels op de lange zijde, en we hebben er minstens {min} nodig. Dit is meestal een screenshot of een foto van een website; stuur het origineel uit je fotolijst.',
       },
@@ -664,6 +750,7 @@ for (const l of ['en', 'nl'] as const) {
   (PIPE[l] as Record<string, unknown>).pu = {
     required: s.required,
     optional: s.optional,
+    aanbevolen: s.aanbevolen,
     skipShot: s.skipShot,
     undoSkip: s.undoSkip,
     replace: s.replace,
@@ -725,6 +812,26 @@ for (const l of ['en', 'nl'] as const) {
     /* Eén regel per vakje, uit shots.js `how` — de uitleg staat sinds 3 september
        onder de kaarten ingeklapt, dus het vakje moet zelf zeggen wat erin hoort. */
     how: Object.fromEntries(SHOTS.map((x) => [x.id, x.how[l]])),
+    /* ── DE KAART PER PRODUCT — 11 oktober 2026 (F3) ──────────────────────────
+     * `regel` vervangt `how` in stap 2 (5.07): één korte regel per vak, met bij
+     * de draagfoto de aanname erachter (vakRegel() in shots.js). `tip` is de
+     * zin met het witte vel bij het detailvak (5.03), die in `how` stond. De
+     * rest zijn de woorden van de kaart zelf; zie shots.js. */
+    regel: Object.fromEntries(SHOTS.map((x) => [x.id, vakRegel(x.id, l)])),
+    tip: Object.fromEntries(SHOTS.filter((x) => x.tip).map((x) => [x.id, x.tip[l]])),
+    kies: s.kies,
+    kiesNog: s.kiesNog,
+    kiesHint: s.kiesHint,
+    wissel: s.wissel,
+    wisselLabel: s.wisselLabel,
+    wisselMet: s.wisselMet,
+    soort: s.soort,
+    soortKies: s.soortKies,
+    erbijH: s.erbijH,
+    erbijHint: s.erbijHint,
+    erbijGeen: s.erbijGeen,
+    erbijEerst: s.erbijEerst,
+    missingNone: s.missingNone,
 
     /* ── DE AFWIJKING PER BEELD, ALLEEN BIJ LIFESTYLE ──────────────────────
      * Lucas: *"Bij lifestyle moeten deze wel per foto ingesteld kunnen worden
@@ -771,11 +878,11 @@ for (const l of ['en', 'nl'] as const) {
       : 'Only set this if this product needs a different face from the rest of the order.',
 
     /* ── 4K OP DIT PRODUCT — 9 september 2026 ──────────────────────────────
-     * Eén vinkje per productkaart dat alle drie de lifestylebeelden van dat
-     * product op de hoge maat zet. De twee getallen komen uit RESOLUTIE en het
-     * bedrag uit HOOG_PER_PRODUCT; er staat hier niets overgetypt.
+     * Eén vinkje per productkaart dat alle lifestylebeelden van dat product (vier
+     * sinds 14 oktober 2026) op de hoge maat zet. De twee getallen komen uit
+     * RESOLUTIE en het bedrag uit HOOG_PER_PRODUCT; er staat hier niets overgetypt.
      *
-     * "Alle drie" en niet "de foto's": de klant heeft net drie beelden per
+     * "Alle vier" en niet "de foto's": de klant heeft net vier beelden per
      * product beloofd gekregen, en dat is het aantal dat hij hier terugleest. */
     hoogResLabel: l === 'nl'
       ? `Alle ${LIFESTYLE_IMAGES} lifestylebeelden op ${RESOLUTIE.hoog} px · ${euro(HOOG_PER_PRODUCT, 'nl')}`
@@ -883,7 +990,26 @@ for (const l of ['en', 'nl'] as const) {
   (PIPE[l] as Record<string, unknown>).ratio = {
     /* Ronde 9: "16:9 · Breed 16:9" — de naam noemt de verhouding soms zelf al.
        Dan alleen de naam. */
-    name: Object.fromEntries(LIFESTYLE_RATIOS.map((r) => [r.id, String(r.name[l]).includes(r.label) ? r.name[l] : `${r.label} · ${r.name[l]}`])),
+    /* Plus de kanaalverhouding (Zalando, 14 oktober 2026): die naam draagt de vorm al. */
+    name: Object.fromEntries([...LIFESTYLE_RATIOS, ...CHANNEL_RATIOS].map((r: any) => [r.id, String(r.name[l]).includes(ratioLabel(r, l)) ? r.name[l] : `${ratioLabel(r, l)} · ${r.name[l]}`])),
+  };
+}
+
+// ── 1.04: DE BESTELLING WAAR JE MEE BEZIG WAS — 11 oktober 2026 (F3) ─────────
+// De regel in het blok bovenaan het formulier: "Catalogsets · 3 producten ·
+// 7 foto’s". pipeline.js vult hem; de woorden staan hier. Zie de noot bij
+// CONCEPT_SLEUTEL in src/data/cookies.js voor wat er wel en niet bewaard wordt.
+for (const l of ['en', 'nl'] as const) {
+  (PIPE[l] as Record<string, unknown>).concept = {
+    dienst: isSample ? TEST_SAMPLE[l].name : SERVICE[l][service].title,
+    wat: '{dienst} · {producten} · {fotos}',
+    product1: '1 product',
+    productN: l === 'nl' ? '{n} producten' : '{n} products',
+    foto0: l === 'nl' ? 'nog geen foto’s' : 'no photos yet',
+    foto1: l === 'nl' ? '1 foto' : '1 photo',
+    fotoN: l === 'nl' ? '{n} foto’s' : '{n} photos',
+    weg1: l === 'nl' ? 'Eén foto is niet meer bij ons; zet die opnieuw neer.' : 'One photo is no longer with us; add it again.',
+    wegN: l === 'nl' ? '{n} foto’s zijn niet meer bij ons; zet die opnieuw neer.' : '{n} photos are no longer with us; add them again.',
   };
 }
 
@@ -905,9 +1031,13 @@ const REQUIRED_COPY = [
   'pu.modelH', 'pu.modelLabel', 'pu.modelSame', 'pu.modelSamePlain', 'pu.modelZelfdeKort', 'pu.modelHint',
   'pu.meerH', 'pu.meerVolgt', 'pu.meerHoog', 'pu.meerRatio',
   'rung.one', 'rung.many',
+  'besparing.minder', 'besparing.gelijk', 'besparing.knop', 'besparing.knopLabel', 'besparing.datum',
+  'wanneer.snel', 'wanneer.venster', 'wanneer.later', 'wanneer.voorrang', 'wanneer.revisie',
+  'appOns.bericht', 'appOns.wat', 'appOns.watAantal', 'appOns.een', 'appOns.meer',
+  ...Array.from({ length: isSample ? 4 : 5 }, (_, i) => `appOns.stap.${i + 1}`),
   'plan.compare', 'plan.steady', 'plan.cta',
   'level.attended', 'level.unattended',
-  'kind.complete', 'kind.catalog', 'kind.lifestyle',
+  'kind.catalog', 'kind.lifestyle',
   'err.generic',
   'sum.kind', 'sum.count', 'sum.bg', 'sum.style', 'sum.styleCatalog', 'sum.styleLifestyle',
   'sum.hoogRes', 'sum.hoogResN', 'sum.hoogRes1', 'sum.voorrang', 'sum.voorrangJa',
@@ -929,10 +1059,11 @@ const REQUIRED_COPY = [
   'upload.err.unavailable', 'upload.err.network', 'upload.err.generic',
   'upload.err.bad-type', 'upload.err.empty', 'upload.err.no-file',
   'upload.err.bad-batch', 'upload.err.bad-request', 'upload.err.bad-shot',
+  'upload.err.dag-limiet', 'upload.err.botcheck',
   // Step 2's uploader. The shot names are generated from SHOTS rather than
   // typed, so a fifth angle added to shots.js brings its own build-time check
   // instead of shipping a slot with no word under the drawing.
-  'pu.required', 'pu.optional', 'pu.skipShot', 'pu.undoSkip', 'pu.replace', 'pu.remove',
+  'pu.required', 'pu.optional', 'pu.aanbevolen', 'pu.skipShot', 'pu.undoSkip', 'pu.replace', 'pu.remove',
   'pu.productName', 'pu.ready', 'pu.needsShots', 'pu.needsChoice', 'pu.listAnd', 'pu.trayAssign',
   'pu.vorige', 'pu.volgende', 'pu.volgendeLaatste', 'pu.rijTel', 'pu.rijAf', 'pu.railNaam',
   'pu.ownModel',
@@ -944,12 +1075,16 @@ const REQUIRED_COPY = [
   'pu.product', 'pu.add', 'pu.dropCard', 'pu.toggle', 'pu.placeIn', 'pu.trayNotSent', 'pu.trayH',
   ...SHOT_IDS.map((id) => `pu.shot.${id}`),
   ...SHOT_IDS.map((id) => `pu.how.${id}`),
+  ...SHOT_IDS.map((id) => `pu.regel.${id}`),
+  ...SHOTS.filter((x) => x.tip).map((x) => `pu.tip.${x.id}`),
+  'pu.kies', 'pu.kiesNog', 'pu.kiesHint', 'pu.wissel', 'pu.wisselLabel', 'pu.wisselMet',
+  'pu.soort', 'pu.soortKies', 'pu.erbijH', 'pu.erbijHint', 'pu.erbijGeen', 'pu.erbijEerst', 'pu.missingNone',
   // Ook als deze stroom geen afwijking per beeld heeft. De sleutels staan altijd
   // in de blob, want een dienst die hem morgen wél krijgt, hoort geen kaart met
   // een leeg label te tekenen — dat is precies wat deze lijst voorkomt.
   'pu.ratioH', 'pu.ratioHint', 'pu.ratioSame', 'pu.ratioImage',
   'pu.refAdd', 'pu.refHint', 'pu.refLead', 'pu.refSlot', 'pu.refFull', 'pu.refDrop', 'pu.refTerug',
-  ...LIFESTYLE_RATIOS.map((r) => `ratio.name.${r.id}`),
+  ...[...LIFESTYLE_RATIOS, ...CHANNEL_RATIOS].map((r) => `ratio.name.${r.id}`),
   // The product questions, generated from src/data/attributes.js rather than
   // typed, for the reason the shot names are: a second question added there
   // brings its own build-time check instead of shipping a card with a blank
@@ -962,6 +1097,8 @@ const REQUIRED_COPY = [
     ...(x.options ? x.options.map((o) => `pu.qopt.${x.id}.${o.id || '_'}`) : []),
   ]),
   's3.prefillNote',
+  'concept.dienst', 'concept.wat', 'concept.product1', 'concept.productN',
+  'concept.foto0', 'concept.foto1', 'concept.fotoN', 'concept.weg1', 'concept.wegN',
   'gate.windowSub', 'gate.chosen', 'gate.none', 'gate.earlier', 'gate.later',
   'submit.sending', 'submit.email', 'submit.network', 'submit.generic',
   ...(bgApplies
@@ -1017,6 +1154,8 @@ const FORM = {
     rail: ['Order', 'Your photos', 'Your details', 'Timing', 'Pay'],
     next: 'Continue',
     back: 'Back',
+    /* 1.08: de regel onder elke stap. Het bericht zelf staat in PIPE.appOns. */
+    appOns: { vraag: 'Stuck?', link: 'Message us on WhatsApp' },
     optional: 'optional',
     garment: {
       label: 'What kind of product is this order about?',
@@ -1062,7 +1201,7 @@ const FORM = {
       sampleKindCatalog: 'Catalog set',
       sampleKindCatalogGets: 'Four images, product on a clean background',
       sampleKindLifestyle: 'Lifestyle carousel',
-      sampleKindLifestyleGets: 'Three images, worn in a styled scene',
+      sampleKindLifestyleGets: 'Four images in a styled look, three on a model',
       sampleKindErr: 'Pick one of the two.',
       sampleFlatNote: 'for one product, one per business.',
       countErr: 'Choose how many products before you continue.',
@@ -1120,6 +1259,10 @@ const FORM = {
       levelAttended: ['A date held for you', `From ${WINDOW_THRESHOLD} products`],
       levelUnattended: ['Normal turnaround', `Up to ${WINDOW_THRESHOLD - 1} products`],
       ladderLink: 'The whole price per product',
+      /* 1.07 (8 oktober 2026): wat er bij de prijs zit, onder het totaal. De
+         proef heeft geen revisieronde (§2.8), dus daar valt die weg. */
+      inbegrepen: 'Included: a face of your choice, the styling around it, one revision round and full commercial usage rights.',
+      inbegrepenProef: 'Included: a face of your choice, the styling around it and full commercial usage rights.',
     },
     // Two lines, because the step's own words moved to ProductUploader.astro
     // with the control they describe — the lead, the dropzone labels, the
@@ -1154,10 +1297,13 @@ const FORM = {
 
          De melding zegt WAAROM het veld er staat en niet dat het leeg is. Een
          nummer vragen zonder te zeggen waarvoor, leest als een marketinglijst;
-         "we appen je als er iets aan je foto's onduidelijk is" is de reden dat
-         het er is, en het is ook wat er gebeurt. */
-      phoneErr: 'Fill in a number we can reach you on — we message you if anything about your photos is unclear.',
-      phoneHint: 'We only use it for this order.',
+         appen "als er iets aan je foto's onduidelijk is" was de reden dat
+         het er is. Sinds 8 oktober 2026 (7.05, V26 = b en Lucas' notitie):
+         "we nemen contact met je op als er iets met je bestelling is" — Lucas
+         belt Nederlandse klanten en appt de rest, en de vijf momenten van 7.05
+         (betaling, foto's, mail, incasso, review) vallen eronder. */
+      phoneErr: 'Fill in a number we can reach you on — we get in touch if anything comes up with your order.',
+      phoneHint: 'We get in touch if anything comes up with your order.',
       website: 'Website or shop link',
       country: 'Country',
       countryPick: 'Choose a country',
@@ -1186,16 +1332,22 @@ const FORM = {
          een omleiding zonder zichtbare reden is een doodlopende weg. */
       refusePhone: 'We could not read a phone number in what you sent. Fill in a number we can reach you on and send it again.',
       refuseVat: 'That VAT number does not have the right shape for the country you picked. Correct it, or tick “I do not have a VAT number”.',
+      /* o03, 8 oktober 2026: Cloudflare zei uitdrukkelijk dat de botcheck niet
+         klopte. Er is niets aangemaakt of afgeschreven. */
+      refuseBotcheck: 'We could not confirm that this order came from a person, so it was not sent and nothing was charged. Try again in a moment, or place the order with us directly:',
+      refuseBotcheckWaLabel: 'send a WhatsApp',
+      refuseBotcheckWa: 'Hi VISUAILS, I tried to place an order on the site and it did not go through. Can you help me place it?',
+      refuseBotcheckOf: 'or email',
       noVat: 'I do not have a VAT number',
-      vatConfirm: 'I confirm that my company is established outside the Netherlands and that this VAT number belongs to it.',
-      vatConfirmHint: 'Required before we can invoice at 0%. The tax authority holds us liable for a reverse charge that turns out to be wrong, so this is the one thing we cannot decide for you.',
       vatHint: 'A business in another EU country: we check it against VIES, and if it is valid no Dutch VAT is charged.',
       reg: 'Registration number',
       regKvk: 'KVK number',
       regKvkErr: 'A KVK number has 8 digits — you find it on your KVK extract or your invoices.',
       regErr: 'Fill in a registration number — a KVK number in the Netherlands, or your local equivalent.',
       regHint: 'Only needed because you have no VAT number: the number from your country’s company register (in Germany, for example, your Handelsregister number). Without a VAT number we charge 21% VAT and check your details before you pay — usually within one working day.',
-      regHintNl: 'Your 8-digit number from the Dutch Chamber of Commerce (KVK). It is how we confirm you order as a business.',
+      /* 1.07: één regel waaróm we hem vragen. Niet "hij komt op je factuur": de factuur
+         drukt het KVK-nummer van de klant niet af (src/lib/invoicePdf.js). */
+      regHintNl: 'VISUAILS works for businesses only: your 8-digit Chamber of Commerce (KVK) number confirms that you are ordering as a business.',
       regHintOther: 'For example your EIN in the United States or your company number in the UK. No number? Then the business confirmation below is enough.',
       message: 'Anything we should know',
       // SHARPENED, AND THE SHARPENING IS THE POINT. attributes.js's
@@ -1230,6 +1382,13 @@ const FORM = {
       lostBody: 'Nothing was created and nothing was charged. Pick another delivery date below and send again.',
       nojs: 'Without JavaScript the calendar cannot be checked from this page. Send the form and we will come back with a delivery date in writing — no date is assumed in the meantime.',
     },
+    /* 1.04 (F3, 11 oktober 2026): het blok bovenaan als de klant terugkomt. */
+    concept: {
+      h: 'You were in the middle of an order',
+      noot: 'Your details are not kept; you fill them in again afterwards.',
+      verder: 'Carry on',
+      opnieuw: 'Start again',
+    },
     open: {
       h: 'This order is already placed',
       body: 'You pressed back on the payment page. Your order exists and has not been paid yet — pay it here without filling anything in again. Reference:',
@@ -1258,7 +1417,40 @@ const FORM = {
       saveLabel: 'Save these details to my account for next time',
       saveHint: 'Your name, brand and contact details — not this order or the notes you wrote about it.',
       saveHintOut: 'Your name, brand and contact details — not this order or the notes you wrote about it. They are kept the moment you first sign in; the link is in your confirmation email.',
-      tegoed: 'You have {bedrag} of credit. It comes off the total (incl. VAT) automatically: at checkout you only pay the rest, and if it covers everything, there is nothing to pay and we start straight away.',
+      /* "Account balance" en niet "credit" (2.02): naast de credits van een
+         abonnement mag tegoed nooit "credit" heten. */
+      tegoed: 'You have {bedrag} account balance. It comes off the total (incl. VAT) automatically: at checkout you only pay the rest, and if it covers everything, there is nothing to pay and we start straight away.',
+      /* Betalen met credits (ronde B, §28.2, 6.06). pipeline.js vult de
+         {velden} in; zie syncCredits(). */
+      credits: {
+        kost: 'This order costs {kosten} credits · you have {saldo} · {daarna} left after',
+        oudste: 'The oldest go first: {aantal} of these expire on {datum}.',
+        binnenkort: 'After this order, {aantal} credits expire on {datum}.',
+        /* Het spaarplafond (12 oktober 2026): wat er na deze bestelling bij de
+           volgende termijn nog boven het plafond zou vervallen. */
+        boven: 'On {datum}, {aantal} more come in: use {eraf} more before that day, or they lapse.',
+        /* Extra credits bijkopen (12 oktober 2026, ab-v4 = b): bij te weinig
+           credits het kleinste pakket dat het tekort dekt, met een link naar
+           Studio. Het concept van dit formulier blijft bewaard (1.04). */
+        tekort: 'You are {tekort} credits short. Buy {pakket} credits for {bedrag} excl. VAT, or simply pay for this order through Mollie.',
+        tekortAlgemeen: 'You are {tekort} credits short. You can buy up to {ruimte} extra credits this month, or simply pay for this order through Mollie.',
+        bijkoopLink: 'Buy credits',
+        hint: 'Switching to {plan} is better value: {bedrag} a month for {credits} credits.',
+        hintLink: 'Go to your plan',
+        na: 'Paid straight away with your credits; your confirmation follows by email. There is no separate invoice: your plan invoice covers this order.',
+        tegoed: 'Your account balance of {bedrag} stays for a payment through Mollie.',
+        optie: 'With {opties}, this order cannot be paid with credits: you pay it through Mollie, {bedrag} excl. VAT.',
+        opties: { voorrang: 'priority', outfit: 'an outfit', toeslag: 'the surcharge of your own look' },
+        en: 'and',
+        zonder: 'Without that choice it costs {kosten} credits; you have {saldo}.',
+        teWeinig: 'This order costs {kosten} credits; you have {saldo}.',
+        past: 'That is enough for {past} {dienst}: take {eraf} {producten} off to pay with credits.',
+        dienst: { catalog: ['catalog set', 'catalog sets'], lifestyle: ['carousel', 'carousels'] },
+        product: ['product', 'products'],
+        nieuw: 'On {datum}, {aantal} new credits come in.',
+        mollie: 'Or pay this order through Mollie: {bedrag} excl. VAT.',
+        submit: 'Order with credits',
+      },
     },
     /* ── "ALL FIVE STEPS" WAS NOT TRUE ON THE SAMPLE ──────────────────────
        18 augustus 2026. Deze zin stond als vaste tekst, en /test-sample heeft
@@ -1313,9 +1505,15 @@ const FORM = {
     // 'Timing' stond hier onvertaald tussen vier Nederlandse woorden. pricing.js
     // heeft het juiste woord al: Levertijd. 8 augustus 2026.
     /* Zie de noot bij de Engelse rail: stap 3 is het factuurblok. */
-    rail: ['Bestelling', 'Materiaal', 'Jouw gegevens', 'Levertijd', 'Betalen'],
+    /* 'Materiaal' werd 'Je foto’s' op 11 oktober 2026 (F3, 1.09): in stap 2
+       vraagt het formulier ook naar materiaal in de zin van stof, en dan
+       betekende het woord op één scherm twee dingen. De Engelse rail zei al
+       'Your photos'. */
+    rail: ['Bestelling', 'Je foto’s', 'Jouw gegevens', 'Levertijd', 'Betalen'],
     next: 'Verder',
     back: 'Terug',
+    /* Zie de Engelse tegenhanger (1.08). */
+    appOns: { vraag: 'Kom je er niet uit?', link: 'App ons' },
     optional: 'optioneel',
     garment: {
       label: 'Wat voor soort product gaat deze bestelling over?',
@@ -1355,7 +1553,7 @@ const FORM = {
       sampleKindCatalog: 'Catalogset',
       sampleKindCatalogGets: 'Vier beelden, je product op een schone ondergrond',
       sampleKindLifestyle: 'Lifestylecarrousel',
-      sampleKindLifestyleGets: 'Drie beelden, gedragen in een gestylede scène',
+      sampleKindLifestyleGets: 'Vier beelden in een gestylede look, drie op een model',
       sampleKindErr: 'Kies er één van de twee.',
       sampleFlatNote: 'voor één product, één per bedrijf.',
       countErr: 'Kies eerst hoeveel producten.',
@@ -1397,6 +1595,9 @@ const FORM = {
       levelAttended: ['Vaste leverdatum', `Vanaf ${WINDOW_THRESHOLD} producten`],
       levelUnattended: ['Normale doorlooptijd', `Tot en met ${WINDOW_THRESHOLD - 1} producten`],
       ladderLink: 'De hele prijs per product',
+      /* Zie de Engelse tegenhanger (1.07). */
+      inbegrepen: 'Inbegrepen: een gezicht naar keuze, de styling eromheen, één revisieronde en volledige commerciële gebruiksrechten.',
+      inbegrepenProef: 'Inbegrepen: een gezicht naar keuze, de styling eromheen en volledige commerciële gebruiksrechten.',
     },
     s2: {
       h: 'Stuur de productfoto’s',
@@ -1435,8 +1636,8 @@ const FORM = {
       emailErr: 'We hebben een e-mailadres nodig om de bevestiging naartoe te sturen.',
       phone: 'Telefoon of WhatsApp',
       /* Zie de Engelse noot. */
-      phoneErr: 'Vul een nummer in waarop we je kunnen bereiken — we appen je als er iets aan je foto’s onduidelijk is.',
-      phoneHint: 'We gebruiken het alleen voor deze bestelling.',
+      phoneErr: 'Vul een nummer in waarop we je kunnen bereiken — we nemen contact met je op als er iets met je bestelling is.',
+      phoneHint: 'We nemen contact met je op als er iets met je bestelling is.',
       website: 'Website of shoplink',
       country: 'Land',
       countryPick: 'Kies een land',
@@ -1458,17 +1659,20 @@ const FORM = {
       vat: 'Btw-nummer',
       vatErr: 'Vul je btw-nummer in, of zet het vinkje hieronder aan als je er geen hebt.',
       refusePhone: 'We konden in wat je verstuurde geen telefoonnummer lezen. Vul een nummer in waarop we je kunnen bereiken en verstuur het opnieuw.',
+      /* Zie de Engelse refuseBotcheck. */
+      refuseBotcheck: 'We konden niet bevestigen dat deze bestelling van een mens komt, dus is hij niet verstuurd en is er niets afgeschreven. Probeer het zo nog eens, of plaats de bestelling rechtstreeks bij ons:',
+      refuseBotcheckWaLabel: 'stuur een WhatsApp',
+      refuseBotcheckWa: 'Hoi VISUAILS, ik probeerde een bestelling te plaatsen op de site en dat lukte niet. Kunnen jullie me helpen hem te plaatsen?',
+      refuseBotcheckOf: 'of mail',
       refuseVat: 'Dit btw-nummer heeft niet de vorm die bij het gekozen land hoort. Verbeter het, of zet het vinkje “Ik heb geen btw-nummer” aan.',
       noVat: 'Ik heb geen btw-nummer',
-      vatConfirm: 'Ik verklaar dat mijn bedrijf buiten Nederland is gevestigd en dat dit btw-nummer van dat bedrijf is.',
-      vatConfirmHint: 'Nodig voordat we 0% op je factuur kunnen zetten. Blijkt de btw-verlegging later onjuist, dan krijgen wij de aanslag. Daarom moet je dit zelf aanvinken.',
       vatHint: 'Zakelijk in een ander EU-land: we controleren hem bij VIES, en klopt hij, dan rekenen we geen Nederlandse btw.',
       reg: 'Registratienummer',
       regKvk: 'KVK-nummer',
       regKvkErr: 'Een KVK-nummer heeft 8 cijfers — je vindt het op je KVK-uittreksel of je facturen.',
       regErr: 'Vul een registratienummer in — in Nederland je KVK-nummer, daarbuiten het nummer van je eigen register.',
       regHint: 'Alleen nodig omdat je geen btw-nummer hebt: het nummer uit het handelsregister van je land (in Duitsland bijvoorbeeld je Handelsregisternummer). Zonder btw-nummer rekenen we 21% btw en kijken we je gegevens na voordat je betaalt — meestal binnen een werkdag.',
-      regHintNl: 'Je KVK-nummer van acht cijfers. Daarmee bevestigen we dat je zakelijk bestelt.',
+      regHintNl: 'VISUAILS werkt alleen voor bedrijven: met je KVK-nummer van acht cijfers bevestig je dat je zakelijk bestelt.',
       regHintOther: 'Bijvoorbeeld je EIN in de Verenigde Staten of je company number in het Verenigd Koninkrijk. Geen nummer? Dan is de zakelijke bevestiging hieronder genoeg.',
       message: 'Wat we moeten weten',
       // Zie de Engelse noot hierboven.
@@ -1498,6 +1702,13 @@ const FORM = {
       lostH: 'Die leverdatum is weg terwijl je dit invulde',
       lostBody: 'Er is niets aangemaakt en niets in rekening gebracht. Kies hieronder een andere datum en verstuur opnieuw.',
       nojs: 'Zonder JavaScript kunnen we de agenda niet vanaf deze pagina checken. Verstuur het formulier, dan komen we op schrift met een leverdatum terug — tot die tijd staat er geen datum vast.',
+    },
+    /* Zie de Engelse tegenhanger (1.04). */
+    concept: {
+      h: 'Je was bezig met een bestelling',
+      noot: 'Je gegevens bewaren we niet; die vul je straks opnieuw in.',
+      verder: 'Verder gaan',
+      opnieuw: 'Opnieuw beginnen',
     },
     open: {
       h: 'Deze bestelling staat al klaar',
@@ -1530,6 +1741,31 @@ const FORM = {
       saveHint: 'Je naam, merk en contactgegevens — niet deze bestelling of wat je ons erover vertelde.',
       saveHintOut: 'Je naam, merk en contactgegevens — niet deze bestelling of wat je ons erover vertelde. Ze worden bewaard zodra je voor het eerst inlogt; de link staat in je bevestigingsmail.',
       tegoed: 'Je hebt {bedrag} tegoed. Dat gaat automatisch van het totaal (incl. btw) af: bij het afrekenen betaal je alleen de rest, en dekt het alles, dan hoef je niets te betalen en beginnen we meteen.',
+      /* Zie de Engelse tegenhanger. */
+      credits: {
+        kost: 'Deze bestelling kost {kosten} credits · je hebt er {saldo} · daarna {daarna}',
+        oudste: 'De oudste gaan eerst: {aantal} daarvan vervallen op {datum}.',
+        binnenkort: 'Na deze bestelling vervallen er {aantal} op {datum}.',
+        boven: 'Op {datum} komen er {aantal} bij: gebruik er vóór die dag nog {eraf}, anders vallen ze weg.',
+        tekort: 'Je komt {tekort} credits tekort. Koop {pakket} credits bij voor {bedrag} excl. btw, of betaal deze bestelling gewoon via Mollie.',
+        tekortAlgemeen: 'Je komt {tekort} credits tekort. Je kunt deze maand nog {ruimte} credits bijkopen, of je betaalt deze bestelling gewoon via Mollie.',
+        bijkoopLink: 'Credits bijkopen',
+        hint: 'Overstappen naar {plan} is voordeliger: {bedrag} per maand voor {credits} credits.',
+        hintLink: 'Naar je abonnement',
+        na: 'Je bestelling is meteen betaald met credits; je bevestiging komt per mail. Er komt geen aparte factuur: je termijnfactuur dekt deze bestelling.',
+        tegoed: 'Je tegoed van {bedrag} blijft staan voor een betaling via Mollie.',
+        optie: 'Met {opties} gaat deze bestelling niet met credits: je betaalt hem via Mollie, {bedrag} excl. btw.',
+        opties: { voorrang: 'voorrang', outfit: 'een outfit', toeslag: 'de toeslag van je eigen look' },
+        en: 'en',
+        zonder: 'Zonder die keuze kost hij {kosten} credits; je hebt er {saldo}.',
+        teWeinig: 'Deze bestelling kost {kosten} credits, je hebt er {saldo}.',
+        past: 'Daarmee kun je {past} {dienst} bestellen: haal {eraf} {producten} eraf om met credits te betalen.',
+        dienst: { catalog: ['catalogset', 'catalogsets'], lifestyle: ['carrousel', 'carrousels'] },
+        product: ['product', 'producten'],
+        nieuw: 'Op {datum} komen er {aantal} bij.',
+        mollie: 'Of betaal deze bestelling via Mollie: {bedrag} excl. btw.',
+        submit: 'Bestellen met credits',
+      },
     },
     /* Zie de noot bij de Engelse tegenhanger. */
     noscript: (n: string, sample: boolean) => sample
@@ -1721,6 +1957,12 @@ const config = {
      daar omdat ze geld kosten, deze staan daar omdat ze alleen een vakje zijn dat
      het formulier tekent. Zie de kop bij REF_SHOT_PREFIX. */
   maxRefPerProduct: MAX_REF_PER_PRODUCT,
+  /* ── DE VOORBEELDFOTO PER VAK — 11 oktober 2026 (F3, 5.07) ─────────────────
+     ±64 px naast de regel bij elk vak, en ALLEEN als het bestand er echt is
+     (isEcht() uit beeldAanwezig.js): ontbreekt het, dan staat hier '' en toont
+     de kaart geen plaatje — geen grijs vlak, geen plaatshouder. De bestanden
+     maakt Lucas (public/img/vak-<vak>.webp, 128 × 128 px). */
+  voorbeeld: Object.fromEntries(SHOTS.map((x) => [x.id, x.voorbeeld && isEcht(x.voorbeeld) ? x.voorbeeld : ''])),
   /* ── DE STYLING PER PRODUCT — 22 september 2026 ──────────────────────────
      Wat pipeline.js nodig heeft om onderaan stap 2 één rij per product te
      bouwen (zie Styling.astro): de typen met hun uitsnede, de namen van de
@@ -1867,6 +2109,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
     id="pl-form"
     class="pl-form"
     data-pipeline
+    data-botcheck="bestelling"
     method="post"
     action="/api/order"
     enctype="multipart/form-data"
@@ -1898,12 +2141,37 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         langs het formulier heen post, en voor de dag dat een script niet laadt. */}
     <div class="pl-weigering" data-form-refusal="phone" role="status" tabindex="-1" hidden>{f.s3.refusePhone}</div>
     <div class="pl-weigering" data-form-refusal="vat" role="status" tabindex="-1" hidden>{f.s3.refuseVat}</div>
+    {/* ── DE BOTCHECK ZEI NEE — 8 oktober 2026 (o03) ─────────────────────────
+        Alleen als Cloudflare uitdrukkelijk zegt dat het token ongeldig is; zonder
+        token of bij een storing gaat de bestelling gewoon door (src/lib/turnstile.js).
+        Er is dan niets aangemaakt, en de klant krijgt twee wegen die altijd werken. */}
+    <div class="pl-weigering" data-form-refusal="botcheck" role="status" tabindex="-1" hidden>
+      {f.s3.refuseBotcheck}{' '}
+      <a href={waHref(f.s3.refuseBotcheckWa)} target="_blank" rel="noopener">{f.s3.refuseBotcheckWaLabel}<NieuwTabblad lang={lang} /></a>{' '}
+      {f.s3.refuseBotcheckOf}{' '}
+      <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
+    </div>
     {/* ── AL BESTELD, NOG NIET BETAALD — 24 september 2026 ─────────────────
         Wie op de betaalpagina van Mollie op "terug" drukte, kwam op een leeg
         formulier uit, terwijl zijn bestelling al bestond. Opnieuw invullen gaf
         een tweede bestelling, en de eerste kreeg drie dagen later een
         betaalherinnering. pipeline.js (checkOpenOrder) laat dit blok zien als
         er in dit tabblad net een bestelling is geplaatst die nog open staat. */}
+    {/* ── JE WAS BEZIG MET EEN BESTELLING — 11 oktober 2026 (F3, 1.04) ───────
+        pipeline.js (checkConcept) toont dit blok als er op dit apparaat een
+        bestelling van deze pagina half klaarstaat: de keuzes en de foto's die
+        nog bij ons staan, niet de gegevens. Twee knoppen, en zonder script of
+        zonder opslag blijft het gewoon weg. */}
+    <div class="pl-lost pl-open pl-concept" data-pl-concept hidden role="status" tabindex="-1">
+      <h2 class="pl-lost-h">{f.concept.h}</h2>
+      <p class="pl-lost-body" data-pl-concept-wat></p>
+      <p class="pl-lost-body" data-pl-concept-weg hidden></p>
+      <p class="pl-lost-body pl-concept-noot">{f.concept.noot}</p>
+      <div class="pl-open-acts">
+        <button type="button" class="knop knop-inkt" data-pl-concept-verder>{f.concept.verder}</button>
+        <button type="button" class="knop" data-pl-concept-opnieuw>{f.concept.opnieuw}</button>
+      </div>
+    </div>
     <div class="pl-lost pl-open" data-pl-open hidden role="status">
       <h2 class="pl-lost-h">{f.open.h}</h2>
       <p class="pl-lost-body">{f.open.body} <b data-pl-open-ref></b></p>
@@ -1967,7 +2235,10 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           op vier Nederlandse pagina's, tot 18 augustus 2026. Een reparatie op één
           plek terwijl hetzelfde patroon nog ergens anders staat, is geen reparatie.
           Sectie 10 van tests/nav.test.mjs bewaakt het nu over de hele bron. */}
-      <a href={`/account?lang=${lang}`} class="knop knop-inkt pl-signin-cta">{f.signInCta}</a>
+      {/* 1.06 (8 oktober 2026): na de code terug in DIT formulier, met de look
+          die in de adresbalk stond (die leest /account/login uit de Referer).
+          Zie formulierTerug() in src/lib/account.js. */}
+      <a href={`/account/login?lang=${lang}&terug=${encodeURIComponent(Astro.url.pathname)}`} class="knop knop-inkt pl-signin-cta">{f.signInCta}</a>
     </aside>
 
     {/* De vierde rail-ingang is 'Levertijd' / 'Timing', en die stap bestaat niet
@@ -2167,7 +2438,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         <h3 class="pl-sub-h">{f.s1.moreH}</h3>
         <p>{f.s1.moreBody}</p>
         <p class="pl-more-btns">
-          <a href={waHref(f.s1.moreWaText)} target="_blank" rel="noopener" class="knop knop-inkt">{f.s1.moreWa}</a>
+          <a href={waHref(f.s1.moreWaText)} target="_blank" rel="noopener" class="knop knop-inkt">{f.s1.moreWa}<NieuwTabblad lang={lang} /></a>
           <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(f.s1.moreMailSubject)}&body=${encodeURIComponent(f.s1.moreMailBody)}`} class="knop knop-lijn">{f.s1.moreMail}</a>
         </p>
         <p class="pl-more-alt">{WHATSAPP_DISPLAY} · {CONTACT_EMAIL}</p>
@@ -2285,6 +2556,13 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           <p class="pl-total-note" data-pl-total-note></p>
         </div>
         <p class="pl-total-rung" data-pl-rung hidden></p>
+        {/* ── MEER PRODUCTEN VOOR HETZELFDE OF MINDER — 8 oktober 2026 (1.07) ──
+            Lucas: *"subtiel en niet overheersend en salesachtig"*. Dus geen
+            kader, geen badge, geen uitroepteken: gewone tekst, alleen de twee
+            bedragen vet. Staat hij er, dan zwijgt de ladderregel hierboven —
+            twee regels die hetzelfde aanbod doen, is er één te veel. Gevuld door
+            syncBesparing() in pipeline.js; zonder script blijft hij leeg. */}
+        <p class="pl-total-besparing" data-pl-besparing hidden></p>
         {/* ── DE ABONNEMENTSREGEL ─────────────────────────────────────────────
             Onder de ladderregel en niet ernaast: het zijn twee versies van
             dezelfde vraag — "kan dit voordeliger" — en de ladder gaat over DEZE
@@ -2345,12 +2623,26 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         <strong>{sample.price}</strong> <span class="pl-total-flat-btw">{vatLabel('excl', lang)}</span> {f.s1.sampleFlatNote}
       </p>
       )}
+      {/* Wat er bij de prijs zit (1.07). Vaste tekst, geen bedrag: die staan
+          erboven. Bij de proef zonder revisieronde. */}
+      <p class="pl-inbegrepen">{isSample ? f.s1.inbegrepenProef : f.s1.inbegrepen}</p>
 
       {/* THE ONE BLOCK THAT DIFFERS PER SERVICE. Catalog and complete slot in
           the background picker; lifestyle slots in the style picker, because a
           styled scene has no flat ground to choose. Nothing else on this page
           knows which one it got. */}
       <slot />
+
+      {/* ── WIE HET DRAAGT: TERUG IN STAP 1 — 11 oktober 2026 (F3, 1.09) ──────
+          Stond sinds 10 september boven de productkaarten in stap 2, en elke
+          kaart had er een eigen rij gezichten bij: bij vijf producten zes keer
+          dezelfde vraag, tussen de fotovakken. Lucas koos (afvinklijst 2, form
+          = a): het gezicht kies je één keer, in stap 1, naast look en
+          achtergrond — "wat je krijgt". Stap 2 is alleen nog "wat je stuurt";
+          afwijken per product kan daar onder het ingeklapte "Meer over dit
+          product". De slot heet nog steeds "model", dus de pagina's die hem
+          vullen (catalog, lifestyle, de proef) hoeven niets te weten. */}
+      <slot name="model" />
 
       {/* DE BEELDVERHOUDING, NA DE SLOT EN NIET ERVOOR. De slot draagt de vraag
           die deze dienst DEFINIEERT — de achtergrond of de look — en die hoort
@@ -2388,7 +2680,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       <details class="pl-meeropties" data-pl-meeropties>
         <summary class="pl-meeropties-kop">
           <span class="pl-meeropties-t">{f.s1.meerOpties}</span>
-          <span class="pl-meeropties-sub">{isCatalog || service === 'complete' || service === 'drop' ? f.s1.meerOptiesSub : f.s1.meerOptiesSubZonderHoek}</span>
+          <span class="pl-meeropties-sub">{isCatalog ? f.s1.meerOptiesSub : f.s1.meerOptiesSubZonderHoek}</span>
         </summary>
         <div class="pl-meeropties-body">
           <slot name="extra" />
@@ -2474,6 +2766,12 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         <span></span>
         <button type="button" class="knop knop-inkt" data-pl-next>{f.next}</button>
       </div>
+      {/* ── "KOM JE ER NIET UIT? APP ONS" — 8 oktober 2026 (1.08) ───────────
+          Onder elke stap één rustige regel: een gewone wa.me-link, zonder
+          script en zonder tijdsbelofte. Het klaargezette bericht noemt de stap
+          en (zodra het script het aantal weet) de bestelling, nooit iets over
+          de klant zelf. syncAppOns() in pipeline.js werkt het aantal bij. */}
+      <p class="pl-appons">{f.appOns.vraag} <a href={appOnsHref(1)} data-pl-appons="1" target="_blank" rel="noopener">{f.appOns.link}<NieuwTabblad lang={lang} /></a></p>
     </section>
 
     <!-- STEP 2 · MATERIAL -->
@@ -2492,27 +2790,22 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
     <section class="pl-step" data-pl-step="2">
       <h2 class="pl-h" data-pl-head>{f.s2.h}</h2>
 
-      {/* ── WIE HET DRAAGT, BOVEN DE KAARTEN — 10 september 2026 ────────────
-          Lucas: *"Verplaats model keuze naar material gedeelte van bestelform
-          bij alle bestelforms. Dan word het eerste scherm al wat rustiger en de
-          klant moet toch bij elk product kunnen kiezen wie het draagt."*
+      {/* ── WIE HET DRAAGT STOND HIER — tot 11 oktober 2026 ─────────────────
+          Sinds F3 (1.09) staat <slot name="model" /> weer in stap 1; zie de noot
+          daar. Een eigen slot en niet vast ingebouwd, zoals hij hier stond:
+          welke zin er boven de tegels hoort verschilt per dienst, en een
+          formulier zonder modelvraag laat hem gewoon leeg.
 
-          Een eigen slot en niet vast ingebouwd: welke zin er boven de tegels
-          hoort verschilt per dienst (een catalogset heeft één modelfoto, een
-          carrousel heeft er een ín de carrousel), en de proef heeft weer een
-          eigen tekst. De pagina die de dienst kiest, kiest dus ook deze regel —
-          zelfde afspraak als bij de slot eronder in stap 1.
-
-          Een formulier zonder modelvraag (video, abonnement) laat de slot leeg
-          en er staat niets: een lege slot rendert niets, en er is geen vlag om
-          te vergeten. */}
-      <slot name="model" />
-
+          ── EN "WAT JE OPSTUURT" (Styling.astro) STAAT HIER NIET MEER ──────
+          Lucas vond stap 2 "moeizaam en chaotisch"; één van de oorzaken was dat
+          elk product er twee keer stond: als fotokaart bovenaan en als rij in
+          "Wat je opstuurt" onderaan. De productsoort staat nu óp de kaart, en
+          wat er erbij in beeld mag (de contextstukken) onder "Meer over dit
+          product" op dezelfde kaart. Zie buildSoort() en buildErbij() in
+          pipeline.js. De zin over "stuur alles mee" (s2.skip) is mee weg: wat
+          er gebeurt als er iets ontbreekt, zegt het tussenscherm van 2.05 nu,
+          op het moment dat het speelt. */}
       <ProductUploader lang={lang} />
-
-      {!isSample && <Styling lang={lang} />}
-
-      <p class="hint pl-skip">{f.s2.skip}</p>
 
       <p class="pl-step-err" id="pl-err-2" data-pl-step-error hidden></p>
 
@@ -2520,6 +2813,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         <button type="button" class="knop knop-lijn" data-pl-back>{f.back}</button>
         <button type="button" class="knop knop-inkt" data-pl-next>{f.next}</button>
       </div>
+      <p class="pl-appons">{f.appOns.vraag} <a href={appOnsHref(2)} data-pl-appons="2" target="_blank" rel="noopener">{f.appOns.link}<NieuwTabblad lang={lang} /></a></p>
     </section>
 
     <!-- STEP 3 · BRIEF -->
@@ -2722,33 +3016,11 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           </label>
           </div>
 
-          {/* ── DE VERKLARING BIJ 0% ────────────────────────────────────────
-              Uit btwverleggingspecificatie.md §4. Verborgen tot er werkelijk 0%
-              uit de beslissing komt, en dan verplicht.
-
-              WAAROM HIJ ER STAAT. Bij een verlegging schuift de btw-plicht naar
-              de afnemer, en bij een verlegging die onjuist blijkt komt de
-              naheffing bij de leverancier — bij VISUAILS. Dit vinkje is het
-              enige bewijs dat de claim van de klant komt en niet van ons.
-
-              WAAROM ER GEEN NIEUWE REGEL VOOR NODIG WAS. syncRequired() in
-              pipeline.js zet `required` al op elk veld met `data-pl-req="1"`
-              dat ZICHTBAAR is. Dit blok is `hidden` tot 0% van toepassing is,
-              dus is het vinkje dan niet zichtbaar en niet verplicht, en zodra
-              het verschijnt is het dat wel. Eén bron, geen tweede attribuut.
-
-              Zonder JavaScript blijft het blok verborgen en blokkeert het niets.
-              Dan is er ook geen 0% zonder verklaring: de poort in
-              functions/api/order.js houdt de betaling tegen en de order komt op
-              de beoordelingslijst. Degraderen naar veilig, niet naar gratis. */}
-          <div class="field pl-vatconfirm" data-pl-vatconfirm hidden>
-            <label class="pl-check" for="pl-vat-confirmed">
-              <input type="checkbox" id="pl-vat-confirmed" name="vat_confirmed" value="yes"
-                     data-pl-req="1" data-pl-err-msg={f.s3.vatConfirm} />
-              <span>{f.s3.vatConfirm}</span>
-            </label>
-            <span class="hint">{f.s3.vatConfirmHint}</span>
-          </div>
+          {/* ── HET APARTE 0%-VINKJE IS WEG — 8 oktober 2026 (8.06, V19 = a) ──────
+              Hier stond een verplicht verklaringsvinkje voor 0% verlegd. De
+              verklaring staat nu in het zakelijk-vinkje van de laatste stap, met
+              het merk en het btw-nummer erin; zie syncVatConfirm() in pipeline.js
+              en verleggingTelt() in src/data/vat.js. */}
 
           {/* ── HET REGISTRATIENUMMER ────────────────────────────────────────
               12 augustus 2026. VISUAILS levert uitsluitend zakelijk, en dit is
@@ -2871,6 +3143,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         <button type="button" class="knop knop-lijn" data-pl-back>{f.back}</button>
         <button type="button" class="knop knop-inkt" data-pl-next>{f.next}</button>
       </div>
+      <p class="pl-appons">{f.appOns.vraag} <a href={appOnsHref(3)} data-pl-appons="3" target="_blank" rel="noopener">{f.appOns.link}<NieuwTabblad lang={lang} /></a></p>
     </section>
 
     {/* STAP 4 · LEVERTIJD — bestaat niet bij een proefvisual.
@@ -2936,6 +3209,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         <button type="button" class="knop knop-lijn" data-pl-back>{f.back}</button>
         <button type="button" class="knop knop-inkt" data-pl-next>{f.next}</button>
       </div>
+      <p class="pl-appons">{f.appOns.vraag} <a href={appOnsHref(4)} data-pl-appons="4" target="_blank" rel="noopener">{f.appOns.link}<NieuwTabblad lang={lang} /></a></p>
     </section>
     )}
 
@@ -2968,9 +3242,13 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       <div class="pl-after">
         <h3 class="pl-sub-h">{f.s5.afterH}</h3>
         <ul class="pl-after-list">
-          {f.s5.after.map((t, i) => <li>{t}{i === 0 && <span data-pl-after-window hidden> {f.s5.afterWindow}</span>}{i === 1 && <span data-pl-after-eu> {f.s5.afterEu}</span>}</li>)}
+          {f.s5.after.map((t, i) => <li data-pl-mollie={i < 2 ? '' : undefined}>{t}{i === 0 && <span data-pl-after-window hidden> {f.s5.afterWindow}</span>}{i === 1 && <span data-pl-after-eu> {f.s5.afterEu}</span>}</li>)}
+          {/* 1.07: wanneer de beelden komen en hoelang de revisieronde openstaat.
+              Zonder script de gewone levertijd; syncWanneer() zet de gekozen datum
+              of voorrang erin. De proef heeft geen revisieronde. */}
+          <li data-pl-wanneer>{PIPE[lang].wanneer.snel}{!isSample && ` ${PIPE[lang].wanneer.revisie}`}</li>
         </ul>
-        <p class="pl-pay-note">{f.s5.payNote}</p>
+        <p class="pl-pay-note" data-pl-mollie>{f.s5.payNote}</p>
 
         {/* THE WITHDRAWAL WAIVER. See src/data/consent.js for the two statutory
             conditions it satisfies and why the VERSION rather than a boolean is
@@ -3014,10 +3292,14 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
             het is "er is een vinkje gezet bij DEZE tekst". Zie
             src/data/business.js. */}
         <input type="hidden" name="business_version" value={BUSINESS_VERSION} />
+        {/* 8.06: "yes" zolang de verleggingszin hieronder in het vinkje staat (een
+            klant in een ander EU-land met btw-nummer); gezet door syncVatConfirm().
+            Zonder script leeg: dan geen verlegging en 21%, nooit 0% zonder zin. */}
+        <input type="hidden" name="vat_confirmed" value="" data-pl-verlegd-veld />
         <label class="pl-consent">
           <input type="checkbox" name="business_declaration" value="yes" required
                  data-pl-err-msg={lang === 'nl' ? "VISUAILS levert uitsluitend zakelijk. Vink dit aan om te bevestigen dat je voor je bedrijf bestelt." : "VISUAILS supplies businesses only. Please tick this to confirm you are ordering for a business."} />
-          <span>{currentBusiness(lang)}</span>
+          <span><span class="pl-verlegd" data-pl-verlegd hidden></span>{currentBusiness(lang)}</span>
         </label>
 
         {/* Eén vinkje sinds 30 september 2026: de zakelijke verklaring (business-v2)
@@ -3048,9 +3330,29 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         <input type="hidden" name="save_details" value="" data-pl-save-flag />
       </div>
 
+      {/* ── CREDITS VAN EEN ABONNEE — 8 oktober 2026 (ronde B, §28.2, 6.06) ──
+          "Deze bestelling kost 48 credits · je hebt er 120 · daarna 72", of
+          waarom het niet met credits gaat en wat dan wel kan. pipeline.js
+          (syncCredits) vult het uit /account/me en src/data/creditKosten.js —
+          dezelfde som als de server. Verborgen zonder credits of zonder script;
+          de server beslist toch zelf. */}
+      <div class="pl-credits" data-pl-credits data-tekst={JSON.stringify(f.s5.credits)} hidden>
+        <p class="pl-credits-kop" data-pl-credits-kop></p>
+        <ul class="pl-credits-regels" data-pl-credits-regels></ul>
+        {/* Extra credits bijkopen (12 oktober 2026): één regel met een link naar
+            Studio, en de hint "Overstappen is voordeliger" als die waar is. */}
+        <p class="pl-credits-bij" data-pl-credits-bij hidden><span data-pl-credits-bij-tekst></span> <a class="pijl" data-pl-credits-bij-link href="/account/plan/#bijkopen"></a></p>
+        <p class="pl-credits-bij" data-pl-credits-hint hidden><span data-pl-credits-hint-tekst></span> <a class="pijl" data-pl-credits-hint-link href="/account/plan/#je-plan"></a></p>
+      </div>
+
       {/* Tegoed van een ingelogde klant (29 september 2026) — pipeline.js vult
           het bedrag uit /account/me. Zie src/lib/tegoedVerrekening.js. */}
       <p class="pl-tegoed" data-pl-tegoed data-tekst={f.s5.tegoed} hidden></p>
+
+      {/* De plek voor de onzichtbare botcheck (o03, 8 oktober 2026). Leeg en
+          onzichtbaar; alleen in de modus "Beheerd" kan hier bij een verdacht
+          verzoek een vinkje van Cloudflare verschijnen. Zie src/scripts/botcheck.js. */}
+      <div class="pl-botcheck" data-botcheck-plek></div>
 
       <div class="pl-submit-row">
         <button type="button" class="knop knop-lijn pl-back-inline" data-pl-back>{f.back}</button>
@@ -3079,6 +3381,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         {f.s5.legal[0]}<a href={lp('/terms')}>{f.s5.legalTerms}</a>{f.s5.legal[1]}
         <a href={lp('/privacy')}>{f.s5.legalPrivacy}</a>{f.s5.legal[2]}
       </p>
+      <p class="pl-appons">{f.appOns.vraag} <a href={appOnsHref(isSample ? 4 : 5)} data-pl-appons={isSample ? '4' : '5'} target="_blank" rel="noopener">{f.appOns.link}<NieuwTabblad lang={lang} /></a></p>
     </section>
     {/* ── HET MEELOPENDE OVERZICHT ─────────────────────────────────────────
         Als LAATSTE kind van het formulier, en dat is de leesvolgorde die je
@@ -3164,7 +3467,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   <p class="lopend">{f.footBody}</p>
   <div class="acties">
     <a href={lp('/test-sample')} class="knop knop-inkt">{f.footCta}</a>
-    <a href={waHref(f.footWaText)} target="_blank" rel="noopener" class="knop knop-lijn">{f.footWa}</a>
+    <a href={waHref(f.footWaText)} target="_blank" rel="noopener" class="knop knop-lijn">{f.footWa}<NieuwTabblad lang={lang} /></a>
   </div>
 </section>
 </>
@@ -3596,6 +3899,23 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
     border: 1px solid var(--line); border-radius: var(--r-md, 8px);
     font-size: .94rem; line-height: 1.5; color: var(--ink);
   }
+  /* De creditregel (ronde B): dezelfde vorm als het tegoed, met de kopregel
+     iets zwaarder, want dat is de zin waar een abonnee op stuurt. Met credits
+     betaald krijgt de rand de inktkleur; anders blijft hij rustig. */
+  .pl-credits {
+    margin: 1.2rem 0 0; padding: .8rem 1rem; max-width: 64ch;
+    border: 1px solid var(--line); border-radius: var(--r-md, 8px);
+    color: var(--ink);
+  }
+  .pl-credits.is-credits { border-color: var(--ink); }
+  .pl-credits-kop { margin: 0; font-size: 1rem; line-height: 1.5; font-weight: 600; }
+  .pl-credits-regels { list-style: none; margin: .4rem 0 0; padding: 0; }
+  .pl-credits-regels:empty { display: none; }
+  /* :global, want pipeline.js maakt de regels pas na het laden (zonder het
+     scope-attribuut van deze component). */
+  .pl-credits-regels :global(li) { margin: .3rem 0 0; font-size: .92rem; line-height: 1.55; color: var(--ink-2); }
+  .pl-credits-bij { margin: .5rem 0 0; font-size: .92rem; line-height: 1.55; color: var(--ink); }
+  .pl-credits-bij a { white-space: nowrap; }
   .pl-save-offer {
     margin: 1.4rem 0 0; padding: .9rem 0 0;
     border-top: 1px solid var(--line);
@@ -3784,25 +4104,23 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   }
 
   .pl-total-note { margin-top: .8rem; font-size: .85rem; color: var(--ink-3); line-height: 1.5; }
-  /* The one line on this step that is an offer rather than a fact, so it is
-     the one line that carries the system colour — the same treatment the gate
-     note gets, for the same reason: it is a statement of how the ladder works,
-     not a scarcity badge. */
+  /* ── DE LADDERREGEL, NET ZO RUSTIG ALS DE BESPARINGSREGEL — 8 okt 2026 ────
+     Lucas bij 1.07: *"subtiel en niet overheersend en salesachtig"*. Vroeger
+     stond deze regel in een gesignaleerd kader; nu dezelfde toon als
+     .pl-total-besparing hieronder: geen kader, geen signaalkleur, gewone
+     tekstkleur, alleen de bedragen vet (pipeline.js zet die als <b>). */
   .pl-total-rung {
-    margin-top: .8rem;
-    padding: .75rem .95rem;
-    border: 1px solid var(--signal);
-    background: var(--paper-2);
-    color: var(--signal-ink);
-    font-size: .9rem;
-    line-height: 1.5;
+    margin-top: .7rem;
+    font-size: .86rem;
+    line-height: 1.55;
+    color: var(--ink-2);
+    max-width: 62ch;
   }
-  /* ── DE ABONNEMENTSREGEL, EEN TOON ZACHTER DAN DE LADDERREGEL ─────────────
-     De ladderregel staat in een gesignaleerd kader: hij gaat over deze
-     bestelling, is nu waar en morgen niet meer, en dat verdient een rand. De
-     abonnementsregel is een tweede gedachte over ELKE maand — dezelfde plek,
-     geen kader, alleen een lijntje erboven. Twee gekaderde blokken onder elkaar
-     zouden allebei minder gaan tellen, en de bovenste is de belangrijkste. */
+  .pl-total-rung :global(b) { color: var(--ink); font-weight: 600; }
+  /* ── DE ABONNEMENTSREGEL ──────────────────────────────────────────────────
+     Een tweede gedachte over ELKE maand — dezelfde plek, geen kader, alleen
+     een lijntje erboven, zodat hij losstaat van de regels over deze
+     bestelling. */
   .pl-total-plan {
     margin-top: .7rem;
     padding-top: .7rem;
@@ -3813,6 +4131,33 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
     max-width: 62ch;
   }
   .pl-total-plan-a { margin-left: .35rem; color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+  /* ── 1.07: DE BESPARINGSREGEL EN WAT ER BIJ DE PRIJS ZIT ──────────────────
+     Dezelfde toon als de abonnementsregel: geen kader, geen signaalkleur. De
+     knop is een tekstknop in de lopende tekst (onderstreept, zelfde kleur), geen
+     knopvorm — hij zet alleen het aantal. */
+  .pl-total-besparing {
+    margin-top: .7rem;
+    font-size: .86rem;
+    line-height: 1.55;
+    color: var(--ink-2);
+    max-width: 62ch;
+  }
+  /* :global(), want pipeline.js bouwt de knop en de <b>'s; die dragen het
+     scope-attribuut van deze component niet. */
+  .pl-total-besparing :global(b) { color: var(--ink); font-weight: 600; }
+  .pl-total-besparing :global(.pl-besparing-knop) {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .pl-total-besparing :global(.pl-besparing-knop:hover) { color: var(--ink); }
+  .pl-total-besparing :global(.pl-besparing-knop:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .pl-inbegrepen { margin: .9rem 0 0; font-size: .86rem; line-height: 1.55; color: var(--ink-2); max-width: 62ch; }
   .pl-total-first,
   .pl-total-display { margin-top: .6rem; font-size: .82rem; color: var(--ink-3); line-height: 1.5; max-width: 62ch; }
   .pl-total-display { font-style: italic; }
@@ -4131,6 +4476,9 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   .pl-consent input { accent-color: var(--accent); width: 17px; height: 17px; flex: none; margin-top: .15rem; }
   .pl-consent span { font-size: .86rem; line-height: 1.6; color: var(--ink-2); }
   .pl-consent:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  /* 8.06: de verleggingszin als eerste regel in het zakelijk-vinkje (EU met btw-nummer). */
+  .pl-consent .pl-verlegd { display: block; margin-bottom: .45rem; color: var(--ink); }
+  .pl-consent .pl-verlegd[hidden] { display: none; }
 
   /* ── Navigation ───────────────────────────────────────────────────────────
      .pl-nav is the wizard's own control strip and does not exist without JS.
@@ -4148,6 +4496,11 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
     border-top: 1px solid var(--line-strong);
   }
   .pl-form.is-live .pl-nav { display: flex; }
+  /* 1.08: "Kom je er niet uit? App ons" — één rustige regel onder de knoppen,
+     in de gewone tekstkleur, geen knop en geen icoon. */
+  .pl-appons { margin: 1rem 0 0; font-size: .86rem; line-height: 1.55; color: var(--ink-2); }
+  .pl-appons a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+  .pl-appons a:hover { text-decoration-thickness: 2px; }
 
   .pl-submit-row {
     display: flex;
@@ -4645,7 +4998,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   .pl-kit {
     margin: clamp(1.2rem, 2.4vw, 1.8rem) 0 0;
     padding: .9rem 1rem .9rem 1.1rem;
-    background: var(--ghost, rgb(17 17 17 / .04));
+    background: var(--ghost, rgb(15 12 36 / .04));
     border-left: 3px solid var(--accent, #4A1FFF);
     border-radius: 0 var(--r-sm, 8px) var(--r-sm, 8px) 0;
     max-width: var(--pl-measure);

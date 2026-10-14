@@ -83,7 +83,8 @@ import { VAT_RATE as PRICING_VAT_RATE } from '../data/pricing.js';
 export { VAT_RATE };
 
 /** Services that can be priced from the ladder. Anything else is not payable. */
-export const PAYABLE_SERVICES = new Set(['catalog', 'lifestyle', 'complete']);
+/* 'complete' stond er ook in; compleet bestaat sinds 14 oktober 2026 niet meer (afvinklijst 23). */
+export const PAYABLE_SERVICES = new Set(['catalog', 'lifestyle']);
 
 /**
  * DIENSTEN MET ÉÉN VAST BEDRAG, EN WAAROM DIE NIET IN PAYABLE_SERVICES STAAN.
@@ -166,7 +167,9 @@ export const PRICED_VIDEO_STYLES = new Set(['motion']);
  * through unchanged, so a service that IS its own ladder key keeps working with
  * no entry.
  */
-const LADDER_KEY = { drop: 'complete' };
+/* Was { drop: 'complete' }: /start/complete postte 'drop'. compleet bestaat sinds 14 oktober 2026 niet meer (afvinklijst 23); een oude
+   'drop'-rij is daarmee niet meer te prijzen, en dat is de bedoeling. */
+const LADDER_KEY = {};
 
 /*
  * Het hoogste productaantal waarvoor deze module een prijs afgeeft. Stond als los
@@ -212,8 +215,19 @@ export function isPayableService(service) {
      het bedrag en niet naar deze functie. Zie de noot bij quoteVideo(), en
      orderMoney() in account.js, dat een bestelling zonder bedrag geen betaalknop
      geeft en de /pay-route dat nog een keer weigert. */
-  return PAYABLE_SERVICES.has(kind) || FIXED_PRICE_SERVICES.has(kind) || FLAT_RATE_SERVICES.has(kind);
+  return PAYABLE_SERVICES.has(kind) || FIXED_PRICE_SERVICES.has(kind) || FLAT_RATE_SERVICES.has(kind)
+    || OUDE_BUNDEL_DIENSTEN.has(kind);
 }
+
+/* ── EEN OUDE BUNDELBESTELLING BLIJFT TE BETALEN — 14 oktober 2026 ──────────
+   Compleet (catalog + lifestyle, op de draad 'drop') bestaat niet meer als
+   dienst: hij staat niet meer in PAYABLE_SERVICES en quoteOrder() prijst hem niet
+   (afvinklijst 23). Maar een bestelling die vóór 8 oktober zo geplaatst is, kan
+   nog na de btw-beoordeling op betaling wachten. Die draagt haar eigen bedrag
+   (total_cents), en de betaalknop en /pay vragen alleen of de dienst te betalen
+   valt — niet om een nieuwe prijs. Zonder deze regel verdween bij zo'n klant de
+   betaalknop. Nieuw bestellen kan niet: /api/order weigert 'drop' vooraan. */
+const OUDE_BUNDEL_DIENSTEN = new Set(['drop', 'complete']);
 
 /** Round to whole cents the way money has to be rounded: half away from zero. */
 function cents(euros) {
@@ -259,10 +273,12 @@ function safeRate(vatRate) {
  * safe direction to fail in.
  */
 /* `styleSurchargeCents` — 4 september 2026. Een eigen stijl (customer_styles)
-   mag per product iets extra kosten; 0 is het gewone tarief, en dat is ook wat
-   /start/custom-look belooft ("daarna loopt elk product tegen het gewone
-   tarief"). Geklemd op 0..500 euro per product: een getal daarbuiten is een
-   typefout in /admin en geen prijs. */
+   mag per product iets extra kosten; 0 is het gewone tarief. Geklemd op 0..500
+   euro per product: een getal daarbuiten is een typefout in /admin en geen prijs.
+   Omdat die toeslag bestaat, zegt de site sinds 8 oktober 2026 (§17.19, o23)
+   "VANAF het gewone tarief", en noemen de voorwaarden §4 de toeslag. Hier stond
+   dat /start/custom-look "tegen het gewone tarief" belooft — dat was precies de
+   belofte die deze parameter tegensprak. */
 /* `hoogRes` en `voorrang` — 9 september 2026.
  *
  *   hoogRes   het AANTAL producten waarvan de lifestylebeelden op de hoge maat
@@ -351,7 +367,7 @@ export function quoteOrder({ service, products, outfits = 0, extras = 0, hoogRes
   /* 4K alleen waar er lifestylebeelden zijn om op te schalen. `ladderish()`
      heeft `service` al naar `kind` vertaald, dus dit leest dezelfde twee namen
      als styleApplies() in pipeline.js. */
-  const hoogKan = kind === 'lifestyle' || kind === 'complete';
+  const hoogKan = kind === 'lifestyle';
   const h = hoogKan ? clamp(hoogRes, 0, n) : 0;
   const net = n * rate + o * OUTFIT_SURCHARGE + x * extraRate + h * HOOG_PER_PRODUCT;
   const netCents = cents(net) + n * surcharge;
@@ -576,9 +592,12 @@ export function paymentDescription(quote, lang = 'en') {
       ? `VISUAILS — ${k} ${k === 1 ? 'videoclip' : 'videoclips'}`
       : `VISUAILS — ${k} video ${k === 1 ? 'clip' : 'clips'}`;
   }
+  /* `drop` en `complete` alleen voor een bestelling van vóór 8 oktober 2026 die
+     nog betaald wordt (zie OUDE_BUNDEL_DIENSTEN): die houdt haar naam op het
+     bankafschrift. Nieuw te bestellen is hij niet. */
   const what = nl
-    ? { catalog: 'catalogsets', lifestyle: 'lifestylecarrousels', complete: 'catalog + lifestyle' }
-    : { catalog: 'catalog sets', lifestyle: 'lifestyle carousels', complete: 'catalog + lifestyle' };
+    ? { catalog: 'catalogsets', lifestyle: 'lifestylecarrousels', drop: 'catalog + lifestyle', complete: 'catalog + lifestyle' }
+    : { catalog: 'catalog sets', lifestyle: 'lifestyle carousels', drop: 'catalog + lifestyle', complete: 'catalog + lifestyle' };
   /*
    * ── DEZELFDE VAL, VOOR DE DERDE KEER — 14 AUGUSTUS 2026 ────────────────────
    *

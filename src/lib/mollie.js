@@ -366,6 +366,39 @@ export async function createFirstPayment(env, {
 }
 
 /**
+ * ── EXTRA CREDITS BIJKOPEN — 12 oktober 2026 (ab-v3 = c) ─────────────────────
+ *
+ * Een eigen, losse betaling: geen incasso op het mandaat (`sequenceType`
+ * 'oneoff', geen customerId), alleen iDEAL of een kaart (zonder iDEAL als het
+ * abonnement niet op Nederlandse btw staat, om dezelfde reden als
+ * NON_NL_METHODS hieronder). `metadata.bijkoop` is het nummer van de rij in
+ * credit_aankopen: zo vindt de webhook hem terug (src/lib/bijkopen.js). Het
+ * bedrag komt uit de server (bijkoopPrijs() en subBrutoCents()), nooit uit het
+ * formulier.
+ */
+export const BIJKOOP_METHODS = ['ideal', 'creditcard'];
+export const BIJKOOP_METHODS_ZONDER_IDEAL = ['creditcard', 'bancontact'];
+
+export async function createBijkoopMolliePayment(env, {
+  aankoopId, customerId = null, grossCents, description, lang, successUrl, webhookUrl, excludeIdeal = false,
+}) {
+  const cents = Math.round(Number(grossCents));
+  if (!Number.isFinite(cents) || cents < 1 || !aankoopId) {
+    throw new Error(`mollie: een bijkoop van ${grossCents} cent kan niet (aankoop ${aankoopId})`);
+  }
+  return mollieRequest(env, 'POST', '/payments', {
+    amount: { currency: 'EUR', value: (cents / 100).toFixed(2) },
+    sequenceType: 'oneoff',
+    description: String(description || 'VISUAILS extra credits').slice(0, 255),
+    redirectUrl: successUrl,
+    webhookUrl,
+    locale: lang === 'nl' ? 'nl_NL' : 'en_GB',
+    method: excludeIdeal ? BIJKOOP_METHODS_ZONDER_IDEAL : BIJKOOP_METHODS,
+    metadata: { bijkoop: String(aankoopId), ...(customerId ? { customer_id: String(customerId) } : {}) },
+  });
+}
+
+/**
  * Het mandaat dat uit een geslaagde eerste betaling is gerold.
  *
  * NIET UIT DE BETALING ZELF, en dat is gemeten gedrag en geen voorkeur: het veld

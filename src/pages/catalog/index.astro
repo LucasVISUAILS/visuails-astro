@@ -21,7 +21,9 @@
 // The turnaround gave way instead: it is a tier fact, restated in the trust
 // row a few lines into the page, and it is only true under WINDOW_THRESHOLD.
 import Layout from '../../layouts/Layout.astro';
-import CatalogPage from '../../components/CatalogPage.astro';
+// 12 oktober 2026 (afvinklijst 8, alles "doen"): deze pagina staat in de hal (huid="hal");
+// de vorige opmaak staat op _opruimen/LIJST.txt.
+import CatalogHal from '../../components/CatalogHal.astro';
 import { euro, ladderRate, ladderFloor, LADDER, vatLabel } from '../../data/pricing.js';
 
 const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
@@ -33,10 +35,10 @@ const description =
   `${vatLabel('excl', 'en')}.`;
 ---
 
-<Layout
+<Layout huid="hal"
   title="Catalog photos for clothing brands, no shoot | VISUAILS"
   description={description}
   ogImage="/img/catalog-after.webp"
 >
-  <CatalogPage lang="en" />
+  <CatalogHal lang="en" />
 </Layout>

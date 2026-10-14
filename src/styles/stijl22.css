@@ -879,6 +879,9 @@
     .s22.thuis .kiezer .kaarten { grid-template-columns: minmax(0, 1fr); }
     .s22.thuis .kiezer .kaart { aspect-ratio: 4 / 3; }
   }
+  /* Naloop A2 (8 okt 2026): de ene uitlegregel onder de tegels ("Eén product
+     kost …"), rustig zoals op /start (.st-ladder). */
+  .s22.thuis .kiezer .vp-eenproduct { margin: clamp(1.2rem, 2.4vw, 1.6rem) 0 0; max-width: 62rem; font-size: .92rem; line-height: 1.6; color: var(--inkt-2); text-wrap: pretty; }
 
   /* De lookstrook loopt tot de rand van het paneel door; de kaart die half in
      beeld staat, is het teken dat er meer is. Zie Stijlstrook.astro. */

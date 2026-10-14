@@ -142,16 +142,22 @@ console.log('\nhet plusje staat er, naast de vier');
      buildRefs geeft een strook terug, en die strook komt in de kaart terecht. */
   ok('en geeft een eigen strook terug',
     /const strip = document\.createElement\('div'\);[\s\S]{0,120}strip\.className = 'pu-refs';/.test(pl), true);
-  ok('die onder de vier vakken in de kaart wordt gehangen',
-    /li\.append\(head, slots\);[\s\S]{0,200}if \(refs\) li\.append\(refs\);/.test(pl), true);
+  /* Sinds 11 oktober 2026 (F3) in de lade "Meer over dit product": niet
+     verplicht, dus niet open op de kaart. De meervoudige kiezer bovenaan de
+     kaart vult ze ook, met de foto's die na de vaste vakken over zijn. */
+  ok('die in de lade van de kaart wordt gehangen',
+    /buildMeer\(card, \[gezicht, about, ratios, refs, erbij\]\)/.test(pl), true);
+  ok('  en de knop voor 3–4 foto\'s zet er de rest in', /card\.voegRefToe\(\)/.test(pl), true);
   ok('het maximum komt uit de config en niet uit een getal hier',
     /Number\(cfg\.maxRefPerProduct\)/.test(pl), true);
   ok('en de knop verdwijnt als het vol is', /add\.hidden = vol;/.test(pl), true);
 
   /* GEEN OVERSLAAN-KNOP. Bij een vakje dat je zelf hebt aangevraagd is "deze sla
      ik over" geen keuze maar een raadsel, en de kaart vraagt er nooit om. */
-  ok('een referentievak krijgt geen overslaan-knop',
-    /const skipBtn = \(isRequiredShot\(id\) \|\| extraSlotNumber\(id\) \|\| refShotNumber\(id\)\)/.test(pl), true);
+  /* Sinds 11 oktober 2026 (F3) heeft GEEN vak nog een overslaan-knop: de
+     draagfoto wordt overgeslagen zonder klik. */
+  ok('een referentievak krijgt geen overslaan-knop (geen enkel vak meer)',
+    /const skipBtn = null;/.test(pl), true);
   /* WEL een weghaalknop, en alleen op het laatste — anders loopt de nummering
      stuk. Zie de kop van dit bestand voor de meting die dat aan het licht bracht. */
   ok('maar wel een weghaalknop', /const dropBtn = !refShotNumber\(id\) \? null :/.test(pl), true);
@@ -224,7 +230,7 @@ console.log('\nen het formulier zegt in beide talen wat het is');
   }
   ok('het maximum reist mee in de config', /maxRefPerProduct: MAX_REF_PER_PRODUCT/.test(flow), true);
   ok('  uit shots.js en niet uit pricing.js',
-    /import \{ SHOTS, SHOT_IDS, MAX_REF_PER_PRODUCT, copy as shotCopy \} from '\.\.\/\.\.\/data\/shots\.js';/.test(flow), true);
+    /import \{ SHOTS, SHOT_IDS, MAX_REF_PER_PRODUCT, copy as shotCopy(, [A-Za-z]+)* \} from '\.\.\/\.\.\/data\/shots\.js';/.test(flow), true);
 
   /* EN DE BETAALDE FOTO BLIJFT BESTAAN. Lucas, 13 augustus 2026: *"wel moet de
      optie voor een extra foto behouden worden als apart vak die gewoon de huidige

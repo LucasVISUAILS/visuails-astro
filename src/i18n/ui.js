@@ -71,6 +71,9 @@ export const ui = {
     // Het abonnement kreeg op 20 augustus 2026 een eigen pagina en dus een eigen
     // ingang. Naast Prijzen en niet erin: het zijn twee manieren om te kopen, en
     // een menu dat de tweede verstopt onder de eerste zegt dat hij een detail is.
+    /* 8 oktober 2026 (1.11): omgedraaid. Lucas koos "Prijzen (met Abonnement)":
+       sinds §28 is het abonnement een manier van betalen en geen apart product,
+       dus staat het nu onder Prijzen — zie `prijzen` hieronder. */
     nav_gallery: 'Gallery',
     nav_contact: 'Contact',
     nav_start: 'Order',
@@ -120,7 +123,13 @@ export const ui = {
        * Wat het oplevert: twee items minder in de balk, en één plek waar de
        * vraag "wat kan ik hier bestellen" volledig beantwoord wordt. */
       { href: '/custom-models', title: 'Your Brand Model', desc: 'One face, made for your brand and used by nobody else', groep: 'erbij' },
-      { href: '/plans', title: 'Monthly plan', desc: 'A fixed number of credits every month, below the per-product rate', groep: 'maand' },
+      /* ── HET ABONNEMENT STAAT SINDS 8 OKTOBER 2026 ONDER PRIJZEN ──────────
+       * Lucas koos bij 1.11 het menu "Wat we maken (Catalog, Lifestyle, Video,
+       * Jouw merkmodel) · Hoe het werkt · Prijzen (met Abonnement)". Sinds §28
+       * is het abonnement een manier van BETALEN — credits voor dezelfde
+       * diensten — en geen apart product. Het staat nu in `prijzen` hieronder,
+       * en in de voettekst naast Prijzen. Editions blijft hier in de groep
+       * 'maand': dat is wél iets wat we maken (nog niet te bestellen). */
       /*
        * HOOKS HEEFT GEEN href, EN DAT IS HET HELE PUNT — 9 augustus 2026.
        *
@@ -216,8 +225,13 @@ export const ui = {
        * Nederlands stond er zelfs "Hoe een bestelling draait" onder "Van
        * bestelling tot levering". Wat /studio werkelijk laat zien is de
        * capaciteit en de kalender — dus dat zegt hij nu. */
-      { href: '/studio', title: 'The calendar and the capacity', desc: 'What a studio day holds, and when a date can be held for you' },
-      { href: '/portal', title: 'VISUAILS Studio', desc: 'Where your work lands, and how you approve it' },
+      /* ── /studio EN /portal STAAN HIER NIET MEER — 8 oktober 2026 (1.11) ──
+       * Lucas koos V39 = b: /studio is de pagina over VISUAILS Studio, met
+       * "Inloggen" bovenaan, en /portal stuurt door. De planning en de
+       * capaciteit staan sindsdien als blok op /how-it-works (#planning) — het
+       * eerste item van deze lijst — en hebben geen eigen pagina meer. VISUAILS
+       * Studio vind je via "Inloggen" rechtsboven, de voettekst en de stap
+       * "Je keurt goed" op home en /how-it-works. Twee items minder in deze lade. */
       { href: '/models', title: 'The models', desc: 'The ten faces included in every order' },
       { href: '/upload-guidelines', title: 'Sending your photos', desc: 'What we need, and what a phone can do' },
       /* ── TWEE ERAF, EN ALLEBEI NAAR EEN BETERE PLEK — 21 augustus 2026 ────
@@ -237,6 +251,14 @@ export const ui = {
        * verhuizen naar de plek waar iemand ze zoekt in plaats van naar de plek
        * waar ze toevallig pasten. */
     ],
+    /* ── PRIJZEN, MET HET ABONNEMENT ERONDER — 8 oktober 2026 (1.11) ───────
+     * Dezelfde vorm als `drops` en `how`, zodat Layout.astro hem met dezelfde
+     * lus tekent (balk, telefoonlade). Twee manieren om te betalen: per
+     * product, of elke maand met credits. */
+    prijzen: [
+      { href: '/pricing', title: 'Per product', desc: 'One rate per product, and everything else that has a price' },
+      { href: '/plans', title: 'Monthly plan', desc: 'A fixed number of credits every month, below the per-product rate' },
+    ],
     nav_soon: 'Coming soon',
     mob_chat: 'Chat on WhatsApp',
     mob_notsure: 'Not sure yet?',
@@ -250,8 +272,12 @@ export const ui = {
     foot_company: 'Company',
     foot_touch: 'Get in touch',
     foot_about: 'About',
-    /* Dezelfde link als in het menu; dus dezelfde naam. Zie de noot bij `how`. */
-    foot_studio: 'The calendar and the capacity',
+    /* Sinds 8 oktober 2026 (1.11) is /studio de pagina over VISUAILS Studio en
+       heet de link dus zo. Hij staat niet meer in het menu (zie de noot bij
+       `how`); de voettekst is de vaste plek. `foot_plans` is het abonnement,
+       dat uit "Wat we maken" naar Prijzen verhuisde. */
+    foot_studio: 'VISUAILS Studio',
+    foot_plans: 'Monthly plan',
     foot_guides: 'Guides',
     // /compare is now "a shoot day, or a drop" (AUDIT §F). The AI-tools
     // argument still lives on that page at #ai-tools and in its <title>, so
@@ -386,7 +412,8 @@ export const ui = {
       /* Zie de noot bij de Engelse lijst hierboven: alles wat je koopt, staat
          in het menu waar staat wat we maken. */
       { href: '/custom-models', title: 'Jouw merkmodel', desc: 'Eén gezicht, voor jouw merk gemaakt en door niemand anders gebruikt', groep: 'erbij' },
-      { href: '/plans', title: 'Abonnement', desc: 'Elke maand een vast aantal credits, onder het tarief per product', groep: 'maand' },
+      /* Het abonnement staat sinds 8 oktober 2026 in `prijzen` — zie de noot
+         bij de Engelse lijst. */
       /* Zie de noot bij de Engelse tegenhanger. */
       { href: '/hooks', title: 'Hooks', desc: 'Op aanvraag — een korte video op een bewezen format', soon: 'Op aanvraag', groep: 'video' },
       /* Zie de noot bij de Engelse tegenhanger. */
@@ -398,12 +425,17 @@ export const ui = {
       /* Zelfde reden als bij de Engelse lijst hierboven: het demo-item is weg,
          en /studio heet nu naar wat er staat in plaats van naar iets wat bijna
          hetzelfde is als de regel erboven. */
-      { href: '/studio', title: 'De planning en de capaciteit', desc: 'Wat een studiodag aankan, en wanneer een datum vast kan staan' },
-      { href: '/portal', title: 'VISUAILS Studio', desc: 'Waar je werk landt, en hoe je het goedkeurt' },
+      /* /studio en /portal staan hier sinds 8 oktober 2026 niet meer — zie de
+         noot bij de Engelse lijst (1.11). */
       { href: '/models', title: 'De modellen', desc: 'De tien gezichten die bij elke bestelling horen' },
       { href: '/upload-guidelines', title: 'Je foto\u2019s aanleveren', desc: 'Wat we nodig hebben, en wat een telefoon kan' },
       /* /compare staat nu op de prijzenpagina en /ai-act in de juridische regel
          onderaan — zie de noot bij de Engelse lijst. */
+    ],
+    /* Zie de noot bij de Engelse `prijzen`. */
+    prijzen: [
+      { href: '/pricing', title: 'Per product', desc: 'Eén tarief per product, en wat er verder een prijs heeft' },
+      { href: '/plans', title: 'Abonnement', desc: 'Elke maand een vast aantal credits, onder het tarief per product' },
     ],
     nav_soon: 'Binnenkort',
     mob_chat: 'Chat via WhatsApp',
@@ -416,7 +448,8 @@ export const ui = {
     foot_company: 'Bedrijf',
     foot_touch: 'Contact',
     foot_about: 'Over ons',
-    foot_studio: 'De planning en de capaciteit',
+    foot_studio: 'VISUAILS Studio',
+    foot_plans: 'Abonnement',
     foot_guides: 'Gidsen',
     foot_compare: 'Shootdag vs VISUAILS',
     foot_sample: TEST_SAMPLE.nl.cta,

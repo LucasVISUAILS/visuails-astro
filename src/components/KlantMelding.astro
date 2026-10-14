@@ -1,0 +1,79 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — de melding onderin het scherm. 14 oktober 2026.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas, 11:14: "Ik zou de melding liever als pop up willen onderaan je scherm
+ * die daar blijft tot je hem wegklikt. Voor nieuwe bedrijven ook een test
+ * sample pop up voor als die er nog niet was (klein en compact op telefoon voor
+ * beide pop ups)." 11:15: "dus als een bedrijf niet is ingelogd of nieuw is op
+ * de website."
+ *
+ * Twee meldingen, nooit tegelijk. Allebei `hidden` in de pagina; interactions.js
+ * (meldingen()) kiest er één zodra /account/me?stand=1 antwoordt:
+ *
+ *   de bestelling   een ingelogde klant met een bestelling: "Welkom terug,
+ *                   Mara", het kenmerk en de stand van de bestelling die bovenaan
+ *                   Studio staat, en één knop erheen (vroeger de welkomstregel
+ *                   bovenin de voorpagina, KlantWelkom.astro). Komt meteen.
+ *   de proef        wie niet is ingelogd, of ingelogd is zonder één bestelling:
+ *                   "Eerst zien? Eén product voor €1". Komt pas als de bezoeker
+ *                   de opening voorbij is (60% van het scherm gescrold) en er
+ *                   geen proefblok in beeld staat — twee keer hetzelfde aanbod in
+ *                   één scherm leest als aandringen (de reden dat de oude
+ *                   proefkaart op 23 september van de voorpagina ging).
+ *
+ * Allebei pas na de cookiekeuze: de cookiekaart staat op dezelfde plek. Wie het
+ * kruisje aanklikt, ziet de bestelling pas terug als haar stand verandert, en de
+ * proef pas na PROEF_WEG_DAGEN (src/data/cookies.js, daar staat waarom dertig).
+ * Bij een zachte navigatie blijft een open melding gewoon staan, zonder opnieuw
+ * in te schuiven.
+ *
+ * Niet op de pagina's waar hij in de weg zit of niets toevoegt: het bestellen
+ * (/start), de proef zelf (/test-sample) en de bedankpagina (Layout.astro).
+ *
+ * Op een telefoon (tot 600 px) klein: twee regels tekst, een rond pijltje en
+ * het kruisje op één rij. Het woord van de knop staat er dan nog wel, alleen
+ * onzichtbaar, zodat een schermlezer het pijltje kan noemen. De WhatsApp-knop
+ * schuift erboven (hal.css, --h-melding-h).
+ *
+ * Geen kop (h2): een melding is geen hoofdstuk van de pagina. Wel een eigen
+ * oriëntatiepunt (aside met een naam), zodat hij te vinden is.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+import { klantTekst } from '../data/klant.js';
+import { TEST_SAMPLE } from '../data/pricing.js';
+import { geleverd } from '../data/voorbeeldset.js';
+import { localizedPath } from '../i18n/ui.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const k = klantTekst(lang);
+const s = TEST_SAMPLE[lang];
+const beeld = geleverd(lang)[0];
+const PIJL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/></svg>';
+const KRUIS = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
+---
+<aside
+  class="h-melding"
+  data-vis-klant="melding"
+  data-vis-welkom={k.welkom}
+  data-vis-welkom-naam={k.welkomNaam}
+  aria-label={k.meldingLabel}
+  hidden
+>
+  <div class="h-melding-tekst">
+    <p class="h-melding-kop" data-vis-welkom-kop>{k.welkom}</p>
+    <p class="h-melding-regel" data-vis-welkom-stand>{k.leeg}</p>
+  </div>
+  <a class="h-knop h-knop-inkt h-knop-klein h-melding-knop" href="/account" data-vis-welkom-knop><span class="h-melding-woord" data-vis-label>{k.studio}</span><span class="o" set:html={PIJL} /></a>
+  <button type="button" class="h-melding-sluit" data-vis-melding-sluit aria-label={k.sluit} set:html={KRUIS} />
+</aside>
+<aside class="h-melding h-melding-proef" data-vis-proef aria-label={k.proefLabel} hidden>
+  <img class="h-melding-beeld" src={beeld.src} width={beeld.w} height={beeld.h} alt="" loading="lazy" decoding="async" />
+  <div class="h-melding-tekst">
+    <p class="h-melding-kop"><span class="l">{k.proefKop[0]}</span> {k.proefKop[1]} {s.price}</p>
+    <p class="h-melding-regel h-melding-detail">{s.deliverableShort}{k.proefStaart}</p>
+  </div>
+  <a class="h-knop h-knop-inkt h-knop-klein h-melding-knop" href={localizedPath(lang, '/test-sample')} data-track="melding-proef"><span class="h-melding-woord">{s.cta}</span><span class="o" set:html={PIJL} /></a>
+  <button type="button" class="h-melding-sluit" data-vis-melding-sluit aria-label={k.sluit} set:html={KRUIS} />
+</aside>

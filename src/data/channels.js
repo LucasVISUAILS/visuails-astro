@@ -65,6 +65,11 @@
  *   modelShotRisk   the platform's model-view rules may not accept an
  *                   AI-generated person. Drives a warning, never a block.
  *   formats         file types the platform accepts for listing images.
+ *   aspect          a fixed width:height the platform demands, if it has one.
+ *                   Only Zalando: "Aspect ratio (width x height): 1:1.44",
+ *                   best practice 1801 × 2600, minimum 762 × 1100 (Zalando
+ *                   partner university, image guidelines, read 14 Oct 2026).
+ *                   Amazon and bol set limits in pixels, not a shape.
  */
 export const CHANNELS = [
   {
@@ -108,8 +113,10 @@ export const CHANNELS = [
     formats: ['jpg'],
     minPx: 762,
     zoomPx: 1801,
+    aspect: { w: 1, h: 1.44 },
     /* Eén regel op de kaart; de volledige eis staat achter het vraagteken (note). 3 sep 2026. */
-    short: { en: 'Packshots on white, JPG only. Read the note about the on-model shot.', nl: 'Packshots op wit, alleen JPG. Lees de notitie over de on-model shot.' },
+    /* 14 oktober 2026: de vorm erbij — het formulier zet hem vast (ratios.js, CHANNEL_RATIOS). */
+    short: { en: 'On white and in 1:1.44, JPG only. Read the note about the on-model shot.', nl: 'Op wit en in 1:1,44, alleen JPG. Lees de notitie over de on-model shot.' },
     note: {
       en: 'Packshots on #FFFFFF, model views on light grey (#F1F1F1), JPG only, 1:1.44, three compliant images per apparel article. Read the warning below before you pick this one.',
       nl: 'Packshots op #FFFFFF, modelbeelden op lichtgrijs (#F1F1F1), alleen JPG, 1:1.44, drie geldige beelden per kledingartikel. Lees de waarschuwing hieronder voor je dit kiest.',
@@ -153,8 +160,8 @@ export const CHANNELS = [
     /* Eén regel op de kaart; de volledige eis staat achter het vraagteken (note). 3 sep 2026. */
     short: { en: 'No background rule. The AI disclosure is already in the file.', nl: 'Geen achtergrondregel. De AI-vermelding zit al in het bestand.' },
     note: {
-      en: 'No background rule, but the AI disclosure has to be in the file: Google requires the IPTC DigitalSourceType property and says not to strip it. Every format we deliver carries it — jpg, png and webp alike — so whichever one you upload is fine. Keep it in the file when you re-export.',
-      nl: 'Geen achtergrondregel, maar de AI-vermelding moet ín het bestand zitten: Google vereist de IPTC-eigenschap DigitalSourceType en vraagt die niet te verwijderen. Elk formaat dat wij leveren draagt hem — jpg, png én webp — dus welke je ook uploadt is goed. Houd hem er wel in als je zelf opnieuw exporteert.',
+      en: 'No background rule, but the AI disclosure has to be in the file: Google requires the IPTC DigitalSourceType property and says not to strip it. We put it in the photos we deliver; if one is missing it, tell us and we deliver it again. Keep it in the file when you re-export.',
+      nl: 'Geen achtergrondregel, maar de AI-vermelding moet ín het bestand zitten: Google vereist de IPTC-eigenschap DigitalSourceType en vraagt die niet te verwijderen. Wij zetten hem in de foto’s die we leveren; mist hij ergens, laat het weten, dan leveren we opnieuw. Houd hem er wel in als je zelf opnieuw exporteert.',
     },
   },
 ];
@@ -186,8 +193,10 @@ export const COPY = {
     split: 'Order the same product twice: one marketplace version on white, and one for your own shop and socials in the colour you want. The second one counts as a normal product, so it is charged at the rate your total lands on — not as a surcharge.',
     riskH: 'About Zalando and the on-model shot',
     risk: 'Zalando asks for model views photographed with a real person. Our on-model shot is generated, so we cannot promise it will be accepted as a compliant model view — the packshots are a different matter and meet their spec. If Zalando is where this range lives, use our images for the pack views and talk to us before you count on the model one.',
-    formatH: 'You get the formats the marketplace takes',
-    format: 'A marketplace order comes in the formats that marketplace accepts, not as webp: JPG and PNG for Amazon and bol.com, JPG only for Zalando. The AI disclosure is in every format we deliver, so that part costs you nothing either way.',
+    /* 14 oktober 2026: "niet als webp" klopte niet meer — sinds 11 oktober levert
+       elke bestelling als JPG, en PNG of WebP vraag je erbij aan (k401). */
+    formatH: 'You get what the marketplace takes',
+    format: 'We deliver as JPG, which Amazon, bol.com and Zalando all accept. Want PNG as well for Amazon or bol.com? Request it on the order in VISUAILS Studio; Zalando takes JPG only. The AI disclosure is in every format we deliver.',
     orderH: 'Which image goes first',
     orderShort: 'Lead with the front packshot; the on-model shot goes among the additional images.',
     order: 'bol.com allows no model on the main image, and Amazon only allows one there for apparel. This costs you nothing: the on-model shot stays in your set, it simply belongs among the additional images. Lead with the front packshot, then the back, the close-up and the on-model shot behind it.',
@@ -205,8 +214,8 @@ export const COPY = {
     split: 'Bestel hetzelfde product twee keer: één marktplaatsversie op wit, en één voor je eigen shop en socials in de kleur die je wilt. Die tweede telt gewoon als een extra product, dus je betaalt het tarief waar je totaal op uitkomt — geen toeslag.',
     riskH: 'Over Zalando en de on-model shot',
     risk: 'Zalando vraagt om modelbeelden die met een echte persoon zijn gefotografeerd. Onze on-model shot is gegenereerd, dus we kunnen niet beloven dat die als geldig modelbeeld wordt geaccepteerd — de packshots zijn een ander verhaal en voldoen wél aan hun eisen. Verkoop je op Zalando, gebruik onze beelden dan voor de packviews en overleg met ons voordat je op de modelfoto rekent.',
-    formatH: 'Je krijgt de formaten van de marktplaats',
-    format: 'Een marktplaatsbestelling komt in de formaten die die marktplaats aanneemt, niet als webp: JPG en PNG bij Amazon en bol, alleen JPG bij Zalando. De AI-vermelding zit in elk formaat dat wij leveren, dus dát scheelt niets.',
+    formatH: 'Je krijgt wat de marktplaats aanneemt',
+    format: 'We leveren als JPG, en dat nemen Amazon, bol en Zalando alle drie aan. Wil je voor Amazon of bol ook PNG? Vraag het aan bij je bestelling in VISUAILS Studio; Zalando neemt alleen JPG. De AI-vermelding zit in elk formaat dat wij leveren.',
     orderH: 'Welk beeld vooraan hoort',
     orderShort: 'Zet de voorkant-packshot vooraan; de on-model shot hoort bij de extra afbeeldingen.',
     order: 'bol staat geen model op de hoofdafbeelding toe, en Amazon alleen bij kleding. Dat kost je niets: de on-model shot blijft gewoon in je set, hij hoort alleen bij de extra afbeeldingen. Zet de voorkant-packshot vooraan, en daarachter de achterkant, de close-up en de on-model shot.',

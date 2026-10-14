@@ -1,0 +1,80 @@
+Wat OPRUIMEN.bat binnen de projectmap verplaatste (oud -> nieuw).
+
+2026-10-14 17:20  ARCHITECTURE.md -> _opruimen/2026-10-14/ARCHITECTURE.md  (oude kopie; docs/ARCHITECTURE.md bestond al)
+2026-10-14 17:20  AVG-DATALEKPROCEDURE.md -> _opruimen/2026-10-14/AVG-DATALEKPROCEDURE.md  (oude kopie; docs/AVG-DATALEKPROCEDURE.md bestond al)
+2026-10-14 17:20  AVG-VERWERKINGSREGISTER.md -> _opruimen/2026-10-14/AVG-VERWERKINGSREGISTER.md  (oude kopie; docs/AVG-VERWERKINGSREGISTER.md bestond al)
+2026-10-14 17:20  BACKEND-SETUP.md -> _opruimen/2026-10-14/BACKEND-SETUP.md  (oude kopie; docs/BACKEND-SETUP.md bestond al)
+2026-10-14 17:20  DEPLOY.md -> _opruimen/2026-10-14/DEPLOY.md  (oude kopie; docs/DEPLOY.md bestond al)
+2026-10-14 17:20  DESIGN.md -> _opruimen/2026-10-14/DESIGN.md  (oude kopie; docs/DESIGN.md bestond al)
+2026-10-14 17:20  MOLLIE.md -> _opruimen/2026-10-14/MOLLIE.md  (oude kopie; docs/MOLLIE.md bestond al)
+2026-10-14 17:20  PRODUCT.md -> _opruimen/2026-10-14/PRODUCT.md  (oude kopie; docs/PRODUCT.md bestond al)
+2026-10-14 17:20  SCHRIJFWIJZER.md -> _opruimen/2026-10-14/SCHRIJFWIJZER.md  (oude kopie; docs/SCHRIJFWIJZER.md bestond al)
+2026-10-14 17:20  STIJL.md -> _opruimen/2026-10-14/STIJL.md  (oude kopie; docs/STIJL.md bestond al)
+2026-10-14 17:20  WORKER.md -> _opruimen/2026-10-14/WORKER.md  (oude kopie; docs/WORKER.md bestond al)
+2026-10-14 17:20  FLAGS.md -> _opruimen/2026-10-14/FLAGS.md  (oude kopie; docs/archief/FLAGS.md bestond al)
+2026-10-14 17:20  audit-bouw.mjs -> _opruimen/2026-10-14/audit-bouw.mjs  (oude kopie; scripts/meten/audit-bouw.mjs bestond al)
+2026-10-14 17:20  audit-feiten.mjs -> _opruimen/2026-10-14/audit-feiten.mjs  (oude kopie; scripts/meten/audit-feiten.mjs bestond al)
+2026-10-14 17:20  audit-jsonld.mjs -> _opruimen/2026-10-14/audit-jsonld.mjs  (oude kopie; scripts/meten/audit-jsonld.mjs bestond al)
+2026-10-14 17:20  audit-links.mjs -> _opruimen/2026-10-14/audit-links.mjs  (oude kopie; scripts/meten/audit-links.mjs bestond al)
+2026-10-14 17:20  audit-paar.mjs -> _opruimen/2026-10-14/audit-paar.mjs  (oude kopie; scripts/meten/audit-paar.mjs bestond al)
+2026-10-14 17:20  audit-tekst.mjs -> _opruimen/2026-10-14/audit-tekst.mjs  (oude kopie; scripts/meten/audit-tekst.mjs bestond al)
+2026-10-14 17:20  leesbaar.mjs -> _opruimen/2026-10-14/leesbaar.mjs  (oude kopie; scripts/meten/leesbaar.mjs bestond al)
+2026-10-14 17:20  mobiel.mjs -> _opruimen/2026-10-14/mobiel.mjs  (oude kopie; scripts/meten/mobiel.mjs bestond al)
+2026-10-14 17:20  naad-in-venster.mjs -> _opruimen/2026-10-14/naad-in-venster.mjs  (oude kopie; scripts/meten/naad-in-venster.mjs bestond al)
+2026-10-14 17:20  naden.mjs -> _opruimen/2026-10-14/naden.mjs  (oude kopie; scripts/meten/naden.mjs bestond al)
+2026-10-14 17:20  pixnav.mjs -> _opruimen/2026-10-14/pixnav.mjs  (oude kopie; scripts/meten/pixnav.mjs bestond al)
+2026-10-14 17:20  spelling.mjs -> _opruimen/2026-10-14/spelling.mjs  (oude kopie; scripts/meten/spelling.mjs bestond al)
+2026-10-14 17:20  variant.mjs -> _opruimen/2026-10-14/variant.mjs  (oude kopie; scripts/meten/variant.mjs bestond al)
+2026-10-14 17:20  vlak-per-sectie.mjs -> _opruimen/2026-10-14/vlak-per-sectie.mjs  (oude kopie; scripts/meten/vlak-per-sectie.mjs bestond al)
+2026-10-14 17:20  wandel.mjs -> _opruimen/2026-10-14/wandel.mjs  (oude kopie; scripts/meten/wandel.mjs bestond al)
+2026-10-14 17:20  zoom.mjs -> _opruimen/2026-10-14/zoom.mjs  (oude kopie; scripts/meten/zoom.mjs bestond al)
+2026-10-14 17:20  KLEURENSCHEMA.md -> docs/KLEURENSCHEMA.md
+2026-10-14 17:20  IMAGES.md -> docs/IMAGES.md
+2026-10-14 17:20  STEM-BRON.md -> docs/STEM-BRON.md
+2026-10-14 17:20  WORKING-AGREEMENT.md -> docs/WORKING-AGREEMENT.md
+2026-10-14 17:20  STOCK-IDEE.md -> _opruimen/2026-10-14/STOCK-IDEE.md  (oude kopie; docs/STOCK-IDEE.md bestond al)
+2026-10-14 17:20  ABONNEMENT-ONTWERP.md -> docs/ABONNEMENT-ONTWERP.md
+2026-10-14 17:20  MERKMODEL-ONTWERP.md -> docs/MERKMODEL-ONTWERP.md
+2026-10-14 17:20  EIGEN-LOOK-MAANDSET-INFORMATIE.md -> docs/EIGEN-LOOK-MAANDSET-INFORMATIE.md
+2026-10-14 17:20  FABLE-EN-VISUAILS.md -> docs/FABLE-EN-VISUAILS.md
+2026-10-14 17:20  WHATSAPP-BERICHTEN.md -> docs/WHATSAPP-BERICHTEN.md
+2026-10-14 17:20  WERKLIJST.md -> docs/archief/WERKLIJST.md
+2026-10-14 17:20  HERONTWERP.md -> docs/archief/HERONTWERP.md
+2026-10-14 17:20  AUDIT-TASK-0.md -> docs/archief/AUDIT-TASK-0.md
+2026-10-14 17:20  ARCHITECTUURAUDIT-23-AUGUSTUS.md -> docs/archief/ARCHITECTUURAUDIT-23-AUGUSTUS.md
+2026-10-14 17:20  BACKEND-STUDIO-ADMIN-DOORLICHTING.md -> docs/archief/BACKEND-STUDIO-ADMIN-DOORLICHTING.md
+2026-10-14 17:20  BRIEF-13-SERVICE-TIERS.md -> docs/archief/BRIEF-13-SERVICE-TIERS.md
+2026-10-14 17:20  BRIEF-14-VAT-BTW.md -> docs/archief/BRIEF-14-VAT-BTW.md
+2026-10-14 17:20  HOOKS-COPY-CONCEPT.md -> docs/archief/HOOKS-COPY-CONCEPT.md
+2026-10-14 17:20  PLAN-DEMO-SPEL.md -> docs/archief/PLAN-DEMO-SPEL.md
+2026-10-14 17:20  PLAN-PORTALEN.md -> docs/archief/PLAN-PORTALEN.md
+2026-10-14 17:20  PLAN-PORTALEN-V2.md -> docs/archief/PLAN-PORTALEN-V2.md
+2026-10-14 17:20  PRICING-MODEL-OPTIONS.md -> docs/archief/PRICING-MODEL-OPTIONS.md
+2026-10-14 17:20  REPORT-SECTION-11.md -> docs/archief/REPORT-SECTION-11.md
+2026-10-14 17:20  REPORT-SECTION-14-VAT.md -> docs/archief/REPORT-SECTION-14-VAT.md
+2026-10-14 17:20  REPORT-SECTION-15.md -> docs/archief/REPORT-SECTION-15.md
+2026-10-14 17:20  REPORT-SECTIONS-4-9.md -> docs/archief/REPORT-SECTIONS-4-9.md
+2026-10-14 17:20  TEKST-RONDE.md -> docs/archief/TEKST-RONDE.md
+2026-10-14 17:20  ONGEBRUIKTE-BEELDEN-22-AUGUSTUS.txt -> docs/archief/ONGEBRUIKTE-BEELDEN-22-AUGUSTUS.txt
+2026-10-14 17:20  HERSTEL-TESTFACTUREN.sql -> docs/archief/HERSTEL-TESTFACTUREN.sql
+2026-10-14 17:20  RESET-FACTUURREEKS.sql -> docs/archief/RESET-FACTUURREEKS.sql
+2026-10-14 17:20  kladblok/BEELD-WIE-MAAKT-WAT.md -> kladblok/naslag/BEELD-WIE-MAAKT-WAT.md
+2026-10-14 17:20  kladblok/CONCEPT-RONDE-9.md -> kladblok/ronde-9/CONCEPT-RONDE-9.md
+2026-10-14 17:20  kladblok/content-te-maken-2026-09-19.md -> kladblok/naslag/content-te-maken-2026-09-19.md
+2026-10-14 17:20  kladblok/creditsysteem-ontwerp-2026-09-19.md -> kladblok/naslag/creditsysteem-ontwerp-2026-09-19.md
+2026-10-14 17:20  kladblok/EINDVERSLAG-RONDE-9-CONCEPT.md -> kladblok/ronde-9/EINDVERSLAG-RONDE-9-CONCEPT.md
+2026-10-14 17:20  kladblok/klantervaring-zes-mensen.md -> kladblok/naslag/klantervaring-zes-mensen.md
+2026-10-14 17:20  kladblok/ONTWERPKEURING-3-OKT.md -> kladblok/ronde-9/ONTWERPKEURING-3-OKT.md
+2026-10-14 17:20  kladblok/pagina-opbouw.html -> kladblok/naslag/pagina-opbouw.html
+2026-10-14 17:20  kladblok/PAGINA-OPBOUW.md -> kladblok/naslag/PAGINA-OPBOUW.md
+2026-10-14 17:20  kladblok/POSITIONERING-AUDIT.md -> kladblok/naslag/POSITIONERING-AUDIT.md
+2026-10-14 17:20  kladblok/PROMPT-GROEPSBEELD.md -> kladblok/naslag/PROMPT-GROEPSBEELD.md
+2026-10-14 17:20  kladblok/PROMPT-RONDE-9.md -> kladblok/ronde-9/PROMPT-RONDE-9.md
+2026-10-14 17:20  kladblok/r9-stap7-mails.html -> kladblok/ronde-9/r9-stap7-mails.html
+2026-10-14 17:20  kladblok/voorpagina-opbouw.html -> kladblok/naslag/voorpagina-opbouw.html
+2026-10-14 17:20  kladblok/VOORPAGINA-OPBOUW.md -> kladblok/naslag/VOORPAGINA-OPBOUW.md
+2026-10-14 17:20  kladblok/VOORSTEL-CONTEXTKLEDING.md -> kladblok/naslag/VOORSTEL-CONTEXTKLEDING.md
+2026-10-14 17:20  kladblok/VOORSTEL-D4-ABONNEMENTEN.md -> kladblok/naslag/VOORSTEL-D4-ABONNEMENTEN.md
+2026-10-14 17:20  kladblok/VOORSTEL-GROEPSBEELD.md -> kladblok/naslag/VOORSTEL-GROEPSBEELD.md
+2026-10-14 17:20  kladblok/VOORSTEL-VOORPAGINA.md -> kladblok/naslag/VOORSTEL-VOORPAGINA.md
+2026-10-14 17:20  kladblok/WERKLIJST-RONDE-9.md -> kladblok/ronde-9/WERKLIJST-RONDE-9.md

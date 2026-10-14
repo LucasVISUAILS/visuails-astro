@@ -1,5 +1,11 @@
 ---
+// ── IN DE HAL — 13 oktober 2026 (afvinklijst 19, alles doen) ──────────────────────────
+// De omhulling is JuridischHal.astro: de kop van de hal, een inhoud, en het document in rijen.
+// De tekst hieronder is dezelfde; alleen de s22-omhulling en haar <style> gingen eruit.
+import JuridischHal from '../components/JuridischHal.astro';
+import { TEGOED_GELDIG_MAANDEN } from '../data/tegoed.js';
 import { WHATSAPP_DISPLAY, waHref } from '../data/whatsapp.js';
+import NieuwTabblad from '../components/NieuwTabblad.astro';
 // VISUAILS — Terms of Service. Ported from the SvelteKit terms page (itself
 // ported from static /terms.html). Legal pages are deliberately
 // plain/scannable, not "designed" — no reveal animations or kickers, per the
@@ -139,13 +145,23 @@ import { PORTAL_TTL_DAYS } from '../lib/token.js';
  * catalog- en lifestyleregels de ladder al lazen, en om dezelfde reden — een
  * prijs die op twee plekken staat, staat er over een half jaar verschillend.
  */
-import { AMOUNT, clause, VIDEO_OP_AANVRAAG, CUSTOM_CREDITS_MIN, customCreditsTotal } from '../data/pricing.js';
+import { AMOUNT, clause, VIDEO_OP_AANVRAAG, CUSTOM_CREDITS_MIN, customCreditsTotal, CREDITS_GELDIG_MAANDEN, BIJKOOP_MAX_PER_MAAND } from '../data/pricing.js';
+/* Extra credits bijkopen (12 oktober 2026, ab-v3 = c): de pakketten en de korting uit pricing.js. */
+import { bijkoopRegel } from '../data/creditKaart.js';
 import { PLAN_IDS, monthlyCents } from '../data/plans.js';
 import { planName } from '../data/planNames.js';
 // De datum stond hier uitgetypt, en nog negen keer elders. Zie de kop van
 // src/data/juridischeDatums.js: één bron, en een toets die hem tegen git houdt.
 import { bijgewerktOp } from '../data/juridischeDatums.js';
-import '../styles/stijl22.css';
+/* §5, likeness (o22, 11 October 2026): the number of face-search engines from
+   the check log (the same list as /ai-act) and the target time for replacement
+   images from termijnen.js — no typed numbers. See the NL page. */
+import { GEZICHTSZOEKERS, rosterVolledigGecontroleerd } from '../data/modelChecks.js';
+import { inWoorden, PORTRET_VERVANGEN_WEKEN } from '../data/termijnen.js';
+const portretZoekers = inWoorden(GEZICHTSZOEKERS.length, 'en');
+// Our standard models are named only once their check is in the log (see the NL page).
+const vasteModellenGecontroleerd = rosterVolledigGecontroleerd();
+const portretWeken = PORTRET_VERVANGEN_WEKEN === 1 ? 'a week' : `${inWoorden(PORTRET_VERVANGEN_WEKEN, 'en')} weeks`;
 
 /* Van–tot over de drie plannen, op de maandtermijn: dat is het bedrag dat op
    /plans het grootst wordt afgedrukt. Het VOORUITBETAALDE jaar is goedkoper en
@@ -172,38 +188,13 @@ const t1 = clause(turnaround('attended', 'en')).toLowerCase();
 const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 ---
 
-<Layout
+<Layout huid="hal"
   title="Terms of Service — VISUAILS"
   description="The terms governing your use of VISUAILS — done-for-you product visuals for brands. Orders, pricing, usage rights, payment, VAT and Dutch law."
 >
-{/* ═══ EEN JURIDISCHE PAGINA IN DE STIJL VAN SECTIE 22 — 7 september 2026 ═══
-    De TEKST is woord voor woord onaangeraakt. Wat verandert is de omhulling:
-    één `.paneel` in plaats van drie secties, en de letters van sectie 22 op het
-    `.legal`-blok — dat blok zelf staat nog steeds in global.css en wordt hier
-    niet overgetypt. Zie `.s22.s22 .legal` in src/styles/stijl22.css; die zet de
-    letters voor alle zes juridische pagina's tegelijk.
+<JuridischHal lang="en" doc="terms" rubriek="Legal" titel="Terms of Service" datum={bijgewerktOp('terms', 'en')}>
+<Fragment slot="lead">The terms that apply when you order product visuals from VISUAILS. Please read them before placing an order.</Fragment>
 
-    ALLE VIJF TEGELIJK, en dat is geen keuze maar een eis van de toets.
-    tests/juridische-datums.test.mjs bewaakt deze documenten als GROEP: vijf
-    pagina's die er hetzelfde uit horen te zien en waar niets afgaat als er
-    eentje uit de pas loopt. Toen /ai-act als eerste overging, viel die toets om
-    met de naam van dat bestand erin — precies zoals bedoeld. Het antwoord
-    daarop is niet de toets versoepelen maar de andere vier meenemen.
-
-    GEEN SLOTPANEEL. De andere pagina's eindigen op een `.paneel-slot`; een
-    juridische pagina niet. Het accent wijst een keuze aan, en aan het eind van
-    een document valt niets te kiezen — er staat een adres waar je terecht kunt.
-    Een slotpaneel met knoppen eronder zou daar een aanbieding van maken. */}
-<div class="s22">
-  <section class="paneel">
-    <header class="paneel-kop jur-kop">
-      <p class="etiket">Legal</p>
-      <h1 class="hoog">Terms of Service</h1>
-      <p class="lopend jur-lead">The terms that apply when you order product visuals from VISUAILS. Please read them before placing an order.</p>
-      <p class="legal-meta">{bijgewerktOp('terms', 'en')}</p>
-    </header>
-
-    <div class="legal jur-tekst">
 
       <h2>1. Introduction &amp; acceptance</h2>
       <p>These Terms of Service govern your use of VISUAILS and any order you place with us. VISUAILS is operated from Enschede, the Netherlands (KVK 99742993, VAT NL005407575B96). By placing an order, requesting a test sample or otherwise using our service, you agree to these terms. If you do not agree, please do not use the service.</p>
@@ -235,7 +226,7 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
           controleur. Juridisch verandert er niets: het blijft een dienst die
           productvisuals maakt, met AI als een van de middelen en met controle
           vooraf. Zie de noot bij REVIEW_CLAIM in src/data/pricing.js. */}
-      <p>VISUAILS makes product visuals for you — catalog images, lifestyle scenes, and video — from the source material you supply. We produce each one and our image editors check it before delivery; AI is one of the techniques used in that production. We aim for consistent, publish-ready results, but visuals are creative work and exact outcomes can vary.</p>
+      <p>VISUAILS makes product visuals for you — catalog images, lifestyle scenes, and video — from the source material you supply. We produce each one and check it before delivery; AI is one of the techniques used in that production. We aim for consistent, publish-ready results, but visuals are creative work and exact outcomes can vary.</p>
 
       <p><strong>VISUAILS supplies businesses only.</strong> This service is for brands, retailers and other businesses, and not for private individuals. When you order we ask you to confirm that you are ordering for a business or profession, and inside the EU we ask for the evidence that goes with that: a KVK number in the Netherlands, and a VAT number we can verify against VIES elsewhere in the EU. Where that evidence is missing we do not refuse the order — we put it on hold, tell you what we need, and start once it is there. Nothing is produced and nothing is invoiced in the meantime. Outside the EU your confirmation is enough: many countries, such as the United States, have no VAT number. You may give a registration number, but you do not have to; we do check after payment that the country of your payment method matches the country you gave.</p>
       <p>We only ask for a KVK number in the Netherlands, because that number only exists there, and a service that demands one everywhere does not exclude consumers — it excludes foreign businesses. What matters in law is whether you are acting for your business, which is why your confirmation is the part that counts and the number is what corroborates it.</p>
@@ -245,12 +236,12 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       <p>Visuals are priced per product, and the rate falls as the number of products in the order rises. Indicative rates are:</p>
       <ul>
         <li><strong>Catalog</strong> — {euro(ladderRate('catalog', 1), 'en')} per product, falling to {euro(ladderFloor('catalog'), 'en')} from {FLOOR_FROM} products up. A set of four photos (front, back, a detail close-up and one on-model shot).</li>
-        <li><strong>Lifestyle images</strong> — {euro(ladderRate('lifestyle', 1), 'en')} per product, falling to {euro(ladderFloor('lifestyle'), 'en')} from {FLOOR_FROM} products up. A three-photo carousel.</li>
+        <li><strong>Lifestyle images</strong> — {euro(ladderRate('lifestyle', 1), 'en')} per product, falling to {euro(ladderFloor('lifestyle'), 'en')} from {FLOOR_FROM} products up. A four-photo carousel.</li>
         <li><strong>The rate between those ends</strong> — set out in full on our <a href="/pricing/">pricing page</a>. The rate that applies is the one for the total number of products in your order, and it applies to every product in it.</li>
         <li><strong>Video</strong> — {VIDEO_OP_AANVRAAG ? 'on request: we quote per clip in writing before any work starts, and nothing is charged until you accept.' : `${euro(AMOUNT.video, 'en')} per clip, the same rate whether it is one clip or twenty.`} A clip is not in the list above.</li>
         <li><strong>Monthly plans</strong> — {euro(planLo / 100, 'en')} to {euro(planHi / 100, 'en')} per month on the monthly term ({planLoNaam} to {planHiNaam}), plus the {planName('maat', 'en')} from {euro(maatVanaf, 'en')} per month, set out in full on our <a href="/plans/">plans page</a>. The yearly term is priced there too.</li>
         <li><strong>Custom work</strong> — quoted individually before you commit.</li>
-        <li><strong>Brand Model</strong> — {euro(AMOUNT.brandModel, 'en')}, paid once when the model is designed. Not per visual, not per order, not per year. The design gets one correction round and is then locked; after that each product is charged at the normal rate. The same applies to a look of your own: one design fee, one correction round, then the normal rate per product.</li>
+        <li><strong>Brand Model</strong> — {euro(AMOUNT.brandModel, 'en')}, paid once when the model is designed. Not per visual, not per order, not per year. The design gets one correction round and is then locked; after that each product is charged at the normal rate. A look of your own works the same way: one design fee and one correction round, then the normal rate per product, plus a surcharge per product where the look takes more work. Any surcharge is shown with the look in VISUAILS Studio and is included in the total you see before you pay.</li>
       </ul>
       {/* ── TWEE OPTIES DIE OP 9 SEPTEMBER 2026 TERUGKWAMEN ─────────────────
           De noot bovenaan dit bestand zegt dat "de drie checkout add-ons
@@ -278,6 +269,14 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
         <li>The content is not illegal, harmful, misleading or otherwise prohibited.</li>
       </ul>
       <p>We may decline or stop work on any order that appears to breach these conditions.</p>
+      {/* 8 October 2026 (o22): a brand model or a described face is not a real,
+          recognisable person without that person's written consent. See the NL page. */}
+      <p><strong>A brand model is a face that does not exist.</strong> If you describe the face for your Brand Model (the ‘I have someone in mind’ route) or for any other order, it must not be a recognisable, existing person — a well-known name, an employee, a customer — unless that person has given written permission for their likeness to be used this way, and you can show us that permission on request. We may decline or stop an order that asks for a recognisable, existing person without it.</p>
+      {/* 11 October 2026 (o22): a chance resemblance — every face goes through the
+          face-search engines first; if someone invokes their portrait rights we
+          replace the images with another model at our cost, in consultation.
+          No guarantee, indemnity or damages. See the NL page. */}
+      <p><strong>If a face resembles a real person.</strong> Every face we make{vasteModellenGecontroleerd ? ', including those of our standard models,' : ''} is put through {portretZoekers} different face-search engines before it is used, to check that it does not appear online as the face of an existing person. A chance resemblance to someone can never be ruled out completely. If that person invokes their portrait rights (the right to their own likeness), we replace every image with that face with images of a different model, at our cost; we agree with you which model to use and how we go about it. This is usually done within {portretWeken}; with many images or videos it can take longer. If you receive such a claim, forward it to us straight away.</p>
       {/* 1 October 2026: a single point of contact for notices, as the Digital
           Services Act asks of anyone who stores files for customers. See the NL page. */}
       <p><strong>Notices and point of contact.</strong> If you believe something supplied to or made by VISUAILS is unlawful, for example because it infringes your rights, report it to <a href="mailto:hello@visuails.com">hello@visuails.com</a>. Tell us which image or order it concerns, why you believe it is unlawful, and how we can reach you. The same address is our point of contact for users and authorities under the Digital Services Act (Regulation (EU) 2022/2065); you can write to us in Dutch or English. We confirm that we have received your notice, review it carefully and tell you what we do with it.</p>
@@ -299,7 +298,7 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       <p>Three periods are fixed; what differs is the moment each one starts counting:</p>
       <ul>
         <li><strong>Source material</strong> — the photos and files you upload are deleted {UPLOAD_DAYS} days after your order closes. If you need us to keep them longer, ask in writing before then and we will agree it with you.</li>
-        <li><strong>Delivered visuals</strong> — your finished visuals stay in VISUAILS Studio to download for {DELIVERY_DAYS} days from delivery; after that they are removed there. A copy may then stay in our own archive for no more than twelve months, but that is not a guarantee; if you do not want that, say so and we delete it straight away.</li>
+        <li><strong>Delivered visuals</strong> — your finished visuals stay in VISUAILS Studio to download for {DELIVERY_DAYS} days from delivery; after that they are removed there. We keep a copy of the visuals we made in our own archive, with no end date, so that we can keep your look consistent and keep improving it. That is our working archive, not a backup for you, so keep your own copy. Want our copy gone? Email us from the address of your account and we delete it, from that archive too; you do not need to give a reason. Visuals showing a real, recognisable person we keep only for as long as your customer account exists (see our <a href="/privacy/">Privacy Policy</a>, §6).</li>
         <li><strong>Your order link</strong> — the private link you download from works for {PORTAL_TTL_DAYS} days after your order closes, then it stops. If you need the files after that, email us and we will send a new link.</li>
       </ul>
       <p>Keep your own copy of anything you rely on: after {DELIVERY_DAYS} days we cannot guarantee a re-download. Still need older images? Get in touch — we check whether they are still with us. How we handle your personal data more generally, including how that private link is protected, is set out in our <a href="/privacy/">Privacy Policy</a>.</p>
@@ -351,31 +350,35 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       {/* ── FROM SLOTS TO CREDITS — 20 September 2026 ───────────────────
           Zie de noot bij dezelfde alinea in nl/terms.astro. Alleen de EENHEID
           verandert; wat er beloofd wordt is ongewijzigd. */}
-      <p>A subscription is a standing arrangement under which you receive a fixed number of <strong>credits</strong> every month, in a fixed week we keep free for you, starting on the day of the month you pick. Credits are one balance: every service costs a number of them, and you decide what to spend them on. How many credits a service costs and how many you receive each month is set out in VISUAILS Studio and on the plans page; the {planName('brand', 'en')} plan also includes your Brand Model, and so does {planName('studio', 'en')} on both twelve-month terms. What each plan contains and what it costs is set out on the <a href="/plans/">plans page</a>; those figures apply as they stand there at the moment you subscribe.</p>
+      {/* ── NO FIXED WEEK AND NO LIST — 8 October 2026 (ronde 10 / B) ──────
+          Zie de noot bij dezelfde alinea in nl/terms.astro. */}
+      <p>A subscription is a standing arrangement under which you receive a fixed number of <strong>credits</strong> every month. Credits are one balance: every service costs a number of them, and you decide what to spend them on and when. How many credits a service costs and how many you receive each month is set out in VISUAILS Studio and on the plans page; the {planName('brand', 'en')} plan also includes your Brand Model, and so does {planName('studio', 'en')} when you pay a year up front. What each plan contains and what it costs is set out on the <a href="/plans/">plans page</a>; those figures apply as they stand there at the moment you subscribe.</p>
 
-      <p><strong>Filling a product in, and confirming it.</strong> You put what you want made on your list in VISUAILS Studio and add your photos. That costs nothing: an item on the list is a draft. It becomes work when you confirm it, and at that moment the credits for that service come off your balance. Confirming is what tells us to make it, so an item that is still a draft when your week begins is not made and stays on your list. You can release a confirmed item again, and those credits come straight back, up to the moment your week starts. After that it is in production.</p>
+      <p><strong>Ordering with credits.</strong> You order through the regular order form, like everyone else, and whenever you like. When you are signed in with a running subscription, you pay with your credits instead of money in the last step: at that moment the credits for that order come off your balance, and that is what tells us to make it. Delivery follows the same rules as any other order (section 6). If you choose something that cannot be paid with credits, or you do not have enough credits, you pay that order in full with money at the ordinary price; an order is never paid partly in credits and partly in money.</p>
 
       <p><strong>How it starts.</strong> When you subscribe you pay your first month straight away, and that same payment is the transaction by which your bank issues the mandate — without it nothing can be collected later. Your first month starts there and then; the second term falls a month after it. From then on our payment provider collects the monthly amount automatically under that mandate. On the prepaid term there is no mandate and no later collection: see below.</p>
 
-      <p><strong>Three terms.</strong> The monthly term can be <strong>cancelled in any month</strong>; there is no minimum duration. The twelve-month term is fixed: it runs for twelve terms and then ends by itself. In return it gives three things the monthly one does not — three months of rollover instead of one, your rate held for twelve months regardless of our price list, and on {planName('studio', 'en')} the Brand Model included. Every plan, the monthly one included, has a fixed week every month, starting on the day of the month you pick. The <strong>prepaid twelve-month term</strong> has all three of those and is paid in a single payment at the start, for which you pay fewer months than you receive; how many depends on the plan and is stated on the <a href="/plans/">pricing page</a> before you pay.</p>
+      <p><strong>Two terms.</strong> The monthly term can be <strong>cancelled in any month</strong>; there is no minimum duration. The <strong>prepaid twelve-month term</strong> is paid in a single payment at the start, for which you pay fewer months than you receive; how many depends on the plan and is stated on the <a href="/plans/">plans page</a> before you pay. On that term your rate is held for twelve months, and on {planName('studio', 'en')} your Brand Model is included. A subscription already running on the former twelve-month term with a monthly collection runs on to the end of those twelve terms and then ends by itself.</p>
 
-      <p><strong>Paying up front, and stopping partway.</strong> A prepaid year is <strong>not refundable</strong>. That is what the discount pays for, and it is the whole reason the term exists: the year is paid, so we can hold your week for twelve months without depending on twelve collections. If you stop partway, you do not lose what you paid for: if you cancel, <strong>your year simply runs on to the end</strong>. The months you have already paid for arrive as normal, <strong>one month at a time</strong>, with the same credits and the same week — not released as one balance, because a whole year claimed on a single day is more than one studio can make. A prepaid year never renews by itself, whether you cancel or not; after the twelfth month it stops. It is not converted into credit and not paid out in money.</p>
+      <p><strong>Paying up front, and stopping partway.</strong> A prepaid year is <strong>not refundable</strong>. That is what the discount pays for, and it is the whole reason the term exists. If you stop partway, you do not lose what you paid for: if you cancel, <strong>your year simply runs on to the end</strong>. The months you have already paid for arrive as normal, one month at a time, with the same credits — not released as one balance, because a whole year claimed on a single day is more than one studio can make. A prepaid year never renews by itself, whether you cancel or not; after the twelfth month it stops. It is not converted into credit and not paid out in money.</p>
 
-      <p><strong>Unused credits.</strong> What you have not confirmed in a month rolls over to the next — one month on the monthly term, three months on both twelve-month terms. VISUAILS Studio shows the date through which you can still use rolled-over credits. After that they lapse. They do not stack up further: on the monthly term the most you can ever hold is two months of credits, and the oldest ones are always used first. A subscription is capacity reserved in our calendar, and a month that has passed has passed.</p>
+      <p><strong>Saving credits, and when they lapse.</strong> While your subscription runs, your credits do not lapse. You can save up to {CREDITS_GELDIG_MAANDEN} months of credits: {CREDITS_GELDIG_MAANDEN} times the number your plan gives you each month (VISUAILS Studio shows the figure). If a new term takes your balance above that, only what goes above it lapses, on the day of that term; we send you a reminder beforehand. Credits that come back, after a cancellation or for a product we could not make, count towards your balance like any other. If you pause or cancel, all your credits stay valid until {CREDITS_GELDIG_MAANDEN} months after your last term and then lapse; here too we send you a reminder beforehand. When you order, the oldest credits are always used first, after any bought credits (see below).</p>
 
-      <p><strong>Cancelling.</strong> You cancel it yourself in VISUAILS Studio; you do not have to email us and there is no notice period. As soon as you cancel we stop the collection, and nothing further is charged. The month you have already paid for remains yours: you can still confirm that month’s credits until the end of it. Credits that rolled over from earlier months do not survive the cancellation, because rolling over is a promise about a following month and after cancelling there is no following month. After that the subscription closes. We do not refund the current month — it has been supplied in the form of capacity held available — and nothing is given in its place. On a prepaid year, cancelling works as set out under <em>Paying up front</em> above.</p>
+      <p><strong>Buying extra credits.</strong> While your subscription runs, you can buy extra credits in VISUAILS Studio, {bijkoopRegel('en')}, at most {BIJKOOP_MAX_PER_MAAND} per calendar month. You pay for them separately, with their own invoice; they are added as soon as the payment is in. Bought credits are used first, stay valid for {CREDITS_GELDIG_MAANDEN} months from the purchase, also if you pause or cancel, and do not count towards your savings limit.</p>
 
-      <p><strong>Pausing.</strong> You can pause your subscription yourself. That stops the next collection. Your balance stays where it is and rolls over under the same rule as always, and once you resume, collection starts again from the next term. You do not have to give a new mandate for that.</p>
+      <p><strong>Cancelling.</strong> You cancel it yourself in VISUAILS Studio; you do not have to email us and there is no notice period. As soon as you cancel we stop the collection, and nothing further is charged. The month you have already paid for remains yours until the end of it, and the credits you already have stay valid until {CREDITS_GELDIG_MAANDEN} months after your last term. After that the subscription closes. We do not refund the current month, and nothing is given in its place. On a prepaid year, cancelling works as set out under <em>Paying up front</em> above.</p>
 
-      <p><strong>If a collection fails.</strong> We put the subscription on pause and let you know. Your credits stay where they are, but nothing can be confirmed while the month is unpaid. If the payment comes in after all, the subscription carries on as though nothing had happened.</p>
+      <p><strong>Pausing.</strong> You can pause your subscription yourself. That stops the next collection, and while the subscription is paused no new credits come in. The credits you have stay where they are and stay valid until {CREDITS_GELDIG_MAANDEN} months after your last term. Once you resume, collection starts again from the next term; you do not have to give a new mandate for that.</p>
+
+      <p><strong>If a collection fails.</strong> We put the subscription on pause and let you know. Your credits stay where they are and stay valid until {CREDITS_GELDIG_MAANDEN} months after your last term. If the payment comes in after all, the subscription carries on as though nothing had happened.</p>
 
       <p><strong>What happens to what has already been made.</strong> Everything you had made and delivered during your subscription stays yours under the same usage rights as any other order — see section 8. Cancelling changes nothing about that. How long we keep your files is governed by section 7.</p>
 
-      <p><strong>There is a limit on how many subscriptions exist.</strong> A subscription is capacity reserved at one studio, and that capacity is finite. We may therefore decline a new subscription when the calendar is full. You find that out before you pay rather than after: if there is no room, you cannot subscribe.</p>
+      <p><strong>There is a limit on how many subscriptions exist.</strong> What subscribers order is made by one studio, and that capacity is finite. We therefore keep a limit on how many credits all subscriptions together receive each month, and may decline a new subscription when it no longer fits. You find that out before you pay rather than after: if there is no room, you cannot subscribe.</p>
 
-      <p><strong>Price changes.</strong> We may change the price of a subscription. On both twelve-month terms your rate is unchanged for twelve months. On the monthly term we give at least one full month’s notice of a change, so that you can still cancel before the next collection. We never change a price retroactively.</p>
+      <p><strong>Price changes.</strong> We may change the price of a subscription. On a prepaid year, and on a running twelve-month term, your rate is unchanged for twelve months. On the monthly term we give at least one full month’s notice of a change, so that you can still cancel before the next collection. We never change a price retroactively.</p>
 
-      <p><strong>What a subscription is not.</strong> It is not a voucher, and paying a year up front does not turn it into one: each month you buy a fixed number of credits and a place in the calendar, and that place is there even in a month when you order nothing. What you pay for in advance is those months, not a balance to spend on one-off work. Anything your plan does not cover — a kind of work it does not include, or more than your credits grant — can be ordered separately at the ordinary price.</p>
+      <p><strong>What a subscription is not.</strong> It is not a voucher, and paying a year up front does not turn it into one: each month you buy a fixed number of credits, valid for the period set out above. What you pay for in advance is those months, not a balance that never lapses. Credits are never converted into money or into account balance. Anything your plan does not cover — a kind of work it does not include, or more than your credits grant — can be ordered separately at the ordinary price.</p>
 
       <h2>10. Cancellations, refunds and putting it right</h2>
       <p>Because visuals are produced to your specific brief, work that has already started or been delivered generally cannot be cancelled for a refund.</p>
@@ -394,19 +397,34 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
         ))}
       </ul>
       <p>What we agree relates to the brief we worked from; a substantially new direction is a new order rather than a correction. Refunds are at our reasonable discretion and assessed case by case.</p>
-      <p><strong>Credit instead of a refund.</strong> Where we refund an order, you may choose to leave the amount on your account as credit instead; it is always your choice, never the default. Credit comes off your next order automatically when you order while signed in to VISUAILS Studio. It is set against the total including VAT, and your invoice still shows the full amount, with the credit and the remainder to pay underneath. Credit does not expire and is not paid out in money: if an order you paid with credit is cancelled, that part comes back as credit.</p>
+      <p><strong>Credit instead of a refund.</strong> Where we refund an order, you may choose to leave the amount on your account as credit instead; it is always your choice, never the default. Credit comes off your next order automatically when you order while signed in to VISUAILS Studio. It is set against the total including VAT, and your invoice still shows the full amount, with the credit and the remainder to pay underneath. Credit is valid for {TEGOED_GELDIG_MAANDEN} months and is not paid out in money: if an order you paid with credit is cancelled, that part comes back as credit.</p>
 
 
       <h2>10a. Right of withdrawal for consumers</h2>
-      <p>If you order as a consumer — that is, not in the course of a profession or business — a distance contract normally gives you fourteen days to withdraw. Two statutory exceptions apply to our service, and they are set out here because you need to know them before you order.</p>
-      <p><strong>Made to your specification.</strong> Every visual is produced from the product photographs you supply and to the brief you give us. It is therefore made to your specifications and clearly personalised, and for that reason falls outside the right of withdrawal.</p>
-      <p><strong>A service fully performed.</strong> When you place your order you confirm that you are ordering for a business, and in that same declaration — in case consumer law applies to you after all — you expressly ask us to begin straight away and declare that you lose your right of withdrawal once the order has been delivered. We record that confirmation against your order, together with the wording you were shown at the time. Without it we do not start.</p>
+      {/* ── ÉÉN GROND, NIET TWEE — 8 oktober 2026 (o24) ─────────────────────────
+          Hier stond ook "Made to your specification". Die uitzondering in
+          art. 6:230p BW gaat over zaken die op specificatie worden gemaakt, niet
+          over een dienst of digitale inhoud, en kon dus niet dragen wat hij beweerde. Wat blijft is de
+          grond die wél past, met de bevestiging die art. 6:230t BW erbij vraagt:
+          de bestelbevestiging herhaalt de verklaring sinds vandaag. */}
+      <p>If you order as a consumer — that is, not in the course of a profession or business — a distance contract normally gives you fourteen days to withdraw. One statutory exception applies to our service, and it is set out here because you need to know it before you order.</p>
+      <p><strong>A service fully performed.</strong> When you place your order you confirm that you are ordering for a business, and in that same declaration — in case consumer law applies to you after all — you expressly ask us to begin straight away and declare that you lose your right of withdrawal once the order has been delivered. We record that confirmation against your order, together with the wording you were shown at the time, and the order confirmation we email you repeats it. Without it we do not start.</p>
       <p>As long as nothing has been delivered and you have not given that confirmation, you may withdraw within the cooling-off period at no cost. If you have already paid, you get that money back. Email hello@visuails.com — that is enough, no form is needed.</p>
       <p>All of this applies to consumers only. If you order on behalf of a business the right of withdrawal does not apply, and section 10 and the rest of these terms govern instead.</p>
 
       <h2>11. Liability limitations</h2>
       <p>We provide the service with reasonable skill and care, but to the extent permitted by law we are not liable for indirect or consequential losses, lost profits, or losses arising from your use of the visuals. Our total liability for any order is limited to the amount you paid for that order. Nothing in these terms excludes liability that cannot be excluded by law.</p>
-      <p><strong>What you cover, and its limits.</strong> Section 5 is your warranty about the material you send us; this is what happens if that warranty turns out to be wrong. If a third party brings a claim against us because of the source material you supplied, or because of how you have used or published the delivered visuals, you indemnify us against that claim and against the reasonable costs of defending it. That covers three things and nothing beyond them: material you did not have the rights to, a person shown in the material without a basis for using their image, and a publication obligation that rests on you rather than on us — the AI disclosure in <a href="/ai-act/">our AI Act statement</a> being the obvious example.</p>
+      {/* 8 October 2026: who does what for the AI disclosure. See the note at
+          the same place on the Dutch page. */}
+      <p><strong>The AI disclosure: who does what.</strong> The visuals are made with AI. We tell you so at delivery, write a machine-readable marking into the delivered photos that records it (the IPTC property DigitalSourceType), and give you an explanation and a sentence to place with the visuals on <a href="/ai-act/">our AI Act page</a>. If a delivered photo is missing that marking, we deliver it again with the marking at your request. From delivery onwards you decide where, when and how a visual appears, and so from that moment the following rests with you:</p>
+      <ul>
+        <li>the visible statement that the visual was made with AI, in every publication where the law or the platform asks for one;</li>
+        <li>leaving the marking in the file;</li>
+        <li>complying with the rules of the channels and markets where you publish;</li>
+        <li>passing these tasks on to whoever publishes the visuals for you, such as your agency, a reseller or a marketplace.</li>
+      </ul>
+      <p>This allocation settles which of us does what. It does not change what the law itself requires of either of us, and liability is governed by the rest of this section.</p>
+      <p><strong>What you cover, and its limits.</strong> Section 5 is your warranty about the material you send us; this is what happens if that warranty turns out to be wrong. If a third party brings a claim against us because of the source material you supplied, or because of how you have used or published the delivered visuals, you indemnify us against that claim and against the reasonable costs of defending it. That covers three things and nothing beyond them: material you did not have the rights to, a person shown in the material without a basis for using their image, and a publication task that these terms place on you rather than on us — the AI disclosure above being the obvious example.</p>
       <p>Three limits go with it, because an indemnity without them is a clause nobody can act on:</p>
       <ul>
         <li><strong>We tell you promptly.</strong> If a claim arrives we notify you without unreasonable delay and pass on what we received, so you can act while it still matters.</li>
@@ -419,42 +437,16 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       <p>These terms are governed by the laws of the Netherlands. Any disputes will be subject to the jurisdiction of the competent Dutch courts, unless mandatory law provides otherwise.</p>
 
       <h2>13. Contact</h2>
-      <p>Questions about these terms? Email <a href="mailto:hello@visuails.com">hello@visuails.com</a> or message us on WhatsApp at <a href={waHref()} target="_blank" rel="noopener">{WHATSAPP_DISPLAY}</a>.</p>
+      <p>Questions about these terms? Email <a href="mailto:hello@visuails.com">hello@visuails.com</a> or message us on WhatsApp at <a href={waHref()} target="_blank" rel="noopener">{WHATSAPP_DISPLAY}<NieuwTabblad lang={'en'} /></a>.</p>
 
     <div class="jur-uit">
-      <h2>Ready when you are.</h2>
-      <p>Start with a test sample, or place your first order. We’ll confirm what you get and what it costs before any work begins.</p>
-      <p class="acties">
-        <a class="knop knop-inkt" href="/test-sample/">Test sample</a>
-        <a class="knop knop-lijn" href="/start/">Start an order</a>
-        <a class="knop knop-lijn" href={waHref("Hi VISUAILS, I have a question about your terms.")} target="_blank" rel="noopener">WhatsApp</a>
+      <h2 data-niet-in-inhoud>Questions about these terms?</h2>
+      <p>We’re happy to explain anything in these terms. Reach out and we’ll get back to you.</p>
+      <p class="h-acties">
+        <a class="h-knop h-knop-inkt" href="/contact/">Contact us<span class="o" aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/></svg></span></a>
+        <a class="h-knop h-knop-lijn" href={waHref("Hi VISUAILS, I have a question about your terms.")} target="_blank" rel="noopener">WhatsApp<NieuwTabblad lang={'en'} /></a>
       </p>
     </div>
-    </div>
-  </section>
-</div>
+    
+</JuridischHal>
 </Layout>
-
-<style>
-  /* Een juridisch document leest in één kolom. 46rem is ongeveer 75 tekens in
-     deze letter — de bovengrens uit de leesbaarheidsregel van DESIGN.md, en
-     ruimer dan de 34em van `.lopend` omdat dit een document is en geen
-     verkooptekst. */
-  .jur-kop { max-width: 46rem; margin-bottom: clamp(1.6rem, 3vw, 2.4rem); }
-  .jur-lead { max-width: none; font-size: clamp(1.05rem, 1.8vw, 1.25rem); color: var(--inkt); }
-  .jur-tekst { max-width: 46rem; }
-
-  /* Het slot: een adres, geen aanbieding. Zie de noot bovenaan. */
-  .jur-uit { margin-top: clamp(2.5rem, 5vw, 4rem); padding-top: clamp(1.6rem, 3vw, 2.4rem); border-top: 1px solid var(--lijn); }
-  .jur-uit .acties { margin-top: 1.4rem; }
-</style>
-
-<style>
-  /* De opmaak van een juridische pagina staat sinds 3 september 2026 één keer in
-     src/styles/global.css, bij `.legal` — zie de noot daar. Hij stond hier, en in
-     vijf andere bestanden, met exact dezelfde regels; en de drie pagina's waar hij
-     op 24 augustus wél uit werd gehaald, kregen daardoor koppen van 52,8px waar
-     deze er 24 had. Nu één bron, en alle zes gelijk. `.narrow { 820px }` is niet
-     meegegaan: 760px (--container-narrow) is de maat die de ladder bij --container
-     aan juist deze pagina's geeft. */
-</style>

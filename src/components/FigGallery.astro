@@ -54,11 +54,21 @@
  * formulier op een marketingpagina dat nergens naartoe post, is een knop die
  * niets doet.
  */
-import { DEMO_ORDER, demoWindow, dayLabel } from '../data/figdemo.js';
+import { DEMO_ORDER } from '../data/figdemo.js';
+/* Het woordmerk in de balk van het voorbeeldscherm (14 oktober 2026): het echte merk, niet het woord in een letter. */
+import Woordmerk from './Woordmerk.astro';
 import { CATALOG_IMAGES } from '../data/pricing.js';
+import { geleverd } from '../data/voorbeeldset.js';
+import { deliveryEntries } from '../lib/delivery.js';
+import UitlegBalk from './UitlegBalk.astro';
 
-interface Props { lang?: 'en' | 'nl' }
-const { lang = 'en' } = Astro.props;
+/* `uitleg` (14 oktober 2026): een cursor keurt twee beelden goed, vraagt bij het
+   modelbeeld om wit in plaats van grijs, en opent de map. Zie UitlegBalk.astro.
+   Afvinklijst 24 (Lucas): de roze jeans uit de voorbeeldset ("ook hier mag je de roze
+   broek gebruiken"), en de map zoals hij echt is: elk beeld als JPG, PNG en WebP op
+   aanvraag (k401, 11 oktober). Hier stond "als PNG, JPG en WebP" en drie formaten per beeld. */
+interface Props { lang?: 'en' | 'nl'; uitleg?: boolean }
+const { lang = 'en', uitleg = false } = Astro.props;
 const nl = lang === 'nl';
 
 /* ── DEZELFDE BESTELLING ALS IN FIGDASH, FIGOVERZICHT EN FIGBOARD — 30 sep 2026
@@ -66,86 +76,106 @@ const nl = lang === 'nl';
    venster van die bestelling 10 – 11 aug is, en "24 bestanden" bij twintig
    producten. Nu komt alles uit dezelfde fixture: catalog, de dag na het venster,
    en het aantal bestanden uit producten × beelden × drie formaten. */
-const venster = demoWindow(DEMO_ORDER.products);
-const naLevering = dayLabel(new Date(Date.parse(`${venster.end}T00:00:00Z`) + 86400000).toISOString().slice(0, 10), lang);
+/* De datum bij "Goedgekeurd" is weg (14 oktober 2026): het echte scherm zegt alleen
+   "Goedgekeurd" (stApproved in account.js), en zo staat het ook in FigDash. */
 const TOTAAL = DEMO_ORDER.products * CATALOG_IMAGES;
-const BESTANDEN = TOTAAL * 3;
-const MB_PER_BESTAND = 186.4 / 24;
-const omvang = (BESTANDEN * MB_PER_BESTAND / 1000).toFixed(1);
-const omvangLabel = nl ? `${omvang.replace('.', ',')} GB` : `${omvang} GB`;
+/* Eén bestand per beeld: JPG is de standaard. */
+const BESTANDEN = TOTAAL;
 
-const PHOTOS = [
-  '/img/lifestyle-flash-01.webp',
-  '/img/lifestyle-flash-03.webp',
-  '/img/lifestyle-flash-05.webp',
-  '/img/lifestyle-flash-07.webp',
-];
+/* De vier beelden van product 1: de roze jeans. Het modelbeeld is het beeld waarvoor
+   de klant om een witte achtergrond vraagt, dus hier staat het nog op lichtgrijs. */
+const UIT = geleverd(lang);
+const PHOTOS = [UIT[0].src, UIT[1].src, UIT[2].src, '/img/ba2-na-model.webp'];
+/* Na de revisie (stap 4): hetzelfde modelbeeld op wit, zoals in FigDash. */
+const MODEL_WIT = UIT[3].src;
+const PRODUCT = nl ? 'Wijde jeans' : 'Wide leg jeans';
+/* Het boompje uit dezelfde functie als de echte zip (delivery.js), met alleen JPG. */
+const SHOTS = ['front', 'back', 'detail', 'worn'];
+const entries = deliveryEntries(SHOTS.map((shot, i) => ({
+  id: i + 1, product_key: 'p1', shot, r2_key: `x/${i}`, bytes: 0, filename: `${shot}.jpg`,
+  assets: [{ format: 'jpg', r2_key: `x/${i}.jpg`, bytes: 0 }],
+})), lang, { ref: DEMO_ORDER.ref, productNames: { p1: PRODUCT } });
+const productMap = entries[0]?.name.split('/')[1] || `01 - ${PRODUCT}`;
+const BOOM = [[`${productMap}/`, 'dir'], ...entries.map((e) => [e.name.split('/').slice(2).join('/'), 'file'])];
 
 const C = nl
   ? {
       badge: 'Voorbeeld met verzonnen gegevens',
       ref: `${DEMO_ORDER.ref} · ${DEMO_ORDER.brand}`,
       h: 'Wat wij leverden',
-      tally: `2 van ${TOTAAL} goedgekeurd · 1 terug`,
+      tally: `2 van ${TOTAAL} goedgekeurd · 1 in je ronde`,
+      tallyStap: [`0 van ${TOTAAL} goedgekeurd`, `1 van ${TOTAAL} goedgekeurd`, `2 van ${TOTAAL} goedgekeurd`],
+      zinnen: [
+        'Je keurt per beeld goed: één klik, en dat beeld is klaar.',
+        'De rest van je bestelling wacht niet op de beelden die je nog niet bekeek.',
+        'Wil je iets anders? Zeg het in je eigen woorden. Alleen dat beeld gaat terug.',
+        'Wij passen het aan en leveren het opnieuw: nu op wit, net als de rest.',
+        'Je bestanden staan in één map, per product, als JPG. PNG of WebP vraag je erbij aan.',
+      ],
+      tallyNa: `2 van ${TOTAAL} goedgekeurd · 1 aangepast`,
+      opnieuw: 'Opnieuw geleverd',
       tiles: [
-        { cap: 'Product 1 · voorkant', state: 'ok', label: `Goedgekeurd op ${naLevering}` },
-        { cap: 'Product 1 · achterkant', state: 'rev', label: `Revisie gevraagd op ${naLevering}`, said: 'De mouw valt links anders dan rechts.' },
-        { cap: 'Product 2 · voorkant', state: 'open' },
-        { cap: 'Product 2 · achterkant', state: 'ok', label: `Goedgekeurd op ${naLevering}` },
+        /* De woorden van het echte scherm (stApproved, stRevision in account.js), 14 oktober 2026. */
+        { cap: 'Product 1 · voorkant', state: 'ok', label: 'Goedgekeurd' },
+        { cap: 'Product 1 · achterkant', state: 'ok', label: 'Goedgekeurd' },
+        { cap: 'Product 1 · detail', state: 'open' },
+        { cap: 'Product 1 · op model', state: 'rev', label: 'Revisie aangevraagd', said: 'Toch liever op wit dan grijs, zoals de rest.' },
       ],
       bApprove: 'Goedkeuren',
-      bAsk: 'Er klopt iets niet',
-      noteLabel: 'Zeg in je eigen woorden wat er niet klopt',
-      notePlaceholder: 'De kleur van het label is te warm — hij moet koeler, zoals op de foto die ik stuurde.',
-      bSend: 'Versturen',
+      /* 14 oktober 2026: de woorden van het echte scherm (rdTick en rdHint in account.js), en
+         een revisie als wens in plaats van fout (Lucas, afvinklijst 24). */
+      bAsk: 'Deze aanmerken',
+      /* Letterlijk de vraag van het echte scherm (rdNote, levering 40). */
+      noteLabel: 'Wat wil je anders aan dit beeld?',
+      notePlaceholder: 'In je eigen woorden — hoe specifieker, hoe sneller het goed is.',
+      bSend: 'Revisieronde versturen',
       reviewNote: 'Deze beelden zijn op schermformaat. Ze staan er om te beoordelen.',
       folderH: 'Jouw bestanden',
-      folderBody: 'Eén map per product, en daarin dezelfde foto als PNG, JPG en WebP.',
-      folderMeta: `${BESTANDEN} bestanden · ${omvangLabel}`,
-      bFolder: 'Download de map',
-      tree: [
-        ['product-1/', 'dir'],
-        ['PNG/voorkant.png', 'png'],
-        ['JPG/voorkant.jpg', 'jpg'],
-        ['WEBP/voorkant.webp', 'webp'],
-        ['product-2/', 'dir'],
-      ],
+      folderBody: 'Eén map per product, en daarin elk beeld als JPG. PNG of WebP erbij? Eén klik op de bestelling.',
+      folderMeta: `${BESTANDEN} bestanden · JPG`,
+      /* De knop van het echte scherm (bDownloadAll). */
+      bFolder: 'Downloaden (zip)',
+      meerMappen: `en nog ${DEMO_ORDER.products - 1} productmappen`,
     }
   : {
       badge: 'Example with made-up data',
       ref: `${DEMO_ORDER.ref} · ${DEMO_ORDER.brand}`,
       h: 'What we delivered',
-      tally: `2 of ${TOTAAL} approved · 1 back`,
+      tally: `2 of ${TOTAAL} approved · 1 in your round`,
+      tallyStap: [`0 of ${TOTAAL} approved`, `1 of ${TOTAAL} approved`, `2 of ${TOTAAL} approved`],
+      zinnen: [
+        'You approve image by image: one click and that image is done.',
+        'The rest of your order does not wait for the images you have not looked at yet.',
+        'Want something different? Say it in your own words. Only that image goes back.',
+        'We change it and deliver it again: on white now, like the rest.',
+        'Your files sit in one folder, per product, as JPG. PNG or WebP you request on top.',
+      ],
+      tallyNa: `2 of ${TOTAAL} approved · 1 changed`,
+      opnieuw: 'Delivered again',
       tiles: [
-        { cap: 'Product 1 · front', state: 'ok', label: `Approved ${naLevering}` },
-        { cap: 'Product 1 · back', state: 'rev', label: `Revision requested ${naLevering}`, said: 'The sleeve sits differently on the left than on the right.' },
-        { cap: 'Product 2 · front', state: 'open' },
-        { cap: 'Product 2 · back', state: 'ok', label: `Approved ${naLevering}` },
+        { cap: 'Product 1 · front', state: 'ok', label: 'Approved' },
+        { cap: 'Product 1 · back', state: 'ok', label: 'Approved' },
+        { cap: 'Product 1 · detail', state: 'open' },
+        { cap: 'Product 1 · on model', state: 'rev', label: 'Revision requested', said: 'On white rather than grey after all, like the rest.' },
       ],
       bApprove: 'Approve',
-      bAsk: 'Something is off',
-      noteLabel: 'Say what is wrong in your own words',
-      notePlaceholder: 'The label colour is too warm — it should be cooler, like the photo I sent.',
-      bSend: 'Send',
+      bAsk: 'Mark this one',
+      noteLabel: 'What would you like different about this image?',
+      notePlaceholder: 'In your own words — the more specific, the faster we get it right.',
+      bSend: 'Send revision round',
       reviewNote: 'These are at screen size. They are here to be judged.',
       folderH: 'Your files',
-      folderBody: 'One folder per product, and in it the same image as PNG, JPG and WebP.',
-      folderMeta: `${BESTANDEN} files · ${omvangLabel}`,
-      bFolder: 'Download the folder',
-      tree: [
-        ['product-1/', 'dir'],
-        ['PNG/front.png', 'png'],
-        ['JPG/front.jpg', 'jpg'],
-        ['WEBP/front.webp', 'webp'],
-        ['product-2/', 'dir'],
-      ],
+      folderBody: 'One folder per product, and in it every image as JPG. Need PNG or WebP too? One click on the order.',
+      folderMeta: `${BESTANDEN} files · JPG`,
+      bFolder: 'Download (zip)',
+      meerMappen: `and ${DEMO_ORDER.products - 1} more product folders`,
     };
 ---
 
-<figure class="fg">
+<figure class="fg" data-uitleg={uitleg ? '' : undefined} data-uitleg-maat="2600 2400 4800 2800 3400" data-uitleg-start="500">
   <div class="fg-frame">
     <div class="fg-bar">
-      <span class="fg-mark">VISUAILS</span>
+      <span class="fg-mark"><Woordmerk klasse="fg-wm" /><span class="fg-sr">VISUAILS</span></span>
       <span class="fg-ref">{C.ref}</span>
       <span class="fg-badge">{C.badge}</span>
     </div>
@@ -153,26 +183,42 @@ const C = nl
     <div class="fg-body">
       <div class="fg-head">
         <p class="fg-h">{C.h}</p>
-        <p class="fg-tally">{C.tally}</p>
+        <p class="fg-tally">
+          {uitleg && C.tallyStap.map((t, k) => <span class="fg-tally-u" data-k={k}>{t}</span>)}
+          <span class="fg-tally-eind">{C.tally}</span>
+          {uitleg && <span class="fg-tally-na">{C.tallyNa}</span>}
+        </p>
       </div>
 
       <ul class="fg-tiles">
         {C.tiles.map((tile, i) => (
-          <li class={`fg-tile is-${tile.state}`}>
-            <img src={PHOTOS[i]} alt="" loading="lazy" decoding="async" width="200" height="250" />
+          <li class={`fg-tile is-${tile.state}`} data-u={uitleg ? ['1', '2', '', '3'][i] : undefined}>
+            <span class="fg-foto">
+              <img src={PHOTOS[i]} alt="" loading="lazy" decoding="async" width="200" height="250" />
+              {uitleg && tile.state === 'rev' && <img class="fg-foto-na" src={MODEL_WIT} alt="" loading="lazy" decoding="async" width="200" height="250" />}
+            </span>
             <div class="fg-tile-body">
               <span class="fg-cap">{tile.cap}</span>
-              {tile.state === 'ok' ? <span class="fg-state is-ok">{tile.label}</span> : null}
+              {/* Met uitleg: ook de beelden die straks goedgekeurd of teruggestuurd zijn,
+                  beginnen met de twee knoppen. */}
+              {uitleg && tile.state !== 'open' ? (
+                <div class="fg-acts fg-acts-u">
+                  <span class="fg-btn is-primary" data-uitleg-klik={tile.state === 'ok' ? (i === 0 ? '1' : '2') : undefined}>{C.bApprove}</span>
+                  <span class="fg-pick" data-uitleg-klik={tile.state === 'rev' ? '3' : undefined}><span class="fg-box" aria-hidden="true"></span>{C.bAsk}</span>
+                </div>
+              ) : null}
+              {tile.state === 'ok' ? <span class="fg-state is-ok"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" /></svg>{tile.label}</span> : null}
               {tile.state === 'rev' ? (
                 <>
                   <span class="fg-state is-rev">{tile.label}</span>
+                  {uitleg && <span class="fg-state is-ok fg-opnieuw"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" /></svg>{C.opnieuw}</span>}
                   <p class="fg-said">{tile.said}</p>
                 </>
               ) : null}
               {tile.state === 'open' ? (
                 <div class="fg-acts">
                   <span class="fg-btn is-primary">{C.bApprove}</span>
-                  <span class="fg-btn">{C.bAsk}</span>
+                  <span class="fg-pick"><span class="fg-box" aria-hidden="true"></span>{C.bAsk}</span>
                 </div>
               ) : null}
             </div>
@@ -185,8 +231,8 @@ const C = nl
           lezen — en het is juist de zin van de klant die deze band verkoopt. */}
       <div class="fg-ask">
         <p class="fg-ask-l">{C.noteLabel}</p>
-        <p class="fg-ask-field">{C.notePlaceholder}</p>
-        <span class="fg-btn">{C.bSend}</span>
+        <p class="fg-ask-field"><span class="fg-ask-tekst">{uitleg ? C.tiles[3].said : C.notePlaceholder}</span></p>
+        <span class="fg-btn is-primary" data-uitleg-klik={uitleg ? '3' : undefined} data-uitleg-wacht={uitleg ? '2700' : undefined}>{C.bSend}</span>
       </div>
 
       <p class="fg-fine">{C.reviewNote}</p>
@@ -195,8 +241,8 @@ const C = nl
           Dit hoort niet bij "beeld voor beeld goedkeuren" en het staat er toch,
           omdat het de vraag beantwoordt die de tegels hierboven oproepen: als er
           bij geen enkele foto een downloadknop staat, waar krijg ik mijn
-          bestanden dan? Het boompje ernaast zegt wat erin zit — drie formaten per
-          product — en dat is sneller gelezen dan de zin die het uitlegt. */}
+          bestanden dan? Het boompje ernaast zegt wat erin zit — per product een map,
+          elk beeld als JPG — en dat is sneller gelezen dan de zin die het uitlegt. */}
       <section class="fg-folder">
         <div>
           <p class="fg-folder-h">{C.folderH}</p>
@@ -209,14 +255,16 @@ const C = nl
             keer (de map en de extensie). Wat overblijft is de vorm zelf, en die
             is het enige dat deze figuur hier moet bewijzen. */}
         <ul class="fg-tree">
-          {C.tree.map(([name, kind]) => (
-            <li class={`fg-tree-${kind === 'dir' ? 'dir' : 'file'}`}>{name}</li>
+          {BOOM.map(([name, kind], i) => (
+            <li class={`fg-tree-${kind === 'dir' ? 'dir' : 'file'}`} style={uitleg ? `--i:${i}` : undefined}>{name}</li>
           ))}
+          <li class="fg-tree-meer" style={uitleg ? `--i:${BOOM.length}` : undefined}>{C.meerMappen}</li>
         </ul>
-        <span class="fg-btn is-primary fg-folder-btn">{C.bFolder}</span>
+        <span class="fg-btn is-primary fg-folder-btn" data-uitleg-klik={uitleg ? '5' : undefined} data-uitleg-wacht={uitleg ? '1600' : undefined}>{C.bFolder}</span>
       </section>
     </div>
   </div>
+  {uitleg && <UitlegBalk zinnen={C.zinnen} lang={lang} />}
 </figure>
 
 <style>
@@ -289,7 +337,14 @@ const C = nl
   .fg-tile-body { display: grid; gap: .18rem; }
   .fg-cap { font-size: .74rem; color: var(--ink-2); }
   .fg-state { font-size: .72rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-  .fg-state.is-ok { color: var(--accent-text); }
+  /* Goedgekeurd als dezelfde pil als in FigDash (.fd-ok-u) en het echte scherm — 14 oktober 2026,
+     Lucas: "De Goedkeuren knoppen zijn niet consistent." */
+  .fg-state.is-ok {
+    display: inline-flex; align-items: center; justify-content: center; gap: .3rem; justify-self: stretch;
+    padding: .26rem .5rem; border-radius: var(--r-pill);
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface)); color: var(--accent-text); white-space: nowrap;
+  }
+  .fg-state.is-ok svg { width: 11px; height: 11px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   /* ── DE LETTER IS DONKER, DE RAND BLIJFT HELDER — 7 september 2026 ──────
      `--warn-ink` is de klei-kleur en meet als TEKST op wit 2,36:1. De noot bij
      dezelfde reparatie in FigBoard zegt het al: `--clay-text` bestaat precies
@@ -302,7 +357,11 @@ const C = nl
     font-size: .74rem; line-height: 1.5; font-style: italic; color: var(--ink-3);
   }
 
-  .fg-acts { display: flex; flex-wrap: wrap; gap: .25rem; margin-top: .15rem; }
+  /* Goedkeuren boven, het vinkje "Deze aanmerken" eronder: zo staat het in FigDash en op het echte scherm. */
+  .fg-acts { display: grid; gap: .3rem; margin-top: .15rem; }
+  .fg-acts .fg-btn { text-align: center; }
+  .fg-pick { display: inline-flex; align-items: center; gap: .35rem; padding: .1rem 0; font-size: .72rem; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+  .fg-box { inline-size: .68rem; block-size: .68rem; flex: none; border-radius: 2px; box-shadow: inset 0 0 0 1px var(--line-strong); background-repeat: no-repeat; background-position: center; background-size: 80%; }
   /* Geen echte knoppen — zie de kop. Een <span> die eruitziet als een knop is hier
      het eerlijke element: er is niets om aan te klikken. */
   .fg-btn {
@@ -363,4 +422,98 @@ const C = nl
   .fg-tree-dir { color: var(--ink-2); font-weight: 600; }
   /* De bestanden springen in onder hun map, want dat is wat een map is. */
   .fg-tree-file { padding-left: .8rem; }
+  .fg-tree-meer { color: var(--ink-2); }
+
+  /* ── DE UITLEG (alleen met data-uitleg-staat) ────────────────────────────
+     Tegel 1 wordt goedgekeurd in stap 1, tegel 4 in stap 2, tegel 2 krijgt in
+     stap 3 een melding, en in stap 4 opent de map. De knoppen bij een tegel
+     staan er tot zijn stap; daarna zijn staat. Na stap 4 is alles de figuur zoals
+     hij altijd stond. */
+  .fg-acts-u { display: none; }
+  .fg[data-uitleg-staat] .fg-acts-u { display: grid; }
+  /* Knoppen en staat in dezelfde cel: geen verspringende tegel als ze wisselen. */
+  .fg[data-uitleg-staat] .fg-tile-body { grid-template-areas: "cap" "s" "zei"; }
+  .fg[data-uitleg-staat] .fg-cap { grid-area: cap; }
+  .fg[data-uitleg-staat] :is(.fg-acts-u, .fg-state) { grid-area: s; align-self: start; }
+  .fg[data-uitleg-staat] .fg-said { grid-area: zei; }
+  /* Twee regels en niet één lijst: op 14 oktober stond de 3,2 s van het modelbeeld
+     ook achter de eerste twee, en dan bleef "Goedkeuren" staan nadat "Goedgekeurd" er al
+     was (Lucas, afvinklijst 25: "glitchen de goedgekeurd knoppen"). */
+  .fg[data-uitleg-staat].u-s1 .fg-tile[data-u="1"] .fg-acts-u,
+  .fg[data-uitleg-staat].u-s2 .fg-tile[data-u="2"] .fg-acts-u { animation: fg-weg .3s ease .8s forwards; }
+  .fg[data-uitleg-staat].u-s3 .fg-tile[data-u="3"] .fg-acts-u { animation: fg-weg .35s ease 3.2s forwards; }
+  /* Het vinkje bij "Deze aanmerken" gaat aan zodra de cursor klikt, en blijft staan tot de ronde weg is. */
+  .fg[data-uitleg] .fg-box { transition: background-color .25s, box-shadow .25s; }
+  .fg.u-s3 .fg-tile[data-u="3"] .fg-box {
+    background-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); transition-delay: .62s;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 8.5l3.2 3L13 4.5' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  }
+  .fg[data-uitleg-staat="klaar"] .fg-acts-u { visibility: hidden; }
+  @keyframes fg-weg { to { opacity: 0; transform: scale(.9); } }
+
+  .fg[data-uitleg-staat] :is(.fg-state, .fg-said) { transition: opacity .45s, transform .6s cubic-bezier(.34, 1.4, .5, 1); }
+  .fg[data-uitleg-staat]:not(.u-s1) .fg-tile[data-u="1"] :is(.fg-state, .fg-said),
+  .fg[data-uitleg-staat]:not(.u-s2) .fg-tile[data-u="2"] :is(.fg-state, .fg-said),
+  .fg[data-uitleg-staat]:not(.u-s3) .fg-tile[data-u="3"] :is(.fg-state, .fg-said) { opacity: 0; transform: translateY(6px); }
+  .fg.u-s1 .fg-tile[data-u="1"] .fg-state, .fg.u-s2 .fg-tile[data-u="2"] .fg-state { transition-delay: 1.1s; }
+  .fg.u-s3 .fg-tile[data-u="3"] :is(.fg-state, .fg-said) { transition-delay: 3.5s; }
+  .fg[data-uitleg-staat] .fg-tile img { transition: box-shadow .5s; }
+  .fg[data-uitleg-staat]:not(.u-s1) .fg-tile[data-u="1"] img,
+  .fg[data-uitleg-staat]:not(.u-s2) .fg-tile[data-u="2"] img,
+  .fg[data-uitleg-staat]:not(.u-s3) .fg-tile[data-u="3"] img { box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .fg.u-s1 .fg-tile[data-u="1"] img, .fg.u-s2 .fg-tile[data-u="2"] img { transition-delay: 1.05s; }
+  .fg.u-s3 .fg-tile[data-u="3"] img { transition-delay: 3.5s; }
+  /* ── STAP 4: OPNIEUW GELEVERD, NU OP WIT — 14 oktober 2026 ─────────────────
+     Lucas (afvinklijst 25): "mag de grijze on model foto ook veranderen na de revisie
+     naar witte achtergrond foto." Het witte beeld ligt in dezelfde cel als het grijze
+     (ook als de bouw er een <picture> omheen zet: daarom :global) en komt er overheen;
+     "Revisie aangevraagd" wordt "Opnieuw geleverd". */
+  .fg-foto { display: grid; }
+  /* De <picture> van de bouw staat op display: contents, dus de beelden zelf zijn de
+     rasteritems: allebei in cel 1/1. */
+  .fg-foto > :global(*), .fg-foto img { grid-area: 1 / 1; min-width: 0; }
+  .fg-foto-na { opacity: 0; transition: opacity .7s ease, box-shadow .5s; }
+  .fg.u-s4 .fg-foto-na { opacity: 1; transition-delay: .4s; }
+  .fg.u-s4 .fg-tile[data-u="3"] img { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, var(--line)); transition-delay: .4s; }
+  .fg[data-uitleg-staat]:not(.u-s4) .fg-tile[data-u="3"] .fg-opnieuw { opacity: 0; transform: translateY(6px); }
+  .fg.u-s3.u-s4 .fg-tile[data-u="3"] .fg-state.is-rev { opacity: 0; transform: translateY(-4px); transition-delay: .6s; }
+  .fg.u-s4 .fg-tile[data-u="3"] .fg-opnieuw { transition-delay: 1s; }
+
+  /* De teller loopt mee: 0, 1, 2, en dan "2 · 1 terug". */
+  .fg-tally { display: grid; }
+  .fg-tally > span { grid-area: 1 / 1; }
+  .fg[data-uitleg-staat] .fg-tally > span { opacity: 0; transition: opacity .3s; }
+  .fg[data-uitleg-staat]:not(.u-s1) .fg-tally-u[data-k="0"],
+  .fg.u-s1:not(.u-s2) .fg-tally-u[data-k="1"],
+  .fg.u-s2:not(.u-s3) .fg-tally-u[data-k="2"],
+  .fg.u-s3 .fg-tally > .fg-tally-eind { opacity: 1; }
+  .fg.u-s1:not(.u-s2) .fg-tally-u[data-k="1"], .fg.u-s2:not(.u-s3) .fg-tally-u[data-k="2"] { transition-delay: 1.05s; }
+  /* `.fg-tally >` erbij: anders won `.fg[data-uitleg-staat] .fg-tally > span` (opacity 0) en
+     bleef de teller na stap 2 leeg (14 oktober 2026 gevonden). */
+  .fg.u-s3 .fg-tally > .fg-tally-eind { transition-delay: 3.5s; }
+  /* Stap 4: opnieuw geleverd — de teller zegt "1 aangepast", zoals in FigDash. */
+  .fg.u-s4 .fg-tally > .fg-tally-eind { opacity: 0; transition-delay: .6s; }
+  .fg.u-s4 .fg-tally > .fg-tally-na { opacity: 1; transition-delay: 1s; }
+  .fg.u-s1:not(.u-s2) .fg-tally-u[data-k="0"] { opacity: 1; transition-delay: 0s; animation: fg-uit .3s linear 1.05s forwards; }
+  @keyframes fg-uit { to { opacity: 0; } }
+
+  /* De melding: het veld licht op en de zin verschijnt terwijl hij geschreven wordt. */
+  .fg[data-uitleg-staat] .fg-ask { transition: box-shadow .4s, opacity .4s; }
+  .fg[data-uitleg-staat]:not(.u-s3) .fg-ask { opacity: .45; }
+  .fg.u-s3:not(.u-s4) .fg-ask { box-shadow: 0 0 0 2px var(--accent); transition-delay: .8s; }
+  .fg[data-uitleg-staat]:not(.u-s3) .fg-ask-tekst { clip-path: inset(0 100% 0 0); }
+  .fg.u-s3 .fg-ask-tekst { animation: fg-typ 1.5s steps(28, end) 1s both; }
+  @keyframes fg-typ { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+
+  /* De map: de regels een voor een, dan de knop. */
+  .fg[data-uitleg-staat] .fg-tree li { transition: opacity .35s, transform .45s cubic-bezier(.22, .8, .2, 1); }
+  .fg[data-uitleg-staat]:not(.u-s5) .fg-tree li { opacity: 0; transform: translateX(-6px); }
+  .fg.u-s5 .fg-tree li { transition-delay: calc(var(--i, 0) * .22s + .2s); }
+  .fg[data-uitleg-staat]:not(.u-s5) .fg-folder { opacity: .45; }
+  .fg[data-uitleg-staat] .fg-folder { transition: opacity .4s; }
+
+  .fg[data-uitleg-staat="pauze"] * { animation-play-state: paused !important; }
+  @media (prefers-reduced-motion: reduce) {
+    .fg-acts-u { display: none !important; }
+  }
 </style>

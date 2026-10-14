@@ -113,13 +113,37 @@ export function initGalerijFilter() {
 
      getAnimations() kan niet lekken: het vraagt de browser wat er NU op dit
      element ligt, in plaats van bij te houden wat er ooit op gelegd is. */
+  /* ── EN TOCH OOK ZELF BIJHOUDEN — 13 oktober 2026 ─────────────────────────
+     getAnimations() bleek in Chrome niet altijd alles terug te geven. Gemeten in
+     de hal (kijkplan/dbg-filter.mjs, met elke animate/finish/getAnimations/cancel
+     per foto gelogd): een uitfade met `fill: forwards` is klaar, en een halve
+     seconde later geeft getAnimations() op diezelfde foto [] terug — terwijl de
+     opacity 0 nog op de foto ligt. schoon() vond dus niets, brak niets af, en de
+     foto kwam bij een volgende klik terug als gat (in de galerijfilter-toets 2 tot
+     31 foto's per ronde, niet elke keer). Inline opacity 1 hielp niet; alleen een
+     nieuwe animatie of !important kwam erboven.
+     Daarom nu allebei: wat de browser nu meldt (zodat er niets kan lekken zoals bij
+     de oude Map, zie hierboven), plus elke animatie die wij zelf maakten, tot hij
+     is afgebroken. Een animatie gaat pas uit de lijst bij `cancel`, nooit bij
+     `finish` — dat was de fout van de oude Map. */
   const MERK = 'vis-galerij-filter';
-  const volg = (el, animatie) => { animatie.id = MERK; return animatie; };
+  const eigen = new WeakMap();
+  const volg = (el, animatie) => {
+    animatie.id = MERK;
+    let lijst = eigen.get(el);
+    if (!lijst) { lijst = new Set(); eigen.set(el, lijst); }
+    lijst.add(animatie);
+    return animatie;
+  };
   /* Eén foto terug naar zijn onaangeroerde staat: onze animaties eraf, en de
      inline stijl die wij geschreven hebben weg. Dit is de tegenhanger van
      GSAP's `clearProps: 'opacity,transform'`. */
   const schoon = (el) => {
-    for (const a of el.getAnimations()) if (a.id === MERK) a.cancel();
+    const lijst = eigen.get(el);
+    const alle = new Set(lijst || []);
+    for (const a of el.getAnimations()) if (a.id === MERK) alle.add(a);
+    for (const a of alle) a.cancel();
+    if (lijst) lijst.clear();
     el.style.opacity = '';
     el.style.transform = '';
   };
@@ -141,10 +165,14 @@ export function initGalerijFilter() {
     if (!vertrekt.length && !komt.length) return;
 
     /* De omslag: pas hier gaat display om, en dus pas hier reflowt de rij. */
+    /* Eerst afbreken, dan verbergen (13 oktober 2026; was andersom): zo ruimt
+       schoon() op terwijl de foto nog getekend wordt. Afbreken en verbergen
+       gebeuren in dezelfde taak, dus er komt geen beeld tussen waarin de foto even
+       vol in beeld staat. De echte oorzaak van de gaten staat bij `eigen` hierboven. */
     const omslag = () => {
+      vertrekt.forEach(schoon);
       vertrekt.forEach((img) => { img.style.display = 'none'; });
       komt.forEach((img) => { img.style.display = ''; });
-      vertrekt.forEach(schoon);
     };
 
     if (rustig) {

@@ -204,8 +204,27 @@ console.log('\nde terugzetlink in het oude postvak — het slot');
 
   ok('de sessie van de aanvaller bestaat nog', telling(db, 'SELECT COUNT(*) FROM account_sessions'), 1);
 
-  const res = await get(`/account/email/undo/${undo}`);
-  ok('de pagina laadt', res.status, 200);
+  /* ── DE LINK IS EEN VRAAG, DE KNOP DOET HET — 8 oktober 2026 (o25) ───────
+     Een mailscanner die de link vooraf opent, mag niets terugzetten. De GET
+     toont alleen de knop; de POST van die knop zet terug. */
+  const vraag = await get(`/account/email/undo/${undo}`);
+  const vraagHtml = await vraag.text();
+  ok('de link laadt een pagina', vraag.status, 200);
+  ok('met één knop die naar dezelfde link POST', new RegExp(`<form method="post" action="/account/email/undo/${undo}">`).test(vraagHtml), true);
+  ok('en het openen alleen verandert nog niets', adresVan(7), 'nieuw@voltbrand.test');
+  ok('ook de sessies niet', telling(db, 'SELECT COUNT(*) FROM account_sessions'), 1);
+
+  /* Een POST van een andere site (geen eigen Origin) doet ook niets. */
+  const vreemd = await accountPost({
+    request: new Request(`${ORIGIN}/account/email/undo/${undo}`, {
+      method: 'POST', headers: { origin: 'https://ergens-anders.test', 'content-type': 'application/x-www-form-urlencoded' }, body: '',
+    }), env, waitUntil() {},
+  });
+  ok('een knop op een andere site werkt niet', [vreemd.status, adresVan(7)], [403, 'nieuw@voltbrand.test']);
+
+  /* De knop zelf: zonder sessiekoekje, want wie terugzet kan misschien niet meer inloggen. */
+  const res = await post(`/account/email/undo/${undo}`, {}, 'vis_lang=nl');
+  ok('de knop laadt een pagina', res.status, 200);
   ok('en zegt dat het terugstaat', /terug/i.test(await res.text()), true);
 
   ok('HET OUDE ADRES IS TERUG', adresVan(7), 'mara@voltbrand.test');
@@ -217,6 +236,7 @@ console.log('\nde terugzetlink in het oude postvak — het slot');
   const na = laatsteRij();
   ok('de rij is afgetekend', Boolean(na.undone_at), true);
   ok('een tweede klik doet niets nieuws', /al teruggezet/i.test(await (await get(`/account/email/undo/${undo}`)).text()), true);
+  ok('en een tweede druk op de knop ook niet', /al teruggezet/i.test(await (await post(`/account/email/undo/${undo}`, {}, 'vis_lang=nl')).text()), true);
 }
 
 console.log('\nlinks die niet meer horen te werken');
@@ -295,7 +315,12 @@ console.log('\nen wat de code zelf belooft');
     undoRegel > 0 && naSessie > 0 && undoRegel < naSessie, true);
   /* En hij krijgt geen `customer` mee, want die is er misschien niet. */
   ok('en hij verwacht geen ingelogde klant',
-    /handleEmailUndo\(context, undoMatch\[1\]\)/.test(src), true);
+    /vraagEmailUndo\(context, undoMatch\[1\]\)/.test(src), true);
+  /* De knop (8 oktober 2026): ook in accountPost vóór currentCustomer(). */
+  const post_ = src.slice(src.indexOf('export async function accountPost'));
+  ok('en de knop ook niet',
+    post_.indexOf('handleEmailUndo(context, undoPost[1])') > 0
+      && post_.indexOf('handleEmailUndo(context, undoPost[1])') < post_.indexOf('await currentCustomer(env, request)'), true);
 
   /* Een eigen limiet, strenger dan POST_LIMIT: elk verzoek stuurt een mail naar een
      adres dat de aanvrager zelf intypt. */

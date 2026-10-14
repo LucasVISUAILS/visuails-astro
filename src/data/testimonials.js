@@ -25,7 +25,10 @@
  *   2 · Jij keurt hem goed op /admin/testimonials. Dat zet `testimonial_approved`
  *       op 1 en is met één klik terug te draaien.
  *   3 · `npm run testimonials` haalt de goedgekeurde op en schrijft dit bestand.
- *   4 · Je commit en deployt. Pas dán staat hij op de site.
+ *   4 · Je commit en deployt. Pas dán staat hij op de site — sinds 8 oktober
+ *       2026 in het blok "Wat merken zeggen" op home en /pricing
+ *       (src/components/Aanbevelingen.astro). Testexemplaren en aanbevelingen
+ *       op proefbestellingen komen er nooit op: zie src/data/aanbevelingen.js.
  *
  * Stap 3 en 4 ontbraken tot 30 augustus 2026. Stap 1 en 2 bestonden allebei al,
  * wat het erger maakte en niet minder: er werd toestemming gevraagd voor iets

@@ -1,21 +1,30 @@
 ---
 /**
- * /account/plan — Abonnement & facturering, als Astro-pagina. Studio fase 2,
- * 5 september 2026. Alles komt uit planView() in account.js: de status, de
- * meldingen, de vijf tabben (links, geen script), en per tab de blokken die
- * planBody() ook tekende — het saldo met slotmeters, je week, de maandset; de
- * lijst en de agenda; de edities; je look; wat je hebt opgebouwd en het beheer.
- * De formulieren posten naar dezelfde routes als voorheen (accountPost).
+ * /account/plan — de abonnementspagina. Alles komt uit planView() in account.js.
+ *
+ * PUNT 2.07, 8 oktober 2026: ÉÉN PAGINA ZONDER TABBLADEN, zonder script. Van
+ * boven naar beneden: het saldo (creditboek, niet meer subscription_slots), twee
+ * bestelknoppen met je vaste look erin, de creditkaart (6.01), de maandset, het
+ * creditboek (elke bij- en afschrijving, met de bestelling en haar status), en
+ * "Je plan" (plan, termijn, bedrag, volgende afschrijving, facturen, pauzeren en
+ * opzeggen). Wie op "Opzeggen" klikt, krijgt eerst pauzeren aangeboden; beide
+ * vragen een reden (stopReden.js). De knop "Bespreek met ons wat je met je
+ * credits kunt doen" stuurt Lucas een studiomail (handlePlanBespreek()).
+ *
+ * De formulieren posten naar dezelfde routes als voorheen (accountPost), met
+ * dezelfde CSRF-bescherming: /account/plan/pause, /account/plan/cancel, en
+ * nieuw /account/plan/bespreek. Een oude link met ?tab=… komt hier gewoon uit.
  *
  * /account/plan/return blijft in accountGet(): dat is de terugkeer van de
  * betaalpagina, geen scherm van deze pagina.
  */
 import StudioLayout from '../../layouts/StudioLayout.astro';
-import Slotmeter from '../../components/studio/Slotmeter.astro';
 import Plaatshouder from '../../components/studio/Plaatshouder.astro';
 import VasteLookRij from '../../components/studio/VasteLookRij.astro';
+import CreditKaart from '../../components/CreditKaart.astro';
 import { pagesContext } from '../../lib/route.js';
-import { studioScreen, STUDIO_ICONS } from '../../lib/account.js';
+import { studioScreen } from '../../lib/account.js';
+import { standKlasse } from '../../data/status.js';
 
 export const prerender = false;
 
@@ -24,6 +33,7 @@ if (s instanceof Response) return s;
 
 const { st, v, bk } = s;
 const { t, lang, customer, thema, navDicht } = st;
+const T = v.tekst || {};
 ---
 <StudioLayout
   lang={lang} t={t} thema={thema} navDicht={navDicht} actief="plan" customer={customer}
@@ -31,11 +41,6 @@ const { t, lang, customer, thema, navDicht } = st;
 >
   {v.melding && <p class="st-melding is-warn" role="alert">{v.melding}</p>}
   {v.bevestiging && <p class="st-melding is-ok" role="status">{v.bevestiging}</p>}
-  {/* Gepauzeerd: bovenaan, vóór de bestelknoppen (ronde 8, S-N14). Pas bij het
-      vastzetten kwam "je abonnement loopt niet". */}
-  {v.beheer?.gepauzeerd && v.nu !== 'facturering' && (
-    <p class="st-melding is-warn">{lang === 'nl' ? 'Je abonnement staat op pauze. Je credits zijn bewaard; hervat om weer te bestellen.' : 'Your plan is paused. Your credits are kept; resume to order again.'} <a class="st-link" href="/account/plan?tab=facturering">{lang === 'nl' ? 'Hervatten' : 'Resume'} →</a></p>
-  )}
 
   {v.geen && (
     <Fragment>
@@ -59,7 +64,7 @@ const { t, lang, customer, thema, navDicht } = st;
           </div>
         </section>
       )}
-      {/* Drie dingen die een abonnement is, als beeld: de slots, de week, de look. */}
+      {/* Twee dingen die een abonnement is, als beeld: de credits en de look. */}
       <section class="st-blok" aria-label={t.planVisSlotsH}>
         <div class="st-uitleg">
           <div class="st-kaart-vlak st-vlak st-uitleg-blok">
@@ -68,13 +73,6 @@ const { t, lang, customer, thema, navDicht } = st;
             </div>
             <h2>{t.planVisSlotsH}</h2>
             <p>{t.planVisSlotsP}</p>
-          </div>
-          <div class="st-kaart-vlak st-vlak st-uitleg-blok">
-            <div class="st-weekstrip" aria-hidden="true">
-              {v.weekstrip.map((d) => <span class={`st-dag${d.week ? ' is-week' : ''}${d.start ? ' is-start' : ''}`}>{d.n}</span>)}
-            </div>
-            <h2>{t.planVisWeekH}</h2>
-            <p>{t.planVisWeekP}</p>
           </div>
           <div class="st-kaart-vlak st-vlak st-uitleg-blok">
             {bk && <VasteLookRij t={t} k={bk.kaarten[0]} voorbeeld />}
@@ -88,598 +86,301 @@ const { t, lang, customer, thema, navDicht } = st;
 
   {!v.geen && (
     <Fragment>
-      {v.nudge && (
-        <aside class="st-kaart-vlak st-nudge">
-          <div><h2>{v.nudge.h}</h2><p>{v.nudge.p}</p><p class="st-meta">{v.nudge.which}</p></div>
-          <a class="btn btn-2nd btn-sm" href="/account/brand-kit">{v.nudge.cta}</a>
-        </aside>
+      {/* ── DE STAND: pauze (straks of nu), opgezegd, teruggeboekt, gestopt ── */}
+      {v.nooitBetaald && (
+        <p class="st-melding is-warn">{t.planFirstUnpaid} <a class="st-link" href={v.opnieuw}>{t.planFirstRetry}</a></p>
       )}
-      <nav class="st-tabs" aria-label={t.planTabsLabel}>
-        {v.tabs.map((tb) => <a class={`st-tab${tb.nu ? ' is-nu' : ''}`} href={tb.href} aria-current={tb.nu ? 'page' : undefined}>{tb.label}</a>)}
-      </nav>
-
-      {v.nu === 'maand' && (
-        <Fragment>
-          {/* ── HET OVERZICHT ALS ÉÉN VERHAAL — 19 september 2026 ─────────────
-              Uit de doorlichting: twaalf plus-tegels die als uploadvakken lazen,
-              een strook van 28 dagnummers zonder maandnaam, en de look en
-              Editions elk op een eigen tab. Nu, van boven naar beneden: wat je
-              abonnement is, wat er deze maand van gebruikt is (de gemaakte en
-              vastgezette frames, plus één tegel met wat er vrij is), wanneer je
-              week is (als echte datum), je vaste look (één regel), de gedeelde
-              set, en één regel over Editions. */}
-          <section class="st-blok" aria-label={t.planBalanceH}>
-            <div class="st-kaart-vlak st-saldo">
-              <div class="st-saldo-kop">
-                <div><span class="st-eyebrow">{t.planBalanceH}</span><h2>{v.saldo.naam}</h2></div>
-                {v.saldo.volgende && <div class="st-saldo-volgende"><span class="st-eyebrow">{t.planNextCharge}</span><strong>{v.saldo.volgende}</strong></div>}
-              </div>
-              {/* ── DE CREDITBALK — 19 september 2026 ────────────────────────
-                  Lucas: "maak het mooi overzichtelijk en strak/minimalistisch."
-                  Hier stonden tot vijf meters naast elkaar, elk met een eigen
-                  teller en vervaldatum. Eén saldo is één balk, en het getal dat
-                  ertoe doet (wat er nog over is) staat er in woorden naast. */}
-              {/* ── HET SALDO, ALS TEGELS — 24 september 2026 ─────────────────
-                  Lucas: "visueel duidelijk en goed zichtbaar … net als credits
-                  bij andere bedrijven, maar mooier en overzichtelijker." Wat je
-                  nog hebt staat groot, de balk loopt leeg in plaats van vol, en
-                  wanneer er nieuwe credits bijkomen staat eronder. Het tegoed
-                  (geld van een eerdere bestelling) staat ernaast als tweede
-                  tegel, alleen als er iets is. */}
-              <div class="st-credit">
-                <div class={`st-saldotegels${v.tegoed ? ' is-twee' : ''}`}>
-                  <div class="st-saldo-tegel">
-                    <span class="st-eyebrow">{t.planCreditsLeft}</span>
-                    <p class="st-credit-tel"><b>{v.saldo.credit.saldo}</b> <span>{t.planOfN} {v.saldo.credit.toegekend}</span></p>
-                    <div class="st-credit-balk" role="img" aria-label={`${v.saldo.credit.saldo} ${t.planOfN} ${v.saldo.credit.toegekend}`}>
-                      <span class={`st-credit-vul is-p${v.saldo.credit.pctStap}`}></span>
-                    </div>
-                    {(v.saldo.credit.nieuw || v.saldo.credit.verval) && (
-                      <p class="st-meta st-credit-regel">
-                        {v.saldo.credit.nieuw}
-                        {v.saldo.credit.nieuw && v.saldo.credit.verval && ' · '}
-                        {v.saldo.credit.verval && <b>{v.saldo.credit.verval}</b>}
-                      </p>
-                    )}
-                  </div>
-                  {v.tegoed && (
-                    <div class="st-saldo-tegel is-tegoed">
-                      <span class="st-eyebrow">{v.tegoed.h}</span>
-                      <p class="st-credit-tel"><b>{v.tegoed.bedrag}</b></p>
-                      <p class="st-meta">{v.tegoed.uitleg}</p>
-                    </div>
-                  )}
-                </div>
-                <div class="st-knoppen">
-                  <a class="btn btn-primary btn-sm" href="/account/plan?tab=bestellen">{t.planSlotFill}</a>
-                  <a class="btn btn-ghost btn-sm" href={v.saldo.startComplete}>{t.planRequest}</a>
-                </div>
-                <p class="st-meta st-credit-regel">{v.saldo.credit.lede}</p>
-                {v.saldo.credit.leeg && v.saldo.betaald && <p class="st-melding is-warn">{t.planCreditEmpty}</p>}
-                {v.saldo.credit.frames.length > 0 && (
-                  <div class="st-frames">
-                    {v.saldo.credit.frames.map((fr) => (
-                      <span class={`st-frame is-${fr.kind}`} aria-label={fr.label}>{fr.img ? <img src={fr.img} alt="" loading="lazy" decoding="async" /> : <Plaatshouder klein donker ratio="4/5" />}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* ── DE DIENSTEN, ALS KAARTEN ────────────────────────────────
-                  Eén kaart per dienst die dit abonnement mag bestellen, met de
-                  prijs in credits erop. Wat je niet kunt betalen is zichtbaar
-                  maar uitgeschakeld, mét hoeveel je tekortkomt — een grijze knop
-                  zonder reden is de ergste knop die er is. */}
-              {v.saldo.dienstKaarten.length > 0 && (
-                <ul class="st-diensten">
-                  {v.saldo.dienstKaarten.map((d) => (
-                    <li class={`st-dienst${d.betaalbaar ? '' : ' is-uit'}`}>
-                      <span class="st-dienst-prijs">{d.credits}</span>
-                      <span class="st-dienst-naam">{d.naam}</span>
-                      <span class="st-dienst-per">{d.per}</span>
-                      {d.betaalbaar
-                        ? <a class="st-dienst-knop" href={`/account/plan?tab=bestellen&dienst=${d.value}`}>{t.planCreditPick}</a>
-                        : <span class="st-dienst-kort">{t.planCreditShort(d.tekort)}</span>}
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <p class="st-meta">{v.saldo.elkProduct && <Fragment>{t.planEachProduct} · </Fragment>}{t.planExtraNote}</p>
-              {!v.saldo.betaald && <p class="st-melding is-warn">{v.saldo.nooitBetaald ? <Fragment>{t.planFirstUnpaid} <a href={v.saldo.opnieuw}>{t.planFirstRetry}</a></Fragment> : t.planUnpaid}</p>}
-            </div>
-          </section>
-          <section class="st-blok" aria-label={t.planWindowH}>
-            <div class="st-kaart-vlak st-vlak st-week">
-              <div>
-                <h2>{t.planWindowH}</h2>
-                {v.weekZin ? <p class="st-groot">{v.weekZin}</p> : <p>{t.planWindowNone}</p>}
-                <p class="st-meta">{t.planWeekUitleg}</p>
-                {/* ── DE WEEK VERZETTEN, ZELF — ronde 4, 19 september 2026 ────────
-                    Hier stond "antwoord op een van onze mails". Nu een keuzelijst
-                    met de dag van de maand; handlePlanWeek() toetst en mailt de
-                    studio. Alleen op een lopend abonnement. */}
-                {v.weekVerzetbaar && (
-                  <form method="post" action="/account/plan/week" class="st-week-form">
-                    <label class="st-meta" for="week-dag">{t.planWeekWijzig}</label>
-                    <div class="st-week-kies">
-                      <span class="st-meta">{t.planWeekDag}</span>
-                      <select id="week-dag" class="st-veld st-veld-kort" name="dag">
-                        {v.weekDagen.map((d) => <option value={d} selected={d === v.weekDag}>{lang === 'nl' ? `${d}e` : `${d}${[11, 12, 13].includes(d % 100) ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' })[d % 10] || 'th'}`}</option>)}
-                      </select>
-                      <button class="btn btn-ghost btn-sm" type="submit">{t.planWeekVerzet}</button>
-                    </div>
-                  </form>
-                )}
-              </div>
-              {v.week && <p class="st-week-dag"><span class="st-eyebrow">{t.planVisWeekStart}</span><strong>{v.week}</strong></p>}
-            </div>
-          </section>
-          <section class="st-blok" aria-label={t.planLookStrip}>
-            <div class="st-kaart-vlak st-vlak st-lookstrip">
-              <div class="st-lookstrip-kop">
-                <h2>{t.planLookStrip}</h2>
-                <a class="st-link" href="/account/brand-kit">{t.planLookWijzig} →</a>
-              </div>
-              <dl class="st-feiten st-feiten-rij">
-                {v.look.map((r) => <div class="st-feit"><dt>{r.label}</dt><dd>{r.waarde || <a class="st-link" href={`/account/brand-kit#bk-${r.stijl}`}>{t.planLookLeeg} →</a>}</dd></div>)}
-              </dl>
-            </div>
-          </section>
-          {v.maandset && (
-            <section class="st-blok" aria-label={t.msH}>
-              <div class="st-kaart-vlak st-vlak">
-                <h2>{t.msH}</h2>
-                <p class="st-meta">{t.msLede}</p>
-                {v.maandset.nu
-                  ? (
-                    <Fragment>
-                      <div class="st-set is-nu" id={`set-${v.maandset.nu.id}`}>
-                        <div class="st-set-kop"><span class="st-set-maand">{v.maandset.nu.label}</span><span class="st-meta">{v.maandset.nu.n}</span></div>
-                        {v.maandset.nu.beelden.length > 0 && <div class="st-strook">{v.maandset.nu.beelden.map((b) => <span><img src={b} alt="" loading="lazy" decoding="async" width="240" height="240" /></span>)}</div>}
-                        <a class="btn btn-primary btn-sm" href={v.maandset.nu.zip}>{t.msZip}</a>
-                      </div>
-                      <p class="st-meta">{t.msLicence}</p>
-                    </Fragment>
-                  )
-                  : <p class="st-meta">{t.msNone}</p>}
-                {v.maandset.eerder.length > 0 && (
-                  <Fragment>
-                    <h3 class="st-h3">{t.msEarlier}</h3>
-                    {v.maandset.eerder.map((ms) => (
-                      <div class="st-set" id={`set-${ms.id}`}>
-                        <div class="st-set-kop"><span class="st-set-maand">{ms.label}</span><span class="st-meta">{ms.n}</span></div>
-                        {ms.beelden.length > 0 && <div class="st-strook is-klein">{ms.beelden.map((b) => <span><img src={b} alt="" loading="lazy" decoding="async" width="240" height="240" /></span>)}</div>}
-                        <a class="btn btn-2nd btn-sm" href={ms.zip}>{t.msZip}</a>
-                      </div>
-                    ))}
-                  </Fragment>
-                )}
-              </div>
-            </section>
+      {v.standZin && (
+        <div class={`st-melding st-abo-stand${['teruggeboekt', 'stil', 'mislukt'].includes(v.stand) ? ' is-warn' : ''}`} data-stand={v.stand}>
+          <p>{v.standZin}</p>
+          {v.beheer?.magHervatten && (
+            <form method="post" action="/account/plan/pause">
+              <input type="hidden" name="do" value="resume" />
+              <button class="btn btn-primary btn-sm" type="submit">{v.beheer.hervatLabel}</button>
+            </form>
           )}
-          <p class="st-meta st-editions-regel">{t.planEditionsRegel} <a class="st-link" href={lang === 'nl' ? '/nl/plans#editions' : '/plans#editions'}>{t.planEditionsMeer} →</a></p>
-        </Fragment>
+          {v.stand === 'gestopt' && <a class="st-link" href={v.plansHref}>{t.planNoneCta} →</a>}
+        </div>
       )}
 
-      {v.nu === 'bestellen' && !v.kalender && (
-        <section class="st-blok" aria-label={t.planQueueH}>
-          <div class="st-kaart-vlak st-vlak">
-            <h2>{t.planQueueH}</h2>
-            <p class="st-meta">{t.planQueueLede}</p>
-            <p class="st-meta">{t.planQLockHint}</p>
-            {v.wachtrij.length
-              ? (
-                <Fragment>
-                  <ol class="st-lijst">
-                    {v.wachtrij.map((q) => (
-                      <li class={`st-q${q.vast ? ' is-vast' : ''}`}>
-                        {/* De eigen foto als miniatuur, niet een merkteken (19 sep 2026). */}
-                        <span class={`st-q-frame${q.fotos ? ' is-fotos' : ''}`} aria-hidden="true">{q.thumb ? <img src={q.thumb} alt="" loading="lazy" decoding="async" /> : <span class="st-frame-leeg"></span>}</span>
-                        <div class="st-q-tekst">
-                          <strong>{q.name}</strong>
-                          {q.note && <span class="st-meta">{q.note}</span>}
-                          <span class={`st-q-staat${q.fotos ? ' is-ok' : ''}`}>{q.fotosLabel}{q.soort && ` · ${q.soort}`}{q.gezicht && ` · ${q.gezicht}`}</span>
-                          {/* De poort op de look (ronde 4): staat de look voor
-                              deze soort nog open, dan zegt de regel het hier,
-                              met de link naar precies die kaart. */}
-                          {q.lookOpen.length > 0 && (
-                            <span class="st-q-look-open">{t.planQLookOpenFor} {q.lookOpen.map((o, i) => <Fragment>{i > 0 && ' · '}<a class="st-link" href={o.href}>{o.label}</a></Fragment>)}</span>
-                          )}
-                          {!q.vast && (
-                            <form method="post" action="/account/plan/queue" enctype="multipart/form-data" class="st-q-fotos">
-                              <input type="hidden" name="do" value="fotos" /><input type="hidden" name="id" value={q.id} />
-                              {/* Ronde 8 (S-K3): hier stond onchange="this.form.requestSubmit()" met
-                                  de knop in <noscript>. De CSP van Studio blokkeert inline-handlers,
-                                  en <noscript> toont niets als scripting aan staat: kiezen deed niets.
-                                  Nu een zichtbaar veld en een knop. */}
-                              <label class="st-meta" for={`q-fotos-${q.id}`}>{t.planQFotosAdd}</label>
-                              <span class="st-q-actie">
-                                <input id={`q-fotos-${q.id}`} class="st-q-fotos-kies" name="fotos" type="file" accept="image/*" multiple required data-melding={lang === 'nl' ? 'Kies eerst de foto’s van dit product; zonder foto’s kunnen we het niet maken.' : 'Choose the photos of this product first; without them we cannot make it.'} />
-                                <button class="btn btn-ghost btn-sm" type="submit">{lang === 'nl' ? 'Uploaden' : 'Upload'}</button>
-                              </span>
-                            </form>
-                          )}
-                          {!q.vast && v.gezichten.length > 0 && (
-                            <form method="post" action="/account/plan/queue" class="st-q-gezicht">
-                              <input type="hidden" name="do" value="model" /><input type="hidden" name="id" value={q.id} />
-                              <label class="st-meta" for={`q-gezicht-${q.id}`}>{t.planQFaceChange}</label>
-                              <span class="st-q-actie">
-                                <select id={`q-gezicht-${q.id}`} class="st-veld st-veld-kort" name="model">
-                                  <option value="" selected={!q.gezichtWaarde}>{t.planQFaceFollow}</option>
-                                  {v.gezichtGroepen.map((g) => <optgroup label={g}>{v.gezichten.filter((x) => x.groep === g).map((x) => <option value={x.value} selected={x.value === q.gezichtWaarde}>{x.label}</option>)}</optgroup>)}
-                                </select>
-                                <button class="btn btn-ghost btn-sm" type="submit">{t.planQFaceSave}</button>
-                              </span>
-                            </form>
-                          )}
-                        </div>
-                        <span class={`st-q-merk${q.vast ? ' is-vast' : ''}`}>{q.merk}</span>
-                        <a class={`st-q-wanneer${q.wanneerVast ? ' is-vast' : ''}`} href={q.kiesHref}>{q.wanneer}</a>
-                        <div class="st-q-knoppen">
-                          <form method="post" action="/account/plan/queue">
-                            <input type="hidden" name="do" value={q.lockDo} /><input type="hidden" name="id" value={q.id} />
-                            <button class={`btn ${q.vast ? 'btn-ghost' : 'btn-primary'} btn-sm`} type="submit" disabled={q.lockUit}>{q.lockLabel}</button>
-                          </form>
-                          <form method="post" action="/account/plan/queue">
-                            <input type="hidden" name="do" value="up" /><input type="hidden" name="id" value={q.id} />
-                            <button class="btn btn-ghost btn-sm" type="submit" disabled={q.eerste} aria-label={`${t.planQueueUp}: ${q.name}`}>↑</button>
-                          </form>
-                          <form method="post" action="/account/plan/queue">
-                            <input type="hidden" name="do" value="down" /><input type="hidden" name="id" value={q.id} />
-                            <button class="btn btn-ghost btn-sm" type="submit" disabled={q.laatste} aria-label={`${t.planQueueDown}: ${q.name}`}>↓</button>
-                          </form>
-                          {/* Eén tik naast ↑/↓ verwijderde een product met zijn foto's (ronde 8,
-                              S-N9). Nu eerst openklappen, dan bevestigen. */}
-                          <details class="st-q-weg">
-                            <summary class="btn btn-ghost btn-sm">{t.planQueueRemove}</summary>
-                            <form method="post" action="/account/plan/queue">
-                              <input type="hidden" name="do" value="remove" /><input type="hidden" name="id" value={q.id} />
-                              <button class="btn btn-sm st-q-weg-ja" type="submit">{lang === 'nl' ? 'Ja, met foto’s verwijderen' : 'Yes, remove with photos'}</button>
-                            </form>
-                          </details>
-                        </div>
-                      </li>
-                    ))}
-                  </ol>
-                  <p class="st-meta">{v.wachtrijNoot}</p>
-                </Fragment>
-              )
-              : <p>{t.planQueueEmpty}</p>}
-            {/* ── HETZELFDE PRODUCTVAK ALS HET BESTELFORMULIER, IN HET KLEIN — 19 sep 2026
-                Eén los bestandsveld zei niets over welke foto wat was; het
-                bestelformulier vraagt voorkant, achterkant, detail en (optioneel)
-                gedragen. Hier nu dezelfde vier vakken plus "meer foto's", en de
-                productsoort — dat is wat de studio nodig heeft om zonder vragen
-                te kunnen maken. enctype, want zonder multipart komen de bytes
-                niet mee. Geen required op de fotovelden: een product zonder foto's
-                mag op de lijst; vastzetten kan pas met foto's. */}
-            <form method="post" action="/account/plan/queue" class="st-formulier is-in-vlak" enctype="multipart/form-data">
-              <input type="hidden" name="do" value="add" />
-              <div class="st-rij">
-                <div class="st-veldgroep">
-                  <label for="q-name">{t.planQueueName}</label>
-                  <input id="q-name" class="st-veld" name="name" type="text" maxlength="120" required data-melding={t.planQueueNameMissing} placeholder={t.planQueueNamePh} />
-                </div>
-                <div class="st-veldgroep">
-                  <label for="q-type">{t.planQType}</label>
-                  <select id="q-type" class="st-veld" name="soort">{v.soortProduct.map((o) => <option value={o.value}>{o.label}</option>)}</select>
-                </div>
-                {v.soortKeuze
-                  ? (
-                    <div class="st-veldgroep">
-                      <label for="q-soort">{t.planQueueKind}</label>
-                      <select id="q-soort" class="st-veld" name="kind">{v.soortKeuze.map((o) => <option value={o.value}>{o.label}</option>)}</select>
-                    </div>
-                  )
-                  : <input type="hidden" name="kind" value={v.soortEnkel} />}
-              </div>
-              <div class="st-rij">
-                <div class="st-veldgroep is-breed">
-                  <label for="q-note">{t.planQueueNote}</label>
-                  <input id="q-note" class="st-veld" name="note" type="text" maxlength="500" />
-                </div>
-                {v.gezichten.length > 0 && (
-                  <div class="st-veldgroep">
-                    <label for="q-model">{t.planQFace}</label>
-                    <select id="q-model" class="st-veld" name="model">
-                      <option value="">{t.planQFaceFollow}</option>
-                      {v.gezichtGroepen.map((g) => <optgroup label={g}>{v.gezichten.filter((x) => x.groep === g).map((x) => <option value={x.value}>{x.label}</option>)}</optgroup>)}
-                    </select>
-                  </div>
-                )}
-              </div>
-              <fieldset class="st-fotovakken">
-                <legend>{t.planQueuePhotos}</legend>
-                <div class="st-rij is-vakken">
-                  {[['fotos_voorkant', t.planQSlotFront], ['fotos_achterkant', t.planQSlotBack], ['fotos_detail', t.planQSlotDetail], ['fotos_gedragen', t.planQSlotWorn]].map(([naam, label]) => (
-                    <div class="st-veldgroep st-fotovak">
-                      <label for={`q-${naam}`}>{label}</label>
-                      <input id={`q-${naam}`} class="st-veld st-veld-bestand" name={naam} type="file" accept="image/*" />
-                    </div>
-                  ))}
-                </div>
-                <div class="st-rij">
-                  <div class="st-veldgroep is-breed">
-                    <label for="q-fotos">{t.planQSlotExtra}</label>
-                    <input id="q-fotos" class="st-veld st-veld-bestand" name="fotos" type="file" accept="image/*" multiple />
-                    <span class="st-hint">{t.planQSlotsHint} {t.planQueuePhotosHint}</span>
-                  </div>
-                </div>
-              </fieldset>
-              <div class="st-rij is-acties">
-                <label class="st-vink"><input type="checkbox" name="meteen" value="1" /> <span>{t.planQMeteen}</span></label>
-                <button class="btn btn-2nd" type="submit">{t.planQueueAdd}</button>
-              </div>
-              <p class="st-hint">{t.planQMeteenHint}</p>
+      {/* ── BESPREEK JE CREDITS — groot in beeld na de reden "weet niet wat ik
+          met mijn credits moet doen" (Lucas bij 2.07). ── */}
+      {v.bespreek?.nadruk && !v.bespreek.gevraagd && (
+        <section class="st-blok" aria-labelledby="bespreek-h">
+          <div class="st-kaart-vlak st-vlak st-bespreek is-nadruk" id="bespreek">
+            <h2 id="bespreek-h">{T.bespreekH}</h2>
+            <p>{T.bespreekP}</p>
+            <form method="post" action="/account/plan/bespreek">
+              <button class="btn btn-primary" type="submit">{T.bespreekKnop}</button>
             </form>
           </div>
         </section>
       )}
 
-      {v.nu === 'bestellen' && v.kalender && (
-        <section class="st-blok" aria-label={t.planWhenH}>
+      {/* ── HET SALDO ── */}
+      <section class="st-blok" aria-labelledby="saldo-h">
+        <div class={`st-kaart-vlak st-vlak st-abo-saldo${v.saldo.leeg ? ' is-leeg' : ''}`} id="saldo">
+          {v.plan && <span class="st-eyebrow">{T.planLabel} · {v.plan.naam}</span>}
+          {/* Het spaarplafond (12 oktober 2026): "Je hebt 356 credits (je kunt
+              er 360 sparen)", en bij een lopend abonnement geen vervaldatum maar
+              wat er bij de volgende termijn boven het plafond zou vervallen. */}
+          <h2 id="saldo-h" class="st-abo-getal">{v.saldo.kop}{v.saldo.spaar && <Fragment> <span class="st-abo-spaar">{v.saldo.spaar}</span></Fragment>}</h2>
+          {v.saldo.vertaling && <p class="st-abo-vertaling">{v.saldo.vertaling}</p>}
+          {(v.saldo.eerst || v.saldo.rest) && (
+            <p class={`st-abo-verval${v.saldo.bijna && !v.saldo.boven ? ' is-bijna' : ''}`} data-bijna={v.saldo.bijna && !v.saldo.boven ? 'ja' : undefined}>{[v.saldo.eerst, v.saldo.rest].filter(Boolean).join(' ')}</p>
+          )}
+          {v.saldo.nieuw && <p class={`st-abo-nieuw${v.saldo.boven ? ' is-boven' : ''}`} data-boven={v.saldo.boven || undefined}>{v.saldo.nieuw}</p>}
+          {v.saldo.bijgekocht && <p class="st-abo-verval" data-bijgekocht>{v.saldo.bijgekocht}</p>}
+          {v.saldo.bevroren && <p class="st-melding is-warn" data-bevroren>{v.saldo.bevroren}</p>}
+          <p class="st-meta">{v.saldo.geldig}</p>
+        </div>
+      </section>
+
+      {/* ── BESTELLEN MET CREDITS: twee knoppen met de vaste look erin ── */}
+      <section class="st-blok" aria-labelledby="bestel-h">
+        <div class="st-kaart-vlak st-vlak st-abo-bestel">
+          <h2 id="bestel-h">{T.bestelH}</h2>
+          <p class="st-meta">{v.bestelLede}</p>
+          <ul class="st-abo-knoppen" role="list">
+            {v.bestel.map((k, i) => (
+              <li data-dienst={k.dienst}>
+                <a class={`btn ${i === 0 ? 'btn-primary' : 'btn-2nd'}`} href={k.href}>{k.label}</a>
+                <span class="st-meta">{k.per}</span>
+              </li>
+            ))}
+          </ul>
+          <p class="st-meta st-abo-links"><a class="st-link" href={v.andereLook.href}>{v.andereLook.label}</a> · <a class="st-link" href={v.lookAanpassen.href}>{v.lookAanpassen.label}</a></p>
+        </div>
+        <CreditKaart lang={lang} plannen={false} kern />
+      </section>
+
+      {/* ── EXTRA CREDITS BIJKOPEN — 12 oktober 2026 (ab-v3 = c, ab-v4 = b) ──
+          Een gewoon formulier zonder script: drie keuzerondjes en een knop, naar
+          /account/plan/bijkopen (dezelfde Origin-controle als elk Studio-
+          formulier). Daarvandaan naar Mollie; terug op ?bijkoop=… zegt de
+          melding bovenaan wat er gebeurde. */}
+      {v.bijkoop && (
+        <section class="st-blok" aria-labelledby="bijkopen-h">
+          <div class="st-kaart-vlak st-vlak st-bijkoop" id="bijkopen">
+            <h2 id="bijkopen-h">{v.bijkoop.h}</h2>
+            <p class="st-meta">{v.bijkoop.lede}</p>
+            {v.bijkoop.verder && <p class="st-bijkoop-verder"><a class="btn btn-primary btn-sm" href={v.bijkoop.verder.href}>{v.bijkoop.verder.label}</a></p>}
+            {v.bijkoop.hint && <p class="st-bijkoop-hint">{v.bijkoop.hint} <a class="st-link" href={v.bijkoop.hintLink.href}>{v.bijkoop.hintLink.label}</a></p>}
+            {v.bijkoop.kan
+              ? (
+                <form method="post" action="/account/plan/bijkopen" class="st-bijkoop-form">
+                  {v.bijkoop.verderVeld && <input type="hidden" name="verder" value={v.bijkoop.verderVeld} />}
+                  <fieldset class="st-bijkoop-keuze">
+                    <legend class="sr-only">{v.bijkoop.h}</legend>
+                    {v.bijkoop.pakketten.map((p) => (
+                      <label class={`st-bijkoop-pakket${p.kan ? '' : ' is-uit'}`} data-pakket={p.credits}>
+                        <input type="radio" name="pakket" value={String(p.credits)} checked={p.gekozen} disabled={!p.kan} required={p.kan} />
+                        <span class="st-bijkoop-tekst">
+                          <span class="st-bijkoop-n">{p.label}{p.korting && <span class="st-bijkoop-korting">{p.korting}</span>}</span>
+                          <span class="st-bijkoop-prijs">{p.prijs}</span>
+                          <span class="st-meta">{p.sub}</span>
+                        </span>
+                      </label>
+                    ))}
+                  </fieldset>
+                  {v.bijkoop.pakketten.filter((p) => p.hint).map((p) => (
+                    <p class="st-bijkoop-hint" data-hint={p.credits}>{p.hint} <a class="st-link" href={v.bijkoop.hintLink.href}>{v.bijkoop.hintLink.label}</a></p>
+                  ))}
+                  <p class="st-meta">{v.bijkoop.ruimte}</p>
+                  <p class="st-meta">{v.bijkoop.betaal}</p>
+                  <div class="st-knoppen"><button class="btn btn-primary" type="submit">{v.bijkoop.knop}</button></div>
+                </form>
+              )
+              : <p class="st-meta">{v.bijkoop.ruimte}</p>}
+            {v.bijkoop.eerder.length > 0 && (
+              <details class="st-boek-eerder">
+                <summary class="st-link">{v.bijkoop.eerderH} ({v.bijkoop.eerder.length})</summary>
+                <ul class="st-bijkoop-eerder" role="list">
+                  {v.bijkoop.eerder.map((a) => <li><span class="st-boek-dag">{a.dag}</span> {a.tekst} · <span class={a.betaald ? '' : 'st-meta'}>{a.status}</span></li>)}
+                </ul>
+              </details>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ── DE MAANDSET ── */}
+      {v.maandset && (
+        <section class="st-blok" aria-label={t.msH}>
           <div class="st-kaart-vlak st-vlak">
-            <p><a class="st-link" href="/account/plan?tab=bestellen">← {t.planWhenBack}</a></p>
-            <h2>{t.planWhenH}</h2>
-            {v.kalender.geenGewicht
-              ? <p class="st-meta">{t.planWhenNoWeight}</p>
-              : (
+            <h2>{t.msH}</h2>
+            <p class="st-meta">{t.msLede}</p>
+            {v.maandset.nu
+              ? (
                 <Fragment>
-                  <p class="st-meta">{v.kalender.item.name}{v.kalender.item.note && ` — ${v.kalender.item.note}`}</p>
-                  {/* Twee smaken, niet drie (19 sep 2026): in je week (de standaard,
-                      dezelfde route als "asap": het venster gaat eraf), of eerder
-                      met een gekozen datum. "Zo snel mogelijk" als derde verhaal
-                      naast de vaste week is weg. */}
-                  <form method="post" action="/account/plan/queue" class="st-kal-asap">
-                    <input type="hidden" name="do" value="asap" /><input type="hidden" name="id" value={v.kalender.item.id} />
-                    <button class={`btn ${v.kalender.item.vast ? 'btn-ghost' : 'btn-primary'} btn-sm`} type="submit">{t.planWhenWeek}</button>
-                    <span class="st-meta">{t.planWhenWeekSub}</span>
-                  </form>
-                  {v.kalender.item.vast && <p>{t.planWhenSet} <strong>{v.kalender.item.start}</strong> {v.kalender.of} <strong>{v.kalender.item.end}</strong></p>}
-                  <h3 class="st-h3">{t.planWhenEarlier}</h3>
-                  <p class="st-meta">{t.planWhenLead} {t.planWhenFirst} <strong>{v.kalender.eerste}</strong>.</p>
-                  <form method="post" action="/account/plan/queue">
-                    <input type="hidden" name="do" value="plan" /><input type="hidden" name="id" value={v.kalender.item.id} />
-                    <div class="st-kal">
-                      {v.kalender.kopjes.map((k) => <div class="st-kal-kop">{k}</div>)}
-                      {v.kalender.dagen.map((d) => d.staat === 'vrij'
-                        ? <button class={`st-kal-dag is-vrij${d.vandaag ? ' is-nu' : ''}${d.mijn ? ' is-mijn' : ''}`} type="submit" name="dag" value={d.iso} aria-label={d.aria}><span class="st-kal-n">{d.nr}</span><span class="st-kal-l">{d.label}</span><span class="st-kal-vul"><i class={`is-${d.vul}`}></i></span></button>
-                        : <div class={`st-kal-dag is-${d.staat}${d.vandaag ? ' is-nu' : ''}${d.mijn ? ' is-mijn' : ''}`}><span class="st-kal-n">{d.nr}</span><span class="st-kal-l">{d.label}</span><span class="st-kal-vul"><i class={`is-${d.vul}`}></i></span></div>)}
-                    </div>
-                  </form>
-                  <p class="st-meta">{t.planWhenBefore}</p>
-                  <p class="st-meta">{t.planWhenOnlyLocked}</p>
-                  {v.kalender.kanNiets && <p class="st-melding is-warn">{t.planWhenNone}</p>}
+                  <div class="st-set is-nu" id={`set-${v.maandset.nu.id}`}>
+                    <div class="st-set-kop"><span class="st-set-maand">{v.maandset.nu.label}</span><span class="st-meta">{v.maandset.nu.n}</span></div>
+                    {v.maandset.nu.beelden.length > 0 && <div class="st-strook">{v.maandset.nu.beelden.map((b) => <span><img src={b} alt="" loading="lazy" decoding="async" width="240" height="240" /></span>)}</div>}
+                    <a class="btn btn-primary btn-sm" href={v.maandset.nu.zip}>{t.msZip}</a>
+                  </div>
+                  <p class="st-meta">{t.msLicence}</p>
                 </Fragment>
-              )}
+              )
+              : <p class="st-meta">{t.msNone}</p>}
+            {v.maandset.eerder.length > 0 && (
+              <Fragment>
+                <h3 class="st-h3">{t.msEarlier}</h3>
+                {v.maandset.eerder.map((ms) => (
+                  <div class="st-set" id={`set-${ms.id}`}>
+                    <div class="st-set-kop"><span class="st-set-maand">{ms.label}</span><span class="st-meta">{ms.n}</span></div>
+                    {ms.beelden.length > 0 && <div class="st-strook is-klein">{ms.beelden.map((b) => <span><img src={b} alt="" loading="lazy" decoding="async" width="240" height="240" /></span>)}</div>}
+                    <a class="btn btn-2nd btn-sm" href={ms.zip}>{t.msZip}</a>
+                  </div>
+                ))}
+              </Fragment>
+            )}
+          </div>
+          <p class="st-meta st-editions-regel">{t.planEditionsRegel} <a class="st-link" href={lang === 'nl' ? '/nl/plans#editions' : '/plans#editions'}>{t.planEditionsMeer} →</a></p>
+        </section>
+      )}
+
+      {/* ── HET CREDITBOEK ── */}
+      <section class="st-blok" aria-labelledby="boek-h">
+        <div class="st-kaart-vlak st-vlak st-boek" id="creditboek">
+          <h2 id="boek-h">{T.boekH}</h2>
+          <p class="st-meta">{T.boekLede}</p>
+          {v.boek.leeg
+            ? <p class="st-meta">{T.koppen.leeg}</p>
+            : (
+              <Fragment>
+                <table class="st-tabel st-boek-tabel">
+                  <thead><tr><th scope="col">{T.koppen.datum}</th><th scope="col">{T.koppen.wat}</th><th scope="col" class="is-bedrag">{T.koppen.credits}</th><th scope="col" class="is-bedrag">{T.koppen.saldo}</th></tr></thead>
+                  <tbody>
+                    {v.boek.regels.map((r) => (
+                      <tr data-reden={r.reden}>
+                        <td class="st-boek-dag">{r.dag}</td>
+                        <td class="st-boek-wat">
+                          <span>{r.wat}</span>
+                          {r.ref && (r.href ? <Fragment> · <a class="st-link" href={r.href}>{r.ref}</a></Fragment> : <Fragment> · {r.ref}</Fragment>)}
+                          {r.status && <Fragment> <span class={standKlasse(r.status.key)}>{r.status.tekst}</span></Fragment>}
+                          {r.toelichting && <span class="st-meta st-boek-noot">{r.toelichting}</span>}
+                          {r.geldig && <span class="st-meta st-boek-noot">{r.geldig}</span>}
+                        </td>
+                        <td class={`is-bedrag st-boek-n${r.plus ? ' is-plus' : ''}`}>{r.aantal}</td>
+                        <td class="is-bedrag">{r.saldoNa}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {v.boek.eerder.length > 0 && (
+                  <details class="st-boek-eerder">
+                    <summary class="st-link">{T.koppen.eerder} ({v.boek.eerder.length})</summary>
+                    <table class="st-tabel st-boek-tabel">
+                      <thead><tr><th scope="col">{T.koppen.datum}</th><th scope="col">{T.koppen.wat}</th><th scope="col" class="is-bedrag">{T.koppen.credits}</th><th scope="col" class="is-bedrag">{T.koppen.saldo}</th></tr></thead>
+                      <tbody>
+                        {v.boek.eerder.map((r) => (
+                          <tr data-reden={r.reden}>
+                            <td class="st-boek-dag">{r.dag}</td>
+                            <td class="st-boek-wat">
+                              <span>{r.wat}</span>
+                              {r.ref && (r.href ? <Fragment> · <a class="st-link" href={r.href}>{r.ref}</a></Fragment> : <Fragment> · {r.ref}</Fragment>)}
+                              {r.status && <Fragment> <span class={standKlasse(r.status.key)}>{r.status.tekst}</span></Fragment>}
+                              {r.toelichting && <span class="st-meta st-boek-noot">{r.toelichting}</span>}
+                            </td>
+                            <td class={`is-bedrag st-boek-n${r.plus ? ' is-plus' : ''}`}>{r.aantal}</td>
+                            <td class="is-bedrag">{r.saldoNa}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </details>
+                )}
+              </Fragment>
+            )}
+        </div>
+      </section>
+
+      {/* ── BESPREEK JE CREDITS (rustig, als er credits zijn) ── */}
+      {v.bespreek && !v.bespreek.nadruk && !v.bespreek.gevraagd && (
+        <section class="st-blok" aria-labelledby="bespreek-h2">
+          <div class="st-kaart-vlak st-vlak st-bespreek" id="bespreek">
+            <h2 id="bespreek-h2">{T.bespreekH}</h2>
+            <p>{T.bespreekP}</p>
+            <form method="post" action="/account/plan/bespreek">
+              <button class="btn btn-2nd btn-sm" type="submit">{T.bespreekKnop}</button>
+            </form>
           </div>
         </section>
       )}
 
-      {/* ── DE PLANNING — 20 september 2026 ──────────────────────────────────
-          De hele maand in één blik. Elke dag is een knop of een vak, met zijn
-          bezetting als balk en met wat er van deze klant op ligt. In
-          verzet-stand zijn alleen de dagen vóór de huidige aanwijsbaar; zie
-          planningKalender() in account.js voor waarom er niet gesleept wordt. */}
-      {v.nu === 'planning' && v.planning && (
-        <section class="st-blok" aria-label={t.planPlanH}>
-          <div class="st-kaart-vlak st-vlak">
-            <div class="st-kop-rij">
-              <div>
-                <h2>{v.planning.verzet ? t.planPlanVerzetH : t.planPlanH}</h2>
-                <p class="st-meta">
-                  {v.planning.verzet
-                    ? t.planVerzetStand(v.planning.verzet.naam, v.planning.verzet.van)
-                    : t.planPlanLede}
-                </p>
-              </div>
-              {v.planning.verzet && <a class="st-link" href="/account/plan?tab=planning">{t.planPlanVerzetUit}</a>}
-            </div>
+      {/* ── JE PLAN ── */}
+      {v.plan && (
+        <section class="st-blok" aria-labelledby="je-plan-h">
+          <div class="st-kaart-vlak st-vlak" id="je-plan">
+            <h2 id="je-plan-h">{T.planH}</h2>
+            <dl class="st-feiten">
+              <div class="st-feit"><dt>{T.planLabel}</dt><dd>{v.plan.naam}</dd></div>
+              <div class="st-feit"><dt>{T.termijn}</dt><dd>{v.plan.termijn}</dd></div>
+              <div class="st-feit"><dt>{v.plan.bedragLabel}</dt><dd>{v.plan.bedrag}</dd></div>
+              {v.plan.volgende && <div class="st-feit"><dt>{T.volgende}</dt><dd>{v.plan.volgende}</dd></div>}
+              {v.plan.jaarTot && <div class="st-feit"><dt>{T.jaarTot}</dt><dd>{v.plan.jaarTot}</dd></div>}
+              {v.plan.status && <div class="st-feit"><dt>{T.status}</dt><dd>{v.plan.status}</dd></div>}
+            </dl>
+            <p class="st-meta">{T.facturen} <a class="st-link" href="/account/invoices">{T.facturenLink} →</a></p>
 
-            {v.planning.geenGewicht && <p class="st-melding is-warn">{t.planVerzetGeenGewicht}</p>}
-
-            {/* De bevestiging staat vóór de kalender en niet in een venster:
-                zonder script is er geen venster, en een vraag die je moet
-                zoeken is geen vraag. */}
-            {v.planning.bevestig && (
-              <form class="st-bevestig" method="post" action="/account/plan/queue">
-                <input type="hidden" name="do" value="verzet" />
-                <input type="hidden" name="id" value={v.planning.bevestig.id} />
-                <input type="hidden" name="dag" value={v.planning.bevestig.naarIso} />
-                <input type="hidden" name="bevestig" value="ja" />
-                <p class="st-bevestig-h"><strong>{v.planning.bevestig.naam}</strong> · {v.planning.bevestig.van} → {v.planning.bevestig.naar}</p>
-                <p class="st-meta">{v.planning.bevestig.waarschuwing}</p>
-                <div class="st-knoppen">
-                  <button class="btn btn-primary btn-sm" type="submit">{t.planVerzetBevestig}</button>
-                  <a class="btn btn-ghost btn-sm" href={`/account/plan?tab=planning&verzet=${v.planning.bevestig.id}`}>{t.planPlanVerzetUit}</a>
-                </div>
-              </form>
+            {v.beheer?.magPauzeren && (
+              <details class="st-opzeggen st-stop" id="pauzeren">
+                <summary class="btn btn-ghost btn-sm">{T.pauzeren}</summary>
+                <form method="post" action="/account/plan/pause" class="st-stop-form">
+                  <input type="hidden" name="do" value="pause" />
+                  <p class="st-meta">{v.beheer.pauzeUitleg}</p>
+                  <fieldset class="st-redenen">
+                    <legend class="st-label">{T.waarom}</legend>
+                    {v.beheer.redenen.map((r, i) => (
+                      <label class="st-reden"><input type="radio" name="reden" value={r.id} required={i === 0} data-melding={i === 0 ? T.redenMelding : undefined} /> <span>{r.label}</span></label>
+                    ))}
+                    <label class="st-label" for="pz-toelichting">{T.andersLabel}</label>
+                    <input id="pz-toelichting" class="st-veld" name="toelichting" type="text" maxlength="300" autocomplete="off" />
+                  </fieldset>
+                  <button class="btn btn-primary btn-sm" type="submit">{T.pauzeren}</button>
+                </form>
+              </details>
             )}
 
-            {/* ── EEN PRODUCT INPLANNEN OP DE AANGEKLIKTE DAG ──────────────
-                Hetzelfde productvak als op de productentab, met twee verborgen
-                velden erbij: de dag, en "meteen vastzetten". Eén verzending
-                doet dus toevoegen, vastzetten en inplannen. Wat er NIET in
-                staat is de look — die komt uit je merkkit en gaat vanzelf mee;
-                zie vasteLook.js. Dat staat er met zoveel woorden bij, want een
-                formulier dat minder vraagt dan je verwacht, roept de vraag op
-                of het wel compleet is. */}
-            {v.planning.nieuweDag && (
-              <form method="post" action="/account/plan/queue" class="st-formulier is-in-vlak" enctype="multipart/form-data">
-                <input type="hidden" name="do" value="add" />
-                <input type="hidden" name="meteen" value="1" />
-                <input type="hidden" name="dag" value={v.planning.nieuweDag.iso} />
-                <div class="st-kop-rij">
-                  <div>
-                    <span class="st-eyebrow">{t.planPlanNieuwH}</span>
-                    <p class="st-groot">{v.planning.nieuweDag.label}</p>
-                  </div>
-                  <a class="st-link" href="/account/plan?tab=planning">{t.planPlanVerzetUit}</a>
-                </div>
-                <p class="st-meta">{t.planPlanNieuwUit}</p>
-                <div class="st-rij">
+            {v.beheer?.magOpzeggen && (
+              <details class="st-opzeggen st-stop" id="opzeggen">
+                {/* Opzeggen achter één klik (29 september 2026), en sinds 2.07 met
+                    eerst het aanbod om te pauzeren. */}
+                <summary class="st-link">{t.planCancel}</summary>
+                {/* Eén formulier, twee knoppen. Opzeggen staat als eerste knop in
+                    de code, zodat Enter in het opzegveld opzegt en niet pauzeert;
+                    het aanbod om te pauzeren staat bovenaan in tekst en als
+                    hoofdknop ernaast (formaction, zonder script). */}
+                <form method="post" action="/account/plan/cancel" class="st-stop-form">
+                  {v.beheer.magPauzeren && <p class="st-melding st-stop-aanbod">{T.opzegAanbod} {v.beheer.pauzeUitleg}</p>}
+                  <fieldset class="st-redenen">
+                    <legend class="st-label">{T.waarom}</legend>
+                    {v.beheer.redenen.map((r, i) => (
+                      <label class="st-reden"><input type="radio" name="reden" value={r.id} required={i === 0} data-melding={i === 0 ? T.redenMelding : undefined} /> <span>{r.label}</span></label>
+                    ))}
+                    <label class="st-label" for="oz-toelichting">{T.andersLabel}</label>
+                    <input id="oz-toelichting" class="st-veld" name="toelichting" type="text" maxlength="300" autocomplete="off" />
+                  </fieldset>
+                  <p class="st-meta">{v.beheer.opzegUitleg}</p>
                   <div class="st-veldgroep">
-                    <label for="p-name">{t.planQueueName}</label>
-                    <input id="p-name" class="st-veld" name="name" type="text" maxlength="120" required data-melding={t.planQueueNameMissing} placeholder={t.planQueueNamePh} />
+                    <label for="opz">{v.beheer.magPauzeren ? T.opzegToch : t.planCancelConfirm}</label>
+                    <input id="opz" class="st-veld" name="confirm" type="text" autocomplete="off" placeholder={T.opzegWoord} />
                   </div>
-                  <div class="st-veldgroep">
-                    <label for="p-type">{t.planQType}</label>
-                    <select id="p-type" class="st-veld" name="soort">{v.soortProduct.map((o) => <option value={o.value}>{o.label}</option>)}</select>
+                  <div class="st-knoppen">
+                    <button class="btn btn-ghost btn-sm" type="submit">{t.planCancel}</button>
+                    {v.beheer.magPauzeren && <button class="btn btn-primary btn-sm" type="submit" name="do" value="pause" formaction="/account/plan/pause">{T.pauzeInPlaats}</button>}
                   </div>
-                  {v.soortKeuze
-                    ? (
-                      <div class="st-veldgroep">
-                        <label for="p-soort">{t.planQueueKind}</label>
-                        <select id="p-soort" class="st-veld" name="kind">{v.soortKeuze.map((o) => <option value={o.value}>{o.label}</option>)}</select>
-                      </div>
-                    )
-                    : <input type="hidden" name="kind" value={v.soortEnkel} />}
-                </div>
-                <div class="st-rij">
-                  <div class="st-veldgroep is-breed">
-                    <label for="p-note">{t.planQueueNote}</label>
-                    <input id="p-note" class="st-veld" name="note" type="text" maxlength="500" />
-                  </div>
-                  {v.gezichten.length > 0 && (
-                    <div class="st-veldgroep">
-                      <label for="p-model">{t.planQFace}</label>
-                      <select id="p-model" class="st-veld" name="model">
-                        <option value="">{t.planQFaceFollow}</option>
-                        {v.gezichtGroepen.map((g) => <optgroup label={g}>{v.gezichten.filter((x) => x.groep === g).map((x) => <option value={x.value}>{x.label}</option>)}</optgroup>)}
-                      </select>
-                    </div>
-                  )}
-                </div>
-                <div class="st-rij">
-                  <div class="st-veldgroep is-breed">
-                    <label for="p-fotos">{t.planQSlotExtra}</label>
-                    <input id="p-fotos" class="st-veld st-veld-bestand" name="fotos" type="file" accept="image/*" multiple />
-                    <span class="st-hint">{t.planQueuePhotosHint}</span>
-                  </div>
-                </div>
-                <button class="btn btn-primary btn-sm" type="submit">{t.planPlanNieuwKnop}</button>
-              </form>
-            )}
-
-            <p class="st-meta">{t.planPlanEerste(v.planning.eerste)}</p>
-
-            <div class="st-kal st-kal-groot">
-              {v.planning.kopjes.map((k) => <span class="st-kal-kop">{k}</span>)}
-              {v.planning.dagen.map((d) => (
-                d.kiesbaar && v.planning.verzet
-                  ? <a class={`st-kal-dag is-vrij is-kies${d.vandaag ? ' is-nu' : ''}`}
-                       href={`/account/plan?tab=planning&verzet=${v.planning.verzet.id}&naar=${d.iso}`}
-                       aria-label={d.aria}>
-                      <span class="st-kal-n">{d.nr}</span>
-                      <span class="st-kal-pct">{d.pct}%</span>
-                      <span class="st-kal-vul"><i class={`is-${d.vul}`}></i></span>
-                    </a>
-                  : d.planHref
-                    ? <a class={`st-kal-dag is-vrij is-kies${d.vandaag ? ' is-nu' : ''}${d.items.length ? ' is-mijn' : ''}`} href={d.planHref} aria-label={d.aria}>
-                        <span class="st-kal-n">{d.nr}</span>
-                        <span class="st-kal-pct">{d.pct}%</span>
-                        {d.items.filter((it) => it.eerste).map((it) => (
-                          <span class="st-kal-item" title={it.name}>{it.name}</span>
-                        ))}
-                        <span class="st-kal-vul"><i class={`is-${d.vul}`}></i></span>
-                      </a>
-                    : <div class={`st-kal-dag is-${d.staat}${d.vandaag ? ' is-nu' : ''}${d.items.length ? ' is-mijn' : ''}`} aria-label={d.aria}>
-                        <span class="st-kal-n">{d.nr}</span>
-                        <span class="st-kal-pct">{d.pct}%</span>
-                        {d.items.filter((it) => it.eerste).map((it) => (
-                          <span class="st-kal-item" title={it.name}>{it.name}</span>
-                        ))}
-                        <span class="st-kal-vul"><i class={`is-${d.vul}`}></i></span>
-                      </div>
-              ))}
-            </div>
-
-            {!v.planning.verzet && (
-              <div class="st-plan-lijsten">
-                <div>
-                  <span class="st-eyebrow">{t.planPlanOpen}</span>
-                  {v.planning.open.length
-                    ? <ul class="st-plan-open">{v.planning.open.map((q) => (
-                        <li><span>{q.name}</span><a class="st-link" href={`/account/plan?tab=bestellen&kies=${q.id}`}>{t.planWhenH}</a></li>
-                      ))}</ul>
-                    : <p class="st-meta">{v.planning.ingepland.length ? t.planPlanOpenLeeg : t.planPlanNiets}</p>}
-                </div>
-                {v.planning.ingepland.length > 0 && (
-                  <div>
-                    <span class="st-eyebrow">{t.planQLocked}</span>
-                    <ul class="st-plan-open">{v.planning.ingepland.map((q) => (
-                      <li><span>{q.name} · <em>{q.wanneer}</em></span><a class="st-link" href={q.verzetHref}>{t.planVerzet}</a></li>
-                    ))}</ul>
-                  </div>
-                )}
-              </div>
+                </form>
+              </details>
             )}
           </div>
         </section>
       )}
 
-      {v.nu === 'facturering' && (
-        <Fragment>
-          <section class="st-blok" aria-label={t.planBuiltH}>
-            <div class="st-kaart-vlak st-vlak">
-              <h2>{t.planBuiltH}</h2>
-              <dl class="st-feiten">
-                <div class="st-feit"><dt>{t.planBuiltDelivered}</dt><dd>{v.opgebouwd.geleverd}</dd></div>
-                <div class="st-feit"><dt>{t.planBuiltImages}</dt><dd>{v.opgebouwd.beelden}</dd></div>
-                {v.opgebouwd.sinds && <div class="st-feit"><dt>{t.planBuiltSince}</dt><dd>{v.opgebouwd.sinds}</dd></div>}
-              </dl>
-              {v.opgebouwd.opgehaald.length
-                ? <ul class="st-gedaan">{v.opgebouwd.opgehaald.map((o) => <li><strong>{o.name}</strong>{o.ref && <span class="st-meta"> {o.ref}</span>}</li>)}</ul>
-                : <p class="st-meta">{t.planBuiltEmpty}</p>}
-            </div>
-          </section>
-          <section class="st-blok" aria-label={t.planBillingH}>
-            <div class="st-kaart-vlak st-vlak">
-              <h2>{t.planBillingH}</h2>
-              <dl class="st-feiten">
-                <div class="st-feit"><dt>{t.planBillingTerm}</dt><dd>{v.beheer.term}</dd></div>
-                <div class="st-feit"><dt>{v.beheer.bedragLabel}</dt><dd>{v.beheer.bedrag}</dd></div>
-                <div class="st-feit"><dt>{t.planStatusLabel}</dt><dd>{v.beheer.status}</dd></div>
-                {v.beheer.jaarTot && <div class="st-feit"><dt>{t.planYearUntil}</dt><dd>{v.beheer.jaarTot}</dd></div>}
-              </dl>
-              {v.beheer.beeindigd
-                ? <Fragment><p class="st-melding">{v.beheer.beeindigd}</p><p class="st-meta"><a class="st-link" href={v.beheer.plansHref}>{t.planNoneCta}</a></p></Fragment>
-                : v.beheer.jaarOpgezegd
-                ? <p class="st-melding">{v.beheer.jaarOpgezegd}</p>
-                : v.beheer.nooitBetaald
-                ? <Fragment><p class="st-melding is-warn">{lang === 'nl' ? 'De eerste betaling van dit abonnement is niet afgerond. Er is niets afgeschreven.' : 'The first payment for this plan was not completed. Nothing has been charged.'}</p><p><a class="btn btn-primary btn-sm" href={v.beheer.opnieuwHref}>{lang === 'nl' ? 'Opnieuw afsluiten' : 'Start again'}</a></p></Fragment>
-                : (
-                  <Fragment>
-                    <form method="post" action="/account/plan/pause">
-                      <input type="hidden" name="do" value={v.beheer.gepauzeerd ? 'resume' : 'pause'} />
-                      <button class="btn btn-ghost" type="submit">{v.beheer.gepauzeerd ? t.planResume : t.planPause}</button>
-                    </form>
-                    <p class="st-meta">{v.beheer.pauzeNoot}</p>
-                    {/* Opzeggen achter één klik (29 september 2026): het is de zeldzaamste
-                        handeling op deze pagina, en hij stond even groot als pauzeren. */}
-                    <details class="st-opzeggen">
-                    <summary class="st-link">{t.planCancel}</summary>
-                    <form method="post" action="/account/plan/cancel" class="st-rij is-mail">
-                      <div class="st-veldgroep">
-                        <label for="opz">{t.planCancelConfirm}</label>
-                        <input id="opz" class="st-veld" name="confirm" type="text" autocomplete="off" required data-melding={t.planCancelConfirm} />
-                      </div>
-                      <div class="st-veldgroep is-knop"><button class="btn btn-ghost" type="submit">{t.planCancel}</button></div>
-                    </form>
-                    <p class="st-meta">{v.beheer.opzegNoot}</p>
-                    </details>
-                  </Fragment>
-                )}
-            </div>
-          </section>
-        </Fragment>
-      )}
+      {/* Het tegoed staat hier niet meer (2.02): zijn thuis is Facturen, en het
+          Overzicht toont het in de strook "Je saldo". Credits zijn van deze pagina. */}
     </Fragment>
   )}
 
-  {(v.geen || v.nu === 'facturering') && (
-    /* Alleen de vraagregel (29 september 2026): e-mailadres en merk stonden hier
-       nog een keer, terwijl ze onder "Je gegevens" staan en daar te wijzigen zijn. */
-    <p class="st-meta">{v.account.note}</p>
-  )}
+  <p class="st-meta">{v.account.note}</p>
 </StudioLayout>

@@ -8,7 +8,9 @@
    aanvinkvak en de notitie voor de revisieronde dragen `form="ronde-<id>"` en
    horen bij het formulier onderaan de bestelling (Bestelling.astro). */
 import { standKlasse } from '../../data/status.js';
-const { v, orderId } = Astro.props;
+import NieuwTabblad from '../NieuwTabblad.astro';
+/* `lang` (8 oktober 2026, o26): alleen voor de zin "opent in een nieuw tabblad". */
+const { v, orderId, lang = 'en' } = Astro.props;
 ---
 <li class="st-beeld" id={`f${v.id}`}>
   {v.gone
@@ -18,6 +20,7 @@ const { v, orderId } = Astro.props;
           ? <img src={v.href} alt={v.caption} loading="lazy" decoding="async" />
           : <span class="st-beeld-ext">{v.ext}</span>}
         {v.badge && <span class={`st-badge ${standKlasse(v.badge.kind)}`}>{v.badge.text}</span>}
+        <NieuwTabblad lang={lang} />
       </a>}
   <div class="st-beeld-body">
     <span class="st-beeld-cap">{v.caption}</span>

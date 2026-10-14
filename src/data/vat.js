@@ -52,6 +52,7 @@
  * src/data/pricing.js en werd hier twee keer als 0.21 overgetypt, plus nog eens
  * drie keer als "21%" in een zin. Vijf plekken die het tarief niet kenden. */
 import { VAT_RATE, vatPercent } from './pricing.js';
+import { BETALEN_NA_BTW_AKKOORD } from './termijnen.js';
 
 export const HOME_COUNTRY = 'NL';
 
@@ -120,6 +121,22 @@ export const OTHER_COUNTRIES = [
 ];
 
 const EU_IDS = new Set(EU_COUNTRIES.map(function id(c) { return c.id; }));
+
+/**
+ * Het land van de bezoeker om het formulier mee voor te vullen (8.06, 8 oktober
+ * 2026), uit Cloudflare's `request.cf.country` — hetzelfde ip-land dat o16 al
+ * leest. Alleen een land dat in onze keuzelijst staat; `XX` (Cloudflare weet het
+ * niet, en bij ons "Ergens anders") en `T1` (Tor) vullen niets in. Het is een
+ * voorzet, geen beslissing: een vpn of een zakenreis geeft een ander land, dus de
+ * klant ziet het en kan het wijzigen, en de btw volgt het land dat HIJ indient.
+ */
+export function bezoekersLand(code) {
+  const up = String(code || '').trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(up) || up === 'XX' || up === 'T1') return null;
+  const bekend = EU_COUNTRIES.some(function is(c) { return c.id === up; })
+    || OTHER_COUNTRIES.some(function is(c) { return c.id === up; });
+  return bekend ? up : null;
+}
 
 /** Is this ISO country code an EU member state? */
 export function isEu(code) {
@@ -224,6 +241,27 @@ export function vatDecision({ country, vatValid }) {
 }
 
 /**
+ * Telt een door VIES bevestigd nummer voor 0% verlegd? (8.06, 8 oktober 2026)
+ *
+ * Alleen MET de verklaring van de klant: het verplichte zakelijk-vinkje in de
+ * laatste stap, met de verleggingszin erin (VERLEGGING_TEXT in business.js).
+ * Het aparte 0%-vinkje in stap 3 is weg (V19 = a), en daarmee ook de route
+ * "vinkje niet gezet → btw-lijst": zonder verklaring is het gewoon 21%, meteen
+ * te betalen — dezelfde regel die het abonnement al had (bepaalBedrijfEnBtw()).
+ *
+ * `namensKlant`: een bestelling die Lucas in /admin namens de klant zet. Daar
+ * beslist zijn eigen vinkje ("de klant bevestigde zelf …"), en zonder dat vinkje
+ * gaat hij zoals altijd eerst langs de btw-lijst (vatGate() regel 4) in plaats
+ * van stil 21% te rekenen. Het vinkje van de klant bestaat daar niet.
+ *
+ * Gebruik: vatDecision({ country, vatValid: verleggingTelt({ … }) }).
+ */
+export function verleggingTelt({ vatValid, bevestigd, namensKlant = false } = {}) {
+  if (vatValid !== true) return false;
+  return bevestigd === true || namensKlant === true;
+}
+
+/**
  * The line that has to appear on the invoice and in the confirmation mail.
  *
  * "Btw verlegd" and "niet belastbaar in Nederland" are not two ways of saying
@@ -306,9 +344,14 @@ export const REVIEW = {
 };
 
 /** Hoelang de klant op een antwoord hoeft te wachten, en hoelang hij daarna
- *  heeft om te betalen. Uit §7 van de specificatie. */
+ *  heeft om te betalen. Uit §7 van de specificatie.
+ *
+ *  PAYMENT_DAYS staat sinds 8 oktober 2026 (punt 9.01, §17.16) in
+ *  src/data/termijnen.js als BETALEN_NA_BTW_AKKOORD, naast de andere termijnen
+ *  van een onbetaalde bestelling. De naam blijft hier bestaan voor wie hem al
+ *  importeert; het getal staat op één plek. */
 export const REVIEW_HOURS = 24;
-export const PAYMENT_DAYS = 7;
+export const PAYMENT_DAYS = BETALEN_NA_BTW_AKKOORD;
 
 /**
  * @param {object} o
@@ -320,11 +363,13 @@ export const PAYMENT_DAYS = 7;
  * @param {string=} o.vatError    'timeout' | 'network' | 'unavailable' | ''
  * @param {boolean=} o.confirmed  Heeft de klant het vinkje aangezet?
  * @param {boolean=} o.hadNumber  Heeft de klant een btw-nummer ingevuld?
+ * @param {string=} o.ipCountry   Het land van het ip-adres (Cloudflare, CF-IPCountry),
+ *   sinds 8 oktober 2026. Zie ipLandVraagtNakijken() hieronder.
  * @returns {{ needsReview: boolean, payableNow: boolean, reasons: string[] }}
  *
  * `reasons` is voor een mens, niet voor code. Er wordt nooit op gematcht.
  */
-export function vatGate({ country, treatment, vatValid, vatError, confirmed, hadNumber }) {
+export function vatGate({ country, treatment, vatValid, vatError, confirmed, hadNumber, ipCountry = '' }) {
   const up = String(country || '').trim().toUpperCase();
   const reasons = [];
   let payableNow = true;
@@ -347,6 +392,20 @@ export function vatGate({ country, treatment, vatValid, vatError, confirmed, had
   //     land (art. 44 btw-richtlijn) en de zakelijke verklaring.
   if (up && up !== HOME_COUNTRY && !isEu(up)) {
     /* bewust leeg: zie hierboven */
+  }
+
+  // 1b · BUITEN DE EU GEKOZEN, MAAR BESTELD VANAF EEN IP IN DE EU — 8 oktober 2026.
+  //      Lucas koos in de afvinklijst (o16) voor "met een EU-IP eerst laten
+  //      nakijken". De regel van 29 september hierboven blijft staan voor wie
+  //      ook echt van buiten de EU bestelt; alleen deze combinatie gaat eerst
+  //      langs de btw-lijst, zoals een VIES-nummer dat niet te controleren was.
+  //      Dat is geen afkeuring: een zakenreis, een vpn of een Nederlandse
+  //      directeur van een Amerikaans bedrijf geven hetzelfde beeld. Een mens
+  //      kijkt het na en keurt goed (0% blijft) of rekent alsnog btw. Zonder het
+  //      verschil kocht een Nederlands bedrijf met "Verenigde Staten" 21%.
+  if (ipLandVraagtNakijken(up, ipCountry)) {
+    const ip = String(ipCountry || '').trim().toUpperCase();
+    reasons.push(`Land buiten de EU (${up}) gekozen, maar besteld vanaf een ip-adres in ${ip} — nakijken voordat er 0% btw wordt gerekend`);
   }
 
   // 2 · Een EU-nummer dat we niet hebben kúnnen controleren. Het tarief is al
@@ -373,6 +432,25 @@ export function vatGate({ country, treatment, vatValid, vatError, confirmed, had
   }
 
   return { needsReview: reasons.length > 0, payableNow, reasons };
+}
+
+/**
+ * Vraagt het land van het ip-adres om een tweede blik? (o16, 8 oktober 2026)
+ *
+ * Ja als de klant een land BUITEN de EU koos (0%, buiten de heffing) terwijl
+ * Cloudflare het verzoek in een EU-land plaatst, Nederland meegerekend. Alleen
+ * echte landcodes tellen: Cloudflare geeft `XX` als het het niet weet en `T1`
+ * voor Tor, en een onbekend land is geen bewijs van iets.
+ *
+ * Gedeeld door vatGate() (bestellingen) en bepaalBedrijfEnBtw() in
+ * src/lib/subscribe.js (abonnementen), zodat beide dezelfde vraag stellen.
+ */
+export function ipLandVraagtNakijken(country, ipCountry) {
+  const land = String(country || '').trim().toUpperCase();
+  const ip = String(ipCountry || '').trim().toUpperCase();
+  if (!land || !ip) return false;
+  if (land === HOME_COUNTRY || isEu(land)) return false;
+  return ip === HOME_COUNTRY || isEu(ip);
 }
 
 /**

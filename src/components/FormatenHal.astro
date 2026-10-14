@@ -1,0 +1,321 @@
+---
+/**
+ * VISUAILS — "Het formaat dat jij nodig hebt. Geleverd." (14 oktober 2026)
+ *
+ * Lucas, 04:14: *"animaties voor stukken als op de homepage 'Het formaat dat jij
+ * nodig hebt geleverd' en dat klanten dan zien dat verschillende formaten
+ * mogelijk zijn, precies zoals hij ze nodig heeft (3 formaten 16:9, 4:5 en 9:16,
+ * en dan erna 'En meer' om te laten zien dat er nog meer mogelijk is)."*
+ *
+ * ÉÉN BEELD, VIER STANDEN. Het kader rond hetzelfde lifestylebeeld verandert van
+ * vorm: breed (16:9), staand (4:5), het hele scherm (9:16). Het beeld blijft staan
+ * en het kader snijdt het anders uit — zo ziet de kijker dat het om hetzelfde beeld
+ * gaat en niet om drie verschillende. Dan "En meer": 1:1 en 3:4 naast elkaar, elk
+ * met een ander beeld uit dezelfde look, zodat je het verschil tussen de twee
+ * vormen echt ziet.
+ *
+ * ── DE VERSIE VAN 05:21 ────────────────────────────────────────────────────
+ * Lucas: *"Bij formaten kloppen de formaten niet met wat er getoond word."* Het label
+ * wisselde sneller dan het kader van vorm veranderde. Sindsdien: de cursor klikt
+ * (--u-klik), het oude label verdwijnt (0,15 s), dan pas verandert het kader, en het
+ * nieuwe label komt als het kader klaar is. Nagemeten met kladblok/fmt-meet.mjs.
+ *
+ * ── AFVINKLIJST 24 (14 oktober, 06:56) ────────────────────────────────────
+ *   · "Zalando 1:1,44 is erg verwarrend": eruit. "En meer" is 1:1 en 3:4 (Lucas'
+ *     keuze), de maat van Zalando zet het formulier zelf vast als je Zalando kiest.
+ *   · "foto's te pakken met dat formaat … zodat klanten echt het verschil zien op het
+ *     einde": het 3:4-vak krijgt een ander beeld uit dezelfde look.
+ *   · "een loop … het einde het begin weer": data-uitleg-lus. Beginstand = eindstand =
+ *     "En meer", dus de lus heeft geen sprong.
+ *   · "Het wisselen tussen formaten mag iets sneller": 2,4 s per vorm (was 3,4), het
+ *     kader in 0,8 s (was 0,95).
+ *   · Bestanden: JPG; PNG of WebP op aanvraag (k401, 11 oktober). Stond "JPG, PNG of WebP".
+ *
+ * WAT HET NIET MAG BELOVEN. 16:9 en 9:16 bestaan alleen bij lifestyle (per beeld
+ * te kiezen); catalog kent 1:1, 4:5 en 3:4, één per bestelling (ratios.js). Dat
+ * staat in de kleine regel onder de tekst, uit dezelfde bron.
+ *
+ * De knoppen boven het kader werken ook zelf: een klik zet de uitleg stil en toont
+ * die vorm.
+ */
+import { LIFESTYLE_RATIOS, CATALOG_RATIOS } from '../data/ratios.js';
+import UitlegBalk from './UitlegBalk.astro';
+
+interface Props { lang: 'en' | 'nl'; uitleg?: boolean }
+const { lang, uitleg = true } = Astro.props as Props;
+const nl = lang === 'nl';
+const r = (id: string) => LIFESTYLE_RATIOS.find((x: any) => x.id === id)!;
+const eerste = (s: string) => s.split('.')[0];
+/* Een streepje in een naam ("webshop-grids") breekt niet af: liever tussen twee woorden. */
+const gebruik = (id: string) => eerste(r(id).use[lang]).replace(/-/g, '\u2011');
+const klein = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
+const lijst = (xs: string[], en: string) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} ${en} ${xs[xs.length - 1]}`);
+const CATALOG = CATALOG_RATIOS.map((x: any) => x.label);
+const BREED = [r('wide').label, r('story').label];
+/* "1:1" uit "1x1": breedte en hoogte als getal. */
+const wh = (id: string) => r(id).ratio.split('x').map(Number) as [number, number];
+/* Breedte en hoogte als deel van het vierkante podium: de lange zijde is het hele
+   podium, behalve bij "En meer", waar twee vakken naast elkaar op 52% hoogte staan. */
+const vorm = (id: string, hoog = 1) => {
+  const [b, h] = wh(id);
+  const m = Math.max(b, h);
+  return { b: (b / m) * hoog, h: (h / m) * hoog };
+};
+const MEER_H = 0.52; // hoogte van de twee vakken bij "En meer"
+const MEER_GAT = 0.04; // ruimte ertussen
+
+/* De standen, in de volgorde van de uitleg. */
+const STANDEN = [
+  { k: '169', id: 'wide' },
+  { k: '45', id: 'portrait45' },
+  { k: '916', id: 'story' },
+  { k: '11', id: 'square', hoog: MEER_H },
+].map((s) => ({ ...s, label: r(s.id).label, waar: gebruik(s.id), ...vorm(s.id, s.hoog) }));
+/* Het tweede vak bij "En meer": 3:4, even hoog als het vierkant. */
+const MINI = { id: 'portrait34', label: r('portrait34').label, waar: gebruik('portrait34'), ...vorm('portrait34', MEER_H) };
+/* Waar de twee vakken staan: samen gecentreerd, vierkant links. */
+const meerBreed = STANDEN[3].b + MEER_GAT + MINI.b;
+const meerLinks = (1 - meerBreed) / 2;
+const X_11 = meerLinks + STANDEN[3].b / 2; // midden van het vierkant
+const MINI_LINKS = meerLinks + STANDEN[3].b + MEER_GAT;
+const VORM_CSS = [
+  ...STANDEN.map((s) => `--b-${s.k}:${s.b.toFixed(5)};--h-${s.k}:${s.h.toFixed(5)}`),
+  `--x-11:${(X_11 * 100).toFixed(3)}%`,
+  `--mini-b:${(MINI.b * 100).toFixed(3)}%;--mini-h:${(MINI.h * 100).toFixed(3)}%;--mini-x:${(MINI_LINKS * 100).toFixed(3)}%`,
+].join(';');
+
+const C = nl
+  ? {
+      pil: 'Formaten',
+      kop: ['Het formaat dat jij nodig hebt.', 'Geleverd.'],
+      lede: 'Kies in het bestelformulier waar je beelden heen gaan. Wij leveren elk beeld precies op die maat.',
+      klein: `${lijst(BREED, 'en')} kies je bij lifestyle, per beeld. Catalog leveren we in ${lijst(CATALOG, 'of')}, één verhouding per bestelling.`,
+      meer: 'En meer',
+      knoppenLabel: 'Kies een formaat',
+      rij: ['Op wit voor marktplaatsen', 'Als JPG; PNG of WebP op aanvraag'],
+      zinnen: [
+        `Jij kiest het formaat. Breed: ${r('wide').label} voor een banner of paginakop.`,
+        `Staand: ${r('portrait45').label} voor je webshop en je feed.`,
+        `Het hele scherm: ${r('story').label} voor Reels, Stories en TikTok.`,
+        `En meer: ${r('square').label} voor ${klein(gebruik('square'))}, ${MINI.label} voor ${klein(MINI.waar)}.`,
+      ],
+      alt: 'Een model in een witte pufferjas tussen betonnen muren onder een blauwe lucht',
+      miniAlt: 'Uit dezelfde look: een model in een rode trui tegen een betonnen muur',
+    }
+  : {
+      pil: 'Formats',
+      kop: ['The format you need.', 'Delivered.'],
+      lede: 'Choose in the order form where your images are going. We deliver every image at exactly that size.',
+      klein: `${lijst(BREED, 'and')} are for lifestyle, chosen per image. Catalog comes in ${lijst(CATALOG, 'or')}, one ratio per order.`,
+      meer: 'And more',
+      knoppenLabel: 'Pick a format',
+      rij: ['On white for marketplaces', 'As JPG; PNG or WebP on request'],
+      zinnen: [
+        `You pick the format. Wide: ${r('wide').label} for a banner or page header.`,
+        `Upright: ${r('portrait45').label} for your shop and your feed.`,
+        `The whole screen: ${r('story').label} for Reels, Stories and TikTok.`,
+        `And more: ${r('square').label} for ${klein(gebruik('square'))}, ${MINI.label} for ${klein(MINI.waar)}.`,
+      ],
+      alt: 'A model in a white puffer jacket between concrete walls under a blue sky',
+      miniAlt: 'From the same look: a model in a red jumper against a concrete wall',
+    };
+/* Het beeld dat van vorm verandert, en het tweede beeld uit dezelfde look. Een andere
+   foto erin? Zet hier het pad en de maat, en pas `pos` aan zodat het gezicht in elke
+   uitsnede blijft (het percentage is waar de uitsnede naartoe schuift). */
+const BEELD = { src: '/img/lifestyle-phone-made-04.webp', w: 2400, h: 1792, pos: '50% 32%' };
+const BEELD_MINI = { src: '/img/lifestyle-phone-made-07.webp', w: 2400, h: 1792, pos: '78% 30%' };
+---
+<section class="h-sec h-fmt" aria-labelledby="h-fmt-kop" style={VORM_CSS}
+         data-uitleg={uitleg ? '' : undefined} data-uitleg-lus={uitleg ? '' : undefined}
+         data-uitleg-maat="2400 2400 2400 3800" data-uitleg-start="600">
+  <header class="h-sec-kop h-in">
+    <div>
+      <p class="h-pil"><span>{C.pil}</span></p>
+      <h2 id="h-fmt-kop" class="h-kop h-h2"><span class="l">{C.kop[0]}</span> {C.kop[1]}</h2>
+    </div>
+  </header>
+  <div class="h-fmt-raster">
+  <div class="h-fmt-tekst h-in">
+    <div class="h-fmt-lede">{C.lede}</div>
+    <div class="h-fmt-klein">{C.klein}</div>
+  </div>
+
+  <div class="h-fmt-vlak h-in" style="--d:1" data-uitleg-zicht>
+    <div class="h-fmt-knoppen" role="group" aria-label={C.knoppenLabel}>
+      {STANDEN.map((s, i) => (
+        <button type="button" class="h-fmt-knop" data-fmt={s.k} data-uitleg-stop data-uitleg-klik={uitleg ? String(i + 1) : undefined}
+                aria-pressed={s.k === '11' ? 'true' : 'false'}>{s.k === '11' ? C.meer : s.label}</button>
+      ))}
+    </div>
+
+    <div class="h-fmt-podium">
+      <figure class="h-fmt-kader">
+        <img src={BEELD.src} width={BEELD.w} height={BEELD.h} alt={C.alt} loading="lazy" decoding="async" style={`object-position:${BEELD.pos}`} />
+        {STANDEN.map((s) => (
+          <figcaption class="h-fmt-label" data-v={s.k} aria-hidden={s.k === '11' ? undefined : 'true'}>
+            <span class="h-fmt-maat h-glas">{s.label}</span>
+            <span class="h-fmt-waar h-glas">{s.waar}</span>
+          </figcaption>
+        ))}
+      </figure>
+      {/* Het tweede vak bij "En meer": 3:4, met een ander beeld uit dezelfde look. */}
+      <figure class="h-fmt-mini">
+        <img src={BEELD_MINI.src} width={BEELD_MINI.w} height={BEELD_MINI.h} alt={C.miniAlt} loading="lazy" decoding="async" style={`object-position:${BEELD_MINI.pos}`} />
+        <figcaption class="h-fmt-label">
+          <span class="h-fmt-maat h-glas">{MINI.label}</span>
+          <span class="h-fmt-waar h-glas">{MINI.waar}</span>
+        </figcaption>
+      </figure>
+    </div>
+
+    <ul class="h-fmt-rij" role="list">
+      {C.rij.map((t, i) => <li style={`--i:${i}`}>{t}</li>)}
+    </ul>
+
+    {uitleg && <UitlegBalk zinnen={C.zinnen} lang={lang} />}
+  </div>
+  </div>
+</section>
+
+<script>
+  /* EÉN STAND OP HET BLOK. De uitleg zet u-s1…u-s4 en data-uitleg-staat; een klik
+     op een knop zet data-keuze. Hieruit volgt één `data-stand` (169 · 45 · 916 · 11),
+     en alleen daarop leest de CSS. Stap 0 is "En meer" (11), net als de laatste stap:
+     zo loopt de lus zonder sprong. Zonder JavaScript is er geen data-stand en staat
+     "En meer" er ook. */
+  const STAP = ['11', '169', '45', '916', '11'];
+  const zet = () => {
+    for (const w of document.querySelectorAll<HTMLElement>('.h-fmt')) {
+      if (w.dataset.fmtKlaar) continue;
+      w.dataset.fmtKlaar = '1';
+      const knoppen = [...w.querySelectorAll<HTMLButtonElement>('[data-fmt]')];
+      const lees = () => {
+        if (w.dataset.keuze) return w.dataset.keuze;
+        const staat = w.dataset.uitlegStaat;
+        if (!staat || staat === 'klaar') return '11';
+        let k = 0;
+        for (let i = 1; i < STAP.length; i += 1) if (w.classList.contains(`u-s${i}`)) k = i;
+        return STAP[k];
+      };
+      const werk = () => {
+        const s = lees();
+        // Tijdens de uitleg wacht alles op de klik van de cursor; bij een eigen klik niet.
+        const loopt = !w.dataset.keuze && (w.dataset.uitlegStaat === 'speelt' || w.dataset.uitlegStaat === 'pauze');
+        w.classList.toggle('h-fmt-loopt', loopt);
+        if (w.dataset.stand === s) return;
+        w.dataset.stand = s;
+        for (const x of knoppen) x.setAttribute('aria-pressed', String(x.dataset.fmt === s));
+      };
+      for (const k of knoppen) {
+        k.addEventListener('click', () => { w.dataset.keuze = k.dataset.fmt || '11'; werk(); });
+      }
+      // Opnieuw afspelen begint zonder eigen keuze.
+      w.addEventListener('uitleg-begin', () => { delete w.dataset.keuze; werk(); });
+      new MutationObserver(werk).observe(w, { attributes: true, attributeFilter: ['class', 'data-uitleg-staat', 'data-keuze'] });
+      werk();
+    }
+  };
+  zet();
+  document.addEventListener('astro:page-load', zet);
+</script>
+
+<style>
+  /* De kop over de hele breedte (twee regels), daaronder de tekst links en het
+     vlak rechts. Naast het vlak werd de kop drie regels. */
+  .h-fmt-raster { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 56px; align-items: start; }
+  .h-fmt-lede { max-width: 18em; font-size: 18px; line-height: 1.5; color: var(--h-inkt-2); }
+  /* var(--h-maat): vijf tot zeven woorden per regel, zoals de rest van de hal (14 oktober 2026; 24em gaf er tien). */
+  .h-fmt-klein { margin-top: 16px; max-width: var(--h-maat, 16.5em); font-size: 14px; line-height: 1.5; color: var(--h-inkt-3); }
+
+  .h-fmt-vlak { background: var(--h-nevel); border-radius: 40px; padding: 28px; display: grid; gap: 20px; }
+
+  /* ── DE TIJD ── --t0 is het moment van de klik: tijdens de uitleg --u-klik (de
+     cursor is dan bij de knop), bij een eigen klik meteen. Bij de klik verdwijnt
+     het oude label (0,15 s); pas als het weg is verandert het kader (--tk, 0,8 s),
+     en het nieuwe label komt als het kader klaar is (--t1). */
+  .h-fmt { --t0: 0s; --duur: .8s; --tk: calc(var(--t0) + .16s); --t1: calc(var(--tk) + var(--duur) + .05s); }
+  .h-fmt.h-fmt-loopt { --t0: var(--u-klik, .56s); }
+
+  /* ── DE KNOPPEN ── een rij pillen; de gekozen is inkt. */
+  .h-fmt-knoppen { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .h-fmt-knop {
+    height: 40px; padding: 0 18px; border-radius: 999px; border: 0; cursor: pointer;
+    background: #fff; color: var(--h-inkt); font: 600 14px/1 var(--h-letter); font-variant-numeric: tabular-nums;
+    transition: background-color .25s var(--t0), color .25s var(--t0), transform .35s var(--h-veer);
+  }
+  .h-fmt-knop[aria-pressed="true"] { background: var(--h-inkt); color: #fff; }
+  .h-fmt-knop:hover { transform: translateY(-1px); }
+  .h-fmt-knop:focus-visible { outline: 2px solid var(--h-violet); outline-offset: 2px; }
+
+  /* ── HET PODIUM ── een vierkant waarin het kader van vorm verandert. De maten
+     komen uit ratios.js (style op de sectie: --b-169, --h-169 …). */
+  .h-fmt-podium { position: relative; width: 100%; max-width: 500px; margin: 0 auto; aspect-ratio: 1 / 1; }
+  .h-fmt-kader, .h-fmt-mini { margin: 0; position: absolute; top: 50%; border-radius: 22px; overflow: hidden; background: var(--h-vak); box-shadow: 0 30px 60px -30px rgba(15, 12, 36, .35); }
+  .h-fmt-kader {
+    --b: var(--b-11); --h: var(--h-11); --x: var(--x-11);
+    left: var(--x);
+    width: calc(var(--b) * 100%); height: calc(var(--h) * 100%);
+    transform: translate(-50%, -50%);
+    transition-property: width, height, left;
+    transition-duration: var(--duur);
+    transition-timing-function: cubic-bezier(.65, 0, .25, 1);
+    transition-delay: var(--tk);
+    z-index: 2;
+  }
+  .h-fmt[data-stand="169"] .h-fmt-kader { --b: var(--b-169); --h: var(--h-169); --x: 50%; }
+  .h-fmt[data-stand="45"] .h-fmt-kader { --b: var(--b-45); --h: var(--h-45); --x: 50%; }
+  .h-fmt[data-stand="916"] .h-fmt-kader { --b: var(--b-916); --h: var(--h-916); --x: 50%; }
+  .h-fmt-kader img, .h-fmt-mini img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+  /* ── HET TWEEDE VAK ── alleen bij "En meer" (en zonder JavaScript). Weg bij de klik,
+     terug als het vierkant zijn plek heeft. */
+  .h-fmt-mini {
+    left: var(--mini-x); width: var(--mini-b); height: var(--mini-h);
+    transform: translate(0, -50%) scale(.92); opacity: 0;
+    transition: opacity .2s var(--t0), transform .2s var(--t0);
+    z-index: 1;
+  }
+  .h-fmt:is(:not([data-stand]), [data-stand="11"]) .h-fmt-mini {
+    opacity: 1; transform: translate(0, -50%);
+    transition: opacity .4s calc(var(--t1) - .1s), transform .6s var(--h-veer) calc(var(--t1) - .1s);
+  }
+
+  /* ── HET LABEL ── weg bij de klik, terug als het kader klaar is. */
+  .h-fmt-label { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .15s linear var(--t0); }
+  .h-fmt:not([data-stand]) .h-fmt-label[data-v="11"],
+  .h-fmt[data-stand="11"] .h-fmt-label[data-v="11"],
+  .h-fmt[data-stand="169"] .h-fmt-label[data-v="169"],
+  .h-fmt[data-stand="45"] .h-fmt-label[data-v="45"],
+  .h-fmt[data-stand="916"] .h-fmt-label[data-v="916"],
+  .h-fmt-mini .h-fmt-label { opacity: 1; transition: opacity .3s var(--t1); }
+  .h-fmt-maat { position: absolute; left: 12px; top: 12px; height: 34px; padding: 0 14px; border-radius: 999px; display: inline-flex; align-items: center; font: 600 17px/1 var(--h-letter); color: var(--h-inkt); font-variant-numeric: tabular-nums; }
+  .h-fmt-waar { position: absolute; left: 12px; right: 12px; bottom: 12px; width: max-content; max-width: calc(100% - 24px); min-height: 32px; padding: 7px 14px; border-radius: 16px; display: inline-flex; align-items: center; font: 500 14px/1.3 var(--h-letter); color: var(--h-inkt); }
+
+  /* De rij onder het podium: alleen bij "En meer". */
+  .h-fmt-rij { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .h-fmt-rij li {
+    min-height: 36px; padding: 8px 14px; border-radius: 999px; background: #fff; max-width: 100%;
+    font: 500 14px/1.3 var(--h-letter); color: var(--h-inkt);
+    opacity: 0; transform: translateY(10px) scale(.96);
+    transition: opacity .2s var(--t0), transform .2s var(--t0);
+  }
+  .h-fmt:is(:not([data-stand]), [data-stand="11"]) .h-fmt-rij li {
+    opacity: 1; transform: none;
+    transition: opacity .4s calc(var(--t1) + .3s + var(--i) * 140ms), transform .55s var(--h-veer) calc(var(--t1) + .3s + var(--i) * 140ms);
+  }
+
+  @media (max-width: 900px) {
+    .h-fmt-raster { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+    .h-fmt-vlak { border-radius: 32px; padding: 20px; }
+  }
+  @media (max-width: 640px) {
+    .h-fmt-vlak { border-radius: 28px; padding: 16px; gap: 16px; }
+    .h-fmt-knop { height: 38px; padding: 0 14px; font-size: 13.5px; }
+    .h-fmt-waar { font-size: 13px; left: 8px; right: 8px; bottom: 8px; max-width: calc(100% - 16px); padding: 6px 10px; }
+    .h-fmt-maat { font-size: 15px; height: 30px; left: 8px; top: 8px; }
+    .h-fmt-kader, .h-fmt-mini { border-radius: 18px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .h-fmt-kader, .h-fmt-mini, .h-fmt-rij li, .h-fmt-label, .h-fmt-knop { transition: none !important; }
+  }
+</style>

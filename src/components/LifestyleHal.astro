@@ -1,0 +1,304 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — /lifestyle in de hal. 12 oktober 2026, afvinklijst 7 (groep lifestyle).
+ * Voorbeeld op /voorbeeld/lifestyle/ en /nl/voorbeeld/lifestyle/; de echte
+ * /lifestyle blijft LifestylePage.astro tot Lucas de groep goedkeurt (v-live = a).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * DEZELFDE INHOUD ALS LifestylePage.astro, in dezelfde volgorde: opening met de
+ * laptop (alleen de carrousel, sets={['lifestyle']}), het assortiment, de looks,
+ * wat een carrousel is en wat hij kost, het model, de vragen, het slot.
+ *
+ * WAT ANDERS IS
+ *   · Het assortiment is de strook van de voorpagina (pijlen, lijntje), met een
+ *     witte pil op elk beeld en geen glazen: er staan er meer dan drie in beeld.
+ *   · De looks zijn de kaarten van /start, vier naast elkaar; de eigen look en
+ *     wat eraan komt staan eronder in één rustige rij.
+ *   · "Een carrousel" zijn drie genummerde kaarten met de maatlijn (zie de noot
+ *     verderop: er is nog geen complete carrousel van één product in de beeldbank).
+ *   · "Waar je het gebruikt" noemt alleen de kanalen; "beeld dat de scroll
+ *     stopt" staat er niet meer (jouw regel). Zie kladblok/TEKSTEN-GROEP-2.md.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/hal.css';
+import {
+  ladderFloor, euro, vatLabel, eenProductRegel, WINDOW_THRESHOLD, TIERS, clause, TEST_SAMPLE, LIFESTYLE_IMAGES, levervlakken,
+} from '../data/pricing.js';
+import { serviceFaqs } from '../data/faq.js';
+import { localizedPath } from '../i18n/ui.js';
+import { styles as stylesEn } from '../data/styles.js';
+import { styles as stylesNl } from '../data/styles.nl.js';
+import { komendeStijlen } from '../data/komendeStijlen.js';
+import { productStand, PRODUCT_COPY } from '../data/eigenproduct.js';
+import { kleiner, beeldMaat, isEcht } from '../lib/beeldAanwezig.js';
+import HalLaptop from './HalLaptop.astro';
+import HalVragen from './HalVragen.astro';
+import HalProef from './HalProef.astro';
+import HalBeweging from './HalBeweging.astro';
+
+/* basis: '/voorbeeld' op het voorbeeld, zodat de links tussen de hub en zijn
+   lookpagina's binnen het voorbeeld blijven; leeg op de echte pagina. */
+interface Props { lang: 'en' | 'nl'; basis?: string; }
+const { lang, basis = '' } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+const e = (n: number) => euro(n, lang);
+const ex = vatLabel('excl', lang);
+const sample = TEST_SAMPLE[lang];
+const floor = ladderFloor('lifestyle');
+const t0 = TIERS.unattended;
+const moods = nl ? stylesNl : stylesEn;
+
+const looks = await Promise.all(moods.filter((s: any) => s.slug !== 'custom' && s.orderHref && !s.orderLabel).map(async (s: any) => {
+  const bron = s.cardPhoto || s.heroPhoto;
+  const maat = await beeldMaat(bron);
+  return {
+    slug: s.slug, naam: s.name, zin: s.tagline,
+    kies: lp(String(s.orderHref).replace(/^\/nl(?=\/)/, '')),
+    meer: lp(`${basis}/lifestyle/${s.slug}`),
+    proef: `${lp('/test-sample')}?style=${encodeURIComponent(s.slug)}`,
+    beeld: kleiner(bron), w: maat?.w, h: maat?.h,
+  };
+}));
+const eigen = moods.find((s: any) => s.slug === 'custom');
+const komend = komendeStijlen('lifestyle', lang);
+
+/* Het assortiment: dezelfde vijf beelden als nu op /lifestyle. */
+const RIJ = [
+  { src: '/img/lifestyle-phone-made-06.webp', label: 'Phone-made', w: 2400, h: 1792 },
+  { src: '/img/lifestyle-glow-03.webp', label: 'Glow', w: 768, h: 1376 },
+  { src: '/img/lifestyle-flash-05.webp', label: 'Flash', w: 2400, h: 1792 },
+  { src: '/img/lifestyle-dunes-02.webp', label: 'Dunes', w: 928, h: 1152 },
+  { src: '/img/lifestyle-phone-made-11.webp', label: 'Phone-made', w: 2400, h: 1792 },
+].filter((b) => isEcht(b.src));
+/* "Een carrousel" staat als drie genummerde kaarten zonder beeld, zoals op de
+   huidige pagina: de enige complete carrousel in de beeldbank (laptopSlides.js)
+   mist nog één beeld ("Alleen het product" staat er als plaat, zie beeldenNodig.js), en drie
+   beelden van verschillende producten zouden "één product" tegenspreken. */
+
+const COPY = {
+  en: {
+    pil: 'Lifestyle',
+    h1: ['Your product,', 'set in a scene.'],
+    lede: `A ${LIFESTYLE_IMAGES}-photo carousel per product: on a model front and back, the product on its own, and a detail.`,
+    feiten: [`<b>From ${e(floor)}</b> per product · ${ex}`, `<b>${LIFESTYLE_IMAGES} photos</b> per product`],
+    wacht: `Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}: a fixed delivery date.`,
+    kiesCta: 'Pick your look', prijsCta: 'See the price per product',
+    rijPil: 'The range', rijKop: ['The range,', 'in four moods.'], rijCta: 'See the full gallery',
+    vorige: 'Previous images', volgende: 'Next images',
+    alt: (n: string) => `${n} lifestyle example`,
+    looksPil: 'Looks', looksKop: ['Four moods,', 'or your own.'],
+    vanaf: 'From', per: `per product, ${ex}`,
+    kies: 'Pick this look', meer: 'More about this look',
+    eigenKop: 'Not in there?', eigenCta: 'Request your own look', eigenMeer: 'More about your own look',
+    komendTag: 'Coming soon',
+    setPil: 'One carousel', setKop: ['One product.', 'Four photos. A carousel.'],
+    /* "More images can be added in the order form" stond hier ook; dat kan bij lifestyle niet (vast vier, afvinklijst 23). */
+    setZin: 'Four shots that belong together, ready to post as a carousel.',
+    /* De namen komen uit levervlakken() in pricing.js (wat de prijs belooft); hier alleen de zin eronder. */
+    set: ['Worn by a model, from the front.', 'The same model, from the back.', 'Your product without a model, in the same scene.', 'Up close on the model, in the same colour grade.'],
+    setNoot: 'One look per order · another scene is a separate order.',
+    waarKop: 'Where it lives', waar: ['Instagram & TikTok', 'Paid ads', 'Your homepage', 'Email & campaigns'],
+    prijsKop: 'What a carousel costs', prijsRegel: `${eenProductRegel('en', ['lifestyle'])} The rate applies to every product in the order; all amounts ${ex}.`,
+    staffelCta: 'See all prices by quantity',
+    modelKop: ['Add a consistent', 'model.'], modelZin: 'The same face across your whole collection.', modelCta: 'Explore models',
+    modelAlt: 'A VISUAILS model, styled consistently across a campaign',
+    proefKop: ['See it first?', 'One product for'] as [string, string],
+    proefZin: `One of your own products, as a catalog set or a carousel · ${ex} · ${sample.unit}.`,
+    proefAlt: 'Or pick your look',
+  },
+  nl: {
+    pil: 'Lifestyle',
+    h1: ['Jouw product,', 'in scène gezet.'],
+    lede: `Een carrousel van ${LIFESTYLE_IMAGES} foto’s per product: op een model van voren en van achteren, het product alleen, en een detail.`,
+    feiten: [`<b>Vanaf ${e(floor)}</b> per product · ${ex}`, `<b>${LIFESTYLE_IMAGES} foto’s</b> per product`],
+    wacht: `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD}: een vaste leverdatum.`,
+    kiesCta: 'Kies je look', prijsCta: 'Bekijk de prijs per product',
+    rijPil: 'Het assortiment', rijKop: ['Het assortiment,', 'in vier sferen.'], rijCta: 'Bekijk de volledige galerij',
+    vorige: 'Vorige beelden', volgende: 'Volgende beelden',
+    alt: (n: string) => `${n} lifestyle-voorbeeld`,
+    looksPil: 'Looks', looksKop: ['Vier sferen,', 'of je eigen.'],
+    vanaf: 'Vanaf', per: `per product, ${ex}`,
+    kies: 'Kies deze look', meer: 'Meer over deze look',
+    eigenKop: 'Zit het er niet bij?', eigenCta: 'Vraag een eigen look aan', eigenMeer: 'Meer over een eigen look',
+    komendTag: 'Binnenkort',
+    setPil: 'Eén carrousel', setKop: ['Eén product.', 'Vier foto’s. Een carrousel.'],
+    setZin: 'Vier foto’s die bij elkaar horen, klaar om als carrousel te posten.',
+    set: ['Gedragen door een model, van voren.', 'Hetzelfde model, van achteren.', 'Je product zonder model, in dezelfde scène.', 'Van dichtbij op het model, in dezelfde kleurbewerking.'],
+    setNoot: 'Eén look per bestelling · een andere scène is een aparte bestelling.',
+    waarKop: 'Waar je het gebruikt', waar: ['Instagram & TikTok', 'Advertenties', 'Je homepage', 'E-mail & campagnes'],
+    prijsKop: 'Wat een carrousel kost', prijsRegel: `${eenProductRegel('nl', ['lifestyle'])} Het tarief geldt voor elk product in de bestelling; alle bedragen ${ex}.`,
+    staffelCta: 'Bekijk alle prijzen per aantal',
+    modelKop: ['Voeg een consistent', 'model toe.'], modelZin: 'Hetzelfde gezicht door je hele collectie.', modelCta: 'Ontdek modellen',
+    modelAlt: 'Een VISUAILS-model, consistent gestyled door een hele campagne',
+    proefKop: ['Eerst zien?', 'Eén product voor'] as [string, string],
+    proefZin: `Eén van je eigen producten, als catalogset of carrousel · ${ex} · ${sample.unit}.`,
+    proefAlt: 'Of kies je look',
+  },
+};
+const c = COPY[lang];
+const ICOON = {
+  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
+  links: '<path d="M13.5 8h-11M7 3.5L2.5 8 7 12.5"/>',
+  pijl: '<path d="M4.5 11.5l7-7M5.5 4.5h6v6"/>',
+  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
+  label: '<path d="M8.6 2.5H13.5V7.4L7.4 13.5 2.5 8.6z"/><circle cx="10.6" cy="5.4" r=".9"/>',
+  doos: '<path d="M2.5 5L8 2.5 13.5 5v6L8 13.5 2.5 11z"/><path d="M2.5 5L8 7.5 13.5 5M8 7.5v6"/>',
+  plus: '<path d="M8 3v10M3 8h10"/>',
+};
+const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+/* Het etiket "van jouw eigen productfoto's" in drie VORMEN en niet alleen drie
+   kleuren (zoals op de oude /start): een vinkje (met), een streep (zonder), en
+   plus-en-min (allebei kan). tests/eigenproduct.test.mjs. */
+const EIGEN_VORM: Record<string, string> = { met: '<path d="M3 8.5l3.2 3L13 4.5"/>', zonder: '<path d="M4.5 8h7"/>', beide: '<path d="M8 3.5v5M5.5 6h5M5.5 12h5"/>' };
+const eigenVorm = (stand: string) => `<svg viewBox="0 0 16 16" aria-hidden="true">${EIGEN_VORM[stand] || EIGEN_VORM.met}</svg>`;
+const DRIE = (n: number) => String(n).padStart(2, '0');
+---
+<div class="h-pagina h-dienst h-ls">
+
+  {/* ── 1 · DE OPENING, als op de voorpagina ─────────────────────────────── */}
+  <section class="h-opening h-dienst-open" aria-labelledby="ls-h1">
+    <div class="h-open-tekst">
+      <p class="h-pil h-op" style="--d:0"><span>{c.pil}</span></p>
+      <h1 id="ls-h1" class="h-kop h-h1">
+        {c.h1.map((r, i) => <span class="h-regel" style={`--d:${i + 1}`}><span class:list={['h-regel-in', i === 0 && 'l']}>{r}</span></span>)}
+      </h1>
+      <p class="h-lede h-op" style="--d:3">{c.lede}</p>
+      <p class="h-acties h-op" style="--d:4">
+        <a class="h-knop h-knop-inkt" href="#looks">{c.kiesCta}<span class="o" set:html={ik('rechts')} /></a>
+        <a class="h-knop h-knop-lijn" href={lp('/pricing')}>{c.prijsCta}</a>
+      </p>
+      <ul class="h-feiten h-op" style="--d:5" role="list">
+        {c.feiten.map((f, i) => <li><i set:html={ik((['label', 'doos'] as const)[i])} /><span set:html={f} /></li>)}
+      </ul>
+      <p class="h-dienst-wacht h-op" style="--d:6">{c.wacht}</p>
+    </div>
+    <div class="h-open-beeld h-op" style="--d:3">
+      <HalLaptop lang={lang} sets={['lifestyle']} />
+    </div>
+  </section>
+
+  {/* ── 2 · HET ASSORTIMENT ── de strook van de voorpagina ─────────────────── */}
+  <section class="h-sec h-ls-rij" aria-labelledby="ls-rij" data-h-strook>
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{c.rijPil}</span></p>
+        <h2 id="ls-rij" class="h-kop h-h2"><span class="l">{c.rijKop[0]}</span> {c.rijKop[1]}</h2>
+      </div>
+      <p class="h-sec-rechts">
+        <span class="h-lijntje" aria-hidden="true"><i data-h-strook-stand></i></span>
+        <button type="button" class="h-cirkel" data-h-strook-stap="-1" aria-label={c.vorige} set:html={ik('links')} />
+        <button type="button" class="h-cirkel" data-h-strook-stap="1" aria-label={c.volgende} set:html={ik('rechts')} />
+      </p>
+    </header>
+    <ul class="h-strook" role="list" data-h-strook-rij>
+      {RIJ.map((b, i) => (
+        <li class="h-ls-beeld h-in" style={`--d:${Math.min(i, 4)}`}>
+          <img src={kleiner(b.src)} alt={c.alt(b.label)} width={b.w} height={b.h} loading="lazy" decoding="async" />
+          <span class="h-pil h-pil-wit h-pil-nr">{b.label}</span>
+        </li>
+      ))}
+    </ul>
+    <p class="h-ls-rij-voet h-in"><a class="h-link" href={lp('/gallery')}>{c.rijCta}<span class="h-cirkel h-cirkel-klein" aria-hidden="true" set:html={ik('pijl')} /></a></p>
+  </section>
+
+  {/* ── 3 · DE LOOKS ── de kaarten van /start; id="looks" voor de knoppen. */}
+  <section class="h-sec h-dienst-looks" id="looks" aria-labelledby="ls-looks">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{c.looksPil}</span></p>
+        <h2 id="ls-looks" class="h-kop h-h2"><span class="l">{c.looksKop[0]}</span> {c.looksKop[1]}</h2>
+      </div>
+      <span class={`h-chip h-st-eigen is-${productStand('lifestyle')}`}><i set:html={eigenVorm(productStand('lifestyle'))} />{PRODUCT_COPY[lang][productStand('lifestyle')]}</span>
+    </header>
+    <div class:list={['h-st-groep', `n-${looks.length}`]} data-st-groep="lifestyle">
+      <ul class="h-st-looks" role="list">
+        {looks.map((l, i) => (
+          <li class="h-st-look h-in" style={`--d:${i}`} data-st-look={l.slug}>
+            <a class="h-st-beeld" href={l.kies} aria-hidden="true" tabindex="-1">
+              <img src={l.beeld} alt="" width={l.w} height={l.h} loading="lazy" decoding="async" />
+            </a>
+            <div class="h-st-tekst">
+              <h3 class="h-st-naam">{l.naam}</h3>
+              <p class="h-st-zin">{l.zin}</p>
+              <p class="h-st-tarief"><span>{c.vanaf}</span> <b>{e(floor)}</b> <span>{c.per}</span></p>
+              <p class="h-st-wegen"><a class="h-knop h-knop-inkt h-knop-klein" href={l.kies} data-st-kies>{c.kies}<span class="o" set:html={ik('rechts')} /></a></p>
+              <p class="h-st-ook-links">
+                <a class="h-st-proef" href={l.proef} data-st-proef data-vis-uit>{sample.cta}</a>
+                <a class="h-st-meer" href={l.meer}>{c.meer}<span set:html={ik('pijl')} /></a>
+              </p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+    <ul class="h-dienst-extra" role="list">
+      {eigen && (
+        <li class="h-dienst-eigen h-in">
+          <span class="h-cirkel h-cirkel-wit" aria-hidden="true" set:html={ik('plus')} />
+          <div>
+            <p class="h-dienst-extra-kop">{c.eigenKop} <span class="l">{eigen.name}.</span></p>
+            <p class="h-dienst-extra-zin">{eigen.tagline} <span class="h-dienst-extra-prijs">{nl ? 'Op aanvraag' : 'On request'}</span></p>
+          </div>
+          <p class="h-dienst-extra-wegen">
+            <a class="h-knop h-knop-lijn h-knop-klein" href={lp(String(eigen.orderHref).replace(/^\/nl(?=\/)/, ''))}>{c.eigenCta}</a>
+            <a class="h-st-meer" href={lp(`${basis}/lifestyle/custom`)}>{c.eigenMeer}<span set:html={ik('pijl')} /></a>
+          </p>
+        </li>
+      )}
+      {komend.map((k: any, i: number) => (
+        <li class="h-dienst-komend h-in" style={`--d:${i + 1}`}>
+          <span class="h-chip h-pl-tag">{c.komendTag}</span>
+          <p class="h-dienst-extra-kop">{k.naam}</p>
+          <p class="h-dienst-extra-zin">{k.regel}</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  {/* ── 4 · EEN CARROUSEL, EN WAT HIJ KOST ───────────────────────────────── */}
+  <section class="h-sec h-ls-set" aria-labelledby="ls-set">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{c.setPil}</span></p>
+        <h2 id="ls-set" class="h-kop h-h2"><span class="l">{c.setKop[0]}</span> {c.setKop[1]}</h2>
+      </div>
+      <p class="h-pr-kopzin">{c.setZin}</p>
+    </header>
+    <ol class="h-ls-drie" role="list">
+      {levervlakken('lifestyle', lang).map((h, i) => (
+        <li class="h-in" style={`--d:${i}`}>
+          <p class="h-nr" aria-hidden="true"><b>{DRIE(i + 1)}</b><i></i><span>/ {DRIE(levervlakken('lifestyle', lang).length)}</span></p>
+          <p class="h-pp-naam">{h}</p>
+          <p class="h-pp-regel">{c.set[i]}</p>
+        </li>
+      ))}
+    </ol>
+    <p class="h-ls-noot h-in">{c.setNoot}</p>
+    <p class="h-ls-waar h-in"><span>{c.waarKop}</span> {c.waar.map((w) => <span class="h-chip h-chip-nevel">{w}</span>)}</p>
+
+    <div class="h-pr-band h-ls-prijs h-in">
+      <div>
+        <h3 class="h-kop h-h3">{c.prijsKop}</h3>
+        <p class="h-pr-band-zin">{c.prijsRegel}</p>
+      </div>
+      <a class="h-knop h-knop-lijn" href={lp('/pricing')}>{c.staffelCta}</a>
+    </div>
+
+    <a class="h-ls-model h-in" href={`${lp('/custom-models')}#standard`}>
+      <span class="h-ls-model-beeld"><img src="/img/model-02.webp" alt={c.modelAlt} width="800" height="1071" loading="lazy" decoding="async" /></span>
+      <span class="h-ls-model-tekst">
+        <span class="h-kop h-h3"><span class="l">{c.modelKop[0]}</span> {c.modelKop[1]}</span>
+        <span class="h-pr-band-zin">{c.modelZin}</span>
+      </span>
+      <span class="h-link">{c.modelCta}<span class="h-cirkel h-cirkel-klein h-cirkel-wit" aria-hidden="true" set:html={ik('pijl')} /></span>
+    </a>
+  </section>
+
+  {/* ── 5 · VRAGEN ─────────────────────────────────────────────────────────── */}
+  <HalVragen lang={lang} id="ls-faq" dienst="lifestyle" faqs={serviceFaqs('lifestyle', lang)} />
+
+  {/* ── 6 · HET SLOT: de proef ───────────────────────────────────────────── */}
+  <HalProef lang={lang} id="ls-slot" kop={c.proefKop} zin={c.proefZin} alt={{ label: c.proefAlt, href: '#looks' }} />
+</div>
+<HalBeweging />

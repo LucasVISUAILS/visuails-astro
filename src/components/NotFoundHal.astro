@@ -1,0 +1,97 @@
+---
+/*
+ * VISUAILS — NotFoundHal: de 404 in de hal (13 oktober 2026, afvinklijst 18, v18-volgende a).
+ * Live sinds afvinklijst 19 (alles doen): src/pages/404.astro en nl/404.astro. De woorden zijn die van NotFoundPage.astro;
+ * anders (● in kladblok/TEKSTEN-JURIDISCH.md): de kop in twee tonen met een punt, de knop
+ * "Start een bestelling" zoals overal in de hal (was "Start een aanvraag"), en de kop boven de
+ * zes kaarten in twee tonen. Het grote getal is de enige versiering: één dun getal, zoals de
+ * kaarten van rondesignlab.
+ */
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/hal.css';
+import { waHref } from '../data/whatsapp.js';
+import NieuwTabblad from './NieuwTabblad.astro';
+import HalBeweging from './HalBeweging.astro';
+import { waKlant } from '../data/klant.js';
+import { localizedPath } from '../i18n/ui.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+
+const c = nl ? {
+  h1: ['Deze pagina', 'bestaat niet.'],
+  lead: 'De link is misschien verouderd, of het adres is verkeerd getypt. Hier kun je verder.',
+  home: 'Terug naar home',
+  start: 'Start een bestelling',
+  wa: 'Meld wat er stuk is',
+  waTekst: 'Hoi VISUAILS, ik volgde een link die niet werkte.',
+  verderH: ['Waar de meeste mensen', 'heen gaan.'],
+  verder: [
+    ['/catalog', 'Catalog', 'Vier foto’s per product op een schone achtergrond.'],
+    ['/lifestyle', 'Lifestyle', 'Vier foto’s in één gestylede look.'],
+    ['/video', 'Video', 'Korte clips van hetzelfde product.'],
+    ['/pricing', 'Prijzen', 'Wat een set kost, en hoe de prijs per aantal zakt.'],
+    ['/gallery', 'Galerij', 'Werk dat we eerder hebben gemaakt.'],
+    ['/contact', 'Contact', 'Een vraag die hier niet beantwoord wordt.'],
+  ],
+} : {
+  h1: ['This page', 'doesn’t exist.'],
+  lead: 'The link may be old, or the address was mistyped. Here’s where to go instead.',
+  home: 'Back to home',
+  start: 'Start an order',
+  wa: 'Tell us what’s broken',
+  waTekst: 'Hi VISUAILS, I followed a link that didn’t work.',
+  verderH: ['Where most people', 'are heading.'],
+  verder: [
+    ['/catalog', 'Catalog', 'Four photos per product on a clean background.'],
+    ['/lifestyle', 'Lifestyle', 'Four photos in one styled look.'],
+    ['/video', 'Video', 'Short clips of the same product.'],
+    ['/pricing', 'Pricing', 'What a set costs, and where the ladder drops.'],
+    ['/gallery', 'Gallery', 'Work we have made before.'],
+    ['/contact', 'Contact', 'A question this page does not answer.'],
+  ],
+};
+const PIJL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5l7-7M5.5 4.5h6v6"/></svg>';
+/* De pijl van elke inktknop in de hal (rondgang 13 okt: hier stond een huisje). */
+const PIJL_R = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/></svg>';
+---
+<div class="h-pagina h-nf-pagina">
+  <header class="h-nf-kop">
+    <div class="h-nf-tekst">
+      <p class="h-pil h-op" style="--d:0"><span>404</span></p>
+      <h1 class="h-kop h-h1 h-op" style="--d:1"><span class="l">{c.h1[0]}</span> <span>{c.h1[1]}</span></h1>
+      <p class="h-lede h-op" style="--d:2">{c.lead}</p>
+      <p class="h-acties h-op" style="--d:3">
+        <a class="h-knop h-knop-inkt" href={lp('/')}>{c.home}<span class="o" set:html={PIJL_R} /></a>
+        <a class="h-knop h-knop-lijn" href={lp('/start')}>{c.start}</a>
+        <a class="h-knop h-knop-lijn" href={waHref(c.waTekst)} target="_blank" rel="noopener" {...waKlant(lang)}>{c.wa}<NieuwTabblad lang={lang} /></a>
+      </p>
+    </div>
+    <div class="h-nf-getal h-groot h-in" aria-hidden="true">
+      <span class="h-korrel"></span>
+      <span class="h-getal">404</span>
+    </div>
+  </header>
+
+  {/* Een 404 die alleen zegt dat er niets is, laat de bezoeker met dezelfde vraag achter
+      waarmee hij kwam (NotFoundPage.astro). De zes plekken waar bijna elke aanvraag vandaan
+      komt, als kaarten met een pijl. */}
+  <section class="h-sec h-nf-verder-sec" aria-labelledby="nf-verder">
+    <header class="h-sec-kop h-in">
+      <div><h2 id="nf-verder" class="h-kop h-h2"><span class="l">{c.verderH[0]}</span> {c.verderH[1]}</h2></div>
+    </header>
+    <ul class="h-nf-verder" role="list">
+      {c.verder.map(([pad, naam, uitleg], i) => (
+        <li class="h-in" style={`--d:${i}`}>
+          <a href={lp(pad)}>
+            <span class="h-weten-boven"><span class="h-pil h-pil-wit"><span>{naam}</span></span><span class="h-cirkel h-cirkel-wit" aria-hidden="true" set:html={PIJL} /></span>
+            <span class="h-nf-zin">{uitleg}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+</div>
+<HalBeweging />

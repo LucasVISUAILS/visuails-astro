@@ -3,7 +3,9 @@
 // PricingPage.astro, zodat /pricing en /nl/pricing niet uit elkaar kunnen
 // lopen; alleen de meta verschilt hier.
 import Layout from '../../layouts/Layout.astro';
-import PricingPage from '../../components/PricingPage.astro';
+// 12 oktober 2026 (afvinklijst 8, alles "doen"): deze pagina staat in de hal (huid="hal");
+// de vorige opmaak staat op _opruimen/LIJST.txt.
+import PricingHal from '../../components/PricingHal.astro';
 //
 // Hij noemde tot augustus 2026 de twee pakketten. Nu noemt hij de vorm van de
 // staffel: het instaptarief, de bodem, en dat het tarief daalt. De korting op
@@ -20,6 +22,6 @@ const description =
   `${vatLabel('excl', 'nl')}.`;
 ---
 
-<Layout title="Prijzen — de prijs per product, volledig | VISUAILS" description={description}>
-  <PricingPage lang="nl" />
+<Layout huid="hal" title="Prijzen — de prijs per product, volledig | VISUAILS" description={description}>
+  <PricingHal lang="nl" />
 </Layout>

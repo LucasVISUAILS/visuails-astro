@@ -29,9 +29,14 @@
 // spam". A sender who volunteers that is a sender the reader starts to doubt.
 // The framing is a check the customer runs, not a defect we are confessing to.
 
+/* ── EN DE CONTACTENREGEL STAAT NU HIER — 8 oktober 2026 (punt 7.07, V21-1) ──
+   Lucas koos: "Zet orders@visuails.com in je contacten" alleen nog in de eerste
+   mail aan een nieuw adres, op /thank-you en op de kaart "kijk in je mail" —
+   en niet meer onderaan elke klantmail. Deze zin is precies die twee schermen
+   (en het portaalscherm zonder link), dus de regel komt hier bij. */
 const NOTE = {
-  en: 'Nothing after a few minutes? Look in your spam or junk folder — and mark it as safe, so the next one lands in your inbox.',
-  nl: 'Na een paar minuten nog niets? Kijk in je spam- of ongewenste-mailmap — en markeer hem als veilig, dan komt de volgende gewoon binnen.',
+  en: 'Nothing there after a few minutes? Check your spam folder, and add orders@visuails.com to your contacts so the next one lands in your inbox.',
+  nl: 'Na een paar minuten nog niets? Kijk in je spam, en zet orders@visuails.com in je contacten, dan komt de volgende gewoon binnen.',
 };
 
 /** @param {'en'|'nl'} lang */

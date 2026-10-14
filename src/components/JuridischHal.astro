@@ -1,0 +1,158 @@
+---
+/*
+ * VISUAILS — JuridischHal: de omhulling van een juridisch document in de hal.
+ * 13 oktober 2026, afvinklijst 18 (v18-volgende = a): de voorwaarden, het
+ * privacybeleid, het cookiebeleid, de verwerkersovereenkomst en de AI Act-pagina.
+ * Live sinds afvinklijst 19 (alles doen; v19-lang b: 9 tot 10 woorden per regel,
+ * zie hal.css; v19-titel a: de titel zonder punt, in één toon).
+ *
+ * DE TEKST IS WOORD VOOR WOORD DIE VAN HET DOCUMENT. Dit onderdeel krijgt het
+ * document als slot en verandert alleen de vorm:
+ *   · de kop zoals elke pagina in de hal: pil, titel, de ene zin waar het document
+ *     over gaat, de datum, en een rij met de vijf documenten (deze aangewezen);
+ *   · daaronder de inhoud: een nevelkaart met elk hoofdstuk als link;
+ *   · het document in rijen, zoals de referenties van rondesignlab een lange
+ *     tekst opbouwen: links het nummer en de titel (die blijft staan terwijl je het
+ *     hoofdstuk leest), rechts de tekst, met een haarlijn tussen de rijen;
+ *   · het slot van het document (.jur-uit: een adres, geen aanbieding) als nevelkaart.
+ *
+ * HOE. Het slot wordt hier één keer als HTML opgehaald (Astro.slots.render), elke
+ * <h2> krijgt een id (een bestaande id blijft staan) en wordt een rij. Een <h2> met
+ * data-niet-in-inhoud (de kop van het slot) wordt geen rij en staat niet in de inhoud.
+ * Staan de <div>'s in een stuk niet in evenwicht — een h2 die ín een blok staat —
+ * dan wordt het document NIET in rijen gezet maar in één kolom, in plaats van de
+ * opmaak te breken: geen enkele tekst mag door de vorm verdwijnen of verschuiven.
+ */
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/hal.css';
+import HalBeweging from './HalBeweging.astro';
+
+interface Props {
+  lang: 'en' | 'nl';
+  doc: 'terms' | 'privacy' | 'cookie-policy' | 'data-processing-agreement' | 'ai-act';
+  rubriek: string;
+  titel: string;
+  datum: string;
+}
+const { lang, doc, rubriek, titel, datum } = Astro.props;
+const nl = lang === 'nl';
+const pre = nl ? '/nl' : '';
+
+const lead = Astro.slots.has('lead') ? await Astro.slots.render('lead') : '';
+const kopExtra = Astro.slots.has('kop') ? await Astro.slots.render('kop') : '';
+const ruw = await Astro.slots.render('default');
+
+/* ── DE HOOFDSTUKKEN ────────────────────────────────────────────────────── */
+const ids = new Set<string>();
+const slug = (t: string) => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .replace(/&[a-z#0-9]+;/g, ' ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64) || 'deel';
+type Deel = { id: string; nr: string; titel: string; attr: string; binnen: string };
+const delen: Deel[] = [];
+/* Het slot van het document (.jur-uit) staat altijd achteraan en is één blok: dat gaat er
+   eerst af, zodat de rij ervoor niet eindigt op de open <div> van het slot. */
+const uitBegin = ruw.indexOf('<div class="jur-uit"');
+let staart = uitBegin === -1 ? '' : ruw.slice(uitBegin);
+const romp = uitBegin === -1 ? ruw : ruw.slice(0, uitBegin);
+const stukken = romp.split(/(?=<h2[\s>])/);
+const voorRuw = /^<h2[\s>]/.test(stukken[0] || '') ? '' : (stukken.shift() || '');
+const voor = voorRuw.trim() ? voorRuw : '';
+const evenwicht = (s: string) => (s.match(/<div[\s>]/g) || []).length === (s.match(/<\/div>/g) || []).length;
+let rijen = true;
+for (const stuk of stukken) {
+  const m = stuk.match(/^<h2(\s[^>]*)?>([\s\S]*?)<\/h2>([\s\S]*)$/);
+  if (!m) { rijen = false; break; }
+  const [, attr = '', kop, rest] = m;
+  if (/data-niet-in-inhoud/.test(attr)) { rijen = false; break; }   // een slotkop buiten het slot: dan liever één kolom
+  const nrM = kop.match(/^\s*(\d+[a-z]?)\.\s+([\s\S]*)$/);
+  /* De id komt van de titel zonder nummer (#levering, #definitions): een anker dat met een
+     cijfer begint is geen geldige CSS-selector, en een nummer kan bij een herziening schuiven. */
+  const tekst = (nrM ? nrM[2] : kop).replace(/<[^>]+>/g, '').trim();
+  let id = (attr.match(/\sid="([^"]+)"/) || [])[1];
+  if (!id) { const b = slug(tekst); id = b; let n = 2; while (ids.has(id)) id = `${b}-${n++}`; }
+  ids.add(id);
+  delen.push({ id, nr: nrM ? nrM[1] : '', titel: nrM ? nrM[2] : kop, attr: attr.replace(/\sid="[^"]*"/, ''), binnen: rest });
+}
+/* Het slot (.jur-uit) sluit met de </div> van zijn eigen blok; de laatste rij mag geen
+   halve div bevatten. Elk stuk moet in evenwicht zijn, anders één kolom. */
+if (rijen && !delen.every((d) => evenwicht(d.binnen))) rijen = false;
+if (rijen && staart && !evenwicht(staart)) rijen = false;
+if (!rijen) { delen.length = 0; }
+
+const T = nl
+  ? { inhoud: 'Inhoud', docs: 'Juridische documenten', delen: (n: number) => `${n} hoofdstukken` }
+  : { inhoud: 'Contents', docs: 'Legal documents', delen: (n: number) => `${n} sections` };
+/* De vijf documenten, met de titel die elk zelf draagt. */
+const DOCS = nl
+  ? [['terms', 'Algemene voorwaarden'], ['privacy', 'Privacybeleid'], ['cookie-policy', 'Cookiebeleid'], ['data-processing-agreement', 'Verwerkersovereenkomst'], ['ai-act', 'AI Act & transparantie']]
+  : [['terms', 'Terms of Service'], ['privacy', 'Privacy Policy'], ['cookie-policy', 'Cookie Policy'], ['data-processing-agreement', 'Data Processing Agreement'], ['ai-act', 'AI Act & transparency']];
+/* Het voorbeeld linkt naar de voorbeelden, zodat de rij in het voorbeeld rondloopt;
+   live wordt dit de gewone route (zie de pagina's). */
+const voorbeeld = Astro.url.pathname.includes('/voorbeeld/');
+const docHref = (d: string) => `${pre}${voorbeeld ? '/voorbeeld' : ''}/${d}/`;
+const KLOK = '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 4.8V8l2.2 1.6"/></svg>';
+const PLUS = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>';
+---
+<div class="h-pagina h-jur-pagina">
+  <header class="h-paginakop h-jur-kop">
+    <p class="h-pil h-op" style="--d:0"><span>{rubriek}</span></p>
+    <h1 class="h-kop h-h1 h-op" style="--d:1">{titel}</h1>
+    {lead && <p class="h-lede h-jur-lead h-op" style="--d:2" set:html={lead} />}
+    {kopExtra && <div class="h-jur-kop-extra h-op" style="--d:2" set:html={kopExtra} />}
+    <span class="h-jur-datum h-op" style="--d:3"><span set:html={KLOK}></span>{datum}</span>
+    <nav class="h-jur-docs h-op" style="--d:4" aria-label={T.docs}>
+      {DOCS.map(([d, naam]) => <a class="h-jur-doc" href={docHref(d)} aria-current={d === doc ? 'page' : undefined}>{naam}</a>)}
+    </nav>
+  </header>
+
+  <section class="h-sec h-jur" aria-label={titel}>
+    {delen.length > 0 && (
+      <details class="h-jur-inhoud h-in" open data-jur-inhoud>
+        <summary class="h-jur-inhoud-kop"><span>{T.inhoud}</span><span class="h-jur-inhoud-tal">{T.delen(delen.length)}</span><span class="h-cirkel h-cirkel-wit h-cirkel-mini" aria-hidden="true" set:html={PLUS} /></summary>
+        <ol class="h-jur-inhoud-lijst" role="list">
+          {delen.map((d) => (
+            <li><a href={`#${d.id}`}>{d.nr && <span class="h-jur-nr">{d.nr}</span>}<span set:html={d.titel} /></a></li>
+          ))}
+        </ol>
+      </details>
+    )}
+
+    {delen.length > 0
+      ? (
+        <div class="legal h-jur-tekst h-jur-rijen">
+          {voor && <div class="h-jur-voor" set:html={voor} />}
+          {delen.map((d) => (
+            <section class="h-jur-deel" aria-labelledby={d.id}>
+              <h2 id={d.id} class="h-jur-deel-kop" set:html={`${d.nr ? `<span class="h-jur-nr">${d.nr}</span> ` : ''}${d.titel}`} />
+              <div class="h-jur-deel-tekst" set:html={d.binnen} />
+            </section>
+          ))}
+          {staart && <div class="h-jur-staart" set:html={staart} />}
+        </div>
+      )
+      : <div class="legal h-jur-tekst h-jur-kolom" set:html={ruw} />}
+  </section>
+</div>
+<HalBeweging />
+
+<script>
+  /* De inhoud: zonder JavaScript open (dan werkt elke link). Op een telefoon gaat hij
+     dicht, zodat het document niet onder een lijst van zestien regels begint; en
+     tijdens het lezen wijst hij aan in welk hoofdstuk je bent. */
+  const init = () => {
+    const inhoud = document.querySelector<HTMLDetailsElement>('[data-jur-inhoud]');
+    if (!inhoud || inhoud.dataset.klaar) return;
+    inhoud.dataset.klaar = '1';
+    if (window.matchMedia('(max-width: 900px)').matches) inhoud.open = false;
+    const links = new Map([...inhoud.querySelectorAll<HTMLAnchorElement>('a[href^="#"]')].map((a) => [a.getAttribute('href')!.slice(1), a]));
+    const koppen = [...document.querySelectorAll<HTMLElement>('.h-jur-deel-kop')];
+    if (!('IntersectionObserver' in window) || !koppen.length) return;
+    const zet = (id: string) => { for (const [k, a] of links) { if (k === id) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current'); } };
+    const io = new IntersectionObserver((rijen) => {
+      const zicht = rijen.filter((r) => r.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+      if (zicht[0]) zet((zicht[0].target as HTMLElement).id);
+    }, { rootMargin: '-15% 0px -70% 0px' });
+    koppen.forEach((k) => io.observe(k));
+  };
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

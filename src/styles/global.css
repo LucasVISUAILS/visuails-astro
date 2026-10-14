@@ -621,8 +621,9 @@
      één alinea leest als twee lettertypes. */
   --font-merk: "Anybody Variable", "Helvetica Neue", Arial, sans-serif;
   --stretch-merk: 125%;
-  /* Het merkteken, ook voor CSS. Bron: MERKTEKEN in src/data/brand.js. */
-  --merkteken: "\2122";
+  /* Het merkteken, ook voor CSS. Bron: MERKTEKEN in src/data/brand.js.
+     Sinds 12 oktober 2026 leeg: Lucas wil geen ™ meer achter de naam. */
+  --merkteken: "";
   --stretch-kop: 118%;
   /* The editorial accent (task #271b) — high-contrast serif italic, used
      nowhere near body text. Georgia/Times New Roman are the fallback stack
@@ -6299,3 +6300,40 @@ body::before { display: none; }
   font-size: .95rem;
   line-height: 1.45;
 }
+
+/* ── VERBORGEN VOOR HET OOG, NIET VOOR EEN SCHERMLEZER — 8 oktober 2026 (o26) ──
+   Sitebreed bestond deze klasse niet (zie de noot in OrderFlow.astro); Studio,
+   de privélink en het oude dashboard hadden elk hun eigen. Nu ook hier, voor
+   de zin "opent in een nieuw tabblad" (src/components/NieuwTabblad.astro).
+   Dezelfde regels als in public/portal.css. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── DE TEKSTMAAT: 5 TOT 7 WOORDEN PER REGEL (13 oktober 2026) ─────────────
+   Dezelfde regel als in hal.css (zie daar), voor de pagina's die nog niet in
+   de hal staan: de juridische pagina's, /ai-act en de voettekst. 15 em (EN),
+   16,5 em (NL): gemiddeld 5,4 woorden op een volle regel. */
+html { --maat: 15em; }
+html[lang="nl"] { --maat: 16.5em; }
+.legal p:not(.acties) { max-width: var(--maat) !important; }
+.legal li { max-width: var(--maat) !important; }
+.legal dd { max-width: var(--maat) !important; }
+.legal dt { max-width: var(--maat) !important; }
+.legal td { max-width: var(--maat) !important; }
+.legal figcaption { max-width: var(--maat) !important; }
+.legal-note { max-width: var(--maat) !important; }
+.lopend { max-width: var(--maat) !important; }
+.dc-body p { max-width: var(--maat) !important; }
+.an-note { max-width: var(--maat) !important; }
+.site-footer p { max-width: var(--maat) !important; }
+.sb-zin { max-width: var(--maat) !important; }

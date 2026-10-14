@@ -78,8 +78,8 @@ export const DEMO_ORDER = { ref: 'VIS-2608-4471', brand: 'VOLT', products: 20 };
  */
 /* Tien en niet acht (24 september 2026): een vaste leverdatum begint bij
    WINDOW_THRESHOLD producten, en een voorbeeld met acht producten en een
-   venster sprak de rest van de site tegen. De uitkomst is dezelfde: 7 – 10
-   augustus (vrijdag en maandag, het weekend is dicht). */
+   venster sprak de rest van de site tegen. Sinds 14 oktober 2026 (de studio
+   werkt ook in het weekend, Lucas) is de uitkomst 7 – 8 augustus. */
 export const DEMO_SMALL_PRODUCTS = 10;
 
 /**
@@ -88,7 +88,7 @@ export const DEMO_SMALL_PRODUCTS = 10;
  * De eenheid is het beeld sinds de agenda gedeeld is — zie de noot bij
  * PUNTEN_PER_DAG in capacity.js. De getallen staan hier als "producten maal
  * PUNTEN_PER_PRODUCT" en niet uitgerekend, zodat de bedoeling leesbaar blijft:
- * acht complete producten op maandag, en niet zesenvijftig losse punten.
+ * acht producten op maandag, en niet tweeëndertig losse punten.
  *
  * Deze cijfers zijn met opzet zo gekozen dat de poort er iets INTERESSANTS mee
  * doet, en niet zo dat alles kan:
@@ -98,7 +98,7 @@ export const DEMO_SMALL_PRODUCTS = 10;
  *     (zie LEAD_DAYS) valt de 5e binnen de brieftijd, en dan toont de figuur
  *     "te vroeg" en niet "vol". Een figuur die zijn eigen interessantste
  *     toestand kwijtraakt, laat dat niet zien — de test wel.
- *   · donderdag 6 en vrijdag 7 hebben ruimte, maar niet genoeg voor de grote
+ *   · vrijdag 7 heeft ruimte, maar niet genoeg voor de grote
  *     bestelling: die vraagt de helft van haar punten op ELKE dag van het
  *     venster, dus twee dagen die vrij genoeg zijn. Dat is de pessimistische
  *     lezing die windowFits() aanhoudt, en het is de reden dat een grote
@@ -128,11 +128,18 @@ export const DEMO_BOOKED = {
      dat nu met de constante zelf. */
   '2026-08-05': ATTENDED_PUNTEN_PER_DAG,
   '2026-08-06': 6 * PUNTEN_PER_PRODUCT,
-  '2026-08-07': 2 * PUNTEN_PER_PRODUCT,
-  /* Zaterdag en zondag staan in DEMO_BLACKOUTS: de demo laat een studio zien
-     die het weekend dichtzet. Bezetting erop zou suggereren dat er gewerkt wordt
-     op een dag die de figuur als gesloten tekent. */
-  '2026-08-08': 0,
+  /* Twaalf en niet twee sinds 14 oktober 2026: een product weegt nu vier punten
+     in plaats van zeven, dus met twee bezette producten paste de grote bestelling
+     hier opeens wél, en was het verhaal van de figuur weg. Twaalf laat 32 punten
+     vrij: genoeg voor de helft van de kleine bestelling (20), niet voor de helft
+     van de grote (40). */
+  '2026-08-07': 12 * PUNTEN_PER_PRODUCT,
+  /* HET WEEKEND IS OPEN — 14 oktober 2026. Lucas: *"studio is gewoon op
+     zaterdag 8 en 9 open. In het weekend wordt gewoon doorgewerkt."* Hier
+     stonden de twee dagen dichtgezet. Zaterdag heeft nu werk: veertien laat er
+     zes vrij, genoeg voor de helft van de kleine bestelling (5), niet voor die
+     van de grote (10). Zondag is vrij en de eerste dag van het grote venster. */
+  '2026-08-08': 14 * PUNTEN_PER_PRODUCT,
   '2026-08-09': 0,
   '2026-08-10': 0,
   '2026-08-11': 0,
@@ -151,7 +158,10 @@ export const DEMO_BOOKED = {
  * verzameling mee — anders biedt de poort een dag aan die de tabel als gesloten
  * tekent, en dat is precies het soort verschil waar deze figuur tegen bedoeld is.
  */
-export const DEMO_BLACKOUTS = new Set(['2026-08-08', '2026-08-09']);
+/* Leeg sinds 14 oktober 2026: de studio werkt ook op zaterdag en zondag. De
+   figuur kan een dichte dag nog wel tekenen ("Dicht", zie FigGate), voor het
+   geval Lucas een dag dichtzet. */
+export const DEMO_BLACKOUTS = new Set();
 
 /** De twaalf dagen die de figuur toont: maandag 3 t/m vrijdag 14 augustus. */
 export const DEMO_DAYS = Object.keys(DEMO_BOOKED);
@@ -208,7 +218,7 @@ export function demoWindow(products) {
   const [first] = offerableWindows({
     today: DEMO_TODAY,
     products,
-    service: 'complete',
+    service: 'catalog',
     booked: DEMO_BOOKED,
     blackouts: DEMO_BLACKOUTS,
     limit: 1,

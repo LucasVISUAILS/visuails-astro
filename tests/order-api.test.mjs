@@ -172,8 +172,10 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
   const db = ({ insertThrows = false, samplesPaid = 0, samplesUnpaid = 0, readThrows = false, samplePeople = [], posterEmail = '', posterPhone = null } = {}) => {
     let stored = false;
     const inserted = [];
+    const orderBinds = [];
     return {
       _inserted: inserted,
+      _orderBinds: orderBinds,
       prepare(sql) {
         const st = {
           _a: [],
@@ -184,6 +186,7 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
           async run() {
             if (sql.includes('INSERT INTO orders')) {
               inserted.push('orders');
+              orderBinds.push(st._a);
               if (insertThrows) throw new Error('D1_ERROR: database is locked');
               stored = true;
             }
@@ -237,8 +240,11 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
        hij weet wie er post. Vóór 11 aug 2026 gaf hij een telling terug en deed de
        identiteit er niet toe; nu vergelijkt de controle echte adressen. */
     lastDb = db({ ...(opts || {}), posterEmail: fields.email, posterPhone: fields.phone });
+    const verzoek = new Request('https://visuails.com/api/order', { method: 'POST', body: fd });
+    /* Het land van het ip, zoals Cloudflare het op request.cf zet (o16, 8 okt 2026). */
+    if (opts?.ipLand) Object.defineProperty(verzoek, 'cf', { value: { country: opts.ipLand } });
     const res = await onRequestPost({
-      request: new Request('https://visuails.com/api/order', { method: 'POST', body: fd }),
+      request: verzoek,
       env: {
         DB: lastDb,
         // Vorm-gecontroleerd door src/lib/mollie.js: een korte sleutel wordt daar
@@ -260,6 +266,12 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
       status: res?.status ?? 0,
       location: res?.headers?.get?.('Location') || kassa,
       ordersWritten: lastDb._inserted.length,
+      /* details_json van de geschreven bestelling, als object (8 oktober 2026). */
+      details: (() => {
+        const binds = lastDb._orderBinds[0] || [];
+        const tekst = binds.find((v) => typeof v === 'string' && v.startsWith('{') && v.includes('"'));
+        try { return tekst ? JSON.parse(tekst) : null; } catch { return null; }
+      })(),
       payments: seen.filter((c) => c.url.includes('mollie')).length,
       /* Het BEDRAG dat Mollie te zien krijgt, als getal. Dit stond er niet, en
          daardoor kon een telfout in de opties (zie de hoeken hieronder) langs
@@ -297,8 +309,12 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
      `service=contact`. Zonder dit veld meet elke test hieronder de weigering in
      plaats van wat hij denkt te meten; dat is precies wat er gebeurde toen de
      eis erin ging, en het is de bedoeling dat het opvalt. */
+  /* `catalog` en niet meer `drop` (8 oktober 2026, punt 9.01): /api/order weigert
+     catalog + lifestyle in één bestelling sinds die niet meer verkocht wordt. Alles
+     wat dit blok meet — betaling, datumstap, btw-poort, hoeken — geldt voor elke
+     dienst op de ladder. */
   const base = {
-    service: 'drop', email: 'klant@merk.nl', name: 'Jan Jansen',
+    service: 'catalog', email: 'klant@merk.nl', name: 'Jan Jansen',
     brand: 'Merk', products: '12', country: 'NL', back: '/thank-you',
     phone: '+31 6 12345678',
     business_declaration: 'yes', business_version: 'business-v1-2026-08',
@@ -318,10 +334,30 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
   ok('  een gedateerde bestelling zónder datum landt op de bedankpagina, met de link', /thank-you\?ref=VIS-.*&pay=/.test(healthy.location), true, healthy.location);
   const klein = await post({ ...base, products: '5' });
   ok('  een bestelling onder de datumdrempel gaat direct naar de Mollie-checkout', klein.location, 'https://pay.mollie.test/tr_TEST');
+  /* ── WAT DE SERVER INVULT, KAN NIET UIT HET FORMULIER KOMEN — 8 oktober 2026 ──
+     `tegoed_cents` met de hand meegepost viel tot vandaag in details_json, en
+     /api/order-pay trok dat bedrag van de rekening af. Elk veld in
+     SERVER_DETAIL_KEYS hoort de server te zijn. */
+  const gesleuteld = await post({ ...base, products: '5', tegoed_cents: '999999', own_style_id: '7', style_name: 'Nep', uploads: '40', business_ok: 'true' });
+  ok('een gepost tegoed_cents komt niet in de bestelling', gesleuteld.details && !('tegoed_cents' in gesleuteld.details), true, gesleuteld.details);
+  ok('  own_style_id en style_name ook niet', gesleuteld.details && !('own_style_id' in gesleuteld.details) && !('style_name' in gesleuteld.details), true, gesleuteld.details);
+  ok('  uploads ook niet zonder geüploade bestanden', gesleuteld.details && !('uploads' in gesleuteld.details), true, gesleuteld.details);
+  ok('  business_ok is wat de server besloot, niet "true"', gesleuteld.details?.business_ok !== 'true', true, gesleuteld.details?.business_ok);
+  ok('  en het bedrag is dat van een gewone bestelling', gesleuteld.amount, klein.amount);
   const buitenEu = await post({ ...base, country: 'US', email: 'us@merk.com' });
   /* Sinds 29 september 2026: buiten de EU meteen betalen (0%, zonder iDEAL);
      de controle zit op het betaalmiddel ná de betaling. */
   ok('een niet-EU-bestelling krijgt meteen een betaling', buitenEu.payments, 1);
+  /* ── MAAR NIET VANAF EEN IP IN DE EU — 8 oktober 2026 (o16) ──────────────────
+     Lucas koos "met een EU-IP eerst laten nakijken": dan geen betaling, wel de
+     bestaande route via de btw-lijst (de bedankpagina met nakijk=1). */
+  const vanuitNl = await post({ ...base, products: '5', country: 'US', email: 'us2@merk.com' }, { ipLand: 'NL' });
+  ok('  niet-EU-land met een NL-ip: geen betaling', vanuitNl.payments, 0);
+  ok('  maar de bedankpagina met "eerst nakijken"', /thank-you\?ref=VIS-.*&nakijk=1/.test(vanuitNl.location), true, vanuitNl.location);
+  const vanuitUs = await post({ ...base, products: '5', country: 'US', email: 'us3@merk.com' }, { ipLand: 'US' });
+  ok('  met een ip in de VS gewoon meteen naar Mollie', vanuitUs.payments, 1);
+  const nlVanuitNl = await post({ ...base, products: '5' }, { ipLand: 'NL' });
+  ok('  en een Nederlandse bestelling vanaf een NL-ip ook', nlVanuitNl.payments, 1);
 
   /*
    * ── DE HOEKEN TELLEN ALLEEN ALS ZE AANGEVINKT ZIJN — 9 september 2026 ──────
@@ -338,7 +374,7 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
    * betaling uit, dus elke proef die alleen `payments` telt bleef groen.
    */
   const zonderHoeken = await post(base);
-  const netto = quoteOrder({ service: 'drop', products: 12 });
+  const netto = quoteOrder({ service: 'catalog', products: 12 });
   ok('zonder aangevinkte hoek kost een bestelling het gewone bedrag',
     zonderHoeken.amount, Number((netto.grossCents / 100).toFixed(2)));
 
@@ -349,7 +385,7 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
      beweerde — en dat is precies het soort stille misrekening dat deze test
      hoort te vangen. Nu twee ids die er allebei zijn. */
   const tweeHoeken = await post({ ...base, 'angle_flat-lay': '1', 'angle_inside': '1' });
-  const metHoeken = quoteOrder({ service: 'drop', products: 12, extras: 2 * 12 });
+  const metHoeken = quoteOrder({ service: 'catalog', products: 12, extras: 2 * 12 });
   ok('twee hoeken zijn twee foto’s per product, niet twee in totaal',
     tweeHoeken.amount, Number((metHoeken.grossCents / 100).toFixed(2)));
   ok('en dat is het verschil van 24 extra foto’s',
@@ -594,7 +630,7 @@ console.log('\nen de bezoeker krijgt te zien waarom');
   /* Eén component sinds 7 september 2026 — zie de kop van TestSamplePage.astro.
      De twee talen komen uit dezelfde bron, dus de blokken worden hier één keer
      gecontroleerd en niet twee keer op hetzelfde bestand. */
-  const tsComp = read('../src/components/TestSamplePage.astro');
+  const tsComp = read('../src/components/TestSampleHal.astro');
   const pages = { component: tsComp };
 
   ok('de server stuurt error=sample-used mee', api.includes("'error=sample-used'"));
@@ -692,7 +728,7 @@ console.log('\nen er is een ratelimiet op de bestelroute');
        Deze sectie gaat over de snelheidslimiet en niet over de uitsluiting, dus
        moet elke bestelling hier wél door de zakelijke poort komen; anders meet
        "geen betaling" straks het verkeerde ding. */
-    const all = { service: 'drop', email: 'klant@merk.nl', name: 'Jan Jansen',
+    const all = { service: 'catalog', email: 'klant@merk.nl', name: 'Jan Jansen',
       brand: 'Merk', products: '12', country: 'NL', back: '/thank-you',
       phone: '+31 6 12345678',
       business_declaration: 'yes', business_version: 'business-v1-2026-08',

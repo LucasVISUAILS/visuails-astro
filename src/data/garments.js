@@ -238,29 +238,12 @@ export function cropFor(id) {
   return CROPS[garment(id).crop] || CROPS.full;
 }
 
-/**
- * Staat er een gezicht in beeld?
- *
- * DIT IS DE HELE MODELVRAAG. Is het antwoord nee, dan is een keuze uit de tien
- * gezichten van de roster een keuze die de klant in zijn beeld niet terugziet — en
- * een vraag stellen waarvan het antwoord onzichtbaar is, is het soort vraag dat
- * deze codebase elders weigert te stellen (zie de noot bij een hex-code in
- * attributes.js: gemeten dat het antwoord het resultaat niet raakt, dus niet
- * gevraagd).
- */
-export function faceInFrame(id) {
-  return cropFor(id).face === true;
-}
-
-/**
- * Welke modelvraag hoort bij dit type: de volledige roster, of alleen man/vrouw.
- *
- * Twee waarden en geen boolean, want er komt een dag dat er een derde is
- * (bijvoorbeeld "geen model") en dan is een boolean een verbouwing.
- */
-export function modelQuestion(id) {
-  return faceInFrame(id) ? 'roster' : 'presenting';
-}
+/* ── faceInFrame() EN modelQuestion() ZIJN WEG — 8 oktober 2026 (punt 9.01, §17.20) ──
+ * Ze beslisten of de klant bij een type zonder gezicht in beeld (broek, schoen)
+ * alleen man/vrouw kiest in plaats van een gezicht uit de roster. Niets riep ze
+ * aan: het formulier toont bij elk type de hele modelkeuze. Lucas koos "weg"
+ * boven "nog te bouwen". Of een uitsnede een gezicht toont, staat nog gewoon in
+ * CROPS (`face`), voor wie die vraag ooit wél bouwt. */
 
 /**
  * De plekken die de klant bij dit type mag vullen, in beeldvolgorde.

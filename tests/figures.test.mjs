@@ -89,7 +89,7 @@ console.log('\nde poort en de tekening geven hetzelfde antwoord');
   const gate = offerableWindows({
     today: DEMO_TODAY,
     products: DEMO_ORDER.products,
-    service: 'complete',
+    service: 'catalog',
     booked: DEMO_BOOKED,
     blackouts: DEMO_BLACKOUTS,
     limit: 1,
@@ -106,8 +106,10 @@ console.log('\nde poort en de tekening geven hetzelfde antwoord');
   check('en markeert precies die dagen', offered, gate.days);
 
   // Het label dat de bezoeker leest.
-  check('het label leest als één venster', windowLabel(gate, 'nl'), '10 – 11 aug');
-  check('en in het Engels', windowLabel(gate, 'en'), '10 – 11 Aug');
+  /* 9 – 10 sinds 14 oktober 2026: het weekend is open (Lucas) en zaterdag 8 heeft
+     werk, dus de grote bestelling begint op zondag. */
+  check('het label leest als één venster', windowLabel(gate, 'nl'), '9 – 10 aug');
+  check('en in het Engels', windowLabel(gate, 'en'), '9 – 10 Aug');
 }
 
 /* ══ 2 · DE GEWEIGERDE DAG IS ECHT GEWEIGERD ═════════════════════════════════
@@ -183,18 +185,17 @@ console.log('\nkleiner is eerder, en dat is geen toeval');
   check('de kleinere bestelling krijgt ook een venster', Boolean(small), true);
   check('en dat venster ligt eerder', small.start < big.start, true);
   /* Schuift mee met LEAD_DAYS: de kleine bestelling opende op 6 augustus en
-     opent sinds de aanloop van drie dagen op vrijdag de 7e. Zaterdag en zondag
-     staan in DEMO_BLACKOUTS (de demo toont een studio die het weekend
-     dichtzet), dus de tweede dag van het venster wordt maandag de 10e. Dat is
-     precies de "achter elkaar in de AGENDA en niet in de kalender"-regel uit
-     windowFor(), hier voor het eerst zichtbaar in een label. */
-  check('het kleine label', windowLabel(small, 'nl'), '7 – 10 aug');
+     opent sinds de aanloop van drie dagen op vrijdag de 7e. Sinds 14 oktober
+     2026 is het weekend open (de studio werkt door), dus de tweede dag is
+     zaterdag de 8e. */
+  check('het kleine label', windowLabel(small, 'nl'), '7 – 8 aug');
+  check('het weekend is open in de demo', DEMO_BLACKOUTS.size, 0);
 
   // En de vergelijking is alleen eerlijk als het écht dezelfde agenda is: zelfde
   // dag, zelfde boeking, alleen een ander aantal producten.
   check('zelfde agenda, alleen een ander aantal',
     JSON.stringify(small),
-    JSON.stringify(offerableWindows({ today: DEMO_TODAY, products: DEMO_SMALL_PRODUCTS, service: 'complete', booked: DEMO_BOOKED, blackouts: DEMO_BLACKOUTS, limit: 1 })[0]));
+    JSON.stringify(offerableWindows({ today: DEMO_TODAY, products: DEMO_SMALL_PRODUCTS, service: 'catalog', booked: DEMO_BOOKED, blackouts: DEMO_BLACKOUTS, limit: 1 })[0]));
 }
 
 /* ══ 4 · DE FIXTURE ZELF IS GELDIG ══════════════════════════════════════════ */
@@ -304,16 +305,25 @@ console.log('\nvier figuren, één bron');
     check(`${f} noemt geen capaciteit per week`, /(per week|per_week|calWeeks)/i.test(code), false);
   }
 
-  /* /studio noemt de cijfers, en leest ze uit capacity.js in plaats van ze te
-     herhalen. Hier stond "a week has room for a number of products". */
-  const page = codeOnly(read('src/components/StudioPage.astro'));
-  check('StudioPage leest de constanten', /from '\.\.\/data\/capacity\.js'/.test(page), true);
-  check('en tekent de figuren', /<FigGate lang=\{lang\} \/>/.test(page) && /<FigBoard lang=\{lang\} \/>/.test(page), true);
-  /* De schermafdruk die er niet was. Op deze plek stond een <Placeholder> met de
-     opdracht "Schermafdruk van VISUAILS Studio"; sinds 8 september staat daar een
-     getekend scherm. Als die regel ooit weer verdwijnt, hoort de plaatshouder
-     terug te komen en niet de lege plek. */
-  check('en het klantoverzicht', /<FigOverzicht lang=\{lang\} \/>/.test(page), true);
+  /* De planning noemt de cijfers, en leest ze uit capacity.js in plaats van ze
+     te herhalen. Hier stond "a week has room for a number of products".
+
+     ── SINDS 8 OKTOBER 2026 (1.11) IS DE PLANNING EEN BLOK ─────────────────
+     Ze stond op /studio (StudioPage.astro); /studio is nu de pagina over
+     VISUAILS Studio en de planning een blok op /how-it-works
+     (PlanningBlok.astro). Het blok tekent alleen nog de poort: FigBoard (ons
+     bestelbord) en FigOverzicht (het klantoverzicht) gingen niet mee — zie de
+     kop van PlanningBlok.astro. Hun bestanden blijven staan en blijven in de
+     lus hierboven, zodat ze niet stil uit de pas lopen als ze terugkomen.
+
+     ── SINDS 13 OKTOBER 2026 STAAT HET BLOK IN DE HAL ──────────────────────
+     /how-it-works is HowItWorksHal.astro (afvinklijst 11); de planning is daar een
+     eigen deel met dezelfde regels en dezelfde poort. PlanningBlok.astro en
+     HowItWorksPage.astro staan op de opruimlijst, dus deze toets leest de hal. */
+  const page = codeOnly(read('src/components/HowItWorksHal.astro'));
+  check('de planning leest de constanten', /from '\.\.\/data\/capacity\.js'/.test(page), true);
+  check('en tekent de poort', /<FigGate lang=\{lang\}( uitleg)? \/>/.test(page), true);
+  check('en /how-it-works toont de planning', /<HowItWorksHal lang="en" \/>/.test(read('src/pages/how-it-works.astro')) && /id="planning"/.test(page), true);
   check('de grijze vlakken zijn weg', /class="ph"/.test(page), false);
   // Geen hardgecodeerd 18 / 15 / 3 in de tekst: dat is precies hoe /pricing en
   // /studio ooit twee verschillende plafonds gingen noemen.

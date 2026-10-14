@@ -65,7 +65,7 @@ console.log('elk formulier dat een klant maakt, vraagt om een nummer');
 /* ══ 2 · EN /contact IS DE UITZONDERING ═══════════════════════════════════ */
 console.log('\nen op /contact is alleen het mailadres verplicht');
 {
-  const bron = lees('src/components/ContactPage.astro');
+  const bron = lees('src/components/ContactHal.astro');
   const mail = bron.match(/<input[^>]*name="email"[^>]*>/);
   const tel = bron.match(/<input[^>]*name="phone"[^>]*>/);
   ok('het mailadres is verplicht', !!mail && /\brequired\b/.test(mail[0]));
@@ -155,7 +155,7 @@ console.log('\nde contactvoorkeur heet overal hetzelfde');
   /* Eén veldnaam over de hele site. Twee namen voor hetzelfde antwoord is één
      plek waar de studio op de verkeerde vergelijkt — en /contact had er tot
      vandaag een eigen (`preferred`). */
-  for (const pad of ['src/components/ContactPage.astro', 'src/components/order/OrderFlow.astro',
+  for (const pad of ['src/components/ContactHal.astro', 'src/components/order/OrderFlow.astro',
                      'src/components/order/PlanPicker.astro']) {
     const bron = lees(pad);
     ok(`${pad.split('/').pop()}: post contact_preference`,

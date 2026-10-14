@@ -1,10 +1,14 @@
 ---
+// ── IN DE HAL — 13 oktober 2026 (afvinklijst 19, alles doen) ──────────────────────────
+// De omhulling is JuridischHal.astro: de kop van de hal, een inhoud, en het document in rijen.
+// De tekst hieronder is dezelfde; alleen de s22-omhulling en haar <style> gingen eruit.
+import JuridischHal from '../../components/JuridischHal.astro';
 import Layout from '../../layouts/Layout.astro';
-import { UPLOAD_DAYS, DELIVERY_DAYS } from '../../lib/retention.js';
+import { UPLOAD_DAYS, DELIVERY_DAYS, ACCOUNT_YEARS } from '../../lib/retention.js';
+import { subverwerkers, lijstRegel, MELDTERMIJN_DAGEN } from '../../data/subverwerkers.js';
 // De datum stond hier uitgetypt, en nog negen keer elders. Zie de kop van
 // src/data/juridischeDatums.js: één bron, en een toets die hem tegen git houdt.
 import { bijgewerktOp } from '../../data/juridischeDatums.js';
-import '../../styles/stijl22.css';
 // VISUAILS — Verwerkersovereenkomst (art. 28 AVG). Nieuw op 12 augustus 2026.
 //
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -66,7 +70,7 @@ import '../../styles/stijl22.css';
 //
 // ── DE TERMIJNEN KOMEN UIT retention.js ─────────────────────────────────────
 //
-// 90 dagen en 12 maanden staan hier niet ingetypt. Ze komen uit dezelfde module
+// De dagen en jaren staan hier niet ingetypt. Ze komen uit dezelfde module
 // die de nachtelijke opruimtaak gebruikt, zodat een contractuele belofte en de
 // code die hem uitvoert niet uit elkaar kunnen lopen. Dezelfde afspraak als §7
 // van de voorwaarden en §6 van het privacybeleid.
@@ -80,71 +84,28 @@ import '../../styles/stijl22.css';
 // subverwerkers; de zin "nog niet door een jurist beoordeeld" is op Lucas' verzoek
 // weg — hij leest hem zelf na. Twee dingen blijven een keuze en geen verplichting:
 // de onbeperkte aansprakelijkheid in §13 en de archieftermijn in §12.
-const SUBS = [
-  {
-    naam: 'Magnific AI, S.L.U.',
-    waar: 'Málaga, Spanje (EU); voorheen Freepik Company, S.L.U.',
-    waarvoor: 'het genereren van de visuals uit jouw materiaal (zie hieronder over de modelaanbieders)',
-    grond: 'binnen de EU; voor modelaanbieders buiten de EER sluit Magnific standaardcontractbepalingen',
-  },
-  /* "Met opslag in de EU" stond hier, en dat is niet gegarandeerd: R2 en D1
-     staan niet in een EU-jurisdictie (wrangler.toml), en een locatiehint is
-     volgens Cloudflare "best effort" (29 september 2026). */
-  {
-    naam: 'Cloudflare, Inc.',
-    waar: 'Verenigde Staten (wereldwijd netwerk)',
-    waarvoor: 'opslag van het aangeleverde materiaal en de geleverde beelden, en het draaien van de site',
-    grond: 'EU-VS Data Privacy Framework (gecertificeerd); standaardcontractbepalingen als terugval',
-  },
-  {
-    naam: 'Plus Five Five, Inc. (Resend)',
-    waar: 'San Francisco, Verenigde Staten',
-    waarvoor: 'e-mail; de bestelmelding aan de studio draagt het aangeleverde materiaal als bijlage. Resend bewaart verzonden mail 30 dagen',
-    grond: 'EU-VS Data Privacy Framework (gecertificeerd); standaardcontractbepalingen als terugval',
-  },
-  /* De mailbox waarin die bestelmelding binnenkomt, ontvangt het materiaal ook —
-     en ontbrak (29 september 2026). */
-  {
-    naam: 'Google Ireland Ltd. (Google Workspace)',
-    waar: 'Dublin, Ierland (EU); Google LLC in de Verenigde Staten',
-    waarvoor: 'de mailbox hello@visuails.com, waarin de bestelmelding met het aangeleverde materiaal binnenkomt',
-    grond: 'EU-VS Data Privacy Framework (gecertificeerd); standaardcontractbepalingen als terugval',
-  },
-];
+/* ── DE LIJST KOMT UIT src/data/subverwerkers.js — 8 oktober 2026 (o08, o09) ──
+   Hier stond een eigen array met vier partijen; het privacybeleid had een tweede
+   lijst en het register een derde. Nu leest alles één bron, met WhatsApp (Meta)
+   en de makers van de modellen erbij.
+
+   DE MAKERS WEL, DE MODELLEN NIET. Op 12 augustus besloot Lucas geen modellen
+   te publiceren (zie "WAT ER MET OPZET NIET IN STAAT" hierboven). Op 8 oktober
+   koos hij ervoor de AI-leverancier wél te noemen. Het compromis: de partijen
+   die persoonsgegevens ontvangen staan erin (het platform en de maker van het
+   model), zijn werkwijze niet. Welk model van een maker hij gebruikt, blijft
+   zijn zaak; een nieuwe MAKER valt onder de melding vooraf van §8, want die
+   keuze maakt VISUAILS zelf. */
+const SUBS = subverwerkers('nl');
 ---
 
-<Layout
+<Layout huid="hal"
   title="Verwerkersovereenkomst — VISUAILS"
   description="De verwerkersovereenkomst van VISUAILS volgens artikel 28 AVG: wat wij met jouw beeldmateriaal doen, wie het ontvangt en hoe lang wij het bewaren."
 >
-{/* ═══ EEN JURIDISCHE PAGINA IN DE STIJL VAN SECTIE 22 — 7 september 2026 ═══
-    De TEKST is woord voor woord onaangeraakt. Wat verandert is de omhulling:
-    één `.paneel` in plaats van drie secties, en de letters van sectie 22 op het
-    `.legal`-blok — dat blok zelf staat nog steeds in global.css en wordt hier
-    niet overgetypt. Zie `.s22.s22 .legal` in src/styles/stijl22.css; die zet de
-    letters voor alle zes juridische pagina's tegelijk.
+<JuridischHal lang="nl" doc="data-processing-agreement" rubriek="Juridisch" titel={'Verwerkers\u00ADovereenkomst'} datum={bijgewerktOp('data-processing-agreement', 'nl', 'artikel 28 AVG')}>
+<Fragment slot="lead">Staat er een persoon op het beeld dat je aanlevert, dan verwerken wij persoonsgegevens waarvoor jíj verantwoordelijk bent — en dan schrijft de AVG voor dat wij daar een overeenkomst over hebben. Dit is die overeenkomst.</Fragment>
 
-    ALLE VIJF TEGELIJK, en dat is geen keuze maar een eis van de toets.
-    tests/juridische-datums.test.mjs bewaakt deze documenten als GROEP: vijf
-    pagina's die er hetzelfde uit horen te zien en waar niets afgaat als er
-    eentje uit de pas loopt. Toen /ai-act als eerste overging, viel die toets om
-    met de naam van dat bestand erin — precies zoals bedoeld. Het antwoord
-    daarop is niet de toets versoepelen maar de andere vier meenemen.
-
-    GEEN SLOTPANEEL. De andere pagina's eindigen op een `.paneel-slot`; een
-    juridische pagina niet. Het accent wijst een keuze aan, en aan het eind van
-    een document valt niets te kiezen — er staat een adres waar je terecht kunt.
-    Een slotpaneel met knoppen eronder zou daar een aanbieding van maken. */}
-<div class="s22">
-  <section class="paneel">
-    <header class="paneel-kop jur-kop">
-      <p class="etiket">Juridisch</p>
-      <h1 class="hoog">Verwerkersovereenkomst</h1>
-      <p class="lopend jur-lead">Staat er een persoon op het beeld dat je aanlevert, dan verwerken wij persoonsgegevens waarvoor jíj verantwoordelijk bent — en dan schrijft de AVG voor dat wij daar een overeenkomst over hebben. Dit is die overeenkomst.</p>
-      <p class="legal-meta">{bijgewerktOp('data-processing-agreement', 'nl', 'artikel 28 AVG')}</p>
-    </header>
-
-    <div class="legal jur-tekst">
 
       <h2>1. Twee rollen, en het verschil doet ertoe</h2>
       <p>Bij één bestelling verwerken wij twee soorten gegevens, en de AVG geeft ons daarbij twee verschillende rollen. Dat klinkt als een formaliteit en is het niet: het bepaalt wie beslist, wie een datalek aan de toezichthouder meldt, en bij wie een betrokkene terechtkan.</p>
@@ -161,7 +122,7 @@ const SUBS = [
 
       <h2>3. Onderwerp, aard, doel en duur</h2>
       <p><strong>Onderwerp en doel.</strong> Het maken van productbeelden en video uit het materiaal dat jij aanlevert, en het leveren daarvan aan jou. Er is geen ander doel. Wij gebruiken jouw materiaal niet voor ons eigen portfolio, niet voor advertenties en niet om er iets van te leren, tenzij je ons daar per bestelling afzonderlijk en aantoonbaar toestemming voor geeft. Staat er een persoon op, dan zijn wij voor dat gebruik zelf verwerkingsverantwoordelijke en doen wij het alleen als die persoon daar zelf mee heeft ingestemd.</p>
-      <p><strong>Aard van de verwerking.</strong> Ontvangen, opslaan, doorgeven aan de subverwerkers in §8, bekijken en beoordelen door onze beeldredactie, en verwijderen. Er wordt niets geprofileerd en er wordt niets geautomatiseerd besloten.</p>
+      <p><strong>Aard van de verwerking.</strong> Ontvangen, opslaan, doorgeven aan de subverwerkers in §8, bekijken en beoordelen door VISUAILS, en verwijderen. Er wordt niets geprofileerd en er wordt niets geautomatiseerd besloten.</p>
       <p><strong>Duur.</strong> Deze overeenkomst begint bij je eerste bestelling en eindigt zodra het laatste gegeven waarop zij betrekking heeft is verwijderd — zie §12. Zij eindigt dus later dan de opdracht zelf, en dat is de bedoeling.</p>
 
       <h2>4. Soort persoonsgegevens en categorieën betrokkenen</h2>
@@ -175,7 +136,14 @@ const SUBS = [
       <p>Denken wij dat een instructie van jou in strijd is met de AVG of met andere Unie- of Nederlandse regels over gegevensbescherming, dan zeggen wij dat onmiddellijk en voeren wij hem niet uit voordat het is opgehelderd. Dat is geen dienstweigering maar art. 28 lid 3, laatste alinea.</p>
 
       <h2>6. Geheimhouding</h2>
-      <p>VISUAILS is een eenmanszaak. In de praktijk betekent dat: er is één persoon met toegang, en dat is Lucas Snuverink. Schakelen wij ooit iemand in — een vaste medewerker, een freelancer voor de nabewerking — dan gebeurt dat pas nadat die persoon zich schriftelijk tot geheimhouding heeft verbonden, en die verbintenis loopt door na het einde van de samenwerking. Een freelancer is bovendien een subverwerker: die komt eerst in de lijst van §8, met de melding van 30 dagen vooraf. Wij houden de geheimhouding aan ook zonder dat je erom vraagt en ook zonder aparte NDA.</p>
+      {/* ── WIE ER TOEGANG HEEFT, NEUTRAAL EN JUIST — 8 oktober 2026 (o10) ──────
+          Hier stond "één persoon met toegang, en dat is Lucas Snuverink", terwijl de
+          rest van de site "onze beeldredactie" zei. Lucas' besluit van 8 oktober
+          vervangt dat van 3 oktober: geen meervoud dat een team suggereert, geen
+          ik-vorm, en hier de kring zoals art. 28 lid 3 sub b AVG hem vraagt —
+          wie onder verantwoordelijkheid van VISUAILS werkt en aan geheimhouding
+          gebonden is. Dat klopt vandaag en blijft kloppen als er iemand bij komt. */}
+      <p>Alleen personen die onder verantwoordelijkheid van VISUAILS werken en aan geheimhouding gebonden zijn, hebben toegang tot het materiaal, en alleen voor zover de bestelling dat vraagt. Schakelen wij iemand in — een vaste medewerker, een freelancer voor de nabewerking — dan krijgt die persoon pas toegang nadat hij zich schriftelijk tot geheimhouding heeft verbonden, en die verbintenis loopt door na het einde van de samenwerking. Een freelancer is bovendien een subverwerker: die komt eerst in de lijst van §8, met de melding van {MELDTERMIJN_DAGEN} dagen vooraf. Wij houden de geheimhouding aan ook zonder dat je erom vraagt en ook zonder aparte NDA.</p>
 
       <h2>7. Beveiliging</h2>
       <p>Hieronder staat wat er werkelijk is, en niets meer. Wij zijn niet ISO-gecertificeerd, er is geen pentest uitgevoerd en er is geen managementsysteem voor informatiebeveiliging. Een beveiligingsparagraaf die meer belooft dan er staat, is de paragraaf die bij een incident tegen ons wordt gebruikt.</p>
@@ -187,32 +155,36 @@ const SUBS = [
         <li><strong>Snelheidslimieten</strong> op het bestellen, het uploaden, het inloggen en het opvragen van bestanden, zodat een script niet ongelimiteerd kan proberen.</li>
         <li><strong>Geen ruwe ip-adressen.</strong> Waar wij verkeer moeten tellen, bewaren wij een gezouten hash en niet het adres zelf.</li>
         <li><strong>De bewaartermijnen worden uitgevoerd en niet alleen beloofd.</strong> Een taak verwijdert elke nacht wat verlopen is, uit de opslag én uit de database, en legt op de tijdlijn van de bestelling vast wat er weg is. Dat is het verschil tussen een termijn in een document en een termijn in de werkelijkheid.</li>
-        <li><strong>Een wekelijkse kopie van de database</strong> op een schijf die wij zelf beheren, zodat verlies van het platform geen verlies van jouw bestelling betekent. Die kopie bevat persoonsgegevens. Hij gaat niet naar een clouddienst, staat niet in een gedeelde map en niet in de versiebeheergeschiedenis van de broncode. Een taak controleert elke nacht of die kopie niet ouder is dan tien dagen en waarschuwt ons als dat wel zo is — een back-up waarvan niemand merkt dat hij is gestopt, is geen back-up.</li>
+        {/* 8 oktober 2026 (9.04): de kopie gaat naar Google Drive (Lucas koos V6 = c),
+            dus de oude zin dat de kopie in geen enkele clouddienst stond, klopte niet meer. Google Workspace
+            stond al in §8; de omschrijving daar noemt Drive nu ook. */}
+        <li><strong>Een wekelijkse kopie van de database</strong> in onze eigen Google Drive (Google Workspace, zie de lijst in §8), zodat verlies van het platform geen verlies van jouw bestelling betekent. Die kopie bevat persoonsgegevens, maar geen wachtwoorden, inlogcodes of sessies: die laten wij er bewust uit. Hij staat niet in een gedeelde map en niet in de versiebeheergeschiedenis van de broncode, en na elke kopie controleren wij of hij terug te lezen is. Een taak controleert elke nacht of die kopie niet ouder is dan tien dagen en waarschuwt ons als dat wel zo is — een back-up waarvan niemand merkt dat hij is gestopt, is geen back-up.</li>
       </ul>
       <p>Wij beoordelen deze maatregelen opnieuw wanneer er iets wezenlijk verandert in wat wij verwerken, en in ieder geval één keer per jaar.</p>
 
       <h2>8. Subverwerkers</h2>
-      <p>Wij schakelen andere partijen in. Je geeft ons hierbij een <strong>algemene schriftelijke toestemming</strong> daarvoor, in de zin van art. 28 lid 2 AVG, onder drie voorwaarden: deze lijst is actueel, wij melden een toevoeging of vervanging <strong>minstens 30 dagen vooraf</strong> per e-mail, en je mag er in die periode bezwaar tegen maken. Doe je dat, dan zoeken wij een alternatief of mag je de opdracht kosteloos beëindigen voor het deel dat nog niet is uitgevoerd. De termijn van 30 dagen geldt voor partijen die wij zelf inschakelen; wijzigingen die een subverwerker ons in zijn eigen keten meldt, geven wij door zodra wij ze ontvangen.</p>
-      <p>Met elke partij hieronder hebben wij een verwerkersovereenkomst die dezelfde verplichtingen doorlegt die wij aan jou hebben (art. 28 lid 4). Wij blijven jegens jou aansprakelijk voor wat zij doen.</p>
+      <p>Wij schakelen andere partijen in. Je geeft ons hierbij een <strong>algemene schriftelijke toestemming</strong> daarvoor, in de zin van art. 28 lid 2 AVG, onder drie voorwaarden: deze lijst is actueel, wij melden een toevoeging of vervanging <strong>minstens {MELDTERMIJN_DAGEN} dagen vooraf</strong> per e-mail, en je mag er in die periode bezwaar tegen maken. Doe je dat, dan zoeken wij een alternatief of mag je de opdracht kosteloos beëindigen voor het deel dat nog niet is uitgevoerd. De termijn van {MELDTERMIJN_DAGEN} dagen geldt voor partijen die wij zelf inschakelen, en daar horen de makers bij van de modellen die wij op een platform gebruiken: welk model van welke maker wij gebruiken, kiezen wij zelf, dus een maker die nog niet in de lijst staat is een toevoeging zoals elke andere. Een nieuwer model van een maker die er al in staat, is geen wijziging. Wijzigingen die een subverwerker ons in zijn eigen keten meldt, geven wij door zodra wij ze ontvangen.</p>
+      <p>Met elke partij hieronder geldt een verwerkersovereenkomst die dezelfde verplichtingen doorlegt die wij aan jou hebben (art. 28 lid 4): rechtstreeks met ons, of bij een modelmaker via Magnific. Voor WhatsApp zijn dat de zakelijke voorwaarden en verwerkersvoorwaarden die WhatsApp voor elk bedrijf vastlegt dat het gebruikt, en die wij aanvaarden zoals ze zijn. Wij blijven jegens jou aansprakelijk voor wat zij doen.</p>
       {/* tabindex + role: zie de noot bij .fb-tblwrap in FigBoard.astro.
           Deze tabel schuift horizontaal en was zonder muis niet te lezen. */}
+      <p class="legal-meta" id="subverwerkers">{lijstRegel('nl')}</p>
       <div class="table-scroll" tabindex="0" role="region" aria-label="Subverwerkers">
       <table class="files">
         <thead><tr><th>Wie</th><th>Waar</th><th>Waarvoor</th><th>Grondslag doorgifte</th></tr></thead>
         <tbody>
           {SUBS.map((s) => (
             <tr>
-              <td data-label="Wie"><strong>{s.naam}</strong></td>
+              <td data-label="Wie"><strong>{s.naam}</strong>{s.viaNaam && <><br />via {s.viaNaam}</>}</td>
               <td data-label="Waar">{s.waar}</td>
-              <td data-label="Waarvoor">{s.waarvoor}</td>
+              <td data-label="Waarvoor">{s.wat}</td>
               <td data-label="Grondslag">{s.grond}</td>
             </tr>
           ))}
         </tbody>
       </table>
       </div>
-      <p><strong>Over het genereren zelf.</strong> Magnific biedt op zijn platform een groot aantal modellen aan van verschillende makers. Welke wij op een bepaald moment gebruiken, wisselt — wij werken met wat op dat moment het beste resultaat geeft, en dat is onderdeel van hoe wij ons werk doen. De aanbieder van het gekozen model verwerkt jouw beeld als subverwerker van Magnific en bewaart het volgens Magnific ten hoogste 30 dagen na het genereren; Magnific zelf verwijdert het aangeleverde beeld direct na het genereren. Staat die aanbieder buiten de EER in een land zonder adequaatheidsbesluit, dan sluit Magnific daarvoor standaardcontractbepalingen (art. 46 lid 2 sub c AVG). Op verzoek sturen wij je binnen vijf werkdagen de naam en vestigingsplaats van elke modelaanbieder die wij voor jouw bestellingen gebruiken. Magnific verklaart in zijn eigen voorwaarden uitdrukkelijk: <em>"Under no circumstances will we use your images or voices, or those of third parties that you upload to our platform, to train or improve our artificial intelligence models or those of third-party providers"</em>.</p>
-      <p><strong>De nabewerking gebeurt op onze eigen machine, en nooit op jouw foto’s.</strong> De foto’s die jij aanlevert worden niet geopend in Photoshop, DaVinci Resolve of andere bewerkingssoftware; ze worden alleen gebruikt om de beelden te laten genereren. Alleen de beelden die wij met jouw product maken, retoucheren en monteren wij, lokaal. Die programma’s sturen het bestand niet naar een clouddienst: het staat op de schijf, wordt daar bewerkt en gaat daar weer weg volgens de termijnen van §12. Adobe en Blackmagic Design staan daarom <strong>niet</strong> in de lijst hierboven — zij ontvangen jouw materiaal niet. Adobe schrijft over lokaal opgeslagen materiaal in zijn eigen voorwaarden: <em>"For Content stored locally on your device, we do not scan or review your Content."</em> Software die op onze machine draait verwerkt niets namens ons; een dienst die het bestand ontvangt doet dat wel. Dat onderscheid bepaalt wie er in de lijst hoort. Zouden wij ooit naar een clouddienst gaan voor de nabewerking — Adobe’s eigen cloudopslag daaronder begrepen — dan is dat een toevoeging aan die lijst, met de melding van 30 dagen vooraf die hierboven staat.</p>
+      <p><strong>Over het genereren zelf.</strong> Magnific biedt op zijn platform een groot aantal modellen aan van verschillende makers, en draait ze voor ons. Welke wij op een bepaald moment gebruiken, wisselt — wij werken met wat op dat moment het beste resultaat geeft, en dat is onderdeel van hoe wij ons werk doen. Daarom noemt de lijst de makers van wie wij modellen gebruiken, en niet de modellen: een nieuwer model van een maker uit de lijst verandert voor jou niets, een nieuwe maker melden wij vooraf zoals hierboven staat. De maker van het gekozen model verwerkt jouw beeld als subverwerker van Magnific en bewaart het volgens Magnific ten hoogste 30 dagen na het genereren; Magnific zelf verwijdert het aangeleverde beeld direct na het genereren. Staat een maker buiten de EER in een land zonder adequaatheidsbesluit, dan sluit Magnific daarvoor standaardcontractbepalingen (art. 46 lid 2 sub c AVG). Op verzoek laten wij je binnen vijf werkdagen weten welke van deze makers voor jouw bestellingen zijn gebruikt. Magnific verklaart in zijn eigen voorwaarden uitdrukkelijk: <em>"Under no circumstances will we use your images or voices, or those of third parties that you upload to our platform, to train or improve our artificial intelligence models or those of third-party providers"</em>.</p>
+      <p><strong>De nabewerking gebeurt op onze eigen machine, en nooit op jouw foto’s.</strong> De foto’s die jij aanlevert worden niet geopend in Photoshop, DaVinci Resolve of andere bewerkingssoftware; ze worden alleen gebruikt om de beelden te laten genereren. Alleen de beelden die wij met jouw product maken, retoucheren en monteren wij, lokaal. Die programma’s sturen het bestand niet naar een clouddienst: het staat op de schijf, wordt daar bewerkt en gaat daar weer weg volgens de termijnen van §12. Adobe en Blackmagic Design staan daarom <strong>niet</strong> in de lijst hierboven — zij ontvangen jouw materiaal niet. Adobe schrijft over lokaal opgeslagen materiaal in zijn eigen voorwaarden: <em>"For Content stored locally on your device, we do not scan or review your Content."</em> Software die op onze machine draait verwerkt niets namens ons; een dienst die het bestand ontvangt doet dat wel. Dat onderscheid bepaalt wie er in de lijst hoort. Zouden wij ooit naar een clouddienst gaan voor de nabewerking — Adobe’s eigen cloudopslag daaronder begrepen — dan is dat een toevoeging aan die lijst, met de melding van {MELDTERMIJN_DAGEN} dagen vooraf die hierboven staat.</p>
       <p><strong>Wat hier niet staat, en waarom.</strong> Onze betaalprovider en de partijen rond reviews staan niet in deze lijst. Zij raken jouw beeldmateriaal niet. Mollie verwerkt de betaalgegevens als eigen verwerkingsverantwoordelijke, en de reviewplatforms zien alleen wat je daar zelf publiceert. Die staan in het <a href="/nl/privacy/">privacybeleid</a>.</p>
 
       <h2>9. Rechten van betrokkenen</h2>
@@ -224,16 +196,16 @@ const SUBS = [
       <p>Wij helpen je verder met wat art. 32 tot en met 36 AVG van je vraagt, waaronder een gegevensbeschermingseffectbeoordeling als je die voor jouw gebruik nodig hebt.</p>
 
       <h2>11. Doorgifte buiten de Europese Economische Ruimte</h2>
-      <p>Ons contract voor het genereren is met een partij in Spanje; de modelaanbieder daarachter kan buiten de EER zitten (zie §8). Waar een subverwerker uit §8 buiten de EER is gevestigd, rust de doorgifte op het EU-VS Data Privacy Framework (art. 45 AVG), met standaardcontractbepalingen van de Europese Commissie (art. 46 lid 2 sub c AVG) als terugval mocht dat kader vervallen; bij de modelaanbieders van Magnific op die standaardcontractbepalingen. Wij geven persoonsgegevens niet door aan een land of partij buiten die lijst zonder je vooraf te informeren.</p>
-      <p>Eén ding dat wij eerlijker opschrijven dan gebruikelijk: bij het maken van de beelden wordt materiaal door onze beeldredactie vanuit onze omgeving in het gereedschap van de subverwerker geplaatst. Dat is dus geen automatische koppeling maar een handeling, en zij valt onder dezelfde afspraken als de rest van deze overeenkomst.</p>
+      <p>Ons contract voor het genereren is met een partij in Spanje; de modelmakers daarachter kunnen buiten de EER zitten (zie §8). Waar een subverwerker uit §8 buiten de EER is gevestigd, rust de doorgifte op het EU-VS Data Privacy Framework (art. 45 AVG), met standaardcontractbepalingen van de Europese Commissie (art. 46 lid 2 sub c AVG) als terugval mocht dat kader vervallen; bij de modelmakers met wie Magnific werkt op die standaardcontractbepalingen. Wij geven persoonsgegevens niet door aan een land of partij buiten die lijst zonder je vooraf te informeren.</p>
+      <p>Eén ding dat wij eerlijker opschrijven dan gebruikelijk: bij het maken van de beelden wordt materiaal met de hand vanuit onze omgeving in het gereedschap van de subverwerker geplaatst. Dat is dus geen automatische koppeling maar een handeling, en zij valt onder dezelfde afspraken als de rest van deze overeenkomst.</p>
 
       <h2>12. Teruggave en verwijdering</h2>
-      <p>De termijnen hieronder zijn dezelfde als in §7 van de <a href="/nl/terms/">voorwaarden</a> en §6 van het <a href="/nl/privacy/">privacybeleid</a>. Opslag en database worden door een nachtelijke taak opgeschoond. Kopieën in onze mailbox en op onze werkmachine, en wat wij op het platform van Magnific hebben gegenereerd, verwijderen wij binnen dezelfde termijn met de hand; Resend bewaart verzonden mail 30 dagen.</p>
+      <p>De termijnen hieronder zijn dezelfde als in §7 van de <a href="/nl/terms/">voorwaarden</a> en §6 van het <a href="/nl/privacy/">privacybeleid</a>. Opslag en database worden door een nachtelijke taak opgeschoond. Voor onze eigen kopieën, in onze mailbox en op onze werkmachine, gelden de termijnen hieronder; wat wij op het platform van Magnific hebben gegenereerd, verwijderen wij binnen dezelfde termijn met de hand; Resend bewaart verzonden mail 30 dagen.</p>
       <ul>
-        <li><strong>Het materiaal dat jij aanlevert:</strong> {UPLOAD_DAYS} dagen nadat je bestelling is afgesloten, daarna verwijderd.</li>
-        <li><strong>De beelden die wij leveren:</strong> {DELIVERY_DAYS} dagen in VISUAILS Studio, zodat je ze in die tijd opnieuw kunt ophalen. Een kopie kan daarna nog ten hoogste twaalf maanden in ons eigen archief staan, zonder garantie, en wordt dan verwijderd. Wil je dat niet, zeg het, dan verwijderen wij hem na {DELIVERY_DAYS} dagen.</li>
+        <li><strong>Het materiaal dat jij aanlevert:</strong> {UPLOAD_DAYS} dagen nadat je bestelling is afgesloten, daarna uit onze opslag verwijderd. Een eigen kopie van je productfoto’s en stijlreferenties bewaren wij zolang je klantaccount bestaat, tot {ACCOUNT_YEARS} jaar na je laatste bestelling, zodat een nieuwe bestelling dezelfde look houdt.</li>
+        <li><strong>De beelden die wij leveren:</strong> {DELIVERY_DAYS} dagen in VISUAILS Studio, zodat je ze in die tijd opnieuw kunt ophalen. Een kopie blijft zonder einddatum in ons eigen archief, om je look gelijk te houden en te verbeteren. Beelden waarop een echt, herkenbaar persoon staat — je eigen model, iemand op een draagfoto — bewaren wij alleen zolang je klantaccount bestaat.</li>
       </ul>
-      <p>Wil je het eerder weg, dan mail je ons en verwijderen wij het — tenzij een wettelijke bewaarplicht in de weg staat, en dan zeggen wij welke. Bij het einde van de overeenkomst verwijderen wij alles wat onder deze overeenkomst valt, inclusief kopieën, of geven wij het aan je terug als je dat liever hebt. Wat om die reden moet blijven staan, blijft alleen daarvoor staan en wordt niet meer gebruikt.</p>
+      <p>Wil je iets eerder weg — je materiaal, onze kopie ervan of de beelden in ons archief? Mail ons vanaf het adres van je account, dan verwijderen wij het; een reden hoef je niet te geven. Een nieuwe bestelling kan daarna wel anders uitvallen dan de eerdere look. Alleen een wettelijke bewaarplicht kan in de weg staan, en dan zeggen wij welke. Bij het einde van de overeenkomst verwijderen wij alles wat onder deze overeenkomst valt, inclusief kopieën, of geven wij het aan je terug als je dat liever hebt. Wat om die reden moet blijven staan, blijft alleen daarvoor staan en wordt niet meer gebruikt.</p>
       <p>De gegevens die wij als verwerkingsverantwoordelijke hebben — je factuur, je bedrijfsgegevens — vallen hier niet onder. Daarvoor geldt de fiscale bewaarplicht van zeven jaar; zie het <a href="/nl/privacy/">privacybeleid</a>.</p>
 
       <h2>13. Audit, aansprakelijkheid en slot</h2>
@@ -242,7 +214,7 @@ const SUBS = [
       <p><strong>Slot.</strong> Wijkt deze overeenkomst af van de algemene voorwaarden, dan gaat deze overeenkomst voor, maar alleen voor de verwerking van persoonsgegevens. Nederlands recht is van toepassing; de rechtbank Overijssel is bevoegd. Wijzigt de AVG of komt er dwingende regelgeving bij, dan passen wij deze tekst aan en melden wij dat langs dezelfde weg als een wijziging in §8.</p>
 
       <h2>14. Vragen</h2>
-      <p>Over deze overeenkomst, over een verzoek van een betrokkene of over een ondertekend exemplaar: <a href="mailto:hello@visuails.com">hello@visuails.com</a>. Eén persoon leest die mailbox, en dat is dezelfde persoon die de verwerking uitvoert.</p>
+      <p>Over deze overeenkomst, over een verzoek van een betrokkene of over een ondertekend exemplaar: <a href="mailto:hello@visuails.com">hello@visuails.com</a>. Die mailbox wordt gelezen waar de verwerking gebeurt, zonder helpdesk ertussen.</p>
 
       {/* ── DEZELFDE SOORT NOOT ALS OP /ai-act, DUS DEZELFDE VORM — 3 sept 2026 ──
           Dit stond hier als `.legal-meta` met een handgezette marge van 2,4rem: de
@@ -252,21 +224,6 @@ const SUBS = [
           gewicht ervan is. En de marge komt nu uit de klasse in plaats van uit dit
           bestand. */}
       <p class="legal-note">Deze pagina is opgesteld aan de hand van artikel 28 AVG en dekt de onderdelen van lid 3 sub a tot en met h. Voor jouw eigen situatie — zeker als je zelf in een keten met meerdere verantwoordelijken zit — laat je dit door je eigen adviseur nakijken.</p>
-    </div>
-  </section>
-</div>
+    
+</JuridischHal>
 </Layout>
-
-<style>
-  /* Een juridisch document leest in één kolom. 46rem is ongeveer 75 tekens in
-     deze letter — de bovengrens uit de leesbaarheidsregel van DESIGN.md, en
-     ruimer dan de 34em van `.lopend` omdat dit een document is en geen
-     verkooptekst. */
-  .jur-kop { max-width: 46rem; margin-bottom: clamp(1.6rem, 3vw, 2.4rem); }
-  .jur-lead { max-width: none; font-size: clamp(1.05rem, 1.8vw, 1.25rem); color: var(--inkt); }
-  .jur-tekst { max-width: 46rem; }
-
-  /* Het slot: een adres, geen aanbieding. Zie de noot bovenaan. */
-  .jur-uit { margin-top: clamp(2.5rem, 5vw, 4rem); padding-top: clamp(1.6rem, 3vw, 2.4rem); border-top: 1px solid var(--lijn); }
-  .jur-uit .acties { margin-top: 1.4rem; }
-</style>

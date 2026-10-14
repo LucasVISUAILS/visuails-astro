@@ -15,7 +15,8 @@
  *
  * ── WAAROM DE LIJST HIER STAAT EN NIET TWEE KEER IN EEN COMPONENT ───────────
  *
- * Het zijn echte beelden uit echte bestellingen. Als er ooit nieuwe komen — en
+ * Het zijn voorbeeldbeelden en geen klantbestellingen (zie de noot bij
+ * ECHTE_BESTELLING onderaan). Als er ooit nieuwe komen — en
  * die komen er, want dit is een portfolio dat groeit — dan wordt één lijst
  * bijgewerkt en niet twee. Twee lijsten die uit elkaar lopen betekent: op het
  * bestelformulier zie je de roze jeans en op de abonnementspagina nog de set
@@ -38,13 +39,15 @@ const CATALOG = [
   { src: '/img/ba2-na-front.webp', nl: 'Vooraanzicht op wit', en: 'Front view on white' },
   { src: '/img/ba2-na-achter.webp', nl: 'Achterkant op wit', en: 'Back view on white' },
   { src: '/img/ba2-na-detail.webp', nl: 'Detail van de knoop', en: 'Button detail' },
-  { src: '/img/ba2-na-model.webp', nl: 'Gedragen door een model', en: 'Worn by a model' },
+  { src: '/img/ba2-na-model-wit.webp', nl: 'Gedragen door een model', en: 'Worn by a model' },
 ];
 
 const LIFESTYLE = [
   { src: '/img/lifestyle-band-01.webp', nl: 'Lifestylebeeld op locatie', en: 'Lifestyle image on location' },
   { src: '/img/lifestyle-band-04.webp', nl: 'Lifestylebeeld, tweede look', en: 'Lifestyle image, second look' },
   { src: '/img/lifestyle-flash-02.webp', nl: 'Lifestylebeeld met flits', en: 'Lifestyle image with flash' },
+  /* 14 oktober 2026: een carrousel is vier beelden; de vierde tegel is een model van achteren. */
+  { src: '/img/lifestyle-flash-05.webp', nl: 'Lifestylebeeld van achteren', en: 'Lifestyle image from behind' },
 ];
 
 /* Twee van elk: dat is letterlijk wat één product op een compleet pakket en op
@@ -60,10 +63,8 @@ const BEIDE = [CATALOG[0], CATALOG[2], ...LIFESTYLE.slice(0, 2)];
 const PER_DIENST = {
   catalog: CATALOG,
   lifestyle: LIFESTYLE,
-  complete: BEIDE,
-  drop: BEIDE,
-  /* De abonnementsplaat: geen dienst uit /api/order maar een eigen sleutel,
-     zodat een wijziging aan `complete` niet stilletjes de plannen verandert. */
+  /* 'complete' en 'drop' stonden hier ook; compleet bestaat sinds 14 oktober 2026
+     niet meer. De abonnementsplaat houdt zijn eigen sleutel. */
   plan: BEIDE,
 };
 
@@ -81,7 +82,13 @@ export function tegelsVoor(service, lang) {
 /* De noot die onder elke strook hoort: dit zijn echte beelden, en wat de klant
    stuurt bepaalt hoe die van hem eruitzien. Zonder die regel leest een strook
    als een belofte over ZIJN product, en dat is hij niet. */
+/* ── GEEN "ECHTE BESTELLING" MEER — 12 oktober 2026 ──────────────────────
+   Jouw regel: een voorbeeldbeeld heet geen echte bestelling. De catalogbeelden
+   zijn de voorbeeldset (de roze jeans, voorbeeldset.js) en de lifestylestrook
+   mengt looks van verschillende producten, dus de noot zegt alleen wat ze zijn:
+   voorbeeldbeelden. De naam van de constante blijft, zodat de twee aanroepers
+   (BestelOverzicht, PlanPicker) niet hoeven te veranderen. */
 export const ECHTE_BESTELLING = {
-  nl: 'Een voorbeeld van een echte bestelling. Wat jij stuurt bepaalt hoe die van jou eruitziet.',
-  en: 'An example from a real order. What you send decides how yours looks.',
+  nl: 'Voorbeeldbeelden. Wat jij stuurt bepaalt hoe de jouwe eruitzien.',
+  en: 'Example images. What you send decides how yours look.',
 };

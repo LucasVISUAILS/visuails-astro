@@ -67,9 +67,9 @@ export const BINNENKORT = {
            gecorrigeerde versie, expliciet dat één foto NIET genoeg is. */
         qBody: [
           ['You send photos', 'The same set as a catalog order: the front, the back and a detail close-up. A worn shot is welcome but not required. One photo alone isn’t sufficient because our formats build scene depth around the entire product.'],
-          ['We build the video', 'Scroll-stopping, short-form vertical video, built to give a post its best chance at more engagement and new followers.'],
-          ['Our image editors check it', `Before final delivery, we verify product accuracy and ensure every image transition aligns seamlessly. Your assets land in VISUAILS Studio on the delivery time agreed in your quote — for your review, feedback, or instant approval.`],
-          ['What we sell', 'We guarantee the format and the execution — not the reach. How far a post travels depends on timing and algorithms, and those aren’t ours to promise.'],
+          ['We build the video', 'Short vertical video that stands out in the feed, built to give a post its best chance at more engagement and new followers.'],
+          ['We check it', `Before delivery we check that the product is shown accurately and that every cut runs smoothly. Your assets land in VISUAILS Studio on the delivery time agreed in your quote — for your review, feedback, or instant approval.`],
+          ['What we sell', 'We deliver the format and the execution — not the reach. How far a post travels depends on timing and algorithms, and those aren’t ours to promise.'],
         ],
       },
       {
@@ -103,7 +103,7 @@ export const BINNENKORT = {
         qLabel: 'What Editions is',
         qBody: [
           ['What lands', 'A fresh set of finished visuals delivered to VISUAILS Studio at the start of every month — ready to post. They arrive whether you launched a new product or not, right when brands usually run out of content.'],
-          ['Made for your brand', 'Built around your style, locations, and brand colors so they fit seamlessly into your feed. That’s what a stock library structurally cannot do — and why this is anything but stock.'],
+          ['Made for your brand', 'Built around your style, locations, and brand colors so they fit your feed. That’s what a stock library structurally cannot do — and why this is anything but stock.'],
           ['Or the monthly set', 'A more accessible option that is not exclusive to your brand — the same set also goes to other brands. We state exclusivity clearly, just like shared rosters are explicitly labeled on our model picker.'],
           ['Where it arrives', 'Integrated right alongside your balance and order history. Downloading works exactly like a regular order — no second library, complex search tools, or extra folders to manage.'],
         ],
@@ -119,8 +119,8 @@ export const BINNENKORT = {
         qBody: [
           ['Je stuurt foto’s', 'Dezelfde set als bij een catalogbestelling: de voorkant, de achterkant en een close-up van een detail. Een draagfoto mag erbij, maar hoeft niet. Met één foto red je het niet, omdat de uiteindelijke weergave om het product heen beweegt.'],
           ['Wij bouwen de video', 'Korte, verticale video’s die opvallen — gebouwd om je post de beste kans te geven op meer betrokkenheid en nieuwe volgers.'],
-          ['Onze beeldredactie kijkt hem na', `Vóór oplevering garanderen we dat het product waarheidsgetrouw is en alle aansluitingen naadloos overlopen. Op de levertijd uit je offerte staat het resultaat klaar in VISUAILS Studio voor jouw goedkeuring of feedback.`],
-          ['Wat wij verkopen', 'Wij garanderen het format en de uitvoering — niet het bereik. Of een post viraal gaat hangt af van het platform en de timing, en dat is iets wat we nooit valselijk zullen beloven.'],
+          ['Wij kijken hem na', `Vóór oplevering controleren we of het product klopt en of alle overgangen goed lopen. Op de levertijd uit je offerte staat het resultaat klaar in VISUAILS Studio voor jouw goedkeuring of feedback.`],
+          ['Wat wij verkopen', 'Wij leveren het format en de uitvoering — niet het bereik. Of een post viraal gaat hangt af van het platform en de timing, en dat is iets wat we nooit valselijk zullen beloven.'],
         ],
       },
       {
@@ -131,7 +131,7 @@ export const BINNENKORT = {
         qLabel: 'Wat Editions is',
         qBody: [
           ['Wat je krijgt', 'Elke eerste van de maand een nieuwe set beelden in VISUAILS Studio, direct klaar om te posten. Ze arriveren ook als je die maand geen nieuw product hebt — precies op het moment dat de meeste merken door hun content heen zijn.'],
-          ['Gemaakt voor jouw merk', 'Afgestemd op jouw stijl, locaties en merkkleuren, zodat ze naadloos aansluiten op je feed. Dat is precies wat een stockbibliotheek nooit kan bieden — en waarom dit absoluut geen stock is.'],
+          ['Gemaakt voor jouw merk', 'Afgestemd op jouw stijl, locaties en merkkleuren, zodat ze in je feed passen. Dat is precies wat een stockbibliotheek nooit kan bieden — en waarom dit absoluut geen stock is.'],
           ['Of de maandset', 'Een toegankelijkere optie die niet exclusief voor jouw merk is — dezelfde set gaat ook naar andere merken. We zijn helder over wat gedeeld is, net zoals het gedeelde bestand expliciet vermeld staat bij de modelkiezer.'],
           ['Waar hij binnenkomt', 'Overzichtelijk geplaatst naast je saldo en besteloverzicht. Downloaden werkt exact zoals je gewend bent van een reguliere order — geen tweede mediabibliotheek met een eigen zoekfunctie of losse mappen.'],
         ],

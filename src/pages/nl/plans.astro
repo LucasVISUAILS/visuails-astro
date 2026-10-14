@@ -3,17 +3,19 @@
 // zodat /plans en /nl/plans niet uit elkaar kunnen lopen; alleen de meta
 // verschilt hier.
 import Layout from '../../layouts/Layout.astro';
-import PlansPage from '../../components/PlansPage.astro';
+// 12 oktober 2026 (afvinklijst 8, alles "doen"): deze pagina staat in de hal (huid="hal");
+// de vorige opmaak staat op _opruimen/LIJST.txt.
+import PlansHal from '../../components/PlansHal.astro';
 import { euro, PLAN_AMOUNT, PLAN_CREDITS, vatLabel } from '../../data/pricing.js';
 
 const CHEAPEST = Object.keys(PLAN_AMOUNT).reduce((a, b) => (PLAN_AMOUNT[b] < PLAN_AMOUNT[a] ? b : a));
 
 const description =
-  `Elke maand credits voor catalog, lifestyle en video. Vanaf ` +
+  `Elke maand credits voor catalogsets en carrousels; je bestelt wanneer je wilt. Vanaf ` +
   `${euro(PLAN_AMOUNT[CHEAPEST], 'nl')} per maand voor ${PLAN_CREDITS[CHEAPEST]} credits, ` +
-  `of stel je eigen abonnement samen. ${vatLabel('excl', 'nl')}.`;
+  `of kies je eigen aantal. ${vatLabel('excl', 'nl')}.`;
 ---
 
-<Layout title="Abonnementen — elke maand credits | VISUAILS" description={description}>
-  <PlansPage lang="nl" />
+<Layout huid="hal" title="Abonnementen — elke maand credits | VISUAILS" description={description}>
+  <PlansHal lang="nl" />
 </Layout>

@@ -96,7 +96,7 @@ export const KOMEND = {
   },
   video: {
     nl: [
-      { naam: 'Draaitafel', regel: 'Eén volle rotatie op wit, naadloos rond — de videoversie van je catalogset.' },
+      { naam: 'Draaitafel', regel: 'Eén volle rotatie op wit, zonder schok rond — de videoversie van je catalogset.' },
       { naam: 'Kleurwissel', regel: 'Hetzelfde product wisselt van kleur of materiaal in één clip. Voor webshops met veel varianten.' },
       { naam: 'Detail', regel: 'Macro over stiksel, weefsel en sluiting — de tweede clip naast een productfilm.' },
     ],
@@ -122,15 +122,15 @@ export const KOMEND = {
      prijs, geen knop, en alleen wat er echt komt. */
   hooks: {
     nl: [
-      { naam: 'De lus', regel: 'Het laatste beeld sluit naadloos aan op het eerste, zodat de clip eindeloos doorloopt zonder dat je de naad ziet.' },
+      { naam: 'De lus', regel: 'Het laatste beeld sluit aan op het eerste, zodat de clip eindeloos doorloopt zonder dat je de overgang ziet.' },
       { naam: 'Drieluik', regel: 'Drie posts naast elkaar die in je grid één beeld vormen — de hook zit in het openen van je profiel.' },
-      { naam: 'De onthulling', regel: 'De eerste seconden tonen alles behalve het product; het komt pas in beeld als de duim al gestopt is.' },
+      { naam: 'De onthulling', regel: 'De eerste seconden tonen alles behalve het product; het komt pas in beeld als de kijker al kijkt.' },
       { naam: 'Stapel', regel: 'Meerdere producten wisselen elkaar af in hetzelfde kader, op dezelfde plek. Voor een drop van een serie.' },
     ],
     en: [
       { naam: 'The loop', regel: 'The last frame joins the first seamlessly, so the clip runs forever without the seam showing.' },
       { naam: 'Triptych', regel: 'Three posts side by side that form one image in your grid — the hook is opening your profile.' },
-      { naam: 'The reveal', regel: 'The first seconds show everything but the product; it arrives once the thumb has already stopped.' },
+      { naam: 'The reveal', regel: 'The first seconds show everything but the product; it arrives once the viewer is already watching.' },
       { naam: 'Stack', regel: 'Several products swap places inside one frame, in the same spot. For dropping a series.' },
     ],
   },

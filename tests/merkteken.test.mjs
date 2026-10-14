@@ -32,18 +32,18 @@ function check(naam, waarde, verwacht) {
 
 console.log('\nde constante zelf');
 {
-  check('MERKTEKEN is één teken', [...MERKTEKEN].length, 1);
-  check('MERK is de naam plus het teken', MERK, `VISUAILS${MERKTEKEN}`);
-  /* ® mag hier komen te staan zodra VISUAILS ingeschreven is. Dan verandert
-     deze regel mee, en niet eerder — de test hoort niet te beslissen wat er
-     juridisch waar is, maar wel dat iemand er bewust langs komt. */
-  check('en het is ™ zolang er geen inschrijving is', MERKTEKEN, '™');
+  /* 12 oktober 2026: Lucas wil het ™ niet meer zien ("Verwijder zorgvuldig
+     overal de tm achter het logo"). Komt er ooit een teken terug (® na een
+     inschrijving), dan veranderen deze twee regels mee, en niet eerder — de
+     test beslist niet wat juridisch mag, maar wel dat iemand er bewust langs komt. */
+  check('MERKTEKEN is leeg', MERKTEKEN, '');
+  check('MERK is alleen de naam', MERK, 'VISUAILS');
 }
 
 console.log('\nde CSS-kopie loopt niet uit de pas');
 {
   const css = readFileSync(new URL('../src/styles/global.css', import.meta.url), 'utf8');
-  const m = css.match(/--merkteken:\s*"([^"]+)"/);
+  const m = css.match(/--merkteken:\s*"([^"]*)"/);
   check('--merkteken staat in global.css', !!m, true);
   if (m) {
     /* CSS schrijft een teken als een escape ("\2122"), want een letterlijke ™
@@ -97,11 +97,12 @@ console.log('\nen de gebouwde site draagt precies dit teken');
     const ander = [];
     for (const f of paginas) {
       const html = readFileSync(f, 'utf8');
-      for (const m of html.matchAll(/VISUAILS\s*[®™]/g)) {
-        if (m[0] !== MERK) ander.push(`${f.replace(/^dist\//, '')} — ${m[0]}`);
+      /* Ook als entiteit of escape: &trade; en &#8482; zijn in de browser hetzelfde teken. */
+      for (const m of html.matchAll(/VISUAILS\s*(?:[®™]|&trade;|&reg;|&#8482;|&#174;|&#x2122;)/gi)) {
+        ander.push(`${f.replace(/^dist\//, '')} — ${m[0]}`);
       }
     }
-    check(`${paginas.length} gebouwde pagina's dragen alleen ${MERK}`, ander.length, 0);
+    check(`${paginas.length} gebouwde pagina's dragen geen teken achter de naam`, ander.length, 0);
     for (const r of ander.slice(0, 10)) console.log(`      ${r}`);
   }
 }

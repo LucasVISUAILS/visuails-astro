@@ -1,0 +1,29 @@
+---
+/* De andere lopende bestellingen op het overzicht, als compacte rij. Elke rij
+   draagt dezelfde Nu-zin als de kaart van die bestelling (punt 3.01: uit
+   watNuView() in account.js, dus uit nuZin()); zonder die staat de zin van de
+   tijdlijn, zoals voorheen. */
+import Pil from './Pil.astro';
+import { progressView, weergaveStatus } from '../../lib/account.js';
+import { serviceLabel } from '../../data/services.js';
+const { t, lang, orders = [], nuPerOrder = null, eventsByOrder, filesByOrder } = Astro.props;
+const nuVan = (o) => {
+  const n = nuPerOrder && nuPerOrder.get(o.id);
+  if (n) return n.zin;
+  const p = progressView(t, lang, o, eventsByOrder.get(o.id) || [], filesByOrder.get(o.id) || []);
+  return `${p.now}${p.when}`;
+};
+---
+<div class="st-kaart-vlak">
+  <ul class="st-lopend" aria-label={t.ovOthers(orders.length)}>
+    {orders.slice(0, 6).map((o) => (
+      <li>
+        <span class="st-ref">{o.ref}</span>
+        <Pil status={weergaveStatus(o)} lang={lang} />
+        <span class="st-meta">{serviceLabel(o.service, lang) || o.service} · {nuVan(o)}</span>
+        <a class="st-link" href={`/account/orders?order=${o.id}#order-${o.id}`}>{t.ovOpenOrder}</a>
+      </li>
+    ))}
+  </ul>
+  {orders.length > 6 && <p class="st-meta st-meer"><a class="st-link" href="/account/orders">{t.ovViewAll}</a></p>}
+</div>

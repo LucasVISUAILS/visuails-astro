@@ -36,8 +36,8 @@ import { exiftool } from 'exiftool-vendored';
  * daardoor overal heen kan. Dit bestand blijft de SCHRIJVER, en dat is nog steeds
  * de enige plek waar een tag wordt gezet.
  */
-export { COMPOSITE, FULLY, TAGGABLE } from '../../src/lib/iptc.js';
-import { COMPOSITE } from '../../src/lib/iptc.js';
+export { COMPOSITE, FULLY, LEVERTAG, TAGGABLE } from '../../src/lib/iptc.js';
+import { LEVERTAG } from '../../src/lib/iptc.js';
 
 /** Wat er nu in staat, of null. */
 export async function readSourceType(file) {
@@ -61,7 +61,7 @@ export async function readSourceType(file) {
  * `-overwrite_original`, want exiftool laat standaard een `_original`-kopie naast
  * elk bestand staan, en dat verdubbelt de map die de klant krijgt.
  */
-export async function writeSourceType(file, value = COMPOSITE) {
+export async function writeSourceType(file, value = LEVERTAG) {
   await exiftool.write(file, { 'XMP-iptcExt:DigitalSourceType': value }, {
     writeArgs: ['-overwrite_original'],
   });

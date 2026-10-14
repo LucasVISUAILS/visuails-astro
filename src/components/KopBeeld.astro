@@ -1,0 +1,80 @@
+---
+/*
+ * VISUAILS — het beeld rechts in de opening van een pagina. 14 oktober 2026,
+ * afvinklijst 20 (v20-opening = a: elke pagina zonder beeld krijgt er een, een getal
+ * of een foto, alleen echt materiaal).
+ *
+ * De voorpagina en de helft van de pagina's openden al met tekst links en een groot
+ * beeld rechts; twaalf pagina's openden met alleen tekst. Dit onderdeel geeft ze
+ * hetzelfde, in drie vormen:
+ *
+ *   getal  de kaart van rondesignlab: label linksboven, ↗ rechtsboven, één groot dun
+ *          getal met een kleine eenheid, en één zin eronder. Op het lichte violette
+ *          vlak (het enige van dat scherm). Elk getal komt uit de data (pricing.js),
+ *          nooit getypt.
+ *   foto   een foto die VISUAILS gemaakt heeft, met een glazen pil erover (glas
+ *          alleen over een foto).
+ *   paar   twee foto's naast elkaar: wat je stuurt en wat je terugkrijgt.
+ *
+ * Het staat in de opening (.h-paginakop.met-kopbeeld, zie hal.css "OPENINGEN MET
+ * EEN BEELD"); de tekst van de opening staat in .h-paginakop-tekst ernaast.
+ */
+interface Foto { src: string; alt: string; pil?: string; positie?: string }
+interface Props {
+  soort: 'getal' | 'foto' | 'paar';
+  /* getal */
+  label?: string;
+  href?: string;
+  linkNaam?: string;
+  voor?: string;
+  getal?: string;
+  eenheid?: string;
+  voet?: string;
+  /* een paar korte regels onder het getal: [kop, zin] */
+  regels?: [string, string][];
+  /* foto en paar */
+  foto?: Foto;
+  fotos?: Foto[];
+  verhouding?: string;
+}
+import { beeldMaat } from '../lib/beeldAanwezig.js';
+const { soort, label, href, linkNaam, voor, getal, eenheid, voet, regels = [], foto, fotos = [], verhouding = '4 / 3' } = Astro.props;
+/* width/height van het echte bestand, zodat de browser de ruimte vooraf reserveert. */
+const maat = async (f?: Foto) => (f ? (await beeldMaat(f.src)) || { w: 1200, h: 1500 } : { w: 1200, h: 1500 });
+const fotoMaat = await maat(foto);
+const parenMaat = await Promise.all(fotos.map((f) => maat(f)));
+const PIJL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5l7-7M5.5 4.5h6v6"/></svg>';
+---
+{soort === 'getal' && (
+  <div class="h-kopbeeld h-kopbeeld-getal h-groot h-in">
+    <span class="h-korrel" aria-hidden="true"></span>
+    <div class="h-kopbeeld-boven">
+      {label && <span class="h-pil h-pil-wit"><span>{label}</span></span>}
+      {href && <a class="h-cirkel h-cirkel-wit" href={href} aria-label={linkNaam} set:html={PIJL} />}
+    </div>
+    {/* Een div en geen p: de tekstmaat van de hal (16,5em) geldt voor alinea's, niet voor het getal. */}
+    <div class="h-kopbeeld-rij">{voor && <span class="h-kopbeeld-voor">{voor}</span>}<span class="h-getal">{getal}</span>{eenheid && <span class="h-kopbeeld-eenheid">{eenheid}</span>}</div>
+    {regels.length > 0 && (
+      <ul class="h-kopbeeld-regels" role="list">
+        {regels.map(([kop, zin]) => <li><b>{kop}</b><span>{zin}</span></li>)}
+      </ul>
+    )}
+    {voet && <p class="h-kopbeeld-voet">{voet}</p>}
+  </div>
+)}
+{soort === 'foto' && foto && (
+  <figure class="h-kopbeeld h-kopbeeld-foto h-op" style={`--d:2; aspect-ratio: ${verhouding}`}>
+    <img src={foto.src} alt={foto.alt} width={fotoMaat.w} height={fotoMaat.h} decoding="async" fetchpriority="high" style={foto.positie ? `object-position: ${foto.positie}` : undefined} />
+    {foto.pil && <figcaption class="h-pil h-pil-glas"><span>{foto.pil}</span></figcaption>}
+  </figure>
+)}
+{soort === 'paar' && fotos.length === 2 && (
+  <div class="h-kopbeeld h-kopbeeld-paar h-op" style="--d:2">
+    {fotos.map((f, i) => (
+      <figure style={`aspect-ratio: ${verhouding}`}>
+        <img src={f.src} alt={f.alt} width={parenMaat[i].w} height={parenMaat[i].h} decoding="async" fetchpriority="high" style={f.positie ? `object-position: ${f.positie}` : undefined} />
+        {f.pil && <figcaption class="h-pil h-pil-glas"><span>{f.pil}</span></figcaption>}
+      </figure>
+    ))}
+  </div>
+)}

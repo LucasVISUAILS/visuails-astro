@@ -1,4 +1,6 @@
 ---
+// VISUAILS — /custom-models: in de hal sinds 13 oktober 2026 (afvinklijst 12, alles doen). De pagina
+// staat in BrandModelHal.astro; de vorige (BrandModelPage.astro) staat op de opruimlijst.
 // VISUAILS — /custom-models, "Your Brand Model" (English). The page body lives
 // in BrandModelPage.astro so that /custom-models and /nl/custom-models cannot
 // drift apart; only the meta differs here.
@@ -12,7 +14,7 @@
 // <meta> tag is the one place a stale figure survives a page rewrite — the
 // body gets corrected and the search result keeps quoting the old number.
 import Layout from '../layouts/Layout.astro';
-import BrandModelPage from '../components/BrandModelPage.astro';
+import BrandModelHal from '../components/BrandModelHal.astro';
 import { euro, AMOUNT, vatLabel } from '../data/pricing.js';
 
 // Under 152 characters (META_LIMIT) so Google shows all of it. The description
@@ -27,10 +29,10 @@ const description =
   `${euro(AMOUNT.brandModel, 'en')} ${vatLabel('excl', 'en')}, paid once when the model is designed.`;
 ---
 
-<Layout
+<Layout huid="hal"
   title="Your Brand Model — one face, only yours | VISUAILS"
   description={description}
   ogImage="/img/custom-models-03.webp"
 >
-  <BrandModelPage lang="en" />
+  <BrandModelHal lang="en" />
 </Layout>

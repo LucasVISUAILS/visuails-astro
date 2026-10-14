@@ -26,6 +26,7 @@
 // paginaweergave. Zodra de clip er is, komt hier `video` en `duur` bij.
 // ══════════════════════════════════════════════════════════════════════
 
+import { LIFESTYLE_IMAGES, LEVERVLAKKEN } from './pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 
 const HELE = '/img/laptop/voor_heel.webp';
@@ -57,7 +58,7 @@ export function laptopSlides(lang = 'nl') {
                    : 'Phone photo: the same jeans turned over, back',
       },
       {
-        src: '/img/ba2-na-model.webp', naam: nl ? 'Op model' : 'On model',
+        src: '/img/ba2-na-model-wit.webp', naam: nl ? 'Op model' : 'On model',
         alt: nl ? 'De broek gedragen door een model' : 'The jeans worn by a model',
         fon: '/img/ba2-voor-pasvorm.webp',
         fonAlt: nl ? 'Spiegelselfie waarop de broek gedragen wordt' : 'Mirror selfie of the jeans being worn',
@@ -76,25 +77,38 @@ export function laptopSlides(lang = 'nl') {
     fon: HELE, duur: 2600,
     fonAlt: nl ? 'Telefoonfoto van de klant: de hele broek plat op een betonnen magazijnvloer'
                : "The customer’s phone photo: the whole garment flat on a concrete floor",
-    naam: nl ? 'Lifestylecarrousel · 3 beelden' : 'Lifestyle carousel · 3 images',
+    naam: nl ? `Lifestylecarrousel · ${LIFESTYLE_IMAGES} beelden` : `Lifestyle carousel · ${LIFESTYLE_IMAGES} images`,
     href: lp('/lifestyle'),
-    alt: nl ? 'Drie lifestyle-beelden als carrousel in een nagebouwd social-bericht'
-            : 'Three lifestyle images as a carousel in a mocked-up social post',
-    beelden: [
-      { src: '/img/lifestyle-flash-03.webp', naam: nl ? 'Opening' : 'Opening',
-        alt: nl ? 'Model in een wit gewatteerd jack, avondopname met flits' : 'Model in a white puffer jacket, night flash shot' },
-      { src: '/img/lifestyle-band-08.webp', naam: nl ? 'Volledig' : 'Full length',
-        alt: nl ? 'Dezelfde look ten voeten uit op straat' : 'The same look head to toe on the street' },
-      { src: '/img/lifestyle-flash-01.webp', naam: 'Detail',
-        alt: nl ? 'Close-up van de broek en de schoenen' : 'Close-up of the trousers and shoes' },
-    ],
+    alt: nl ? 'Lifestyle-beelden als carrousel in een nagebouwd social-bericht'
+            : 'Lifestyle images as a carousel in a mocked-up social post',
+    /* De vier vaste beelden van een carrousel, met hun vaste namen (LEVERVLAKKEN in
+       pricing.js). Afvinklijst 24, v24-laptop = a: voor "Alleen het product" is er in
+       de flash-look nog geen foto; tot Lucas er een levert staat er een plaat met de
+       naam (`plaat`). Leg hem neer als public/img/lifestyle-flash-product.webp en de
+       plaat wordt bij de volgende build een foto. Hier stonden Opening, Achterkant,
+       Volledig (lifestyle-band-08, dat er niet was) en Detail. */
+    beelden: LEVERVLAKKEN.lifestyle[nl ? 'nl' : 'en'].map((naam, i) => ({ naam, ...[
+      { src: '/img/lifestyle-flash-03.webp',
+        alt: nl ? 'Op model, van voren: een wit gewatteerd jack, avondopname met flits' : 'On model, from the front: a white puffer jacket, night flash shot' },
+      { src: '/img/lifestyle-flash-05.webp',
+        alt: nl ? 'Hetzelfde model van achteren, op straat bij nacht' : 'The same model from behind, on the street at night' },
+      { src: '/img/lifestyle-flash-product.webp', plaat: true,
+        alt: nl ? 'Alleen het product, in dezelfde scène (foto volgt)' : 'The product on its own, in the same scene (photo to follow)' },
+      { src: '/img/lifestyle-flash-01.webp',
+        alt: nl ? 'Detail op het model: de broek en de schoenen van dichtbij' : 'Detail on the model: the trousers and shoes up close' },
+    ][i] })),
     post: {
       naam: 'visuails_com',
       avatar: '/img/merk-tegel.webp',
       vlag: nl ? 'Door AI gegenereerd' : 'AI generated',
+      /* 12 oktober 2026: hier stond "Eén telefoonfoto erin" / "One phone photo
+         in". Dat is de belofte die op 8 augustus overal van de site ging: een
+         bestelling vraagt de verplichte hoeken (shots.js), niet één foto. Het
+         bijschrift staat klein in de laptop op de voorpagina en op /lifestyle,
+         en zegt nu wat de dienstband van de hal ook zegt: een paar foto's. */
       bijschrift: nl
-        ? ['Eén telefoonfoto erin. Een hele carrousel eruit.', 'Zelfde look, drie beelden, klaar om te plaatsen.']
-        : ['One phone photo in. A whole carousel out.', 'Same look, three images, ready to post.'],
+        ? ['Een paar telefoonfoto’s erin. Een hele carrousel eruit.', 'Zelfde look, vier beelden, klaar om te plaatsen.']
+        : ['A few phone photos in. A whole carousel out.', 'Same look, four images, ready to post.'],
       /* ── GEEN VERZONNEN MENSEN MEER — 20 september 2026 ──────────────────
          Hier stonden zes accountnamen met zes uitspraken, in twee talen. Zie de
          noot bij `interface Reactie` in LaptopCarousel.astro voor waarom die

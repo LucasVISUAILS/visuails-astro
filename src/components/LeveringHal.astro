@@ -1,0 +1,275 @@
+---
+/*
+ * VISUAILS — LeveringHal: één levering zoals hij in Studio staat, in de hal (13 oktober 2026,
+ * afvinklijst 16, v16-volgende = a: de galerij). De gegevens (de voorbeeldset, de map die
+ * deliveryEntries() en deliveryDocs() voor deze bestelling bouwen, de teksten) zijn letterlijk
+ * die van Levering.astro; alleen de opmaak is die van de hal: een venster als nevelkaart, de drie
+ * stappen met de maatlijn (01 —— / 03), de beelden met ronde hoeken, geen hoofdletters.
+ * Het is een TEKENING van Studio: de knoppen zijn <span>'s, er valt hier niets te doen.
+ */
+/*
+ * VISUAILS — ÉÉN LEVERING, VAN BEGIN TOT EIND. 23 september 2026.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"Ik wil dat 'zo ziet een levering eruit' de standaard galerij look is
+ * (…) Maak dit echt overzichtelijk en mooi uitziend met een mooie mock-up van een
+ * order flow, want klanten gaan deze pagina gegarandeerd goed bestuderen en hier
+ * hun mening op vormen."*
+ *
+ * Een galerij met losse beelden beantwoordt "kunnen jullie mooie foto's maken?".
+ * Wie hier komt, vraagt iets anders: "wat krijg ík, als ik mijn foto's stuur?"
+ * Dit blok beantwoordt die vraag met één echte bestelling, in de vorm van het
+ * scherm waarin de klant hem zelf zou zien: VISUAILS Studio.
+ *
+ * DRIE STAPPEN, NIET VIER. Binnengekomen → gemaakt en nagekeken → gedownload.
+ * Goedkeuren is geen aparte stap met dezelfde vier beelden nog een keer; het is
+ * een vinkje op de beelden van stap twee. Hetzelfde beeld twee keer tonen is de
+ * pagina langer maken zonder dat hij meer zegt.
+ *
+ * ALLES KOMT UIT DE BRON, NIETS IS NAGETEKEND:
+ *   · de foto's uit src/data/voorbeeldset.js (dezelfde set als de voorpagina)
+ *   · de mappen en bestandsnamen uit deliveryEntries() en deliveryDocs() in
+ *     src/lib/delivery.js — precies de functies die de echte zip bouwen. Hernoemt
+ *     iemand daar een map, dan verandert hij hier mee.
+ *   · de maat (2048 px) uit RESOLUTIE in pricing.js
+ *
+ * EERLIJK OVER WAT VERZONNEN IS: de set is echt, het bestelnummer
+ * (VOORBEELD_REF) en de productnaam zijn voorbeelden. Dat staat onder het blok.
+ */
+import { ingestuurd, geleverd, vormen, VOORBEELD_REF } from '../data/voorbeeldset.js';
+import { deliveryEntries, deliveryDocs } from '../lib/delivery.js';
+import { RESOLUTIE } from '../data/pricing.js';
+import { REQUIRED_SHOT_IDS } from '../data/shots.js';
+import { DIENSTEN } from '../data/leveringen.js';
+import UitlegBalk from './UitlegBalk.astro';
+
+/* Sinds 23 september 2026 één van meerdere leveringen in de galerij (zie
+   src/data/leveringen.js): de bestelling, het product en de dienst komen mee
+   als props. Zonder props is het de wijde jeans, zoals voorheen. `plaatshouder`
+   zet de noot onderaan om: dan zijn het de beelden van de voorbeeldset en niet
+   van dit product, en dat staat er dan ook. */
+interface Props {
+  lang: 'en' | 'nl';
+  nummer?: string;
+  product?: string;
+  dienst?: 'catalog' | 'lifestyle';
+  plaatshouder?: boolean;
+  id?: string;
+  /* 14 oktober 2026 (voorbeeld): de levering speelt zich af in drie stappen. */
+  uitleg?: boolean;
+}
+const { lang, nummer: bestelRef = VOORBEELD_REF, product, dienst = 'catalog', plaatshouder = false, id = 'lv', uitleg = false } = Astro.props;
+const nl = lang === 'nl';
+
+const IN = ingestuurd(lang);
+const UIT = geleverd(lang);
+const VORMEN = vormen(lang);
+const PRODUCT = product || (nl ? 'Wijde jeans' : 'Wide leg jeans');
+const DIENST = DIENSTEN[dienst]?.meta?.[nl ? 'nl' : 'en'] || (nl ? 'Catalogset' : 'Catalog set');
+
+/* De map, gebouwd door dezelfde twee functies als de echte zip. Vier beelden, elk als
+   JPG: dat is de standaard sinds k401 (11 oktober 2026); PNG en WebP vraag je erbij
+   aan. Tot afvinklijst 24 stond hier "elk beeld in 3 formaten" (Lucas: "verouderde/
+   verkeerde informatie"). De rijen hieronder zijn wat deliveryEntries() maakt. */
+const SHOTS = ['front', 'back', 'detail', 'worn'];
+const nepBestanden = SHOTS.map((shot, i) => ({
+  id: i + 1, product_key: 'p1', shot, r2_key: `x/${i}`, bytes: 0, filename: `${shot}.jpg`,
+  assets: [{ format: 'jpg', r2_key: `x/${i}.jpg`, bytes: 0 }],
+}));
+/* De verhouding van deze bestelling: catalog kent er één per bestelling (ratios.js). */
+/* Bij lifestyle kies je de verhouding per beeld; dan staat er geen ene verhouding. */
+const LIFE = dienst === 'lifestyle';
+const VERHOUDING = LIFE ? (nl ? 'per beeld' : 'per image') : (VORMEN.find((v) => v.gekozen) || VORMEN[0]).maat;
+const VERPLICHT = REQUIRED_SHOT_IDS.length;
+const entries = deliveryEntries(nepBestanden, lang, { ref: bestelRef, productNames: { p1: PRODUCT } });
+const docs = deliveryDocs({ order: { ref: bestelRef, lang, brand: PRODUCT }, entries, taal: lang });
+const wortel = entries[0]?.name.split('/')[0] || `VISUAILS-${bestelRef}`;
+const productMap = entries[0]?.name.split('/')[1] || `01 - ${PRODUCT}`;
+const perFormaat: Record<string, string[]> = {};
+for (const e of entries) {
+  const delen = e.name.split('/');
+  (perFormaat[delen[2]] ||= []).push(delen[3]);
+}
+const formaten = Object.keys(perFormaat);
+const bestanden = entries.length;
+const px = RESOLUTIE.standaard;
+
+const c = nl ? {
+  venster: 'VISUAILS Studio',
+  bestelling: `Bestelling ${bestelRef}`,
+  status: 'Geleverd',
+  meta: [
+    ['Product', PRODUCT],
+    ['Dienst', DIENST],
+    ['Beelden', `${UIT.length}`],
+    ['Verhouding en maat', `${VERHOUDING} · ${px} px`],
+  ],
+  stappen: [
+    { nr: '01', kop: 'Binnengekomen', zin: `${IN.length} telefoonfoto’s op de magazijnvloer: de ${VERPLICHT} verplichte en ${IN.length - VERPLICHT} extra.` },
+    { nr: '02', kop: 'In de studio', zin: LIFE ? 'Elk beeld gemaakt in je look, en nagekeken naast de foto die je stuurde.' : 'Elk beeld afgewerkt op jouw achtergrond, en nagekeken naast de foto die je stuurde.' },
+    { nr: '03', kop: 'Jij keurt goed', zin: 'Per beeld goedkeuren. Wil je iets anders? Vink het aan en zeg wat.' },
+    { nr: '04', kop: 'Gedownload', zin: `Eén map, ${bestanden} bestanden: elk beeld als JPG, ${LIFE ? 'in de verhouding die je per beeld koos' : `in ${VERHOUDING}`}. PNG of WebP vraag je erbij aan.` },
+  ],
+  inLabels: ['Voorkant', 'Achterkant', 'Detail', 'Stof', 'Gedragen'],
+  verplicht: 'verplicht', extra: 'extra',
+  checks: [LIFE ? 'In de look die je koos' : 'Uitgeknipt, op jouw achtergrond', 'Kleur vergeleken met jouw foto', 'Naden, knoop en logo nagelopen', 'Door ons nagekeken, beeld voor beeld'],
+  labels: ['Voorkant', 'Achterkant', 'Detail', 'Op model'],
+  ok: 'Goedgekeurd',
+  /* De woorden van het echte scherm (rdTick in account.js), zoals in FigDash en FigGallery. */
+  revisie: 'Deze aanmerken',
+  goedkeuren: 'Goedkeuren',
+  bestandenN: (n: number) => `${n} bestanden`,
+  noot: plaatshouder
+    ? `Beelden volgen. Tot die er zijn, staat hier de voorbeeldset (een wijde jeans) en niet de ${PRODUCT.toLowerCase()}. Het bestelnummer is een voorbeeld.`
+    : 'Een echte set. Het bestelnummer en de productnaam zijn voorbeelden.',
+  map: 'In de map',
+  zinnen: [
+    'Je stuurt een paar telefoonfoto’s, gewoon op de vloer van je magazijn.',
+    'In de studio werken we elk beeld af en kijken we het na, naast jouw foto.',
+    'Jij keurt per beeld goed. Wil je iets anders? Vink het aan en zeg wat.',
+    'Je downloadt één map: elk beeld als JPG, in de verhouding die je koos.',
+  ],
+} : {
+  venster: 'VISUAILS Studio',
+  bestelling: `Order ${bestelRef}`,
+  status: 'Delivered',
+  meta: [
+    ['Product', PRODUCT],
+    ['Service', DIENST],
+    ['Images', `${UIT.length}`],
+    ['Ratio and size', `${VERHOUDING} · ${px} px`],
+  ],
+  stappen: [
+    { nr: '01', kop: 'Came in', zin: `${IN.length} phone photos on a warehouse floor: the ${VERPLICHT} required ones and ${IN.length - VERPLICHT} extra.` },
+    { nr: '02', kop: 'In the studio', zin: LIFE ? 'Every image made in your look, and checked next to the photo you sent.' : 'Every image finished on your background, and checked next to the photo you sent.' },
+    { nr: '03', kop: 'You approve', zin: 'Approve image by image. Want something different? Tick it and say what.' },
+    { nr: '04', kop: 'Downloaded', zin: `One folder, ${bestanden} files: every image as JPG, ${LIFE ? 'in the ratio you chose per image' : `in ${VERHOUDING}`}. PNG or WebP you request on top.` },
+  ],
+  inLabels: ['Front', 'Back', 'Detail', 'Fabric', 'Worn'],
+  verplicht: 'required', extra: 'extra',
+  checks: [LIFE ? 'In the look you chose' : 'Cut out, on your background', 'Colour compared with your photo', 'Seams, button and logo checked', 'Checked by us, image by image'],
+  labels: ['Front', 'Back', 'Detail', 'On model'],
+  ok: 'Approved',
+  revisie: 'Mark this one',
+  goedkeuren: 'Approve',
+  bestandenN: (n: number) => `${n} files`,
+  noot: plaatshouder
+    ? `Images to follow. Until they are here, this shows the sample set (wide leg jeans), not the ${PRODUCT.toLowerCase()}. The order number is an example.`
+    : 'A real set. The order number and the product name are examples.',
+  map: 'In the folder',
+  zinnen: [
+    'You send a few phone photos, simply on your warehouse floor.',
+    'In the studio we finish every image and check it, next to your photo.',
+    'You approve image by image. Want something different? Tick it and say what.',
+    'You download one folder: every image as JPG, in the ratio you chose.',
+  ],
+};
+
+const VINK = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
+const DRIE = (n: number) => String(n).padStart(2, '0');
+---
+
+<article class="h-lv" aria-labelledby={`${id}-kop`} data-uitleg={uitleg ? '' : undefined} data-uitleg-maat="2600 3400 2600 3000" data-uitleg-start="500">
+  <header class="h-lv-balk">
+    <p class="h-lv-venster">{c.venster}</p>
+    <h3 id={`${id}-kop`} class="h-lv-bestelling">{c.bestelling}</h3>
+    <p class="h-chip h-chip-wit h-lv-status"><i set:html={VINK} />{c.status}</p>
+  </header>
+
+  <dl class="h-lv-meta">
+    {c.meta.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}
+  </dl>
+
+  <ol class="h-lv-stappen" role="list">
+    {/* ── 01 · BINNENGEKOMEN ── */}
+    <li class="h-lv-stap" data-u="1">
+      <div class="h-lv-uitleg">
+        <p class="h-nr" aria-hidden="true"><b>{DRIE(1)}</b><i></i><span>/ {DRIE(4)}</span></p>
+        <h4 class="h-lv-woord">{c.stappen[0].kop}</h4>
+        <p class="h-lv-zin">{c.stappen[0].zin}</p>
+      </div>
+      <ul class="h-lv-in" role="list">
+        {IN.map((b, i) => (
+          <li style={`--i:${i}`}><img src={b.src} width={b.w} height={b.h} alt={b.alt} loading="lazy" decoding="async" /><span class="h-lv-in-naam"><b>{c.inLabels[i]}</b> {i < VERPLICHT ? c.verplicht : c.extra}</span></li>
+        ))}
+      </ul>
+    </li>
+
+    {/* ── 02 · IN DE STUDIO ── Afvinklijst 24, Lucas: "Dit voelt ook als een AI tool.
+        Probeer dit gevoel … te vermijden door meer proces en duidelijkheid te geven."
+        Dus het werk zelf in beeld: het beeld en wat we eraan doen en nalopen, een voor een. */}
+    <li class="h-lv-stap" data-u="2">
+      <div class="h-lv-uitleg">
+        <p class="h-nr" aria-hidden="true"><b>{DRIE(2)}</b><i></i><span>/ {DRIE(4)}</span></p>
+        <h4 class="h-lv-woord">{c.stappen[1].kop}</h4>
+        <p class="h-lv-zin">{c.stappen[1].zin}</p>
+      </div>
+      <div class="h-lv-werk">
+        <figure class="h-lv-werk-paar">
+          <img src={IN[0].src} width={IN[0].w} height={IN[0].h} alt="" loading="lazy" decoding="async" />
+          <img src={UIT[0].src} width={UIT[0].w} height={UIT[0].h} alt="" loading="lazy" decoding="async" />
+        </figure>
+        <ul class="h-lv-checks" role="list">
+          {c.checks.map((t, i) => <li style={`--i:${i}`}><i set:html={VINK} /><span>{t}</span></li>)}
+        </ul>
+      </div>
+    </li>
+
+    {/* ── 03 · JIJ KEURT GOED ── */}
+    <li class="h-lv-stap" data-u="3">
+      <div class="h-lv-uitleg">
+        <p class="h-nr" aria-hidden="true"><b>{DRIE(3)}</b><i></i><span>/ {DRIE(4)}</span></p>
+        <h4 class="h-lv-woord">{c.stappen[2].kop}</h4>
+        <p class="h-lv-zin">{c.stappen[2].zin}</p>
+        <p class="h-lv-knoppen" aria-hidden="true">
+          <span class="h-lv-knop is-ja" data-uitleg-klik={uitleg ? '3' : undefined} data-uitleg-wacht={uitleg ? '400' : undefined}>{c.goedkeuren}</span>
+          <span class="h-lv-pick"><span class="h-lv-box"></span>{c.revisie}</span>
+        </p>
+      </div>
+      <ul class="h-lv-uit" role="list">
+        {UIT.map((b, i) => (
+          <li style={`--i:${i}`}>
+            <figure>
+              <img src={b.src} width={b.w} height={b.h} alt={b.alt} loading="lazy" decoding="async" />
+              <figcaption>
+                <span>{c.labels[i]}</span>
+                <span class="h-lv-vink"><i set:html={VINK} />{c.ok}</span>
+              </figcaption>
+            </figure>
+          </li>
+        ))}
+      </ul>
+    </li>
+
+    {/* ── 04 · GEDOWNLOAD ── Eén verhouding (de gekozen) en één bestandsformaat. Hier stond
+        een strook met drie verhoudingen ("kan ook"), en die las als "je krijgt alle drie". */}
+    <li class="h-lv-stap" data-u="4">
+      <div class="h-lv-uitleg">
+        <p class="h-nr" aria-hidden="true"><b>{DRIE(4)}</b><i></i><span>/ {DRIE(4)}</span></p>
+        <h4 class="h-lv-woord">{c.stappen[3].kop}</h4>
+        <p class="h-lv-zin">{c.stappen[3].zin}</p>
+      </div>
+      <div class="h-lv-uitkomst">
+        <div class="h-lv-map" role="group" aria-label={c.map}>
+          <p class="h-lv-map-kop">{c.map}</p>
+          <ul class="h-lv-boom" role="list">
+            <li class="is-map">{wortel}/</li>
+            {docs.map((d) => <li class="d1">{d.name.split('/').pop()}</li>)}
+            <li class="d1 is-map">{productMap}/</li>
+            {formaten.map((f, i) => (
+              i === 0
+                ? <>
+                    <li class="d2 is-map">{f}/</li>
+                    {perFormaat[f].map((n) => <li class="d3">{n}</li>)}
+                  </>
+                : <li class="d2 is-map">{f}/ <span class="h-lv-telling">{c.bestandenN(perFormaat[f].length)}</span></li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </li>
+  </ol>
+
+  <p class="h-lv-noot">{c.noot}</p>
+  {uitleg && <div class="h-lv-balk-u"><UitlegBalk zinnen={c.zinnen} lang={lang} /></div>}
+</article>

@@ -214,7 +214,14 @@ const METEN = () => {
       if (el.closest('.btn, .cc-btn')) return;      // knoppen zijn hierboven al gedaan
       const r = el.getBoundingClientRect();
       if (r.width < 4 || r.height < 4) return;
-      const v = verhouding(nr(cs.color), vulling(el.parentElement));
+      /* vulling(el) en niet vulling(el.parentElement) — 12 oktober 2026. Tekst
+         staat op zijn EIGEN achtergrond als hij die heeft. In de lichte footer
+         van het voorbeeld (/voorbeeld/) heeft de aanmeldknop van de Studiobrief
+         een inktvlak met witte letters; tegen de ouder gemeten las dat als wit op
+         nevel (1,09:1), terwijl het 19:1 is. Zonder eigen vulling is vulling(el)
+         precies wat vulling(el.parentElement) was, dus voor de rest verandert er
+         niets. */
+      const v = verhouding(nr(cs.color), vulling(el));
       const px = parseFloat(cs.fontSize) || 16;
       const eis = (px >= 24 || (px >= 18.66 && Number(cs.fontWeight) >= 700)) ? 3 : 4.5;
       if (v < eis) uit.push(`voet: "${el.textContent.trim().slice(0, 28)}" ${v.toFixed(2)}:1 (eis ${eis}) — ${cs.color} op ${kleurtekst(grond)}`);

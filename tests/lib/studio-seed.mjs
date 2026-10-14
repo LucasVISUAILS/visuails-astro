@@ -21,7 +21,7 @@ export const SUB_ID = 7070;
 
 /* De beelden die als levering dienen: bestaan in public/img; de aanroeper
    filtert op wat er op schijf staat. */
-export const IMG = ['lifestyle-flash-01-w380.webp', 'lifestyle-glow-03-w380.webp', 'lifestyle-phone-made-03-w760.webp', 'lifestyle-flash-04-w760.webp', 'lifestyle-glow-06-w760.webp', 'lifestyle-phone-made-08-w760.webp', 'lifestyle-flash-03-w760.webp', 'lifestyle-phone-made-12-w760.webp'];
+export const IMG = ['lifestyle-flash-01-w380.webp', 'lifestyle-glow-03-w380.webp', 'lifestyle-phone-made-03-w760.webp', 'lifestyle-flash-04-w760.webp', 'lifestyle-glow-05-w760.webp', 'lifestyle-phone-made-08-w760.webp', 'lifestyle-flash-03-w760.webp', 'lifestyle-phone-made-12-w760.webp'];
 
 /**
  * @param {{ hash: string, hash2: string, img: string[] }} p — de gehashte

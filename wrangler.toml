@@ -31,7 +31,8 @@
 # die twee naast elkaar hebben op 10 augustus 2026 achttien dagen verwarring
 # gekost (`Project "visuails" does not exist`). De Worker krijgt daarom een
 # derde naam die op geen van beide lijkt. Hij verschijnt als
-# visuails-site.<account>.workers.dev tot het domein is overgezet.
+# visuails-site.<account>.workers.dev tot het domein is overgezet. (Dat is
+# gebeurd; sinds 8 oktober staat dat adres uit, zie hieronder.)
 #
 # De secrets (RESEND_API_KEY, MOLLIE_API_KEY, …) staan NIET in dit bestand:
 # `npx wrangler secret put <NAAM>`, of in het dashboard onder Workers ->
@@ -45,6 +46,22 @@ compatibility_date = "2026-07-01"
 # transitively, even though nothing in functions/ or src/ does directly.
 # Ruled out as the cause of the empty Stripe 400s; do not remove again.
 compatibility_flags = ["nodejs_compat"]
+
+# ── ALLEEN VIA VISUAILS.COM — 8 oktober 2026 (punt o02) ──────────────────────
+#
+# De Worker draait op visuails.com en www.visuails.com via twee routes in de
+# zone visuails.com (Lucas keek het na in het dashboard: Workers -> visuails-site
+# -> Domains, type "Route"). Daarnaast stonden het workers.dev-adres
+# (visuails-site.<subdomein>.workers.dev) en de preview-adressen
+# (*-visuails-site.<subdomein>.workers.dev) aan. Die twee zijn een tweede en
+# derde voordeur naar /admin, Studio en de API, met dezelfde database en
+# bucket, en buiten elke regel die op de zone staat. Een preview-adres kan
+# bovendien een OUDE versie draaien, zonder de fixes van later.
+#
+# Deze twee regels sluiten ze bij de volgende deploy. De routes zelf staan niet
+# in dit bestand en worden door `wrangler deploy` niet aangeraakt.
+workers_dev = false
+preview_urls = false
 
 # --- Geen `main`, geen [assets] ---------------------------------------------
 # Die twee vult Astro's Cloudflare-adapter zelf in. Bij `npm run build` schrijft

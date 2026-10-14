@@ -93,7 +93,10 @@ const PUBLIC_REASONS = new Set(['sample-duplicate']);
  */
 const REF_SHAPE = /^VIS-[0-9A-Z-]{3,20}$/i;
 
-/** Drie pogingen per paginaweergave, dus dertig is ruim voor een mens en krap voor een script. */
+/** Per minuut. Sinds 8 oktober 2026 (punt 1.05) vraagt de bedankpagina na de
+ *  terugkeer van Mollie ongeveer een minuut lang door: dertien keer, plus drie
+ *  keer voor de annulering. Dertig is dan nog ruim voor een mens en krap voor
+ *  een script. */
 const LIMIT = 30;
 
 export async function onRequestGet({ request, env, waitUntil }) {
@@ -177,7 +180,10 @@ export async function onRequestGet({ request, env, waitUntil }) {
 
   const cancelled = row.status === 'cancelled';
   const reason = typeof row.cancel_reason === 'string' ? row.cancel_reason : '';
-  const paid = String(row.payment_status || 'unpaid') === 'paid';
+  /* 'credits' (ronde B, 8 oktober 2026): betaald met abonnementscredits, meteen
+     bij het bestellen. De bedankpagina komt dan met `?paid=` en moet "Betaald"
+     zeggen, niet "niet afgerond". 'plan' is de oude naam ervan. */
+  const paid = ['paid', 'credits', 'plan'].includes(String(row.payment_status || 'unpaid'));
   const review = String(row.review_state || '');
   const gross = (Number(row.total_cents) || 0) + (Number(row.vat_cents) || 0);
   const payable = !cancelled && !paid && (review === '' || review === 'approved') && gross > 0;

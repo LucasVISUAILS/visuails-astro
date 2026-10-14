@@ -1,4 +1,6 @@
 ---
+// VISUAILS — /video: in de hal sinds 13 oktober 2026 (afvinklijst 16, alles doen). De pagina
+// staat in VideoHal.astro; de vorige (VideoPage.astro) staat op de opruimlijst.
 // VISUAILS — /video (English). The page body lives in VideoPage.astro so that
 // /video and /nl/video cannot drift apart; only the meta differs here.
 //
@@ -19,7 +21,7 @@
 // way for the clause that carries the VAT label: it is a tier fact, restated
 // in the trust row, and only true under WINDOW_THRESHOLD products.
 import Layout from '../../layouts/Layout.astro';
-import VideoPage from '../../components/VideoPage.astro';
+import VideoHal from '../../components/VideoHal.astro';
 import { euro, AMOUNT, vatLabel, VIDEO_OP_AANVRAAG } from '../../data/pricing.js';
 
 /* Zolang video op aanvraag is (VIDEO_OP_AANVRAAG, 24 september 2026), noemt de
@@ -31,10 +33,10 @@ const description = VIDEO_OP_AANVRAAG
     `rate on its own or inside an order.`;
 ---
 
-<Layout
+<Layout huid="hal"
   title="Short product videos, from your photos | VISUAILS"
   description={description}
   ogImage="/img/banners-16.webp"
 >
-  <VideoPage lang="en" />
+  <VideoHal lang="en" />
 </Layout>

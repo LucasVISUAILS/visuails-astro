@@ -148,14 +148,19 @@ console.log('\neen venster is twee open dagen achter elkaar in de agenda');
 /* ══ 4 · DE AGENDA WEEGT IN PUNTEN, EN ELKE DIENST WEEGT MEE ══════════════ */
 console.log('\nelke dienst weegt in dezelfde eenheid');
 {
-  check('een compleet product is een catalogset plus een carrousel',
-    KIND_PUNTEN.complete, KIND_PUNTEN.catalog + KIND_PUNTEN.lifestyle);
-  check('en dat is PUNTEN_PER_PRODUCT', PUNTEN_PER_PRODUCT, KIND_PUNTEN.complete);
+  /* Sinds 14 oktober 2026 (afvinklijst 23): geen "complete producten" meer. Een
+     product is een catalogset óf een carrousel, en met vier lifestylefoto's wegen
+     die allebei vier punten. De zwaarste van de twee is de eenheid. */
+  check('compleet heeft geen gewicht meer als soort', 'complete' in KIND_PUNTEN, false);
+  check('een carrousel weegt sinds vier foto’s evenveel als een catalogset',
+    KIND_PUNTEN.lifestyle, KIND_PUNTEN.catalog);
+  check('en PUNTEN_PER_PRODUCT is de zwaarste van de twee', PUNTEN_PER_PRODUCT,
+    Math.max(KIND_PUNTEN.catalog, KIND_PUNTEN.lifestyle));
   /* ── EEN ONGELIJKHEID EN GEEN GELIJKHEID — 7 september 2026 ──────────────
      Tot vandaag stond het plafond in PRODUCTEN en volgden de punten daaruit, dus
      vielen de twee exact samen. Nu staat het plafond in PUNTEN (Lucas zette hem
      op 100) en volgt het aantal producten eruit met een afronding naar beneden:
-     veertien complete producten is 98 van de 100. Die twee punten die overblijven
+     toen veertien complete producten, 98 van de 100. Die twee punten die overblijven
      zijn de rest van de deling en geen fout.
      Wat wél een fout zou zijn, is de andere kant op — een productplafond dat méér
      punten opeet dan er zijn. Dan verkoopt de site een venster dat de poort
@@ -170,20 +175,20 @@ console.log('\nelke dienst weegt in dezelfde eenheid');
     Object.keys(SLOT_KINDS).filter((k) => !(k in KIND_PUNTEN)), []);
 
   /* DE FOUT DIE DIT MOEST OPLOSSEN. Dertig catalogsets zijn 120 beelden en pasten
-     in een venster, maar werden geteld als dertig complete producten (210). */
+     in een venster, maar werden toen geteld als dertig complete producten (210). */
   check('dertig catalogsets passen in één venster',
     puntenVoor('catalog', 30) <= ATTENDED_PUNTEN_PER_VENSTER, true);
   /* Uit het plafond gerekend en niet ingetypt: het aantal dat er precies in past,
      verandert mee met PUNTEN_PER_DAG, en een test die dat getal overtypt valt bij
      elke plafondwijziging om zonder dat er iets stuk is. */
-  const maxCompleet = Math.floor(ATTENDED_PUNTEN_PER_VENSTER / KIND_PUNTEN.complete);
-  check('het grootste aantal complete producten past in één venster',
-    puntenVoor('complete', maxCompleet) <= ATTENDED_PUNTEN_PER_VENSTER, true);
+  const maxCarrousels = Math.floor(ATTENDED_PUNTEN_PER_VENSTER / KIND_PUNTEN.lifestyle);
+  check('het grootste aantal carrousels past in één venster',
+    puntenVoor('lifestyle', maxCarrousels) <= ATTENDED_PUNTEN_PER_VENSTER, true);
   check('en één meer niet',
-    puntenVoor('complete', maxCompleet + 1) > ATTENDED_PUNTEN_PER_VENSTER, true);
-  check('catalog haalt dus een hoger plafond dan complete',
-    clearedWindows({ today: MAANDAG, products: 1, service: 'catalog' }).max
-    > clearedWindows({ today: MAANDAG, products: 1, service: 'complete' }).max, true);
+    puntenVoor('lifestyle', maxCarrousels + 1) > ATTENDED_PUNTEN_PER_VENSTER, true);
+  check('catalog en lifestyle halen hetzelfde plafond',
+    clearedWindows({ today: MAANDAG, products: 1, service: 'catalog' }).max,
+    clearedWindows({ today: MAANDAG, products: 1, service: 'lifestyle' }).max);
 
   /* ── ELKE LADDERDIENST MOET GEWOGEN ZIJN, MAAR NIET ANDERSOM ─────────────
    *
@@ -239,24 +244,25 @@ console.log('\nde vastgelegde last wordt per soort gewogen');
     { window_start: '2026-09-03', window_end: '2026-09-04', product_count: 2, service: 'drop' },
   ];
   const last = bookedFromRows(rijen);
-  // 10 catalogsets = 40 beelden over twee dagen = 20/dag; 2 complete = 14 = 7/dag.
-  check('tien catalogsets en twee complete wegen samen 27 beelden per dag',
+  // 10 catalogsets = 40 beelden over twee dagen = 20/dag; 2 oude bundels ('drop',
+  // van vóór 14 oktober 2026: catalog + carrousel van drie) = 14 = 7/dag.
+  check('tien catalogsets en twee oude bundels wegen samen 27 beelden per dag',
     last['2026-09-03'], 27);
   check('en de tweede dag draagt hetzelfde', last['2026-09-04'], 27);
 
-  /* EEN RIJ ZONDER SOORT TELT ALS COMPLETE — het zwaarste gewicht, en precies wat
-     de poort vóór 31 augustus 2026 voor élke order aannam. Oude rijen krijgen
+  /* EEN RIJ ZONDER SOORT TELT ALS OUDE BUNDEL (zeven punten) — precies wat de
+     poort vóór 31 augustus 2026 voor élke order aannam. Oude rijen krijgen
      daarmee geen ruimte met terugwerkende kracht. */
-  check('een rij zonder soort telt als compleet',
+  check('een rij zonder soort telt als oude bundel',
     bookedFromRows([{ window_start: '2026-09-03', window_end: '2026-09-04', product_count: 2 }])['2026-09-03'],
     7);
 
   /* Een order die de dag vol zet, sluit hem ook echt af voor de volgende. Het
-     aantal komt uit het plafond en staat niet ingetypt: hoeveel complete
-     producten een dag vullen, verandert mee met PUNTEN_PER_DAG. */
-  const vulProducten = Math.ceil(ATTENDED_PUNTEN_PER_VENSTER / KIND_PUNTEN.complete);
+     aantal komt uit het plafond en staat niet ingetypt: hoeveel catalogsets een
+     dag vullen, verandert mee met PUNTEN_PER_DAG. */
+  const vulProducten = Math.ceil(ATTENDED_PUNTEN_PER_VENSTER / KIND_PUNTEN.catalog);
   const propvol = bookedFromRows([
-    { window_start: '2026-09-03', window_end: '2026-09-04', product_count: vulProducten, service: 'drop' },
+    { window_start: '2026-09-03', window_end: '2026-09-04', product_count: vulProducten, service: 'catalog' },
   ]);
   check('een order die het venster vult, zet beide dagen op het plafond',
     [propvol['2026-09-03'] >= ATTENDED_PUNTEN_PER_DAG, propvol['2026-09-04'] >= ATTENDED_PUNTEN_PER_DAG],
@@ -282,7 +288,10 @@ console.log('\nvideowerk weegt in de agenda, per stijl en in clips');
   check('en een custom video ook', agendaKind('video', 'custom'), null);
   check('een videorij zonder stijl valt nergens op terug', agendaKind('video', ''), null);
   check('een foto-dienst gaat ongewijzigd door', agendaKind('catalog'), 'catalog');
-  check('en de wire-waarde drop blijft compleet', agendaKind('drop'), 'complete');
+  /* 'drop' (catalog + lifestyle in één bestelling) bestaat sinds 14 oktober 2026
+     niet meer als dienst; een oude rij weegt wat hij toen woog. */
+  check('en een oude drop-rij weegt als oude bundel', agendaKind('drop'), 'oude-bundel');
+  check('  van zeven punten per product', puntenVoor('drop', 1), 7);
 
   /* HET AANTAL KOMT UIT clip_count EN NIET UIT product_count. Zie de noot bij
      het clips-veld in functions/api/order.js: clips in product_count schrijven
@@ -302,8 +311,16 @@ console.log('\nvideowerk weegt in de agenda, per stijl en in clips');
     rowPunten({ service: 'video', style: 'campaign', clip_count: 4 }), null);
   check('een fotorij weegt nog steeds op product_count',
     rowPunten({ service: 'catalog', product_count: 10 }), 10 * KIND_PUNTEN.catalog);
-  check('en een rij zonder soort telt nog steeds als compleet',
-    rowPunten({ product_count: 2 }), 2 * KIND_PUNTEN.complete);
+  check('en een rij zonder soort telt nog steeds als oude bundel',
+    rowPunten({ product_count: 2 }), 2 * puntenVoor('drop', 1));
+  /* Een lifestylebestelling van vóór de vier foto’s weegt drie punten per product,
+     een nieuwe vier (afvinklijst 23, k-ls-oud). */
+  check('een oude lifestylerij weegt drie per product',
+    rowPunten({ service: 'lifestyle', product_count: 5, details_json: '{}' }), 15);
+  check('een nieuwe vier',
+    rowPunten({ service: 'lifestyle', product_count: 5, details_json: '{"lifestyle_beelden":4}' }), 20);
+  check('en zonder details (nieuw werk) ook vier',
+    rowPunten({ service: 'lifestyle', product_count: 5 }), 20);
 
   const last = bookedFromRows([
     { window_start: '2026-09-03', window_end: '2026-09-04', service: 'video', style: 'motion', clip_count: 6 },

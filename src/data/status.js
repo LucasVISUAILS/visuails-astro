@@ -48,7 +48,7 @@ export const STAND_VAN = {
   received: 'wait',            // binnen, nog niet opgepakt
   awaiting_payment: 'wait',    // wacht op de betaling; de productie start pas daarna
   in_production: 'work',
-  human_check: 'work',         // onze beeldredactie kijkt het na — nog steeds ONS werk,
+  human_check: 'work',         // wij kijken het na — nog steeds ONS werk,
                                // en dus niet 'rev': dat is wat de KLANT terugstuurt
   delivered: 'done',
   cancelled: 'can',
@@ -117,12 +117,14 @@ export function standKlasse(status) {
  * waar geen CSS-variabele bestaat. Lichte stand; mail kent geen donkere (zie
  * de noot bij C in src/lib/mailTemplate.js).
  */
+/* Sinds 14 oktober 2026 de standen van de hal (KLEURENSCHEMA.md): een lijn,
+   mist met nacht, nacht met wit; amber en vak-grijs voor de twee uitzonderingen. */
 export const STAND_KLEUR = {
-  wait: { fill: 'transparent', edge: '#7C8096', ink: '#4A4E6B' },
-  work: { fill: '#E4DFFF', edge: 'rgba(61,23,214,.30)', ink: '#3D17D6' },
-  done: { fill: '#1F0B66', edge: '#1F0B66', ink: '#FFFFFF' },
+  wait: { fill: 'transparent', edge: '#8E8BA2', ink: '#4B4960' },
+  work: { fill: '#F1EEFF', edge: '#DCD5FF', ink: '#2A0E8F' },
+  done: { fill: '#2A0E8F', edge: '#2A0E8F', ink: '#FFFFFF' },
   rev: { fill: '#F6E7D1', edge: 'rgba(138,77,6,.30)', ink: '#8A4D06' },
-  can: { fill: '#E4E7EC', edge: '#83868A', ink: '#3E4145' },
+  can: { fill: '#ECEBF3', edge: '#8E8BA2', ink: '#4B4960' },
 };
 
 

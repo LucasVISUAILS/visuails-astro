@@ -235,7 +235,33 @@ console.log('\nde huid staat op elke gebouwde pagina, op twee na');
        alleen "hoogstens twee" zegt de dag doorlaat waarop het de verkeerde twee
        zijn. Die twee pagina's bestaan niet meer; de lijst is daarmee leeg, en
        een lege lijst is de strengste vorm die deze controle kan hebben. */
-    check('geen enkele pagina mist de huid', zonder, []);
+    /* ── BEHALVE DE VOORPAGINA — 12 oktober 2026 ────────────────────────────
+       Eerst stond de nieuwe huid "hal" (src/styles/hal.css) alleen op het
+       voorbeeld, /voorbeeld/ en /nl/voorbeeld/. Lucas keurde het goed en koos
+       "direct live bij je volgende UITROLLEN": nu dragen / en /nl/ de hal, en
+       dus met opzet niet de kantige; de voorbeeldpagina's bestaan niet meer.
+       Met naam, om dezelfde reden als hierboven: "precies deze twee", en niet
+       "hoogstens twee". En de tweede regel eist dat ze de hal ook echt dragen,
+       zodat een pagina die de huid kwijtraakt hier nooit voor de voorpagina kan
+       doorgaan. Krijgt een volgende pagina de hal, dan komt hij hier bij.
+       Sinds afvinklijst 7 (12 oktober, avond) ook de voorbeelden per groep op
+       /voorbeeld/<pagina>/ (v-vorm = a), weer met naam: start, de prijzen (pricing,
+       plans, per-product), catalog en lifestyle met hun lookpagina's. Gaat een groep live, dan verhuist hij hier van
+       VOORBEELDEN naar de echte route. */
+    /* Sinds afvinklijst 8 (12 oktober, avond, alles "doen") staan start, de
+       prijzen, catalog en lifestyle met hun lookpagina's zelf in de hal; sinds
+       afvinklijst 9 de proef, sinds afvinklijst 10 de formulieren en de bedankpagina,
+       sinds afvinklijst 11 hoe het werkt, sinds afvinklijst 12 de modellen, sinds
+       afvinklijst 13 vergelijken, sinds afvinklijst 14 de leespagina's, sinds afvinklijst 15
+       over ons en contact, sinds afvinklijst 16 video met zijn stijlen, hooks en editions, sinds afvinklijst 17 de galerij, sinds afvinklijst 18 Studio, sinds afvinklijst 19 de juridische pagina's en de AI Act-pagina. */
+    const GROEPEN = ['start', 'pricing', 'plans', 'per-product', 'catalog', 'catalog/classic', 'catalog/custom', 'lifestyle', 'lifestyle/dunes', 'lifestyle/flash', 'lifestyle/glow', 'lifestyle/phone-made', 'lifestyle/custom', 'test-sample', 'start/catalog', 'start/lifestyle', 'start/plan', 'start/brand-model', 'start/custom-look', 'start/video', 'thank-you', 'how-it-works', 'models', 'custom-models', 'compare', 'guides', 'faq', 'upload-guidelines', 'about', 'contact', 'video', 'video/motion', 'video/lifestyle', 'video/campaign', 'video/custom', 'hooks', 'editions', 'gallery', 'studio', 'terms', 'privacy', 'cookie-policy', 'data-processing-agreement', 'ai-act'].flatMap((p) => [`/${p}/`, `/nl/${p}/`]);
+    /* De openingen met een beeld staan sinds afvinklijst 21 op de pagina's zelf. Sinds 14 oktober
+       2026 weer twee voorbeelden: de uitleg in beweging (afvinklijst 24), los en op de voorpagina. */
+    const VOORBEELDEN = ['uitleg', 'voorpagina'].flatMap((p) => [`/voorbeeld/${p}/`, `/nl/voorbeeld/${p}/`]);
+    /* /nl/404/ is de map die Astro van nl/404.astro bouwt (zie scripts/sitemap-and-404.mjs). */
+    const HAL = ['/', '/nl/', ...GROEPEN, ...VOORBEELDEN, '/nl/404/'].sort();
+    check('alleen de pagina\'s in de hal missen de kantige huid', zonder, HAL);
+    check('en dat is omdat ze de hal dragen', HAL.map((p) => /<body[^>]*class="[^"]*\bhal\b/.test(readFileSync(`dist${p}index.html`, 'utf8'))), HAL.map(() => true));
   }
 
   /* De regels hieronder lezen de BRON en niet dist/, dus ze staan buiten de
@@ -255,11 +281,13 @@ console.log('\nde huid staat op elke gebouwde pagina, op twee na');
      ontsnappingsklep hoort te blijven werken voor de volgende keer dat er
      vergeleken moet worden, ook nu er niemand gebruik van maakt. */
 
-  /* De homepage noemt de prop juist NIET meer: hij komt uit de standaard. Stond
-     hij er nog wel, dan waren er twee plekken die hetzelfde zeggen, en dan is de
-     dag dat ze elkaar tegenspreken alleen een kwestie van tijd. */
-  check('/ leunt op de standaard', /huid\s*=/.test(indexEN), false);
-  check('/nl leunt op de standaard', /huid\s*=/.test(indexNL), false);
+  /* De homepage noemde de prop niet: hij kwam uit de standaard, want twee
+     plekken die hetzelfde zeggen spreken elkaar ooit tegen. Sinds 12 oktober 2026
+     zegt de homepage iets ANDERS dan de standaard — huid="hal" — en dat moet hij
+     dan ook met zoveel woorden zeggen. Wat blijft: de kantige huid, de
+     standaard, noemt hij nog steeds niet. */
+  check('/ zet de hal, en noemt de standaard niet', [/huid="hal"/.test(indexEN), /huid="kantig"/.test(indexEN)], [true, false]);
+  check('/nl zet de hal, en noemt de standaard niet', [/huid="hal"/.test(indexNL), /huid="kantig"/.test(indexNL)], [true, false]);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -307,13 +335,30 @@ if (!distStaat.er || distStaat.oud) {
      een verwijderde pagina alsnog live gaat. */
   check('dist/proef bestaat niet meer', lees('dist/proef/index.html'), null);
   check('dist/nl/proef bestaat niet meer', lees('dist/nl/proef/index.html'), null);
-  check('/ draagt de klasse', /<body[^>]*huid-kantig/.test(home), true);
+  /* Tot 12 oktober 2026 las dit de homepage. Die draagt nu de hal (zie sectie
+     5 en tests/hal-voorbeeld.test.mjs), dus de kantige huid wordt nu gelezen op
+     een pagina die hem nog draagt: /pricing, en sinds afvinklijst 8 (die /pricing
+     in de hal zette) /how-it-works, en sinds afvinklijst 11 (die hoe het werkt in
+     de hal zette) /models, en sinds afvinklijst 12 (die de modellen in de hal zette)
+     /compare, en sinds afvinklijst 13 (die vergelijken in de hal zette) /about, en sinds
+     afvinklijst 15 (die over ons in de hal zette) /privacy: de juridische pagina's komen als laatste. */
+  /* Sinds afvinklijst 19 (13 oktober 2026) staan ook de juridische pagina's in de hal: geen enkele
+     gebouwde pagina draagt de kantige huid nog. Wat hier gelezen wordt is dus de laatste die hem droeg,
+     /privacy, en die hoort hem nu NIET meer te dragen. */
+  const prijzen = lees('dist/privacy/index.html');
+  check('/privacy draagt de kantige huid niet meer (hij staat in de hal)', [/<body[^>]*huid-kantig/.test(prijzen), /<body[^>]*class="[^"]*\bhal\b/.test(prijzen)], [false, true]);
+  check('/ draagt de hal en niet de kantige huid', [/<body[^>]*class="[^"]*\bhal\b/.test(home), /<body[^>]*huid-kantig/.test(home)], [true, false]);
   /* Omgedraaid op 7 september 2026: de eigen aanwijzer is eruit, dus ook de
      homepage hoort er geen te dragen. Zie sectie 3 hierboven. */
   check('/ draagt ook geen eigen aanwijzer', /id="aw"/.test(home), false);
   /* Het merk met zijn hover-animatie staat er nog — de reden dat dit een huid
      werd en geen verbouwing. */
-  check('/ heeft het merk met zijn twee lagen nog', /mk-line/.test(home) && /mk-fill/.test(home), true);
+  /* Het V-teken met zijn twee lagen hoorde bij de kantige huid; in de hal staat het woordmerk in de
+     balk, ook op /privacy. */
+  check('/privacy heeft het woordmerk in de balk', /<symbol id="woordmerk"/.test(prijzen), true);
+  /* In de hal staat het woordmerk in de balk (afvinklijst 5); het V-teken met
+     zijn twee lagen hoort daar dus niet, en het woordmerk wel. */
+  check('/ heeft het woordmerk in de balk', /<symbol id="woordmerk"/.test(home), true);
 
   const kaart = lees('dist/sitemap.xml');
   /* Stond er al op noindex en dus nooit in; nu bestaat de route helemaal niet

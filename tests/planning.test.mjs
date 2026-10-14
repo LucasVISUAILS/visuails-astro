@@ -1,3 +1,4 @@
+// RONDE 10 · BLIJFT (punt 9.11, 8 oktober 2026): gaat over vaste leverdata en /admin/planning, niet over de abonnementsweek.
 /*
  * ═══════════════════════════════════════════════════════════════════════════════
  * DE PLANNING — WIE EEN VENSTER KRIJGT, EN OF DE ONDERSTE TREDE ERIN PAST
@@ -56,16 +57,16 @@ console.log('alleen een dienst van de prijsladder kan een venster krijgen');
 {
   /* De ladderdiensten: bij tien of meer producten hoort daar een gereserveerd venster,
      want daar bestaat een capaciteitspoort voor. */
-  for (const svc of ['catalog', 'lifestyle', 'complete']) {
+  for (const svc of ['catalog', 'lifestyle']) {
     ok(`${svc} met ${WINDOW_THRESHOLD} producten is attended`, tierFor(WINDOW_THRESHOLD, svc), 'attended');
     ok(`${svc} met ${WINDOW_THRESHOLD - 1} nog niet`, tierFor(WINDOW_THRESHOLD - 1, svc), 'unattended');
   }
-  /* En de wire-waarde, want /start/complete post `service=drop` en niet `complete`.
-     Diezelfde val kostte eerder een bestelling van € 2.359,50 die gratis de deur uit
-     ging (zie LADDER_KEY in src/lib/quote.js) — dus wordt hij hier expliciet getoetst
-     in plaats van dat de laddernaam wordt aangenomen. */
-  ok('de wire-waarde drop telt als complete', tierFor(12, 'drop'), 'attended');
-  ok('en isLadderService kent hem ook', isLadderService('drop'), true);
+  /* Compleet (catalog + lifestyle in één bestelling, op de draad 'drop') bestaat
+     sinds 14 oktober 2026 niet meer als dienst (afvinklijst 23). /api/order weigert
+     'drop' al sinds 8 oktober; hier staat dat hij ook geen venster meer krijgt. */
+  ok('de oude wire-waarde drop krijgt geen venster meer', tierFor(12, 'drop'), 'unattended');
+  ok('en isLadderService kent hem niet meer', isLadderService('drop'), false);
+  ok('net als complete', isLadderService('complete'), false);
 
   /* DE KERN. Video is een aanvraag en geen bestelling: geen prijs op de ladder, geen
      capaciteitspoort, geen betaallink. Dus nooit attended, hoeveel clips er ook staan. */
@@ -110,10 +111,11 @@ console.log('\nde server denkt hetzelfde als de browser');
   ok('en roept hem met de dienst aan', /tierFor\(products, svc\)/.test(code), true);
 
   /* En de gedeelde functie moet nog steeds doen waar hij voor is: alleen een
-     ladderdienst krijgt een venster, 'drop' hoort erbij, en video niet. Dit is de
-     inhoud van de oude servercopie-toets, nu op de functie zelf. */
-  ok('drop krijgt een venster vanaf de drempel', tierFor(WINDOW_THRESHOLD, 'drop'), 'attended');
-  ok('complete ook', tierFor(WINDOW_THRESHOLD, 'complete'), 'attended');
+     ladderdienst krijgt een venster, en video niet. Dit is de inhoud van de oude
+     servercopie-toets, nu op de functie zelf. ('drop' en 'complete' hoorden erbij
+     tot 14 oktober 2026; compleet bestaat niet meer.) */
+  ok('catalog krijgt een venster vanaf de drempel', tierFor(WINDOW_THRESHOLD, 'catalog'), 'attended');
+  ok('lifestyle ook', tierFor(WINDOW_THRESHOLD, 'lifestyle'), 'attended');
   ok('video nooit', tierFor(WINDOW_THRESHOLD, 'video'), 'unattended');
   ok('en onder de drempel niemand', tierFor(WINDOW_THRESHOLD - 1, 'catalog'), 'unattended');
   ok('de drempel komt uit pricing.js', WINDOW_THRESHOLD, 10);
@@ -221,9 +223,9 @@ console.log('\nelk vakje dat het formulier tekent, kan ook geüpload worden');
   /* De config moet dat getal ook echt meesturen, anders valt maxCards() stil terug
      op de 30 uit zijn eigen terugval en is de koppeling schijn. */
   const of = read('src/components/order/OrderFlow.astro');
-  /* Sinds 31 augustus 2026 is dat getal per dienst — een catalogset weegt vier
-     beelden en een compleet product zeven, dus in hetzelfde venster passen 52
-     catalogsets tegen 30 complete. De config draagt dus `maxProducts` in de
+  /* Sinds 31 augustus 2026 is dat getal per dienst — elke dienst heeft zijn eigen
+     gewicht in punten (catalog en lifestyle sinds 14 oktober 2026 allebei vier).
+     De config draagt dus `maxProducts` in de
      verkorte vorm, en de afleiding staat er één blok boven. */
   ok('en OrderFlow stuurt maxProducts mee', /\n  maxProducts,\n/.test(of), true);
   /* Sinds 3 september 2026 in twee stappen: eerst de weekcapaciteit van de

@@ -99,16 +99,24 @@ export const PRODUCT_QUESTIONS = [
     // against, not the colour we build from.
     id: 'colour',
     type: 'text',
-    maxLength: 40,
+    /* 60 en niet 40 sinds 8 oktober 2026 (5.03): de vraag is nu naam én code,
+       en "bosgroen · Pantone 19-5513 TCX · #1B3A2F" is al 40 tekens. */
+    maxLength: 60,
     // Renders a live swatch beside the field when the value parses as a hex.
     // Confirmation, not validation: it tells the customer we read what they
     // typed, and it never refuses a word.
     swatch: true,
-    name: { en: 'Its exact colour, if you know it', nl: 'De exacte kleur, als je die weet' },
-    placeholder: { en: '#1B3A2F, or "forest green"', nl: '#1B3A2F, of "bosgroen"' },
+    /* ── KLEURTROUW — 8 oktober 2026 (punt 5.03, V32 = a) ─────────────────────
+       De kleur zoals in de webshop, met Pantone- of hexcode als die er is; wijkt
+       de foto af, dan geldt deze kleur. Dat staat ook in de revisieregel (/terms
+       §10 en de FAQ, uit REVISIEBELEID in pricing.js). Alleen label en hint zijn
+       veranderd: stap 2 wordt later mogelijk omgebouwd. De tip met het witte vel
+       staat al in de fotogids (src/data/fotogids.js). */
+    name: { en: 'Colour, as in your webshop', nl: 'Kleur, zoals in je webshop' },
+    placeholder: { en: 'forest green, #1B3A2F', nl: 'bosgroen, #1B3A2F' },
     buys: {
-      en: 'A phone photograph carries the room with it — a warm bulb or a cold window pulls the whole garment off. If you give us the colour code from your own spec, the finished frame is checked against that rather than against whatever the light did. A colour name in words helps too; a code is better, because a name is a range.',
-      nl: 'Een telefoonfoto neemt de kamer mee — een warme lamp of een koud raam trekt het hele kledingstuk scheef. Geef je de kleurcode uit je eigen specificatie, dan leggen we het afgewerkte beeld daarnaast in plaats van naast wat het licht ervan maakte. Een kleur in woorden helpt ook; een code is beter, want een naam is een marge.',
+      en: 'A phone photograph carries the room with it — a warm bulb or a cold window pulls the colour off. Name the colour as in your webshop, with the colour code if you have one (Pantone or hex). If your photo differs from your product, we go by this colour.',
+      nl: 'Een telefoonfoto neemt de kamer mee — een warme lamp of een koud raam trekt de kleur scheef. Noem de kleur zoals in je webshop, met de kleurcode als je die hebt (Pantone of hex). Wijkt je foto af van je product, dan houden we deze kleur aan.',
     },
   },
 ];

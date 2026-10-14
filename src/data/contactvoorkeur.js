@@ -69,21 +69,55 @@ export function voorkeurMet(raw, telefoon) {
  * link naar zijn beelden gaan altijd per mail, want die moet je terug kunnen
  * vinden. De voorkeur gaat over de VRAGEN die wij stellen tijdens het werk.
  */
+/*
+ * ── "TELEFOON OF WHATSAPP" — 11 oktober 2026 (k705 = a) ─────────────────────
+ *
+ * Lucas belt Nederlandse klanten en appt daarbuiten. De tweede keuze heette
+ * "WhatsApp", en dan leest een Nederlandse klant die gebeld wordt dat als iets
+ * wat hij niet koos. Alleen het WOORD verandert: de waarde blijft 'whatsapp',
+ * zodat elke klant die het sinds 11 september koos (migratie 0047) gewoon
+ * hetzelfde antwoord houdt en niets in de database omgezet hoeft te worden.
+ * Lees de waarde dus als "via het telefoonnummer", niet als "alleen appen".
+ */
+/*
+ * ── DE GERUSTSTELLENDE REGEL — 12 oktober 2026 (afvinklijst 4, k-contact = a) ──
+ *
+ * Lucas: *"Telefoon weet ik niet of dat erbij gezet moet worden omdat ik
+ * voornamelijk alleen Nederlandse klanten bel en buitenlandse klanten straks
+ * het idee krijgen dat zij ook zomaar gebeld worden, dus dit moet veilig
+ * geframed worden want ik zou af en toe Engelse klanten gewoon kunnen bellen."*
+ *
+ * Dus één regel die zegt WAAROVER en WANNEER, en niets over landen: dan klopt
+ * hij voor een Nederlandse klant die gebeld wordt en voor een Engelse die een
+ * appje krijgt. `gerust` staat vooraan in `noot`, zodat het bestelformulier
+ * (stap 3) en /plans hem krijgen zonder dat hun bestanden veranderen; /contact
+ * heeft een eigen variant, want daar gaat het om een vraag, niet om een
+ * bestelling.
+ */
+const GERUST = {
+  en: 'We only call or message about your order, and only when it is quicker than email.',
+  nl: 'We bellen of appen alleen over je bestelling, en alleen als dat sneller is dan mailen.',
+};
 export const VOORKEUR_COPY = {
   en: {
     vraag: 'How should we reach you?',
     email: 'Email',
-    whatsapp: 'WhatsApp',
-    noot: 'For questions while we work. Your invoice and the link to your images always come by email.',
+    whatsapp: 'Phone or WhatsApp',
+    gerust: GERUST.en,
+    noot: `${GERUST.en} Your invoice and the link to your images always come by email.`,
+    /* Alleen op /contact: daar gaat het om een vraag, niet om een bestelling. */
+    gerustContact: 'We only call or message about your question, and only when it is quicker than email.',
     /* Alleen op /contact, waar een nummer optioneel is. */
-    nootZonderNummer: 'Pick WhatsApp and leave a number, and we answer there.',
+    nootZonderNummer: 'Pick Phone or WhatsApp and leave a number, and we answer there.',
   },
   nl: {
     vraag: 'Hoe kunnen we je het beste bereiken?',
     email: 'E-mail',
-    whatsapp: 'WhatsApp',
-    noot: 'Voor vragen tijdens het werk. Je factuur en de link naar je beelden gaan altijd per mail.',
-    nootZonderNummer: 'Kies WhatsApp en laat een nummer achter, dan antwoorden we daar.',
+    whatsapp: 'Telefoon of WhatsApp',
+    gerust: GERUST.nl,
+    noot: `${GERUST.nl} Je factuur en de link naar je beelden gaan altijd per mail.`,
+    gerustContact: 'We bellen of appen alleen over je vraag, en alleen als dat sneller is dan mailen.',
+    nootZonderNummer: 'Kies Telefoon of WhatsApp en laat een nummer achter, dan antwoorden we daar.',
   },
 };
 

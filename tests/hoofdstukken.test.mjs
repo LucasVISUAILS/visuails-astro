@@ -17,9 +17,10 @@
  *       te zitten;
  *   3 · een kamer of slotkaart is zelf nooit een vervolg: donker IS de wissel.
  *
- * En op de voorpagina: hoofdstuk 2 is de dienstwissel (één paneel), en de oude
- * band van vier stations staat er niet meer naast.
+ * En op de voorpagina: sinds 12 oktober 2026 de hal, met één donker vlak en geen
+ * panelen; de oude band van vier stations staat er niet meer.
  */
+import { isEcht } from '../src/lib/beeldAanwezig.js';
 import { readFileSync, globSync } from 'node:fs';
 import { buildStaat } from './lib/build.mjs';
 
@@ -72,8 +73,13 @@ for (const pad of ['dist/index.html', 'dist/nl/index.html']) {
   const s = secties(html);
   const naden = s.filter((k, i) => i > 0 && !k.includes('vervolg')).length;
   ok(`${pad}: hoogstens vijf naden (waren er negen)`, naden <= 5, true);
-  ok(`${pad}: hoofdstuk 2 is de dienstwissel`, /<section\b[^>]*class="paneel dd"/.test(html), true);
-  ok(`${pad}: met drie dia’s`, (html.match(/<article\b[^>]*data-dd-dia/g) || []).length, 3);
+  /* 12 oktober 2026: de voorpagina is de hal (VoorpaginaHal.astro), en die kent
+     geen panelen, kamers of dienstwissel meer — de twee regels die hier stonden
+     ("hoofdstuk 2 is de dienstwissel", "met twee dia's") gingen over die opbouw.
+     De regel van de hal die er het dichtst bij ligt is d-donker uit afvinklijst
+     5: één donker vlak, het slotbeeld van de proef. Dat staat nu hier. */
+  ok(`${pad}: de hal heeft precies één donker vlak (de proef)`, (html.match(/<section\b[^>]*class="h-proef\b/g) || []).length, 1);
+  ok(`${pad}: en geen paneel of kamer van de kantige huid`, s.length, 0);
   ok(`${pad}: en de oude band staat er niet meer`, /class="lb paneel"/.test(html), false);
 }
 

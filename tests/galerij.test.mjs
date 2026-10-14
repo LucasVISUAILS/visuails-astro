@@ -57,7 +57,8 @@ const lees = (p) => readFileSync(path.join(ROOT, p), 'utf8');
  * echt die component gebruiken (anders is er stilletjes weer een tweede kopie),
  * en dat de alt-teksten — het ENIGE dat per taal hoort te verschillen — ook
  * echt per taal geschreven zijn en niet één keer in het Engels. */
-const BRON = lees('src/components/GalleryPage.astro');
+/* Sinds 13 oktober 2026 (afvinklijst 17) staat de galerij in de hal: GalleryHal.astro is de ene bron. */
+const BRON = lees('src/components/GalleryHal.astro');
 const PAGINA_EN = lees('src/pages/gallery.astro');
 const PAGINA_NL = lees('src/pages/nl/gallery.astro');
 
@@ -78,8 +79,8 @@ const filtersUit = (bron) => [...bron.matchAll(/\{ key: '([a-z-]+)', label:/g)].
 
 console.log('de twee talen delen één bron');
 {
-  ok('/gallery gebruikt de gedeelde component', /<GalleryPage lang="en"/.test(PAGINA_EN), true);
-  ok('/nl/gallery ook', /<GalleryPage lang="nl"/.test(PAGINA_NL), true);
+  ok('/gallery gebruikt de gedeelde component', /<GalleryHal lang="en"/.test(PAGINA_EN), true);
+  ok('/nl/gallery ook', /<GalleryHal lang="nl"/.test(PAGINA_NL), true);
   /* Geen tweede fotolijst in een paginabestand. Zou er ooit weer een `src: '/img/`
      in een van de twee wrappers verschijnen, dan is de kopie terug en zegt deze
      regel het meteen. */
@@ -102,8 +103,12 @@ console.log('\nelke foto bestaat, en geen enkele gaat op volle grootte mee');
   const reeksen = [
     ...Array.from({ length: 8 }, (_, i) => `banners-0${i + 1}`),
     ...Array.from({ length: 8 }, (_, i) => `lifestyle-flash-0${i + 1}`),
-    ...Array.from({ length: 6 }, (_, i) => `lifestyle-glow-0${i + 1}`),
-    ...Array.from({ length: 14 }, (_, i) => `lifestyle-phone-made-${String(i + 1).padStart(2, '0')}`),
+    /* Glow zonder 01 sinds 12 oktober 2026 (afvinklijst 8, v8-glow b): dat beeld
+       droeg tekst op het shirt en is overal weg, zoals in GalleryPage.astro. Zonder 06
+       sinds 13 oktober 2026 (afvinklijst 15, k-rechten): de hoodie, zonder toestemming. */
+    ...[2, 3, 4, 5].map((n) => `lifestyle-glow-0${n}`),
+    /* Phone-made zonder 01 sinds 14 oktober 2026: een product van een ander, echt merk. */
+    ...Array.from({ length: 13 }, (_, i) => `lifestyle-phone-made-${String(i + 2).padStart(2, '0')}`),
   ];
   const alle = [...new Set([...reeksen, ...losseUit(BRON)])];
 

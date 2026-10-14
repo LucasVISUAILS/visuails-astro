@@ -115,7 +115,15 @@ export function tagline(lang) {
    kan geen JavaScript lezen, dus daar staat `--merkteken` in :root. Dat is een
    tweede waarheid, en die wordt door tests/merkteken.test.mjs aan deze
    vastgeknoopt: lopen ze uit elkaar, dan wordt er iets rood. */
-export const MERKTEKEN = '™';
+/* ── GEEN TEKEN MEER — 12 oktober 2026 ──────────────────────────────────────
+   Lucas (afvinklijst 5, bij de opening): *"Verwijder zorgvuldig overal de "tm"
+   achter het logo. Deze wil ik niet meer zien."*
 
-/** De merknaam met zijn teken: "VISUAILS™". Gebruik dit, niet de losse letters. */
+   Dus leeg, en niet weggehaald: MERK blijft de ene plek waar de naam vandaan
+   komt, en schrijft VISUAILS zich ooit in bij BOIP of EUIPO en wil Lucas het
+   teken terug, dan is het weer deze ene regel (en --merkteken in global.css,
+   die tests/merkteken.test.mjs eraan vastknoopt). */
+export const MERKTEKEN = '';
+
+/** De merknaam: "VISUAILS" (sinds 12 oktober 2026 zonder teken). Gebruik dit, niet de losse letters. */
 export const MERK = `VISUAILS${MERKTEKEN}`;

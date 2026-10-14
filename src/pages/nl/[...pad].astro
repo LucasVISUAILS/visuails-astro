@@ -11,15 +11,19 @@
 // bestand is. Astro geeft een rest-parameter de laagste voorrang, dus hij komt
 // pas aan de beurt als niets anders past; bestanden uit dist/ serveert Cloudflare
 // zelf, vóór de Worker. Status 404, noindex, en dezelfde inhoud als /nl/404.
+//
+// 14 oktober 2026: in de hal, net als /nl/404 sinds 13 oktober. Hier stond nog
+// NotFoundPage.astro (de vorige opmaak), terwijl die op de opruimlijst staat:
+// na OPRUIMEN.bat zou de build hier breken.
 export const prerender = false;
 import Layout from '../../layouts/Layout.astro';
-import NotFoundPage from '../../components/NotFoundPage.astro';
+import NotFoundHal from '../../components/NotFoundHal.astro';
 
 Astro.response.status = 404;
 const description =
   'Deze pagina bestaat niet. De link is verouderd of het adres verkeerd getypt — ga terug naar de homepage of bekijk Catalog, Lifestyle en Video.';
 ---
 
-<Layout title="Pagina niet gevonden — VISUAILS" description={description} noindex>
-  <NotFoundPage lang="nl" />
+<Layout huid="hal" title="Pagina niet gevonden — VISUAILS" description={description} noindex>
+  <NotFoundHal lang="nl" />
 </Layout>

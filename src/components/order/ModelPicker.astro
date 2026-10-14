@@ -121,8 +121,8 @@ const COPY = {
     lead: 'Every catalog set includes one on-model photo at no extra cost. Pick the face that fits your brand, or leave the choice to us.',
     /* De lifestylevorm (24 september 2026): daar stond de catalogtekst over
        "vier foto's en niet drie". */
-    labelNoteLifestyle: 'One photo of the product being worn, so a shopper can see the fit and the drape instead of guessing at them. It is one of the three images in every carousel, at no extra cost.',
-    leadLifestyle: 'Every carousel includes one photo of the product being worn, at no extra cost. Pick the face that fits your brand, or leave the choice to us.',
+    labelNoteLifestyle: 'Three of the four images in every carousel show the product being worn — front, back and a detail — so a shopper can see the fit and the drape instead of guessing at them. At no extra cost.',
+    leadLifestyle: 'Three of the four photos in every carousel are on a model, at no extra cost. Pick the face that fits your brand, or leave the choice to us.',
     /* ── DE PROEF KENT ZIJN SOORT NOG NIET — 10 september 2026 ──────────────
        Op /test-sample staat de soort in dezelfde stap als deze keuze: een
        radio die van catalogset naar carousel kan springen zolang de klant nog
@@ -135,7 +135,7 @@ const COPY = {
        is vier foto's waarvan één gedragen (zie `labelNote` hierboven), en in
        elke carousel zit er ook één. Wat de klant kiest, verandert niet DAT de
        vraag geldt. */
-    leadProef: 'Your test sample includes one photo of the product being worn, at no extra cost. Pick the face that fits your brand, or leave the choice to us.',
+    leadProef: 'Your test sample shows the product on a model, at no extra cost. Pick the face that fits your brand, or leave the choice to us.',
     /* "Choose one that fits OUR brand" stond hier, en dat wisselt halverwege het
        blok van spreker: de regel erboven zegt "Pick the face that fits YOUR
        brand, or leave the choice to us" — VISUAILS aan het woord — en de noot
@@ -174,10 +174,10 @@ const COPY = {
     label: 'De foto op een model',
     labelNote: 'Eén foto waarop het product gedragen wordt, zodat een koper de pasvorm en de val ziet in plaats van erover te moeten gokken. Hij zit zonder meerprijs in elke catalogset, en hij is de reden dat die set uit vier foto\u2019s bestaat en niet uit drie.',
     lead: 'Bij elke catalogset zit één foto op een model, zonder extra kosten. Kies het gezicht dat bij je merk past, of laat de keuze aan ons.',
-    labelNoteLifestyle: 'Eén foto waarop het product gedragen wordt, zodat een koper de pasvorm en de val ziet in plaats van erover te moeten gokken. Hij is een van de drie beelden in elke carrousel, zonder meerprijs.',
-    leadLifestyle: 'In elke carrousel zit één foto waarop het product gedragen wordt, zonder extra kosten. Kies het gezicht dat bij je merk past, of laat de keuze aan ons.',
+    labelNoteLifestyle: 'Drie van de vier beelden in elke carrousel tonen het product gedragen — van voren, van achteren en een detail — zodat een koper de pasvorm en de val ziet in plaats van erover te moeten gokken. Zonder meerprijs.',
+    leadLifestyle: 'Drie van de vier foto’s in elke carrousel zijn op een model, zonder extra kosten. Kies het gezicht dat bij je merk past, of laat de keuze aan ons.',
     /* Zie de Engelse tegenhanger. */
-    leadProef: 'In je proef zit één foto waarop het product gedragen wordt, zonder extra kosten. Kies het gezicht dat bij je merk past, of laat de keuze aan ons.',
+    leadProef: 'In je proef staat je product op een model, zonder extra kosten. Kies het gezicht dat bij je merk past, of laat de keuze aan ons.',
     /* Zie de Engelse tegenhanger. */
     any: 'Wij kiezen voor jou',
     /* Zie de Engelse noot. */
@@ -505,7 +505,7 @@ const thumbSet = (m) => {
      onbekenden te vinden. */
   .mp-opt.is-own {
     border-color: var(--ink);
-    box-shadow: 0 0 0 1px var(--ink), 0 6px 18px rgb(17 17 17 / .07);
+    box-shadow: 0 0 0 1px var(--ink), 0 6px 18px rgb(15 12 36 / .07);
     background: var(--surface);
   }
   /* Aangevinkt wint van "van jou": zonder deze regel houdt de inktrand hierboven
@@ -514,7 +514,7 @@ const thumbSet = (m) => {
   .mp-opt.is-own:has(input:checked) {
     border-color: var(--accent);
     background: var(--accent-soft);
-    box-shadow: inset 0 0 0 1px var(--accent), 0 6px 18px rgb(17 17 17 / .07);
+    box-shadow: inset 0 0 0 1px var(--accent), 0 6px 18px rgb(15 12 36 / .07);
   }
   .mp-opt.is-own .mp-thumb {
     box-shadow: inset 0 0 0 1px var(--line-strong);
@@ -550,7 +550,7 @@ const thumbSet = (m) => {
     left: .3rem;
     padding: .12rem .38rem;
     border-radius: var(--r-sm);
-    background: rgb(17 17 17 / .88);
+    background: rgb(15 12 36 / .88);
     /* ── DONKER OP DONKER — 10 september 2026 ─────────────────────────────
        Lucas: *"de label tekst is ook niet goed zichtbaar."* Hier stond
        `var(--accent-bright)`, en die naam liegt: in global.css is

@@ -39,7 +39,7 @@ function ok(naam, kreeg, verwacht) {
   console.log(` ${isGoed ? 'ok  ' : 'FAIL'} ${String(naam).padEnd(58)}${isGoed ? '' : ` verwacht ${JSON.stringify(verwacht)} kreeg ${JSON.stringify(kreeg)}`}`);
 }
 
-const doc = readFileSync(new URL('../DESIGN.md', import.meta.url), 'utf8');
+const doc = readFileSync(new URL('../docs/DESIGN.md', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../src/styles/global.css', import.meta.url), 'utf8');
 
 /* Tokens die het document met opzet noemt als WEG. Elke regel hier hoort een

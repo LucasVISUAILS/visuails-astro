@@ -240,8 +240,11 @@ export async function onRequestPost(context) {
       const reg = tekst(form.get('reg_number'), 40);
       const geenBtw = !btw && ['1', 'on', 'true', 'yes'].includes(tekst(form.get('no_vat'), 5).toLowerCase());
       await env.DB.prepare(
-        `UPDATE customers SET reg_number = CASE WHEN ?2 IS NOT NULL AND (reg_number IS NULL OR reg_number = '' OR details_saved_at IS NULL) THEN ?2 ELSE reg_number END,
-                no_vat_number = CASE WHEN ?3 = 1 THEN 1 ELSE no_vat_number END
+        /* Alleen lege velden (8 oktober 2026, o25): zie de kop van upsertWide()
+           in functions/api/order.js. Wie het adres van een ander intypt, mag
+           diens KVK-nummer of "geen btw-nummer" niet omzetten. */
+        `UPDATE customers SET reg_number = CASE WHEN ?2 IS NOT NULL AND (reg_number IS NULL OR reg_number = '') THEN ?2 ELSE reg_number END,
+                no_vat_number = CASE WHEN ?3 = 1 AND vat_number IS NULL THEN 1 ELSE no_vat_number END
           WHERE id = ?1`
       ).bind(id, reg || null, geenBtw ? 1 : 0).run()
         .catch((e) => console.error('[abonnement] registratienummer niet opgeslagen —', e?.message || e));

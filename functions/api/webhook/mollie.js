@@ -68,15 +68,25 @@ import { mailInvoice, mailSubscriptionInvoice } from '../../../src/lib/invoiceMa
 /* De direct-inlogknop in de welkomstmail van een abonnement (24 september 2026). */
 import { welkomLink } from '../../../src/lib/account.js';
 import { mailCreditNote, mailOngewensteBetaling, mailIncassoMislukt, mailBetalingOntvangen } from '../../../src/lib/cancelMail.js';
-import { notifyBtwTwijfel, notifyPaid, notifyPaymentFailed, notifySampleBlocked, notifySubscriptionFailed, notifySubscriptionRefunded, notifySubscriptionStarted, notifyOngewensteBetaling, notifyChargeback } from '../../../src/lib/notify.js';
+import { vulVasteLookAan } from '../../../src/lib/vasteLook.js';
+import { notifyBtwTwijfel, notifyPaid, notifyPaymentFailed, notifySampleBlocked, notifySubscriptionFailed, notifySubscriptionRefunded, notifySubscriptionStarted, notifyOngewensteBetaling, notifyChargeback, notifyTermijnTeruggeboekt } from '../../../src/lib/notify.js';
 /* Of Mollie het zelf heeft opgegeven. Zie de kop van recordSubscriptionFailed()
    hieronder: het verschil tussen 'morgen weer' en 'hier stopt het' hoort uit
    Mollie te komen en niet uit een teller van mij. */
 import { getMollieSubscription, abonnementGestopt } from '../../../src/lib/mollie.js';
 import { grantSlots, subMaandBruto, subEersteBetalingBruto, subProducten, creditsVoor } from '../../../src/lib/slots.js';
+/* Het creditboek (ronde B, migratie 0061): de credits van een termijn, en bij een
+   terugbetaalde termijn het ongebruikte deel laten vervallen (V49). */
+import { boekTermijnBij, vervalTermijn, bevriesTermijn, ontdooiTermijn } from '../../../src/lib/creditboek.js';
+/* Extra credits bijkopen (12 oktober 2026, ab-v3 = c): een eigen losse betaling
+   met `metadata.bijkoop`; src/lib/bijkopen.js doet de rest. */
+import { bijkoopId, verwerkBijkoop } from '../../../src/lib/bijkopen.js';
 import { planName } from '../../../src/data/planNames.js';
 import { SAMPLE_SERVICE } from '../../../src/data/pricing.js';
 import { bedrag as mailBedrag } from '../../../src/lib/mailTemplate.js';
+/* De boekhouding (8.08, 8 oktober 2026): na het antwoord, nooit ervoor. Zie
+   boekhoudingAchteraf() en de kop van src/lib/eboekhouden.js. */
+import { boekhoudingAchteraf } from '../../../src/lib/eboekhouden.js';
 
 /* Dezelfde twee cent als FACTUUR_SPELING_CENT in src/lib/invoice.js, en om
    dezelfde reden — zie de noot bij de dekkingscontrole in
@@ -149,7 +159,7 @@ export function payloadZonderPersoon(payment) {
 }
 
 
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost({ request, env, waitUntil }) {
   if (!env.MOLLIE_API_KEY) {
     console.error('[mollie-webhook] MOLLIE_API_KEY not configured');
     return new Response('not configured', { status: 500 });
@@ -248,6 +258,16 @@ export async function onRequestPost({ request, env }) {
         return new Response('ok', { status: 200 });
       }
 
+      /* Een bijkoop die niet doorging: alleen de status, er komt niets bij. */
+      if (bijkoopId(payment)) {
+        try {
+          await verwerkBijkoop(env, payment, { mode });
+        } catch (err) {
+          console.error('[mollie-webhook] mislukte bijkoop niet verwerkt —', payment.id, '—', err?.message || err);
+        }
+        return new Response('ok', { status: 200 });
+      }
+
       /*
        * `metadata.order_ref`, NIET `metadata.ref` — GECORRIGEERD 10 AUGUSTUS 2026.
        *
@@ -338,6 +358,15 @@ export async function onRequestPost({ request, env }) {
     console.error('[mollie-webhook] write failed for', id, '—', e && e.message ? e.message : e);
     return new Response('write failed', { status: 500 });
   }
+
+  /* ── EN DAN DE BOEKHOUDING, ACHTERAF — 8 oktober 2026 (8.08) ──────────────
+     Alles hierboven is gedaan: de betaling vastgelegd, de factuur of creditnota
+     uitgegeven en gemaild. Pas nu gaat het naar e-Boekhouden, in waitUntil en
+     zonder await — Mollie krijgt zijn 200 meteen, en een storing bij
+     e-Boekhouden wordt een rij "mislukt" in /admin in plaats van een webhook die
+     opnieuw komt. Zonder EBOEKHOUDEN_API_TOKEN doet dit niets. Een storno
+     (amountChargedBack) komt hier ook mee: die staat verder nergens in een kolom. */
+  boekhoudingAchteraf({ env, waitUntil }, { payment });
 
   return new Response('ok', { status: 200 });
 }
@@ -439,6 +468,21 @@ async function recordSubscriptionRefund(env, payment, mode, { sub, cents, terug 
   console.error('[mollie-webhook] GELD TERUG op abonnement', sub.id, '—', payment.id,
     `(${mode}) — ${terug} van ${cents} cent${volledig ? ', volledig, abonnement gepauzeerd' : ', gedeeltelijk'}`);
 
+  /* ── DE ONGEBRUIKTE CREDITS VAN DEZE TERMIJN VERVALLEN — V49 = a ─────────
+     8 oktober 2026, Lucas: wordt een termijn terugbetaald terwijl er al
+     credits uit gebruikt zijn, dan een creditnota alleen voor het ongebruikte
+     deel, en die credits vervallen. Wat al gebruikt is, blijft gebruikt; wat
+     er nog over is, gaat er nu af (regel "terugbetaald" in het creditboek). De
+     studiomail noemt beide getallen en het bedrag van het ongebruikte deel,
+     zodat de creditnota klopt. Eenmalig per termijn. */
+  const credits = await vervalTermijn(env, {
+    paymentId: payment.id, bedragCents: cents,
+    toelichting: `termijn terugbetaald (${terug} van ${cents} cent)`, door: 'systeem',
+  }).catch((e) => {
+    console.error('[mollie-webhook] ongebruikte credits van termijn', payment.id, 'niet laten vervallen —', e?.message || e);
+    return null;
+  });
+
   const klant = await env.DB.prepare(
     'SELECT email, brand FROM customers WHERE id = ?1'
   ).bind(sub.customer_id).first().catch(() => null);
@@ -449,7 +493,74 @@ async function recordSubscriptionRefund(env, payment, mode, { sub, cents, terug 
   await notifySubscriptionRefunded(env, {
     subRef: ref?.ref || '', plan: sub.plan, brand: klant?.brand, email: klant?.email,
     bedragCents: cents, terugCents: terug, maand: month, volledig, molliestatus: payment.status,
+    credits,
   });
+}
+
+/**
+ * ── EEN TERMIJN IS TERUGGEBOEKT — 8 oktober 2026 (8.11, V50 = a) ────────────
+ *
+ * Alleen wat terug te draaien is: het abonnement op pauze (pause_reason
+ * 'chargeback', alleen als het liep — een pauze van de klant zelf blijft van
+ * hem), de credits van deze termijn bevroren (creditboek: regel 'bevroren'),
+ * en één studiomail met Bel/App. De factuur blijft staan en de incasso bij
+ * Mollie wordt niet gestopt (dat is niet terug te draaien); Lucas beslist.
+ * Eén keer per betaling: admin_log is het geheugen, zoals bij meldChargeback().
+ */
+async function termijnTeruggeboekt(env, payment, mode, { sub, cents, terug }) {
+  const detail = `${sub.ref || `abonnement ${sub.id}`}: ${payment.id} ${terug} cent teruggeboekt`;
+  try {
+    const al = await env.DB.prepare(
+      "SELECT 1 AS er FROM admin_log WHERE action = 'plan.chargeback' AND detail = ?1 LIMIT 1"
+    ).bind(detail).first();
+    if (al) return;
+    await env.DB.prepare(
+      `INSERT INTO admin_log (admin_id, admin_email, action, customer_id, detail)
+       VALUES (NULL, NULL, 'plan.chargeback', ?1, ?2)`
+    ).bind(sub.customer_id || null, detail).run();
+  } catch (err) {
+    console.error('[mollie-webhook] terugboeking op termijn niet vastgelegd —', payment.id, '—', err?.message || err);
+    return;
+  }
+  await env.DB.prepare(
+    `UPDATE subscriptions
+        SET status = 'paused', paused_at = datetime('now'), pause_reason = 'chargeback', updated_at = datetime('now')
+      WHERE id = ?1 AND (status = 'active' OR (status = 'paused' AND pause_reason = 'payment_failed'))`
+  ).bind(sub.id).run().catch((e) => console.error('[mollie-webhook] pauze na terugboeking mislukt —', sub.id, '—', e?.message || e));
+  const bevroren = await bevriesTermijn(env, {
+    paymentId: payment.id, toelichting: `terugboeking (${terug} van ${cents} cent)`, door: 'systeem',
+  }).catch((e) => { console.error('[mollie-webhook] credits niet bevroren —', payment.id, '—', e?.message || e); return null; });
+  console.error('[mollie-webhook] TERUGBOEKING op abonnement', sub.id, '—', payment.id, `(${mode}) — ${terug} van ${cents} cent; gepauzeerd, ${bevroren?.bevroren || 0} credits bevroren`);
+  const klant = await env.DB.prepare('SELECT email, brand FROM customers WHERE id = ?1').bind(sub.customer_id).first().catch(() => null);
+  const betaald = String(payment.paidAt || payment.createdAt || '');
+  await notifyTermijnTeruggeboekt(env, {
+    subRef: sub.ref || '', plan: sub.plan, brand: klant?.brand, email: klant?.email,
+    bedragCents: cents, terugCents: terug, maand: /^\d{4}-\d{2}/.test(betaald) ? betaald.slice(0, 7) : '',
+    bevroren: bevroren ? (bevroren.bevroren || bevroren.al || 0) : null,
+  });
+}
+
+/**
+ * Mollie heeft de terugboeking van deze termijn teruggedraaid (de betaling komt
+ * weer binnen zonder `amountChargedBack`): de bevroren credits komen vrij met
+ * hun eigen vervaldatum, en stond het abonnement op pauze wegens de
+ * terugboeking, dan loopt het weer. Doet niets als er niets vastzat.
+ */
+async function termijnTerugboekingTerug(env, payment, mode, { sub }) {
+  const vrij = await ontdooiTermijn(env, { paymentId: payment.id, toelichting: 'terugboeking teruggedraaid door Mollie', door: 'systeem' })
+    .catch((e) => { console.error('[mollie-webhook] credits niet vrijgegeven —', payment.id, '—', e?.message || e); return null; });
+  if (!vrij?.vrijgegeven) return;
+  await env.DB.prepare(
+    `UPDATE subscriptions SET status = 'active', paused_at = NULL, pause_reason = NULL, updated_at = datetime('now')
+      WHERE id = ?1 AND status = 'paused' AND pause_reason = 'chargeback'`
+  ).bind(sub.id).run().catch((e) => console.error('[mollie-webhook] hervatten na teruggedraaide terugboeking mislukt —', sub.id, '—', e?.message || e));
+  await env.DB.prepare(
+    `INSERT INTO admin_log (admin_id, admin_email, action, customer_id, detail)
+     VALUES (NULL, NULL, 'plan.chargeback-terug', ?1, ?2)`
+  ).bind(sub.customer_id || null, `${sub.ref || `abonnement ${sub.id}`}: ${payment.id} terugboeking teruggedraaid, ${vrij.vrijgegeven} credits vrij`).run().catch(() => {});
+  console.log(`[mollie-webhook] terugboeking ${payment.id} teruggedraaid (${mode}) — ${vrij.vrijgegeven} credits vrij`);
+  const klant = await env.DB.prepare('SELECT email, brand FROM customers WHERE id = ?1').bind(sub.customer_id).first().catch(() => null);
+  await notifyTermijnTeruggeboekt(env, { subRef: sub.ref || '', plan: sub.plan, brand: klant?.brand, email: klant?.email, bevroren: vrij.vrijgegeven, terug: true });
 }
 
 async function recordSubscriptionPaid(env, payment, mode, { subRef = null } = {}) {
@@ -519,6 +630,19 @@ async function recordSubscriptionPaid(env, payment, mode, { subRef = null } = {}
     await recordSubscriptionRefund(env, payment, mode, { sub, cents, terug });
     return;
   }
+
+  /* ═══ EN IS ER GELD TERUGGEBOEKT (CHARGEBACK / STORNO)? — 8 oktober 2026 (8.11) ═══
+   * Mollie laat de status op 'paid' staan en zet `amountChargedBack`. Dan het
+   * omkeerbare (V50 = a): het abonnement op pauze ('chargeback') en de credits
+   * van deze termijn bevroren; de factuur blijft staan. Is `amountChargedBack`
+   * weer leeg terwijl er credits van deze termijn vastzitten, dan heeft Mollie
+   * de terugboeking teruggedraaid: alles terug. */
+  const teruggeboekt = mollieAmountToCents(payment.amountChargedBack) ?? 0;
+  if (teruggeboekt > 0) {
+    await termijnTeruggeboekt(env, payment, mode, { sub, cents, terug: teruggeboekt });
+    return;
+  }
+  await termijnTerugboekingTerug(env, payment, mode, { sub });
 
   /* De maand waar deze termijn bij hoort, uit de betaaldatum van Mollie en niet
      uit `datetime('now')`. Een melding die een dag later wordt afgeleverd — of
@@ -661,6 +785,17 @@ async function recordSubscriptionPaid(env, payment, mode, { subRef = null } = {}
   /* De RIJ en niet sub.plan, sinds migratie 0038: een maand op maat draagt zijn
      bundel zelf en zou via de plan-id nul slots krijgen. */
   const slots = await grantSlots(env, sub.id, month, sub, payment.id);
+  /* ── EN DE CREDITS IN HET CREDITBOEK — 8 oktober 2026 (ronde B) ───────────
+     Het saldo waarmee een abonnee in het gewone formulier bestelt, staat sinds
+     migratie 0061 in credit_boek (src/lib/creditboek.js): één partij per
+     termijn, en sinds het spaarplafond (12 oktober 2026) schuiven alle credits
+     mee naar 3 maanden vanaf nu en vervalt wat boven het plafond komt, in
+     dezelfde transactie. Dezelfde zelfgenezing als hierboven:
+     elke aflevering probeert het, de sleutel termijn:<abonnement>:<maand> maakt
+     een tweede keer onschadelijk. Mislukt het, dan luid in het log en door. */
+  await boekTermijnBij(env, sub, month, payment.id).catch((e) => {
+    console.error('[mollie-webhook] credits NIET in het creditboek gezet voor abonnement', sub.id, month, '—', e?.message || e);
+  });
 
   /* ── DRIE UITKOMSTEN, EN MAAR ÉÉN ERVAN IS EEN FOUT ────────────────────────
    *
@@ -931,6 +1066,16 @@ async function recordPaid(env, payment, mode, origin = '') {
    */
   if (payment.subscriptionId) {
     await recordSubscriptionPaid(env, payment, mode);
+    return;
+  }
+
+  /* ── EXTRA CREDITS BIJGEKOCHT — 12 oktober 2026 ──────────────────────────
+     Geen `order_ref`, geen `sub_ref`, geen `subscriptionId`, wel
+     `metadata.bijkoop`. Betaald: credits, factuur en mail; terugbetaald of
+     teruggeboekt: zoals bij een termijn. Zie src/lib/bijkopen.js. Een fout
+     hier is een 500, zodat Mollie het opnieuw aanbiedt: de klant heeft betaald. */
+  if (!ref && bijkoopId(payment)) {
+    await verwerkBijkoop(env, payment, { mode });
     return;
   }
 
@@ -1636,6 +1781,10 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
    */
   await notifyPaid(env, order.id);
 
+  /* 2.08 (8 oktober 2026): na de eerste betaalde bestelling per dienst wordt de
+     vaste look van de klant gevuld als die nog leeg is. Nooit werpend. */
+  await vulVasteLookAan(env, order.id);
+
   console.log(`[mollie-webhook] order ${ref} marked paid from ${payment.id} (${mode})`);
 
   // ── DE FACTUUR ─────────────────────────────────────────────────────────────
@@ -1745,7 +1894,35 @@ export function onRequestGet() {
  */
 async function meldChargeback(env, order, payment, ref) {
   const terug = mollieAmountToCents(payment.amountChargedBack) ?? 0;
-  if (terug <= 0) return;
+  /* ── 8.11: DE RODE PIL, EN TERUG ALS MOLLIE HET TERUGDRAAIT ─────────────
+     orders.teruggeboekt_at (migratie 0063) zet de pil "Betaling teruggeboekt —
+     niet leveren" in /admin. Leeg als deze zelfde betaling weer zonder
+     terugboeking binnenkomt (Mollie draaide de chargeback terug). Een andere
+     betaling van dezelfde bestelling haalt de pil niet weg. */
+  if (terug <= 0) {
+    try {
+      const was = await env.DB.prepare(
+        `UPDATE orders SET teruggeboekt_at = NULL
+          WHERE id = ?1 AND teruggeboekt_at IS NOT NULL
+            AND EXISTS (SELECT 1 FROM admin_log WHERE action = 'payment.chargeback' AND order_id = ?1 AND detail LIKE ?2)
+          RETURNING id`
+      ).bind(order.id, `%${payment.id} %`).first();
+      if (was) {
+        await env.DB.prepare(
+          `INSERT INTO admin_log (admin_id, admin_email, action, order_id, customer_id, detail)
+           VALUES (NULL, NULL, 'payment.chargeback-terug', ?1, ?2, ?3)`
+        ).bind(order.id, order.customer_id || null, `${ref}: ${payment.id} terugboeking teruggedraaid door Mollie`).run();
+        console.warn(`[mollie-webhook] terugboeking ${ref} ${payment.id} teruggedraaid`);
+      }
+    } catch (err) {
+      if (!/no such column/i.test(String(err?.message || err))) console.error('[mollie-webhook] terugboeking terugdraaien mislukt —', err?.message || err);
+    }
+    return;
+  }
+  await env.DB.prepare("UPDATE orders SET teruggeboekt_at = datetime('now') WHERE id = ?1 AND teruggeboekt_at IS NULL")
+    .bind(order.id).run().catch((err) => {
+      if (!/no such column/i.test(String(err?.message || err))) console.error('[mollie-webhook] pil teruggeboekt niet gezet —', err?.message || err);
+    });
   const detail = `${ref}: ${payment.id} ${terug} cent teruggeboekt`;
   try {
     const al = await env.DB.prepare(

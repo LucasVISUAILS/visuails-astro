@@ -45,7 +45,9 @@ import {
   CATALOG_RATIOS, LIFESTYLE_RATIOS, DEFAULT_RATIO_ID,
   ratiosPerImage, ratiosFor, ratioById, effectiveRatio,
   ratioField, parseRatioField, ratioViewBox,
+  CHANNEL_RATIOS, channelRatio, lockedRatio, ratioLabel,
 } from '../src/data/ratios.js';
+import { lockChannelRatio } from '../functions/api/order.js';
 
 let pass = 0;
 let fail = 0;
@@ -102,17 +104,17 @@ console.log('de data: welke verhouding hoort bij welke dienst');
   }
 }
 
-console.log('\nper beeld of per bestelling — en `drop` telt mee');
+console.log('\nper beeld of per bestelling');
 {
   ok('catalog kiest één verhouding voor de hele bestelling', ratiosPerImage('catalog'), false);
   ok('lifestyle mag per beeld', ratiosPerImage('lifestyle'), true);
-  ok('complete ook, want die heeft een lifestyle-helft', ratiosPerImage('complete'), true);
-  /* `drop` is wat /start/complete post. Dezelfde val als bij tierFor() en
-     PAYABLE_SERVICES — daar kostte hij een bestelling van € 2.359,50. */
-  ok("en 'drop' is complete op de draad", ratiosPerImage('drop'), true);
+  /* Compleet ('drop' op de draad) bestaat sinds 14 oktober 2026 niet meer
+     (afvinklijst 23): het is catalog óf lifestyle. */
+  ok('complete niet meer', ratiosPerImage('complete'), false);
+  ok("en 'drop' ook niet", ratiosPerImage('drop'), false);
   ok('video kent de vraag niet per beeld', ratiosPerImage('video'), false);
   ok('ratiosFor(catalog) is de korte lijst', ratiosFor('catalog').length, 3);
-  ok('ratiosFor(drop) is de lange', ratiosFor('drop').length, 5);
+  ok('ratiosFor(lifestyle) is de lange', ratiosFor('lifestyle').length, 5);
 }
 
 console.log('\nwat wint: de keuze bij het beeld, dan de bestelling, dan de standaard');
@@ -179,7 +181,7 @@ console.log('\nhet bestelformulier stelt de vraag');
   ok('en de gebruiksregel eronder', /\{r\.use\}/.test(picker), true);
   /* Geen handgetypte lijst. Een verhouding die aan ratios.js wordt toegevoegd,
      hoort op het formulier te verschijnen zonder dat iemand hier iets doet. */
-  ok('de tegels komen uit LIFESTYLE_RATIOS', /LIFESTYLE_RATIOS\.map/.test(picker), true);
+  ok('de tegels komen uit LIFESTYLE_RATIOS (en de kanaalvorm)', /\[\.\.\.LIFESTYLE_RATIOS, \.\.\.CHANNEL_RATIOS\]\.map/.test(picker), true);
   /* Er is er één voorgeselecteerd, en dat is hier de juiste uitzondering: een
      bestelling zonder verhouding bestaat niet. Zie de kop van het bestand. */
   ok('het vierkant staat voor', /checked=\{r\.id === DEFAULT_RATIO_ID\}/.test(picker), true);
@@ -234,8 +236,8 @@ console.log('\nen hij schakelt mee met de soort');
     /r\.value === wantRatio && !r\.disabled/.test(pl), true);
 
   /* De afwijking per beeld bestaat alleen waar hij bestaat. `perImage` is een
-     AANTAL en geen vlag, want bij complete mogen alleen de lifestyle-beelden
-     afwijken en de catalogbeelden niet. */
+     AANTAL en geen vlag (uit de tijd dat bij compleet alleen de lifestyle-beelden
+     mochten afwijken). */
   ok('buildRatios geeft null als de stroom het niet per beeld vraagt',
     /const perImage = Number\(\(cfg\.ratio && cfg\.ratio\.perImage\) \|\| 0\);\s*\n\s*if \(!perImage\) return null;/.test(pl), true);
   ok('en het veld heet ratio_p3_2', /sel\.name = `ratio_\$\{card\.key\}_\$\{i\}`;/.test(pl), true);
@@ -251,7 +253,7 @@ console.log('\nde server laat er geen verzonnen waarde door');
   ok('vetAnswer controleert ratio', /if \(key === 'ratio' \|\| parseRatioField\(key\)\)/.test(api), true);
   ok('  tegen de lijst uit ratios.js', /RATIO_IDS\.has\(v\) \? v : ''/.test(api), true);
   ok('  en die lijst is niet overgetypt',
-    /const RATIO_IDS = new Set\(LIFESTYLE_RATIOS\.map\(\(r\) => r\.id\)\);/.test(api), true);
+    /const RATIO_IDS = new Set\(\[\.\.\.LIFESTYLE_RATIOS, \.\.\.CHANNEL_RATIOS\]\.map\(\(r\) => r\.id\)\);/.test(api), true);
   /* Niet in TOP_FIELDS: het is een antwoord uit de briefing en hoort in
      details_json, naast `product_p3` waar het op de sleutel `p3` aan vastzit. */
   const top = api.slice(api.indexOf('const TOP_FIELDS'), api.indexOf('export async function onRequestPost'));
@@ -293,6 +295,46 @@ console.log('\nde brand kit onthoudt hem, en alleen wat mag');
     /ALTER TABLE customer_style_locks ADD COLUMN ratio TEXT;/.test(sql), true);
   const schema = read('schema.sql');
   ok('en schema.sql kent hem ook', /ratio/.test(schema), true);
+}
+
+/*
+ * ── ZALANDO ZET DE VORM VAST — 14 oktober 2026 ────────────────────────────────
+ * Afvinklijst 24 (v24-zalando, a): "bij Zalando de verhouding vast op 1:1,44,
+ * zoals de achtergrond vast op wit". Geen vierde keuze voor iedereen: de tegel
+ * verschijnt pas als Zalando is aangevinkt, en de server zet hem zelf vast.
+ */
+console.log('\nzalando zet de vorm vast op 1:1,44');
+{
+  const z = channelRatio('zalando');
+  ok('zalando heeft een eigen vorm', !!z, true);
+  ok('  en die is 25x36, precies 1:1,44', z && z.ratio, '25x36');
+  ok('  met een viewBox die dat ook tekent', ratioViewBox(z), '0 0 25 36');
+  ok('  en een komma in het Nederlands', ratioLabel(z, 'nl'), '1:1,44');
+  ok('  en een punt in het Engels', ratioLabel(z, 'en'), '1:1.44');
+  ok('amazon en bol eisen geen vorm', !channelRatio('amazon') && !channelRatio('bol'), true);
+  ok('geen vierde tegel voor iedereen', CATALOG_RATIOS.some((r) => r.id === 'zalando'), false);
+  ok('maar een catalogbestelling mag hem dragen', ratioById('zalando', 'catalog')?.id, 'zalando');
+  ok('een lifestylebestelling niet', ratioById('zalando', 'lifestyle') === undefined, true);
+  ok('lockedRatio leest de kommalijst', lockedRatio('amazon,zalando')?.id, 'zalando');
+  ok('  en zonder zalando niets', lockedRatio('amazon,bol,own') === undefined, true);
+  ok('de server zet hem vast, ook over een 4:5 heen',
+    lockChannelRatio({ channels: 'bol,zalando', ratio: 'portrait45' }).ratio, 'zalando');
+  ok('  en laat hem staan zonder zalando',
+    lockChannelRatio({ channels: 'bol', ratio: 'portrait45' }).ratio, 'portrait45');
+  const order = read('functions/api/order.js');
+  ok('  alleen bij catalog', /if \(service === 'catalog'\) lockChannelRatio\(details\);/.test(order), true);
+
+  const picker = read('src/components/order/RatioPicker.astro');
+  ok('de kiezer tekent de kanaaltegel', /CHANNEL_RATIOS/.test(picker) && /data-pl-ratio-channel=\{r\.channel\}/.test(picker), true);
+  ok('  verborgen en uitgezet tot het kanaal aanstaat', /hidden=\{r\.channel \? true : undefined\}/.test(picker) && /disabled=\{r\.channel \? true : undefined\}/.test(picker), true);
+  const markt = read('src/components/order/MarketplacePicker.astro');
+  ok('het vinkje zegt welke vorm het kanaal eist', /data-pl-ch-ratio=\{channelRatio\(ch\.id\)\?\.id\}/.test(markt), true);
+  const pipe = read('src/scripts/pipeline.js');
+  ok('syncRatio leest het vinkje', /dataset\.plChRatio/.test(pipe), true);
+  ok('en syncChannels laat syncRatio meelopen', /syncBackground\(kindOf\(\)\);\s*\/\/[^\n]*\n\s*syncRatio\(kindOf\(\)\);/.test(pipe), true);
+  const look = read('src/lib/vasteLook.js');
+  ok('de vaste look neemt de kanaalvorm niet over', /if \(r && !r\.channel\) velden\.ratio = r\.id;/.test(look), true);
+  ok('CHANNEL_RATIOS heeft maar één kanaal', CHANNEL_RATIOS.length, 1);
 }
 
 console.log(`\n${pass}/${pass + fail} geslaagd`);

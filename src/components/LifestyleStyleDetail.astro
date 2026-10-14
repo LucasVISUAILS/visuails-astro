@@ -3,25 +3,17 @@
  * VISUAILS — de detailpagina van een lifestylestijl, gedeeld door
  * /lifestyle/[slug] en /nl/lifestyle/[slug].
  *
- * ── ÉÉN COMPONENT SINDS 7 SEPTEMBER 2026 ─────────────────────────────────
+ * ── KORT EN BEELDVULLEND SINDS 11 OKTOBER 2026 (k101 = a) ─────────────────
  *
- * Twee sjablonen van 263 en 252 regels die elkaars vertaling hoorden te zijn.
- * Zelfde behandeling als de catalogstijlen; zie de kop van
- * CatalogStyleDetail.astro voor de redenering.
+ * De pagina zelf is LookDetailHal.astro: grote foto's, drie korte koppen (voor
+ * welke kleding, welk gevoel, welke kanalen) uit `kort` in de lookdata, en
+ * onderaan "Kies deze look" en "Probeer VISUAILS · €1". Hier staat alleen wat
+ * bij lifestyle hoort: de beelden van deze look (alleen echte, isEcht), de
+ * feitenregel, en de lange uitleg die ingeklapt onder "Meer over …" staat
+ * (de sfeer, de stappen, wat je krijgt, het model).
  *
- * De stijlgegevens komen als prop binnen, uit styles.js of styles.nl.js. Wat
- * hier staat is de omlijsting — de koppen die op elke lifestylepagina hetzelfde
- * zijn, en die dus niet twee keer horen te bestaan.
- *
- * ── DE SFEERFOTO MAG DE HEROFOTO NIET ZIJN ───────────────────────────────
- *
- * Bij Flash en Glow ÍS grid[0] de hero, dus droeg dezelfde foto de herostrook
- * en de sfeerstrook twee vouwen uit elkaar — op een pagina wiens hele opdracht
- * is te laten zien wat één look oplevert, en dat leest als "er is maar één
- * foto van deze stijl". De andere acht rasterbeelden zijn stijlcorrecte foto's
- * van dezelfde look, dus de oplossing is de eerste te nemen die nog niet in
- * beeld staat. Valt terug op grid[0] als een stijl ooit met één foto uitkomt,
- * wat het oude gedrag was.
+ * Titel, meta, canonical en JSON-LD staan in de route (src/pages/…/[slug].astro)
+ * en in Layout; daar is niets aan veranderd.
  *
  * ── DE DOORLOOPTIJD IS EEN TIER-FEIT ─────────────────────────────────────
  *
@@ -30,16 +22,23 @@
  * detailpagina. En een look OP AANVRAAG heeft eerst een ONTWERP; daar geldt de
  * gewone doorlooptijd pas ná.
  */
-import Compare from './Compare.astro';
-import ServiceSwitch from './ServiceSwitch.astro';
-import { reviewClaim, turnaround, TIERS } from '../data/pricing.js';
+/* Sinds 12 oktober 2026 (afvinklijst 8) in het sjabloon van de hal; het vorige
+   sjabloon (LookDetail.astro) staat op _opruimen/LIJST.txt. hub = waar de pil terug
+   naartoe wijst (standaard de eigen dienst). */
+import LookDetailHal from './LookDetailHal.astro';
+import { reviewClaim, turnaround, TIERS, TEST_SAMPLE } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
-import '../styles/stijl22.css';
+import { isEcht } from '../lib/beeldAanwezig.js';
 
-interface Props { lang: 'en' | 'nl'; style: any; zusters: { href: string; naam: string }[]; priceLine: string; }
-const { lang, style, zusters, priceLine } = Astro.props;
+interface Props { lang: 'en' | 'nl'; style: any; zusters: { href: string; naam: string }[]; priceLine: string; hub?: string; }
+const { lang, style, zusters, priceLine, hub } = Astro.props;
 const nl = lang === 'nl';
 const lp = (p: string) => localizedPath(lang, p);
+/* ── DE PROEF BEGINT BIJ DEZE LOOK — 8 oktober 2026 (1.06) ─────────────────
+   /test-sample?style=<look> slaat de eerste vraag van de proef over en vinkt de
+   look aan. Niet bij de look op maat: dat is een aanvraag en geen look om te
+   proberen. De knoptekst komt uit TEST_SAMPLE ("Probeer VISUAILS · €1"). */
+const proefHref = style.slug === 'custom' ? lp('/test-sample') : `${lp('/test-sample')}?style=${encodeURIComponent(style.slug)}`;
 
 const TIMING = style.slug === 'custom'
   ? (nl ? 'Eerst het ontwerp, daarna de gewone doorlooptijd per bestelling.' : 'Design first, then the ordinary turnaround per order.')
@@ -47,323 +46,70 @@ const TIMING = style.slug === 'custom'
 const REVIEW = reviewClaim('unattended', lang);
 const QUEUE = style.slug === 'custom' ? '' : TIERS.unattended.queue[lang];
 
-/* De intrinsieke pixelmaten van de ene foto die dit sjabloon als <img> rendert.
-   Het vak pint de verhouding en het beeld dekt hem, dus deze attributen
-   veranderen niets zichtbaars — ze laten de browser de ruimte reserveren
-   voordat het bestand er is. Een onbekend pad gooit, met opzet: dan valt de
-   maat niet stil weg maar bij de bouw op. */
-const INTRINSIC: Record<string, [number, number]> = {
-  '/img/banners-14.webp': [2400, 1792],
-  '/img/lifestyle-dunes-02.webp': [928, 1152],
-  '/img/lifestyle-flash-01.webp': [928, 1152],
-  '/img/lifestyle-glow-01.webp': [1340, 2400],
-  '/img/lifestyle-phone-made-02.webp': [2400, 1792],
-  '/img/lifestyle-flash-02.webp': [1340, 2400],
-  '/img/lifestyle-glow-02.webp': [2400, 1792],
-};
-const moodPhoto = (style.grid.find((g: any) => g.photo && g.photo !== style.heroPhoto) || style.grid[0]).photo;
-const moodSize = INTRINSIC[moodPhoto];
-if (!moodSize) throw new Error(`LifestyleStyleDetail: geen intrinsieke maat bekend voor ${moodPhoto} — zet hem in INTRINSIC.`);
+/* De beelden: eerst de hero, dan het raster, elk één keer en alleen als het
+   echt bestaat (geen plaatshouder, geen getekend vak). */
+const alt = nl ? `Voorbeeld in de ${style.name}-stijl` : `${style.name}-style example`;
+const bronnen = [style.heroPhoto, ...(style.grid || []).map((g: any) => g.photo)].filter(Boolean);
+const beelden = [...new Set(bronnen)].filter((src) => isEcht(src)).map((src, i) => ({
+  src,
+  alt: i === 0 ? (nl ? `De ${style.name}-stijl van VISUAILS` : `The VISUAILS ${style.name} style`) : alt,
+}));
 
 const c = nl ? {
-  terug: 'Lifestyle-stijlen',
-  bestel: style.orderLabel ?? `Bestel ${style.name}`,
-  wa: 'WhatsApp',
-  waTekst: `Hoi VISUAILS, ik wil graag praten over de ${style.name}-stijl.`,
-  andere: 'Andere looks:',
-  heroAlt: `De ${style.name}-stijl van VISUAILS`,
-  voeltH: ['Wat ', ' kenmerkt'],
-  sfeerAlt: `Voorbeeld in de ${style.name}-stijl`,
-  vlakH: ['Voor en na: '],
-  vlakP: 'Wat de behandeling werkelijk verandert.',
-  vlak: 'Vlak',
-  vlakAlt: `Een vlakke, ongegradeerde ${style.name}-scène`,
-  klaarAlt: `Dezelfde scène afgewerkt in de ${style.name}-lifestylelook`,
-  stapH: ['Hoe ', ' tot stand komt.'],
-  idealH: ['Ideaal ', 'voor'],
-  krijgH: ['Wat je ', 'krijgt'],
+  kies: style.orderLabel ?? 'Kies deze look',
+  voeltH: `Hoe ${style.name} voelt`,
+  stapH: `Hoe ${style.name} tot stand komt`,
+  idealH: 'Ideaal voor',
+  krijgH: 'Wat je krijgt',
   modelNoot: ['Het model in een ', '-scène: een standaardgezicht, of ', 'je eigen merkmodel', '.'],
-  slotH: ['Bestel in ', '.'],
-  proef: 'Probeer VISUAILS',
 } : {
-  terug: 'Lifestyle styles',
-  bestel: style.orderLabel ?? `Order ${style.name}`,
-  wa: 'WhatsApp',
-  waTekst: `Hi VISUAILS, I’d like to talk about the ${style.name} style.`,
-  andere: 'Other looks:',
-  heroAlt: `The VISUAILS ${style.name} style`,
-  voeltH: ['What defines ', ''],
-  sfeerAlt: `${style.name}-style example`,
-  vlakH: ['Before and after: '],
-  vlakP: 'What the treatment actually changes.',
-  vlak: 'Flat',
-  vlakAlt: `A flat, ungraded ${style.name} scene`,
-  klaarAlt: `The same scene finished in the ${style.name} lifestyle look`,
-  stapH: ['How ', ' comes together.'],
-  idealH: ['Best ', 'for'],
-  krijgH: ['What you ', 'get'],
+  kies: style.orderLabel ?? 'Choose this look',
+  voeltH: `How ${style.name} feels`,
+  stapH: `How ${style.name} comes together`,
+  idealH: 'Best for',
+  krijgH: 'What you get',
   modelNoot: ['The model in a ', ' scene: a standard face, or ', 'your own Brand Model', '.'],
-  slotH: ['Order in ', '.'],
-  proef: 'Test sample',
 };
-
 const vink = 'M20 6L9 17l-5-5';
-/* Alleen de vakken van het raster met een echte foto — zie de noot bij het raster. */
-const alleRasterFotos = (style.grid || []).filter((g: any) => g.photo);
-/* Ronde 9 (O63): acht foto's in drie kolommen lieten rechtsonder een leeg vak
-   (Flash). Vanaf drie: een veelvoud van drie, zodat elke rij vol is. Op de
-   telefoon (twee kolommen) vult de eerste foto bij een oneven aantal de hele
-   breedte — zie .ls-negen hieronder. */
-const rasterFotos = alleRasterFotos.length >= 3 ? alleRasterFotos.slice(0, alleRasterFotos.length - (alleRasterFotos.length % 3)) : alleRasterFotos;
 ---
 
-<div class="s22 ls">
-
-  <section class="paneel ls-open" aria-labelledby="ls-h1">
-    <div class="paneel-kop ls-kop">
-      <p class="etiket"><a href={lp('/lifestyle')}>{c.terug}</a></p>
-      <h1 id="ls-h1" class="hoog">{style.name}</h1>
-      <p class="lopend ls-tagline">{style.tagline}</p>
-      <div class="acties">
-        <a class="knop knop-inkt" href={style.orderHref ?? lp('/start')}>{c.bestel}</a>
-        {/* De proef en geen WhatsApp als tweede knop — 23 september 2026. Op de
-            dienstpagina's ging WhatsApp al uit de opening: rechtsonder zweeft
-            op elke pagina dezelfde knop. Voor wie ingelogd is, verdwijnt hij. */}
-        <a class="knop knop-lijn" href={lp('/test-sample')} data-vis-uit>{c.proef}</a>
-      </div>
-      <ServiceSwitch lang={lang} label={c.andere} items={zusters} />
-      <ServiceSwitch current="lifestyle" lang={lang} />
-      {/* Eén bron voor het tarief op deze pagina: priceLine bevat al de eigen
-          priceTrust van de stijl of de twee uiteinden van de staffel, dus de
-          feitenrij kan geen ander bedrag noemen dan de meta. */}
-      <ul class="ls-feiten feiten" role="list">
-        <li>{priceLine}</li>
-        <li>{TIMING}</li>
-        <li>{REVIEW}</li>
-      </ul>
-      {QUEUE && <p class="ls-queue">{QUEUE}</p>}
-    </div>
-  </section>
-
-  {/* De kenmerkende foto over de volle breedte. Eén beeld, groot — dat is wat
-      een lifestylestijl verkoopt, en het is het enige wat een raster niet kan. */}
-  <figure class="ls-band">
-    <img src={style.heroPhoto} alt={c.heroAlt} width="2400" height="1143" fetchpriority="high" decoding="async" />
-  </figure>
-
-  <section class="paneel ls-sfeer">
-    <div class="ls-twee">
-      <figure class="kaart kaart-stil ls-sfeerbeeld">
-        <img src={moodPhoto} alt={c.sfeerAlt} loading="lazy" decoding="async" width={moodSize[0]} height={moodSize[1]} />
-      </figure>
-      <div>
-        <h2 class="hoog hoog-2">{c.voeltH[0]}<em>{style.name}</em>{c.voeltH[1]}.</h2>
-        <p class="lopend ls-sfeer-p">{style.moodParagraphs[0]}</p>
-        {/* "Ideaal voor" staat sinds 23 september 2026 hier, bij hoe de stijl
-            voelt — PAGINA-OPBOUW.md: die twee zijn één blok. */}
-        <h3 class="hoog hoog-3 ls-ideaal-h">{c.idealH[0]}<em>{c.idealH[1]}</em></h3>
-        <ul class="ls-vinkjes" role="list">
-          {style.bestFor.slice(0, 3).map((item: string) => (
-            <li><svg viewBox="0 0 24 24" class="ls-i" aria-hidden="true"><path d={vink} /></svg><span>{item}</span></li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <section class="kamer ls-bewijs">
-    <div class="kamer-kop ls-midden">
-      <h2 class="hoog hoog-2">{c.vlakH[0]}{style.name}.</h2>
-      <p class="lopend">{c.vlakP}</p>
-    </div>
-    <div class="ls-compare">
-      <Compare
-        grade
-        before={style.heroPhoto}
-        after={style.heroPhoto}
-        beforeAlt={c.vlakAlt}
-        afterAlt={c.klaarAlt}
-        beforeLabel={c.vlak}
-        afterLabel={style.name}
-      />
-    </div>
-  </section>
-
-  <section class="paneel ls-stap">
-    <div class="paneel-kop">
-      <h2 class="hoog hoog-2">{c.stapH[0]}<em>{style.name}</em>{c.stapH[1]}</h2>
-    </div>
-    <ol class="ls-stappen" role="list">
-      {style.steps.map((s: any, i: number) => (
-        <li>
-          <span class="mono ls-nr">{String(i + 1).padStart(2, '0')}</span>
-          <b>{s.title}</b>
-          <p class="lopend">{s.body}</p>
-        </li>
-      ))}
-    </ol>
-  </section>
-
-  {/* ── ALLEEN BEELDEN DIE ER ZIJN — 23 september 2026 ──────────────────────
-      Het raster van negen had getekende vakken (ProductScene) waar nog geen
-      foto was. PAGINA-OPBOUW.md: alleen echte beelden; vanaf drie een raster,
-      minder dan drie één rij, geen enkele — geen sectie. */}
-  {rasterFotos.length > 0 && (
-    <section class="paneel vervolg ls-raster">
-      <ul class:list={['ls-negen', rasterFotos.length < 3 && 'is-rij']} role="list">
-        {rasterFotos.map((g: any) => (
-          <li>
-            <span class="kaart kaart-stil">
-              <img src={g.photo} alt={`${style.name}`} loading="lazy" decoding="async" />
-              <span class="foto-pil mono">{style.name}</span>
-            </span>
-          </li>
+<LookDetailHal
+  hub={hub}
+  lang={lang}
+  dienst="lifestyle"
+  style={style}
+  zusters={zusters}
+  feiten={[priceLine, TIMING, REVIEW]}
+  queue={QUEUE}
+  beelden={beelden}
+  kies={{ href: style.orderHref ?? lp('/start'), label: c.kies }}
+  proef={{ href: proefHref, label: TEST_SAMPLE[lang].cta }}
+>
+  <Fragment slot="meer">
+    <div class="lm">
+      <h3 class="hoog hoog-3">{c.voeltH}</h3>
+      {style.moodParagraphs.map((p: string) => <p class="lopend">{p}</p>)}
+      <h3 class="hoog hoog-3">{c.idealH}</h3>
+      <ul class="lm-vinkjes" role="list">
+        {style.bestFor.map((item: string) => (
+          <li><svg viewBox="0 0 24 24" class="lm-i" aria-hidden="true"><path d={vink} /></svg><span>{item}</span></li>
         ))}
       </ul>
-    </section>
-  )}
-
-  <section class="paneel vervolg ls-lijsten">
-    <div class="ls-een">
-      <div>
-        <h2 class="hoog hoog-3">{c.krijgH[0]}<em>{c.krijgH[1]}</em></h2>
-        <ul class="ls-vinkjes" role="list">
-          {style.whatYouGet.map((item: string) => (
-            <li><svg viewBox="0 0 24 24" class="ls-i" aria-hidden="true"><path d={vink} /></svg><span>{item}</span></li>
-          ))}
-        </ul>
-        {/* Bodytekst en geen callout — zie dezelfde noot in
-            CatalogStyleDetail.astro. Voorwaardelijk geformuleerd ("gedragen in
-            plaats van geplaatst") omdat niet elke lifestylescène een mens in
-            beeld heeft. */}
-        <p class="ls-modelnoot">
-          {c.modelNoot[0]}{style.name}{c.modelNoot[1]}<a href={lp('/custom-models')}>{c.modelNoot[2]}</a>{c.modelNoot[3]}
-        </p>
-      </div>
+      <h3 class="hoog hoog-3">{c.stapH}</h3>
+      <ol class="lm-stappen" role="list">
+        {style.steps.map((s: any, i: number) => (
+          <li><span class="mono lm-nr">{String(i + 1).padStart(2, '0')}</span> <b>{s.title}</b> <span>{s.body}</span></li>
+        ))}
+      </ol>
+      <h3 class="hoog hoog-3">{c.krijgH}</h3>
+      <ul class="lm-vinkjes" role="list">
+        {style.whatYouGet.map((item: string) => (
+          <li><svg viewBox="0 0 24 24" class="lm-i" aria-hidden="true"><path d={vink} /></svg><span>{item}</span></li>
+        ))}
+      </ul>
+      <p class="lm-noot">
+        {c.modelNoot[0]}{style.name}{c.modelNoot[1]}<a href={lp('/custom-models')}>{c.modelNoot[2]}</a>{c.modelNoot[3]}
+      </p>
     </div>
-  </section>
-
-  <section class="paneel paneel-slot ls-slot">
-    {/* De eigen look heet "Eigen look" / "Custom", en dat gaf "Maak Eigen look van jou."
-        Voor die ene look staat er daarom "Maak je eigen look." */}
-    <h2 class="hoog hoog-2">{style.slug === 'custom'
-      ? <>{lang === 'nl' ? <>Vraag <em>je eigen look</em> aan.</> : <>Request <em>your own look</em>.</>}</>
-      : <>{c.slotH[0]}<em>{style.name}</em>{c.slotH[1]}</>}</h2>
-    <div class="acties">
-      <a class="knop knop-inkt" href={style.orderHref ?? lp('/start')}>{c.bestel}</a>
-      <a class="knop knop-lijn" href={lp('/test-sample')}>{c.proef}</a>
-    </div>
-  </section>
-
-</div>
-
-<style>
-  .ls-ideaal-h { margin-top: clamp(1.4rem, 3vw, 2rem); }
-  .ls-een { max-width: 44rem; }
-  .ls-negen.is-rij { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .ls-kop { margin-bottom: 0; }
-  .ls-kop .etiket a { color: inherit; }
-  .ls-kop .etiket a:hover { color: var(--inkt); }
-  .ls-tagline {
-    font-family: var(--kop2); font-weight: 500; font-stretch: 125%;
-    font-size: clamp(1.2rem, 2.1vw, 1.7rem);
-    /* ── DE REGELAFSTAND SCHAALT MEE — 21 september 2026 ───────────────────
-       Hier stond `line-height: 1.2`, een factor. Een factor schaalt MET de
-       letter, en dat is precies verkeerd om: hoe kleiner de letter, hoe MEER
-       lucht een regel nodig heeft. Op een breed scherm (27px) klopte 1,2; op
-       een telefoon zakt de clamp naar 19px en dan is 1,2 nog maar 23px
-       regelafstand voor een zin met staarten. De spatiescan
-       (kladblok/spatie-alles.mjs) vond dit op vier stijlpagina's tegelijk.
-
-       `calc(1em + .42rem)` houdt de LOODRUIMTE constant in plaats van de
-       factor: 6,7px tussen de regels, wat de letter ook doet. Uitkomst 1,35
-       op 19px en 1,25 op 27px — allebei de stand die bij die maat hoort, uit
-       één regel die niet per breekpunt bijgehouden hoeft te worden. */
-    line-height: calc(1em + .42rem);
-    letter-spacing: -.01em; color: var(--inkt); max-width: 20em;
-  }
-  /* De pillen zijn een lijst geworden (1 oktober 2026): zie .feiten in stijl22.css. */
-  .ls-feiten { margin-top: 1.6rem; }
-  .ls-queue { margin-top: .9rem; font-size: .88rem; line-height: 1.6; color: var(--inkt-2); }
-
-  /* Over de volle breedte, binnen de marge van de stijl — dezelfde vorm als een
-     paneel maar dan met alleen een beeld erin. */
-  .ls-band {
-    margin: var(--rand); border-radius: var(--ronding); overflow: hidden;
-    aspect-ratio: 21 / 10; background: var(--inkt);
-  }
-  .ls-band img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-  .ls-twee { display: grid; gap: clamp(1.8rem, 4.5vw, 3.5rem); align-items: center; }
-  @media (min-width: 900px) {
-    .ls-twee { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); }
-    .ls-twee-gelijk { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
-  }
-  .ls-sfeerbeeld { margin: 0; aspect-ratio: 4 / 5; }
-  .ls-sfeerbeeld img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .ls-sfeer-p { margin-top: 1.1rem; }
-
-  /* ── HET BEWIJS STOND OP 520 IN EEN PANEEL VAN 1392 — 13 september 2026 ──
-     Gemeten op een scherm van 1440: de schuif stond 520 breed, gecentreerd,
-     met 872 pixels leeg eromheen — en dit is het blok dat laat zien wat er
-     met JOUW foto gebeurt. Het overtuigendste element van de pagina was het
-     kleinste.
-
-     Breder maken alleen helpt niet: de schuif is vierkant, dus 900 breed is
-     ook 900 hoog en dan past het bewijs niet meer op één scherm. De tekst
-     gaat daarom ERNAAST staan in plaats van erboven. Het blok vult de
-     breedte, de schuif wordt een derde groter, en de uitleg staat naast het
-     beeld waar hij over gaat. Onder 62rem blijft alles onder elkaar. */
-  .ls-midden { max-width: 46rem; margin-inline: auto; text-align: center; }
-  .ls-midden .lopend { margin-inline: auto; }
-  .ls-compare { max-width: 520px; margin: 0 auto; }
-  @media (min-width: 62rem) {
-    .ls-bewijs { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: clamp(2rem, 5vw, 4.5rem); align-items: center; }
-    .ls-midden { max-width: 46ch; margin-inline: 0; text-align: start; }
-    /* Vier regels waarvan de laatste twee woorden telt, leest als een fout.
-       `balance` verdeelt de kop over even lange regels. */
-    .ls-midden h2 { text-wrap: balance; }
-    .ls-midden .lopend { margin-inline: 0; }
-    .ls-compare { max-width: 680px; margin: 0; width: 100%; }
-  }
-
-  .ls-stappen {
-    display: grid; gap: clamp(1.2rem, 2.5vw, 2rem);
-    grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
-    list-style: none; padding: 0; margin: 0;
-  }
-  .ls-stappen li { padding-top: 1.2rem; border-top: 1px solid var(--lijn); display: grid; gap: .35rem; align-content: start; }
-  /* Inkt en geen lime: --gloed is een accent náást leesbare tekst en meet als
-     tekstkleur 2,13:1 op vel. Zie de noot bij die token in stijl22.css. */
-  .ls-nr { color: var(--inkt-2); }
-  .ls-stappen b {
-    font-family: var(--kop2); font-weight: 500; font-stretch: 125%;
-    font-size: 1.05rem; line-height: 1.2; text-transform: uppercase; letter-spacing: -.01em;
-  }
-  .ls-stappen p { font-size: .92rem; margin-top: .35rem; }
-
-  .ls-negen {
-    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: clamp(.7rem, 1.6vw, 1.1rem); list-style: none; padding: 0; margin: 0;
-  }
-  @media (max-width: 700px) {
-    .ls-negen { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .ls-negen:not(.is-rij) > li:first-child:nth-last-child(odd) { grid-column: span 2; }
-    .ls-negen:not(.is-rij) > li:first-child:nth-last-child(odd) .kaart { aspect-ratio: 8 / 5; }
-  }
-  .ls-negen .kaart img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-
-  .ls-vinkjes { display: grid; gap: .9rem; list-style: none; padding: 0; margin: 1.4rem 0 0; }
-  .ls-vinkjes li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .8rem; align-items: start; }
-  .ls-vinkjes span { color: var(--inkt-2); font-size: .95rem; line-height: 1.6; }
-  .ls-i {
-    width: 20px; height: 20px; margin-top: .15rem; flex: 0 0 auto;
-    fill: none; stroke: var(--gloed); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
-  }
-  .ls-modelnoot { margin-top: 1.4rem; font-size: .92rem; line-height: 1.6; color: var(--inkt-2); max-width: 44em; }
-  .ls-modelnoot a {
-    color: var(--inkt); text-decoration: underline; text-underline-offset: 3px;
-    text-decoration-color: var(--geel); text-decoration-thickness: 2px;
-  }
-  .ls-modelnoot a:hover { text-decoration-color: var(--inkt); }
-</style>
+  </Fragment>
+</LookDetailHal>

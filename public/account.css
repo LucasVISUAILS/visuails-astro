@@ -4004,7 +4004,7 @@ body:not(.has-shell) > .wrap {
   display: flex; flex-direction: column; align-items: center; gap: 1.5rem;
 }
 body:not(.has-shell) .bar { padding: 0; box-shadow: none; justify-content: center; }
-body:not(.has-shell) .mark { display: block; width: 124px; height: 21px; color: var(--kv-ink-1); line-height: 0; }
+body:not(.has-shell) .mark { display: block; width: 124px; height: 22px; color: var(--kv-ink-1); line-height: 0; } /* 124 × 813,83 / 4651,24 = 21,7: het nieuwe woordmerk (14 okt 2026) */
 .mark .woordmerk { display: block; width: 100%; height: 100%; fill: currentColor; }
 .mark:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
 
@@ -4045,3 +4045,30 @@ body:not(.has-shell) .nakijk-knoppen { display: flex; flex-wrap: wrap; gap: .6re
 @media (max-width: 30em) {
   body:not(.has-shell) .authcard { padding: 1.5rem; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DE HAL — 14 oktober 2026
+   ═══════════════════════════════════════════════════════════════════════════
+   De losse kaarten van account.js (een foutpagina, "even rustig aan", een dode
+   link) in het lichte thema: dezelfde hal als Studio (src/styles/studio-hal.css)
+   en de site. Urbanist uit /fonts/gedeeld.css, wit met nevel, inkt #0F0C24,
+   lijn #DEDCE8, violet alleen op een knop. Het donkere thema blijft wat het was
+   tot die vraag beantwoord is (afvinklijst 26). */
+html[data-thema="licht"] body {
+  --h-letter: "Urbanist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font: var(--h-letter); --font-display: var(--h-letter); --stretch-kop: 100%;
+  --kv-veld: #F5F5F9; --kv-kaart: #FFFFFF; --kv-lijn: #DEDCE8; --kv-veld-lijn: #8E8BA2;
+  --kv-ink-1: #0F0C24; --kv-ink-2: #4B4960; --kv-ink-3: #6A6880;
+  --paper: #FFFFFF; --paper-2: #F5F5F9; --paper-lift: #F5F5F9; --surface: #FFFFFF; --surface-2: #F5F5F9;
+  --ink: #0F0C24; --ink-2: #4B4960; --ink-3: #6A6880; --ink-4: #C9C6D8; --ink-900: #0F0C24; --ink-700: #4B4960; --ink-500: #6A6880; --ink-300: #C9C6D8; --ink-200: #DEDCE8;
+  --line: #DEDCE8; --line-strong: #C9C6D8; --line-ui: #8E8BA2; --ghost: rgb(15 12 36 / .04); --btn-ghost-fill: rgb(15 12 36 / .05);
+  --accent: #4A1FFF; --on-accent: #FFFFFF; --accent-text: #3D17D6; --accent-dim: #3D17D6; --accent-2: #3D17D6; --teal: #4A1FFF; --teal-hover: #3D17D6; --teal-text: #3D17D6; --focus-ring: #4A1FFF;
+  --signal: #F1EEFF; --signal-ink: #2A0E8F; --warn: #F6E7D1; --warn-ink: #8A4D06;
+  --st-wait-fill: transparent; --st-wait-edge: #8E8BA2; --st-wait-ink: #4B4960;
+  --st-work-fill: #F1EEFF; --st-work-edge: #DCD5FF; --st-work-ink: #2A0E8F;
+  --st-done-fill: #2A0E8F; --st-done-edge: #2A0E8F; --st-done-ink: #FFFFFF;
+  --st-rev-fill: #F6E7D1; --st-rev-edge: rgb(138 77 6 / .30); --st-rev-ink: #8A4D06;
+  font-family: var(--h-letter);
+}
+html[data-thema="licht"] body:not(.has-shell) .authcard { border-radius: 28px; }
+html[data-thema="licht"] body .btn, html[data-thema="licht"] body:not(.has-shell) .authcard .btn { border-radius: 999px; font-family: var(--h-letter); }

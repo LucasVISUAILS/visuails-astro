@@ -190,19 +190,21 @@ console.log('\n5 · een eigen look in het abonnement: pas als hij gemaakt is');
 
 console.log('\n6 · de pagina\'s');
 {
-  const plansPage = zonderCommentaar(lees('src/components/PlansPage.astro'));
+  const plansPage = zonderCommentaar(lees('src/components/PlansHal.astro'));
   ok('/plans noemt geen producten per maand', /products a month|producten per maand/.test(plansPage), false);
-  ok('/plans heeft een plan op maat met een creditveld', /name="credits"/.test(plansPage) && /data-pm-credits/.test(plansPage), true);
-  ok('  dat naar /start/plan post met plan=maat', /action=\{lp\('\/start\/plan'\)\}/.test(plansPage) && /name="plan" value=\{CUSTOM_MONTH_ID\}/.test(plansPage), true);
-  ok('  en de prijzen komen uit customCreditsTotal()', /customCreditsTotal\(/.test(plansPage), true);
+  /* Sinds 6.04 (8 oktober 2026) is op maat op /plans één regel met een link naar
+     het veld op /start/plan, en niet meer een eigen formulier met een schuif. */
+  ok('/plans heeft op maat als één regel', /id="op-maat"/.test(plansPage) && !/data-pm-credits/.test(plansPage), true);
+  ok('  die naar /start/plan wijst met plan=maat', /lp\('\/start\/plan'\)\}\?plan=\$\{CUSTOM_MONTH_ID\}/.test(plansPage), true);
+  ok('  en de prijs komt uit customCreditsTotal()', /customCreditsTotal\(/.test(plansPage), true);
   const picker = zonderCommentaar(lees('src/components/order/PlanPicker.astro'));
   ok('/start/plan noemt geen producten per maand', /\$\{n\} producten|\$\{n\} products/.test(picker), false);
   ok('  en leest ?credits= alleen als cijfers', /\/\^\\d\{1,3\}\$\/\.test\(credits\)/.test(picker), true);
   const dist = (p) => { const f = new URL(`../dist/${p}`, import.meta.url); return existsSync(f) ? readFileSync(f, 'utf8') : null; };
   const html = dist('nl/plans/index.html');
   if (html) {
-    ok('dist: /nl/plans draagt het plan op maat', /id="op-maat"/.test(html), true);
-    ok('dist: en de tabel voor het script', /data-pm-data/.test(html), true);
+    ok('dist: /nl/plans draagt de regel op maat', /id="op-maat"/.test(html), true);
+    ok('dist: met de link naar het veld op /start/plan', /\/nl\/start\/plan\/?\?plan=maat#maat-credits/.test(html), true);
     ok('dist: en noemt de credits van Studio', html.includes(`${PLAN_CREDITS.studio}`), true);
   } else ok('dist/nl/plans is gebouwd', false, true);
 }

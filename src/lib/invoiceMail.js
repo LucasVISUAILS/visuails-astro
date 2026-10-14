@@ -35,8 +35,15 @@
  */
 
 import { sendMail, toBase64 } from './mail.js';
-import { shell, h1, p, rows, note, linkLine, esc, button, greeting } from './mailTemplate.js';
-import { rolloverMonths } from '../data/plans.js';
+import { shell, h1, p, rows, note, linkLine, esc, button, greeting, vragen } from './mailTemplate.js';
+/* Punt 7.01 (8 oktober 2026): "Zo gaat het verder" uit één bron met de
+   bedankpagina en de bestelmail, de privélink bovenaan, en wat er ontbreekt. */
+import { verderBlokHtml, leveringVan } from './verder.js';
+import { ontbrekendVoorOrder, ontbrekendRegels } from './ontbreekt.js';
+import { mintToken, hashToken, portalUrl } from './token.js';
+/* 6.03 (8 oktober 2026): credits blijven voor iedereen even lang geldig; de
+   doorschuifregel per termijn (rolloverMonths) staat niet meer in deze mail. */
+import { CREDITS_GELDIG_MAANDEN } from '../data/pricing.js';
 import { VAT_TREATMENT } from '../data/vat.js';
 import { formatDate } from './invoicePdf.js';
 
@@ -62,48 +69,45 @@ const COPY = {
     subject: (ref) => `Betaling ontvangen — ${ref}`,
     pre: (n) => `Je factuur ${n} zit als pdf bij deze mail.`,
     head: 'Je betaling is binnen',
-    lede: 'Bedankt. We hebben je betaling ontvangen en zijn met je bestelling aan de slag.',
+    /* Punt 7.07: één zin waar de bestelling staat, dan één knop. */
+    lede: (bedrag, bij) => `Bedankt — je betaling van ${bedrag} is binnen. ${bij ? 'De factuur zit als pdf bij deze mail.' : 'Je factuur staat klaar in VISUAILS Studio, onder Facturen.'}`,
+    knop: 'Bekijk je bestelling',
     rInvoice: 'Factuurnummer',
     rDate: 'Factuurdatum',
     rRef: 'Bestelling',
     rAmount: 'Betaald',
-    attached: 'De factuur zit als pdf bij deze mail. Je vindt hem ook altijd terug in VISUAILS Studio, onder <b>Facturen</b>.',
+    attached: 'Je vindt de factuur ook altijd terug in VISUAILS Studio, onder <b>Facturen</b>.',
     noAttach: 'Je factuur staat klaar in VISUAILS Studio, onder <b>Facturen</b>. Lukt het downloaden niet, mail ons dan even.',
     portal: 'Naar VISUAILS Studio',
     reverse: 'Op deze factuur is de btw verlegd naar jou als afnemer. Je geeft hem zelf aan in je eigen land.',
     outside: 'Deze levering valt buiten de Europese btw.',
     keep: 'Bewaar deze factuur voor je eigen administratie.',
     nextH: 'Wat nu',
-    next: (wanneer) => `We maken je beelden en onze beeldredactie loopt elk beeld na. Je krijgt een mail zodra ze klaarstaan${wanneer}. Daarna keur je ze per beeld goed, of vraag je één gratis revisieronde aan.`,
     /* Ronde 9 (F40): een offerte (video, eigen look) heeft geen uploadformulier
        gehad. Zonder deze zin wist de klant na betalen niet hoe zijn foto's bij
        ons komen. */
     nextModel: 'Je krijgt eerst een paar richtingen om op te reageren, met één correctieronde. Daarna bouwen we het gezicht, halen het door de uniciteitscontrole en leggen het vast op jouw merk. Je krijgt een mail zodra er iets te bekijken is.',
     nextOfferte: 'We gaan aan de slag zoals in de offerte staat. Heb je je productfoto’s nog niet gestuurd? Beantwoord dan deze mail met de foto’s, of stuur ze via WhatsApp. Je krijgt een mail zodra er iets klaarstaat om te bekijken.',
-    asap: ' (vaak binnen een dag, soms een paar dagen)',
-    window: (van, tot) => ` — op de gereserveerde datum, ${van}${tot && tot !== van ? ` tot en met ${tot}` : ''}`,
   },
   en: {
     subject: (ref) => `Payment received — ${ref}`,
     pre: (n) => `Your invoice ${n} is attached as a PDF.`,
     head: 'We have your payment',
-    lede: 'Thank you. Your payment came through and we have started on your order.',
+    lede: (amount, att) => `Thank you — your payment of ${amount} is in. ${att ? 'The invoice is attached as a PDF.' : 'Your invoice is waiting in VISUAILS Studio, under Invoices.'}`,
+    knop: 'See your order',
     rInvoice: 'Invoice number',
     rDate: 'Invoice date',
     rRef: 'Order',
     rAmount: 'Paid',
-    attached: 'The invoice is attached as a PDF. You can also find it any time in VISUAILS Studio, under <b>Invoices</b>.',
+    attached: 'You can also find the invoice any time in VISUAILS Studio, under <b>Invoices</b>.',
     noAttach: 'Your invoice is waiting in VISUAILS Studio, under <b>Invoices</b>. If the download will not work, email us.',
     portal: 'Go to VISUAILS Studio',
     reverse: 'VAT on this invoice is reverse charged to you as the customer. You declare it yourself in your own country.',
     outside: 'This supply falls outside the scope of European VAT.',
     keep: 'Keep this invoice for your own records.',
     nextH: 'What happens next',
-    next: (when) => `We make your images and our image editors check every one. You get an email as soon as they are ready${when}. Then you approve them image by image, or ask for one free revision round.`,
     nextModel: 'First you get a few directions to react to, with one correction round. Then we build the face, run it through the uniqueness check and tie it to your brand. You get an email as soon as there is something to look at.',
     nextOfferte: 'We start as set out in the quote. Not sent your product photos yet? Reply to this email with the photos, or send them on WhatsApp. You get an email as soon as there is something to look at.',
-    asap: ' (often within a day, sometimes a few days)',
-    window: (from, to) => ` — on the reserved date, ${from}${to && to !== from ? ` to ${to}` : ''}`,
   },
 };
 
@@ -139,7 +143,7 @@ const dateLine = (iso, lang) => formatDate(String(iso || ''), lang);
  * @param {object} o.snap  de bewaarde momentopname
  * @param {boolean} o.attached  zit de pdf er echt bij? Bepaalt één alinea.
  */
-export function invoiceEmail({ lang = 'nl', order = {}, invoice, snap = {}, attached = true }) {
+export function invoiceEmail({ lang = 'nl', order = {}, invoice, snap = {}, attached = true, link = '', levering = null, ontbreekt = null }) {
   const t = COPY[lang === 'en' ? 'en' : 'nl'];
   const gross = Number(snap.netCents || 0) + Number(snap.vatCents || 0);
   // Dezelfde drie waarden als vat.js en invoicePdf.js, uit de constante en niet
@@ -150,21 +154,32 @@ export function invoiceEmail({ lang = 'nl', order = {}, invoice, snap = {}, atta
     : treatment === VAT_TREATMENT.outsideScope ? t.outside
       : '';
 
-  /* ── WAT NU — 1 oktober 2026 (ronde 8, M-C1) ──────────────────────────────
-     Na het betalen was het stil tot de levering. Eén zin over wat er gebeurt en
-     wanneer — dezelfde tijdszin als op de site, nooit een belofte. Niet bij een
-     abonnementstermijn of een proef (daar geldt dit niet). */
-  const wanneer = order.window_start
-    ? t.window(dateLine(order.window_start, lang), order.window_end ? dateLine(order.window_end, lang) : '')
-    : t.asap;
+  /* ── ZO GAAT HET VERDER — 8 oktober 2026 (punt 7.01) ───────────────────────
+     Hier stond sinds 1 oktober (ronde 8, M-C1) één "Wat nu"-zin met een eigen,
+     getypte levertijd. Nu het vaste blok uit src/lib/verder.js, met de
+     leverregel van déze bestelling (de gereserveerde dagen, voorrang, of
+     turnaround()), het nakijken, en dat er tot de levering niets komt — behalve
+     als er iets mis is. Ontbreken er foto's, dan noemt het blok welke (2.05).
+     Ook bij de €1-proef: het blok belooft geen revisieronde, dus het klopt daar
+     ook (`order.noNext` van de webhook wordt daarom niet meer gelezen).
+     Een offerte (video, eigen look) en een merkmodel houden hun eigen zin: daar
+     is geen foto-upload en geen gewone levering. */
   const offerte = order.service === 'video' || order.service === 'custom';
-  const watNu = order.ref && !order.noNext ? p(`<b>${esc(t.nextH)}.</b> ${esc(order.service === 'brand-model' ? t.nextModel : offerte ? t.nextOfferte : t.next(wanneer))}`, { top: 4 }) : '';
+  const eigenZin = order.service === 'brand-model' ? t.nextModel : offerte ? t.nextOfferte : '';
+  const watNu = !order.ref ? ''
+    : eigenZin ? p(`<b>${esc(t.nextH)}.</b> ${esc(eigenZin)}`, { top: 4 })
+      : verderBlokHtml({ lang, levering: levering || leveringVan(order), factuur: 'bijgevoegd', ontbreekt });
+  const portaal = `${SITE}${lang === 'nl' ? '/nl' : ''}/account`;
   const body = [
     h1(t.head, esc(invoice.number)),
     /* De aanhef, zoals in elke andere klantmail (ronde 9, O21). Alleen met een
        naam: deze mail gaat ook uit voor een abonnementstermijn. */
     order.name ? p(greeting(order.name, lang)) : '',
-    p(esc(t.lede)),
+    p(esc(t.lede(euro(gross, lang), attached))),
+    /* De knop bovenaan (7.01): de privélink van deze bestelling. Zonder link
+       (een oude bestelling, of het maken van de link lukte niet) gaat hij naar
+       VISUAILS Studio, waar dezelfde bestelling staat. */
+    order.ref ? button(link || `${portaal}/orders`, t.knop) : '',
     watNu,
     rows([
       [t.rInvoice, esc(invoice.number)],
@@ -173,7 +188,7 @@ export function invoiceEmail({ lang = 'nl', order = {}, invoice, snap = {}, atta
       [t.rAmount, esc(euro(gross, lang))],
     ]),
     p(attached ? t.attached : t.noAttach, { top: 4 }),
-    linkLine(`${SITE}${lang === 'nl' ? '/nl' : ''}/account`, t.portal),
+    attached ? '' : linkLine(portaal, t.portal),
     vatLine ? note(esc(vatLine)) : '',
     // GEEN spamNote() HIER. Die regel — "nog niets? kijk in je spam" — hoort in
     // een mail waarop de klant wácht: de inloglink, de levermelding. Dit bericht
@@ -182,12 +197,53 @@ export function invoiceEmail({ lang = 'nl', order = {}, invoice, snap = {}, atta
     // precies het soort meegekopieerde alinea dat een transactionele mail
     // rommelig maakt.
     note(esc(t.keep)),
+    order.ref ? vragen(lang, order.ref) : '',
   ].join('');
 
   return {
     subject: t.subject(order.ref || invoice.number),
     html: shell({ lang, preheader: t.pre(invoice.number), body }),
   };
+}
+
+/**
+ * Wat de betaalmail over de bestelling zelf moet weten — 8 oktober 2026 (7.01).
+ *
+ * De webhook geeft de factuurmail alleen kenmerk, adres, naam en taal mee. Voor
+ * de knop bovenaan is een privélink nodig, en die kan niet uit de database
+ * komen: daar staat alleen de hash (zie de kop van order_tokens in schema.sql).
+ * Dus maken we er hier een, zoals elke aankondigingsmail dat doet sinds
+ * migratie 0044 — de vorige links blijven werken. En de leverregel en wat er
+ * aan foto's ontbreekt (src/lib/ontbreekt.js, punt 2.05).
+ *
+ * Alles best effort: lukt een stap niet, dan gaat de mail zonder dat stuk.
+ * Ook gebruikt door mailBetalingOntvangen() in cancelMail.js.
+ *
+ * @returns {Promise<{ link: string, levering: object|null, ontbreekt: string[] }>}
+ */
+export async function betaalMailContext(env, ref, lang = 'nl') {
+  const uit = { link: '', levering: null, ontbreekt: [] };
+  if (!env?.DB || !ref) return uit;
+  let o = null;
+  try {
+    o = await env.DB.prepare(
+      'SELECT id, tier, window_start, window_end, details_json FROM orders WHERE ref = ?1'
+    ).bind(ref).first();
+  } catch { return uit; }
+  if (!o) return uit;
+  uit.levering = leveringVan(o);
+  try {
+    const token = mintToken();
+    await env.DB.prepare('INSERT INTO order_tokens (order_id, token_hash) VALUES (?1, ?2)')
+      .bind(o.id, await hashToken(token)).run();
+    uit.link = portalUrl(token, env.PUBLIC_ORIGIN || SITE);
+  } catch (err) {
+    console.warn('[invoice-mail] geen privélink voor', ref, '—', err && err.message);
+  }
+  try {
+    uit.ontbreekt = ontbrekendRegels(await ontbrekendVoorOrder(env.DB, o.id), lang);
+  } catch { /* onbekend: dan niets tonen */ }
+  return uit;
 }
 
 /**
@@ -223,7 +279,8 @@ export async function mailInvoice(env, { order, invoice }) {
       }
     }
 
-    const { subject, html } = invoiceEmail({ lang, order, invoice, snap, attached: !!attachment });
+    const ctx = await betaalMailContext(env, order.ref, lang);
+    const { subject, html } = invoiceEmail({ lang, order, invoice, snap, attached: !!attachment, ...ctx });
     await sendMail(env, {
       to: order.email,
       /* ── EN EEN KOPIE VOOR DE EIGEN ADMINISTRATIE — 20 augustus 2026 ───────
@@ -268,11 +325,11 @@ const SUB_COPY = {
   nl: {
     subjectNext: (ref, maand) => `Je credits voor ${maand} staan klaar — ${ref}`,
     headNext: 'Je maandtermijn is betaald',
-    ledeFirst: (plan, credits, dag) => `Bedankt. Je eerste maand is betaald en ${abo(plan)} loopt: ${credits} credits per maand, die je in VISUAILS Studio besteedt aan catalog, lifestyle en video. Je vaste week begint elke maand rond dag ${dag}.`,
+    ledeFirst: (plan, credits, dag) => `Bedankt. Je eerste maand is betaald en ${abo(plan)} loopt: ${credits} credits per maand, die je besteedt aan catalog, lifestyle en video. Je bestelt wanneer je wilt, via het gewone formulier.`,
     /* Vooruitbetaald (24 september 2026): de mail zei "je eerste maand is betaald"
        boven een afschrijving van een heel jaar. */
-    ledeFirstPrepaid: (plan, credits, dag) => `Bedankt. Je jaar is vooruitbetaald en ${abo(plan)} loopt: twaalf maanden lang ${credits} credits per maand, die je in VISUAILS Studio besteedt aan catalog, lifestyle en video. Er wordt dit jaar niets meer afgeschreven. Je vaste week begint elke maand rond dag ${dag}.`,
-    ledeNext: (maand, credits) => `De termijn voor ${maand} is binnen. Je ${credits} credits voor deze maand staan klaar in VISUAILS Studio; wat je vorige maand niet gebruikte, is doorgeschoven.`,
+    ledeFirstPrepaid: (plan, credits, dag) => `Bedankt. Je jaar is vooruitbetaald en ${abo(plan)} loopt: twaalf maanden lang ${credits} credits per maand, die je in VISUAILS Studio besteedt aan catalog, lifestyle en video. Er wordt dit jaar niets meer afgeschreven. Je bestelt wanneer je wilt, via het gewone formulier.`,
+    ledeNext: (maand, credits) => `De termijn voor ${maand} is binnen. Je ${credits} credits voor deze maand staan klaar in VISUAILS Studio. Zolang je abonnement loopt, vervallen je credits niet; in Studio zie je hoeveel je er kunt sparen.`,
     rPlan: 'Abonnement',
     rCredits: 'Credits per maand',
     rInvoice: 'Factuurnummer',
@@ -289,9 +346,10 @@ const SUB_COPY = {
     steps: (dag) => [
       ['Log in op VISUAILS Studio', 'Met de knop hieronder ben je direct binnen. Daarna log je in met je e-mailadres: je krijgt een code per mail, een wachtwoord is er niet.'],
       ['Zet je vaste look', 'Onder <b>Je vaste look</b> kies je per dienst één keer je stijl, achtergrond en model. Die look gaat vanzelf mee met alles wat je laat maken, zodat elke maand bij elkaar past.'],
-      ['Plan je producten', `Zet je producten met foto's op je lijst en klik onder <b>Planning</b> op een dag. We maken ze in je vaste week, rond dag ${dag} van elke maand.`],
+      /* Ronde 10 (8 oktober 2026): geen lijst en geen vaste week meer. */
+      ['Bestel wanneer je wilt', 'Kies op visuails.com een look en bestel via het gewone formulier, zoals iedereen. Ben je ingelogd, dan betaal je met je credits.'],
     ],
-    rollover: (n) => `Credits die je in een maand niet gebruikt, schuiven ${n === 1 ? 'één maand' : `${n} maanden`} door.`,
+    rollover: (n) => `Zolang je abonnement loopt, vervallen je credits niet: je kunt tot ${n} maanden aan credits sparen. Komt er een termijn bij die je daarboven brengt, dan vervalt alleen wat erboven komt, en we waarschuwen je vooraf. Pauzeer of stop je, dan blijven je credits geldig tot ${n} maanden na je laatste termijn.`,
     loginBtn: 'Direct naar VISUAILS Studio',
     loginNote: 'Deze knop logt je meteen in en werkt twee dagen. Later log je in via visuails.com/account met je e-mailadres.',
     invoiceH: 'Je eerste factuur',
@@ -299,9 +357,9 @@ const SUB_COPY = {
   en: {
     subjectNext: (ref, maand) => `Your credits for ${maand} are ready — ${ref}`,
     headNext: 'This month is paid',
-    ledeFirst: (plan, credits, dag) => `Thank you. Your first month is paid and ${planEn(plan)} is running: ${credits} credits a month, which you spend in VISUAILS Studio on catalog, lifestyle and video. Your fixed week starts around day ${dag} of each month.`,
-    ledeFirstPrepaid: (plan, credits, dag) => `Thank you. Your year is paid in advance and ${planEn(plan)} is running: twelve months of ${credits} credits a month, which you spend in VISUAILS Studio on catalog, lifestyle and video. Nothing else is charged this year. Your fixed week starts around day ${dag} of each month.`,
-    ledeNext: (maand, credits) => `The payment for ${maand} came through. Your ${credits} credits for this month are ready in VISUAILS Studio; whatever you did not use last month has rolled over.`,
+    ledeFirst: (plan, credits, dag) => `Thank you. Your first month is paid and ${planEn(plan)} is running: ${credits} credits a month, which you spend on catalog, lifestyle and video. You order whenever you like, through the regular form.`,
+    ledeFirstPrepaid: (plan, credits, dag) => `Thank you. Your year is paid in advance and ${planEn(plan)} is running: twelve months of ${credits} credits a month, which you spend in VISUAILS Studio on catalog, lifestyle and video. Nothing else is charged this year. You order whenever you like, through the regular form.`,
+    ledeNext: (maand, credits) => `The payment for ${maand} came through. Your ${credits} credits for this month are ready in VISUAILS Studio. While your plan runs, your credits do not expire; Studio shows how many you can save.`,
     rPlan: 'Plan',
     rCredits: 'Credits per month',
     rInvoice: 'Invoice number',
@@ -317,9 +375,9 @@ const SUB_COPY = {
     steps: (dag) => [
       ['Sign in to VISUAILS Studio', 'The button below takes you straight in. After that you sign in with your email address: you get a code by email, there is no password.'],
       ['Set your look', 'Under <b>Your look</b> you choose your style, background and model once per service. That look goes with everything you order, so every month fits together.'],
-      ['Plan your products', `Put your products with photos on your list and click a day under <b>Planning</b>. We make them in your fixed week, around day ${dag} of each month.`],
+      ['Order whenever you like', 'Pick a look on visuails.com and order through the regular form, like everyone else. When you are signed in, you pay with your credits.'],
     ],
-    rollover: (n) => `Credits you do not use in a month roll over for ${n === 1 ? 'one month' : `${n} months`}.`,
+    rollover: (n) => `While your plan runs, your credits do not expire: you can save up to ${n} months of credits. If a payment takes you above that, only what goes above it lapses, and we warn you beforehand. If you pause or stop, your credits stay valid until ${n} months after your last monthly credits came in.`,
     loginBtn: 'Go straight to VISUAILS Studio',
     loginNote: 'This button signs you in straight away and works for two days. Later you sign in at visuails.com/account with your email address.',
     invoiceH: 'Your first invoice',
@@ -390,7 +448,7 @@ export async function mailSubscriptionInvoice(env, { sub, customer, invoice, pla
     const welkom = eerste ? [
       p(`<b>${esc(t.stepsH)}</b>`, { top: 8, bottom: 8 }),
       ...t.steps(dag).map(([kop, tekst], i) => p(`<b>${i + 1}. ${esc(kop)}</b><br>${tekst}`, { bottom: 12 })),
-      p(esc(t.rollover(rolloverMonths(sub.term || 'monthly'))), { muted: true }),
+      p(esc(t.rollover(CREDITS_GELDIG_MAANDEN)), { muted: true }),
       loginLink ? button(loginLink, t.loginBtn) : button(studio, t.portal),
       loginLink ? note(esc(t.loginNote)) : '',
       invoice ? p(`<b>${esc(t.invoiceH)}</b>`, { top: 16, bottom: 8 }) : '',
@@ -420,6 +478,100 @@ export async function mailSubscriptionInvoice(env, { sub, customer, invoice, pla
     return true;
   } catch (err) {
     console.error('[invoice-mail] abonnementsmail mislukt voor', sub?.ref, '—', err && err.message ? err.message : err);
+    return false;
+  }
+}
+
+/*
+ * ── EXTRA CREDITS BIJGEKOCHT — 12 oktober 2026 (ab-v3 = c, ab-v4 = b) ─────────
+ *
+ * De mail na een betaalde bijkoop, met de factuur erbij ("Extra credits · 25 ·
+ * Pro", uit dezelfde reeks als een termijnfactuur). Eén keer: de aanroeper
+ * (src/lib/bijkopen.js) stuurt hem alleen op de overgang naar 'paid'.
+ */
+const BIJKOOP_COPY = {
+  nl: {
+    subject: (n, nummer) => `Je ${n} extra credits staan klaar${nummer ? ` — ${nummer}` : ''}`,
+    head: 'Je extra credits staan klaar',
+    lede: (n, tot) => `Bedankt. Je betaling is binnen en er staan ${n} extra credits op je saldo in VISUAILS Studio. Ze gaan als eerste op, tellen niet mee voor je spaarplafond en blijven ${CREDITS_GELDIG_MAANDEN} maanden geldig${tot ? `, tot en met ${tot}` : ''}.`,
+    rPakket: 'Extra credits',
+    rInvoice: 'Factuurnummer',
+    rDate: 'Factuurdatum',
+    rAmount: 'Betaald',
+    attached: 'De factuur zit als pdf bij deze mail. Je vindt hem ook terug in VISUAILS Studio, onder <b>Facturen</b>.',
+    noAttach: 'Je factuur staat klaar in VISUAILS Studio, onder <b>Facturen</b>.',
+    portal: 'Naar je abonnement in VISUAILS Studio',
+  },
+  en: {
+    subject: (n, nummer) => `Your ${n} extra credits are ready${nummer ? ` — ${nummer}` : ''}`,
+    head: 'Your extra credits are ready',
+    lede: (n, tot) => `Thank you. Your payment came through and there are ${n} extra credits on your balance in VISUAILS Studio. They are used first, do not count towards your savings limit and stay valid for ${CREDITS_GELDIG_MAANDEN} months${tot ? `, up to and including ${tot}` : ''}.`,
+    rPakket: 'Extra credits',
+    rInvoice: 'Invoice number',
+    rDate: 'Invoice date',
+    rAmount: 'Paid',
+    attached: 'The invoice is attached as a PDF. You can also find it in VISUAILS Studio, under <b>Invoices</b>.',
+    noAttach: 'Your invoice is waiting in VISUAILS Studio, under <b>Invoices</b>.',
+    portal: 'Go to your plan in VISUAILS Studio',
+  },
+};
+
+/**
+ * @param {object} o
+ * @param {{ email: string }} o.customer
+ * @param {object|null} o.invoice  de rij uit subscription_invoices (of null als het papier niet lukte)
+ * @param {number} o.pakket        het aantal credits
+ * @param {string} o.tot           'YYYY-MM-DD', de laatste dag dat ze gelden ("tot en met")
+ * @param {string} o.lang
+ */
+export async function mailBijkoopFactuur(env, { customer, invoice = null, pakket, tot = '', lang = 'nl' }) {
+  try {
+    if (!customer?.email) return false;
+    const L = invoice?.lang === 'en' ? 'en' : (lang === 'en' ? 'en' : 'nl');
+    const t = BIJKOOP_COPY[L];
+    let snap = {};
+    try { snap = JSON.parse(invoice?.snapshot_json || '{}'); } catch { /* dan zonder */ }
+    let attachment = null;
+    if (invoice?.pdf_key && env?.UPLOADS) {
+      try {
+        const obj = await env.UPLOADS.get(invoice.pdf_key);
+        const buf = obj && typeof obj.arrayBuffer === 'function' ? await obj.arrayBuffer() : null;
+        if (buf && buf.byteLength) attachment = { filename: `${invoice.number}.pdf`, content: toBase64(buf) };
+      } catch (err) {
+        console.warn('[invoice-mail] pdf niet leesbaar voor', invoice.number, '—', err && err.message);
+      }
+    }
+    const gross = Number(snap.grossCents ?? (Number(snap.netCents || 0) + Number(snap.vatCents || 0)));
+    const treatment = String(snap.treatment || '');
+    const vatLine = treatment === VAT_TREATMENT.reverseCharge ? COPY[L].reverse
+      : treatment === VAT_TREATMENT.outsideScope ? COPY[L].outside
+        : '';
+    const studio = `${SITE}${L === 'nl' ? '/nl' : ''}/account/plan`;
+    const totTekst = tot ? formatDate(String(tot), L) : '';
+    const body = [
+      h1(t.head, invoice ? esc(invoice.number) : ''),
+      p(esc(t.lede(Number(pakket) || 0, totTekst))),
+      invoice ? rows([
+        [t.rPakket, String(Number(pakket) || 0)],
+        [t.rInvoice, esc(invoice.number)],
+        [t.rDate, esc(dateLine(snap.date, L))],
+        [t.rAmount, esc(euro(gross, L))],
+      ]) : rows([[t.rPakket, String(Number(pakket) || 0)]]),
+      p(invoice && attachment ? t.attached : t.noAttach, { top: 4 }),
+      linkLine(studio, t.portal),
+      vatLine ? note(esc(vatLine)) : '',
+      invoice ? note(esc(COPY[L].keep)) : '',
+    ].join('');
+    await sendMail(env, {
+      to: customer.email,
+      bcc: invoice ? (env.INVOICE_BCC || undefined) : undefined,
+      subject: t.subject(Number(pakket) || 0, invoice?.number || ''),
+      html: shell({ lang: L, preheader: invoice ? COPY[L].pre(invoice.number) : t.head, body }),
+      attachments: attachment ? [attachment] : undefined,
+    });
+    return true;
+  } catch (err) {
+    console.error('[invoice-mail] bijkoopmail mislukt —', err && err.message ? err.message : err);
     return false;
   }
 }

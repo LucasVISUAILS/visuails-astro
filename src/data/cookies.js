@@ -68,3 +68,64 @@ export function cookieDuur(dagen, lang = 'en') {
   }
   return nl ? `${dagen} dagen` : `${dagen} days`;
 }
+
+/* ── GEEN COOKIE, WEL IN DE BROWSER — 8 oktober 2026 (o12) ────────────────────
+ *
+ * Het cookiebeleid zegt "dit is de complete lijst", en dat klopte voor cookies.
+ * Wat er niet stond: de kleine notities die de site in de eigen opslag van de
+ * browser legt in plaats van in een cookie. Die worden niet naar ons gestuurd,
+ * maar staan wel op het apparaat van de bezoeker, en de Telecommunicatiewet
+ * (art. 11.7a) kijkt naar opslaan op het apparaat, niet naar het woord "cookie".
+ *
+ * Hier stond PROEFKAART_DICHT_DAGEN (7): hoe lang de gesloten proefkaart
+ * wegbleef (`vis_proef_dicht` in localStorage). De proefkaart is weg sinds
+ * 8 oktober 2026 (1.06), en daarmee die notitie; het cookiebeleid noemt hem niet
+ * meer. Alle overgebleven notities leven niet langer dan een tabblad — behalve,
+ * sinds 11 oktober 2026, de bestelling waar je mee bezig was (hieronder). */
+
+/* ── DE BESTELLING WAAR JE MEE BEZIG WAS — 11 oktober 2026 (F3, punt 1.04) ─────
+ *
+ * Lucas koos (V51 = a): het bestelformulier onthoudt op het apparaat van de
+ * klant de look, het aantal, de opties en de al geüploade foto's — van die
+ * foto's alleen de sleutels, niet de bestanden — en NIET naam, e-mail, telefoon
+ * of adres. Dit is de enige notitie die langer blijft dan een tabblad, want het
+ * geval waar hij voor is, is de klant die naar zijn camera of WhatsApp gaat en
+ * in een nieuw tabblad terugkomt.
+ *
+ * localStorage, geen cookie: hij gaat nooit mee naar de server. Het cookiebeleid
+ * noemt hem onder "In je browser bewaard, niet als cookie".
+ *
+ * ZES DAGEN, en dat is geen ronde gok: de nachtelijke opruiming in cron/index.js
+ * haalt een batch weg die zeven dagen niet aan een bestelling hangt
+ * (INTAKE_TTL_DAYS). Een concept dat langer bleef staan, zou foto's beloven die
+ * er niet meer zijn. Het formulier controleert bij terugkomst toch nog of ze er
+ * staan (GET /api/upload?batch=…). Na een geplaatste bestelling of "Opnieuw
+ * beginnen" wordt hij gewist. */
+export const CONCEPT_SLEUTEL = 'vis-bestelling';
+export const CONCEPT_DAGEN = 6;
+
+/* ── DE MELDING ONDERIN HET SCHERM — 14 oktober 2026 ──────────────────────────
+ *
+ * Lucas, 11:14: de welkomstregel liever "als pop up onderaan je scherm die daar
+ * blijft tot je hem wegklikt", en voor nieuwe bedrijven een proef-pop-up. 11:15:
+ * "Wanneer de bezoeker hem wegklikt blijft hij weg voor een tijdje (bedenk
+ * hoelang dit moet zijn)."
+ *
+ * Eén notitie in localStorage (KlantMelding.astro, interactions.js), en alleen
+ * als je op het kruisje klikt:
+ *   s   de bestelling en haar stand die je wegklikte ("VIS-2041|Geleverd, …").
+ *       De melding komt pas terug als er iets aan verandert: een andere
+ *       bestelling bovenaan, of dezelfde in een volgende stap.
+ *   p   tot wanneer de proef-pop-up wegblijft (een tijdstempel).
+ *
+ * DERTIG DAGEN voor de proef. Wie hem wegklikt, zegt "nu niet", en het aanbod
+ * staat daarna nog steeds op de pagina zelf: het proefblok, en "Probeer
+ * VISUAILS · €1" op elke lookkaart. De pop-up hoeft dus niet snel terug. Na
+ * een maand is het een nieuw bezoek, en dan mag hij één keer opnieuw. De oude
+ * proefkaart (tot 8 oktober) bleef zeven dagen weg: wie elke week even kijkt,
+ * kreeg hem elke week opnieuw.
+ *
+ * localStorage en geen cookie: hij gaat nooit mee naar de server. Het
+ * cookiebeleid noemt hem onder "In je browser bewaard, niet als cookie". */
+export const MELDING_SLEUTEL = 'vis-melding';
+export const PROEF_WEG_DAGEN = 30;

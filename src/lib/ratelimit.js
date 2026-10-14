@@ -80,26 +80,88 @@ export const PORTAL_WINDOW_SECONDS = 60;
  *
  * Geen nieuwe functie en geen tweede tabel: `key` is precies wat er gehasht wordt,
  * en `ip` blijft de naam voor het gewone geval. */
-export async function checkRate(env, { ip, key: sleutel, action = 'portal', limit = PORTAL_LIMIT, windowSeconds = PORTAL_WINDOW_SECONDS, nowIso = new Date().toISOString() } = {}) {
+/* ── IPv6 TELT PER /64, EN `failClosed` — 8 oktober 2026 ────────────────────
+ *
+ * Eén IPv6-aansluiting krijgt een heel /64-blok: 2^64 adressen. Een teller op het
+ * volledige adres kon dus per aanvraag een nieuwe emmer krijgen, en elke grens in
+ * deze code was voor wie dat wist geen grens. De teller kijkt nu naar de eerste
+ * vier groepen (het /64-blok), zoals vrijwel elke snelheidsbegrenzer doet. IPv4
+ * blijft het volledige adres.
+ *
+ * `failClosed` is voor de paar tellers die raden moeten tegenhouden (inloggen in
+ * /admin): gaat de telling zelf mis, dan weigeren in plaats van doorlaten. Voor
+ * alle andere blijft de oude keuze staan (open, zie de noot bij de catch). */
+export function rateIp(ip) {
+  const raw = String(ip || '').trim();
+  if (!raw.includes(':')) return raw;
+  const zonder = raw.split('%')[0].toLowerCase();
+  /* Een IPv4-adres in IPv6-jas (::ffff:203.0.113.7) telt als dat IPv4-adres,
+     niet als het /64-blok 0:0:0:0 dat alle zulke adressen zouden delen. */
+  const v4 = /(?:^|:)(\d{1,3}(?:\.\d{1,3}){3})$/.exec(zonder);
+  if (v4) return v4[1];
+  const [kop, staart = ''] = zonder.split('::');
+  const voor = kop ? kop.split(':') : [];
+  const na = zonder.includes('::') && staart ? staart.split(':') : [];
+  const groepen = zonder.includes('::')
+    ? [...voor, ...Array(Math.max(0, 8 - voor.length - na.length)).fill('0'), ...na]
+    : voor;
+  if (groepen.length < 4 || groepen.slice(0, 4).some((g) => !/^[0-9a-f]{1,4}$/.test(g))) return raw;
+  return `${groepen.slice(0, 4).map((g) => g.replace(/^0+(?=.)/, '')).join(':')}::/64`;
+}
+
+/* De sleutel van een emmer, gedeeld door checkRate() en peekRate(). */
+async function emmerSleutel(env, { ip, sleutel, action, windowSeconds, nowIso }) {
+  const salt = await getSalt(env);
+  return `${action}:${await digest(`${salt}|${sleutel || rateIp(ip) || 'unknown'}`)}:${windowStamp(nowIso, windowSeconds)}`;
+}
+
+/**
+ * KIJKEN ZONDER TE TELLEN — 8 oktober 2026.
+ *
+ * Voor een grens die alleen MISLUKTE pogingen telt (inloggen in /admin): eerst
+ * kijken of de emmer al vol is, en pas bij een mislukking checkRate() aanroepen.
+ * Zo kan een buitenstaander met twintig foute wachtwoorden de eigenaar niet
+ * buitensluiten zodra die een tweede stap heeft (zie handleLogin in admin.js).
+ * Gaat het lezen mis, dan `failClosed` zoals bij checkRate.
+ */
+export async function peekRate(env, { ip, key: sleutel, action = 'portal', limit = PORTAL_LIMIT, windowSeconds = PORTAL_WINDOW_SECONDS, nowIso = new Date().toISOString(), failClosed = false } = {}) {
+  if (!env?.DB) return { vol: failClosed, hits: 0, limit };
+  try {
+    const key = await emmerSleutel(env, { ip, sleutel, action, windowSeconds, nowIso });
+    const row = await env.DB.prepare('SELECT hits FROM rate_limits WHERE bucket = ?1').bind(key).first();
+    const hits = Number(row?.hits) || 0;
+    return { vol: hits >= limit, hits, limit };
+  } catch {
+    return { vol: failClosed, hits: 0, limit };
+  }
+}
+
+/* ── `gewicht`: TELLEN IN IETS ANDERS DAN VERZOEKEN — 8 oktober 2026 (o05) ────
+ *
+ * De daggrens op uploads telt bytes, niet verzoeken: één bestand van 25 MB weegt
+ * 25 miljoen. Zelfde emmer, zelfde atomaire upsert, alleen `hits + gewicht` in
+ * plaats van `hits + 1`. Zonder `gewicht` verandert er niets. */
+export async function checkRate(env, { ip, key: sleutel, action = 'portal', limit = PORTAL_LIMIT, windowSeconds = PORTAL_WINDOW_SECONDS, nowIso = new Date().toISOString(), failClosed = false, gewicht = 1 } = {}) {
   const open = { allowed: true, hits: 0, limit, retryAfter: 0 };
-  if (!env?.DB) return open;
+  const dicht = { allowed: false, hits: 0, limit, retryAfter: 60 };
+  if (!env?.DB) return failClosed ? dicht : open;
+  const stap = Math.max(1, Math.round(Number(gewicht) || 1));
 
   try {
-    const salt = await getSalt(env);
-    const key = `${action}:${await digest(`${salt}|${sleutel || ip || 'unknown'}`)}:${windowStamp(nowIso, windowSeconds)}`;
+    const key = await emmerSleutel(env, { ip, sleutel, action, windowSeconds, nowIso });
     const expiresAt = new Date(Date.parse(nowIso) + windowSeconds * 2000).toISOString();
 
     // One statement, one round trip, atomic. RETURNING hands back the value the
     // upsert settled on, so two concurrent requests cannot both read "1".
     const row = await env.DB.prepare(
-      `INSERT INTO rate_limits (bucket, hits, expires_at) VALUES (?1, 1, ?2)
-         ON CONFLICT(bucket) DO UPDATE SET hits = hits + 1
+      `INSERT INTO rate_limits (bucket, hits, expires_at) VALUES (?1, ?3, ?2)
+         ON CONFLICT(bucket) DO UPDATE SET hits = hits + ?3
        RETURNING hits`
     )
-      .bind(key, expiresAt)
+      .bind(key, expiresAt, stap)
       .first();
 
-    const hits = Number(row?.hits) || 1;
+    const hits = Number(row?.hits) || stap;
     return {
       allowed: hits <= limit,
       hits,
@@ -117,7 +179,7 @@ export async function checkRate(env, { ip, key: sleutel, action = 'portal', limi
     // Nothing is silently lost either way: the lookup this guards is about to
     // hit the same database, and if D1 is genuinely down it will fail there,
     // loudly, on its own terms.
-    return open;
+    return failClosed ? dicht : open;
   }
 }
 

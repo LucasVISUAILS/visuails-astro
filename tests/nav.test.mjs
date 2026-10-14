@@ -328,7 +328,8 @@ console.log('\nwat elk formulier post als service');
 
   // video mag niet afgerekend worden, anders is een aanvraag een betaalbare order.
   const quote = read('src/lib/quote.js');
-  check('video is niet betaalbaar', /PAYABLE_SERVICES = new Set\(\['catalog', 'lifestyle', 'complete'\]\)/.test(quote), true);
+  /* Sinds 14 oktober 2026 zonder 'complete' (afvinklijst 23). */
+  check('video is niet betaalbaar', /PAYABLE_SERVICES = new Set\(\['catalog', 'lifestyle'\]\)/.test(quote), true);
 }
 
 /* ══ 6 · HET VINKJE HEEFT EEN GRONDSLAG ═════════════════════════════════════
@@ -371,77 +372,19 @@ console.log('\nde privacyverklaring dekt het');
  * Deze test is daarom een verbod en geen bevestiging: nergens mag een media query
  * die twee elementen nog verbergen.
  */
-console.log('\nde proefkaart onderin draagt tekst en merk');
+console.log('\nde proefkaart onderin is weg (1.06)');
 {
-  /* ── DE BALK IS EEN KAART GEWORDEN — SECTIE 21, 5 SEPTEMBER 2026 ──────────
-     Hier stond de conversiebalk (.convbar) met een <Note> achter een vraagteken.
-     Lucas' oorspronkelijke bezwaar — *"ook mist hier tekst en logo bij de pop
-     up"* — geldt onverkort voor de opvolger, Proefkaart.astro: de kaart zegt
-     wat je krijgt en voor hoeveel (uit TEST_SAMPLE, niet getypt), draagt het
-     merk, en is te sluiten. Layout.astro rendert hem op elke pagina. */
-  const kaart = read('src/components/Proefkaart.astro');
+  /* ── DE POPUP VERDWIJNT — 8 oktober 2026, punt 1.06 ─────────────────────────
+     Hier werd de proefkaart bewaakt (Proefkaart.astro, sectie 21): een zwevende
+     kaart "Probeer VISUAILS · €1" op elke pagina, die op /plans over de kop
+     viel. Lucas koos 1.06: de proef begint bij een look, met een stille knop op
+     elke lookkaart en lookpagina; de popup verdwijnt. Deze toets bewaakt nu dat
+     hij niet terugkomt, en dat de oude balk (.convbar) ook weg blijft. */
   const bron = read('src/layouts/Layout.astro');
-  check('Layout rendert de proefkaart', /<Proefkaart lang=\{lang\} \/>/.test(bron), true);
-  check('de kaart leest de proef uit TEST_SAMPLE', /TEST_SAMPLE\[lang\]/.test(kaart), true);
-  /* ── DE TWEEDE VOORWAARDE HEEFT EEN EIGEN SEIN NODIG — 10 september 2026 ──
-     Lucas: *"Ik krijg geen test sample pop up."* De kaart komt na twee dingen:
-     voorbij de hero gescrold, én de cookiebanner beantwoord. Beide werden alleen
-     bij SCROLLEN nagekeken, en dus viel er precies één veelvoorkomende volgorde
-     buiten: scrollen (banner staat nog open, kaart mag niet), dan de banner
-     wegklikken — en daarna scrolt er niemand meer. Op die pagina kwam de kaart
-     nooit. In een echte browser gemeten, in allebei de volgordes.
-
-     Twee helften, dus twee controles: writeConsent() moet het omroepen, en de
-     kaart moet luisteren. Eén ervan alleen is geen werkende keten. */
-  const toestemming = read('src/scripts/consent.js');
-  check('writeConsent roept de keuze om', /dispatchEvent\(new CustomEvent\('vis:consent'/.test(toestemming), true);
-  check('en de kaart kijkt dan opnieuw', /addEventListener\('vis:consent'/.test(kaart), true);
-  check('en noemt prijs en inhoud', /s\.price/.test(kaart) && /s\.deliverableShort/.test(kaart), true);
-  /* ── DE BEDOELING EN NIET DE SPELLING — 8 september 2026 ────────────────
-     Hier stond /VISUAILS®/, en dat werd rood toen het merkteken op 8 september
-     naar één constante ging (MERK in src/data/brand.js, ™ in plaats van ® —
-     zie de noot daar). De kaart was niet stuk; de test spelde de uitvoering na
-     in plaats van de belofte. Wat hier telt is dat het merk op de kaart staat
-     en dat het uit die ene bron komt. */
-  check('het merk staat erop', /\{MERK\}/.test(kaart), true);
-  check('en het komt uit brand.js', /import \{ MERK \} from '\.\.\/data\/brand\.js'/.test(kaart), true);
-  check('en hij is te sluiten', /data-pk-sluit/.test(kaart), true);
+  check('Layout rendert geen proefkaart meer', /<Proefkaart\b/.test(bron), false);
+  check('en importeert hem niet', /import Proefkaart/.test(bron), false);
+  check('Proefkaart.astro bestaat niet meer', existsSync(new URL('../src/components/Proefkaart.astro', import.meta.url)), false);
   check('de oude balk staat niet meer in de markup', /class="convbar"/.test(bron), false);
-  /* ── DE KNOP MOET WIJKEN, NIET OP 142px STAAN — 26 augustus 2026 ─────────
-     Hier stond `/--wa-bottom: 142px/`, en dat is een SPELLING en geen belofte.
-     Het getal was met de hand gemeten tegen een balk die door de
-     `position: relative`-fout van 24 augustus niet lag waar hij hoorde te
-     liggen — zie de noot bij `.convbar` in Layout.astro. Nu die fout weg is,
-     leest de regel de echte hoogte van de balk:
-
-       @media (max-width: 700px) { .convbar.show ~ .wa-launcher {
-         --wa-bottom: calc(var(--cb-h, 0px) + 32px); } }
-
-     Dat is beter dan wat de toets afdwong, en de toets ging er rood op. Precies
-     het geval dat SCHRIJFWIJZER.md §6 beschrijft: een wacht die de spelling
-     vasthoudt, keurt op een dag de betere versie af.
-
-     Wat hij hoort te bewaken is de BELOFTE: zodra de balk in beeld staat, gaat
-     de WhatsApp-knop omhoog en komt hij er niet achter te zitten. Dat is nu de
-     eis — een regel die `.wa-launcher` verhoogt zodra `.convbar.show` er is,
-     hoe die verhoging ook is opgeschreven. Een vast getal mag nog steeds; alleen
-     is het niet langer verplicht.
-
-     ── EN DEZELFDE LES NOG EEN KEER — 2 september 2026 ──────────────────────
-     De regel hierboven eiste `~ .wa-launcher` DIRECT achter de tilde, en dus
-     ging hij opnieuw rood op een verbetering: de knop staat nu in een
-     <div class="wa-dock"> die role="complementary" draagt, omdat axe-core hem
-     op alle 91 pagina's aanwees als inhoud buiten elk landmark. De selector
-     werd `.convbar.show ~ .wa-dock .wa-launcher` — dezelfde belofte, één doos
-     verderop.
-
-     Wat de tilde bewaakt is dat de verhoging AAN DE BALK HANGT en niet los aan
-     de viewportbreedte; dat de knop een broer of een kleinkind van die broer is,
-     is opmaak. `[^{}]*` tussen de tilde en de knop laat dat vrij en houdt de
-     eis overeind: geen `{` en geen `}` ertussen, dus het blijft één selector. */
-  /* De WhatsApp-knop hoefde voor de balk te wijken; de kaart staat linksonder
-     en de knop rechtsonder, dus die twee raken elkaar niet meer. De
-     `.convbar.show ~`-regel mag weg zodra de huid wordt opgeruimd. */
 }
 
 console.log('\nde prijsvorm');
@@ -464,7 +407,7 @@ console.log('\nde prijsvorm');
    * meeleest, straft het opschrijven van de regel.
    */
   const stripped = (f) => codeOnly(read(f));
-  const files = ['src/data/pricing.js', 'src/components/PricingPage.astro', 'src/components/Voorpagina.astro'];
+  const files = ['src/data/pricing.js', 'src/components/PricingHal.astro', 'src/components/VoorpaginaHal.astro'];
   const handwritten = files.filter((f) => /€\s?\d[\d.,]*\s*[–—-]\s*€/.test(stripped(f)));
   check('geen handgeschreven bereik met twee eurotekens', handwritten, []);
 }
@@ -647,7 +590,8 @@ console.log('\nde hookspagina bestaat, en verkoopt niets');
  */
 console.log('\nhet vraagteken naast hooks');
 {
-  const home = read('src/components/Voorpagina.astro');
+  /* Sinds 12 oktober 2026 is de voorpagina VoorpaginaHal.astro (de hal). */
+  const home = read('src/components/VoorpaginaHal.astro');
 
   /* ── DE CONSTRUCTIE IS OP 21 AUGUSTUS 2026 VERVANGEN ────────────────────
      Hier stond een <details> met het driehoekje op drie manieren verborgen, en
@@ -679,9 +623,13 @@ console.log('\nhet vraagteken naast hooks');
   /* Sectie 21 (5 september 2026): de homepage noemt Hooks en Editions helemaal
      niet meer — Lucas: tekst mag weg zolang de kern helder blijft. Het menu
      doet dat werk (NAV_SOON in src/i18n/ui.js), en /plans draagt de uitleg. */
-  check('de homepage noemt de twee nog wel', /binnenkortNamen\(/.test(home), true);
-  check('en wijst naar de plek waar ze staan', /plans#binnenkort/.test(home), true);
-  check('en draagt de uitleg zelf niet meer', /svcSoonList/.test(home), false);
+  /* 12 oktober 2026: de hal noemt Hooks en Editions ook niet meer in een regel
+     onder de diensten (dat deed de oude voorpagina nog: "Ook: Hooks · Editions ·
+     werk op maat"). Het goedgekeurde voorbeeld heeft zes secties en die regel
+     zat er niet in. Wat de twee vindbaar houdt, is het menu: sectie 1 hierboven
+     eist dat elk "binnenkort" daar staat en naar zijn eigen uitleg wijst. Hier
+     blijft de eis die altijd gold: de uitleg staat niet op de voorpagina. */
+  check('de homepage draagt de uitleg niet', /svcSoonList|binnenkortNamen\(/.test(home), false);
   /* ── EN DEZE ZES LEZEN dist/, DUS MET DE LEEFTIJDSCONTROLE ERVOOR ───────
      30 augustus 2026, 20:12. Deze zes stonden hier zonder buildStaat en gaven
      bij Lucas zes rode regels:
@@ -858,7 +806,9 @@ console.log('\nhet vraagteken naast hooks');
        het niet" en "One photo alone won't work" — hetzelfde, anders gezegd. */
     check(`${lang}: één foto is niet genoeg`,
       /(not enough|niet genoeg|red je het niet|won.t work|isn.t (enough|sufficient)|is not (enough|sufficient))/i.test(b), true);
-    check(`${lang}: de beeldredactie kijkt hem na`, /beeldredactie|image editors/.test(b), true);
+    /* o10, 8 oktober 2026: de stap blijft, "onze beeldredactie" is weg (zie
+       tests/beeldredactie.test.mjs voor het besluit). */
+    check(`${lang}: er wordt nagekeken, zonder "beeldredactie"`, /(We check it|Wij kijken hem na)/.test(b) && !/beeldredactie|image editors/.test(b), true);
     /* ── DE LEVERTIJD KOMT UIT DE BRON — 18 augustus 2026 ────────────────
        Hier stond `/24 (to|tot) 48/` en die toets hield een FOUTE belofte vast.
        De homepage zei "binnen 24 tot 48 uur" terwijl elke andere pagina
@@ -948,7 +898,7 @@ console.log('\nhet vraagteken naast hooks');
      bijgewerkt en de ander niet. Eén per taal dus. */
   /* De voetregel staat sinds 30 augustus 2026 op /plans (soonFoot) en niet meer
      op de homepage (svcSoonFoot). Zelfde mededeling, zelfde eis eronder. */
-  const feet = [...read('src/components/PlansPage.astro').matchAll(/soonFoot: '([^']*)'/g)].map((m) => m[1]);
+  const feet = [...read('src/components/PlansHal.astro').matchAll(/soonFoot: '([^']*)'/g)].map((m) => m[1]);
   check('beide talen hebben een voetregel', feet.length, 2);
   /* ── DE CLAIM EN NIET DE WOORDEN — 24 augustus 2026 ────────────────────
      Hier stond `/(not settled|niet vast)/`. Lucas herschreef de regel naar
@@ -1382,6 +1332,108 @@ console.log('\nwat nog niet te bestellen is, staat niet in de balk');
       check(`${pagina}: ${naam} wél in de voettekst`, re.test(voet), true);
     }
     check(`${pagina}: de balk heeft nog diensten`, /href="(\/nl)?\/catalog\/"/.test(balk), true);
+  }
+}
+
+/*
+ * ── HET MENU VAN 1.11 — 8 oktober 2026 ─────────────────────────────────────
+ *
+ * Lucas koos: Wat we maken (Catalog, Lifestyle, Video, Jouw merkmodel) · Hoe
+ * het werkt · Prijzen (met Abonnement) · Galerij · Contact · Inloggen ·
+ * Bestellen. En V39 = b: /studio is de pagina over VISUAILS Studio, met
+ * "Inloggen" bovenaan, en /portal stuurt door. De planning werd een blok op
+ * /how-it-works.
+ *
+ * Op 21 augustus ging de balk van zeven naar vijf onderdelen (§23). Het blijven
+ * er vijf; wat korter wordt, zijn de laden. Deze sectie legt dat vast, in de
+ * bron én in de gebouwde pagina, zodat een item dat terugsluipt (de planning,
+ * /portal, het abonnement onder "Wat we maken") hier rood wordt.
+ */
+console.log('\nhet menu van 1.11');
+{
+  const MAKEN = ['/catalog', '/custom-models', '/lifestyle', '/video'];
+  const HOE = ['/how-it-works', '/models', '/upload-guidelines'];
+  const PRIJZEN = ['/pricing', '/plans'];
+  for (const lang of LANGS) {
+    const u = ui[lang];
+    check(`${lang}: Wat we maken = Catalog, Lifestyle, Video, merkmodel`,
+      u.drops.filter((d) => !d.soon).map((d) => d.href).sort(), MAKEN);
+    check(`${lang}: het abonnement staat niet meer onder Wat we maken`, u.drops.some((d) => d.href === '/plans'), false);
+    check(`${lang}: Hoe het werkt zonder /studio en /portal`, u.how.map((d) => d.href).sort(), HOE);
+    check(`${lang}: Prijzen met het abonnement eronder`, (u.prijzen || []).map((d) => d.href), PRIJZEN);
+    check(`${lang}: elk item onder Prijzen heeft titel en beschrijving`, (u.prijzen || []).every((d) => d.title && d.desc), true);
+    check(`${lang}: de voettekst noemt /studio VISUAILS Studio`, u.foot_studio, 'VISUAILS Studio');
+  }
+
+  /* De gebouwde balk: vijf onderdelen, drie daarvan uitklappers. */
+  const lus = (n, f) => { f(n); for (const c of n.childNodes || []) lus(c, f); };
+  const attr = (n, a) => (n.attrs || []).find((x) => x.name === a)?.value || '';
+  const heeftKlasse = (n, k) => attr(n, 'class').split(/\s+/).includes(k);
+  const tekst = (n) => { const o = []; lus(n, (x) => { if (x.nodeName === '#text') o.push(x.value); }); return o.join(' ').replace(/\s+/g, ' ').trim(); };
+  for (const [pagina, verwacht] of [
+    ['dist/index.html', ['What we make', 'How it works', 'Pricing']],
+    ['dist/nl/index.html', ['Wat we maken', 'Hoe het werkt', 'Prijzen']],
+  ]) {
+    const u = new URL(`../${pagina}`, import.meta.url);
+    if (!existsSync(u)) { console.log(` --   ${pagina} niet gecontroleerd: geen build`); continue; }
+    const doc = parse(readFileSync(u, 'utf8'));
+    let lijst = null;
+    lus(doc, (n) => { if (!lijst && n.nodeName === 'ul' && heeftKlasse(n, 'nav-links')) lijst = n; });
+    const items = (lijst?.childNodes || []).filter((n) => n.nodeName === 'li');
+    check(`${pagina}: vijf onderdelen in de balk (zoals sinds 21 aug)`, items.length, 5);
+    const knoppen = items.flatMap((li) => (li.childNodes || []).filter((n) => n.nodeName === 'button')).map(tekst);
+    check(`${pagina}: drie uitklappers, Prijzen is de derde`, knoppen, verwacht);
+    const prijsLi = items.find((li) => (li.childNodes || []).some((n) => n.nodeName === 'button' && tekst(n) === verwacht[2]));
+    const prijsLinks = [];
+    if (prijsLi) lus(prijsLi, (n) => { if (n.nodeName === 'a') prijsLinks.push(attr(n, 'href').replace(/^\/nl/, '').replace(/\/$/, '')); });
+    check(`${pagina}: onder Prijzen staan /pricing en /plans`, prijsLinks, PRIJZEN);
+    const html = readFileSync(u, 'utf8');
+    const lade = (html.match(/<div class="mobile-nav"[\s\S]*?<div class="mobile-cta"/) || [''])[0];
+    check(`${pagina}: de telefoonlade heeft drie groepen`, (lade.match(/class="mobile-group"/g) || []).length, 3);
+    check(`${pagina}: en het abonnement staat erin`, /href="(\/nl)?\/plans\/?"/.test(lade), true);
+    const voet = (html.match(/<footer class="site-footer"[^>]*>[\s\S]*?<\/footer>/) || [''])[0];
+    check(`${pagina}: de voettekst linkt /plans en /studio`, /href="(\/nl)?\/plans\/?"/.test(voet) && /href="(\/nl)?\/studio\/?"/.test(voet), true);
+  }
+
+  /* Geen enkele gebouwde pagina linkt nog naar /portal: het adres werkt (301),
+     maar een link op onze eigen site hoort niet via een omweg te gaan. */
+  const dist = new URL('../dist/', import.meta.url);
+  if (existsSync(new URL('index.html', dist))) {
+    const portaal = [];
+    (function zoek(u, rel) {
+      for (const e of readdirSync(u, { withFileTypes: true })) {
+        const kind = new URL(`${e.name}${e.isDirectory() ? '/' : ''}`, u);
+        if (e.isDirectory()) zoek(kind, `${rel}${e.name}/`);
+        else if (e.name.endsWith('.html') && /href="(\/nl)?\/portal[/"#?]/.test(readFileSync(kind, 'utf8'))) portaal.push(`${rel}${e.name}`);
+      }
+    }(dist, ''));
+    check('geen enkele pagina linkt naar /portal', portaal, []);
+    check('en /portal wordt niet meer als pagina gebouwd', existsSync(new URL('portal/index.html', dist)) || existsSync(new URL('nl/portal/index.html', dist)), false);
+
+    /* /studio: de pagina over VISUAILS Studio, met Inloggen als eerste knop. */
+    for (const [pad, taal] of [['studio/index.html', 'en'], ['nl/studio/index.html', 'nl']]) {
+      const html = readFileSync(new URL(pad, dist), 'utf8');
+      const main = (html.match(/<main[\s\S]*?<\/main>/) || [''])[0];
+      /* Sinds 13 oktober 2026 (afvinklijst 18) in de hal: de knop heet .h-knop en het
+         etiket is de pil boven de kop. Wat getoetst wordt is hetzelfde. */
+      const eerste = (main.match(/<a class="(?:h-)?knop[^"]*" href="([^"]+)"/) || [])[1] || '';
+      check(`${pad}: de eerste knop is Inloggen (${taal})`, eerste.replace(/&amp;/g, '&'), `/account?lang=${taal}`);
+      check(`${pad}: de kop gaat over VISUAILS Studio`, /<p class="etiket"[^>]*>VISUAILS Studio<\/p>|<p class="h-pil[^"]*"[^>]*><span>VISUAILS Studio<\/span><\/p>/.test(main), true);
+    }
+    /* De planning staat als blok op /how-it-works, met het anker. Sinds 13 oktober
+       2026 (afvinklijst 11) is dat het deel "planning" van HowItWorksHal.astro. */
+    for (const pad of ['how-it-works/index.html', 'nl/how-it-works/index.html']) {
+      const html = readFileSync(new URL(pad, dist), 'utf8');
+      check(`${pad}: het planningsblok staat erop`, /<section class="[^"]*\bh-hw-plan-sec\b[^"]*"[^>]*id="planning"/.test(html), true);
+      check(`${pad}: en "de agenda" wijst ernaar`, /href="#planning"/.test(html), true);
+    }
+  }
+
+  /* De doorverwijzing, in beide talen en beide vormen, permanent. */
+  const regels = read('public/_redirects').split('\n').map((r) => r.trim()).filter((r) => r && !r.startsWith('#')).map((r) => r.split(/\s+/));
+  for (const [bron, doel] of [['/portal', '/studio/'], ['/portal/', '/studio/'], ['/nl/portal', '/nl/studio/'], ['/nl/portal/', '/nl/studio/']]) {
+    const r = regels.find((x) => x[0] === bron);
+    check(`_redirects: ${bron} → ${doel} 301`, r ? `${r[1]} ${r[2]}` : '(geen regel)', `${doel} 301`);
   }
 }
 

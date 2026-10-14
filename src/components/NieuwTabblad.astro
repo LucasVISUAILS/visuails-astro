@@ -1,0 +1,9 @@
+---
+/* "Opent in een nieuw tabblad", alleen voor een schermlezer — 8 oktober 2026 (o26).
+   Zet hem als laatste kind in een <a target="_blank">. Zie src/data/nieuwTabblad.js. */
+import { nieuwTabblad } from '../data/nieuwTabblad.js';
+interface Props { lang?: string }
+const { lang = 'en' } = Astro.props;
+const zin = ` (${nieuwTabblad(lang)})`;
+---
+<span class="sr-only">{zin}</span>

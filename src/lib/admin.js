@@ -39,18 +39,34 @@
 
 import { hashToken, mintToken, portalUrl } from './token.js';
 import { portalVoorvertoning } from './portal.js';
+import { WORDMARK_VIEWBOX, WORDMARK_PATHS } from '../data/wordmarkPath.js';
+/* Het getekende woordmerk (14 oktober 2026, /admin in de hal), zoals in Studio,
+   het portaal en de inlogpagina: geen getypt "VISUAILS" in Anybody meer. De
+   naam staat op de link (aria-label), het pad zelf is decoratie. */
+const MERK = `<svg class="woordmerk" viewBox="${WORDMARK_VIEWBOX}" aria-hidden="true" focusable="false">${WORDMARK_PATHS.map((d) => `<path fill-rule="evenodd" d="${d}"/>`).join('')}</svg>`;
 import {
   HERSTEL_AANTAL, TOTP_STAP,
   hashRecoveryCode, mintRecoveryCodes, mintTotpSecret, normaliseRecoveryCode,
-  totpUri, verifyTotp,
+  totpStap, totpUri,
 } from './adminAuth.js';
 /* DELIVERY_DAYS staat in de mail bij een nieuwe portaallink: die mail zegt hoe
    lang de klant er nog bij kan, en dat getal hoort uit dezelfde constante te
    komen als de nachtelijke opruiming en de juridische pagina's. */
-import { stampDeliveryRetention, DELIVERY_DAYS } from './retention.js';
+import { stampDeliveryRetention, DELIVERY_DAYS, ACCOUNT_YEARS, STALE_ACCOUNTS_COUNT_SQL, STALE_ACCOUNTS_SQL, bewaartermijnRegel } from './retention.js';
+/* De revisie- en bewaardatum van de levermail: dezelfde som als Studio (naloop A2). */
+import { leverDatums } from './leverdatums.js';
+/* Punt 3.01: de levermail zegt hetzelfde als de privélink en Studio (nuzin.js). */
+import { leverMailZin, NU_TEKST } from './nuzin.js';
+/* Punt 3.08: de vanaf-regel van de proef, dezelfde als op zijn privélink. */
+import { herbestelKnop } from './herbestel.js';
+/* Punt 10.05: de termijn waarbinnen ingetrokken beelden van site en social gaan. */
+import { TOESTEMMING_WEG_DAGEN, termijnInWoorden } from '../data/termijnen.js';
 import { serviceLabel } from '../data/services.js';
 import { planName } from '../data/planNames.js';
 import { statPil } from '../data/status.js';
+/* G3 (8 oktober 2026): welke aanbeveling nooit op de site komt — één regel voor
+   het scherm, het script en de site. */
+import { isTestExemplaar } from '../data/aanbevelingen.js';
 /* De fotosoorten met hun Nederlandse naam — zie SHOT_LABEL verderop voor waarom
    dit geen eigen lijstje meer is. */
 import { SHOTS as SHOTS_DATA, contextShotSlot, isRefShotId } from '../data/shots.js';
@@ -96,7 +112,7 @@ import { styles as ALLE_LOOKS } from '../data/styles.js';
    daar hernoemd wordt, heet hier meteen ook zo. */
 import { catalogStyles as ALLE_CATALOG_LOOKS } from '../data/catalogStyles.js';
 import { videoStyles as ALLE_VIDEO_LOOKS } from '../data/videoStyles.js';
-import { background as achtergrondVan } from '../data/backgrounds.js';
+import { background as achtergrondVan, achtergrondNaam } from '../data/backgrounds.js';
 /* De hoeken die bij de bestelling zijn bijgekozen. Zie de kop van
    src/data/angles.js; ze staan in details_json als `angle_<id>` met een optionele
    `angle_note_<id>` ernaast, en ze gelden voor de HELE bestelling. */
@@ -104,11 +120,20 @@ import { ANGLES } from '../data/angles.js';
 const STYLE_LOOKS = ALLE_LOOKS.filter((l) => !l.priceTrust);
 import { ENGINES, GEZICHTSZOEKERS, UITKOMSTEN, merkmodelControleCompleet } from '../data/modelChecks.js';
 import { rosterWoord, ROSTER, modelId, MODEL_ANY } from '../data/models.js';
-/* DE ABONNEMENTSWEEK. Zie de kop van planStart.js: deze twee functies zijn het
-   stuk dat van een klantenlijst werk maakt, en Lucas' keuze was uitdrukkelijk
-   dat een MENS daarop drukt. Vandaar dat ze hier binnenkomen en niet in cron/. */
-import { startPlanWindow, klaarOmTeStarten } from './planStart.js';
+/* DE ABONNEMENTSWEEK IS WEG — ronde 10 (B), 8 oktober 2026. Hier kwamen
+   startPlanWindow() en klaarOmTeStarten() uit planStart.js binnen voor de knop
+   "Start deze week". Een abonnee bestelt nu via het gewone formulier (§28 van
+   het overzicht); planStart.js bestaat niet meer. */
 import { bundelVoor, kindLabel } from './slots.js';
+/* Het creditboek (ronde B, migratie 0061): credits terug bij annuleren of een
+   product dat niet gemaakt kon worden, en "Credits bijstellen" met een reden. */
+import { creditsTerugVoorBestelling, creditsVanBestelling, boekBij, boekAf, creditsBeschikbaar, CREDIT_REDEN, creditSaldo, creditboek } from './creditboek.js';
+/* De klantpagina toont saldo en creditboek in dezelfde woorden als Studio (2.07). */
+import { saldoWeergave, boekWeergave, boekKoppen, terugZin } from './creditWeergave.js';
+/* Extra credits bijkopen (12 oktober 2026): de aankopen op de klantpagina. */
+import { aankopenVanKlant } from './bijkopen.js';
+import { redenLabel } from './stopReden.js';
+import { CREDITS_GELDIG_MAANDEN, BIJKOOP_MAX_PER_MAAND } from '../data/pricing.js';
 import { planState, queueTerugNaAnnulering, loadSubscription, termijnMaand } from './subscription.js';
 /* De beeldverhouding, voor de werkmap. `ratioById` met de dienst erbij, zodat een
    verhouding die deze dienst niet kent ook niet in de briefing komt; `ratioField`
@@ -119,8 +144,11 @@ import { ratioById, ratioField } from '../data/ratios.js';
    echte aantal kost een paar lege lookups, lager zou een gezette afwijking laten
    vallen. Zeven is het maximum dat een dienst vandaag levert (complete). */
 const RATIO_IMAGES_MAX = 7;
-import { hasProvenanceTag, isScannable } from './provenance.js';
-import { checkRate, clientIp } from './ratelimit.js';
+import { hasProvenanceTag, isScannable, MAX_SCAN_BYTES } from './provenance.js';
+/* 4.01: de herkomsttag schrijven, in de Worker, bij elke jpg en png uit /admin. */
+import { zetHerkomstTag, kanTaggen, zetHerkomstTagMp4, kanTaggenVideo } from './xmp.js';
+import { LEVERTAG, MAANDSETTAG } from './iptc.js';
+import { checkRate, peekRate, clientIp } from './ratelimit.js';
 /* sendLoginLink() komt uit account.js en niet uit een eigen kopie hier — zie de noot
    daar. account.js importeert dit bestand niet, dus er is geen kringverwijzing. */
 import { sendLoginLink } from './account.js';
@@ -129,7 +157,7 @@ import { mintBatch, batchPrefix, safeName, typeFor, MAX_FILE_BYTES, MAX_BATCH_FI
 import { zipStream, zipDisposition } from './zip.js';
 import {
   scaffoldFiles, scaffoldFilename, parseScaffoldPath, isSourcePath, isScaffoldDoc,
-  deliveryFilename,
+  deliveryFilename, isRawPath, kenmerkenInPad, kenmerkUitWerkbestand, vreemdKenmerk,
 } from './scaffold.js';
 import {
   adminSessionExpiry,
@@ -145,7 +173,10 @@ const SESSION_COOKIE = 'vis_admin';
 import { sendMail } from './mail.js';
 import { stuurBetaallink as stuurBetaallinkMail } from './betaallink.js';
 import { createOrderMolliePayment, refundMolliePayment, mollieKey, mollieKeyProblems, describeHeaders } from './mollie.js';
-import { issueInvoice, issueCreditNote } from './invoice.js';
+import { issueInvoice, issueCreditNote, formatNumber } from './invoice.js';
+/* De boekhouding (8.08, 8 oktober 2026): de stand per document in /admin/facturen,
+   de knop "Opnieuw", de regel in /admin/diagnose. Zie src/lib/eboekhouden.js. */
+import { boekhoudingAchteraf, koppelingAan, standPerDocument, mislukteBoekingen, koppelingStand, opnieuw as boekhoudingOpnieuw, testKoppeling } from './eboekhouden.js';
 import { boekTegoedTerug, tegoedAfgeboekt, tegoedOpBestelling, teBetalenCents } from './tegoedVerrekening.js';
 import { betaalVolledigMetTegoed } from './tegoedBetaling.js';
 import { mailInvoice } from './invoiceMail.js';
@@ -154,11 +185,33 @@ import { bouncesFor, bounceLine } from './bounces.js';
 /* De twee bedragen van de merkmodel-credit komen uit de prijslijst en niet uit een
    getal hier: /pricing en /custom-models rekenen met dezelfde bron, en een tweede
    kopie is hoe het scherm en de belofte uit elkaar gaan lopen. */
-import { AMOUNT, VAT_RATE, vatPercent, ladderTotal, STOCK_OFF_BRAND } from '../data/pricing.js';
+import { AMOUNT, VAT_RATE, vatPercent, ladderTotal, STOCK_OFF_BRAND, euro, withVat } from '../data/pricing.js';
+/* De gratis grenzen van Workers, D1 en Resend (8 oktober 2026, punt 9.05). Eén bron,
+   met de vindplaats van elk getal: src/lib/meetlat.js. */
+import { GRENZEN, RESEND_GRATIS } from './meetlat.js';
 /* De betaaltermijn na een goedgekeurde btw-beoordeling. Uit vat.js en niet
    ingetypt: functions/api/order.js zet dezelfde klok bij het bestellen, en
    tests/promises.test.mjs weigert een tweede getal in dit bestand. */
-import { PAYMENT_DAYS, countryOptions, EU_COUNTRIES, OTHER_COUNTRIES } from '../data/vat.js';
+import { countryOptions, EU_COUNTRIES, OTHER_COUNTRIES, isEu, HOME_COUNTRY } from '../data/vat.js';
+/* De leverdatum die bij een btw-akkoord opnieuw gaat lopen, is dezelfde
+   vasthoudtermijn als bij het bestellen (8 oktober 2026, punt 9.01, §17.16):
+   hier stond PAYMENT_DAYS, de termijn waarbinnen een goedgekeurde bestelling
+   betaald moet zijn. Allebei zeven dagen, maar twee afspraken — zie de kop van
+   src/data/termijnen.js. */
+import { VENSTER_VASTHOUDEN_DAGEN, FOTO_WACHT_DAGEN, inWoorden } from '../data/termijnen.js';
+/* Punt 2.05 (8 oktober 2026): de ene lijst "wat ontbreekt per vak". */
+import { ontbrekendeFotos, ontbrekendRegels, aantalOntbrekend } from './ontbreekt.js';
+/* De klant bereiken op vijf momenten (punt 7.05): waLink() en de knoppen. */
+import { waNummer, waLink, waTekst, contactKnoppen as waKnoppen, isNederlands, betaalDag, WA_MOMENTEN, REVIEW_GEVRAAGD } from './waLink.js';
+/* De tussenpagina naar WhatsApp na de reviewknop (3.06): form-action 'self' blokkeert een 303 naar buiten. */
+import { offsitePage } from './offsite.js';
+/* De Nu-doen-lijst (4.05): bovenaan het dashboard, "Volgende stap" op de bestelpagina, en het nachtrapport. */
+import { nuDoen, nuDoenHtml, volgendeStapHtml } from './nudoen.js';
+/* Drie vaste redenen voor "geen nieuw beeld nodig" (4.08, V37 = a). */
+import { REVISIE_REDENEN, revisieReden } from '../data/revisieRedenen.js';
+/* De kleur van een product: naam, hex, Pantone (5.03). */
+import { kleurInfo } from './kleurcode.js';
+import { botcheckUitleg } from './turnstile.js';
 import { composeAddress } from '../data/address.js';
 import { puntenVoor, heeftVoorrang, voorrangDeadline, SAMPLE_SERVICE, REVISIE_DAGEN, ladderRate, SERVICE_CREDITS } from '../data/pricing.js';
 /* rowPunten() weegt een opgeslagen rij, video inbegrepen; videoVelden() haalt de
@@ -177,8 +230,19 @@ import { videoStyles as VIDEO_STIJLEN_NL } from '../data/videoStyles.nl.js';
 import { leverVakken, vakIds, vakWoord, vakNaam, extraVakken } from '../data/levervakken.js';
 import { CHANNELS as KANALEN, channelName } from '../data/channels.js';
 import { leveringIngetrokken } from './delivery.js';
-import { maybeCloseOrder } from './close.js';
+import { maybeCloseOrder, kanHeropenen, heropenBestelling } from './close.js';
+/* "Weer openen" (w2 = b, 11 okt 2026): de revisiedatum vanaf het weer openen. */
+import { leverDatumsVan } from './leverdatums.js';
 import { leesMelding, zetMelding, wisMelding, amsterdamKort, MELDING_MAX } from './melding.js';
+/* 1.02 (8 oktober 2026): welke beelden er nog niet op de site staan. */
+import { beeldenStand, beeldenBlok } from './beeldenDiagnose.js';
+/* G2 (8 oktober 2026): proef tijdelijk dicht, en de wachtlijst. */
+import { leesProefStand, zetProefStand, telWachtlijst, mailWachtlijst } from './proefStand.js';
+/* k401 (11 oktober 2026): de pagina Formaten — png/webp die klanten in Studio aanvroegen. */
+import { formatenLijst, formaatKlaar, telOpenFormaten, FORMAAT_NAAM } from './formaten.js';
+/* De rem op abonnementen in credits (6.05, 8 oktober 2026): één regel op Klanten. */
+import { aboStand, zetAboPlafond } from './aboPlafond.js';
+import { ABO_CREDITS_PLAFOND } from '../data/plans.js';
 // Aliased for the same reason as in account.js: this module has its own `esc`
 // and page-level helpers, and the mail template exports overlapping names.
 import {
@@ -195,6 +259,8 @@ import {
   bedrag as mailBedrag,
   datum as mailDatum,
 } from './mailTemplate.js';
+/* De vragenregel onder elke klantmail (punt 7.07, 8 oktober 2026). */
+import { vragen as mailVragen } from './mailTemplate.js';
 
 /* Tot wanneer een voorrangsbestelling uiterlijk geleverd moet zijn (29 september
    2026) — zie VOORRANG en voorrangDeadline() in src/data/pricing.js. Leeg als er
@@ -215,8 +281,8 @@ const STATUSES = ['received', 'in_production', 'human_check', 'delivered', 'canc
    bestelling. Alleen wat je LEEST verandert; wat er staat niet.
 
    De klantkant heeft zijn eigen vertaling — statusLabel() in account.js, per
-   taal — en die is hier niet bruikbaar: daar heet human_check "Wordt nagekeken
-   door onze beeldredactie", wat de klant geruststelt en jou een woord te veel is. */
+   taal — en die is hier niet bruikbaar: daar heet human_check "Wordt nagekeken" (sinds 8 oktober 2026 zonder
+   "door onze beeldredactie", zie o10), in de toon van de klant en niet van jou. */
 const STATUS_LABEL = {
   received: 'Binnen',
   in_production: 'In productie',
@@ -399,6 +465,10 @@ async function adminGetInner(context) {
      hieronder. Zie de kop van renderDiagnose(). */
   /* De melding bovenaan Studio (ronde 9). Leesroute; zetten en weghalen is de POST hieronder. */
   if (path === '/admin/melding') return renderMelding(context, url);
+  /* Proef tijdelijk dicht (G2). Leesroute; omzetten en de wachtlijst mailen is de POST. */
+  if (path === '/admin/proef') return renderProef(context, url);
+  /* k401: welke bestellingen ook png of webp vroegen. Leesroute; "Klaar" is de POST. */
+  if (path === '/admin/formaten') return renderFormaten(context, url);
   if (path === '/admin/diagnose') return renderDiagnose(context);
   /* De aanbevelingen. Een LEESROUTE, want goedkeuren gebeurt met een POST
      hieronder — zie de kop van renderTestimonials() voor waarom dit scherm er
@@ -439,7 +509,7 @@ async function adminGetInner(context) {
       ? wantedFilter : '';
     const hidden = url.searchParams.get('hidden') === '1';
 
-    const [revisions, orders, counts, statusCounts, vatHeld, watch, tmWaiting, aflopend, aandacht] = await Promise.all([
+    const [revisions, orders, counts, statusCounts, vatHeld, watch, tmWaiting, aflopend, aandacht, nuLijst] = await Promise.all([
       loadRevisionInbox(env),
       loadOrders(env, statusFilter, { q, filter, hidden }),
       loadTodayCounts(env),
@@ -449,16 +519,36 @@ async function adminGetInner(context) {
       loadTestimonialsWaiting(env),
       loadAflopend(env),
       loadAandacht(env),
+      /* 4.05: één lijst in vaste volgorde; dezelfde functie voedt het nachtrapport. */
+      nuDoen(env.DB),
     ]);
+    /* Terug van "N nieuwe beelden melden" op het dashboard (handleAnnounceRedelivery). */
+    const gemeldRef = String(url.searchParams.get('gemeld') || '').slice(0, 40);
+    const gemeld = gemeldRef
+      ? { ref: gemeldRef, n: Math.max(0, Math.min(999, Number(url.searchParams.get('n')) || 0)) }
+      : null;
+    /* 4.08: een revisieronde waarvan de laatste kaart is afgehandeld, maar die
+       nog niet gemeld is — de kaart blijft staan, met de meldknop erin. */
+    const afgehandeld = await loadAfgehandeldeRondes(env, nuLijst);
+    /* Een vaste reden in het redenveld (4.08, V37): ?reden=<bestand>.<reden>.
+       Een link en geen script, zodat het zonder JavaScript werkt; Lucas kan de
+       tekst daarna aanpassen voor hij verstuurt. */
+    const redenM = /^(\d{1,9})\.([a-z]{1,20})$/.exec(String(url.searchParams.get('reden') || ''));
+    const reden = redenM ? { fileId: Number(redenM[1]), id: redenM[2] } : null;
     const modelsByCustomer = await loadCustomModelsByCustomer(env, orders.map((o) => o.customer_id));
     /* Mail die niet aankwam (doorlichting §3.7, 4 september 2026): één query voor
        alle adressen op de lijst, als merkteken op de regel — zie orderCard(). */
     const bounces = await bouncesFor(env, orders.map((o) => o.email));
     for (const o of orders) o.bounce = bounces.get(String(o.email || '').toLowerCase()) || null;
+    /* 8.11: een teruggeboekte betaling (migratie 0063) — de rode pil op de regel. */
+    const teruggeboekt = await teruggeboekteOrders(env, orders.map((o) => o.id));
+    for (const o of orders) if (teruggeboekt.has(Number(o.id))) o.teruggeboekt_at = teruggeboekt.get(Number(o.id));
     const studioMelding = await leesMelding(env);
+    /* k401: open png/webp-verzoeken, als chip naar /admin/formaten. */
+    const formatenOpen = await telOpenFormaten(env);
     return html(page({
       title: statusFilter ? `Dashboard · ${STATUS_LABEL[statusFilter] || statusFilter}` : 'Dashboard',
-      body: dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter, { q, filter, hidden, studioMelding }, vatHeld, watch, tmWaiting, aflopend, aandacht),
+      body: dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter, { q, filter, hidden, studioMelding, nuLijst, gemeld, afgehandeld, reden, formatenOpen }, vatHeld, watch, tmWaiting, aflopend, aandacht),
       /* Een revisiekaart heeft een uploadvak voor de vervangende foto: dan ook
          hier het beoordeelbeeld maken (ronde 9, F18). Zonder revisies geen script. */
       voorvertoning: revisions.length > 0,
@@ -505,6 +595,13 @@ async function adminPostInner(context) {
      aanmaakt, hoort geen GET te zijn, en achter deze poort staat bovendien de
      originIsSelf()-controle die een statisch routebestand niet krijgt. */
   if (path === '/admin/diagnose/probe') return handleDiagnoseProbe(context);
+  /* Klaar voor live, stap 1 (8 oktober 2026, punt 8.01): de open proefbestellingen
+     in één keer annuleren. Een POST achter dezelfde poort, want hij verandert rijen. */
+  if (path === '/admin/diagnose/proef-annuleren') return handleProefAnnuleren(context);
+  /* De boekhouding (8.08): een mislukte boeking opnieuw, en de koppeling testen
+     zonder iets te boeken. POST, want "opnieuw" boekt echt in e-Boekhouden. */
+  if (path === '/admin/boekhouding/opnieuw') return handleBoekhoudingOpnieuw(context, admin);
+  if (path === '/admin/boekhouding/test') return handleBoekhoudingTest(context);
 
   /* DE AGENDA DICHTZETTEN EN WEER OPENZETTEN. Achter dezelfde poort als alles
      hierboven. `admin` gaat mee omdat een dichtgezette dag een dag is die geen
@@ -512,6 +609,9 @@ async function adminPostInner(context) {
      hem dichtzette en waarom. */
   if (path === '/admin/agenda/dagen') return handleBlackoutDay(context, admin);
   if (path === '/admin/melding') return handleMeldingPost(context, admin);
+  if (path === '/admin/proef') return handleProefPost(context, admin);
+  if (path === '/admin/formaten') return handleFormatenPost(context, admin);
+  if (path === '/admin/abo-plafond') return handleAboPlafond(context, admin);
 
   /* HET VENSTER VAN ÉÉN BESTELLING VERZETTEN. Hoort bij de agenda en niet bij de
      status: dit verandert WANNEER het werk moet, niet HOE VER het is. */
@@ -553,11 +653,10 @@ async function adminPostInner(context) {
   const modelMatch = path.match(/^\/admin\/orders\/(\d+)\/models$/);
   if (modelMatch) return handleAddCustomModel(context, Number(modelMatch[1]));
 
-  /* DE WEEK VAN EEN ABONNEE STARTEN. Achter dezelfde poort als alles hierboven:
-     een sessie én een Origin die klopt. Dat is hier geen formaliteit — dit is de
-     enige knop in dit dashboard die saldo afschrijft én werk laat ontstaan. */
+  /* "Start deze week" bestaat niet meer (ronde 10): een formulier uit een oud
+     tabblad doet niets en gaat terug naar de klantpagina. */
   const weekMatch = path.match(/^\/admin\/customers\/(\d+)\/week$/);
-  if (weekMatch) return handleStartWeek(context, Number(weekMatch[1]), admin);
+  if (weekMatch) return seeOther(`/admin/customers/${Number(weekMatch[1])}#abonnement`);
 
   /* SLOTS MET DE HAND BIJSTELLEN. Achter dezelfde poort, en met `admin` mee om
      dezelfde reden: dit is de tweede knop die aan het saldo van een klant komt. */
@@ -595,6 +694,10 @@ async function adminPostInner(context) {
   const custDetailsMatch = path.match(/^\/admin\/customers\/(\d+)\/details$/);
   if (custDetailsMatch) return handleCustomerDetails(context, Number(custDetailsMatch[1]));
 
+  /* o16, 8 oktober 2026: een land buiten de EU goedkeuren voor een abonnement. */
+  const btwLandMatch = path.match(/^\/admin\/customers\/(\d+)\/btw-land$/);
+  if (btwLandMatch) return handleBtwLandAkkoord(context, Number(btwLandMatch[1]));
+
   const custStatusMatch = path.match(/^\/admin\/customers\/(\d+)\/status$/);
   if (custStatusMatch) return handleCustomerStatus(context, Number(custStatusMatch[1]));
 
@@ -615,6 +718,16 @@ async function adminPostInner(context) {
   const noteMatch = path.match(/^\/admin\/orders\/(\d+)\/note$/);
   if (noteMatch) return handleCustomerNote(context, Number(noteMatch[1]));
 
+  /* Review vragen via WhatsApp (punt 3.06, 8 oktober 2026): schrijft "review
+     gevraagd" in order_events en stuurt door naar de wa.me-link. */
+  const reviewWaMatch = path.match(/^\/admin\/orders\/(\d+)\/review-wa$/);
+  if (reviewWaMatch) return handleReviewWa(context, Number(reviewWaMatch[1]));
+
+  /* Een afgeronde bestelling weer openen (w2 = b, 11 oktober 2026). Achter
+     dezelfde poort (sessie + originIsSelf), met een verplicht vinkje. */
+  const weerOpenMatch = path.match(/^\/admin\/orders\/(\d+)\/weer-openen$/);
+  if (weerOpenMatch) return handleWeerOpenen(context, Number(weerOpenMatch[1]), admin);
+
   const internalMatch = path.match(/^\/admin\/orders\/(\d+)\/internal$/);
   if (internalMatch) return handleInternalNote(context, Number(internalMatch[1]));
 
@@ -622,6 +735,10 @@ async function adminPostInner(context) {
   // waarom dit geen één knop met een keuzelijstje is.
   const cancelMatch = path.match(/^\/admin\/orders\/(\d+)\/cancel$/);
   if (cancelMatch) return handleOrderCancel(context, Number(cancelMatch[1]));
+
+  /* Credits terug voor een product dat niet gemaakt kan worden (ronde B, 6.08). */
+  const creditsTerugMatch = path.match(/^\/admin\/orders\/(\d+)\/credits-terug$/);
+  if (creditsTerugMatch) return handleCreditsNietGemaakt(context, Number(creditsTerugMatch[1]), admin);
 
   const hideMatch = path.match(/^\/admin\/orders\/(\d+)\/hide$/);
   if (hideMatch) return handleOrderHide(context, Number(hideMatch[1]));
@@ -700,6 +817,19 @@ async function handleLogin({ request, env }) {
   const email = String(form?.get('email') || '').trim().toLowerCase();
   const password = String(form?.get('password') || '');
 
+  /* ── OOK EEN GRENS PER ACCOUNT — 8 oktober 2026 ─────────────────────────────
+     De grens hierboven telt per IP. Met IPv6 had één aanvaller miljoenen
+     adressen, dus raden ging in feite onbeperkt. Nu ook twintig MISLUKTE
+     pogingen per kwartier per e-mailadres. Alleen mislukte tellen, en een goed
+     wachtwoord komt bij een volle emmer nog door als de tweede stap aan staat:
+     anders kon iedereen die het adres kent de eigenaar met twintig foute
+     wachtwoorden per kwartier buiten de deur houden. De code van de tweede stap
+     heeft zijn eigen grens per account (handleCodePost). Zonder tweede stap is
+     de emmer wel een slot: zet hem dus aan op /admin/security. */
+  const ACCOUNT_GRENS = { key: `admin-login|${email}`, action: 'admin-login-acct', limit: 20, windowSeconds: 900, failClosed: true };
+  const accountVol = email ? (await peekRate(env, ACCOUNT_GRENS)).vol : false;
+  const teVeel = () => html(page({ title: 'Inloggen', body: loginBody('Te veel pogingen op dit account. Wacht een kwartier en probeer het opnieuw.') }), 429);
+
   const row = email
     ? await env.DB.prepare(
       'SELECT id, password_hash, totp_secret, totp_confirmed_at FROM admin_users WHERE email = ?1'
@@ -714,8 +844,13 @@ async function handleLogin({ request, env }) {
     : await verifyPassword(password, await dummyHash());
 
   if (!ok || !row) {
+    if (email) {
+      const telling = await checkRate(env, ACCOUNT_GRENS);
+      if (accountVol || !telling.allowed) return teVeel();
+    }
     return html(page({ title: 'Inloggen', body: loginBody('E-mailadres of wachtwoord klopt niet.') }), 401);
   }
+  if (accountVol && !(row.totp_secret && row.totp_confirmed_at)) return teVeel();
 
   /* ── EN DAN PAS DE TWEEDE FACTOR — migratie 0037, 1 september 2026 ────────
    *
@@ -728,9 +863,13 @@ async function handleLogin({ request, env }) {
    * en currentAdmin() weigert hem, dus hij opent nergens iets. */
   const { token, tokenHash } = await mintAdminSession();
   const tweedeFactor = Boolean(row.totp_secret && row.totp_confirmed_at);
+  /* Een halve sessie (wachtwoord goed, code nog niet) leeft een kwartier en niet
+     veertien dagen (8 oktober 2026); de volle termijn krijgt hij pas na de code,
+     in handleCodePost(). */
+  const halfVerloopt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
   await env.DB.prepare(
     'INSERT INTO admin_sessions (admin_id, token_hash, expires_at, totp_pending) VALUES (?1, ?2, ?3, ?4)'
-  ).bind(row.id, tokenHash, adminSessionExpiry(), tweedeFactor ? 1 : 0).run();
+  ).bind(row.id, tokenHash, tweedeFactor ? halfVerloopt : adminSessionExpiry(), tweedeFactor ? 1 : 0).run();
 
   if (tweedeFactor) return seeOther('/admin/code', [setSessionCookie(token)]);
   return seeOther('/admin', [setSessionCookie(token)]);
@@ -799,7 +938,12 @@ async function handleCodePost(context) {
   const form = await request.formData().catch(() => null);
   const ingevuld = String(form?.get('code') || '');
 
-  let goed = await verifyTotp(ingevuld, half.totp_secret);
+  /* Eén keer per code — zie gebruikTotp() hieronder (o19, 8 oktober 2026). */
+  const totp = await gebruikTotp(env, half.admin_id, ingevuld, half.totp_secret);
+  if (totp === 'gebruikt') {
+    return html(page({ title: 'Twee stappen', body: codeBody(TOTP_AL_GEBRUIKT) }), 401);
+  }
+  let goed = totp === 'goed';
 
   /* DE HERSTELCODE. Eén keer, en het opmaken is een voorwaardelijke UPDATE en geen
      lees-dan-schrijf: twee tabbladen met dezelfde code mogen niet allebei binnen. */
@@ -821,9 +965,42 @@ async function handleCodePost(context) {
     return html(page({ title: 'Twee stappen', body: codeBody('Die code klopt niet.') }), 401);
   }
 
-  await env.DB.prepare('UPDATE admin_sessions SET totp_pending = 0 WHERE id = ?1')
-    .bind(half.session_id).run();
+  await env.DB.prepare('UPDATE admin_sessions SET totp_pending = 0, expires_at = ?2 WHERE id = ?1')
+    .bind(half.session_id, adminSessionExpiry()).run();
   return seeOther('/admin');
+}
+
+/* ── EEN CODE WERKT MAAR ÉÉN KEER — 8 oktober 2026 (o19) ────────────────────
+ *
+ * verifyTotp() neemt een code aan tot één stap van 30 seconden ernaast, dus een
+ * code bleef zo'n 90 seconden geldig, en in die tijd ook een tweede keer. Wie hem
+ * afkeek of via een nagemaakte inlogpagina doorgaf, kwam er nog mee binnen.
+ *
+ * Nu wordt de stap van de laatst gebruikte code bewaard (migratie 0052,
+ * admin_users.totp_last_step) en wordt een code alleen aangenomen als zijn stap
+ * NIEUWER is. Eén voorwaardelijke UPDATE en geen lees-dan-schrijf: twee tabbladen
+ * met dezelfde code komen er niet allebei mee door.
+ *
+ * Geeft 'goed', 'gebruikt' of 'fout'. Faalt de UPDATE zelf (migratie 0052 nog
+ * niet gedraaid), dan geldt de oude regel: de code klopt, dus binnen. Een
+ * vergeten migratie mag de enige beheerder niet buitensluiten.
+ */
+const TOTP_AL_GEBRUIKT = `Deze code is net al gebruikt. Wacht tot je app een nieuwe code toont (hooguit ${TOTP_STAP} seconden) en vul die in.`;
+
+async function gebruikTotp(env, adminId, code, secret) {
+  const stap = await totpStap(code, secret);
+  if (stap === null) return 'fout';
+  try {
+    const rij = await env.DB.prepare(
+      `UPDATE admin_users SET totp_last_step = ?2
+        WHERE id = ?1 AND COALESCE(totp_last_step, -1) < ?2
+        RETURNING id`
+    ).bind(adminId, stap).first();
+    return rij ? 'goed' : 'gebruikt';
+  } catch (err) {
+    console.error('[admin] totp_last_step niet bij te werken (migratie 0052?) —', err?.message || err);
+    return 'goed';
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -944,6 +1121,20 @@ async function handleSecurityPost(context, admin) {
     'SELECT totp_secret, totp_confirmed_at FROM admin_users WHERE id = ?1'
   ).bind(admin.admin_id).first().catch(() => null);
 
+  /* ── OPNIEUW BEGINNEN OF AFBREKEN TERWIJL HIJ AAN STAAT — 8 oktober 2026 ──
+     `start` en `afbreken` liepen vóór de codecontrole verderop. Wie een sessie
+     overnam, kon daarmee de tweede stap uitzetten (afbreken) of een eigen
+     authenticator koppelen (start, dan bevestig) zonder ooit een code te kennen:
+     precies wat de controle hieronder moet voorkomen. Staat hij aan, dan vragen
+     ze nu dezelfde kloppende code. Het scherm "aan" biedt deze twee knoppen niet
+     aan, dus voor de eigenaar verandert er niets. */
+  if ((doen === 'start' || doen === 'afbreken') && rij?.totp_secret && rij?.totp_confirmed_at) {
+    const uitslag = await gebruikTotp(env, admin.admin_id, code, rij.totp_secret);
+    if (uitslag !== 'goed') {
+      return renderSecurity(context, admin, { melding: uitslag === 'gebruikt' ? TOTP_AL_GEBRUIKT : 'Die code klopt niet.' });
+    }
+  }
+
   if (doen === 'start') {
     /* Een nieuw geheim, en de oude bevestiging gaat eraf. Iemand die opnieuw
        begint terwijl het al aanstond, zit tot hij bevestigt zonder tweede stap \u2014
@@ -966,9 +1157,16 @@ async function handleSecurityPost(context, admin) {
 
   if (doen === 'bevestig') {
     if (!rij?.totp_secret) return renderSecurity(context, admin);
-    if (!(await verifyTotp(code, rij.totp_secret))) {
+    const stap = await totpStap(code, rij.totp_secret);
+    if (stap === null) {
       return renderSecurity(context, admin, { melding: 'Die code klopt niet. Loopt de klok van je telefoon gelijk?' });
     }
+    /* Een NIEUW geheim: de vorige stap hoorde bij het oude, dus hier geen
+       weigering op "al gebruikt". Wel bewaren, zodat deze code daarna niet nog
+       een keer bij het inloggen werkt (o19). MAX, zodat de teller nooit
+       terugloopt. Zonder migratie 0052 gebeurt hier niets. */
+    await env.DB.prepare('UPDATE admin_users SET totp_last_step = MAX(COALESCE(totp_last_step, -1), ?2) WHERE id = ?1')
+      .bind(admin.admin_id, stap).run().catch(() => {});
     const codes = mintRecoveryCodes();
     await env.DB.batch([
       env.DB.prepare("UPDATE admin_users SET totp_confirmed_at = datetime('now') WHERE id = ?1").bind(admin.admin_id),
@@ -986,8 +1184,9 @@ async function handleSecurityPost(context, admin) {
      kunnen uitzetten of de herstelcodes kunnen vervangen \u2014 dan is de tweede stap
      alleen een drempel voor de eigenaar. */
   if (!rij?.totp_secret || !rij?.totp_confirmed_at) return renderSecurity(context, admin);
-  if (!(await verifyTotp(code, rij.totp_secret))) {
-    return renderSecurity(context, admin, { melding: 'Die code klopt niet.' });
+  const uitslag = await gebruikTotp(env, admin.admin_id, code, rij.totp_secret);
+  if (uitslag !== 'goed') {
+    return renderSecurity(context, admin, { melding: uitslag === 'gebruikt' ? TOTP_AL_GEBRUIKT : 'Die code klopt niet.' });
   }
 
   if (doen === 'codes') {
@@ -1209,6 +1408,41 @@ async function handleRevisionRights(context, customerId) {
   return seeOther(back);
 }
 
+/* ── EEN LAND BUITEN DE EU GOEDKEUREN — 8 oktober 2026 (o16) ─────────────────
+ *
+ * Een klant die een land buiten de EU kiest (0% btw) terwijl zijn ip-adres in de
+ * EU ligt, gaat eerst langs jou. Bij een bestelling is dat de btw-lijst; een
+ * abonnement heeft die niet, dus komt er een mail en wacht de klant (zie
+ * handleSubscribeStart in subscribe.js). Klopt het land, dan zet deze knop het
+ * akkoord op de klant: customers.btw_land_akkoord = dat land (migratie 0053).
+ * Daarna kan de klant gewoon afsluiten. Intrekken zet hem weer op NULL.
+ *
+ * Alleen het land dat NU op de klant staat, en alleen een land buiten de EU: een
+ * akkoord op "NL" zou niets betekenen en een akkoord op een ander land dan de
+ * klant opgaf is een vergissing. Zonder migratie 0053 gebeurt er niets.
+ */
+async function handleBtwLandAkkoord(context, customerId) {
+  const { request, env } = context;
+  const admin = await currentAdmin(context);
+  const form = await request.formData().catch(() => null);
+  const action = String(form?.get('action') || '');
+  const back = `/admin/customers/${customerId}`;
+  if (action === 'intrekken') {
+    await env.DB.prepare('UPDATE customers SET btw_land_akkoord = NULL WHERE id = ?1')
+      .bind(customerId).run().catch(() => {});
+    await logAdmin(env, admin, 'btw-land.intrekken', { customerId });
+    return seeOther(back);
+  }
+  if (action !== 'akkoord') return seeOther(back);
+  const rij = await env.DB.prepare('SELECT country FROM customers WHERE id = ?1').bind(customerId).first().catch(() => null);
+  const land = String(rij?.country || '').toUpperCase();
+  if (!land || land === HOME_COUNTRY || isEu(land)) return seeOther(back);
+  await env.DB.prepare('UPDATE customers SET btw_land_akkoord = ?2 WHERE id = ?1')
+    .bind(customerId, land).run().catch(() => {});
+  await logAdmin(env, admin, 'btw-land.akkoord', { customerId, detail: `0% btw buiten de EU goedgekeurd voor ${land}` });
+  return seeOther(back);
+}
+
 /* ── HET SPOOR — augustus 2026 ─────────────────────────────────────────────────
  *
  * Lucas: *"er wordt nergens vastgelegd wie in admin wat heeft gedaan.
@@ -1299,6 +1533,18 @@ async function handleOrderCancel(context, orderId) {
    * en niet deze bestelling. Wat er teruggaat zijn zijn SLOTS, en dat gebeurt
    * hieronder. */
   const uitAbonnement = order.payment_status === 'plan';
+  /* ── MET CREDITS BETAALD — 8 oktober 2026 (ronde B, 6.08) ─────────────────
+     Geen geld om terug te geven, wel credits. De keuze is "credits terug" (een
+     nieuwe partij met dezelfde datum als de rest en minstens 3 maanden geldig,
+     met een regel in het creditboek) of "niets". Verplicht, om dezelfde reden als bij geld: wie
+     niets kiest, vergeet het. */
+  const metCredits = order.payment_status === 'credits';
+  const creditsKeuze = ['terug', 'niets'].includes(String(form?.get('credits') || '')) ? String(form.get('credits')) : '';
+  if (metCredits && !creditsKeuze) {
+    return html(page({ title: 'Admin', body: errorBody(
+      'Deze bestelling is met credits betaald, dus zeg wat er met de credits gebeurt: terug op het saldo van de klant, of niets.'
+    ) }), 400);
+  }
   if (paid && !payment) {
     return html(page({ title: 'Admin', body: errorBody(
       'Deze bestelling is betaald, dus zeg wat er met het geld gebeurt: terugbetalen, tegoed of niets. Als dat niet gezegd wordt, wordt een terugbetaling vergeten.'
@@ -1312,6 +1558,10 @@ async function handleOrderCancel(context, orderId) {
     ? (nlBest
       ? { refund: 'Het bedrag wordt terugbetaald', credit: 'Het bedrag blijft staan als tegoed voor een volgende bestelling', none: 'Er wordt niets terugbetaald' }
       : { refund: 'Refund to be issued', credit: 'Credit for a future order', none: 'No refund' })[payment]
+    : metCredits
+      ? (creditsKeuze === 'terug'
+        ? (nlBest ? 'Betaald met credits \u2014 de credits staan weer op je saldo' : 'Paid with subscription credits \u2014 the credits are back on your balance')
+        : (nlBest ? 'Betaald met credits \u2014 de credits blijven afgeboekt' : 'Paid with subscription credits \u2014 the credits stay used'))
     : uitAbonnement
       ? (nlBest ? 'Betaald uit je abonnement \u2014 de credits gaan terug naar je abonnement' : 'Paid from your subscription \u2014 the credits go back to your plan')
       /* Deze regel leest de KLANT op zijn tijdlijn, niet de studio. Hij stond
@@ -1341,7 +1591,7 @@ async function handleOrderCancel(context, orderId) {
       `UPDATE orders SET status = 'cancelled', cancelled_at = datetime('now'),
                          cancel_reason = ?2, cancel_payment = ?3
         WHERE id = ?1 AND status <> 'cancelled'`
-    ).bind(orderId, reason, paid ? payment : null),
+    ).bind(orderId, reason, paid ? payment : (metCredits ? (creditsKeuze === 'terug' ? 'credits' : 'none') : null)),
   ]);
   /* Een tweede verzoek dat tegelijk liep, vindt de rij al geannuleerd: dan
      verandert er niets en stoppen we hier, vóór tegoed, mail en tijdlijn. */
@@ -1381,14 +1631,14 @@ async function handleOrderCancel(context, orderId) {
         refundedGrossCents: bruto,
         reason: order.lang === 'nl'
           ? 'Bestelling geannuleerd — bedrag blijft staan als tegoed voor een volgende bestelling'
-          : 'Order cancelled — amount kept as credit for a future order',
+          : 'Order cancelled — amount kept as account balance for a future order',
       });
       if (nota) {
         await env.DB.prepare(
           "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, 'cancelled', ?2, 'system')"
         ).bind(orderId, order.lang === 'nl'
           ? `Creditnota ${nota.number} staat tegenover de factuur; het bedrag blijft als tegoed voor je volgende bestelling.`
-          : `Credit note ${nota.number} offsets the invoice; the amount stays as credit for your next order.`).run().catch(() => {});
+          : `Credit note ${nota.number} offsets the invoice; the amount stays as account balance for your next order.`).run().catch(() => {});
         await logAdmin(env, admin, 'credit-note.issued', { orderId, detail: `${order.ref}: ${nota.number} (tegoed)` }).catch(() => {});
       }
     } catch (e) {
@@ -1429,6 +1679,36 @@ async function handleOrderCancel(context, orderId) {
     } else if (terug === null) {
       await logAdmin(env, admin, 'plan-slots-terug.mislukt', {
         orderId, detail: `${order.ref}: terugboeken mislukt — doe het met de hand via het abonnementspaneel`,
+      }).catch(() => {});
+    }
+  }
+
+  /* ── DE CREDITS TERUG (6.08) ────────────────────────────────────────────────
+     Een nieuwe partij met alles wat er voor deze bestelling is afgeboekt,
+     minstens 3 maanden geldig vanaf vandaag (niet de oude datum: die kan al
+     voorbij zijn). Sinds het spaarplafond (12 oktober 2026) telt ze gewoon mee,
+     ook voor het plafond bij de volgende termijn; de zin aan de klant komt uit
+     terugZin() en noemt dat als het zo uitkomt.
+     Na de annulering en met een eigen uitkomst, zoals de slots hierboven: gaat
+     het mis, dan staat de annulering, en staat er een luide regel in het log. */
+  let creditsTerug = null;
+  if (metCredits && creditsKeuze === 'terug') {
+    creditsTerug = await creditsTerugVoorBestelling(env, {
+      orderId, reden: CREDIT_REDEN.annulering, toelichting: reason, door: admin?.email || 'admin',
+    }).catch((e) => {
+      console.error('[admin] credits na annulering niet teruggeboekt —', e?.message || e);
+      return null;
+    });
+    if (creditsTerug?.ok) {
+      await env.DB.prepare(
+        "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, 'cancelled', ?2, 'system')"
+      ).bind(orderId, tijdlijn(order.lang, terugZin(creditsTerug, 'nl'), terugZin(creditsTerug, 'en'))).run().catch(() => {});
+      await logAdmin(env, admin, 'order.credits-terug', {
+        orderId, detail: `${order.ref}: ${creditsTerug.aantal} credits terug${creditsTerug.loopt ? ' (abonnement loopt: telt mee voor het spaarplafond)' : `, geldig tot ${creditsTerug.vervaltOp}`}`,
+      }).catch(() => {});
+    } else {
+      await logAdmin(env, admin, 'order.credits-terug.mislukt', {
+        orderId, detail: `${order.ref}: credits NIET teruggeboekt (${creditsTerug?.reden || 'fout'}) — doe het met "Credits bijstellen" op de klantpagina`,
       }).catch(() => {});
     }
   }
@@ -1519,7 +1799,7 @@ async function handleOrderCancel(context, orderId) {
         "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, 'cancelled', ?2, 'system')"
       ).bind(orderId, order.lang === 'nl'
         ? `${mailBedrag(tegoedTerug, 'nl')} staat weer als tegoed op je account.`
-        : `${mailBedrag(tegoedTerug, 'en')} is back on your account as credit.`).run().catch(() => {});
+        : `${mailBedrag(tegoedTerug, 'en')} is back on your account as account balance.`).run().catch(() => {});
       await logAdmin(env, admin, 'order.tegoed-terug', { orderId, detail: `${order.ref}: ${tegoedTerug} cent tegoed teruggeboekt` });
     }
     const bruto = Math.max(0, betaald - alTerug - tegoedAf);
@@ -1584,8 +1864,13 @@ async function handleOrderCancel(context, orderId) {
     const tegoedDeel = paid && payment === 'refund' ? await tegoedAfgeboekt(env, orderId).catch(() => 0) : 0;
     const bruto = Math.max(0,
       (Number(order.total_cents) || 0) + (Number(order.vat_cents) || 0) - Math.max(0, Number(order.refunded_cents) || 0) - tegoedDeel);
-    const money = paid ? payment : (uitAbonnement ? 'plan' : 'unpaid');
-    const verstuurd = await mailCancellation(env, { order, reason, money, grossCents: bruto, tegoedCents: tegoedDeel });
+    const money = paid ? payment
+      : metCredits ? (creditsKeuze === 'terug' ? 'credits' : 'credits-niets')
+        : (uitAbonnement ? 'plan' : 'unpaid');
+    const creditsMail = creditsTerug?.ok
+      ? { aantal: creditsTerug.aantal, datum: mailDatum(creditsTerug.vervaltOp, order.lang === 'en' ? 'en' : 'nl'), zin: terugZin(creditsTerug, order.lang) }
+      : null;
+    const verstuurd = await mailCancellation(env, { order, reason, money, grossCents: bruto, tegoedCents: tegoedDeel, credits: creditsMail });
     annuleerMail = !!verstuurd;
     if (!verstuurd) {
       await logAdmin(env, admin, 'order.cancel.mail-mislukt', {
@@ -1593,6 +1878,11 @@ async function handleOrderCancel(context, orderId) {
       }).catch(() => {});
     }
   }
+
+  /* De creditnota die hierboven misschien is uitgegeven (bij tegoed), naar de
+     boekhouding — achteraf, zonder te wachten (8.08). Een terugbetaling via
+     Mollie komt later vanzelf via de webhook. */
+  boekhoudingAchteraf(context, { orderId });
 
   /* Terug naar de bestelling, met wat er gebeurde (ronde 8): het dashboard zei
      niets, en wie net annuleerde wil zien dát het gelukt is en of de klant het
@@ -1678,7 +1968,9 @@ async function handleOrderDelete(context, orderId) {
   ).bind(orderId).first().catch(() => null);
   if (!order) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.') }), 404);
 
-  if (order.payment_status === 'paid' && Number(order.total_cents || 0) > 0) {
+  /* 'credits' (ronde B): met abonnementscredits betaald is ook betaald, en de
+     regel in het creditboek wijst naar deze bestelling. */
+  if ((order.payment_status === 'paid' && Number(order.total_cents || 0) > 0) || order.payment_status === 'credits') {
     return html(page({ title: 'Admin', body: errorBody(
       'Deze bestelling is betaald, dus hij kan niet verwijderd worden — een betaalde bestelling moet bewaard blijven. Annuleer hem (met een reden) of verberg hem uit je lijsten.'
     ) }), 400);
@@ -2138,6 +2430,14 @@ async function handleStatusUpdate(context, orderId) {
       "SELECT COUNT(*) AS n FROM files WHERE order_id = ?1 AND kind = 'delivery' AND superseded_at IS NULL"
     ).bind(orderId).first().catch(() => null);
     if (!(Number(levend?.n) > 0)) return seeOther(`/admin/orders/${orderId}/files?fout=leeg`);
+    /* ── TERUGGEBOEKT: EERST BEVESTIGEN — 8 oktober 2026 (8.11) ─────────────
+       De betaling is via de bank teruggeboekt. Leveren mag (het kan een
+       bankfout zijn), maar alleen met het vinkje erbij — ook vanuit het
+       statuslijstje, dat geen vinkje heeft. */
+    if (exists.status !== 'delivered' && (await teruggeboekteOrders(env, [orderId])).has(orderId)
+      && String(form?.get('teruggeboekt_ok') || '') !== '1') {
+      return seeOther(`/admin/orders/${orderId}/files?fout=teruggeboekt`);
+    }
   }
 
   // Two writes, not one — orders.status is what every other query in the
@@ -2312,9 +2612,17 @@ async function loadOrderFiles(env, orderId) {
     : 'id, kind, filename, bytes, product_key, shot, created_at, review_state, review_note';
   let results = [];
   try {
-    ({ results } = await env.DB.prepare(
-      `SELECT ${fileCols} FROM files WHERE order_id = ?1 ORDER BY kind, id`
-    ).bind(orderId).all());
+    /* 4.01: `ai_tag` (migratie 0060) voor de chip "AI-tag" per beeld. Eigen
+       terugval: zonder die kolom laadt het bord gewoon, zonder chip. */
+    try {
+      ({ results } = await env.DB.prepare(
+        `SELECT ${fileCols}, ai_tag FROM files WHERE order_id = ?1 ORDER BY kind, id`
+      ).bind(orderId).all());
+    } catch {
+      ({ results } = await env.DB.prepare(
+        `SELECT ${fileCols} FROM files WHERE order_id = ?1 ORDER BY kind, id`
+      ).bind(orderId).all());
+    }
   } catch {
     migrated = false;
     ({ results } = await env.DB.prepare(
@@ -2393,9 +2701,9 @@ async function loadOrderFiles(env, orderId) {
  * werkmap pas bruikbaar is nadat er al geleverd is -- precies omgekeerd aan
  * waarvoor hij bedoeld is.
  *
- * WAAROM DE ZIP GESTREAMD WORDT terwijl er alleen tekst in zit. Omdat het niets
- * kost: zipStream() doet het al, en de dag dat het bronmateriaal er wel in gaat
- * (Lucas' derde optie, nu niet gekozen) verandert er hier niets aan.
+ * WAAROM DE ZIP GESTREAMD WORDT. Sinds 8 oktober 2026 (4.02) zitten de foto's van
+ * de klant erin, per product in `_aangeleverd/`: zipStream() haalt ze één voor één
+ * uit R2, zodat de Worker nooit meer dan één foto vasthoudt.
  */
 /*
  * ── HET PORTAAL VAN DE KLANT, MET JOUW SESSIE ──────────────────────────────
@@ -2501,6 +2809,47 @@ async function serveScaffold(context, orderId) {
   const count = Math.max(1, Math.min(Number(order.product_count) || 1, 200));
   const tekst = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
 
+  /* ── DE FOTO'S VAN DE KLANT — 8 oktober 2026 (punt 4.02, V34 = b) ──────────
+     Per product in `_aangeleverd/`, rechtstreeks uit R2, één tegelijk gestreamd
+     (zie KLANTFOTO_GRENS in scaffold.js voor de grens en waarom). Alleen de
+     levende rijen: een foto die de klant in Studio verving, gaat niet mee.
+     `?fotos=nee` geeft de lichte werkmap zonder foto's, voor wie ze al heeft. */
+  const metFotos = new URL(context.request.url).searchParams.get('fotos') !== 'nee';
+  let klantFotos = [];
+  try {
+    ({ results: klantFotos = [] } = await env.DB.prepare(
+      `SELECT id, product_key, shot, filename, r2_key, bytes FROM files
+        WHERE order_id = ?1 AND kind = 'upload' AND superseded_at IS NULL ORDER BY id`
+    ).bind(orderId).all());
+  } catch {
+    try {
+      ({ results: klantFotos = [] } = await env.DB.prepare(
+        "SELECT id, product_key, shot, filename, r2_key, bytes FROM files WHERE order_id = ?1 AND kind = 'upload' ORDER BY id"
+      ).bind(orderId).all());
+    } catch { klantFotos = []; }
+  }
+  const haalFoto = async (key) => {
+    if (!env.UPLOADS || !key) return null;
+    const obj = await env.UPLOADS.get(key);
+    return obj ? obj.arrayBuffer() : null;
+  };
+
+  /* De look en of hij door Photoshop moet (4.07, V35 = b). Lifestyle komt
+     rechtstreeks uit Spaces; alleen een EIGEN look waarvan Lucas in de interne
+     notitie "Photoshop" schreef, krijgt `photoshop=ja` in de INSTELLINGEN-regel. */
+  let look = tekst(details.style);
+  let photoshop;
+  const eigenLook = /^cs-(\d{1,9})$/.exec(look || '');
+  if (eigenLook) {
+    const st = await env.DB.prepare('SELECT name, prompt_note FROM customer_styles WHERE id = ?1')
+      .bind(Number(eigenLook[1])).first().catch(() => null);
+    if (st) {
+      look = `${st.name} (eigen look)`;
+      if (/photoshop/i.test(String(st.prompt_note || ''))) photoshop = true;
+    }
+  }
+  const UITSNEDE_NL = { lower: 'taille en lager', upper: 'heup en hoger', full: 'hele figuur', feet: 'voeten', waist: 'taille', head: 'hoofd', detail: 'detail', figure: 'lichaam' };
+
   /* De hoeken, één keer voor de hele bestelling. Uit ANGLES en niet uit de
      sleutels van details_json: dan staan ze in de volgorde van het scherm, en een
      verzonnen `angle_iets` levert niets op. */
@@ -2588,6 +2937,21 @@ async function serveScaffold(context, orderId) {
          iemand in de studio leest voordat hij begint. */
       model: modelLabel(tekst(details[`model_${key}`]) || tekst(details.model)),
       extras,
+      /* De vijf blokken (4.02): het TYPE voor de plakregel, de uitsnede en wat
+         wij ernaast zetten — dezelfde bronnen als de brief op het bord. */
+      ...(() => {
+        const type = tekst(details[`garment_${key}`]) || tekst(details.garment);
+        if (!type) return {};
+        const keuzes = {};
+        for (const sl of contextSlots(type)) keuzes[sl.id] = tekst(details[`context_${sl.id}_${key}`]) || tekst(details[`context_${sl.id}`]) || 'ours';
+        for (const f of klantFotos) if (f.product_key === key && contextShotSlot(f.shot)) keuzes[contextShotSlot(f.shot)] = 'own';
+        const crop = cropFor(type);
+        return {
+          garment: type,
+          uitsnede: crop ? UITSNEDE_NL[crop.id] || crop.id : null,
+          styling: stylingVoor(type, keuzes, 'nl').regel || null,
+        };
+      })(),
     });
   }
 
@@ -2597,19 +2961,260 @@ async function serveScaffold(context, orderId) {
     /* Zie de noot bij VOORRANG in de briefing: een betaalde afspraak met een
        klok eraan hoort in de werkmap en niet alleen in een e-mail. */
     voorrang: !!tekst(details.voorrang),
+    kanaal: tekst(details.channels),
+    look,
+    photoshop,
   };
   const files = scaffoldFiles(orderForText, products, {
     origin: new URL(context.request.url).origin,
     vakken: leverVakken(order.service, order.details_json),
+    ...(metFotos ? { klantFotos, haalFoto } : {}),
   });
 
   return new Response(zipStream(files), {
     headers: {
       'content-type': 'application/zip',
-      'content-disposition': zipDisposition(scaffoldFilename(order.ref)),
+      'content-disposition': zipDisposition(scaffoldFilename(order.ref, order.brand || order.name)),
       'cache-control': 'private, no-store',
     },
   });
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * WAT ER NOG ONTBREEKT, IN /admin — 8 oktober 2026 (punt 2.05)
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Eén lijst "wat ontbreekt per vak" (src/lib/ontbreekt.js), hier op drie
+ * plekken: de bestelrij op het dashboard ("2 foto's ontbreken", rood), het bord
+ * van de bestelling (een rood leeg vak bij het product, en het product rood in
+ * de index), en bovenaan het bord het blok waarmee Lucas de klant benadert.
+ *
+ * Alleen bij de fotodiensten en alleen tot de levering: daarna is een
+ * ontbrekende foto geen werk meer, en Studio neemt dan ook niets meer aan.
+ * `null` (onbekend: geen uploads, of een upload zonder product) toont niets.
+ *
+ * V31-2 = c: één bericht met een vaste tekst, en na FOTO_WACHT_DAGEN zonder
+ * antwoord maakt de studio wat er is. Lucas belt Nederlandse klanten en appt
+ * daarbuiten; daarom een tel:-link (als er een nummer is) en een wa.me-link met
+ * de tekst al ingevuld, plus mail voor wie geen nummer opgaf. De tekst is in de
+ * taal van de klant en zonder ik-vorm.
+ */
+const NASTUUR_DIENSTEN = new Set(['catalog', 'lifestyle', 'drop']);
+const NAGESTUURD_MERK = '<span class="brief-nagestuurd">nagestuurd</span>';
+const VOOR_LEVERING = new Set(['received', 'in_production', 'human_check']);
+
+/** De lijst voor /admin, of null als hij niet geldt of onbekend is. */
+export function ontbreektVoorAdmin(order, uploads) {
+  if (!order || !NASTUUR_DIENSTEN.has(String(order.service || '')) || !VOOR_LEVERING.has(String(order.status || ''))) return null;
+  let details = {};
+  try { details = JSON.parse(order.details_json || '{}') || {}; } catch { details = {}; }
+  return ontbrekendeFotos({ productCount: order.product_count, details, files: uploads || [] });
+}
+
+/** "2 foto’s ontbreken" — leeg als er niets (of niets bekends) ontbreekt. */
+export function ontbreektLabel(lijst) {
+  const n = aantalOntbrekend(lijst);
+  if (!n) return '';
+  return n === 1 ? '1 foto ontbreekt' : `${n} foto’s ontbreken`;
+}
+
+/**
+ * De vaste tekst aan de klant: wat er ontbreekt, waar hij het kwijt kan, en dat
+ * we na FOTO_WACHT_DAGEN zonder antwoord maken wat er is. In zijn taal.
+ */
+export function ontbreektKlantTekst(order, lijst) {
+  /* Sinds 7.05 (8 oktober 2026) uit waTekst('fotos') in src/lib/waLink.js: één
+     tekst voor dit blok, de studiomail en wat er nog komt. */
+  return waTekst('fotos', order, { lijst });
+}
+
+/**
+ * Het blok bovenaan het bord. `tel` is het nummer zoals het bij de bestelling
+ * of de klant staat; `nl` of de klant in Nederland zit (dan staat bellen voorop).
+ */
+export function ontbreektBlok(order, lijst, { tel = '', nl = false, land = '' } = {}) {
+  if (!lijst || !lijst.length) return '';
+  /* 7.05: dezelfde waLink() als de andere vier momenten. `nl` van de aanroeper
+     blijft beslissen of Bellen voorop staat. */
+  const link = { ...waLink('fotos', { ...order, tel, land }, { lijst }), belEerst: nl };
+  const tekst = link.tekst;
+  const onderwerp = order?.lang === 'en' ? `${order.ref} — missing photos` : `${order.ref} — ontbrekende foto’s`;
+  const wie = order?.brand || order?.name || 'de klant';
+  return `<div class="warnline is-rood ontbreekt-blok" id="ontbreekt">
+  <p><strong>${esc(ontbreektLabel(lijst))}</strong> &mdash; ${ontbrekendRegels(lijst, 'nl').map(esc).join('; ')}.</p>
+  <p class="meta">Vaste tekst aan de klant (${order?.lang === 'en' ? 'Engels' : 'Nederlands'}): &ldquo;${esc(tekst)}&rdquo;</p>
+  <p class="pl-contact">${waKnoppen(link, { wie, email: order?.email || '', onderwerp })}</p>
+</div>`;
+}
+
+/*
+ * ── DE KLEUR VAN HET PRODUCT IN DE BRIEF — 8 oktober 2026 (punt 5.03) ─────────
+ * Kleur, code en een kleurvlakje als het een geldige hexcode is. De opgegeven
+ * kleur is leidend als de foto afwijkt (V32 = a): zet in Camera Raw de
+ * witbalans op het papier en vergelijk daarna met deze kleur. Het vlakje is een
+ * svg met een fill-attribuut, niet style="…": de CSP van /admin weigert inline
+ * stijlen (zie de achtergrondregel in de keuzekaart).
+ */
+export function kleurFeit(waarde) {
+  const k = kleurInfo(waarde);
+  if (!k) return '';
+  const staal = k.hex ? `<svg class="kleurstaal" viewBox="0 0 10 10" aria-hidden="true"><rect width="10" height="10" fill="${esc(k.hex)}"/></svg>` : '';
+  const codes = [k.hex, k.pantone].filter(Boolean).map(esc).join(' &middot; ');
+  return `kleur: ${staal}<b>${esc(k.naam || k.hex || k.pantone || k.tekst)}</b>${codes && k.naam ? ` <span class="meta">${codes}</span>` : (k.hex && k.pantone ? ` <span class="meta">${esc(k.pantone)}</span>` : '')} <span class="meta">&mdash; leidend als de foto afwijkt</span>`;
+}
+
+/*
+ * ── DE KLANT BEREIKEN OP DE BESTELPAGINA — 8 oktober 2026 (punt 7.05) ────────
+ * Vijf momenten met een vaste tekst (src/lib/waLink.js), en nergens anders:
+ * betaling open en mail kwam niet aan staan hier; foto's ontbreken heeft zijn
+ * eigen blok hierboven; review vragen (3.06) staat bij een afgeronde
+ * bestelling; incasso mislukt staat in de studiomail. Bellen voorop bij een
+ * Nederlandse klant (Lucas' notitie bij 7.05).
+ */
+async function klantContact(env, orderId) {
+  const c = await env.DB.prepare(
+    `SELECT o.phone AS phone, c.phone AS c_phone, COALESCE(o.country, c.country) AS land, o.reviewed_at AS reviewed_at
+       FROM orders o LEFT JOIN customers c ON c.id = o.customer_id WHERE o.id = ?1`
+  ).bind(orderId).first().catch(() => null);
+  return {
+    tel: String(c?.phone || c?.c_phone || '').trim(),
+    land: String(c?.land || '').trim().toUpperCase(),
+    reviewed_at: c?.reviewed_at || null,
+  };
+}
+
+/** Moment 1 op de bestelpagina en in de zijkolom: "dag 5 van 14" en de knoppen. */
+export function betaalContactRegel(order, contact = {}, nu = new Date()) {
+  const o = { ...order, ...contact };
+  const klok = betaalDag(o, nu);
+  const link = waLink('betaling', o);
+  const onderwerp = order?.lang === 'en' ? `${order.ref} — payment still open` : `${order.ref} — betaling staat open`;
+  return `<span class="wa-dag">${klok ? `dag ${klok.dag} van ${klok.van}` : 'wacht op de btw-controle'}</span> `
+    + `<span class="pl-contact">${waKnoppen(link, { wie: order?.brand || order?.name || 'de klant', email: order?.email || '', onderwerp })}</span>`;
+}
+
+/** Moment 3: de mail kwam niet aan. Geen mailknop: het adres is juist het probleem. */
+export function bounceContactRegel(order, contact = {}) {
+  const link = waLink('bounce', { ...order, ...contact });
+  return `<p class="pl-contact">${waKnoppen(link, { wie: order?.brand || order?.name || 'de klant', mail: false })}</p>`;
+}
+
+/*
+ * ── REVIEW VRAGEN MET ÉÉN KLIK — 8 oktober 2026 (punt 3.06, V27 = b) ─────────
+ * Bij elke afgeronde bestelling, nooit gefilterd op score, de knop "Vraag om een
+ * review via WhatsApp". Een gewoon formulier (geen script in /admin): de post
+ * schrijft "review gevraagd" in order_events en stuurt door naar de wa.me-link
+ * met de vaste tekst in de taal van de bestelling. Lucas drukt zelf op
+ * verzenden. Daarna is de knop grijs met de datum, en de regel in order_events
+ * voorkomt dat hij het twee keer vraagt.
+ *
+ * DOORSTUREN MET EEN TUSSENPAGINA, NIET MET EEN 303. /admin heeft form-action
+ * 'self', en Chrome past dat ook toe op de redirect na een post: een 303 naar
+ * wa.me gaf een leeg tabblad. Zie de kop van src/lib/offsite.js (hetzelfde
+ * probleem bij de reviewknoppen in Studio, 9 augustus 2026).
+ */
+export { REVIEW_GEVRAAGD };
+
+async function reviewGevraagdOp(env, orderId) {
+  const r = await env.DB.prepare(
+    "SELECT created_at FROM order_events WHERE order_id = ?1 AND note = ?2 ORDER BY id DESC LIMIT 1"
+  ).bind(orderId, REVIEW_GEVRAAGD).first().catch(() => null);
+  return r?.created_at || null;
+}
+
+const reviewDatum = (stamp) => {
+  const t = Date.parse(normalizeStamp(stamp));
+  return Number.isNaN(t) ? '' : new Intl.DateTimeFormat('nl-NL', { day: 'numeric', month: 'long', timeZone: 'Europe/Amsterdam' }).format(new Date(t));
+};
+
+/** Het blok op de bestelpagina, of '' als de bestelling niet afgerond is. */
+export function reviewVraagBlok(order, contact = {}, gevraagdOp = null) {
+  if (!order?.closed_at || order.status !== 'delivered') return '';
+  const link = waLink('review', { ...order, ...contact });
+  const wie = esc(order.brand || order.name || 'de klant');
+  const bel = link.tel ? `<a class="btn ${link.belEerst ? 'btn-primary' : 'btn-ghost'} btn-sm" href="${esc(link.tel)}">Bel ${wie}</a>` : '';
+  if (gevraagdOp) {
+    return `<div class="review-vraag" id="review"><span class="is-gevraagd">Review gevraagd op ${esc(reviewDatum(gevraagdOp))} via WhatsApp</span></div>`;
+  }
+  const knop = link.wa
+    ? `<form method="post" action="/admin/orders/${order.id}/review-wa" target="_blank"><button class="btn ${link.belEerst ? 'btn-ghost' : 'btn-primary'} btn-sm" type="submit">Vraag om een review via WhatsApp</button></form>`
+    : `<span class="meta">${link.tel ? 'Landnummer niet zeker, dus geen WhatsApp-link.' : 'Geen telefoonnummer bekend, dus geen WhatsApp.'}</span>`;
+  return `<div class="review-vraag" id="review"><span class="meta">Afgerond &mdash; vraag om een review, bij elke score:</span>${link.belEerst ? bel + knop : knop + bel}</div>`;
+}
+
+async function handleReviewWa(context, orderId) {
+  const { env } = context;
+  if (!Number.isInteger(orderId)) return html(page({ title: 'Admin', body: errorBody('Ongeldig bestelnummer.') }), 400);
+  const order = await env.DB.prepare(
+    'SELECT id, ref, name, brand, email, lang, status, closed_at FROM orders WHERE id = ?1'
+  ).bind(orderId).first().catch(() => null);
+  if (!order) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.') }), 404);
+  const terug = `/admin/orders/${orderId}/files#review`;
+  if (!order.closed_at || order.status !== 'delivered') return seeOther(terug);
+  const link = waLink('review', { ...order, ...(await klantContact(env, orderId)) });
+  if (!link.wa) return seeOther(terug);
+  if (!(await reviewGevraagdOp(env, orderId))) {
+    await env.DB.prepare(
+      "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, 'delivered', ?2, 'intern')"
+    ).bind(orderId, REVIEW_GEVRAAGD).run();
+  }
+  const doorsturen = offsitePage({ url: link.wa, name: 'WhatsApp', lang: 'nl', css: '/admin.css' });
+  return doorsturen ? html(doorsturen) : seeOther(terug);
+}
+
+/*
+ * ── WEER OPENEN — 11 oktober 2026 (afvinklijst 3, w2 = b) ─────────────────────
+ * Lucas: *"Wellicht is het handig dat ik de order wel nog kan openen voor wanneer
+ * hier een reden voor is."* Bij een afgeronde, geleverde bestelling (geen proef)
+ * staat onder de reviewknop een ingeklapte knop "Weer openen". Openklappen toont
+ * wat er gebeurt; de post vraagt een verplicht vinkje "Ja, weer openen" (geen
+ * dialoog met JavaScript, /admin heeft geen script). Wat er dan gebeurt staat bij
+ * heropenBestelling() in src/lib/close.js. Er gaat geen mail uit.
+ */
+const dagMaand = (iso) => {
+  const t = Date.parse(`${String(iso || '').slice(0, 10)}T12:00:00Z`);
+  return Number.isNaN(t) ? '' : new Intl.DateTimeFormat('nl-NL', { day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(t));
+};
+
+/** Het blok op de bestelpagina: de knop bij een afgeronde bestelling, of de regel na het weer openen. */
+export function weerOpenenBlok(order, { nu = new Date() } = {}) {
+  if (!order) return '';
+  if (order.status === 'delivered' && !order.closed_at && order.reopened_at) {
+    const d = leverDatumsVan(order);
+    const tot = d && d.revisieTot >= nu.toISOString().slice(0, 10) ? d.revisieTot : '';
+    return `<p class="okline weer-geopend" id="weer-openen">Weer geopend op ${esc(reviewDatum(order.reopened_at))}${
+      tot ? ` &middot; de klant kan tot en met ${esc(dagMaand(tot))} een revisieronde aanvragen` : ''} &middot; er ging geen mail uit, neem zelf contact op.</p>`;
+  }
+  if (!kanHeropenen(order) || order.reopened_at === undefined) return '';
+  const tot = leverDatums(nu)?.revisieTot || '';
+  const ronde = order.revision_round_at
+    ? `<p class="warnline in-tekst">De revisieronde is al gebruikt (${esc(reviewDatum(order.revision_round_at))}). Na weer openen kan de klant beelden goedkeuren, maar geen tweede ronde indienen.</p>`
+    : '';
+  return `<details class="ingeklapt weer-openen" id="weer-openen">
+    <summary class="btn btn-ghost btn-sm">Weer openen</summary>
+    <form class="stack" method="post" action="/admin/orders/${order.id}/weer-openen">
+      <p class="meta">Afgerond op ${esc(reviewDatum(order.closed_at))}. Weer openen zet hem in Studio terug op Geleverd: de klant kan dan tot en met ${esc(dagMaand(tot))} een revisieronde aanvragen. Er gaat geen mail uit; neem zelf contact op met de klant.</p>
+      ${ronde}
+      <label class="vink-rij"><input type="checkbox" name="ja" value="1" required> Ja, weer openen</label>
+      <button class="btn btn-primary btn-sm" type="submit">Weer openen</button>
+    </form>
+  </details>`;
+}
+
+async function handleWeerOpenen(context, orderId, admin) {
+  const { request, env } = context;
+  if (!Number.isInteger(orderId)) return html(page({ title: 'Admin', body: errorBody('Ongeldig bestelnummer.') }), 400);
+  const terug = `/admin/orders/${orderId}/files#weer-openen`;
+  const form = await request.formData().catch(() => null);
+  /* Het vinkje is verplicht in het formulier; zonder (een oud tabblad, een
+     losse post) gebeurt er niets. */
+  if (String(form?.get('ja') || '') !== '1') return seeOther(terug);
+  const uit = await heropenBestelling(env, orderId).catch((err) => ({ ok: false, reden: String(err?.message || err) }));
+  if (uit.reden === 'onbekend') return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.') }), 404);
+  if (uit.ok) {
+    await logAdmin(env, admin, 'order.weer-geopend', { orderId, detail: `${uit.ref}: weer geopend (was afgerond op ${uit.was_closed_at}); geen mail aan de klant` });
+  }
+  return seeOther(terug);
 }
 
 async function renderFiles(context, orderId) {
@@ -2621,6 +3226,9 @@ async function renderFiles(context, orderId) {
   if (!data) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.') }), 404);
 
   const { order, files, migrated, notes, assets = new Map() } = data;
+  /* 8.11: teruggeboekt? Een losse query, zodat de brede query hierboven niet
+     omvalt vóór migratie 0063. */
+  order.teruggeboekt_at = (await teruggeboekteOrders(env, [order.id])).get(Number(order.id)) || null;
   /* De eigen merkmodellen van deze klant, voor "Wat de klant koos": daar stond
      "c5 — eigen merkmodel" zonder naam en zonder gezicht (ronde 9, F49). */
   const eigenModellen = new Map();
@@ -2630,7 +3238,29 @@ async function renderFiles(context, orderId) {
     for (const m of rijen) eigenModellen.set(`c${m.id}`, m);
   }
   const orderBounce = (await bouncesFor(env, [order.email])).get(String(order.email || '').toLowerCase()) || null;
-  const bounceBlok = orderBounce ? `<p class="warnline is-rood">${esc(bounceLine(orderBounce))}</p>` : '';
+  /* 7.05: het nummer en land van de klant, voor de knoppen bij betaling open en
+     een mail die niet aankwam. */
+  const contact = await klantContact(env, order.id);
+  /* 3.06: bij een afgeronde bestelling de reviewknop, of grijs met de datum. */
+  const reviewBlok = order.closed_at && order.status === 'delivered'
+    ? reviewVraagBlok(order, contact, await reviewGevraagdOp(env, order.id)) : '';
+  /* w2 = b: "Weer openen". Een losse query, zodat de brede query hierboven niet
+     omvalt vóór migratie 0066; zonder die kolom blijft reopened_at undefined en
+     staat de knop er niet. */
+  if (order.status === 'delivered') {
+    const wo = await env.DB.prepare('SELECT reopened_at, revision_round_at FROM orders WHERE id = ?1')
+      .bind(order.id).first().catch(() => null);
+    if (wo) { order.reopened_at = wo.reopened_at || null; order.revision_round_at = wo.revision_round_at || null; }
+  }
+  const weerOpenen = weerOpenenBlok(order);
+  /* 4.05: "Volgende stap: …" bovenaan, uit dezelfde Nu-doen-lijst als het
+     dashboard en het nachtrapport, voor alleen deze bestelling. */
+  const volgendeStap = volgendeStapHtml(order, await nuDoen(env.DB, { orderId: order.id }));
+  const bounceBlok = orderBounce ? `<div class="warnline is-rood"><p>${esc(bounceLine(orderBounce))}</p>${bounceContactRegel(order, contact)}</div>` : '';
+  /* Ronde B (6.08): bij een bestelling betaald met credits, hoeveel er afging en
+     hoeveel er al terug is — voor "credits terug voor wat niet gemaakt kan worden". */
+  const creditStand = order.payment_status === 'credits'
+    ? await creditsVanBestelling(env, order.id).catch(() => null) : null;
   /* Terugboeking (ronde 9, F62): de webhook legt hem vast in admin_log en mailt; hier staat hij bovenaan de bestelling. */
   const chargebacks = await env.DB.prepare("SELECT detail, created_at FROM admin_log WHERE action = 'payment.chargeback' AND order_id = ?1 ORDER BY id")
     .bind(order.id).all().then((r) => r.results || []).catch(() => []);
@@ -2761,6 +3391,37 @@ async function renderFiles(context, orderId) {
 
   const intake = files.filter((f) => f.kind === 'upload');
   const delivery = files.filter((f) => f.kind === 'delivery');
+  /* 4.02: hoeveel foto's van de klant er in de werkmap meegaan, zodat de knop zegt
+     hoe groot de download wordt (dezelfde selectie als serveScaffold). */
+  const werkmapFotos = (() => {
+    const levend = intake.filter((f) => !f.superseded_at);
+    const bytes = levend.reduce((n, f) => n + (Number(f.bytes) || 0), 0);
+    return { n: levend.length, mb: Math.max(1, Math.round(bytes / 1048576)) };
+  })();
+
+  /* ── WAT ER NOG ONTBREEKT, EN WAT ER NAGESTUURD IS — punt 2.05 ─────────────
+     De lijst komt uit ontbreekt.js (null = onbekend: dan niets). "Nagestuurd"
+     is een upload die de klant in Studio deed: die staat in R2 onder
+     aangeleverd/ (handleOrderFotos in account.js), het formulier zet hem onder
+     intake/. Eigen query's met een eigen catch: zonder deze regels laadt het
+     bord gewoon zoals gisteren. */
+  const ontbreekt = ontbreektVoorAdmin(order, intake);
+  const mistPer = new Map((ontbreekt || []).map((p) => [p.key, new Set(p.mist)]));
+  const nagestuurd = new Set(await env.DB.prepare(
+    "SELECT id FROM files WHERE order_id = ?1 AND kind = 'upload' AND r2_key LIKE 'aangeleverd/%'"
+  ).bind(order.id).all().then((r) => (r.results || []).map((x) => x.id)).catch(() => []));
+  let ontbreektHtml = '';
+  if (ontbreekt && ontbreekt.length) {
+    const c = await env.DB.prepare(
+      'SELECT o.phone AS phone, c.phone AS c_phone, COALESCE(o.country, c.country) AS land FROM orders o LEFT JOIN customers c ON c.id = o.customer_id WHERE o.id = ?1'
+    ).bind(order.id).first().catch(() => null);
+    const tel = String(c?.phone || c?.c_phone || '').trim();
+    /* Naloop A2: het land beslist; een 0 vooraan zegt pas "Nederland" als het land onbekend is. */
+    const land = String(c?.land || '').toUpperCase();
+    const kaal = tel.replace(/\s+/g, '');
+    const nl = land === 'NL' || /^(\+31|0031)/.test(kaal) || (!land && /^0[1-9]/.test(kaal));
+    ontbreektHtml = ontbreektBlok(order, ontbreekt, { tel, nl, land });
+  }
 
   // Per bestand zichtbaar of het al gemeld is. Dit is de kolom die de vraag
   // "wat weet de klant?" beantwoordt zonder dat je je mailbox erbij hoeft te
@@ -2781,7 +3442,7 @@ async function renderFiles(context, orderId) {
   const FORMATEN = ['jpg', 'png', 'webp'];
   const formaatCel = (f) => {
     const heeft = assets.get(f.id) || new Set();
-    if (!heeft.size) return '<span class="fmt fmt-geen" title="Alleen het bestand dat je uploadde. De klant krijgt geen JPG/PNG/WEBP-mappen voor dit beeld — draai npm run deliver.">nog niet omgezet</span>';
+    if (!heeft.size) return '<span class="fmt fmt-geen" title="Alleen het bestand dat je uploadde (jpg is de standaard). Vroeg de klant PNG of WebP: dubbelklik FORMATEN.bat in de projectmap.">nog niet omgezet</span>';
     return `<span class="fmt">${FORMATEN.map((k) =>
       `<span class="${heeft.has(k) ? 'fmt-ja' : 'fmt-nee'}" title="${heeft.has(k) ? `${k.toUpperCase()} staat klaar` : `${k.toUpperCase()} ontbreekt`}">${k.toUpperCase()}</span>`
     ).join('')}</span>`;
@@ -2948,6 +3609,22 @@ async function renderFiles(context, orderId) {
   const filledSlots = boardProducts.reduce((n, key) =>
     n + SHOT_KEYS.filter((sh) => liveByKey.has(`${key}|${sh}`)).length, 0);
 
+  /* ── DE HERKOMSTTAG PER BEELD — 8 oktober 2026 (punt 4.01) ────────────────
+     "AI-tag" als het opgeslagen bestand de tag draagt, "geen AI-tag" in de
+     waarschuwingskleur als het een beeld zonder tag is, niets als het onbekend is
+     (een upload van vóór migratie 0060). Plus het formaat als het geen jpg is. */
+  const tagChips = (f) => {
+    const ext = (String(f.filename || '').match(/\.([a-z0-9]+)$/i) || ['', ''])[1].toLowerCase();
+    const tag = f.ai_tag === 1 || f.ai_tag === '1'
+      ? '<span class="or-let is-stil" title="De herkomsttag (IPTC DigitalSourceType) zit in het bestand">AI-tag</span>'
+      : (f.ai_tag === 0 || f.ai_tag === '0')
+        ? '<span class="or-let" title="Geen herkomsttag: exporteer als jpg en upload opnieuw">geen AI-tag</span>'
+        : '';
+    const formaat = ['png', 'webp', 'avif'].includes(ext)
+      ? `<span class="or-let" title="Leverbeelden zijn standaard jpg">${esc(ext)}</span>` : '';
+    return tag || formaat ? `<span class="slot-tags">${tag}${formaat}</span>` : '';
+  };
+
   const slot = (productKey, shotKey) => {
     const f = liveByKey.get(`${productKey}|${shotKey}`);
     if (!f) {
@@ -2978,6 +3655,7 @@ async function renderFiles(context, orderId) {
            LINK krijgt de naam, want dat is wat er aangeklikt wordt. */ ''}
       <a href="/admin/files/${f.id}" target="_blank" rel="noopener" aria-label="${esc(vakLabel(shotKey))} van product ${esc(productKey.slice(1))} op ware grootte openen"><img class="slot-img" src="/admin/files/${f.id}" alt="" loading="lazy"></a>
       <span class="slot-state">${revising ? 'revisie gevraagd' : fresh ? 'niet gemeld' : 'gemeld'}</span>
+      ${tagChips(f)}
       ${/* ── WAT DE KLANT ZEI, OP HET VAKJE ZELF — 2 oktober 2026 (ronde 9, F14) ──
            De revisiemail zegt "de verzoeken staan bij de bestelling", maar de
            woorden van de klant stonden alleen op het dashboard. Wie vanaf het bord
@@ -3052,7 +3730,7 @@ async function renderFiles(context, orderId) {
       g ? `<b>${esc(g.name.nl)}</b>` : '<span class="brief-leeg">type niet gekozen</span>',
       crop ? `${esc(({ lower: 'taille en lager', upper: 'heup en hoger', full: 'hele figuur', feet: 'voeten', waist: 'taille', head: 'hoofd', detail: 'detail', figure: 'lichaam' })[crop.id] || crop.id)}` : '',
       (() => { const gz = gezichtKort(dPer('model', n) || details.model); return gz ? `gezicht: ${esc(gz)}` : ''; })(),
-      ...PRODUCT_QUESTIONS.map((qn) => { const v = dPer(qn.id, n); return v ? `${esc(qn.name.nl.replace(/\?$/, '').toLowerCase())}: ${esc(v)}` : ''; }),
+      ...PRODUCT_QUESTIONS.map((qn) => { const v = dPer(qn.id, n); if (v && qn.id === 'colour') return kleurFeit(v); return v ? `${esc(qn.name.nl.replace(/\?$/, '').toLowerCase())}: ${esc(v)}` : ''; }),
       /* ── 4K EN DE VERHOUDING PER BEELD, OP HET BORD — ronde 9, F17b ─────────
          Ze stonden alleen in de werkmap en de adminmail. Wie vanaf het bord
          werkt, leverde een €9-4K-product dus gewoon op 2048 px. */
@@ -3074,9 +3752,17 @@ async function renderFiles(context, orderId) {
        dienst voorkant/achterkant/detail/gedragen plus een foto per bijbestelde
        hoek. Vandaar de catalogusset als lijst, ook bij lifestyle (ronde 9). */
     const AANGELEVERD = vakIds('catalog', order.details_json);
-    const perHoek = AANGELEVERD.map((sh) => uploadsVan(key).filter((f) => f.shot === sh).map((f) => `<span class="brief-vak"><span class="brief-vak-l">${esc(SHOT_LABEL[sh] || VAK_ALLE[sh] || sh)}</span>${duim(f)}</span>`).join('')).join('');
-    const refs = uploadsVan(key).filter((f) => isRefShotId(f.shot)).map((f) => `<span class="brief-vak"><span class="brief-vak-l">ref</span>${duim(f)}</span>`).join('');
-    const los = uploadsVan(key).filter((f) => !f.shot).map((f) => `<span class="brief-vak"><span class="brief-vak-l">?</span>${duim(f)}</span>`).join('');
+    /* Punt 2.05: een leeg verplicht vak staat er rood bij ("ontbreekt"), en een
+       foto die de klant in Studio nastuurde draagt "nagestuurd". */
+    const mist = mistPer.get(key);
+    const na = (f) => (nagestuurd.has(f.id) ? NAGESTUURD_MERK : '');
+    const perHoek = AANGELEVERD.map((sh) => {
+      const eigen = uploadsVan(key).filter((f) => f.shot === sh);
+      if (!eigen.length && mist && mist.has(sh)) return `<span class="brief-vak is-mist"><span class="brief-vak-l">${esc(SHOT_LABEL[sh] || VAK_ALLE[sh] || sh)}</span><span class="brief-mist">ontbreekt</span></span>`;
+      return eigen.map((f) => `<span class="brief-vak"><span class="brief-vak-l">${esc(SHOT_LABEL[sh] || VAK_ALLE[sh] || sh)}</span>${duim(f)}${na(f)}</span>`).join('');
+    }).join('');
+    const refs = uploadsVan(key).filter((f) => isRefShotId(f.shot)).map((f) => `<span class="brief-vak"><span class="brief-vak-l">ref</span>${duim(f)}${na(f)}</span>`).join('');
+    const los = uploadsVan(key).filter((f) => !f.shot).map((f) => `<span class="brief-vak"><span class="brief-vak-l">?</span>${duim(f)}${na(f)}</span>`).join('');
     const erbij = eigen.map((f) => { const sl = contextShotSlot(f.shot); return `<span class="brief-vak is-erbij"><span class="brief-vak-l">${esc(CONTEXT_SLOTS[sl] ? CONTEXT_SLOTS[sl].name.nl : sl)}</span>${duim(f, true)}</span>`; }).join('');
     const ons = styling ? styling.delen.filter((d2) => !d2.eigen).map((d2) => `${esc(d2.naam.toLowerCase())}: ${esc(d2.tekst)}`).join(' · ') : '';
 
@@ -3113,11 +3799,15 @@ async function renderFiles(context, orderId) {
        geen revisie. Alles daartussen staat open. */
     const klaar = done === SHOT_KEYS.length && fresh === 0 && !revisie;
     const stand = klaar ? 'af' : revisie ? 'revisie' : fresh ? `${fresh} niet gemeld` : done ? `${done}/${SHOT_KEYS.length}` : 'nog niets';
-    return `<details class="board-row${klaar ? ' is-af' : ''}${revisie ? ' is-revisie' : ''}" id="${esc(key)}"${klaar ? '' : ' open'}>
+    /* Punt 2.05: welke foto van de klant hier nog mist, rood in de kop. */
+    const mistHier = mistPer.get(key);
+    /* VAK_ALLE: ook de bijbestelde hoeken ("driekwart"), k-hoeken 12 oktober 2026. */
+    const mistLabel = mistHier && mistHier.size ? `<span class="or-let is-rood">mist ${esc([...mistHier].map((sh) => (SHOT_LABEL[sh] || VAK_ALLE[sh] || sh).toLowerCase()).join(', '))}</span>` : '';
+    return `<details class="board-row${klaar ? ' is-af' : ''}${revisie ? ' is-revisie' : ''}${mistLabel ? ' is-mist' : ''}" id="${esc(key)}"${klaar ? '' : ' open'}>
       <summary class="board-head">
         <h3>Product ${n}${naam ? ` <span class="board-naam">${esc(naam)}</span>` : ''}</h3>
         <span class="board-count${done === SHOT_KEYS.length ? ' is-full' : ''}">${done}/${SHOT_KEYS.length}</span>
-        <span class="board-stand">${esc(stand)}</span>
+        <span class="board-stand">${esc(stand)}</span>${mistLabel}
       </summary>
       ${brief(key)}
       <div class="board-uit"><span class="brief-kop">Leveren</span>${push}</div>
@@ -3136,7 +3826,8 @@ async function renderFiles(context, orderId) {
         const revisie = SHOT_KEYS.some((sh) => { const f = liveByKey.get(`${key}|${sh}`); return f && f.review_state === 'revision_requested'; });
         const klaar = done === SHOT_KEYS.length && fresh === 0 && !revisie;
         const n = Number(key.slice(1)) || 0;
-        return `<a class="board-idx${klaar ? ' is-af' : ''}${revisie ? ' is-revisie' : ''}${!klaar && done ? ' is-bezig' : ''}" href="#${esc(key)}" title="${esc(dPer('product', n) || `Product ${n}`)} · ${done}/${SHOT_KEYS.length}">${n}</a>`;
+        const mistIdx = mistPer.has(key);
+        return `<a class="board-idx${klaar ? ' is-af' : ''}${revisie ? ' is-revisie' : ''}${!klaar && done ? ' is-bezig' : ''}${mistIdx ? ' is-mist' : ''}" href="#${esc(key)}" title="${esc(dPer('product', n) || `Product ${n}`)} · ${done}/${SHOT_KEYS.length}${mistIdx ? ' · foto ontbreekt' : ''}">${n}</a>`;
       }).join('')}</p>`
     : '';
 
@@ -3191,11 +3882,16 @@ async function renderFiles(context, orderId) {
      wegklikken. Nu een regel bovenaan, en je staat weer bij het product. */
   const qp = (() => { try { return new URL(request.url).searchParams; } catch { return new URLSearchParams(); } })();
   const geupload = Number(qp.get('geupload')) || 0;
+  const ongewijzigdN = Number(qp.get('ongewijzigd')) || 0;
   const zonderTag = Number(qp.get('zondertag')) || 0;
+  const formaatFlash = /^(png|webp|avif)$/.test(qp.get('formaat') || '') ? qp.get('formaat') : '';
   const zwaar = qp.get('zwaar') || '';
-  const uploadFlash = geupload
+  const uploadFlash = (!geupload && ongewijzigdN)
+    ? '<p class="okline">Ongewijzigd: dit beeld stond er al precies zo. Er is niets vervangen.</p>'
+    : geupload
     ? `<p class="okline">${geupload} bestand${geupload === 1 ? '' : 'en'} opgeslagen in het vakje. De klant ziet ${order.delivery_mailed_at ? 'een vervanging meteen; de mail gaat pas bij melden' : 'nog niets tot je de bestelling op geleverd zet'}.</p>${
-      zonderTag ? `<p class="warnline">${zonderTag} zonder herkomsttag (IPTC). Tag ze met <code>npm run tag:delivery -- ./de-map</code> of lever via <code>npm run deliver -- ${esc(order.ref)} ./de-map --go</code>.</p>` : ''}${
+      zonderTag ? `<p class="warnline">${zonderTag} zonder herkomsttag (IPTC): webp, avif of niet te lezen. Exporteer als jpg en zet hem opnieuw in het vak.</p>` : ''}${
+      formaatFlash ? `<p class="warnline">Dit beeld is ${esc(formaatFlash)}. Leverbeelden zijn standaard jpg.</p>` : ''}${
       zwaar ? `<p class="warnline">Zonder beoordeelbeeld weegt de pagina van de klant nu ${esc(zwaar)} MB. <code>npm run deliver</code> maakt de verkleining.</p>` : ''}`
     : '';
   const alFlag = qp.get('al') === 'geannuleerd'
@@ -3212,6 +3908,8 @@ async function renderFiles(context, orderId) {
           ? '<p class="warnline">Op geleverd zetten kan pas als er minstens één beeld in staat.</p>'
           : qp.get('fout') === 'geannuleerd'
             ? '<p class="warnline">Een geannuleerde bestelling gaat niet terug naar een andere status.</p>'
+          : qp.get('fout') === 'teruggeboekt'
+            ? '<p class="warnline is-rood">De betaling van deze bestelling is teruggeboekt. Op geleverd zetten kan alleen met het vinkje "Ik weet dat de betaling is teruggeboekt en lever toch" (onderaan, bij Op geleverd zetten).</p>'
             : qp.get('mail') === 'mislukt'
               ? '<p class="warnline is-rood">De leveringsmail is niet verstuurd. Probeer het opnieuw met de knop hieronder.</p>'
               : qp.get('mail') === 'ok'
@@ -3341,7 +4039,7 @@ async function renderFiles(context, orderId) {
     return `
   <h2>${eigenLook ? 'Aanvraag eigen look' : 'Aanvraag'}</h2>
   ${intake}
-  <h3>Offerte</h3>
+  <h3 id="offerte">Offerte</h3>
   ${offerte}
   ${klaarzetten}`;
   })();
@@ -3385,6 +4083,8 @@ async function renderFiles(context, orderId) {
          <form class="controls" method="post" action="/admin/orders/${order.id}/status">
            <input type="hidden" name="status" value="delivered">
            <input type="hidden" name="back" value="files">
+           ${order.teruggeboekt_at ? `<p class="warnline is-rood in-tekst"><strong>Betaling teruggeboekt — niet leveren.</strong> Lever je toch, dan krijgt de klant de beelden zonder dat er betaald is.</p>
+           <label class="vink-rij"><input type="checkbox" name="teruggeboekt_ok" value="1" required> Ik weet dat de betaling is teruggeboekt en lever toch</label>` : ''}
            <p class="muted in-tekst">Deze bestelling is nog nooit gemeld &mdash; ${delivery.filter((f) => !f.superseded_at).length} beeld${delivery.filter((f) => !f.superseded_at).length === 1 ? '' : 'en'} klaar. De klant ziet ze pas na deze klik, samen met de mail dat zijn bestelling klaarstaat.</p>
            <button class="btn btn-primary" type="submit">Op geleverd zetten en klant mailen</button>
          </form>`)
@@ -3555,7 +4255,9 @@ async function renderFiles(context, orderId) {
          eerst als `bg.name` en zette dan "[object Object]" op het scherm. */
       const bg = id ? achtergrondVan(id) : null;
       /* "custom" stond er als slug (ronde 9): de eigen kleur van de klant heet zo. */
-      const naam = bg ? (bg.name?.nl || bg.name?.en || id) : (id === 'custom' ? 'Eigen kleur' : (id || ''));
+      /* Een oude achtergrond die niet meer in de lijst staat (lichtgrijs, §17.25)
+         krijgt zijn naam uit de hexcode in plaats van een onbekend id. */
+      const naam = bg ? (bg.name?.nl || bg.name?.en || id) : (id === 'custom' ? 'Eigen kleur' : (achtergrondNaam(hex, 'nl') || id || ''));
       /* Als svg met een fill-ATTRIBUUT en niet als style="background:…": de
          CSP van dit scherm (style-src 'self') weigert een inline stijl, en de
          klantkleur stond hier als leeg vakje. Een presentatieattribuut valt
@@ -3639,6 +4341,11 @@ async function renderFiles(context, orderId) {
       /* Ronde 9, O39: bij een bestelling die jij namens de klant aanmaakte, is het
          jouw notitie en niet zijn bericht. */
       rij(d.placed_by ? 'Jouw notitie (ziet de klant)' : 'Bericht van de klant', berichtRegel),
+      /* ── DE BOTCHECK — 8 oktober 2026 (o03) ─────────────────────────────
+         Alleen als de bestelling zonder geldige botcheck van Cloudflare is
+         doorgelaten (geen token, al gebruikt, of een storing). Niet geweigerd,
+         want dat zou echte klanten raken; wel even naar kijken. */
+      rij('Botcheck', botcheckUitleg(d.botcheck) ? `<strong class="or-botcheck">Even nakijken</strong> — ${esc(botcheckUitleg(d.botcheck))}` : ''),
     ].filter(Boolean);
 
     if (!rijen.length) return '';
@@ -3727,14 +4434,14 @@ async function renderFiles(context, orderId) {
      "in productie" zetten niet meer via het dashboard hoeft (terug, zoeken,
      uitklappen, kiezen, bijwerken). */
   const brutoKop = (Number(order.total_cents) || 0) + (Number(order.vat_cents) || 0);
-  const BETAAL = { paid: 'betaald', unpaid: 'onbetaald', plan: 'uit abonnement', refunded: 'terugbetaald', failed: 'mislukt' };
+  const BETAAL = { paid: 'betaald', unpaid: 'onbetaald', plan: 'betaald met credits', credits: 'betaald met credits', refunded: 'terugbetaald', failed: 'mislukt' };
   const betaalKop = order.payment_status
-    ? `${statPil(order.payment_status === 'paid' || order.payment_status === 'plan' ? 'delivered' : order.payment_status === 'unpaid' ? 'received' : 'cancelled', BETAAL[order.payment_status] || order.payment_status)}${brutoKop > 0 ? ` <strong>${esc(mailBedrag(brutoKop, 'nl'))}</strong> <span class="meta">${(Number(order.vat_cents) || 0) > 0 ? 'incl. btw' : 'zonder btw'}</span>` : ''}${order.paid_at ? ` <span class="meta">op ${esc(when(order.paid_at))}</span>` : ''}`
+    ? `${statPil(order.payment_status === 'paid' || metCreditsBetaald(order) ? 'delivered' : order.payment_status === 'unpaid' ? 'received' : 'cancelled', BETAAL[order.payment_status] || order.payment_status)}${brutoKop > 0 ? ` <strong>${esc(mailBedrag(brutoKop, 'nl'))}</strong> <span class="meta">${(Number(order.vat_cents) || 0) > 0 ? 'incl. btw' : 'zonder btw'}</span>` : ''}${order.paid_at ? ` <span class="meta">op ${esc(when(order.paid_at))}</span>` : ''}`
     : '';
   const kanBetaallink = order.status !== 'cancelled' && order.payment_status === 'unpaid' && brutoKop > 0
     && (!order.review_state || order.review_state === 'approved');
   const statusKeuze = order.status === 'cancelled' ? '' : `
-  <form class="controls kop-status" method="post" action="/admin/orders/${order.id}/status">
+  <form class="controls kop-status" id="status" method="post" action="/admin/orders/${order.id}/status">
     <input type="hidden" name="back" value="files">
     <select name="status" aria-label="Status van ${esc(order.ref)}">${STATUSES.filter((st) => st !== 'cancelled').map((st) => `<option value="${st}"${st === order.status ? ' selected' : ''}>${STATUS_LABEL[st]}</option>`).join('')}</select>
     <input type="text" name="note" placeholder="Notitie (optioneel, de klant leest mee)" class="in-grow">
@@ -3747,12 +4454,16 @@ async function renderFiles(context, orderId) {
     ${order.status === 'cancelled' ? `<p class="warnline">Geannuleerd${order.cancel_reason ? `: ${esc(order.cancel_reason)}` : ''}${order.cancel_payment ? ` &middot; ${esc(geldTerugStand(order))}` : ''}${leveringIngetrokken(order) && (files || []).some((f) => f.kind === 'delivery') ? ' &middot; de beelden zijn niet meer zichtbaar voor de klant' : ''}.</p>` : ''}
     ${order.status === 'delivered' && !order.delivery_mailed_at ? `<form class="controls" method="post" action="/admin/orders/${order.id}/delivery-mail"><p class="warnline in-grow">Op geleverd gezet, maar de klant heeft de leveringsmail niet gekregen.</p><button class="btn btn-primary" type="submit">Leveringsmail opnieuw proberen</button></form>` : ''}
     ${kanBetaallink ? `<form class="controls" method="post" action="/admin/orders/${order.id}/paylink"><p class="meta in-grow">Nog niet betaald. Kwijt of verlopen? Stuur de klant een nieuwe link.</p><button class="btn" type="submit">Betaallink opnieuw mailen</button></form>` : ''}
+    ${kanBetaallink && order.service !== 'test-sample' ? `<div class="wa-moment" id="betaling"><span class="meta">Betaling staat open &middot;</span> ${betaalContactRegel(order, contact)}</div>` : ''}
+    ${reviewBlok}
+    ${weerOpenen}
     ${statusKeuze}
   </div>`;
 
   const body = `
 ${adminNav('')}
-  <h1>${esc(order.ref)}</h1>
+  <h1>${esc(order.ref)}${creditsPil(order)}${terugboekPil(order)}</h1>
+  ${volgendeStap}
   ${kop}
   ${bounceBlok}
   ${chargebackBlok}
@@ -3808,8 +4519,9 @@ ${adminNav('')}
 
   <div class="werk">
     <div class="werk-stap">
-      <span class="werk-label">1 &middot; De lege mappen</span>
+      <span class="werk-label">1 &middot; De werkmap${werkmapFotos.n ? ` &mdash; met ${werkmapFotos.n} foto${werkmapFotos.n === 1 ? '' : '&rsquo;s'} van de klant (${werkmapFotos.mb} MB)` : ''}</span>
       <a class="btn" href="/admin/orders/${order.id}/scaffold">Downloaden (.zip)</a>
+      ${werkmapFotos.n ? `<a class="werk-alt" href="/admin/orders/${order.id}/scaffold?fotos=nee">zonder foto&rsquo;s</a>` : ''}
     </div>
 
     <form class="controls" method="post" action="/admin/orders/${order.id}/deliver" enctype="multipart/form-data">
@@ -3843,8 +4555,7 @@ ${adminNav('')}
        te laden — dus een upload hier is letterlijk het bestand dat je koos, in het
        goede vakje. De drie formaten komen uit het commando npm run deliver, dat op
        je eigen machine draait. (Geen backticks in deze noot: hij staat binnen een
-       template-literal, en een backtick sluit de string — zie dezelfde waarschuwing
-       bij checkPlanQueues in cron/index.js.)
+       template-literal, en een backtick sluit de string.)
 
        Sinds 20 september staat dit in een <details> en niet meer als vier regels
        vet gedrukte waarschuwing boven de knop: het is een ding dat je één keer
@@ -3860,6 +4571,7 @@ ${adminNav('')}
   </details>`}
 
   <h2>Het bord</h2>
+  ${ontbreektHtml}
   ${migrated ? board : '<p class="muted">Draai migratie 0012 voor het bord per product.</p>'}
 
   <details class="uitleg">
@@ -3875,7 +4587,7 @@ ${adminNav('')}
   <h2 id="wanneer">Wanneer</h2>
   ${wanneerBlok}
 
-  <h2>De klant op de hoogte brengen</h2>
+  <h2 id="melden">De klant op de hoogte brengen</h2>
   <!-- De voorvertoning staat hier en niet bovenaan: dit is het blok waar je
        besluit of het klaar is om te versturen, en dan wil je eerst kunnen
        kijken. Zie servePortaalKijk() voor waarom dit geen /o/-link is. -->
@@ -3900,6 +4612,7 @@ ${adminNav('')}
   </details>` : ''}
 
   <h2 id="annuleren">Onomkeerbaar</h2>
+  ${creditsTerugBlok(order, creditStand)}
   ${orderDanger(order)}
   `;
   return html(page({ title: order.ref, body, voorvertoning: true }));
@@ -4139,6 +4852,9 @@ const SHOT_WORDS = [
   ['front', /\b(front|voor|voorkant|vk)\b/i],
   ['back', /\b(back|achter|achterkant|ak)\b/i],
   ['detail', /\b(detail|close|closeup|dtl)\b/i],
+  /* Het lifestylebeeld zonder model (sinds 14 oktober 2026). Vóór 'worn', want
+     "model" staat ook in "model-voorkant"; die valt al eerder op voorkant. */
+  ['product', /\b(product|productonly|alleen)\b/i],
   ['worn', /\b(worn|model|onmodel|op-?model|lifestyle)\b/i],
 ];
 
@@ -4164,6 +4880,33 @@ export function guessProductShot(filename) {
     if (re.test(words)) { shot = key; break; }
   }
   return { product, shot };
+}
+
+/** Twee byte-reeksen gelijk? Eerst de lengte, dan byte voor byte. */
+function bytesGelijk(a, b) {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
+
+/**
+ * Is een van de varianten byte voor byte gelijk aan een levend beeld in dit vak?
+ * (4.02) Alleen rijen van dezelfde grootte worden uit R2 gelezen; een rij zonder
+ * grootte (heel oud) wordt altijd gelezen. Lukt het lezen niet, dan telt het als
+ * verschillend: liever een beeld te veel opgeslagen dan een vervanging gemist.
+ */
+async function zelfdeAlsLevend(env, rijen, varianten) {
+  for (const r of rijen) {
+    const maat = r.bytes == null ? null : Number(r.bytes);
+    const passend = varianten.filter((v) => v && (maat == null || v.byteLength === maat));
+    if (!passend.length) continue;
+    let obj = null;
+    try { obj = await env.UPLOADS.get(r.r2_key); } catch { obj = null; }
+    if (!obj || typeof obj.arrayBuffer !== 'function') continue;
+    const opgeslagen = new Uint8Array(await obj.arrayBuffer());
+    for (const v of passend) if (bytesGelijk(opgeslagen, new Uint8Array(v))) return true;
+  }
+  return false;
 }
 
 async function handleDeliveryUpload({ request, env }, orderId) {
@@ -4210,12 +4953,59 @@ async function handleDeliveryUpload({ request, env }, orderId) {
   const VAK_IDS = vakIds(order.service, order.details_json);
   const slotShot = VAK_IDS.includes(String(form.get('shot') || '')) ? String(form.get('shot')) : null;
 
+  /* ── HOORT DEZE MAP BIJ DEZE BESTELLING? — 8 oktober 2026 (punt 4.02) ──────
+     De zwaarste fout in de leverstroom is de map van klant A op de bestelling van
+     klant B: na de eerste levering is elk nieuw beeld meteen zichtbaar. Het
+     kenmerk staat in de wortelmap, in de namen die het Photoshop-script maakt en
+     in `kenmerk=` in elke _briefing.txt (zie scaffold.js). Eén vreemd kenmerk en
+     er wordt NIETS opgeslagen — ook niet de bestanden die wel zouden passen. Geen
+     kenmerk te vinden (losse bestanden, een eigen map) is geen bewijs van het
+     tegendeel, en gaat door zoals altijd. */
+  const kenmerken = new Set();
+  for (const file of incoming) {
+    const rel = String(file.name || '');
+    for (const k of kenmerkenInPad(rel)) kenmerken.add(k);
+    if (isScaffoldDoc(rel) && file.size <= 256 * 1024) {
+      const k = kenmerkUitWerkbestand(await file.text().catch(() => ''));
+      if (k) kenmerken.add(k);
+    }
+  }
+  const vreemd = vreemdKenmerk(order.ref, kenmerken);
+  if (vreemd) {
+    return html(page({
+      title: 'Upload geweigerd',
+      body: errorBody(`Deze map hoort bij ${esc(vreemd)}, niet bij deze bestelling (${esc(order.ref)}). Er is niets geüpload.`),
+    }), 409);
+  }
+
+  /* ── WAT ER NU LEEFT, PER VAK — voor het overslaan van ongewijzigde beelden ──
+     4.02: een hele map opnieuw uploaden na een revisie mag een goedgekeurd beeld
+     niet vervangen. Een bestand dat byte voor byte gelijk is aan het levende beeld
+     in zijn vak, wordt overgeslagen ("ongewijzigd"). Vergeleken wordt alleen bij
+     dezelfde grootte, dus R2 wordt pas gelezen als het er echt op lijkt. */
+  const levend = new Map();
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT id, product_key, shot, r2_key, bytes FROM files
+        WHERE order_id = ?1 AND kind = 'delivery' AND superseded_at IS NULL
+          AND product_key IS NOT NULL AND shot IS NOT NULL`
+    ).bind(orderId).all();
+    for (const r of results || []) {
+      const k = `${r.product_key}|${r.shot}`;
+      if (!levend.has(k)) levend.set(k, []);
+      levend.get(k).push(r);
+    }
+  } catch { /* zonder migratie 0012: dan wordt er niets overgeslagen, zoals vroeger */ }
+  let ongewijzigd = 0;
+
   let stored = 0;
   const failed = [];
   /* Bestanden die wél gecontroleerd konden worden en geen herkomsttag bleken te
      dragen. Geen fout — ze zijn opgeslagen — maar wel iets dat je moet weten
      vóórdat je de levering aankondigt. */
   const untagged = [];
+  /* 4.01: leverbeelden zijn standaard jpg; png, webp en avif worden gemeld. */
+  const nietJpg = [];
   /* Bestanden uit `_aangeleverd/` die zijn overgeslagen. Geen fout, maar het hoort
      op het scherm te komen: "twaalf bestanden opgeslagen" terwijl je er vijftien
      selecteerde is een verschil dat je wil kunnen verklaren. */
@@ -4260,6 +5050,9 @@ async function handleDeliveryUpload({ request, env }, orderId) {
        de studio geschreven; als levering zouden ze in het portaal van de klant staan.
        Gevonden bij het naspelen van de terugweg -- niet bij het bedenken ervan. */
     if (isScaffoldDoc(relPath)) { skippedOwn += 1; continue; }
+    /* En het ruwe beeld dat het Photoshop-script (4.07) in `_ruw/` zette: dat is
+       het beeld VÓÓR het afwerken, en hoort nooit bij de klant. */
+    if (isRawPath(relPath)) { skippedOwn += 1; continue; }
 
     const fromPath = parseScaffoldPath(relPath);
     // De gok gaat meteen mee de rij in. Hij staat daarna als voorselectie in
@@ -4322,11 +5115,51 @@ async function handleDeliveryUpload({ request, env }, orderId) {
        * ruil, en hij is bewust begrensd op MAX_SCAN_BYTES.
        */
       let body = file.stream();
-      if (isScannable(clean, file.size)) {
-        const bytes = await file.arrayBuffer();
-        if (!hasProvenanceTag(bytes)) untagged.push(clean);
-        body = bytes;
+      /* 4.02: is er in dit vak een levend beeld van dezelfde grootte, dan moeten de
+         bytes hier staan om te vergelijken — dezelfde grens als de tagcontrole. */
+      const kandidaten = (product && shot && levend.get(`${product}|${shot}`)) || [];
+      const vergelijk = kandidaten.length > 0 && Number(file.size) <= MAX_SCAN_BYTES;
+      let ruw = null;
+      /* ── DE HERKOMSTTAG ERIN — 8 oktober 2026 (punt 4.01) ─────────────────
+         Elke jpg en png krijgt hier de tag (src/lib/xmp.js), vóór hij naar R2
+         gaat — map, vakje, revisiekaart, alles komt door deze functie. Lukt het
+         niet (onleesbaar), dan gaat het origineel ongewijzigd door en zegt het
+         bord "geen AI-tag". Webp en avif kunnen hier geen tag krijgen. */
+      const taggen = kanTaggen(clean) && Number(file.size) <= MAX_SCAN_BYTES;
+      /* kiptc, video a (11 oktober 2026): een mp4 krijgt de tag als XMP-box
+         achteraan (src/lib/xmp.js, tagMp4) — er verschuift geen byte van de film.
+         Alleen de boxkoppen worden gelezen; dezelfde grens als bij jpg en png. */
+      const taggenVideo = kanTaggenVideo(clean) && Number(file.size) <= MAX_SCAN_BYTES;
+      if (taggen || isScannable(clean, file.size) || vergelijk) {
+        ruw = await file.arrayBuffer();
+        body = ruw;
       }
+      const isBeeld = /\.(jpe?g|png|webp|avif|gif|heic|tiff?)$/i.test(clean);
+      let aiTag = null;
+      if (taggen && ruw) {
+        const t = zetHerkomstTag(ruw, clean, LEVERTAG);
+        body = t.bytes;
+        aiTag = t.aiTag;
+      } else if (taggenVideo) {
+        const t = await zetHerkomstTagMp4(file, LEVERTAG);
+        /* Moeten de bytes hier staan om te vergelijken (4.02), dan als buffer. */
+        body = ruw ? await t.blob.arrayBuffer() : t.blob;
+        aiTag = t.aiTag;
+      } else if (ruw && isScannable(clean, file.size)) {
+        aiTag = hasProvenanceTag(ruw) ? 1 : 0;
+      } else if (isBeeld && Number(file.size) <= MAX_SCAN_BYTES) {
+        aiTag = 0;   // avif en andere beelden: geen tag mogelijk
+      }
+      /* 4.02: gelijk aan het levende beeld? Met én zonder tag vergelijken: een
+         beeld van vóór 4.01 staat er ongetagd. */
+      if (vergelijk && ruw && await zelfdeAlsLevend(env, kandidaten, [body, ruw])) {
+        ongewijzigd += 1;
+        continue;
+      }
+      /* De waarschuwing "exporteer als jpg" is voor beelden; een mp4 zonder tag
+         krijgt alleen de chip op het bord. */
+      if (aiTag === 0 && !taggenVideo) untagged.push(clean);
+      if (/\.(png|webp|avif)$/i.test(clean)) nietJpg.push(clean);
 
       /* ── HET TYPE UIT DE NAAM EN NIET UIT DE BROWSER — 31 augustus 2026 ───
        *
@@ -4360,14 +5193,28 @@ async function handleDeliveryUpload({ request, env }, orderId) {
         } catch { previewKey = null; }
       }
 
-      await env.DB.prepare(
-        `INSERT INTO files (order_id, kind, r2_key, filename, bytes, product_key, shot, preview_key)
-         VALUES (?1, 'delivery', ?2, ?3, ?4, ?5, ?6, ?7)`
-        /* `shown` en niet `clean`: dit is de naam die de klant in zijn portaal
-           leest en in zijn download terugvindt. De R2-sleutel houdt de ruwe naam
-           erin, dus het spoor terug naar het bestand op de machine van de studio
-           blijft bestaan -- die twee dingen hebben verschillende lezers. */
-      ).bind(orderId, key, shown, file.size ?? null, product, shot, previewKey).run();
+      /* `bytes` is wat er in R2 staat: met de tag erin een paar honderd bytes meer
+         dan wat de browser stuurde. 4.02 vergelijkt daarop. */
+      const opgeslagen = body instanceof ArrayBuffer ? body.byteLength
+        : (typeof Blob !== 'undefined' && body instanceof Blob) ? body.size : (file.size ?? null);
+      try {
+        await env.DB.prepare(
+          `INSERT INTO files (order_id, kind, r2_key, filename, bytes, product_key, shot, preview_key, ai_tag)
+           VALUES (?1, 'delivery', ?2, ?3, ?4, ?5, ?6, ?7, ?8)`
+        ).bind(orderId, key, shown, opgeslagen, product, shot, previewKey, aiTag).run();
+      } catch (err) {
+        /* Migratie 0060 nog niet gedraaid: dezelfde rij zonder de vlag. Elke andere
+           fout gaat door naar de foutmelding hieronder. */
+        if (!/ai_tag/.test(String(err && err.message))) throw err;
+        await env.DB.prepare(
+          `INSERT INTO files (order_id, kind, r2_key, filename, bytes, product_key, shot, preview_key)
+           VALUES (?1, 'delivery', ?2, ?3, ?4, ?5, ?6, ?7)`
+          /* `shown` en niet `clean`: dit is de naam die de klant in zijn portaal
+             leest en in zijn download terugvindt. De R2-sleutel houdt de ruwe naam
+             erin, dus het spoor terug naar het bestand op de machine van de studio
+             blijft bestaan -- die twee dingen hebben verschillende lezers. */
+        ).bind(orderId, key, shown, opgeslagen, product, shot, previewKey).run();
+      }
       stored++;
     } catch (err) {
       failed.push(`${clean}: ${err && err.message ? err.message : 'failed'}`);
@@ -4418,12 +5265,10 @@ async function handleDeliveryUpload({ request, env }, orderId) {
    * dat is iets om te weten vóórdat je op "aankondigen" drukt — daarna staat het
    * bestand bij de klant.
    *
-   * OOK GEEN BLOKKADE. Een Worker kan die tag niet schrijven, dus tegenhouden zou
-   * betekenen dat je een levering niet kunt doen die je wel moet doen. De keuze is
-   * aan jou: taggen via het script, of bewust doorgaan.
-   *
-   * De pagina noemt het commando, want een waarschuwing zonder de volgende stap
-   * erin is een waarschuwing die je de tweede keer wegklikt.
+   * OOK GEEN BLOKKADE. Sinds 4.01 (8 oktober 2026) schrijft de Worker de tag zelf
+   * in elke jpg en png; wat hier nog overblijft is webp, avif of een bestand dat
+   * niet te lezen was. De volgende stap is dus: als jpg exporteren en opnieuw
+   * uploaden, niet meer een commando.
    */
   const heavy = await portalWeight(env, orderId);
 
@@ -4431,19 +5276,26 @@ async function handleDeliveryUpload({ request, env }, orderId) {
      en terug bij het product (1 oktober 2026, ronde 8). De map-upload houdt de
      volle uitleg: daar gaat het om veel bestanden tegelijk. */
   if (slotProduct && !skippedSource && !skippedOwn) {
-    const q = new URLSearchParams({ geupload: String(stored), zondertag: String(untagged.length || ''), zwaar: heavy ? String(heavy.mb) : '' });
+    const q = new URLSearchParams({ geupload: String(stored), ongewijzigd: String(ongewijzigd || ''), zondertag: String(untagged.length || ''), formaat: nietJpg.length ? (nietJpg[0].match(/\.([a-z]+)$/i) || ['', ''])[1].toLowerCase() : '', zwaar: heavy ? String(heavy.mb) : '' });
     for (const [k, v] of [...q]) if (!v) q.delete(k);
     return seeOther(`/admin/orders/${orderId}/files?${q}#${slotProduct}`);
   }
 
-  if (untagged.length || heavy) {
+  if (untagged.length || heavy || nietJpg.length) {
     const tagBlock = untagged.length ? `
         <h2>Geen herkomsttag</h2>
         <p>Deze bestanden staan klaar, maar er zit geen IPTC <code>DigitalSourceType</code> in:</p>
         <ul>${untagged.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>
-        <p>/ai-act §6 belooft dat elk geleverd bestand die tag draagt. Dit scherm kan
-        hem niet schrijven — dat doet <code>exiftool</code>, en dat draait niet in een
-        Worker.</p>` : '';
+        <p>/ai-act §6 belooft dat elk geleverd bestand die tag draagt. De server zet hem
+        in elke jpg en png; in webp en avif kan dat niet, en een bestand dat niet te
+        lezen was blijft zoals het was.</p>` : '';
+    /* 4.01: leverbeelden zijn standaard jpg (sRGB, 2048 of 4096 px). */
+    const formaatBlock = nietJpg.length ? `
+        <h2>Geen jpg</h2>
+        <p>Leverbeelden zijn standaard jpg. Deze ${nietJpg.length === 1 ? 'is' : 'zijn'} het niet:</p>
+        <ul>${nietJpg.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>
+        <p>Een png maakt de download van de klant zwaar; webp en avif kunnen geen
+        herkomsttag dragen. Exporteer als jpg en zet hem opnieuw in hetzelfde vak.</p>` : '';
 
     const weightBlock = heavy ? `
         <h2>Geen beoordeelbeeld — de portaalpagina weegt ${heavy.mb} MB</h2>
@@ -4460,20 +5312,22 @@ async function handleDeliveryUpload({ request, env }, orderId) {
        dan gaat hij zoeken naar drie bestanden die met opzet zijn overgeslagen. */
     const sourceBlock = (skippedSource || skippedOwn) ? `<p class="muted">${
       [skippedSource ? `${skippedSource} uit <code>_aangeleverd/</code> (materiaal van de klant)` : '',
-       skippedOwn ? `${skippedOwn} werkbestand${skippedOwn === 1 ? '' : 'en'} van de werkmap (leesmij, briefing, licentie)` : '']
+       skippedOwn ? `${skippedOwn} werkbestand${skippedOwn === 1 ? '' : 'en'} van de werkmap (leesmij, briefing, licentie, <code>_ruw/</code>)` : '']
         .filter(Boolean).join(' en ')
     } overgeslagen — die horen niet als levering bij de klant.</p>` : '';
+    const ongewijzigdBlok = ongewijzigd ? `<p class="muted">${ongewijzigd} ongewijzigd — precies gelijk aan het beeld dat er al stond, dus niet vervangen.</p>` : '';
 
+    const punten = [untagged.length, nietJpg.length, heavy].filter(Boolean).length;
     return html(page({
-      title: untagged.length && heavy ? 'Upload — twee dingen om te weten'
-        : untagged.length ? 'Upload — geen herkomsttag' : 'Upload — geen beoordeelbeeld',
-      body: `<div class="bar"><a class="mark" href="/">VISUAILS</a></div>
+      title: punten > 1 ? 'Upload — een paar dingen om te weten'
+        : untagged.length ? 'Upload — geen herkomsttag' : nietJpg.length ? 'Upload — geen jpg' : 'Upload — geen beoordeelbeeld',
+      body: `<div class="bar"><a class="mark" href="/" aria-label="VISUAILS">${MERK}</a></div>
         <h1>${stored} bestand${stored === 1 ? '' : 'en'} opgeslagen</h1>
-        ${sourceBlock}${tagBlock}${weightBlock}
+        ${sourceBlock}${ongewijzigdBlok}${tagBlock}${formaatBlock}${weightBlock}
         <h2>Zo zet je het recht</h2>
-        <p><strong>Lever via het script:</strong> <code>npm run deliver -- ${esc(order.ref)} ./de-map --go</code>
-        — dat maakt png, jpg en webp, maakt het beoordeelbeeld, tagt alles en zet het er
-        in één keer op.${untagged.length ? `<br><strong>Of tag alleen de map en upload opnieuw:</strong> <code>npm run tag:delivery -- ./de-map</code>` : ''}</p>
+        ${untagged.length || nietJpg.length ? '<p><strong>Exporteer als jpg</strong> en zet het bestand opnieuw in hetzelfde vak: de tag komt er bij het uploaden vanzelf in.</p>' : ''}
+        ${heavy ? `<p><strong>Voor het beoordeelbeeld:</strong> <code>npm run deliver -- ${esc(order.ref)} ./de-map --go</code>
+        maakt de verkleining en zet alles er in één keer op.</p>` : ''}
         <p>Doorgaan mag: de bestanden staan in R2. ${order.delivery_mailed_at ? 'De klant ziet een vervanging meteen; de mail gaat pas bij melden.' : 'De klant ziet ze pas als je de bestelling op geleverd zet.'}</p>
         <p><a class="btn" href="/admin/orders/${orderId}/files">Verder naar de bestanden</a></p>`,
     }));
@@ -4482,17 +5336,19 @@ async function handleDeliveryUpload({ request, env }, orderId) {
   /* Is er niets te waarschuwen maar wel iets overgeslagen, dan mag dat niet in een
      redirect verdwijnen. Zonder deze tak zou "vijftien geselecteerd, twaalf
      opgeslagen" een verschil zijn dat nergens wordt uitgelegd. */
-  if (skippedSource || skippedOwn) {
+  if (skippedSource || skippedOwn || ongewijzigd) {
     return html(page({
       title: 'Upload — een paar bestanden overgeslagen',
-      body: `<div class="bar"><a class="mark" href="/">VISUAILS</a></div>
+      body: `<div class="bar"><a class="mark" href="/" aria-label="VISUAILS">${MERK}</a></div>
         <h1>${stored} bestand${stored === 1 ? '' : 'en'} opgeslagen</h1>
+        ${ongewijzigd ? `<p>${ongewijzigd} bestand${ongewijzigd === 1 ? ' is' : 'en zijn'} ongewijzigd: precies
+        gelijk aan het beeld dat er al stond. Dat beeld blijft staan, met zijn goedkeuring.</p>` : ''}
         ${skippedSource ? `<p>${skippedSource} bestand${skippedSource === 1 ? '' : 'en'} uit
         <code>_aangeleverd/</code> ${skippedSource === 1 ? 'is' : 'zijn'} overgeslagen. Die map bevat
         wat de klant heeft aangeleverd; die hoort niet als levering terug.</p>` : ''}
         ${skippedOwn ? `<p>${skippedOwn} werkbestand${skippedOwn === 1 ? '' : 'en'} van de werkmap
-        ${skippedOwn === 1 ? 'is' : 'zijn'} overgeslagen: LEESMIJ.txt, de briefings en LICENTIE.txt zijn
-        voor jou geschreven en niet voor het portaal van de klant.</p>` : ''}
+        ${skippedOwn === 1 ? 'is' : 'zijn'} overgeslagen: LEESMIJ.txt, de briefings, LICENTIE.txt en de ruwe
+        beelden in <code>_ruw/</code> zijn voor jou en niet voor het portaal van de klant.</p>` : ''}
         <p><a class="btn" href="/admin/orders/${orderId}/files">Verder naar de bestanden</a></p>`,
     }));
   }
@@ -4715,8 +5571,11 @@ async function freshPortalLink(env, orderId, origin, { revoke = false } = {}) {
  *
  * /privacy en /terms zeggen het allebei, in beide talen: *"is je link verlopen,
  * mail ons dan — we sturen je een nieuwe."* De link leeft 90 dagen; het
- * opgeleverde werk twaalf maanden. Precies in dat gat van negen maanden is de
- * klant aangewezen op deze belofte.
+ * opgeleverde werk stond toen twaalf maanden. Precies in dat gat van negen maanden
+ * was de klant aangewezen op deze belofte. (Sinds 4 september 2026 is het
+ * opgeleverde werk DELIVERY_DAYS dagen beschikbaar, zie src/lib/retention.js; de
+ * belofte en deze knop blijven nodig voor wie daarna mailt. Bijgewerkt op
+ * 8 oktober 2026, punt 9.01, §17.23.)
  *
  * `freshPortalLink()` bestond en deed precies het goede — oude token intrekken,
  * nieuwe uitgeven, in één batch. Maar hij had twee aanroepers, en allebei zitten
@@ -4986,8 +5845,8 @@ export function freshLinkEmail({ order, link }) {
       mailNote(nl
         ? `Deze link vervangt de vorige en werkt ${HANDLINK_DAGEN} dagen. Je opgeleverde beelden blijven tot ${DELIVERY_DAYS} dagen na levering bij ons staan.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`
         : `This link replaces the previous one and works for ${HANDLINK_DAGEN} days. Your delivered images stay with us until ${DELIVERY_DAYS} days after delivery.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`),
-      '<div style="height:14px;font-size:0;line-height:0">&nbsp;</div>',
-      mailSpamNote(nl ? 'nl' : 'en'),
+      /* 7.07: de vragenregel in plaats van de contactenregel (V21-1). */
+      mailVragen(nl ? 'nl' : 'en', order.ref),
     ].join(''),
   });
 }
@@ -5018,8 +5877,10 @@ async function markAnnounced(env, orderId, product = null) {
     /*
      * ── EN METEEN DE BEWAARTERMIJN, 9 AUGUSTUS 2026 ────────────────────────
      *
-     * /privacy §6 belooft dat geleverde visuals 12 maanden na LEVERING bewaard
-     * blijven. Aankondigen is dat moment: hier gaat de mail met de link uit. Niet
+     * /privacy §6 belooft dat geleverde visuals DELIVERY_DAYS dagen na LEVERING
+     * bewaard blijven (src/lib/retention.js; hier stond "12 maanden", de termijn
+     * van vóór 4 september 2026). Aankondigen is dat moment: hier gaat de mail met
+     * de link uit. Niet
      * bij het afsluiten van de bestelling — daartussen kan een maand
      * goedkeuringswerk zitten, en dan zou de klant meer krijgen dan de tekst zegt.
      *
@@ -5137,18 +5998,41 @@ export function deliveryEmail({ order, link, n, nu = new Date() }) {
   const telNl = (k) => `${k} ${clip ? (k === 1 ? 'clip' : 'clips') : (k === 1 ? 'beeld' : 'beelden')}`;
   const telEn = (k) => `${k} ${clip ? (k === 1 ? 'clip' : 'clips') : (k === 1 ? 'image' : 'images')}`;
   /* Een proef is catalog (4 foto's) of lifestyle (3): het vervolgtarief hoort
-     bij wat hij koos, niet altijd bij catalog (ronde 8). */
-  let proefSoort = 'catalog';
-  try { if (JSON.parse(order.details_json || '{}').sample_type === 'lifestyle') proefSoort = 'lifestyle'; } catch { /* onleesbaar: catalog */ }
-  const tot = new Date(nu.getTime() + REVISIE_DAGEN * 86400000).toISOString().slice(0, 10);
-  const termijn = mailDatum(tot, nl ? 'nl' : 'en');
+     bij wat hij koos, niet altijd bij catalog (ronde 8). Sinds 3.08 kiest
+     herbestelKnop() dat, uit sample_type. */
+  /* Naloop A2 (8 okt 2026): beide datums uit leverDatums() — dezelfde som als de
+     bestelkaart in Studio, op één plek (src/lib/leverdatums.js). */
+  const datums = leverDatums(nu) || leverDatums(new Date());
+  const termijn = mailDatum(datums.revisieTot, nl ? 'nl' : 'en');
+  /* ── EN DE BEWAARDATUM, ALS DATUM — 8 oktober 2026 (punt 7.07) ─────────────
+     "90 dagen" moest de klant zelf uitrekenen. De geleverde beelden verlopen
+     DELIVERY_DAYS na hun aankondiging (stampDeliveryRetention in
+     src/lib/retention.js), en die aankondiging is deze mail. */
+  const bewaarTot = mailDatum(datums.bewaarTot, nl ? 'nl' : 'en');
+  const bewaarZin = nl
+    ? `Je beelden staan online tot en met <strong>${esc(bewaarTot)}</strong>; download ze op tijd.`
+    : `Your images are online until <strong>${esc(bewaarTot)}</strong>; download them in good time.`;
+  /* ── DE PROEF: DEZELFDE WOORDEN ALS ZIJN PRIVÉLINK — 8 oktober 2026 (3.08) ──
+     De privélink van de proef is de eerste verkooppagina: downloads, "Bestel in
+     deze look" met "catalogfoto’s vanaf €39 per product" (de onderste trede,
+     herbestel.js) en de tevredenheidsvraag. Hier stond "vanaf" de bovenste
+     trede (ladderRate(…, 1)) en "In VISUAILS Studio", terwijl de knop naar de
+     privélink gaat. Nu dezelfde zin en hetzelfde bedrag als de pagina. */
+  const proefVanaf = proef ? herbestelKnop({ service: SAMPLE_SERVICE, details_json: order.details_json }, { lang: nl ? 'nl' : 'en' }) : null;
   const uitleg = proef
     ? (nl
-      ? `Je proef is klaar. In VISUAILS Studio kun je de beelden bekijken en downloaden. Bevalt het? Bestel de rest van je producten in dezelfde look &mdash; vanaf ${esc(mailBedrag(ladderRate(proefSoort, 1) * 100, 'nl'))} per product.`
-      : `Your trial is ready. You can view and download the images in VISUAILS Studio. Like it? Order the rest of your products in the same look &mdash; from ${esc(mailBedrag(ladderRate(proefSoort, 1) * 100, 'en'))} per product.`)
-    : (nl
-      ? `Je bestelling is klaar${n ? ` &mdash; ${telNl(n)}` : ''}. Via de knop hieronder bekijk en download je alles, en keur je per beeld goed (of alles in één keer); met een account staat het ook in VISUAILS Studio. Klopt er iets niet? Je hebt één gratis revisieronde, tot en met <strong>${esc(termijn)}</strong>: vink de beelden aan en zeg wat er anders moet.`
-      : `Your order is ready${n ? ` &mdash; ${telEn(n)}` : ''}. With the button below you view, download and approve everything, image by image or all at once; with an account it is in VISUAILS Studio too. Something not right? You have one free revision round, until <strong>${esc(termijn)}</strong>: tick the images and say what should change.`);
+      ? `${esc(NU_TEKST.nl.proef)} Bevalt het? Bestel de rest van je producten in dezelfde look &mdash; ${esc(proefVanaf.vanaf)}.`
+      : `${esc(NU_TEKST.en.proef)} Like it? Order the rest of your products in the same look &mdash; ${esc(proefVanaf.vanaf)}.`)
+    /* ── DE NU-ZIN VAN DE PRIVÉLINK — 8 oktober 2026 (punt 3.01) ─────────────
+       Dezelfde woorden als bovenaan de privélink en op de bestelkaart in
+       Studio (leverMailZin() in nuzin.js), met de revisiedatum in de zin en
+       één knop "Bekijk je beelden". Zonder aantal (n = 0) de oude openingszin. */
+    : n
+      ? esc(leverMailZin(n, { clip, datum: '\u0000', lang: nl ? 'nl' : 'en' })).replace('\u0000', `<strong>${esc(termijn)}</strong>`)
+      : (nl
+        ? `Je bestelling is klaar. Je hebt één revisieronde, tot en met <strong>${esc(termijn)}</strong>; daarna ronden we je bestelling af.`
+        : `Your order is ready. You have one revision round, until <strong>${esc(termijn)}</strong>; after that we complete your order.`);
+  /* De proef heeft geen revisieronde, maar wel een bewaartermijn. */
   return mailShell({
     lang: nl ? 'nl' : 'en',
     preheader: nl
@@ -5163,13 +6047,14 @@ export function deliveryEmail({ order, link, n, nu = new Date() }) {
       mailP(uitleg),
       mailButton(link, clip ? (nl ? 'Bekijk je clips' : 'See your clips') : (nl ? 'Bekijk je beelden' : 'See your images')),
       '<div style="height:22px;font-size:0;line-height:0">&nbsp;</div>',
+      mailP(bewaarZin),
       // The URL in full under the button, for the same reason the sign-in mail
       // prints it: a client that strips anchors, or a phone-to-desktop hop.
       mailNote(nl
         ? `Deze link is de sleutel tot je bestelling — stuur hem gerust door aan een collega die mee moet kijken.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`
         : `That link is the key to the order — pass it on to a colleague who needs to look.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`),
-      '<div style="height:14px;font-size:0;line-height:0">&nbsp;</div>',
-      mailSpamNote(nl ? 'nl' : 'en'),
+      /* 7.07: de vragenregel in plaats van de contactenregel (V21-1). */
+      mailVragen(nl ? 'nl' : 'en', order.ref),
     ].join(''),
   });
 }
@@ -5258,6 +6143,8 @@ async function handleInvoiceRepair(context, orderId) {
     try {
       const factuur = await issueInvoice(env, orderId);
       await logAdmin(env, admin, 'invoice.render', { orderId, detail: `${order.ref}: ${factuur?.number || bestaand.number}` });
+      /* En naar de boekhouding, achteraf (8.08). Zonder koppeling doet dit niets. */
+      boekhoudingAchteraf(context, { orderId });
     } catch (e) {
       return html(page({ title: 'Admin', body: errorBody(
         `Die factuur maken is mislukt: ${esc(e?.message || String(e))}. Het nummer is ongewijzigd.`
@@ -5315,6 +6202,10 @@ async function handleAnnounceRedelivery(context, orderId) {
   // af is meteen de deur uit, of aan het eind alles in één bericht. Zonder
   // `product` gaat het over de hele bestelling — dat is de knop onderaan.
   const product = /^p\d{1,3}$/.test(String(form?.get('product') || '')) ? String(form.get('product')) : null;
+  /* 4.05 / 4.08: de knop staat ook in de Nu-doen-lijst en op de afgehandelde
+     revisiekaart van het dashboard. Dan terug naar het dashboard, met de
+     bevestiging daar; alleen deze ene waarde, geen vrije terugweg. */
+  const naarDashboard = String(form?.get('terug') || '') === 'dashboard';
 
   const tally = await unannouncedTally(env, orderId, product);
   // NIETS NIEUWS IS GEEN MAIL. Een knop die altijd verstuurt, verstuurt ook de
@@ -5322,7 +6213,7 @@ async function handleAnnounceRedelivery(context, orderId) {
   // aan de kant van de klant niet te onderscheiden van een studio die twee keer
   // hetzelfde zegt. Er is geen foutmelding nodig: terug naar de pagina, waar
   // het blok dan zelf laat zien dat er niets klaarstaat.
-  if (!tally.files) return seeOther(`/admin/orders/${orderId}/files?announced=none`);
+  if (!tally.files) return seeOther(naarDashboard ? '/admin?gemeld=niets' : `/admin/orders/${orderId}/files?announced=none`);
 
   const origin = (() => {
     try { return new URL(request.url).origin; } catch { return 'https://visuails.com'; }
@@ -5383,6 +6274,7 @@ async function handleAnnounceRedelivery(context, orderId) {
     orderId, detail: `${order.ref}: ${tally.files} beeld(en)${product ? ` van product ${product.replace(/^p/, '')}` : ''} gemeld`,
   });
   await maybeCloseOrder(env, orderId);
+  if (naarDashboard) return seeOther(`/admin?gemeld=${encodeURIComponent(order.ref)}&n=${tally.files}`);
   return seeOther(`/admin/orders/${orderId}/files?announced=${tally.files}`);
 }
 
@@ -5454,8 +6346,8 @@ export function redeliveryEmail({ order, link, n, revisions = 0, note = '', prod
       mailNote(nl
         ? `Je eerdere link blijft ook werken; allebei brengen je naar dezelfde bestelling.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`
         : `Your earlier link keeps working too; both take you to the same order.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`),
-      '<div style="height:14px;font-size:0;line-height:0">&nbsp;</div>',
-      mailSpamNote(nl ? 'nl' : 'en'),
+      /* 7.07: de vragenregel in plaats van de contactenregel (V21-1). */
+      mailVragen(nl ? 'nl' : 'en', order.ref),
     ].join(''),
   });
 }
@@ -5537,7 +6429,7 @@ const WATCH = {
 async function loadWatchdogs(env) {
   try {
     const res = await env.DB.prepare(
-      "SELECT key, value FROM app_settings WHERE key IN ('cron_last_run', 'backup_last_run')"
+      "SELECT key, value FROM app_settings WHERE key IN ('cron_last_run', 'backup_last_run', 'backup_check')"
     ).all();
     const rows = new Map((res.results || []).map((r) => [r.key, r.value]));
     /* DE VORM EERST, DAN PARSEN. `Date.parse('gisteren ergens')` geeft geen NaN maar
@@ -5558,7 +6450,15 @@ async function loadWatchdogs(env) {
       const hours = (Date.now() - when) / 36e5;
       return { state: hours > spec.staleHours ? 'stale' : 'ok', value: String(value), hours };
     };
-    return { cron: read(WATCH.cron), backup: read(WATCH.backup) };
+    /* ── EN OF HIJ GECONTROLEERD IS — 8 oktober 2026 (9.04) ──────────────────
+       scripts/backup.mjs leest elke dump terug in een lege database en schrijft de
+       uitkomst in backup_check, samen met waar de kopie staat (Google Drive of
+       lokaal) en of de prompts mee zijn. De chip zegt dat erbij; is de dump niet
+       gecontroleerd of lokaal gebleven, dan is de chip oranje, ook als hij vers is. */
+    const backup = read(WATCH.backup);
+    const check = rows.get('backup_check');
+    if (check) backup.check = String(check);
+    return { cron: read(WATCH.cron), backup };
   } catch {
     /* Geen app_settings betekent een database die niet is opgezet; dat is elders al
        zichtbaar en hier geen reden om het dashboard te laten omvallen. */
@@ -5573,6 +6473,13 @@ function watchChip(spec, w) {
   if (w.state === 'stale') {
     const days = Math.floor((w.hours || 0) / 24);
     return `<span class="fl-chip is-warn">${spec.label}: ${days} ${days === 1 ? 'dag' : 'dagen'} stil</span>`;
+  }
+  if (spec === WATCH.backup && w.check) {
+    /* Alleen het begin van de controleregel in de chip ("gecontroleerd, 41
+       tabellen, …"); de rest staat in de title. Niet in orde of lokaal: oranje. */
+    const goed = /^gecontroleerd/.test(w.check) && !/LOKAAL/.test(w.check);
+    const kort = w.check.split(' | ')[0].replace(/, \d+ rijen$/, '');
+    return `<span class="fl-chip${goed ? '' : ' is-warn'}" title="${esc(w.check)}">${goed ? spec.ok : 'Back-up niet in orde'} &middot; ${esc(w.value || '')} &middot; ${esc(goed ? kort : (/LOKAAL/.test(w.check) && /^gecontroleerd/.test(w.check) ? 'staat alleen lokaal' : kort))}</span>`;
   }
   return `<span class="fl-chip">${spec.ok} &middot; ${esc(w.value || '')}</span>`;
 }
@@ -5603,20 +6510,15 @@ async function loadTestimonialsWaiting(env) {
   }
 }
 
+/* Hoeveel wachtende bestellingen de zijkolom met knoppen toont (7.05); de rest zit achter "bekijken". */
+const WACHT_LIJST_MAX = 6;
+
 /* Wat vandaag aandacht vraagt naast de lijst (ronde 8, A-N13). Elk deel vangt
    zijn eigen fout: een ontbrekende tabel laat het dashboard staan. */
 async function loadAandacht(env) {
-  const uit = { aboKlaar: [], betaaldGeannuleerd: 0, wachtOpBetaling: 0 };
-  try {
-    uit.aboKlaar = (await env.DB.prepare(
-      `SELECT s.customer_id, c.brand, c.email, COUNT(q.id) AS n
-         FROM subscriptions s
-         JOIN customers c ON c.id = s.customer_id
-         JOIN plan_queue q ON q.customer_id = s.customer_id
-        WHERE s.status = 'active' AND q.locked_at IS NOT NULL AND q.taken_at IS NULL AND q.order_id IS NULL
-        GROUP BY s.customer_id ORDER BY MIN(q.locked_at) LIMIT 12`
-    ).all())?.results || [];
-  } catch { /* geen abonnementstabellen */ }
+  /* "Abonnementen klaar" (abonnees met vastgezette producten op hun lijst) is
+     weg sinds ronde 10, 8 oktober 2026: er is geen lijst meer. */
+  const uit = { betaaldGeannuleerd: 0, wachtOpBetaling: 0, wachtLijst: [], bewaartermijn: 0 };
   try {
     uit.betaaldGeannuleerd = Number((await env.DB.prepare(
       `SELECT COUNT(*) AS n FROM orders WHERE status = 'cancelled' AND payment_status = 'paid' AND cancel_payment IS NULL AND hidden_at IS NULL`
@@ -5629,6 +6531,31 @@ async function loadAandacht(env) {
           AND COALESCE(payment_status, 'unpaid') = 'unpaid' AND COALESCE(total_cents, 0) > 0`
     ).first())?.n) || 0;
   } catch { /* */ }
+  /* ── WIE ER WACHT, MET DE DAG EN DE KNOPPEN — 8 oktober 2026 (7.05, moment 1) ──
+     Naast het getal de oudste wachtende bestellingen: "dag 5 van 14" en Bel/App/
+     Mail met de vaste tekst. Alleen als er ook echt een link is gestuurd (niet
+     wat nog op de btw-controle wacht). Zelfde voorwaarden als de telling. */
+  if (uit.wachtOpBetaling) {
+    try {
+      uit.wachtLijst = (await env.DB.prepare(
+        `SELECT o.id, o.ref, o.brand, o.name, o.email, o.lang, o.created_at, o.review_state, o.reviewed_at,
+                o.phone AS phone, c.phone AS c_phone, COALESCE(o.country, c.country) AS land
+           FROM orders o LEFT JOIN customers c ON c.id = o.customer_id
+          WHERE o.status IN ('received','in_production','human_check')
+            AND o.service <> 'test-sample' AND o.hidden_at IS NULL
+            AND COALESCE(o.payment_status, 'unpaid') = 'unpaid' AND COALESCE(o.total_cents, 0) > 0
+            AND (o.review_state IS NULL OR o.review_state = 'approved')
+          ORDER BY COALESCE(o.reviewed_at, o.created_at) LIMIT ${WACHT_LIJST_MAX}`
+      ).all())?.results || [];
+    } catch { /* kolom ontbreekt: dan alleen het getal */ }
+  }
+  /* ── DE BEWAARTERMIJN VAN EEN KLANTACCOUNT — 8 oktober 2026 (o11) ─────────
+     /privacy belooft dat een account ACCOUNT_YEARS jaar na de laatste bestelling
+     wordt gewist. Automatisch wissen bestaat bewust niet; dit getal is de
+     herinnering, en de chip leidt naar de lijst met de AVG-knop per klant. */
+  try {
+    uit.bewaartermijn = Number((await env.DB.prepare(STALE_ACCOUNTS_COUNT_SQL).first())?.n) || 0;
+  } catch { /* geen abonnementstabel of kolom */ }
   return uit;
 }
 
@@ -5674,7 +6601,7 @@ async function loadTodayCounts(env) {
     // anybody, and counting it as work is how a dashboard starts lying.
     /* Alleen wat betaald is of uit een abonnement komt (ronde 8, A-B6): een
        afgebroken checkout of een aanvraag zonder offerte is geen werk. */
-    one("SELECT COUNT(*) AS n FROM orders WHERE status IN ('received','in_production','human_check') AND payment_status IN ('paid','plan') AND hidden_at IS NULL"),
+    one("SELECT COUNT(*) AS n FROM orders WHERE status IN ('received','in_production','human_check') AND payment_status IN ('paid','plan','credits') AND hidden_at IS NULL"),
     // Only what is actually owed: the test sample and anything with no total
     // priced against it are not debts, they are rows.
     //
@@ -5772,15 +6699,30 @@ async function loadCustomers(env) {
 
 async function renderCustomers(context) {
   const { env } = context;
-  const rows = await loadCustomers(env);
   /* Na het wissen kwam je hier zonder één woord (24 september 2026). */
   let gewist = false;
-  try { gewist = new URL(context.request.url).searchParams.get('wiped') === '1'; } catch { gewist = false; }
+  let filter = '';
+  try {
+    const sp = new URL(context.request.url).searchParams;
+    gewist = sp.get('wiped') === '1';
+    filter = sp.get('f') || '';
+  } catch { gewist = false; }
+  /* ── DE BEWAARTERMIJN — 8 oktober 2026 (o11) ──────────────────────────────
+     /privacy §6 belooft dat een klantaccount ACCOUNT_YEARS jaar na de laatste
+     bestelling wordt gewist. Dat doet niets automatisch (overzicht §21); deze
+     lijst is de plek waar je het doet. Per klant: openen, onderaan "Deze klant
+     wissen (AVG-verzoek)", merknaam overtypen. Facturen blijven, uitgekleed. */
+  if (filter === 'bewaartermijn') return renderBewaartermijn(context, gewist);
+  const rows = await loadCustomers(env);
+  let overTermijn = 0;
+  try { overTermijn = Number((await env.DB.prepare(STALE_ACCOUNTS_COUNT_SQL).first())?.n) || 0; } catch { overTermijn = 0; }
   const body = `
 ${adminNav('customers')}
   <h1>Klanten</h1>
   ${gewist ? '<p class="okline">De klant is gewist. Bestellingen met een factuur of creditnota zijn bewaard zonder persoonsgegevens; de rest is weg.</p>' : ''}
   <p class="lede">${rows.length} merk${rows.length === 1 ? '' : 'en'}</p>
+  ${overTermijn ? `<p class="warnline"><a href="/admin/customers?f=bewaartermijn">${bewaartermijnRegel(overTermijn)} &rarr;</a></p>` : ''}
+  ${await aboPlafondRegel(context)}
   ${nieuweKlantFormulier()}
   ${rows.length ? `<table class="files">
     <thead><tr><th>Merk</th><th>E-mail</th><th class="num">Bestellingen</th><th class="num">Betaald excl. btw</th><th>Laatste bestelling</th></tr></thead>
@@ -5793,6 +6735,36 @@ ${adminNav('customers')}
     </tr>`).join('')}</tbody></table>` : '<p class="empty">Nog geen klanten.</p>'}
   `;
   return html(page({ title: 'Klanten', body }));
+}
+
+/* De lijst achter de chip "N klantaccounts langer dan 2 jaar zonder bestelling"
+   (o11, 8 oktober 2026). Alleen lezen: wissen gebeurt per klant, op de
+   klantpagina, met dezelfde bevestiging als elk ander AVG-verzoek. */
+async function renderBewaartermijn(context, gewist = false) {
+  const { env } = context;
+  let rows = [];
+  let stuk = '';
+  try {
+    rows = (await env.DB.prepare(STALE_ACCOUNTS_SQL).bind(300).all())?.results || [];
+  } catch (err) { stuk = String(err?.message || err); }
+  const body = `
+${adminNav('customers')}
+  <h1>Klanten over de bewaartermijn</h1>
+  ${gewist ? '<p class="okline">De klant is gewist. Bestellingen met een factuur of creditnota zijn bewaard zonder persoonsgegevens; de rest is weg.</p>' : ''}
+  <p class="lede">Het privacybeleid belooft dat een klantaccount ${ACCOUNT_YEARS} jaar na de laatste bestelling wordt gewist (zonder bestelling: ${ACCOUNT_YEARS} jaar na het aanmaken). Een lopend of gepauzeerd abonnement telt als lopende klantrelatie en staat hier dus niet.</p>
+  <p class="meta">Wissen doe je zelf, per klant: open de klant, onderaan &ldquo;Deze klant wissen (AVG-verzoek)&rdquo;, merknaam overtypen. Facturen en creditnota&rsquo;s blijven bewaard zonder persoonsgegevens, omdat de fiscale bewaarplicht dat vraagt. <a href="/admin/customers">Alle klanten</a></p>
+  ${stuk ? `<p class="warnline">De lijst is niet te lezen (${esc(stuk)}).</p>` : ''}
+  ${rows.length ? `<table class="files">
+    <thead><tr><th>Merk</th><th>E-mail</th><th class="num">Bestellingen</th><th>Laatste bestelling</th><th>Account sinds</th></tr></thead>
+    <tbody>${rows.map((r) => `<tr>
+      <td><a href="/admin/customers/${r.id}">${esc(r.brand || r.name || '—')}</a></td>
+      <td>${esc(r.email)}</td>
+      <td class="num">${Number(r.orders) || 0}</td>
+      <td>${esc((r.last_order || '').slice(0, 10) || '—')}</td>
+      <td>${esc((r.created_at || '').slice(0, 10) || '—')}</td>
+    </tr>`).join('')}</tbody></table>` : (stuk ? '' : '<p class="empty">Geen klanten over de termijn.</p>')}
+  `;
+  return html(page({ title: 'Bewaartermijn', body }));
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
@@ -6229,21 +7201,6 @@ async function handleCustomerCredit(context, customerId) {
  * scherm: de link zou werken en de klant zou binnen zijn.
  */
 /*
- * ── DE WEEK STARTEN ─────────────────────────────────────────────────────────
- *
- * Eén klik, en er ontstaat een bestelling. Het saldo ging er al af toen de klant
- * zijn slot vastzette — zie queueLock(). Al het rekenwerk
- * staat in startPlanWindow(); hier staat alleen wat er met de uitkomst gebeurt.
- *
- * WAAROM DE MELDING VOLUIT WORDT UITGESCHREVEN. De functie geeft een reden terug
- * als sleutel ('niets-klaar', 'abonnement-paused'). Die sleutel op
- * het scherm zetten zou Lucas laten raden waarom er niets gebeurde — en juist bij
- * een knop die soms terecht niets doet, is "waarom" het hele antwoord.
- *
- * `admin` gaat mee naar het logboek, om dezelfde reden als bij de btw-beslissing:
- * dit is een handeling met geld eraan vast.
- */
-/*
  * ── SLOTS MET DE HAND BIJSTELLEN ────────────────────────────────────────────
  *
  * "Er gaat een keer iets mis en dan wil je het kunnen rechtzetten" stond al sinds
@@ -6286,91 +7243,63 @@ const SLOT_CORRECTIE_MAX = 300;
 
 async function handleSlotCorrectie(context, customerId, admin) {
   const { request, env } = context;
-  const terug = `/admin/customers/${customerId}#week`;
+  const terug = `/admin/customers/${customerId}#abonnement`;
   if (!Number.isInteger(customerId)) return seeOther('/admin/customers');
 
   const form = await request.formData().catch(() => null);
-  const soort = String(form?.get('kind') || '').trim().slice(0, 40);
   const reden = String(form?.get('reason') || '').trim().slice(0, 200);
   const ruw = Number.parseInt(String(form?.get('delta') || ''), 10);
 
-  /* Drie weigeringen met drie verschillende meldingen. Eén algemene zou Lucas
+  /* Twee weigeringen met twee verschillende meldingen. Eén algemene zou Lucas
      laten gokken wat er mis was — en dit is een formulier dat hij misschien twee
      keer per jaar gebruikt, dus hij weet het niet uit zijn hoofd. */
-  if (!soort) return html(page({ title: 'Admin', body: errorBody('Kies welk soort slot je wilt bijstellen.') }), 400);
   if (!Number.isInteger(ruw) || ruw === 0 || Math.abs(ruw) > SLOT_CORRECTIE_MAX) {
     return html(page({ title: 'Admin', body: errorBody(
       `De correctie moet een heel getal zijn tussen -${SLOT_CORRECTIE_MAX} en ${SLOT_CORRECTIE_MAX}, en niet nul.`
     ) }), 400);
   }
+  /* De reden is verplicht (6.08): hij komt als toelichting in het creditboek,
+     en dat is het enige spoor van waarom deze klant meer of minder heeft. */
   if (!reden) {
     return html(page({ title: 'Admin', body: errorBody(
-      'Een slotcorrectie heeft een reden nodig. Het is het enige spoor van waarom deze klant meer of minder heeft dan zijn abonnement geeft, en over drie maanden de eerste vraag.'
+      'Credits bijstellen heeft een reden nodig. Die komt in het creditboek van de klant, en is over drie maanden de eerste vraag.'
     ) }), 400);
   }
 
-  const sub = await loadSubscription(env, customerId);
+  /* ── SINDS HET CREDITBOEK — 8 oktober 2026 (ronde B, migratie 0061) ────────
+     Hier werd `granted` van de lopende maand in subscription_slots verhoogd.
+     Nu is het een regel in credit_boek: erbij is een nieuwe partij (dezelfde
+     datum als de rest, minstens 3 maanden geldig vanaf vandaag), eraf gaat
+     oudste eerst en nooit onder nul. Het abonnement is alleen nog het label op
+     de regel: ook na een opzegging kunnen credits bijgesteld worden, want ze
+     gelden tot 3 maanden na de laatste termijn (spaarplafond, 12 oktober 2026). */
+  const sub = await env.DB.prepare(
+    'SELECT id, ref FROM subscriptions WHERE customer_id = ?1 ORDER BY id DESC LIMIT 1'
+  ).bind(customerId).first().catch(() => null);
   if (!sub) return html(page({ title: 'Admin', body: errorBody('Deze klant heeft geen abonnement om bij te stellen.') }), 400);
 
-  /* De maand van de LOPENDE TERMIJN en niet de kalendermaand — zie
-     termijnMaand() in subscription.js. Anders schrijft een handmatige correctie
-     op een maand die het dashboard van de klant nog niet telt, en zie je op twee
-     schermen twee verschillende saldi. */
-  const maand = termijnMaand(sub);
-  /* De rij van DEZE maand, en aanmaken als hij er nog niet is. Dat laatste is
-     geen zeldzaam geval maar juist het gewone: een klant wiens incasso mislukte
-     heeft geen rij voor deze maand, en dat is precies wanneer je hem met de hand
-     iets wilt geven. INSERT OR IGNORE en daarna de UPDATE — dezelfde vorm als
-     grantSlots(), zodat twee tabbladen samen niet twee rijen maken. */
-  await env.DB.prepare(
-    `INSERT OR IGNORE INTO subscription_slots (subscription_id, month, kind, granted, used)
-     VALUES (?1, ?2, ?3, 0, 0)`
-  ).bind(sub.id, maand, soort).run().catch(() => {});
+  const door = admin?.email || 'admin';
+  const r = ruw > 0
+    ? await boekBij(env, { customerId, subscriptionId: sub.id, aantal: ruw, reden: CREDIT_REDEN.bijstelling, toelichting: reden, door })
+      .catch((e) => { console.error('[admin] credits bijstellen mislukt —', e?.message || e); return { ok: false }; })
+    : await boekAf(env, { customerId, aantal: -ruw, reden: CREDIT_REDEN.bijstelling, toelichting: reden, door })
+      .catch((e) => { console.error('[admin] credits bijstellen mislukt —', e?.message || e); return { ok: false }; });
 
-  const gezet = await env.DB.prepare(
-    `UPDATE subscription_slots SET granted = granted + ?4
-      WHERE subscription_id = ?1 AND month = ?2 AND kind = ?3
-        AND granted + ?4 >= used
-        AND granted + ?4 >= 0
-      RETURNING granted, used`
-  ).bind(sub.id, maand, soort, ruw).first().catch((e) => {
-    console.error('[admin] slotcorrectie mislukt —', e?.message || e);
-    return null;
-  });
-
-  if (!gezet) {
+  if (!r?.ok) {
     await logAdmin(env, admin, 'plan-slots-correctie.geweigerd', {
-      customerId, detail: `${sub.ref}: ${ruw > 0 ? '+' : ''}${ruw} ${soort} — geweigerd (er staat al meer vastgezet dan dit toelaat)`,
+      customerId, detail: `${sub.ref}: ${ruw > 0 ? '+' : ''}${ruw} credits — geweigerd (${r?.reden || 'fout'})`,
     }).catch(() => {});
-    return html(page({ title: 'Admin', body: errorBody(
-      'Dan komt het saldo onder wat al vastgezet is. Voor vastgezette items is werk beloofd, dus die kunnen niet weggehaald worden.'
-    ) }), 400);
+    return html(page({ title: 'Admin', body: errorBody(r?.reden === 'te-weinig'
+      ? `Zoveel credits heeft deze klant niet (nog ${r.saldo}). Een saldo gaat nooit onder nul.`
+      : 'Bijstellen is niet gelukt. Er is niets veranderd.') }), 400);
   }
 
+  const saldo = await creditsBeschikbaar(env, customerId).catch(() => null);
   await logAdmin(env, admin, 'plan-slots-correctie', {
     customerId,
-    detail: `${sub.ref}: ${ruw > 0 ? '+' : ''}${ruw} ${soort} in ${maand} — ${reden} (nu ${gezet.granted} toegekend, ${gezet.used} vastgezet)`,
+    detail: `${sub.ref}: ${ruw > 0 ? '+' : ''}${ruw} credits — ${reden}${saldo === null ? '' : ` (saldo nu ${saldo})`}`,
   });
   return seeOther(terug);
-}
-
-async function handleStartWeek(context, customerId, admin) {
-  const { env } = context;
-  const terug = `/admin/customers/${customerId}#week`;
-  if (!Number.isInteger(customerId)) return seeOther('/admin/customers');
-
-  const r = await startPlanWindow(env, customerId);
-  /* De uitkomst als ?week=… op de klantpagina (29 september 2026): een week die
-     NIET startte, stuurde je zonder één woord terug. */
-  if (r.ok) {
-    await logAdmin(env, admin, 'plan-week-start', {
-      customerId, orderId: r.orderId,
-      detail: `${r.aantal} ${r.aantal === 1 ? 'product' : 'producten'} → ${r.ref}`,
-    });
-    return seeOther(`/admin/customers/${customerId}?week=gestart&ref=${encodeURIComponent(r.ref || '')}#week`);
-  }
-  await logAdmin(env, admin, 'plan-week-geen-start', { customerId, detail: r.reden || 'onbekend' });
-  return seeOther(`/admin/customers/${customerId}?week=${encodeURIComponent(r.reden || 'onbekend')}#week`);
 }
 
 async function handleCustomerSigninLink(context, customerId) {
@@ -6719,81 +7648,84 @@ async function renderCustomer(context, customerId) {
    * stap na intrekken meestal een gesprek is en dat gesprek vaak goed afloopt.
    */
   /*
-   * ── DE ABONNEMENTSWEEK ───────────────────────────────────────────────────
+   * ── HET ABONNEMENT VAN DEZE KLANT ────────────────────────────────────────
    *
-   * Lucas: *"Hoe werkt 'jouw lijst' nou precies want hier zit toch helemaal geen
-   * werkend systeem achter."* Hij had gelijk — zie de kop van planStart.js. Dit
-   * paneel is de andere helft van die reparatie: zonder een plek waar hij ZIET
-   * wat er op iemands lijst staat, is een knop om die lijst te starten een knop
-   * in het donker.
-   *
-   * WAT ER STAAT, EN IN DEZE VOLGORDE: hoeveel er klaarstaat (met foto's),
-   * hoeveel er wacht omdat het saldo op is, hoeveel er hangt omdat er geen
-   * foto's zijn, en dan pas de knop. De uitzondering staat vóór de handeling,
-   * want juist die twee getallen bepalen of drukken nu verstandig is.
+   * Hier stond tot ronde 10 (8 oktober 2026) "Abonnementsweek": de lijst van de
+   * klant en de knop "Start deze week". Lucas, 6 oktober: het weeksysteem gaat
+   * weg (§28 van het overzicht); een abonnee bestelt via het gewone formulier,
+   * en die bestellingen staan gewoon bij Bestellingen hierboven. Wat blijft:
+   * plan, status, saldo en de correctieknop. De nieuwe abonnementsweergave
+   * (2.07) komt in een eigen ronde.
    *
    * GEEN PANEEL ZONDER ABONNEMENT. Een lege doos met "geen abonnement" erin is
    * ruis op een pagina die Lucas dagelijks doorbladert.
    */
+  /* ── HET SALDO EN HET CREDITBOEK — 8 oktober 2026 (punt 2.07) ─────────────
+     Dezelfde weergave als de klant op /account/plan ziet (creditWeergave.js),
+     uit het creditboek (creditSaldo/creditboek) en niet meer uit
+     subscription_slots: Lucas en de klant kijken naar dezelfde lijst. Het
+     paneel staat er ook zonder lopend abonnement, zolang er credits of regels
+     zijn (spaarplafond: geldig tot 3 maanden na de laatste termijn). Erbij:
+     waarom de klant pauzeerde of opzei (migratie 0063). */
   const abo = await planState(env, customerId).catch(() => null);
-  const weekPanel = !abo?.sub ? '' : (() => {
-    const klaar = klaarOmTeStarten(abo);
-    const open = (abo.wachtrij || []).filter((q) => !q.taken_at && !q.order_id);
-    /* ── WAT HIER STAAT IS "VASTGEZET", EN NIET "HEEFT FOTO'S" — 0035 ────────
-       De regel las het uploadveld en noemde dat klaar. Sinds het slotmodel is
-       dat de halve waarheid: foto's zijn een VOORWAARDE om vast te zetten, maar
-       pas het vastzetten door de klant betaalt het slot en geeft ons toestemming
-       om het te maken. Een lijst die "foto's klaar" zegt bij een concept, laat
-       Lucas werk starten waar de klant nog aan sleutelt. */
-    const rijen = open.length
-      ? `<ol class="qlist">${open.map((q) => `<li>
-           <span>${esc(q.name || '')}</span>
-           <span class="meta">${q.locked_at
-             ? `vastgezet &middot; ${esc(kindLabel(q.kind, 'nl'))}`
-             : (String(q.upload_batch || '').trim() ? 'concept, foto&rsquo;s klaar' : 'concept, nog geen foto&rsquo;s')}</span>
-         </li>`).join('')}</ol>`
-      : '<p class="empty">De lijst is leeg.</p>';
-    /* ── HET SALDO IS WEER ÉÉN GETAL — 19 september 2026 ────────────────────
-     *
-     * Hier stond een regel per soort ("13 × complete bundel · 2 × motion-clip"),
-     * en daarboven een noot dat het paneel expres NIET over credits praat omdat
-     * het saldo toen geen één getal meer was. Dat is met het creditsysteem
-     * teruggedraaid: er is weer één pot, en elke dienst heeft een prijs.
-     *
-     * Wat blijft: één bron voor twee schermen. Dit is hetzelfde saldo dat de
-     * klant op /account/plan ziet, uit dezelfde planState().
-     *
-     * De oude rijen per soort worden er nog wél bij getoond zolang ze bestaan —
-     * dat is geschiedenis van vóór migratie 0051 en geen dubbeltelling; zie de
-     * kop van die migratie. */
-    const cr = abo.credits || { saldo: 0, toegekend: 0, ouder: 0 };
-    const oudeRijen = (abo.slots || []).filter((b) => b.kind !== 'credits');
-    const saldoRegel = cr.toegekend
-      ? `<strong>${cr.saldo}</strong> van ${cr.toegekend} credits over${cr.ouder ? ` (${cr.ouder} doorgeschoven)` : ''}`
-        + (oudeRijen.length ? ` <span class="meta">&middot; historie: ${oudeRijen.map((b) => `${b.saldo} &times; ${esc(kindLabel(b.kind, 'nl').toLowerCase())}`).join(', ')}</span>` : '')
-      : 'geen credits deze maand';
-    /* Opgezegd telt mee zolang de betaalde termijn loopt — zie de noot in
-       startPlanWindow() (planStart.js). */
-    const kan = (abo.sub.status === 'active' || abo.sub.status === 'cancelled') && klaar.items.length > 0;
-
+  const [credSaldo, credBoek, aankopen] = await Promise.all([
+    creditSaldo(env, { customerId }).catch(() => null),
+    creditboek(env, { customerId }).catch(() => []),
+    aankopenVanKlant(env, customerId, { limit: 10 }).catch(() => []),
+  ]);
+  const aboRij = abo?.sub || (credSaldo?.abonnement?.id
+    ? await env.DB.prepare('SELECT id, ref, plan, term, status, pause_reason, paused_at FROM subscriptions WHERE id = ?1').bind(credSaldo.abonnement.id).first().catch(() => null)
+    : null);
+  const stopRij = aboRij?.id
+    ? await env.DB.prepare('SELECT stop_reden, stop_toelichting FROM subscriptions WHERE id = ?1').bind(aboRij.id).first().catch(() => null)
+    : null;
+  const aboPanel = !aboRij && !(credSaldo?.saldo) && !(credBoek || []).length ? '' : (() => {
+    const sv = saldoWeergave(credSaldo || {}, 'nl');
+    const boek = boekWeergave(credBoek || [], { lang: 'nl', eerst: 12, loopt: credSaldo?.nieuw?.op || false, orderHref: (r) => `/admin/orders/${r.orderId}/files` });
+    const kop = boekKoppen('nl');
+    const rij = (r) => `<tr>
+         <td>${esc(r.dag)}</td>
+         <td>${esc(r.wat)}${r.ref ? ` &middot; ${r.href ? `<a href="${esc(r.href)}">${esc(r.ref)}</a>` : esc(r.ref)}` : ''}${r.status ? ` ${statPil(r.status.key, r.status.tekst)}` : ''}${r.toelichting ? `<br><span class="meta">${esc(r.toelichting)}</span>` : ''}${r.geldig ? `<br><span class="meta">${esc(r.geldig)}</span>` : ''}</td>
+         <td class="num"><strong>${esc(r.aantal)}</strong></td>
+         <td class="num">${esc(r.saldoNa)}</td>
+       </tr>`;
+    const tabel = (lijst) => `<table class="files"><thead><tr><th>${kop.datum}</th><th>${kop.wat}</th><th class="num">${kop.credits}</th><th class="num">${kop.saldo}</th></tr></thead><tbody>${lijst.map(rij).join('')}</tbody></table>`;
+    const boekHtml = boek.leeg
+      ? `<p class="empty">${esc(kop.leeg)}</p>`
+      : `${tabel(boek.regels)}${boek.eerder.length ? `<details><summary>${esc(kop.eerder)} (${boek.eerder.length})</summary>${tabel(boek.eerder)}</details>` : ''}`;
+    /* Het spaarplafond (12 oktober 2026): "(je kunt er 360 sparen)" naast het
+       saldo, en vervalt er bij de volgende termijn iets, dan in een eigen regel. */
+    const bovenNu = abo?.actief && sv.boven ? sv.nieuw : '';
+    const saldoHtml = `<p class="lead-saldo"><strong>${esc(sv.kop)}</strong>${sv.spaar ? ` ${esc(sv.spaar)}` : ''}${sv.vertaling ? ` &mdash; ${esc(sv.vertaling)}` : ''}</p>
+    ${bovenNu ? `<p class="warnline"><strong>${esc(bovenNu)}</strong></p>` : ''}
+    ${[sv.eerst, sv.rest, abo?.actief && !bovenNu ? sv.nieuw : '', sv.geldig].filter(Boolean).length ? `<p class="meta">${[sv.eerst, sv.rest, abo?.actief && !bovenNu ? sv.nieuw : '', sv.geldig].filter(Boolean).map(esc).join(' ')}</p>` : ''}
+    ${sv.bijgekocht ? `<p class="meta">${esc(sv.bijgekocht)}</p>` : ''}
+    ${credSaldo?.bevroren ? `<p class="warnline"><strong>${credSaldo.bevroren} credits bevroren</strong> &mdash; een termijn is teruggeboekt. Ze komen vanzelf vrij als Mollie de terugboeking terugdraait.</p>` : ''}`;
+    /* ── EXTRA CREDITS GEKOCHT — 12 oktober 2026 (ab-v3 = c) ──────────────────
+       De betalingen van bijkopen, met de factuur (uit dezelfde reeks als een
+       termijnfactuur, zie src/lib/bijkopen.js). Alleen als er ooit iets is
+       gekocht. */
+    const STATUS_BIJ = { paid: 'betaald', open: 'open bij Mollie', failed: 'mislukt', canceled: 'afgebroken', expired: 'verlopen' };
+    const aankoopHtml = (aankopen || []).length ? `<h3>Extra credits gekocht</h3>
+    <table class="files"><thead><tr><th>Datum</th><th>Pakket</th><th class="num">Excl. btw</th><th class="num">Betaald</th><th>Status</th><th>Mollie</th><th>Factuur</th></tr></thead><tbody>${aankopen.map((a) => `<tr>
+         <td>${esc(String(a.created_at || '').slice(0, 10))}</td>
+         <td>${esc(a.pakket)} credits &middot; ${esc(a.plan_label || '')}</td>
+         <td class="num">${esc(mailBedrag(a.net_cents, 'nl'))}</td>
+         <td class="num">${esc(mailBedrag(a.gross_cents, 'nl'))}</td>
+         <td>${statPil(a.status === 'paid' ? 'delivered' : a.status === 'open' ? 'received' : 'cancelled', STATUS_BIJ[a.status] || a.status)}</td>
+         <td><span class="meta">${esc(a.mollie_payment_id || '—')}</span></td>
+         <td>${a.factuur_id ? `<a href="/admin/plan-invoices/${esc(a.factuur_id)}/pdf">${esc(a.factuur)}</a>` : '—'}</td>
+       </tr>`).join('')}</tbody></table>
+    <p class="meta">Bijgekochte credits gaan als eerste op, zijn ${CREDITS_GELDIG_MAANDEN} maanden geldig vanaf de betaling en tellen niet mee voor het spaarplafond. Hoogstens ${BIJKOOP_MAX_PER_MAAND} per kalendermaand.</p>` : '';
+    const reden = stopRij?.stop_reden ? redenLabel(stopRij.stop_reden, stopRij.stop_toelichting || '', 'nl') : '';
+    const pauzeDag = aboRij?.status === 'paused' && aboRij.paused_at ? String(aboRij.paused_at).slice(0, 10) : '';
+    const statusWoord = !aboRij ? '' : aboRij.status === 'paused' && aboRij.pause_reason === 'chargeback' ? 'stil: termijn teruggeboekt'
+      : aboRij.status === 'paused' && pauzeDag > new Date().toISOString().slice(0, 10) ? `pauze vanaf ${mailDatum(pauzeDag, 'nl')}`
+        : ({ active: 'loopt', pending: 'wacht op machtiging', paused: 'gepauzeerd', cancelled: 'opgezegd', canceled: 'opgezegd', ended: 'afgelopen' }[aboRij.status] || aboRij.status);
     /* ── DE CORRECTIEKNOP, DICHTGEKLAPT ────────────────────────────────────────
-     *
-     * In een <details> en niet open, want dit is de knop die je twee keer per
-     * jaar nodig hebt en de rest van het jaar niet wilt zien. <details> werkt
-     * zonder script en met een toetsenbord — hetzelfde als de accordeons op de
-     * site.
-     *
-     * DE SOORTEN KOMEN UIT HET PLAN ÉN UIT DE BALANS, samengevoegd. Uit het plan
-     * alleen zou een soort missen die ooit met de hand is bijgezet en niet meer
-     * in het plan zit; uit de balans alleen zou een soort missen waarvoor deze
-     * maand nog niets is toegekend — en dat is juist het geval waarin je hier
-     * komt, want een mislukte incasso laat precies zo'n leegte achter. */
-    /* ── ÉÉN SOORT OM BIJ TE STELLEN ────────────────────────────────────────
-     * Hier stond een keuzelijst met alle soorten uit het plan én uit de balans,
-     * omdat elk saldo apart bijgesteld moest worden. Met één pot is er één
-     * knop, en verdwijnt de hele klasse fouten waarbij je de verkeerde soort
-     * bijstelt en het pas maanden later ziet. */
-    const slotCorrectie = `
+     * In een <details>: de knop die je twee keer per jaar nodig hebt. Eén pot,
+     * één knop; de reden is verplicht en komt als regel in het creditboek. */
+    const slotCorrectie = aboRij ? `
     <details class="slotfix">
       <summary>Credits bijstellen</summary>
       <form method="post" action="/admin/customers/${customer.id}/slots">
@@ -6805,32 +7737,51 @@ async function renderCustomer(context, customerId) {
                placeholder="bv. incasso van juli kwam alsnog binnen">
         <button class="btn btn-sm" type="submit">Bijstellen</button>
       </form>
-      <p class="meta">Past <code>granted</code> aan van de lopende maand &mdash; niet <code>used</code>, want wat al vastgezet is hoort zichtbaar te blijven. Een catalogset is ${SERVICE_CREDITS.catalog} credits, een lifestylecarrousel ${SERVICE_CREDITS.lifestyle}, een motion-clip ${SERVICE_CREDITS['video-motion']}, een hook ${SERVICE_CREDITS.hooks} en een lifestyle-clip ${SERVICE_CREDITS['video-lifestyle']}. Eraf halen kan niet onder wat er vastgezet staat: daar is werk tegenover beloofd. Elke bijstelling komt met reden en al in het adminlogboek.</p>
-    </details>`;
+      <p class="meta">Een regel in het creditboek van de klant, met je reden erbij. Erbij krijgt dezelfde datum als de rest en is minstens ${CREDITS_GELDIG_MAANDEN} maanden geldig vanaf vandaag; bij een lopend abonnement telt het mee voor het spaarplafond, dus bij de volgende termijn vervalt wat erboven komt. Eraf gaat van de oudste credits af en nooit onder nul. Een catalogset is ${SERVICE_CREDITS.catalog} credits, een lifestylecarrousel ${SERVICE_CREDITS.lifestyle}.</p>
+    </details>` : '';
 
     return `
-  <div class="card" id="week">
+  <div class="card" id="abonnement">
     <div class="row-head">
-      <span class="ref">Abonnement &middot; ${esc(planName(abo.sub.plan, 'nl'))}</span>
-      <span class="meta">${statPil(abo.sub.status, { active: 'loopt', pending: 'wacht op machtiging', paused: 'gepauzeerd', cancelled: 'opgezegd', canceled: 'opgezegd', ended: 'afgelopen' }[abo.sub.status] || abo.sub.status)}${
-        abo.sub.term === 'prepaid' ? ` &middot; vooruitbetaald jaar${abo.jaarTot ? `, loopt tot ${esc(mailDatum(abo.jaarTot, 'nl'))}` : ''}${abo.jaarOpgezegd ? ' &middot; <strong>opgezegd — loopt door tot het einde, daarna stopt het</strong>' : ''}` : ''}${
-        abo.sub.status === 'cancelled' && abo.termijnTot ? ` &middot; betaald tot ${esc(mailDatum(abo.termijnTot, 'nl'))}` : ''}${abo.sub.window_day ? ` &middot; week vanaf de ${abo.sub.window_day}e` : ''}
-        &middot; ${saldoRegel}</span>
+      <span class="ref">${aboRij ? `Abonnement &middot; ${esc(planName(aboRij.plan, 'nl'))}` : 'Credits'}</span>
+      <span class="meta">${aboRij ? statPil(aboRij.status, statusWoord) : ''}${
+        aboRij?.term === 'prepaid' && abo ? ` &middot; vooruitbetaald jaar${abo.jaarTot ? `, loopt tot ${esc(mailDatum(abo.jaarTot, 'nl'))}` : ''}${abo.jaarOpgezegd ? ' &middot; <strong>opgezegd — loopt door tot het einde, daarna stopt het</strong>' : ''}` : ''}${
+        aboRij?.status === 'cancelled' && abo?.termijnTot ? ` &middot; betaald tot ${esc(mailDatum(abo.termijnTot, 'nl'))}` : ''}</span>
     </div>
-    ${rijen}
-    <p class="meta">${klaar.items.length} vastgezet en klaar om te starten${
-      klaar.concepten ? ` &middot; ${klaar.concepten} nog concept` : ''}</p>
-    ${kan
-      ? `<form method="post" action="/admin/customers/${customer.id}/week">
-           <button class="btn btn-primary" type="submit">Start deze week &middot; ${klaar.items.length} product${klaar.items.length === 1 ? '' : 'en'}</button>
-         </form>
-         <p class="meta">Maakt &eacute;&eacute;n bestelling met ${klaar.items.length} product${klaar.items.length === 1 ? '' : 'en'}. De credits zijn al afgeschreven toen de klant ze vastzette, dus hier gaat er niets meer af. Twee keer drukken pakt niets dubbel.</p>`
-      : `<p class="meta">Er valt nu niets te starten.${
-          abo.sub.status === 'paused' || abo.sub.status === 'pending' ? ' Het abonnement staat niet op actief.' : ''}${
-          abo.sub.status === 'active' && klaar.concepten ? ` Er ${klaar.concepten === 1 ? 'staat 1 concept' : `staan ${klaar.concepten} concepten`} op de lijst die de klant nog niet heeft vastgezet.` : ''}</p>`}
+    ${reden ? `<p class="meta"><strong>Reden van ${aboRij?.status === 'cancelled' || abo?.jaarOpgezegd ? 'opzeggen' : 'pauzeren'}:</strong> ${esc(reden)}</p>` : ''}
+    ${saldoHtml}
+    <h3>Creditboek</h3>
+    ${boekHtml}
+    ${aankoopHtml}
+    <p class="meta">De klant bestelt via het gewone formulier en betaalt met credits; die bestellingen staan bij Bestellingen hierboven. Dezelfde lijst staat voor de klant op /account/plan.</p>
     ${slotCorrectie}
   </div>`;
   })();
+
+  /* ── BTW: LAND BUITEN DE EU — 8 oktober 2026 (o16) ──────────────────────────
+     Alleen als het ertoe doet: de klant staat op een land buiten de EU, of er
+     staat al een akkoord. Een losse query met een terugval, zodat deze pagina
+     zonder migratie 0053 gewoon blijft werken (dan is het blok er niet). */
+  const btwLand = await env.DB.prepare('SELECT btw_land_akkoord AS land FROM customers WHERE id = ?1')
+    .bind(customerId).first().then((r) => ({ kan: true, land: r?.land || '' })).catch(() => ({ kan: false, land: '' }));
+  const klantLand = String(customer.country || '').toUpperCase();
+  const buitenEu = Boolean(klantLand) && klantLand !== HOME_COUNTRY && !isEu(klantLand);
+  const btwLandPanel = btwLand.kan && (buitenEu || btwLand.land) ? `
+  <div class="card">
+    <div class="row-head">
+      <span class="ref">Btw: land buiten de EU</span>
+      <span class="meta">${btwLand.land ? `goedgekeurd voor ${esc(landNaamAdmin(btwLand.land))}` : 'niet nagekeken'}</span>
+    </div>
+    ${btwLand.land
+      ? `<p class="meta">Deze klant mag een abonnement met 0% btw afsluiten voor ${esc(landNaamAdmin(btwLand.land))}, ook vanaf een ip-adres in de EU.</p>
+         <form method="post" action="/admin/customers/${customer.id}/btw-land">
+           <button class="btn btn-ghost" type="submit" name="action" value="intrekken">Akkoord intrekken</button>
+         </form>`
+      : `<p class="meta">Deze klant staat op ${esc(landNaamAdmin(klantLand))}. Sluit hij een abonnement af vanaf een ip-adres in de EU, dan wacht het op jou en krijg je een mail. Klopt het land? Keur het dan hier goed en vraag de klant het formulier opnieuw te versturen.</p>
+         <form method="post" action="/admin/customers/${customer.id}/btw-land">
+           <button class="btn btn-primary" type="submit" name="action" value="akkoord">Land goedkeuren: ${esc(landNaamAdmin(klantLand))}, 0% btw</button>
+         </form>`}
+  </div>` : '';
 
   const revoked = Boolean(customer.revisions_revoked_at);
   const revisionsPanel = `
@@ -7063,25 +8014,10 @@ async function renderCustomer(context, customerId) {
   let inlogGestuurd = false;
   try { inlogGestuurd = new URL(context.request.url).searchParams.get('signin') === '1'; } catch { inlogGestuurd = false; }
   const regLabel = /^NL/i.test(String(customer.country || 'NL')) ? 'KVK' : 'reg.';
-  const weekMelding = (() => {
-    let w = '', ref = '';
-    try { const q = new URL(context.request.url).searchParams; w = q.get('week') || ''; ref = q.get('ref') || ''; } catch { /* geen melding */ }
-    if (!w) return '';
-    if (w === 'gestart') return `<p class="okline">Week gestart${ref ? ` — bestelling ${esc(ref)}` : ''}.</p>`;
-    const uitleg = {
-      'niets-klaar': 'er staat niets vastgezet met foto’s op de lijst van de klant',
-      'geen-abonnement': 'deze klant heeft geen lopend abonnement',
-      'geen-klant': 'de klant heeft geen e-mailadres',
-      'bestelling-mislukt': 'de bestelling kon niet worden aangemaakt; zie het logboek',
-      'geen-db': 'de database is niet bereikbaar',
-    }[w] || esc(w);
-    return `<p class="warnline">De week is niet gestart: ${uitleg}.</p>`;
-  })();
   const body = `
 ${adminNav('customers')}
   <h1>${esc(customer.brand || customer.name || customer.email)}</h1>
   ${inlogGestuurd ? `<p class="okline">Inloglink gemaild naar ${esc(customer.email)}.</p>` : ''}
-  ${weekMelding}
   <p class="lede">${esc(customer.email)}${customer.vat_number ? ` · btw ${esc(customer.vat_number)}` : ''}${!customer.vat_number && customer.reg_number ? ` · ${regLabel} ${esc(customer.reg_number)}` : ''}${customer.website ? ` · ${esc(customer.website)}` : ''}${customer.country ? ` · ${esc(landNaamAdmin(customer.country))}` : ''}${sinds ? ` · klant sinds ${esc(sinds)}` : ''}</p>
   ${klantBounce ? `<p class="warnline is-rood">${esc(bounceLine(klantBounce))}</p>` : ''}
 
@@ -7106,7 +8042,9 @@ ${adminNav('customers')}
   <h2>Tegoed</h2>
   ${creditPanel}
 
-  ${weekPanel ? `<h2>Abonnementsweek</h2>${weekPanel}` : ''}
+  ${btwLandPanel ? `<h2>Btw</h2>${btwLandPanel}` : ''}
+
+  ${aboPanel ? `<h2>Abonnement</h2>${aboPanel}` : ''}
 
   <h2>Revisies</h2>
   ${revisionsPanel}
@@ -7169,13 +8107,12 @@ ${adminNav('customers')}
         <select name="service">
           <option value="catalog">Catalog</option>
           <option value="lifestyle">Lifestyle</option>
-          <option value="drop">Compleet (catalog + lifestyle)</option>
         </select></label>
       <label>Aantal producten
         <input name="products" type="number" min="1" max="20" value="1" required></label>
     </div>
     <div class="row-2">
-      <label>Look (alleen lifestyle/compleet)
+      <label>Look (alleen lifestyle)
         <select name="style">
           <option value="">Kiest de klant / standaard</option>
           ${STYLE_LOOKS.map((l) => `<option value="${esc(l.slug)}">${esc(l.name)}</option>`).join('')}
@@ -7806,11 +8743,21 @@ async function handleMaandsetUpload({ request, env }, admin) {
     const type = String(file.type || '').toLowerCase();
     if (!PREVIEW_TYPES.includes(type) || file.size > PREVIEW_MAX_BYTES) { overgeslagen++; continue; }
     const clean = String(file.name || 'beeld').replace(/[\\/"\r\n\t\x00-\x1f]/g, '_').split('/').pop().slice(0, 100) || 'beeld';
+    /* 4.01 (8 oktober 2026): ook de maandset krijgt de herkomsttag, met de waarde
+       die /editions belooft (MAANDSETTAG in iptc.js). Het type beslist, niet de naam. */
+    let body = file.stream();
+    let grootte = file.size;
+    const tagNaam = type === 'image/jpeg' ? 'beeld.jpg' : type === 'image/png' ? 'beeld.png' : '';
+    if (tagNaam) {
+      const t = zetHerkomstTag(await file.arrayBuffer(), tagNaam, MAANDSETTAG);
+      body = new Uint8Array(t.bytes);
+      grootte = body.byteLength;
+    }
     const rij = await env.DB.prepare(
       'INSERT INTO shared_files (set_id, r2_key, filename, bytes, content_type) VALUES (?1, ?2, ?3, ?4, ?5) RETURNING id'
-    ).bind(set.id, `shared/${month}/pending`, clean, file.size, type).first();
+    ).bind(set.id, `shared/${month}/pending`, clean, grootte, type).first();
     const key = `shared/${month}/${rij.id}-${clean}`;
-    await env.UPLOADS.put(key, file.stream(), { httpMetadata: { contentType: type } });
+    await env.UPLOADS.put(key, body, { httpMetadata: { contentType: type } });
     await env.DB.prepare('UPDATE shared_files SET r2_key = ?1 WHERE id = ?2').bind(key, rij.id).run();
   }
   await logAdmin(env, admin, 'maandset.upload', { detail: `${month}: ${files.length - overgeslagen} beeld(en) toegevoegd${overgeslagen ? `, ${overgeslagen} overgeslagen` : ''}` }).catch(() => {});
@@ -7941,13 +8888,23 @@ export async function hasAdminSession(context) {
     const token = readSessionCookie(request);
     if (!token) return false;
     const row = await env.DB.prepare(
-      'SELECT expires_at FROM admin_sessions WHERE token_hash = ?1'
+      /* totp_pending erbij (8 oktober 2026): een halve sessie — wachtwoord goed,
+         code nog niet — opende deze debugroute tot nu toe wél, terwijl
+         currentAdmin() hem nergens toelaat. Nu dezelfde regel. */
+      'SELECT expires_at, issued_at, last_used_at, totp_pending FROM admin_sessions WHERE token_hash = ?1'
     ).bind(await hashToken(token)).first();
-    return !!row && Date.parse(normalizeStamp(row.expires_at)) > Date.now();
+    if (!row || !(Date.parse(normalizeStamp(row.expires_at)) > Date.now())) return false;
+    if (Number(row.totp_pending) === 1) return false;
+    /* Dezelfde twaalf uur als currentAdmin() (o18, 8 oktober 2026). */
+    const laatst = Date.parse(normalizeStamp(row.last_used_at || row.issued_at || ''));
+    return !(Number.isFinite(laatst) && Date.now() - laatst > ADMIN_IDLE_MS);
   } catch {
     return false;
   }
 }
+
+/** Na zoveel tijd zonder één verzoek is een /admin-sessie voorbij (o18). */
+export const ADMIN_IDLE_MS = 12 * 3600 * 1000;
 
 async function currentAdmin(context) {
   const { env, request, waitUntil } = context;
@@ -7958,12 +8915,28 @@ async function currentAdmin(context) {
     /* `totp_pending` erbij sinds migratie 0037: een sessie tussen wachtwoord en
        code in mag nergens iets openen. De voorwaarde staat in de WHERE en niet in
        een `if` erna, zodat een halve sessie hier niet eens als sessie terugkomt. */
-    `SELECT s.id AS session_id, s.expires_at, a.id AS admin_id, a.email
+    `SELECT s.id AS session_id, s.expires_at, s.issued_at, s.last_used_at, a.id AS admin_id, a.email
        FROM admin_sessions s JOIN admin_users a ON a.id = s.admin_id
       WHERE s.token_hash = ?1 AND s.totp_pending = 0`
   ).bind(hash).first();
   if (!row) return null;
   if (Date.parse(normalizeStamp(row.expires_at)) <= Date.now()) return null;
+  /* ── VANZELF UIT NA 12 UUR NIETS DOEN — 8 oktober 2026 (o18) ────────────────
+     `last_used_at` werd bij elk verzoek geschreven en nergens gelezen, dus een
+     sessie bleef 14 dagen open, ook als hij al die tijd niet gebruikt werd. Een
+     vergeten tabblad op een gedeelde of gestolen laptop was zo twee weken lang
+     een open /admin. Nu: twaalf uur niets gedaan (gerekend vanaf het laatste
+     verzoek, of vanaf het inloggen als er nog geen was) en de sessie is voorbij;
+     de rij gaat weg en de browser gaat naar het inlogscherm. Wie elke dag werkt,
+     merkt hier niets van: elk verzoek schuift de twaalf uur op. Ontbreken beide
+     stempels (een oude rij of een toets met een nepdatabase), dan geldt alleen
+     de vaste vervaldatum, zoals voorheen. */
+  const laatst = Date.parse(normalizeStamp(row.last_used_at || row.issued_at || ''));
+  if (Number.isFinite(laatst) && Date.now() - laatst > ADMIN_IDLE_MS) {
+    later(waitUntil, env.DB.prepare('DELETE FROM admin_sessions WHERE id = ?1')
+      .bind(row.session_id).run().catch(() => {}));
+    return null;
+  }
   // Best-effort touch; a failed write here should not cost the request a 500,
   // hence the .catch() swallowing it. That alone was not enough: an unawaited
   // promise with nowhere else holding it can be dropped mid-flight the moment
@@ -8031,6 +9004,40 @@ async function loadRevisionInbox(env) {
   return res.results || [];
 }
 
+/*
+ * ── DE AFGEHANDELDE RONDE, NOG NIET GEMELD — 8 oktober 2026 (4.08) ──────────
+ * Is de laatste open revisiekaart van een bestelling afgehandeld (vervangen of
+ * "geen nieuw beeld nodig") en staan er nieuwe beelden klaar die de klant nog
+ * niet kreeg, dan blijft er één kaart staan met de knop "N nieuwe beelden
+ * melden" — zodat het melden niet meer op de bestelpagina hoeft. Welke
+ * bestellingen dat zijn, zegt de Nu-doen-lijst al (soort 'leveren', 'nieuw',
+ * met revisies in deze ronde); hier alleen wat er per beeld gedaan is. Dezelfde
+ * afbakening van "deze ronde" als unannouncedTally().
+ */
+async function loadAfgehandeldeRondes(env, nuLijst) {
+  const rondes = (nuLijst?.regels || []).filter((r) => r.soort === 'leveren' && r.extra === 'nieuw' && r.n2 > 0).slice(0, 50);
+  if (!rondes.length) return [];
+  const perOrder = new Map();
+  try {
+    const ids = rondes.map((r) => r.id);
+    const { results } = await env.DB.prepare(
+      `SELECT r.order_id, r.file_id, r.resolved_at, r.resolution_note,
+              f.product_key, f.shot, f.superseded_at, o.service, o.details_json
+         FROM revision_requests r
+         JOIN files f ON f.id = r.file_id
+         JOIN orders o ON o.id = r.order_id
+        WHERE r.order_id IN (${ids.map((_, i) => `?${i + 1}`).join(', ')})
+          AND (r.resolved_at IS NULL OR r.resolved_at > COALESCE(o.redelivery_mailed_at, o.delivery_mailed_at, '0000'))
+        ORDER BY r.order_id, r.id`
+    ).bind(...ids).all();
+    for (const v of results || []) {
+      if (!perOrder.has(v.order_id)) perOrder.set(v.order_id, []);
+      perOrder.get(v.order_id).push(v);
+    }
+  } catch { /* zonder details: de kaart met alleen de knop */ }
+  return rondes.map((r) => ({ ...r, verzoeken: perOrder.get(r.id) || [] }));
+}
+
 /**
  * Recent orders, active ones first — "duidelijk overzicht van wat er gedaan
  * moet worden."
@@ -8092,7 +9099,7 @@ async function loadOrders(env, status = '', { q = '', filter = '', hidden = fals
     // een belofte die openstaat, en de enige reden dat die lijst niet bestond
     // is dat je hem uit twee kolommen moet samenstellen die nooit naast elkaar
     // stonden.
-    clauses.push("payment_status = 'paid' AND status IN ('received','in_production','human_check')");
+    clauses.push("payment_status IN ('paid','plan','credits') AND status IN ('received','in_production','human_check')");
   } else if (filter === 'delivered_unpaid') {
     // Deel twee, en de duurste: geleverd en nooit betaald. Dit is het enige
     // filter in dit dashboard dat over verlies gaat in plaats van over werk.
@@ -8172,6 +9179,28 @@ async function loadOrders(env, status = '', { q = '', filter = '', hidden = fals
       for (const o of orders) o.unannounced = byOrder.get(o.id) || 0;
     } catch {
       for (const o of orders) o.unannounced = 0;
+    }
+  }
+  /* ── WAT ER NOG ONTBREEKT, PER BESTELLING — 8 oktober 2026 (punt 2.05) ─────
+     Eén query voor alle bestellingen samen, alleen de uploads van bestellingen
+     die nog niet geleverd zijn (daar is een ontbrekende foto nog werk). Geen
+     IN-lijst met tweehonderd kenmerken: D1 neemt hoogstens honderd parameters.
+     Mislukt hij, dan staat er geen regel — zoals gisteren. */
+  if (orders.some((o) => VOOR_LEVERING.has(String(o.status || '')))) {
+    try {
+      const { results } = await env.DB.prepare(
+        `SELECT f.order_id AS order_id, f.kind AS kind, f.product_key AS product_key, f.shot AS shot
+           FROM files f JOIN orders o ON o.id = f.order_id
+          WHERE f.kind = 'upload' AND o.status IN ('received', 'in_production', 'human_check')`
+      ).all();
+      const perOrder = new Map();
+      for (const r of results || []) {
+        if (!perOrder.has(r.order_id)) perOrder.set(r.order_id, []);
+        perOrder.get(r.order_id).push(r);
+      }
+      for (const o of orders) o.ontbreekt = ontbreektVoorAdmin(o, perOrder.get(o.id) || []);
+    } catch {
+      for (const o of orders) o.ontbreekt = null;
     }
   }
   return orders;
@@ -8369,17 +9398,463 @@ async function mollieMethoden(env) {
        naar buiten praat, en een adminpagina die blijft hangen omdat Mollie traag
        is, is erger dan een tabel die "niet te lezen" zegt. Drie seconden is ruim
        voor een lijst van twintig regels. */
-    const res = await fetch(`${MOLLIE_API}/methods`, {
-      headers: { Authorization: `Bearer ${key}`, Accept: 'application/json' },
-      signal: AbortSignal.timeout(3000),
-    });
-    if (!res.ok) return { staat: 'fout', methoden: null };
-    const data = await res.json();
-    const ids = (data?._embedded?.methods || []).map((m) => String(m.id));
-    return { staat: 'gelezen', methoden: ids };
+    /* ── EN DE LIJST VOOR TERUGKERENDE BETALINGEN ERNAAST — 8 oktober 2026 (8.01)
+       De gewone lijst is die voor losse betalingen. SEPA-incasso is een methode
+       voor TERUGKERENDE betalingen en staat daar niet altijd in, ook als hij aan
+       staat; dan zei deze tabel "UIT" over iets wat aan stond. Daarom ook
+       `?sequenceType=recurring`, tegelijk, en de twee lijsten samen. Beide zijn
+       leesverzoeken: er wordt niets aangemaakt. */
+    const lees = async (pad) => {
+      const res = await fetch(`${MOLLIE_API}/methods${pad}`, {
+        headers: { Authorization: `Bearer ${key}`, Accept: 'application/json' },
+        signal: AbortSignal.timeout(3000),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return (data?._embedded?.methods || []).map((m) => String(m.id));
+    };
+    const [los, terug] = await Promise.all([lees(''), lees('?sequenceType=recurring').catch(() => null)]);
+    if (!los) return { staat: 'fout', methoden: null };
+    return { staat: 'gelezen', methoden: [...new Set([...los, ...(terug || [])])] };
   } catch {
     return { staat: 'fout', methoden: null };
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * KLAAR VOOR LIVE — 8 oktober 2026 (punt 8.01)
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * De overstap van de testsleutel naar de live-sleutel gebeurt één keer, en hij
+ * moet in één keer goed: het eerste echte geld, de eerste echte factuur. Er is
+ * met opzet geen schakelaar (§21 van het overzicht): de Mollie-sleutel beslist
+ * of iets echt is. Dit blok zet de vier stappen in hun vaste volgorde, leest
+ * zelf hoe ver het is, en zegt per rode regel in gewone woorden wat Lucas doet.
+ *
+ *   1 · MET DE TESTSLEUTEL NOG AAN proefabonnementen opzeggen en open
+ *       proefbestellingen annuleren. Met de live-sleutel bereikt de site die bij
+ *       Mollie niet meer, en een open proefbestelling kreeg op dag 3 een
+ *       herinnering waarvan de link een échte betaling aanmaakt (de cron slaat
+ *       ze sinds vandaag met een live-sleutel over, maar opgeruimd is beter).
+ *   2 · In Mollie, onder Live, de betaalmethoden aanzetten die de code gebruikt.
+ *       Dat valt pas te controleren als de live-sleutel erop staat; tot dan is
+ *       het een opdracht en geen controle.
+ *   3 · De live-sleutel op BEIDE Workers: de site en de nachtelijke taak. De
+ *       site leest hij hier zelf; de cron schrijft elke nacht op met welke
+ *       sleutel hij draaide (cron_modus, zie heartbeat() in cron/index.js).
+ *   4 · Eén rookproef (Lucas koos V4 = a): een bevriend bedrijf betaalt de
+ *       proef (€1 + btw) en krijgt alles terug. Dan bestaan de eerste echte
+ *       factuur en de eerste creditnota vóór de eerste klant. Groen als er een
+ *       betaling met mode "live" is (payments.raw_payload) met een factuur én
+ *       een creditnota uit de echte reeks.
+ *
+ * Staat alles goed, dan krimpt het blok tot één regel. Het is een overgang,
+ * geen vast scherm.
+ */
+const LIVE_METHODEN = [
+  ['ideal', 'iDEAL', 'bestellingen'],
+  ['creditcard', 'Kaart', 'bestellingen'],
+  ['bancontact', 'Bancontact', 'bestellingen uit België'],
+  ['paypal', 'PayPal', 'bestellingen van buiten Nederland'],
+  ['directdebit', 'SEPA-incasso', 'de maandtermijnen van een abonnement'],
+];
+
+/** De stand van de Mollie-sleutel op deze Worker, zonder de sleutel ooit te tonen. */
+function sleutelStand(env) {
+  const k = String(env?.MOLLIE_API_KEY || '').trim();
+  if (!k) return 'geen';
+  if (mollieKeyProblems(env)) return 'onleesbaar';
+  return /^live_/.test(k) ? 'live' : 'test';
+}
+
+/** De voorwaarde voor "open proefbestelling": dezelfde in de telling en in de knop. */
+const OPEN_PROEF_WHERE = `COALESCE(testmodus, 0) = 1
+   AND COALESCE(payment_status, 'unpaid') = 'unpaid'
+   AND status NOT IN ('cancelled', 'delivered')
+   AND COALESCE(total_cents, 0) > 0`;
+
+/**
+ * Wat er nu staat. Elk deel vangt zijn eigen fout: een ontbrekende tabel of
+ * kolom maakt van die regel "onbekend", niet van de hele pagina een fout.
+ */
+export async function klaarVoorLiveStand(env, methoden = { staat: 'sleutel', methoden: null }) {
+  const db = env?.DB;
+  const veilig = async (fn, terug) => { try { return await fn(); } catch { return terug; } };
+  const jaar = new Date().getUTCFullYear();
+  const [abos, open, reeks, instellingen, rook] = await Promise.all([
+    veilig(async () => (await db.prepare(
+      `SELECT s.id, s.ref, s.customer_id, s.status, c.brand, c.email
+         FROM subscriptions s LEFT JOIN customers c ON c.id = s.customer_id
+        WHERE COALESCE(s.testmodus, 0) = 1 AND s.status IN ('active', 'paused')
+        ORDER BY s.id LIMIT 20`
+    ).all())?.results || [], null),
+    veilig(async () => Number((await db.prepare(`SELECT COUNT(*) AS n FROM orders WHERE ${OPEN_PROEF_WHERE}`).first())?.n) || 0, null),
+    veilig(async () => (await db.prepare('SELECT year, last_number FROM invoice_series WHERE year IN (?1, ?2)').bind(jaar, -jaar).all())?.results || [], []),
+    veilig(async () => (await db.prepare(
+      "SELECT key, value FROM app_settings WHERE key IN ('cron_modus', 'cron_last_run')"
+    ).all())?.results || [], []),
+    veilig(async () => await db.prepare(
+      `SELECT o.id, o.ref, i.number AS factuur,
+              (SELECT c.number FROM credit_notes c
+                WHERE c.order_id = o.id AND COALESCE(c.testmodus, 0) = 0
+                ORDER BY c.id LIMIT 1) AS creditnota
+         FROM payments p
+         JOIN orders o ON o.id = p.order_id
+         LEFT JOIN invoices i ON i.order_id = o.id AND COALESCE(i.testmodus, 0) = 0
+        WHERE p.provider = 'mollie' AND p.raw_payload LIKE '%"mode":"live"%'
+        ORDER BY (creditnota IS NULL), p.id
+        LIMIT 1`
+    ).first(), null),
+  ]);
+  const laatste = (y) => Number((reeks || []).find((r) => Number(r.year) === y)?.last_number) || 0;
+  const zet = new Map((instellingen || []).map((r) => [r.key, r.value]));
+  let cron = null;
+  try { cron = JSON.parse(zet.get('cron_modus') || 'null'); } catch { cron = null; }
+  return {
+    site: sleutelStand(env),
+    cron,
+    cronLaatst: zet.get('cron_last_run') || null,
+    proefAbos: abos,
+    proefOpen: open,
+    volgende: formatNumber(jaar, laatste(jaar) + 1),
+    echteUitgegeven: laatste(jaar),
+    proefUitgegeven: laatste(-jaar),
+    rookproef: rook || null,
+    methoden,
+  };
+}
+
+/** Eén regel in een stap: wat, de staat, en wat je doet. */
+function liveRij(wat, staat, uitleg) {
+  const pil = staat === 'klaar'
+    ? '<span class="pill">&#10003; klaar</span>'
+    : staat === 'te-doen'
+      ? '<span class="pill danger">te doen</span>'
+      : staat === 'wacht'
+        ? '<span class="pill is-warn">wacht</span>'
+        : '<span class="pill is-warn">onbekend</span>';
+  return `<tr><td>${wat}</td><td>${pil}</td><td class="meta">${uitleg}</td></tr>`;
+}
+
+/** De stappen als gegevens, zodat de test ze kan lezen zonder HTML te ontleden. */
+export function klaarVoorLiveStappen(s) {
+  const siteLive = s.site === 'live';
+  const proef = euro(withVat(AMOUNT.testSample), 'nl');
+  const stappen = [];
+
+  /* 1 · Proefwerk opruimen, met de testsleutel nog aan. */
+  const abos = s.proefAbos;
+  const r1a = abos === null
+    ? { staat: 'onbekend', uitleg: 'De abonnementen zijn niet te lezen (draait migratie 0046?).' }
+    : !abos.length
+      ? { staat: 'klaar', uitleg: 'Geen lopende proefabonnementen.' }
+      : {
+        staat: 'te-doen',
+        uitleg: (siteLive
+          ? 'De live-sleutel staat er al, dus de site bereikt deze proefabonnementen bij Mollie niet meer. Zet ze stop in het Mollie-dashboard (Testmodus aan → Klanten → het abonnement → Opzeggen) en vraag Claude daarna de rij op opgezegd te zetten: '
+          : 'Zeg ze nu op, terwijl de testsleutel er nog op staat: open de klant, klik op "Inloglink", en zeg in Studio bij Facturering het abonnement op. ')
+          + abos.map((a) => `<a href="/admin/customers/${Number(a.customer_id)}">${esc(a.ref)}${a.brand ? ` (${esc(a.brand)})` : ''}</a>`).join(', '),
+      };
+  const n = s.proefOpen;
+  const r1b = n === null
+    ? { staat: 'onbekend', uitleg: 'De bestellingen zijn niet te lezen.' }
+    : n === 0
+      ? { staat: 'klaar', uitleg: 'Geen open proefbestellingen.' }
+      : {
+        staat: 'te-doen',
+        uitleg: `${n} open proefbestelling${n === 1 ? '' : 'en'}. Met de live-sleutel zou een herinnering daarvoor een échte betaallink maken. Annuleer ze in één keer; er gaat geen mail uit en er wordt niets betaald.`
+          + `<form method="post" action="/admin/diagnose/proef-annuleren"><button class="btn btn-sm" type="submit">Annuleer de ${n} open proefbestelling${n === 1 ? '' : 'en'}</button></form>`,
+      };
+  stappen.push({ nr: 1, titel: 'Proefwerk opruimen, met de testsleutel nog aan', rijen: [
+    { wat: 'Proefabonnementen', ...r1a },
+    { wat: 'Open proefbestellingen', ...r1b },
+  ] });
+
+  /* 2 · De betaalmethoden in Mollie live. */
+  const rijen2 = [];
+  if (!siteLive) {
+    rijen2.push({ wat: 'Betaalmethoden (live)', staat: 'wacht', uitleg:
+      `Zet in het Mollie-dashboard, met de schakelaar op Live (niet Test), bij Betaalmethoden aan: ${LIVE_METHODEN.map((m) => m[1]).join(', ')}. Controleren kan pas als de live-sleutel erop staat (stap 3); dan kleurt deze regel vanzelf.` });
+  } else if (s.methoden?.staat !== 'gelezen') {
+    rijen2.push({ wat: 'Betaalmethoden (live)', staat: 'onbekend', uitleg: 'Mollie gaf geen leesbare lijst terug. Kijk zelf in het Mollie-dashboard (Live) bij Betaalmethoden.' });
+  } else {
+    for (const [id, naam, waarvoor] of LIVE_METHODEN) {
+      const aan = s.methoden.methoden.includes(id);
+      rijen2.push({ wat: naam, staat: aan ? 'klaar' : 'te-doen', uitleg: aan ? `Aan — voor ${waarvoor}.` : `Uit. Nodig voor ${waarvoor}: zet hem aan in het Mollie-dashboard (Live) bij Betaalmethoden.` });
+    }
+  }
+  stappen.push({ nr: 2, titel: 'In Mollie live de betaalmethoden aanzetten', rijen: rijen2 });
+
+  /* 3 · De live-sleutel op beide Workers. */
+  const zetSleutel = (worker) => `Cloudflare-dashboard → Workers &amp; Pages → <strong>${worker}</strong> → Settings → Variables and Secrets → bij MOLLIE_API_KEY het potloodje → plak de sleutel die met <code>live_</code> begint (Mollie-dashboard, Live → Ontwikkelaars → API-sleutels) → Deploy. Dat doe je zelf; Claude zet nooit een sleutel.`;
+  const cronMollie = s.cron?.mollie || null;
+  stappen.push({ nr: 3, titel: 'De live-sleutel op beide Workers', rijen: [
+    { wat: 'Site (visuails-site)', staat: siteLive ? 'klaar' : 'te-doen',
+      uitleg: siteLive ? 'Draait op de live-sleutel.' : (s.site === 'onleesbaar' ? 'De sleutel is onleesbaar (zie de tabel hieronder). ' : '') + zetSleutel('visuails-site') },
+    { wat: 'Nachtelijke taak (visuails-cron)',
+      staat: cronMollie === 'live' ? 'klaar' : 'te-doen',
+      uitleg: cronMollie === 'live'
+        ? `Draaide vannacht op de live-sleutel (${esc(s.cron?.op || '')} UTC).`
+        : !s.cron
+          ? 'De nachtelijke taak heeft nog niet gemeld met welke sleutel hij draait: hij is nog niet uitgerold of heeft na de uitrol nog geen nacht gedraaid. Eerst UITROLLEN.bat, dan de volgende ochtend hier kijken.'
+          : `Draaide vannacht op: ${esc(cronMollie || 'onbekend')}. ${zetSleutel('visuails-cron')} De cron meldt de nieuwe stand na de volgende nacht; kijk dan de ochtend erna hier.` },
+  ] });
+
+  /* 4 · De rookproef. */
+  const rook = s.rookproef;
+  const rijen4 = [];
+  if (!siteLive) {
+    rijen4.push({ wat: 'Echte betaling', staat: 'wacht', uitleg: `Na stap 3: een bevriend bedrijf dat nog nooit een proef deed, bestelt via "Probeer VISUAILS" (/test-sample) en betaalt ${proef}.` });
+    rijen4.push({ wat: 'Volledig terugbetaald', staat: 'wacht', uitleg: 'Daarna betaal je alles terug; dan ontstaat de eerste creditnota.' });
+  } else {
+    rijen4.push(rook
+      ? { wat: 'Echte betaling', staat: 'klaar', uitleg: `<a href="/admin/orders/${Number(rook.id)}/files">${esc(rook.ref)}</a> betaald${rook.factuur ? ` · factuur ${esc(rook.factuur)}` : ' · de factuur is nog niet uitgegeven (de nacht maakt hem af)'}.` }
+      : { wat: 'Echte betaling', staat: 'te-doen', uitleg: `Laat een bevriend bedrijf dat nog nooit een proef deed via "Probeer VISUAILS" (/test-sample) ${proef} betalen. Daarmee ontstaat de eerste echte factuur.` });
+    rijen4.push(rook?.creditnota
+      ? { wat: 'Volledig terugbetaald', staat: 'klaar', uitleg: `Creditnota ${esc(rook.creditnota)}.` }
+      : { wat: 'Volledig terugbetaald', staat: rook ? 'te-doen' : 'wacht', uitleg: rook
+        ? `Open <a href="/admin/orders/${Number(rook.id)}/files">${esc(rook.ref)}</a> en betaal alles terug. Mollie meldt de terugbetaling en de creditnota volgt vanzelf.`
+        : 'Na de betaling: alles terugbetalen in /admin, dan volgt de eerste creditnota.' });
+  }
+  stappen.push({ nr: 4, titel: `Eén rookproef: ${proef} betalen en terugkrijgen`, rijen: rijen4 });
+
+  return stappen;
+}
+
+/** Het blok zelf. Alles klaar: één regel. Anders de vier stappen. */
+export function klaarVoorLiveBlok(s) {
+  const stappen = klaarVoorLiveStappen(s);
+  const alles = stappen.every((st) => st.rijen.every((r) => r.staat === 'klaar'));
+  const stand = (m) => (m === 'live' ? 'live' : m === 'test' ? 'test' : m === 'geen' ? 'geen sleutel' : m ? 'onleesbaar' : 'nog niet gemeld');
+  const kop = `<p class="meta"><strong>site: ${stand(s.site)} &middot; cron: ${stand(s.cron?.mollie)}</strong> &middot; Volgende factuur: <strong>${esc(s.volgende)}</strong> &middot; PROEF-facturen tellen niet mee (${Number(s.proefUitgegeven) || 0} uitgegeven).</p>`;
+  if (alles) {
+    return `<section id="klaar-voor-live"><h2>Klaar voor live</h2>${kop}<p class="meta">&#10003; Alles staat goed: beide Workers draaien op de live-sleutel en de eerste echte factuur en creditnota bestaan. Dit blok heeft zijn werk gedaan.</p></section>`;
+  }
+  const waarschuwing = s.echteUitgegeven > 0 && !s.rookproef
+    ? `<p class="meta is-warn">In de echte reeks van dit jaar zijn al ${Number(s.echteUitgegeven)} nummers uitgegeven, terwijl er nog geen live-betaling is. Zijn dat oude proefnummers van vóór de PROEF-reeks? Vraag het Claude vóór de rookproef, dan begint de eerste klant niet op een vreemd nummer.</p>`
+    : '';
+  return `<section id="klaar-voor-live">
+    <h2>Klaar voor live</h2>
+    <p class="meta">Vier stappen, in deze volgorde. Werk alleen de regels af waar "te doen" staat; de rest staat goed of wacht op een eerdere stap. Er is geen schakelaar: de Mollie-sleutel beslist of iets echt is. De hele volgorde, met wat je ziet als het gelukt is, staat in <code>kladblok/LIVE-STAPPEN.md</code>.</p>
+    ${kop}${waarschuwing}
+    ${stappen.map((st) => `<h3>${st.nr} &middot; ${esc(st.titel)}</h3>
+    <table class="tbl"><thead><tr><th>Wat</th><th>Staat</th><th>Wat je doet</th></tr></thead>
+      <tbody>${st.rijen.map((r) => liveRij(esc(r.wat), r.staat, r.uitleg)).join('')}</tbody></table>`).join('\n')}
+  </section>`;
+}
+
+/**
+ * Stap 1 in één klik: de open proefbestellingen annuleren.
+ *
+ * TWEE VERZOEKEN EN NIET TWEE PER BESTELLING. Op het gratis plan mag één verzoek
+ * aan de site 50 databaseverzoeken doen (src/lib/meetlat.js); een lus over dertig
+ * proefbestellingen met elk een UPDATE en een tijdlijnregel liep daar overheen.
+ * Dus één INSERT … SELECT voor de tijdlijn en één UPDATE, in één batch, met
+ * dezelfde voorwaarde als de telling in het blok.
+ *
+ * Geen mail, geen Mollie: een proefbestelling is onbetaald en hoort bij een
+ * proefklant van Lucas zelf. cancelled_at gaat mee, zoals bij elke annulering.
+ */
+async function handleProefAnnuleren(context) {
+  const { env } = context;
+  const admin = await currentAdmin(context);
+  let aantal = 0;
+  try {
+    const [, upd] = await env.DB.batch([
+      env.DB.prepare(
+        `INSERT INTO order_events (order_id, status, note, actor)
+         SELECT id, 'cancelled',
+                CASE WHEN lang = 'en' THEN 'Cancelled: test order, cleared before going live. Nothing was paid.'
+                     ELSE 'Geannuleerd: proefbestelling, opgeruimd vóór de overstap naar live. Er is niets betaald.' END,
+                'admin'
+           FROM orders WHERE ${OPEN_PROEF_WHERE}`
+      ),
+      env.DB.prepare(
+        `UPDATE orders
+            SET status = 'cancelled', cancelled_at = COALESCE(cancelled_at, datetime('now')),
+                cancel_reason = 'proefbestelling, opgeruimd vóór live',
+                window_start = NULL, window_end = NULL, window_expires_at = NULL
+          WHERE ${OPEN_PROEF_WHERE}`
+      ),
+    ]);
+    aantal = Number(upd?.meta?.changes) || 0;
+  } catch (err) {
+    return html(page({ title: 'Admin', body: errorBody(
+      `De proefbestellingen zijn niet geannuleerd: ${esc(err?.message || String(err))}. Er is niets gewijzigd.`
+    ) }), 500);
+  }
+  await logAdmin(env, admin, 'order.proef.annuleer', { detail: `${aantal} open proefbestelling(en) geannuleerd vóór live` });
+  return seeOther('/admin/diagnose#klaar-voor-live');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * NACHTWERK, WISSEN EN MAIL — 8 oktober 2026 (punt 9.03)
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Vier stappen in vaste volgorde, elk met een controle die Lucas zelf ziet:
+ * (1) uitrollen en het eerste nachtrapport lezen, (2) één back-up en dan het
+ * wissen aan, (3) de Resend-webhook met zijn secret, (4) de proef met
+ * bounced@resend.dev. Dit blok is de "zo zie je dat het gelukt is" van drie van
+ * die vier: of de nacht draait, of het wissen aan staat (dat meldt de cron zelf,
+ * want PURGE_ENABLED staat op de cron-Worker en niet op deze), en of er ooit een
+ * melding van Resend binnenkwam. Een melding over bounced@resend.dev hoort bij
+ * geen klant en geen bestelling en was daarom nergens in /admin te zien; hier
+ * staat de laatste, wie hij ook betreft.
+ */
+async function nachtwerkStand(env) {
+  try {
+    const rij = await env.DB.prepare(
+      'SELECT email, kind, occurred_at FROM mail_bounces ORDER BY id DESC LIMIT 1'
+    ).first();
+    return { bounce: rij || null, bounceLeesbaar: true };
+  } catch {
+    return { bounce: null, bounceLeesbaar: false };
+  }
+}
+
+function nachtwerkBlok(stand, nacht, env) {
+  const cron = stand.cron;
+  const secret = env?.RESEND_WEBHOOK_SECRET !== undefined && env?.RESEND_WEBHOOK_SECRET !== null && String(env.RESEND_WEBHOOK_SECRET) !== '';
+  const rijen = [
+    stand.cronLaatst
+      ? { wat: 'De nachtelijke taak', staat: 'klaar', uitleg: `Laatst gedraaid: ${esc(stand.cronLaatst)} (UTC). Het nachtrapport komt in hello@ als er iets te melden is.` }
+      : { wat: 'De nachtelijke taak', staat: 'te-doen', uitleg: 'Heeft nog nooit gedraaid. Rol uit met UITROLLEN.bat en kijk de ochtend erna opnieuw.' },
+    !cron
+      ? { wat: 'Wissen na de bewaartermijn', staat: 'wacht', uitleg: 'Nog niet gemeld; de cron schrijft dit na zijn eerste nacht.' }
+      : cron.wissen
+        ? { wat: 'Wissen na de bewaartermijn', staat: 'klaar', uitleg: 'Aan: wat over de termijn uit /privacy is, gaat elke nacht weg uit R2 en uit de database.' }
+        : { wat: 'Wissen na de bewaartermijn', staat: 'te-doen', uitleg: 'Uit (verslagmodus): het nachtrapport noemt wat er weg zou gaan, er wordt niets gewist. Na één gecontroleerde back-up gaat PURGE_ENABLED in cron/wrangler.toml op "true" (stap 5 in kladblok/LIVE-STAPPEN.md).' },
+    secret
+      ? { wat: 'Resend-webhook', staat: 'klaar', uitleg: 'Het geheim RESEND_WEBHOOK_SECRET staat op deze Worker.' }
+      : { wat: 'Resend-webhook', staat: 'te-doen', uitleg: 'Het geheim RESEND_WEBHOOK_SECRET is niet gezet. Maak in Resend de webhook naar https://visuails.com/api/webhook/resend (bounced en complained) en zet zijn signing secret hier als geheim (stap 6 in kladblok/LIVE-STAPPEN.md).' },
+    !nacht.bounceLeesbaar
+      ? { wat: 'Melding van Resend', staat: 'onbekend', uitleg: 'De tabel mail_bounces is niet te lezen.' }
+      : nacht.bounce
+        ? { wat: 'Melding van Resend', staat: 'klaar', uitleg: `Laatste: ${esc(String(nacht.bounce.occurred_at || ''))} &middot; ${esc(String(nacht.bounce.kind || ''))} &middot; ${esc(String(nacht.bounce.email || ''))}. De webhook werkt.` }
+        : { wat: 'Melding van Resend', staat: secret ? 'te-doen' : 'wacht', uitleg: 'Nog nooit een melding binnengekomen. Controle: meld onderaan de site bounced@resend.dev aan voor de Studiobrief; binnen een minuut staat hier een regel (stap 7 in kladblok/LIVE-STAPPEN.md).' },
+  ];
+  return `<section id="nachtwerk"><h2>Nachtwerk, wissen en mail</h2>
+    <table class="tbl"><thead><tr><th>Wat</th><th>Staat</th><th>Wat je doet</th></tr></thead>
+      <tbody>${rijen.map((r) => liveRij(esc(r.wat), r.staat, r.uitleg)).join('')}</tbody></table></section>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * DE GRATIS GRENZEN — 8 oktober 2026 (punt 9.05)
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas koos (V3): Workers en Resend op het gratis plan. Dit blok zet naast elke
+ * grens wat er gebruikt wordt, voor zover de site dat zelf kan zien:
+ *
+ *   · wat de nachtelijke taak vannacht gebruikte (cron_meting, geschreven door
+ *     de meetlat in cron/index.js);
+ *   · hoeveel mail Resend vandaag en deze maand telt — GET /usage, een
+ *     leesverzoek; een sleutel die alleen mag versturen krijgt daar "geen
+ *     toegang", en dan zegt de regel waar je het in Resend ziet;
+ *   · hoe groot de database is (D1 geeft dat bij elke query terug als
+ *     meta.size_after).
+ *
+ * Wat de site NIET kan zien — verzoeken per dag en rekentijd per verzoek — staat
+ * er met de plek in het Cloudflare-dashboard waar je het wél ziet. De grenzen
+ * zelf komen uit src/lib/meetlat.js, met hun bron.
+ */
+async function grenzenStand(env) {
+  const uit = { meting: null, resend: null, d1Bytes: null };
+  try {
+    const rij = await env.DB.prepare("SELECT value FROM app_settings WHERE key = 'cron_meting'").first();
+    uit.meting = rij?.value ? JSON.parse(rij.value) : null;
+  } catch { uit.meting = null; }
+  try {
+    const res = await env.DB.prepare('SELECT COUNT(*) AS n FROM app_settings').all();
+    const b = Number(res?.meta?.size_after);
+    uit.d1Bytes = Number.isFinite(b) && b > 0 ? b : null;
+  } catch { uit.d1Bytes = null; }
+  if (env?.RESEND_API_KEY) {
+    try {
+      const res = await fetch('https://api.resend.com/usage', {
+        headers: { Authorization: `Bearer ${String(env.RESEND_API_KEY).trim()}`, Accept: 'application/json' },
+        signal: AbortSignal.timeout(3000),
+      });
+      if (res.status === 401 || res.status === 403) uit.resend = { staat: 'geen-toegang' };
+      else if (!res.ok) uit.resend = { staat: 'fout' };
+      else {
+        const d = await res.json();
+        uit.resend = { staat: 'gelezen', dag: d?.emails?.daily || null, maand: d?.emails?.monthly || null };
+      }
+    } catch {
+      uit.resend = { staat: 'fout' };
+    }
+  }
+  return uit;
+}
+
+const getal = (n) => (n === null || n === undefined ? '?' : String(Math.round(Number(n))).replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
+
+function grenzenBlok(g) {
+  const p = GRENZEN.gratis;
+  const rijen = [];
+  const m = g.meting;
+  rijen.push(m
+    ? `<tr><td>Nachtelijke taak (${esc(String(m.op || ''))} UTC)</td><td>database ${getal(m.d1)} van ${getal(p.d1PerAanroep)} &middot; Cloudflare intern ${getal(Number(m.d1) + Number(m.r2))} van ${getal(p.internPerAanroep)} &middot; naar buiten ${getal(m.extern)} van ${getal(p.externPerAanroep)}</td><td class="meta">${Array.isArray(m.gestopt) && m.gestopt.length ? `${esc(m.gestopt.join(' en '))} stopte vroeg om binnen de grens te blijven; de rest gaat de volgende nacht.` : 'Per run. Vanaf 70% staat het in het nachtrapport.'}</td></tr>`
+    : `<tr><td>Nachtelijke taak</td><td>nog niet gemeten</td><td class="meta">De cron schrijft dit na zijn eerste nacht.</td></tr>`);
+  const r = g.resend;
+  const resendRij = !r
+    ? 'geen RESEND_API_KEY'
+    : r.staat === 'gelezen'
+      ? `vandaag ${getal(r.dag?.used)} van ${getal(r.dag?.limit ?? RESEND_GRATIS.perDag)} &middot; deze maand ${getal(r.maand?.used)} van ${getal(r.maand?.limit ?? RESEND_GRATIS.perMaand)}`
+      : r.staat === 'geen-toegang'
+        ? 'deze sleutel mag het gebruik niet lezen'
+        : 'Resend gaf geen antwoord';
+  rijen.push(`<tr><td>Mail (Resend)</td><td>${resendRij}</td><td class="meta">Gratis: ${getal(RESEND_GRATIS.perDag)} per dag en ${getal(RESEND_GRATIS.perMaand)} per maand. Elke ontvanger telt, ook de bcc van een factuur aan hello@. Ook te zien in Resend &rarr; Usage.</td></tr>`);
+  rijen.push(`<tr><td>Database (D1)</td><td>${g.d1Bytes ? `${(g.d1Bytes / 1048576).toFixed(1).replace('.', ',')} MB van ${getal(p.d1MaxMb)} MB` : 'grootte niet gemeld'}</td><td class="meta">Gratis: ${getal(p.d1RijenGelezenPerDag)} rijen lezen en ${getal(p.d1RijenGeschrevenPerDag)} schrijven per dag; zie Cloudflare &rarr; Storage &amp; Databases &rarr; D1 &rarr; visuails &rarr; Metrics.</td></tr>`);
+  rijen.push(`<tr><td>Verzoeken en rekentijd</td><td>niet vanuit de site te meten</td><td class="meta">Gratis: ${getal(p.verzoekenPerDag)} verzoeken per dag en ${getal(p.cpuMsPerAanroep)} ms rekentijd per verzoek, ${getal(p.d1PerAanroep)} databaseverzoeken per verzoek. Zie Cloudflare &rarr; Workers &amp; Pages &rarr; visuails-site &rarr; Metrics (verzoeken, fouten, CPU-tijd).</td></tr>`);
+  return `<section id="grenzen"><h2>De gratis grenzen</h2>
+    <p class="meta">Workers en Resend draaien op het gratis plan. Wat hier staat, meet de drukteproef (stap 8 in <code>kladblok/LIVE-STAPPEN.md</code>).</p>
+    <table class="tbl"><thead><tr><th>Wat</th><th>Gebruik</th><th>Grens en waar je kijkt</th></tr></thead>
+      <tbody>${rijen.join('')}</tbody></table></section>`;
+}
+
+/* ── DE BOEKHOUDING OP HET DIAGNOSESCHERM — 8 oktober 2026 (8.08) ────────────
+   Aan of uit, vanaf wanneer, hoeveel er staat, de laatste fout — en de
+   instellingen zelf, zodat Lucas de grootboekcodes en btw-codes kan nakijken
+   zonder in de code te zoeken. De vorm van het token, nooit de waarde. */
+function boekhoudingDiagnose(b, vorm) {
+  const t = b.telling || {};
+  const n = (k) => Number(t[k] || 0);
+  const tokenStaat = !b.aan
+    ? '<span class="pill">uit</span>'
+    : vorm?.verdict ? `<span class="pill is-warn">${esc(vorm.verdict)}</span>` : '<span class="pill">aan</span>';
+  const inst = b.inst;
+  const instRij = (naam, waarde, variabele) => `<tr><td>${esc(naam)}</td><td><code>${esc(waarde)}</code></td><td class="meta"><code>${esc(variabele)}</code></td></tr>`;
+  return `<h2>De boekhouding (e-Boekhouden)</h2>
+    <p class="meta">Elke uitgereikte factuur, creditnota en abonnementsfactuur gaat achteraf naar e-Boekhouden, met de Mollie-betaling ertegenover. Een fout houdt nooit een betaling of factuur tegen; hij komt in /admin/facturen met een knop "Opnieuw".</p>
+    <table class="tbl">
+      <thead><tr><th>Onderdeel</th><th>Staat</th><th>Toelichting</th></tr></thead>
+      <tbody>
+        <tr><td>Koppeling</td><td>${tokenStaat}</td><td class="meta">${b.aan ? `EBOEKHOUDEN_API_TOKEN is gezet (${esc(String(vorm?.length || 0))} tekens)` : 'zonder EBOEKHOUDEN_API_TOKEN gaat er niets naar e-Boekhouden'}</td></tr>
+        <tr><td>Boekt vanaf</td><td>${b.vanaf ? `<code>${esc(b.vanaf)}</code>` : '&mdash;'}</td><td class="meta">${inst.vanaf ? 'uit EBOEKHOUDEN_VANAF' : 'de dag van de eerste run; eerder kan met EBOEKHOUDEN_VANAF'}</td></tr>
+        ${inst.proefreeks ? '<tr><td>Proefdocumenten</td><td><span class="pill is-warn">gaan mee</span></td><td class="meta">EBOEKHOUDEN_PROEFREEKS staat aan: alleen bedoeld voor een proefadministratie</td></tr>' : ''}
+        <tr><td>Boekingen</td><td>${b.tabel ? `${n('geboekt')} geboekt` : '<span class="pill is-warn">geen tabel</span>'}</td><td class="meta">${b.tabel ? `${n('wacht') + n('bezig')} staan klaar, ${n('mislukt')} mislukt` : 'draai migratie 0056'}</td></tr>
+        <tr><td>Laatste fout</td><td>${b.laatsteFout ? esc(String(b.laatsteFout.poging_at || '').slice(0, 16)) : '&mdash;'}</td><td class="meta">${b.laatsteFout ? `${esc(b.laatsteFout.document)} (${esc(b.laatsteFout.soort)}): ${esc(String(b.laatsteFout.laatste_fout || '').slice(0, 300))}` : 'geen'}</td></tr>
+        <tr><td>Laatst geboekt</td><td>${b.laatsteGeboekt ? esc(String(b.laatsteGeboekt.geboekt_at || '').slice(0, 16)) : '&mdash;'}</td><td class="meta">${b.laatsteGeboekt ? `${esc(b.laatsteGeboekt.document)} (${esc(b.laatsteGeboekt.soort)})` : 'nog niets'}</td></tr>
+      </tbody>
+    </table>
+    <p class="meta">De instellingen, om na te kijken. Elke waarde is te veranderen met de variabele erachter, op beide workers (de site en visuails-cron).</p>
+    <table class="tbl">
+      <thead><tr><th>Instelling</th><th>Waarde</th><th>Variabele</th></tr></thead>
+      <tbody>
+        ${instRij('Grootboek debiteuren', inst.grootboek.debiteuren, 'EBOEKHOUDEN_GROOTBOEK_DEBITEUREN')}
+        ${instRij('Grootboek omzet', inst.grootboek.omzet, 'EBOEKHOUDEN_GROOTBOEK_OMZET')}
+        ${instRij('Grootboek omzet EU (verlegd)', inst.grootboek.omzetEu, 'EBOEKHOUDEN_GROOTBOEK_OMZET_EU')}
+        ${instRij('Grootboek omzet buiten de EU', inst.grootboek.omzetBuitenEu, 'EBOEKHOUDEN_GROOTBOEK_OMZET_BUITEN_EU')}
+        ${instRij('Tussenrekening Mollie', inst.grootboek.mollie, 'EBOEKHOUDEN_GROOTBOEK_MOLLIE')}
+        ${instRij('Btw-code Nederland', inst.btw.nl, 'EBOEKHOUDEN_BTW_NL')}
+        ${instRij('Btw-code EU, verlegd', inst.btw.eu, 'EBOEKHOUDEN_BTW_EU')}
+        ${instRij('Btw-code buiten de EU', inst.btw.buitenEu, 'EBOEKHOUDEN_BTW_BUITEN_EU')}
+      </tbody>
+    </table>
+    ${b.aan ? `<form method="post" action="/admin/boekhouding/test">
+      <button class="btn" type="submit">Koppeling testen (boekt niets)</button>
+    </form>` : ''}`;
 }
 
 /** Leesroute: wat er van de secrets te zeggen valt zonder er één te lezen. */
@@ -8422,8 +9897,15 @@ async function renderDiagnose(context) {
     ['FROM_EMAIL', 'zonder: mails gaan uit met de standaardafzender'],
     ['INVOICE_BCC', 'leeg mag: dan krijgt de studio geen kopie van elke factuur'],
     ['RESEND_WEBHOOK_SECRET', 'zonder: /admin ziet niet welke mail niet aankwam (bounces) — zet de webhook in Resend op /api/webhook/resend'],
+    /* o03 (8 okt): zonder deze twee staat de botcheck uit (src/lib/turnstile.js);
+       stap 6b in kladblok/LIVE-STAPPEN.md zegt waar je ze maakt. */
+    ['TURNSTILE_SITE_KEY', 'zonder: geen botcheck op het bestel-, contact-, upload- en briefformulier (stap 6b in kladblok/LIVE-STAPPEN.md)'],
+    ['TURNSTILE_SECRET_KEY', 'zonder: geen botcheck op het bestel-, contact-, upload- en briefformulier (stap 6b in kladblok/LIVE-STAPPEN.md)'],
     ['ALLOWED_ORIGIN_HOSTS', 'leeg mag: alleen visuails.com wordt vertrouwd'],
-    ['PURGE_ENABLED', 'leeg mag: de opruimtaak van de cron rapporteert dan alleen en verwijdert niets (bewust)'],
+    /* PURGE_ENABLED stond hier tot 8 oktober 2026 (9.03), en las altijd "niet
+       gezet": hij hoort op de CRON-Worker, niet op deze. Wat de cron vannacht
+       deed, staat nu in het blok "Nachtwerk, wissen en mail" hierboven, uit
+       cron_modus. */
   ];
   const lanceerRij = ([naam, gevolg]) => {
     const gezet = env?.[naam] !== undefined && env?.[naam] !== null && String(env[naam]) !== '';
@@ -8432,6 +9914,17 @@ async function renderDiagnose(context) {
   };
   const problemen = mollieKeyProblems(env);
   const methoden = await mollieMethoden(env);
+  /* Klaar voor live (8.01), nachtwerk (9.03) en de gratis grenzen (9.05) — 8 oktober 2026. */
+  const [stand, nacht, grenzen] = await Promise.all([
+    klaarVoorLiveStand(env, methoden),
+    nachtwerkStand(env),
+    grenzenStand(env),
+  ]);
+  /* De boekhouding (8.08): leest alleen de database, praat niet met e-Boekhouden.
+     Dat doet de knop "Koppeling testen" eronder, als POST. */
+  const boek = await koppelingStand(env).catch(() => null);
+  /* De beelden die Lucas nog maakt (1.02): via ASSETS nagekeken, niets gedownload. */
+  const beelden = await beeldenStand(env, new URL(context?.request?.url || 'https://visuails.com').origin).catch(() => null);
   const methodeRij = ([id, naam, gevolg]) => {
     if (methoden.staat !== 'gelezen') {
       return `<tr><td><code>${esc(naam)}</code></td><td><span class="pill">niet te lezen</span></td><td class="meta">${esc(gevolg)}</td></tr>`;
@@ -8456,6 +9949,12 @@ async function renderDiagnose(context) {
   const body = `
 ${adminNav('diagnose')}
     <h1>Diagnose</h1>
+    <div class="diag">
+    ${klaarVoorLiveBlok(stand)}
+    ${nachtwerkBlok(stand, nacht, env)}
+    ${grenzenBlok(grenzen)}
+    ${beeldenBlok(beelden)}
+    <h2>De secrets</h2>
     <p class="meta">De vorm van elk secret &mdash; nooit de waarde. Lengte, of elk teken afdrukbaar is, en
     het voorvoegsel alleen waar dat een openbaar merkteken is (<code>test_</code>, <code>live_</code>,
     <code>re_</code>). Dat is precies genoeg om "goed ingesteld" van "een losse toetsaanslag" te scheiden.</p>
@@ -8470,6 +9969,7 @@ ${adminNav('diagnose')}
       <thead><tr><th>Variabele</th><th>Staat</th><th>Als hij leeg is</th></tr></thead>
       <tbody>${VERWACHT.map(lanceerRij).join('')}</tbody>
     </table>
+    ${boek ? boekhoudingDiagnose(boek, secretShape(env?.EBOEKHOUDEN_API_TOKEN)) : ''}
     <h2>De twee betaalmethoden waar geld op staat</h2>
     <p class="meta">Wat er in je Mollie-profiel aanstaat, gelezen met <code>GET /v2/methods</code> &mdash; er wordt
     niets aangemaakt. Deze twee vallen stil om als ze uitstaan: de eerste pas een maand na je eerste abonnee,
@@ -8490,7 +9990,8 @@ ${adminNav('diagnose')}
     vanzelf laadt.</p>
     <form method="post" action="/admin/diagnose/probe">
       <button class="btn" type="submit">Draai de vier probes</button>
-    </form>`;
+    </form>
+    </div>`;
   return html(page({ title: 'Diagnose', body }));
 }
 
@@ -8558,7 +10059,7 @@ async function handleDiagnoseProbe(context) {
   out.methods = {
     note: 'Mollie filters methods by amount. The test sample is the smallest payment the site makes, so this is the shortest the list ever gets.',
     at_smallest: await mollieMethodList(key, AMOUNT.testSample.toFixed(2)),
-    at_large_order: await mollieMethodList(key, ladderTotal('complete', 30).toFixed(2)),
+    at_large_order: await mollieMethodList(key, ladderTotal('lifestyle', 30).toFixed(2)),
   };
 
   out.reading = readDiagnose(out);
@@ -8788,7 +10289,7 @@ function originMismatchDetail(request) {
 
 function loginBody(error = null) {
   return `
-<div class="bar"><a class="mark" href="/">VISUAILS</a></div>
+<div class="bar"><a class="mark" href="/" aria-label="VISUAILS">${MERK}</a></div>
 <form class="login" method="post" action="/admin/login">
   ${error ? `<p class="error">${esc(error)}</p>` : ''}
   <input type="email" name="email" placeholder="E-mailadres" aria-label="E-mailadres" autocomplete="username" required>
@@ -8912,15 +10413,15 @@ const LOG_LABEL = {
   'order.namens': 'Bestelling namens klant', 'order.refund': 'Terugbetaling gestart', 'order.credit': 'Tegoed geboekt', 'order.credit.failed': 'Tegoed NIET geboekt',
   'order.tegoed-terug': 'Tegoed teruggeboekt', 'order.status': 'Status gewijzigd', 'order.announce': 'Beelden gemeld', 'order.note': 'Mededeling aan klant',
   'order.paylink': 'Betaallink opnieuw gemaild', 'order.paylink.niet': 'Betaallink niet verstuurd', 'order.delivery-mail': 'Levermail verstuurd',
-  'order.delivery-mail.mislukt': 'Levermail mislukt', 'order.proef.hide': 'Proefbestellingen verborgen', 'order.created': 'Bestelling binnen',
+  'order.delivery-mail.mislukt': 'Levermail mislukt', 'order.proef.hide': 'Proefbestellingen verborgen', 'order.proef.annuleer': 'Proefbestellingen geannuleerd (vóór live)', 'order.created': 'Bestelling binnen',
   'payment.paid': 'Betaald', 'payment.tegoed': 'Betaald met tegoed', 'payment.refund': 'Terugbetaald', 'payment.short': 'Te weinig betaald',
-  'payment.dubbel': 'Dubbel betaald — teruggestort', 'payment.op-geannuleerd': 'Betaling op geannuleerde bestelling', 'payment.btw-twijfel': 'Btw nakijken', 'payment.chargeback': 'Terugboeking (chargeback)', 'melding.zet': 'Melding in Studio gezet', 'melding.weg': 'Melding in Studio weggehaald',
+  'payment.dubbel': 'Dubbel betaald — teruggestort', 'payment.op-geannuleerd': 'Betaling op geannuleerde bestelling', 'payment.btw-twijfel': 'Btw nakijken', 'payment.chargeback': 'Terugboeking (chargeback)', 'melding.zet': 'Melding in Studio gezet', 'melding.weg': 'Melding in Studio weggehaald', 'proef.stand': 'Proef dicht of open gezet', 'abo.plafond': 'Plafond voor abonnementen gezet', 'proef.wachtlijst-gemaild': 'Wachtlijst van de proef gemaild',
   'payment-link.failed': 'Betaallink niet verstuurd', 'quote': 'Offerte vastgelegd', 'quote.restant': 'Restant gevraagd',
   'invoice.render': 'Factuur afgemaakt', 'invoice.resend': 'Factuur opnieuw verstuurd', 'invoice.blocked': 'Factuur tegengehouden',
   'credit-note.issued': 'Creditnota uitgegeven', 'credit-note.failed': 'Creditnota mislukt',
   'customer.credit': 'Tegoed bijgesteld', 'customer.details': 'Klantgegevens gewijzigd', 'customer.nieuw': 'Klant aangemaakt', 'customer.signin_link': 'Inloglink gestuurd',
   'customer.deactivate': 'Klant gedeactiveerd', 'customer.reactivate': 'Klant heractiveerd', 'customer.wipe': 'Klant gewist',
-  'revision.resolve': 'Revisie beantwoord', 'revision.withdrawn': 'Revisie ingetrokken door klant', 'revisions.revoke': 'Revisierechten ingetrokken', 'revisions.restore': 'Revisierechten terug',
+  'revision.resolve': 'Revisie beantwoord', 'revision.withdrawn': 'Revisie ingetrokken door klant', 'revisions.revoke': 'Revisierechten ingetrokken', 'revisions.restore': 'Revisierechten terug', 'btw-land.akkoord': 'Land buiten de EU goedgekeurd', 'btw-land.intrekken': 'Akkoord land buiten de EU ingetrokken',
   'plan-week-start': 'Abonnementsweek gestart', 'plan-week-geen-start': 'Week niet gestart', 'plan-slots-correctie': 'Credits bijgesteld',
   'plan-slots-correctie.geweigerd': 'Creditcorrectie geweigerd', 'plan-slots-terug': 'Credits terug na annuleren', 'plan-slots-terug.deels': 'Credits deels terug',
   'plan-slots-terug.mislukt': 'Credits terugboeken mislukt', 'plan.betaling-na-opzeggen': 'Betaling na opzeggen',
@@ -9173,6 +10674,166 @@ async function handleMeldingPost(context, admin) {
   return seeOther('/admin/melding?klaar=gezet');
 }
 
+/* ═══ PROEF TIJDELIJK DICHT — 8 oktober 2026 (G2, V9 = a) ══════════════════════
+ * Een rem op de proef bij een piek: dicht, alleen lifestyle, of open. Er gebeurt
+ * niets vanzelf (§21). De wachtlijst telt ook terwijl hij dicht is; de knop om
+ * hem te mailen staat er pas als de proef weer open is. Zie src/lib/proefStand.js. */
+const PROEF_STAND_LABEL = {
+  open: 'Open — catalog en lifestyle',
+  lifestyle: 'Alleen de lifestyleproef open',
+  dicht: 'Dicht — geen nieuwe proeven',
+};
+
+async function renderProef({ env }, url) {
+  const stand = await leesProefStand(env);
+  const n = await telWachtlijst(env);
+  const klaar = url?.searchParams?.get('klaar') || '';
+  const fout = url?.searchParams?.get('fout') || '';
+  const opties = Object.entries(PROEF_STAND_LABEL).map(([k, v]) =>
+    `<label><input type="radio" name="stand" value="${k}"${stand === k ? ' checked' : ''}> ${esc(v)}</label>`).join('');
+  const lijst = n === null
+    ? '<p class="meta is-warn">De wachtlijst is nog niet te lezen: migratie 0054 is nog niet gedraaid.</p>'
+    : `<p><strong>${n}</strong> ${n === 1 ? 'adres wacht' : 'adressen wachten'} op bericht dat de proef weer open is.</p>`;
+  const knop = n && stand !== 'dicht'
+    ? `<form method="post" action="/admin/proef"><input type="hidden" name="do" value="mail">
+  <button class="btn btn-primary" type="submit">Mail de wachtlijst (${n})</button></form>
+<p class="meta">Eén mail per adres, in de taal waarin iemand zich aanmeldde, met de knop naar /test-sample${stand === 'lifestyle' ? ' (de mail zegt dat het om een lifestylecarrousel gaat)' : ''}. Daarna worden de adressen die de mail kregen gewist; een adres waarvan de mail mislukte, blijft staan.</p>`
+    : (n && stand === 'dicht' ? '<p class="meta">Zet de proef eerst weer open; dan staat hier de knop om ze te mailen.</p>' : '');
+  /* De radioknoppen dragen .quote-soort: admin.css zet daar het rondje terug
+     dat de algemene `appearance: none` weghaalt. */
+  const body = `
+${adminNav('proef')}
+<h1>Proef dicht of open</h1>
+<p class="lede">Een rem op de proef bij een piek. Staat hij dicht, dan toont /test-sample "De proef opent in rondes" met een veld om je adres achter te laten, en weigert de bestelroute een nieuwe proef. Er gebeurt niets vanzelf: jij zet hem weer open.</p>
+<p class="meta">De pagina belooft dat wie op de lijst staat als eerste bericht krijgt. Stuur de mail aan de wachtlijst dus meteen na het openzetten, vóór je de nieuwe ronde ergens anders noemt.</p>
+${klaar === 'stand' ? `<p class="okline">De proef staat nu op: ${esc(PROEF_STAND_LABEL[stand])}.</p>` : ''}
+${klaar === 'gemaild' ? `<p class="okline">${esc(url.searchParams.get('n') || '0')} gemaild, ${esc(url.searchParams.get('mis') || '0')} mislukt.</p>` : ''}
+${fout ? `<p class="warnline">${esc(fout)}</p>` : ''}
+<h2>De stand</h2>
+<p>Nu: <span class="pill${stand === 'open' ? '' : ' is-warn'}">${esc(PROEF_STAND_LABEL[stand])}</span></p>
+<form method="post" action="/admin/proef" class="stack">
+  <input type="hidden" name="do" value="stand">
+  <fieldset class="quote-soort"><legend>Zet de proef op</legend>${opties}</fieldset>
+  <button class="btn" type="submit">Opslaan</button>
+</form>
+<h2>De wachtlijst</h2>
+${lijst}
+${knop}
+<p class="meta">Geen nieuwsbrief: het adres wordt alleen voor deze ene mail gebruikt en daarna gewist (zo staat het ook in de privacyverklaring).</p>`;
+  return html(page({ title: 'Proef dicht of open', body }));
+}
+
+/* ═══ FORMATEN — 11 oktober 2026 (k401) ════════════════════════════════════════
+ * Jpg is de standaard; een klant vraagt op een geleverde bestelling in Studio
+ * ook png of webp aan (src/lib/formaten.js). Hier staat wat openstaat, per
+ * bestelling en formaat, met de link naar de bestelling en "Klaar" zodra je het
+ * geleverd hebt. Er gebeurt niets vanzelf: geen omzetting, geen mail. */
+async function renderFormaten({ env }, url) {
+  const lijst = await formatenLijst(env);
+  const klaar = url?.searchParams?.get('klaar') || '';
+  const datum = (d) => esc(String(d || '').slice(0, 16).replace('T', ' '));
+  /* Vier kolommen, zodat Klaar ook op een telefoon in beeld staat: het merk
+     onder het kenmerk, het aantal beelden onder het formaat. */
+  const rij = (r, open) => `<tr>
+    <td><a href="/admin/orders/${Number(r.order_id)}/files">${esc(r.ref || `#${r.order_id}`)}</a><br><span class="meta">${esc(r.brand || r.name || '—')}</span></td>
+    <td><strong>${esc(FORMAAT_NAAM[r.formaat] || r.formaat)}</strong><br><span class="meta">${Number(r.beelden) || 0} ${Number(r.beelden) === 1 ? 'beeld' : 'beelden'}</span></td>
+    <td>${datum(r.aangevraagd_at)}</td>
+    <td>${open
+      ? `<form class="cel-knop" method="post" action="/admin/formaten"><input type="hidden" name="id" value="${Number(r.id)}"><button class="btn btn-sm" type="submit">Klaar</button></form>`
+      : `geleverd ${datum(r.klaar_at)}`}</td>
+  </tr>`;
+  const tabel = (rijen, open) => `<div class="or-lijst"><table class="files">
+    <thead><tr><th>Bestelling</th><th>Formaat</th><th>Aangevraagd</th><th>${open ? 'Geleverd?' : 'Klaar'}</th></tr></thead>
+    <tbody>${rijen.map((r) => rij(r, open)).join('')}</tbody>
+  </table></div>`;
+  const inhoud = lijst === null
+    ? '<p class="meta is-warn">De verzoeken zijn nog niet te lezen: migratie 0065 is nog niet gedraaid.</p>'
+    : `<h2>Open</h2>
+${lijst.open.length ? tabel(lijst.open, true) : '<p class="empty">Niets open: geen klant vroeg een ander formaat.</p>'}
+${lijst.klaar.length ? `<h2>Geleverd</h2>\n<p class="meta">De laatste ${lijst.klaar.length}.</p>\n${tabel(lijst.klaar, false)}` : ''}`;
+  const body = `
+${adminNav('formaten')}
+<h1>Formaten</h1>
+<p class="lede">Leverbeelden zijn jpg. Een klant kan op een geleverde bestelling in Studio ook PNG of WebP aanvragen; dat staat hier, per bestelling en formaat, met het aantal geleverde beelden. Lever het formaat met <strong>FORMATEN.bat</strong> in de projectmap (de PNG-originelen uit Magnific in een map, bestelnummer typen, map erin slepen): dat maakt de WebP, zet beide in de zip van de klant en zet het verzoek hier op Klaar zodra elk beeld ze heeft. Lever je het anders, klik dan zelf op Klaar. In Studio staat daarna "PNG geleverd" met de datum.</p>
+${klaar === '1' ? '<p class="okline">Op klaar gezet.</p>' : ''}
+${klaar === 'fout' ? '<p class="warnline">Dat lukte niet. Probeer het opnieuw.</p>' : ''}
+${inhoud}`;
+  return html(page({ title: 'Formaten', body }));
+}
+
+async function handleFormatenPost(context, admin) {
+  const { request, env } = context;
+  const form = await request.formData().catch(() => null);
+  const id = Number(form?.get('id'));
+  const uit = await formaatKlaar(env, id);
+  if (!uit.ok) return seeOther('/admin/formaten?klaar=fout');
+  await logAdmin(env, admin, 'formaat.klaar', { detail: `verzoek ${id}` }).catch(() => {});
+  return seeOther('/admin/formaten?klaar=1');
+}
+
+/*
+ * ── DE REM OP ABONNEMENTEN, ÉÉN REGEL — 8 oktober 2026 (punt 6.05, V45 = a) ──
+ *
+ * "/admin toont één regel: de credits per maand van alle abonnees samen, tegen
+ * het plafond." Daaronder, dichtgeklapt, het veld om het plafond te zetten. Leeg
+ * opslaan = terug naar de standaard (ABO_CREDITS_PLAFOND in plans.js). De poort
+ * in handleSubscribeStart() en /start/plan lezen dezelfde stand (aboPlafond.js).
+ */
+async function aboPlafondRegel(context) {
+  let stand;
+  try { stand = await aboStand(context.env); } catch { return ''; }
+  let melding = '';
+  try {
+    const sp = new URL(context.request.url).searchParams;
+    if (sp.get('plafond') === 'ok') melding = '<p class="okline">Het plafond is opgeslagen.</p>';
+    else if (sp.get('plafond') === 'fout') melding = '<p class="warnline">Dat plafond is niet opgeslagen: vul een heel aantal credits in, of laat het veld leeg voor de standaard.</p>';
+  } catch { /* geen melding */ }
+  const pct = stand.plafond ? Math.round((stand.credits / stand.plafond) * 100) : 0;
+  return `${melding}
+  <p class="meta" id="abo-plafond">Abonnees samen: <strong>${stand.credits.toLocaleString('nl-NL')} credits per maand</strong> van het plafond ${stand.plafond.toLocaleString('nl-NL')} (${pct}%)${stand.gezet ? '' : ' &middot; standaard'}.</p>
+  <details class="slotfix">
+    <summary>Plafond voor abonnementen</summary>
+    <form method="post" action="/admin/abo-plafond">
+      <label for="abo-plafond-n">Credits per maand voor alle abonnees samen</label>
+      <input id="abo-plafond-n" name="plafond" type="number" step="1" min="1" inputmode="numeric" value="${stand.gezet ? stand.plafond : ''}" placeholder="${ABO_CREDITS_PLAFOND}">
+      <button class="btn btn-sm" type="submit">Opslaan</button>
+    </form>
+    <p class="meta">Past een nieuw abonnement er niet meer bij, dan zegt /start/plan "vol" bij dat plan; "nog N plekken" staat er pas bij drie of minder. Leeg = de standaard van ${ABO_CREDITS_PLAFOND}. Ter vergelijking: het huidige plafond alleen aan catalogsets is ${Math.floor(stand.plafond / SERVICE_CREDITS.catalog)} sets per maand.</p>
+  </details>`;
+}
+
+async function handleAboPlafond(context, admin) {
+  const { request, env } = context;
+  const form = await request.formData().catch(() => null);
+  const ruw = String(form?.get('plafond') ?? '');
+  const uit = await zetAboPlafond(env, ruw).catch(() => ({ ok: false }));
+  if (!uit.ok) return seeOther('/admin/customers?plafond=fout#abo-plafond');
+  await logAdmin(env, admin, 'abo.plafond', { detail: ruw.trim() ? `${ruw.trim()} credits per maand` : 'terug naar de standaard' }).catch(() => {});
+  return seeOther('/admin/customers?plafond=ok#abo-plafond');
+}
+
+async function handleProefPost(context, admin) {
+  const { request, env } = context;
+  const form = await request.formData().catch(() => null);
+  const doen = String(form?.get('do') || '');
+  if (doen === 'stand') {
+    const stand = String(form?.get('stand') || '');
+    const uit = await zetProefStand(env, stand);
+    if (!uit.ok) return seeOther(`/admin/proef?fout=${encodeURIComponent(uit.fout)}`);
+    await logAdmin(env, admin, 'proef.stand', { detail: stand });
+    return seeOther('/admin/proef?klaar=stand');
+  }
+  if (doen === 'mail') {
+    let origin = 'https://visuails.com';
+    try { origin = new URL(request.url).origin; } catch { /* de vaste */ }
+    const uit = await mailWachtlijst(env, { origin });
+    if (!uit.ok) return seeOther(`/admin/proef?fout=${encodeURIComponent(uit.fout)}`);
+    await logAdmin(env, admin, 'proef.wachtlijst-gemaild', { detail: `${uit.verstuurd} gemaild, ${uit.mislukt} mislukt, ${uit.gewist} gewist` });
+    return seeOther(`/admin/proef?klaar=gemaild&n=${uit.verstuurd}&mis=${uit.mislukt}`);
+  }
+  return seeOther('/admin/proef');
+}
+
 async function handleBlackoutDay(context, admin) {
   const { request, env } = context;
   const terug = '/admin/planning#dagen';
@@ -9214,10 +10875,10 @@ async function handleBlackoutDay(context, admin) {
     ) }), 400);
   }
 
-  /* Wat staat er al op die dag? Zowel losse bestellingen als vastgezette
-     wachtrij-items, want allebei zijn ze aan iemand beloofd — dezelfde twee bronnen
+  /* Wat staat er al op die dag? De bestellingen met een venster — dezelfde bron
      die agenda.js optelt, hier per stuk in plaats van als gewicht, omdat Lucas moet
-     zien WIE het is en niet hoeveel beelden het zijn. */
+     zien WIE het is en niet hoeveel beelden het zijn. (De vastgezette items uit
+     een abonnementslijst telden hier ook mee; die lijst is weg sinds ronde 10.) */
   const bezet = await env.DB.prepare(
     `SELECT o.id AS id, o.ref AS ref, COALESCE(o.brand, o.name, '—') AS wie, o.window_start, o.window_end
        FROM orders o
@@ -9493,15 +11154,11 @@ function relatief(dag, vandaag) {
   return `over ${n} dagen`;
 }
 
-/** Alleen cijfers, met landcode: wat wa.me wil. Een 06-nummer wordt 316. */
-function waNummer(phone) {
-  let d = String(phone || '').replace(/[^\d+]/g, '');
-  if (!d) return '';
-  if (d.startsWith('+')) d = d.slice(1);
-  else if (d.startsWith('00')) d = d.slice(2);
-  else if (d.startsWith('0')) d = `31${d.slice(1)}`;
-  return /^\d{8,15}$/.test(d) ? d : '';
-}
+/* waNummer() — het landnummer uit het land van de klant (naloop A2) — staat
+   sinds 8 oktober 2026 (punt 7.05) in src/lib/waLink.js, samen met waLink():
+   de cron en de studiomail hebben hem ook nodig. Hier opnieuw geëxporteerd
+   voor wie hem uit admin.js haalde. */
+export { waNummer };
 
 /**
  * "12 × Catalog", of "6 clips × Video".
@@ -9561,13 +11218,17 @@ function contactTekst(o, vandaag) {
 
 function contactKnoppen(o, vandaag) {
   const tekst = contactTekst(o, vandaag);
-  const tel = waNummer(o.phone || o.c_phone);
+  const tel = waNummer(o.phone || o.c_phone, o.land);
+  /* Naloop A2: is het landnummer onzeker, dan geen wa.me maar wel bellen. */
+  const telHref = String(o.phone || o.c_phone || '').replace(/[^\d+]/g, '');
   const onderwerp = (o.lang || 'nl') !== 'en' ? `${o.ref} — nieuwe leverdatum` : `${o.ref} — new delivery date`;
   return `
 <div class="pl-contact">
   ${tel
     ? `<a class="btn btn-primary btn-sm" href="https://wa.me/${esc(tel)}?text=${encodeURIComponent(tekst)}" target="_blank" rel="noopener">App ${esc(o.brand || o.name || 'de klant')}</a>`
-    : '<span class="meta">Geen telefoonnummer bekend, dus geen WhatsApp.</span>'}
+    : telHref
+      ? `<a class="btn btn-primary btn-sm" href="tel:${esc(telHref)}">Bel ${esc(o.brand || o.name || 'de klant')}</a> <span class="meta">Landnummer niet zeker, dus geen WhatsApp-link.</span>`
+      : '<span class="meta">Geen telefoonnummer bekend, dus geen WhatsApp.</span>'}
   <a class="btn btn-ghost btn-sm" href="mailto:${esc(o.email)}?subject=${encodeURIComponent(onderwerp)}&body=${encodeURIComponent(tekst)}">Mail ${esc(o.brand || o.name || 'de klant')}</a>
   <a class="meta" href="/admin/orders/${o.id}/files">Naar de bestelling &rarr;</a>
 </div>`;
@@ -9624,11 +11285,11 @@ async function renderPlanning({ env }, url) {
         `SELECT o.id, o.ref, o.brand, o.name, o.email, o.phone, o.service, o.status, o.tier, o.lang,
                 o.product_count, o.window_start, o.window_end, o.created_at, o.payment_status,
                 o.details_json,
-                c.phone AS c_phone
+                c.phone AS c_phone, COALESCE(o.country, c.country) AS land
            FROM orders o LEFT JOIN customers c ON c.id = o.customer_id
           WHERE o.status IN (${AGENDA_OPEN.map((_, i) => `?${i + 1}`).join(', ')})
             AND o.hidden_at IS NULL
-            AND (o.payment_status IN ('paid', 'plan') OR o.window_start IS NOT NULL)
+            AND (o.payment_status IN ('paid', 'plan', 'credits') OR o.window_start IS NOT NULL)
           ORDER BY o.id ASC
           LIMIT 300`
       ).bind(...AGENDA_OPEN).all(),
@@ -9819,7 +11480,7 @@ ${pakBalk}
   <div class="pl-item-wat">
     <a class="ref" href="/admin/orders/${o.id}/files">${esc(o.ref)}</a>
     <span class="meta">${esc(o.brand || o.name || '—')} · ${wat(o)}${o.punten ? ` · ${o.punten} ${o.punten === 1 ? 'punt' : 'punten'}` : ''}</span>
-    <span class="meta">${o.manier === 'datum' ? `vastgelegd ${esc(o.window_start)} – ${esc(o.window_end)}` : `${o.manier === 'voorrang' ? '<strong class="or-voorrang">voorrang · volgende werkdag</strong>' : 'zo snel mogelijk'}, binnen sinds ${esc(normalizeStamp(o.created_at || '').slice(0, 10))}`}${o.payment_status === 'plan' ? ' · abonnement' : o.payment_status !== 'paid' ? ' · <strong class="pl-onbetaald">onbetaald</strong>' : ''}</span>
+    <span class="meta">${o.manier === 'datum' ? `vastgelegd ${esc(o.window_start)} – ${esc(o.window_end)}` : `${o.manier === 'voorrang' ? '<strong class="or-voorrang">voorrang · volgende werkdag</strong>' : 'zo snel mogelijk'}, binnen sinds ${esc(normalizeStamp(o.created_at || '').slice(0, 10))}`}${metCreditsBetaald(o) ? ' · credits' : o.payment_status !== 'paid' ? ' · <strong class="pl-onbetaald">onbetaald</strong>' : ''}</span>
     ${statPil(o.status, STATUS_LABEL[o.status] || o.status)}
     ${['delivered', 'cancelled'].includes(String(o.status)) ? '' : `<a class="pl-pak-link" href="/admin/planning?van=${esc(van)}&amp;pak=${o.id}#raster">Verplaatsen in het raster &uarr;</a>`}
   </div>
@@ -9839,7 +11500,7 @@ ${pakBalk}
 </li>`;
   };
 
-  const teLaat = werk.filter((w) => w.uiterlijk < vandaag && ['paid', 'plan'].includes(w.payment_status));
+  const teLaat = werk.filter((w) => w.uiterlijk < vandaag && ['paid', 'plan', 'credits'].includes(w.payment_status));
   const zichtbaar = soort === 'alles' ? werk : werk.filter((w) => w.manier === soort);
   const lijst = werk.length
     ? (zichtbaar.length ? `<ol class="pl-lijst">${zichtbaar.map(item).join('')}</ol>` : '<p class="empty">Niets in deze filter.</p>')
@@ -10100,6 +11761,10 @@ ${[...byLang.entries()]
  * en geen knop. Wat dit scherm oplost is dat de teksten nu bestaan voor de mens
  * die erover gaat.
  *
+ * SINDS 8 OKTOBER 2026 (G3) IS DE PLEK GEKOZEN: het blok "Wat merken zeggen" op
+ * home en /pricing (Aanbevelingen.astro). Goedkeuren hier = per stuk aanzetten;
+ * de derde stap blijft `npm run testimonials` plus commit en deploy.
+ *
  * ── GOEDKEUREN IS OMKEERBAAR, EN DAT IS DE HELE VEILIGHEID ──────────────────
  *
  * Eén klik terug, in hetzelfde scherm. Een goedkeuring die je alleen in de
@@ -10112,14 +11777,41 @@ ${[...byLang.entries()]
  * en deze query is de tweede sluiting op dezelfde deur: een rij die er door een
  * oude import of een handmatige INSERT tóch in staat, komt hier niet in beeld.
  */
-async function renderTestimonials({ env }) {
+async function renderTestimonials({ env, request }) {
   let rows = [];
   let missing = false;
+  /* ── FILTER "MAG GETOOND WORDEN" — 8 oktober 2026 (punt 10.05) ─────────────
+     Het toestemmingsblok op het afrondscherm vraagt per bestelling of we de
+     tekst en de beelden mogen laten zien (met merknaam, zonder, liever niet).
+     Dit scherm toont wie ja zei, en wie het introk — dan moeten de beelden
+     binnen TOESTEMMING_WEG_DAGEN van site en social. Publiceren blijft een
+     aparte stap: niets hier zet iets op de site. Draagfoto's vallen er nooit
+     onder. Zonder migratie 0055 zegt het scherm dat. */
+  let filter = '';
+  try { filter = new URL(request.url).searchParams.get('filter') || ''; } catch { filter = ''; }
+  if (!['toonbaar', 'ingetrokken'].includes(filter)) filter = '';
+  let toonRijen = [];
+  let toonMist = '';
+  try {
+    const r = await env.DB.prepare(
+      `SELECT f.order_id, f.toon_tekst, f.toon_beelden, f.toestemming_at, f.ingetrokken_at,
+              o.ref, o.brand, o.service, o.lang, COALESCE(o.testmodus, 0) AS testmodus, c.email
+         FROM order_feedback f
+         JOIN orders o ON o.id = f.order_id
+         LEFT JOIN customers c ON c.id = o.customer_id
+        WHERE f.toon_tekst IN ('merk', 'zonder') OR f.toon_beelden IN ('merk', 'zonder') OR f.ingetrokken_at IS NOT NULL
+        ORDER BY COALESCE(f.ingetrokken_at, f.toestemming_at) DESC
+        LIMIT 200`
+    ).all();
+    toonRijen = r.results || [];
+  } catch (err) {
+    toonMist = String(err?.message || '');
+  }
   try {
     const res = await env.DB.prepare(
       `SELECT f.order_id, f.testimonial_text, f.testimonial_name, f.testimonial_approved,
               f.updated_at, f.asked_at,
-              o.ref, o.brand, o.service, o.lang, o.closed_at,
+              o.ref, o.brand, o.service, o.lang, o.closed_at, COALESCE(o.testmodus, 0) AS testmodus,
               c.email
          FROM order_feedback f
          JOIN orders o ON o.id = f.order_id
@@ -10142,6 +11834,11 @@ async function renderTestimonials({ env }) {
 
   const kaart = (r) => {
     const aan = !!Number(r.testimonial_approved);
+    /* G3: een aanbeveling op een proefbestelling of met "TEST — niet plaatsen"
+       komt nooit op de site, ook niet goedgekeurd (scripts/testimonials.mjs en
+       src/data/aanbevelingen.js laten hem weg). Dat staat er dan bij, zodat
+       een goedkeuring niet iets belooft wat niet gebeurt. */
+    const proef = Number(r.testmodus) === 1 || isTestExemplaar({ text: r.testimonial_text, name: r.testimonial_name });
     return `
 <div class="card">
   <div class="row-head">
@@ -10155,17 +11852,58 @@ async function renderTestimonials({ env }) {
     <input type="hidden" name="action" value="${aan ? 'unapprove' : 'approve'}">
     <button type="submit" class="btn ${aan ? 'btn-ghost' : 'btn-primary'}">${aan ? 'Goedkeuring intrekken' : 'Goedkeuren'}</button>
     ${aan ? '<span class="pill">goedgekeurd</span>' : ''}
+    ${proef ? '<span class="pill is-warn">test — komt nooit op de site</span>' : ''}
   </form>
 </div>`;
   };
 
+  const TOON_WOORD = { merk: 'met merknaam', zonder: 'zonder merknaam', nee: 'liever niet' };
+  const toonbaar = toonRijen.filter((r) => !r.ingetrokken_at);
+  const ingetrokken = toonRijen.filter((r) => r.ingetrokken_at);
+  const weg = termijnInWoorden(TOESTEMMING_WEG_DAGEN, 'nl');
+  const toonKaart = (r) => `
+<div class="card">
+  <div class="row-head">
+    <a class="ref" href="/admin/orders/${encodeURIComponent(String(r.order_id))}/files">${esc(r.ref)}</a>
+    <span class="muted">${esc(r.brand || '—')} · ${esc(serviceLabel(r.service, 'nl') || r.service || '')} · ${esc(String(r.lang || '').toUpperCase())}</span>
+    <span class="muted">${esc(when(r.ingetrokken_at || r.toestemming_at))}</span>
+  </div>
+  <p class="meta">Beelden en productfoto&rsquo;s: <strong>${esc(TOON_WOORD[r.toon_beelden] || 'niet gevraagd')}</strong> · Tekst: <strong>${esc(TOON_WOORD[r.toon_tekst] || 'niet gevraagd')}</strong>${r.email ? ` · ${esc(r.email)}` : ''}</p>
+  ${r.ingetrokken_at
+    ? `<p class="warnline">Ingetrokken op ${esc(when(r.ingetrokken_at))}: haal de beelden en de tekst binnen ${esc(weg)} van de site en van social.</p>`
+    : '<p class="muted">Draagfoto&rsquo;s (iemand die het product draagt) nooit laten zien, ook niet met deze toestemming.</p>'}
+  ${Number(r.testmodus) === 1 ? '<span class="pill is-warn">test — komt nooit op de site</span>' : ''}
+</div>`;
+  const filters = `<p class="muted">Filter:
+  <a href="/admin/testimonials"${filter ? '' : ' aria-current="page"'}>Aanbevelingen</a> ·
+  <a href="/admin/testimonials?filter=toonbaar"${filter === 'toonbaar' ? ' aria-current="page"' : ''}>Mag getoond worden (${toonbaar.length})</a> ·
+  <a href="/admin/testimonials?filter=ingetrokken"${filter === 'ingetrokken' ? ' aria-current="page"' : ''}>Ingetrokken (${ingetrokken.length})</a></p>`;
+  if (filter) {
+    const lijst = filter === 'toonbaar' ? toonbaar : ingetrokken;
+    const body = `
+${adminNav('testimonials')}
+<h1>${filter === 'toonbaar' ? 'Mag getoond worden' : 'Toestemming ingetrokken'}</h1>
+<p class="lede">${filter === 'toonbaar'
+    ? 'Klanten die op het afrondscherm ja zeiden tegen het laten zien van hun beelden, productfoto&rsquo;s of tekst, met of zonder merknaam. <strong>Er wordt niets gepubliceerd</strong>: wat je ermee doet op de site of op social, kies je zelf.'
+    : `Klanten die hun toestemming introkken. Haal hun beelden en tekst binnen ${esc(weg)} van de site en van social; dat belooft het scherm hun.`}</p>
+${filters}
+${toonMist
+    ? `<p class="warnline">Dit scherm kan de toestemmingen niet lezen (${esc(toonMist)}). Draai migratie 0055.</p>`
+    : (lijst.length ? lijst.map(toonKaart).join('') : '<p class="empty">Nog niemand.</p>')}`;
+    return html(page({ title: 'Aanbevelingen', body }));
+  }
+
   const body = `
 ${adminNav('testimonials')}
 <h1>Aanbevelingen</h1>
+${filters}
 <p class="lede">Wat klanten over ons geschreven hebben, met het vinkje erbij dat wij het
-mogen gebruiken. Goedkeuren zet alleen dat vinkje om — <strong>er wordt niets
-gepubliceerd</strong>. Waar een aanbeveling komt te staan, blijft een keuze die je zelf
-maakt; dit scherm zorgt er alleen voor dat je hem kunt lezen.</p>
+mogen gebruiken. Goedkeuren zet een aanbeveling klaar voor de site — <strong>er wordt
+nog niets gepubliceerd</strong>. Op de site komt hij pas als je daarna
+<code>npm run testimonials</code> draait, src/data/testimonials.js commit en de site
+opnieuw uitrolt: dan staat hij in het blok &ldquo;Wat merken zeggen&rdquo; op home en
+/pricing. Aanbevelingen op een proefbestelling en teksten met &ldquo;TEST &mdash; niet
+plaatsen&rdquo; komen er nooit op.</p>
 ${missing
   ? `<p class="warnline">Dit scherm kan de aanbevelingen niet lezen (${esc(missing)}). Draai migratie 0020.</p>`
   : rows.length
@@ -10397,7 +12135,7 @@ async function handleVatDecision({ request, env }, orderId, admin) {
                 WHEN window_start IS NOT NULL AND window_expires_at IS NULL
                 THEN datetime('now', ?3) ELSE window_expires_at END
         WHERE id = ?1 AND review_state IN ('pending', 'rejected')`
-    ).bind(orderId, admin?.email || 'admin', `+${PAYMENT_DAYS} days`));
+    ).bind(orderId, admin?.email || 'admin', `+${VENSTER_VASTHOUDEN_DAGEN} days`));
     note = (Number(order.vat_cents) || 0) > 0
       ? (nlV ? 'Bedrijfsgegevens nagekeken en in orde. De bestelling kan betaald worden.' : 'Business details checked and in order. The order can be paid.')
       : (nlV ? 'Btw-gegevens nagekeken en in orde. De bestelling kan betaald worden.' : 'VAT details checked and in order. The order can be paid.');
@@ -10434,7 +12172,7 @@ async function handleVatDecision({ request, env }, orderId, admin) {
                 WHEN window_start IS NOT NULL AND window_expires_at IS NULL
                 THEN datetime('now', ?5) ELSE window_expires_at END
         WHERE id = ?1 AND review_state IN ('pending', 'rejected')`
-    ).bind(orderId, admin?.email || 'admin', vat, VAT_RATE, `+${PAYMENT_DAYS} days`));
+    ).bind(orderId, admin?.email || 'admin', vat, VAT_RATE, `+${VENSTER_VASTHOUDEN_DAGEN} days`));
     note = nlV
       ? 'Btw-gegevens nagekeken. Op deze bestelling wordt Nederlandse btw gerekend; het bedrag exclusief btw is niet veranderd.'
       : 'VAT details checked. Dutch VAT applies to this order; the amount excluding VAT has not changed.';
@@ -10490,7 +12228,8 @@ async function handleVatDecision({ request, env }, orderId, admin) {
           mailP(nlV
             ? `We hebben de btw-gegevens bij <strong>${esc(order.ref)}</strong> nagekeken en konden ze niet bevestigen. Daarom staat er nog geen betaallink klaar. Beantwoord deze mail met je btw-nummer zoals het bij de Belastingdienst (of in je eigen land) staat, of laat weten dat je geen btw-nummer hebt. Dan sturen we je dezelfde dag de betaallink.`
             : `We checked the VAT details on <strong>${esc(order.ref)}</strong> and could not confirm them, so there is no payment link yet. Reply to this mail with your VAT number as it is registered, or let us know you do not have one. We send the payment link the same day.`),
-          mailSpamNote(nlV ? 'nl' : 'en'),
+          /* Geen contactenregel meer (7.07, V21-1); de mail vraagt zelf al om
+             te antwoorden. */
         ].join(''),
       }),
     }).catch((e) => console.error('[admin] btw-vraag niet gemaild —', e?.message || e));
@@ -10705,7 +12444,9 @@ async function loadFacturen(env, kw) {
         WHERE COALESCE(s.issued_at, s.created_at) >= ?1 AND COALESCE(s.issued_at, s.created_at) < ?2
         ORDER BY s.year, s.seq`
     ).bind(kw.van, kw.tot).all())?.results || [];
-    for (const r of si) add('abonnement', r, lees(r.snapshot_json), `/admin/plan-invoices/${r.id}/pdf`);
+    /* Een bijkoop van extra credits (12 oktober 2026) komt uit dezelfde tabel;
+       de momentopname draagt kind 'bijkoop'. */
+    for (const r of si) { const snap = lees(r.snapshot_json); add(snap.kind === 'bijkoop' ? 'extra credits' : 'abonnement', r, snap, `/admin/plan-invoices/${r.id}/pdf`); }
   } catch { /* geen tabel */ }
   return rijen.sort((a, b) => String(a.nummer).localeCompare(String(b.nummer)));
 }
@@ -10717,7 +12458,15 @@ async function renderFacturen({ env, request }) {
   const kw = kwartaalVan(url.searchParams.get('kwartaal'));
   const rijen = await loadFacturen(env, kw);
   if (url.searchParams.get('csv') === '1') {
-    const cel = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    /* Een cel die met = + @ of een tab begint, leest Excel als formule; een
+       bedrijfsnaam uit het bestelformulier kon zo een link of berekening worden
+       (8 oktober 2026). Een apostrof ervoor maakt er tekst van. Alleen een kaal
+       negatief getal ("-12,50") blijft een getal; "-2+3+…" niet. */
+    const cel = (v) => {
+      let t = String(v ?? '');
+      if (/^[=+@\t\r]/.test(t) || (t.startsWith('-') && !/^-\d+(?:[.,]\d+)?$/.test(t))) t = `'${t}`;
+      return `"${t.replace(/"/g, '""')}"`;
+    };
     const bedrag = (c) => (Number(c) / 100).toFixed(2).replace('.', ',');
     const kop = ['soort', 'nummer', 'datum', 'klant', 'land', 'btw-nummer', 'behandeling', 'netto', 'btw', 'bruto', 'status', 'kenmerk'];
     const regels = rijen.map((r) => [r.soort, r.nummer, r.datum, r.klant, r.land, r.btwNummer, BEHANDELING_KORT[r.behandeling] || r.behandeling, bedrag(r.net), bedrag(r.vat), bedrag(r.bruto), r.status, r.ref].map(cel).join(';'));
@@ -10725,6 +12474,14 @@ async function renderFacturen({ env, request }) {
       headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="visuails-facturen-${kw.label}.csv"`, 'cache-control': 'no-store' },
     });
   }
+  /* ── DE BOEKHOUDING PER DOCUMENT — 8 oktober 2026 (8.08) ───────────────────
+     Staat dit document in e-Boekhouden? Alleen als de koppeling aan staat of er
+     ooit iets geboekt is; anders blijft de tabel zoals hij was. De CSV hierboven
+     verandert niet: die is voor de aangifte, en die vraagt dit niet. */
+  const stand = await standPerDocument(env, rijen.map((r) => r.nummer)).catch(() => new Map());
+  const metBoekhouding = koppelingAan(env) || stand.size > 0;
+  const mislukt = metBoekhouding ? await mislukteBoekingen(env) : [];
+  const boekMelding = String(url.searchParams.get('boekhouding') || '');
   const som = (f) => rijen.filter((r) => r.status === 'issued').filter(f).reduce((a, r) => ({ net: a.net + r.net, vat: a.vat + r.vat }), { net: 0, vat: 0 });
   const nl = som((r) => r.behandeling === 'nl_standard');
   const icp = som((r) => r.behandeling === 'eu_reverse_charge');
@@ -10743,10 +12500,108 @@ ${adminNav('facturen')}
   <div class="stat"><span class="stat-n">${rijen.length}</span><span class="stat-l">documenten</span></div>
 </div>
 <p class="muted">Alleen uitgereikte documenten tellen mee in de bedragen hierboven; creditnota's staan er negatief in. Controleer de aangifte altijd met je eigen boekhouding.</p>
+${metBoekhouding ? boekhoudingBlok({ aan: koppelingAan(env), mislukt, stand, kwartaal: kw.label, melding: boekMelding }) : ''}
 ${rijen.length ? `<table class="files"><thead><tr><th>Nummer</th><th>Datum</th><th>Soort</th><th>Klant</th><th>Btw-nummer</th><th>Behandeling</th><th class="num">Netto</th><th class="num">Btw</th><th>Status</th></tr></thead><tbody>
-${rijen.map((r) => `<tr><td>${r.pdf ? `<a href="${esc(r.pdf)}">${esc(r.nummer)}</a>` : esc(r.nummer)}</td><td>${esc(r.datum)}</td><td>${esc(r.soort)}</td><td>${esc(r.klant)}${r.land ? ` <span class="meta">${esc(r.land)}</span>` : ''}</td><td>${esc(r.btwNummer)}</td><td>${esc(BEHANDELING_KORT[r.behandeling] || r.behandeling)}</td><td class="num">${e(r.net)}</td><td class="num">${e(r.vat)}</td><td>${esc({ issued: 'uitgereikt', pending: 'nog niet af', void: 'vervallen' }[r.status] || r.status)}</td></tr>`).join('')}
+${rijen.map((r) => `<tr><td>${r.pdf ? `<a href="${esc(r.pdf)}">${esc(r.nummer)}</a>` : esc(r.nummer)}</td><td>${esc(r.datum)}</td><td>${esc(r.soort)}</td><td>${esc(r.klant)}${r.land ? ` <span class="meta">${esc(r.land)}</span>` : ''}</td><td>${esc(r.btwNummer)}</td><td>${esc(BEHANDELING_KORT[r.behandeling] || r.behandeling)}</td><td class="num">${e(r.net)}</td><td class="num">${e(r.vat)}</td><td>${esc({ issued: 'uitgereikt', pending: 'nog niet af', void: 'vervallen' }[r.status] || r.status)}${metBoekhouding && stand.get(r.nummer) ? `<br>${boekhoudingCel(stand.get(r.nummer), kw.label)}` : ''}</td></tr>`).join('')}
 </tbody></table>` : '<p class="empty">Geen facturen in dit kwartaal.</p>'}`;
   return html(page({ title: `Facturen ${kw.label}`, body }));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * DE BOEKHOUDING IN /admin — 8 oktober 2026 (punt 8.08)
+ * ═══════════════════════════════════════════════════════════════════════════
+ * De stand van elke boeking naar e-Boekhouden, en een knop "Opnieuw" voor wat
+ * misging. Het boeken zelf staat in src/lib/eboekhouden.js; hier staat alleen
+ * wat Lucas ziet en waar hij op drukt. Gewone formulieren, geen script. */
+const BOEKSOORT = { factuur: 'factuur', creditnota: 'creditnota', betaling: 'betaling via Mollie', terugbetaling: 'terugbetaling', storno: 'storno' };
+
+function boekhoudingKnop(id, kwartaal, label) {
+  return `<form class="cel-knop" method="post" action="/admin/boekhouding/opnieuw"><input type="hidden" name="id" value="${esc(String(id))}"><input type="hidden" name="kwartaal" value="${esc(kwartaal)}"><button class="btn btn-sm" type="submit">${esc(label)}</button></form>`;
+}
+
+/* De boekhouding in de cel "Status", onder "uitgereikt". Geen eigen kolom: de
+   tabel heeft er al negen en een tiende liet bij 1280 px breed de woorden
+   midden in breken ("factuu-r", "uitgereik-t"). Niets: (nog) niet op de lijst —
+   van vóór de koppeling, een proefdocument, of nog niet uitgereikt. */
+function boekhoudingCel(s, kwartaal) {
+  if (!s) return '';
+  if (s.stand === 'geboekt') return '<span class="pill">in de boekhouding</span>';
+  if (s.stand === 'wacht') return '<span class="pill">staat klaar</span>';
+  return `<span class="pill is-warn">mislukt</span> ${boekhoudingKnop(s.foutId, kwartaal, 'Opnieuw')}`;
+}
+
+const BOEKMELDING = {
+  ok: 'Opnieuw geprobeerd: gelukt.',
+  deels: 'Opnieuw geprobeerd: een deel is gelukt. Wat nog misgaat, staat hieronder.',
+  fout: 'Opnieuw geprobeerd, maar het lukte niet. De reden staat hieronder.',
+  uit: 'De koppeling staat uit: zet eerst het geheim EBOEKHOUDEN_API_TOKEN.',
+};
+
+function boekhoudingBlok({ aan, mislukt, stand, kwartaal, melding }) {
+  const notities = [...stand.entries()].filter(([, s]) => s.notitie);
+  return `<section id="boekhouding" class="card${mislukt.length ? ' is-attention' : ''}">
+  <h2>Boekhouding (e-Boekhouden)</h2>
+  ${BOEKMELDING[melding] ? `<p><strong>${esc(BOEKMELDING[melding])}</strong></p>` : ''}
+  ${aan ? '' : '<p class="meta">De koppeling staat uit: er is geen EBOEKHOUDEN_API_TOKEN gezet, dus er gaat niets naar e-Boekhouden. Zie kladblok/E-BOEKHOUDEN-KOPPELEN.md.</p>'}
+  ${mislukt.length ? `<p>${mislukt.length === 1 ? 'Eén boeking is' : `${mislukt.length} boekingen zijn`} niet gelukt. De nachtelijke taak probeert elke mislukte boeking één keer per nacht opnieuw; met de knop gaat het nu meteen.</p>
+  <table class="files"><thead><tr><th>Document</th><th>Soort</th><th class="num">Bedrag</th><th>Reden</th><th class="num">Pogingen</th><th>Actie</th></tr></thead><tbody>
+  ${mislukt.map((b) => `<tr><td>${esc(b.document)}</td><td>${esc(BOEKSOORT[b.soort] || b.soort)}</td><td class="num">${esc(mailBedrag(b.bedrag_cents, 'nl'))}</td><td>${esc(String(b.laatste_fout || '').slice(0, 300))}</td><td class="num">${esc(String(b.pogingen || 0))}</td><td>${boekhoudingKnop(b.id, kwartaal, 'Opnieuw')}</td></tr>`).join('')}
+  </tbody></table>
+  ${mislukt.length > 1 ? `<div class="controls">${boekhoudingKnop('alle', kwartaal, 'Alles opnieuw proberen')}</div>` : ''}`
+    : (aan ? '<p class="meta">Geen mislukte boekingen.</p>' : '')}
+  ${notities.length ? `<p class="meta">Om in e-Boekhouden af te letteren:</p>
+  <ul>${notities.map(([nr, s]) => `<li>${esc(nr)}: ${esc(s.notitie)}</li>`).join('')}</ul>` : ''}
+</section>`;
+}
+
+/* De knop "Opnieuw": één rij, of alle mislukte. Wacht op de uitkomst — Lucas
+   drukt er zelf op en wil zien of het lukte — met het plafond uit opnieuw(). */
+async function handleBoekhoudingOpnieuw({ request, env }, admin) {
+  const form = await request.formData().catch(() => null);
+  const idTekst = String(form?.get('id') || '');
+  const kwartaal = /^\d{4}-Q[1-4]$/.test(String(form?.get('kwartaal') || '')) ? String(form.get('kwartaal')) : '';
+  const terug = (m) => seeOther(`/admin/facturen?${kwartaal ? `kwartaal=${kwartaal}&` : ''}boekhouding=${m}#boekhouding`);
+  if (!koppelingAan(env)) return terug('uit');
+  const id = idTekst === 'alle' ? null : Number(idTekst);
+  if (idTekst !== 'alle' && !(Number.isInteger(id) && id > 0)) return terug('fout');
+  let uit;
+  try {
+    uit = await boekhoudingOpnieuw(env, { id });
+  } catch (e) {
+    console.error('[admin] boekhouding opnieuw mislukt —', e?.message || e);
+    return terug('fout');
+  }
+  await logAdmin(env, admin, 'boekhouding.opnieuw', {
+    detail: `${idTekst === 'alle' ? 'alle mislukte boekingen' : `boeking ${id}`}: ${uit.geboekt} geboekt, ${uit.mislukt} mislukt`,
+  }).catch(() => {});
+  return terug(uit.mislukt ? (uit.geboekt ? 'deels' : 'fout') : 'ok');
+}
+
+/* De koppeling testen zonder iets te boeken: inloggen en de grootboekrekeningen
+   opzoeken. POST en geen GET, omdat het een verzoek naar buiten is — dezelfde
+   afspraak als de probes van Mollie hierboven. */
+async function handleBoekhoudingTest({ env }) {
+  const t = await testKoppeling(env);
+  const rijen = t.rekeningen.map((r) => {
+    const goedeSoort = !r.categorie || r.categorie === r.verwacht;
+    const staat = !r.gevonden
+      ? '<span class="pill is-warn">niet gevonden</span>'
+      : goedeSoort ? '<span class="pill">gevonden</span>' : `<span class="pill is-warn">categorie ${esc(r.categorie)}</span>`;
+    const uitleg = !r.gevonden
+      ? 'Maak hem aan in e-Boekhouden, of zet de goede code in de instellingen.'
+      : `${esc(r.omschrijving)}${goedeSoort ? '' : ` &middot; verwacht: categorie ${esc(r.verwacht)}`}`;
+    return `<tr><td>${esc(r.naam)}</td><td><code>${esc(r.code)}</code></td><td>${staat}</td><td class="meta">${uitleg}</td></tr>`;
+  }).join('');
+  const body = `
+${adminNav('diagnose')}
+<h1>De koppeling met e-Boekhouden</h1>
+<p class="meta">Inloggen en de grootboekrekeningen opzoeken. Er is niets geboekt.</p>
+${!t.aan ? '<p><strong>De koppeling staat uit:</strong> er is geen EBOEKHOUDEN_API_TOKEN gezet.</p>' : ''}
+${t.aan && t.fout ? `<p><strong>Dat lukte niet:</strong> ${esc(t.fout)}</p>` : ''}
+${t.aan && t.sessie && !t.fout ? '<p><strong>Inloggen lukt.</strong></p>' : ''}
+${rijen ? `<table class="tbl"><thead><tr><th>Rekening</th><th>Code</th><th>Staat</th><th>In e-Boekhouden</th></tr></thead><tbody>${rijen}</tbody></table>` : ''}
+<p><a href="/admin/diagnose">Terug naar de diagnose</a></p>`;
+  return html(page({ title: 'Boekhouding testen', body }));
 }
 
 /* Een factuur, creditnota of abonnementsfactuur als pdf, voor de beheerder. Het
@@ -10881,7 +12736,10 @@ async function handleOrderForCustomer({ request, env, waitUntil }, customerId, a
   if (!c) return html(page({ title: 'Admin', body: errorBody('Die klant bestaat niet.') }), 404);
 
   const form = await request.formData().catch(() => null);
-  const service = ['catalog', 'lifestyle', 'drop'].includes(String(form?.get('service'))) ? String(form.get('service')) : 'catalog';
+  /* 'drop' (catalog + lifestyle in één bestelling) is hier op 8 oktober 2026
+     weggehaald: die combinatie wordt niet meer verkocht (punt 9.01, §17.5), ook
+     niet namens de klant. Twee diensten = twee bestellingen. */
+  const service = ['catalog', 'lifestyle'].includes(String(form?.get('service'))) ? String(form.get('service')) : 'catalog';
   const products = Math.max(1, Math.min(20, Number.parseInt(String(form?.get('products') || '1'), 10) || 1));
   const style = String(form?.get('style') || '').trim();
   /* Het KVK-nummer uit het formulier, anders het bewaarde (migratie 0043). */
@@ -11014,7 +12872,7 @@ async function loadAflopend(env, limiet = 6) {
             /* Geen afgebroken checkouts en geen aanvragen zonder offerte (ronde 8,
                A-B6): die werden na een dag "te laat". Een onbetaalde bestelling
                MET gereserveerde datum blijft staan — die dag is vastgehouden. */
-            AND (payment_status IN ('paid', 'plan') OR window_start IS NOT NULL)
+            AND (payment_status IN ('paid', 'plan', 'credits') OR window_start IS NOT NULL)
           ORDER BY id ASC LIMIT 300`
       ).bind(...AGENDA_OPEN).all(),
       readCalendar(env, vandaag),
@@ -11022,7 +12880,7 @@ async function loadAflopend(env, limiet = 6) {
     const werk = (open.results || [])
       .map((o) => { const u = agendaUiterlijk(o, kalender.blackouts); return { ...o, uiterlijk: u.dag, manier: u.manier }; })
       .sort((a, b) => (a.uiterlijk < b.uiterlijk ? -1 : a.uiterlijk > b.uiterlijk ? 1 : a.id - b.id));
-    return { vandaag, open: werk.length, teLaat: werk.filter((w) => w.uiterlijk < vandaag && ['paid', 'plan'].includes(w.payment_status)).length, kop: werk.slice(0, limiet) };
+    return { vandaag, open: werk.length, teLaat: werk.filter((w) => w.uiterlijk < vandaag && ['paid', 'plan', 'credits'].includes(w.payment_status)).length, kop: werk.slice(0, limiet) };
   } catch (err) {
     return { vandaag, stuk: String(err?.message || err), kop: [] };
   }
@@ -11126,8 +12984,14 @@ function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts
        (ronde 8, A-K7): de webhook stort sinds vandaag zelf terug, maar oudere
        rijen of een mislukte terugstorting moeten hier opvallen. */
     aandacht?.betaaldGeannuleerd > 0 ? `<a class="fl-chip is-warn" href="/admin/log">Betaald maar geannuleerd &middot; ${aandacht.betaaldGeannuleerd} &rarr;</a>` : '',
-    vatHeld > 0 ? `<a class="fl-chip is-warn" href="/admin/vat">Btw-controle &middot; ${vatHeld} &rarr;</a>` : '',
+    /* De btw-chip staat sinds 4.05 als regel bovenaan in Nu doen. Alleen als die
+       lijst niet gelezen kon worden, staat hij hier nog als vangnet. */
+    vatHeld > 0 && view.nuLijst?.fout ? `<a class="fl-chip is-warn" href="/admin/vat">Btw-controle &middot; ${vatHeld} &rarr;</a>` : '',
     tmWaiting > 0 ? `<a class="fl-chip" href="/admin/testimonials">Aanbevelingen &middot; ${tmWaiting} &rarr;</a>` : '',
+    /* k401: klanten die png of webp vroegen. */
+    view.formatenOpen > 0 ? `<a class="fl-chip" href="/admin/formaten">Formaten &middot; ${view.formatenOpen} &rarr;</a>` : '',
+    /* o11, 8 oktober 2026: accounts over de bewaartermijn — zie loadAandacht(). */
+    aandacht?.bewaartermijn > 0 ? `<a class="fl-chip is-warn" href="/admin/customers?f=bewaartermijn">${bewaartermijnRegel(aandacht.bewaartermijn)} &rarr;</a>` : '',
     watch ? watchChip(WATCH.cron, watch.cron) : '',
     watch ? watchChip(WATCH.backup, watch.backup) : '',
   ].filter(Boolean);
@@ -11143,13 +13007,13 @@ function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts
   <h2>Eerst af</h2>
   ${aflopendBlok}
   ${/* Revisies stonden drie keer: als tegel, hier en als kaarten. Met open
-       revisies staan de kaarten bovenaan de lijst en is dit blok weg (ronde 8). */ ''}
-  ${revisions.length ? '' : `<h2>Revisies</h2>${revisieKort}`}
-  ${/* Abonnees met vastgezette producten die nog niet gestart zijn (ronde 8,
-       A-B7): stond alleen in het nachtrapport en op de klantpagina. */ ''}
-  ${aandacht?.aboKlaar?.length ? `<h2>Abonnementen klaar <span class="fl-n">${aandacht.aboKlaar.length}</span></h2>
-  <ul class="db-abo">${aandacht.aboKlaar.map((k) => `<li><a href="/admin/customers/${k.customer_id}#week">${esc(k.brand || k.email)}</a> <span class="meta">${k.n} vastgezet</span></li>`).join('')}</ul>` : ''}
+       revisies staan de kaarten bovenaan de lijst en is dit blok weg (ronde 8).
+       Sinds 4.05 staat ook "geen revisies" niet meer hier: de Nu-doen-lijst
+       bovenaan zegt wat er open is, en een lege lijst zegt "Niets wacht op jou".
+       Alleen als die lijst niet gelezen kon worden, staat de regel er nog. */ ''}
+  ${revisions.length || !view.nuLijst?.fout ? '' : `<h2>Revisies</h2>${revisieKort}`}
   ${aandacht?.wachtOpBetaling ? `<p class="meta">${aandacht.wachtOpBetaling} bestelling${aandacht.wachtOpBetaling === 1 ? '' : 'en'} wacht${aandacht.wachtOpBetaling === 1 ? '' : 'en'} op betaling &mdash; <a href="/admin?f=unpaid">bekijken</a>. Die tellen niet als werk.</p>` : ''}
+  ${aandacht?.wachtLijst?.length ? `<ul class="db-wacht">${aandacht.wachtLijst.map((o) => `<li><a href="/admin/orders/${o.id}/files#betaling">${esc(o.ref)}</a> <span class="meta">${esc(o.brand || o.name || o.email || '')}</span><div class="wa-moment">${betaalContactRegel(o, { tel: String(o.phone || o.c_phone || '').trim(), land: String(o.land || '').toUpperCase() })}</div></li>`).join('')}</ul>` : ''}
   ${bewakers.length ? `<h2>Bewakers</h2><div class="fl-row">${bewakers.join('')}</div>` : ''}
 </aside>`;
 
@@ -11157,12 +13021,31 @@ function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts
 ${adminNav('dashboard')}
 <h1>Dashboard</h1>
 ${view.studioMelding ? `<p class="melding-balk is-${esc(view.studioMelding.soort)}"><span class="melding-l">In Studio</span> ${esc(view.studioMelding.nl)} <a href="/admin/melding">Wijzigen of weghalen</a></p>` : ''}
+${/* 4.05: wat nu moet, in vaste volgorde, met één knop per regel — bovenaan,
+     vóór de tegels. Dezelfde regels staan bovenaan het nachtrapport. */ ''}
+${view.gemeld ? (view.gemeld.ref === 'niets'
+  ? '<p class="warnline">Er stond niets nieuws klaar om te melden; er ging geen mail uit.</p>'
+  : `<p class="okline" role="status">${esc(view.gemeld.ref)}: gemeld aan de klant &mdash; ${view.gemeld.n} beeld${view.gemeld.n === 1 ? '' : 'en'}.</p>`) : ''}
+${view.nuLijst ? nuDoenHtml(view.nuLijst) : ''}
 ${counts ? todayStrip(counts) : ''}
 <div class="db-vlakken">
 <section class="db-hoofd">
-${revisions.length ? `
+${(() => {
+  /* 4.08: de afgehandelde rondes (met de meldknop) eerst, want die zijn in
+     één klik af; dan de open kaarten. Een vaste reden houdt de filters vast. */
+  const afgehandeld = view.afgehandeld || [];
+  if (!revisions.length && !afgehandeld.length) return '';
+  const behoud = new URLSearchParams();
+  if (statusFilter) behoud.set('status', statusFilter);
+  if (q) behoud.set('q', q);
+  if (filter) behoud.set('f', filter);
+  if (hidden) behoud.set('hidden', '1');
+  const ctx = { reden: view.reden, behoud: behoud.toString() };
+  return `
 <h2 id="revisies">Revisieverzoeken <span class="fl-n">${revisions.length}</span></h2>
-${revisions.map(revisionCard).join('')}` : ''}
+${afgehandeld.map(afgehandeldKaart).join('')}
+${revisions.map((r) => revisionCard(r, ctx)).join('')}`;
+})()}
 
 <h2>Bestellingen${statusFilter ? ` · ${esc(STATUS_LABEL[statusFilter] || statusFilter)}` : ''}${q ? ` · &ldquo;${esc(q)}&rdquo;` : ''}</h2>
 ${searchRow}
@@ -11220,7 +13103,14 @@ function statusFilterRow(statusCounts, statusFilter) {
  * `asked` staat er alleen bij als er meer dan één is. Bij een eerste aanvraag
  * is "1×" ruis; bij de zevende is het het enige wat je wilt weten.
  */
-function revisionCard(r) {
+/* 4.08: de taal van de klant, boven elk veld waarvan de tekst naar hem gaat.
+   Dezelfde keuze als de mail: 'en' is Engels, al het andere Nederlands. */
+function klantTaalRegel(lang, wat = 'je reden') {
+  const en = lang === 'en';
+  return `<p class="rev-taal">Deze klant leest ${en ? 'Engels' : 'Nederlands'} &mdash; schrijf ${wat} in het ${en ? 'Engels' : 'Nederlands'}.</p>`;
+}
+
+function revisionCard(r, ctx = {}) {
   const repeat = r.asked_here > 1
     ? `<span class="pill is-attention">${r.asked_here}× dit beeld</span>` : '';
   const often = r.asked > 0 ? `<span class="meta">${r.asked}× eerder door dit merk, bij andere bestellingen</span>` : '';
@@ -11284,15 +13174,61 @@ function revisionCard(r) {
            de val: hij klinkt als het einde van het werk terwijl hij het beeld
            niet aanraakt. Hij zet alleen de toestand terug, dus de klant kreeg
            dezelfde foto opnieuw ter beoordeling. Nu zegt hij wat hij doet. -->
+      <!-- ── IN DE TAAL VAN DE KLANT, MET DRIE VASTE REDENEN — 4.08 ─────────────
+           De reden gaat letterlijk naar de klant (mail en tijdlijn), dus de
+           taalregel staat er pal boven. De drie vaste redenen (V37 = a,
+           src/data/revisieRedenen.js) zijn links: één klik laadt het dashboard
+           met de reden in het veld, in de taal van de klant, en Lucas past hem
+           aan voor hij verstuurt. Geen script nodig. Een tekstvak en geen
+           regel, zodat een reden van twee zinnen ook te lezen is. -->
       <form method="post" action="/admin/revisions/${r.file_id}/resolve" class="rev-actions">
-        <input type="text" name="fixed" maxlength="${ANNOUNCE_NOTE_MAX}" required
-               placeholder="Waarom hoeft er niets vervangen te worden? Dit komt op de tijdlijn van de klant."
-               class="in-grow">
+        ${klantTaalRegel(r.lang)}
+        <p class="rev-redenen"><span class="meta">Vaste reden:</span> ${REVISIE_REDENEN.map((v) => `<a class="fl-chip" href="/admin?${ctx.behoud ? `${esc(ctx.behoud)}&amp;` : ''}reden=${r.file_id}.${esc(v.id)}#rev-${r.file_id}">${esc(v.knop)}</a>`).join(' ')}</p>
+        <label class="rev-label" for="fixed-${r.file_id}">Waarom hoeft er niets vervangen te worden? Dit gaat naar de klant, in de mail en op de tijdlijn.</label>
+        <textarea id="fixed-${r.file_id}" name="fixed" maxlength="${ANNOUNCE_NOTE_MAX}" required rows="4" class="in-grow">${esc(ctx.reden && ctx.reden.fileId === Number(r.file_id) ? revisieReden(ctx.reden.id, r.lang === 'en' ? 'en' : 'nl') : '')}</textarea>
         <button class="btn btn-ghost" type="submit">Geen nieuw beeld nodig</button>
       </form>
       ${r.customer_id ? `<p class="meta"><a href="/admin/customers/${r.customer_id}">Klant bekijken</a></p>` : ''}
     </div>
   </div>
+</div>`;
+}
+
+/*
+ * ── DE AFGEHANDELDE RONDE MET DE MELDKNOP — 8 oktober 2026 (4.08) ───────────
+ * Na de laatste kaart van een bestelling blijft deze ene kaart staan: wat er per
+ * beeld gedaan is, en de knop "N nieuwe beelden melden" (dezelfde route als op
+ * de bestelpagina, terug naar het dashboard). §21 blijft: uploaden en melden zijn
+ * twee knoppen, alleen nu op één plek. Na het melden verdwijnt de kaart en zegt
+ * het dashboard "gemeld aan de klant — N beelden".
+ */
+function afgehandeldKaart(r) {
+  const n = Number(r.n) || 0;
+  const regels = (r.verzoeken || []).map((v) => {
+    const wat = v.product_key
+      ? `Product ${esc(String(v.product_key).replace(/^p/, ''))}${v.shot ? ` &middot; ${esc(vakNaam(v.service, v.details_json, v.shot) || SHOT_LABEL[v.shot] || v.shot)}` : ''}`
+      : 'Beeld';
+    const hoe = v.superseded_at
+      ? 'nieuw beeld geüpload'
+      : v.resolved_at
+        ? `geen nieuw beeld nodig${v.resolution_note ? `: &ldquo;${esc(v.resolution_note)}&rdquo;` : ''}`
+        : 'afgehandeld';
+    return `<li><strong>${wat}</strong> &mdash; ${hoe}</li>`;
+  }).join('');
+  return `
+<div class="card is-afgehandeld" id="rev-o${r.id}">
+  <div class="row-head">
+    <span class="ref"><a href="/admin/orders/${r.id}/files">${esc(r.ref)}</a></span>
+    <span class="meta">${esc(r.brand || r.name || r.email || '')} &middot; revisieronde afgehandeld, nog niet gemeld</span>
+  </div>
+  ${regels ? `<ul class="rev-af-lijst">${regels}</ul>` : ''}
+  <form method="post" action="/admin/orders/${r.id}/announce" class="rev-melden">
+    <input type="hidden" name="terug" value="dashboard">
+    ${klantTaalRegel(r.lang, 'je notitie')}
+    <input type="text" name="note" maxlength="${ANNOUNCE_NOTE_MAX}" aria-label="Notitie bij het melden (optioneel)" placeholder="Optioneel: wat er veranderd is (komt in de mail en op de tijdlijn)" class="in-grow">
+    <button class="btn btn-primary" type="submit">${n} nieuw${n === 1 ? ' beeld' : 'e beelden'} melden</button>
+  </form>
+  <p class="meta">Eén mail voor alles wat nog niet gemeld is; daarna is deze kaart weg.</p>
 </div>`;
 }
 
@@ -11369,15 +13305,20 @@ function orderCard(o, models, statusFilter = '') {
     : (o.delivery_mailed_at && o.unannounced)
       ? `<span class="or-let" title="${o.unannounced} nieuwe beelden niet aangekondigd">${o.unannounced} nieuw</span>`
       : o.hidden_at ? '<span class="or-let is-stil">verborgen</span>' : '';
+  /* Punt 2.05: "2 foto's ontbreken", rood, uit de ene lijst (ontbreekt.js). */
+  const mistLabel = ontbreektLabel(o.ontbreekt);
+  const mistTeken = mistLabel
+    ? `<span class="or-let is-rood" title="${esc(ontbrekendRegels(o.ontbreekt, 'nl').join('; '))}">${esc(mistLabel)}</span>`
+    : '';
   return `
 <details class="or" id="order-${o.id}">
   <summary class="or-rij">
-    <span class="or-ref"><span class="ref">${esc(o.ref)}</span>${proefmerk}${merkteken}</span>
+    <span class="or-ref"><span class="ref">${esc(o.ref)}</span>${creditsPil(o)}${terugboekPil(o)}${proefmerk}${merkteken}${mistTeken}</span>
     <span class="or-merk"><strong>${esc(o.brand || '—')}</strong><span class="meta">${esc(o.email)}</span></span>
     <span class="or-wat">${o.product_count ? `${esc(o.product_count)} × ` : ''}${esc(serviceLabel(o.service, 'nl') || o.service)}<span class="meta">${esc(o.tier === 'attended' ? 'vastgelegd' : voorrang ? 'voorrang' : 'wachtrij')}</span></span>
     <span class="or-wanneer">${waar}<span class="meta">binnen ${esc(when(o.created_at).slice(0, 10))}</span></span>
     <span class="or-status">${statPil(o.status, STATUS_LABEL[o.status] || o.status)}</span>
-    <span class="or-betaal${o.payment_status === 'paid' || o.payment_status === 'plan' ? '' : ' is-open'}">${esc(({ paid: 'betaald', unpaid: 'onbetaald', plan: 'abonnement', refunded: 'terugbetaald', failed: 'mislukt' })[o.payment_status] || o.payment_status || '')}</span>
+    <span class="or-betaal${o.payment_status === 'paid' || metCreditsBetaald(o) ? '' : ' is-open'}">${esc(({ paid: 'betaald', unpaid: 'onbetaald', plan: 'credits', credits: 'credits', refunded: 'terugbetaald', failed: 'mislukt' })[o.payment_status] || o.payment_status || '')}</span>
     <span class="or-files"><a class="files-link" href="/admin/orders/${o.id}/files">Bestanden${o.file_count ? ` (${o.file_count})` : ''}</a></span>
   </summary>
   <div class="or-body">
@@ -11393,6 +13334,7 @@ function orderCard(o, models, statusFilter = '') {
     <button class="btn btn-primary" type="submit">Bijwerken</button>
   </form>
   ${bounced}
+  ${mistLabel ? `<p class="warnline is-rood"><strong>${esc(mistLabel)}</strong> &mdash; ${ontbrekendRegels(o.ontbreekt, 'nl').map(esc).join('; ')}. <a href="/admin/orders/${o.id}/files#ontbreekt">Klant benaderen &rarr;</a></p>` : ''}
   ${unannounced}
   ${pendingAnnounce}
   ${o.hidden_at ? `<p class="meta">Verborgen sinds ${esc(when(o.hidden_at))} — hij staat buiten de lijsten en de tellingen.</p>` : ''}
@@ -11404,6 +13346,105 @@ function orderCard(o, models, statusFilter = '') {
        /admin/orders/:id/models blijft bestaan. */ ''}
   </div>
 </details>`;
+}
+
+/** Met abonnementscredits betaald? ('plan' is de oude naam ervan.) */
+function metCreditsBetaald(o) {
+  return ['credits', 'plan'].includes(String(o?.payment_status || ''));
+}
+
+/**
+ * TERUGGEBOEKT — 8 oktober 2026 (8.11). Welke van deze bestellingen een
+ * teruggeboekte betaling hebben (orders.teruggeboekt_at, migratie 0063): Map(id →
+ * datum). Eén query; zonder de kolom een lege map.
+ */
+async function teruggeboekteOrders(env, ids) {
+  const uit = new Map();
+  const lijst = [...new Set((ids || []).map(Number).filter((n) => n > 0))];
+  if (!lijst.length) return uit;
+  const r = await env.DB.prepare(
+    `SELECT id, teruggeboekt_at FROM orders WHERE teruggeboekt_at IS NOT NULL AND id IN (${lijst.map(() => '?').join(', ')})`
+  ).bind(...lijst).all().catch(() => ({ results: [] }));
+  for (const x of r.results || []) uit.set(Number(x.id), x.teruggeboekt_at);
+  return uit;
+}
+
+/** De rode pil "Betaling teruggeboekt — niet leveren" naast het kenmerk (8.11). */
+function terugboekPil(o) {
+  return o?.teruggeboekt_at ? '<span class="terugboek-pil" title="De betaling is via de bank teruggeboekt (chargeback of storno)">Betaling teruggeboekt — niet leveren</span>' : '';
+}
+
+/** De pil "Credits" naast het kenmerk (ronde B, §28.2). */
+function creditsPil(o) {
+  return metCreditsBetaald(o) ? '<span class="credits-pil" title="Betaald met credits van een abonnement">Credits</span>' : '';
+}
+
+/**
+ * CREDITS TERUG VOOR WAT NIET GEMAAKT KAN WORDEN — 8 oktober 2026 (ronde B, 6.08)
+ *
+ * Bij een bestelling die met credits betaald is: kan een product niet gemaakt
+ * worden, dan komen de credits daarvan terug, als nieuwe partij (dezelfde datum
+ * als de rest, minstens 3 maanden geldig) met een regel in het creditboek. Nooit meer dan er voor
+ * deze bestelling is afgeboekt — creditsTerugVoorBestelling() bewaakt dat zelf.
+ * Hele bestelling weg? Dan is het annuleren, met de keuze "credits terug".
+ */
+function creditsTerugBlok(o, stand) {
+  if (o.payment_status !== 'credits' || o.status === 'cancelled' || !stand || !stand.afgeboekt) return '';
+  const open = stand.afgeboekt - stand.terug;
+  const n = Number(o.product_count) || 0;
+  const perProduct = n > 0 ? Math.round(stand.afgeboekt / n) : 0;
+  return `
+<details class="danger" id="credits-terug">
+  <summary>Credits terug — een product kan niet gemaakt worden</summary>
+  <div class="danger-body">
+    <p class="meta">Betaald met <strong>${stand.afgeboekt} credits</strong>${stand.terug ? `, waarvan ${stand.terug} al terug` : ''}.${perProduct ? ` Per product is dat ongeveer ${perProduct}.` : ''}</p>
+    ${open > 0 ? `<form method="post" action="/admin/orders/${o.id}/credits-terug" class="danger-block">
+      <label>Hoeveel credits gaan terug?
+        <input type="number" name="credits" min="1" max="${open}" step="1" required value="${Math.min(open, perProduct || open)}">
+      </label>
+      <input type="text" name="reason" required maxlength="300" placeholder="Welk product, en waarom niet? Dit leest de klant op zijn tijdlijn.">
+      <p class="meta">Ze komen terug op het saldo en tellen gewoon mee, bij een lopend abonnement ook voor het spaarplafond bij de volgende termijn. Zonder lopend abonnement zijn ze minstens ${CREDITS_GELDIG_MAANDEN} maanden geldig vanaf vandaag.</p>
+      <button class="btn btn-ghost btn-sm" type="submit">Credits terugzetten</button>
+    </form>` : '<p class="meta">Alles is al terug.</p>'}
+  </div>
+</details>`;
+}
+
+async function handleCreditsNietGemaakt(context, orderId, admin) {
+  const { request, env } = context;
+  const terug = `/admin/orders/${orderId}/files#credits-terug`;
+  const order = await env.DB.prepare('SELECT id, ref, lang, status, payment_status FROM orders WHERE id = ?1')
+    .bind(orderId).first().catch(() => null);
+  if (!order) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.') }), 404);
+  if (order.payment_status !== 'credits') {
+    return html(page({ title: 'Admin', body: errorBody('Deze bestelling is niet met credits betaald.') }), 400);
+  }
+  const form = await request.formData().catch(() => null);
+  const aantal = Number.parseInt(String(form?.get('credits') || ''), 10);
+  const reden = String(form?.get('reason') || '').trim().slice(0, 300);
+  if (!Number.isInteger(aantal) || aantal < 1) {
+    return html(page({ title: 'Admin', body: errorBody('Vul een heel aantal credits in, minstens 1.') }), 400);
+  }
+  if (!reden) {
+    return html(page({ title: 'Admin', body: errorBody('Zeg welk product niet gemaakt kon worden en waarom. De klant leest dat op zijn tijdlijn.') }), 400);
+  }
+  const r = await creditsTerugVoorBestelling(env, {
+    orderId, aantal, reden: CREDIT_REDEN.nietGemaakt, toelichting: reden, door: admin?.email || 'admin',
+  }).catch(() => ({ ok: false, reden: 'fout' }));
+  if (!r.ok) {
+    return html(page({ title: 'Admin', body: errorBody(['al-terug', 'te-veel'].includes(r.reden)
+      ? `Dat is meer dan er nog terug kan (nog ${Number(r.open) || 0} open): er gaat nooit meer terug dan er voor deze bestelling is afgeboekt.`
+      : 'Terugzetten is niet gelukt. Er is niets veranderd.') }), 400);
+  }
+  await env.DB.prepare('INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, ?4)')
+    .bind(orderId, order.status || 'received', tijdlijn(order.lang,
+      `${reden} — ${terugZin(r, 'nl')}`,
+      `${reden} — ${terugZin(r, 'en')}`), 'admin')
+    .run().catch(() => {});
+  await logAdmin(env, admin, 'order.credits-niet-gemaakt', {
+    orderId, detail: `${order.ref}: ${r.aantal} credits terug — ${reden}`,
+  }).catch(() => {});
+  return seeOther(terug);
 }
 
 /**
@@ -11420,6 +13461,8 @@ function orderCard(o, models, statusFilter = '') {
  */
 function orderDanger(o) {
   const paid = o.payment_status === 'paid' && Number(o.total_cents || 0) > 0;
+  /* Met credits betaald (ronde B, 6.08): de keuze gaat over credits, niet over geld. */
+  const metCredits = o.payment_status === 'credits';
   const cancelled = o.status === 'cancelled';
   return `
 <details class="danger">
@@ -11441,7 +13484,16 @@ function orderDanger(o) {
                   </select>
                 </label>
                 <p class="meta"><strong>Terugbetalen</strong> stuurt het geld hier meteen terug via Mollie. De creditnota volgt vanzelf zodra Mollie bevestigt.</p>`
-             : '<p class="meta">Er is niets betaald, dus er valt niets over geld te beslissen.</p>'}
+             : metCredits
+               ? `<label class="danger-money">Wat gebeurt er met de credits?
+                  <select name="credits" required>
+                    <option value="">— kies —</option>
+                    <option value="terug">Credits terug — op het saldo, minstens ${CREDITS_GELDIG_MAANDEN} maanden geldig</option>
+                    <option value="niets">Niets — de credits blijven afgeboekt</option>
+                  </select>
+                </label>
+                <p class="meta">Deze bestelling is betaald met credits van een abonnement. <strong>Credits terug</strong> zet alles wat ervoor is afgeboekt weer op het saldo van de klant, met een regel in het creditboek.</p>`
+               : '<p class="meta">Er is niets betaald, dus er valt niets over geld te beslissen.</p>'}
            <button class="btn btn-ghost btn-sm" type="submit">Deze bestelling annuleren</button>
          </form>`}
 
@@ -11454,7 +13506,7 @@ function orderDanger(o) {
       <button class="btn btn-ghost btn-sm" type="submit">${o.hidden_at ? 'Weer tonen' : 'Verbergen uit mijn lijsten'}</button>
     </form>
 
-    ${paid
+    ${paid || metCredits
       ? '<div class="danger-block"><h4>Verwijderen</h4><p class="meta">Niet mogelijk: deze bestelling is betaald, en een betaalde bestelling moet bewaard blijven. Annuleer hem of verberg hem.</p></div>'
       : `<form method="post" action="/admin/orders/${o.id}/delete" class="danger-block is-worst">
            <h4>Voorgoed verwijderen</h4>
@@ -11481,7 +13533,7 @@ function orderDanger(o) {
    regel in welke stand het geld is. */
 function geldTerugStand(o) {
   if (o.cancel_payment !== 'refund') {
-    return { credit: 'tegoed gegeven', none: 'geen restitutie' }[o.cancel_payment] || String(o.cancel_payment || '');
+    return { credit: 'tegoed gegeven', none: 'geen restitutie', credits: 'credits terug op het saldo' }[o.cancel_payment] || String(o.cancel_payment || '');
   }
   const bruto = (Number(o.total_cents) || 0) + (Number(o.vat_cents) || 0);
   const terug = Number(o.refunded_cents) || 0;
@@ -11509,7 +13561,7 @@ function landKeuze(id, gekozen) {
 function errorBody(message) {
   /* Met een weg terug (24 september 2026): een foutmelding was een doodlopende
      pagina met alleen het logo, dat naar de publieke site linkt. */
-  return `<div class="bar"><a class="mark" href="/admin">VISUAILS</a></div><p class="error is-page">${message}</p><p class="meta"><a href="/admin">&larr; Terug naar het dashboard</a> &middot; gebruik de terugknop van je browser om je invoer te houden.</p>`;
+  return `<div class="bar"><a class="mark" href="/admin" aria-label="VISUAILS">${MERK}</a></div><p class="error is-page">${message}</p><p class="meta"><a href="/admin">&larr; Terug naar het dashboard</a> &middot; gebruik de terugknop van je browser om je invoer te houden.</p>`;
 }
 
 /**
@@ -11527,6 +13579,7 @@ const NAV = [
   ['customers', '/admin/customers', 'Klanten'],
   ['maandset', '/admin/maandset', 'Maandset'],
   ['testimonials', '/admin/testimonials', 'Aanbevelingen'],
+  ['formaten', '/admin/formaten', 'Formaten'],
   ['vat', '/admin/vat', 'Btw'],
   ['facturen', '/admin/facturen', 'Facturen'],
   ['funnel', '/admin/funnel', 'Trechter'],
@@ -11535,12 +13588,13 @@ const NAV = [
   ['security', '/admin/security', 'Twee stappen'],
   ['diagnose', '/admin/diagnose', 'Diagnose'],
   ['melding', '/admin/melding', 'Melding in Studio'],
+  ['proef', '/admin/proef', 'Proef dicht of open'],
 ];
 /* ── ZES IN DE BALK, DE REST ONDER "MEER" — 29 september 2026 ──────────────
    Tien items passen niet op één regel, en Diagnose stond er niet eens in. Wat
    je elke dag gebruikt staat vooraan; wat je af en toe opzoekt achter één klik.
    Staat de pagina waar je bent onder Meer, dan staat Meer open. */
-const NAV_MEER = new Set(['facturen', 'funnel', 'berichten', 'log', 'security', 'diagnose', 'melding']);
+const NAV_MEER = new Set(['facturen', 'funnel', 'berichten', 'log', 'security', 'diagnose', 'melding', 'proef']);
 function adminNav(actief = '') {
   /* ── DE ZIJBALK — herontwerp 3 oktober 2026 ──────────────────────────────
      Dezelfde schil als VISUAILS Studio: een donkere zijbalk met het menu en een
@@ -11556,7 +13610,7 @@ function adminNav(actief = '') {
   const label = (NAV.find(([k]) => k === actief) || [])[2] || '';
   return `
 <aside class="adm-side">
-  <a class="mark" href="/">VISUAILS</a><span class="adm-sub">Admin</span>
+  <a class="mark" href="/" aria-label="VISUAILS">${MERK}</a><span class="adm-sub">Admin</span>
   <nav class="bar-nav" aria-label="Adminportaal">
     <div class="adm-groep">${vast}</div>
     <p class="adm-groep-kop">Meer</p>
@@ -11637,6 +13691,9 @@ function html(body, status = 200, extraSetCookies = []) {
   const headers = new Headers({
     'content-type': 'text/html; charset=utf-8',
     'cache-control': 'no-store',
+    /* public/_headers geldt alleen voor statische bestanden; wat de Worker
+       maakt, kreeg geen HSTS (8 oktober 2026). */
+    'strict-transport-security': 'max-age=31536000; includeSubDomains',
     'referrer-policy': 'same-origin',
     'x-robots-tag': 'noindex, nofollow',
     'x-content-type-options': 'nosniff',
@@ -11652,7 +13709,7 @@ function html(body, status = 200, extraSetCookies = []) {
 }
 
 function seeOther(location, setCookies = []) {
-  const headers = new Headers({ Location: location, 'cache-control': 'no-store', 'referrer-policy': 'same-origin' });
+  const headers = new Headers({ Location: location, 'cache-control': 'no-store', 'referrer-policy': 'same-origin', 'strict-transport-security': 'max-age=31536000; includeSubDomains' });
   for (const c of setCookies) headers.append('Set-Cookie', c);
   return new Response(null, { status: 303, headers });
 }

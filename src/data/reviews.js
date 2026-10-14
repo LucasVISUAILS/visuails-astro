@@ -41,7 +41,10 @@ export const REVIEW_PLATFORMS = [
   {
     id: 'trustpilot',
     name: 'Trustpilot',
-    url: 'https://www.trustpilot.com/review/visuails.com',
+    /* /evaluate/ en niet /review/ (8 oktober 2026, punt 3.05): /review/ is de
+       bedrijfspagina, /evaluate/ opent meteen het scherm om een review te
+       schrijven — de knop moet het reviewscherm direct openen. */
+    url: 'https://www.trustpilot.com/evaluate/visuails.com',
     /*
      * De korte uitnodigingslink uit §0. Voor een mail of WhatsApp, waar een lange
      * url door een client wordt afgekapt of verminkt. NIET voor de knop op de
@@ -52,6 +55,18 @@ export const REVIEW_PLATFORMS = [
     inviteUrl: 'https://trstp.lt/YtZP5fQ-Ub',
   },
 ];
+
+/**
+ * ── WELKE PLEK GROOT STAAT — 8 oktober 2026 (punt 3.05) ─────────────────────
+ *
+ * Op het afrondscherm staat één reviewplek als knop en de andere als kleine
+ * tekstlink. Lucas: *"Is in mijn geval niet handiger om trustpilot groter te
+ * maken dan google."* Advies was hetzelfde: Trustpilot groot, Google klein.
+ * Omdraaien = deze ene waarde op 'google' zetten; feedback.js leest alleen dit.
+ * Beide blijven er bij ELKE score staan (nooit filteren op score, zie de kop van
+ * feedback.js).
+ */
+export const REVIEW_VOORKEUR = 'trustpilot';
 
 /** De ids die we accepteren. Alles daarbuiten wordt bij lezen én schrijven weggefilterd. */
 export const REVIEW_PLATFORM_IDS = REVIEW_PLATFORMS.map((p) => p.id);

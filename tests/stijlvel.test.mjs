@@ -73,11 +73,65 @@ for (const [dienst, pad, taal] of PAGINAS) {
   const html = lees(pad);
   if (!html) { ok(`${pad} is gebouwd`, false, 'bestand', 'ontbreekt'); continue; }
 
+  const namen = levervlakken(dienst, taal);
+  const zin = dienst === 'video'
+    ? (taal === 'nl' ? 'Meer clips vraag je aan via het aanvraagformulier' : 'More clips can be requested through the request form')
+    : (taal === 'nl' ? 'Meer beelden kies je erbij in het bestelformulier' : 'More images can be added in the order form');
+
+  /* ── IN DE HAL (12 oktober 2026, avond) ────────────────────────────────
+     /catalog en /lifestyle staan in de hal (afvinklijst 8). Het vel is daar
+     geen contactvel meer maar dezelfde vorm als op /start: bij catalog de
+     vier beelden van één product met hun naam (.h-st-set), bij lifestyle de
+     drie genummerde kaarten (.h-ls-drie). Jouw foto staat er als voor en na
+     (Compare). De twee beloftes blijven getoetst: precies de beelden die de
+     prijs belooft, in die volgorde, en één keer de zin dat er meer kan. */
+  /* ── VIDEO IN DE HAL (13 oktober 2026, afvinklijst 16) ─────────────────
+     /video toont zolang video op aanvraag is geen vel met een geleend beeld,
+     maar per soort een vlak "Clip volgt". De belofte blijft dezelfde: de kop
+     van de soorten zegt wat élke look levert (zoveel clips als pricing.js
+     belooft), en één keer dat er meer kan via het aanvraagformulier. */
+  if (dienst === 'video' && /<body[^>]*class="[^"]*\bhal\b/.test(html)) {
+    const regel = (html.match(/<p class="h-pr-kopzin h-vd-levert[^"]*">([^<]*)<\/p>/) || ['', ''])[1];
+    const telwoord = taal === 'nl' ? ['één', 'twee', 'drie'][namen.length - 1] : ['one', 'two', 'three'][namen.length - 1];
+    ok(`${pad} — de kop van de soorten zegt wat elke look levert`, regel.includes(taal === 'nl' ? 'Elke look levert' : 'Every look delivers'), 'de zin', regel);
+    ok(`${pad} — ${telwoord} clip, zoals pricing.js belooft (${namen.join(', ')})`, new RegExp(`(^|\\s)${telwoord} clip`).test(regel), telwoord, regel);
+    const keer = html.split(zin).length - 1;
+    ok(`${pad} — "meer clips kan" staat precies één keer`, keer === 1, 1, keer);
+    ok(`${pad} — geen resten van de oude baan (pijl of vakkenraster)`,
+       !html.includes('sr-k-pijl') && !html.includes('sr-k-vakken'), 'geen', 'wel');
+    continue;
+  }
+  if (/<body[^>]*class="[^"]*\bhal\b/.test(html)) {
+    const blok = dienst === 'catalog'
+      ? (html.match(/<li class="h-st-set[\s"][\s\S]*?<\/li>/) || [''])[0]
+      : (html.match(/<ol class="h-ls-drie"[\s\S]*?<\/ol>/) || [''])[0];
+    ok(`${pad} — de set staat er (${dienst === 'catalog' ? '.h-st-set' : '.h-ls-drie'})`, blok.length > 0, 'blok', 'geen');
+    const gevonden = dienst === 'catalog'
+      ? [...blok.matchAll(/<span class="h-st-set-naam">([^<]*)<\/span>/g)].map((m) => m[1])
+      : [...blok.matchAll(/<p class="h-pp-naam">([^<]*)<\/p>/g)].map((m) => m[1]);
+    ok(`${pad} — de set noemt ${namen.join(', ')}, in die volgorde`, JSON.stringify(gevonden) === JSON.stringify(namen), namen, gevonden);
+    if (dienst === 'catalog') {
+      /* de build zet style="--d:N" om in een klasse, dus niet op de sluitquote matchen */
+      const beelden = (blok.match(/class="h-st-set-beeld[\s"]/g) || []).length;
+      ok(`${pad} — met ${namen.length} beelden`, beelden === namen.length, namen.length, beelden);
+    } else {
+      const nummers = [...blok.matchAll(/<b>(\d\d)<\/b>/g)].map((m) => m[1]);
+      ok(`${pad} — genummerd 01 tot ${String(namen.length).padStart(2, '0')}`, JSON.stringify(nummers) === JSON.stringify(namen.map((_, i) => String(i + 1).padStart(2, '0'))), namen.length, nummers);
+    }
+    const keer = html.split(zin).length - 1;
+    /* Lifestyle is sinds 14 oktober 2026 vast vier beelden (afvinklijst 23,
+       v23-extra a): daar hoort de zin dat er meer kan juist NIET te staan. */
+    const wilKeer = dienst === 'lifestyle' ? 0 : 1;
+    ok(`${pad} — "meer beelden kan" staat ${wilKeer ? 'precies één keer' : 'er niet (vast vier)'}`, keer === wilKeer, wilKeer, keer);
+    ok(`${pad} — geen resten van de oude baan (pijl of vakkenraster)`,
+       !html.includes('sr-k-pijl') && !html.includes('sr-k-vakken'), 'geen', 'wel');
+    continue;
+  }
+
   const lijst = vellen(html);
   ok(`${pad} — er staat minstens één vel`, lijst.length > 0, '>0', lijst.length);
   if (!lijst.length) continue;
 
-  const namen = levervlakken(dienst, taal);
   const verwachtTegels = namen.length + 1;          // de geleverde beelden + jouw foto
 
   let goedAantal = 0, goedVoor = 0, goedNummers = 0;
@@ -104,9 +158,6 @@ for (const [dienst, pad, taal] of PAGINAS) {
      meer beelden kan, en dat kies je in het bestelformulier. */
   /* Video heeft geen bestelformulier en levert clips: daar staat dezelfde
      ondergrens met het aanvraagformulier (30 september 2026). */
-  const zin = dienst === 'video'
-    ? (taal === 'nl' ? 'Meer clips vraag je aan via het aanvraagformulier' : 'More clips can be requested through the request form')
-    : (taal === 'nl' ? 'Meer beelden kies je erbij in het bestelformulier' : 'More images can be added in the order form');
   const keer = html.split(zin).length - 1;
   ok(`${pad} — "meer beelden kan" staat precies één keer`, keer === 1, 1, keer);
 

@@ -1,0 +1,347 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — /about. 14 oktober 2026, afvinklijst 22 (alles doen; v22-over a, v22-slot b,
+ * v22-portret a).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas (14 oktober 2026): "Het voelt alsof /about VISUAILS kleineert en kleiner
+ * laat lijken dan dat ik wil dat het voor de klant voelt." De pagina begon met
+ * één persoon ("Ik ben Lucas.", "met mij, niet met een helpdesk"), het grootste
+ * getal bovenaan was een 1 ("1 op 1") en onderaan €1, en een van de drie
+ * principes ging over de prijs per product.
+ *
+ * Nu opent VISUAILS de pagina, als studio:
+ *
+ *   kop       de studio achter je productbeeld, met rechts de controle: jouw foto
+ *             naast ons beeld, en waar we op letten (Lucas, afvinklijst 22: "een
+ *             soort hoopgevende mockup van hoe wij omgaan met bestellingen en hoe we
+ *             ervoor zorgen dat VISUAILS de kwaliteit kan leveren die we leveren")
+ *   cijfers   wat er klaarstaat: modellen, looks, kanalen, resolutie. Elk getal
+ *             komt uit de data (models.js, styles.js, catalogStyles.js,
+ *             channels.js, pricing.js), nooit getypt
+ *   werk      de lopende band uit AboutHal (zelfde klassen, zelfde pauzeknop)
+ *   werkwijze het contact met de klant van eerste foto tot na de levering: een
+ *             vraag tussendoor, een foto vergeten, twijfel bij ons, een beeld dat
+ *             niet klopt. Nooit "één persoon" (Lucas, 14 oktober: "nooit heel
+ *             direct aangeven dat ik de enige werknemer ben")
+ *   lucas     de oprichter, met zijn eigen woorden en de drie dingen waar we aan
+ *             vasthouden (zonder de prijs)
+ *   slot      een licht vlak met "Start een bestelling" en de proef als tweede knop
+ *             (v22-slot = b); wie is ingelogd, ziet daar het abonnement (data-vis-in)
+ *
+ * Het portret (v22-portret = a): zodra public/img/lucas.webp er is, staat het groot
+ * naast zijn tekst en schuiven de drie principes eronder. Een foto van iemand anders
+ * staat nooit bij "Ik ben Lucas."
+ * ═══════════════════════════════════════════════════════════════════════════ */
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/hal.css';
+import { waHref } from '../data/whatsapp.js';
+import NieuwTabblad from './NieuwTabblad.astro';
+import { MERK } from '../data/brand.js';
+import { RESOLUTIE, reviewClaim, turnaround, TEST_SAMPLE } from '../data/pricing.js';
+import { ROSTER_COUNT } from '../data/models.js';
+import { styles as lifestyleLooks } from '../data/styles.js';
+import { catalogStyles as catalogLooks } from '../data/catalogStyles.js';
+import { CHANNELS } from '../data/channels.js';
+import { localizedPath } from '../i18n/ui.js';
+import { isEcht } from '../lib/beeldAanwezig.js';
+import HalBeweging from './HalBeweging.astro';
+import HalControle from './HalControle.astro';
+import { planKnop, waKlant } from '../data/klant.js';
+const PORTRET = '/img/lucas.webp';
+const toonPortret = isEcht(PORTRET);
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+
+const TIMING = turnaround('unattended', lang);
+const REVIEW = reviewClaim('unattended', lang);
+/* De looks zoals de voorpagina ze telt: de vaste looks van catalog en lifestyle, zonder "eigen look". */
+const LOOKS = [...catalogLooks, ...lifestyleLooks].filter((s: any) => s.slug !== 'custom').length;
+
+/* Dezelfde band als op AboutHal (afvinklijst 15, k-ab-werk; v15-andere = a). */
+const strip = [
+  { src: '/img/lifestyle-dunes-02.webp', w: 928, h: 1152, alt: { en: 'Lifestyle photo in the Dunes style', nl: 'Lifestylefoto in de Dunes-stijl' } },
+  { src: '/img/lifestyle-flash-04-w760.webp', w: 760, h: 567, alt: { en: 'Lifestyle photo in the Flash style', nl: 'Lifestylefoto in de Flash-stijl' } },
+  { src: '/img/lifestyle-flash-01.webp', w: 928, h: 1152, alt: { en: 'Lifestyle photo in the Flash style', nl: 'Lifestylefoto in de Flash-stijl' } },
+  { src: '/img/lifestyle-phone-made-03-w760.webp', w: 760, h: 567, alt: { en: 'Lifestyle photo in the Phone-made style', nl: 'Lifestylefoto in de Phone-made-stijl' } },
+  { src: '/img/banners-08.webp', w: 928, h: 1152, alt: { en: 'Campaign photography', nl: 'Campagnefotografie' } },
+  { src: '/img/lifestyle-glow-05-w760.webp', w: 760, h: 567, alt: { en: 'Lifestyle photo in the Glow style', nl: 'Lifestylefoto in de Glow-stijl' } },
+  { src: '/img/lifestyle-dunes-01.webp', w: 928, h: 1152, alt: { en: 'Lifestyle photo in the Dunes style', nl: 'Lifestylefoto in de Dunes-stijl' } },
+  { src: '/img/lifestyle-phone-made-08-w760.webp', w: 760, h: 567, alt: { en: 'Lifestyle photo in the Phone-made style', nl: 'Lifestylefoto in de Phone-made-stijl' } },
+  { src: '/img/lifestyle-glow-03.webp', w: 768, h: 1376, alt: { en: 'Lifestyle photo in the Glow style', nl: 'Lifestylefoto in de Glow-stijl' } },
+  { src: '/img/lifestyle-flash-07-w760.webp', w: 760, h: 567, alt: { en: 'Lifestyle photo in the Flash style', nl: 'Lifestylefoto in de Flash-stijl' } },
+];
+
+const c = nl ? {
+  etiket: `${MERK} · Enschede, NL`,
+  h1: ['De studio achter', 'je productbeeld.'],
+  lede: 'Catalog, lifestyle en video, gemaakt van je eigen productfoto’s. Voor één product of je hele collectie.',
+  ctaStart: 'Start een bestelling',
+  ctaWerk: 'Bekijk het werk',
+
+  cijfersPil: 'In huis',
+  cijfersH: ['Een hele studio,', 'zonder shootdag.'],
+  cijfers: [
+    { label: 'Modellen', getal: String(ROSTER_COUNT), eenheid: 'modellen', zin: 'Vaste gezichten voor je beelden, zonder meerprijs.', href: '/models', linkNaam: 'Naar de modellen' },
+    { label: 'Looks', getal: String(LOOKS), eenheid: 'looks', zin: 'Vaste looks voor catalog en lifestyle, of je eigen look.', href: '/lifestyle', linkNaam: 'Naar de looks' },
+    { label: 'Kanalen', getal: String(CHANNELS.length), eenheid: 'kanalen', zin: 'Webshop, marktplaats of social: elk beeld op de maat van waar je verkoopt.' },
+    { label: 'Resolutie', getal: String(RESOLUTIE.hoog), eenheid: 'px', zin: `Lifestyle voor een banner of een druk; standaard is ${RESOLUTIE.standaard} px.` },
+  ],
+
+  strookLabel: 'Werk uit de studio',
+  strookH: ['Werk uit', 'de studio.'],
+  naarGalerij: 'Meer werk in de galerij',
+  pauze: 'Zet de beelden stil',
+  speel: 'Laat de beelden weer lopen',
+
+  werkPil: 'Werkwijze',
+  werkH: ['Van je eerste foto', 'tot na de levering.'],
+  werkZin: 'Eén vast aanspreekpunt, het hele traject door: voor je bestelt, terwijl we eraan werken en na de levering.',
+  werkLink: 'App ons, ook als je bestelling al loopt',
+  werkWa: 'Hoi VISUAILS, ik heb een vraag.',
+  werk: [
+    ['Een vraag tussendoor', 'App of mail. Meestal heb je binnen het uur antwoord, buiten openingstijden de volgende ochtend.'],
+    ['Een foto vergeten', 'Stuur hem na in VISUAILS Studio of via WhatsApp. Hij gaat mee in je bestelling.'],
+    ['Twijfel bij ons', 'Zien we iets wat we niet zeker weten, dan vragen we het je eerst, in plaats van te gokken.'],
+    ['Een beeld klopt niet', 'Markeer het in VISUAILS Studio. Dat beeld gaat terug; de rest van je bestelling loopt door.'],
+  ],
+
+  lucasPil: 'Opgericht door Lucas',
+  lucasH: ['Ik ben', 'Lucas.'],
+  lucas: [
+    'Productbeeld hoeft niet meer te wachten op een studio, een shootdag en weken geduld. Daarvoor heb ik VISUAILS opgericht.',
+    'Het laatste woord ligt bij mij. Voordat er iets naar je toe gaat, ligt elk beeld naast jouw foto: klopt de kleur van de stof, zit het logo goed, valt het zoals het hoort? Wat niet klopt, gaat de deur niet uit.',
+  ],
+  lucasAlt: 'Lucas, oprichter van VISUAILS',
+  drieKop: 'Waar we aan vasthouden',
+  drie: [
+    ['Snel, zonder sluiproute', 'Een doorlooptijd die we halen in plaats van een die mooi staat, en beelden die je zonder aarzelen publiceert.'],
+    ['Consistent, ook bij dertig producten', 'Dezelfde kleurzetting en kadrering over je hele assortiment, niet per beeld opnieuw bedacht.'],
+    ['Eén product of een hele collectie', 'Eén product krijgt dezelfde zorg als een hele collectie. Geen minimum, en geen pakket waar je in moet passen.'],
+  ],
+
+  slotPil: 'Beginnen',
+  slotH: ['Laat zien', 'wat je maakt.'],
+  slotZin: 'Begin met één product, of zet je hele collectie in één keer in de rij. Er is geen minimum.',
+  slotStart: 'Start een bestelling',
+  slotProef: `Probeer één product · ${TEST_SAMPLE.nl.price}`,
+  slotPlan: 'Sluit een abonnement af',
+} : {
+  etiket: `${MERK} · Enschede, NL`,
+  h1: ['The studio behind', 'your product images.'],
+  lede: 'Catalog, lifestyle and video, made from your own product photos. For one product or your whole collection.',
+  ctaStart: 'Start an order',
+  ctaWerk: 'See the work',
+
+  cijfersPil: 'In house',
+  cijfersH: ['A whole studio,', 'without the shoot day.'],
+  cijfers: [
+    { label: 'Models', getal: String(ROSTER_COUNT), eenheid: 'models', zin: 'Regular faces for your images, at no extra cost.', href: '/models', linkNaam: 'To the models' },
+    { label: 'Looks', getal: String(LOOKS), eenheid: 'looks', zin: 'House looks for catalog and lifestyle, or your own look.', href: '/lifestyle', linkNaam: 'To the looks' },
+    { label: 'Channels', getal: String(CHANNELS.length), eenheid: 'channels', zin: 'Webshop, marketplace or social: every image to the spec of where you sell.' },
+    { label: 'Resolution', getal: String(RESOLUTIE.hoog), eenheid: 'px', zin: `Lifestyle for a banner or for print; standard is ${RESOLUTIE.standaard} px.` },
+  ],
+
+  strookLabel: 'Work from the studio',
+  strookH: ['Work from', 'the studio.'],
+  naarGalerij: 'More work in the gallery',
+  pauze: 'Pause the images',
+  speel: 'Play the images again',
+
+  werkPil: 'How we work',
+  werkH: ['From your first photo', 'to after delivery.'],
+  werkZin: 'One regular point of contact all the way through: before you order, while we work, and after delivery.',
+  werkLink: 'Message us, even mid-order',
+  werkWa: 'Hi VISUAILS, I have a question.',
+  werk: [
+    ['A question along the way', 'Message or email. You usually hear back within the hour; outside opening hours, the next morning.'],
+    ['A photo you forgot', 'Send it later in VISUAILS Studio or on WhatsApp. It goes into your order.'],
+    ['Doubt on our side', 'If we see something we’re not sure about, we ask you first instead of guessing.'],
+    ['An image isn’t right', 'Flag it in VISUAILS Studio. That image goes back; the rest of your order carries on.'],
+  ],
+
+  lucasPil: 'Founded by Lucas',
+  lucasH: ['I’m', 'Lucas.'],
+  lucas: [
+    'Product images no longer have to wait for a studio, a shoot day and weeks of patience. That’s why I founded VISUAILS.',
+    'The last word is mine. Before anything reaches you, every image sits next to your photo: is the colour of the fabric right, is the logo right, does it fall the way it should? What isn’t right doesn’t leave.',
+  ],
+  lucasAlt: 'Lucas, founder of VISUAILS',
+  drieKop: 'What we hold to',
+  drie: [
+    ['Speed, without the shortcut', 'A turnaround we actually meet rather than one that only looks good on paper, and images you publish without hesitating.'],
+    ['Consistent, at thirty products too', 'The same colour and framing across your whole range, not re-invented per image.'],
+    ['One product or a whole collection', 'One product gets the same care as a whole collection. No minimum, and no package you have to fit into.'],
+  ],
+
+  slotPil: 'Get started',
+  slotH: ['Show what', 'you make.'],
+  slotZin: 'Start with one product, or queue your whole collection at once. There is no minimum.',
+  slotStart: 'Start an order',
+  slotProef: `Try one product · ${TEST_SAMPLE.en.price}`,
+  slotPlan: 'Start a plan',
+};
+const NR = (n: number) => String(n).padStart(2, '0');
+const PIJL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5l7-7M5.5 4.5h6v6"/></svg>';
+const RECHTS = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/></svg>';
+const VINK = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
+/* De controle in de opening: twee echte beelden van één bestelling (de roze jeans van de voorbeeldset). */
+---
+<div class="h-pagina h-ab h-ov">
+
+  {/* ── 1 · DE KOP: de studio, niet één persoon ─────────────────────────────── */}
+  <header class="h-paginakop h-ov-kop met-kopbeeld">
+    <div class="h-paginakop-tekst">
+      <p class="h-pil h-op" style="--d:0"><span>{c.etiket}</span></p>
+      <h1 class="h-kop h-h1 h-op" style="--d:1"><span class="l">{c.h1[0]}</span> <span>{c.h1[1]}</span></h1>
+      <p class="h-lede h-op" style="--d:2">{c.lede}</p>
+      <p class="h-acties h-op" style="--d:3">
+        <a class="h-knop h-knop-inkt" href={lp('/start')}>{c.ctaStart}<span class="o" set:html={RECHTS} /></a>
+        <a class="h-knop h-knop-lijn" href={lp('/gallery')}>{c.ctaWerk}</a>
+      </p>
+      {/* De pillen komen uit pricing.js: het zijn tier-feiten. */}
+      <ul class="h-feiten h-ab-feiten h-op" style="--d:4" role="list">
+        <li><i set:html={VINK} />{REVIEW}</li>
+        <li><i set:html={VINK} />{TIMING}</li>
+      </ul>
+    </div>
+    {/* De controle: geen echt scherm, een getekend voorbeeld van wat er met elk beeld gebeurt (HalControle.astro). */}
+    <HalControle lang={lang} uitleg />
+  </header>
+
+  {/* ── 2 · IN HUIS: vier getallen uit de data ───────────────────────────────── */}
+  <section class="h-sec h-ov-cijfers-sec" aria-labelledby="ov-cijfers">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{c.cijfersPil}</span></p>
+        <h2 id="ov-cijfers" class="h-kop h-h2"><span class="l">{c.cijfersH[0]}</span> {c.cijfersH[1]}</h2>
+      </div>
+    </header>
+    <ul class="h-ov-cijfers" role="list">
+      {c.cijfers.map((k, i) => (
+        <li class:list={['h-in', 'h-groot', 'h-ov-cijfer', i === 0 && 'h-ov-cijfer-licht']} style={`--d:${i}`}>
+          {i === 0 && <span class="h-korrel" aria-hidden="true"></span>}
+          <div class="h-ov-cijfer-boven">
+            <span class="h-pil h-pil-wit"><span>{k.label}</span></span>
+            {k.href && <a class="h-cirkel h-cirkel-wit" href={lp(k.href)} aria-label={k.linkNaam} set:html={PIJL} />}
+          </div>
+          <div class="h-ov-cijfer-onder">
+            <div class="h-ov-cijfer-rij"><span class="h-getal">{k.getal}</span><span class="h-ov-eenheid">{k.eenheid}</span></div>
+            <p class="h-ov-cijfer-zin">{k.zin}</p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  {/* ── 3 · WERK UIT DE STUDIO: de band van AboutHal ─────────────────────────── */}
+  <section class="h-sec h-ab-werk-sec" aria-labelledby="ov-werk">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{c.strookLabel}</span></p>
+        <h2 id="ov-werk" class="h-kop h-h2"><span class="l">{c.strookH[0]}</span> {c.strookH[1]}</h2>
+      </div>
+      <div class="h-ab-werk-acties">
+        <button type="button" class="h-cirkel h-cirkel-klein h-ab-pauze" data-ab-pauze aria-pressed="false" aria-label={c.pauze} data-uit={c.pauze} data-aan={c.speel} hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path class="h-ab-p-uit" d="M6 4v8M10 4v8" /><path class="h-ab-p-aan" d="M5.5 3.8v8.4L12.5 8z" /></svg></button>
+        <a class="h-link" href={lp('/gallery')}>{c.naarGalerij}<span class="h-cirkel h-cirkel-klein" aria-hidden="true" set:html={PIJL} /></a>
+      </div>
+    </header>
+    <div class="h-ab-band h-in" data-ab-band>
+      {[0, 1].map((kopie) => (
+        <ul class="h-ab-band-rij" role={kopie ? undefined : 'list'} aria-hidden={kopie ? 'true' : undefined}>
+          {strip.map((f) => (
+            <li style={`--r:${(f.w / f.h).toFixed(4)}`}>
+              <img src={f.src} alt={kopie ? '' : f.alt[lang]} loading="lazy" decoding="async" width={f.w} height={f.h} />
+            </li>
+          ))}
+        </ul>
+      ))}
+    </div>
+  </section>
+
+  {/* ── 4 · WERKWIJZE: het contact, van eerste foto tot na de levering ───────── */}
+  <section class="h-sec h-ov-werk-sec" aria-labelledby="ov-werkwijze">
+    <header class="h-sec-kop h-ov-werk-kop h-in">
+      <div>
+        <p class="h-pil"><span>{c.werkPil}</span></p>
+        <h2 id="ov-werkwijze" class="h-kop h-h2"><span class="l">{c.werkH[0]}</span> {c.werkH[1]}</h2>
+      </div>
+      <div class="h-ov-werk-zij">
+        <p class="h-ov-werk-zin">{c.werkZin}</p>
+        <a class="h-link" href={waHref(c.werkWa)} target="_blank" rel="noopener" {...waKlant(lang)}>{c.werkLink}<span class="h-cirkel h-cirkel-klein" aria-hidden="true" set:html={PIJL} /><NieuwTabblad lang={lang} /></a>
+      </div>
+    </header>
+    <ol class="h-ab-drie h-ov-vier" role="list">
+      {c.werk.map(([kop, tekst], i) => (
+        <li class="h-in" style={`--d:${i}`}>
+          <p class="h-nr" aria-hidden="true"><b>{NR(i + 1)}</b><i></i><span>/ {NR(c.werk.length)}</span></p>
+          <h3 class="h-ab-drie-kop">{kop}</h3>
+          <p class="h-ab-drie-tekst">{tekst}</p>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  {/* ── 5 · LUCAS: de oprichter, en waar we aan vasthouden ───────────────────── */}
+  <section class="h-sec h-ov-lucas-sec" aria-labelledby="ov-lucas">
+    <div class:list={['h-ov-lucas', toonPortret && 'met-portret']}>
+      <div class="h-ov-lucas-tekst h-in">
+        <p class="h-pil"><span>{c.lucasPil}</span></p>
+        <h2 id="ov-lucas" class="h-kop h-h2"><span class="l">{c.lucasH[0]}</span> {c.lucasH[1]}</h2>
+        <p class="h-ov-lucas-lede">{c.lucas[0]}</p>
+        <p class="h-ov-lucas-zin">{c.lucas[1]}</p>
+      </div>
+      {toonPortret && (
+        <figure class="h-ov-lucas-portret h-in" style="--d:1">
+          <img src={PORTRET} alt={c.lucasAlt} width="1200" height="1500" loading="lazy" decoding="async" />
+        </figure>
+      )}
+      <div class="h-ov-drie h-in" style="--d:1">
+        <p class="h-ov-drie-kop">{c.drieKop}</p>
+        <ul class="h-ov-drie-lijst" role="list">
+          {c.drie.map(([kop, tekst]) => <li><div><b>{kop}</b><span>{tekst}</span></div></li>)}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  {/* ── 6 · HET SLOT: een licht vlak, beginnen ───────────────────────────────── */}
+  <section class="h-sec h-lk-slot-sec" aria-labelledby="ov-slot">
+    <div class="h-lk-slot h-in">
+      <span class="h-korrel" aria-hidden="true"></span>
+      <p class="h-pil h-pil-wit"><span>{c.slotPil}</span></p>
+      <h2 id="ov-slot" class="h-kop h-h2"><span class="l">{c.slotH[0]}</span> {c.slotH[1]}</h2>
+      <p class="h-vd-slot-zin">{c.slotZin}</p>
+      <p class="h-acties">
+        <a class="h-knop h-knop-inkt" href={lp('/start')}>{c.slotStart}<span class="o" set:html={RECHTS} /></a>
+        {/* De proef alleen voor wie niet is ingelogd; een klant ziet het abonnement (interactions.js). */}
+        <a class="h-knop h-knop-lijn" href={lp('/test-sample')} data-vis-uit>{c.slotProef}</a>
+        <a class="h-knop h-knop-lijn" href={lp('/start/plan')} {...planKnop(lang, lp)}><span data-vis-label>{c.slotPlan}</span></a>
+      </p>
+    </div>
+  </section>
+</div>
+<HalBeweging />
+
+<script>
+  /* De pauzeknop van de band, zoals op AboutHal (WCAG 2.2.2). */
+  const zetBand = () => {
+    const band = document.querySelector<HTMLElement>('[data-ab-band]');
+    const knop = document.querySelector<HTMLButtonElement>('[data-ab-pauze]');
+    if (!band || !knop || knop.dataset.klaar) return;
+    knop.dataset.klaar = '1';
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    knop.hidden = false;
+    knop.addEventListener('click', () => {
+      const stil = knop.getAttribute('aria-pressed') !== 'true';
+      knop.setAttribute('aria-pressed', String(stil));
+      knop.setAttribute('aria-label', (stil ? knop.dataset.aan : knop.dataset.uit) || '');
+      band.classList.toggle('is-stil', stil);
+    });
+  };
+  zetBand();
+  document.addEventListener('astro:page-load', zetBand);
+</script>

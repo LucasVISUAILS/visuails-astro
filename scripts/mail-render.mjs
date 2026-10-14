@@ -28,10 +28,12 @@ import { cancelEmail, creditNoteEmail } from '../src/lib/cancelMail.js';
 import { browserPad } from './lib/browserpad.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const DATA_MARK = 'data:image/png;base64,' +
-  fs.readFileSync(path.join(ROOT, 'public/img/mail/mark-groen.png')).toString('base64');
-
-const localise = html => html.replace(/https:\/\/visuails\.com\/img\/mail\/mark-groen\.png/g, DATA_MARK);
+/* Elk beeld uit public/img/mail als data-URI (14 oktober 2026: ook het woordmerk
+   van de kop, woordmerk-inkt.png), zodat de voorvertoning zonder de live site werkt. */
+const localise = html => html.replace(/https:\/\/visuails\.com\/img\/mail\/([a-z-]+\.png)/g, (m, f) => {
+  const pad = path.join(ROOT, 'public/img/mail', f);
+  return fs.existsSync(pad) ? `data:image/png;base64,${fs.readFileSync(pad).toString('base64')}` : m;
+});
 
 const PORTAL = 'https://visuails.com/o/3f9a2c7d5e1b48a6';
 

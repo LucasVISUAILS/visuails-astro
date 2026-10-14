@@ -72,11 +72,14 @@ export const ROSTER = [
   { name: 'Dana',   photo: '/img/model-dana.webp',   thumb: '/img/model-dana-w800.webp',   traits: ['confident', 'modern'], w: 1195, h: 1600, tw: 800, th: 1071 },
   { name: 'Lisa',   photo: '/img/model-lisa.webp',   thumb: '/img/model-lisa-w800.webp',   traits: ['natural', 'approachable'], w: 1195, h: 1600, tw: 800, th: 1071 },
   { name: 'Maegan', photo: '/img/model-maegan.webp', thumb: '/img/model-maegan-w800.webp', traits: ['bold', 'statement'], w: 1195, h: 1600, tw: 800, th: 1071 },
-  /* Rae's master is 800x1071 en er ligt géén -w800-derivaat op schijf (de noot
-     hierboven liep vooruit op een master die er niet is): thumb en photo zijn
-     hetzelfde bestand, tot de 1195x1600 er ligt. 5 september 2026 — de tegel op
-     Je vaste look gaf een 404. */
-  { name: 'Rae',    photo: '/img/model-rae.webp',    thumb: '/img/model-rae.webp',         traits: ['soft', 'understated'], w: 800, h: 1071, tw: 800, th: 1071 },
+  /* Rae volgt sinds 8 oktober 2026 de andere negen (punt 9.01, §17.25). Op
+     5 september stond hier dat er géén -w800-derivaat op schijf lag en dat
+     thumb en photo daarom hetzelfde bestand waren; de tegel op Je vaste look gaf
+     toen een 404. Inmiddels ligt model-rae-w800.webp er wel (de nacontrole van
+     6 oktober zag hem), en dan laadde elke rostertegel het grote bestand voor
+     een tegel van 800 px. De maten zijn die van de andere negen: dezelfde 3:4,
+     dus ook als de master toch kleiner blijkt, verschuift er niets. */
+  { name: 'Rae',    photo: '/img/model-rae.webp',    thumb: '/img/model-rae-w800.webp',    traits: ['soft', 'understated'], w: 1195, h: 1600, tw: 800, th: 1071 },
   { name: 'Fabi',   photo: '/img/model-fabi.webp',   thumb: '/img/model-fabi-w800.webp',   traits: ['clean', 'contemporary'], w: 1195, h: 1600, tw: 800, th: 1071 },
   { name: 'Seme',   photo: '/img/model-seme.webp',   thumb: '/img/model-seme-w800.webp',   traits: ['sharp', 'editorial'], w: 1195, h: 1600, tw: 800, th: 1071 },
 ];

@@ -45,7 +45,9 @@
  */
 
 import { serviceLabel } from '../data/services.js';
-import { REVIEW_PLATFORMS, parsePlatforms, SCORE_HIGH, SCORE_MAX } from '../data/reviews.js';
+import { REVIEW_PLATFORMS, REVIEW_VOORKEUR, parsePlatforms, SCORE_HIGH, SCORE_MAX } from '../data/reviews.js';
+import { TOESTEMMING_WEG_DAGEN, termijnInWoorden } from '../data/termijnen.js';
+import { nieuwTabbladHtml } from '../data/nieuwTabblad.js';
 import { sendMail } from './mail.js';
 import { shell, h1, p as mailP, rows as mailRows, quote as mailQuote, note as mailNote } from './mailTemplate.js';
 
@@ -96,6 +98,28 @@ const COPY = {
 
     done: 'Bedankt voor je antwoord.',
     changeScore: 'Ander antwoord geven',
+
+    /* ── HET TOESTEMMINGSBLOK — 8 oktober 2026 (punten 3.05 en 10.05) ──────
+       Vervangt het losse vinkje "je mag dit met mijn naam op de site zetten":
+       één blok, twee vrijwillige keuzes, elk met merknaam / zonder / liever
+       niet. Na het versturen staat de eigen tekst klaar om te kopiëren. */
+    tekstH: 'Wat zou je tegen een ander merk zeggen?',
+    tekstLede: 'Mag leeg blijven. Wat je hier schrijft lezen we zelf; we zetten het alleen ergens neer als je dat hieronder aangeeft, en pas nadat we het hebben nagekeken.',
+    tekstNaam: 'Merknaam, zoals hij erbij mag staan',
+    toonH: 'Mogen we dit laten zien op visuails.com en social?',
+    toonTekst: 'Je tekst',
+    toonBeelden: 'Je beelden en productfoto\u2019s',
+    toon: { merk: 'Ja, met merknaam', zonder: 'Ja, zonder merknaam', nee: 'Liever niet' },
+    toonNoot: (termijn) => `Foto\u2019s waarop iemand je product draagt, laten we nooit zien. Je kunt je toestemming altijd intrekken, in VISUAILS Studio of met een mail; dan halen we je beelden binnen ${termijn} van de site en social.`,
+    /* Geen tweede "dank je": de kop erboven zegt al "Bedankt voor je antwoord". */
+    naVraag: (naam) => `Wil je dit ook op ${naam} zetten?`,
+    naKopie: 'Je tekst staat hieronder; kopieer hem gerust.',
+    naZonderTekst: (naam) => `Wil je ook een review op ${naam} achterlaten?`,
+    kopieLabel: 'Je tekst, om te kopiëren',
+    platformOok: (name) => `Of op ${name}`,
+    toonStaat: (tekst, beelden) => `Je tekst: ${tekst.toLowerCase()} \u00b7 Je beelden: ${beelden.toLowerCase()}`,
+    intrekken: 'Toestemming intrekken',
+    ingetrokken: (termijn) => `Je hebt je toestemming ingetrokken. We halen je beelden binnen ${termijn} van de site en social, en zetten je tekst nergens meer neer.`,
   },
   en: {
     askH: 'Are you happy with what you got?',
@@ -129,6 +153,23 @@ const COPY = {
 
     done: 'Thanks for answering.',
     changeScore: 'Give a different answer',
+
+    tekstH: 'What would you tell another brand?',
+    tekstLede: 'You may leave this empty. We read what you write here ourselves; we only put it anywhere if you say so below, and only after we have read it.',
+    tekstNaam: 'Brand name, as it may appear',
+    toonH: 'May we show this on visuails.com and social?',
+    toonTekst: 'Your text',
+    toonBeelden: 'Your images and product photos',
+    toon: { merk: 'Yes, with brand name', zonder: 'Yes, without brand name', nee: 'Rather not' },
+    toonNoot: (termijn) => `We never show photos of someone wearing your product. You can withdraw your permission at any time, in VISUAILS Studio or by email; we then take your images off the site and social within ${termijn}.`,
+    naVraag: (naam) => `Want to put this on ${naam} too?`,
+    naKopie: 'Your text is below; feel free to copy it.',
+    naZonderTekst: (naam) => `Want to leave a review on ${naam} as well?`,
+    kopieLabel: 'Your text, to copy',
+    platformOok: (name) => `Or on ${name}`,
+    toonStaat: (tekst, beelden) => `Your text: ${tekst.toLowerCase()} \u00b7 Your images: ${beelden.toLowerCase()}`,
+    intrekken: 'Withdraw permission',
+    ingetrokken: (termijn) => `You withdrew your permission. We take your images off the site and social within ${termijn}, and no longer use your text anywhere.`,
   },
 };
 
@@ -292,6 +333,81 @@ export async function saveTestimonial(env, orderId, { text, name, consent }) {
   }
 }
 
+/* ── HET TOESTEMMINGSBLOK — 8 oktober 2026 (punten 3.05 en 10.05) ────────────
+ *
+ * Eén blok op het afrondscherm met twee vrijwillige keuzes: je tekst, en je
+ * beelden (de geleverde beelden en de aangeleverde productfoto's — NOOIT
+ * draagfoto's, want voor de persoon op de foto kan de klant geen toestemming
+ * geven). Elk: 'merk', 'zonder' of 'nee'. Het vervangt het losse vinkje van
+ * saveTestimonial() hierboven; dat pad blijft bestaan voor een formulier uit een
+ * tabblad dat nog openstond.
+ *
+ * DE TEKST WORDT NU OOK ZONDER TOESTEMMING BEWAARD, en dat is een andere vraag
+ * dan het vinkje stelde. Het vinkje vroeg "mogen we dit op de site zetten", en
+ * zonder ja was de tekst er alleen voor de site — dus weg. Nu vraagt het blok
+ * "wat zou je tegen een ander merk zeggen" en staat die tekst na het versturen
+ * klaar om te kopiëren naar Trustpilot of Google (3.05). Dat kan alleen als hij
+ * bewaard is. Hij staat dan in testimonial_text met testimonial_consent = 0, en
+ * elke plek die iets toont (/admin/testimonials, scripts/testimonials.mjs) eist
+ * testimonial_consent = 1. Het scherm zegt dat ook: "wat je hier schrijft lezen
+ * we zelf; we zetten het alleen ergens neer als je dat hieronder aangeeft".
+ *
+ * testimonial_consent = 1 zodra de tekst getoond mag worden (met of zonder
+ * merknaam); testimonial_name alleen bij 'merk'. Zo blijven de bestaande
+ * lezers werken zonder dat ze van de nieuwe kolommen hoeven te weten.
+ */
+const TOON = ['merk', 'zonder', 'nee'];
+const toonWaarde = (v) => (TOON.includes(String(v || '')) ? String(v) : 'nee');
+const magTonen = (v) => v === 'merk' || v === 'zonder';
+
+export async function saveToestemming(env, orderId, { text, name, toonTekst, toonBeelden }) {
+  const tekst = String(text || '').trim().slice(0, 1200);
+  const tt = toonWaarde(toonTekst);
+  const tb = toonWaarde(toonBeelden);
+  const consent = tekst && magTonen(tt) ? 1 : 0;
+  const naam = tt === 'merk' ? (String(name || '').trim().slice(0, 120) || null) : null;
+  try {
+    await env.DB.prepare(
+      `UPDATE order_feedback
+          SET testimonial_text = ?2, testimonial_name = ?3, testimonial_consent = ?4,
+              testimonial_approved = 0,
+              toon_tekst = ?5, toon_beelden = ?6, toestemming_at = datetime('now'), ingetrokken_at = NULL,
+              updated_at = datetime('now')
+        WHERE order_id = ?1`
+    ).bind(orderId, tekst || null, naam, consent, tt, tb).run();
+    return true;
+  } catch (err) {
+    console.error('[feedback] toestemming niet opgeslagen voor bestelling', orderId, '—', err && err.message, '— migratie 0055 gedraaid?');
+    return false;
+  }
+}
+
+/**
+ * Toestemming intrekken: tekst en beelden op 'nee', de goedkeuring in /admin
+ * eraf. De tekst zelf blijft staan (het is wat de klant ons schreef), maar
+ * testimonial_consent = 0, dus niets toont hem nog. Geeft terug of er écht iets
+ * ingetrokken werd — alleen dan krijgt Lucas een mail (binnen een week weghalen).
+ */
+export async function trekToestemmingIn(env, orderId) {
+  try {
+    const voor = await env.DB.prepare(
+      'SELECT toon_tekst, toon_beelden, testimonial_consent FROM order_feedback WHERE order_id = ?1'
+    ).bind(orderId).first();
+    const had = !!voor && (magTonen(voor.toon_tekst) || magTonen(voor.toon_beelden) || Number(voor.testimonial_consent) === 1);
+    if (!had) return false;
+    await env.DB.prepare(
+      `UPDATE order_feedback
+          SET toon_tekst = 'nee', toon_beelden = 'nee', testimonial_consent = 0, testimonial_approved = 0,
+              ingetrokken_at = datetime('now'), updated_at = datetime('now')
+        WHERE order_id = ?1`
+    ).bind(orderId).run();
+    return true;
+  } catch (err) {
+    console.error('[feedback] intrekken mislukt voor bestelling', orderId, '—', err && err.message);
+    return false;
+  }
+}
+
 /* ── DE OPMAAK ───────────────────────────────────────────────────────────────
  *
  * Losse HTML met eigen `fb-`-klassen in public/feedback.css, en dat bestand wordt
@@ -358,32 +474,83 @@ function scoreRow(t, action, hidden) {
  * WAT NIET IS AANGERAAKT: dat het een POST is, dat hij in een nieuw tabblad opent en dat
  * de klik geregistreerd wordt. Dat is de werking, en die was niet het probleem.
  */
-function platformButtons(t, action, hidden, clicked) {
-  return REVIEW_PLATFORMS.map((p) => `<form method="post" action="${esc(action)}" target="_blank" rel="noopener">
+/* `lang` (8 oktober 2026, o26): de knop opent een nieuw tabblad, en een
+   schermlezer hoort dat nu ook ná de eerste klik, als de zichtbare hint weg is. */
+/* ── ÉÉN PLEK GROOT, DE ANDERE ALS TEKSTLINK — 8 oktober 2026 (punt 3.05) ────
+   REVIEW_VOORKEUR in reviews.js zegt welke voorop staat (Trustpilot, Lucas'
+   keuze); die is een knop, de andere een kleine link "Of op Google". Beide
+   blijven er bij elke score: de volgorde is een advies, geen filter. Met
+   `groot` (na het versturen, als de review de enige handeling is die nog over
+   is) wordt de eerste de violette knop. */
+function platformButtons(t, action, hidden, clicked, lang = 'nl', { groot = false } = {}) {
+  const lijst = [...REVIEW_PLATFORMS].sort((a, b) => (a.id === REVIEW_VOORKEUR ? -1 : b.id === REVIEW_VOORKEUR ? 1 : 0));
+  return lijst.map((p, i) => `<form method="post" action="${esc(action)}" target="_blank" rel="noopener"${i ? ' class="fb-ook"' : ''}>
     ${hidden}<input type="hidden" name="fb" value="click">
     <input type="hidden" name="platform" value="${esc(p.id)}">
-    <button class="btn btn-ghost btn-sm" type="submit">${esc(p.name)}</button>
+    <button class="${i === 0 ? `btn ${groot ? 'btn-primary' : 'btn-ghost'}` : 'btn-quiet fb-link'}" type="submit">${esc(i === 0 ? t.platform(p.name) : t.platformOok(p.name))}${nieuwTabbladHtml(lang)}</button>
   </form>`).join('') + (clicked.length ? '' : `<span class="fb-hint">${esc(t.platformNote)}</span>`);
 }
 
-/** Het testimonialformulier. */
-function quoteForm(t, action, hidden, fb) {
-  if (fb?.testimonial_consent) {
-    return `<p class="fb-thanks">${esc(t.quoteThanks)}</p>`;
-  }
+/** De naam van de plek die voorop staat ("Trustpilot"), voor de zin erboven. */
+const voorkeurNaam = () => (REVIEW_PLATFORMS.find((p) => p.id === REVIEW_VOORKEUR) || REVIEW_PLATFORMS[0]).name;
+
+/**
+ * Het tekstvak met het toestemmingsblok (vóór het versturen), bij een hoge score.
+ * Eén formulier, geen script: twee groepen radioknoppen, "Liever niet" staat
+ * standaard aan — toestemming is iets wat de klant zelf aanzet.
+ */
+function toestemmingForm(t, action, hidden, lang) {
+  const groep = (naam, legend) => `<fieldset class="fb-toon-groep">
+      <legend>${esc(legend)}</legend>
+      ${TOON.map((w) => `<label class="fb-toon-keuze"><input type="radio" name="${naam}" value="${w}"${w === 'nee' ? ' checked' : ''}><span>${esc(t.toon[w])}</span></label>`).join('')}
+    </fieldset>`;
   return `<form class="fb-quote" method="post" action="${esc(action)}">
     ${hidden}<input type="hidden" name="fb" value="quote">
-    <h4>${esc(t.quoteH)}</h4>
-    <textarea name="quote" rows="3" placeholder="${esc(t.quotePlaceholder)}" maxlength="1200" required></textarea>
-    <input type="text" name="quote_name" placeholder="${esc(t.quoteName)}" maxlength="120" autocomplete="organization">
-    <label class="fb-check">
-      <input type="checkbox" name="quote_consent" value="1" required>
-      <span>${esc(t.quoteConsent)}</span>
-    </label>
-    <p class="fb-hint">${esc(t.quoteConsentNote)}</p>
-    <button class="btn btn-ghost fb-btn-sm" type="submit">${esc(t.quoteSend)}</button>
+    <h4><label for="fb-tekst">${esc(t.tekstH)}</label></h4>
+    <p class="fb-lede">${esc(t.tekstLede)}</p>
+    <textarea id="fb-tekst" name="quote" rows="3" maxlength="1200"></textarea>
+    <input type="text" name="quote_name" placeholder="${esc(t.tekstNaam)}" aria-label="${esc(t.tekstNaam)}" maxlength="120" autocomplete="organization">
+    <div class="fb-toon" role="group" aria-labelledby="fb-toon-h">
+      <p class="fb-toon-h" id="fb-toon-h">${esc(t.toonH)}</p>
+      ${groep('toon_tekst', t.toonTekst)}
+      ${groep('toon_beelden', t.toonBeelden)}
+      <p class="fb-hint">${esc(t.toonNoot(termijnInWoorden(TOESTEMMING_WEG_DAGEN, lang)))}</p>
+    </div>
+    <button class="btn btn-primary fb-btn-sm" type="submit">${esc(t.quoteSend)}</button>
   </form>`;
 }
+
+/**
+ * Na het versturen: de eigen tekst klaar om te kopiëren (alleen-lezen tekstvak,
+ * kopiëren werkt zonder script), de reviewknoppen, wat er gekozen is en de weg
+ * terug (intrekken).
+ */
+function naVersturen(t, action, hidden, fb, clicked, lang) {
+  const tekst = String(fb.testimonial_text || '').trim();
+  const naam = voorkeurNaam();
+  /* Een rij van vóór 0055 (het oude vinkje) telt als "tekst met merknaam". */
+  const tt = fb.toon_tekst || (Number(fb.testimonial_consent) === 1 ? 'merk' : '');
+  const tb = fb.toon_beelden || '';
+  const heeftKeuze = !!(fb.toon_tekst || fb.toon_beelden);
+  const magIets = magTonen(tt) || magTonen(tb);
+  const termijn = termijnInWoorden(TOESTEMMING_WEG_DAGEN, lang);
+  return `<div class="fb-na">
+      <h4>${esc(tekst ? t.naVraag(naam) : t.naZonderTekst(naam))}</h4>
+      ${tekst ? `<p class="fb-lede">${esc(t.naKopie)}</p>` : ''}
+      ${tekst ? `<textarea class="fb-kopie" readonly rows="4" aria-label="${esc(t.kopieLabel)}">${esc(tekst)}</textarea>` : ''}
+      <div class="fb-actions">${platformButtons(t, action, hidden, clicked, lang, { groot: true })}</div>
+      ${fb.ingetrokken_at ? `<p class="fb-thanks">${esc(t.ingetrokken(termijn))}</p>` : ''}
+      ${!fb.ingetrokken_at && magTonen(tt) ? `<p class="fb-thanks">${esc(t.quoteThanks)}</p>` : ''}
+      ${heeftKeuze && !fb.ingetrokken_at ? `<p class="fb-hint">${esc(t.toonStaat(t.toon[toonWaarde(tt)], t.toon[toonWaarde(tb)]))}</p>` : ''}
+      ${magIets && !fb.ingetrokken_at ? `<form class="fb-again" method="post" action="${esc(action)}">
+        ${hidden}<input type="hidden" name="fb" value="intrekken">
+        <button class="btn-quiet" type="submit">${esc(t.intrekken)}</button>
+      </form>` : ''}
+    </div>`;
+}
+
+/* Het testimonialformulier met het losse vinkje (quoteForm) is op 8 oktober
+   2026 vervangen door toestemmingForm() hierboven (punt 10.05). */
 
 /**
  * Het hele blok, in de toestand waarin deze bestelling nu staat.
@@ -426,15 +593,27 @@ export function feedbackBlock({ lang = 'nl', action, hidden = '', feedback = nul
     <p class="fb-lede"><span class="fb-given">${esc(t.scoreLabel(score))}</span></p>`;
 
   // ── HOGE SCORE: de drie acties naast elkaar ───────────────────────────────
+  /* Verstuurd: het toestemmingsblok is ingevuld (of het oude vinkje stond aan,
+     of er staat al een tekst). Dan de tekst om te kopiëren en de reviewknoppen
+     (3.05). Nog niet: de knoppen, en daaronder het tekstvak met het
+     toestemmingsblok (10.05) in plaats van het oude losse vinkje. */
+  const verstuurd = !!(fb.toestemming_at || fb.ingetrokken_at || Number(fb.testimonial_consent) === 1 || String(fb.testimonial_text || '').trim());
+  if (high && verstuurd) {
+    return `<section class="fb" aria-labelledby="fb-h">
+      ${head}
+      ${naVersturen(t, action, hidden, fb, clicked, lang)}
+      ${again}
+    </section>`;
+  }
   if (high) {
     return `<section class="fb" aria-labelledby="fb-h">
       ${head}
       <div class="fb-share">
         <h4>${esc(t.shareH)}</h4>
         <p class="fb-lede">${esc(t.shareLede)}</p>
-        <div class="fb-actions">${platformButtons(t, action, hidden, clicked)}</div>
+        <div class="fb-actions">${platformButtons(t, action, hidden, clicked, lang)}</div>
       </div>
-      ${quoteForm(t, action, hidden, fb)}
+      ${toestemmingForm(t, action, hidden, lang)}
       ${again}
     </section>`;
   }
@@ -460,7 +639,7 @@ export function feedbackBlock({ lang = 'nl', action, hidden = '', feedback = nul
     <div class="fb-also">
       <h4>${esc(t.alsoH)}</h4>
       <p class="fb-lede">${esc(t.alsoLede)}</p>
-      <div class="fb-actions">${platformButtons(t, action, hidden, clicked)}</div>
+      <div class="fb-actions">${platformButtons(t, action, hidden, clicked, lang)}</div>
     </div>
     ${again}
   </section>`;
@@ -516,18 +695,48 @@ async function notifyStudio(env, { orderId, kind, score, note }) {
       || [order?.first_name, order?.last_name].filter(Boolean).join(' ')
       || order?.name || order?.email || '—';
 
+    /* ── TOESTEMMING INGETROKKEN (10.05, V30-2 = a) ─────────────────────────
+       Een eigen, korte mail: Lucas moet de beelden en de tekst binnen de termijn
+       van site en social halen. Alleen Nederlands, net als de rest van /admin. */
+    if (kind === 'intrekken') {
+      const termijn = termijnInWoorden(TOESTEMMING_WEG_DAGEN, 'nl');
+      await sendMail(env, {
+        replyTo: order?.email || '',
+        to,
+        subject: `Toestemming ingetrokken bij ${ref} — binnen ${termijn} weghalen`,
+        html: shell({
+          lang: 'nl',
+          preheader: `${who} wil niet meer dat we zijn beelden of tekst laten zien.`,
+          body: [
+            h1('Een klant trekt zijn toestemming in', ref),
+            mailRows([
+              ['Bestelling', esc(ref)],
+              ['Klant', esc(who)],
+              ['E-mail', esc(order?.email || '')],
+            ]),
+            mailP(`Haal zijn beelden en zijn tekst binnen ${esc(termijn)} van de site en van social. Dat is wat het scherm hem belooft. In /admin/testimonials staat hij nu onder "Ingetrokken".`, { top: 16 }),
+          ].join(''),
+        }),
+      });
+      return;
+    }
+
     const subject = kind === 'note'
       ? `Klacht bij ${ref} — ${score}/${SCORE_MAX}`
       : `Lage score bij ${ref} — ${score}/${SCORE_MAX}`;
 
     const body = [
       h1(kind === 'note' ? 'Een klant heeft uitgelegd wat er misging' : 'Een klant is niet tevreden', ref),
+      /* Elke waarde als tekst (8 oktober 2026). rows() uit mailTemplate.js neemt
+         HTML aan, en `who` is de merknaam of naam die de klant zelf typte: een
+         merk dat "<a href=…>Open in admin</a>" heette, stond hier als echte link
+         in een echte VISUAILS-melding. notify.js ontsnapte dit al; deze mail niet. */
       mailRows([
-        ['Score', `${score} / ${SCORE_MAX}`],
-        ['Bestelling', ref],
-        ['Klant', who],
-        ['E-mail', order?.email || ''],
-        ['Dienst', serviceLabel(order?.service, 'nl') || order?.service || ''],
+        ['Score', esc(`${score} / ${SCORE_MAX}`)],
+        ['Bestelling', esc(ref)],
+        ['Klant', esc(who)],
+        ['E-mail', esc(order?.email || '')],
+        ['Dienst', esc(serviceLabel(order?.service, 'nl') || order?.service || '')],
       ]),
       note ? mailQuote(String(note).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])).replace(/\n/g, '<br>')) : '',
       mailP(kind === 'note'
@@ -586,11 +795,31 @@ export async function handleFeedbackPost(env, { orderId, customerId, form }) {
   }
 
   if (kind === 'quote') {
+    /* Het toestemmingsblok (10.05) stuurt toon_tekst en toon_beelden mee; een
+       formulier zonder die velden komt uit een tabblad van vóór vandaag en gaat
+       de oude weg, met het vinkje. */
+    if (form.get('toon_tekst') !== null || form.get('toon_beelden') !== null) {
+      await saveToestemming(env, orderId, {
+        text: form.get('quote'),
+        name: form.get('quote_name'),
+        toonTekst: form.get('toon_tekst'),
+        toonBeelden: form.get('toon_beelden'),
+      });
+      return { ok: true, redirect: null };
+    }
     await saveTestimonial(env, orderId, {
       text: form.get('quote'),
       name: form.get('quote_name'),
       consent: form.get('quote_consent') === '1',
     });
+    return { ok: true, redirect: null };
+  }
+
+  /* Intrekken (V30-2 = a): Lucas krijgt een mail, want hij moet de beelden
+     binnen een week van site en social halen. */
+  if (kind === 'intrekken') {
+    const echt = await trekToestemmingIn(env, orderId);
+    if (echt) await notifyStudio(env, { orderId, kind: 'intrekken', score: '' });
     return { ok: true, redirect: null };
   }
 

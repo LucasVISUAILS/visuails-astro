@@ -24,7 +24,7 @@
  * image on two of the largest channels they sell through, and the reason they
  * could not show it would have been us.
  *
- * THE VALUE WE WRITE, AND WHY IT IS THE COMPOSITE ONE
+ * THE VALUE WE WRITE — trainedAlgorithmicMedia SINCE 11 OCTOBER 2026
  *
  * IPTC's vocabulary separates:
  *   trainedAlgorithmicMedia          — created algorithmically by a model
@@ -33,13 +33,13 @@
  *                                    — augmentation, correction or enhancement
  *                                      using a generative model
  *
- * A VISUAILS visual starts from the customer's real photographs of a real
- * product and builds the light, the background and the model around them. That
- * is the composite case, and it is the same reading that puts "partially
- * modified by AI" on the EU icon on /ai-act. One workflow, one story, in the
- * file and on the page. `--fully` exists for a frame with no photographed
- * region at all; it should be rare, and if it stops being rare, /ai-act's
- * description of how we work is what needs revisiting, not this flag.
+ * Until 11 October 2026 this wrote the composite value, on the reading that a
+ * VISUAILS visual starts from the customer's real photographs. Lucas chose the
+ * other value (afvinklijst 2, kiptc = a): the image itself is made by the model,
+ * with the product photos as its source, and that is what the stronger value
+ * says. The value lives in src/lib/iptc.js (LEVERTAG); /ai-act and /editions
+ * name it from there. `--fully` now writes the same value and is kept for old
+ * command lines.
  *
  * WHAT THIS DOES NOT DO
  *
@@ -79,7 +79,7 @@ import path from 'node:path';
  * De uitleg over het gereedschap en het moment blijft hierboven staan: die gaat
  * over dit script en niet over de waarde.
  */
-import { COMPOSITE, FULLY, writeSourceType } from './lib/aitag.mjs';
+import { FULLY, LEVERTAG, writeSourceType } from './lib/aitag.mjs';
 
 /**
  * Extra IPTC keywords to write alongside the source type.
@@ -99,7 +99,7 @@ const EXT = new Set(['.jpg', '.jpeg', '.png', '.webp']);
 const args = process.argv.slice(2);
 const dir = args.find((a) => !a.startsWith('--'));
 const checkOnly = args.includes('--check');
-const value = args.includes('--fully') ? FULLY : COMPOSITE;
+const value = args.includes('--fully') ? FULLY : LEVERTAG;   // 4.01: de waarde staat in src/lib/iptc.js
 
 if (!dir) {
   console.error('Usage: node scripts/tag-delivery.mjs <folder> [--check] [--fully]');

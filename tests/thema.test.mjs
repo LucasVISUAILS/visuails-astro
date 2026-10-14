@@ -150,39 +150,27 @@ console.log('\nhet accent wisselt van rol en niet van kleur');
     /rgb\(198 241 0/.test(buitenRoot.replace(/\/\*[\s\S]*?\*\//g, '')), false);
 }
 
-console.log('\nde schakelaar werkt zonder JavaScript');
+/* ── ALLEEN LICHT — 14 oktober 2026 (afvinklijst 26, v26-donker = a) ──────────
+   Studio staat in de hal, en de hal is licht. Het maantje is weg en Studio zet
+   geen thema-cookie meer. De lichte en donkere tokens hierboven blijven getoetst:
+   ze staan nog in account.css, en het inlogscherm leest het lichte blok. */
+console.log('\nStudio is alleen licht');
 {
-  ok('het thema komt uit een cookie', /function themaCookie\(/.test(acc));
-  /* Sectie 21 (5 september 2026): de site is licht, dus zonder cookie is Studio
-     het ook — 'donker' is de keuze, niet het uitgangspunt. */
-  ok('en de standaard is licht', /\? 'donker' : 'licht'/.test(acc));
-  ok('?thema= legt de keuze vast', /searchParams\.get\('thema'\)/.test(acc));
-  ok('en stuurt terug zonder de parameter', /searchParams\.delete\('thema'\)/.test(acc));
-  ok('de cookie heet vis_thema', /vis_thema=\$\{kleur\}/.test(acc));
-  /* Een LINK en geen knop met een handler: dit dashboard draait op nul
-     JavaScript — er staat geen script-src in de CSP, alleen default-src 'none'. */
-  /* Sinds 6 september 2026 staat de schil in src/layouts/StudioLayout.astro. */
+  ok('themaCookie geeft altijd licht', /function themaCookie\(\) \{\s*return 'licht';\s*\}/.test(acc));
+  ok('?thema= stuurt terug zonder parameter', /searchParams\.get\('thema'\)/.test(acc) && /searchParams\.delete\('thema'\)/.test(acc));
+  ok('en zet geen cookie meer', /vis_thema=\$\{kleur\}/.test(acc), false);
   const schil = lees('../src/layouts/StudioLayout.astro');
-  /* Sinds ronde 8 via metParam(): de link houdt de rest van de query vast. */
-  ok('de schakelaar is een link', /class="st-stand" href=\{metParam\('thema'/.test(schil));
-  ok('en hij wijst naar de andere stand',
-    /metParam\('thema', licht \? 'donker' : 'licht'\)/.test(schil));
-  ok('het wortelelement draagt de stand', /data-thema="licht"/.test(acc));
-  /* color-scheme stond onvoorwaardelijk op light, op een donker dashboard. Dat
-     vertelt de browser: teken je scrollbalk en je <progress> licht. */
-  ok('color-scheme volgt het thema', /content="\$\{licht \? 'light' : 'dark'\}"/.test(acc));
-  ok('en staat niet meer vast op light', /content="light"/.test(accCode), false);
+  ok('de schakelaar staat niet meer in de schil', /metParam\('thema'/.test(schil), false);
+  ok('en geen maan of zon', /STUDIO_ICONS\.(maan|zon)/.test(schil), false);
+  ok('het wortelelement draagt de stand nog', /data-thema="licht"/.test(acc));
 }
 
-console.log('\nde cookie staat in de cookieverklaring');
+console.log('\nde cookieverklaring');
 {
   for (const p of ['../src/pages/cookie-policy.astro', '../src/pages/nl/cookie-policy.astro']) {
-    const pagina = lees(p);
-    ok(`${p.split('/').slice(-2).join('/')} noemt vis_thema`, pagina.includes('vis_thema'));
+    const pagina = lees(p).replace(/^\/\/.*$/gm, '');
+    ok(`${p.split('/').slice(-2).join('/')} noemt vis_thema niet meer`, pagina.includes('vis_thema'), false);
   }
-  /* Het telwoord wordt door tests/legal.test.mjs bewaakt — die telt de cookies
-     die de code werkelijk zet en vergelijkt dat met het woord op de pagina. Hier
-     staat alleen dat de rij er is; daar staat of het er vijf zijn. */
 }
 
 console.log(`\n${goed}/${totaal} geslaagd`);

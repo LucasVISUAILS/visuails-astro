@@ -48,7 +48,7 @@
  * tenzij". Wie is ingelogd en het in zijn brand kit heeft staan, ziet zijn eigen
  * keuze aangevinkt: applyBrandKit() in pipeline.js zet hem over.
  */
-import { LIFESTYLE_RATIOS, CATALOG_RATIOS, DEFAULT_RATIO_ID, ratioViewBox } from '../../data/ratios.js';
+import { LIFESTYLE_RATIOS, CATALOG_RATIOS, CHANNEL_RATIOS, DEFAULT_RATIO_ID, ratioViewBox, ratioLabel } from '../../data/ratios.js';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -69,16 +69,17 @@ const COPY = {
        Dat verschil hoort in de zin te staan die eronder hangt; anders lijkt
        "één verhouding voor de hele bestelling" te zeggen dat er niets kan
        afwijken, of "elk beeld apart" dat de catalogset dat ook kan. */
-    hintComplete: 'One shape for the four catalog images — they sit in a grid, so they have to match. The three lifestyle images start on the same shape, and on any product below you can set one of them differently.',
     recommended: 'Recommended',
+    /* 14 oktober 2026: onder de tegels zodra Zalando is aangevinkt. */
+    lock: 'Fixed to 1:1.44, because you sell on Zalando. Zalando only accepts images in that shape.',
   },
   nl: {
     label: 'Beeldverhouding',
     hintBatch: 'Eén verhouding voor de hele bestelling. Beelden staan naast elkaar — in een grid of een carrousel — en dat ziet er alleen goed uit als elk beeld dezelfde vorm heeft.',
     hintEach: 'De verhouding waar elk beeld op begint. Bij elk product hieronder kun je één beeld anders zetten — bijvoorbeeld één banner tussen drie vierkante.',
     /* Zie de Engelse tegenhanger. */
-    hintComplete: 'Eén verhouding voor de vier catalogbeelden — die staan in een grid, dus die moeten gelijk zijn. De drie lifestylebeelden beginnen op dezelfde verhouding, en bij elk product hieronder kun je er daar één van anders zetten.',
     recommended: 'Aanbevolen',
+    lock: 'Vast op 1:1,44, omdat je op Zalando verkoopt. Zalando neemt beelden alleen in die vorm aan.',
   },
 };
 const c = COPY[lang];
@@ -103,14 +104,20 @@ const CATALOG_IDS = CATALOG_RATIOS.map((r) => r.id);
    te zien op een schermafdruk zonder te weten wat je zou moeten zien. Wel te
    meten: kladblok/_verhouding.mjs leest de breedte-hoogteverhouding van elk
    kader uit en zet hem naast de naam van de tegel. */
-const tiles = LIFESTYLE_RATIOS.map((r) => ({
+/* ── EN DE TEGEL VAN EEN KANAAL — 14 oktober 2026 ──────────────────────────
+   Zalando, 1:1,44 (CHANNEL_RATIOS in ratios.js). Verborgen en uitgezet in de
+   markup: zonder JavaScript post hij dus niet, en zet /api/order de verhouding
+   zelf vast als Zalando is aangevinkt. syncRatio() in pipeline.js toont hem,
+   vinkt hem aan en zet de andere uit zodra het kanaal aanstaat. */
+const tiles = [...LIFESTYLE_RATIOS, ...CHANNEL_RATIOS].map((r: any) => ({
   id: r.id,
-  label: r.label,
+  label: ratioLabel(r, lang),
+  channel: r.channel as string | undefined,
   css: r.css,
   name: r.name[lang] || r.name.en,
   use: r.use[lang] || r.use.en,
   viewBox: ratioViewBox(r),
-  lifestyleOnly: !CATALOG_IDS.includes(r.id),
+  lifestyleOnly: !r.channel && !CATALOG_IDS.includes(r.id),
 }));
 ---
 
@@ -121,16 +128,16 @@ const tiles = LIFESTYLE_RATIOS.map((r) => ({
   <h3 class="pl-sub-h" id="pl-ratio-h">{c.label}</h3>
   <p class="hint pl-ratio-hint" data-pl-ratio-hint-batch>{c.hintBatch}</p>
   <p class="hint pl-ratio-hint" data-pl-ratio-hint-each hidden>{c.hintEach}</p>
-  <p class="hint pl-ratio-hint" data-pl-ratio-hint-complete hidden>{c.hintComplete}</p>
 
   <div class="ratio-grid" role="radiogroup" aria-labelledby="pl-ratio-h">
     {tiles.map((r) => (
-      <label class="ratio" data-pl-ratio-tile={r.id} data-pl-ratio-only={r.lifestyleOnly ? 'lifestyle' : undefined}>
+      <label class="ratio" data-pl-ratio-tile={r.id} data-pl-ratio-only={r.lifestyleOnly ? 'lifestyle' : undefined} data-pl-ratio-channel={r.channel} hidden={r.channel ? true : undefined}>
         <input
           type="radio"
           name="ratio"
           value={r.id}
           checked={r.id === DEFAULT_RATIO_ID}
+          disabled={r.channel ? true : undefined}
           data-pl-ratio-box={r.id}
           data-pl-ratio-label={r.label}
         />
@@ -147,6 +154,7 @@ const tiles = LIFESTYLE_RATIOS.map((r) => ({
       </label>
     ))}
   </div>
+  <p class="hint pl-ratio-hint pl-ratio-lock" data-pl-ratio-lock hidden>{c.lock}</p>
 </fieldset>
 
 <style>
@@ -164,6 +172,7 @@ const tiles = LIFESTYLE_RATIOS.map((r) => ({
      kladblok/te-dicht.mjs. Een hint hoort ONDER zijn label te hangen, niet
      ertegenaan. */
   .pl-ratio-hint { display: block; max-width: 66ch; margin-top: .6rem; }
+  .pl-ratio-lock { margin-top: .8rem; }
 
   /* auto-fit en niet vier vaste kolommen: als 16:9 bij catalog wegvalt, vullen
      de overgebleven drie de rij netjes op in plaats van een gat te laten waar de
@@ -189,6 +198,9 @@ const tiles = LIFESTYLE_RATIOS.map((r) => ({
   .ratio:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
   .ratio:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
   .ratio:has([aria-invalid='true']) { border-color: var(--warn); }
+  /* Vastgezet door een kanaal (Zalando, 14 oktober 2026): zichtbaar, maar niet te kiezen. */
+  .ratio:has(input:disabled) { opacity: .45; cursor: not-allowed; }
+  .ratio:has(input:disabled):hover { border-color: var(--line-strong); }
 
   /* Verborgen maar bereikbaar: de VORM is het antwoord, en een radiorondje
      ernaast trekt het oog naar het enige deel van de tegel dat niets zegt. */

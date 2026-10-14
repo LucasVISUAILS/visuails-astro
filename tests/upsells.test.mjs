@@ -43,8 +43,9 @@ console.log('\n4K telt alleen waar er lifestylebeelden zijn');
 {
   const basis5 = ladderRate('lifestyle', 5) * 5;
   ok('lifestyle: vijf producten op 4K', net({ service: 'lifestyle', products: 5, hoogRes: 5 }), basis5 + 5 * HOOG_PER_PRODUCT);
-  ok('complete telt mee, want die heeft een lifestylehelft',
-    net({ service: 'drop', products: 5, hoogRes: 5 }), ladderRate('complete', 5) * 5 + 5 * HOOG_PER_PRODUCT);
+  /* Compleet ('drop') bestaat sinds 14 oktober 2026 niet meer en is dus niet
+     meer te prijzen (afvinklijst 23). */
+  ok('compleet is geen bestelling meer', net({ service: 'drop', products: 5, hoogRes: 5 }), null);
   /* Catalogbeelden zijn altijd de standaardmaat; 4K is daar een aanvraag via
      WhatsApp en geen vinkje. Een POST die het tóch meestuurt, hoort niets te
      kosten — anders betaalt iemand voor iets wat niet geleverd wordt. */
@@ -59,7 +60,12 @@ console.log('\n4K telt alleen waar er lifestylebeelden zijn');
 console.log('\nvoorrang is een deel van het orderbedrag, met een bodem en een plafond');
 {
   ok('de bodem bijt bij één product', voorrangBedrag(ladderRate('catalog', 1)), VOORRANG.bodem);
-  ok('het plafond bijt bij de grootste bestelling', voorrangBedrag(ladderRate('complete', 20) * 20), VOORRANG.plafond);
+  /* Sinds compleet weg is, is de grootste bestelling twintig carrousels (€ 980 ×
+     20% = € 196), en die haalt het plafond niet meer. Het plafond blijft staan
+     voor een bestelling met extra's; zie de noot bij VOORRANG in pricing.js. */
+  ok('het plafond bijt boven de grootste kale bestelling', voorrangBedrag(VOORRANG.plafond / VOORRANG.deel + 100), VOORRANG.plafond);
+  ok('de grootste kale bestelling zit eronder',
+    voorrangBedrag(ladderRate('lifestyle', 20) * 20) < VOORRANG.plafond, true);
   ok('en daartussen is het het percentage', voorrangBedrag(500), Math.ceil(500 * VOORRANG.deel));
   ok('het bedrag is altijd een heel getal',
     [1, 89, 325, 780, 1300].every((n) => Number.isInteger(voorrangBedrag(n))), true);

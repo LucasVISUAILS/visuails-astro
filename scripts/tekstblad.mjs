@@ -57,7 +57,7 @@ const PAGINAS = [
   ['models/', 'modellen'], ['gallery/', 'galerij'], ['about/', 'over-ons'], ['faq/', 'faq'],
   ['guides/', 'gidsen'], ['upload-guidelines/', 'uploadrichtlijnen'], ['test-sample/', 'proefvisual'],
   ['start/', 'start'], ['start/catalog/', 'start-catalog'], ['start/lifestyle/', 'start-lifestyle'],
-  ['start/complete/', 'start-allebei'], ['start/video/', 'start-video'],
+  ['start/video/', 'start-video'],
   ['start/brand-model/', 'start-merkmodel'], ['start/custom-look/', 'start-eigen-look'],
   ['start/plan/', 'start-abonnement'], ['contact/', 'contact'], ['thank-you/', 'bedankt'],
   ['portal/', 'portaal'], ['terms/', 'voorwaarden'], ['privacy/', 'privacy'],

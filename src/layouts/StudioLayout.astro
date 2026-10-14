@@ -17,18 +17,24 @@
  *
  * GEEN JAVASCRIPT, EN DAT IS EEN EIS. De CSP van dit dashboard (studioHeaders in
  * account.js) is default-src 'none' met alleen img/style/font 'self'. Er staat
- * hier dus geen <script>, geen ClientRouter, geen inline stijl. Het thema, de
- * taal en de inklapstand zijn cookies, gezet via een GET met ?thema=, ?lang= en
- * ?nav= — zie sectionState() in account.js voor de omleiding.
+ * hier dus geen <script>, geen ClientRouter, geen inline stijl. De taal en de
+ * inklapstand zijn cookies, gezet via een GET met ?lang= en ?nav= —
+ * zie sectionState() in account.js voor de omleiding. (Het thema was er ook een,
+ * tot 14 oktober 2026: Studio is nu alleen licht.)
  *
  * DE KOPPEN. Astro laat een pagina zijn eigen antwoordkoppen zetten via
  * Astro.response.headers; dat gebeurt hier in de layout, zodat elke Studio-pagina
  * ze krijgt zonder er zelf aan te denken. no-store, noindex, en de CSP.
  */
 import '../styles/global.css';
-import { WORDMARK_VIEWBOX, WORDMARK_TRANSFORM, WORDMARK_PATHS } from '../data/wordmarkPath.js';
+import { WORDMARK_VIEWBOX, WORDMARK_PATHS } from '../data/wordmarkPath.js';
 import { standKlasse } from '../data/status.js';
 import '../styles/studio.css';
+/* De hal (14 oktober 2026): Urbanist en studio-hal.css; alles daarin hangt
+   onder body.studio.st-hal. Sinds afvinklijst 26 (v26-donker a, v26-schakelaar a)
+   is dat de enige stand: geen donker scherm en geen weg terug naar de vorige. */
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/studio-hal.css';
 /* Sectie 22: Anybody voor de koppen, Figtree voor de tekst, Martian
    Mono voor de labels — alle drie variabel, open source en zelf gehost. Zie de
    noot bij --font-heading in global.css voor waarom deze drie. */
@@ -76,15 +82,16 @@ const meldingTxt = meldingTekst(melding, lang);
 const MELDING_LABEL = (lang === 'nl' || !melding?.en)
   ? { info: 'Mededeling', druk: 'Drukte', storing: 'Storing' }
   : { info: 'Notice', druk: 'Busy', storing: 'Service issue' };
-const licht = thema === 'licht';
+/* Alleen licht, alleen de hal (14 oktober 2026, v26-donker a). `thema` komt nog
+   mee van de pagina's, maar themaCookie() in account.js geeft altijd 'licht'. */
+const licht = true;
+const hal = true;
 const items = studioNav(t);
 const naam = customer ? (customer.brand || customer.name || customer.email) : '';
 const letter = (naam || '?').trim().charAt(0).toUpperCase();
 const huidig = items.find((n) => n.key === actief)?.label || '';
 const andereTaal = lang === 'nl' ? 'en' : 'nl';
 const andereTaalLabel = lang === 'nl' ? 'English' : 'Nederlands';
-const themaLabel = licht ? t.themaNaarDonker : t.themaNaarLicht;
-const themaIcon = licht ? STUDIO_ICONS.maan : STUDIO_ICONS.zon;
 /* De schakelaars houden de huidige weergave vast (ronde 8, S-N6): een relatieve
    `?lang=en` gooide `?tab=planning` of `?status=delivered` weg. sectionState()
    haalt na het zetten van de cookie alleen de eigen parameter eruit. */
@@ -114,12 +121,12 @@ const metParam = (k, v) => {
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 </head>
-<body class={`studio ${vorm === 'kaart' ? 'st-kaartvorm' : 'st-schilvorm'}${licht ? '' : ' on-ink'}`}>
+<body class={`studio ${vorm === 'kaart' ? 'st-kaartvorm' : 'st-schilvorm'}${licht ? '' : ' on-ink'}${hal ? ' st-hal' : ''}`}>
   {vorm === 'kaart' ? (
     <div class="st-kaartveld">
       {meldingTxt && <p class={`st-banner is-${melding.soort}`} role="status"><span class="st-banner-l">{MELDING_LABEL[melding.soort]}</span><span>{meldingTxt}</span></p>}
       <a class="st-merk st-merk-los" href="/" aria-label="VISUAILS">
-        <svg class="st-woordmerk" viewBox={WORDMARK_VIEWBOX} aria-hidden="true" focusable="false"><g transform={WORDMARK_TRANSFORM}>{WORDMARK_PATHS.map((d) => <path d={d} />)}</g></svg>
+        <svg class="st-woordmerk" viewBox={WORDMARK_VIEWBOX} aria-hidden="true" focusable="false">{WORDMARK_PATHS.map((d) => <path fill-rule="evenodd" d={d} />)}</svg>
       </a>
       <main class="st-kaart" id="inhoud">
         <slot />
@@ -131,14 +138,13 @@ const metParam = (k, v) => {
       <aside class="st-side">
         <div class="st-side-kop">
           <a class="st-merk" href="/" aria-label="VISUAILS">
-            <svg class="st-woordmerk" viewBox={WORDMARK_VIEWBOX} aria-hidden="true" focusable="false"><g transform={WORDMARK_TRANSFORM}>{WORDMARK_PATHS.map((d) => <path d={d} />)}</g></svg>
+            <svg class="st-woordmerk" viewBox={WORDMARK_VIEWBOX} aria-hidden="true" focusable="false">{WORDMARK_PATHS.map((d) => <path fill-rule="evenodd" d={d} />)}</svg>
           </a>
           <span class="st-sub">{t.dashSub}</span>
         </div>
         {/* Alleen op de telefoon: daar is er geen bovenbalk en geen zijbalkvoet. */}
         <div class="st-mob">
           <a href={metParam('lang', andereTaal)} lang={andereTaal} title={andereTaalLabel}>{andereTaal.toUpperCase()}</a>
-          <a href={metParam('thema', licht ? 'donker' : 'licht')} title={themaLabel} aria-label={themaLabel}><Fragment set:html={themaIcon} /></a>
           <form method="post" action="/account/logout"><button type="submit">{t.signOut}</button></form>
         </div>
         <nav class="st-nav" aria-label="Studio">
@@ -170,7 +176,7 @@ const metParam = (k, v) => {
 
       <div class="st-romp">
         {/* De bovenbalk (herontwerp 3 oktober 2026): inklappen, waar je bent, en
-            rechts de taal en het thema. De paginatitel staat eronder. */}
+            rechts de taal. De paginatitel staat eronder. */}
         <div class="st-balk">
           <a class="st-klap" href={metParam('nav', navDicht ? 'open' : 'dicht')} title={navDicht ? t.navExpand : t.navCollapse} aria-label={navDicht ? t.navExpand : t.navCollapse}>
             <Fragment set:html={navDicht ? STUDIO_ICONS.expand : STUDIO_ICONS.collapse} />
@@ -181,13 +187,16 @@ const metParam = (k, v) => {
               {lang === 'nl' ? <span aria-current="true">NL</span> : <a href={metParam('lang', 'nl')} lang="nl" title="Nederlands">NL</a>}
               {lang === 'en' ? <span aria-current="true">EN</span> : <a href={metParam('lang', 'en')} lang="en" title="English">EN</a>}
             </span>
-            <a class="st-stand" href={metParam('thema', licht ? 'donker' : 'licht')} title={themaLabel}><Fragment set:html={themaIcon} /><span>{themaLabel}</span></a>
           </div>
         </div>
         {meldingTxt && <p class={`st-banner is-${melding.soort}`} role="status"><span class="st-banner-l">{MELDING_LABEL[melding.soort]}</span><span>{meldingTxt}</span></p>}
         <header class="st-top">
           <div class="st-top-tekst">
-            <h1 class="st-h1">{kop}</h1>
+            {/* In de hal: de kop in twee tonen, gesplitst op de eerste komma
+                ("Welkom terug, | Mara"). Zonder komma één toon. */}
+            {hal && kop.includes(', ')
+              ? <h1 class="st-h1"><span class="l">{kop.slice(0, kop.indexOf(', ') + 1)}</span> {kop.slice(kop.indexOf(', ') + 2)}</h1>
+              : <h1 class="st-h1">{kop}</h1>}
             {lede && <p class="st-lede">{lede}</p>}
           </div>
           {/* De kopchip zegt hoe de REKENING ervoor staat ("3 bestellingen lopen",

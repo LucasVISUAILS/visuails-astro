@@ -1,0 +1,22 @@
+-- ══════════════════════════════════════════════════════════════════════════════
+-- 0052 · EEN 2FA-CODE WERKT MAAR ÉÉN KEER
+-- ══════════════════════════════════════════════════════════════════════════════
+--
+-- 8 oktober 2026, afvinklijst o19 (Lucas: "doen").
+--
+-- verifyTotp() in src/lib/adminAuth.js neemt een code aan die tot één stap van
+-- 30 seconden ernaast ligt: samen zo'n 90 seconden. Binnen die tijd werkte
+-- dezelfde code een tweede keer. Wie hem over je schouder zag, of hem via een
+-- nagemaakte inlogpagina doorgaf, kon er dus nog mee inloggen.
+--
+-- Deze kolom onthoudt de laatste tijdstap waarmee is ingelogd. Een code wordt
+-- alleen aangenomen als zijn stap NIEUWER is (zie gebruikTotp() in
+-- src/lib/admin.js; één voorwaardelijke UPDATE, dus ook twee tabbladen tegelijk
+-- komen er niet allebei mee binnen).
+--
+-- Alleen toevoegend. NULL betekent "nog nooit met een code ingelogd", en dan
+-- geldt elke kloppende code. Zolang deze migratie niet gedraaid is, werkt het
+-- inloggen precies zoals voorheen (de UPDATE faalt en de code valt terug op de
+-- oude regel, met een regel in het logboek).
+
+ALTER TABLE admin_users ADD COLUMN totp_last_step INTEGER;

@@ -97,13 +97,13 @@ export const KLAAR = new Set([
   'lifestyle-flash-06',
   'lifestyle-flash-07',
   'lifestyle-flash-08',
-  'lifestyle-glow-01',
   'lifestyle-glow-02',
   'lifestyle-glow-03',
   'lifestyle-glow-04',
   'lifestyle-glow-05',
-  'lifestyle-glow-06',
-  'lifestyle-phone-made-01',
+  /* 'lifestyle-glow-06' is weg sinds 13 oktober 2026 (afvinklijst 15, k-rechten): de hoodie van een echt merk,
+     zonder toestemming. Niet meer als klaar: verwijst iets er toch nog naar, dan staat er een plaatshouder. */
+  /* 'lifestyle-phone-made-01' is weg sinds 14 oktober 2026: de hoodie met de rode cirkel is van een ander, echt merk. */
   'lifestyle-phone-made-02',
   'lifestyle-phone-made-03',
   'lifestyle-phone-made-04',

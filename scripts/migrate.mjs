@@ -176,7 +176,7 @@ async function execute(stmt) {
         + '\nAPI-token de volgende stap: maak er een aan met D1:Edit op'
         + '\nhttps://dash.cloudflare.com/profile/api-tokens en draai opnieuw met'
         + '\nCLOUDFLARE_API_TOKEN in je omgeving gezet — niet in een bestand in deze'
-        + '\nrepository en niet in een chatvenster (zie DEPLOY.md §7).';
+        + '\nrepository en niet in een chatvenster (zie docs/DEPLOY.md §7).';
     }
     return r;
   } finally {
@@ -210,7 +210,11 @@ async function loadColumnMap() {
   mapLoaded = true;
   try {
     const rows = await query(
-      "SELECT m.name AS t, p.name AS c FROM sqlite_master m JOIN pragma_table_info(m.name) p WHERE m.type = 'table'"
+      /* Zonder de eigen tabellen van D1 (_cf_KV): daarin kijken geeft
+         "not authorized: SQLITE_AUTH" en dan viel de hele brede vraag om
+         (14 oktober 2026, zie SCHEMA_SQL in scripts/uitrol.mjs). */
+      "SELECT m.name AS t, p.name AS c FROM sqlite_master m JOIN pragma_table_info(m.name) p WHERE m.type = 'table' "
+      + "AND substr(m.name, 1, 4) <> '_cf_' AND substr(m.name, 1, 7) <> 'sqlite_'"
     );
     if (!rows.length) return;
     for (const { t, c } of rows) {

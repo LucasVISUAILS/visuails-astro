@@ -1586,3 +1586,195 @@ CREATE INDEX IF NOT EXISTS idx_orders_proef ON orders(testmodus) WHERE testmodus
 -- normaliseerVoorkeur() in src/data/contactvoorkeur.js, dat de enige plek is
 -- waar deze waarde wordt uitgelegd.
 ALTER TABLE customers ADD COLUMN contact_preference TEXT;
+
+-- ── MIGRATIE 0052 · EEN 2FA-CODE WERKT MAAR ÉÉN KEER — 8 oktober 2026 ────────
+--
+-- De laatste tijdstap (van 30 seconden) waarmee een beheerder een code gebruikte.
+-- Een code wordt alleen aangenomen als zijn stap nieuwer is; zie gebruikTotp() in
+-- src/lib/admin.js en de kop van migrations/0052-totp-eenmalig.sql.
+ALTER TABLE admin_users ADD COLUMN totp_last_step INTEGER;
+
+-- ── MIGRATIE 0053 · EEN LAND BUITEN DE EU, DOOR LUCAS NAGEKEKEN — 8 oktober 2026 ──
+--
+-- De landcode die Lucas in /admin goedkeurde voor 0% btw bij een abonnement,
+-- terwijl de klant vanaf een ip-adres in de EU afsloot (o16). NULL = niet
+-- nagekeken. Zie migrations/0053-btw-land-akkoord.sql en bepaalBedrijfEnBtw() in
+-- src/lib/subscribe.js.
+ALTER TABLE customers ADD COLUMN btw_land_akkoord TEXT;
+
+-- ── MIGRATIE 0056 · WAT ER NAAR DE BOEKHOUDING IS GEGAAN — 8 oktober 2026 ────
+--
+-- Eén rij per boeking in e-Boekhouden (punt 8.08): factuur, creditnota, betaling,
+-- terugbetaling of storno, met een unieke sleutel tegen dubbel boeken. Geschreven
+-- en gelezen door src/lib/eboekhouden.js; de stand staat in /admin/facturen en
+-- /admin/diagnose. Zie de kop van migrations/0056-boekhouding-boekingen.sql.
+CREATE TABLE IF NOT EXISTS boekhouding_boekingen (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  sleutel        TEXT    NOT NULL UNIQUE,
+  soort          TEXT    NOT NULL
+                   CHECK (soort IN ('factuur', 'creditnota', 'betaling', 'terugbetaling', 'storno')),
+  document       TEXT    NOT NULL,
+  bron           TEXT    NOT NULL
+                   CHECK (bron IN ('invoice', 'credit_note', 'subscription_invoice')),
+  bron_id        INTEGER NOT NULL,
+  order_id       INTEGER,
+  bedrag_cents   INTEGER NOT NULL DEFAULT 0,
+  datum          TEXT    NOT NULL,
+  kenmerk        TEXT,
+  status         TEXT    NOT NULL DEFAULT 'wacht'
+                   CHECK (status IN ('wacht', 'bezig', 'geboekt', 'mislukt')),
+  eb_mutatie_id  INTEGER,
+  eb_relatie_id  INTEGER,
+  pogingen       INTEGER NOT NULL DEFAULT 0,
+  laatste_fout   TEXT,
+  notitie        TEXT,
+  poging_at      TEXT,
+  geboekt_at     TEXT,
+  created_at     TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_boekhouding_status   ON boekhouding_boekingen(status, id);
+CREATE INDEX IF NOT EXISTS idx_boekhouding_document ON boekhouding_boekingen(document);
+CREATE INDEX IF NOT EXISTS idx_boekhouding_order    ON boekhouding_boekingen(order_id);
+
+-- ── MIGRATIE 0058 · VERVALLEN BESTELLINGEN KRIJGEN HUN ANNULERINGSDATUM — 8 oktober 2026 ──
+--
+-- Alleen data, geen nieuwe kolom: `orders.cancelled_at` bestaat sinds 0014. De
+-- nachttaak die een onbetaalde bestelling laat vervallen zet hem sinds vandaag
+-- ook; de migratie vult hem eenmalig voor wat al vervallen was. Op een verse
+-- database is er niets te vullen, dus hier staat alleen deze noot. Zie
+-- migrations/0058-vervallen-cancelled-at.sql.
+
+-- ── MIGRATIE 0054 · DE WACHTLIJST VAN DE €1-PROEF — 8 oktober 2026 (G2) ──────
+--
+-- Wie op /test-sample zijn adres achterlaat terwijl de proef dicht is. Eén rij
+-- per adres; na de mail "de proef is weer open" wordt de rij gewist
+-- (src/lib/proefStand.js). Zie migrations/0054-proef-wachtlijst.sql.
+CREATE TABLE IF NOT EXISTS proef_wachtlijst (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  email         TEXT    NOT NULL UNIQUE,
+  taal          TEXT    NOT NULL DEFAULT 'nl' CHECK (taal IN ('nl', 'en')),
+  aangemeld_op  TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+-- ── MIGRATIE 0055 · TOESTEMMING OM ECHTE BESTELLINGEN TE LATEN ZIEN — 8 oktober 2026 ──
+--
+-- De keuzes van het toestemmingsblok op het afrondscherm (punt 10.05): je tekst
+-- en je beelden, elk 'merk' | 'zonder' | 'nee' (NULL = nooit gevraagd), wanneer
+-- gekozen en wanneer ingetrokken. Draagfoto's vallen er nooit onder. Zie
+-- migrations/0055-toestemming-tonen.sql en saveToestemming() in src/lib/feedback.js.
+ALTER TABLE order_feedback ADD COLUMN toon_tekst TEXT;
+ALTER TABLE order_feedback ADD COLUMN toon_beelden TEXT;
+ALTER TABLE order_feedback ADD COLUMN toestemming_at TEXT;
+ALTER TABLE order_feedback ADD COLUMN ingetrokken_at TEXT;
+
+-- ── MIGRATIE 0060 · DRAAGT DIT GELEVERDE BESTAND DE HERKOMSTTAG? — 8 oktober 2026 (4.01) ──
+--
+-- 1 = de Worker heeft de herkomsttag in de XMP gezet (of hij stond er al),
+-- 0 = een beeld zonder tag (webp, avif, onleesbaar), NULL = onbekend of geen
+-- beeld. Het bord in /admin toont er per beeld de chip "AI-tag" mee. Zie
+-- migrations/0060-herkomsttag-per-bestand.sql en src/lib/xmp.js.
+ALTER TABLE files ADD COLUMN ai_tag INTEGER;
+
+-- ── MIGRATIE 0061 · HET CREDITBOEK — 8 oktober 2026 (ronde B, §28) ───────────
+--
+-- Elke bij- en afschrijving van credits als regel: datum, aantal (+/−), reden,
+-- en de bestelling of termijn. Een + regel is een partij met een eigen
+-- vervaldatum (binnenkomst plus CREDITS_GELDIG_MAANDEN uit pricing.js) en een
+-- `rest`; CHECK (rest >= 0) houdt twee bestellingen tegelijk binnen het saldo.
+-- `orders.credits_used` is wat een bestelling met credits kostte (payment_status
+-- 'credits'). De motor: src/lib/creditboek.js. De migratie neemt ook de credits
+-- over die al in subscription_slots stonden en zet 'plan'-bestellingen op
+-- 'credits'; op een verse database is er niets over te nemen. Zie
+-- migrations/0061-creditboek.sql.
+CREATE TABLE IF NOT EXISTS credit_boek (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id      INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  subscription_id  INTEGER REFERENCES subscriptions(id) ON DELETE SET NULL,
+  datum            TEXT    NOT NULL DEFAULT (datetime('now')),
+  aantal           INTEGER NOT NULL CHECK (aantal <> 0),
+  reden            TEXT    NOT NULL,
+  toelichting      TEXT,
+  order_id         INTEGER REFERENCES orders(id) ON DELETE SET NULL,
+  order_ref        TEXT,
+  maand            TEXT,
+  payment_id       TEXT,
+  vervalt_op       TEXT,
+  rest             INTEGER,
+  partijen         TEXT,
+  sleutel          TEXT UNIQUE,
+  door             TEXT,
+  CHECK ((aantal > 0 AND rest IS NOT NULL AND rest >= 0 AND rest <= aantal AND vervalt_op IS NOT NULL)
+      OR (aantal < 0 AND rest IS NULL))
+);
+CREATE INDEX IF NOT EXISTS idx_creditboek_klant  ON credit_boek(customer_id, datum);
+CREATE INDEX IF NOT EXISTS idx_creditboek_order  ON credit_boek(order_id);
+CREATE INDEX IF NOT EXISTS idx_creditboek_betaal ON credit_boek(payment_id);
+ALTER TABLE orders ADD COLUMN credits_used INTEGER;
+
+-- ── MIGRATIE 0063 · WAAROM IEMAND STOPT, EN EEN TERUGGEBOEKTE BETALING — 8 oktober 2026 (2.07, 8.11) ──
+--
+-- `stop_reden` (vaste code uit src/lib/stopReden.js) en `stop_toelichting` (de
+-- eigen woorden bij "anders"): waarom een abonnee pauzeerde of opzei.
+-- `pauze_vraag_at`: wanneer de mail "hervatten of opzeggen?" ging (na 3 maanden
+-- pauze, V42 = b). `orders.teruggeboekt_at`: de betaling is via de bank
+-- teruggeboekt (8.11); leeg als Mollie dat terugdraait.
+-- `customer_style_locks.bron_order_id`: de bestelling waaruit de vaste look
+-- zichzelf vulde (2.08). Zie migrations/0063-abonnement-reden-terugboeking.sql.
+ALTER TABLE subscriptions ADD COLUMN stop_reden TEXT;
+ALTER TABLE subscriptions ADD COLUMN stop_toelichting TEXT;
+ALTER TABLE subscriptions ADD COLUMN pauze_vraag_at TEXT;
+ALTER TABLE orders ADD COLUMN teruggeboekt_at TEXT;
+ALTER TABLE customer_style_locks ADD COLUMN bron_order_id INTEGER;
+
+-- ── MIGRATIE 0065 · OOK ALS PNG OF WEBP — 11 oktober 2026 (k401) ──────────────
+--
+-- Een klant vraagt op een geleverde bestelling in Studio ook png of webp aan
+-- (jpg is de standaard). Eén rij per bestelling en formaat; `klaar_at` zet
+-- /admin/formaten met "Klaar". Zie migrations/0065-formaat-verzoeken.sql en
+-- src/lib/formaten.js.
+CREATE TABLE IF NOT EXISTS formaat_verzoeken (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id        INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  formaat         TEXT    NOT NULL CHECK (formaat IN ('png', 'webp')),
+  aangevraagd_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+  klaar_at        TEXT,
+  UNIQUE (order_id, formaat)
+);
+CREATE INDEX IF NOT EXISTS idx_formaat_verzoeken_open ON formaat_verzoeken(klaar_at, aangevraagd_at);
+
+-- ── MIGRATIE 0066 · WEER GEOPEND DOOR VISUAILS — 11 oktober 2026 (w2 = b) ──
+--
+-- `orders.reopened_at`: wanneer een afgeronde bestelling in /admin met "Weer
+-- openen" weer openging. Het stille afronden en de revisiedatum in Studio tellen
+-- dan vanaf dit moment. Zie migrations/0066-weer-geopend.sql.
+ALTER TABLE orders ADD COLUMN reopened_at TEXT;
+
+-- ── MIGRATIE 0067 · EXTRA CREDITS BIJKOPEN — 12 oktober 2026 (ab-v3 = c, ab-v4 = b) ──
+--
+-- `credit_aankopen`: één rij per keer dat een abonnee extra credits bijkoopt
+-- (pakket, bedragen, btw-behandeling, de kalendermaand voor het maximum van 100,
+-- de status van de Mollie-betaling). Bij 'paid' komt de betaling ook in
+-- subscription_payments, voor de factuur uit dezelfde reeks.
+-- `credit_boek.soort`: 'bijgekocht' bij gekochte credits (eigen datum, eerst op,
+-- niet in het spaarplafond); leeg bij credits van het abonnement. Zie
+-- migrations/0067-credits-bijkopen.sql, src/lib/bijkopen.js en src/lib/creditboek.js.
+CREATE TABLE IF NOT EXISTS credit_aankopen (
+  id                       INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id              INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  subscription_id          INTEGER REFERENCES subscriptions(id) ON DELETE SET NULL,
+  pakket                   INTEGER NOT NULL CHECK (pakket > 0),
+  net_cents                INTEGER NOT NULL CHECK (net_cents > 0),
+  vat_cents                INTEGER NOT NULL DEFAULT 0,
+  gross_cents              INTEGER NOT NULL CHECK (gross_cents >= net_cents),
+  vat_treatment            TEXT,
+  plan_label               TEXT,
+  maand                    TEXT    NOT NULL,
+  status                   TEXT    NOT NULL DEFAULT 'open'
+                             CHECK (status IN ('open', 'paid', 'failed', 'canceled', 'expired')),
+  mollie_payment_id        TEXT UNIQUE,
+  subscription_payment_id  INTEGER REFERENCES subscription_payments(id) ON DELETE SET NULL,
+  created_at               TEXT    NOT NULL DEFAULT (datetime('now')),
+  paid_at                  TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_credit_aankopen_klant ON credit_aankopen(customer_id, maand, status);
+ALTER TABLE credit_boek ADD COLUMN soort TEXT;

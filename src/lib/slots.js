@@ -90,7 +90,7 @@ export function slotsFor(planId) {
  * aanroeper die vroeger `slotsFor(sub.plan)` deed, hoort nu `bundelVoor(sub)` te
  * doen; wie dat vergeet, krijgt bij een maand op maat een LEGE bundel terug —
  * geen fout, gewoon een dashboard waarop de klant niets heeft. Vandaar dat
- * tests/maand-op-maat.test.mjs de aanroepplekken bij naam bewaakt.
+ * tests/subscribe.test.mjs een maand op maat meetelt in de bezetting.
  */
 
 /** Wat DIT abonnement per maand geeft. De rij wint van de tabel. */
@@ -105,7 +105,14 @@ export function bundelVoor(sub) {
       const schoon = {};
       for (const [kind, aantal] of Object.entries(uit || {})) {
         const n = Math.max(0, Math.floor(Number(aantal) || 0));
-        if (n && kind in SLOT_KINDS) schoon[kind] = n;
+        if (!n) continue;
+        /* `complete` bestaat sinds 14 oktober 2026 niet meer als soort, maar staat
+           nog in oude rijen. Hier telt hij als evenveel catalogproducten: deze
+           bundel bepaalt alleen hoeveel agenda een abonnement vasthoudt, en dat
+           getal hoort voor een lopend abonnement niet achteraf te veranderen.
+           Wat hij in credits waard is, staat in creditsPerSoort(). */
+        const soort = kind === 'complete' ? 'catalog' : kind;
+        if (soort in SLOT_KINDS) schoon[soort] = (schoon[soort] || 0) + n;
       }
       if (Object.keys(schoon).length) return schoon;
     } catch {

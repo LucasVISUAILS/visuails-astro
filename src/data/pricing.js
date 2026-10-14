@@ -116,12 +116,17 @@
 // WIL DE TREDE TERUG, dan hoort daar dezelfde dag een wijziging in capacity.js
 // bij die 35 producten daadwerkelijk in een venster laat passen. Anders komt
 // deze fout precies zo terug, en dan zonder deze noot.
+// ── DE COMPLETE-TREDE IS WEG — 14 oktober 2026, afvinklijst 23: Lucas — "compleet bestaat niet meer … Klanten kunnen niet compleet bestellen, het is het één of het ander."
+// Een catalogset en een lifestylecarrousel zijn twee bestellingen, elk tegen zijn
+// eigen prijs. De bundeltrede, completeSaving(), de bundelcontrole en alles wat
+// erop rekende (de oude maand op maat in producten, de agenda in "complete
+// producten") zijn mee weg; wat erover in de opmerkingen hieronder staat, is
+// geschiedenis.
 export const LADDER = {
-  // Catalog set AND lifestyle carousel — seven finished images per product.
-  complete: [[1, 4, 149], [5, 9, 109], [10, 19, 85], [20, null, 65]],
   // Catalog set only — four images.
   catalog: [[1, 4, 89], [5, 9, 65], [10, 19, 51], [20, null, 39]],
-  // Lifestyle carousel only — three images.
+  // Lifestyle carousel only — four images since 14 October 2026 (it was three; the
+  // price stayed the same, afvinklijst 23 v23-prijs a).
   lifestyle: [[1, 4, 109], [5, 9, 82], [10, 19, 64], [20, null, 49]],
 };
 
@@ -167,87 +172,79 @@ export function ladderFloor(kind) {
   return rungs[rungs.length - 1][2];
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
- * DE BUNDELKORTING, DIE BESTOND MAAR NERGENS STOND
- * ═══════════════════════════════════════════════════════════════════════════
+/*
+ * ── "VANAF" EN DE ENE UITLEGREGEL — 8 oktober 2026 (naloop A2) ──────────────
  *
- * Lucas, 25 augustus 2026: *"Bezoekers vinden het complete pakket verwarrend.
- * Bepaal of we het schrappen of verbeteren."*
- *
- * Schrappen kon niet, want de korting is echt en hij is fors. Op elke trede is
- * `complete` ongeveer een kwart goedkoper dan catalog en lifestyle los naast
- * elkaar — €49 per product op de eerste trede, €23 op de laatste. Bij tien
- * complete producten scheelt dat €300 op één bestelling.
- *
- * DAT GETAL STOND NERGENS OP DE SITE. De tabel drukte alledrie de tarieven af
- * en de noot eronder zei: *"Combine both sets for a single bundled rate — not
- * two separate fees added together."* Dat is waar, en het laat de aftrekking
- * aan de lezer. Wie €149 naast €89 en €109 ziet staan en niet gaat rekenen,
- * ziet alleen dat de complete kolom de DUURSTE is. Precies de verwarring die
- * Lucas meldde: de kolom die het meeste bespaart, ziet er het duurst uit.
- *
- * ── WAAROM HIER EN NIET IN DE PAGINA ───────────────────────────────────────
- *
- * Omdat het een afgeleide is van LADDER en geen tweede waarheid mag worden.
- * Zet iemand "bespaar €49" als tekst op de homepage en verandert LADDER, dan
- * staat er een leugen die niets kapotmaakt. `assertBundleSaving()` hieronder
- * draait bij de bouw en valt luid om zodra dat gebeurt.
+ * "Vanaf €… per product" is op de voorpagina, /start, /catalog en /lifestyle
+ * altijd de onderste trede (ladderFloor). Eerst zei de ene pagina "vanaf €89" en
+ * de andere "vanaf €39", en dat spreekt elkaar tegen. Zodat niemand bij één
+ * product schrikt, staat er op elke pagina dezelfde ene regel die zegt wat één
+ * product kost — de regel die /start al had, nu hier en nergens anders
+ * geschreven. "Het bedrag hierboven" is het vanaf-bedrag: zet de regel dus
+ * onder de kaarten of tegels die het noemen.
  */
-
-/**
- * Wat het bundelen van catalog en lifestyle scheelt bij `products` producten.
- *
- * @returns {{apart: number, together: number, saved: number, pct: number}}
- *   `apart` de twee losse tarieven opgeteld, `together` het bundeltarief,
- *   `saved` het verschil per product, `pct` datzelfde verschil als percentage.
- */
-export function completeSaving(products = 1) {
-  const apart = ladderRate('catalog', products) + ladderRate('lifestyle', products);
-  const together = ladderRate('complete', products);
-  const saved = apart - together;
-  return { apart, together, saved, pct: (saved / apart) * 100 };
+export function eenProductRegel(lang = 'en', kinds = ['catalog', 'lifestyle']) {
+  const nl = lang === 'nl';
+  const lijst = kinds.filter((k) => LADDER[k]);
+  if (!lijst.length) throw new Error('pricing.js: eenProductRegel() zonder bekende dienst');
+  const drempels = [...new Set(lijst.map((k) => LADDER[k][LADDER[k].length - 1][0]))];
+  /* Eén zin met "vanaf N producten" klopt alleen als de onderste trede overal
+     bij hetzelfde aantal begint. Verandert de ladder, dan liever een fout bij
+     het bouwen dan een zin die voor één van de twee diensten niet klopt. */
+  if (drempels.length !== 1) throw new Error('pricing.js: eenProductRegel() — de onderste treden beginnen niet bij hetzelfde aantal; splits de regel');
+  const prijs = (k) => euro(ladderRate(k, 1), lang);
+  const kost = lijst.length === 1
+    ? prijs(lijst[0])
+    : lijst.map((k) => (nl ? `${prijs(k)} bij ${k}` : `${prijs(k)} for ${k}`)).join(nl ? ' of ' : ' or ');
+  return nl
+    ? `Eén product kost ${kost}; het tarief zakt naarmate je meer bestelt, tot het bedrag hierboven vanaf ${drempels[0]} producten.`
+    : `One product costs ${kost}; the rate drops as you order more, down to the price above from ${drempels[0]} products.`;
 }
 
 /*
- * DE GRENZEN WAARBINNEN "ONGEVEER EEN KWART" WAAR IS.
+ * ── MEER PRODUCTEN VOOR HETZELFDE OF MINDER — 8 oktober 2026 (1.07, V16 = a) ──
  *
- * De pagina’s zeggen het in woorden en niet in een percentage, en dat is met
- * opzet: op de eerste trede is het 24,7% en op de laatste 26,1%. Eén getal zou
- * op drie van de vier treden nét niet kloppen, en afronden naar boven is een
- * hardere belofte dan de code waarmaakt. "Ongeveer een kwart" klopt op alle
- * vier — zolang de treden binnen deze marge blijven, en dat is wat de controle
- * hieronder afdwingt.
- */
-export const BUNDLE_CLAIM = { min: 20, max: 32 };
-
-/**
- * Faalt bij de bouw zodra de bundel niet meer doet wat de site erover zegt.
+ * Omdat het tarief voor ÉLK product zakt zodra de bestelling een trede hoger
+ * komt, kost een grotere bestelling soms minder dan een kleinere: met de
+ * staffel van nu bij 4, 8, 9 en 16–19 producten. Een klant die dat na betaling
+ * zelf uitrekent, voelt zich gefopt; het formulier zegt het daarom vooraf, in
+ * één rustige regel (Lucas: "subtiel, niet overheersend en salesachtig").
  *
- * Drie dingen, en ze zijn alledrie een belofte die ergens op een pagina staat:
- * de bundel is goedkoper dan de delen, dat geldt op ELKE trede, en het scheelt
- * genoeg om "ongeveer een kwart" te mogen zeggen.
+ * WELKE AANTALLEN, staat hier NIET: dat volgt uit `totaal`. De lijst "4, 8, 9,
+ * 16–19" is een uitkomst van LADDER van vandaag, geen regel; verandert een
+ * trede, dan verschuift de regel vanzelf mee.
+ *
+ * `totaal(m)` is wat de bestelling bij m producten kost, met dezelfde keuzes
+ * (toeslagen, extra hoeken, voorrang) als nu — het formulier geeft zijn eigen
+ * som mee, zodat het bedrag "in plaats van" precies het totaal is dat erboven
+ * staat. Het kleinste grotere aantal tot en met `max` dat even duur of
+ * goedkoper is, wint. Vergeleken in centen, want 0,1 + 0,2 is geen 0,3.
+ *
+ * @returns {{ aantal: number, dan: number, nu: number, gelijk: boolean } | null}
  */
-export function assertBundleSaving() {
-  for (const [lo, hi] of LADDER.complete) {
-    const { apart, together, saved, pct } = completeSaving(lo);
-    const waar = `${lo}–${hi === null ? '∞'  : hi} producten`;
-    if (saved <= 0) {
-      throw new Error(
-        `pricing.js: het complete pakket is bij ${waar} niet goedkoper dan de delen `
-        + `(samen ${together}, los ${apart}). De hele bundel heeft dan geen reden om te bestaan.`,
-      );
-    }
-    if (pct < BUNDLE_CLAIM.min || pct > BUNDLE_CLAIM.max) {
-      throw new Error(
-        `pricing.js: de bundelkorting is bij ${waar} ${pct.toFixed(1)}%, buiten `
-        + `${BUNDLE_CLAIM.min}–${BUNDLE_CLAIM.max}%. De pagina’s zeggen "ongeveer een kwart" / `
-        + `"about a quarter"; pas die tekst aan óf pas LADDER aan, maar niet één van de twee alleen.`,
-      );
+export function groterGoedkoper(n, totaal, max = FORM_MAX_PRODUCTS) {
+  if (!Number.isInteger(n) || n < 1 || typeof totaal !== 'function') return null;
+  const nu = Number(totaal(n));
+  if (!Number.isFinite(nu) || nu <= 0) return null;
+  const cent = (x) => Math.round(x * 100);
+  for (let m = n + 1; m <= Number(max); m += 1) {
+    const dan = Number(totaal(m));
+    if (Number.isFinite(dan) && dan > 0 && cent(dan) <= cent(nu)) {
+      return { aantal: m, dan, nu, gelijk: cent(dan) === cent(nu) };
     }
   }
+  return null;
 }
 
-assertBundleSaving();
+/** Hetzelfde voor de kale staffel van één dienst: alleen producten × tarief. */
+export function ladderGroterGoedkoper(kind, n, max = FORM_MAX_PRODUCTS) {
+  return groterGoedkoper(n, (m) => ladderTotal(kind, m), max);
+}
+
+/* ── DE BUNDELKORTING — weg sinds 14 oktober 2026 ────────────────────────────
+   Hier stonden completeSaving(), BUNDLE_CLAIM en assertBundleSaving(): de korting
+   van een complete bestelling (catalog + lifestyle samen) ten opzichte van los.
+   14 oktober 2026, afvinklijst 23: Lucas — "compleet bestaat niet meer … Klanten kunnen niet compleet bestellen, het is het één of het ander." Er is dus geen bundel meer om te bewaken. */
 
 // FIRST_ORDER_DISCOUNT WAS HERE — 20% off a first order, once per brand, and it
 // is gone. Lucas: *"Verwijder hierna ook de 20% korting omdat we zelfverzekerd
@@ -307,19 +304,24 @@ export const PLAN_CLIPS = { starter: 0, studio: 2, brand: 0 };
  * vergelijkingen ze gebruiken; assertPlans() bewaakt dat ze niet uit elkaar
  * lopen met wat hier staat.
  */
+/* ── 14 OKTOBER 2026: GEEN 'complete' MEER, OOK NIET HIER ───────────────────
+   Een abonnement rekent sinds 19 september 2026 in credits (zie hieronder); deze
+   bundel telt alleen nog hoeveel producten een plan "is" voor een oud scherm dat
+   dat getal toont. De soort heette 'complete' en is nu 'catalog': dezelfde
+   aantallen, zonder een dienst die niet meer bestaat. Een oude rij in de database
+   met { complete: n } leest slots.js als { catalog: n }. */
 export const PLAN_SLOTS = {
-  starter: { complete: PLAN_PRODUCTS.starter },
-  studio:  { complete: PLAN_PRODUCTS.studio, 'video-motion': PLAN_CLIPS.studio },
-  brand:   { complete: PLAN_PRODUCTS.brand },
+  starter: { catalog: PLAN_PRODUCTS.starter },
+  studio:  { catalog: PLAN_PRODUCTS.studio, 'video-motion': PLAN_CLIPS.studio },
+  brand:   { catalog: PLAN_PRODUCTS.brand },
 };
 
 /* Elke soort die in een bundel mag staan, met hoe hij heet en waaruit hij
    bestaat. Vrije tekst in de database, een gesloten lijst hier — zodat een
    typefout in een plan bij de bouw omvalt en niet bij een klant. */
 export const SLOT_KINDS = {
-  complete:        { en: 'Complete bundle',  nl: 'Complete bundel',    per: { en: '4 catalog images and a 3-image lifestyle carousel', nl: '4 catalogbeelden en een lifestylecarrousel van 3' } },
   catalog:         { en: 'Catalog set',      nl: 'Catalogset',         per: { en: 'from 4 images — front, back, detail, on model',     nl: 'vanaf 4 beelden — voorkant, achterkant, detail, op model' } },
-  lifestyle:       { en: 'Lifestyle carousel', nl: 'Lifestylecarrousel', per: { en: '3 images in your fixed look',                     nl: '3 beelden in jouw vaste look' } },
+  lifestyle:       { en: 'Lifestyle carousel', nl: 'Lifestylecarrousel', per: { en: '4 images in your fixed look',                     nl: '4 beelden in jouw vaste look' } },
   'video-motion':  { en: 'Motion clip',      nl: 'Motion-clip',        per: { en: 'the product in motion, 8 seconds',                  nl: 'het product in beweging, 8 seconden' } },
   'video-lifestyle': { en: 'Lifestyle clip', nl: 'Lifestyleclip',     per: { en: 'a clip in a styled scene',                          nl: 'een clip in een gestylede scène' } },
   hooks:           { en: 'Hook',             nl: 'Hook',               per: { en: 'a short vertical clip, 6 to 8 seconds',             nl: 'een korte verticale clip, 6 tot 8 seconden' } },
@@ -423,7 +425,9 @@ export const EXTRA_CREDITS = {
  *   · Editions — een maandset is een eigen product met een eenmalige opzet.
  *   · Een custom look laten BOUWEN — de opzet is het werk en wordt per project
  *     geoffreerd. Een look die al op het account staat, kost gewoon de credits
- *     van de dienst eronder; zie eigenStijlCredits() in slots.js.
+ *     van de dienst eronder (SERVICE_CREDITS hierboven). Hier stond een
+ *     verwijzing naar eigenStijlCredits() in slots.js; die functie heeft nooit
+ *     bestaan (8 oktober 2026, punt 9.01, §17.23).
  *   · Campagnevideo — geen tarief, dus geen creditprijs.
  *   · Voorrang — een abonnee prikt zelf zijn datum. Voorrang kopen bovenop je
  *     eigen datum is een lege belofte.
@@ -457,6 +461,40 @@ export const PLAN_SERVICES = Object.keys(SERVICE_CREDITS);
  * Nu € 5,83, elf procent beter dan Studio, en het duurste plan loont zichtbaar.
  */
 export const PLAN_CREDITS = { starter: 45, studio: 120, brand: 290 };
+
+/*
+ * HOE LANG EEN CREDIT GELDIG IS — 8 oktober 2026 (punt 6.03, V43 = a).
+ *
+ * Lucas koos: "3 maanden na binnenkomst, voor iedereen". Eén getal voor elke
+ * termijn. Het oude doorschuiven per termijn (1 maand maandelijks, 3 bij een
+ * jaar) leeft nog in TERMS in plans.js voor de oude abonnementsschermen; het
+ * creditboek (src/lib/creditboek.js) rekent alleen met dit getal.
+ *
+ * Sinds 12 oktober 2026 (spaarplafond, hieronder) betekent het getal: zolang
+ * het abonnement loopt, vervalt er niets en heb je hoogstens zoveel maanden aan
+ * credits; na pauze of opzeggen blijft alles geldig tot zoveel maanden na de
+ * laatste termijn. Dat vervangt "per credit vanaf binnenkomst" (V43) en "elke
+ * credit op zijn eigen datum" (V41).
+ *
+ * Teksten op /plans, /start/plan, in de FAQ en de voorwaarden lezen dit getal
+ * en typen "3" niet over.
+ */
+export const CREDITS_GELDIG_MAANDEN = 3;
+
+/*
+ * HET SPAARPLAFOND — 12 oktober 2026 (afvinklijst 4: ab-v1 = c, ab-v2 = a).
+ *
+ * Lucas koos: "alles per maand, één spaarplafond van 3 maanden; zolang het
+ * abonnement loopt vervalt er niets", en na pauze of opzeggen "alles tot 3
+ * maanden na de laatste termijn (één datum)". Het plafond is hetzelfde getal
+ * als hierboven, maal de credits die het abonnement per maand geeft: Starter
+ * 135, Pro 360, Merk 870, een abonnement op maat naar rato. Het creditboek
+ * (src/lib/creditboek.js) rekent ermee bij elke termijn; /plans en Studio
+ * tonen het. Geen getal ingetypt: altijd via deze functie.
+ */
+export function spaarPlafond(creditsPerMaand) {
+  return CREDITS_GELDIG_MAANDEN * Math.max(0, Math.floor(Number(creditsPerMaand) || 0));
+}
 
 /** Wat `count` stuks van een dienst kosten in credits, of null als hij niet in een plan mag. */
 export function creditsVoorDienst(kind, count = 1) {
@@ -589,9 +627,8 @@ function assertCredits() {
  * dat is een belofte aan een klant. Zodra het getal er is, is dit één regel.
  */
 export const KIND_PUNTEN = {
-  complete: 7,            // een catalogset (4) plus een carrousel (3)
   catalog: 4,
-  lifestyle: 3,
+  lifestyle: 4,            // vier foto's sinds 14 oktober 2026 (afvinklijst 23, v23-punten a)
   'video-motion': 4,      // ~25 vooraf bepaalde clips op een dag
   'video-lifestyle': 10,  // ~10 gestileerde clips op een dag
   hooks: null,
@@ -686,9 +723,20 @@ export function agendaKind(service, style) {
     const s = String(style || '').trim();
     return Object.prototype.hasOwnProperty.call(VIDEO_STYLE_KINDS, s) ? VIDEO_STYLE_KINDS[s] : null;
   }
-  const key = dienst === 'drop' ? 'complete' : dienst;
-  return Object.prototype.hasOwnProperty.call(KIND_PUNTEN, key) ? key : null;
+  /* Een oude bundelbestelling ('drop', vóór 14 oktober 2026) heeft een eigen
+     gewicht voor de agenda: zie OUDE_BUNDEL_PUNTEN. Geen soort in KIND_PUNTEN. */
+  if (OUDE_BUNDELS.has(dienst)) return OUDE_BUNDEL;
+  return Object.prototype.hasOwnProperty.call(KIND_PUNTEN, dienst) ? dienst : null;
 }
+
+/* ── OUDE BUNDELBESTELLINGEN IN DE AGENDA ────────────────────────────────────
+   Een bestelling met orders.service 'drop' (de oude naam van catalog + lifestyle
+   samen) kan niet meer besteld worden, maar een rij uit die tijd kan nog in de
+   agenda staan. Die weegt wat hij toen woog: een catalogset (4) plus een
+   carrousel van drie (3). Alleen om oude rijen te lezen. */
+const OUDE_BUNDELS = new Set(['drop', 'complete']);
+const OUDE_BUNDEL = 'oude-bundel';
+const OUDE_BUNDEL_PUNTEN = 7;
 
 /**
  * Wat één stuk van deze soort in deze stijl kost, in punten.
@@ -703,7 +751,8 @@ export function agendaKind(service, style) {
  */
 export function puntenPerStuk(kind, style) {
   const naam = String(kind || '').trim();
-  const key = naam === 'drop' ? 'complete' : naam;
+  if (naam === OUDE_BUNDEL || OUDE_BUNDELS.has(naam)) return OUDE_BUNDEL_PUNTEN;
+  const key = naam;
   if (!Object.prototype.hasOwnProperty.call(KIND_PUNTEN, key)) return null;
   const slug = String(style || '').trim();
   const eigen = slug ? `${key}:${slug}` : '';
@@ -716,8 +765,7 @@ export function puntenPerStuk(kind, style) {
  *
  * Geeft `null` terug voor een soort die nog niet gewogen is — bewust geen 0,
  * want 0 is een getal en null is een gat, en de poort moet dat verschil zien.
- * Neemt de wire-waarde ('drop') net zo goed als de laddernaam ('complete'),
- * dezelfde vertaling die isLadderService() hieronder al doet.
+ * Een oude bundelrij ('drop') weegt wat hij toen woog; zie OUDE_BUNDEL_PUNTEN.
  *
  * HEETTE kindImages() TOT 7 SEPTEMBER 2026, en die naam is meeverhuisd met de
  * eenheid. Zolang alles een foto was, viel "beelden" samen met "hoeveel werk";
@@ -773,15 +821,8 @@ function assertPunten() {
       throw new Error(`pricing.js: de punten van "${sleutel}" zijn ${v}; dat moet een heel getal boven nul zijn, of null.`);
     }
   }
-  // DE BUNDEL IS DE SOM VAN ZIJN DELEN. Zodra iemand SLOT_KINDS.complete anders
-  // beschrijft dan "een catalogset plus een carrousel", moet dit meebewegen of omvallen.
-  if (KIND_PUNTEN.complete !== KIND_PUNTEN.catalog + KIND_PUNTEN.lifestyle) {
-    throw new Error(
-      `pricing.js: een compleet product kost ${KIND_PUNTEN.complete} punten, maar een catalogset `
-      + `(${KIND_PUNTEN.catalog}) plus een carrousel (${KIND_PUNTEN.lifestyle}) is `
-      + `${KIND_PUNTEN.catalog + KIND_PUNTEN.lifestyle}. SLOT_KINDS zegt dat compleet precies die twee is.`
-    );
-  }
+  /* De bundelcontrole (compleet = catalog + lifestyle) stond hier tot 14 oktober
+     2026; er is geen bundel meer. */
 }
 assertPunten();
 /* ── GEEN MINIMALE LOOPTIJD MEER — 18 augustus 2026 ────────────────────────
@@ -945,12 +986,11 @@ export function tierFor(products, service) {
 
 /**
  * Staat deze dienst op de prijsladder, en kan hij dus een gereserveerd venster
- * krijgen? Neemt de wire-waarde ('drop') net zo goed als de laddernaam ('complete').
+ * krijgen? Een oude bundelbestelling ('drop') niet meer: die bestaat niet als dienst.
  */
 export function isLadderService(service) {
   const naam = String(service || '').trim();
-  const key = naam === 'drop' ? 'complete' : naam;
-  return Object.prototype.hasOwnProperty.call(LADDER, key);
+  return Object.prototype.hasOwnProperty.call(LADDER, naam);
 }
 
 // ── WIE MAG BEOORDELEN ───────────────────────────────────────────────────────
@@ -1282,7 +1322,6 @@ export const AMOUNT = {
   // any page still printing a single figure should say "from".
   catalog: LADDER.catalog[0][2],       // entry rung; the floor is LADDER.catalog's last row
   lifestyle: LADDER.lifestyle[0][2],   // entry rung; the floor is LADDER.lifestyle's last row
-  complete: LADDER.complete[0][2],     // entry rung; the floor is LADDER.complete's last row
   // RAISED, TASK #271f, 2026-07-30. Was €49, "left alone" by the comment
   // above — that held until Lucas asked for the opposite: video must rise
   // above €49 regardless of the Single Product/Full outfit feature this task
@@ -1472,11 +1511,11 @@ export const AMOUNT = {
 //      conversation, the same reasoning FULL_DROP_MIN/MAX already applies to
 //      "more than a form can hold."
 //
-// €50 is Lucas's own figure too (confirmed against catalog €139.99 = 89.99 +
-// 50, and lifestyle €179.99 = 129.99 + 50). Applied the same way to video —
-// video's outfit price is AMOUNT.video + OUTFIT_SURCHARGE, following the same
-// "priced the same as every other style" rule the AMOUNT.video comment above
-// states for the base rate.
+// The figure is Lucas's own. The prices it was checked against when it was set
+// (July 2026) are long gone, so they are no longer quoted here (8 oktober 2026,
+// punt 9.01, §17.4): what a styled outfit costs is ladderRate() plus this
+// surcharge, read at the time, never a sum typed into a comment. Applied the same
+// way to video — video's outfit price is AMOUNT.video + OUTFIT_SURCHARGE.
 export const OUTFIT_SURCHARGE = 50;
 export const MAX_OUTFIT_PRODUCTS = 3;
 
@@ -1514,9 +1553,10 @@ export const RESOLUTIE = { standaard: 2048, hoog: 4096 };
 // 1c-bis · 4K OP DE LIFESTYLEBEELDEN — 9 september 2026.
 //
 // €9 per PRODUCT en niet per foto — Lucas' eigen keuze uit drie voorstellen.
-// Het waarom is de bedienbaarheid: een lifestylecarousel is drie beelden, en
-// bij twintig producten zou "per foto" zestig vinkjes betekenen. Eén vinkje op
-// de productkaart zet alle drie de beelden van dat product op 4K.
+// Het waarom is de bedienbaarheid: een lifestylecarousel is vier beelden (tot 14
+// oktober 2026 drie), en bij twintig producten zou "per foto" tachtig vinkjes
+// betekenen. Eén vinkje op de productkaart zet alle vier de beelden van dat
+// product op 4K. Ook met vier beelden €9 en 1 credit (afvinklijst 23, v23-4k a).
 //
 // VLAK EN GEEN STAFFEL, anders dan elk ander tarief op deze site. Reden: het
 // werk achter een opschaling daalt niet met het aantal. Een tarief dat wél
@@ -1533,13 +1573,13 @@ export const RESOLUTIE_COPY = {
   en: {
     standaard: `Every image is delivered at ${RESOLUTIE.standaard} px on the long edge — the size a webshop, a marketplace and a feed all use.`,
     catalog: `Catalog images are always ${RESOLUTIE.standaard} px. Four times that for a tile shown at 600 px is storage, not quality. If you do need a catalog image larger — a shop front, a trade-show banner — ask on WhatsApp and we look at what is possible.`,
-    lifestyle: `Lifestyle images are ${RESOLUTIE.standaard} px as standard. Per product you can have all three delivered at ${RESOLUTIE.hoog} px instead, for €${HOOG_PER_PRODUCT} — for a full-bleed banner, a print, or a screen you stand in front of.`,
+    lifestyle: `Lifestyle images are ${RESOLUTIE.standaard} px as standard. Per product you can have all four delivered at ${RESOLUTIE.hoog} px instead, for €${HOOG_PER_PRODUCT} — for a full-bleed banner, a print, or a screen you stand in front of.`,
     video: 'Clip resolution depends on the model a clip is made with, and that is being worked out. Until it is written here, it is agreed in writing before a clip runs.',
   },
   nl: {
     standaard: `Elk beeld wordt geleverd op ${RESOLUTIE.standaard} px aan de lange zijde — de maat waar een webshop, een marktplaats en een feed alle drie mee werken.`,
     catalog: `Catalogbeelden zijn altijd ${RESOLUTIE.standaard} px. Vier keer zoveel voor een tegel die op 600 px staat, is opslag en geen kwaliteit. Heb je een catalogbeeld tóch groter nodig — een winkelpui, een beursdoek — vraag het dan via WhatsApp, dan kijken we wat er mogelijk is.`,
-    lifestyle: `Lifestylebeelden zijn standaard ${RESOLUTIE.standaard} px. Per product kun je alle drie op ${RESOLUTIE.hoog} px laten leveren voor €${HOOG_PER_PRODUCT} — voor een schermvullende banner, een druk, of een scherm waar je voor staat.`,
+    lifestyle: `Lifestylebeelden zijn standaard ${RESOLUTIE.standaard} px. Per product kun je alle vier op ${RESOLUTIE.hoog} px laten leveren voor €${HOOG_PER_PRODUCT} — voor een schermvullende banner, een druk, of een scherm waar je voor staat.`,
     video: 'Welke resolutie een clip kan halen, hangt af van het model waarmee hij gemaakt wordt, en dat wordt nog uitgezocht. Zolang het hier niet staat, wordt het op schrift afgesproken voordat een clip draait.',
   },
 };
@@ -1694,7 +1734,7 @@ export function voorrangZin(lang) {
 /** Mag deze bestelling voorrang kopen? Buiten de grenzen wordt hij niet getoond. */
 export function voorrangKan({ kind, products, clips }) {
   if (kind === 'video' || kind === 'hooks') return Number(clips || 0) > 0 && Number(clips) <= VOORRANG.maxClips;
-  if (kind !== 'catalog' && kind !== 'lifestyle' && kind !== 'complete') return false;
+  if (kind !== 'catalog' && kind !== 'lifestyle') return false;
   const n = Number(products || 0);
   return n > 0 && n <= VOORRANG.maxProducten;
 }
@@ -1703,13 +1743,15 @@ export const VOORRANG_COPY = {
   en: {
     label: 'Priority delivery',
     line: `Your order goes to the top of the list. Pay on a working day before ${VOORRANG.bestelVoorUur}:00 and it is delivered by ${VOORRANG.klaarUur}:00 the next working day (Dutch time); pay later and it is the working day after that. If we do not make it, the surcharge comes back and your order runs on as normal.`,
-    limits: `Available up to ${20} products, or ${10} clips, on a style that already exists — a house style or a custom look that has been built. A style still being designed cannot be rushed, because designing it is the work.`,
+    /* De twee grenzen uit VOORRANG en niet getypt (8 oktober 2026, punt 9.01,
+       §17.3): hier stonden ${20} en ${10} — dezelfde getallen, maar een tweede bron. */
+    limits: `Available up to ${VOORRANG.maxProducten} products, or ${VOORRANG.maxClips} clips, on a style that already exists — a house style or a custom look that has been built. A style still being designed cannot be rushed, because designing it is the work.`,
     busy: 'Priority is not available for this week — the calendar is full. Saying so here is better than taking the surcharge and giving it back.',
   },
   nl: {
     label: 'Voorrang bij levering',
     line: `Je bestelling gaat bovenaan de lijst. Betaal je op een werkdag vóór ${VOORRANG.bestelVoorUur}:00, dan leveren we uiterlijk de volgende werkdag om ${VOORRANG.klaarUur}:00 (Nederlandse tijd); betaal je later, dan de werkdag daarna. Halen we dat niet, dan komt de toeslag terug en loopt je bestelling gewoon door.`,
-    limits: `Mogelijk tot ${20} producten, of ${10} clips, op een stijl die al bestaat — een vaste look of een eigen look die al gebouwd is. Een stijl die nog ontworpen wordt, kan niet sneller: dat ontwerpen ís het werk.`,
+    limits: `Mogelijk tot ${VOORRANG.maxProducten} producten, of ${VOORRANG.maxClips} clips, op een stijl die al bestaat — een vaste look of een eigen look die al gebouwd is. Een stijl die nog ontworpen wordt, kan niet sneller: dat ontwerpen ís het werk.`,
     busy: 'Voorrang kan deze week niet — de agenda zit vol. Dat hier zeggen is beter dan de toeslag aannemen en hem daarna terugstorten.',
   },
 };
@@ -1724,9 +1766,14 @@ export const VOORRANG_COPY = {
   // De bodem hoort te bijten bij de kleinste bestelling en het plafond bij de
   // grootste; bijt geen van beide, dan zijn het decoratie.
   const kleinste = LADDER.catalog[0][2];                 // één catalogproduct
-  const grootste = LADDER.complete[LADDER.complete.length - 1][2] * 20;
   if (Math.ceil(kleinste * deel) >= bodem) throw new Error('VOORRANG.bodem bijt nergens — hij ligt onder 20% van de kleinste bestelling');
-  if (Math.ceil(grootste * deel) <= plafond) throw new Error('VOORRANG.plafond bijt nergens — hij ligt boven 20% van de grootste bestelling');
+  /* HET PLAFOND BIJT SINDS 14 OKTOBER 2026 NIET MEER, EN DAT IS GEEN FOUT. Hij
+     beet op een complete bestelling (€ 65 × 20); compleet bestaat niet meer, en de
+     grootste fotobestelling die voorrang kan krijgen (19 lifestyleproducten, € 1.216)
+     geeft 20% = € 244, onder € 249. Het plafond blijft staan als grens voor als
+     VOORRANG.maxProducten ooit omhoog gaat; een lager plafond is een prijsbesluit
+     (afvinklijst 24). Wat wél nog moet kloppen: het plafond ligt boven de bodem. */
+  void plafond;
 })();
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2160,16 +2207,30 @@ export const AFTERCARE = {
  * terugbetaald wordt: "overwegen" is Lucas' woord en het blijft staan, want een
  * garantie die je niet kunt waarmaken is precies wat deze lijst moet vervangen.
  */
+/* ── DE KLEUR DIE JE OPGAF — 8 oktober 2026 (punt 5.03, V32 = a) ─────────────
+   Stap 2 vraagt de kleur zoals in de webshop, met Pantone- of hexcode; wijkt de
+   foto af, dan geldt die kleur. De revisieregel hieronder zegt daarom waar een
+   kleur tegen gemeten wordt: de opgegeven kleur, en alleen zonder opgave de
+   foto's. Zo staat het in /terms §10, op /faq en in Studio (één bron). */
+/* ── STIL AFGEROND = AANVAARD, EN WEER OPENEN — 11 oktober 2026 (w2 = b) ─────
+   Lucas koos in afvinklijst 3 bij w2 voor b: achter "dan ronden we je
+   bestelling af" staat "De levering geldt dan als aanvaard." Met zijn notitie
+   erbij ("Wellicht is het handig dat ik de order wel nog kan openen voor
+   wanneer hier een reden voor is") één zin dat wij een afgeronde bestelling in
+   overleg weer kunnen openen. Bewust een bevoegdheid van VISUAILS ("dat
+   beslissen wij per geval"), geen recht dat de klant kan opeisen. De knop
+   daarvoor staat in /admin op de bestelpagina (heropenBestelling() in
+   src/lib/close.js). Eén bron: dit staat dus ook op /faq en in Studio. */
 export const REVISIEBELEID = {
   nl: [
-    ['Eén ronde zit erbij', `Bij elke bestelling hoort één revisieronde. Je vraagt hem aan binnen ${REVISIE_DAGEN} dagen na levering; daarin verwerken we je aanpassingen, per beeld, in VISUAILS Studio.`],
-    ['Is het onze fout, dan lossen we het op', 'Verkeerd product, verkeerde kleur, iets mis in de afwerking — als het aan onze kant ligt, maken we het kosteloos goed. Ook na die ene ronde.'],
+    ['Eén ronde zit erbij', `Bij elke bestelling hoort één revisieronde. Je vraagt hem aan binnen ${REVISIE_DAGEN} dagen na levering; daarin verwerken we je aanpassingen, per beeld, in VISUAILS Studio. Vraag je in die dagen niets aan, dan ronden we je bestelling af. De levering geldt dan als aanvaard; je beelden blijven gewoon te downloaden. Is daar een reden voor, dan kunnen we een afgeronde bestelling in overleg weer openen; dat beslissen wij per geval.`],
+    ['Is het onze fout, dan lossen we het op', 'Verkeerd product, een kleur die afwijkt van de kleur die je opgaf (of van je foto’s, als je geen kleur opgaf), iets mis in de afwerking — als het aan onze kant ligt, maken we het kosteloos goed. Ook na die ene ronde.'],
     ['Wil je daarna iets anders, dan kan dat', 'Aanpassingen die geen fout van ons zijn, doen we ook na de eerste ronde nog. Daar kunnen kosten aan verbonden zijn, en die spreken we vooraf af.'],
     ['Kan het niet, dan bekijken we een terugbetaling', 'Blijkt bij het maken dat jouw product met AI en onze eigen gereedschappen niet goed na te maken is, dan kijken we naar een passende of volledige terugbetaling.'],
   ],
   en: [
-    ['One round is included', `Every order comes with one revision round. You request it within ${REVISIE_DAGEN} days of delivery; that is where your adjustments go, image by image, in VISUAILS Studio.`],
-    ['If it is our mistake, we fix it', 'Wrong product, wrong colour, something off in the finishing — if it is on our side we put it right at no cost, even after the included round.'],
+    ['One round is included', `Every order comes with one revision round. You request it within ${REVISIE_DAGEN} days of delivery; that is where your adjustments go, image by image, in VISUAILS Studio. If you request nothing in those days, we complete your order. The delivery then counts as accepted; your images stay available to download. If there is a reason to, we can reopen a completed order in consultation with you; we decide that case by case.`],
+    ['If it is our mistake, we fix it', 'Wrong product, a colour that differs from the colour you gave us (or from your photos, if you gave none), something off in the finishing — if it is on our side we put it right at no cost, even after the included round.'],
     ['Want other changes after that? We can make them', 'Changes that are not a mistake of ours can still be made after the first round. There may be a cost, and we agree it beforehand.'],
     ['If it cannot be made, we look at a refund', 'If it turns out your product cannot be reproduced properly with AI and our own tools, we look at a full or partial refund.'],
   ],
@@ -2885,13 +2946,13 @@ export function planFor(productsPerMonth) {
 /**
  * De drie abonnementskaarten.
  *
- * `jaarRollover` en `jaarPrijzen` komen van BUITEN omdat ze in plans.js staan en
+ * `jaarPrijzen` komt van BUITEN omdat hij in plans.js staat en
  * dit bestand plans.js niet mag importeren — plans.js importeert al uit pricing.js
  * en een kringetje zou beide stukmaken. Dezelfde reden dat planNames.js een eigen
  * bestandje is. De terugval is de constante die hier wél staat, zodat een
  * aanroeper die ze vergeet een kloppende maandzin krijgt in plaats van undefined.
  */
-export function plans(lang = 'en', { jaarRollover = 3, jaarPrijzen = null } = {}) {
+export function plans(lang = 'en', { jaarPrijzen = null } = {}) {
   const l = lang === 'nl' ? 'nl' : 'en';
   const nlx = l === 'nl';
   /* ── IN CREDITS SINDS 23 SEPTEMBER 2026 ──────────────────────────────────
@@ -2938,14 +2999,13 @@ export function plans(lang = 'en', { jaarRollover = 3, jaarPrijzen = null } = {}
         nlx ? `${credits} credits per maand` : `${credits} credits a month`,
         nlx ? `Bijvoorbeeld ${fit.catalog} catalogsets, of ${fit.lifestyle} lifestylecarrousels` : `For example ${fit.catalog} catalog sets, or ${fit.lifestyle} lifestyle carousels`,
         ...(id === 'brand' ? [nlx ? 'Je eigen merkmodel inbegrepen' : 'Your own Brand Model included'] : []),
-        /* hasBrandModel() in plans.js: Pro krijgt het merkmodel op de termijnen
-           van twaalf maanden. Hier geen import van plans.js (kringetje), dus de
-           regel staat bij het plan zelf. */
-        ...(id === 'studio' ? [nlx ? 'Je eigen merkmodel inbegrepen op 12 maanden' : 'Your own Brand Model included on 12 months'] : []),
-        nlx ? 'Elke maand een vaste week, vanaf de dag die jij kiest' : 'A fixed week every month, from the day you pick',
-        nlx
-          ? `Ongebruikte credits schuiven ${PLAN_ROLLOVER_MONTHS} maand door (${jaarRollover} op 12 maanden)`
-          : `Unused credits roll over ${PLAN_ROLLOVER_MONTHS} month (${jaarRollover} on 12 months)`,
+        /* hasBrandModel() in plans.js: Pro krijgt het merkmodel bij een jaar
+           vooruit (6.04, 8 oktober 2026: de tussentermijn is weg). Hier geen
+           import van plans.js (kringetje), dus de regel staat bij het plan zelf. */
+        ...(id === 'studio' ? [nlx ? 'Je eigen merkmodel inbegrepen bij een jaar vooruit' : 'Your own Brand Model included when you pay a year up front'] : []),
+        /* De vaste week is weg (ronde 10, §28); het spaarplafond (12 oktober
+           2026): zolang het loopt vervalt er niets, sparen tot 3 maanden. */
+        nlx ? `Sparen tot ${spaarPlafond(credits)} credits (${CREDITS_GELDIG_MAANDEN} maanden); zolang het loopt vervalt er niets` : `Save up to ${spaarPlafond(credits)} credits (${CREDITS_GELDIG_MAANDEN} months); nothing expires while it runs`,
         nlx ? 'Maandelijks opzegbaar' : 'Cancel any month',
       ],
       saving: saving
@@ -2989,11 +3049,13 @@ function assertLadder() {
      van een keuze binnen hetzelfde gesprek — en dat is precies de fout die op
      € 1.250 gemaakt werd. Tien producten is de maat, want dat is de drempel
      waarop een bestelling een datum krijgt. */
-  const tienCompleet = ladderTotal('complete', WINDOW_THRESHOLD);
-  if (AMOUNT.brandModel > tienCompleet) {
+  /* Tot 14 oktober 2026 was de maat tien COMPLETE producten; nu tien
+     lifestyleproducten, de duurste fotodienst — compleet bestaat niet meer. */
+  const tienLifestyle = ladderTotal('lifestyle', WINDOW_THRESHOLD);
+  if (AMOUNT.brandModel > tienLifestyle) {
     throw new Error(
       `pricing.js: het merkmodel kost € ${AMOUNT.brandModel} en een bestelling van `
-      + `${WINDOW_THRESHOLD} complete producten € ${tienCompleet}. Een toevoeging die meer `
+      + `${WINDOW_THRESHOLD} lifestyleproducten € ${tienLifestyle}. Een toevoeging die meer `
       + 'kost dan de bestelling waar hij bij hoort, is geen toevoeging meer.'
     );
   }
@@ -3007,12 +3069,15 @@ function assertLadder() {
   // would have saved them, and a prompt whose arithmetic a client can disprove
   // with a calculator costs more than it earns. So the saving is asserted at
   // build time rather than trusted.
+  /* In credits sinds 14 oktober 2026: dezelfde credits, helemaal aan catalogsets
+     los besteld (planSaving(), de goedkoopste dienst per credit). Hier stond de
+     complete-ladder over PLAN_PRODUCTS; die bestaat niet meer. */
   for (const id of Object.keys(PLAN_AMOUNT)) {
-    const onLadder = ladderTotal('complete', PLAN_PRODUCTS[id]) + PLAN_CLIPS[id] * AMOUNT.video;
-    if (!(PLAN_AMOUNT[id] < onLadder)) {
+    const besp = planSaving(id);
+    if (!besp || !(besp.saving > 0)) {
       throw new Error(
-        `pricing.js: the ${id} plan costs ${PLAN_AMOUNT[id]} for ` +
-        `${PLAN_PRODUCTS[id]} products, which is ${onLadder} on the ladder — a ` +
+        `pricing.js: the ${id} plan costs ${PLAN_AMOUNT[id]}, and its credits spent on ` +
+        `catalog sets ordered one by one cost ${besp ? besp.onLadder : '?'} — a ` +
         `plan that does not beat the ladder is a worse deal wearing a ` +
         `subscription’s clothes, and upgradePrompt() would be lying.`
       );
@@ -3042,26 +3107,8 @@ function assertLadder() {
   // exists now: the ladder has no crossover to assert because there is nothing
   // to cross over to. What replaced them is the plan check below.
 
-  // EVERY PLAN MUST BEAT THE LADDER. This replaces the old "the retainer must
-  // cost more than the drop it contains" check, which asserted the opposite
-  // relationship and fired the moment the plans were priced: under the package
-  // model the retainer was a bundle sold ABOVE its contents, and under this one
-  // a plan is the cheaper way to buy the same output. That is not a style
-  // preference — upgradePrompt() below tells a client, in euros, what a plan
-  // would have saved them, and a prompt whose arithmetic a client can disprove
-  // with a calculator costs more than it earns. So the saving is asserted at
-  // build time rather than trusted.
-  for (const id of Object.keys(PLAN_AMOUNT)) {
-    const onLadder = ladderTotal('complete', PLAN_PRODUCTS[id]) + PLAN_CLIPS[id] * AMOUNT.video;
-    if (!(PLAN_AMOUNT[id] < onLadder)) {
-      throw new Error(
-        `pricing.js: the ${id} plan costs ${PLAN_AMOUNT[id]} for ` +
-        `${PLAN_PRODUCTS[id]} products, which is ${onLadder} on the ladder — a ` +
-        `plan that does not beat the ladder is a worse deal wearing a ` +
-        `subscription’s clothes, and upgradePrompt() would be lying.`
-      );
-    }
-  }
+  // (De tweede, identieke planscontrole die hier stond, is weg: hij deed hetzelfde als die hierboven.)
+
 
   // The ladder itself has to fall. A rung that costs more per product than the
   // one below it is the exact failure the old package model shipped with (8
@@ -3101,12 +3148,12 @@ assertLadder();
 export const PER_PRODUCT = {
   en: [
     { id: 'catalog', tier: 'unattended', name: 'Catalog set', price: euro(AMOUNT.catalog, 'en'), outfitPrice: euro(AMOUNT.catalog + OUTFIT_SURCHARGE, 'en'), unit: 'per product', line: 'From four photos: front, back, a fabric or logo close-up, and one on-model shot. Add more per product.' },
-    { id: 'lifestyle', tier: 'unattended', name: 'Lifestyle carousel', price: euro(AMOUNT.lifestyle, 'en'), outfitPrice: euro(AMOUNT.lifestyle + OUTFIT_SURCHARGE, 'en'), unit: 'per product', line: 'Three photos of one product in one styled look — a carousel ready to post.' },
+    { id: 'lifestyle', tier: 'unattended', name: 'Lifestyle carousel', price: euro(AMOUNT.lifestyle, 'en'), outfitPrice: euro(AMOUNT.lifestyle + OUTFIT_SURCHARGE, 'en'), unit: 'per product', line: 'Four photos of one product in one styled look — on a model front and back, the product on its own, and a detail. A carousel ready to post.' },
     { id: 'video', tier: 'unattended', name: 'Video clip', price: euro(AMOUNT.video, 'en'), outfitPrice: euro(AMOUNT.video + OUTFIT_SURCHARGE, 'en'), unit: 'per clip', line: 'One short clip. The same rate on its own or added to a larger order.' },
   ],
   nl: [
     { id: 'catalog', tier: 'unattended', name: 'Catalogset', price: euro(AMOUNT.catalog, 'nl'), outfitPrice: euro(AMOUNT.catalog + OUTFIT_SURCHARGE, 'nl'), unit: 'per product', line: 'Vanaf vier foto’s: voorkant, achterkant, een stof- of logodetail, en één on-model shot. Per product bij te bestellen.' },
-    { id: 'lifestyle', tier: 'unattended', name: 'Lifestylecarrousel', price: euro(AMOUNT.lifestyle, 'nl'), outfitPrice: euro(AMOUNT.lifestyle + OUTFIT_SURCHARGE, 'nl'), unit: 'per product', line: 'Drie foto’s van één product in één gestylede look — een carrousel klaar om te posten.' },
+    { id: 'lifestyle', tier: 'unattended', name: 'Lifestylecarrousel', price: euro(AMOUNT.lifestyle, 'nl'), outfitPrice: euro(AMOUNT.lifestyle + OUTFIT_SURCHARGE, 'nl'), unit: 'per product', line: 'Vier foto’s van één product in één gestylede look — op een model van voren en van achteren, het product alleen, en een detail. Een carrousel klaar om te posten.' },
     { id: 'video', tier: 'unattended', name: 'Videoclip', price: euro(AMOUNT.video, 'nl'), outfitPrice: euro(AMOUNT.video + OUTFIT_SURCHARGE, 'nl'), unit: 'per clip', line: 'Eén korte clip. Dezelfde prijs los of toegevoegd aan een grotere bestelling.' },
   ],
 };
@@ -3148,10 +3195,34 @@ export function perProduct(id, lang = 'en') {
 
 /** Een catalogset: voorkant, achterkant, een detail, en één op een model. */
 export const CATALOG_IMAGES = 4;
-/** Een lifestyle-carousel: een scène, een op een model, een detailclose-up. */
-export const LIFESTYLE_IMAGES = 3;
-/** Een compleet product is beide samen. */
-export const COMPLETE_IMAGES = CATALOG_IMAGES + LIFESTYLE_IMAGES;
+/**
+ * Een lifestyle-carousel: op een model van voren, op een model van achteren, het
+ * product alleen (in de scène van de look) en een detail op het model.
+ *
+ * ── VIER SINDS 14 OKTOBER 2026 ────────────────────────────────────────────
+ * Lucas: *"lifestyle orders krijgen nu minimaal 4 foto's; on model front, on model
+ * back, product only, en on model detail close up. Pas dit overal goed toe."*
+ * Afvinklijst 23: dezelfde prijs, dezelfde credits, 4K blijft €9 per product, vier
+ * agendapunten, vast vier (geen extra lifestylebeelden), de proef ook vier, en
+ * "alleen het product" staat in de scène van de look. Tot die dag waren het er
+ * drie: een scène, een op een model, een detailclose-up. Een bestelling van vóór
+ * die dag houdt haar drie vakjes; zie LIFESTYLE_BEELDEN_VELD hieronder.
+ */
+export const LIFESTYLE_IMAGES = 4;
+/**
+ * Het veld in details_json dat zegt dat een lifestylebestelling vier beelden
+ * krijgt. functions/api/order.js zet het bij elke nieuwe lifestylebestelling (en
+ * bij een lifestyleproef); levervakken.js en de planning lezen het. Een bestelling
+ * zonder dit veld is van vóór 14 oktober 2026 en houdt drie vakjes, met de oude
+ * namen — anders toont het werkbord "3 van 4" en gaat hij nooit af.
+ */
+export const LIFESTYLE_BEELDEN_VELD = 'lifestyle_beelden';
+/** Hoeveel lifestylebeelden een bestelling krijgt: 4, of 3 als hij van vóór de wijziging is. */
+export function lifestyleBeeldenVan(details) {
+  let d = details;
+  if (typeof d === 'string') { try { d = JSON.parse(d); } catch { d = {}; } }
+  return Number(d && d[LIFESTYLE_BEELDEN_VELD]) >= 4 ? LIFESTYLE_IMAGES : 3;
+}
 
 /*
  * ═══════════════════════════════════════════════════════════════════════════
@@ -3190,8 +3261,8 @@ export const LEVERVLAKKEN = {
     nl: ['Voorkant', 'Achterkant', 'Detail', 'Op model'],
   },
   lifestyle: {
-    en: ['The scene', 'On model', 'Close-up'],
-    nl: ['De scène', 'Op model', 'Close-up'],
+    en: ['On model · front', 'On model · back', 'Product only', 'Detail on model'],
+    nl: ['Op model · voorkant', 'Op model · achterkant', 'Alleen het product', 'Detail op model'],
   },
   video: {
     en: ['The clip'],
@@ -3226,7 +3297,6 @@ export function levervlakken(dienst, lang = 'nl') {
  * beelden" is geen vraag die erover gaat. Wie hem toch stelt, krijgt null.
  */
 export const KIND_BEELDEN = {
-  complete: COMPLETE_IMAGES,
   catalog: CATALOG_IMAGES,
   lifestyle: LIFESTYLE_IMAGES,
 };
@@ -3234,8 +3304,7 @@ export const KIND_BEELDEN = {
 /** Beelden per product voor deze dienst, of null als beelden er niet over gaan. */
 export function beeldenVoor(service) {
   const naam = String(service || '').trim();
-  const key = naam === 'drop' ? 'complete' : naam;
-  return Object.prototype.hasOwnProperty.call(KIND_BEELDEN, key) ? KIND_BEELDEN[key] : null;
+  return Object.prototype.hasOwnProperty.call(KIND_BEELDEN, naam) ? KIND_BEELDEN[naam] : null;
 }
 
 /*
@@ -3246,11 +3315,6 @@ export function beeldenVoor(service) {
  * klant die vier beelden verwachtte. Vandaar deze controle bij de bouw.
  */
 function assertShotCounts() {
-  if (COMPLETE_IMAGES !== 7) {
-    throw new Error(
-      `pricing.js: een compleet product is ${COMPLETE_IMAGES} beelden, maar de opmerking bij LADDER.complete zegt zeven. Werk beide bij.`,
-    );
-  }
   /* De namen van de vakken tellen mee met de belofte — zie de kop van
      LEVERVLAKKEN. Eén naam te veel of te weinig is een stijltegel die iets
      anders toont dan de prijs zegt, en dat valt pas op bij een klant. */
@@ -3351,7 +3415,7 @@ export const TEST_SAMPLE = {
     // bewijst.
     line: `${CATALOG_IMAGES} catalog images or a lifestyle carousel of ${LIFESTYLE_IMAGES} images, your choice, finished the way a paid order is.`,
     catalogLine: `${CATALOG_IMAGES} images — front, back, a fabric or logo detail, and one on a model.`,
-    lifestyleLine: `${LIFESTYLE_IMAGES} images in one styled look — a scene, one on a model, and a detail close-up.`,
+    lifestyleLine: `${LIFESTYLE_IMAGES} images in one styled look — on a model front and back, the product on its own, and a detail on the model.`,
   },
   nl: {
     /* 'Probeer VISUAILS' en niet meer 'Proefvisual' (3 september 2026): de klant
@@ -3371,7 +3435,7 @@ export const TEST_SAMPLE = {
     deliverableShort: `${CATALOG_IMAGES} catalogfoto’s of een carrousel van ${LIFESTYLE_IMAGES}`,
     line: `${CATALOG_IMAGES} catalogfoto’s of een lifestylecarrousel van ${LIFESTYLE_IMAGES} foto’s, jij kiest, afgewerkt zoals bij een betaalde bestelling.`,
     catalogLine: `${CATALOG_IMAGES} foto’s — voorkant, achterkant, een stof- of logodetail, en één op een model.`,
-    lifestyleLine: `${LIFESTYLE_IMAGES} foto’s in één gestylede look — een scène, één op een model, en een detailclose-up.`,
+    lifestyleLine: `${LIFESTYLE_IMAGES} foto’s in één gestylede look — op een model van voren en van achteren, het product alleen, en een detail op het model.`,
   },
 };
 
@@ -3482,73 +3546,11 @@ export const CUSTOM_MONTH_ID = 'maat';
  */
 export const CUSTOM_MONTH_MAX_PRODUCTS = 40;
 
-/**
- * Wat een lifestylecarrousel kost bovenop de catalogset van hetzelfde product,
- * op de trede die bij `products` hoort.
- *
- * AFGELEID UIT DE LADDER EN NERGENS APART OPGESCHREVEN, om dezelfde reden als de
- * bundelkorting hierboven: een tweede tabel met opslagen zou op een dag iets
- * anders zeggen dan de ladder, en dan is er geen manier meer om te zien welke van
- * de twee de prijs is.
- */
-export function addOnRate(products = 1) {
-  return ladderRate('complete', products) - ladderRate('catalog', products);
-}
-
-/**
- * Wat een zelf samengestelde maand kost, exclusief btw.
- *
- * @param {{products:number, carousels?:number, clips?:number}} maand
- * @returns {{total:number, catalog:number, addOn:number, video:number, images:number}}
- */
-export function customMonthTotal({ products, carousels = 0, clips = 0 }) {
-  const n = Math.floor(Number(products) || 0);
-  const m = Math.floor(Number(carousels) || 0);
-  const k = Math.floor(Number(clips) || 0);
-  if (n < 1) throw new Error('pricing.js: een maand op maat heeft minstens één product.');
-  /* M <= N IS GEEN VALIDATIE MAAR DE VORM ZELF. Een carrousel hangt aan een
-     product dat toch al gefotografeerd wordt; meer carrousels dan producten is een
-     andere dienst (lifestyle los, met zijn eigen ladder) en geen randgeval. */
-  if (m > n) throw new Error(`pricing.js: ${m} carrousels op ${n} producten — een carrousel hoort bij een product dat er is.`);
-  if (k < 0) throw new Error('pricing.js: een negatief aantal clips bestaat niet.');
-
-  const catalog = n * ladderRate('catalog', n);
-  const addOn = m * addOnRate(n);
-  const video = k * AMOUNT.video;
-  return {
-    total: catalog + addOn + video,
-    catalog,
-    addOn,
-    video,
-    /* Wat deze maand de agenda kost, in punten. Heette `images` tot 7 september
-       2026 — zie de noot bij puntenVoor(): zolang alles een foto was, viel die
-       naam samen met de eenheid, en bij video niet meer. */
-    punten: n * KIND_PUNTEN.catalog + m * KIND_PUNTEN.lifestyle,
-  };
-}
-
-/**
- * Waaruit een maand op maat bestaat, in SLOTS.
- *
- * Dit is de vertaling tussen de PRIJSREGEL hierboven en de administratie in
- * src/lib/slots.js. `customMonthTotal()` rekent met N catalogsets plus M
- * opslagen; een klant gebruikt N − M catalogslots en M completeslots, want een
- * complete slot IS een catalogset met de carrousel erbij (zie SLOT_KINDS).
- *
- * Soorten met nul komen er niet in. Een rij met granted = 0 zou in het dashboard
- * verschijnen als een soort die je hebt en niet kunt gebruiken.
- */
-export function customMonthSlots({ products, carousels = 0, clips = 0 }) {
-  const n = Math.floor(Number(products) || 0);
-  const m = Math.floor(Number(carousels) || 0);
-  const k = Math.floor(Number(clips) || 0);
-  if (m > n) throw new Error(`pricing.js: ${m} carrousels op ${n} producten — een carrousel hoort bij een product dat er is.`);
-  const uit = {};
-  if (n - m > 0) uit.catalog = n - m;
-  if (m > 0) uit.complete = m;
-  if (k > 0) uit['video-motion'] = k;
-  return uit;
-}
+/* addOnRate(), customMonthTotal() en customMonthSlots() stonden hier: de oude maand
+   op maat in producten, waarbij een carrousel een opslag bovenop een catalogset
+   was (het verschil tussen de complete- en de catalogtrede). Sinds 19 september
+   2026 is een maand op maat een aantal credits, en sinds 14 oktober 2026 is er
+   geen complete-trede meer om een opslag uit af te leiden. */
 
 /**
  * Hoeveel PRODUCTEN een bundel slots vasthoudt.
@@ -3581,125 +3583,7 @@ export function slotProducts(slots = {}) {
 export const PRODUCT_SLOT_KINDS = Object.keys(SLOT_KINDS)
   .filter((k) => !k.startsWith('video-') && k !== 'hooks');
 
-/**
- * De goedkoopste manier om aan deze maand te komen, van de drie die er zijn.
- *
- * `kind` is 'custom', 'plan' of 'plan+extra'. Bij de laatste twee staat er welk
- * plan het is en wat er los bij komt, zodat het scherm het kan uitschrijven in
- * plaats van alleen een bedrag te tonen.
- *
- * EEN PLAN TELT ALLEEN MEE ALS HET MINSTENS EVENVEEL GEEFT. Een plan dat te klein
- * is, wordt aangevuld met een losse bestelling tegen het gewone laddertarief over
- * wát er bijkomt — dat is wat "de normale prijs" betekent: bijkopen is een gewone
- * bestelling en kost wat een gewone bestelling kost.
- */
-export function cheapestRoute({ products, carousels = 0, clips = 0 }) {
-  const eigen = customMonthTotal({ products, carousels, clips });
-  const n = Math.floor(Number(products) || 0);
-  const m = Math.floor(Number(carousels) || 0);
-  const k = Math.floor(Number(clips) || 0);
-
-  const opties = [{ kind: 'custom', total: eigen.total, plan: null, extra: null }];
-
-  for (const id of Object.keys(PLAN_AMOUNT)) {
-    const planN = PLAN_SLOTS[id].complete || 0;
-    const planK = PLAN_SLOTS[id]['video-motion'] || 0;
-
-    // Het plan vult eerst de producten MET carrousel, want daar is het plan het
-    // sterkst: een complete slot die als catalogset wordt gebruikt, laat de
-    // carrousel die erin zit ongebruikt.
-    const extraComplete = Math.max(0, Math.min(n, m) - planN);
-    const extraCatalog = Math.max(0, n - Math.max(m, planN));
-    const extraClips = Math.max(0, k - planK);
-    const extra = ladderTotal('complete', extraComplete)
-      + ladderTotal('catalog', extraCatalog)
-      + extraClips * AMOUNT.video;
-
-    opties.push({
-      kind: extra > 0 ? 'plan+extra' : 'plan',
-      total: PLAN_AMOUNT[id] + extra,
-      plan: id,
-      extra: extra > 0
-        ? { complete: extraComplete, catalog: extraCatalog, clips: extraClips, amount: extra }
-        : null,
-    });
-  }
-
-  /* Bij een gelijke stand wint het plan van de maand op maat: dezelfde prijs met
-     een vaste vorm is voor Lucas beter in te plannen, en voor de klant simpeler.
-     De volgorde hieronder maakt dat expliciet in plaats van het aan de
-     stabiliteit van sort() over te laten. */
-  const rang = { plan: 0, 'plan+extra': 1, custom: 2 };
-  opties.sort((a, b) => a.total - b.total || rang[a.kind] - rang[b.kind]);
-  return { winner: opties[0], custom: eigen, options: opties };
-}
-
-function assertCustomMonth() {
-  /* DE SLOTS EN DE PRIJS MOETEN OVER DEZELFDE MAAND GAAN. customMonthSlots() is
-     een tweede lezing van dezelfde invoer, en twee lezingen is precies waar dit
-     bestand elders tegen waarschuwt. De band tussen de twee: het aantal producten
-     dat de slots vasthouden, is het aantal waarvoor is gerekend. */
-  for (const [n, m] of [[5, 0], [5, 5], [9, 3], [20, 20], [37, 12]]) {
-    const slots = customMonthSlots({ products: n, carousels: m, clips: 4 });
-    if (slotProducts(slots) !== n) {
-      throw new Error(`pricing.js: ${n} producten met ${m} carrousels levert ${slotProducts(slots)} productslots op.`);
-    }
-    if ((slots['video-motion'] || 0) !== 4) {
-      throw new Error('pricing.js: de clips uit een maand op maat komen niet in de bundel terecht.');
-    }
-    /* En de punten die de agenda gaat wegen, horen dezelfde maand te beschrijven
-       als het bedrag. Zou dit uiteenlopen, dan verkoopt de site een maand die niet
-       in de agenda past of andersom. */
-    const viaSlots = Object.entries(slots)
-      .filter(([kind]) => kind !== 'video-motion')
-      .reduce((tot, [kind, aantal]) => tot + puntenVoor(kind, aantal), 0);
-    if (viaSlots !== customMonthTotal({ products: n, carousels: m }).punten) {
-      throw new Error(`pricing.js: ${n}/${m} kost ${viaSlots} punten via de slots en ${customMonthTotal({ products: n, carousels: m }).punten} via de prijsregel.`);
-    }
-  }
-  if (CUSTOM_MONTH_MAX_PRODUCTS <= CUSTOM_MONTH_MIN_PRODUCTS) {
-    throw new Error('pricing.js: het plafond van de maand op maat ligt op of onder de bodem.');
-  }
-
-  /* DE OPSLAG MOET DE LADDER REPRODUCEREN. N producten met allemaal een carrousel
-     is per definitie N complete producten; komt daar een ander bedrag uit, dan is
-     de opslag geen afgeleide meer maar een tweede prijs. */
-  for (const [lo] of LADDER.complete) {
-    const eigen = customMonthTotal({ products: lo, carousels: lo }).total;
-    const langs = ladderTotal('complete', lo);
-    if (eigen !== langs) {
-      throw new Error(
-        `pricing.js: ${lo} producten met evenveel carrousels kost EUR ${eigen} via de opslag `
-        + `en EUR ${langs} via de ladder. De opslag hoort het verschil tussen complete en `
-        + `catalog te zijn en niets anders.`
-      );
-    }
-  }
-  // Een carrousel erbij mag nooit goedkoper zijn dan geen carrousel.
-  for (const [lo] of LADDER.catalog) {
-    if (addOnRate(lo) <= 0) {
-      throw new Error(`pricing.js: de opslag op trede ${lo} is ${addOnRate(lo)} — een carrousel erbij zou gratis of negatief zijn.`);
-    }
-  }
-  /* ELK BESTAAND PLAN MOET ZIJN EIGEN VORM WINNEN. Zou een klant die precies
-     Starter bestelt goedkoper uit zijn met de maand op maat, dan is het plan een
-     val en niet een aanbieding. Dit is dezelfde belofte als assertPlans() maakt
-     tegenover de ladder, nu tegenover de nieuwe vorm. */
-  for (const id of Object.keys(PLAN_AMOUNT)) {
-    const n = PLAN_SLOTS[id].complete || 0;
-    const k = PLAN_SLOTS[id]['video-motion'] || 0;
-    if (!n) continue;
-    const route = cheapestRoute({ products: n, carousels: n, clips: k });
-    if (route.winner.plan !== id) {
-      throw new Error(
-        `pricing.js: wie precies ${planName(id, 'nl')} bestelt, is goedkoper uit via `
-        + `"${route.winner.kind}" (EUR ${route.winner.total}) dan via het plan zelf `
-        + `(EUR ${PLAN_AMOUNT[id]}). Een plan dat zijn eigen vorm verliest, hoort niet te bestaan.`
-      );
-    }
-  }
-}
-assertCustomMonth();
+/* cheapestRoute() en assertCustomMonth() hoorden bij dezelfde maand op maat in producten; weg sinds 14 oktober 2026. */
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * HET ABONNEMENT IN CREDITS, OOK OP MAAT — 23 september 2026
@@ -3848,3 +3732,81 @@ function assertCreditPlans() {
   }
 }
 assertCreditPlans();
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * EXTRA CREDITS BIJKOPEN — 12 oktober 2026 (afvinklijst 4: ab-v3 = c, ab-v4 = b)
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas koos: de prijs per credit van het eigen plan, 5% korting bij 25 en 10%
+ * bij 50; op de abonnementspagina én in stap 5; hoogstens 100 per maand. Zijn
+ * eis (ab4): "Het moet er niet voor zorgen dat de klant het goedkoopste
+ * abonnement kan nemen en dan extra credits bij kan kopen en dan uiteindelijk
+ * daardoor goedkoper uit is dan een klant met een duurder abonnement."
+ *
+ * De prijs: pakket × (maandbedrag / credits per maand) × (1 − korting), naar
+ * boven afgerond op hele euro's, exclusief btw. Het maandbedrag is dat van de
+ * prijslijst (PLAN_AMOUNT, of customCreditsTotal() bij op maat), ook bij een
+ * jaar vooruit. Starter 87 / 206 / 390, Pro 66 / 157 / 297, Merk 59 / 139 / 263.
+ *
+ * assertBijkoop() hieronder is de bouwcontrole: elk plan en elke stand op maat
+ * (elk geheel aantal van CUSTOM_CREDITS_MIN tot CUSTOM_CREDITS_MAX), met elke
+ * combinatie van hoogstens vier pakketten, kost nooit minder dan een
+ * abonnement met evenveel credits. Faalt hij, dan bouwt de site niet.
+ * tests/bijkopen.test.mjs rekent hetzelfde na, plus een jaar vooruit.
+ */
+export const BIJKOOP_PAKKETTEN = Object.freeze([10, 25, 50]);
+/** Korting per pakket in hele procenten. */
+export const BIJKOOP_KORTING_PCT = Object.freeze({ 10: 0, 25: 5, 50: 10 });
+/** Hoogstens zoveel bijgekochte credits per kalendermaand per klant (ab-v4 = b). */
+export const BIJKOOP_MAX_PER_MAAND = 100;
+/** De hint "Overstappen naar … is voordeliger": als het volgende plan hoogstens
+    zoveel euro per maand meer kost dan plan + pakket. */
+export const OVERSTAP_HINT_MARGE = 25;
+
+/**
+ * Wat een pakket kost bij een abonnement van `planBedrag` euro voor
+ * `planCredits` credits per maand: hele euro's, exclusief btw, naar boven
+ * afgerond. Exact gerekend (in centen en hele procenten), zodat 390,00 geen 391
+ * wordt door een kommagetal.
+ */
+export function bijkoopPrijs(planBedrag, planCredits, pakket) {
+  const x = Math.floor(Number(pakket) || 0);
+  const pct = BIJKOOP_KORTING_PCT[x];
+  const c = Math.floor(Number(planCredits) || 0);
+  if (pct === undefined || !(c > 0) || !(Number(planBedrag) > 0)) return null;
+  const teller = x * Math.round(Number(planBedrag) * 100) * (100 - pct);
+  const noemer = c * 100 * 100;
+  return Math.floor((teller + noemer - 1) / noemer);
+}
+
+/** Het maandbedrag van een abonnement met `credits` per maand volgens de prijslijst (plan of op maat), of null. */
+export function planMaandBedrag(planId, credits) {
+  if (PLAN_AMOUNT[planId] && PLAN_CREDITS[planId] === credits) return PLAN_AMOUNT[planId];
+  return isCustomCredits(credits) ? customCreditsTotal(credits).total : null;
+}
+
+function assertBijkoop() {
+  const abos = Object.keys(PLAN_CREDITS).map((id) => ({ id, c: PLAN_CREDITS[id], b: PLAN_AMOUNT[id] }));
+  for (let n = CUSTOM_CREDITS_MIN; n <= CUSTOM_CREDITS_MAX; n += 1) {
+    if (!Object.values(PLAN_CREDITS).includes(n)) abos.push({ id: `op maat ${n}`, c: n, b: customCreditsTotal(n).total });
+  }
+  const combis = [];
+  const rec = (start, cur) => {
+    if (cur.length) combis.push(cur);
+    if (cur.length === 4) return;
+    for (let i = start; i < BIJKOOP_PAKKETTEN.length; i += 1) rec(i, [...cur, BIJKOOP_PAKKETTEN[i]]);
+  };
+  rec(0, []);
+  for (const a of abos) {
+    for (const c of combis) {
+      const N = a.c + c.reduce((s, x) => s + x, 0);
+      const prijs = a.b + c.reduce((s, x) => s + bijkoopPrijs(a.b, a.c, x), 0);
+      const abonnement = customCreditsTotal(Math.min(N, CUSTOM_CREDITS_MAX)).total;
+      if (prijs < abonnement) {
+        throw new Error(`pricing.js: ${a.id} + ${c.join(' + ')} (${N} credits) kost ${prijs}, een abonnement met die credits ${abonnement}: bijkopen is goedkoper.`);
+      }
+    }
+  }
+}
+assertBijkoop();

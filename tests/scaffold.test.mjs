@@ -74,8 +74,10 @@ console.log('heen: de zip bevat de mappen, en dat is niet vanzelfsprekend');
   /* DE CHECK DIE HET ECHT DOET. Zonder `dir: true` zou deze lijst leeg zijn, zou de
      zip alleen drie tekstbestanden bevatten, en zou er niets omvallen. */
   ok('er zitten mapvermeldingen in', mappen.length > 0, true, String(mappen.length));
-  ok('vier shotmappen per product', mappen.filter((n) => !n.endsWith(`${LOOSE_FOLDER}/`)).length,
+  ok('vier shotmappen per product', mappen.filter((n) => !n.endsWith(`${LOOSE_FOLDER}/`) && !n.endsWith(`${SOURCE_FOLDER}/`)).length,
     PRODUCTS.length * SHOT_IDS.length);
+  /* 4.02 (8 oktober 2026): per product een `_aangeleverd/` voor de foto's van de klant. */
+  ok(`en per product een ${SOURCE_FOLDER}/`, mappen.filter((n) => /\/p\d+ - [^/]+\/_aangeleverd\/$/.test(n)).length, PRODUCTS.length);
   ok('en elke mapnaam eindigt op een schuine streep',
     mappen.every((n) => n.endsWith('/')), true, mappen.find((n) => !n.endsWith('/')));
   ok(`plus één ${LOOSE_FOLDER}`, mappen.filter((n) => n.endsWith(`${LOOSE_FOLDER}/`)).length, 1);
@@ -83,9 +85,11 @@ console.log('heen: de zip bevat de mappen, en dat is niet vanzelfsprekend');
   ok('de leesmij zit erin', namen.some((n) => n.endsWith('/LEESMIJ.txt')), true);
   ok('het licentiebestand ook', namen.some((n) => n.endsWith('/LICENTIE.txt')), true);
   ok('en een briefing per product', namen.filter((n) => n.endsWith('/_briefing.txt')).length, PRODUCTS.length);
-  ok('alles staat onder één wortelmap met de referentie erin',
-    namen.every((n) => n.startsWith(`${ORDER.ref}/`)), true, namen.find((n) => !n.startsWith(`${ORDER.ref}/`)));
-  ok('de zipnaam draagt de referentie', scaffoldFilename(ORDER.ref), 'VIS-2608-4471-werkmap.zip');
+  /* 4.02: de wortelmap en de zip heten `VIS-2608-4471 - Atelier Noord`, zodat het
+     kenmerk in elk pad staat en je het merk ziet voordat je een map terugzet. */
+  ok('alles staat onder één wortelmap met de referentie en het merk erin',
+    namen.every((n) => n.startsWith(`${ORDER.ref} - Atelier Noord/`)), true, namen.find((n) => !n.startsWith(`${ORDER.ref} - Atelier Noord/`)));
+  ok('de zipnaam draagt de referentie en het merk', scaffoldFilename(ORDER.ref, ORDER.brand), 'VIS-2608-4471 - Atelier Noord.zip');
 
   /* SHOT_IDS en niet een eigen lijst: loopt de mapstructuur uit elkaar met het
      werkbord op /admin, dan komt een beeld in een map waar geen vakje voor is. */
@@ -126,12 +130,12 @@ console.log('\nde zip pakt echt uit, met de mappen erin');
   ok('de centrale directory noemt elke ingang', uitDirectory.length, files.length,
     `${uitDirectory.length} van ${files.length}`);
   ok('inclusief de shotmappen',
-    uitDirectory.includes(`${ORDER.ref}/p1 - Zwarte hoodie/${SLOT_FOLDER.front}/`), true,
+    uitDirectory.includes(`${ORDER.ref} - Atelier Noord/p1 - Zwarte hoodie/${SLOT_FOLDER.front}/`), true,
     uitDirectory.filter((n) => n.includes('voorkant')).join(' | '));
   /* Een mapvermelding heeft nul bytes en crc nul. Zou zip.js er een gewoon bestand
      van maken, dan pakt hij uit als bestand mét naam en zonder inhoud — en dan staat
      er in Verkenner een bestand waar een map hoort. */
-  const idx = uitDirectory.indexOf(`${ORDER.ref}/p1 - Zwarte hoodie/${SLOT_FOLDER.front}/`);
+  const idx = uitDirectory.indexOf(`${ORDER.ref} - Atelier Noord/p1 - Zwarte hoodie/${SLOT_FOLDER.front}/`);
   ok('en die mapvermelding is te vinden', idx >= 0, true);
 }
 
@@ -146,7 +150,7 @@ console.log('\nterug: het pad geeft product en shot, precies zoals de heenweg ze
   const files = scaffoldFiles(ORDER, PRODUCTS, { origin: 'https://visuails.com' });
   let gecontroleerd = 0;
   const scheef = [];
-  for (const f of files.filter((x) => x.dir && !x.name.endsWith(`${LOOSE_FOLDER}/`))) {
+  for (const f of files.filter((x) => x.dir && !x.name.endsWith(`${LOOSE_FOLDER}/`) && !x.name.endsWith(`${SOURCE_FOLDER}/`))) {
     // Zoals de browser hem post: het pad plus een bestandsnaam die niets zegt.
     const gepost = `${f.name}upscaled_v3(2).PNG`;
     const uit = parseScaffoldPath(gepost);
@@ -210,10 +214,13 @@ console.log('\nhet bronmateriaal van de klant komt niet terug als levering');
      stil een levering. Het moet het hele segment zijn. */
   ok('_aangeleverde-versie-2 is geen bronmap', isSourcePath('x/_aangeleverde-versie-2/y.jpg'), false);
 
-  /* En de andere kant: de scaffold maakt die map NIET aan. Hij bestaat alleen als
-     iemand hem zelf maakt of als hij ooit gevuld wordt uitgeleverd. */
+  /* En de andere kant: sinds 4.02 (8 oktober 2026) deelt de werkmap die map WEL
+     uit, per product, met de foto's van de klant erin. Daarom moet hij bij de
+     terugweg als los gelden en overgeslagen worden. */
   const namen = scaffoldFiles(ORDER, PRODUCTS, {}).map((f) => f.name);
-  ok('de werkmap deelt geen bronmap uit', namen.some((n) => n.includes(SOURCE_FOLDER)), false);
+  ok('de werkmap deelt per product een bronmap uit', namen.filter((n) => n.endsWith(`/${SOURCE_FOLDER}/`)).length, PRODUCTS.length);
+  ok('en die leest terug als los, nooit als vak',
+    namen.filter((n) => n.endsWith(`/${SOURCE_FOLDER}/`)).every((n) => { const u = parseScaffoldPath(`${n}x.jpg`); return u.loose && !u.shot; }), true);
 }
 
 console.log('\nde werkbestanden van de werkmap komen niet bij de klant terecht');
@@ -350,7 +357,7 @@ console.log('\nde admin-kant is bedraad');
     || /scaffold\$/.test(code), true);
   ok('en een handler', /async function serveScaffold\(/.test(code), true);
   ok('die de zip streamt', /zipStream\(files\)/.test(code), true);
-  ok('met de juiste naam erop', /scaffoldFilename\(order\.ref\)/.test(code), true);
+  ok('met de juiste naam erop', /scaffoldFilename\(order\.ref, order\.brand \|\| order\.name\)/.test(code), true);
 
   /* DE TERUGWEG. De rangorde is een rangorde: het vakje van het bord gaat voor het
      pad, en het pad gaat voor de gok uit de bestandsnaam. Zou de gok voorop staan,

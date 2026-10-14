@@ -1151,7 +1151,10 @@ export async function createSubscriptionRow(env, {
     if (!(Number(amountCents) > 0)) throw new Error('abonnement: een maand op maat zonder bedrag');
   }
   const ref = makeSubRef();
-  const dag = Number.isFinite(Number(windowDay)) ? Math.min(28, Math.max(1, Math.floor(Number(windowDay)))) : null;
+  /* `window_day` (de dag van de vaste week) blijft als kolom bestaan voor de
+     geschiedenis, maar sinds ronde 10 (8 oktober 2026) schrijft niets er meer
+     in: het weeksysteem is weg. `windowDay` wordt nog aangenomen en genegeerd. */
+  const dag = null;
   try {
     /* Sinds 29 september 2026 bepaalt handleSubscribeStart() het tarief uit wat
        de klant op het formulier opgaf (bepaalBedrijfEnBtw() in subscribe.js).
@@ -1254,13 +1257,19 @@ export async function activateSubscription(env, subId) {
  * door de webhook vanzelf opgeheven bij de volgende geslaagde betaling, en een
  * pauze die de klant zelf zette, niet.
  */
-export async function pauseSubscription(env, subId, reason = 'customer') {
+/* `vanaf` (8 oktober 2026, 2.07): de dag waarop de pauze ingaat, als die in de
+   toekomst ligt — Lucas: "gaat in vanaf de volgende maand die hij betaald". De
+   incasso is dan al gestopt; `paused_at` draagt die dag, zodat Studio zegt
+   "je pauze gaat in op …" en de nachttaak de drie maanden vanaf daar telt.
+   Zonder `vanaf`: nu, zoals altijd. */
+export async function pauseSubscription(env, subId, reason = 'customer', vanaf = null) {
+  const dag = /^\d{4}-\d{2}-\d{2}$/.test(String(vanaf || '')) ? `${vanaf} 00:00:00` : null;
   return stil(() => env.DB.prepare(
     `UPDATE subscriptions
-        SET status = 'paused', paused_at = datetime('now'), pause_reason = ?2, updated_at = datetime('now')
+        SET status = 'paused', paused_at = COALESCE(?3, datetime('now')), pause_reason = ?2, updated_at = datetime('now')
       WHERE id = ?1 AND status IN ('active', 'pending')
       RETURNING id, status`
-  ).bind(subId, String(reason || 'customer').slice(0, 40)).first());
+  ).bind(subId, String(reason || 'customer').slice(0, 40), dag).first());
 }
 
 /**
@@ -1335,8 +1344,14 @@ export function jaarLooptTot(sub, { aantal = 0, laatste = '' } = {}) {
  *
  * seatsLeft() in plans.js rekent uit hoeveel abonnementen er PASSEN; deze functie
  * telt hoeveel er al zijn. De pagina die "nog N plekken" toont, heeft ze allebei
- * nodig, en het verschil is precies waarom ze niet één functie zijn: het budget
+ * nodig, en het verschil is precies waarom ze niet één functie zijn: het plafond
  * is een besluit, de bezetting is een feit.
+ *
+ * ── SINDS 6.05 (8 OKTOBER 2026) IN CREDITS ─────────────────────────────────
+ * `credits` is de som van de maandcredits van elk abonnement dat meetelt
+ * (creditsVoor() in slots.js: het plan, of de bundel op de rij bij een maand op
+ * maat). Dat is wat de rem vergelijkt met het plafond (ABO_CREDITS_PLAFOND in
+ * plans.js, of de stand in /admin). `producten` blijft voor wie hem nog leest.
  */
 export async function bezetting(env) {
   const rows = await stil(() => env.DB.prepare(
@@ -1357,6 +1372,7 @@ export async function bezetting(env) {
   ).all(), { results: [] });
   const per = {};
   let producten = 0;
+  let credits = 0;
   for (const r of rows?.results || []) {
     /* Tellen, niet overschrijven: hier stond `= 1`, dus zeiden tien Starters
        samen dat er één was. Er las nog niemand `per`, en daarom viel het niet op. */
@@ -1366,8 +1382,9 @@ export async function bezetting(env) {
        slots_json meeneemt en niet alleen op plan groepeert — voor 'maat' zegt de
        plan-id niets over hoeveel agenda er wordt vastgelegd. */
     producten += subProducten(r);
+    credits += creditsVoor(r);
   }
-  return { per, producten };
+  return { per, producten, credits };
 }
 
 /**

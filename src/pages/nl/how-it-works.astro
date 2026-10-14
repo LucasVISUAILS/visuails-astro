@@ -1,9 +1,11 @@
 ---
+// VISUAILS — /nl/how-it-works: in de hal sinds 13 oktober 2026 (afvinklijst 11, alles doen). De pagina
+// staat in HowItWorksHal.astro; de vorige (HowItWorksPage.astro) staat op de opruimlijst.
 // VISUAILS — /nl/how-it-works (Nederlands). De pagina-inhoud staat in
 // HowItWorksPage.astro, zodat /how-it-works en /nl/how-it-works niet uit
 // elkaar kunnen lopen; alleen de meta verschilt hier.
 import Layout from '../../layouts/Layout.astro';
-import HowItWorksPage from '../../components/HowItWorksPage.astro';
+import HowItWorksHal from '../../components/HowItWorksHal.astro';
 //
 // De laatste zin noemde een pakketband — "voor 25–30 producten" — en dat
 // pakket bestaat niet meer. Het aantal dat op een procespagina telt, is het
@@ -18,6 +20,6 @@ const description =
   `ligt de datum vast zodra je betaalt.`;
 ---
 
-<Layout title="Hoe het werkt — VISUAILS" description={description}>
-  <HowItWorksPage lang="nl" />
+<Layout huid="hal" title="Hoe het werkt — VISUAILS" description={description}>
+  <HowItWorksHal lang="nl" />
 </Layout>

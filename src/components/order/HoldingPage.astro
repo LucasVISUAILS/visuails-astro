@@ -91,7 +91,7 @@ const UI = {
     phone: 'Phone or WhatsApp',
     /* Verplicht sinds 11 september 2026 — zie de noot bij `phoneErr` in
        OrderFlow.astro voor waarom de melding de reden noemt. */
-    phoneErr: 'Fill in a number we can reach you on — we message you if anything is unclear.',
+    phoneErr: 'Fill in a number we can reach you on — we get in touch if anything comes up with your order.',
     website: 'Website or shop link',
     optional: 'optional',
     message: 'What do you have in mind?',
@@ -107,7 +107,7 @@ const UI = {
     submit: 'Send this request',
     nextH: 'What happens next',
     next: [
-      'A personal written answer, not an automated one.',
+      'We read your request and write back, with any questions we still have.',
       // NIET "the same figures on this page": deze drie regels staan onder ELKE
       // wachtpagina, en /start/custom-look zet er geen bedragen op — die pagina
       // zegt juist "price on request". Een belofte die op de ene pagina klopt en
@@ -129,7 +129,7 @@ const UI = {
     email: 'E-mail',
     phone: 'Telefoon of WhatsApp',
     /* Zie de Engelse noot. */
-    phoneErr: 'Vul een nummer in waarop we je kunnen bereiken — we appen je als er iets onduidelijk is.',
+    phoneErr: 'Vul een nummer in waarop we je kunnen bereiken — we nemen contact met je op als er iets met je bestelling is.',
     website: 'Website of shoplink',
     optional: 'optioneel',
     message: 'Wat heb je in gedachten?',
@@ -140,7 +140,7 @@ const UI = {
     submit: 'Verstuur deze aanvraag',
     nextH: 'Wat er daarna gebeurt',
     next: [
-      'Een persoonlijk antwoord op schrift, geen automatisch bericht.',
+      'We lezen je aanvraag en schrijven terug, met de vragen die we nog hebben.',
       'Een offerte op schrift, of een gesprek als het werk daarom vraagt.',
       'We brengen niets in rekening en houden niets voor je vrij totdat je schriftelijk ja zegt.',
     ],
@@ -203,7 +203,7 @@ const KIND = {
       status: 'Priced per request',
       statusBody: 'No standard rate: we price it once we know the world you want, in writing, before anything runs.',
       facts: [
-        ['Price', 'One design fee, on request. After that every product runs at the normal rate.'],
+        ['Price', 'One design fee, on request. After that every product runs from the normal rate: if the look takes more work per product, the surcharge is shown with the look before you order.'],
         ['What you get', 'A setting and light only your brand uses, on every order after.'],
         ['How it starts', 'Send references; we reply with a direction and a price.'],
         ['Two ways in', 'Bring your concept, or let us think it up (extra design work).'],
@@ -240,7 +240,7 @@ const KIND = {
         countOptions: [['1-4', '1 to 4'], ['5-9', '5 to 9'], ['10-19', '10 to 19'], ['20+', '20 or more'], ['unsure', 'Not sure yet']],
         whenLabel: 'When do you need the first set?',
         whenOptions: [['asap', 'As soon as it is ready'], ['month', 'Within a month'], ['quarter', 'This quarter'], ['open', 'No date yet']],
-        after: 'Once approved, the look appears as a tile in your VISUAILS Studio, orderable at the ordinary rate.',
+        after: 'Once approved, the look appears as a tile in your VISUAILS Studio, orderable from the ordinary rate.',
       },
     },
   },
@@ -267,7 +267,7 @@ const KIND = {
       status: 'Prijs op aanvraag',
       statusBody: 'Geen standaardtarief: we bepalen de prijs zodra we weten welke wereld je wilt, op schrift, voordat er iets draait.',
       facts: [
-        ['Prijs', 'Eén ontwerpbedrag, op aanvraag. Daarna loopt elk product tegen het gewone tarief.'],
+        ['Prijs', 'Eén ontwerpbedrag, op aanvraag. Daarna loopt elk product vanaf het gewone tarief: vraagt de look per product meer werk, dan staat de toeslag bij de look voordat je bestelt.'],
         ['Wat je krijgt', 'Een setting en licht die alleen jouw merk gebruikt, in elke bestelling erna.'],
         ['Hoe het begint', 'Stuur referenties; wij komen terug met een richting en een prijs.'],
         ['Twee ingangen', 'Breng je eigen concept, of laat ons het bedenken (extra denkwerk).'],
@@ -298,7 +298,7 @@ const KIND = {
         countOptions: [['1-4', '1 tot 4'], ['5-9', '5 tot 9'], ['10-19', '10 tot 19'], ['20+', '20 of meer'], ['unsure', 'Weet ik nog niet']],
         whenLabel: 'Wanneer heb je de eerste set nodig?',
         whenOptions: [['asap', 'Zo snel als hij klaar is'], ['month', 'Binnen een maand'], ['quarter', 'Dit kwartaal'], ['open', 'Nog geen datum']],
-        after: 'Na goedkeuring staat de look als tegel in je VISUAILS Studio, te bestellen tegen het gewone tarief.',
+        after: 'Na goedkeuring staat de look als tegel in je VISUAILS Studio, te bestellen vanaf het gewone tarief.',
       },
     },
   },

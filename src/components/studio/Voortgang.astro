@@ -1,13 +1,14 @@
 ---
 /* De tijdlijn van één bestelling: de zin "Nu:", de stappen, de geschiedenis.
    De gegevens komen uit progressView() in account.js — dezelfde bron als de
-   oude progressBlock(), dus wat hier staat is per definitie hetzelfde verhaal. */
+   oude progressBlock(), dus wat hier staat is per definitie hetzelfde verhaal.
+   `zonderNu` (punt 3.01): de kaart erboven toont de Nu-zin al (Bestelkaart). */
 import { progressView } from '../../lib/account.js';
-const { t, lang, order, events = [], files = [] } = Astro.props;
+const { t, lang, order, events = [], files = [], zonderNu = false } = Astro.props;
 const v = progressView(t, lang, order, events, files);
 ---
 <div class={`st-flow${v.cancelled ? ' is-cancelled' : ''}`}>
-  <p class="st-flow-nu"><strong>{t.flowNowLabel}</strong> {v.now}{v.when}</p>
+  {!zonderNu && <p class="st-flow-nu"><strong>{t.flowNowLabel}</strong> {v.now}{v.when}</p>}
   {v.steps.length > 0 && (
     <ol class="st-stappen">
       {v.steps.map((s) => (

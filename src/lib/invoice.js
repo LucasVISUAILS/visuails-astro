@@ -637,7 +637,7 @@ export async function issueInvoice(env, orderId, { today } = {}) {
  */
 
 /** De momentopname voor één abonnementstermijn. Zelfde vorm als snapshotFromOrder(). */
-export function snapshotFromSubscription({ sub, customer, payment, month, lang: taal }, env, { number, date } = {}) {
+export function snapshotFromSubscription({ sub, customer, payment, month, lang: taal, bijkoop = null }, env, { number, date } = {}) {
   /* DE TAAL KOMT NIET VAN `customer.lang` — die kolom bestaat niet. `customers`
      heeft e-mail, naam, merk, adres, land en btw-nummer, en verder niets over
      taal (zie schema.sql). De vergelijking was daarmee altijd
@@ -692,9 +692,13 @@ export function snapshotFromSubscription({ sub, customer, payment, month, lang: 
      een boekhouder op zoekt; een nummer zegt hem niets over de periode. */
   const naam = planName(sub && sub.plan, lang) || (sub && sub.plan) || 'Abonnement';
   const periode = maandLabel(month, lang);
-  const label = lang === 'nl'
-    ? `${naam} — abonnement${periode ? ` ${periode}` : ''}`
-    : `${naam} — subscription${periode ? ` ${periode}` : ''}`;
+  /* Extra credits bijkopen (12 oktober 2026, ab-v3 = c): "Extra credits · 25 ·
+     Pro", met het plan zoals het heette op het moment van kopen. */
+  const label = bijkoop
+    ? `Extra credits · ${Math.max(0, Math.floor(Number(bijkoop.pakket) || 0))} · ${bijkoop.planLabel || naam}`
+    : lang === 'nl'
+      ? `${naam} — abonnement${periode ? ` ${periode}` : ''}`
+      : `${naam} — subscription${periode ? ` ${periode}` : ''}`;
 
   return {
     number,
@@ -718,6 +722,7 @@ export function snapshotFromSubscription({ sub, customer, payment, month, lang: 
     reference: (sub && sub.ref) || null,
     paidAt: date,
     viesConsultation: null,
+    ...(bijkoop ? { kind: 'bijkoop' } : {}),
   };
 }
 
@@ -770,6 +775,15 @@ export async function issueSubscriptionInvoice(env, subscriptionPaymentId, { tod
     'SELECT * FROM customers WHERE id = ?1'
   ).bind(sub.customer_id).first();
 
+  /* Een bijkoop van extra credits (12 oktober 2026, migratie 0067) staat ook in
+     subscription_payments, zodat hij uit dezelfde reeks en route komt; alleen de
+     regel op de factuur is anders. Zonder tabel (migratie niet gedraaid): een
+     gewone termijn. */
+  const aankoop = await env.DB.prepare(
+    'SELECT pakket, plan_label FROM credit_aankopen WHERE subscription_payment_id = ?1 LIMIT 1'
+  ).bind(subscriptionPaymentId).first().catch(() => null);
+  const bijkoop = aankoop ? { pakket: aankoop.pakket, planLabel: aankoop.plan_label || '' } : null;
+
   /* De taal van de klant, uit zijn laatste bestelling. `customers` heeft geen
      taalkolom en het abonnement ook niet; `orders.lang` is de enige plek waar
      de keuze van de bezoeker bewaard blijft. Geen bestelling gevonden — bij een
@@ -798,7 +812,7 @@ export async function issueSubscriptionInvoice(env, subscriptionPaymentId, { tod
     const seq = await nextNumber(env, year, proef);
     const number = formatNumber(year, seq, proef);
     const snap = snapshotFromSubscription(
-      { sub, customer, payment: betaling, month: betaling.month, lang: taal }, env, { number, date }
+      { sub, customer, payment: betaling, month: betaling.month, lang: taal, bijkoop }, env, { number, date }
     );
     try {
       await env.DB.prepare(

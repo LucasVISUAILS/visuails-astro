@@ -1,14 +1,16 @@
 ---
+// VISUAILS — de galerij: in de hal sinds 13 oktober 2026 (afvinklijst 17, alles doen). Het lichaam
+// staat in GalleryHal.astro; de vorige (GalleryPage.astro, Levering.astro) staat op de opruimlijst.
 // VISUAILS — /nl/gallery. Zie src/pages/gallery.astro; het lichaam is gedeeld.
 import Layout from '../../layouts/Layout.astro';
-import GalleryPage from '../../components/GalleryPage.astro';
+import GalleryHal from '../../components/GalleryHal.astro';
 /* Zie /nl/test-sample: het bedrag van de proef staat in pricing.js. */
 import { TEST_SAMPLE } from '../../data/pricing.js';
 ---
 
-<Layout
+<Layout huid="hal"
   title="VISUAILS — Een blik op de stijlen die we maken"
   description={`De echte VISUAILS-fotobibliotheek — campagne, Dunes, Flash, Glow en Phone-made lifestylevisuals. Bekijk wat we maken en probeer VISUAILS eerst voor ${TEST_SAMPLE.nl.price}.`}
 >
-  <GalleryPage lang="nl" />
+  <GalleryHal lang="nl" />
 </Layout>

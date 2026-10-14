@@ -1,0 +1,284 @@
+---
+/**
+ * VISUAILS — de opening van het voorbeeld: Lucas' laptopbeeld met losse schermen.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Ontwerpplan §00 (gekozen in afvinklijst 5): N1 op de computer, N2 op de
+ * telefoon, met de wissel bij 900 px. Hetzelfde onderdeel in allebei; alleen
+ * hoe de fotodoos in de opening ligt verschilt (hal.css).
+ *
+ * HOE HET WERKT. De fotodoos heeft de verhouding van de foto (4:3). Daarin:
+ *   1. de foto, met de schermen al ingezet (het eerste beeld) — dit is wat je
+ *      ziet zonder JavaScript, en wat er staat tot het script klaar is;
+ *   2. een laag van 2304 × 1728 "fotopixels" met de twee schermen erin, elk op
+ *      zijn eigen maat opgebouwd (1600 × 1034 en 540 × 1170) en met matrix3d in
+ *      het perspectief van de foto gezet (src/data/halLaptop.js). Het script zet
+ *      alleen de schaal (--hl-k) en wisselt de beelden; het masker per scherm laat
+ *      de vingers van de foto staan;
+ *   3. de twee belletjes en hun lijntjes, op punten die op de rand van het scherm
+ *      liggen (uitgerekend, niet gemikt).
+ *
+ * WAT ER TE ZIEN IS komt uit src/data/laptopSlides.js (dezelfde reeks als de
+ * huidige voorpagina): de catalogset (4), de lifestylecarrousel en de videoclip.
+ * De videodia toont het sfeerbeeld in 9:16 (plan §07), tot de echte clip er is.
+ * Een beeld dat er nog niet is (isEcht), valt weg in plaats van grijs te staan.
+ *
+ * DE BELLETJES (Lucas bij d-bellen): *"Bedenk hoe het voor de klant nog
+ * logischer word en niet voelt als een ai tool maar dat het duidelijk word dat
+ * het een service is waarbij de klant simpelweg alleen een paar foto's … hoeft
+ * te sturen en wij de rest … uitvoeren."* Daarom zegt de telefoon "Een paar
+ * telefoonfoto's" en de laptop wat er terugkomt; wat wij ertussen doen staat in
+ * "Hoe het werkt" (VoorpaginaHal.astro), niet op de foto.
+ *
+ * Het nagemaakte webshopscherm noemt een VERZONNEN prijs van een verzonnen merk
+ * ("JOUWMERK"), geen tarief van ons — net als in LaptopCarousel.astro, en om
+ * dezelfde reden staat hij hier per taal genoteerd (tests/hardgetypt.test.mjs
+ * kent de uitzondering).
+ */
+import { laptopReeks } from '../data/laptopSlides.js';
+import { FOTO, SCHERMEN, matrix3d, inFoto } from '../data/halLaptop.js';
+import { RESOLUTIE } from '../data/pricing.js';
+import { isEcht } from '../lib/beeldAanwezig.js';
+
+/* sets (12 oktober 2026, afvinklijst 7): welke reeksen de laptop toont. De
+   voorpagina toont ze alle drie; /catalog alleen de webshop met de catalogset,
+   /lifestyle alleen de carrousel ("consistent bij elke categorie", Lucas, 17 sep). */
+type SetNaam = 'catalog' | 'lifestyle' | 'video';
+interface Props { lang: 'en' | 'nl'; sets?: SetNaam[] }
+const { lang, sets = ['catalog', 'lifestyle', 'video'] } = Astro.props as Props;
+const nl = lang === 'nl';
+
+const reeks = laptopReeks(lang);
+const [catalog, lifestyle, video] = reeks;
+const echt = (b: { src: string }) => isEcht(b.src);
+const cat = catalog.beelden.filter(echt);
+/* Een beeld met `plaat` (laptopSlides.js) blijft staan als plaat met zijn naam zolang de foto er
+   niet is (afvinklijst 24, v24-laptop); de rest valt weg zoals altijd. */
+const life = lifestyle.beelden.filter((b: { src: string; plaat?: boolean }) => echt(b) || b.plaat);
+const KLIP = { src: '/img/hal/sfeer-9x16.webp', w: 648, h: 1152 };
+
+type Stand = { set: 'catalog' | 'lifestyle' | 'video'; i: number; fon: string; fonAlt: string; duur: number };
+const standen: Stand[] = [
+  ...cat.map((b, i) => ({ set: 'catalog' as const, i, fon: b.fon ?? catalog.fon, fonAlt: b.fonAlt ?? '', duur: catalog.duur })),
+  ...life.map((_, i) => ({ set: 'lifestyle' as const, i, fon: lifestyle.fon, fonAlt: lifestyle.fonAlt ?? '', duur: lifestyle.duur })),
+  { set: 'video' as const, i: 0, fon: video.fon, fonAlt: video.fonAlt ?? '', duur: video.duur },
+].filter((s) => sets.includes(s.set));
+/* Elk telefoonbeeld één keer in de DOM; de standen wijzen ernaar. */
+const fonnen = [...new Set(standen.map((s) => s.fon))];
+
+const SET = {
+  catalog: { naam: catalog.naam, wat: nl ? `Je catalogbeeld · ${RESOLUTIE.standaard} px` : `Your catalog image · ${RESOLUTIE.standaard} px` },
+  lifestyle: { naam: lifestyle.naam, wat: nl ? `Je lifestylebeeld · ${RESOLUTIE.standaard} px` : `Your lifestyle image · ${RESOLUTIE.standaard} px` },
+  video: { naam: video.naam, wat: nl ? 'Je productvideo · 9:16' : 'Your product video · 9:16' },
+};
+
+const T = nl
+  ? { stuur: 'Wat jij stuurt', stuurWat: 'Een paar telefoonfoto’s', krijg: 'Wat je terugkrijgt',
+      vorige: 'Vorig beeld', volgende: 'Volgend beeld', pauze: 'Zet de beelden stil', speel: 'Laat de beelden lopen',
+      van: (a: number, b: number) => `${a} / ${b}`,
+      uitleg: 'Een voorbeeld. Je krijgt de losse bestanden en gebruikt ze waar je wilt.',
+      fotoAlt: 'Een laptop op schoot met een webshoppagina, en een telefoon in de hand met de foto die je instuurt',
+      shop: { merk: 'JOUWMERK', menu: ['Nieuw', 'Denim', 'Jassen', 'Accessoires'], kruimel: 'Home / Denim', titel: 'Wide leg jeans', prijs: '€ 79,95', mandje: 'In winkelmand', verzend: 'Gratis retour binnen 30 dagen' },
+      post: { naam: lifestyle.post?.naam ?? 'visuails_com', vlag: lifestyle.post?.vlag ?? '', volgen: 'Volgen', bijschrift: lifestyle.post?.bijschrift ?? [], datum: lifestyle.post?.datum ?? '', opmerking: 'Een opmerking toevoegen…', plaatsen: 'Plaatsen' } }
+  : { stuur: 'What you send', stuurWat: 'A few phone photos', krijg: 'What you get back',
+      vorige: 'Previous image', volgende: 'Next image', pauze: 'Pause the images', speel: 'Play the images',
+      van: (a: number, b: number) => `${a} / ${b}`,
+      uitleg: 'An example. You get the files and use them wherever you like.',
+      fotoAlt: 'A laptop on a lap showing a shop page, and a phone in hand with the photo you send in',
+      shop: { merk: 'JOUWMERK', menu: ['New', 'Denim', 'Jackets', 'Accessories'], kruimel: 'Home / Denim', titel: 'Wide leg jeans', prijs: '€79.95', mandje: 'Add to cart', verzend: 'Free returns within 30 days' },
+      post: { naam: lifestyle.post?.naam ?? 'visuails_com', vlag: lifestyle.post?.vlag ?? '', volgen: 'Follow', bijschrift: lifestyle.post?.bijschrift ?? [], datum: lifestyle.post?.datum ?? '', opmerking: 'Add a comment…', plaatsen: 'Post' } };
+
+/* De belletjes wijzen naar een punt OP de bovenrand van elk scherm (in fotopixels,
+   dus als fractie van de fotodoos). Laptop: op een tiende van de breedte, boven de
+   duimnagels van de rij. Telefoon: op 58%, tussen de camera en de rechterrand. */
+const L = SCHERMEN.laptop, F = SCHERMEN.fon;
+const [lx, ly] = inFoto(L, L.w * 0.1, 0);
+const [fx, fy] = inFoto(F, F.w * 0.58, 0);
+const punt = (x: number, y: number) => `--px:${(x / FOTO.w).toFixed(5)};--py:${(y / FOTO.h).toFixed(5)}`;
+const eerst = standen[0];
+---
+<div class="hl" data-hl data-sets={standen.map((s) => s.set).join(' ')}>
+  {/* HET RAAM. Op een breed scherm is het precies zo groot als de fotodoos, dus
+      de belletjes (in procenten van het raam) staan op de goede plek in de foto.
+      Op een telefoon (N2) is het het ronde paneel dat de foto uitsnijdt, en
+      staan de belletjes in de hoeken van het paneel, niet in de foto. */}
+  <div class="hl-raam">
+  <div class="hl-doos" data-hl-doos>
+    <img class="hl-foto" src="/img/hal/laptop-1600.webp" srcset="/img/hal/laptop-1000.webp 1000w, /img/hal/laptop-1600.webp 1600w, /img/hal/laptop-2304.webp 2304w"
+         sizes="(max-width: 900px) 170vw, 75vw" width={FOTO.w} height={FOTO.h} alt={T.fotoAlt} fetchpriority="high" decoding="async" />
+
+    {/* 2 · de losse schermen. aria-hidden: wat erop staat zegt de foto-alt en de bediening al. */}
+    <div class="hl-laag" data-hl-laag aria-hidden="true">
+      <div class="hl-scherm hl-scherm-lap" style={`transform:${matrix3d(L)}`}>
+        {/* De webshop (catalog) */}
+        <div class="sc sc-shop" data-hl-set="catalog">
+          <div class="sc-top"><b>{T.shop.merk}</b>{T.shop.menu.map((m) => <span>{m}</span>)}<i class="sc-ic"></i><i class="sc-ic sc-ic-z"></i></div>
+          <div class="sc-wrap">
+            <div class="sc-th">{cat.map((b, i) => <img src={b.src} alt="" width="760" height="760" loading="lazy" decoding="async" data-hl-th={i} />)}</div>
+            <div class="sc-hoofd">{cat.map((b, i) => <img src={b.src} alt="" width="760" height="760" loading={i ? 'lazy' : 'eager'} decoding="async" data-hl-beeld={`catalog-${i}`} />)}</div>
+            <div class="sc-info">
+              <p class="sc-kr">{T.shop.kruimel}</p>
+              <p class="sc-h1">{T.shop.titel}</p>
+              <p class="sc-prijs">{T.shop.prijs}</p>
+              <p class="sc-kl"><i></i><i></i><i></i></p>
+              <p class="sc-mt"><span>XS</span><span class="aan">S</span><span>M</span><span>L</span></p>
+              <p class="sc-knop">{T.shop.mandje}</p>
+              <p class="sc-klein">{T.shop.verzend}</p>
+              <p class="sc-rij">{cat.slice(1).map((b) => <span><img src={b.src} alt="" width="760" height="760" loading="lazy" decoding="async" /></span>)}</p>
+            </div>
+          </div>
+        </div>
+        {/* De carrousel (lifestyle), als nagemaakt bericht */}
+        {life.length > 0 && (
+          <div class="sc sc-post" data-hl-set="lifestyle">
+            <div class="sc-kaart">
+              <div class="sc-pbeeld">
+                {life.map((b: { src: string; naam: string }, i: number) => echt(b)
+                  ? <img src={b.src} alt="" width="928" height="1152" loading="lazy" decoding="async" data-hl-beeld={`lifestyle-${i}`} />
+                  : <span class="sc-plaat" data-hl-beeld={`lifestyle-${i}`}><b>{b.naam}</b></span>)}
+                <p class="sc-stippen">{life.map((_, i) => <i data-hl-stip={i}></i>)}</p>
+              </div>
+              <div class="sc-pkant">
+                <p class="sc-pkop"><img src={lifestyle.post?.avatar ?? '/img/merk-tegel.webp'} alt="" width="48" height="48" loading="lazy" decoding="async" /><b>{T.post.naam}</b>{T.post.vlag && <span>· {T.post.vlag}</span>}<em>{T.post.volgen}</em></p>
+                <div class="sc-pstroom">
+                  <p class="sc-pregel"><img src={lifestyle.post?.avatar ?? '/img/merk-tegel.webp'} alt="" width="48" height="48" loading="lazy" decoding="async" /><span><b>{T.post.naam}</b> {T.post.bijschrift.join(' ')}</span></p>
+                  {(lifestyle.post?.reacties ?? []).map((r: { naam: number; tekst: number }) => (
+                    <p class="sc-preactie"><i class="sc-bol"></i><span><i style={`width:${Math.round(r.naam * 100)}%`}></i><i style={`width:${Math.round(r.tekst * 100)}%`}></i></span></p>
+                  ))}
+                </div>
+                <p class="sc-pvoet"><span>{T.post.datum}</span></p>
+                <p class="sc-pinvoer"><span>{T.post.opmerking}</span><b>{T.post.plaatsen}</b></p>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* De clip (video): verticaal, met hetzelfde beeld onscherp als vulling */}
+        <div class="sc sc-klip" data-hl-set="video">
+          <img class="sc-kvul" src={KLIP.src} alt="" width={KLIP.w} height={KLIP.h} loading="lazy" decoding="async" />
+          <div class="sc-kclip"><img src={KLIP.src} alt="" width={KLIP.w} height={KLIP.h} loading="lazy" decoding="async" /><span class="sc-kbalk"><i></i></span></div>
+        </div>
+        <span class="sc-glans"></span>
+      </div>
+      <div class="hl-scherm hl-scherm-fon" style={`transform:${matrix3d(F)}`}>
+        {fonnen.map((src, i) => <img src={src} alt="" loading={src === eerst.fon ? 'eager' : 'lazy'} decoding="async" data-hl-fon={src} />)}
+        <p class="sc-tijd"><span>9:41</span><span><i></i><i></i></span></p>
+        <span class="sc-glans"></span>
+      </div>
+    </div>
+  </div>
+
+    {/* 3 · de belletjes. De tekst is echte tekst (geen aria-hidden): hij zegt wat je ziet. */}
+    <p class="hl-bel hl-bel-lap" style={punt(lx, ly)}><span class="hl-stip" aria-hidden="true"></span><span><em>{T.krijg}</em><b data-hl-wat>{SET[eerst.set].wat}</b></span></p>
+    <p class="hl-bel hl-bel-fon" style={punt(fx, fy)}><span class="hl-stip" aria-hidden="true"></span><span><em>{T.stuur}</em><b>{T.stuurWat}</b></span></p>
+    <span class="hl-draad hl-draad-lap" style={punt(lx, ly)} aria-hidden="true"></span>
+    <span class="hl-draad hl-draad-fon" style={punt(fx, fy)} aria-hidden="true"></span>
+  </div>
+
+  {/* De bediening: naam van de set, de streep, terug en verder. Eronder de ene
+      regel die zegt dat dit een voorbeeld is (Lucas, 20 september 2026). */}
+  <div class="hl-bediening" data-hl-bediening>
+    <p class="hl-naam"><b data-hl-naam>{SET[eerst.set].naam}</b><span class="hl-teller" data-hl-teller>{T.van(1, standen.length)}</span></p>
+    <span class="hl-streep" aria-hidden="true"><i data-hl-streep></i></span>
+    <button type="button" class="h-cirkel h-cirkel-klein" data-hl-stap="-1" aria-label={T.vorige}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8h-11M7 3.5L2.5 8 7 12.5" /></svg></button>
+    <button type="button" class="h-cirkel h-cirkel-klein" data-hl-stap="1" aria-label={T.volgende}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5L13.5 8 9 12.5" /></svg></button>
+    <button type="button" class="h-cirkel h-cirkel-klein hl-pauze" data-hl-pauze aria-pressed="false" aria-label={T.pauze} data-uit={T.pauze} data-aan={T.speel} hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path class="hl-p-uit" d="M6 4v8M10 4v8" /><path class="hl-p-aan" d="M5.5 3.8v8.4L12.5 8z" /></svg></button>
+  </div>
+  <p class="hl-uitleg">{T.uitleg}</p>
+  <script type="application/json" data-hl-standen set:html={JSON.stringify({
+    standen: standen.map((s) => ({ set: s.set, i: s.i, fon: s.fon, duur: s.duur })),
+    sets: { catalog: SET.catalog, lifestyle: SET.lifestyle, video: SET.video },
+    foto: FOTO,
+  })} />
+</div>
+
+<script>
+  /* ── DE SCHERMEN — 12 oktober 2026 ──────────────────────────────────────────
+     Twee dingen, en niet meer:
+     1. DE SCHAAL. De laag is 2304 × 1728 fotopixels; hij moet zo groot worden als
+        de fotodoos. Dat is één getal (--hl-k), en een ResizeObserver op de doos
+        houdt het bij. Geen luisteraar op window (zie tests/zachte-navigatie).
+     2. DE WISSEL. Elke stand heeft een duur uit laptopSlides.js. De klok is de
+        streep: een CSS-animatie van precies die duur, en als hij af is gaat de
+        wissel een stand verder — dezelfde aanpak als de dienstwissel op de
+        huidige voorpagina. Pauzeren is de animatie stilzetten.
+     Stil bij "minder beweging", buiten beeld, onder de muis of de focus, en
+     voorgoed zodra iemand zelf op een pijl drukt of op pauze. */
+  type Stand = { set: string; i: number; fon: string; duur: number };
+  const zet = () => {
+    for (const root of document.querySelectorAll<HTMLElement>('[data-hl]')) {
+      if (root.dataset.hlKlaar) continue;
+      root.dataset.hlKlaar = '1';
+      const json = root.querySelector('[data-hl-standen]');
+      const doos = root.querySelector<HTMLElement>('[data-hl-doos]');
+      const laag = root.querySelector<HTMLElement>('[data-hl-laag]');
+      const streep = root.querySelector<HTMLElement>('[data-hl-streep]');
+      const naam = root.querySelector<HTMLElement>('[data-hl-naam]');
+      const teller = root.querySelector<HTMLElement>('[data-hl-teller]');
+      const wat = root.querySelector<HTMLElement>('[data-hl-wat]');
+      const pauze = root.querySelector<HTMLButtonElement>('[data-hl-pauze]');
+      if (!json || !doos || !laag || !streep || !naam || !teller || !wat || !pauze) continue;
+      const data = JSON.parse(json.textContent || '{}') as { standen: Stand[]; sets: Record<string, { naam: string; wat: string }>; foto: { w: number } };
+      const standen = data.standen;
+      if (!standen?.length) continue;
+
+      new ResizeObserver(([e]) => {
+        const w = e.contentRect.width;
+        if (w > 0) laag.style.setProperty('--hl-k', String(w / data.foto.w));
+      }).observe(doos);
+
+      const rustig = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let nu = 0, loopt = !rustig, zicht = false, erboven = false;
+
+      const stand = () => {
+        const actief = loopt && zicht && !erboven;
+        root.classList.toggle('hl-loopt', actief);
+        pauze.setAttribute('aria-pressed', String(!loopt));
+        pauze.setAttribute('aria-label', (loopt ? pauze.dataset.uit : pauze.dataset.aan) || '');
+      };
+      const toon = (i: number) => {
+        nu = (i + standen.length) % standen.length;
+        const s = standen[nu];
+        root.dataset.set = s.set;
+        for (const el of root.querySelectorAll<HTMLElement>('[data-hl-set]')) el.classList.toggle('is-nu', el.dataset.hlSet === s.set);
+        for (const el of root.querySelectorAll<HTMLElement>('[data-hl-beeld]')) el.classList.toggle('is-nu', el.dataset.hlBeeld === `${s.set}-${s.i}`);
+        for (const el of root.querySelectorAll<HTMLElement>('[data-hl-th]')) el.classList.toggle('is-nu', s.set === 'catalog' && Number(el.dataset.hlTh) === s.i);
+        for (const el of root.querySelectorAll<HTMLElement>('[data-hl-stip]')) el.classList.toggle('is-nu', s.set === 'lifestyle' && Number(el.dataset.hlStip) === s.i);
+        for (const el of root.querySelectorAll<HTMLImageElement>('[data-hl-fon]')) {
+          const aan = el.dataset.hlFon === s.fon;
+          if (aan) el.loading = 'eager';
+          el.classList.toggle('is-nu', aan);
+        }
+        /* Het volgende beeld alvast laden, zodat de wissel nooit op een leeg vak valt. */
+        const v = standen[(nu + 1) % standen.length];
+        root.querySelector<HTMLImageElement>(`[data-hl-beeld="${v.set}-${v.i}"]`)?.setAttribute('loading', 'eager');
+        const set = data.sets[s.set];
+        if (naam.textContent !== set.naam) { naam.textContent = set.naam; wissel(naam); }
+        if (wat.textContent !== set.wat) { wat.textContent = set.wat; wissel(wat); }
+        teller.textContent = `${nu + 1} / ${standen.length}`;
+        /* De streep opnieuw laten beginnen, met de duur van deze stand. */
+        streep.style.animationDuration = `${s.duur}ms`;
+        streep.classList.remove('is-aan'); void streep.offsetWidth; streep.classList.add('is-aan');
+      };
+      const wissel = (el: HTMLElement) => { el.classList.remove('h-wissel'); void el.offsetWidth; el.classList.add('h-wissel'); };
+      streep.addEventListener('animationend', () => { if (loopt) toon(nu + 1); });
+
+      for (const knop of root.querySelectorAll<HTMLButtonElement>('[data-hl-stap]')) {
+        knop.addEventListener('click', () => { loopt = false; stand(); toon(nu + Number(knop.dataset.hlStap)); });
+      }
+      pauze.hidden = rustig;
+      pauze.addEventListener('click', () => { loopt = !loopt; stand(); });
+      doos.addEventListener('pointerenter', () => { erboven = true; stand(); });
+      doos.addEventListener('pointerleave', () => { erboven = false; stand(); });
+      root.addEventListener('focusin', () => { erboven = true; stand(); });
+      root.addEventListener('focusout', () => { erboven = false; stand(); });
+      new IntersectionObserver(([e]) => { zicht = e.isIntersecting; stand(); }, { threshold: 0.35 }).observe(doos);
+
+      toon(0);
+      stand();
+      /* Pas tonen als de laag de goede maat heeft: één frame na de eerste meting. */
+      requestAnimationFrame(() => requestAnimationFrame(() => root.classList.add('hl-leeft')));
+    }
+  };
+  zet();
+  document.addEventListener('astro:page-load', zet);
+</script>

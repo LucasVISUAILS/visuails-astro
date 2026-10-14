@@ -61,6 +61,20 @@
     if (form.dataset.voorvertoningKlaar === '1') return; // tweede keer: echt versturen
 
     var invoer = form.querySelectorAll('input[type="file"][name="files"]');
+    /* 8 oktober 2026 (4.02): de werkmap bevat nu per product de foto's van de klant
+       in _aangeleverd/, en het Photoshop-script zet het ruwe beeld in _ruw/. Bij
+       "de hele map" zou de browser die allemaal meesturen, terwijl de server ze
+       toch overslaat — honderden MB voor niets. Hier gaan ze er vóór het versturen
+       uit. Zonder dit script slaat de server ze nog steeds over. */
+    var WERKMAP_ALLEEN = /(^|\/)(_aangeleverd|_ruw)\//;
+    invoer.forEach(function (i) {
+      var alle = Array.prototype.slice.call(i.files || []);
+      var houden = alle.filter(function (f) { return !WERKMAP_ALLEEN.test(f.webkitRelativePath || ''); });
+      if (houden.length === alle.length) return;
+      var dt = new DataTransfer();
+      houden.forEach(function (f) { dt.items.add(f); });
+      try { i.files = dt.files; } catch (_) { /* dan gaat alles mee; de server slaat ze over */ }
+    });
     var bestanden = [];
     invoer.forEach(function (i) { Array.prototype.push.apply(bestanden, Array.prototype.slice.call(i.files || [])); });
     bestanden = bestanden.filter(function (f) { return BEELD.test(f.name); });

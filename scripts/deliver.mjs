@@ -3,8 +3,8 @@
  * ÉÉN COMMANDO PER BESTELLING
  * ═══════════════════════════════════════════════════════════════════════════════
  *
- *   npm run deliver -- VIS-2608-4471 ./klaar            eerst kijken (droogloop)
- *   npm run deliver -- VIS-2608-4471 ./klaar --go       en dan doen
+ *   npm run deliver -- VIS-MF3K-7QX ./klaar            eerst kijken (droogloop)
+ *   npm run deliver -- VIS-MF3K-7QX ./klaar --go       en dan doen
  *
  * ── WAT DIT VERVANGT ────────────────────────────────────────────────────────
  *
@@ -58,6 +58,23 @@
  * Niets aankondigen. Er gaat geen mail uit, geen status verandert. Uploaden en
  * "de klant laten weten" zijn twee besluiten, en dat tweede hoort in admin te
  * blijven waar je de bestelling erbij ziet.
+ *
+ * ── /admin IS DE GEWONE WEG, DIT IS DE EXTRA — 8 oktober 2026 (punt 9.01) ──
+ *
+ * Sinds besluit F18 (ronde 9) lever je in /admin: slepen, vakjes, melden. Dit
+ * script blijft voor één ding dat /admin niet kan — een Worker zet geen beeld om
+ * — namelijk per beeld een png, een jpg en een webp met de herkomsttag (de
+ * mappen JPG/, PNG/ en WEBP/ in de zip). /admin wijst ernaar bij een beeld
+ * zonder die formaten. Twee fouten maakten het tot vandaag onbruikbaar en zijn
+ * gerepareerd (§17.8):
+ *
+ *   · de referentiecontrole eiste `VIS-` plus twee keer vier CIJFERS, terwijl een
+ *     echte referentie letters en cijfers heeft (VIS-XXXX-XXX, zie makeRef() in
+ *     functions/api/order.js). Elke echte bestelling werd geweigerd. Nu dezelfde
+ *     vorm als REF_SHAPE in functions/api/order-status.js;
+ *   · de slotzin zei "de klant ziet dit meteen". Dat klopt alleen als de
+ *     bestelling al geleverd is; anders ziet hij de beelden pas als je de levering
+ *     in /admin meldt (ZICHTBAAR_VOOR_KLANT in src/lib/delivery.js).
  */
 import { readdir, stat, mkdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -65,7 +82,7 @@ import { randomUUID } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import sharp from 'sharp';
 import { wrangler, warmLogin, assertSafeArg } from './lib/wrangler.mjs';
-import { COMPOSITE, FULLY, writeSourceType, closeExif } from './lib/aitag.mjs';
+import { FULLY, LEVERTAG, writeSourceType, closeExif } from './lib/aitag.mjs';
 
 const DB = 'visuails';
 const BUCKET = 'visuails-uploads';
@@ -112,8 +129,8 @@ if (!ref || !folder) {
   console.error(`
 Gebruik:  npm run deliver -- <referentie> <map> [opties]
 
-  npm run deliver -- VIS-2608-4471 ./klaar          kijken wat het denkt
-  npm run deliver -- VIS-2608-4471 ./klaar --go     en dan echt leveren
+  npm run deliver -- VIS-MF3K-7QX ./klaar          kijken wat het denkt
+  npm run deliver -- VIS-MF3K-7QX ./klaar --go     en dan echt leveren
 
 Opties:
   --go              daadwerkelijk omzetten, uploaden en wegschrijven
@@ -134,13 +151,16 @@ lezen is, wordt gemeld en niet geraden.
 }
 
 assertSafeArg(ref, 'referentie');
-if (!/^VIS-\d{4}-\d{4}$/.test(ref)) {
-  console.error(`"${ref}" ziet niet uit als een referentie (VIS-2608-4471).`);
+/* Dezelfde vorm als REF_SHAPE in functions/api/order-status.js: VIS- plus letters,
+   cijfers en streepjes. Hier stond /^VIS-\d{4}-\d{4}$/, en een echte referentie
+   (VIS-XXXX-XXX, letters én cijfers) kwam daar nooit doorheen. */
+if (!/^VIS-[0-9A-Z-]{3,20}$/i.test(ref)) {
+  console.error(`"${ref}" ziet niet uit als een referentie (VIS-MF3K-7QX).`);
   process.exit(1);
 }
 
 const scope = LOCAL ? '--local' : '--remote';
-const AI_VALUE = FULLY_AI ? FULLY : COMPOSITE;
+const AI_VALUE = FULLY_AI ? FULLY : LEVERTAG;   // 4.01: de waarde staat in src/lib/iptc.js
 
 // ─────────────────────────────────────────────────────────────────────────────
 // KLEINE HULPJES
@@ -207,7 +227,7 @@ async function walk(dir) {
 await warmLogin();   // zie de noot in scripts/lib/wrangler.mjs over 7403
 
 const orders = await query(
-  `SELECT id, ref, lang, product_count, status FROM orders WHERE ref = ${q(ref)}`
+  `SELECT id, ref, lang, product_count, status, delivery_mailed_at, service, details_json FROM orders WHERE ref = ${q(ref)}`
 );
 if (!orders.length) {
   console.error(`Geen bestelling met referentie ${ref}${LOCAL ? ' in de LOKALE database' : ''}.`);
@@ -215,7 +235,16 @@ if (!orders.length) {
 }
 const order = orders[0];
 const lang = order.lang === 'en' ? 'en' : 'nl';
-const shotNames = SHOT_NAME[lang];
+/* ── PER DIENST — 14 oktober 2026 ─────────────────────────────────────────────
+   Tot vandaag kende dit script alleen de vier vakjes van een catalogset, ook bij
+   een lifestylebestelling ("Alle producten hebben alle vier de shots"). Nu de
+   vakjes van deze bestelling, met hun eigen namen (levervakken.js): vier bij
+   lifestyle sinds vandaag, drie bij een oude lifestylebestelling. */
+const { leverVakken } = await import('../src/data/levervakken.js');
+const VAKKEN = leverVakken(order.service, order.details_json);
+const VAK_IDS = VAKKEN.map((v) => v.id);
+const shotNames = Object.fromEntries(VAKKEN.map((v) => [v.id, v.woord[lang]]));
+for (const [k, v] of Object.entries(SHOT_NAME[lang])) if (!(k in shotNames) && order.service !== 'lifestyle') shotNames[k] = v;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 2 · DE MAP LEZEN EN DE GOK DOEN
@@ -243,7 +272,8 @@ for (const file of sources) {
     file,
     base,
     product: guess.product,
-    shot: guess.shot,
+    /* Alleen een vak dat deze bestelling heeft; anders is het "niet te plaatsen". */
+    shot: VAK_IDS.includes(guess.shot) ? guess.shot : null,
     sourceBytes: size,
   });
 }
@@ -257,8 +287,8 @@ const productNo = (p) => {
 plan.sort((a, b) => {
   const d = productNo(a.product) - productNo(b.product);
   if (d) return d;
-  const sa = SHOT_ORDER.indexOf(a.shot);
-  const sb = SHOT_ORDER.indexOf(b.shot);
+  const sa = VAK_IDS.indexOf(a.shot);
+  const sb = VAK_IDS.indexOf(b.shot);
   return (sa < 0 ? 9 : sa) - (sb < 0 ? 9 : sb);
 });
 
@@ -299,7 +329,7 @@ const gaps = [];
 for (let n = 1; n <= expectedCount; n++) {
   const have = byProduct.get(n);
   if (!have) { gaps.push([n, 'niets']); continue; }
-  const missing = SHOT_ORDER.filter((s) => !have.has(s));
+  const missing = VAK_IDS.filter((s) => !have.has(s));
   if (missing.length) gaps.push([n, missing.map((s) => shotNames[s]).join(', ')]);
 }
 
@@ -312,7 +342,7 @@ if (gaps.length) {
   console.log('\n  Nog niet compleet:');
   for (const [n, what] of gaps) console.log(`    product ${n}: ${what} ontbreekt`);
 } else {
-  console.log('\n  Alle producten hebben alle vier de shots.');
+  console.log(`\n  Alle producten hebben alle ${VAK_IDS.length} shots.`);
 }
 
 const usable = plan.filter((p) => p.product && p.shot);
@@ -549,6 +579,10 @@ const live = await query(
     WHERE order_id = ${order.id} AND kind = 'delivery' AND superseded_at IS NULL`
 );
 const row = live[0] || {};
+/* Wanneer ziet de klant dit? Dezelfde regel als ZICHTBAAR_VOOR_KLANT in
+   src/lib/delivery.js: een gemelde levering, of een bestelling die al geleverd
+   (of geannuleerd) is of al een levermail kreeg. */
+const al = ['delivered', 'cancelled'].includes(order.status) || !!order.delivery_mailed_at;
 
 console.log(`
 Klaar.
@@ -558,7 +592,9 @@ Klaar.
   zonder beoordeelbeeld: ${row.zonder_preview || 0}${Number(row.zonder_preview) ? '  (leveringen van vóór dit script)' : ''}
   herkomsttag: ${NO_TAG ? 'OVERGESLAGEN (--no-tag)' : AI_VALUE.split('/').pop()}
 
-De klant ziet dit meteen in zijn portaal en in VISUAILS Studio. Er is GEEN mail
-uitgegaan en de status is niet veranderd — dat doe je in het adminportaal, zodat
-je de bestelling erbij ziet op het moment dat je het aankondigt.
+${al ? `De bestelling is al geleverd, dus de klant ziet deze beelden nu meteen in
+zijn portaal en in VISUAILS Studio. Er is GEEN mail uitgegaan — meld de nieuwe
+beelden in het adminportaal als de klant het moet horen.` : `De klant ziet deze beelden nog NIET. Ze worden zichtbaar zodra je de levering
+in het adminportaal meldt; er is geen mail uitgegaan en de status is niet
+veranderd, zodat je de bestelling erbij ziet op het moment dat je het aankondigt.`}
 `);

@@ -1,15 +1,16 @@
 ---
-// VISUAILS — /test-sample (English). De inhoud staat in TestSamplePage.astro
+// VISUAILS — /test-sample (English). Sinds 12 oktober 2026 in de hal (afvinklijst 9, alles
+// "doen"): de inhoud staat in TestSampleHal.astro. Daarvoor stond hij in TestSamplePage.astro
 // zodat deze pagina en /nl/test-sample niet uit elkaar kunnen lopen; zie de kop
 // daar, ook voor waarom het bestelformulier zelf OrderFlow is en geen eigen
 // wizard meer.
 import Layout from '../layouts/Layout.astro';
-import TestSamplePage from '../components/TestSamplePage.astro';
+import TestSampleHal from '../components/TestSampleHal.astro';
 ---
 
-<Layout
+<Layout huid="hal"
   title="Test VISUAILS with 1 product — test sample"
-  description="Send the photos a normal order needs and get back four catalog images or a three-photo lifestyle carousel. One per business, checked by our image editors."
+  description="Send the photos a normal order needs and get back four catalog images or a four-photo lifestyle carousel. One per business, checked before delivery."
 >
-  <TestSamplePage lang="en" />
+  <TestSampleHal lang="en" />
 </Layout>

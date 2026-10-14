@@ -162,7 +162,9 @@ console.log('\nhet bestelformulier loopt van de eerste stap tot de laatste');
 
   /* /start/video is een wachtpagina en /start/brand-model heeft zijn eigen
      stappen (data-bm-*); die horen hier niet. */
-  for (const url of ['/nl/start/catalog/', '/nl/start/lifestyle/', '/nl/start/complete/', '/nl/test-sample/']) {
+  /* /nl/start/complete is op 8 oktober 2026 weg (punt 9.01): hij stuurt door
+     naar /nl/start. */
+  for (const url of ['/nl/start/catalog/', '/nl/start/lifestyle/', '/nl/test-sample/']) {
     const page = await browser.newPage({ locale: 'en-US', viewport: { width: 1600, height: 1000 } });
     const scriptfouten = [];
     page.on('pageerror', (e) => scriptfouten.push(e.message.slice(0, 80)));

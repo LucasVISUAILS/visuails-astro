@@ -1,0 +1,15 @@
+# Bestanden die op een andere plek in de projectmap horen. OPRUIMEN.bat zet ze daar.
+# Vorm: oud -> nieuw. Eindigt "nieuw" op /, dan houdt het bestand zijn naam.
+# Achter het # staat waarom. Er wordt nooit iets overschreven of verwijderd: staat er op
+# de nieuwe plek al een bestand, dan gaat het oude naar _opruimen\<datum>\.
+# Een kop met "moet" erin: UITROLLEN.bat zet niets live zolang daar nog iets op de oude plek staat.
+#
+# ── 8 oktober 2026 · moet verplaatst: de naslag naar docs\ (tests en README wijzen al naar de nieuwe plek) ──
+#
+# ── 8 oktober 2026 · moet verplaatst: de meetscripts naar scripts\meten\ (package.json wijst er al heen) ──
+#
+# ── 8 oktober 2026 · mag verplaatst: naslag die alleen op jouw pc staat, naar docs\ ──
+#
+# ── 8 oktober 2026 · mag verplaatst: dagverslagen en plannen waar de code nog naar verwijst, naar docs\archief\ ──
+#
+# ── 8 oktober 2026 · mag verplaatst: kladblok in een paar submappen ──

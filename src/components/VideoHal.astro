@@ -1,0 +1,611 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — /video in de hal. 13 oktober 2026, afvinklijst 15
+ * (v15-volgende = a: video, hooks en editions als volgende groep).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * DEZELFDE INHOUD ALS VideoPage.astro: de frontmatter hieronder (COPY, de
+ * soorten uit videoStyles.js, de bedragen en VIDEO_OP_AANVRAAG uit pricing.js)
+ * is daar letterlijk uit overgenomen; alleen de opmaak is die van de hal, zoals
+ * /catalog en /lifestyle (LifestyleHal.astro). Wat in de tekst anders is, staat
+ * in kladblok/TEKSTEN-VIDEO.md.
+ *
+ *   opening  pil, kop in twee tonen, de zin, de feiten, de laptop met de videodia
+ *   soorten  Motion, Lifestyle Video en Campaign als kaarten; zolang video op
+ *            aanvraag is een "clip volgt"-vlak en geen geleend sfeerbeeld; de
+ *            eigen look eronder
+ *   kopen    wat je krijgt (checklist, waar je het gebruikt, het model) en de
+ *            twee manieren om video te kopen
+ *   vragen   HalVragen (faq.js)
+ *   slot     een licht vlak: aanvragen of contact
+ * ═══════════════════════════════════════════════════════════════════════════ */
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/hal.css';
+import HalLaptop from './HalLaptop.astro';
+import HalVragen from './HalVragen.astro';
+import HalBeweging from './HalBeweging.astro';
+import { waHref } from '../data/whatsapp.js';
+import NieuwTabblad from './NieuwTabblad.astro';
+// VISUAILS — /video and /nl/video share this body.
+//
+// Same conversion as CatalogPage.astro and LifestylePage.astro: two 156-line
+// inline pages, each holding its own copy of the prices, replaced by one body
+// taking a `lang` prop. EN/NL parity becomes a property of the file layout.
+//
+// This page carried the worst price defect on the site. Its inline
+// `videoStyles` literal — and src/data/videoStyles.js behind it — priced
+// Lifestyle Video at €59, a figure that appears nowhere in pricing.js and
+// never has. The sitewide price scan missed it for months because "€59" is a
+// string prefix of "€59.99", so every occurrence was folded into the catalog
+// lifestyle tally. There is one clip rate now and it comes from AMOUNT.video.
+//
+// WHY THIS PAGE STILL PRINTS ONE FIGURE WHERE /catalog AND /lifestyle PRINT A
+// LADDER (August 2026 — section 0 of src/data/pricing.js). A catalog set and a
+// lifestyle carousel are priced per PRODUCT and their rate falls as the count
+// rises. A clip is not on that ladder: it is a flat rate per clip, the same
+// inside an order as on its own, and that flatness is the claim this page has
+// always made about it. So the figure here is genuinely one number — but it is
+// one number that now has to say so, because a reader arriving from /pricing
+// has just been shown a falling rate and will assume this one falls too.
+//
+// EVERY PRINTED PRICE CARRIES A VAT LABEL, from vatLabel() — BRIEF-14's
+// hardest rule, and never a typed "excl. VAT".
+//
+// "DROP" IS NOT WHAT WE SELL. It means a collection going live to the brands
+// we sell to; a work order is an order — in Dutch, een bestelling. "The same
+// rate on its own or added to a drop" was the one line on this page that used
+// the word for a work order, and it is the line the change matters most on,
+// because it is the sentence about the price.
+//
+// SERVICE LEVEL FOLLOWS SIZE: from WINDOW_THRESHOLD products an order gets the
+// reserved window, below it the standard queue.
+//
+// ── EN VIDEO STAAT NIET OP DIE LADDER — 13 augustus 2026 ────────────────────
+//
+// Die regel hierboven gold voor deze pagina niet, en dat stond er wel. Drie
+// plekken beloofden dat je vanaf tien een leverdatum krijgt die niet meer wijkt:
+// de FAQ "hoe lang duurt het", de regel onder de hero, en de slotalinea.
+//
+// tierFor() in pricing.js geeft voor `service: 'video'` ALTIJD 'unattended',
+// omdat video niet op de prijsladder staat (zie isLadderService). Een aanvraag
+// van twaalf clips kan dus per definitie geen gereserveerd venster krijgen — er
+// is geen bestelstroom, geen capaciteitspoort en geen agenda voor. De pagina
+// beloofde iets dat het systeem niet alleen niet doet, maar niet KAN doen.
+//
+// WAT WEL WAAR IS, en dat is het onderscheid dat de teksten nu maken: clips die
+// MEELIFTEN op een bestelling van tien producten of meer vallen binnen het
+// venster van die bestelling. Niet omdat het clips zijn, maar omdat de
+// BESTELLING de datum draagt. Een losse clipaanvraag draagt niets.
+//
+// Vandaar ook dat de knoppen naar /start/video gaan en niet naar /start: dit is
+// de enige dienst op deze pagina, en de keuzepagina opnieuw laten kiezen wat de
+// bezoeker net gekozen heeft, is een stap die niets oplevert.
+import {
+  TIERS, AMOUNT, euro, vatLabel, WINDOW_THRESHOLD,
+  reviewClaim, turnaround,
+  clause, VIDEO_OP_AANVRAAG,
+} from '../data/pricing.js';
+/* De vragen onderaan deze pagina staan in faq.js en niet meer hier. Reden:
+   schema.js bouwt zijn FAQPage-knoop uit het pad en kan de frontmatter van
+   een component niet lezen — zie de kop boven serviceFaqs(). */
+import { serviceFaqs } from '../data/faq.js';
+import { localizedPath } from '../i18n/ui.js';
+import { videoStyles as videoStylesEn } from '../data/videoStyles.js';
+import { videoStyles as videoStylesNl } from '../data/videoStyles.nl.js';
+
+/* basis: '/voorbeeld' op het voorbeeld, zodat de links naar de stijlpagina's
+   binnen het voorbeeld blijven; leeg op de echte pagina. */
+interface Props { lang: 'en' | 'nl'; basis?: string; }
+const { lang, basis = '' } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+
+const kinds = lang === 'nl' ? videoStylesNl : videoStylesEn;
+
+// One rate, flat. Formatted once here rather than at every call site, so the
+// clip price and its VAT label cannot get separated by an edit.
+const clip = euro(AMOUNT.video, lang);
+const t0 = TIERS.unattended;
+/* ── OP AANVRAAG ZOLANG DE PIJPLIJN NIET STAAT — 19 september 2026 ─────────
+   Zie VIDEO_OP_AANVRAAG in pricing.js. Op deze pagina betekent dat: geen
+   bedrag in de feitenrij en op de kaarten, geen bestelknop bij de vaste
+   kinds, en een "clip volgt"-plaat in plaats van een geleend sfeerbeeld —
+   dezelfde vorm als een lifestyle-look zonder foto, zodat Lucas ziet hoe de
+   pagina eruit komt te zien zodra de clips er zijn. De aanvraagknop blijft
+   bovenaan en bij de eigen look. */
+const opAanvraag = VIDEO_OP_AANVRAAG;
+const opAanvraagWoord = lang === 'nl' ? 'Op aanvraag' : 'On request';
+
+// The plan that includes clips, named rather than typed — /pricing says the
+// same thing off the same two constants, so the two pages cannot disagree
+// about how many clips a Studio month carries.
+
+// Motion and Lifestyle Video are the two fixed-rate clips; Campaign and
+// Custom are scoped and quoted. Keeping the rule here rather than in
+// videoStyles.js means no euro figure lives in the style data at all — which
+// is exactly how the stale €59 survived as long as it did.
+const QUOTED = new Set(['campaign', 'custom']);
+
+// w/h on both tables are the intrinsic pixel size of the file in public/img —
+// the real photo, not the .photo-band / .photo-grid box it crops into. They
+// are attributes, not layout: the browser needs the aspect ratio before the
+// bytes arrive or the grid reflows under the reader (§12).
+// ── DE ALT-TEKST OP DEZE PAGINA IS GEEN DECORATIE — 23 AUGUSTUS 2026 ────────
+//
+// Hier stond `stepsAlt: 'A product video still from a VISUAILS Motion clip'` op
+// /img/banners-04.webp, en `exampleAlt: (n) => `${n} example`` op de vier
+// posters hierboven. Allebei onwaar, en niet op een manier die je ziet: er
+// bestaat geen enkele Motion-clip. `src/data/videoExamples.js` heeft acht
+// ingangen die allemaal `file: null` dragen, er staat geen .mp4 of .webm in het
+// project, en VideoExamples.astro rendert daarom overal het lege vakje.
+//
+// Een foto die zichzelf een filmstill noemt, is precies het soort claim dat
+// tests/promises.test.mjs moet tegenhouden: een belofte in tekst die door niets
+// wordt nagekomen. Dat het in een alt-tekst stond in plaats van in een kop,
+// maakt het niet kleiner — een schermlezer krijgt hem als het enige wat er over
+// dat beeld gezegd wordt, en Google leest hem als een beschrijving van de
+// pagina-inhoud.
+//
+// De nieuwe teksten beschrijven wat er te ZIEN is: een productfoto. Voor de
+// stappenafbeelding is dat bovendien betere copy, want stap 1 op die plek is
+// letterlijk "Stuur een productfoto".
+//
+// De echte videovoorbeelden komen in VideoExamples.astro te staan zodra er
+// bestanden zijn. Zolang die er niet zijn, staat er een leeg vakje dat dat
+// zegt, en dat is de eerlijke vorm.
+const posters: Record<string, { src: string; w: number; h: number }> = {
+  motion: { src: '/img/banners-04.webp', w: 928, h: 1152 },
+  lifestyle: { src: '/img/lifestyle-glow-03.webp', w: 768, h: 1376 },
+  campaign: { src: '/img/banners-08.webp', w: 928, h: 1152 },
+  custom: { src: '/img/banners-13.webp', w: 2400, h: 1792 },
+};
+
+const strip = [
+  { src: '/img/banners-01.webp', wide: true, key: 'campaign', w: 928, h: 1152 },
+  { src: '/img/lifestyle-flash-02.webp', wide: false, key: 'flash', w: 1340, h: 2400 },
+  /* ── HET ONDERWERP STOND HALF BUITEN BEELD — 23 AUGUSTUS 2026 ────────────
+     Deze foto is liggend (2400x1792) en staat in een staande strook. Bij
+     `object-fit: cover` valt daar 71% van de breedte weg, en met de standaard
+     `50% 50%` wordt dat de MIDDELSTE 29% — terwijl het onderwerp in deze opname
+     links staat. Resultaat op /video: een halve persoon tegen de linkerrand en
+     twee derde lege bestrating ernaast, met het kledingstuk — het product — er
+     bijna helemaal uit.
+
+     Gemeten over acht pagina's viel dit als enige echt om. De andere beelden die
+     evenveel of meer verliezen (de galerijtegels, de stroken op /lifestyle) zijn
+     centraal gecomponeerd en overleven de uitsnede gewoon. Het percentage is dus
+     niet het signaal — waar het onderwerp staat, is dat wel. */
+  { src: '/img/lifestyle-phone-made-09.webp', wide: false, key: 'phone', w: 2400, h: 1792, pos: '26% 50%' },
+  { src: '/img/lifestyle-dunes-02.webp', wide: false, key: 'dunes', w: 928, h: 1152 },
+  { src: '/img/banners-06.webp', wide: true, key: 'campaign', w: 928, h: 1152 },
+];
+
+// No `as const` — COPY[lang] on a const-asserted object gives a union of
+// readonly tuples and .map() on that union is a TS error.
+const COPY = {
+  en: {
+    eyebrow: 'Video',
+    h1: 'Product videos <br />that <em>move</em>.',
+    /* De prijszin is eruit, zoals op /catalog: het bedrag staat twee regels
+       lager in de specificatiestrook, en een bedrag lees je niet in lopende
+       tekst. Wat de lead nog doet is wat de strook niet kan — zeggen wat je
+       krijgt. Zie de noot bij `lead` in CatalogPage.astro. */
+    lead: `8 seconds of motion, vertical for Reels and TikTok — from your product photos.`,
+    // SECTION 13: Tier 0 "must NOT appear ... in any hero." See CatalogPage for
+    // the full note. Used in the hero and the closing band; the buy block lower
+    // down names the tier from TIERS.unattended.label instead.
+    ctaPrimary: 'Ask about a video clip',
+    wa: waHref("Hi VISUAILS, I'd like to talk about a product video."),
+    waQuote: waHref("Hi VISUAILS, I'd like a quote for a campaign video."),
+    waLabel: 'WhatsApp',
+    waQuoteLabel: 'Quote a campaign',
+    // The third hero button. /catalog and /lifestyle both offer it and this
+    // page did not, so the one service page whose price is a single flat
+    // figure was also the one that gave a visitor no way to see the figure in
+    // context. It says "pricing" rather than "the price ladder": a clip is not
+    // on the ladder, and sending someone to look for a falling rate that does
+    // not exist for this service is the confusion buyFlat exists to prevent.
+    ctaPrices: 'See pricing',
+    /* PRIJS EERST, ZOALS OP /catalog EN /lifestyle. Deze twee stonden
+       omgekeerd — formaat, dan prijs — en dat was de enige pagina van de drie
+       waar de bezoeker de rij in een andere volgorde las. */
+    trust: [
+      opAanvraag ? [opAanvraagWoord, 'we reply in writing with a price'] : [clip, `per clip · ${vatLabel('excl', 'en')}`],
+      ['8s', 'clean product videos'],
+    ],
+    // Visible, not buried. Section 13: a visitor must not be able to leave
+    // this page believing a delivery date was promised — and now that size
+    // decides the service level, the line names the count as well.
+    /* 30 september 2026: video is op aanvraag; formaat en levertijd staan in de
+       offerte. Hier stond dat clips in de normale doorlooptijd meelopen. */
+    queueNote: 'Video is on request: the format and the delivery time are agreed in the written quote.',
+    // The qualifier above TierCompare. That component is shared with /catalog,
+    // /lifestyle and /pricing and prints the ladder's two service levels; on
+    // THIS page it needs one sentence of context, because neither column is
+    // reachable by ordering clips. Removing the component instead would take
+    // away information a buyer who also orders photos does want.
+    tierNote: opAanvraag
+      ? 'The two columns below describe the price per quantity for catalog and lifestyle products. Clips are on request for now, and their delivery time is agreed in the quote rather than set by either column.'
+      : `The two columns below describe the price per quantity for catalog and lifestyle products. A clip is ${clip} however many you order, and a clip request runs at the standard turnaround — the right-hand column reaches your clips only when they are added to an order of ${WINDOW_THRESHOLD} products or more.`,
+    reviewNote: reviewClaim('unattended', 'en'),
+    heroAlt: 'A still from a short VISUAILS product clip',
+    heroCap: 'Video · a frame from an 8-second clip',
+    kiesCta: 'Pick your clip',
+    levert: 'one clip of eight seconds.',
+    kindsH: 'Ways to add motion.',
+    perClip: opAanvraag ? 'On request' : `${clip} / clip · ${vatLabel('excl', 'en')}`,
+    quoted: 'Quoted per project',
+    exampleAlt: (n: string) => `A product photo in the ${n} style`,
+    edMeta: '( Where it fits )',
+    edH: 'Product video: a short clip, made from one of your product photos.',
+    edSub: 'A few seconds of movement, made for feeds and ads.',
+    whatH: 'What it is',
+    whatP: [
+      'A product video is a short, clean film with subtle motion — a slow turn, a drape, a catch of light — built to give a product life without a full production. On a feed tuned for movement, a few seconds of motion earns attention a static image can’t, and holds it long enough to land the message.',
+      "It isn’t a replacement for your photos; it’s the layer on top that lifts them where it counts. The same product that sits still on your shop can move in your ads and socials, where dwell time and click-through decide whether people stop — or keep scrolling.",
+    ],
+    // Brief §1: every service page links to /custom-models. It goes here,
+    // in the paragraph about what a clip is, because "who is in it" is a real
+    // question a clip raises and the answer is the same face as the stills.
+    modelNote: `A person in the clip can be <a href="${lp('/custom-models')}">your own Brand Model</a>.`,
+    buyFlatH: 'Why the clip rate does not fall',
+    whereH: 'Where it lives',
+    where: [
+      ['Reels, TikTok & Shorts', 'where motion is the native language.'],
+      ['Paid ads', 'higher dwell time and click-through.'],
+      ['Product pages', 'an autoplay clip beside the stills.'],
+      ['Email & landing pages', 'a moment of life above the fold.'],
+    ],
+    stepsH: 'Three steps to a moving product.',
+    steps: [
+      ['Send a product photo', 'One clean still is enough to start.'],
+      ['We add the motion', 'A slow turn, a drape, a catch of light — held subtle.'],
+      ['Delivered as agreed', 'Vertical 9:16 as standard, on the delivery time in your quote.'],
+    ],
+    stepsAlt: 'A product photo of the kind a clip starts from',
+    cleanH: 'Clean motion, ready to publish.',
+    clean: [
+      '8-second video with subtle motion',
+      'Vertical 9:16 as standard, other ratios on request',
+      'Consistent style across your range',
+      reviewClaim('unattended', 'en'),
+    ],
+    buyH: 'Two ways to buy video',
+    // The whole point of the clip price: a video does not get cheaper or more
+    // expensive for arriving with a collection. Photos are priced per product
+    // on a falling ladder; a clip is priced per clip and stays put, which is
+    // the difference this block now has to state out loud rather than imply.
+    buyFixed: opAanvraag
+      ? '<strong>Motion &amp; Lifestyle</strong> — on request for now. We reply in writing with a price and a date; nothing is charged until you say yes.'
+      : `<strong>Motion &amp; Lifestyle</strong> — a fixed ${clip} per clip, ${vatLabel('excl', 'en')}. There is no checkout for video yet: you request it through the form, on its own or on top of an order, and we will confirm what and when in writing before anything runs.`,
+    buyQuote: '<strong>Campaign</strong> — bigger, multi-shot, quoted per project.',
+    buyFlat: `One rate per clip, whatever else is in the order.`,
+    /* Deze knop wijst naar /start/video en heette "Start an order". Dat is
+       precies de mismatch die op elke dienstpagina is rechtgezet: het label
+       moet zeggen wat er achter de knop gebeurt, niet wat er in het algemeen
+       mogelijk is. Zelfde tekst als de hoofdknop bovenaan deze pagina. */
+    buyCta: 'Ask about a video clip',
+    stripAlt: {
+      campaign: 'Campaign photography',
+      flash: 'Flash-style lifestyle image',
+      phone: 'Phone-made-style lifestyle image',
+      dunes: 'Dunes-style lifestyle image',
+    },
+    faqs: serviceFaqs('video', 'en'),
+    ctaH: 'Put your product <br>in motion.',
+    ctaP: opAanvraag
+      ? 'On request — the format and the delivery time are agreed in the written quote.'
+      : `${clip} per clip, ${vatLabel('excl', 'en')} — ${turnaround('unattended', 'en').toLowerCase()}, no fixed delivery date.`,
+    ctaSecondary: 'Contact us',
+  },
+  nl: {
+    eyebrow: 'Video',
+    h1: 'Productvideo’s <br />die <em>bewegen</em>.',
+    /* De prijszin is eruit, zoals op /catalog: het bedrag staat twee regels
+       lager in de specificatiestrook, en een bedrag lees je niet in lopende
+       tekst. Wat de lead nog doet is wat de strook niet kan — zeggen wat je
+       krijgt. Zie de noot bij `lead` in CatalogPage.astro. */
+    lead: `8 seconden beweging, verticaal voor Reels en TikTok — van je productfoto’s.`,
+    ctaPrimary: 'Vraag een videoclip aan',
+    wa: waHref("Hoi VISUAILS, ik wil graag praten over een productvideo."),
+    waQuote: waHref("Hoi VISUAILS, ik wil graag een offerte voor een campagnevideo."),
+    waLabel: 'WhatsApp',
+    waQuoteLabel: 'Offerte voor een campagne',
+    ctaPrices: 'Bekijk de prijzen',
+    trust: [
+      opAanvraag ? [opAanvraagWoord, 'we antwoorden schriftelijk met een prijs'] : [clip, `per clip · ${vatLabel('excl', 'nl')}`],
+      ['8s', 'strakke productvideo’s'],
+    ],
+    queueNote: 'Video is op aanvraag: het formaat en de levertijd spreken we af in de schriftelijke offerte.',
+    // Zie de Engelse kant voor waarom deze regel er staat.
+    tierNote: opAanvraag
+      ? 'De twee kolommen hieronder gaan over de prijs per aantal voor catalog- en lifestyleproducten. Clips zijn voorlopig op aanvraag, en hun levertijd spreken we af in de offerte; geen van beide kolommen bepaalt die.'
+      : `De twee kolommen hieronder gaan over de prijs per aantal voor catalog- en lifestyleproducten. Een clip is ${clip}, hoeveel je er ook bestelt, en een clipaanvraag blijft in de normale doorlooptijd — de rechterkolom raakt je clips alleen als ze meegaan met een bestelling van ${WINDOW_THRESHOLD} producten of meer.`,
+    reviewNote: reviewClaim('unattended', 'nl'),
+    heroAlt: 'Een stilstaand beeld uit een korte productclip van VISUAILS',
+    heroCap: 'Video · een beeld uit een clip van 8 seconden',
+    kiesCta: 'Kies je clip',
+    levert: 'één clip van acht seconden.',
+    kindsH: 'Manieren om beweging toe te voegen.',
+    perClip: opAanvraag ? 'Op aanvraag' : `${clip} / clip · ${vatLabel('excl', 'nl')}`,
+    quoted: 'Offerte per project',
+    exampleAlt: (n: string) => `Een productfoto in de stijl ${n}`,
+    edMeta: '( Waar het past )',
+    edH: 'Productvideo: beweging waar een foto niet verder komt.',
+    edSub: 'Een paar seconden beweging, gemaakt voor je feed en je advertenties.',
+    whatH: 'Wat het is',
+    whatP: [
+      'Een productvideo is een korte, strakke film met subtiele beweging — een langzame draai, stof die valt, licht dat over het materiaal trekt — gemaakt om een product te laten leven zonder een volledige productie. In een feed die op beweging is gebouwd, valt een paar seconden video op waar een stilstaand beeld voorbijgaat.',
+      'Het vervangt je foto’s niet; het komt erbij. Hetzelfde product staat stil op je productpagina en beweegt in je advertenties en op je socials — de plekken waar kijktijd en doorklikken meetellen.',
+    ],
+    modelNote: `Een persoon in de clip kan <a href="${lp('/custom-models')}">je eigen merkmodel</a> zijn.`,
+    buyFlatH: 'Waarom het cliptarief niet daalt',
+    whereH: 'Waar je het gebruikt',
+    where: [
+      ['Reels, TikTok & Shorts', 'waar alles beweegt.'],
+      ['Betaalde ads', 'hogere kijktijd en doorklik.'],
+      ['Productpagina’s', 'een autoplay-clip naast de stills.'],
+      ['E-mail & landingspagina’s', 'beweging in het eerste beeld dat iemand ziet.'],
+    ],
+    stepsH: 'Drie stappen naar een bewegend product.',
+    steps: [
+      ['Stuur een productfoto', 'Eén strakke still is genoeg om te beginnen.'],
+      ['Wij brengen het in beweging', 'Een langzame draai, stof die valt, licht dat over het materiaal trekt — subtiel gehouden.'],
+      ['Geleverd zoals afgesproken', 'Standaard verticaal 9:16, op de levertijd uit je offerte.'],
+    ],
+    stepsAlt: 'Een productfoto zoals een clip er een als vertrekpunt neemt',
+    cleanH: 'Strakke beweging, klaar om te publiceren.',
+    clean: [
+      'Video van 8 seconden met subtiele beweging',
+      'Standaard verticaal 9:16, andere verhoudingen op aanvraag',
+      'Consistente stijl door je hele assortiment',
+      reviewClaim('unattended', 'nl'),
+    ],
+    buyH: 'Twee manieren om video te kopen',
+    buyFixed: opAanvraag
+      ? '<strong>Motion &amp; Lifestyle</strong> — voorlopig op aanvraag. We antwoorden schriftelijk met een prijs en een datum; er wordt niets afgeschreven voordat jij ja zegt.'
+      : `<strong>Motion &amp; Lifestyle</strong> — een vaste ${clip} per clip, ${vatLabel('excl', 'nl')}. Video heeft nog geen afrekenstap: je vraagt het aan via het formulier, los of bovenop een bestelling, en we bevestigen op schrift wat en wanneer voordat er iets draait.`,
+    buyQuote: '<strong>Campaign</strong> — groter, meerdere scènes, offerte per project.',
+    buyFlat: `Eén tarief per clip, wat er verder ook in de bestelling zit.`,
+    buyCta: 'Vraag een videoclip aan',
+    stripAlt: {
+      campaign: 'Campagnefotografie',
+      flash: 'Lifestylefoto in Flash-stijl',
+      phone: 'Lifestylefoto in Phone-made-stijl',
+      dunes: 'Lifestylefoto in Dunes-stijl',
+    },
+    faqs: serviceFaqs('video', 'nl'),
+    ctaH: 'Breng je product <br>in beweging.',
+    ctaP: opAanvraag
+      ? 'Op aanvraag — het formaat en de levertijd spreken we af in de schriftelijke offerte.'
+      : `${clip} per clip, ${vatLabel('excl', 'nl')} — ${turnaround('unattended', 'nl').toLowerCase()}, geen vaste leverdatum.`,
+    ctaSecondary: 'Neem contact op',
+  },
+};
+
+const c = COPY[lang];
+const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
+const nl = lang === 'nl';
+
+/* ── ELKE VIDEOSOORT ZIJN EIGEN REGEL, DE EIGEN LOOK BOVENAAN — 4 september 2026 ──
+   Zie de kop van StyleRows.astro. Custom gaat naar WhatsApp (ctaExternal) en
+   niet naar een formulier; dat blijft zo. */
+/* De waaier per soort: de poster plus stills uit dezelfde reeks. Tot de
+   video-stills er zijn, zijn dit de banners die de pagina al gebruikt. */
+/* ── ÉÉN KAART, WANT JE KRIJGT ÉÉN CLIP — 4 september 2026 ─────────────────
+   Hier stonden drie tot vier beelden per soort, en dat was een verkeerde
+   belofte: een videobestelling levert ÉÉN clip. Catalog toont er vier omdat een
+   catalogset er vier heeft, lifestyle drie om dezelfde reden — dan hoort video
+   er één te tonen. Naast die ene staat de ingestuurde telefoonfoto, zodat je in
+   één oogopslag ziet wat erin gaat en wat eruit komt.
+
+   Campaign is de uitzondering en dat staat in de dienst zelf: dat is een film
+   MET meerdere shots, dus drie kaarten zijn daar geen overdrijving maar de
+   beschrijving. */
+const WAAIER: Record<string, string[]> = {
+  motion: ['/img/banners-04.webp'],
+  lifestyle: ['/img/lifestyle-glow-03.webp'],
+  campaign: ['/img/banners-08.webp', '/img/banners-01.webp'],
+  custom: ['/img/banners-13.webp'],
+};
+const TINT: Record<string, string> = { motion: '#8fa3b8', lifestyle: '#a86bd6', campaign: '#c9a06a', custom: '#c8c9cd' };
+const naarRij = (s: (typeof kinds)[number]) => ({
+  slug: s.slug,
+  name: s.name,
+  tagline: s.tagline,
+  desc: s.cardDesc,
+  price: kindPrice(s.slug),
+  bestFor: s.bestFor || [],
+  /* Zolang video op aanvraag is, geen geleend sfeerbeeld maar een "clip
+     volgt"-plaat per kaart (StyleRows tekent een Media zonder src als
+     plaatshouder met dit label). Campaign houdt zijn twee kaarten, want dat
+     is een film met meerdere shots. */
+  media: opAanvraag && s.slug !== 'custom'
+    ? { label: nl ? 'Clip volgt' : 'Clip to follow' }
+    : { src: posters[s.slug].src, w: posters[s.slug].w, h: posters[s.slug].h, alt: c.exampleAlt(s.name) },
+  photos: opAanvraag && s.slug !== 'custom'
+    ? (WAAIER[s.slug] || [posters[s.slug].src]).map((_, i) => ({ label: nl ? (i === 0 ? 'Clip volgt' : `Shot ${i + 1} volgt`) : (i === 0 ? 'Clip to follow' : `Shot ${i + 1} to follow`) }))
+    : (WAAIER[s.slug] || [posters[s.slug].src]).map((src, i) => ({ src, alt: i === 0 ? c.exampleAlt(s.name) : '' })),
+  /* Dezelfde telefoonfoto als op /catalog en /lifestyle: het ingestuurde beeld
+     hoort bij elke dienst hetzelfde te zijn, want het IS bij elke dienst
+     hetzelfde — één foto van je product. */
+  before: { src: '/img/catalog-before-1x1.webp', alt: '' },
+  /* En het geleverde beeld zegt hier wat het is: geen foto maar een clip. */
+  naLabel: nl ? 'Clip · 8 sec' : 'Clip · 8 sec',
+  tint: TINT[s.slug],
+  detailHref: lp(`/video/${s.slug}`),
+  detailLabel: nl ? `Ontdek ${s.name}` : `Explore ${s.name}`,
+  /* Geen bestelknop op de vaste kinds zolang video op aanvraag is: de kaart
+     linkt naar de detailpagina, en aanvragen gaat via de knop bovenaan en bij
+     de eigen look. Campaign en custom blijven een offerte-aanvraag. */
+  orderHref: opAanvraag && (s.slug === 'motion' || s.slug === 'lifestyle') ? undefined : s.ctaHref,
+  orderLabel: s.ctaLabel,
+});
+const eigenLook = naarRij(kinds.find((s) => s.slug === 'custom')!);
+const vasteLooks = kinds.filter((s) => s.slug !== 'custom').map(naarRij);
+
+/* ── DE HAL ────────────────────────────────────────────────────────────── */
+/* Een kop met een <br> wordt de kop in twee tonen: eerst het lichte deel. */
+const tonen = (h: string) => h.split(/<br\s*\/?>/).map((d) => d.replace(/<[^>]+>/g, '').trim());
+const H = nl ? {
+  kinds: ['Manieren om', 'beweging toe te voegen.'],
+  clean: ['Strakke beweging,', 'klaar om te publiceren.'],
+  kindsPil: 'Soorten', koopPil: 'Wat je krijgt', slotPil: 'Video',
+  /* = de zinnen uit StyleRows (de oude kop van de soorten): wat élke look levert, en één keer dat er meer kan. */
+  levertL: 'Elke look levert', altijd: 'Meer clips vraag je aan via het aanvraagformulier.',
+  klip: 'Clip volgt', klipMaat: '8 sec · 9:16', film: 'Film volgt', filmMaat: 'meerdere shots',
+  eigenKop: 'Zit het er niet bij?', eigenMeer: 'Meer over een eigen look',
+} : {
+  kinds: ['Ways to', 'add motion.'],
+  clean: ['Clean motion,', 'ready to publish.'],
+  kindsPil: 'Kinds', koopPil: 'What you get', slotPil: 'Video',
+  levertL: 'Every look delivers', altijd: 'More clips can be requested through the request form.',
+  klip: 'Clip to follow', klipMaat: '8 sec · 9:16', film: 'Film to follow', filmMaat: 'several shots',
+  eigenKop: 'Not in there?', eigenMeer: 'More about your own look',
+};
+const feiten = [...c.trust, (nl ? ['In de offerte', 'levertijd'] : ['In the quote', 'delivery time'])];
+const vast = kinds.filter((s: any) => s.slug !== 'custom');
+const eigen = kinds.find((s: any) => s.slug === 'custom');
+const PLAAT = (slug: string) => slug === 'campaign' ? [H.film, H.filmMaat] : [H.klip, H.klipMaat];
+const ICOON = {
+  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
+  pijl: '<path d="M4.5 11.5l7-7M5.5 4.5h6v6"/>',
+  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
+  speel: '<path d="M5.5 3.8v8.4L12.5 8z"/>',
+  klok: '<circle cx="8" cy="8" r="5.5"/><path d="M8 5v3.2l2 1.3"/>',
+  film: '<rect x="2.5" y="3.5" width="11" height="9" rx="1.5"/><path d="M6.5 6.2v3.6L9.8 8z"/>',
+  plus: '<path d="M8 3v10M3 8h10"/>',
+};
+const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+---
+<div class="h-pagina h-dienst h-vd">
+
+  {/* ── 1 · DE OPENING ── als /catalog en /lifestyle, met de videodia ─────── */}
+  <section class="h-opening h-dienst-open" aria-labelledby="vd-h1">
+    <div class="h-open-tekst">
+      <p class="h-pil h-op" style="--d:0"><span>{c.eyebrow}</span></p>
+      <h1 id="vd-h1" class="h-kop h-h1">
+        {tonen(c.h1).map((r, i) => <span class="h-regel" style={`--d:${i + 1}`}><span class:list={['h-regel-in', i === 0 && 'l']}>{r}</span></span>)}
+      </h1>
+      <p class="h-lede h-op" style="--d:3">{c.lead}</p>
+      <p class="h-acties h-op" style="--d:4">
+        <a class="h-knop h-knop-inkt" href="#looks">{c.kiesCta}<span class="o" set:html={ik('rechts')} /></a>
+        <a class="h-knop h-knop-lijn" href={lp('/pricing')}>{c.ctaPrices}</a>
+      </p>
+      <ul class="h-feiten h-vd-feiten h-op" style="--d:5" role="list">
+        {feiten.map(([sterk, rest], i) => <li><i set:html={ik((['film', 'klok', 'check'] as const)[i] || 'check')} /><span><b>{sterk}</b> {rest}</span></li>)}
+      </ul>
+      <p class="h-dienst-wacht h-op" style="--d:6">{c.queueNote}</p>
+    </div>
+    <div class="h-open-beeld h-op" style="--d:3">
+      <HalLaptop lang={lang} sets={['video']} />
+    </div>
+  </section>
+
+  {/* ── 2 · DE SOORTEN ── id="looks" voor de knop bovenaan ─────────────── */}
+  <section class="h-sec h-dienst-looks" id="looks" aria-labelledby="vd-looks">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{H.kindsPil}</span></p>
+        <h2 id="vd-looks" class="h-kop h-h2"><span class="l">{H.kinds[0]}</span> {H.kinds[1]}</h2>
+      </div>
+      <p class="h-pr-kopzin h-vd-levert">{H.levertL} {c.levert} {H.altijd}</p>
+    </header>
+    <ul class="h-st-looks h-vd-looks" role="list">
+      {vast.map((s: any, i: number) => (
+        <li class="h-st-look h-in" style={`--d:${i}`}>
+          {opAanvraag ? (
+            <div class="h-st-beeld h-vd-klip" aria-hidden="true">
+              <span class="h-vd-klip-in">
+                <span class="h-cirkel h-cirkel-wit" set:html={ik('speel')} />
+                <span class="h-vd-klip-t">{PLAAT(s.slug)[0]}</span>
+                <span class="h-vd-klip-m">{PLAAT(s.slug)[1]}</span>
+              </span>
+            </div>
+          ) : (
+            <a class="h-st-beeld" href={lp(`${basis}/video/${s.slug}`)} aria-hidden="true" tabindex="-1">
+              <img src={posters[s.slug].src} alt="" width={posters[s.slug].w} height={posters[s.slug].h} loading="lazy" decoding="async" />
+            </a>
+          )}
+          <div class="h-st-tekst">
+            <h3 class="h-st-naam">{s.name}</h3>
+            <p class="h-st-zin">{s.tagline}</p>
+            <p class="h-vd-desc">{s.cardDesc}</p>
+            <p class="h-st-tarief"><b>{kindPrice(s.slug)}</b></p>
+            <p class="h-st-wegen">
+              {opAanvraag && (s.slug === 'motion' || s.slug === 'lifestyle')
+                ? <a class="h-knop h-knop-lijn h-knop-klein" href={lp(`${basis}/video/${s.slug}`)}>{nl ? `Ontdek ${s.name}` : `Explore ${s.name}`}</a>
+                : s.ctaExternal
+                  ? <a class="h-knop h-knop-inkt h-knop-klein" href={s.ctaHref} target="_blank" rel="noopener">{s.ctaLabel}<span class="o" set:html={ik('rechts')} /><NieuwTabblad lang={lang} /></a>
+                  : <a class="h-knop h-knop-inkt h-knop-klein" href={s.ctaHref}>{s.ctaLabel}<span class="o" set:html={ik('rechts')} /></a>}
+            </p>
+            {!(opAanvraag && (s.slug === 'motion' || s.slug === 'lifestyle')) && (
+              <p class="h-st-ook-links"><a class="h-st-meer" href={lp(`${basis}/video/${s.slug}`)}>{nl ? `Ontdek ${s.name}` : `Explore ${s.name}`}<span set:html={ik('pijl')} /></a></p>
+            )}
+          </div>
+        </li>
+      ))}
+    </ul>
+    {eigen && (
+      <ul class="h-dienst-extra" role="list">
+        <li class="h-dienst-eigen h-in">
+          <span class="h-cirkel h-cirkel-wit" aria-hidden="true" set:html={ik('plus')} />
+          <div>
+            <p class="h-dienst-extra-kop">{H.eigenKop} <span class="l">{eigen.name}.</span></p>
+            <p class="h-dienst-extra-zin">{eigen.tagline} <span class="h-dienst-extra-prijs">{c.quoted}</span></p>
+          </div>
+          <p class="h-dienst-extra-wegen">
+            <a class="h-knop h-knop-lijn h-knop-klein" href={eigen.ctaHref} target="_blank" rel="noopener">{eigen.ctaLabel}<NieuwTabblad lang={lang} /></a>
+            <a class="h-st-meer" href={lp(`${basis}/video/custom`)}>{H.eigenMeer}<span set:html={ik('pijl')} /></a>
+          </p>
+        </li>
+      </ul>
+    )}
+  </section>
+
+  {/* ── 3 · WAT JE KRIJGT, EN HOE JE VIDEO KOOPT ─────────────────────────── */}
+  <section class="h-sec h-vd-koop-sec" aria-labelledby="vd-clean">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{H.koopPil}</span></p>
+        <h2 id="vd-clean" class="h-kop h-h2"><span class="l">{H.clean[0]}</span> {H.clean[1]}</h2>
+      </div>
+    </header>
+    <div class="h-vd-twee">
+      <div class="h-vd-krijg h-in">
+        <ul class="h-bm-vink" role="list">
+          {c.clean.map((li) => <li><i set:html={ik('check')} /><span>{li}</span></li>)}
+        </ul>
+        <p class="h-ls-waar"><span>{c.whereH}</span> {c.where.map(([w]) => <span class="h-chip h-chip-nevel">{w}</span>)}</p>
+        <p class="h-vd-noot" set:html={c.modelNote} />
+      </div>
+      <div class="h-vd-kopen h-in" style="--d:1">
+        <h3 class="h-kop h-h3">{c.buyH}</h3>
+        <p set:html={c.buyFixed} />
+        <p set:html={c.buyQuote} />
+        {!opAanvraag && <p class="h-vd-vast"><b>{c.buyFlatH}</b> {c.buyFlat}</p>}
+        <p class="h-acties">
+          <a class="h-knop h-knop-inkt" href={lp('/start/video')}>{c.buyCta}<span class="o" set:html={ik('rechts')} /></a>
+          <a class="h-knop h-knop-lijn" href={c.waQuote} target="_blank" rel="noopener">{c.waQuoteLabel}<NieuwTabblad lang={lang} /></a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  {/* ── 4 · VRAGEN ─────────────────────────────────────────────────────────── */}
+  <HalVragen lang={lang} id="vd-faq" dienst="video" faqs={c.faqs} />
+
+  {/* ── 5 · HET SLOT ── een licht vlak; de proef is een beeld en geen clip. */}
+  <section class="h-sec h-lk-slot-sec" aria-labelledby="vd-slot">
+    <div class="h-lk-slot h-in">
+      <span class="h-korrel" aria-hidden="true"></span>
+      <p class="h-pil h-pil-wit"><span>{H.slotPil}</span></p>
+      <h2 id="vd-slot" class="h-kop h-h2"><span class="l">{tonen(c.ctaH)[0]}</span> {tonen(c.ctaH)[1]}</h2>
+      <p class="h-vd-slot-zin">{c.ctaP}</p>
+      <p class="h-acties">
+        <a class="h-knop h-knop-inkt" href={lp('/start/video')}>{c.ctaPrimary}<span class="o" set:html={ik('rechts')} /></a>
+        <a class="h-knop h-knop-lijn" href={lp('/contact')}>{c.ctaSecondary}</a>
+      </p>
+    </div>
+  </section>
+</div>
+<HalBeweging />

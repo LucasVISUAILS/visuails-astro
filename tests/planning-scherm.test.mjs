@@ -1,3 +1,4 @@
+// RONDE 10 · BLIJFT (punt 9.11, 8 oktober 2026): gaat over vaste leverdata en /admin/planning, niet over de abonnementsweek.
 /*
  * ═══════════════════════════════════════════════════════════════════════════════
  * DE PLANNING EN HET BREDE DASHBOARD — 3 september 2026

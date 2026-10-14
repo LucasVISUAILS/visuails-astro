@@ -131,8 +131,8 @@ is made, not what is bought.
 
 We are not a photo studio and we do not run shoots either. There is no shoot
 day, no crew and no location. Every visual is made and corrected by us and
-checked by our image editors before it is delivered, and every delivered file carries a
-machine-readable AI provenance tag.
+checked before it is delivered, and the photos we deliver carry a
+machine-readable AI marking (IPTC DigitalSourceType).
 
 ## Prices
 

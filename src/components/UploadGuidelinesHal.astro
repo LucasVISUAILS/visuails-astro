@@ -1,0 +1,241 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — /upload-guidelines in de hal (de fotogids). 13 oktober 2026,
+ * afvinklijst 13 (v13-volgende = a: de leespagina's als volgende groep).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Dezelfde raad als UploadGuidelinesPage.astro, uit dezelfde bron:
+ * src/data/fotogids.js (die ook het A4 en de checklistmail vult). Wat in de
+ * tekst anders is, staat in kladblok/TEKSTEN-LEESPAGINAS.md.
+ *
+ *   kop      pil, de kop in twee tonen, de zin, de regel naar de gidsen,
+ *            de knoppen en het A4
+ *   paren    welke telefoonfoto welk beeld wordt: de vier echte paren van de
+ *            catalogset uit laptopSlides.js, zonder de laptop eromheen
+ *   blokken  licht, ondergrond, kader, close-up (nevelkaarten)
+ *   vakken   wat we per product vragen, in de lichte band, met de regel over
+ *            producttrouw (pricing.js) eronder
+ *   vragen   de vijf vragen voor je uploadt, om af te vinken
+ *   slot     de proef (HalProef)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/hal.css';
+/* PRODUCTTROUW staat in pricing.js: deze zin wordt op drie plekken gesteld en
+   tests/promises.test.mjs let erop dat hij nergens anders luidt. */
+import { TEST_SAMPLE, producttrouwDelen } from '../data/pricing.js';
+import { fotogids } from '../data/fotogids.js';
+import { laptopSlides } from '../data/laptopSlides.js';
+import { localizedPath } from '../i18n/ui.js';
+import HalProef from './HalProef.astro';
+import HalBeweging from './HalBeweging.astro';
+import KlantKnop from './KlantKnop.astro';
+import KopBeeld from './KopBeeld.astro';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+const sample = TEST_SAMPLE[lang];
+const gids = fotogids(lang);
+/* De catalogset in laptopSlides.js is ECHT: elk geleverd beeld is gemaakt van
+   de telefoonfoto ernaast (zie de noot boven in dat bestand). Alleen die. */
+const cat = laptopSlides(lang).catalog;
+const trouw = producttrouwDelen(lang);
+const DRIE = (n: number) => String(n).padStart(2, '0');
+
+const c = nl ? {
+  etiket: 'De beste resultaten halen',
+  hub: ['Lees dit vóór je bestelt. Meer in de ', 'gidsen', '.'],
+  ctaStart: 'Start een bestelling',
+  pdf: 'Download de fotogids als A4 (pdf)',
+  parenPil: 'Van foto naar beeld',
+  parenKop: ['Welke foto', 'welk beeld wordt.'],
+  parenZin: 'Bij elk geleverd beeld staat de telefoonfoto waar het uit gemaakt is.',
+  jouw: 'Jouw foto',
+  geleverd: 'Geleverd',
+  parenMeer: 'Meer over de catalogset',
+  blokkenKop: ['Let op', 'vier dingen.'],
+  setKop: ['Wat we per product', 'vragen.'],
+  vragenPil: 'Klaar om te sturen',
+  vragenKop: ['Voor je uploadt:', 'vijf vragen.'],
+  vragenZin: 'Vink ze af terwijl je je foto’s naloopt.',
+  slotKop: ['Klaar om te sturen?', 'Probeer één product, voor'] as [string, string],
+  slotAlt: 'Of start een bestelling',
+} : {
+  etiket: 'Getting the best results',
+  hub: ['Read this before you order. More in the ', 'guides', '.'],
+  ctaStart: 'Start an order',
+  pdf: 'Download the guide as one A4 (pdf)',
+  parenPil: 'From photo to image',
+  parenKop: ['Which photo', 'becomes which image.'],
+  parenZin: 'Each delivered image shows the phone photo it was made from.',
+  jouw: 'Your photo',
+  geleverd: 'Delivered',
+  parenMeer: 'More about the catalog set',
+  blokkenKop: ['Mind', 'four things.'],
+  setKop: ['What we ask for', 'per product.'],
+  vragenPil: 'Ready to send',
+  vragenKop: ['Before you upload:', 'five questions.'],
+  vragenZin: 'Tick them off as you go through your photos.',
+  slotKop: ['Ready to send?', 'Start with one product, for'] as [string, string],
+  slotAlt: 'Or start an order',
+};
+
+const ICOON = {
+  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
+  pijl: '<path d="M4.5 11.5l7-7M5.5 4.5h6v6"/>',
+  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
+  schild: '<path d="M8 1.8l5 2v3.6c0 3.1-2.1 5.6-5 6.8-2.9-1.2-5-3.7-5-6.8V3.8z"/><path d="M5.6 8.1l1.7 1.6 3.1-3.3"/>',
+  omlaag: '<path d="M8 2.5v8M4.5 7.5L8 11l3.5-3.5M3 13.5h10"/>',
+};
+const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+/* Het beeld in de opening: afvinklijst 20 (v20-opening a), live sinds afvinklijst 21. Zie KopBeeld.astro. */
+const BEELD = {
+  soort: 'paar' as const, verhouding: '4 / 5',
+  fotos: [
+    { src: '/img/ba2-voor-front.webp', alt: nl ? 'Een telefoonfoto van de voorkant van een roze jeans, op de vloer' : 'A phone photo of the front of pink jeans, on the floor', pil: nl ? 'Jouw foto' : 'Your photo' },
+    { src: '/img/ba2-na-front.webp', alt: nl ? 'De catalogfoto van de voorkant die ervan gemaakt is' : 'The catalog photo of the front that was made from it', pil: nl ? 'Ons beeld' : 'Our image' },
+  ],
+};
+/* De kop van de pagina staat sinds afvinklijst 21 hier en niet meer in fotogids.js: met het beeld ernaast is hij
+   korter. Het A4 van de fotogids houdt zijn eigen kop. */
+const H1 = nl ? ['Zo maak je', 'goede productfoto’s.'] : ['How to shoot', 'the photos we need.'];
+---
+<div class="h-pagina h-ug">
+
+  {/* ── 1 · DE KOP ─────────────────────────────────────────────────────────── */}
+  <header class="h-paginakop h-ug-kop met-kopbeeld">
+    <div class="h-paginakop-tekst">
+      <p class="h-pil h-op" style="--d:0"><span>{c.etiket}</span></p>
+      <h1 class="h-kop h-h1 h-op" style="--d:1"><span class="l">{H1[0]}</span> <span>{H1[1]}</span></h1>
+      <p class="h-lede h-op" style="--d:2">{gids.intro}</p>
+      {/* De regel naar de gidsen: wie een gids leest, wil de rest ervan ook. */}
+      <p class="h-ug-hub h-op" style="--d:2">{c.hub[0]}<a href={lp('/guides')}>{c.hub[1]}</a>{c.hub[2]}</p>
+      <p class="h-acties h-op" style="--d:3">
+        <a class="h-knop h-knop-inkt" href={lp('/test-sample')} data-vis-uit>{sample.cta}<span class="o" set:html={ik('rechts')} /></a>
+        <a class="h-knop h-knop-lijn" href={lp('/start')} data-vis-uit>{c.ctaStart}</a>
+        {/* Voor een klant (k-klant-vervang): de proef was hier de HOOFDknop, dus
+            krijgt hij er een hoofdknop voor terug — "Bestel opnieuw met je look",
+            of "Start een bestelling" als er nog niets geleverd is. */}
+        <KlantKnop lang={lang} soort="herbestel-of-start" toon="inkt" pijl />
+        <KlantKnop lang={lang} soort="start-naast" />
+      </p>
+      {/* `download`: het A4 landt in de downloadmap, niet in een nieuw tabblad. */}
+      <a class="h-link h-ug-pdf h-op" style="--d:4" href={gids.pdf} download>{c.pdf}<span class="h-cirkel h-cirkel-mini" aria-hidden="true" set:html={ik('omlaag')} /></a>
+    </div>
+    <KopBeeld {...BEELD} />
+  </header>
+
+  {/* ── 2 · WELKE FOTO WELK BEELD WORDT ──────────────────────────────────────
+      Vóór de regels: wie eerst ziet waar een foto voor dient, leest een lijst
+      eisen als uitleg en niet als drempel. */}
+  <section class="h-sec h-ug-paren-sec" aria-labelledby="ug-paren">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{c.parenPil}</span></p>
+        <h2 id="ug-paren" class="h-kop h-h2"><span class="l">{c.parenKop[0]}</span> {c.parenKop[1]}</h2>
+      </div>
+      <p class="h-ug-kopzin">{c.parenZin}</p>
+    </header>
+    <ol class="h-ug-paren" role="list">
+      {cat.beelden.map((b, i) => (
+        <li class="h-ug-paar h-in" style={`--d:${i % 2}`}>
+          <h3 class="h-ug-paar-naam">{b.naam}</h3>
+          <div class="h-ug-paar-beelden">
+            <figure class="h-ug-fon">
+              <img src={b.fon} width="760" height="1013" alt={b.fonAlt} loading="lazy" decoding="async" />
+              <figcaption>{c.jouw}</figcaption>
+            </figure>
+            <span class="h-cirkel h-cirkel-mini h-cirkel-wit h-ug-pijl" aria-hidden="true" set:html={ik('rechts')} />
+            <figure class="h-ug-na">
+              <img src={b.src} width="760" height="760" alt={b.alt} loading="lazy" decoding="async" />
+              <figcaption>{c.geleverd}</figcaption>
+            </figure>
+          </div>
+        </li>
+      ))}
+    </ol>
+    <p class="h-ug-meer h-in"><a class="h-link" href={cat.href}>{c.parenMeer}<span class="h-cirkel h-cirkel-mini" aria-hidden="true" set:html={ik('pijl')} /></a></p>
+  </section>
+
+  {/* ── 3 · DE VIER BLOKKEN ── dezelfde zinnen als het A4 en de checklistmail.
+      Geen kruisjes en geen "niet": de gids leest als raad, niet als cijfer. */}
+  <section class="h-sec h-ug-blokken-sec" aria-labelledby="ug-blokken">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{gids.etiket}</span></p>
+        <h2 id="ug-blokken" class="h-kop h-h2"><span class="l">{c.blokkenKop[0]}</span> {c.blokkenKop[1]}</h2>
+      </div>
+    </header>
+    <ol class="h-ug-blokken" role="list">
+      {gids.blokken.map((b, i) => (
+        <li class="h-ug-blok h-in" style={`--d:${i}`}>
+          <p class="h-nr" aria-hidden="true"><b>{DRIE(i + 1)}</b><i></i><span>/ {DRIE(gids.blokken.length)}</span></p>
+          <h3 class="h-ug-blok-kop">{b.kop}</h3>
+          <ul class="h-bm-vink" role="list">
+            {b.regels.map((r) => <li><i set:html={ik('check')} /><span>{r}</span></li>)}
+          </ul>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  {/* ── 4 · PER PRODUCT ── de vakken uit shots.js, met het etiket en de regel
+      die het formulier gebruikt; eronder wat we met die foto's doen. */}
+  <section class="h-sec h-ug-set-sec" aria-labelledby="ug-set">
+    <div class="h-st-band h-in">
+      <span class="h-korrel" aria-hidden="true"></span>
+      <header class="h-st-band-kop">
+        <p class="h-pil h-pil-wit"><span>{gids.vakkenKop}</span></p>
+        <h2 id="ug-set" class="h-kop h-h2"><span class="l">{c.setKop[0]}</span> {c.setKop[1]}</h2>
+      </header>
+      <ol class="h-st-stappen h-ug-vakken" role="list">
+        {gids.vakken.map((v, i) => (
+          <li class="h-st-stap" style={`--d:${i}`}>
+            <p class="h-nr" aria-hidden="true"><b>{DRIE(i + 1)}</b><i></i><span>/ {DRIE(gids.vakken.length)}</span></p>
+            <span class="h-st-stap-naam">{v.naam}</span>
+            <span class:list={['h-ug-label', v.nodig ? 'is-nodig' : 'is-los']}>{v.label}</span>
+            <span class="h-ug-vak-zin">{v.regel}{v.zonder && <strong>{v.zonder}</strong>}</span>
+          </li>
+        ))}
+      </ol>
+      {/* Onder de vakken en niet erboven: eerst wat we vragen, dan wat we
+          ermee doen. Omgekeerd leest het als een garantie vooraf. */}
+      <div class="h-bm-check h-ug-trouw">
+        <span class="h-bm-check-i" aria-hidden="true" set:html={ik('schild')} />
+        <div>
+          <h3 class="h-bm-ruil-kop">{trouw[0]}</h3>
+          <p class="h-bm-zin">{trouw[1].trim()}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* ── 5 · DE VIJF VRAGEN ── het laatste wat je leest voor het formulier, net
+      als onderaan het A4. Echte vinkjes, zonder script en zonder opslag. */}
+  <section class="h-sec h-ug-vragen-sec" aria-labelledby="ug-vragen">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{c.vragenPil}</span></p>
+        <h2 id="ug-vragen" class="h-kop h-h2"><span class="l">{c.vragenKop[0]}</span> {c.vragenKop[1]}</h2>
+      </div>
+      <p class="h-ug-kopzin">{c.vragenZin}</p>
+    </header>
+    <ol class="h-ug-vragen" role="list">
+      {gids.vragen.map((q, i) => (
+        <li class="h-in" style={`--d:${i}`}>
+          <label class="h-ug-vraag">
+            <input type="checkbox" />
+            <span class="h-ug-vakje" aria-hidden="true" set:html={ik('check')} />
+            <span class="h-ug-vraag-t">{q}</span>
+          </label>
+        </li>
+      ))}
+    </ol>
+    <p class="h-ug-meer h-in"><a class="h-link" href={gids.pdf} download>{c.pdf}<span class="h-cirkel h-cirkel-mini" aria-hidden="true" set:html={ik('omlaag')} /></a></p>
+  </section>
+
+  {/* ── 6 · HET SLOT: DE PROEF ───────────────────────────────────────────── */}
+  <HalProef lang={lang} id="ug-slot" kop={c.slotKop} zin={sample.line} alt={{ label: c.slotAlt, href: '/start' }} />
+</div>
+<HalBeweging />

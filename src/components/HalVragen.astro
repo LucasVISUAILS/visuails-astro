@@ -1,0 +1,39 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — de vragen onderaan een dienstpagina, in de hal.
+ * 12 oktober 2026, afvinklijst 7 (groepen catalog en lifestyle).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Hetzelfde als Vragen.astro: de eerste vier vragen van de dienst (faq.js, die
+ * schema.js ook als FAQPage uitgeeft), open te klappen met Disclose, en een
+ * link naar de rest op /faq#<dienst>. Alleen de vorm is die van de hal: een
+ * sectiekop met pil en tweetonige kop, de vragen als nevelkaarten.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+import Disclose from './Disclose.astro';
+import { localizedPath } from '../i18n/ui.js';
+import { SERVICE_FAQ_NAMES } from '../data/faq.js';
+
+interface Props { lang: 'en' | 'nl'; id: string; dienst: keyof typeof SERVICE_FAQ_NAMES; faqs: { q: string; a: string }[]; }
+const TOON = 4;
+const { lang, id, dienst, faqs } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+const naam = SERVICE_FAQ_NAMES[dienst][lang];
+const rest = faqs.length - TOON;
+const meer = rest > 0
+  ? (nl ? `Nog ${rest} ${rest === 1 ? 'vraag' : 'vragen'} over ${naam}` : `${rest} more ${rest === 1 ? 'question' : 'questions'} about ${naam}`)
+  : (nl ? 'Alle vragen' : 'All questions');
+const PIJL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5l7-7M5.5 4.5h6v6"/></svg>';
+---
+<section class="h-sec h-vragen-sec" aria-labelledby={id}>
+  <header class="h-sec-kop h-in">
+    <div>
+      <p class="h-pil"><span>{nl ? 'Vragen' : 'Questions'}</span></p>
+      <h2 id={id} class="h-kop h-h2"><span class="l">{nl ? 'Vragen over' : 'Questions about'}</span> {naam}.</h2>
+    </div>
+    <a class="h-link" href={`${lp('/faq')}#${dienst}`}>{meer}<span class="h-cirkel h-cirkel-klein" aria-hidden="true" set:html={PIJL} /></a>
+  </header>
+  <div class="h-vragen-lijst h-in">
+    {faqs.slice(0, TOON).map((f) => <Disclose summary={f.q} tone="plain"><p>{f.a}</p></Disclose>)}
+  </div>
+</section>

@@ -184,6 +184,20 @@ body.studio a:not(.btn) { color: inherit; }
 /* Het woordmerk (19 september 2026). Wit op het paneel — KLEURENSCHEMA,
    "Bovenbalk op het zwarte paneel". */
 .st-merk { display: inline-flex; width: 104px; height: 18px; color: var(--sd-side-ink-1); }
+/* ── HET MERK KLAPT MEE, 14 OKTOBER 2026 ────────────────────────────────────
+   Lucas: *"als je de zijbalk in studio dichtklapt dat het logo van het
+   woordlogo naar het V logo met een animatie smooth verandert."* De V ÍS de
+   eerste letter van het woordmerk (src/data/wordmarkPath.js), dus er wordt niets
+   verwisseld: het woordmerk staat in een venster dat dichtschuift tot alleen de
+   V erin past (x 0–740 van 4651,24, de I begint op 826,7), en tegelijk groter
+   wordt, van 18 naar 26 px hoog. De maat is één getal, --merk-h; de breedte van
+   het venster volgt eruit.
+   De beweging zelf staat onderaan dit bestand (DE OVERGANG): Studio heeft geen
+   script, dus het is een view transition tussen de twee pagina's. */
+.st-merk { --merk-h: 18px; display: block; flex: none; overflow: hidden; height: var(--merk-h); width: calc(var(--merk-h) * 4651.24 / 813.83); view-transition-name: st-merk; }
+/* De breedte uitgeschreven en max-width uit: global.css zet svg op max-width 100%,
+   en dan perste het venster het hele woord in de breedte van de V. */
+.st-merk .st-woordmerk { display: block; flex: none; height: var(--merk-h); width: calc(var(--merk-h) * 4651.24 / 813.83); max-width: none; }
 .st-glyph, .st-woordmerk { width: 100%; height: 100%; fill: currentColor; }
 .st-sub { font-size: .75rem; color: var(--sd-side-ink-3); letter-spacing: 0; }
 .st-mob { display: none; }
@@ -225,7 +239,9 @@ body.studio .st-navlink.is-actief { background: var(--sd-side-actief); color: va
    niet verkleind tot iets onleesbaars — het verdwijnt; de bovenbalk zegt waar
    je bent. */
 .is-dicht .st-side { padding-inline: .6rem; }
-.is-dicht .st-side-kop { visibility: hidden; }
+.is-dicht .st-side-kop { padding-inline: 0; align-items: center; }
+.is-dicht .st-sub { display: none; }
+.is-dicht .st-merk { --merk-h: 26px; width: calc(var(--merk-h) * 740 / 813.83); }
 .is-dicht .st-navlink span, .is-dicht .st-wie-tekst, .is-dicht .st-uit span { display: none; }
 .is-dicht .st-navlink, .is-dicht .st-uit, .is-dicht .st-wie { justify-content: center; padding: 0; }
 
@@ -424,6 +440,15 @@ a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
 }
 .st-bestelling-kop::-webkit-details-marker { display: none; }
 .st-bestelling-kop .st-ref { font-family: var(--font-body); font-size: .875rem; margin: 0; line-height: 1.3; letter-spacing: .01em; }
+/* Ronde B (§28.2): "Credits" naast het kenmerk — betaald met abonnementscredits.
+   Omlijnd in de accenttekstkleur en zonder statuskleur: het zegt hoe er betaald
+   is, niet waar de bestelling staat. */
+.credits-pil {
+  display: inline-flex; align-items: center; min-height: 22px; padding: 0 .55rem;
+  border-radius: var(--r-pill, 999px); box-shadow: inset 0 0 0 1px currentColor;
+  color: var(--st-accent-tekst); font-size: .75rem; font-weight: 600; letter-spacing: .02em;
+  line-height: 1; white-space: nowrap;
+}
 .st-bestelling-meta { flex: 1 1 auto; display: flex; flex-wrap: wrap; gap: .1rem .4rem; font-size: .875rem; color: var(--ink-3); min-width: 0; }
 .st-bit + .st-bit::before { content: "·"; margin-right: .4rem; color: var(--ink-4); }
 .st-bit-money { color: var(--st-clay-tekst); font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -433,10 +458,72 @@ a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
 .st-mini-stip.is-done { background: var(--ink-3); }
 .st-mini-stip.is-now { background: var(--st-accent-lijn); outline: 2px solid var(--accent-tint); outline-offset: 1px; }
 .st-chevron { width: 8px; height: 8px; border-right: 1.5px solid var(--ink-3); border-bottom: 1.5px solid var(--ink-3); transform: rotate(45deg); margin: 0 .3rem 0 .2rem; transition: transform var(--dur-1) var(--ease); }
-.st-bestelling[open] .st-chevron { transform: rotate(-135deg); margin-top: .3rem; }
+.st-bestelling-klap[open] .st-chevron { transform: rotate(-135deg); margin-top: .3rem; }
 .st-bestelling-kop:hover { background: var(--ghost); }
-.st-bestelling[open] .st-bestelling-kop { border-bottom: 1px solid var(--line); }
+.st-bestelling-klap[open] .st-bestelling-kop { border-bottom: 1px solid var(--line); }
 .st-bestelling-body { padding: 1.1rem 1.25rem 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
+
+/* ── DE NU-ZIN, DE TWEE DATUMS EN DE ENE KNOP — 8 oktober 2026 (punt 2.03) ──
+   De kaart is een <article> met daarin de <details>; de Nu-zin staat in de kop
+   (zichtbaar dicht én open), de knop onder de dichte kaart. Klapt de kaart
+   open, dan staat de actie zelf bovenaan de inhoud en verdwijnt de knop —
+   zonder script, met de broer-selector. De "Nu:"-regel van de tijdlijn zegt in
+   de open kaart hetzelfde als de kop, dus die valt hier weg. */
+.st-nu { flex: 1 0 100%; display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
+.st-nu-zin { font-size: .875rem; line-height: 1.45; color: var(--ink-1); }
+.st-nu-datum { font-size: .8125rem; line-height: 1.4; color: var(--ink-2); }
+.st-nu-knop { padding: 0 1.25rem 1rem; margin-top: -.25rem; }
+.st-nu-knop form { margin: 0; }
+.st-bestelling-klap[open] + .st-nu-knop { display: none; }
+.st-bestelling .st-flow-nu { display: none; }
+
+/* ── "WAT NU" BOVENAAN HET OVERZICHT — 8 oktober 2026 (punt 3.01) ─────────
+   De Nu-zin, de twee datums en hoogstens twee knoppen op de overzichtskaart
+   (Bestelkaart.astro); daaronder "En nog 1 bestelling: …". */
+.st-watnu { display: flex; flex-direction: column; gap: .5rem; }
+.st-watnu-zin { margin: 0; font-size: .9375rem; line-height: 1.5; color: var(--ink-1); max-width: 72ch; }
+.st-watnu-datums { margin: 0; display: flex; flex-wrap: wrap; gap: .15rem 1rem; font-size: .8125rem; line-height: 1.45; color: var(--ink-2); }
+.st-watnu-knoppen { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; margin-top: .25rem; }
+.st-watnu-knoppen form { margin: 0; }
+.st-nogmeer { margin-top: .75rem; }
+
+/* Het afrondblok op de open kaart (punt 3.05): map met bewaardatum, daaronder
+   het tevredenheidsblok. Zonder afronding doet de omhulling niets. */
+.st-afrond-niet { display: contents; }
+.st-afrond { display: flex; flex-direction: column; gap: 1rem; scroll-margin-top: 5rem; }
+.st-afrond .st-tevreden .fb { margin-top: 0; }
+.st-map-datum { margin: .3rem 0 0; font-size: .8125rem; font-weight: 600; color: var(--ink-1); }
+/* "Bestel met dezelfde look" (punt 3.07). */
+.st-herbestel { display: flex; flex-direction: column; align-items: flex-start; gap: .4rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.st-herbestel h3 { margin: 0; font-size: .9375rem; }
+.st-herbestel .btn { white-space: normal; text-align: left; height: auto; min-height: 32px; padding-block: .35rem; }
+.st-herbestel-regel { margin: 0; font-size: .8125rem; font-weight: 600; color: var(--ink-1); }
+@media (max-width: 640px) { .st-herbestel .btn { width: 100%; justify-content: center; text-align: center; } }
+/* k401 (11 oktober 2026): "Ook als PNG" / "Ook als WebP" onder de map. Klein en
+   stil: jpg is de standaard, dit is voor wie iets anders nodig heeft. */
+.st-formaten { display: flex; flex-direction: column; gap: .5rem; margin: 0; }
+.st-formaten-uitleg { margin: 0; font-size: .8125rem; color: var(--ink-2); line-height: 1.45; }
+.st-formaten-kop { font-weight: 600; color: var(--ink-1); }
+.st-formaten-knoppen { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.st-formaat-staat { display: inline-flex; align-items: center; min-height: 32px; padding: .3rem .7rem; border: 1px dashed var(--line-ui); border-radius: var(--sd-r); font-size: .8125rem; font-weight: 600; color: var(--ink-1); }
+.st-formaat-staat.is-klaar { border-style: solid; }
+.st-formaten-melding { margin: 0; }
+.st-formaten-melding.is-warn { color: var(--st-clay-tekst); }
+.st-nogmeer-kop { margin: 0; padding: .8rem 1.25rem 0; font-size: .8125rem; font-weight: 600; color: var(--ink-2); }
+.st-nogmeer .st-lopend li { grid-template-columns: auto minmax(0, 1fr) auto; }
+.st-nogmeer .st-lopend .st-meta { white-space: normal; }
+@media (max-width: 640px) {
+  .st-nogmeer-kop { padding-inline: 1rem; }
+  .st-nogmeer .st-lopend li { grid-template-columns: auto auto; }
+}
+
+/* Afgerond (N): ingeklapt onder de lopende bestellingen. */
+.st-afgerond { margin-top: .4rem; }
+.st-afgerond > summary { cursor: pointer; list-style: none; padding: .6rem 0; font-size: .9375rem; font-weight: 600; color: var(--ink-1); }
+.st-afgerond > summary::-webkit-details-marker { display: none; }
+.st-afgerond > summary::before { content: '\203A'; display: inline-block; margin-right: .5rem; transition: transform .15s; }
+.st-afgerond[open] > summary::before { transform: rotate(90deg); }
+.st-afgerond[open] > .st-bestellingen { margin-top: .5rem; }
 .st-gesloten { padding-top: .2rem; }
 
 /* De producten: elk een klapper met omslag, naam, feiten. */
@@ -511,13 +598,53 @@ a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
 .st-ronde.is-form .btn { align-self: flex-start; margin-top: .3rem; }
 .st-fotos .btn { align-self: flex-start; }
 .st-fotos-kies input[type="file"] { max-width: 100%; font-size: .875rem; color: var(--ink-2); }
+
+/* ── NASTUREN PER VAK — 8 oktober 2026 (punt 2.05) ──────────────────────────
+   Per product de vier vakken: gevuld met een kleine weergave, of leeg met een
+   eigen bestandsveld. Een leeg verplicht vak krijgt een gestippelde rand in de
+   revisiekleur, met de woorden "Nog niet ontvangen" erbij: kleur alleen zegt
+   niets tegen wie hem niet ziet. Geen grijs vlak voor een leeg vak. */
+.st-vakform { gap: .8rem; }
+.st-vakform > h3 { margin-bottom: 0; }
+.st-ontbreekt { padding: .75rem .9rem; border-radius: var(--r-sm); border: 1px solid color-mix(in srgb, var(--st-clay-tekst) 55%, transparent); background: var(--surface); }
+.st-ontbreekt .st-ontbreekt-h { margin: 0 0 .3rem; font-size: .875rem; font-weight: 600; color: var(--st-clay-tekst); }
+.st-ontbreekt ul { margin: 0 0 .4rem; padding-left: 1.1rem; font-size: .875rem; color: var(--ink-1); display: flex; flex-direction: column; gap: .15rem; }
+.st-vak-product { margin: 0; padding: 0; border: 0; min-width: 0; display: flex; flex-direction: column; gap: .5rem; }
+.st-vak-product + .st-vak-product { margin-top: .5rem; }
+.st-vak-legend { padding: 0; margin-bottom: .45rem; font-size: .875rem; font-weight: 600; color: var(--ink-1); }
+.st-vakken { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .6rem; }
+.st-vak { display: flex; flex-direction: column; gap: .3rem; min-width: 0; padding: .55rem .6rem; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); }
+.st-vak.is-mist { border-style: dashed; border-color: var(--st-clay-tekst); }
+.st-vak-beeld { display: block; width: 56px; aspect-ratio: 4 / 5; border-radius: 4px; overflow: hidden; border: 1px solid var(--line); }
+.st-vak-beeld img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.st-vak-ext { display: grid; place-items: center; height: 100%; font-size: .75rem; font-weight: 600; color: var(--ink-2); }
+.st-vak-naam { font-size: .8125rem; font-weight: 600; color: var(--ink-1); }
+.st-vak-staat { font-size: .75rem; color: var(--ink-2); }
+.st-vak.is-mist .st-vak-staat { color: var(--st-clay-tekst); font-weight: 600; }
+.st-vak-veld { width: 100%; max-width: 100%; font-size: .75rem; color: var(--ink-2); }
+.st-vak-ander { display: flex; flex-direction: column; gap: .3rem; font-size: .8125rem; color: var(--ink-2); }
+.st-vak-compleet > summary { cursor: pointer; font-size: .8125rem; color: var(--ink-2); padding: .3rem 0; }
+.st-vak-compleet[open] > summary { margin-bottom: .6rem; }
+@media (max-width: 56.25em) {
+  .st-vakken { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+/* Op een telefoon één vak per regel: naam en stand naast de kleine weergave,
+   het bestandsveld eronder op de volle breedte. In twee kolommen knipte de
+   browser "Geen bestand gekozen" af tot één letter. */
+@media (max-width: 30em) {
+  .st-vakken { grid-template-columns: minmax(0, 1fr); gap: .45rem; }
+  .st-vak { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 0; row-gap: .2rem; }
+  .st-vak-beeld { grid-row: 1 / span 2; width: 40px; margin-right: .7rem; }
+  .st-vak-naam, .st-vak-staat { grid-column: 2; }
+  .st-vak-veld { grid-column: 1 / -1; margin-top: .2rem; }
+}
 .st-ronde-waarschuwing { color: var(--ink-1) !important; font-weight: 500; }
 .st-beleid details { margin-top: .4rem; }
 .st-beleid summary { cursor: pointer; font-size: .8125rem; color: var(--ink-3); }
 .st-beleid ul { margin: .5rem 0 0; padding-left: 1.1rem; font-size: .8125rem; color: var(--ink-2); display: flex; flex-direction: column; gap: .3rem; }
 
 @media (max-width: 56.25em) {
-  .st-bestelling-kop, .st-bestelling-body { padding-inline: 1rem; }
+  .st-bestelling-kop, .st-bestelling-body, .st-nu-knop { padding-inline: 1rem; }
   .st-product-kolommen, .st-kanten { grid-template-columns: 1fr; }
   .st-product-kolom.is-ref, .st-kant:last-child { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 1rem; }
   .st-beelden { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -890,7 +1017,8 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
 .st-dag.is-start { background: var(--st-done-fill); color: var(--st-done-ink); font-weight: 600; }
 .st-dag.is-vandaag { box-shadow: inset 0 0 0 1.5px var(--ink-1); color: var(--ink-1); }
 
-.st-uitleg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .9rem; }
+/* Twee blokken sinds ronde 10 (8 okt 2026): de vaste week als derde is weg. */
+.st-uitleg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9rem; }
 .st-uitleg-blok { gap: .6rem; }
 .st-uitleg-blok .st-weekstrip { max-width: none; margin-bottom: .4rem; }
 .st-uitleg-blok .st-lookrij { margin-bottom: .4rem; }
@@ -969,7 +1097,7 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
 
 /* ── HET INLOGSCHERM: ÉÉN KAART IN HET MIDDEN ────────────────────────────── */
 .st-kaartveld { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.5rem; padding: 2rem 1rem; box-sizing: border-box; }
-.st-merk-los { width: 124px; height: 21px; color: var(--ink-1); }
+.st-merk-los { --merk-h: 21.7px; color: var(--ink-1); } /* 124 px breed */
 .st-kaart { width: min(100%, 400px); box-sizing: border-box; background: var(--surface); border: 1px solid var(--line); border-radius: var(--sd-r-kaart); padding: 2rem; display: flex; flex-direction: column; gap: 1rem; }
 .st-kaart h1 { font-family: var(--font-body); font-weight: 600; font-size: 1.5rem; line-height: 1.2; letter-spacing: -.02em; color: var(--ink-1); margin: 0; }
 .st-kaart .st-lede { margin: 0; font-size: .875rem; color: var(--ink-2); }
@@ -1009,7 +1137,7 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
     padding: .6rem .75rem .75rem;
   }
   .st-side-kop { grid-area: kop; min-height: 40px; padding: 0 .25rem; flex-direction: row; align-items: center; justify-content: flex-start; visibility: visible; }
-  .st-merk { width: 96px; height: 16px; }
+  .st-merk, .is-dicht .st-merk { --merk-h: 16.8px; width: calc(var(--merk-h) * 4651.24 / 813.83); }
   .st-sub { display: none; }
   .st-mob { grid-area: mob; display: flex; align-items: center; gap: .35rem; }
   .st-mob form { margin: 0; }
@@ -1338,3 +1466,124 @@ a.st-kal-dag.is-kies:hover { background: var(--ghost); border-color: var(--ink-1
 .st-eyebrow { color: var(--ink-3); }
 body.studio .st-merk { color: var(--sd-side-ink-1); }
 body.studio .st-merk-los { color: var(--ink-1); }
+
+/* ══ DE ABONNEMENTSPAGINA ZONDER TABBLADEN — 8 oktober 2026 (punt 2.07) ══════
+   Saldo, twee bestelknoppen, maandset, creditboek, je plan. Geen script en geen
+   inline stijl; de status van een bestelling in het boek is de gedeelde pil
+   (.stand, global.css). Kleuren alleen uit de bestaande namen, zodat licht en
+   donker vanzelf kloppen. */
+.st-abo-stand { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem 1rem; }
+.st-abo-stand > p { margin: 0; flex: 1 1 22rem; }
+.st-abo-saldo { gap: .45rem; }
+.st-vlak .st-abo-getal { font-family: var(--font-body); font-weight: 600; font-size: 1.75rem; line-height: 1.15; letter-spacing: -.02em; color: var(--ink-1); margin: 0; font-variant-numeric: tabular-nums; }
+.st-vlak.is-leeg .st-abo-getal { color: var(--ink-2); }
+.st-vlak > .st-abo-vertaling { margin: 0; color: var(--ink-1); font-size: 1rem; }
+.st-abo-verval, .st-abo-nieuw { margin: 0; font-size: .875rem; }
+.st-vlak > .st-abo-verval.is-bijna { color: var(--st-clay-tekst); font-weight: 600; }
+/* Het spaarplafond (12 oktober 2026): "(je kunt er 360 sparen)" naast het
+   getal, kleiner en rustiger; en de zin "gebruik er vóór die dag …" in de
+   kleur van "bijna", want dan valt er iets weg. */
+.st-vlak .st-abo-getal .st-abo-spaar { font-size: .9375rem; font-weight: 500; letter-spacing: 0; color: var(--ink-2); white-space: normal; }
+.st-vlak > .st-abo-nieuw.is-boven { color: var(--st-clay-tekst); font-weight: 600; }
+/* Extra credits bijkopen (12 oktober 2026): drie pakketten als keuzerondjes in
+   een rij (onder elkaar op een telefoon), zonder script. */
+.st-bijkoop { gap: .6rem; }
+.st-bijkoop-form { display: flex; flex-direction: column; gap: .6rem; margin: 0; }
+.st-bijkoop-keuze { border: 0; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; min-width: 0; }
+.st-bijkoop-pakket { display: flex; align-items: flex-start; gap: .55rem; padding: .75rem .8rem; border: 1px solid var(--line-strong); border-radius: var(--r-sm); background: var(--surface); cursor: pointer; min-width: 0; }
+.st-bijkoop-pakket:has(input:checked) { border-color: var(--st-accent-lijn); box-shadow: inset 0 0 0 1px var(--st-accent-lijn); }
+.st-bijkoop-pakket.is-uit { cursor: not-allowed; }
+.st-bijkoop-pakket input { margin: .2rem 0 0; flex: 0 0 auto; width: 16px; height: 16px; accent-color: var(--st-accent-lijn); }
+.st-bijkoop-tekst { display: flex; flex-direction: column; gap: .15rem; min-width: 0; overflow-wrap: anywhere; }
+.st-bijkoop-n { font-weight: 600; color: var(--ink-1); font-size: .9375rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .45rem; }
+.st-bijkoop-korting { font-weight: 600; font-size: .8125rem; color: var(--ink-1); }
+.st-bijkoop-prijs { color: var(--ink-1); font-size: .9375rem; font-variant-numeric: tabular-nums; }
+.st-bijkoop-pakket .st-meta { font-size: .8125rem; }
+.st-bijkoop-hint { margin: 0; font-size: .875rem; color: var(--ink-1); }
+.st-bijkoop-verder { margin: 0; }
+.st-bijkoop-eerder { list-style: none; margin: .4rem 0 0; padding: 0; display: grid; gap: .3rem; font-size: .875rem; color: var(--ink-1); }
+@media (max-width: 720px) {
+  .st-bijkoop-keuze { grid-template-columns: minmax(0, 1fr); }
+}
+.st-abo-knoppen { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .6rem; }
+.st-abo-knoppen li { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .8rem; min-width: 0; }
+.st-abo-knoppen .btn { white-space: normal; text-align: left; max-width: 100%; }
+.st-abo-links { margin: 0; }
+.st-boek-tabel td { vertical-align: top; }
+.st-tabel td.st-boek-dag { white-space: nowrap; color: var(--ink-3); }
+.st-tabel td.st-boek-wat { overflow-wrap: anywhere; color: var(--ink-1); }
+.st-boek-wat .stand { margin-left: .15rem; vertical-align: baseline; }
+.st-boek-noot { display: block; margin-top: .2rem; font-size: .8125rem; }
+.st-boek-n { font-weight: 600; white-space: nowrap; }
+.st-tabel td.st-boek-n.is-plus { color: var(--ink-1); }
+.st-boek-eerder > summary { cursor: pointer; margin: .6rem 0 .2rem; }
+.st-bespreek.is-nadruk { border-color: var(--st-accent-lijn); box-shadow: inset 3px 0 0 var(--st-accent-lijn); }
+.st-bespreek form { margin: 0; }
+.st-stop { margin-top: .4rem; }
+.st-stop > summary.btn { display: inline-flex; }
+.st-stop-form { display: flex; flex-direction: column; gap: .75rem; margin-top: .6rem; max-width: 40rem; }
+.st-stop-form .st-meta { margin: 0; }
+.st-redenen { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .45rem; min-width: 0; }
+.st-redenen legend { margin-bottom: .35rem; padding: 0; }
+.st-reden { display: flex; align-items: flex-start; gap: .55rem; font-size: .875rem; color: var(--ink-1); line-height: 1.4; cursor: pointer; }
+.st-reden input { margin: .2rem 0 0; flex: 0 0 auto; width: 16px; height: 16px; accent-color: var(--st-accent-lijn); }
+.st-stop-aanbod { margin: 0; }
+@media (max-width: 560px) {
+  .st-vlak .st-abo-getal { font-size: 1.5rem; }
+  .st-boek-tabel th, .st-boek-tabel td { padding-right: .5rem; }
+  .st-boek-tabel { font-size: .8125rem; }
+}
+
+/* ══ JE SALDO: TEGOED EN CREDITS — 8 oktober 2026 (punt 2.02) ═══════════════
+   Twee vakken naast elkaar (één als er maar één bestaat): het getal groot, met
+   zijn eigen woord erin ("€ 50,00 tegoed", "72 credits"). */
+.st-saldostrook { display: grid; grid-template-columns: minmax(0, 1fr); gap: .75rem; }
+.st-saldostrook.is-twee { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.st-saldovak { gap: .45rem; }
+.st-vlak > .st-saldovak-getal, .st-saldovak-getal { margin: 0; font-family: var(--font-body); font-weight: 600; font-size: 1.375rem; line-height: 1.2; letter-spacing: -.015em; color: var(--ink-1); font-variant-numeric: tabular-nums; }
+.st-betaal-factuur { margin: 0; font-size: .8125rem; color: var(--ink-2); }
+@media (max-width: 640px) { .st-saldostrook.is-twee { grid-template-columns: minmax(0, 1fr); } }
+.st-vl-bron { font-size: .8125rem; color: var(--ink-2); line-height: 1.4; } /* 2.08: waar de vaste look vandaan kwam */
+/* 2.08: Je gegevens als samenvatting, het formulier achter "Wijzigen". */
+.st-gegevens-regels { margin: 0; color: var(--ink-1); font-size: .9375rem; line-height: 1.5; overflow-wrap: anywhere; }
+.st-gegevens > summary { list-style: none; display: inline-flex; cursor: pointer; }
+.st-gegevens > summary::-webkit-details-marker { display: none; }
+.st-gegevens[open] > summary { margin-bottom: .75rem; }
+
+/* ══ DE OVERGANG — 14 oktober 2026 ═════════════════════════════════════════
+   Dichtklappen is een gewone link (?nav=dicht zet een cookie en stuurt terug),
+   want Studio draait zonder script (de CSP staat er geen toe). Een animatie
+   tussen twee pagina's kan zonder script: een view transition tussen
+   documenten. De browser fotografeert het merk, de zijbalk en de romp vóór en
+   na, en beweegt de een naar de ander.
+
+   De truc voor het merk en de zijbalk: de foto's houden hun eigen hoogte en
+   verhouding (block-size 100 %, inline-size auto) en de groep knipt af. Dan
+   schuift het venster dicht over het woordmerk — de letters na de V
+   verdwijnen achter de rand en de V groeit mee — in plaats van dat het hele
+   woord platgedrukt wordt. Openklappen is dezelfde beweging terug.
+
+   Een browser zonder view transitions (Firefox nu nog) klapt gewoon direct;
+   bij "minder beweging" ook. Tussen twee tabs doet alleen de romp iets: een
+   korte overvloei. */
+@view-transition { navigation: auto; }
+.st-kolom { view-transition-name: st-kolom; }
+.st-romp { view-transition-name: st-romp; }
+::view-transition-group(st-merk), ::view-transition-group(st-kolom), ::view-transition-group(st-romp) {
+  animation-duration: .46s; animation-timing-function: cubic-bezier(.22, .8, .2, 1);
+}
+::view-transition-group(st-merk), ::view-transition-group(st-kolom) { overflow: clip; }
+::view-transition-old(st-merk), ::view-transition-new(st-merk),
+::view-transition-old(st-kolom), ::view-transition-new(st-kolom) {
+  inset: 0 auto 0 0; block-size: 100%; inline-size: auto; object-fit: none; object-position: left center;
+  animation-duration: .46s;
+}
+::view-transition-old(st-merk), ::view-transition-new(st-merk) { object-fit: contain; }
+::view-transition-old(st-romp), ::view-transition-new(st-romp) {
+  inset: 0 auto auto 0; block-size: auto; inline-size: auto; object-fit: none; object-position: left top;
+  animation-duration: .24s;
+}
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .2s; }
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+}

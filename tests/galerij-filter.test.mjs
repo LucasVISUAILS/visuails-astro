@@ -111,14 +111,16 @@ for (const [pad, rustig] of [['/gallery', false], ['/nl/gallery', false], ['/gal
   /* ── EERST DE LEVERING, DAN PAS HET RASTER — 23 september 2026 ──────────
      Lucas: "zo ziet een levering eruit" is de standaard, "alle beelden" een
      keuze. Dus staat bij het openen de levering er en het raster niet, en
-     moet de proef eerst omschakelen voordat hij de filters kan toetsen. */
+     moet de proef eerst omschakelen voordat hij de filters kan toetsen.
+     In de hal (13 oktober 2026, afvinklijst 17) heten de twee vlakken
+     .h-gl-levering en .h-gl-alles; de schakelaar is dezelfde radio. */
   const zicht = (sel) => p.evaluate((q) => { const el = document.querySelector(q); return !!el && getComputedStyle(el).display !== 'none'; }, sel);
-  ok('bij het openen staat de levering er', await zicht('.gal-levering'), true);
-  ok('en het raster niet', await zicht('.gal-alles'), false);
+  ok('bij het openen staat de levering er', await zicht('.h-gl-levering'), true);
+  ok('en het raster niet', await zicht('.h-gl-alles'), false);
   await p.click('label[for="gw-alles"]');
   await p.waitForTimeout(150);
-  ok('"alle beelden" toont het raster', await zicht('.gal-alles'), true);
-  ok('en verbergt de levering', await zicht('.gal-levering'), false);
+  ok('"alle beelden" toont het raster', await zicht('.h-gl-alles'), true);
+  ok('en verbergt de levering', await zicht('.h-gl-levering'), false);
   ok('en zet het anker in de adresbalk', new URL(p.url()).hash, '#alle-beelden');
 
   let st = await staat(p);
@@ -164,7 +166,7 @@ for (const [pad, rustig] of [['/gallery', false], ['/nl/gallery', false], ['/gal
   const p = await ctx.newPage();
   await p.goto('http://127.0.0.1:8092/nl/gallery#alle-beelden', { waitUntil:'load' });
   await p.waitForTimeout(300);
-  const open = await p.evaluate(() => getComputedStyle(document.querySelector('.gal-alles')).display !== 'none');
+  const open = await p.evaluate(() => getComputedStyle(document.querySelector('.h-gl-alles')).display !== 'none');
   ok('#alle-beelden in de link opent het raster', open, true);
   await ctx.close();
 }

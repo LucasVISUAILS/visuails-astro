@@ -45,7 +45,17 @@ const opt = t.detOptional;
     </aside>
   )}
 
+  {/* 2.08 (8 oktober 2026): Je gegevens als samenvatting met één knop
+      "Wijzigen" (<details>, zonder script). Het formulier staat open als er
+      iets mist of als het opslaan een melding gaf. */}
   <section class="st-blok" id="details" aria-label={t.detH}>
+    <div class="st-kaart-vlak st-vlak st-gegevens-kort">
+      <h2>{v.kort.kop}</h2>
+      {v.kort.regels.length > 0 && <p class="st-gegevens-regels">{v.kort.regels.join(' · ')}</p>}
+      {v.kort.mist && <p class="st-melding is-warn">{v.kort.mist}</p>}
+    </div>
+    <details class="st-gegevens" open={v.open}>
+      <summary class="btn btn-2nd btn-sm">{v.kort.wijzig}</summary>
     <form class="st-kaart-vlak st-formulier" method="post" action="/account/details">
       {v.rijen.map((rij) => <div class="st-rij">{rij.map((f) => <Veld v={f} optioneel={opt} melding={v.warn || t.detMissing} />)}</div>)}
       <div class="st-rij">
@@ -85,6 +95,7 @@ const opt = t.detOptional;
       </div>
       <div class="st-rij is-acties"><button class="btn btn-primary" type="submit">{v.save}</button></div>
     </form>
+    </details>
   </section>
 
   {/* id="email": de omleiding na het versturen springt hierheen, want de

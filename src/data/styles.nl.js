@@ -11,7 +11,7 @@ import { LIFESTYLE_IMAGES } from './pricing.js';
 // survived a repricing nobody caught. Derive, never type.
 /* Wat een carousel IS, als eerste regel op elke stijlpagina — 4 september 2026.
    Geen van de vier zei hoeveel foto's je krijgt; dat stond alleen op de hub. */
-const SET = `${LIFESTYLE_IMAGES} foto’s per product — sfeer, op een model en detail`;
+const SET = `${LIFESTYLE_IMAGES} foto’s per product — op een model van voren en van achteren, het product alleen en een detail`;
 /* Levertijd en controle staan in de feitenrij van de detailpagina, niet
    meer ook in "Wat je krijgt" (29 september 2026: twee keer dezelfde zin). */
 
@@ -35,6 +35,13 @@ export const styles = [
     orderHref: '/nl/start/lifestyle/?style=dunes',
     name: 'Dunes',
     tagline: 'Zon, zand en ingetogen luxe.',
+    /* De lookpagina, kort (k101, 11 oktober 2026): drie korte regels onder
+       vaste koppen — voor welke kleding, welk gevoel, welke kanalen. */
+    kort: {
+      kleding: 'Premium breiwerk, linnen en lederwaren.',
+      gevoel: 'Zonnig en rustig: aardetinten, lange zachte schaduwen, ingetogen luxe.',
+      kanalen: 'Campagnes, advertenties en banners, met ruimte voor je eigen tekst.',
+    },
     heroPhoto: '/img/lifestyle-dunes-01.webp',
     cardPhoto: '/img/lifestyle-dunes-01.webp',
     beforeAfter: { before: '/img/lifestyle-dunes-02.webp', after: '/img/lifestyle-dunes-01.webp' },
@@ -73,6 +80,13 @@ export const styles = [
     orderHref: '/nl/start/lifestyle/?style=flash',
     name: 'Flash',
     tagline: 'Directe flits, harde schaduwen.',
+    /* De lookpagina, kort (k101, 11 oktober 2026): drie korte regels onder
+       vaste koppen — voor welke kleding, welk gevoel, welke kanalen. */
+    kort: {
+      kleding: 'Streetwear, sneakers en accessoires.',
+      gevoel: 'Harde flits, diepe schaduwen, kleur die knalt: de look van het nachtleven.',
+      kanalen: 'Social-advertenties en drops die in een feed moeten opvallen.',
+    },
     heroPhoto: '/img/lifestyle-flash-01.webp',
     cardPhoto: '/img/lifestyle-flash-02.webp',
     beforeAfter: { before: '/img/lifestyle-flash-07.webp', after: '/img/lifestyle-flash-01.webp' },
@@ -111,9 +125,18 @@ export const styles = [
     orderHref: '/nl/start/lifestyle/?style=glow',
     name: 'Glow',
     tagline: 'Golden hour, op afroep.',
-    heroPhoto: '/img/lifestyle-glow-01.webp',
-    cardPhoto: '/img/lifestyle-glow-01.webp',
-    beforeAfter: { before: '/img/lifestyle-glow-03.webp', after: '/img/lifestyle-glow-01.webp' },
+    /* De lookpagina, kort (k101, 11 oktober 2026): drie korte regels onder
+       vaste koppen — voor welke kleding, welk gevoel, welke kanalen. */
+    kort: {
+      kleding: 'Avondkleding, badmode en statementstukken.',
+      gevoel: 'Golden hour: lage zon en warm amberlicht, een avond die goed verliep.',
+      kanalen: 'Campagnes, launches en een feed waar mensen bij willen horen.',
+    },
+    /* glow-01 (de tekst op het shirt) is weg sinds 12 oktober 2026 (afvinklijst 8, v8-glow b): glow-03 is kaart en hero. */
+    heroPhoto: '/img/lifestyle-glow-03.webp',
+    cardPhoto: '/img/lifestyle-glow-03.webp',
+    /* lifestyle-glow-06 (the hoodie with the red circle) is gone since 13 October 2026 (checklist 15, k-rechten): a real brand's product, tested without permission. */
+    beforeAfter: { before: '/img/lifestyle-glow-03.webp', after: '/img/lifestyle-glow-04.webp' },
     cardIcon: 'jar',
     /* ── DEZE REGEL BESCHREEF FLASH — 4 september 2026 ──────────────────────
        Hier stond "directe on-camera flits, scherp contrast, sterke schaduwen":
@@ -134,7 +157,7 @@ export const styles = [
       { title: 'Warme kleurafwerking', body: 'Een consistente, editorial kleurafwerking over de hele set.' },
     ],
     grid: grid(
-      ['/img/lifestyle-glow-01.webp', '/img/lifestyle-glow-02.webp', '/img/lifestyle-glow-03.webp', '/img/lifestyle-glow-04.webp', '/img/lifestyle-glow-05.webp', '/img/lifestyle-glow-06.webp'],
+      ['/img/lifestyle-glow-02.webp', '/img/lifestyle-glow-03.webp', '/img/lifestyle-glow-04.webp', '/img/lifestyle-glow-05.webp'],
       ['bottle', 'sneaker', 'jar', 'bag', 'bottle', 'sneaker', 'jar', 'bag', 'bottle']
     ),
     craft: [
@@ -156,9 +179,17 @@ export const styles = [
     orderHref: '/nl/start/lifestyle/?style=phone-made',
     name: 'Phone-made',
     tagline: 'Ziet eruit alsof het zo gemaakt is. Dat is het niet.',
-    heroPhoto: '/img/lifestyle-phone-made-01.webp',
+    /* De lookpagina, kort (k101, 11 oktober 2026): drie korte regels onder
+       vaste koppen — voor welke kleding, welk gevoel, welke kanalen. */
+    kort: {
+      kleding: 'Kleding die verkoopt op herkenbaarheid.',
+      gevoel: 'Daglicht door een raam, een net niet perfect kader: het leest als echt.',
+      kanalen: 'Organische posts en UGC-achtige advertenties, al in de verhouding van Instagram.',
+    },
+    /* phone-made-01 weg sinds 14 oktober 2026 (Lucas: de hoodie met de rode cirkel is van een ander, echt merk). */
+    heroPhoto: '/img/lifestyle-phone-made-03.webp',
     cardPhoto: '/img/lifestyle-phone-made-11.webp',
-    beforeAfter: { before: '/img/lifestyle-phone-made-05.webp', after: '/img/lifestyle-phone-made-01.webp' },
+    beforeAfter: { before: '/img/lifestyle-phone-made-05.webp', after: '/img/lifestyle-phone-made-09.webp' },
     cardIcon: 'bottle',
     cardDesc: 'Minimalistische lifestylefoto’s die lijken op authentieke, alledaagse fotografie — natuurlijk en ongepolijst, als een foto die iemand net even maakte.',
     moodTitle: 'Hoe Phone-made eruitziet.',
@@ -193,6 +224,13 @@ export const styles = [
     slug: 'custom',
     name: 'Eigen look',
     tagline: 'Je eigen wereld, gebouwd rond je product.',
+    /* De lookpagina, kort (k101, 11 oktober 2026): drie korte regels onder
+       vaste koppen — voor welke kleding, welk gevoel, welke kanalen. */
+    kort: {
+      kleding: 'Assortimenten waar de scène het verhaal is.',
+      gevoel: 'Je eigen wereld: een scène ontworpen vanuit jouw referenties.',
+      kanalen: 'Campagnes die hun eigen handtekening nodig hebben.',
+    },
     priceTrust: 'Op aanvraag',
     priceUnit: '',
     heroPhoto: '/img/banners-13.webp',
@@ -231,7 +269,7 @@ export const styles = [
       'Scène, styling en licht afgestemd op je merk',
       'Consistent bij elke toekomstige bestelling',
       'Een heldere prijs, afgesproken voordat we beginnen',
-      'Eén ontwerpbedrag op schrift; elke carrousel daarna tegen het gewone lifestyle-tarief voor dat aantal',
+      'Eén ontwerpbedrag op schrift; elke carrousel daarna vanaf het gewone lifestyle-tarief voor dat aantal',
       'Van jou: we gebruiken de look niet voor een ander merk',
       'Daarna een eigen tegel in je account en in het bestelformulier',
     ],

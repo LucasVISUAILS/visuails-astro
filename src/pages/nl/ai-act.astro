@@ -7,14 +7,15 @@
 // module is voor opsommingen van clausules, en een vertrouwenspagina met een
 // snippet als een specsheet werkt tegen zichzelf. Vaste tekst, dus vaste
 // lengte — ruim onder de 160 tekens die Google toont.
+// Sinds 13 oktober 2026 (afvinklijst 19, alles doen) in de hal: AiActHal.astro.
 import Layout from '../../layouts/Layout.astro';
-import AiActPage from '../../components/AiActPage.astro';
+import AiActHal from '../../components/AiActHal.astro';
 
 const description =
   'Wij maken je beeld met AI en zetten dat erbij. Wat de AI Act vraagt als je ' +
   'publiceert, wat je van ons krijgt, en wat wij niet namens jou beweren.';
 ---
 
-<Layout title="AI Act & transparantie — VISUAILS" description={description}>
-  <AiActPage lang="nl" />
+<Layout huid="hal" title="AI Act & transparantie — VISUAILS" description={description}>
+  <AiActHal lang="nl" />
 </Layout>

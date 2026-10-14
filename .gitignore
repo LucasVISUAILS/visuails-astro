@@ -53,3 +53,21 @@ kladblok/concepten/visuails-homepage-richtingen.html
 
 # schermafbeeldingen van de conceptpagina's (27 MB, opnieuw te maken met kladblok/concept-schermen.mjs)
 kladblok/concepten/schermen/
+
+# Geheimen voor lokaal draaien (8 oktober 2026). `wrangler dev` leest .dev.vars,
+# en daar horen echte sleutels in; die mogen nooit mee in een commit.
+.dev.vars*
+.env*
+
+# Wat OPRUIMEN.bat verplaatst (8 oktober 2026): de kopieën staan per datum in
+# _opruimen/, en die gaan nooit mee naar GitHub. LIJST.txt zelf wel.
+_opruimen/*/
+
+# UITROLLEN.bat (8 oktober 2026, punt 9.02): de volledige uitvoer van de laatste
+# testreeks en het logboek van de uitrollen. Ze horen bij deze pc, niet bij de
+# code; stonden ze in git, dan maakte elke uitrol een wijziging voor de volgende.
+kladblok/uitrol-tests.txt
+kladblok/uitrol-log.txt
+# De nepbeelden van de drukteproef (8 oktober 2026, 9.05): een gigabyte ruis,
+# opnieuw te maken met kladblok\drukteproef-beelden.bat. Geen bron.
+kladblok/drukteproef/

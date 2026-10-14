@@ -14,14 +14,15 @@
 // No price is imported here, and none appears on the page. The brief forbids
 // turning this into a fear pitch; a snippet that opens on a figure would make
 // it a sales page in the one place a reader sees before they arrive.
+// Sinds 13 oktober 2026 (afvinklijst 19, alles doen) in de hal: AiActHal.astro.
 import Layout from '../layouts/Layout.astro';
-import AiActPage from '../components/AiActPage.astro';
+import AiActHal from '../components/AiActHal.astro';
 
 const description =
   'We make your images with AI and we say so. What the EU AI Act asks when you ' +
   'publish, what you get from us, and what we will not claim on your behalf.';
 ---
 
-<Layout title="AI Act & transparency — VISUAILS" description={description}>
-  <AiActPage lang="en" />
+<Layout huid="hal" title="AI Act & transparency — VISUAILS" description={description}>
+  <AiActHal lang="en" />
 </Layout>

@@ -1,0 +1,88 @@
+# Bestanden die weg mogen. OPRUIMEN.bat verplaatst ze naar _opruimen\<datum>\.
+# Achter het # staat waarom. Claude vult deze lijst; jij beslist wat echt weg gaat.
+# Een kop met "moet" erin: UITROLLEN.bat zet niets live zolang daar nog iets van staat.
+#
+# ── 8 oktober 2026 · moet weg voor de volgende build (punt 1.11) ──
+#
+# ── 8 oktober 2026 · mag weg ──
+#
+# ── 8 oktober 2026 · mag weg: de oude knoppen, vervangen door UITROLLEN.bat (punt 9.02) ──
+#
+# ── 8 oktober 2026 · mag weg: oude verslagen, plak-SQL en losse bestanden in de projectmap ──
+#
+# ── 8 oktober 2026 · mag weg: kladblok, afgeronde rondes en losse proeven ──
+# (de testomgeving, het meetgereedschap, ronde 9 en de lopende stukken blijven staan)
+#
+# ── 8 oktober 2026 · moet weg (punt 9.01) ──
+#
+# ── 8 oktober 2026 · mag weg (punt 9.01) ──
+#
+# ── 8 oktober 2026 · moet weg (punt 1.06) ──
+#
+# ── 8 oktober 2026 · mag weg (ronde B, B3) ──
+#
+# ── 8 oktober 2026 · moet weg (ronde B: het weeksysteem is weg) ──
+#
+# ── 11 oktober 2026 · mag weg (F3, stap 2 als één kaart per product) ──
+#
+# ── 12 oktober 2026 · moet weg (de hal is de voorpagina) ──
+#
+# ── 12 oktober 2026 · mag weg (de oude voorpagina) ──
+#
+# ── 12 oktober 2026 (avond) · moet weg (start, prijzen, catalog en lifestyle staan in de hal) ──
+#
+# ── 12 oktober 2026 (avond) · mag weg (de vorige opmaak van die pagina's) ──
+#
+# ── 12 oktober 2026 (avond) · mag weg (afvinklijst 8, v8-glow b: het Glow-beeld met tekst op het shirt) ──
+#
+# ── 12 oktober 2026 (nacht) · moet weg (de proef staat in de hal, afvinklijst 9) ──
+#
+# ── 12 oktober 2026 (nacht) · mag weg ──
+#
+# ── 13 oktober 2026 · moet weg (de formulieren en de bedankpagina staan in de hal, afvinklijst 10) ──
+#
+# ── 13 oktober 2026 · moet weg (hoe het werkt staat in de hal, afvinklijst 11) ──
+#
+# ── 13 oktober 2026 · mag weg (de vorige opmaak van hoe het werkt) ──
+#
+# ── 13 oktober 2026 · moet weg (de modellen staan in de hal, afvinklijst 12) ──
+#
+# ── 13 oktober 2026 · mag weg (de vorige opmaak van de modellen) ──
+#
+# ── 13 oktober 2026 · moet weg (vergelijken staat in de hal, afvinklijst 13) ──
+#
+# ── 13 oktober 2026 · mag weg (de vorige opmaak van vergelijken) ──
+#
+# ── 13 oktober 2026 · moet weg (de leespagina's staan in de hal, afvinklijst 14) ──
+#
+# ── 13 oktober 2026 · mag weg (de vorige opmaak van de leespagina's) ──
+#
+# ── 13 oktober 2026 · moet weg (over ons en contact staan in de hal, afvinklijst 15) ──
+#
+# ── 13 oktober 2026 · mag weg (de vorige opmaak van over ons en contact) ──
+#
+# ── 14 oktober 2026 · mag weg (over ons is opnieuw opgebouwd, afvinklijst 22) ──
+#
+# ── 13 oktober 2026 · moet weg (afvinklijst 15, k-rechten: de hoodie van een echt merk, zonder toestemming) ──
+#
+# ── 13 oktober 2026 · moet weg (video, hooks en editions staan in de hal, afvinklijst 16) ──
+#
+# ── 13 oktober 2026 · mag weg (de vorige opmaak van video, hooks en editions) ──
+#
+# ── 13 oktober 2026 · moet weg (de galerij staat in de hal, afvinklijst 17) ──
+#
+# ── 13 oktober 2026 · mag weg (de vorige opmaak van de galerij) ──
+#
+# ── 13 oktober 2026 · moet weg (Studio staat in de hal, afvinklijst 18) ──
+#
+# ── 13 oktober 2026 · mag weg (de vorige opmaak van Studio) ──
+#
+# ── 13 oktober 2026 · moet weg (de juridische pagina's, de AI Act en de 404 staan in de hal, afvinklijst 19) ──
+#
+# ── 13 oktober 2026 · mag weg (de vorige opmaak van de AI Act-pagina en de 404) ──
+#
+# ── 14 oktober 2026 · moet weg (de openingen met een beeld staan op de pagina's zelf, afvinklijst 21) ──
+#
+# ── 14 oktober 2026 · moet weg (Lucas: "Beeld 1 niet gebruiken, dat is de hoodie met de rode cirkel van een ander echt merk") ──
+#
+# ── 14 oktober 2026 · mag weg (onderdelen van de vorige opmaak die geen pagina meer laadt; nagekeken: de site bouwt zonder, ook zonder alles hierboven) ──

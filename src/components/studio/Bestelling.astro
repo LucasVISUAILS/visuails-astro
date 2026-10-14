@@ -1,7 +1,9 @@
 ---
 /* De volledige bestelkaart op Bestellingen. Klapt in (native <details>, geen
-   script): de kop draagt kenmerk, dienst · aantal · datum · openstaand bedrag,
-   de vier stappen als stippen en de statuspil. Open staat wat aandacht vraagt
+   script): de kop draagt kenmerk, dienst · aantal, de vier stappen als stippen
+   en de statuspil, en daaronder de Nu-zin en (bij een geleverde bestelling) de
+   twee datums. Onder de DICHTE kaart staat één knop; open begint de inhoud met
+   "Downloaden (zip)" (punt 2.03, 8 oktober 2026). Open staat wat aandacht vraagt
    — de nieuwste, een onbetaalde, een met een revisie, een gesloten zonder
    tevredenheidsvraag — en de bestelling waar de link naar wijst. Gegevens en
    beslissingen: orderView() in account.js.
@@ -9,23 +11,80 @@
    Twee blokken komen als HTML binnen: de tevredenheidsvraag (feedback.js, met
    public/feedback.css) en het revisiebeleid (een lijst uit revisiebeleid()). */
 import Pil from './Pil.astro';
+import NieuwTabblad from '../NieuwTabblad.astro';
 import Voortgang from './Voortgang.astro';
 import Betaling from './Betaling.astro';
 import Product from './Product.astro';
 import Beeld from './Beeld.astro';
+import { formaatMelding } from '../../lib/formaten.js';
 const { t, lang, v, order, events = [], files = [] } = Astro.props;
 ---
-<details class="st-kaart-vlak st-bestelling" id={`order-${v.id}`} open={v.openNow}>
+<article class="st-kaart-vlak st-bestelling">
+<details class="st-bestelling-klap" id={`order-${v.id}`} open={v.openNow}>
   <summary class="st-bestelling-kop">
     <h2 class="st-ref">{v.ref}</h2>
+    {/* Ronde B (§28.2): "Credits" naast het kenmerk bij een bestelling die met
+        abonnementscredits betaald is. */}
+    {v.credits && <span class="credits-pil" title={t.pilCreditsTitel}><span aria-hidden="true">{t.pilCredits}</span><span class="sr-only">{t.pilCreditsTitel}</span></span>}
     <span class="st-bestelling-meta">{v.bits.map(([k, val]) => <span class={`st-bit st-bit-${k}`}>{val}</span>)}</span>
     {v.mini.length > 0 && (
       <span class="st-mini" role="img" aria-label={v.statusLabel}>{v.mini.map((s) => <i class={`st-mini-stip is-${s}`}></i>)}</span>
     )}
     <Pil status={v.status} lang={lang} />
     <span class="st-chevron" aria-hidden="true"></span>
+    {/* Punt 2.03: één zin over wat er nu gebeurt of wat de klant moet doen,
+        en na de levering de revisie- en de bewaardatum (leverdatums.js). */}
+    {v.nu && v.nu.zin && (
+      <span class="st-nu">
+        <span class="st-nu-zin">{v.nu.zin}</span>
+        {v.datums.map((d) => <span class="st-nu-datum">{d}</span>)}
+      </span>
+    )}
   </summary>
   <div class="st-bestelling-body">
+    {/* De open kaart begint met "Downloaden (zip)" (punt 2.03): downloaden is
+        wat de klant hier het vaakst komt doen. Ook bij de oudere bestellingen
+        zonder producten (v.sides), waar de map eerst onder de kanten stond. */}
+    {/* Punt 3.05 (8 oktober 2026): is de bestelling afgerond, dan staan de map
+        (met de bewaardatum) en het tevredenheidsblok samen bovenaan, in het
+        afrondblok waar "Alles goed" naartoe stuurt (#afgerond-<id>). */}
+    <div class={v.afrondScherm ? 'st-afrond' : 'st-afrond-niet'} id={v.afrondScherm ? `afgerond-${v.id}` : undefined}>
+    {v.folder && (
+      <section class="st-map">
+        <div class="st-map-tekst"><h3>{v.folder.h}</h3><p>{v.folder.body}</p>{v.afrondScherm && v.datums.length > 0 && <p class="st-map-datum">{v.datums.join(' ')}</p>}{v.folder.note && <p class="st-meta">{v.folder.note}</p>}</div>
+        {v.folder.href && <a class="btn btn-primary btn-sm" href={v.folder.href}>{v.folder.cta}</a>}
+      </section>
+    )}
+    {/* k401 (11 oktober 2026): jpg is de standaard; png en webp vraag je hier
+        los aan. Eén gewoon formulier met twee knoppen, geen script; een
+        aangevraagd formaat staat er als regel met de datum. Gegevens:
+        formaatView() in src/lib/formaten.js. */}
+    {v.formaten && (
+      <form class="st-formaten" id={v.formaten.id} method="post" action={v.formaten.action}>
+        <p class="st-formaten-uitleg"><span class="st-formaten-kop">{v.formaten.kop}</span> {v.formaten.uitleg}</p>
+        <div class="st-formaten-knoppen">
+          {v.formaten.knoppen.map((k) => k.staat
+            ? <span class={`st-formaat-staat${k.klaar ? ' is-klaar' : ''}`}>{k.staat}</span>
+            : <button class="btn btn-2nd btn-sm" type="submit" name="formaat" value={k.formaat}>{k.label}</button>)}
+        </div>
+        {Number(Astro.url.searchParams.get('order')) === Number(v.id) && formaatMelding(Astro.url.searchParams.get('formaat'), lang) && (
+          <p class={`st-meta st-formaten-melding${Astro.url.searchParams.get('formaat') === 'fout' ? ' is-warn' : ''}`} role="status">{formaatMelding(Astro.url.searchParams.get('formaat'), lang)}</p>
+        )}
+      </form>
+    )}
+    {v.afrondScherm && v.feedbackHtml && <div class="st-tevreden" set:html={v.feedbackHtml} />}
+    {/* Punt 3.07: "Bestel met dezelfde look" — één gewone link met alleen de
+        lookkeuzes (herbestel.js); abonnees zien de credits per product. */}
+    {v.herbestel && (
+      <section class="st-herbestel" aria-label={v.herbestel.kop}>
+        <h3>{v.herbestel.kop}</h3>
+        <a class={`btn ${v.herbestel.proef ? 'btn-primary' : 'btn-2nd'} btn-sm`} href={v.herbestel.href}>{v.herbestel.label}</a>
+        {v.herbestel.proef && v.herbestel.delen.length > 0 && <p class="st-meta">{v.herbestel.delen.join(' · ')}</p>}
+        {(v.herbestel.proef || v.herbestel.credits) && <p class="st-herbestel-regel">{[v.herbestel.proef ? v.herbestel.vanaf : '', v.herbestel.credits].filter(Boolean).join(' · ')}</p>}
+        <p class="st-meta">{v.herbestel.uitleg}</p>
+      </section>
+    )}
+    </div>
     {v.windowLine && <p class="st-meta">{v.windowLine}</p>}
     {Number(Astro.url.searchParams.get('order')) === Number(v.id) && Astro.url.searchParams.get('terug') === '1' && v.status === 'awaiting_payment' && (
       <p class="st-melding" role="status">{t.payTerug}</p>
@@ -40,11 +99,16 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
       if (Number(q.get('order')) !== Number(v.id) || !q.has('fotos')) return null;
       const f = q.get('fotos');
       const n = Number(f);
-      const tekst = f === 'dicht' ? t.fotosDicht : n > 0 ? t.fotosOk(n) : t.fotosNiets;
-      return <p class={`st-melding ${n > 0 ? 'is-ok' : 'is-warn'}`} role="status">{tekst}</p>;
+      const mis = Number(q.get('mis')) || 0;
+      const tekst = f === 'dicht' ? t.fotosDicht : f === 'dag' ? t.fotosDag : n > 0 ? (mis > 0 ? t.fotosDeels(n, mis) : t.fotosOk(n)) : t.fotosNiets;
+      return <p class={`st-melding ${n > 0 && !mis ? 'is-ok' : 'is-warn'}`} role="status">{tekst}</p>;
     })()}
-    {v.fotos && (
-      <form class={`st-ronde st-fotos${v.fotos.leeg ? ' is-ready' : ''}`} method="post" action={v.fotos.action} enctype="multipart/form-data">
+    {/* Punt 2.05 (8 oktober 2026): per product de vier vakken, gevuld of leeg
+        met een eigen bestandsveld, en bovenaan de ene lijst "wat ontbreekt".
+        Eén gewoon formulier, geen script (Studio heeft een strenge CSP). Gegevens
+        en wanneer hij verschijnt: fotosView() in account.js. */}
+    {v.fotos && (v.fotos.los ? (
+      <form class={`st-ronde st-fotos${v.fotos.leeg ? ' is-ready' : ''}`} id={v.fotos.anker} method="post" action={v.fotos.action} enctype="multipart/form-data">
         <h3>{v.fotos.h}</h3>
         <p>{v.fotos.p}</p>
         <label class="st-fotos-kies">
@@ -54,21 +118,63 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
         <button class={`btn ${v.fotos.leeg ? 'btn-primary' : 'btn-2nd'} btn-sm`} type="submit">{v.fotos.cta}</button>
         <p class="st-meta">{v.fotos.hint}</p>
       </form>
-    )}
+    ) : (() => {
+      const product = (p) => (
+        <fieldset class="st-vak-product">
+          <legend class="st-vak-legend">{p.label}</legend>
+          <ul class="st-vakken">
+            {p.vakken.map((vak) => (
+              <li class={`st-vak ${vak.gevuld ? 'is-gevuld' : vak.mist ? 'is-mist' : 'is-leeg'}`}>
+                {vak.gevuld && (
+                  <span class="st-vak-beeld" aria-hidden="true">
+                    {vak.gevuld.beeld ? <img src={vak.gevuld.href} alt="" loading="lazy" decoding="async" /> : <span class="st-vak-ext">{vak.gevuld.ext || '—'}</span>}
+                  </span>
+                )}
+                <span class="st-vak-naam">{vak.naam}</span>
+                {vak.staat && <span class="st-vak-staat">{vak.staat}</span>}
+                {vak.veld && (
+                  <input class="st-vak-veld" type="file" name={vak.veld} aria-label={vak.aria} accept=".jpg,.jpeg,.png,.webp,.avif,.heic,.heif,image/jpeg,image/png,image/webp,image/avif,image/heic" />
+                )}
+              </li>
+            ))}
+          </ul>
+          {p.ander && (
+            <label class="st-vak-ander">
+              <span>{p.ander.label}</span>
+              <input class="st-vak-veld" type="file" name={p.ander.veld} aria-label={p.ander.aria} accept=".jpg,.jpeg,.png,.webp,.avif,.heic,.heif,image/jpeg,image/png,image/webp,image/avif,image/heic" />
+            </label>
+          )}
+        </fieldset>
+      );
+      return (
+        <form class="st-ronde st-fotos st-vakform" id={v.fotos.anker} method="post" action={v.fotos.action} enctype="multipart/form-data">
+          <h3>{v.fotos.h}</h3>
+          {v.fotos.ontbreekt && (
+            <div class="st-ontbreekt" role="note">
+              <p class="st-ontbreekt-h">{v.fotos.ontbreekt.h}</p>
+              <ul>{v.fotos.ontbreekt.regels.map((r) => <li>{r}</li>)}</ul>
+              <p class="st-meta">{v.fotos.ontbreekt.na}</p>
+            </div>
+          )}
+          <p>{v.fotos.p}</p>
+          {v.fotos.producten.map(product)}
+          {v.fotos.compleet.length > 0 && (
+            <details class="st-vak-compleet" open={v.fotos.producten.length === 0}>
+              <summary>{v.fotos.compleetLabel}</summary>
+              {v.fotos.compleet.map(product)}
+            </details>
+          )}
+          <button class="btn btn-primary btn-sm" type="submit">{v.fotos.cta}</button>
+          <p class="st-meta">{v.fotos.hint}</p>
+        </form>
+      );
+    })())}
     {v.note && (
       <div class="st-nota"><span class="st-nota-wie">{t.noteFrom}</span><p>{v.note}</p></div>
     )}
     {v.closedNote && <p class="st-meta st-gesloten">{v.closedNote}</p>}
-    {v.feedbackHtml && <div class="st-tevreden" set:html={v.feedbackHtml} />}
+    {!v.afrondScherm && v.feedbackHtml && <div class="st-tevreden" set:html={v.feedbackHtml} />}
 
-    {/* De map bovenaan en niet onder twintig productkaarten (29 september 2026):
-        downloaden is wat de klant hier het vaakst komt doen. */}
-    {v.products && v.folder && (
-      <section class="st-map">
-        <div class="st-map-tekst"><h3>{v.folder.h}</h3><p>{v.folder.body}</p>{v.folder.note && <p class="st-meta">{v.folder.note}</p>}</div>
-        {v.folder.href && <a class="btn btn-primary btn-sm" href={v.folder.href}>{v.folder.cta}</a>}
-      </section>
-    )}
 
     {/* Alles in één keer goedkeuren (30 september 2026). Staat boven de
         productkaarten: wie tevreden is, hoeft ze niet één voor één open te
@@ -90,7 +196,7 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
     {v.products && (() => {
       const nietsGeleverd = v.products.every((p) => !(p.delivered && p.delivered.length));
       const dicht = nietsGeleverd && v.products.length >= 7;
-      const lijst = <div class="st-producten">{v.products.map((p) => <Product t={t} v={p} orderId={v.id} />)}</div>;
+      const lijst = <div class="st-producten">{v.products.map((p) => <Product t={t} v={p} orderId={v.id} lang={lang} />)}</div>;
       return dicht
         ? (
           <details class="st-producten-dicht">
@@ -104,17 +210,11 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
     })()}
     {v.sides && (
       <Fragment>
-        {v.folder && (
-          <section class="st-map">
-            <div class="st-map-tekst"><h3>{v.folder.h}</h3><p>{v.folder.body}</p>{v.folder.note && <p class="st-meta">{v.folder.note}</p>}</div>
-            {v.folder.href && <a class="btn btn-primary btn-sm" href={v.folder.href}>{v.folder.cta}</a>}
-          </section>
-        )}
         <div class="st-kanten">
           {[v.sides.delivered, v.sides.uploaded].map((k) => (
             <section class="st-kant">
               <h3>{k.h}</h3>
-              {k.shots.length ? <ul class="st-beelden">{k.shots.map((b) => <Beeld v={b} orderId={v.id} />)}</ul> : <p class="st-meta">{k.empty}</p>}
+              {k.shots.length ? <ul class="st-beelden">{k.shots.map((b) => <Beeld v={b} orderId={v.id} lang={lang} />)}</ul> : <p class="st-meta">{k.empty}</p>}
             </section>
           ))}
         </div>
@@ -138,10 +238,20 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
     {v.contact && (
       <p class="st-contact">
         <span class="st-contact-h">{v.contact.h}</span>
-        <a href={v.contact.wa.href} rel="noopener" target="_blank">{v.contact.wa.label}</a>
+        <a href={v.contact.wa.href} rel="noopener" target="_blank">{v.contact.wa.label}<NieuwTabblad lang={lang} /></a>
         <a href={v.contact.mail.href}>{v.contact.mail.label}</a>
         <span class="st-meta">{v.contact.note}</span>
       </p>
     )}
   </div>
 </details>
+{/* De ene knop onder de dichte kaart (punt 2.03). Open staat de actie zelf
+    bovenaan de inhoud; dan verbergt studio.css deze knop (details[open] + …). */}
+{v.nu && v.nu.knop && (
+  <div class="st-nu-knop">
+    {v.nu.knop.form
+      ? <form method="post" action={v.nu.knop.form}><button class="btn btn-primary btn-sm" type="submit">{v.nu.knop.label}</button></form>
+      : <a class="btn btn-primary btn-sm" href={v.nu.knop.href}>{v.nu.knop.label}</a>}
+  </div>
+)}
+</article>

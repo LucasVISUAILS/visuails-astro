@@ -43,10 +43,11 @@ const COPY = {
     askBody: 'A world built around your product is designed rather than picked, so it has no per-product rate until we know what it is. It is a request, and it gets a written price before anything runs.',
     askCta: 'Ask for a custom look',
     /* De regel die in de plaats komt van het raster zodra de bezoeker de look
-       al op /lifestyle gekozen heeft. */
+       al gekozen heeft: op /start, op een lookkaart of op de lookpagina (naloop
+       A2, 8 okt 2026: hier stond "op de lifestyle-pagina", ook als dat niet zo was). */
     vastL: 'Your look',
     vastWijzig: 'Change',
-    vastHint: 'Picked on the lifestyle page. Changing it here is one click.',
+    vastHint: 'Picked from the looks. Changing it here is one click.',
   },
   nl: {
     label: 'Welke look?',
@@ -61,7 +62,7 @@ const COPY = {
     /* Zie de Engelse tegenhanger. */
     vastL: 'Jouw look',
     vastWijzig: 'Wijzig',
-    vastHint: 'Gekozen op de lifestyle-pagina. Hier veranderen kan met één klik.',
+    vastHint: 'Gekozen bij de look. Hier veranderen kan met één klik.',
   },
 };
 const c = COPY[lang];
@@ -96,7 +97,8 @@ const c = COPY[lang];
 const CARDS = {
   '/img/lifestyle-dunes-01.webp': { src: '/img/lifestyle-dunes-01.webp', w: 928, h: 1152 },
   '/img/lifestyle-flash-02.webp': { src: '/img/lifestyle-flash-02-w960.webp', w: 960, h: 1719 },
-  '/img/lifestyle-glow-01.webp': { src: '/img/lifestyle-glow-01-w960.webp', w: 960, h: 1719 },
+  /* glow-03 staat op zijn origineel om dezelfde reden als dunes-01: 768 px breed. */
+  '/img/lifestyle-glow-03.webp': { src: '/img/lifestyle-glow-03.webp', w: 768, h: 1376 },
   '/img/lifestyle-phone-made-11.webp': { src: '/img/lifestyle-phone-made-11-w960.webp', w: 960, h: 717 },
   '/img/banners-13.webp': { src: '/img/banners-13-w960.webp', w: 960, h: 717 },
 };

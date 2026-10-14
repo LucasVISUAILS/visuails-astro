@@ -142,7 +142,9 @@ const JPEG = { name: 'voorkant.jpg', mimeType: 'image/jpeg', buffer: Buffer.from
    1 · GEEN ENKELE BESTELPAGINA VALT STIL OM BIJ HET OPSTARTEN
    ════════════════════════════════════════════════════════════════════════════ */
 console.log('de bestelstroom start zonder opgegeten fout');
-for (const pad of ['/start/catalog/', '/start/lifestyle/', '/start/complete/', '/nl/start/catalog/']) {
+/* /start/complete is op 8 oktober 2026 uit deze lijst gegaan: die pagina bestaat
+   niet meer en stuurt door naar /start (punt 9.01). */
+for (const pad of ['/start/catalog/', '/start/lifestyle/', '/nl/start/catalog/']) {
   const pg = await browser.newPage({ locale: 'en-US' });
   const klachten = [];
   pg.on('console', (m) => { if (m.text().includes('[pipeline]')) klachten.push(m.text().split('\n')[0]); });

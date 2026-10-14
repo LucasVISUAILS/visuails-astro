@@ -256,11 +256,11 @@ function organizationNode() {
      * Toegevoegd na de GEO-doorlichting (kladblok/geo-audit.mjs). Een
      * zoekmachine rangschikt pagina's; een taalmodel dat een ANTWOORD citeert
      * moet eerst weten wíé het citeert, en dat is wat deze velden doen. Ze
-     * staan er alle vier op bewijs:
+     * staan er alle drie op bewijs:
      *
-     *   · `legalName`, `vatID` en `taxID` staan al zichtbaar in de voettekst
-     *     van elke pagina (Layout.astro) — een machineleesbare kopie van iets
-     *     wat een mens er al kan lezen, en geen nieuwe claim.
+     *   · `vatID` en het KVK-nummer (`identifier`) staan al zichtbaar in de
+     *     voettekst van elke pagina (Layout.astro) — een machineleesbare kopie
+     *     van iets wat een mens er al kan lezen, en geen nieuwe claim.
      *   · `knowsAbout` komt uit PILLARS en is niet ingetypt: een dienst erbij
      *     levert hier vanzelf een term op, en er kan niets in staan wat we niet
      *     doen.
@@ -268,15 +268,21 @@ function organizationNode() {
      *     staan, maar dan als aanspreekpunt — het veld waar een model naar
      *     kijkt bij "hoe bereik ik ze".
      *
+     * ── legalName EN taxID ERUIT — 8 oktober 2026 (o24) ──────────────────
+     * `legalName: 'VISUAILS'` was de handelsnaam en niet de juridische naam
+     * (een eenmanszaak heeft die van de eigenaar, en die naam staat bewust
+     * alleen op /about en de juridische pagina's). `taxID: '99742993'` was
+     * het KVK-nummer en geen fiscaal nummer. Het KVK-nummer staat nu als wat
+     * het is: een `identifier` met propertyID KVK (doorlichting §1).
+     *
      * WAT ER MET OPZET NIET IN ZIT: `foundingDate`, `numberOfEmployees` en
      * `aggregateRating`. Van de eerste twee weet dit bestand het antwoord niet,
      * en een schema-veld is geen plek om te schatten. Een `aggregateRating`
      * zonder echte reviews is bovendien precies waar Google handmatige
      * maatregelen voor uitdeelt — zie testimonials.js, dat om dezelfde reden
      * leeg is en de site dat gewoon laat zeggen. */
-    legalName: 'VISUAILS',
     vatID: 'NL005407575B96',
-    taxID: '99742993',
+    identifier: { '@type': 'PropertyValue', propertyID: 'KVK', value: '99742993' },
     knowsAbout: Object.values(PILLARS).map((e) => e.serviceType.en),
     contactPoint: {
       '@type': 'ContactPoint',
@@ -317,18 +323,10 @@ function organizationNode() {
 // NOTHING HERE IS A NUMBER, and nothing here is a delivery promise.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/* ── DE NAAM IS DE SOM VAN ZIJN DELEN — 20 september 2026 ──────────────────
-   Lucas: *"complete is geen product meer op de website."* Hij bestaat nog wel
-   als TARIEF — allebei de diensten op hetzelfde product kost minder dan los,
-   omdat één intake, één look en één controle over twee sets worden verdeeld.
-   Wat verdwijnt is de naam van een derde product dat je zou kunnen kiezen.
-   De sleutel `complete` blijft: daar hangen bestaande bestellingen aan. */
-const COMPLETE_NAME = { en: 'Catalog + Lifestyle', nl: 'Catalog + Lifestyle' };
-
-const COMPLETE_LEAD = {
-  en: 'A catalog set and a lifestyle carousel for every product in the order.',
-  nl: 'Elk product in de bestelling krijgt een catalogset en een lifestylecarrousel.',
-};
+/* ── GEEN "CATALOG + LIFESTYLE" MEER — 14 oktober 2026 ─────────────────────
+   Hier stonden COMPLETE_NAME en COMPLETE_LEAD voor een derde ladder (catalog en
+   lifestyle samen). Sinds 20 september geen product meer op de site, en sinds
+   14 oktober 2026 ook geen tarief: compleet bestaat niet meer (afvinklijst 23). */
 
 const VIDEO_LINE = {
   en: 'One short clip. The same rate on its own or added to any order.',
@@ -585,16 +583,10 @@ function pricingProductNodes(lang, url) {
   const perProductUnit = perProduct('catalog', l).unit;
   for (const scope of LADDER_SCOPES) {
     const rungs = LADDER[scope.kind];
-    const isComplete = scope.kind === 'complete';
-    // The complete scope has no per-product row of its own — it IS the other
-    // two bought together — so its description is built from both of theirs
-    // behind one typed lead sentence.
-    const description = isComplete
-      ? `${COMPLETE_LEAD[l]} ${perProduct('catalog', l).line} ${perProduct('lifestyle', l).line}`
-      : perProduct(scope.kind, l).line;
+    const description = perProduct(scope.kind, l).line;
     nodes.push(productNode({
       slug: scope.slug,
-      name: isComplete ? COMPLETE_NAME[l] : perProduct(scope.kind, l).name,
+      name: perProduct(scope.kind, l).name,
       description,
       // The entry rung, and only the entry rung — see the block comment above.
       amount: ladderRate(scope.kind, 1),
@@ -839,7 +831,6 @@ const CRUMBS = {
   '/start': { en: 'Order', nl: 'Bestellen' },
   '/start/brand-model': { en: 'Brand Model', nl: 'Merkmodel' },
   '/start/catalog': { en: 'Catalog sets', nl: 'Catalogsets' },
-  '/start/complete': { en: 'Catalog and lifestyle', nl: 'Catalog en lifestyle' },
   '/start/lifestyle': { en: 'Lifestyle carousels', nl: 'Lifestylecarrousels' },
   '/start/plan': { en: 'Plan', nl: 'Plan' },
   '/start/video': { en: 'Video', nl: 'Video' },
@@ -853,7 +844,8 @@ const CRUMBS = {
    * zoekresultaat "visuails.com › Abonnementen" laat tonen in plaats van een
    * kale URL, en dat is precies het regeltje waarop geklikt wordt. */
   '/plans': { en: 'Plans', nl: 'Abonnementen' },
-  '/portal': { en: 'Your portal', nl: 'Jouw portaal' },
+  /* '/portal' stond hier tot 8 oktober 2026 (1.11): die pagina is nu /studio,
+     en /portal is een 301 (public/_redirects). */
   '/start/custom-look': { en: 'Custom look', nl: 'Eigen look' },
   '/studio': { en: 'VISUAILS Studio', nl: 'VISUAILS Studio' },
   '/test-sample': { en: 'Try VISUAILS', nl: 'Probeer VISUAILS' },

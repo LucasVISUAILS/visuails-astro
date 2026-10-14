@@ -42,6 +42,9 @@ const c = nl ? {
   bezig: 'Even…',
   ok: 'Je staat erop. Er staat een bevestiging in je inbox.',
   fout: 'Dat lukte niet. Klopt het adres? Probeer het anders zo nog eens.',
+  /* o03, 8 oktober 2026: alleen als Cloudflare uitdrukkelijk zei dat de
+     botcheck niet klopte. */
+  botcheck: 'We konden niet bevestigen dat deze aanmelding van een mens komt. Probeer het zo nog eens, of mail hello@visuails.com — dan zetten we je erop.',
   noot: 'Afmelden kan onderaan elke brief.',
   privacy: 'Privacy',
 } : {
@@ -54,6 +57,7 @@ const c = nl ? {
   bezig: 'One moment…',
   ok: 'You are on the list. A confirmation is in your inbox.',
   fout: 'That did not work. Is the address right? Otherwise try again in a moment.',
+  botcheck: 'We could not confirm this sign-up came from a person. Try again in a moment, or email hello@visuails.com and we will add you.',
   noot: 'Unsubscribe at the bottom of every letter.',
   privacy: 'Privacy',
 };
@@ -66,6 +70,7 @@ const c = nl ? {
   method="post"
   data-studiobrief
   data-astro-reload
+  data-botcheck="studiobrief"
   data-bezig={c.bezig}
   aria-labelledby={`${id}-kop`}
 >
@@ -87,6 +92,10 @@ const c = nl ? {
     <p class="sb-hp" aria-hidden="true"><label>Website <input type="text" name="website_hp" tabindex="-1" autocomplete="off" /></label></p>
     <p class="sb-ok" id={`brief-ok-${bron}`} role="status">{c.ok}</p>
     <p class="sb-fout" id={`brief-fout-${bron}`} role="alert">{c.fout}</p>
+    <p class="sb-botcheck" role="alert">{c.botcheck}</p>
+    {/* De onzichtbare botcheck van Cloudflare (o03). Leeg, behalve als
+        Cloudflare in de modus "Beheerd" een vinkje wil tonen. */}
+    <div class="sb-botcheck-plek" data-botcheck-plek></div>
     <p class="sb-noot">{c.noot} <a href={localizedPath(lang, '/privacy')}>{c.privacy}</a></p>
   </div>
 </form>
@@ -96,6 +105,12 @@ const c = nl ? {
      omslaan. Zonder JavaScript doet het formulier hetzelfde met een omleiding
      en :target — zie de kop van dit bestand. Eén luisteraar op het document,
      zodat het ook na een zachte navigatie werkt zonder dubbel te binden. */
+  /* ── DE BOTCHECK — 8 oktober 2026 (o03) ───────────────────────────────────
+     Bij de eerste aanraking haalt botcheck.js de sleutel en het script (niet
+     eerder: deze aanmelding staat in de voettekst van elke pagina), en bij het
+     versturen een token. Geen token na zes seconden: dan zonder. */
+  import { botToken, bindBotcheckForms } from '../scripts/botcheck.js';
+  bindBotcheckForms();
   const w = window as unknown as { __visBrief?: boolean };
   if (!w.__visBrief) {
     w.__visBrief = true;
@@ -106,14 +121,16 @@ const c = nl ? {
       const knop = form.querySelector('button[type="submit"]') as HTMLButtonElement | null;
       const was = knop?.textContent || '';
       if (knop) { knop.disabled = true; knop.textContent = form.dataset.bezig || '…'; }
-      form.classList.remove('is-fout');
+      form.classList.remove('is-fout', 'is-botcheck');
       try {
         const data = new FormData(form);
         data.set('mode', 'json');
+        const token = await botToken(form, 'studiobrief');
+        if (token) data.set('turnstile', token);
         const res = await fetch(form.action, { method: 'POST', body: data, headers: { accept: 'application/json' } });
         const uit = await res.json().catch(() => ({ ok: false }));
         if (uit && uit.ok) form.classList.add('is-klaar');
-        else form.classList.add('is-fout');
+        else form.classList.add(uit && uit.error === 'botcheck' ? 'is-botcheck' : 'is-fout');
       } catch {
         form.classList.add('is-fout');
       } finally {
@@ -125,9 +142,12 @@ const c = nl ? {
 
 <style>
   .sb {
-    --sb-inkt: var(--inkt, #0b0c0e);
-    --sb-inkt-2: var(--inkt-2, #55585f);
-    --sb-lijn: var(--lijn-sterk, rgb(11 12 14 / .22));
+    /* Uit de tokens van de pagina (14 oktober 2026): --inkt en --inkt-2 bestonden
+       nergens, dus stonden hier altijd de terugvalwaarden #0B0C0E en #55585F, ook
+       in de hal. Nu de inkt van het schema, in de hal de hal-inkt. */
+    --sb-inkt: var(--ink-1, #0F0C24);
+    --sb-inkt-2: var(--ink-2, #4B4960);
+    --sb-lijn: var(--line-ui, #8E8BA2);
     --sb-veld: #fff;
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
@@ -137,10 +157,10 @@ const c = nl ? {
     color: var(--sb-inkt);
   }
   .sb-donker {
-    --sb-inkt: #f2f3f5;
-    --sb-inkt-2: rgb(242 243 245 / .66);
-    --sb-lijn: rgb(242 243 245 / .24);
-    --sb-veld: rgb(242 243 245 / .06);
+    --sb-inkt: #FFFFFF;
+    --sb-inkt-2: rgb(255 255 255 / .72);
+    --sb-lijn: rgb(255 255 255 / .28);
+    --sb-veld: rgb(255 255 255 / .06);
   }
   .sb-kop {
     margin: 0 0 .35rem;
@@ -189,7 +209,9 @@ const c = nl ? {
   .sb-veld button:focus-visible { outline: 2px solid var(--sb-inkt); outline-offset: 2px; }
   .sb-noot { margin: 0; font-size: .8rem; color: var(--sb-inkt-2); }
   .sb-noot a { color: inherit; text-decoration: underline; text-underline-offset: .2em; }
-  .sb-ok, .sb-fout { display: none; margin: 0; font-size: .95rem; line-height: 1.5; }
+  .sb-ok, .sb-fout, .sb-botcheck { display: none; margin: 0; font-size: .95rem; line-height: 1.5; }
+  .sb-botcheck { color: var(--sb-inkt); }
+  .sb.is-botcheck .sb-botcheck { display: block; }
   .sb-fout { color: var(--sb-inkt); }
   /* Na het aanmelden: het veld weg, de bevestiging erin. Met JS via een klasse,
      zonder JS via het anker waar de server naar terugstuurt. */

@@ -265,11 +265,10 @@ section('§5 · het scherm leest dezelfde agenda als de poort');
   await req('GET', '/admin/planning', { env });
   const alle = env.DB.prepared.join('\n');
 
-  /* De twee bronnen die agenda.js optelt. Stond plan_queue er niet bij, dan zag een
-     dag die voor een abonnee al vastgezet is er hier leeg uit. */
-  check('de vastgezette wachtrij wordt meegeteld', /FROM plan_queue/.test(alle));
-  check('en alleen wat écht vastgezet is',
-    /locked_at IS NOT NULL/.test(alle) && /taken_at IS NULL/.test(alle));
+  /* Ronde 10 (8 oktober 2026): agenda.js telt alleen nog bestellingen. De
+     abonnementswachtrij (plan_queue) is weg met het weeksysteem; een abonnee
+     bestelt via het gewone formulier en zijn venster staat dus in orders. */
+  check('de oude abonnementswachtrij wordt niet meer gelezen', !/FROM plan_queue/.test(alle));
   /* En de uitsluiting die de poort wél had en dit scherm niet: een onbetaald venster
      waarvan de termijn verlopen is, is weer vrij. */
   check('een verlopen onbetaald venster telt niet meer mee',

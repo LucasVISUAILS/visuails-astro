@@ -1,0 +1,289 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — /catalog in de hal. 12 oktober 2026, afvinklijst 7 (groep catalog).
+ * Voorbeeld op /voorbeeld/catalog/ en /nl/voorbeeld/catalog/; de echte /catalog
+ * blijft CatalogPage.astro tot Lucas de groep goedkeurt (v-live = a).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * DEZELFDE INHOUD ALS CatalogPage.astro, in de volgorde die daar goedgekeurd is
+ * (PAGINA-OPBOUW.md): opening met de laptop, het bewijs, de looks, de prijs in
+ * één band, de vragen, het slot. Elke euro uit pricing.js, met vatLabel().
+ *
+ * DE OPENING IS DIE VAN DE VOORPAGINA (HalLaptop), maar alleen met de webshop
+ * en de vier catalogbeelden (sets={['catalog']}): Lucas wilde de laptop "bovenaan
+ * op de eerste sectie en rechts van de tekst, mooi consistent bij elke
+ * categorie" (17 september).
+ *
+ * DE LOOKS ZIJN DIE VAN /start (dezelfde kaart, dezelfde klassen): Classic ligt
+ * over twee kolommen met ernaast de vier beelden die je per product krijgt, de
+ * eigen look en wat eraan komt staan eronder. Zo ziet kiezen er op /catalog en
+ * op /start hetzelfde uit. "Kies deze look" gaat naar het formulier met de look
+ * al gekozen; een proef bij de look; "Meer over" naar de lookpagina.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/hal.css';
+import {
+  ladderFloor, euro, vatLabel, eenProductRegel, WINDOW_THRESHOLD, reviewClaim,
+  TIERS, clause, RESOLUTIE, TEST_SAMPLE, CATALOG_IMAGES, levervlakken,
+} from '../data/pricing.js';
+import { serviceFaqs } from '../data/faq.js';
+import { localizedPath } from '../i18n/ui.js';
+import { catalogStyles as catalogEn } from '../data/catalogStyles.js';
+import { catalogStyles as catalogNl } from '../data/catalogStyles.nl.js';
+import { komendeStijlen } from '../data/komendeStijlen.js';
+import { productStand, PRODUCT_COPY } from '../data/eigenproduct.js';
+import { geleverd } from '../data/voorbeeldset.js';
+import { setSize } from '../data/lexicon.js';
+import { kleiner, beeldMaat } from '../lib/beeldAanwezig.js';
+import Compare from './Compare.astro';
+import HalLaptop from './HalLaptop.astro';
+import HalVragen from './HalVragen.astro';
+import HalProef from './HalProef.astro';
+import HalBeweging from './HalBeweging.astro';
+
+/* basis: '/voorbeeld' op het voorbeeld, zodat de links tussen de hub en zijn
+   lookpagina's binnen het voorbeeld blijven; leeg op de echte pagina. */
+interface Props { lang: 'en' | 'nl'; basis?: string; }
+const { lang, basis = '' } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+const e = (n: number) => euro(n, lang);
+const ex = vatLabel('excl', lang);
+const sample = TEST_SAMPLE[lang];
+const floor = ladderFloor('catalog');
+const t0 = TIERS.unattended;
+const styles = nl ? catalogNl : catalogEn;
+
+/* De looks, zoals op /start: alleen wat bestelbaar is, de look op maat apart. */
+const CATALOG_STANDAARD = '/img/catalog-after.webp';
+const looks = await Promise.all(styles.filter((s: any) => s.slug !== 'custom').map(async (s: any) => {
+  const bron = s.cardPhoto || s.heroPhoto || CATALOG_STANDAARD;
+  const maat = await beeldMaat(bron);
+  return {
+    slug: s.slug, naam: s.name, zin: s.tagline, desc: s.cardDesc,
+    kies: lp(String(s.orderHref).replace(/^\/nl(?=\/)/, '')),
+    meer: lp(`${basis}/catalog/${s.slug}`),
+    proef: `${lp('/test-sample')}?style=${encodeURIComponent(s.slug)}`,
+    beeld: kleiner(bron), w: maat?.w, h: maat?.h,
+  };
+}));
+const eigen = styles.find((s: any) => s.slug === 'custom');
+const komend = komendeStijlen('catalog', lang);
+/* De namen uit levervlakken() in pricing.js: dezelfde vier die de prijs belooft
+   (tests/stijlvel.test.mjs). Hier stond SHOTS[i].label, een veld dat shots.js
+   niet heeft: de vier namen onder de beelden waren leeg (12 oktober 2026). */
+const SET = geleverd(lang).map((b, i) => ({ ...b, naam: levervlakken('catalog', lang)[i] || '' }));
+
+const COPY = {
+  en: {
+    pil: 'Catalog',
+    h1: ['Catalog photos.', 'Every one alike.'],
+    lede: `${CATALOG_IMAGES} photos per product: front, back, a detail and one on a model.`,
+    feiten: [`<b>From ${e(floor)}</b> per product · ${ex}`, `<b>From ${CATALOG_IMAGES} photos</b> per product`],
+    wacht: `Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}: a fixed delivery date.`,
+    kiesCta: 'Pick your look', prijsCta: 'See the price per product',
+    bewijsPil: 'Before and after', bewijsKop: ['One photo in.', 'A clean catalog image out.'],
+    voorLabel: 'Your photo', voorAlt: 'A raw phone photo of a t-shirt on a table before VISUAILS', naAlt: 'The same t-shirt as a clean catalog image after VISUAILS',
+    reviewKop: 'Fast means nothing if it isn’t right.', reviewZin: 'We check colour and detail on every image before you get it.',
+    check: ['Consistent lighting & angles', 'Neutral or your chosen background', 'Marketplace-ready framing', `Files at ${RESOLUTIE.standaard} px`, reviewClaim('unattended', 'en')],
+    grondKop: 'Background', grond: ['White — standard', 'Custom colour — any colour you name'],
+    waarKop: 'Where it lives', waar: ['Your webshop', 'Marketplaces', 'Shopping feeds', 'Wholesale & line sheets'],
+    looksPil: 'Looks', looksKop: ['Pick your', 'catalog style.'],
+    vanaf: 'From', per: `per product, ${ex}`,
+    kies: 'Pick this look', meer: 'More about this look',
+    setKop: 'Per product', setZin: `${setSize('catalog', CATALOG_IMAGES, 'en')}, ready for your shop.`, setMeer: 'More images can be added in the order form.',
+    eigenKop: 'Not in there?', eigenCta: 'Request your own look', eigenMeer: 'More about your own look', opAanvraag: 'On request',
+    komendKop: 'On the way', komendTag: 'Coming soon',
+    prijsKop: 'What a catalog set costs', prijsRegel: `${eenProductRegel('en', ['catalog'])} The rate applies to every product in the order; all amounts ${ex}.`,
+    merk: ['The on-model shot uses a face from the roster, or ', 'a Brand Model made only for you', '.'],
+    staffelCta: 'See all prices by quantity',
+    proefKop: ['See it first?', 'One product for'] as [string, string],
+    proefZin: `A catalog set of one of your own products · ${ex} · ${sample.unit}.`,
+    proefAlt: 'Or pick your look',
+  },
+  nl: {
+    pil: 'Catalog',
+    h1: ['Catalogfoto’s.', 'Elke keer gelijk.'],
+    lede: `${CATALOG_IMAGES} foto’s per product: voorkant, achterkant, een detail en één op een model.`,
+    feiten: [`<b>Vanaf ${e(floor)}</b> per product · ${ex}`, `<b>Vanaf ${CATALOG_IMAGES} foto’s</b> per product`],
+    wacht: `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD}: een vaste leverdatum.`,
+    kiesCta: 'Kies je look', prijsCta: 'Bekijk de prijs per product',
+    bewijsPil: 'Voor en na', bewijsKop: ['Dit is een telefoonfoto.', 'Dit is wat eruit kwam.'],
+    voorLabel: 'Jouw foto', voorAlt: 'Een ruwe telefoonfoto van een t-shirt op een tafel vóór VISUAILS', naAlt: 'Hetzelfde t-shirt als een strakke catalogfoto na VISUAILS',
+    reviewKop: 'Snel betekent niets als het niet klopt.', reviewZin: 'Wij controleren kleur en detail van elk beeld voordat jij het krijgt.',
+    check: ['Consistente belichting & hoeken', 'Neutrale of je gekozen achtergrond', 'Bijgesneden zoals marktplaatsen het willen', `Bestanden op ${RESOLUTIE.standaard} px`, reviewClaim('unattended', 'nl')],
+    grondKop: 'Achtergrond', grond: ['Wit — standaard', 'Je eigen kleur — elke kleur die je opgeeft'],
+    waarKop: 'Waar je het gebruikt', waar: ['Je webshop', 'Marktplaatsen', 'Shopping-feeds', 'Wholesale & linesheets'],
+    looksPil: 'Looks', looksKop: ['Kies je', 'catalog-stijl.'],
+    vanaf: 'Vanaf', per: `per product, ${ex}`,
+    kies: 'Kies deze look', meer: 'Meer over deze look',
+    setKop: 'Per product', setZin: `${setSize('catalog', CATALOG_IMAGES, 'nl').replace(/^v/, 'V')}, klaar voor je webshop.`, setMeer: 'Meer beelden kies je erbij in het bestelformulier.',
+    eigenKop: 'Zit het er niet bij?', eigenCta: 'Vraag een eigen look aan', eigenMeer: 'Meer over een eigen look', opAanvraag: 'Op aanvraag',
+    komendKop: 'Komt eraan', komendTag: 'Binnenkort',
+    prijsKop: 'Wat een catalogset kost', prijsRegel: `${eenProductRegel('nl', ['catalog'])} Het tarief geldt voor elk product in de bestelling; alle bedragen ${ex}.`,
+    merk: ['De foto op model gebruikt een gezicht uit de bibliotheek, of ', 'een merkmodel dat alleen voor jou is', '.'],
+    staffelCta: 'Bekijk alle prijzen per aantal',
+    proefKop: ['Eerst zien?', 'Eén product voor'] as [string, string],
+    proefZin: `Een catalogset van één van je eigen producten · ${ex} · ${sample.unit}.`,
+    proefAlt: 'Of kies je look',
+  },
+};
+const c = COPY[lang];
+const ICOON = {
+  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
+  pijl: '<path d="M4.5 11.5l7-7M5.5 4.5h6v6"/>',
+  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
+  label: '<path d="M8.6 2.5H13.5V7.4L7.4 13.5 2.5 8.6z"/><circle cx="10.6" cy="5.4" r=".9"/>',
+  doos: '<path d="M2.5 5L8 2.5 13.5 5v6L8 13.5 2.5 11z"/><path d="M2.5 5L8 7.5 13.5 5M8 7.5v6"/>',
+  info: '<circle cx="8" cy="8" r="6.2"/><path d="M8 7.2v4.2M8 4.8v.1"/>',
+  plus: '<path d="M8 3v10M3 8h10"/>',
+};
+const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+/* Het etiket "van jouw eigen productfoto's" in drie VORMEN en niet alleen drie
+   kleuren (zoals op de oude /start): een vinkje (met), een streep (zonder), en
+   plus-en-min (allebei kan). tests/eigenproduct.test.mjs. */
+const EIGEN_VORM: Record<string, string> = { met: '<path d="M3 8.5l3.2 3L13 4.5"/>', zonder: '<path d="M4.5 8h7"/>', beide: '<path d="M8 3.5v5M5.5 6h5M5.5 12h5"/>' };
+const eigenVorm = (stand: string) => `<svg viewBox="0 0 16 16" aria-hidden="true">${EIGEN_VORM[stand] || EIGEN_VORM.met}</svg>`;
+---
+<div class="h-pagina h-dienst h-cat">
+
+  {/* ── 1 · DE OPENING, als op de voorpagina ─────────────────────────────── */}
+  <section class="h-opening h-dienst-open" aria-labelledby="cat-h1">
+    <div class="h-open-tekst">
+      <p class="h-pil h-op" style="--d:0"><span>{c.pil}</span></p>
+      <h1 id="cat-h1" class="h-kop h-h1">
+        {c.h1.map((r, i) => <span class="h-regel" style={`--d:${i + 1}`}><span class:list={['h-regel-in', i === 0 && 'l']}>{r}</span></span>)}
+      </h1>
+      <p class="h-lede h-op" style="--d:3">{c.lede}</p>
+      <p class="h-acties h-op" style="--d:4">
+        <a class="h-knop h-knop-inkt" href="#looks">{c.kiesCta}<span class="o" set:html={ik('rechts')} /></a>
+        <a class="h-knop h-knop-lijn" href={lp('/pricing')}>{c.prijsCta}</a>
+      </p>
+      <ul class="h-feiten h-op" style="--d:5" role="list">
+        {c.feiten.map((f, i) => <li><i set:html={ik((['label', 'doos'] as const)[i])} /><span set:html={f} /></li>)}
+      </ul>
+      <p class="h-dienst-wacht h-op" style="--d:6">{c.wacht}</p>
+    </div>
+    <div class="h-open-beeld h-op" style="--d:3">
+      <HalLaptop lang={lang} sets={['catalog']} />
+    </div>
+  </section>
+
+  {/* ── 2 · HET BEWIJS: jouw foto → VISUAILS, met wat we eraan doen ───────── */}
+  <section class="h-sec h-cat-bewijs" aria-labelledby="cat-bewijs">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{c.bewijsPil}</span></p>
+        <h2 id="cat-bewijs" class="h-kop h-h2"><span class="l">{c.bewijsKop[0]}</span> {c.bewijsKop[1]}</h2>
+      </div>
+    </header>
+    <div class="h-bewijs-raster">
+      <div class="h-bewijs-cmp h-in">
+        <Compare before="/img/catalog-before-1x1.webp" after="/img/catalog-after.webp" ratio="1/1" beforeLabel={c.voorLabel} afterLabel="VISUAILS" beforeAlt={c.voorAlt} afterAlt={c.naAlt} />
+      </div>
+      <div class="h-bewijs-kaart h-in" style="--d:1">
+        <h3 class="h-bewijs-kop">{c.reviewKop}</h3>
+        <p class="h-bewijs-zin">{c.reviewZin}</p>
+        <ul class="h-pr-vinken" role="list">{c.check.map((f) => <li><i set:html={ik('check')} />{f}</li>)}</ul>
+        <dl class="h-bewijs-regels">
+          <div><dt>{c.grondKop}</dt><dd>{c.grond.map((g) => <span class="h-chip h-chip-wit">{g}</span>)}</dd></div>
+          <div><dt>{c.waarKop}</dt><dd>{c.waar.map((g) => <span class="h-chip h-chip-wit">{g}</span>)}</dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  {/* ── 3 · DE LOOKS ── zelfde kaart als op /start; id="looks" voor de knoppen. */}
+  <section class="h-sec h-dienst-looks" id="looks" aria-labelledby="cat-looks">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{c.looksPil}</span></p>
+        <h2 id="cat-looks" class="h-kop h-h2"><span class="l">{c.looksKop[0]}</span> {c.looksKop[1]}</h2>
+      </div>
+      <span class={`h-chip h-st-eigen is-${productStand('catalog')}`}><i set:html={eigenVorm(productStand('catalog'))} />{PRODUCT_COPY[lang][productStand('catalog')]}</span>
+    </header>
+    <div class:list={['h-st-groep', `n-${looks.length}`]} data-st-groep="catalog">
+      <ul class="h-st-looks" role="list">
+        {looks.map((l, i) => (
+          <li class="h-st-look h-in" style={`--d:${i}`} data-st-look={l.slug}>
+            <a class="h-st-beeld" href={l.kies} aria-hidden="true" tabindex="-1">
+              <img src={l.beeld} alt="" width={l.w} height={l.h} loading="lazy" decoding="async" />
+            </a>
+            <div class="h-st-tekst">
+              <h3 class="h-st-naam">{l.naam}</h3>
+              <p class="h-st-zin">{l.zin}</p>
+              {l.desc && <p class="h-st-desc">{l.desc}</p>}
+              <p class="h-st-tarief"><span>{c.vanaf}</span> <b>{e(floor)}</b> <span>{c.per}</span></p>
+              <p class="h-st-wegen"><a class="h-knop h-knop-inkt h-knop-klein" href={l.kies} data-st-kies>{c.kies}<span class="o" set:html={ik('rechts')} /></a></p>
+              <p class="h-st-ook-links">
+                <a class="h-st-proef" href={l.proef} data-st-proef data-vis-uit>{sample.cta}</a>
+                <a class="h-st-meer" href={l.meer}>{c.meer}<span set:html={ik('pijl')} /></a>
+              </p>
+            </div>
+          </li>
+        ))}
+        {looks.length === 1 && (
+          <li class="h-st-set h-in" style="--d:1" aria-label={c.setKop}>
+            <p class="h-st-set-kop"><span class="h-pil h-pil-wit"><span>{c.setKop}</span></span></p>
+            <p class="h-st-set-zin">{c.setZin}</p>
+            <span class="h-st-set-rij" role="list">
+              {SET.map((b, k) => (
+                <span class="h-st-set-beeld" role="listitem" style={`--d:${k}`}>
+                  <span class="h-well"><img src={b.src} width={b.w} height={b.h} alt={b.alt} loading="lazy" decoding="async" /></span>
+                  <span class="h-st-set-naam">{b.naam}</span>
+                </span>
+              ))}
+            </span>
+            <p class="h-st-set-meer">{c.setMeer}</p>
+          </li>
+        )}
+      </ul>
+    </div>
+
+    {/* De eigen look en wat eraan komt: een rustige rij, geen bestelkaarten. Bij de
+        eigen look "Op aanvraag", zoals op /lifestyle: priceTrust uit de lookdata zegt
+        "vanaf €89" (het tarief van één product), en een vanaf-bedrag op deze pagina
+        is de onderste trede (tests/vanaf-bedragen.test.mjs). */}
+    <ul class="h-dienst-extra" role="list">
+      {eigen && (
+        <li class="h-dienst-eigen h-in">
+          <span class="h-cirkel h-cirkel-wit" aria-hidden="true" set:html={ik('plus')} />
+          <div>
+            <p class="h-dienst-extra-kop">{c.eigenKop} <span class="l">{eigen.name}.</span></p>
+            <p class="h-dienst-extra-zin">{eigen.tagline} <span class="h-dienst-extra-prijs">{c.opAanvraag}</span></p>
+          </div>
+          <p class="h-dienst-extra-wegen">
+            <a class="h-knop h-knop-lijn h-knop-klein" href={lp(String(eigen.orderHref).replace(/^\/nl(?=\/)/, ''))}>{c.eigenCta}</a>
+            <a class="h-st-meer" href={lp(`${basis}/catalog/custom`)}>{c.eigenMeer}<span set:html={ik('pijl')} /></a>
+          </p>
+        </li>
+      )}
+      {komend.map((k: any, i: number) => (
+        <li class="h-dienst-komend h-in" style={`--d:${i + 1}`}>
+          <span class="h-chip h-pl-tag">{c.komendTag}</span>
+          <p class="h-dienst-extra-kop">{k.naam}</p>
+          <p class="h-dienst-extra-zin">{k.regel}</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  {/* ── 4 · DE PRIJS IN ÉÉN BAND ─────────────────────────────────────────── */}
+  <section class="h-sec h-pr-plans" aria-labelledby="cat-prijs">
+    <div class="h-pr-band h-in">
+      <div>
+        <h2 id="cat-prijs" class="h-kop h-h3">{c.prijsKop}</h2>
+        <p class="h-pr-band-zin">{c.prijsRegel}</p>
+        <p class="h-pr-band-zin">{c.merk[0]}<a class="h-st-link" href={lp('/custom-models')}>{c.merk[1]}</a>{c.merk[2]}</p>
+      </div>
+      <a class="h-knop h-knop-lijn" href={lp('/pricing')}>{c.staffelCta}</a>
+    </div>
+  </section>
+
+  {/* ── 5 · VRAGEN — de eerste vier; de rest op /faq ─────────────────────── */}
+  <HalVragen lang={lang} id="cat-faq" dienst="catalog" faqs={serviceFaqs('catalog', lang)} />
+
+  {/* ── 6 · HET SLOT: de proef ───────────────────────────────────────────── */}
+  <HalProef lang={lang} id="cat-slot" kop={c.proefKop} zin={c.proefZin} alt={{ label: c.proefAlt, href: '#looks' }} />
+</div>
+<HalBeweging />

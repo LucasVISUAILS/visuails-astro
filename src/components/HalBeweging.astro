@@ -1,0 +1,53 @@
+---
+/**
+ * VISUAILS — de beweging van de hal, voor elke pagina behalve de voorpagina.
+ * 12 oktober 2026, bij de eerste voorbeelden van andere pagina's (afvinklijst 7).
+ *
+ * Hetzelfde als stap 1 en 3 in het script van VoorpaginaHal.astro, zodat een
+ * pagina in de hal net zo binnenkomt als de voorpagina:
+ *   1. BINNENKOMEN: elk .h-in krijgt .is-in zodra het voor een vijfde in beeld is,
+ *      één keer. De beweging zelf staat in hal.css; zonder JavaScript of bij
+ *      "minder beweging" staat alles er meteen (hal.css zet .h-in pas op
+ *      onzichtbaar als <html> de klasse h-js heeft).
+ *   2. EEN STROOK met pijlen ([data-h-strook]): de pijlen schuiven een kaart
+ *      verder en het lijntje erboven laat zien hoe ver je bent.
+ * Geen luisteraar op window (tests/zachte-navigatie): alleen op de elementen
+ * zelf en op astro:page-load.
+ */
+---
+<script>
+  const zet = () => {
+    if (!document.querySelector('.h-pagina')) return;
+    document.documentElement.classList.add('h-js');
+    const rustig = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const io = new IntersectionObserver((rijen) => {
+      for (const r of rijen) if (r.isIntersecting) { r.target.classList.add('is-in'); io.unobserve(r.target); }
+    }, { threshold: 0.2, rootMargin: '0px 0px -6% 0px' });
+    for (const el of document.querySelectorAll('.h-pagina .h-in:not(.is-in)')) {
+      if (rustig) el.classList.add('is-in'); else io.observe(el);
+    }
+    for (const st of document.querySelectorAll<HTMLElement>('[data-h-strook]')) {
+      if (st.dataset.hKlaar) continue;
+      st.dataset.hKlaar = '1';
+      const rij = st.querySelector<HTMLElement>('[data-h-strook-rij]');
+      const stand = st.querySelector<HTMLElement>('[data-h-strook-stand]');
+      if (!rij) continue;
+      const meet = () => {
+        const max = rij.scrollWidth - rij.clientWidth;
+        stand?.style.setProperty('--w', String(Math.max(0.12, Math.min(1, rij.scrollWidth > 0 ? rij.clientWidth / rij.scrollWidth : 1))));
+        stand?.style.setProperty('--x', String(max > 0 ? rij.scrollLeft / max : 0));
+      };
+      rij.addEventListener('scroll', meet, { passive: true });
+      new ResizeObserver(meet).observe(rij);
+      for (const b of st.querySelectorAll<HTMLButtonElement>('[data-h-strook-stap]')) {
+        b.addEventListener('click', () => {
+          const kaart = rij.firstElementChild as HTMLElement | null;
+          const stap = kaart ? kaart.offsetWidth + 16 : rij.clientWidth * 0.8;
+          rij.scrollBy({ left: stap * Number(b.dataset.hStrookStap), behavior: rustig ? 'auto' : 'smooth' });
+        });
+      }
+    }
+  };
+  zet();
+  document.addEventListener('astro:page-load', zet);
+</script>

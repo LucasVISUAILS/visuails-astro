@@ -95,7 +95,22 @@ const get = (pad, cookie = '') => adminGet({
    bij het invullen al verlopen, en deze toets viel willekeurig om in een volle
    run terwijl hij los altijd groen was. Een toets die zijn eigen antwoord moet
    raden, meet zijn eigen snelheid. */
-const codeNu = (secret) => totpCode(secret);
+/* Een code vlak voor de wissel naar de volgende stap van 30 seconden kan bij
+   een drukke testreeks (alles parallel) net over de grens vallen. Dan eerst die
+   paar seconden afwachten, zodat elke toets midden in een stap begint. */
+const codeNu = async (secret) => {
+  const inStap = (Date.now() / 1000) % 30;
+  if (inStap > 25) await new Promise((r) => setTimeout(r, (30 - inStap) * 1000 + 50));
+  return totpCode(secret);
+};
+
+/* ── EEN CODE WERKT MAAR ÉÉN KEER — 8 oktober 2026 (o19) ────────────────────
+   Deze toets gebruikt de code van NU, en doet dat in een paar milliseconden
+   meerdere keren. In het echt zit er minstens een halve minuut tussen twee
+   inlogmomenten; sinds migratie 0052 weigert de server dezelfde stap een tweede
+   keer. `latereStap()` doet alsof die halve minuut voorbij is, door de bewaarde
+   stap te wissen. Sectie 7 toetst de weigering zelf. */
+const latereStap = () => db.exec('UPDATE admin_users SET totp_last_step = NULL');
 
 console.log('\nzonder tweede factor verandert er niets aan het inloggen');
 {
@@ -162,6 +177,7 @@ console.log('\nmet de tweede stap aan komt het wachtwoord alleen niet meer binne
 
   const geheim = db.prepare('SELECT totp_secret FROM admin_users WHERE id = 1').get().totp_secret;
   const juist = await codeNu(geheim);
+  latereStap();
   const binnen = await post('/admin/code', { code: juist }, c);
   ok('de goede code maakt de sessie heel', [binnen.status, binnen.headers.get('location')], [303, '/admin']);
   const dash2 = await get('/admin', c);
@@ -209,16 +225,161 @@ console.log('\nuitzetten en nieuwe codes vragen zelf ook een code');
   const res = await post('/admin/login', { email: 'lucas@visuails.com', password: WACHTWOORD });
   const c = koekje(res);
   const geheim = db.prepare('SELECT totp_secret FROM admin_users WHERE id = 1').get().totp_secret;
+  latereStap();
   await post('/admin/code', { code: await codeNu(geheim) }, c);
 
   await post('/admin/security', { doen: 'uit', code: '000000' }, c);
   ok('uitzetten met een verkeerde code doet niets',
     Boolean(db.prepare('SELECT totp_confirmed_at FROM admin_users WHERE id = 1').get().totp_confirmed_at), true);
 
+  /* 8 oktober 2026: `afbreken` en `start` liepen om de codecontrole heen. */
+  await post('/admin/security', { doen: 'afbreken' }, c);
+  ok('afbreken zonder code zet hem niet uit',
+    Boolean(db.prepare('SELECT totp_confirmed_at FROM admin_users WHERE id = 1').get().totp_confirmed_at), true);
+  await post('/admin/security', { doen: 'start', code: '000000' }, c);
+  const naStart = db.prepare('SELECT totp_secret, totp_confirmed_at FROM admin_users WHERE id = 1').get();
+  ok('opnieuw beginnen met een verkeerde code verandert het geheim niet',
+    [naStart.totp_secret, Boolean(naStart.totp_confirmed_at)], [geheim, true]);
+
+  latereStap();
   await post('/admin/security', { doen: 'uit', code: await codeNu(geheim) }, c);
   const na = db.prepare('SELECT totp_secret, totp_confirmed_at FROM admin_users WHERE id = 1').get();
   ok('met de goede code gaat hij uit', [na.totp_secret, na.totp_confirmed_at], [null, null]);
   ok('en de herstelcodes gaan mee', telling(db, 'SELECT COUNT(*) FROM admin_recovery_codes'), 0);
+}
+
+/* ══ 6 · DE HALVE SESSIE EN DE GRENS PER ACCOUNT — 8 oktober 2026 ═════════ */
+console.log('\nde halve sessie leeft kort, en raden telt per account');
+{
+  db.exec('DELETE FROM admin_sessions');
+  db.exec('DELETE FROM rate_limits');
+  const geheim = 'JBSWY3DPEHPK3PXP';
+  db.prepare("UPDATE admin_users SET totp_secret = ?, totp_confirmed_at = datetime('now') WHERE id = 1").run(geheim);
+  const half = await post('/admin/login', { email: 'lucas@visuails.com', password: WACHTWOORD });
+  const rij = db.prepare('SELECT expires_at FROM admin_sessions WHERE totp_pending = 1').get();
+  const minuten = (Date.parse(rij.expires_at) - Date.now()) / 60000;
+  ok('een halve sessie verloopt binnen een kwartier', minuten > 0 && minuten <= 15.5, true, minuten);
+  latereStap();
+  await post('/admin/code', { code: await codeNu(geheim) }, koekje(half));
+  const heel = db.prepare('SELECT expires_at FROM admin_sessions WHERE totp_pending = 0').get();
+  ok('na de code krijgt hij de volle termijn', (Date.parse(heel.expires_at) - Date.now()) / 86400000 > 7, true, heel.expires_at);
+
+  db.exec('DELETE FROM rate_limits');
+  let laatste = null;
+  for (let i = 0; i < 21; i++) {
+    /* Elke poging uit een ANDER /64-blok, zodat alleen de grens per account kan
+       ingrijpen en niet die per IP. */
+    laatste = await adminPost({
+      request: new Request('https://visuails.com/admin/login', {
+        method: 'POST',
+        headers: { origin: 'https://visuails.com', 'cf-connecting-ip': `2001:db8:${(i + 1).toString(16)}::1` },
+        body: new URLSearchParams({ email: 'lucas@visuails.com', password: 'fout' }),
+      }),
+      env, waitUntil() {},
+    });
+  }
+  ok('na twintig foute pogingen op één account volgt een 429, ook vanaf steeds een ander adres', laatste.status, 429);
+
+  /* Een volle emmer mag de eigenaar niet buitensluiten als zijn tweede stap aan
+     staat: het goede wachtwoord brengt hem nog bij de code. */
+  const metCode = await adminPost({
+    request: new Request('https://visuails.com/admin/login', {
+      method: 'POST',
+      headers: { origin: 'https://visuails.com', 'cf-connecting-ip': '198.51.100.77' },
+      body: new URLSearchParams({ email: 'lucas@visuails.com', password: WACHTWOORD }),
+    }),
+    env, waitUntil() {},
+  });
+  ok('met tweede stap: het goede wachtwoord gaat door naar de code', [metCode.status, metCode.headers.get('location')], [303, '/admin/code']);
+  db.prepare('UPDATE admin_users SET totp_secret = NULL, totp_confirmed_at = NULL WHERE id = 1').run();
+  const zonderCode = await adminPost({
+    request: new Request('https://visuails.com/admin/login', {
+      method: 'POST',
+      headers: { origin: 'https://visuails.com', 'cf-connecting-ip': '198.51.100.78' },
+      body: new URLSearchParams({ email: 'lucas@visuails.com', password: WACHTWOORD }),
+    }),
+    env, waitUntil() {},
+  });
+  ok('zonder tweede stap: een volle emmer houdt ook het goede wachtwoord tegen', zonderCode.status, 429);
+  db.exec('DELETE FROM rate_limits');
+  const weerOpen = await post('/admin/login', { email: 'lucas@visuails.com', password: WACHTWOORD });
+  ok('en een goede inlog telt zelf niet mee', [weerOpen.status, telling(db, "SELECT COUNT(*) FROM rate_limits WHERE bucket LIKE 'admin-login-acct:%'")], [303, 0]);
+
+  db.exec('DELETE FROM rate_limits');
+  let perIp = null;
+  for (let i = 0; i < 11; i++) {
+    perIp = await adminPost({
+      request: new Request('https://visuails.com/admin/login', {
+        method: 'POST',
+        headers: { origin: 'https://visuails.com', 'cf-connecting-ip': `2001:db8:aa:bb::${(i + 1).toString(16)}` },
+        body: new URLSearchParams({ email: `iemand${i}@example.com`, password: 'fout' }),
+      }),
+      env, waitUntil() {},
+    });
+  }
+  ok('elf pogingen uit één /64-blok lopen tegen de grens per IP', perIp.status, 429);
+  db.exec('DELETE FROM rate_limits');
+  db.prepare('UPDATE admin_users SET totp_secret = NULL, totp_confirmed_at = NULL WHERE id = 1').run();
+}
+
+/* ══ 7 · EEN CODE WERKT MAAR ÉÉN KEER — 8 oktober 2026 (o19) ══════════════ */
+console.log('\neen 2FA-code werkt maar één keer');
+{
+  db.exec('DELETE FROM admin_sessions');
+  db.exec('DELETE FROM rate_limits');
+  const geheim = 'JBSWY3DPEHPK3PXP';
+  db.prepare("UPDATE admin_users SET totp_secret = ?, totp_confirmed_at = datetime('now'), totp_last_step = NULL WHERE id = 1").run(geheim);
+  const code = await codeNu(geheim);
+
+  const eerst = await post('/admin/login', { email: 'lucas@visuails.com', password: WACHTWOORD });
+  const binnen = await post('/admin/code', { code }, koekje(eerst));
+  ok('de code komt de eerste keer binnen', [binnen.status, binnen.headers.get('location')], [303, '/admin']);
+  ok('en zijn stap is bewaard',
+    typeof db.prepare('SELECT totp_last_step FROM admin_users WHERE id = 1').get().totp_last_step, 'number');
+
+  const tweede = await post('/admin/login', { email: 'lucas@visuails.com', password: WACHTWOORD });
+  const nogEens = await post('/admin/code', { code }, koekje(tweede));
+  ok('dezelfde code een tweede keer: geweigerd', nogEens.status, 401);
+  ok('met een uitleg dat hij net al gebruikt is', /net al gebruikt/.test(await nogEens.text()), true);
+  ok('en die halve sessie blijft half',
+    telling(db, 'SELECT COUNT(*) FROM admin_sessions WHERE totp_pending = 1'), 1);
+
+  /* Een code van een LATERE stap gaat wel: de bewaarde stap één terugzetten
+     doet hetzelfde als een halve minuut wachten. */
+  db.exec('UPDATE admin_users SET totp_last_step = totp_last_step - 1');
+  const later = await post('/admin/code', { code }, koekje(tweede));
+  ok('een nieuwere stap komt wel binnen', later.headers.get('location'), '/admin');
+
+  /* Op /admin/security geldt hetzelfde: met een net gebruikte code gaat de
+     tweede stap niet uit. */
+  const sessie = koekje(eerst);
+  await post('/admin/security', { doen: 'uit', code }, sessie);
+  ok('uitzetten met een net gebruikte code doet niets',
+    Boolean(db.prepare('SELECT totp_confirmed_at FROM admin_users WHERE id = 1').get().totp_confirmed_at), true);
+
+  /* Zonder migratie 0052 (geen kolom) werkt het inloggen zoals vroeger: een
+     vergeten migratie sluit de enige beheerder niet buiten. */
+  const zonderKolom = { ...env, DB: { ...env.DB, prepare(sql) {
+    if (/totp_last_step/.test(sql)) throw new Error('no such column: totp_last_step');
+    return env.DB.prepare(sql);
+  } } };
+  db.exec('DELETE FROM admin_sessions');
+  db.exec('DELETE FROM rate_limits');
+  const zPost = (pad, velden, cookie = '') => adminPost({
+    request: new Request(`https://visuails.com${pad}`, {
+      method: 'POST',
+      headers: { origin: 'https://visuails.com', ...(cookie ? { cookie: `vis_admin=${cookie}` } : {}) },
+      body: new URLSearchParams(velden),
+    }),
+    env: zonderKolom, waitUntil() {},
+  });
+  const zIn = await zPost('/admin/login', { email: 'lucas@visuails.com', password: WACHTWOORD });
+  const zCode = await zPost('/admin/code', { code }, koekje(zIn));
+  ok('zonder de kolom: de code werkt zoals vroeger', zCode.headers.get('location'), '/admin');
+
+  db.exec('DELETE FROM admin_sessions');
+  db.exec('DELETE FROM rate_limits');
+  db.prepare('UPDATE admin_users SET totp_secret = NULL, totp_confirmed_at = NULL, totp_last_step = NULL WHERE id = 1').run();
 }
 
 console.log(`\n${goed}/${totaal} geslaagd`);

@@ -92,8 +92,12 @@ console.log('\nde bewaartermijn doet wat /privacy §6 belooft');
        bestelling wat hij weghaalde, en een gebeurtenis herhaalt de bestaande status.
        Haal je hem hier weg, dan valt de opruimquery om op "no such column".
        Of de nabouw hieronder nog op het échte schema past, test tests/retention.test.mjs
-       — die draait tegen schema.sql zelf. */
-    CREATE TABLE orders (id INTEGER PRIMARY KEY, closed_at TEXT, status TEXT NOT NULL DEFAULT 'received', lang TEXT NOT NULL DEFAULT 'en');
+       — die draait tegen schema.sql zelf.
+       'cancelled_at' en 'created_at' sinds 8 oktober 2026: de termijn voor een
+       geannuleerde bestelling rekent vanaf die twee (zie retention.js). */
+    CREATE TABLE orders (id INTEGER PRIMARY KEY, closed_at TEXT, status TEXT NOT NULL DEFAULT 'received', lang TEXT NOT NULL DEFAULT 'en',
+      cancelled_at TEXT, created_at TEXT NOT NULL DEFAULT (datetime('now')));
+    CREATE TABLE plan_queue (id INTEGER PRIMARY KEY, upload_batch TEXT);
     CREATE TABLE files (
       id INTEGER PRIMARY KEY, order_id INTEGER, kind TEXT, r2_key TEXT, preview_key TEXT,
       announced_at TEXT, superseded_at TEXT, expires_at TEXT,
@@ -216,8 +220,10 @@ console.log('\nde getallen op de pagina komen overeen met de code');
     /* 30 september 2026: het portaal noemt de twee klokken nu apart — de
        bestanden vanaf levering, de link vanaf afsluiten. Deze check houdt de
        link-klok vast, in dezelfde woorden als /privacy. */
+    /* 8 oktober 2026 (1.11): de portaalpagina staat nu op /studio; /portal is
+       een 301. Zelfde pagina, zelfde zin, ander adres. */
     check('en het portaal noemt dezelfde looptijd',
-      new RegExp(`works for[^<]{0,40}${PORTAL_TTL_DAYS} days`).test(read('dist/portal/index.html')), true);
+      new RegExp(`works for[^<]{0,40}${PORTAL_TTL_DAYS} days`).test(read('dist/studio/index.html')), true);
     /* De cookietermijnen horen bij hetzelfde principe: het cookiebeleid is de
        plek waar wij opschrijven hoe lang een cookie leeft. */
     check(`het cookiebeleid toont de sessieduur (${SESSION_COOKIE_DAYS} dagen)`,
@@ -236,7 +242,10 @@ console.log('\nde getallen op de pagina komen overeen met de code');
   for (const p of ['src/pages/privacy.astro', 'src/pages/nl/privacy.astro',
                    'src/pages/terms.astro', 'src/pages/nl/terms.astro',
                    'src/pages/cookie-policy.astro', 'src/pages/nl/cookie-policy.astro',
-                   'src/components/PortalPage.astro']) {
+                   /* Was PortalPage.astro; sinds 1.11 (8 oktober 2026) heet de
+                      portaalpagina StudioPage.astro en staat hij op /studio. Sinds
+                      13 oktober 2026 (afvinklijst 18) is dat StudioHal.astro (de hal). */
+                   'src/components/StudioHal.astro']) {
     const code = zonderCommentaar(read(p));
     check(`${p.replace('src/', '')} typt ${UPLOAD_DAYS} dagen niet meer`,
       new RegExp(`${UPLOAD_DAYS} (days|dagen)`).test(code), false);
@@ -362,26 +371,45 @@ console.log('\n/terms §9 beschrijft geen betaalregeling die niet bestaat');
  * ══════════════════════════════════════════════════════════════════════════════ */
 console.log('\n/ai-act §6: de twee talen beweren hetzelfde');
 {
-  const page = read('src/components/AiActPage.astro');
+  const page = read('src/components/AiActHal.astro'); // de hal sinds 13 oktober; AiActPage.astro staat op de opruimlijst
   const body = codeOnly(page);
 
   // De verworpen bewering, in beide talen, mag nergens meer staan.
   check('"we add nothing" staat er niet meer', /we add nothing/i.test(body), false);
   check('"wij voegen niets toe" ook niet', /voegen (wij|we) niets toe/i.test(body), false);
 
-  // En beide talen zeggen wél dat wij schrijven.
-  check('de Engelse tekst zegt dat wij de tag schrijven',
-    /We write an IPTC DigitalSourceType tag into every delivered file/.test(body), true);
-  check('de Nederlandse tekst zegt dat ook',
-    /Wij schrijven in elk geleverd bestand een IPTC DigitalSourceType-tag/.test(body), true);
-
-  // Beide noemen de webp expliciet, want dat is het formaat waar de bewering het
-  // meest kan verrassen — de omzetting gooit weg wat de aanbieder erin zette.
-  const en = body.slice(0, body.indexOf('Elk bestand dat wij leveren'));
-  const nl = body.slice(body.indexOf('Elk bestand dat wij leveren'));
+  /* ── DE BELOFTE IS SMALLER GEWORDEN, EN DAT IS DE BEDOELING — 8 oktober 2026 ──
+   *
+   * Hier eiste deze toets dat beide talen zeiden "We write an IPTC
+   * DigitalSourceType tag into every delivered file". Die zin was onwaar: de
+   * /admin-upload, de hoofdweg om te leveren, zet geen tag (F30; het
+   * automatisch zetten komt in 4.01). Een toets die een onware belofte
+   * afdwingt, is de omgekeerde bewaker.
+   *
+   * Wat hij nu eist, in beide talen: dat wij de markering zetten in de foto's
+   * die we leveren, dat een foto zonder markering opnieuw geleverd wordt, dat
+   * het geen garantie is, en dat de zichtbare vermelding telt. En dat de
+   * oude "elk bestand"-belofte niet terugkomt. Wordt 4.01 gebouwd en is de tag
+   * aantoonbaar overal, dan mag die belofte terug — samen met een toets op de
+   * code die hem nakomt, niet eerder. */
+  const splits = body.indexOf('nl: {');
+  const en = body.slice(0, splits);
+  const nl = body.slice(splits);
+  check('de pagina heeft een Engelse en een Nederlandse tak', splits > 0, true);
+  check('EN belooft niet meer "every delivered file"',
+    /(into every delivered file|Every file we deliver)/i.test(en), false);
+  check('NL belooft niet meer "elk geleverd bestand"',
+    /(in elk geleverd bestand|Elk bestand dat wij leveren)/i.test(nl), false);
+  check('EN zegt dat wij de markering in de geleverde foto’s zetten',
+    /In the photos (and videos )?we deliver we write the IPTC property DigitalSourceType/.test(en), true);
+  check('NL zegt dat ook',
+    /In de foto’s (en video’s )?die we leveren zetten we de IPTC-eigenschap DigitalSourceType/.test(nl), true);
   for (const [lang, part] of [['en', en], ['nl', nl]]) {
+    check(`${lang}: een foto zonder markering wordt opnieuw geleverd`,
+      /(we deliver it again|leveren we (hem|het) opnieuw)/.test(part), true);
     check(`${lang}: noemt de webp`, /webp/i.test(part), true);
-    check(`${lang}: noemt de datum 2 december 2026`, /2 (December|december) 2026/.test(part), true);
+    check(`${lang}: noemt de overgangsdatum, uit juridischeDatums.js`,
+      /wetDatum\('markeringTot'/.test(part), true);
     check(`${lang}: zegt dat het geen garantie is`,
       /(not a guarantee|geen garantie)/i.test(part), true);
     check(`${lang}: en dat de zichtbare vermelding telt`,
@@ -414,8 +442,8 @@ console.log('\n/ai-act §6: de twee talen beweren hetzelfde');
     /(a webp does not|webp niet, omdat)/i.test(ch), false);
   check('en nergens dat de omzetting hem bij ons weghaalt',
     /(which webp conversion strips|die webp-omzetting eruit haalt)/i.test(ch), false);
-  check('de Google-note zegt dat elk formaat hem draagt',
-    /(Every format we deliver carries it|Elk formaat dat wij leveren draagt hem)/.test(ch), true);
+  check('de Google-note zegt dat wij hem in de foto’s zetten',
+    /(We put it in the photos we deliver|Wij zetten hem in de foto’s die we leveren)/.test(ch), true);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -447,9 +475,12 @@ console.log('\nde adminroute meldt een levering zonder herkomsttag');
 
   // En het adminportaal doet er iets mee.
   const admin = read('src/lib/admin.js');
-  check('admin.js controleert bij het uploaden', /if \(isScannable\(clean, file\.size\)\)/.test(admin), true);
+  check('admin.js controleert bij het uploaden', /isScannable\(clean, file\.size\)/.test(admin), true);
   check('en meldt wat er mist', /untagged\.length/.test(admin), true);
-  check('en noemt het commando om het te herstellen', /npm run tag:delivery/.test(admin), true);
+  /* 4.01 (8 oktober 2026): de Worker schrijft de tag nu zelf in elke jpg en png
+     (src/lib/xmp.js). Wat overblijft (webp, avif) krijgt de stap "als jpg
+     exporteren", geen commando meer. Zie tests/herkomsttag.test.mjs. */
+  check('en schrijft de tag zelf (4.01)', /zetHerkomstTag\(ruw, clean, LEVERTAG\)/.test(admin), true);
 
   /*
    * ── GEEN BLOKKADE, EN NIET GETEST OP MIJN EIGEN ZIN ───────────────────────
@@ -500,7 +531,12 @@ console.log('\ngeen belofte van twee werkdagen buiten de gesanctioneerde tekst')
   const pages = [
     'src/pages/about.astro', 'src/pages/nl/about.astro',
     'src/pages/contact.astro', 'src/pages/nl/contact.astro',
-    'src/components/Voorpagina.astro', 'src/components/StudioPage.astro',
+    /* Sinds 12 oktober 2026 is de voorpagina VoorpaginaHal.astro (de hal). */
+    'src/components/VoorpaginaHal.astro', 'src/components/StudioHal.astro',
+    /* De planning van de oude /studio staat sinds 1.11 als blok op
+       /how-it-works; StudioPage.astro is nu de pagina over VISUAILS Studio.
+       Sinds 13 oktober 2026 staat dat blok in HowItWorksHal.astro (de hal). */
+    'src/components/HowItWorksHal.astro',
   ];
   for (const p of pages) {
     const body = codeOnly(read(p));
@@ -592,11 +628,12 @@ console.log('\neen onbetaalde reservering blokkeert de agenda niet voor altijd')
       /from '\.\.\/\.\.\/src\/lib\/agenda\.js'/.test(bron), true);
   }
 
-  /* EN EEN CONCEPT UIT EEN ABONNEMENTSWACHTRIJ HOUDT NIETS BEZET. Zonder deze
-     voorwaarde kan één klant de agenda dichtzetten met plannen die hij nooit
-     uitvoert — zie de kop van src/lib/agenda.js. */
-  check('alleen een vastgezet wachtrij-item houdt zijn dagen',
-    /FROM plan_queue[\s\S]{0,200}locked_at IS NOT NULL/.test(agenda), true);
+  /* DE ABONNEMENTSWACHTRIJ HOUDT NIETS MEER BEZET — ronde 10, 8 oktober 2026.
+     Hier stond dat alleen een vastgezet wachtrij-item dagen hield. Het
+     weeksysteem is weg (§28); een abonnee bestelt via het gewone formulier, dus
+     de agenda leest alleen nog bestellingen. */
+  check('de agenda leest de oude abonnementswachtrij niet meer',
+    /FROM plan_queue/.test(agenda), false);
 
   const cron = read('cron/index.js');
   check('de cron geeft de reservering ook echt vrij',
@@ -829,10 +866,13 @@ console.log('\ngetypte aantallen kloppen nog met de lijsten waar ze over gaan');
   const echteStijlen = styles.filter((s2) => s2.moodTitle).length;
   const [enS, nlS] = woord[echteStijlen] || [];
   check(`het aantal huisstijlen is ${echteStijlen}`, echteStijlen >= 1, true);
-  const start = readFileSync(new URL('../src/components/StartPage.astro', import.meta.url), 'utf8');
+  /* Sinds 1.01 (8 oktober 2026) noemt /start geen aantal meer: hij toont de
+     looks zelf, gelezen uit styles.js en catalogStyles.js. Dan kan het aantal
+     ook niet uit de pas lopen — dat is wat hier nu bewaakt wordt. */
+  const start = readFileSync(new URL('../src/components/StartHal.astro', import.meta.url), 'utf8');
+  check('StartPage leest de looks uit styles.js', /from '\.\.\/data\/styles\.js'/.test(start) && /from '\.\.\/data\/catalogStyles\.js'/.test(start), true);
   if (enS) {
-    check(`StartPage zegt "${enS} house styles"`, start.includes(`${enS} house styles`), true);
-    check(`en "${nlS} vaste looks"`, start.includes(`${nlS} vaste looks`), true);
+    check(`StartPage typt geen aantal looks ("${enS} house styles")`, !start.includes(`${enS} house styles`) && !start.includes(`${nlS} vaste looks`), true);
   }
 }
 
@@ -859,7 +899,7 @@ console.log('\ngetypte aantallen kloppen nog met de lijsten waar ze over gaan');
 console.log('\nDESIGN.md noemt geen kleuren die de site niet heeft');
 {
   const css = readFileSync(new URL('../src/styles/global.css', import.meta.url), 'utf8');
-  const design = readFileSync(new URL('../DESIGN.md', import.meta.url), 'utf8');
+  const design = readFileSync(new URL('../docs/DESIGN.md', import.meta.url), 'utf8');
   /* ZONDER COMMENTAAR, en dat is de reparatie die deze test pas bruikbaar maakt.
      Eerste versie las global.css inclusief noten — en daar staat, bij het accent,
      letterlijk *"Was #90BEFF, a light blue, until August 2026"*. Die ene regel zet
@@ -923,9 +963,12 @@ console.log('\nde homepage belooft niets buiten de studio');
      van de homepage af. Wat blijft is de regel erachter — de homepage zegt
      nergens iets over wat een platform ermee doet — en die geldt nu voor de
      hele copytabel van Voorpagina.astro, zonder commentaar. Strenger dan de
-     vier kaarten, en zonder een structuur te pinnen die weer kan verhuizen. */
-  const home = codeOnly(read('src/components/Voorpagina.astro'));
-  const BUITEN = /click-?through|doorklik|bereik\b|reach\b|impressie|engagement|volgers|followers|conversie|conversion|meer verkopen|sell more|viral/i;
+     vier kaarten, en zonder een structuur te pinnen die weer kan verhuizen.
+     Sinds 12 oktober 2026 is dat VoorpaginaHal.astro (de hal). */
+  const home = codeOnly(read('src/components/VoorpaginaHal.astro'));
+  /* `\breach` en niet `reach`: de hal heeft een script, en daarin staat
+     `forEach` — "rEach" plus een woordgrens. Het woord, niet de lettergreep. */
+  const BUITEN = /click-?through|doorklik|bereik\b|\breach\b|impressie|engagement|volgers|followers|conversie|conversion|meer verkopen|sell more|viral/i;
   const treffers = [...home.matchAll(new RegExp(BUITEN.source, 'gi'))].map((m) => m[0]);
   check('de homepage belooft niets van het platform', treffers, []);
 }
@@ -985,7 +1028,7 @@ console.log('\nde gelijkenisbelofte garandeert geen gelijkenis');
 
   /* En de pagina waar de vraag gesteld wordt, mag hem niet zelf beantwoorden
      met een sterkere belofte dan de claim hierboven. */
-  const gids = codeOnly(read('src/components/UploadGuidelinesPage.astro'));
+  const gids = codeOnly(read('src/components/UploadGuidelinesHal.astro'));
   const treffers = [...gids.matchAll(new RegExp(ABSOLUUT.source, 'gi'))].map((m) => m[0]);
   check('/how-to-photograph belooft nergens een exacte kopie', treffers, []);
 }

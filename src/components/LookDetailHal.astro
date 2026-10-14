@@ -1,0 +1,214 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — één lookpagina in de hal. 12 oktober 2026, afvinklijst 7 (groepen
+ * catalog en lifestyle: "de lookpagina's delen één onderdeel, dus dat sjabloon
+ * doe ik hier één keer goed").
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Dezelfde props en dezelfde opbouw als LookDetail.astro (k101 = a: kort en
+ * beeldvullend, "vooral kort visueel uitleggen door middel van foto's en wat
+ * titels verspreid hier en daar"). CatalogStyleDetail.astro en
+ * LifestyleStyleDetail.astro kiezen met huid="hal" dit sjabloon in plaats van
+ * dat; wat ze uitrekenen (feiten, beelden, bewijs, de lange uitleg) blijft daar.
+ *
+ *   kop     pil terug naar de dienst, naam, tagline, de andere looks als chips
+ *   beeld   het eerste echte beeld groot (twee staande naast elkaar), met één
+ *           glazen pil erop (glas alleen boven beeld)
+ *   koppen  voor welke kleding · welk gevoel · welke kanalen, elk met een beeld
+ *           ernaast, om en om
+ *   bewijs  (catalog) jouw foto → VISUAILS, in een nevelvlak
+ *   rest    de overige echte beelden, twee kolommen, niets bijgesneden
+ *   meer    de lange uitleg, ingeklapt (blijft vindbaar met ctrl+F)
+ *   slot    één verloop met korrel: de feiten, de twee knoppen, de andere diensten
+ *
+ * ALLEEN ECHTE BEELDEN (de aanroeper filtert met isEcht()). Geen grijze vakken.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/hal.css';
+import ServiceSwitch from './ServiceSwitch.astro';
+import Compare from './Compare.astro';
+import Disclose from './Disclose.astro';
+import HalBeweging from './HalBeweging.astro';
+import KlantKnop from './KlantKnop.astro';
+import { kleiner, beeldMaat } from '../lib/beeldAanwezig.js';
+import { localizedPath } from '../i18n/ui.js';
+
+interface Beeld { src: string; alt: string }
+interface Props {
+  lang: 'en' | 'nl';
+  dienst: 'catalog' | 'lifestyle';
+  style: any;
+  zusters: { href: string; naam: string }[];
+  feiten: string[];
+  queue?: string;
+  beelden: Beeld[];
+  bewijs?: { before: string; after: string; ratio?: string; beforeLabel: string; afterLabel: string; beforeAlt: string; afterAlt: string; kop: string; regel: string } | null;
+  kies: { href: string; label: string };
+  proef: { href: string; label: string };
+  /** De hub waar de pil naar terug wijst; op het voorbeeld /voorbeeld/<dienst>. */
+  hub?: string;
+}
+const { lang, dienst, style, zusters, feiten, queue = '', beelden, bewijs = null, kies, proef, hub } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+const dienstNaam = dienst === 'catalog' ? 'Catalog' : 'Lifestyle';
+
+const c = nl ? {
+  terug: dienst === 'catalog' ? 'Catalog-stijlen' : 'Lifestyle-stijlen',
+  andere: 'Andere looks',
+  koppen: { kleding: 'Voor welke kleding', gevoel: 'Welk gevoel', kanalen: 'Welke kanalen' },
+  bewijsPil: 'Voor en na',
+  meer: `Meer over ${style.name}`,
+  slotPil: 'Deze look',
+  slot: style.slug === 'custom' ? ['Je eigen look,', 'eerst als voorstel.'] : ['Past het?', `Kies ${style.name}.`],
+} : {
+  terug: dienst === 'catalog' ? 'Catalog styles' : 'Lifestyle styles',
+  andere: 'Other looks',
+  koppen: { kleding: 'What clothing', gevoel: 'What it feels like', kanalen: 'Which channels' },
+  bewijsPil: 'Before and after',
+  meer: `More about ${style.name}`,
+  slotPil: 'This look',
+  slot: style.slug === 'custom' ? ['Your own look,', 'as a proposal first.'] : ['Does it fit?', `Choose ${style.name}.`],
+};
+
+/* De maten van elk beeld (geen verspringende pagina) en een kleinere versie voor
+   een smal scherm, zoals in LookDetail.astro. */
+const metMaat = await Promise.all(beelden.map(async (b) => {
+  const m = await beeldMaat(b.src);
+  const klein = kleiner(b.src, 760);
+  return { ...b, w: m?.w, h: m?.h, srcset: klein !== b.src && m?.w ? `${klein} 760w, ${b.src} ${m.w}w` : undefined };
+}));
+const staand = (b: any) => !!(b && b.w && b.h && b.h > b.w);
+const vorm = (b: any) => {
+  if (!b || !b.w || !b.h) return 'onbekend';
+  const r = b.w / b.h;
+  return r < 0.66 ? '916' : r < 0.95 ? '45' : r < 1.15 ? '11' : 'liggend';
+};
+const maatje = staand(metMaat[0]) ? metMaat.findIndex((b, i) => i > 0 && staand(b)) : -1;
+const paar = maatje > 0;
+const helden = paar ? [metMaat[0], metMaat[maatje]] : metMaat.slice(0, 1);
+const hero = helden[0];
+const rest = metMaat.filter((b) => !helden.includes(b));
+const KOPPEN = ['kleding', 'gevoel', 'kanalen'] as const;
+const kort = style.kort || {};
+const blokken = KOPPEN.filter((k) => kort[k]).map((k, i) => ({ id: k, kop: c.koppen[k], regel: kort[k], beeld: rest[i] || null }));
+const overig = rest.slice(blokken.length);
+/* Heeft geen enkele kop een beeld (Dunes: twee echte beelden, allebei bovenaan),
+   dan staan de drie naast elkaar als kaarten in plaats van drie losse regels met
+   veel wit ertussen. */
+const rij = blokken.length > 0 && blokken.every((b) => !b.beeld);
+const ICOON = {
+  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
+  terug: '<path d="M13.5 8h-11M7 3.5L2.5 8 7 12.5"/>',
+  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
+};
+const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+---
+<div class:list={['h-pagina', 'h-lk', `h-lk-${dienst}`]}>
+
+  {/* ── KOP ────────────────────────────────────────────────────────────────── */}
+  <header class="h-paginakop h-lk-kop">
+    <p class="h-op"><a class="h-pil h-lk-terug" href={lp(hub || `/${dienst}`)}><span>{c.terug}</span></a></p>
+    <h1 class="h-kop h-h1 h-op">{style.name}</h1>
+    <p class="h-lede h-lk-tagline h-op">{style.tagline}</p>
+    {zusters.length > 0 && (
+      <nav class="h-lk-zus h-op" aria-label={c.andere}>
+        <span class="h-st-ook-l">{c.andere}</span>
+        <ul class="h-st-ook-rij" role="list">
+          {zusters.map((z) => <li><a class="h-st-chip" href={lp(z.href)}>{z.naam}</a></li>)}
+        </ul>
+      </nav>
+    )}
+  </header>
+
+  {/* ── HET EERSTE BEELD ─────────────────────────────────────────────────── */}
+  {hero && (
+    <section class="h-sec h-lk-held-sec" aria-label={style.name}>
+      <figure class:list={['h-lk-held', 'h-op', paar ? `is-paar paar-${vorm(helden[0])}-${vorm(helden[1])}` : staand(hero) ? 'is-staand' : 'is-liggend']}>
+        {helden.map((b, i) => (
+          <span class="h-lk-held-beeld">
+            <img src={b.src} srcset={b.srcset} sizes={paar ? '(min-width: 700px) 50vw, 86vw' : '100vw'} alt={b.alt} width={b.w} height={b.h} fetchpriority={i === 0 ? 'high' : undefined} loading={i === 0 ? undefined : 'lazy'} decoding="async" />
+            {i === 0 && <span class="h-pil h-pil-glas h-pil-nr" aria-hidden="true">{dienstNaam} · {style.name}</span>}
+          </span>
+        ))}
+      </figure>
+    </section>
+  )}
+
+  {/* ── DRIE KOPPEN, ELK MET EEN BEELD ───────────────────────────────────── */}
+  {blokken.length > 0 && (
+    <section class:list={['h-sec', 'h-lk-blokken', rij && 'is-rij']}>
+      {blokken.map((b, i) => (
+        <div class:list={['h-lk-blok', 'h-in', b.beeld ? `met-beeld v-${vorm(b.beeld)}` : 'zonder-beeld', i % 2 === 1 && 'is-om']}>
+          {b.beeld && (
+            <figure class="h-lk-beeld">
+              <img src={b.beeld.src} srcset={b.beeld.srcset} sizes="(min-width: 900px) 55vw, 100vw" alt={b.beeld.alt} width={b.beeld.w} height={b.beeld.h} loading="lazy" decoding="async" />
+            </figure>
+          )}
+          <div class="h-lk-tekst">
+            <h2 class="h-pil"><span>{b.kop}</span></h2>
+            <p class="h-lk-regel">{b.regel}</p>
+          </div>
+        </div>
+      ))}
+    </section>
+  )}
+
+  {/* ── HET BEWIJS (catalog) ─────────────────────────────────────────────── */}
+  {bewijs && (
+    <section class="h-sec h-lk-bewijs-sec" aria-labelledby="lk-bewijs">
+      <div class="h-lk-bewijs h-in">
+        <div class="h-lk-bewijs-tekst">
+          <p class="h-pil h-pil-wit"><span>{c.bewijsPil}</span></p>
+          <h2 id="lk-bewijs" class="h-kop h-h3">{bewijs.kop}</h2>
+          <p class="h-pr-band-zin">{bewijs.regel}</p>
+        </div>
+        <div class="h-bewijs-cmp">
+          <Compare before={bewijs.before} after={bewijs.after} ratio={bewijs.ratio} beforeLabel={bewijs.beforeLabel} afterLabel={bewijs.afterLabel} beforeAlt={bewijs.beforeAlt} afterAlt={bewijs.afterAlt} />
+        </div>
+      </div>
+    </section>
+  )}
+
+  {/* ── DE REST, IN TWEE KOLOMMEN ────────────────────────────────────────── */}
+  {overig.length > 0 && (
+    <section class="h-sec h-lk-rest-sec">
+      <ul class:list={['h-lk-raster', overig.length % 2 === 1 && 'is-oneven']} role="list">
+        {overig.map((b) => (
+          <li class="h-in">
+            <img src={b.src} srcset={b.srcset} sizes="(min-width: 900px) 50vw, 100vw" alt={b.alt} width={b.w} height={b.h} loading="lazy" decoding="async" />
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {/* ── MEER, INGEKLAPT ──────────────────────────────────────────────────── */}
+  <section class="h-sec h-lk-meer">
+    <div class="h-lk-meer-in h-in">
+      <Disclose summary={c.meer} tone="plain">
+        <slot name="meer" />
+      </Disclose>
+    </div>
+  </section>
+
+  {/* ── HET SLOT ─────────────────────────────────────────────────────────── */}
+  <section class="h-sec h-lk-slot-sec" aria-labelledby="lk-slot-h">
+    <div class="h-lk-slot h-in">
+      <span class="h-korrel" aria-hidden="true"></span>
+      <p class="h-pil h-pil-wit"><span>{c.slotPil}</span></p>
+      <h2 id="lk-slot-h" class="h-kop h-h2"><span class="l">{c.slot[0]}</span> {c.slot[1]}</h2>
+      <ul class="h-feiten" role="list">
+        {feiten.map((f) => <li><i set:html={ik('check')} /><span>{f}</span></li>)}
+      </ul>
+      {queue && <p class="h-lk-queue">{queue}</p>}
+      <p class="h-acties">
+        <a class="h-knop h-knop-inkt" href={kies.href}>{kies.label}<span class="o" set:html={ik('rechts')} /></a>
+        <a class="h-knop h-knop-lijn" href={proef.href} data-vis-uit>{proef.label}</a>
+        <KlantKnop lang={lang} soort="herbestel" />
+      </p>
+      <ServiceSwitch current={dienst} lang={lang} class="h-lk-diensten" />
+    </div>
+  </section>
+</div>
+<HalBeweging />

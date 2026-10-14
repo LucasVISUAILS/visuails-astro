@@ -63,10 +63,11 @@ export const DOORS = [
   /* ── CATALOG + LIFESTYLE IS ERUIT — 1 oktober 2026 (ronde 8) ───────────────
      Lucas: *"bij Gallery een optie catalog + lifestyle terwijl ik deze helemaal
      niet meer verkoop."* De deur stond via ServiceSwitch op achttien pagina's
-     ("Ook mogelijk: … Catalog + Lifestyle"). De route /start/complete, de
-     sleutel `complete` in LADDER en de waarde in ORDER_SERVICES blijven bestaan:
-     daar hangen oude bestellingen, betalingen en abonnementsslots aan. De
-     pagina staat op noindex en nergens linkt er nog iets naartoe. */
+     ("Ook mogelijk: … Catalog + Lifestyle"). De sleutel `complete` in LADDER en
+     de waarde in ORDER_SERVICES blijven bestaan: daar hangen oude bestellingen,
+     betalingen en abonnementsslots aan. De route /start/complete is op
+     8 oktober 2026 weg (punt 9.01): hij stuurt door naar /start, zie
+     public/_redirects. */
   {
     id: 'video',
     lees: '/video',

@@ -62,7 +62,6 @@ const JOBS = [
   // deliberately absent: it is 928px wide already, under the 960 target, so a
   // derivative would be a same-size re-encode — generation loss for 20 kB.
   { file: 'lifestyle-flash-02', width: 960 },
-  { file: 'lifestyle-glow-01', width: 960 },
   { file: 'lifestyle-phone-made-11', width: 960 },
   { file: 'banners-13', width: 960 },
 
@@ -114,13 +113,13 @@ const JOBS = [
    * 1340 tegen 760 nog altijd bijna drie keer zoveel pixels is.
    */
   ...['lifestyle-flash-04', 'lifestyle-flash-05', 'lifestyle-flash-06', 'lifestyle-flash-07',
-    'lifestyle-flash-08', 'lifestyle-glow-02', 'lifestyle-glow-05', 'lifestyle-glow-06',
-    'lifestyle-phone-made-01', 'lifestyle-phone-made-02', 'lifestyle-phone-made-03',
+    'lifestyle-flash-08', 'lifestyle-glow-02', 'lifestyle-glow-05',
+    'lifestyle-phone-made-02', 'lifestyle-phone-made-03',
     'lifestyle-phone-made-04', 'lifestyle-phone-made-05', 'lifestyle-phone-made-06',
     'lifestyle-phone-made-07', 'lifestyle-phone-made-08', 'lifestyle-phone-made-09',
     'lifestyle-phone-made-10', 'lifestyle-phone-made-11', 'lifestyle-phone-made-12',
     'lifestyle-phone-made-13', 'lifestyle-phone-made-14',
-    'lifestyle-flash-02', 'lifestyle-flash-03', 'lifestyle-glow-01']
+    'lifestyle-flash-02', 'lifestyle-flash-03']
     .map((n) => ({ file: n, width: 760 })),
 
   /* ── EN DE KLEINSTE MAAT, WAAR HET MEESTE TE HALEN VALT ──────────────────
@@ -142,10 +141,10 @@ const JOBS = [
   ...['banners-01', 'banners-02', 'banners-03', 'banners-04', 'banners-05', 'banners-06',
     'banners-07', 'banners-08', 'lifestyle-dunes-01', 'lifestyle-dunes-02', 'lifestyle-flash-01',
     'lifestyle-glow-03', 'lifestyle-glow-04',
-    'lifestyle-flash-02', 'lifestyle-flash-03', 'lifestyle-glow-01',
+    'lifestyle-flash-02', 'lifestyle-flash-03',
     'lifestyle-flash-04', 'lifestyle-flash-05', 'lifestyle-flash-06', 'lifestyle-flash-07',
-    'lifestyle-flash-08', 'lifestyle-glow-02', 'lifestyle-glow-05', 'lifestyle-glow-06',
-    'lifestyle-phone-made-01', 'lifestyle-phone-made-02', 'lifestyle-phone-made-03',
+    'lifestyle-flash-08', 'lifestyle-glow-02', 'lifestyle-glow-05',
+    'lifestyle-phone-made-02', 'lifestyle-phone-made-03',
     'lifestyle-phone-made-04', 'lifestyle-phone-made-05', 'lifestyle-phone-made-06',
     'lifestyle-phone-made-07', 'lifestyle-phone-made-08', 'lifestyle-phone-made-09',
     'lifestyle-phone-made-10', 'lifestyle-phone-made-11', 'lifestyle-phone-made-12',
@@ -158,8 +157,8 @@ const JOBS = [
      van gemiddeld 90 kB is de prijs van een galerij waarin je een foto kunt
      bijzetten zonder dit bestand te hoeven natellen. */
   ...['lifestyle-flash-04', 'lifestyle-flash-05', 'lifestyle-flash-06', 'lifestyle-flash-07',
-    'lifestyle-flash-08', 'lifestyle-glow-02', 'lifestyle-glow-05', 'lifestyle-glow-06',
-    'lifestyle-phone-made-01', 'lifestyle-phone-made-02', 'lifestyle-phone-made-03',
+    'lifestyle-flash-08', 'lifestyle-glow-02', 'lifestyle-glow-05',
+    'lifestyle-phone-made-02', 'lifestyle-phone-made-03',
     'lifestyle-phone-made-04', 'lifestyle-phone-made-05', 'lifestyle-phone-made-06',
     'lifestyle-phone-made-07', 'lifestyle-phone-made-08', 'lifestyle-phone-made-09',
     'lifestyle-phone-made-10', 'lifestyle-phone-made-11', 'lifestyle-phone-made-12',

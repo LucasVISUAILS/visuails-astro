@@ -5,17 +5,19 @@
 // Deze pagina bestaat sinds 20 augustus 2026 en haalde het abonnement weg bij
 // de prijslijst — zie de lange noot bovenin PlansPage.astro.
 import Layout from '../layouts/Layout.astro';
-import PlansPage from '../components/PlansPage.astro';
+// 12 oktober 2026 (afvinklijst 8, alles "doen"): deze pagina staat in de hal (huid="hal");
+// de vorige opmaak staat op _opruimen/LIJST.txt.
+import PlansHal from '../components/PlansHal.astro';
 import { euro, PLAN_AMOUNT, PLAN_CREDITS, vatLabel } from '../data/pricing.js';
 
 const CHEAPEST = Object.keys(PLAN_AMOUNT).reduce((a, b) => (PLAN_AMOUNT[b] < PLAN_AMOUNT[a] ? b : a));
 
 const description =
-  `Credits every month to spend on catalog, lifestyle and video. From ` +
+  `Credits every month for catalog sets and carousels; you order whenever you like. From ` +
   `${euro(PLAN_AMOUNT[CHEAPEST], 'en')} a month for ${PLAN_CREDITS[CHEAPEST]} credits, ` +
-  `or build your own plan. ${vatLabel('excl', 'en')}.`;
+  `or choose your own number. ${vatLabel('excl', 'en')}.`;
 ---
 
-<Layout title="Plans — credits every month | VISUAILS" description={description}>
-  <PlansPage lang="en" />
+<Layout huid="hal" title="Plans — credits every month | VISUAILS" description={description}>
+  <PlansHal lang="en" />
 </Layout>

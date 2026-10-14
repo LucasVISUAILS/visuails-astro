@@ -2,7 +2,7 @@
 // src/data/catalogStyles.js — same shape and exports, only the
 // human-readable strings are translated. Order paths are prefixed with /nl.
 
-import { perProduct, ladderRate, euro, vatLabel, RESOLUTIE } from './pricing.js';
+import { perProduct, ladderFloor, euro, vatLabel, RESOLUTIE } from './pricing.js';
 
 // No euro figure and no delivery time may be typed into this file.
 // Both used to live here as literals, which is how the hub cards and the
@@ -15,8 +15,13 @@ const CAT = perProduct('catalog', 'nl');
 // four. Every card prints the entry rung with "from" and a VAT label — the
 // same shape /catalog’s own rung table uses, so the card and the table cannot
 // disagree.
-const CAT_FROM = `vanaf ${euro(ladderRate('catalog', 1), 'nl')}`;
+/* Zie catalogStyles.js: sinds 12 oktober 2026 de onderste trede (v9-vanaf a). */
+const CAT_FROM = `vanaf ${euro(ladderFloor('catalog'), 'nl')}`;
 const CAT_VAT = vatLabel('excl', 'nl');
+/* De kaart op /catalog (naloop A2, 8 okt 2026): "vanaf" is overal de onderste
+   trede, net als op /start, /lifestyle en de voorpagina; de uitlegregel bij de
+   prijsband zegt wat één product kost (eenProductRegel() in pricing.js). */
+const CAT_KAART = `Vanaf ${euro(ladderFloor('catalog'), 'nl')} / product · ${CAT_VAT}`;
 /* Levertijd en controle staan in de feitenrij van de detailpagina, niet
    meer ook in "Wat je krijgt" (29 september 2026: twee keer dezelfde zin). */
 
@@ -30,6 +35,16 @@ export const catalogStyles = [
     slug: 'classic',
     name: 'Classic',
     tagline: 'Strak. Consistent. Zonder concessies.',
+    /* De lookpagina, kort (k101, 11 oktober 2026): drie korte regels onder
+       vaste koppen — voor welke kleding, welk gevoel, welke kanalen. */
+    kort: {
+      kleding: 'Je hele assortiment in één keer, van T-shirts tot jassen, tassen en petten.',
+      gevoel: 'Strak en gelijk: hetzelfde licht en dezelfde hoek voor elk product.',
+      kanalen: 'Je webshop, en marktplaatsen zoals Amazon en bol.com.',
+    },
+    /* De echte beelden van deze look, het eerste groot bovenaan (k101). Leeg =
+       geen beeldblokken; nooit een grijs vlak. */
+    fotos: ['/img/catalog-raster.webp', '/img/catalog-after.webp'],
     priceTrust: CAT_FROM,
     priceUnit: ' / product',
     metaPrice: `${CAT_FROM} / product — vanaf 4 foto’s`,
@@ -43,7 +58,7 @@ export const catalogStyles = [
     heroWidth: '26%',
     cardIcon: 'bottle',
     cardWidth: '42%',
-    cardPrice: `${CAT_FROM} / product ${CAT_VAT}`,
+    cardPrice: CAT_KAART,
     cardDesc: 'Een complete set per product — voorkant, achterkant, detail en één on-model shot.',
     moodTitle: 'Hoe Classic eruitziet.',
     moodParagraphs: [
@@ -62,7 +77,7 @@ export const catalogStyles = [
       { title: 'Een vastgezet lichtrecept', body: 'Eén softbox-opstelling, vastgelegd — geen keuze die per shot opnieuw wordt gemaakt.' },
       { title: 'Een hoeksysteem, geen losse hoek', body: 'Vaste camerageometrie, zodat een nieuw product precies naast een oud past.' },
       { title: 'Kleur trouw aan het product', body: 'Wit blijft wit, je merkkleur blijft kloppen.' },
-      { title: 'Eén verhouding per bestelling', body: 'Je kiest één beeldverhouding per bestelling. Je krijgt JPG, PNG en WebP; een marktplaatsbestelling krijgt de formaten die die marktplaats aanneemt.' },
+      { title: 'Eén verhouding per bestelling', body: 'Je kiest één beeldverhouding per bestelling. Je krijgt elk beeld als JPG; PNG of WebP erbij vraag je aan bij je bestelling in VISUAILS Studio.' },
     ],
     why: [
       { title: 'Marktplaats-proof', body: 'Packshots voldoen aan de beeldregels van Amazon, bol en Zalando. Zalando vraagt daarnaast echte modelfoto\u2019s, dus we kunnen niet beloven dat Zalando onze on-model shot accepteert.' },
@@ -85,9 +100,20 @@ export const catalogStyles = [
     slug: 'custom',
     name: 'Eigen look',
     tagline: 'Een catalog-look die onmiskenbaar van jou is.',
-    priceTrust: `Eén keer ontworpen — daarna ${CAT_FROM} / product`,
+    /* De lookpagina, kort (k101, 11 oktober 2026): drie korte regels onder
+       vaste koppen — voor welke kleding, welk gevoel, welke kanalen. */
+    kort: {
+      kleding: 'Assortimenten waar herkenning belangrijker is dan neutraliteit.',
+      gevoel: 'Een achtergrond, schaduw en props die zeggen: dit zijn wij, nog vóór het logo.',
+      kanalen: 'Je eigen webshop, waar je look je etalage is.',
+    },
+    /* De echte beelden van deze look, het eerste groot bovenaan (k101). Leeg =
+       geen beeldblokken; nooit een grijs vlak. */
+    fotos: [],
+    /* Op aanvraag, zoals de eigen look op /catalog en /lifestyle (v9-vanaf a). */
+    priceTrust: 'Op aanvraag',
     priceUnit: '',
-    metaPrice: `Eén keer ontworpen — daarna ${CAT_FROM} / product`,
+    metaPrice: 'Eén keer ontworpen, op aanvraag',
     orderHref: '/nl/start/custom-look/',
     orderLabel: 'Vraag een eigen look aan',
     heroIcon: 'bag',
@@ -95,7 +121,7 @@ export const catalogStyles = [
     cardIcon: 'bag',
     cardWidth: '46%',
     cardPrice: 'Prijs op maat',
-    cardDesc: `Een catalog-look ontworpen rond jouw merk — daarna elk product ${CAT_FROM} per set van vier foto’s.`,
+    cardDesc: 'Een catalog-look ontworpen rond jouw merk — daarna elk product als set van vier foto’s, tegen het gewone tarief.',
     moodTitle: 'Hoe een eigen look eruitziet.',
     moodParagraphs: [
       'Een kenmerkende achtergrond, schaduw en propstijl die zeggen: dit zijn wij — nog voordat het logo dat doet.',
@@ -130,7 +156,7 @@ export const catalogStyles = [
       'Een catalogstijl op maat, samen met jou ontworpen',
       'Gedocumenteerde regels voor perfecte herhaalbaarheid',
       'Exclusiviteit — jouw look blijft van jou',
-      'Eén ontwerpbedrag, daarna het gewone tarief per product',
+      'Eén ontwerpbedrag, daarna vanaf het gewone tarief per product',
     ],
   },
 ];

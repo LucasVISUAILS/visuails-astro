@@ -9,7 +9,7 @@
 // unlike the lifestyle styles — there is no `heroPhoto` / `cardPhoto` here.
 // Icon fields drive ProductScene's placeholder rendering directly.
 
-import { perProduct, ladderRate, euro, vatLabel, RESOLUTIE } from './pricing.js';
+import { perProduct, ladderFloor, euro, vatLabel, RESOLUTIE } from './pricing.js';
 
 // No euro figure and no delivery time may be typed into this file.
 // Both used to live here as literals, which is how the hub cards and the
@@ -19,11 +19,18 @@ import { perProduct, ladderRate, euro, vatLabel, RESOLUTIE } from './pricing.js'
 const CAT = perProduct('catalog', 'en');
 // The rate is a LADDER now, not a flat fee, so a bare figure on a style card
 // would read as the price at any count when it is only the price at one to
-// four. Every card prints the entry rung with "from" and a VAT label — the
+// four. Every card prints the bottom rung with "from" and a VAT label — the
 // same shape /catalog's own rung table uses, so the card and the table cannot
 // disagree.
-const CAT_FROM = `from ${euro(ladderRate('catalog', 1), 'en')}`;
+/* Sinds 12 oktober 2026 (afvinklijst 9, v9-vanaf a) ook hier de onderste trede:
+   "vanaf" is op de hele site het laagste tarief, zoals CAT_KAART hieronder. Hier stond
+   ladderRate('catalog', 1), het tarief van één product. */
+const CAT_FROM = `from ${euro(ladderFloor('catalog'), 'en')}`;
 const CAT_VAT = vatLabel('excl', 'en');
+/* De kaart op /catalog (naloop A2, 8 okt 2026): "vanaf" is overal de onderste
+   trede, net als op /start, /lifestyle en de voorpagina; de uitlegregel bij de
+   prijsband zegt wat één product kost (eenProductRegel() in pricing.js). */
+const CAT_KAART = `From ${euro(ladderFloor('catalog'), 'en')} / product · ${CAT_VAT}`;
 /* Levertijd en controle staan in de feitenrij van de detailpagina, niet
    meer ook in "Wat je krijgt" (29 september 2026: twee keer dezelfde zin). */
 
@@ -40,6 +47,16 @@ export const catalogStyles = [
     slug: 'classic',
     name: 'Classic',
     tagline: 'Clean. Consistent. Relentlessly so.',
+    /* De lookpagina, kort (k101, 11 oktober 2026): drie korte regels onder
+       vaste koppen — voor welke kleding, welk gevoel, welke kanalen. */
+    kort: {
+      kleding: 'Your whole range in one go, from T-shirts to jackets, bags and caps.',
+      gevoel: 'Clean and consistent: the same light and angle for every product.',
+      kanalen: 'Your webshop, and marketplaces such as Amazon and bol.com.',
+    },
+    /* De echte beelden van deze look, het eerste groot bovenaan (k101). Leeg =
+       geen beeldblokken; nooit een grijs vlak. */
+    fotos: ['/img/catalog-raster.webp', '/img/catalog-after.webp'],
     priceTrust: CAT_FROM,
     priceUnit: ' / product',
     metaPrice: `${CAT_FROM} / product ${CAT_VAT} — from 4 photos`,
@@ -53,7 +70,7 @@ export const catalogStyles = [
     heroWidth: '26%',
     cardIcon: 'bottle',
     cardWidth: '42%',
-    cardPrice: `${CAT_FROM} / product ${CAT_VAT}`,
+    cardPrice: CAT_KAART,
     cardDesc: 'A full set per product — front, back, detail and one on-model shot.',
     moodTitle: 'What Classic feels like.',
     moodParagraphs: [
@@ -72,7 +89,7 @@ export const catalogStyles = [
       { title: 'A locked lighting recipe', body: 'One softbox setup, codified — not a call made shot by shot.' },
       { title: 'An angle system, not an angle', body: 'Fixed camera geometry, so new products sit flush beside old ones.' },
       { title: 'Colour held to the product', body: 'Whites stay white, your brand colour stays true.' },
-      { title: 'One ratio per order', body: 'You pick one aspect ratio per order. Files come as JPG, PNG and WebP; a marketplace order gets the formats that marketplace accepts.' },
+      { title: 'One ratio per order', body: 'You pick one aspect ratio per order. Every image comes as JPG; need PNG or WebP as well, request it on the order in VISUAILS Studio.' },
     ],
     why: [
       { title: 'Marketplace-proof', body: 'Packshots meet the image rules of Amazon, bol.com and Zalando. Zalando also asks for real model photos, so we cannot promise it will accept our on-model shot.' },
@@ -95,9 +112,20 @@ export const catalogStyles = [
     slug: 'custom',
     name: 'Custom Brand',
     tagline: 'A catalog look that is unmistakably yours.',
-    priceTrust: `Designed once — then ${CAT_FROM} / product`,
+    /* De lookpagina, kort (k101, 11 oktober 2026): drie korte regels onder
+       vaste koppen — voor welke kleding, welk gevoel, welke kanalen. */
+    kort: {
+      kleding: 'Ranges where recognition matters more than neutrality.',
+      gevoel: 'A backdrop, shadow and props that say this is us, before the logo does.',
+      kanalen: 'Your own shop, where your look is your storefront.',
+    },
+    /* De echte beelden van deze look, het eerste groot bovenaan (k101). Leeg =
+       geen beeldblokken; nooit een grijs vlak. */
+    fotos: [],
+    /* Op aanvraag, zoals de eigen look op /catalog en /lifestyle (v9-vanaf a). */
+    priceTrust: 'On request',
     priceUnit: '',
-    metaPrice: `Designed once — then ${CAT_FROM} / product`,
+    metaPrice: 'Designed once, on request',
     /* Custom Brand heeft geen tarief per product tot de look ontworpen is —
        zie `cardPrice: 'Custom pricing'` hierboven. Een knop naar het gewone
        bestelformulier zou een prijs beloven die er nog niet is, dus gaat hij
@@ -109,7 +137,7 @@ export const catalogStyles = [
     cardIcon: 'bag',
     cardWidth: '46%',
     cardPrice: 'Custom pricing',
-    cardDesc: `A catalog look designed around your brand — then every product ${CAT_FROM} for a four-photo set.`,
+    cardDesc: 'A catalog look designed around your brand — then every product as a four-photo set, at the regular rate.',
     moodTitle: 'What Custom Brand feels like.',
     moodParagraphs: [
       'A signature backdrop, shadow and prop language that says this is us — before the logo does.',
@@ -144,7 +172,7 @@ export const catalogStyles = [
       'A custom catalog style, designed with you',
       'Documented rules for perfect repeatability',
       'Exclusivity — your look stays yours',
-      'One design fee, then the normal per-product rate',
+      'One design fee, then from the normal per-product rate',
     ],
   },
 ];

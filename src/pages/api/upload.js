@@ -1,4 +1,4 @@
-// VISUAILS — POST en DELETE /api/upload, de foto's van /start naar R2. De code en
+// VISUAILS — POST, DELETE en GET (?batch=, 1.04) /api/upload, de foto's van /start naar R2. De code en
 // de uitleg staan in functions/api/upload.js; zie src/lib/route.js.
 import { onRequestGet, onRequestPost, onRequestDelete } from '../../../functions/api/upload.js';
 import { alsRoute, nietToegestaan } from '../../lib/route.js';

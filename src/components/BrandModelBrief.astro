@@ -410,23 +410,11 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
           <span class="bm-hint">{b.vatHint}</span>
         </div>
 
-        {/* De verklaring bij 0%. Verborgen tot verlegging überhaupt mogelijk is
-            — een ander EU-land dan Nederland, mét een ingevuld btw-nummer — en
-            dan verplicht. De voorwaarde is niet overgetypt: het script leest
-            isEu() en HOME_COUNTRY uit src/data/vat.js, dezelfde bron als
-            syncVatConfirm() in pipeline.js.
-
-            Blijft het blok verborgen omdat er geen script draait, dan is er ook
-            geen 0% zonder verklaring: vatGate() in vat.js houdt de betaling
-            tegen en de bestelling komt op de beoordelingslijst. Degraderen naar
-            veilig, niet naar gratis. */}
-        <div class="field bm-vatconfirm" data-bm-vatconfirm hidden>
-          <label class="bm-check" for="bm-vat-confirmed">
-            <input type="checkbox" id="bm-vat-confirmed" name="vat_confirmed" value="yes" data-melding={b.vatConfirm} />
-            <span>{b.vatConfirm}</span>
-          </label>
-          <span class="bm-hint">{b.vatConfirmHint}</span>
-        </div>
+        {/* 8.06 (8 oktober 2026, V19 = a): hier stond een apart vinkje voor 0%
+            verlegd. Net als op het bestelformulier en het abonnementsformulier
+            zit die verklaring nu in het zakelijk-vinkje van stap 5, met merk en
+            btw-nummer erin. Zonder script blijft de zin weg en is het 21%:
+            degraderen naar veilig, niet naar gratis. */}
 
         <div class="field bm-reg" data-bm-reg hidden>
           <label for="bm-reg">{b.reg} <span class="req">*</span></label>
@@ -474,9 +462,13 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
             src/data/consent.js. */}
         <div class="bm-consents">
           <input type="hidden" name="business_version" value={BUSINESS_VERSION} />
+          {/* 8.06: "yes" zolang de verleggingszin in het vinkje staat (ander
+              EU-land dan NL, met merk en btw-nummer); gezet door syncBtw()
+              hieronder. Zonder script leeg: dan 21%. */}
+          <input type="hidden" name="vat_confirmed" value="" data-bm-verlegd-veld />
           <label class="bm-check">
             <input type="checkbox" name="business_declaration" value="yes" required data-melding={c.businessErr} />
-            <span>{currentBusiness(lang)}</span>
+            <span><span class="bm-verlegd" data-bm-verlegd hidden></span>{currentBusiness(lang)}</span>
           </label>
 
           {/* Eén vinkje sinds 30 september 2026: de zakelijke verklaring (business-v2)
@@ -632,6 +624,9 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
   .bm-check { display: flex; gap: .55rem; align-items: flex-start; margin-top: .6rem; font-size: .84rem; color: var(--ink-2); line-height: 1.55; cursor: pointer; }
   .bm-check input { accent-color: var(--accent); width: 15px; height: 15px; flex: none; margin-top: .18rem; }
   .field:has(.bm-check input:checked) input[data-bm-vat] { opacity: .45; }
+  /* 8.06: de verleggingszin als eerste regel in het zakelijk-vinkje (EU met btw-nummer). */
+  .bm-check .bm-verlegd { display: block; margin-bottom: .45rem; color: var(--ink); }
+  .bm-check .bm-verlegd[hidden] { display: none; }
 
   .bm-total {
     display: grid; grid-template-columns: 1fr auto; gap: .2rem 1rem;
@@ -683,6 +678,8 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
    * niets extra's en houdt de lijst met EU-landen op één plek.
    */
   import { isEu, HOME_COUNTRY, vatShape, vatFormatError } from '../data/vat.js';
+  /* 8.06: de verleggingszin in het zakelijk-vinkje, dezelfde bron als pipeline.js. */
+  import { verleggingZin } from '../data/business.js';
 
   function bmBoot() {
     const form = document.querySelector('form[data-bm-form]');
@@ -772,8 +769,10 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
     const noVat = form.querySelector('[data-bm-novat]');
     const regBlok = form.querySelector('[data-bm-reg]');
     const regVeld = form.querySelector('[data-bm-regfield]');
-    const vcBlok = form.querySelector('[data-bm-vatconfirm]');
-    const vcVeld = vcBlok ? vcBlok.querySelector('input[name="vat_confirmed"]') : null;
+    /* 8.06: de zin in het zakelijk-vinkje en het verborgen veld ernaast. */
+    const verlegd = form.querySelector('[data-bm-verlegd]');
+    const verlegdVeld = form.querySelector('[data-bm-verlegd-veld]');
+    const merkVeld = form.querySelector('input[name="brand"]');
     const land = form.querySelector('[data-bm-country]');
 
     const syncBtw = () => {
@@ -782,12 +781,11 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
       if (regBlok) regBlok.hidden = !geen;
       if (regVeld) regVeld.required = geen;
 
-      /* De verklaring bij 0%: een ander EU-land dan Nederland, mét een ingevuld
-         btw-nummer. Precies de voorwaarde van artikel 196, en dezelfde die
-         pipeline.js aanhoudt. Verdwijnt het blok, dan verdwijnt ook het
-         antwoord — een aangevinkte verklaring die de klant niet meer kan zien,
-         is geen verklaring, en hij zou meeliften naar een land waar hij niet
-         over gaat. */
+      /* De verleggingszin (8.06): een ander EU-land dan Nederland, mét een
+         ingevuld btw-nummer en een merk. Precies de voorwaarde van artikel 196,
+         en dezelfde die syncVatConfirm() in pipeline.js aanhoudt. Verandert het
+         land of het nummer, dan verandert de zin mee — het vinkje hoort altijd
+         bij de tekst die er nu staat. */
       const up = String((land && land.value) || '').trim().toUpperCase();
 
       /* ── DE VORM VAN HET NUMMER, PER LAND — 12 september 2026 ───────────
@@ -816,11 +814,17 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
       }
 
       const geldt = !!up && up !== HOME_COUNTRY && isEu(up) && !!(vat && vat.value.trim()) && !geen;
-      if (vcBlok) vcBlok.hidden = !geldt;
-      if (vcVeld) {
-        vcVeld.required = geldt;
-        if (!geldt) vcVeld.checked = false;
+      const zin = geldt
+        ? verleggingZin(document.documentElement.lang === 'nl' ? 'nl' : 'en', {
+          merk: merkVeld ? merkVeld.value : '',
+          btw: vat ? vat.value : '',
+        })
+        : null;
+      if (verlegd) {
+        verlegd.textContent = zin || '';
+        verlegd.hidden = !zin;
       }
+      if (verlegdVeld) verlegdVeld.value = zin ? 'yes' : '';
     };
 
     /* Een stap is pas geldig als alles erin geldig is. `checkValidity()` op de

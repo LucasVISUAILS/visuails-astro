@@ -40,6 +40,7 @@ import {
   CHANNELS, WHITE_CHANNELS, RISK_CHANNELS, channelName, copy as chCopy,
 } from '../../data/channels.js';
 
+import { channelRatio } from '../../data/ratios.js';
 import Disclose from '../Disclose.astro';
 import Note from '../Note.astro';
 /* 3 september 2026: de kaart draagt één regel (`short`); de volledige eis van
@@ -85,6 +86,7 @@ if (!background(DEFAULT_ID) || background(DEFAULT_ID).hex.toUpperCase() !== '#FF
             data-pl-ch-white={ch.requiresWhite ? '1' : undefined}
             data-pl-ch-risk={ch.modelShotRisk ? '1' : undefined}
             data-pl-ch-mainmodel={ch.modelsOnMain === true ? undefined : '1'}
+            data-pl-ch-ratio={channelRatio(ch.id)?.id}
           />
           <span class="ch-name">{channelName(ch, lang)}</span>
         </span>

@@ -1,0 +1,109 @@
+---
+/*
+ * VISUAILS — de creditkaart. 8 oktober 2026 (punt 6.01).
+ *
+ * Eén kaart voor /plans, /start/plan, Studio en stap 5: catalogset, carrousel,
+ * extra foto, 4K en video op aanvraag, met de credits uit pricing.js. Per plan
+ * de vertaling ("Pro: 120 credits, 30 catalogsets of 24 carrousels") en, als er
+ * een saldo is, dezelfde vertaling achter het saldo. De inhoud en de zinnen
+ * staan in src/data/creditKaart.js, zodat Studio (account.js) en stap 5 ze ook
+ * zonder deze component kunnen lezen.
+ *
+ * Props:
+ *   lang      'nl' | 'en'
+ *   plannen   true = de vertaling per plan eronder (standaard aan)
+ *   saldo     een aantal credits: "Je hebt 72 credits: genoeg voor …"
+ *   kern      true = de kernzin erboven (catalogset altijd 4 credits)
+ *   kop       eigen kop; standaard "Wat een credit oplevert"
+ *   id        anker op de kaart
+ *
+ * Eén credit is "1 credit" en niet "1 credits" (4K, 12 oktober 2026): het woord is
+ * in beide talen hetzelfde, dus het enkelvoud staat hier en niet in de data.
+ *
+ * Geen script en geen inline stijl: werkt onder de CSP van Studio
+ * (`style-src 'self'`; de stijl hieronder komt als los bestand mee, zie
+ * inlineStylesheets in astro.config.mjs). De kleuren lezen de namen van de
+ * site (--inkt) met die van Studio (--ink) als terugval.
+ */
+import { creditKaartRegels, creditKaartTekst, planVertaling, saldoVertaling, creditKern } from '../data/creditKaart.js';
+import { PLAN_IDS } from '../data/plans.js';
+
+interface Props {
+  lang: 'nl' | 'en';
+  plannen?: boolean;
+  saldo?: number;
+  kern?: boolean;
+  kop?: string;
+  id?: string;
+}
+const { lang, plannen = true, saldo, kern = false, kop, id } = Astro.props;
+const tekst = creditKaartTekst(lang);
+const regels = creditKaartRegels(lang);
+const kopId = `${id || 'creditkaart'}-kop`;
+---
+<section class="ck" id={id} aria-labelledby={kopId}>
+  <p class="ck-kop" id={kopId}>{kop || tekst.kop}</p>
+  {kern && <p class="ck-kern">{creditKern(lang)}</p>}
+  <ul class="ck-lijst" role="list">
+    {regels.map((r) => (
+      <li data-ck={r.id}>
+        <span class="ck-c">{r.credits === null ? <span class="ck-aanvraag">{tekst.opAanvraag}</span> : <Fragment><b>{r.credits}</b> <span class="ck-woord">{r.credits === 1 ? 'credit' : tekst.credits}</span></Fragment>}</span>
+        <span class="ck-naam">{r.naam}</span>
+        <span class="ck-per">{r.per}</span>
+      </li>
+    ))}
+  </ul>
+  {plannen && (
+    <ul class="ck-plannen" role="list">
+      {PLAN_IDS.map((p) => <li data-ck-plan={p}>{planVertaling(p, lang)}</li>)}
+    </ul>
+  )}
+  {typeof saldo === 'number' && <p class="ck-saldo">{saldoVertaling(saldo, lang)}</p>}
+</section>
+
+<style>
+  .ck {
+    --ck-inkt: var(--inkt, var(--ink));
+    --ck-inkt-2: var(--inkt-2, var(--ink-2));
+    --ck-lijn: var(--lijn, var(--line));
+    border: 1px solid var(--ck-lijn);
+    border-radius: var(--s22-ronding, 14px);
+    padding: clamp(1.1rem, 2.4vw, 1.8rem);
+    background: var(--vel, var(--paper-2, transparent));
+    color: var(--ck-inkt);
+    min-width: 0;
+  }
+  .ck-kop {
+    margin: 0 0 .9rem;
+    font-family: var(--mono2, var(--font-mono, ui-monospace, monospace));
+    font-size: .75rem; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--ck-inkt-2);
+  }
+  .ck-kern { margin: 0 0 1rem; font-weight: 600; font-size: .98rem; line-height: 1.45; text-wrap: pretty; }
+  .ck-lijst { list-style: none; margin: 0; padding: 0; display: grid; }
+  .ck-lijst li {
+    display: grid; grid-template-columns: 7.2rem minmax(0, 1fr); grid-template-rows: auto auto;
+    column-gap: 1rem; padding: .7rem 0; border-top: 1px solid var(--ck-lijn);
+  }
+  .ck-lijst li:first-child { border-top: 0; padding-top: 0; }
+  .ck-c { grid-row: 1 / span 2; display: flex; align-items: baseline; gap: .35rem; white-space: nowrap; }
+  .ck-c b {
+    font-family: var(--kop2, var(--font-heading, inherit)); font-weight: 500; font-stretch: 125%;
+    font-size: clamp(1.45rem, 2.4vw, 1.9rem); line-height: 1; font-variant-numeric: tabular-nums;
+  }
+  .ck-woord, .ck-aanvraag {
+    font-family: var(--mono2, var(--font-mono, ui-monospace, monospace));
+    font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ck-inkt-2);
+  }
+  .ck-aanvraag { white-space: normal; align-self: center; }
+  .ck-naam { font-weight: 600; font-size: .95rem; }
+  .ck-per { font-size: .85rem; color: var(--ck-inkt-2); }
+  .ck-plannen {
+    list-style: none; margin: 1rem 0 0; padding: .9rem 0 0; border-top: 1px solid var(--ck-lijn);
+    display: grid; gap: .35rem; font-size: .9rem; line-height: 1.45;
+  }
+  .ck-saldo { margin: 1rem 0 0; padding-top: .9rem; border-top: 1px solid var(--ck-lijn); font-weight: 600; }
+  @media (max-width: 560px) {
+    .ck-lijst li { grid-template-columns: 6rem minmax(0, 1fr); column-gap: .7rem; }
+  }
+</style>

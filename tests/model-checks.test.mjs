@@ -84,9 +84,11 @@ console.log('\nwat een volledige controle is');
 
 console.log('\nde pagina kan de claim niet buiten het logboek om doen');
 {
-  const pagina = read('src/components/AiActPage.astro');
+  /* Sinds 13 oktober 2026 staat /ai-act in de hal (AiActHal.astro); AiActPage.astro
+     staat op de opruimlijst. */
+  const pagina = read('src/components/AiActHal.astro');
 
-  check('AiActPage leest het logboek', /from '\.\.\/data\/modelChecks\.js'/.test(pagina), true);
+  check('AiActHal leest het logboek', /from '\.\.\/data\/modelChecks\.js'/.test(pagina), true);
   /* Zonder deze regel zou iemand de sectie kunnen laten staan en de schakelaar
      weghalen — en dan staat de claim er altijd, ook als er niets gecontroleerd is. */
   check('en toont de sectie alleen achter die schakelaar',

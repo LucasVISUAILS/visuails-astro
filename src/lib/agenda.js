@@ -15,16 +15,16 @@
 //
 // ── WAT ER MEETELT, EN WAT NIET ─────────────────────────────────────────────
 //
-// Twee bronnen houden dagen bezet, en allebei om dezelfde reden: er is iemand aan
-// wie een dag beloofd is.
+// Eén bron houdt dagen bezet: een bestelling met een gereserveerd venster
+// (`orders.window_start`), zolang zij niet geannuleerd is en haar betaaltermijn
+// niet verlopen. Er is iemand aan wie die dag beloofd is.
 //
-//   · een bestelling met een gereserveerd venster (`orders.window_start`), zolang
-//     zij niet geannuleerd is en haar betaaltermijn niet verlopen;
-//   · een VASTGEZET item uit een abonnementswachtrij dat zelf dagen heeft gekozen.
-//
-// Een concept in de wachtrij telt NIET mee. Vastzetten is wat een slot kost en wat
-// van een voornemen een afspraak maakt; zou een concept al dagen bezet houden, dan
-// kan één klant de agenda dichtzetten met plannen die hij nooit uitvoert.
+// ── DE ABONNEMENTSWACHTRIJ TELT NIET MEER MEE — ronde 10, 8 oktober 2026 ──────
+// Hier was een tweede bron: een vastgezet item uit `plan_queue` dat zelf dagen
+// had gekozen. Het weeksysteem is weg (§28 van het overzicht): een abonnee
+// bestelt via het gewone formulier, en zijn bestelling met een venster staat
+// dus gewoon in `orders`. `plan_queue` blijft als geschiedenis staan, maar
+// niets schrijft er meer in en de agenda leest hem niet meer.
 //
 // ── EN ALS DE AGENDA NIET TE LEZEN IS, WORDT ER NIETS GEGOKT ────────────────
 //
@@ -68,16 +68,6 @@ function orderSql(beforeId, exceptId) {
              )${beforeId ? ' AND id < ?2' : ''}${exceptId ? ` AND id <> ?${beforeId ? 3 : 2}` : ''}`;
 }
 
-/* Een vastgezet wachtrij-item is één stuk van zijn eigen soort. `1 AS product_count`
-   en `kind AS service` zetten het in precies de vorm die bookedFromRows() al leest,
-   zodat er geen tweede weegfunctie nodig is voor abonnementen. */
-const QUEUE_SQL = `SELECT window_start, window_end, 1 AS product_count, kind AS service
-                     FROM plan_queue
-                    WHERE locked_at IS NOT NULL
-                      AND taken_at IS NULL
-                      AND window_start IS NOT NULL
-                      AND COALESCE(window_end, window_start) >= ?1`;
-
 /**
  * De dichtgezette dagen en de vastgelegde last, vanaf `today`.
  *
@@ -91,14 +81,13 @@ export async function readCalendar(env, today, { beforeId = null, exceptId = nul
   const binds = [today, beforeId, exceptId].filter((v) => v !== null && v !== undefined);
   const orders = env.DB.prepare(orderSql(beforeId, exceptId)).bind(...binds);
 
-  const [blackoutRows, orderRows, queueRows] = await Promise.all([
+  const [blackoutRows, orderRows] = await Promise.all([
     env.DB.prepare('SELECT day FROM blackout_days WHERE day >= ?1 AND day <= ?2').bind(today, horizonEnd).all(),
     orders.all(),
-    env.DB.prepare(QUEUE_SQL).bind(today).all(),
   ]);
 
   const blackouts = new Set((blackoutRows.results || []).map((r) => r.day));
-  const rijen = [...(orderRows.results || []).map(videoVelden), ...(queueRows.results || [])];
+  const rijen = (orderRows.results || []).map(videoVelden);
   return { blackouts, booked: bookedFromRows(rijen, blackouts) };
 }
 

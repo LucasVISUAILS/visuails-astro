@@ -1,13 +1,15 @@
 ---
+// VISUAILS — /nl/upload-guidelines: in de hal sinds 13 oktober 2026 (afvinklijst 14, alles doen). De pagina
+// staat in UploadGuidelinesHal.astro; de vorige (UploadGuidelinesPage.astro) staat op de opruimlijst.
 // VISUAILS — /nl/upload-guidelines. Zie de Engelse variant en de kop van
 // UploadGuidelinesPage.astro; alleen de meta verschilt hier.
 import Layout from '../../layouts/Layout.astro';
-import UploadGuidelinesPage from '../../components/UploadGuidelinesPage.astro';
+import UploadGuidelinesHal from '../../components/UploadGuidelinesHal.astro';
 ---
 
-<Layout
+<Layout huid="hal"
   title="Uploadrichtlijnen — VISUAILS"
   description="Eenvoudige tips voor de productfoto’s die je ons stuurt, zodat je visuals scherp, accuraat en snel worden."
 >
-  <UploadGuidelinesPage lang="nl" />
+  <UploadGuidelinesHal lang="nl" />
 </Layout>

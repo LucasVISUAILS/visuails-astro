@@ -30,26 +30,21 @@ const lees = (p) => readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
 
 console.log('\nVISUAILS — met jouw product\n');
 
-/* ══ 1 · DE LIJST DEKT PRECIES DE DEUREN DIE ER ZIJN ══════════════════════ */
-console.log('de lijst loopt niet achter op de pagina');
+/* ══ 1 · WAT /start TOONT, KENT DE LIJST ═══════════════════════════════════
+   Sinds 1.01 (8 oktober 2026) toont /start geen acht deuren meer maar de
+   looks, in twee groepen: catalog en lifestyle. Elke groep draagt het etiket.
+   Een groep die de lijst niet kent, zou "geen product nodig" zeggen tegen een
+   klant die wél zijn foto's moet sturen — daarom wordt dat hier vergeleken. */
+console.log('de lijst kent de groepen op /start');
 {
-  const bron = lees('src/components/StartPage.astro');
-  /* De ids staan twee keer in het bestand — één keer per taal — dus uniek maken.
-     Zou een van de twee talen een deur missen, dan valt dat bij de telling
-     hieronder om en niet hier. */
-  const ids = [...new Set([...bron.matchAll(/^\s{8}id: '([a-z-]+)',$/gm)].map((m) => m[1]))];
-
-  /* Acht sinds 10 september: "Catalog + Lifestyle" is geen deur meer maar een
-     vraag in het catalogformulier — zie de noot in StartPage.astro. Het getal
-     staat hier hard, en dat is met opzet: verandert het aantal deuren, dan hoort
-     iemand daar één keer bewust naar te kijken in plaats van dat een lijst zich
-     stil aanpast aan een pagina die per ongeluk iets verloor. */
-  ok('StartPage rendert acht deuren', ids.length === 8, 8, ids.length);
+  const bron = lees('src/components/StartHal.astro');
+  const m = bron.match(/\(\[([^\]]*)\] as const\)\.map\(async \(id\)/);
+  const ids = m ? [...m[1].matchAll(/'([a-z-]+)'/g)].map((x) => x[1]) : [];
+  ok('StartHal toont twee groepen', ids.length === 2, 2, ids.length);
   for (const id of ids) {
     ok(`  ${id} staat in eigenproduct.js`, ALLE_DEUREN.includes(id), 'bekend', 'ONBEKEND');
+    ok(`  ${id} is een dienst met jouw product`, productStand(id) === 'met', 'met', productStand(id));
   }
-  const teveel = ALLE_DEUREN.filter((id) => !ids.includes(id));
-  ok('en eigenproduct.js kent geen deuren die niet bestaan', teveel.length === 0, '[]', JSON.stringify(teveel));
 }
 
 /* ══ 2 · DE ENIGE DIE ZEKER IS ════════════════════════════════════════════
@@ -73,8 +68,8 @@ console.log('\nEditions is de dienst zonder product');
     ALLE_DEUREN.length, MET_EIGEN_PRODUCT.length + BEIDE_KAN.length + 1);
   ok('hooks staat vast op met', productStand('hooks') === 'met', 'met', productStand('hooks'));
   ok('  en video op maat op allebei', productStand('video-custom') === 'beide', 'beide', productStand('video-custom'));
-  const bron = lees('src/components/StartPage.astro');
-  ok('  wat de tekst van editions ook zegt', /no product in it/.test(bron), true, 'de zin is weg');
+  /* De zin "no product in it" stond op de Editions-deur van /start; die deur
+     is weg sinds 1.01. De stand in eigenproduct.js blijft de bron. */
 }
 
 /* ══ 3 · BEIDE TALEN, EN GEEN ONTKENNING ══════════════════════════════════ */
@@ -106,17 +101,22 @@ console.log('\nhet woord klopt in allebei de talen');
 }
 
 /* ══ 4 · HET STAAT ER OOK ECHT ════════════════════════════════════════════ */
-console.log('\nde deur draagt het etiket');
+console.log('\nde groep draagt het etiket');
 {
-  const bron = lees('src/components/StartPage.astro');
-  ok('StartPage leest de bron', /import \{ productStand, PRODUCT_COPY \}/.test(bron));
-  ok('en zet het etiket op de deur', /class=\{`st-eigen is-\$\{productStand\(d\.id\)\}`\}/.test(bron));
+  const bron = lees('src/components/StartHal.astro');
+  ok('StartHal leest de bron', /import \{ productStand, PRODUCT_COPY \}/.test(bron));
+  /* Sinds 12 oktober 2026 staat /start in de hal (StartHal.astro): de stand komt
+     als g.stand = productStand(id) mee, het teken per stand uit eigenVorm(), de
+     opmaak in hal.css. */
+  ok('en zet het etiket op de groep', /stand: productStand\(id\)/.test(bron) && /class=\{`h-chip h-st-eigen is-\$\{g\.stand\}`\}/.test(bron) && /eigenVorm\(g\.stand\)/.test(bron));
   /* Twee VORMEN en niet twee kleuren, zodat het verschil ook leesbaar is voor
      wie het geel niet als "ja" leest. */
   /* Drie VORMEN en niet drie kleuren, zodat het verschil ook leesbaar is voor
      wie het geel niet als "ja" leest. */
+  const halCss = lees('src/styles/hal.css');
   ok('  met drie verschillende vormen',
-    /\.st-eigen\.is-met[\s\S]{0,600}\.st-eigen\.is-zonder[\s\S]{0,600}\.st-eigen\.is-beide/.test(bron));
+    /met: '<path[^']+'/.test(bron) && /zonder: '<path[^']+'/.test(bron) && /beide: '<path[^']+'/.test(bron)
+    && /\.h-st-eigen\.is-met[\s\S]{0,600}\.h-st-eigen\.is-zonder[\s\S]{0,600}\.h-st-eigen\.is-beide/.test(halCss));
 }
 
 console.log(`\n${pass}/${pass + fail} geslaagd`);

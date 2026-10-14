@@ -1,0 +1,288 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — /contact in de hal. 13 oktober 2026, afvinklijst 14
+ * (v14-volgende = a: over ons en contact als volgende groep).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Dezelfde teksten en HETZELFDE FORMULIER als ContactPage.astro: het post naar
+ * /api/order met service=contact (zie de kop daar), met dezelfde veldnamen, ids,
+ * meldingen, de honeypot, de onzichtbare botcheck (data-botcheck, o03) en de
+ * weigering bij ?error=botcheck. Alleen de vorm is die van de hal. Wat in de
+ * tekst anders is, staat in kladblok/TEKSTEN-OVER-CONTACT.md.
+ *
+ *   kop      pil, de kop in twee tonen, de zin
+ *   body     links de kanalen (WhatsApp, e-mail, openingstijden, locatie) als
+ *            nevelkaarten; rechts het formulier in een nevelvlak
+ *   slot     de proef (HalProef)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/hal.css';
+import { waHref, WHATSAPP_DISPLAY } from '../data/whatsapp.js';
+import { VOORKEUR_COPY } from '../data/contactvoorkeur.js';
+import NieuwTabblad from './NieuwTabblad.astro';
+import { TEST_SAMPLE } from '../data/pricing.js';
+import { localizedPath } from '../i18n/ui.js';
+import HalProef from './HalProef.astro';
+import HalBeweging from './HalBeweging.astro';
+import KopBeeld from './KopBeeld.astro';
+import { waKlant } from '../data/klant.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+const SAMPLE = nl ? TEST_SAMPLE.nl : TEST_SAMPLE.en;
+/* De woorden van de twee keuzes en de geruststellende regel komen uit dezelfde
+   bron als stap 3 en /plans (k-contact, 12 oktober 2026). */
+const vk = VOORKEUR_COPY[lang];
+
+const c = nl ? {
+  etiket: 'Contact',
+  h1: ['Neem', 'contact op.'],
+  /* Afvinklijst 22 (Lucas, 14 oktober 2026): contactteksten laten het hele traject voelen — voor, tijdens
+     en na de bestelling, ook als er iets mis gaat — zonder dat er staat dat er één persoon werkt. */
+  lead: 'Voor je bestelt, terwijl we eraan werken of na de levering: stuur een bericht.',
+
+  kanalenKop: 'De snelste manier om ons te bereiken',
+  waKop: 'WhatsApp',
+  waP: 'Meestal antwoord binnen het uur.',
+  waCta: 'Chat via WhatsApp',
+  waTekst: 'Hoi VISUAILS, ik heb een vraag.',
+  mailKop: 'E-mail',
+  mailP: 'Voor uitgebreide briefings, facturen of bijlagen.',
+  urenKop: 'Openingstijden',
+  uren: ['Ma–vr 08:00–20:00 (Nederlandse tijd)', 'Za–zo 09:00–20:00 (Nederlandse tijd)'],
+  plaatsKop: 'Locatie',
+  plaats: ['Enschede, Nederland', 'KVK 99742993'],
+  plaatsLink: 'Volledige bedrijfsgegevens',
+  plaatsHref: '/nl/terms/#bedrijfsgegevens',
+
+  vormKop: 'Stuur een bericht',
+  vormP: 'We reageren meestal binnen het uur, via het kanaal dat jij kiest.',
+  weigerBotcheck: 'We konden niet bevestigen dat dit bericht van een mens komt, dus het is niet verstuurd. Probeer het zo nog eens, of',
+  weigerBotcheckWa: 'stuur een WhatsApp',
+  weigerBotcheckWaTekst: 'Hoi VISUAILS, ik probeerde een bericht te sturen via het contactformulier en dat lukte niet.',
+  weigerBotcheckOf: 'of mail',
+  vNaam: 'Naam',
+  vNaamMelding: 'Vul je naam in, dan weten we wie er schrijft.',
+  vNaamHouder: 'Je naam',
+  vMail: 'E-mailadres',
+  vMailMelding: 'Vul een volledig e-mailadres in, zoals jij@jouwmerk.nl — anders kunnen we niet antwoorden.',
+  vMailHouder: 'jij@jouwmerk.nl',
+  /* Optioneel, en dat is de uitzondering (11 september 2026): op /contact is
+     alleen het mailadres verplicht. Zie ContactPage.astro. */
+  vTelefoon: 'Telefoon of WhatsApp',
+  vTelefoonHouder: '+31 6 …',
+  vTelefoonHint: 'Alleen nodig als je liever via telefoon of WhatsApp antwoord krijgt.',
+  vOptioneel: 'optioneel',
+  vOnderwerp: 'Onderwerp',
+  onderwerpen: [
+    ['order-support', 'Vraag over een bestelling'],
+    ['new-order', 'Nieuwe bestelling'],
+    ['custom-request', 'Iets op maat'],
+    ['other', 'Anders'],
+  ],
+  vBericht: 'Bericht',
+  vBerichtMelding: 'Schrijf even waar het over gaat, dan kunnen we meteen inhoudelijk reageren.',
+  vBerichtHouder: 'Hoe kunnen we helpen?',
+  vKanaal: 'Voorkeurskanaal',
+  kMail: [VOORKEUR_COPY.nl.email, 'Je krijgt antwoord op het adres hierboven'],
+  kWa: [VOORKEUR_COPY.nl.whatsapp, 'Snelst — meestal binnen het uur'],
+  vVerstuur: 'Verstuur bericht',
+  vPrivacy: ['Wat je hier invult, gebruiken we om je te antwoorden. Hoe we met je gegevens omgaan, staat in ons ', 'privacybeleid', '.'],
+  vFaq: ['Snel een antwoord nodig? Bekijk eerst de ', 'FAQ', '.'],
+
+  slotEtiket: 'Liever eerst zien',
+  slotKop: ['Liever eerst zien?', 'Eén product van jezelf, voor'] as [string, string],
+  slotP: `Je levert aan zoals bij een gewone bestelling en krijgt ${SAMPLE.deliverable} terug. Eén per bedrijf.`,
+  slotCta2: 'Bekijk de prijzen',
+} : {
+  etiket: 'Contact',
+  h1: ['Get in', 'touch.'],
+  lead: 'Before you order, while we work, or after delivery: send a message.',
+
+  kanalenKop: 'The fastest way to reach us',
+  waKop: 'WhatsApp',
+  waP: 'Usually replies within the hour.',
+  waCta: 'Chat on WhatsApp',
+  waTekst: 'Hi VISUAILS, I have a question.',
+  mailKop: 'Email',
+  mailP: 'For a long request, an invoice question or files you want to attach.',
+  urenKop: 'Opening hours',
+  uren: ['Mon–Fri 08:00–20:00 (Dutch time)', 'Sat–Sun 09:00–20:00 (Dutch time)'],
+  plaatsKop: 'Location',
+  plaats: ['Enschede, the Netherlands', 'KVK 99742993'],
+  plaatsLink: 'Full company details',
+  plaatsHref: '/terms/#company-details',
+
+  vormKop: 'Send a message',
+  vormP: 'We usually reply within the hour, by your preferred channel.',
+  weigerBotcheck: 'We could not confirm this message came from a person, so it was not sent. Try again in a moment, or',
+  weigerBotcheckWa: 'send a WhatsApp',
+  weigerBotcheckWaTekst: 'Hi VISUAILS, I tried to send a message through the contact form and it did not go through.',
+  weigerBotcheckOf: 'or email',
+  vNaam: 'Name',
+  vNaamMelding: 'Add your name, so we know who is writing.',
+  vNaamHouder: 'Your name',
+  vMail: 'Email',
+  vMailMelding: 'Add a full email address, like you@yourbrand.com — otherwise we cannot reply.',
+  vMailHouder: 'you@yourbrand.com',
+  vTelefoon: 'Phone or WhatsApp',
+  vTelefoonHouder: '+31 6 …',
+  vTelefoonHint: 'Only needed if you would rather get a reply by phone or WhatsApp.',
+  vOptioneel: 'optional',
+  vOnderwerp: 'Topic',
+  onderwerpen: [
+    ['order-support', 'Order support'],
+    ['new-order', 'New order'],
+    ['custom-request', 'Custom request'],
+    ['other', 'Other'],
+  ],
+  vBericht: 'Message',
+  vBerichtMelding: 'Tell us what it is about, so we can answer properly the first time.',
+  vBerichtHouder: 'How can we help?',
+  vKanaal: 'Preferred contact method',
+  kMail: [VOORKEUR_COPY.en.email, 'You get a reply at the address above'],
+  kWa: [VOORKEUR_COPY.en.whatsapp, 'Fastest — usually within the hour'],
+  vVerstuur: 'Send message',
+  vPrivacy: ['We use what you fill in here to reply to you. How we handle your details is set out in our ', 'Privacy Policy', '.'],
+  vFaq: ['Looking for quick answers? Check the ', 'FAQ', ' first.'],
+
+  slotEtiket: 'Rather see it first',
+  slotKop: ['Rather see it first?', 'One of your own products, for'] as [string, string],
+  slotP: `You send what a normal order needs and get ${SAMPLE.deliverable} back. One per business.`,
+  slotCta2: 'See pricing',
+};
+const PIJL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5l7-7M5.5 4.5h6v6"/></svg>';
+/* Het beeld in de opening: afvinklijst 20 (v20-opening a), live sinds afvinklijst 21. Zie KopBeeld.astro. */
+const BEELD = {
+  soort: 'getal' as const,
+  label: 'WhatsApp',
+  href: '#kanalen', linkNaam: nl ? 'Naar de manieren om ons te bereiken' : 'To the ways to reach us',
+  voor: nl ? 'meestal antwoord binnen' : 'usually a reply within', getal: '1', eenheid: nl ? 'uur' : 'hour',
+  voet: c.uren.join('. ') + '.',
+};
+---
+<div class="h-pagina h-ct">
+
+  {/* ── 1 · DE KOP ─────────────────────────────────────────────────────────── */}
+  <header class="h-paginakop h-ct-kop met-kopbeeld">
+    <div class="h-paginakop-tekst">
+      <p class="h-pil h-op" style="--d:0"><span>{c.etiket}</span></p>
+      <h1 id="ct-h1" class="h-kop h-h1 h-op" style="--d:1"><span class="l">{c.h1[0]}</span> <span>{c.h1[1]}</span></h1>
+      <p class="h-lede h-op" style="--d:2">{c.lead}</p>
+    </div>
+    <KopBeeld {...BEELD} />
+  </header>
+
+  {/* ── 2 · DE KANALEN EN HET FORMULIER ── de kanalen eerst: het antwoord op
+      "hoe bereik ik jullie" is meestal WhatsApp en niet een formulier. */}
+  <section class="h-sec h-ct-sec">
+    <div class="h-ct-kanalen h-in" id="kanalen">
+      <h2 class="h-ct-kanalen-kop">{c.kanalenKop}</h2>
+
+      <div class="h-ct-vak h-ct-wa">
+        <h3 class="h-ct-vak-kop">{c.waKop}</h3>
+        <p class="h-ct-groot">{WHATSAPP_DISPLAY}</p>
+        <p class="h-ct-klein">{c.waP}</p>
+        <p class="h-acties"><a class="h-knop h-knop-inkt" href={waHref(c.waTekst)} target="_blank" rel="noopener" {...waKlant(lang)}>{c.waCta}<span class="o" set:html={PIJL} /><NieuwTabblad lang={lang} /></a></p>
+      </div>
+
+      <div class="h-ct-vak">
+        <h3 class="h-ct-vak-kop">{c.mailKop}</h3>
+        <p class="h-ct-groot"><a href="mailto:hello@visuails.com">hello@visuails.com</a></p>
+        <p class="h-ct-klein">{c.mailP}</p>
+      </div>
+
+      <div class="h-ct-twee">
+        <div class="h-ct-vak">
+          <h3 class="h-ct-vak-kop">{c.urenKop}</h3>
+          <p class="h-ct-klein">{c.uren[0]} <br />{c.uren[1]}</p>
+        </div>
+        <div class="h-ct-vak">
+          <h3 class="h-ct-vak-kop">{c.plaatsKop}</h3>
+          <p class="h-ct-klein">
+            {c.plaats[0]} <br />{c.plaats[1]} <br /><a href={c.plaatsHref}>{c.plaatsLink}</a>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    {/* RECHTS · het formulier. Post naar /api/order met service=contact. */}
+    <div class="h-ct-vorm h-in" style="--d:1">
+      <h2 class="h-kop h-h3">{c.vormKop}</h2>
+      <p class="h-ct-klein">{c.vormP}</p>
+
+      {/* De botcheck zei nee (o03). interactions.js zet dit aan bij ?error=botcheck. */}
+      <p class="ct-weigering h-ct-weigering" data-form-refusal="botcheck" role="status" tabindex="-1" hidden>
+        {c.weigerBotcheck} <a href={waHref(c.weigerBotcheckWaTekst)} target="_blank" rel="noopener">{c.weigerBotcheckWa}<NieuwTabblad lang={lang} /></a> {c.weigerBotcheckOf} <a href="mailto:hello@visuails.com">hello@visuails.com</a>.
+      </p>
+
+      {/* data-botcheck: de onzichtbare botcheck van Cloudflare (o03). Het script
+          onderaan vraagt bij het versturen eerst een token; zonder script gaat
+          het formulier gewoon, zonder token. */}
+      <form action="/api/order" method="post" data-botcheck="contact" data-botcheck-post>
+        <input type="hidden" name="service" value="contact" />
+        {/* Taalbewust én met ?soort=contact (23 september 2026). */}
+        <input type="hidden" name="redirect" value={`${lp('/thank-you')}?soort=contact`} />
+        <input type="hidden" name="lang" value={lang} />
+        {/* Het honeypotveld: buiten beeld en buiten de tabvolgorde. */}
+        <input type="text" name="company_hp" tabindex="-1" autocomplete="off" aria-hidden="true" class="ct-val" />
+
+        <div class="field">
+          <label for="c-name">{c.vNaam} <span class="req">*</span></label>
+          <input class="input" type="text" id="c-name" name="name" required data-melding={c.vNaamMelding} autocomplete="name" placeholder={c.vNaamHouder} />
+        </div>
+        <div class="field">
+          <label for="c-email">{c.vMail} <span class="req">*</span></label>
+          <input class="input" type="email" id="c-email" name="email" required data-melding={c.vMailMelding} autocomplete="email" placeholder={c.vMailHouder} />
+        </div>
+        <div class="field">
+          <label for="c-phone">{c.vTelefoon} <span class="ct-opt">{c.vOptioneel}</span></label>
+          <input class="input" type="tel" id="c-phone" name="phone" autocomplete="tel" placeholder={c.vTelefoonHouder} maxlength="40" />
+          <span class="hint">{c.vTelefoonHint}</span>
+        </div>
+        <div class="field">
+          <label for="c-topic">{c.vOnderwerp}</label>
+          <select class="select" id="c-topic" name="topic">
+            {c.onderwerpen.map(([waarde, label]) => <option value={waarde}>{label}</option>)}
+          </select>
+        </div>
+        <div class="field">
+          <label for="c-message">{c.vBericht} <span class="req">*</span></label>
+          <textarea class="textarea" id="c-message" name="message" rows="5" required data-melding={c.vBerichtMelding} placeholder={c.vBerichtHouder}></textarea>
+        </div>
+        <div class="field">
+          {/* Een <span> en geen <label>: de kop van een GROEP (role="radiogroup"). */}
+          <span class="veldkop" id="preferred-label">{c.vKanaal}</span>
+          <div class="opt-stack" role="radiogroup" aria-labelledby="preferred-label">
+            <label class="opt">
+              <input type="radio" name="contact_preference" value="email" checked />
+              <span class="opt-main"><span class="opt-title">{c.kMail[0]}</span><span class="opt-desc">{c.kMail[1]}</span></span>
+            </label>
+            <label class="opt">
+              <input type="radio" name="contact_preference" value="whatsapp" />
+              <span class="opt-main"><span class="opt-title">{c.kWa[0]}</span><span class="opt-desc">{c.kWa[1]}</span></span>
+            </label>
+          </div>
+          <span class="hint">{vk.gerustContact}</span>
+        </div>
+
+        <div data-botcheck-plek></div>
+        <p class="h-acties ct-verstuur"><button type="submit" class="h-knop h-knop-inkt">{c.vVerstuur}<span class="o" set:html={PIJL} /></button></p>
+        <p class="ct-privacy">{c.vPrivacy[0]}<a href={lp('/privacy')}>{c.vPrivacy[1]}</a>{c.vPrivacy[2]}</p>
+        <p class="ct-faq">{c.vFaq[0]}<a href={lp('/faq')}>{c.vFaq[1]}</a>{c.vFaq[2]}</p>
+      </form>
+    </div>
+  </section>
+
+  {/* ── 3 · HET SLOT: DE PROEF ───────────────────────────────────────────── */}
+  <HalProef lang={lang} id="ct-slot" kop={c.slotKop} zin={c.slotP} alt={{ label: c.slotCta2, href: '/pricing' }} />
+</div>
+<HalBeweging />
+
+<script>
+  /* De onzichtbare botcheck op het contactformulier (o03, 8 oktober 2026). */
+  import { bindBotcheckForms } from '../scripts/botcheck.js';
+  bindBotcheckForms();
+</script>

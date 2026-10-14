@@ -1,5 +1,13 @@
 ---
-// VISUAILS — step 2 of /start: the product photos, one product at a time.
+// VISUAILS — step 2 of /start: the product photos, one card per product.
+//
+// ── SINDS 11 OKTOBER 2026 (F3) ───────────────────────────────────────────────
+// Eén kaart per product, allemaal open onder elkaar: één knop voor 3–4 foto's
+// tegelijk, wisselen per vak, de soort op de kaart, en wat niet hoeft onder
+// "Meer over dit product". Het gezicht staat in stap 1; de gids, het tippaneel
+// en "Wat je opstuurt" zijn weg. Zie de kop bij `.pu-live` hieronder en het blok
+// "DE KAART PER PRODUCT" in src/scripts/pipeline.js. De noten hieronder over
+// "the guide, once" beschrijven de stand van vóór die dag.
 //
 // WHAT THIS REPLACED
 // One <input type="file" multiple> and a flat list of rows. A customer ordering
@@ -57,32 +65,22 @@
 // REQUIRED_SHOT was imported here and never used; it is gone from shots.js now
 // (the rule is two shots, not one), so the dead name goes with it rather than
 // sitting here as an import of an export that no longer exists.
-import { SHOTS, copy as shotCopy } from '../../data/shots.js';
-import { PRODUCT_QUESTIONS, copy as attrCopy } from '../../data/attributes.js';
+import { copy as shotCopy } from '../../data/shots.js';
+import { PRODUCT_QUESTIONS } from '../../data/attributes.js';
 import { MAX_BATCH_FILES, MAX_FILE_BYTES } from '../../lib/uploads.js';
-/* De belofte over herkenbaarheid staat in pricing.js, niet hier — zie de kop
-   van PRODUCTTROUW. Dit is de derde plek waar hij staat en de enige waar de
-   klant op dat moment zijn eigen foto voor zich heeft. */
-import { producttrouw } from '../../data/pricing.js';
-import ShotDiagram from './ShotDiagram.astro';
-/* ── DE TIPS NAAST DEZE STAP ───────────────────────────────────────────────
-   Uit een eigen module en niet hier uitgeschreven, want /concept/bestelrij
-   toont dezelfde reeks. Twee kopieën is één kopie die na de eerste wijziging
-   stil uit elkaar loopt; zie de kop van src/data/uploadTips.js. */
-import { tipsVoor, belofteVoor, TIP_COPY, TIP_INTERVAL_MS } from '../../data/uploadTips.js';
-import { VLAK, FON, PLAAT, OVERLAY, overlayAlt } from '../../data/laptopVlak.js';
-import Disclose from '../Disclose.astro';
-import { existsSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-
-/* Voorbeeldfoto per foto-soort, alleen als het bestand bestaat. */
-const PUB = fileURLToPath(new URL('../../../public/', import.meta.url));
-const example = (id: string) => (existsSync(`${PUB}img/voorbeeld-${id}.webp`) ? `/img/voorbeeld-${id}.webp` : '');
+import { waHref, WHATSAPP_DISPLAY } from '../../data/whatsapp.js';
+/* ── WAT HIER STOND EN WEG IS — 11 oktober 2026 (F3) ──────────────────────────
+   De ingeklapte gids ("Wat we vragen, en waar elke foto voor is", met de vier
+   tekeningen, de belofte over herkenbaarheid en de uitleg bij de vragen) en het
+   tippaneel dat elke tien seconden wisselde (uploadTips.js, laptopVlak.js). Ze
+   vochten met elkaar en met de uitleg per vak om dezelfde aandacht — één van de
+   oorzaken die Lucas "chaotisch" noemde. Wat er overblijft: één regel en een
+   voorbeeldfoto per vak op de eerste kaart (shots.js `regel`, 5.07), en de pdf
+   om mee te nemen. De bronbestanden van de tips blijven bestaan. */
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const k = shotCopy(lang);
-const a = attrCopy(lang);
 
 // The handful of labels shots.js does not own, because they are about THIS
 // control rather than about the photographs. Same arrangement as
@@ -92,14 +90,32 @@ const COPY = {
     folder: 'Choose a folder instead',
     folderHint: 'One folder per product. We read the folder name as the product.',
     off: 'Uploads are not available right now. Carry on — we will ask for them by email, and nothing about your order depends on this step.',
-    guideH: 'What we ask for, and what each one is for',
+    /* ── DE DAGGRENS — 8 oktober 2026 (o05) ──────────────────────────────────
+       Lucas: *"Wanneer de klant een limiet heeft bereikt wellicht handig om dan
+       aan te geven om de klant uitleg hierover te geven en de bestelling via mail
+       of whatsapp (meestal sneller) te plaatsen."* De grens zelf staat bij
+       UPLOAD_DAG in functions/api/upload.js. */
+    limietH: 'You have reached today’s upload limit',
+    limietBody: 'To prevent misuse, each internet connection can send us a limited number of photos per day. A large order can sometimes reach it. Place the order on WhatsApp instead (usually the fastest) or by email: tell us what you would like made and send the photos, and we will set up the order for you.',
+    limietWa: 'Order on WhatsApp',
+    limietWaText: 'Hi VISUAILS, I was placing an order and reached the upload limit. I would like to place the order on WhatsApp.',
+    limietMail: 'Order by email',
+    limietMailSubject: 'Placing an order — upload limit reached',
+    limietMailBody: 'Hi VISUAILS,\n\nI was placing an order on the site and reached the upload limit.\nWhat I would like made: \nHow many products: \nMy shop: \n\nI will send the photos in reply to your email.\n',
     pdf: 'Take the photo guide with you (pdf)',
   },
   nl: {
     folder: 'Of kies een map',
     folderHint: 'Eén map per product. We lezen de mapnaam als het product.',
     off: 'Je kunt op dit moment geen bestanden versturen. Ga gerust verder — we vragen ze per e-mail op, en je bestelling hangt niet van deze stap af.',
-    guideH: 'Wat we vragen, en waar elke foto voor is',
+    /* Zie de noot bij de Engelse limietH. */
+    limietH: 'Je hebt het maximum aantal uploads voor vandaag bereikt',
+    limietBody: 'Om misbruik te voorkomen kan er per internetverbinding per dag een beperkt aantal foto’s naar ons toe. Bij een grote bestelling kom je daar soms aan. Plaats de bestelling dan via WhatsApp (meestal het snelst) of per mail: laat ons weten wat je wilt laten maken en stuur de foto’s mee, dan zetten wij de bestelling voor je klaar.',
+    limietWa: 'Bestel via WhatsApp',
+    limietWaText: 'Hoi VISUAILS, ik was een bestelling aan het plaatsen en kwam aan het maximum aantal uploads. Ik wil de bestelling graag via WhatsApp plaatsen.',
+    limietMail: 'Bestel per mail',
+    limietMailSubject: 'Bestelling plaatsen — maximum aantal uploads bereikt',
+    limietMailBody: 'Hoi VISUAILS,\n\nIk was een bestelling op de site aan het plaatsen en kwam aan het maximum aantal uploads.\nWat ik wil laten maken: \nHoeveel producten: \nMijn shop: \n\nDe foto’s stuur ik mee als antwoord op jullie mail.\n',
     pdf: 'Neem de fotogids mee (pdf)',
   },
 };
@@ -110,212 +126,80 @@ const hint = lang === 'nl'
   ? `JPG, PNG, WebP, AVIF, HEIC, GIF of TIFF · max ${mb} MB per stuk · ${MAX_BATCH_FILES} bestanden per bestelling`
   : `JPG, PNG, WebP, AVIF, HEIC, GIF or TIFF · up to ${mb} MB each · ${MAX_BATCH_FILES} files per order`;
 
-/* ── HET TIPPANEEL ─────────────────────────────────────────────────────────
-   De tips reizen als JSON mee in een data-attribuut, zoals de conceptpagina
-   het ook doet. Niet via de PIPE-tabel in OrderFlow.astro: dat is een tabel van
-   platte sleutels en dit is een reeks objecten met beeldpaden erbij. Eén regel
-   JSON is hier eerlijker dan vijf sleutels per tip die je met de hand moet
-   bijhouden zodra er een tip bij komt.
-
-   De NAAM van het vak komt uit shots.js en wordt niet in uploadTips.js
-   overgetypt, anders heet "Voorkant" in dit paneel ooit anders dan in het
-   vakje drie centimeter hoger. */
-const tipCopy = TIP_COPY[lang === 'nl' ? 'nl' : 'en'];
-const tips = tipsVoor(lang).map((tip) => ({
-  ...tip,
-  naam: (SHOTS.find((sh) => sh.id === tip.vak) || { name: {} }).name[lang] || tip.vak,
-}));
-/* De belofte per vak reist apart mee: hij hoort bij het vakje dat je aanraakt
-   en niet bij de tip die toevallig langskomt. */
-const beloftes = Object.fromEntries(SHOTS.map((sh) => [sh.id, belofteVoor(sh.id, lang)]));
-const lcStijl = [
-  `--lc-plaat:${PLAAT}`,
-  `--lc-l:${VLAK.links}%`, `--lc-t:${VLAK.boven}%`, `--lc-w:${VLAK.breed}%`, `--lc-h:${VLAK.hoog}%`,
-  `--lc-fl:${FON.links}%`, `--lc-ft:${FON.boven}%`, `--lc-fw:${FON.breed}%`, `--lc-fh:${FON.hoog}%`,
-].join(';');
 ---
 
 <div class="pu">
   {/* ── THE LIVE UPLOADER ──────────────────────────────────────────────────
       ÉÉN WEG TEGELIJK, EN PER PRODUCT IS DE VOORKEUR — 8 augustus 2026.
+      De kaarten staan eerst, de map erachter; er is er altijd precies één
+      zichtbaar. pipeline.js hangt zijn sleep-luisteraars aan de stap en niet
+      aan dit paneel, dus een map op de kaarten slepen werkt nog steeds.
 
-      Hier stonden beide manieren onder elkaar op één scherm: eerst de sleepbak
-      voor de hele hoop, daarna de kaarten per product. Lucas: *"Ook het slepen
-      van bestanden of mappen werkt niet zo fijn. (…) niet beide opties tonen,
-      laat eerst invulscherm zien en maak een knop om over te schakelen naar map
-      uploaden en dan verdwijnt het andere scherm."*
+      ═══ ÉÉN KAART PER PRODUCT, ALLEMAAL ONDER ELKAAR — 11 OKTOBER 2026 (F3) ═══
+      Lucas vond deze stap "moeizaam en chaotisch". Gemeten met vijf
+      catalogproducten: vijftien keer een fotokiezer (elk vak één foto), vijf
+      keer verplicht "Sla deze over" bij de draagfoto, het gezicht twee keer per
+      product, en ±1.000 woorden. Wat het chaotisch maakte: elk product stond
+      twee keer op het scherm (deze kaarten en "Wat je opstuurt" onderaan), er
+      zat een stappenplan in het stappenplan ("Volgend product" naast
+      "Verder"), en drie soorten hulp vochten om aandacht.
 
-      Twee dingen veranderden daarmee. De ORDE: de kaarten staan nu eerst en de
-      sleepbak erachter, want per product ingevuld is de weg die geen navraag
-      kost. En de EXCLUSIVITEIT: er is er altijd precies één zichtbaar. Twee
-      manieren naast elkaar is geen keuze aanbieden maar de keuze doorschuiven —
-      de klant moet dan zelf uitzoeken welke van de twee voor hem bedoeld is, en
-      dat is precies het moment waarop iemand de verkeerde pakt.
+      Lucas koos (afvinklijst 2, form = a):
+        · één knop per product voor 3–4 foto's tegelijk, die vanzelf in
+          voorkant / achterkant / detail / gedragen vallen, met een wisselknop
+          per vak — buildKies() en wisselVakken() in pipeline.js;
+        · de productsoort óp de kaart, die die van het vorige product overneemt;
+        · het gezicht één keer, in stap 1; afwijken per product onder het
+          ingeklapte "Meer over dit product";
+        · de draagfoto overslaan zonder klik;
+        · bovenaan de balk met "3 van 5 klaar" en per product wat er mist.
 
-      De maproute is NIET weggestopt. Hij is sneller en voor een merk met een
-      exportmap de enige redelijke weg. Hij kost alleen een gesprek achteraf, en
-      dat staat er nu bij vóórdat je hem kiest.
-
-      DE BAK BLIJFT VOOR BEIDE WERKEN. pipeline.js hangt zijn sleep-luisteraars
-      aan het formulier en niet aan dit paneel, dus een map op de kaarten slepen
-      werkt nog steeds — verbergen is geen uitschakelen. Dat is bewust: iemand die
-      per product invult en tóch een map naar binnen sleept, bedoelde dat. */}
+      De kaarten staan nu allemaal open onder elkaar. De rij met "Vorige" en
+      "Volgend product" is weg; de balk springt naar een kaart. */}
   <div class="pu-live" data-pu-modes>
-    <section class="pu-manual" data-pu-panel="cards" aria-labelledby="pu-manual-h">
-      <h3 class="pu-sub-h" id="pu-manual-h">{k.manualH}</h3>
-      {/* ONCE, over the whole list — the same rule the guide follows. Twenty-five
-          cards each carrying a sentence about what to type in their name field
-          is twenty-five copies of one instruction. */}
-      <p class="pu-sub-lead">{k.leadShort} {k.productNameHint}</p>
-      {/* ═══ ÉÉN PRODUCT TEGELIJK, VAN LINKS NAAR RECHTS — 17 SEPTEMBER 2026 ══
-          Lucas: *"Misschien kan het bestelformulier wel van links naar rechts
-          gaan — dat zorgt voor overzicht, je vult per product de foto's in en
-          klikt op klaar, en dan gaat hij naar de volgende productinvulpagina.
-          Je kan dan met pijltjes nog wel terug naar het vorige product of juist
-          vooruit; op het einde krijg je een melding als er nog een product of
-          meerdere niet ingevuld is."* En na het prototype: *"bestelformulier van
-          links naar rechts is goed en overzichtelijker."*
-
-          ── WAT ER NIET VERANDERT ────────────────────────────────────────────
-          De KAART zelf niet, en dat is opzet. De vakjes, het slepen, de lade,
-          de gratis referentievakken, de bijbestelde foto's, het gezicht per
-          product — dat werkt allemaal en het is het duurste deel van dit
-          formulier om opnieuw te maken. Wat verandert is wat je ERVAN ZIET:
-          één kaart in beeld in plaats van een kolom van vijfentwintig, met een
-          balk erboven die zegt waar je bent en twee pijlen om te verplaatsen.
-
-          ── DE BALK IS GEEN VERSIERING ───────────────────────────────────────
-          Hij is de enige plek waar je in één blik ziet hoeveel er nog moet, en
-          hij is aanklikbaar: naar product 14 springen is één tik in plaats van
-          dertien keer vooruit. Hij wordt gekloond uit het <li> hieronder en
-          niet met createElement gebouwd — Astro hangt zijn data-astro-cid aan
-          elke selector, en wat na de bouw ontstaat draagt dat niet en krijgt
-          dus geen enkele scoped regel. Drie keer eerder in gelopen in dit
-          project; zie de kop van bestelrij.astro.
-
-          ── EN DE VOORUITKNOP IS DE POORT ───────────────────────────────────
-          Lucas, over de draagfoto: *"'Sla deze over' moet aangeklikt worden,
-          anders kan de klant niet verder naar het volgende product."* In een
-          kolom is er geen "verder" om tegen te houden; hier wel. De knop staat
-          uit zolang de kaart niet af is, met de reden eronder — dezelfde zin
-          die op de kaart zelf staat, uit cardStateText(). */}
-      <div class="pu-rij" data-pl-rij hidden>
-        <ol class="pu-rail" data-pl-rail role="list">
-          {/* ── HET VAKJE ZEGT SINDS 17 SEPTEMBER OOK WÁÁR HET GAT ZIT ──────────
-          Tot vandaag was dit één vierkantje per product: vol of leeg, af of
-          niet af. Je wist dus hoeveel producten er nog lagen, maar niet wat er
-          aan ontbrak — waarvoor je elk product moest openklikken.
-
-          Nu draagt de knop een streepje per verplichte foto. Vol is binnen,
-          leeg mist nog. Die streepjes worden door pipeline.js gemaakt (het
-          aantal hangt van de bestelde hoeken af), dus de opmaak ervan staat
-          onder `:global()` verderop — een element dat tijdens het gebruik
-          ontstaat, draagt Astro's scope-attribuut niet. */}
-      <li class="pu-rail-item"><button type="button" class="pu-rail-knop" data-pl-rail-knop><span class="pu-rail-vakjes" data-pl-rail-vakjes aria-hidden="true"></span><span class="pu-sr" data-pl-rail-naam></span></button></li>
-        </ol>
-        <p class="pu-rij-tel" data-pl-rij-tel aria-live="polite"></p>
+    <section class="pu-manual" data-pu-panel="cards">
+      {/* ── DE BALK EN DE TELLING, BOVENAAN ─────────────────────────────────
+          Eén vierkantje per product met een streepje per verplichte foto (vol =
+          binnen), aanklikbaar om naar dat product te springen. Verborgen bij één
+          product; de telling eronder staat er altijd. Het vierkantje wordt
+          gekloond uit het <li> hieronder en niet met createElement gebouwd —
+          Astro hangt zijn data-astro-cid aan elke selector, en wat na de bouw
+          ontstaat draagt dat niet. Zie paintRail() in pipeline.js. */}
+      <div class="pu-top">
+        <div class="pu-rij" data-pl-rij hidden>
+          <ol class="pu-rail" data-pl-rail role="list">
+            <li class="pu-rail-item"><button type="button" class="pu-rail-knop" data-pl-rail-knop><span class="pu-rail-vakjes" data-pl-rail-vakjes aria-hidden="true"></span><span class="pu-sr" data-pl-rail-naam></span></button></li>
+          </ol>
+        </div>
+        {/* "3 van 5 producten klaar" — over producten, nooit over bestanden.
+            "31 bestanden verstuurd" is een bonnetje voor werk dat de klant niet
+            kan nakijken; "3 van 5 klaar" is iets waar hij iets mee kan. */}
+        <p class="pu-progress" data-pl-progress aria-live="polite"></p>
       </div>
+
+      {/* ÉÉN KEER, boven alle kaarten — dezelfde regel als altijd: twintig
+          kaarten met elk dezelfde instructie is twintig keer één zin. */}
+      <p class="pu-sub-lead pu-stap-lead">{k.stapLead}</p>
 
       {/* Built by pipeline.js from the count on step 1, and rebuilt when that
           count changes. Empty in the markup on purpose: a card list rendered
           here would be a guess at a number the visitor has already answered. */}
       <ol class="pu-cards" data-pl-cards></ol>
 
-      {/* De twee pijlen staan ONDER de kaart en niet erboven: je leest de kaart
-          van boven naar beneden en de handeling "klaar, volgende" hoort aan het
-          eind van dat lezen. Verborgen tot pipeline.js weet dat er meer dan één
-          product is. */}
-      <div class="pu-nav" data-pl-nav hidden>
-        <button type="button" class="btn btn-ghost pu-nav-knop" data-pl-vorige>
-          <svg viewBox="0 0 24 24" class="i" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
-          <span data-pl-vorige-tekst>{k.vorige}</span>
-        </button>
-        <span class="pu-nav-reden hint" data-pl-nav-reden></span>
-        <button type="button" class="btn btn-primary pu-nav-knop" data-pl-volgende>
-          <span data-pl-volgende-tekst>{k.volgende}</span>
-          <svg viewBox="0 0 24 24" class="i" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </button>
-      </div>
-      {/* ── DE TIPS ─────────────────────────────────────────────────────────
-          Lucas: *"rechts tips die de klant elke 10 seconden kort vertellen wat
-          waarvoor is en waarom het handig is."* Gebouwd op /concept/bestelrij,
-          op 17 september hiernaartoe gehaald.
-
-          ── ONDER DE KAART EN NIET VASTGEPLAKT ONDERAAN ─────────────────────
-          Op de conceptpagina plakt dit paneel aan de onderkant van het scherm.
-          Hier kan dat niet: deze stap heeft onderaan al twee dingen die om die
-          rand vechten — de pijlen van de rij en de Vorige/Verder van de wizard
-          — en op stap 1 zit daar op een telefoon ook nog de totaalbalk. Een
-          derde zwevende strook is er één te veel.
-
-          Dus staat hij in de stroom, direct onder de pijlen: je leest de kaart,
-          je gaat door, en wie twijfelt vindt de uitleg op de plek waar hij
-          stopte. Open op een groot scherm, dicht op een telefoon — daar is de
-          ruimte waar je in werkt te kostbaar om er ongevraagd een paneel in te
-          zetten.
-
-          ALLES STAAT IN DE MARKUP. Geen enkel deel hiervan wordt door
-          pipeline.js gemaakt: dat script wisselt alleen teksten en bronnen om.
-          Dat is met opzet — een element dat tijdens het gebruik ontstaat, krijgt
-          geen van de gescopeerde regels hieronder (zie de kop van dit bestand),
-          en die val heeft dit project al vier keer gekost. */}
-      <aside
-        class="pu-tips"
-        data-pu-tips={JSON.stringify(tips)}
-        data-pu-beloftes={JSON.stringify(beloftes)}
-        data-pu-tip-ms={TIP_INTERVAL_MS}
-        data-pu-merk={tipCopy.merk}
-      >
-        <h3 class="pu-tips-kop">
-          <button
-            type="button"
-            class="pu-tips-knop"
-            data-pu-tips-schuif
-            aria-expanded="true"
-            aria-controls="pu-tips-in"
-          >
-            <span class="pu-tips-woord">{tipCopy.kop}</span>
-            {/* De regel naast de knop verschijnt pas als het paneel dicht is:
-                dan is hij het enige dat er nog van over is. Staat hij er ook
-                open bij, dan staat dezelfde zin twee keer op het scherm. */}
-            <span class="pu-tips-nu" data-pu-tips-nu></span>
-            <svg class="pu-tips-pijl" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m6 9 6 6 6-6"/></svg>
-          </button>
-        </h3>
-
-        <div class="pu-tips-in" id="pu-tips-in">
-          <div class="pu-tips-doek" style={lcStijl}>
-            <div class="pu-tips-vlak"><img data-pu-tips-laptop src={tips[0].na} alt="" width="760" height="760" loading="lazy" decoding="async" /></div>
-            <div class="pu-tips-fon"><img data-pu-tips-fon src={tips[0].voor} alt="" width="760" height="1013" loading="lazy" decoding="async" /></div>
-            <img class="pu-tips-plaat" src={OVERLAY} alt={overlayAlt(lang)} width="1792" height="1013" loading="lazy" decoding="async" />
-            {/* Het label hoort bij het LAPTOPbeeld en staat daarom binnen het
-                schermvlak, linksboven, waar nooit een telefoon overheen valt. */}
-            <p class="pu-tips-merk" data-pu-tips-merk></p>
-          </div>
-
-          <div class="pu-tips-woorden">
-            <p class="pu-tips-vaknaam" data-pu-tips-vaknaam></p>
-            <p class="pu-tips-zin" data-pu-tips-zin></p>
-            <p class="pu-tips-noot" set:html={tipCopy.noot}></p>
-            {/* De streepjes zeggen hoeveel tips er zijn en waar je bent. Geen
-                knoppen: dit is iets dat langskomt, niet iets dat je bedient. */}
-            <p class="pu-tips-tikken" data-pu-tips-tikken aria-hidden="true">
-              {tips.map(() => (<i></i>))}
-            </p>
-          </div>
-        </div>
-      </aside>
-
-      {/* Verborgen tot pipeline.js beslist heeft of hij nodig is — hij bestaat
-          alleen voor de keuze "meer dan N" (het plafond per dienst), waar het aantal onbekend is. Zonder
-          dit stond er een lege ghost-knop in beeld zolang het script nog niet
-          gedraaid had. */}
+      {/* Verborgen tot pipeline.js weet of hij iets kan: hij telt mee met het
+          aantal in stap 1 (zie syncAddKnop). */}
       <p class="pu-add-row"><button type="button" class="btn btn-ghost pu-add" data-pl-add hidden>{k.addProduct}</button></p>
 
       <p class="pu-swap">
         <button type="button" class="pu-link" data-pu-switch="folder">{k.toFolder}</button>
         <span class="hint">{k.toFolderWhy}</span>
       </p>
+      {/* ── DE GIDS OM MEE TE NEMEN — 7 september 2026 ────────────────────────
+          Dit is de stap waar iemand ontdekt dat de foto's die hij heeft niet
+          zijn wat we vragen, en opstaat om ze te maken. Dan staat deze pagina
+          niet meer op zijn scherm; de pdf neemt hij mee. Sinds 11 oktober 2026
+          staat hij hier los: de uitklapgids waar hij in stond is weg (F3). */}
+      <p class="pu-gids"><a class="pu-link" href={`/downloads/visuails-fotogids-${lang}.pdf`} download>{t.pdf}</a></p>
     </section>
 
     <section class="pu-bulk" data-pu-panel="folder" hidden aria-labelledby="pu-bulk-h">
@@ -327,11 +211,8 @@ const lcStijl = [
         <span class="dz-hint">{hint}</span>
       </label>
       {/* A SECOND input, because webkitdirectory and multiple-files are not the
-          same picker: a browser that has directory upload opens a folder
-          chooser for one and a file chooser for the other, and there is no
-          attribute that offers both in one dialog. The button is hidden by
-          pipeline.js on a browser without the property rather than rendered
-          dead. Dropping a folder needs neither — that is webkitGetAsEntry. */}
+          same picker. The button is hidden by pipeline.js on a browser without
+          the property rather than rendered dead. */}
       <p class="pu-folder-row" data-pl-folder-row hidden>
         <button type="button" class="pu-link" data-pl-folder>{t.folder}</button>
         <span class="hint pu-folder-hint">{t.folderHint}</span>
@@ -344,33 +225,16 @@ const lcStijl = [
       </p>
     </section>
 
-    {/* Progress that is about products, never about files. "8 of 25 products
-        ready" is a sentence a customer can act on; "31 files uploaded" is a
-        receipt for work they cannot check.
-
-        BUITEN DE PANELEN, want hij gaat over de bestelling en niet over de weg
-        die je koos: wie een map stuurt wil net zo goed weten hoeveel producten
-        er klaar zijn. */}
-    <p class="pu-progress" data-pl-progress aria-live="polite"></p>
-
-    {/* ── DE TUSSENSTAP BIJ ONTBREKENDE FOTO'S — 3 september 2026 ──────────
+    {/* ── HET TUSSENSCHERM BIJ ONTBREKENDE FOTO'S (2.05) ─────────────────────
         Gevuld en getoond door askMissing() in pipeline.js zodra iemand op
-        Verder drukt terwijl een product zijn voor- of achterkant mist. Geen
-        poort: de tweede knop stuurt door. Wél het gevolg, in woorden. */}
+        Verder drukt terwijl er verplichte vakken leeg zijn. Geen poort: één
+        lijst van wat er mist (src/lib/ontbreekt.js, dezelfde regels als in
+        Studio en de mails) en twee keuzes — nu toevoegen, of later in VISUAILS
+        Studio. `laterLead` zegt hoe dat later gaat. */}
     <div class="pu-missing" data-pl-missing hidden role="group" aria-labelledby="pu-missing-h">
       <h3 class="pu-sub-h" id="pu-missing-h" data-pl-missing-h>{k.missingHOne}</h3>
-      {/* ── EEN RASTER EN GEEN OPSOMMING — 17 september 2026 ──────────────
-          Hier stond een lijstje dat na zes regels ophield met "en nog 19" —
-          op het enige scherm waar je juist wilt weten wélke negentien. Op
-          /concept/bestelrij was dit een raster van tegels: elk product met
-          zijn vakjes, en één klik om er heen te springen.
-
-          De tegels worden door askMissing() gemaakt (het aantal producten
-          staat pas vast als de klant het heeft ingevuld), dus hun opmaak
-          staat onder `:global()` — zie de noot bij de streepjes in de balk. */}
-      <p class="pu-missing-tik hint">{k.missingTap}</p>
-      <ol class="pu-missing-raster" data-pl-missing-list></ol>
-      <p class="pu-sub-lead">{k.missingBody}</p>
+      <ul class="pu-missing-lijst" data-pl-missing-list></ul>
+      <p class="pu-sub-lead">{k.laterLead}</p>
       <p class="pu-missing-btns">
         <button type="button" class="btn btn-primary" data-pl-missing-fix>{k.missingFix}</button>
         <button type="button" class="btn btn-ghost" data-pl-missing-go>{k.missingGo}</button>
@@ -378,12 +242,9 @@ const lcStijl = [
     </div>
 
     {/* ── THE TRAY ─────────────────────────────────────────────────────────
-        Files we could not attribute. It is hidden until there is one, because
-        an empty box labelled "not placed yet" is an accusation.
-
-        Drag onto a slot works, and it is NOT the only way: the menu on each
-        item lists every product against every shot, so this is reachable by
-        click, by keyboard and by a thumb on a phone — none of which can drag. */}
+        Files we could not attribute. Hidden until there is one. Every item
+        carries a menu of every product against every shot, so it is reachable
+        by click, keyboard and thumb — not only by drag. */}
     <section class="pu-tray" data-pl-tray hidden aria-labelledby="pu-tray-h">
       <h3 class="pu-sub-h" id="pu-tray-h">{k.trayH}</h3>
       <p class="pu-sub-lead">{k.trayLead}</p>
@@ -391,127 +252,34 @@ const lcStijl = [
     </section>
 
     <p class="pl-note pu-off" data-pl-upload-note="off" hidden>{t.off}</p>
+
+    {/* ── DE DAGGRENS (o05, 8 oktober 2026) ─────────────────────────────────
+        pipeline.js zet dit blok aan zodra /api/upload `dag-limiet` antwoordt. */}
+    <div class="pu-limiet" data-pl-upload-note="limiet" hidden role="status">
+      <h3 class="pu-sub-h">{t.limietH}</h3>
+      <p>{t.limietBody}</p>
+      <p class="pu-limiet-btns">
+        <a href={waHref(t.limietWaText)} target="_blank" rel="noopener" class="knop knop-inkt">{t.limietWa}</a>
+        <a href={`mailto:hello@visuails.com?subject=${encodeURIComponent(t.limietMailSubject)}&body=${encodeURIComponent(t.limietMailBody)}`} class="knop knop-lijn">{t.limietMail}</a>
+      </p>
+      <p class="pu-limiet-alt">{WHATSAPP_DISPLAY} · hello@visuails.com</p>
+    </div>
   </div>
 
   {/* ── WITHOUT JAVASCRIPT ─────────────────────────────────────────────────
-      The end of the honest path. No dead control, no input that posts nothing:
-      the order goes through and the photographs follow, which is what happens
-      anyway for every client who would rather send them later. */}
-  {/* ── DE UITLEG, ONDER DE KAARTEN EN INGEKLAPT — 3 september 2026 ────────
-      Hij stond bovenaan: twee schermen tekst voordat de eerste upload in beeld
-      was. Lucas: "duidelijk maar niet druk". Elke kaart draagt nu zelf één regel
-      per foto (pu.how in pipeline.js), en de volledige uitleg — met de
-      voorbeeldfoto's — staat hier achter één uitklapper. De aria-describedby-
-      doelen (#pu-q-<vraag>-buys) blijven in het document, dus de kaarten
-      wijzen nog steeds naar dezelfde uitleg. */}
-  <Disclose summary={t.guideH} tone="plain" class="pu-guide-fold">
-  {/* ── THE GUIDE, ONCE ────────────────────────────────────────────────────
-      Printed here and nowhere else. See the header: a slot inside a card is a
-      drawing and a word, and this is the page that gives the drawing meaning. */}
-  <section class="pu-guide" aria-labelledby="pu-guide-h">
-    <h3 class="pu-guide-h" id="pu-guide-h">{t.guideH}</h3>
-    <p class="pu-lead">{k.lead}</p>
-    {/* Wat er met die foto's gebeurt. Binnen de uitklapper en niet erbuiten: wie
-        hem opent, vraagt zich af wat er van zijn product terugkomt. */}
-    <p class="pu-lead pu-trouw">{producttrouw(lang)}</p>
-    <ul class="pu-guide-list">
-      {SHOTS.map((s) => (
-        <li class="pu-guide-item">
-          <span class="pu-guide-dia"><ShotDiagram shot={s.id} /></span>
-          {/* Een echte voorbeeldfoto naast de tekening, als hij op schijf staat
-              (public/img/voorbeeld-<shot>.webp). Ontbreekt hij, dan staat er
-              alleen de tekening — geen leeg vak. 3 september 2026. */}
-          {example(s.id) && <img class="pu-guide-eg" src={example(s.id)} alt={s.name[lang]} width="120" height="150" loading="lazy" decoding="async" />}
-          <div class="pu-guide-body">
-            <h4 class="pu-guide-name">
-              {s.name[lang]}
-              <span class:list={['pu-tag', s.required && 'is-req']}>{s.required ? k.required : k.optional}</span>
-            </h4>
-            <p class="pu-guide-how">{s.how[lang]}</p>
-            <p class="pu-guide-buys">{s.buys[lang]}</p>
-          </div>
-        </li>
-      ))}
-    </ul>
-    <p class="pu-quality">{k.quality}</p>
-    {/* ── DE GIDS OM MEE TE NEMEN — 7 september 2026 ────────────────────────
-        Dit is de enige stap waar iemand ontdekt dat de foto's die hij heeft
-        niet zijn wat we vragen — en het volgende dat hij doet, is opstaan om
-        ze te maken. Dan staat deze pagina niet meer op zijn scherm.
-
-        Daarom hier de pdf en niet nog een link naar /upload-guidelines: die
-        lees je, deze neem je mee. `download` zorgt dat hij in de downloadmap
-        landt in plaats van in een tabblad dat hij kwijtraakt. Zelfde bestand
-        als op /upload-guidelines en /test-sample; scripts/handleiding.mjs
-        maakt hem. */}
-    <p class="acties pu-gids">
-      <a class="pijl" href={`/downloads/visuails-fotogids-${lang}.pdf`} download>{t.pdf}</a>
-    </p>
-  </section>
-
-  {/* ── THE SECOND HALF OF THE GUIDE, ALSO ONCE ─────────────────────────────
-      The same shape as the block above and for the same reason: a name, an
-      optional mark, and the one sentence that says what answering buys. Every
-      card's control points here with aria-describedby, so the explanation is
-      read once and referenced twenty-five times instead of printed
-      twenty-five times.
-
-      Inside .pu-live because the question lives on generated cards: with
-      JavaScript off there are no cards, and a guide to a field that is not on
-      the page is the worst kind of text wall — one that cannot even be acted
-      on. */}
-  <section class="pu-guide pu-about-guide" aria-labelledby="pu-about-h">
-    <h3 class="pu-guide-h" id="pu-about-h">{a.aboutH}</h3>
-    <p class="pu-lead">{a.aboutLead}</p>
-    <ul class="pu-about-list">
-      {PRODUCT_QUESTIONS.map((qn) => (
-        <li class="pu-about-item">
-          <div class="pu-guide-body">
-            <h4 class="pu-guide-name">
-              {qn.name[lang]}
-              <span class="pu-tag">{a.optional}</span>
-            </h4>
-            <p class="pu-guide-buys" id={`pu-q-${qn.id}-buys`}>
-              <span class="pu-buys-lede">{a.whatItBuys}</span>{qn.buys[lang]}
-            </p>
-          </div>
-        </li>
-      ))}
-    </ul>
-  </section>
-
-  </Disclose>
-
+      The end of the honest path: the order goes through and the photographs
+      follow, which is what happens anyway for every client who would rather
+      send them later. */}
   <div class="pu-later">
     <h3 class="pu-sub-h">{k.laterH}</h3>
     <p class="pu-sub-lead">{k.laterLead}</p>
   </div>
 
-  {/* ── DE VIER TEKENINGEN STAAN NOG MAAR OP ÉÉN PLEK — 17 september 2026 ────
-      Ze werden hiervandaan door pipeline.js in elk leeg vakje gekloond. Sinds
-      een leeg vakje een plusje draagt (zie buildSlot), gebeurt dat niet meer en
-      zou deze reeks <template>'s vier onbereikbare SVG's per pagina zijn.
-
-      Ze zijn niet weg: in de gids bovenaan deze stap staan ze naast elkaar
-      (.pu-guide-dia), en dáár doen ze hun werk — vier hoeken naast elkaar leert
-      je het verschil, dezelfde vier los in vier vakken laat je raden. */}
-
   {/* ── HET GEZICHT PER PRODUCT, ALS TEGELS — 18 september 2026 ────────────
-      Lucas: *"Het is ook belangrijk dat klanten per product visueel een ander
-      model kunnen kiezen per product, dit hoeft niet groot en is puur
-      optioneel."* Dit was een keuzelijst in de lade van de kaart: elf namen
-      onder elkaar, en je moest weten wie "Ava" is voordat je iets kon kiezen.
-
-      Nu is het een rij duimnagels op de kaart zelf, waarvan de eerste
-      "hetzelfde als de bestelling" is en het gezicht van de bestelling toont.
-      Wie niets doet, ziet één gekozen tegel en klaar.
-
-      ── WAAROM EEN <template> EN GEEN createElement ────────────────────────
-      Astro scopet zijn CSS met een attribuut dat een element dat pipeline.js
-      maakt niet draagt. Een tegel die hier in de bron staat, wordt wél gescopet,
-      en een kloon daarvan is dus een echte tegel — dezelfde afspraak als bij de
-      eigen modeltegel in ModelPicker.astro, en om dezelfde reden: die ging een
-      keer mis en leverde een portret van 760 pixels op in een raster van 86. */}
+      Sinds 11 oktober 2026 onder "Meer over dit product" op de kaart, niet meer
+      open op de kaart: het gezicht kies je in stap 1. Een <template> en geen
+      createElement, omdat Astro zijn CSS scopet met een attribuut dat een
+      element dat pipeline.js maakt niet draagt; een kloon hiervan draagt het wel. */}
   <template data-pu-model>
     <div class="pu-mk" role="group">
       <p class="pu-mk-h"></p>
@@ -528,9 +296,7 @@ const lcStijl = [
   </template>
 
   {/* One <datalist> per question that has examples, shared by every card's
-      input through `list="pu-dl-<id>"`. Suggestions, never a closed list —
-      attributes.js says so on the `examples` key and a datalist is the only
-      native control that suggests without refusing. */}
+      input through `list="pu-dl-<id>"`. Suggestions, never a closed list. */}
   {PRODUCT_QUESTIONS.filter((qn) => qn.examples).map((qn) => (
     <datalist id={`pu-dl-${qn.id}`}>
       {qn.examples[lang].map((x) => <option value={x}></option>)}
@@ -570,7 +336,7 @@ const lcStijl = [
      .pl-step one line into its own sheet, for the same reason.
 
      First, so the two that declare a padding of their own still win. */
-  .pu-guide, .pu-bulk, .pu-tray, .pu-manual { padding-block: 0; }
+  .pu-bulk, .pu-tray, .pu-manual { padding-block: 0; }
 
   .pu-live { display: none; }
   :global(.pl-form.is-live) .pu-live { display: block; }
@@ -584,110 +350,8 @@ const lcStijl = [
   .dz-main { display: block; color: var(--ink); font-weight: 500; }
   .dz-hint { display: block; margin-top: .35rem; font-size: .85rem; color: var(--ink-3); }
 
-  /* ── The guide ────────────────────────────────────────────────────────────
-     Four items, each a drawing and two sentences: what to photograph, and what
-     skipping it costs. The second sentence is the one that earns its place —
-     "recommended" with no reason attached is nagging, and a customer who knows
-     what a missing back shot costs can make that trade themselves. */
-  .pu-guide {
-    margin-top: 1.2rem;
-    padding: clamp(1rem, 2.6vw, 1.6rem);
-    border: 1px solid var(--line);
-    border-radius: var(--r-lg);
-    background: var(--surface);
-  }
-  .pu-guide-h {
-    font-size: .72rem; font-weight: 700; letter-spacing: .09em;
-    text-transform: uppercase; color: var(--ink-3);
-  }
-  .pu-lead { margin-top: .5rem; color: var(--ink-2); font-size: .95rem; line-height: 1.6; max-width: 64ch; }
-  /* Onder een haarlijn en niet in een kader — zie dezelfde afweging op
-     /how-to-photograph. */
-  .pu-trouw { margin-top: .9rem; padding-top: .9rem; border-top: 1px solid var(--line, #DFDFDF); }
-
-  .pu-guide-list {
-    list-style: none;
-    margin: 1.2rem 0 0;
-    padding: 0;
-    display: grid;
-    gap: 1rem 1.6rem;
-    /* Two by two at the form's 880px measure, one column on a phone. Four
-       across fits arithmetically and reads badly: `buys` is a sentence, and a
-       sentence in a 200px column is eight lines of two words. */
-    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
-  }
-  .pu-guide-item {
-    display: grid;
-    grid-template-columns: 46px auto 1fr;
-    gap: .8rem;
-    padding-top: .9rem;
-    border-top: 1px solid var(--line);
-  }
-  .pu-guide-dia { display: block; width: 46px; height: 46px; color: var(--ink-2); }
-  .pu-guide-name {
-    display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem;
-    font-size: 1rem; line-height: 1.2;
-  }
-  .pu-guide-how { margin-top: .35rem; font-size: .86rem; color: var(--ink-2); line-height: 1.5; }
-  .pu-guide-buys { margin-top: .35rem; font-size: .8rem; color: var(--ink-3); line-height: 1.5; }
-
-  /* A mark, so --r-sm. The required one is the only thing in the guide that is
-     a rule rather than a recommendation, and it is the only thing coloured. */
-  .pu-tag {
-    padding: .12rem .4rem;
-    border: 1px solid var(--line);
-    border-radius: var(--r-sm);
-    font-size: .72rem; font-weight: 700; letter-spacing: .07em;
-    text-transform: uppercase; color: var(--ink-3);
-    white-space: nowrap;
-  }
-  .pu-tag.is-req { border-color: var(--signal); color: var(--signal-ink); background: var(--paper-2); }
-
-  .pu-quality { margin-top: 1.1rem; font-size: .82rem; color: var(--ink-3); line-height: 1.55; max-width: 70ch; }
-  .pu-gids { margin-top: 1rem; }
-
-  /* ── The second guide: what the product is made of ────────────────────────
-     Only shown on the live form. See the note in the markup: without JS there
-     are no cards, so there is no field for this to explain. */
-  .pu-about-guide { display: none; }
-  :global(.pl-form.is-live) .pu-about-guide { display: block; }
-  /* ITS OWN LIST, NOT .pu-guide-list, and that is a scar. These items have no
-     drawing to sit beside, so they were given .pu-guide-item with the gutter
-     column overridden — and the ≤560px media query further down redeclares
-     that gutter at equal specificity and later in the sheet, so on a phone
-     every paragraph was placed back into a 38px column and wrapped one word
-     per line. The block was 2,365px tall. A shared class that has to be
-     un-declared in two places is not a shared class. */
-  .pu-about-list {
-    list-style: none;
-    margin: 1.1rem 0 0;
-    padding: 0;
-    display: grid;
-    gap: .85rem 1.6rem;
-    /* auto-fit at 250px, which today means one full-width item because there
-       is one question. The track sizing is kept measured rather than replaced
-       with a single column: the form's 880px measure minus this block's own
-       padding leaves 830px, so three tracks plus two 1.6rem gaps need
-       3×250 + 51 = 801 and still fit if a second or third question is ever
-       added back in attributes.js. At 260 the third track missed by half a
-       pixel, which is why it is not 260. */
-    grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
-  }
-  .pu-about-item {
-    min-width: 0;
-    /* The measure guard for the one-question case: a single auto-fit track is
-       830px wide, and a 130-character line is not a line anyone reads. With
-       two or three items the track is already under this, so it does nothing
-       there. */
-    max-width: 70ch;
-    padding-top: .8rem;
-    border-top: 1px solid var(--line);
-  }
-  /* The label attributes.js writes for the `buys` sentence, inline so it costs
-     a phrase rather than a line. The dash is punctuation, not words — it is in
-     CSS because it is the same mark in both languages. */
-  .pu-buys-lede { font-weight: 700; color: var(--ink-2); }
-  .pu-buys-lede::after { content: ' — '; font-weight: 400; }
+  /* De gids om mee te nemen: één link, stil, onder de omschakelregel. */
+  .pu-gids { margin: .8rem 0 0; }
 
   /* ── The two ways in ──────────────────────────────────────────────────────*/
   .pu-bulk, .pu-manual, .pu-tray { margin-top: clamp(1.6rem, 3.4vw, 2.4rem); }
@@ -725,14 +389,12 @@ const lcStijl = [
      One line, always about products. It is a live region, so it is deliberately
      short: a screen reader re-reads the whole thing on every change. */
   .pu-progress {
-    margin-top: clamp(1.4rem, 3vw, 2rem);
-    padding: .7rem .95rem;
-    border: 1px solid var(--signal);
-    border-radius: var(--r-md);
-    background: var(--paper-2);
-    color: var(--signal-ink);
+    margin: 0;
     font-size: .9rem;
+    font-weight: 600;
     line-height: 1.5;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums lining-nums;
   }
   .pu-progress:empty { display: none; }
 
@@ -747,49 +409,22 @@ const lcStijl = [
   }
   .pu-missing:focus { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
   .pu-missing .pu-sub-h { color: var(--warn-ink); }
-  .pu-missing-tik { margin: .35rem 0 0; }
-  .pu-missing-raster {
-    list-style: none; margin: .7rem 0 0; padding: 0;
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: .6rem;
+  /* ── ÉÉN LIJST (2.05, F3 11 oktober 2026) ─────────────────────────────────
+     Eén regel per product uit ontbrekendRegels() (src/lib/ontbreekt.js), als
+     knop die naar dat product springt. Gemaakt door askMissing(), dus
+     `:global()`. Geen tegels meer: Lucas vroeg om één lijst. */
+  .pu-missing-lijst { list-style: none; margin: .6rem 0 0; padding: 0; display: grid; gap: .25rem; }
+  .pu-missing-lijst:empty { display: none; }
+  .pu-missing :global(.pu-mis-regel) {
+    display: inline; padding: .15rem 0; border: 0; background: none;
+    font: inherit; font-size: .9rem; line-height: 1.5; text-align: left;
+    color: var(--ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+    border-radius: var(--r-sm);
   }
-  /* Leeg komt in de praktijk niet voor — het paneel verschijnt alleen als er
-     iets mist — maar een leeg raster mag geen marge overhouden. */
-  .pu-missing-raster:empty { display: none; }
-  /* ── DE TEGELS ──────────────────────────────────────────────────────────
-     Gemaakt door askMissing(), dus `:global()`: een element dat tijdens het
-     gebruik ontstaat draagt Astro's scope-attribuut niet. */
-  .pu-missing :global(.pu-mis-tegel) {
-    width: 100%; height: 100%; display: grid; gap: .3rem; justify-items: start; text-align: left;
-    padding: .7rem .8rem; border: 1px solid var(--line); border-radius: var(--radius-s, 10px);
-    background: var(--paper); color: inherit; font: inherit; cursor: pointer;
-    transition: border-color .15s;
-  }
-  .pu-missing :global(.pu-mis-tegel:hover) { border-color: var(--ink); }
-  .pu-missing :global(.pu-mis-tegel:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-  /* Een gat krijgt de inktrand. Niet de waarschuwingskleur: dit paneel staat er
-     al in, en dan zouden twintig tegels het hele blok rood maken terwijl het om
-     de twee gaat die er tussen staan. */
-  .pu-missing :global(.pu-mis-tegel.is-gat) { border-color: var(--ink); }
-  /* .72rem en niet de .66 van het prototype: onder 11,5 pixels houdt dit
-     project op met lezen, en dat is precies de maat die daar nog boven zit. */
-  .pu-missing :global(.pu-mis-nr) {
-    font-family: var(--font-mono); font-size: .72rem; letter-spacing: .08em; color: var(--ink-3);
-  }
-  .pu-missing :global(.pu-mis-naam) { font-weight: 600; font-size: .88rem; line-height: 1.35; }
-  .pu-missing :global(.pu-mis-wat) { font-size: .78rem; color: var(--ink-2); line-height: 1.5; }
+  .pu-missing :global(.pu-mis-regel:hover) { color: var(--accent-bright); }
+  .pu-missing :global(.pu-mis-regel:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
   /* Ronde 9, F27: wat in de bak ligt, gaat niet mee. */
-  .pu-missing :global(.pu-mis-bak) { margin: 0 0 .8rem; font-size: .9rem; font-weight: 600; color: var(--ink); line-height: 1.5; }
-  .pu-missing :global(.pu-mis-vakjes) { display: flex; gap: 4px; margin-top: .15rem; }
-  .pu-missing :global(.pu-mis-vakjes i) {
-    width: 11px; height: 11px; display: block;
-    border: 1px solid currentColor; opacity: .3; border-radius: 2px;
-  }
-  .pu-missing :global(.pu-mis-vakjes i.is-vol) {
-    background: var(--accent); border-color: var(--accent); opacity: 1;
-  }
-  /* Een gat is niet "niets", het is een vakje dat wacht: vollere rand, geen
-     vulling. Zonder dit verschil lezen leeg en ontbrekend hetzelfde. */
-  .pu-missing :global(.pu-mis-vakjes i.is-gat) { opacity: .9; border-width: 2px; }
+  .pu-missing :global(.pu-mis-bak) { margin: .5rem 0 0; font-size: .9rem; font-weight: 600; color: var(--ink); line-height: 1.5; }
   .pu-missing .pu-sub-lead { margin-top: .6rem; }
   .pu-missing-btns { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: .9rem; }
 
@@ -809,6 +444,21 @@ const lcStijl = [
     line-height: 1.55;
     max-width: 78ch;
   }
+
+  /* De daggrens: dezelfde vorm als .pl-more in OrderFlow.astro (het blok
+     "meer dan twintig producten"), want het is hetzelfde gesprek: dit doen we
+     samen, via WhatsApp of mail. */
+  .pu-limiet {
+    margin: 1.2rem 0 0;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--accent);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    max-width: 78ch;
+  }
+  .pu-limiet > p { margin-top: .5rem; font-size: .92rem; line-height: 1.6; color: var(--ink-2); }
+  .pu-limiet-btns { display: flex; flex-wrap: wrap; gap: .6rem; }
+  .pu-limiet .pu-limiet-alt { font-size: .82rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 
   /* ── The no-JS ending ─────────────────────────────────────────────────────*/
   .pu-later {
@@ -890,27 +540,6 @@ const lcStijl = [
   .pu-cards :global(.pu-sr) {
     position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
     overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
-  }
-  .pu-rij-tel { margin: 0; font-size: .82rem; color: var(--ink-2); font-variant-numeric: tabular-nums lining-nums; }
-
-  /* ── DE TWEE PIJLEN ─────────────────────────────────────────────────────
-     De reden staat ERTUSSEN en niet onder de knop: op het moment dat de
-     vooruitknop uitstaat, is de vraag "waarom" — en die hoort op ooghoogte met
-     de knop te staan, niet eronder waar je hem pas ziet na het klikken dat niet
-     werkte. */
-  .pu-nav {
-    margin-top: .9rem; display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem;
-  }
-  .pu-nav-knop { display: inline-flex; align-items: center; gap: .45rem; }
-  .pu-nav-knop .i { width: 1em; height: 1em; flex: none; }
-  .pu-nav-knop:disabled { opacity: .45; cursor: not-allowed; }
-  .pu-nav-reden { flex: 1 1 14ch; min-width: 0; margin: 0; }
-  /* De vooruitknop rechts, de terugknop links, en de reden in het midden: op een
-     telefoon valt de reden dan onder de twee knoppen in plaats van ertussen. */
-  @media (max-width: 34rem) {
-    .pu-nav { gap: .5rem; }
-    .pu-nav-reden { flex-basis: 100%; order: 3; }
-    .pu-nav-knop { flex: 1 1 auto; justify-content: center; }
   }
   @media (prefers-reduced-motion: reduce) {
     .pu-rail-knop { transition: none; }
@@ -1381,8 +1010,6 @@ const lcStijl = [
      regels. Die regels moeten dan wel uit elkaar staan. */
   .pu-cards :global(.pu-slot-how) { font-size: .82rem; color: var(--ink-2); line-height: 1.6; }
   .pu-cards :global(.pu-slot.is-thumb .pu-slot-how) { display: none; }
-  .pu-guide-fold { margin-top: clamp(1.4rem, 3vw, 2rem); max-width: var(--pl-measure); }
-  .pu-guide-eg { width: 72px; height: 90px; object-fit: cover; border-radius: var(--r-sm); flex: none; }
   /* .pu-slot-req — de gevulde VERPLICHT-badge in de hoek — is op 17 september
      2026 vervangen door .pu-slot-eis onder het beeld. Zie het blok hierboven. */
 
@@ -1554,6 +1181,8 @@ const lcStijl = [
      inside the control's right edge keeps the row one line tall and reads as
      part of the field rather than as a fourth thing. */
   .pu-cards :global(.pu-q-has-swatch) { position: relative; }
+  /* De uitleg bij een productvraag, alleen op de eerste kaart (11 oktober 2026). */
+  .pu-cards :global(.pu-q-uitleg) { margin: 0; font-size: .8rem; line-height: 1.5; color: var(--ink-2); max-width: 62ch; }
   .pu-cards :global(.pu-q-swatch) {
     position: absolute;
     right: .55rem;
@@ -1771,94 +1400,8 @@ const lcStijl = [
     cursor: pointer; border-radius: var(--r-sm);
   }
 
-  /* ── HET TIPPANEEL ────────────────────────────────────────────────────────
-     Twee kolommen op een groot scherm: links de plaat, rechts de woorden. De
-     plaat is een laptop met een telefoon ervoor, en de twee gaten daarin komen
-     als percentages uit src/data/laptopVlak.js — niet overgetypt, want twee
-     kopieën van die maten schuiven ooit stil uit elkaar en dan liggen de
-     beelden naast hun gat.
-
-     De hele strook staat in de gewone stroom en plakt nergens aan vast; de
-     reden staat bij de markup. */
-  .pu-tips {
-    margin-top: clamp(1.4rem, 3vw, 2.2rem);
-    padding-top: .2rem;
-    border-top: 1px solid var(--line);
-  }
-  .pu-tips-kop { margin: 0; }
-  .pu-tips-knop {
-    width: 100%; display: flex; align-items: center; gap: .7rem;
-    padding: .7rem 0; background: none; border: 0; color: inherit; font: inherit;
-    text-align: left; cursor: pointer;
-  }
-  .pu-tips-knop:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: var(--r-sm); }
-  .pu-tips-woord {
-    font-family: var(--font-mono); font-size: .72rem;
-    letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2);
-  }
-  .pu-tips-nu {
-    flex: 1; min-width: 0; font-size: .84rem; color: var(--ink-3);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    opacity: 0; transition: opacity var(--dur-1) var(--ease);
-  }
-  .pu-tips.is-dicht .pu-tips-nu { opacity: 1; }
-  .pu-tips-pijl { width: 18px; height: 18px; flex: none; transition: rotate var(--dur-1) var(--ease); }
-  .pu-tips.is-dicht .pu-tips-pijl { rotate: 180deg; }
-  .pu-tips.is-dicht .pu-tips-in { display: none; }
-
-  .pu-tips-in {
-    display: grid; grid-template-columns: minmax(0, 390px) minmax(0, 1fr);
-    gap: clamp(1rem, 3vw, 2rem); align-items: center;
-    padding-bottom: 1rem;
-  }
-  .pu-tips-doek {
-    position: relative; aspect-ratio: var(--lc-plaat);
-    border-radius: var(--r-md); overflow: hidden; background: var(--paper-2);
-  }
-  .pu-tips-vlak {
-    position: absolute;
-    left: var(--lc-l); top: var(--lc-t); width: var(--lc-w); height: var(--lc-h);
-    background: #FFF; display: grid; place-items: center;
-    /* Rechts meer lucht dan links: daar valt de telefoon overheen. */
-    padding: 6% 26% 6% 6%;
-  }
-  .pu-tips-fon {
-    position: absolute;
-    left: var(--lc-fl); top: var(--lc-ft); width: var(--lc-fw); height: var(--lc-fh);
-  }
-  .pu-tips-vlak img { max-width: 100%; max-height: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
-  .pu-tips-fon img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .pu-tips-plaat { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
-  .pu-tips-merk {
-    position: absolute; left: calc(var(--lc-l) + 2%); top: calc(var(--lc-t) + 4%); margin: 0;
-    background: var(--accent); color: #141414;
-    padding: .18em .45em;
-    font-family: var(--font-mono); font-size: .72rem; font-weight: 700;
-    letter-spacing: .1em; text-transform: uppercase;
-  }
-
-  .pu-tips-woorden { display: grid; gap: .45rem; max-width: 46rem; }
-  .pu-tips-vaknaam {
-    margin: 0; font-family: var(--font-mono); font-size: .72rem;
-    letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2);
-  }
-  /* Een vaste hoogte, zodat de regel eronder niet op en neer springt bij elke
-     tip. Drie regels is de langste tip; korter laat de plaat verspringen. */
-  .pu-tips-zin { margin: 0; min-height: 4.4em; font-size: .95rem; line-height: 1.55; color: var(--ink); }
-  .pu-tips-noot { margin: 0; font-size: .82rem; color: var(--ink-3); max-width: 58ch; line-height: 1.5; }
-  .pu-tips-noot :global(b) { color: var(--ink-2); font-weight: 600; }
-  .pu-tips-tikken { display: flex; gap: 5px; margin: .2rem 0 0; }
-  .pu-tips-tikken i {
-    width: 16px; height: 2px; display: block;
-    background: currentColor; opacity: .2;
-    transition: opacity var(--dur-1) var(--ease);
-  }
-  .pu-tips-tikken i.is-aan { opacity: .8; }
-
   /* ── Breakpoints ──────────────────────────────────────────────────────────*/
   @media (max-width: 560px) {
-    .pu-guide-item { grid-template-columns: 38px auto 1fr; gap: .7rem; }
-    .pu-guide-dia { width: 38px; height: 38px; }
     /* Two across, not four. See the note on .pu-slots. */
     .pu-cards :global(.pu-slots) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     /* GEEN min-height meer: het vakje heeft sinds 17 september een vaste
@@ -1866,17 +1409,134 @@ const lcStijl = [
        stiekem vierkant trekken. Twee kolommen op 390px geeft een vak van ±170
        bij 227 pixels — ruim boven de 44 die een vinger nodig heeft. */
     .pu-cards :global(.pu-head) { grid-template-columns: auto minmax(0, 1fr) auto; }
-    .pu-tips-in { grid-template-columns: 1fr; gap: .8rem; }
-    .pu-tips-doek { max-width: 320px; }
-    /* De zin mag hier wél meebewegen: op één kolom staat de plaat erboven en
-       springt er niets van op en neer. */
-    .pu-tips-zin { min-height: 0; }
+  }
+
+  /* ═══ DE KAART PER PRODUCT — 11 oktober 2026 (F3) ══════════════════════════
+     Staat ONDERAAN dit blad, zodat het de oudere regels hierboven overschrijft
+     waar ze dezelfde elementen raken (het raster van de vakken, de kop).
+
+     Eén kaart per product, allemaal open: de kop (nummer, naam, soort, staat),
+     één knop voor 3–4 foto's, de vier vakken in twee kolommen — een duimnagel
+     met de woorden ernaast — en de lade "Meer over dit product". Op de eerste
+     kaart staat per vak één regel uitleg; daar staan de vakken op een telefoon
+     onder elkaar, zodat die regel niet in een kolom van drie woorden breekt. */
+  .pu-top { display: grid; gap: .45rem; margin-top: .3rem; }
+  .pu-top .pu-rij { margin-top: 0; }
+  .pu-stap-lead { margin-top: .75rem; color: var(--ink-2); }
+  .pu-cards { gap: 1rem; }
+  .pu-cards :global(.pu-card) {
+    padding: 1.1rem clamp(1rem, 2.2vw, 1.4rem) 1.15rem;
+    /* Springen vanuit de balk zet de kaart onder de vaste sitekop, niet erachter. */
+    scroll-margin-top: 6rem;
+  }
+  .pu-cards :global(.pu-soort) { grid-column: 3; grid-row: 1; align-self: center; }
+  .pu-cards :global(.pu-soort-sel) {
+    min-height: 40px; max-width: 14rem;
+    padding: .4rem 2.3rem .4rem .75rem;
+    font-size: .86rem; border-radius: var(--r-md);
+  }
+  .pu-cards :global(.pu-state) { grid-column: 2 / -1; }
+
+  .pu-cards :global(.pu-kies) {
+    margin-top: .9rem;
+    display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .9rem;
+  }
+  .pu-cards :global(.pu-kies-knop) { min-height: 44px; }
+  .pu-cards :global(.pu-kies-input) { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
+  .pu-cards :global(.pu-kies-hint) {
+    margin: 0; flex: 1 1 18rem; max-width: 60ch;
+    font-size: .82rem; line-height: 1.5; color: var(--ink-2);
+  }
+
+  .pu-cards :global(.pu-slots) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .9rem 1.1rem;
+    margin-top: 1rem;
+  }
+  /* Een vak: de duimnagel links, de woorden rechts. De knop beslaat de hele
+     hoogte van wat ernaast staat; de rest vult de tweede kolom van boven af. */
+  .pu-cards :global(.pu-slots .pu-slot) {
+    display: grid;
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    column-gap: .75rem; row-gap: .25rem;
+    align-content: start;
+  }
+  .pu-cards :global(.pu-slots .pu-slot-btn) {
+    grid-column: 1; grid-row: 1 / span 6;
+    width: 4.5rem; aspect-ratio: 4 / 5; padding: 0;
+  }
+  .pu-cards :global(.pu-slots .pu-slot > :not(.pu-slot-btn):not(.pu-slot-input)) { grid-column: 2; min-width: 0; }
+  .pu-cards :global(.pu-slots .pu-slot-name) { font-size: .9rem; }
+  .pu-cards :global(.pu-slot-uitleg) { display: flex; gap: .55rem; align-items: flex-start; }
+  /* De voorbeeldfoto (5.07): ±64 px, alleen als het bestand er is. */
+  .pu-cards :global(.pu-slot-vb) {
+    width: 64px; height: 64px; flex: none;
+    object-fit: cover; border-radius: var(--r-sm);
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .pu-cards :global(.pu-slot-regel) { font-size: .8rem; line-height: 1.5; color: var(--ink-2); }
+  .pu-cards :global(.pu-slots .pu-slot-bar) { margin-top: .15rem; }
+
+  /* De wisselkeuze: klein, rustig, en toch een echt besturingselement. */
+  .pu-cards :global(.pu-wissel) {
+    justify-self: start; max-width: 100%;
+    min-height: 32px; padding: .25rem 1.9rem .25rem .55rem;
+    font: inherit; font-size: .78rem; color: var(--ink);
+    border: 1px solid var(--line-strong); border-radius: var(--r-md);
+    background-color: var(--surface);
+    cursor: pointer;
+  }
+  .pu-cards :global(.pu-wissel:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  /* iOS zoomt in op velden onder 16 px (1 oktober 2026); zie stijl22.css. */
+  @media (max-width: 760px), (pointer: coarse) {
+    .pu-cards :global(.pu-wissel),
+    .pu-cards :global(.pu-soort-sel) { font-size: 16px; }
+  }
+
+  /* ── IN DE LADE: MEER FOTO'S EN ERBIJ IN BEELD ─────────────────────────────
+     Kleine vierkante duimnagels met het woord eronder, zoals de strook met
+     referentievakken altijd al was. Wat erbij in beeld komt is rond — het
+     signaal dat het geen product is (zie de kop van Styling.astro). */
+  .pu-cards :global(.pu-refs .pu-slot),
+  .pu-cards :global(.pu-erbij .pu-slot) { display: flex; flex-direction: column; width: 92px; gap: .25rem; }
+  .pu-cards :global(.pu-refs .pu-slot-btn),
+  .pu-cards :global(.pu-erbij .pu-slot-btn) { width: 100%; aspect-ratio: 1; padding: .3rem; }
+  .pu-cards :global(.pu-erbij .pu-slot-btn) { border-radius: 999px; border-style: dashed; }
+  .pu-cards :global(.pu-erbij .pu-slot-img) { border-radius: 999px; }
+  .pu-cards :global(.pu-erbij .pu-slot-eis) { display: none; }
+  .pu-cards :global(.pu-erbij .pu-slot-name) {
+    font-family: var(--font-mono); font-size: .72rem; font-weight: 400;
+    letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2);
+  }
+  .pu-cards :global(.pu-erbij) { display: grid; gap: .45rem; padding-top: .8rem; border-top: 1px solid var(--line); }
+  .pu-cards :global(.pu-erbij-h) {
+    margin: 0; font-family: var(--font-mono);
+    font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2);
+  }
+  .pu-cards :global(.pu-erbij-rij) { display: flex; flex-wrap: wrap; gap: .5rem; align-items: flex-start; }
+  .pu-cards :global(.pu-erbij-hint) { margin: 0; font-size: .78rem; line-height: 1.5; color: var(--ink-2); max-width: 60ch; }
+  .pu-cards :global(.pu-meer-in .pu-mk) { margin-top: 0; }
+
+  @media (max-width: 560px) {
+    .pu-cards :global(.pu-head) { grid-template-columns: auto minmax(0, 1fr); }
+    .pu-cards :global(.pu-soort) { grid-column: 1 / -1; grid-row: 2; }
+    .pu-cards :global(.pu-soort-sel) { max-width: none; width: 100%; }
+    .pu-cards :global(.pu-state) { grid-column: 1 / -1; }
+    .pu-cards :global(.pu-slots) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem .7rem; }
+    .pu-cards :global(.pu-card.is-uitleg .pu-slots) { grid-template-columns: 1fr; }
+    .pu-cards :global(.pu-slots .pu-slot) { grid-template-columns: 3.6rem minmax(0, 1fr); column-gap: .55rem; }
+    .pu-cards :global(.pu-slots .pu-slot-btn) { width: 3.6rem; }
+    .pu-cards :global(.pu-card.is-uitleg .pu-slots .pu-slot) { grid-template-columns: 4rem minmax(0, 1fr); }
+    .pu-cards :global(.pu-card.is-uitleg .pu-slots .pu-slot-btn) { width: 4rem; }
+    /* "OPTIONEEL" in een kolom van zeventig pixels: iets minder spatiëring. */
+    .pu-cards :global(.pu-slots .pu-slot-eis) { letter-spacing: .03em; }
+    /* De wisselkeuze is op een telefoon 16 px (iOS) en past dan niet naast de
+       duimnagel; hij komt eronder, over de volle breedte van het vak. */
+    .pu-cards :global(.pu-slots .pu-slot > :not(.pu-slot-btn):not(.pu-slot-input).pu-wissel) { grid-column: 1 / -1; }
+    .pu-cards :global(.pu-kies-knop) { width: 100%; justify-content: center; }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .pu-tips-pijl,
-    .pu-tips-nu,
-    .pu-tips-tikken i,
     .pu-cards :global(.pu-toggle),
     .pu-cards :global(.pu-toggle > svg),
     .pu-cards :global(.pu-slot-btn) { transition: none; }

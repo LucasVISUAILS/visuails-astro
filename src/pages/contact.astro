@@ -1,15 +1,17 @@
 ---
+// VISUAILS — /contact: in de hal sinds 13 oktober 2026 (afvinklijst 15, alles doen). De pagina
+// staat in ContactHal.astro; de vorige (ContactPage.astro) staat op de opruimlijst.
 // VISUAILS — /contact (English). De inhoud staat in ContactPage.astro zodat deze
 // pagina en /nl/contact niet uit elkaar kunnen lopen; zie de kop daar. Bij een
 // formulier weegt dat zwaarder dan bij een verhaalpagina: een veld dat in één
 // van de twee talen anders heet, is een veld dat niet aankomt.
 import Layout from '../layouts/Layout.astro';
-import ContactPage from '../components/ContactPage.astro';
+import ContactHal from '../components/ContactHal.astro';
 ---
 
-<Layout
+<Layout huid="hal"
   title="VISUAILS — Contact us"
   description="Questions about an order, support, or a custom request? Message VISUAILS on WhatsApp or email hello@visuails.com — we usually reply within the hour."
 >
-  <ContactPage lang="en" />
+  <ContactHal lang="en" />
 </Layout>

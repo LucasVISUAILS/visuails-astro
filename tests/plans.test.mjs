@@ -28,14 +28,13 @@
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import {
-  PLAN_IDS, TERM_IDS, TERMS, PLAN_SERVICE, ADVISORY,
-  monthlyCents, termTotalCents, perProductCents, ladderFloorCents,
+  PLAN_IDS, TERM_IDS, TERMS, PLAN_SERVICE,
+  monthlyCents, termTotalCents, perProductCents, PLAN_BODEM_CENTS,
   productsFor, clipsFor, hasBrandModel, rolloverMonths, available,
-  planProductBudget, attendedProductsPerMonth, fitsBudget, seatsLeft,
-  advisoryAvailable, planShape, PLAN_CAPACITY_SHARE, rolloverDetail, addMonths,
+  seatsLeft, planPast, creditsPassen, aboPlafond, ABO_CREDITS_PLAFOND, PLEKKEN_TONEN_TOT,
+  OFFERED_TERM_IDS, planShape, rolloverDetail, addMonths,
 } from '../src/data/plans.js';
-import { PLAN_AMOUNT, PLAN_COMPARE_MONTHS } from '../src/data/pricing.js';
-import { ATTENDED_PER_DAY } from '../src/data/capacity.js';
+import { PLAN_AMOUNT, PLAN_COMPARE_MONTHS, PLAN_CREDITS } from '../src/data/pricing.js';
 
 let pass = 0;
 let fail = 0;
@@ -50,7 +49,7 @@ console.log('VISUAILS — het abonnement\n');
 
 console.log('geen plan zakt onder de bodem van de ladder');
 {
-  const bodem = ladderFloorCents();
+  const bodem = PLAN_BODEM_CENTS;
   ok('de ladder heeft een bodem om tegen te meten', bodem > 0, true, bodem);
   for (const id of PLAN_IDS) {
     for (const t of TERM_IDS) {
@@ -103,7 +102,7 @@ console.log('geen plan zakt onder de bodem van de ladder');
      vooruitbetaald jaar betaal je daar wat twintig producten los kosten. Dat is
      de zin die op de prijspagina uitlegbaar is, en dit is de meting eronder. */
   ok('en dat brengt Starter op precies de bodem',
-    perProductCents('starter', 'prepaid'), ladderFloorCents());
+    perProductCents('starter', 'prepaid'), PLAN_BODEM_CENTS);
 }
 
 console.log('\nde plaat in PlanPicker kent elke combinatie van plan en termijn');
@@ -118,8 +117,10 @@ console.log('\nde plaat in PlanPicker kent elke combinatie van plan en termijn')
    *
    * Deze regel leest de CSS en eist dat elke combinatie erin staat. */
   const bron = read('src/components/order/PlanPicker.astro');
+  /* Sinds 6.04 alleen de termijnen uit het aanbod: de tussentermijn staat niet
+     meer op /start/plan. */
   for (const p of PLAN_IDS) {
-    for (const t of TERM_IDS) {
+    for (const t of OFFERED_TERM_IDS) {
       const kies = `[name="plan"][value="${p}"]:checked`;
       const kiesT = `[name="term"][value="${t}"]:checked`;
       const doel = `.ps-sumv[data-plan="${p}"][data-term="${t}"]`;
@@ -128,9 +129,10 @@ console.log('\nde plaat in PlanPicker kent elke combinatie van plan en termijn')
     }
   }
   // En elke termijn heeft een naam en een uitleg in het component.
-  for (const t of TERM_IDS) {
+  for (const t of OFFERED_TERM_IDS) {
     ok(`${t}: staat in de terugvalvrije teksttabel`, bron.includes(`  ${t}: { naam:`), true);
   }
+  ok('de tussentermijn staat niet meer op de plaat', /data-term="yearly"|\[value="yearly"\]/.test(bron), false);
 }
 
 console.log('\nde termijnen kloppen met elkaar');
@@ -159,32 +161,36 @@ console.log('\nde termijnen kloppen met elkaar');
   ok('Starter op geen van beide', hasBrandModel('starter', 'yearly'), false);
 }
 
-console.log('\nde plekken volgen capacity.js en niet een ingetypt getal');
+console.log('\nde plekken: één plafond in credits (6.05, 8 oktober 2026)');
 {
-  ok('de maandcapaciteit komt uit ATTENDED_PER_DAY',
-    attendedProductsPerMonth(), ATTENDED_PER_DAY * 21);
-  ok('het budget is het afgesproken deel daarvan',
-    planProductBudget(), Math.floor(ATTENDED_PER_DAY * 21 * PLAN_CAPACITY_SHARE));
-  /* Het deel moet onder de helft blijven: losse bestellingen zijn er vandaag en
-     abonnees nog niet, en een abonnement dat meer dan de helft van de agenda
-     vastlegt, sluit de deur waar de omzet nu vandaan komt. */
-  ok('en dat deel is niet meer dan de helft', PLAN_CAPACITY_SHARE <= 0.5, true, PLAN_CAPACITY_SHARE);
+  /* Het "abonnementsbudget" in producten (30% van de begeleide capaciteit) is
+     weg. De rem telt de maandcredits van alle abonnementen en vergelijkt die met
+     één plafond: de stand uit /admin, of ABO_CREDITS_PLAFOND. */
+  const P = ABO_CREDITS_PLAFOND;
+  ok('het plafond is een positief aantal credits', Number.isInteger(P) && P > 0, true);
+  ok('een leeg plafond heeft plek voor elk plan', PLAN_IDS.every((id) => planPast(id, 0)), true);
+  ok('een vol plafond voor geen enkel', PLAN_IDS.some((id) => planPast(id, P)), false);
+  ok('precies passend mag nog', planPast('starter', P - PLAN_CREDITS.starter), true);
+  ok('één credit te veel niet', planPast('starter', P - PLAN_CREDITS.starter + 1), false);
+  ok('en onzin telt als nul', planPast('starter', NaN), true);
+  ok('een maand op maat rekent met zijn eigen credits', creditsPassen(300, P - 300), true);
+  ok('  en niet één meer', creditsPassen(300, P - 299), false);
+  /* IN CREDITS EN NIET IN ABONNEES: een Merk is zes keer een Starter. */
+  ok('de plekken worden per plan geteld', seatsLeft(0, 'brand'), Math.floor(P / PLAN_CREDITS.brand));
+  ok('  en voor Starter meer dan voor Merk', seatsLeft(0, 'starter') > seatsLeft(0, 'brand'), true);
+  ok('en gaat nooit onder nul', seatsLeft(P * 10, 'starter'), 0);
+  ok('een stand uit /admin gaat voor', seatsLeft(0, 'studio', 240), 2);
+  ok('een lege of kapotte stand is de standaard', [aboPlafond(null), aboPlafond('x'), aboPlafond(0), aboPlafond(-5)].every((n) => n === P), true);
+  ok('"nog N plekken" pas bij drie of minder', PLEKKEN_TONEN_TOT, 3);
+  const src = read('src/data/plans.js');
+  ok('het oude productbudget is weg', /planProductBudget|PLAN_CAPACITY_SHARE|fitsBudget/.test(src.replace(/\/\*[\s\S]*?\*\//g, '')), false);
+}
 
-  /* IN PRODUCTEN EN NIET IN ABONNEES. Acht Starters en één Brand leggen niet
-     hetzelfde vast; een teller op aantallen zou zeggen dat er nog plek is
-     terwijl de agenda vol staat. */
-  const budget = planProductBudget();
-  ok('een leeg budget heeft plek voor elk plan',
-    PLAN_IDS.every((id) => fitsBudget(id, 0)), true);
-  ok('een vol budget voor geen enkel',
-    PLAN_IDS.some((id) => fitsBudget(id, budget)), false);
-  ok('precies passend mag nog', fitsBudget('starter', budget - productsFor('starter')), true);
-  ok('één product te veel niet', fitsBudget('starter', budget - productsFor('starter') + 1), false);
-  ok('en onzin telt als nul', fitsBudget('starter', NaN), true);
-
-  ok('de teller rekent in het kleinste plan',
-    seatsLeft(0), Math.floor(budget / productsFor('starter')));
-  ok('en gaat nooit onder nul', seatsLeft(budget * 10), 0);
+console.log('\ntwee termijnen in het aanbod (6.04, 8 oktober 2026)');
+{
+  ok('maandelijks en jaar vooruit', OFFERED_TERM_IDS.join(','), 'monthly,prepaid');
+  ok('de tussentermijn bestaat nog voor lopende abonnementen', TERM_IDS.includes('yearly') && !!TERMS.yearly, true);
+  ok('Pro houdt het merkmodel bij vooruit', hasBrandModel('studio', 'prepaid'), true);
 }
 
 console.log('\nhet saldo is een som, en schuift door zolang het mag');
@@ -244,15 +250,13 @@ console.log('\ndoorschuiven heeft een zichtbare afloopmaand');
   ok('onzin geeft leeg en niet NaN-NaN', addMonths('later', 1), '');
 }
 
-console.log('\nmeedenken is de enige plek waar tijd wordt verkocht');
+/* "Meedenken" (ADVISORY) stond hier tot 8 oktober 2026. Die dienst bestaat niet
+   (punt 9.01, §17.6); de toets eist nu dat hij ook niet meer in plans.js staat. */
+console.log('\nmeedenken bestaat niet als dienst');
 {
-  ok('alleen op het grootste plan', advisoryAvailable('studio', 0), false);
-  ok('en daar wel', advisoryAvailable('brand', 0), true);
-  ok('tot de limiet', advisoryAvailable('brand', ADVISORY.maxCustomers - 1), true);
-  ok('en niet erna', advisoryAvailable('brand', ADVISORY.maxCustomers), false);
-  /* De limiet is wat één persoon naast het werk kan doen. Wordt hij groot, dan
-     is dat een besluit en geen groei die er ongemerkt in sluipt. */
-  ok('de limiet is klein genoeg om alleen te doen', ADVISORY.maxCustomers <= 6, true, ADVISORY.maxCustomers);
+  const P = await import('../src/data/plans.js');
+  ok('plans.js exporteert geen ADVISORY meer', 'ADVISORY' in P, false);
+  ok('en geen advisoryAvailable()', 'advisoryAvailable' in P, false);
 }
 
 console.log('\nde migratie draait, en houdt tegen wat hij moet tegenhouden');
@@ -391,7 +395,7 @@ console.log('\nen de vorm die een pagina leest, klopt');
   ok('en het aantal producten', s.products, productsFor('studio'));
   ok('en de clips', s.clips, clipsFor('studio'));
   ok('en de vergelijking met de ladder', s.ladderCents > s.monthlyCents, true);
-  ok('en de dienst is complete', PLAN_SERVICE, 'complete');
+  ok('en de dienst is catalog (compleet bestaat niet meer)', PLAN_SERVICE, 'catalog');
   ok('een onbekend plan gooit',
     (() => { try { planShape('goud'); return false; } catch { return true; } })(), true);
 }

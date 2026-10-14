@@ -133,6 +133,8 @@
 //                                                aria-live, never a file count
 //           [data-pl-tray] [data-pl-tray-list]   files with no product
 //           [data-pl-upload-note="off"]          shown when uploads are down
+//           [data-pl-upload-note="limiet"]       shown when the daily upload
+//                                                limit is reached (o05, 8 okt 2026)
 //
 //           The classes this file writes are a contract with that component's
 //           scoped sheet, which reaches them through :global(): .pu-card,
@@ -207,6 +209,8 @@ import {
 // off this import reaches the screen: every label, placeholder and option name
 // is read out of the config blob like everything else on this page.
 import { PRODUCT_QUESTIONS } from '../data/attributes.js';
+/* Het kleurvlakje bij de productkleur leest de hexcode ook uit "bosgroen, #1B3A2F" (5.03). */
+import { hexUit } from '../lib/kleurcode.js';
 /* Alleen de vraag "is dit de zelfbedachte hoek": de veldnamen staan in
    angles.js zodat het formulier, de server en dit script er niet elk hun eigen
    spelling van maken. Zie de noot bij EIGEN_ANGLE_IDS. */
@@ -215,11 +219,29 @@ import { isEigenAngleId } from '../data/angles.js';
    zodat het te toetsen is zonder een browser. Het METEN staat hier, want daar
    zijn de pixels — zie meetBeeld(). */
 import { keurBeeld } from '../data/shots.js';
+/* De lijst "wat ontbreekt" in het tussenscherm van stap 2 (2.05): dezelfde
+   bron als Studio, de mails en /admin. Zonder DOM en zonder database. */
+import { ontbrekendeFotos, ontbrekendRegels } from '../lib/ontbreekt.js';
+/* 1.04: de sleutel en de termijn van het concept op het apparaat van de klant. */
+import { CONCEPT_SLEUTEL, CONCEPT_DAGEN } from '../data/cookies.js';
 // De EU-lijst staat op één plek. Hem hier overtypen zou betekenen dat het
 // formulier en de server het ooit oneens worden over of een land in de EU zit,
 // en dan biedt het formulier 0% aan waar de server 21% rekent.
 import { isEu, HOME_COUNTRY, vatShape, vatFormatError } from '../data/vat.js';
 import { VAT_RATE } from '../data/pricing.js';
+/* 1.07 (8 oktober 2026): bij welk groter aantal de bestelling evenveel of minder
+   kost. Alleen de regel; de som zelf geeft dit script mee (totaalBij()). */
+import { groterGoedkoper } from '../data/pricing.js';
+/* Ronde B (8 oktober 2026): wat een bestelling in credits kost — dezelfde som als
+   /account/order, zodat stap 5 nooit een ander getal noemt dan wat afgaat. */
+import { creditKosten, watPast, oudsteEerst, CREDIT_DIENSTEN } from '../data/creditKosten.js';
+/* 1.08: het WhatsApp-nummer en de codering van het bericht, op één plek. */
+import { waHref } from '../data/whatsapp.js';
+/* 8.06: de verleggingszin in het zakelijk-vinkje (ingevuld met merk en nummer). */
+import { verleggingZin } from '../data/business.js';
+/* De onzichtbare botcheck van Cloudflare (o03, 8 oktober 2026). Zonder sleutels
+   doet hij niets en kost hij niets; zie src/scripts/botcheck.js. */
+import { botToken, bindBotcheckForms } from './botcheck.js';
 
 /*
  * ── HOEVEEL STAPPEN, EN WELKE IS DE POORT — 11 AUGUSTUS 2026 ─────────────────
@@ -253,6 +275,13 @@ const DEFAULT_GATE_STEP = 4;
 /** Per-page state. Reset on every init, because ClientRouter reuses the module. */
 let form = null;
 let cfg = null;
+/* Het creditsaldo van een ingelogde abonnee uit /account/me (ronde B), en hoe
+   ver vooruit stap 5 "binnenkort vervallen" noemt. Hier bovenaan en niet bij
+   syncCredits(): boot() hieronder draait al tijdens het laden van dit bestand,
+   en syncTotal() roept syncCredits() aan — een `let` verderop zou dan nog niet
+   bestaan. */
+let creditsMe = null;
+const CREDITS_BINNENKORT_DAGEN = 31;
 let STEPS = DEFAULT_STEPS;
 /** Null betekent: deze stroom heeft geen capaciteitspoort. */
 let GATE_STEP = DEFAULT_GATE_STEP;
@@ -260,12 +289,26 @@ let current = 1;
 let batch = '';
 let staged = []; // [{ key, name, bytes, product, shot }]
 let uploadsOff = false;
+/* ── DE DAGGRENS IS BEREIKT — 8 oktober 2026 (o05) ─────────────────────────
+   /api/upload antwoordt `dag-limiet` als deze internetaansluiting vandaag het
+   maximum heeft verstuurd (zie UPLOAD_DAG in functions/api/upload.js). Dan gaan
+   de foto's die nog in de wachtrij staan er niet meer achteraan — die worden
+   alleen geweigerd — en verschijnt één keer het blok met WhatsApp en mail om
+   de bestelling zo te plaatsen. Zelfde vorm als `uploadsOff`. */
+let uploadsVol = false;
 let busy = false;
 let gateReq = 0; // request generation, so a slow answer cannot overwrite a fast one
 /* Zie askMissing(): heeft de klant "toch versturen" gekozen bij ontbrekende
    foto's? Hier en niet bij de functie, om dezelfde reden als `reached`: boot()
    draait vóór de rest van dit bestand is geëvalueerd. */
 let missingOk = false;
+/* 1.04 (F3, 11 oktober 2026): het concept op dit apparaat. `conceptKlaar` staat
+   uit tot de klant gekozen heeft (of er niets te kiezen viel) — anders schrijft
+   de lege opstart van het formulier het bewaarde concept meteen over. Hier en
+   niet bij de functies, om de reden die bij `reached` staat: boot() draait vóór
+   de rest van dit bestand. */
+let conceptKlaar = false;
+let conceptTimer = 0;
 
 // Step 2. `cards` is the product list — one per product on the order, each with
 // four slots — and `tray` is what arrived without a product we could name.
@@ -437,6 +480,7 @@ function init(el) {
   batch = '';
   staged = [];
   uploadsOff = false;
+  uploadsVol = false;
   busy = false;
   gateReq = 0;
   /* Leeg bij elke init, net als de rest van de toestand hierboven: ClientRouter
@@ -476,285 +520,33 @@ function init(el) {
   bindUploads();
   bindGate();
   bindSubmit();
+  bindBotcheckForms();
   bindVertrekWaarschuwing();
   bindPrefill();
-  bindStyling();
   bindMissing();
   missingOk = false;
 
   syncOrder();
   show(1, { focus: false });
+  /* 1.04: was de klant hier al bezig? Pas NA de opstart, zodat de kaarten en
+     de stappen er zijn om in te zetten wat terugkomt. */
+  conceptKlaar = false;
+  bindConcept();
+  checkConcept();
 }
 
 
-/* ═══════════════════════════════════════════════════════════════════════════
- * DE STYLING PER PRODUCT — 22 SEPTEMBER 2026
- * ═══════════════════════════════════════════════════════════════════════════
+/* ── DE STYLING PER PRODUCT STOND HIER — 22 september tot 11 oktober 2026 ───
  *
- * Onderaan stap 2 staat één rij per product (Styling.astro levert de schil en
- * de <template>s; dit bouwt de rijen uit dezelfde `cards` als de uploader).
- * Per rij: het kleine poppetje, wat er van het product binnen is, de plekken
- * die bij dit type ERBIJ kunnen — gewone uploadvakjes uit buildSlot(), met
- * `shot: ctx-<plek>` zodat ze in R2 en in de werkmap naast het product landen
- * — en de regel "wij kiezen".
- *
- * ── HET TYPE: ÉÉN KEER VOOR ALLES, EN PER RIJ ANDERS ──────────────────────
- *
- * `garment` (de keuzelijst bovenaan) geldt voor de hele bestelling en is al
- * toegepast; `garment_p3` in een rij wijkt ervan af. Leeg in een rij betekent
- * "zelfde als de bestelling". De server leest het precies zo — zie de noot bij
- * het producttype in functions/api/order.js.
- *
- * ── DE KEUZE PER PLEK IS EEN VERBORGEN VELD DAT DE VAKJES VOLGT ───────────
- *
- * `context_shoes_p3` staat op `own` zodra het vakje ctx-shoes op kaart 3 een
- * bestand heeft, en anders op `ours`. Niet een keuzelijst die de klant zelf
- * omzet: het bestand IS de keuze. Een MutationObserver op `data-state` van het
- * vakje houdt het veld bij — paintSlot() zet dat attribuut, en er hoeft dus
- * niets in paintSlot() zelf te weten van deze rijen.
- *
- * ── ZONDER RIJEN: DE OUDE KEUZELIJSTEN ────────────────────────────────────
- *
- * `data-pl-ctx` (de drie keuzelijsten voor de hele bestelling) is de vorm
- * zonder JavaScript. Zodra hier rijen staan, gaat hij uit én disabled, anders
- * post hij naast de velden per product — en de server zou dan twee antwoorden
- * krijgen voor dezelfde vraag.
- */
-function bindStyling() {
-  const keuze = form.querySelector('[data-pl-garment]');
-  if (!keuze) return;
-  const blok = form.querySelector('[data-pl-ctx]');
-  const sectie = form.querySelector('[data-pl-styling]');
-
-  /* Zonder de rijen (geen kaarten, geen sectie): het oude gedrag, de drie
-     keuzelijsten volgen het type. */
-  const tekenOud = () => {
-    if (!blok) return;
-    const slots = CTX_BY_GARMENT[keuze.value] || null;
-    if (!slots) { blok.hidden = true; return; }
-    let zichtbaar = 0;
-    for (const rij of blok.querySelectorAll('[data-pl-ctx-slot]')) {
-      const past = slots.includes(rij.getAttribute('data-pl-ctx-slot'));
-      rij.hidden = !past;
-      const sel = rij.querySelector('select');
-      if (sel) sel.disabled = !past;
-      if (past) zichtbaar += 1;
-    }
-    blok.hidden = zichtbaar === 0;
-  };
-
-  keuze.addEventListener('change', () => {
-    if (stylingAan()) { syncStyling(); } else { tekenOud(); }
-  });
-  if (!stylingAan()) { tekenOud(); return; }
-
-  /* Rijen: de oude keuzelijsten uit, en uit de verzending. */
-  if (blok) {
-    blok.hidden = true;
-    for (const sel of blok.querySelectorAll('select')) sel.disabled = true;
-  }
-  const skip = sectie.querySelector('[data-pl-styling-skip]');
-  if (skip) {
-    skip.hidden = false;
-    skip.addEventListener('click', () => {
-      const next = form.querySelector('[data-pl-step="2"] [data-pl-next]');
-      if (next) { next.scrollIntoView({ block: 'center' }); next.focus({ preventScroll: true }); }
-    });
-  }
-  syncStyling();
-}
-
-function stylingAan() {
-  return Boolean(form.querySelector('[data-pl-styling-rows]') && cfg && cfg.styling && q('[data-pl-cards]'));
-}
-
-/** Het type dat voor deze kaart geldt: de eigen keuze, anders die van de bestelling. */
-function stylingType(card) {
-  const eigen = card.styling && card.styling.typeEl ? card.styling.typeEl.value : '';
-  if (eigen) return eigen;
-  const alles = form.querySelector('[data-pl-garment]');
-  return alles ? alles.value : '';
-}
-
-/** De uitsnede bij een type, uit de config. */
-function cropVoor(type) {
-  const g = (cfg.styling.garments || []).find((x) => x.id === type);
-  return g ? g.crop : 'full';
-}
-
-/**
- * Het poppetje op een uitsnede, een product en de plekken van de klant zetten.
- * Eén tekening voor alles — zie Poppetje.astro. Het kader per uitsnede staat
- * als JSON op de svg zelf (`data-kaders`), zodat dit script geen eigen tabel
- * heeft die uit de pas kan lopen.
- */
-function paintPop(svg, { crop, product, own }) {
-  if (!svg) return;
-  let kaders = null;
-  try { kaders = JSON.parse(svg.getAttribute('data-kaders') || 'null'); } catch { kaders = null; }
-  const k = (kaders && kaders[crop]) || (kaders && kaders.full) || [8, 292];
-  svg.setAttribute('data-crop', crop);
-  if (product) svg.setAttribute('data-product', product); else svg.removeAttribute('data-product');
-  if (own && own.length) svg.setAttribute('data-own', own.join(',')); else svg.removeAttribute('data-own');
-  const buiten = svg.querySelector('.pop-buiten');
-  const kader = svg.querySelector('.pop-kader');
-  if (buiten) buiten.setAttribute('d', `M0 0 H140 V300 H0 Z M14 ${k[0]} H126 V${k[1]} H14 Z`);
-  if (kader) { kader.setAttribute('y', String(k[0])); kader.setAttribute('height', String(k[1] - k[0])); }
-}
-
-/** Alle rijen in lijn brengen met de kaarten; na elke syncCards(). */
-function syncStyling() {
-  if (!stylingAan()) return;
-  const host = form.querySelector('[data-pl-styling-rows]');
-  const tpl = form.querySelector('[data-pl-styling-row]');
-  const popTpl = form.querySelector('[data-pl-pop]');
-  if (!host || !tpl || !popTpl) return;
-
-  /* Rijen van kaarten die weg zijn: weg. */
-  for (const li of [...host.children]) {
-    if (!cards.some((c2) => c2.styling && c2.styling.rowEl === li)) li.remove();
-  }
-  /* Een rij per kaart, op volgorde. */
-  cards.forEach((card) => {
-    if (!card.styling) buildStylingRow(card, tpl, popTpl);
-    host.appendChild(card.styling.rowEl);
-    paintStylingRow(card);
-  });
-
-  /* De regel achter de keuzelijst bovenaan, en de grote uitleg. */
-  const alles = form.querySelector('[data-pl-garment]');
-  const gedaan = form.querySelector('[data-pl-garment-alles]');
-  const T = stylingCopy();
-  if (gedaan && T) {
-    const n = cards.length;
-    gedaan.hidden = !alles.value;
-    gedaan.textContent = n === 1 ? T.allesEen : T.allesGedaan.replace('{n}', String(n));
-  }
-  const groot = form.querySelector('[data-pl-styling] .st-pop-groot [data-pop]');
-  const crop = alles && alles.value ? cropVoor(alles.value) : 'full';
-  paintPop(groot, { crop, product: alles ? alles.value : '', own: [] });
-  const uh = form.querySelector('[data-pl-styling-uitleg-h]');
-  const up = form.querySelector('[data-pl-styling-uitleg-p]');
-  if (T && uh && up) { uh.textContent = T.uitlegH[crop] || T.uitlegH.full; up.textContent = T.uitlegP[crop] || T.uitlegP.full; }
-}
-
-function stylingCopy() {
-  const sectie = form.querySelector('[data-pl-styling]');
-  if (!sectie) return null;
-  try { return JSON.parse(sectie.getAttribute('data-st-copy') || 'null'); } catch { return null; }
-}
-
-function buildStylingRow(card, tpl, popTpl) {
-  const li = tpl.content.firstElementChild.cloneNode(true);
-  const T = stylingCopy() || {};
-  const pop = popTpl.content.querySelector('svg').cloneNode(true);
-  li.querySelector('.st-rij-pop').appendChild(pop);
-
-  const typeEl = li.querySelector('.st-rij-type');
-  typeEl.name = `garment_${card.key}`;
-  const leeg = document.createElement('option');
-  leeg.value = '';
-  leeg.textContent = T.rijType || '';
-  typeEl.appendChild(leeg);
-  for (const g of cfg.styling.garments || []) {
-    const o = document.createElement('option');
-    o.value = g.id; o.textContent = g.naam;
-    typeEl.appendChild(o);
-  }
-  typeEl.addEventListener('change', () => paintStylingRow(card));
-
-  card.styling = { rowEl: li, popEl: pop, typeEl, slotIds: [], velden: {}, waarnemers: [] };
-}
-
-function paintStylingRow(card) {
-  const st = card.styling;
-  if (!st) return;
-  const T = stylingCopy() || {};
-  const type = stylingType(card);
-  const slots = CTX_BY_GARMENT[type] || [];
-  const li = st.rowEl;
-
-  li.querySelector('.st-rij-n').textContent = String(card.n);
-  const naam = card.input && card.input.value.trim();
-  li.querySelector('.st-rij-naam').textContent = naam || c('pu.product', { n: card.n });
-
-  /* Wat er van het product binnen is: geteld over de vaste vakjes. */
-  const vast = SHOT_IDS.filter((id) => card.slots[id]);
-  const binnen = vast.filter((id) => card.slots[id].file && card.slots[id].status !== 'failed').length;
-  li.querySelector('.st-jouw').textContent = (T.fotos || '{n} / {m}').replace('{n}', String(binnen)).replace('{m}', String(vast.length));
-
-  /* De plekken: een uploadvakje per plek die bij dit type hoort. Vakjes van
-     een plek die er niet meer bij hoort, gaan weg — met het bestand terug in
-     de bak, net als bij een hoek die uit gaat (paintAngles). */
-  const rij = li.querySelector('.st-erbij-rij');
-  const wil = slots.map((slot) => cfg.styling.slots[slot] && cfg.styling.slots[slot].shot).filter(Boolean);
-  for (const id of [...st.slotIds]) {
-    if (wil.includes(id)) continue;
-    const sl = card.slots[id];
-    if (sl) {
-      if (sl.file && sl.status !== 'failed') trayAdd(sl.file);
-      clearSlot(card, id);
-      if (sl.el && sl.el.wrap) sl.el.wrap.remove();
-      delete card.slots[id];
-    }
-    if (st.velden[id]) { st.velden[id].remove(); delete st.velden[id]; }
-    st.slotIds = st.slotIds.filter((x) => x !== id);
-  }
-  let geen = li.querySelector('.st-geen');
-  if (!slots.length) {
-    if (!geen) { geen = document.createElement('p'); geen.className = 'st-geen'; geen.textContent = T.geenPlek || ''; rij.appendChild(geen); }
-  } else if (geen) { geen.remove(); }
-  const gratis = li.querySelector('.st-gratis');
-  if (gratis) gratis.hidden = !slots.length;
-
-  for (const slot of slots) {
-    const spec = cfg.styling.slots[slot];
-    if (!spec) continue;
-    const id = spec.shot;
-    if (st.slotIds.includes(id) && card.slots[id] && card.slots[id].el) continue;
-    if (!card.slots[id]) card.slots[id] = EMPTY_SLOT();
-    const wrap = buildSlot(card, id);
-    rij.appendChild(wrap);
-    st.slotIds.push(id);
-    paintSlot(card, id);
-
-    /* Het verborgen veld dat de keuze draagt, en de waarnemer die het bijhoudt. */
-    const veld = document.createElement('input');
-    veld.type = 'hidden';
-    veld.name = `context_${slot}_${card.key}`;
-    veld.value = 'ours';
-    li.appendChild(veld);
-    st.velden[id] = veld;
-    const mo = new MutationObserver(() => {
-      const heeft = wrap.dataset.state === 'filled';
-      const nieuw = heeft ? 'own' : 'ours';
-      if (veld.value !== nieuw) { veld.value = nieuw; paintStylingRow(card); }
-    });
-    mo.observe(wrap, { attributes: true, attributeFilter: ['data-state'] });
-    st.waarnemers.push(mo);
-  }
-  /* Vakjes op volgorde van de plekken houden (een type-wissel kan ze anders
-     achteraan zetten). */
-  for (const slot of slots) {
-    const spec = cfg.styling.slots[slot];
-    const sl = spec && card.slots[spec.shot];
-    if (sl && sl.el && sl.el.wrap) rij.appendChild(sl.el.wrap);
-  }
-
-  /* De regel "wij kiezen", en het poppetje. */
-  const eigen = [];
-  const delen = [];
-  for (const slot of slots) {
-    const spec = cfg.styling.slots[slot];
-    if (!spec) continue;
-    const sl = card.slots[spec.shot];
-    const own = Boolean(sl && sl.file && sl.status !== 'failed');
-    if (own) eigen.push(slot); else if (spec.standaard) delen.push(spec.standaard);
-  }
-  const ons = li.querySelector('.st-ons');
-  ons.textContent = delen.length ? delen.join(' · ') : (slots.length ? '—' : '');
-  paintPop(st.popEl, { crop: cropVoor(type), product: type, own: eigen });
-}
+ * bindStyling(), syncStyling(), buildStylingRow() en paintStylingRow() bouwden
+ * onderaan stap 2 een tweede lijst van dezelfde producten ("Wat je opstuurt",
+ * Styling.astro): per product de soort, het poppetje, de foto's en de vakjes
+ * voor wat erbij in beeld kan. Die tweede lijst is weg (F3, Lucas: één kaart
+ * per product). De soort staat nu op de kaart (buildSoort), de contextvakjes in
+ * de lade van de kaart (buildErbij, paintErbij) — met dezelfde veldnamen
+ * (`garment_pN`, `context_<plek>_pN`) en dezelfde vakje-ids (`ctx-<plek>`), dus
+ * /api/order en de werkmap merken er niets van. CTX_BY_GARMENT bovenaan blijft
+ * de tabel die zegt welke plekken bij welke soort horen. */
 
 /** Parse the server-rendered config. Returns null rather than throwing. */
 function readConfig(el) {
@@ -1031,43 +823,45 @@ function syncRequired() {
 }
 
 /*
- * ── DE VERKLARING BIJ 0%, EN WANNEER HIJ VERSCHIJNT ──────────────────────────
+ * ── DE VERKLARING BIJ 0%: IN HET ZAKELIJK-VINKJE VAN DE LAATSTE STAP ──────────
  *
- * Uit btwverleggingspecificatie.md §4: bij een geslaagde verlegging een
- * verplicht vinkje waarin de klant verklaart dat het bedrijf buiten Nederland
- * zit en dat het nummer daarbij hoort.
+ * 8 oktober 2026 (8.06, V19 = a). Tot vandaag stond hier een apart, verplicht
+ * vinkje in stap 3 ("ik verklaar dat mijn bedrijf buiten Nederland is
+ * gevestigd …"). Dat is weg. Dezelfde verklaring staat nu als eerste zin IN het
+ * verplichte zakelijk-vinkje van stap 5, ingevuld met het merk en het
+ * btw-nummer dat de klant typte (verleggingZin() in src/data/business.js), en
+ * het verborgen veld `vat_confirmed` legt vast dat het vinkje bij DIE tekst werd
+ * gezet. Op de server is een door VIES bevestigd nummer plus dit vinkje 0%, en
+ * zonder vinkje 21% (verleggingTelt() in src/data/vat.js).
  *
- * De voorwaarde is precies die van artikel 196: een ander EU-land dan Nederland,
- * en een btw-nummer ingevuld. Buiten de EU is er geen verlegging — dat is
- * "niet belastbaar in Nederland", een andere regel met een andere factuurtekst
- * (zie src/data/vat.js) — dus hoort dit vinkje daar niet, en zou het er zetten
- * suggereren dat het één ding is.
+ * De voorwaarde is die van artikel 196: een ander EU-land dan Nederland, een
+ * btw-nummer ingevuld, en niet "ik heb geen btw-nummer". Buiten de EU is er geen
+ * verlegging — dat is "niet belastbaar in Nederland", een andere regel met een
+ * andere factuurtekst — dus daar blijft de gewone zakelijke zin staan.
  *
- * DIT BELOOFT NIETS. Het vinkje verschijnt zodra 0% MOGELIJK is, niet zodra het
- * zeker is: of het nummer klopt weten we pas als VIES antwoordt, en dat gebeurt
- * op de server bij verzenden. Klopt het niet, dan is het tarief 21% en is het
- * vinkje betekenisloos in plaats van onwaar. De andere volgorde — pas vragen ná
- * VIES — zou betekenen dat de klant een vinkje krijgt op het moment dat hij op
- * verzenden heeft gedrukt, en dat is de slechtste plek voor een verplicht veld.
+ * DIT BELOOFT NIETS. Of het nummer klopt weet pas VIES, op de server bij
+ * verzenden. Klopt het niet, dan is het tarief 21% en is de zin betekenisloos in
+ * plaats van onwaar.
  */
 function syncVatConfirm() {
-  const block = q('[data-pl-vatconfirm]');
-  if (!block) return;
+  const zin = q('[data-pl-verlegd]');
+  const veld = q('[data-pl-verlegd-veld]');
+  if (!zin && !veld) return;
   const country = (q('select[name=country]') || {}).value || '';
   const vat = ((q('input[name=vat]') || {}).value || '').trim();
+  const merk = ((q('input[name=brand]') || {}).value || '').trim();
   const noVat = !!(q('input[type="checkbox"][name="no_vat"]') || {}).checked;
 
   const up = country.trim().toUpperCase();
   const applies = !!up && up !== HOME_COUNTRY && isEu(up) && !!vat && !noVat;
-
-  block.hidden = !applies;
-  // Verdwijnt het blok, dan verdwijnt ook het antwoord. Een aangevinkte
-  // verklaring die de klant niet meer kan zien, is geen verklaring — en hij zou
-  // meeliften naar de server bij een land waar hij niet over gaat.
-  if (!applies) {
-    const box = q('input[name=vat_confirmed]');
-    if (box) box.checked = false;
+  // Zonder merk of nummer is er geen zin, en dan ook geen verlegging: liever
+  // 21% dan een vinkje bij een verklaring met een gat erin.
+  const tekst = applies ? verleggingZin(cfg.lang, { merk, btw: vat }) : null;
+  if (zin) {
+    zin.textContent = tekst || '';
+    zin.hidden = !tekst;
   }
+  if (veld) veld.value = tekst ? 'yes' : '';
   syncRequired();
 }
 
@@ -1275,7 +1069,7 @@ function bindErrors() {
   // want een land is een select en een nummer wordt getypt.
   const watch = (e) => {
     const n = e.target && e.target.name;
-    if (n === 'country' || n === 'vat' || n === 'no_vat') syncVatConfirm();
+    if (n === 'country' || n === 'vat' || n === 'no_vat' || n === 'brand') syncVatConfirm();
     // De vorm hangt aan het land en de melding aan wat er staat, dus beide.
     if (n === 'country' || n === 'vat') syncVatFormat();
     // Het registratienummer hangt alleen aan het vinkje, niet aan het land: de
@@ -1386,75 +1180,74 @@ function askMissing() {
   const inBak = tray.length;
   if ((!short.length && !inBak) || missingOk) { box.hidden = true; return true; }
   const n = short.length;
+
+  /* ── ÉÉN LIJST, UIT DE GEDEELDE BRON — 11 oktober 2026 (F3, 2.05) ─────────
+     Hier stond een raster van tegels per product. Nu één lijst, en de regels
+     komen uit src/lib/ontbreekt.js — dezelfde functie die Studio, de betaalmail,
+     de studiomail en /admin gebruiken, zodat "geen achterkant" hier hetzelfde
+     zegt als daar. ontbrekendeFotos() kent alleen de vaste verplichte vakken;
+     staat er nog geen enkele foto, dan geeft hij `null` (onbekend) en tonen we
+     geen lijst — nooit "alles compleet". Wat in de bak ligt, telt niet mee:
+     dat gaat niet met de bestelling mee (zie de regel daaronder). */
+  const files = [];
+  const details = {};
+  cards.forEach((card) => {
+    const naam = card.input ? card.input.value.trim() : '';
+    if (naam) details[`product_${card.key}`] = naam;
+    Object.keys(card.slots).forEach((id) => {
+      if (slotFilled(card, id)) files.push({ kind: 'upload', product_key: card.key, shot: id });
+    });
+  });
+  /* De bijbestelde hoeken (k-hoeken, 12 oktober 2026): dezelfde velden als de
+     bestelling meestuurt (extra_slots, angle_<id>, angle_note_<id>), zodat
+     ontbreekt.js ze hier net zo telt als in Studio, de mails en /admin. */
+  const vakkenNu = hoekVakken();
+  if (vakkenNu.length) {
+    details.extra_slots = vakkenNu.map((v) => `${v.id}:${v.hoek}`).join(',');
+    vakkenNu.forEach((v) => {
+      details[`angle_${v.hoek}`] = '1';
+      if (isEigenAngleId(v.hoek) && v.naam) details[`angle_note_${v.hoek}`] = v.naam;
+    });
+  }
+  const lijst = ontbrekendeFotos({ productCount: cards.length, details, files });
+  const regels = ontbrekendRegels(lijst, cfg.lang === 'nl' ? 'nl' : 'en');
+
   const h = q('[data-pl-missing-h]', box);
-  if (h) h.textContent = !n ? c('pu.trayH') : n === 1 ? c('pu.missingHOne') : c('pu.missingH', { n });
+  if (h) {
+    h.textContent = !files.length && n ? c('pu.missingNone')
+      : !n ? c('pu.trayH')
+      : n === 1 ? c('pu.missingHOne') : c('pu.missingH', { n });
+  }
   /* De bak telt mee (ronde 9, F27): wat daar ligt, gaat niet mee. */
   let bakRegel = q('[data-pl-missing-tray]', box);
+  const list = q('[data-pl-missing-list]', box);
   if (!bakRegel) {
     bakRegel = document.createElement('p');
     bakRegel.className = 'pu-mis-bak';
     bakRegel.dataset.plMissingTray = '';
-    const lijst = q('[data-pl-missing-list]', box);
-    if (lijst) lijst.before(bakRegel); else box.appendChild(bakRegel);
+    if (list) list.after(bakRegel); else box.appendChild(bakRegel);
   }
   bakRegel.hidden = !inBak;
   bakRegel.textContent = inBak ? c('pu.trayNotSent', { n: inBak }) : '';
-  const list = q('[data-pl-missing-list]', box);
+
   if (list) {
-    /* ── ALLE PRODUCTEN EN NIET DE EERSTE ZES ──────────────────────────────
-       Hier stond een opsomming die na zes regels ophield met "en nog 19" — op
-       het enige scherm waar iemand juist wil weten wélke negentien. Nu staan ze
-       er allemaal, ook de afgevinkte: het gat is pas een gat als je ziet waar
-       het tussen staat. Een tegel is smal, dus dertig ervan zijn vijf regels en
-       geen vijf schermen. */
-    const vakIds = [...REQUIRED_SHOT_IDS, ...hoekVakIds(), ...MUST_DECIDE_SHOT_IDS]
-      .filter((id, i, rij) => rij.indexOf(id) === i);
     list.textContent = '';
-    cards.forEach((card) => {
-      const klaar = cardReady(card);
+    const regel = (tekst, card) => {
       const li = document.createElement('li');
       const knop = document.createElement('button');
       knop.type = 'button';
-      knop.className = 'pu-mis-tegel';
-      knop.classList.toggle('is-gat', !klaar);
-
-      const nr = document.createElement('span');
-      nr.className = 'pu-mis-nr';
-      nr.textContent = String(card.n).padStart(2, '0');
-
-      const naam = document.createElement('span');
-      naam.className = 'pu-mis-naam';
-      const eigen = card.input && card.input.value.trim();
-      naam.textContent = eigen || c('pu.product', { n: card.n });
-
-      /* De vakjes zeggen WAAR het gat zit, de regel eronder zegt WAT er moet.
-         Allebei, want "één vakje leeg" vertelt niet of het om een foto of om
-         een keuze gaat — zie undecided(). */
-      const strook = document.createElement('span');
-      strook.className = 'pu-mis-vakjes';
-      strook.setAttribute('aria-hidden', 'true');
-      vakIds.forEach((id) => {
-        const vak = document.createElement('i');
-        const vol = slotFilled(card, id)
-          || (mustDecideShot(id) && card.slots[id] && card.slots[id].status === 'skipped');
-        vak.classList.toggle('is-vol', !!vol);
-        vak.classList.toggle('is-gat', !vol);
-        strook.appendChild(vak);
-      });
-
-      const wat = document.createElement('span');
-      wat.className = 'pu-mis-wat';
-      wat.textContent = cardStateText(card, klaar);
-
-      knop.append(nr, naam, strook, wat);
-      /* Dezelfde sprong als de knop "Foto's toevoegen", alleen naar DIT product
-         in plaats van naar het eerste dat nog iets mist. */
-      knop.addEventListener('click', () => {
-        box.hidden = true;
-        naarProduct(card);
-      });
+      knop.className = 'pu-mis-regel';
+      knop.textContent = tekst;
+      /* Eén klik naar dát product, met de melding weg. */
+      knop.addEventListener('click', () => { box.hidden = true; naarProduct(card); });
       li.appendChild(knop);
       list.appendChild(li);
+    };
+    /* Sinds 12 oktober 2026 kent ontbreekt.js ook de bijbestelde hoeken; de
+       eigen regel die hier daarvoor stond, is weg. */
+    (lijst || []).forEach((p, i) => {
+      const card = cards.find((k) => k.key === p.key);
+      if (card && regels[i]) regel(regels[i], card);
     });
   }
   box.hidden = false;
@@ -1466,27 +1259,15 @@ function askMissing() {
 }
 
 /**
- * Naar één product toe: openklappen, in beeld brengen, blik erin.
- *
- * Twee knoppen komen hier uit — "Foto's toevoegen" (naar het eerste gat) en een
- * tegel in het raster (naar dát product). In de rij is een kaart alleen zichtbaar
- * als hij aan de beurt is, dus dan moet de RIJ eerst verschuiven; buiten de rij
- * staan ze allemaal onder elkaar en volstaat openklappen. Zonder dat onderscheid
- * verdwijnt de melding en gebeurt er verder niets — de kaart waar je heen wilde
- * staat dan nog steeds op `hidden`.
+ * Naar één product toe: in beeld brengen, blik erin. Twee knoppen komen hier
+ * uit — "Nu toevoegen" (naar het eerste gat) en een regel in de lijst (naar dát
+ * product). Sinds 11 oktober 2026 staan alle kaarten open, dus dit is altijd
+ * dezelfde sprong als die van de balk (naarKaart).
  */
 function naarProduct(card) {
   if (!card) return;
-  if (rijAan()) {
-    const i = cards.indexOf(card);
-    if (i >= 0) naarKaart(i);
-    return;
-  }
-  if (!card.el) return;
-  card.collapsed = false;
-  paintCard(card);
-  card.el.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
-  if (card.input) { try { card.input.focus({ preventScroll: true }); } catch { /* ok */ } }
+  const i = cards.indexOf(card);
+  if (i >= 0) naarKaart(i);
 }
 
 function bindMissing() {
@@ -1712,6 +1493,9 @@ function bindOrder() {
   // just finished binding. Bound first, constrained second.
   bindChannels();
   bindModel();
+  /* "Bestel met dezelfde look" (punt 3.07): achtergrond, verhouding en gezicht
+     uit de link, ná het binden zodat de change-events hun werk doen. */
+  applyLookUitUrl();
   /* De hoeken — 9 september 2026. Ná bindModel omdat paintAngles() het lopende
      totaal aanraakt en dat pas klopt als de rest van stap 1 gebonden is. */
   bindAngles();
@@ -1719,10 +1503,8 @@ function bindOrder() {
   // syncRequired() en refreshUploader() aan en die willen dat de kaarten en de
   // achtergrond al gebonden zijn.
   bindUploadMode();
-  /* De tips naast stap 2. Helemaal aan het eind: het paneel staat volledig in
-     de markup en hangt aan niets hierboven, dus als het ooit stukloopt mag dat
-     de rest van deze stroom niet meenemen. */
-  bindTips();
+  /* Hier stond bindTips(): het tippaneel naast stap 2 is op 11 oktober 2026
+     weggehaald (F3) — het vocht met de uitleg per vak om dezelfde aandacht. */
   bindVouwAnker();
   bindCombiBalk();
 }
@@ -1825,7 +1607,7 @@ function syncHoekVakken(alleen) {
     Object.keys(card.slots).forEach((id) => {
       if (!extraSlotNumber(id) || wil.includes(id)) return;
       const sl = card.slots[id];
-      if (sl.file && sl.status !== 'failed') trayAdd(sl.file);
+      if (sl.file && sl.status !== 'failed' && isEchtBestand(sl.file)) trayAdd(sl.file);
       clearSlot(card, id);
       if (sl.el && sl.el.wrap) sl.el.wrap.remove();
       delete card.slots[id];
@@ -1903,175 +1685,6 @@ function bindVouwAnker() {
       window.scrollBy({ top: verschil, left: 0, behavior: 'auto' });
     });
   });
-}
-
-/*
- * ══════════════════════════════════════════════════════════════════════════════
- * DE TIPS NAAST STAP 2
- * ══════════════════════════════════════════════════════════════════════════════
- *
- * Lucas: *"rechts tips die de klant elke 10 seconden kort vertellen wat waarvoor
- * is en waarom het handig is."*
- *
- * ── DIT SCRIPT MAAKT NIETS ──────────────────────────────────────────────────
- *
- * Elk element staat al in ProductUploader.astro. Hier worden alleen teksten en
- * beeldbronnen omgewisseld. Dat is niet netheid maar noodzaak: Astro scopet zijn
- * CSS met een attribuut dat een element dat híér ontstaat niet draagt, en dan
- * krijgt het paneel geen enkele regel mee. Die val heeft dit project vier keer
- * gekost; zie de kop van ProductUploader.astro.
- *
- * ── WAT ER BEWEEGT, EN WANNEER NIET ─────────────────────────────────────────
- *
- * De reeks draait vanzelf door. Drie keer staat hij stil, en alle drie om een
- * reden die je op het scherm kunt zien:
- *
- *   DICHTGEKLAPT      er is niets te tonen, dus een klok laten lopen is werk
- *                     doen voor een leeg scherm.
- *   TABBLAD WEG       hetzelfde, en het scheelt een browser die op de
- *                     achtergrond elke tien seconden twee foto's inlaadt.
- *   JE RAAKT EEN VAK  dan is de tip niet meer iets dat langskomt maar een
- *                     antwoord op wat je nu doet. Hij blijft staan tot je
- *                     ergens anders heen gaat. Een uitleg die wegdraait terwijl
- *                     je hem leest, is erger dan geen uitleg.
- *
- * GEEN aria-live op de zin. Een regel die vanzelf elke tien seconden verandert
- * en zichzelf aankondigt, onderbreekt een schermlezer midden in het invullen van
- * een formulier — dat is de klassieke karrousel-fout. Wie hem wil lezen, komt
- * er met de tab-toets langs; de knop zegt met aria-expanded wat hij doet.
- */
-function bindTips() {
-  const paneel = q('[data-pu-tips]');
-  if (!paneel) return;
-
-  let TIPS = [];
-  let BELOFTES = {};
-  try {
-    TIPS = JSON.parse(paneel.dataset.puTips || '[]');
-    BELOFTES = JSON.parse(paneel.dataset.puBeloftes || '{}');
-  } catch (e) {
-    /* Stuk JSON is geen reden om de stap te laten vallen: het paneel gaat weg
-       en uploaden werkt gewoon door. */
-    paneel.hidden = true;
-    return;
-  }
-  if (!TIPS.length) { paneel.hidden = true; return; }
-
-  const laptop = q('[data-pu-tips-laptop]', paneel);
-  const fon = q('[data-pu-tips-fon]', paneel);
-  const merk = q('[data-pu-tips-merk]', paneel);
-  const vaknaam = q('[data-pu-tips-vaknaam]', paneel);
-  const zin = q('[data-pu-tips-zin]', paneel);
-  const kortje = q('[data-pu-tips-nu]', paneel);
-  const schuif = q('[data-pu-tips-schuif]', paneel);
-  const tikken = qa('[data-pu-tips-tikken] i', paneel);
-  const merkWoord = paneel.dataset.puMerk || '';
-  const ms = Math.max(2000, Number(paneel.dataset.puTipMs) || 10000);
-
-  let nu = 0;
-  let klok = null;
-  let vast = false;
-  /* Welk vak de uitleg vasthoudt. Apart van `vast` omdat de vraag "sta ik nog
-     op hetzelfde vak" een andere is dan "sta ik ergens op". */
-  let vastVak = '';
-
-  const stop = () => { if (klok) { clearTimeout(klok); klok = null; } };
-  const draai = () => {
-    stop();
-    if (vast || paneel.classList.contains('is-dicht') || document.hidden) return;
-    klok = setTimeout(() => { toon(nu + 1); draai(); }, ms);
-  };
-
-  function zet({ voor, na, naam, kop, tekst }) {
-    if (fon && voor) fon.src = voor;
-    if (laptop && na) laptop.src = na;
-    if (merk) merk.textContent = naam ? `${merkWoord} · ${naam}` : merkWoord;
-    if (vaknaam) vaknaam.textContent = kop || '';
-    /* textContent en geen innerHTML: deze tekst komt uit uploadTips.js en is
-       van ons, maar een reeks die ooit door een ander gevuld wordt hoort niet
-       als HTML op het scherm te komen. De enige regel met opmaak is de noot, en
-       die staat in de markup. */
-    if (zin) zin.textContent = tekst || '';
-    if (kortje) kortje.textContent = kop || '';
-  }
-
-  function toon(k) {
-    nu = ((k % TIPS.length) + TIPS.length) % TIPS.length;
-    const tip = TIPS[nu];
-    zet({ voor: tip.voor, na: tip.na, naam: tip.naam, kop: tip.kop, tekst: tip.tekst });
-    tikken.forEach((b, i) => b.classList.toggle('is-aan', i === nu));
-  }
-
-  /* ── EEN VAK AANRAKEN ZET DE UITLEG STIL OP DAT VAK ────────────────────────
-     Dit is het stuk waar het paneel iets doet wat een losse uitlegtekst niet
-     kan: je staat met je cursor op "Achterkant" en het scherm laat zien wat er
-     uit een achterkantfoto komt. De BELOFTE en niet de tip, want dat is de zin
-     die over dít vak gaat.
-
-     Op de kaart en niet op het paneel gebonden, en met capture, omdat de vakjes
-     door pipeline.js gemaakt worden en dus na deze binding pas bestaan. */
-  const kaarten = q('[data-pl-cards]');
-  if (kaarten) {
-    const raak = (el) => {
-      const vak = el && el.closest ? el.closest('[data-pu-slot]') : null;
-      const id = vak && vak.dataset ? vak.dataset.puSlot : '';
-      const belofte = id ? BELOFTES[id] : '';
-      if (!belofte) return false;
-      /* ── ÉÉN KEER PER VAK, EN NIET PER MUISBEWEGING ────────────────────────
-         `mouseover` vuurt bij elke beweging binnen hetzelfde vakje. Zonder deze
-         regel wordt bij het overglijden van één vak tientallen keren dezelfde
-         tekst en dezelfde beeldbron opnieuw gezet. De browser haalt die foto's
-         niet opnieuw op — een `src` die niet verandert is een no-op — maar het
-         is wel tientallen keren de tekst in de zin vervangen, en dat is precies
-         het soort werk dat op een trage telefoon te zien is. */
-      if (vast && vastVak === id) return true;
-      const tip = TIPS.find((t) => t.vak === id);
-      vast = true;
-      vastVak = id;
-      stop();
-      zet({
-        voor: tip ? tip.voor : '',
-        na: tip ? tip.na : '',
-        naam: (vak.querySelector('.pu-slot-name') || {}).textContent || '',
-        kop: (vak.querySelector('.pu-slot-name') || {}).textContent || '',
-        tekst: belofte,
-      });
-      /* De streepjes uit, want je staat niet meer IN de reeks. Ze komen terug
-         zodra hij weer doordraait. */
-      tikken.forEach((b) => b.classList.remove('is-aan'));
-      return true;
-    };
-    const los = () => {
-      if (!vast) return;
-      vast = false;
-      vastVak = '';
-      toon(nu);
-      draai();
-    };
-    kaarten.addEventListener('focusin', (e) => { raak(e.target); });
-    kaarten.addEventListener('focusout', los);
-    kaarten.addEventListener('mouseover', (e) => { raak(e.target); });
-    kaarten.addEventListener('mouseleave', los);
-  }
-
-  if (schuif) {
-    /* Dicht op een telefoon, open op een groot scherm: daar kost het paneel
-       niets en is het nuttig op het moment dat iemand twijfelt; op een klein
-       scherm neemt het de ruimte weg waar je in staat te werken. */
-    const groot = typeof matchMedia === 'function' && matchMedia('(min-width: 52rem)').matches;
-    if (!groot) paneel.classList.add('is-dicht');
-    schuif.setAttribute('aria-expanded', paneel.classList.contains('is-dicht') ? 'false' : 'true');
-    schuif.addEventListener('click', () => {
-      const dicht = paneel.classList.toggle('is-dicht');
-      schuif.setAttribute('aria-expanded', dicht ? 'false' : 'true');
-      if (dicht) stop(); else draai();
-    });
-  }
-
-  document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); else draai(); });
-
-  toon(0);
-  draai();
 }
 
 /*
@@ -2562,6 +2175,8 @@ function syncChannels() {
 
   // Re-render the background from whatever the lock just did to it.
   syncBackground(kindOf());
+  // And the shape: Zalando fixes it to 1:1.44 (14 October 2026, see syncRatio).
+  syncRatio(kindOf());
   // …and directly as well: on a flow with no background field syncBackground()
   // returns early, and the channel summary still has to move.
   syncSummaries();
@@ -2642,7 +2257,7 @@ function isLight(hex) {
 
 /** Catalog work has a background. A lifestyle carousel is a scene. */
 function bgApplies(kind) {
-  return kind === 'complete' || kind === 'catalog';
+  return kind === 'catalog';
 }
 
 /**
@@ -2663,7 +2278,7 @@ function bgApplies(kind) {
  * regel.
  */
 function styleApplies(kind) {
-  return kind === 'complete' || kind === 'lifestyle';
+  return kind === 'lifestyle';
 }
 
 /**
@@ -2740,29 +2355,44 @@ function syncRatio(kind) {
   const field = q('[data-pl-ratio]');
   if (!field) return;
 
-  /* De regel in de dichte vouw — 10 september 2026. De beeldvorm zit sinds
-     vandaag achter een <Disclose>, en een vouw die zijn eigen antwoord niet toont
-     is een vouw die iets verstopt. Het label plus de naam, uit de tegel zelf zodat
-     hij nooit iets anders kan zeggen dan wat er aanstaat. */
-  const aan = q('input[name="ratio"]:checked');
-  const tegel = aan && aan.closest('[data-pl-ratio-tile]');
-  if (tegel) {
-    const label = q('.ratio-label', tegel);
-    const naam = q('.ratio-naam', tegel) || q('.ratio-name', tegel);
-    const stukken = [label && label.textContent.trim(), naam && naam.textContent.trim()].filter(Boolean);
-    if (stukken.length) setSummary('data-pl-sum-ratio', stukken.join(' · '));
+  /* ── EEN KANAAL MET EEN EIGEN VORM — 14 oktober 2026 ──────────────────────
+     Afvinklijst 24 (v24-zalando, a): vinkt de klant Zalando aan, dan staat de
+     verhouding vast op 1:1,44, zoals de achtergrond vast op wit staat. Welk
+     kanaal welke vorm eist, staat op het vinkje (data-pl-ch-ratio, uit
+     CHANNEL_RATIOS in ratios.js). De tegel verschijnt en wordt aangevinkt; de
+     andere blijven staan maar zijn uitgezet. Wat de klant ervoor had gekozen,
+     onthoudt het veld, zodat uitvinken hem terugzet in plaats van op het
+     vierkant. /api/order zet hetzelfde vast voor een post zonder JavaScript. */
+  const slotBox = kind === 'catalog'
+    ? qa('[data-pl-ch-box]').find((b) => b.checked && b.dataset.plChRatio)
+    : null;
+  const slot = slotBox ? slotBox.dataset.plChRatio : '';
+  if (slot && !field.dataset.plRatioVoor) {
+    const voor = q('input[name="ratio"]:checked');
+    field.dataset.plRatioVoor = voor && !voor.closest('[data-pl-ratio-channel]') ? voor.value : (cfg.ratio && cfg.ratio.fallback) || 'square';
   }
 
   let bumped = false;
   qa('[data-pl-ratio-tile]').forEach((tile) => {
     const id = tile.dataset.plRatioTile;
-    const on = ratioApplies(kind, id);
+    const kanaal = tile.hasAttribute('data-pl-ratio-channel');
+    const on = kanaal ? id === slot : ratioApplies(kind, id);
     tile.hidden = !on;
     const input = q('input[name="ratio"]', tile);
     if (!input) return;
-    input.disabled = !on;
+    input.disabled = !on || (!!slot && id !== slot);
+    if (slot && id === slot) input.checked = true;
     if (!on && input.checked) { input.checked = false; bumped = true; }
   });
+  const slotHint = q('[data-pl-ratio-lock]', field);
+  if (slotHint) slotHint.hidden = !slot;
+
+  // Het kanaal is net uitgevinkt: terug naar wat de klant ervoor had gekozen.
+  if (!slot && field.dataset.plRatioVoor) {
+    const terug = qa('input[name="ratio"]').find((r) => r.value === field.dataset.plRatioVoor && !r.disabled);
+    delete field.dataset.plRatioVoor;
+    if (terug && (bumped || !q('input[name="ratio"]:checked'))) { terug.checked = true; bumped = false; }
+  }
 
   // Niets meer aangevinkt — of omdat de keuze net verdween, of omdat de pagina
   // zonder standaard laadde. Terug naar de verhouding die altijd werkt.
@@ -2772,12 +2402,28 @@ function syncRatio(kind) {
     if (target) target.checked = true;
   }
 
+  /* De regel in de dichte vouw — 10 september 2026. De beeldvorm zit sinds
+     vandaag achter een <Disclose>, en een vouw die zijn eigen antwoord niet toont
+     is een vouw die iets verstopt. Het label plus de naam, uit de tegel zelf zodat
+     hij nooit iets anders kan zeggen dan wat er aanstaat. NA de tegels sinds 14
+     oktober 2026: een kanaal kan de keuze net hebben vastgezet. */
+  {
+    const aan = q('input[name="ratio"]:checked');
+    const tegel = aan && aan.closest('[data-pl-ratio-tile]');
+    if (tegel) {
+      const label = q('.ratio-label', tegel);
+      const naam = q('.ratio-naam', tegel) || q('.ratio-name', tegel);
+      const stukken = [label && label.textContent.trim(), naam && naam.textContent.trim()].filter(Boolean);
+      if (stukken.length) setSummary('data-pl-sum-ratio', stukken.join(' · '));
+    }
+  }
+
   /* Drie zinnen en niet twee, sinds complete zijn eigen geval is: bij catalog
      één verhouding voor alles, bij lifestyle een startpunt waar elk beeld van
      mag afwijken, en bij complete allebei tegelijk — vast voor de catalogset,
      afwijkbaar in de carousel. Zie de noot bij ratioApplies() hierboven. */
   const each = !!(cfg.ratio && cfg.ratio.perImage) && styleApplies(kind);
-  const beide = each && kind === 'complete';
+  const beide = false; // 'complete' had beide tegelijk; compleet bestaat sinds 14 oktober 2026 niet meer
   const batchHint = q('[data-pl-ratio-hint-batch]');
   const eachHint = q('[data-pl-ratio-hint-each]');
   const beideHint = q('[data-pl-ratio-hint-complete]');
@@ -3030,6 +2676,87 @@ function quoteFor(kind, n, outfits, extras = 0, hoog = 0) {
   };
 }
 
+/*
+ * ── MEER PRODUCTEN VOOR HETZELFDE OF MINDER — 8 oktober 2026 (1.07) ──────────
+ *
+ * Wat de bestelling bij `m` producten zou kosten, met dezelfde keuzes als nu:
+ * dezelfde outfits, dezelfde hoeken op élk product (tegen het hoektarief van
+ * DAT aantal), dezelfde 4K-vinkjes, dezelfde looktoeslag per product, en
+ * voorrang als die aan staat. Bij m = het huidige aantal is dit precies het
+ * totaal van syncTotal(), zodat "in plaats van" het bedrag is dat erboven staat.
+ */
+function totaalBij(kind, m) {
+  const rate = rateFor(kind, m);
+  if (rate === null) return null;
+  const treden = cfg.extraPhotoLadder || [];
+  const trede = treden.find(([lo, hi]) => m >= lo && (hi === null || m <= hi));
+  const hoekTarief = trede ? trede[2] : 0;
+  const hoogPrijs = Number((cfg.hoogRes && cfg.hoogRes.prijs) || 0);
+  const net = round2(m * rate
+    + outfitCount() * Number(cfg.outfitSurcharge || 0)
+    + anglesChosen().length * m * hoekTarief
+    + hoogResCount() * hoogPrijs
+    + m * stijlToeslagNu());
+  const voorrang = voorrangAan() ? voorrangBedragNu(net) : null;
+  return voorrang !== null ? round2(net + voorrang) : net;
+}
+
+/** Zet het aantal via het getalveld, zodat alles via dezelfde weg loopt als een klik op +. */
+function zetAantal(m) {
+  const input = q('[data-pl-qty-input]');
+  if (!input || !Number.isInteger(m)) return;
+  input.value = String(m);
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+  try { input.focus({ preventScroll: true }); } catch { input.focus(); }
+}
+
+/** Een sjabloon met {naam}-plekken invullen met tekst of elementen. Nooit innerHTML. */
+function vulSjabloon(el, sjabloon, delen) {
+  String(sjabloon).split(/(\{[a-zA-Z]+\})/).forEach((stuk) => {
+    const m = /^\{([a-zA-Z]+)\}$/.exec(stuk);
+    const deel = m ? delen[m[1]] : undefined;
+    if (deel !== undefined) el.appendChild(typeof deel === 'string' ? document.createTextNode(deel) : deel);
+    else if (stuk) el.appendChild(document.createTextNode(stuk));
+  });
+}
+
+/**
+ * De besparingsregel: "Met {aantal} producten betaal je {dan} in plaats van {nu}". Alleen
+ * waar groterGoedkoper() iets vindt; welke aantallen dat zijn, volgt uit de
+ * staffel. Geeft true als de regel er staat.
+ */
+function syncBesparing(kind, n, quote) {
+  const el = q('[data-pl-besparing]');
+  if (!el) return false;
+  el.textContent = '';
+  const uit = kind && quote && Number.isInteger(n) && n > 0
+    ? groterGoedkoper(n, (m) => totaalBij(kind, m), Number(cfg.maxProducts) || 0)
+    : null;
+  if (!uit) {
+    el.hidden = true;
+    return false;
+  }
+  const knop = document.createElement('button');
+  knop.type = 'button';
+  knop.className = 'pl-besparing-knop';
+  knop.textContent = c('besparing.knop', { aantal: uit.aantal });
+  knop.setAttribute('aria-label', c('besparing.knopLabel', { aantal: uit.aantal }));
+  knop.addEventListener('click', () => zetAantal(uit.aantal));
+  const vet = (bedrag) => {
+    const b = document.createElement('b');
+    b.textContent = euro(bedrag);
+    return b;
+  };
+  vulSjabloon(el, c(uit.gelijk ? 'besparing.gelijk' : 'besparing.minder'), { knop, dan: vet(uit.dan), nu: vet(uit.nu) });
+  // Van "zo snel mogelijk" naar een vaste datum is ook een verschil: zeg het erbij.
+  const drempel = Number(cfg.windowThreshold);
+  if (drempel > 0 && n < drempel && uit.aantal >= drempel) {
+    el.appendChild(document.createTextNode(` ${c('besparing.datum')}`));
+  }
+  el.hidden = false;
+  return true;
+}
+
 /**
  * The running total: one figure, and the sentence that explains it.
  *
@@ -3083,6 +2810,8 @@ function syncTotal() {
     noteText = c('total.quote');
   }
   setText('[data-pl-total-note]', noteText);
+  /* Ronde B: de creditregel in stap 5 rekent met dezelfde keuzes mee. */
+  syncCredits();
 
   /* ── HET MEELOPENDE OVERZICHT — 12 september 2026 ────────────────────────
      Lucas: *"bij het bestelformulier is het gewoon super onduidelijk en niet
@@ -3117,11 +2846,19 @@ function syncTotal() {
       // phrased as if it were a saving. What actually falls is the per-product
       // rate, so that is what the two figures compare, and the totals are
       // stated as what they are: this many products for this much.
-      rung.textContent = c(next.addProducts === 1 ? 'rung.one' : 'rung.many', {
-        add: next.addProducts,
-        rate: euro(next.rate),
-        then: euro(then.net),
-        now: euro(quote.rate),
+      /* 8 okt 2026: rustig zoals de besparingsregel — gewone tekst, alleen de
+         bedragen vet (vulSjabloon, nooit innerHTML). */
+      const vet = (bedrag) => {
+        const b = document.createElement('b');
+        b.textContent = euro(bedrag);
+        return b;
+      };
+      rung.textContent = '';
+      vulSjabloon(rung, c(next.addProducts === 1 ? 'rung.one' : 'rung.many'), {
+        add: String(next.addProducts),
+        rate: vet(next.rate),
+        then: vet(then.net),
+        now: vet(quote.rate),
         count: String(next.at),
       });
       rung.hidden = false;
@@ -3130,58 +2867,41 @@ function syncTotal() {
       rung.hidden = true;
     }
   }
-
-  /* ── DE COMBINATIE, MET HET BEDRAG ERBIJ — 13 september 2026 ────────────
-   *
-   * Lucas, over een bezoeker: *"De upsell van add lifestyle to this order bij
-   * bijvoorbeeld catalog is ook heel onlogisch (…) hij gaf aan erop geklikt te
-   * hebben en uit het niets opeens meer moest betalen zonder te weten waar en
-   * wat hij voor betaalde."*
-   *
-   * Dat klopte, en de oorzaak was niet de tekst maar de VOLGORDE: de knop
-   * stuurde je naar een ander formulier, en pas dáár zag je een nieuw totaal.
-   * Wat er stond was een tarief per product — een getal dat je zelf met je
-   * aantal moest vermenigvuldigen om te weten wat er ging gebeuren.
-   *
-   * Nu staat het hele bedrag er vóór de klik, uitgerekend met DEZELFDE ladder
-   * en dezelfde functie als het totaal erboven. Geen schatting en geen tweede
-   * som: `quoteFor('complete', …)` leest `cfg.ladder.complete`, dat toch al in
-   * de config zit omdat de prijstabel het nodig heeft.
-   *
-   * De toeslagen gaan mee (outfits, extra foto's, 4K), want die blijven staan
-   * als de klant overstapt. Voorrang niet: dat is een keuze op de levertijd en
-   * die maakt hij op het andere formulier opnieuw.
-   */
-  const combiNu = q('[data-pl-combi-nu]');
-  const combiStraks = q('[data-pl-combi-straks]');
-  if (combiNu || combiStraks) {
-    const ander = kind === 'catalog' ? 'complete' : kind === 'complete' ? 'catalog' : null;
-    const anderQuote = ander && Number.isInteger(n) && n > 0
-      ? quoteFor(ander, n, outfits, extras, hoog)
-      : null;
-    /* Allebei of geen van beide. Eén bedrag zonder het andere ernaast is
-       precies het getal zonder context waar de klacht over ging. */
-    const toon = !!(quote && anderQuote);
-    setText('[data-pl-combi-nu]', toon ? euro(quote.net) : '');
-    setText('[data-pl-combi-straks]', toon ? euro(anderQuote.net) : '');
-    const blok = q('[data-pl-combi]');
-    if (blok) blok.classList.toggle('heeft-bedrag', toon);
-
-    /* ── DE DICHTE BALK DRAAGT DEZELFDE TWEE BEDRAGEN ───────────────────────
-       De balk onderaan begint dicht (zie .pl-combi-balk in OrderFlow.astro), en
-       dan is deze ene regel alles wat er van het aanbod te zien is. Hij hoort
-       dus hetzelfde te zeggen als het blok erin: van dit bedrag naar dat
-       bedrag. Zonder de bedragen blijft de regel leeg in plaats van "→" te
-       tonen — een pijl tussen twee lege plekken leest als een fout.
-
-       De vraag komt uit het blok zelf en wordt hier niet overgetypt: wat er
-       boven de balk staat, is wat er in het blok staat. */
-    const vraag = q('[data-pl-combi] .ck-vraag');
-    setText('[data-pl-combi-woord]', vraag ? vraag.textContent.trim() : '');
-    setText('[data-pl-combi-prijs]', toon ? `${euro(quote.net)} → ${euro(anderQuote.net)}` : '');
+  /* 1.07: is een groter aantal even duur of goedkoper, dan zegt de rustige
+     besparingsregel dat, en zwijgt de ladderregel (zelfde aanbod, twee keer). */
+  if (syncBesparing(kind, n, quote) && rung) {
+    rung.textContent = '';
+    rung.hidden = true;
   }
 
+  /* De combinatie ("lifestyle erbij?", van catalog naar compleet en terug) stond
+     hier met het bedrag erbij. Het blok staat sinds 1 oktober 2026 niet meer op
+     een pagina, en sinds 14 oktober 2026 bestaat compleet niet meer: weg. */
+
+  syncAppOns();
   paintPlan(kind, n);
+}
+
+/*
+ * ── "KOM JE ER NIET UIT? APP ONS" — 8 oktober 2026 (1.08) ────────────────────
+ * Elke stap heeft één gewone wa.me-link (OrderFlow.astro). Zonder script noemt
+ * het bericht de stap en de dienst; hier komt het aantal producten erbij zodra
+ * dat bekend is. Alleen de stand van de bestelling, nooit iets over de klant —
+ * geen naam, merk, e-mail of telefoon, ook niet als die al zijn ingevuld.
+ */
+function syncAppOns() {
+  const links = qa('[data-pl-appons]');
+  if (!links.length) return;
+  const n = productCount();
+  const wat = !cfg.sample && Number.isInteger(n) && n > 0
+    ? c('appOns.watAantal', { aantal: n === 1 ? c('appOns.een') : c('appOns.meer', { n }) })
+    : c('appOns.wat');
+  links.forEach((a) => {
+    const stap = String(a.dataset.plAppons || '');
+    const naam = c(`appOns.stap.${stap}`);
+    if (!stap || !naam || !wat) return;
+    a.setAttribute('href', waHref(c('appOns.bericht', { stap, naam, wat })));
+  });
 }
 
 /*
@@ -3226,7 +2946,7 @@ function paintPlan(kind, n) {
 
   if (!zin) return verberg();
   if (cfg.sample || !rijen.length || !kind || !Number.isInteger(n) || n < 1) return verberg();
-  if (kind !== 'complete' && kind !== 'lifestyle' && kind !== 'catalog') return verberg();
+  if (kind !== 'lifestyle' && kind !== 'catalog') return verberg();
 
   /* ── IN CREDITS SINDS 23 SEPTEMBER 2026 ──────────────────────────────
      Deze bestelling, elke maand, is n × de credits van de soort. Het plan dat
@@ -4042,7 +3762,7 @@ function dropCard(card) {
     const s = card.slots[id];
     // Back to the tray rather than to the bin. The customer answered a question
     // about the order, not a question about this photograph.
-    if (s.file && s.status !== 'failed') trayAdd(s.file);
+    if (s.file && s.status !== 'failed' && isEchtBestand(s.file)) trayAdd(s.file);
     clearSlot(card, id);
   });
   if (card.el) card.el.remove();
@@ -4052,6 +3772,11 @@ function dropCard(card) {
 function buildCard(card) {
   const li = document.createElement('li');
   li.className = 'pu-card';
+  li.id = `pu-kaart-${card.key}`;
+  /* De eerste kaart draagt de uitleg (een regel per vak, de tip bij het detail,
+     de volgorde van kiezen); de rest alleen de namen. Een klasse uit card.n en
+     geen :first-child in CSS — zie de noot bij de uitleg in buildSlot(). */
+  if (card.n === 1) li.classList.add('is-uitleg');
 
   const head = document.createElement('div');
   head.className = 'pu-head';
@@ -4072,18 +3797,7 @@ function buildCard(card) {
   input.placeholder = c('pu.productName');
   input.setAttribute('aria-label', `${c('pu.productName')} — ${c('pu.product', { n: card.n })}`);
   input.autocomplete = 'off';
-  input.addEventListener('change', () => { renderTray(); paintCard(card); if (card.styling) paintStylingRow(card); });
-
-  const toggle = document.createElement('button');
-  toggle.type = 'button';
-  toggle.className = 'pu-toggle';
-  toggle.setAttribute('aria-expanded', 'true');
-  toggle.setAttribute('aria-label', c('pu.toggle'));
-  toggle.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6 L8 11 L13 6"/></svg>';
-  toggle.addEventListener('click', () => {
-    card.collapsed = !card.collapsed;
-    paintCard(card);
-  });
+  input.addEventListener('change', () => { renderTray(); paintCard(card); });
 
   const state = document.createElement('span');
   state.className = 'pu-state';
@@ -4091,11 +3805,9 @@ function buildCard(card) {
   /* ── EN WEER WEG — 4 september 2026 ──────────────────────────────────────
      Een product dat je per ongeluk toevoegde, moet je kunnen terugnemen. Alleen
      de LAATSTE kaart draagt de knop, en alleen boven het bestelde aantal (zie
-     minCards). Alleen de laatste, omdat de kaarten `p1`, `p2`, `p3` heten en
-     die sleutel bij elke geüploade foto in R2 staat: een kaart uit het midden
-     weghalen zou de rest moeten hernummeren, en dan hoort de foto van product 3
-     ineens bij product 2. Wat er wél gebeurt met foto's op een kaart die weggaat:
-     ze vallen in de bak onderaan (`trayAdd` in dropCard), niet in de prullenbak. */
+     minCards): de kaarten heten `p1`, `p2`, `p3` en die sleutel staat bij elke
+     geüploade foto in R2, dus uit het midden weghalen zou hernummeren vragen.
+     Foto's op een kaart die weggaat, vallen in de bak (`trayAdd` in dropCard). */
   const weg = document.createElement('button');
   weg.type = 'button';
   weg.className = 'pu-weg';
@@ -4119,92 +3831,51 @@ function buildCard(card) {
   });
   card.wegEl = weg;
 
-  head.append(num, input, toggle, state, weg);
+  /* ── DE PRODUCTSOORT STAAT ÓP DE KAART — 11 oktober 2026 (F3) ────────────
+     Stond onderaan stap 2 in "Wat je opstuurt", met een keuze voor de hele
+     bestelling en een afwijking per rij. Nu staat hij in de kop van de kaart en
+     neemt hij die van het vorige product over (zie syncSoorten). */
+  const soort = buildSoort(card);
+
+  head.append(num, input);
+  if (soort) head.append(soort);
+  head.append(state, weg);
+
+  /* ── ÉÉN KNOP VOOR DE FOTO'S VAN DIT PRODUCT — 11 oktober 2026 (F3) ──────── */
+  const kies = buildKies(card);
 
   const slots = document.createElement('div');
   slots.className = 'pu-slots';
   slots.id = `pu-slots-${card.key}`;
   SHOT_IDS.forEach((id) => slots.appendChild(buildSlot(card, id)));
-  // De gratis referentievakken: een eigen strook ONDER de vier, met kleine
-  // duimnagels. Zie de kop van buildRefs() voor waarom ze daar sinds 17
-  // september staan en niet meer als vijfde cel van dit raster.
-  const refs = buildRefs(card);
 
-  // The three optional questions, folded into the SAME disclosure as the four
-  // slots — aria-controls takes a list, so one toggle honestly names both.
-  const about = buildAbout(card);
-  toggle.setAttribute('aria-controls', `${slots.id} ${about.id}`);
-
-  // De afwijking per beeld, als deze stroom hem heeft. In dezelfde uitklap als
-  // de foto’s en de vraag — één knop die eerlijk zegt wat hij opent — en dus
-  // ook in aria-controls, of de knop noemt twee van de drie dingen die hij
-  // laat verschijnen.
-  const ratios = buildRatios(card);
-  if (ratios) toggle.setAttribute('aria-controls', `${slots.id} ${about.id} ${ratios.id}`);
-
-  /* ── ALLES WAT MEESTAL HETZELFDE IS, GAAT IN ÉÉN LADE — 9 september 2026 ──
+  /* ── ALLES WAT NIET HOEFT, IN ÉÉN LADE: "MEER OVER DIT PRODUCT" ────────────
    *
-   * Lucas: *"Herontwerp het per product invoeren in bestelformulieren, maak het
-   * veel overzichtelijker, consistenter en ruimtelijker omdat dit de meest zware
-   * taak is voor de klant."*
+   * 9 september 2026: "een kaart toont wat anders is, niet alles". Sinds
+   * 11 oktober (F3) gaat dat een stap verder. Lucas koos: het gezicht kies je één
+   * keer in stap 1, en per product afwijken kan onder een ingeklapt "Meer over
+   * dit product" — en daar ook de rest van wat er per product gevraagd wordt en
+   * niet verplicht is:
    *
-   * ── WAT ER MIS WAS, IN GETALLEN ────────────────────────────────────────────
+   *   het gezicht     buildModelKeuze() — stond open op de kaart
+   *   materiaal, kleur buildAbout() (attributes.js), met 4K en "kopieer naar
+   *                   alle producten" op de eerste kaart
+   *   de verhouding   buildRatios(), alleen bij lifestyle
+   *   meer foto's     buildRefs() — de gratis referentievakken, stonden open
+   *   erbij in beeld  buildErbij() — de contextstukken uit "Wat je opstuurt"
    *
-   * Gemeten met kladblok/_stap2.mjs op de stand van vanochtend: één kaart was
-   * 1.058 pixels hoog op een desktop en 1.722 op een telefoon, met dertien
-   * velden in acht losse blokken. Zes producten maakten een pagina van 9.916
-   * pixels; twintig zou ruim dertigduizend zijn.
-   *
-   * En de verdeling klopte niet. Het UPLOADEN is echt werk per product — daar
-   * is geen weg omheen, elk product heeft eigen foto's. Materiaal, kleur, extra
-   * foto's, 4K, gezicht en verhouding zijn voor verreweg de meeste klanten bij
-   * ELK product hetzelfde, en die stonden even zwaar, twintig keer herhaald.
-   *
-   * ── DE REGEL DIE ERUIT VOLGT ───────────────────────────────────────────────
-   *
-   * EEN KAART TOONT WAT ANDERS IS, NIET ALLES. De foto's blijven staan. De rest
-   * gaat achter één knop die zegt wat er afwijkt — "Volgt de bestelling", of
-   * "Ava · 4K · beeld 2 breed". Wie niets bijzonders heeft, ziet die regel en
-   * scrollt door; wie wél iets afwijkt, ziet het van een afstand op de kaart
-   * waar het gebeurt.
-   *
-   * Vier soorten klant, en alle vier winnen ze iets anders:
-   *
-   *   ÉÉN PRODUCT      de kaart is een half scherm in plaats van een heel; alles
-   *                    is nog te bereiken met één klik.
-   *   VIJF TOT TIEN    dezelfde stof, hetzelfde gezicht, geen extra's — hij vult
-   *                    alleen foto's in en raakt de lade nooit aan.
-   *   TWINTIG, GEMENGD hij ziet in één blik welke producten afwijken, in plaats
-   *                    van twintig identieke muren te moeten aflezen.
-   *   OP EEN TELEFOON  van 1.722 naar een paar honderd pixels per product.
-   *
-   * ── WAAROM ÉÉN LADE EN NIET VIJF ───────────────────────────────────────────
-   *
-   * Vijf uitklappers is dezelfde muur met deurtjes ervoor. Wat de klant wil
-   * weten is niet "waar staat de 4K-knop" maar "wijkt dit product ergens van
-   * af" — één vraag, dus één deur, met het antwoord op de deur geschreven. */
-  const meer = buildMeer(card, [about, ratios]);
-  toggle.setAttribute('aria-controls', `${slots.id} ${meer.id}`);
-
-  /* ── HET GEZICHT STAAT OP DE KAART EN NIET IN DE LADE — 18 september 2026 ──
-   *
-   * Lucas: *"Het is ook belangrijk dat klanten per product visueel een ander
-   * model kunnen kiezen per product."* In de lade is het onvindbaar: die opent
-   * pas als je vermoedt dat er iets in zit.
-   *
-   * Dat gaat niet in tegen de regel van 9 september ("een kaart toont wat
-   * anders is, niet alles"), want die regel is er tegen een MUUR van velden.
-   * Dit is één regel duimnagels van 52 pixels, en in de rij staat er toch maar
-   * één kaart tegelijk in beeld — het kost dus geen scrollhoogte die iemand
-   * anders had gebruikt.
-   *
-   * Onder de foto's: eerst wat je stuurt, dan wie het draagt. */
+   * De knop draagt de samenvatting van wat afwijkt, dus wie niets bijzonders
+   * heeft ziet "Volgt de bestelling" en scrolt door. */
   const gezicht = buildModelKeuze(card);
+  const about = buildAbout(card);
+  const ratios = buildRatios(card);
+  const refs = buildRefs(card);
+  const erbij = buildErbij(card);
+  const meer = buildMeer(card, [gezicht, about, ratios, refs, erbij]);
 
-  li.append(head, slots);
-  if (refs) li.append(refs);
-  if (gezicht) li.append(gezicht);
-  li.append(meer);
+  li.append(head);
+  if (kies) li.append(kies);
+  li.append(slots, meer);
   card.el = li;
   /* Het raster wordt later nog aangeraakt: syncHoekVakken() hangt er een vak in
      zodra er een hoek bij komt. */
@@ -4212,12 +3883,359 @@ function buildCard(card) {
   card.numEl = num;
   card.input = input;
   card.stateEl = state;
-  card.toggleEl = toggle;
+  /* Er is geen inklapper meer: alle kaarten staan open onder elkaar en de balk
+     bovenaan springt. paintCard() leest card.toggleEl nog null-veilig. */
+  card.toggleEl = null;
   /* Een kaart die NU gebouwd wordt terwijl er al hoeken gekozen zijn — dat
      gebeurt zodra iemand het aantal producten verhoogt — krijgt zijn hoekvakken
      meteen mee. Zonder deze regel is de nieuwe kaart de enige zonder. */
   syncHoekVakken(card);
   paintCard(card);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * DE KAART PER PRODUCT — 11 OKTOBER 2026 (F3)
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas vond stap 2 "moeizaam en chaotisch". Gemeten met vijf catalogproducten:
+ * vijftien keer een fotokiezer (elk vak één foto), vijf keer verplicht "Sla deze
+ * over", het gezicht twee keer per product en ±1.000 woorden. Hij koos
+ * (afvinklijst 2, form = a) één kaart per product met:
+ *
+ *   ÉÉN KNOP voor 3–4 foto's tegelijk (buildKies). Ze vallen vanzelf in de vakken
+ *     — eerst waar de bestandsnaam het zegt (guessShot), dan in de volgorde van
+ *     kiezen: voorkant, achterkant, detail, gedragen, de bijbestelde hoeken —
+ *     en wat er daarna over is in de gratis referentievakken (verdeelFotos).
+ *   OMWISSELEN met één keuze per vak (wisselVakken). Een losse foto bijzetten of
+ *     vervangen per vak blijft gewoon kunnen.
+ *   DE PRODUCTSOORT op de kaart, die die van het vorige product overneemt
+ *     (buildSoort, syncSoorten).
+ *   DE DRAAGFOTO overslaan zonder klik: leeg is overgeslagen, met de aanname
+ *     erbij ("Zonder draagfoto gaan we uit van een normale, rechte pasvorm").
+ *
+ * Uploads gaan precies zoals ervoor: elke foto apart, met product_key en shot,
+ * door placeFile() → sendSlot() — met de herhaalpogingen, de voortgang, de
+ * beeldkeuring en de daggrens. Er is aan de server niets veranderd.
+ */
+
+/** De knop "Kies de foto's van dit product", met zijn eigen meervoudige kiezer. */
+function buildKies(card) {
+  const wrap = document.createElement('div');
+  wrap.className = 'pu-kies';
+
+  const knop = document.createElement('button');
+  knop.type = 'button';
+  knop.className = 'btn btn-primary pu-kies-knop';
+  knop.dataset.puKies = card.key;
+  knop.textContent = c('pu.kies');
+  knop.setAttribute('aria-label', `${c('pu.kies')} — ${c('pu.product', { n: card.n })}`);
+
+  /* `multiple` werkt ook op een telefoon: iOS en Android laten in de fotolijst
+     meerdere foto's aantikken, in de volgorde waarin je ze aantikt. Uit de
+     tabvolgorde: de knop is wat je bedient, het veld is wat hij opent. */
+  const file = document.createElement('input');
+  file.type = 'file';
+  file.multiple = true;
+  file.accept = 'image/*';
+  file.className = 'pu-kies-input';
+  file.tabIndex = -1;
+  file.setAttribute('aria-hidden', 'true');
+  file.addEventListener('change', () => {
+    const gekozen = [...(file.files || [])];
+    file.value = '';
+    if (gekozen.length) verdeelFotos(card, gekozen);
+  });
+  knop.addEventListener('click', () => file.click());
+
+  wrap.append(knop, file);
+
+  /* De volgorde van kiezen, één keer, op de eerste kaart. */
+  if (card.n === 1) {
+    const hint = document.createElement('p');
+    hint.className = 'pu-kies-hint';
+    hint.textContent = c('pu.kiesHint');
+    wrap.appendChild(hint);
+  }
+  card.kiesKnop = knop;
+  return wrap;
+}
+
+/**
+ * Een handvol foto's over de vakken van één kaart verdelen.
+ *
+ * VUL ALLEEN LEGE VAKKEN. Wie al een voorkant heeft en er nog drie kiest, bedoelt
+ * de drie die nog ontbreken — niet een nieuwe voorkant. Vervangen doe je per vak.
+ *
+ * EERST DE NAAM, DAN DE VOLGORDE. Een bestand dat "achterkant" of "back" heet,
+ * gaat naar de achterkant als die leeg is (dezelfde guessShot() als de map-route).
+ * Een naam als IMG_0234 zegt niets; die volgen de volgorde van kiezen. Wat er
+ * over blijft, gaat naar de gratis referentievakken, en pas daarna naar de bak
+ * "Nog niet geplaatst" — weggegooid wordt er niets.
+ */
+function verdeelFotos(card, bestanden) {
+  const volgorde = [...SHOT_IDS, ...hoekVakIds()].filter((id) => card.slots[id]);
+  const vrij = (id) => card.slots[id] && slotOpen(card, id);
+  const rest = [];
+  const geplaatst = new Set();
+
+  bestanden.forEach((f) => {
+    const raad = guessShot(f.name) || guessHoekVak(f.name);
+    if (raad && volgorde.includes(raad) && vrij(raad) && !geplaatst.has(raad)) {
+      placeFile(card, raad, f);
+      geplaatst.add(raad);
+    } else {
+      rest.push(f);
+    }
+  });
+
+  const over = [];
+  rest.forEach((f) => {
+    const id = volgorde.find((v) => vrij(v) && !geplaatst.has(v));
+    if (id) { placeFile(card, id, f); geplaatst.add(id); } else { over.push(f); }
+  });
+
+  /* Meer foto's dan vakken: de gratis referentievakken, zolang er plek is. */
+  const max = Math.max(0, Math.floor(Number(cfg.maxRefPerProduct) || 0));
+  over.forEach((f) => {
+    let id = '';
+    for (let i = 1; i <= (card.refs || 0); i += 1) {
+      const rid = refShotId(i);
+      if (card.slots[rid] && slotOpen(card, rid)) { id = rid; break; }
+    }
+    if (!id && card.voegRefToe && (card.refs || 0) < max) id = card.voegRefToe();
+    if (id) placeFile(card, id, f); else trayAdd(f);
+  });
+
+  /* Zijn er referentievakken bijgekomen, dan staat de lade open: anders staat de
+     foto in een vak dat je niet ziet. */
+  if (over.length && card.meerKnop && !card.meerOpen) { card.meerOpen = true; paintMeer(card); }
+  refreshUploader();
+}
+
+/**
+ * Twee vakken van plaats wisselen.
+ *
+ * DE SERVER VERANDERT NIET, dus wisselen is: beide bestanden opnieuw plaatsen.
+ * placeFile() haalt het oude object weg (DELETE) en stuurt het bestand opnieuw met
+ * het nieuwe `shot` — precies wat er ook gebeurt als je per vak vervangt. Een
+ * upload die nog onderweg was, landt in een vak dat niet meer bestaat en wordt
+ * door verstuurSlot() meteen weer weggehaald (`live()`).
+ *
+ * Alleen met bestanden die deze pagina zelf nog heeft. Een foto die na het
+ * terugkomen uit de opslag is hersteld (1.04), is er alleen als sleutel; die kan
+ * niet opnieuw verstuurd worden en staat daarom niet in het wissellijstje.
+ */
+function wisselVakken(card, a, b) {
+  const sa = card.slots[a];
+  const sb = card.slots[b];
+  if (!sa || !sb || a === b) return;
+  const fa = isEchtBestand(sa.file) ? sa.file : null;
+  const fb = isEchtBestand(sb.file) ? sb.file : null;
+  if ((sa.file && !fa) || (sb.file && !fb)) return;
+  if (!fa && !fb) return;
+  if (fb) placeFile(card, a, fb); else clearSlot(card, a);
+  if (fa) placeFile(card, b, fa); else clearSlot(card, b);
+  refreshUploader();
+  /* De blik naar het vak waar de foto nu staat: wie met het toetsenbord wisselt,
+     staat anders op een keuzelijst die net is leeggemaakt. */
+  const doel = card.slots[b] && card.slots[b].el;
+  if (doel && doel.btn) { try { doel.btn.focus({ preventScroll: true }); } catch { /* ok */ } }
+}
+
+/** Een File (of Blob) die we opnieuw kunnen versturen — geen herstelde sleutel. */
+function isEchtBestand(f) {
+  return typeof Blob !== 'undefined' && f instanceof Blob;
+}
+
+/**
+ * Het wissellijstje van één vak bijwerken: alle andere vaste vakken en
+ * hoekvakken op deze kaart, met wat erin zit. Alleen zichtbaar als dit vak een
+ * foto heeft die we opnieuw kunnen versturen.
+ */
+function paintWissel(card, id) {
+  const s = card.slots[id];
+  const sel = s && s.el && s.el.wissel;
+  if (!sel) return;
+  const kan = isEchtBestand(s.file) && s.status !== 'failed';
+  sel.hidden = !kan;
+  if (!kan) return;
+  const anderen = [...SHOT_IDS, ...hoekVakIds()]
+    .filter((x) => x !== id && card.slots[x] && card.slots[x].el)
+    .filter((x) => !card.slots[x].file || isEchtBestand(card.slots[x].file));
+  const sig = anderen.map((x) => `${x}:${shotLabel(x)}`).join('|');
+  if (sel.dataset.sig === sig) return;
+  sel.dataset.sig = sig;
+  sel.textContent = '';
+  const leeg = document.createElement('option');
+  leeg.value = '';
+  leeg.textContent = c('pu.wissel');
+  sel.appendChild(leeg);
+  anderen.forEach((x) => {
+    const o = document.createElement('option');
+    o.value = x;
+    o.textContent = c('pu.wisselMet', { shot: shotLabel(x).toLocaleLowerCase() });
+    sel.appendChild(o);
+  });
+  sel.value = '';
+}
+
+/* ── DE PRODUCTSOORT ─────────────────────────────────────────────────────── */
+
+/**
+ * De keuzelijst op de kaart. `garment_pN`, zoals de rijen in "Wat je opstuurt"
+ * hem al postten; /api/order leest hem tegen het type van de bestelling
+ * (`garment`, een verborgen veld dat syncSoorten() op het eerste product zet) en
+ * gooit een gelijke waarde weg. Er verandert aan de server dus niets.
+ *
+ * NEEMT DIE VAN HET VORIGE PRODUCT OVER zolang de klant hier niet zelf iets
+ * kiest: een merk stuurt meestal twaalf keer hetzelfde soort. Wie hier wél kiest,
+ * zet `card.soortEigen`, en vanaf dan volgt deze kaart niet meer.
+ */
+function buildSoort(card) {
+  /* Niet op de €1-proef: daar stond "Wat je opstuurt" ook nooit (zie OrderFlow,
+     `!isSample`). Eén product, één beeld, wij kiezen de styling. */
+  if (cfg.sample) return null;
+  if (!cfg.styling || !Array.isArray(cfg.styling.garments) || !cfg.styling.garments.length) return null;
+  const wrap = document.createElement('label');
+  wrap.className = 'pu-soort';
+  const t = document.createElement('span');
+  t.className = 'pu-sr';
+  t.textContent = `${c('pu.soort')} — ${c('pu.product', { n: card.n })}`;
+  const sel = document.createElement('select');
+  sel.className = 'select pu-soort-sel';
+  sel.name = `garment_${card.key}`;
+  const leeg = document.createElement('option');
+  leeg.value = '';
+  leeg.textContent = c('pu.soortKies');
+  sel.appendChild(leeg);
+  cfg.styling.garments.forEach((g) => {
+    const o = document.createElement('option');
+    o.value = g.id;
+    o.textContent = g.naam;
+    sel.appendChild(o);
+  });
+  sel.addEventListener('change', () => {
+    card.soortEigen = true;
+    syncSoorten();
+    paintErbij(card);
+    paintMeer(card);
+    bewaarConcept();
+  });
+  wrap.append(t, sel);
+  card.soortEl = sel;
+  card.soortEigen = false;
+  return wrap;
+}
+
+/** De soort van dit product: wat er staat, of '' zolang er niets gekozen is. */
+function soortVan(card) {
+  return card && card.soortEl ? card.soortEl.value : '';
+}
+
+/**
+ * Elke kaart die niet zelf gekozen heeft, krijgt de soort van de kaart erboven.
+ * Daarna het verborgen veld `garment` voor de hele bestelling: de soort van het
+ * eerste product, zodat de server een geldig type heeft om tegen te lezen.
+ */
+function syncSoorten() {
+  if (cfg.sample || !cfg.styling) return;
+  let vorige = '';
+  cards.forEach((card) => {
+    if (!card.soortEl) return;
+    if (!card.soortEigen && vorige && card.soortEl.value !== vorige) {
+      card.soortEl.value = vorige;
+      paintErbij(card);
+    }
+    vorige = card.soortEl.value || vorige;
+  });
+  let veld = q('input[name="garment"]');
+  const eerste = cards[0] ? soortVan(cards[0]) : '';
+  if (!veld) {
+    veld = document.createElement('input');
+    veld.type = 'hidden';
+    veld.name = 'garment';
+    form.appendChild(veld);
+  }
+  veld.value = eerste;
+}
+
+/* ── ERBIJ IN BEELD: DE CONTEXTSTUKKEN, NU IN DE LADE ─────────────────────
+ *
+ * Stonden in de rijen van "Wat je opstuurt" (Styling.astro, 22 september 2026):
+ * per product de plekken die bij dit type ERBIJ kunnen — de broek onder een
+ * hoodie, de schoen onder een jeans — als gewone uploadvakjes uit buildSlot()
+ * met `shot: ctx-<plek>`, en per plek een verborgen veld `context_<plek>_pN`
+ * dat `own` is zodra er een foto in zit en anders `ours` (wij kiezen). Dezelfde
+ * velden en dezelfde vakjes, alleen op een andere plek: in de lade van de kaart,
+ * want ze zijn niet verplicht. */
+function buildErbij(card) {
+  if (cfg.sample || !cfg.styling || !cfg.styling.slots) return null;
+  const wrap = document.createElement('div');
+  wrap.className = 'pu-erbij';
+  const h = document.createElement('p');
+  h.className = 'pu-erbij-h';
+  h.textContent = c('pu.erbijH');
+  const rij = document.createElement('div');
+  rij.className = 'pu-erbij-rij';
+  const hint = document.createElement('p');
+  hint.className = 'pu-erbij-hint';
+  wrap.append(h, rij, hint);
+  card.erbij = { wrap, rij, hint, slotIds: [], velden: {} };
+  return wrap;
+}
+
+function paintErbij(card) {
+  const st = card && card.erbij;
+  if (!st) return;
+  const type = soortVan(card);
+  const plekken = (type && CTX_BY_GARMENT[type]) || [];
+  const wil = plekken.map((p) => cfg.styling.slots[p] && cfg.styling.slots[p].shot).filter(Boolean);
+
+  /* Vakjes van een plek die er niet meer bij hoort: weg, met het bestand terug
+     in de bak, net als bij een hoek die uit gaat. */
+  for (const id of [...st.slotIds]) {
+    if (wil.includes(id)) continue;
+    const sl = card.slots[id];
+    if (sl) {
+      if (sl.file && sl.status !== 'failed' && isEchtBestand(sl.file)) trayAdd(sl.file);
+      clearSlot(card, id);
+      if (sl.el && sl.el.wrap) sl.el.wrap.remove();
+      delete card.slots[id];
+    }
+    if (st.velden[id]) { st.velden[id].remove(); delete st.velden[id]; }
+    st.slotIds = st.slotIds.filter((x) => x !== id);
+  }
+
+  plekken.forEach((plek) => {
+    const spec = cfg.styling.slots[plek];
+    if (!spec) return;
+    const id = spec.shot;
+    if (st.slotIds.includes(id) && card.slots[id] && card.slots[id].el) return;
+    if (!card.slots[id]) card.slots[id] = EMPTY_SLOT();
+    st.rij.appendChild(buildSlot(card, id));
+    st.slotIds.push(id);
+    const veld = document.createElement('input');
+    veld.type = 'hidden';
+    veld.name = `context_${plek}_${card.key}`;
+    veld.value = 'ours';
+    st.wrap.appendChild(veld);
+    st.velden[id] = veld;
+    paintSlot(card, id);
+  });
+  /* Op volgorde van de plekken houden: een wissel van soort kan ze anders
+     achteraan zetten. */
+  plekken.forEach((plek) => {
+    const spec = cfg.styling.slots[plek];
+    const sl = spec && card.slots[spec.shot];
+    if (sl && sl.el && sl.el.wrap) st.rij.appendChild(sl.el.wrap);
+  });
+  /* Het bestand IS de keuze: own als er een foto in zit, anders ours. */
+  st.slotIds.forEach((id) => {
+    const veld = st.velden[id];
+    if (veld) veld.value = slotFilled(card, id) ? 'own' : 'ours';
+  });
+  st.rij.hidden = !plekken.length;
+  st.hint.textContent = !type ? c('pu.erbijEerst') : (plekken.length ? c('pu.erbijHint') : c('pu.erbijGeen'));
 }
 
 /**
@@ -4415,11 +4433,23 @@ function buildAbout(card) {
 
     const buys = c(`pu.q.${qn.id}.buys`);
     if (buys) ctrl.title = buys;
-    if (document.getElementById(`pu-q-${qn.id}-buys`)) {
+    /* 11 oktober 2026: de uitleg bij deze vraag stond in de lijst "Wat je
+       opstuurt", en die is met de productkaart (F3) weggegaan. Hij staat nu op
+       de eerste kaart tussen label en veld, net als de regel bij elk fotovak;
+       de velden op de andere kaarten verwijzen ernaar. Tussen label en veld,
+       niet eronder: het kleurvlakje staat onderaan het veld (absolute). */
+    let uitleg = null;
+    if (buys && card.n === 1 && !document.getElementById(`pu-q-${qn.id}-buys`)) {
+      uitleg = document.createElement('p');
+      uitleg.className = 'pu-q-uitleg';
+      uitleg.id = `pu-q-${qn.id}-buys`;
+      uitleg.textContent = buys;
+    }
+    if (uitleg || document.getElementById(`pu-q-${qn.id}-buys`)) {
       ctrl.setAttribute('aria-describedby', `pu-q-${qn.id}-buys`);
     }
 
-    field.append(label, ctrl);
+    field.append(...[label, uitleg, ctrl].filter(Boolean));
 
     // A live swatch for a question that carries a colour (attributes.js sets
     // `swatch`). It appears only once the value parses as a hex and vanishes
@@ -4431,7 +4461,9 @@ function buildAbout(card) {
       dot.className = 'pu-q-swatch';
       dot.setAttribute('aria-hidden', 'true');
       const paintDot = () => {
-        const hex = normalizeHex(ctrl.value);
+        /* Sinds 5.03 (8 oktober 2026) vraagt het veld naam én code; de code
+           mag dus midden in de tekst staan, met een # ervoor. */
+        const hex = hexUit(ctrl.value);
         dot.style.setProperty('--swatch', hex || 'transparent');
         dot.hidden = !hex;
       };
@@ -5001,12 +5033,9 @@ function buildRefs(card) {
   hintTekst.className = 'pu-ref-hint-tekst';
   hint.append(lead, ' ', hintTekst);
   add.setAttribute('aria-describedby', hint.id);
-  /* Dezelfde regel als bij de uitleg in de vakjes hierboven: op kaart één te
-     lezen, daarna alleen als iemand ernaar zoekt. `aria-describedby` blijft
-     staan — een schermlezer leest hem dan nog steeds bij de knop, want een
-     verborgen element blijft in de boom zolang het niet `hidden` is. Vandaar
-     `.is-stil` en geen `hidden`. */
-  if (card.n !== 1) hint.classList.add('is-stil');
+  /* Hier stond: op kaart twee en verder `.is-stil`, zodat de uitleg alleen op de
+     eerste kaart te lezen was. Sinds 11 oktober 2026 (F3) staat deze strook in de
+     ingeklapte lade "Meer over dit product", en wie die opent, vraagt erom. */
 
   /* ── EN WAAR JE WÉL MEER BEELDEN BESTELT ────────────────────────────────
      De zin hierboven zegt dat deze foto's geen extra beelden opleveren. Dat is
@@ -5024,12 +5053,11 @@ function buildRefs(card) {
      (vaste prijs) bestelt niets bij. */
   const hoekBox = angleBoxEl();
   const hoekKan = !!hoekBox && !hoekBox.closest('[hidden]') && cfg.samplePrice == null
-    && ['catalog', 'complete'].includes(String(kindOf() || ''));
+    && String(kindOf() || '') === 'catalog';
   const terug = document.createElement('p');
   if (extraMax && hoekKan) {
     terug.className = 'pu-ref-terug hint';
     terug.textContent = c('pu.refTerug', { max: extraMax });
-    if (card.n !== 1) terug.classList.add('is-stil');
   }
 
   const paint = () => {
@@ -5063,8 +5091,11 @@ function buildRefs(card) {
     }
   };
 
-  add.addEventListener('click', () => {
-    if (card.refs >= max) return;
+  /* Eén vak erbij, en zijn id terug. Los van de knop, zodat de meervoudige
+     kiezer bovenaan de kaart (verdeelFotos, F3) er ook een kan aanvragen voor de
+     foto's die na de vaste vakken over zijn. */
+  const voegToe = () => {
+    if (card.refs >= max) return '';
     card.refs += 1;
     const id = refShotId(card.refs);
     if (!card.slots[id]) card.slots[id] = EMPTY_SLOT();
@@ -5075,6 +5106,13 @@ function buildRefs(card) {
     // onder een leeg vak — precies de fout die buildExtras() hierboven noemt.
     paintSlot(card, id);
     paintAll();
+    return id;
+  };
+  card.voegRefToe = voegToe;
+
+  add.addEventListener('click', () => {
+    const id = voegToe();
+    if (!id) return;
     refreshUploader();
     // De focus naar het vak dat er net bij kwam. Wie met het toetsenbord werkt,
     // staat anders op een knop die naar beneden is opgeschoven of verdwenen is.
@@ -5526,22 +5564,55 @@ function buildSlot(card, id) {
        ermee bedoelt. Vandaar `|| extraSlotNumber(id)` en niet alleen
        isRequiredShot(): dat laatste gaat over de vier vaste hoeken uit
        shots.js, en dit vak bestaat daar niet. */
-    eis.textContent = (isRequiredShot(id) || extraSlotNumber(id)) ? c('pu.required') : c('pu.optional');
+    /* De draagfoto is bij lifestyle AANBEVOLEN en niet alleen optioneel (14 oktober
+       2026, afvinklijst 23): drie van de vier beelden zijn dan op een model, en daar
+       helpt hij het meest bij pasvorm en lengte. Leeg laten blijft gewoon mogen. */
+    const aanbevolen = id === 'worn' && kindOf() === 'lifestyle';
+    eis.textContent = (isRequiredShot(id) || extraSlotNumber(id)) ? c('pu.required') : aanbevolen ? c('pu.aanbevolen') : c('pu.optional');
     woord.appendChild(eis);
   }
 
   wrap.appendChild(btn);
   wrap.appendChild(woord);
 
-  const how = lookup(`pu.how.${id}`);
-  if (how) {
+  /* ── DE REGEL EN HET VOORBEELD — 11 oktober 2026 (F3, 5.07) ──────────────
+     `regel` uit shots.js in de plaats van `how`: één korte regel per vak, en bij
+     de draagfoto de aanname erachter ("Zonder draagfoto gaan we uit van een
+     normale, rechte pasvorm"). Bij het detailvak de tip met het witte vel
+     (5.03). Een voorbeeldfoto van ±64 px alleen als het bestand er echt is —
+     OrderFlow vraagt dat bij de bouw aan isEcht() en geeft anders '' mee.
+
+     OP DE EERSTE KAART, en daarna niet meer: wat de eerste kaart leert, weet je
+     bij de tweede al, en bij twintig producten zijn het anders tachtig regels.
+     Op de andere kaarten draagt de knop de regel als `title`, en een
+     schermlezer hoort hem via aria-describedby op elke kaart. */
+  const regel = lookup(`pu.regel.${id}`);
+  const tip = lookup(`pu.tip.${id}`);
+  const vb = cfg.voorbeeld && cfg.voorbeeld[id] ? cfg.voorbeeld[id] : '';
+  if (regel) {
     if (card.n === 1) {
-      const howEl = document.createElement('span');
-      howEl.className = 'pu-slot-how';
-      howEl.textContent = how;
-      wrap.appendChild(howEl);
+      const uitleg = document.createElement('span');
+      uitleg.className = 'pu-slot-uitleg';
+      if (vb) {
+        const eg = document.createElement('img');
+        eg.className = 'pu-slot-vb';
+        eg.src = vb;
+        eg.alt = '';
+        eg.width = 64;
+        eg.height = 64;
+        eg.loading = 'lazy';
+        eg.decoding = 'async';
+        uitleg.appendChild(eg);
+      }
+      const r = document.createElement('span');
+      r.className = 'pu-slot-regel';
+      r.id = `pu-regel-${card.key}-${id}`;
+      r.textContent = tip ? `${regel} ${tip}` : regel;
+      uitleg.appendChild(r);
+      wrap.appendChild(uitleg);
+      btn.setAttribute('aria-describedby', r.id);
     } else {
-      btn.title = how;
+      btn.title = tip ? `${regel} ${tip}` : regel;
     }
   }
 
@@ -5601,20 +5672,36 @@ function buildSlot(card, id) {
   // een vakje dat je zojuist hebt aangevraagd, is geen keuze maar een raadsel — en
   // de kaart vraagt er ook nooit om, want cardReady() loopt over SHOT_IDS en ziet
   // referentievakken niet. Wat hier wél hoort, staat een regel lager: weghalen.
-  const skipBtn = (isRequiredShot(id) || extraSlotNumber(id) || refShotNumber(id)) ? null : act(c('pu.skipShot'), () => {
-    clearSlot(card, id);
-    card.slots[id].status = 'skipped';
-    paintSlot(card, id);
-    refreshUploader();
-  });
-  // clearSlot(), NOT a fresh EMPTY_SLOT(): the slot record carries the handles
-  // to its own elements, and replacing it wholesale left a slot that could
-  // never be painted again — visibly stuck on "skipped" with every control on
-  // it dead. An undo that cannot be undone is worse than no undo.
-  const undoBtn = isRequiredShot(id) ? null : act(c('pu.undoSkip'), () => {
-    clearSlot(card, id);
-    refreshUploader();
-  });
+  /* ── GEEN "SLA DEZE OVER" MEER — 11 oktober 2026 (F3) ────────────────────
+     Lucas koos: de draagfoto overslaan zonder klik. Sinds 19 september telde
+     een leeg vak al als overgeslagen (`mustDecide: false` in shots.js), maar de
+     knop stond er nog — en bij vijf producten lazen klanten vijf keer "sla deze
+     over" bij een vak dat optioneel heet als iets wat moest. Wat er gebeurt als
+     het vak leeg blijft, staat nu in de regel bij het vak (`zonder`). De
+     velden blijven bestaan, leeg: paintSlot() leest ze null-veilig, en de
+     derde soort vakje (`mustDecide`) kan in shots.js terugkomen zonder dat hier
+     iets stuk is. */
+  const skipBtn = null;
+  const undoBtn = null;
+
+  /* ── WISSELEN MET ÉÉN KEUZE — 11 oktober 2026 (F3) ───────────────────────
+     Een keuzelijst en geen sleepbeweging: werkt met een duim, met een muis en
+     met het toetsenbord, en een schermlezer leest hem als "Wissel voorkant met
+     een ander vak". Alleen op de vaste vakken en de bijbestelde hoeken: een
+     referentie- of contextvak is geen plek die de kaart verwacht. paintWissel()
+     vult de opties en zet hem zichtbaar zodra er een foto in zit. */
+  let wissel = null;
+  if (SHOT_IDS.includes(id) || extraSlotNumber(id)) {
+    wissel = document.createElement('select');
+    wissel.className = 'pu-wissel';
+    wissel.hidden = true;
+    wissel.setAttribute('aria-label', c('pu.wisselLabel', { shot: shotLabel(id).toLocaleLowerCase() }));
+    wissel.addEventListener('change', () => {
+      const naar = wissel.value;
+      wissel.value = '';
+      if (naar) wisselVakken(card, id, naar);
+    });
+  }
 
   /* ── HET VAKJE WEER WEG — alleen bij een gratis referentievak ───────────────
    *
@@ -5641,7 +5728,9 @@ function buildSlot(card, id) {
   /* btn en de woorden staan er al (zie hierboven); bar/msg/acts/file sluiten
      de rij af. De volgorde in de DOM is de leesvolgorde: beeld, naam, uitleg,
      voortgang, melding, knoppen. */
-  wrap.append(bar, msg, acts, file);
+  wrap.append(bar, msg, acts);
+  if (wissel) wrap.appendChild(wissel);
+  wrap.appendChild(file);
 
   // Drop a tray item — or a file straight off the desktop — onto this slot.
   // stopPropagation so the step's bulk sorter does not also take it.
@@ -5668,7 +5757,7 @@ function buildSlot(card, id) {
     placeFromTray(trayKey, card.key, id);
   });
 
-  card.slots[id].el = { wrap, btn, dia, img, nameEl, bar, msg, retryBtn, replaceBtn, removeBtn, skipBtn, undoBtn, dropBtn };
+  card.slots[id].el = { wrap, btn, dia, img, nameEl, bar, msg, retryBtn, replaceBtn, removeBtn, skipBtn, undoBtn, dropBtn, wissel };
   return wrap;
 }
 
@@ -5720,6 +5809,12 @@ function paintSlot(card, id) {
 
   const what = filled ? `${shotLabel(id)} — ${s.file.name}` : shotLabel(id);
   el.btn.setAttribute('aria-label', `${what} · ${cardLabel(card)}`);
+  paintWissel(card, id);
+  /* Een contextvak: het verborgen veld volgt het bestand (own / ours). Hier en
+     niet met een MutationObserver zoals in de oude rijen — paintSlot() is de
+     ene plek waar de staat van een vak op het scherm komt. */
+  const ctx = card.erbij && card.erbij.velden && card.erbij.velden[id];
+  if (ctx) ctx.value = filled && s.status !== 'failed' ? 'own' : 'ours';
 }
 
 /** De regel op de kaart: af, of wat er nog moet. */
@@ -5738,42 +5833,16 @@ function paintCard(card) {
   if (!card.el) return;
   const ready = cardReady(card);
 
-  // The collapse follows readiness, and only on the CHANGE — otherwise a card
-  // the customer deliberately opened to add a detail shot would slam shut on
-  // the next repaint.
-  //
-  /* ── EN IN DE RIJ HELEMAAL NIET — 17 september 2026 ──────────────────────
-     In de rij staat er één kaart in beeld en beslist de rij waar je heen gaat.
-     Deze regel zou daar tegenin werken: een kaart die af is klapt dicht en
-     opent de VOLGENDE, terwijl die volgende verborgen is — je ziet dan een
-     dichtgeklapte kaart en een pijl die naar iets anders wijst. Twee dingen
-     die allebei de navigatie doen, is één te veel. */
-  /* Ronde 9, klanttype 13: stond de toetsenbordfocus in de kaart die nu
-     dichtklapt (op het vakje van de laatste foto), dan viel hij weg naar
-     <body> en begon Tab weer bovenaan de pagina. Hij gaat naar de inklapknop
-     van dezelfde kaart; de volgende Tab gaat dan gewoon verder. */
-  let focusTerug = false;
-  if (ready !== card.wasReady && !rijAan()) {
-    focusTerug = ready && card.el.contains(document.activeElement)
-      && document.activeElement !== card.toggleEl && document.activeElement !== card.input;
-    card.collapsed = ready;
-    card.wasReady = ready;
-    // Hand the list on. A card that just became ready closes, so the next one
-    // that still needs a front shot opens — otherwise finishing a card leaves
-    // the customer looking at nothing and hunting for the next tap.
-    if (ready) {
-      const next = cards.find((k) => k !== card && !cardReady(k));
-      if (next && next.collapsed) {
-        next.collapsed = false;
-        if (next.el) next.el.classList.remove('is-collapsed');
-        if (next.toggleEl) next.toggleEl.setAttribute('aria-expanded', 'true');
-      }
-    }
-  }
+  /* ── GEEN INKLAPPEN MEER — 11 oktober 2026 (F3) ──────────────────────────
+     Een kaart die af was, klapte dicht en opende de volgende. Met de knop voor
+     3–4 foto's tegelijk is "af" het moment waarop de klant wil zien waar zijn
+     foto's terecht zijn gekomen en ze wil kunnen wisselen — precies dan mag de
+     kaart niet dichtklappen. Alle kaarten staan open onder elkaar; de balk
+     bovenaan springt naar een product. */
+  card.collapsed = false;
+  card.wasReady = ready;
 
-  /* "01 / 06", zoals op /concept/bestelrij. Het losse "01" zei wel wélke kaart
-     dit is maar niet hoeveel er zijn, en juist dat tweede getal is wat iemand
-     halverwege een bestelling wil weten. Bij één product staat er alleen "01":
+  /* "01 / 06", zoals op /concept/bestelrij. Bij één product alleen "01":
      "01 / 01" is een breuk die niets deelt. */
   if (card.numEl) {
     const eigen = String(card.n).padStart(2, '0');
@@ -5783,37 +5852,28 @@ function paintCard(card) {
   }
 
   card.el.classList.toggle('is-ready', ready);
-  card.el.classList.toggle('is-collapsed', card.collapsed);
-  if (focusTerug) {
-    const doel = card.toggleEl && !rijAan() ? card.toggleEl : card.input;
-    if (doel) doel.focus({ preventScroll: true });
-  }
+  card.el.classList.remove('is-collapsed');
   /* De verwijderknop hoort bij de laatste kaart, en alleen boven het bestelde
-     aantal. Hij wordt hier geschilderd en niet bij het bouwen, want beide
-     voorwaarden veranderen terwijl de kaart al bestaat. */
+     aantal. Hier geschilderd en niet bij het bouwen, want beide voorwaarden
+     veranderen terwijl de kaart al bestaat. */
   if (card.wegEl) card.wegEl.hidden = !(cards[cards.length - 1] === card && cards.length > minCards());
-  /* ── DE INKLAPPER GAAT WEG IN DE RIJ — 17 september 2026 ─────────────────
-     Er staat één kaart in beeld. Die dichtklappen levert een leeg scherm op met
-     twee pijlen eronder — een knop die het scherm leegmaakt is geen knop maar
-     een val. `hidden` en niet verwijderen: bij minder dan twee producten valt
-     de rij weg en hoort hij er gewoon weer te zijn. */
-  if (card.toggleEl) {
-    card.toggleEl.hidden = rijAan();
-    card.toggleEl.setAttribute('aria-expanded', card.collapsed ? 'false' : 'true');
-  }
-  /* Drie toestanden en niet twee: af, mist een verplichte foto, of wacht op
-     één keuze. De derde krijgt zijn eigen zin — zie undecided() hierboven. */
   if (card.stateEl) card.stateEl.textContent = cardStateText(card, ready);
-  /* Alle vakken die op deze kaart staan, en niet alleen de vaste vier: sinds 17
-     september kunnen er hoekvakken bij staan, en die werden dan nooit
-     bijgewerkt — een hoekfoto die binnenkwam liet het vakje leeg staan. */
+  /* De knop bovenaan de kaart: vol als er nog niets in zit, rustig ("Foto's
+     bijzetten") zodra er iets staat — dan is hij niet meer de eerste handeling. */
+  if (card.kiesKnop) {
+    const iets = [...SHOT_IDS, ...hoekVakIds()].some((id) => card.slots[id] && slotFilled(card, id));
+    card.kiesKnop.textContent = iets ? c('pu.kiesNog') : c('pu.kies');
+    card.kiesKnop.setAttribute('aria-label', `${iets ? c('pu.kiesNog') : c('pu.kies')} — ${cardLabel(card)}`);
+    card.kiesKnop.classList.toggle('btn-primary', !iets);
+    card.kiesKnop.classList.toggle('btn-ghost', iets);
+  }
+  /* Alle vakken die op deze kaart staan, en niet alleen de vaste vier: er kunnen
+     hoekvakken, referentievakken en contextvakken bij staan. */
   Object.keys(card.slots).forEach((id) => paintSlot(card, id));
-  /* De regel op de lade hoort bij de kaart en wordt hier bijgewerkt, niet alleen
-     bij een verandering ín de lade: het gezicht van de BESTELLING kan wijzigen
-     (paintModelDefaults) en dan verandert wat "volgt de bestelling" betekent. */
+  /* De regel op de lade hoort bij de kaart: het gezicht van de BESTELLING kan
+     wijzigen (paintModelDefaults) en dan verandert wat "volgt de bestelling"
+     betekent. */
   paintMeer(card);
-  /* En de stylingrij onderaan de stap: die telt de foto's van deze kaart. */
-  if (card.styling) paintStylingRow(card);
 }
 
 /**
@@ -5847,8 +5907,11 @@ function progressText() {
 }
 
 function refreshUploader() {
+  /* De soorten eerst: een kaart die de soort van zijn voorganger overneemt,
+     moet zijn contextvakjes al hebben voordat hij geschilderd wordt. */
+  syncSoorten();
+  cards.forEach(paintErbij);
   cards.forEach(paintCard);
-  syncStyling();
   // The card count moves with the count on step 1, and the copy-down has
   // nothing to say while there is one card.
   syncCopyDown(cards[0]);
@@ -5857,6 +5920,7 @@ function refreshUploader() {
   syncAddKnop();
   renderTray();
   paintRij();
+  bewaarConcept();
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -5885,7 +5949,15 @@ function refreshUploader() {
  */
 let rijNu = 0;
 
-/** Draait de rij? Onder de twee producten is er niets te verplaatsen. */
+/* ── SINDS 11 OKTOBER 2026 (F3) IS DE RIJ GEEN BLADERAAR MEER ───────────────
+ * Hij toonde één kaart tegelijk met "Vorige" en "Volgend product" eronder: een
+ * stappenplan in het stappenplan, naast "Verder" van de stap zelf. Nu staan alle
+ * kaarten open onder elkaar, en blijft van de rij alleen de balk over: één
+ * vierkantje per product met een streepje per verplichte foto, aanklikbaar om
+ * naar dat product te springen. `rijNu` is het product waar de klant het laatst
+ * was (de dikke rand), en `rijAan()` zegt of de balk er staat. */
+
+/** Staat de balk er? Onder de twee producten is er niets om naartoe te springen. */
 function rijAan() {
   return cards.length > 1 && !!q('[data-pl-rij]');
 }
@@ -5893,70 +5965,27 @@ function rijAan() {
 function naarKaart(i, verplaats = true) {
   if (!cards.length) return;
   rijNu = Math.max(0, Math.min(cards.length - 1, Math.floor(i) || 0));
-  paintRij();
+  paintRail();
   const kaart = cards[rijNu];
   if (verplaats && kaart && kaart.el) {
-    kaart.el.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'nearest' });
-    /* De naam is het eerste dat je invult. Focus zetten is hier geen luxe: wie
-       met het toetsenbord werkt, staat anders na "volgende" nog op een knop
-       onderaan een kaart die niet meer in beeld is. */
-    if (kaart.input) { try { kaart.input.focus({ preventScroll: true }); } catch { /* ok */ } }
+    kaart.el.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
+    /* De naam is het eerste dat je invult; daarna de knop voor de foto's. Focus
+       zetten is geen luxe: wie met het toetsenbord werkt, staat anders nog op
+       het vierkantje in de balk. */
+    const doel = kaart.input || kaart.kiesKnop;
+    if (doel) { try { doel.focus({ preventScroll: true }); } catch { /* ok */ } }
   }
 }
 
 function paintRij() {
   const rij = q('[data-pl-rij]');
-  const nav = q('[data-pl-nav]');
   const aan = rijAan();
   if (rij) rij.hidden = !aan;
-  if (nav) nav.hidden = !aan;
-
-  if (!aan) {
-    /* Terug naar de kolom: alles zichtbaar, en de inklapper mag weer. */
-    cards.forEach((k) => { if (k.el) k.el.hidden = false; });
-    return;
-  }
-
-  if (rijNu > cards.length - 1) rijNu = cards.length - 1;
-  cards.forEach((k, i) => {
-    if (!k.el) return;
-    k.el.hidden = i !== rijNu;
-    /* De actieve kaart staat altijd open — zie de kop. */
-    if (i === rijNu && k.collapsed) { k.collapsed = false; paintCard(k); }
-  });
-
-  const af = cards.filter(cardReady).length;
-  const tel = q('[data-pl-rij-tel]');
-  if (tel) {
-    tel.textContent = `${c('pu.rijTel', { i: rijNu + 1, n: cards.length })} · ${c('pu.rijAf', { done: af })}`;
-  }
-
-  paintRail();
-
-  const kaart = cards[rijNu];
-  const klaar = kaart ? cardReady(kaart) : false;
-  const laatste = rijNu >= cards.length - 1;
-
-  const vorige = q('[data-pl-vorige]');
-  if (vorige) vorige.disabled = rijNu === 0;
-
-  const volgende = q('[data-pl-volgende]');
-  const volgendeTekst = q('[data-pl-volgende-tekst]');
-  if (volgende) {
-    /* ── DE POORT ──────────────────────────────────────────────────────────
-       Uit zolang de kaart niet af is. `disabled` en niet verborgen: een knop
-       die verdwijnt laat je zoeken naar wat er weg is, een knop die uitstaat
-       met de reden ernaast zegt wat er moet gebeuren. */
-    volgende.disabled = !klaar;
-    /* Op de laatste kaart is er geen volgende: dan sluit de knop de rij af en
-       gaat de blik naar de voortgangsregel. Hij gaat NIET door naar stap 3 —
-       dat is de knop onderaan de stap, en twee knoppen die allebei "verder"
-       betekenen is de snelste manier om iemand per ongeluk te laten indienen. */
-    if (volgendeTekst) volgendeTekst.textContent = laatste ? c('pu.volgendeLaatste') : c('pu.volgende');
-  }
-
-  const reden = q('[data-pl-nav-reden]');
-  if (reden) reden.textContent = klaar ? '' : cardStateText(kaart, false);
+  cards.forEach((k) => { if (k.el) k.el.hidden = false; });
+  if (rijNu > cards.length - 1) rijNu = Math.max(0, cards.length - 1);
+  const out = q('[data-pl-progress]');
+  if (out) out.textContent = progressText();
+  if (aan) paintRail();
 }
 
 /* ── BOVEN HOEVEEL PRODUCTEN DE STREEPJES RUIS WORDEN ────────────────────────
@@ -6090,20 +6119,19 @@ function bindRailToetsen() {
 }
 
 function bindRij() {
-  const vorige = q('[data-pl-vorige]');
-  if (vorige) vorige.addEventListener('click', () => naarKaart(rijNu - 1));
-  const volgende = q('[data-pl-volgende]');
-  if (volgende) volgende.addEventListener('click', () => {
-    /* Op de laatste kaart is er niets om naartoe te gaan; de knop bevestigt
-       alleen dat je klaar bent en zet de blik op de voortgangsregel. */
-    if (rijNu >= cards.length - 1) {
-      const out = q('[data-pl-progress]');
-      if (out) out.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'center' });
-      return;
-    }
-    naarKaart(rijNu + 1);
-  });
   bindRailToetsen();
+  /* Waar de klant is, volgt waar hij werkt: een veld of knop op een kaart die de
+     focus krijgt, maakt die kaart de huidige in de balk. Eén luisteraar op de
+     lijst, want de kaarten komen en gaan met het aantal. */
+  const host = q('[data-pl-cards]');
+  if (host && !host.dataset.plNuGebonden) {
+    host.dataset.plNuGebonden = '1';
+    host.addEventListener('focusin', (e) => {
+      const li = e.target && e.target.closest ? e.target.closest('.pu-card') : null;
+      const i = li ? cards.findIndex((k) => k.el === li) : -1;
+      if (i >= 0 && i !== rijNu) { rijNu = i; if (rijAan()) paintRail(); }
+    });
+  }
   paintRij();
 }
 
@@ -6323,6 +6351,9 @@ function placeFile(card, id, file) {
     if (!oordeel) return;
     if (oordeel.hard) {
       s.status = 'failed';
+      /* Onthouden dat de MEETING weigerde, zodat een upload die al onderweg was
+         het vakje niet alsnog op "Verstuurd" zet (verstuurSlot). */
+      s.geweigerd = true;
       s.let = '';
       s.msg = c('upload.err.te-klein', { min: oordeel.min, lang: oordeel.lang });
       if (s.key) removeStaged(s.key);
@@ -6480,6 +6511,10 @@ function retrySlot(card, id) {
     const off = q('[data-pl-upload-note="off"]');
     if (off) off.hidden = true;
   }
+  /* Ook na de daggrens is "Opnieuw" een nieuw besluit van een mens: misschien
+     is het inmiddels een nieuwe dag. Het blok blijft staan; zegt de server
+     opnieuw nee, dan weet de klant waarom. */
+  uploadsVol = false;
 
   /* De vooraf-controle nog eens: bij `batch-full` is er misschien net een ander
      bestand weggehaald, en dan is dit vakje ineens wél te versturen. Bij
@@ -6503,7 +6538,20 @@ function retrySlot(card, id) {
   refreshUploader();
 }
 
+/* ── HET EERSTE BESTAND BEGINT EEN BATCH, EN DAT VRAAGT DE BOTCHECK — o03 ──
+   8 oktober 2026. /api/upload maakt voor een upload zonder batch een nieuwe
+   aan; dat is het moment waarop een script opslag kan gaan vullen. Alleen dan
+   gaat er een token mee. De wachtrij is één voor één (`chain`), dus het tweede
+   bestand heeft de batch van het eerste al. */
 function sendSlot(card, id) {
+  const s0 = card.slots[id];
+  const voor = !batch && !uploadsOff && !uploadsVol && s0 && s0.file && s0.status === 'sending'
+    ? botToken(form, 'upload')
+    : Promise.resolve('');
+  return voor.then((token) => verstuurSlot(card, id, token));
+}
+
+function verstuurSlot(card, id, token) {
   return new Promise((resolve) => {
     const s = card.slots[id];
     if (!s.file || s.status !== 'sending') return resolve();
@@ -6521,6 +6569,15 @@ function sendSlot(card, id) {
     // reach the order carrying a product key for a card that no longer exists.
     // So the response is checked against the state, not assumed onto it.
     const live = () => cards.indexOf(card) !== -1 && card.slots[id] === s;
+    /* ── EN IS HIJ INTUSSEN NIET GEWEIGERD — 14 oktober 2026 ──────────────────
+       De beeldkeuring loopt naast de upload (placeFile). Landt de meting "te
+       klein" terwijl dit verzoek al onderweg is, dan zette het antwoord het vakje
+       hierna gewoon op "Verstuurd" en kwam de foto alsnog bij de bestelling —
+       en bij een netwerkfout probeerde failSlot() hem zelfs opnieuw. Gevonden
+       doordat tests/stap2-kaart-browser.test.mjs op Lucas' pc (UITROLLEN.bat)
+       en hier onder drukte "filled" las waar "failed" hoorde: in de toets is het
+       verzoek meestal sneller dan de meting, live is het andersom. */
+    const geweigerd = () => s.geweigerd === true;
 
     if (uploadsOff) {
       s.status = 'failed';
@@ -6529,10 +6586,18 @@ function sendSlot(card, id) {
       refreshUploader();
       return resolve();
     }
+    if (uploadsVol) {
+      s.status = 'failed';
+      s.msg = c('upload.err.dag-limiet');
+      paintSlot(card, id);
+      refreshUploader();
+      return resolve();
+    }
 
     const fd = new FormData();
     fd.append('file', s.file);
     if (batch) fd.append('batch', batch);
+    else if (token) fd.append('turnstile', token);
     // THE TWO FIELDS THIS WHOLE STEP EXISTS FOR. The key, not the customer's
     // name for the product: a name can be retyped after the photograph is in
     // R2, and a key that changes under an object's metadata is a mapping that
@@ -6551,7 +6616,7 @@ function sendSlot(card, id) {
     });
 
     xhr.addEventListener('error', () => {
-      if (!live()) return resolve();
+      if (!live() || geweigerd()) return resolve();
       failSlot(card, id, s, 'network', null, 0);
       resolve();
     });
@@ -6568,10 +6633,12 @@ function sendSlot(card, id) {
       if (xhr.status >= 200 && xhr.status < 300 && body && body.ok) {
         batch = body.batch || batch;
         setHidden('upload_batch', batch);
-        if (!live()) {
-          // Uploaded into a slot that is gone. Take it straight back out —
-          // `staged` is what decides the order’s files, and this never joins it.
+        if (!live() || geweigerd()) {
+          // Uploaded into a slot that is gone, or that the measurement refused
+          // while this was in flight. Take it straight back out — `staged` is
+          // what decides the order’s files, and this never joins it.
           removeStaged(body.file.key);
+          if (live()) { paintSlot(card, id); refreshUploader(); }
           return resolve();
         }
         s.status = 'done';
@@ -6602,8 +6669,15 @@ function sendSlot(card, id) {
         const off = q('[data-pl-upload-note="off"]');
         if (off) off.hidden = false;
       }
+      /* De daggrens: niet opnieuw proberen (retryableUpload kent `dag-limiet`
+         niet), de rest van de wachtrij laten staan, en één keer de uitleg. */
+      if (code === 'dag-limiet') {
+        uploadsVol = true;
+        const vol = q('[data-pl-upload-note="limiet"]');
+        if (vol) vol.hidden = false;
+      }
 
-      if (live()) {
+      if (live() && !geweigerd()) {
         failSlot(card, id, s, code, body, xhr.status);
       } else {
         paintSlot(card, id);
@@ -6854,6 +6928,185 @@ function toonTegoed(me) {
   el.hidden = false;
 }
 
+/* ── CREDITS IN STAP 5 — 8 oktober 2026 (ronde B, §28.2, 6.06) ───────────────
+ *
+ * Een ingelogde abonnee betaalt met credits: stap 5 zegt "Deze bestelling kost
+ * 48 credits · je hebt er 120 · daarna 72" en de knop heet "Bestellen met
+ * credits". Kan het niet — voorrang, een outfit of een eigen look met toeslag,
+ * of te weinig credits — dan zegt het waarom, wat wél past, wanneer er nieuwe
+ * credits komen en wat het via Mollie kost. Nooit gemengd.
+ *
+ * Alleen tekst: /account/order rekent zelf en boekt zelf af. Zonder script
+ * blijft dit blok verborgen en beslist de server precies hetzelfde.
+ */
+function toonCredits(me) {
+  const c = me && me.credits;
+  creditsMe = c && (Number(c.saldo) > 0 || c.nieuw) ? c : null;
+  syncCredits();
+}
+
+/* Een {veld} in een tekst invullen. Alleen textContent verderop, nooit HTML. */
+function vul(tekst, velden) {
+  return String(tekst || '').replace(/\{(\w+)\}/g, (_, k) => (k in velden ? String(velden[k]) : ''));
+}
+
+/* 6 november / 6 November, zonder jaar: het gaat altijd om de komende maanden. */
+function creditDatum(iso) {
+  try {
+    return new Intl.DateTimeFormat(cfg.lang === 'nl' ? 'nl-NL' : 'en-GB', { day: 'numeric', month: 'long', timeZone: 'UTC' })
+      .format(new Date(`${iso}T00:00:00Z`));
+  } catch { return String(iso || ''); }
+}
+
+/* De dienst die het formulier echt post. Een proef draagt hier 'test-sample',
+   ook als kindOf() 'catalog' zegt — die kan nooit met credits. */
+function geposteDienst() {
+  const r = q('input[name="service"]:checked') || q('input[name="service"]');
+  return r ? String(r.value || '') : '';
+}
+
+function syncCredits() {
+  const box = q('[data-pl-credits]');
+  if (!box) return;
+  let t = {};
+  try { t = JSON.parse(box.dataset.tekst || '{}'); } catch { t = {}; }
+  const submit = q('[data-pl-submit]');
+  if (submit && !submit.dataset.plGewoon) submit.dataset.plGewoon = submit.textContent;
+  const tegoedEl = q('[data-pl-tegoed]');
+  if (tegoedEl && !tegoedEl.dataset.plGewoon && tegoedEl.textContent) tegoedEl.dataset.plGewoon = tegoedEl.textContent;
+
+  /* Mollie of credits: de Mollie-zinnen in "wat er gebeurt", de knoptekst en de
+     tegoedregel volgen mee. */
+  const mollie = (aan) => {
+    qa('[data-pl-mollie]').forEach((el) => { el.hidden = !aan; });
+    if (submit && submit.dataset.plGewoon) submit.textContent = aan ? submit.dataset.plGewoon : (t.submit || submit.dataset.plGewoon);
+    if (tegoedEl && tegoedEl.dataset.plGewoon) {
+      tegoedEl.textContent = aan
+        ? tegoedEl.dataset.plGewoon
+        : vul(t.tegoed, { bedrag: euro(tegoedMeCents / 100) });
+    }
+  };
+  /* Extra credits bijkopen (12 oktober 2026): de regel met de link, en de hint. */
+  const bijEl = q('[data-pl-credits-bij]', box);
+  const hintEl = q('[data-pl-credits-hint]', box);
+  const zetRegel = (el, tekst, href, label) => {
+    if (!el) return;
+    el.hidden = !tekst;
+    const s = q('span', el);
+    const a = q('a', el);
+    if (s) s.textContent = tekst || '';
+    if (a) { a.textContent = label || ''; if (href) a.setAttribute('href', href); }
+  };
+  zetRegel(bijEl, '');
+  zetRegel(hintEl, '');
+  const uit = () => { box.hidden = true; box.classList.remove('is-credits'); mollie(true); };
+
+  /* `creditsMe` eerst: zolang die leeg is (ook tijdens het laden), wordt
+     `ingelogdBestellen` niet gelezen. */
+  if (!creditsMe) return uit();
+  const dienst = geposteDienst();
+  if (!ingelogdBestellen || !CREDIT_DIENSTEN.includes(dienst)) return uit();
+  const n = productCount();
+  const kost = creditKosten({
+    service: dienst, products: n, extras: extrasCount(), hoogRes: hoogResCount(),
+    outfits: outfitCount(), voorrang: voorrangAan(), toeslagCents: Math.round(stijlToeslagNu() * 100),
+  });
+  /* Geen creditprijs ("meer dan 30", nog geen aantal): dan niets zeggen. */
+  if (kost.credits === null) return uit();
+
+  const saldo = Math.max(0, Math.floor(Number(creditsMe.saldo) || 0));
+  const net = totaalBij(kindOf(), n);
+  const bedrag = Number.isFinite(net) ? euro(net) : '';
+  const regels = [];
+  let kop = '';
+  let metCredits = false;
+
+  if (!kost.kan) {
+    const woorden = kost.nietMet.map((k) => t.opties && t.opties[k]).filter(Boolean);
+    const opties = woorden.length > 1
+      ? `${woorden.slice(0, -1).join(', ')} ${t.en || '&'} ${woorden[woorden.length - 1]}`
+      : (woorden[0] || '');
+    kop = vul(t.optie, { opties, bedrag });
+    if (saldo >= kost.credits) regels.push(vul(t.zonder, { kosten: kost.credits, saldo }));
+  } else if (saldo >= kost.credits) {
+    metCredits = true;
+    kop = vul(t.kost, { kosten: kost.credits, saldo, daarna: saldo - kost.credits });
+    /* Oudste eerst (6.03): welke credits hiermee opgaan, en wat er daarna
+       binnenkort nog vervalt. */
+    const vervalt = Array.isArray(creditsMe.vervalt) ? creditsMe.vervalt : [];
+    const op = oudsteEerst(vervalt, kost.credits);
+    const grens = new Date(Date.now() + CREDITS_BINNENKORT_DAGEN * 864e5).toISOString().slice(0, 10);
+    if (op.length && op[0].op && op[0].op <= grens) regels.push(vul(t.oudste, { aantal: op[0].aantal, datum: creditDatum(op[0].op) }));
+    let rest = kost.credits;
+    for (const g of vervalt) {
+      const over = Math.max(0, Number(g.aantal) - rest);
+      rest = Math.max(0, rest - Number(g.aantal));
+      if (over > 0) {
+        if (g.op <= grens) regels.push(vul(t.binnenkort, { aantal: over, datum: creditDatum(g.op) }));
+        break;
+      }
+    }
+    /* Het spaarplafond (12 oktober 2026): komt hij na deze bestelling bij de
+       volgende termijn nog boven zijn plafond, dan zegt stap 5 hoeveel er dan
+       wegvalt. Bijgekochte credits gaan eerst op en tellen niet mee. */
+    const nw = creditsMe.nieuw;
+    const plafond = Math.max(0, Math.floor(Number(creditsMe.plafond) || 0));
+    if (plafond && nw && nw.op && t.boven) {
+      const abo = Math.max(0, Math.floor(Number(creditsMe.aboSaldo) || 0));
+      const bij = Math.max(0, saldo - abo);
+      const aboNa = Math.max(0, abo - Math.max(0, kost.credits - bij));
+      const bovenNa = Math.max(0, aboNa + Math.floor(Number(nw.aantal) || 0) - plafond);
+      if (bovenNa > 0) regels.push(vul(t.boven, { datum: creditDatum(nw.op), aantal: nw.aantal, eraf: bovenNa }));
+    }
+    regels.push(t.na);
+  } else {
+    kop = vul(t.teWeinig, { kosten: kost.credits, saldo });
+    const p = watPast({ service: dienst, products: n, extrasPerProduct: anglesChosen().length, hoogRes: hoogResCount(), saldo });
+    const woord = (paar, k) => (Array.isArray(paar) ? paar[k === 1 ? 0 : 1] : '');
+    if (p && p.past > 0) {
+      regels.push(vul(t.past, {
+        past: p.past, dienst: woord(t.dienst && t.dienst[dienst], p.past),
+        eraf: p.eraf, producten: woord(t.product, p.eraf),
+      }));
+    }
+    if (creditsMe.nieuw && creditsMe.nieuw.op) regels.push(vul(t.nieuw, { datum: creditDatum(creditsMe.nieuw.op), aantal: creditsMe.nieuw.aantal }));
+    /* Bijkopen (ab-v4 = b): het kleinste pakket dat het tekort dekt en binnen
+       de ruimte van deze maand past, met een link naar Studio. Daar staat het
+       pakket al gekozen; na het betalen brengt "Verder met je bestelling" de
+       klant hier terug, waar het concept (1.04) op hem wacht. */
+    const bk = creditsMe.bijkoop;
+    const tekort = kost.credits - saldo;
+    if (bk && Array.isArray(bk.pakketten) && tekort > 0) {
+      const ruimte = Math.max(0, Math.floor(Number(bk.ruimte) || 0));
+      const p = bk.pakketten.filter((x) => x.credits >= tekort && x.credits <= ruimte).sort((a, b) => a.credits - b.credits)[0];
+      const terug = encodeURIComponent(location.pathname);
+      if (p) {
+        zetRegel(bijEl, vul(t.tekort, { tekort, pakket: p.credits, bedrag: euro(p.euros) }),
+          `/account/plan/?pakket=${p.credits}&verder=${terug}#bijkopen`, t.bijkoopLink);
+        if (p.hint) zetRegel(hintEl, vul(t.hint, { plan: p.hint.naam, bedrag: euro(p.hint.bedrag), credits: p.hint.credits }), '/account/plan/#je-plan', t.hintLink);
+      } else if (ruimte >= tekort) {
+        zetRegel(bijEl, vul(t.tekortAlgemeen, { tekort, ruimte }), `/account/plan/?verder=${terug}#bijkopen`, t.bijkoopLink);
+      }
+    }
+    if (bedrag) regels.push(vul(t.mollie, { bedrag }));
+  }
+
+  const kopEl = q('[data-pl-credits-kop]', box);
+  if (kopEl) kopEl.textContent = kop;
+  const lijst = q('[data-pl-credits-regels]', box);
+  if (lijst) {
+    lijst.textContent = '';
+    for (const r of regels) {
+      const li = document.createElement('li');
+      li.textContent = r;
+      lijst.appendChild(li);
+    }
+  }
+  box.classList.toggle('is-credits', metCredits);
+  box.hidden = false;
+  mollie(!metCredits);
+}
+
 function bindPrefill() {
   accountMe()
     .then((me) => {
@@ -6862,6 +7115,7 @@ function bindPrefill() {
         ingelogdBestellen = !!me.email;
         if (ingelogdBestellen) form.setAttribute('action', '/account/order');
         toonTegoed(me);
+        toonCredits(me);
         applyAccount(me);
         return;
       }
@@ -6880,7 +7134,36 @@ function bindPrefill() {
        */
       bindSaveOffer({ signedIn: false });
     })
-    .catch(() => {}); // offline of /account/me onbereikbaar — het formulier werkt leeg ook
+    .catch(() => {}) // offline of /account/me onbereikbaar — het formulier werkt leeg ook
+    /* 8.06: pas NA de opgeslagen gegevens, zodat het land uit het account altijd
+       voorgaat op het land van het ip-adres. */
+    .then(() => vulLandVoor());
+}
+
+/*
+ * ── HET LAND, VOORGEVULD MET HET LAND VAN DE BEZOEKER — 8 oktober 2026 (8.06) ──
+ *
+ * Uit Cloudflare (GET /api/land, zie functions/api/land.js). Een voorzet en geen
+ * keuze: het veld staat gewoon zichtbaar in stap 3 en is te wijzigen, want een
+ * vpn of een zakenreis geeft een ander land. NOOIT OVERSCHRIJVEN: staat er al
+ * een land (uit het account, of de klant koos er zelf een terwijl het verzoek
+ * onderweg was), dan blijft dat staan. Het `change`-event laat het btw-veld, de
+ * vorm van het nummer en het registratienummer meteen meegaan, net als bij een
+ * keuze met de hand.
+ */
+function vulLandVoor() {
+  const select = q('select[name="country"]');
+  if (!select || select.value || typeof fetch !== 'function') return undefined;
+  return fetch('/api/land', { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((uit) => {
+      const land = uit && typeof uit.land === 'string' ? uit.land : '';
+      if (!land || select.value) return;
+      if (!Array.from(select.options).some((o) => o.value === land)) return;
+      select.value = land;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    })
+    .catch(() => {});
 }
 
 /**
@@ -6949,6 +7232,9 @@ function applyAccount(me) {
   addBrandModels(me);
   addOwnStyles(me);
   applyBrandKit(me);
+  /* Een eigen merkmodel (?face=c<id>) bestaat pas nu; de link gaat vóór de
+     brand kit, want dat is een keuze van zojuist (punt 3.07). */
+  applyLookUitUrl({ alleenGezicht: true });
 
   // The collapse needs the fields it hides to actually be filled. A saved
   // record missing a name is a saved record that cannot answer step 3, and
@@ -7195,7 +7481,7 @@ function addOwnStyles(me) {
   const styles = Array.isArray(me && me.styles) ? me.styles : [];
   if (!styles.length) return;
   const kind = kindOf();
-  const passend = styles.filter((st) => st && st.id && (st.service === 'both' || st.service === kind || (kind === 'complete' && st.service !== 'catalog')));
+  const passend = styles.filter((st) => st && st.id && (st.service === 'both' || st.service === kind));
   if (!passend.length) return;
 
   let wanted = '';
@@ -7318,6 +7604,62 @@ function ownLookPlaceholder(name) {
 
 function escHtml(v) {
   return String(v == null ? '' : v).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
+}
+
+/* ── "BESTEL MET DEZELFDE LOOK" — 8 oktober 2026 (punt 3.07) ─────────────────
+ *
+ * De knop op de privélink en in Studio (src/lib/herbestel.js) opent dit
+ * formulier met de keuzes van een eerdere bestelling: ?style= (al gelezen door
+ * StylePicker en, voor een eigen look, addOwnStyles()), en ?bg=, ?ratio= en
+ * ?face=, die hier gelezen worden. Naam, KVK en adres zitten er nooit in (V28 = a).
+ *
+ * DEZELFDE DISCIPLINE ALS StylePicker: een waarde uit de URL gaat nergens de
+ * pagina in. Hij wordt gefilterd en daarna alleen vergeleken met een radio die
+ * de pagina zelf heeft gerenderd; bestaat die niet, dan blijft staan wat er
+ * stond. Een uitgezette radio (bijv. wit verplicht bij een marktplaats) wordt
+ * niet aangevinkt. Stap 2 zelf wordt niet aangeraakt: het gezicht is de radio
+ * waar de productkaarten hun standaard uit halen (paintModelDefaults()).
+ */
+function applyLookUitUrl({ alleenGezicht = false } = {}) {
+  let qs;
+  try { qs = new URLSearchParams(location.search); } catch { return; }
+  const kies = (r) => {
+    if (!r || r.disabled || r.checked) return;
+    r.checked = true;
+    r.dispatchEvent(new Event('change', { bubbles: true }));
+  };
+  if (!alleenGezicht) {
+    const bg = String(qs.get('bg') || '').replace(/^#/, '').toUpperCase();
+    if (/^[0-9A-F]{6}$/.test(bg)) {
+      const hex = `#${bg}`;
+      const vast = qa('input[name="background"]').find((r) => (r.dataset.plBgHex || '').toUpperCase() === hex);
+      if (vast) kies(vast);
+      else {
+        /* Een eigen kleur: de eigen-kleurradio, met de waarde in de twee velden
+           (zelfde vorm als applySavedBackground()). */
+        const eigen = q('input[name="background"][data-pl-bg-custom]');
+        if (eigen && !eigen.disabled) {
+          const text = q('[data-pl-bg-text]');
+          const color = q('[data-pl-bg-color]');
+          if (text) text.value = hex;
+          if (color) color.value = hex;
+          kies(eigen);
+          syncBackground(kindOf());
+        }
+      }
+    }
+    const ratio = String(qs.get('ratio') || '');
+    if (/^[a-z0-9-]{2,16}$/.test(ratio)) kies(qa('input[name="ratio"]').find((r) => r.value === ratio));
+  }
+  const face = String(qs.get('face') || '');
+  if (/^[a-z0-9-]{1,24}$/.test(face)) {
+    const r = qa('input[name="model"]').find((x) => x.value === face);
+    if (r && !r.checked) {
+      kies(r);
+      paintModelDefaults();
+    }
+  }
+  syncSummaries();
 }
 
 function applyBrandKit(me) {
@@ -7611,13 +7953,10 @@ function collapseBrief(me) {
 
   fields.hidden = true;
   panel.hidden = false;
-  /* ── HET BTW-VINKJE BLIJFT ZICHTBAAR — 1 oktober 2026 (ronde 8, B-B9) ─────
-     De verklaring voor verlegde btw zat in de groep die hier dichtklapt. Een
-     terugkerende EU-klant kon hem dus niet aanvinken, en kwam elke keer in de
-     beoordeling terecht. Het blok verhuist naar onder de adreskaart; wanneer het
-     zichtbaar is, beslist syncVatConfirm() zoals altijd. */
-  const vatBlok = q('[data-pl-vatconfirm]');
-  if (vatBlok && fields.contains(vatBlok)) panel.insertAdjacentElement('afterend', vatBlok);
+  /* De verklaring voor verlegde btw zat tot 8 oktober 2026 als apart vinkje in
+     deze groep (en verhuisde hier naar onder de adreskaart, ronde 8 B-B9). Sinds
+     8.06 staat ze in het zakelijk-vinkje van stap 5; dit zet die zin gelijk met
+     de zojuist ingevulde gegevens. */
   syncVatConfirm();
 
   const edit = q('[data-pl-saved-edit]');
@@ -8035,6 +8374,24 @@ function kiesVenster(knop, host, keuze) {
 // the invoice follows.
 // ─────────────────────────────────────────────────────────────────────────────
 
+/*
+ * ── WANNEER HET KOMT, BOVEN DE KNOP — 8 oktober 2026 (1.07) ───────────────────
+ * Eén regel in "Wat er gebeurt nadat je op de knop drukt": de gekozen datum
+ * (vanaf de drempel), voorrang, of de gewone levertijd uit turnaround(), en
+ * daarachter de revisieronde met REVISIE_DAGEN. De proef heeft geen revisieronde
+ * (§2.8 van het overzicht), dus daar alleen de levertijd.
+ */
+function syncWanneer(attended, ws, we) {
+  const el = q('[data-pl-wanneer]');
+  if (!el) return;
+  let zin;
+  if (attended && ws) zin = c('wanneer.venster', { datum: we && we !== ws ? `${day(ws)} – ${day(we)}` : day(ws) });
+  else if (attended) zin = c('wanneer.later');
+  else if (voorrangAan()) zin = c('wanneer.voorrang');
+  else zin = c('wanneer.snel');
+  el.textContent = cfg.sample ? zin : `${zin} ${c('wanneer.revisie')}`;
+}
+
 function renderSummary() {
   const host = q('[data-pl-summary]');
   if (!host) return;
@@ -8300,6 +8657,10 @@ function renderSummary() {
      blok eronder hoort alleen bij een bestelling MET een leverdatum (ronde 9, F3). */
   const naVenster = q('[data-pl-after-window]');
   if (naVenster) naVenster.hidden = !(attended && ws);
+  syncWanneer(attended, ws, we);
+  /* 8.06: het merk kan zonder invoer-event zijn ingevuld (opgeslagen gegevens),
+     dus de verleggingszin in het zakelijk-vinkje hier nog één keer gelijkzetten. */
+  syncVatConfirm();
   if (attended && ws) rows.push([c('sum.window'), we && we !== ws ? `${day(ws)} – ${day(we)}` : day(ws)]);
   else if (attended) rows.push([c('sum.window'), c('sum.windowLater')]);
   else if (!voorrangAan()) rows.push([c('sum.window'), c('sum.queue')]);
@@ -8482,7 +8843,14 @@ function onSubmit(e) {
 
   /* Een ingelogde klant bestelt via /account/order (29 september 2026): alleen
      daar ziet de server de sessie, en dus het tegoed. Zie account.js. */
-  fetch(ingelogdBestellen ? '/account/order' : '/api/order', { method: 'POST', body: fd, headers: { accept: 'application/json' } })
+  /* ── EERST HET TOKEN VAN DE BOTCHECK — 8 oktober 2026 (o03) ─────────────
+     Hooguit zes seconden, en alleen als de botcheck aan staat. Komt er geen,
+     dan gaat de bestelling zonder: de server laat hem door en markeert hem.
+     Een ingelogde klant hoeft het niet (de server kijkt er dan niet naar),
+     maar het kost hem niets, dus één weg voor iedereen. */
+  botToken(form, 'bestelling')
+    .then((token) => { if (token) fd.set('turnstile', token); })
+    .then(() => fetch(ingelogdBestellen ? '/account/order' : '/api/order', { method: 'POST', body: fd, headers: { accept: 'application/json' } }))
     .then((r) => r.json().then((b) => ({ status: r.status, body: b })).catch(() => ({ status: r.status, body: null })))
     .then(({ status, body }) => finishSubmit(status, body))
     .catch(() => finishSubmit(0, null));
@@ -8500,6 +8868,8 @@ function finishSubmit(status, body) {
   };
 
   if (status >= 200 && status < 300 && body && body.ok && body.redirect) {
+    /* 1.04: de bestelling staat; het concept op dit apparaat is klaar. */
+    wisConcept();
     // AFTER the order landed, and only then: an opt-in offered at the end of an
     // order should not save anything if the order itself never happened. It is
     // sent with keepalive so the navigation two lines down cannot cancel it —
@@ -8538,6 +8908,10 @@ function finishSubmit(status, body) {
       const we = value('window_end');
       if (ws) sessionStorage.setItem('vis-ty-venster', we && we !== ws ? `${day(ws)} – ${day(we)}` : day(ws));
       else sessionStorage.removeItem('vis-ty-venster');
+      /* Voorrang (naloop A2, 8 okt 2026): anders zei de bedankpagina "zo snel
+         mogelijk" bij een bestelling met voorrang. Alleen een vlag, geen bedrag. */
+      if (voorrangAan()) sessionStorage.setItem('vis-ty-voorrang', '1');
+      else sessionStorage.removeItem('vis-ty-voorrang');
     } catch { /* geen opslag is geen fout */ }
 
     if (body.windowLost) {
@@ -8761,4 +9135,284 @@ function checkOpenOrder() {
       try { blok.scrollIntoView({ block: 'center', behavior: 'auto' }); } catch { /* oude browser */ }
     })
     .catch(() => { /* niets te melden: het formulier werkt gewoon */ });
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * HET FORMULIER ONTHOUDT DE KEUZES EN DE FOTO'S, NIET DE GEGEVENS
+ * 11 oktober 2026 (F3, punt 1.04, V51 = a)
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Op een telefoon gooit de browser het tabblad weg als de klant naar zijn camera
+ * of WhatsApp gaat, of hij komt via Instagram terug in een nieuw tabblad. Dan
+ * was alles weg: de look, het aantal, en de foto's die al bij ons stonden.
+ *
+ * WAT ER BEWAARD WORDT (localStorage, `vis-bestelling`, zie cookies.js): de
+ * velden van stap 1 en 2 — look, aantal, opties, per product de naam, soort,
+ * materiaal, kleur en gezicht — en van de foto's alleen het batchkenmerk en
+ * welke foto in welk vak stond. NOOIT stap 3: naam, e-mail, telefoon, adres en
+ * btw staan daar, en die worden niet eens gelezen. Geen bestanden: die staan al
+ * in R2.
+ *
+ * BIJ TERUGKOMST vraagt het formulier eerst aan /api/upload welke foto's er van
+ * die batch nog staan (alleen eigen uploads: het kenmerk is de sleutel). Dan het
+ * blok "Je was bezig met een bestelling" met Verder gaan en Opnieuw beginnen.
+ * Wat er nog staat, komt terug in zijn vak (zonder voorbeeld — het bestand is
+ * niet meer op het apparaat — maar met het vinkje en de naam); wat weg is, wordt
+ * genoemd. Opnieuw beginnen wist het concept en begint een nieuwe batch; de oude
+ * ruimt de nacht vanzelf op (cron, INTAKE_TTL_DAYS).
+ *
+ * NA EEN GEPLAATSTE BESTELLING wordt alles gewist (finishSubmit).
+ *
+ * Elke lees- en schrijfactie staat in try/catch: in een privévenster of met
+ * geblokkeerde opslag werkt het formulier precies zoals zonder dit punt.
+ */
+function leesConcept() {
+  try {
+    const raw = localStorage.getItem(CONCEPT_SLEUTEL);
+    if (!raw) return null;
+    const c0 = JSON.parse(raw);
+    return c0 && typeof c0 === 'object' && c0.v === 1 ? c0 : null;
+  } catch { return null; }
+}
+
+function wisConcept() {
+  try { localStorage.removeItem(CONCEPT_SLEUTEL); } catch { /* geen opslag */ }
+}
+
+/** De velden van stap 1 en 2, als [naam, waarde, aan]. Nooit stap 3 en verder. */
+function conceptVelden() {
+  const uit = [];
+  [1, 2].forEach((n) => {
+    const node = stepNode(n);
+    if (!node) return;
+    qa('input, select, textarea', node).forEach((f) => {
+      if (!f.name || f.disabled) return;
+      if (f.type === 'file' || f.type === 'hidden' || f.type === 'password') return;
+      if (f.type === 'radio') { if (f.checked) uit.push([f.name, f.value, 1]); return; }
+      if (f.type === 'checkbox') { uit.push([f.name, f.value, f.checked ? 1 : 0]); return; }
+      uit.push([f.name, String(f.value || '').slice(0, 300)]);
+    });
+  });
+  return uit;
+}
+
+/** Schrijven, een halve seconde na de laatste wijziging. */
+function bewaarConcept() {
+  if (!conceptKlaar || !cfg || !form) return;
+  if (conceptTimer) clearTimeout(conceptTimer);
+  conceptTimer = setTimeout(() => {
+    conceptTimer = 0;
+    if (!conceptKlaar || !form || !document.contains(form)) return;
+    const fotos = [];
+    cards.forEach((card) => {
+      Object.keys(card.slots).forEach((id) => {
+        const sl = card.slots[id];
+        if (sl && sl.key && sl.status === 'done') fotos.push({ p: card.key, s: id, k: sl.key });
+      });
+    });
+    const velden = conceptVelden();
+    const aantal = productCount();
+    /* Niets gekozen en niets gestuurd: dan is er ook niets om naar terug te keren. */
+    if (!fotos.length && !Number.isInteger(aantal)) { wisConcept(); return; }
+    const concept = {
+      v: 1,
+      t: Date.now(),
+      pad: location.pathname,
+      stap: Math.min(current, 2),
+      velden,
+      eigen: cards.filter((k) => k.soortEigen).map((k) => k.key),
+      refs: Object.fromEntries(cards.filter((k) => k.refs).map((k) => [k.key, k.refs])),
+      hoeken: { ...hoekVak },
+      batch: fotos.length ? batch : '',
+      fotos,
+    };
+    try { localStorage.setItem(CONCEPT_SLEUTEL, JSON.stringify(concept)); } catch { /* vol of geblokkeerd: dan niet */ }
+  }, 500);
+}
+
+function bindConcept() {
+  /* Elke wijziging in stap 1 en 2 bewaart. Stap 3 en verder niet: daar staan de
+     gegevens, en die horen hier niet. */
+  const bewaar = (e) => {
+    const stap = e.target && e.target.closest ? e.target.closest('[data-pl-step]') : null;
+    const n = stap ? Number(stap.dataset.plStep) : 0;
+    if (n !== 1 && n !== 2) return;
+    /* Laat de klant het blok links liggen en begint hij gewoon te kiezen, dan
+       is dat opnieuw beginnen: het blok gaat weg en vanaf nu wordt dít bewaard.
+       Alleen bij een echte handeling (isTrusted), niet bij het terugzetten. */
+    const blok0 = q('[data-pl-concept]');
+    if (blok0 && !blok0.hidden && e.isTrusted) { blok0.hidden = true; conceptKlaar = true; }
+    bewaarConcept();
+  };
+  form.addEventListener('change', bewaar);
+  form.addEventListener('input', bewaar);
+  const blok = q('[data-pl-concept]');
+  if (!blok) return;
+  const verder = q('[data-pl-concept-verder]', blok);
+  const opnieuw = q('[data-pl-concept-opnieuw]', blok);
+  if (opnieuw) opnieuw.addEventListener('click', () => {
+    wisConcept();
+    blok.hidden = true;
+    conceptKlaar = true;
+  });
+  if (verder) verder.addEventListener('click', () => {
+    const c0 = blok.__concept;
+    blok.hidden = true;
+    if (c0) herstelConcept(c0.concept, c0.daar);
+    conceptKlaar = true;
+    bewaarConcept();
+  });
+}
+
+/** Bij het openen: staat er een concept voor deze pagina, en wat is er nog van? */
+function checkConcept() {
+  const c0 = leesConcept();
+  const blok = q('[data-pl-concept]');
+  const klaar = () => { conceptKlaar = true; };
+  if (!c0 || !blok) { klaar(); return; }
+  const oud = !(Date.now() - Number(c0.t || 0) < CONCEPT_DAGEN * 864e5);
+  if (oud || c0.pad !== location.pathname) {
+    /* Te oud: weg. Van een andere bestelpagina: laten staan voor die pagina. */
+    if (oud) wisConcept();
+    klaar();
+    return;
+  }
+  const fotos = Array.isArray(c0.fotos) ? c0.fotos : [];
+  const toon = (daar) => {
+    const aantal = Number((c0.velden || []).find((v) => v[0] === 'products')?.[1]) || 0;
+    const nog = daar.length;
+    const producten = aantal === 1 ? c('concept.product1') : c('concept.productN', { n: aantal || '?' });
+    const fotoTekst = !nog ? c('concept.foto0') : nog === 1 ? c('concept.foto1') : c('concept.fotoN', { n: nog });
+    const wat = q('[data-pl-concept-wat]', blok);
+    if (wat) wat.textContent = c('concept.wat', { dienst: c('concept.dienst'), producten, fotos: fotoTekst });
+    const daarSleutels = new Set(daar.map((f) => f.key));
+    const weg = fotos.filter((f) => !daarSleutels.has(f.k)).length;
+    const wegEl = q('[data-pl-concept-weg]', blok);
+    if (wegEl) {
+      wegEl.hidden = weg <= 0;
+      wegEl.textContent = weg === 1 ? c('concept.weg1') : weg > 1 ? c('concept.wegN', { n: weg }) : '';
+    }
+    blok.__concept = { concept: c0, daar };
+    blok.hidden = false;
+  };
+  if (!fotos.length || !c0.batch) { toon([]); return; }
+  /* Welke foto's staan er nog? Alleen eigen uploads: het kenmerk is de sleutel.
+     Lukt het niet om dat te vragen, dan beloven we geen foto's die er misschien
+     niet meer zijn: dan komen alleen de keuzes terug, met een nieuwe batch. */
+  fetch(`/api/upload?batch=${encodeURIComponent(c0.batch)}`, { headers: { accept: 'application/json' } })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((body) => {
+      const lijst = body && body.ok && Array.isArray(body.files) ? body.files : null;
+      if (!lijst) { toon([]); return; }
+      /* ALLES wat er in de batch staat, en niet alleen wat het concept noemt: de
+         server hangt bij het bestellen de hele batch aan de bestelling. Een foto
+         die vlak voor het sluiten nog binnenkwam en niet meer in het concept
+         stond, moet dus óók terug in zijn vak (of weg) — anders gaat hij
+         onzichtbaar mee. De plek komt uit wat /api/upload bij de foto bewaarde. */
+      toon(lijst.filter((f) => f && f.key));
+    })
+    .catch(() => toon([]));
+}
+
+/** Een veld terugzetten zoals de klant het had, met het event dat erbij hoort. */
+function zetVeld(naam, waarde, aan) {
+  const els = qa('input, select, textarea').filter((f) => f.name === naam && !f.disabled);
+  if (!els.length) return;
+  const el0 = els[0];
+  if (el0.type === 'radio') {
+    const r = els.find((f) => f.value === waarde);
+    if (r && !r.checked) { r.checked = true; r.dispatchEvent(new Event('change', { bubbles: true })); }
+    return;
+  }
+  if (el0.type === 'checkbox') {
+    const b = els.find((f) => f.value === waarde) || el0;
+    if (b.checked !== !!aan) { b.checked = !!aan; b.dispatchEvent(new Event('change', { bubbles: true })); }
+    return;
+  }
+  if (el0.value === waarde) return;
+  el0.value = waarde;
+  el0.dispatchEvent(new Event('input', { bubbles: true }));
+  el0.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+/** Een foto die nog in R2 staat, terug in zijn vak — zonder bestand op het apparaat. */
+function herstelVak(card, id, f) {
+  const sl = card.slots[id];
+  if (!sl || sl.file) return false;
+  sl.status = 'done';
+  sl.key = f.key;
+  sl.file = { name: f.name || id, size: Number(f.bytes) || 0, hersteld: true };
+  sl.url = '';
+  sl.pct = 100;
+  sl.thumb = false;
+  sl.msg = c('upload.done');
+  staged.push({ key: f.key, name: f.name, bytes: Number(f.bytes) || 0, product: card.key, shot: id });
+  paintSlot(card, id);
+  return true;
+}
+
+function herstelConcept(c0, daar) {
+  const velden = Array.isArray(c0.velden) ? c0.velden : [];
+  /* Het aantal eerst: daarmee ontstaan de kaarten. Via het getalveld, zodat de
+     knoppen en de lijst gelijk blijven (bindQty). */
+  const aantal = velden.find((v) => v[0] === 'products');
+  if (aantal) {
+    const veld = q('[data-pl-qty-input]');
+    if (veld && /^\d+$/.test(String(aantal[1]))) {
+      veld.value = String(aantal[1]);
+      veld.dispatchEvent(new Event('input', { bubbles: true }));
+    } else {
+      zetVeld('products', String(aantal[1]));
+    }
+  }
+  /* De hoeken houden hun vaknummer (extra1, extra2, …): de foto's in R2 dragen
+     dat nummer. */
+  if (c0.hoeken && typeof c0.hoeken === 'object') {
+    Object.entries(c0.hoeken).forEach(([h, nr]) => { if (Number.isInteger(nr) && nr > 0) hoekVak[h] = nr; });
+  }
+  /* Stap 1, dan de kaarten. De soort vóór de rest van de kaart: daar hangen de
+     contextvakjes aan. */
+  const isKaartVeld = (naam) => /_p\d+$/.test(naam) || /_p\d+_\d+$/.test(naam);
+  velden.filter((v) => v[0] !== 'products' && !isKaartVeld(v[0])).forEach((v) => zetVeld(v[0], v[1], v[2]));
+  const eigen = new Set(Array.isArray(c0.eigen) ? c0.eigen : []);
+  cards.forEach((card) => { if (eigen.has(card.key)) card.soortEigen = true; });
+  velden.filter((v) => /^garment_p\d+$/.test(v[0])).forEach((v) => zetVeld(v[0], v[1], v[2]));
+  syncSoorten();
+  cards.forEach(paintErbij);
+  velden.filter((v) => isKaartVeld(v[0]) && !/^garment_p\d+$/.test(v[0])).forEach((v) => zetVeld(v[0], v[1], v[2]));
+  /* Referentievakken zoals ze er stonden. */
+  if (c0.refs && typeof c0.refs === 'object') {
+    cards.forEach((card) => {
+      const n = Math.min(Number(c0.refs[card.key]) || 0, Number(cfg.maxRefPerProduct) || 0);
+      while ((card.refs || 0) < n && card.voegRefToe) { if (!card.voegRefToe()) break; }
+    });
+  }
+  /* De foto's die er nog staan. Het batchkenmerk alleen als er iets terugkomt;
+     anders begint de eerste nieuwe foto een nieuwe batch. */
+  if (daar && daar.length) {
+    batch = c0.batch;
+    setHidden('upload_batch', batch);
+    const plek = new Map((c0.fotos || []).map((f) => [f.k, f]));
+    daar.forEach((f) => {
+      /* De plek die de server bij de foto bewaarde (customMetadata), anders die
+         uit het concept. */
+      const waar = plek.get(f.key);
+      const productKey = f.product || (waar && waar.p) || '';
+      const id = f.shot || (waar && waar.s) || '';
+      const card = productKey ? cards.find((k) => k.key === productKey) : null;
+      if (card && id && refShotNumber(id)) {
+        while ((card.refs || 0) < refShotNumber(id) && card.voegRefToe) { if (!card.voegRefToe()) break; }
+      }
+      if (!card || !id || !herstelVak(card, id, f)) {
+        /* Geen vak meer voor deze foto (de kaart of het vak bestaat niet meer, of
+           er staat al een foto): weghalen, anders gaat hij onzichtbaar mee met
+           de bestelling. */
+        removeStaged(f.key);
+      }
+    });
+  }
+  syncOrder();
+  refreshUploader();
+  /* Terug naar de stap waar de klant was, als stap 1 nog klopt. */
+  if (Number(c0.stap) === 2 && validateStep(1)) show(2);
 }

@@ -42,6 +42,8 @@ import { UPLOAD_DAYS, DELIVERY_DAYS } from '../src/lib/retention.js';
 /* De cookietermijnen staan sinds 23 augustus 2026 in src/data/cookies.js — één
    plek voor het getal dat de code zet én de pagina opschrijft. */
 import { SESSION_COOKIE_DAYS, PREFERENCE_COOKIE_DAYS } from '../src/data/cookies.js';
+/* De ontvangers staan sinds 8 oktober 2026 in één bron (o08, o09). */
+import { subverwerkers, ontvangers } from '../src/data/subverwerkers.js';
 import { buildStaat } from './lib/build.mjs';
 
 let pass = 0;
@@ -189,15 +191,29 @@ console.log('\nde subverwerkers staan met naam, en de twee lijsten zijn gelijk')
    * helemaal niet. Samen zeggen ze wat er moet gelden: de partijen staan er, én ze komen
    * op de pagina terecht.
    */
-  const PARTIJEN = ['Magnific AI, S.L.U.', 'Cloudflare, Inc.', 'Resend']; /* ronde 9: Freepik Company heet sinds 2026 Magnific AI (zelfde CIF B-93183366) */
+  /* ── SINDS 8 OKTOBER 2026 UIT ÉÉN BRON (o08, o09) ──────────────────────────
+     De namen stonden in een SUBS-array per overeenkomst en met de hand in het
+     privacybeleid. Nu lezen alle vier de pagina's src/data/subverwerkers.js. De
+     toets kijkt dus of de PARTIJEN in die bron staan, én of de pagina's die bron
+     lezen en afdrukken — de twee helften van dezelfde bewering. */
+  const PARTIJEN = ['Magnific AI, S.L.U.', 'Cloudflare, Inc.', 'Resend', 'WhatsApp Ireland Ltd. (Meta)', 'Google (Gemini)']; /* ronde 9: Freepik Company heet sinds 2026 Magnific AI (zelfde CIF B-93183366) */
+  const LIJST = { en: subverwerkers('en').map((s) => s.naam).join(' | '), nl: subverwerkers('nl').map((s) => s.naam).join(' | ') };
   for (const naam of PARTIJEN) {
-    ok(`EN de overeenkomst noemt ${naam}`, SRC.en.includes(naam), true);
-    ok(`NL idem`, SRC.nl.includes(naam), true);
+    ok(`EN de lijst van de overeenkomst noemt ${naam}`, LIJST.en.includes(naam), true);
+    ok(`NL idem`, LIJST.nl.includes(naam), true);
   }
+  ok('EN de overeenkomst leest de lijst', /const SUBS = subverwerkers\('en'\)/.test(SRC.en), true);
+  ok('NL idem', /const SUBS = subverwerkers\('nl'\)/.test(SRC.nl), true);
   ok('EN en de lijst wordt op de pagina gerenderd', /\{SUBS\.map\(/.test(DPA.en), true);
   ok('NL idem', /\{SUBS\.map\(/.test(DPA.nl), true);
-  ok('EN het privacybeleid noemt Magnific', PRIV.en.includes('Magnific AI, S.L.U.'), true);
-  ok('NL idem', PRIV.nl.includes('Magnific AI, S.L.U.'), true);
+  ok('EN het privacybeleid drukt dezelfde bron af', /\{ontvangers\('en'\)\.map\(/.test(PRIV.en), true);
+  ok('NL idem', /\{ontvangers\('nl'\)\.map\(/.test(PRIV.nl), true);
+  ok('en Magnific staat in die bron', ontvangers('en').some((o) => o.naam === 'Magnific AI, S.L.U.'), true);
+  /* De datum "laatst gewijzigd" staat boven de lijst, in beide documenten. */
+  ok('EN de overeenkomst toont wanneer de lijst gewijzigd is', /\{lijstRegel\('en'\)\}/.test(DPA.en), true);
+  ok('NL idem', /\{lijstRegel\('nl'\)\}/.test(DPA.nl), true);
+  ok('EN het privacybeleid ook', /\{lijstRegel\('en'\)\}/.test(PRIV.en), true);
+  ok('NL idem', /\{lijstRegel\('nl'\)\}/.test(PRIV.nl), true);
   ok('EN en Mollie, want die staat niet in de overeenkomst', PRIV.en.includes('Mollie B.V.'), true);
   ok('NL idem', PRIV.nl.includes('Mollie B.V.'), true);
 
@@ -470,10 +486,23 @@ console.log('\nde beveiligingsparagraaf belooft niets wat niet gemeten is');
     /lives on an encrypted disk/i.test(DPA.en), false);
   ok('NL idem', /staat daarom op een versleutelde schijf/i.test(DPA.nl), false);
 
-  /* Wat er wél staat, en dat is wel gemeten: de kopie gaat niet naar een clouddienst, en
-     de nachtelijke taak in cron/index.js kijkt of hij niet verouderd is. */
-  ok('EN de back-up gaat niet naar een clouddienst', /does not go to a cloud service/i.test(DPA.en), true);
-  ok('NL idem', /gaat niet naar een clouddienst/i.test(DPA.nl), true);
+  /* Wat er wél staat, en dat is wel gemeten: waar de kopie staat, en de nachtelijke taak
+     in cron/index.js kijkt of hij niet verouderd is.
+
+     ── TOT 8 OKTOBER 2026 STOND HIER "GAAT NIET NAAR EEN CLOUDDIENST" ──────────────
+     Toen klopte dat: de dump stond op E:. Lucas koos (9.04, V6 = c) Google Drive, dus
+     nu bewaakt deze check het omgekeerde: de overeenkomst NOEMT Google Drive, de
+     partij staat in §8 (Google Workspace), en de zin dat er geen inloggegevens in de
+     kopie zitten staat erbij — want dat is wat scripts/backup.mjs sindsdien doet. Gaat
+     de kopie ooit ergens anders heen, dan hoort deze check rood te worden. */
+  ok('EN de back-up staat in Google Drive', /in our own Google Drive \(Google Workspace, see the list in §8\)/.test(DPA.en), true);
+  ok('NL idem', /in onze eigen Google Drive \(Google Workspace, zie de lijst in §8\)/.test(DPA.nl), true);
+  ok('EN en niet meer "does not go to a cloud service"', /does not go to a cloud service/i.test(DPA.en), false);
+  ok('NL idem', /gaat niet naar een clouddienst/i.test(DPA.nl), false);
+  ok('EN zonder wachtwoorden, inlogcodes of sessies', /no passwords, sign-in codes or sessions/.test(DPA.en), true);
+  ok('NL idem', /geen wachtwoorden, inlogcodes of sessies/.test(DPA.nl), true);
+  ok('en Google Workspace noemt Drive in de lijst subverwerkers',
+    /Google Drive/.test(JSON.stringify(subverwerkers('nl'))) && /Google Drive/.test(JSON.stringify(subverwerkers('en'))), true);
   ok('EN en de leeftijd ervan wordt bewaakt', /no older than ten days/i.test(DPA.en), true);
   ok('NL idem', /niet ouder is dan tien dagen/i.test(DPA.nl), true);
 }
@@ -508,15 +537,10 @@ console.log('\nde nabewerking is lokaal, en dus staan Adobe en Blackmagic niet i
    * Blackmagic worden in de LOPENDE TEKST genoemd (juist om te zeggen dat ze er niet in
    * staan), dus een check over de hele bron zou altijd slagen. Alleen de array telt.
    */
-  const subsBlok = (src) => {
-    const start = src.indexOf('const SUBS');
-    if (start === -1) return '';
-    const einde = src.indexOf('];', start);
-    return einde === -1 ? '' : src.slice(start, einde);
-  };
-  for (const [lang, src] of Object.entries(SRC)) {
-    const blok = subsBlok(src);
-    ok(`${lang}: de SUBS-array is gevonden`, blok.length > 50, true, `${blok.length} tekens`);
+  /* Sinds 8 oktober 2026 is "de array" de lijst in src/data/subverwerkers.js. */
+  for (const lang of ['en', 'nl']) {
+    const blok = JSON.stringify(subverwerkers(lang));
+    ok(`${lang}: de lijst subverwerkers is gevonden`, blok.length > 50, true, `${blok.length} tekens`);
     ok(`${lang}: Adobe staat niet in de subverwerkerslijst`, /Adobe/i.test(blok), false);
     ok(`${lang}: Blackmagic ook niet`, /Blackmagic/i.test(blok), false);
     /* De controle op de controle: de partijen die er WEL in horen zitten in dit blok, want
@@ -547,6 +571,9 @@ console.log('\nen er staat geen modelnaam op een juridische pagina');
     'vwo en': SRC.en, 'vwo nl': SRC.nl,
     'privacy en': read('src/pages/privacy.astro'), 'privacy nl': read('src/pages/nl/privacy.astro'),
     'terms en': read('src/pages/terms.astro'), 'terms nl': read('src/pages/nl/terms.astro'),
+    /* 8 oktober 2026: de lijst die beide documenten afdrukken. Daar staan de
+       MAKERS (o08: "Google (Gemini)"), en daar mag dus ook geen modelnaam in. */
+    'subverwerkers.js': read('src/data/subverwerkers.js'),
   };
   const gevonden = [];
   for (const [waar, src] of Object.entries(PAGINAS)) {
@@ -564,8 +591,10 @@ console.log('\nen er staat geen modelnaam op een juridische pagina');
   /* 29 september 2026: "welk model, dat zeggen we niet" werd "dat wisselt, en je
      kunt de aanbieders opvragen" — de modelaanbieder is een subverwerker van Freepik,
      en de keten mag een verantwoordelijke kennen. Nog steeds geen naam op de pagina. */
-  ok('EN legt uit waarom er geen model genoemd wordt', /Which model: that changes[\s\S]{0,600}five working days/i.test(PRIV.en), true);
-  ok('NL idem', /Welk model, dat wisselt[\s\S]{0,600}vijf werkdagen/i.test(PRIV.nl), true);
+  /* 8 oktober 2026 (o08): de makers staan nu in de lijst, de modellen nog steeds
+     niet — en de uitleg zegt waarom, plus dat een nieuwe maker vooraf gemeld wordt. */
+  ok('EN legt uit waarom er geen model genoemd wordt', /Which model: that changes[\s\S]{0,700}names the makers[\s\S]{0,450}five working days/i.test(PRIV.en), true);
+  ok('NL idem', /Welk model, dat wisselt[\s\S]{0,700}noemt de lijst de makers[\s\S]{0,450}vijf werkdagen/i.test(PRIV.nl), true);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -623,10 +652,16 @@ console.log('\nde cookieverklaring noemt elke cookie die de code zet');
        derde naam maakt dit rood, en dan is het weer een afweging in plaats van
        een gewoonte. */
     ok('admin.js zet alleen vis_admin en vis_thema', [...adminNamen].sort().join(' '), 'vis_admin vis_thema');
-    /* En dat vis_thema inderdaad op de verklaring staat — anders leunt de
-       redenering hierboven op iets dat niet waar is. */
-    ok('  en vis_thema staat op de cookieverklaring',
-      read('src/pages/cookie-policy.astro').includes('vis_thema'));
+    /* ── EN SINDS 14 OKTOBER STAAT VIS_THEMA ER NIET MEER OP ───────────────
+       Afvinklijst 26 (v26-donker = a): VISUAILS Studio is alleen licht en zet
+       geen thema-cookie meer. Daarmee vervalt de reden hierboven (Studio zet
+       dezelfde naam), en geldt voor het admincookie vis_thema dezelfde regel
+       als voor vis_admin: hij komt alleen op het apparaat van de beheerder, dus
+       hij hoort niet op de verklaring. De grendel blijft: precies deze twee. Zet
+       Studio ooit weer een vis_thema, dan noemt de lus hieronder hem en moet hij
+       er weer op. */
+    ok('  en Studio zet geen vis_thema meer, dus hij staat niet op de verklaring',
+      !/vis_thema/.test(read('src/pages/cookie-policy.astro').replace(/\{\/\*[\s\S]*?\*\/\}/g, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')) && !/['"`]vis_thema['"`]|vis_thema=\$\{/.test(read('src/lib/account.js')));
   }
 
   const bronnen = ['src/lib/account.js', 'src/lib/portal.js', 'src/scripts/consent.js'];
@@ -801,8 +836,10 @@ console.log('\nde abonnementsvoorwaarden staan er, en kloppen met de code');
      *      toekent (ook na opzeggen), en TERMS.prepaid dat in TERM_IDS zit. Een korting die de
      *      klant koopt met "geen geld terug" hoort met zoveel woorden in de
      *      voorwaarden te staan en niet alleen op de prijspagina. */
-    ok(`${lang}: de derde termijn staat erin`,
-      /(Three terms|Drie termijnen)/.test(tekst));
+    /* 6.04 (8 oktober 2026): twee termijnen in het aanbod; de tussentermijn
+       staat er alleen nog als iets wat doorloopt voor wie hem al heeft. */
+    ok(`${lang}: de twee termijnen staan erin`,
+      /(Two terms|Twee termijnen)/.test(tekst));
     ok(`${lang}: een vooruitbetaald jaar wordt niet terugbetaald`,
       /(not refundable|niet terugbetaald)/.test(tekst));
     ok(`${lang}: en de maanden komen per maand, niet in één keer`,
@@ -826,10 +863,16 @@ console.log('\nde abonnementsvoorwaarden staan er, en kloppen met de code');
     ok(`${lang}: de betaalde maand blijft na opzegging te besteden`,
       /(until the end of it|tot het einde ervan)/.test(tekst));
 
-    // 4 · DOORSCHUIVEN MET EEN ZICHTBARE VERVALMAAND. rolloverDetail() in
-    //     plans.js levert die maand; het dashboard toont hem.
-    ok(`${lang}: doorschuiven staat erin, met een vervalmoment`,
-      /(rolls over|schuift door)/.test(tekst) && /(lapse|vervallen)/.test(tekst));
+    // 4 · HOE LANG CREDITS GELDIG ZIJN — 6.03 (8 oktober 2026): één regel voor
+    //     iedereen, CREDITS_GELDIG_MAANDEN uit pricing.js en niet overgetypt.
+    //     12 oktober 2026 (spaarplafond, ab-v1 = c): zolang het loopt vervalt er
+    //     niets, sparen tot CREDITS_GELDIG_MAANDEN maanden, wat erboven komt
+    //     vervalt op de dag van de termijn (creditboek.js boekTermijnBij).
+    ok(`${lang}: sparen tot ${'{'}CREDITS_GELDIG_MAANDEN} maanden, zolang het loopt vervalt er niets`,
+      /(save up to \{CREDITS_GELDIG_MAANDEN\} months of credits|tot \{CREDITS_GELDIG_MAANDEN\} maanden aan credits sparen)/.test(tekst)
+      && /(While your subscription runs, your credits do not lapse|Zolang je abonnement loopt, vervallen je credits niet)/.test(tekst));
+    ok(`${lang}: wat erboven komt, vervalt op de dag van die termijn`,
+      /(only what goes above it lapses, on the day of that term|vervalt alleen wat erboven komt, op de dag van die termijn)/.test(tekst));
 
     // 5 · MISLUKTE AFSCHRIJVING → PAUZE. pauseSubscription(.., 'payment_failed')
     //     en verbruikToestaan() dat op !betaald blokkeert.
@@ -878,15 +921,17 @@ console.log('\nde abonnementsvoorwaarden staan er, en kloppen met de code');
      * waarop de klant zijn credits uitgeeft en wij de opdracht krijgen. */
     ok(`${lang}: de voorwaarden noemen credits en niet alleen producten`,
       /(<strong>credits<\/strong>)/.test(tekst));
-    ok(`${lang}: en leggen uit dat vastzetten de credits kost`,
-      /(the credits for that service come off your balance|gaan de credits van die dienst van je saldo af)/.test(tekst));
-    ok(`${lang}: en dat losmaken de credits terugbrengt tot de week begint`,
-      /(those credits come straight back|dan komen die credits direct terug)/.test(tekst));
-    /* Het dak van twee maanden staat in de code als het venster van
-       rolloverMonths(); het hoorde ook in de tekst te staan, want het is de
-       enige grens die de klant kan verrassen. */
-    ok(`${lang}: het dak van twee maanden staat er`,
-      /(two months of credits|twee maanden aan credits)/.test(tekst));
+    /* Ronde 10 (8 oktober 2026): geen lijst en geen vastzetten meer. Bestellen
+       met credits via het gewone formulier is de handeling waar de credits aan
+       hangen; nooit deels credits en deels geld (§28.2.4); de oudste eerst (6.03). */
+    ok(`${lang}: en leggen uit dat bestellen de credits kost`,
+      /(the credits for that order come off your balance|gaan de credits van die bestelling van je saldo af)/.test(tekst));
+    ok(`${lang}: en dat een bestelling nooit deels credits en deels geld is`,
+      /(never paid partly in credits and partly in money|nooit deels met credits en deels met geld)/.test(tekst));
+    ok(`${lang}: de oudste credits gaan eerst`,
+      /(oldest credits are always used first|oudste credits altijd als eerste op)/.test(tekst));
+    ok(`${lang}: geen vaste week en geen lijst meer`,
+      /(fixed week|vaste week|on your list|op je lijst)/.test(tekst.replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')), false);
     /* En de oude eenheid mag NERGENS meer in de voorwaarden staan: een tekst
        die allebei de modellen noemt, is erger dan een tekst die alleen het oude
        noemt — dan weet niemand welke van de twee geldt.
@@ -904,10 +949,13 @@ console.log('\nde abonnementsvoorwaarden staan er, en kloppen met de code');
       .replace(/\/\*[\s\S]*?\*\//g, ' ');
     ok(`${lang}: en de oude eenheid staat er niet meer in`,
       !/(compleet product|complete product)/.test(zonderNoten));
-    /* En Lucas' eigen regel van 29 augustus: opzeggen neemt het doorschuiven
-       weg, want er is geen volgende maand meer. vensterVoor() doet dat. */
-    ok(`${lang}: opzeggen neemt het doorschuiven weg`,
-      /(do not survive the cancellation|gaan met de opzegging mee weg)/.test(tekst));
+    /* V41 = a (8 oktober 2026) is sinds het spaarplafond (12 oktober 2026,
+       ab-v2 = a) vervangen: na opzeggen of pauze blijft alles geldig tot
+       CREDITS_GELDIG_MAANDEN maanden na de laatste termijn — één datum. Het
+       creditboek rekent zo (zie tests/spaarplafond.test.mjs). */
+    ok(`${lang}: na opzeggen blijven credits geldig tot 3 maanden na de laatste termijn`,
+      /(stay valid until \{CREDITS_GELDIG_MAANDEN\} months after your last term|blijven geldig tot \{CREDITS_GELDIG_MAANDEN\} maanden na je laatste termijn)/.test(tekst)
+      && !/(their own expiry date|own date|hun eigen vervaldatum|eigen datum)/.test(tekst.replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')));
   }
 
   /* ── EN DE CODE MAAKT DIE BELOFTES OOK ECHT WAAR ────────────────────────

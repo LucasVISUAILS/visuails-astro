@@ -1,0 +1,548 @@
+---
+/*
+ * VISUAILS — AiActHal: /ai-act in de hal (13 oktober 2026, afvinklijst 18, v18-volgende a).
+ * Live sinds afvinklijst 19 (alles doen) op /ai-act en /nl/ai-act. De frontmatter hieronder (de COPY,
+ * de figuur, de modellencontrole, de datums) is die van AiActPage.astro, woord voor woord;
+ * alleen de omhulling is JuridischHal.astro, zoals bij de vier andere juridische documenten.
+ */
+import JuridischHal from './JuridischHal.astro';
+import NieuwTabblad from './NieuwTabblad.astro';
+import { waHref } from '../data/whatsapp.js';
+// VISUAILS — /ai-act. Rewritten 3 August 2026 from copy supplied by Lucas,
+// which replaces the July 2026 version wholesale. The old page argued about
+// whether the disclosure rule reached ordinary product imagery; that argument
+// is over (see §2 below), so a page built on it would now be wrong rather than
+// careful.
+//
+// WHAT WAS DELIBERATELY CUT FROM THE SUPPLIED COPY, AND WHY
+//
+//   "Drie beeldvarianten bij elke levering" — a table promising every delivery
+//   ships in three cuts (unlabelled / discrete badge / embedded 50% notice).
+//   Cut on Lucas's instruction because none of it exists: `files` has one
+//   `kind` column (upload | delivery | thumbnail) and no variant concept, and
+//   there is no delivery endpoint yet at all. A transparency page that opens by
+//   promising a deliverable that does not exist has defeated itself in its own
+//   first table. §3 now lists the three things that DO exist. If the variants
+//   get built, this is the section that gains a fourth entry — not the other
+//   way round.
+//
+//   §4 "De gezichten" from the previous version — the shared standard library
+//   against a Brand Model. Cut on Lucas's instruction: it is commercial
+//   information for a brand choosing between the ten standard faces and a paid
+//   exclusive one, not an AI Act matter, and /models is where a buyer meets
+//   that choice. FLAGGED: it is now on no page in this form. It is worth
+//   saying somewhere that a standard face can appear on another brand.
+//
+// WHAT WAS CORRECTED IN THE SUPPLIED COPY
+//
+//   1. "Beelden die je vóór 2 augustus 2026 van ons kreeg" → the trigger is the
+//      date the image was GENERATED, not the date it was received or published.
+//      The final Guidelines are explicit that images and video turn on the
+//      generation date while text turns on the publication date, so a delivery
+//      date is the wrong hinge and would be wrong in the client’s favour.
+//   2. "Sinds 2 augustus 2026 geldt een vermeldingsplicht voor AI-beeld dat een
+//      echt product toont" → kept as the message, anchored to what actually
+//      carries it: the Guidelines treat marketing imagery that makes a product
+//      look different from reality as a deep fake under Art. 50(4), the duty
+//      sits on whoever publishes, and the creative-work exception is read
+//      strictly. Stating the duty without stating who carries it was the one
+//      place the supplied copy risked speaking for the reader's business.
+//   3. The provenance claim — see the block below. This is the biggest change.
+//
+// THE PROVENANCE CLAIM, AND WHY §6 IS SO SPECIFIC ABOUT IT
+//
+// The supplied copy said the machine-readable marking "komt van de
+// modelaanbieders, wij verwijderen die niet", full stop. Lucas confirmed the
+// jpg and png deliverables carry it and flagged webp as unknown because the
+// conversion is done ad hoc. Tested rather than assumed, 3 August 2026:
+//
+//   - A jpeg carrying an APP11/JUMBF segment (how C2PA sits in a jpeg),
+//     converted to webp with sharp — the encoder this project already uses in
+//     scripts/make-thumbs.mjs — comes out as a bare 'VP8 ' chunk. The payload
+//     is gone. With .withMetadata() the output gains 'ICCP' and 'EXIF' chunks
+//     and the C2PA payload is STILL gone: sharp carries colour profile and EXIF,
+//     it does not carry a JUMBF box into webp's C2PA RIFF chunk.
+//   - Every .webp in public/img was then checked the same way. All of them are
+//     a single 'VP8 ' chunk — no EXIF, no XMP, no C2PA. The site's own imagery
+//     demonstrates the finding.
+//
+// EN DIT IS OP 9 AUGUSTUS 2026 VERANDERD, dus de tekst van §6 hieronder ook.
+//
+// De meting hierboven blijft kloppen: sharp gooit een C2PA-manifest weg bij de
+// omzetting naar webp. Wat veranderd is, is wat wij daarna doen. scripts/deliver.mjs
+// schrijft nu in elk geleverd bestand een IPTC DigitalSourceType-tag — ná de
+// omzetting, ook in de webp, waar dus een vermelding terugkomt die de omzetting had
+// weggegooid. Zie scripts/lib/aitag.mjs voor de waarde en scripts/tag-delivery.mjs
+// voor waarom webp met opzet meedoet.
+//
+// Daarmee werd "wij voegen niets toe" onwaar, en dat is precies de soort zin die op
+// een pagina over de AI Act niet mag blijven staan omdat hij ooit klopte. De tekst
+// zegt nu wat we schrijven, dat het geen garantie is (elk programma dat opnieuw
+// opslaat kan het weghalen), en nog steeds dat de zichtbare vermelding de enige is
+// die telt.
+//
+// ── EN OP 9 AUGUSTUS, LATER OP DE DAG: DE ENGELSE VERSIE STOND ER NOG ───────
+//
+// Bij het herschrijven hierboven is alleen de Nederlandse tak aangepast. De
+// Engelse zei nog "The machine-readable marking (…) comes from the model
+// providers, not from us. We add nothing" — dus stond er op deze pagina, over
+// dezelfde wettelijke verplichting, in de ene taal het tegendeel van de andere.
+// Een halve dag lang, op de enige pagina waar het juridisch is.
+//
+// Dat is exact het faalpatroon dat WORKING-AGREEMENT.md §3 beschrijft: één taal
+// nakijken is een "false-clean generator". Er is nu een test die de twee talen van
+// §6 tegen elkaar houdt (tests/promises.test.mjs), want dit is niet iets wat je
+// door beter opletten voorkomt — het is iets wat je door meten voorkomt.
+//
+// webp is not the problem — the C2PA spec supports it, in a 'C2PA' RIFF chunk.
+// Generic converters are the problem: preserving a manifest across a re-encode
+// takes a C2PA-aware tool, and neither sharp nor Pillow is one. So §6 said which
+// formats carry it and which do not, and tells the reader not to rely on the
+// file to identify itself. That sentence is worth more to a brand than the
+// blanket reassurance it replaces, and unlike the blanket version it is true.
+//
+// FACTS VERIFIED 3 AUGUST 2026 against the Commission’s own pages and the
+// firm commentary on the final texts:
+//   - Regulation (EU) 2024/1689 in force 1 Aug 2024; Art. 50 applies 2 Aug 2026.
+//   - Final Guidelines on transparency of AI-generated content published
+//     20 July 2026; the Code of Practice on marking and labelling was confirmed
+//     adequate by the Commission and the AI Board and applies from 2 Aug 2026.
+//   - Art. 50(2) machine-readable marking: grace to 2 Dec 2026 for generative
+//     systems already on the market before 2 Aug 2026. This is why §6 says not
+//     every model marks yet — it is a live transitional fact, not hedging.
+//   - The human-review exemption in Art. 50(4) covers TEXT on matters of public
+//     interest. It does not reach images. The supplied copy had this right and
+//     it is repeated here because it is the single most common thing a supplier
+//     gets wrong in a client’s favour.
+//   - The Code of Practice carries a set of icons a deployer may use. They are
+//     an aid, not a mark of conformity, and the supplied copy had that right too.
+// Nothing here names the Digital Omnibus: it does not touch Art. 50 for this
+// use, and naming an instrument a reader cannot act on is noise on a trust page.
+//
+// ── NAGEKEKEN EN HERSCHREVEN — 8 oktober 2026 ─────────────────────────────────
+//
+// Lucas (o27): "Kan je dit voor mij nog een keer goed nakijken … om ervoor te
+// zorgen dat ik de meldplicht bij de klant kan neerleggen nadat ik de
+// foto's/video's heb geleverd." En bij o07: de tekst nu eerlijk maken, het
+// automatisch zetten van de tag komt later (4.01). Nagelezen op 8 oktober 2026
+// tegen de tekst van de verordening (AI Act Service Desk van de Commissie), de
+// pagina's van de Commissie, en commentaar van advocatenkantoren op de
+// definitieve richtsnoeren. Wat er daardoor NIET meer klopte:
+//
+//   1. "Every file we deliver carries a … tag" — de /admin-upload zet hem niet
+//      (F30). Nu: we zetten hem in de geleverde foto's, en mist hij, dan leveren
+//      we opnieuw. Geen "elk bestand, altijd".
+//   2. "A face that is nobody is not a deepfake" — onjuist. De richtsnoeren lezen
+//      "bestaand" ruim: ook een realistisch gezicht van iemand die niet bestaat
+//      kan eronder vallen, en art. 3(60) noemt ook voorwerpen, dus ook het
+//      product zelf. Een product dat klopt tegen een gegenereerde achtergrond
+//      valt er meestal buiten; een product dat beter lijkt dan het is, niet.
+//   3. "The duty sits on whoever publishes — in practice, you" — te stellig. De
+//      plicht van art. 50(4) ligt bij de gebruiksverantwoordelijke (art. 3(4)),
+//      en dat is bij beeld dat wij met AI maken zeker ook VISUAILS. Wat wél kan,
+//      en wat de pagina en §11 nu doen: de TAAK bij publicatie contractueel bij
+//      de klant leggen (alleen hij ziet waar het beeld verschijnt), terwijl wij
+//      onze kant doen — zeggen, markeren, de zin leveren. Dat is ook hoe de
+//      richtsnoeren het in een keten beschrijven: wie het label aanbrengt, mag
+//      via contractvoorwaarden zorgen dat de partij die verspreidt het toont.
+//   4. "VISUAILS is not liable for legal consequences" — ruimer dan §11. Weg;
+//      de pagina verwijst nu naar §11.
+//   5. "We supply [the EU icon]" — dat doen we niet. Weg.
+//   6. De Digital Omnibus raakt art. 50 dus WEL: Verordening (EU) 2026/1744
+//      (Publicatieblad 24 juli 2026) voegde art. 111 lid 4 in, en daar komt de
+//      2 december 2026 vandaan. De datums staan nu in juridischeDatums.js
+//      (wetDatum), met de bron erbij, en niet meer uitgetypt in deze tekst.
+//
+// De punten 1, 2 en 3 hierboven gelden ook voor teksten buiten dit bestand
+// (de LEESMIJ in delivery.js, LICENTIE in scaffold.js, faq.js, channels.js);
+// die vallen buiten deze ronde en staan in het verslag van 8 oktober.
+import { localizedPath } from '../i18n/ui.js';
+import FigAnatomy from './FigAnatomy.astro';
+import Disclose from './Disclose.astro';
+/*
+ * De modellencontrole komt uit data en niet uit deze tekst — 19 augustus 2026.
+ *
+ * Lucas wil de controle als verkoopargument gebruiken, en dat mag: hij is echt en
+ * hij is controleerbaar. Maar daarmee wordt het een belofte op de site, en de
+ * huisregel daarvoor staat in tests/promises.test.mjs: een belofte in tekst moet
+ * door code worden nagekomen. Vandaar dat de zin hieronder alleen verschijnt als
+ * src/data/modelChecks.js zegt dat élk model in de roster daadwerkelijk door alle
+ * gezichtszoekers is gehaald, zonder treffer. Ontbreekt er één, dan zwijgt de
+ * pagina — geen "de meeste modellen", want een belofte over negen van de tien is
+ * een onware belofte over tien.
+ */
+import { GEZICHTSZOEKERS, rosterVolledigGecontroleerd, oudsteControle } from '../data/modelChecks.js';
+// De datum stond hier uitgetypt, en nog negen keer elders. Zie de kop van
+// src/data/juridischeDatums.js: één bron, en een toets die hem tegen git houdt.
+import { bijgewerktOp, wetDatum } from '../data/juridischeDatums.js';
+/* kiptc (11 oktober 2026): de waarde van de herkomsttag en wat hij zegt, uit
+   src/lib/iptc.js — dezelfde constante die de Worker in elk bestand schrijft. */
+import { LEVERTAG, TAG_WOORD, tagNaam } from '../lib/iptc.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+
+// No `as const`: COPY[lang] would resolve to a union of readonly tuple arrays
+// and .map() on that union is a TS error. Every page component omits it.
+/* ── DE TEKST NA HET NAKIJKEN — 8 oktober 2026 ──────────────────────────────
+   Nederlands is de brontaal; het Engels is de vertaling. Wat er veranderde en
+   waarom staat in de kop van dit bestand. De drie wettelijke datums komen uit
+   wetDatum() (src/data/juridischeDatums.js), met hun bron daar. */
+const COPY = {
+  en: {
+    eyebrow: 'Transparency',
+    h1: 'AI Act & transparency',
+    lead: 'We make your images with AI. We say so.',
+    updated: bijgewerktOp('ai-act', 'en'),
+    note: 'This page describes our own practice and the rules as we read them. It is not legal advice. For your own situation — certainly if you sell outside the EU — ask a qualified adviser.',
+
+    introP: `Since ${wetDatum('art50Geldt', 'en')}, Article 50 of the EU AI Act applies. For images it comes down to this: realistic AI imagery that could pass for real has to be recognisable as AI at the moment someone sees it. We deliver your images with a marking in the file and a sentence you can use. You place that disclosure, visibly, wherever you publish.`,
+
+    s1H: 'Why we are open about this',
+    s1P: [
+      'A brand that uses AI and hides it has a problem the moment somebody notices. A brand that simply says so has a story: no samples flying around the world, no shoot booked three weeks ahead, no crew of eight for twelve products.',
+      'The disclosure costs you nothing. Its absence can cost you a customer.',
+    ],
+
+    s2H: 'What these rules are aimed at',
+    s2P: [
+      'It helps to know where this law comes from. The trigger was deepfakes: video of politicians saying things they never said, invented events presented as news, voices cloned to defraud people. That is what Article 50 was written for, and that is where the regulators are looking.',
+      'A product photograph of a jacket on a model seems to sit at the other end of that spectrum. Nobody is misled about an event, no public opinion is being steered, and the buyer receives the product they ordered.',
+      `Even so, an image like that can fall under the rule, and it is worth being precise about why rather than hoping. The law calls an image a deep fake when it resembles existing persons, objects, places or events and would falsely appear to be authentic (Article 3, point 60). Your product is an existing object. And under the guidelines the European Commission published on ${wetDatum('richtsnoeren', 'en')}, a realistic face of someone who does not exist counts too: what matters is that it could be real. The guidelines name imagery that makes a product look different or better than it is as an example, and they read the exception for evidently creative work narrowly; advertising rarely qualifies.`,
+      'Not every image falls under it. According to the same guidelines, a product shown accurately against a generated background usually falls outside. But working out where the line sits for each image costs more than the disclosure itself. So our advice is simple: place it with every image you get from us, photos and videos alike.',
+      'Who has to disclose? The law places that duty on the deployer: whoever uses the AI system professionally and under its own authority (Article 3, point 4). For imagery a studio makes for a brand, that can be the studio, the brand or both, and neither the law nor the guidelines settle it yet. What is certain: only whoever publishes can place the disclosure where the image appears. So this is how we have arranged it: we deliver with a marking in the file and the text to go with it, and you place the disclosure visibly wherever you publish. Section 11 of our terms says the same.',
+      'What has always applied, and still does: the jacket in the photograph has to be the jacket in the box. That is not a new AI rule. That is honest selling, and it was exactly the same with a traditional photoshoot. That is where our attention goes, and where yours should go too.',
+    ],
+
+    s3H: 'What you get from us',
+    s3P: 'Four things, and we do all four today. If we build more, this list grows — it does not describe anything that is coming.',
+    s3Items: [
+      ['A ready-made sentence', 'One sentence to place under your product gallery, in your product information block or with a post, in English and Dutch. In English: “This image was created with AI from photographs of the actual product.” For a video, write “video” instead of “image”. You are free to word it differently, as long as a reader meets it at the same moment they meet the image.'],
+      ['A marking in the file', `In the photos and videos we deliver we write the IPTC property DigitalSourceType, with the value ${tagNaam(LEVERTAG)}: a machine-readable line saying the image was ${TAG_WOORD[LEVERTAG].en}. Platforms and search engines can read it. If a delivered file is missing the marking, tell us and we deliver it again, with the marking. What the marking does not do is set out below, under “What we do not claim”.`],
+      ['An approval record per order', 'On an order, you approve or request a revision on each image individually in your portal, and every one of those decisions is stored against that image with the date it was made. If somebody later asks where an image came from and who signed it off, it is there and you can read it back from your own link.'],
+      ['A written summary on request', 'Source files supplied, visuals produced, dates, and confirmation that every image was checked before delivery. We write that summary ourselves. There is no button here that generates one, and we are not going to imply there is.'],
+    ],
+
+    mdlH: 'Our models are not people',
+    mdlP: (datum, zoekers) => `Every face in our standard roster was put through ${zoekers.length} face-search engines — ${zoekers.join(', ')} — before it was ever used. None of them matched a findable person. The oldest of those checks is from ${datum}; ask and we will send you the log.`,
+    mdlItems: [
+      ['What that check is.', 'Not a reverse image search, which only finds where a file has been published before. These build a faceprint and look for the same person across different photographs — a different question, and the one that matters here.'],
+      ['What it does not prove.', 'That nobody on earth resembles them. These engines index part of the open web; someone with no photographs online is not found. We say this because a check presented as a guarantee is worth less than one presented honestly.'],
+      ['Why it matters for you.', 'A face that resembles a real, recognisable person touches that person’s right to their own likeness, and we keep that chance as small as we can. It does not make the disclosure unnecessary: under the Commission’s guidelines, a realistic face of someone who does not exist can still fall under the deep fake rule. So place it anyway.'],
+      ['A brand model is checked at delivery.', 'A model made for you does not exist yet when this roster is checked, so its check happens before we hand the images over and is recorded on your order.'],
+    ],
+    s4H: 'What this really turns on: the image has to be right',
+    s4P: [
+      'A disclosure does not make an inaccurate image acceptable. If the colour, the material or the fit in the photograph differs from the product in the box, that is misleading — with or without a label, with or without AI. This rule is as old as mail order. It is what returns and bad reviews come from, and it weighs heavier than any new regulation.',
+      'Which is why we work the way we do:',
+    ],
+    s4Items: [
+      ['Real photographs of the front, the back and one close-up are required.', 'We do not invent your product, we re-photograph it — and a catalog set delivers a back image and a detail, so we ask for them rather than guess at a print, a seam or a logo you cannot see from the front.'],
+      ['We ask about the material.', '100% cotton falls differently from polyester, and leather catches light differently. That has to be visible.'],
+      ['A worn shot is optional.', 'It makes fit and drape more accurate. Without one, the on-model photo is read from your flat photographs.'],
+      ['You approve every image', 'before it leaves your order.'],
+    ],
+
+    s5H: 'What you do when you publish',
+    s5Items: [
+      ['Place the disclosure where the image is.', 'Visible at the moment someone first sees the image — not tucked behind “read more”, in your terms, or only inside the file. The law itself asks for that (Article 50(5)).'],
+      ['Leave the marking in the file.', 'If you re-export or compress the images, check that your software or shop keeps the metadata; a lot of image optimisation strips it without telling you. Google Merchant Center explicitly asks you not to remove it.'],
+      ['Follow the rules of your channel.', 'Instagram, Facebook and TikTok have their own AI label that you switch on when you post. For images with a realistic AI-generated person, Amazon asks for an extra keyword in the file (“contains-synthetic-performer”); we do not add it as standard, so add it yourself or ask us about it. These rules change; check what currently applies on your own channels.'],
+      ['Hold the image against the real product.', 'Colour, material, fit — does it match? If not, tell us and we will change it.'],
+      ['Pass it on when someone else publishes for you.', 'If an agency, a reseller or a marketplace places the images for you, make sure the disclosure and the marking go with them.'],
+      ['If you edit an image with AI yourself, that is your own use of AI.', 'We describe what we deliver. What changes afterwards through an AI tool is beyond what we can oversee.'],
+    ],
+    s5Tail: `According to the Commission’s guidelines, images made before ${wetDatum('art50Geldt', 'en')} generally do not have to be labelled retroactively. Doing it anyway is never wrong, and nobody expects you to go through your archive.`,
+
+    s6H: 'What we do not claim',
+    s6P: 'A lot gets shouted about this subject. We stick to what we can support.',
+    s6Items: [
+      ['We are not lawyers.', 'This page is information, not legal advice.'],
+      ['Our check does not exempt your images from the disclosure.', 'The exception for human review in the law is for text on matters of public interest, not for images. Anyone claiming otherwise has not read it.'],
+      ['Using the EU icon does not make you compliant.', 'It is an aid from the code of practice the Commission found adequate, not a certification. You may use it; it is not required. The disclosure itself is.'],
+      ['A file does not reliably identify itself.', `The marking we write is an aid, not a guarantee. Any program that re-saves or converts an image, to WebP for example, can strip it, along with whatever the AI model provider put there itself. Those providers have had to mark their output since ${wetDatum('art50Geldt', 'en')}; for systems already on the market before that date, the deadline is ${wetDatum('markeringTot', 'en')}. So do not rely on a file to identify itself. The disclosure that counts is the visible one, the one you place.`],
+      ['We do not claim the duty is therefore yours alone.', 'Our terms settle who does what. Which party the law treats as the deployer is decided by the law, not by our contract — which is why we do our part properly.'],
+      ['Marketplaces have their own image rules.', 'Zalando, Amazon, bol.com and About You sometimes set stricter requirements than the law does, particularly for the main image. You check those for your own channels — and we are glad to help you work it out.'],
+    ],
+
+    s7H: 'Who is responsible for what',
+    s7P: 'The tasks change hands at delivery. Until then the image is with us; after that you decide where, when and how it appears.',
+    s7WijLead: 'VISUAILS:',
+    s7WijItems: [
+      'makes the image with AI and tells you so at delivery',
+      'writes a machine-readable marking into the delivered photos, and delivers a photo without one again on request',
+      'gives you the sentence to place with the image, and the explanation on this page',
+      'corrects an image that does not match your product',
+    ],
+    s7Lead: 'You:',
+    s7Items: [
+      'the accuracy of the product information you supply',
+      'checking that the delivered image matches your actual product',
+      'the choice of where, when and on which channel you publish',
+      'the visible AI disclosure when you publish, wherever the law or the platform asks for one',
+      'leaving the marking in the file',
+      'the rules of your own channels and markets, and asking the same of whoever publishes the images for you',
+    ],
+    s7Voorwaarden: ['This is also how ', 'section 11 of our terms and conditions', ' sets it out. What applies if something goes wrong is there too; this page explains that arrangement and adds nothing to it.'],
+    s7Tail: [
+      'That is not us keeping our distance — we are glad to help you work it out, and we correct an image that is wrong without argument. But you know your product and your market, and only you see where the image appears.',
+    ],
+
+    s8H: 'We are in the EU',
+    s8P: 'VISUAILS is a Dutch company based in Enschede. Your point of contact sits in the same time zone and under the same regulation as you. No support form twelve hours away.',
+
+    ctaH: 'Questions about how this works out for your brand?',
+    ctaP: 'Email us or send a message on WhatsApp. We will help you work out where the disclosure should sit, even if you are not a customer yet.',
+    ctaBtn: 'Contact us',
+    wa: 'WhatsApp',
+    waText: 'Hi VISUAILS, I have a question about the AI Act and your images.',
+
+    figNoteH: 'What is photographed and what is built',
+  },
+
+  nl: {
+    eyebrow: 'Transparantie',
+    h1: 'AI Act & transparantie',
+    lead: 'Wij maken je beeld met AI. Dat zeggen we erbij.',
+    updated: bijgewerktOp('ai-act', 'nl'),
+    note: 'Deze pagina beschrijft onze eigen werkwijze en de regels zoals wij ze lezen. Het is geen juridisch advies. Raadpleeg voor je eigen situatie — zeker bij verkoop buiten de EU — een adviseur.',
+
+    introP: `Sinds ${wetDatum('art50Geldt', 'nl')} geldt artikel 50 van de Europese AI-verordening. Voor beeld komt het hierop neer: realistisch AI-beeld dat voor echt kan doorgaan, moet als AI herkenbaar zijn op het moment dat iemand het ziet. Wij leveren je beelden met een markering in het bestand en een zin die je kunt gebruiken. Jij zet die vermelding zichtbaar neer waar je publiceert.`,
+
+    s1H: 'Waarom wij hier open over zijn',
+    s1P: [
+      'Een merk dat AI gebruikt en dat verzwijgt, heeft een probleem zodra iemand het merkt. Een merk dat het gewoon zegt, heeft een verhaal: geen samples die de wereld over vliegen, geen shoot die drie weken vooruit ingepland moet worden, geen crew van acht mensen voor twaalf producten.',
+      'De vermelding kost je niets. Het ontbreken ervan kan je een klant kosten.',
+    ],
+
+    s2H: 'Waar deze regels op gericht zijn',
+    s2P: [
+      'Het is nuttig om te weten waar deze wetgeving vandaan komt. De aanleiding is deepfakes: video’s van politici die dingen zeggen die ze nooit gezegd hebben, verzonnen gebeurtenissen die als nieuws worden gepresenteerd, stemmen die worden nagebootst om mensen op te lichten. Dáár is artikel 50 voor geschreven, en daar ligt ook de aandacht van de toezichthouders.',
+      'Een productfoto van een jas op een model lijkt aan de andere kant van dat spectrum te zitten. Er wordt niemand misleid over een gebeurtenis, er wordt geen publieke opinie gestuurd, en de koper krijgt het product dat hij bestelt.',
+      `Toch kan zo’n beeld onder de regel vallen, en het is beter om precies te weten waaróm dan om te hopen. De wet noemt beeld een deepfake als het lijkt op bestaande personen, voorwerpen, plaatsen of gebeurtenissen en ten onrechte voor echt kan worden aangezien (artikel 3, punt 60). Jouw product is een bestaand voorwerp. En volgens de richtsnoeren die de Europese Commissie op ${wetDatum('richtsnoeren', 'nl')} publiceerde, telt ook een realistisch gezicht van iemand die niet bestaat: het gaat erom dat het echt zou kúnnen zijn. Beeld waarin een product er anders of beter uitziet dan het is, noemen die richtsnoeren als voorbeeld, en de uitzondering voor kennelijk creatief werk lezen ze smal; reclame valt daar zelden onder.`,
+      'Niet elk beeld valt eronder. Een product dat klopt, tegen een gegenereerde achtergrond, valt er volgens dezelfde richtsnoeren meestal buiten. Maar per beeld uitzoeken waar de grens ligt, kost meer dan de vermelding zelf. Ons advies is daarom eenvoudig: zet hem bij al het beeld dat je van ons krijgt, foto’s en video’s.',
+      'Wie moet het melden? De wet legt die plicht bij de gebruiksverantwoordelijke: wie het AI-systeem beroepsmatig en onder eigen verantwoordelijkheid gebruikt (artikel 3, punt 4). Bij beeld dat een studio voor een merk maakt, kan dat de studio zijn, het merk of allebei, en daar geven de wet en de richtsnoeren nog geen sluitend antwoord op. Wat wél vaststaat: alleen wie publiceert, kan de vermelding neerzetten op de plek waar het beeld verschijnt. Daarom is het zo afgesproken: wij leveren met een markering in het bestand en de tekst erbij, jij zet de vermelding zichtbaar neer waar je publiceert. Dat staat ook in paragraaf 11 van onze voorwaarden.',
+      'Wat wél altijd al gold, en wat blijft gelden: de jas op de foto moet de jas in de doos zijn. Dat is geen nieuwe AI-regel. Dat is gewoon eerlijk verkopen, en dat was met een traditionele fotoshoot precies zo. Daar ligt onze aandacht, en daar zou de jouwe ook moeten liggen.',
+    ],
+
+    s3H: 'Wat je van ons krijgt',
+    s3P: 'Vier dingen, en alle vier doen we vandaag. Bouwen we er meer bij, dan groeit deze lijst — hij beschrijft niets wat er nog aan komt.',
+    s3Items: [
+      ['Een kant-en-klare zin', 'Eén zin die je onder je productgalerij, in je productinfo-blok of bij een post plaatst, in het Nederlands en het Engels. In het Nederlands: “Dit beeld is met AI gemaakt op basis van foto’s van het echte product.” Bij een video zet je “video” in plaats van “beeld”. Je mag het anders formuleren, zolang een lezer het tegenkomt op hetzelfde moment als het beeld.'],
+      ['Een markering in het bestand', `In de foto’s en video’s die we leveren zetten we de IPTC-eigenschap DigitalSourceType, met de waarde ${tagNaam(LEVERTAG)}: een machineleesbare regel die zegt dat het beeld ${TAG_WOORD[LEVERTAG].nl} is. Platforms en zoekmachines kunnen die lezen. Mist een geleverd bestand de markering, laat het ons weten; dan leveren we het opnieuw, met markering. Wat die markering níét doet, staat hieronder bij “Wat wij níét beweren”.`],
+      ['Een goedkeuringsdossier per bestelling', 'Bij een bestelling keur je in je portaal elk beeld afzonderlijk goed of vraag je een revisie aan, en elk van die beslissingen wordt bij dat beeld vastgelegd met de datum. Vraagt iemand later waar een beeld vandaan komt en wie het heeft geaccordeerd, dan staat het er en kun je het teruglezen via je eigen link.'],
+      ['Op verzoek een schriftelijk overzicht', 'Aangeleverde bronbestanden, geproduceerde beelden, data, en de bevestiging dat elk beeld vóór levering is gecontroleerd. Dat overzicht schrijven we zelf. Er zit hier geen knop die er een genereert, en we doen ook niet alsof.'],
+    ],
+
+    mdlH: 'Onze modellen zijn geen mensen',
+    mdlP: (datum, zoekers) => `Elk gezicht in onze vaste roster is door ${zoekers.length} gezichtszoekmachines gehaald — ${zoekers.join(', ')} — voordat het ooit gebruikt is. Geen daarvan legde het naast een vindbaar mens. De oudste van die controles is van ${datum}; vraag erom en je krijgt het logboek.`,
+    mdlItems: [
+      ['Wat die controle is.', 'Geen omgekeerde afbeeldingszoekopdracht, want die vindt alleen waar een bestand eerder gepubliceerd is. Deze maken een faceprint en zoeken dezelfde persóón over verschillende foto’s heen — een andere vraag, en hier de vraag die telt.'],
+      ['Wat het niet bewijst.', 'Dat er niemand op lijkt. Deze machines indexeren een deel van het open web; iemand zonder foto’s online wordt niet gevonden. We zeggen dat erbij, omdat een controle die als garantie wordt gebracht minder waard is dan een die eerlijk wordt gebracht.'],
+      ['Waarom het voor jou uitmaakt.', 'Een gezicht dat op een bestaand, herkenbaar mens lijkt, raakt aan diens recht op zijn eigen beeltenis, en die kans maken we zo klein als we kunnen. De vermelding vervalt er níét door: volgens de richtsnoeren van de Commissie kan ook een realistisch gezicht van iemand die niet bestaat onder de deepfake-regel vallen. Zet hem er dus gewoon bij.'],
+      ['Een merkmodel wordt bij levering gecontroleerd.', 'Een model dat voor jou gemaakt wordt bestaat nog niet als deze roster gecontroleerd wordt, dus die controle gebeurt vlak voor we de beelden overdragen en wordt op je order vastgelegd.'],
+    ],
+    s4H: 'Waar het echt om gaat: het beeld moet kloppen',
+    s4P: [
+      'Een vermelding maakt een onjuist beeld niet in orde. Als de kleur, het materiaal of de pasvorm op de foto anders is dan het product in de doos, is dat misleidend — met of zonder label, en met of zonder AI. Deze regel is zo oud als postorderverkoop. Daar komen retouren en slechte reviews uit voort, en dat weegt zwaarder dan welke nieuwe regelgeving ook.',
+      'Daarom werken we zoals we werken:',
+    ],
+    s4Items: [
+      ['Echte foto’s van de voorkant, de achterkant en één close-up zijn verplicht.', 'We verzinnen je product niet, we fotograferen het opnieuw — en een catalogset levert een achterkantbeeld en een detail, dus vragen we die in plaats van te gokken naar een print, een naad of een logo dat je van voren niet ziet.'],
+      ['We vragen naar het materiaal.', '100% katoen valt anders dan polyester, en leer vangt anders licht. Dat moet je zien.'],
+      ['Een draagfoto is optioneel.', 'Die maakt pasvorm en val nauwkeuriger. Zonder draagfoto lezen we de foto op model uit je platte foto’s.'],
+      ['Jij keurt elk beeld goed', 'voordat het je bestelling verlaat.'],
+    ],
+
+    s5H: 'Wat jij doet als je publiceert',
+    s5Items: [
+      ['Zet de vermelding waar het beeld staat.', 'Zichtbaar op het moment dat iemand het beeld voor het eerst ziet — niet weggestopt achter “meer lezen”, in je voorwaarden of alleen in het bestand. Dat vraagt de wet zelf (artikel 50, lid 5).'],
+      ['Laat de markering in het bestand staan.', 'Exporteer of comprimeer je de beelden opnieuw, kijk dan of je programma of webshop de metadata bewaart; veel beeldoptimalisatie haalt die er ongemerkt uit. Google Merchant Center vraagt uitdrukkelijk om die gegevens niet te verwijderen.'],
+      ['Volg de regels van je kanaal.', 'Instagram, Facebook en TikTok hebben een eigen AI-melding die je bij het plaatsen aanzet. Amazon vraagt bij beeld met een realistische AI-persoon een extra trefwoord in het bestand (“contains-synthetic-performer”); dat zetten wij er niet standaard in, dus zet het er zelf in of vraag ons ernaar. Deze regels veranderen; kijk bij je eigen kanalen wat er nu geldt.'],
+      ['Leg het beeld naast het echte product.', 'Klopt kleur, materiaal, pasvorm? Zo niet: laat het ons weten, wij passen het aan.'],
+      ['Geef het door als een ander voor je publiceert.', 'Plaatst een bureau, een wederverkoper of een marktplaats de beelden voor je, zorg dan dat de vermelding en de markering meegaan.'],
+      ['Bewerk je een beeld zelf met AI, dan is dat jouw eigen AI-gebruik.', 'Wij beschrijven wat wij leveren. Wat er daarna met een AI-hulpmiddel aan verandert, valt buiten wat wij kunnen overzien.'],
+    ],
+    s5Tail: `Beelden die vóór ${wetDatum('art50Geldt', 'nl')} zijn gemaakt, hoeven volgens de richtsnoeren van de Commissie in de regel niet alsnog gelabeld te worden. Doe je het toch, dan is dat nooit fout, en niemand verwacht dat je je archief doorloopt.`,
+
+    s6H: 'Wat wij níét beweren',
+    s6P: 'Er wordt op dit onderwerp veel geroepen. Wij houden het bij wat we kunnen onderbouwen.',
+    s6Items: [
+      ['Wij zijn geen juristen.', 'Deze pagina is informatie, geen juridisch advies.'],
+      ['Onze controle stelt je beelden niet vrij van de vermelding.', 'De uitzondering voor menselijke controle in de wet geldt voor tekst over zaken van algemeen belang, niet voor beeld. Wie anders beweert, heeft de tekst niet gelezen.'],
+      ['Het EU-icoon gebruiken maakt je niet automatisch compliant.', 'Het is een hulpmiddel uit de praktijkcode die de Commissie toereikend vond, geen keurmerk. Je mag het gebruiken; verplicht is het niet. De vermelding zelf is dat wel.'],
+      ['Een bestand wijst zichzelf niet betrouwbaar aan.', `De markering die wij zetten is een hulpmiddel, geen garantie. Elk programma dat een beeld opnieuw opslaat of omzet, bijvoorbeeld naar WebP, kan haar verwijderen, en daarmee ook wat de aanbieder van het AI-model er zelf in had gezet. Die aanbieders moeten hun eigen markering sinds ${wetDatum('art50Geldt', 'nl')} op orde hebben; wie zijn systeem al vóór die datum op de markt had, heeft tot ${wetDatum('markeringTot', 'nl')}. Reken er dus niet op dat een bestand zichzelf aanwijst. De vermelding die telt, is de zichtbare, die jij plaatst.`],
+      ['Wij beweren niet dat de plicht daarmee alleen bij jou ligt.', 'Onze voorwaarden regelen wie wát doet. Welke partij de wet als gebruiksverantwoordelijke aanwijst, bepaalt de wet en niet ons contract — en daarom doen wij onze kant ook echt.'],
+      ['Marktplaatsen hebben eigen beeldregels.', 'Zalando, Amazon, bol en About You stellen soms strengere eisen dan de wet, met name aan de hoofdafbeelding. Die controleer je zelf voor je eigen kanalen — we denken graag mee.'],
+    ],
+
+    s7H: 'Wie waarvoor verantwoordelijk is',
+    s7P: 'De taken wisselen op het moment van levering. Tot dan ligt het beeld bij ons; daarna bepaal jij waar, wanneer en hoe het verschijnt.',
+    s7WijLead: 'VISUAILS:',
+    s7WijItems: [
+      'maakt het beeld met AI en zegt je dat bij de levering',
+      'zet in de geleverde foto’s een machineleesbare markering, en levert een foto zonder markering op verzoek opnieuw',
+      'geeft je de zin om bij het beeld te zetten, en de uitleg op deze pagina',
+      'past een beeld aan dat niet klopt met je product',
+    ],
+    s7Lead: 'Jij:',
+    s7Items: [
+      'de juistheid van de productinformatie die je aanlevert',
+      'de controle of het geleverde beeld overeenkomt met je werkelijke product',
+      'de keuze waar, wanneer en op welk kanaal je publiceert',
+      'de zichtbare AI-vermelding bij publicatie, waar de wet of het platform die vraagt',
+      'de markering in het bestand laten staan',
+      'de regels van je eigen kanalen en afzetmarkten, en hetzelfde vragen van wie de beelden voor je publiceert',
+    ],
+    s7Voorwaarden: ['Zo staat het ook in ', 'paragraaf 11 van onze algemene voorwaarden', '. Wat er geldt als er iets misgaat, staat daar ook; deze pagina legt die afspraak uit en voegt er niets aan toe.'],
+    s7Tail: [
+      'Dat is geen afstandelijkheid — we denken graag mee en corrigeren een beeld dat niet klopt zonder discussie. Maar jij kent je product en je markt, en alleen jij ziet waar het beeld verschijnt.',
+    ],
+
+    s8H: 'Wij zitten in de EU',
+    s8P: 'VISUAILS is een Nederlands bedrijf, gevestigd in Enschede. Je aanspreekpunt zit in dezelfde tijdzone en onder dezelfde regelgeving als jij. Geen supportformulier met twaalf uur verschil.',
+
+    ctaH: 'Vragen over hoe dit voor jouw merk uitpakt?',
+    ctaP: 'Mail ons of stuur een bericht via WhatsApp. We denken mee over waar de vermelding komt te staan, ook als je nog geen klant bent.',
+    ctaBtn: 'Neem contact op',
+    wa: 'WhatsApp',
+    waText: 'Hoi VISUAILS, ik heb een vraag over de AI Act en jullie beelden.',
+
+    figNoteH: 'Wat is gefotografeerd en wat is gebouwd',
+  },
+};
+
+// The §4 figure's own copy. It stays in this table rather than in
+// FigAnatomy.astro for the reason every figure's copy does: keeping the strings
+// beside their translations makes EN/NL parity on the drawing a matter of
+// reading one object, and keeps the component free of language.
+//
+// It sits in §4 rather than in §2, where the previous version put it. §4 is the
+// section that argues the image has to match the product, and the drawing's
+// whole subject is which part of the frame IS the product. Under §2 it would be
+// illustrating a paragraph about regulators.
+const FIG = {
+  en: {
+    real: 'Your product — photographed',
+    built: 'Light, background, model — built',
+    keys: [
+      { mark: 'real', t: 'Photographed', b: 'The product itself, out of the files you supply. This is the one region of the frame that was not invented, and it is the part your customer actually receives.' },
+      { mark: 'built', t: 'Built', b: 'The lighting, the background, the model, the motion. An AI image pipeline makes all of it. None of it is a place that exists or a shoot that happened.' },
+      { mark: 'checked', t: 'Checked in the studio', b: 'Before anything leaves, the studio finishes the frame and looks at it against the product you ship. That pass covers the whole image, not only the built half of it.' },
+    ],
+    // The caveat is not decoration. A diagram states a proportion whether or not
+    // it means to, and this one must not be read as a measurement.
+    note: 'The drawing is a shape, not a specimen. The photographed part is not always a block in the middle, and the proportion is not a measurement — how much of a given frame is your own product depends on the product and on the shot.',
+  },
+  nl: {
+    real: 'Jouw product — gefotografeerd',
+    built: 'Licht, achtergrond, model — gebouwd',
+    keys: [
+      { mark: 'real', t: 'Gefotografeerd', b: 'Het product zelf, uit de bestanden die jij aanlevert. Dit is het enige deel van het kader dat niet verzonnen is, en het is het deel dat je klant daadwerkelijk ontvangt.' },
+      { mark: 'built', t: 'Gebouwd', b: 'Het licht, de achtergrond, het model, de beweging. Een AI-beeldpijplijn maakt dat allemaal. Niets daarvan is een plek die bestaat of een shoot die heeft plaatsgevonden.' },
+      { mark: 'checked', t: 'In de studio gecontroleerd', b: 'Voordat er iets de deur uitgaat, werkt de studio het kader af en legt het naast het product dat je verstuurt. Die controle geldt het hele beeld, niet alleen de gebouwde helft ervan.' },
+    ],
+    note: 'De tekening is een vorm, geen exemplaar. Het gefotografeerde deel staat niet altijd als blok in het midden, en de verhouding is geen meting — hoeveel van een kader jouw eigen product is, hangt af van het product en van de opname.',
+  },
+};
+
+const modellenGecontroleerd = rosterVolledigGecontroleerd();
+const controleDatum = oudsteControle();
+const zoekers = GEZICHTSZOEKERS.map((e) => e.naam);
+
+const c = COPY[lang];
+const f = FIG[lang];
+const waLink = waHref(c.waText);
+---
+
+<JuridischHal lang={lang} doc="ai-act" rubriek={c.eyebrow} titel={c.h1} datum={c.updated}>
+  <Fragment slot="lead">{c.lead}</Fragment>
+  <Fragment slot="kop">
+    <p class="h-jur-intro">{c.introP}</p>
+    <p class="legal-note">{c.note}</p>
+  </Fragment>
+
+  <h2>{c.s1H}</h2>
+  {c.s1P.map((p) => (<p>{p}</p>))}
+
+  <h2>{c.s2H}</h2>
+  {c.s2P.map((p) => (<p>{p}</p>))}
+
+  <h2>{c.s3H}</h2>
+  <p>{c.s3P}</p>
+  <dl class="legal-dl">
+    {c.s3Items.map(([term, def]) => (<><dt>{term}</dt><dd>{def}</dd></>))}
+  </dl>
+
+  {/* De modellencontrole: alles of niets (zie AiActPage.astro). */}
+  {modellenGecontroleerd && (
+    <>
+      <h2>{c.mdlH}</h2>
+      <p>{c.mdlP(controleDatum, zoekers)}</p>
+      <ul>
+        {c.mdlItems.map(([b, rest]) => (<li><strong>{b}</strong> {rest}</li>))}
+      </ul>
+    </>
+  )}
+
+  <h2>{c.s4H}</h2>
+  <p>{c.s4P[0]}</p>
+  <div class="legal-fig">
+    <FigAnatomy
+      realLabel={f.real}
+      builtLabel={f.built}
+      keys={f.keys}
+      note={f.note}
+    />
+  </div>
+  <p>{c.s4P[1]}</p>
+  <ul>
+    {c.s4Items.map(([b, rest]) => (<li><strong>{b}</strong> {rest}</li>))}
+  </ul>
+
+  {/* Vanaf hier vouwt de pagina, zoals in AiActPage.astro: §5–§8 zijn naslag. */}
+  <div class="legal-folds">
+    <Disclose summary={c.s5H} tone="plain">
+      <ol class="legal-ol">
+        {c.s5Items.map(([b, rest]) => (<li><strong>{b}</strong> {rest}</li>))}
+      </ol>
+      <p>{c.s5Tail}</p>
+    </Disclose>
+
+    <Disclose summary={c.s6H} tone="plain">
+      <p>{c.s6P}</p>
+      <dl class="legal-dl">
+        {c.s6Items.map(([term, def]) => (<><dt>{term}</dt><dd>{def}</dd></>))}
+      </dl>
+    </Disclose>
+
+    <Disclose summary={c.s7H} tone="plain">
+      <p>{c.s7P}</p>
+      <p>{c.s7WijLead}</p>
+      <ul>
+        {c.s7WijItems.map((i) => (<li>{i}</li>))}
+      </ul>
+      <p>{c.s7Lead}</p>
+      <ul>
+        {c.s7Items.map((i) => (<li>{i}</li>))}
+      </ul>
+      <p>{c.s7Voorwaarden[0]}<a href={lp('/terms')}>{c.s7Voorwaarden[1]}</a>{c.s7Voorwaarden[2]}</p>
+      {c.s7Tail.map((p) => (<p>{p}</p>))}
+    </Disclose>
+
+    <Disclose summary={c.s8H} tone="plain">
+      <p>{c.s8P}</p>
+    </Disclose>
+  </div>
+
+  {/* Het slot van een juridische pagina is een adres en geen aanbieding. */}
+  <div class="jur-uit">
+    <h2 data-niet-in-inhoud>{c.ctaH}</h2>
+    <p>{c.ctaP}</p>
+    <p class="h-acties">
+      <a class="h-knop h-knop-inkt" href={lp('/contact')}>{c.ctaBtn}<span class="o" aria-hidden="true" set:html={'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/></svg>'} /></a>
+      <a class="h-knop h-knop-lijn" href={waLink} target="_blank" rel="noopener">{c.wa}<NieuwTabblad lang={lang} /></a>
+    </p>
+  </div>
+</JuridischHal>

@@ -1,0 +1,529 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — /compare in de hal ("Shootdag vs VISUAILS"). 13 oktober 2026,
+ * afvinklijst 12 (v12-volgende = a: vergelijken als volgende groep).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Dezelfde opbouw en dezelfde teksten als ComparePage.astro: de COPY, het
+ * ankeraantal en de bedragen hieronder zijn daaruit overgenomen, met hun noten.
+ * Wat in de tekst anders is, staat in kladblok/TEKSTEN-VERGELIJKEN.md.
+ *
+ *   kop       pil, de kop in twee tonen, twee knoppen
+ *   tabel     de vergelijking: zes rijen, de kolom van VISUAILS wit (een echte
+ *             tabel voor de schermlezer, met role="table"/row/cell zoals eerst)
+ *   lijn      wat op één lijn moet komen (FigConverge, licht via zijn tokens)
+ *             en de week eromheen
+ *   wint      waar een shootdag nog steeds wint (de pagina is niet geloofwaardig
+ *             zonder deze sectie)
+ *   tools     zelf genereren: wanneer genoeg, wanneer duurder (#ai-tools blijft)
+ *   slot      de proef (HalProef)
+ *
+ * ELK BEDRAG KOMT UIT pricing.js EN REIST MET ZIJN BTW-LABEL (zie de noot bij
+ * orderNet hieronder).
+ * ═══════════════════════════════════════════════════════════════════════════ */
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/hal.css';
+import { waHref } from '../data/whatsapp.js';
+import {
+  SHOOT_DAY, euro, quote, ladderFloor, tierFor,
+  reviewClaim, turnaround, aftercare,
+  vatLabel, clause, CATALOG_IMAGES } from '../data/pricing.js';
+import { localizedPath } from '../i18n/ui.js';
+import FigConverge from './FigConverge.astro';
+import HalProef from './HalProef.astro';
+import HalBeweging from './HalBeweging.astro';
+import KopBeeld from './KopBeeld.astro';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+
+const shoot = SHOOT_DAY[lang];
+
+// THE COUNT THE RIGHT-HAND COLUMN IS PRICED AT, and it is a choice worth
+// stating because the next editor will want to move it.
+//
+// A production day is the unit on the left: one day, everything counted. There
+// is no per-product number on that side to compare against, so the right side
+// has to be a whole season's worth of work or the two columns are not the same
+// question. Thirty is what /pricing anchors its own shoot-day comparison at —
+// the two pages must not quote different sizes at the same argument, which is
+// the exact drift pricing.js exists to prevent. If this moves, move it there.
+//
+// It is also comfortably past WINDOW_THRESHOLD, which is why every service
+// promise in the matrix below is read at `tier` rather than typed as
+// 'attended': under the new model the service level is a CONSEQUENCE of this
+// count, not a second thing the buyer picked, and deriving it here is what
+// keeps the two facts from being stated as independent.
+const ANCHOR_PRODUCTS = 30;
+/* Ronde 8: catalog, en niet meer catalog + lifestyle samen — dat wordt niet
+   meer als één dienst verkocht. Dezelfde 30 als de meta-omschrijving. */
+const q = quote('catalog', ANCHOR_PRODUCTS);
+const tier = tierFor(ANCHOR_PRODUCTS);
+
+// Every money string on this page is assembled once, here, so a cell cannot
+// print a figure without its VAT label — the two travel together or not at all.
+const orderNet = `${euro(q.net, lang)} ${vatLabel('excl', lang)}`;
+const orderRate = euro(q.rate, lang);
+const shootNet = `${shoot.range} ${vatLabel('excl', lang)}`;
+const floorRate = euro(ladderFloor('catalog'), lang);
+/* ── "AFLOPEND TOT €65" TERWIJL HET AL €65 IS ────────────────────────────────
+   20 augustus 2026. De kostenrij zei: "€1.950 excl. btw bij 30 producten —
+   €65 per product, aflopend tot €65 bij het hoogste aantal producten." Twee
+   keer hetzelfde bedrag in één zin, en de lezer die het opmerkt gaat aan de
+   hele pagina twijfelen.
+
+   Geen tikfout: ANCHOR_PRODUCTS staat op 30 en de ladder is bij 20 al op zijn
+   bodem, dus `orderRate` en `floorRate` ZIJN hetzelfde getal. De zin ging er
+   stilzwijgend van uit dat het ankeraantal ergens halverwege de ladder ligt.
+
+   Daarom vergelijken we de twee nu voordat we ze naast elkaar zetten. Wie
+   ANCHOR_PRODUCTS ooit op 8 zet, krijgt de "aflopend tot"-zin vanzelf weer
+   terug — de regel klopt dan namelijk wél. */
+const opDeBodem = orderRate === floorRate;
+
+// No `as const`: COPY[lang] would otherwise widen to a union of readonly tuple
+// types and .map() below would stop type-checking (project convention, see
+// PricingPage.astro).
+const COPY = {
+  en: {
+    eyebrow: 'Compare',
+    h1a: 'A shoot day, or ',
+    h1b: 'an order',
+    h1c: '.',
+    lead: 'Both get a season of product images made. Here they are side by side, nothing hidden.',
+    ctaPrimary: 'Start an order',
+    ctaGhost: 'See the price per product',
+
+    matrixLabel: 'A production day compared with a VISUAILS order',
+    colLabel: 'What',
+    colA: 'A production day',
+    colB: 'A VISUAILS order',
+
+    rows: [
+      {
+        label: 'What you get',
+        a: "One day of everyone’s time, and whatever fits inside it.",
+        // The count is named because it has to be: the rate falls as the count
+        // rises, so the column below is one worked example rather than a price.
+        b: `${ANCHOR_PRODUCTS} products, each with a catalog set of ${CATALOG_IMAGES} images.`,
+      },
+      {
+        label: 'What it costs',
+        // Net against net, and both say so. See the header block: this is the
+        // one row where an unlabelled figure would make the whole page a
+        // comparison of two things that were never the same kind of number.
+        a: `${shootNet} · ${shoot.basis.toLowerCase()}.`,
+        b: `${orderNet} at ${ANCHOR_PRODUCTS} products — ${orderRate} per product${opDeBodem ? ', the lowest catalog rate' : `, falling to ${floorRate} at the highest product count`}.`,
+      },
+      {
+        label: 'When it lands',
+        // Trimmed with the figure below, not for the sake of a word count: the
+        // enumeration that used to sit here — "a studio, a model and your own
+        // calendar have to agree on a date" — is now four labelled lanes
+        // meeting a rule, and a table cell repeating what the drawing states is
+        // the exact reflex #246 is about. What stays is the part a picture
+        // cannot say: how long, and that the retouching is after.
+        a: 'Weeks, plus retouching after the day.',
+        b: `${clause(turnaround(tier, 'en'))}, on a date checked against the calendar.`,
+      },
+      {
+        label: 'Who checks it',
+        a: 'You, on the day. Then the retoucher.',
+        b: `${clause(reviewClaim(tier, 'en'))} — then you, image by image, in the portal.`,
+      },
+      {
+        label: 'If something is wrong',
+        // Same trim, and this cell was the more duplicated of the two: the
+        // figure's own outcome line reads "A reshoot is the same four things,
+        // agreeing again", which is this sentence's second half drawn.
+        a: 'A reshoot is another day, booked from scratch.',
+        /* clause(): aftercare() eindigt op een punt, en een punt vlak voor
+           een gedachtestreepje leest als een afgebroken zin. Zie de noot bij
+           clause() in pricing.js. */
+        b: `${clause(aftercare(tier, 'en'))}, in the portal.`,
+      },
+      {
+        label: 'What you organise',
+        a: shoot.items.join(' · ') + '.',
+        b: 'A folder of product photos.',
+      },
+    ],
+    caveat: shoot.caveat,
+    caveatNote: 'A real range for a whole day, every line counted. Both figures are net.',
+
+    // FigConverge (task #246). The matrix rows "When it lands" and "If
+    // something is wrong" are one fact stated twice: a day needs four
+    // schedules to meet, so a reshoot is that meeting again. The figure draws
+    // it once and the second row stops needing to be argued.
+    //
+    // Every label here is a noun phrase, not a claim, and that is deliberate.
+    // The lead promises "the comparison with nothing hidden on either side"
+    // and section 3 is four cards on where a shoot day wins; a figure that
+    // editorialised in its labels would undo both, because a reader argues
+    // with a sentence and absorbs a diagram. "A studio, on a date" is what a
+    // production day IS — a studio would write it the same way.
+    convergeH: 'What has to line up',
+    convergeSub: '',
+    convTitle: 'A production day',
+    convLanes: [
+      { label: 'A studio, on a date' },
+      { label: 'A model, on that date' },
+      { label: 'Your own calendar, on that date' },
+      { label: 'The product, in the room, by then' },
+    ],
+    convMeet: 'One date',
+    convOut: 'A reshoot means lining up all four again.',
+    seqTitle: 'A VISUAILS order',
+    seqSteps: [
+      'You send your photos.',
+      'The date is checked and reserved, then fixed once you pay.',
+      'Images land as they are ready.',
+    ],
+    seqOut: 'A revision is one image, not a new day.',
+    convNote: 'Not to scale.',
+
+    /* ── DE SHOOTWEEK, 30 AUGUSTUS 2026 ────────────────────────────────────
+       Deze opsomming stond op de HOMEPAGE en nergens anders: hij is daar op 18
+       augustus al eens weggehaald richting deze pagina, en toen bleek bij het
+       nakijken van de gebouwde site dat hij hier helemaal niet stond. De
+       verhuizing is toen teruggedraaid met de juiste reden — "het is de enige
+       plek op de site waar staat waaruit een shootweek bestaat".
+
+       Nu staat hij hier wél, en pas daarna gaat hij van de homepage af. De
+       volgorde is het punt: eerst een thuis, dan de schaar.
+
+       WAAROM HIER EN NIET IN DE MATRIX. De matrix bovenaan vergelijkt wat je
+       KRIJGT. Dit gaat over wat het je KOST aan uren, en dat is de tweede helft
+       van dezelfde vergelijking — de helft die niet op de factuur staat.
+       tests/vergelijk-week.test.mjs bewaakt dat hij hier blijft. */
+    weekHead: 'And the week around the day',
+    weekSub: 'Only the day shows up on the invoice.',
+    weekList: [
+      'Casting',
+      'Booking a studio and photographer',
+      'Shipping the samples there and back',
+      'The reschedule when something slips',
+      'Evenings culling frames',
+    ],
+    weekOrder: 'An order takes minutes of your time, not days — one product or thirty.',
+
+    winsHead: 'Where a shoot day still wins',
+    winsSub: 'If one of these is the job, book the day.',
+    wins: [
+      { t: 'A material that has to be in the room', b: 'When the whole sell is the hand-feel, put a camera on it.' },
+      { t: 'A campaign around one real person', b: 'A founder or an athlete: photograph them.' },
+      { t: 'Documentation, not depiction', b: 'Press and provenance, where a camera has to have been there.' },
+      { t: 'You want the day itself', b: 'A team day, a behind-the-scenes reel, a launch moment.' },
+    ],
+
+    toolHead: 'And if you are weighing a self-serve tool',
+    toolSub: 'Sometimes generating images yourself is the right call.',
+    enoughHead: 'A tool is genuinely enough when',
+    enough: [
+      'You need a quick mock-up for an idea or a layout.',
+      'No customer will see it.',
+      'You enjoy prompting and have the afternoon.',
+    ],
+    costsHead: 'It ends up costing more when',
+    costs: [
+      'It takes ten tries to get one keeper.',
+      'Your brand colour drifts on every run.',
+      'Nothing is checked: warped hands go straight to your shop.',
+      'The prompting and exporting is still your afternoon.',
+    ],
+    toolClose: 'If a tool is enough, use the tool.',
+    toolCta: 'Try it on your product',
+
+    ctaHead: 'Try it on your ',
+    ctaHeadEm: 'own product',
+    ctaBody: 'See it on your own product first.',
+    ctaSample: 'Test sample',
+    ctaStart: 'Start an order',
+    ctaWa: 'Ask us anything',
+    ctaReply: 'Usually a reply within the hour; outside opening hours, the next morning.',
+    wa: waHref("Hi VISUAILS, I'm comparing a shoot day to an order."),
+  },
+
+  nl: {
+    eyebrow: 'Vergelijk',
+    h1a: 'Een shootdag, of ',
+    h1b: 'een bestelling',
+    h1c: '.',
+    lead: 'Allebei leveren ze een seizoen aan productbeelden op. Hier staan ze naast elkaar, niets weggelaten.',
+    ctaPrimary: 'Start een bestelling',
+    ctaGhost: 'Bekijk de prijs per product',
+
+    matrixLabel: 'Een productiedag vergeleken met een VISUAILS-bestelling',
+    colLabel: 'Wat',
+    colA: 'Een productiedag',
+    colB: 'Een VISUAILS-bestelling',
+
+    rows: [
+      {
+        label: 'Wat je krijgt',
+        a: 'Eén dag van ieders tijd, en wat daar precies in past.',
+        // Zie de EN-tak: het aantal staat erbij omdat het tarief met de omvang
+        // meezakt, dus dit is één uitgewerkt voorbeeld en geen pakketprijs.
+        b: `${ANCHOR_PRODUCTS} producten, elk met een catalogset van ${CATALOG_IMAGES} beelden.`,
+      },
+      {
+        label: 'Wat het kost',
+        a: `${shootNet} · ${shoot.basis.toLowerCase()}.`,
+        b: `${orderNet} bij ${ANCHOR_PRODUCTS} producten — ${orderRate} per product${opDeBodem ? ', het laagste catalogtarief' : `, aflopend tot ${floorRate} bij het hoogste aantal producten`}.`,
+      },
+      {
+        label: 'Wanneer het er is',
+        a: 'Weken, plus retouche na de dag.',
+        b: `${clause(turnaround(tier, 'nl'))}, op een datum die in de agenda is gecontroleerd.`,
+      },
+      {
+        label: 'Wie het controleert',
+        a: 'Jij, op de dag zelf. Daarna de retoucheur.',
+        b: `${clause(reviewClaim(tier, 'nl'))} — en daarna jij, beeld voor beeld, in het portaal.`,
+      },
+      {
+        label: 'Als er iets mis is',
+        a: 'Opnieuw fotograferen is opnieuw een dag, en die boek je vanaf nul.',
+        /* Zie de noot bij de Engelse tegenhanger. */
+        b: `${clause(aftercare(tier, 'nl'))}, in het portaal.`,
+      },
+      {
+        label: 'Wat jij regelt',
+        a: shoot.items.join(' · ') + '.',
+        b: 'Een map met productfoto’s.',
+      },
+    ],
+    caveat: shoot.caveat,
+    caveatNote: 'Een echte bandbreedte voor een hele dag, elke regel meegeteld. Beide bedragen zijn netto.',
+
+    // FigConverge (taak #246) — zie de EN-tak hierboven voor waarom de labels
+    // naamwoordgroepen zijn en geen stellingen. convTitle en seqTitle zijn
+    // woordelijk colA en colB, zodat de figuur en de matrix hetzelfde ding
+    // hetzelfde noemen; wijkt er één af, dan leest de figuur als een derde
+    // partij in plaats van als dezelfde twee kolommen, getekend.
+    convergeH: 'Wat op één lijn moet komen',
+    convergeSub: '',
+    convTitle: 'Een productiedag',
+    convLanes: [
+      { label: 'Een studio, op een datum' },
+      { label: 'Een model, op die datum' },
+      { label: 'Je eigen agenda, op die datum' },
+      { label: 'Het product, in de ruimte, tegen die tijd' },
+    ],
+    convMeet: 'Eén datum',
+    convOut: 'Opnieuw fotograferen betekent alle vier weer op één lijn.',
+    seqTitle: 'Een VISUAILS-bestelling',
+    seqSteps: [
+      'Je stuurt je foto’s.',
+      'De datum wordt gecontroleerd en gereserveerd, en na betaling vastgezet.',
+      'Beelden komen binnen zodra ze klaar zijn.',
+    ],
+    seqOut: 'Een revisie is één beeld, geen nieuwe dag.',
+    convNote: 'Niet op schaal.',
+
+    /* Zie de noot bij de Engelse tabel. */
+    weekHead: 'En de week eromheen',
+    weekSub: 'Alleen de dag staat op de factuur.',
+    weekList: [
+      'Casting',
+      'De boeking van studio en fotograaf',
+      'De samples ernaartoe sturen en terug',
+      'Het uitstel als er iets misloopt',
+      'Avonden frames schiften',
+    ],
+    weekOrder: 'Een bestelling kost je minuten, geen dagen — één product of dertig.',
+
+    winsHead: 'Waar een shootdag nog steeds wint',
+    winsSub: 'Is dit de opdracht, boek dan de dag.',
+    wins: [
+      { t: 'Een materiaal dat in de ruimte moet liggen', b: 'Draait de verkoop om het gevoel, zet er een camera op.' },
+      { t: 'Een campagne rond één echt persoon', b: 'Een oprichter of een sporter: fotografeer die.' },
+      { t: 'Documentatie, geen verbeelding', b: 'Pers en herkomst, waar echt een camera bij moet zijn geweest.' },
+      { t: 'Je wilt de dag zelf', b: 'Een teamdag, beelden achter de schermen, een lanceringsmoment.' },
+    ],
+
+    toolHead: 'En als je een self-serve tool overweegt',
+    toolSub: 'Soms is zelf genereren de juiste keuze.',
+    enoughHead: 'Een tool is echt genoeg als',
+    enough: [
+      'Je een snelle mock-up nodig hebt voor een idee of layout.',
+      'Geen klant het ziet.',
+      'Je prompten leuk vindt en de middag hebt.',
+    ],
+    costsHead: 'Hij kost je uiteindelijk meer als',
+    costs: [
+      'Je tien pogingen nodig hebt voor één bruikbaar beeld.',
+      'Je merkkleur bij elke poging verschuift.',
+      'Niets gecontroleerd wordt: vervormde handen gaan zo je shop in.',
+      'Het prompten en exporteren nog steeds jouw middag is.',
+    ],
+    toolClose: 'Is een tool genoeg, gebruik dan de tool.',
+    toolCta: 'Probeer het op je product',
+
+    ctaHead: 'Test het op je ',
+    ctaHeadEm: 'eigen product',
+    ctaBody: 'Zie het eerst op je eigen product.',
+    ctaSample: 'Probeer VISUAILS',
+    ctaStart: 'Start een bestelling',
+    ctaWa: 'Vraag ons alles',
+    ctaReply: 'Meestal antwoord binnen het uur, buiten openingstijden de volgende ochtend.',
+    wa: waHref("Hoi VISUAILS, ik vergelijk een shootdag met een bestelling."),
+  },
+};
+
+/* Voor de briefteksten op de placeholders — die zijn aan de fotograaf
+   gericht en niet aan de bezoeker, dus staan ze niet in de COPY-tabel. */
+const nl = lang === 'nl';
+const t = COPY[lang];
+/* Koppen in twee tonen en de pillen van de hal (nieuw; zie het kladblok). */
+const KOP = nl ? {
+  pil: t.eyebrow, h1: ['Een shootdag,', 'of een bestelling.'],
+  tabelPil: 'Naast elkaar', tabelKop: ['Een productiedag', 'en een bestelling.'],
+  lijnPil: 'Planning', wintPil: 'Eerlijk is eerlijk', toolsPil: 'Zelf genereren',
+  proef: ['Test het op je', 'eigen product, voor'] as [string, string], proefAlt: 'Of start een bestelling',
+} : {
+  pil: t.eyebrow, h1: ['A shoot day,', 'or an order.'],
+  tabelPil: 'Side by side', tabelKop: ['A production day', 'and an order.'],
+  lijnPil: 'Planning', wintPil: 'To be fair', toolsPil: 'Doing it yourself',
+  proef: ['Try it on your', 'own product, for'] as [string, string], proefAlt: 'Or start an order',
+};
+const ICOON = {
+  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
+  pijl: '<path d="M4.5 11.5l7-7M5.5 4.5h6v6"/>',
+  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
+  min: '<path d="M4 8h8"/>',
+};
+const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+const DRIE = (n: number) => String(n).padStart(2, '0');
+/* Het beeld in de opening: afvinklijst 20 (v20-opening a), live sinds afvinklijst 21. Zie KopBeeld.astro. */
+const BEELD = {
+  soort: 'getal' as const,
+  label: nl ? 'Een bestelling · per product' : 'An order · per product',
+  href: '#cmp-matrix', linkNaam: nl ? 'Naar de vergelijking' : 'To the comparison',
+  voor: nl ? 'vanaf' : 'from', getal: floorRate, eenheid: 'per product',
+  voet: nl ? `Een shootdag: ${SHOOT_DAY.nl.range}, ${SHOOT_DAY.nl.basis.charAt(0).toLowerCase()}${SHOOT_DAY.nl.basis.slice(1)}.`
+           : `A shoot day: ${SHOOT_DAY.en.range}, ${SHOOT_DAY.en.basis.charAt(0).toLowerCase()}${SHOOT_DAY.en.basis.slice(1)}.`,
+};
+---
+<div class="h-pagina h-cmp">
+
+  {/* ── 1 · DE KOP ─────────────────────────────────────────────────────────── */}
+  <header class="h-paginakop met-kopbeeld">
+    <div class="h-paginakop-tekst">
+      <p class="h-pil h-op" style="--d:0"><span>{KOP.pil}</span></p>
+      <h1 class="h-kop h-h1 h-op" style="--d:1"><span class="l">{KOP.h1[0]}</span> <span>{KOP.h1[1]}</span></h1>
+      <p class="h-lede h-op" style="--d:2">{t.lead}</p>
+      <p class="h-acties h-op" style="--d:3">
+        <a class="h-knop h-knop-inkt" href={lp('/start')} data-track="compare-start">{t.ctaPrimary}<span class="o" set:html={ik('rechts')} /></a>
+        <a class="h-knop h-knop-lijn" href={lp('/pricing')}>{t.ctaGhost}</a>
+      </p>
+    </div>
+    <KopBeeld {...BEELD} />
+  </header>
+
+  {/* ── 2 · DE TABEL ─────────────────────────────────────────────────────────
+      Een echte tabel (role="table"/row/cell): zonder die rollen hoort een
+      schermlezer een rijlabel en twee antwoorden zonder te weten van wie ze zijn.
+      Onder 900 px valt de kopregel weg en haalt elke cel zijn kolomnaam uit data-col. */}
+  <section class="h-sec h-cmp-tabel-sec" aria-labelledby="cmp-matrix">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{KOP.tabelPil}</span></p>
+        <h2 id="cmp-matrix" class="h-kop h-h2"><span class="l">{KOP.tabelKop[0]}</span> {KOP.tabelKop[1]}</h2>
+      </div>
+    </header>
+    <div class="h-cmp-tabel h-in" role="table" aria-label={t.matrixLabel}>
+      <div class="h-cmp-rij h-cmp-kopregel" role="row">
+        <span role="columnheader">{t.colLabel}</span>
+        <span role="columnheader">{t.colA}</span>
+        <span class="is-ons" role="columnheader">{t.colB}</span>
+      </div>
+      {t.rows.map((r, i) => (
+        <div class:list={['h-cmp-rij', i === t.rows.length - 1 && 'is-laatst']} role="row">
+          <span class="h-cmp-label" role="rowheader">{r.label}</span>
+          <span class="h-cmp-cel" role="cell" data-col={t.colA}>{r.a}</span>
+          <span class="h-cmp-cel is-ons" role="cell" data-col={t.colB}>{r.b}</span>
+        </div>
+      ))}
+    </div>
+    {/* shoot.caveat reist mee met het getal, waar dat getal ook staat (§H·2). */}
+    <p class="h-cmp-noot h-in">{t.caveat} {t.caveatNote}</p>
+  </section>
+
+  {/* ── 3 · WAT OP ÉÉN LIJN MOET KOMEN, EN DE WEEK EROMHEEN ─────────────── */}
+  <section class="h-sec" aria-labelledby="cmp-conv">
+    <div class="h-cmp-lijn h-in">
+      <header class="h-cmp-lijn-kop">
+        <p class="h-pil h-pil-wit"><span>{KOP.lijnPil}</span></p>
+        <h2 id="cmp-conv" class="h-kop h-h2"><span class="l">{nl ? 'Wat op één lijn' : 'What has'}</span> {nl ? 'moet komen.' : 'to line up.'}</h2>
+      </header>
+      <div class="h-cmp-fig">
+        <FigConverge
+          convergeTitle={t.convTitle}
+          lanes={t.convLanes}
+          meetLabel={t.convMeet}
+          convergeOut={t.convOut}
+          seqTitle={t.seqTitle}
+          seqSteps={t.seqSteps}
+          seqOut={t.seqOut}
+          note={t.convNote}
+        />
+      </div>
+      <div class="h-cmp-week" aria-labelledby="cmp-week">
+        <div class="h-cmp-week-tekst">
+          <h3 id="cmp-week" class="h-kop h-h3">{t.weekHead}</h3>
+          <p class="h-cmp-zin">{t.weekSub}</p>
+        </div>
+        <ol class="h-cmp-week-rij" role="list">
+          {t.weekList.map((r, i) => <li><b>{DRIE(i + 1)}</b><span>{r}</span></li>)}
+        </ol>
+        <p class="h-cmp-week-voet"><span class="h-cirkel h-cirkel-mini h-cirkel-wit" aria-hidden="true" set:html={ik('check')} />{t.weekOrder}</p>
+      </div>
+    </div>
+  </section>
+
+  {/* ── 4 · WAAR EEN SHOOTDAG NOG STEEDS WINT ────────────────────────────── */}
+  <section class="h-sec" aria-labelledby="cmp-wint">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{KOP.wintPil}</span></p>
+        <h2 id="cmp-wint" class="h-kop h-h2"><span class="l">{nl ? 'Waar een shootdag' : 'Where a shoot day'}</span> {nl ? 'nog steeds wint.' : 'still wins.'}</h2>
+      </div>
+      <p class="h-cmp-kopzin">{t.winsSub}</p>
+    </header>
+    <ul class="h-cmp-wint" role="list">
+      {t.wins.map((w, i) => <li class="h-in" style={`--d:${i}`}><b>{w.t}</b><span>{w.b}</span></li>)}
+    </ul>
+  </section>
+
+  {/* ── 5 · ZELF GENEREREN — #ai-tools wordt vanaf /custom-models gelinkt ── */}
+  <section class="h-sec" id="ai-tools" aria-labelledby="cmp-tools">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{KOP.toolsPil}</span></p>
+        <h2 id="cmp-tools" class="h-kop h-h2"><span class="l">{nl ? 'En als je een' : 'And if you are weighing'}</span> {nl ? 'self-serve tool overweegt.' : 'a self-serve tool.'}</h2>
+      </div>
+      <p class="h-cmp-kopzin">{t.toolSub}</p>
+    </header>
+    <div class="h-cmp-tools">
+      <div class="h-cmp-tool h-in">
+        <h3 class="h-cmp-tool-kop">{t.enoughHead}</h3>
+        <ul class="h-cmp-tool-lijst" role="list">{t.enough.map((line) => <li><i set:html={ik('check')} /><span>{line}</span></li>)}</ul>
+      </div>
+      <div class="h-cmp-tool h-in" style="--d:1">
+        <h3 class="h-cmp-tool-kop">{t.costsHead}</h3>
+        <ul class="h-cmp-tool-lijst is-min" role="list">{t.costs.map((line) => <li><i set:html={ik('min')} /><span>{line}</span></li>)}</ul>
+      </div>
+    </div>
+    <p class="h-cmp-tool-slot h-in">
+      <span>{t.toolClose}</span>
+      <a class="h-link" href={lp('/test-sample')} data-track="compare-tool-sample">{t.toolCta}<span class="h-cirkel h-cirkel-mini" set:html={ik('pijl')} /></a>
+    </p>
+  </section>
+
+  {/* ── 6 · HET SLOT: DE PROEF ───────────────────────────────────────────── */}
+  <HalProef lang={lang} id="cmp-slot" kop={KOP.proef} zin={t.ctaBody} alt={{ label: KOP.proefAlt, href: '/start' }} />
+  <p class="h-cmp-antwoord h-in">{t.ctaReply}</p>
+</div>
+<HalBeweging />

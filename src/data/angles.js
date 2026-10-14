@@ -80,7 +80,8 @@ export const ANGLE_GROUPS = ['model', 'ground'];
  * tests/hoeken.test.mjs vergelijkt hem met de pagina's die de kiezer echt
  * renderen, dus de lijst kan niet stil achterlopen op de werkelijkheid.
  */
-export const UITBREIDBARE_DIENSTEN = ['catalog', 'complete'];
+/* 'complete' stond er ook in; compleet bestaat sinds 14 oktober 2026 niet meer (afvinklijst 23). */
+export const UITBREIDBARE_DIENSTEN = ['catalog'];
 
 /** Kan de klant bij deze dienst foto's bijbestellen? Zo ja, dan is het aantal in
  *  de set een ondergrens ("vanaf 4") en geen uitkomst ("4"). */

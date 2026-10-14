@@ -3,342 +3,132 @@
  * VISUAILS — de detailpagina van een catalogstijl, gedeeld door
  * /catalog/[slug] en /nl/catalog/[slug].
  *
- * ── ÉÉN COMPONENT SINDS 7 SEPTEMBER 2026 ─────────────────────────────────
+ * ── KORT EN BEELDVULLEND SINDS 11 OKTOBER 2026 (k101 = a) ─────────────────
  *
- * Het waren twee sjablonen van 214 en 208 regels die elkaars vertaling hoorden
- * te zijn. Ze waren nog niet gedrift — de klassen waren regel voor regel gelijk
- * — en dat is precies het moment om ze samen te voegen: nadat het is gebeurd,
- * moet je eerst uitzoeken welke van de twee gelijk had.
+ * De pagina zelf is LookDetailHal.astro (zie daar de opbouw). Hier staat wat bij
+ * catalog hoort: de beelden uit `fotos` in de lookdata (alleen echte), het
+ * bewijs "jouw foto → VISUAILS" (het enige echte ruw-naar-catalogpaar in de
+ * beeldbibliotheek), de feiten, en de lange uitleg die ingeklapt onder
+ * "Meer over …" staat: de sfeer, de stappen, het vakwerk, waarom, wat je
+ * krijgt en het model.
  *
- * DE STIJLGEGEVENS ZELF KOMEN NIET HIERUIT. `style` gaat als prop naar binnen en
- * komt uit catalogStyles.js of catalogStyles.nl.js — de naam, de tagline, de
- * sfeerteksten, de stappen, het vakwerk. Dat is de tekst die PER STIJL verschilt
- * en die twee bestanden verdient. Wat hier staat is de omlijsting: de koppen die
- * op elke stijlpagina hetzelfde zijn, en die dus niet twee keer horen te bestaan.
+ * Het raster van negen getekende vakken is al sinds 23 september weg; er wordt
+ * nooit een vak zonder foto getekend.
  *
  * ── DE DOORLOOPTIJD IS EEN TIER-FEIT ─────────────────────────────────────
  *
  * Levertijd, controleniveau en wachtrijgedrag komen uit pricing.js en niet uit
- * de stijl. Zo kan een capaciteitswijziging geen belofte laten stranden op een
- * detailpagina — wat "~24u levering" en "geproduceerd in ongeveer 24 uur" hier
- * letterlijk deden.
- *
- * En een look OP AANVRAAG (`priceTrust`, dus custom) heeft eerst een ONTWERP;
- * de doorlooptijd van een gewone bestelling geldt daar pas ná. "Vaak binnen een
- * dag" op die pagina was een belofte over het verkeerde ding — 4 september 2026.
+ * de stijl. En een look OP AANVRAAG (custom) heeft eerst een ONTWERP; de
+ * doorlooptijd van een gewone bestelling geldt daar pas ná.
  */
-import ProductScene from './ProductScene.astro';
-import Compare from './Compare.astro';
-import ServiceSwitch from './ServiceSwitch.astro';
-import { reviewClaim, turnaround, TIERS } from '../data/pricing.js';
+/* Sinds 12 oktober 2026 (afvinklijst 8) in het sjabloon van de hal; het vorige
+   sjabloon (LookDetail.astro) staat op _opruimen/LIJST.txt. hub = waar de pil terug
+   naartoe wijst (standaard de eigen dienst). */
+import LookDetailHal from './LookDetailHal.astro';
+import { reviewClaim, turnaround, TIERS, TEST_SAMPLE } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
-import '../styles/stijl22.css';
+import { isEcht } from '../lib/beeldAanwezig.js';
 
-interface Props { lang: 'en' | 'nl'; style: any; zusters: { href: string; naam: string }[]; }
-const { lang, style, zusters } = Astro.props;
+interface Props { lang: 'en' | 'nl'; style: any; zusters: { href: string; naam: string }[]; hub?: string; }
+const { lang, style, zusters, hub } = Astro.props;
 const nl = lang === 'nl';
 const lp = (p: string) => localizedPath(lang, p);
+/* ── DE PROEF BEGINT BIJ DEZE LOOK — 8 oktober 2026 (1.06) ───────────────── */
+const proefHref = style.slug === 'custom' ? lp('/test-sample') : `${lp('/test-sample')}?style=${encodeURIComponent(style.slug)}`;
 
 const TIMING = style.slug === 'custom'
   ? (nl ? 'Eerst het ontwerp, daarna de gewone doorlooptijd per bestelling.' : 'Design first, then the ordinary turnaround per order.')
   : turnaround('unattended', lang);
 const REVIEW = reviewClaim('unattended', lang);
 const QUEUE = style.slug === 'custom' ? '' : TIERS.unattended.queue[lang];
+const prijs = `${style.priceTrust}${style.priceUnit ?? (nl ? ' / visual' : ' / visual')}`;
+
+const alt = nl ? `Voorbeeld in de ${style.name}-stijl` : `${style.name}-style example`;
+const beelden = [...new Set(style.fotos || [])].filter((src: any) => isEcht(src)).map((src: any) => ({ src, alt }));
+
+/* Het bewijs alleen bij een vaste look en alleen als beide beelden echt zijn. */
+const VOOR = '/img/catalog-before-1x1.webp';
+const NA = '/img/catalog-after.webp';
+const bewijs = style.slug !== 'custom' && isEcht(VOOR) && isEcht(NA) ? {
+  before: VOOR,
+  after: NA,
+  ratio: '1/1',
+  kop: nl ? `Wat ${style.name} met een echte foto doet.` : `What ${style.name} does to a real photo.`,
+  regel: nl ? 'Een van je eigen productfoto’s, precies zo behandeld.' : 'One of your own product photos, treated exactly like this.',
+  beforeLabel: nl ? 'Jouw foto' : 'Your photo',
+  afterLabel: 'VISUAILS',
+  beforeAlt: nl ? 'Een ruwe telefoonfoto van een t-shirt op een tafel vóór VISUAILS' : 'A raw phone photo of a t-shirt on a table before VISUAILS',
+  afterAlt: nl ? `Hetzelfde t-shirt als een strakke ${style.name}-catalogvisual na VISUAILS` : `The same t-shirt as a clean ${style.name} catalog visual after VISUAILS`,
+} : null;
 
 const c = nl ? {
-  terug: 'Catalog-stijlen',
-  bestel: style.orderLabel ?? `Bestel ${style.name}`,
-  wa: 'WhatsApp',
-  waTekst: `Hoi VISUAILS, ik wil graag praten over de ${style.name}-stijl.`,
-  andere: 'Andere looks:',
-  voeltH: ['Wat ', ' kenmerkt'],
-  echtH: `Wat ${style.name} met een echte foto doet.`,
-  echtP: 'Een van je eigen productfoto’s, precies zo behandeld.',
-  voor: 'Jouw foto',
-  na: 'VISUAILS',
-  voorAlt: 'Een ruwe telefoonfoto van een t-shirt op een tafel vóór VISUAILS',
-  naAlt: `Hetzelfde t-shirt als een strakke ${style.name}-catalogvisual na VISUAILS`,
-  kaderH: 'Wat er in elk kader gaat.',
-  idealH: ['Ideaal ', 'voor'],
-  krijgH: ['Wat je ', 'krijgt'],
+  kies: style.orderLabel ?? 'Kies deze look',
+  voeltH: `Hoe ${style.name} voelt`,
+  stapH: 'In drie stappen',
+  kaderH: 'Wat er in elk kader gaat',
+  waaromH: 'Waarom het werkt',
+  idealH: 'Ideaal voor',
+  krijgH: 'Wat je krijgt',
   modelNoot: ['De foto op model in elke ', '-set: een standaardgezicht, of ', 'je eigen merkmodel', '.'],
-  slotH: ['Bestel in ', '.'],
-  slotP: 'Probeer VISUAILS eerst, of plaats vandaag je bestelling.',
-  slotPCustom: 'Vertel wat je voor ogen hebt: je krijgt eerst schriftelijk een voorstel en een prijs.',
-  proef: 'Probeer VISUAILS',
 } : {
-  terug: 'Catalog styles',
-  bestel: style.orderLabel ?? `Order ${style.name}`,
-  wa: 'WhatsApp',
-  waTekst: `Hi VISUAILS, I’d like to talk about the ${style.name} style.`,
-  andere: 'Other looks:',
-  voeltH: ['What defines ', ''],
-  echtH: `What ${style.name} does to a real photo.`,
-  echtP: 'One of your own product photos, treated exactly like this.',
-  voor: 'Your photo',
-  na: 'VISUAILS',
-  voorAlt: 'A raw phone photo of a t-shirt on a table before VISUAILS',
-  naAlt: `The same t-shirt as a clean ${style.name} catalog visual after VISUAILS`,
-  kaderH: 'What goes into every frame.',
-  idealH: ['Best ', 'for'],
-  krijgH: ['What you ', 'get'],
+  kies: style.orderLabel ?? 'Choose this look',
+  voeltH: `How ${style.name} feels`,
+  stapH: 'In three steps',
+  kaderH: 'What goes into every frame',
+  waaromH: 'Why it works',
+  idealH: 'Best for',
+  krijgH: 'What you get',
   modelNoot: ['The on-model shot in every ', ' set: a standard face, or ', 'your own Brand Model', '.'],
-  slotH: ['Order in ', '.'],
-  slotP: 'Test sample, or place your order today.',
-  slotPCustom: 'Tell us what you have in mind: you get a written proposal and a price first.',
-  proef: 'Test sample',
 };
-
 const vink = 'M20 6L9 17l-5-5';
-const badge = `Catalog · ${style.name}`;
 ---
 
-<div class="s22 cs">
-
-  <section class="paneel cs-open" aria-labelledby="cs-h1">
-    <div class="cs-open-grid">
-      <div class="paneel-kop cs-kop">
-        <p class="etiket"><a href={lp('/catalog')}>{c.terug}</a></p>
-        <h1 id="cs-h1" class="hoog">{style.name}</h1>
-        <p class="lopend cs-tagline">{style.tagline}</p>
-        <div class="acties">
-          <a class="knop knop-inkt" href={style.orderHref}>{c.bestel}</a>
-          {/* De proef en geen WhatsApp als tweede knop — 23 september 2026. Op de
-            dienstpagina's ging WhatsApp al uit de opening: rechtsonder zweeft
-            op elke pagina dezelfde knop. Voor wie ingelogd is, verdwijnt hij. */}
-        <a class="knop knop-lijn" href={lp('/test-sample')} data-vis-uit>{c.proef}</a>
-        </div>
-        <ServiceSwitch lang={lang} label={c.andere} items={zusters} />
-        <ServiceSwitch current="catalog" lang={lang} />
-        {/* De drie feiten die op elke stijlpagina staan. Twee ervan komen uit
-            pricing.js — zie de kop: het zijn tier-feiten, geen stijlteksten. */}
-        <ul class="cs-feiten feiten" role="list">
-          <li><b>{style.priceTrust}</b>{style.priceUnit ?? (nl ? ' / visual' : ' / visual')}</li>
-          <li><b>{TIMING}</b></li>
-          <li><b>{REVIEW}</b></li>
-        </ul>
-        {QUEUE && <p class="cs-queue">{QUEUE}</p>}
-      </div>
-      <div class="cs-beeld">
-        <ProductScene icon={style.heroIcon} width={style.heroWidth} badge={badge} wide />
-      </div>
+<LookDetailHal
+  hub={hub}
+  lang={lang}
+  dienst="catalog"
+  style={style}
+  zusters={zusters}
+  feiten={[prijs, TIMING, REVIEW]}
+  queue={QUEUE}
+  beelden={beelden}
+  bewijs={bewijs}
+  kies={{ href: style.orderHref, label: c.kies }}
+  proef={{ href: proefHref, label: TEST_SAMPLE[lang].cta }}
+>
+  <Fragment slot="meer">
+    <div class="lm">
+      <h3 class="hoog hoog-3">{c.voeltH}</h3>
+      {style.moodParagraphs.map((p: string) => <p class="lopend">{p}</p>)}
+      <h3 class="hoog hoog-3">{c.idealH}</h3>
+      <ul class="lm-vinkjes" role="list">
+        {style.bestFor.map((item: string) => (
+          <li><svg viewBox="0 0 24 24" class="lm-i" aria-hidden="true"><path d={vink} /></svg><span>{item}</span></li>
+        ))}
+      </ul>
+      <h3 class="hoog hoog-3">{c.stapH}</h3>
+      <ol class="lm-stappen" role="list">
+        {style.steps.map((s: any, i: number) => (
+          <li><span class="mono lm-nr">{String(i + 1).padStart(2, '0')}</span> <b>{s.title}</b> <span>{s.body}</span></li>
+        ))}
+      </ol>
+      <h3 class="hoog hoog-3">{c.kaderH}</h3>
+      <ul class="lm-stappen" role="list">
+        {style.craft.map((k: any) => <li><b>{k.title}</b> <span>{k.body}</span></li>)}
+      </ul>
+      <h3 class="hoog hoog-3">{c.waaromH}</h3>
+      <ul class="lm-stappen" role="list">
+        {style.why.map((w: any) => <li><b>{w.title}</b> <span>{w.body}</span></li>)}
+      </ul>
+      <h3 class="hoog hoog-3">{c.krijgH}</h3>
+      <ul class="lm-vinkjes" role="list">
+        {style.whatYouGet.map((item: string) => (
+          <li><svg viewBox="0 0 24 24" class="lm-i" aria-hidden="true"><path d={vink} /></svg><span>{item}</span></li>
+        ))}
+      </ul>
+      <p class="lm-noot">
+        {c.modelNoot[0]}{style.name}{c.modelNoot[1]}<a href={lp('/custom-models')}>{c.modelNoot[2]}</a>{c.modelNoot[3]}
+      </p>
     </div>
-  </section>
-
-  <section class="paneel cs-sfeer">
-    <div class="cs-twee">
-      <div class="cs-beeld">
-        <ProductScene icon={style.cardIcon} width={style.cardWidth} badge={badge} />
-      </div>
-      <div>
-        <h2 class="hoog hoog-2">{c.voeltH[0]}<em>{style.name}</em>{c.voeltH[1]}.</h2>
-        {style.moodParagraphs.slice(0, 1).map((p: string) => <p class="lopend cs-sfeer-p">{p}</p>)}
-        <ol class="cs-stappen" role="list">
-          {style.steps.map((s: any, i: number) => (
-            <li>
-              <span class="mono cs-nr">{String(i + 1).padStart(2, '0')}</span>
-              <b>{s.title}</b>
-              <p class="lopend">{s.body}</p>
-            </li>
-          ))}
-        </ol>
-        {/* "Ideaal voor" hoort bij hoe de stijl voelt — 23 september 2026. */}
-        <h3 class="hoog hoog-3 cs-ideaal-h">{c.idealH[0]}<em>{c.idealH[1]}</em></h3>
-        <ul class="cs-vinkjes" role="list">
-          {style.bestFor.slice(0, 3).map((item: string) => (
-            <li><svg viewBox="0 0 24 24" class="cs-i" aria-hidden="true"><path d={vink} /></svg><span>{item}</span></li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  {/* ── HET RASTER VAN NEGEN IS WEG — 23 september 2026 ─────────────────────
-      Het waren negen getekende vakken (ProductScene) en geen foto. PAGINA-
-      OPBOUW.md: een raster toont alleen beelden die er zijn. Zodra er echte
-      Classic-beelden zijn, komt het terug met `photo` per vak, zoals op de
-      lifestylestijlen. */}
-
-  {/* Het enige echte ruw-naar-catalogpaar in de beeldbibliotheek, in de
-      trechterstap van deze stijl. Een illustratie kan laten zien hoe een look
-      voelt; alleen een echte foto laat zien wat er met de jouwe gebeurt. */}
-  <section class="kamer cs-bewijs">
-    <div class="kamer-kop cs-midden">
-      <h2 class="hoog hoog-2">{c.echtH}</h2>
-      <p class="lopend">{c.echtP}</p>
-    </div>
-    <div class="cs-compare">
-      <Compare
-        before="/img/catalog-before-1x1.webp"
-        after="/img/catalog-after.webp"
-        ratio="1/1"
-        beforeLabel={c.voor}
-        afterLabel={c.na}
-        beforeAlt={c.voorAlt}
-        afterAlt={c.naAlt}
-      />
-    </div>
-  </section>
-
-  <section class="paneel cs-vak">
-    <div class="paneel-kop">
-      <h2 class="hoog hoog-2">{c.kaderH}</h2>
-    </div>
-    <ul class="cs-vakwerk" role="list">
-      {style.craft.slice(0, 3).map((k: any) => (
-        <li><b>{k.title}</b><p class="lopend">{k.body}</p></li>
-      ))}
-    </ul>
-    <ul class="cs-waarom" role="list">
-      {style.why.slice(0, 1).map((w: any) => (
-        <li><b>{w.title}</b><p class="lopend">{w.body}</p></li>
-      ))}
-    </ul>
-  </section>
-
-  <section class="paneel vervolg cs-lijsten">
-    <div class="cs-een">
-      <div>
-        <h2 class="hoog hoog-3">{c.krijgH[0]}<em>{c.krijgH[1]}</em></h2>
-        <ul class="cs-vinkjes" role="list">
-          {style.whatYouGet.map((item: string) => (
-            <li><svg viewBox="0 0 24 24" class="cs-i" aria-hidden="true"><path d={vink} /></svg><span>{item}</span></li>
-          ))}
-        </ul>
-        {/* Bodytekst en geen callout. Een vak of een tint eromheen maakt van één
-            eerlijke zin een advertentieplek. Hij staat onder "wat je krijgt"
-            omdat het model deel is van wat je krijgt: in elke catalogset zit
-            een on-model shot. */}
-        <p class="cs-modelnoot">
-          {c.modelNoot[0]}{style.name}{c.modelNoot[1]}<a href={lp('/custom-models')}>{c.modelNoot[2]}</a>{c.modelNoot[3]}
-        </p>
-      </div>
-    </div>
-  </section>
-
-  <section class="paneel paneel-slot cs-slot">
-    {/* De eigen look heet "Eigen look" / "Custom", en dat gaf "Maak Eigen look van jou."
-        Voor die ene look staat er daarom "Maak je eigen look." */}
-    <h2 class="hoog hoog-2">{style.slug === 'custom'
-      ? <>{lang === 'nl' ? <>Vraag <em>je eigen look</em> aan.</> : <>Request <em>your own look</em>.</>}</>
-      : <>{c.slotH[0]}<em>{style.name}</em>{c.slotH[1]}</>}</h2>
-    <p class="lopend">{style.slug === 'custom' ? c.slotPCustom : c.slotP}</p>
-    <div class="acties">
-      <a class="knop knop-inkt" href={style.orderHref}>{c.bestel}</a>
-      <a class="knop knop-lijn" href={lp('/test-sample')}>{c.proef}</a>
-    </div>
-  </section>
-
-</div>
-
-<style>
-  .cs-ideaal-h { margin-top: clamp(1.4rem, 3vw, 2rem); }
-  .cs-een { max-width: 44rem; }
-  .cs-open-grid, .cs-twee { display: grid; gap: clamp(1.8rem, 4.5vw, 3.5rem); align-items: center; }
-  .cs-open-grid { align-items: start; }
-  @media (min-width: 900px) {
-    .cs-open-grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); }
-    .cs-twee { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); }
-    .cs-twee-gelijk { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
-  }
-  .cs-kop { margin-bottom: 0; }
-  .cs-kop .etiket a { color: inherit; }
-  .cs-kop .etiket a:hover { color: var(--inkt); }
-  .cs-tagline {
-    font-family: var(--kop2); font-weight: 500; font-stretch: 125%;
-    font-size: clamp(1.2rem, 2.1vw, 1.7rem);
-    /* ── DE REGELAFSTAND SCHAALT MEE — 21 september 2026 ───────────────────
-       Hier stond `line-height: 1.2`, een factor. Een factor schaalt MET de
-       letter, en dat is precies verkeerd om: hoe kleiner de letter, hoe MEER
-       lucht een regel nodig heeft. Op een breed scherm (27px) klopte 1,2; op
-       een telefoon zakt de clamp naar 19px en dan is 1,2 nog maar 23px
-       regelafstand voor een zin met staarten. De spatiescan
-       (kladblok/spatie-alles.mjs) vond dit op vier stijlpagina's tegelijk.
-
-       `calc(1em + .42rem)` houdt de LOODRUIMTE constant in plaats van de
-       factor: 6,7px tussen de regels, wat de letter ook doet. Uitkomst 1,35
-       op 19px en 1,25 op 27px — allebei de stand die bij die maat hoort, uit
-       één regel die niet per breekpunt bijgehouden hoeft te worden. */
-    line-height: calc(1em + .42rem);
-    letter-spacing: -.01em; color: var(--inkt); max-width: 20em;
-  }
-
-  /* De pillen zijn een lijst geworden (1 oktober 2026): zie .feiten in stijl22.css. */
-  .cs-feiten { margin-top: 1.6rem; }
-  .cs-queue { margin-top: .9rem; font-size: .88rem; line-height: 1.6; color: var(--inkt-2); }
-
-  .cs-sfeer-p + .cs-sfeer-p, .cs-sfeer-p { margin-top: 1.1rem; }
-  .cs-stappen { display: grid; gap: 1.1rem; list-style: none; padding: 0; margin: 1.8rem 0 0; }
-  .cs-stappen li { padding-top: 1.1rem; border-top: 1px solid var(--lijn); display: grid; gap: .35rem; }
-  /* ── HET NUMMER IS INKT EN GEEN LIME — 7 september 2026 ──────────────────
-     Dit stond op --gloed, en de noot bij die token in stijl22.css zegt met
-     zoveel woorden waarom dat niet mag: hij is bedoeld als ACCENT náást
-     leesbare tekst, niet als tekstkleur. Op vel meet hij 2,13:1, en dit is een
-     nummer — een teken zonder woordbeeld, dus je kunt het niet half lezen en de
-     rest raden. De keuring zei het meteen. */
-  .cs-nr { color: var(--inkt-2); }
-  .cs-stappen b, .cs-vakwerk b, .cs-waarom b {
-    font-family: var(--kop2); font-weight: 500; font-stretch: 125%;
-    font-size: 1.05rem; line-height: 1.2; text-transform: uppercase; letter-spacing: -.01em;
-  }
-  .cs-stappen p, .cs-vakwerk p, .cs-waarom p { font-size: .92rem; margin-top: .35rem; }
-
-  .cs-negen {
-    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: clamp(.7rem, 1.6vw, 1.1rem); list-style: none; padding: 0; margin: 0;
-  }
-  @media (max-width: 700px) { .cs-negen { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-
-  /* ── HET BEWIJS STOND OP 520 IN EEN PANEEL VAN 1392 — 13 september 2026 ──
-     Gemeten op een scherm van 1440: de schuif stond 520 breed, gecentreerd,
-     met 872 pixels leeg eromheen — en dit is het blok dat laat zien wat er
-     met JOUW foto gebeurt. Het overtuigendste element van de pagina was het
-     kleinste.
-
-     Breder maken alleen helpt niet: de schuif is vierkant, dus 900 breed is
-     ook 900 hoog en dan past het bewijs niet meer op één scherm. De tekst
-     gaat daarom ERNAAST staan in plaats van erboven. Het blok vult de
-     breedte, de schuif wordt een derde groter, en de uitleg staat naast het
-     beeld waar hij over gaat. Onder 62rem blijft alles onder elkaar. */
-  .cs-midden { max-width: 46rem; margin-inline: auto; text-align: center; }
-  .cs-midden .lopend { margin-inline: auto; }
-  .cs-compare { max-width: 520px; margin: 0 auto; }
-  @media (min-width: 62rem) {
-    .cs-bewijs { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: clamp(2rem, 5vw, 4.5rem); align-items: center; }
-    .cs-midden { max-width: 46ch; margin-inline: 0; text-align: start; }
-    /* Vier regels waarvan de laatste twee woorden telt, leest als een fout.
-       `balance` verdeelt de kop over even lange regels. */
-    .cs-midden h2 { text-wrap: balance; }
-    .cs-midden .lopend { margin-inline: 0; }
-    .cs-compare { max-width: 680px; margin: 0; width: 100%; }
-  }
-
-  .cs-vakwerk, .cs-waarom {
-    display: grid; gap: clamp(1.4rem, 3vw, 2.4rem);
-    grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
-    list-style: none; padding: 0; margin: 0;
-  }
-  .cs-vakwerk li { padding-top: 1.2rem; border-top: 1px solid var(--lijn); }
-  .cs-waarom { margin-top: clamp(2.5rem, 5vw, 4rem); }
-  .cs-waarom li {
-    padding: clamp(1.2rem, 2.5vw, 1.7rem);
-    border: 1px solid var(--lijn); border-radius: calc(var(--ronding) - 12px);
-    background: var(--wit);
-  }
-
-  .cs-vinkjes { display: grid; gap: .9rem; list-style: none; padding: 0; margin: 1.4rem 0 0; }
-  .cs-vinkjes li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .8rem; align-items: start; }
-  .cs-vinkjes span { color: var(--inkt-2); font-size: .95rem; line-height: 1.6; }
-  .cs-i {
-    width: 20px; height: 20px; margin-top: .15rem; flex: 0 0 auto;
-    fill: none; stroke: var(--gloed); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
-  }
-  .cs-modelnoot { margin-top: 1.4rem; font-size: .92rem; line-height: 1.6; color: var(--inkt-2); max-width: 44em; }
-  .cs-modelnoot a {
-    color: var(--inkt); text-decoration: underline; text-underline-offset: 3px;
-    text-decoration-color: var(--geel); text-decoration-thickness: 2px;
-  }
-  .cs-modelnoot a:hover { text-decoration-color: var(--inkt); }
-
-  .cs-slot .lopend { max-width: 44em; }
-</style>
+  </Fragment>
+</LookDetailHal>

@@ -12,7 +12,6 @@ fs.mkdirSync(SHOTS, { recursive: true });
 const FLOWS = [
   { path: '/start/catalog', kind: 'catalog', wire: 'catalog', bg: true },
   { path: '/start/lifestyle', kind: 'lifestyle', wire: 'lifestyle', bg: false },
-  { path: '/start/complete', kind: 'complete', wire: 'drop', bg: true },
 ];
 const HOLDS = [
   { path: '/start/video', wire: 'video' },

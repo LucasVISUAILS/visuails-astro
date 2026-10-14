@@ -8,6 +8,13 @@
  * overzicht staat (tellers, uitgelichte bestelling, strook, activiteit). Hier
  * staat alleen de vorm — in de schil van de site, zie StudioLayout.astro.
  *
+ * Punt 3.01 (8 oktober 2026): bovenaan staat nu "wat nu" — de bestelling waar
+ * de klant het eerst iets moet doen, met de Nu-zin, de datums en hoogstens twee
+ * knoppen (watNuView() in account.js, dezelfde orderView() als Bestellingen),
+ * en daaronder "En nog 1 bestelling: …". Is dat de uitgelichte bestelling, dan
+ * IS de uitgelichte kaart het blok. De tellers staan er alleen nog als hun
+ * getal boven 0 is (V23 = b).
+ *
  * Vier blokken, in deze volgorde en met deze reden:
  *   1 · de vier tellers — elk een link naar dezelfde statusfilter op Bestellingen;
  *   2 · de nieuwste LOPENDE bestelling met haar tijdlijn, en de andere lopende
@@ -18,6 +25,7 @@
  */
 import StudioLayout from '../../layouts/StudioLayout.astro';
 import Bestelkaart from '../../components/studio/Bestelkaart.astro';
+import Lopend from '../../components/studio/Lopend.astro';
 import Pil from '../../components/studio/Pil.astro';
 import { pagesContext } from '../../lib/route.js';
 import { studioScreen, progressView, STUDIO_ICONS, invoiceDate, weergaveStatus } from '../../lib/account.js';
@@ -30,6 +38,11 @@ if (s instanceof Response) return s;
 
 const { st, v } = s;
 const { t, lang, customer, orders, filesByOrder, eventsByOrder, thema, navDicht } = st;
+/* Punt 3.01: het "wat nu"-blok. `samen` = de bestelling bovenaan is de uitgelichte. */
+const w = v.watNu;
+const samen = !!(w && w.boven && v.featured && w.boven.id === v.featured.id);
+/* Staat er een andere bestelling bovenaan, dan niet nog eens in de rij eronder. */
+const restZonderBoven = v.rest.filter((o) => !(w && w.boven && o.id === w.boven.id));
 ---
 <StudioLayout
   lang={lang} t={t} thema={thema} navDicht={navDicht} actief="overview" customer={customer}
@@ -37,6 +50,56 @@ const { t, lang, customer, orders, filesByOrder, eventsByOrder, thema, navDicht 
   kop={`${orders.length > 1 ? t.ovWelcome : t.ovWelcomeFirst}, ${v.name}`} lede={t.ovLede} chip={v.chip}
   actie={v.actie}
 >
+  {/* ── "WAT NU" (punt 3.01) ── */}
+  {w && w.boven && (
+    <section class="st-blok st-watnu-blok" aria-label={samen ? t.ovNowTitle : t.ovNuTeDoen}>
+      <div class="st-blok-kop"><h2>{samen ? t.ovNowTitle : t.ovNuTeDoen}</h2></div>
+      <Bestelkaart t={t} lang={lang} order={w.boven} events={eventsByOrder.get(w.boven.id) || []} files={filesByOrder.get(w.boven.id) || []} nu={w.nu} />
+      {w.nogMeer.length > 0 && (
+        <div class="st-kaart-vlak st-nogmeer">
+          <p class="st-nogmeer-kop">{w.nogMeerKop}</p>
+          <ul class="st-lopend">
+            {w.nogMeer.map((n) => (
+              <li>
+                <span class="st-ref">{n.ref}</span>
+                <span class="st-meta">{n.zin}</span>
+                <a class="st-link" href={n.href}>{t.ovOpenOrder}</a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {samen && v.rest.length > 0 && <Lopend t={t} lang={lang} orders={v.rest} nuPerOrder={w.nuPerOrder} eventsByOrder={eventsByOrder} filesByOrder={filesByOrder} />}
+    </section>
+  )}
+
+  {/* ── JE SALDO (punt 2.02, 8 oktober 2026) ─────────────────────────────
+      Onder de Nu-zin: tegoed met € en het woord "tegoed", credits als getal
+      zonder € met de vertaling in producten. Elk vak alleen als het bestaat.
+      Vervangt de losse tegoedtegel van 24 september. */}
+  {v.saldoStrook && (
+    <section class="st-blok" aria-labelledby="saldo-strook-h">
+      <div class="st-blok-kop"><h2 id="saldo-strook-h">{v.saldoStrook.kop}</h2></div>
+      <div class={`st-saldostrook${v.saldoStrook.tegoed && v.saldoStrook.credits ? ' is-twee' : ''}`}>
+        {v.saldoStrook.tegoed && (
+          <div class="st-kaart-vlak st-vlak st-saldovak is-tegoed" data-saldo="tegoed">
+            <p class="st-saldovak-getal">{v.saldoStrook.tegoed.getal}</p>
+            <p class="st-meta">{v.saldoStrook.tegoed.uitleg}</p>
+            <a class="st-link" href={v.saldoStrook.tegoed.link.href}>{v.saldoStrook.tegoed.link.label} →</a>
+          </div>
+        )}
+        {v.saldoStrook.credits && (
+          <div class="st-kaart-vlak st-vlak st-saldovak is-credits" data-saldo="credits">
+            <p class="st-saldovak-getal">{v.saldoStrook.credits.getal}</p>
+            <p class="st-meta">{v.saldoStrook.credits.uitleg}</p>
+            <a class="st-link" href={v.saldoStrook.credits.link.href}>{v.saldoStrook.credits.link.label} →</a>
+          </div>
+        )}
+      </div>
+    </section>
+  )}
+
+  {v.stats.length > 0 && (
   <section class="st-blok" aria-label={t.navOverview}>
     <div class="st-kaart-vlak st-cijfers">
       {v.stats.map(([icon, label, n, status]) => {
@@ -52,41 +115,14 @@ const { t, lang, customer, orders, filesByOrder, eventsByOrder, thema, navDicht 
       })}
     </div>
   </section>
-
-  {/* Het tegoed (24 september 2026): alleen als er iets staat. Zie tegoedView()
-      in account.js. */}
-  {v.tegoed && (
-    <section class="st-blok" aria-label={v.tegoed.h}>
-      <div class="st-kaart-vlak st-vlak st-saldo-tegel is-tegoed is-los">
-        <span class="st-eyebrow">{v.tegoed.h}</span>
-        <p class="st-credit-tel"><b>{v.tegoed.bedrag}</b></p>
-        <p class="st-meta">{v.tegoed.uitleg}</p>
-      </div>
-    </section>
   )}
 
-  {v.featured && (
+
+  {v.featured && !samen && (
     <section class="st-blok">
       <div class="st-blok-kop"><h2>{t.ovNowTitle}</h2></div>
-      <Bestelkaart t={t} lang={lang} order={v.featured} events={eventsByOrder.get(v.featured.id) || []} files={filesByOrder.get(v.featured.id) || []} />
-      {v.rest.length > 0 && (
-        <div class="st-kaart-vlak">
-          <ul class="st-lopend" aria-label={t.ovOthers(v.rest.length)}>
-            {v.rest.slice(0, 6).map((o) => {
-              const p = progressView(t, lang, o, eventsByOrder.get(o.id) || [], filesByOrder.get(o.id) || []);
-              return (
-                <li>
-                  <span class="st-ref">{o.ref}</span>
-                  <Pil status={weergaveStatus(o)} lang={lang} />
-                  <span class="st-meta">{serviceLabel(o.service, lang) || o.service} · {p.now}{p.when}</span>
-                  <a class="st-link" href={`/account/orders?order=${o.id}#order-${o.id}`}>{t.ovOpenOrder}</a>
-                </li>
-              );
-            })}
-          </ul>
-          {v.rest.length > 6 && <p class="st-meta st-meer"><a class="st-link" href="/account/orders">{t.ovViewAll}</a></p>}
-        </div>
-      )}
+      <Bestelkaart t={t} lang={lang} order={v.featured} events={eventsByOrder.get(v.featured.id) || []} files={filesByOrder.get(v.featured.id) || []} nu={w ? w.nuPerOrder.get(v.featured.id) : null} />
+      {restZonderBoven.length > 0 && <Lopend t={t} lang={lang} orders={restZonderBoven} nuPerOrder={w ? w.nuPerOrder : null} eventsByOrder={eventsByOrder} filesByOrder={filesByOrder} />}
     </section>
   )}
 

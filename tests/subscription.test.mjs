@@ -56,7 +56,8 @@ const gemaakt = await createSubscriptionRow(env, { customerId: 1, planId: 'studi
 ok('de rij bestaat', Boolean(gemaakt.row?.id), true);
 ok('en staat op pending', gemaakt.row.status, 'pending');
 ok('met het gekozen plan', [gemaakt.row.plan, gemaakt.row.term], ['studio', 'yearly']);
-ok('en de gekozen dag', gemaakt.row.window_day, 8);
+/* Ronde 10 (8 oktober 2026): window_day blijft als kolom, maar wordt niet meer geschreven. */
+ok('en geen vaste week, ook niet als hij wordt meegegeven', gemaakt.row.window_day, null);
 ok('het kenmerk heeft de abonnementsvorm', /^SUB-[0-9A-Z]{4}-[0-9A-Z]{3}$/.test(gemaakt.row.ref), true);
 
 /* DE DUBBELE KLIK. Dit is geen zeldzaam geval: een trage betaalpagina en een
@@ -307,7 +308,7 @@ console.log('\nde vorm die een mail of een paneel leest');
 const vorm = subscriptionShape(opnieuw.row);
 ok('kent het kenmerk', vorm.ref, opnieuw.row.ref);
 ok('en het aantal producten', vorm.products, productsFor('starter'));
-ok('en de dienst', vorm.service, 'complete');
+ok('en de dienst (catalog sinds 14 oktober 2026; compleet bestaat niet meer)', vorm.service, 'catalog');
 ok('zonder abonnement is de vorm niets', subscriptionShape(null), null);
 
 console.log('\nhet dashboard zegt niet wat er aan de beurt is, en tekent zijn meter');
@@ -363,21 +364,25 @@ console.log('\nhet dashboard zegt niet wat er aan de beurt is, en tekent zijn me
      Wat overeind blijft, en hier dus nog steeds getoetst wordt: wat er dreigt
      te VERVALLEN staat er met zoveel woorden bij. Dat is het enige getal op dit
      scherm waar een klant iets aan kwijt kan raken. */
+  /* Sinds 2.07 (8 oktober 2026) komt de zin uit creditWeergave.js (dezelfde
+     als in /admin): "8 hiervan vervallen op … — die gaan als eerste op." */
   ok('en noemt de datum waarop credits vervallen',
-    /st-credit-regel/.test(pagina) && /planCreditExpiry/.test(acc), true);
+    /st-abo-verval/.test(pagina) && /eersteOp:/.test(readFileSync(new URL('../src/lib/creditWeergave.js', import.meta.url), 'utf8')), true);
   /* DE BALK HEEFT GEEN style-ATTRIBUUT. Dezelfde CSP-val als hierboven, nu voor
      de vierde keer: een breedte in `style=` wordt geweigerd en de balk staat
      vol. Vandaar een vaste trap van vijf procent als klasse. */
-  ok('en draagt zijn stand als klasse en niet als inline stijl',
-    /st-credit-vul is-p\$\{/.test(pagina) && !/style=\{`--pct/.test(pagina), true);
+  /* De balk is weg sinds 2.07: het saldo is een getal met de vertaling in
+     producten ("genoeg voor 32 catalogsets"). Wat blijft: geen inline stijl. */
+  ok('en draagt geen inline stijl',
+    !/style=\{`--pct/.test(pagina), true);
   ok('met een trap in de css',
     /\.st-credit-vul\.is-p50 \{ width: 50%; \}/.test(
       readFileSync(new URL('../src/styles/studio.css', import.meta.url), 'utf8')), true);
 
-  /* De drie knoppen per regel zijn drie losse formulieren. In één formulier zou
-     één submit alle drie de bedoelingen tegelijk versturen. */
-  ok('elke lijstknop heeft zijn eigen formulier',
-    (pagina.match(/action="\/account\/plan\/queue"/g) || []).length >= 4, true);
+  /* De lijst (en dus de lijstknoppen) is weg sinds ronde 10, 8 oktober 2026:
+     niets op de pagina post nog naar /account/plan/queue. */
+  ok('geen enkel formulier post nog naar de oude lijst',
+    /action="\/account\/plan\/(queue|week)"/.test(pagina), false);
 
   /* Opzeggen moet kunnen. Wie er niet uit kan, stapt naar zijn bank, en dan is
      het een stornering in plaats van een beëindiging. */
@@ -398,7 +403,7 @@ console.log('\nhet dashboard zegt niet wat er aan de beurt is, en tekent zijn me
 
   /* DE BESTELKNOP NAAST HET GETAL. Uit de mockup: het getal roept een vraag op en
      het antwoord hoort op dezelfde kaart. */
-  ok('het saldo heeft een bestelknop naast zich', /st-saldo-kop/.test(pagina) && /\.st-saldo-kop/.test(css), true);
+  ok('onder het saldo staan de bestelknoppen', pagina.indexOf('st-abo-saldo') < pagina.indexOf('st-abo-knoppen') && /\.st-abo-knoppen/.test(css), true);
   /* ── GEEN SOORT MEER BIJ NAAM IN DE OPMAAK — migratie 0035 ─────────────────
      Hier stond `ok('de clips hebben hun eigen meter', /planClipsH/)`: een vaste
      tweede meter naast die voor de producten. Dat klopte zolang er precies twee
@@ -415,21 +420,24 @@ console.log('\nhet dashboard zegt niet wat er aan de beurt is, en tekent zijn me
      eigenschap die bewaakt wordt is dezelfde gebleven: het scherm kent geen
      soort bij naam maar leest ze uit de gegevens, zodat een nieuw plan of een
      nieuwe dienst er vanzelf op komt te staan. */
-  ok('het scherm tekent één creditbalk en een kaart per dienst',
-    /const dienstKaarten = \(state\.diensten \|\| \[\]\)\.map/.test(acc)
-    && /v\.saldo\.dienstKaarten\.map/.test(readFileSync(new URL('../src/pages/account/plan.astro', import.meta.url), 'utf8')), true);
+  /* Sinds 2.07: één saldo en twee bestelknoppen (catalog, lifestyle) met de
+     vaste look erin; de creditkaart zegt wat elke dienst kost (6.01). */
+  ok('het scherm tekent één saldo, de bestelknoppen en de creditkaart',
+    /v\.bestel\.map/.test(pagina) && /<CreditKaart /.test(pagina), true);
   ok('en noemt geen enkele soort bij naam in de opmaak',
     /planClipsH|'video-motion'|"video-motion"/.test(acc), false);
-  /* En de soort van een nieuw item komt uit het PLAN en niet uit het formulier:
-     een verzonnen soort levert een rij op die nooit vast te zetten is. */
-  ok('de soort van een nieuw item wordt aan het plan getoetst',
-    /kanKiezen\.includes\(gevraagd\)/.test(acc), true);
+  /* "De soort van een nieuw item wordt aan het plan getoetst" ging over de lijst
+     (handlePlanQueue), die weg is sinds ronde 10. Een abonnee bestelt nu via het
+     gewone formulier; de dienstkaart wijst daarheen. */
+  ok('de bestelknop wijst naar het gewone bestelformulier (herbestel.js)',
+    /herbestelKnop\(\{ service: dienst, details_json: d \}/.test(acc), true);
   /* De vaste look staat er als FEITEN en niet alleen als een link: het abonnement
      werkt omdat die look een afspraak is, en dan moet hij te lezen zijn. */
   ok('wat vastligt staat er uitgeschreven', /brandKitRegels/.test(acc), true);
-  /* En de nudge verdwijnt zodra het af is — een nudge die blijft staan, is een
-     banner. */
-  ok('de nudge hangt aan wat er nog open is', /bkOnaf\.length/.test(acc), true);
+  /* De nudge "leg je look vast" is weg sinds 2.08 (8 oktober 2026): de vaste
+     look vult zichzelf na de eerste betaalde bestelling, en is voor een abonnee
+     niet meer verplicht. */
+  ok('geen nudge meer om de look vast te leggen', /bkOnaf\.length/.test(acc), false);
 }
 
 

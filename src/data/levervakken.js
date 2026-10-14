@@ -28,11 +28,28 @@
  */
 import { SHOTS } from './shots.js';
 import { angleById, isEigenAngleId } from './angles.js';
+import { lifestyleBeeldenVan } from './pricing.js';
 
-const LIFESTYLE = [
+/* Een lifestylebestelling van VÓÓR 14 oktober 2026: drie beelden (een scène, op een
+   model, een close-up), met de neutrale namen die ze toen hadden. Zo blijven
+   die bestellingen precies wat ze waren — op het werkbord, in Studio en in de zip. */
+const LIFESTYLE_OUD = [
   { id: 'front', nl: 'Beeld 1', en: 'Image 1', woord: { nl: 'beeld-1', en: 'image-1' } },
   { id: 'back', nl: 'Beeld 2', en: 'Image 2', woord: { nl: 'beeld-2', en: 'image-2' } },
   { id: 'detail', nl: 'Beeld 3', en: 'Image 3', woord: { nl: 'beeld-3', en: 'image-3' } },
+];
+
+/* ── VIER SINDS 14 OKTOBER 2026 ──────────────────────────────────────────────
+   Lucas: "on model front, on model back, product only, en on model detail close
+   up". De namen zijn die van LEVERVLAKKEN.lifestyle in pricing.js (wat de site
+   belooft), de volgorde is de volgorde van de carrousel, en de sleutels zijn
+   gewone woorden in `files.shot` (een vrij tekstveld; het werkbord laat alleen de
+   sleutels van deze lijst toe). 'product' is nieuw en komt alleen hier voor. */
+const LIFESTYLE = [
+  { id: 'front', nl: 'Op model · voorkant', en: 'On model · front', woord: { nl: 'model-voorkant', en: 'model-front' } },
+  { id: 'back', nl: 'Op model · achterkant', en: 'On model · back', woord: { nl: 'model-achterkant', en: 'model-back' } },
+  { id: 'product', nl: 'Alleen het product', en: 'Product only', woord: { nl: 'product', en: 'product' } },
+  { id: 'detail', nl: 'Detail op model', en: 'Detail on model', woord: { nl: 'detail', en: 'detail' } },
 ];
 
 const BASIS_WOORD = {
@@ -88,7 +105,11 @@ export function extraVakken(det) {
  */
 export function leverVakken(service, det) {
   const s = String(service || '');
-  if (s === 'lifestyle') return LIFESTYLE;
+  const d = details(det);
+  /* Een lifestyleproef krijgt de lifestylevakjes, niet die van een catalogset
+     (tot 14 oktober 2026 kreeg hij er vier catalogvakjes). */
+  const lifestyle = s === 'lifestyle' || (s === 'test-sample' && String(d.sample_type || '') === 'lifestyle');
+  if (lifestyle) return lifestyleBeeldenVan(d) >= 4 ? LIFESTYLE : LIFESTYLE_OUD;
   return [...CATALOG, ...extraVakken(det)];
 }
 

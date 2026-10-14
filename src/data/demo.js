@@ -263,8 +263,10 @@ export function catalogImage(shot, background) {
 const PLACEHOLDER_LIFESTYLE = {
   dunes: ['/img/lifestyle-dunes-01.webp', '/img/lifestyle-dunes-02.webp', '/img/banners-05.webp'],
   flash: ['/img/lifestyle-flash-01.webp', '/img/lifestyle-flash-03.webp', '/img/lifestyle-flash-04.webp'],
-  glow: ['/img/lifestyle-glow-01.webp', '/img/lifestyle-glow-03.webp', '/img/lifestyle-glow-04.webp'],
-  'phone-made': ['/img/lifestyle-phone-made-01.webp', '/img/lifestyle-phone-made-04.webp', '/img/lifestyle-phone-made-07.webp'],
+  /* glow-06 (de hoodie) weg sinds 13 oktober 2026 (afvinklijst 15, k-rechten): geen toestemming. */
+  glow: ['/img/lifestyle-glow-03.webp', '/img/lifestyle-glow-04.webp', '/img/lifestyle-glow-05.webp'],
+  /* phone-made-01 weg sinds 14 oktober 2026 (Lucas: de hoodie met de rode cirkel is van een ander, echt merk). */
+  'phone-made': ['/img/lifestyle-phone-made-03.webp', '/img/lifestyle-phone-made-04.webp', '/img/lifestyle-phone-made-07.webp'],
 };
 
 /** Eén beeld uit de carousel van een stijl. `i` is 0-based. */
@@ -358,7 +360,7 @@ export const WALK_COPY = {
         n: 'Us, in production',
         duur: kort(TURN_UNATT_) + ', or on the day you picked',
         h: 'We make it',
-        b: 'Every product runs through as one series, which is what makes the lighting, the angle and the grade match across the whole order. Where a person appears, a face from the shared roster is included at no extra cost. Our image editors check every image before it goes into your folder.',
+        b: 'Every product runs through as one series, which is what makes the lighting, the angle and the grade match across the whole order. Where a person appears, a face from the shared roster is included at no extra cost. Every image is checked before it goes into your folder.',
       },
       goedkeuren: {
         n: 'You, in your account',
@@ -369,7 +371,7 @@ export const WALK_COPY = {
     },
     services: {
       catalog: { name: 'Catalog', line: 'Four images per product' },
-      lifestyle: { name: 'Lifestyle', line: 'Three images, one styled look' },
+      lifestyle: { name: 'Lifestyle', line: 'Four images, one styled look' },
       video: { name: 'Video', line: 'One clip that loops' },
     },
 
@@ -408,7 +410,7 @@ export const WALK_COPY = {
         n: 'Us, in production',
         h: 'A face is added, and every product runs as one batch',
         b: 'Every order includes a model from the shared roster, at no extra cost. Every product then runs through together, which is what makes the lighting, the angle and the grade match across all of them.',
-        meer: `In this walkthrough it is one face; on a real order you pick from ${rosterWoord('en')}, or we design one that is only yours. Run separately, the products would not match. Each image is finished by hand in professional editing tools, colour-graded to your brand, and our image editors check fit, colour against your own photo, and framing before anything leaves.`,
+        meer: `In this walkthrough it is one face; on a real order you pick from ${rosterWoord('en')}, or we design one that is only yours. Run separately, the products would not match. Each image is finished by hand in professional editing tools, colour-graded to your brand, and then checked for fit, colour against your own photo, and framing before anything leaves.`,
       },
       /* ── DE DREMPEL STOND HIER NOG, EN HIJ IS ER SINDS 7 AUGUSTUS AF ────────
          Deze twee zinnen zeiden dat per beeld goedkeuren pas vanaf
@@ -473,7 +475,7 @@ export const WALK_COPY = {
         n: 'Wij, in productie',
         duur: kort(TURN_UNATT_NL_) + ', of op de dag die jij koos',
         h: 'Wij maken het',
-        b: 'Elk product gaat als één serie door de productie, en dat is wat ervoor zorgt dat de belichting, de hoek en de kleur over de hele bestelling kloppen. Waar een persoon in beeld komt, zit er een gezicht uit de gedeelde bibliotheek bij, zonder extra kosten. Onze beeldredactie kijkt elk beeld na voordat het je map in gaat.',
+        b: 'Elk product gaat als één serie door de productie, en dat is wat ervoor zorgt dat de belichting, de hoek en de kleur over de hele bestelling kloppen. Waar een persoon in beeld komt, zit er een gezicht uit de gedeelde bibliotheek bij, zonder extra kosten. Elk beeld wordt nagekeken voordat het je map in gaat.',
       },
       goedkeuren: {
         n: 'Jij, in je account',
@@ -484,7 +486,7 @@ export const WALK_COPY = {
     },
     services: {
       catalog: { name: 'Catalog', line: 'Vier beelden per product' },
-      lifestyle: { name: 'Lifestyle', line: 'Drie beelden, één gestylede look' },
+      lifestyle: { name: 'Lifestyle', line: 'Vier beelden, één gestylede look' },
       video: { name: 'Video', line: 'Eén clip die doorloopt' },
     },
 
@@ -517,7 +519,7 @@ export const WALK_COPY = {
         n: 'Wij, in productie',
         h: 'Er komt een gezicht bij, en alles gaat als één batch door',
         b: 'Elke bestelling bevat een model uit de gedeelde bibliotheek, zonder extra kosten. Daarna gaat elk product samen door de productie, en daardoor kloppen de belichting, de hoek en de kleur over de hele bestelling.',
-        meer: `In deze doorloop is het één gezicht; bij een echte bestelling kies je uit ${rosterWoord('nl')}, of we ontwerpen er één die alleen van jou is. Los gedraaid kloppen de producten niet met elkaar. Elk beeld wordt met de hand afgewerkt in professionele editingtools, kleurgecorrigeerd naar je merk, en onze beeldredactie controleert de pasvorm, de kleur tegen je eigen foto en de kadrering voordat er iets weggaat.`,
+        meer: `In deze doorloop is het één gezicht; bij een echte bestelling kies je uit ${rosterWoord('nl')}, of we ontwerpen er één die alleen van jou is. Los gedraaid kloppen de producten niet met elkaar. Elk beeld wordt met de hand afgewerkt in professionele editingtools, kleurgecorrigeerd naar je merk, en daarna gecontroleerd op pasvorm, kleur tegen je eigen foto en kadrering voordat er iets weggaat.`,
       },
       // Zie de noot bij de Engelse result-tekst hierboven.
       result: {

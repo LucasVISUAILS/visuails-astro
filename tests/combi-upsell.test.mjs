@@ -10,8 +10,9 @@
  *
  *   1 · /start/catalog (beide talen) draagt geen combi-blok meer en geen link
  *       naar /start/complete;
- *   2 · /start/complete bestaat nog (oude links, lopende bestellingen) maar
- *       staat op noindex, zodat hij niet opnieuw als dienst gevonden wordt;
+ *   2 · /start/complete wordt niet meer gebouwd en stuurt met een 301 door naar
+ *       /start (8 oktober 2026, punt 9.01: Lucas koos V12 = a), en niets in src/
+ *       laadt CombiKeuze nog;
  *   3 · de sitemap noemt /start/complete niet.
  */
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
@@ -31,10 +32,27 @@ for (const pad of ['start/catalog/index.html', 'nl/start/catalog/index.html']) {
   ok(`  geen link naar /start/complete`, !/href="[^"]*\/start\/complete/.test(html), true);
 }
 
+/* ── /start/complete IS WEG — 8 oktober 2026 (punt 9.01) ────────────────────
+   Tot vandaag eiste deze toets dat de pagina bleef bestaan, op noindex, voor
+   oude links. De verkoop is nu dicht: oude links krijgen een 301 naar het
+   keuzescherm, en de pagina zelf mag er niet meer staan (een regel in
+   _redirects wint het van een echte pagina — zie de kop van dat bestand). */
 for (const pad of ['start/complete/index.html', 'nl/start/complete/index.html']) {
-  const html = dist(pad);
-  ok(`${pad} bestaat nog voor oude links`, !!html, 'bestand', 'ontbreekt');
-  if (html) ok('  en staat op noindex', /<meta name="robots" content="noindex/.test(html), true);
+  ok(`${pad} wordt niet meer gebouwd`, dist(pad) === null, 'geen bestand', 'gebouwd');
+}
+{
+  const regels = readFileSync(new URL('../public/_redirects', import.meta.url), 'utf8')
+    .split('\n').map((r) => r.trim()).filter((r) => r && !r.startsWith('#')).map((r) => r.split(/\s+/));
+  for (const [bron, doel] of [['/start/complete', '/start/'], ['/start/complete/', '/start/'], ['/nl/start/complete', '/nl/start/'], ['/nl/start/complete/', '/nl/start/']]) {
+    const r = regels.find((x) => x[0] === bron);
+    ok(`_redirects: ${bron} → ${doel} 301`, !!r && r[1] === doel && r[2] === '301', `${doel} 301`, r ? `${r[1]} ${r[2]}` : '(geen regel)');
+  }
+}
+{
+  const loop = (d) => readdirSync(new URL(`../${d}`, import.meta.url), { withFileTypes: true })
+    .flatMap((e) => (e.isDirectory() ? loop(`${d}/${e.name}`) : /\.(astro|js|mjs|ts)$/.test(e.name) ? [`${d}/${e.name}`] : []));
+  const laders = loop('src').filter((f) => /import\s+CombiKeuze\b|<CombiKeuze\b/.test(readFileSync(new URL(`../${f}`, import.meta.url), 'utf8')));
+  ok('niets in src/ laadt CombiKeuze nog', laders.length === 0, [], laders);
 }
 
 const kaarten = existsSync(new URL('../dist', import.meta.url))

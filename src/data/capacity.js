@@ -49,7 +49,7 @@
 // producten is daar een gevolg van.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { WINDOW_THRESHOLD, KIND_PUNTEN, puntenVoor, agendaKind } from './pricing.js';
+import { WINDOW_THRESHOLD, KIND_PUNTEN, puntenVoor, agendaKind, lifestyleBeeldenVan } from './pricing.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1 · HET PLAFOND
@@ -60,20 +60,31 @@ import { WINDOW_THRESHOLD, KIND_PUNTEN, puntenVoor, agendaKind } from './pricing
  * dat Lucas zet, en het enige in dit bestand dat niet afgeleid is.
  *
  * Eén punt is één afgewerkte foto (KIND_PUNTEN in pricing.js): een catalogset is
- * vier punten, een carrousel drie, een compleet product zeven. Voor video meet
+ * vier punten, een carrousel sinds 14 oktober 2026 ook vier. Voor video meet
  * een punt tijd en geen bestanden — een lifestyle-clip is één bestand en tien
  * punten. Zie de noot boven KIND_PUNTEN.
  */
 export const PUNTEN_PER_DAG = 100;
 
-/** Punten in één compleet product — vier catalog plus een carrousel van drie. */
-export const PUNTEN_PER_PRODUCT = KIND_PUNTEN.complete;
+/**
+ * Punten in één product: een catalogset of een lifestylecarrousel.
+ *
+ * ── GEEN "COMPLETE PRODUCTEN" MEER — 14 oktober 2026 ──────────────────────
+ * Tot vandaag was de eenheid van de agenda een compleet product (catalog plus
+ * lifestyle, zeven punten), en zei de site "een studiodag houdt 14 producten".
+ * Lucas, afvinklijst 23: "compleet bestaat niet meer … het is het één of het
+ * ander." Een product is dus één catalogset óf één carrousel, en die wegen sinds
+ * lifestyle vier foto's heeft allebei vier punten. Mochten ze ooit uit elkaar
+ * gaan, dan telt de zwaarste: zo belooft de site nooit meer producten dan er
+ * passen.
+ */
+export const PUNTEN_PER_PRODUCT = Math.max(KIND_PUNTEN.catalog, KIND_PUNTEN.lifestyle);
 
 /**
- * Complete producten die op een dag passen. AFGELEID, niet gezet: het plafond
- * staat in punten en dit is wat daar aan complete producten in gaat. Naar
- * beneden afgerond, want een half product bestaat niet en naar boven afronden
- * zou een dag verkopen die niet af komt.
+ * Producten die op een dag passen. AFGELEID, niet gezet: het plafond staat in
+ * punten en dit is wat daar aan producten in gaat. Naar beneden afgerond, want
+ * een half product bestaat niet en naar boven afronden zou een dag verkopen die
+ * niet af komt.
  */
 export const PRODUCTS_PER_DAY = Math.floor(PUNTEN_PER_DAG / PUNTEN_PER_PRODUCT);
 
@@ -87,7 +98,11 @@ export const PRODUCTS_PER_DAY = Math.floor(PUNTEN_PER_DAG / PUNTEN_PER_PRODUCT);
  * gate"; yielding is not the same as starving. This is the floor under the
  * yielding.
  */
-export const QUEUE_FLOOR_PER_DAY = 3;
+/* 3 → 5 OP 14 OKTOBER 2026, EN DAT IS GEEN NIEUWE KEUZE MAAR DEZELFDE. Het waren
+   drie complete producten (21 van de 100 punten). Nu een product vier punten is,
+   zijn vijf producten 20 punten: hetzelfde deel van de dag blijft vrij voor kleine
+   bestellingen. Wil Lucas meer of minder ruimte, dan is dit het getal. */
+export const QUEUE_FLOOR_PER_DAY = 5;
 
 /** What is actually sellable as a reserved window, per day. */
 export const ATTENDED_PER_DAY = PRODUCTS_PER_DAY - QUEUE_FLOOR_PER_DAY;
@@ -230,10 +245,9 @@ export const ATTENDED_PUNTEN_PER_VENSTER = ATTENDED_PUNTEN_PER_DAG * WINDOW_DAYS
 /**
  * Het grootste aantal producten dat één venster kan houden, over alle diensten heen.
  *
- * De lichtste gewogen soort bepaalt dit: een lifestylecarrousel kost drie punten, dus
- * er passen er meer in een venster dan complete producten, die er zeven kosten.
- * ATTENDED_PER_WINDOW blijft het getal voor complete producten — dat is wat de site
- * bedoelt als er "producten" staat zonder dienst erbij.
+ * De lichtste gewogen soort bepaalt dit: een Motion-clip kost vier punten, net als een
+ * catalogset en een carrousel. ATTENDED_PER_WINDOW is het getal voor producten —
+ * dat is wat de site bedoelt als er "producten" staat zonder dienst erbij.
  *
  * WAAROM DIT BESTAAT EN NIET IEDEREEN ZIJN EIGEN MAXIMUM UITREKENT: het
  * bestandsplafond in src/lib/uploads.js moet de grootste bestelling dekken die het
@@ -405,7 +419,7 @@ export function windowFits(startIso, punten, booked = {}, blackouts = new Set())
 export function offerableWindows({
   today,
   products,
-  service = 'complete',
+  service = 'catalog',
   booked = {},
   blackouts = new Set(),
   limit = 6,
@@ -446,14 +460,14 @@ export function offerableWindows({
  * Elk krijgt zijn eigen reden zodat de pagina het ware ding kan zeggen.
  *
  * `max` is er in twee eenheden. Producten omdat de site daarin praat, punten
- * omdat de poort daarin rekent — en dat verschil is echt: dertig catalogsets
- * passen wél in een venster en dertig complete producten niet.
+ * omdat de poort daarin rekent — en dat verschil is echt: dertig Motion-clips
+ * wegen anders dan dertig lifestyle-clips.
  *
  * `maxPunten` heette `maxImages` tot 7 september 2026. Zelfde reden als overal:
  * het getal meet werk en geen bestanden, en een naam die het tweede belooft komt
  * ooit als aantal foto's op een scherm terecht.
  */
-export function clearedWindows({ today, products, service = 'complete', booked = {}, blackouts = new Set(), limit = 6, from = null }) {
+export function clearedWindows({ today, products, service = 'catalog', booked = {}, blackouts = new Set(), limit = 6, from = null }) {
   const perProduct = puntenVoor(service, 1);
   const maxProducts = perProduct === null ? 0 : Math.floor(ATTENDED_PUNTEN_PER_VENSTER / perProduct);
   const leeg = (reason) => ({ windows: [], reason, max: maxProducts, maxPunten: ATTENDED_PUNTEN_PER_VENSTER, service });
@@ -535,9 +549,10 @@ export function daysInRange(startIso, endIso) {
  *
  * DE LAST IS IN BEELDEN EN NIET IN PRODUCTEN, en sinds 7 september 2026 doet
  * rowPunten() hieronder de vertaling van rij naar gewicht — inclusief video, dat
- * clips telt in plaats van producten. Een rij zonder `service` telt als
- * `complete` — het zwaarste gewicht, en precies wat de poort vóór 31 augustus 2026
- * voor elke order aannam. Oude rijen worden daarmee gelezen zoals ze bedoeld waren
+ * clips telt in plaats van producten. Een rij zonder `service` telt als een oude
+ * bundel (catalog + lifestyle, zeven punten; compleet bestaat sinds 14 oktober 2026
+ * niet meer als dienst) — precies wat de poort vóór 31 augustus 2026 voor elke
+ * order aannam. Oude rijen worden daarmee gelezen zoals ze bedoeld waren
  * en niemand krijgt met terugwerkende kracht meer ruimte dan hij had. Een rij met
  * een soort die nog geen gewicht heeft, kan geen venster hebben en wordt
  * overgeslagen; kwam hij er tóch, dan is dat een gat dat je in het beheerscherm
@@ -585,12 +600,22 @@ export function daysInRange(startIso, endIso) {
  * beheerscherm ziet, en niet een nul die stilletjes meetelt.
  */
 export function rowPunten(r = {}) {
-  const dienst = String(r.service || 'complete').trim();
+  /* Een rij zonder dienst is van vóór de diensten een naam hadden: toen was elke
+     bestelling catalog + lifestyle samen. agendaKind() weegt die als oude bundel. */
+  const dienst = String(r.service || 'drop').trim();
   const kind = agendaKind(dienst, r.style);
   if (!kind) return null;
   const aantal = dienst === 'video'
     ? Number(r.clip_count) || 0
     : Number(r.product_count) || 0;
+  /* EEN LIFESTYLEBESTELLING VAN VÓÓR 14 OKTOBER 2026 WEEGT DRIE PUNTEN PER PRODUCT.
+     Zo telt de agenda wat er bij het bestellen gold (afvinklijst 23, k-ls-oud): een
+     venster dat toen geboekt is, wordt niet achteraf zwaarder. Alleen als de rij
+     zijn details meedraagt; een rij zonder details is nieuw werk en weegt vier. */
+  if (kind === 'lifestyle' && (r.details_json !== undefined || r.details !== undefined)
+      && lifestyleBeeldenVan(r.details_json !== undefined ? r.details_json : r.details) < 4) {
+    return aantal * 3;
+  }
   /* De stijl gaat mee zodat STYLE_PUNTEN kan afwijken van de soort. Bij video is
      de stijl al in agendaKind() verwerkt (die kiest de soort ermee); bij foto's
      staat hij hier voor het geval een look ooit zwaarder blijkt te wegen. */
@@ -667,7 +692,7 @@ function assertCapacity() {
    * daarna weigert. Vandaar `>` en niet `!==`. */
   if (ATTENDED_PER_WINDOW * PUNTEN_PER_PRODUCT > ATTENDED_PUNTEN_PER_VENSTER) {
     throw new Error(
-      `capacity.js: ${ATTENDED_PER_WINDOW} complete producten kosten `
+      `capacity.js: ${ATTENDED_PER_WINDOW} producten kosten `
       + `${ATTENDED_PER_WINDOW * PUNTEN_PER_PRODUCT} punten, en een venster houdt er `
       + `${ATTENDED_PUNTEN_PER_VENSTER}. Het plafond in producten belooft meer dan het plafond in punten geeft.`
     );

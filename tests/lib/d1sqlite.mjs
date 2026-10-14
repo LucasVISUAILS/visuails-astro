@@ -83,7 +83,16 @@ export function d1(db) {
       db.exec('BEGIN');
       try {
         const uit = [];
-        for (const st of list) uit.push(await st.run());
+        /* Zoals D1: een SELECT (of iets met RETURNING) geeft zijn rijen terug
+           in `results`, al het andere `meta.changes` — 8 oktober 2026. */
+        for (const st of list) {
+          if (/^\s*(SELECT|WITH)\b/i.test(st.sql) || /\bRETURNING\b/i.test(st.sql)) {
+            const { results } = await st.all();
+            uit.push({ success: true, results, meta: { changes: 0 } });
+          } else {
+            uit.push(await st.run());
+          }
+        }
         db.exec('COMMIT');
         return uit;
       } catch (err) {

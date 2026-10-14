@@ -1,0 +1,255 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — /faq in de hal. 13 oktober 2026, afvinklijst 13
+ * (v13-volgende = a: de leespagina's als volgende groep).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Dezelfde inhoud als FaqPage.astro: de zeventig vragen uit src/data/faq.js
+ * (die schema.js ook als FAQPage uitgeeft), dezelfde ankers per groep, dezelfde
+ * <Disclose>, dezelfde foto's in het antwoord over catalog en lifestyle, en
+ * dezelfde tabs: één groep tegelijk als het script draait, alle vragen onder
+ * elkaar zonder script. Wat in de tekst anders is, staat in
+ * kladblok/TEKSTEN-LEESPAGINAS.md.
+ *
+ *   kop      pil, de kop in twee tonen, de zin, het beeld ernaast
+ *   vragen   links de groepen (op een telefoon een rij pillen erboven),
+ *            rechts de vragen van één groep als nevelkaarten
+ *   nog      "Nog een vraag?": WhatsApp en contact, een witte strook
+ *   slot     de proef (HalProef)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/hal.css';
+import { faqPageGroups, SERVICE_FAQ_NAMES } from '../data/faq.js';
+import { waHref } from '../data/whatsapp.js';
+import { localizedPath } from '../i18n/ui.js';
+import Disclose from './Disclose.astro';
+import NieuwTabblad from './NieuwTabblad.astro';
+import HalProef from './HalProef.astro';
+import HalBeweging from './HalBeweging.astro';
+import { waKlant } from '../data/klant.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+
+/* De foto's in een antwoord komen uit faq.js zonder maat. Hun echte maat staat
+   hier, zodat de browser de verhouding vasthoudt voor het beeld er is. Een foto
+   die hier niet staat, stopt de bouw (zoals in FaqPage.astro). */
+const INTRINSIC: Record<string, [number, number]> = {
+  '/img/catalog-after.webp': [1800, 1800],
+};
+const maat = (src: string): [number, number] => {
+  const d = INTRINSIC[src];
+  if (!d) throw new Error(`FaqHal.astro: geen maat bekend voor ${src} — zet hem in INTRINSIC.`);
+  return d;
+};
+
+const c = nl ? {
+  pil: 'Vragen',
+  h1: ['Vragen,', 'beantwoord.'],
+  /* Afvinklijst 22 (Lucas, 14 oktober 2026): contactteksten laten het hele traject voelen — voor, tijdens
+     en na de bestelling, ook als er iets mis gaat — zonder dat er staat dat er één persoon werkt. */
+  lead: 'Staat je vraag er niet bij? Stel hem op WhatsApp.',
+  heroAlt: 'Een VISUAILS lifestylefoto',
+  indexLabel: 'Ga naar een onderdeel',
+  algemeen: 'Algemeen',
+  perDienst: 'Per dienst',
+  vragen: (n: number) => `${n} ${n === 1 ? 'vraag' : 'vragen'}`,
+  nogH: 'Nog een vraag?',
+  nogZin: 'Ook als je al besteld hebt: meestal antwoord binnen het uur, buiten openingstijden de volgende ochtend.',
+  nogWa: 'Stuur een WhatsApp',
+  nogContact: 'Neem contact op',
+  wa: waHref('Hoi VISUAILS, ik heb een vraag over jullie dienst.'),
+  slotKop: ['Of zie het meteen', 'op je eigen product, voor'] as [string, string],
+  slotZin: 'Zie het eerst op je eigen product.',
+  slotAlt: 'Of start een bestelling',
+} : {
+  pil: 'Questions',
+  h1: ['Questions,', 'answered.'],
+  lead: 'Not finding your question? Ask it on WhatsApp.',
+  heroAlt: 'A VISUAILS lifestyle image',
+  indexLabel: 'Jump to a section',
+  algemeen: 'General',
+  perDienst: 'By service',
+  vragen: (n: number) => `${n} ${n === 1 ? 'question' : 'questions'}`,
+  nogH: 'Still have a question?',
+  nogZin: 'Also once you’ve ordered: usually a reply within the hour; outside opening hours, the next morning.',
+  nogWa: 'Send a WhatsApp',
+  nogContact: 'Get in touch',
+  wa: waHref('Hi VISUAILS, I have a question about your service.'),
+  slotKop: ['Or see it straight away', 'on your own product, for'] as [string, string],
+  slotZin: 'See it on your own product first.',
+  slotAlt: 'Or start an order',
+};
+
+const groepen = faqPageGroups(lang);
+for (const g of groepen) {
+  if (!g.id) throw new Error(`FaqHal: groep "${g.title}" (${lang}) heeft geen id in faq.js.`);
+}
+/* De groepen per dienst zijn die met een naam in SERVICE_FAQ_NAMES (faq.js);
+   de rest gaat over de dienst als geheel. Zo belandt een nieuwe algemene groep
+   niet stil onder "Per dienst". */
+const DIENSTEN = new Set(Object.keys(SERVICE_FAQ_NAMES));
+const algemeen = groepen.filter((g) => !DIENSTEN.has(g.id));
+const perDienst = groepen.filter((g) => DIENSTEN.has(g.id));
+
+const PIJL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5l7-7M5.5 4.5h6v6"/></svg>';
+/* Het WhatsApp-teken bij een wa.me-link zet global.css er zelf voor (op href);
+   het grote teken in de strook leest hetzelfde bestand, /img/i-whatsapp.svg. */
+---
+<div class="h-pagina h-faq-pagina">
+
+  {/* ── 1 · DE KOP ─────────────────────────────────────────────────────────── */}
+  <header class="h-paginakop h-faq-kop">
+    <div class="h-faq-kop-tekst">
+      <p class="h-pil h-op" style="--d:0"><span>{c.pil}</span></p>
+      <h1 class="h-kop h-h1 h-op" style="--d:1"><span class="l">{c.h1[0]}</span> <span>{c.h1[1]}</span></h1>
+      <p class="h-lede h-op" style="--d:2">{c.lead}</p>
+      <p class="h-acties h-op" style="--d:3">
+        <a class="h-knop h-knop-inkt" href={c.wa} target="_blank" rel="noopener" data-track="faq-wa-kop" {...waKlant(lang)}>{c.nogWa}<span class="o" set:html={PIJL} /><NieuwTabblad lang={lang} /></a>
+      </p>
+    </div>
+    <figure class="h-faq-kop-beeld h-op" style="--d:2">
+      <img src="/img/lifestyle-flash-05.webp" alt={c.heroAlt} width="2400" height="1792" fetchpriority="high" decoding="async" />
+    </figure>
+  </header>
+
+  {/* ── 2 · DE VRAGEN ────────────────────────────────────────────────────────
+      Zonder script: links een index die springt, rechts alle tien de groepen.
+      Met script (.is-tabs): de index is een rij tabs en er staat één groep. */}
+  <section class="h-sec h-faq-sec" data-faq-tabs>
+    <nav class="h-faq-index h-in" aria-label={c.indexLabel}>
+      {[[c.algemeen, algemeen], [c.perDienst, perDienst]].map(([naam, lijst]) => (
+        <div class="h-faq-index-blok">
+          <p class="h-faq-index-naam" aria-hidden="true">{naam as string}</p>
+          <ul class="h-faq-index-lijst" role="list">
+            {(lijst as typeof groepen).map((g) => (
+              <li>
+                <a class="h-faq-tab" href={`#${g.id}`} data-faq-tab={g.id}>
+                  <span class="h-faq-tab-t">{g.title}</span>
+                  <span class="h-faq-tab-n">{g.items.length}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </nav>
+
+    <div class="h-faq-groepen">
+      {groepen.map((g) => (
+        <div class="h-faq-groep" id={g.id} data-faq-groep={g.id}>
+          <header class="h-faq-groep-kop">
+            <h2 class="h-kop h-h3">{g.title}</h2>
+            <span class="h-faq-groep-n">{c.vragen(g.items.length)}</span>
+          </header>
+          <div class="h-vragen-lijst h-faq-lijst">
+            {g.items.map((item) => (
+              <Disclose summary={item.q} tone="plain">
+                {item.html ? <p set:html={item.html} /> : <p>{item.a}</p>}
+                {item.photos ? (
+                  <div class="h-faq-figs">
+                    {item.photos.map((ph) => (
+                      <figure class="h-faq-fig">
+                        <img src={ph.src} alt={ph.alt} loading="lazy" decoding="async" width={maat(ph.src)[0]} height={maat(ph.src)[1]} />
+                        <figcaption>{ph.cap}</figcaption>
+                      </figure>
+                    ))}
+                  </div>
+                ) : null}
+                {item.linkText ? <p class="h-faq-meer"><a class="h-link" href={lp(item.linkHref)}>{item.linkText}<span class="h-cirkel h-cirkel-mini" aria-hidden="true" set:html={PIJL} /></a></p> : null}
+              </Disclose>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  {/* ── 3 · NOG EEN VRAAG ── WhatsApp en contact, een witte strook. */}
+  <section class="h-sec h-faq-nog-sec" aria-labelledby="faq-nog">
+    <div class="h-faq-nog h-in">
+      <span class="h-cirkel h-faq-nog-ik" aria-hidden="true"></span>
+      <div class="h-faq-nog-tekst">
+        <h2 id="faq-nog" class="h-kop h-h3">{c.nogH}</h2>
+        <p>{c.nogZin}</p>
+      </div>
+      <p class="h-acties">
+        <a class="h-knop h-knop-inkt" href={c.wa} target="_blank" rel="noopener" data-track="faq-wa" {...waKlant(lang)}>{c.nogWa}<span class="o" set:html={PIJL} /><NieuwTabblad lang={lang} /></a>
+        <a class="h-knop h-knop-lijn" href={lp('/contact')}>{c.nogContact}</a>
+      </p>
+    </div>
+  </section>
+
+  {/* ── 4 · HET SLOT: DE PROEF ───────────────────────────────────────────── */}
+  <HalProef lang={lang} id="faq-slot" kop={c.slotKop} zin={c.slotZin} alt={{ label: c.slotAlt, href: '/start' }} />
+</div>
+<HalBeweging />
+
+<script>
+  /* De tabs, zoals in FaqPage.astro. Alleen hier wordt iets verborgen, en
+     alleen als dit script draait: zonder script blijft /faq de volledige lijst
+     met een index die springt. */
+  const zetTabs = () => {
+    const blok = document.querySelector<HTMLElement>('[data-faq-tabs]');
+    if (!blok || blok.dataset.faqKlaar) return;
+    blok.dataset.faqKlaar = '1';
+    const tabs = [...blok.querySelectorAll<HTMLAnchorElement>('[data-faq-tab]')];
+    const groepen = [...blok.querySelectorAll<HTMLElement>('[data-faq-groep]')];
+    if (!tabs.length || !groepen.length) return;
+    blok.classList.add('is-tabs');
+    /* Eén tablist om beide rijtjes: de pijltjestoetsen lopen door van
+       "Algemeen" naar "Per dienst". De namen erboven zijn aria-hidden. */
+    const nav = blok.querySelector('.h-faq-index');
+    nav?.setAttribute('role', 'tablist');
+    for (const l of blok.querySelectorAll('.h-faq-index-blok, .h-faq-index-lijst, .h-faq-index-lijst > li')) l.setAttribute('role', 'presentation');
+    const kies = (id: string, focus = false) => {
+      if (!groepen.some((g) => g.dataset.faqGroep === id)) id = groepen[0].dataset.faqGroep!;
+      for (const t of tabs) {
+        const aan = t.dataset.faqTab === id;
+        t.setAttribute('aria-selected', String(aan));
+        t.tabIndex = aan ? 0 : -1;
+        if (aan && focus) t.focus();
+      }
+      for (const g of groepen) g.hidden = g.dataset.faqGroep !== id;
+    };
+    for (const [i, t] of tabs.entries()) {
+      t.setAttribute('role', 'tab');
+      t.id = `faq-tab-${t.dataset.faqTab}`;
+      t.setAttribute('aria-controls', t.dataset.faqTab!);
+      t.addEventListener('click', (e) => {
+        e.preventDefault();
+        kies(t.dataset.faqTab!);
+        history.replaceState(null, '', `#${t.dataset.faqTab}`);
+        /* Op een telefoon staan de tabs boven de vragen: na een keuze begint de
+           groep in beeld, niet drie schermen lager. */
+        if (matchMedia('(max-width: 900px)').matches) {
+          const g = document.getElementById(t.dataset.faqTab!);
+          const r = g?.getBoundingClientRect();
+          if (r && (r.top < 0 || r.top > innerHeight * .6)) g!.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+        }
+      });
+      t.addEventListener('keydown', (e) => {
+        const stap = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
+        if (!stap) return;
+        e.preventDefault();
+        const volgende = tabs[(i + stap + tabs.length) % tabs.length];
+        kies(volgende.dataset.faqTab!, true);
+        history.replaceState(null, '', `#${volgende.dataset.faqTab}`);
+      });
+    }
+    for (const g of groepen) { g.setAttribute('role', 'tabpanel'); g.setAttribute('aria-labelledby', `faq-tab-${g.dataset.faqGroep}`); }
+    /* Een #hash kan een groep zijn of een element erin (een vraag). Ook een
+       link binnen de pagina (#pricing) opent de juiste groep. */
+    const volgHash = () => {
+      const doel = location.hash ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
+      const groep = doel?.closest<HTMLElement>('[data-faq-groep]');
+      kies(groep?.dataset.faqGroep || groepen[0].dataset.faqGroep!);
+    };
+    volgHash();
+    addEventListener('hashchange', volgHash);
+  };
+  zetTabs();
+  document.addEventListener('astro:page-load', zetTabs);
+</script>

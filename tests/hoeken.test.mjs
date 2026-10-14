@@ -28,6 +28,7 @@
  *
  * Dat het SCHERM er staat, toetst request-flow; dit bestand gaat over de som.
  */
+import { readFileSync as leesBestand } from 'node:fs';
 import { quoteOrder } from '../src/lib/quote.js';
 import {
   EXTRA_PHOTO_LADDER, MAX_EXTRA_PER_PRODUCT, extraPhotoRate, ladderRate, LADDER,
@@ -134,12 +135,17 @@ console.log('\nvier per product is een grens en geen wens');
 
 console.log('\nde hoeken gelden waar een catalogset is, en nergens anders');
 {
-  /* Op `complete` zit een catalogset, dus daar kan er een hoek bij. Het tarief is
-     dat van de extra-ladder en niet dat van de dienst — een extra foto is een
-     extra foto, ongeacht wat er verder in de bestelling zit. */
-  ok('complete rekent met dezelfde extra-ladder',
-    net({ service: 'complete', products: 10, extras: 2 * 10 }),
-    ladderRate('complete', 10) * 10 + 20 * extraPhotoRate(10));
+  /* Alleen catalog. Tot 14 oktober 2026 kon het ook op `complete` (daar zat een
+     catalogset in); compleet bestaat niet meer (afvinklijst 23) en lifestyle is
+     vast vier (v23-extra a). */
+  ok('catalog rekent met de extra-ladder',
+    net({ service: 'catalog', products: 10, extras: 2 * 10 }),
+    ladderRate('catalog', 10) * 10 + 20 * extraPhotoRate(10));
+  /* De server telt hoeken alleen bij een dienst met extra hoeken; quoteOrder()
+     zelf rekent wat hij krijgt. */
+  ok('lifestyle kent geen extra hoeken: de server telt ze daar niet',
+    /const angles = isUitbreidbaar\(svc\)\s*\n\s*\? TELBARE_ANGLE_IDS/.test(leesBestand(new URL('../functions/api/order.js', import.meta.url), 'utf8')), true);
+  ok('en compleet is niet meer te prijzen', net({ service: 'complete', products: 10 }), null);
 }
 
 console.log('\nde agenda van stap 4 raakt de hoekkiezer niet (ronde 9, F25)');

@@ -20,6 +20,26 @@ const { t, lang, customer, thema, navDicht } = st;
   lang={lang} t={t} thema={thema} navDicht={navDicht} actief="invoices" customer={customer}
   title={t.invHeading} kop={t.invHeading} lede={t.invLede}
 >
+  {/* 2.02 (8 oktober 2026): het tegoed heeft hier zijn thuis — met € en het
+      woord "tegoed", en de boekingen. Credits staan op de abonnementspagina. */}
+  {v.tegoed && (
+    <section class="st-blok" aria-labelledby="tegoed-h" id="tegoed">
+      <div class="st-kaart-vlak st-vlak">
+        <h2 id="tegoed-h">{v.tegoed.kop}</h2>
+        <p class="st-saldovak-getal">{v.tegoed.getal}</p>
+        <p class="st-meta">{v.tegoed.lede}</p>
+        {v.tegoed.regels.length > 0 && (
+          <table class="st-tabel">
+            <tbody>
+              {v.tegoed.regels.map((r) => (
+                <tr><td>{r.datum}</td><td>{r.wat}{r.ref && <Fragment> · {r.ref}</Fragment>}</td><td class="is-bedrag">{r.bedrag}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </section>
+  )}
   <section class="st-blok" aria-label={t.invHeading}>
     {v.rows.length === 0
       ? <p class="st-leeg">{v.emptyText}</p>

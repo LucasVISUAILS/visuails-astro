@@ -1,0 +1,2786 @@
+﻿VISUAILS — BESLISLIJST UPGRADEVOORSTELLEN
+7 oktober 2026
+════════════════════════════════════════════════════════════════════════════════════════════
+
+HOE DIT WERKT
+─────────────
+  1. Elk voorstel eindigt met een blok tussen >>> en <<<. Typ je antwoord achter de dubbele
+     punt.
+  2. Keuze: ok = je volgt het advies dat erboven staat · doen · later · niet · anders. Bij
+     "anders" schrijf je bij Opmerking wat je wilt.
+  3. Vraag: typ a, b of c, of ok voor het advies, of je eigen antwoord in een paar woorden.
+  4. Leeg laten mag. Wat leeg is, staat open, en wat open staat bouw ik niet.
+  5. Laat de regels met >>> en <<< staan; daaraan herken ik je antwoorden. Opmerkingen mogen
+     over meer regels lopen.
+  6. Halverwege stoppen kan: sla op met Ctrl+S en zeg "lees de beslislijst". Ik verwerk wat
+     er staat; de rest blijft open.
+  7. Zoeken: Ctrl+F op een code tussen haken (bijv. [A1]) of op een nummer (bijv. 3.03).
+  8. Alle details per voorstel staan in UPGRADE-NASLAG-7-OKT.txt. Zoek daar op hetzelfde
+     nummer of V-nummer. Een deelvraag heet hier V21-2 (deel 2 van V21); V80 is hier
+     gesplitst in V80-1 en V80-2.
+
+BEGIN HIER: [NU] en [A1]. De rest kan in de volgorde van de lijst, of later.
+
+INHOUD
+──────
+  [TOP10] De tien voorstellen met de meeste winst per uur bouwen (geen invulblokken)
+  [NU]    Nu beslissen — hoort bij geen ronde
+  [A1]    Ronde A1 · live-klaar
+  [A2]    Ronde A2 · een eerste klant begrijpt alles vóór het betalen
+  [A3]    Ronde A3 · na de levering: afronden, review en terugkomen
+  [A4]    Ronde A4 · jouw werkdag
+  [PAR]   Parallel, alleen jij: het CATALOG-bord
+  [B]     Ronde B · het abonnement zonder week (ronde 10, §28.6)
+  [NA-A]  Direct na ronde A
+  [C]     Later — hoeft nu niet; per voorstel staat wanneer
+  [NEE]   Geschrapt — alleen als je ze toch wilt
+
+
+════════════════════════════════════════════════════════════════════════════════════════════
+[TOP10]  DE TIEN VOORSTELLEN MET DE MEESTE WINST PER UUR BOUWEN
+════════════════════════════════════════════════════════════════════════════════════════════
+Gesorteerd op winst ÷ kosten. Je beslist erover in hun eigen blok verderop.
+
+ 1. 8.01 Live-overgang in vaste volgorde, met een blok "Klaar voor live" op /admin/diagnose
+    (S) — [A1]
+    Moet af vóór de eerste klant: zonder vaste volgorde maakt een open testbestelling na de
+    sleutelwissel een echte betaling aan.
+
+ 2. 9.02 Eén dubbelklik "Uitrollen": testen, tonen wat meegaat, committen, pushen, live
+    zetten, nakijken (S) — [A1]
+    De cron is nooit live gegaan omdat uitrollen CMD-werk is. Jij pusht nog steeds zelf, met
+    één J/N vooraf.
+
+ 3. 9.03 Cron, purge en webhook: vier stappen in vaste volgorde, elk met een controle (S) —
+    [A1]
+    De drie open schakelaars van §16.1: zonder cron vervalt en herinnert er niets, zonder
+    purge klopt /privacy niet.
+
+ 4. 9.01 §17 als opruimlijst in drie pakketten; ronde-10-punten niet apart repareren (S (±4
+    uur)) — [A1]
+    Pakket A: op live staat €69 voor video (ook in Google) en een tariefbelofte bij eigen
+    look die de offerte tegenspreekt.
+
+ 5. 3.03 Stil afronden 7 dagen na de laatste levering (S) — [A3]
+    Eén cronstap, en reviewvraag, wisregel en de lijst "geleverd" kloppen ook voor wie nooit
+    "Alles goed" klikt.
+
+ 6. 3.06 Review vragen met één klik uit /admin, eerst alleen via WhatsApp (S) — [A3]
+    Reviews zijn je grootste knelpunt; een persoonlijk verzoek met spoor breekt §21 niet.
+
+ 7. 3.08 De privélink van de €1-proef als eerste verkooppagina (S) — [A3]
+    De €1-proef is de ingang van je eerste klanten; afgerond bij levering wordt die pagina
+    meteen review- en bestelmoment.
+
+ 8. 3.05 "Alles goed" landt op een afrondscherm met downloads, review en toestemming (S) —
+    [A3]
+    De klant schrijft één keer en jij krijgt een Google-review, een aanbeveling en
+    toestemming voor echte voorbeelden.
+
+ 9. 1.07 Wat het kost, wat erbij zit en wanneer het komt: in het formulier zelf (S) — [A2]
+    Eerlijk bij 4, 8, 9 en 16–19 producten, en het antwoord op de vier vragen van een eerste
+    klant.
+
+10. 1.02 Eén product in vijf looks voor het pad naar betalen; de andere plaatshouders
+    verbergen (S + 2–3 uur jij) — [A2]
+    Elke koper moet langs de lookkeuze, en precies daar staan nu grijze vlakken.
+
+Net buiten de tien: 4.01 de herkomsttag bij elke upload (M, het antwoord op je
+sleepvak-vraag), 4.02 werkmap met controle op de juiste bestelling (M), 3.01 het "wat
+nu"-blok, 7.01 + 1.05 "Zo gaat het verder", 9.05 de drukteproef.
+
+
+════════════════════════════════════════════════════════════════════════════════════════════
+[NU]  NU BESLISSEN — HOORT BIJ GEEN RONDE
+════════════════════════════════════════════════════════════════════════════════════════════
+Deze vragen bepalen wat er in de rondes gebeurt, of horen bij voorstellen die pas later
+gebouwd worden maar waarvan de keuze nu al telt.
+
+────────────────────────────────────────────────────────────────────────────────────────────
+G6    HET OUDE OVERZICHT IN KLADBLOK/ VERVANGEN
+      [NU] · gebied — · kosten — · tegenspreker: — (werkafspraak onderaan deel 7 van de
+      naslag)
+
+  Wat      VISUAILS-OVERZICHT-6-OKT.md in je map kladblok/ is de oudere versie zonder §28
+           (116 KB tegen 127 KB). Claude zet de versie die je uploadde ervoor in de plaats.
+  Waarom   Elke nieuwe chat leest eerst je map; met de oude versie werkt hij nog met het
+           weeksysteem.
+  Mening   Doen vóór de volgende ronde begint.
+  Vraag    Mag Claude het oude overzicht vervangen?
+             a) ja, vervang het
+             b) nee, ik doe het zelf
+             c) laat het staan
+             advies: a
+  Advies   doen, nu
+
+  >>> JOUW BESLUIT G6
+      Keuze (ok / doen / later / niet / anders):
+      Vraag (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+G5    WIE SCHRIJFT DE NIEUWE KLANTTEKSTEN
+      [NU] · gebied — · kosten — · tegenspreker: uit de tegenspraak (geen gebied telde deze
+      tijd)
+
+  Wat      Ongeveer dertig voorstellen voegen klantteksten toe in NL en EN of veranderen ze.
+           Per ronde zet Claude alle nieuwe en gewijzigde teksten in één tekstdocument, NL
+           en EN naast elkaar, volgens §26; jij loopt ze in één keer na.
+  Waarom   Volgens §26 schrijf jij lanceringsteksten zelf, en losse teksten nakijken kost
+           meer tijd dan één document per ronde.
+  Mening   Zo houd jij de laatste stem en hoef je niet bij elk voorstel apart naar tekst te
+           kijken.
+  Vraag    V11 · Wie schrijft de nieuwe klantteksten (NL en EN)?
+             a) Claude zet ze per ronde in één tekstdocument, jij loopt ze in één keer na
+             b) jij schrijft alles zelf vanaf leeg
+             c) Claude schrijft, jij kijkt steekproeven
+             advies: a
+  Advies   doen, vanaf ronde A2
+
+  >>> JOUW BESLUIT G5
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V11 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+8.08  FACTUREN NAAR DE BOEKHOUDING — EERST WETEN WIE DE AANGIFTE DOET
+      [NU] · gebied 8 · kosten M bij een pakket met API, S bij een boekhouder of zelf ·
+      tegenspreker: later (Eerst het antwoord op V7; niets bouwen voordat dat er is)
+
+  Wat      Afhankelijk van wie je aangifte doet: bij een pakket met API, zoals Moneybird,
+           zet /admin elke VIS-factuur en creditnota er bij betaling in. Bij een boekhouder
+           geeft /admin per kwartaal één zip met de pdf’s, de CSV, de ICP-lijst (8.07) en
+           per Mollie-uitbetaling welke facturen, terugbetalingen en kosten erin zitten. Doe
+           je het zelf, dan 8.07 plus die uitbetalingslijst.
+  Waarom   De CSV dekt alleen de verkoop, terwijl de aangifte ook om voorbelasting en
+           verlegde btw op buitenlandse inkoop vraagt, en zonder uitbetalingslijst is elke
+           bijschrijving van Mollie uitzoekwerk.
+  Mening   Voor de eerste kwartalen is de zip of 8.07 met de uitbetalingslijst genoeg. Een
+           koppeling met een pakket loont pas bij volume, en alleen als je het pakket toch
+           al gebruikt.
+  Vraag    V7 · Wie doet nu je btw-aangifte en boekhouding?
+             a) Moneybird of een ander pakket
+             b) een boekhouder
+             c) ikzelf in Mijn Belastingdienst
+             advies: eerst het antwoord; heb je een boekhouder, leg hem dan ook 8.06 voor
+                     (het 0%-vinkje)
+  Advies   vraag nu beantwoorden; bouwen na je antwoord
+
+  >>> JOUW BESLUIT 8.08
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V7 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+10.09 BUREAUS BEDIENEN ZONDER IETS TE BOUWEN
+      [NU] · gebied 10 · kosten S · tegenspreker: later (tekst voor een doelgroep die er nog
+      niet is; V38 wel nu beantwoorden)
+
+  Wat      Op /pricing en /contact komt één korte alinea die je zelf schrijft: per klant een
+           eigen account met eigen look en facturen, of de bestelling via WhatsApp laten
+           klaarzetten met "bestelling namens de klant" in /admin. Meerdere merken onder één
+           login pas als een bureau twee keer heeft besteld.
+  Waarom   Bureaus zijn een doelgroep, maar een account hoort bij één merk met één look en
+           één factuuradres, en de site zegt nergens hoe een bureau bestelt.
+  Mening   Goed als proef zonder bouwwerk, want een bureauportaal nu opent nieuw werk voor
+           een klant die er nog niet is. Volgens de tegenspreker moet de vraag over mengen
+           (V38) wel nu beantwoord worden.
+  Vraag    V38 · Mag een bureau producten van verschillende klanten in één bestelling zetten
+           voor een lager tarief? De code staat dat nu al toe.
+             a) ja, als look en achtergrond gelijk zijn
+             b) nee, één bestelling per merk
+             c) ja, met per product een eigen achtergrond
+             advies: a — het werk per product blijft gelijk; het tarief hangt af van het
+                     aantal, niet van het merk
+  Advies   vraag nu beantwoorden; de tekst pas bij het eerste bureau
+
+  >>> JOUW BESLUIT 10.09
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V38 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+1.11  EEN KORTER MENU, EN /STUDIO WORDT DE PAGINA OVER VISUAILS STUDIO
+      [NU] · gebied 1 · kosten M · tegenspreker: later (Raakt de eerste klanten nauwelijks;
+      als het gebeurt, vóór er links in klantmails staan)
+
+  Wat      Het menu wordt: Wat we maken (Catalog, Lifestyle, Video, Jouw merkmodel) · Hoe
+           het werkt · Prijzen (met Abonnement) · Galerij · Contact · Inloggen · Bestellen.
+           De planningstekst wordt een blok in /how-it-works, /studio wordt de uitleg van
+           VISUAILS Studio met "Inloggen" bovenaan, en /portal stuurt door naar /studio.
+  Waarom   Wie in een mail "VISUAILS Studio" leest en visuails.com/studio typt, komt nu op
+           een pagina over capaciteit, en na §28 is het abonnement een manier van betalen.
+  Mening   Goed (B2: ja), en dan vóór de eerste echte klantmails, want daarna wordt elke
+           URL-wissel duurder.
+  Vraag    V39 · Wat wordt de URL /studio? Bouwen is "later", maar beslis het vóór de
+           lancering, want daarna staan de links in mails van echte klanten.
+             a) een doorverwijzing naar het inlogscherm
+             b) de pagina over VISUAILS Studio, met "Inloggen" bovenaan; /portal stuurt door
+             advies: b
+  Advies   vraag nu beantwoorden; bouwen alleen bij b, en dan vóór de lancering
+
+  >>> JOUW BESLUIT 1.11
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V39 (a / b):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+G1    CAPACITEITSPUNTEN OPNIEUW NAAST DE ECHTE MINUTEN LEGGEN
+      [NU] · gebied — · kosten S (later) · tegenspreker: uit de tegenspraak (niemand pakte
+      dit op)
+
+  Wat      Catalog telt 4 punten bij 20–30 minuten werk, lifestyle 3 punten bij 5–10 minuten
+           (§3.6, §25). Leg de punten opnieuw naast de echte minuten zodra 5.09 catalog
+           sneller heeft gemaakt; tot dan let je zelf op bij een vaste leverdatum.
+  Waarom   Een venster van 158 punten kan 39 catalogproducten bevatten: 13–20 uur werk in
+           twee dagen, naast "zo snel mogelijk".
+  Mening   Na voorrang is dit de enige datumbelofte die kan breken. Nu nog geen probleem,
+           want bestellingen van 10 producten of meer zijn er nog niet.
+  Vraag    V8 · Wat doen we met de capaciteitspunten?
+             a) opnieuw ijken zodra 5.09 catalog sneller heeft gemaakt; tot dan zelf
+                opletten bij een vaste datum
+             b) catalog nu al zwaarder laten tellen
+             c) laten zoals het is
+             advies: a
+  Advies   later, na 5.09
+
+  >>> JOUW BESLUIT G1
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V8 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+G3    EEN PLEK OP DE SITE VOOR ECHTE AANBEVELINGEN EN BEELDEN (O15)
+      [NU] · gebied — · kosten nog niet te schatten · tegenspreker: uit de tegenspraak
+      (niemand pakte dit op)
+
+  Wat      3.05 en 10.05 verzamelen aanbevelingen en toestemming om beelden te tonen, maar
+           nergens staat waar die op de site komen en hoe jij ze publiceert.
+  Waarom   Zonder plek blijft de sociale bewijskracht in /admin liggen.
+  Mening   Pas ontwerpen als er drie echte zijn; tot dan is de galerij genoeg.
+  Vraag    V10 · Waar komen echte aanbevelingen en vrijgegeven beelden op de site?
+             a) een blok op home en /pricing, per stuk door jou aangezet
+             b) alleen in de galerij
+             c) pas beslissen als er drie echte zijn
+             advies: c, daarna a
+  Advies   later, na drie echte aanbevelingen
+
+  >>> JOUW BESLUIT G3
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V10 (a / b / c):
+      Opmerking:
+  <<<
+
+
+════════════════════════════════════════════════════════════════════════════════════════════
+[A1]  RONDE A1 · LIVE-KLAAR
+════════════════════════════════════════════════════════════════════════════════════════════
+Claude ±2 dagen; jij ±1,5 uur verspreid over twee ochtenden.
+Jij: dubbelklik op UITROLLEN.bat (gaat mee: de werkkopie van 3–6 okt, pakket A en voor het
+eerst de cron) · volgende ochtend het nachtrapport lezen · één back-up starten, dan de purge
+aan · Resend-webhook en secret instellen · drukteproef (een uur samen + je telefoon) · met de
+testsleutel nog actief: testabonnementen opzeggen, open testbestellingen annuleren, Mollie-
+methoden live aanzetten · als laatste de live-sleutel en de rookproef · in WhatsApp Business
+een snel antwoord "stuur je foto’s als document (bestand), niet als foto".
+Stoppunt: "Klaar voor live" helemaal groen, VIS-2026-0001 bestaat, het nachtrapport komt
+elke ochtend.
+
+────────────────────────────────────────────────────────────────────────────────────────────
+9.02  EÉN DUBBELKLIK "UITROLLEN": TESTEN, TONEN WAT MEEGAAT, COMMITTEN, PUSHEN, LIVE ZETTEN,
+      NAKIJKEN
+      [A1] · gebied 9 · kosten S · tegenspreker: blijft
+
+  Wat      Claude schrijft UITROLLEN.bat op je bureaublad plus scripts/uitrol.mjs; jij start
+           het met een dubbelklik, Claude draait het nooit. Zeven stappen die stoppen bij
+           een fout: geheimencontrole, tests, commit en push, nieuwe migraties, site live,
+           cron live, zes adressen nakijken. Na de tests toont het welke bestanden en
+           migraties meegaan en vraagt "Doorgaan? J/N"; TERUGDRAAIEN.bat staat ernaast.
+  Waarom   Na elke ronde typ je vijf CMD-commando’s zonder te zien of het gelukt is, nergens
+           staat hoe migraties live komen, en de cron is nooit gedeployed.
+  Mening   Goed en het meeste rendement in dit gebied: je ziet voortaan of uitrollen gelukt
+           is, en Claude raakt je machine en git niet aan. Tegenspreker: met de lijst van
+           wat meegaat en de J/N blijft het je eigen push.
+  Vraag    V1 · Hoe komen nieuwe migraties nu op de live-database?
+             a) dat zit al in npm run deploy
+             b) Claude zegt het per keer en jij typt het commando
+             c) weet ik niet
+             advies: een vaste stap 4 in de uitrolknop; bij a wordt dat alleen een melding
+  Vraag    V2 · Mag de uitrolknop de volledige testreeks draaien (build plus 157 scripts)?
+             a) altijd
+             b) een snelle set, de volledige alleen als Claude het zegt
+             c) geen tests in de knop
+             advies: a — zolang het onder 5 minuten blijft, anders b
+  Advies   doen, ronde A1
+
+  >>> JOUW BESLUIT 9.02
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V1 (a / b / c):
+      Vraag V2 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+9.01  §17 ALS OPRUIMLIJST IN DRIE PAKKETTEN; RONDE-10-PUNTEN NIET APART REPAREREN
+      [A1] · gebied 9 · kosten M (A = S, B + C = S) · tegenspreker: blijft · neemt het
+      termijndeel van 8.02 op
+
+  Wat      §17 (26 punten) wordt drie pakketten: A, wat de klant of het geld raakt (±4 uur);
+           B, wat een volgende lezer misleidt, plus één cosmetisch punt (±4 uur); R10, gaat
+           mee in ronde 10. Kern van A: €69 weg van de videopagina’s, "vanaf het gewone
+           tarief" bij eigen look, complete uit de verkoop. A gaat eerst, als eigen uitrol.
+  Waarom   Op live staat een vaste videoprijs (€69, ook in de Google-omschrijving) voor iets
+           wat op aanvraag is, plus een tariefbelofte bij eigen look die de offerte
+           tegenspreekt.
+  Mening   Goed en nodig, maar alleen pakket A is lanceringswerk; B kan wachten tot na de
+           eerste klanten. Tegenspreker: de twee termijnen van 7 dagen (leverdatum
+           vasthouden, betalen na btw-akkoord) krijgen elk een eigen naam, niet één
+           constante.
+  Vraag    V12 · Wat doet /start/complete als complete uit de code is?
+             a) doorsturen naar /start
+             b) doorsturen naar /catalog#looks
+             c) 404
+             advies: a — oude links uit mails of bladwijzers landen dan op het keuzescherm
+  Advies   doen, ronde A1
+
+  >>> JOUW BESLUIT 9.01
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V12 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+9.11  TESTS GOEDKOPER: ÉÉN BEDRAGENTEST, ÉÉN CONTROLE OP HARDGETYPTE GETALLEN,
+      WEEKSYSTEEMTESTS WEG MÉT RONDE 10
+      [A1] · gebied 9 · kosten S (±3 uur) · tegenspreker: blijft
+
+  Wat      Eén bedragentest loopt §22 regel voor regel na (staffels, extra foto, 4K,
+           voorrang, plannen, credits, btw, termijnen). Een controle doorzoekt src/ en cron/
+           op euro-bedragen en dagtermijnen buiten pricing.js, plans.js, vat.js,
+           retention.js en het termijnenbestand. De weeksysteemtests gaan in ronde 10 mee
+           weg met de code, zonder reparatie; npm run test:snel komt er voor de uitrolknop.
+  Waarom   Hardgetypte bedragen en termijnen komen telkens terug (€69 in videoStyles.js, "+7
+           days" op vier plekken) zonder dat een van de 157 testscripts het ziet.
+  Mening   Goed; de controle op hardgetypte getallen heeft het meeste rendement, want die
+           maakt de opruimronde van 9.01 blijvend. Tegenspreker: de €69 en de losse "+7
+           days" zijn precies dit soort fout.
+  Advies   doen, ronde A1
+
+  >>> JOUW BESLUIT 9.11
+      Keuze (ok / doen / later / niet / anders):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+9.04  BACK-UP DIE JE KUNT TERUGZETTEN, ZONDER INLOGGEHEIMEN EN MÉT DE PROMPTS
+      [A1] · gebied 9 · kosten S · tegenspreker: blijft
+
+  Wat      Vier aanpassingen in het bestaande back-upscript: tabellen met inloggeheimen en
+           sessies niet dumpen en de dump naar Google Drive (Workspace) of een
+           BitLocker-schijf; na elke dump inlezen en controleren, zodat /admin
+           "gecontroleerd" toont; in de Taakplanner "zo snel mogelijk uitvoeren na een
+           gemiste start" aanvinken; de map Prompts en VISUAILS-afwerken.jsx mee kopiëren.
+  Waarom   Een onversleutelde dump met wachtwoordhash en TOTP-geheim geeft wie de schijf
+           vindt ook de tweede factor, en je prompts en afwerkscript zitten in geen enkele
+           back-up.
+  Mening   Goed en klein; de prompts en het afwerkscript meekopiëren telt het zwaarst, want
+           de database kan Cloudflare terugzetten. Tegenspreker: een dump op Drive bewaart
+           gewiste klantgegevens langer dan 90 dagen; beperk het aantal dumps of noem het in
+           /privacy.
+  Vraag    V6 · Waar komt de back-up nu terecht?
+             a) op dezelfde schijf als de code
+             b) op een losse USB-schijf
+             c) in Google Drive
+             advies: c — de Drive-map van Workspace; dan ligt er altijd een kopie buiten
+                     huis
+  Advies   doen, ronde A1
+
+  >>> JOUW BESLUIT 9.04
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V6 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+9.03  CRON, PURGE EN WEBHOOK: VIER STAPPEN IN VASTE VOLGORDE, ELK MET EEN CONTROLE
+      [A1] · gebied 9 · kosten S + ±30 min jij · tegenspreker: blijft
+
+  Wat      Na de uitrol (9.02) lees je het eerste nachtrapport: de purge noemt in
+           verslagmodus wat hij zou wissen. Dan één back-up, vervallen bestellingen krijgen
+           cancelled_at (9.01), en de purge gaat aan als gewone variabele. Jij maakt in
+           Resend de webhook en zet het secret in Cloudflare; een testaanmelding met
+           bounced@resend.dev moet een rode regel in /admin geven.
+  Waarom   Zonder cron vervallen onbetaalde bestellingen niet en komen er geen
+           herinneringen, zonder purge klopt /privacy niet, en zonder webhook merkt alleen
+           de klant dat een mail niet aankwam.
+  Mening   Goed: O56 (mail vóór het wissen) hoeft de purge niet op te houden, want de eerste
+           echte levering is pas drie maanden na de lancering 90 dagen oud. Tegenspreker:
+           nummer 3 van de top 10, direct na 9.02.
+  Vraag    V5 · Wanneer moet de mail vóór het wissen (O56) er zijn?
+             a) vóór de purge aangaat
+             b) uiterlijk twee maanden na de eerste echte levering
+             c) niet
+             advies: b — purge nu aan, de mail (7.09) volgt later
+  Advies   doen, ronde A1
+
+  >>> JOUW BESLUIT 9.03
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V5 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+8.01  LIVE-OVERGANG IN VASTE VOLGORDE, MET EEN BLOK "KLAAR VOOR LIVE" OP /ADMIN/DIAGNOSE
+      [A1] · gebied 8 · kosten S · tegenspreker: blijft
+
+  Wat      Op /admin/diagnose komt een blok "Klaar voor live" met drie stappen in vaste
+           volgorde, elke rode regel met een link: met de testsleutel testabonnementen en
+           open testbestellingen opruimen, in Mollie live de betaalmethoden aanzetten, en de
+           live-sleutel op beide Workers. Het blok toont "site: live · cron: live" en
+           "Volgende factuur: VIS-2026-0001". Daarna één rookproef: echt betalen en volledig
+           terugbetalen.
+  Waarom   Een cron die nog op de testsleutel draait, ziet de echte betalingen niet, en een
+           testabonnement dat na de wissel niet meer te stoppen is, merk je pas weken later.
+  Mening   Goed en dringend: het enige voorstel in dit gebied dat vóór de eerste klant af
+           moet, en de tegenspreker zet het op 1 van de top 10. Het blok verdwijnt vanzelf
+           zodra alles groen is en VIS-2026-0001 bestaat.
+  Vraag    V4 · Wie doet de rookproefbetaling na de live-sleutel?
+             a) een bevriend bedrijf dat €1,21 betaalt en terugkrijgt
+             b) jijzelf: een factuur aan jezelf plus een creditnota, als je boekhouder dat
+                goedvindt
+             c) geen rookproef
+             advies: a, anders b; niet c
+  Advies   doen, ronde A1
+
+  >>> JOUW BESLUIT 8.01
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V4 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+9.05  DRUKTEPROEF OP LIVE: MEET DE GRENZEN MET ÉÉN ECHTE GROTE BESTELLING EN LUCAS’ EIGEN
+      TELEFOON
+      [A1] · gebied 9 · kosten S + een uur samen · tegenspreker: blijft · neemt 1.03 op
+
+  Wat      Na 9.02 en 9.03 één proef van ±een uur: Claude zet een zware bestelling met
+           nepbeelden op echte grootte (4096 px) op live, Mollie in testmodus, en jij kijkt
+           mee in /admin. Jij opent het formulier op je telefoon vanuit de Instagram-app met
+           een HEIC-foto. Uitkomst per grens: "breekt bij …" of "houdt"; uploadreparatie
+           alleen bij een vondst.
+  Waarom   De eerste klant met 20 producten (€780–€980 excl.) test als eerste de grenzen:
+           breekt de zip of mislukt een upload stil, dan merkt hij het vóór jou.
+  Mening   Goed, vóór de lancering; liever één zware bestelling dan honderd nepklanten, want
+           bij VISUAILS is de grootte van één bestelling het risico, niet het aantal.
+           Tegenspreker: de vraag over het Workers-plan hoort er meteen bij.
+  Vraag    V3 · Op welk plan draaien Cloudflare Workers en Resend?
+             a) beide gratis
+             b) Workers Paid, Resend gratis
+             c) beide betaald
+             advies: Workers Paid vóór de lancering (gratis: cron 10 ms rekentijd per run);
+                     Resend gratis volstaat tot ±12 bestellingen per dag
+  Advies   doen, ronde A1
+
+  >>> JOUW BESLUIT 9.05
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V3 (a / b / c):
+      Opmerking:
+  <<<
+
+
+════════════════════════════════════════════════════════════════════════════════════════════
+[A2]  RONDE A2 · EEN EERSTE KLANT BEGRIJPT ALLES VÓÓR HET BETALEN
+════════════════════════════════════════════════════════════════════════════════════════════
+Claude ±2–3 dagen; jij 2–3 uur beelden (1.02) plus ±45 minuten voorbeeldfoto’s (5.07).
+Stoppunt: nergens op het pad naar betalen nog een grijs vlak, en een testbestelling van
+9 producten laat zien dat 10 goedkoper is.
+
+────────────────────────────────────────────────────────────────────────────────────────────
+1.07  WAT HET KOST, WAT ERBIJ ZIT EN WANNEER HET KOMT: IN HET FORMULIER ZELF
+      [A2] · gebied 1 · kosten S · tegenspreker: blijft
+
+  Wat      Het formulier krijgt vier vaste regels met berekende bedragen: in stap 1 wat
+           inbegrepen is en bij 4, 8, 9 of 16–19 producten een regel als "Met 5 producten
+           betaal je €325 in plaats van €356"; stap 3: waarom KVK; stap 5: wanneer de
+           beelden komen en de 7 dagen voor één revisieronde. Bij de €1-proef vervalt die
+           revisieronde.
+  Waarom   Een klant die na betaling ontdekt dat 10 producten goedkoper waren dan zijn 9,
+           voelt zich gefopt.
+  Mening   Goed: tonen is beter dan hopen dat niemand rekent, en een grotere eerste
+           bestelling vergroot de kans dat de klant terugkomt. B4 (prijscalculator) is niet
+           nodig; de nieuwe railnaam zonder "Materiaal" uit 1.09 kan hier nu al mee.
+  Vraag    V16 · Tonen we dat een grotere bestelling soms goedkoper is (bij 4, 8, 9 en 16–19
+           producten)?
+             a) ja, met de regel "Met 5 producten betaal je €325 in plaats van €356"
+             b) nee
+             c) de prijsopbouw laten herzien
+             advies: a
+  Advies   doen, ronde A2
+
+  >>> JOUW BESLUIT 1.07
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V16 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+1.05  DE BEDANKPAGINA WACHT OP MOLLIE EN ZEGT WAT ER NU GEBEURT
+      [A2] · gebied 1 · kosten S · tegenspreker: blijft
+
+  Wat      De bedankpagina krijgt drie standen: betaald; bevestigen, met "Je hoeft niet
+           opnieuw te betalen" en zonder knop, die zichzelf ververst en na ongeveer een
+           minuut stopt; en pas als Mollie geannuleerd, verlopen of mislukt meldt, een knop.
+           Eronder komt het blok "Zo gaat het verder" over het nakijken van de foto’s,
+           wanneer de beelden komen en de factuur.
+  Waarom   Toont de pagina bij een trage webhook "Nog één stap: betalen" met een knop, dan
+           betaalt een klant die net betaald heeft misschien nog een keer.
+  Mening   Goed: het F64-patroon van het abonnement bestaat al, dus dit is werk afmaken.
+           Tegenspreker: schrijf "We kijken je foto’s na" in plaats van "Onze beeldredactie
+           kijkt je foto’s na", want die naam staat voor wie de beelden nakijkt.
+  Vraag    V17 · Wat gebeurt er met de eerste mail bij het bestellen?
+             a) blijft, maar begint met "Je bestelling staat erin" en "Al betaald bij
+                Mollie? Dan hoef je niets te doen"
+             b) die gaat pas na de betaling uit, samen met de factuur
+             advies: a — nu, de kleine variant van 7.02; b leunt helemaal op de webhook
+  Advies   doen, ronde A2
+
+  >>> JOUW BESLUIT 1.05
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V17 (a / b):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+7.01  DE BETAALMAIL ZEGT WAT ER NU GEBEURT, EN DAT HET TOT DE LEVERING STIL BLIJFT
+      [A2] · gebied 7 · kosten S · tegenspreker: blijft
+
+  Wat      De betaalmail krijgt bovenaan de knop "Bekijk je bestelling" (de privélink) en
+           daaronder het blok "Zo gaat het verder": de leverregel van deze bestelling, de
+           nakijk door de beeldredactie en "tussendoor sturen we niets". Hetzelfde blok
+           staat op de bedankpagina (1.05), in de bestelmail (7.02) en in de
+           creditbevestiging voor abonnees. Ontbreken er foto’s, dan noemt de mail welke.
+  Waarom   Na "Betaling ontvangen" blijft het bewust stil tot de levering, en die stilte is
+           alleen een probleem als de klant hem niet verwacht.
+  Mening   Goed: het goedkoopste voorstel in dit gebied en het helpt een eerste klant het
+           meest. Beter dan een "opgepakt"-mail, omdat het de belofte niet breekt en jou per
+           bestelling niets kost.
+  Let op   De vraag waar een klant zonder account foto’s nastuurt (V31-3) staat bij 2.05.
+  Advies   doen, ronde A2
+
+  >>> JOUW BESLUIT 7.01
+      Keuze (ok / doen / later / niet / anders):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+7.02  DE BESTELMAIL KLOPT OOK ALS JE AL BETAALD HEBT
+      [A2] · gebied 7 · kosten S; grote variant M · tegenspreker: blijft
+
+  Wat      De bestelmail "We hebben je bestelling" begint met "Je bestelling staat erin" en
+           de zin dat wie nu bij Mollie betaalt zo een tweede mail met de factuur krijgt.
+           Pas daaronder komen de betaalknop en het overzicht van wat de klant koos. De zin
+           over wat er daarna gebeurt komt uit "Zo gaat het verder" (1.05, 7.01).
+  Waarom   Twee mails binnen een minuut, waarvan de eerste "betaal" zegt, laten een eerste
+           klant twijfelen of zijn betaling gelukt is.
+  Mening   Goed: doe nu de kleine variant, en de grote (pas na betaling één mail) alleen als
+           klanten erover beginnen, want die haalt een mail weg die bij een afgebroken
+           betaling nodig is. De keuze valt bij 1.05 (V17).
+  Advies   doen, ronde A2
+
+  >>> JOUW BESLUIT 7.02
+      Keuze (ok / doen / later / niet / anders):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+1.08  "APP ONS" IN ELKE STAP, MET DE STAP AL IN HET BERICHT
+      [A2] · gebied 1 · kosten S · tegenspreker: blijft
+
+  Wat      Onder elke stap van het formulier komt één rustige regel "Kom je er niet uit? App
+           ons" als gewone wa.me-link zonder script en zonder tijdsbelofte. Het klaargezette
+           bericht noemt de stand, in de taal van de pagina en zonder persoonsgegevens,
+           bijvoorbeeld: "Hoi, ik zit bij stap 2 (foto’s) van een catalogbestelling met 3
+           producten".
+  Waarom   /admin/funnel toont wáár bezoekers stoppen, niet waarom; bij de eerste 5–10
+           klanten is jouw antwoord op het moment van twijfel de sterkste reden om toch te
+           betalen.
+  Mening   Goed voor nu en makkelijk terug te draaien: haal de regel weg zodra de appjes
+           meer productietijd kosten dan ze opleveren. Tegenspreker: het blijft los van de
+           WhatsApp-knoppen van 7.05, die van jou naar de klant gaan.
+  Advies   doen, ronde A2
+
+  >>> JOUW BESLUIT 1.08
+      Keuze (ok / doen / later / niet / anders):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+1.01  /START TOONT DE VIJF LOOKS; EEN LOOK KIEZEN OPENT METEEN HET FORMULIER
+      [A2] · gebied 1 · kosten S · tegenspreker: blijft
+
+  Wat      /start toont bovenaan vijf lookkaarten (Classic, Dunes, Flash, Glow, Phone-made),
+           elk met één beeld, de zin uit styles.js en "Vanaf €39 per product" of "Vanaf €49
+           per product". "Kies deze look" gaat meteen naar het formulier, met de look al
+           gekozen. Daaronder één rustige rij: Video, Eigen look, Jouw merkmodel,
+           Abonnement, Probeer VISUAILS · €1, App ons.
+  Waarom   Wie via /start binnenkomt, gaat nu eerst via de dienstpagina en de lookkeuze daar
+           naar het formulier, en ziet de looks per dienst in plaats van naast elkaar.
+  Mening   Goed: de goedkoopste manier om de weg korter te maken zonder de lookregel te
+           breken, en vijf looks naast elkaar beantwoorden "wat past bij mij". Haal ook
+           "Beam" uit de galerijfilter; tegenspreker: het blijft vooral omdat keuzehulp B3
+           vervalt.
+  Vraag    V15 · Mag een lookkaart op /start meteen naar het formulier gaan?
+             a) ja, met de look al aangevinkt
+             b) nee, eerst naar de detailpagina van de look
+             c) zoals nu, via de dienstpagina
+             advies: a — het formulier toont de gekozen look bovenaan, dus de klant ziet hem
+                     nog een keer
+  Advies   doen, ronde A2
+
+  >>> JOUW BESLUIT 1.01
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V15 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+1.02  EÉN PRODUCT IN VIJF LOOKS VOOR HET PAD NAAR BETALEN; DE ANDERE PLAATSHOUDERS VERBERGEN
+      [A2] · gebied 1 · kosten S + ±2–3 uur jij · tegenspreker: blijft
+
+  Wat      Je maakt eerst alleen de beelden op het pad naar betalen: één merkloos
+           kledingstuk in de vijf looks, plus de telefoonfoto ervan. Die vullen de
+           lookkaarten op home, /start, /catalog en /lifestyle; secties buiten dat pad
+           (Editions, kop van /hooks en /guides, /about) blijven verborgen tot hun beeld er
+           is. /admin/diagnose toont welke beelden nog ontbreken.
+  Waarom   Elke koper moet langs de lookkeuze, en een grijs vlak juist daar ziet eruit als
+           "nog niet af" voor iemand die een onbekende dienst moet vertrouwen.
+  Mening   Goed, en beter dan alle plaatshouders vervangen: je werk krimpt tot de beelden
+           die verkopen. Hetzelfde product in vijf looks laat het verschil tussen de looks
+           beter zien dan vijf verschillende producten.
+  Vraag    V13 · Welke plaatshouders mogen verdwijnen in plaats van gevuld te worden?
+             a) alles buiten het pad naar betalen, tot er een beeld is
+             b) alleen /about en /guides
+             c) niets, alles vullen
+             advies: a
+  Advies   doen, ronde A2
+
+  >>> JOUW BESLUIT 1.02
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V13 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+5.07  FOTOGIDS OP ÉÉN A4 EN EEN VOORBEELD PER VAK IN STAP 2
+      [A2] · gebied 5 · kosten S + ±45 minuten jij · tegenspreker: blijft
+
+  Wat      /upload-guidelines, de fotogids-pdf en de checklist-mail komen uit één bron: een
+           A4 in vier blokken (licht, ondergrond, kader, close-up) met onderaan vijf korte
+           vragen vóór het uploaden. In stap 2 krijgt elk vak een voorbeeldfoto van ±64 px
+           en één regel. Bij het draagvak staat: "Zonder draagfoto gaan we uit van een
+           normale, rechte pasvorm."
+  Waarom   Bijna elke fout in telefoonfoto’s, zoals lamplicht, half in beeld of een vette
+           lens, is vooraf in één zin te voorkomen en achteraf niet door software te
+           herkennen.
+  Mening   Goed: de aanname bij het draagvak geeft wat een pasvormvraag zou geven, zonder
+           extra veld. De voorbeeldfoto’s moeten echte telefoonfoto’s zijn, geen
+           gegenereerde, zodat een klant zijn eigen situatie herkent.
+  Advies   doen, ronde A2
+
+  >>> JOUW BESLUIT 5.07
+      Keuze (ok / doen / later / niet / anders):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+1.06  DE €1-PROEF BEGINT BIJ EEN LOOK EN LEIDT NAAR DE TWEEDE BESTELLING
+      [A2] · gebied 1 · kosten S–M · tegenspreker: blijft
+
+  Wat      Elke lookkaart en lookpagina krijgt een tweede, stillere knop "Probeer VISUAILS ·
+           €1" naar /test-sample met de gekozen look, zodat de eerste vraag van /test-sample
+           (catalogset of lifestylecarrousel) vervalt; de popup verdwijnt. Wie al eerder
+           bestelde en inlogt, komt na de code terug in hetzelfde formulier. De vaste look
+           na de proef valt onder 2.08, de herbestellink onder 3.07.
+  Waarom   De proef haalt het risico weg, maar daarna begint de tweede bestelling weer bij
+           nul, en zonder korting is "alles staat al klaar" de reden om door te gaan.
+  Mening   Goed: dit is wat §23 toestaat, niet goedkoper maar sneller. Eens met O60:
+           hetzelfde vis_in-cookie kan het formulier vertellen dat de bezoeker ingelogd is,
+           dan verdwijnt de regel "Log in".
+  Vraag    V18 · Mag de €1-proef altijd een account aanmaken (de vaste look heeft dat
+           nodig)?
+             a) ja, zonder vinkje
+             b) alleen met "Bewaar mijn gegevens"
+             advies: a — de gegevens staan er voor de één-per-bedrijfcontrole en de factuur
+                     toch al
+  Advies   doen, ronde A2
+
+  >>> JOUW BESLUIT 1.06
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V18 (a / b):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+7.07  KLANTMAILS: ÉÉN KNOP BOVENAAN EN DATUMS IN PLAATS VAN TERMIJNEN
+      [A2] · gebied 7 · kosten S · tegenspreker: blijft
+
+  Wat      Elke klantmail krijgt dezelfde opbouw: aanhef, één zin over waar de bestelling
+           staat, één knop, details, "Vragen? Antwoord op deze mail of app ons." De
+           levermail noemt de revisiedatum en de bewaardatum, de herinnering van dag 3 noemt
+           beide datums zodat de mail van dag 7 weg kan, en de btw-mail heet "Je
+           btw-gegevens zijn goedgekeurd — VIS-…".
+  Waarom   Een datum hoeft de klant niet zelf uit te rekenen, en een zin die in dertig mails
+           staat, leest niemand meer.
+  Mening   Goed; het belangrijkst zijn de datums in de levermail en het nieuwe
+           btw-onderwerp. Tegenspreker: de contactenregel staat volgens §26 in elke
+           klantmail, dus weghalen kan alleen als jij die regel loslaat.
+  Vraag    V21-1 · Moet "Zet orders@visuails.com in je contacten" alleen nog in de eerste
+           mail aan een nieuw adres, op /thank-you en op de kaart "kijk in je mail"?
+             a) ja, je laat die regel uit §26 los
+             b) nee
+             advies: a
+  Vraag    V21-2 · De inlogcode in het onderwerp van de mail?
+             a) ja
+             b) nee
+             advies: jouw afweging, want de code staat dan op het vergrendelscherm
+  Vraag    V21-3 · Mag de mail van dag 7 ("leverdatum vrijgegeven") weg?
+             a) ja
+             b) nee
+             advies: a — de mail van dag 3 noemt de datum al
+  Advies   doen, ronde A2
+
+  >>> JOUW BESLUIT 7.07
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V21-1 (a / b):
+      Vraag V21-2 (a / b):
+      Vraag V21-3 (a / b):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+9.07  STUDIOMAIL ZONDER FOTOBIJLAGEN, MET WAT ER ONTBREEKT
+      [A2] · gebied 9 · kosten S · tegenspreker: blijft
+
+  Wat      De studiomail "Nieuwe bestelling" krijgt geen fotobijlagen meer (nu tot 8 MB, in
+           hetzelfde verzoek als de bestelknop). Hij toont wel kenmerk, dienst, aantal,
+           bedrag, per product één regel ("p1 Hoodie zwart · voorkant, achterkant, detail ·
+           2 referenties"), wat ontbreekt ("p4: geen detail") en een knop "Open in /admin".
+  Waarom   8 MB is twee à drie telefoonfoto’s, dus vanaf het tweede product is de bijlage al
+           onvolledig, en ondertussen wacht de klant op een Worker die foto’s inpakt.
+  Mening   Goed als vereenvoudiging; de regel "wat ontbreekt" is meer waard dan de foto’s,
+           want dat wil je bij binnenkomst weten. Wil je toch één beeld zien: alleen de
+           voorkant van product 1 als bijlage.
+  Vraag    V20 · Gebruik je de foto’s in de studiomail?
+             a) nee, ik werk vanuit /admin
+             b) ja, op mijn telefoon om te zien of ze bruikbaar zijn
+             c) ja, ik sla ze op uit de mail
+             advies: bij a en c alle bijlagen weg; bij b alleen de voorkant van product 1
+  Advies   doen, ronde A2
+
+  >>> JOUW BESLUIT 9.07
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V20 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+2.05  FOTO’S NASTUREN PER LEEG VAK, MET ÉÉN LIJST VAN WAT ONTBREEKT
+      [A2] · gebied 2 · kosten S · tegenspreker: blijft · neemt 5.06 op
+
+  Wat      Tot de levering toont Studio per product de vier fotovakken, gevuld of leeg met
+           een eigen bestandsveld. Eén lijst "wat ontbreekt per vak" vult het tussenscherm
+           van stap 2, Studio, de betaal- en studiomail en in /admin de bestelrij ("2 foto’s
+           ontbreken") en een rood vak op het bord. Een nagestuurde foto komt in het juiste
+           vak.
+  Waarom   Nagestuurde foto’s moet je nu zelf in het juiste vak zetten, bij meer producten
+           staan ze niet op het bord, en de klant weet niet wát er mist.
+  Mening   Goed: het haalt een foutbron weg die in ronde 9 live opdook (F66), en de tekst
+           per vak laat de klant zien wat een ontbrekende foto kost. Die tekst moet kloppen
+           met wat jij doet bij een leeg vak.
+  Vraag    V31-1 · Tot wanneer mag een klant foto’s nasturen?
+             a) tot In productie
+             b) tot Geleverd
+             c) altijd
+             advies: b
+  Vraag    V31-2 · Wat doe je als een achterkant ontbreekt?
+             a) wachten
+             b) raden en leveren; revisie mag
+             c) één appje met een vaste tekst, en na een dag zonder antwoord maken wat er is
+             advies: c — en de knoptekst daarop aanpassen
+  Vraag    V31-3 · Waar stuurt een klant zonder account foto’s na?
+             a) in Studio, via de inlogcode
+             b) via WhatsApp als bestand
+             c) een nieuw vak op de privélink
+             advies: a — met b als tweede weg
+  Advies   doen; de lijst van wat ontbreekt in A2, nasturen per vak in A3
+
+  >>> JOUW BESLUIT 2.05
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V31-1 (a / b / c):
+      Vraag V31-2 (a / b / c):
+      Vraag V31-3 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+2.03  BESTELKAART: BOVENAAN DE NU-ZIN, ÉÉN KNOP EN TWEE DATUMS
+      [A2] · gebied 2 · kosten S · tegenspreker: blijft
+
+  Wat      De dichte bestelkaart in Studio toont kenmerk, dienst, aantal en status, met
+           daaronder de Nu-zin en één knop. Elke geleverde bestelling krijgt twee datums:
+           "Revisie aanvragen kan tot en met 13 okt." en "Je beelden staan hier tot 4 jan".
+           De open kaart begint met "Downloaden (zip)", en afgeronde bestellingen staan
+           ingeklapt onder "Afgerond (N)".
+  Waarom   De revisietermijn (7 dagen) en de verwijderdatum (90 dagen) zijn nu rekenwerk,
+           terwijl de purge straks echt wist.
+  Mening   Goed: de twee datums kunnen meteen, de Nu-zin volgt zodra nuZin() op de privélink
+           staat (3.01). Met O56 (7.09, later) noemen Studio en mail straks dezelfde datum.
+  Advies   doen, ronde A2
+
+  >>> JOUW BESLUIT 2.03
+      Keuze (ok / doen / later / niet / anders):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+8.06  HET APARTE 0%-VINKJE WEG, DE VERLEGGINGSZIN IN HET ZAKELIJK-VINKJE VAN STAP 5, HET
+      LAND VOORGEVULD
+      [A2] · gebied 8 · kosten S (land voorvullen een aparte S) · tegenspreker: blijft ·
+      neemt 1.10 op (land voorvullen, btw-nummer in de vinkjestekst); het live-VIES-deel van
+      1.10 gaat naar 8.05
+
+  Wat      Het aparte 0%-vinkje in stap 3 vervalt; voor EU-klanten krijgt het verplichte
+           vinkje in stap 5 de tekst "Ik bestel zakelijk voor <merk>, het btw-nummer
+           <nummer> is van dit bedrijf, en de btw wordt verlegd naar mijn bedrijf." Een
+           VIES-geldig nummer plus dit vinkje is 0%. Het land staat voorgevuld met het land
+           van de bezoeker, zichtbaar en te wijzigen.
+  Waarom   Een vergeten 0%-vinkje zet de bestelling zonder betaallink op de btw-lijst,
+           terwijl een door VIES bevestigd nummer volgens Uitvoeringsverordening 282/2011
+           artikel 18 al het bewijs is.
+  Mening   Goed, het past bij je besluit van 30 sep (één vinkje voor zakelijk en herroeping)
+           en is volgens de tegenspreker juridisch houdbaar. Wil je het vinkje houden, laat
+           een vergeten vinkje dan 21% met direct betalen betekenen.
+  Vraag    V19 · Waarom staat het 0%-vinkje voor EU-klanten er apart?
+             a) zonder bijzondere reden, het mag weg
+             b) op advies van een boekhouder: houden, maar een vergeten vinkje betekent 21%
+                en meteen betalen
+             c) houden zoals nu
+             advies: a, nadat je boekhouder het bevestigt
+  Advies   doen, ronde A2
+
+  >>> JOUW BESLUIT 8.06
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V19 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+G2    PROEF TIJDELIJK DICHT (EEN REM OP €1-PROEVEN BIJ EEN PIEK)
+      [A2] · gebied — · kosten S · tegenspreker: uit de tegenspraak (niemand pakte dit op)
+
+  Wat      Een schakelaar in /admin: "Proef tijdelijk dicht", of alleen de lifestyleproef
+           open. /test-sample toont dan "Even niet beschikbaar" tot jij hem weer omzet.
+  Waarom   Elke catalogproef kost je 20–30 minuten; één goede post kan een week vullen en
+           "vaak binnen een dag" breken voor betalende klanten.
+  Mening   Goed en klein, en het past bij §21: jij zet hem aan en uit, er gebeurt niets
+           vanzelf.
+  Vraag    V9 · Een rem op €1-proeven bij een piek?
+             a) een schakelaar "Proef tijdelijk dicht" in /admin
+             b) bij drukte alleen de lifestyleproef open laten
+             c) geen rem
+             advies: a — S en terug te draaien
+  Advies   doen, ronde A2
+
+  >>> JOUW BESLUIT G2
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V9 (a / b / c):
+      Opmerking:
+  <<<
+
+
+════════════════════════════════════════════════════════════════════════════════════════════
+[A3]  RONDE A3 · NA DE LEVERING: AFRONDEN, REVIEW EN TERUGKOMEN
+════════════════════════════════════════════════════════════════════════════════════════════
+Claude ±3 dagen, in deze volgorde. Jij: je Google Place ID opzoeken en de reviewtekst in NL
+en EN goedkeuren.
+Stoppunt: een testbestelling waar niemand op klikt, rondt na 7 dagen vanzelf af; de klant
+ziet het afrondscherm en jij de knop "Review vragen".
+
+────────────────────────────────────────────────────────────────────────────────────────────
+3.01  EÉN "WAT NU"-BLOK BOVENAAN PRIVÉLINK EN STUDIO, MET DE REVISIEDATUM
+      [A3] · gebied 3 · kosten S–M · tegenspreker: blijft · neemt 2.01 en 3.09 op
+
+  Wat      Bovenaan de privélink (elke klant, ook zonder account en bij de proef) komt één
+           zin met hoogstens twee knoppen: wat de klant nu moet doen en tot wanneer zijn
+           revisieronde loopt. Daaronder het statuspad van Studio, de leverregel en, zolang
+           er niet betaald is, "Nu betalen". Daarna komt hetzelfde blok bovenaan het
+           Studio-overzicht en in de levermail.
+  Waarom   De klant moet nu zelf uitzoeken wat er van hem verwacht wordt, en zonder datum
+           weet hij niet dat zijn revisieronde kan verlopen.
+  Mening   Goed, en het belangrijkste punt van dit gebied: alles hierna hangt aan deze
+           bovenkant, en één functie voorkomt dubbel bouwen. Tegenspreker: eerst de
+           privélink; de vier Studio-tegels weghalen draait het herontwerp van 3 okt terug
+           en is jouw besluit.
+  Vraag    V22 · Welke knop bovenaan de privélink wordt violet?
+             a) "Alles goed — naar je downloads"
+             b) "Downloaden"
+             c) twee gelijke knoppen
+             advies: a — na het goedkeuren staat de klant meteen bij de downloads
+  Vraag    V23 · Wat gebeurt er met de vier tellertegels op het Studio-overzicht?
+             a) weg; de lijst "Lopend" vervangt ze
+             b) alleen tonen als het getal boven 0 is, als link naar de gefilterde
+                bestellingen
+             c) laten
+             advies: b — zo blijft je herontwerp van 3 okt staan en verdwijnt de ruis van "0
+                     · 0 · 1 · 0"
+  Advies   doen, ronde A3
+
+  >>> JOUW BESLUIT 3.01
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V22 (a / b / c):
+      Vraag V23 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+3.03  STIL AFRONDEN 7 DAGEN NA DE LAATSTE LEVERING
+      [A3] · gebied 3 · kosten S · tegenspreker: blijft · neemt 4.09 en 2.09 op
+
+  Wat      De nachtelijke cron rondt een geleverde, betaalde bestelling zonder open revisie
+           af als er 7 dagen niets is gebeurd sinds de laatste levering of het laatste
+           revisieantwoord. Hij zet closed_at, schrijft de reden stil in order_events en een
+           regel in het nachtrapport; er gaat geen mail uit. De klant leest vooraf de datum
+           in 3.01 en de levermail.
+  Waarom   Zonder "Alles goed" blijft een bestelling voor altijd op Geleverd: geen
+           tevredenheidsvraag, geen wisdatum voor de bronfoto’s en een privélink die tot 365
+           dagen open blijft.
+  Mening   Goed: de kleinste ingreep die review, wissen en privélink in één keer regelt.
+           Tegenspreker: afronden raakt geen geld, stuurt geen mail en is omkeerbaar, dus de
+           reden achter de handmatige weekstart (§21) geldt hier niet.
+  Vraag    V24 · Wie rondt een bestelling af na 7 stille dagen?
+             a) de cron, met een regel in het nachtrapport
+             b) niemand; overal wordt "afgerond of 7 dagen stil" gerekend
+             c) jij, met één klik in /admin
+             advies: a — met één zin in /terms: een levering zonder revisieverzoek binnen 7
+                     dagen geldt als aanvaard
+  Advies   doen, ronde A3
+
+  >>> JOUW BESLUIT 3.03
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V24 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+3.05  "ALLES GOED" LANDT OP EEN AFRONDSCHERM MET DOWNLOADS, REVIEW EN TOESTEMMING
+      [A3] · gebied 3 · kosten S · tegenspreker: blijft
+
+  Wat      Na "Alles goed" gaat de klant naar /o/<token>#afgerond: bovenaan de downloads met
+           de bewaardatum, daaronder het tevredenheidsblok met één toestemmingsblok voor
+           zijn tekst en zijn beelden (draagfoto’s uitgezonderd). Na het versturen staat
+           zijn eigen tekst klaar om te kopiëren, met knoppen die het reviewscherm van
+           Google en Trustpilot direct openen, bij elke score.
+  Waarom   Dit is het enige moment waarop de klant zelf laat weten dat het goed is; moet hij
+           zijn tekst voor Google opnieuw typen, dan haakt hij af.
+  Mening   Goed, het sterkste reviewpunt binnen §21: geen mail, niets automatisch
+           gepubliceerd, niets gefilterd. Tegenspreker: één toestemmingsblok in plaats van
+           twee vragen; waar aanbevelingen en vrijgegeven beelden op de site komen (O15), is
+           nog niet ontworpen.
+  Vraag    V25 · Welke reviewplek komt eerst?
+             a) Google groot, Trustpilot als tekstlink
+             b) beide even groot
+             c) alleen Google
+             advies: a — je eerste vijf reviews op één plek tellen zwaarder, en Google toont
+                     ze als iemand op je naam zoekt
+  Advies   doen, ronde A3
+
+  >>> JOUW BESLUIT 3.05
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V25 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+10.05 TOESTEMMING OM ECHTE BESTELLINGEN TE LATEN ZIEN
+      [A3] · gebied 10 · kosten S–M · tegenspreker: blijft
+
+  Wat      Het tevredenheidsblok op het afrondscherm van 3.05 (privélink en Studio) krijgt
+           één toestemmingsblok met twee vrijwillige keuzes: je tekst en je beelden, elk met
+           merknaam, zonder merknaam of liever niet. Het vervangt het losse vinkje van 3.05;
+           draagfoto’s vallen er nooit onder. In /admin komt een filter "mag getoond
+           worden", en publiceren blijft een aparte stap van jou.
+  Waarom   Plaatshouderfoto’s zijn de grootste zichtbare zwakte van de site, en echte
+           beelden ("dit stuurde de klant, dit kreeg hij terug") overtuigen meer dan elke
+           tekst.
+  Mening   Goed: van alles in dit gebied geeft dit het snelst sociale bewijskracht, en het
+           is beter dan een "galerijkorting" (korting via een omweg). Tegenspreker: waar
+           vrijgegeven beelden en aanbevelingen op de site komen (O15), heeft nog niemand
+           ontworpen.
+  Vraag    V30-1 · Toestemming om tekst en beelden te tonen: wanneer vragen we het?
+             a) alleen op het afrondscherm
+             b) ook bij het bestellen van de proef
+             c) beide
+             advies: a — ook bij de proef liever ná het resultaat dan vooraf
+  Vraag    V30-2 · Toestemming om tekst en beelden te tonen: wat gebeurt er als een klant
+           zijn toestemming intrekt?
+             a) je haalt zijn beelden binnen een week van site en social
+             b) een geplaatste post blijft, er komt alleen niets nieuws bij
+             advies: a — en zo staat het in /privacy
+  Advies   doen, ronde A3
+
+  >>> JOUW BESLUIT 10.05
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V30-1 (a / b / c):
+      Vraag V30-2 (a / b):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+3.07  "BESTEL MET DEZELFDE LOOK": ÉÉN LINK MET DE LOOKKEUZES, OP DRIE PLEKKEN
+      [A3] · gebied 3 · kosten S · tegenspreker: blijft · neemt 2.06 op
+
+  Wat      Een knop "Catalog bestellen — Classic · gebroken wit · 4:5" opent het formulier
+           met dezelfde look, achtergrond, verhouding en hetzelfde gezicht al ingevuld;
+           abonnees zien erbij "4 credits per product" (lifestyle: 5). Hij staat op de
+           privélink na afronden, in Studio bij elke geleverde bestelling en op de
+           proef-privélink. Naam, KVK en adres gaan niet mee.
+  Waarom   Een merk dat terugkomt wil dat de nieuwe producten naast de oude passen, en dat
+           lukt alleen als dezelfde keuzes terugkomen.
+  Mening   Goed: de kleinste stap naar herhaalbestellingen, en binnen "eerst een look, dan
+           het formulier" (§6.1). Tegenspreker: lookparameters zijn beter dan van=<ref> of
+           zoals=<ref>, omdat ze zonder inloggen en zonder nieuwe serverroute werken.
+  Vraag    V28 · Neemt de knop "Bestel met dezelfde look" ook de bedrijfsgegevens mee?
+             a) nee, alleen de look; de gegevens komen via inloggen
+             b) ja, via een inlogcode
+             c) ja, rechtstreeks uit de privélink
+             advies: a — een privélink mag gedeeld worden
+  Advies   doen, ronde A3
+
+  >>> JOUW BESLUIT 3.07
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V28 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+3.08  DE PRIVÉLINK VAN DE €1-PROEF ALS EERSTE VERKOOPPAGINA
+      [A3] · gebied 3 · kosten S · tegenspreker: blijft
+
+  Wat      Een proefbestelling is afgerond op het moment van levering, met de reden proef in
+           order_events. De privélink toont dan meteen de downloads, de knop "Bestel in deze
+           look" (3.07) met de regel "catalogfoto’s vanaf €39 per product" en het afrondblok
+           van 3.05. Het bedrag komt uit LADDER, niet getypt.
+  Waarom   Voor de eerste 5–10 klanten is de proef de ingang, maar pas na "Alles goed" zien
+           ze de reviewvraag en er is geen stap naar een echte bestelling.
+  Mening   Goed, en vóór de lancering misschien het meest waard per uur bouwen in dit
+           gebied; de tegenspreker zet het in de top 10. De prijsregel is optioneel, met of
+           zonder "vanaf €39": jouw keuze.
+  Vraag    V29 · Wanneer is een €1-proef afgerond?
+             a) bij levering
+             b) na "Alles goed", zoals nu
+             c) na 7 stille dagen
+             advies: a — er is geen revisie om op te wachten
+  Advies   doen, ronde A3
+
+  >>> JOUW BESLUIT 3.08
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V29 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+7.05  WHATSAPP-KNOPPEN MET KANT-EN-KLARE TEKST OP VIJF MOMENTEN, EN NERGENS ANDERS
+      [A3] · gebied 7 · kosten S · tegenspreker: blijft · neemt 8.02 op
+
+  Wat      Eén functie waLink() maakt een wa.me-link met het nummer en een vaste tekst in de
+           taal van de bestelling; jij drukt zelf op verzenden. De knop staat op de
+           bestelpagina in /admin, in de studiomail, in de ochtendlijst en in "wacht op
+           betaling" naast "dag 5 van 14". Momenten: betaling open, foto’s ontbreken, mail
+           kwam niet aan, incasso mislukt, review.
+  Waarom   Precies op deze momenten schiet een mail tekort: hij komt niet aan, wordt niet
+           gelezen, of de klant moet iets doen.
+  Mening   Goed en klein: WhatsApp wordt een gereedschap in plaats van een tweede inbox.
+           Houd het bij deze vijf, want elk extra moment leert de klant dat hij via WhatsApp
+           op de hoogte gehouden wordt.
+  Vraag    V26 · Mag de tekst bij het telefoonveld in stap 3 breder worden?
+             a) laten: "we appen als iets onduidelijk is"
+             b) "we appen als er iets met je bestelling is"
+             c) geen WhatsApp voor betaling en review
+             advies: b — dit moet vóór 3.06, anders gebruik je het nummer voor iets waarvoor
+                     de klant het niet gaf
+  Advies   doen, ronde A3
+
+  >>> JOUW BESLUIT 7.05
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V26 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+3.06  REVIEW VRAGEN MET ÉÉN KLIK UIT /ADMIN, EERST ALLEEN VIA WHATSAPP
+      [A3] · gebied 3 · kosten S · tegenspreker: blijft · neemt 7.06 op
+
+  Wat      Bij elke afgeronde bestelling, nooit gefilterd op score, staat in /admin en in de
+           ochtendlijst onder "Afgerond gisteren" de knop "Vraag om een review via
+           WhatsApp". Die schrijft "review gevraagd" in order_events en opent WhatsApp met
+           de tekst in de taal van de bestelling; jij drukt zelf op verzenden. Daarna is de
+           knop grijs met datum.
+  Waarom   Een persoonlijk bericht van de maker levert meer reviews op dan een knop die de
+           klant zelf moet vinden, en de regel in order_events voorkomt dubbel sturen.
+  Mening   Goed en goedkoop, omdat het een bestaand /admin-patroon hergebruikt; een snel
+           antwoord in WhatsApp Business kan zonder bouwen, maar mist het spoor van wie het
+           al gevraagd is. Tegenspreker: route achter de login, order_events in plaats van
+           een nieuwe kolom.
+  Vraag    V27 · Via welke kanalen vraag je om een review?
+             a) WhatsApp en mail
+             b) alleen WhatsApp
+             c) alleen mail
+             advies: b — om mee te beginnen; mail pas als klanten niet op WhatsApp reageren
+  Advies   doen, ronde A3
+
+  >>> JOUW BESLUIT 3.06
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V27 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+5.03  KLEURTROUW: DE OPGEGEVEN KLEUR IS LEIDEND, WIT PAPIER ALS IJKPUNT
+      [A3] · gebied 5 · kosten S · tegenspreker: blijft
+
+  Wat      Stap 2 vraagt de kleur zoals in de webshop, met Pantone- of hexcode als die er
+           is; wijkt de foto af, dan geldt die kleur. Tip bij de close-up: leg een wit vel
+           printpapier half in beeld. De brief toont kleur, code en kleurvlakje; jij zet in
+           Camera Raw de witbalans op het papier en snijdt het weg vóór @img1.
+  Waarom   Lamplicht verschuift de kleur in de klantfoto’s; die fout komt in alle vier de
+           beelden terug en is een revisie, terwijl niet vastligt of product of foto telt.
+  Mening   Goed: van dit gebied levert dit per minuut de meeste kwaliteit op, want het
+           gebeurt vóór de generatie. Het rondt het kleurveld uit augustus af: tekst voor
+           iedereen, een code voor wie die heeft, papier voor de rest.
+  Vraag    V32 · Moet de revisieregel "kleur ten opzichte van de kleur die je opgaf" ook in
+           /terms en de FAQ staan?
+             a) ja
+             b) alleen in het formulier
+             c) niets veranderen
+             advies: a — bij onenigheid lees je de voorwaarden, niet het formulier
+  Advies   doen, ronde A3
+
+  >>> JOUW BESLUIT 5.03
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V32 (a / b / c):
+      Opmerking:
+  <<<
+
+
+════════════════════════════════════════════════════════════════════════════════════════════
+[A4]  RONDE A4 · JOUW WERKDAG
+════════════════════════════════════════════════════════════════════════════════════════════
+Claude ±4–5 dagen; het enige blok met M-punten (4.02 en 4.01). Jij: het Photoshop-script
+±30 minuten testen met een proefwerkmap.
+Stoppunt: een proefbestelling gaat van werkmap via Photoshop naar upload zonder getypte hex,
+zonder hernoemen en zonder CMD, en elk beeld op het bord heeft de chip "AI-tag".
+Wil je A korter houden? Zet bij 4.01 en 4.02 "later"; dan pas ik tot die tijd de tekst op
+/ai-act aan.
+
+────────────────────────────────────────────────────────────────────────────────────────────
+4.05  NU-DOEN-LIJST BOVENAAN HET DASHBOARD EN IN HET NACHTRAPPORT, MET EEN EINDPUNT
+      [A4] · gebied 4 · kosten S–M · tegenspreker: blijft · neemt 7.04 op
+
+  Wat      Bovenaan het dashboard staat één lijst in vaste volgorde met één knop per regel:
+           btw-controle, klaar om te leveren, revisies, betaald en niet opgepakt, offerte
+           maken, review vragen. Het nachtrapport begint met dezelfde regels en elke
+           bestelpagina met "Volgende stap: …". Een lege lijst zegt "Niets wacht op jou".
+  Waarom   Je hebt een vaste volgorde en een stoppunt nodig; nu zoek je elke ochtend zelf
+           uit wat eerst moet, en zegt /admin nooit dat je klaar bent.
+  Mening   Goed; het eindpunt is het eigenlijke voorstel, en met het rapport erbij begint je
+           ochtend op één plek. In je planner-app hoogstens een teller "3 dingen wachten"
+           met een link naar /admin, anders wordt die een tweede beheerscherm.
+  Vraag    V36 · Moet het nachtrapport ook komen als er niets open staat?
+             a) altijd, met het onderwerp "niets open"
+             b) alleen als er iets is
+             advies: a — een mail die niet komt, kun je anders niet onderscheiden van een
+                     cron die niet draait
+  Advies   doen, ronde A4
+
+  >>> JOUW BESLUIT 4.05
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V36 (a / b):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+4.08  REVISIE AFHANDELEN OP ÉÉN PLEK, MET ANTWOORDEN IN DE TAAL VAN DE KLANT
+      [A4] · gebied 4 · kosten S · tegenspreker: blijft
+
+  Wat      Boven het redenveld staat de taal van de klant: "Deze klant leest Engels —
+           schrijf je reden in het Engels." Is de laatste revisiekaart afgehandeld, dan
+           verschijnt in die kaart de knop "3 nieuwe beelden melden", zodat je niet naar de
+           bestelpagina hoeft. Later komen er drie vaste redenen in NL en EN, door jou
+           geschreven.
+  Waarom   Revisie is het gevoeligste moment met een klant: een vergeten melding of een
+           Nederlandse zin in een Engelse mail komt slordig over.
+  Mening   Goed; de taalregel en de meldknop in de kaart leveren het meeste op en kosten
+           bijna niets. Vaste redenen nu al bouwen is gokken naar redenen die je nog niet
+           kent.
+  Vraag    V37 · Vaste redenen voor "geen nieuw beeld nodig"?
+             a) nu drie
+             b) na ±10 echte revisies
+             c) nooit, alleen de taalregel
+             advies: nu c, daarna b
+  Advies   doen, ronde A4
+
+  >>> JOUW BESLUIT 4.08
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V37 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+4.07  PHOTOSHOP-AFWERKEN LEEST DE WERKMAP: GEEN HEX TYPEN, GEEN HERNOEMEN
+      [A4] · gebied 4 · kosten S + eenmalig ±30 min jij · tegenspreker: blijft · neemt 5.01
+      op (het tagdeel ervan zit in 4.01)
+
+  Wat      VISUAILS-afwerken.jsx leest achtergrond, verhouding en maat uit de
+           INSTELLINGEN-regel in _briefing.txt, snijdt bij, schaalt en slaat op als
+           VIS-…-p1-voorkant.jpg in hetzelfde vak, met het ruwe beeld in _ruw/. Opschalen
+           doet het nooit; een te klein beeld geeft een melding. Je start het één keer op de
+           hele werkmap met een sneltoets en krijgt een slotmelding met aantallen.
+  Waarom   Een overgetypte hex geeft een hele bestelling de verkeerde achtergrond, een
+           zekere revisie, en 24 bestanden hernoemen en verslepen is het saaiste kwartier
+           van je bestelling.
+  Mening   Goed: het grootste stuk handwerk tussen generator en upload, en de enige
+           handmatige invoer gaat uit het batchscript. Tegenspreker: het tagdeel van 5.01
+           vervalt, want 4.01 tagt elk bestand bij de upload.
+  Vraag    V35 · Gaan lifestylebeelden nu ook door Photoshop?
+             a) ja, altijd
+             b) nee, ze komen rechtstreeks uit Spaces
+             c) soms
+             advies: bij b of c ook door het script, voor naam en maat; de tag hangt er niet
+                     meer van af
+  Advies   doen, ronde A4
+
+  >>> JOUW BESLUIT 4.07
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V35 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+4.02  WERKMAP COMPLEET MET BRIEF PER PRODUCT, EN VEILIG TERUG TE UPLOADEN
+      [A4] · gebied 4 · kosten M · tegenspreker: blijft · neemt 5.02 op
+
+  Wat      De werkmapzip heet VIS-XXXX-XXX - Merknaam.zip en heeft per product _aangeleverd/
+           met de klantfoto’s en een _briefing.txt in vijf vaste blokken, met een plakregel
+           zonder productnaam. Bij "Map uploaden" weigert de server een map van een andere
+           bestelling. Een bestand dat byte voor byte gelijk is aan het levende beeld wordt
+           overgeslagen, zodat goedgekeurde beelden blijven staan.
+  Waarom   De zwaarste fout in je stroom is de map van klant A op de bestelling van klant B,
+           want na de eerste levering is elk nieuw beeld meteen zichtbaar.
+  Mening   Goed, en in dit gebied de eerste die ik zou bouwen: geen nieuwe gewoonte, en hij
+           haalt de enige fout weg waardoor je een klant echt kwijtraakt. Nog beter met één
+           gedeeld invoervak op het CATALOG-bord (5.09).
+  Vraag    V34 · Hoe krijg je nu de klantfoto’s op je pc?
+             a) uit de studiomail
+             b) per foto uit /admin
+             c) ze zitten al in _aangeleverd/ van de werkmap
+             advies: bij c alleen de briefblokken, de refcontrole en het overslaan van
+                     ongewijzigde bestanden bouwen; bij a of b 4.02 helemaal
+  Advies   doen, ronde A4
+
+  >>> JOUW BESLUIT 4.02
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V34 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+4.01  HERKOMSTTAG AUTOMATISCH BIJ ELKE UPLOAD IN /ADMIN, JPG ALS STANDAARD
+      [A4] · gebied 4 · kosten M · tegenspreker: blijft · neemt 3.10 en het tagdeel van 5.01
+      op
+
+  Wat      De Worker zet de herkomsttag in elke jpg en png die je in /admin uploadt, ook bij
+           revisies en de maandset. Leverbeelden zijn standaard jpg; /admin waarschuwt bij
+           png, webp of avif en toont per beeld de chip "AI-tag". Dit beantwoordt je vraag
+           om een sleepvak voor npm run tag:delivery: de tag komt er zonder handeling bij.
+  Waarom   Een stap die je moet onthouden gebeurt niet: npm run tag:delivery is nooit
+           gedraaid, dus de zip via /admin heeft geen tag terwijl /ai-act hem belooft.
+  Mening   Beste route: de Worker dekt elke uploadweg op één plek, werkt zonder JavaScript
+           en draait mee in de testreeks. De tegenspreker kiest de Worker boven taggen bij
+           opslaan in Photoshop, want of Photoshop de XMP bewaart is onbekend.
+  Vraag    V33 · Moet de klant naast jouw jpg nog andere formaten krijgen?
+             a) nee
+             b) ook een png voor marktplaatsen
+             c) alleen op verzoek via WhatsApp
+             advies: a — met c als uitzondering
+  Advies   doen, ronde A4
+
+  >>> JOUW BESLUIT 4.01
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V33 (a / b / c):
+      Opmerking:
+  <<<
+
+
+════════════════════════════════════════════════════════════════════════════════════════════
+[PAR]  PARALLEL, ALLEEN JIJ: HET CATALOG-BORD
+════════════════════════════════════════════════════════════════════════════════════════════
+Begin zodra A1 af is; het hangt niet van Claude af. Tot het af is, gaat betaalde reclame naar
+lifestyle en de €1-proef.
+
+────────────────────────────────────────────────────────────────────────────────────────────
+5.09  VOLGORDE VOOR DE BORDEN, MET EEN VASTE PROEFSET ALS STOPPUNT
+      [PAR] · gebied 5 · kosten L (jij, omvang onbekend); Claude niets of S · tegenspreker:
+      blijft · neemt 10.01 op (betaalde reclame eerst op lifestyle en de €1-proef)
+
+  Wat      Eerst het CATALOG-bord afmaken: twee à drie posegenerators (één stil, één die in
+           de lens kijkt) plus de lege generator voor extra hoeken. Daarna de live looks,
+           eerst Dunes, pas dan één nieuwe look tegelijk. Een stap is klaar als een vaste
+           proefset van vijf producten zonder handwerk buiten het script door het bord gaat,
+           binnen 10–20 minuten per product.
+  Waarom   Catalog is het instapproduct en het traagste werk (meer dan 20 minuten per
+           product tegen 5–10 voor lifestyle); zonder vaste proefset is er geen moment
+           waarop een bord klaar is.
+  Mening   Goed: dit levert van het hele gebied de meeste uren terug, zonder code; twee à
+           drie poses is genoeg. Het bord sneller maken is beter dan de credits verhogen,
+           want dat verandert /plans vlak vóór ronde 10.
+  Prijs    nu catalog 4 credits (lifestyle 5) → voorstel catalog 5 credits, alleen bij V47
+           b: Merk 58 catalogproducten per maand i.p.v. 72, Pro 24 i.p.v. 30, Starter 9
+           i.p.v. 11; 20% minder catalog.
+  Vraag    V14 · Welk bord hoort bij Dunes?
+             a) AUGUST is Dunes
+             b) Dunes heeft nog geen eigen bord
+             c) iets anders
+             advies: bij b: Dunes meteen na het CATALOG-bord
+  Vraag    V47 · Wat doen we met de catalogcredits?
+             a) op 4 laten en eerst het bord afmaken
+             b) naar 5 in ronde 10
+             c) beslissen na de eerste drie abonnees
+             advies: a — b alleen als het bord catalog niet onder de 15 minuten per product
+                     krijgt
+  Advies   doen, parallel aan ronde A (jouw werk)
+
+  >>> JOUW BESLUIT 5.09
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V14 (a / b / c):
+      Vraag V47 (a / b / c):
+      Opmerking:
+  <<<
+
+
+════════════════════════════════════════════════════════════════════════════════════════════
+[B]  RONDE B · HET ABONNEMENT ZONDER WEEK (RONDE 10, §28.6)
+════════════════════════════════════════════════════════════════════════════════════════════
+Claude ±3–4 dagen: de §28-omslag zelf (weeksysteem weg, betalen met credits in stap 5, het
+label "Credits") plus de voorstellen hieronder. Jij: de teksten op /plans nalopen.
+Stoppunt: een testabonnee bestelt via het gewone formulier met credits, het creditboek klopt
+tot op de credit, en nergens staat nog "week".
+
+────────────────────────────────────────────────────────────────────────────────────────────
+2.07  DE ABONNEMENTSPAGINA: ÉÉN PAGINA ZONDER TABBLADEN (VERBETERDE §28.3)
+      [B] · gebied 2 · kosten M (ronde 10) · tegenspreker: blijft · neemt 6.07 op
+
+  Wat      De vier tabbladen van de abonnementspagina worden één pagina zonder JS: saldo
+           ("Je hebt 72 credits", genoeg voor 18 catalogsets), twee bestelknoppen, maandset,
+           creditboek en je plan. Het creditboek toont elke bij- en afschrijving met kenmerk
+           of reden, en wie op "Opzeggen" klikt krijgt eerst pauzeren aangeboden. In /admin
+           staat dezelfde weergave in plaats van "abonnementsweek".
+  Waarom   "72 van 120" klopt niet zodra credits doorschuiven (dan heb je er 152 "van 120"),
+           en tabbladen die bestaande pagina’s herhalen geven twee plekken voor dezelfde
+           vaste look.
+  Mening   §28.3 is sterk in saldo en creditboek; plantegel en tabbladen zijn overbodig, en
+           het mist "genoeg voor …", vervaldatums, de standen pauze en opgezegd en een reden
+           bij elke correctie. Houd de pagina een rekening plus twee bestelknoppen.
+  Vraag    V41 · Wat doen credits na een pauze of opzegging?
+             a) een credit vervalt altijd op zijn eigen datum
+             b) bij opzeggen vervallen ze op de einddatum van het abonnement
+             c) bij pauze worden ze bevroren
+             advies: a — één regel zonder uitzondering, gelijk aan 6.08
+  Vraag    V42 · Hoe lang mag een pauze duren?
+             a) tot de klant zelf hervat
+             b) hoogstens 3 maanden, daarna een mail "hervatten of opzeggen?"
+             advies: b — na 3 maanden zijn de credits toch vervallen
+  Advies   doen, ronde B
+
+  >>> JOUW BESLUIT 2.07
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V41 (a / b / c):
+      Vraag V42 (a / b):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+2.02  TEGOED EN CREDITS: ÉÉN SALDO-STROOK, TWEE WOORDEN DIE NOOIT WISSELEN
+      [B] · gebied 2 · kosten S (ronde 10) · tegenspreker: blijft · neemt 8.10 op
+
+  Wat      Op het Studio-Overzicht komt een strook "Je saldo": tegoed met € en het woord
+           "tegoed", credits als getal zonder € ("genoeg voor 18 catalogsets"), en dezelfde
+           woorden in stap 5, betaalblok en factuurlijst. Tegoed betaalt nooit een
+           creditsbestelling, wordt nooit credits, en credits worden nooit euro’s. Bij elke
+           creditsbestelling staat een link naar de termijnfactuur die hem dekt.
+  Waarom   Een klant die €50 tegoed ziet en denkt dat hij 50 credits heeft (of omgekeerd),
+           bestelt verkeerd of mailt, en zijn boekhouder zoekt de factuur bij een
+           creditsbestelling.
+  Mening   Goed en klein: "genoeg voor 18 catalogsets" is wat §28 mist, en elk saldo krijgt
+           één thuis (tegoed bij Facturen, credits bij Abonnement). Geen aparte
+           bestelbevestiging-pdf per creditsbestelling: die verwart de boekhouder meer dan
+           een link naar de termijnfactuur.
+  Vraag    V40 · Een abonnee heeft tegoed én credits en bestelt. Wat gaat eerst?
+             a) credits; het tegoed blijft staan voor een Mollie-betaling
+             b) de klant kiest in stap 5
+             c) eerst tegoed
+             advies: a — één regel zonder keuze, past bij 8.10
+  Vraag    V49 · Er wordt een termijn terugbetaald terwijl er al credits uit gebruikt zijn.
+           Wat dan?
+             a) een creditnota alleen voor het ongebruikte deel; die credits vervallen
+             b) een volledige creditnota; de gebruikte credits worden een openstaand bedrag
+             c) per geval beslissen
+             advies: a
+  Advies   doen, ronde B
+
+  >>> JOUW BESLUIT 2.02
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V40 (a / b / c):
+      Vraag V49 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+2.08  VASTE LOOK EN GEGEVENS VULLEN ZICHZELF; STUDIO VRAAGT ALLEEN WAT ONTBREEKT
+      [B] · gebied 2 · kosten S · tegenspreker: blijft · neemt 6.09 en het vaste-lookdeel
+      van 1.06 op
+
+  Wat      Na de eerste betaalde bestelling per dienst (ook de €1-proef) worden look,
+           gezicht, verhouding, achtergrond en kanalen als vaste look bewaard, als die nog
+           leeg is. De verplichte vaste look voor abonnees en het videoblok vervallen. "Je
+           gegevens" wordt een samenvatting met een knop "Wijzigen"; mist er iets voor de
+           factuur, dan zegt de Nu-zin dat.
+  Waarom   Een klant die al besteld heeft, heeft alles al gekozen, en een verplichte vaste
+           look is een extra drempel vóór de eerste abonnementsbestelling.
+  Mening   Goed, en een echte vereenvoudiging: de klant hoeft niets apart in te stellen en
+           de poort uit §28.2.1 voegt met het gewone formulier niets meer toe. De
+           herbestellink uit 6.09 wordt de link met lookparameters van 3.07.
+  Advies   doen, ronde B
+
+  >>> JOUW BESLUIT 2.08
+      Keuze (ok / doen / later / niet / anders):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+6.01  EÉN CREDITKAART OVERAL, MET DE VERTALING IN PRODUCTEN
+      [B] · gebied 6 · kosten S · tegenspreker: blijft
+
+  Wat      Op /plans, /start/plan, in Studio en in stap 5 staat dezelfde creditkaart:
+           catalogset 4, carrousel 5, extra foto 2, 4K 1, video op aanvraag. Per plan en
+           achter elk saldo staat de vertaling (Pro: 30 catalogsets of 24 carrousels) in
+           plaats van "≈ producten". Bovenaan /plans staat dat een catalogset met abonnement
+           altijd 4 credits kost, ook bij twee.
+  Waarom   Het echte voordeel staat nergens: de staffel vraagt bij 1–4 producten €89 per
+           stuk, met credits kost een catalogset bij Pro €26, en "≈ producten" lijkt met
+           complete te rekenen.
+  Mening   Goed, en de goedkoopste verduidelijking in dit gebied; houd het woord "credits",
+           want "producten per maand" klopt niet bij mengen of een extra foto. Tegenspreker:
+           dit lost het "of"-probleem op zonder prijswijziging, dus 6.02 is niet nodig.
+  Advies   doen, ronde B
+
+  >>> JOUW BESLUIT 6.01
+      Keuze (ok / doen / later / niet / anders):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+6.03  CREDITS 3 MAANDEN GELDIG VOOR IEDEREEN; OUDSTE EERST
+      [B] · gebied 6 · kosten S · tegenspreker: blijft
+
+  Wat      Op /plans, in de voorwaarden en bij elke regel in het creditboek staat: "Credits
+           blijven 3 maanden geldig." Bij een bestelling gaan de oudste credits eerst, en
+           stap 5 zegt welke vervallen. Er gaat één herinnering, 7 dagen vooraf; de mail van
+           2 dagen vooraf vervalt.
+  Waarom   Nu schuiven credits bij maandelijks 1 maand en bij 12 maanden en vooruit 3
+           maanden door: twee regels uitleg die niemand nodig heeft, terwijl "3 maanden" op
+           een kaart past.
+  Mening   Goed, eens met §28.5. Zeg "3 maanden geldig" en niet "doorschuiven", en maak
+           "oudste eerst" expliciet, anders vervallen oude credits terwijl de klant nieuwe
+           gebruikt.
+  Prijs    nu 1 maand doorschuiven bij maandelijks, 3 bij 12 maanden en vooruit → voorstel 3
+           maanden geldig voor iedereen; bruikbaar 3 in plaats van 2 maanden (maandelijks)
+           of 4 (jaar), omzet per abonnement gelijk.
+  Vraag    V43 · Wat betekent "3 maanden geldig" precies?
+             a) 3 maanden na binnenkomst, voor iedereen
+             b) tot het eind van de derde maand na binnenkomst
+             advies: a
+  Advies   doen, ronde B
+
+  >>> JOUW BESLUIT 6.03
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V43 (a / b):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+6.04  TWEE TERMIJNEN; OP MAAT ALS ÉÉN REGEL
+      [B] · gebied 6 · kosten S · tegenspreker: blijft
+
+  Wat      Op /plans en /start/plan blijven alleen maandelijks en jaar vooruit (€3.900 ·
+           €7.900 · €16.900, ongewijzigd); de tussentermijn van 12 maanden, maandelijks
+           geïncasseerd, vervalt. Pro houdt het merkmodel bij vooruit. Op maat (30–300
+           credits) wordt één regel onder de drie kaarten, met een link naar de schuif op
+           /start/plan.
+  Waarom   Na 6.03 houdt de tussentermijn alleen prijsgarantie en merkmodel over, en boekt
+           een klant een incasso terug, dan moet jij een jaarverplichting zelf innen; bij
+           vooruit is het geld binnen.
+  Mening   Goed, eens met §28.5. Op maat werkt beter als regel dan als schuif, want die is
+           een vierde keuze op het moment dat de klant moet kiezen, en 30 credits voor €272
+           is de goedkoopste instap die je wilt houden.
+  Prijs    nu 3 termijnen en op maat als vierde kaart → voorstel maandelijks en vooruit, op
+           maat als regel met dezelfde prijzen; geen bedrag verandert, Pro met merkmodel kan
+           alleen nog via €7.900 vooruit.
+  Vraag    V44 · Wat gebeurt er met de tussentermijn (12 maanden, maandelijks geïncasseerd)?
+             a) weg
+             b) één regel onder de tabel
+             c) houden als kolom
+             advies: a — jouw besluit, want het draait 10 sep terug
+  Advies   doen, ronde B
+
+  >>> JOUW BESLUIT 6.04
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V44 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+6.05  SEATSLEFT MEET CREDITS IN PLAATS VAN EEN BUDGET DAT VERDWIJNT
+      [B] · gebied 6 · kosten S · tegenspreker: blijft
+
+  Wat      De rem op abonnementen telt de maandcredits van alle actieve abonnees op en
+           vergelijkt die met één plafond dat jij zet. /start/plan zegt per plan alleen
+           "vol" als het niet past, en "nog N plekken" pas bij 3 of minder. /admin toont één
+           regel: de credits per maand van alle abonnees samen, tegen het plafond.
+  Waarom   De rem rekent nu met 231 punten/maand → 13 Starter-plekken, wat niet klopt (5 tot
+           8), en een telling van abonnees rekent een Merk (290 credits) als één Starter
+           (45).
+  Mening   Goed, de rem meet weer iets wat bestaat; kies het getal vanuit je uren, niet de
+           punten, of anders eerst een maximum aantal abonnees. Belangrijker: /start/plan
+           toont geen "nog 13 plekken" zolang er geen abonnee is.
+  Prijs    nu 13 Starter-plekken uit 231 punten/maand → voorstel één creditplafond per maand
+           voor alle abonnees, door jou gekozen; bij 1.000 vol bij 22 Starter (€8.580 per
+           maand), 8 Pro (€6.320) of 3 Merk (€5.070).
+  Vraag    V45 · Welk deel van je productie-uren wil je aan abonnees geven, en hoe rem je
+           dat af?
+             a) een plafond in credits dat jij kiest vanuit die uren (ter vergelijking:
+                1.000 credits alleen aan catalog is ±83 uur)
+             b) een maximum aantal abonnees
+             c) geen rem
+             advies: a — met een getal uit je uren; weet je dat nog niet, dan b
+  Advies   doen, ronde B
+
+  >>> JOUW BESLUIT 6.05
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V45 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+6.06  STAP 5 MET CREDITS: WAT ERBIJ KAN, EN WAT ALS HET NIET PAST
+      [B] · gebied 6 · kosten M · tegenspreker: blijft
+
+  Wat      Met credits betaal je alles wat op de creditkaart staat; kies je voorrang, outfit
+           of een eigen look met toeslag, dan gaat de hele bestelling via Mollie. Heb je te
+           weinig credits, dan rekent stap 5 voor wat wel past, wanneer er nieuwe bijkomen
+           en wat Mollie kost. Tegoed telt alleen als je via Mollie betaalt.
+  Waarom   Zonder deze regel loopt het formulier vast op opties zonder creditprijs, en laat
+           "niet genoeg" zonder som de klant zonder volgende stap.
+  Mening   Eens met §28.2.4: nooit mengen, anders komt er een factuur voor een deelbedrag;
+           het wordt beter doordat stap 5 voorrekent in plaats van "haal 5 producten eraf"
+           te zeggen. Credits bijkopen pas als dit vaker gebeurt (6.11).
+  Vraag    V46 · Voorrang voor een abonnee?
+             a) niet met credits; de bestelling gaat dan via Mollie
+             b) voorrang in credits
+             c) inbegrepen bij Merk
+             advies: a — tot een abonnee erom vraagt
+  Advies   doen, ronde B
+
+  >>> JOUW BESLUIT 6.06
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V46 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+6.08  VASTE REGELS VOOR CREDITS BIJ ANNULEREN, TERUGBETALEN EN OPZEGGEN
+      [B] · gebied 6 · kosten S–M · tegenspreker: blijft
+
+  Wat      Vier regels, elk met een regel in het creditboek: annuleer je een
+           creditbestelling, dan komen de credits terug, 3 maanden geldig vanaf vandaag; kan
+           een product niet gemaakt worden, dan komen die credits terug; na opzeggen of
+           pauze blijven credits bruikbaar tot hun datum; "Credits bijstellen" in /admin
+           vraagt een reden. Het annuleerscherm krijgt de keuze "credits terug / niets".
+  Waarom   Nergens staat wat er met credits gebeurt bij annuleren of opzeggen, dus beslis je
+           per geval en klopt het saldo van de klant niet met zijn bestellingen.
+  Mening   Dit moet vastliggen vóór de eerste echte abonnee, niet later. "Terug met 3
+           maanden vanaf vandaag" is simpeler dan de oude datum terugzetten, want die kan al
+           voorbij zijn.
+  Let op   De vraag wat credits doen na pauze of opzeggen (V41) staat bij 2.07.
+  Advies   doen, ronde B
+
+  >>> JOUW BESLUIT 6.08
+      Keuze (ok / doen / later / niet / anders):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+8.11  TERUGBOEKING (CHARGEBACK OF STORNO): AUTOMATISCH ALLEEN WAT TERUG TE DRAAIEN IS
+      [B] · gebied 8 · kosten S–M · tegenspreker: later (Hoort op de werklijst van ronde 10)
+
+  Wat      Bij een chargeback krijgt de bestelling een rode pil "Betaling teruggeboekt —
+           niet leveren", met een bevestiging bij "Op geleverd zetten". Bij een termijn gaat
+           het abonnement op pauze en worden de credits van die termijn bevroren; de factuur
+           blijft staan en alles verdwijnt weer als Mollie de chargeback terugdraait. De
+           studiomail krijgt een WhatsApp-knop.
+  Waarom   Nu levert een chargeback alleen een logregel en een studiomail op, dus lever je
+           werk waarvoor het geld al weg is en kan een abonnee na een storno doorbestellen.
+  Mening   Goed, maar pas nodig met ronde 10. Of de btw op een vordering die nooit betaald
+           wordt later terug kan (oninbaar), is een vraag voor je boekhouder.
+  Vraag    V50 · Mag een teruggeboekte termijn het abonnement automatisch op pauze zetten?
+             a) ja, en de credits van die termijn worden bevroren
+             b) nee, alleen een melding
+             c) ja, maar de credits blijven bruikbaar
+             advies: a
+  Advies   doen in ronde B (de tegenspreker zette het op later omdat het bij ronde 10 hoort)
+
+  >>> JOUW BESLUIT 8.11
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V50 (a / b / c):
+      Opmerking:
+  <<<
+
+
+════════════════════════════════════════════════════════════════════════════════════════════
+[NA-A]  DIRECT NA RONDE A
+════════════════════════════════════════════════════════════════════════════════════════════
+Blijft, maar is M; past niet in de S-ronde.
+
+────────────────────────────────────────────────────────────────────────────────────────────
+1.04  HET FORMULIER ONTHOUDT DE KEUZES EN DE FOTO’S, NIET DE GEGEVENS (O47, ANDERE
+      UITVOERING)
+      [NA-A] · gebied 1 · kosten M · tegenspreker: blijft
+
+  Wat      Het formulier bewaart look, aantal, opties en de al geüploade foto’s op het
+           apparaat van de klant (localStorage), maar niet naam, e-mail, telefoon en adres.
+           Bij terugkomst controleert het of de foto’s nog in R2 staan en toont het "Je was
+           bezig met een bestelling" met "Verder gaan" en "Opnieuw beginnen". Na een
+           geplaatste bestelling wordt alles gewist.
+  Waarom   Na verversen of als de telefoon het tabblad weggooit (camera, WhatsApp,
+           Instagram) is het formulier leeg, en moet de klant al zijn foto’s opnieuw kiezen.
+  Mening   Goed: O47 klopt, maar sessionStorage lost alleen het minst voorkomende geval op;
+           dit dekt het meest voorkomende geval erbij. Een knop "stuur mezelf een link" pas
+           als de trechter laat zien dat klanten in stap 2 afhaken.
+  Vraag    V51 · Wat mag er op het apparaat van de klant blijven staan?
+             a) look, aantal, opties en foto’s, niet zijn gegevens
+             b) alles
+             c) alleen per stap, zoals O47
+             advies: a
+  Advies   doen, direct na ronde A
+
+  >>> JOUW BESLUIT 1.04
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V51 (a / b / c):
+      Opmerking:
+  <<<
+
+
+════════════════════════════════════════════════════════════════════════════════════════════
+[C]  LATER — HOEFT NU NIET
+════════════════════════════════════════════════════════════════════════════════════════════
+Per groep staat wanneer het aan de beurt is. Je hoeft hier nu niets in te vullen; doe het
+alleen als je het anders wilt dan het advies.
+
+■ AAN DE BEURT UITERLIJK TWEE MAANDEN NA DE EERSTE ECHTE LEVERING (DE HARDE GRENS IS DAG 83)
+
+────────────────────────────────────────────────────────────────────────────────────────────
+7.09  DE MAIL VÓÓR HET WISSEN ALLEEN AAN WIE NOG NIET GEDOWNLOAD HEEFT (O56 AANGESCHERPT)
+      [C] · gebied 7 · kosten S · tegenspreker: later (Pas nodig vóór de eerste echte purge,
+      ±80 dagen na de eerste echte levering)
+
+  Wat      Een zip-download in Studio of op de privélink wordt vastgelegd (downloaded_at).
+           De cron stuurt 7 dagen voor het wissen een mail met de wisdatum en de knop
+           "Download alles", alleen als er nooit een zip is gedownload, en legt vast dat die
+           mail ging (purge_warned_at).
+  Waarom   Nu gaat er geen mail uit voordat beelden na 90 dagen worden gewist, en wie de zip
+           al heeft, heeft aan zo’n mail niets.
+  Mening   Goed als aanvulling op O56, want zonder purge_warned_at gaat deze mail dubbel.
+           Volgens 9.03 (b) mag de purge nu al aan, zolang deze mail er is vóór de eerste
+           echte levering 90 dagen oud is.
+  Advies   later — uiterlijk twee maanden na de eerste echte levering (de harde grens is dag
+           83)
+
+  >>> JOUW BESLUIT 7.09
+      Keuze (ok / doen / later / niet / anders):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+3.04  EÉN BEWAARDATUM PER BESTELLING, ZICHTBAAR OP DE PRIVÉLINK
+      [C] · gebied 3 · kosten M · tegenspreker: later (Met 3.03 verdwijnt het 365-dagengat
+      al; /privacy en /terms kunnen na de lancering)
+
+  Wat      Eén veld bewaard_tot (afronden + 90 dagen) geldt voor beelden, bronfoto’s en
+           privélink tegelijk en staat bij de downloads in Studio en op de privélink. Met
+           O56 gaat 7 dagen vóór die datum één mail per bestelling uit.
+  Waarom   Nu lopen er drie klokken (beelden per beeld na levering, bronfoto’s en privélink
+           na afronden), en één datum kun je op één plek uitleggen.
+  Mening   Goed, het liefst vóór PURGE_ENABLED aangaat; alles 90 dagen na de eerste levering
+           is even simpel, maar dan staan herleverde beelden korter dan 90 dagen.
+           Tegenspreker: na 3.03 vooral een interne zaak, de winst is te hoog geschat.
+  Vraag    V54 · Welke bewaarklok?
+             a) alles 90 dagen na afronden
+             b) alles 90 dagen na de eerste levering
+             c) zoals nu
+             advies: a
+  Advies   later — uiterlijk twee maanden na de eerste echte levering (de harde grens is dag
+           83)
+
+  >>> JOUW BESLUIT 3.04
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V54 (a / b / c):
+      Opmerking:
+  <<<
+
+■ AAN DE BEURT NA ±10 ECHTE BESTELLINGEN
+
+────────────────────────────────────────────────────────────────────────────────────────────
+4.03  WERKMAP ZONDER ZIP: DIRECT OP JE SCHIJF, EN UPLOADEN IN ÉÉN KLIK
+      [C] · gebied 4 · kosten M · tegenspreker: later (nieuwe vorm van vertrouwen, alleen
+      Chrome/Edge, en pas zinvol na ±10 echte bestellingen)
+
+  Wat      In Chrome en Edge krijgt /admin de knoppen "Oppakken: werkmap op je schijf", die
+           de werkmap van 4.02 rechtstreeks in een eenmalig gekozen bestellingenmap zet, en
+           "Uploaden uit werkmap", die alleen nieuwe en gewijzigde beelden stuurt. De zip en
+           "Map uploaden" blijven als terugval.
+  Waarom   Nu download je de zip, pak je hem uit, kies je een doelmap en blader je bij "Map
+           uploaden" opnieuw naar dezelfde map.
+  Mening   Goed, maar pas na 4.02 en ±10 echte bestellingen, als je weet of het uitpakken
+           echt hindert.
+  Vraag    V56 · In welke browser werk je in /admin?
+             a) Chrome of Edge
+             b) Firefox
+             c) wisselend
+             advies: bij a bouwen na 4.02; bij b of c vervalt 4.03
+  Advies   later — na ±10 echte bestellingen
+
+  >>> JOUW BESLUIT 4.03
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V56 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+4.06  LEVERKEURING: ÉÉN SCHERM MET VIER CONTROLES VÓÓR "OP GELEVERD ZETTEN"
+      [C] · gebied 4 · kosten M · tegenspreker: later (kost M, niet S; bij weinig
+      bestellingen dekt "bekijken zoals de klant" het)
+
+  Wat      De knop "Leverkeuring" opent het raster zoals de klant het ziet, met vier
+           controles die bij het uploaden zijn berekend: vakken gevuld, pixelmaat en
+           verhouding, de bovenhoeken van catalogbeelden tegen de bestelde hex, en de
+           herkomsttag uit 4.01. Een afwijking geeft een amber regel met "Toch leveren",
+           zonder te blokkeren.
+  Waarom   Een verkeerde achtergrond of verhouding is een gegarandeerde revisie en een
+           ontbrekend vak een mail van de klant, en nu controleert niets dat vóór het
+           leveren.
+  Mening   Goed: een goedkope verzekering, en met 4.03 kunnen dezelfde controles al vóór het
+           uploaden op de werkmap draaien.
+  Vraag    V58 · Mag een afwijking in de leverkeuring het leveren tegenhouden?
+             a) nooit, alleen melden
+             b) alleen bij een ontbrekend vak
+             c) altijd
+             advies: a
+  Advies   later — na ±10 echte bestellingen
+
+  >>> JOUW BESLUIT 4.06
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V58 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+4.04  STATUS VOLGT JE EIGEN HANDELINGEN
+      [C] · gebied 4 · kosten S · tegenspreker: later (met de Nu-zin (3.01) maakt Ontvangen
+      of In productie voor de klant weinig uit)
+
+  Wat      De werkmapknop heet "Oppakken" en zet een betaalde bestelling op In productie; je
+           eerste upload zet hem op In controle. Naast "Oppakken" staat een link "alleen
+           downloaden". Er gaat geen mail uit, er komt een tijdlijnregel bij, en de
+           statuslijst verhuist naar "Meer".
+  Waarom   Vergeet je de status te zetten, dan ziet de klant in Studio "Ontvangen" terwijl
+           je al bezig bent.
+  Mening   Goed en klein, omdat het alleen klikwerk weghaalt; de marge-meter (10.07) werkt
+           pas als In productie op het juiste moment staat en wacht dus hierop.
+  Vraag    V57 · Mag de knop "Oppakken" een bestelling op In productie zetten?
+             a) ja
+             b) alleen via een aparte statusknop
+             c) nee
+             advies: a
+  Advies   later — na ±10 echte bestellingen
+
+  >>> JOUW BESLUIT 4.04
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V57 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+10.07 MINUTEN PER PRODUCT UIT DE STATUSTIJDEN (MARGE-METER IN /ADMIN)
+      [C] · gebied 10 · kosten S · tegenspreker: later (werkt alleen als je "In productie"
+      op het juiste moment zet; pas zinvol na 4.04)
+
+  Wat      In /admin komt een tabel (bij Trechter of een tabblad "Marge") met per dienst
+           over de laatste 30 dagen: aantal producten, mediaan van de minuten per product
+           tussen "In productie" en "In controle", en het nettobedrag per uur. Bij elke
+           bestelling komt één regel met die minuten.
+  Waarom   De minuten per dienst zijn schattingen uit gesprekken en voor merkmodel,
+           varianten en extra hoeken onbekend, dus elk prijsbesluit in dit gebied is
+           gokwerk.
+  Mening   Goed als hulpmiddel voor de eerste tien bestellingen. De tegenspreker voegt toe
+           dat het pas betrouwbaar is als de status je eigen handelingen volgt (4.04, ook
+           later).
+  Vraag    V79 · Zet je "In productie" op het moment dat je aan een bestelling begint?
+             a) ja
+             b) nee, alles tegelijk ’s ochtends
+             c) soms
+             advies: bij a bouwen; bij b of c niet bouwen en de eerste tien met de hand
+                     timen
+  Advies   later — na ±10 echte bestellingen
+
+  >>> JOUW BESLUIT 10.07
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V79 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+4.10  KLANTFOTO’S OOK OP JE EIGEN SCHIJF NA 120 DAGEN WEG (TAAKPLANNER)
+      [C] · gebied 4 · kosten S · tegenspreker: later (nieuw script dat op je schijf wist,
+      pas nodig als 4.02 klantfoto’s systematisch lokaal zet)
+
+  Wat      Een PowerShell-script draait wekelijks in de Taakplanner en wist in je
+           bestellingenmap alleen de mappen _aangeleverd in VIS-…-werkmappen waarin 120
+           dagen niets is gewijzigd. Het schrijft laatst-opgeschoond.txt en draait de eerste
+           week als proefrun. Je installeert het één keer door opruimen-installeren.cmd te
+           dubbelklikken.
+  Waarom   Aangeleverde foto’s verdwijnen 90 dagen na afronden uit R2, maar kopieën op je
+           schijf hebben geen termijn, terwijl /privacy 90 dagen belooft en jij verwerker
+           bent.
+  Mening   Nodig zodra 4.02 gebouwd is, anders een zin in /privacy over lokale kopieën; het
+           raakt ook gebied 9 (AVG).
+  Vraag    V59 · Hoe lang mogen klantfoto’s op je eigen schijf blijven?
+             a) 120 dagen na de laatste wijziging
+             b) 90 dagen
+             c) tot je ze zelf weggooit
+             advies: a
+  Advies   later — na ±10 echte bestellingen
+
+  >>> JOUW BESLUIT 4.10
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V59 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+5.04  NAKIJKLIJST PER DIENST, OP DE TWEE PLEKKEN WAAR JE TOCH AL KIJKT
+      [C] · gebied 5 · kosten S · tegenspreker: later (helpt pas als dezelfde fout terugkomt
+      of iemand anders nakijkt)
+
+  Wat      Eén nakijklijst per dienst in src/data/nakijken.js: voor catalog kleur, print en
+           logo, pasvorm, details geteld, handen en gezicht, randen; voor lifestyle daarbij
+           de look. De lijst staat onderaan de brief, boven de knop "Op geleverd zetten en
+           klant mailen" en op "Bekijken zoals de klant".
+  Waarom   AI-fouten zijn voorspelbaar (verzonnen of gespiegelde tekst, een knoop te veel,
+           een zesde vinger), en een lijst bij het leveren haalt ze eruit voordat de klant
+           ze vindt.
+  Mening   Goed omdat er geen vinkje of extra scherm bijkomt, want een verplicht vinkje klik
+           je na een week zonder te lezen aan.
+  Vraag    V60 · Wil je bij de leverknop iets afvinken?
+             a) nee, alleen de nakijklijst
+             b) één verplicht vinkje
+             c) per product een vinkje
+             advies: a
+  Advies   later — na ±10 echte bestellingen
+
+  >>> JOUW BESLUIT 5.04
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V60 (a / b / c):
+      Opmerking:
+  <<<
+
+■ AAN DE BEURT ALS DE TRECHTER LAAT ZIEN DAT KLANTEN IN STAP 2 AFHAKEN
+
+────────────────────────────────────────────────────────────────────────────────────────────
+5.05  FOTOCHECK BIJ HET UPLOADEN: DONKER, LAMPLICHT, ONSCHERP, KLEIN, DUBBEL
+      [C] · gebied 5 · kosten M · tegenspreker: later (M met kans op valse meldingen, en
+      5.07 doet het meeste vooraf)
+
+  Wat      Na het kiezen van een foto meet stap 2 helderheid, kleurzweem, scherpte en
+           afmetingen en zoekt dubbele foto’s. Bij een afwijking verschijnt één regel met
+           "Vervangen" en "Zo laten", zonder de klant tegen te houden. Wat hij zo liet,
+           staat in brief en bord onder LET OP.
+  Waarom   Een slechte foto zie je nu pas bij het maken, met een appje en vaak een dag
+           wachten; bij het uploaden herstelt de klant hem zelf in tien seconden.
+  Mening   Goed, maar pas na de S-punten: begin met de drie metingen die niet vals alarmeren
+           (klein, dubbel, donker) en voeg lamplicht en onscherp pas toe als je die in echte
+           bestellingen tegenkomt.
+  Vraag    V61 · Neemt de upload HEIC-foto’s aan?
+             a) ja, en Photoshop opent ze
+             b) ja, maar jij kunt ze niet openen
+             c) nee
+             advies: niets antwoorden: de drukteproef (9.05) test één HEIC; bij b of c komt
+                     er een regel: iPhone op "Meest compatibel"
+  Advies   later — als de trechter laat zien dat klanten in stap 2 afhaken
+
+  >>> JOUW BESLUIT 5.05
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V61 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+1.09  STAP 1 IS "WAT JE KRIJGT", STAP 2 ALLEEN "WAT JE STUURT"
+      [C] · gebied 1 · kosten S–M · tegenspreker: later (Raakt formulier, vaste look en
+      tests voor ±20 seconden winst; railnaam nu mee met 1.07)
+
+  Wat      Het gezicht gaat van stap 2 (tussen de fotovakken) naar stap 1, naast look,
+           achtergrond en verhouding. De vraag naar verkoopkanalen wordt één vinkje "daar
+           moet de achtergrond wit". De rail wordt "Je look · Je foto’s · Je gegevens ·
+           Levertijd · Betalen", ook in "zo werkt het".
+  Waarom   Op een telefoon staat nu een raster van tien gezichten tussen de fotovakken, en
+           "Materiaal" betekent in hetzelfde scherm twee dingen.
+  Mening   Goed als de kanalen nergens anders voor dienen dan "wit verplicht". Dezelfde rail
+           in "zo werkt het" (B1) ja, geanimeerd (B1b) nee: Lenis ging eruit omdat de site
+           er traag van werd.
+  Vraag    V52 · Gebruik je de verkoopkanalen nog voor iets anders dan de witte achtergrond?
+             a) nee, dan wordt het één vinkje
+             b) ja, dan blijft de lijst onder "Meer opties"
+             advies: a, tenzij b geldt
+  Advies   later — als de trechter laat zien dat klanten in stap 2 afhaken
+
+  >>> JOUW BESLUIT 1.09
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V52 (a / b):
+      Opmerking:
+  <<<
+
+■ AAN DE BEURT BIJ DE EERSTE EU-KLANT
+
+────────────────────────────────────────────────────────────────────────────────────────────
+8.05  BTW-LIJST ALLEEN VOOR ECHTE TWIJFEL: VIES VOORAF CONTROLEREN, BIJ EEN STORING VANZELF
+      OPNIEUW
+      [C] · gebied 8 · kosten S–M · tegenspreker: later (Er zijn nu nul EU-klanten) · neemt
+      het live-VIES-deel van 1.10 op
+
+  Wat      Stap 3 controleert het btw-nummer zodra de klant het invult, via /api/vies met
+           limiet en cache, en meldt bevestigd (met bedrijfsnaam), onbekend of niet
+           bereikbaar. Een bestelling die door een storing wacht, wordt opnieuw
+           gecontroleerd als de klant zijn privélink of jij /admin opent, hoogstens eens per
+           10 minuten. Bij "geldig" volgen 0% en een betaallink.
+  Waarom   Nu wordt VIES pas bij versturen gecontroleerd, en bij een storing wacht de
+           bestelling zonder betaallink op de btw-lijst, met een besluit binnen 24 uur, ook
+           in het weekend.
+  Mening   Goed: de btw-lijst wordt een lijst met beslissingen in plaats van een plek waar
+           bestellingen wachten. De eerste klanten zijn waarschijnlijk Nederlands, dus dit
+           komt na 8.06.
+  Vraag    V69-1 · Welke tekst geldt bij een VIES-storing?
+             a) "binnen 24 uur"
+             b) "meestal dezelfde werkdag"
+             advies: b — "24 uur" is in het weekend niet te houden en staat bij de beloftes
+                     die nooit getypt worden
+  Vraag    V69-2 · Mag een bestelling na een geldige herhaalcontrole zonder jou door naar
+           betalen?
+             a) ja
+             b) nee
+             c) ja, met een regel in het nachtrapport
+             advies: c
+  Advies   later — bij de eerste EU-klant
+
+  >>> JOUW BESLUIT 8.05
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V69-1 (a / b):
+      Vraag V69-2 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+8.04  "FACTUUR CORRIGEREN": CREDITNOTA EN NIEUWE FACTUUR IN ÉÉN HANDELING
+      [C] · gebied 8 · kosten M (alleen gegevens corrigeren: S) · tegenspreker: later (Het
+      EU-geval komt pas met EU-klanten; het gegevensdeel (S) eerder als een klant erom
+      vraagt)
+
+  Wat      Onder Administratie komt een knop "Factuur corrigeren": je past naam, adres of
+           btw-nummer aan, en een btw-nummer gaat meteen langs VIES. Het scherm toont vooraf
+           wat er gebeurt, bijvoorbeeld creditnota −€660,66, nieuwe factuur €546,00 met btw
+           verlegd, €114,66 terug. Eén klik maakt de creditnota, hangt de nieuwe factuur aan
+           dezelfde betaling en mailt beide pdf’s.
+  Waarom   Nu corrigeer je buiten het systeem, met een gat in de reeks, of via het
+           Mollie-dashboard, dat een evenredige creditnota maakt in plaats van een volledige
+           plus een nieuwe 0%-factuur.
+  Mening   Goed, en juist bij de btw-variant gaat het nu verkeerd. Bouw het gegevensdeel (S)
+           zodra een klant erom vraagt, en de btw-variant bij de eerste EU-klanten.
+  Vraag    V68 · Mag een EU-klant achteraf 0% krijgen als hij zijn btw-nummer vergat?
+             a) ja, altijd
+             b) alleen binnen hetzelfde kwartaal
+             c) nee
+             advies: a — met c verlies je de klant
+  Advies   later — bij de eerste EU-klant
+
+  >>> JOUW BESLUIT 8.04
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V68 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+8.07  ICP-LIJST KANT-EN-KLAAR PER KWARTAAL, MET DE CONTROLE "ICP = 3B"
+      [C] · gebied 8 · kosten S · tegenspreker: later (Er zijn nul EU-klanten; eerst de
+      vraag van 8.08)
+
+  Wat      Op /admin/facturen komt per kwartaal een blok "ICP-opgaaf": per afnemer landcode,
+           btw-nummer, bedrag diensten (facturen min creditnota’s) en aantal facturen, met
+           correcties op eerdere kwartalen apart. De controle "Totaal ICP = rubriek 3b"
+           wordt rood als het niet klopt, en er is een CSV zoals het formulier vraagt. Elk
+           nieuw kwartaal meldt het nachtrapport het in de eerste nacht.
+  Waarom   De Belastingdienst legt rubriek 3b naast de ICP-opgaaf, en nu haal je die lijst
+           met de hand uit de facturen.
+  Mening   Goed en goedkoop, maar het dekt alleen de verkoopkant; de inkoopkant kent /admin
+           niet (8.08).
+  Advies   later — bij de eerste EU-klant
+
+  >>> JOUW BESLUIT 8.07
+      Keuze (ok / doen / later / niet / anders):
+      Opmerking:
+  <<<
+
+■ AAN DE BEURT BIJ DE EERSTE VOORRANGSBESTELLING OF DEELTERUGBETALING
+
+────────────────────────────────────────────────────────────────────────────────────────────
+8.03  "GELD TERUG" IN /ADMIN: DEEL TERUGBETALEN MET DE REDEN ERBIJ (O53, UITGEBREID)
+      [C] · gebied 8 · kosten S–M · tegenspreker: later (Het Mollie-dashboard maakt al een
+      correcte creditnota; de voorrangsbewaker pas nodig bij voorrangsbestellingen)
+
+  Wat      Op de bestelpagina in /admin komt een blok "Geld terug" met drie keuzes: de
+           voorrangstoeslag, aangevinkte producten tegen het tarief van de bestelling, of
+           een ander bedrag. Het geld gaat naar de rekening of wordt tegoed, met een
+           verplichte reden op de creditnota en in de mail. Op het dashboard komt een
+           bewaker "Voorrang gemist", waarbij jij beslist.
+  Waarom   De klant leest op de creditnota niet waarom hij geld terugkrijgt, en de belofte
+           "voorrang niet gehaald → toeslag terug" hangt van je geheugen af.
+  Mening   Goed: O53 met vaste bedragen en de voorrangsbewaker erbij. Omdat het
+           Mollie-dashboard de creditnota nu al correct maakt, zit de winst vooral in de
+           reden op de creditnota en in de bewaker.
+  Vraag    V67 · Welk bedrag geldt als je losse producten terugbetaalt?
+             a) het tarief dat de klant betaalde
+             b) de prijs opnieuw rekenen voor wat overblijft
+             c) altijd een vrij bedrag
+             advies: a — simpel en uit te leggen
+  Advies   later — bij de eerste voorrangsbestelling of deelterugbetaling
+
+  >>> JOUW BESLUIT 8.03
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V67 (a / b / c):
+      Opmerking:
+  <<<
+
+■ AAN DE BEURT BIJ DE EERSTE VIDEO-AANVRAAG
+
+────────────────────────────────────────────────────────────────────────────────────────────
+8.12  OFFERTES: DE PRIJS ÉÉN KEER TYPEN, HET RESTANT KOMT VANZELF MEE
+      [C] · gebied 8 · kosten S; M met het automatische restant · tegenspreker: later (Bij
+      de lancering weinig offertes; het S-deel zodra er video-aanvragen binnenkomen)
+
+  Wat      Het offerteformulier in /admin wordt het antwoord zelf: regels, toelichting en
+           volledig of aanbetaling, in één mail met de betaallink. Offerte en restant volgen
+           dezelfde termijnen als een bestelling (dag 3 en dag 14) en staan in "wacht op
+           betaling". Het restant gaat automatisch mee in de mail die bij de dienst hoort.
+  Waarom   Nu typ je elke prijs twee keer, eerst in je antwoord en dan in de offerte, en of
+           het restant wordt verstuurd, hangt van je geheugen af.
+  Mening   Goed: het S-deel bij de eerste video-aanvragen, het restant pas bij twee of meer
+           offertes per maand. Een eigen look die pas actief wordt als het restant binnen
+           is, is de eerlijkste koppeling.
+  Vraag    V71 · Wanneer moet het restant van een offerte betaald zijn?
+             a) bij levering
+             b) voordat beelden of de look beschikbaar komen
+             c) per offerte kiezen
+             advies: c — standaard a bij video en b bij een eigen look
+  Advies   later — bij de eerste video-aanvraag
+
+  >>> JOUW BESLUIT 8.12
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V71 (a / b / c):
+      Opmerking:
+  <<<
+
+■ AAN DE BEURT BIJ HET EERSTE GOODWILLTEGOED
+
+────────────────────────────────────────────────────────────────────────────────────────────
+8.09  TEGOED: ACHTER ELKE EURO TEGOED ZIT EEN CREDITNOTA, OF HIJ STAAT ALS KORTING OP DE
+      FACTUUR
+      [C] · gebied 8 · kosten S · tegenspreker: later (Pas nodig bij het eerste
+      goodwilltegoed; tot dan geen goodwill via een handmatige tegoedboeking)
+
+  Wat      Nu boek je tegoed met de hand op de klantpagina, en nergens staat of
+           goodwilltegoed een creditnota krijgt. Tegoed krijgt een herkomst: "uit creditnota
+           VIS-…" (op de factuur een betaalregel) of "korting" (een regel vóór de btw). De
+           simpelste vorm: goodwill alleen nog via "Geld terug → als tegoed" (8.03) op een
+           betaalde bestelling.
+  Waarom   Wordt goodwilltegoed als betaling verrekend, dan staat er btw op de factuur over
+           geld dat nooit binnenkwam, en draag je te veel af.
+  Mening   Goed, met voorkeur voor de simpelste vorm. Tot het er is, geef je geen goodwill
+           via een handmatige tegoedboeking (tegenspreker).
+  Vraag    V70 · Hoe geef je goodwilltegoed?
+             a) altijd via een creditnota op een betaalde bestelling
+             b) als twee soorten: tegoed en korting
+             c) zo laten
+             advies: a — tot het gebouwd is geen goodwill via een handmatige tegoedboeking
+  Advies   later — bij het eerste goodwilltegoed
+
+  >>> JOUW BESLUIT 8.09
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V70 (a / b / c):
+      Opmerking:
+  <<<
+
+■ AAN DE BEURT ALS DE EERSTE ABONNEE WIL GROEIEN OF TWEE KEER TE WEINIG CREDITS HEEFT
+
+────────────────────────────────────────────────────────────────────────────────────────────
+6.11  VAN DE DRIE ONTBREKENDE FUNCTIES EERST PLAN WIJZIGEN, DOOR LUCAS
+      [C] · gebied 6 · kosten M · tegenspreker: later (Zinvol bij de eerste abonnee die wil
+      groeien)
+
+  Wat      Op de klantpagina in /admin komt "Plan wijzigen vanaf de volgende termijn": plan
+           en Mollie-bedrag aanpassen, nieuwe credits vanaf de volgende termijn, zonder
+           verrekening. Credits bijkopen komt pas als een abonnee twee keer te weinig heeft,
+           en voor de betaalmethode komt geen knop.
+  Waarom   Een klant die wil groeien moet nu opzeggen en opnieuw beginnen (±15 minuten in
+           plaats van ±1), met een creditboek verdeeld over twee abonnementen.
+  Mening   Plan wijzigen gaat voor, omdat een klant zo groeit en jij dat gesprek zelf wilt
+           voeren; zelf wijzigen in Studio pas als er genoeg abonnees zijn.
+  Prijs    nu bestaat bijkopen niet → voorstel per 10 credits tegen de creditprijs van je
+           plan: Starter €86,67 · Pro €65,83 · Merk €58,28; geen korting; bij structureel
+           meer is een groter plan goedkoper.
+  Vraag    V63 · Wie wijzigt het plan van een abonnee?
+             a) alleen jij, in /admin
+             b) de klant zelf, in Studio
+             advies: a
+  Advies   later — als de eerste abonnee wil groeien of twee keer te weinig credits heeft
+
+  >>> JOUW BESLUIT 6.11
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V63 (a / b):
+      Opmerking:
+  <<<
+
+■ AAN DE BEURT ALS ER ABONNEES ZIJN
+
+────────────────────────────────────────────────────────────────────────────────────────────
+6.12  MAANDSET VOORUIT KLAARZETTEN, ZICHTBAAR VANAF DE MAAND ZELF
+      [C] · gebied 6 · kosten S · tegenspreker: later (Haalt een maandritueel weg, maar met
+      nul abonnees hoeft er nog geen set)
+
+  Wat      Bij het uploaden in /admin/maandset kies je de maand; de set staat vanaf de 1e
+           van die maand vanzelf in Studio, en terugtrekken blijft kunnen. Studio houdt de
+           laatste 3 maanden te downloaden. De publiceerknop per maand vervalt.
+  Waarom   Nu upload en publiceer je elke maand 20 beelden met de hand, een vaste
+           maandelijkse handeling die je juist niet wilt.
+  Mening   Goed en klein; maak de eerste set pas als de eerste abonnee er is, daarna vult
+           het archief zich vanzelf.
+  Vraag    V64 · Welke maandsets ziet een abonnee?
+             a) alleen die van deze maand
+             b) die van de laatste 3 maanden
+             c) alle sets sinds hij begon
+             advies: b
+  Advies   later — als er abonnees zijn
+
+  >>> JOUW BESLUIT 6.12
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V64 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+6.10  ABONNEMENTSREGEL UIT DE EIGEN BESTELLINGEN VAN EEN KLANT
+      [C] · gebied 6 · kosten S · tegenspreker: later (Werkt pas met bestelgeschiedenis, en
+      die is er nog niet)
+
+  Wat      Op het Studio-overzicht verschijnt één regel, zonder pop-up, bij een klant zonder
+           abonnement met minstens twee betaalde bestellingen in 30 dagen, alleen als een
+           plan goedkoper was geweest. De regel geeft de som in zijn eigen getallen, in de
+           verleden tijd ("had gekost"), excl. btw, met een link naar /plans.
+  Waarom   Een klant stapt over als hij het verschil in zijn eigen getallen ziet, niet als
+           hij een algemeen percentage van 30 / 32 / 40% leest.
+  Mening   Goed, eerlijk en goedkoop, en zinvol vanaf de tweede bestelling van de eerste
+           klanten.
+  Advies   later — als er abonnees zijn
+
+  >>> JOUW BESLUIT 6.10
+      Keuze (ok / doen / later / niet / anders):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+6.02  CATALOGSET EN CARROUSEL ALLEBEI 4 CREDITS
+      [C] · gebied 6 · kosten S · tegenspreker: later (Prijswijziging zonder nood vóór de
+      eerste abonnee; 6.01 lost het "of"-probleem al op)
+
+  Wat      Elk product kost 4 credits, catalog of lifestyle; nu kost een carrousel 5. Extra
+           foto (2) en 4K (1) blijven, en de plankaarten blijven in credits met het aantal
+           producten eronder.
+  Waarom   Met één prijs per product is het saldo gedeeld door 4 het aantal producten, dus
+           verdwijnt de "of"-zin, en lifestyle kost je minder tijd dan catalog.
+  Mening   Goed als je accepteert dat de creditprijs je werk volgt en niet de losse prijs;
+           een kop in producten draait 23 sep terug en is daarom uit het voorstel gehaald.
+  Prijs    nu catalogset 4 · carrousel 5 credits → voorstel beide 4; carrousels per maand
+           Starter 9 → 11, Pro 24 → 30, Merk 58 → 72, omzet per abonnement gelijk.
+  Vraag    V48 · Eén creditprijs voor catalog en lifestyle?
+             a) beide 4
+             b) 4 en 5 houden, met de vertaling in producten
+             c) beide 5
+             advies: b nu — a opnieuw bekijken als er abonnees zijn
+  Advies   later — als er abonnees zijn
+
+  >>> JOUW BESLUIT 6.02
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V48 (a / b / c):
+      Opmerking:
+  <<<
+
+■ AAN DE BEURT ALS CATALOG SNELLER IS (5.09 AF)
+
+────────────────────────────────────────────────────────────────────────────────────────────
+10.06 NOEM WAT CATALOG LEVERT MET DE WOORDEN WAAROP DE DOELGROEP ZOEKT; GEEN APARTE FLAT LAY
+      SET
+      [C] · gebied 10 · kosten S, of M als het CATALOG-bord moet veranderen · tegenspreker:
+      later (eerst moet het CATALOG-bord één vaste vorm leveren (5.09))
+
+  Wat      Leg in Classic één vaste vorm vast voor voorkant en achterkant: plat gelegd of op
+           een onzichtbare paspop. Noem die op /catalog, /per-product en in de FAQ met het
+           zoekwoord erbij ("ghost mannequin" of "flat-lay"), zonder derde dienst. Wie beide
+           vormen wil, bestelt de andere als extra hoek.
+  Waarom   Wie "ghost mannequin laten maken" zoekt, ziet nergens dat VISUAILS het levert,
+           terwijl concurrenten het als dienst met een eigen naam verkopen.
+  Mening   Goed en goedkoop, en beter dan je Flat Lay Set van 12 sep, die drie van de vier
+           catalogbeelden opnieuw verkoopt en als bundel met korting complete onder een
+           andere naam is.
+  Vraag    V78 · Hoe zien voorkant en achterkant er nu uit?
+             a) plat gelegd
+             b) 3D, op een onzichtbare paspop
+             c) wisselend
+             advies: leg vast wat het bord het vaakst doet; dat het één vorm wordt, is
+                     belangrijker dan welke
+  Advies   later — als catalog sneller is (5.09 af)
+
+  >>> JOUW BESLUIT 10.06
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V78 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+10.02 DEZELFDE PRODUCTEN OOK ALS LIFESTYLECARROUSEL, ZONDER OPNIEUW TE UPLOADEN
+      [C] · gebied 10 · kosten M · tegenspreker: later (M en pas zinvol met catalogklanten;
+      alleen als losse bestelling, nooit als pakket of korting)
+
+  Wat      Bij een geleverde catalogbestelling staat in Studio en op de privélink, zolang de
+           bronfoto’s bestaan, één gewone link (/lifestyle?van=VIS-…) naar lifestyle. De
+           klant kiest eerst een look, daarna opent het formulier met producten, namen,
+           soorten en foto’s al ingevuld. Het is een losse bestelling tegen het gewone
+           tarief.
+  Waarom   Wie na catalog ook lifestyle wil, uploadt nu per product opnieuw voorkant,
+           achterkant en detail en vult naam en soort opnieuw in, terwijl de foto’s er nog
+           90 dagen staan.
+  Mening   Goed, omdat het gedrag ondersteunt dat er al is, nog beter met dezelfde zin op de
+           bedankpagina van een catalogbestelling, mits het nooit naast catalog als pakket
+           verschijnt. Andersom (lifestyle naar catalog) pas als catalog sneller is (5.09).
+  Prijs    nu geen aparte prijs → voorstel het gewone tarief per bestelling; het tarief van
+           de catalogbestelling ook voor lifestyle (binnen 30 dagen) is weggehaald, want dat
+           is complete onder een andere naam.
+  Advies   later — als catalog sneller is (5.09 af)
+
+  >>> JOUW BESLUIT 10.02
+      Keuze (ok / doen / later / niet / anders):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+10.04 KLEURVARIANTEN: ZELFDE PRODUCT, ANDERE KLEUR
+      [C] · gebied 10 · kosten M · tegenspreker: later (eerst meten of een variant echt
+      minder tijd kost; raakt besluit 17 sep (achterkant verplicht))
+
+  Wat      Op de productkaart in stap 2 komt een vinkje "hetzelfde product als product 1, in
+           een andere kleur". Dan zijn alleen voorkant, close-up en kleurveld verplicht, en
+           jij maakt de variant met pose, model en uitsnede van product 1. Elke kleur blijft
+           een product tegen het gewone tarief.
+  Waarom   Een hoodie in vijf kleuren is nu vijf losse producten met elk voorkant,
+           achterkant en close-up verplicht, zonder afspraak over gelijke pose, uitsnede en
+           model, terwijl concurrenten kleurvarianten standaard aanbieden.
+  Mening   Goed en beter dan een aparte variantprijs, want vijf kleuren vallen al in het
+           tarief voor 5–9 producten. Maar eerst testen op een voorbeeldmerk, want de winst
+           hangt af van een tijd die niemand gemeten heeft.
+  Prijs    nu elke kleur een product tegen het gewone tarief → voorstel zo laten; effect 5
+           kleuren × €65 = €325 netto, bij half de tijd €260–390/u per variant in plaats van
+           €130–195.
+  Vraag    V77 · Hoe lang duurt een kleurvariant als product 1 al af is?
+             a) ±de helft
+             b) even lang
+             c) weet ik nog niet
+             advies: c — eerst testen op een voorbeeldmerk; bij b alleen het vinkje voor de
+                     gelijke pose bouwen
+  Advies   later — als catalog sneller is (5.09 af)
+
+  >>> JOUW BESLUIT 10.04
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V77 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+5.08  CONSISTENTIE PER SET: GELIJK IN DE NABEWERKING, VARIATIE IN DE PROMPT
+      [C] · gebied 5 · kosten S + ±15 minuten per look jij · tegenspreker: later
+      (productietechniek met eigen proefwerk, pas na 5.09)
+
+  Wat      Wat in elk beeld gelijk moet zijn, gaat in het afwerkscript (4.07): voor- en
+           achterkant vullen het kader even ver (bij kanaal Amazon ±85%). Per look zet één
+           Camera Raw-voorinstelling alleen de modelbeelden in de grade. Het eerste
+           goedgekeurde modelbeeld gaat als tweede referentie mee voor gezicht, licht en
+           kader.
+  Waarom   Elke generatie verschuift iets in warmte en schaal, en twaalf producten naast
+           elkaar op een collectiepagina laten elk verschil zien.
+  Mening   Goed: het maakt het CATALOG-bord kleiner, omdat de zachte filter niet in vijf
+           generators hoeft maar in één voorinstelling. Vaste regel: in elke
+           lifestylecarrousel is beeld 3 (de close-up) kleurecht.
+  Advies   later — als catalog sneller is (5.09 af)
+
+  >>> JOUW BESLUIT 5.08
+      Keuze (ok / doen / later / niet / anders):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+5.10  DE LOOKS IN DE MAAK DOOR JE EIGEN MOMENTTOETS
+      [C] · gebied 5 · kosten S · tegenspreker: later (raakt de eerste klanten niet en is
+      jouw eigen keuze over je looks)
+
+  Wat      In de teaser "in de maak" (komendeStijlen.js) gaan Still en Studio eruit: Still
+           wordt de stille pose van Classic (uit 5.09), Studio blijft eruit tot hij een
+           moment heeft. Nacht krijgt een eigen moment naast Flash (Flash binnen op het
+           feest met flits, Nacht buiten onderweg met alleen het licht van de stad) of valt
+           af.
+  Waarom   Elke teaser is een belofte op de site en open werk, en drie foto-looks in de maak
+           naast een catalogbord dat niet af is, is meer dan één persoon afmaakt.
+  Mening   Goed als vereenvoudiging, want volgens je eigen regel valt Studio af. Is AUGUST
+           of HAZARD verder dan Nacht, dan is die een betere kandidaat voor de enige plek in
+           de teaser.
+  Vraag    V62 · Wat wordt Still?
+             a) een pose binnen Classic, zonder keuze voor de klant
+             b) een keuze binnen Classic
+             c) een eigen cataloglook
+             advies: a — een keuze erbij is een vraag erbij in stap 1
+  Advies   later — als catalog sneller is (5.09 af)
+
+  >>> JOUW BESLUIT 5.10
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V62 (a / b / c):
+      Opmerking:
+  <<<
+
+■ AAN DE BEURT ALS EEN KLANT EROM VRAAGT
+
+────────────────────────────────────────────────────────────────────────────────────────────
+10.03 "OOK OP WIT": EEN TWEEDE SET VOOR MARKTPLAATSEN
+      [C] · gebied 10 · kosten S–M · tegenspreker: later (nieuwe prijs en extra vraag in het
+      formulier voor een randgeval)
+
+  Wat      Onder "Meer opties" bij catalog komt een vinkje dat alleen verschijnt bij een
+           gekozen marktplaats én een eigen achtergrondkleur. Jij laat VISUAILS-afwerken.jsx
+           dan een tweede keer lopen op wit, en werkmap en zip krijgen per product een
+           submap wit.
+  Waarom   Catalog heeft één achtergrond per bestelling en een marktplaats krijgt alles op
+           wit, dus wie een webshop op beige én een bol-account heeft, moet kiezen of twee
+           keer bestellen.
+  Mening   Goed en het hoogste uurtarief van alle voorstellen zonder nieuwe look. Maar de
+           tegenspreker heeft gelijk dat het een nieuwe prijs en een extra vraag is, dus pas
+           bouwen als een klant erom vraagt.
+  Prijs    nu bestaat het niet (vergelijkbaar: 4K €9 per product) → voorstel tweede set op
+           wit €9 per product, 1 credit; effect bij 10 producten +€90 netto, bij 20
+           producten +€180.
+  Vraag    V76 · Welke tweede versie bij catalog?
+             a) alleen op wit, en alleen bij een gekozen marktplaats
+             b) elke tweede kleur
+             c) ook een tweede verhouding
+             advies: a — een andere verhouding vraagt aanvullen of bijsnijden, en dat doet
+                     het script niet
+  Advies   later — als een klant erom vraagt
+
+  >>> JOUW BESLUIT 10.03
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V76 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+3.11  ELK BEELD LOS TE OPENEN, VOOR WIE VANAF DE TELEFOON POST
+      [C] · gebied 3 · kosten S · tegenspreker: later (Draait §23 9 aug ("/d weg") terug
+      terwijl de reden onbekend is; eerst jouw woord)
+
+  Wat      Elke tegel op de privélink krijgt een linkje "Origineel" naar het volledige
+           jpg-bestand achter dezelfde token. De zip blijft de hoofdweg bovenaan.
+  Waarom   Downloaden kan nu alleen als zip; op een iPhone belandt die in Bestanden, terwijl
+           Instagram uit Foto’s kiest, en dat kost vijf tot acht tikken per set.
+  Mening   Goed als de reden voor het weghalen van /d "één nette downloadweg" was, want de
+           zip blijft die weg. Was de reden dat originelen alleen via de zip mogen, dan
+           vervalt dit voorstel.
+  Vraag    V55 · Waarom ging /d (losse download) op 9 aug weg, en mag een losse link per
+           beeld terugkomen?
+             a) ja, bij elk beeld
+             b) alleen bij lifestyle
+             c) nee
+             advies: a — tenzij de reden was dat originelen alleen via de zip mogen
+  Advies   later — als een klant erom vraagt
+
+  >>> JOUW BESLUIT 3.11
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V55 (a / b / c):
+      Opmerking:
+  <<<
+
+■ AAN DE BEURT ALS HET EERSTE MERKMODEL EN DE VOLGENDE MAANDSET GETIMED ZIJN
+
+────────────────────────────────────────────────────────────────────────────────────────────
+10.08 MERKMODEL ALS TWEEDE STAP — EERST WETEN HOEVEEL UUR HET KOST
+      [C] · gebied 10 · kosten S · tegenspreker: later (eerst de tijd van één merkmodel
+      meten; de verkoopregel daarna)
+
+  Wat      Time eerst het eerstvolgende merkmodel. Zet daarna vanaf de tweede betaalde
+           bestelling één regel op Overzicht in Studio die een eigen gezicht aanbiedt naast
+           het gezicht dat de klant al koos, alleen bij 2–4 bestellingen, zolang er geen
+           merkmodel is en zonder mail.
+  Waarom   Een eigen gezicht is de sterkste reden om terug te komen, maar zonder de tijd
+           weet niemand of €450 en "gratis bij Pro-jaar" uit kunnen.
+  Mening   Goed om het aan herhaalbestellingen te koppelen, maar de tijd bepaalt of dit een
+           dienst is die laat groeien of een die geld kost. Dus zonder die meting geen
+           reclame ervoor.
+  Prijs    alleen als het meer dan 6 uur kost: nu €450, gratis bij Merk en Pro-jaar →
+           voorstel alleen nog gratis bij Merk; Pro-jaar verliest €450 voordeel, jij houdt
+           de uren over.
+  Vraag    V80-1 · Hoeveel tijd kost een merkmodel van briefing tot klaar?
+             a) minder dan 3 uur
+             b) 3–6 uur
+             c) meer
+             advies: time het eerstvolgende merkmodel; bij c de prijs houden, maar het uit
+                     "gratis bij Pro-jaar" halen
+  Advies   later — als het eerste merkmodel en de volgende maandset getimed zijn
+
+  >>> JOUW BESLUIT 10.08
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V80-1 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+10.12 EDITIONS PAS OPENEN ALS DE MAANDSET LAAT ZIEN DAT HET GEEN HANDWERK IS
+      [C] · gebied 10 · kosten S · tegenspreker: later (Editions blijft toch "binnenkort";
+      het besluit kan wachten tot er abonnees zijn)
+
+  Wat      Editions (20 beelden per maand op het eigen merk, €149/maand + €295 opzet) gaat
+           pas open als de maandset twee maanden op rij minder dan een uur kost, van begin
+           tot publiceren. Ook moet er een klant met een eigen look of merkmodel zijn, bij
+           wie de opzet grotendeels gedaan is. Tot dan wordt er niets aan gebouwd.
+  Waarom   Editions is de enige dienst die kan groeien zonder jouw uren, maar alleen als "op
+           het eigen merk" niet per klant handwerk wordt.
+  Mening   Goed als vast beslismoment, en de koppeling met eigen look maakt er een logische
+           volgende stap van: proef → bestelling → eigen look of merkmodel → Editions.
+  Vraag    V80-2 · Hoeveel tijd kost de maandset per maand?
+             a) minder dan 1 uur
+             b) 1–3 uur
+             c) nog niet gemeten
+             advies: c — time de volgende maandset; daar hangt 10.12 aan
+  Advies   later — als het eerste merkmodel en de volgende maandset getimed zijn
+
+  >>> JOUW BESLUIT 10.12
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V80-2 (a / b / c):
+      Opmerking:
+  <<<
+
+■ AAN DE BEURT ALS DE RECLAME LOOPT
+
+────────────────────────────────────────────────────────────────────────────────────────────
+10.10 DROPSHIPPERS: SPREEK ZE AAN OP HET PRODUCT DAT AL VERKOOPT
+      [C] · gebied 10 · kosten S · tegenspreker: later (advertentietekst die je zelf
+      schrijft; pas relevant als er reclame loopt)
+
+  Wat      Spreek dropshippers in "Voor wie" en in advertenties aan op het moment dat een
+           product verkoopt: eigen beelden in plaats van dezelfde leveranciersfoto’s als
+           twintig andere winkels, in je eigen woorden. Er komt geen apart aanbod; de
+           bestaande prijzen en de €1-proef zijn genoeg.
+  Waarom   Self-serve tools leveren beelden op model voor centen per stuk, dus een
+           dropshipper die tien producten uitprobeert betaalt geen €39–€89 per product en
+           blijft bij de €1-proef.
+  Mening   Goed en eerlijk: VISUAILS kan niet concurreren op prijs per beeld en hoeft dat
+           niet (geen self-serve). Voor done-for-you zijn alleen dropshippers met een
+           product dat al verkoopt een echte klant.
+  Advies   later — als de reclame loopt
+
+  >>> JOUW BESLUIT 10.10
+      Keuze (ok / doen / later / niet / anders):
+      Opmerking:
+  <<<
+
+■ AAN DE BEURT NA DE LANCERING, IN EEN RUSTIGE WEEK
+
+────────────────────────────────────────────────────────────────────────────────────────────
+9.06  VROEG-SIGNAAL: LUCAS ZIET EEN STORING OF DRUKTE VÓÓR DE KLANT
+      [C] · gebied 9 · kosten S–M · tegenspreker: later (9.02 ziet een kapotte uitrol al;
+      geweigerde mails kunnen mee met de webhook (9.03))
+
+  Wat      Drie signalen zonder nieuwe dienst: een tweede cronschema vraagt elke 30 minuten
+           vier adressen op live op en mailt na twee fouten op rij, plus een rode balk in
+           /admin; elke geweigerde klantmail wordt een rode regel naast de bounces; de tegel
+           "open werk" toont het werk ook in dagen, met een drukte-melding die alleen jij
+           aanzet.
+  Waarom   Een site die plat ligt of een mail die Resend weigert hoor je nu van de klant, en
+           drukte zie je als aantal in plaats van als tijd.
+  Mening   Goed: de adrescontrole en de geweigerde mails zijn de kern van dit gebied, de
+           dagentegel meet wat bij drukte het eerst breekt (je eigen tijd), en de
+           drukte-melding gaat nooit vanzelf aan.
+  Vraag    V72 · Waar wil je een alarm krijgen?
+             a) mail plus een rode balk in /admin
+             b) ook een pushmelding
+             c) alleen de rode balk
+             advies: a nu, b zodra er betalende klanten zijn
+  Advies   later — na de lancering, in een rustige week
+
+  >>> JOUW BESLUIT 9.06
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V72 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+9.08  /ADMIN: INLOGMELDING, SESSIELIJST EN DE CODE OPNIEUW BIJ TERUGBETALEN EN WISSEN
+      [C] · gebied 9 · kosten S–M · tegenspreker: later (Echt, maar klein risico; na de
+      lancering)
+
+  Wat      Een studiomail bij inloggen vanaf een nieuw apparaat, de actieve sessies op
+           /admin/security met "Alle andere uitloggen", en opnieuw de tweestapscode bij
+           terugbetalen (ook via annuleren), AVG-wissen en wachtwoord wijzigen. Nooit bij
+           status, upload of notities.
+  Waarom   /admin is het enige scherm waar geld en klantgegevens met één klik weg kunnen, en
+           de tweede factor beschermt nu alleen het inloggen.
+  Mening   Goed: een indringer kan via Mollie geen geld stelen, maar wel alles terugstorten
+           of klanten onherroepelijk wissen, en precies dat houdt de extra code tegen.
+  Vraag    V73 · Bij welke handelingen vraagt /admin opnieuw de tweestapscode?
+             a) terugbetalen, AVG-wissen en wachtwoord wijzigen
+             b) plus tegoed boeken en deactiveren
+             c) alles wat onomkeerbaar is
+             advies: a — tegoed kan alleen bij VISUAILS besteed worden en deactiveren is
+                     terug te draaien
+  Advies   later — na de lancering, in een rustige week
+
+  >>> JOUW BESLUIT 9.08
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V73 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+9.09  HERSTELKAART: ZES STORINGEN IN DRIE REGELS, PLUS "WAT STAAT WAAR"
+      [C] · gebied 9 · kosten S · tegenspreker: later (Verzekering die de eerste klanten
+      niet raakt, plus een bijwerkafspraak per ronde)
+
+  Wat      HERSTELKAART.md in de privé-repo en geprint naast de pc: zes storingen in drie
+           regels (wat je ziet · wat je doet · hoe je weet dat het weer goed is), plus een
+           tabel "wat staat waar" per account: doel, 2FA, plek van de herstelcodes in
+           woorden, secretnamen. Nooit de codes of sleutels zelf.
+  Waarom   Bij een storing midden in de nacht is er geen tijd om te lezen, en "alleen jij
+           weet het" is het grootste risico van een eenmanszaak.
+  Mening   Goed, mits zes storingen en geen draaiboek van twintig pagina’s. Of /admin een
+           gemiste Mollie-betaling opnieuw kan ophalen is onbekend; ontbreekt dat, dan is
+           dat het enige stukje code dat de kaart nodig maakt.
+  Vraag    V74 · Kun je in /admin een betaling opnieuw bij Mollie laten ophalen als de
+           webhook gemist is?
+             a) ja, er is een knop
+             b) nee, ik kijk in het Mollie-dashboard
+             c) weet ik niet
+             advies: Claude kijkt het na in de code; ontbreekt het, dan komt er een kleine
+                     knop "Bij Mollie nakijken"
+  Advies   later — na de lancering, in een rustige week
+
+  >>> JOUW BESLUIT 9.09
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V74 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+9.10  KLADBLOK: PER RONDE ARCHIVEREN, TESTOMGEVING ERUIT, ÉÉN "BEGIN HIER"
+      [C] · gebied 9 · kosten S · tegenspreker: later (Niet dringend; samen met pakket B van
+      9.01)
+
+  Wat      Eén verplaatsronde zonder te wissen: de testomgeving naar scripts/testomgeving/
+           (npm run testomgeving), afgesloten rondes naar kladblok/archief/ronde-5 tot
+           ronde-9, en bovenaan alleen het nieuwste overzicht, de lopende werklijst en een
+           LEESMIJ.md "begin hier".
+  Waarom   Elke nieuwe chat leest eerst kladblok/ (ruim 300 bestanden), en een oudere versie
+           van het overzicht tussen oude werklijsten is precies de verouderde kopie waarvoor
+           de werkafspraak waarschuwt.
+  Mening   Goed; archiveren is beter dan weggooien, want de bewijsschermen van ronde 9 zijn
+           bruikbaar bij een klacht.
+  Vraag    V75 · Gaat kladblok/ mee naar GitHub?
+             a) ja, alles
+             b) nee
+             c) weet ik niet
+             advies: de tekstbestanden wel, de schermafbeeldingen en het archief niet
+  Advies   later — na de lancering, in een rustige week
+
+  >>> JOUW BESLUIT 9.10
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V75 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+7.03  STUDIOMAILS: ALLEEN DIRECT WAT IETS VAN JE VRAAGT
+      [C] · gebied 7 · kosten M; eerste stap S · tegenspreker: later (Het advies bij O10
+      ("laten") houdt stand zolang elke bestelling nieuws is)
+
+  Wat      Elke studiomail aan hello@ wordt "direct" (er is iets te doen of er ging iets
+           fout; het onderwerp begint met een werkwoord, zoals "Maken") of "dag" (één regel
+           in de ochtendlijst van 4.05). Per betaalde bestelling komt één "Maken"-mail in
+           plaats van "Nieuwe bestelling", "Betaald" en de factuur in bcc. "Week
+           gekozen/verzet" en "Dag naar voren" vallen weg.
+  Waarom   hello@ krijgt ruim 25 soorten studiomails, per betaalde bestelling minstens drie,
+           en de meeste laten je niets doen.
+  Mening   Goed zodra er volume is. Wat nu al kan zonder bouwen: zet zelf INVOICE_BCC op
+           hello+facturen@visuails.com met een Gmail-filter "label Facturen, inbox
+           overslaan".
+  Vraag    V65 · Wil je een mail bij een nieuwe, nog onbetaalde bestelling?
+             a) nee, pas "Maken" na de betaling
+             b) ja, tot je tien klanten hebt
+             c) ja, altijd
+             advies: a
+  Advies   later — na de lancering, in een rustige week
+
+  >>> JOUW BESLUIT 7.03
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V65 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+7.08  DE STUDIOMELDING OOK WAAR DE KLANT BETAALT EN WACHT
+      [C] · gebied 7 · kosten S–M · tegenspreker: later (Pas nuttig bij drukte, en een
+      melding in stap 5 kan een bestelling kosten)
+
+  Wat      De melding die nu alleen bovenaan Studio staat (Mededeling, Drukte of Storing)
+           komt ook op de privélink, op /thank-you, in de betaalmail (7.01) en, alleen bij
+           Drukte of Storing, in stap 5 van het bestelformulier. Er komen vaste teksten per
+           soort, en bij dagen dichtzetten in Planning een link "Zet hier ook een melding
+           van".
+  Waarom   "Soms een paar dagen" is pas eerlijk als de klant het hoort voordat hij betaalt.
+  Mening   Goed omdat het iets bestaands hergebruikt. De automatische suggestie bij drukte
+           (capacity.js) heeft pas zin bij echt volume en als de punten met de echte minuten
+           kloppen.
+  Vraag    V66 · Mag een melding in stap 5 van het bestelformulier staan?
+             a) alleen Drukte en Storing
+             b) alle drie
+             c) nergens
+             advies: a
+  Advies   later — na de lancering, in een rustige week
+
+  >>> JOUW BESLUIT 7.08
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V66 (a / b / c):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+2.04  BEELDEN BEOORDELEN OP EEN EIGEN PAGINA, MET HETZELFDE SCHERM ALS DE PRIVÉLINK
+      [C] · gebied 2 · kosten M · tegenspreker: later (Goede opruiming, maar na ronde 10 en
+      zonder klantwinst nu)
+
+  Wat      "Beelden bekijken" opent een eigen pagina /account/bestellingen/<ref> binnen de
+           Studio-zijbalk, met dezelfde weergave als de privélink; alleen de toegang
+           verschilt (sessie of token). Goedkeuren, revisie en tevredenheid draaien dan op
+           één code in plaats van twee.
+  Waarom   Twee implementaties van één handeling lopen uit elkaar (F13 en F66 waren zulke
+           fouten), en bij 20 producten staan nu 80 beoordeelbeelden op één
+           Bestellingenpagina.
+  Mening   Goed voor het systeem, maar pas wanneer de privélink in gebied 3 toch wordt
+           aangepakt. Het lichte alternatief (eigen pagina met de huidige Studio-code) laat
+           de twee weergaven bestaan.
+  Vraag    V53 · Hoe ver gaat het samenvoegen van beoordelen in Studio en op de privélink?
+             a) één code voor beide
+             b) een eigen pagina met eigen Studio-code
+             c) laten
+             advies: a — na ronde 10
+  Advies   later — na de lancering, in een rustige week
+
+  >>> JOUW BESLUIT 2.04
+      Keuze (ok / doen / later / niet / anders):
+      Vraag V53 (a / b / c):
+      Opmerking:
+  <<<
+
+
+════════════════════════════════════════════════════════════════════════════════════════════
+[NEE]  GESCHRAPT
+════════════════════════════════════════════════════════════════════════════════════════════
+De tegenspreker schrapte deze twee. Vul alleen iets in als je ze toch wilt.
+
+────────────────────────────────────────────────────────────────────────────────────────────
+3.02  EEN INGESTUURDE REVISIERONDE KEURT DE REST GOED; DE GOEDKEURKNOP PER BEELD GAAT ERUIT
+      [NEE] · gebied 3 · kosten — · tegenspreker: nee ("Alles goed" (3.01) en stil afronden
+      (3.03) halen de extra klikken al weg)
+
+  Wat      Bij het insturen van een revisieronde zouden alle niet-aangemerkte beelden
+           goedgekeurd worden. De knop Goedkeuren / Ongedaan maken per tegel zou op de
+           privélink en in Studio verdwijnen; goedkeuren zou alleen via "Alles goed" (3.01)
+           gaan.
+  Waarom   Na een revisieronde blijven de niet-aangemerkte beelden op "nieuw" staan, dus na
+           de herlevering moet de klant alles opnieuw goedkeuren voordat de bestelling
+           afrondt.
+  Mening   Oorspronkelijk goed, want zonder JS voegt de losse goedkeurknop alleen klikken
+           toe. Tegenspreker: 3.01 en 3.03 halen die klikken al weg, dus het besluit van 7
+           aug (goedkeuren per beeld) blijft.
+  Advies   niet
+
+  >>> JOUW BESLUIT 3.02
+      Keuze (ok / doen / later / niet / anders):
+      Opmerking:
+  <<<
+
+────────────────────────────────────────────────────────────────────────────────────────────
+10.11 DE THREADS-INSTURING: ÉÉN PER WEEK, VIA DE €1-PROEF
+      [NEE] · gebied 10 · kosten — · tegenspreker: nee (het wordt een nieuw weekritueel;
+      10.05 levert hetzelfde voor-en-na-materiaal zonder vaste handeling)
+
+  Wat      Merken zouden hun product via Threads insturen, en één gekozen product per week
+           zou een lifestylepost worden met de telefoonfoto naast het resultaat. De gekozen
+           inzender zou via de gewone €1-proef bestellen.
+  Waarom   Een post met een echte voor-en-na levert content op, en via de proef blijft het
+           zakelijk en meetbaar in plaats van DM-werk buiten het systeem.
+  Mening   Nee: het wordt een nieuw weekritueel, en 10.05 levert hetzelfde
+           voor-en-na-materiaal zonder vaste handeling, het alternatief dat de agent zelf
+           noemde.
+  Advies   niet
+
+  >>> JOUW BESLUIT 10.11
+      Keuze (ok / doen / later / niet / anders):
+      Opmerking:
+  <<<
+
+════════════════════════════════════════════════════════════════════════════════════════════
+EINDE VAN DE BESLISLIJST
+════════════════════════════════════════════════════════════════════════════════════════════

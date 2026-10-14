@@ -124,72 +124,31 @@ console.log('\ntipsVoor() levert wat het scherm nodig heeft');
   });
 }
 
-/* ── DE CONCEPTPAGINA IS WEG — 23 september 2026 ─────────────────────────────
-   Lucas heeft de twintig conceptpagina's laten opruimen (git bewaart ze). Wat
-   deze paragraaf bewaakte, blijft staan: het formulier haalt zijn tips uit de
-   module, en importeert niets uit een prototype. */
-console.log('\nhet formulier haalt de tips uit de ene bron');
-{
-  const uploader = read('src/components/order/ProductUploader.astro');
+/* ── HET PANEEL IS UIT STAP 2 — 11 oktober 2026 (F3) ─────────────────────────
+   Lucas vond stap 2 "moeizaam en chaotisch". Eén van de oorzaken: hulp die met
+   elkaar concurreerde — dit wisselende tippaneel, de uitklapgids en de uitleg
+   per vak. Hij koos (afvinklijst 2, form = a): het tipspaneel gaat weg, en een
+   voorbeeldfoto van ±64 px plus één regel per vak doet zijn werk (shots.js
+   `regel`, `voorbeeld`, `zonder`).
 
-  ok('het formulier haalt de tips uit de module',
-    /import \{[^}]*tipsVoor[^}]*\} from '\.\.\/\.\.\/data\/uploadTips\.js'/.test(uploader), true);
-
-  /* ── DE CONCEPTPAGINA HEEFT NOG ZIJN EIGEN REEKS ───────────────────────────
-     Bewust, en daarom staat het hier als een opdracht en niet als een groene
-     regel: de conceptpagina is een prototype uit 16 september en die mag zijn
-     eigen tekst houden tot iemand hem naast het formulier legt. Wat NIET mag,
-     is dat het formulier zijn tekst uit die pagina kopieert. Deze regel
-     bewaakt dus de richting van de afhankelijkheid. */
-  /* Op de NAAM noemen mag — er staat uitleg in de commentaren die naar die
-     pagina verwijst, en dat is precies waar commentaar voor is. Wat niet mag is
-     een IMPORT: dan hangt het formulier aan een prototype. */
-  ok('en het formulier importeert niets uit de conceptpagina',
-    /from '[^']*concept\//.test(uploader), false);
-}
-
-console.log('\nhet paneel staat in de markup en niet in het script');
+   Wat hieronder stond, bewaakte dat het paneel in de markup stond, draaide,
+   stilstond op het vak waar je was en zichzelf niet aankondigde. Dat is nu
+   omgekeerd: deze regels bewaken dat het niet stilletjes terugkomt in het
+   formulier. De reeks zelf (src/data/uploadTips.js) blijft bestaan en wordt
+   hierboven nog steeds nagekeken — hij kan op een andere plek terugkomen. */
+console.log('\nhet paneel staat niet meer in stap 2 (F3)');
 {
   const uploader = read('src/components/order/ProductUploader.astro');
   const pl = read('src/scripts/pipeline.js');
-
-  /* ── DE ASTRO-VAL ─────────────────────────────────────────────────────────
-     Astro plakt bij de bouw `data-astro-cid-…` achter elk deel van een
-     selector. Een element dat pipeline.js maakt, draagt dat attribuut niet en
-     krijgt dus GEEN van de regels hieronder. Vier keer misgegaan in dit
-     project; vandaar dat elk deel van dit paneel in de markup hoort. */
-  ['pu-tips', 'pu-tips-doek', 'pu-tips-vlak', 'pu-tips-fon', 'pu-tips-plaat',
-   'pu-tips-merk', 'pu-tips-zin', 'pu-tips-tikken'].forEach((klas) => {
-    ok(`  ${klas} staat in de markup`, uploader.includes(`class="${klas}"`), true);
-  });
-  ok('en pipeline.js maakt geen enkel tip-element',
-    /createElement\([^)]*\)[\s\S]{0,80}pu-tips/.test(pl), false);
-
-  /* De maten van de laptopplaat komen uit hun eigen module en worden niet
-     overgetypt: twee kopieën schuiven ooit stil uit elkaar en dan liggen de
-     beelden naast hun gat. */
-  ok('de maten komen uit laptopVlak.js',
-    /import \{ VLAK, FON, PLAAT, OVERLAY, overlayAlt \} from '\.\.\/\.\.\/data\/laptopVlak\.js';/.test(uploader), true);
-
-  /* GEEN aria-live op de draaiende zin. Een regel die vanzelf elke tien
-     seconden verandert en zichzelf aankondigt, onderbreekt een schermlezer
-     midden in het invullen van een formulier. */
-  const paneelStuk = uploader.slice(uploader.indexOf('class="pu-tips"'), uploader.indexOf('class="pu-tips"') + 3000);
-  ok('de draaiende zin kondigt zichzelf niet aan', /aria-live/.test(paneelStuk), false);
-  ok('maar de knop zegt wel wat hij doet', /aria-expanded/.test(paneelStuk), true);
-  ok('  en waar hij over gaat', /aria-controls="pu-tips-in"/.test(paneelStuk), true);
-
-  /* Stilstaan heeft drie redenen en alle drie horen ze in het script te staan:
-     dichtgeklapt, tabblad weg, en een vak dat je aanraakt. */
-  const bind = pl.slice(pl.indexOf('function bindTips()'), pl.indexOf('function bindTips()') + 6000);
-  ok('de klok stopt als het paneel dicht is',
-    /if \(vast \|\| paneel\.classList\.contains\('is-dicht'\) \|\| document\.hidden\) return;/.test(bind), true);
-  ok('en als het tabblad weg is', /document\.hidden/.test(bind), true);
-  ok('en als je een vak aanraakt', /vast = true;/.test(bind), true);
-  ok('het interval komt uit de module en niet uit een getal hier',
-    /data-pu-tip-ms=\{TIP_INTERVAL_MS\}/.test(uploader), true);
-  ok('de tekst gaat er als tekst in en niet als HTML',
-    /zin\.textContent = tekst/.test(bind), true);
+  ok('het formulier importeert de tips niet meer', /from '\.\.\/\.\.\/data\/uploadTips\.js'/.test(uploader), false);
+  ok('  en de laptopplaat ook niet', /from '\.\.\/\.\.\/data\/laptopVlak\.js'/.test(uploader), false);
+  ok('er staat geen tippaneel in de markup', /class="pu-tips/.test(uploader), false);
+  ok('en pipeline.js bindt er niets meer aan', /function bindTips\(|bindTips\(\);|data-pu-tips/.test(pl), false);
+  ok('en het formulier importeert niets uit een conceptpagina', /from '[^']*concept\//.test(uploader), false);
+  /* Wat zijn werk doet: één regel per vak uit shots.js, op de eerste kaart. */
+  ok('de regel per vak komt uit shots.js (vakRegel)',
+    /regel: Object\.fromEntries\(SHOTS\.map\(\(x\) => \[x\.id, vakRegel\(x\.id, l\)\]\)\)/.test(read('src/components/order/OrderFlow.astro')), true);
+  ok('  en het vak toont hem', /lookup\(`pu\.regel\.\$\{id\}`\)/.test(pl), true);
 }
 
 console.log(`\n${pass}/${pass + fail} geslaagd`);

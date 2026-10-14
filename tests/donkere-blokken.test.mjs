@@ -167,8 +167,23 @@ await browser.close();
 stop();
 
 /* Een test die nul blokken vindt is een test die niets meet. Zou `.op-nacht`
-   ooit hernoemd worden, dan valt deze om in plaats van stil groen te blijven. */
-check('er zijn donkere blokken om te meten', blokken > 0, true);
+   ooit hernoemd worden, dan valt deze om in plaats van stil groen te blijven.
+   ── NUL IS SINDS 13 OKTOBER 2026 JUIST (afvinklijst 18) ─────────────────────
+   Studio was de laatste pagina met donkere blokken (het dashboard en de galerij
+   "op zwart"); in de hal staan ze licht (v18-scherm = a). Nul blokken betekent nu
+   dat er geen donker blok meer op een pagina staat. Daarom zoekt de toets dan in
+   de gebouwde HTML naar een `op-nacht` die de meting gemist zou hebben (een blok
+   dat bijvoorbeeld pas na een klik zichtbaar wordt): staat er nergens een, dan
+   is er niets te meten en niets gemist. */
+if (blokken > 0) check('er zijn donkere blokken om te meten', true, true);
+else {
+  const { readFileSync } = await import('node:fs');
+  const gemist = PAGINAS.filter((pad) => {
+    const f = join(DIST, ...pad.split('/').filter(Boolean), pad.endsWith('.html') ? '' : 'index.html');
+    return existsSync(f) && /\bop-nacht\b/.test(readFileSync(f, 'utf8'));
+  });
+  check('geen donker blok meer op een pagina, en geen dat de meting mist', gemist, []);
+}
 console.log(`   ${blokken} blok(ken) over ${PAGINAS.length} pagina's`);
 check(`alle tekst in de donkere blokken is leesbaar`, stuk, []);
 

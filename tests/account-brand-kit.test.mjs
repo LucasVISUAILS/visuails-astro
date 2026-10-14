@@ -80,6 +80,16 @@ const SUB_SLOTS = [
   { month: _vorig, kind: 'credits', granted: 120, used: 90 },
   { month: _deze,  kind: 'credits', granted: 120, used: 20 },
 ];
+/* Het creditboek (2.07, 8 oktober 2026): de abonnementspagina leest het saldo
+   daaruit. Twee partijen van deze klant, samen 130 over. De eerste vervalt
+   morgen: sinds het spaarplafond (12 oktober 2026) noemt de pagina bij een
+   lopend abonnement alleen een datum die vóór de volgende termijn (de 1e van
+   volgende maand) valt, en morgen doet dat altijd. */
+const _over = (d) => new Date(Date.now() + d * 864e5).toISOString().slice(0, 10);
+const CREDIT_BOEK = [
+  { id: 1, subscription_id: 3, datum: `${_vorig}-08 09:00:00`, aantal: 120, rest: 10, reden: 'termijn', maand: _vorig, payment_id: null, order_id: null, vervalt_op: _over(1) },
+  { id: 2, subscription_id: 3, datum: `${_deze}-01 09:00:00`, aantal: 120, rest: 120, reden: 'termijn', maand: _deze, payment_id: null, order_id: null, vervalt_op: _over(80) },
+];
 const QUEUE = [
   { id: 91, position: 0, name: 'Winterjas, zwart', note: null, upload_batch: 'b-1', kind: 'complete', locked_at: `${_deze}-02 10:00:00`, created_at: `${_deze}-01` },
   { id: 92, position: 1, name: 'Cargobroek, sand', note: null, upload_batch: null,  kind: 'complete', locked_at: null, created_at: `${_deze}-01` },
@@ -106,6 +116,9 @@ function makeDb({ locks = [], models = MODELS, files = [], events = [], finish =
      * bewaking was in orde, de fixture bereikte de code niet. Vandaar deze drie
      * regels, met opzet in een plan dat doorschuift — dan tekent hij én de balk
      * van deze maand én die van vorige. */
+    if (s.includes('FROM credit_boek') && s.includes('SUM(rest)')) return { n: 130 };
+    if (s.includes('FROM credit_boek') && s.includes("reden IN ('bevroren', 'vrijgegeven')")) return { n: 0 };
+    if (s.includes('FROM credit_boek')) return CREDIT_BOEK;
     if (s.includes('FROM subscriptions')) return SUBSCRIPTION;
     if (s.includes('FROM subscription_months')) return SUB_MONTHS;
     if (s.includes('FROM subscription_slots')) return SUB_SLOTS;
@@ -476,8 +489,13 @@ section('§3 · a saved lock comes back selected, and reads back in the summary'
   // only thing the page is for.
   check('the folded summary names the chosen face', kaart('catalog').samenvatting[0] === 'Nadia');
   check('and the chosen look, by name', kaart('lifestyle').samenvatting.slice(0, 2).join(' · ') === 'Ava · Glow');
-  check('an unset service says so once, not twice', kaart('video').samenvatting.length === 1);
-  check('and says it as a whole answer', kaart('video').samenvatting[0] === 'Asked per order');
+  /* 2.08 (8 oktober 2026): het videoblok is weg — video is op aanvraag. Een
+     dienst zonder keuzes zegt het nog steeds in één keer. */
+  check('there is no video card any more (2.08)', !kaart('video'));
+  const leeg = await get('/account/brand-kit', { locks: [] });
+  const leegKaart = leeg.view.kaarten.find((k) => k.style === 'catalog');
+  check('an unset service says so once, not twice', leegKaart.samenvatting.length === 1);
+  check('and says it as a whole answer', leegKaart.samenvatting[0] === 'Asked per order');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -780,25 +798,23 @@ console.log('\nde staat van elke sectie');
     check(`${pad} levert zijn staat`, r.status === 200 && r.view && typeof r.view === 'object', r.status);
   }
   const plan = await get('/account/plan');
+  /* Sinds 2.07 (8 oktober 2026) uit het creditboek: één getal, met de
+     vertaling in producten, en geen balk meer. */
   check('/account/plan draagt één creditsaldo',
-    plan.view.geen === false && plan.view.saldo.credit.toegekend === 240 && plan.view.saldo.credit.saldo === 130);
-  /* De balk draagt zijn stand als een trap van vijf procent, want inline stijl
-     mag niet van het CSP-beleid — zie de noot bij pctStap in account.js. */
-  /* Sinds 24 september 2026 toont de balk wat er OVER is (130 van 240 = 54%,
-     afgerond op de trap: 55), en niet wat er op is. */
-  check('en de balk staat op een veelvoud van vijf procent, op wat er over is',
-    plan.view.saldo.credit.pctStap % 5 === 0 && plan.view.saldo.credit.pctStap === 55);
-  /* De diensten staan als kaarten, met de prijs in credits erop. */
-  check('en er staat een kaart per dienst met zijn creditprijs',
-    plan.view.saldo.dienstKaarten.length >= 4
-    && plan.view.saldo.dienstKaarten.every((d) => d.credits > 0 && d.naam)
-    && plan.view.saldo.dienstKaarten.every((d) => d.value !== 'complete'));
+    plan.view.geen === false && plan.view.saldo.getal === 130 && plan.view.saldo.kop === 'You have 130 credits');
+  check('met de vertaling in producten en wat er eerst vervalt',
+    /^Enough for /.test(plan.view.saldo.vertaling) && /^10 of these expire on /.test(plan.view.saldo.eerst));
+  /* Twee bestelknoppen (catalog, lifestyle) met de prijs in credits erbij. */
+  check('en twee bestelknoppen met hun creditprijs',
+    plan.view.bestel.length === 2 && plan.view.bestel.every((d) => d.kosten > 0 && /credits per product/.test(d.per)));
+  /* De besteltab (de lijst met vastzetknoppen) is weg sinds ronde 10, 8 oktober
+     2026: een oude link stuurt door naar de abonnementspagina. */
   const lijst = await get('/account/plan?tab=bestellen');
-  check('de besteltab draagt de lijst met een vastzetknop per item', lijst.view.nu === 'bestellen' && lijst.view.wachtrij.length === 2 && lijst.view.wachtrij.every((q) => ['lock', 'unlock'].includes(q.lockDo)));
+  check('een oude link naar de besteltab stuurt door naar /account/plan', lijst.status === 303 && lijst.res.headers.get('location') === '/account/plan');
   const { AMOUNT: BEDRAG, euro: euroBedrag } = await import('../src/data/pricing.js');
   const ed = await get('/account/plan?tab=edities');
-  check('een oude editions-link landt op het overzicht (de tab is sinds 19 sep 2026 één regel)', ed.view.nu === 'maand');
-  check('en het bedrag komt uit AMOUNT, geen vanaf-prijs', typeof BEDRAG.editions === 'number' && euroBedrag(BEDRAG.editions, 'en').startsWith('€') && !/\bfrom €|vanaf €/i.test(ed.st.t.edPrice));
+  check('een oude editions-link stuurt door naar de ene pagina (2.07)', ed.status === 303 && ed.res.headers.get('location') === '/account/plan');
+  check('en het bedrag komt uit AMOUNT, geen vanaf-prijs', typeof BEDRAG.editions === 'number' && euroBedrag(BEDRAG.editions, 'en').startsWith('€') && !/\bfrom €|vanaf €/i.test(plan.st.t.edPrice));
 }
 
 console.log(`\n${fails ? `${fails} FAILED` : 'all passed'}`);

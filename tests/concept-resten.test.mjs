@@ -56,47 +56,40 @@ const flow = read('src/components/order/OrderFlow.astro');
 const hoeken = read('src/components/order/AnglePicker.astro');
 const ask = pl.slice(pl.indexOf('function askMissing()'), pl.indexOf('function naarProduct('));
 
-console.log('1 · het overzicht is een raster en geen opsomming');
+console.log('1 · het overzicht is één lijst uit ontbreekt.js (F3, 11 oktober 2026)');
 {
-  ok('het raster staat in de markup', /class="pu-missing-raster"/.test(uploader), true);
-  ok('en de tegels worden gemaakt', /pu-mis-tegel/.test(ask), true);
-  /* Astro scopet zijn CSS; een tegel die tijdens het gebruik ontstaat draagt
-     dat kenmerk niet. Vijf keer misgegaan in dit project. */
-  ['.pu-mis-tegel', '.pu-mis-vakjes', '.pu-mis-vakjes i'].forEach((sel) => {
-    ok(`  ${sel} staat onder :global()`, uploader.includes(`:global(${sel})`), true);
-  });
-
-  /* ── ALLE PRODUCTEN, EN GEEN AFKAPPING MEER ─────────────────────────────
-     De afkapping was het hele probleem. Deze regel is dus geen smaak maar de
-     reden dat dit bestand bestaat. */
-  ok('geen afkapping op zes meer', /slice\(0, 6\)/.test(ask), false);
+  /* ── VAN RASTER NAAR ÉÉN LIJST ────────────────────────────────────────────
+     Hier stond sinds 17 september een raster van tegels per product. Bij de
+     ombouw van stap 2 (F3) koos Lucas voor punt 2.05: wie verder wil met lege
+     verplichte vakken, ziet ÉÉN lijst — en die lijst komt uit de gedeelde bron
+     src/lib/ontbreekt.js, dezelfde als Studio, de mails en /admin. Wat het raster
+     bewaakte, blijft bewaakt: alle producten (geen afkapping), en één klik naar
+     het product. */
+  ok('de lijst staat in de markup', /class="pu-missing-lijst" data-pl-missing-list/.test(uploader), true);
+  ok('de regels komen uit ontbrekendeFotos() en ontbrekendRegels()',
+    /ontbrekendeFotos\(\{ productCount: cards\.length, details, files \}\)/.test(ask)
+    && /ontbrekendRegels\(lijst,/.test(ask), true);
+  ok('  en pipeline.js haalt ze uit src/lib/ontbreekt.js',
+    /import \{ ontbrekendeFotos, ontbrekendRegels \} from '\.\.\/lib\/ontbreekt\.js';/.test(pl), true);
+  /* Bij null (onbekend: nog geen enkele foto) geen lijst en nooit "alles compleet". */
+  ok('bij null staat er geen lijst', /\(lijst \|\| \[\]\)\.forEach/.test(ask), true);
+  ok('  maar wel een kop die zegt dat er nog niets is', /c\('pu\.missingNone'\)/.test(ask), true);
+  ok('geen afkapping op zes', /slice\(0, 6\)/.test(ask), false);
   ok('en het loopt over alle kaarten', /cards\.forEach\(/.test(ask), true);
-
-  /* Een tegel draagt drie dingen: waar het product staat, wélke vakjes leeg
-     zijn, en wat er moet. Het laatste in woorden, want een leeg vakje vertelt
-     niet of er een foto of een keuze ontbreekt — zie undecided(). */
-  ['pu-mis-nr', 'pu-mis-naam', 'pu-mis-vakjes', 'pu-mis-wat'].forEach((k) => {
-    ok(`  de tegel draagt ${k}`, ask.includes(k), true);
-  });
-  ok('de vakjes zijn verborgen voor een schermlezer',
-    /strook\.setAttribute\('aria-hidden', 'true'\)/.test(ask), true);
-  ok('en de zin in woorden komt uit cardStateText()', /cardStateText\(card, klaar\)/.test(ask), true);
-
-  /* Springen. Beide knoppen — de tegel en "Foto's toevoegen" — gaan door
-     dezelfde deur, want in de rij is een kaart onzichtbaar tot hij aan de beurt
-     is en dan moet de RIJ verschuiven in plaats van de kaart openklappen. */
-  ok('een tegel springt naar dat product', /naarProduct\(card\)/.test(ask), true);
-  ok('en die sprong kent de rij', /function naarProduct\(card\)[\s\S]{0,400}rijAan\(\)/.test(pl), true);
-  ok('de knop "foto’s toevoegen" gebruikt dezelfde deur',
+  /* Een regel is een knop: een lijst die je wilt aanklikken, moet je ook kunnen
+     aanklikken — met een muis, een duim en het toetsenbord. */
+  ok('een regel is een knop die naar dat product springt',
+    /knop\.className = 'pu-mis-regel'/.test(ask) && /naarProduct\(card\)/.test(ask), true);
+  ok('  en zijn opmaak staat onder :global()', uploader.includes(':global(.pu-mis-regel)'), true);
+  ok('de sprong is die van de balk', /function naarProduct\(card\)[\s\S]{0,300}naarKaart\(i\)/.test(pl), true);
+  ok('de knop "nu toevoegen" gebruikt dezelfde deur',
     /missing-fix[\s\S]{0,300}naarProduct\(first\)/.test(pl), true);
-
-  /* De uitnodiging hoort erbij: een raster van tegels dat je kunt aanklikken,
-     zonder dat er staat dat het kan, is een raster dat niemand aanklikt. */
-  ok('er staat bij dat je erop kunt klikken', /data-pl-missing-list/.test(uploader) && /missingTap/.test(uploader), true);
+  /* De tweede keuze: later, in VISUAILS Studio — en de zin die zegt hoe dat gaat. */
+  ok('de keuze "later in Studio" staat erbij, met laterLead', /data-pl-missing-go/.test(uploader) && /\{k\.laterLead\}/.test(uploader.slice(uploader.indexOf('data-pl-missing'))), true);
   ['nl', 'en'].forEach((t) => {
-    ok(`  in het ${t}`, typeof SHOT_COPY[t].missingTap === 'string' && SHOT_COPY[t].missingTap.length > 10, true);
+    ok(`  in het ${t}: ${SHOT_COPY[t].missingFix} / ${SHOT_COPY[t].missingGo}`,
+      /VISUAILS Studio/.test(SHOT_COPY[t].missingGo) && SHOT_COPY[t].missingFix.length > 3, true);
   });
-  ok('en de sleutel staat in de kopijlijst', /'pu\.missingTap'/.test(flow), true);
 }
 
 console.log('\n2 · waar je wél meer beelden bestelt');
@@ -119,11 +112,11 @@ console.log('\n2 · waar je wél meer beelden bestelt');
   ok('en het verschil tussen sturen en krijgen',
     /stuur jij ons/.test(flow) && /you send us/.test(flow), true);
   ok('de opmaak staat onder :global()', uploader.includes(':global(.pu-ref-terug)'), true);
-  /* Op kaart twee en verder stil, net als de uitleg erboven — en `clip` en geen
-     `display: none`, zodat een schermlezer hem nog bereikt. */
-  ok('en op kaart twee is hij stil', /terug\.classList\.add\('is-stil'\)/.test(pl), true);
-  ok('stil is geweggeknipt en niet weggehaald',
-    /:global\(\.pu-ref-terug\.is-stil\)[\s\S]{0,200}clip-path: inset\(50%\)/.test(uploader), true);
+  /* Tot 11 oktober 2026 was hij op kaart twee en verder stil (weggeknipt). Sinds
+     F3 staat deze strook in de ingeklapte lade "Meer over dit product": wie die
+     opent, vraagt erom, dus hij is daar op elke kaart te lezen. */
+  ok('in de lade is hij op elke kaart te lezen', /terug\.classList\.add\('is-stil'\)/.test(pl), false);
+  ok('  en de strook staat in de lade', /buildMeer\(card, \[gezicht, about, ratios, refs, erbij\]\)/.test(pl), true);
 }
 
 console.log('\n3 · wat er gebeurt als wij het niet zeker weten');

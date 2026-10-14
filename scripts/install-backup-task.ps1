@@ -109,8 +109,10 @@ if ($uitvoer -ne $bat) {
   exit 1
 }
 
-Write-Host '  Draai hem nu een keer met de hand, dan weet je dat het werkt:'
-Write-Host '      scripts\backup-weekly.bat'
-Write-Host '  Daarna staat er in backups\_log\laatste.txt wat er gebeurde, en op /admin'
-Write-Host '  een chip "Back-up ok" met de datum erbij.'
+# Sinds 8 oktober 2026 (9.04) start BACKUP.bat (keuze 1) dit script en maakt het
+# daarna meteen de eerste back-up; de oude zin "draai hem nu met de hand" zou
+# Lucas een stap laten doen die al gebeurt.
+Write-Host '  BACKUP.bat maakt nu meteen de eerste back-up. Daarna staat er in'
+Write-Host '  backups\_log\laatste.txt wat er gebeurde, en op /admin een chip'
+Write-Host '  "Back-up ok" met de datum en "gecontroleerd" erbij.'
 Write-Host ''

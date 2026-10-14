@@ -81,7 +81,7 @@ export const VOORUIT_COPY = {
     voordeelEen: '1 maand gratis — je bespaart {bedrag}',
     ineens: '{bedrag} in één keer, voor twaalf maanden',
     geenGeldTerug: 'Stop je tussentijds, dan komt er geen geld terug — daar staat de korting tegenover.',
-    restant: 'Zeg je op, dan loopt je jaar gewoon door tot het einde: elke maand je credits en je vaste week. Het verlengt nooit vanzelf.',
+    restant: 'Zeg je op, dan loopt je jaar gewoon door tot het einde: elke maand je credits. Het verlengt nooit vanzelf.',
   },
   en: {
     label: 'Best value',
@@ -91,7 +91,7 @@ export const VOORUIT_COPY = {
     voordeelEen: '1 month free — you save {bedrag}',
     ineens: '{bedrag} once, for twelve months',
     geenGeldTerug: 'Stop partway and there is no refund — that is what the discount pays for.',
-    restant: 'If you cancel, your year simply runs on to the end: your credits and your fixed week every month. It never renews by itself.',
+    restant: 'If you cancel, your year simply runs on to the end: your credits every month. It never renews by itself.',
   },
 };
 

@@ -1,15 +1,21 @@
 ---
-// VISUAILS — /studio (English). Body in StudioPage.astro so EN and NL cannot
+// VISUAILS — /studio (English). Body in StudioHal.astro so EN and NL cannot
 // drift; only the meta differs here.
+//
+// Sinds 8 oktober 2026 (1.11) is dit de pagina over VISUAILS Studio — wat tot
+// dan op /portal stond. /portal stuurt hierheen (public/_redirects); de
+// planningstekst die hier stond, is een blok op /how-it-works.
+//
+// Sinds 13 oktober 2026 (afvinklijst 18, alles doen) staat /studio in de hal:
+// StudioHal.astro. Het voorbeeld op /voorbeeld/studio stuurt hierheen (301).
 import Layout from '../layouts/Layout.astro';
-import StudioPage from '../components/StudioPage.astro';
+import StudioHal from '../components/StudioHal.astro';
 ---
 
-<Layout
-  title="How we process your order — the calendar | VISUAILS"
-  description="A date is only worth the mechanism behind it. The calendar counts real load in products, refuses a week it cannot hold, and offers the first one it can."
-  ogImage="/img/banners-13.webp"
-  ground="espresso"
+<Layout huid="hal"
+  title="VISUAILS Studio — every order in one place | VISUAILS"
+  description="Sign in with your email and see every order: where it stands, approve image by image, one revision round, and downloads as JPG; PNG or WebP on request."
+  ogImage="/img/banners-09.webp"
 >
-  <StudioPage lang="en" />
+  <StudioHal lang="en" />
 </Layout>

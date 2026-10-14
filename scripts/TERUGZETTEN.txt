@@ -1,0 +1,69 @@
+VISUAILS - EEN BACK-UP TERUGZETTEN
+==================================
+Dit bestand staat naast elke back-up (als LEESMIJ-TERUGZETTEN.txt) en in de
+projectmap als scripts\TERUGZETTEN.txt. Bijgewerkt 8 oktober 2026.
+
+
+WAT ER IN EEN BACK-UP ZIT
+-------------------------
+  <datum>-d1.sql          de hele database, ZONDER inloggeheimen (zie hieronder)
+  <datum>-controle.json   wat er bij het maken in zat: aantal rijen per tabel
+  <datum>-r2.json         de lijst van alle foto's en beelden in R2, met bij
+                          welke bestelling ze horen (niet de bestanden zelf)
+  <datum>-prompts\        een kopie van C:\Users\Gebruiker\VISUAILS\Prompts
+
+Elke week komt er een bij; de 8 nieuwste blijven staan. Een oudere gaat naar de
+prullenbak van Google Drive en is daar na 30 dagen definitief weg.
+
+
+WAT ER MET OPZET NIET IN ZIT
+----------------------------
+Je adminwachtwoord en je tweestapscode, de herstelcodes, alle ingelogde
+sessies en de inlogcodes van Studio. Die tabellen staan in de back-up, maar
+leeg. Wie de back-up vindt, kan er dus niet mee inloggen.
+Gevolg na een echt herstel: iedereen logt opnieuw in (Studio-klanten vragen
+gewoon een nieuwe code) en jij zet je adminaccount opnieuw neer (stap 3).
+
+
+EERST: PROBEER OF HET TERUGZETTEN WERKT  (er verandert niets live)
+------------------------------------------------------------------
+Dubbelklik BACKUP.bat in de projectmap en kies 3.
+Het zet de nieuwste back-up in een lege database op je eigen pc, telt de rijen
+en vergelijkt ze met <datum>-controle.json.
+Zo zie je dat het gelukt is:  "TERUGZETTEN WERKT: .. tabellen en .. rijen"
+Het verslag staat ook in backups\_log\terugzet-proef.txt.
+
+
+ALS DE DATABASE ECHT KAPOT OF WEG IS
+------------------------------------
+Doe dit niet alleen en niet gehaast: vraag Claude erbij. Terugzetten giet een
+kopie over de database heen; daarom bestaat er met opzet geen knop voor.
+
+1. Eerste keus: Time Travel van Cloudflare.
+   Cloudflare bewaart zelf hoe de database er elke minuut uitzag, de laatste
+   7 dagen (gratis plan; 30 dagen op Workers Paid). Dat is nauwkeuriger dan
+   deze back-up, want het is van de minuut en niet van zondag.
+   Zeg tegen Claude: "zet de database terug naar <dag en tijd>". Claude maakt er
+   een dubbelklikbestand van; jij start het.
+
+2. Tweede keus: deze back-up (langer dan 7 dagen geleden, of het account weg).
+   a. Er moet een LEGE database zijn. Over een database die nog gegevens
+      heeft, gaat dit niet.
+   b. Claude maakt een dubbelklikbestand dat precies deze opdracht draait:
+         npx wrangler d1 execute visuails --remote --file "<pad naar>\<datum>-d1.sql"
+      Is de database nieuw aangemaakt, dan heeft hij een nieuwe id: die past
+      Claude aan in wrangler.toml en cron\wrangler.toml, en daarna rol je uit
+      met UITROLLEN.bat.
+   c. Zo zie je dat het gelukt is: /admin laat je bestellingen weer zien.
+
+3. Je adminaccount opnieuw neerzetten (na stap 2, niet na stap 1).
+   Claude maakt met scripts\hash-admin-password.mjs de regel voor je account;
+   jij kiest het wachtwoord en typt het zelf in. Daarna in /admin bij
+   "Twee stappen" de tweestapscode opnieuw instellen.
+
+4. De foto's en beelden zelf staan in R2 en NIET in deze back-up. Waren die
+   ook weg, dan zegt <datum>-r2.json precies welke bestanden bij welke klant
+   hoorden.
+
+5. De prompts: kopieer de map <datum>-prompts terug naar
+   C:\Users\Gebruiker\VISUAILS\Prompts.

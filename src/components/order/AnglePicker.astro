@@ -52,6 +52,7 @@
  * op een fotoshoot.
  */
 import { ANGLES, ANGLE_GROUPS, ANGLE_COPY } from '../../data/angles.js';
+import NieuwTabblad from '../NieuwTabblad.astro';
 import AngleSketch from './AngleSketch.astro';
 import { SHOTS } from '../../data/shots.js';
 import { MAX_EXTRA_PER_PRODUCT, extraPhotoRate, euro, vatLabel } from '../../data/pricing.js';
@@ -137,7 +138,7 @@ const vasteRegel = lang === 'nl'
     <span class="pl-hoeken-tarief" data-pl-angle-rate>{c.per.replace('{price}', euro(startTarief, lang))} · {vatLabel('excl', lang)}</span>
     {/* In een nieuw tabblad (29 september 2026): midden in het formulier wegklikken
         kostte de klant zijn plek. */}
-    <a class="pijl pl-hoeken-uit" href={lp('/per-product')} target="_blank" rel="noopener">{c.seeAll}</a>
+    <a class="pijl pl-hoeken-uit" href={lp('/per-product')} target="_blank" rel="noopener">{c.seeAll}<NieuwTabblad lang={lang} /></a>
   </p>
 
   {perGroep.map((g) => (

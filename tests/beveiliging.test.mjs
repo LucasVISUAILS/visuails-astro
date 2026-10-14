@@ -154,8 +154,9 @@ console.log('\nhet publieke capaciteits-endpoint kan niet om zijn eigen cache he
   const cap = lees('functions/api/capacity.js');
   ok('het aantal wordt geknipt op een bovengrens',
     /Math\.min\(Math\.max\(gevraagd, 1\), MAX_PRODUCTS_ANY_SERVICE \+ 1\)/.test(cap), true);
-  ok('een onbekende dienst valt terug op complete',
-    /puntenVoor\(gevraagdeDienst, 1\) === null \? 'complete'/.test(cap), true);
+  /* 'catalog' sinds 14 oktober 2026: compleet bestaat niet meer (afvinklijst 23). */
+  ok('een onbekende dienst valt terug op catalog',
+    /puntenVoor\(gevraagdeDienst, 1\) === null \? 'catalog'/.test(cap), true);
   ok('en het antwoord blijft cachebaar', /'cache-control': 'public, max-age=60'/.test(cap), true);
   ok('met nosniff erbij', /'x-content-type-options': 'nosniff'/.test(cap), true);
   ok('ook op /api/order-status',

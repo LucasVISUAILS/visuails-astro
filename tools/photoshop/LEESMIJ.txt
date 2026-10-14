@@ -1,0 +1,52 @@
+VISUAILS - werkmap afwerken in Photoshop (01-catalog-afwerken.jsx)
+====================================================================
+
+WAT HET DOET
+------------
+Je start het één keer en kiest de werkmap uit /admin ("VIS-XXXX-XXX - Merknaam").
+Het script loopt elk product en elk vak langs, en per vak:
+- leest het de achtergrond, de verhouding en de maat uit _briefing.txt
+  (de regel INSTELLINGEN). Geen hex meer typen.
+- snijdt het product uit, zet de achtergrond en de schaduw, maakt de
+  verhouding en verkleint naar 2048 of 4096 px.
+- slaat het op als VIS-...-p1-voorkant.jpg (sRGB) in hetzelfde vak, en zet
+  het ruwe beeld in _ruw/ in dat vak. Map uploaden slaat _ruw/ over.
+Aan het eind krijg je één melding met aantallen, bijvoorbeeld:
+  "24 beelden afgewerkt · 1 overgeslagen: p4 detail (geen beeld)"
+
+Opschalen doet het nooit. Is een beeld te klein, dan blijft het staan en
+zegt de melding: "1800 px, besteld 2048 - eerst opschalen".
+
+Lifestyle slaat het over: die beelden komen rechtstreeks uit Spaces (en
+Lightroom voor grading en grain). Vraagt een eigen look wel Photoshop,
+schrijf dan "Photoshop" in de interne notitie van die look in /admin; de
+werkmap zet dan photoshop=ja en het script snijdt bij, schaalt en geeft de
+naam (zonder uitsnijden of achtergrond). Voor één bestelling kan het ook
+met de hand: verander in _briefing.txt photoshop=nee in photoshop=ja.
+
+Zet per vak één ruw beeld neer. Staan er twee, dan slaat het script dat
+vak over en zegt het welk.
+
+
+ÉÉN KEER INSTELLEN: HET SCRIPT AAN EEN SNELTOETS (±3 minuten)
+-------------------------------------------------------------
+1. Open Photoshop. Kies Venster > Handelingen.
+2. Klik onderaan het paneel op het mapje (Nieuwe set). Naam: VISUAILS. OK.
+3. Klik op het plusje (Nieuwe handeling).
+   Naam: Werkmap afwerken. Functietoets: F9 (of een andere vrije toets).
+   Klik Opnemen.
+4. Kies Bestand > Scripts > Bladeren... en kies dit bestand:
+   01-catalog-afwerken.jsx in de map tools\photoshop van je projectmap.
+   Het venster "Kies de werkmap" gaat open: klik Annuleren.
+5. Klik onderaan het paneel op het vierkantje (Stoppen met opnemen).
+
+Klaar. Voortaan: druk F9, kies de werkmap, wacht op de slotmelding.
+De handeling wijst naar het bestand in je projectmap, dus een nieuwe
+versie van het script werkt meteen, zonder opnieuw instellen.
+
+Liever in het menu? Kopieer 01-catalog-afwerken.jsx naar de map
+Presets\Scripts van Photoshop (bijvoorbeeld
+C:\Program Files\Adobe\Adobe Photoshop 2026\Presets\Scripts), start
+Photoshop opnieuw en kies Bewerken > Sneltoetsen > Toepassingsmenu's >
+Bestand > Scripts > "VISUAILS werkmap afwerken". Let op: na een nieuwe
+versie moet je hem dan opnieuw kopiëren.

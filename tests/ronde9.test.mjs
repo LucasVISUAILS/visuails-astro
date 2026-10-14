@@ -99,9 +99,12 @@ console.log('\nF5, F6, F11, F26, O2, O5 · het bestelformulier');
 
 console.log('\nO1, O3, O4 · mails en kleine teksten');
 {
-  ok('O1: "net al betaald?" bij de betaalknop', /Net al betaald\?/.test(lees('functions/api/order.js')));
+  /* 7.02 (8 oktober 2026, V17): de zin staat nu bovenaan de mail, als "Al betaald bij Mollie?". */
+  ok('O1: "al betaald bij Mollie?" bovenaan de bestelmail', /Al betaald bij Mollie\? Dan hoef je niets te doen/.test(lees('functions/api/order.js')));
   ok('O1: één woord voor de ronde', !/correctieronde/.test(lees('src/lib/invoiceMail.js').split('\n').filter((r) => !/nextModel:/.test(r)).join('\n')) && !/correctieronde, tot en met/.test(lees('src/lib/admin.js')));
-  ok('O3: de knop zegt dat het WhatsApp is', /Extra foto’s sturen via WhatsApp/.test(lees('src/components/ThankYouPage.astro')));
+  /* Sinds 8 oktober 2026 (punt 2.05, V31-3 = a) gaat de knop naar Studio in
+     plaats van WhatsApp; de regel van O3 blijft: de knop zegt waar hij heen gaat. */
+  ok('O3: de knop zegt waar hij heen gaat (Studio)', /Extra foto’s toevoegen in VISUAILS Studio/.test(lees('src/components/ThankYouPage.astro')) && /<a href="\/account\/orders" class="knop knop-lijn" data-track="ty-extra-photos">/.test(lees('src/components/ThankYouPage.astro')));
   ok('O4: /account/profile gaat naar je gegevens', /'\/account\/profile': '\/account\/details\/'/.test(lees('src/lib/account.js')));
 }
 
@@ -237,10 +240,11 @@ console.log('\nF40, O21 · na betalen van een offerte: hoe komen de foto\'s bij 
   const { invoiceEmail } = await import('../src/lib/invoiceMail.js');
   const inv = { number: 'PROEF-2026-0001' };
   const v = invoiceEmail({ lang: 'nl', order: { ref: 'VIS-X', service: 'video', name: 'Bram Bureau' }, invoice: inv, snap: { netCents: 13800, vatCents: 2898 } }).html;
-  ok('video: "Beantwoord dan deze mail met de foto’s"', /Beantwoord dan deze mail met de foto’s/.test(v) && !/We maken je beelden en onze beeldredactie/.test(v));
+  ok('video: "Beantwoord dan deze mail met de foto’s"', /Beantwoord dan deze mail met de foto’s/.test(v) && !/We maken je beelden en lopen elk beeld na/.test(v));
   ok('O21: met aanhef', /Hoi Bram,/.test(v));
   const c = invoiceEmail({ lang: 'en', order: { ref: 'VIS-X', service: 'catalog' }, invoice: inv, snap: { netCents: 100, vatCents: 21 } }).html;
-  ok('catalog: de gewone zin, zonder naam geen "Hi,"', /We make your images and our image editors check every one/.test(c) && !/Hi,/.test(c));
+  /* Punt 7.01 (8 oktober 2026): de "Wat nu"-zin is het blok "Zo gaat het verder" geworden. */
+  ok('catalog: "What happens next" uit verder.js, zonder naam geen "Hi,"', /What happens next/.test(c) && /check every image before it reaches you/.test(c) && !/Hi,/.test(c));
   ok('webhook leest de naam', /SELECT ref, email, name, lang, service, window_start, window_end FROM orders/.test(lees('functions/api/webhook/mollie.js')));
   const po = lees('src/lib/portal.js');
   ok('portaal: eigen lege staat voor video en eigen look', /emptyOfferte:/.test(po) && /emptyRequest:/.test(po) && /o\.payment_status,/.test(po));
@@ -384,7 +388,7 @@ console.log('\nF54, F55, O39 · klant via WhatsApp');
   ok('O39: jouw notitie, niet "bericht van de klant"', /rij\(d\.placed_by \? 'Jouw notitie \(ziet de klant\)' : 'Bericht van de klant', berichtRegel\)/.test(adm));
   const acc = lees('src/lib/account.js');
   ok('F55: Studio heeft een fotoroute, alleen voor de eigen bestelling', /const fotos = \/\^\\\/account\\\/orders\\\/\(\\d\+\)\\\/fotos\$\/\.exec\(path\);/.test(acc) && /WHERE id = \?1 AND customer_id = \?2'\s*\)\.bind\(orderId, customer\.customer_id\)/.test(acc) && /`aangeleverd\/\$\{o\.ref\}\//.test(acc));
-  ok('F55: studio hoort het', /notifyFotosToegevoegd\(env, \{ orderId, count: n \}\)/.test(acc) && /export async function notifyFotosToegevoegd/.test(lees('src/lib/notify.js')));
+  ok('F55: studio hoort het', /notifyFotosToegevoegd\(env, \{ orderId, count: (n|aantal)[ ,}]/.test(acc) && /export async function notifyFotosToegevoegd/.test(lees('src/lib/notify.js')));
   ok('F55: formulier op de kaart', /v\.fotos && \(/.test(lees('src/components/studio/Bestelling.astro')) && /enctype="multipart\/form-data"/.test(lees('src/components/studio/Bestelling.astro')));
   ok('O40: terug van Mollie zegt de kaart dat de betaling verwerkt wordt', /successUrl: `\$\{origin\}\$\{home\}\?order=\$\{orderId\}&terug=1#order-\$\{orderId\}`/.test(acc) && /searchParams\.get\('terug'\) === '1' && v\.status === 'awaiting_payment'/.test(lees('src/components/studio/Bestelling.astro')));
   ok('F55: bevestigingsmail wijst naar Studio als er geen foto\'s zijn', /fotos: \(!staged\.length && \['catalog', 'lifestyle', 'drop'\]\.includes\(svc\)\)/.test(lees('functions/api/order.js')));
@@ -393,7 +397,9 @@ console.log('\nF54, F55, O39 · klant via WhatsApp');
 console.log('\nklanttype 13 · alleen het toetsenbord');
 {
   const pl = lees('src/scripts/pipeline.js');
-  ok('focus valt niet weg als een productkaart dichtklapt', /focusTerug = ready && card\.el\.contains\(document\.activeElement\)/.test(pl) && /if \(focusTerug\) \{/.test(pl));
+  /* Sinds 11 oktober 2026 (F3) klapt een kaart niet meer dicht, dus kan de focus
+     ook niet meer wegvallen met een dichtklappende kaart. */
+  ok('focus valt niet weg: een productkaart klapt niet meer dicht (F3)', /function paintCard\(card\) \{[\s\S]{0,900}card\.collapsed = false;/.test(pl) && !/focusTerug/.test(pl));
   ok('productnaam heeft een zichtbare focusrand', /\.pu-name:focus-visible\) \{ border-bottom-color: var\(--accent\); box-shadow: 0 1px 0 0 var\(--accent\); \}/.test(lees('src/components/order/ProductUploader.astro')));
 }
 
@@ -442,16 +448,15 @@ console.log('\nF62 · terugboeking (chargeback)');
 console.log('\nO54 · lage-score-mail');
 ok('O54: de zin noemt de echte score', /wie een \$\{score\} geeft en niets typt/.test(lees('src/lib/feedback.js')) && !/wie een 1 of 2 geeft/.test(lees('src/lib/feedback.js')));
 
-/* Dode bestanden: in de map, maar door niets geïmporteerd en dus niet in de
-   site. HomeV2.astro is de voorpagina van vóór sectie 21 (nu Voorpagina.astro);
-   hij staat nog in de map en hoort weg (zie de werklijst, 3 oktober). Tot dan
-   telt hij hier niet mee — een woord of maat erin bereikt geen bezoeker. */
-const DOOD = /(^|\/)HomeV2\.astro$/;
+/* Hier stond een uitzondering voor HomeV2.astro, de voorpagina van vóór sectie 21
+   (nu Voorpagina.astro): dood, maar nog in de map. Sinds 8 oktober 2026 (punt 9.01,
+   §17.13) staat hij in _opruimen/LIJST.txt onder "moet weg", en telt deze toets
+   weer elk bestand mee. */
 
 console.log('\nO62 · leesbaarheidsvloer 11,5 px');
 {
   const { readdirSync, statSync } = await import('node:fs');
-  const loop = (d) => readdirSync(new URL(`../${d}`, import.meta.url)).flatMap((n) => { const pad = `${d}/${n}`; return statSync(new URL(`../${pad}`, import.meta.url)).isDirectory() ? loop(pad) : (/\.(css|astro)$/.test(n) && !DOOD.test(pad) ? [pad] : []); });
+  const loop = (d) => readdirSync(new URL(`../${d}`, import.meta.url)).flatMap((n) => { const pad = `${d}/${n}`; return statSync(new URL(`../${pad}`, import.meta.url)).isDirectory() ? loop(pad) : (/\.(css|astro)$/.test(n) ? [pad] : []); });
   const te = [];
   for (const f of [...loop('src'), 'public/account.css', 'public/admin.css', 'public/portal.css', 'public/admin-voorvertoning.css']) {
     const t = lees(f);
@@ -491,13 +496,16 @@ console.log('\nRonde 9 · melding bovenaan Studio');
 console.log('\nRonde 9 · woordkeus');
 {
   const { readdirSync, statSync } = await import('node:fs');
-  const loop = (d) => readdirSync(new URL(`../${d}`, import.meta.url)).flatMap((n) => { const pad = `${d}/${n}`; return statSync(new URL(`../${pad}`, import.meta.url)).isDirectory() ? loop(pad) : (/\.(js|astro|mjs)$/.test(n) && !DOOD.test(pad) ? [pad] : []); });
+  const loop = (d) => readdirSync(new URL(`../${d}`, import.meta.url)).flatMap((n) => { const pad = `${d}/${n}`; return statSync(new URL(`../${pad}`, import.meta.url)).isDirectory() ? loop(pad) : (/\.(js|astro|mjs)$/.test(n) ? [pad] : []); });
   const bestanden = [...loop('src'), ...loop('functions'), 'scripts/llms-txt.mjs'];
   const tekst = (f) => lees(f).replace(/\/\*[\s\S]*?\*\//g, '').replace(/<!--[\s\S]*?-->/g, '').replace(/(^|\s)\/\/[^\n]*/g, '$1');
   const zoek = (re) => bestanden.filter((f) => re.test(tekst(f)));
   gelijk('"specialist" staat nergens meer in een klanttekst', zoek(/\b[Ss]pecialist/), []);
-  gelijk('"Lucas" alleen nog op /about, in de juridische pagina\'s en in werknotities', zoek(/['"`][^'"`\n]*\bLucas\b[^'"`\n]*['"`]/).filter((f) => !/AboutPage|privacy|terms|data-processing/.test(f)), []);
-  ok('NL: carrousel met dubbele r', zoek(/carousels?: 'carousels'/).length === 1 && /carousels: 'carrousels'/.test(lees('src/components/PlansPage.astro')));
+  gelijk('"Lucas" alleen nog op /about, in de juridische pagina\'s en in werknotities', zoek(/['"`][^'"`\n]*\bLucas\b[^'"`\n]*['"`]/).filter((f) => !/AboutPage|AboutHal|OverHal|privacy|terms|data-processing/.test(f)), []);
+  /* Sinds 6.01 (8 oktober 2026) staan "catalogsets of carrousels" op /plans uit
+     één functie: creditVertaling() in src/data/creditKaart.js. */
+  ok('NL: carrousel met dubbele r', /carrousel\$\{life === 1 \? '' : 's'\}/.test(lees('src/data/creditKaart.js'))
+    && /'Lifestylecarrousel'/.test(lees('src/data/creditKaart.js')));
 }
 
 console.log('\nF63 · geen herinnering aan wat dezelfde nacht vervalt');

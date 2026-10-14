@@ -37,15 +37,21 @@
  * leest voordat je iets anders leest.
  */
 import { waHref } from '../data/whatsapp.js';
+import NieuwTabblad from './NieuwTabblad.astro';
 /* AMOUNT erbij: de annuleringstekst noemt het teruggestorte bedrag van de
    proefvisual, en dat is een prijs — die hoort uit pricing.js te komen. */
 import {
   turnaround, AMOUNT, euro,
   /* Voor de abonnementsregel onderaan — zie PLAN_REGEL hieronder. */
   plans, planSaving, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, STOCK_OFF_BRAND, creditSaving,
-  UPGRADE_TRIGGER_PRODUCTS,
+  UPGRADE_TRIGGER_PRODUCTS, WINDOW_THRESHOLD,
+  /* De Levertijd-rij bij voorrang (naloop A2). */
+  voorrangZin,
 } from '../data/pricing.js';
 import { mailNote } from '../data/mailNote.js';
+/* "Zo gaat het verder" (punt 1.05): dezelfde bron als de betaal- en de
+   bestelmail, zodat pagina en mail nooit iets anders zeggen. */
+import { zoGaatHetVerder, leverregel, stilteRegel } from '../lib/verder.js';
 import { localizedPath } from '../i18n/ui.js';
 import '../styles/stijl22.css';
 
@@ -55,6 +61,22 @@ const nl = lang === 'nl';
 const lp = (p: string) => localizedPath(lang, p);
 
 const TIMING = turnaround('unattended', lang);
+
+/* ── ZO GAAT HET VERDER — 8 oktober 2026 (punt 1.05) ─────────────────────────
+   Drie regels onder de kop. De pagina is statisch en kent de bestelling niet;
+   initThankYou() kiest de leverregel (zo snel mogelijk, de gereserveerde dagen
+   uit sessionStorage, of "datum volgt" vanaf WINDOW_THRESHOLD producten) en de
+   factuurregel (betaald of nog niet). Alle varianten staan hier als tekst, het
+   script wisselt alleen. `{datum}` vult het script met de dagen die pipeline.js
+   achterliet. */
+const VERDER = zoGaatHetVerder({ lang, factuur: 'volgt' });
+const VERDER_ALT = {
+  datum: leverregel({ lang, levering: { soort: 'datum' }, datumTekst: '{datum}' }),
+  datumVolgt: leverregel({ lang, levering: { soort: 'datum-volgt' } }),
+  /* Naloop A2 (8 okt 2026): voorrang, als pipeline.js 'vis-ty-voorrang' achterliet. */
+  voorrang: leverregel({ lang, levering: { soort: 'voorrang' } }),
+  onbetaald: stilteRegel({ lang, factuur: 'na-betaling' }),
+};
 
 /*
  * ── DE ABONNEMENTSREGEL — 8 september 2026 ─────────────────────────────────
@@ -78,7 +100,6 @@ const TIMING = turnaround('unattended', lang);
  */
 const PLAN_ID = 'studio';
 const PLAN_KAART = plans(lang).find((p) => p.id === PLAN_ID);
-const PLAN_LADDER = planSaving(PLAN_ID);
 /* Voor wie net LIFESTYLE bestelde (24 september 2026): die las "30 catalogsets
    los kosten €1.170" — een vergelijking met iets wat hij niet bestelt. Dezelfde
    credits als lifestylecarrousels, los besteld. */
@@ -88,15 +109,13 @@ const PLAN_LADDER_LS = creditSaving(PLAN_KAART.credits, PLAN_AMOUNT[PLAN_ID], 'l
    draait nog niet. */
 const PLAN_REGEL = nl ? {
   h: 'Elke maand hetzelfde nodig?',
-  compare: `Het ${PLAN_KAART.name}-abonnement geeft ${PLAN_KAART.credits} credits per maand voor ${euro(PLAN_AMOUNT[PLAN_ID], 'nl')}, te besteden aan catalog, lifestyle en video. ${PLAN_LADDER.sets} catalogsets los kosten ${euro(PLAN_LADDER.onLadder, 'nl')}.`,
   compareLs: `Het ${PLAN_KAART.name}-abonnement geeft ${PLAN_KAART.credits} credits per maand voor ${euro(PLAN_AMOUNT[PLAN_ID], 'nl')}, te besteden aan catalog, lifestyle en video. ${PLAN_LADDER_LS.count} lifestylecarrousels los kosten ${euro(PLAN_LADDER_LS.los, 'nl')}.`,
-  steady: 'Een abonnement geeft je elke maand credits en een vaste week.',
+  steady: 'Een abonnement geeft je elke maand credits; je bestelt wanneer je wilt, zoals nu.',
   cta: 'Bekijk de abonnementen',
 } : {
   h: 'Need the same every month?',
-  compare: `The ${PLAN_KAART.name} plan gives ${PLAN_KAART.credits} credits a month for ${euro(PLAN_AMOUNT[PLAN_ID], 'en')}, to spend on catalog, lifestyle and video. ${PLAN_LADDER.sets} catalog sets one-off cost ${euro(PLAN_LADDER.onLadder, 'en')}.`,
   compareLs: `The ${PLAN_KAART.name} plan gives ${PLAN_KAART.credits} credits a month for ${euro(PLAN_AMOUNT[PLAN_ID], 'en')}, to spend on catalog, lifestyle and video. ${PLAN_LADDER_LS.count} lifestyle carousels one-off cost ${euro(PLAN_LADDER_LS.los, 'en')}.`,
-  steady: 'A plan gives you credits and a fixed week every month.',
+  steady: 'A plan gives you credits every month; you order whenever you like, just like now.',
   cta: 'See the plans',
 };
 
@@ -110,13 +129,15 @@ const c = nl ? {
      de bevestiging dat het geld binnen is. interactions.js wisselt de tekst. */
   titlePay: 'Nog één stap: betalen.',
   titlePaid: 'Betaald — we gaan aan de slag.',
-  titleChecking: 'Even kijken of de betaling binnen is…',
+  /* Punt 1.05 (8 oktober 2026): de tussenstand na de terugkeer van Mollie zegt
+     wat de klant moet weten — niet opnieuw betalen — in plaats van "even
+     kijken", wat las alsof er iets mis kon zijn. */
+  titleChecking: 'Je betaling wordt bevestigd.',
   titleUnpaid: 'De betaling is niet afgerond.',
   cancelled: 'Deze moesten we annuleren',
-  nowH: 'Wat er nu gebeurt',
   payQ: 'Staat er een betaallink in je bevestigingsmail?',
   payA: 'Rond die betaling af — je bestelling staat genoteerd, maar de productie start pas als de betaling binnen is.',
-  flow: 'We lezen wat je hebt gestuurd, maken je visuals, en onze beeldredactie kijkt elk resultaat na voordat het bij jou komt.',
+  flow: 'We lezen wat je hebt gestuurd, maken je visuals en kijken elk resultaat na voordat het bij jou komt.',
   /* Een AANVRAAG (video, hooks, editions, eigen look) is geen bestelling: er
      wordt niets gemaakt en er is geen levertijd. Tot 19 september 2026 kreeg
      die dezelfde tekst als een bestelling — "we maken je visuals", "Levertijd:
@@ -146,7 +167,8 @@ const c = nl ? {
   guidePdf: 'Fotogids als pdf',
   extraH: 'Meer hoeken, nauwkeuriger resultaat',
   extraB: 'Hoe meer foto’s we hebben, hoe preciezer we pasvorm, kleur en detail de eerste keer raken. Extra close-ups van de stof en een gedragen foto — gratis toe te voegen.',
-  extraCta: 'Extra foto’s sturen via WhatsApp',
+  /* Punt 2.05, V31-3 = a (8 oktober 2026): nasturen gaat in Studio, per vak. */
+  extraCta: 'Extra foto’s toevoegen in VISUAILS Studio',
   sourceQ: 'Nog één ding — hoe heb je ons gevonden?',
   cancelP1: `Uit onze administratie blijkt dat er al een proef naar je bedrijf is gegaan. Er is er één per bedrijf, dus deze tweede aanvraag is geannuleerd — en het betaalde bedrag is onderweg terug naar de rekening waarvandaan je betaalde. Dat duurt meestal een paar werkdagen.`,
   cancelP2: 'Klopt dat niet — een collega bestelde zonder het te zeggen, of de eerste proef kwam nooit aan — reageer dan op de bevestigingsmail en we lossen het met de hand op.',
@@ -162,13 +184,12 @@ const c = nl ? {
   title: 'Thanks — we have your request.',
   titlePay: 'One more step: payment.',
   titlePaid: 'Paid — we are on it.',
-  titleChecking: 'Checking whether the payment came through…',
+  titleChecking: 'Your payment is being confirmed.',
   titleUnpaid: 'The payment was not completed.',
   cancelled: 'This one we had to cancel',
-  nowH: 'What happens now',
   payQ: 'Is there a payment link in your confirmation email?',
   payA: 'Complete that payment — your order is noted, but production only starts once the payment has come through.',
-  flow: 'We read what you sent, prepare your visuals, and our image editors check every result before it reaches you.',
+  flow: 'We read what you sent, prepare your visuals and check every result before it reaches you.',
   flowRequest: 'We read your request and reply in writing with a proposal and a price — usually within one working day. It only becomes an order once you say yes.',
   flowReview: 'There is no payment button yet: we check your details first, usually within one working day. Then we send you the payment link by email, and we start as soon as the payment is in.',
   titleReview: 'Thanks — your order is in.',
@@ -189,7 +210,7 @@ const c = nl ? {
   guidePdf: 'Photo guide as pdf',
   extraH: 'More angles, a closer match',
   extraB: 'The more we have, the more accurately we match fit, colour and detail first time. Extra close-ups of the fabric and a worn shot — free to add.',
-  extraCta: 'Send extra photos on WhatsApp',
+  extraCta: 'Add extra photos in VISUAILS Studio',
   sourceQ: 'One quick thing — how did you find us?',
   cancelP1: `Our records show a test sample already went out to your company. There is one per business, so this second request has been cancelled — and the amount you paid is on its way back to the account you paid from. That usually takes a few working days.`,
   cancelP2: 'If that does not sound right — a colleague ordered without telling you, or the first sample never arrived — reply to the confirmation email and we will sort it out by hand.',
@@ -242,7 +263,16 @@ const bronnen = nl
         </div>
 
         <div class="ty-now ty-hide-when-cancelled">
-          <h2 class="hoog hoog-3">{c.nowH}</h2>
+          {/* ── DE STAND VAN DE BETALING — 8 oktober 2026 (punt 1.05) ───────────
+              Drie standen na de terugkeer van Mollie, en initThankYou() zet hier
+              de zin (en alleen in de derde stand de knop): betaald; bevestigen
+              ("je hoeft niet opnieuw te betalen", ververst zichzelf en stopt na
+              ongeveer een minuut); en pas als Mollie geannuleerd, verlopen of
+              mislukt meldt, "opnieuw betalen". Stond eerst in de kenmerkrij
+              rechts, als <p> in een <dl>; hier leest hij als eerste, direct
+              onder de kop in de balk. */}
+          <div class="ty-status" data-ty-status role="status" aria-live="polite" hidden></div>
+          <h2 class="hoog hoog-3">{VERDER.kop}</h2>
           {/* De betaalregel. Voorwaardelijk geformuleerd, want het contactformulier,
               de checklist en de video-aanvraag landen hier ook en die hebben geen
               betaallink. Geen zijstreep: een gekleurde rand van 3px links is
@@ -252,7 +282,16 @@ const bronnen = nl
               zet hem aan bij ?pay=. Zonder link (contactformulier, checklist,
               terugkeer van Mollie) stond hier een vraag zonder antwoord. */}
           <p class="ty-pay" data-ty-payq hidden><strong>{c.payQ}</strong> {c.payA}</p>
-          <p class="lopend" data-ty-flow data-ty-flow-request={c.flowRequest} data-ty-flow-review={c.flowReview} data-ty-flow-contact={c.flowContact} data-ty-flow-model={c.flowModel}>{c.flow}</p>
+          {/* De lopende zin staat er alleen nog voor wie geen bestelling plaatste
+              (aanvraag, bericht, merkmodel) of bij wie iets anders eerst moet
+              (btw-controle, niet betaald). Bij een bestelling zegt het blok
+              hieronder het al, in drie regels. */}
+          <p class="lopend" data-ty-flow data-ty-flow-request={c.flowRequest} data-ty-flow-review={c.flowReview} data-ty-flow-contact={c.flowContact} data-ty-flow-model={c.flowModel} hidden>{c.flow}</p>
+          <ol class="ty-verder" data-ty-verder data-ty-verder-drempel={String(WINDOW_THRESHOLD)}>
+            <li>{VERDER.regels[0]}</li>
+            <li data-ty-verder-lever data-ty-verder-datum={VERDER_ALT.datum} data-ty-verder-datum-volgt={VERDER_ALT.datumVolgt} data-ty-verder-voorrang={VERDER_ALT.voorrang}>{VERDER.regels[1]}</li>
+            <li data-ty-verder-stil data-ty-verder-onbetaald={VERDER_ALT.onbetaald}>{VERDER.regels[2]}</li>
+          </ol>
           <p class="acties ty-act"><a href={`/account?lang=${lang}`} class="knop knop-inkt">{c.cta}</a></p>
           <p class="ty-signin" data-ty-signin>{c.signin}</p>
         </div>
@@ -289,12 +328,12 @@ const bronnen = nl
         </div>
         <div class="ty-row">
           <dt data-ty-timing>{c.sumTiming}</dt>
-          <dd data-ty-timing>{TIMING}</dd>
+          <dd data-ty-timing data-ty-timing-voorrang={voorrangZin(lang)}>{TIMING}</dd>
         </div>
         <div class="ty-row ty-row-ask">
           <dt>{c.askH}</dt>
           <dd>
-            <a href={waHref(nl ? 'Hoi VISUAILS, ik heb net een aanvraag gedaan via de site.' : 'Hi VISUAILS, I just sent a request through the site.')} target="_blank" rel="noopener">{c.wa}</a><br />
+            <a href={waHref(nl ? 'Hoi VISUAILS, ik heb net een aanvraag gedaan via de site.' : 'Hi VISUAILS, I just sent a request through the site.')} target="_blank" rel="noopener">{c.wa}<NieuwTabblad lang={lang} /></a><br />
             <a href="mailto:hello@visuails.com">{c.mail}</a><br />
             <a href={lp('/upload-guidelines')} data-ty-alleen-bestelling>{c.guide}</a><br data-ty-alleen-bestelling />
             {/* Het moment waarop iemand opstaat om de foto's te maken. De
@@ -335,8 +374,11 @@ const bronnen = nl
           <h2 class="hoog hoog-3">{c.extraH}</h2>
           <p class="lopend">{c.extraB}</p>
         </div>
-        <a href={waHref(nl ? 'Hoi VISUAILS, ik wil extra foto’s sturen voor mijn bestelling.' : 'Hi VISUAILS, I’d like to send extra photos for my order.')}
-           class="knop knop-lijn" target="_blank" rel="noopener" data-track="ty-extra-photos">{c.extraCta}</a>
+        {/* Naar Studio en niet meer naar WhatsApp (punt 2.05, V31-3 = a): daar
+            staat per product welk vak nog leeg is, en een foto komt meteen in
+            het goede vak. Zonder account logt de klant in met de code uit zijn
+            mail. */}
+        <a href="/account/orders" class="knop knop-lijn" data-track="ty-extra-photos">{c.extraCta}</a>
       </div>
       <div class="source-ask" data-source-ask>
         <span class="source-q">{c.sourceQ}</span>
@@ -353,7 +395,6 @@ const bronnen = nl
         bedankpagina die zonder opslag opent, is een bedankpagina. */}
     <p class="ty-plan" data-ty-plan data-ty-plan-min={String(UPGRADE_TRIGGER_PRODUCTS)} hidden>
       <b>{PLAN_REGEL.h}</b>
-      <span data-ty-plan-compare hidden>{PLAN_REGEL.compare}</span>
       <span data-ty-plan-compare-ls hidden>{PLAN_REGEL.compareLs}</span>
       <span data-ty-plan-steady hidden>{PLAN_REGEL.steady}</span>
       <a class="ty-plan-a" href={lp('/plans')}>{PLAN_REGEL.cta}</a>
@@ -433,6 +474,31 @@ const bronnen = nl
   }
   .ty-pay strong { color: var(--inkt); font-weight: 600; }
   .ty-act { margin: 1.4rem 0 0; }
+  /* ── ZO GAAT HET VERDER ──────────────────────────────────────────────────
+     Een genummerde lijst in de lettergrootte van de lopende tekst: drie stappen
+     in de volgorde waarin ze gebeuren. Het nummer in mono, zoals de etiketten
+     op deze pagina, en zonder kleur: dit is uitleg, geen actie. */
+  .ty-verder {
+    margin: 0 0 1.8rem; padding: 0; list-style: none; counter-reset: verder;
+    display: grid; gap: .75rem; max-width: 40em;
+  }
+  .ty-verder li {
+    counter-increment: verder;
+    display: grid; grid-template-columns: 1.8em minmax(0, 1fr); align-items: baseline;
+    color: var(--inkt-2); line-height: 1.6; text-wrap: pretty;
+  }
+  .ty-verder li::before {
+    content: counter(verder) '.';
+    font-family: var(--mono2); font-stretch: 82%; font-size: .85rem; color: var(--inkt);
+  }
+  /* De stand van de betaling: een eigen vlak, zoals de betaalvraag, zodat hij
+     boven de drie regels als éérste gelezen wordt. */
+  .ty-status {
+    margin: 0 0 1.2rem; padding: 1rem 1.15rem; max-width: 40em;
+    background: var(--wit); border: 1px solid var(--lijn);
+    border-radius: calc(var(--ronding) - 14px);
+  }
+  .ty-status[hidden] { display: none; }
   .ty-signin {
     margin: 1rem 0 0; max-width: 42em;
     font-family: var(--mono2); font-size: .75rem; font-stretch: 82%;
@@ -478,6 +544,9 @@ const bronnen = nl
   :global(.s22 .ty-pay-cta span) { font-size: .92rem; line-height: 1.6; color: var(--inkt-2); }
   /* De bevestiging na een geslaagde betaling — zelfde herkomst, zelfde reden. */
   :global(.s22 .ty-paid-note) { margin: 1rem 0 0; font-size: .92rem; line-height: 1.6; color: var(--inkt-2); }
+  /* In het standvlak (punt 1.05) begint de eerste regel bovenaan het vlak. */
+  :global(.s22 .ty-status > :first-child) { margin-top: 0; }
+  :global(.s22 .ty-status .ty-paid-note) { color: var(--inkt); }
 
   /* ── DE TWEE GUNSTEN ──────────────────────────────────────────────────── */
   .ty-extra { display: grid; gap: 1.3rem; justify-items: start; }

@@ -1,9 +1,11 @@
 ---
+// VISUAILS — /nl/faq: in de hal sinds 13 oktober 2026 (afvinklijst 14, alles doen). De pagina
+// staat in FaqHal.astro; de vorige (FaqPage.astro) staat op de opruimlijst.
 // VISUAILS — /nl/faq (Nederlands). De pagina-inhoud staat in FaqPage.astro,
 // zodat /faq en /nl/faq niet uit elkaar kunnen lopen; alleen de meta verschilt
 // hier.
 import Layout from '../../layouts/Layout.astro';
-import FaqPage from '../../components/FaqPage.astro';
+import FaqHal from '../../components/FaqHal.astro';
 import { euro, ladderRate, ladderFloor, LADDER, vatLabel } from '../../data/pricing.js';
 
 // De band en de pakketprijs zijn samen met het pakket verdwenen. Wat ervoor in
@@ -15,6 +17,6 @@ const description =
   `correcties, rechten en betaling — helder beantwoord.`;
 ---
 
-<Layout title="Veelgestelde vragen — VISUAILS" description={description}>
-  <FaqPage lang="nl" />
+<Layout huid="hal" title="Veelgestelde vragen — VISUAILS" description={description}>
+  <FaqHal lang="nl" />
 </Layout>

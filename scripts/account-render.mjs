@@ -180,7 +180,7 @@ const SUBSCRIPTION = {
   id: 4, ref: 'SUB-4K2P-9XT', customer_id: 7,
   plan: MAAT ? 'maat' : 'studio', term: MAAT ? 'monthly' : 'yearly',
   amount_cents: MAAT ? 85500 : null,
-  slots_json: MAAT ? '{"catalog":6,"complete":3,"video-motion":2}' : null,
+  slots_json: MAAT ? '{"catalog":6,"lifestyle":3,"video-motion":2}' : null,
   status: 'active', window_day: 8,
   mollie_customer_id: 'cst_voorbeeld', mollie_mandate_id: 'mdt_voorbeeld', mollie_subscription_id: 'sub_voorbeeld',
   started_at: '2026-05-08', cancelled_at: null, cancel_reason: null,
@@ -215,8 +215,8 @@ const SUB_MONTHS = MAAT ? [
    nog geen gewicht in de agenda heeft (video) en dus geen dag kan krijgen. */
 const _dag = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
 const QUEUE = [
-  { id: 21, position: 0, name: 'Winterjas, zwart', note: 'graag op straat, niet in de studio', upload_batch: 'b-21', kind: 'complete', locked_at: '2026-08-14 09:12', created_at: '2026-08-14', window_start: _dag(4), window_end: _dag(5), asap: 0 },
-  { id: 22, position: 1, name: 'Wollen sjaal — drie kleuren', note: null, upload_batch: 'b-22', kind: 'complete', locked_at: null, created_at: '2026-08-14', window_start: null, window_end: null, asap: 1 },
+  { id: 21, position: 0, name: 'Winterjas, zwart', note: 'graag op straat, niet in de studio', upload_batch: 'b-21', kind: 'catalog', locked_at: '2026-08-14 09:12', created_at: '2026-08-14', window_start: _dag(4), window_end: _dag(5), asap: 0 },
+  { id: 22, position: 1, name: 'Wollen sjaal — drie kleuren', note: null, upload_batch: 'b-22', kind: 'catalog', locked_at: null, created_at: '2026-08-14', window_start: null, window_end: null, asap: 1 },
   { id: 23, position: 2, name: 'Handschoenen', note: 'detailopname van de naad', upload_batch: null, kind: 'video-motion', locked_at: null, created_at: '2026-08-15', window_start: null, window_end: null, asap: 1 },
 ];
 
@@ -231,11 +231,11 @@ const _vorige = new Date(Date.UTC(_nu.getUTCFullYear(), _nu.getUTCMonth() - 1, 1
 const SUB_SLOTS = MAAT ? [
   { month: _vorige,    kind: 'catalog',      granted: 6,  used: 4 },
   { month: _dezeMaand, kind: 'catalog',      granted: 6,  used: 2 },
-  { month: _dezeMaand, kind: 'complete',     granted: 3,  used: 1 },
+  { month: _dezeMaand, kind: 'catalog',      granted: 3,  used: 1 },
   { month: _dezeMaand, kind: 'video-motion', granted: 2,  used: 0 },
 ] : [
-  { month: _vorige,    kind: 'complete',     granted: 12, used: 9 },
-  { month: _dezeMaand, kind: 'complete',     granted: 12, used: 2 },
+  { month: _vorige,    kind: 'catalog',      granted: 12, used: 9 },
+  { month: _dezeMaand, kind: 'catalog',      granted: 12, used: 2 },
   { month: _dezeMaand, kind: 'video-motion', granted: 2,  used: 1 },
 ];
 

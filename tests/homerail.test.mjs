@@ -146,7 +146,13 @@ console.log('\ngeen rij op de homepage is verticaal scrollbaar');
          beelden van één set) en `.cast` (de gezichten): dezelfde constructie,
          dezelfde eis. Wat hier getoetst wordt is niet veranderd — een rij mag
          nooit verticaal scrollen en geen kaart mag onbereikbaar zijn. */
-      for (const sel of ['.s22 .kaarten', '.s22 .rij', '.s22 .cast']) {
+      /* ── EN WEER MEE MET DE HAL — 12 oktober 2026 ─────────────────────────
+         De voorpagina is nu VoorpaginaHal.astro. Zijn rijen: `.h-cf` (de drie
+         diensten; op een telefoon een veegrij), `.h-strook` (de looks) en
+         `.h-koppen` (de gezichten). Dezelfde eis als altijd. De oude namen
+         blijven in de lijst staan: komt die opbouw ooit terug, dan geldt het
+         daar ook. */
+      for (const sel of ['.h-pagina .h-cf', '.h-pagina .h-strook', '.h-pagina .h-koppen', '.s22 .kaarten', '.s22 .rij', '.s22 .cast']) {
         const el = document.querySelector(sel);
         if (!el) continue;
         uit[sel] = { v: el.scrollHeight - el.clientHeight, h: el.scrollWidth - el.clientWidth };
@@ -171,8 +177,11 @@ console.log('\ngeen rij op de homepage is verticaal scrollbaar');
        twee manieren waar — hij past, of je kunt ernaartoe schuiven — en de
        enige verboden derde is dat hij is afgeknipt. Dat wordt hieronder
        gemeten aan de kaarten zelf en niet meer aan de scrollbalk. */
+    /* Sinds 12 oktober 2026 is de rij met kaarten op de voorpagina de strook
+       met looks (`.h-strook`, VoorpaginaHal.astro): die schuift op elk scherm
+       zijwaarts, met pijlen erboven. */
     const kaarten = await page.evaluate(() => {
-      const rail = document.querySelector('.s22 .kaarten');
+      const rail = document.querySelector('.h-pagina .h-strook') || document.querySelector('.s22 .kaarten');
       if (!rail) return null;
       const r = rail.getBoundingClientRect();
       const items = [...rail.children].map((el) => el.getBoundingClientRect());
@@ -195,7 +204,7 @@ console.log('\ngeen rij op de homepage is verticaal scrollbaar');
       check(`${naam} — en geen enkele is afgeknipt of onbereikbaar`, kaarten.onbereikbaar, 0);
       check(`${naam} — schuiven of passen, nooit iets ertussenin`,
         kaarten.schuift > 100 || kaarten.schuift === 0, true);
-    } else check(`${naam} — de dienstwissel staat er in plaats van de rij`, await page.evaluate(() => !!document.querySelector('.s22 .dd-tabs')), true);
+    } else check(`${naam} — er is een rij met kaarten om te meten`, false, true);
     await ctx.close();
   }
 }

@@ -189,11 +189,12 @@ console.log('\n4 · het merkmodel is één bedrag, en blijft onder een bestellin
 {
   ok('er is geen credit meer', AMOUNT.brandModelCredit === undefined, true);
   ok('en het bedrag is één getal', typeof AMOUNT.brandModel, 'number');
-  /* Tien complete producten is de maat: dat is de drempel waarop een bestelling
-     een leverdatum krijgt, en dus de kleinste bestelling waar een merkmodel
-     realistisch bij hoort. */
-  const tien = ladderTotal('complete', WINDOW_THRESHOLD);
-  ok('het merkmodel kost minder dan een bestelling van tien complete producten',
+  /* Tien producten is de maat: dat is de drempel waarop een bestelling een
+     leverdatum krijgt, en dus de kleinste bestelling waar een merkmodel
+     realistisch bij hoort. Tien lifestyleproducten sinds 14 oktober 2026 (tot dan
+     tien complete; compleet bestaat niet meer), zoals in pricing.js. */
+  const tien = ladderTotal('lifestyle', WINDOW_THRESHOLD);
+  ok('het merkmodel kost minder dan een bestelling van tien lifestyleproducten',
     AMOUNT.brandModel < tien, true);
   ok('  en dat is een echte vergelijking, geen nul', tien > 0, true);
 }
@@ -407,7 +408,7 @@ console.log('\nelk bedrag van één euro komt uit pricing.js');
     'ze mogen gelijk ZIJN, maar het moeten twee namen blijven');
 
   for (const pad of ['src/lib/subscribe.js', 'src/components/order/PlanPicker.astro',
-                     'src/components/PlansPage.astro', 'src/components/ThankYouPage.astro']) {
+                     'src/components/PlansHal.astro', 'src/components/ThankYouPage.astro']) {
     const code = zonderCommentaar(lees(pad));
     ok(`${pad.replace('src/', '')} typt geen los eurobedrag`, /€\s?1\b(?!\d)/.test(code), false);
   }

@@ -353,7 +353,7 @@ function productNumber(key) {
  */
 export function deliveryEntries(files, lang = 'nl', opts = {}) {
   /* Per dienst (ronde 9, F17): met `opts.service` heten de lifestylebeelden
-     1-beeld-1 … 3-beeld-3 en krijgt een bijbestelde hoek zijn eigen naam en een
+     model-voorkant … detail (een oude bestelling: 1-beeld-1 … 3-beeld-3) en krijgt een bijbestelde hoek zijn eigen naam en een
      plek ná de vier vaste. Zonder `service` blijft alles zoals het was. */
   const taal = lang === 'en' ? 'en' : 'nl';
   const vakken = opts.service ? leverVakken(opts.service, opts.details) : null;
@@ -689,6 +689,11 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
       'made them in, not shuffled alphabetically.',
     ];
   const meerFormaten = s.formats.length > 1;
+  /* k401 (11 oktober 2026): jpg is de standaard; png en webp vraag je in Studio
+     los aan. Eén zin, alleen als ze er niet allebei al in zitten en alleen waar
+     Studio de knoppen toont (niet bij video of de proef; formaatKan()). */
+  const andereFormaten = !(s.formats.includes('png') && s.formats.includes('webp'))
+    && !['video', 'test-sample'].includes(String(order?.service || ''));
   /* In een platte map staat het nummer niet voor de opname (…-p1-voorkant.jpg). */
   const namenHier = plat ? shotWoorden.split(', ').map((w) => w.replace(/^\d+-/, '')).join(', ') : shotWoorden;
 
@@ -718,6 +723,11 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
       ...(meerFormaten ? [
         'Het is steeds hetzelfde beeld. Je verliest niets door de kleinste te',
         'nemen — dat is precies waarvoor hij er is.',
+      ] : []),
+      ...(andereFormaten ? [
+        ...(meerFormaten ? [''] : []),
+        'Ook PNG of WebP nodig? Vraag het aan bij deze bestelling in Studio,',
+        'op visuails.com/account.',
       ] : []),
       '',
       ...kop("3 · ALLE JPG'S IN ÉÉN KEER"),
@@ -767,13 +777,16 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
       'wat je ermee mag, en dat is: vrijwel alles, zonder limiet en zonder ons',
       'te vermelden.',
       '',
-      'Ze zijn met AI gemaakt. In elk bestand staat dat ook als machineleesbaar',
+      /* kiptc (11 oktober 2026): ook een mp4 krijgt de tag in /admin. */
+      `Ze zijn met AI gemaakt. In de ${order?.service === 'video' ? "video's" : "foto's"} staat dat ook als machineleesbaar`,
       'gegeven (het IPTC-veld "Digital Source Type"), zodat het meereist als je',
-      'ze doorstuurt. Publiceer je ze, dan hoort er een vermelding bij — de EU',
-      'AI Act vraagt dat van wie publiceert, dus van jou. Op',
+      'ze doorstuurt; mist het ergens, laat het ons weten. Publiceer je ze, zet',
+      'er dan zichtbaar een AI-vermelding bij, zoals de EU AI Act vraagt; zo is',
+      'het afgesproken in paragraaf 11 van de voorwaarden. Op',
       'visuails.com/nl/ai-act staat een zin die je kunt overnemen.',
       '',
-      `Vragen? ${CONTACT} — je krijgt een persoonlijk antwoord.`,
+      `Nog een vraag, of klopt er iets niet? Mail ${CONTACT};`,
+      'ook na de levering zoeken we het met je uit.',
       '',
     ]);
   }
@@ -803,6 +816,11 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
     ...(meerFormaten ? [
       'It is the same image each time. You lose nothing by taking the smallest —',
       'that is exactly what it is there for.',
+    ] : []),
+    ...(andereFormaten ? [
+      ...(meerFormaten ? [''] : []),
+      'Need PNG or WebP as well? Request it on this order in Studio, at',
+      'visuails.com/account.',
     ] : []),
     '',
     ...kop('3 · ALL THE JPGS AT ONCE'),
@@ -850,13 +868,15 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
     'what you may do with them, and that is: very nearly anything, with no',
     'limit and without crediting us.',
     '',
-    'They were made with AI. Every file carries that as machine-readable',
+    `They were made with AI. The ${order?.service === 'video' ? 'videos' : 'photos'} carry that as machine-readable`,
     'data too (the IPTC "Digital Source Type" field), so it travels with the',
-    'file when you pass it on. If you publish them, a disclosure belongs',
-    'with them — the EU AI Act asks that of whoever publishes, so of you.',
+    'file when you pass it on; if it is missing anywhere, tell us. If you',
+    'publish them, place a visible AI disclosure with them, as the EU AI Act',
+    'asks; that is how section 11 of the terms arranges it.',
     'visuails.com/ai-act has a sentence you can use.',
     '',
-    `Questions? ${CONTACT} — you get a personal reply.`,
+    `A question, or something not right? Email ${CONTACT};`,
+    'we sort it out with you after delivery too.',
     '',
   ]);
 }

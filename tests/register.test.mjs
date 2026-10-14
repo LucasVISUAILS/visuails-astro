@@ -49,8 +49,8 @@ const read = (p) => readFileSync(new URL('../' + p, import.meta.url), 'utf8');
 
 console.log('\nVISUAILS — het verwerkingsregister en de datalekprocedure\n');
 
-const REG = read('AVG-VERWERKINGSREGISTER.md');
-const LEK = read('AVG-DATALEKPROCEDURE.md');
+const REG = read('docs/AVG-VERWERKINGSREGISTER.md');
+const LEK = read('docs/AVG-DATALEKPROCEDURE.md');
 
 console.log('beide documenten bestaan en staan in de repository');
 {
@@ -101,19 +101,26 @@ console.log('\nde bewaartermijnen staan niet ingetypt');
 
 console.log('\nde lijst subverwerkers is dezelfde als in de verwerkersovereenkomst');
 {
-  /* Uit de SUBS-array van de overeenkomst en niet uit de lopende tekst: de namen
-     staan daar in de frontmatter. Zie de noot bij dezelfde aanpak in
-     tests/legal.test.mjs. */
+  /* ── UIT ÉÉN BRON SINDS 8 OKTOBER 2026 (o08, o09) ─────────────────────────
+     De namen stonden in een SUBS-array in de frontmatter van de overeenkomst, en
+     deze regel telde er vier. Nu leest de overeenkomst (en het privacybeleid)
+     src/data/subverwerkers.js, met WhatsApp (Meta) en de modelmaker erbij. De
+     toets kijkt dus naar die bron, en controleert daarnaast dat de overeenkomst
+     hem ook echt leest — anders bewijst een gelijke lijst hier niets over wat de
+     klant te zien krijgt. */
+  const { subverwerkers } = await import('../src/data/subverwerkers.js');
   const DPA = read('src/pages/nl/data-processing-agreement.astro');
   const blok = (() => {
     const start = DPA.indexOf('const SUBS');
-    const einde = DPA.indexOf('];', start);
+    const einde = DPA.indexOf(';', start);
     return start === -1 || einde === -1 ? '' : DPA.slice(start, einde);
   })();
-  ok('de SUBS-array is gevonden', blok.length > 50, true, `${blok.length} tekens`);
+  ok('de overeenkomst leest de lijst uit subverwerkers.js',
+    /const SUBS = subverwerkers\('nl'\)/.test(blok) && /from '..\/..\/data\/subverwerkers\.js'/.test(DPA), true, blok);
 
-  const namen = [...blok.matchAll(/naam: '([^']+)'/g)].map((m) => m[1]);
-  ok('er staan vier subverwerkers in de overeenkomst', namen.length, 4, namen.join(' | '));
+  const namen = subverwerkers('nl').map((s) => s.naam);
+  /* Zeven sinds 11 oktober 2026: ByteDance (BytePlus), via Magnific (ko08 = a). */
+  ok('er staan zeven subverwerkers in de lijst', namen.length, 7, namen.join(' | '));
 
   /*
    * ── IN DE JUISTE TABEL, EN NIET ERGENS IN HET DOCUMENT ─────────────────────
@@ -147,7 +154,7 @@ console.log('\nde lijst subverwerkers is dezelfde als in de verwerkersovereenkom
      zijn. Het register moet dat onderscheid maken en niet één lijst zijn. */
   ok('het register noemt Mollie apart', /Mollie B\.V\./.test(REG), true);
   ok('en Mollie staat niet in de subverwerkerslijst van de overeenkomst',
-    /Mollie/.test(blok), false);
+    namen.some((n) => /Mollie/.test(n)), false);
 
   /* Adobe en Blackmagic staan in geen van beide, want de nabewerking is lokaal.
      Het register legt dat uit in plaats van het weg te laten -- een lezer die zich

@@ -1,0 +1,22 @@
+-- ══════════════════════════════════════════════════════════════════════════════
+-- 0053 · EEN LAND BUITEN DE EU, DOOR JOU NAGEKEKEN
+-- ══════════════════════════════════════════════════════════════════════════════
+--
+-- 8 oktober 2026, afvinklijst o16 (Lucas: "doen").
+--
+-- Een klant die een land BUITEN de EU kiest (0% btw, buiten de heffing) terwijl
+-- zijn ip-adres in de EU ligt, gaat sinds vandaag eerst langs jou. Bij een
+-- bestelling is dat de bestaande btw-lijst in /admin. Een abonnement heeft geen
+-- btw-lijst: daar gaat de klant niet naar Mollie, krijg jij een mail, en zet je
+-- na het nakijken op de klantpagina in /admin "Land goedkeuren". Die keuze staat
+-- in deze kolom, als de landcode die je goedkeurde (bv. 'US'). Daarna kan de
+-- klant het abonnement gewoon afsluiten, ook vanaf een ip in de EU.
+--
+-- Geldt alleen voor DAT land: kiest de klant later een ander land, dan vraagt de
+-- site opnieuw om jouw blik. NULL = niet nagekeken.
+--
+-- Alleen toevoegend. Zolang deze migratie niet gedraaid is, wacht zo'n
+-- abonnement gewoon op jou (de site leest de kolom met een terugval op "niet
+-- nagekeken"), en staat de knop in /admin er niet.
+
+ALTER TABLE customers ADD COLUMN btw_land_akkoord TEXT;

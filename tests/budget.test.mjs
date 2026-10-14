@@ -27,7 +27,7 @@ import {
   budgetFor, budgetBuys, spendTotal, budgetTable, SETUP_FEES, BUDGET_WEEK_SHARE,
 } from '../src/data/budget.js';
 import { PLAN_IDS, PLAN_SERVICE, productsFor, clipsFor, hasBrandModel } from '../src/data/plans.js';
-import { PLAN_AMOUNT, AMOUNT, ladderRate, KIND_PUNTEN, puntenVoor } from '../src/data/pricing.js';
+import { PLAN_AMOUNT, AMOUNT, ladderRate, KIND_PUNTEN, puntenVoor, PLAN_CREDITS, SERVICE_CREDITS, planSaving } from '../src/data/pricing.js';
 
 let goed = 0;
 let totaal = 0;
@@ -40,33 +40,34 @@ function ok(naam, kreeg, verwacht) {
 
 console.log('\nVISUAILS — het maandbudget\n');
 
-console.log('het budget is de productiewaarde van wat het plan belooft');
+console.log('het budget is de productiewaarde van wat het plan belooft (in credits sinds 14 oktober 2026)');
 {
+  ok('de eigen dienst van een abonnement is catalog; compleet bestaat niet meer', PLAN_SERVICE, 'catalog');
   for (const id of PLAN_IDS) {
-    const n = productsFor(id);
-    const verwacht = n * ladderRate(PLAN_SERVICE, n) + (clipsFor(id) || 0) * AMOUNT.video;
-    ok(`${id}: budget = ${n} × het tarief van zijn eigen trede`, planBudget(id), verwacht);
+    const n = Math.floor(PLAN_CREDITS[id] / SERVICE_CREDITS.catalog);
+    ok(`${id}: budget = ${n} catalogsets × het tarief van zijn eigen trede`, planBudget(id), n * ladderRate('catalog', n));
+    /* Dezelfde vergelijking als de prijspagina: als deze uit elkaar lopen, zegt
+       de pagina iets anders dan dit bestand. */
+    ok(`${id}: en dat is wat de prijspagina "los" noemt`, planBudget(id), planSaving(id).onLadder);
   }
-  /* De belofte op de prijskaart. Als deze regel breekt, klopt "twaalf producten
-     per maand" niet meer en is de pagina een leugen geworden. */
   for (const id of PLAN_IDS) {
     const rung = planRung(id);
-    ok(`${id}: het budget koopt precies het beloofde aantal producten`,
-      budgetBuys(planBudget(id) - (clipsFor(id) || 0) * AMOUNT.video, PLAN_SERVICE, rung), productsFor(id));
+    ok(`${id}: het budget koopt precies zoveel catalogsets als de credits`,
+      budgetBuys(planBudget(id), PLAN_SERVICE, rung), planSaving(id).sets);
   }
-  ok('een maand op maat rekent met dezelfde regel', budgetFor(12, 2), planBudget('studio'));
+  ok('een maand op maat rekent met dezelfde regel', budgetFor(30), planBudget('studio'));
   ok('nul producten is nul budget', budgetFor(0), 0);
 }
 
 console.log('\nde trede hoort bij het contract en niet bij de bestelling');
 {
-  ok('starter rekent op de trede van 5', planRung('starter'), 5);
-  ok('brand op die van 30', planRung('brand'), 30);
+  ok('starter rekent op de trede van 11 (45 credits, 4 per catalogset)', planRung('starter'), 11);
+  ok('brand op die van 72 (290 credits)', planRung('brand'), 72);
   /* Zou de trede meebewegen met wat er besteld wordt, dan zou een klant die zijn
      budget aan carrousels uitgeeft op een andere trede belanden en minder
      overhouden dan de pagina beloofde. */
   ok('en de trede verandert niet door wat er gekozen wordt',
-    menuRate('catalog', planRung('brand')), ladderRate('catalog', 30));
+    menuRate('catalog', planRung('brand')), ladderRate('catalog', 72));
   /* En een plan dat niet bestaat heeft geen trede. Zou hij hier terugvallen op de
      laagste, dan kreeg een gesleutelde plan-id stilletjes de DUURSTE tarieven en
      ging er nergens iets stuk — de vorm waarin een prijsfout zich verstopt. */
@@ -84,8 +85,7 @@ console.log('\ngeen enkele verdeling koopt meer werk dan het plan aankan');
   for (const id of PLAN_IDS) {
     const rung = planRung(id);
     const budget = planBudget(id);
-    const eigenPunten = puntenVoor(PLAN_SERVICE, productsFor(id))
-      + (clipsFor(id) || 0) * (KIND_PUNTEN['video-motion'] || 0);
+    const eigenPunten = puntenVoor(PLAN_SERVICE, rung);
     for (const item of BUDGET_MENU.filter((i) => i.kind)) {
       const aantal = budgetBuys(budget, item.id, rung);
       const { punten } = spendTotal({ [item.id]: aantal }, rung);
@@ -121,7 +121,7 @@ console.log('\nwaarom de eenheid de euro is en geen credit');
   const creditsVoorClip = (rung) => Math.round(10 * AMOUNT.video / ladderRate('catalog', rung));
   const opStarter = creditsVoorClip(planRung('starter'));
   const opBrand = creditsVoorClip(planRung('brand'));
-  ok('een clip zou op Starter 11 credits kosten', opStarter, 11);
+  ok('een clip zou op Starter 14 credits kosten', opStarter, 14);
   ok('en op Brand 18, terwijl hij in euro’s niets verandert', opBrand, 18);
   ok('dezelfde clip kost op elk plan hetzelfde bedrag',
     PLAN_IDS.map((id) => menuRate('video', planRung(id))), PLAN_IDS.map(() => AMOUNT.video));
@@ -154,7 +154,7 @@ console.log('\nde optelsom van een maand');
   const som = spendTotal(maand, rung);
   ok('het bedrag is de som van de regels',
     som.euro, 6 * menuRate('catalog', rung) + 4 * menuRate('lifestyle', rung) + 2 * AMOUNT.video);
-  ok('en de beelden tellen mee', som.beelden, 6 * 4 + 4 * 3);
+  ok('en de beelden tellen mee (lifestyle vier sinds 14 oktober 2026)', som.beelden, 6 * 4 + 4 * 4);
   ok('er staan drie regels in', som.regels.length, 3);
   ok('en die maand past in het budget van Studio', som.euro <= planBudget('studio'), true);
 }
@@ -172,18 +172,15 @@ console.log('\nwat buiten het budget valt, valt er één keer buiten');
 
 console.log('\nde plannen beloven alle drie ongeveer evenveel');
 {
-  const korting = (id) => {
-    const waarde = planBudget(id) + (hasBrandModel(id, 'monthly') ? AMOUNT.brandModel : 0);
-    return 1 - PLAN_AMOUNT[id] / waarde;
-  };
+  /* Zonder het merkmodel erbij, zoals de prijspagina (planSaving) rekent. */
+  const korting = (id) => 1 - PLAN_AMOUNT[id] / planBudget(id);
   const alle = PLAN_IDS.map(korting);
   for (const [i, id] of PLAN_IDS.entries()) {
     ok(`${id} geeft korting op de losse prijs`, alle[i] > 0, true);
   }
-  /* Deze regel is de reden dat ik Lucas eerst verkeerd heb geadviseerd: met de
-     CATALOGprijs gerekend leek Brand er ver uit te lopen, en met de prijs van de
-     dienst die een abonnement echt levert (complete) plus het merkmodel dat erbij
-     zit, ligt hij binnen vier punten van de andere twee. De proef legt dat vast. */
+  /* In credits gerekend: 30, 32 en 40 procent. Hier stond de rekensom met
+     "complete producten" plus het merkmodel; die dienst bestaat sinds 14 oktober
+     2026 niet meer. */
   ok('en de drie liggen binnen vijftien punten van elkaar',
     Math.max(...alle) - Math.min(...alle) < 0.15, true);
 }

@@ -262,5 +262,53 @@ console.log('\neen gewone nacht');
   ok('de rij staat er nog', db.prepare('SELECT COUNT(*) AS n FROM files').get().n, 1);
 }
 
+/* ══ GEANNULEERD BLIJFT NIET VOOR ALTIJD STAAN — 8 oktober 2026 ═══════════
+ * Een geannuleerde of vervallen bestelling sluit nooit, dus het bronmateriaal
+ * had geen termijn. Nu: UPLOAD_DAYS na de annulering (of na het plaatsen als die
+ * datum ontbreekt), behalve als een andere bestelling naar hetzelfde bestand wijst. */
+console.log('\ngeannuleerde bestellingen');
+{
+  const db = fresh();
+  const b = bucket();
+
+  const oudGeannuleerd = addOrder(db, { status: 'cancelled' });
+  db.prepare("UPDATE orders SET cancelled_at = datetime('now','-100 days') WHERE id = ?").run(oudGeannuleerd);
+  addFile(db, oudGeannuleerd, { r2_key: b.seed('intake/geannuleerd/a.jpg') });
+
+  const zonderDatum = addOrder(db, { status: 'cancelled' });
+  db.prepare("UPDATE orders SET created_at = datetime('now','-120 days') WHERE id = ?").run(zonderDatum);
+  addFile(db, zonderDatum, { r2_key: b.seed('intake/vervallen/b.jpg') });
+
+  const recentGeannuleerd = addOrder(db, { status: 'cancelled' });
+  db.prepare("UPDATE orders SET cancelled_at = datetime('now','-5 days') WHERE id = ?").run(recentGeannuleerd);
+  addFile(db, recentGeannuleerd, { r2_key: b.seed('intake/recent/c.jpg') });
+
+  const gedeeld = addOrder(db, { status: 'cancelled' });
+  db.prepare("UPDATE orders SET cancelled_at = datetime('now','-100 days') WHERE id = ?").run(gedeeld);
+  addFile(db, gedeeld, { r2_key: b.seed('intake/gedeeld/d.jpg') });
+  const nieuw = addOrder(db, { status: 'in_production' });
+  addFile(db, nieuw, { r2_key: 'intake/gedeeld/d.jpg' });
+
+  const lopend = addOrder(db, { status: 'received' });
+  db.prepare("UPDATE orders SET created_at = datetime('now','-200 days') WHERE id = ?").run(lopend);
+  addFile(db, lopend, { r2_key: b.seed('intake/lopend/e.jpg') });
+
+  /* Een abonnementsbestelling die geannuleerd werd: haar item staat weer op de
+     lijst van de klant, met dezelfde batch. Die foto's moeten blijven. */
+  const plan = addOrder(db, { status: 'cancelled' });
+  db.prepare("UPDATE orders SET cancelled_at = datetime('now','-100 days') WHERE id = ?").run(plan);
+  addFile(db, plan, { r2_key: b.seed('intake/BATCHabc123/p1-voor.jpg') });
+  db.prepare("INSERT INTO customers (id, email) VALUES (900, 'abonnee@example.com')").run();
+  db.prepare("INSERT INTO plan_queue (customer_id, name, upload_batch) VALUES (900, 'Hoodie', 'BATCHabc123')").run();
+
+  await tasks.purgeExpiredFiles({ DB: d1(db), UPLOADS: b, PURGE_ENABLED: 'true' });
+  ok('na 90 dagen geannuleerd: weg', b.deleted.includes('intake/geannuleerd/a.jpg'));
+  ok('foto\'s die nog op een abonneelijst staan: blijven', b.deleted.includes('intake/BATCHabc123/p1-voor.jpg'), false);
+  ok('zonder annuleringsdatum telt het plaatsen', b.deleted.includes('intake/vervallen/b.jpg'));
+  ok('vijf dagen geannuleerd: blijft', b.deleted.includes('intake/recent/c.jpg'), false);
+  ok('een bestand dat een andere bestelling gebruikt: blijft', b.deleted.includes('intake/gedeeld/d.jpg'), false);
+  ok('een lopende bestelling wordt niet aangeraakt', b.deleted.includes('intake/lopend/e.jpg'), false);
+}
+
 console.log(`\n${pass}/${pass + fail} passed`);
 if (fail) process.exit(1);

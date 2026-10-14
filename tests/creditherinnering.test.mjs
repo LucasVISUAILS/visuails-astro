@@ -86,12 +86,28 @@ console.log('\nde tip verspilt zo min mogelijk');
 
 console.log('\nde taak staat in de nachtelijke lijst');
 {
-  ok('herinnerCredits() draait mee', /checkPlanQueues, herinnerCredits,/.test(bron), true);
-  ok('op zeven en twee dagen vóór de vervaldatum',
-    /CREDIT_WAARSCHUWING_DAGEN = \[7, 2\]/.test(bron), true);
-  ok('en hij leest de vervaldatum die het dashboard ook toont',
-    /loadSlots\(env, abo\.id, venster, nu\)/.test(bron), true);
-  ok('alleen bij een lopend abonnement', /WHERE s\.status = 'active'/.test(bron), true);
+  /* Niet meer naast checkPlanQueues: die verdwijnt met het weeksysteem (ronde B). */
+  ok('herinnerCredits() draait mee', /\[[^\]]*\bherinnerCredits\b[^\]]*\]\)/.test(bron), true);
+  /* 6.03 (8 oktober 2026): één herinnering, zeven dagen vooraf; die van twee
+     dagen vervalt. */
+  ok('één herinnering: zeven dagen vóór de vervaldatum',
+    /const CREDIT_HERINNERING_DAGEN = 7;/.test(bron), true);
+  ok('  de mail van twee dagen vooraf is weg', /\[7, 2\]/.test(bron), false);
+  ok('en hij leest de vervaldatum uit het creditboek (dezelfde als Studio)',
+    /creditsDieVervallen\(env, \{ dagen: CREDIT_HERINNERING_DAGEN, nu \}\)/.test(bron), true);
+  /* Na pauze of opzegging vervalt alles samen, 3 maanden na de laatste termijn
+     (spaarplafond, 12 oktober 2026, ab-v2 = a) — dus ook die klanten krijgen de
+     herinnering. */
+  const taak = knip('herinnerCredits');
+  ok('niet alleen lopende abonnementen', /status = 'active'/.test(taak), false);
+  ok('de mail verwijst naar bestellen, niet naar de planning',
+    /Planning|planning/.test(knip('mailCreditsVervallen')), false);
+  /* En bij een lopend abonnement één mail vóór de termijn die boven het
+     spaarplafond komt (12 oktober 2026). */
+  ok('de plafondherinnering draait mee, 7 dagen vóór de termijn',
+    /plafondInZicht\(env, \{ dagen: CREDIT_HERINNERING_DAGEN, nu \}\)/.test(taak), true);
+  ok('  met de zin "gebruik er vóór die dag …, anders vallen ze weg"',
+    /gebruik er vóór die dag <strong>\$\{o\.boven\}<\/strong>, anders vallen ze weg/.test(knip('mailPlafondInZicht')), true);
 }
 
 console.log(`\n${goed}/${totaal} geslaagd`);

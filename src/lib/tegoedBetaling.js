@@ -32,7 +32,7 @@ export async function betaalVolledigMetTegoed(env, orderId) {
   const nl = order.lang === 'nl';
   await env.DB.prepare('INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, ?4)')
     .bind(order.id, order.status || 'received',
-      nl ? 'Betaald met je tegoed' : 'Paid with your credit', 'system').run().catch(() => {});
+      nl ? 'Betaald met je tegoed' : 'Paid with your account balance', 'system').run().catch(() => {});
   await env.DB.prepare(
     `INSERT INTO admin_log (admin_id, admin_email, action, order_id, customer_id, detail)
      VALUES (NULL, NULL, 'payment.tegoed', ?1, ?2, ?3)`

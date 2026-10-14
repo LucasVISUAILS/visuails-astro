@@ -8,19 +8,22 @@
 // groepeert, en waarom de oude groepering (naar of er al een kassa achter zit)
 // video liet lijken op iets wat we niet doen.
 import Layout from '../../layouts/Layout.astro';
-import StartPage from '../../components/StartPage.astro';
+// 12 oktober 2026 (afvinklijst 8, alles "doen"): deze pagina staat in de hal (huid="hal");
+// de vorige opmaak staat op _opruimen/LIJST.txt.
+import StartHal from '../../components/StartHal.astro';
 
 /* Onder de 160 tekens — zie de noot in src/pages/start.astro, en daar staat ook
    waarom deze regel op 7 september is herschreven: hij noemde drie van de vier
    deuren. */
+/* 1.01 (8 oktober 2026): de pagina toont nu de looks per dienst. */
 const description =
-  `Beelden voor je productpagina, je feed, allebei tegelijk, of een clip. ` +
-  `Kies waar ze heen moeten \u2014 in het formulier wordt nog niets afgeschreven.`;
+  `Kies een look voor catalog- of lifestylebeelden. ` +
+  `Het bestelformulier opent met die look al gekozen \u2014 er wordt niets afgeschreven tot je betaalt.`;
 ---
 
-<Layout
+<Layout huid="hal"
   title="Start een bestelling — VISUAILS"
   description={description}
 >
-  <StartPage lang="nl" />
+  <StartHal lang="nl" />
 </Layout>

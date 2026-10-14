@@ -37,7 +37,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -258,10 +258,12 @@ console.log('\ngeen enkele redirect-bron is een pagina die de site echt serveert
      slash) omdat _redirects die als losse bronnen ziet. `index.astro` is de map
      zelf; `[param].astro` is dynamisch en heeft geen vast pad. */
   const routes = new Set();
+  const dynamisch = [];
   (function loop(dir, voorvoegsel = '') {
     for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
       if (e.isDirectory()) { loop(path.join(dir, e.name), `${voorvoegsel}/${e.name}`); continue; }
       if (!e.name.endsWith('.astro')) continue;
+      if (e.name === '[slug].astro') { dynamisch.push({ bestand: path.join(dir, e.name), voorvoegsel }); continue; }
       if (e.name.includes('[')) continue;
       const stam = e.name.replace(/\.astro$/, '');
       const pad = stam === 'index' ? (voorvoegsel || '/') : `${voorvoegsel}/${stam}`;
@@ -269,6 +271,26 @@ console.log('\ngeen enkele redirect-bron is een pagina die de site echt serveert
       routes.add(pad.endsWith('/') ? pad : `${pad}/`);
     }
   })(path.join(ROOT, 'src/pages'));
+
+  /* DE LOOKPAGINA'S (12 oktober 2026). Sinds de voorbeelden van catalog en
+     lifestyle doorsturen, wijzen er 301's naar /catalog/classic en
+     /lifestyle/dunes: pagina's die een [slug].astro maakt uit de lookdata. Hun
+     paden staan niet als bestand in src/pages, dus haalt deze toets ze uit
+     dezelfde lijst als getStaticPaths: het data-bestand dat de route
+     importeert, en daarin de lijst waarvan elk item een slug heeft. Zo blijft
+     een 301 naar een look die niet (meer) bestaat een fout. */
+  for (const { bestand, voorvoegsel } of dynamisch) {
+    const bron = fs.readFileSync(bestand, 'utf8');
+    const m = bron.match(/import\s*\{\s*(\w+)\s*\}\s*from\s*'([^']+\/data\/[^']+\.js)'[^\n]*\n(?:[\s\S]*?)getStaticPaths\(\)\s*\{\s*return\s+\1\.map/);
+    if (!m) continue;
+    const data = await import(pathToFileURL(path.resolve(path.dirname(bestand), m[2])).href);
+    for (const item of data[m[1]] || []) {
+      if (!item || !item.slug) continue;
+      routes.add(`${voorvoegsel}/${item.slug}`);
+      routes.add(`${voorvoegsel}/${item.slug}/`);
+    }
+  }
+  ok('de lookpagina\'s tellen mee als route', routes.has('/catalog/classic') && routes.has('/nl/lifestyle/dunes'), true);
 
   ok('er zijn routes gevonden om tegenaan te houden', routes.size > 20, true, routes.size);
   ok('er staan regels in _redirects', regels.length > 0, true, regels.length);

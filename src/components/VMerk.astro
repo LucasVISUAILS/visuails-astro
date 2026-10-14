@@ -1,0 +1,23 @@
+---
+/* VISUAILS — het V-merk in de hal, met dezelfde glitch als het woordmerk.
+   ═══════════════════════════════════════════════════════════════════════════
+
+   14 oktober 2026. Lucas: *"ik wil niet het woordlogo in de topbar links maar
+   het V logo."* Dus draagt de bovenbalk (en de bovenkant van de lade, die over
+   de balk heen schuift) het losse V-merk; het woordmerk staat in de footer.
+   Ze delen nooit een container (scripts/brand-lockup-guard.mjs controleert dat
+   bij elke build).
+
+   Hetzelfde symbool als overal (#markglyph in Layout.astro, niet nagetekend),
+   en dezelfde twee echolagen als Woordmerk.astro: de glitch staat in hal.css op
+   .wm-glitch en werkt dus voor allebei. Bij "minder beweging" staan de lagen uit.
+   De maat zet de aanroeper via `klasse` (hal.css). */
+interface Props { klasse?: string; glitch?: boolean }
+const { klasse = '', glitch = false } = Astro.props as Props;
+const B = 702, H = 813.25;
+---
+<svg class:list={['wm', 'vm', klasse, glitch && 'wm-glitch']} viewBox={`0 0 ${B} ${H}`} aria-hidden="true" focusable="false">
+  {glitch && <use class="wm-echo wm-echo-1" href="#markglyph" width={B} height={H} />}
+  {glitch && <use class="wm-echo wm-echo-2" href="#markglyph" width={B} height={H} />}
+  <use class="wm-vorm" href="#markglyph" width={B} height={H} />
+</svg>

@@ -1,0 +1,86 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — het slotbeeld van een pagina in de hal: de proef van €1.
+ * 12 oktober 2026, afvinklijst 7 (groep 1).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Hetzelfde vlak als sectie 06 van de voorpagina (VoorpaginaHal.astro, .h-proef
+ * in hal.css): het enige donkere vlak van de pagina, diep violet met korrel, de
+ * grote prijs van de proef in Urbanist 300 en de vier beelden die een proef
+ * oplevert. Een pagina kiest alleen de woorden; de vorm, de knop naar
+ * /test-sample (weg voor wie is ingelogd, data-vis-uit) en de knop naar het
+ * abonnement voor een bestaande klant (data-vis-in) staan hier vast.
+ *
+ * Props:
+ *   lang   'en' | 'nl'
+ *   kop    [licht, donker] — de kop vóór de prijs, in twee tonen
+ *   zin    de regel onder de prijs
+ *   alt    { label, href } — de tweede knop (lijn). Een href die met http(s) begint
+ *          (bijvoorbeeld WhatsApp op /about) opent in een nieuw tabblad en zegt dat tegen een
+ *          schermlezer (NieuwTabblad); een #anker blijft op de pagina; de rest
+ *          krijgt de taal van de pagina.
+ *   id     id van de kop (aria-labelledby)
+ *   plan   false = geen abonnementsknop voor een bestaande klant (op /plans is
+ *          de tweede knop dat al)
+ *
+ * ── VOOR WIE AL BESTELDE IETS ANDERS — 14 oktober 2026 ──────────────────────
+ * Afvinklijst 26 (v26-proefblok a) en Lucas' notitie: voor een ingelogde klant
+ * doet "een product voor €1" er niet meer toe en heeft het ook niets met
+ * credits te maken; tekst en foto's moeten helemaal anders. Daarom staat er een
+ * tweede tekstblok in (data-vis-proefklant, hidden), dat interactions.js
+ * (vulProefblok) toont voor een klant met minstens één bestelling:
+ *   met een levering   "Meer producten? Bestel met je look.", de knop uit Studio,
+ *                      en de vier beelden uit die levering (Lucas koos zijn eigen
+ *                      levering boven voorbeeldbeelden)
+ *   nog geen levering  "Meer producten? Start je volgende bestelling."
+ *   met credits        "Je hebt nog 48 credits." als stille regel, geen knop
+ * Een nieuw account (nog nooit besteld) houdt de proef: die mag hij nog doen.
+ * De abonnementsknop (`plan`) staat hier niet meer: dat was "Bestel met je
+ * credits" in een blok over een proef van €1.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+import { TEST_SAMPLE } from '../data/pricing.js';
+import { geleverd } from '../data/voorbeeldset.js';
+import { localizedPath } from '../i18n/ui.js';
+import NieuwTabblad from './NieuwTabblad.astro';
+import { klantTekst } from '../data/klant.js';
+
+interface Props { lang: 'en' | 'nl'; kop: [string, string]; zin: string; alt: { label: string; href: string }; id?: string; label?: string; plan?: boolean; }
+const { lang, kop, zin, alt, id = 'h-proef', label } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+const sample = TEST_SAMPLE[lang];
+const pil = label || (nl ? 'Proef' : 'Trial');
+const k = klantTekst(lang);
+const kb = k.blok;
+const PIJL_R = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/></svg>';
+const extern = /^https?:\/\//.test(alt.href);
+const altHref = extern || alt.href.startsWith('#') ? alt.href : lp(alt.href);
+const PIJL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5l7-7M5.5 4.5h6v6"/></svg>';
+---
+<section class="h-proef h-in" aria-labelledby={id} data-vis-klant="proefblok" data-vis-klant-kop={`${id}-klant`}>
+  <span class="h-korrel" aria-hidden="true"></span>
+  <div class="h-proef-woord" data-vis-proefwoord>
+    <p class="h-pil h-pil-donker"><span>{pil}</span></p>
+    <h2 id={id} class="h-kop h-proef-kop"><span class="l">{kop[0]}</span> <span class="d">{kop[1]}</span> <span class="h-een">{sample.price}</span></h2>
+    <p class="h-proef-zin">{zin}</p>
+    <p class="h-acties">
+      <a class="h-knop h-knop-wit" href={lp('/test-sample')} data-vis-uit>{sample.cta}<span class="o" set:html={PIJL} /></a>
+      {extern
+        ? <a class="h-knop h-knop-lijnwit" href={altHref} target="_blank" rel="noopener">{alt.label}<NieuwTabblad lang={lang} /></a>
+        : <a class="h-knop h-knop-lijnwit" href={altHref}>{alt.label}</a>}
+    </p>
+  </div>
+  <div class="h-proef-woord" data-vis-proefklant hidden>
+    <p class="h-pil h-pil-donker"><span>{kb.pil}</span></p>
+    <h2 id={`${id}-klant`} class="h-kop h-proef-kop"><span class="l">{kb.kopL}</span> <span class="d" data-vis-proefklant-kop data-vis-her={kb.kopHer}>{kb.kopStart}</span></h2>
+    <p class="h-proef-zin" data-vis-proefklant-zin data-vis-her={kb.zinHer}>{kb.zinStart}</p>
+    <p class="h-proef-credits" data-vis-proefklant-credits data-vis-zin={kb.credits} hidden></p>
+    <p class="h-acties">
+      <a class="h-knop h-knop-wit" href={lp('/start')} data-vis-proefklant-knop data-vis-her={k.herbestel}><span data-vis-label>{k.start}</span><span class="o" set:html={PIJL_R} /></a>
+      <a class="h-knop h-knop-lijnwit" href="/account">{k.studio}</a>
+    </p>
+  </div>
+  <ul class="h-vier" role="list" aria-hidden="true">
+    {geleverd(lang).map((b, i) => <li class="h-well" style={`--d:${i}`}><img src={b.src} width={b.w} height={b.h} alt="" loading="lazy" decoding="async" /></li>)}
+  </ul>
+</section>

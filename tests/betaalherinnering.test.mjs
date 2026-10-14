@@ -8,8 +8,10 @@
  *     payment_reminder_at (migratie 0042). Niet voor wat nog op de
  *     btw-beoordeling wacht (die heeft nog geen link), niet voor wat betaald is,
  *     niet voor een aanvraag zonder bedrag.
- *   · releaseExpiredWindows — de klant hoort het als zijn gereserveerde dagen
- *     na zeven dagen onbetaald weer vrijkomen. De bestelling blijft staan.
+ *   · releaseExpiredWindows — gereserveerde dagen komen na zeven dagen
+ *     onbetaald weer vrij. De bestelling blijft staan. Sinds 8 oktober 2026
+ *     (punt 7.07, V21-3 = a) zonder mail: de herinnering van dag 3 noemt de
+ *     datum al, dus de "leverdatum vrijgegeven"-mail is weg.
  *
  * Tegen het echte schema, met een nep-Mollie en een nep-Resend.
  */
@@ -63,7 +65,7 @@ order(5, 'VIS-GOEDGE-005', { review_state: 'approved', reviewed_at: "datetime('n
 order(6, 'VIS-AANVR-0006', { service: 'custom', total_cents: 0, vat_cents: 0 });    // aanvraag zonder bedrag → niets
 order(7, 'VIS-VENSTER-07', { tier: 'attended', product_count: 12, window_start: '2026-09-20', window_end: '2026-09-21', window_expires_at: "datetime('now', '-1 hours')", created_at: "datetime('now', '-8 days')", payment_reminder_at: "datetime('now', '-4 days')" });
 
-console.log('\nVISUAILS — betaalherinnering en vrijgavebericht\n');
+console.log('\nVISUAILS — betaalherinnering en vrijgave\n');
 console.log('1 · de herinnering');
 {
   const regel = await tasks.remindUnpaid(env);
@@ -87,19 +89,16 @@ console.log('1 · de herinnering');
   ok('  en er gaat geen tweede mail uit', mails().length, 2);
 }
 
-console.log('\n2 · het vrijgavebericht');
+console.log('\n2 · de vrijgave, zonder mail (7.07, V21-3)');
 {
   const voor = mails().length;
   const regel = await tasks.releaseExpiredWindows(env);
   ok('de reservering is vrijgegeven', /VIS-VENSTER-07/.test(regel || ''), true);
   ok('  en de dagen zijn van de bestelling af', db.prepare('SELECT window_start, window_expires_at FROM orders WHERE id = 7').get(), { window_start: null, window_expires_at: null });
   ok('  de bestelling staat nog', db.prepare('SELECT status FROM orders WHERE id = 7').get().status, 'received');
-  const m = mails().slice(voor);
-  ok('de klant krijgt één mail', m.length, 1);
-  ok('  met de vrijgave in het onderwerp', /vrijgegeven/.test(m[0]?.subject || ''), true);
-  ok('  en de dagen erin', /20 september 2026/.test(m[0]?.html || ''), true);
-  ok('  en dat de bestelling blijft staan', /blijft gewoon staan/.test(m[0]?.html || ''), true);
-  ok('  de taakregel telt de mail', /1 klant gemaild/.test(regel), true);
+  ok('  de tijdlijn zegt waarom', /vrijgegeven: de betaaltermijn is verstreken/.test(db.prepare('SELECT note FROM order_events WHERE order_id = 7 ORDER BY id DESC').get()?.note || ''), true);
+  ok('de klant krijgt GEEN mail meer (de mail van dag 7 is weg)', mails().slice(voor).length, 0);
+  ok('  en de taakregel telt geen mail', /gemaild/.test(regel), false);
 }
 
 globalThis.fetch = echteFetch;

@@ -1,9 +1,9 @@
 ---
-// VISUAILS — / (English). The page body lives in Voorpagina.astro so that / and
-// /nl cannot drift apart; only the meta differs here. (It said HomePage.astro
-// until that file was deleted — it had been dead since the section-17 rebuild
-// and nothing imported it, but 1,347 lines of stale prices read as live to
-// anyone who opened it.)
+// VISUAILS — / (English). The page body lives in VoorpaginaHal.astro ("the white
+// hall", since 12 October 2026) so that / and /nl cannot drift apart; only the
+// meta differs here. Until that day the body was Voorpagina.astro; Lucas approved
+// the example at /voorbeeld/ and chose to put it live with the next UITROLLEN,
+// before the other pages get their own examples. /voorbeeld/ now 301s here.
 //
 // The description is built from pricing.js rather than typed, for the same
 // reason /pricing's is: a price or a turnaround typed into a <meta> tag is a
@@ -18,7 +18,7 @@
 // either number alone is a different page's price. The band is gone with the
 // package, because every count has a price now.
 import Layout from '../layouts/Layout.astro';
-import Voorpagina from '../components/Voorpagina.astro';
+import VoorpaginaHal from '../components/VoorpaginaHal.astro';
 import { euro, AMOUNT, ladderRate, ladderFloor, LADDER, vatLabel } from '../data/pricing.js';
 
 // Catalog + Lifestyle (`complete`) is no longer sold (ronde 8, 1 oktober 2026):
@@ -38,6 +38,7 @@ const description =
   title="Product visuals for clothing brands, no shoot | VISUAILS"
   description={description}
   ogImage="/img/og-en.png"
+  huid="hal"
 >
-  <Voorpagina lang="en" />
+  <VoorpaginaHal lang="en" uitleg />
 </Layout>

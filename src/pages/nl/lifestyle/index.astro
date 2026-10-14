@@ -7,22 +7,24 @@
 // staffel. De levertijd wijkt daarvoor — dat is een tier-feit dat verderop op
 // de pagina staat en alleen onder WINDOW_THRESHOLD producten geldt.
 import Layout from '../../../layouts/Layout.astro';
-import LifestylePage from '../../../components/LifestylePage.astro';
+// 12 oktober 2026 (afvinklijst 8, alles "doen"): deze pagina staat in de hal (huid="hal");
+// de vorige opmaak staat op _opruimen/LIJST.txt.
+import LifestyleHal from '../../../components/LifestyleHal.astro';
 import { euro, ladderRate, ladderFloor, LADDER, vatLabel } from '../../../data/pricing.js';
 
 const FLOOR_FROM = LADDER.lifestyle[LADDER.lifestyle.length - 1][0];
 
 const description =
-  `Drie foto’s van één product in één gestylede look — een carrousel klaar om ` +
+  `Vier foto’s van één product in één gestylede look — een carrousel klaar om ` +
   `te posten. ${euro(ladderRate('lifestyle', 1), 'nl')} per product, ` +
   `${euro(ladderFloor('lifestyle'), 'nl')} vanaf ${FLOOR_FROM}, ` +
   `${vatLabel('excl', 'nl')}.`;
 ---
 
-<Layout
+<Layout huid="hal"
   title="Lifestylebeelden die je product verkopen | VISUAILS"
   description={description}
-  ogImage="/img/lifestyle-glow-01.webp"
+  ogImage="/img/lifestyle-phone-made-06.webp"
 >
-  <LifestylePage lang="nl" />
+  <LifestyleHal lang="nl" />
 </Layout>

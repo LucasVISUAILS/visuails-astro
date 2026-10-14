@@ -1,0 +1,170 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — /per-product in de hal. 12 oktober 2026, afvinklijst 7 (groep 1).
+ * Voorbeeld op /voorbeeld/per-product/ en /nl/voorbeeld/per-product/; de echte
+ * pagina blijft PerProductPage.astro tot Lucas de groep goedkeurt (v-live = a).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * DEZELFDE INHOUD ALS PerProductPage.astro: de vier vaste opnames uit shots.js,
+ * de hoeken uit angles.js, het tarief uit pricing.js en elk woord uit ANGLE_COPY
+ * (dezelfde bron als de kiezer in het formulier).
+ *
+ * ÉÉN VERSCHIL IN VORM, MET OPZET: de vier die er altijd bij zitten, staan hier
+ * als ECHTE BEELDEN — de afgewerkte voorbeeldset (voorbeeldset.js, dezelfde vier
+ * als stap 3 op de voorpagina, in dezelfde volgorde als shots.js). Deze pagina
+ * gaat over wat je terugkrijgt, en dat laat een beeld beter zien dan een
+ * tekening. De hoeken die je erbij kunt bestellen blijven tekeningen
+ * (AngleSketch): daar bestaat nog geen voorbeeldbeeld van, en een tekening
+ * belooft geen beeld dat we niet hebben.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/hal.css';
+import AngleSketch from './order/AngleSketch.astro';
+import { SHOTS } from '../data/shots.js';
+import { ANGLES, ANGLE_GROUPS, ANGLE_COPY } from '../data/angles.js';
+import { MAX_EXTRA_PER_PRODUCT, extraPhotoRate, euro, vatLabel, CATALOG_IMAGES, levervlakken } from '../data/pricing.js';
+import { geleverd } from '../data/voorbeeldset.js';
+import { localizedPath } from '../i18n/ui.js';
+import HalBeweging from './HalBeweging.astro';
+import KopBeeld from './KopBeeld.astro';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+const ac = ANGLE_COPY[lang];
+const beelden = geleverd(lang);
+
+/* De naam is die van het beeld dat je TERUGKRIJGT (levervlakken in pricing.js),
+   niet die van de foto die je opstuurt (shots.js): de vierde heet hier "Op model"
+   en in het formulier "Gedragen" (afvinklijst 9, v9-model a). De zin eronder komt
+   uit shots.js, zoals in kladblok/TEKSTEN-GROEP-1.md. */
+const vast = SHOTS.map((s: any, i: number) => ({
+  id: s.id,
+  naam: levervlakken('catalog', lang)[i] || s.name[lang] || s.name.en,
+  regel: (s.buys[lang] || s.buys.en).split(/(?<=\.)\s/)[0],
+  beeld: beelden[i],
+}));
+const perGroep = ANGLE_GROUPS.map((g: string) => ({ id: g, naam: ac.groups[g], hoeken: ANGLES.filter((a: any) => a.group === g) }));
+const tarief = euro(extraPhotoRate(1), lang);
+
+const t = nl ? {
+  pil: 'Wat je krijgt',
+  h1: ['Per product,', 'wat je terugkrijgt.'],
+  lede: 'Elk product krijgt dezelfde set. Dit zit er altijd in, en dit kun je erbij kiezen.',
+  vastPil: 'Zit er altijd bij', vastKop: ['Altijd erbij.', `${CATALOG_IMAGES} foto’s per product.`],
+  extraPil: 'Erbij te bestellen', extraKop: ['Een hoek erbij.', 'Per foto.'],
+  extraTarief: `${tarief} per foto bij één product, lager naarmate je meer producten bestelt · ${vatLabel('excl', lang)}`,
+  slotKop: ['Dit krijgt elk product.', 'Kies nu je look.'],
+  naarBestellen: 'Kies je look en bestel',
+  naarGids: 'Wat je zelf opstuurt',
+} : {
+  pil: 'What you get',
+  h1: ['Per product,', 'what comes back.'],
+  lede: 'Every product gets the same set. Here is what is always included, and what you can add.',
+  vastPil: 'Always included', vastKop: ['Always included.', `${CATALOG_IMAGES} photos per product.`],
+  extraPil: 'Available to add', extraKop: ['An extra angle.', 'Per photo.'],
+  extraTarief: `${tarief} per photo at one product, less the more products you order · ${vatLabel('excl', lang)}`,
+  slotKop: ['This is what every product gets.', 'Now choose your look.'],
+  naarBestellen: 'Choose your look and order',
+  naarGids: 'What you send us',
+};
+const ICOON = {
+  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
+  pijl: '<path d="M4.5 11.5l7-7M5.5 4.5h6v6"/>',
+  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
+  plus: '<path d="M8 3v10M3 8h10"/>',
+};
+const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+const DRIE = (n: number) => String(n).padStart(2, '0');
+/* Het beeld in de opening: afvinklijst 20 (v20-opening a), live sinds afvinklijst 21. Zie KopBeeld.astro. */
+const BEELD = {
+  soort: 'foto' as const, verhouding: '5 / 4',
+  foto: { src: '/img/ba2-na-model-wit.webp', positie: '50% 55%',
+    alt: nl ? `De roze jeans op een model: een van de ${CATALOG_IMAGES} catalogfoto’s van één product` : `The pink jeans on a model: one of the ${CATALOG_IMAGES} catalog photos of one product`,
+    pil: nl ? `Op model · 1 van ${CATALOG_IMAGES}` : `On model · 1 of ${CATALOG_IMAGES}` },
+};
+---
+<div class="h-pagina h-pp">
+
+  {/* ── 1 · DE KOP ─────────────────────────────────────────────────────────── */}
+  <header class="h-paginakop met-kopbeeld">
+    <div class="h-paginakop-tekst">
+      <p class="h-pil h-op" style="--d:0"><span>{t.pil}</span></p>
+      <h1 class="h-kop h-h1 h-op" style="--d:1"><span class="l">{t.h1[0]}</span> <span>{t.h1[1]}</span></h1>
+      <p class="h-lede h-op" style="--d:2">{t.lede}</p>
+    </div>
+    <KopBeeld {...BEELD} />
+  </header>
+
+  {/* ── 2 · DE VIER DIE ER ALTIJD ZIJN ── geen prijs en geen vinkje om te zetten:
+      er valt niets te kiezen. Wel een vinkje bij elk beeld: dit krijg je. */}
+  <section class="h-sec h-pp-vast" aria-labelledby="pp-vast">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{t.vastPil}</span></p>
+        <h2 id="pp-vast" class="h-kop h-h2"><span class="l">{t.vastKop[0]}</span> {t.vastKop[1]}</h2>
+      </div>
+      <p class="h-pp-kopzin">{ac.fixedLine}</p>
+    </header>
+    <ul class="h-pp-vier" role="list">
+      {vast.map((s, i) => (
+        <li class="h-pp-tegel h-in" style={`--d:${i}`}>
+          <figure class="h-well h-pp-beeld">
+            {s.beeld && <img src={s.beeld.src} width={s.beeld.w} height={s.beeld.h} alt={s.beeld.alt} loading="lazy" decoding="async" />}
+            <span class="h-vink" aria-hidden="true" set:html={ik('check')} />
+          </figure>
+          <p class="h-nr" aria-hidden="true"><b>{DRIE(i + 1)}</b><i></i><span>/ {DRIE(vast.length)}</span></p>
+          <p class="h-pp-naam">{s.naam}</p>
+          <p class="h-pp-regel">{s.regel}</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  {/* ── 3 · EN WAT JE ERBIJ KUNT ZETTEN ── per groep één kaart, de hoeken als
+      tekening in een wit vak; het tarief één keer, bovenaan. */}
+  <section class="h-sec h-pp-extra" aria-labelledby="pp-extra">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{t.extraPil}</span></p>
+        <h2 id="pp-extra" class="h-kop h-h2"><span class="l">{t.extraKop[0]}</span> {t.extraKop[1]}</h2>
+      </div>
+      <div class="h-pp-kopzin">
+        <p class="h-pp-tarief">{t.extraTarief}</p>
+        <p>{ac.extraLine.replace('{max}', String(MAX_EXTRA_PER_PRODUCT))}</p>
+      </div>
+    </header>
+    <div class="h-pp-groepen">
+      {perGroep.map((g, gi) => (
+        <div class="h-pp-groep h-in" style={`--d:${gi}`}>
+          <p class="h-pil h-pil-wit"><span>{g.naam}</span></p>
+          <ul class="h-pp-hoeken" role="list">
+            {g.hoeken.map((a: any) => (
+              <li class="h-pp-hoek">
+                <span class="h-pp-schets"><AngleSketch id={a.id} /><span class="h-pp-plus" aria-hidden="true" set:html={ik('plus')} /></span>
+                <span class="h-pp-hoek-tekst">
+                  <span class="h-pp-naam">{a.name[lang] || a.name.en}</span>
+                  <span class="h-pp-regel">{a.line[lang] || a.line.en}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  {/* ── 4 · HET SLOT ── kiezen gebeurt bij de looks (vaste bestelregel: een
+      bestelknop gaat nooit rechtstreeks naar het formulier). */}
+  <section class="h-sec h-pp-slot" aria-labelledby="pp-slot">
+    <div class="h-pp-band h-in">
+      <h2 id="pp-slot" class="h-kop h-h3"><span class="l">{t.slotKop[0]}</span> {t.slotKop[1]}</h2>
+      <p class="h-acties">
+        <a class="h-knop h-knop-inkt" href={`${lp('/catalog')}#looks`}>{t.naarBestellen}<span class="o" set:html={ik('rechts')} /></a>
+        <a class="h-link" href={lp('/upload-guidelines')}>{t.naarGids}<span class="h-cirkel h-cirkel-klein h-cirkel-wit" aria-hidden="true" set:html={ik('pijl')} /></a>
+      </p>
+    </div>
+  </section>
+</div>
+<HalBeweging />

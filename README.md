@@ -21,12 +21,30 @@ paginainhoud.
 | `migrations/**` | het D1-schema, genummerd `0001…`, uitgevoerd door `scripts/migrate.mjs` |
 | `public/**` | wat ongewijzigd wordt geserveerd, inclusief `_headers` |
 | `tests/**` | de testsuites; elke suite draait als los `node`-proces |
-| `scripts/**` | losse scripts: bouwstappen, metingen, onderhoud |
+| `scripts/**` | losse scripts: bouwstappen, onderhoud, de uitrol; `scripts/meten/` de meetscripts |
 | `visual/**` | de referentiebeelden waar `npm run visueel` tegenaan meet |
+| `docs/**` | de naslag (zie onder); `docs/archief/` de dagverslagen en plannen |
+| `kladblok/**` | Claude's werkmap: de lopende stukken, de testomgeving, `naslag/`, `ronde-9/` |
+| `_opruimen/**` | `LIJST.txt` (wat weg mag) en `VERPLAATS.txt` (wat ergens anders hoort); `OPRUIMEN.bat` voert ze uit |
+
+In de projectmap zelf staan alleen de instellingen (`package.json`,
+`astro.config.mjs`, `wrangler.toml`, `schema.sql`, …), deze README en drie
+knoppen om te dubbelklikken: **`UITROLLEN.bat`**, **`TERUGDRAAIEN.bat`** en
+**`OPRUIMEN.bat`** (8 oktober 2026).
+
+**`FORMATEN.bat`** (12 oktober 2026) levert PNG en WebP als een klant die in
+Studio aanvroeg (/admin/formaten): zet de PNG-originelen uit Magnific van één
+bestelling in een map, dubbelklik, typ het bestelnummer en sleep de map erin.
+Het script (`scripts/formaten.mjs`) maakt van elke PNG een WebP (kwaliteit 90,
+nooit uit de jpg), zet de herkomsttag erin, uploadt ze en hangt ze aan de
+beelden, zodat de zip per product JPG/, PNG/ en WEBP/ heeft. Is elk beeld
+compleet, dan zet het het verzoek op Klaar.
 
 ## Lokaal draaien
 
-Node 22 (staat in `.nvmrc`).
+Node 22, minimaal 22.12 (staat in `.nvmrc`; Astro 7 eist 22.12 sinds 8 oktober
+2026). Na een update van package.json of package-lock.json: dubbelklik
+`NA-UPDATE-INSTALLEREN.bat` (controleert Node, `npm ci`, bouwt één keer).
 
 ```
 npm install          # er is een package-lock.json; npm ci kan ook
@@ -53,6 +71,11 @@ kruis over een bestand dat niemand meer publiceert — dat is een keer een
 middag kosten geweest. `tests/keten-volledig.test.mjs` houdt die eerste schakel
 op zijn plek.
 
+**`npm run test:reeks`** (sinds 8 oktober 2026, punt 9.11) draait precies dezelfde
+keten — hij leest hem uit `test` in `package.json` — maar na de build een paar
+tegelijk en zonder npm per test; een test die faalt, krijgt aan het eind één losse
+herkansing. `UITROLLEN.bat` gebruikt deze. Nieuwe tests zet je dus gewoon in `test`.
+
 Daarnaast is er per suite een los script (`npm run test:vat`, `test:geld`,
 `test:order`, …); de volledige lijst staat in `package.json`. **Los draaien bouwt
 niet**: de suites die uit `dist/` lezen slaan zichzelf dan over met een regel die
@@ -61,73 +84,67 @@ zegt hoe oud de build is. Wil je die controles echt, draai dan eerst
 
 Naast de tests staat er een rij meetcommando's (`npm run audit`, `naden`,
 `keuring`, `visueel`). De complete tabel, met per commando wat het meet, staat in
-`ARCHITECTURE.md` §10.
+`docs/ARCHITECTURE.md` §10.
 
 ## Deployen
 
-Het Pages-project (`visuails-astro`) hangt aan GitHub en bouwt zelf met
-`npm install && npm run build` naar `dist/`. `functions/` wordt automatisch
-opgepakt en hoort niet in de build-output.
+**Dubbelklik `UITROLLEN.bat`** (sinds 8 oktober 2026, punt 9.02). In deze volgorde,
+en bij een fout stopt hij met "GESTOPT BIJ STAP n — er is niets live gezet":
 
-- **Push naar een willekeurige branch** → een preview-deploy op zijn eigen
-  `*.pages.dev`-URL. Dat is de enige plek waar je de Functions, D1 en R2 in
-  samenhang ziet werken.
-- **Push naar `main`** → productie.
+0. staat er in `_opruimen` nog iets onder een kop met "moet"? Dan eerst opruimen (J/N);
+1. geheimen: `.dev.vars`, `.env`, dumps, back-ups, sleutels in de tekst, bestanden boven 25 MB;
+2. de volledige testreeks (`npm test`);
+3. welke bestanden en welke nieuwe migraties meegaan, en "Doorgaan? J/N";
+4. commit (bericht uit `kladblok/COMMIT-BERICHT.txt`, anders de datum) en push;
+5. de nieuwe migraties op de live-D1 (`scripts/migrate.mjs`, zie `docs/ARCHITECTURE.md` §4.4);
+6. `npm run deploy` (de site); 7. `npm run cron:deploy` (het nachtwerk);
+8. zes adressen op visuails.com nakijken.
 
-Bindings komen uit `wrangler.toml` (dit project draait in config-file mode, de
-Bindings-UI in het dashboard is uitgeschakeld). Secrets staan daar bewust níét in
-en gaan via `npx wrangler secret put …`.
+Het eindscherm zegt "LIVE EN NAGEKEKEN · <datum tijd>", en elke uitrol krijgt een
+regel in `kladblok/uitrol-log.txt`. **`TERUGDRAAIEN.bat`** zet de site terug naar de
+vorige versie (`wrangler rollback`); de database gaat níét terug. Zonder dubbelklik
+kan het ook: `npm run uitrollen`, `npm run terugdraaien`; proefrit zonder iets te
+bewaren of live te zetten: `node scripts/uitrol.mjs --droog`.
 
-**Sinds 5 september 2026 is de site één Cloudflare Worker** in plaats van een
-Pages-project met losse Functions: dezelfde build levert de statische pagina's
-én de server-routes. Hoe dat zit, hoe je hem uitrolt en welke secrets opnieuw
-gezet moeten worden staat in `WORKER.md`. De twee alinea's hierboven over
-`*.pages.dev` beschrijven de oude situatie, die blijft staan tot het domein
-overgaat.
-
-De Worker in `cron/` is een **apart** Cloudflare-project (`visuails-cron`) en gaat
-niet mee met een push. Verander je `cron/index.js`, dan blijft de oude versie
-draaien tot je hem los uitrolt:
-
-```
-npm run cron:check   # wrangler deploy --dry-run: bouwt en controleert bindings
-npm run cron:deploy  # de echte
-```
+De site is één Cloudflare Worker (`visuails-site`); hoe dat zit en welke secrets
+erop staan, staat in `docs/WORKER.md`. De Worker in `cron/` is een **apart**
+project (`visuails-cron`); de knop rolt ze allebei uit. Bindings komen uit
+`wrangler.toml`; secrets staan daar bewust níét in en gaan via
+`npx wrangler secret put …` of het dashboard.
 
 ## De documenten in deze map
 
-Er staan ruim veertig `.md`-bestanden in de projectmap en ze zijn **niet
-allemaal even oud**. Dat is geen rommel maar een gevolg van hoe er gewerkt is:
-elke grote ronde liet een verslag achter. Het probleem is alleen dat je aan de
-naam niet ziet of je een geldende regel leest of een dagverslag uit augustus.
+Sinds 8 oktober 2026 staan ze niet meer los in de projectmap maar in `docs/`, en
+zie je aan de map of je een geldende regel leest of een verslag van één moment.
+(Code-opmerkingen noemen ze nog bij hun naam, zonder `docs/` ervoor; de naam is
+niet veranderd.)
 
-Deze tabel lost dat op. Lees hem voordat je iets uit een van deze bestanden
-overneemt.
-
-### Levend — hier hoort te staan wat vandaag waar is
+### `docs/` — hier hoort te staan wat vandaag waar is
 
 | Bestand | Waarvoor |
 |---|---|
 | `ARCHITECTURE.md` | de regels van het project: waar een getal hoort, hoe geld en btw lopen, hoe routes authenticeren. **Begin bij §13**, de openstaande punten |
-| `README.md` | deze: opzet, lokaal draaien, testen, deployen |
-| `WERKLIJST.md` | wat er nog ligt, met per punt de stand. Het langste document en het enige dat als takenlijst bedoeld is |
-| `DESIGN.md` | de vormregels: kleur, ritme, typografie, beweging |
-| `SCHRIJFWIJZER.md` | hoe er geschreven wordt, en welke woorden niet |
-| `DEPLOY.md` | uitrollen, secrets, bindings, de losse cron-Worker |
+| `DESIGN.md`, `KLEURENSCHEMA.md` | de vormregels en de kleuren; `npm run test:ontwerpdoc` houdt DESIGN.md bij de CSS |
+| `SCHRIJFWIJZER.md`, `STIJL.md`, `STEM-BRON.md` | hoe er geschreven wordt, en welke woorden niet |
+| `PRODUCT.md` | voor wie en waarom |
+| `DEPLOY.md`, `WORKER.md`, `BACKEND-SETUP.md` | uitrollen, secrets, bindings, de back-up, de losse cron-Worker |
 | `MOLLIE.md` | de betaalketen en wat er misging |
 | `IMAGES.md` | waarom beeld buiten `astro:assets` om gaat |
 | `AVG-VERWERKINGSREGISTER.md`, `AVG-DATALEKPROCEDURE.md` | de twee AVG-documenten; het register wordt door `npm run test:register` bewaakt |
-| `STOCK-IDEE.md`, `ABONNEMENT-ONTWERP.md`, `MERKMODEL-ONTWERP.md` | het denkwerk achter drie diensten; de uitvoering staat in de code |
+| `STOCK-IDEE.md`, `ABONNEMENT-ONTWERP.md`, `MERKMODEL-ONTWERP.md` | het denkwerk achter drie diensten; de uitvoering staat in de code (het abonnement zonder week: §28 van het overzicht) |
+| `WORKING-AGREEMENT.md`, `EIGEN-LOOK-MAANDSET-INFORMATIE.md`, `FABLE-EN-VISUAILS.md`, `WHATSAPP-BERICHTEN.md` | losse naslag |
 
-### Dagverslag — een beschrijving van één moment, met opzet niet bijgewerkt
+De lopende werklijst en het overzicht staan in `kladblok/` (`UPGRADE-BESLISLIJST-7-OKT.txt`,
+`VISUAILS-OVERZICHT-6-OKT.md`).
 
-Alles met een **datum in de naam** (`AUDIT-*`, `CONTROLE-*`, `RANDEN-*`,
-`MOBIEL-*`, `MERKBEELDEN-*`, `NAVIGATIE-EN-BESTELSTROOM-*`,
-`ARCHITECTUURAUDIT-*`) plus alle `REPORT-SECTION-*` en `TEKST-*`.
+### `docs/archief/` — dagverslagen en plannen, met opzet niet bijgewerkt
 
-Die beschrijven de site zoals hij op díé dag was, en dat is wat ze horen te
-doen. Gebruik ze om te lezen *waarom* iets zo geworden is — nooit om te weten
-hoe het nu staat.
+`WERKLIJST.md` (de werklijst van augustus), `HERONTWERP.md`, `PLAN-*`, `BRIEF-*`,
+`PRICING-MODEL-OPTIONS.md`, `HOOKS-COPY-CONCEPT.md`, `AUDIT-TASK-0.md`,
+`ARCHITECTUURAUDIT-23-AUGUSTUS.md`, de `REPORT-SECTION-*` waar de code nog naar
+verwijst, `TEKST-RONDE.md`, `FLAGS.md` en `ONGEBRUIKTE-BEELDEN-22-AUGUSTUS.txt`.
+Gebruik ze om te lezen *waarom* iets zo geworden is — nooit om te weten hoe het nu
+staat. Dagverslagen waar niets meer naar verwijst, staan op de opruimlijst.
 
 **Namen die sindsdien veranderd zijn, staan er sinds 30 augustus 2026 bij.** Elk
 document dat een verouderde bestandsnaam noemt, draagt bovenaan een blok met wat
@@ -144,11 +161,13 @@ De volledige kaart:
 | `functions/admin/debug-mollie.js` | `/admin/diagnose` in de padtabel van `src/lib/admin.js` |
 | `HooksPage.astro`, `FigHook.astro` | verwijderd 18 aug 2026; de tekst staat in `src/data/binnenkort.js` en op `/plans#binnenkort` |
 | `FigStudio.astro` | verwijderd; `FigGate` op /studio tekende hetzelfde |
-| `DemoGame.astro` | nooit gebouwd; het plan staat in `PLAN-DEMO-SPEL.md` |
+| `DemoGame.astro` | nooit gebouwd; het plan staat in `docs/archief/PLAN-DEMO-SPEL.md` |
 | `ThreeWay.astro` | verwijderd, samen met de Duitse site |
 | `src/pages/order-*.astro` | opgegaan in één `/start`; de 301's staan in `public/_redirects` |
 | `/order-status` | `/o` |
-| `src/components/HomeV2.astro` §3 t/m §13 | de homepage is op 30 aug van dertien naar acht secties gegaan — zie `HERONTWERP.md` |
+| `src/components/HomeV2.astro` §3 t/m §13 | de homepage is op 30 aug van dertien naar acht secties gegaan — zie `docs/archief/HERONTWERP.md` |
+| een document in de projectmap | sinds 8 okt 2026 in `docs/` of `docs/archief/` |
+| `audit-*.mjs`, `naden.mjs`, `leesbaar.mjs`, … in de projectmap | sinds 8 okt 2026 in `scripts/meten/` |
 
 **Eén dagverslag is ingetrokken in plaats van geannoteerd:**
 `ONGEBRUIKTE-BEELDEN-22-AUGUSTUS.txt` noemde 62 ongebruikte beelden, waarvan er
@@ -157,18 +176,9 @@ staan omdat de bouwstap ze koppelt. Wie die lijst had gevolgd, had de hele
 AVIF-set gewist. Er staat nu een verantwoording in dat bestand en een script dat
 de vraag opnieuw stelt: `npm run beelden`.
 
-### Plan — geschreven vóór de uitvoering
-
-`HERONTWERP.md`, `PLAN-PORTALEN.md`, `PLAN-PORTALEN-V2.md`, `PLAN-DEMO-SPEL.md`,
-`PRICING-MODEL-OPTIONS.md`, `HOOKS-COPY-CONCEPT.md`, `BRIEF-*`.
-
-Deze zijn deels uitgevoerd en deels niet. `HERONTWERP.md` heeft bovenaan een
-stand van zaken; de andere niet. Toets een plan altijd aan de code voordat je
-ervan uitgaat dat het er zo in zit.
-
 ## Verder lezen
 
-`ARCHITECTURE.md` beschrijft de regels van dit project: waar een getal hoort te
+`docs/ARCHITECTURE.md` beschrijft de regels van dit project: waar een getal hoort te
 staan, hoe btw en geld lopen, hoe een query eruitziet, welke routes hoe
 authenticeren, en wat er bewust niet is. **Begin bij §13** — de lijst met bekende
 openstaande punten, dingen die kapot of half zijn en die je moet weten voordat je

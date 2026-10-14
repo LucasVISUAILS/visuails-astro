@@ -1,0 +1,100 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — /guides in de hal (de gidsen). 13 oktober 2026, afvinklijst 13
+ * (v13-volgende = a: de leespagina's als volgende groep).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Dezelfde opbouw en dezelfde teksten als GuidesPage.astro: de kop, de kaarten
+ * uit src/data/guides.js (die schema.js ook als ItemList uitgeeft), de
+ * Studiobrief en het slot. Wat in de tekst anders is, staat in
+ * kladblok/TEKSTEN-LEESPAGINAS.md.
+ *
+ *   kop     pil, de kop in twee tonen, de zin
+ *   gidsen  de kaarten als nevelvlakken; de hele kaart is de link
+ *   brief   de Studiobrief (wie hier leest, bestelt vandaag meestal niet)
+ *   slot    de proef (HalProef)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/hal.css';
+import { guides as gidsen } from '../data/guides.js';
+import Studiobrief from './Studiobrief.astro';
+import HalProef from './HalProef.astro';
+import HalBeweging from './HalBeweging.astro';
+import KopBeeld from './KopBeeld.astro';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const guides = gidsen(lang);
+
+const c = nl ? {
+  etiket: 'Gidsen',
+  h1: ['Productbeeld,', 'zonder shoot.'],
+  lead: 'Korte, praktische stukken voor ondernemers die hun productbeelden goed willen hebben — of je nu bij ons bestelt of niet.',
+  lees: 'Lees',
+  slotEtiket: 'Wanneer je zover bent',
+  slotKop: ['Klaar wanneer jij dat bent.', 'Eén product voor'] as [string, string],
+  slotP: 'Begin met één product, of zet meteen een hele set in de rij. Er is geen minimum.',
+  ctaStart: 'Of start een bestelling',
+} : {
+  etiket: 'Guides',
+  h1: ['Product images,', 'without a shoot.'],
+  lead: 'Short, practical reads for founders getting their product visuals right — whether you order from us or not.',
+  lees: 'Read',
+  slotEtiket: 'Whenever you are ready',
+  slotKop: ['Ready when you are.', 'One product for'] as [string, string],
+  slotP: 'Start with a single product, or put a whole set in the queue. There is no minimum.',
+  ctaStart: 'Or start an order',
+};
+const PIJL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5l7-7M5.5 4.5h6v6"/></svg>';
+/* Het beeld in de opening: afvinklijst 20 (v20-opening a), live sinds afvinklijst 21. Zie KopBeeld.astro. */
+const nlB = lang === 'nl';
+const BEELD = {
+  soort: 'foto' as const, verhouding: '5 / 4',
+  /* Het T-shirt van /catalog: gemaakt van een telefoonfoto op tafel (catalog-before). Eerst stond hier
+     een telefoonfoto van de jeans in een magazijn; Lucas (afvinklijst 21): je zag alleen de bovenkant van
+     de broek, en het zei niet wat "zonder shoot" is. */
+  foto: { src: '/img/catalog-after.webp', positie: '50% 50%',
+    alt: nlB ? 'Een catalogfoto van een zwart T-shirt, gemaakt van een telefoonfoto' : 'A catalog photo of a black T-shirt, made from a phone photo',
+    pil: nlB ? 'Gemaakt van een telefoonfoto' : 'Made from a phone photo' },
+};
+---
+<div class="h-pagina h-gd">
+
+  {/* ── 1 · DE KOP ─────────────────────────────────────────────────────────── */}
+  <header class="h-paginakop met-kopbeeld">
+    <div class="h-paginakop-tekst">
+      <p class="h-pil h-op" style="--d:0"><span>{c.etiket}</span></p>
+      <h1 class="h-kop h-h1 h-op" style="--d:1"><span class="l">{c.h1[0]}</span> <span>{c.h1[1]}</span></h1>
+      <p class="h-lede h-op" style="--d:2">{c.lead}</p>
+    </div>
+    <KopBeeld {...BEELD} />
+  </header>
+
+  {/* ── 2 · DE GIDSEN ── de hele kaart is de link: er staat één bestemming in. */}
+  <section class="h-sec h-gd-sec">
+    <ul class="h-gd-raster" role="list">
+      {guides.map((g, i) => (
+        <li class="h-in" style={`--d:${i % 3}`}>
+          <a class="h-gd-kaart" href={g.href}>
+            <span class="h-pil h-pil-wit"><span>{g.tag}</span></span>
+            <h2 class="h-gd-titel">{g.title}</h2>
+            <p class="h-gd-tekst">{g.desc}</p>
+            <span class="h-link h-gd-meer">{c.lees}<span class="h-cirkel h-cirkel-mini h-cirkel-wit" aria-hidden="true" set:html={PIJL} /></span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  {/* ── 3 · DE STUDIOBRIEF ── wie hier leest, bestelt vandaag meestal niet. */}
+  <section class="h-sec h-gd-brief-sec">
+    <div class="h-gd-brief h-in">
+      <Studiobrief lang={lang} bron="gidsen" />
+    </div>
+  </section>
+
+  {/* ── 4 · HET SLOT: DE PROEF ───────────────────────────────────────────── */}
+  <HalProef lang={lang} id="gd-slot" kop={c.slotKop} zin={c.slotP} alt={{ label: c.ctaStart, href: '/start' }} />
+</div>
+<HalBeweging />

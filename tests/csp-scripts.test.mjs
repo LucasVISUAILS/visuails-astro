@@ -59,6 +59,11 @@ if (!vers) {
   const headers = readFileSync(new URL('../dist/_headers', import.meta.url), 'utf8');
   const regel = (/Content-Security-Policy:\s*(.+)/.exec(headers) || [, ''])[1].trim();
   check('er staat een CSP in dist/_headers', regel.length > 0, true);
+  /* Cloudflare neemt een regel in _headers tot 2000 tekens; met Astro 7 staan er
+     meer scripts in de pagina, dus meer hashes (8 oktober 2026, o17). Wordt hij te
+     lang, dan valt de hele CSP stil weg — daarom hier de grens. */
+  check('elke regel in dist/_headers blijft onder de 2000 tekens',
+    headers.split(/\r?\n/).filter((r) => r.length > 2000).length, 0);
 
   /* De schuine strepen recht, zoals tests/paths.test.mjs eist: op Windows geeft
      globSync backslashes terug en dan klopt geen enkele padvergelijking meer. */
@@ -153,6 +158,9 @@ if (!vers) {
   check('en img-src laat blob: toe', /img-src[^;]*\bblob:/.test(regel), true);
 
   check('frame-ancestors blijft staan', /frame-ancestors 'none'/.test(regel), true);
+  /* o03, 8 oktober 2026: de botcheck van Cloudflare, en verder geen enkele host. */
+  check('frame-src laat alleen de botcheck van Cloudflare toe', (/frame-src[^;]*/.exec(regel) || [''])[0], 'frame-src https://challenges.cloudflare.com');
+  check('en script-src kent dezelfde host', /script-src[^;]*https:\/\/challenges\.cloudflare\.com/.test(regel), true);
   check('object-src staat uit', /object-src 'none'/.test(regel), true);
   check('en base-uri is vastgezet', /base-uri 'self'/.test(regel), true);
 

@@ -1,13 +1,15 @@
 ---
+// VISUAILS — /nl/guides: in de hal sinds 13 oktober 2026 (afvinklijst 14, alles doen). De pagina
+// staat in GuidesHal.astro; de vorige (GuidesPage.astro) staat op de opruimlijst.
 // VISUAILS — /nl/guides. Zie de Engelse variant en de kop van GuidesPage.astro;
 // alleen de meta verschilt hier.
 import Layout from '../../layouts/Layout.astro';
-import GuidesPage from '../../components/GuidesPage.astro';
+import GuidesHal from '../../components/GuidesHal.astro';
 ---
 
-<Layout
+<Layout huid="hal"
   title="Gidsen — productfotografie voor kledingmerken | VISUAILS"
   description="Praktische gidsen voor kleding- en e-commercemerken: fotograferen met een telefoon, AI-visuals tegenover een shoot, en wat productvisuals kosten."
 >
-  <GuidesPage lang="nl" />
+  <GuidesHal lang="nl" />
 </Layout>

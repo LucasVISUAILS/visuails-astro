@@ -42,6 +42,7 @@ import {
   batchPrefix,
   isWellFormedBatch,
   keyBelongsTo,
+  listBatch,
   mintBatch,
   safeName,
   safeProduct,
@@ -49,9 +50,48 @@ import {
 } from '../../src/lib/uploads.js';
 import { isShotId } from '../../src/data/shots.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from '../../src/lib/ratelimit.js';
+import { controleerBotcheck, botcheckBesluit, TOKEN_VELD } from '../../src/lib/turnstile.js';
 
 /** Generous for a person filling in a form, tight for anything automating it. */
 const RATE = { action: 'upload', limit: 40, windowSeconds: 60 };
+
+/* ── EEN DAGGRENS PER INTERNETAANSLUITING — 8 oktober 2026 (o05) ──────────────
+ *
+ * Hierboven staat 40 per minuut, en dat was het. Wie geen bestelling had, kon
+ * dus elke minuut 40 × 25 MB in R2 zetten, de hele dag door — en omdat een
+ * upload zonder batch een nieuwe batch begint, hielp het plafond per batch niet.
+ * Opslag kost geld per maand, en de nachtelijke opruiming ruimt alleen op als
+ * PURGE_ENABLED aan staat.
+ *
+ * Nu ook drie grenzen per DAG (UTC), per IP-adres, en bij IPv6 per /64-blok
+ * (rateIp() in ratelimit.js): het aantal bestanden, het aantal bytes, en het
+ * aantal nieuwe batches.
+ *
+ * ── DE GETALLEN, EN WAAROM ZE ZO RUIM ZIJN ────────────────────────────────
+ *
+ * Lucas: *"Onthoud wel dat klanten met grote orders sowieso veel moeten
+ * invullen/uploaden."* De grootste bestelling die het formulier kan tekenen is
+ * 20 producten (FORM_MAX_PRODUCTS) × 12 vakjes (4 vaste foto's, 4 extra, 4
+ * gratis referenties) = 240 bestanden, en dan elk op het maximum van 25 MB =
+ * 6 GB. Een echte grote bestelling (20 × 4 à 6 foto's van een telefoon, 3 à 8 MB)
+ * is 80 tot 120 bestanden en minder dan 1 GB. De grenzen liggen boven het
+ * theoretische maximum, met ruimte voor opnieuw proberen en een tweede
+ * bestelling op dezelfde dag vanaf hetzelfde kantoor:
+ *
+ *   400 bestanden · 8 GB · 30 nieuwe batches per dag
+ *
+ * Een nieuwe batch ontstaat bij elke nieuwe bestelpagina (de eerste foto van
+ * een sessie); dertig keer per dag een formulier opnieuw beginnen doet een mens
+ * niet. Wie een grens raakt, krijgt `dag-limiet` terug en in het formulier een
+ * uitleg met WhatsApp en mail om de bestelling zo te plaatsen (ProductUploader
+ * en pipeline.js). De teller loopt alleen op bestanden die verder in orde zijn:
+ * een geweigerd type of een te groot bestand telt niet mee.
+ *
+ * `batchesZonderBotcheck` (o03, zelfde dag): staat de botcheck van Cloudflare
+ * aan en komt een nieuwe batch zonder geldig token (adblocker, storing), dan
+ * gaat hij door maar zijn er daarvan hooguit vijf per dag. Zie src/lib/turnstile.js. */
+export const UPLOAD_DAG = { bestanden: 400, bytes: 8 * 1024 * 1024 * 1024, batches: 30, batchesZonderBotcheck: 5 };
+const DAG = 86400;
 
 export async function onRequestPost(context) {
   const { request, env, waitUntil } = context;
@@ -131,10 +171,43 @@ export async function onRequestPost(context) {
   // bytes zeggen het: elk formaat in UPLOAD_TYPES heeft een vaste handtekening.
   // Een .jpg die eigenlijk een png is, is gewoon een beeld en gaat door — de
   // vraag is alleen of het een beeld IS, niet of de extensie klopt.
+  /* ── EN WAT NIET TE LEZEN IS, GAAT NIET DOOR — 8 oktober 2026 (o05) ────────
+     Hier stond: niet te lezen, laat de rest van de keten beslissen. Maar er is
+     geen rest van de keten die naar de inhoud kijkt; het bestand ging zo R2 in.
+     Een bestand waarvan wij de eerste zestien bytes niet kunnen lezen, is geen
+     beeld waar de studio iets mee kan. De klant krijgt dezelfde melding als bij
+     een verkeerd type, en kan het opnieuw kiezen. */
   try {
     const kop = new Uint8Array(await file.slice(0, 16).arrayBuffer());
     if (!isBeeldHandtekening(kop)) return json({ ok: false, error: 'bad-type', accepted: Object.keys(UPLOAD_TYPES) }, 400);
-  } catch { /* niet te lezen: laat de rest van de keten beslissen */ }
+  } catch {
+    return json({ ok: false, error: 'bad-type', accepted: Object.keys(UPLOAD_TYPES) }, 400);
+  }
+
+  /* De daggrenzen (zie UPLOAD_DAG bovenaan). Pas hier, na alle controles op het
+     bestand zelf: wat geweigerd wordt, telt niet mee. Eerst de nieuwe batch,
+     dan bestanden, dan bytes; de eerste die vol is, stopt het. */
+  const ip = clientIp(request);
+  if (!presented) {
+    /* ── EEN NIEUWE BATCH VRAAGT DE BOTCHECK — 8 oktober 2026 (o03) ──────────
+       Alleen hier: het eerste bestand van een bestelling. Zie src/lib/turnstile.js:
+       zonder sleutels uit; geen token of een storing is door, maar dan hooguit
+       5 nieuwe batches per dag in plaats van 30; alleen een token dat
+       Cloudflare uitdrukkelijk ongeldig noemt, wordt geweigerd. */
+    const token = form.get(TOKEN_VELD);
+    const botcheck = botcheckBesluit((await controleerBotcheck(env, { token: typeof token === 'string' ? token : '', ip })).stand);
+    if (botcheck === 'weiger') return json({ ok: false, error: 'botcheck' }, 403);
+    const nieuw = await checkRate(env, { ip, action: 'upload-batch-dag', limit: UPLOAD_DAG.batches, windowSeconds: DAG });
+    if (!nieuw.allowed) return dagLimiet(nieuw);
+    if (botcheck === 'streng') {
+      const streng = await checkRate(env, { ip, action: 'upload-batch-zonder-botcheck', limit: UPLOAD_DAG.batchesZonderBotcheck, windowSeconds: DAG });
+      if (!streng.allowed) return dagLimiet(streng);
+    }
+  }
+  const stuks = await checkRate(env, { ip, action: 'upload-bestanden-dag', limit: UPLOAD_DAG.bestanden, windowSeconds: DAG });
+  if (!stuks.allowed) return dagLimiet(stuks);
+  const zwaar = await checkRate(env, { ip, action: 'upload-bytes-dag', limit: UPLOAD_DAG.bytes, windowSeconds: DAG, gewicht: bytes });
+  if (!zwaar.allowed) return dagLimiet(zwaar);
 
   // The count comes from R2 rather than from the client, and it also supplies
   // the ordering number below.
@@ -221,9 +294,54 @@ export async function onRequestDelete(context) {
   return json({ ok: true, key });
 }
 
-/** There is nothing to GET here. Say so in the shape the client already parses. */
-export async function onRequestGet() {
-  return json({ ok: false, error: 'method' }, 405, { allow: 'POST, DELETE' });
+/* ── WAT STAAT ER NOG VAN MIJ? — 11 oktober 2026 (F3, punt 1.04) ──────────────
+ *
+ * Lucas koos (V51 = a): het bestelformulier onthoudt op het apparaat van de
+ * klant de look, het aantal, de opties en de al geüploade foto's — van die
+ * foto's alleen de sleutels, niet de bestanden. Komt de klant terug, dan moet
+ * het formulier eerst weten of die foto's hier nog staan: de nachtelijke
+ * opruiming haalt een batch weg die zeven dagen niet aan een bestelling hangt
+ * (INTAKE_TTL_DAYS in cron/index.js).
+ *
+ * ALLEEN EIGEN UPLOADS. Dezelfde sleutel als bij DELETE hierboven: wie het
+ * batchkenmerk heeft (drieënveertig willekeurige tekens, alleen bekend bij de
+ * browser die de eerste foto stuurde), mag zien wat erin staat — en niets
+ * anders. Er komt geen persoonsgegeven mee terug: alleen sleutel, bestandsnaam,
+ * grootte, product (`p3`) en vak, precies wat de upload zelf al teruggaf.
+ *
+ * MET EEN EIGEN SNELHEIDSGRENS, los van die voor uploads: een formulier vraagt
+ * dit één keer per bezoek, dus twintig per minuut per adres is ruim voor een
+ * mens en krap voor wie batchkenmerken probeert te raden.
+ *
+ * Zonder `batch` blijft het antwoord wat het was: hier valt niets te halen. */
+export async function onRequestGet(context) {
+  const { request, env } = context || {};
+  const url = request ? new URL(request.url) : null;
+  const batch = url ? (url.searchParams.get('batch') || '').toString() : '';
+  if (!batch) return json({ ok: false, error: 'method' }, 405, { allow: 'POST, DELETE' });
+  if (!env?.UPLOADS) return json({ ok: false, error: 'unavailable' }, 503);
+  if (!isWellFormedBatch(batch)) return json({ ok: false, error: 'bad-batch' }, 400);
+
+  const limit = await checkRate(env, { ip: clientIp(request), action: 'upload-lijst', limit: 20, windowSeconds: 60 });
+  if (!limit.allowed) return json({ ok: false, error: 'rate', retryAfter: limit.retryAfter }, 429);
+
+  /* listBatch() geeft bij een storing een lege lijst; het formulier leest dat als
+     "niet meer hier" en begint dan een nieuwe batch — de veilige kant. */
+  const files = await listBatch(env, batch);
+  return json({
+    ok: true,
+    batch,
+    files: files.map((f) => ({ key: f.key, name: f.name, bytes: f.bytes, product: f.product, shot: f.shot })),
+  });
+}
+
+/* Een eigen code en GEEN `rate`: pipeline.js probeert `rate` vanzelf opnieuw,
+   en dat heeft bij een daggrens geen zin. 429, want het is een grens en geen
+   fout in het bestand. */
+function dagLimiet(teller) {
+  return json({ ok: false, error: 'dag-limiet', retryAfter: teller.retryAfter }, 429, {
+    'retry-after': String(teller.retryAfter || DAG),
+  });
 }
 
 function rand(n) {

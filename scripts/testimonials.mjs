@@ -30,14 +30,18 @@
  * ── LEEG IS EEN UITKOMST EN GEEN FOUT ───────────────────────────────────────
  *
  * Nul goedgekeurde aanbevelingen is de normale toestand aan het begin. Het script
- * schrijft dan een lege lijst en zegt dat, en de homepage valt terug op de
- * eerlijke regel die er nu al staat: "Nog geen muur vol reviews." Een script dat
- * hierop met een foutcode stopt, zou een build breken om een waarheid.
+ * schrijft dan een lege lijst en zegt dat, en het blok "Wat merken zeggen" op
+ * home en /pricing rendert dan niets (sinds 8 oktober 2026, G3 — zie
+ * src/components/Aanbevelingen.astro; de regel "Nog geen muur vol reviews"
+ * staat al sinds september niet meer op de homepage). Een script dat hierop
+ * met een foutcode stopt, zou een build breken om een waarheid.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { wrangler, warmLogin, asCommandArg, volhard } from './lib/wrangler.mjs';
+/* De regel wie er nooit op de site komt, op één plek — zie src/data/aanbevelingen.js. */
+import { isTestExemplaar } from '../src/data/aanbevelingen.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DOEL = path.join(ROOT, 'src', 'data', 'testimonials.js');
@@ -61,7 +65,15 @@ const SQL = `SELECT testimonial_text AS text,
                 AND testimonial_consent = 1
                 AND testimonial_text IS NOT NULL
                 AND TRIM(testimonial_text) <> ''
+                AND order_id NOT IN (SELECT id FROM orders WHERE testmodus = 1)
               ORDER BY updated_at DESC`;
+/* ── PROEFBESTELLINGEN NOOIT — 8 oktober 2026 (G3) ─────────────────────────
+   Een aanbeveling op een bestelling die in Mollie-testmodus werd geplaatst
+   (orders.testmodus, migratie 0046) is per definitie een test van Lucas zelf.
+   Een subquery en geen JOIN: zo blijft de SELECT hierboven precies drie
+   kolommen uit één tabel, en is `updated_at` niet dubbelzinnig. De tekstvlag
+   "TEST — niet plaatsen" wordt hieronder in JavaScript gelezen en niet in de
+   SQL: een gedachtestreep in een --command gaat op Windows door cmd.exe. */
 
 console.log(`Aanbevelingen ophalen uit ${DB} (remote)…`);
 await warmLogin();
@@ -119,12 +131,14 @@ try {
    gemeld, zodat jij hem inkort in plaats van dat de site hem half toont. */
 const MAX = 320;
 const teLang = [];
+const proef = [];
 const schoon = rijen.map((r) => ({
   text: String(r.text || '').replace(/\s+/g, ' ').trim(),
   name: String(r.name || '').replace(/\s+/g, ' ').trim().slice(0, 60),
   month: /^\d{4}-\d{2}$/.test(String(r.month || '')) ? String(r.month) : '',
 })).filter((r) => {
   if (!r.text) return false;
+  if (isTestExemplaar(r)) { proef.push(r); return false; }
   if (r.text.length > MAX) { teLang.push(r); return false; }
   return true;
 });
@@ -132,6 +146,10 @@ const schoon = rijen.map((r) => ({
 console.log(`\n${schoon.length} goedgekeurde aanbeveling${schoon.length === 1 ? '' : 'en'} gevonden.`);
 for (const r of schoon) {
   console.log(`  · ${r.name || 'geen naam'} (${r.month || 'geen maand'}) — ${r.text.slice(0, 70)}${r.text.length > 70 ? '…' : ''}`);
+}
+if (proef.length) {
+  console.log(`\n${proef.length} overgeslagen als testexemplaar ("TEST — niet plaatsen" of een testnaam):`);
+  for (const r of proef) console.log(`  · ${r.name || 'geen naam'} — ${r.text.slice(0, 60)}${r.text.length > 60 ? '…' : ''}`);
 }
 if (teLang.length) {
   console.log(`\n${teLang.length} overgeslagen omdat ze langer zijn dan ${MAX} tekens:`);
@@ -180,4 +198,5 @@ export function testimonialsToShow(max = 3) {
 
 fs.writeFileSync(DOEL, bestaand.slice(0, knip) + staart, 'utf8');
 console.log(`\nGeschreven naar src/data/testimonials.js.`);
-console.log('Commit het bestand en deploy — pas dan staan ze op de site.');
+console.log('Commit het bestand en deploy — pas dan staan ze op de site,');
+console.log('in het blok "Wat merken zeggen" op home en /pricing (src/components/Aanbevelingen.astro).');

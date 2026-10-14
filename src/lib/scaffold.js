@@ -50,7 +50,11 @@
    mapstructuur laten afwijken van het werkbord op /admin, en dan komt een beeld in
    een map te staan waar geen vakje voor is. */
 import { RESOLUTIE, VOORRANG } from '../data/pricing.js';
-import { SHOT_IDS } from '../data/shots.js';
+import { SHOT_IDS, shot as shotInfo, contextShotSlot } from '../data/shots.js';
+/* De kleur van een product: naam, hex, Pantone (5.03). */
+import { kleurInfo, rgbVan } from './kleurcode.js';
+/* Het kledingstuk voor de plakregel (4.02): het TYPE, nooit de productnaam. */
+import { garment as garmentVan } from '../data/garments.js';
 
 /**
  * De mapnaam per shot, met een cijfer ervoor.
@@ -73,8 +77,13 @@ export const SLOT_FOLDER = {
 /** De map voor beeld dat niet in een vakje hoort: extra foto’s, losse varianten. */
 export const LOOSE_FOLDER = '_los';
 
-/** De map met wat de klant heeft aangeleverd. Wordt niet gevuld door de scaffold. */
+/** De map met wat de klant heeft aangeleverd. Sinds 8 oktober 2026 (4.02) per
+ *  product gevuld met de foto's van de klant; zie klantFotoBestanden(). */
 export const SOURCE_FOLDER = '_aangeleverd';
+
+/** De map waarin het Photoshop-script (4.07) het ruwe beeld zet, per vak. Komt
+ *  bij "Map uploaden" nooit als levering terug; zie isRawPath(). */
+export const RAW_FOLDER = '_ruw';
 
 /**
  * Een mapnaam waar geen uitpakker en geen Verkenner over valt.
@@ -154,7 +163,9 @@ export function parseScaffoldPath(relPath) {
     /* Ronde 9, F17: een bijbestelde hoek heet `5 driekwart [extra1]` en een
        lifestylebeeld `1 beeld-1`. De sleutel tussen haken is wat telt; het woord
        ervoor is voor de mens. */
-    const extra = seg.match(/\[(extra[1-9][0-9]?)\]\s*$/i);
+    /* Sinds 14 oktober 2026 draagt elk vak dat geen catalogvak is zijn sleutel
+       tussen haken: `1 model-voorkant [front]`, `3 product [product]`. */
+    const extra = seg.match(/\[(extra[1-9][0-9]?|front|back|detail|worn|product)\]\s*$/i);
     if (extra) { shot = extra[1].toLowerCase(); continue; }
     const ls = seg.match(/^(?:\d+\s*)?(?:beeld|image)-([123])$/i);
     if (ls) { shot = ['front', 'back', 'detail'][Number(ls[1]) - 1]; continue; }
@@ -194,6 +205,63 @@ export function isScaffoldDoc(relPath) {
 /** Hoort dit pad bij het bronmateriaal, en moet het dus NIET als levering terug? */
 export function isSourcePath(relPath) {
   return String(relPath || '').split(/[\\/]+/).some((seg) => seg === SOURCE_FOLDER);
+}
+
+/** Staat dit bestand in een `_ruw/`-map (het beeld vóór Photoshop, 4.07)? Dan is
+ *  het een werkbestand en geen levering. Alleen de MAPNAAM telt, niet de naam van
+ *  het bestand: een export die toevallig "_ruw" heet, is gewoon een beeld. */
+export function isRawPath(relPath) {
+  return String(relPath || '').split(/[\\/]+/).slice(0, -1).some((seg) => seg === RAW_FOLDER);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   WELKE BESTELLING IS DIT? — 8 oktober 2026 (punt 4.02)
+   ─────────────────────────────────────────────────────────────────────────────
+   De zwaarste fout in de leverstroom: de map van klant A op de bestelling van
+   klant B. Na de eerste levering is elk nieuw beeld meteen zichtbaar voor de
+   klant (§20), dus moet de server dat weigeren vóórdat er iets wordt opgeslagen.
+
+   Het kenmerk staat op drie plekken die we zelf uitdelen: de wortelmap
+   (`VIS-2608-4471 - Merk`), de bestandsnaam die het Photoshop-script maakt
+   (`VIS-2608-4471-p1-voorkant.jpg`) en de INSTELLINGEN-regel in elke
+   _briefing.txt (`kenmerk=VIS-2608-4471`), die met de map meegaat als vingerafdruk.
+
+   NIET in de productmappen kijken: daar staat de productnaam van de KLANT achter
+   `p3 - `, en die is vrije tekst. Wel in de bestandsnaam, want die komt van ons
+   of van een export. */
+const KENMERK = /\bVIS-[A-Z0-9]{2,8}-[A-Z0-9]{2,8}(?:-R\d{1,3})?(?![A-Z0-9])/gi;
+
+/** De kenmerken in een relatief pad, in hoofdletters, zonder dubbele. */
+export function kenmerkenInPad(relPath) {
+  const segs = String(relPath || '').split(/[\\/]+/).filter(Boolean);
+  const gevonden = new Set();
+  segs.forEach((seg, i) => {
+    const isBestand = i === segs.length - 1;
+    if (!isBestand && /^p\d{1,3}\b/i.test(seg)) return;   // productmap: naam van de klant
+    for (const m of seg.match(KENMERK) || []) gevonden.add(m.toUpperCase());
+  });
+  return [...gevonden];
+}
+
+/** Het kenmerk uit de tekst van een _briefing.txt of LEESMIJ.txt uit onze werkmap,
+ *  of '' als er geen staat. Alleen de vaste plekken: `kenmerk=` in de
+ *  INSTELLINGEN-regel en de eerste regel van de leesmij. Nooit de notitie van de
+ *  klant, want daar mag hij gerust een ander kenmerk noemen. */
+export function kenmerkUitWerkbestand(tekst) {
+  const t = String(tekst || '');
+  const inst = t.match(/^INSTELLINGEN\b.*?\bkenmerk=(VIS-[A-Z0-9-]+)/im);
+  if (inst) return inst[1].toUpperCase();
+  const kop = t.match(/^VISUAILS - werkmap voor bestelling (VIS-[A-Z0-9-]+)/m);
+  return kop ? kop[1].toUpperCase() : '';
+}
+
+/** Het eerste vreemde kenmerk in een lijst, of '' als alles bij `ref` hoort. */
+export function vreemdKenmerk(ref, kenmerken) {
+  const eigen = String(ref || '').toUpperCase();
+  for (const k of kenmerken || []) {
+    if (k && String(k).toUpperCase() !== eigen) return String(k).toUpperCase();
+  }
+  return '';
 }
 
 /**
@@ -252,9 +320,14 @@ export function readmeText({ order, products, origin }) {
     'ZO WERKT DEZE MAP',
     '-'.repeat(60),
     '',
+    `Per product: ${SOURCE_FOLDER}/ met de foto's van de klant, _briefing.txt`,
+    '(INSTELLINGEN, PLAKREGEL, MAKEN, LET OP, NAKIJKEN) en een lege map per vak.',
+    '',
     '1. Zet elk afgewerkt beeld in de map van het juiste product en de',
     '   juiste shot. De bestandsnaam maakt NIET uit - noem hem zoals je',
     '   export hem noemt. De MAP bepaalt waar het beeld terechtkomt.',
+    '   Catalog: het Photoshop-script (tools/photoshop) leest de',
+    '   INSTELLINGEN-regel, werkt elk vak af en zet het ruwe beeld in _ruw/.',
     '',
     '2. Klaar? Ga naar:',
     `   ${url}`,
@@ -263,14 +336,18 @@ export function readmeText({ order, products, origin }) {
     '3. De server leest product en shot uit het pad, hernoemt het bestand',
     `   naar ${order.ref}-p1-voorkant.jpg en zet het in het juiste vakje`,
     '   van het werkbord. Je hoeft niets te hernoemen en niets in te delen.',
+    '   Een beeld dat precies gelijk is aan wat er al staat, wordt',
+    '   overgeslagen: goedgekeurde beelden blijven staan.',
     '',
     'WAT JE NIET MOET DOEN',
     '-'.repeat(60),
     '',
     `- de mapnamen wijzigen. Het deel voor het streepje (p1, p2, ...) is`,
     '  wat de server leest. De productnaam erachter mag je wel aanpassen.',
-    `- beeld in ${SOURCE_FOLDER}/ zetten: die map is van de klant en wordt bij`,
-    '  het uploaden overgeslagen.',
+    `- beeld in ${SOURCE_FOLDER}/ of ${RAW_FOLDER}/ zetten: die mappen worden bij het`,
+    '  uploaden overgeslagen.',
+    `- deze map bij een andere bestelling uploaden. De server ziet aan het`,
+    `  kenmerk ${order.ref} dat hij hier hoort, en weigert hem elders.`,
     '',
     `Weet je niet waar iets hoort, zet het in ${LOOSE_FOLDER}/. Dat komt binnen`,
     'zonder product en shot, en dan deel je het in de tabel in.',
@@ -281,87 +358,168 @@ export function readmeText({ order, products, origin }) {
   ]);
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   DE BRIEF PER PRODUCT IN VIJF VASTE BLOKKEN — 8 oktober 2026 (punt 4.02, met 5.02)
+   ─────────────────────────────────────────────────────────────────────────────
+   INSTELLINGEN · PLAKREGEL · MAKEN · LET OP · NAKIJKEN, altijd in deze volgorde,
+   zodat elke generatie op dezelfde manier wordt opgebouwd en niemand heen en weer
+   zoekt tussen /admin, de map en het promptbestand.
+
+   INSTELLINGEN is één regel `sleutel=waarde · sleutel=waarde`, omdat het
+   Photoshop-script (tools/photoshop/01-catalog-afwerken.jsx, 4.07) hem leest en
+   ExtendScript geen JSON kent. Waarden bevatten nooit een spatie, een · of een =.
+   `kenmerk=` is ook de vingerafdruk waarmee "Map uploaden" een map van een andere
+   bestelling herkent (kenmerkUitWerkbestand hierboven).
+
+   PLAKREGEL bevat het kledingstuk (het TYPE uit garments.js), de kleur met code en
+   het materiaal zoals de klant ze opgaf — en NOOIT de productnaam: die kan als
+   tekst op het kledingstuk belanden. */
+
+/** Het woord voor het kledingstuk in de prompt: kort, Engels, uit het type.
+ *  Een type dat hier niet staat valt terug op de Engelse naam uit garments.js. */
+const PLAK_WOORD = {
+  trousers: 'trousers', shorts: 'shorts', skirt: 'skirt', top: 'top',
+  outerwear: 'jacket', dress: 'dress', shoes: 'shoes', socks: 'socks',
+  belt: 'belt', bag: 'bag', headwear: 'headwear', jewellery: 'jewellery',
+  scarf: 'scarf', underwear: 'underwear', other: 'product',
+};
+
+/** Wat er altijd nagekeken wordt, op elk beeld van elk product. */
+export const NAKIJKEN = ['kleur', 'print/logo', 'pasvorm', 'details', 'handen', 'randen'];
+
+/** Gaat dit product door Photoshop? Catalog wel; lifestyle niet (V35 = b: die
+ *  komt rechtstreeks uit Spaces), tenzij de bestelling het expliciet zegt — een
+ *  eigen look die specifieke bewerking vraagt (zie serveScaffold in admin.js). */
+export function photoshopNodig(order) {
+  if (typeof order?.photoshop === 'boolean') return order.photoshop;
+  return String(order?.service || '') !== 'lifestyle';
+}
+
+/** Eén waarde zonder tekens die de regel breken. */
+const instWaarde = (v) => String(v ?? '').trim().replace(/[\s·|;=]+/g, '');
+
+/**
+ * De INSTELLINGEN-regel, als lijst [sleutel, waarde] — de bron voor de regel in
+ * _briefing.txt en voor de test die hem tegen het Photoshop-script houdt.
+ */
+export function instellingen(order, product) {
+  const achtergrond = (String(product.background || '').match(/^#?([0-9a-f]{6})$/i) || [])[1];
+  const verhouding = /^\d{1,2}:\d{1,2}$/.test(String(product.ratio || '')) ? product.ratio : '';
+  const paren = [
+    ['kenmerk', order.ref],
+    ['product', product.index ? `p${product.index}` : ''],
+    ['dienst', order.service],
+    ['achtergrond', achtergrond ? `#${achtergrond.toUpperCase()}` : ''],
+    ['verhouding', verhouding],
+  ];
+  /* Een afwijkende verhouding per beeld: `verhouding_2=16:9` is het tweede vak. */
+  if (Array.isArray(product.imageRatios)) {
+    product.imageRatios.forEach((r, i) => {
+      if (/^\d{1,2}:\d{1,2}$/.test(String(r || ''))) paren.push([`verhouding_${i + 1}`, r]);
+    });
+  }
+  paren.push(
+    ['lange_zijde', product.hoogRes ? RESOLUTIE.hoog : RESOLUTIE.standaard],
+    ['kanaal', order.kanaal],
+    ['photoshop', photoshopNodig(order) ? 'ja' : 'nee'],
+  );
+  return paren.map(([k, v]) => [k, instWaarde(v)]).filter(([, v]) => v);
+}
+
+/** De regel zelf: `INSTELLINGEN  kenmerk=… · product=p1 · …`. */
+export function instellingenRegel(order, product) {
+  return `INSTELLINGEN  ${instellingen(order, product).map(([k, v]) => `${k}=${v}`).join(' · ')}`;
+}
+
+/** De plakregel voor de prompt: kledingstuk, kleur (code), materiaal. */
+export function plakRegel(product) {
+  const type = String(product.garment || '').trim();
+  const g = type ? garmentVan(type) : null;
+  const woord = g ? (PLAK_WOORD[g.id] || String(g.name.en).toLowerCase()) : 'product';
+  const kleur = kleurInfo(product.colour);
+  let kleurDeel = '';
+  if (kleur) {
+    const code = [kleur.hex, kleur.pantone].filter(Boolean).join(', ');
+    kleurDeel = kleur.naam ? (code ? `${kleur.naam} (${code})` : kleur.naam) : code;
+  }
+  return [woord, kleurDeel, String(product.material || '').trim()]
+    .filter(Boolean).join(', ').replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ');
+}
+
 /** De briefing van de klant, per product, in de map waar je hem nodig hebt. */
 export function briefingText({ order, product }) {
+  const idx = product.index ?? (String(product.folder || '').match(/^p(\d{1,3})\b/) || [])[1];
+  const sleutel = idx ? `p${idx}` : '';
+  const kop = [order.ref, sleutel, product.name || '(geen naam opgegeven)'].filter(Boolean).join(' · ');
   const regels = [
-    `${product.folder}`,
-    '='.repeat(Math.min(60, product.folder.length)),
+    kop,
+    '='.repeat(Math.min(60, kop.length)),
     '',
-    `Bestelling  ${order.ref}`,
-    `Product     ${product.name || '(de klant heeft geen naam opgegeven)'}`,
+    instellingenRegel(order, { ...product, index: idx }),
+    '',
+    `PLAKREGEL     ${plakRegel(product)}`,
     '',
   ];
-  if (product.material) regels.push(`Materiaal   ${product.material}`);
-  if (product.colour) regels.push(`Kleur       ${product.colour}`);
-  if (product.background) regels.push(`Achtergrond ${product.background}`);
-  /* ── DE BEELDVERHOUDING — 13 AUGUSTUS 2026 ────────────────────────────────
-   *
-   * BOVEN DE REGEL "de klant heeft niets opgegeven" en niet eronder, want een
-   * verhouding is altijd gekozen: het formulier begint op het vierkant en er is
-   * geen stroom die de vraag overslaat. Hij hoort dus in het rijtje feiten en
-   * niet in het rijtje ontbrekende antwoorden.
-   *
-   * PER BEELD ALS DE KLANT DAT ZO HEEFT GEZET. Bij lifestyle mag beeld 2 een
-   * banner zijn tussen twee vierkante; dan staat de afwijking hier per nummer,
-   * en de rest volgt de bestelling. Zonder deze regels zou de studio drie keer
-   * dezelfde vorm maken en zou de banner pas bij de revisie boven water komen. */
-  if (product.ratio) regels.push(`Verhouding  ${product.ratio}`);
-  /* De resolutie staat er ALLEEN als hij afwijkt van de standaard. Zie
-     RESOLUTIE in pricing.js: 2048 px is elke bestelling, en een regel die op
-     elk product hetzelfde zegt, is een regel die niemand meer leest. */
-  if (product.hoogRes) regels.push(`Resolutie   ${RESOLUTIE.hoog} px (besteld als hoge resolutie)`);
-  /* Het gezicht staat er ALLEEN als er een gekozen is. Leeg betekent "wij
-     kiezen er een", en dat is een instructie die in de briefing van de hele
-     bestelling thuishoort en niet dertig keer per product. Wijkt dit product af
-     van de rest, dan staat er hier iets anders dan op de kaart ernaast — en dat
-     is precies waarom deze regel per product staat en niet bovenaan. */
-  if (product.model) regels.push(`Gezicht     ${product.model}`);
+
+  /* ── MAKEN: wat er gegenereerd wordt ─────────────────────────────────────── */
+  const maken = [];
+  /* Het gezicht staat er ALLEEN als er een gekozen is; leeg betekent "wij kiezen". */
+  if (product.model) maken.push(`  Gezicht     ${product.model}`);
+  if (product.uitsnede) maken.push(`  Uitsnede    ${product.uitsnede}`);
+  if (product.styling) maken.push(`  Styling     ${product.styling}`);
+  if (order.look) maken.push(`  Look        ${order.look}`);
+  /* De verhouding is altijd gekozen (het formulier begint op het vierkant); een
+     afwijking per beeld staat eronder per nummer (13 augustus 2026). */
+  if (product.ratio) maken.push(`  Verhouding  ${product.ratio}`);
   if (Array.isArray(product.imageRatios)) {
     for (const [i, r] of product.imageRatios.entries()) {
-      if (r) regels.push(`  beeld ${i + 1}    ${r}`);
+      if (r) maken.push(`    beeld ${i + 1}   ${r}`);
     }
   }
-  if (!product.material && !product.colour && !product.background) {
-    regels.push('De klant heeft bij dit product geen materiaal, kleur of');
-    regels.push('achtergrond opgegeven.');
-  }
-  regels.push('');
-  /* ── DE BIJBESTELDE HOEKEN — 9 september 2026 ────────────────────────────
-     Wat hier stond was een lijst notities die de klant per product zelf had
-     getypt, met de opmerking dat de beelden in de losse map horen. Beide zijn
-     veranderd: de klant kiest de hoeken nu één keer voor de HELE bestelling uit
-     een lijst met namen, en elk product krijgt dezelfde. Ze zijn daarmee gewoon
-     beelden van DIT product, dus ze horen in deze map en niet in de losse.
-     De naam staat er altijd; de notitie alleen als de klant er een gaf. */
+  /* Alleen als hij afwijkt van de standaard (RESOLUTIE in pricing.js). */
+  if (product.hoogRes) maken.push(`  Resolutie   ${RESOLUTIE.hoog} px (besteld als hoge resolutie)`);
+  /* De bijbestelde hoeken gelden voor de HELE bestelling, maar staan bij elk
+     product: de studio werkt per productmap (9 september 2026). */
   if (product.extras && product.extras.length) {
-    regels.push(`EXTRA HOEKEN (${product.extras.length}, bij elk product gelijk)`);
-    regels.push('-'.repeat(60));
-    for (const [i, hoek] of product.extras.entries()) {
-      regels.push(`${i + 1}. ${hoek}`);
-    }
-    regels.push('');
-    regels.push('Deze komen bovenop de vaste vier, in deze productmap.');
-    regels.push('');
+    maken.push(`  Extra hoeken (${product.extras.length}, bij elk product gelijk):`);
+    for (const [i, hoek] of product.extras.entries()) maken.push(`    ${i + 1}. ${hoek}`);
+    maken.push('    Deze komen bovenop de vaste vier, in deze productmap.');
   }
-  /* ── VOORRANG STAAT BOVEN DE NOTITIE — 9 september 2026 ────────────────────
-     Het is geen wens maar een AFSPRAAK met een klok eraan: er is een bedrag
-     voor betaald en het komt terug als het niet lukt. Dus staat het in de map
-     die de studio als eerste opent, en niet ergens in een e-mail. */
+  regels.push('MAKEN', ...(maken.length ? maken : ['  (niets bijzonders opgegeven)']), '');
+
+  /* ── LET OP: wat leidend is en wat een revisie voorkomt ──────────────────── */
+  const letOp = [];
+  /* De kleur met code (5.03, V32 = a): naam, hex met RGB, Pantone, en de afspraak
+     dat deze kleur leidend is als de foto afwijkt. Witbalans eerst op het papier
+     (als de klant dat meefotografeerde), het papier wegsnijden vóór @img1. */
+  const kleur = kleurInfo(product.colour);
+  if (kleur) {
+    letOp.push(`  Kleur       ${kleur.naam || kleur.hex || kleur.pantone || kleur.tekst}`);
+    const rgb = rgbVan(kleur.hex);
+    const codes = [kleur.hex ? `${kleur.hex}${rgb ? ` (RGB ${rgb.join(', ')})` : ''}` : '', kleur.pantone].filter(Boolean);
+    if (codes.length) letOp.push(`  Kleurcode   ${codes.join(' / ')}`);
+    letOp.push('              Leidend als de foto afwijkt (witbalans eerst op het papier).');
+  }
+  if (product.material) letOp.push(`  Materiaal   ${product.material}`);
+  if (product.background) letOp.push(`  Achtergrond ${product.background}`);
+  if (!product.material && !product.colour && !product.background) {
+    letOp.push('  De klant heeft bij dit product geen materiaal, kleur of');
+    letOp.push('  achtergrond opgegeven.');
+  }
+  /* Voorrang is een AFSPRAAK met een klok eraan (9 september 2026). */
   if (order.voorrang) {
-    regels.push('VOORRANG BIJ LEVERING - BETAALD');
-    regels.push('-'.repeat(60));
-    regels.push('Deze bestelling gaat bovenaan de lijst. Betaald op een werkdag voor');
-    regels.push(`${VOORRANG.bestelVoorUur}:00: geleverd de volgende werkdag voor ${VOORRANG.klaarUur}:00. Later betaald: de`);
-    regels.push('werkdag daarna. Niet gehaald, dan gaat de toeslag terug naar de klant');
-    regels.push('en loopt de bestelling gewoon door.');
-    regels.push('');
+    letOp.push('  VOORRANG BIJ LEVERING - BETAALD');
+    letOp.push(`  Betaald op een werkdag voor ${VOORRANG.bestelVoorUur}:00: geleverd de volgende werkdag`);
+    letOp.push(`  voor ${VOORRANG.klaarUur}:00. Later betaald: de werkdag daarna. Niet gehaald, dan gaat`);
+    letOp.push('  de toeslag terug naar de klant en loopt de bestelling gewoon door.');
   }
   if (order.notes) {
-    regels.push('NOTITIE BIJ DE HELE BESTELLING');
-    regels.push('-'.repeat(60));
-    regels.push(order.notes);
-    regels.push('');
+    letOp.push('  Notitie bij de hele bestelling:');
+    for (const r of String(order.notes).split(/\r?\n/)) letOp.push(`    ${r}`);
   }
+  regels.push('LET OP', ...letOp, '');
+
+  regels.push(`NAKIJKEN      ${NAKIJKEN.join(' · ')}`, '');
   return CRLF(regels);
 }
 
@@ -405,9 +563,9 @@ export function licenceText({ order, lang, gedeeld = false }) {
     'looptijd op. Je hoeft VISUAILS niet te vermelden.',
     '',
     'DE BEELDEN ZIJN MET AI GEMAAKT.',
-    'Wie ze publiceert, hoort dat erbij te zeggen (EU AI Act, art. 50).',
-    'Die plicht ligt bij de publiceerder - in de praktijk bij jou. Op',
-    'visuails.com/nl/ai-act staat de zin die je kunt gebruiken.',
+    'Publiceer je ze, zet er dan zichtbaar bij dat ze met AI zijn gemaakt',
+    '(EU AI Act, art. 50). Zo is het afgesproken in paragraaf 11 van de',
+    'voorwaarden. Op visuails.com/nl/ai-act staat de zin die je kunt gebruiken.',
     '',
     'VISUAILS mag deze beelden in zijn eigen portfolio laten zien, tenzij',
     'je daar per e-mail bezwaar tegen maakt - dat mag altijd en ook later.',
@@ -440,9 +598,9 @@ export function licenceText({ order, lang, gedeeld = false }) {
     'have to credit VISUAILS.',
     '',
     'THESE IMAGES WERE MADE WITH AI.',
-    'Whoever publishes them should say so (EU AI Act, art. 50). That duty',
-    'sits on the publisher - in practice, on you. visuails.com/ai-act has',
-    'the sentence you can use.',
+    'If you publish them, state visibly that they were made with AI',
+    '(EU AI Act, art. 50). That is how section 11 of the terms arranges it.',
+    'visuails.com/ai-act has the sentence you can use.',
     '',
     'VISUAILS may show these images in its own portfolio unless you object',
     'by email - which you may do at any time, including later. If the',
@@ -529,9 +687,9 @@ function gedeeldeLicentie({ order, lang }) {
     'niets offline te halen. Nieuwe sets komen er dan geen meer.',
     '',
     'DE BEELDEN ZIJN MET AI GEMAAKT.',
-    'Wie ze publiceert, hoort dat erbij te zeggen (EU AI Act, art. 50).',
-    'Die plicht ligt bij de publiceerder - in de praktijk bij jou. Op',
-    'visuails.com/nl/ai-act staat de zin die je kunt gebruiken.',
+    'Publiceer je ze, zet er dan zichtbaar bij dat ze met AI zijn gemaakt',
+    '(EU AI Act, art. 50). Zo is het afgesproken in paragraaf 11 van de',
+    'voorwaarden. Op visuails.com/nl/ai-act staat de zin die je kunt gebruiken.',
     '',
     'De volledige voorwaarden: visuails.com/nl/terms (paragraaf 8)',
     '',
@@ -568,9 +726,9 @@ function gedeeldeLicentie({ order, lang }) {
     'simply stop receiving new sets.',
     '',
     'THESE IMAGES WERE MADE WITH AI.',
-    'Whoever publishes them should say so (EU AI Act, art. 50). That duty',
-    'sits on the publisher - in practice, on you. visuails.com/ai-act has',
-    'the sentence you can use.',
+    'If you publish them, state visibly that they were made with AI',
+    '(EU AI Act, art. 50). That is how section 11 of the terms arranges it.',
+    'visuails.com/ai-act has the sentence you can use.',
     '',
     'Full terms: visuails.com/terms (section 8)',
     '',
@@ -581,9 +739,104 @@ function gedeeldeLicentie({ order, lang }) {
    HET ARCHIEF
    ───────────────────────────────────────────────────────────────────────────── */
 
-/** De bestandsnaam van de zip. Kort, met de referentie erin, zonder spaties. */
-export function scaffoldFilename(ref) {
-  return `${String(ref || 'bestelling').replace(/[^A-Za-z0-9._-]+/g, '-')}-werkmap.zip`;
+/**
+ * De naam van de werkmap: `VIS-2608-4471 - Atelier Noord` (4.02, 8 oktober 2026).
+ *
+ * Het merk erbij, zodat je in Verkenner en in het uploadvenster ziet WELKE klant
+ * dit is voordat je een map terugzet. Het merk komt van de klant en wordt
+ * hier veilig gemaakt voor een Windows-bestandsnaam (geen \ / : * ? " < > |,
+ * geen punt aan het eind, hoogstens 40 tekens). Zonder merk: alleen het kenmerk.
+ * Dezelfde naam is de wortelmap in de zip, zodat het kenmerk in elk pad staat.
+ */
+export function werkmapNaam(ref, merk) {
+  const kenmerk = String(ref || 'bestelling').replace(/[^A-Za-z0-9._-]+/g, '-');
+  /* 40 en niet 48 tekens: zip.js kapt een mapnaam af op 60, en dan zouden de
+     zipnaam en de map erin verschillen. */
+  const m = String(merk || '')
+    .replace(/[\u0000-\u001f\u007f\\/:*?"<>|]+/g, ' ')   // wat Windows in een naam verbiedt
+    .replace(/\s+/g, ' ').trim()
+    .slice(0, 40)
+    .replace(/[\s.]+$/, '');                              // een punt aan het eind valt weg
+  return m ? `${kenmerk} - ${m}` : kenmerk;
+}
+
+/** De bestandsnaam van de zip: `VIS-2608-4471 - Atelier Noord.zip`. */
+export function scaffoldFilename(ref, merk) {
+  return `${werkmapNaam(ref, merk)}.zip`;
+}
+
+/*
+ * ── DE FOTO'S VAN DE KLANT IN DE WERKMAP — 8 oktober 2026 (punt 4.02, V34 = b) ──
+ *
+ * Lucas haalde ze per foto uit /admin. Nu staan ze per product in `_aangeleverd/`
+ * als `p1-klant-voorkant.jpg`, rechtstreeks uit R2.
+ *
+ * DE GRENS, EN WAAROM DEZE. zipStream() haalt één foto tegelijk op en laat hem weer
+ * los, dus het geheugen van de Worker houdt nooit meer dan één foto vast (hoogstens
+ * MAX_FILE_BYTES = 25 MB). Wat wel oploopt is de rekentijd: elk bestand krijgt een
+ * CRC-controlegetal, ±270 MB per seconde in JavaScript (gemeten), dus 1 GB is ±4 s
+ * CPU — ruim binnen de 30 s van een betaalde Worker. En elke foto is één verzoek aan
+ * R2; 400 blijft ver onder de grens per verzoek. Boven een van beide grenzen gaan de
+ * eerste foto's (in productvolgorde) mee en staat de rest in
+ * `_aangeleverd/NIET-IN-DEZE-ZIP.txt`, met waar je ze dan vindt.
+ */
+export const KLANTFOTO_GRENS = { aantal: 400, bytes: 1024 * 1024 * 1024 };
+
+/** Het woord voor een aangeleverde foto: `voorkant`, `referentie-2`, `erbij-shoes`. */
+function klantFotoWoord(shot) {
+  const s = String(shot || '');
+  const vast = shotInfo(s);
+  if (vast) return vast.name.nl.toLowerCase();
+  const extra = s.match(/^extra(\d{1,2})$/);
+  if (extra) return `extra-${extra[1]}`;
+  const ref = s.match(/^ref(\d{1,2})$/);
+  if (ref) return `referentie-${ref[1]}`;
+  const ctx = contextShotSlot(s);
+  if (ctx) return `erbij-${ctx.replace(/[^a-z0-9-]+/gi, '')}`;
+  return 'los';
+}
+
+/**
+ * De ingangen voor `_aangeleverd/` per product, plus een lijstje van wat er boven
+ * de grens niet in past. `fotos` zijn rijen uit `files` (kind = 'upload', niet
+ * vervangen); `haal(key)` levert de bytes uit R2 of null.
+ *
+ * @returns {{ ingangen: Array, weg: Array }}
+ */
+export function klantFotoBestanden(root, products, fotos, haal, grens = KLANTFOTO_GRENS) {
+  const mapVan = new Map(products.map((p) => [`p${p.index}`, productFolder(p.index, p.name)]));
+  const sorteer = (f) => {
+    const n = Number(String(f.product_key || '').replace(/^p/, ''));
+    return Number.isFinite(n) && n > 0 ? n : 9999;
+  };
+  const rijen = [...(fotos || [])].sort((a, b) => sorteer(a) - sorteer(b) || (a.id || 0) - (b.id || 0));
+  const ingangen = [];
+  const weg = [];
+  const geteld = new Map();
+  let bytes = 0;
+  for (const f of rijen) {
+    const map = mapVan.get(String(f.product_key || ''));
+    const ext = (String(f.filename || f.r2_key || '').match(/\.([a-z0-9]{1,5})$/i) || [, 'jpg'])[1].toLowerCase();
+    let naam;
+    if (map) {
+      const basis = `${f.product_key}-klant-${klantFotoWoord(f.shot)}`;
+      const n = (geteld.get(basis) || 0) + 1;
+      geteld.set(basis, n);
+      naam = `${root}/${map}/${SOURCE_FOLDER}/${basis}${n > 1 ? `-${n}` : ''}.${ext}`;
+    } else {
+      /* Zonder product (een losse foto, of een product boven het aantal van de
+         bestelling): in de `_aangeleverd/` van de hele bestelling, met zijn eigen naam. */
+      naam = `${root}/${SOURCE_FOLDER}/${safeSegment(f.filename, `foto-${f.id}`)}`;
+    }
+    const grootte = Number(f.bytes) || 0;
+    if (ingangen.length >= grens.aantal || bytes + grootte > grens.bytes) {
+      weg.push({ naam: naam.slice(root.length + 1), bytes: grootte });
+      continue;
+    }
+    bytes += grootte;
+    ingangen.push({ name: naam, get: () => haal(f.r2_key) });
+  }
+  return { ingangen, weg };
 }
 
 /**
@@ -591,14 +844,18 @@ export function scaffoldFilename(ref) {
  *
  * @param {object} order    de rij uit `orders`
  * @param {Array}  products [{ index, name, material, colour, background, ratio, imageRatios, extras }]
- * @param {object} opts     { origin, shots }  shots = welke vakjes deze dienst heeft
+ * @param {object} opts     { origin, shots, vakken, klantFotos, haalFoto }
+ *                          klantFotos + haalFoto vullen `_aangeleverd/` (4.02)
  */
 export function scaffoldFiles(order, products, opts = {}) {
   const enc = new TextEncoder();
   const txt = (s) => ({ get: async () => enc.encode(s).buffer });
-  const root = String(order.ref || 'bestelling');
+  const root = werkmapNaam(order.ref, order.brand || order.name);
   const shots = Array.isArray(opts.shots) && opts.shots.length ? opts.shots : SHOT_IDS;
   const files = [];
+  const fotos = Array.isArray(opts.klantFotos) && typeof opts.haalFoto === 'function'
+    ? klantFotoBestanden(root, products, opts.klantFotos, opts.haalFoto, opts.fotoGrens || KLANTFOTO_GRENS)
+    : null;
 
   files.push({ name: `${root}/LEESMIJ.txt`, ...txt(readmeText({ order, products, origin: opts.origin })) });
   files.push({ name: `${root}/LICENTIE.txt`, ...txt(licenceText({ order, lang: order.lang })) });
@@ -609,14 +866,25 @@ export function scaffoldFiles(order, products, opts = {}) {
       name: `${root}/${folder}/_briefing.txt`,
       ...txt(briefingText({ order, product: { ...p, folder } })),
     });
+    /* `_aangeleverd/` staat bovenaan in de productmap (Verkenner sorteert de
+       underscore vóór de cijfers), met de foto's van de klant erin. Zonder foto's
+       blijft de map er, leeg: dan weet je dat er niets is en zoek je niet verder. */
+    files.push({ name: `${root}/${folder}/${SOURCE_FOLDER}/`, dir: true });
+    if (fotos) {
+      const prefix = `${root}/${folder}/${SOURCE_FOLDER}/`;
+      for (const f of fotos.ingangen) if (f.name.startsWith(prefix)) files.push(f);
+    }
     if (Array.isArray(opts.vakken) && opts.vakken.length) {
       /* Per dienst (ronde 9, F17): lifestyle krijgt `1 beeld-1` … `3 beeld-3`,
          een bijbestelde hoek `5 driekwart [extra1]`. parseScaffoldPath() leest
          beide terug. */
       opts.vakken.forEach((v, i) => {
-        const naam = /^extra/.test(v.id)
-          ? `${i + 1} ${v.woord.nl} [${v.id}]`
-          : (SLOT_FOLDER[v.id] && v.woord.nl === SLOT_FOLDER[v.id].replace(/^\d+\s*/, '') ? SLOT_FOLDER[v.id] : `${i + 1} ${v.woord.nl}`);
+        /* Een catalogvak heet zoals altijd (`1 voorkant`); elk ander vak krijgt
+           zijn nummer, zijn woord en zijn sleutel (`3 product [product]`), zodat
+           "Map uploaden" hem terugleest ook als het woord op een catalogvak lijkt
+           (`4 detail [detail]` bij lifestyle is het vierde beeld, niet het derde). */
+        const catalogNaam = SLOT_FOLDER[v.id] && SLOT_FOLDER[v.id] === `${i + 1} ${v.woord.nl}`;
+        const naam = catalogNaam ? SLOT_FOLDER[v.id] : `${i + 1} ${v.woord.nl} [${v.id}]`;
         files.push({ name: `${root}/${folder}/${naam}/`, dir: true });
       });
     } else {
@@ -630,5 +898,25 @@ export function scaffoldFiles(order, products, opts = {}) {
   // en varianten zijn er per bestelling een handvol, en dertig lege _los-mappen
   // is dertig mappen waar niemand in kijkt.
   files.push({ name: `${root}/${LOOSE_FOLDER}/`, dir: true });
+
+  if (fotos) {
+    const los = `${root}/${SOURCE_FOLDER}/`;
+    for (const f of fotos.ingangen) if (f.name.startsWith(los)) files.push(f);
+    if (fotos.weg.length) {
+      files.push({
+        name: `${los}NIET-IN-DEZE-ZIP.txt`,
+        ...txt(CRLF([
+          `${fotos.weg.length} foto's van de klant passen niet in deze zip`,
+          `(grens: ${KLANTFOTO_GRENS.aantal} foto's of ${Math.round(KLANTFOTO_GRENS.bytes / 1048576)} MB per werkmap).`,
+          '',
+          'Haal ze per foto op in /admin, op de bestelpagina onder',
+          '"Aangeleverd door de klant":',
+          '',
+          ...fotos.weg.map((w) => `- ${w.naam}`),
+          '',
+        ])),
+      });
+    }
+  }
   return files;
 }

@@ -53,8 +53,11 @@ console.log('\nde vraag staat op de kaart, en alleen waar hij hoort');
      model kunnen kiezen per product, dit hoeft niet groot en is puur
      optioneel."* Een <select> met elf namen vraagt dat je wéét wie "Ava" is. */
   ok('  het is een rij duimnagels', /class="pu-mk-tegel"/.test(uploader));
-  ok('  en die staat op de kaart zelf, niet in de lade',
-    /if \(gezicht\) li\.append\(gezicht\);/.test(pipe));
+  /* Tot 11 oktober 2026 stond de rij open op de kaart. Lucas koos bij de ombouw
+     van stap 2 (F3): het gezicht kies je één keer in stap 1, en per product
+     afwijken kan onder het ingeklapte "Meer over dit product". */
+  ok('  en die staat in de lade "Meer over dit product" (F3)',
+    /buildMeer\(card, \[gezicht, about, ratios, refs, erbij\]\)/.test(pipe));
   /* De Astro-val: een element dat pipeline.js maakt draagt geen scope-attribuut.
      Vandaar een <template> in de bron en :global() in de opmaak. */
   ok('  de tegel komt uit een <template> in de bron', /<template data-pu-model-tegel>/.test(uploader));
@@ -65,8 +68,9 @@ console.log('\nde vraag staat op de kaart, en alleen waar hij hoort');
 
   ok('de stroom zegt zelf of hij het vraagt', /perProduct: !isSample && MODEL_DIENSTEN\.has\(service\)/.test(flow));
   ok('  en de proef vraagt het niet', /!isSample/.test(flow));
-  ok('  drie diensten, dezelfde als de gezichtsvraag zelf',
-    /const MODEL_DIENSTEN = new Set\(\['catalog', 'lifestyle', 'complete'\]\);/.test(flow));
+  /* Twee sinds 14 oktober 2026: compleet bestaat niet meer (afvinklijst 23). */
+  ok('  twee diensten, dezelfde als de gezichtsvraag zelf',
+    /const MODEL_DIENSTEN = new Set\(\['catalog', 'lifestyle'\]\);/.test(flow));
 }
 
 console.log('\nde opties komen van de radio’s en niet uit een tweede lijst');

@@ -1,4 +1,6 @@
 ---
+// VISUAILS — /faq: in de hal sinds 13 oktober 2026 (afvinklijst 14, alles doen). De pagina
+// staat in FaqHal.astro; de vorige (FaqPage.astro) staat op de opruimlijst.
 // VISUAILS — /faq (English). The page body lives in FaqPage.astro so that /faq
 // and /nl/faq cannot drift apart; only the meta differs here.
 //
@@ -7,7 +9,7 @@
 // and every timing string comes from turnaround(); the meta follows the same
 // rule so a repriced ladder cannot leave a stale figure in the <head>.
 import Layout from '../layouts/Layout.astro';
-import FaqPage from '../components/FaqPage.astro';
+import FaqHal from '../components/FaqHal.astro';
 import { euro, ladderRate, ladderFloor, LADDER, vatLabel } from '../data/pricing.js';
 
 // The band and the package price are gone with the package. What replaces them
@@ -19,6 +21,6 @@ const description =
   `corrections, rights and payment — answered plainly.`;
 ---
 
-<Layout title="Frequently asked questions — VISUAILS" description={description}>
-  <FaqPage lang="en" />
+<Layout huid="hal" title="Frequently asked questions — VISUAILS" description={description}>
+  <FaqHal lang="en" />
 </Layout>

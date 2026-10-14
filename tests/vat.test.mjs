@@ -155,19 +155,19 @@ restore();
 // ── 6 · THE MONEY THAT COMES OUT ─────────────────────────────────────────────
 console.log('\n── bedragen ──');
 
-const dutch = quoteOrder({ service: 'drop', products: 12, vatRate: 0.21 });
-const german = quoteOrder({ service: 'drop', products: 12, vatRate: 0 });
+const dutch = quoteOrder({ service: 'lifestyle', products: 12, vatRate: 0.21 });
+const german = quoteOrder({ service: 'lifestyle', products: 12, vatRate: 0 });
 check('net is the same either way', dutch.netCents, german.netCents);
 check('the Dutch order is charged net + 21%', dutch.grossCents, dutch.netCents + dutch.vatCents);
 check('the reverse-charged order pays exactly net', german.grossCents, german.netCents);
 check('and carries no VAT', german.vatCents, 0);
 check('the rate is reported back', german.vatRate, 0);
 check('a nonsense rate falls back to 21%, not to zero',
-  quoteOrder({ service: 'drop', products: 12, vatRate: NaN }).vatRate, 0.21);
+  quoteOrder({ service: 'lifestyle', products: 12, vatRate: NaN }).vatRate, 0.21);
 check('a negative rate falls back too',
-  quoteOrder({ service: 'drop', products: 12, vatRate: -1 }).vatRate, 0.21);
+  quoteOrder({ service: 'lifestyle', products: 12, vatRate: -1 }).vatRate, 0.21);
 check('an absent rate is the Dutch one',
-  quoteOrder({ service: 'drop', products: 12 }).vatRate, 0.21);
+  quoteOrder({ service: 'lifestyle', products: 12 }).vatRate, 0.21);
 
 // ── 7 · THE DISCOUNT IS GONE ─────────────────────────────────────────────────
 // Lucas: "Verwijder hierna ook de 20% korting." A test rather than a comment,
@@ -177,9 +177,9 @@ console.log('\n── de korting is weg ──');
 const pricing = await import('../src/data/pricing.js');
 check('FIRST_ORDER_DISCOUNT no longer exists', 'FIRST_ORDER_DISCOUNT' in pricing, false);
 check('quote() no longer returns a discount field',
-  'discount' in pricing.quote('complete', 12), false);
+  'discount' in pricing.quote('lifestyle', 12), false);
 check('list price and net are the same number now',
-  pricing.quote('complete', 12).listTotal === pricing.quote('complete', 12).net, true);
+  pricing.quote('lifestyle', 12).listTotal === pricing.quote('lifestyle', 12).net, true);
 
 console.log(`\n${pass}/${pass + fail} passed`);
 if (fail) {

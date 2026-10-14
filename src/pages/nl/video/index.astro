@@ -1,4 +1,6 @@
 ---
+// VISUAILS — /nl/video: in de hal sinds 13 oktober 2026 (afvinklijst 16, alles doen). De pagina
+// staat in VideoHal.astro; de vorige (VideoPage.astro) staat op de opruimlijst.
 // VISUAILS — /nl/video (Nederlands). De pagina-inhoud staat in
 // VideoPage.astro, zodat /video en /nl/video niet uit elkaar kunnen lopen;
 // alleen de meta verschilt hier.
@@ -7,7 +9,7 @@
 // prijs: een clip staat niet op de staffel per product, het is één vast
 // tarief, los of binnen een bestelling. Dat staat er nu bij, met de btw-vlag.
 import Layout from '../../../layouts/Layout.astro';
-import VideoPage from '../../../components/VideoPage.astro';
+import VideoHal from '../../../components/VideoHal.astro';
 import { euro, AMOUNT, vatLabel, VIDEO_OP_AANVRAAG } from '../../../data/pricing.js';
 
 const description = VIDEO_OP_AANVRAAG
@@ -17,10 +19,10 @@ const description = VIDEO_OP_AANVRAAG
     `tarief los of binnen een bestelling.`;
 ---
 
-<Layout
+<Layout huid="hal"
   title="Korte productvideo’s uit je eigen foto’s | VISUAILS"
   description={description}
   ogImage="/img/banners-16.webp"
 >
-  <VideoPage lang="nl" />
+  <VideoHal lang="nl" />
 </Layout>

@@ -229,18 +229,29 @@ export async function totpCode(secret, { nu = Date.now() } = {}) {
  * "te klein om te meten" is een aanname over de aanvaller en niet over de code —
  * en er staat hier al een vergelijker die het goed doet.
  */
-export async function verifyTotp(code, secret, { nu = Date.now(), drift = TOTP_DRIFT } = {}) {
+export async function verifyTotp(code, secret, opties = {}) {
+  return (await totpStap(code, secret, opties)) !== null;
+}
+
+/* ── WELKE STAP HET WAS — 8 oktober 2026 (o19) ─────────────────────────────
+ *
+ * verifyTotp() zegt alleen "klopt". Om een code maar één keer te laten werken,
+ * moet de aanroeper weten BIJ WELKE tijdstap hij hoorde: die wordt bewaard
+ * (admin_users.totp_last_step, migratie 0052) en een volgende code moet een
+ * nieuwere stap hebben. Zie gebruikTotp() in admin.js. Geeft het nummer van de
+ * stap, of null als de code niet klopt. */
+export async function totpStap(code, secret, { nu = Date.now(), drift = TOTP_DRIFT } = {}) {
   const cijfers = String(code || '').replace(/\D/g, '');
-  if (cijfers.length !== 6) return false;
+  if (cijfers.length !== 6) return null;
   const bytes = base32Bytes(secret);
-  if (!bytes) return false;
+  if (!bytes) return null;
 
   const teller = Math.floor(nu / 1000 / TOTP_STAP);
   for (let d = -drift; d <= drift; d += 1) {
     const verwacht = await totpVoorTeller(bytes, teller + d);
-    if (timingSafeEqual(cijfers, verwacht)) return true;
+    if (timingSafeEqual(cijfers, verwacht)) return teller + d;
   }
-  return false;
+  return null;
 }
 
 /** De otpauth-regel die een authenticator-app inleest. */

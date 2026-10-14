@@ -13,7 +13,8 @@
  *
  * ── 1 · STARTEN ────────────────────────────────────────────────────────────
  *
- * De klant kiest plan, termijn en de dag van zijn vaste week. Wij leggen een rij
+ * De klant kiest plan en termijn. (De dag van een vaste week hoorde er tot ronde
+ * 10 bij; die week is weg sinds 8 oktober 2026, §28.) Wij leggen een rij
  * vast op 'pending', maken een klant bij Mollie aan, en sturen hem naar een
  * EERSTE BETALING met `sequenceType: 'first'`. Die betaling is geen maand — het
  * is de transactie die het mandaat oplevert. Zonder mandaat kan er nooit iets
@@ -70,15 +71,18 @@
 import { withdrawalRecord } from '../data/consent.js';
 import {
   createSubscriptionRow, loadSubscription, subscriptionByRef,
-  setMollieIds, activateSubscription, bezetting,
+  setMollieIds, activateSubscription,
 } from './subscription.js';
 import {
-  PLAN_IDS, SUB_PLAN_IDS, TERM_IDS, PLAN_SERVICE, monthlyCents, productsFor,
-  planProductBudget, fitsBudget, fitsProducts, isPrepaid,
+  PLAN_IDS, SUB_PLAN_IDS, TERM_IDS, OFFERED_TERM_IDS, PLAN_SERVICE, monthlyCents, productsFor,
+  creditsPassen, planPast, isPrepaid,
 } from '../data/plans.js';
+/* De rem op abonnementen, in credits (6.05): dezelfde stand als /api/plan-plek en /admin. */
+import { aboStand } from './aboPlafond.js';
 import { planName } from '../data/planNames.js';
 import { regKindFor, REG_KIND, looksLikeKvk } from '../data/business.js';
-import { vatDecision, normaliseVat, viesCode, HOME_COUNTRY, vatFormatOk } from '../data/vat.js';
+import { vatDecision, normaliseVat, viesCode, HOME_COUNTRY, vatFormatOk, VAT_TREATMENT, ipLandVraagtNakijken } from '../data/vat.js';
+import { notifyAboBtwNakijken } from './notify.js';
 import { checkVat } from './vies.js';
 import {
   MANDATE_AMOUNT, CUSTOM_MONTH_ID,
@@ -157,7 +161,9 @@ export async function handleSubscribeStart(context, customer, offsite, vooraf = 
 
   const planId = String(form?.get('plan') || '');
   let termId = String(form?.get('term') || 'monthly');
-  const windowDay = Number.parseInt(String(form?.get('window_day') || ''), 10);
+  /* `window_day` (de dag van de vaste week) wordt niet meer gelezen of
+     geschreven: het weeksysteem is weg (ronde 10, 8 oktober 2026). Een oud
+     formulier dat hem nog meestuurt, wordt gewoon genegeerd. */
   /* Bovenaan en niet halverwege: terug() heeft hem nodig en die wordt hieronder
      vijf keer aangeroepen, waarvan drie keer vóór de plek waar deze regel
      stond. Zie de noot bij terug(). */
@@ -187,7 +193,10 @@ export async function handleSubscribeStart(context, customer, offsite, vooraf = 
     if (!(maatCents > 0)) return seeOtherLocal(terug('maat', lang));
   }
 
-  if (!TERM_IDS.includes(termId)) return seeOtherLocal(terug('termijn', lang));
+  /* Alleen de termijnen uit het aanbod (6.04, 8 oktober 2026): maandelijks en
+     jaar vooruit. 'yearly' bestaat nog voor lopende abonnementen, maar een
+     nieuw abonnement kan hem niet meer kiezen. */
+  if (!OFFERED_TERM_IDS.includes(termId)) return seeOtherLocal(terug('termijn', lang));
 
   /* ── DE VERKLARING, OOK VOOR WIE INGELOGD IS — 1 oktober 2026 (ronde 8, B-B3) ──
      /api/plan weigerde zonder de zakelijke verklaring; de ingelogde route
@@ -210,8 +219,33 @@ export async function handleSubscribeStart(context, customer, offsite, vooraf = 
      ook voor een bedrijf in de Verenigde Staten, dat helemaal geen btw hoort te
      betalen, terwijl het formulier "met een geldig nummer verleggen we de btw"
      beloofde. */
-  const bedrijf = await bepaalBedrijfEnBtw(env, form, customer.customer_id);
+  const ipLand = String(request?.cf?.country || '').trim().toUpperCase().slice(0, 2);
+  const bedrijf = await bepaalBedrijfEnBtw(env, form, customer.customer_id, ipLand);
   if (bedrijf.fout) return seeOtherLocal(terug(bedrijf.fout, lang));
+
+  /* ── LAND BUITEN DE EU, IP IN DE EU: EERST NAKIJKEN — 8 oktober 2026 (o16) ──
+     Een bestelling met deze combinatie gaat op de btw-lijst in /admin; een
+     abonnement heeft die lijst niet. Dus gaat het hier niet naar Mollie: Lucas
+     krijgt een mail met alles erbij, en de klant leest een gewone melding
+     (`?fout=nakijken`, in PlanPicker.astro als mededeling en niet als fout) dat
+     we zijn gegevens eerst nakijken en dat er niets is afgeschreven. Keurt Lucas
+     het land goed op de klantpagina (customers.btw_land_akkoord, migratie 0053),
+     dan gaat een volgende poging gewoon door. */
+  if (bedrijf.nakijken) {
+    const rij = await env.DB.prepare('SELECT email, brand, phone FROM customers WHERE id = ?1')
+      .bind(customer.customer_id).first().catch(() => null);
+    await notifyAboBtwNakijken(env, {
+      customerId: customer.customer_id,
+      email: rij?.email || customer.email || '',
+      brand: rij?.brand || customer.brand || '',
+      phone: rij?.phone || '',
+      plan: planName(planId, 'nl'),
+      term: termId,
+      land: bedrijf.nakijken.land,
+      ipLand: bedrijf.nakijken.ipLand,
+    });
+    return seeOtherLocal(terug('nakijken', lang));
+  }
 
   /* AL EEN ABONNEMENT? Dan niet nog een. De partiële UNIQUE index vangt dit ook,
      maar een klant die per ongeluk twee tabbladen open heeft, hoort een uitleg te
@@ -249,29 +283,30 @@ export async function handleSubscribeStart(context, customer, offsite, vooraf = 
    * DE CAPACITEITSPOORT, EN HIJ STAAT HIER OM DEZELFDE REDEN ALS BIJ EEN
    * BESTELLING MET EEN VENSTER: je kunt niet meer beloven dan je kunt maken.
    *
-   * planProductBudget() is 30% van de begeleide maandcapaciteit. Wat er al vast
-   * ligt, wordt geteld over de database en niet aangenomen — zie bezetting() in
-   * subscription.js. Past dit plan er niet meer bij, dan is dat geen storing maar
-   * een volle agenda, en dat hoort de klant te lezen voordat hij een machtiging
-   * afgeeft en niet erna.
+   * Sinds 6.05 (8 oktober 2026) een plafond in CREDITS: de maandcredits van
+   * alle abonnementen samen, tegen het plafond dat Lucas in /admin zet (of
+   * ABO_CREDITS_PLAFOND in plans.js). Wat er al vast ligt, wordt geteld over de
+   * database en niet aangenomen — zie bezetting() in subscription.js. Past dit
+   * plan er niet meer bij, dan is dat geen storing maar een volle maand, en dat
+   * hoort de klant te lezen voordat hij een machtiging afgeeft en niet erna.
    */
   /* De telling staat in bezetting() (subscription.js), en /start/plan leest
      dezelfde functie om VOORAF te zeggen wat er nog past — zie
      functions/api/plan-plek.js. Eén telling, dus de pagina en de poort kunnen
      het niet oneens zijn. */
-  const { producten: vastgelegd } = await bezetting(env);
+  const { credits: vastgelegd, plafond } = await aboStand(env);
   const past = planId === CUSTOM_MONTH_ID
-    ? fitsProducts(maatProducten, vastgelegd)
-    : fitsBudget(planId, vastgelegd);
+    ? creditsPassen(maatSlots?.credits || 0, vastgelegd, plafond)
+    : planPast(planId, vastgelegd, plafond);
   if (!past) {
-    console.error('[abonnement] plek geweigerd —', planId, 'bij', vastgelegd, 'van', planProductBudget());
+    console.error('[abonnement] plek geweigerd —', planId, 'bij', vastgelegd, 'van', plafond, 'credits per maand');
     return seeOtherLocal(terug('vol', lang));
   }
 
   let rij;
   try {
     const gemaakt = await createSubscriptionRow(env, {
-      customerId: customer.customer_id, planId, termId, windowDay,
+      customerId: customer.customer_id, planId, termId,
       slots: maatSlots, amountCents: maatCents, btw: bedrijf.btw,
     });
     if (gemaakt.bestaat) return seeOtherLocal('/account/plan');
@@ -589,7 +624,10 @@ export async function stopIncasso(env, sub) {
  * eerste (het aantal maandrijen) is de boekhouding. Wie hier gaat rekenen,
  * bouwt een tweede waarheid.
  */
-export async function hervatIncasso(env, sub, origin) {
+/* `startDate` (8 oktober 2026, 2.07): een pauze die nog niet was ingegaan
+   (de klant hervat vóór de volgende afschrijving) hervat op precies die dag,
+   zodat er geen termijn wegvalt en er geen dubbel komt. Zonder: eersteTermijn(). */
+export async function hervatIncasso(env, sub, origin, { startDate = null } = {}) {
   /* Een vooruitbetaald jaar heeft geen incasso om te hervatten: het is al
      betaald, en er is geen mandaat. `true` en niet `false` — er is niets
      misgegaan, er valt niets te doen. Zie koppelSubscription(). */
@@ -626,7 +664,7 @@ export async function hervatIncasso(env, sub, origin) {
       valueEuros: subMaandBruto(sub) / 100,
       description: `VISUAILS ${sub.plan} — ${sub.ref}`,
       webhookUrl: `${origin}/api/webhook/mollie`,
-      startDate: eersteTermijn(),
+      startDate: /^\d{4}-\d{2}-\d{2}$/.test(String(startDate || '')) ? startDate : eersteTermijn(),
       times,
     });
     if (!sc?.id) throw new Error('Mollie gaf geen abonnements-id terug');
@@ -661,15 +699,23 @@ export { PLAN_SERVICE, MANDATE_EUROS };
  * Geeft `{ fout }` (een reden voor ?fout=) of `{ btw }` in de vorm die
  * createSubscriptionRow() op de rij zet. Leest het formulier, en valt voor wat
  * ontbreekt terug op de klantrij — een oude pagina post misschien geen land.
+ *
+ * Sinds 8 oktober 2026 (o16) ook `ipLand`, het land van het ip-adres: is het
+ * gekozen land buiten de EU en het ip in de EU, en heeft Lucas dat land voor
+ * deze klant nog niet goedgekeurd (customers.btw_land_akkoord, migratie 0053),
+ * dan komt er `{ nakijken: { land, ipLand } }` bij. Zie handleSubscribeStart().
  */
-export async function bepaalBedrijfEnBtw(env, form, customerId) {
+export async function bepaalBedrijfEnBtw(env, form, customerId, ipLand = '') {
   const t = (k, max) => String(form?.get(k) || '').trim().slice(0, max);
   let land = t('country', 2).toUpperCase();
   let merk = t('brand', 120);
   let btw = t('vat', 32);
   let reg = t('reg_number', 40);
   const geenBtw = !btw && ['1', 'on', 'true', 'yes'].includes(t('no_vat', 5).toLowerCase());
-  const bevestigd = t('vat_confirmed', 5) === 'yes';
+  /* 8.06 (8 oktober 2026): de verklaring zit nu in het zakelijk-vinkje (met de
+     verleggingszin), niet meer in een apart vinkje. `vat_confirmed` zegt bij
+     welke tekst het vinkje werd gezet; zonder het vinkje zelf telt hij niet. */
+  const bevestigd = t('vat_confirmed', 5) === 'yes' && t('business_declaration', 5) === 'yes';
 
   if ((!land || !merk) && customerId && env?.DB) {
     const rij = await env.DB.prepare('SELECT country, brand, vat_number, reg_number FROM customers WHERE id = ?1')
@@ -700,7 +746,19 @@ export async function bepaalBedrijfEnBtw(env, form, customerId) {
       .catch(() => null);
   }
   const besluit = vatDecision({ country: land, vatValid: !!(vies && vies.valid && bevestigd) });
+  let nakijken = null;
+  if (besluit.treatment === VAT_TREATMENT.outsideScope && ipLandVraagtNakijken(land, ipLand)) {
+    /* Zonder migratie 0053 is er geen akkoord te lezen: dan wacht het op Lucas. */
+    const ok = customerId && env?.DB
+      ? await env.DB.prepare('SELECT btw_land_akkoord AS land FROM customers WHERE id = ?1')
+        .bind(customerId).first().catch(() => null)
+      : null;
+    if (String(ok?.land || '').toUpperCase() !== land) {
+      nakijken = { land, ipLand: String(ipLand).toUpperCase() };
+    }
+  }
   return {
+    ...(nakijken ? { nakijken } : {}),
     btw: {
       treatment: besluit.treatment,
       rate: besluit.rate,

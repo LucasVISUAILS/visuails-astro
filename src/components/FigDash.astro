@@ -51,10 +51,20 @@
  * zodat de mock en de renders van het échte dashboard over hetzelfde merk gaan.
  */
 import { euro, quote } from '../data/pricing.js';
-import { DEMO_ORDER, DEMO_TODAY, demoWindow, windowLabel, dayLabel } from '../data/figdemo.js';
+/* Het woordmerk in de balk van het voorbeeldscherm (14 oktober 2026): het echte merk, niet het woord in een letter. */
+import Woordmerk from './Woordmerk.astro';
+import { DEMO_ORDER, DEMO_TODAY, demoWindow, dayLabel } from '../data/figdemo.js';
+import { geleverd, ingestuurd } from '../data/voorbeeldset.js';
+import UitlegBalk from './UitlegBalk.astro';
 
-interface Props { lang?: 'en' | 'nl' }
-const { lang = 'en' } = Astro.props;
+/* `uitleg` (14 oktober 2026): een rondleiding in vijf stappen, met een cursor die de
+   tab Bestellingen echt opent. Klik je zelf op een tab, dan stopt hij.
+   Afvinklijst 24 (Lucas): de roze jeans van de voorbeeldset in plaats van de flash-foto's;
+   de revisie is geen fout maar een wens ("de klant wou toch liever een witte achtergrond
+   in plaats van grijs"), en die wordt voor hem opgelost: de modelfoto komt terug op wit.
+   De rondleiding stopt op Bestellingen; "Je vaste look" blijft een tab die je zelf opent. */
+interface Props { lang?: 'en' | 'nl'; uitleg?: boolean }
+const { lang = 'en', uitleg = false } = Astro.props;
 const nl = lang === 'nl';
 
 /* Eén id-voorvoegsel per instantie, zodat twee FigDash'en op één pagina niet
@@ -67,7 +77,7 @@ const uid = `fd${Math.random().toString(36).slice(2, 8)}`;
    bezoeker iets ruimer dan wat de poort werkelijk vastzet. Het komt nu uit
    dezelfde fixture als FigGate en FigBoard, zodat de drie figuren niet
    ieder hun eigen leverdatum dragen. */
-const win = windowLabel(demoWindow(DEMO_ORDER.products), lang);
+const win2 = demoWindow(DEMO_ORDER.products);
 
 const C = nl
   ? {
@@ -83,26 +93,48 @@ const C = nl
         ['Je gegevens', 'Eén keer invullen, daarna voorgevuld'],
       ],
       ovH: 'Wat er nu loopt',
-      ovTiles: [['1', 'in productie'], ['1', 'wordt nagekeken'], ['2', 'geleverd'], ['1', 'onbetaald']],
+      /* 14 oktober 2026: de tegels van het echte overzicht (overviewView in
+         account.js): dezelfde woorden, label boven het getal, en alleen wat boven
+         0 is. "In productie" en "wordt nagekeken" zijn daar samen "Bij ons in de
+         maak"; "Te beoordelen" is hier 0 (er is nog niets geleverd) en valt weg. */
+      ovTiles: [['1', 'Te betalen'], ['2', 'Bij ons in de maak'], ['2', 'Geleverd']],
+      /* De twee tabs die het echte scherm ook heeft; hier geen paneel, alleen de naam. */
+      tabsRest: [['Facturen', 'Elke factuur als pdf'], ['Abonnement', 'Je credits en je maandplanning']],
       ovOrder: `${DEMO_ORDER.ref} · Catalog · ${DEMO_ORDER.products} producten`,
+      /* De Nu-zin van het echte scherm (COPY.flowNow en flowWindow), zonder "Nu:" ervoor. */
       ovNow: 'Onze studio maakt je beelden.',
-      ovWindow: `Leverdatum ${win}`,
+      ovWindow: win2 ? (win2.start === win2.end ? `Ingepland op ${dayLabel(win2.start, 'nl')}.` : `Ingepland van ${dayLabel(win2.start, 'nl')} tot ${dayLabel(win2.end, 'nl')}.`) : '',
       flow: ['Ontvangen', 'In productie', 'Wordt nagekeken', 'Geleverd'],
       ovRecent: 'Laatst geleverd',
       payNet: 'Excl. btw', payVat: 'Btw', payTotal: 'Totaal',
       /* 30 september 2026: deze bestelling staat in productie, en productie
          begint pas na betaling. Hier stond "nog niet betaald — je plek staat
          vast tot 8 aug": onbetaald én in productie, en "vast" vóór betaling. */
-      payState: `Betaald op ${dayLabel(DEMO_TODAY, 'nl')} — je leverdatum ${win} ligt vast.`,
-      payBtn: 'Factuur downloaden',
+      /* De zin van het echte betaalblok (payPaidOn). Een factuurknop staat daar niet: facturen staan onder Facturen. */
+      payState: `Betaald op ${dayLabel(DEMO_TODAY, 'nl')}.`,
       ordH: 'Product 1',
       ordFacts: '4 foto’s geleverd · 4 goedgekeurd',
+      ordFactsU: '4 foto’s geleverd · 3 goedgekeurd · 1 in je ronde',
+      ordFactsKlaar: '4 foto’s geleverd · 3 goedgekeurd · 1 aangepast',
+      veldU: 'Toch liever op wit dan grijs, zoals de rest.',
+      okU: 'Goedgekeurd',
+      aangepast: 'Opnieuw geleverd',
+      zinnen: [
+        'In VISUAILS Studio zie je in één oogopslag hoe je bestellingen ervoor staan.',
+        'Per bestelling: waar hij staat, wanneer hij klaar is en wat je betaalde.',
+        'Bij levering staat elk beeld naast de foto die je stuurde.',
+        'Goedkeuren doe je per beeld. Wil je iets anders? Vink het aan en zeg wat: hier liever wit dan grijs.',
+        'Wij passen het aan en leveren het opnieuw: nu op wit, net als de rest.',
+      ],
       ordMade: 'Wat wij leverden', ordSent: 'Wat jij stuurde',
-      shots: ['Voorkant', 'Achterkant', 'Detail', 'Op een model'],
-      bApprove: 'Goedkeuren', bAsk: 'Niet goed', bDown: 'Downloaden',
+      shots: ['Voorkant', 'Achterkant', 'Detail', 'Op model'],
+      bApprove: 'Goedkeuren', bAsk: 'Deze aanmerken', bDown: 'Downloaden',
       rrH: 'Eén revisieronde',
-      rrBody: 'Vink aan wat niet goed is, schrijf erbij wat eraan schort, en stuur het als één ronde.',
-      rrBtn: 'Verstuur deze revisieronde',
+      /* 14 oktober 2026: "Deze aanmerken" en "Revisieronde versturen" zijn de woorden van het
+         echte scherm (rdTick, rdSend in account.js); "Niet goed" stond alleen hier. En een
+         revisie is een wens, geen fout (Lucas, afvinklijst 24). */
+      rrBody: 'Vink aan wat je anders wilt, zeg erbij hoe, en stuur het als één ronde.',
+      rrBtn: 'Revisieronde versturen',
       ordNote: 'Goedkeuren doe je per beeld. Aanmerken ook — maar je verstuurt ze samen, als de ene revisieronde die bij de bestelling hoort. Daarna verschijnt er een WhatsApp-link in plaats van de knop.',
       bkH: 'Standaard per dienst',
       bkFace: 'Wie het draagt', bkBg: 'Waar het op staat', bkCh: 'Waar je het verkoopt',
@@ -138,23 +170,35 @@ const C = nl
         ['Your details', 'Fill in once, then prefilled'],
       ],
       ovH: 'What is running now',
-      ovTiles: [['1', 'in production'], ['1', 'being checked'], ['2', 'delivered'], ['1', 'unpaid']],
+      ovTiles: [['1', 'To pay'], ['2', 'With us'], ['2', 'Delivered']],
+      tabsRest: [['Invoices', 'Every invoice as a PDF'], ['Plan', 'Your credits and monthly planning']],
       ovOrder: `${DEMO_ORDER.ref} · Catalog · ${DEMO_ORDER.products} products`,
-      ovNow: 'Our studio is making your visuals.',
-      ovWindow: `Delivery ${win}`,
+      ovNow: 'Our studio is making your images.',
+      ovWindow: win2 ? (win2.start === win2.end ? `Planned for ${dayLabel(win2.start, 'en')}.` : `Planned for ${dayLabel(win2.start, 'en')} – ${dayLabel(win2.end, 'en')}.`) : '',
       flow: ['Received', 'In production', 'Being checked', 'Delivered'],
       ovRecent: 'Delivered most recently',
       payNet: 'Excl. VAT', payVat: 'VAT', payTotal: 'Total',
-      payState: `Paid on ${dayLabel(DEMO_TODAY, 'en')} — your delivery date ${win} is fixed.`,
-      payBtn: 'Download invoice',
+      payState: `Paid on ${dayLabel(DEMO_TODAY, 'en')}.`,
       ordH: 'Product 1',
       ordFacts: '4 images delivered · 4 approved',
+      ordFactsU: '4 images delivered · 3 approved · 1 in your round',
+      ordFactsKlaar: '4 images delivered · 3 approved · 1 changed',
+      veldU: 'On white rather than grey after all, like the rest.',
+      okU: 'Approved',
+      aangepast: 'Delivered again',
+      zinnen: [
+        'VISUAILS Studio shows at a glance where all your orders stand.',
+        'Per order: where it stands, when it is ready and what you paid.',
+        'On delivery, every image sits next to the photo you sent.',
+        'You approve image by image. Want something different? Tick it and say what: here, white instead of grey.',
+        'We change it and deliver it again: on white now, like the rest.',
+      ],
       ordMade: 'What we delivered', ordSent: 'What you sent',
-      shots: ['Front', 'Back', 'Detail', 'On a model'],
-      bApprove: 'Approve', bAsk: 'Not right', bDown: 'Download',
+      shots: ['Front', 'Back', 'Detail', 'On model'],
+      bApprove: 'Approve', bAsk: 'Mark this one', bDown: 'Download',
       rrH: 'One revision round',
-      rrBody: 'Tick what is not right, tell us what is wrong, and send it as one round.',
-      rrBtn: 'Send this revision round',
+      rrBody: 'Tick what you would like different, say how, and send it as one round.',
+      rrBtn: 'Send revision round',
       ordNote: 'You approve image by image. You tick image by image too — but you send them together, as the one revision round that comes with the order. After that a WhatsApp link takes the button\u2019s place.',
       bkH: 'Default per service',
       bkFace: 'Who wears it', bkBg: 'Its background', bkCh: 'Where you sell it',
@@ -189,16 +233,18 @@ const C = nl
 const demoQuote = quote('catalog', DEMO_ORDER.products);
 const money = { net: euro(demoQuote.net, lang), vat: euro(demoQuote.vat, lang), total: euro(demoQuote.gross, lang) };
 
-const PHOTOS = [
-  '/img/lifestyle-flash-01.webp',
-  '/img/lifestyle-flash-03.webp',
-  '/img/lifestyle-flash-05.webp',
-  '/img/lifestyle-flash-07.webp',
-];
-const UPLOAD = '/img/catalog-before.webp';
+/* De vier beelden van de bestelling: de roze jeans uit de voorbeeldset (voorkant,
+   achterkant, detail, op model). Het modelbeeld staat tijdens de rondleiding eerst op
+   lichtgrijs, zoals het geleverd werd (ba2-na-model), en na de revisie op wit. */
+const PHOTOS = geleverd(lang).map((b) => b.src);
+const MODEL_GRIJS = '/img/ba2-na-model.webp';
+const UPLOAD = ingestuurd(lang)[0].src;
+/* De gezichten in "Je vaste look": twee uit de vaste modellen (models.js) en het eigen
+   merkmodel, dat per definitie niet in die lijst staat. */
+const GEZICHTEN = ['/img/lifestyle-flash-03.webp', '/img/model-aaron-w380.webp', '/img/model-ava-w380.webp'];
 ---
 
-<figure class="fd" aria-label={C.tabs.map((t) => t[0]).join(', ')}>
+<figure class="fd" aria-label={C.tabs.map((t) => t[0]).join(', ')} data-uitleg={uitleg ? '' : undefined} data-uitleg-maat="2200 2300 2400 4400 3000" data-uitleg-start="500">
   {/* De radiogroep. Verborgen voor het oog, niet voor het toetsenbord of een
       schermlezer: ze zijn met de labels eronder verbonden en blijven bereikbaar
       met tab en de pijltjestoetsen, precies zoals een echte tabrij. */}
@@ -214,17 +260,26 @@ const UPLOAD = '/img/catalog-before.webp';
 
   <div class="fd-frame">
     <div class="fd-bar">
-      <span class="fd-mark">VISUAILS</span>
+      <span class="fd-mark"><Woordmerk klasse="fd-wm" /><span class="fd-sr">VISUAILS</span></span>
       <span class="fd-badge">{C.note}</span>
     </div>
 
     <div class="fd-body">
       <nav class="fd-nav">
         {C.tabs.map(([name, sub], i) => (
-          <label class="fd-tab" for={`${uid}-${i}`}>
+          <label class="fd-tab" for={`${uid}-${i}`}
+                 data-uitleg-stop={uitleg ? '' : undefined}
+                  data-uitleg-klik={uitleg && i === 1 ? '3' : undefined}
+                 data-uitleg-echt={uitleg && i === 1 ? '' : undefined}>
             <span class="fd-tab-n">{name}</span>
             <span class="fd-tab-s">{sub}</span>
           </label>
+        ))}
+        {C.tabsRest.map(([name, sub]) => (
+          <span class="fd-rust">
+            <span class="fd-tab-n">{name}</span>
+            <span class="fd-tab-s">{sub}</span>
+          </span>
         ))}
       </nav>
 
@@ -232,8 +287,8 @@ const UPLOAD = '/img/catalog-before.webp';
         {/* 1 · OVERZICHT */}
         <div class="fd-pane" data-pane="0">
           <div class="fd-tiles">
-            {C.ovTiles.map(([n, label]) => (
-              <div class="fd-tile"><b>{n}</b><span>{label}</span></div>
+            {C.ovTiles.map(([n, label], i) => (
+              <div class="fd-tile" style={uitleg ? `--i:${i}` : undefined}><span>{label}</span><b>{n}</b></div>
             ))}
           </div>
 
@@ -244,10 +299,9 @@ const UPLOAD = '/img/catalog-before.webp';
               <div class="fd-payrow"><span>{C.payVat}</span><span>{money.vat}</span></div>
               <div class="fd-payrow is-total"><span>{C.payTotal}</span><span>{money.total}</span></div>
               <p class="fd-paystate">{C.payState}</p>
-              <span class="fd-fakebtn">{C.payBtn}</span>
             </div>
 
-            <p class="fd-now"><b>{nl ? 'Nu:' : 'Now:'}</b> {C.ovNow} <span class="fd-win">{C.ovWindow}</span></p>
+            <p class="fd-now">{C.ovNow} <span class="fd-win">{C.ovWindow}</span></p>
             <ol class="fd-flow">
               {C.flow.map((step, i) => (
                 <li class={`fd-step ${i < 1 ? 'is-done' : i === 1 ? 'is-now' : ''}`}>
@@ -272,7 +326,9 @@ const UPLOAD = '/img/catalog-before.webp';
               <img class="fd-cover" src={PHOTOS[0]} alt="" loading="lazy" decoding="async" width="80" height="100" />
               <span>
                 <b>{C.ordH}</b>
-                <span class="fd-sub">{C.ordFacts}</span>
+                {uitleg
+                  ? <span class="fd-sub fd-feiten"><span class="f-ronde">{C.ordFactsU}</span><span class="f-klaar">{C.ordFactsKlaar}</span></span>
+                  : <span class="fd-sub">{C.ordFacts}</span>}
               </span>
             </div>
 
@@ -281,10 +337,15 @@ const UPLOAD = '/img/catalog-before.webp';
                 <p class="fd-h4">{C.ordMade}</p>
                 <div class="fd-shots">
                   {C.shots.map((cap, i) => (
-                    <div class="fd-shot">
-                      <img src={PHOTOS[i]} alt="" loading="lazy" decoding="async" width="200" height="250" />
+                    <div class="fd-shot" style={uitleg ? `--i:${i}` : undefined}>
+                      {uitleg && i === 3 && <img class="fd-grijs" src={MODEL_GRIJS} alt="" loading="lazy" decoding="async" width="200" height="250" />}
+                      <img class:list={[uitleg && i === 3 && 'fd-wit']} src={PHOTOS[i]} alt="" loading="lazy" decoding="async" width="200" height="250" />
                       <span class="fd-cap">{cap}</span>
-                      <span class="fd-fakebtn is-sm">{C.bApprove}</span>
+                      <span class="fd-fakebtn is-sm fd-goed"
+                            data-uitleg-klik={uitleg && i < 3 ? '4' : undefined}
+                            data-uitleg-wacht={uitleg && i < 3 ? String(i * 800) : undefined}>{C.bApprove}</span>
+                      {uitleg && i < 3 && <span class="fd-ok-u"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" /></svg>{C.okU}</span>}
+                      {uitleg && i === 3 && <span class="fd-ok-u fd-aangepast"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" /></svg>{C.aangepast}</span>}
                       {/* ── EEN VINKJE EN GEEN TWEEDE KNOP — 24 augustus 2026 ──
                           Hier stonden drie knoppen per foto, waarvan er één
                           "Er klopt iets niet" heette en meteen een revisie
@@ -295,7 +356,9 @@ const UPLOAD = '/img/catalog-before.webp';
                           De mockup hoort het echte scherm te laten zien en niet
                           een vorige versie ervan — dat is het hele punt van deze
                           figuur. Zie roundBlock() in src/lib/account.js. */}
-                      <span class="fd-pick"><span class="fd-box" aria-hidden="true"></span>{C.bAsk}</span>
+                      <span class="fd-pick"
+                            data-uitleg-klik={uitleg && i === 3 ? '4' : undefined}
+                            data-uitleg-wacht={uitleg && i === 3 ? '2400' : undefined}><span class="fd-box" aria-hidden="true"></span>{C.bAsk}</span>
                       <span class="fd-fakebtn is-sm is-quiet">{C.bDown}</span>
                     </div>
                   ))}
@@ -306,8 +369,8 @@ const UPLOAD = '/img/catalog-before.webp';
                 <div class="fd-rr">
                   <p class="fd-h4">{C.rrH}</p>
                   <p class="fd-sub">{C.rrBody}</p>
-                  <span class="fd-fakefield">&nbsp;</span>
-                  <span class="fd-fakebtn is-sm">{C.rrBtn}</span>
+                  <span class="fd-fakefield">{uitleg ? <span class="fd-veld-u">{C.veldU}</span> : <>&nbsp;</>}</span>
+                  <span class="fd-fakebtn is-sm" data-uitleg-klik={uitleg ? '5' : undefined} data-uitleg-wacht={uitleg ? '250' : undefined}>{C.rrBtn}</span>
                 </div>
               </div>
               <div class="fd-ref-col">
@@ -351,7 +414,7 @@ const UPLOAD = '/img/catalog-before.webp';
               </div>
               {C.bkFaces.map((m, i) => (
                 <div class={`fd-face ${m.own ? 'is-own' : ''}`}>
-                  <img src={PHOTOS[i]} alt="" loading="lazy" decoding="async" width="120" height="160" />
+                  <img src={GEZICHTEN[i]} alt="" loading="lazy" decoding="async" width="120" height="160" />
                   <span>{m.name}</span>
                   <span class={`fd-face-sub ${m.own ? 'is-own' : ''}`}>{m.own ? C.bkOwn : m.sub}</span>
                 </div>
@@ -400,7 +463,24 @@ const UPLOAD = '/img/catalog-before.webp';
       </div>
     </div>
   </div>
+  {uitleg && <UitlegBalk zinnen={C.zinnen} lang={lang} />}
 </figure>
+
+<script>
+  /* Bij elk begin van de rondleiding terug naar het overzicht. */
+  const zetFd = () => {
+    for (const fd of document.querySelectorAll<HTMLElement>('.fd[data-uitleg]')) {
+      if (fd.dataset.fdKlaar) continue;
+      fd.dataset.fdKlaar = '1';
+      fd.addEventListener('uitleg-begin', () => {
+        const eerste = fd.querySelector<HTMLInputElement>('.fd-radio');
+        if (eerste) eerste.checked = true;
+      });
+    }
+  };
+  zetFd();
+  document.addEventListener('astro:page-load', zetFd);
+</script>
 
 <style>
   /* ── DE MAATVOERING IS OMHOOG — 7 september 2026 ─────────────────────────
@@ -466,6 +546,10 @@ const UPLOAD = '/img/catalog-before.webp';
     border-radius: var(--r-lg);
     background: var(--paper-2);
     overflow: hidden;
+    /* clip knipt hetzelfde af, maar maakt geen scrollvak: dan blijft de
+       uitlegbalk onderin het scherm plakken zolang dit blok hoger is dan het
+       scherm (14 oktober 2026). Een browser zonder clip houdt hidden. */
+    overflow: clip;
   }
 
   .fd-radio { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
@@ -516,6 +600,10 @@ const UPLOAD = '/img/catalog-before.webp';
     padding: .55rem .7rem; border-radius: var(--r-md);
     border: 1px solid transparent;
   }
+  /* De twee tabs zonder paneel. Een eigen klasse en niet .fd-tab: de actieve tab
+     wordt gekozen met .fd-tab:nth-of-type(n), en een <span> is de eerste van zijn
+     soort — dan stond "Facturen" als actief naast "Overzicht". */
+  .fd-rust { display: grid; gap: .1rem; padding: .55rem .7rem; border-radius: var(--r-md); border: 1px solid transparent; cursor: default; }
   .fd-tab-n { font-size: .88rem; font-weight: 700; color: var(--ink-2); }
   .fd-tab-s { font-size: .74rem; line-height: 1.35; color: var(--ink-3); }
   .fd-tab:hover { background: var(--ghost); }
@@ -569,13 +657,13 @@ const UPLOAD = '/img/catalog-before.webp';
      passen hangt af van de breedte van het PANEEL, niet van die van het scherm.
      Bij 200 procent tekst op een venster van 1280 was het venster breed genoeg
      (40em) en het paneel niet (171 px), en precies daar sneed de figuur af. */
-  @container fd (min-width: 38.75em) { .fd-tiles { grid-template-columns: repeat(4, 1fr); } }
+  @container fd (min-width: 38.75em) { .fd-tiles { grid-template-columns: repeat(3, 1fr); } }
   .fd-tile {
     display: grid; gap: .1rem; padding: .6rem .7rem;
     border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface);
   }
   .fd-tile b { font-size: 1.3rem; line-height: 1; }
-  .fd-tile span { font-size: .72rem; color: var(--ink-3); }
+  .fd-tile span { font-size: .76rem; color: var(--ink-2); }
 
   .fd-card {
     margin-top: .8rem; padding: .85rem;
@@ -583,10 +671,13 @@ const UPLOAD = '/img/catalog-before.webp';
   }
   .fd-ref { margin: 0 0 .6rem; font-size: .78rem; letter-spacing: .06em; color: var(--ink-3); }
 
+  /* Zoals het echte betaalblok (.st-betaal): een vulling in de kaart, geen rand.
+     Hier stond een violette streep links — een gekleurde zijrand, die het schema
+     verbiedt, en die het echte scherm niet heeft. */
   .fd-pay {
-    display: grid; gap: .25rem; padding: .7rem;
-    border-left: 2px solid var(--accent); border-radius: var(--r-sm);
-    background: var(--paper-2);
+    display: grid; gap: .25rem; padding: .7rem .8rem;
+    border-radius: var(--r-md);
+    background: var(--surface-2);
   }
   .fd-payrow { display: flex; justify-content: space-between; gap: 1rem; font-size: .8rem; color: var(--ink-3); }
   .fd-payrow span:last-child { font-variant-numeric: tabular-nums; }
@@ -770,5 +861,82 @@ const UPLOAD = '/img/catalog-before.webp';
 
   @media (prefers-reduced-motion: reduce) {
     .fd-tab, .fd-fakebtn { transition: none; }
+    .fd-ok-u { display: none !important; }
   }
+
+  /* ── DE RONDLEIDING (alleen met data-uitleg-staat; zie UitlegBalk.astro) ──
+     1 de tegels, 2 de stappen van een bestelling, 3 naar Bestellingen (de cursor
+     klikt de tab echt), 4 drie beelden goedkeuren en bij het modelbeeld "liever op
+     wit" vragen, 5 de ronde versturen: het modelbeeld komt terug op wit. Wat in een paneel staat dat pas tijdens de stap opengaat, komt
+     binnen met een animatie (een overgang begint niet vanuit display: none). */
+  .fd[data-uitleg-staat] .fd-tile { transition: opacity .45s, transform .6s cubic-bezier(.34, 1.4, .5, 1); }
+  .fd[data-uitleg-staat]:not(.u-s1) .fd-tile { opacity: 0; transform: translateY(8px) scale(.95); }
+  .fd.u-s1 .fd-tile { transition-delay: calc(var(--i, 0) * .2s + .2s); }
+
+  .fd[data-uitleg-staat] :is(.fd-pay, .fd-now) { transition: opacity .5s, box-shadow .5s; }
+  .fd[data-uitleg-staat]:not(.u-s2) :is(.fd-pay, .fd-now) { opacity: .35; }
+  .fd[data-uitleg-staat] .fd-dot { transition: background-color .4s, box-shadow .4s; }
+  .fd[data-uitleg-staat]:not(.u-s2) :is(.fd-step.is-done, .fd-step.is-now) .fd-dot { background: var(--surface); box-shadow: inset 0 0 0 2px var(--line-strong); }
+  .fd[data-uitleg-staat]:not(.u-s2) .fd-step.is-now { color: var(--ink-3); font-weight: 400; }
+  .fd.u-s2 .fd-step.is-done .fd-dot { transition-delay: .4s; }
+  .fd.u-s2 .fd-step.is-now .fd-dot, .fd.u-s2 .fd-step.is-now { transition-delay: 1.1s; }
+  .fd.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .fd-step.is-now .fd-dot { animation: fd-puls 1.2s ease-in-out 1.4s 2; }
+  @keyframes fd-puls { 50% { box-shadow: inset 0 0 0 2px var(--st-work-ink), 0 0 0 6px color-mix(in srgb, var(--st-work-ink) 22%, transparent); } }
+
+  .fd:not([data-uitleg-staat="klaar"]).u-s3 .fd-pane[data-pane='1'] .fd-shot { animation: fd-in .55s cubic-bezier(.22, .8, .2, 1) calc(var(--i, 0) * .14s + .1s) both; }
+  @keyframes fd-in { from { opacity: 0; transform: translateY(10px); } }
+
+  /* Goedgekeurd: dezelfde plek als de knop, zodat er niets verspringt. */
+  /* `img` OF `picture`: de bouw zet elk beeld met een AVIF ernaast in een eigen
+     <picture>, en die krijgt geen data-astro-cid — vandaar :global(). Zonder dit
+     viel het witte modelbeeld onder de knoppen in plaats van over het grijze. */
+  .fd[data-uitleg] .fd-shot > img, .fd[data-uitleg] .fd-shot > :global(picture) { grid-row: 1; grid-column: 1; }
+  .fd[data-uitleg] .fd-shot > :global(picture) { display: block; min-width: 0; }
+  .fd[data-uitleg] .fd-shot > .fd-cap { grid-row: 2; }
+  /* align-self: start en nowrap: een langer label in dezelfde cel rekte de knop van het
+     modelbeeld op tot dubbele hoogte (Lucas, 14 oktober: "niet consistent"). */
+  .fd[data-uitleg] .fd-shot > :is(.fd-goed, .fd-ok-u) { grid-row: 3; grid-column: 1; align-self: start; white-space: nowrap; }
+  .fd[data-uitleg] .fd-shot > .fd-pick { grid-row: 4; }
+  .fd[data-uitleg] .fd-shot > .is-quiet { grid-row: 5; }
+  .fd-ok-u {
+    display: inline-flex; align-items: center; justify-content: center; gap: .3rem;
+    padding: .32rem .45rem; border-radius: var(--r-sm);
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface)); color: var(--accent-text);
+    font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    transition: opacity .3s, transform .5s cubic-bezier(.34, 1.4, .5, 1);
+  }
+  .fd-ok-u svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .fd[data-uitleg-staat]:not(.u-s4) .fd-ok-u { opacity: 0; transform: scale(.8); }
+  .fd.u-s4 .fd-ok-u { transition-delay: calc(var(--i, 0) * .8s + .7s); }
+  /* Het modelbeeld: eerst op grijs, na de ronde (stap 5) op wit, met het label erbij. */
+  .fd[data-uitleg] .fd-shot :is(.fd-grijs, .fd-wit) { grid-area: 1 / 1; transition: opacity .5s; }
+  .fd-grijs { opacity: 0; }
+  .fd[data-uitleg-staat]:not(.u-s5) .fd-grijs { opacity: 1; }
+  .fd[data-uitleg-staat]:not(.u-s5) .fd-wit { opacity: 0; }
+  .fd.u-s5 .fd-wit { transition-delay: 1s; }
+  .fd[data-uitleg-staat]:not(.u-s5) .fd-aangepast { opacity: 0; transform: scale(.8); }
+  .fd.u-s5 .fd-aangepast { transition-delay: 1.4s; }
+  .fd.u-s5 .fd-shot:nth-child(4) .fd-goed { opacity: 0; transition-delay: 1.3s; }
+  .fd-feiten { display: inline-grid; }
+  .fd-feiten > span { grid-area: 1 / 1; transition: opacity .35s; }
+  .fd-feiten .f-ronde { opacity: 0; }
+  .fd[data-uitleg-staat]:not(.u-s5) .f-ronde { opacity: 1; }
+  .fd[data-uitleg-staat]:not(.u-s5) .f-klaar { opacity: 0; }
+  .fd.u-s5 .f-klaar { transition-delay: 1.4s; }
+  .fd[data-uitleg-staat] .fd-goed { transition: opacity .25s; }
+  .fd.u-s4 .fd-shot:not(:nth-child(4)) .fd-goed { opacity: 0; transition-delay: calc(var(--i, 0) * .8s + .65s); }
+
+  /* Het vinkje bij "Niet goed", en de zin die erbij geschreven wordt. */
+  .fd[data-uitleg] .fd-box { transition: background-color .25s, box-shadow .25s; background-repeat: no-repeat; background-position: center; background-size: 80%; }
+  .fd.u-s4 .fd-shot:nth-child(4) .fd-box {
+    background-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); transition-delay: 3s;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 8.5l3.2 3L13 4.5' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  }
+  .fd[data-uitleg] .fd-fakefield { display: flex; align-items: center; padding: 0 .55rem; font-size: .72rem; color: var(--ink-2); }
+  .fd[data-uitleg-staat]:not(.u-s4) .fd-veld-u { clip-path: inset(0 100% 0 0); }
+  .fd:not([data-uitleg-staat="klaar"]).u-s4 .fd-veld-u { animation: fd-typ 1.1s steps(30, end) 3.2s both; }
+  /* Na de ronde is het vinkje weer leeg: het beeld is aangepast. */
+  .fd.u-s5 .fd-shot:nth-child(4) .fd-box { background-color: transparent; background-image: none; box-shadow: inset 0 0 0 1px var(--line-strong); transition-delay: 1.2s; }
+  @keyframes fd-typ { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+  .fd[data-uitleg-staat="pauze"] * { animation-play-state: paused !important; }
 </style>

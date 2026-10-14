@@ -164,3 +164,50 @@
   cursor: pointer;
 }
 .fb-again .btn-quiet:hover, .fb-again .btn-quiet:focus-visible { color: var(--ink); }
+
+/* ── HET TOESTEMMINGSBLOK EN DE TEKST OM TE KOPIËREN — 8 oktober 2026 ────────
+   Punten 3.05 en 10.05. Twee groepen keuzes (je tekst · je beelden), elk met
+   merknaam / zonder / liever niet; "Liever niet" staat standaard aan. De
+   radioknoppen worden hier zelf getekend, om dezelfde reden als het vinkje
+   hierboven: account.css zet `appearance: none` op elke input. */
+.fb-toon { display: grid; gap: .75rem; max-width: 52ch; margin-top: .2rem; }
+.fb-toon-h { margin: 0; font-size: .9rem; font-weight: 600; color: var(--ink); }
+.fb-toon-groep { margin: 0; padding: 0; border: 0; display: flex; flex-wrap: wrap; gap: .35rem 1.1rem; }
+.fb-toon-groep legend { padding: 0; margin: 0 0 .35rem; font-size: .84rem; font-weight: 600; color: var(--ink-2); }
+.fb-toon-keuze { display: inline-flex; align-items: center; gap: .45rem; min-height: 32px; cursor: pointer; font-size: .86rem; color: var(--ink-2); }
+.fb-toon-keuze input[type="radio"] {
+  appearance: none; -webkit-appearance: none;
+  width: 18px; height: 18px; margin: 0; padding: 0; flex: 0 0 auto;
+  display: inline-grid; place-content: center;
+  border: 1px solid var(--line-strong); border-radius: 50%;
+  background: var(--surface-2); cursor: pointer;
+}
+.fb-toon-keuze input[type="radio"]:hover { border-color: var(--ink-3); }
+.fb-toon-keuze input[type="radio"]:checked { border-color: var(--accent); }
+.fb-toon-keuze input[type="radio"]:checked::after { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
+.fb-toon-keuze input[type="radio"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.fb-toon-keuze input[type="radio"]:checked + span { color: var(--ink); font-weight: 600; }
+.fb-quote h4 label { cursor: text; }
+
+/* Na het versturen: de eigen tekst, alleen-lezen, zodat hij zonder script te
+   selecteren en te kopiëren is; daaronder de reviewknoppen. */
+.fb-na { margin-top: 1.1rem; display: grid; gap: .6rem; justify-items: start; }
+.fb-na h4 { margin: 0; }
+.fb-na .fb-lede { margin: 0; }
+.fb-kopie {
+  width: 100%; max-width: 52ch; padding: .6rem .7rem;
+  font: inherit; font-size: .92rem; line-height: 1.5; color: var(--ink);
+  background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: var(--r-md);
+  resize: vertical;
+}
+.fb-na .fb-actions { margin-top: .2rem; }
+.fb-na .fb-thanks { margin: 0; }
+.fb-na .fb-again { margin-top: .2rem; }
+
+/* De tweede reviewplek als kleine tekstlink naast de grote knop (REVIEW_VOORKEUR). */
+.fb-ook .fb-link {
+  font: inherit; font-size: .84rem; font-weight: 600;
+  color: var(--accent-text, var(--accent)); background: none; border: 0; padding: 0; min-height: 0; box-shadow: none;
+  text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+}
+.fb-ook .fb-link:hover, .fb-ook .fb-link:focus-visible { color: var(--ink); }

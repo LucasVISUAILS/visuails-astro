@@ -2,13 +2,21 @@
 /* Eén bestelling op het overzicht: kop, betaalblok (zolang er niet betaald is),
    tijdlijn, en de mededeling van de studio. Bewust niet de hele orderkaart met
    productkaarten en goedkeurknoppen — die hoort op Bestellingen; hier staat wat
-   je wilt weten zonder te klikken, plus één link naar waar je iets kunt dóén. */
+   je wilt weten zonder te klikken, plus één link naar waar je iets kunt dóén.
+
+   Punt 3.01 (8 oktober 2026): met `nu` (uit watNuView() in account.js) krijgt de
+   kaart bovenaan de Nu-zin, de twee datums en hoogstens twee knoppen — dezelfde
+   als de bestelkaart op Bestellingen en de privélink. De tijdlijn eronder laat
+   dan haar eigen "Nu:"-regel weg, anders stond dezelfde zin er twee keer. Geen
+   script: elke knop is een link of een gewoon formulier. */
 import { serviceLabel } from '../../data/services.js';
 import Pil from './Pil.astro';
 import Voortgang from './Voortgang.astro';
 import Betaling from './Betaling.astro';
-const { t, lang, order: o, events = [], files = [] } = Astro.props;
+const { t, lang, order: o, events = [], files = [], nu = null } = Astro.props;
 const onbetaald = String(o.payment_status || 'unpaid') !== 'paid' && o.status === 'received';
+/* De betaalknop staat al in het "wat nu"-blok; het betaalblok eronder zou hem herhalen. */
+const betaalKnopBoven = !!(nu && nu.knoppen && nu.knoppen.some((k) => k.form));
 ---
 <article class="st-kaart-vlak st-order">
   <div class="st-order-kop">
@@ -17,8 +25,30 @@ const onbetaald = String(o.payment_status || 'unpaid') !== 'paid' && o.status ==
     <span class="st-meta">{serviceLabel(o.service, lang) || o.service}{o.product_count ? ` · ${o.product_count} ${Number(o.product_count) === 1 ? 'product' : t.fProducts.toLowerCase()}` : ''}</span>
     <a class="st-link" href={`/account/orders?order=${o.id}#order-${o.id}`}>{t.ovOpenOrder}</a>
   </div>
-  {onbetaald && <Betaling t={t} lang={lang} order={o} />}
-  <Voortgang t={t} lang={lang} order={o} events={events} files={files} />
+  {nu && nu.zin && (
+    <div class="st-watnu">
+      <p class="st-watnu-zin">{nu.zin}</p>
+      {nu.datums && nu.datums.length > 0 && <p class="st-watnu-datums">{nu.datums.map((d) => <span>{d}</span>)}</p>}
+      {nu.knoppen && nu.knoppen.length > 0 && (
+        <div class="st-watnu-knoppen">
+          {nu.knoppen.map((k, i) => (
+            k.form
+              ? <form method="post" action={k.form}><button class={`btn ${i === 0 ? 'btn-primary' : 'btn-2nd'} btn-sm`} type="submit">{k.label}</button></form>
+              : k.approveOrder
+                ? (
+                  <form method="post" action="/account/review">
+                    <input type="hidden" name="order" value={k.approveOrder} />
+                    <button class={`btn ${i === 0 ? 'btn-primary' : 'btn-2nd'} btn-sm`} type="submit" name="action" value="approve-order" formnovalidate>{k.label}</button>
+                  </form>
+                )
+                : <a class={i === 0 ? 'btn btn-primary btn-sm' : 'st-link'} href={k.href}>{k.label}</a>
+          ))}
+        </div>
+      )}
+    </div>
+  )}
+  {onbetaald && !betaalKnopBoven && <Betaling t={t} lang={lang} order={o} />}
+  <Voortgang t={t} lang={lang} order={o} events={events} files={files} zonderNu={!!(nu && nu.zin)} />
   {o.customer_note && (
     <div class="st-nota">
       <span class="st-nota-wie">{t.noteFrom}</span>

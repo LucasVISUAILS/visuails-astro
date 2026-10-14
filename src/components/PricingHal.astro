@@ -1,0 +1,316 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — /pricing in de hal. 12 oktober 2026, afvinklijst 7 (groep 1).
+ * Voorbeeld op /voorbeeld/pricing/ en /nl/voorbeeld/pricing/; de echte /pricing
+ * blijft PricingPage.astro tot Lucas de groep goedkeurt (v-live = a).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * DEZELFDE INHOUD ALS PricingPage.astro, in de vorm van de voorpagina. Elke euro
+ * komt uit src/data/pricing.js en elk geprint bedrag zegt of er btw in zit
+ * (vatLabel()); er staat hier geen bedrag getypt (tests/hardgetypt). Wat bleef:
+ *   · de staffel als TABEL (tarievenkaart = tabellaire data), met de rijlabels
+ *     van één soort en de controle dat beide soorten op dezelfde aantallen
+ *     breken — zie de noot in PricingPage.astro;
+ *   · drie uitgerekende aantallen (5, 14, 30) met catalog als hoofdbedrag;
+ *   · "het tarief is het tarief", de aanbevelingen (rendert niets zolang er
+ *     geen is), het merkmodel met de zwevende notitie (tests/notitie), video op
+ *     aanvraag, de kleinere posten, en de band naar /plans met id="plans";
+ *   · het slot: de proef.
+ * Wat korter is, staat in kladblok/TEKSTEN-GROEP-1.md (●).
+ *
+ * VORM. Eén verloop met korrel (de uitgerekende bedragen, naast de tabel) en
+ * één donker vlak (de proef, onderaan): nooit twee violette vlakken in één
+ * scherm. Geen glas: er staat hier geen beeld waar glas boven kan.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/hal.css';
+import {
+  LADDER, ladderRate, quote, euro, vatLabel, AMOUNT, TEST_SAMPLE,
+  PLAN_AMOUNT, CUSTOM_CREDITS_MIN, customCreditsTotal,
+  extraPhotoRate, EXTRA_PHOTO_LADDER, OUTFIT_SURCHARGE, MAX_OUTFIT_PRODUCTS,
+  RESOLUTIE, VIDEO_OP_AANVRAAG, HOOG_PER_PRODUCT, VOORRANG,
+  CATALOG_IMAGES, LIFESTYLE_IMAGES,
+} from '../data/pricing.js';
+import { countedShort, setSize } from '../data/lexicon.js';
+import { planName } from '../data/planNames.js';
+import { localizedPath } from '../i18n/ui.js';
+import Note from './Note.astro';
+import Aanbevelingen from './Aanbevelingen.astro';
+import HalProef from './HalProef.astro';
+import HalBeweging from './HalBeweging.astro';
+import KlantKnop from './KlantKnop.astro';
+import KopBeeld from './KopBeeld.astro';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+const e = (n: number) => euro(n, lang);
+const ex = vatLabel('excl', lang);
+const sample = TEST_SAMPLE[lang];
+
+/* De staffel: rijlabels van catalog, gecontroleerd tegen lifestyle (zie de noot
+   in PricingPage.astro; dezelfde fout, dezelfde controle). */
+const KIND_IDS = ['catalog', 'lifestyle'] as const;
+const rungs = LADDER.catalog.map(([lo, hi]: [number, number | null]) => ({ at: lo, label: hi === null ? `${lo}+` : `${lo}–${hi}` }));
+for (const id of KIND_IDS) {
+  const vorm = (k: string) => LADDER[k].map(([lo, hi]: [number, number | null]) => `${lo}:${hi}`).join(',');
+  if (vorm(id) !== vorm('catalog')) throw new Error(`PricingHal.astro: de staffel van "${id}" breekt niet op dezelfde aantallen als catalog.`);
+}
+const WORKED = [5, 14, 30];
+const maatVanaf = customCreditsTotal(CUSTOM_CREDITS_MIN).total;
+
+const COPY = {
+  en: {
+    pil: 'Pricing',
+    h1: ['Priced per product.', 'The more, the lower.'],
+    lede: 'One rate per product, and it drops as you order more. No packages.',
+    start: 'Start an order',
+    tabelPil: 'Rate card', tabelKop: ['The price', 'per product.'],
+    tabelSub: 'The rate applies to every product in the order.',
+    een: `One product = ${setSize('catalog', CATALOG_IMAGES, 'en')} (catalog) or ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')} in one styled look (lifestyle)`,
+    producten: 'Products', per: 'per product',
+    soort: { catalog: ['Catalog set', setSize('catalog', CATALOG_IMAGES, 'en')], lifestyle: ['Lifestyle carousel', countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')] },
+    somKop: ['What that', 'comes to.'], eenheid: 'products', alsLifestyle: 'as lifestyle carousels',
+    tarief: ['The rate on this page is the rate.', `No discounts, no packages. Want to see the work first? That is what the ${sample.price} test sample is for.`],
+    vergelijk: 'A shoot day, priced against an order',
+    extraPil: 'Own rate', extraKop: ['What else', 'has a rate.'], extraSub: 'Not per product, so not in the table.',
+    merk: 'Your Brand Model', merkZin: 'One face, the same in every order you use it in. Only yours.', merkEenheid: 'one-time setup',
+    merkNoot: `${e(AMOUNT.brandModel)}, once, with one correction round on the design before it is locked. After that the face stays the same between orders; per order you choose whether to use it, at the normal rate. Included in ${planName('brand', 'en')}, and in ${planName('studio', 'en')} on the 12-month terms.`,
+    merkLijst: ['One correction round before it is locked', `Included in ${planName('brand', 'en')}, and in ${planName('studio', 'en')} on 12 months`],
+    merkCta: 'See Your Brand Model',
+    video: 'Video clip',
+    videoZin: VIDEO_OP_AANVRAAG ? 'One short clip, on request for now: we reply with a price.' : 'One short clip. The same rate on its own or added to any order.',
+    videoPrijs: VIDEO_OP_AANVRAAG ? ['On request', 'price follows in writing'] : [e(AMOUNT.video), `per clip · ${ex}`],
+    videoLijst: VIDEO_OP_AANVRAAG ? ['A price per request, within a working day', 'Made from the same product photos'] : ['The same rate inside an order as on its own', 'Made from the same product photos'],
+    videoCta: 'See what a clip is',
+    meerKop: 'The smaller lines.',
+    meer: [
+      ['Extra catalog angle', `${e(extraPhotoRate(1))} to ${e(EXTRA_PHOTO_LADDER[EXTRA_PHOTO_LADDER.length - 1][2])} per photo, falling with your count`, 'A side or a second detail, per product.', '/per-product'],
+      ['Outfit (several pieces together)', `${e(OUTFIT_SURCHARGE)} per product styled that way, up to ${MAX_OUTFIT_PRODUCTS} per order`, 'Several pieces worn together in one lifestyle shot.', '/lifestyle'],
+      ['A look of your own', 'On request', 'One design fee and one correction round, then from the ordinary rate.', '/start/custom-look'],
+      ['Priority delivery', `${Math.round(VOORRANG.deel * 100)}% of the order, ${e(VOORRANG.bodem)} to ${e(VOORRANG.plafond)}`, `Paid on a working day before ${VOORRANG.bestelVoorUur}:00, delivered by ${VOORRANG.klaarUur}:00 the next working day — or the surcharge comes back. Up to ${VOORRANG.maxProducten} products or ${VOORRANG.maxClips} clips.`, '/start'],
+      ['Higher resolution', `${e(HOOG_PER_PRODUCT)} per lifestyle product`, `All four lifestyle images at ${RESOLUTIE.hoog} px on the long edge instead of ${RESOLUTIE.standaard}, for print or a large screen.`, '/lifestyle'],
+      ['Hooks', `From ${e(AMOUNT.hooks)} a hook, on request`, 'A short vertical video that runs into the post below.', '/hooks'],
+      ['Editions', `${e(AMOUNT.editions)} a month after a one-time ${e(AMOUNT.editionsSetup)} — coming soon`, 'Monthly on-brand visuals without your product, on top of a plan.', '/editions'],
+    ],
+    bandKop: 'New images every month?',
+    bandZin: `A plan gives you credits every month for catalog, lifestyle and video: three set plans from ${e(PLAN_AMOUNT.starter)} a month, or your own number of credits from ${e(maatVanaf)}.`,
+    bandCta: 'See the plans',
+    proefKop: ['See it first?', 'One product for'] as [string, string],
+    proefZin: `One of your own, as a catalog set or a carousel · ${ex} · ${sample.unit}.`,
+    proefAlt: 'Or start an order',
+  },
+  nl: {
+    pil: 'Prijzen',
+    /* v18-tel-pr = a (afvinklijst 18): was "Je betaalt per product. / Hoe meer producten, hoe
+       lager het tarief." — vijf regels op een telefoon, nu drie (en twee op een laptop). */
+    h1: ['Prijs per product.', 'Hoe meer, hoe lager.'],
+    lede: 'Eén tarief per product, en het zakt naarmate je meer bestelt. Geen pakketten.',
+    start: 'Start een bestelling',
+    tabelPil: 'Prijslijst', tabelKop: ['De prijs', 'per product.'],
+    tabelSub: 'Het tarief geldt voor elk product in de bestelling.',
+    een: `Eén product = ${setSize('catalog', CATALOG_IMAGES, 'nl')} (catalog) of ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')} in één gestylede look (lifestyle)`,
+    producten: 'Producten', per: 'per product',
+    soort: { catalog: ['Catalogset', setSize('catalog', CATALOG_IMAGES, 'nl')], lifestyle: ['Lifestyle\u00ADcarrousel', countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')] },
+    somKop: ['Wat dat', 'wordt.'], eenheid: 'producten', alsLifestyle: 'als lifestylecarrousels',
+    tarief: ['Het tarief op deze pagina is het tarief.', `Geen kortingen, geen pakketten. Wil je het werk eerst zien? Daarvoor is de proef van ${sample.price}.`],
+    vergelijk: 'Een shootdag, afgezet tegen een bestelling',
+    extraPil: 'Eigen tarief', extraKop: ['Wat er verder', 'een tarief heeft.'], extraSub: 'Niet per product, dus niet in de tabel.',
+    merk: 'Jouw merkmodel', merkZin: 'Eén gezicht, hetzelfde in elke bestelling waarin je het gebruikt. Alleen van jou.', merkEenheid: 'eenmalige setup',
+    merkNoot: `${e(AMOUNT.brandModel)}, één keer, met één correctieronde op het ontwerp voordat het vastligt. Daarna blijft het gezicht hetzelfde tussen bestellingen; per bestelling kies je of je het gebruikt, tegen het gewone tarief. Inbegrepen bij ${planName('brand', 'nl')}, en bij ${planName('studio', 'nl')} op de termijnen van 12 maanden.`,
+    merkLijst: ['Eén correctieronde voordat het vastligt', `Inbegrepen bij ${planName('brand', 'nl')}, en bij ${planName('studio', 'nl')} op 12 maanden`],
+    merkCta: 'Bekijk jouw merkmodel',
+    video: 'Videoclip',
+    videoZin: VIDEO_OP_AANVRAAG ? 'Eén korte clip, voorlopig op aanvraag: we antwoorden met een prijs.' : 'Eén korte clip. Dezelfde prijs los of toegevoegd aan elke bestelling.',
+    videoPrijs: VIDEO_OP_AANVRAAG ? ['Op aanvraag', 'prijs volgt schriftelijk'] : [e(AMOUNT.video), `per clip · ${ex}`],
+    videoLijst: VIDEO_OP_AANVRAAG ? ['Een prijs per aanvraag, binnen een werkdag', 'Gemaakt van dezelfde productfoto’s'] : ['Binnen een bestelling hetzelfde tarief als los', 'Gemaakt van dezelfde productfoto’s'],
+    videoCta: 'Bekijk wat een clip is',
+    meerKop: 'De kleinere posten.',
+    meer: [
+      ['Extra cataloghoek', `${e(extraPhotoRate(1))} tot ${e(EXTRA_PHOTO_LADDER[EXTRA_PHOTO_LADDER.length - 1][2])} per foto, dalend met je aantal`, 'Een zijkant of tweede detail, per product.', '/per-product'],
+      ['Outfit (meerdere stukken samen)', `${e(OUTFIT_SURCHARGE)} per zo gestyled product, tot ${MAX_OUTFIT_PRODUCTS} per bestelling`, 'Meerdere stukken samen gedragen in één lifestyleshot.', '/lifestyle'],
+      ['Een eigen look', 'Op aanvraag', 'Eén ontwerpbedrag en één correctieronde, daarna vanaf het gewone tarief.', '/start/custom-look'],
+      ['Voorrang bij levering', `${Math.round(VOORRANG.deel * 100)}% van de bestelling, ${e(VOORRANG.bodem)} tot ${e(VOORRANG.plafond)}`, `Betaald op een werkdag vóór ${VOORRANG.bestelVoorUur}:00, geleverd uiterlijk de volgende werkdag om ${VOORRANG.klaarUur}:00 — of de toeslag komt terug. Tot ${VOORRANG.maxProducten} producten of ${VOORRANG.maxClips} clips.`, '/start'],
+      ['Hogere resolutie', `${e(HOOG_PER_PRODUCT)} per lifestyleproduct`, `Alle vier de lifestylebeelden op ${RESOLUTIE.hoog} px aan de lange zijde in plaats van ${RESOLUTIE.standaard}, voor print of een groot scherm.`, '/lifestyle'],
+      ['Hooks', `Vanaf ${e(AMOUNT.hooks)} per hook, op aanvraag`, 'Een korte verticale video die doorloopt in de post eronder.', '/hooks'],
+      ['Editions', `${e(AMOUNT.editions)} per maand na een eenmalige ${e(AMOUNT.editionsSetup)} — binnenkort`, 'Maandelijks merkbeeld zonder je product, bovenop een abonnement.', '/editions'],
+    ],
+    bandKop: 'Elke maand nieuwe beelden?',
+    bandZin: `Een abonnement geeft je elke maand credits voor catalog, lifestyle en video: drie vaste abonnementen vanaf ${e(PLAN_AMOUNT.starter)} per maand, of je eigen aantal credits vanaf ${e(maatVanaf)}.`,
+    bandCta: 'Bekijk de abonnementen',
+    proefKop: ['Eerst zien?', 'Eén product voor'] as [string, string],
+    proefZin: `Van jezelf, als catalogset of carrousel · ${ex} · ${sample.unit}.`,
+    proefAlt: 'Of start een bestelling',
+  },
+};
+const c = COPY[lang];
+const ICOON = {
+  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
+  pijl: '<path d="M4.5 11.5l7-7M5.5 4.5h6v6"/>',
+  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
+  info: '<circle cx="8" cy="8" r="6.2"/><path d="M8 7.2v4.2M8 4.8v.1"/>',
+};
+const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+/* Het beeld in de opening: afvinklijst 20 (v20-opening a), live sinds afvinklijst 21. Zie KopBeeld.astro. */
+const KB_LAAG = LADDER.catalog[LADDER.catalog.length - 1];
+const KB_EEN = LADDER.catalog[0];
+const BEELD = {
+  soort: 'getal' as const,
+  label: nl ? 'Catalogset · per product' : 'Catalog set · per product',
+  href: '#pr-ladder', linkNaam: nl ? 'Naar de prijslijst' : 'To the price list',
+  voor: nl ? 'vanaf' : 'from', getal: euro(KB_LAAG[2], lang), eenheid: 'per product',
+  voet: nl ? `Vanaf ${KB_LAAG[0]} producten, ${vatLabel('excl', 'nl')}. Eén product: ${euro(KB_EEN[2], lang)}.`
+           : `From ${KB_LAAG[0]} products, ${vatLabel('excl', 'en')}. One product: ${euro(KB_EEN[2], lang)}.`,
+};
+---
+<div class="h-pagina h-pr">
+
+  {/* ── 1 · DE KOP ─────────────────────────────────────────────────────────── */}
+  <header class="h-paginakop met-kopbeeld">
+    <div class="h-paginakop-tekst">
+      <p class="h-pil h-op" style="--d:0"><span>{c.pil}</span></p>
+      <h1 class="h-kop h-h1 h-op" style="--d:1"><span class="l">{c.h1[0]}</span> <span>{c.h1[1]}</span></h1>
+      <p class="h-lede h-op" style="--d:2">{c.lede}</p>
+      <p class="h-acties h-op" style="--d:3">
+        <a class="h-knop h-knop-inkt" href={lp('/start')}>{c.start}<span class="o" set:html={ik('rechts')} /></a>
+        <a class="h-knop h-knop-lijn" href={lp('/test-sample')} data-vis-uit>{sample.cta}</a>
+        <KlantKnop lang={lang} soort="herbestel" />
+      </p>
+    </div>
+    <KopBeeld {...BEELD} />
+  </header>
+
+  {/* ── 2 · DE STAFFEL, EN WAT DAT WORDT ──────────────────────────────────── */}
+  <section class="h-sec h-pr-staffel" aria-labelledby="pr-ladder">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{c.tabelPil}</span></p>
+        <h2 id="pr-ladder" class="h-kop h-h2"><span class="l">{c.tabelKop[0]}</span> {c.tabelKop[1]}</h2>
+      </div>
+      <p class="h-pr-kopzin">{c.tabelSub}</p>
+    </header>
+
+    <div class="h-pr-raster">
+      <div class="h-pr-tabel h-in">
+        <div class="h-pr-schuif">
+          <table class="h-pr-tab">
+            <thead>
+              <tr>
+                <th scope="col" class="h-pr-aantal">{c.producten}</th>
+                {KIND_IDS.map((id) => (
+                  <th scope="col">
+                    <a class="h-pr-soort" href={lp(`/${id}`)}>{c.soort[id][0]}<span set:html={ik('pijl')} /></a>
+                    <span class="h-pr-soort-sub">{c.soort[id][1]}</span>
+                    <span class="h-pr-soort-btw">{c.per} · {ex}</span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rungs.map((r, i) => (
+                <tr style={`--d:${i}`}>
+                  <th scope="row" class="h-pr-aantal">{r.label}</th>
+                  {KIND_IDS.map((id) => <td>{e(ladderRate(id, r.at))}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p class="h-pr-een"><span class="h-cirkel h-cirkel-mini h-cirkel-wit" aria-hidden="true" set:html={ik('info')} />{c.een}</p>
+      </div>
+
+      <aside class="h-pr-som h-in" style="--d:1" aria-labelledby="pr-som">
+        <span class="h-korrel" aria-hidden="true"></span>
+        <h3 id="pr-som" class="h-kop h-h3"><span class="l">{c.somKop[0]}</span> {c.somKop[1]}</h3>
+        <ul class="h-pr-som-rij" role="list">
+          {WORKED.map((n, i) => {
+            const q = quote('catalog', n);
+            const ql = quote('lifestyle', n);
+            return (
+              <li style={`--d:${i}`}>
+                <span class="h-pr-som-n">{n} {c.eenheid}</span>
+                <b class="h-pr-som-bedrag">{e(q.net)}</b>
+                <span class="h-pr-som-per">{e(q.rate)} {c.per} · {ex}</span>
+                <span class="h-pr-som-life">{c.alsLifestyle} {e(ql.net)}</span>
+              </li>
+            );
+          })}
+        </ul>
+      </aside>
+    </div>
+
+    <div class="h-pr-tarief h-in">
+      <p class="h-pr-tarief-zin"><span class="h-cirkel h-cirkel-mini h-cirkel-mist" aria-hidden="true" set:html={ik('check')} /><span><b>{c.tarief[0]}</b> {c.tarief[1]}</span></p>
+      <p class="h-pr-tarief-wegen">
+        <a class="h-knop h-knop-inkt h-knop-klein" href={lp('/start')}>{c.start}<span class="o" set:html={ik('rechts')} /></a>
+        <a class="h-link" href={lp('/compare')}>{c.vergelijk}<span class="h-cirkel h-cirkel-klein" aria-hidden="true" set:html={ik('pijl')} /></a>
+      </p>
+    </div>
+  </section>
+
+  {/* Echte aanbevelingen (G3): rendert niets zolang er geen gepubliceerd is. */}
+  <Aanbevelingen lang={lang} huid="hal" />
+
+  {/* ── 3 · WAT ER VERDER EEN TARIEF HEEFT ───────────────────────────────── */}
+  <section class="h-sec h-pr-extra" aria-labelledby="pr-add">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{c.extraPil}</span></p>
+        <h2 id="pr-add" class="h-kop h-h2"><span class="l">{c.extraKop[0]}</span> {c.extraKop[1]}</h2>
+      </div>
+      <p class="h-pr-kopzin">{c.extraSub}</p>
+    </header>
+
+    <div class="h-pr-twee">
+      <article class="h-pr-kaart h-in">
+        <h3 class="h-pr-kaart-naam">{c.merk}</h3>
+        <p class="h-pr-kaart-zin">{c.merkZin}</p>
+        {/* De zwevende notitie hangt aan de prijs: het verschil tussen "eenmalig"
+            en "per bestelling" is hier het hele bedrag (tests/notitie). */}
+        <p class="h-pr-prijs">
+          <b class="h-getal">{e(AMOUNT.brandModel)}</b>
+          <span>{c.merkEenheid} · {ex}</span>
+          <Note lang={lang} term={c.merk} wide>{c.merkNoot}</Note>
+        </p>
+        <ul class="h-pr-vinken" role="list">{c.merkLijst.map((f) => <li><i set:html={ik('check')} />{f}</li>)}</ul>
+        <p class="h-pr-kaart-voet"><a class="h-link" href={lp('/custom-models')}>{c.merkCta}<span class="h-cirkel h-cirkel-klein h-cirkel-wit" aria-hidden="true" set:html={ik('pijl')} /></a></p>
+      </article>
+      <article class="h-pr-kaart h-in" style="--d:1">
+        <h3 class="h-pr-kaart-naam"><a href={lp('/video')}>{c.video}</a></h3>
+        <p class="h-pr-kaart-zin">{c.videoZin}</p>
+        <p class="h-pr-prijs"><b class="h-getal">{c.videoPrijs[0]}</b><span>{c.videoPrijs[1]}</span></p>
+        <ul class="h-pr-vinken" role="list">{c.videoLijst.map((f) => <li><i set:html={ik('check')} />{f}</li>)}</ul>
+        <p class="h-pr-kaart-voet"><a class="h-link" href={lp('/video')}>{c.videoCta}<span class="h-cirkel h-cirkel-klein h-cirkel-wit" aria-hidden="true" set:html={ik('pijl')} /></a></p>
+      </article>
+    </div>
+
+    <div class="h-pr-meer h-in">
+      <h3 class="h-kop h-h3">{c.meerKop}</h3>
+      <dl class="h-pr-regels">
+        {c.meer.map(([naam, prijs, uitleg, href]) => (
+          <div class="h-pr-regel">
+            <dt><a href={lp(href)}>{naam}<span set:html={ik('pijl')} /></a></dt>
+            <dd><b>{prijs}</b><span>{uitleg}</span></dd>
+          </div>
+        ))}
+      </dl>
+      <p class="h-pr-btw">{ex}</p>
+    </div>
+  </section>
+
+  {/* ── 4 · OF ELKE MAAND ── id="plans" voor oude links naar /pricing#plans. */}
+  <section class="h-sec h-pr-plans" id="plans" aria-labelledby="pr-band">
+    <div class="h-pr-band h-in">
+      <div>
+        <h2 id="pr-band" class="h-kop h-h3">{c.bandKop}</h2>
+        <p class="h-pr-band-zin">{c.bandZin}</p>
+      </div>
+      <a class="h-knop h-knop-lijn" href={lp('/plans')}>{c.bandCta}</a>
+    </div>
+  </section>
+
+  {/* ── 5 · HET SLOT: de proef, als op de voorpagina ─────────────────────── */}
+  <HalProef lang={lang} id="pr-slot" kop={c.proefKop} zin={c.proefZin} alt={{ label: c.proefAlt, href: '/start' }} />
+</div>
+<HalBeweging />

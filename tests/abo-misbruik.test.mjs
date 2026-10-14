@@ -50,7 +50,6 @@ import {
   queueAdd, queueLock, queueUnlock, queueRemove, queueTakeIds, queueUntakeIds, loadQueue,
 } from '../src/lib/subscription.js';
 import { grantSlots, slotBalans, verbruikSlot, geefSlotTerug, creditsPerSoort } from '../src/lib/slots.js';
-import { startPlanWindow } from '../src/lib/planStart.js';
 import { PLAN_PRODUCTS, PLAN_CREDITS } from '../src/data/pricing.js';
 import { onRequestPost } from '../functions/api/webhook/mollie.js';
 
@@ -136,27 +135,8 @@ console.log('\nweghalen geeft precies één slot terug, en alleen wat echt weg i
   await geefSlotTerug(env, sub.id, 1, 'complete', 2);
 }
 
-console.log('\nde race tussen losmaken en de week starten');
-{
-  /* ── HET GAT VAN 30 AUGUSTUS, NAGEBOOTST ─────────────────────────────────
-     De race zelf is niet af te dwingen in één draad, maar de toestand die hem
-     gevaarlijk maakte wél: een item dat is OPGEPAKT en dat de klant daarna
-     probeert los te maken of weg te halen. Lukt een van beide, dan is het slot
-     terug terwijl het product gemaakt wordt. */
-  const a = await queueAdd(env, 1, { name: 'Trui', uploadBatch: 'b-4' });
-  await queueLock(env, 1, a.id);
-  const week = await startPlanWindow(env, 1);
-  ok('de week is gestart', week.ok, true);
-  const na = (await saldo()).verbruikt;
-  ok('en de credits staan op verbruikt', na, CAT);
-
-  ok('losmaken van een opgepakt item lukt niet', (await queueUnlock(env, 1, a.id)).ok, false);
-  ok('het slot blijft dus verbruikt', (await saldo()).verbruikt, na);
-  ok('weghalen van een opgepakt item lukt ook niet', await queueRemove(env, 1, a.id), false);
-  ok('en ook daarna staat het slot nog op verbruikt', (await saldo()).verbruikt, na);
-  ok('het item hangt nog aan zijn bestelling',
-    db.prepare('SELECT order_id FROM plan_queue WHERE id = ?').get(a.id).order_id, week.orderId);
-}
+/* "De race tussen losmaken en de week starten" is weg met het weeksysteem
+   (ronde 10, 8 oktober 2026): er is geen week meer om te starten. */
 
 console.log('\noppakken pakt alleen op wat op dat moment nog vastgezet is');
 {
@@ -282,10 +262,13 @@ console.log('\nde voorwaarden staan in de UPDATE zelf, niet alleen in de peiling
     /UPDATE subscription_slots SET used = used \+ \?4[\s\S]{0,200}?used \+ \?4 <= granted/.test(slt), true);
   ok('teruggeven kan niet onder nul',
     /UPDATE subscription_slots SET used = used - \?4[\s\S]{0,200}?used >= \?4/.test(slt), true);
-  ok('de adminbijstelling kan niet onder het verbruik zakken',
-    /UPDATE subscription_slots SET granted = granted \+ \?4[\s\S]{0,240}?granted \+ \?4 >= used/.test(adm), true);
-  ok('en niet onder nul',
-    /UPDATE subscription_slots SET granted = granted \+ \?4[\s\S]{0,280}?granted \+ \?4 >= 0/.test(adm), true);
+  /* Sinds het creditboek (ronde B, 8 oktober 2026): de bijstelling is een
+     regel in credit_boek. Eraf gaat via boekAf() (oudste eerst, in één batch),
+     en de tabel zelf houdt elke partij op nul of meer (CHECK rest >= 0). */
+  ok('de adminbijstelling haalt eraf via het creditboek',
+    /boekAf\(env, \{ customerId, aantal: -ruw/.test(adm), true);
+  ok('en de database laat een partij niet onder nul zakken',
+    /CHECK \(\(aantal > 0 AND rest IS NOT NULL AND rest >= 0 AND rest <= aantal/.test(lees('../schema.sql')), true);
 }
 
 /* ── EN DE VIJFDE WEG: EEN BETALING DIE DE TERMIJN NIET DEKT ───────────────

@@ -1,4 +1,6 @@
 ---
+// VISUAILS — /models: in de hal sinds 13 oktober 2026 (afvinklijst 12, alles doen). De pagina
+// staat in ModelsHal.astro; de vorige (ModelsPage.astro) staat op de opruimlijst.
 // VISUAILS — /models, "The standard library" (English). The page body lives
 // in ModelsPage.astro so that /models and /nl/models cannot drift apart; only
 // the meta differs here.
@@ -11,7 +13,7 @@
 // carries no separate fee, and Section 13 keeps per-product tier pricing off
 // pages other than /pricing, /catalog, /lifestyle and /video.
 import Layout from '../layouts/Layout.astro';
-import ModelsPage from '../components/ModelsPage.astro';
+import ModelsHal from '../components/ModelsHal.astro';
 // Het telwoord in de titel en de omschrijving komt uit de roster — zie de noot
 // bij ROSTER_COUNT in src/data/models.js. Beide zijn zoekresultaat-tekst: een
 // aantal dat niet meer klopt is daar een onjuiste bewering, geen opmaakfoutje.
@@ -22,10 +24,10 @@ const description =
   'at no extra cost. Pick one, or let us match one to your product.';
 ---
 
-<Layout
+<Layout huid="hal"
   title={`${rosterWoord('en', true)} standard models, in every order | VISUAILS`}
   description={description}
   ogImage="/img/model-01.webp"
 >
-  <ModelsPage lang="en" />
+  <ModelsHal lang="en" />
 </Layout>

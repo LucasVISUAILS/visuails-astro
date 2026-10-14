@@ -35,7 +35,7 @@ import { startStudio, VOLT } from '../tests/lib/studio-worker.mjs';
 /* Licht is de beginstand sinds sectie 21; donker is de cookie. */
 const THEMA = process.env.VISUAILS_THEMA === 'donker' ? 'donker' : 'licht';
 const SECTIES = ['/account', '/account/orders', '/account/brand-kit', '/account/details',
-                 '/account/invoices', '/account/plan', '/account/plan?tab=bestellen',
+                 '/account/invoices', '/account/plan',
                  '/account/plan?tab=edities', '/account/plan?tab=look', '/account/plan?tab=facturering',
                  '/account/plan/return', '/account/login'];
 

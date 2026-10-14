@@ -1,4 +1,6 @@
 ---
+// VISUAILS — /nl/compare: in de hal sinds 13 oktober 2026 (afvinklijst 13, alles doen). De pagina
+// staat in CompareHal.astro; de vorige (ComparePage.astro) staat op de opruimlijst.
 // VISUAILS — /nl/compare (Nederlands). De pagina-inhoud staat in
 // ComparePage.astro, zodat /compare en /nl/compare niet uit elkaar kunnen
 // lopen; alleen de meta verschilt hier.
@@ -9,7 +11,7 @@
 // staat hetzelfde uitgewerkte voorbeeld als in de rechterkolom van de pagina.
 // Beide bedragen zijn netto, en dat staat er één keer bij.
 import Layout from '../../layouts/Layout.astro';
-import ComparePage from '../../components/ComparePage.astro';
+import CompareHal from '../../components/CompareHal.astro';
 import { SHOOT_DAY, euro, quote, vatLabel } from '../../data/pricing.js';
 
 const ANCHOR_PRODUCTS = 30;
@@ -20,6 +22,6 @@ const description =
   `${vatLabel('excl', 'nl')}. Inclusief waar een shootdag nog steeds wint.`;
 ---
 
-<Layout title="Shootdag vs VISUAILS — de eerlijke vergelijking" description={description}>
-  <ComparePage lang="nl" />
+<Layout huid="hal" title="Shootdag vs VISUAILS — de eerlijke vergelijking" description={description}>
+  <CompareHal lang="nl" />
 </Layout>

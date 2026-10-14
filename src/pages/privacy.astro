@@ -1,5 +1,10 @@
 ---
+// ── IN DE HAL — 13 oktober 2026 (afvinklijst 19, alles doen) ──────────────────────────
+// De omhulling is JuridischHal.astro: de kop van de hal, een inhoud, en het document in rijen.
+// De tekst hieronder is dezelfde; alleen de s22-omhulling en haar <style> gingen eruit.
+import JuridischHal from '../components/JuridischHal.astro';
 import { WHATSAPP_DISPLAY, waHref } from '../data/whatsapp.js';
+import NieuwTabblad from '../components/NieuwTabblad.astro';
 // ── DE BEWAARTERMIJNEN ZIJN CONSTANTEN GEWORDEN — 23 augustus 2026 ─────────
 // §6 en §9 typten 90 en 12 met de hand. terms.astro en de verwerkersovereenkomst
 // waren hier al van af; deze pagina en cookie-policy zijn toen overgeslagen, en
@@ -10,8 +15,10 @@ import { WHATSAPP_DISPLAY, waHref } from '../data/whatsapp.js';
 // betekenen iets anders: UPLOAD_DAYS is hoe lang het bronmateriaal blijft staan
 // en PORTAL_TTL_DAYS is hoe lang de privélink werkt. Wie ze door elkaar haalt,
 // schrijft de ene termijn op de plek van de andere zodra er één verschuift.
-import { UPLOAD_DAYS, DELIVERY_DAYS } from '../lib/retention.js';
+import { UPLOAD_DAYS, DELIVERY_DAYS, ACCOUNT_YEARS, BACKUP_KEEP, DRIVE_PRULLENBAK_DAGEN, BACKUP_UITERLIJK_WEKEN, CORRESPONDENTIE_JAREN } from '../lib/retention.js';
 import { PORTAL_TTL_DAYS } from '../lib/token.js';
+// De termijn waarbinnen ingetrokken beelden van site en social gaan (punt 10.05).
+import { TOESTEMMING_WEG_DAGEN, termijnInWoorden } from '../data/termijnen.js';
 
 // VISUAILS — Privacy Policy. Ported from the SvelteKit privacy page (itself
 // ported from static /privacy.html). Legal pages are deliberately
@@ -69,41 +76,19 @@ import Layout from '../layouts/Layout.astro';
 // De datum stond hier uitgetypt, en nog negen keer elders. Zie de kop van
 // src/data/juridischeDatums.js: één bron, en een toets die hem tegen git houdt.
 import { bijgewerktOp } from '../data/juridischeDatums.js';
-import '../styles/stijl22.css';
+/* §5 leest de ontvangers uit één bron, samen met de verwerkersovereenkomst —
+   8 oktober 2026 (o08, o09). Zie de kop van src/data/subverwerkers.js. */
+import { ontvangers, lijstRegel } from '../data/subverwerkers.js';
+
 ---
 
-<Layout
+<Layout huid="hal"
   title="Privacy Policy — VISUAILS"
   description="How VISUAILS collects, uses and protects your personal data — written in plain English and aligned with the EU GDPR. Enschede, Netherlands."
 >
-{/* ═══ EEN JURIDISCHE PAGINA IN DE STIJL VAN SECTIE 22 — 7 september 2026 ═══
-    De TEKST is woord voor woord onaangeraakt. Wat verandert is de omhulling:
-    één `.paneel` in plaats van drie secties, en de letters van sectie 22 op het
-    `.legal`-blok — dat blok zelf staat nog steeds in global.css en wordt hier
-    niet overgetypt. Zie `.s22.s22 .legal` in src/styles/stijl22.css; die zet de
-    letters voor alle zes juridische pagina's tegelijk.
+<JuridischHal lang="en" doc="privacy" rubriek="Legal" titel="Privacy Policy" datum={bijgewerktOp('privacy', 'en')}>
+<Fragment slot="lead">How we handle your personal data at VISUAILS — in plain English, aligned with the EU General Data Protection Regulation (GDPR).</Fragment>
 
-    ALLE VIJF TEGELIJK, en dat is geen keuze maar een eis van de toets.
-    tests/juridische-datums.test.mjs bewaakt deze documenten als GROEP: vijf
-    pagina's die er hetzelfde uit horen te zien en waar niets afgaat als er
-    eentje uit de pas loopt. Toen /ai-act als eerste overging, viel die toets om
-    met de naam van dat bestand erin — precies zoals bedoeld. Het antwoord
-    daarop is niet de toets versoepelen maar de andere vier meenemen.
-
-    GEEN SLOTPANEEL. De andere pagina's eindigen op een `.paneel-slot`; een
-    juridische pagina niet. Het accent wijst een keuze aan, en aan het eind van
-    een document valt niets te kiezen — er staat een adres waar je terecht kunt.
-    Een slotpaneel met knoppen eronder zou daar een aanbieding van maken. */}
-<div class="s22">
-  <section class="paneel">
-    <header class="paneel-kop jur-kop">
-      <p class="etiket">Legal</p>
-      <h1 class="hoog">Privacy Policy</h1>
-      <p class="lopend jur-lead">How we handle your personal data at VISUAILS — in plain English, aligned with the EU General Data Protection Regulation (GDPR).</p>
-      <p class="legal-meta">{bijgewerktOp('privacy', 'en')}</p>
-    </header>
-
-    <div class="legal jur-tekst">
 
       <h2>1. Who we are</h2>
       {/* ── DE ZELFDEFINITIE ZETTE AI VOOROP — 17 september 2026 ──────────────
@@ -113,7 +98,7 @@ import '../styles/stijl22.css';
           controleur. Juridisch verandert er niets: het blijft een dienst die
           productvisuals maakt, met AI als een van de middelen en met controle
           vooraf. Zie de noot bij REVIEW_CLAIM in src/data/pricing.js. */}
-      <p>VISUAILS is a done-for-you product-visuals service based in Enschede, the Netherlands. We make catalog, lifestyle and video content for brands; AI is one of the techniques we use to produce it, and every visual is checked by our image editors before delivery.</p>
+      <p>VISUAILS is a done-for-you product-visuals service based in Enschede, the Netherlands. We make catalog, lifestyle and video content for brands; AI is one of the techniques we use to produce it, and every visual is checked before delivery.</p>
       <p><strong>We have two roles, and this policy covers one of them.</strong> For your own data — your name, your company details, your messages, your invoice — VISUAILS is the <strong>controller</strong>, and that is what this policy is about. For the material you upload, to the extent there are <em>people</em> in it (in practice the worn shot we ask for so the fit is right), the person in that photo is <em>your</em> data subject and we process the image solely on your instruction. There we are the <strong>processor</strong> and you are the controller, and that relationship has its own document: the <a href="/data-processing-agreement/">Data Processing Agreement</a>.</p>
       <p>That split is not cosmetic. It decides who a data subject should turn to, and who reports a breach to the regulator. This page used to claim we were the controller for everything in it; for the worn shot that was not right, and it was corrected in August 2026.</p>
       <p><strong>VISUAILS is the trading name of Lucas Snuverink.</strong><br>
@@ -127,19 +112,27 @@ import '../styles/stijl22.css';
         <li>Chamber of Commerce (KVK): 99742993</li>
         <li>VAT number: NL005407575B96</li>
         <li>Email: <a href="mailto:hello@visuails.com">hello@visuails.com</a></li>
-        <li>WhatsApp: <a href={waHref()} target="_blank" rel="noopener">{WHATSAPP_DISPLAY}</a></li>
+        <li>WhatsApp: <a href={waHref()} target="_blank" rel="noopener">{WHATSAPP_DISPLAY}<NieuwTabblad lang={'en'} /></a></li>
       </ul>
 
       <h2>2. What data we collect</h2>
       <p>We only collect what we need to produce your visuals and run our business. Depending on how you use VISUAILS, this may include:</p>
       <ul>
         <li><strong>Product photos and images you upload</strong> — the source material we use to create your visuals. If there is a person in them, that image is covered by the <a href="/data-processing-agreement/">Data Processing Agreement</a> rather than by this policy — see §1.</li>
-        <li><strong>Contact and business details</strong> — your name, brand or company name, email address, phone number, and (where relevant) your VAT number for invoicing.</li>
+        {/* 8 oktober 2026 (o24): de lijst miste adres, land, website, KVK, de
+            tevredenheidsvraag, de aanbeveling en de controle op de proef — allemaal
+            dingen die de code wel bewaart (doorlichting §3b). */}
+        <li><strong>Contact and business details</strong> — your name, brand or company name, email address, phone number, postal and billing address, country, website, and (where relevant) your KVK or other registration number and your VAT number for invoicing.</li>
         <li><strong>Message and brief content</strong> — the notes, instructions and correspondence you send us by form, email or WhatsApp.</li>
         <li><strong>Payment data</strong> — handled by our payment provider. We do not store full card details on our own systems; we receive confirmation of payment and the information needed to issue an invoice.</li>
-        <li><strong>Basic technical data</strong> — limited information needed to host and secure the website. See our <a href="/cookie-policy/">Cookie Policy</a> for details.</li>
+        <li><strong>A check on the trial order</strong> — the ‘Try VISUAILS’ trial is one per business. To keep it that way we compare a new trial order with earlier paid ones on email address, phone number and KVK or registration number, and after payment on a scrambled (salted, one-way hashed) version of the bank account you paid from. We never see or store the account number itself.</li>
+        <li><strong>Your feedback, if you give it</strong> — the score and any text you leave after delivery, and which review site you click through to.</li>
+        <li><strong>Permission to show your order, if you give it</strong> — after delivery we ask whether we may show your text and your images (the visuals we delivered and the product photos you sent) on visuails.com and social media, with your brand name, without it, or not at all. Both are voluntary and nothing is shown before we have checked it ourselves. Photos of someone wearing your product are never shown: you cannot give permission on behalf of the person in them. You can withdraw your permission at any time, in VISUAILS Studio or with one email; we then take your images and text off the site and social media within {termijnInWoorden(TOESTEMMING_WEG_DAGEN, 'en')}.</li>
+        <li><strong>Basic technical data</strong> — limited information needed to host and secure the website, such as a salted, one-way scrambled version of your IP address that we use to limit how often a form can be sent; we do not store the address itself. Forms can be protected against bots with Cloudflare Turnstile, which looks at technical signals from your browser and connection, such as your IP address and browser type. See our <a href="/cookie-policy/">Cookie Policy</a> for details.</li>
         <li><strong>A launch notice, if you asked for one</strong> — on a page for a service that is still in build, a separate tick box lets you ask to be emailed when it can be ordered. Ticking it is optional and never a condition of getting an answer; if you leave it, your address is used only to reply to you.</li>
         <li><strong>The Studio letter, if you signed up for it</strong> — your email address, the language you signed up in, the place on the site where you did and the moment. Nothing else: no name, no brand, and we do not track whether you open it.</li>
+        {/* G2 (8 oktober 2026): de wachtlijst van de proef. Zie src/lib/proefStand.js. */}
+        <li><strong>The test sample waiting list, if you left your address</strong> — when ‘Try VISUAILS’ is closed for a while, you can leave your email address on the test sample page. We keep the address, the language and the moment, and use it for one email only, when the test sample opens again; then we delete it.</li>
       </ul>
 
       <h2>3. Why we use your data</h2>
@@ -158,34 +151,52 @@ import '../styles/stijl22.css';
       <p>Under the GDPR, we rely on the following legal bases:</p>
       <ul>
         <li><strong>Performance of a contract</strong> — to deliver the visuals you order and manage your order.</li>
-        <li><strong>Consent</strong> — for anything optional, such as non-essential analytics cookies, the launch notice and the Studio letter described in section 2. You can withdraw consent at any time; one email to us is enough.</li>
-        <li><strong>Legitimate interests</strong> — to keep our service secure, prevent misuse and improve what we offer, balanced against your rights.</li>
+        <li><strong>Consent</strong> — for anything optional, such as non-essential analytics cookies, the launch notice, the Studio letter, the test sample waiting list and the text or images you allow us to show, all described in section 2. You can withdraw consent at any time; one email to us is enough.</li>
+        <li><strong>Legitimate interests</strong> — to keep our service secure, prevent misuse and improve what we offer, balanced against your rights. That includes the check that keeps the trial to one per business, asking for your feedback after delivery, and the bot check on forms (Cloudflare Turnstile); Cloudflare processes those signals for us, and also on its own account to improve its bot detection.</li>
         <li><strong>Legal obligation</strong> — to retain invoicing and tax records as required by Dutch and EU law.</li>
       </ul>
 
       <h2>5. Processors and third parties</h2>
       <p>To run VISUAILS we work with a small number of service providers who process data on our behalf, under agreements that require them to protect it. Named, because "an AI provider" tells you nothing you can check:</p>
-      <ul>
-        <li><strong>Magnific AI, S.L.U.</strong> (Málaga, Spain; formerly Freepik Company, S.L.U.) — the platform on which your visuals are generated. A data processing agreement under Art. 28 GDPR is in place with them.</li>
-        <li><strong>Cloudflare, Inc.</strong> (United States) — hosting the site, storing files and order data.</li>
-        <li><strong>Plus Five Five, Inc.</strong>, trading as Resend (San Francisco, United States) — sending email. Resend keeps sent email for 30 days.</li>
-        <li><strong>Google Ireland Ltd.</strong> (Dublin, Ireland) — our mailbox, through Google Workspace.</li>
+      <ul id="recipients">
+        {ontvangers('en').map((o) => (
+          <li><strong>{o.naam}</strong>{o.viaNaam ? `, through ${o.viaNaam}` : ''} · {o.waar} — {o.wat}.</li>
+        ))}
       </ul>
+      <p class="legal-meta">{lijstRegel('en')}</p>
+      <p>The agreements behind this list, and the transfer basis for each party, are in §8 of the <a href="/data-processing-agreement/#sub-processors">Data Processing Agreement</a>.</p>
       <p><strong>Mollie B.V.</strong> (Amsterdam, the Netherlands) handles payments. For the payment itself Mollie is a controller in its own right and not our processor: as a payment institution it has legal duties of its own, such as fraud checks, and it explains what it does with your data in <a href="https://www.mollie.com/legal/privacy" rel="noopener">its own privacy statement</a>. We never see or store full card details.</p>
       <p><strong>Your material is not used to train AI models.</strong> That is not our hope, it is what the platform we generate on undertakes in its own terms: <em>"Under no circumstances will we use your images or voices, or those of third parties that you upload to our platform, to train or improve our artificial intelligence models or those of third-party providers"</em> — and that the images you upload are deleted from their platform immediately after the visual has been generated from them. The visual that comes out is kept by the platform for as long as we are a customer. That is about their copy; what we keep ourselves, and for how long, is in §6. We do not use the material you supply for our own portfolio or for advertising either, unless you give us separate permission per order. For the visuals we deliver, the arrangement about our portfolio is in §8 of the <a href="/terms/">Terms</a>.</p>
-      <p><strong>Which model: that changes.</strong> The platform above offers a large number of models from different makers and we use whatever gives the best result at the time — as the AI model industry improves, so does what we can deliver. Our recipient stays the platform above. The provider of the chosen model processes your image on that platform’s behalf and keeps it for no more than 30 days. If you want to know which providers we used for your orders, ask us: you get their name and location within five working days.</p>
+      <p><strong>Which model: that changes.</strong> The platform above offers a large number of models from different makers and we use whatever gives the best result at the time — as the AI model industry improves, so does what we can deliver. That is why the list names the makers whose models we use, and not the models: a newer model from a maker on the list changes nothing for you, and a maker we add is announced in advance, as set out in §8 of the <a href="/data-processing-agreement/">Data Processing Agreement</a>. Want to know which of them were used for your orders? Ask us, and you get the answer within five working days.</p>
       <p>We do not sell your personal data, and we do not share it for third-party advertising.</p>
       <p>Reviews are a separate matter: if you choose to leave one on Google or Trustpilot, you are dealing with that platform under its own terms, and we only see what you publish there.</p>
 
       <h2>6. How long we keep your data</h2>
-      <p>We keep your data only as long as it is needed. Three of those periods are fixed, because they are the three that affect you directly:</p>
+      {/* ── HET ACCOUNT EN DE BACK-UPS ERBIJ — 8 oktober 2026 (o11) ──────────────
+          Lucas koos twee jaar na de laatste bestelling voor het klantaccount; de
+          back-uptermijn is wat scripts/backup-weekly.bat werkelijk doet (acht
+          wekelijkse sets), niet de dertig dagen uit het advies. Beide uit
+          src/lib/retention.js. Het telwoord in de aanloopzin is weg: het moest bij
+          elke nieuwe termijn mee, en dat ging al eens mis.
+          11 oktober 2026 (ko06, kback, kcorr en Lucas' notitie bij kback): onze
+          eigen kopie van klantfoto's en stijlreferenties zolang het account
+          bestaat; afgeleverde beelden zonder einddatum in ons archief (met een
+          echt persoon erop: de termijn van het account); alles op verzoek weg,
+          zonder reden. Back-ups "uiterlijk na N weken", N uit retention.js. Mail
+          en WhatsApp: CORRESPONDENTIE_JAREN na het laatste contact. De termijn in
+          Studio ("Je beelden staan online tot en met …") blijft DELIVERY_DAYS. */}
+      <p>We keep your data only as long as it is needed. These periods are fixed:</p>
       <ul>
-        <li><strong>Source material</strong> — the product photos and files you upload are deleted {UPLOAD_DAYS} days after your order closes. If you need us to keep them longer, ask us in writing before then and we will agree it with you.</li>
-        <li><strong>Delivered visuals</strong> — your finished visuals stay in VISUAILS Studio to download for {DELIVERY_DAYS} days from delivery; after that they are removed there. A copy may then stay in our own archive for no more than twelve months, but that is not a guarantee, so keep your own copy. If you do not want us to keep that copy, say so and we delete it straight after those {DELIVERY_DAYS} days. Still need older images? Get in touch and we check whether they are still with us.</li>
+        <li><strong>Source material</strong> — the product photos, style references and other files you upload are deleted from our storage {UPLOAD_DAYS} days after your order closes. We keep our own copy of your product photos and style references for as long as your customer account exists, so that a new order keeps the same look: up to {ACCOUNT_YEARS} years after your last order. Want it gone sooner? Email us from the address of your account and we delete it; you do not need to give a reason. A new order may then turn out differently from your earlier look.</li>
+        <li><strong>Delivered visuals</strong> — your finished visuals stay in VISUAILS Studio to download for {DELIVERY_DAYS} days from delivery; after that they are removed there. We keep a copy of the visuals we made in our own archive, with no end date, so that we can keep your look consistent and keep improving it. That is our working archive, not a backup for you, so keep your own copy. Want our copy gone? Email us from the address of your account and we delete it, from that archive too; you do not need to give a reason. One exception: visuals showing a real, recognisable person — your own model, for example, or someone in a worn photo — we keep only for as long as your customer account exists.</li>
         <li><strong>Your order link</strong> — the private link you download from works for {PORTAL_TTL_DAYS} days after your order closes, then it stops. That clock starts when the order closes, not at delivery like the one above: a link that opens your files should not sit live in an inbox forever. If you need the files after it expires, email us and we will send a new link.</li>
+        <li><strong>Your customer account</strong> — your account in VISUAILS Studio, with your company details, your saved preferences and your order history: we delete it {ACCOUNT_YEARS} years after your last order, or {ACCOUNT_YEARS} years after you created it if you never ordered. A running subscription counts as an ongoing relationship. Invoices are the exception; see below.</li>
+        <li><strong>Email and WhatsApp</strong> — the emails and WhatsApp messages we exchange with you are kept for {CORRESPONDENTIE_JAREN} years after our last contact, as with your account, and then deleted.</li>
+        <li><strong>Back-ups</strong> — once a week we make a copy of our database, and we keep the {BACKUP_KEEP} most recent copies; an older copy we clear out then sits in the Google Drive bin for up to {DRIVE_PRULLENBAK_DAGEN} days. Something we delete is therefore gone from the back-ups too after {BACKUP_UITERLIJK_WEKEN} weeks at the latest.</li>
       </ul>
+      <p>If you left your address on the test sample waiting list, it stays there until we send the email that the test sample is open again, and we delete it right after.</p>
       <p>If you signed up for the Studio letter, we keep your address until you unsubscribe; after that we delete it, or keep only the address with a note that you want no more mail — so you are not signed up again by accident.</p>
-      <p>Correspondence about an order is kept for as long as it is useful for that order and any follow-up. Invoices and the data on them are kept for seven years, because Dutch tax law requires it. When data is no longer needed, we delete or anonymise it.</p>
+      <p>Invoices and the data on them are kept for seven years, because Dutch tax law requires it — also after your account has been deleted, and then only what is on the invoice itself. When data is no longer needed, we delete or anonymise it.</p>
 
       <h2>7. Your GDPR rights</h2>
       <p>As a data subject in the EU, you have the right to:</p>
@@ -200,8 +211,8 @@ import '../styles/stijl22.css';
       <p>To exercise any of these rights, email us at <a href="mailto:hello@visuails.com">hello@visuails.com</a>. You also have the right to lodge a complaint with the Dutch supervisory authority, the Autoriteit Persoonsgegevens (autoriteitpersoonsgegevens.nl).</p>
 
       <h2>8. International transfers</h2>
-      <p>Most of it stays inside the European Economic Area. Generation happens with a party in Spain, and payments with a party in the Netherlands. Cloudflare and Resend are established in the United States, and Google Ireland works with Google LLC in the United States. All three are certified under the <strong>EU-U.S. Data Privacy Framework</strong>, for which the European Commission has adopted an adequacy decision (Art. 45 GDPR); on top of that we have the European Commission’s <strong>Standard Contractual Clauses</strong> (Art. 46(2)(c) GDPR) with each of them, as a fallback should that framework lapse. Our files and order data may therefore also be stored outside the EU.</p>
-      <p>Where the generation platform passes material on to a model provider outside the EEA, that platform concludes Standard Contractual Clauses of its own. The full chain, with each party’s country and basis, is in §8 of the <a href="/data-processing-agreement/">Data Processing Agreement</a> — one list, kept current, because that is what the GDPR asks of us when we change providers.</p>
+      <p>Most of it stays inside the European Economic Area. Generation happens with a party in Spain, and payments with a party in the Netherlands. Cloudflare and Resend are established in the United States, and Google Ireland works with Google LLC in the United States. All three are certified under the <strong>EU-U.S. Data Privacy Framework</strong>, for which the European Commission has adopted an adequacy decision (Art. 45 GDPR); on top of that we have the European Commission’s <strong>Standard Contractual Clauses</strong> (Art. 46(2)(c) GDPR) with each of them, as a fallback should that framework lapse. Our files and order data may therefore also be stored outside the EU. If you contact us on WhatsApp, WhatsApp Ireland works with Meta Platforms, Inc. in the United States; according to WhatsApp’s own privacy policy, those transfers rest on the same framework and on Standard Contractual Clauses.</p>
+      <p>Where the generation platform passes material on to a model maker outside the EEA, that platform concludes Standard Contractual Clauses of its own. The full chain, with each party’s country and basis, is in §8 of the <a href="/data-processing-agreement/">Data Processing Agreement</a> — one list, kept current, because that is what the GDPR asks of us when we change providers.</p>
 
       <h2>9. Security</h2>
       <p>We use appropriate technical and organisational measures to protect your data, including access controls, encrypted connections and limiting who can access your files. No system is completely secure, but we work to keep your data safe and to respond quickly if anything goes wrong.</p>
@@ -215,39 +226,16 @@ import '../styles/stijl22.css';
       </ul>
 
       <h2>10. How to contact us</h2>
-      <p>If you have any questions about this policy or how we handle your data, contact us at <a href="mailto:hello@visuails.com">hello@visuails.com</a> or via WhatsApp on <a href={waHref()} target="_blank" rel="noopener">{WHATSAPP_DISPLAY}</a>. We aim to respond promptly.</p>
+      <p>If you have any questions about this policy or how we handle your data, contact us at <a href="mailto:hello@visuails.com">hello@visuails.com</a> or via WhatsApp on <a href={waHref()} target="_blank" rel="noopener">{WHATSAPP_DISPLAY}<NieuwTabblad lang={'en'} /></a>. We aim to respond promptly.</p>
 
     <div class="jur-uit">
-      <h2>Questions about your data?</h2>
+      <h2 data-niet-in-inhoud>Questions about your data?</h2>
       <p>We’re happy to explain anything in this policy. Reach out and we’ll get back to you.</p>
-      <p class="acties">
-        <a class="knop knop-inkt" href="/contact/">Contact us</a>
-        <a class="knop knop-lijn" href={waHref("Hi VISUAILS, I have a question about privacy.")} target="_blank" rel="noopener">WhatsApp</a>
+      <p class="h-acties">
+        <a class="h-knop h-knop-inkt" href="/contact/">Contact us<span class="o" aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/></svg></span></a>
+        <a class="h-knop h-knop-lijn" href={waHref("Hi VISUAILS, I have a question about privacy.")} target="_blank" rel="noopener">WhatsApp<NieuwTabblad lang={'en'} /></a>
       </p>
     </div>
-    </div>
-  </section>
-</div>
+    
+</JuridischHal>
 </Layout>
-
-<style>
-  /* Een juridisch document leest in één kolom. 46rem is ongeveer 75 tekens in
-     deze letter — de bovengrens uit de leesbaarheidsregel van DESIGN.md, en
-     ruimer dan de 34em van `.lopend` omdat dit een document is en geen
-     verkooptekst. */
-  .jur-kop { max-width: 46rem; margin-bottom: clamp(1.6rem, 3vw, 2.4rem); }
-  .jur-lead { max-width: none; font-size: clamp(1.05rem, 1.8vw, 1.25rem); color: var(--inkt); }
-  .jur-tekst { max-width: 46rem; }
-
-  /* Het slot: een adres, geen aanbieding. Zie de noot bovenaan. */
-  .jur-uit { margin-top: clamp(2.5rem, 5vw, 4rem); padding-top: clamp(1.6rem, 3vw, 2.4rem); border-top: 1px solid var(--lijn); }
-  .jur-uit .acties { margin-top: 1.4rem; }
-</style>
-
-<style>
-  /* De opmaak van een juridische pagina staat sinds 24 augustus 2026 één keer in
-     src/styles/global.css, bij `.legal`. Hij stond hier, en in vijf andere
-     bestanden, met exact dezelfde regels — en de verwerkersovereenkomst had hem
-     helemaal niet, waardoor die pagina koppen van 52,8px kreeg waar deze er 24
-     heeft. Zie de noot daar voor de meting. */
-</style>

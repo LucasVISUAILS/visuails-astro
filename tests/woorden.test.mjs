@@ -165,8 +165,9 @@ console.log('\nde prijstabellen gebruiken de tabel en niet hun eigen woorden');
 {
   /* Sectie 21: Voorpagina.astro in plaats van HomeV2; de tabel daar leest de
      korte vorm voor alle drie de kolommen. */
-  const home = codeOnly(lees('src/components/Voorpagina.astro'));
-  const prijs = codeOnly(lees('src/components/PricingPage.astro'));
+  /* Sinds 12 oktober 2026 is de voorpagina VoorpaginaHal.astro (de hal). */
+  const home = codeOnly(lees('src/components/VoorpaginaHal.astro'));
+  const prijs = codeOnly(lees('src/components/PricingHal.astro'));
 
   /* 23 september 2026: de set- en tarieventabel zijn van de voorpagina (zie de
      kop van Voorpagina.astro). Daarmee verdween ook het ENIGE `complete`-getal
@@ -194,8 +195,14 @@ console.log('\nde prijstabellen gebruiken de tabel en niet hun eigen woorden');
      functies doen dat, dus tellen ze allebei mee. Het TOTAAL blijft staan: wie
      er een plek uithaalt, wordt hier nog steeds rood. */
   const uitLexicon = /(?:countedShort|setSize)\('(catalog|lifestyle)'/g;
-  check('Voorpagina gebruikt de korte vorm (diensttegels en voor-en-na, twee talen)',
-    (home.match(uitLexicon) || []).length, 8);  /* 1 okt 2026: diensttegels (2) + de dienstwissel (catalog en lifestyle, 2), twee talen */
+  /* 12 oktober 2026: de voorpagina is de hal (VoorpaginaHal.astro), en die
+     noemt geen setgrootte meer: geen diensttegels met "Catalogset · …" en geen
+     dienstwissel, alleen "vanaf ⟨bedrag⟩ per product". Hier stond "8 keer de
+     korte vorm"; nu is de eis dat er geen enkele setgrootte staat, getypt
+     (de regel hierboven) of als woord. Komt er ooit weer een, dan hoort hij uit
+     het lexicon te komen en komt deze regel terug in die vorm. */
+  check('de voorpagina noemt geen setgrootte (geen "…set · N beelden")',
+    /(?:set|carrousel|carousel)\s*·\s*\d/i.test(home.replace(/\$\{[^}]*\}/g, '0')), false);
   check('PricingPage ook',
     (prijs.match(uitLexicon) || []).length, 8);  /* 24 sep 2026: + "Eén product = …" boven de tabel (2), twee talen */
   check('en nergens meer de lange vorm onder een kop',
@@ -223,7 +230,7 @@ console.log('\nde voorraadregels zeggen stockfoto’s en niet visuals');
 
      Vandaar deze controle: hij bewaakt de plek waar ik zelf overheen keek. */
   /* Sectie 21: de voorraadregels staan niet meer op de homepage; alleen /plans. */
-  const plan = codeOnly(lees('src/components/PlansPage.astro'));
+  const plan = codeOnly(lees('src/components/PlansHal.astro'));
 
   const stockRegels = (t, welk) => (t.match(new RegExp(`STOCK_${welk}_BRAND\\}[^\`]*\``, 'g')) || []);
 

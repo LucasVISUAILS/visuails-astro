@@ -3,8 +3,11 @@ REM ============================================================================
 REM  VISUAILS - de wekelijkse back-up, voor de Windows Taakplanner
 REM ============================================================================
 REM
-REM  Wat dit doet:  npm run backup -- --keep 8
-REM                 (database + R2-inventaris; acht sets bewaren, oudere weg)
+REM  Wat dit doet:  npm run backup -- --keep 3
+REM                 (database zonder inloggeheimen + R2-inventaris + de map
+REM                 Prompts, naar de Google Drive-map uit backups\BESTEMMING.txt;
+REM                 drie sets bewaren, oudere weg - 12 oktober 2026, k-back)
+REM  Met de hand starten: BACKUP.bat in de projectmap, keuze 2.
 REM
 REM  Waarom een .bat en niet de Taakplanner die npm direct aanroept:
 REM
@@ -28,7 +31,7 @@ REM  geslaagde ronde een datum in app_settings, en kijkt cron\index.js daar elke
 REM  nacht naar. Is die datum ouder dan tien dagen, dan krijg je een mail - vanuit
 REM  de cloud, want een PC die het probleem is kan het probleem niet melden.
 REM
-REM  EENMALIG INSTELLEN: zie DEPLOY.md, onder "De wekelijkse back-up".
+REM  EENMALIG INSTELLEN: zie docs\DEPLOY.md, onder "De wekelijkse back-up".
 REM ============================================================================
 
 setlocal
@@ -37,7 +40,7 @@ pushd "%~dp0.." || exit /b 1
 where npm >nul 2>&1
 if errorlevel 1 (
   echo npm staat niet in het PATH van dit account.
-  echo De taak moet lopen onder een account dat Node.js kan vinden - zie DEPLOY.md.
+  echo De taak moet lopen onder een account dat Node.js kan vinden - zie docs\DEPLOY.md.
   popd
   exit /b 1
 )
@@ -50,14 +53,14 @@ echo VISUAILS back-up - gestart %DATE% %TIME%> "%LOG%"
 echo map: %CD%>> "%LOG%"
 echo.>> "%LOG%"
 
-call npm run backup -- --keep 8 >> "%LOG%" 2>&1
+call npm run backup -- --keep 3 >> "%LOG%" 2>&1
 if errorlevel 1 goto mislukt
 
 echo.>> "%LOG%"
 echo KLAAR - gelukt, %DATE% %TIME%>> "%LOG%"
 copy /y "%LOG%" "backups\_log\laatste.txt" >nul
 REM Logboeken ouder dan 120 dagen opruimen. De back-ups zelf worden door
-REM --keep 8 beheerd; dit gaat alleen over de tekstbestanden ernaast.
+REM --keep 3 beheerd; dit gaat alleen over de tekstbestanden ernaast.
 forfiles /p "backups\_log" /m *.txt /d -120 /c "cmd /c del @path" >nul 2>&1
 
 REM ============================================================================
@@ -72,7 +75,7 @@ REM  hele bestand, want de rest is npm-ruis; wie meer wil weten krijgt het pad n
 REM  het volledige verslag eronder.
 REM ============================================================================
 echo.
-findstr /c:"database exporteren" /c:"tabellen, waaronder" /c:"datum weggeschreven" /c:"inventaris van de bestanden" "%LOG%"
+findstr /c:"naar:" /c:"LET OP" /c:"database exporteren" /c:"tabellen, waaronder" /c:"controleren" /c:"de map Prompts" /c:"weggeschreven" /c:"inventaris van de bestanden" "%LOG%"
 echo.
 echo   KLAAR - gelukt. Volledig verslag: backups\_log\laatste.txt
 echo.

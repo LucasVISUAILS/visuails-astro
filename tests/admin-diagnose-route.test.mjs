@@ -177,8 +177,13 @@ console.log('\nde leesroute vraagt een sessie en raakt Mollie niet aan');
   ok('met sessie: 200', met.status, 200);
   ok('de leesroute maakt niets aan bij Mollie',
     gezien.filter((v) => v.method !== 'GET' && v.method !== 'HEAD'), []);
-  ok('en leest alleen de methodelijst',
-    gezien.filter((v) => !/\/v2\/methods(\?|$)/.test(v.url)), []);
+  /* ── EN HET MAILGEBRUIK BIJ RESEND — 8 oktober 2026 (9.05) ──────────────────
+     Het blok "De gratis grenzen" leest bij Resend hoeveel mail er vandaag en deze
+     maand is verstuurd (GET /usage). Ook dat is een leesverzoek dat niets
+     aanmaakt, dus het mag; alles daarbuiten blijft een overtreding. */
+  ok('en leest alleen de methodelijst en het mailgebruik',
+    gezien.filter((v) => !/\/v2\/methods(\?|$)/.test(v.url) && v.url !== 'https://api.resend.com/usage'), []);
+  ok('het mailgebruik is een GET', gezien.filter((v) => v.url.includes('api.resend.com')).every((v) => v.method === 'GET'), true);
   const html = await met.text();
   ok('de pagina noemt de secrets bij naam', /MOLLIE_API_KEY/.test(html) && /RESEND_API_KEY/.test(html));
   ok('en toont geen enkele waarde', /test_0123456789/.test(html), false);

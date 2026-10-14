@@ -1,8 +1,38 @@
 /* Een kopie van alles wat je kwijt kunt raken. `npm run backup`
  *
- *   npm run backup              → database + een inventaris van R2
+ *   npm run backup              → database + een inventaris van R2 + de prompts
  *   npm run backup -- --files   → ook de bestanden zelf ophalen (traag)
  *   npm run backup -- --keep 10 → oudere back-ups opruimen, tien bewaren
+ *   npm run backup -- --naar X  → naar map X in plaats van de ingestelde map
+ *   npm run backup -- --lokaal  → de LOKALE database van wrangler dev (proef)
+ *
+ * Lucas start dit niet zelf: BACKUP.bat in de projectmap (dubbelklik) of de
+ * wekelijkse taak in de Taakplanner (scripts/backup-weekly.bat) doet het.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * WAT ER OP 8 OKTOBER 2026 VERANDERDE (punt 9.04)
+ *
+ * 1 · ZONDER INLOGGEHEIMEN. De dump bevatte de wachtwoordhash en het
+ *     TOTP-geheim van /admin, de herstelcodes, alle sessies en de inlogcodes van
+ *     Studio. Nu gaan die tabellen leeg mee: hun opbouw wel, hun inhoud niet
+ *     (lijst en waarom in lib/backupdelen.mjs, GEHEIME_TABELLEN). De export
+ *     gebeurt daarvoor in twee delen — de opbouw van álle tabellen, en de inhoud
+ *     van alle tabellen behalve die zes — zodat de geheimen nooit op schijf komen.
+ * 2 · NAAR GOOGLE DRIVE. Lucas koos (V6 = c) Google Drive; de map staat in
+ *     backups/BESTEMMING.txt (BACKUP.bat, keuze 1). Ontbreekt de map, dan komt de
+ *     kopie in backups/ en zegt het script dat luid — zie kiesBestemming().
+ * 3 · GECONTROLEERD. Elke dump wordt meteen ingelezen in een lege database,
+ *     integrity_check en rijen tellen; de uitkomst staat in <stamp>-controle.json
+ *     en als regel in app_settings.backup_check, die /admin naast de chip zet.
+ * 4 · MÉT DE PROMPTS. De map C:\Users\Gebruiker\VISUAILS\Prompts gaat mee als
+ *     <stamp>-prompts\. Wat VISUAILS onvervangbaar maakt, zat in geen back-up.
+ * 5 · TERUG TE ZETTEN. Naast de kopieën staat LEESMIJ-TERUGZETTEN.txt, en
+ *     BACKUP.bat keuze 3 zet de nieuwste kopie op proef terug in een lege lokale
+ *     D1 en vergelijkt de tellingen (scripts/terugzetten.mjs).
+ *
+ * Het aantal bewaarde sets is BACKUP_KEEP uit src/lib/retention.js — hetzelfde
+ * getal dat /privacy noemt. backup-weekly.bat geeft het ook expliciet mee
+ * (--keep), en tests/bewaartermijn.test.mjs houdt de twee gelijk.
  *
  * ─────────────────────────────────────────────────────────────────────────────
  * WAAROM DIT HET BELANGRIJKSTE SCRIPT IN DEZE MAP IS.
@@ -38,20 +68,33 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import os from 'node:os';
 import { wrangler, warmLogin, asCommandArg } from './lib/wrangler.mjs';
+import {
+  GEHEIME_TABELLEN, tabellenVoorDump, kiesBestemming, promptsMap, kopieerMap,
+  controleerDump, controleRegel, setsOmWegTeDoen, hoortBijSet,
+} from './lib/backupdelen.mjs';
+import { BACKUP_KEEP } from '../src/lib/retention.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const OUT = path.join(ROOT, 'backups');
+const LOKAAL_MAP = path.join(ROOT, 'backups');
 
 const argv = process.argv.slice(2);
 const hash = argv.findIndex((a) => a.startsWith('#'));
 const args = hash === -1 ? argv : argv.slice(0, hash);
 const WITH_FILES = args.includes('--files');
+/* --lokaal: de database van `wrangler dev` in plaats van de echte. Alleen om dit
+   script zelf te proberen zonder iets live aan te raken. */
+const WAAR = args.includes('--lokaal') ? '--local' : '--remote';
+/* Zonder --keep: BACKUP_KEEP uit retention.js, het getal dat /privacy noemt. */
 const KEEP = (() => {
   const i = args.indexOf('--keep');
   const n = i === -1 ? NaN : Number(args[i + 1]);
-  return Number.isInteger(n) && n > 0 ? n : 0;
+  return Number.isInteger(n) && n > 0 ? n : BACKUP_KEEP;
 })();
+
+const BESTEMMING = kiesBestemming({ root: ROOT, argv: args });
+const OUT = BESTEMMING.map;
 
 const DB = (() => {
   const toml = fs.readFileSync(path.join(ROOT, 'wrangler.toml'), 'utf8');
@@ -78,29 +121,75 @@ const stamp = (() => {
 fs.mkdirSync(OUT, { recursive: true });
 
 console.log(`VISUAILS · back-up ${stamp}\n`);
+console.log(`  naar: ${OUT}`);
+if (BESTEMMING.waar !== 'drive') {
+  console.log(`  ! LET OP: deze kopie staat LOKAAL op de pc — ${BESTEMMING.reden}.`);
+  console.log('    Hij is wel gemaakt, maar niet buiten huis. /admin laat dit ook zien.');
+}
+console.log('');
 
 // Token vernieuwen vóór de eerste aanroep, anders valt een back-up om op een
 // 7403 die geen rechtenprobleem is — zie warmLogin() in lib/wrangler.mjs.
 // Juist hier vervelend: een back-up die niet draait, merk je pas als je hem
 // nodig hebt.
-await warmLogin();
+if (WAAR === '--remote') await warmLogin();
 
-// ── 1 · de database ───────────────────────────────────────────────────────────
+// ── 1 · de database, zonder inloggeheimen ─────────────────────────────────────
+/* Eerst welke tabellen er zijn, want de inhoud wordt per tabel gevraagd (alles
+ * behalve GEHEIME_TABELLEN). Mislukt dit, dan is er geen back-up — stoppen. */
 const sqlFile = path.join(OUT, `${stamp}-d1.sql`);
-process.stdout.write('  database exporteren… ');
-/* `-y` beantwoordt de waarschuwing die wrangler geeft voordat hij de database
- * even op slot zet. Oudere versies kennen die vlag niet en weigeren hem, dus
- * bij "unknown argument" gaat hij er zonder — liever een script dat op twee
- * versies werkt dan een vlag die je moet onthouden. */
-let dump = await wrangler(['d1', 'export', DB, '--remote', '-y', '--output', sqlFile]);
-if (!dump.ok && /unknown argument|unrecognized/i.test(dump.out)) {
-  dump = await wrangler(['d1', 'export', DB, '--remote', '--output', sqlFile]);
-}
-if (!dump.ok || !fs.existsSync(sqlFile)) {
+process.stdout.write('  database exporteren (zonder inloggeheimen)… ');
+const TABELLEN_SQL = asCommandArg("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name");
+const lijst = await wrangler(['d1', 'execute', DB, WAAR, '--json', '--command', TABELLEN_SQL]);
+let alleTabellen = [];
+try { alleTabellen = (JSON.parse(lijst.stdout.slice(lijst.stdout.indexOf('[')))?.[0]?.results || []).map((r) => r.name); } catch { alleTabellen = []; }
+if (!lijst.ok || !alleTabellen.length) {
   console.log('mislukt');
-  console.error(dump.out.trim().slice(0, 1200));
+  console.error('  ✖ de lijst met tabellen kwam niet terug — er is geen back-up gemaakt.');
+  console.error('    ' + lijst.out.trim().split('\n').filter(Boolean).slice(-3).join(' ').slice(0, 600));
   process.exit(1);
 }
+const metInhoud = tabellenVoorDump(alleTabellen);
+
+/* Twee delen in een tijdelijke map BUITEN Google Drive, zodat Drive nooit een
+ * half bestand oppikt; daarna samen als één bestand naar de bestemming.
+ * `-y` beantwoordt de waarschuwing die wrangler geeft voordat hij de database
+ * even op slot zet. Oudere versies kennen die vlag niet en weigeren hem, dus
+ * bij "unknown argument" gaat hij er zonder. */
+const tijdelijk = fs.mkdtempSync(path.join(os.tmpdir(), 'visuails-backup-'));
+const exporteer = async (extra, uit) => {
+  let r = await wrangler(['d1', 'export', DB, WAAR, '-y', ...extra, '--output', uit]);
+  if (!r.ok && /unknown argument|unrecognized/i.test(r.out)) {
+    r = await wrangler(['d1', 'export', DB, WAAR, ...extra, '--output', uit]);
+  }
+  return r.ok && fs.existsSync(uit) ? null : r.out.trim().slice(0, 1200);
+};
+const opbouwFile = path.join(tijdelijk, 'opbouw.sql');
+const inhoudFile = path.join(tijdelijk, 'inhoud.sql');
+let fout = await exporteer(['--no-data'], opbouwFile);
+if (!fout) {
+  fout = await exporteer(['--no-schema', ...metInhoud.flatMap((t) => ['--table', t])], inhoudFile);
+  /* sqlite_sequence onthoudt de hoogste id per tabel. Weigert een versie van
+     wrangler hem als --table, dan zonder: SQLite telt dan verder vanaf de
+     hoogste id die er staat, en dat is voor een herstel goed genoeg. */
+  if (fout && metInhoud.includes('sqlite_sequence')) {
+    fout = await exporteer(['--no-schema', ...metInhoud.filter((t) => t !== 'sqlite_sequence').flatMap((t) => ['--table', t])], inhoudFile);
+  }
+}
+if (fout) {
+  console.log('mislukt');
+  console.error(fout);
+  fs.rmSync(tijdelijk, { recursive: true, force: true });
+  process.exit(1);
+}
+fs.writeFileSync(sqlFile, [
+  `-- VISUAILS back-up ${stamp} (database ${DB}).`,
+  `-- Zonder inloggeheimen: de tabellen ${GEHEIME_TABELLEN.join(', ')} staan erin, maar leeg.`,
+  '-- Terugzetten: zie LEESMIJ-TERUGZETTEN.txt in deze map.',
+  fs.readFileSync(opbouwFile, 'utf8'),
+  fs.readFileSync(inhoudFile, 'utf8'),
+].join('\n'));
+fs.rmSync(tijdelijk, { recursive: true, force: true });
 const sqlKb = (fs.statSync(sqlFile).size / 1024).toFixed(0);
 console.log(`${path.basename(sqlFile)}  ${sqlKb} kB`);
 
@@ -119,6 +208,46 @@ if (missing.length) {
   process.exit(1);
 }
 console.log(`     ${tables.length} tabellen, waaronder ${MUST_HAVE.join(', ')}`);
+
+/* ── 1a · INLEZEN EN CONTROLEREN — 8 oktober 2026 (9.04) ─────────────────────
+ * Zie controleerDump() in lib/backupdelen.mjs. Een dump die niet terug te lezen
+ * is, of waarin toch een inloggeheim staat, telt als NIET gecontroleerd: de chip
+ * in /admin wordt dan oranje. De dump zelf blijft staan, zodat je kunt kijken. */
+process.stdout.write('  controleren (inlezen in een lege database)… ');
+const controle = await controleerDump(sql);
+fs.writeFileSync(path.join(OUT, `${stamp}-controle.json`), JSON.stringify({
+  taken_at: stamp, database: DB, waar: BESTEMMING.waar, ...controle,
+  geheime_tabellen_leeg: GEHEIME_TABELLEN,
+}, null, 2));
+if (controle.ok) {
+  console.log(`in orde · ${controle.tabellen} tabellen · ${controle.rijen} rijen${controle.wezen ? ` · ${controle.wezen} verwijzingen zonder doel (geen fout)` : ''}`);
+} else {
+  console.log('NIET in orde');
+  console.error(`  ✖ ${controle.reden}`);
+  process.exitCode = 1;
+}
+
+/* ── 1b' · DE PROMPTS — 8 oktober 2026 (9.04) ────────────────────────────────
+ * De map Prompts staat alleen op deze pc, en de database kan Cloudflare zelf
+ * terugzetten; deze map niet. Hij gaat daarom elke week mee, als gewone kopie
+ * naast de dump. Ontbreekt hij, dan is dat een melding en geen reden om de rest
+ * te laten vallen. */
+const PROMPTS = promptsMap();
+let prompts;
+process.stdout.write('  de map Prompts meenemen… ');
+if (fs.existsSync(PROMPTS)) {
+  try {
+    const k = kopieerMap(PROMPTS, path.join(OUT, `${stamp}-prompts`));
+    prompts = { bestanden: k.bestanden };
+    console.log(`${k.bestanden} bestanden, ${(k.bytes / 1048576).toFixed(1)} MB`);
+  } catch (err) {
+    prompts = { bestanden: null, reden: 'kopieren mislukt' };
+    console.log(`mislukt — ${err?.message || err}`);
+  }
+} else {
+  prompts = { bestanden: null, reden: 'map niet gevonden' };
+  console.log(`niet gevonden op ${PROMPTS}`);
+}
 
 /* ── 1b · DE DATUMSTEMPEL ─────────────────────────────────────────────────────
  *
@@ -148,14 +277,20 @@ console.log(`     ${tables.length} tabellen, waaronder ${MUST_HAVE.join(', ')}`)
  * geen back-up is terwijl die er wel is — vervelend, maar de goede kant om fout te
  * gaan: een bewaking die liever te vaak waarschuwt dan te weinig.
  */
+/* Sinds 8 oktober 2026 (9.04) gaat backup_check mee in dezelfde opdracht: de
+ * uitkomst van de controle, waar de kopie staat en of de prompts mee zijn. /admin
+ * zet die regel naast de chip. Eén opdracht, zodat de twee rijen nooit over
+ * verschillende rondes gaan. */
 const stampSql = asCommandArg(
   `INSERT INTO app_settings (key, value) VALUES ('backup_last_run', '${stamp.replace(/-(\d{4})$/, ' $1').replace(/(\d{2})(\d{2})$/, '$1:$2')}')
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value;
+   INSERT INTO app_settings (key, value) VALUES ('backup_check', '${controleRegel(controle, { waar: BESTEMMING.waar, reden: BESTEMMING.reden, prompts, map: OUT })}')
      ON CONFLICT(key) DO UPDATE SET value = excluded.value`
 );
 if (stampSql) {
-  const st = await wrangler(['d1', 'execute', DB, '--remote', '--command', stampSql]);
+  const st = await wrangler(['d1', 'execute', DB, WAAR, '--command', stampSql]);
   if (st.ok) {
-    console.log('     datum weggeschreven in app_settings — cron/index.js kijkt hiernaar');
+    console.log('     datum en controle weggeschreven in app_settings — /admin en cron/index.js kijken hiernaar');
   } else {
     console.error('  ! de datum kon niet in app_settings — de back-up zelf is in orde.');
     console.error('    Gevolg: de nachtelijke taak denkt over tien dagen dat er geen back-up is.');
@@ -185,7 +320,7 @@ const INVENTORY_SQL = asCommandArg(
      FROM files f LEFT JOIN orders o ON o.id = f.order_id ORDER BY f.id`
 );
 const inv = INVENTORY_SQL
-  ? await wrangler(['d1', 'execute', DB, '--remote', '--json', '--command', INVENTORY_SQL])
+  ? await wrangler(['d1', 'execute', DB, WAAR, '--json', '--command', INVENTORY_SQL])
   : { ok: false, out: 'de inventarisquery past niet op een commandoregel', stdout: '' };
 
 /* DRIE UITKOMSTEN, DRIE BERICHTEN. Hier stond één regel — "leeg of mislukt" — voor
@@ -225,7 +360,7 @@ const ASSETS_SQL = asCommandArg(
 );
 let assets = [];
 if (!invError && files.length) {
-  const q = await wrangler(['d1', 'execute', DB, '--remote', '--json', '--command', ASSETS_SQL]);
+  const q = await wrangler(['d1', 'execute', DB, WAAR, '--json', '--command', ASSETS_SQL]);
   if (q.ok) {
     try { assets = JSON.parse(q.stdout.slice(q.stdout.indexOf('[')))?.[0]?.results || []; } catch { assets = []; }
   } else if (!/no such table/i.test(q.out)) {
@@ -285,19 +420,27 @@ if (WITH_FILES && files.length) {
   console.log('  (de bestanden zelf niet meegenomen — gebruik --files als je die ook wilt)');
 }
 
-// ── 4 · opruimen ─────────────────────────────────────────────────────────────
-if (KEEP) {
-  const sets = [...new Set(fs.readdirSync(OUT).map((f) => f.slice(0, 16)))].sort();
-  const drop = sets.slice(0, Math.max(0, sets.length - KEEP));
-  for (const old of drop) {
-    for (const f of fs.readdirSync(OUT).filter((f) => f.startsWith(old))) {
-      fs.rmSync(path.join(OUT, f), { recursive: true, force: true });
-    }
-  }
-  if (drop.length) console.log(`  ${drop.length} oudere back-up(s) opgeruimd, ${KEEP} bewaard`);
-}
+// ── 4 · de uitleg ernaast, en opruimen ─────────────────────────────────────────
+/* LEESMIJ-TERUGZETTEN.txt staat in elke bestemming, zodat wie de back-up in
+ * handen heeft ook weet wat hij ermee moet — ook als de projectmap weg is. */
+try {
+  fs.copyFileSync(path.join(ROOT, 'scripts', 'TERUGZETTEN.txt'), path.join(OUT, 'LEESMIJ-TERUGZETTEN.txt'));
+} catch { /* de uitleg ontbreekt in de projectmap; de back-up is er wel */ }
 
-console.log(`\n▶ ${path.relative(ROOT, OUT)}/${stamp}-*`);
-console.log('\nTerugzetten is met opzet handwerk. Op een LEGE database:');
-console.log(`  npx wrangler d1 execute ${DB} --remote --file backups/${stamp}-d1.sql`);
-console.log('Kijk eerst in het bestand. Over een database die nog data heeft, giet je dit niet.');
+/* Alleen wat de vorm van een set heeft telt mee (zie setsOmWegTeDoen); _log,
+ * BESTEMMING.txt en de uitleg blijven altijd staan.
+ *
+ * In Google Drive gaat een verwijderde set eerst naar de prullenbak van Drive en
+ * is hij daar na 30 dagen definitief weg (Google's eigen termijn). */
+const weg = setsOmWegTeDoen(fs.readdirSync(OUT), KEEP);
+for (const set of weg) {
+  for (const f of fs.readdirSync(OUT).filter((f) => hoortBijSet(f, set))) {
+    fs.rmSync(path.join(OUT, f), { recursive: true, force: true });
+  }
+}
+if (weg.length) console.log(`  ${weg.length} oudere back-up(s) opgeruimd, ${KEEP} bewaard`);
+
+console.log(`\n▶ ${OUT}${path.sep}${stamp}-*`);
+console.log(`  ${BESTEMMING.waar === 'drive' ? 'in Google Drive' : 'LOKAAL — niet buiten huis'} · ${controle.ok ? 'gecontroleerd' : 'NIET gecontroleerd'} · prompts ${prompts.bestanden !== null ? 'mee' : 'NIET mee'}`);
+console.log('\nTerugzetten: zie LEESMIJ-TERUGZETTEN.txt naast de kopieën. Een proef op een');
+console.log('lege lokale database doe je met BACKUP.bat, keuze 3 — daar verandert niets live.');

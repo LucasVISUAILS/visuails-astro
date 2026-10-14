@@ -8,7 +8,7 @@ import { waHref } from './whatsapp.js';
 // grid; the hero/strip photography for each style is real and is wired up
 // directly in the [slug] page template.
 
-import { perProduct, vatLabel } from './pricing.js';
+import { perProduct, vatLabel, euro, AMOUNT, VIDEO_OP_AANVRAAG } from './pricing.js';
 
 // No euro figure and no delivery time may be typed into this file.
 // Both used to live here as literals, which is how the hub cards and the
@@ -21,6 +21,18 @@ const VID = perProduct('video', 'en');
 // a flat figure; it just no longer prints it without saying which side of VAT
 // it sits on.
 const VID_VAT = vatLabel('excl', 'en');
+/* ── GEEN BEDRAG ZOLANG VIDEO OP AANVRAAG IS — 8 oktober 2026 (§17.2, o23) ──
+   priceTrust en cardPrice zetten € 69 per clip op /video/motion en
+   /video/lifestyle, en via [slug].astro ook in de Google-omschrijving, terwijl
+   video op aanvraag is (VIDEO_OP_AANVRAAG). Lifestyle Video kostte bovendien
+   AMOUNT.videoLifestyle en niet AMOUNT.video. Nu zegt de data zelf "On request"
+   zolang de vlag aan staat; gaat hij uit, dan staan de juiste bedragen er
+   vanzelf weer — Lifestyle Video als ondergrens, zoals op /start. */
+const OP_AANVRAAG = 'On request';
+const MOTION_PRIJS = VIDEO_OP_AANVRAAG ? OP_AANVRAAG : VID.price;
+const LIFESTYLE_PRIJS = VIDEO_OP_AANVRAAG ? OP_AANVRAAG : `from ${euro(AMOUNT.videoLifestyle, 'en')}`;
+const PER_CLIP = VIDEO_OP_AANVRAAG ? '' : ' / clip';
+const VASTE_PRIJS = VIDEO_OP_AANVRAAG ? '' : ' Fixed price.';
 /* Levertijd en controle staan in de feitenrij van de detailpagina, niet
    meer ook in "Wat je krijgt" (29 september 2026: twee keer dezelfde zin). */
 
@@ -39,8 +51,8 @@ export const videoStyles = [
        src/data/orderDoors.js. */
     name: 'Motion',
     tagline: 'Eight seconds of undivided attention.',
-    priceTrust: VID.price,
-    priceUnit: ' / clip',
+    priceTrust: MOTION_PRIJS,
+    priceUnit: PER_CLIP,
     /* Naar het aanvraagformulier van Video en niet naar de keuzepagina.
        Video staat nog op 'in aanbouw' — er is geen bestelformulier maar een
        aanvraag, en dát is waar deze knop hoort te landen. "Order" beloofde
@@ -52,8 +64,8 @@ export const videoStyles = [
     heroWidth: '26%',
     cardIcon: 'bottle',
     cardWidth: '42%',
-    cardPrice: `${VID.price} / clip`,
-    cardDesc: 'An 8-second clip, subtle motion, clean presentation. Fixed price.',
+    cardPrice: `${MOTION_PRIJS}${PER_CLIP}`,
+    cardDesc: `An 8-second clip, subtle motion, clean presentation.${VASTE_PRIJS}`,
     moodTitle: 'What Motion feels like.',
     moodParagraphs: [
       'Eight seconds, one product, one clean move — enough to hold the eye, never enough to distract.',
@@ -86,7 +98,7 @@ export const videoStyles = [
     ],
     whatYouGet: [
       '8-second clean product film',
-      'Seamless loop, subtle motion',
+      'Continuous loop, subtle motion',
       'Vertical 9:16; other ratios on request',
     ],
   },
@@ -94,8 +106,8 @@ export const videoStyles = [
     slug: 'lifestyle',
     name: 'Lifestyle Video',
     tagline: 'The scene, set in motion.',
-    priceTrust: VID.price,
-    priceUnit: ' / clip',
+    priceTrust: LIFESTYLE_PRIJS,
+    priceUnit: PER_CLIP,
     ctaLabel: 'Ask about Lifestyle Video',
     ctaHref: '/start/video',
     ctaExternal: false,
@@ -103,8 +115,10 @@ export const videoStyles = [
     heroWidth: '26%',
     cardIcon: 'jar',
     cardWidth: '46%',
-    cardPrice: `${VID.price} / clip`,
-    cardDesc: 'A styled scene, in motion — for social and ads. Fixed price.',
+    cardPrice: `${LIFESTYLE_PRIJS}${PER_CLIP}`,
+    /* Geen "Fixed price." meer: Lifestyle Video heeft een ondergrens, geen vast
+       bedrag (AMOUNT.videoLifestyle), ook als video weer gewoon te bestellen is. */
+    cardDesc: 'A styled scene, in motion — for social and ads.',
     moodTitle: 'What Lifestyle Video feels like.',
     moodParagraphs: [
       'A styled scene, let loose: steam rising, light shifting, a model turning towards the lens.',

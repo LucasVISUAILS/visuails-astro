@@ -88,6 +88,9 @@ binding = "UPLOADS"
 bucket_name = "visuails-uploads"
 
 [vars]
+# Let op: alles onder [vars] staat in git en is dus geen geheim. Sleutels horen
+# als secret in het dashboard (zie hieronder); PURGE_ENABLED en WORKERS_PLAN
+# staan juist wél hier, met opzet — zie hun eigen uitleg verderop.
 NOTIFY_EMAIL = "hello@visuails.com"
 FROM_EMAIL = "VISUAILS <orders@visuails.com>"
 
@@ -103,6 +106,43 @@ FROM_EMAIL = "VISUAILS <orders@visuails.com>"
 #   npx wrangler secret put MOLLIE_API_KEY --config cron/wrangler.toml
 # Zonder die sleutel slaat de taak de herinnering over en doet hij de rest gewoon.
 PUBLIC_ORIGIN = "https://visuails.com"
+
+# ── DE REM OP HET WISSEN — 8 oktober 2026 (punt 9.03) ────────────────────────
+#
+# PURGE_ENABLED stond hiervoor als SECRET op deze Worker (of eigenlijk: nergens,
+# want de cron was nog nooit uitgerold). Een secret zie je in git niet, dus "staat
+# het wissen aan?" kon alleen het Cloudflare-dashboard beantwoorden. Nu is het een
+# gewone variabele in dit bestand: wat hier staat, is wat er live draait, en elke
+# keer dat hij omgaat staat er een commit met een datum bij.
+#
+#   "false"  verslagmodus: het nachtrapport noemt wat er ZOU worden gewist, en er
+#            wordt niets weggegooid. Zo staat hij tot de eerste back-up er is.
+#   "true"   de bewaartermijn uit /privacy wordt echt uitgevoerd: bestanden ouder
+#            dan de termijn gaan weg uit R2 en uit de database.
+#
+# OP "true" ZETTEN, ALLEEN NA DE BACK-UP. Stap 5 in kladblok/LIVE-STAPPEN.md:
+# één gecontroleerde back-up (BACKUP.bat, keuze 2), het nachtrapport in
+# verslagmodus gelezen (alleen proefbestellingen erin), en dan vraag je Claude
+# deze regel op "true" te zetten — of je doet het zelf in Kladblok: "false"
+# wordt "true", opslaan, en UITROLLEN.bat. De volgende nacht wist hij.
+#
+# LET OP, EEN BOTSING: staat PURGE_ENABLED in het Cloudflare-dashboard nog als
+# SECRET op visuails-cron (Workers & Pages → visuails-cron → Settings →
+# Variables and Secrets, type "Secret"), dan weigert de uitrol deze variabele
+# met "Binding name already in use". Haal dat geheim dan eerst daar weg (stap 1
+# in kladblok/LIVE-STAPPEN.md). Een variabele hier wint daarna altijd: de uitrol
+# zet hem bij elke keer opnieuw op wat in dit bestand staat.
+PURGE_ENABLED = "false"
+
+# ── OP WELK PLAN DRAAIT DIT — 8 oktober 2026 (punt 9.05) ─────────────────────
+#
+# Lucas koos (V3): Workers en Resend allebei op het gratis plan. Op dat plan mag
+# één nachtelijke run maar 50 databaseverzoeken en 50 verzoeken naar buiten doen
+# (src/lib/meetlat.js, met de bron). De cron telt wat hij gebruikt, zet het in
+# het nachtrapport als het krap wordt, en het opruimen stopt op tijd in plaats
+# van halverwege om te vallen. Stap je over op Workers Paid, dan wordt dit
+# "betaald" en gelden de ruimere grenzen.
+WORKERS_PLAN = "gratis"
 
 # ── OBSERVABILITY, AAN — 10 augustus 2026 ────────────────────────────────────
 #

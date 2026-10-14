@@ -1,0 +1,210 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — /models in de hal ("de standaardbibliotheek"). 13 oktober 2026,
+ * afvinklijst 11 (v11-volgende = a: de modellen als volgende groep).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Dezelfde opbouw, dezelfde teksten en dezelfde roster als ModelsPage.astro, in
+ * de vorm van de voorpagina. Wat in de tekst anders is, staat in
+ * kladblok/TEKSTEN-MODELLEN.md (●-regels).
+ *
+ *   kop      pil, de kop in twee tonen, twee knoppen, de drie feiten, één portret
+ *   rooster  alle gezichten uit models.js, elk met naam en karakter, en een
+ *            kaart "Laat ons matchen" die de rij vult
+ *   kost     één nevelvlak: inbegrepen, en de deur naar het merkmodel
+ *   slot     het lichte verloop met korrel (zoals op de lookpagina's), twee knoppen
+ *
+ * GEEN BEDRAG OP DEZE PAGINA (zie de kop van ModelsPage.astro): de pagina zegt
+ * dat de gezichten niets extra kosten, en noemt daarom geen getal.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/hal.css';
+import NieuwTabblad from './NieuwTabblad.astro';
+import HalBeweging from './HalBeweging.astro';
+import { waHref } from '../data/whatsapp.js';
+import { localizedPath } from '../i18n/ui.js';
+import { ROSTER, TRAITS, modelId, rosterWoord } from '../data/models.js';
+/* De gezichtscontrole (afvinklijst 12): pas zichtbaar als het logboek in modelChecks.js
+   voor élk gezicht compleet is — dezelfde schakelaar als /terms §5 en /ai-act. */
+import { GEZICHTSZOEKERS, rosterVolledigGecontroleerd } from '../data/modelChecks.js';
+import { inWoorden } from '../data/termijnen.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+
+const COPY = {
+  en: {
+    eyebrow: 'The standard library',
+    h1: [`${rosterWoord('en', true)} faces.`, 'Already included.'],
+    lead: 'Included in every order at no extra cost. Pick one, or let us match one to your product.',
+    ctaPrimary: 'Start an order',
+    ctaWa: 'Discuss it on WhatsApp',
+    waText: 'Hi VISUAILS, I\'d like to ask about the standard models.',
+    heroAlt: 'A VISUAILS standard model',
+    trust: [
+      ['No fee', 'per model, ever'],
+      [`${rosterWoord('en', true)} faces`, 'shared across brands'],
+      ['Swap freely', 'order to order'],
+    ],
+    rosterPil: `All ${rosterWoord('en')}`,
+    rosterH: ['The full', 'roster.'],
+    modelAlt: 'a VISUAILS standard model',
+    chooseH: 'Let us match one',
+    chooseBody: 'Tell us the product when you order and we pick the face that fits.',
+    incPil: 'What it costs',
+    incH: ['Included,', 'not upsold.'],
+    incBody: 'No fee per model, no upgrade. The price per product is the whole price.',
+    incCta: 'See all prices by quantity',
+    doorH: 'Want a face that’s only yours?',
+    doorBody: 'Designed once, for your brand only.',
+    doorCta: 'Explore Your Brand Model',
+    slot: ['Pick a face,', 'start an order.'],
+    ctaStart: 'Start an order',
+    ctaPricing: 'See pricing per product',
+  },
+  nl: {
+    eyebrow: 'De standaardbibliotheek',
+    h1: [`${rosterWoord('nl', true)} gezichten.`, 'Al inbegrepen.'],
+    lead: 'Inbegrepen in elke bestelling, zonder meerprijs. Kies er een, of laat ons er een bij je product zoeken.',
+    ctaPrimary: 'Start een bestelling',
+    ctaWa: 'Bespreek het op WhatsApp',
+    waText: 'Hoi VISUAILS, ik wil graag iets vragen over de standaardmodellen.',
+    heroAlt: 'Een VISUAILS-standaardmodel',
+    trust: [
+      ['Geen kosten', 'per model, nooit'],
+      [`${rosterWoord('nl', true)} gezichten`, 'die we voor alle merken gebruiken'],
+      ['Vrij wisselen', 'van bestelling tot bestelling'],
+    ],
+    rosterPil: `Alle ${rosterWoord('nl')}`,
+    rosterH: ['De volledige', 'bibliotheek.'],
+    modelAlt: 'een VISUAILS-standaardmodel',
+    chooseH: 'Laat ons matchen',
+    chooseBody: 'Vertel ons bij het bestellen wat je verkoopt, dan kiezen wij het gezicht dat past.',
+    incPil: 'Wat het kost',
+    incH: ['Inbegrepen,', 'niet iets wat je erbij moet kopen.'],
+    incBody: 'Geen kosten per model, niets bij te kopen. De prijs per product is de hele prijs.',
+    incCta: 'Bekijk alle prijzen per aantal',
+    doorH: 'Wil je een gezicht dat alleen van jou is?',
+    doorBody: 'Eén keer ontworpen, alleen voor jouw merk.',
+    doorCta: 'Ontdek jouw merkmodel',
+    slot: ['Kies een gezicht,', 'start een bestelling.'],
+    ctaStart: 'Start een bestelling',
+    ctaPricing: 'Bekijk de prijs per product',
+  },
+};
+const c = COPY[lang];
+const traits = TRAITS[lang];
+const wa = waHref(c.waText);
+const gecontroleerd = rosterVolledigGecontroleerd();
+const zoekers = inWoorden(GEZICHTSZOEKERS.length, lang);
+const CHECK = lang === 'nl' ? {
+  kop: 'Gecontroleerd op bestaande gezichten',
+  zin: `Elk gezicht in de bibliotheek is vóór gebruik door ${zoekers} verschillende gezichtszoekmachines gehaald, om na te gaan dat het niet het gezicht van een bestaand persoon is. Zo gebruik je ze met een gerust hart in je shop en je advertenties.`,
+  link: 'Hoe we dat controleren',
+} : {
+  kop: 'Checked against real faces',
+  zin: `Every face in the roster went through ${zoekers} different face-search engines before it was used, to check that it is not the face of an existing person. So you can use them in your shop and your ads with confidence.`,
+  link: 'How we check',
+};
+const ICOON = {
+  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
+  pijl: '<path d="M4.5 11.5l7-7M5.5 4.5h6v6"/>',
+  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
+  schild: '<path d="M8 1.8l5 2v3.6c0 3.1-2.1 5.6-5 6.8-2.9-1.2-5-3.7-5-6.8V3.8z"/><path d="M5.6 8.1l1.7 1.6 3.1-3.3"/>',
+};
+const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+---
+<div class="h-pagina h-md">
+
+  {/* ── 1 · DE KOP ─────────────────────────────────────────────────────────── */}
+  <header class="h-paginakop h-md-kop">
+    <div class="h-md-kop-tekst">
+      <p class="h-pil h-op" style="--d:0"><span>{c.eyebrow}</span></p>
+      <h1 class="h-kop h-h1 h-op" style="--d:1"><span class="l">{c.h1[0]}</span> <span>{c.h1[1]}</span></h1>
+      <p class="h-lede h-op" style="--d:2">{c.lead}</p>
+      <p class="h-acties h-op" style="--d:3">
+        <a class="h-knop h-knop-inkt" href={lp('/start')}>{c.ctaPrimary}<span class="o" set:html={ik('rechts')} /></a>
+        <a class="h-knop h-knop-lijn" href={wa} target="_blank" rel="noopener">{c.ctaWa}<NieuwTabblad lang={lang} /></a>
+      </p>
+      <ul class="h-feiten h-op" style="--d:4" role="list">
+        {c.trust.map((t) => <li><i set:html={ik('check')} /><span><b>{t[0]}</b> — {t[1]}</span></li>)}
+      </ul>
+    </div>
+    <figure class="h-md-kop-beeld h-op" style="--d:2">
+      <img src="/img/model-01.webp" alt={c.heroAlt} width="800" height="1071" decoding="sync" fetchpriority="high" />
+    </figure>
+  </header>
+
+  {/* ── 2 · DE VOLLEDIGE BIBLIOTHEEK ─────────────────────────────────────────
+      Elk portret groot genoeg om een gezicht te beoordelen (zes per rij op een
+      laptop, twee op een telefoon), met het anker #<naam> waar andere pagina's
+      naar wijzen. De laatste tegel is geen gezicht maar het aanbod om er een te
+      laten kiezen; hij vult de rij. */}
+  <section class="h-sec h-md-rooster-sec" aria-labelledby="md-rooster">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{c.rosterPil}</span></p>
+        <h2 id="md-rooster" class="h-kop h-h2"><span class="l">{c.rosterH[0]}</span> {c.rosterH[1]}</h2>
+      </div>
+    </header>
+    <ul class="h-md-rooster" role="list">
+      {ROSTER.map((m, i) => (
+        <li class="h-in" style={`--d:${i % 6}`}>
+          <a class="h-md-gezicht" href={`${lp('/models')}#${modelId(m.name)}`} id={modelId(m.name)}>
+            <span class="h-well h-md-foto">
+              <img src={m.thumb} alt={`${m.name} — ${c.modelAlt}`} loading="lazy" decoding="async" width={m.tw} height={m.th} transition:name={`face-${modelId(m.name)}`} />
+            </span>
+            <span class="h-md-naam"><b>{m.name}</b><span>{m.traits.map((t) => traits[t]).join(' · ')}</span></span>
+          </a>
+        </li>
+      ))}
+      <li class="h-md-kies h-in" style="--d:4">
+        <h3 class="h-md-kies-kop">{c.chooseH}</h3>
+        <p class="h-md-zin">{c.chooseBody}</p>
+        <a class="h-link" href={lp('/start')}>{c.ctaPrimary}<span class="h-cirkel h-cirkel-mini h-cirkel-wit" set:html={ik('pijl')} /></a>
+      </li>
+    </ul>
+    {gecontroleerd && (
+      <div class="h-bm-check h-md-check h-in">
+        <span class="h-bm-check-i" aria-hidden="true" set:html={ik('schild')} />
+        <div>
+          <h3 class="h-bm-ruil-kop">{CHECK.kop}</h3>
+          <p class="h-md-zin">{CHECK.zin} <a class="h-bm-a" href={lp('/ai-act')}>{CHECK.link}</a></p>
+        </div>
+      </div>
+    )}
+  </section>
+
+  {/* ── 3 · WAT HET KOST ─────────────────────────────────────────────────────
+      Was de donkere kamer: links de zin die het argument draagt, rechts de deur
+      naar het merkmodel. Nu één nevelvlak met een witte kaart als deur. */}
+  <section class="h-sec" aria-labelledby="md-inc">
+    <div class="h-md-inc h-in">
+      <div class="h-md-inc-tekst">
+        <p class="h-pil h-pil-wit"><span>{c.incPil}</span></p>
+        <h2 id="md-inc" class="h-kop h-h2"><span class="l">{c.incH[0]}</span> {c.incH[1]}</h2>
+        <p class="h-md-zin">{c.incBody}</p>
+        <a class="h-link" href={lp('/pricing')}>{c.incCta}<span class="h-cirkel h-cirkel-mini h-cirkel-wit" set:html={ik('pijl')} /></a>
+      </div>
+      <a class="h-md-deur" href={lp('/custom-models')}>
+        <span class="h-md-deur-kop">{c.doorH}</span>
+        <span class="h-md-zin">{c.doorBody}</span>
+        <span class="h-link">{c.doorCta}<span class="h-cirkel h-cirkel-mini" set:html={ik('pijl')} /></span>
+      </a>
+    </div>
+  </section>
+
+  {/* ── 4 · HET SLOT ─────────────────────────────────────────────────────── */}
+  <section class="h-sec h-lk-slot-sec" aria-labelledby="md-slot">
+    <div class="h-lk-slot h-in">
+      <span class="h-korrel" aria-hidden="true"></span>
+      <h2 id="md-slot" class="h-kop h-h2"><span class="l">{c.slot[0]}</span> {c.slot[1]}</h2>
+      <p class="h-acties">
+        <a class="h-knop h-knop-inkt" href={lp('/start')}>{c.ctaStart}<span class="o" set:html={ik('rechts')} /></a>
+        <a class="h-knop h-knop-lijn" href={lp('/pricing')}>{c.ctaPricing}</a>
+      </p>
+    </div>
+  </section>
+</div>
+<HalBeweging />

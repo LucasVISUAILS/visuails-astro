@@ -24,7 +24,9 @@ import {
   linkLine as mailLinkLine,
   bedrag as mailBedrag,
   greeting as mailGreeting,
+  vragen as mailVragen,
 } from './mailTemplate.js';
+import { BETALEN_NA_BTW_AKKOORD, VERVAL_DAG } from '../data/termijnen.js';
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
@@ -36,7 +38,7 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
     return null;
   }
   const o = await env.DB.prepare(
-    `SELECT id, ref, email, name, vat_number, address_line1, lang, service, product_count, total_cents, vat_cents, vat_rate, vat_treatment, payment_status, status, window_start, details_json, created_at, reviewed_at, review_state
+    `SELECT id, ref, email, name, vat_number, address_line1, lang, service, product_count, total_cents, vat_cents, vat_rate, vat_treatment, payment_status, status, window_start, window_expires_at, details_json, created_at, reviewed_at, review_state
        FROM orders WHERE id = ?1`
   ).bind(orderId).first();
   if (!o || !o.email) return null;
@@ -49,14 +51,23 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
      niet tot wanneer hij openstaat. Dezelfde twee klokken als de nachtelijke
      taak (cron/index.js, ONBETAALD_VERVAL_DAGEN en cancelStaleApprovals): zeven
      dagen na de btw-goedkeuring, anders veertien dagen na het bestellen. */
-  const vervalOp = (() => {
-    const basis = o.review_state === 'approved' && o.reviewed_at ? o.reviewed_at : o.created_at;
-    const t = Date.parse(String(basis || '').replace(' ', 'T') + (/Z|[+-]\d\d:?\d\d$/.test(String(basis || '')) ? '' : 'Z'));
+  /* De termijnen uit src/data/termijnen.js (8 oktober 2026, punt 7.07): hier
+     stonden 7 en 14 getypt naast dezelfde constanten in de cron. */
+  const alsDatum = (iso, plusDagen = 0) => {
+    const t = Date.parse(String(iso || '').replace(' ', 'T') + (/Z|[+-]\d\d:?\d\d$/.test(String(iso || '')) ? '' : 'Z'));
     if (!Number.isFinite(t)) return '';
-    const dagen = o.review_state === 'approved' && o.reviewed_at ? 7 : 14;
     return new Intl.DateTimeFormat(String(o.lang || 'nl') === 'en' ? 'en-GB' : 'nl-NL', { day: 'numeric', month: 'long', timeZone: 'Europe/Amsterdam' })
-      .format(new Date(t + dagen * 86400000));
-  })();
+      .format(new Date(t + plusDagen * 86400000));
+  };
+  const vervalOp = o.review_state === 'approved' && o.reviewed_at
+    ? alsDatum(o.reviewed_at, BETALEN_NA_BTW_AKKOORD)
+    : alsDatum(o.created_at, VERVAL_DAG);
+  /* ── EN TOT WANNEER DE LEVERDATUM VASTSTAAT — 8 oktober 2026 (7.07) ───────
+     De mail van dag 7 ("leverdatum vrijgegeven") is weg (V21-3 = a). Daarom
+     noemt de herinnering van dag 3 nu allebei de datums: tot wanneer we de
+     gereserveerde dagen vasthouden (window_expires_at, dezelfde kolom die de
+     cron leest) en wanneer de bestelling vervalt. */
+  const vasthoudenTot = o.window_start && o.window_expires_at ? alsDatum(o.window_expires_at) : '';
   /* Geannuleerd is niet meer te betalen (ronde 8, A-K7). */
   if (String(o.status || '') === 'cancelled') return null;
 
@@ -134,7 +145,12 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
       ? (lang === 'nl' ? `Je bestelling wacht nog op betaling — ${o.ref}` : `Your order is still waiting for payment — ${o.ref}`)
       : offerte
         ? (lang === 'nl' ? `Je offerte — ${o.ref}` : `Your quote — ${o.ref}`)
-        : (lang === 'nl' ? `Je bestelling is nagekeken — ${o.ref}` : `Your order has been checked — ${o.ref}`),
+        /* 7.07 (8 oktober 2026): "nagekeken" is het woord voor het nakijken
+           van beelden; dit gaat over btw-gegevens. "Goedgekeurd" alleen als ze
+           ook zijn goedgekeurd — rekenen we toch btw, dan "bekeken". */
+        : (btwErbij || euBtwNietBevestigd)
+          ? (lang === 'nl' ? `Je btw-gegevens zijn bekeken — ${o.ref}` : `We have reviewed your VAT details — ${o.ref}`)
+          : (lang === 'nl' ? `Je btw-gegevens zijn goedgekeurd — ${o.ref}` : `Your VAT details have been approved — ${o.ref}`),
     html: mailShell({
       lang,
       preheader: lang === 'nl' ? 'De betaallink staat erin.' : 'The payment link is inside.',
@@ -145,7 +161,9 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
             ? (lang === 'nl' ? 'Je offerte' : 'Your quote')
             : btwErbij
               ? (lang === 'nl' ? 'Nagekeken — met btw' : 'Checked — with VAT')
-              : (lang === 'nl' ? 'Nagekeken en akkoord' : 'Checked — ready to pay')),
+              : euBtwNietBevestigd
+                ? (lang === 'nl' ? 'Klaar om te betalen' : 'Ready to pay')
+                : (lang === 'nl' ? 'Goedgekeurd — klaar om te betalen' : 'Approved — ready to pay')),
         /* De aanhef met voornaam, zoals in elke andere klantmail (ronde 9, O21). */
         mailP(mailGreeting(o.name, lang)),
         /* Bij een OFFERTE (eigen look, video) is dit de eerste keer dat de klant
@@ -154,12 +172,12 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
            aanvraagpagina ("Nothing is charged ... until you say yes in writing"). */
         mailP(herinnering
           ? (lang === 'nl'
-            ? `Je bestelling <strong>${esc(o.ref)}</strong> staat nog open: er is nog niet betaald. Wil je hem nog? Dan is dit de link. Wil je hem niet meer, dan hoef je niets te doen: er wordt niets in rekening gebracht${o.window_start ? ', en een gereserveerde leverdatum komt na zeven dagen weer vrij voor anderen' : ''}.${vervalOp ? ` Betaal je niet, dan vervalt de bestelling vanzelf na ${vervalOp}.` : ''}`
-            : `Your order <strong>${esc(o.ref)}</strong> is still open: it has not been paid yet. Still want it? This is the link. If not, there is nothing to do: nothing is charged${o.window_start ? ', and a reserved delivery date is released to others after seven days' : ''}.${vervalOp ? ` If it stays unpaid, the order lapses by itself after ${vervalOp}.` : ''}`)
+            ? `Je bestelling <strong>${esc(o.ref)}</strong> staat nog open: er is nog niet betaald. Wil je hem nog? Dan is dit de link.${vasthoudenTot ? ` Je leverdatum houden we vast tot <strong>${esc(vasthoudenTot)}</strong>; daarna komen die dagen weer vrij.` : ''}${vervalOp ? ` Betaal je niet, dan vervalt de bestelling na <strong>${esc(vervalOp)}</strong>.` : ''} Wil je hem niet meer, dan hoef je niets te doen: er wordt niets in rekening gebracht.`
+            : `Your order <strong>${esc(o.ref)}</strong> is still open: it has not been paid yet. Still want it? This is the link.${vasthoudenTot ? ` We hold your delivery date until <strong>${esc(vasthoudenTot)}</strong>; after that those days are released.` : ''}${vervalOp ? ` If it stays unpaid, the order lapses after <strong>${esc(vervalOp)}</strong>.` : ''} If you no longer want it, there is nothing to do: nothing is charged.`)
           : offerte
           ? (lang === 'nl'
-            ? `Hieronder staat de prijs voor <strong>${esc(o.ref)}</strong>, zoals besproken. ${offerteSoort} Betalen is je akkoord — daarna gaan we voor je aan het werk. Vragen? Beantwoord gewoon deze mail.`
-            : `Below is the price for <strong>${esc(o.ref)}</strong>, as discussed. ${offerteSoort} Paying is your go-ahead — we start on it straight after. Questions? Just reply to this mail.`)
+            ? `Hieronder staat de prijs voor <strong>${esc(o.ref)}</strong>, zoals besproken. ${offerteSoort} Betalen is je akkoord — daarna gaan we voor je aan het werk.`
+            : `Below is the price for <strong>${esc(o.ref)}</strong>, as discussed. ${offerteSoort} Paying is your go-ahead — we start on it straight after.`)
           : btwErbij
           ? (lang === 'nl'
             ? `We hebben de gegevens bij <strong>${esc(o.ref)}</strong> nagekeken. Op basis van wat we konden controleren, rekenen we toch ${Math.round(Number(o.vat_rate) * 100) || 21}% btw: ${euro(btw)} bovenop het bedrag dat je bij het bestellen zag. Klopt dat niet — heb je bijvoorbeeld een geldig btw-nummer? Beantwoord deze mail, dan kijken we het na en passen we het aan vóór je betaalt.`
@@ -195,7 +213,9 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
           cta: lang === 'nl' ? 'Betalen' : 'Pay now',
         }),
         mailLinkLine(url, lang === 'nl' ? 'Werkt de knop niet? Gebruik deze link:' : 'Button not working? Use this link:'),
-        mailSpamNote(lang),
+        /* De contactenregel is weg (7.07, V21-1: alleen in de eerste mail aan
+           een nieuw adres); de vragenregel staat in elke klantmail. */
+        mailVragen(lang, o.ref),
       ].join(''),
     }),
   });

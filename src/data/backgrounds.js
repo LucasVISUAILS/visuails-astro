@@ -74,6 +74,23 @@ export const CUSTOM_ID = 'custom';
 
 export const DEFAULT_ID = 'white';
 
+/* ── LICHTGRIJS, ALLEEN NOG ALS NAAM — 8 oktober 2026 (punt 9.01, §17.25) ─────
+   #EDEDED is in augustus uit RECOMMENDED gehaald (zie hierboven), maar een oude
+   bestelling of een vaste look van vóór die tijd kan hem nog dragen. Dan hoort er
+   in Studio en /admin een naam bij en geen kale hexcode. Dit is alleen een label:
+   niets in het formulier of in Studio biedt hem weer aan. */
+export const OUDE_ACHTERGRONDEN = [
+  { hex: '#EDEDED', name: { en: 'Light grey', nl: 'Lichtgrijs' } },
+];
+
+/** De naam bij een hexcode (ook een oude), of '' als hij nergens bij hoort. */
+export function achtergrondNaam(hex, lang = 'en') {
+  const h = String(hex || '').trim().toUpperCase();
+  if (!h) return '';
+  const hit = [...RECOMMENDED, ...OUDE_ACHTERGRONDEN].find((b) => b.hex.toUpperCase() === h);
+  return hit ? (hit.name[lang === 'nl' ? 'nl' : 'en'] || hit.name.en) : '';
+}
+
 /** Look one up by id, or undefined for the custom option. */
 export function background(id) {
   return RECOMMENDED.find((b) => b.id === id);

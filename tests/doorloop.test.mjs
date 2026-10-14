@@ -60,9 +60,13 @@ console.log('het contactformulier');
   ok('het antwoord is een omleiding', res.status, 303);
   ok('naar de Nederlandse bedankpagina voor een bericht', /\/nl\/thank-you\/\?soort=contact/.test(res.headers.get('location') || ''), true);
   /* Twee mails sinds ronde 8: de studio, en een ontvangstbevestiging aan de
-     bezoeker met een kopie van zijn bericht (M-C9). */
+     bezoeker (M-C9). Sinds 8 oktober 2026 (o04, optie a) zonder zijn bericht:
+     alleen "we hebben je bericht", het vaste onderwerp en wanneer we antwoorden. */
   ok('er gingen twee mails: studio en bezoeker', verstuurd.length, 2);
-  ok('de tweede gaat naar de bezoeker, met zijn bericht', verstuurd[1]?.to === 'henk@zaak.test' && /Doen jullie ook schoenen/.test(verstuurd[1]?.html || ''), true);
+  ok('de tweede gaat naar de bezoeker', verstuurd[1]?.to, 'henk@zaak.test');
+  ok('en zijn bericht staat er niet in', /Doen jullie ook schoenen/.test(verstuurd[1]?.html || ''), false);
+  ok('wel dat we het hebben, met het vaste onderwerp', /We hebben je bericht/.test(verstuurd[1]?.html || '') && /Iets op maat/.test(verstuurd[1]?.html || ''), true);
+  ok('en de studiomail heeft het bericht nog wel', /Doen jullie ook schoenen/.test(verstuurd[0]?.html || ''), true);
   ok('en antwoorden op de studiomail gaat naar de bezoeker', verstuurd[0]?.reply_to, 'henk@zaak.test');
   ok('met het onderwerp in de onderwerpregel', /Iets op maat/.test(verstuurd[0]?.subject || ''), true);
   ok('en het gekozen kanaal in de mail', /WhatsApp/.test(verstuurd[0]?.html || ''), true);
@@ -83,13 +87,14 @@ console.log('\nde tijdlijn van de klant');
 }
 
 /* ── 3 · DE ABONNEMENTSWEEK KRIJGT DE JUISTE DIENST ─────────────────────── */
+/* planStart.js is weg met het weeksysteem (ronde 10, 8 oktober 2026); de twee
+   controles op de bestelling uit een abonnementsweek gingen mee. Wat blijft: een
+   bestelling met payment_status 'plan' (uit vroeger) heet op het bord niet onbetaald. */
 console.log('\nde bestelling uit een abonnementsweek');
 {
-  const plan = lees('../src/lib/planStart.js');
-  ok('één soort catalog of lifestyle wordt die dienst', /soorten\[0\] === 'catalog' \|\| soorten\[0\] === 'lifestyle'\) \? soorten\[0\] : 'drop'/.test(plan), true);
-  ok('en de INSERT gebruikt die dienst', /VALUES \(\?1, \?2, \?12,/.test(plan), true);
   const admin = lees('../src/lib/admin.js');
-  ok('het bord noemt zo’n bestelling niet onbetaald', /o\.payment_status === 'plan' \? ' · abonnement'/.test(admin), true);
+  /* Ronde B: 'plan' en 'credits' heten op het bord allebei "credits". */
+  ok('het bord noemt zo’n bestelling niet onbetaald', /o\.payment_status === 'plan' \? ' · abonnement'|metCreditsBetaald\(o\) \? ' · credits'/.test(admin), true);
 }
 
 /* ── 4 · DE MAIL BIJ EEN BETAALDE MAAND ─────────────────────────────────── */
@@ -134,13 +139,15 @@ console.log('\npauzeren, hervatten en opzeggen');
   const acc = lees('../src/lib/account.js');
   const pauze = acc.slice(acc.indexOf('async function handlePlanPause'));
   const pauzeBody = pauze.slice(0, pauze.indexOf('\n}\n'));
-  ok('pauzeren landt op Facturering met een bevestiging', /terugOk\('pauze'\)/.test(pauzeBody), true);
+  /* Sinds 2.07 (8 oktober 2026) is de abonnementspagina één pagina: terug
+     naar /account/plan met een bevestiging (en de gekozen reden). */
+  ok('pauzeren landt op de abonnementspagina met een bevestiging', /terugOk\('pauze', reden\.reden\)/.test(pauzeBody), true);
   ok('hervatten ook', /terugOk\('hervat'\)/.test(pauzeBody), true);
   const opzeg = acc.slice(acc.indexOf('async function handlePlanCancel'));
   const opzegBody = opzeg.slice(0, opzeg.indexOf('\n}\n'));
-  ok('opzeggen landt op Facturering met een bevestiging', /ok=opgezegd/.test(opzegBody), true);
+  ok('opzeggen landt op de abonnementspagina met een bevestiging', /ok=opgezegd/.test(opzegBody), true);
   ok('en mailt de klant en de studio', /mailAboWijziging\(env, \{ soort: 'opgezegd'/.test(opzegBody), true);
-  ok('de bevestigingen hebben tekst', /pauze: jaar \? t\.planPauseOkPrepaid : t\.planPauseOk, hervat: jaar \? t\.planResumeOkPrepaid : t\.planResumeOk, opgezegd: t\.planCancelOk/.test(acc), true);
+  ok('de bevestigingen hebben tekst', /pauze: pauzeStraks \? A\.pauzeOkStraks\([^)]*\)[^,]*\(jaar \? t\.planPauseOkPrepaid : t\.planPauseOk\),\s*hervat: jaar \? t\.planResumeOkPrepaid : t\.planResumeOk,\s*opgezegd: t\.planCancelOk/.test(acc), true);
   /* Een vooruitbetaald jaar heeft geen incasso: pauze en hervatten zeggen dan niets over afschrijven. */
   ok('  en bij een vooruitbetaald jaar zonder "afschrijving"', /planPauseOkPrepaid: 'Je jaar staat op pauze\. Er komen geen nieuwe maanden bij/.test(acc) && /soort === 'pauze'\) \{\n\s+koppen\[1\] = nl\n\s+\? `\$\{hoofd\(jeJaar\)\} staat op pauze\. Het is al betaald, dus er wordt niets afgeschreven/.test(acc), true);
 }
@@ -191,7 +198,10 @@ console.log('\nronde twee: betaallinks, btw-lijst, abonnement, formulieren');
   ok('een tweede tabblad binnen een half uur maakt geen tweede abonnement', /created_at > datetime\('now', '-30 minutes'\)/.test(sub), true);
   /* De telling staat sinds 24 september 2026 in bezetting() (subscription.js),
      die de poort én /api/plan-plek allebei lezen. */
-  ok('en houdt na een etmaal geen capaciteit meer vast', /status = 'pending' AND created_at > datetime\('now', '-1 day'\)/.test(lees('../src/lib/subscription.js')) && /await bezetting\(env\)/.test(sub), true);
+  /* Sinds 6.05 (8 oktober 2026) leest de poort aboStand() (aboPlafond.js), die
+     bezetting() aanroept en het plafond in credits erbij zet. */
+  ok('en houdt na een etmaal geen capaciteit meer vast', /status = 'pending' AND created_at > datetime\('now', '-1 day'\)/.test(lees('../src/lib/subscription.js'))
+    && /await aboStand\(env\)/.test(sub) && /bezetting\(env\)/.test(lees('../src/lib/aboPlafond.js')), true);
   const sb = lees('../src/components/Studiobrief.astro');
   ok('de studiobrief-aanmelding draagt data-astro-reload', /data-studiobrief\s+data-astro-reload/.test(sb), true);
   const up = await import('../functions/api/upload.js');
@@ -218,25 +228,23 @@ console.log('\nronde drie: cronmails, portaal, gegevens, terugknop, video');
   const { kindLabel } = await import('../src/lib/slots.js');
   const verstuurd = [];
   const sendMail = async (_env, m) => { verstuurd.push(m); };
-  const maak = new Function('sendMail', 'mailShell', 'mailH1', 'mailP', 'mailSpamNote', 'mailDatum', 'mailButton', 'SERVICE_CREDITS', 'kindLabel', 'QUEUE_WARN_DAYS', 'mailGreeting',
-    `${knip('creditTips')}\n${knip('mailCreditsVervallen')}\n${knip('mailLegeWachtrij')}\nreturn { mailCreditsVervallen, mailLegeWachtrij };`);
-  const f = maak(sendMail, tpl.shell, tpl.h1, tpl.p, tpl.spamNote, tpl.datum, tpl.button, SERVICE_CREDITS, kindLabel, 5, tpl.greeting);
+  /* mailLegeWachtrij() is weg met het weeksysteem (ronde 10, 8 oktober 2026). */
+  const maak = new Function('sendMail', 'mailShell', 'mailH1', 'mailP', 'mailSpamNote', 'mailDatum', 'mailButton', 'SERVICE_CREDITS', 'kindLabel', 'mailGreeting',
+    `${knip('creditTips')}\n${knip('mailCreditsVervallen')}\nreturn { mailCreditsVervallen };`);
+  const f = maak(sendMail, tpl.shell, tpl.h1, tpl.p, tpl.spamNote, tpl.datum, tpl.button, SERVICE_CREDITS, kindLabel, tpl.greeting);
   const env = { RESEND_API_KEY: 're_x', FROM_EMAIL: 'x@y.z' };
   await f.mailCreditsVervallen(env, { email: 'a@b.c', ref: 'SUB-X', over: 12, vervalt: '2026-10-10', dagen: 7, lang: 'en' });
   await f.mailCreditsVervallen(env, { email: 'a@b.c', ref: 'SUB-X', over: 12, vervalt: '2026-10-10', dagen: 7, lang: 'nl' });
   ok('creditherinnering in het Engels voor een Engelse abonnee', /You still have 12 credits/.test(verstuurd[0]?.subject || ''), true);
   ok('  met een leesbare datum', /10 October 2026/.test(verstuurd[0]?.html || '') && /10 oktober 2026/.test(verstuurd[1]?.html || ''), true);
   ok('  en geen ruwe ISO-datum meer', /2026-10-10/.test(verstuurd[1]?.html || ''), false);
-  const wachtrijNl = verstuurd.length;
-  await f.mailLegeWachtrij(env, { email: 'a@b.c', brand: 'Merk', lang: 'nl' });
-  await f.mailLegeWachtrij(env, { email: 'a@b.c', brand: 'Brand', lang: 'en' });
-  ok('lege-wachtrijmail in de huisstijl (html) en niet meer platte tekst', !!verstuurd[wachtrijNl]?.html, true);
-  ok('  spreekt van credits en niet meer van "één slot"', /credits van die dienst/.test(verstuurd[wachtrijNl]?.html || '') && !/één slot/.test(verstuurd[wachtrijNl]?.html || ''), true);
-  ok('  en in het Engels met de knoptekst uit Studio', /click Lock in/.test(verstuurd[wachtrijNl + 1]?.html || ''), true);
+  ok('de lege-wachtrijmail is weg met het weeksysteem', /async function mailLegeWachtrij\(/.test(bron), false);
   ok('cron leest de taal van de abonnee', /KLANT_TAAL_SQL/.test(bron) && /subscription_invoices si WHERE si.subscription_id = s.id/.test(bron), true);
 
   const portal = lees('../src/lib/portal.js');
-  ok('portaal: tevredenheidsvraag ook bij een gewone bestelling', /const vraagFeedback = !!order.closed_at && order.service !== SAMPLE_SERVICE;/.test(portal), true);
+  /* Sinds 3.08 (8 oktober 2026) ook bij de geleverde proef: isAfgerond() in
+     src/lib/nuzin.js is closed_at, of een geleverde proef. */
+  ok('portaal: tevredenheidsvraag ook bij een gewone bestelling', /const vraagFeedback = isAfgerond\(order\);/.test(portal) && /order\.status === 'delivered' && !!order\.closed_at|o\.status === 'delivered' && !!o\.closed_at/.test(lees('../src/lib/nuzin.js')), true);
   ok('portaal: geen inline script meer (CSP weigerde het)', /<script>/.test(portal.slice(portal.indexOf('function roundBlock'), portal.indexOf('function attendedBody'))), false);
   const details = lees('../src/pages/account/details.astro');
   ok('Studio › gegevens: een POST gaat naar de opslaghandler', /if \(Astro\.request\.method === 'POST'\) return accountPost\(pagesContext\(Astro\)\);/.test(details), true);
@@ -285,8 +293,9 @@ console.log('\nronde 4');
 
   /* 3 · Het tegoed in Studio. */
   const planPagina = lees('../src/pages/account/plan.astro');
-  ok('Studio: het tegoed staat op het eerste tabblad', /v\.tegoed && \(/.test(planPagina) && /st-saldo-tegel is-tegoed/.test(planPagina), true);
-  ok('  en de balk toont wat er over is', /Math\.max\(0, cb\.saldo\) \/ cb\.toegekend/.test(acc), true);
+  ok('Studio: het tegoed staat op de abonnementspagina', /v\.tegoed && \(/.test(planPagina) && /st-saldo-tegel is-tegoed/.test(planPagina), true);
+  /* Sinds 2.07: geen balk meer, maar het getal dat over is ("Je hebt 72 credits"). */
+  ok('  en het saldo toont wat er over is', /kop: n \? t\.heb\(n\) : t\.geen/.test(lees('../src/lib/creditWeergave.js')), true);
 
   /* 4 · De welkomstmail, met een inlogknop die op het abonnement landt. */
   ok('welkomstlink landt op /account/plan', /naar=plan/.test(acc) && /searchParams\.get\('naar'\) === 'plan'/.test(acc), true);

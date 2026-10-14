@@ -25,7 +25,10 @@ import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'parse5';
 
-const MARKS = { '#wordmark': 'wordmark', '#markglyph': 'V glyph' };
+/* #woordmerk (12 oktober 2026) is het woordmerk van de hal: de merkletter, waarin
+   het V-merk de eerste letter IS. Het telt als woordmerk, dus het losse V-teken
+   mag er net zo min naast staan als naast het oude #wordmark. */
+const MARKS = { '#wordmark': 'wordmark', '#woordmerk': 'wordmark', '#markglyph': 'V glyph' };
 
 async function htmlFiles(dir, out = []) {
   for (const e of await readdir(dir, { withFileTypes: true })) {

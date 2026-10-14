@@ -1,5 +1,11 @@
 ---
 import { WA_CHROME, WHATSAPP_DISPLAY, waHref } from '../data/whatsapp.js';
+/* k-klant-wa (14 okt 2026): een ingelogde klant met een lopende bestelling krijgt
+   het kenmerk in zijn WhatsApp-bericht — interactions.js vult het in, alleen op een
+   pagina die /account/me toch al vraagt. */
+import { waKlant } from '../data/klant.js';
+import NieuwTabblad from '../components/NieuwTabblad.astro';
+import { metNieuwTabblad } from '../data/nieuwTabblad.js';
 // VISUAILS — root layout. Ports the SvelteKit v2 +layout.svelte chrome
 // (header/nav, mobile nav, footer, grain overlay, conversion bar) to Astro.
 // <ClientRouter /> turns this into an SPA-like app with native browser
@@ -101,10 +107,17 @@ import bigShoulders from '@fontsource-variable/anybody/files/anybody-latin-stand
 import { ui, brandModelHref, ogLocale, localeNames, getLangFromPath, stripLang, localizedPath, useTranslations } from '../i18n/ui.js';
 import { graphJson } from '../data/schema.js';
 import CookieConsent from '../components/CookieConsent.astro';
-import Proefkaart from '../components/Proefkaart.astro';
 import BrandMark from '../components/BrandMark.astro';
 import Studiobrief from '../components/Studiobrief.astro';
 import HuidKantig from '../components/HuidKantig.astro';
+/* De huid 'hal' (het voorbeeld van de nieuwe voorpagina, 12 oktober 2026): het woordmerk
+   uit de woordmerk-studie in de balk en de footer, en Urbanist als enige letter. */
+import Woordmerk from '../components/Woordmerk.astro';
+/* De bovenbalk draagt in de hal het V-merk (14 oktober 2026), het woordmerk de footer. */
+import VMerk from '../components/VMerk.astro';
+import KlantMelding from '../components/KlantMelding.astro';
+import { WOORDMERK } from '../data/woordmerk.js';
+import urbanistLatin from '@fontsource-variable/urbanist/files/urbanist-latin-wght-normal.woff2?url';
 
 interface Props {
   title: string;
@@ -137,7 +150,15 @@ interface Props {
    *  vergelijkingspagina's die laten zien wat de laag doet. Die zijn nu MEER
    *  waard dan eerst, want ze zijn de enige plek waar de site nog zonder huid
    *  te zien is. */
-  huid?: 'geen' | 'kantig';
+  huid?: 'geen' | 'kantig' | 'hal';
+  /* ── 'hal' — 12 oktober 2026 ────────────────────────────────────────────
+     De nieuwe stijl uit het ontwerpplan ("de witte hal"), voorlopig alleen op
+     /voorbeeld/ en /nl/voorbeeld/. Wat hij hier verandert, en niet meer: de
+     klasse `hal` op <body> (src/styles/hal.css hangt daar alles onder), het
+     woordmerk in plaats van het V-teken in de balk, de lade en de footer, en
+     Urbanist als voorgeladen letter. Geen HuidKantig: de hal is rond, niet
+     hoekig, en heeft geen eigen muisaanwijzer. De rest van de site merkt er
+     niets van zolang geen andere pagina huid="hal" zet. */
 }
 
 // noindex is for the pages that exist to be arrived at, not found. Two use it:
@@ -158,8 +179,10 @@ const { title, description, ogImage = '/img/banners-05.webp', noindex = false, g
 // sets nothing on the visitor’s device.
 //
 // TURNING IT ON IS A BUILD SETTING, NOT A CODE EDIT. Set
-// PUBLIC_CF_ANALYTICS_TOKEN in the Pages project (Settings → Variables and
-// Secrets → **plaintext Variable**, not a Secret) and redeploy. The token is
+// PUBLIC_CF_ANALYTICS_TOKEN in the .env file in the project folder (the site is
+// built on Lucas' own machine and deployed as a Worker since October 2026; the
+// old Pages project no longer builds) and roll out again — see
+// kladblok/LIVE-STAPPEN.md, step 6c. The token is
 // public by design — it ends up in the page source of every site that uses it —
 // so it is not a credential and a Secret would only make it harder to read
 // back. The empty default means an unconfigured build ships with analytics
@@ -183,6 +206,9 @@ const CF_ANALYTICS_TOKEN = import.meta.env.PUBLIC_CF_ANALYTICS_TOKEN ?? '';
 
 // Language is derived from the URL: /nl/... → Dutch, else English.
 const path = Astro.url.pathname;
+/* De melding onderin het scherm (KlantMelding.astro, 14 oktober 2026): niet
+   tijdens het bestellen, niet op de proef zelf en niet op de bedankpagina. */
+const meldingHier = !/^\/(nl\/)?(start|test-sample|thank-you)(\/|$)/.test(path);
 const lang = getLangFromPath(path);
 const t = useTranslations(lang);
 // The two WhatsApp prefills in this file — the floating launcher and the
@@ -226,6 +252,10 @@ const dropLos = menuDrops.filter((d) => !d.groep || !dropGroepen[d.groep]);
 /* De tweede laag — zie de noot bij `how` in src/i18n/ui.js. Dezelfde vorm als
    `drops`, dus dezelfde renderlus kan hem tekenen. */
 const how = (ui[lang] || ui.en).how || [];
+/* ── DE DERDE UITKLAPPER: PRIJZEN, MET HET ABONNEMENT — 8 oktober 2026 ──────
+   Lucas koos bij 1.11: "Prijzen (met Abonnement)". Zelfde vorm als `how`, dus
+   dezelfde lus tekent hem; zie de noot bij `prijzen` in src/i18n/ui.js. */
+const prijzen = (ui[lang] || ui.en).prijzen || [];
 
 // ── The signed-in chrome's own copy ─────────────────────────────────────────
 // Everything else in this header comes from t() / src/i18n/ui.js, and these
@@ -362,13 +392,15 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
       })();
     </script>
   )}
-  <link rel="preload" as="font" type="font/woff2" href={archivoRoman} crossorigin="anonymous" />
+  {huid === 'hal'
+    ? <link rel="preload" as="font" type="font/woff2" href={urbanistLatin} crossorigin="anonymous" />
+    : <link rel="preload" as="font" type="font/woff2" href={archivoRoman} crossorigin="anonymous" />}
   {/* The heading face IS the LCP element on most pages — same measured
        reasoning as the Archivo preload above. Anybody is deliberately NOT
        preloaded: it draws one word, below the fold on every page but the
        homepage, and a preload for a font the page may never paint costs the
        same bandwidth as one it does. */}
-  <link rel="preload" as="font" type="font/woff2" href={bigShoulders} crossorigin="anonymous" />
+  {huid !== 'hal' && <link rel="preload" as="font" type="font/woff2" href={bigShoulders} crossorigin="anonymous" />}
   {/* Favicons. All five files are rendered from the SAME traced path as
       <symbol id="markglyph"> further down this file — the V mark in white on
       the page ground, so the tab icon and the mark in the header cannot drift
@@ -409,7 +441,10 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
       near-white address bar above a near-black page on Android Chrome. */}
   {/* Uit KLEURENSCHEMA.md, 20 september 2026 — het schema noemt deze regel bij
       naam. Was #F5F5F5 (de oude grond); de adresbalk draagt nu het accent. */}
-  <meta name="theme-color" content="#4A1FFF" />
+  {/* 14 oktober 2026, de hal: wit, de grond van de pagina. Een violette
+      adresbalk boven een witte pagina is een vlak violet dat geen actie is, en
+      dat staat de hal niet toe (KLEURENSCHEMA.md). */}
+  <meta name="theme-color" content={huid === 'hal' ? '#FFFFFF' : '#4A1FFF'} />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:image" content={ogImageAbs} />
@@ -491,7 +526,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
   </noscript>
   <ClientRouter />
 </head>
-<body class={[ground === "espresso" && "ground-espresso", huid === "kantig" && "huid-kantig"].filter(Boolean).join(" ") || undefined}>
+<body class={[ground === "espresso" && "ground-espresso", huid === "kantig" && "huid-kantig", huid === "hal" && "hal"].filter(Boolean).join(" ") || undefined}>
 {/* THE FIRST TAB STOP. It has to be the first child of <body>, not merely
     before <main>: placed after the header it is the twelfth stop, which is
     eleven stops too late to be a skip link. Even with the drawer inert, the header is a handful of
@@ -722,6 +757,11 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
       <path pathLength="100" vector-effect="non-scaling-stroke" d="M 0.0 16.0 L 144.25 266.75 L 463.25 813.25 L 662.75 354.75 L 619.25 408.25 L 515.5 546.25 L 264.5 119.0 A 201.21 201.21 0 0 0 101.0 15.75 L 0.0 16.0 Z" />
       <path pathLength="100" vector-effect="non-scaling-stroke" d="M 701.75 0.0 L 543.25 366.25 L 507.25 453.75 L 652.0 259.25 L 702.0 338.25 L 701.75 0.0 Z" />
     </symbol>
+    {/* Het woordmerk van de hal (de merkletter): het V-merk is de eerste letter, dus
+        hier staat het merk WEL naast letters — maar als één vorm, en alleen via
+        <use href="#woordmerk">. scripts/brand-lockup-guard.mjs telt #woordmerk als
+        woordmerk: het losse V-teken mag er nog steeds niet naast. */}
+    {huid === 'hal' && <symbol id="woordmerk" viewBox={WOORDMERK.symbool}><path fill-rule="evenodd" d={WOORDMERK.d} /></symbol>}
   </svg>
 
   <div class="grain" aria-hidden="true"></div>
@@ -751,7 +791,9 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           een zwart-op-groen-versie van. Het V-teken is dus het merk; de V
           staat weer in de balk. */}
       <a href={lp('/')} class="brand" aria-label="VISUAILS home">
-        <svg class="mk brand-mark brand-glyph" viewBox="0 0 702.00 813.25" aria-hidden="true"><BrandMark /></svg>
+        {huid === 'hal'
+          ? <VMerk klasse="hal-vm hal-vm-balk" glitch />
+          : <svg class="mk brand-mark brand-glyph" viewBox="0 0 702.00 813.25" aria-hidden="true"><BrandMark /></svg>}
       </a>
       <nav aria-label={t('nav_primary')} class="primary-nav">
         <ul class="nav-links">
@@ -798,12 +840,16 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
               stonden — of, bij /models, /upload-guidelines en /demo, nergens.
               Zie de noot bij `how` in src/i18n/ui.js voor waarom dit één menu is
               en geen tien losse links. Twee kolommen, want acht items onder
-              elkaar is een lijst en geen menu. */}
+              elkaar is een lijst en geen menu.
+
+              SINDS 8 OKTOBER 2026 ÉÉN KOLOM. De planning en VISUAILS Studio
+              gingen eruit (1.11); drie items in twee kolommen is een rij van
+              twee en een wees eronder. */}
           <li class="has-menu">
             <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">{t('nav_how')}
               <svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
             </button>
-            <div class="nav-menu nav-menu-2col" role="menu">
+            <div class="nav-menu nav-menu-1kol" role="menu">
               {/* ── DEZELFDE UITGESCHAKELDE VORM ALS BIJ `drops` — 26 aug 2026 ──
                   Deze lijst rendeerde ALTIJD een `<a href>`, ook voor een item
                   zonder pagina. `/demo` stond zo op elke pagina van de site: 90
@@ -833,7 +879,25 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
               heet — zie de noot bij `drops` in src/i18n/ui.js. Wat overblijft is
               waar je heen gaat als je NIET aan het kiezen bent: wat het kost,
               hoe het eruitziet, en hoe je ons bereikt. */}
-          <li><a href={lp('/pricing')} aria-current={isActive('/pricing') ? 'page' : undefined}>{t('nav_pricing')}</a></li>
+          {/* ── PRIJZEN IS EEN UITKLAPPER, MET HET ABONNEMENT — 8 oktober 2026 ──
+              1.11: "Prijzen (met Abonnement)". Nog steeds vijf onderdelen in de
+              balk (Wat we maken · Hoe het werkt · Prijzen · Galerij · Contact),
+              precies zoals sinds 21 augustus; Inloggen en Bestellen staan rechts.
+              Dezelfde knop-en-lade als de twee hierboven, en niet een link met
+              een zwevend paneel: één vorm voor elke uitklapper, ook voor wie met
+              het toetsenbord of op een tablet komt. */}
+          <li class="has-menu">
+            <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">{t('nav_pricing')}
+              <svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="nav-menu nav-menu-1kol" role="menu">
+              {prijzen.map((s) => (
+                <a href={lp(s.href)} role="menuitem" aria-current={isActive(s.href) ? 'page' : undefined}>
+                  <span class="mi-title">{s.title}</span><span class="mi-desc">{s.desc}</span>
+                </a>
+              ))}
+            </div>
+          </li>
           <li><a href={lp('/gallery')} aria-current={isActive('/gallery') ? 'page' : undefined}>{t('nav_gallery')}</a></li>
           <li><a href={lp('/contact')} aria-current={isActive('/contact') ? 'page' : undefined}>{t('nav_contact')}</a></li>
         </ul>
@@ -964,7 +1028,9 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           een telefoon het menu opende, had geen enkele weg terug naar de
           homepage behalve de terugknop van de browser. */}
       <a href={lp('/')} class="mobile-home" aria-label={t('nav_home')}>
-        <svg class="mk brand-mark mobile-mark" viewBox="0 0 702.00 813.25" aria-hidden="true"><BrandMark /></svg>
+        {huid === 'hal'
+          ? <VMerk klasse="hal-vm hal-vm-lade" />
+          : <svg class="mk brand-mark mobile-mark" viewBox="0 0 702.00 813.25" aria-hidden="true"><BrandMark /></svg>}
       </a>
       <button class="mobile-close" aria-label={t('nav_close')}>&times;</button>
     </div>
@@ -988,12 +1054,21 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
         ))}
       </div>
 
-      {/* Prijzen, Galerij en Contact: op de balk staan ze los naast de twee
-          uitklappers, dus hier ook — als één rij en niet als drie regels van
-          dezelfde maat als een dienst. Merkmodel en Abonnement zitten in
-          `drops` hierboven en zouden anders twee keer in de lade staan. */}
+      {/* ── PRIJZEN IS HIER OOK EEN GROEP — 8 oktober 2026 (1.11) ──────────
+          Op de balk is Prijzen sinds vandaag een uitklapper met het
+          abonnement erin; in de lade is dat, net als "Hoe het werkt", een kop
+          met kleine regels eronder. */}
+      <p class="mobile-group">{t('nav_pricing')}</p>
+      <div class="mobile-lijst mobile-lijst-klein">
+        {prijzen.map((s) => (
+          <a class="mobile-sub" href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}</a>
+        ))}
+      </div>
+
+      {/* Galerij en Contact: op de balk staan ze los naast de uitklappers, dus
+          hier ook — als één rij en niet als regels van dezelfde maat als een
+          dienst. (Prijzen stond hier tot 8 oktober 2026 als derde.) */}
       <div class="mobile-rij">
-        <a href={lp('/pricing')} aria-current={isActive('/pricing') ? 'page' : undefined}>{t('nav_pricing')}</a>
         <a href={lp('/gallery')} aria-current={isActive('/gallery') ? 'page' : undefined}>{t('nav_gallery')}</a>
         <a href={lp('/contact')} aria-current={isActive('/contact') ? 'page' : undefined}>{t('nav_contact')}</a>
       </div>
@@ -1006,7 +1081,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
 
           Wat écht altijd in beeld moet, is één deur. Deze drie horen bij de
           lijst en scrollen dus mee. */}
-      <a href={waHref(wa.order)} class="btn btn-wa btn-block mobile-wa" target="_blank" rel="noopener">{t('mob_chat')}</a>
+      <a href={waHref(wa.order)} class="btn btn-wa btn-block mobile-wa" target="_blank" rel="noopener" {...waKlant(lang)}>{t('mob_chat')}<NieuwTabblad lang={lang} /></a>
       <span class="mobile-cta-hint">{t('mob_notsure')} <a href={lp('/test-sample')}>{t('mob_try')}</a></span>
 
       {/* ── ACCOUNT EN TAAL OP ÉÉN REGEL — 9 september 2026 ─────────────────
@@ -1226,7 +1301,9 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
       <div class="footer-grid">
         <div class="footer-brand">
           <a href={lp('/')} class="brand" aria-label="VISUAILS home">
-            <svg class="mk brand-word" viewBox="0 0 1650 278" aria-hidden="true"><BrandMark bron="#wordmark" /></svg>
+            {huid === 'hal'
+              ? <Woordmerk klasse="hal-wm hal-wm-voet" />
+              : <svg class="mk brand-word" viewBox="0 0 1650 278" aria-hidden="true"><BrandMark bron="#wordmark" /></svg>}
           </a>
           <p>{t('foot_tagline')}</p>
           {/* ── DE MERKKOLOM DEED NIETS ─────────────────────────────────────
@@ -1247,9 +1324,10 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           <div class="footer-act">
             <a class="btn btn-primary btn-sm" href={lp('/start')}>{t('foot_cta')}</a>
             <ul class="foot-social">
-              <li><a href={waHref()} target="_blank" rel="noopener me" aria-label="WhatsApp"></a></li>
-              <li><a href="https://www.instagram.com/visuails_com/" target="_blank" rel="noopener me" aria-label="Instagram"></a></li>
-              <li><a href="https://www.facebook.com/profile.php?id=61590208333392" target="_blank" rel="noopener me" aria-label="Facebook"></a></li>
+              {/* o26, 8 oktober 2026: het label zegt dat er een tabblad opengaat — zie src/data/nieuwTabblad.js. */}
+              <li><a href={waHref()} target="_blank" rel="noopener me" aria-label={metNieuwTabblad('WhatsApp', lang)}></a></li>
+              <li><a href="https://www.instagram.com/visuails_com/" target="_blank" rel="noopener me" aria-label={metNieuwTabblad('Instagram', lang)}></a></li>
+              <li><a href="https://www.facebook.com/profile.php?id=61590208333392" target="_blank" rel="noopener me" aria-label={metNieuwTabblad('Facebook', lang)}></a></li>
             </ul>
           </div>
         </div>
@@ -1290,11 +1368,16 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           <ul>
             <li><a href={lp('/about')}>{t('foot_about')}</a></li>
             <li><a href={lp('/pricing')}>{t('foot_pricing')}</a></li>
+            {/* Het abonnement, naast Prijzen sinds 8 oktober 2026 (1.11): het
+                staat niet meer in `drops`, en dus niet meer in de eerste kolom. */}
+            <li><a href={lp('/plans')}>{t('foot_plans')}</a></li>
             {/* /compare en /studio stonden tot 21 augustus in de uitklapper "Hoe
                 het werkt". Die lade had acht items en dat is er te veel om te
                 scannen; deze twee zijn bovendien geen processtap maar een
                 onderbouwing. /compare staat nu ook prominent op /pricing, want
-                het is een vergelijking van geld. */}
+                het is een vergelijking van geld.
+                Sinds 8 oktober 2026 (1.11) is /studio de pagina over VISUAILS
+                Studio; de planning staat op /how-it-works#planning. */}
             <li><a href={lp('/compare')}>{t('foot_compare')}</a></li>
             <li><a href={lp('/studio')}>{t('foot_studio')}</a></li>
             <li><a href={lp('/guides')}>{t('foot_guides')}</a></li>
@@ -1306,7 +1389,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           <h2 class="footer-h">{t('foot_touch')}</h2>
           <ul>
             <li><a href="mailto:hello@visuails.com">hello@visuails.com</a></li>
-            <li><a href={waHref()} target="_blank" rel="noopener">{WHATSAPP_DISPLAY}</a></li>
+            <li><a href={waHref()} target="_blank" rel="noopener">{WHATSAPP_DISPLAY}<NieuwTabblad lang={lang} /></a></li>
             <li style="color:var(--ink-3)">{t('foot_location')}</li>
             {t('support_note') && <li style="color:var(--ink-3);font-size:.82rem;margin-top:.2rem">{t('support_note')}</li>}
           </ul>
@@ -1324,7 +1407,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           lettertjes: op elke pagina, maar pas als je onderaan bent. Zie de kop
           van src/components/Studiobrief.astro. */}
       <div class="footer-brief">
-        <Studiobrief lang={lang} bron="voet" vorm="donker" />
+        <Studiobrief lang={lang} bron="voet" vorm={huid === 'hal' ? 'licht' : 'donker'} />
       </div>
       <div class="footer-bottom">
         <span>&copy; {year} VISUAILS &middot; KVK 99742993 &middot; {lang === 'nl' ? 'btw' : 'VAT'} NL005407575B96</span>
@@ -1382,13 +1465,16 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
         niets bij. */}
     <div class="foot-mark reveal pending" aria-hidden="true">
       <span class="foot-mark-light"></span>
-      <svg class="foot-mark-w" viewBox="0 0 1650 278" preserveAspectRatio="xMidYMax meet" focusable="false"><use href="#wordmark" /></svg>
+      {huid === 'hal'
+        ? <Woordmerk klasse="hal-wm hal-wm-reus" verloop />
+        : <svg class="foot-mark-w" viewBox="0 0 1650 278" preserveAspectRatio="xMidYMax meet" focusable="false"><use href="#wordmark" /></svg>}
     </div>
   </footer>
 
   <CookieConsent lang={lang} policyHref={lp('/cookie-policy')} />
-  {/* De proefkaart: zie de kop van Proefkaart.astro voor wanneer hij komt. */}
-  <Proefkaart lang={lang} />
+  {/* De proefkaart (de zwevende "Probeer VISUAILS · €1"-popup) is weg sinds
+      8 oktober 2026, punt 1.06: de proef begint nu bij een look, met een
+      stille knop op elke lookkaart en lookpagina. */}
 
   {/* ÉÉN RIJ: teken, zin, knop, kruisje — 9 augustus 2026.
 
@@ -1435,12 +1521,14 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
       De doos zelf krijgt GEEN positionering: .wa-launcher is `position: fixed`
       en blijft dat, want een gewone <div> maakt geen bevattend blok voor een
       vast geplaatst kind (dat doet alleen transform / filter / contain). */}
+  {meldingHier && <KlantMelding lang={lang} />}
   <div class="wa-dock" role="complementary" aria-label={t('wa_launcher_label')}>
   <a
     class="wa-launcher"
     href={waHref(wa.chat)}
     target="_blank"
     rel="noopener"
+    {...waKlant(lang)}
     aria-label={t('wa_launcher_aria')}
   >
     {/* THE ACTUAL WHATSAPP MARK, not a speech bubble. What was here was a
@@ -1969,11 +2057,13 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      Acht items onder elkaar is een lijst waarin je zoekt; twee kolommen van
      vier is een menu dat je in één blik overziet. Alleen waar er ruimte is —
      onder de 900px valt hij terug op één kolom en scrollt de lade. */
-  .nav-menu-2col { min-width: 34rem; }
-  @media (min-width: 900px) {
-    .nav-menu-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0 .3rem; }
-  }
-  @media (max-width: 899px) { .nav-menu-2col { min-width: 0; } }
+  /* ── ÉÉN KOLOM — 8 oktober 2026 (1.11) ──────────────────────────────────
+     Hier stond `.nav-menu-2col` voor de tweede uitklapper. Na 1.11 heeft
+     "Hoe het werkt" drie items en "Prijzen" twee: korte lijsten die je in één
+     blik leest, dus één kolom en een smaller paneel. Het basisraster van
+     `.nav-menu` (twee kolommen, 470px) blijft voor "Wat we maken", waar de
+     kolommen de groepen zijn. */
+  .nav-menu-1kol { grid-template-columns: minmax(0, 1fr); min-width: 21rem; }
 
   /* De groepskop in de mobiele lade. Geen tweede uitklapper daar: een lade die
      zelf laden bevat, is een lade waarin je zoekt. */

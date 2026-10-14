@@ -1,10 +1,14 @@
 ---
+// ── IN DE HAL — 13 oktober 2026 (afvinklijst 19, alles doen) ──────────────────────────
+// De omhulling is JuridischHal.astro: de kop van de hal, een inhoud, en het document in rijen.
+// De tekst hieronder is dezelfde; alleen de s22-omhulling en haar <style> gingen eruit.
+import JuridischHal from '../components/JuridischHal.astro';
 import Layout from '../layouts/Layout.astro';
-import { UPLOAD_DAYS, DELIVERY_DAYS } from '../lib/retention.js';
+import { UPLOAD_DAYS, DELIVERY_DAYS, ACCOUNT_YEARS } from '../lib/retention.js';
+import { subverwerkers, lijstRegel, MELDTERMIJN_DAGEN } from '../data/subverwerkers.js';
 // De datum stond hier uitgetypt, en nog negen keer elders. Zie de kop van
 // src/data/juridischeDatums.js: één bron, en een toets die hem tegen git houdt.
 import { bijgewerktOp } from '../data/juridischeDatums.js';
-import '../styles/stijl22.css';
 // VISUAILS — Data Processing Agreement (Art. 28 GDPR). New on 12 August 2026.
 //
 // The full reasoning is in src/pages/nl/verwerkersovereenkomst.astro, in Dutch,
@@ -33,68 +37,20 @@ import '../styles/stijl22.css';
 // Checked against Art. 28, 32, 33 and 44–46 GDPR, EDPB Guidelines 07/2020, the
 // Art. 28 SCCs (Implementing Decision (EU) 2021/915) and the sub-processors' own
 // terms. Every change mirrors the Dutch page; the reasons are in its header.
-const SUBS = [
-  {
-    who: 'Magnific AI, S.L.U.',
-    where: 'Málaga, Spain (EU); formerly Freepik Company, S.L.U.',
-    what: 'generating the visuals from your material (see below on the model providers)',
-    basis: 'inside the EU; for model providers outside the EEA, Magnific concludes Standard Contractual Clauses',
-  },
-  /* "With storage in the EU" was here and is not guaranteed: R2 and D1 are not in
-     an EU jurisdiction, and a location hint is "best effort" (29 September 2026). */
-  {
-    who: 'Cloudflare, Inc.',
-    where: 'United States (global network)',
-    what: 'storing the material you supply and the visuals we deliver, and running the site',
-    basis: 'EU-U.S. Data Privacy Framework (certified); Standard Contractual Clauses as fallback',
-  },
-  {
-    who: 'Plus Five Five, Inc. (Resend)',
-    where: 'San Francisco, United States',
-    what: 'email; the order notice to the studio carries the supplied material as an attachment. Resend keeps sent email for 30 days',
-    basis: 'EU-U.S. Data Privacy Framework (certified); Standard Contractual Clauses as fallback',
-  },
-  {
-    who: 'Google Ireland Ltd. (Google Workspace)',
-    where: 'Dublin, Ireland (EU); Google LLC in the United States',
-    what: 'the hello@visuails.com mailbox, where the order notice with the supplied material arrives',
-    basis: 'EU-U.S. Data Privacy Framework (certified); Standard Contractual Clauses as fallback',
-  },
-];
+/* ── DE LIJST KOMT UIT src/data/subverwerkers.js — 8 oktober 2026 (o08, o09) ──
+   Hier stond een eigen array met vier partijen. Het privacybeleid had een
+   tweede lijst, het register een derde. Nu leest alles één bron, met WhatsApp
+   (Meta) en de makers van de modellen erbij. Zie de kop van dat bestand. */
+const SUBS = subverwerkers('en');
 ---
 
-<Layout
+<Layout huid="hal"
   title="Data Processing Agreement — VISUAILS"
   description="VISUAILS’s data processing agreement under Article 28 GDPR: what we do with the material you supply, who receives it, and how long we keep it."
 >
-{/* ═══ EEN JURIDISCHE PAGINA IN DE STIJL VAN SECTIE 22 — 7 september 2026 ═══
-    De TEKST is woord voor woord onaangeraakt. Wat verandert is de omhulling:
-    één `.paneel` in plaats van drie secties, en de letters van sectie 22 op het
-    `.legal`-blok — dat blok zelf staat nog steeds in global.css en wordt hier
-    niet overgetypt. Zie `.s22.s22 .legal` in src/styles/stijl22.css; die zet de
-    letters voor alle zes juridische pagina's tegelijk.
+<JuridischHal lang="en" doc="data-processing-agreement" rubriek="Legal" titel="Data Processing Agreement" datum={bijgewerktOp('data-processing-agreement', 'en', 'Article 28 GDPR')}>
+<Fragment slot="lead">If there is a person in the material you send us, we are processing personal data <em>you</em> are responsible for — and the GDPR then requires us to have an agreement about it. This is that agreement.</Fragment>
 
-    ALLE VIJF TEGELIJK, en dat is geen keuze maar een eis van de toets.
-    tests/juridische-datums.test.mjs bewaakt deze documenten als GROEP: vijf
-    pagina's die er hetzelfde uit horen te zien en waar niets afgaat als er
-    eentje uit de pas loopt. Toen /ai-act als eerste overging, viel die toets om
-    met de naam van dat bestand erin — precies zoals bedoeld. Het antwoord
-    daarop is niet de toets versoepelen maar de andere vier meenemen.
-
-    GEEN SLOTPANEEL. De andere pagina's eindigen op een `.paneel-slot`; een
-    juridische pagina niet. Het accent wijst een keuze aan, en aan het eind van
-    een document valt niets te kiezen — er staat een adres waar je terecht kunt.
-    Een slotpaneel met knoppen eronder zou daar een aanbieding van maken. */}
-<div class="s22">
-  <section class="paneel">
-    <header class="paneel-kop jur-kop">
-      <p class="etiket">Legal</p>
-      <h1 class="hoog">Data Processing Agreement</h1>
-      <p class="lopend jur-lead">If there is a person in the material you send us, we are processing personal data <em>you</em> are responsible for — and the GDPR then requires us to have an agreement about it. This is that agreement.</p>
-      <p class="legal-meta">{bijgewerktOp('data-processing-agreement', 'en', 'Article 28 GDPR')}</p>
-    </header>
-
-    <div class="legal jur-tekst">
 
       <h2>1. Two roles, and the difference matters</h2>
       <p>A single order has us processing two kinds of data, and the GDPR gives us a different role for each. That sounds like paperwork and is not: it decides who makes the call, who reports a breach to the regulator, and who a data subject should turn to.</p>
@@ -111,7 +67,7 @@ const SUBS = [
 
       <h2>3. Subject matter, nature, purpose and duration</h2>
       <p><strong>Subject matter and purpose.</strong> Producing product visuals and video from the material you supply, and delivering them to you. There is no other purpose. We do not use your material for our own portfolio, for advertising, or to learn anything from it, unless you give us separate and demonstrable permission per order. If a person appears in it, we are the controller for that use ourselves, and we only do it if that person has agreed to it.</p>
-      <p><strong>Nature of the processing.</strong> Receiving, storing, passing to the sub-processors in §8, being looked at and reviewed by our image editors, and deleting. Nothing is profiled and nothing is decided automatically.</p>
+      <p><strong>Nature of the processing.</strong> Receiving, storing, passing to the sub-processors in §8, being looked at and reviewed by VISUAILS, and deleting. Nothing is profiled and nothing is decided automatically.</p>
       <p><strong>Duration.</strong> This agreement starts with your first order and ends once the last piece of data it covers has been deleted — see §12. It therefore outlives the order itself, and that is deliberate.</p>
 
       <h2>4. Type of personal data and categories of data subjects</h2>
@@ -125,7 +81,8 @@ const SUBS = [
       <p>If we believe an instruction of yours infringes the GDPR or other Union or Dutch data protection rules, we tell you immediately and we do not carry it out until it is resolved. That is not us refusing to work; it is the last paragraph of Art. 28(3).</p>
 
       <h2>6. Confidentiality</h2>
-      <p>VISUAILS is a sole trader. In practice that means one person has access, and that person is Lucas Snuverink. If we ever bring someone in — an employee, a freelancer for retouching — it happens only after that person has committed to confidentiality in writing, and that commitment survives the end of the engagement. A freelancer is also a sub-processor: they go on the list in §8 first, with the 30 days' notice. We keep material confidential without being asked and without a separate NDA.</p>
+      {/* 8 oktober 2026 (o10): zie de noot bij §6 in de Nederlandse versie. */}
+      <p>Only people who work under the responsibility of VISUAILS and are bound to confidentiality have access to the material, and only as far as the order requires. If we bring someone in — an employee, a freelancer for retouching — that person gets access only after committing to confidentiality in writing, and that commitment survives the end of the engagement. A freelancer is also a sub-processor: they go on the list in §8 first, with the {MELDTERMIJN_DAGEN} days' notice. We keep material confidential without being asked and without a separate NDA.</p>
 
       <h2>7. Security</h2>
       <p>What follows is what actually exists, and nothing more. We are not ISO certified, no penetration test has been carried out, and there is no information security management system. A security clause that promises more than is there is the clause that gets used against us when something happens.</p>
@@ -137,32 +94,34 @@ const SUBS = [
         <li><strong>Rate limits</strong> on ordering, uploading, signing in and fetching files, so a script cannot keep trying.</li>
         <li><strong>No raw IP addresses.</strong> Where we have to count traffic we store a salted hash, not the address.</li>
         <li><strong>The retention periods are executed, not just promised.</strong> A nightly task deletes what has expired, from storage and from the database, and records on the order’s timeline what went. That is the difference between a period in a document and a period in reality.</li>
-        <li><strong>A weekly copy of the database</strong> on a disk we control ourselves, so losing the platform does not mean losing your order. That copy contains personal data. It does not go to a cloud service, it does not sit in a shared folder, and it is not committed to the source code history. A nightly task checks that this copy is no older than ten days and warns us if it is — a backup nobody notices has stopped is not a backup.</li>
+        {/* 8 oktober 2026 (9.04): zie de noot bij deze regel in de Nederlandse versie. */}
+        <li><strong>A weekly copy of the database</strong> in our own Google Drive (Google Workspace, see the list in §8), so losing the platform does not mean losing your order. That copy contains personal data, but no passwords, sign-in codes or sessions: we deliberately leave those out. It does not sit in a shared folder and is not committed to the source code history, and after every copy we check that it can be read back. A nightly task checks that this copy is no older than ten days and warns us if it is — a backup nobody notices has stopped is not a backup.</li>
       </ul>
       <p>We reassess these measures whenever something material changes in what we process, and in any case once a year.</p>
 
       <h2>8. Sub-processors</h2>
-      <p>We use other parties. You hereby give us a <strong>general written authorisation</strong> for that, within the meaning of Art. 28(2) GDPR, on three conditions: this list is current, we announce an addition or replacement <strong>at least 30 days in advance</strong> by email, and you may object during that period. If you do, we find an alternative or you may end the engagement free of charge for the part not yet performed. The 30 days apply to parties we engage ourselves; changes a sub-processor reports to us in its own chain, we pass on as soon as we receive them.</p>
-      <p>With each party below we have a processor agreement that passes on the same obligations we owe you (Art. 28(4)). We remain liable to you for what they do.</p>
+      <p>We use other parties. You hereby give us a <strong>general written authorisation</strong> for that, within the meaning of Art. 28(2) GDPR, on three conditions: this list is current, we announce an addition or replacement <strong>at least {MELDTERMIJN_DAGEN} days in advance</strong> by email, and you may object during that period. If you do, we find an alternative or you may end the engagement free of charge for the part not yet performed. The {MELDTERMIJN_DAGEN} days apply to parties we engage ourselves, and that includes the makers of the models we use on a platform: which maker’s model we use is our choice, so a maker that is not on the list yet is an addition like any other. A newer model from a maker already on the list is not a change. Changes a sub-processor reports to us in its own chain, we pass on as soon as we receive them.</p>
+      <p>With each party below there is a processor agreement that passes on the same obligations we owe you (Art. 28(4)): with us directly, or, for a model maker, through Magnific. For WhatsApp these are the business terms and data processing terms WhatsApp sets for every business that uses it, which we accept as they are. We remain liable to you for what they do.</p>
       {/* tabindex + role: zie de noot bij .fb-tblwrap in FigBoard.astro.
           Deze tabel schuift horizontaal en was zonder muis niet te lezen. */}
+      <p class="legal-meta" id="sub-processors">{lijstRegel('en')}</p>
       <div class="table-scroll" tabindex="0" role="region" aria-label="Sub-processors">
       <table class="files">
         <thead><tr><th>Who</th><th>Where</th><th>For what</th><th>Transfer basis</th></tr></thead>
         <tbody>
           {SUBS.map((s) => (
             <tr>
-              <td data-label="Who"><strong>{s.who}</strong></td>
-              <td data-label="Where">{s.where}</td>
-              <td data-label="For what">{s.what}</td>
-              <td data-label="Basis">{s.basis}</td>
+              <td data-label="Who"><strong>{s.naam}</strong>{s.viaNaam && <><br />via {s.viaNaam}</>}</td>
+              <td data-label="Where">{s.waar}</td>
+              <td data-label="For what">{s.wat}</td>
+              <td data-label="Basis">{s.grond}</td>
             </tr>
           ))}
         </tbody>
       </table>
       </div>
-      <p><strong>About the generation itself.</strong> Magnific offers a large number of models on its platform, from different makers. Which one we use at a given moment changes — we work with whatever gives the best result at the time, and that is part of how we do our job. The provider of the chosen model processes your image as Magnific’s sub-processor and, according to Magnific, keeps it for no more than 30 days after generation; Magnific itself deletes the supplied image immediately after generation. Where that provider is outside the EEA in a country without an adequacy decision, Magnific concludes Standard Contractual Clauses for it (Art. 46(2)(c) GDPR). On request, we send you the name and location of every model provider we used for your orders within five working days. Magnific states expressly in its own terms: <em>"Under no circumstances will we use your images or voices, or those of third parties that you upload to our platform, to train or improve our artificial intelligence models or those of third-party providers"</em>.</p>
-      <p><strong>Retouching happens on our own machine, and never on your photos.</strong> The photos you supply are never opened in Photoshop, DaVinci Resolve or any other editing software; they are only used to have the visuals generated. Only the images we make with your product are retouched and edited, locally. Those programs do not send the file to a cloud service: it sits on the disk, is edited there, and leaves there under the periods in §12. Adobe and Blackmagic Design are therefore <strong>not</strong> on the list above — they do not receive your material. Adobe writes about locally stored material in its own terms: <em>"For Content stored locally on your device, we do not scan or review your Content."</em> Software running on our machine processes nothing on our behalf; a service that receives the file does. That distinction decides who belongs on the list. If we ever move to a cloud service for retouching — Adobe’s own cloud storage included — that is an addition to the list, with the 30 days' notice set out above.</p>
+      <p><strong>About the generation itself.</strong> Magnific offers a large number of models on its platform, from different makers, and runs them for us. Which one we use at a given moment changes — we work with whatever gives the best result at the time, and that is part of how we do our job. That is why the list names the makers whose models we use, and not the models: a newer model from a maker on the list changes nothing for you, a new maker is announced in advance as set out above. The maker of the chosen model processes your image as Magnific’s sub-processor and, according to Magnific, keeps it for no more than 30 days after generation; Magnific itself deletes the supplied image immediately after generation. Where a maker is outside the EEA in a country without an adequacy decision, Magnific concludes Standard Contractual Clauses for it (Art. 46(2)(c) GDPR). On request, we tell you within five working days which of these makers were used for your orders. Magnific states expressly in its own terms: <em>"Under no circumstances will we use your images or voices, or those of third parties that you upload to our platform, to train or improve our artificial intelligence models or those of third-party providers"</em>.</p>
+      <p><strong>Retouching happens on our own machine, and never on your photos.</strong> The photos you supply are never opened in Photoshop, DaVinci Resolve or any other editing software; they are only used to have the visuals generated. Only the images we make with your product are retouched and edited, locally. Those programs do not send the file to a cloud service: it sits on the disk, is edited there, and leaves there under the periods in §12. Adobe and Blackmagic Design are therefore <strong>not</strong> on the list above — they do not receive your material. Adobe writes about locally stored material in its own terms: <em>"For Content stored locally on your device, we do not scan or review your Content."</em> Software running on our machine processes nothing on our behalf; a service that receives the file does. That distinction decides who belongs on the list. If we ever move to a cloud service for retouching — Adobe’s own cloud storage included — that is an addition to the list, with the {MELDTERMIJN_DAGEN} days' notice set out above.</p>
       <p><strong>What is not on this list, and why.</strong> Our payment provider and the review platforms are absent. They do not touch your material. Mollie processes payment data as a controller in its own right, and the review platforms only see what you publish there yourself. Those are covered in the <a href="/privacy/">Privacy Policy</a>.</p>
 
       <h2>9. Data subject rights</h2>
@@ -174,16 +133,16 @@ const SUBS = [
       <p>We help you further with what Art. 32 to 36 GDPR asks of you, including a data protection impact assessment if your use needs one.</p>
 
       <h2>11. Transfers outside the European Economic Area</h2>
-      <p>Our contract for the generation is with a party in Spain; the model provider behind it may be outside the EEA (see §8). Where a sub-processor in §8 is established outside the EEA, the transfer rests on the EU-U.S. Data Privacy Framework (Art. 45 GDPR), with the European Commission’s Standard Contractual Clauses (Art. 46(2)(c) GDPR) as fallback should that framework lapse; for Magnific’s model providers, on those Standard Contractual Clauses. We do not transfer personal data to a country or party outside that list without informing you first.</p>
-      <p>One thing we write down more plainly than is customary: when the visuals are made, material is placed into the sub-processor’s tool by our image editors, from our environment. So it is not an automatic integration but an act, and it falls under the same arrangements as the rest of this agreement.</p>
+      <p>Our contract for the generation is with a party in Spain; the model makers behind it may be outside the EEA (see §8). Where a sub-processor in §8 is established outside the EEA, the transfer rests on the EU-U.S. Data Privacy Framework (Art. 45 GDPR), with the European Commission’s Standard Contractual Clauses (Art. 46(2)(c) GDPR) as fallback should that framework lapse; for the model makers Magnific works with, on those Standard Contractual Clauses. We do not transfer personal data to a country or party outside that list without informing you first.</p>
+      <p>One thing we write down more plainly than is customary: when the visuals are made, material is placed into the sub-processor’s tool by hand, from our environment. So it is not an automatic integration but an act, and it falls under the same arrangements as the rest of this agreement.</p>
 
       <h2>12. Return and deletion</h2>
-      <p>The periods below are the same ones as in §7 of the <a href="/terms/">Terms</a> and §6 of the <a href="/privacy/">Privacy Policy</a>. Storage and the database are cleaned by a nightly task. Copies in our mailbox and on our workstation, and what we generated on Magnific’s platform, we delete by hand within the same period; Resend keeps sent email for 30 days.</p>
+      <p>The periods below are the same ones as in §7 of the <a href="/terms/">Terms</a> and §6 of the <a href="/privacy/">Privacy Policy</a>. Storage and the database are cleaned by a nightly task. Our own copies, in our mailbox and on our workstation, follow the periods below; what we generated on Magnific’s platform, we delete by hand within the same period; Resend keeps sent email for 30 days.</p>
       <ul>
-        <li><strong>The material you supply:</strong> {UPLOAD_DAYS} days after your order closes, then deleted.</li>
-        <li><strong>The visuals we deliver:</strong> {DELIVERY_DAYS} days in VISUAILS Studio, so you can fetch them again in that time. After that, a copy may stay in our own archive for no more than twelve months, without guarantee, and is then deleted. If you do not want that, say so and we delete it after {DELIVERY_DAYS} days.</li>
+        <li><strong>The material you supply:</strong> {UPLOAD_DAYS} days after your order closes, then deleted from our storage. Our own copy of your product photos and style references we keep for as long as your customer account exists, up to {ACCOUNT_YEARS} years after your last order, so that a new order keeps the same look.</li>
+        <li><strong>The visuals we deliver:</strong> {DELIVERY_DAYS} days in VISUAILS Studio, so you can fetch them again in that time. A copy stays in our own archive with no end date, to keep your look consistent and to improve it. Visuals showing a real, recognisable person — your own model, someone in a worn photo — we keep only for as long as your customer account exists.</li>
       </ul>
-      <p>Want it gone sooner? Email us and we delete it — unless a statutory retention duty stands in the way, and then we say which one. At the end of this agreement we delete everything it covers, copies included, or return it to you if you prefer. Anything that has to stay for that reason stays only for that reason and is not used again.</p>
+      <p>Want something gone sooner — your material, our copy of it, or the visuals in our archive? Email us from the address of your account and we delete it; you do not need to give a reason. A new order may then turn out differently from the earlier look. Only a statutory retention duty can stand in the way, and then we say which one. At the end of this agreement we delete everything it covers, copies included, or return it to you if you prefer. Anything that has to stay for that reason stays only for that reason and is not used again.</p>
       <p>The data we hold as controller — your invoice, your company details — is not covered here. Those carry the seven-year Dutch tax retention duty; see the <a href="/privacy/">Privacy Policy</a>.</p>
 
       <h2>13. Audit, liability and closing</h2>
@@ -192,7 +151,7 @@ const SUBS = [
       <p><strong>Closing.</strong> Where this agreement differs from the Terms of Service, this agreement prevails, but only for the processing of personal data. Dutch law applies; the Overijssel District Court has jurisdiction. If the GDPR changes or binding rules are added, we amend this text and announce it the same way we announce a change to §8.</p>
 
       <h2>14. Questions</h2>
-      <p>About this agreement, about a data subject request, or to get a signed copy: <a href="mailto:hello@visuails.com">hello@visuails.com</a>. One person reads that inbox, and it is the same person who carries out the processing.</p>
+      <p>About this agreement, about a data subject request, or to get a signed copy: <a href="mailto:hello@visuails.com">hello@visuails.com</a>. That inbox is read where the processing is done, with no helpdesk in between.</p>
 
       {/* ── DEZELFDE SOORT NOOT ALS OP /ai-act, DUS DEZELFDE VORM — 3 sept 2026 ──
           Dit stond hier als `.legal-meta` met een handgezette marge van 2,4rem: de
@@ -202,21 +161,6 @@ const SUBS = [
           gewicht ervan is. En de marge komt nu uit de klasse in plaats van uit dit
           bestand. */}
       <p class="legal-note">This page was drafted against the text of Article 28 GDPR and covers points (a) to (h) of paragraph 3. For your own situation — certainly if you sit in a chain with more than one controller — have your own adviser check it.</p>
-    </div>
-  </section>
-</div>
+    
+</JuridischHal>
 </Layout>
-
-<style>
-  /* Een juridisch document leest in één kolom. 46rem is ongeveer 75 tekens in
-     deze letter — de bovengrens uit de leesbaarheidsregel van DESIGN.md, en
-     ruimer dan de 34em van `.lopend` omdat dit een document is en geen
-     verkooptekst. */
-  .jur-kop { max-width: 46rem; margin-bottom: clamp(1.6rem, 3vw, 2.4rem); }
-  .jur-lead { max-width: none; font-size: clamp(1.05rem, 1.8vw, 1.25rem); color: var(--inkt); }
-  .jur-tekst { max-width: 46rem; }
-
-  /* Het slot: een adres, geen aanbieding. Zie de noot bovenaan. */
-  .jur-uit { margin-top: clamp(2.5rem, 5vw, 4rem); padding-top: clamp(1.6rem, 3vw, 2.4rem); border-top: 1px solid var(--lijn); }
-  .jur-uit .acties { margin-top: 1.4rem; }
-</style>

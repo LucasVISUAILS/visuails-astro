@@ -18,6 +18,8 @@
 // blob; this page has no blob, so it reads them straight from the source.
 import { MAX_FILE_BYTES, MAX_BATCH_FILES, typeFor } from '../lib/uploads.js';
 import { normalizePhone } from '../lib/payer.js';
+import { MELDING_SLEUTEL, PROEF_WEG_DAGEN } from '../data/cookies.js';
+import { readConsent } from './consent.js';
 
 // Safety net for reveal-gated content. `.reveal.pending` starts at opacity:0
 // and only becomes visible once `.in` is added. If the per-page Intersection
@@ -48,8 +50,11 @@ const I18N = {
     tyRefTitle: 'Your reference', tyRefNote: 'Keep this handy — quote it if you message us about this order.',
     tyPayNote: 'This order is not paid yet. Production starts once the payment comes through.',
     tyPayCta: 'Complete the payment',
-    tyPaidNote: 'The payment came through. You will get a confirmation and the invoice by email.',
-    tyCheckingNote: 'Checking with the bank whether the payment came through…',
+    tyPaidNote: 'The payment is in. There is nothing left for you to do.',
+    /* Punt 1.05 (8 oktober 2026): de tussenstand. Geen knop — wie net betaald
+       heeft, mag hier niet de indruk krijgen dat het nog een keer moet. */
+    tyCheckingNote: 'You do not need to pay again. This page updates itself as soon as Mollie confirms the payment.',
+    tyCheckingSlow: 'This is taking longer than usual. There is nothing you need to do: we email you as soon as the payment is in. Did you stop the payment yourself? Then the payment link is in your confirmation email.',
     tyUnpaidFlow: 'Nothing is being made yet: we start as soon as the payment is in. Your photos and choices are saved with the order.',
     tyUnpaidNote: 'The payment was not completed — cancelled, declined or the link expired. Nothing has been charged. The order is recorded under this reference; pay now, or later through the link in your confirmation email.',
     tyRetryCta: 'Pay again',
@@ -89,8 +94,9 @@ const I18N = {
     tyRefTitle: 'Je referentie', tyRefNote: 'Bewaar deze — vermeld hem als je ons over deze bestelling appt of mailt.',
     tyPayNote: 'Deze bestelling is nog niet betaald. Zodra de betaling binnen is, gaan we aan de slag.',
     tyPayCta: 'Rond de betaling af',
-    tyPaidNote: 'De betaling is binnengekomen. Je krijgt de bevestiging en de factuur per mail.',
-    tyCheckingNote: 'We kijken bij de bank of de betaling binnen is…',
+    tyPaidNote: 'De betaling is binnen. Je hoeft niets meer te doen.',
+    tyCheckingNote: 'Je hoeft niet opnieuw te betalen. Deze pagina werkt zichzelf bij zodra Mollie de betaling bevestigt.',
+    tyCheckingSlow: 'Dit duurt langer dan normaal. Je hoeft niets te doen: we mailen je zodra de betaling binnen is. Heb je de betaling zelf afgebroken? Dan staat de betaallink in je bevestigingsmail.',
     tyUnpaidFlow: 'Er wordt nog niets gemaakt: we beginnen zodra de betaling binnen is. Je foto’s en keuzes staan bewaard bij de bestelling.',
     tyUnpaidNote: 'De betaling is niet afgerond — afgebroken, geweigerd of de link was verlopen. Er is niets afgeschreven. Je bestelling staat genoteerd onder dit kenmerk; betaal nu, of later via de link in je bevestigingsmail.',
     tyRetryCta: 'Opnieuw betalen',
@@ -437,6 +443,15 @@ function initServicesMenu() {
     const trigger = li.querySelector('.nav-trigger');
     if (trigger) trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
   };
+  /* ── ELKE UITKLAPPER, NIET ALLEEN DE EERSTE — 8 oktober 2026 (1.11) ────────
+     Hier stond `document.querySelector('.has-menu')`: dat is de EERSTE, "Wat we
+     maken". Een klik ernaast of Escape deed "Hoe het werkt" dus nooit dicht —
+     dat viel niet op zolang die vooral met de muis (hover) openging. Met Prijzen
+     als derde uitklapper werkt het nu voor alle drie, en gaat een tweede die je
+     opent niet over een eerste heen staan. */
+  const alleDicht = (behalve) => {
+    for (const li of document.querySelectorAll('.has-menu.menu-open')) if (li !== behalve) setOpen(li, false);
+  };
   document.addEventListener('click', (e) => {
     const t = e.target;
     if (!(t instanceof Element)) return;
@@ -444,10 +459,11 @@ function initServicesMenu() {
     if (trigger) {
       e.preventDefault();
       const li = trigger.closest('.has-menu');
+      alleDicht(li);
       setOpen(li, li ? !li.classList.contains('menu-open') : false);
       return;
     }
-    if (!t.closest('.has-menu')) setOpen(document.querySelector('.has-menu'), false);
+    if (!t.closest('.has-menu')) alleDicht();
   });
   /*
    * ── ESCAPE ZETTE aria-expanded OP false EN LIET HET PANEEL STAAN ────────────
@@ -468,11 +484,13 @@ function initServicesMenu() {
    */
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    const li = document.querySelector('.has-menu');
+    /* De uitklapper waar de focus in staat, en anders geen; open panelen gaan
+       allemaal dicht (zie de noot bij alleDicht hierboven). */
+    const actief = document.activeElement instanceof Element ? document.activeElement : null;
+    const li = actief ? actief.closest('.has-menu') : null;
+    alleDicht();
     if (!li) return;
-    const inside = li.contains(document.activeElement);
-    setOpen(li, false);
-    if (inside) {
+    {
       /*
        * ── EN DIT WAS MIJN EERSTE FIX, DIE NIET WERKTE ───────────────────────────
        *
@@ -1084,6 +1102,9 @@ function initThankYou() {
     if (kop0 && kop0.dataset.tyTitleContact) kop0.textContent = kop0.dataset.tyTitleContact;
     const flow = document.querySelector('[data-ty-flow]');
     if (flow && flow.dataset.tyFlowContact) flow.textContent = flow.dataset.tyFlowContact;
+    /* Een bericht is geen bestelling: de lopende zin, niet het verder-blok. */
+    if (flow) flow.hidden = false;
+    document.querySelectorAll('[data-ty-verder]').forEach((el) => { el.hidden = true; });
     document.querySelectorAll('dd[data-ty-timing]').forEach((el) => { (el.closest('.ty-row') || el).hidden = true; });
     document.querySelectorAll('[data-ty-alleen-bestelling]').forEach((el) => { el.hidden = true; });
     const mailCel = document.querySelector('[data-ty-mail]');
@@ -1096,6 +1117,13 @@ function initThankYou() {
   if (!/^VIS-[A-Z0-9-]{3,}$/i.test(ref)) return;
   const d = t18();
   const pay = molliePayUrl(params.get('pay'));
+  /* Wie nog niet betaald heeft, leest in het blok niet "je factuur komt zo"
+     maar "na je betaling krijg je de factuur". */
+  const verder = document.querySelector('[data-ty-verder]');
+  const verderOnbetaald = () => {
+    const stil = verder && verder.querySelector('[data-ty-verder-stil]');
+    if (stil && stil.dataset.tyVerderOnbetaald) stil.textContent = stil.dataset.tyVerderOnbetaald;
+  };
   /* ── HET KENMERK IS EEN RIJ IN DE SAMENVATTING GEWORDEN — 18 augustus 2026 ──
      Hier stond een compleet kaartje dat dit script uit een string opbouwde, met
      de opmaak in inline stijlattributen. Sinds de herindeling staat de rij AL in
@@ -1121,11 +1149,42 @@ function initThankYou() {
     } catch { return ''; }
   };
 
-  /* De vastgezette leverdata, als pipeline.js ze achterliet (ronde 9, F29). */
+  /* De vastgezette leverdata, als pipeline.js ze achterliet (ronde 9, F29).
+     Zonder dagen maar met voorrang: de voorrangszin (naloop A2, 8 okt 2026). */
   try {
     const venster = eigen('vis-ty-venster');
     if (venster) document.querySelectorAll('dd[data-ty-timing]').forEach((el) => { el.textContent = venster; });
+    else if (eigen('vis-ty-voorrang') === '1') {
+      document.querySelectorAll('dd[data-ty-timing][data-ty-timing-voorrang]').forEach((el) => { el.textContent = el.dataset.tyTimingVoorrang; });
+    }
   } catch { /* geen opslag */ }
+
+  /* ── ZO GAAT HET VERDER: DE LEVERREGEL — 8 oktober 2026 (punt 1.05) ────────
+     De tekst staat in ThankYouPage.astro (uit src/lib/verder.js, dezelfde bron
+     als de mails); hier wordt alleen gekozen. Gereserveerde dagen: die dagen.
+     Vanaf de drempel zonder dagen: de datum volgt. Anders zo snel mogelijk —
+     ook als er niets in sessionStorage staat, zoals de Levertijd-rij rechts. */
+  if (verder) {
+    try {
+      const regel = verder.querySelector('[data-ty-verder-lever]');
+      const venster = eigen('vis-ty-venster');
+      const aantal = parseInt(eigen('vis-ty-n'), 10);
+      const drempel = parseInt(verder.dataset.tyVerderDrempel || '', 10);
+      if (regel && venster && regel.dataset.tyVerderDatum) {
+        regel.textContent = regel.dataset.tyVerderDatum.replace('{datum}', venster);
+      } else if (regel && eigen('vis-ty-voorrang') === '1' && regel.dataset.tyVerderVoorrang) {
+        /* Naloop A2: dezelfde volgorde als leveringVan() in verder.js — dagen,
+           dan voorrang, dan "datum volgt", anders zo snel mogelijk. */
+        regel.textContent = regel.dataset.tyVerderVoorrang;
+      } else if (regel && Number.isInteger(aantal) && Number.isInteger(drempel) && aantal >= drempel && regel.dataset.tyVerderDatumVolgt) {
+        regel.textContent = regel.dataset.tyVerderDatumVolgt;
+      }
+    } catch { /* geen opslag: de standaardregel blijft */ }
+  }
+  /* Alleen de terugkeer van Mollie (`?paid=`, ook na betalen met tegoed) mag
+     "je factuur komt zo" zeggen; bij elke andere aankomst is er nog niet
+     betaald. */
+  if (!(betaald && !params.get('ref'))) verderOnbetaald();
 
   /* Het adres waar de bevestiging heen ging, als pipeline.js het achterliet. */
   try {
@@ -1156,11 +1215,11 @@ function initThankYou() {
       const soort = eigen('vis-ty-kind');
       const drempel = parseInt(abo.dataset.tyPlanMin || '', 10);
       if (Number.isInteger(aantal) && Number.isInteger(drempel) && aantal >= drempel
-          && (soort === 'complete' || soort === 'lifestyle' || soort === 'catalog')) {
-        /* Bij catalog geen bedragen: een abonnement levert `complete` en is
-           tegen een catalogbestelling van hetzelfde aantal duurder. Dezelfde
-           poort als paintPlan() in pipeline.js. */
-        const welke = soort === 'catalog' ? '[data-ty-plan-steady]' : soort === 'lifestyle' ? '[data-ty-plan-compare-ls]' : '[data-ty-plan-compare]';
+          && (soort === 'lifestyle' || soort === 'catalog')) {
+        /* Bij catalog geen bedragen, bij lifestyle de vergelijking met carrousels.
+           'complete' stond hier ook; die bestelling bestaat sinds 14 oktober 2026
+           niet meer. Dezelfde poort als paintPlan() in pipeline.js. */
+        const welke = soort === 'catalog' ? '[data-ty-plan-steady]' : '[data-ty-plan-compare-ls]';
         const span = abo.querySelector(welke);
         if (span) { span.hidden = false; abo.hidden = false; }
       }
@@ -1179,6 +1238,9 @@ function initThankYou() {
   if (params.get('soort') === 'aanvraag') {
     const flow = document.querySelector('[data-ty-flow]');
     if (flow && flow.dataset.tyFlowRequest) flow.textContent = flow.dataset.tyFlowRequest;
+    /* Een aanvraag heeft nog geen levering: de lopende zin, geen verder-blok. */
+    if (flow) flow.hidden = false;
+    if (verder) verder.hidden = true;
     document.querySelectorAll('dd[data-ty-timing]').forEach((el) => { (el.closest('.ty-row') || el).hidden = true; });
     /* Geen foto's, geen aanleverpagina, geen "extra foto's sturen": bij een
        aanvraag is er nog niets aangeleverd. En de regel "bevestiging verstuurd
@@ -1197,6 +1259,8 @@ function initThankYou() {
   if (params.get('soort') === 'merkmodel') {
     const flow = document.querySelector('[data-ty-flow]');
     if (flow && flow.dataset.tyFlowModel) flow.textContent = flow.dataset.tyFlowModel;
+    if (flow) flow.hidden = false;
+    if (verder) verder.hidden = true;
     document.querySelectorAll('dd[data-ty-timing]').forEach((el) => { (el.closest('.ty-row') || el).hidden = true; });
     document.querySelectorAll('[data-ty-alleen-bestelling]').forEach((el) => { el.hidden = true; });
   }
@@ -1206,6 +1270,10 @@ function initThankYou() {
     /* Ronde 9 (O19): de kop zei "we hebben je aanvraag" — het is een bestelling. */
     const kopR = document.querySelector('[data-ty-title]');
     if (kopR && kopR.dataset.tyTitleReview) kopR.textContent = kopR.dataset.tyTitleReview;
+    /* Eerst de controle, dan pas betalen (1.05): de zin over de controle
+       bovenaan, en in het blok de factuurregel van wie nog niet betaald heeft. */
+    if (flow) flow.hidden = false;
+    verderOnbetaald();
   }
 
   const kop = document.querySelector('[data-ty-title]');
@@ -1248,12 +1316,17 @@ function initThankYou() {
   /* Terug van Mollie: één zin, geen knop. De betaling is binnen — een knop
      "Rond de betaling af" eronder zou de bezoeker laten twijfelen of er iets
      misging. */
+  /* Punt 1.05: de zin staat nu in het standvlak onder de kop (zie
+     ThankYouPage.astro), niet meer in de kenmerkrij rechts. Geen vinkje in de
+     balk zolang de betaling nog bevestigd wordt. */
+  const stand = document.querySelector('[data-ty-status]');
   if (betaald && !params.get('ref')) {
     const klaar = document.createElement('p');
     klaar.className = 'ty-paid-note';
     klaar.textContent = d.tyCheckingNote;
-    klaar.setAttribute('role', 'status');
-    box.append(klaar);
+    if (stand) { stand.append(klaar); stand.hidden = false; } else box.append(klaar);
+    const balk0 = document.querySelector('[data-ty-bar]');
+    if (balk0) balk0.setAttribute('data-ty-pay-state', '');
     verifyPaid(ref, klaar, d);
   }
 
@@ -1275,7 +1348,8 @@ function initThankYou() {
     knop.rel = 'noopener';
     knop.textContent = d.tyPayCta;
     wrap.append(note, knop);
-    box.append(wrap);
+    if (stand) { stand.append(wrap); stand.hidden = false; } else box.append(wrap);
+    verderOnbetaald();
   }
 
   /* Sinds 11 augustus 2026: kijken of deze bestelling niet zojuist is
@@ -1312,43 +1386,66 @@ function initThankYou() {
  * omdat er iets omviel; dat is een veel duurdere fout dan de melding missen.
  */
 /*
- * ── IS ER ÉCHT BETAALD? — 19 september 2026 ─────────────────────────────────
+ * ── IS ER ÉCHT BETAALD? — 19 september 2026, drie standen sinds 8 oktober ───
  *
  * Dezelfde wedloop als bij checkCancelled(): de klant komt van Mollie terug
- * terwijl de webhook onderweg is. Vier pogingen over ongeveer tien seconden;
- * zolang de bank nog niet heeft geantwoord, blijft de kop neutraal. Zegt het
- * eindpunt `paid`, dan wordt het "Betaald — we gaan aan de slag." Blijft het
- * na de laatste poging onbetaald én betaalbaar, dan is de betaling afgebroken
- * of mislukt: de kop zegt dat, en er komt een knop naar /api/order-pay die een
- * verse checkout aanmaakt. Faalt het eindpunt zelf, dan blijft de neutrale
- * tekst staan — nooit "betaald" op de gok, en nooit "mislukt" op de gok.
+ * terwijl de webhook onderweg is. Zolang er geen antwoord is, staat de pagina
+ * in de tussenstand "Je betaling wordt bevestigd — je hoeft niet opnieuw te
+ * betalen", zonder knop. Dan:
+ *
+ *   (a) `paid`   → "Betaald — we gaan aan de slag."
+ *   (c) `failed` → Mollie zelf meldde geannuleerd, verlopen of mislukt (de
+ *                  webhook schreef het in `payments`): "De betaling is niet
+ *                  afgerond", met de knop naar /api/order-pay voor een verse
+ *                  checkout. ALLEEN dan een knop (punt 1.05, Lucas).
+ *   (b) anders   → blijven vragen, ongeveer een minuut lang, en dan stoppen
+ *                  met "we mailen je zodra de betaling binnen is".
+ *
+ * Tot 8 oktober stond hier na vier vragen (±10 seconden) zonder antwoord al
+ * "niet afgerond" met een knop. Bij een trage webhook betaalde een klant die
+ * net betaald hád dan misschien nog een keer; de webhook stortte dat terug,
+ * maar dat kostte mails en een terugboeking. Een betaling die per overboeking
+ * loopt, blijft ook "open" — ook dan is de tussenstand de eerlijke.
+ *
+ * Een fout of een 429 van het eindpunt is geen antwoord: doorvragen tot de
+ * minuut om is. Nooit "betaald" op de gok, en nooit "mislukt" op de gok.
+ * Dertien vragen in een minuut, plus drie van checkCancelled(): ruim onder de
+ * dertig die order-status per bezoeker toelaat.
  */
 function verifyPaid(ref, noot, d, attempt = 0) {
-  const DELAYS = [0, 2000, 3000, 5000];
+  const DELAYS = [0, 2000, 3000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000];
   if (attempt >= DELAYS.length) return;
+  /* De minuut is om zonder dat Mollie iets meldde: stoppen, zonder knop. */
+  const opgeven = () => { noot.textContent = d.tyCheckingSlow; };
+  const verder = () => {
+    if (attempt + 1 < DELAYS.length) verifyPaid(ref, noot, d, attempt + 1);
+    else opgeven();
+  };
   window.setTimeout(() => {
     fetch(`/api/order-status?ref=${encodeURIComponent(ref)}`, { headers: { Accept: 'application/json' } })
       .then((r) => (r.ok ? r.json() : null))
       .then((s) => {
-        if (!s) return;
+        if (!s) { verder(); return; }
         const kop = document.querySelector('[data-ty-title]');
         const balk = document.querySelector('[data-ty-bar]');
         if (s.paid) {
           noot.textContent = d.tyPaidNote;
           if (kop && kop.dataset.tyTitlePaid) kop.textContent = kop.dataset.tyTitlePaid;
+          /* Nu is er iets af: het vinkje terug. */
+          if (balk) balk.removeAttribute('data-ty-pay-state');
           return;
         }
         if (s.cancelled) return; /* checkCancelled() neemt het over */
-        /* De bank heeft al nee gezegd (failed/canceled/expired): niet verder
-           wachten, meteen de knop om opnieuw te betalen. */
+        /* Mollie heeft nog niets gemeld: doorvragen, en na de minuut stoppen. */
         if (!s.failed && attempt + 1 < DELAYS.length) { verifyPaid(ref, noot, d, attempt + 1); return; }
-        if (!s.payable) return;
+        if (!s.failed || !s.payable) { opgeven(); return; }
         noot.textContent = d.tyUnpaidNote;
         if (kop && kop.dataset.tyTitleUnpaid) kop.textContent = kop.dataset.tyTitleUnpaid;
-        /* Ronde 9 (O13): onder "Wat er nu gebeurt" stond nog "we maken je
-           visuals" terwijl er niets loopt zolang er niet betaald is. */
+        /* Ronde 9 (O13): er wordt niets gemaakt zolang er niet betaald is. */
         const flowP = document.querySelector('[data-ty-flow]');
-        if (flowP) flowP.textContent = d.tyUnpaidFlow;
+        if (flowP) { flowP.textContent = d.tyUnpaidFlow; flowP.hidden = false; }
+        const stil = document.querySelector('[data-ty-verder-stil]');
+        if (stil && stil.dataset.tyVerderOnbetaald) stil.textContent = stil.dataset.tyVerderOnbetaald;
         if (balk) balk.setAttribute('data-ty-pay-state', '');
         const wrap = document.createElement('p');
         wrap.className = 'ty-pay-cta';
@@ -1359,7 +1456,7 @@ function verifyPaid(ref, noot, d, attempt = 0) {
         wrap.append(knop);
         noot.after(wrap);
       })
-      .catch(() => { /* stil — zie de kop */ });
+      .catch(() => verder());
   }, DELAYS[attempt]);
 }
 
@@ -1923,7 +2020,7 @@ function initVeldmeldingen() {
  * een site die niet weet wie er staat. En het is bovendien de duurste plek op
  * de pagina die aan het goedkoopste aanbod wordt weggegeven.
  *
- * ── TWEE ATTRIBUTEN, EN VERDER NIETS ────────────────────────────────────────
+ * ── TWEE ATTRIBUTEN (SINDS 14 OKTOBER 2026 EEN DERDE, ZIE ONDER) ───────────────────────────────────────────────────
  *
  *   data-vis-uit   alleen voor wie NIET is ingelogd
  *   data-vis-in    alleen voor wie WEL is ingelogd
@@ -1951,23 +2048,349 @@ function initVeldmeldingen() {
  * staan meteen goed in plaats van een frame te knipperen.
  */
 let ingelogd = null;
+/* De stand (k-klant, 14 oktober 2026): undefined = nog niet gevraagd, null =
+   gevraagd maar niet meegekomen, anders het object uit klantStandVan(). */
+let klantStand;
+
+/*
+ * ── EN SINDS 14 OKTOBER 2026: WAT DE KLANT IN DE PLAATS KRIJGT ──────────────
+ *
+ * Afvinklijst 23 (k-klant): verbergen alleen was te weinig. Een klant die al
+ * eens besteld heeft, stond op vijf soorten pagina's met minder knoppen dan
+ * een bezoeker. Daarom een derde attribuut, dat ook iets INVULT:
+ *
+ *   data-vis-klant="herbestel"           "Bestel opnieuw met je look", alleen
+ *                                        als er een geleverde bestelling is
+ *   data-vis-klant="herbestel-of-start"  dat, of anders "Start een bestelling"
+ *   data-vis-klant="start-naast"         "Start een bestelling" naast de vorige,
+ *                                        alleen als die een herbestelling is
+ *   data-vis-klant="plan"                "Sluit een abonnement af", of met
+ *                                        credits "Bestel met je credits · 48 over"
+ *   data-vis-klant="melding"             de melding onderin het scherm met de
+ *                                        stand (KlantMelding.astro; tot 14 okt
+ *                                        "welkom", bovenin de voorpagina)
+ *   data-vis-wa="…{ref}…"                een WhatsApp-knop die het kenmerk van
+ *                                        de lopende bestelling mag krijgen
+ *
+ * Alle woorden staan in de pagina (src/data/klant.js, als data-attribuut);
+ * dit script zet alleen een naam, kenmerk of getal op de plek van {naam},
+ * {ref} of {n}, altijd met textContent. Een link uit het antwoord moet met
+ * /account/ of /start/ beginnen (of /nl/start/), anders blijft de link uit de
+ * pagina staan.
+ *
+ * (Sinds 14 oktober 2026 staat de melding op bijna elke pagina, en vraagt
+ * bijna elke pagina dus de stand — maar alleen als de kop van de site weet dat
+ * er iemand is ingelogd; zie "EERST WAT DE KOP AL WEET" in pasKlantstandToe.)
+ *
+ * DE STAND KOST IETS, dus alleen als er iets mee te vullen is: een pagina met
+ * een data-vis-klant vraagt /account/me?stand=1, een pagina met alleen
+ * data-vis-uit/-in vraagt /account/me zoals altijd. Een pagina met ALLEEN een
+ * WhatsApp-knop vraagt niets: de zwevende knop staat op elke pagina, en voor
+ * hem elke pagina /account/me laten vragen zou van elke bezoeker een
+ * ingelogde-klantvraag maken. Op die pagina's blijft de zin zoals hij was.
+ */
+const veiligeLink = (href) => typeof href === 'string' && /^\/(nl\/)?(account|start)(\/|\?|$)/.test(href);
+
+/*
+ * ── HET PROEFBLOK VOOR EEN KLANT — 14 oktober 2026 (v26-proefblok a) ───────
+ * Zie HalProef.astro. Een klant met minstens één bestelling krijgt het tweede
+ * tekstblok; met een levering ook de knop uit Studio en, als die levering vier
+ * beelden heeft, die vier beelden in plaats van de voorbeeldset. Een link naar
+ * een beeld moet precies /account/files/<id>/f zijn; anders blijft het
+ * voorbeeld staan. De <source>-elementen van de <picture> gaan eruit, anders
+ * kiest de browser de AVIF van het voorbeeld en niet het nieuwe beeld.
+ */
+function vulProefblok(el, stand, her) {
+  const woord = el.querySelector('[data-vis-proefwoord]');
+  const klant = el.querySelector('[data-vis-proefklant]');
+  if (!woord || !klant) return;
+  const isKlant = ingelogd === true && !!stand && stand.nieuw !== true;
+  woord.hidden = isKlant;
+  klant.hidden = !isKlant;
+  if (!isKlant) return;
+  if (el.dataset.visKlantKop) el.setAttribute('aria-labelledby', el.dataset.visKlantKop);
+  const kop = klant.querySelector('[data-vis-proefklant-kop]');
+  const zin = klant.querySelector('[data-vis-proefklant-zin]');
+  const knop = klant.querySelector('[data-vis-proefklant-knop]');
+  const credits = klant.querySelector('[data-vis-proefklant-credits]');
+  if (her) {
+    if (kop && kop.dataset.visHer) kop.textContent = kop.dataset.visHer;
+    const ref = String(her.ref || '').trim();
+    if (zin && zin.dataset.visHer && ref) zin.textContent = zin.dataset.visHer.replace('{ref}', ref);
+    if (knop) {
+      knop.href = her.href;
+      const l = knop.querySelector('[data-vis-label]');
+      if (l && knop.dataset.visHer) l.textContent = knop.dataset.visHer;
+    }
+    const beelden = (Array.isArray(her.beelden) ? her.beelden : []).filter((b) => typeof b === 'string' && /^\/account\/files\/\d+\/f$/.test(b));
+    const imgs = [...el.querySelectorAll('.h-vier img')];
+    if (beelden.length >= imgs.length && imgs.length) {
+      imgs.forEach((img, i) => {
+        const pic = img.parentElement;
+        if (pic && pic.tagName === 'PICTURE') pic.querySelectorAll('source').forEach((bron) => bron.remove());
+        img.removeAttribute('srcset');
+        img.src = beelden[i];
+      });
+    }
+  }
+  const n = Math.max(0, Math.floor(Number(stand.saldo) || 0));
+  if (credits && n > 0 && credits.dataset.visZin) {
+    credits.textContent = credits.dataset.visZin.replace('{n}', String(n));
+    credits.hidden = false;
+  }
+}
+
+function vulKlant(stand) {
+  document.querySelectorAll('[data-vis-klant]').forEach((el) => {
+    const soort = el.dataset.visKlant;
+    const label = el.querySelector('[data-vis-label]') || el;
+    const her = stand && stand.herbestel && veiligeLink(stand.herbestel.href) ? stand.herbestel : null;
+    let toon = ingelogd === true;
+    if (soort === 'herbestel') {
+      toon = toon && !!her;
+      if (her) el.href = her.href;
+    } else if (soort === 'herbestel-of-start') {
+      if (her) { el.href = her.href; label.textContent = el.dataset.visHerbestel || label.textContent; }
+    } else if (soort === 'start-naast') {
+      toon = toon && !!her;
+    } else if (soort === 'plan' && stand) {
+      const n = Math.max(0, Math.floor(Number(stand.saldo) || 0));
+      if (n > 0 && el.dataset.visCredits) {
+        label.textContent = el.dataset.visCredits.replace('{n}', String(n));
+        el.href = el.dataset.visStart || el.href;
+      } else if (stand.abonnee && el.dataset.visStartLabel) {
+        label.textContent = el.dataset.visStartLabel;
+        el.href = el.dataset.visStart || el.href;
+      }
+    } else if (soort === 'proefblok') {
+      vulProefblok(el, stand, her);
+      return;
+    } else if (soort === 'melding') {
+      /* Tonen of niet beslist meldingen(), niet deze lus: de melding wacht op
+         de cookiekeuze en op het kruisje van eerder. Hier alleen de woorden. */
+      if (stand) {
+        const kop = el.querySelector('[data-vis-welkom-kop]');
+        const naam = String(stand.naam || '').trim();
+        if (kop) kop.textContent = naam ? String(el.dataset.visWelkomNaam || '').replace('{naam}', naam) : (el.dataset.visWelkom || kop.textContent);
+        const l = stand.laatste;
+        const regel = el.querySelector('[data-vis-welkom-stand]');
+        const knop = el.querySelector('[data-vis-welkom-knop]');
+        if (l && regel && l.stand) {
+          regel.textContent = '';
+          if (l.ref) {
+            const b = document.createElement('b');
+            b.textContent = String(l.ref);
+            regel.append(b, ' \u00b7 ');
+          }
+          regel.append(String(l.stand));
+        }
+        if (l && knop && l.knop && veiligeLink(l.knop.href)) {
+          knop.href = l.knop.href;
+          const kl = knop.querySelector('[data-vis-label]') || knop;
+          kl.textContent = String(l.knop.label || kl.textContent);
+        }
+      }
+      return;
+    }
+    el.hidden = !toon;
+  });
+
+  if (stand && stand.lopend) {
+    document.querySelectorAll('a[data-vis-wa]').forEach((a) => {
+      const zin = String(a.dataset.visWa || '');
+      if (!zin.includes('{ref}')) return;
+      const basis = String(a.getAttribute('href') || '').split('?')[0];
+      if (!/^https:\/\/wa\.me\/\d+$/.test(basis)) return;
+      a.href = `${basis}?text=${encodeURIComponent(zin.replace('{ref}', stand.lopend)).replace(/'/g, '%27')}`;
+    });
+  }
+}
+
+/*
+ * ── DE MELDING ONDERIN HET SCHERM — 14 oktober 2026 ────────────────────────
+ *
+ * Lucas, 11:14 en 11:15. Zie KlantMelding.astro voor wat er staat en waarom;
+ * hier alleen WANNEER. Eén melding tegelijk:
+ *
+ *   'stand'  ingelogd, met een bestelling bovenaan Studio (klantStand.laatste),
+ *            en die bestelling-met-die-stand is niet eerder weggeklikt;
+ *   'proef'  niet ingelogd, of ingelogd zonder één bestelling (klantStand.nieuw),
+ *            en de proef is de laatste PROEF_WEG_DAGEN niet weggeklikt.
+ *
+ * Allebei pas na de cookiekeuze (die kaart staat op dezelfde plek), en de proef
+ * pas voorbij 60% van het scherm en als er geen proefblok in beeld staat. Elke
+ * voorwaarde wordt bij scrollen ÉN bij de cookiekeuze nagekeken: de oude
+ * proefkaart keek alleen bij scrollen, en wie eerst scrolde en dan de banner
+ * wegklikte, zag hem nooit (10 september 2026).
+ *
+ * Een melding die open stond, staat op de volgende pagina (zachte navigatie)
+ * meteen weer open, zonder in te schuiven. Het kruisje schrijft de notitie
+ * (MELDING_SLEUTEL); zonder opslag onthoudt deze module het tot het tabblad
+ * dicht gaat.
+ */
+let meldingOpen = null;
+let meldingDicht = { s: null, p: false };
+let meldingKijk = null;
+const meldingNotitie = () => {
+  try {
+    const j = JSON.parse(localStorage.getItem(MELDING_SLEUTEL) || 'null');
+    if (j && typeof j === 'object') return { s: typeof j.s === 'string' ? j.s : '', p: Number(j.p) || 0 };
+  } catch { /* geen opslag of rommel: dan als nieuw */ }
+  return { s: '', p: 0 };
+};
+/* De hoogte gaat als variabele mee (de WhatsApp-knop en de uitlegbalk schuiven
+   erboven, hal.css), en als scroll-padding: wie met Tab door de pagina gaat,
+   krijgt het veld met de focus boven de melding in beeld (WCAG 2.4.11). */
+const meldingHoogte = (el) => {
+  const h = el.offsetHeight;
+  document.documentElement.style.setProperty('--h-melding-h', `${h}px`);
+  document.documentElement.style.scrollPaddingBottom = `${h + 32}px`;
+};
+document.addEventListener('vis:consent', () => { if (meldingKijk) meldingKijk(); });
+window.addEventListener('resize', () => { const el = document.querySelector('.h-melding.is-open'); if (el) meldingHoogte(el); }, { passive: true });
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const el = document.querySelector('.h-melding.is-open');
+  if (el && (el.contains(document.activeElement) || document.activeElement === document.body)) el.querySelector('[data-vis-melding-sluit]')?.click();
+});
+
+function meldingen() {
+  if (meldingKijk) { window.removeEventListener('scroll', meldingKijk); meldingKijk = null; }
+  const elStand = document.querySelector('.h-melding[data-vis-klant="melding"]');
+  const elProef = document.querySelector('.h-melding[data-vis-proef]');
+  if (!elStand && !elProef) return;
+  const n = meldingNotitie();
+  const l = klantStand && klantStand.laatste;
+  const sleutel = l && l.stand ? `${l.ref || ''}|${l.stand}` : '';
+  let el = null;
+  let soort = null;
+  if (ingelogd === true && sleutel && elStand && n.s !== sleutel && meldingDicht.s !== sleutel) { el = elStand; soort = 'stand'; }
+  else if ((ingelogd === false || (ingelogd === true && klantStand && klantStand.nieuw === true)) && elProef && !(n.p > Date.now()) && !meldingDicht.p) { el = elProef; soort = 'proef'; }
+  if (!el) return;
+
+  if (!el.dataset.visGebonden) {
+    el.dataset.visGebonden = '1';
+    el.querySelector('[data-vis-melding-sluit]')?.addEventListener('click', () => {
+      const focus = el.contains(document.activeElement);
+      el.classList.remove('is-open', 'is-meteen');
+      document.documentElement.style.removeProperty('--h-melding-h');
+      document.documentElement.style.scrollPaddingBottom = '';
+      const weg = () => { el.hidden = true; };
+      el.addEventListener('transitionend', weg, { once: true });
+      setTimeout(weg, 600);
+      meldingOpen = null;
+      const nu = meldingNotitie();
+      if (soort === 'stand') { nu.s = sleutel; meldingDicht.s = sleutel; } else { nu.p = Date.now() + PROEF_WEG_DAGEN * 86400000; meldingDicht.p = true; }
+      try { localStorage.setItem(MELDING_SLEUTEL, JSON.stringify(nu)); } catch { /* dan alleen dit tabblad */ }
+      /* De focus niet in het niets laten vallen: terug naar het begin van de inhoud. */
+      if (focus) document.getElementById('main')?.focus({ preventScroll: true });
+    });
+  }
+
+  const open = (meteen) => {
+    meldingOpen = soort;
+    el.hidden = false;
+    if (meteen) {
+      el.classList.add('is-meteen', 'is-open');
+      meldingHoogte(el);
+      requestAnimationFrame(() => requestAnimationFrame(() => el.classList.remove('is-meteen')));
+      return;
+    }
+    requestAnimationFrame(() => requestAnimationFrame(() => { meldingHoogte(el); el.classList.add('is-open'); }));
+  };
+  if (meldingOpen === soort) { open(true); return; }
+
+  const mag = () => {
+    /* Dezelfde vraag als de cookiekaart stelt: een antwoord op een oudere
+       versie van de vraag telt niet, want dan staat de kaart er weer. */
+    if (!readConsent()) return false;
+    if (soort !== 'proef') return true;
+    if (window.scrollY < window.innerHeight * 0.6) return false;
+    for (const blok of document.querySelectorAll('section.h-proef')) {
+      const r = blok.getBoundingClientRect();
+      if (r.top < window.innerHeight && r.bottom > 0) return false;
+    }
+    return true;
+  };
+  const kijk = () => {
+    if (!el.isConnected || meldingOpen) return;
+    if (!mag()) return;
+    window.removeEventListener('scroll', kijk);
+    if (meldingKijk === kijk) meldingKijk = null;
+    open(false);
+  };
+  meldingKijk = kijk;
+  if (soort === 'proef') window.addEventListener('scroll', kijk, { passive: true });
+  kijk();
+}
 
 function pasKlantstandToe() {
   const uit = [...document.querySelectorAll('[data-vis-uit]')];
   const aan = [...document.querySelectorAll('[data-vis-in]')];
-  if (!uit.length && !aan.length) return;
+  const vul = document.querySelector('[data-vis-klant]');
+  if (!uit.length && !aan.length && !vul) return;
 
+  /* data-vis-uit is sinds 14 oktober 2026 "alleen voor wie nog niets bestelde":
+     een nieuw account mag de proef nog doen, dus de proefknop blijft voor hem
+     staan. Zonder stand (een pagina die hem niet vraagt) telt ingelogd als klant. */
+  /* Een merkteken op <html> zodra de stand is toegepast (14 oktober 2026): de
+     browsertoetsen wachten daarop in plaats van op een vaste tijd, die met vier
+     toetsen tegelijk (UITROLLEN.bat) soms te kort was. Verder leest niets hem. */
+  const gezet = () => { document.documentElement.dataset.klantstand = 'gezet'; };
   const zet = (klant) => {
-    uit.forEach((el) => { el.hidden = klant; });
+    const metBestelling = klant && !(klantStand && klantStand.nieuw === true);
+    uit.forEach((el) => { el.hidden = metBestelling; });
     aan.forEach((el) => { el.hidden = !klant; });
   };
 
-  if (ingelogd !== null) { zet(ingelogd); return; }
+  /* Het antwoord is er al (zachte navigatie), en de stand ook als deze pagina
+     hem nodig heeft: meteen goed zetten, zonder tweede vraag. */
+  if (ingelogd === false) { zet(false); if (vul) vulKlant(null); meldingen(); gezet(); return; }
+  const wilStand = !!vul || uit.length > 0;
+  if (ingelogd === true && (!wilStand || klantStand !== undefined)) { zet(true); if (vul) vulKlant(klantStand); meldingen(); gezet(); return; }
   if (typeof fetch !== 'function') return;
 
-  fetch('/account/me', { credentials: 'same-origin', headers: { accept: 'application/json' } })
-    .then((r) => { ingelogd = r.ok; zet(ingelogd); })
+  /* ── EERST WAT DE KOP AL WEET — 14 oktober 2026 ─────────────────────────────
+     Sinds de melding staat er op bijna elke pagina een data-vis-klant, en
+     /account/me deelt zijn emmer per IP met de pagina's van Studio (PAGE_LIMIT
+     in account.js). De kop van de site vraagt hem al, met een momentopname van
+     twee minuten (window.visAccount in Layout.astro, sessionStorage vis_acct).
+     Zegt die dat er niemand is ingelogd, dan geen eigen vraag; anders delen we
+     zijn vraag, en alleen een ingelogde klant kost er één extra: de stand. */
+  const taal = document.documentElement.lang === 'nl' ? 'nl' : 'en';
+  let kopWeet = null;
+  try {
+    const snap = JSON.parse(sessionStorage.getItem('vis_acct') || 'null');
+    const vanAccount = !!document.referrer && new URL(document.referrer).origin === location.origin && new URL(document.referrer).pathname.indexOf('/account') === 0;
+    if (snap && snap.v === 1 && Date.now() - snap.at < 120000 && !vanAccount) kopWeet = !!snap.in;
+  } catch { /* geen opslag: dan gewoon vragen */ }
+  if (kopWeet === false || (kopWeet === null && typeof window.visAccount === 'function')) {
+    const eerst = kopWeet === false ? Promise.resolve(null) : window.visAccount();
+    eerst.then((me) => {
+      if (me) { vraag(); return; }
+      ingelogd = false;
+      zet(false);
+      if (vul) vulKlant(null);
+      meldingen(); gezet();
+    }).catch(() => {});
+    return;
+  }
+  vraag();
+
+  function vraag() {
+  const adres = wilStand ? `/account/me?stand=1&taal=${taal}` : '/account/me';
+  fetch(adres, { credentials: 'same-origin', headers: { accept: 'application/json' } })
+    .then(async (r) => {
+      ingelogd = r.ok;
+      if (r.ok && wilStand) {
+        try { klantStand = (await r.json()).stand || null; } catch { klantStand = null; }
+      }
+      zet(ingelogd);
+      if (vul) vulKlant(ingelogd ? klantStand : null);
+      meldingen(); gezet();
+    })
     .catch(() => { /* offline of onbereikbaar: de pagina blijft zoals hij is */ });
+  }
 }
 
 export function init() {

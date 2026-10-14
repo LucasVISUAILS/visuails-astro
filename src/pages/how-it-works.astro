@@ -1,4 +1,6 @@
 ---
+// VISUAILS — /how-it-works: in de hal sinds 13 oktober 2026 (afvinklijst 11, alles doen). De pagina
+// staat in HowItWorksHal.astro; de vorige (HowItWorksPage.astro) staat op de opruimlijst.
 // VISUAILS — /how-it-works (English). The page body lives in
 // HowItWorksPage.astro so that /how-it-works and /nl/how-it-works cannot drift
 // apart; only the meta differs here.
@@ -9,7 +11,7 @@
 // "in about 24 hours" — task #190 retires that claim, so the timing here comes
 // from turnaround() like every other timing string on the site.
 import Layout from '../layouts/Layout.astro';
-import HowItWorksPage from '../components/HowItWorksPage.astro';
+import HowItWorksHal from '../components/HowItWorksHal.astro';
 //
 // The old last clause named a package band — "for 25–30 products" — which is
 // the offer section 0 of src/data/pricing.js retired. The count that matters
@@ -24,6 +26,6 @@ const description =
   `is fixed once you pay.`;
 ---
 
-<Layout title="How it works — VISUAILS" description={description}>
-  <HowItWorksPage lang="en" />
+<Layout huid="hal" title="How it works — VISUAILS" description={description}>
+  <HowItWorksHal lang="en" />
 </Layout>

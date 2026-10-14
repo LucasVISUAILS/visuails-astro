@@ -68,3 +68,19 @@ for (const [name, fill] of Object.entries(COLOURS)) {
 }
 
 console.log(`\n▶ mark drawn from <symbol id="markglyph"> (${VW}×${VH}) at ${H}px = 3× of the 32px header`);
+
+/* ── HET WOORDMERK VOOR DE KOP VAN DE MAIL — 14 oktober 2026 ─────────────────
+   De mail kreeg de kop van de hal: wit, met het woordmerk (src/data/woordmerk.js)
+   in inkt, 22 px hoog en dus 3× = 66 px in het bestand. Uit hetzelfde pad als de
+   site, zodat een nieuwe letter ook de mail bereikt met `npm run mail:assets`. */
+const { WOORDMERK } = await import('../src/data/woordmerk.js');
+const WH = 66;
+const WW = Math.round(WH * (WOORDMERK.breed / WOORDMERK.hoog));
+const wsvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${WW}" height="${WH}" viewBox="${WOORDMERK.symbool}"><path fill="#0F0C24" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg>`;
+const wfile = path.join(OUT, 'woordmerk-inkt.png');
+await sharp(Buffer.from(wsvg), { density: 384 })
+  .resize({ width: WW, height: WH, fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+  .png({ compressionLevel: 9 })
+  .toFile(wfile);
+const wmeta = await sharp(wfile).metadata();
+console.log(`  ${path.relative(ROOT, wfile)}  ${wmeta.width}×${wmeta.height}  ${(fs.statSync(wfile).size / 1024).toFixed(1)} kB  (124 × 22 in de mail)`);

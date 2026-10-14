@@ -47,7 +47,6 @@ import {
   queueAdd, queueLock, monthKey,
 } from '../src/lib/subscription.js';
 import { slotBalans, vensterVoor, monthMinus, subMaandBruto, subEersteBetalingBruto, creditsPerSoort } from '../src/lib/slots.js';
-import { startPlanWindow } from '../src/lib/planStart.js';
 import { PLAN_SLOTS, PLAN_CREDITS } from '../src/data/pricing.js';
 
 let goed = 0; let totaal = 0;
@@ -182,24 +181,17 @@ let a1; let a2;
      tests/slots.test.mjs, met de prijs van een hook erbij. */
 }
 
-console.log('\n4 · Lucas start de week');
-let week;
+/* ── 4 EN 5 · DE WEEK STARTEN EN ANNULEREN ZIJN WEG — ronde 10, 8 okt 2026 ──
+   "Lucas start de week" en "Lucas annuleert die week weer" gingen mee weg met
+   het weeksysteem (§28.6). Om de rest van de keten in dezelfde toestand te
+   laten beginnen, worden de twee producten hier losgemaakt: de credits zijn
+   terug en ze staan weer als concept op de (oude) lijst. */
+console.log('\n5 · de producten worden losgemaakt, en het adminpaneel toont het saldo');
 {
-  week = await startPlanWindow(env, 1);
-  ok('er ontstaat een bestelling', [week.ok, week.aantal], [true, 2]);
-  ok('zonder bedrag en op payment_status plan',
-    db.prepare('SELECT total_cents, payment_status FROM orders WHERE id = ?').get(week.orderId),
-    { total_cents: 0, payment_status: 'plan' });
-  /* DE NAAD DIE HET DUURST IS. Ging hier ook nog een slot af, dan betaalt de
-     klant twee keer voor hetzelfde product en ziet niemand het. */
-  ok('en er gaat NIETS extra af', (await saldo()).verbruikt, creditsPerSoort('catalog') * 2);
-  ok('het concept zonder foto’s staat er nog',
-    db.prepare('SELECT COUNT(*) AS n FROM plan_queue WHERE taken_at IS NULL').get().n, 1);
-}
-
-console.log('\n5 · Lucas annuleert die week weer');
-{
-  const { adminGet, adminPost } = await import('../src/lib/admin.js');
+  const { queueUnlock } = await import('../src/lib/subscription.js');
+  await queueUnlock(env, 1, a1.id);
+  await queueUnlock(env, 1, a2.id);
+  const { adminGet } = await import('../src/lib/admin.js');
   const { mintToken, hashToken } = await import('../src/lib/token.js');
   const token = await mintToken();
   db.prepare("INSERT INTO admin_users (email, password_hash) VALUES ('lucas@visuails.com', 'x')").run();
@@ -208,14 +200,7 @@ console.log('\n5 · Lucas annuleert die week weer');
     .run(adminId, await hashToken(token));
   const kop = { cookie: `vis_admin=${token}`, origin: 'https://visuails.com' };
 
-  const res = await adminPost({
-    request: new Request(`https://visuails.com/admin/orders/${week.orderId}/cancel`, {
-      method: 'POST', headers: { ...kop, 'content-type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ reason: 'Merk stopt met de lijn.' }).toString(),
-    }), env, waitUntil() {},
-  });
-  ok('de annulering gaat door', res.status, 303);
-  ok('de slots zijn terug', (await saldo()).verbruikt, 0);
+  ok('de credits zijn terug', (await saldo()).verbruikt, 0);
   ok('en de producten staan weer op de lijst, als concept',
     db.prepare('SELECT COUNT(*) AS n FROM plan_queue WHERE id IN (?, ?) AND locked_at IS NULL AND taken_at IS NULL')
       .get(a1.id, a2.id).n, 2);
@@ -227,8 +212,12 @@ console.log('\n5 · Lucas annuleert die week weer');
      per soort — zie de kop van migratie 0051. Wat de toets bewaakt is niet het
      woord maar de KETEN: wat de klant op zijn eigen scherm ziet, ziet Lucas in
      /admin, uit dezelfde planState(). */
-  ok('het adminpaneel toont het creditsaldo', /credits over/.test(paneel), true);
+  /* Sinds 2.07 (8 oktober 2026) komt het saldo uit het creditboek, in dezelfde
+     woorden als op /account/plan (creditWeergave.js). Deze keten schrijft nog
+     in subscription_slots en niet in het boek, dus daar staat "geen credits". */
+  ok('het adminpaneel toont het creditsaldo', /<strong>Je hebt (\d+ credits?|geen credits)<\/strong>/.test(paneel), true);
   ok('  en noemt de complete bundel niet meer', !/Complete bundel/.test(paneel), true);
+  ok('  en heeft geen knop "Start deze week" meer', /Start deze week|Abonnementsweek/.test(paneel), false);
   globalThis.__kop = kop;
 }
 
@@ -262,7 +251,6 @@ console.log('\n7 · de incasso mislukt');
     db.prepare('SELECT status, pause_reason FROM subscriptions WHERE id = ?').get(sub.id),
     { status: 'paused', pause_reason: 'payment_failed' });
   ok('vastzetten kan niet meer', (await queueLock(env, 1, a2.id)).reden, 'abonnement-paused');
-  ok('en de week starten ook niet', (await startPlanWindow(env, 1)).reden, 'abonnement-paused');
   ok('het saldo blijft ongemoeid staan voor als hij terugkomt', (await saldo()).verbruikt, creditsPerSoort('catalog'));
 }
 

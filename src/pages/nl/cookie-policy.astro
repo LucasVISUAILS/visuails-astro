@@ -1,8 +1,13 @@
 ---
+// ── IN DE HAL — 13 oktober 2026 (afvinklijst 19, alles doen) ──────────────────────────
+// De omhulling is JuridischHal.astro: de kop van de hal, een inhoud, en het document in rijen.
+// De tekst hieronder is dezelfde; alleen de s22-omhulling en haar <style> gingen eruit.
+import JuridischHal from '../../components/JuridischHal.astro';
 // VISUAILS — Cookiebeleid (Nederlands). Vertaling van src/pages/cookie-policy.astro.
 // De levensduren komen uit src/data/cookies.js — zie de noot in dat bestand en in
 // de Engelse versie van deze pagina.
-import { SESSION_COOKIE_DAYS, PREFERENCE_COOKIE_DAYS, cookieDuur } from '../../data/cookies.js';
+import { SESSION_COOKIE_DAYS, PREFERENCE_COOKIE_DAYS, cookieDuur, CONCEPT_SLEUTEL, CONCEPT_DAGEN, MELDING_SLEUTEL, PROEF_WEG_DAGEN } from '../../data/cookies.js';
+// 8 oktober 2026 (o12): zie de noot "WAT ER BIJ KWAM" in de Engelse versie.
 // ── WAT HIER NIET MEER STAAT — 24 augustus 2026 ─────────────────────────────
 // De regel over `vis_admin` is eruit. Zie de noot in de Engelse versie van deze
 // pagina: een cookieverklaring gaat over wat er op het apparaat van de lézer
@@ -12,41 +17,16 @@ import Layout from '../../layouts/Layout.astro';
 // De datum stond hier uitgetypt, en nog negen keer elders. Zie de kop van
 // src/data/juridischeDatums.js: één bron, en een toets die hem tegen git houdt.
 import { bijgewerktOp } from '../../data/juridischeDatums.js';
-import '../../styles/stijl22.css';
+
 ---
 
-<Layout
+<Layout huid="hal"
   title="Cookiebeleid — VISUAILS"
   description="Hoe VISUAILS cookies gebruikt: essentiële cookies standaard, analytics alleen met jouw toestemming."
 >
-{/* ═══ EEN JURIDISCHE PAGINA IN DE STIJL VAN SECTIE 22 — 7 september 2026 ═══
-    De TEKST is woord voor woord onaangeraakt. Wat verandert is de omhulling:
-    één `.paneel` in plaats van drie secties, en de letters van sectie 22 op het
-    `.legal`-blok — dat blok zelf staat nog steeds in global.css en wordt hier
-    niet overgetypt. Zie `.s22.s22 .legal` in src/styles/stijl22.css; die zet de
-    letters voor alle zes juridische pagina's tegelijk.
+<JuridischHal lang="nl" doc="cookie-policy" rubriek="Juridisch" titel="Cookiebeleid" datum={bijgewerktOp('cookie-policy', 'nl')}>
+<Fragment slot="lead">Welke cookies deze site plaatst, wat elk ervan doet, en hoe je je antwoord verandert. Het zijn er vijf, en ze staan hieronder allemaal bij naam.</Fragment>
 
-    ALLE VIJF TEGELIJK, en dat is geen keuze maar een eis van de toets.
-    tests/juridische-datums.test.mjs bewaakt deze documenten als GROEP: vijf
-    pagina's die er hetzelfde uit horen te zien en waar niets afgaat als er
-    eentje uit de pas loopt. Toen /ai-act als eerste overging, viel die toets om
-    met de naam van dat bestand erin — precies zoals bedoeld. Het antwoord
-    daarop is niet de toets versoepelen maar de andere vier meenemen.
-
-    GEEN SLOTPANEEL. De andere pagina's eindigen op een `.paneel-slot`; een
-    juridische pagina niet. Het accent wijst een keuze aan, en aan het eind van
-    een document valt niets te kiezen — er staat een adres waar je terecht kunt.
-    Een slotpaneel met knoppen eronder zou daar een aanbieding van maken. */}
-<div class="s22">
-  <section class="paneel">
-    <header class="paneel-kop jur-kop">
-      <p class="etiket">Juridisch</p>
-      <h1 class="hoog">Cookiebeleid</h1>
-      <p class="lopend jur-lead">Welke cookies deze site plaatst, wat elk ervan doet, en hoe je je antwoord verandert. Het zijn er vijf, en ze staan hieronder allemaal bij naam.</p>
-      <p class="legal-meta">{bijgewerktOp('cookie-policy', 'nl')}</p>
-    </header>
-
-    <div class="legal jur-tekst">
     <h2>Wat cookies zijn</h2><p>Cookies zijn kleine tekstbestanden die een website op je apparaat kan opslaan. Ze worden vaak gebruikt om sites te laten werken, voorkeuren te onthouden en te meten hoe een site wordt gebruikt.</p>
     <h2>Hoe we ze gebruiken</h2><p>De VISUAILS-website is grotendeels statisch. Standaard gebruiken we alleen <strong>essentiële</strong> cookies die nodig zijn om de site te laten functioneren en om je privacykeuzes te onthouden. We laden geen advertentie- of trackingcookies zonder je toestemming.</p>
     <ul class="checklist">
@@ -59,39 +39,13 @@ import '../../styles/stijl22.css';
       <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_consent</code></strong> — onthoudt je keuze uit de cookiebanner, zodat we ophouden met vragen. Noodzakelijk, en de reden dat een weigering blijft staan. Verloopt na {cookieDuur(PREFERENCE_COOKIE_DAYS, 'nl')}, waarna we het opnieuw vragen.</span></li>
       <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_lang</code></strong> — onthoudt of je VISUAILS in het Nederlands of het Engels leest, en wordt alleen gezet als je de taalknop gebruikt (op de site of in Studio). Daardoor opent visuails.com de volgende keer in de taal die je koos. Noodzakelijk. Verloopt na {cookieDuur(PREFERENCE_COOKIE_DAYS, 'nl')}.</span></li>
       <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_nav</code></strong> — onthoudt of je het menu in VISUAILS Studio hebt ingeklapt, en wordt alleen gezet als je op die knop klikt. Noodzakelijk. Verloopt na {cookieDuur(PREFERENCE_COOKIE_DAYS, 'nl')}.</span></li>
-      <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_thema</code></strong> — onthoudt of je in VISUAILS Studio het lichte of het donkere scherm hebt gekozen, en wordt alleen gezet als je die schakelaar gebruikt. Noodzakelijk. Verloopt na {cookieDuur(PREFERENCE_COOKIE_DAYS, 'nl')}.</span></li>
     </ul>
-    <p>Dat zijn ze alle vijf. Geen advertentiecookies, geen trackingpixels, geen embeds van derden, en geen analytics tenzij jij die aanzet — en dan is het Cloudflare Web Analytics, dat zelf cookieloos is en niets op je apparaat plaatst. We delen met niemand iets.</p>
+    <p>Dat zijn ze alle vier. Geen advertentiecookies, geen trackingpixels, geen embeds van derden behalve de botcontrole hieronder, en geen analytics tenzij jij die aanzet — en dan is het Cloudflare Web Analytics, dat zelf cookieloos is en niets op je apparaat plaatst. Cloudflare verwerkt die tellingen voor ons; met niemand anders delen we ze.</p>
+    <h2>In je browser bewaard, niet als cookie</h2><p>Een paar kleine notities staan in de eigen opslag van je browser in plaats van in een cookie. Geen ervan wordt naar ons gestuurd, en geen ervan wordt gebruikt om je te volgen. Zolang een tabblad open is: of je bent ingelogd, zodat het menu de goede knop toont (<code>vis_acct</code>); na een bestelling de referentie, het aantal producten, de dienst, de leverdatum, of je voorrang koos en het e-mailadres dat je opgaf, voor de bedankpagina (<code>vis-ty-…</code>, <code>vis-open-order</code>); en de antwoorden van een formulier dat je net verstuurde, zodat ze terugkomen als er iets verbeterd moet worden (<code>vis-form-terug</code>). Dat is allemaal weg zodra je het tabblad sluit. Twee notities blijven langer staan. Begin je een bestelling maar plaats je hem nog niet, dan onthoudt dit apparaat je keuzes — look, aantal, opties en de namen van je producten — en welke foto’s er al bij ons staan, zodat je verder kunt waar je was (<code>{CONCEPT_SLEUTEL}</code>). Je naam, e-mailadres, telefoon en adres staan daar niet in. Die notitie blijft {cookieDuur(CONCEPT_DAGEN, 'nl')} staan en verdwijnt zodra je de bestelling plaatst of opnieuw begint. En klik je een melding onderin het scherm weg, dan onthoudt dit apparaat dat (<code>{MELDING_SLEUTEL}</code>): die over je bestelling komt pas terug als er iets aan die bestelling verandert, die over de proef na {cookieDuur(PROEF_WEG_DAGEN, 'nl')}. Er staat alleen het kenmerk van die bestelling in, verder niets over wie je bent.</p>
+    <p><strong>De stappenteller in het bestelformulier.</strong> Het bestelformulier telt tot welke stap mensen komen, zodat we zien waar een bestelling vastloopt: één getal per dag, stap en taal. In die telling zit geen cookie, geen kenmerk en geen ip-adres, dus niets ervan leidt naar jou terug — en daarom is er geen toestemming voor nodig.</p>
+    <p><strong>De botcontrole op formulieren.</strong> Formulieren op deze site kunnen tegen geautomatiseerd misbruik beschermd worden met Cloudflare Turnstile. Dat is beveiliging, geen analytics: het kijkt naar technische signalen van je browser en verbinding, zoals je ip-adres en het type browser, om een mens van een script te onderscheiden. Cloudflare verwerkt die signalen voor ons, en gebruikt ze daarnaast voor zichzelf om zijn botherkenning te verbeteren. De grondslag is ons gerechtvaardigd belang om de formulieren bruikbaar te houden; zie ons <a href="/nl/privacy/">privacybeleid</a>.</p>
     <h2>Cookies beheren</h2><p>Gebruik de link <button type="button" class="legal-cc" data-cc-reopen>cookievoorkeuren</button> — die staat in de voettekst van elke pagina — om je antwoord op elk moment te wijzigen, inclusief het intrekken van een ja. Weigeren is precies zo makkelijk als accepteren en kost je niets: de site werkt in beide gevallen identiek. Je kunt cookies ook wissen of blokkeren in je browserinstellingen, al zorgt het blokkeren van de noodzakelijke ervoor dat het klantenportaal je niet meer onthoudt.</p>
     <h2>Contact</h2><p>Vragen over dit beleid? Mail <a href="mailto:hello@visuails.com">hello@visuails.com</a>. Zie ook ons <a href="/nl/privacy/">Privacybeleid</a>.</p>
-    </div>
-  </section>
-</div>
+    
+</JuridischHal>
 </Layout>
-
-<style>
-  /* Een juridisch document leest in één kolom. 46rem is ongeveer 75 tekens in
-     deze letter — de bovengrens uit de leesbaarheidsregel van DESIGN.md, en
-     ruimer dan de 34em van `.lopend` omdat dit een document is en geen
-     verkooptekst. */
-  .jur-kop { max-width: 46rem; margin-bottom: clamp(1.6rem, 3vw, 2.4rem); }
-  .jur-lead { max-width: none; font-size: clamp(1.05rem, 1.8vw, 1.25rem); color: var(--inkt); }
-  .jur-tekst { max-width: 46rem; }
-
-  /* Het slot: een adres, geen aanbieding. Zie de noot bovenaan. */
-  .jur-uit { margin-top: clamp(2.5rem, 5vw, 4rem); padding-top: clamp(1.6rem, 3vw, 2.4rem); border-top: 1px solid var(--lijn); }
-  .jur-uit .acties { margin-top: 1.4rem; }
-</style>
-
-<style>
-  /* `.legal` staat sinds 3 september 2026 één keer in src/styles/global.css — zie
-     de noot daar; op 24 augustus is dat wel opgeschreven maar niet gedaan. Deze
-     pagina had bovendien een eigen kopmaat (1,3rem tegen 1,5rem elders), een eigen
-     kolombreedte en een `stack-lg`-wikkel met acht losse marges; allemaal weg, want
-     dit is dezelfde soort pagina als /terms en /privacy en hoort er ook zo uit te
-     zien. Wat hier blijft staan is het enige wat écht alleen hier bestaat. */
-  /* The withdrawal control inside body copy. It is a <button> because it opens
-     a panel, and it is styled as the link beside it because a button that
-     looks like a button in the middle of a sentence reads as an advert. */
-  .legal-cc { background: none; border: 0; padding: 0; font: inherit; color: var(--accent-text); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
-</style>

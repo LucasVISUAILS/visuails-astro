@@ -27,7 +27,7 @@
 import { readFileSync } from 'node:fs';
 import {
   GARMENTS, GARMENT_IDS, CROPS, CONTEXT_SLOTS, CONTEXT_SLOT_IDS,
-  garment, cropFor, faceInFrame, modelQuestion,
+  garment, cropFor,
   contextSlots, contextAllowed, maxContext,
   contextDefault, CONTEXT_OURS, CONTEXT_UPLOAD_PREFIX, copy,
 } from '../src/data/garments.js';
@@ -47,17 +47,21 @@ console.log('de uitsnede bepaalt of er een gezicht in beeld staat');
   /* De vijf zonder gezicht. Dit is de lijst waar Lucas om vroeg: *"wanneer je een
      broek on-model foto krijgt krijg je geen model gezicht erbij, wellicht alleen
      female/male optie."* */
+  /* faceInFrame() en modelQuestion() zijn op 8 oktober 2026 weggehaald (punt
+     9.01, §17.20: niets riep ze aan). Wat ze lazen — `face` op de uitsnede — staat
+     er nog, en dat is wat hier nu getoetst wordt. */
+  const gezicht = (id) => cropFor(id).face === true;
   for (const id of ['trousers', 'shorts', 'skirt', 'shoes', 'socks', 'belt']) {
-    ok(`${id}: geen gezicht in beeld`, faceInFrame(id), false);
-    ok(`  dus geen keuze uit de roster`, modelQuestion(id), 'presenting');
+    ok(`${id}: geen gezicht in beeld`, gezicht(id), false);
   }
   for (const id of ['top', 'outerwear', 'dress', 'headwear', 'bag']) {
-    ok(`${id}: gezicht in beeld`, faceInFrame(id), true);
-    ok(`  dus wel een keuze uit de roster`, modelQuestion(id), 'roster');
+    ok(`${id}: gezicht in beeld`, gezicht(id), true);
   }
   /* Zalando: "body cropping allowed as long as the article remains recognizable" —
      een gezichtsloze on-model shot is dus toegestaan en geen afwijking. */
-  ok('er zijn typen van beide soorten', new Set(GARMENT_IDS.map(faceInFrame)).size, 2);
+  ok('er zijn typen van beide soorten', new Set(GARMENT_IDS.map(gezicht)).size, 2);
+  const G = await import('../src/data/garments.js');
+  ok('faceInFrame() en modelQuestion() bestaan niet meer', ['faceInFrame', 'modelQuestion'].filter((n) => n in G), []);
 }
 
 console.log('\nde keuzes zijn de uitsnede MINUS wat het product zelf bezet');
@@ -96,7 +100,7 @@ console.log('\nde keuzes zijn de uitsnede MINUS wat het product zelf bezet');
 console.log('\neen onbekend type valt naar de ruimste kant');
 {
   ok('een type dat niet bestaat, wordt other', garment('yogamat').id, 'other');
-  ok('en krijgt dus alle vragen', faceInFrame('yogamat'), true);
+  ok('en krijgt dus alle vragen', cropFor('yogamat').face, true);
   ok('en alle plekken', namen('yogamat').length, 3);
   ok('een leeg type ook', garment('').id, 'other');
   ok('en null ook', garment(null).id, 'other');

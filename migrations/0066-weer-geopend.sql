@@ -1,0 +1,21 @@
+-- ══════════════════════════════════════════════════════════════════════════════
+-- 0066 · WEER GEOPEND DOOR VISUAILS
+-- ══════════════════════════════════════════════════════════════════════════════
+--
+-- 11 oktober 2026, afvinklijst 3, w2 = b. Alleen een nieuwe kolom, leeg op
+-- bestaande rijen; niets wordt omgezet.
+--
+-- orders.reopened_at — wanneer Lucas een afgeronde bestelling in /admin met
+-- "Weer openen" weer opende (heropenBestelling() in src/lib/close.js). Leeg als
+-- dat nooit gebeurde. Twee dingen tellen vanaf dit moment:
+--   · het stille afronden 's nachts (STIL_AFRONDEN_SQL): de klant krijgt weer
+--     REVISIE_DAGEN dagen, en de bestelling gaat niet de eerstvolgende nacht
+--     alweer dicht omdat de levering al lang geleden was;
+--   · de revisiedatum in Studio en op de privélink (leverDatumsVan() in
+--     src/lib/leverdatums.js). De bewaardatum van de beelden blijft tellen vanaf
+--     de levering: die beelden verlopen op hun eigen datum.
+--
+-- Een goedkeuring die de klant zelf ongedaan maakt, zet deze kolom niet: dat is
+-- geen heropening door VISUAILS.
+
+ALTER TABLE orders ADD COLUMN reopened_at TEXT;

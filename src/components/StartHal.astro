@@ -1,0 +1,286 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — /start in de hal: kies een look, en het formulier opent ermee.
+ * 12 oktober 2026, afvinklijst 7 (groep 1, als eerste: "Start een bestelling" op
+ * de nieuwe voorpagina komt hier uit). Voorbeeld op /voorbeeld/start/ en
+ * /nl/voorbeeld/start/; de echte /start blijft StartPage.astro tot Lucas de
+ * groep goedkeurt (v-live = a: per groep live).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * DEZELFDE INHOUD EN DEZELFDE BELOFTES ALS StartPage.astro. Alleen de vorm is
+ * de hal (ontwerpplan versie 9, de huisregels in KLEURENSCHEMA.md), en de tekst
+ * is korter waar dat kon (v-tekst = a; de teksten staan in
+ * kladblok/TEKSTEN-GROEP-1.md). Wat tests/start-looks.test.mjs van /start eist,
+ * staat er hier ook, met dezelfde haakjes (data-st-groep, data-st-look,
+ * data-st-kies, data-st-proef, st-ook-rij, st-onder), zodat de wissel naar live
+ * één regel is:
+ *   · twee groepen met anker (#catalog, #lifestyle), met precies de bestelbare
+ *     looks uit de lookdata — niet de look op maat;
+ *   · per look: het beeld en "Kies deze look" naar het formulier met de look al
+ *     gekozen, de proef naar /test-sample?style=<look> (weg voor wie is
+ *     ingelogd, data-vis-uit), "Meer over deze look" naar de lookpagina, en de
+ *     zin uit de lookdata;
+ *   · "vanaf" is de onderste trede, de regel eronder het tarief bij één product
+ *     (eenProductRegel), de btw-noot;
+ *   · de rustige rij: abonnement, video, eigen look, merkmodel, proef, App ons;
+ *   · de vijf stappen uit de rail van het formulier.
+ *
+ * DE CATALOGGROEP HEEFT ÉÉN LOOK (Classic). Eén kaart in een rij van vier liet
+ * drie lege plekken over. Ernaast staat daarom wat je per product krijgt: de
+ * vier beelden van een proef met hun naam uit shots.js, en de setmaat uit het
+ * lexicon ("vanaf 4 foto's"). Zo is de lege plek uitleg in plaats van gat.
+ *
+ * GLAS: geen. Glas staat alleen boven beeld en hoogstens drie keer in beeld;
+ * met vier lookkaarten naast elkaar zou elke kaart er één krijgen.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/hal.css';
+import { waHref } from '../data/whatsapp.js';
+import NieuwTabblad from './NieuwTabblad.astro';
+import Note from './Note.astro';
+import HalBeweging from './HalBeweging.astro';
+import KopBeeld from './KopBeeld.astro';
+import {
+  ladderFloor, euro, vatLabel, vatLead, vatDetail,
+  WINDOW_THRESHOLD, TEST_SAMPLE, TIERS, clause, eenProductRegel, CATALOG_IMAGES, levervlakken,
+} from '../data/pricing.js';
+import { catalogStyles as catalogEn } from '../data/catalogStyles.js';
+import { catalogStyles as catalogNl } from '../data/catalogStyles.nl.js';
+import { styles as lifestyleEn } from '../data/styles.js';
+import { styles as lifestyleNl } from '../data/styles.nl.js';
+import { door } from '../data/orderDoors.js';
+import { productStand, PRODUCT_COPY } from '../data/eigenproduct.js';
+import { geleverd } from '../data/voorbeeldset.js';
+import { setSize } from '../data/lexicon.js';
+import { localizedPath } from '../i18n/ui.js';
+import { kleiner, beeldMaat } from '../lib/beeldAanwezig.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+const sample = TEST_SAMPLE[lang];
+const t0 = TIERS.unattended;
+
+/* Zoals StartPage.astro: Classic draagt geen eigen kaartbeeld en IS het
+   afgewerkte beeld op wit. */
+const CATALOG_STANDAARD = '/img/catalog-after.webp';
+const bestelbaar = (s: any) => s.slug !== 'custom' && Boolean(s.orderHref) && !s.orderLabel;
+type Look = { slug: string; naam: string; zin: string; kies: string; meer: string; proef: string; beeld: string; w?: number; h?: number };
+const naarLook = async (s: any, dienst: 'catalog' | 'lifestyle'): Promise<Look> => {
+  const bron = s.cardPhoto || s.heroPhoto || (dienst === 'catalog' ? CATALOG_STANDAARD : '');
+  const maat = await beeldMaat(bron);
+  return {
+    slug: s.slug,
+    naam: s.name,
+    zin: s.tagline,
+    kies: lp(String(s.orderHref).replace(/^\/nl(?=\/)/, '')),
+    meer: lp(`/${dienst}/${s.slug}`),
+    proef: `${lp('/test-sample')}?style=${encodeURIComponent(s.slug)}`,
+    beeld: kleiner(bron),
+    w: maat?.w,
+    h: maat?.h,
+  };
+};
+const catalogData = nl ? catalogNl : catalogEn;
+const lifestyleData = nl ? lifestyleNl : lifestyleEn;
+const groepen = (await Promise.all((['catalog', 'lifestyle'] as const).map(async (id) => {
+  const d = door(id)!;
+  const data = id === 'catalog' ? catalogData : lifestyleData;
+  return {
+    id,
+    naam: d.naam[lang],
+    kort: d.kort[lang],
+    vanaf: euro(ladderFloor(id), lang),
+    stand: productStand(id),
+    looks: await Promise.all(data.filter(bestelbaar).map((s: any) => naarLook(s, id))),
+  };
+}))).filter((g) => g.looks.length > 0);
+
+/* De set per catalogproduct: de vier beelden van een proef, met hun naam in
+   dezelfde volgorde (voorkant, achterkant, detail, op model). */
+/* De namen uit levervlakken() in pricing.js: dezelfde vier die de prijs belooft
+   (tests/stijlvel.test.mjs). Hier stond SHOTS[i].label, een veld dat shots.js
+   niet heeft: de vier namen onder de beelden waren leeg (12 oktober 2026). */
+const SET = geleverd(lang).map((b, i) => ({ ...b, naam: levervlakken('catalog', lang)[i] || '' }));
+
+const COPY = {
+  en: {
+    pil: 'Start',
+    h1: ['Pick a look.', 'The form follows.'],
+    lede: 'Nothing is charged until you pay.',
+    vanaf: 'From', per: `per product, ${vatLabel('excl', 'en')}`,
+    kies: 'Pick this look', meer: 'More about this look',
+    setKop: 'Per product', setZin: `${setSize('catalog', CATALOG_IMAGES, 'en')}, ready for your shop.`, setMeer: 'More images can be added in the order form.',
+    ladder: eenProductRegel('en'), ladderCta: 'See the full rate card',
+    ookLabel: 'Other ways to order', ook: 'Also',
+    rij: [
+      { naam: door('plan')!.naam.en, href: door('plan')!.lees },
+      { naam: `${door('video')!.naam.en} (on request)`, href: door('video')!.lees },
+      { naam: 'Your own look', href: '/start/custom-look' },
+      { naam: 'Your Brand Model', href: door('brand-model')!.lees },
+      { naam: sample.cta, href: '/test-sample' },
+    ],
+    wa: 'Message us on WhatsApp',
+    waText: "Hi VISUAILS, I'm not sure which look fits my products.",
+    afterPil: 'After you press it', afterH: ['Five steps,', 'then it’s with us.'],
+    afterLead: 'Video and custom work start with a short brief; we reply with a price and a date.',
+    steps: ['Order', 'Your photos', 'Your details', 'Timing', 'Confirm'],
+    facts: [
+      ['You pay at the end', 'Nothing is charged before the checkout.'],
+      [`From ${WINDOW_THRESHOLD} products, you pick the date`, `Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}: you pick a date, reserved when you order and fixed once you pay.`],
+      ['Then you approve image by image', 'Approve, ask for a change, download.'],
+    ],
+  },
+  nl: {
+    pil: 'Start',
+    h1: ['Kies een look.', 'Het formulier volgt.'],
+    lede: 'Er wordt niets afgeschreven tot je betaalt.',
+    vanaf: 'Vanaf', per: `per product, ${vatLabel('excl', 'nl')}`,
+    kies: 'Kies deze look', meer: 'Meer over deze look',
+    setKop: 'Per product', setZin: `${setSize('catalog', CATALOG_IMAGES, 'nl').replace(/^v/, 'V')}, klaar voor je webshop.`, setMeer: 'Meer beelden kies je erbij in het bestelformulier.',
+    ladder: eenProductRegel('nl'), ladderCta: 'Bekijk de volledige prijslijst',
+    ookLabel: 'Andere manieren om te bestellen', ook: 'Ook',
+    rij: [
+      { naam: door('plan')!.naam.nl, href: door('plan')!.lees },
+      { naam: `${door('video')!.naam.nl} (op aanvraag)`, href: door('video')!.lees },
+      { naam: 'Eigen look', href: '/start/custom-look' },
+      { naam: 'Jouw merkmodel', href: door('brand-model')!.lees },
+      { naam: sample.cta, href: '/test-sample' },
+    ],
+    wa: 'App ons',
+    waText: 'Hoi VISUAILS, ik weet niet zeker welke look bij mijn producten past.',
+    afterPil: 'Nadat je erop drukt', afterH: ['Vijf stappen,', 'dan ligt het bij ons.'],
+    afterLead: 'Video en maatwerk beginnen met een korte briefing; wij antwoorden met een prijs en een datum.',
+    steps: ['Bestelling', 'Je foto’s', 'Jouw gegevens', 'Levertijd', 'Bevestigen'],
+    facts: [
+      ['Je betaalt aan het eind', 'Er wordt niets afgeschreven vóór de checkout.'],
+      [`Vanaf ${WINDOW_THRESHOLD} producten kies je de datum`, `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD}: je kiest een datum, gereserveerd zodra je bestelt en vast zodra je betaalt.`],
+      ['Daarna keur je beeld voor beeld goed', 'Goedkeuren, een aanpassing vragen, downloaden.'],
+    ],
+  },
+};
+const c = COPY[lang];
+const ICOON = {
+  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
+  pijl: '<path d="M4.5 11.5l7-7M5.5 4.5h6v6"/>',
+  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
+  info: '<circle cx="8" cy="8" r="6.2"/><path d="M8 7.2v4.2M8 4.8v.1"/>',
+};
+const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+/* Het etiket "van jouw eigen productfoto's" in drie VORMEN en niet alleen drie
+   kleuren (zoals op de oude /start): een vinkje (met), een streep (zonder), en
+   plus-en-min (allebei kan). tests/eigenproduct.test.mjs. */
+const EIGEN_VORM: Record<string, string> = { met: '<path d="M3 8.5l3.2 3L13 4.5"/>', zonder: '<path d="M4.5 8h7"/>', beide: '<path d="M8 3.5v5M5.5 6h5M5.5 12h5"/>' };
+const eigenVorm = (stand: string) => `<svg viewBox="0 0 16 16" aria-hidden="true">${EIGEN_VORM[stand] || EIGEN_VORM.met}</svg>`;
+const DRIE = (n: number) => String(n).padStart(2, '0');
+/* Het beeld in de opening: afvinklijst 20 (v20-opening a), live sinds afvinklijst 21. Zie KopBeeld.astro. */
+const BEELD = {
+  soort: 'foto' as const, verhouding: '4 / 3',
+  foto: { src: '/img/lifestyle-phone-made-06.webp', positie: '50% 40%',
+    alt: nl ? 'Een lifestylebeeld in de look Phone-made' : 'A lifestyle image in the Phone-made look',
+    pil: 'Phone-made · lifestyle' },
+};
+---
+<div class="h-pagina h-st">
+
+  {/* ── 1 · DE KOP ─────────────────────────────────────────────────────────── */}
+  <header class="h-paginakop met-kopbeeld">
+    <div class="h-paginakop-tekst">
+      <p class="h-pil h-op" style="--d:0"><span>{c.pil}</span></p>
+      <h1 class="h-kop h-h1 h-op" style="--d:1"><span class="l">{c.h1[0]}</span> <span>{c.h1[1]}</span></h1>
+      <p class="h-lede h-op" style="--d:2">{c.lede}</p>
+    </div>
+    <KopBeeld {...BEELD} />
+  </header>
+
+  {/* ── 2 · DE LOOKS, PER DIENST ───────────────────────────────────────────
+      Met id: de voorpagina en oude links springen naar #catalog en #lifestyle. */}
+  <section class="h-sec h-st-kies" aria-label="Looks">
+    {groepen.map((g) => (
+      <section class:list={['h-st-groep', `n-${g.looks.length}`]} id={g.id} aria-labelledby={`st-g-${g.id}`} data-st-groep={g.id}>
+        <div class="h-st-groep-kop h-in">
+          <h2 id={`st-g-${g.id}`} class="h-kop h-h3">{g.naam}. <span class="l">{g.kort}.</span></h2>
+          <span class={`h-chip h-st-eigen is-${g.stand}`}><i set:html={eigenVorm(g.stand)} />{PRODUCT_COPY[lang][g.stand]}</span>
+        </div>
+        <ul class="h-st-looks" role="list">
+          {g.looks.map((l, i) => (
+            <li class="h-st-look h-in" style={`--d:${i}`} data-st-look={l.slug}>
+              {/* De foto is dezelfde link als de knop (vaste bestelregel, 19 sep): voor
+                  toetsenbord en schermlezer één link te veel, dus buiten de tabvolgorde. */}
+              <a class="h-st-beeld" href={l.kies} aria-hidden="true" tabindex="-1">
+                <img src={l.beeld} alt="" width={l.w} height={l.h} loading="lazy" decoding="async" />
+              </a>
+              <div class="h-st-tekst">
+                <h3 class="h-st-naam">{l.naam}</h3>
+                <p class="h-st-zin">{l.zin}</p>
+                <p class="h-st-tarief"><span>{c.vanaf}</span> <b>{g.vanaf}</b> <span>{c.per}</span></p>
+                <p class="h-st-wegen">
+                  <a class="h-knop h-knop-inkt h-knop-klein" href={l.kies} data-st-kies>{c.kies}<span class="o" set:html={ik('rechts')} /></a>
+                </p>
+                <p class="h-st-ook-links">
+                  <a class="h-st-proef" href={l.proef} data-st-proef data-vis-uit>{sample.cta}</a>
+                  <a class="h-st-meer" href={l.meer}>{c.meer}<span set:html={ik('pijl')} /></a>
+                </p>
+              </div>
+            </li>
+          ))}
+          {g.id === 'catalog' && g.looks.length === 1 && (
+            <li class="h-st-set h-in" style="--d:1" aria-label={c.setKop}>
+              <p class="h-st-set-kop"><span class="h-pil h-pil-wit"><span>{c.setKop}</span></span></p>
+              <p class="h-st-set-zin">{c.setZin}</p>
+              <span class="h-st-set-rij" role="list">
+                {SET.map((b, k) => (
+                  <span class="h-st-set-beeld" role="listitem" style={`--d:${k}`}>
+                    <span class="h-well"><img src={b.src} width={b.w} height={b.h} alt={b.alt} loading="lazy" decoding="async" /></span>
+                    <span class="h-st-set-naam">{b.naam}</span>
+                  </span>
+                ))}
+              </span>
+              <p class="h-st-set-meer">{c.setMeer}</p>
+            </li>
+          )}
+        </ul>
+      </section>
+    ))}
+
+    <div class="h-st-onder st-onder h-in">
+      <p class="h-st-regel"><span class="h-cirkel h-cirkel-mini h-cirkel-mist" aria-hidden="true" set:html={ik('info')} /><span>{c.ladder} <a class="h-st-link" href={lp('/pricing')}>{c.ladderCta}</a></span></p>
+      <p class="h-st-btw">{vatLead(lang)} <Note lang={lang} term={nl ? vatLabel('excl', lang) : 'VAT'} wide>{vatDetail(lang)}</Note></p>
+    </div>
+
+    {/* ── 3 · DE REST, IN ÉÉN RUSTIGE RIJ ── geen kaarten: dit zijn andere wegen. */}
+    <nav class="h-st-ook h-in" aria-label={c.ookLabel}>
+      <span class="h-st-ook-l">{c.ook}</span>
+      <ul class="h-st-ook-rij st-ook-rij" role="list">
+        {c.rij.map((r) => <li><a class="h-st-chip" href={lp(r.href)}>{r.naam}</a></li>)}
+        <li><a class="h-st-chip" href={waHref(c.waText)} target="_blank" rel="noopener">{c.wa}<span set:html={ik('pijl')} /><NieuwTabblad lang={lang} /></a></li>
+      </ul>
+    </nav>
+  </section>
+
+  {/* ── 4 · WAT ER DAARNA GEBEURT ── de vijf stappen uit de rail van OrderFlow.astro. */}
+  <section class="h-sec h-st-daarna" aria-labelledby="st-daarna">
+    <div class="h-st-band h-in">
+      <header class="h-st-band-kop">
+        <p class="h-pil h-pil-wit"><span>{c.afterPil}</span></p>
+        <h2 id="st-daarna" class="h-kop h-h2"><span class="l">{c.afterH[0]}</span> {c.afterH[1]}</h2>
+        <p class="h-st-band-lead">{c.afterLead}</p>
+      </header>
+      <ol class="h-st-stappen" role="list">
+        {c.steps.map((s, i) => (
+          <li class="h-st-stap" style={`--d:${i}`}>
+            <p class="h-nr" aria-hidden="true"><b>{DRIE(i + 1)}</b><i></i><span>/ {DRIE(c.steps.length)}</span></p>
+            <span class="h-st-stap-naam">{s}</span>
+          </li>
+        ))}
+      </ol>
+      <ul class="h-st-feiten" role="list">
+        {c.facts.map(([h, b], i) => (
+          <li style={`--d:${i}`}><i set:html={ik('check')} /><span><b>{h}</b>{b}</span></li>
+        ))}
+      </ul>
+    </div>
+  </section>
+</div>
+<HalBeweging />

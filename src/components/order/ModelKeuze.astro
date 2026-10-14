@@ -53,15 +53,20 @@ interface Props {
 const { lang, soort = 'catalog', verplicht = true } = Astro.props;
 const nl = lang === 'nl';
 
+/* ── SINDS 11 OKTOBER 2026 STAAT DIT BLOK WEER IN STAP 1 (F3, 1.09) ──────────
+   Eén keer gekozen voor de hele bestelling. "Hieronder aanpassen" klopte niet
+   meer: per product afwijken kan in stap 2, onder het ingeklapte "Meer over dit
+   product" op de kaart. De kop hieronder ("Waarom stap 2 de juiste plek is")
+   beschrijft de vorige stand. */
 const c = nl ? {
   h: 'Wie draagt het?',
   hint: verplicht
-    ? 'Kies een gezicht, of tik op het VISUAILS-vak: dan kiezen wij er een die bij je merk past. Per product kun je het hieronder aanpassen.'
+    ? 'Kies een gezicht, of tik op het VISUAILS-vak: dan kiezen wij er een die bij je merk past. Per product kun je in de volgende stap afwijken.'
     : 'Laat je hem staan, dan kiezen wij een gezicht dat bij je merk past.',
 } : {
   h: 'Who wears it?',
   hint: verplicht
-    ? 'Pick a face, or tap the VISUAILS tile and we choose one that fits your brand. You can change it per product below.'
+    ? 'Pick a face, or tap the VISUAILS tile and we choose one that fits your brand. You can change it per product in the next step.'
     : 'Leave it as it is and we pick a face that fits your brand.',
 };
 ---

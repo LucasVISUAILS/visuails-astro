@@ -33,7 +33,8 @@ import { d1, verseDb, telling } from './lib/d1sqlite.mjs';
 import { hashToken } from '../src/lib/token.js';
 import { handleSubscribeStart, handleSubscribeReturn, eersteTermijn } from '../src/lib/subscribe.js';
 import { prepayTotalCents, monthlyCents } from '../src/data/plans.js';
-import { productsFor, planProductBudget } from '../src/data/plans.js';
+import { productsFor, ABO_CREDITS_PLAFOND } from '../src/data/plans.js';
+import { PLAN_CREDITS } from '../src/data/pricing.js';
 import { customCreditsTotal, creditsProductEquivalent, CUSTOM_CREDITS_MIN, CUSTOM_CREDITS_MAX } from '../src/data/pricing.js';
 import { bundelVoor, subMaandCents, subProducten, subBrutoCents, creditsVoor } from '../src/lib/slots.js';
 import { subscriptionShape } from '../src/lib/subscription.js';
@@ -132,7 +133,12 @@ console.log('\nwat er niet eens bij Mollie langs komt');
 
 console.log('\nde weg naar de machtiging');
 {
-  const res = await start({ plan: 'studio', term: 'yearly', window_day: '8', lang: 'nl' });
+  /* 6.04 (8 oktober 2026): de tussentermijn (12 maanden, maandelijks
+     geïncasseerd) bestaat niet meer voor een NIEUW abonnement. */
+  const tussen = await start({ plan: 'studio', term: 'yearly', lang: 'nl' });
+  ok('de tussentermijn wordt geweigerd', tussen.headers.get('location'), '/nl/start/plan?fout=termijn');
+  ok('  zonder rij', telling(db, 'SELECT COUNT(*) FROM subscriptions'), 0);
+  const res = await start({ plan: 'studio', term: 'monthly', window_day: '8', lang: 'nl' });
   ok('de klant wordt doorgestuurd', res.status, 303);
   ok('naar het betaalscherm van Mollie', res.headers.get('location'), 'https://www.mollie.com/checkout/nep');
 
@@ -141,8 +147,10 @@ console.log('\nde weg naar de machtiging');
      met een kenmerk dat nergens bij hoort. */
   ok('de rij staat er', Boolean(r), true);
   ok('op pending', r.status, 'pending');
-  ok('met het gekozen plan en de termijn', [r.plan, r.term], ['studio', 'yearly']);
-  ok('en de gekozen dag', r.window_day, 8);
+  ok('met het gekozen plan en de termijn', [r.plan, r.term], ['studio', 'monthly']);
+  /* Ronde 10 (8 oktober 2026): de vaste week is weg. Een oud formulier dat
+     window_day nog meestuurt, schrijft niets meer in die kolom. */
+  ok('en geen vaste week meer, ook al stuurt het formulier hem mee', r.window_day, null);
   ok('de Mollie-klant is vastgelegd', r.mollie_customer_id, 'cst_nep');
   ok('maar er is nog geen mandaat', r.mollie_mandate_id, null);
   ok('en nog geen subscription', r.mollie_subscription_id, null);
@@ -193,6 +201,11 @@ console.log('\nterug van Mollie zonder mandaat is geen fout');
 
 console.log('\nmet een geldig mandaat gaat het abonnement lopen');
 {
+  /* De tussentermijn is sinds 6.04 niet meer te kiezen, maar een abonnement dat
+     er al op staat, loopt door tot zijn einde — ook als zijn machtiging nog moet
+     binnenkomen. Deze rij doet zich daarom voor als zo'n oud abonnement, zodat
+     de elf termijnen na de eerste blijven bewaakt. */
+  db.prepare("UPDATE subscriptions SET term = 'yearly' WHERE id = ?").run(rij().id);
   staat.mandaten = [
     { id: 'mdt_oud', status: 'valid', createdAt: '2026-01-01T10:00:00Z' },
     { id: 'mdt_nieuw', status: 'valid', createdAt: '2026-08-17T10:00:00Z' },
@@ -285,17 +298,19 @@ console.log('\neen kenmerk uit de url is van iedereen');
 
 console.log('\nde capaciteitspoort staat vóór de machtiging');
 {
-  /* Het budget is 30% van de begeleide maandcapaciteit, geteld over de database.
-     Vol is geen storing maar een volle agenda — en dat hoort de klant te lezen
-     voordat hij een machtiging afgeeft. */
+  /* Sinds 6.05 (8 oktober 2026) een plafond in CREDITS, geteld over de
+     database: de maandcredits van alle abonnementen samen tegen
+     ABO_CREDITS_PLAFOND (of de stand uit /admin). Vol is geen storing maar een
+     volle maand — en dat hoort de klant te lezen voordat hij een machtiging
+     afgeeft. */
   db.exec("DELETE FROM subscriptions");
-  const budget = planProductBudget();
+  const budget = ABO_CREDITS_PLAFOND;
   let n = 0;
   /* ELK VULABONNEMENT KRIJGT EEN EIGEN KLANT, en dat is geen omweg maar het punt:
      de partiële UNIQUE index laat één lopend abonnement per klant toe, dus een
      volle agenda bestaat uit verschillende merken. Eerste versie hing ze allemaal
      aan klant 8 en liep op die index stuk — de index deed precies zijn werk. */
-  for (let i = 0; i * productsFor('brand') < budget; i += 1) {
+  for (let i = 0; i * PLAN_CREDITS.brand + PLAN_CREDITS.starter <= budget; i += 1) {
     const kid = 100 + i;
     db.prepare('INSERT INTO customers (id, email) VALUES (?, ?)').run(kid, `vol${i}@voorbeeld.test`);
     db.prepare(
@@ -303,8 +318,8 @@ console.log('\nde capaciteitspoort staat vóór de machtiging');
     ).run(kid, `SUB-VOL-${i}`);
     n += 1;
   }
-  const vastgelegd = n * productsFor('brand');
-  ok(`de agenda is vol (${vastgelegd} van ${budget})`, vastgelegd >= budget, true);
+  const vastgelegd = n * PLAN_CREDITS.brand;
+  ok(`het plafond is bereikt voor een Starter (${vastgelegd} van ${budget} credits)`, vastgelegd + PLAN_CREDITS.starter > budget, true);
 
   const voor = staat.aanroepen.length;
   const res = await start({ plan: 'starter', term: 'monthly' });
@@ -374,14 +389,14 @@ console.log('\nen de weg bestaat echt — geen knop zonder draad');
      kaarten mee: wat hij bewaakt is dat de knop op de plankaart naar de
      keuzepagina wijst en niet naar het contactformulier, en dat blijft waar
      ongeacht op welke pagina de kaart staat. */
-  const plan = readFileSync(new URL('../src/components/PlansPage.astro', import.meta.url), 'utf8')
+  const plan = readFileSync(new URL('../src/components/PlansHal.astro', import.meta.url), 'utf8')
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
   ok('en de knop op de abonnementenpagina wijst naar de keuzepagina',
     /lp\('\/start\/plan'\)/.test(plan), true);
   ok('en niet meer naar het contactformulier', /pack-cta[^>]*\/contact/.test(plan), false);
   /* En de prijspagina wijst nog wel naar de abonnementen, zodat de twee manieren
      om te kopen vindbaar blijven vanaf elkaar. */
-  const prijs = readFileSync(new URL('../src/components/PricingPage.astro', import.meta.url), 'utf8')
+  const prijs = readFileSync(new URL('../src/components/PricingHal.astro', import.meta.url), 'utf8')
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
   /* Sinds 24 september 2026 met een eigen smalle band (pr-band) in plaats van
      PlanBand.astro — zie PAGINA-OPBOUW.md. De deur naar /plans blijft. */
@@ -551,8 +566,11 @@ console.log('\nde handlers roepen het aan, en in de goede volgorde');
   const redenen = [...startBody.matchAll(/terug\('([a-z]+)'/g)].map((m) => m[1]);
   ok('subscribe.js kent meer dan één reden', redenen.length > 1, true);
   for (const r of new Set(redenen)) {
+    /* `nakijken` (8 oktober 2026, o16) is een mededeling en geen fout: die heeft
+       een eigen blok met `data-plan-fout="nakijken"` in plaats van een regel in
+       FOUTEN. Beide vormen tellen. */
     ok(`de reden "${r}" heeft een blok in PlanPicker`,
-      picker.includes(`data-plan-fout={id}`) && picker.includes(`${r}:`), true);
+      (picker.includes(`data-plan-fout={id}`) && picker.includes(`${r}:`)) || picker.includes(`data-plan-fout="${r}"`), true);
   }
   ok('de blokken worden verborgen gerenderd en niet weggelaten',
     /data-plan-fout=\{id\} hidden/.test(picker), true);
@@ -572,7 +590,7 @@ console.log('\nde handlers roepen het aan, en in de goede volgorde');
    * PlanPicker vinkt standaard het middelste plan aan. Klikken op de duurste
    * kaart leverde dus de middelste keuze op, op een formulier dat eindigt in
    * een doorlopende machtiging. */
-  const plannen = readFileSync(new URL('../src/components/PlansPage.astro', import.meta.url), 'utf8');
+  const plannen = readFileSync(new URL('../src/components/PlansHal.astro', import.meta.url), 'utf8');
   ok('de knop op /plans draagt het plan-id',
     /\$\{lp\('\/start\/plan'\)\}\?plan=\$\{p\.id\}/.test(plannen), true);
   ok('en PlanPicker leest plan én term uit de URL',
@@ -736,28 +754,14 @@ console.log('\nde contactpoort voor alles wat eerst opgezet moet worden');
   /* Sinds 6 september 2026 tekent src/pages/account/plan.astro de zin, uit
      `elkProduct` dat planView() in account.js uitrekent. */
   const plan = readFileSync(new URL('../src/pages/account/plan.astro', import.meta.url), 'utf8');
-  ok('de zin over elk product staat achter een voorwaarde',
-    /\{v\.saldo\.elkProduct && <Fragment>\{t\.planEachProduct\}/.test(plan), true);
-  /* Sinds 19 september 2026 komt de lijst uit dienstenVoorAbo() en niet meer
-     uit de bundel: `complete` bestaat niet meer, en welke diensten een abonnee
-     mag kiezen is daarmee een eigen vraag geworden met een eigen antwoord. */
-  ok('en die voorwaarde leest de diensten van dit abonnement',
-    /const productSoorten = \(state\.diensten \|\| \[\]\)/.test(acc), true);
-  /* ── EN ZONDER ÉÉN SOORT BIJ NAAM ────────────────────────────────────────
-     Eerste opzet schreef `k === 'complete' || k === 'video-motion'` en viel
-     daarmee over de regel die tests/subscription.test.mjs sinds migratie 0035
-     aanhoudt: dit scherm mag geen soort kennen, anders tekent het het volgende
-     plan half. De vraag "is dit een product" hoort in pricing.js thuis en niet
-     hier — PRODUCT_SLOT_KINDS is afgeleid uit SLOT_KINDS, dus een nieuwe soort
-     komt er vanzelf goed uit. */
+  /* Sinds 2.07 (8 oktober 2026) staat die zin niet meer op de pagina: een
+     abonnee bestelt per dienst via twee knoppen, en de creditkaart zegt wat
+     elke dienst kost (catalogset en carrousel apart). Wat bewaakt blijft: de
+     pagina belooft nergens een carrousel bij elk product. */
+  ok('de pagina belooft geen carrousel bij elk product', /planEachProduct/.test(plan), false);
+  ok('en de creditkaart staat erop (wat elke dienst kost)', /<CreditKaart /.test(plan), true);
   ok('en noemt daarbij geen enkele soort bij naam',
     /elkProduct[^\n]*'(complete|catalog|lifestyle|video-motion|hooks)'/.test(acc), false);
-  ok('maar leunt op de afgeleide lijst uit pricing.js',
-    /PRODUCT_SLOT_KINDS\.includes\(k\)/.test(acc), true);
-  /* De regel over bijbestellen blijft juist wél staan: bij een zelf samengestelde
-     maand is dat het antwoord op "ik wil er deze maand eentje meer". */
-  ok('de regel over bijbestellen blijft onvoorwaardelijk',
-    /<\/Fragment>\}\{t\.planExtraNote\}<\/p>/.test(plan), true);
 }
 
 globalThis.fetch = echteFetch;

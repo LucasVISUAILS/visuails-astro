@@ -8,7 +8,9 @@
 // rebuild — what the page groups by, and why the old grouping (by whether we
 // can take payment) is what left video looking like something we do not do.
 import Layout from '../layouts/Layout.astro';
-import StartPage from '../components/StartPage.astro';
+// 12 oktober 2026 (afvinklijst 8, alles "doen"): deze pagina staat in de hal (huid="hal");
+// de vorige opmaak staat op _opruimen/LIJST.txt.
+import StartHal from '../components/StartHal.astro';
 
 /* ONDER DE 160 TEKENS, en dat is geteld en niet geschat: tests/nav.test.mjs meet
    elke gebouwde pagina.
@@ -19,14 +21,15 @@ import StartPage from '../components/StartPage.astro';
    stond en dus niet gevonden werd. De vier bestemmingen staan er nu alle vier
    in, in de woorden van de bezoeker, en de laatste zin is de belofte die deze
    pagina moest doen en niet deed. */
+/* 1.01 (8 oktober 2026): de pagina toont nu de looks per dienst. */
 const description =
-  `Images for your product page, your feed, both at once, or a clip. ` +
-  `Pick where they have to go \u2014 nothing is created or charged until you send the order.`;
+  `Pick a look for catalog or lifestyle images. ` +
+  `The order form opens with that look already chosen \u2014 nothing is charged until you pay.`;
 ---
 
-<Layout
+<Layout huid="hal"
   title="Start an order — VISUAILS"
   description={description}
 >
-  <StartPage lang="en" />
+  <StartHal lang="en" />
 </Layout>

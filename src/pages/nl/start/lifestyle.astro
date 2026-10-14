@@ -1,15 +1,19 @@
 ---
+// VISUAILS — /nl/start/lifestyle: in de hal sinds 13 oktober 2026 (afvinklijst 10, alles doen). De vorm komt uit
+// HalFormulier.astro en het blok DE FORMULIEREN in hal.css; de werking blijft van de onderdelen.
 // VISUAILS — /nl/start/lifestyle.
 // De pagina is vier imports en een servicenaam. De rest — de vijf stappen, de
 // copy in beide talen, het configblok dat pipeline.js leest — staat in
 // OrderFlow.astro. Het énige blok dat verschilt komt binnen via de slot.
+import HalFormulier from '../../../components/HalFormulier.astro';
 import Layout from '../../../layouts/Layout.astro';
 import OrderFlow from '../../../components/order/OrderFlow.astro';
 import StylePicker from '../../../components/order/StylePicker.astro';
 import ModelKeuze from '../../../components/order/ModelKeuze.astro';
 ---
 
-<Layout title="Lifestylecarrousels bestellen — VISUAILS" description="Je product in een gestylede scène, drie beelden per product. Kies de look en het aantal; het tarief daalt naarmate het aantal stijgt.">
+<Layout huid="hal" title="Lifestylecarrousels bestellen — VISUAILS" description="Je product in een gestylede look, vier beelden per product. Kies de look en het aantal; het tarief daalt naarmate het aantal stijgt.">
+  <HalFormulier soort="lifestyle">
   <OrderFlow lang="nl" service="lifestyle">
     {/* Stap 2, boven de productkaarten — zie ModelKeuze.astro. De slot
         heet "model" en staat in OrderFlow bij stap 2; waar dit blok in
@@ -20,4 +24,5 @@ import ModelKeuze from '../../../components/order/ModelKeuze.astro';
         OrderFlow.astro voor de meting die dat besliste. */}
     <StylePicker slot="look" lang="nl" />
   </OrderFlow>
+  </HalFormulier>
 </Layout>

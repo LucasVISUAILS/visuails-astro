@@ -1,0 +1,273 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — /plans in de hal. 12 oktober 2026, afvinklijst 7 (groep 1).
+ * Voorbeeld op /voorbeeld/plans/ en /nl/voorbeeld/plans/; de echte /plans blijft
+ * PlansPage.astro tot Lucas de groep goedkeurt (v-live = a).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * DEZELFDE INHOUD ALS PlansPage.astro, in dezelfde volgorde, in de vorm van de
+ * voorpagina. Elk bedrag en aantal komt uit pricing.js, plans.js en
+ * creditKaart.js. Wat bleef staan zoals de tests en het menu het verwachten:
+ *   · #plannen met drie kaarten; de knop draagt ?plan=<id> (tests/subscribe);
+ *   · #op-maat met de link naar /start/plan?plan=<maand op maat>#maat-credits;
+ *   · de creditkaart met id="creditkaart" en de kernzin;
+ *   · #binnenkort met #stock, #hooks en #editions (tests/nav).
+ *
+ * KORTER (v-tekst = a): de lange alinea "zo werkt het" is vier korte regels met
+ * een vinkje geworden, met precies dezelfde feiten (sparen tot 3 maanden, geldig
+ * na stoppen, bijkopen, de maandset). Zie kladblok/TEKSTEN-GROEP-1.md.
+ *
+ * VORM. Eén verloop met korrel (wat een credit is, bovenaan) en één donker vlak
+ * (de proef, onderaan). De creditkaart krijgt de hal-vorm in hal.css
+ * (body.hal .ck …), zodat Studio en /start/plan hem houden zoals hij is.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/hal.css';
+import {
+  euro, vatLabel, plans, PLAN_AMOUNT, CREDITS_GELDIG_MAANDEN,
+  STOCK_OFF_BRAND, STOCK_ON_BRAND,
+  CUSTOM_MONTH_ID, CUSTOM_CREDITS_MIN, CUSTOM_CREDITS_MAX,
+  customCreditsTotal, creditSaving, spaarPlafond, PLAN_CREDITS, SERVICE_CREDITS,
+} from '../data/pricing.js';
+import { planName } from '../data/planNames.js';
+import { noun } from '../data/lexicon.js';
+import { localizedPath } from '../i18n/ui.js';
+import { prepayFreeMonths } from '../data/plans.js';
+import { creditVertaling, creditKern, bijkoopRegel, BIJKOOP_MAX } from '../data/creditKaart.js';
+import { binnenkort } from '../data/binnenkort.js';
+import CreditKaart from './CreditKaart.astro';
+import HalProef from './HalProef.astro';
+import HalBeweging from './HalBeweging.astro';
+import KopBeeld from './KopBeeld.astro';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+const e = (n: number) => euro(n, lang);
+const ex = vatLabel('excl', lang);
+const planList = plans(lang);
+const pcts = planList.map((p: any) => p.savingPct).filter((x: number) => x > 0);
+const pctMin = Math.min(...pcts);
+const pctMax = Math.max(...pcts);
+const maatVanaf = customCreditsTotal(CUSTOM_CREDITS_MIN).total;
+const maatHref = `${lp('/start/plan')}?plan=${CUSTOM_MONTH_ID}#maat-credits`;
+const vrijMaanden = prepayFreeMonths('studio');
+
+const COPY = {
+  en: {
+    pil: 'Plans',
+    /* k-tel (afvinklijst 18): was "Credits every month." — vier regels op een telefoon, nu drie. */
+    h1: ['Monthly credits.', 'Yours to spend.'],
+    lede: `One monthly budget for catalog sets and carousels: ${pctMin}–${pctMax}% cheaper than ordering the same catalog sets one by one.`,
+    kies: 'Choose a plan',
+    creditPil: 'What a credit is', creditKop: 'How credits add up',
+    plansPil: 'Plans', plansKop: ['Three', 'plans.'],
+    perMaand: 'a month', perCredit: 'per credit', credits: 'credits',
+    bespaar: (s: string, n: number, los: string) => `Save ${s} a month — ${n} catalog sets one-off cost ${los}.`,
+    merkmodel: 'Your own Brand Model included',
+    merkmodelVooruit: 'Your own Brand Model included when you pay a year up front',
+    spaar: (n: number) => `Save up to ${n} credits; nothing expires while it runs`,
+    kiesPlan: (n: string) => `Choose ${n}`,
+    maatRegel: `Need something else? Choose your own number, from ${CUSTOM_CREDITS_MIN} to ${CUSTOM_CREDITS_MAX} credits a month, from ${e(maatVanaf)} ${ex}.`,
+    maatLink: 'Set your own number',
+    zoPil: 'How it works', zoKop: ['You order', 'like everyone else.'],
+    zoLead: 'Every month your credits come in. You spend them whenever you like, in the regular order form, and pay with credits instead of money.',
+    zo: [
+      [`Save up to ${CREDITS_GELDIG_MAANDEN} months`, `While your plan runs, nothing expires (${spaarPlafond(PLAN_CREDITS.studio)} credits on ${planName('studio', 'en')}).`],
+      ['Pause or stop', `Your credits stay valid until ${CREDITS_GELDIG_MAANDEN} months after your last monthly credits came in.`],
+      ['Short one month?', `Buy extra credits in VISUAILS Studio, ${bijkoopRegel('en')} (up to ${BIJKOOP_MAX} a month).`],
+      ['Plus the monthly set', 'With every plan; see below.'],
+    ],
+    termen: [
+      ['Monthly', 'Cancel any month, yourself in VISUAILS Studio.'],
+      ['12 months up front', `Pay 10, get 12: ${vrijMaanden} months free, with a price lock, and on ${planName('studio', 'en')} your own Brand Model. Paid in one go; stop early and there is no refund.`],
+    ],
+    soonPil: 'On the way', soonKop: ['And what is', 'on the way.'],
+    soonLede: 'What is on request, and what is not orderable yet.',
+    hooksTag: 'On request', soonTag: 'Coming soon',
+    stockNow: [`The monthly set: ${STOCK_OFF_BRAND} new images every month`, 'with every plan, shared and non-exclusive.'],
+    stockSoon: [`${STOCK_ON_BRAND} on-brand ${noun('visual', 'en')} a month`, 'in your own style, with Editions.'],
+    soonFoot: 'Pricing and ordering details are still being finalised, which is why it cannot be booked yet.',
+    proefKop: ['Start with', 'one product for'] as [string, string],
+    proefZin: `See what comes back before any plan starts · ${ex}.`,
+    planCta: 'Start a plan',
+    uit: ['Not every month?', 'See the price per product'],
+  },
+  nl: {
+    pil: 'Abonnementen',
+    h1: ['Elke maand credits.', 'Jij kiest waarvoor.'],
+    lede: `Eén maandbudget voor catalogsets en carrousels: ${pctMin}–${pctMax}% goedkoper dan dezelfde catalogsets los bestellen.`,
+    kies: 'Kies een abonnement',
+    creditPil: 'Wat een credit is', creditKop: 'Zo reken je met credits',
+    plansPil: 'Abonnementen', plansKop: ['Drie', 'abonnementen.'],
+    perMaand: 'per maand', perCredit: 'per credit', credits: 'credits',
+    bespaar: (s: string, n: number, los: string) => `Je bespaart ${s} per maand — ${n} catalogsets los kosten ${los}.`,
+    merkmodel: 'Je eigen merkmodel inbegrepen',
+    merkmodelVooruit: 'Je eigen merkmodel inbegrepen bij een jaar vooruit',
+    spaar: (n: number) => `Sparen tot ${n} credits; zolang het loopt vervalt er niets`,
+    kiesPlan: (n: string) => `Kies ${n}`,
+    maatRegel: `Iets anders nodig? Kies zelf je aantal, van ${CUSTOM_CREDITS_MIN} tot ${CUSTOM_CREDITS_MAX} credits per maand, vanaf ${e(maatVanaf)} ${ex}.`,
+    maatLink: 'Stel je eigen aantal in',
+    zoPil: 'Hoe het werkt', zoKop: ['Je bestelt', 'zoals iedereen.'],
+    zoLead: 'Elke maand komen je credits binnen. Je besteedt ze wanneer je wilt, via het gewone bestelformulier, en betaalt met credits in plaats van met geld.',
+    zo: [
+      [`Sparen tot ${CREDITS_GELDIG_MAANDEN} maanden`, `Zolang je abonnement loopt, vervalt er niets (bij ${planName('studio', 'nl')} tot ${spaarPlafond(PLAN_CREDITS.studio)} credits).`],
+      ['Pauzeren of stoppen', `Je credits blijven geldig tot ${CREDITS_GELDIG_MAANDEN} maanden na je laatste termijn.`],
+      ['Een maand tekort?', `Koop in VISUAILS Studio extra credits bij, ${bijkoopRegel('nl')} (hoogstens ${BIJKOOP_MAX} per maand).`],
+      ['Plus de maandset', 'Bij elk abonnement; zie hieronder.'],
+    ],
+    termen: [
+      ['Maandelijks', 'Elke maand opzegbaar, zelf in VISUAILS Studio.'],
+      ['12 maanden vooruit', `Betaal 10, krijg 12: ${vrijMaanden} maanden gratis, met een prijsgarantie, en bij ${planName('studio', 'nl')} je eigen merkmodel. In één keer betaald; stop je eerder, dan komt er geen geld terug.`],
+    ],
+    soonPil: 'Binnenkort', soonKop: ['En wat', 'eraan komt.'],
+    soonLede: 'Wat op aanvraag is, en wat nog niet te bestellen is.',
+    hooksTag: 'Op aanvraag', soonTag: 'Binnenkort',
+    stockNow: [`De maandset: ${STOCK_OFF_BRAND} nieuwe beelden per maand`, 'bij elk abonnement, gedeeld en niet exclusief.'],
+    stockSoon: [`${STOCK_ON_BRAND} ${noun('visual', 'nl')} per maand in je eigen merkstijl`, 'met Editions.'],
+    soonFoot: 'Omdat we de tarieven en het bestelproces nog afronden, is deze service nog niet te boeken.',
+    proefKop: ['Begin met', 'één product voor'] as [string, string],
+    proefZin: `Zie wat eruit komt voordat er een abonnement begint · ${ex}.`,
+    planCta: 'Sluit een abonnement af',
+    uit: ['Niet elke maand?', 'Bekijk de prijs per product'],
+  },
+};
+const c = COPY[lang];
+const ICOON = {
+  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
+  pijl: '<path d="M4.5 11.5l7-7M5.5 4.5h6v6"/>',
+  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
+  onder: '<path d="M8 2.5v11M3.5 9L8 13.5 12.5 9"/>',
+};
+const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+/* Het beeld in de opening: afvinklijst 20 (v20-opening a), live sinds afvinklijst 21. Zie KopBeeld.astro. */
+const KB_PLAN = 'studio';
+const KB_CR = PLAN_CREDITS[KB_PLAN];
+const BEELD = {
+  soort: 'getal' as const,
+  label: `${planName(KB_PLAN, lang)} · ${nl ? 'per maand' : 'per month'}`,
+  href: '#plannen', linkNaam: nl ? 'Naar de abonnementen' : 'To the plans',
+  getal: String(KB_CR), eenheid: 'credits',
+  voet: nl ? `Genoeg voor ${KB_CR / SERVICE_CREDITS.catalog} catalogsets of ${KB_CR / SERVICE_CREDITS.lifestyle} carrousels. ${euro(PLAN_AMOUNT[KB_PLAN], lang)} per maand, ${vatLabel('excl', 'nl')}.`
+           : `Enough for ${KB_CR / SERVICE_CREDITS.catalog} catalog sets or ${KB_CR / SERVICE_CREDITS.lifestyle} carousels. ${euro(PLAN_AMOUNT[KB_PLAN], lang)} a month, ${vatLabel('excl', 'en')}.`,
+};
+---
+<div class="h-pagina h-pl">
+
+  {/* ── 1 · DE KOP ─────────────────────────────────────────────────────────── */}
+  <header class="h-paginakop met-kopbeeld">
+    <div class="h-paginakop-tekst">
+      <p class="h-pil h-op" style="--d:0"><span>{c.pil}</span></p>
+      <h1 class="h-kop h-h1 h-op" style="--d:1"><span class="l">{c.h1[0]}</span> <span>{c.h1[1]}</span></h1>
+      <p class="h-lede h-op" style="--d:2">{c.lede}</p>
+      <p class="h-acties h-op" style="--d:3">
+        <a class="h-knop h-knop-inkt" href="#plannen">{c.kies}<span class="o" set:html={ik('onder')} /></a>
+      </p>
+    </div>
+    <KopBeeld {...BEELD} />
+  </header>
+
+  {/* ── 2 · WAT EEN CREDIT IS ── de kernzin groot, de kaart ernaast (6.01). */}
+  <section class="h-sec h-pl-credit" aria-labelledby="pl-credit">
+    <div class="h-pl-credit-raster">
+      <div class="h-pl-kern h-in">
+        <span class="h-korrel" aria-hidden="true"></span>
+        <p class="h-pil h-pil-wit"><span>{c.creditPil}</span></p>
+        <h2 id="pl-credit" class="h-kop h-h3">{c.creditKop}</h2>
+        <p class="h-pl-kern-zin">{creditKern(lang)}</p>
+      </div>
+      <div class="h-pl-kaart h-in" style="--d:1">
+        <CreditKaart lang={lang} plannen={false} id="creditkaart" />
+      </div>
+    </div>
+  </section>
+
+  {/* ── 3 · DE ABONNEMENTEN ── de knop draagt ?plan= mee (tests/subscribe). */}
+  <section class="h-sec h-pl-plannen" id="plannen" aria-labelledby="pl-plans">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{c.plansPil}</span></p>
+        <h2 id="pl-plans" class="h-kop h-h2"><span class="l">{c.plansKop[0]}</span> {c.plansKop[1]}</h2>
+      </div>
+    </header>
+    <ul class="h-pl-kaarten" role="list">
+      {planList.map((p: any, i: number) => {
+        const b = creditSaving(p.credits, PLAN_AMOUNT[p.id]);
+        return (
+          <li class="h-pk h-in" style={`--d:${i}`}>
+            <p class="h-pk-kop"><span class="h-pk-naam">{p.name}</span>{p.brandModel && <span class="h-pk-merk">{c.merkmodel}</span>}</p>
+            <p class="h-pk-regel">{p.line}</p>
+            <p class="h-pk-credits"><b class="h-getal">{p.credits}</b> <span>{c.credits}</span></p>
+            <p class="h-pk-fit">{creditVertaling(p.credits, lang)}</p>
+            <p class="h-pk-prijs"><b>{p.price}</b> <span>{c.perMaand} · {ex}</span></p>
+            <ul class="h-pk-lijst" role="list">
+              <li><i set:html={ik('check')} />{p.perCredit} {c.perCredit}</li>
+              <li><i set:html={ik('check')} />{c.spaar(spaarPlafond(p.credits))}</li>
+              {p.id === 'studio' && <li><i set:html={ik('check')} />{c.merkmodelVooruit}</li>}
+              {b && <li><i set:html={ik('check')} />{c.bespaar(e(b.saving), b.count, e(b.los))}</li>}
+            </ul>
+            <p class="h-pk-voet">
+              <a href={`${lp('/start/plan')}?plan=${p.id}`} class="h-knop h-knop-inkt">{c.kiesPlan(p.name)}<span class="o" set:html={ik('rechts')} /></a>
+            </p>
+          </li>
+        );
+      })}
+    </ul>
+    <p class="h-pl-maat h-in" id="op-maat"><span>{c.maatRegel}</span> <a class="h-link" href={maatHref}>{c.maatLink}<span class="h-cirkel h-cirkel-klein h-cirkel-wit" aria-hidden="true" set:html={ik('pijl')} /></a></p>
+  </section>
+
+  {/* ── 4 · ZO WERKT HET ── vier korte regels en de twee termijnen (6.04). */}
+  <section class="h-sec h-pl-zo" aria-labelledby="pl-zo">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{c.zoPil}</span></p>
+        <h2 id="pl-zo" class="h-kop h-h2"><span class="l">{c.zoKop[0]}</span> {c.zoKop[1]}</h2>
+      </div>
+      <p class="h-pl-kopzin">{c.zoLead}</p>
+    </header>
+    <ul class="h-pl-feiten" role="list">
+      {c.zo.map(([h, b], i) => <li class="h-in" style={`--d:${i}`}><i set:html={ik('check')} /><span><b>{h}</b>{b}</span></li>)}
+    </ul>
+    <ul class="h-pl-termen" role="list">
+      {c.termen.map(([naam, zin], i) => (
+        <li class="h-in" style={`--d:${i}`}>
+          <h3 class="h-pl-term-naam">{naam}</h3>
+          <p>{zin}</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  {/* ── 5 · WAT ERAAN KOMT ── het menu wijst naar #binnenkort, #hooks en
+      #editions (tests/nav). Geen knop in deze sectie. */}
+  <section class="h-sec h-pl-soon" id="binnenkort" aria-labelledby="pl-soon">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{c.soonPil}</span></p>
+        <h2 id="pl-soon" class="h-kop h-h2"><span class="l">{c.soonKop[0]}</span> {c.soonKop[1]}</h2>
+      </div>
+      <p class="h-pl-kopzin">{c.soonLede}</p>
+    </header>
+    <ul class="h-pl-soon-rij" role="list">
+      <li id="stock" class="h-in">
+        <span class="h-chip h-pl-tag">{c.soonTag}</span>
+        <p class="h-pl-soon-naam">{c.stockNow[0]}</p>
+        <p>{c.stockNow[1]}</p>
+      </li>
+      {binnenkort(lang).map((b: any, i: number) => (
+        <li id={b.id} class="h-in" style={`--d:${i + 1}`}>
+          <span class="h-chip h-pl-tag">{b.id === 'hooks' ? c.hooksTag : c.soonTag}</span>
+          <p class="h-pl-soon-naam">{b.name}</p>
+          <p>{b.desc}{b.id === 'editions' ? ` ${c.stockSoon[0]}, ${c.stockSoon[1]}` : ''}</p>
+        </li>
+      ))}
+    </ul>
+    <p class="h-pl-soon-voet h-in">{c.soonFoot}</p>
+  </section>
+
+  {/* ── 6 · HET SLOT: de proef, als op de voorpagina ─────────────────────── */}
+  <HalProef lang={lang} id="pl-slot" kop={c.proefKop} zin={c.proefZin} alt={{ label: c.planCta, href: '/start/plan' }} plan={false} />
+  <p class="h-pl-uit h-in">{c.uit[0]} <a class="h-link" href={lp('/pricing')}>{c.uit[1]}<span class="h-cirkel h-cirkel-klein" aria-hidden="true" set:html={ik('pijl')} /></a></p>
+</div>
+<HalBeweging />

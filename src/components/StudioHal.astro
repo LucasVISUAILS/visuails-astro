@@ -1,0 +1,500 @@
+---
+/*
+ * VISUAILS — StudioHal: /studio in de hal (13 oktober 2026, afvinklijst 17,
+ * v17-volgende = a). Sinds afvinklijst 18 (alles doen, v18-scherm a, v18-log a)
+ * het lichaam van /studio en /nl/studio; /voorbeeld/studio stuurt door (301).
+ *
+ * Alles wat de pagina ZEGT stond letterlijk zo in StudioPage.astro (de COPY
+ * hieronder is daaruit gekopieerd, in beide talen; één verschil: v18-256, zie de sleutel): de toestanden, goedkeuren, de map,
+ * het logboek, de sleutel, en dezelfde getallen uit pricing.js, token.js en
+ * retention.js. Wat er in de hal anders is, met de referenties van rondesignlab
+ * (kladblok/design/IG-STIJL.md) ernaast:
+ *   · de opening is een koprij (kop links, inleiding en knoppen rechts) met het scherm
+ *     er DIRECT onder, op het lichte violette vlak: Lucas wilde op deze pagina "op de
+ *     eerste sectie gelijk weer een grote dashboard mock-up" (9 augustus);
+ *   · het scherm is FigDash zelf, licht in de kleuren van de hal (zoals de agenda op
+ *     /how-it-works) — dezelfde figuur, dus geen tweede tekening die kan afwijken;
+ *   · de lange inleiding is opgeknipt: de eerste zin staat bij de kop, de andere drie
+ *     staan elk op een kaart onder het scherm (inloggen, de privélink, de leverdatum),
+ *     in de vorm van de kaarten op de voorpagina (label, ↗, één groot getal);
+ *   · de zes toestanden zijn vier stappen (01 — / 04) en twee dingen onderweg;
+ *   · de map is één foto met de mappenboom als glas erover (glas alleen op een beeld),
+ *     en het onzichtbare label is hetzelfde etiket als op de voorpagina (IPTC);
+ *   · de sleutel is een bento met de twee echte getallen: 256 bits en 90 dagen;
+ *   · het slot is de proef (HalProef), met de kop van /how-it-works.
+ * Nieuwe woorden (kaarttitels, pillen, eenheden, het voorbeeldlogboek) staan in
+ * kladblok/TEKSTEN-STUDIO.md.
+ */
+import '@fontsource-variable/urbanist/index.css';
+import '../styles/hal.css';
+import { localizedPath } from '../i18n/ui.js';
+import { WINDOW_THRESHOLD, TEST_SAMPLE } from '../data/pricing.js';
+import { PORTAL_TTL_DAYS } from '../lib/token.js';
+import { UPLOAD_DAYS, DELIVERY_DAYS } from '../lib/retention.js';
+import { DEMO_ORDER, demoWindow, dayLabel } from '../data/figdemo.js';
+import { geleverd } from '../data/voorbeeldset.js';
+import { LEVERTAG, TAG_WOORD, tagNaam } from '../lib/iptc.js';
+import { deliveryEntries } from '../lib/delivery.js';
+import FigDash from './FigDash.astro';
+import FigGallery from './FigGallery.astro';
+import Note from './Note.astro';
+import HalProef from './HalProef.astro';
+import HalBeweging from './HalBeweging.astro';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+
+const COPY = {
+  en: {
+    h1: ['Every order.', 'In one place.'],
+    lede: `VISUAILS Studio holds all your orders: where each one stands, the visuals the moment they are finished, and a button on each one to approve it or say what is wrong. You sign in with your email address — we email you a code and a link, and there is no password. Every order also comes with a private link, for anyone who needs to look along without signing in. From ${WINDOW_THRESHOLD} products up there is a delivery date beside it: reserved when you order, fixed once you have paid.`,
+    /* "Inloggen bovenaan" (1.11): dezelfde woorden als de link rechtsboven in
+       de balk (nav_account in src/i18n/ui.js). */
+    ctaLogin: 'Log in',
+    ctaStart: 'Start an order',
+
+    stateH: 'Where it is, without asking.',
+    /* ── ZES DINGEN, MAAR GEEN ZES STATUSSEN — 23 AUGUSTUS 2026 ───────────────
+     *
+     * Hier stond *"There are six"*, en de kolom heeft er vijf: received,
+     * in_production, human_check, delivered, cancelled (schema.sql:103, en
+     * dezelfde vijf in portal.js:273 en admin.js:98). "Revision" en "Closed"
+     * stonden ertussen alsof ze in datzelfde rijtje zaten.
+     *
+     * ZE ZIJN WEL ECHT, en dat is waarom ze blijven staan. Ze komen alleen
+     * ergens anders vandaan: een revisie is een toestand van één BEELD
+     * (files.review_state = 'revision_requested'), en afgesloten is
+     * orders.closed_at — het veld waar canReviewOrder() op kijkt. Twee dingen
+     * die de klant ziet en die geen orderstatus zijn.
+     *
+     * Dat verschil is niet cosmetisch. Een klant die "zes statussen" leest en er
+     * vijf ziet, denkt dat er iets mist; een klant die leest dat een revisie
+     * per beeld loopt, snapt meteen waarom de rest van zijn bestelling ondertussen
+     * doorgaat. En "In review" heette hier anders dan in het portaal zelf, waar
+     * human_check als "Being checked" op het scherm komt.
+     *
+     * 'Cancelled' staat er bewust niet bij: dat is een status, maar het is niet
+     * iets waar een bestelling doorheen LOOPT, en hem in dit rijtje zetten leest
+     * als een stap die iedereen passeert.
+     */
+    stateLede: 'Studio opens on the state of your order. Four steps it moves through, a revision that can happen along the way, and completion at the end — and where you are is the first thing on the page.',
+    states: [
+      ['Received', `The order is in. From ${WINDOW_THRESHOLD} products the delivery date is reserved, and fixed once you have paid.`],
+      ['In production', 'The studio is working through the folder.'],
+      ['Being checked', 'Every visual is looked at before it goes out.'],
+      ['Delivered', 'The gallery is open and the downloads are live.'],
+      ['Revision — per image', 'You asked for a change on one visual and it is being made. It is a state of that image, not of the order: the rest keeps moving.'],
+      ['Completed', `Every image approved. Nothing left to decide. The files stay downloadable for ${DELIVERY_DAYS} days after delivery, and this link works for ${PORTAL_TTL_DAYS} days after the order is completed.`],
+    ],
+    stateNote: 'Each change is written into a timeline you can read, with the date it happened. Nothing about your order is only in our heads.',
+
+    galleryH: 'Approve it image by image.',
+    galleryLede: 'On delivery the whole order opens as a gallery. You approve each image on its own, or a whole product at once once you have looked at its images and everything is right. Ask for a revision on one image and the rest of the order keeps moving.',
+    galleryList: [
+      ['Approve', 'Marks that image done. The count at the top moves.'],
+      ['Request a revision', 'Opens a note field. Say what is wrong in your own words — it goes straight to the person who made it.'],
+      // Nieuw op 9 augustus 2026, en het hoort hier omdat de figuur ernaast het
+      // laat zien: bij de foto’s staat geen downloadknop meer. Dat verzint een
+      // bezoeker niet zelf, en ongezegd leest het als een scherm dat stuk is.
+      ['The images here are review size', 'They exist to be judged, not to be used. What you take away is one folder — the next section is what is in it.'],
+    ],
+
+    dlH: 'One folder, and everything is in it.',
+    dlLede: 'When the order is approved you download one folder. Inside it is a folder per product, and in each of those the same image, in the aspect ratio you chose, as JPG: the file every shop, marketplace and feed opens. Need PNG or WebP as well? One click on the order, and we add it.',
+    dl: [
+      ['JPG', 'The default: the format every system accepts. For a product page, a lookbook, an email.'],
+      ['PNG', 'One click to add. Lossless, the biggest file: for print and for anything that gets edited again.'],
+      ['WebP', 'One click to add. A third of the size at the same quality: for your site, so a page loads fast.'],
+    ],
+    // GESPLITST, 21 augustus 2026. Was 96 woorden, de langste alinea van
+    // /portal. Wat je moet DOEN staat er nog voluit — plaats zelf de zichtbare
+    // vermelding, reken niet op het bestand. Waaróm je er niet op kunt rekenen
+    // (de WebP-omzetting, de overgangstermijn tot 2 december 2026) is techniek
+    // en staat achter het vraagteken.
+    dlManifest: 'Every delivered file carries an invisible label saying AI was used to make it. Do not rely on that alone: the disclosure that counts is the visible one you place, and the AI Act page has a line you can use.',
+    dlManifestNoteTerm: 'the provenance tag',
+    dlManifestNote: 'We write it into the WebP too, where the conversion discarded whatever the model provider had put there. Even so: any tool that re-saves an image can strip it again, and providers of systems already on the market have until 2 December 2026 to mark at all.',
+
+    logH: 'Every approval and revision stays readable afterwards.',
+    logLede: 'Every approval and every revision is stamped with a time and kept against the individual image, and you can read the sequence back at any time from your own link. Ask, and we will write it out for you as a summary. There is no button here that generates a document, and we are not going to imply there is.',
+    logCta: 'Read the AI Act page',
+
+    secH: 'Why there is no password.',
+    secLede: 'A password is one more thing to lose, and for a link you open three times it buys nothing. The link itself is the key, so it is built like one.',
+    sec: [
+      /* v18-256 = a (afvinklijst 18): de kop heette "256 bits of randomness", terwijl het
+         getal er in de hal groot boven staat. Nu zoals in het Nederlands ("Niet te raden"). */
+      ['Cannot be guessed', 'Generated by the browser-grade crypto in the runtime, not by a counter. It cannot be guessed and it cannot be walked.'],
+      ['Never stored in the clear', 'We keep only a one-way fingerprint of it, so nobody can read the link back out of our database.'],
+      ['Protected against guessing', 'Keep trying and you are stopped after a few attempts, before anything is looked up.'],
+      ['It expires', `The link stops working ${PORTAL_TTL_DAYS} days after the order is completed. The source files you sent are deleted ${UPLOAD_DAYS} days after that.`],
+    ],
+    secNote: 'Treat the link the way you would treat a key: anyone who has it can see the order. Send it on if a colleague needs it, and ask us for a new one if it goes somewhere it should not.',
+
+    closeH: 'One of your own products, as a catalog set or a carousel, first.',
+    closeLede: `${TEST_SAMPLE.en.deliverable}, made from your own photo and checked before delivery. VISUAILS Studio comes with every paid order.`,
+    closeCta: TEST_SAMPLE.en.cta,
+    closeAlt: 'Start an order',
+  },
+
+  nl: {
+    h1: ['Al je bestellingen.', 'Op één plek.'],
+    lede: `In VISUAILS Studio staan al je bestellingen: waar elke bestelling staat, de beelden zodra ze klaar zijn, en bij elk beeld een knop om het goed te keuren of te zeggen wat er niet klopt. Je logt in met je e-mailadres — we mailen je een code en een link, en een wachtwoord is er niet. Bij elke bestelling krijg je daarnaast een privélink, voor wie mee moet kijken zonder in te loggen. Vanaf ${WINDOW_THRESHOLD} producten staat er een leverdatum naast: gereserveerd zodra je bestelt, vast zodra je hebt betaald.`,
+    ctaLogin: 'Inloggen',
+    ctaStart: 'Start een bestelling',
+
+    stateH: 'Waar hij staat, zonder te vragen.',
+    // Zie de noot bij de Engelse stateLede.
+    /* 14 oktober 2026: "het portaal" heet overal VISUAILS Studio, en het laatste heet "Afgerond", zoals in Studio zelf (nuzin.js). */
+    stateLede: 'Studio begint bij de status van je bestelling. Vier stappen die hij doorloopt, een revisie die onderweg kan gebeuren en het afronden aan het eind — en waar jij staat is het eerste dat je ziet.',
+    states: [
+      ['Ontvangen', `Je bestelling is binnen. Vanaf ${WINDOW_THRESHOLD} producten is de leverdatum gereserveerd, en na betaling ligt hij vast.`],
+      ['In productie', 'De studio werkt de map door.'],
+      ['Wordt nagekeken', 'Elk beeld wordt bekeken voordat het weggaat.'],
+      ['Geleverd', 'De galerij is open en de downloads staan klaar.'],
+      ['Revisie — per beeld', 'Je vroeg op één beeld om een wijziging en die wordt gemaakt. Het is een toestand van dat beeld en niet van de bestelling: de rest loopt gewoon door.'],
+      ['Afgerond', `Elk beeld goedgekeurd. Er valt niets meer te beslissen. De bestanden blijven ${DELIVERY_DAYS} dagen na levering te downloaden, en deze link werkt tot ${PORTAL_TTL_DAYS} dagen nadat de bestelling is afgerond.`],
+    ],
+    stateNote: 'Elke wijziging wordt in een tijdlijn geschreven die je kunt lezen, met de datum erbij. Niets over je order zit alleen in ons hoofd.',
+
+    galleryH: 'Beeld voor beeld goedkeuren.',
+    galleryLede: 'Bij levering opent de hele bestelling als galerij. Je keurt elk beeld apart goed, of per product in één keer als je alle beelden ervan hebt bekeken en alles klopt. Vraag je op één beeld een revisie aan, dan loopt de rest van de bestelling gewoon door.',
+    galleryList: [
+      ['Goedkeuren', 'Daarmee staat dat beeld op afgerond. De teller bovenaan loopt mee.'],
+      ['Revisie aanvragen', 'Opent een notitieveld. Zeg in je eigen woorden wat er niet klopt — het gaat rechtstreeks naar degene die het gemaakt heeft.'],
+      ['De beelden hier zijn op schermformaat', 'Ze staan er om te beoordelen, niet om te gebruiken. Wat je meeneemt is één map — de volgende sectie is wat daarin zit.'],
+    ],
+
+    dlH: 'Eén map, en alles zit erin.',
+    dlLede: 'Is de bestelling goedgekeurd, dan download je één map. Daarin zit een map per product, en in elk daarvan dezelfde foto, in de beeldverhouding die je koos, als JPG: het bestand dat elke webshop, marktplaats en feed opent. PNG of WebP erbij nodig? Eén klik op de bestelling, en wij zetten het erbij.',
+    dl: [
+      /* 14 oktober 2026: JPG voorop, want dat is de standaard (zoals in Studio:
+         "JPG is de standaard. PNG is zonder kwaliteitsverlies …"), en geen Engels
+         "Lossless" in een Nederlandse zin. */
+      ['JPG', 'De standaard: het formaat dat elk systeem aanneemt. Voor een productpagina, een lookbook, een mail.'],
+      ['PNG', 'Met één klik erbij. Zonder kwaliteitsverlies, het grootste bestand: voor drukwerk en voor alles wat nog bewerkt wordt.'],
+      ['WebP', 'Met één klik erbij. Een derde van de grootte bij dezelfde kwaliteit: voor je eigen site, zodat een pagina snel laadt.'],
+    ],
+    dlManifest: 'Elk geleverd bestand krijgt een onzichtbaar label mee dat zegt dat er AI is gebruikt. Reken daar niet alleen op: de vermelding die telt is de zichtbare die jij plaatst, en op de AI Act-pagina staat een zin die je kunt gebruiken.',
+    dlManifestNoteTerm: 'de herkomsttag',
+    dlManifestNote: 'We zetten hem ook in de WebP, waar de omzetting weggooide wat de modelaanbieder erin had gezet. Toch: elk programma dat een beeld opnieuw opslaat kan hem er weer uit halen, en aanbieders van systemen die al op de markt waren hebben tot 2 december 2026 om überhaupt te markeren.',
+
+    logH: 'Elke goedkeuring en revisie blijft terug te lezen.',
+    logLede: 'Elke goedkeuring en elke revisie krijgt een tijdstempel en wordt bewaard bij het betreffende beeld, en je kunt de reeks op elk moment teruglezen via je eigen link. Vraag ernaar en we schrijven het voor je uit als overzicht. Er zit hier geen knop die een document genereert, en we doen ook niet alsof.',
+    logCta: 'Lees de AI Act-pagina',
+
+    secH: 'Waarom er geen wachtwoord is.',
+    secLede: 'Een wachtwoord is nog iets om kwijt te raken, en voor een link die je drie keer opent levert het niets op. Daarom hebben we de link zelf zo gemaakt dat niemand hem kan raden.',
+    sec: [
+      ['Niet te raden', 'De link bestaat uit 256 willekeurige bits — geen volgnummer dat je kunt ophogen om bij de bestelling van iemand anders te komen.'],
+      ['Nooit leesbaar opgeslagen', 'We bewaren alleen een onomkeerbare vingerafdruk ervan, dus niemand kan de link uit onze database teruglezen.'],
+      ['Tegen raden beschermd', 'Wie blijft proberen, wordt na een paar pogingen tegengehouden, nog voordat er iets wordt opgezocht.'],
+      ['Hij verloopt', `De link werkt niet meer vanaf ${PORTAL_TTL_DAYS} dagen nadat de bestelling is afgerond. De bronbestanden die je stuurde worden ${UPLOAD_DAYS} dagen na het afronden verwijderd.`],
+    ],
+    secNote: 'Behandel de link zoals je een sleutel behandelt: wie hem heeft, kan de bestelling zien. Stuur hem gerust door als een collega hem nodig heeft, en vraag ons om een nieuwe als hij ergens belandt waar hij niet hoort.',
+
+    closeH: 'Eerst één product van jezelf, als catalogset of carrousel.',
+    closeLede: `${TEST_SAMPLE.nl.deliverable}, gemaakt van je eigen foto en vóór levering nagekeken. VISUAILS Studio krijg je bij elke betaalde bestelling.`,
+    closeCta: TEST_SAMPLE.nl.cta,
+    closeAlt: 'Start een bestelling',
+  },
+};
+
+const c = COPY[lang];
+
+/* ── DE INLEIDING, OPGEKNIPT ───────────────────────────────────────────────
+   Vier zinnen: wat er in Studio staat, hoe je inlogt, de privélink, de leverdatum.
+   De eerste staat bij de kop, de andere drie elk op hun eigen kaart. Breekt een
+   wijziging aan de inleiding dat in iets anders dan vier zinnen, dan stopt de bouw
+   hier in plaats van stil een kaart leeg te laten. */
+const zinnen = c.lede.split(/(?<=\.)\s+(?=[A-Z])/);
+if (zinnen.length !== 4) throw new Error(`StudioHal: de inleiding (${lang}) heeft ${zinnen.length} zinnen, verwacht 4`);
+
+/* ── DE HAL ─────────────────────────────────────────────────────────────── */
+const ICOON = {
+  pijl: '<path d="M4.5 11.5l7-7M5.5 4.5h6v6"/>',
+  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
+  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
+  label: '<path d="M2.5 8.6V2.5h6.1l5 5-6.1 6.1z"/><circle cx="5.6" cy="5.6" r="1"/>',
+  klok: '<circle cx="8" cy="8" r="6"/><path d="M8 4.8V8l2.2 1.6"/>',
+  revisie: '<path d="M13 8a5 5 0 11-1.5-3.6M13 2.8v2.6h-2.6"/>',
+  slot: '<rect x="3" y="7" width="10" height="6.5" rx="1.6"/><path d="M5.3 7V5.2a2.7 2.7 0 015.4 0V7"/>',
+  map: '<path d="M2 4.2h4.3l1.4 1.6H14v6.8H2z"/>',
+  dobbel: '<rect x="2.5" y="2.5" width="11" height="11" rx="2.4"/><circle cx="5.7" cy="5.7" r=".9"/><circle cx="10.3" cy="10.3" r=".9"/><circle cx="8" cy="8" r=".9"/>',
+  vinger: '<path d="M4.6 13c.8-1.4 1.2-3 1.2-5a2.2 2.2 0 014.4 0c0 2.2-.4 4.1-1.1 5.8M2.9 10.4c.3-.8.4-1.6.4-2.4a4.7 4.7 0 019.4 0c0 1.2-.1 2.3-.3 3.4"/>',
+  rem: '<path d="M2.6 11.2a5.4 5.4 0 1110.8 0"/><path d="M8 11.2l2.5-3.1"/>',
+  sleutel: '<circle cx="5.4" cy="10.6" r="2.9"/><path d="M7.5 8.5l6-6M11.2 4.8l1.7 1.7M12.6 3.4l1.3 1.3"/>',
+};
+const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+const DRIE = (n: number) => String(n).padStart(2, '0');
+
+/* Het voorbeeldlogboek hoort bij dezelfde verzonnen bestelling als FigDash en
+   FigGallery (figdemo.js): dezelfde referentie, de dag na het levervenster. */
+const venster = demoWindow(DEMO_ORDER.products);
+const naLevering = dayLabel(new Date(Date.parse(`${venster.end}T00:00:00Z`) + 86400000).toISOString().slice(0, 10), lang);
+
+const H = nl ? {
+  kaarten: [
+    { label: c.ctaLogin, titel: 'Een code in je mail.' },
+    { label: 'Privélink', titel: 'Een link om mee te kijken.' },
+    { label: 'Leverdatum' },
+  ],
+  staatPil: 'Status',
+  staatKop: ['Waar hij staat,', 'zonder te vragen.'],
+  onderweg: ['Onderweg', 'Na de levering'],
+  galPil: 'Galerij',
+  galKop: ['Beeld voor beeld', 'goedkeuren.'],
+  dlPil: 'Downloaden',
+  dlKop: ['Eén map,', 'en alles zit erin.'],
+  logPil: 'Logboek',
+  logKop: ['Elke goedkeuring en revisie', 'blijft terug te lezen.'],
+  logBadge: 'Voorbeeld met verzonnen gegevens',
+  log: [
+    ['10:14', 'Product 1 · voorkant', 'Goedgekeurd', ''],
+    ['10:16', 'Product 1 · achterkant', 'Revisie aangevraagd', 'De mouw valt links anders dan rechts.'],
+    ['10:21', 'Product 2 · achterkant', 'Goedgekeurd', ''],
+  ],
+  secPil: 'De link',
+  secKop: ['Waarom er', 'geen wachtwoord is.'],
+  bits: 'bits',
+  dagen: 'dagen',
+  proefKop: ['Eén product van jezelf,', 'voor'] as [string, string], /* 14 okt: korter, de zin eronder noemt de set al */
+} : {
+  kaarten: [
+    { label: c.ctaLogin, titel: 'A code in your inbox.' },
+    { label: 'Private link', titel: 'A link to look along.' },
+    { label: 'Delivery date' },
+  ],
+  staatPil: 'Status',
+  staatKop: ['Where it is,', 'without asking.'],
+  onderweg: ['Along the way', 'After delivery'],
+  galPil: 'Gallery',
+  galKop: ['Approve it', 'image by image.'],
+  dlPil: 'Download',
+  dlKop: ['One folder,', 'and everything is in it.'],
+  logPil: 'Log',
+  logKop: ['Every approval and revision', 'stays readable afterwards.'],
+  logBadge: 'Example with made-up data',
+  log: [
+    ['10:14', 'Product 1 · front', 'Approved', ''],
+    ['10:16', 'Product 1 · back', 'Revision requested', 'The sleeve sits differently on the left than on the right.'],
+    ['10:21', 'Product 2 · back', 'Approved', ''],
+  ],
+  secPil: 'The link',
+  secKop: ['Why there is', 'no password.'],
+  bits: 'bits',
+  dagen: 'days',
+  proefKop: ['One of your own products,', 'for'] as [string, string],
+};
+
+/* De drie kaarten onder het scherm: de zinnen 2, 3 en 4 van de inleiding. */
+const KAARTEN = [
+  { ...H.kaarten[0], zin: zinnen[1], href: `/account?lang=${lang}` },
+  { ...H.kaarten[1], zin: zinnen[2], href: '#sleutel' },
+  { ...H.kaarten[2], zin: zinnen[3], href: `${lp('/how-it-works')}#planning`, getal: `${WINDOW_THRESHOLD}+` },
+];
+/* Vier stappen die een bestelling doorloopt, en twee dingen die onderweg kunnen gebeuren
+   (zie de noot bij stateLede in StudioPage.astro: revisie is een toestand van een BEELD,
+   afgesloten is closed_at — geen van beide is een orderstatus). */
+const STAPPEN = c.states.slice(0, 4);
+const ONDERWEG = c.states.slice(4);
+/* De map, sinds 14 oktober 2026 uit dezelfde functie als de echte zip
+   (deliveryEntries in delivery.js), zoals in FigGallery: "01 - Wijde jeans/" met
+   per formaat een map en "1-voorkant.jpg". Hier stond "product-1/" met
+   "voorkant.png" en de drie formaten alsof ze er altijd in zitten. JPG voorop;
+   PNG en WebP met de opmerking dat je ze erbij vraagt. */
+const ZIP = deliveryEntries([{ id: 1, product_key: 'p1', shot: 'front', r2_key: 'x/0', bytes: 0, filename: 'front.jpg',
+  assets: ['jpg', 'png', 'webp'].map((format) => ({ format, r2_key: `x/0.${format}`, bytes: 0 })) }],
+  lang, { ref: DEMO_ORDER.ref, productNames: { p1: nl ? 'Wijde jeans' : 'Wide leg jeans' } })
+  .map((e) => e.name.split('/').slice(1));
+const productMap = ZIP[0][0];
+const VOLG = ['JPG', 'PNG', 'WEBP'];
+const bestanden = ZIP.map((p) => p.slice(1)).sort((x, y) => VOLG.indexOf(x[0]) - VOLG.indexOf(y[0]));
+const opAanvraag = nl ? 'met één klik erbij' : 'one click to add';
+const MAPFOTO = geleverd(lang)[3];
+/* Het label op de voorpagina: de waarde die écht in elk bestand komt (src/lib/iptc.js). */
+const IPTC_WAARDE = tagNaam(LEVERTAG);
+const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
+/* De sleutel: de eerste kaart draagt de 256 bits, de laatste de dagen uit token.js. */
+const SLEUTEL_IKOON: (keyof typeof ICOON)[] = ['dobbel', 'vinger', 'rem', 'klok'];
+---
+
+<div class="h-pagina h-sd-pagina">
+
+  {/* ── 1 · DE OPENING: de koprij, en het scherm er direct onder ─────────── */}
+  <header class="h-sd-kop">
+    <div class="h-sd-kop-links">
+      <p class="h-pil h-op" style="--d:0"><span>VISUAILS Studio</span></p>
+      <h1 class="h-kop h-h1 h-op" style="--d:1"><span class="l">{c.h1[0]}</span> <span class="d">{c.h1[1]}</span></h1>
+    </div>
+    <div class="h-sd-kop-rechts">
+      <p class="h-lede h-op" style="--d:2">{zinnen[0]}</p>
+      {/* Inloggen bovenaan (1.11): letterlijk /account met ?lang=, nooit door lp() —
+          /account heeft geen /nl-variant (tests/nav.test.mjs §11). */}
+      <p class="h-acties h-op" style="--d:3">
+        <a class="h-knop h-knop-inkt" href={`/account?lang=${lang}`}>{c.ctaLogin}<span class="o" set:html={ik('pijl')} /></a>
+        <a class="h-knop h-knop-lijn" href={lp('/start')}>{c.ctaStart}</a>
+      </p>
+    </div>
+  </header>
+
+  <section class="h-sec h-sd-scherm-sec" aria-label={nl ? 'VISUAILS Studio, een voorbeeld' : 'VISUAILS Studio, an example'}>
+    <div class="h-sd-scherm h-in">
+      <span class="h-korrel" aria-hidden="true"></span>
+      <div class="h-sd-fig"><FigDash lang={lang} uitleg /></div>
+    </div>
+    <ul class="h-weten-rij h-sd-rij" role="list">
+      {KAARTEN.map((k, i) => (
+        <li class={`h-in${k.getal ? ' h-groot' : ''}`} style={`--d:${i}`}>
+          <a href={k.href}>
+            <span class="h-weten-boven"><span class="h-pil h-pil-wit"><span>{k.label}</span></span><span class="h-cirkel h-cirkel-wit" aria-hidden="true" set:html={ik('pijl')} /></span>
+            {k.getal
+              ? <span class="h-weten-onder"><span class="h-getal">{k.getal}</span><span class="h-weten-zin">{k.zin}</span></span>
+              : <span class="h-weten-onder"><b>{k.titel}</b><span class="h-weten-zin">{k.zin}</span></span>}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  {/* ── 2 · DE TOESTANDEN: vier stappen, en twee dingen onderweg ─────────── */}
+  <section class="h-sec h-sd-staat-sec" aria-labelledby="sd-staat">
+    <div class="h-sd-staat h-in">
+      <header class="h-sd-staat-kop">
+        <div>
+          <p class="h-pil h-pil-wit"><span>{H.staatPil}</span></p>
+          <h2 id="sd-staat" class="h-kop h-h2"><span class="l">{H.staatKop[0]}</span> {H.staatKop[1]}</h2>
+        </div>
+        <p class="h-pr-kopzin">{c.stateLede}</p>
+      </header>
+      <ol class="h-st-stappen h-sd-stappen" role="list">
+        {STAPPEN.map(([k, v], i) => (
+          <li class="h-st-stap" style={`--d:${i}`}>
+            <p class="h-nr" aria-hidden="true"><b>{DRIE(i + 1)}</b><i></i><span>/ {DRIE(STAPPEN.length)}</span></p>
+            <span class="h-st-stap-naam">{k}</span>
+            <span class="h-sd-zin">{v}</span>
+          </li>
+        ))}
+      </ol>
+      <ul class="h-sd-onderweg" role="list">
+        {ONDERWEG.map(([k, v], i) => (
+          <li>
+            <span class="h-sd-onderweg-boven"><span class="h-cirkel h-cirkel-wit h-cirkel-klein" aria-hidden="true" set:html={ik(i === 0 ? 'revisie' : 'slot')} /><span class="h-sd-etiket">{H.onderweg[i] || H.onderweg[0]}</span></span>
+            <span class="h-st-stap-naam">{k}</span>
+            <span class="h-sd-zin">{v}</span>
+          </li>
+        ))}
+      </ul>
+      <p class="h-sd-noot"><span class="h-sd-noot-i" aria-hidden="true" set:html={ik('klok')} /><span>{c.stateNote}</span></p>
+    </div>
+  </section>
+
+  {/* ── 3 · DE GALERIJ: beeld voor beeld goedkeuren ───────────────────────── */}
+  <section class="h-sec h-sd-gal-sec" aria-labelledby="sd-gal">
+    <div class="h-sd-twee">
+      <div class="h-sd-tekst h-in">
+        <p class="h-pil"><span>{H.galPil}</span></p>
+        <h2 id="sd-gal" class="h-kop h-h2"><span class="l">{H.galKop[0]}</span> {H.galKop[1]}</h2>
+        <p class="h-sd-zin-groot">{c.galleryLede}</p>
+        <dl class="h-sd-def">
+          {c.galleryList.map(([k, v]) => (<div><dt>{k}</dt><dd>{v}</dd></div>))}
+        </dl>
+      </div>
+      <div class="h-sd-vlak h-in" style="--d:1">
+        <div class="h-sd-fig"><FigGallery lang={lang} uitleg /></div>
+      </div>
+    </div>
+  </section>
+
+  {/* ── 4 · DE MAP: één foto, de boom als glas erover ──────────────────────── */}
+  <section class="h-sec h-sd-dl-sec" aria-labelledby="sd-dl">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{H.dlPil}</span></p>
+        <h2 id="sd-dl" class="h-kop h-h2"><span class="l">{H.dlKop[0]}</span> {H.dlKop[1]}</h2>
+      </div>
+    </header>
+    <div class="h-sd-dl">
+      <figure class="h-sd-map h-in">
+        <img src={MAPFOTO.src} width={MAPFOTO.w} height={MAPFOTO.h} alt="" loading="lazy" decoding="async" />
+        {/* het onzichtbare label, zichtbaar gemaakt: hetzelfde etiket als op de voorpagina */}
+        <span class="h-label h-sd-map-label" aria-hidden="true">
+          <span class="h-label-kop"><i>IPTC</i>Digital Source Type</span>
+          <span class="h-label-waarde">{IPTC_WAARDE}</span>
+          <span class="h-label-zegt"><span set:html={ik('check')} />{IPTC_WOORD}</span>
+        </span>
+        <div class="h-sd-boom">
+          <span class="h-sd-boom-map"><span set:html={ik('map')} />{productMap}/</span>
+          <span class="h-sd-boom-lijst">
+            {bestanden.map(([fmt, bestand]) => <span class="h-sd-boom-r"><b>{fmt}/</b>{bestand}{fmt !== 'JPG' && <em class="h-sd-boom-extra"> · {opAanvraag}</em>}</span>)}
+          </span>
+        </div>
+      </figure>
+      <div class="h-sd-dl-tekst h-in" style="--d:1">
+        <p class="h-sd-zin-groot">{c.dlLede}</p>
+        <ul class="h-sd-formaten" role="list">
+          {c.dl.map(([k, v]) => (<li><span class="h-sd-fmt">{k}</span><span class="h-sd-zin">{v}</span></li>))}
+        </ul>
+        <p class="h-sd-manifest"><span class="h-sd-manifest-i" aria-hidden="true" set:html={ik('label')} /><span class="h-sd-zin">{c.dlManifest} <Note lang={lang} term={c.dlManifestNoteTerm}>{c.dlManifestNote}</Note></span></p>
+      </div>
+    </div>
+  </section>
+
+  {/* ── 5 · HET LOGBOEK ─────────────────────────────────────────────────── */}
+  <section class="h-sec h-sd-log-sec" aria-labelledby="sd-log">
+    <div class="h-sd-log h-in">
+      <div class="h-sd-log-tekst">
+        <p class="h-pil h-pil-wit"><span>{H.logPil}</span></p>
+        <h2 id="sd-log" class="h-kop h-h3"><span class="l">{H.logKop[0]}</span> {H.logKop[1]}</h2>
+        <p class="h-sd-zin">{c.logLede}</p>
+        <p class="h-acties"><a class="h-knop h-knop-lijn h-knop-klein" href={lp('/ai-act')}>{c.logCta}</a></p>
+      </div>
+      <div class="h-sd-logboek" aria-hidden="true">
+        <span class="h-sd-logboek-kop"><b>{DEMO_ORDER.ref}</b><span>{naLevering}</span><i>{H.logBadge}</i></span>
+        <span class="h-sd-logboek-lijst">
+          {H.log.map(([tijd, beeld, wat, zei]) => (
+            <span class={`h-sd-logboek-r${zei ? ' is-terug' : ''}`}>
+              <span class="h-sd-logboek-t">{tijd}</span>
+              <span class="h-sd-logboek-i" set:html={ik(zei ? 'revisie' : 'check')} />
+              <span class="h-sd-logboek-w"><b>{wat}</b><span>{beeld}</span>{zei && <em>{zei}</em>}</span>
+            </span>
+          ))}
+        </span>
+      </div>
+    </div>
+  </section>
+
+  {/* ── 6 · DE SLEUTEL: de link is de sleutel, dus hij is er als een gebouwd ── */}
+  <section class="h-sec h-sd-sec-sec" id="sleutel" aria-labelledby="sd-sec">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{H.secPil}</span></p>
+        <h2 id="sd-sec" class="h-kop h-h2"><span class="l">{H.secKop[0]}</span> {H.secKop[1]}</h2>
+      </div>
+      <p class="h-pr-kopzin">{c.secLede}</p>
+    </header>
+    <ul class="h-sd-sleutel" role="list">
+      {c.sec.map(([k, v], i) => (
+        <li class={`h-in h-sd-sl${i === 0 ? ' h-groot h-sd-sl-groot' : ''}`} style={`--d:${i}`}>
+          <span class="h-cirkel h-cirkel-wit" aria-hidden="true" set:html={ik(SLEUTEL_IKOON[i])} />
+          <span class="h-sd-sl-onder">
+            {i === 0 && <span class="h-sd-sl-getal"><span class="h-getal">256</span><span class="h-sd-eenheid">{H.bits}</span></span>}
+            {i === c.sec.length - 1 && <span class="h-sd-sl-getal"><span class="h-getal">{PORTAL_TTL_DAYS}</span><span class="h-sd-eenheid">{H.dagen}</span></span>}
+            <b>{k}</b>
+            <span class="h-sd-zin">{v}</span>
+          </span>
+        </li>
+      ))}
+      <li class="h-in h-sd-sl h-sd-sl-noot" style={`--d:${c.sec.length}`}>
+        <span class="h-cirkel h-cirkel-wit" aria-hidden="true" set:html={ik('sleutel')} />
+        <span class="h-sd-zin">{c.secNote}</span>
+      </li>
+    </ul>
+  </section>
+
+  {/* ── 7 · HET SLOT: de proef ───────────────────────────────────────────── */}
+  <HalProef lang={lang} id="sd-slot" kop={H.proefKop} zin={c.closeLede} alt={{ label: c.closeAlt, href: '/start' }} />
+</div>
+<HalBeweging />

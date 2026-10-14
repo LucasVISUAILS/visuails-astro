@@ -63,10 +63,12 @@ console.log('\nde bundel komt uit het plan en niet uit een los getal');
   /* slotsFor() blijft de OUDE bundel teruggeven — die staat nog in PLAN_SLOTS en
      wordt gelezen door /admin voor rijen van vóór de credits. Wat een abonnee
      vandaag krijgt, is creditsVoor(). */
-  ok('studio geeft completes', slotsFor('studio').complete, PLAN_PRODUCTS.studio);
+  /* 'catalog' sinds 14 oktober 2026: compleet bestaat niet meer (afvinklijst 23). */
+  ok('studio geeft catalogproducten', slotsFor('studio').catalog, PLAN_PRODUCTS.studio);
+  ok('en geen completes meer', 'complete' in slotsFor('studio'), false);
   ok('en in credits is dat het plan', creditsVoor({ plan: 'studio' }), PLAN_CREDITS.studio);
   ok('en motion-clips', slotsFor('studio')['video-motion'], PLAN_CLIPS.studio);
-  ok('starter kent maar één soort', kindsFor('starter'), ['complete']);
+  ok('starter kent maar één soort', kindsFor('starter'), ['catalog']);
   /* Een soort met nul hoort geen rij te krijgen — anders staat er "0 van 0" op
      het scherm voor iets wat dit plan niet verkoopt. */
   ok('starter kent geen video', 'video-motion' in slotsFor('starter'), false);

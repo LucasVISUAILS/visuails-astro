@@ -46,6 +46,7 @@
 
 import { mailNote, mailNoteInMail } from '../data/mailNote.js';
 import { tagline } from '../data/brand.js';
+import { waHref } from '../data/whatsapp.js';
 
 const SITE = 'https://visuails.com';
 
@@ -71,32 +72,39 @@ const SITE = 'https://visuails.com';
  * DE STATUSSET STAAT ER OOK IN. Een mail is de vierde plek waar een
  * bestelstatus getoond wordt (na Studio, het klantportaal en admin), en tot
  * vandaag zei hij daar iets anders dan de andere drie. */
+/* ── DE HAL, 14 OKTOBER 2026 ───────────────────────────────────────────────
+   Lucas: het nieuwe kleurenschema "volledig toevoegen". De mail droeg nog het
+   schema van 20 september: puur zwart, een grijsblauwe pagina (#E4E7EC) en
+   alfa-grijzen. Nu de hal (KLEURENSCHEMA.md): inkt #0F0C24 met inkt 2 en 3,
+   wit papier op nevel, de lijn #DEDCE8 en mist met nacht voor een vlak. Violet
+   alleen op de knop. `faint` was zwart op 45 %, 3,4:1 op wit voor de voettekst
+   van 12 px; nu inkt 3, 5,4:1. */
 const C = {
   green: '#4A1FFF',
   onAccent: '#FFFFFF',
   accentText: '#3D17D6',
-  ink: '#000000',
-  text: 'rgba(0,0,0,.66)',
-  head: '#000000',
-  muted: 'rgba(0,0,0,.56)',
-  faint: 'rgba(0,0,0,.45)',
-  rule: 'rgba(0,0,0,.20)',
-  ruleSoft: 'rgba(0,0,0,.10)',
+  ink: '#0F0C24',
+  text: '#4B4960',
+  head: '#0F0C24',
+  muted: '#6A6880',
+  faint: '#6A6880',
+  rule: '#DEDCE8',
+  ruleSoft: '#ECEBF3',
   paper: '#FFFFFF',
-  foot: '#F2F3F5',
-  tintBg: '#E4DFFF',
+  foot: '#F5F5F9',
+  tintBg: '#F1EEFF',
   tintInk: '#2A0E8F',
-  page: '#E4E7EC',
+  page: '#F5F5F9',
 
   /* De vijf toestanden, lichte stand — zie de tabel in KLEURENSCHEMA.md.
      Mail kent geen donkere stand: een mailclient kan zijn eigen donkere modus
      hebben, maar die herkleurt ons vlak niet, dus een tweede set zou alleen
      maar een tweede waarheid zijn. */
-  stWaitFill: 'transparent', stWaitEdge: '#7C8096',            stWaitInk: '#4A4E6B',
-  stWorkFill: '#E4DFFF',     stWorkEdge: 'rgba(61,23,214,.30)', stWorkInk: '#3D17D6',
-  stDoneFill: '#1F0B66',     stDoneEdge: '#1F0B66',             stDoneInk: '#FFFFFF',
+  stWaitFill: 'transparent', stWaitEdge: '#8E8BA2',            stWaitInk: '#4B4960',
+  stWorkFill: '#F1EEFF',     stWorkEdge: '#DCD5FF',             stWorkInk: '#2A0E8F',
+  stDoneFill: '#2A0E8F',     stDoneEdge: '#2A0E8F',             stDoneInk: '#FFFFFF',
   stRevFill:  '#F6E7D1',     stRevEdge:  'rgba(138,77,6,.30)',  stRevInk:  '#8A4D06',
-  stCanFill:  '#E4E7EC',     stCanEdge:  '#83868A',             stCanInk:  '#3E4145',
+  stCanFill:  '#ECEBF3',     stCanEdge:  '#8E8BA2',             stCanInk:  '#4B4960',
 };
 
 import { stand } from '../data/status.js';
@@ -247,19 +255,19 @@ export const statusPil = (status, label) => {
 /** The green call-to-action. A table cell with bgcolor, which Outlook honours. */
 export const button = (href, label) =>
   `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-    <td bgcolor="${C.green}" align="center" style="background:${C.green};padding:14px 26px">
+    <td bgcolor="${C.green}" align="center" style="background:${C.green};padding:14px 26px;border-radius:999px">
       <!-- De letter op het accent is WIT sinds 20 september: zwart op violet
            haalt 2,93:1 en is in KLEURENSCHEMA.md met zoveel woorden afgekeurd. -->
       <a href="${esc(href)}" style="font-family:${FONT};font-size:15px;font-weight:700;color:${C.onAccent};text-decoration:none;display:block">${esc(label)}</a>
     </td>
   </tr></table>`;
 
-/** The amount-due panel: green edge, tinted ground, total, button. */
+/** The amount-due panel: a mist panel with the total and the button. Sinds 14
+    oktober 2026 zonder de violette rand links (violet is voor de knop). */
 export const payPanel = ({ label, amount, sub, href, cta }) =>
-  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.tintBg}" style="background:${C.tintBg};margin:8px 0 0">
+  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.tintBg}" style="background:${C.tintBg};margin:8px 0 0;border-radius:22px">
     <tr>
-      <td width="4" bgcolor="${C.green}" style="width:4px;background:${C.green};font-size:0;line-height:0">&nbsp;</td>
-      <td style="padding:20px 22px;font-family:${FONT}">
+      <td style="padding:22px 24px;font-family:${FONT}">
         <p style="margin:0 0 2px;font-size:12px;letter-spacing:.1em;color:${C.tintInk};text-transform:uppercase">${esc(label)}</p>
         <p style="margin:0 0 4px;font-size:26px;font-weight:700;color:${C.head}">${esc(amount)}</p>
         ${sub ? `<p style="margin:0 0 16px;font-size:12px;line-height:1.5;color:${C.muted}">${sub}</p>` : ''}
@@ -271,9 +279,8 @@ export const payPanel = ({ label, amount, sub, href, cta }) =>
 /** A quiet aside with a hairline down its left — the spam note lives in one. */
 export const note = html =>
   `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 0"><tr>
-    <!-- #CCCCCC is --line (20% zwart) uitgerekend op wit: bgcolor slikt geen
-         rgba, en dit streepje is het enige dat hier nog een eigen grijs had. -->
-    <td width="3" bgcolor="#CCCCCC" style="width:3px;font-size:0;line-height:0">&nbsp;</td>
+    <!-- De lijn van de hal (#DEDCE8), als bgcolor: dat slikt elke mailclient. -->
+    <td width="3" bgcolor="${C.rule}" style="width:3px;font-size:0;line-height:0">&nbsp;</td>
     <td style="padding:2px 0 2px 14px">
       <p style="margin:0;font-family:${FONT};font-size:13px;line-height:1.6;color:${C.muted}">${html}</p>
     </td>
@@ -289,15 +296,33 @@ export const note = html =>
  * before the button rather than after.
  */
 export const quote = html =>
-  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.tintBg}" style="background:${C.tintBg};margin:2px 0 0"><tr>
-    <td width="4" bgcolor="${C.green}" style="width:4px;background:${C.green};font-size:0;line-height:0">&nbsp;</td>
-    <td style="padding:14px 18px">
+  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.tintBg}" style="background:${C.tintBg};margin:2px 0 0;border-radius:18px"><tr>
+    <td style="padding:16px 20px">
       <p style="margin:0;font-family:${FONT};font-size:15px;line-height:1.6;color:${C.text}">${html}</p>
     </td>
   </tr></table>`;
 
-/** The "check your spam" line, from the one place that sentence is written. */
+/** The "check your spam" line, from the one place that sentence is written.
+ *  Sinds 8 oktober 2026 (punt 7.07, V21-1) alleen nog in de eerste mail aan een
+ *  nieuw adres: de bestelbevestiging bij een eerste bestelling, de checklist en
+ *  de bevestiging van een nieuw e-mailadres. Een zin die in dertig mails staat,
+ *  leest niemand meer. */
 export const spamNote = lang => note(esc(mailNoteInMail(lang)));
+
+/* ── DE VRAGENREGEL — 8 oktober 2026 (punt 7.07) ─────────────────────────────
+   Elke klantmail eindigt met dezelfde regel: "Vragen? Antwoord op deze mail of
+   app ons." Het antwoordadres is hello@ (src/lib/mail.js), en "app ons" is een
+   gewone wa.me-link met het kenmerk erin, zonder persoonsgegevens. Dit is de
+   knop voor wie zelf een vraag heeft; wij appen nooit uit onszelf over een
+   statuswissel (overzicht §21). */
+export function vragen(lang = 'nl', ref = '') {
+  const nl = lang !== 'en';
+  const tekst = nl
+    ? `Hoi VISUAILS, een vraag over mijn bestelling${ref ? ` ${ref}` : ''}:`
+    : `Hi VISUAILS, a question about my order${ref ? ` ${ref}` : ''}:`;
+  const a = `<a href="${esc(waHref(tekst))}" style="color:${C.head};font-weight:700">${nl ? 'app ons' : 'WhatsApp us'}</a>`;
+  return p(nl ? `Vragen? Antwoord op deze mail of ${a}.` : `Questions? Reply to this email or ${a}.`, { top: 14, bottom: 0 });
+}
 
 /** A prominent text link on its own line, the way the portal link is offered. */
 export const linkLine = (href, label) =>
@@ -305,19 +330,18 @@ export const linkLine = (href, label) =>
 
 /* ── the shell ───────────────────────────────────────────────────────────── */
 
+/* De kop (14 oktober 2026): wit, met het woordmerk als beeld (een mail kent
+   geen SVG; scripts/make-mail-assets.mjs tekent het uit src/data/woordmerk.js)
+   en een haarlijn eronder. Hier stond een zwarte band met het V-merk en het
+   woord VISUAILS ernaast — twee merken naast elkaar, wat nergens anders mag —
+   en een violette streep van 4 px. Zonder beelden leest de alt-tekst
+   "VISUAILS" op dezelfde plek. */
 const letterhead = () => `
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.ink}" style="background:${C.ink}">
-  <tr><td style="padding:20px 32px">
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-      <td style="padding:0 12px 0 0;vertical-align:middle">
-        <a href="${SITE}"><img src="${SITE}/img/mail/mark-groen.png" width="28" height="32" alt="" style="display:block;border:0;outline:none;text-decoration:none"></a>
-      </td>
-      <td style="vertical-align:middle">
-        <a href="${SITE}" style="font-family:${FONT};font-size:15px;font-weight:700;letter-spacing:.22em;color:#FFFFFF;text-decoration:none">VISUAILS</a>
-      </td>
-    </tr></table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.paper}" style="background:${C.paper}">
+  <tr><td style="padding:26px 32px 22px">
+    <a href="${SITE}" style="font-family:${FONT};font-size:15px;font-weight:700;letter-spacing:.12em;color:${C.ink};text-decoration:none"><img src="${SITE}/img/mail/woordmerk-inkt.png" width="124" height="22" alt="VISUAILS" style="display:block;border:0;outline:none;text-decoration:none;color:${C.ink}"></a>
   </td></tr>
-  <tr><td height="4" bgcolor="${C.green}" style="height:4px;line-height:4px;font-size:0">&nbsp;</td></tr>
+  <tr><td style="padding:0 32px"><div style="height:1px;background:${C.rule};font-size:0;line-height:0">&nbsp;</div></td></tr>
 </table>`;
 
 const footer = lang => {

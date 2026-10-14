@@ -1,15 +1,17 @@
 ---
+// VISUAILS — /about: sinds 14 oktober 2026 OverHal.astro (afvinklijst 22: de studio opent, Lucas
+// verderop als oprichter). AboutHal.astro en AboutPage.astro staan op de opruimlijst.
 // VISUAILS — /about (English). De inhoud staat in AboutPage.astro zodat deze
 // pagina en /nl/about niet uit elkaar kunnen lopen; zie de kop daar. Dit paar
 // wás al uit elkaar gelopen — de Engelse stond in sectie 22 en de Nederlandse
 // nog in de oude stijl — en dat is precies waarom het nu één bestand is.
 import Layout from '../layouts/Layout.astro';
-import AboutPage from '../components/AboutPage.astro';
+import OverHal from '../components/OverHal.astro';
 ---
 
-<Layout
+<Layout huid="hal"
   title="About VISUAILS — the studio behind the visuals"
   description="VISUAILS is a product-visual studio in Enschede, Netherlands — modern production speed with human judgement on every visual we deliver."
 >
-  <AboutPage lang="en" />
+  <OverHal lang="en" />
 </Layout>

@@ -71,6 +71,13 @@ export const SHOTS = [
     id: 'front',
     required: true,
     name: { en: 'Front', nl: 'Voorkant' },
+    /* 5.07 — de ene regel bij het vak en de voorbeeldfoto. Zie de noot
+       "DE REGEL EN HET VOORBEELD PER VAK" onder deze lijst. */
+    regel: {
+      en: 'Flat on a clear floor or against a door, fully in frame, in daylight.',
+      nl: 'Plat op een lege vloer of tegen een deur, helemaal in beeld, bij daglicht.',
+    },
+    voorbeeld: '/img/vak-front.webp',
     how: {
       en: 'The whole product, flat or hanging, straight on. Fill the frame.',
       nl: 'Het hele product, plat of hangend, recht van voren. Vul het beeld.',
@@ -86,6 +93,11 @@ export const SHOTS = [
     id: 'back',
     required: true,
     name: { en: 'Back', nl: 'Achterkant' },
+    regel: {
+      en: 'Same spot and light, product turned over.',
+      nl: 'Zelfde plek en licht, product omgedraaid.',
+    },
+    voorbeeld: '/img/vak-back.webp',
     how: {
       en: 'Same distance and angle as the front, turned over.',
       nl: 'Zelfde afstand en hoek als de voorkant, omgedraaid.',
@@ -126,9 +138,22 @@ export const SHOTS = [
     id: 'detail',
     required: true,
     name: { en: 'Detail', nl: 'Detail' },
+    regel: {
+      en: 'The logo, the print or the label — whatever has to be right in your images. No logo? Then the fabric.',
+      nl: 'Het logo, de print of het label — wat in je beelden moet kloppen. Geen logo? Dan de stof.',
+    },
+    voorbeeld: '/img/vak-detail.webp',
+    /* De tip met het witte vel (5.03), los van `how` — 11 oktober 2026 (F3).
+       In stap 2 staat sinds de ombouw `regel` bij het vak en niet meer `how`;
+       zonder dit veld zou de tip daar verdwijnen. Dezelfde zin als aan het
+       eind van `how`, dat de fotogids en de werkmap blijven lezen. */
+    tip: {
+      en: 'Tip: put a sheet of white printer paper half in the frame; it shows us what colour the light adds.',
+      nl: 'Tip: leg een wit vel printpapier half in beeld; dan zien we welke kleur het licht geeft.',
+    },
     how: {
-      en: 'Close in on the fabric, a seam, the label or the hardware. A plain fabric shot counts — one is enough.',
-      nl: 'Ga dichtbij op de stof, een naad, het label of de fournituren. Een gewone stoffoto telt ook — één is genoeg.',
+      en: 'Close in on the fabric, a seam, the label or the hardware. A plain fabric shot counts — one is enough. Tip: put a sheet of white printer paper half in the frame; it shows us what colour the light adds.',
+      nl: 'Ga dichtbij op de stof, een naad, het label of de fournituren. Een gewone stoffoto telt ook — één is genoeg. Tip: leg een wit vel printpapier half in beeld; dan zien we welke kleur het licht geeft.',
     },
     buys: {
       en: 'This is what keeps the material honest — the weave, the wash, the sheen. It is the difference between your garment and a garment, and a close-up comes back to you as a delivered image, so without one we would be reading the material off a photo that cannot show it.',
@@ -174,6 +199,18 @@ export const SHOTS = [
     required: false,
     mustDecide: false,
     name: { en: 'Worn', nl: 'Gedragen' },
+    regel: {
+      en: 'Show how it hangs.',
+      nl: 'Laat zien hoe het valt.',
+    },
+    /* Wat we aannemen als dit vak leeg blijft (5.07). Een eigen veld en niet
+       achter `regel` geplakt: het formulier kan de aanname dan anders zetten
+       dan de aanwijzing, en de fotogids leest hem los. */
+    zonder: {
+      en: 'Without a worn photo we assume a regular, straight fit.',
+      nl: 'Zonder draagfoto gaan we uit van een normale, rechte pasvorm.',
+    },
+    voorbeeld: '/img/vak-worn.webp',
     how: {
       en: 'Anyone wearing it, any phone, any room. It is for the fit, not for the picture.',
       nl: 'Wie het ook draagt, elke telefoon, elke kamer. Het gaat om de pasvorm, niet om de foto.',
@@ -184,6 +221,33 @@ export const SHOTS = [
     },
   },
 ];
+
+/* ── DE REGEL EN HET VOORBEELD PER VAK — 8 oktober 2026 (5.07) ──────────────
+ *
+ * Lucas koos: in stap 2 krijgt elk vak een voorbeeldfoto van ±64 px en één
+ * regel, en bij het draagvak staat wat we aannemen als die foto ontbreekt. De
+ * velden staan hier alvast; het TONEN in stap 2 komt pas bij de ombouw van
+ * die stap. Tot dan lezen /upload-guidelines, de fotogids-pdf en de
+ * checklistmail ze (via src/data/fotogids.js).
+ *
+ *   regel      één korte regel, in de plaats van `how` zodra stap 2 omgaat
+ *   zonder     alleen bij `worn`: de aanname als het vak leeg blijft
+ *   voorbeeld  pad van de voorbeeldfoto. Het BESTAND maakt Lucas (een echte
+ *              telefoonfoto, 128 × 128 px voor ±64 px op het scherm). Wie hem
+ *              toont, vraagt eerst isEcht() uit src/lib/beeldAanwezig.js en
+ *              laat het plaatje weg zolang het bestand er niet is: geen grijs
+ *              vlak, geen plaatshouder.
+ *
+ * `how` en `buys` blijven staan zoals ze zijn: het formulier, het tippaneel en
+ * de werkmap lezen ze vandaag. */
+
+/** De regel bij een vak, met de aanname erachter als die er is. '' voor een onbekend vak. */
+export function vakRegel(id, lang = 'en') {
+  const s = SHOTS.find((x) => x.id === id);
+  if (!s || !s.regel) return '';
+  const l = lang === 'nl' ? 'nl' : 'en';
+  return s.zonder ? `${s.regel[l]} ${s.zonder[l]}` : s.regel[l];
+}
 
 export const SHOT_IDS = SHOTS.map((s) => s.id);
 export const SHOTS_PER_PRODUCT = SHOTS.length;
@@ -508,6 +572,14 @@ export function productKeyFromPath(relativePath) {
   return parts.length > 1 ? parts[parts.length - 2] : null;
 }
 
+/* Hoe lang we wachten op een ontbrekende foto (laterLead hieronder), uit
+   termijnen.js — niet getypt. Naloop A2, 8 okt 2026. */
+import { FOTO_WACHT_DAGEN, inWoorden } from './termijnen.js';
+const WACHT = {
+  nl: `${inWoorden(FOTO_WACHT_DAGEN, 'nl')} ${FOTO_WACHT_DAGEN === 1 ? 'dag' : 'dagen'}`,
+  en: `${inWoorden(FOTO_WACHT_DAGEN, 'en')} ${FOTO_WACHT_DAGEN === 1 ? 'day' : 'days'}`,
+};
+
 export const COPY = {
   en: {
     h: 'Your product photos',
@@ -553,6 +625,9 @@ export const COPY = {
        Lucas naar wees toen hij zei dat die look rustiger oogt. */
     required: 'Needed',
     optional: 'Optional',
+    /* De draagfoto bij lifestyle (afvinklijst 23, v23-draagfoto b): drie van de vier
+       beelden zijn op een model, dus vragen we erom — overslaan mag nog steeds. */
+    aanbevolen: 'Recommended',
     /* ── DE RIJ — 17 september 2026 ──────────────────────────────────────
        Eén product tegelijk, met twee pijlen eronder. `rijTel` is de regel boven
        de balk: "Product 3 van 12 · 2 af". De {n} is er alleen als hij klopt —
@@ -624,15 +699,36 @@ export const COPY = {
        moet worden; hij wordt op dit moment niet gebruikt. */
     missingMore: 'and {n} more',
     missingTap: 'Tap a product to jump straight to it.',
-    missingFix: 'Add the photos',
-    missingGo: 'Send without them',
+    /* 2.05 (F3, 11 oktober 2026): nu toevoegen, of later in VISUAILS Studio. */
+    missingFix: 'Add them now',
+    missingGo: 'Later, in VISUAILS Studio',
     progressExtra: '{n} optional photos added',
     progressExtraOne: '1 optional photo added',
     allDone: 'All {total} products have what we need.',
     allDoneOne: 'That product has what we need.',
     laterH: 'Rather send them later?',
-    laterLead: 'Order now and send the photos afterwards — you get a link the moment the order is in, and the studio does not start until they arrive.',
+    /* Naloop A2 (8 okt 2026), V31-2 = c: de studio wacht niet meer tot alles er is.
+       Eén bericht, en na FOTO_WACHT_DAGEN zonder antwoord maken we wat er is. */
+    laterLead: `Order now and add the photos afterwards in VISUAILS Studio. If anything is still missing after ${WACHT.en}, we make what we have.`,
     quality: 'Any phone, any daylight, any plain surface. We are not judging the photograph — we are reading the product off it.',
+    /* ── STAP 2 ALS ÉÉN KAART PER PRODUCT — 11 oktober 2026 (F3) ────────────
+       Lucas koos (afvinklijst 2, form = a): één knop per product, 3–4 foto's
+       tegelijk, ze vallen vanzelf in voorkant / achterkant / detail /
+       gedragen, en wisselen met één tik. Deze woorden horen bij die kaart. */
+    stapLead: 'One button per product: pick its 3 or 4 photos at once. Front, back and detail are needed; the worn photo is optional.',
+    kies: 'Choose this product’s photos',
+    kiesNog: 'Add photos',
+    kiesHint: 'Pick them in this order: front, back, detail, worn. Landed in the wrong slot? Swap it underneath.',
+    wissel: 'Swap…',
+    wisselLabel: 'Swap {shot} with another slot',
+    wisselMet: 'with {shot}',
+    soort: 'Kind of product',
+    soortKies: 'Pick a kind',
+    erbijH: 'Alongside in the photo',
+    erbijHint: 'Not photographed as a product, and free. Has a logo on it? We remove it. Leave it empty and we choose.',
+    erbijGeen: 'With this kind of product nothing else is in the frame.',
+    erbijEerst: 'Pick the kind of product first; then you see what can go alongside it.',
+    missingNone: 'You have not chosen any photos yet',
   },
   nl: {
     h: 'Je productfoto’s',
@@ -652,6 +748,7 @@ export const COPY = {
        vaknaam waar 'Verplicht' wikkelt, en het is het woord uit het concept. */
     required: 'Nodig',
     optional: 'Optioneel',
+    aanbevolen: 'Aanbevolen',
     /* Zie de Engelse tegenhanger. */
     vorige: 'Vorige',
     volgende: 'Volgend product',
@@ -689,15 +786,30 @@ export const COPY = {
     missingBody: 'Je kunt de bestelling toch versturen. De productie start dan pas als de ontbrekende foto’s binnen zijn, en we nemen contact met je op om ze te vragen — dat kost meestal een dag.',
     missingMore: 'en nog {n}',
     missingTap: 'Klik op een product om er meteen heen te gaan.',
-    missingFix: 'Foto’s toevoegen',
-    missingGo: 'Toch versturen',
+    missingFix: 'Nu toevoegen',
+    missingGo: 'Later in VISUAILS Studio',
     progressExtra: '{n} optionele foto’s toegevoegd',
     progressExtraOne: '1 optionele foto toegevoegd',
     allDone: 'Alle {total} producten hebben wat we nodig hebben.',
     allDoneOne: 'Dat product heeft wat we nodig hebben.',
     laterH: 'Liever later opsturen?',
-    laterLead: 'Bestel nu en stuur de foto’s daarna — je krijgt een link zodra de bestelling binnen is, en de studio begint pas als ze er zijn.',
+    laterLead: `Bestel nu en voeg de foto’s daarna toe in VISUAILS Studio. Ontbreekt er na ${WACHT.nl} nog iets, dan maken we wat er is.`,
     quality: 'Elke telefoon, elk daglicht, elke egale ondergrond. We beoordelen de foto niet — we lezen het product eraf.',
+    /* Zie de Engelse tegenhanger (F3, 11 oktober 2026). */
+    stapLead: 'Per product één knop: kies de 3 of 4 foto’s tegelijk. Voorkant, achterkant en detail zijn nodig, de draagfoto is optioneel.',
+    kies: 'Kies de foto’s van dit product',
+    kiesNog: 'Foto’s bijzetten',
+    kiesHint: 'Kies ze in deze volgorde: voorkant, achterkant, detail, gedragen. Staat er een in het verkeerde vak? Wissel hem eronder.',
+    wissel: 'Wissel…',
+    wisselLabel: 'Wissel {shot} met een ander vak',
+    wisselMet: 'met {shot}',
+    soort: 'Soort product',
+    soortKies: 'Kies een soort',
+    erbijH: 'Erbij in beeld',
+    erbijHint: 'Wordt niet als product gefotografeerd en kost niets. Zit er een logo op? Dat halen we weg. Laat je het leeg, dan kiezen wij.',
+    erbijGeen: 'Bij deze soort product staat er verder niets in beeld.',
+    erbijEerst: 'Kies eerst de soort product; dan zie je wat er nog bij in beeld kan.',
+    missingNone: 'Je hebt nog geen foto’s gekozen',
   },
 };
 

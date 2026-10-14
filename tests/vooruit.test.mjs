@@ -25,7 +25,7 @@
 import {
   PLAN_IDS, TERMS, TERM_IDS, isPrepaid, term,
   prepayFreeMonths, prepayPaidMonths, prepayTotalCents, prepaySaveCents,
-  termTotalCents, monthlyCents, perProductCents, ladderFloorCents,
+  termTotalCents, monthlyCents, perProductCents, PLAN_BODEM_CENTS,
   PREPAY_FLOOR_SHARE, rolloverMonths, hasBrandModel,
 } from '../src/data/plans.js';
 import { PREPAY_REFUNDABLE, prepayRefundCents, VOORUIT_COPY } from '../src/data/vooruit.js';
@@ -118,7 +118,7 @@ console.log('\nvooruitbetalen is op elk plan goedkoper, en het voordeel loopt op
 
 console.log('\nen geen enkel plan zakt door de vooruitbodem');
 {
-  const bodem = ladderFloorCents();
+  const bodem = PLAN_BODEM_CENTS;
   const drempel = Math.round(bodem * PREPAY_FLOOR_SHARE);
   /* Zeventig procent sinds 10 september; hij stond op 75 en ging mee omlaag toen
      Lucas voor twee gratis maanden op elk plan koos. Zie PREPAY_FLOOR_SHARE. */

@@ -140,3 +140,288 @@
 /proef/                 /                   301
 /nl/proef               /nl                 301
 /nl/proef/              /nl                 301
+
+# ── /portal → /studio (8 oktober 2026, punt 1.11) ───────────────────────────
+# Lucas koos V39 = b: /studio is de pagina over VISUAILS Studio, met "Inloggen"
+# bovenaan, en /portal stuurt door. De pagina die op /portal stond, staat nu
+# op /studio (src/components/StudioPage.astro); src/pages/portal.astro en
+# src/pages/nl/portal.astro bestaan dus niet meer, en daarom mogen ze hier als
+# bron staan (regel 2 bovenaan). /portal stond in de sitemap en in de tekst
+# van de leveringsmap ("visuails.com/portal", src/lib/delivery.js): een 301
+# houdt die links werkend. De privélink zelf is /o/<token> en raakt dit niet.
+# Het doel met slash: de pagina staat als map in dist/, en zonder slash zou er
+# na deze 301 nog een tweede doorverwijzing komen.
+/portal                 /studio/            301
+/portal/                /studio/            301
+/nl/portal              /nl/studio/         301
+/nl/portal/             /nl/studio/         301
+
+# ── /start/complete → /start (8 oktober 2026, punt 9.01) ────────────────────
+# Catalog + lifestyle in één bestelling wordt niet meer verkocht (§17.5). Lucas
+# koos V12 = a: wie een oude link uit een mail of bladwijzer volgt, landt op het
+# keuzescherm, waar catalog en lifestyle elk hun eigen deur hebben. De pagina's
+# src/pages/start/complete.astro en src/pages/nl/start/complete.astro bestaan
+# daarom niet meer (regel 2 bovenaan); bestaande bestellingen met service
+# 'drop' lopen via Studio, de privélink en /admin, en die raakt dit niet.
+# Het doel met slash, om dezelfde reden als bij /portal hierboven.
+/start/complete         /start/             301
+/start/complete/        /start/             301
+/nl/start/complete      /nl/start/          301
+/nl/start/complete/     /nl/start/          301
+
+# ── /voorbeeld → / (12 oktober 2026) ────────────────────────────────────────
+# Het voorbeeld van de nieuwe voorpagina ("de hal") stond een dag op /voorbeeld/
+# en /nl/voorbeeld/ (noindex, niet in de sitemap). Lucas keurde het goed en koos
+# "direct live bij je volgende UITROLLEN": de hal staat nu op / en /nl/, en de
+# twee voorbeeldpagina's bestaan niet meer (regel 2 bovenaan). Wie de link nog
+# op zijn telefoon heeft, landt zo op de echte voorpagina.
+/voorbeeld              /                   301
+/voorbeeld/             /                   301
+/nl/voorbeeld           /nl/                301
+/nl/voorbeeld/          /nl/                301
+
+# ── /voorbeeld/<pagina> → de pagina zelf (12 oktober 2026, avond) ─────────────
+# Afvinklijst 7 en 8: per groep eerst een voorbeeld op /voorbeeld/<pagina>/ (noindex,
+# niet in de sitemap), daarna Lucas' "doen". Start, de prijzen, catalog en lifestyle
+# staan nu zelf in de hal; de voorbeeldpagina's bestaan niet meer (regel 2 bovenaan).
+# Wie de link nog heeft, komt op de echte pagina. Exact, in beide vormen.
+/voorbeeld/start                        /start                      301
+/voorbeeld/start/                       /start                      301
+/nl/voorbeeld/start                     /nl/start                   301
+/nl/voorbeeld/start/                    /nl/start                   301
+/voorbeeld/pricing                      /pricing                    301
+/voorbeeld/pricing/                     /pricing                    301
+/nl/voorbeeld/pricing                   /nl/pricing                 301
+/nl/voorbeeld/pricing/                  /nl/pricing                 301
+/voorbeeld/plans                        /plans                      301
+/voorbeeld/plans/                       /plans                      301
+/nl/voorbeeld/plans                     /nl/plans                   301
+/nl/voorbeeld/plans/                    /nl/plans                   301
+/voorbeeld/per-product                  /per-product                301
+/voorbeeld/per-product/                 /per-product                301
+/nl/voorbeeld/per-product               /nl/per-product             301
+/nl/voorbeeld/per-product/              /nl/per-product             301
+/voorbeeld/catalog                      /catalog                    301
+/voorbeeld/catalog/                     /catalog                    301
+/nl/voorbeeld/catalog                   /nl/catalog                 301
+/nl/voorbeeld/catalog/                  /nl/catalog                 301
+/voorbeeld/catalog/classic              /catalog/classic            301
+/voorbeeld/catalog/classic/             /catalog/classic            301
+/nl/voorbeeld/catalog/classic           /nl/catalog/classic         301
+/nl/voorbeeld/catalog/classic/          /nl/catalog/classic         301
+/voorbeeld/catalog/custom               /catalog/custom             301
+/voorbeeld/catalog/custom/              /catalog/custom             301
+/nl/voorbeeld/catalog/custom            /nl/catalog/custom          301
+/nl/voorbeeld/catalog/custom/           /nl/catalog/custom          301
+/voorbeeld/lifestyle                    /lifestyle                  301
+/voorbeeld/lifestyle/                   /lifestyle                  301
+/nl/voorbeeld/lifestyle                 /nl/lifestyle               301
+/nl/voorbeeld/lifestyle/                /nl/lifestyle               301
+/voorbeeld/lifestyle/dunes              /lifestyle/dunes            301
+/voorbeeld/lifestyle/dunes/             /lifestyle/dunes            301
+/nl/voorbeeld/lifestyle/dunes           /nl/lifestyle/dunes         301
+/nl/voorbeeld/lifestyle/dunes/          /nl/lifestyle/dunes         301
+/voorbeeld/lifestyle/flash              /lifestyle/flash            301
+/voorbeeld/lifestyle/flash/             /lifestyle/flash            301
+/nl/voorbeeld/lifestyle/flash           /nl/lifestyle/flash         301
+/nl/voorbeeld/lifestyle/flash/          /nl/lifestyle/flash         301
+/voorbeeld/lifestyle/glow               /lifestyle/glow             301
+/voorbeeld/lifestyle/glow/              /lifestyle/glow             301
+/nl/voorbeeld/lifestyle/glow            /nl/lifestyle/glow          301
+/nl/voorbeeld/lifestyle/glow/           /nl/lifestyle/glow          301
+/voorbeeld/lifestyle/phone-made         /lifestyle/phone-made       301
+/voorbeeld/lifestyle/phone-made/        /lifestyle/phone-made       301
+/nl/voorbeeld/lifestyle/phone-made      /nl/lifestyle/phone-made    301
+/nl/voorbeeld/lifestyle/phone-made/     /nl/lifestyle/phone-made    301
+/voorbeeld/lifestyle/custom             /lifestyle/custom           301
+/voorbeeld/lifestyle/custom/            /lifestyle/custom           301
+/nl/voorbeeld/lifestyle/custom          /nl/lifestyle/custom        301
+/nl/voorbeeld/lifestyle/custom/         /nl/lifestyle/custom        301
+# De proef staat sinds 12 oktober 2026 (afvinklijst 9) zelf in de hal; het voorbeeld stuurt door.
+/voorbeeld/test-sample                  /test-sample                301
+/voorbeeld/test-sample/                 /test-sample                301
+/nl/voorbeeld/test-sample               /nl/test-sample             301
+/nl/voorbeeld/test-sample/              /nl/test-sample             301
+# De formulieren en de bedankpagina staan sinds 13 oktober 2026 (afvinklijst 10) zelf in de hal; de voorbeelden sturen door.
+/voorbeeld/start/catalog                /start/catalog              301
+/voorbeeld/start/catalog/               /start/catalog              301
+/voorbeeld/start/lifestyle              /start/lifestyle            301
+/voorbeeld/start/lifestyle/             /start/lifestyle            301
+/voorbeeld/start/plan                   /start/plan                 301
+/voorbeeld/start/plan/                  /start/plan                 301
+/voorbeeld/start/brand-model            /start/brand-model          301
+/voorbeeld/start/brand-model/           /start/brand-model          301
+/voorbeeld/start/custom-look            /start/custom-look          301
+/voorbeeld/start/custom-look/           /start/custom-look          301
+/voorbeeld/start/video                  /start/video                301
+/voorbeeld/start/video/                 /start/video                301
+/voorbeeld/thank-you                    /thank-you                  301
+/voorbeeld/thank-you/                   /thank-you                  301
+/nl/voorbeeld/start/catalog             /nl/start/catalog           301
+/nl/voorbeeld/start/catalog/            /nl/start/catalog           301
+/nl/voorbeeld/start/lifestyle           /nl/start/lifestyle         301
+/nl/voorbeeld/start/lifestyle/          /nl/start/lifestyle         301
+/nl/voorbeeld/start/plan                /nl/start/plan              301
+/nl/voorbeeld/start/plan/               /nl/start/plan              301
+/nl/voorbeeld/start/brand-model         /nl/start/brand-model       301
+/nl/voorbeeld/start/brand-model/        /nl/start/brand-model       301
+/nl/voorbeeld/start/custom-look         /nl/start/custom-look       301
+/nl/voorbeeld/start/custom-look/        /nl/start/custom-look       301
+/nl/voorbeeld/start/video               /nl/start/video             301
+/nl/voorbeeld/start/video/              /nl/start/video             301
+/nl/voorbeeld/thank-you                 /nl/thank-you               301
+/nl/voorbeeld/thank-you/                /nl/thank-you               301
+# Hoe het werkt staat sinds 13 oktober 2026 (afvinklijst 11) zelf in de hal; het voorbeeld stuurt door.
+/voorbeeld/how-it-works                 /how-it-works               301
+/voorbeeld/how-it-works/                /how-it-works               301
+/nl/voorbeeld/how-it-works              /nl/how-it-works            301
+/nl/voorbeeld/how-it-works/             /nl/how-it-works            301
+# De modellen staan sinds 13 oktober 2026 (afvinklijst 12) zelf in de hal; de voorbeelden sturen door.
+/voorbeeld/models                       /models                     301
+/voorbeeld/models/                      /models                     301
+/voorbeeld/custom-models                /custom-models              301
+/voorbeeld/custom-models/               /custom-models              301
+/nl/voorbeeld/models                    /nl/models                  301
+/nl/voorbeeld/models/                   /nl/models                  301
+/nl/voorbeeld/custom-models             /nl/custom-models           301
+/nl/voorbeeld/custom-models/            /nl/custom-models           301
+# Vergelijken staat sinds 13 oktober 2026 (afvinklijst 13) zelf in de hal; het voorbeeld stuurt door.
+/voorbeeld/compare                      /compare                    301
+/voorbeeld/compare/                     /compare                    301
+/nl/voorbeeld/compare                   /nl/compare                 301
+/nl/voorbeeld/compare/                  /nl/compare                 301
+# De leespagina's (gidsen, vragen, fotogids) staan sinds 13 oktober 2026 (afvinklijst 14) zelf in de hal; het voorbeeld stuurt door.
+/voorbeeld/guides                       /guides                     301
+/voorbeeld/guides/                      /guides                     301
+/nl/voorbeeld/guides                    /nl/guides                  301
+/nl/voorbeeld/guides/                   /nl/guides                  301
+/voorbeeld/faq                          /faq                        301
+/voorbeeld/faq/                         /faq                        301
+/nl/voorbeeld/faq                       /nl/faq                     301
+/nl/voorbeeld/faq/                      /nl/faq                     301
+/voorbeeld/upload-guidelines            /upload-guidelines          301
+/voorbeeld/upload-guidelines/           /upload-guidelines          301
+/nl/voorbeeld/upload-guidelines         /nl/upload-guidelines       301
+/nl/voorbeeld/upload-guidelines/        /nl/upload-guidelines       301
+# Over ons en contact staan sinds 13 oktober 2026 (afvinklijst 15) zelf in de hal; het voorbeeld stuurt door.
+/voorbeeld/about                        /about                      301
+/voorbeeld/about/                       /about                      301
+/nl/voorbeeld/about                     /nl/about                   301
+/nl/voorbeeld/about/                    /nl/about                   301
+/voorbeeld/contact                      /contact                    301
+/voorbeeld/contact/                     /contact                    301
+/nl/voorbeeld/contact                   /nl/contact                 301
+/nl/voorbeeld/contact/                  /nl/contact                 301
+# Video, hooks en editions staan sinds 13 oktober 2026 (afvinklijst 16) zelf in de hal; de voorbeelden sturen door.
+/voorbeeld/video                        /video                      301
+/voorbeeld/video/                       /video                      301
+/voorbeeld/video/motion                 /video/motion               301
+/voorbeeld/video/motion/                /video/motion               301
+/voorbeeld/video/lifestyle              /video/lifestyle            301
+/voorbeeld/video/lifestyle/             /video/lifestyle            301
+/voorbeeld/video/campaign               /video/campaign             301
+/voorbeeld/video/campaign/              /video/campaign             301
+/voorbeeld/video/custom                 /video/custom               301
+/voorbeeld/video/custom/                /video/custom               301
+/voorbeeld/hooks                        /hooks                      301
+/voorbeeld/hooks/                       /hooks                      301
+/voorbeeld/editions                     /editions                   301
+/voorbeeld/editions/                    /editions                   301
+/nl/voorbeeld/video                     /nl/video                   301
+/nl/voorbeeld/video/                    /nl/video                   301
+/nl/voorbeeld/video/motion              /nl/video/motion            301
+/nl/voorbeeld/video/motion/             /nl/video/motion            301
+/nl/voorbeeld/video/lifestyle           /nl/video/lifestyle         301
+/nl/voorbeeld/video/lifestyle/          /nl/video/lifestyle         301
+/nl/voorbeeld/video/campaign            /nl/video/campaign          301
+/nl/voorbeeld/video/campaign/           /nl/video/campaign          301
+/nl/voorbeeld/video/custom              /nl/video/custom            301
+/nl/voorbeeld/video/custom/             /nl/video/custom            301
+/nl/voorbeeld/hooks                     /nl/hooks                   301
+/nl/voorbeeld/hooks/                    /nl/hooks                   301
+/nl/voorbeeld/editions                  /nl/editions                301
+/nl/voorbeeld/editions/                 /nl/editions                301
+# De galerij staat sinds 13 oktober 2026 (afvinklijst 17) zelf in de hal; het voorbeeld stuurt door.
+/voorbeeld/gallery                      /gallery                    301
+/voorbeeld/gallery/                     /gallery                    301
+/nl/voorbeeld/gallery                   /nl/gallery                 301
+/nl/voorbeeld/gallery/                  /nl/gallery                 301
+# Studio staat sinds 13 oktober 2026 (afvinklijst 18) zelf in de hal; het voorbeeld stuurt door.
+/voorbeeld/studio                       /studio                     301
+/voorbeeld/studio/                      /studio                     301
+/nl/voorbeeld/studio                    /nl/studio                  301
+/nl/voorbeeld/studio/                   /nl/studio                  301
+# De juridische pagina's, de AI Act-pagina en de 404 staan sinds 13 oktober 2026 (afvinklijst 19) zelf in de hal.
+/voorbeeld/terms                        /terms                      301
+/voorbeeld/terms/                       /terms                      301
+/nl/voorbeeld/terms                     /nl/terms                   301
+/nl/voorbeeld/terms/                    /nl/terms                   301
+/voorbeeld/privacy                      /privacy                    301
+/voorbeeld/privacy/                     /privacy                    301
+/nl/voorbeeld/privacy                   /nl/privacy                 301
+/nl/voorbeeld/privacy/                  /nl/privacy                 301
+/voorbeeld/cookie-policy                /cookie-policy              301
+/voorbeeld/cookie-policy/               /cookie-policy              301
+/nl/voorbeeld/cookie-policy             /nl/cookie-policy           301
+/nl/voorbeeld/cookie-policy/            /nl/cookie-policy           301
+/voorbeeld/data-processing-agreement    /data-processing-agreement  301
+/voorbeeld/data-processing-agreement/   /data-processing-agreement  301
+/nl/voorbeeld/data-processing-agreement  /nl/data-processing-agreement  301
+/nl/voorbeeld/data-processing-agreement/ /nl/data-processing-agreement  301
+/voorbeeld/ai-act                       /ai-act                     301
+/voorbeeld/ai-act/                      /ai-act                     301
+/nl/voorbeeld/ai-act                    /nl/ai-act                  301
+/nl/voorbeeld/ai-act/                   /nl/ai-act                  301
+/voorbeeld/404                          /                           301
+/voorbeeld/404/                         /                           301
+/nl/voorbeeld/404                       /nl/                        301
+/nl/voorbeeld/404/                      /nl/                        301
+# De twaalf openingen met een beeld staan sinds 14 oktober 2026 (afvinklijst 21) op de pagina's zelf; het voorbeeld stuurt door.
+/voorbeeld/opening/pricing                /pricing                      301
+/voorbeeld/opening/pricing/               /pricing                      301
+/nl/voorbeeld/opening/pricing             /nl/pricing                   301
+/nl/voorbeeld/opening/pricing/            /nl/pricing                   301
+/voorbeeld/opening/plans                  /plans                        301
+/voorbeeld/opening/plans/                 /plans                        301
+/nl/voorbeeld/opening/plans               /nl/plans                     301
+/nl/voorbeeld/opening/plans/              /nl/plans                     301
+/voorbeeld/opening/per-product            /per-product                  301
+/voorbeeld/opening/per-product/           /per-product                  301
+/nl/voorbeeld/opening/per-product         /nl/per-product               301
+/nl/voorbeeld/opening/per-product/        /nl/per-product               301
+/voorbeeld/opening/start                  /start                        301
+/voorbeeld/opening/start/                 /start                        301
+/nl/voorbeeld/opening/start               /nl/start                     301
+/nl/voorbeeld/opening/start/              /nl/start                     301
+/voorbeeld/opening/compare                /compare                      301
+/voorbeeld/opening/compare/               /compare                      301
+/nl/voorbeeld/opening/compare             /nl/compare                   301
+/nl/voorbeeld/opening/compare/            /nl/compare                   301
+/voorbeeld/opening/guides                 /guides                       301
+/voorbeeld/opening/guides/                /guides                       301
+/nl/voorbeeld/opening/guides              /nl/guides                    301
+/nl/voorbeeld/opening/guides/             /nl/guides                    301
+/voorbeeld/opening/upload-guidelines      /upload-guidelines            301
+/voorbeeld/opening/upload-guidelines/     /upload-guidelines            301
+/nl/voorbeeld/opening/upload-guidelines   /nl/upload-guidelines         301
+/nl/voorbeeld/opening/upload-guidelines/  /nl/upload-guidelines         301
+/voorbeeld/opening/contact                /contact                      301
+/voorbeeld/opening/contact/               /contact                      301
+/nl/voorbeeld/opening/contact             /nl/contact                   301
+/nl/voorbeeld/opening/contact/            /nl/contact                   301
+/voorbeeld/opening/gallery                /gallery                      301
+/voorbeeld/opening/gallery/               /gallery                      301
+/nl/voorbeeld/opening/gallery             /nl/gallery                   301
+/nl/voorbeeld/opening/gallery/            /nl/gallery                   301
+/voorbeeld/opening/about                  /about                        301
+/voorbeeld/opening/about/                 /about                        301
+/nl/voorbeeld/opening/about               /nl/about                     301
+/nl/voorbeeld/opening/about/              /nl/about                     301
+/voorbeeld/opening/hooks                  /hooks                        301
+/voorbeeld/opening/hooks/                 /hooks                        301
+/nl/voorbeeld/opening/hooks               /nl/hooks                     301
+/nl/voorbeeld/opening/hooks/              /nl/hooks                     301
+/voorbeeld/opening/editions               /editions                     301
+/voorbeeld/opening/editions/              /editions                     301
+/nl/voorbeeld/opening/editions            /nl/editions                  301
+/nl/voorbeeld/opening/editions/           /nl/editions                  301

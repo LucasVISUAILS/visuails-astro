@@ -54,7 +54,7 @@ export const BILLING = {
        verplicht maken behalve bij contact."* De melding noemt de reden dat het
        veld er staat en niet dat het leeg is — zie de noot bij `phoneErr` in
        OrderFlow.astro. */
-    phoneErr: 'Fill in a number we can reach you on — we message you if anything is unclear.',
+    phoneErr: 'Fill in a number we can reach you on — we get in touch if anything comes up with your order.',
     street: 'Street and number',
     streetPh: '12 Example Street',
     streetErr: 'An invoice needs an address on it.',
@@ -76,8 +76,6 @@ export const BILLING = {
     vatErr: 'Fill in your VAT number, or tick the box below if you do not have one.',
     vatHint: 'A business in another EU country: we check it against VIES, and if it is valid no Dutch VAT is charged.',
     noVat: 'I do not have a VAT number',
-    vatConfirm: 'I confirm that my company is established outside the Netherlands and that this VAT number belongs to it.',
-    vatConfirmHint: 'Required before we can invoice at 0%. The tax authority holds us liable for a reverse charge that turns out to be wrong, so this is the one thing we cannot decide for you.',
     reg: 'Registration number',
     regHint: 'A Dutch business: your KVK number. Elsewhere: whatever your country registers companies with.',
     regErr: 'Add a registration number, so we can see this is a business.',
@@ -97,7 +95,7 @@ export const BILLING = {
     emailHint: 'Hier komen de bevestiging, de factuur en de richtingen binnen.',
     phone: 'Telefoon of WhatsApp',
     /* Zie de Engelse noot. */
-    phoneErr: 'Vul een nummer in waarop we je kunnen bereiken — we appen je als er iets onduidelijk is.',
+    phoneErr: 'Vul een nummer in waarop we je kunnen bereiken — we nemen contact met je op als er iets met je bestelling is.',
     street: 'Straat en huisnummer',
     streetPh: 'Voorbeeldstraat 12',
     streetErr: 'Op een factuur hoort een adres te staan.',
@@ -119,8 +117,6 @@ export const BILLING = {
     vatErr: 'Vul je btw-nummer in, of vink hieronder aan dat je er geen hebt.',
     vatHint: 'Een bedrijf in een ander EU-land: we controleren het bij VIES, en klopt het, dan rekenen we geen Nederlandse btw.',
     noVat: 'Ik heb geen btw-nummer',
-    vatConfirm: 'Ik bevestig dat mijn onderneming buiten Nederland is gevestigd en dat dit btw-nummer van haar is.',
-    vatConfirmHint: 'Nodig voordat we op 0% mogen factureren. Bij een verlegging die achteraf niet klopt komt de naheffing bij ons, dus dit is het enige wat we niet voor je kunnen invullen.',
     reg: 'Registratienummer',
     regHint: 'Een Nederlands bedrijf: je KVK-nummer. Daarbuiten: waar jouw land bedrijven mee registreert.',
     regErr: 'Vul een registratienummer in, dan kunnen we zien dat dit zakelijk is.',

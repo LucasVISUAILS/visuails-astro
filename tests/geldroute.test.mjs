@@ -221,16 +221,17 @@ console.log('de keten: bestelling → betaling → factuur');
     const { db, bucket, env } = verseOmgeving(omg);
 
     const PRODUCTEN = 12;
-    const offerte = quoteOrder({ service: 'complete', products: PRODUCTEN, vatRate: VAT_RATE });
+    const offerte = quoteOrder({ service: 'catalog', products: PRODUCTEN, vatRate: VAT_RATE });
 
-    /* `service=drop` en niet `complete`. Dat is geen slordigheid maar de wire-waarde
-       die /start/complete al sinds jaar en dag post; quote.js heeft er een lange
-       noot over staan omdat het één keer een bestelling van € 2.359,50 gratis heeft
-       laten weggaan. Een test die hier `complete` post, test een pad dat de site
-       niet gebruikt — en krijgt stilletjes `catalog` terug, want ORDER_SERVICES
-       kent `complete` niet en valt terug. Precies dat gebeurde bij de eerste run. */
+    /* ── CATALOG EN NIET MEER `drop` — 8 oktober 2026 (punt 9.01) ──────────────
+       Deze keten liep met `service=drop`, de wire-waarde die /start/complete
+       postte. Catalog + lifestyle in één bestelling wordt niet meer verkocht en
+       /api/order weigert hem nu (zie tests/opruimlijst.test.mjs). De keten zelf —
+       bestelling, betaling, webhook, factuur — is voor elke dienst dezelfde, dus
+       hij loopt nu met de dienst die de site wél verkoopt. Dat een bestaande
+       'drop'-rij nog geprijsd wordt, legt tests/order-api.test.mjs vast. */
     const res = await bestel(env, {
-      service: 'drop',
+      service: 'catalog',
       products: PRODUCTEN,
       name: 'Voorbeeld Merk',
       brand: 'VOORBEELD',
@@ -261,7 +262,7 @@ console.log('de keten: bestelling → betaling → factuur');
 
     const order = db.prepare('SELECT * FROM orders ORDER BY id DESC LIMIT 1').get();
     ok('er staat één bestelling in de database', telling(db, 'SELECT COUNT(*) FROM orders'), 1);
-    ok('de dienst is opgeslagen als de wire-waarde', order.service, 'drop');
+    ok('de dienst is opgeslagen als de wire-waarde', order.service, 'catalog');
     ok('en het aantal producten', order.product_count, PRODUCTEN);
 
     /* ── DE EERSTE VAN DE DRIE GETALLEN ─────────────────────────────────────
@@ -348,7 +349,7 @@ console.log('\nde factuur is een bestand en geen rij');
   try {
     const { db, bucket, env } = verseOmgeving(omg);
     await bestel(env, {
-      service: 'drop', products: 5,
+      service: 'catalog', products: 5,
       name: 'Voorbeeld Merk', brand: 'VOORBEELD', email: 'pdf@voorbeeld.nl',
       country: 'NL', address_line1: 'Voorbeeldstraat 12', postal_code: '1234 AB', city: 'Rotterdam',
       lang: 'nl', style: 'classic', background: 'studio-white',
@@ -401,7 +402,7 @@ console.log('\nzonder zakelijk bewijs begint er geen geld te lopen');
   try {
     const { db, env } = verseOmgeving(omg);
     const res = await bestel(env, {
-      service: 'drop', products: 12,
+      service: 'catalog', products: 12,
       name: 'Voorbeeld Merk', brand: 'VOORBEELD', email: 'zonder@voorbeeld.nl',
       country: 'NL', address_line1: 'Voorbeeldstraat 12', postal_code: '1234 AB', city: 'Rotterdam',
       lang: 'nl', style: 'classic', background: 'studio-white',
@@ -473,7 +474,7 @@ console.log('\nals het bedrag afwijkt, wint Mollie en blijft het verschil zichtb
   try {
     const { db, env } = verseOmgeving(omg);
     await bestel(env, {
-      service: 'drop', products: 12,
+      service: 'catalog', products: 12,
       name: 'Voorbeeld Merk', brand: 'VOORBEELD', email: 'afwijking@voorbeeld.nl',
       country: 'NL', address_line1: 'Voorbeeldstraat 12', postal_code: '1234 AB', city: 'Rotterdam',
       lang: 'nl', style: 'classic', background: 'studio-white',
@@ -483,7 +484,7 @@ console.log('\nals het bedrag afwijkt, wint Mollie en blijft het verschil zichtb
     const id = [...omg.betalingen.keys()][0];
     const { issueInvoice } = await import('../src/lib/invoice.js');
 
-    // Mollie meldt één euro op een bestelling van ruim twaalfhonderd.
+    // Mollie meldt één euro op een bestelling van honderden euro's.
     omg.zetBetaald(id, { currency: 'EUR', value: '1.00' });
     await webhook(env, id);
 
@@ -540,8 +541,11 @@ console.log('\nals het bedrag afwijkt, wint Mollie en blijft het verschil zichtb
     const logregel = db.prepare(
       "SELECT * FROM admin_log WHERE order_id = ? AND action = 'payment.short'"
     ).get(order.id);
+    /* De bedragen uit de bestelling zelf en niet getypt (8 oktober 2026): dit blok
+       liep met een complete-bestelling van € 1.234,20 en loopt nu met catalog. */
+    const bruto = order.total_cents + order.vat_cents;
     ok('en jij leest de twee bedragen in het adminlog',
-       /binnengekomen 100 cent op een bestelling van 123420 cent/.test(logregel?.detail || ''), true);
+       new RegExp(`binnengekomen 100 cent op een bestelling van ${bruto} cent`).test(logregel?.detail || ''), true);
 
     /* Nog een keer proberen — dat doet de inhaalslag in VISUAILS Studio bij ELK
        bezoek aan /account/invoices. Er mag geen tweede regel bij komen, anders is
@@ -553,7 +557,7 @@ console.log('\nals het bedrag afwijkt, wint Mollie en blijft het verschil zichtb
     ok('en een tweede poging schrijft geen tweede regel', nogmaals.n, 1);
 
     ok('het verschil is terug te vinden via de betaalrij',
-       (order.total_cents + order.vat_cents) - (rij ? rij.amount_cents : 0), 123320);
+       (order.total_cents + order.vat_cents) - (rij ? rij.amount_cents : 0), bruto - 100);
 
     /* ── EN ALS ER ALSNOG WORDT BIJBETAALD ─────────────────────────────────
        De weigering is geen eindstation. Komt het bedrag alsnog binnen — een
@@ -561,7 +565,7 @@ console.log('\nals het bedrag afwijkt, wint Mollie en blijft het verschil zichtb
        issueInvoice() de rijen op en gaat de factuur alsnog uit, zonder dat er
        iemand iets hoeft te herstellen. Dat is wat een controle op het TOTAAL
        oplevert boven een controle per betaling. */
-    const bij = omg.maakBetaling(order.ref, { currency: 'EUR', value: '1233.20' });
+    const bij = omg.maakBetaling(order.ref, { currency: 'EUR', value: ((bruto - 100) / 100).toFixed(2) });
     omg.zetBetaald(bij);
     await webhook(env, bij);
 
@@ -755,7 +759,7 @@ console.log('\ndezelfde route met een test-sleutel levert een proefnummer');
     const env = { ...basis, MOLLIE_API_KEY: 'test_abcdefghijklmnopqrstuvwxyz0123' };
 
     await bestel(env, {
-      service: 'drop', products: 5,
+      service: 'catalog', products: 5,
       name: 'Voorbeeld Merk', brand: 'VOORBEELD', email: 'proefmerk@voorbeeld.nl',
       country: 'NL', address_line1: 'Voorbeeldstraat 12', postal_code: '1234 AB',
       city: 'Rotterdam', lang: 'nl',

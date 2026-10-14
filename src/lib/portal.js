@@ -54,12 +54,14 @@
 // header block above seeOther() and admin.js's originIsSelf().
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { WORDMARK_VIEWBOX, WORDMARK_PATHS } from '../data/wordmarkPath.js';
 import {
   TEST_SAMPLE, TIERS, aftercare, turnaround, clause,
   canReviewOrder, canSeeReviewHistory, SAMPLE_SERVICE,
   revisionRoundState, canRequestRevisionRound,
 } from '../data/pricing.js';
 import { waHref } from '../data/whatsapp.js';
+import { nieuwTabbladHtml } from '../data/nieuwTabblad.js';
 import { serviceLabel } from '../data/services.js';
 import { statPil } from '../data/status.js';
 import {
@@ -84,6 +86,13 @@ import { offsitePage } from './offsite.js';
 import { loadDeliveryFiles, deliveryEntries, deliveryDocs, deliveryZipFiles, deliverySummary, humanBytes, orderProductNames, leveringIngetrokken, ZICHTBAAR_VOOR_KLANT } from './delivery.js';
 import { zipStream, zipDisposition, ZIP_MAX_BYTES, ZIP_MAX_FILES } from './zip.js';
 import { vakIds } from '../data/levervakken.js';
+/* Punt 3.01: de Nu-zin, het statuspad en de leverregel — dezelfde bronnen als
+   Studio (nuzin.js) en de bedankpagina (verder.js). */
+import { nuZin, nuKnopLabel, statusPad, eersteMistVan, isAfgerond } from './nuzin.js';
+import { leverregel, leveringVan } from './verder.js';
+import { ontbrekendVoorOrder } from './ontbreekt.js';
+/* Punt 3.07: "Bestel met dezelfde look" — alleen lookkeuzes in de link. */
+import { herbestelKnop, herbestelHtml } from './herbestel.js';
 
 const STUDIO_EMAIL = 'hello@visuails.com';
 
@@ -165,6 +174,7 @@ const COPY = {
     folderBody: 'One folder per product, and in it the same visual as PNG, JPG and WebP — so a print shop, a shop page and a feed each get the file they want without anyone resizing anything.',
     folderBodyKaal: (fmt) => `One folder per product, with every visual as we delivered it (${fmt}).`,
     folderReview: 'The photos above are review copies, at screen size. They are there to approve or to point at when something is wrong. The folder holds the real files.',
+    folderReviewOnder: 'The photos below are review copies, at screen size. The folder holds the real files.',
     folderMeta: (n, size) => `${n} files · ${size}`,
     bUndo: 'Undo',
     bCancel: 'Cancel this request',
@@ -184,8 +194,9 @@ const COPY = {
     rrLabel: 'What is wrong with the ones you ticked?',
     rrHint: 'One note for the whole round. Mention which image if it differs per image.',
     /* Ronde 9, F13: zonder vinkje of zonder notitie laadde de pagina stil opnieuw. */
-    rrNone: 'Nothing was sent: no image was ticked. Tick “Not right” under each image that needs work and send the round again — your note is still there.',
-    rrPick: 'Not right',
+    rrNone: 'Nothing was sent: no image was ticked. Tick “Mark this one” under each image you would like different and send the round again — your note is still there.',
+    /* 14 oktober 2026: het woord van Studio (rdTick in account.js), niet "Not right". */
+    rrPick: 'Mark this one',
     /* Wat de tegel zegt zodra het vinkje aanstaat. Zie de noot bij `tik`
        verderop: zonder deze regel gebeurde er bij het aanvinken niets zichtbaars. */
     rrPicked: 'In your revision round',
@@ -273,6 +284,7 @@ const COPY = {
     folderBodyKaal: (fmt) => `Eén map per product, met elk beeld zoals we het leverden (${fmt}).`,
     folderBody: 'Eén map per product, en daarin hetzelfde beeld als PNG, JPG en WebP — zo krijgen een drukker, een productpagina en een feed elk het bestand dat ze willen, zonder dat iemand nog iets bijschaalt.',
     folderReview: 'De foto\'s hierboven zijn voorbeeldweergaven op schermformaat. Ze staan er om goed te keuren of om naar te wijzen als er iets niet klopt. De echte bestanden zitten in de map.',
+    folderReviewOnder: 'De foto\'s hieronder zijn voorbeeldweergaven op schermformaat. De echte bestanden zitten in de map.',
     folderMeta: (n, size) => `${n} bestanden · ${size}`,
     bUndo: 'Ongedaan maken',
     bCancel: 'Aanvraag intrekken',
@@ -286,8 +298,9 @@ const COPY = {
     rrIntro: 'Vink elk beeld aan dat niet goed is, schrijf erbij wat eraan schort, en stuur het als één ronde. We kijken er in één keer naar en zetten het recht.',
     rrLabel: 'Wat klopt er niet aan wat je hebt aangevinkt?',
     rrHint: 'Eén notitie voor de hele ronde. Noem het beeld erbij als het per beeld verschilt.',
-    rrNone: 'Er is niets verstuurd: je had geen beeld aangevinkt. Vink onder elk beeld dat anders moet “Niet goed” aan en verstuur de ronde opnieuw — je opmerking staat er nog.',
-    rrPick: 'Niet goed',
+    rrNone: 'Er is niets verstuurd: je had geen beeld aangevinkt. Vink onder elk beeld dat anders moet “Deze aanmerken” aan en verstuur de ronde opnieuw — je opmerking staat er nog.',
+    /* 14 oktober 2026: het woord van Studio (rdTick in account.js), niet "Niet goed". */
+    rrPick: 'Deze aanmerken',
     rrPicked: 'Staat in je revisieronde',
     rrSend: 'Verstuur deze revisieronde',
     rrNoneChosen: 'Vink eerst minstens één beeld aan.',
@@ -468,7 +481,9 @@ export async function portalPost(context) {
   // hadden hem allebei apart, en dat is precies hoe ze uit elkaar konden gaan
   // lopen toen hij veranderde. De closed_at-helft van die regel staat verderop,
   // bij de actie: afgerond weigert een nieuw besluit maar laat terugdraaien toe.
-  if (!canSeeReviewHistory(order)) return seeOther(home);
+  /* De proef (3.08) mag alleen het tevredenheidsblok posten, en alleen als hij
+     geleverd is; beeldacties blijven voor hem dicht (zie hieronder). */
+  if (!canSeeReviewHistory(order) && !isAfgerond(order)) return seeOther(home);
 
   let form;
   try {
@@ -499,6 +514,7 @@ export async function portalPost(context) {
    * Het formulier heeft target="_blank", dus de tussenpagina en de reis erna
    * landen in het nieuwe tabblad en de bestelpagina blijft staan waar hij stond.
    */
+  if (form.get('fb') && !isAfgerond(order)) return seeOther(home);
   if (form.get('fb')) {
     const res = await handleFeedbackPost(env, {
       orderId: order.order_id,
@@ -516,6 +532,9 @@ export async function portalPost(context) {
     }
     return seeOther(`${home}#fb-h`);
   }
+
+  /* Verder niets voor de proef: geen goedkeuren, geen ronde. */
+  if (!canSeeReviewHistory(order)) return seeOther(home);
 
   const action = String(form.get('action') || '');
 
@@ -549,7 +568,17 @@ export async function portalPost(context) {
       return plainPage(env, request, 'down', 503);
     }
     later(context, bumpUse(env, order.token_id));
-    return seeOther(`${home}#werk`);
+    /* ── "ALLES GOED — NAAR JE DOWNLOADS" (punt 3.01/3.05, 8 oktober 2026) ──
+       Is de bestelling hiermee afgerond, dan landt de klant op het afrondscherm:
+       de downloads met de bewaardatum en daaronder het tevredenheidsblok. Staat
+       er nog een revisie open, dan is er niets afgerond en blijft hij bij het
+       werk. */
+    let dicht = false;
+    try {
+      const rij = await env.DB.prepare('SELECT closed_at FROM orders WHERE id = ?1').bind(order.order_id).first();
+      dicht = !!(rij && rij.closed_at);
+    } catch { dicht = false; }
+    return seeOther(`${home}#${dicht ? 'afgerond' : 'werk'}`);
   }
 
   const fileId = Number.parseInt(String(form.get('file') || ''), 10);
@@ -890,6 +919,10 @@ function parseRoute(url) {
  * pagina die te veel aanbiedt is beter dan een pagina die er niet is.
  */
 const RONDE_KOLOMMEN = 'o.revision_round_at, o.revision_round_note, o.revision_round_count,';
+/* w2 = b (11 oktober 2026): het moment van "Weer openen" in /admin, migratie
+   0066. Valt in dezelfde terugval mee weg; zonder deze kolom telt de
+   revisiedatum gewoon vanaf de levermail. */
+const WEER_KOLOM = 'o.reopened_at,';
 
 /**
  * Twee einddatums, een antwoord.
@@ -912,7 +945,7 @@ function tokenVerlopen(order) {
 
 async function loadOrder(env, token) {
   const hash = await hashToken(token);
-  const bouw = (metRonde) => ORDER_SQL.replace(RONDE_KOLOMMEN, metRonde ? RONDE_KOLOMMEN : '');
+  const bouw = (metRonde) => ORDER_SQL.replace(RONDE_KOLOMMEN, metRonde ? RONDE_KOLOMMEN : '').replace(WEER_KOLOM, metRonde ? WEER_KOLOM : '');
   let row;
   try {
     row = await env.DB.prepare(bouw(true)).bind(hash).first();
@@ -957,6 +990,16 @@ const ORDER_SQL =
             -- gemailde link een ANDERE map dan het dashboard -- precies de
             -- constructie waar de kop van delivery.js over gaat.
             o.brand, o.name, o.details_json,
+            -- Punt 3.01 (8 oktober 2026): de Nu-zin bovenaan rekent met dezelfde
+            -- velden als de bestelkaart in Studio: het moment van de levermail
+            -- (revisie- en bewaardatum, leverdatums.js), het bedrag en de
+            -- btw-controle (wacht op betaling of op ons).
+            o.delivery_mailed_at, o.delivered_at, o.total_cents, o.review_state,
+            -- w2 = b: weer geopend door VISUAILS (migratie 0066), zie WEER_KOLOM.
+            o.reopened_at,
+            -- Punt 3.07: een abonnee ziet bij "Bestel met dezelfde look" wat het
+            -- per product in credits kost.
+            (SELECT 1 FROM subscriptions s WHERE s.customer_id = o.customer_id AND s.status = 'active' LIMIT 1) AS abonnee,
             -- Ingetrokken revisierechten hangen aan de KLANT en werden hier niet
             -- gelezen. Zolang dit scherm alleen tier 1 knoppen gaf viel dat niet
             -- op naast account.js, dat er wél op controleert; sinds 7 augustus
@@ -1207,7 +1250,11 @@ async function renderOrder(env, order, token, lang, { voorvertoning = false } = 
      zijn niet 'attended'. Wie via die link alles goedkeurde, kreeg de vraag dus
      nooit — alleen in Studio. Nu bij elke afgeronde bestelling, behalve de
      proefvisual (die heeft geen beoordeling, zelfde regel als Studio). */
-  const vraagFeedback = !!order.closed_at && order.service !== SAMPLE_SERVICE;
+  /* Punt 3.08 (8 oktober 2026): de proef krijgt het afrondblok wél — hij is af
+     op het moment van levering, en de proefpagina is de plek voor de eerste
+     review (V29 = a). isAfgerond() telt een geleverde proef als afgerond, ook
+     een oude zonder closed_at. */
+  const vraagFeedback = isAfgerond(order);
   const fb = vraagFeedback ? await loadFeedback(env, order.order_id) : null;
 
   /*
@@ -1219,9 +1266,40 @@ async function renderOrder(env, order, token, lang, { voorvertoning = false } = 
    */
   const folder = folderBlock(t, token, deliverySummary(deliveryEntries(files, lang, { service: order.service, details: order.details_json })));
 
+  /* ── "WAT NU" BOVENAAN — 8 oktober 2026 (punt 3.01) ─────────────────────
+     Eén zin met hoogstens twee knoppen, uit nuZin() — dezelfde functie als de
+     bestelkaart en het overzicht in Studio. Een ontbrekende foto telt alleen
+     zolang er nog foto's bij kunnen (dezelfde diensten en standen als Studio). */
+  let eersteMist = null;
+  if (!order.closed_at && ['catalog', 'lifestyle', 'drop'].includes(String(order.service || ''))
+      && ['received', 'in_production', 'human_check'].includes(String(order.status || ''))) {
+    try { eersteMist = eersteMistVan(await ontbrekendVoorOrder(env.DB, order.order_id), lang); } catch { eersteMist = null; }
+  }
+  const ns = nuZin(order, { files, eersteMist, fb: vraagFeedback ? fb : undefined }, lang);
+  const top = nuBlok(t, lang, order, token, ns, files);
+
+  /* ── HET AFRONDSCHERM — 8 oktober 2026 (punt 3.05) ─────────────────────────
+     Na "Alles goed" landt de klant op /o/<token>#afgerond: bovenaan de
+     downloads met de bewaardatum, daaronder het tevredenheidsblok met het
+     toestemmingsblok (10.05). Het raster met de beelden staat eronder. Is de
+     bestelling afgerond, dan staan map en tevredenheidsvraag dus HIER en niet
+     meer onder het raster. */
+  const afgerond = isAfgerond(order);
+  const afrond = afgerond
+    ? afrondBlok({
+      folder: folderBlock(t, token, deliverySummary(deliveryEntries(files, lang, { service: order.service, details: order.details_json })), { boven: true, datums: ns.datums }),
+      feedback: vraagFeedback ? feedbackBlock({ lang, action: `/o/${token}`, feedback: fb }) : '',
+      /* 3.07: "Bestel met dezelfde look", op de privélink na afronden. */
+      herbestel: herbestelHtml(herbestelKnop(order, { lang, abonnee: !!order.abonnee }), esc),
+      /* 3.08: bij de proef komt "Bestel in deze look" vóór de tevredenheidsvraag:
+         de proefpagina is de eerste verkooppagina. */
+      herbestelEerst: order.service === SAMPLE_SERVICE,
+    })
+    : '';
+
   const body = attended
-    ? attendedBody(t, lang, order, token, files, events, fb, folder)
-    : unattendedBody(t, lang, order, token, files, folder, vraagFeedback ? feedbackBlock({ lang, action: `/o/${token}`, feedback: fb }) : '');
+    ? attendedBody(t, lang, order, token, files, events, fb, afrond ? '' : folder, top, afrond)
+    : unattendedBody(t, lang, order, token, files, afrond ? '' : folder, !afrond && vraagFeedback ? feedbackBlock({ lang, action: `/o/${token}`, feedback: fb }) : '', top, afrond);
 
   return html(
     page({
@@ -1235,7 +1313,9 @@ async function renderOrder(env, order, token, lang, { voorvertoning = false } = 
 function masthead(ref) {
   // A wordmark, not a link. This page is reached from an email and leads
   // nowhere: a nav here would walk a client mid-order back onto the sales pages.
-  return `<header class="bar"><span class="mark">VISUAILS</span>${
+  /* 14 oktober 2026: het nieuwe woordmerk (src/data/wordmarkPath.js), inline, net
+     als Studio — de CSP van deze pagina laat geen extern beeld voor het merk nodig. */
+  return `<header class="bar"><span class="mark" role="img" aria-label="VISUAILS"><svg class="woordmerk" viewBox="${WORDMARK_VIEWBOX}" aria-hidden="true" focusable="false">${WORDMARK_PATHS.map((d) => `<path fill-rule="evenodd" d="${d}"/>`).join('')}</svg></span>${
     ref ? `<span class="ref">${esc(ref)}</span>` : ''
   }</header>`;
 }
@@ -1284,7 +1364,7 @@ function roundBlock(t, lang, order, files) {
       return `<section class="rr rr-used">
   <h2>${esc(t.rrDoneTitle)}</h2>
   <p>${esc(t.rrDoneBody(dag, n))}</p>
-  <p><a class="btn btn-wa" href="${esc(waHref(t.rrWaText(order.ref)))}" target="_blank" rel="noopener">${esc(t.rrUsedWa)}</a></p>
+  <p><a class="btn btn-wa" href="${esc(waHref(t.rrWaText(order.ref)))}" target="_blank" rel="noopener">${esc(t.rrUsedWa)}${nieuwTabbladHtml(lang)}</a></p>
 </section>`;
     }
     /*
@@ -1300,7 +1380,7 @@ function roundBlock(t, lang, order, files) {
   <h2>${esc(t.rrUsedTitle)}</h2>
   <p>${esc(t.rrUsedBody(dag, n, files.filter((f) => f.review_state === 'revision_requested' && !f.superseded_at).length))}</p>
   ${order.revision_round_note ? `<p class="said">${esc(order.revision_round_note)}</p>` : ''}
-  <p><a class="btn btn-wa" href="${esc(waHref(t.rrWaText(order.ref)))}" target="_blank" rel="noopener">${esc(t.rrUsedWa)}</a></p>
+  <p><a class="btn btn-wa" href="${esc(waHref(t.rrWaText(order.ref)))}" target="_blank" rel="noopener">${esc(t.rrUsedWa)}${nieuwTabbladHtml(lang)}</a></p>
 </section>`;
   }
 
@@ -1308,7 +1388,7 @@ function roundBlock(t, lang, order, files) {
     return `<section class="rr rr-off">
   <h2>${esc(t.rrRevokedTitle)}</h2>
   <p>${esc(t.rrRevokedBody)}</p>
-  <p><a class="btn btn-wa" href="${esc(waHref(t.rrWaText(order.ref)))}" target="_blank" rel="noopener">${esc(t.rrUsedWa)}</a></p>
+  <p><a class="btn btn-wa" href="${esc(waHref(t.rrWaText(order.ref)))}" target="_blank" rel="noopener">${esc(t.rrUsedWa)}${nieuwTabbladHtml(lang)}</a></p>
 </section>`;
   }
 
@@ -1339,6 +1419,71 @@ function roundBlock(t, lang, order, files) {
      het formulier werkte er al zonder, en de server telt zelf. 24 sep 2026. */
 }
 
+/*
+ * ══════════════════════════════════════════════════════════════════════════════
+ * "WAT NU" — DE BOVENKANT VAN DE PRIVÉLINK (punt 3.01, 8 oktober 2026)
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * Eén zin, de datums, hoogstens twee knoppen; daaronder het statuspad van
+ * Studio en, zolang er nog niets geleverd is, de leverregel. De zin en de
+ * knoppen komen uit nuZin() (src/lib/nuzin.js), dezelfde functie als de
+ * bestelkaart en het overzicht in Studio. Hier staat alleen waar een knop op
+ * DEZE pagina naartoe wijst. Geen script: een gewoon formulier (Alles goed) en
+ * gewone links; "Iets aanmerken ↓" is een anker naar het raster.
+ *
+ * V22 = a: de violette knop is "Alles goed — naar je downloads", met
+ * "Eerst downloaden" als gewone link ernaast.
+ */
+function nuBlok(t, lang, order, token, ns, files) {
+  if (!ns || !ns.zin) return '';
+  const levend = files.filter((f) => !f.superseded_at && !(f.expires_at && isExpired(f.expires_at, null)));
+  const zip = token && levend.length ? `/o/${esc(token)}/zip` : '';
+  const delen = [];
+  const knop = (html) => delen.push(html);
+  for (const doel of ns.knoppen) {
+    const eerste = delen.length === 0;
+    if (doel === 'betalen') {
+      knop(`<a class="${eerste ? 'btn btn-primary' : 'nu-link'}" href="/api/order-pay?ref=${encodeURIComponent(order.ref || '')}&amp;lang=${lang}">${esc(nuKnopLabel('betalen', lang))}</a>`);
+    } else if (doel === 'allesGoed') {
+      knop(`<form method="post" action="" class="nu-form"><input type="hidden" name="naar" value="afgerond"><button class="btn${eerste ? ' btn-primary' : ''}" type="submit" name="action" value="approve-all">${esc(nuKnopLabel('allesGoed', lang))}</button></form>`);
+      if (zip) knop(`<a class="nu-link" href="${zip}">${esc(nuKnopLabel('eerstDownloaden', lang))}</a>`);
+    } else if (doel === 'aanmerken') {
+      knop(`<a class="nu-link" href="#werk">${esc(nuKnopLabel('aanmerken', lang))}</a>`);
+    } else if (doel === 'downloaden') {
+      /* Afgerond: de downloads staan direct hieronder, in het afrondblok. */
+      if (zip && !isAfgerond(order)) knop(`<a class="${eerste ? 'btn btn-primary' : 'nu-link'}" href="${zip}">${esc(nuKnopLabel('downloaden', lang))}</a>`);
+    } else if (doel === 'tevreden') {
+      knop(`<a class="nu-link" href="#fb-h">${esc(nuKnopLabel('tevreden', lang))}</a>`);
+    } else if (doel === 'fotos') {
+      knop(`<a class="${eerste ? 'btn btn-primary' : 'nu-link'}" href="/account/orders?order=${Number(order.order_id)}#fotos-${Number(order.order_id)}">${esc(nuKnopLabel('fotos', lang))}</a>`);
+    }
+  }
+  /* Afgerond: de datums staan bij de downloads in het afrondblok eronder. */
+  const datums = !isAfgerond(order) && ns.datums && ns.datums.length
+    ? `<p class="nu-datums">${ns.datums.map((d) => `<span>${esc(d)}</span>`).join('')}</p>`
+    : '';
+  const pad = statusPad(order, { lang });
+  const padHtml = pad.length
+    ? `<ol class="pad" aria-label="${esc(t.fStatus)}">${pad.map((s) => `<li class="${s.state}"${s.state === 'is-now' ? ' aria-current="step"' : ''}><span class="pad-stip" aria-hidden="true"></span>${esc(s.label)}</li>`).join('')}</ol>`
+    : '';
+  /* De leverregel alleen vóór de levering, en niet bij een aanvraag of offerte:
+     daar geldt de levertijd uit het voorstel (zie emptyRequest/emptyOfferte). */
+  const voorLevering = ['received', 'in_production', 'human_check'].includes(String(order.status || ''));
+  let aanvraag = false;
+  try { aanvraag = !!String((JSON.parse(order.details_json || '{}') || {}).request || '').trim(); } catch { aanvraag = false; }
+  const offerte = order.service === 'video' || order.service === 'custom' || aanvraag || ns.soort === 'btw';
+  const lever = voorLevering && !offerte
+    ? `<p class="nu-lever">${esc(leverregel({ lang, levering: leveringVan(order) }))}</p>`
+    : '';
+  return `<section class="nu" id="nu" aria-labelledby="nu-zin">
+  <p class="nu-zin" id="nu-zin">${esc(ns.zin)}</p>
+  ${datums}
+  ${delen.length ? `<div class="nu-knoppen">${delen.join('')}</div>` : ''}
+  ${padHtml}
+  ${lever}
+</section>`;
+}
+
 // ---- Tier 1 · the portal ----------------------------------------------------
 
 /*
@@ -1346,7 +1491,7 @@ function roundBlock(t, lang, order, files) {
  * niet opgehaald, om dezelfde reden als de rest van deze functie: attendedBody()
  * tekent en vraagt niets aan de database.
  */
-function attendedBody(t, lang, order, token, files, events, fb = null, folder = '') {
+function attendedBody(t, lang, order, token, files, events, fb = null, folder = '', top = '', afrond = '') {
   const approved = files.filter((f) => f.review_state === 'approved').length;
   const revisions = files.filter((f) => f.review_state === 'revision_requested').length;
   const readOnly = !!order.closed_at;
@@ -1396,7 +1541,7 @@ function attendedBody(t, lang, order, token, files, events, fb = null, folder = 
    * gekregen" bij vier van de twaalf beelden is een vraag over een bestelling die
    * nog niet klaar is, en het antwoord daarop zegt niets over wat er straks staat.
    */
-  const feedback = readOnly
+  const feedback = readOnly && !afrond
     ? feedbackBlock({ lang, action: `/o/${token}`, feedback: fb })
     : '';
 
@@ -1405,8 +1550,10 @@ function attendedBody(t, lang, order, token, files, events, fb = null, folder = 
   <h1>${esc(t.orderTitle)}</h1>
   <p class="lede">${esc(t.orderLede)}</p>
 </div>
+${top}
+${afrond}
 ${factList(facts)}
-<p class="note">${esc(readOnly ? t.closed : t.howAttended(clause(aftercare('attended', lang))))}</p>
+${/* Punt 3.01: na de levering zegt het blok bovenaan de revisieronde al, met datum. */ top && !readOnly && order.status === 'delivered' ? '' : `<p class="note">${esc(readOnly ? t.closed : t.howAttended(clause(aftercare('attended', lang))))}</p>`}
 <section class="work" id="werk">
   <h2>${esc(t.workTitle)}${tally}</h2>
   ${allesKnop}
@@ -1436,7 +1583,7 @@ function windowLine(t, lang, order) {
 
 // ---- Tier 0 · the delivery page ---------------------------------------------
 
-function unattendedBody(t, lang, order, token, files, folder = '', feedback = '') {
+function unattendedBody(t, lang, order, token, files, folder = '', feedback = '', top = '', afrond = '') {
   // No window, no date, no countdown — not because there is no room for one, but
   // because Tier 0 has a queue span rather than a delivery date, and section 13
   // is unambiguous: "NO named delivery date [...] never a date."
@@ -1484,10 +1631,15 @@ function unattendedBody(t, lang, order, token, files, folder = '', feedback = ''
   <h1>${esc(t.filesTitle)}</h1>
   <p class="lede">${esc(order.service === SAMPLE_SERVICE ? t.sampleLede : t.filesLede)}</p>
 </div>
+${top}
+${afrond}
 ${factList(facts)}
 ${/* Staat het rondeformulier hieronder, dan is "stuur een reactie op de
-   levermail" de verkeerde weg: die ronde doe je op deze pagina (24 sep 2026). */ ''}<p class="note">${esc(rr ? t.howAttended(clause(aftercare('unattended', lang))) : t.howUnattended(clause(aftercare('unattended', lang))))}</p>
-<section class="work">
+   levermail" de verkeerde weg: die ronde doe je op deze pagina (24 sep 2026).
+   Punt 3.01: na de levering zegt het blok bovenaan de revisieronde al, met
+   datum, of de bestelling is af (dan geldt er geen ronde meer om aan te
+   kondigen); dan staat deze regel er niet nog eens. */ ''}${top && order.status === 'delivered' ? '' : `<p class="note">${esc(rr ? t.howAttended(clause(aftercare('unattended', lang))) : t.howUnattended(clause(aftercare('unattended', lang))))}</p>`}
+<section class="work" id="werk">
   <h2>${esc(t.filesHeading)}</h2>
   ${work}
 </section>
@@ -1515,7 +1667,17 @@ ${feedback}
  * zijn ze er niet. Een maat verzinnen op basis van wat we niet hebben, is de
  * enige manier om deze knop een leugen te laten worden.
  */
-function folderBlock(t, token, summary) {
+/** Het afrondscherm: de map bovenaan, het tevredenheidsblok eronder (3.05). */
+function afrondBlok({ folder = '', feedback = '', herbestel = '', herbestelEerst = false } = {}) {
+  if (!folder && !feedback && !herbestel) return '';
+  return `<div class="afrond" id="afgerond">
+${folder}
+${herbestelEerst ? herbestel : feedback}
+${herbestelEerst ? feedback : herbestel}
+</div>`;
+}
+
+function folderBlock(t, token, summary, { boven = false, datums = [] } = {}) {
   if (!summary || !summary.files) return '';
   /* RONDE 9, F16 — de zin beloofde PNG, JPG én WebP, ook bij een levering via
      de browser waar alleen het geüploade bestand bestaat (admin waarschuwde er
@@ -1531,7 +1693,8 @@ function folderBlock(t, token, summary) {
     <h2>${esc(t.folderH)}</h2>
     <p class="folder-n">${esc(drieFormaten ? t.folderBody : t.folderBodyKaal(fmtLijst))}</p>
     ${meta}
-    <p class="note folder-note">${esc(t.folderReview)}</p>
+    ${/* Op het afrondscherm (3.05) de bewaardatum erbij, uit nuZin(). */ datums.length ? `<p class="folder-datum">${datums.map((d) => esc(d)).join(' ')}</p>` : ''}
+    <p class="note folder-note">${esc(boven ? t.folderReviewOnder : t.folderReview)}</p>
   </div>
   <a class="btn btn-primary" href="/o/${esc(token)}/zip">${esc(t.bDownload)}</a>
 </section>`;
@@ -1905,6 +2068,7 @@ function html(body, status = 200) {
     headers: {
       'content-type': 'text/html; charset=utf-8',
       'cache-control': 'no-store',
+      'strict-transport-security': 'max-age=31536000; includeSubDomains',
       'referrer-policy': 'same-origin',
       'x-robots-tag': 'noindex, nofollow',
       'x-content-type-options': 'nosniff',

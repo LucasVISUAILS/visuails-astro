@@ -1,0 +1,246 @@
+---
+/*
+ * VISUAILS — ECHTE AANBEVELINGEN OP HOME EN /pricing. 8 oktober 2026 (G3).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas (V10 = a, met zijn notitie letterlijk): *"Graag wel bouwen maar
+ * onzichtbaar houden tot ik er 1 echt accepteer en erin zet. Zorg er wel voor
+ * dat het er een beetje goed uitziet. Ik denk het liefst een soort lopende
+ * animatie van links naar rechts wanneer ze niet allemaal naast elkaar passen,
+ * dus eerst gewoon stilstaand en wanneer er echt 5 of zoiets zijn ze laten
+ * bewegen. Een hele lichte fade aan het einde bij de zijkant van de pagina
+ * zodat het er wat mooier uitziet."*
+ *
+ * DRIE VORMEN, EN DE EERSTE IS NIETS.
+ *   0        Geen sectie, geen kop, geen witruimte: dit bestand rendert dan
+ *            letterlijk niets. Zo staat het vandaag op de site.
+ *   1 – 4    Stil, naast elkaar; op een telefoon onder elkaar.
+ *   5 of meer  Een rustige band die van links naar rechts loopt, met een zachte
+ *            fade aan beide zijkanten. Stopt onder de muis en zodra hij focus
+ *            heeft; staat stil en is zijwaarts te schuiven voor wie minder
+ *            beweging vraagt. De grens staat als BAND_VANAF in
+ *            src/data/aanbevelingen.js, met de regels wie er wel en niet op komt.
+ *
+ * DE BEWEGING, EN WAAROM DIE HIER WEL MAG. Op 8 september ging de "spookletter"
+ * eruit — tekst die eindeloos achter een kamer schoof — met de reden dat een
+ * achtergrond die altijd beweegt om aandacht vraagt. Deze band is geen
+ * achtergrond: hij is de inhoud, hij loopt pas vanaf vijf kaarten (dan passen
+ * ze niet meer naast elkaar), hij staat stil zodra je ernaar kijkt met muis of
+ * toetsenbord, en Lucas vroeg er met zoveel woorden om. De fade aan de zijkant
+ * is om dezelfde reden een uitzondering op de harde randen van global.css
+ * (".marquee" — "§8 bans feathered mask edges"): zijn notitie gaat voor.
+ *
+ * TOEGANKELIJK. De lijst staat twee keer in de band, zodat de lus naadloos is;
+ * de tweede keer `aria-hidden` en zonder iets wat focus kan krijgen, dus een
+ * schermlezer hoort elke aanbeveling één keer. Zonder beweging is de kopie weg.
+ *
+ * GEEN SCRIPT. Alles hierboven is CSS; de site laadt hiervoor niets extra.
+ * Geen accentkleur: violet is op deze site een handeling, en een citaat is dat
+ * niet.
+ */
+import { aanbevelingenOpSite, blokVorm, maandLabel } from '../data/aanbevelingen.js';
+
+interface Aanbeveling { text: string; name?: string; month?: string; brand?: string; beeld?: string }
+interface Props {
+  lang: 'en' | 'nl';
+  /** Hoort bij het hoofdstuk erboven (zie `.paneel.vervolg` in stijl22.css). */
+  vervolg?: boolean;
+  /** Alleen voor de toets; de site geeft niets mee en leest testimonials.js. */
+  lijst?: Aanbeveling[];
+  /** De voorpagina in de hal (sinds 12 oktober 2026): de kop in de vorm van de
+   *  andere hal-secties (pil + grote kop); de kaarten zelf kleedt hal.css aan.
+   *  Inhoud en de drie vormen (niets, stil, band) blijven precies dezelfde. */
+  huid?: 'hal';
+}
+const { lang, vervolg = false, lijst, huid } = Astro.props;
+const hal = huid === 'hal';
+const nl = lang === 'nl';
+
+const items = aanbevelingenOpSite(lijst);
+const vorm = blokVorm(items.length);
+
+const c = nl ? {
+  h: 'Wat merken zeggen.',
+  pil: 'Aanbevelingen',
+  band: 'Aanbevelingen van klanten',
+  zonderNaam: 'Klant van VISUAILS',
+} : {
+  h: 'What brands say.',
+  pil: 'Recommendations',
+  band: 'Recommendations from clients',
+  zonderNaam: 'VISUAILS client',
+};
+
+/* Wat er onder het citaat staat: de naam (zoals de klant hem zelf opgaf — het
+   veld heet "Naam of merknaam"), en klein het merk als dat apart in de data
+   zit, plus de maand. */
+const kaarten = items.map((r: Aanbeveling) => ({
+  tekst: String(r.text).trim(),
+  naam: String(r.name || '').trim() || (r.brand ? '' : c.zonderNaam),
+  meta: [String(r.brand || '').trim(), maandLabel(r.month, lang)].filter(Boolean).join(' · '),
+  beeld: r.beeld || '',
+}));
+---
+
+{vorm !== 'niets' && (
+  <section class:list={hal ? ['h-sec', 'ab', 'h-ab'] : ['paneel', 'ab', vervolg && 'vervolg']} aria-labelledby="ab-h" data-aanbevelingen={vorm}>
+    {hal ? (
+      <header class="h-sec-kop h-in ab-kop">
+        <div>
+          <p class="h-pil"><span>{c.pil}</span></p>
+          <h2 id="ab-h" class="h-kop h-h2">{c.h}</h2>
+        </div>
+      </header>
+    ) : (
+      <header class="paneel-kop ab-kop">
+        <h2 id="ab-h" class="hoog hoog-3">{c.h}</h2>
+      </header>
+    )}
+
+    {vorm === 'stil' ? (
+      <ul class="ab-rij" role="list" style={`--n:${kaarten.length}`}>
+        {kaarten.map((k) => (
+          <li class="ab-kaart">
+            <blockquote class="ab-citaat"><p>{k.tekst}</p></blockquote>
+            <p class="ab-wie">
+              {k.beeld && <img class="ab-beeld" src={k.beeld} alt="" width="40" height="40" loading="lazy" decoding="async" />}
+              <span class="ab-wie-t">
+                {k.naam && <span class="ab-naam">{k.naam}</span>}
+                {k.meta && <span class="mono ab-meta">{k.meta}</span>}
+              </span>
+            </p>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <div class="ab-band" style={`--n:${kaarten.length}`}>
+        {/* Het raam is wat focus krijgt (en dan de band stilzet), wat schuift
+            als er geen beweging is, en wat de fade draagt. */}
+        <div class="ab-raam" tabindex="0" role="region" aria-label={c.band}>
+          <div class="ab-loop">
+            <ul class="ab-spoor" role="list">
+              {kaarten.map((k) => (
+                <li class="ab-kaart">
+                  <blockquote class="ab-citaat"><p>{k.tekst}</p></blockquote>
+                  <p class="ab-wie">
+                    {k.beeld && <img class="ab-beeld" src={k.beeld} alt="" width="40" height="40" loading="lazy" decoding="async" />}
+                    <span class="ab-wie-t">
+                      {k.naam && <span class="ab-naam">{k.naam}</span>}
+                      {k.meta && <span class="mono ab-meta">{k.meta}</span>}
+                    </span>
+                  </p>
+                </li>
+              ))}
+            </ul>
+            {/* De kopie voor de naadloze lus. aria-hidden, en er staat niets in
+                wat focus kan krijgen. */}
+            <ul class="ab-spoor ab-kopie" role="list" aria-hidden="true">
+              {kaarten.map((k) => (
+                <li class="ab-kaart">
+                  <blockquote class="ab-citaat"><p>{k.tekst}</p></blockquote>
+                  <p class="ab-wie">
+                    {k.beeld && <img class="ab-beeld" src={k.beeld} alt="" width="40" height="40" loading="lazy" decoding="async" />}
+                    <span class="ab-wie-t">
+                      {k.naam && <span class="ab-naam">{k.naam}</span>}
+                      {k.meta && <span class="mono ab-meta">{k.meta}</span>}
+                    </span>
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    )}
+  </section>
+)}
+
+<style>
+  /* De zijmarge van een paneel (stijl22.css, `.s22 .paneel`). De band loopt tot
+     de rand van het paneel en vervaagt daar, dus hij moet weten hoe breed die
+     marge is. */
+  .ab { --ab-zij: clamp(1.25rem, 4vw, 4rem); --ab-tussen: clamp(.75rem, 1.4vw, 1.1rem); }
+  .ab-kop { margin-bottom: clamp(1.4rem, 3vw, 2.2rem); }
+
+  /* ── DE KAART ──────────────────────────────────────────────────────────────
+     Het tweede grijs van het schema (#E4E7EC) op het papier van het paneel,
+     de kaartronding, geen schaduw en geen rand. Boven het citaat, onder de naam
+     met een haarlijn ertussen: wat iemand zegt en wie het zegt, in die volgorde. */
+  .ab-kaart {
+    display: flex; flex-direction: column; justify-content: space-between; gap: 1.4rem;
+    background: var(--surface, #E4E7EC); color: var(--inkt);
+    border-radius: calc(var(--ronding, 12px) - 2px);
+    padding: clamp(1.1rem, 2vw, 1.5rem);
+  }
+  .ab-citaat { margin: 0; }
+  .ab-citaat p {
+    margin: 0; font-size: 1.04rem; line-height: 1.55; color: var(--inkt);
+    text-wrap: pretty; overflow-wrap: break-word; hyphens: auto;
+  }
+  .ab-wie { display: flex; align-items: center; gap: .75rem; margin: 0; padding-top: 1rem; border-top: 1px solid var(--lijn); }
+  .ab-beeld { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: var(--sunken, #DADEE5); }
+  .ab-wie-t { display: grid; gap: .3rem; min-width: 0; }
+  .ab-naam {
+    font-family: var(--kop2); font-weight: 500; font-stretch: 125%;
+    font-size: .92rem; line-height: 1.2; letter-spacing: -.005em; text-transform: uppercase;
+    overflow-wrap: anywhere;
+  }
+  .ab-meta { color: var(--inkt-2); }
+
+  /* ── 1 TOT 4: STIL, NAAST ELKAAR ───────────────────────────────────────────
+     Zoveel kolommen als er kaarten zijn, maar nooit smaller dan 15rem: op een
+     tablet schuift de vierde naar een tweede rij in plaats van te krimpen. De
+     rij wordt niet breder dan de kaarten nodig hebben — één aanbeveling over de
+     hele breedte is een balk tekst en geen citaat. */
+  .ab-rij {
+    display: grid; gap: var(--ab-tussen);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    max-width: calc(var(--n, 1) * 26rem);
+  }
+  /* Op een telefoon onder elkaar: geen schuifbalk voor drie korte citaten. */
+  @media (max-width: 640px) {
+    .ab-rij { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  /* ── 5 OF MEER: DE BAND ────────────────────────────────────────────────────
+     Zonder beweging (en dat is de basis, zodat niemand een band krijgt die hij
+     niet wil): één rij die je zijwaarts schuift, de kopie weg. Met beweging,
+     hieronder: een lus die van links naar rechts loopt. */
+  .ab-band { margin-inline: calc(-1 * var(--ab-zij)); }
+  .ab-raam {
+    overflow-x: auto; overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity; scroll-padding-inline: var(--ab-zij);
+    padding-inline: var(--ab-zij); padding-block: .25rem;
+    border-radius: var(--ronding, 12px);
+  }
+  .ab-raam:focus-visible { outline: 2px solid var(--inkt); outline-offset: -2px; }
+  .ab-loop { display: flex; width: max-content; }
+  .ab-spoor { display: flex; align-items: stretch; gap: var(--ab-tussen); }
+  /* Op een telefoon bijna schermbreed (één kaart in beeld, de volgende piept
+     erachter); op een breed scherm een kwart, dus vier tot vijf in beeld. */
+  .ab-spoor > .ab-kaart { flex: 0 0 auto; width: clamp(min(78vw, 18rem), 25vw, 22.5rem); scroll-snap-align: start; }
+  .ab-kopie { display: none; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* De fade: van niets naar vol over een korte afstand aan beide kanten —
+       "een hele lichte fade". Op het raam en niet op de kaarten, zodat hij op
+       zijn plek blijft terwijl de band eronderdoor loopt. */
+    .ab-raam {
+      overflow: hidden; padding-inline: 0; scroll-snap-type: none;
+      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--ab-fade), #000 calc(100% - var(--ab-fade)), transparent 100%);
+      mask-image: linear-gradient(to right, transparent 0, #000 var(--ab-fade), #000 calc(100% - var(--ab-fade)), transparent 100%);
+      --ab-fade: clamp(2rem, 5vw, 5rem);
+    }
+    /* Twee gelijke helften: elke helft is n kaarten plus n tussenruimtes (de
+       laatste als padding), dus -50% is precies één lijst verder. Van -50%
+       naar 0 is van links naar rechts. Tien seconden per kaart: rustig genoeg
+       om een citaat te lezen voordat het de rand haalt. */
+    .ab-kopie { display: flex; }
+    .ab-spoor { padding-right: var(--ab-tussen); }
+    .ab-loop { animation: ab-loop calc(var(--n, 5) * 10s) linear infinite; will-change: transform; }
+    .ab-raam:hover .ab-loop,
+    .ab-raam:focus-within .ab-loop,
+    .ab-raam:focus .ab-loop { animation-play-state: paused; }
+  }
+  @keyframes ab-loop { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+</style>

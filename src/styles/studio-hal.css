@@ -1,0 +1,256 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   VISUAILS Studio in de hal — het voorbeeld. 14 oktober 2026.
+   ═══════════════════════════════════════════════════════════════════════════
+
+   WAAROM. De site is omgebouwd naar de hal (hal.css, Urbanist, wit, violet
+   alleen voor acties, pillen). Wie op /studio de voorbeeldschermen bekijkt
+   (FigDash, FigGallery, FigReview) ziet Studio al in die stijl — en logt
+   daarna in op een Studio in de stijl van ronde 9: Figtree, een zwarte
+   zijbalk, hoeken van 10 px. Dit bestand haalt dat verschil weg.
+
+   HOE. Alles hangt onder body.studio.st-hal. StudioLayout.astro zet die
+   klasse in het lichte thema: de hal is licht. Sinds 14 oktober 2026 is dat de
+   beginstand (Lucas: het nieuwe kleurenschema "volledig toevoegen"). Zolang
+   Lucas het bekijkt, zet ?huid=oud op een Studio-pagina de vorige stand terug
+   (cookie vis_huid=oud) en ?huid=hal haalt hem weer weg; daarna gaat die
+   schakelaar eruit.
+
+   EERST DE ROLLEN, DAN DE VORMEN. studio.css leest overal --surface, --line,
+   --ink-2, --sd-side…; door die rollen hier op de hal-kleuren te zetten, gaat
+   elk scherm in één keer mee. Daaronder alleen wat een rol niet kan: de
+   letter, de pillen, de zijbalk die licht wordt, de grotere kop.
+
+   DE REGELS VAN DE HAL, HIER TOEGEPAST
+   · Urbanist, 500 voor nadruk; geen kleine kapitalen meer (ook niet in de
+     tellers: dat was de ene uitzondering van ronde 9).
+   · Wit als grond, nevel #F5F5F9 als tweede laag, lijn #DEDCE8.
+   · Violet alleen op een actie: de hoofdknop, een link, de stip "nu".
+     Waar je bent (de zijbalk, het filter) is een toestand: inkt of wit.
+   · Hoeken: kaart 28, wat erin ligt 22, een beeld 16, knop en pil rond.
+   · Tekst minstens 4,5:1 en 11,5 px. --ink-4 (#A3A1B5) alleen voor wat
+     niet gelezen hoeft te worden: een scheidingspunt, een lege stip.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.studio.st-hal {
+  --h-letter: 'Urbanist Variable', 'Urbanist', ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--h-letter); --font-heading: var(--h-letter); --font-display: var(--h-letter); --font-mono: var(--h-letter);
+
+  --bg-0: #FFFFFF; --bg: #FFFFFF;
+  --surface: #FFFFFF; --surface-2: #F5F5F9;
+  --line: #DEDCE8; --line-strong: #C9C6D8; --line-ui: #8E8BA2;
+  --ghost: rgb(15 12 36 / .04);
+  --ink: #0F0C24; --ink-1: #0F0C24; --ink-2: #4B4960; --ink-3: #6A6880; --ink-4: #A3A1B5;
+  --accent: #4A1FFF; --accent-ink: #FFFFFF; --accent-text: #4A1FFF; --accent-dim: #3D17D6; --accent-tint: #DCD5FF;
+  --focus-ring: #4A1FFF;
+  --st-accent-tekst: #4A1FFF; --st-accent-lijn: #4A1FFF; --st-accent-tint: #F1EEFF;
+
+  /* De standen, dezelfde als in de hal (hal.css): het gelukte pad loopt voller
+     in de eigen familie — een lijn (wacht), mist met nacht (bezig), nacht met
+     wit (klaar, de enige volle). De amber van "aandacht" en het vak-grijs van
+     "geannuleerd" verlaten de familie met opzet. */
+  --st-wait-fill: transparent; --st-wait-edge: #8E8BA2; --st-wait-ink: #4B4960;
+  --st-work-fill: #F1EEFF; --st-work-edge: #DCD5FF; --st-work-ink: #2A0E8F;
+  --st-done-fill: #2A0E8F; --st-done-edge: #2A0E8F; --st-done-ink: #FFFFFF;
+  --st-rev-fill: #F6E7D1; --st-rev-edge: rgb(138 77 6 / .30); --st-rev-ink: #8A4D06;
+  --st-can-fill: #ECEBF3; --st-can-edge: #8E8BA2; --st-can-ink: #4B4960;
+
+  /* De zijbalk wordt licht: nevel, met inkt. */
+  --sd-side: #F5F5F9;
+  --sd-side-ink: #4B4960; --sd-side-ink-1: #0F0C24; --sd-side-ink-3: #6A6880;
+  --sd-side-hover: rgb(15 12 36 / .05); --sd-side-actief: #FFFFFF; --sd-side-lijn: #DEDCE8;
+
+  --sd-r-kaart: 28px; --sd-r: 999px; --sd-r-klein: 999px;
+  --st-ronding: 28px; --st-ronding-in: 22px;
+  --r-sm: 22px; --r-pill: 999px;
+
+  --st-side-w: 256px;
+  --st-pad: 2.5rem;
+  --st-balk-h: 64px;
+
+  font-family: var(--h-letter);
+  font-size: .9375rem;
+  color: var(--ink-2);
+  background: #FFFFFF;
+  color-scheme: light;
+}
+body.studio.st-hal ::selection { background: #DCD5FF; color: #0F0C24; }
+body.studio.st-hal .st-meta { font-size: .84375rem; }
+
+/* ── DE KNOPPEN ─────────────────────────────────────────────────────────────
+   Rond. Primair: vlak violet met wit (de actie). De rest: wit met een lijn,
+   inkt erin — de tweede knop van de hal (h-knop-lijn), een maat kleiner omdat
+   Studio een werkscherm is. */
+body.studio.st-hal .btn {
+  min-height: 42px; padding: 0 1.15rem; border-radius: 999px;
+  font-family: var(--h-letter); font-size: .875rem; font-weight: 600;
+  background: #FFFFFF; color: #0F0C24; box-shadow: inset 0 0 0 1.5px #C9C6D8;
+  transition: background .2s, box-shadow .2s, transform .25s cubic-bezier(.22, .8, .2, 1);
+}
+body.studio.st-hal .btn:hover { background: #F5F5F9; box-shadow: inset 0 0 0 1.5px #0F0C24; }
+body.studio.st-hal .btn-primary { background: #4A1FFF; color: #FFFFFF; box-shadow: none; }
+body.studio.st-hal .btn-primary:hover, body.studio.st-hal .btn-primary:focus-visible { background: #3D17D6; filter: none; box-shadow: 0 12px 24px -14px rgb(74 31 255 / .7); transform: translateY(-1px); }
+body.studio.st-hal .btn-sm { min-height: 36px; padding: 0 .95rem; font-size: .84375rem; }
+@media (pointer: coarse) { body.studio.st-hal .btn { min-height: 46px; } body.studio.st-hal .btn-sm { min-height: 42px; } }
+
+/* De statuspil: het label van de hal, met de stip. */
+body.studio.st-hal .stand { min-height: 26px; padding: 0 .7rem 0 .6rem; border-radius: 999px; font-family: var(--h-letter); font-size: .8125rem; font-weight: 600; }
+body.studio.st-hal .credits-pil { min-height: 26px; padding: 0 .7rem; font-size: .8125rem; }
+
+/* ── DE ZIJBALK: LICHT ─────────────────────────────────────────────────────
+   Nevel, zoals de zijbalk in het voorbeeldscherm op /studio. Het actieve item
+   is een witte pil met een lijn (waar je bent), geen violet. */
+body.studio.st-hal .st-kolom { background: #F5F5F9; border-right: 0; color: #4B4960; }
+body.studio.st-hal .st-side { padding: 1.25rem 1rem; gap: 1.5rem; }
+body.studio.st-hal .st-side-kop { padding: .35rem .75rem .25rem; }
+body.studio.st-hal .st-merk { --merk-h: 19.6px; color: #0F0C24; } /* 112 px breed; dicht 26 px hoog, alleen de V (studio.css) */
+body.studio.st-hal .is-dicht .st-merk { --merk-h: 26px; }
+body.studio.st-hal .st-sub { font-size: .8125rem; color: #6A6880; }
+body.studio.st-hal .st-nav { gap: 4px; }
+body.studio.st-hal .st-navlink { min-height: 44px; padding: 0 .9rem; border-radius: 999px; font-size: .9375rem; font-weight: 500; color: #4B4960; }
+body.studio.st-hal .st-navlink:hover { background: rgb(15 12 36 / .05); color: #0F0C24; }
+body.studio.st-hal .st-navlink.is-actief { background: #FFFFFF; color: #0F0C24; font-weight: 600; box-shadow: inset 0 0 0 1px #DEDCE8, 0 10px 24px -18px rgb(15 12 36 / .35); }
+body.studio.st-hal .st-navlink .i { width: 18px; height: 18px; }
+body.studio.st-hal .st-side-voet { border-top: 1px solid #DEDCE8; }
+body.studio.st-hal .st-wie-letter { width: 34px; height: 34px; background: #FFFFFF; color: #0F0C24; box-shadow: inset 0 0 0 1px #DEDCE8; font-size: .8125rem; }
+body.studio.st-hal .st-wie-naam { font-size: .875rem; color: #0F0C24; }
+body.studio.st-hal .st-wie-mail { font-size: .8125rem; color: #6A6880; }
+body.studio.st-hal .st-uit { min-height: 44px; padding: 0 .9rem; border-radius: 999px; font-size: .9375rem; color: #4B4960; }
+body.studio.st-hal .st-uit:hover { background: rgb(15 12 36 / .05); color: #0F0C24; }
+/* Dichtgeklapt (breed scherm): een kolom van 76 px, zodat het item een rondje
+   van 44 px is met 16 px lucht. Zonder deze regels hield het item de padding
+   van de open zijbalk en kromp het pictogram tot 3 px (14 oktober, gemeten). */
+@media (min-width: 56.3125em) {
+  body.studio.st-hal { --st-side-dicht: 76px; }
+  body.studio.st-hal .is-dicht .st-side-kop { padding-inline: 0; }
+  body.studio.st-hal .is-dicht .st-navlink, body.studio.st-hal .is-dicht .st-uit { width: 44px; padding: 0; justify-content: center; margin-inline: auto; }
+  body.studio.st-hal .is-dicht .st-wie { padding: 0; justify-content: center; }
+}
+
+/* ── DE BOVENBALK ──────────────────────────────────────────────────────────
+   Wit, zonder lijn eronder: de kop eronder is groot genoeg om de grens te
+   zijn. De taal als het pilletje uit de kop van de site (EN | NL). */
+body.studio.st-hal .st-balk { background: rgb(255 255 255 / .92); border-bottom: 1px solid transparent; -webkit-backdrop-filter: saturate(160%) blur(14px); backdrop-filter: saturate(160%) blur(14px); }
+body.studio.st-hal .st-klap { width: 40px; height: 40px; border-radius: 999px; color: #4B4960; box-shadow: inset 0 0 0 1px #DEDCE8; }
+body.studio.st-hal .st-klap:hover { background: #F5F5F9; color: #0F0C24; }
+body.studio.st-hal .st-kruim { font-size: .875rem; color: #6A6880; }
+body.studio.st-hal .st-kruim b { font-weight: 600; color: #0F0C24; }
+body.studio.st-hal .st-kruim i, body.studio.st-hal .st-vl-punt { color: #6A6880; } /* scheidingstekens ook 5,3:1, niet --ink-4 */
+body.studio.st-hal .st-taal { padding: 3px; border-radius: 999px; background: #F5F5F9; box-shadow: none; }
+body.studio.st-hal .st-taal > * { min-width: 40px; height: 34px; border-radius: 999px; font-size: .8125rem; font-weight: 600; color: #4B4960; }
+body.studio.st-hal .st-taal > [aria-current] { background: #FFFFFF; color: #0F0C24; box-shadow: 0 2px 8px -2px rgb(15 12 36 / .18); }
+body.studio.st-hal .st-stand { width: 40px; height: 40px; border-radius: 999px; color: #4B4960; box-shadow: inset 0 0 0 1px #DEDCE8; }
+body.studio.st-hal .st-stand:hover { background: #F5F5F9; color: #0F0C24; }
+
+/* ── DE KOP VAN DE PAGINA ──────────────────────────────────────────────────
+   Urbanist 500 en groter, zoals een kop in de hal — maar een werkscherm, dus
+   40 px en geen 64. De lede in inkt 3. */
+body.studio.st-hal .st-top { padding: 2.25rem var(--st-pad) 0; gap: 1rem 1.25rem; }
+body.studio.st-hal .st-h1 { font-family: var(--h-letter); font-weight: 500; font-size: 2.5rem; line-height: 1.1; letter-spacing: -.025em; color: #0F0C24; }
+body.studio.st-hal .st-lede { margin-top: .5rem; font-size: 1rem; color: #6A6880; }
+body.studio.st-hal .st-top-actie { min-height: 48px; padding: 0 1.4rem; font-size: .9375rem; }
+body.studio.st-hal .st-main { padding: 2rem var(--st-pad) 4rem; gap: 2.5rem; }
+
+/* ── DE BLOKKEN EN KAARTEN ─────────────────────────────────────────────── */
+body.studio.st-hal .st-blok { gap: 1rem; }
+body.studio.st-hal .st-blok-kop h2 { font-family: var(--h-letter); font-size: 1.25rem; font-weight: 600; letter-spacing: -.01em; color: #0F0C24; }
+body.studio.st-hal .st-blok-kop .st-link { font-size: .875rem; }
+body.studio.st-hal .st-kaart-vlak:not(.st-cijfers) { border: 1px solid #DEDCE8; border-radius: 28px; background: #FFFFFF; }
+body.studio.st-hal .st-leeg { border-radius: 22px; border-color: #C9C6D8; }
+
+/* De link: violet, dun onderstreept — het enige violet in lopende tekst. */
+body.studio.st-hal .st-link { color: #4A1FFF; text-decoration-color: rgb(74 31 255 / .35); text-decoration-thickness: 1.5px; text-underline-offset: .22em; font-weight: 500; }
+
+/* De tellers: geen kleine kapitalen meer. Het getal groot in Urbanist 500. */
+body.studio.st-hal .st-kaart-vlak.st-cijfers { gap: 1rem; }
+body.studio.st-hal .st-cijfer { padding: 1.25rem 1.4rem; border-radius: 28px; border-color: #DEDCE8; gap: .35rem .5rem; }
+body.studio.st-hal a.st-cijfer:hover { border-color: #0F0C24; }
+body.studio.st-hal .st-cijfer-label { font-size: .875rem; font-weight: 500; letter-spacing: 0; text-transform: none; color: #4B4960; }
+body.studio.st-hal .st-cijfer-label::first-letter { text-transform: uppercase; }
+body.studio.st-hal .st-cijfer-n { font-weight: 500; font-size: 2.25rem; letter-spacing: -.03em; }
+body.studio.st-hal .st-cijfer .i { width: 18px; height: 18px; color: #A3A1B5; }
+
+/* De bestelkaart op het overzicht en in Bestellingen. */
+body.studio.st-hal .st-order { padding: 1.5rem 1.6rem; gap: 1.1rem; }
+body.studio.st-hal .st-ref { font-weight: 600; letter-spacing: 0; }
+body.studio.st-hal .st-watnu-zin { font-size: 1.0625rem; line-height: 1.5; color: #0F0C24; }
+body.studio.st-hal .st-watnu-datums { font-size: .875rem; }
+body.studio.st-hal .st-lopend li { padding: .95rem 1.6rem; }
+body.studio.st-hal .st-activiteit li { padding: 1rem 1.6rem; }
+body.studio.st-hal .st-nogmeer-kop { font-weight: 600; color: #0F0C24; }
+
+/* De tijdlijn: inkt voor wat klaar is, violet voor nu, lijn voor wat komt. */
+body.studio.st-hal .st-stap::before { height: 2px; background: #ECEBF3; }
+body.studio.st-hal .st-stap.is-done::before { background: #0F0C24; }
+body.studio.st-hal .st-stap.is-now::before { background: linear-gradient(90deg, #0F0C24 0 50%, #ECEBF3 50% 100%); }
+body.studio.st-hal .st-stip { width: 14px; height: 14px; border: 2px solid #C9C6D8; background: #FFFFFF; }
+body.studio.st-hal .st-stap.is-done .st-stip { background: #0F0C24; border-color: #0F0C24; }
+body.studio.st-hal .st-stap.is-now .st-stip { background: #4A1FFF; border-color: #4A1FFF; outline: 3px solid #DCD5FF; outline-offset: 1px; box-shadow: none; }
+body.studio.st-hal .st-stap-label { font-size: .8125rem; color: #6A6880; }
+body.studio.st-hal .st-stap.is-done .st-stap-label { color: #4B4960; }
+body.studio.st-hal .st-stap.is-now .st-stap-label { color: #0F0C24; }
+body.studio.st-hal .st-mini-stip { width: 8px; height: 8px; background: #DEDCE8; }
+body.studio.st-hal .st-mini-stip.is-done { background: #0F0C24; }
+body.studio.st-hal .st-mini-stip.is-now { background: #4A1FFF; outline: 2px solid #DCD5FF; }
+body.studio.st-hal .st-details > summary { font-size: .875rem; color: #4B4960; }
+
+/* De strook laatst geleverde beelden: beelden met een hoek van 16. */
+body.studio.st-hal .st-strook { grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: .75rem; }
+body.studio.st-hal .st-strook a { border-radius: 16px; border: 0; background: #F5F5F9; }
+body.studio.st-hal .st-strook a:hover { transform: translateY(-2px); }
+
+/* ── BESTELLINGEN ───────────────────────────────────────────────────────── */
+body.studio.st-hal .st-filters { gap: .5rem; }
+body.studio.st-hal .st-filter { min-height: 38px; padding: 0 1rem; border: 0; box-shadow: inset 0 0 0 1px #DEDCE8; font-size: .875rem; color: #4B4960; }
+body.studio.st-hal a.st-filter:hover { background: #F5F5F9; color: #0F0C24; }
+body.studio.st-hal .st-filter.is-actief { background: #0F0C24; color: #FFFFFF; box-shadow: none; }
+body.studio.st-hal .st-bestellingen { gap: 1.25rem; }
+body.studio.st-hal .st-bestelling-kop { padding: 1.25rem 1.6rem; min-height: 72px; border-radius: 28px; }
+body.studio.st-hal .st-bestelling-klap[open] .st-bestelling-kop { border-radius: 28px 28px 0 0; }
+body.studio.st-hal .st-bestelling-kop .st-ref { font-size: 1rem; }
+body.studio.st-hal .st-bestelling-meta { font-size: .9375rem; }
+body.studio.st-hal .st-bestelling-body { padding: 1.4rem 1.6rem 1.6rem; gap: 1.25rem; }
+body.studio.st-hal .st-nu-zin { font-size: 1rem; line-height: 1.5; }
+body.studio.st-hal .st-nu-datum { font-size: .875rem; }
+body.studio.st-hal .st-nu-knop { padding: 0 1.6rem 1.4rem; }
+body.studio.st-hal .st-bit-money { color: #8A4D06; }
+
+/* De koppen binnen een kaart ("Jouw bestanden", "Wat wij leverden", "Je
+   revisieronde versturen"): 13 px was in ronde 9 de stilte van een werkscherm;
+   in Urbanist leest dat als een voetnoot. 16 px en 600. */
+body.studio.st-hal :is(.st-product-kolom, .st-kant, .st-map, .st-ronde, .st-herbestel, .st-fotos, .st-vakform) h3,
+body.studio.st-hal .st-h3 { font-family: var(--h-letter); font-size: 1rem; font-weight: 600; letter-spacing: -.005em; color: #0F0C24; }
+
+/* De paginakop in twee tonen, zoals elke kop in de hal: "Welkom terug," in
+   kop-licht (#807E97, alleen in koppen van 32 px of groter) en de naam in inkt.
+   StudioLayout.astro zet het eerste deel in een <span class="l">. */
+body.studio.st-hal .st-h1 .l { color: #807E97; }
+
+/* Binnen een kaart: de vulling is nevel met een hoek van 22. */
+body.studio.st-hal :is(.st-betaal, .st-product, .st-map, .st-ronde, .st-melding) { border-radius: 22px; background: #F5F5F9; }
+body.studio.st-hal .st-map { padding: 1.4rem 1.5rem; }
+body.studio.st-hal .st-product-cover, body.studio.st-hal .st-beeld-media, body.studio.st-hal .st-model-img { border-radius: 16px; }
+body.studio.st-hal :is(.st-vast, .st-nota, .st-gezegd) { border-radius: 18px; }
+
+/* Velden: rond voor één regel, een zachte hoek voor een tekstvak. */
+body.studio.st-hal .st-veld { min-height: 44px; padding: 0 1.05rem; border-radius: 999px; border-color: #8E8BA2; font-size: .9375rem; }
+body.studio.st-hal textarea.st-veld, body.studio.st-hal .studio textarea { border-radius: 18px; padding: .75rem 1rem; }
+body.studio.st-hal textarea { border-radius: 18px; }
+body.studio.st-hal input[type="file"]::file-selector-button { border-radius: 999px; min-height: 36px; padding: 0 1rem; }
+
+/* De melding bovenaan (/admin/melding): een pil, geen balk. */
+body.studio.st-hal .st-banner { border-radius: 22px; padding: .7rem 1.1rem; }
+
+/* ── DE TELEFOON ────────────────────────────────────────────────────────── */
+@media (max-width: 56.25em) {
+  body.studio.st-hal .st-merk, body.studio.st-hal .is-dicht .st-merk { --merk-h: 17.5px; }
+}
+@media (max-width: 720px) {
+  body.studio.st-hal { --st-pad: 1.1rem; }
+  body.studio.st-hal .st-h1 { font-size: 2rem; }
+  body.studio.st-hal .st-kaart-vlak.st-cijfers { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+  body.studio.st-hal .st-cijfer { padding: 1rem 1.1rem; border-radius: 22px; }
+  body.studio.st-hal .st-cijfer-n { font-size: 1.75rem; }
+  body.studio.st-hal .st-order, body.studio.st-hal .st-bestelling-kop, body.studio.st-hal .st-bestelling-body { padding-inline: 1.15rem; }
+  body.studio.st-hal .st-kaart-vlak, body.studio.st-hal .st-bestelling-kop { border-radius: 24px; }
+  body.studio.st-hal .st-bestelling-klap[open] .st-bestelling-kop { border-radius: 24px 24px 0 0; }
+}

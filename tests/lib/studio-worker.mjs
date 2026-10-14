@@ -28,7 +28,11 @@ export { VOLT, NOORD };
 /**
  * @returns {Promise<{ url: string, fetch(pad: string, opts?: { token?: string|null, cookie?: string, method?: string, body?: any, headers?: object }): Promise<Response>, dispose(): Promise<void>, persist: string }>}
  */
-export async function startStudio() {
+/* `extraSql` en `extraR2` (8 oktober 2026, punt 2.05/2.03): een test die meer
+   nodig heeft dan de gedeelde nepdata (een bestelling met lege fotovakken, een
+   adminsessie), zet die erbij zonder de seed van studio-vorm te veranderen.
+   extraR2 is een lijst [sleutel, bestand in public/img]. */
+export async function startStudio({ extraSql = [], extraR2 = [] } = {}) {
   const { getPlatformProxy, unstable_startWorker } = await import('wrangler');
   const config = path.join(ROOT, 'dist', 'server', 'wrangler.json');
   if (!fs.existsSync(config)) throw new Error('dist/server/wrangler.json ontbreekt — draai eerst `npm run build`');
@@ -49,6 +53,12 @@ export async function startStudio() {
     await proxy.env.DB.exec(`${seed.sql.map((s) => s.replace(/\s+/g, ' ')).join(';\n')};`);
     for (const [key, file] of seed.r2) {
       await proxy.env.UPLOADS.put(key, fs.readFileSync(path.join(ROOT, 'public', 'img', file)), { httpMetadata: { contentType: 'image/webp' } });
+    }
+    if (extraSql.length) await proxy.env.DB.exec(`${extraSql.map((s) => s.replace(/\s+/g, ' ')).join(';\n')};`);
+    for (const [key, file] of extraR2) {
+      if (fs.existsSync(path.join(ROOT, 'public', 'img', file))) {
+        await proxy.env.UPLOADS.put(key, fs.readFileSync(path.join(ROOT, 'public', 'img', file)), { httpMetadata: { contentType: 'image/webp' } });
+      }
     }
   } finally {
     await proxy.dispose();

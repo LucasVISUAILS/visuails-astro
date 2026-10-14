@@ -62,7 +62,8 @@ const zonderUitleg = (t) => t
   .replace(/\/\*[\s\S]*?\*\//g, '')
   .replace(/(^|[^:])\/\/.*$/gm, '$1');
 
-const home = zonderUitleg(readFileSync(new URL('../src/components/Voorpagina.astro', import.meta.url), 'utf8'));
+/* Sinds 12 oktober 2026 is de voorpagina VoorpaginaHal.astro (de hal). */
+const home = zonderUitleg(readFileSync(new URL('../src/components/VoorpaginaHal.astro', import.meta.url), 'utf8'));
 
 const nodig = REQUIRED_SHOT_IDS.length;
 

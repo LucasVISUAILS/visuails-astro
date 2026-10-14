@@ -1,4 +1,6 @@
 ---
+// VISUAILS — /editions: in de hal sinds 13 oktober 2026 (afvinklijst 16, alles doen). De pagina
+// staat in EditionsHal.astro; de vorige (EditionsPage.astro) staat op de opruimlijst.
 /*
  * VISUAILS — /editions (Engels). Het lichaam staat in EditionsPage.astro.
  *
@@ -15,7 +17,7 @@
  * vorm waarin het klopt: dit is geen beeldbank.
  */
 import Layout from '../../layouts/Layout.astro';
-import EditionsPage from '../../components/EditionsPage.astro';
+import EditionsHal from '../../components/EditionsHal.astro';
 import { euro, AMOUNT, STOCK_OFF_BRAND, STOCK_ON_BRAND } from '../../data/pricing.js';
 
 /* Onder de 160 tekens — tests/nav.test.mjs meet elke pagina. */
@@ -24,10 +26,10 @@ const description =
   `for ${euro(AMOUNT.editions, 'en')} a month. No product in them, and no stock library.`;
 ---
 
-<Layout
+<Layout huid="hal"
   title="Editions — monthly brand imagery | VISUAILS"
   description={description}
   ogImage="/img/brand-stair.webp"
 >
-  <EditionsPage lang="en" />
+  <EditionsHal lang="en" />
 </Layout>

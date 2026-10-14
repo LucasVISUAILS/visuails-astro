@@ -1,10 +1,15 @@
 ---
+// VISUAILS — /nl/start/plan: in de hal sinds 13 oktober 2026 (afvinklijst 10, alles doen). De vorm komt uit
+// HalFormulier.astro en het blok DE FORMULIEREN in hal.css; de werking blijft van de onderdelen.
 // VISUAILS — /nl/start/plan. Zie de Engelse variant en de kop van
 // PlanPicker.astro; alleen de meta verschilt hier.
+import HalFormulier from '../../../components/HalFormulier.astro';
 import Layout from '../../../layouts/Layout.astro';
 import PlanPicker from '../../../components/order/PlanPicker.astro';
 ---
 
-<Layout title="Een abonnement afsluiten — VISUAILS" description="Elke maand een vast aantal credits, in een week die voor jou gereserveerd is, onder het tarief per product. Hier stel je het in.">
+<Layout huid="hal" title="Een abonnement afsluiten — VISUAILS" description="Elke maand een vast aantal credits, in een week die voor jou gereserveerd is, onder het tarief per product. Hier stel je het in.">
+  <HalFormulier soort="plan">
   <PlanPicker lang="nl" />
+  </HalFormulier>
 </Layout>

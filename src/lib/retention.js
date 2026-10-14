@@ -56,10 +56,14 @@
  *
  * ── EN WAT ER GEBEURT ALS EEN REVISIE DE BESTELLING HEROPENT ───────────────
  *
- * portal.js en account.js zetten `closed_at` terug op NULL bij een revisieverzoek.
- * Dan moet de klok van het bronmateriaal ook terug, anders wordt het materiaal
- * verwijderd terwijl de bestelling weer open is en wij het nodig hebben om de
- * revisie te maken. Zie clearUploadRetention().
+ * portal.js en account.js zetten `closed_at` terug op NULL wanneer de klant een
+ * goedkeuring ONGEDAAN MAAKT ("Ongedaan maken" op een beeld) en de bestelling
+ * daardoor weer open gaat. Een revisieverzoek zelf doet dat niet: dat kan alleen
+ * zolang de bestelling nog open staat. (Hier stond tot 8 oktober 2026 dat een
+ * revisieverzoek `closed_at` wist — punt 9.01, §17.23.) Gaat de bestelling weer
+ * open, dan moet de klok van het bronmateriaal ook terug, anders wordt het
+ * materiaal verwijderd terwijl wij het nodig hebben voor de revisie die volgt.
+ * Zie clearUploadRetention().
  */
 
 /** Bronmateriaal: dagen na het afsluiten van de bestelling. /privacy §6, /terms §7. */
@@ -77,6 +81,104 @@ export const UPLOAD_DAYS = 90;
  * naam is mee veranderd (was DELIVERY_MONTHS): een constante die "maanden"
  * heet en dagen bevat, is de fout die je pas in een mail ziet. */
 export const DELIVERY_DAYS = 90;
+
+/* ── HET KLANTACCOUNT: JAREN NA DE LAATSTE BESTELLING — 8 oktober 2026 (o11) ──
+ *
+ * /privacy §6 zei "zolang nodig" en het register "zolang de klantrelatie
+ * loopt". De AVG (art. 13 lid 2 sub a) vraagt een termijn of de maatstaf
+ * waarmee die wordt bepaald. Lucas koos uit drie: *"a) 2 jaar na de laatste
+ * bestelling"*. Heeft iemand nooit besteld, dan telt het aanmaken van het account.
+ *
+ * UITGEVOERD, NIET ALLEEN BELOOFD — MAAR NIET AUTOMATISCH. Automatisch wissen
+ * bestaat bewust niet (overzicht §21: een verwijdering is een handeling met een
+ * mens erachter, en daar is de AVG-knop in /admin voor). Wat er wél is: het
+ * nachtrapport (cron/index.js, hoogstens één keer per week) en het dashboard
+ * tellen de accounts die over de termijn zijn, en /admin/customers?f=bewaartermijn
+ * zet ze op een rij met de knop erbij. Zie STALE_ACCOUNTS_SQL hieronder.
+ *
+ * Facturen vallen hier niet onder: die bewaart de AVG-knop zeven jaar (fiscale
+ * bewaarplicht, art. 52 lid 4 AWR), uitgekleed tot wat er op de factuur staat. */
+export const ACCOUNT_YEARS = 2;
+
+/* ── DE BACK-UPS — 8 oktober 2026 (o11) ─────────────────────────────────────
+ *
+ * Het advies was "back-ups hoogstens 30 dagen". Dat klopt niet met wat er
+ * draait: scripts/backup-weekly.bat roept elke week `npm run backup -- --keep 8`
+ * aan, en die bewaart de acht laatste sets. Een gewiste klant staat dus nog tot
+ * ongeveer acht weken in een back-up. Het privacybeleid zegt wat er wél
+ * gebeurt; tests/bewaartermijn.test.mjs houdt dit getal gelijk aan het
+ * --keep in het .bat-bestand.
+ *
+ * Lucas koos bij o11 "doen" met het advies: hoogstens 30 dagen. Dus sinds 8
+ * oktober --keep 4: vier wekelijkse sets, ±28 dagen. De tekst volgt vanzelf.
+ *
+ * 12 oktober 2026 (afvinklijst 4, k-back = a): drie kopieën in plaats van vier,
+ * zodat de privacyzin "uiterlijk na 8 weken" waar is (3 × 7 + 30 = 51 dagen). */
+export const BACKUP_KEEP = 3;
+/** Hoe vaak de back-up draait (de Taakplanner-taak uit DEPLOY.md §7): wekelijks. */
+export const BACKUP_EVERY_DAYS = 7;
+/** Hoe lang een back-up daardoor gewoonlijk blijft bestaan, in weken. */
+export const BACKUP_WEKEN = (BACKUP_KEEP * BACKUP_EVERY_DAYS) / 7;
+
+/* ── EN DE PRULLENBAK VAN GOOGLE DRIVE — 11 oktober 2026 (kback = a) ─────────
+ *
+ * Een opgeruimde kopie gaat in Google Drive eerst naar de prullenbak en is daar
+ * na 30 dagen weg (Google's eigen termijn). Een gewist gegeven staat dus
+ * hoogstens BACKUP_KEEP weken in de bewaarde kopieën en daarna nog tot 30 dagen
+ * in de prullenbak. Lucas koos de zin "uiterlijk na … weken"; het getal komt
+ * hieruit, naar boven afgerond, want "uiterlijk" moet waar zijn: met --keep 4 is
+ * dat 28 + 30 = 58 dagen = 9 weken; met --keep 3 (sinds 12 oktober, k-back = a)
+ * is het 21 + 30 = 51 dagen = 8 weken. */
+export const DRIVE_PRULLENBAK_DAGEN = 30;
+export const BACKUP_UITERLIJK_WEKEN = Math.ceil((BACKUP_KEEP * BACKUP_EVERY_DAYS + DRIVE_PRULLENBAK_DAGEN) / 7);
+
+/* ── MAIL EN WHATSAPP MET KLANTEN — 11 oktober 2026 (kcorr = a) ──────────────
+ * Twee jaar na het laatste contact, zoals het account. Lucas ruimt zijn mailbox
+ * en WhatsApp met de hand op; dit is de termijn die het privacybeleid §6 noemt. */
+export const CORRESPONDENTIE_JAREN = ACCOUNT_YEARS;
+
+/* ── WAT VISUAILS ZELF BEWAART, NA DE TERMIJN IN STUDIO — 11 oktober 2026 ────
+ * (ko06 = a en Lucas' notitie bij kback.) De opslag (R2) ruimt het
+ * bronmateriaal op na UPLOAD_DAYS en de beelden na DELIVERY_DAYS; dat blijft.
+ * Daarnaast, in het eigen archief van Lucas (werkmachine, mailbox):
+ *   · klantfoto's en stijlreferenties: zolang het klantaccount bestaat, dus tot
+ *     ACCOUNT_YEARS jaar na de laatste bestelling;
+ *   · afgeleverde beelden die VISUAILS maakte: zonder einddatum ("om de style
+ *     van de klant te bewaken en te blijven verbeteren");
+ *   · beelden met een echt, herkenbaar persoon erop (eigen model van de klant,
+ *     draagfoto): de termijn van het account.
+ * Alles op verzoek weg, vanaf het accountadres en zonder reden. Geen getal om
+ * hier te zetten behalve ACCOUNT_YEARS; de zinnen staan in privacy §6 en in
+ * §12 van de verwerkersovereenkomst. */
+
+/**
+ * Welke klantaccounts over de termijn zijn: de laatste bestelling (of, zonder
+ * bestelling, het aanmaken van het account) is langer dan ACCOUNT_YEARS jaar
+ * geleden. Een lopend, gepauzeerd of aangevraagd abonnement telt als lopende
+ * klantrelatie en houdt het account dus vast, ook zonder bestelling.
+ *
+ * `datetime()` om beide kanten, want niet elke kolom is op dezelfde manier
+ * geschreven ('2026-10-08 07:00:00' tegen '2026-10-08T07:00:00.000Z'), en een
+ * tekstvergelijking tussen die twee vormen klopt niet op dezelfde dag.
+ */
+export const STALE_ACCOUNTS_WHERE = `
+  datetime(COALESCE((SELECT MAX(o.created_at) FROM orders o WHERE o.customer_id = c.id), c.created_at))
+    <= datetime('now', '-${ACCOUNT_YEARS} years')
+  AND NOT EXISTS (SELECT 1 FROM subscriptions s
+                   WHERE s.customer_id = c.id AND s.status IN ('active', 'paused', 'pending'))`;
+
+/** Hoeveel accounts over de termijn zijn — voor het dashboard en het nachtrapport. */
+export const STALE_ACCOUNTS_COUNT_SQL = `SELECT COUNT(*) AS n FROM customers c WHERE ${STALE_ACCOUNTS_WHERE}`;
+
+/** Welke — voor /admin/customers?f=bewaartermijn. `?1` is het maximum. */
+export const STALE_ACCOUNTS_SQL = `
+  SELECT c.id, c.email, c.brand, c.name, c.created_at,
+         (SELECT MAX(o.created_at) FROM orders o WHERE o.customer_id = c.id) AS last_order,
+         (SELECT COUNT(*) FROM orders o WHERE o.customer_id = c.id) AS orders
+    FROM customers c
+   WHERE ${STALE_ACCOUNTS_WHERE}
+   ORDER BY COALESCE(last_order, c.created_at), c.id
+   LIMIT ?1`;
 
 /**
  * Stempel de bewaartermijn op het bronmateriaal van een afgeronde bestelling.
@@ -150,6 +252,18 @@ export function stampDeliveryRetention(env, orderId) {
  * eigen klok; ze verdwijnen met hun bron omdat de query op de kind-waarde van de
  * bron kijkt en de sleutels apart worden opgehaald. Zie de taak zelf.
  *
+ * ── EN EEN GEANNULEERDE BESTELLING — 8 oktober 2026 ─────────────────────────
+ * De termijn voor bronmateriaal liep alleen vanaf `closed_at`, en die krijgt een
+ * bestelling pas als de klant alles goedkeurt. Een geannuleerde of nooit betaalde
+ * (vervallen) bestelling sluit nooit, dus de foto's van de klant, soms met
+ * gezichten, bleven voor altijd staan; /privacy belooft "zo kort als nodig". Nu
+ * telt voor een geannuleerde bestelling UPLOAD_DAYS (90) dagen vanaf de annulering
+ * (of, als die datum ontbreekt, vanaf het plaatsen). Een bestand waar een andere
+ * bestelling naar wijst (zelfde r2_key) blijft staan: weggooien zou die andere
+ * bestelling zijn bron kosten. Hetzelfde voor foto's die een abonnee nog op
+ * zijn lijst heeft: een geannuleerde abonnementsbestelling zet haar items terug
+ * op de lijst (queueTerugNaAnnulering), mét dezelfde batch.
+ *
  * `o.status` gaat mee omdat de opruimtaak op de tijdlijn van de bestelling schrijft
  * wat hij weghaalde, en een gebeurtenis in dit project de bestaande status
  * herhaalt in plaats van er een te verzinnen. Zonder deze kolom zou de taak de
@@ -165,6 +279,21 @@ export const EXPIRED_FILES_SQL = `
               AND datetime(o.closed_at, '+${UPLOAD_DAYS} days') <= datetime('now'))
         OR (f.kind = 'delivery' AND f.announced_at IS NOT NULL
               AND datetime(f.announced_at, '+${DELIVERY_DAYS} days') <= datetime('now'))
+        OR (f.kind = 'upload' AND o.status = 'cancelled' AND o.closed_at IS NULL
+              AND datetime(COALESCE(o.cancelled_at, o.created_at), '+${UPLOAD_DAYS} days') <= datetime('now')
+              AND NOT EXISTS (SELECT 1 FROM files g WHERE g.r2_key = f.r2_key AND g.order_id <> f.order_id)
+              AND NOT EXISTS (SELECT 1 FROM plan_queue q
+                               WHERE COALESCE(q.upload_batch, '') <> ''
+                                 AND f.r2_key LIKE 'intake/' || q.upload_batch || '/%'))
          )
    ORDER BY f.id
    LIMIT ?1`;
+
+/**
+ * De regel voor Lucas, in /admin en in het nachtrapport: één formulering op twee
+ * plekken. Alleen Nederlands — /admin en het nachtrapport zijn voor hem.
+ */
+export function bewaartermijnRegel(n) {
+  const aantal = Number(n) || 0;
+  return `${aantal} klantaccount${aantal === 1 ? '' : 's'} langer dan ${ACCOUNT_YEARS} jaar zonder bestelling`;
+}

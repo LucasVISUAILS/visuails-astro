@@ -1,4 +1,6 @@
 ---
+// VISUAILS — /nl/start/brand-model: in de hal sinds 13 oktober 2026 (afvinklijst 10, alles doen). De vorm komt uit
+// HalFormulier.astro en het blok DE FORMULIEREN in hal.css; de werking blijft van de onderdelen.
 // VISUAILS — /nl/start/brand-model.astro. Een merkmodel bestellen.
 //
 // Dit was een HoldingPage, daarna een briefing zonder bedrag, en sinds
@@ -6,10 +8,13 @@
 // staat in BrandModelBrief.astro zodat de twee talen niet uit elkaar kunnen
 // lopen; alleen de meta verschilt hier. Zie MERKMODEL-ONTWERP.md voor het
 // besluit en de kop van dat component voor de vorm.
+import HalFormulier from '../../../components/HalFormulier.astro';
 import Layout from '../../../layouts/Layout.astro';
 import BrandModelBrief from '../../../components/BrandModelBrief.astro';
 ---
 
-<Layout title="Een merkmodel bestellen — VISUAILS" description="Eén gezicht, één keer ontworpen voor jouw merk en nergens anders gebruikt. Eén bedrag, en twee manieren: beschrijf het zelf, of laat ons het bedenken.">
+<Layout huid="hal" title="Een merkmodel bestellen — VISUAILS" description="Eén gezicht, één keer ontworpen voor jouw merk en nergens anders gebruikt. Eén bedrag, en twee manieren: beschrijf het zelf, of laat ons het bedenken.">
+  <HalFormulier soort="merkmodel">
   <BrandModelBrief lang="nl" />
+  </HalFormulier>
 </Layout>

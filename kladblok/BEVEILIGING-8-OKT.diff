@@ -1,0 +1,992 @@
+diff --git a/.gitignore b/.gitignore
+index 56139b7..1e11cd6 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -53,3 +53,8 @@ kladblok/concepten/visuails-homepage-richtingen.html
+ 
+ # schermafbeeldingen van de conceptpagina's (27 MB, opnieuw te maken met kladblok/concept-schermen.mjs)
+ kladblok/concepten/schermen/
++
++# Geheimen voor lokaal draaien (8 oktober 2026). `wrangler dev` leest .dev.vars,
++# en daar horen echte sleutels in; die mogen nooit mee in een commit.
++.dev.vars*
++.env*
+diff --git a/cron/index.js b/cron/index.js
+index 164341f..7fa8ecd 100644
+--- a/cron/index.js
++++ b/cron/index.js
+@@ -741,7 +741,7 @@ async function noteOnTimeline(env, cleared) {
+       env.DB.prepare(
+         `INSERT INTO order_events (order_id, status, note, actor)
+          VALUES (?1, ?2, ?3, 'system')`
+-      ).bind(orderId, status, describe(kinds, lang))
++      ).bind(orderId, status, describe(kinds, lang, status))
+     );
+   }
+ 
+@@ -758,15 +758,18 @@ async function noteOnTimeline(env, cleared) {
+ /** De tekst die de klant en jij op de tijdlijn lezen. Zie de kop hierboven. */
+ /* In de taal van de bestelling (29 september 2026): de klant leest dit op zijn
+    tijdlijn, en een Engelse klant kreeg het in het Nederlands. */
+-function describe(kinds, lang = 'nl') {
++/* Een geannuleerde bestelling is nooit "afgesloten"; haar termijn loopt vanaf de
++   annulering (8 oktober 2026, zie EXPIRED_FILES_SQL in retention.js). */
++function describe(kinds, lang = 'nl', status = '') {
+   const en = lang === 'en';
++  const geannuleerd = status === 'cancelled';
+   const parts = [];
+   for (const [kind, n] of kinds) {
+     const stuks = en ? `${n} file${n === 1 ? '' : 's'}` : `${n} bestand${n === 1 ? '' : 'en'}`;
+     if (kind === 'upload') {
+       parts.push(en
+-        ? `Source material deleted under the ${UPLOAD_DAYS}-day retention period after the order closed (${stuks}).`
+-        : `Bronmateriaal verwijderd volgens de bewaartermijn van ${UPLOAD_DAYS} dagen na het afsluiten van de bestelling (${stuks}).`);
++        ? `Source material deleted under the ${UPLOAD_DAYS}-day retention period after the order ${geannuleerd ? 'was cancelled' : 'closed'} (${stuks}).`
++        : `Bronmateriaal verwijderd volgens de bewaartermijn van ${UPLOAD_DAYS} dagen na ${geannuleerd ? 'de annulering' : 'het afsluiten'} van de bestelling (${stuks}).`);
+     } else if (kind === 'delivery') {
+       parts.push(en
+         ? `Delivered images deleted under the ${DELIVERY_DAYS}-day retention period after delivery (${stuks}).`
+diff --git a/functions/api/capacity.js b/functions/api/capacity.js
+index 5408154..c775bc3 100644
+--- a/functions/api/capacity.js
++++ b/functions/api/capacity.js
+@@ -37,6 +37,7 @@
+ // Nothing here is a reservation. The reservation is orders.window_start.
+ 
+ import { readCalendar } from '../../src/lib/agenda.js';
++import { viaRandCache } from '../../src/lib/edgeCache.js';
+ import { puntenVoor } from '../../src/data/pricing.js';
+ import {
+   MAX_PRODUCTS_ANY_SERVICE,
+@@ -44,12 +45,33 @@ import {
+   QUEUE_DAYS_MAX,
+   QUEUE_DAYS_MIN,
+   clearedWindows,
++  HORIZON_DAYS,
+ } from '../../src/data/capacity.js';
+ 
+ /** The queue's answer, in working days. See the note in handle() for why not dates. */
+ const QUEUE = { minDays: QUEUE_DAYS_MIN, maxDays: QUEUE_DAYS_MAX, committed: false };
+ 
+-export async function onRequestGet({ request, env }) {
++/* ── DE AGENDA ÉÉN KEER PER MINUUT PER VRAAG — 8 oktober 2026 ──────────────
++   De wachtrij (unattended) leest niets uit D1 en gaat direct door. Voor een
++   vaste datum gaat het antwoord via viaRandCache() in src/lib/edgeCache.js,
++   onder een sleutel van alleen de geknipte waarden: zie de kop van dat bestand
++   voor waarom `max-age=60` alleen geen rem was. */
++export async function onRequestGet(context) {
++  const url = new URL(context.request.url);
++  if (url.searchParams.get('tier') !== 'attended') return capaciteit(context);
++  const gevraagd = Number.parseInt(url.searchParams.get('products') ?? '', 10);
++  const products = Number.isInteger(gevraagd)
++    ? Math.min(Math.max(gevraagd, 1), MAX_PRODUCTS_ANY_SERVICE + 1)
++    : 'geen';
++  const gevraagdeDienst = url.searchParams.get('service') || 'complete';
++  const service = puntenVoor(gevraagdeDienst, 1) === null ? 'complete' : gevraagdeDienst;
++  const from = geldigeVanaf(url.searchParams.get('from'), todayUTC()) || '';
++  return viaRandCache(context, 'capacity',
++    { products, service, from, dag: todayUTC() },
++    () => capaciteit(context));
++}
++
++async function capaciteit({ request, env }) {
+   const url = new URL(request.url);
+   /* ── DE CACHESLEUTEL MOET BEGRENSD ZIJN — 31 augustus 2026 ────────────────
+    *
+@@ -128,8 +150,7 @@ export async function onRequestGet({ request, env }) {
+      bestelpagina). Alleen een ISO-datum telt; alles anders is "vanaf de eerste
+      dag". De cache-sleutel groeit hiermee met hooguit zestig waarden per
+      aantal — zie de noot over normaliseren hierboven. */
+-  const fromRaw = url.searchParams.get('from') || '';
+-  const from = /^\d{4}-\d{2}-\d{2}$/.test(fromRaw) ? fromRaw : null;
++  const from = geldigeVanaf(url.searchParams.get('from'), today);
+   const gate = clearedWindows({ today, products, service, booked, blackouts, from });
+ 
+   return json({
+@@ -166,6 +187,23 @@ export async function onRequestGet({ request, env }) {
+  * — a local-time date built inside a worker whose timezone is not the studio's —
+  * is wrong in the unsafe direction and much harder to see.
+  */
++/* ── `from` ALLEEN BINNEN DE HORIZON — 8 oktober 2026 ──────────────────────
++   De vorm (jjjj-mm-dd) alleen liet honderd miljoen waarden door, elk een eigen
++   cache-sleutel, dus wie `from` liet oplopen, miste de cache steeds. Nu telt
++   alleen een echte datum na vandaag en binnen HORIZON_DAYS; alles anders is
++   "vanaf de eerste dag", wat clearedWindows() voor een datum vóór de eerste
++   bestelbare dag al deed. De bestelpagina vraagt nooit verder dan de horizon
++   (`more` is daar onwaar), dus voor een klant verandert er niets. */
++function geldigeVanaf(raw, today) {
++  const v = String(raw || '');
++  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
++  const t = Date.parse(`${v}T00:00:00Z`);
++  if (!Number.isFinite(t) || new Date(t).toISOString().slice(0, 10) !== v) return null;
++  const vandaag = Date.parse(`${today}T00:00:00Z`);
++  if (t <= vandaag || t > vandaag + HORIZON_DAYS * 86400000) return null;
++  return v;
++}
++
+ function todayUTC() {
+   return new Date().toISOString().slice(0, 10);
+ }
+diff --git a/functions/api/order.js b/functions/api/order.js
+index 15f13a8..aa294ca 100644
+--- a/functions/api/order.js
++++ b/functions/api/order.js
+@@ -161,6 +161,23 @@ const MAIL_ATTACH_MAX_FILES = 10;
+ // `source` was always read into a column and was ALSO landing in details_json,
+ // which is the same duplication the section-10 fields would have caused. It is
+ // listed here now for the same reason they are.
++/* De sleutels in details_json die alleen de server zet (zie de lus "Everything
++   not lifted to a column" in onRequestPost). Een veld met een van deze namen in
++   het formulier komt niet ruw in details. `withdrawal_consent` en
++   `business_declaration` worden wél als vinkje gepost, maar de code leest die
++   met get() en schrijft er zelf het vastgelegde resultaat voor in de plaats. */
++export const SERVER_DETAIL_KEYS = new Set([
++  'tegoed_cents',
++  'own_style_id', 'style_name',
++  'uploads', 'products_gevraagd',
++  'business_declaration', 'business_kind', 'business_reg', 'business_ok', 'business_notes',
++  'withdrawal_consent',
++  /* Offerte en restant: die zet /admin (json_set, handleRestant). Gepost vanuit
++     het formulier liet `quote_kind=aanbetaling` een gewone factuur als
++     aanbetaling drukken. */
++  'quote_kind', 'restant_van',
++]);
++
+ const TOP_FIELDS = [
+   'service', 'redirect', 'lang', 'name', 'brand', 'company', 'email', 'phone', 'vat', 'website',
+   'company_hp', 'source',
+@@ -410,6 +427,15 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
+   const details = {};
+   for (const [k, v] of form.entries()) {
+     if (TOP_FIELDS.includes(k)) continue;
++    /* ── WAT DE SERVER INVULT, KOMT NIET UIT HET FORMULIER — 8 oktober 2026 ──
++       Elk onbekend veld viel tot vandaag in details_json, óók de velden die deze
++       functie verderop zelf zet. Bij `tegoed_cents` was dat geld: wie het met de
++       hand meepostte, kreeg dat bedrag van de rekening af (teBetalenCents() trekt
++       het eraf, betalingGedekt() telt het als ontvangen), zonder dat er tegoed
++       bestond. De andere velden in SERVER_DETAIL_KEYS hebben dezelfde vorm: de
++       server bepaalt ze, dus een geposte waarde wordt hier weggegooid in plaats
++       van later misschien niet overschreven. */
++    if (SERVER_DETAIL_KEYS.has(k)) continue;
+     // A FILE IS NOT AN ANSWER. Every order form carries <input type="file">, and
+     // a browser submits an entry for it whether or not anything was picked. The
+     // old line here was `(v || '').toString()`, which on a File yields the
+@@ -661,17 +687,28 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
+     /* ── EN DE BEZOEKER KRIJGT EEN KOPIE — 1 oktober 2026 (ronde 8, M-C9) ────
+        De bedankpagina belooft "meestal binnen het uur", maar in zijn mailbox
+        stond niets. Een korte bevestiging met zijn eigen bericht erin. */
++    /* ── DE KOPIE: ALLEEN HET BERICHT, GEEN ZELFGEKOZEN ONDERWERP — 8 oktober 2026 ──
++       Dit formulier mailt naar elk adres dat iemand invult, vanaf
++       orders@visuails.com. Het onderwerp komt nu alleen uit de vaste lijst (het
++       vrije `subject` van een gesleuteld formulier niet meer), en een naam staat
++       er alleen in als het een gewone voornaam is (letters, hoogstens 30), zodat
++       er geen link of domeinnaam in de aanhef kan staan. Het bericht zelf blijft
++       erin: dat was de keuze van ronde 8 (M-C9). Zie de afvinklijst van 8 oktober
++       voor het risico daarvan en de rem (Turnstile). */
+     const nlC = lang === 'nl';
++    const vasteOnderwerp = TOPICS[String(get('topic') || '').trim()] || '';
++    const voornaam = String(name || '').trim().split(/\s+/)[0] || '';
++    const groet = /^[\p{L}][\p{L}'-]{0,29}$/u.test(voornaam) ? `, ${esc(voornaam)}` : '';
+     await safe(() => sendMail(env, {
+       to: email,
+       subject: nlC ? 'We hebben je bericht' : 'We have your message',
+       html: shell({
+         lang: nlC ? 'nl' : 'en',
+         preheader: nlC ? 'Je hoort snel van ons.' : 'You will hear from us soon.',
+-        body: h1(nlC ? 'Je bericht is binnen' : 'Your message is in', esc(onderwerp))
++        body: h1(nlC ? 'Je bericht is binnen' : 'Your message is in', vasteOnderwerp ? esc(vasteOnderwerp) : undefined)
+           + p(nlC
+-            ? `Bedankt${name ? `, ${esc(String(name).split(' ')[0])}` : ''}. We antwoorden ${kanaal === 'WhatsApp' ? 'via WhatsApp' : 'per mail'}, meestal binnen het uur; buiten openingstijden de volgende ochtend. Dit stuurde je:`
+-            : `Thank you${name ? `, ${esc(String(name).split(' ')[0])}` : ''}. We reply ${kanaal === 'WhatsApp' ? 'on WhatsApp' : 'by email'}, usually within the hour; outside opening hours the next morning. This is what you sent:`)
++            ? `Bedankt${groet}. We antwoorden ${kanaal === 'WhatsApp' ? 'via WhatsApp' : 'per mail'}, meestal binnen het uur; buiten openingstijden de volgende ochtend. Dit stuurde je:`
++            : `Thank you${groet}. We reply ${kanaal === 'WhatsApp' ? 'on WhatsApp' : 'by email'}, usually within the hour; outside opening hours the next morning. This is what you sent:`)
+           + (body ? mailQuote(esc(body).replace(/\n/g, '<br>')) : ''),
+       }),
+     }));
+@@ -2914,7 +2951,10 @@ async function ownStyleFor(env, email, styleId, service) {
+ 
+ function makeRef() {
+   const t = Date.now().toString(36).toUpperCase().slice(-4);
+-  const r = Math.floor(Math.random() * 46656).toString(36).toUpperCase().padStart(3, '0');
++  /* Het staartje uit de cryptografische generator en niet uit Math.random()
++     (8 oktober 2026): Math.random() is voorspelbaar voor wie een paar kenmerken
++     ziet. De vorm blijft precies VIS-XXXX-XXX; zie order-status.js. */
++  const r = (crypto.getRandomValues(new Uint32Array(1))[0] % 46656).toString(36).toUpperCase().padStart(3, '0');
+   return `VIS-${t}-${r}`;
+ }
+ 
+diff --git a/functions/api/plan-plek.js b/functions/api/plan-plek.js
+index 00c5a8b..066968b 100644
+--- a/functions/api/plan-plek.js
++++ b/functions/api/plan-plek.js
+@@ -28,6 +28,7 @@
+  * zonder geheim verdedig je met een cache en niet met een teller.
+  */
+ import { bezetting } from '../../src/lib/subscription.js';
++import { viaRandCache } from '../../src/lib/edgeCache.js';
+ import { PLAN_IDS, fitsBudget, fitsProducts } from '../../src/data/plans.js';
+ import {
+   CUSTOM_CREDITS_MIN, CUSTOM_CREDITS_MAX, CUSTOM_CREDITS_STEP, creditsProductEquivalent,
+@@ -55,7 +56,14 @@ export async function planPlek(env) {
+   };
+ }
+ 
+-export async function onRequestGet({ env }) {
++/* Eén keer per minuut uit D1, en niet bij elke aanvraag (8 oktober 2026); zie
++   de kop van src/lib/edgeCache.js. Het antwoord hangt van geen enkele parameter
++   af, dus de sleutel is alleen de naam. */
++export async function onRequestGet(context) {
++  return viaRandCache(context, 'plan-plek', {}, () => planPlekAntwoord(context));
++}
++
++async function planPlekAntwoord({ env }) {
+   const antwoord = await planPlek(env);
+   return new Response(JSON.stringify(antwoord), {
+     status: 200,
+diff --git a/package.json b/package.json
+index b00756a..16b9a1b 100644
+--- a/package.json
++++ b/package.json
+@@ -20,7 +20,7 @@
+     "fetch:order": "node scripts/fetch-order.mjs",
+     "test:account": "node tests/account-brand-kit.test.mjs",
+     "test:admin": "node tests/admin.test.mjs",
+-    "test": "npm run test:bouw && npm run test:paths && npm run test:paginakeuring && npm run test:galerijfilter && npm run test:consoleschoon && npm run test:beeldruimte && npm run test:llms && npm run test:ketenvolledig && npm run test:vat && npm run test:abobtw && npm run test:abovooruit && npm run test:aborestitutie && npm run test:gate && npm run test:invoice && npm run test:invoicing && npm run test:credit && npm run test:invoices && npm run test:feedback && npm run test:offsite && npm run test:delivery && npm run test:nav && npm run test:figures && npm run test:agenda && npm run test:maandopmaat && npm run test:slotinplannen && npm run test:beveiliging && npm run test:ontwerpdoc && npm run test:tweedefactor && npm run test:vervaldatum && npm run test:agendadagen && npm run test:cspscripts && npm run test:vergelijker && npm run test:paginalicht && npm run test:promises && npm run test:schrijfwijze && npm run test:korrel && npm run test:schema && npm run test:retention && npm run test:backup && npm run test:funnel && npm run test:legal && npm run test:register && npm run test:scaffold && npm run test:planning && npm run test:wipe && npm run test:beheer && npm run test:wrangler && npm run test:order && npm run test:geld && npm run test:sample && npm run test:sampleinv && npm run test:business && npm run test:request && npm run test:upload && npm run test:keuring && npm run test:merkmodel && npm run test:revisieronde && npm run test:aanhef && npm run test:video && npm run test:ratio && npm run test:refs && npm run test:tips && npm run test:rijbalk && npm run test:conceptresten && npm run test:telefoontekst && npm run test:pay && npm run test:code && npm run test:account && npm run test:studio && npm run test:signin && npm run test:admin && npm run test:mollie && npm run test:diagnose && npm run test:plans && npm run test:abo && npm run test:incasso && npm run test:email && npm run test:garments && npm run test:subscribe && npm run test:planqueue && npm run test:nazicht && npm run test:steps && npm run test:a11y && npm run test:homerail && npm run test:zacht && npm run test:huid && npm run test:revisieantwoord && npm run test:leesbaar && npm run test:planstart && npm run test:planfotos && npm run test:planleeg && npm run test:velden && npm run test:telefoon && npm run test:planweek && npm run test:slots && npm run test:bundel && npm run test:leestekens && npm run test:merkteken && npm run test:modelchecks && npm run test:toegang && npm run test:bestandsnaam && npm run test:woorden && npm run test:aanbevelingen && npm run test:keten && npm run test:galerij && npm run test:misbruik && npm run test:thema && npm run test:uploadbelofte && npm run test:mollie-lezen && npm run test:consent && npm run test:voorbeelden && npm run test:vergelijkweek && npm run test:gewijzigd && npm run test:juridischedatums && npm run test:robots && npm run test:kaders && npm run test:creditherinnering && npm run test:planningtab && npm run test:planningscherm && npm run test:eigenstijl && npm run test:maandset && npm run test:herinnering && npm run test:bounces && npm run test:termijn && npm run test:regelafbreking && npm run test:upsells && npm run test:planzonderaccount && npm run test:modelperproduct && npm run test:hoeken && npm run test:budget && npm run test:tegoed && npm run test:vooruit && npm run test:proefmerk && npm run test:eigenproduct && npm run test:btwvorm && npm run test:uitleg && npm run test:donker && npm run test:migratievolgorde && npm run test:admintaal && npm run test:revisiezichtbaar && npm run test:doorlopen && npm run test:mailtaal && npm run test:stijlkeuze && npm run test:donkervlak && npm run test:stijlvel && npm run test:combi && npm run test:tokenkring && npm run test:adminthema && npm run test:poppetje && npm run test:taal && npm run test:studiobrief && npm run test:ronde2 && npm run test:whatsapp && npm run test:abocredits && npm run test:doorloop && npm run test:tegoedverrekening && npm run test:hoofdstukken && npm run test:ronde9",
++    "test": "npm run test:bouw && npm run test:paths && npm run test:paginakeuring && npm run test:galerijfilter && npm run test:consoleschoon && npm run test:beeldruimte && npm run test:llms && npm run test:ketenvolledig && npm run test:vat && npm run test:abobtw && npm run test:abovooruit && npm run test:aborestitutie && npm run test:gate && npm run test:invoice && npm run test:invoicing && npm run test:credit && npm run test:invoices && npm run test:feedback && npm run test:offsite && npm run test:delivery && npm run test:nav && npm run test:figures && npm run test:agenda && npm run test:maandopmaat && npm run test:slotinplannen && npm run test:beveiliging && npm run test:beveiliging8okt && npm run test:ontwerpdoc && npm run test:tweedefactor && npm run test:vervaldatum && npm run test:agendadagen && npm run test:cspscripts && npm run test:vergelijker && npm run test:paginalicht && npm run test:promises && npm run test:schrijfwijze && npm run test:korrel && npm run test:schema && npm run test:retention && npm run test:backup && npm run test:funnel && npm run test:legal && npm run test:register && npm run test:scaffold && npm run test:planning && npm run test:wipe && npm run test:beheer && npm run test:wrangler && npm run test:order && npm run test:geld && npm run test:sample && npm run test:sampleinv && npm run test:business && npm run test:request && npm run test:upload && npm run test:keuring && npm run test:merkmodel && npm run test:revisieronde && npm run test:aanhef && npm run test:video && npm run test:ratio && npm run test:refs && npm run test:tips && npm run test:rijbalk && npm run test:conceptresten && npm run test:telefoontekst && npm run test:pay && npm run test:code && npm run test:account && npm run test:studio && npm run test:signin && npm run test:admin && npm run test:mollie && npm run test:diagnose && npm run test:plans && npm run test:abo && npm run test:incasso && npm run test:email && npm run test:garments && npm run test:subscribe && npm run test:planqueue && npm run test:nazicht && npm run test:steps && npm run test:a11y && npm run test:homerail && npm run test:zacht && npm run test:huid && npm run test:revisieantwoord && npm run test:leesbaar && npm run test:planstart && npm run test:planfotos && npm run test:planleeg && npm run test:velden && npm run test:telefoon && npm run test:planweek && npm run test:slots && npm run test:bundel && npm run test:leestekens && npm run test:merkteken && npm run test:modelchecks && npm run test:toegang && npm run test:bestandsnaam && npm run test:woorden && npm run test:aanbevelingen && npm run test:keten && npm run test:galerij && npm run test:misbruik && npm run test:thema && npm run test:uploadbelofte && npm run test:mollie-lezen && npm run test:consent && npm run test:voorbeelden && npm run test:vergelijkweek && npm run test:gewijzigd && npm run test:juridischedatums && npm run test:robots && npm run test:kaders && npm run test:creditherinnering && npm run test:planningtab && npm run test:planningscherm && npm run test:eigenstijl && npm run test:maandset && npm run test:herinnering && npm run test:bounces && npm run test:termijn && npm run test:regelafbreking && npm run test:upsells && npm run test:planzonderaccount && npm run test:modelperproduct && npm run test:hoeken && npm run test:budget && npm run test:tegoed && npm run test:vooruit && npm run test:proefmerk && npm run test:eigenproduct && npm run test:btwvorm && npm run test:uitleg && npm run test:donker && npm run test:migratievolgorde && npm run test:admintaal && npm run test:revisiezichtbaar && npm run test:doorlopen && npm run test:mailtaal && npm run test:stijlkeuze && npm run test:donkervlak && npm run test:stijlvel && npm run test:combi && npm run test:tokenkring && npm run test:adminthema && npm run test:poppetje && npm run test:taal && npm run test:studiobrief && npm run test:ronde2 && npm run test:whatsapp && npm run test:abocredits && npm run test:doorloop && npm run test:tegoedverrekening && npm run test:hoofdstukken && npm run test:ronde9",
+     "test:invoice": "node tests/invoice-pdf.test.mjs",
+     "test:offsite": "node tests/offsite.test.mjs",
+     "check:csp": "node scripts/csp-probe.mjs",
+@@ -81,6 +81,7 @@
+     "test:tweedefactor": "node tests/tweede-factor.test.mjs",
+     "test:ontwerpdoc": "node tests/ontwerpdoc.test.mjs",
+     "test:beveiliging": "node tests/beveiliging.test.mjs",
++    "test:beveiliging8okt": "node tests/beveiliging-8-okt.test.mjs",
+     "test:slotinplannen": "node tests/slot-inplannen.test.mjs",
+     "test:maandopmaat": "node tests/maand-op-maat.test.mjs",
+     "test:agenda": "node tests/agenda.test.mjs",
+diff --git a/src/lib/account.js b/src/lib/account.js
+index e476329..48f9bc8 100644
+--- a/src/lib/account.js
++++ b/src/lib/account.js
+@@ -5474,7 +5474,11 @@ async function serveCreditPdf(context, customer, creditId) {
+ 
+ function fileHeaders() {
+   return {
+-    'cache-control': 'private, max-age=3600',
++    /* no-cache en niet max-age=3600 (8 oktober 2026): de browser mag het beeld
++       bewaren, maar vraagt het eerst na. Na uitloggen op een gedeelde computer
++       komt een beeld dan niet meer uit de cache; de server stuurt naar het
++       inloggen. Een ingelogde klant krijgt een 304 (zie de etag hieronder). */
++    'cache-control': 'private, no-cache',
+     'referrer-policy': 'same-origin',
+     'x-robots-tag': 'noindex, nofollow',
+     'x-content-type-options': 'nosniff',
+@@ -8292,6 +8296,7 @@ function html(body, status = 200, extraSetCookies = []) {
+   const headers = new Headers({
+     'content-type': 'text/html; charset=utf-8',
+     'cache-control': 'no-store',
++    'strict-transport-security': 'max-age=31536000; includeSubDomains',
+     'referrer-policy': 'same-origin',
+     'x-robots-tag': 'noindex, nofollow',
+     'x-content-type-options': 'nosniff',
+@@ -9086,6 +9091,7 @@ export async function studioSection(context) {
+ export function studioHeaders() {
+   return {
+     'cache-control': 'no-store',
++    'strict-transport-security': 'max-age=31536000; includeSubDomains',
+     'referrer-policy': 'same-origin',
+     'x-robots-tag': 'noindex, nofollow',
+     'x-content-type-options': 'nosniff',
+diff --git a/src/lib/admin.js b/src/lib/admin.js
+index db45b41..66d316c 100644
+--- a/src/lib/admin.js
++++ b/src/lib/admin.js
+@@ -120,7 +120,7 @@ import { ratioById, ratioField } from '../data/ratios.js';
+    vallen. Zeven is het maximum dat een dienst vandaag levert (complete). */
+ const RATIO_IMAGES_MAX = 7;
+ import { hasProvenanceTag, isScannable } from './provenance.js';
+-import { checkRate, clientIp } from './ratelimit.js';
++import { checkRate, peekRate, clientIp } from './ratelimit.js';
+ /* sendLoginLink() komt uit account.js en niet uit een eigen kopie hier — zie de noot
+    daar. account.js importeert dit bestand niet, dus er is geen kringverwijzing. */
+ import { sendLoginLink } from './account.js';
+@@ -700,6 +700,19 @@ async function handleLogin({ request, env }) {
+   const email = String(form?.get('email') || '').trim().toLowerCase();
+   const password = String(form?.get('password') || '');
+ 
++  /* ── OOK EEN GRENS PER ACCOUNT — 8 oktober 2026 ─────────────────────────────
++     De grens hierboven telt per IP. Met IPv6 had één aanvaller miljoenen
++     adressen, dus raden ging in feite onbeperkt. Nu ook twintig MISLUKTE
++     pogingen per kwartier per e-mailadres. Alleen mislukte tellen, en een goed
++     wachtwoord komt bij een volle emmer nog door als de tweede stap aan staat:
++     anders kon iedereen die het adres kent de eigenaar met twintig foute
++     wachtwoorden per kwartier buiten de deur houden. De code van de tweede stap
++     heeft zijn eigen grens per account (handleCodePost). Zonder tweede stap is
++     de emmer wel een slot: zet hem dus aan op /admin/security. */
++  const ACCOUNT_GRENS = { key: `admin-login|${email}`, action: 'admin-login-acct', limit: 20, windowSeconds: 900, failClosed: true };
++  const accountVol = email ? (await peekRate(env, ACCOUNT_GRENS)).vol : false;
++  const teVeel = () => html(page({ title: 'Inloggen', body: loginBody('Te veel pogingen op dit account. Wacht een kwartier en probeer het opnieuw.') }), 429);
++
+   const row = email
+     ? await env.DB.prepare(
+       'SELECT id, password_hash, totp_secret, totp_confirmed_at FROM admin_users WHERE email = ?1'
+@@ -714,8 +727,13 @@ async function handleLogin({ request, env }) {
+     : await verifyPassword(password, await dummyHash());
+ 
+   if (!ok || !row) {
++    if (email) {
++      const telling = await checkRate(env, ACCOUNT_GRENS);
++      if (accountVol || !telling.allowed) return teVeel();
++    }
+     return html(page({ title: 'Inloggen', body: loginBody('E-mailadres of wachtwoord klopt niet.') }), 401);
+   }
++  if (accountVol && !(row.totp_secret && row.totp_confirmed_at)) return teVeel();
+ 
+   /* ── EN DAN PAS DE TWEEDE FACTOR — migratie 0037, 1 september 2026 ────────
+    *
+@@ -728,9 +746,13 @@ async function handleLogin({ request, env }) {
+    * en currentAdmin() weigert hem, dus hij opent nergens iets. */
+   const { token, tokenHash } = await mintAdminSession();
+   const tweedeFactor = Boolean(row.totp_secret && row.totp_confirmed_at);
++  /* Een halve sessie (wachtwoord goed, code nog niet) leeft een kwartier en niet
++     veertien dagen (8 oktober 2026); de volle termijn krijgt hij pas na de code,
++     in handleCodePost(). */
++  const halfVerloopt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+   await env.DB.prepare(
+     'INSERT INTO admin_sessions (admin_id, token_hash, expires_at, totp_pending) VALUES (?1, ?2, ?3, ?4)'
+-  ).bind(row.id, tokenHash, adminSessionExpiry(), tweedeFactor ? 1 : 0).run();
++  ).bind(row.id, tokenHash, tweedeFactor ? halfVerloopt : adminSessionExpiry(), tweedeFactor ? 1 : 0).run();
+ 
+   if (tweedeFactor) return seeOther('/admin/code', [setSessionCookie(token)]);
+   return seeOther('/admin', [setSessionCookie(token)]);
+@@ -821,8 +843,8 @@ async function handleCodePost(context) {
+     return html(page({ title: 'Twee stappen', body: codeBody('Die code klopt niet.') }), 401);
+   }
+ 
+-  await env.DB.prepare('UPDATE admin_sessions SET totp_pending = 0 WHERE id = ?1')
+-    .bind(half.session_id).run();
++  await env.DB.prepare('UPDATE admin_sessions SET totp_pending = 0, expires_at = ?2 WHERE id = ?1')
++    .bind(half.session_id, adminSessionExpiry()).run();
+   return seeOther('/admin');
+ }
+ 
+@@ -944,6 +966,18 @@ async function handleSecurityPost(context, admin) {
+     'SELECT totp_secret, totp_confirmed_at FROM admin_users WHERE id = ?1'
+   ).bind(admin.admin_id).first().catch(() => null);
+ 
++  /* ── OPNIEUW BEGINNEN OF AFBREKEN TERWIJL HIJ AAN STAAT — 8 oktober 2026 ──
++     `start` en `afbreken` liepen vóór de codecontrole verderop. Wie een sessie
++     overnam, kon daarmee de tweede stap uitzetten (afbreken) of een eigen
++     authenticator koppelen (start, dan bevestig) zonder ooit een code te kennen:
++     precies wat de controle hieronder moet voorkomen. Staat hij aan, dan vragen
++     ze nu dezelfde kloppende code. Het scherm "aan" biedt deze twee knoppen niet
++     aan, dus voor de eigenaar verandert er niets. */
++  if ((doen === 'start' || doen === 'afbreken') && rij?.totp_secret && rij?.totp_confirmed_at
++      && !(await verifyTotp(code, rij.totp_secret))) {
++    return renderSecurity(context, admin, { melding: 'Die code klopt niet.' });
++  }
++
+   if (doen === 'start') {
+     /* Een nieuw geheim, en de oude bevestiging gaat eraf. Iemand die opnieuw
+        begint terwijl het al aanstond, zit tot hij bevestigt zonder tweede stap \u2014
+@@ -10717,7 +10751,15 @@ async function renderFacturen({ env, request }) {
+   const kw = kwartaalVan(url.searchParams.get('kwartaal'));
+   const rijen = await loadFacturen(env, kw);
+   if (url.searchParams.get('csv') === '1') {
+-    const cel = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
++    /* Een cel die met = + @ of een tab begint, leest Excel als formule; een
++       bedrijfsnaam uit het bestelformulier kon zo een link of berekening worden
++       (8 oktober 2026). Een apostrof ervoor maakt er tekst van. Alleen een kaal
++       negatief getal ("-12,50") blijft een getal; "-2+3+…" niet. */
++    const cel = (v) => {
++      let t = String(v ?? '');
++      if (/^[=+@\t\r]/.test(t) || (t.startsWith('-') && !/^-\d+(?:[.,]\d+)?$/.test(t))) t = `'${t}`;
++      return `"${t.replace(/"/g, '""')}"`;
++    };
+     const bedrag = (c) => (Number(c) / 100).toFixed(2).replace('.', ',');
+     const kop = ['soort', 'nummer', 'datum', 'klant', 'land', 'btw-nummer', 'behandeling', 'netto', 'btw', 'bruto', 'status', 'kenmerk'];
+     const regels = rijen.map((r) => [r.soort, r.nummer, r.datum, r.klant, r.land, r.btwNummer, BEHANDELING_KORT[r.behandeling] || r.behandeling, bedrag(r.net), bedrag(r.vat), bedrag(r.bruto), r.status, r.ref].map(cel).join(';'));
+@@ -11637,6 +11679,9 @@ function html(body, status = 200, extraSetCookies = []) {
+   const headers = new Headers({
+     'content-type': 'text/html; charset=utf-8',
+     'cache-control': 'no-store',
++    /* public/_headers geldt alleen voor statische bestanden; wat de Worker
++       maakt, kreeg geen HSTS (8 oktober 2026). */
++    'strict-transport-security': 'max-age=31536000; includeSubDomains',
+     'referrer-policy': 'same-origin',
+     'x-robots-tag': 'noindex, nofollow',
+     'x-content-type-options': 'nosniff',
+@@ -11652,7 +11697,7 @@ function html(body, status = 200, extraSetCookies = []) {
+ }
+ 
+ function seeOther(location, setCookies = []) {
+-  const headers = new Headers({ Location: location, 'cache-control': 'no-store', 'referrer-policy': 'same-origin' });
++  const headers = new Headers({ Location: location, 'cache-control': 'no-store', 'referrer-policy': 'same-origin', 'strict-transport-security': 'max-age=31536000; includeSubDomains' });
+   for (const c of setCookies) headers.append('Set-Cookie', c);
+   return new Response(null, { status: 303, headers });
+ }
+diff --git a/src/lib/edgeCache.js b/src/lib/edgeCache.js
+new file mode 100644
+index 0000000..741e113
+--- /dev/null
++++ b/src/lib/edgeCache.js
+@@ -0,0 +1,62 @@
++/**
++ * VISUAILS — een antwoord een minuut aan de rand van Cloudflare bewaren.
++ *
++ * ── WAAROM DIT BESTAND ER IS — 8 oktober 2026 ─────────────────────────────────
++ *
++ * /api/capacity en /api/plan-plek zijn openbaar, hebben geen snelheidsgrens en
++ * lezen bij elke aanvraag de agenda of de bezetting uit D1: dezelfde database
++ * waar de bestellingen en /admin op draaien. Hun `cache-control: public,
++ * max-age=60` leek een rem, maar is het niet: wat een Worker zelf maakt, bewaart
++ * Cloudflare niet vanzelf, en een willekeurige extra parameter (?x=123) zou elke
++ * gedeelde cache toch omzeilen. Een lus van een paar regels kon de database dus
++ * onbeperkt laten werken.
++ *
++ * Hier wordt het antwoord echt bewaard, in de Cache API (`caches.default`), onder
++ * een sleutel die ALLEEN uit de gecontroleerde waarden bestaat. Een extra
++ * parameter maakt dan geen nieuwe sleutel meer, en dezelfde vraag binnen een
++ * minuut raakt D1 niet.
++ *
++ * Buiten een Worker (de tests in node) bestaat `caches.default` niet; dan wordt
++ * het antwoord gewoon gemaakt, precies zoals voor vandaag.
++ */
++
++/**
++ * @param {object} context   Pages-achtige context (request, waitUntil)
++ * @param {string} naam      vaste naam van het eindpunt, bijv. 'capacity'
++ * @param {object} delen     de GECONTROLEERDE waarden die het antwoord bepalen
++ * @param {() => Promise<Response>} maak  maakt het antwoord als het er niet is
++ */
++export async function viaRandCache(context, naam, delen, maak) {
++  const cache = globalThis.caches?.default;
++  if (!cache || !context?.request) return maak();
++
++  let sleutel;
++  try {
++    const origin = new URL(context.request.url).origin;
++    const zoek = new URLSearchParams(
++      Object.entries(delen)
++        .filter(([, v]) => v !== null && v !== undefined && v !== '')
++        .map(([k, v]) => [k, String(v)])
++        .sort(([a], [b]) => a.localeCompare(b))
++    );
++    sleutel = new Request(`${origin}/__randcache/${naam}?${zoek}`, { method: 'GET' });
++  } catch {
++    return maak();
++  }
++
++  try {
++    const bewaard = await cache.match(sleutel);
++    if (bewaard) return bewaard;
++  } catch { /* de cache hapert: dan gewoon maken */ }
++
++  const antwoord = await maak();
++  /* Alleen een geslaagd antwoord bewaren: een 503 van een haperende database
++     moet de volgende aanvraag niet een minuut lang blijven achtervolgen. */
++  if (antwoord && antwoord.status === 200) {
++    const kopie = antwoord.clone();
++    const zet = cache.put(sleutel, kopie).catch(() => {});
++    if (typeof context.waitUntil === 'function') context.waitUntil(zet);
++    else await zet;
++  }
++  return antwoord;
++}
+diff --git a/src/lib/feedback.js b/src/lib/feedback.js
+index 9c641b7..e7bab72 100644
+--- a/src/lib/feedback.js
++++ b/src/lib/feedback.js
+@@ -522,12 +522,16 @@ async function notifyStudio(env, { orderId, kind, score, note }) {
+ 
+     const body = [
+       h1(kind === 'note' ? 'Een klant heeft uitgelegd wat er misging' : 'Een klant is niet tevreden', ref),
++      /* Elke waarde als tekst (8 oktober 2026). rows() uit mailTemplate.js neemt
++         HTML aan, en `who` is de merknaam of naam die de klant zelf typte: een
++         merk dat "<a href=…>Open in admin</a>" heette, stond hier als echte link
++         in een echte VISUAILS-melding. notify.js ontsnapte dit al; deze mail niet. */
+       mailRows([
+-        ['Score', `${score} / ${SCORE_MAX}`],
+-        ['Bestelling', ref],
+-        ['Klant', who],
+-        ['E-mail', order?.email || ''],
+-        ['Dienst', serviceLabel(order?.service, 'nl') || order?.service || ''],
++        ['Score', esc(`${score} / ${SCORE_MAX}`)],
++        ['Bestelling', esc(ref)],
++        ['Klant', esc(who)],
++        ['E-mail', esc(order?.email || '')],
++        ['Dienst', esc(serviceLabel(order?.service, 'nl') || order?.service || '')],
+       ]),
+       note ? mailQuote(String(note).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])).replace(/\n/g, '<br>')) : '',
+       mailP(kind === 'note'
+diff --git a/src/lib/portal.js b/src/lib/portal.js
+index 3a5be05..87ff7d9 100644
+--- a/src/lib/portal.js
++++ b/src/lib/portal.js
+@@ -1905,6 +1905,7 @@ function html(body, status = 200) {
+     headers: {
+       'content-type': 'text/html; charset=utf-8',
+       'cache-control': 'no-store',
++      'strict-transport-security': 'max-age=31536000; includeSubDomains',
+       'referrer-policy': 'same-origin',
+       'x-robots-tag': 'noindex, nofollow',
+       'x-content-type-options': 'nosniff',
+diff --git a/src/lib/ratelimit.js b/src/lib/ratelimit.js
+index c05541f..46eb9a1 100644
+--- a/src/lib/ratelimit.js
++++ b/src/lib/ratelimit.js
+@@ -80,13 +80,69 @@ export const PORTAL_WINDOW_SECONDS = 60;
+  *
+  * Geen nieuwe functie en geen tweede tabel: `key` is precies wat er gehasht wordt,
+  * en `ip` blijft de naam voor het gewone geval. */
+-export async function checkRate(env, { ip, key: sleutel, action = 'portal', limit = PORTAL_LIMIT, windowSeconds = PORTAL_WINDOW_SECONDS, nowIso = new Date().toISOString() } = {}) {
++/* ── IPv6 TELT PER /64, EN `failClosed` — 8 oktober 2026 ────────────────────
++ *
++ * Eén IPv6-aansluiting krijgt een heel /64-blok: 2^64 adressen. Een teller op het
++ * volledige adres kon dus per aanvraag een nieuwe emmer krijgen, en elke grens in
++ * deze code was voor wie dat wist geen grens. De teller kijkt nu naar de eerste
++ * vier groepen (het /64-blok), zoals vrijwel elke snelheidsbegrenzer doet. IPv4
++ * blijft het volledige adres.
++ *
++ * `failClosed` is voor de paar tellers die raden moeten tegenhouden (inloggen in
++ * /admin): gaat de telling zelf mis, dan weigeren in plaats van doorlaten. Voor
++ * alle andere blijft de oude keuze staan (open, zie de noot bij de catch). */
++export function rateIp(ip) {
++  const raw = String(ip || '').trim();
++  if (!raw.includes(':')) return raw;
++  const zonder = raw.split('%')[0].toLowerCase();
++  /* Een IPv4-adres in IPv6-jas (::ffff:203.0.113.7) telt als dat IPv4-adres,
++     niet als het /64-blok 0:0:0:0 dat alle zulke adressen zouden delen. */
++  const v4 = /(?:^|:)(\d{1,3}(?:\.\d{1,3}){3})$/.exec(zonder);
++  if (v4) return v4[1];
++  const [kop, staart = ''] = zonder.split('::');
++  const voor = kop ? kop.split(':') : [];
++  const na = zonder.includes('::') && staart ? staart.split(':') : [];
++  const groepen = zonder.includes('::')
++    ? [...voor, ...Array(Math.max(0, 8 - voor.length - na.length)).fill('0'), ...na]
++    : voor;
++  if (groepen.length < 4 || groepen.slice(0, 4).some((g) => !/^[0-9a-f]{1,4}$/.test(g))) return raw;
++  return `${groepen.slice(0, 4).map((g) => g.replace(/^0+(?=.)/, '')).join(':')}::/64`;
++}
++
++/* De sleutel van een emmer, gedeeld door checkRate() en peekRate(). */
++async function emmerSleutel(env, { ip, sleutel, action, windowSeconds, nowIso }) {
++  const salt = await getSalt(env);
++  return `${action}:${await digest(`${salt}|${sleutel || rateIp(ip) || 'unknown'}`)}:${windowStamp(nowIso, windowSeconds)}`;
++}
++
++/**
++ * KIJKEN ZONDER TE TELLEN — 8 oktober 2026.
++ *
++ * Voor een grens die alleen MISLUKTE pogingen telt (inloggen in /admin): eerst
++ * kijken of de emmer al vol is, en pas bij een mislukking checkRate() aanroepen.
++ * Zo kan een buitenstaander met twintig foute wachtwoorden de eigenaar niet
++ * buitensluiten zodra die een tweede stap heeft (zie handleLogin in admin.js).
++ * Gaat het lezen mis, dan `failClosed` zoals bij checkRate.
++ */
++export async function peekRate(env, { ip, key: sleutel, action = 'portal', limit = PORTAL_LIMIT, windowSeconds = PORTAL_WINDOW_SECONDS, nowIso = new Date().toISOString(), failClosed = false } = {}) {
++  if (!env?.DB) return { vol: failClosed, hits: 0, limit };
++  try {
++    const key = await emmerSleutel(env, { ip, sleutel, action, windowSeconds, nowIso });
++    const row = await env.DB.prepare('SELECT hits FROM rate_limits WHERE bucket = ?1').bind(key).first();
++    const hits = Number(row?.hits) || 0;
++    return { vol: hits >= limit, hits, limit };
++  } catch {
++    return { vol: failClosed, hits: 0, limit };
++  }
++}
++
++export async function checkRate(env, { ip, key: sleutel, action = 'portal', limit = PORTAL_LIMIT, windowSeconds = PORTAL_WINDOW_SECONDS, nowIso = new Date().toISOString(), failClosed = false } = {}) {
+   const open = { allowed: true, hits: 0, limit, retryAfter: 0 };
+-  if (!env?.DB) return open;
++  const dicht = { allowed: false, hits: 0, limit, retryAfter: 60 };
++  if (!env?.DB) return failClosed ? dicht : open;
+ 
+   try {
+-    const salt = await getSalt(env);
+-    const key = `${action}:${await digest(`${salt}|${sleutel || ip || 'unknown'}`)}:${windowStamp(nowIso, windowSeconds)}`;
++    const key = await emmerSleutel(env, { ip, sleutel, action, windowSeconds, nowIso });
+     const expiresAt = new Date(Date.parse(nowIso) + windowSeconds * 2000).toISOString();
+ 
+     // One statement, one round trip, atomic. RETURNING hands back the value the
+@@ -117,7 +173,7 @@ export async function checkRate(env, { ip, key: sleutel, action = 'portal', limi
+     // Nothing is silently lost either way: the lookup this guards is about to
+     // hit the same database, and if D1 is genuinely down it will fail there,
+     // loudly, on its own terms.
+-    return open;
++    return failClosed ? dicht : open;
+   }
+ }
+ 
+diff --git a/src/lib/retention.js b/src/lib/retention.js
+index 76b3e80..c0a7317 100644
+--- a/src/lib/retention.js
++++ b/src/lib/retention.js
+@@ -150,6 +150,18 @@ export function stampDeliveryRetention(env, orderId) {
+  * eigen klok; ze verdwijnen met hun bron omdat de query op de kind-waarde van de
+  * bron kijkt en de sleutels apart worden opgehaald. Zie de taak zelf.
+  *
++ * ── EN EEN GEANNULEERDE BESTELLING — 8 oktober 2026 ─────────────────────────
++ * De termijn voor bronmateriaal liep alleen vanaf `closed_at`, en die krijgt een
++ * bestelling pas als de klant alles goedkeurt. Een geannuleerde of nooit betaalde
++ * (vervallen) bestelling sluit nooit, dus de foto's van de klant, soms met
++ * gezichten, bleven voor altijd staan; /privacy belooft "zo kort als nodig". Nu
++ * telt voor een geannuleerde bestelling UPLOAD_DAYS (90) dagen vanaf de annulering
++ * (of, als die datum ontbreekt, vanaf het plaatsen). Een bestand waar een andere
++ * bestelling naar wijst (zelfde r2_key) blijft staan: weggooien zou die andere
++ * bestelling zijn bron kosten. Hetzelfde voor foto's die een abonnee nog op
++ * zijn lijst heeft: een geannuleerde abonnementsbestelling zet haar items terug
++ * op de lijst (queueTerugNaAnnulering), mét dezelfde batch.
++ *
+  * `o.status` gaat mee omdat de opruimtaak op de tijdlijn van de bestelling schrijft
+  * wat hij weghaalde, en een gebeurtenis in dit project de bestaande status
+  * herhaalt in plaats van er een te verzinnen. Zonder deze kolom zou de taak de
+@@ -165,6 +177,12 @@ export const EXPIRED_FILES_SQL = `
+               AND datetime(o.closed_at, '+${UPLOAD_DAYS} days') <= datetime('now'))
+         OR (f.kind = 'delivery' AND f.announced_at IS NOT NULL
+               AND datetime(f.announced_at, '+${DELIVERY_DAYS} days') <= datetime('now'))
++        OR (f.kind = 'upload' AND o.status = 'cancelled' AND o.closed_at IS NULL
++              AND datetime(COALESCE(o.cancelled_at, o.created_at), '+${UPLOAD_DAYS} days') <= datetime('now')
++              AND NOT EXISTS (SELECT 1 FROM files g WHERE g.r2_key = f.r2_key AND g.order_id <> f.order_id)
++              AND NOT EXISTS (SELECT 1 FROM plan_queue q
++                               WHERE COALESCE(q.upload_batch, '') <> ''
++                                 AND f.r2_key LIKE 'intake/' || q.upload_batch || '/%'))
+          )
+    ORDER BY f.id
+    LIMIT ?1`;
+diff --git a/tests/beveiliging-8-okt.test.mjs b/tests/beveiliging-8-okt.test.mjs
+new file mode 100644
+index 0000000..35f1cc4
+--- /dev/null
++++ b/tests/beveiliging-8-okt.test.mjs
+@@ -0,0 +1,68 @@
++/**
++ * VISUAILS — de beveiligingsronde van 8 oktober 2026, voor zover niet al in een
++ * bestaand testbestand: de IPv6-teller en de randcache voor de openbare
++ * capaciteitsvragen. Draai: node tests/beveiliging-8-okt.test.mjs
++ */
++import { rateIp } from '../src/lib/ratelimit.js';
++
++let goed = 0, totaal = 0;
++function ok(naam, kreeg, wil = true) {
++  totaal++;
++  const ja = JSON.stringify(kreeg) === JSON.stringify(wil);
++  if (ja) goed++;
++  console.log(`${ja ? ' ok  ' : ' FAIL'} ${naam}${ja ? '' : `  verwacht ${JSON.stringify(wil)}, kreeg ${JSON.stringify(kreeg)}`}`);
++}
++
++console.log('\nde snelheidsteller telt IPv6 per /64-blok');
++ok('IPv4 blijft het hele adres', rateIp('203.0.113.7'), '203.0.113.7');
++ok('een volledig IPv6-adres wordt zijn /64', rateIp('2001:db8:1:2:3:4:5:6'), '2001:db8:1:2::/64');
++ok('een ander adres in hetzelfde blok telt mee', rateIp('2001:db8:1:2::ffff'), '2001:db8:1:2::/64');
++ok('een ingekort adres wordt eerst uitgeschreven', rateIp('2001:db8::1'), '2001:db8:0:0::/64');
++ok('voorloopnullen tellen niet', rateIp('2001:0db8:0001:0002::'), '2001:db8:1:2::/64');
++ok('een zone-aanduiding valt weg', rateIp('fe80::1%eth0'), 'fe80:0:0:0::/64');
++ok('onzin blijft onzin (en dus een eigen emmer)', rateIp('unknown'), 'unknown');
++
++console.log('\nde capaciteitsvraag raakt D1 hooguit één keer per minuut per vraag');
++{
++  const bewaard = new Map();
++  globalThis.caches = { default: {
++    async match(req) { const r = bewaard.get(req.url); return r ? r.clone() : undefined; },
++    async put(req, res) { bewaard.set(req.url, res); },
++  } };
++  const { viaRandCache } = await import('../src/lib/edgeCache.js');
++  const ctx = (u) => ({ request: new Request(u), waitUntil: (p) => p });
++  let gemaakt = 0;
++  const maak = async () => { gemaakt++; return new Response(`antwoord ${gemaakt}`, { status: 200, headers: { 'cache-control': 'public, max-age=60' } }); };
++  const a = await viaRandCache(ctx('https://visuails.com/api/capacity?x=1'), 'capacity', { products: 3, service: 'catalog' }, maak);
++  const b = await viaRandCache(ctx('https://visuails.com/api/capacity?x=987'), 'capacity', { service: 'catalog', products: 3 }, maak);
++  ok('een extra parameter maakt geen nieuwe vraag', gemaakt, 1);
++  ok('en het tweede antwoord is het bewaarde', [await a.text(), await b.text()], ['antwoord 1', 'antwoord 1']);
++  await viaRandCache(ctx('https://visuails.com/'), 'capacity', { products: 4, service: 'catalog' }, maak);
++  ok('een andere geknipte waarde wel', gemaakt, 2);
++  let fout = 0;
++  const kapot = async () => { fout++; return new Response('nee', { status: 503 }); };
++  await viaRandCache(ctx('https://visuails.com/'), 'x', {}, kapot);
++  await viaRandCache(ctx('https://visuails.com/'), 'x', {}, kapot);
++  ok('een 503 wordt niet bewaard', fout, 2);
++
++  const { onRequestGet } = await import('../functions/api/capacity.js');
++  const r = await onRequestGet({ request: new Request('https://visuails.com/api/capacity?tier=unattended&products=3'), env: {} });
++  ok('de wachtrij werkt zonder database', [r.status, (await r.json()).reason], [200, 'queue']);
++
++  /* `from` telt alleen binnen de horizon: anders is elke datum een nieuwe sleutel. */
++  const legeDb = { prepare() { const st = { bind() { return st; }, async all() { return { results: [] }; }, async first() { return null; }, async run() { return {}; } }; return st; } };
++  const vraag = (q) => onRequestGet({ request: new Request(`https://visuails.com/api/capacity?tier=attended&products=3&service=catalog${q}`), env: { DB: legeDb }, waitUntil: (p) => p });
++  bewaard.clear();
++  const dag = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
++  const r1 = await vraag(`&from=${dag(10)}`);
++  const r2 = await vraag('&from=2999-01-01');
++  const r3 = await vraag('&from=2026-02-31');
++  const sleutels = [...bewaard.keys()];
++  ok('een datum binnen de horizon krijgt zijn eigen sleutel', sleutels.some((k) => k.includes(`from=${dag(10)}`)), true);
++  ok('een datum ver weg en een niet-bestaande datum niet', sleutels.filter((k) => /from=(2999|2026-02-31)/.test(k)).length, 0);
++  ok('alle drie gaven gewoon antwoord', [r1.status, r2.status, r3.status], [200, 200, 200]);
++  delete globalThis.caches;
++}
++
++console.log(`\n${goed}/${totaal} geslaagd`);
++if (goed !== totaal) process.exit(1);
+diff --git a/tests/feedback.test.mjs b/tests/feedback.test.mjs
+index 1ca8890..0daf042 100644
+--- a/tests/feedback.test.mjs
++++ b/tests/feedback.test.mjs
+@@ -310,11 +310,29 @@ console.log('\nde melding naar de studio');
+     await post({ fb: 'score', score: '1' });
+     check('een lagere score is nieuw nieuws', sent.length, 3);
+ 
++
+     // Een tevreden klant die daarna toch een testimonial geeft, mag niets sturen.
+     await post({ fb: 'score', score: '5' });
+     await post({ fb: 'quote', quote: 'prima', quote_consent: '1' });
+     check('een testimonial mailt niet', sent.length, 3);
+ 
++    /* 8 oktober 2026: de merknaam komt van het bestelformulier en hoort als
++       TEKST in de mail, niet als HTML. */
++    {
++      const db3 = fresh();
++      for (const kol of ['ref', 'service', 'email', 'brand', 'first_name', 'last_name', 'name', 'lang']) {
++        db3.exec(`ALTER TABLE orders ADD COLUMN ${kol} TEXT`);
++      }
++      db3.prepare("UPDATE orders SET ref = 'VIS-TEST-007', service = 'catalog', email = 'a<b>@x.nl', brand = '<a href=\"https://evil.example\">Open in admin</a>' WHERE id = 7").run();
++      const env3 = { DB: d1(db3), RESEND_API_KEY: 'test', NOTIFY_EMAIL: 'studio@visuails.com' };
++      const voor = sent.length;
++      await handleFeedbackPost(env3, { orderId: 7, customerId: 1, form: form({ fb: 'score', score: '1' }) });
++      const mail = sent[voor];
++      check('een merknaam met HTML wordt geen link in de melding', /<a href="https:\/\/evil\.example"/.test(mail?.html || ''), false);
++      check('  maar staat er wel, als tekst', (mail?.html || '').includes('&lt;a href=&quot;https://evil.example&quot;&gt;'), true);
++      check('  en het e-mailadres ook als tekst', (mail?.html || '').includes('a&lt;b&gt;@x.nl'), true);
++    }
++
+     // Zonder sleutel gaat er niets uit, en er gaat ook niets stuk.
+     const quiet = { DB: d1(fresh()), NOTIFY_EMAIL: 'x@y.z' };
+     const before = sent.length;
+diff --git a/tests/order-api.test.mjs b/tests/order-api.test.mjs
+index 9159a8f..37866f9 100644
+--- a/tests/order-api.test.mjs
++++ b/tests/order-api.test.mjs
+@@ -172,8 +172,10 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
+   const db = ({ insertThrows = false, samplesPaid = 0, samplesUnpaid = 0, readThrows = false, samplePeople = [], posterEmail = '', posterPhone = null } = {}) => {
+     let stored = false;
+     const inserted = [];
++    const orderBinds = [];
+     return {
+       _inserted: inserted,
++      _orderBinds: orderBinds,
+       prepare(sql) {
+         const st = {
+           _a: [],
+@@ -184,6 +186,7 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
+           async run() {
+             if (sql.includes('INSERT INTO orders')) {
+               inserted.push('orders');
++              orderBinds.push(st._a);
+               if (insertThrows) throw new Error('D1_ERROR: database is locked');
+               stored = true;
+             }
+@@ -260,6 +263,12 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
+       status: res?.status ?? 0,
+       location: res?.headers?.get?.('Location') || kassa,
+       ordersWritten: lastDb._inserted.length,
++      /* details_json van de geschreven bestelling, als object (8 oktober 2026). */
++      details: (() => {
++        const binds = lastDb._orderBinds[0] || [];
++        const tekst = binds.find((v) => typeof v === 'string' && v.startsWith('{') && v.includes('"'));
++        try { return tekst ? JSON.parse(tekst) : null; } catch { return null; }
++      })(),
+       payments: seen.filter((c) => c.url.includes('mollie')).length,
+       /* Het BEDRAG dat Mollie te zien krijgt, als getal. Dit stond er niet, en
+          daardoor kon een telfout in de opties (zie de hoeken hieronder) langs
+@@ -318,6 +327,16 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
+   ok('  een gedateerde bestelling zónder datum landt op de bedankpagina, met de link', /thank-you\?ref=VIS-.*&pay=/.test(healthy.location), true, healthy.location);
+   const klein = await post({ ...base, products: '5' });
+   ok('  een bestelling onder de datumdrempel gaat direct naar de Mollie-checkout', klein.location, 'https://pay.mollie.test/tr_TEST');
++  /* ── WAT DE SERVER INVULT, KAN NIET UIT HET FORMULIER KOMEN — 8 oktober 2026 ──
++     `tegoed_cents` met de hand meegepost viel tot vandaag in details_json, en
++     /api/order-pay trok dat bedrag van de rekening af. Elk veld in
++     SERVER_DETAIL_KEYS hoort de server te zijn. */
++  const gesleuteld = await post({ ...base, products: '5', tegoed_cents: '999999', own_style_id: '7', style_name: 'Nep', uploads: '40', business_ok: 'true' });
++  ok('een gepost tegoed_cents komt niet in de bestelling', gesleuteld.details && !('tegoed_cents' in gesleuteld.details), true, gesleuteld.details);
++  ok('  own_style_id en style_name ook niet', gesleuteld.details && !('own_style_id' in gesleuteld.details) && !('style_name' in gesleuteld.details), true, gesleuteld.details);
++  ok('  uploads ook niet zonder geüploade bestanden', gesleuteld.details && !('uploads' in gesleuteld.details), true, gesleuteld.details);
++  ok('  business_ok is wat de server besloot, niet "true"', gesleuteld.details?.business_ok !== 'true', true, gesleuteld.details?.business_ok);
++  ok('  en het bedrag is dat van een gewone bestelling', gesleuteld.amount, klein.amount);
+   const buitenEu = await post({ ...base, country: 'US', email: 'us@merk.com' });
+   /* Sinds 29 september 2026: buiten de EU meteen betalen (0%, zonder iDEAL);
+      de controle zit op het betaalmiddel ná de betaling. */
+diff --git a/tests/promises.test.mjs b/tests/promises.test.mjs
+index a5fb82a..35ff7e7 100644
+--- a/tests/promises.test.mjs
++++ b/tests/promises.test.mjs
+@@ -92,8 +92,12 @@ console.log('\nde bewaartermijn doet wat /privacy §6 belooft');
+        bestelling wat hij weghaalde, en een gebeurtenis herhaalt de bestaande status.
+        Haal je hem hier weg, dan valt de opruimquery om op "no such column".
+        Of de nabouw hieronder nog op het échte schema past, test tests/retention.test.mjs
+-       — die draait tegen schema.sql zelf. */
+-    CREATE TABLE orders (id INTEGER PRIMARY KEY, closed_at TEXT, status TEXT NOT NULL DEFAULT 'received', lang TEXT NOT NULL DEFAULT 'en');
++       — die draait tegen schema.sql zelf.
++       'cancelled_at' en 'created_at' sinds 8 oktober 2026: de termijn voor een
++       geannuleerde bestelling rekent vanaf die twee (zie retention.js). */
++    CREATE TABLE orders (id INTEGER PRIMARY KEY, closed_at TEXT, status TEXT NOT NULL DEFAULT 'received', lang TEXT NOT NULL DEFAULT 'en',
++      cancelled_at TEXT, created_at TEXT NOT NULL DEFAULT (datetime('now')));
++    CREATE TABLE plan_queue (id INTEGER PRIMARY KEY, upload_batch TEXT);
+     CREATE TABLE files (
+       id INTEGER PRIMARY KEY, order_id INTEGER, kind TEXT, r2_key TEXT, preview_key TEXT,
+       announced_at TEXT, superseded_at TEXT, expires_at TEXT,
+diff --git a/tests/retention.test.mjs b/tests/retention.test.mjs
+index 8f1dc4e..f7e94e4 100644
+--- a/tests/retention.test.mjs
++++ b/tests/retention.test.mjs
+@@ -262,5 +262,53 @@ console.log('\neen gewone nacht');
+   ok('de rij staat er nog', db.prepare('SELECT COUNT(*) AS n FROM files').get().n, 1);
+ }
+ 
++/* ══ GEANNULEERD BLIJFT NIET VOOR ALTIJD STAAN — 8 oktober 2026 ═══════════
++ * Een geannuleerde of vervallen bestelling sluit nooit, dus het bronmateriaal
++ * had geen termijn. Nu: UPLOAD_DAYS na de annulering (of na het plaatsen als die
++ * datum ontbreekt), behalve als een andere bestelling naar hetzelfde bestand wijst. */
++console.log('\ngeannuleerde bestellingen');
++{
++  const db = fresh();
++  const b = bucket();
++
++  const oudGeannuleerd = addOrder(db, { status: 'cancelled' });
++  db.prepare("UPDATE orders SET cancelled_at = datetime('now','-100 days') WHERE id = ?").run(oudGeannuleerd);
++  addFile(db, oudGeannuleerd, { r2_key: b.seed('intake/geannuleerd/a.jpg') });
++
++  const zonderDatum = addOrder(db, { status: 'cancelled' });
++  db.prepare("UPDATE orders SET created_at = datetime('now','-120 days') WHERE id = ?").run(zonderDatum);
++  addFile(db, zonderDatum, { r2_key: b.seed('intake/vervallen/b.jpg') });
++
++  const recentGeannuleerd = addOrder(db, { status: 'cancelled' });
++  db.prepare("UPDATE orders SET cancelled_at = datetime('now','-5 days') WHERE id = ?").run(recentGeannuleerd);
++  addFile(db, recentGeannuleerd, { r2_key: b.seed('intake/recent/c.jpg') });
++
++  const gedeeld = addOrder(db, { status: 'cancelled' });
++  db.prepare("UPDATE orders SET cancelled_at = datetime('now','-100 days') WHERE id = ?").run(gedeeld);
++  addFile(db, gedeeld, { r2_key: b.seed('intake/gedeeld/d.jpg') });
++  const nieuw = addOrder(db, { status: 'in_production' });
++  addFile(db, nieuw, { r2_key: 'intake/gedeeld/d.jpg' });
++
++  const lopend = addOrder(db, { status: 'received' });
++  db.prepare("UPDATE orders SET created_at = datetime('now','-200 days') WHERE id = ?").run(lopend);
++  addFile(db, lopend, { r2_key: b.seed('intake/lopend/e.jpg') });
++
++  /* Een abonnementsbestelling die geannuleerd werd: haar item staat weer op de
++     lijst van de klant, met dezelfde batch. Die foto's moeten blijven. */
++  const plan = addOrder(db, { status: 'cancelled' });
++  db.prepare("UPDATE orders SET cancelled_at = datetime('now','-100 days') WHERE id = ?").run(plan);
++  addFile(db, plan, { r2_key: b.seed('intake/BATCHabc123/p1-voor.jpg') });
++  db.prepare("INSERT INTO customers (id, email) VALUES (900, 'abonnee@example.com')").run();
++  db.prepare("INSERT INTO plan_queue (customer_id, name, upload_batch) VALUES (900, 'Hoodie', 'BATCHabc123')").run();
++
++  await tasks.purgeExpiredFiles({ DB: d1(db), UPLOADS: b, PURGE_ENABLED: 'true' });
++  ok('na 90 dagen geannuleerd: weg', b.deleted.includes('intake/geannuleerd/a.jpg'));
++  ok('foto\'s die nog op een abonneelijst staan: blijven', b.deleted.includes('intake/BATCHabc123/p1-voor.jpg'), false);
++  ok('zonder annuleringsdatum telt het plaatsen', b.deleted.includes('intake/vervallen/b.jpg'));
++  ok('vijf dagen geannuleerd: blijft', b.deleted.includes('intake/recent/c.jpg'), false);
++  ok('een bestand dat een andere bestelling gebruikt: blijft', b.deleted.includes('intake/gedeeld/d.jpg'), false);
++  ok('een lopende bestelling wordt niet aangeraakt', b.deleted.includes('intake/lopend/e.jpg'), false);
++}
++
+ console.log(`\n${pass}/${pass + fail} passed`);
+ if (fail) process.exit(1);
+diff --git a/tests/tweede-factor.test.mjs b/tests/tweede-factor.test.mjs
+index 344a6ff..0c2aa60 100644
+--- a/tests/tweede-factor.test.mjs
++++ b/tests/tweede-factor.test.mjs
+@@ -215,11 +215,93 @@ console.log('\nuitzetten en nieuwe codes vragen zelf ook een code');
+   ok('uitzetten met een verkeerde code doet niets',
+     Boolean(db.prepare('SELECT totp_confirmed_at FROM admin_users WHERE id = 1').get().totp_confirmed_at), true);
+ 
++  /* 8 oktober 2026: `afbreken` en `start` liepen om de codecontrole heen. */
++  await post('/admin/security', { doen: 'afbreken' }, c);
++  ok('afbreken zonder code zet hem niet uit',
++    Boolean(db.prepare('SELECT totp_confirmed_at FROM admin_users WHERE id = 1').get().totp_confirmed_at), true);
++  await post('/admin/security', { doen: 'start', code: '000000' }, c);
++  const naStart = db.prepare('SELECT totp_secret, totp_confirmed_at FROM admin_users WHERE id = 1').get();
++  ok('opnieuw beginnen met een verkeerde code verandert het geheim niet',
++    [naStart.totp_secret, Boolean(naStart.totp_confirmed_at)], [geheim, true]);
++
+   await post('/admin/security', { doen: 'uit', code: await codeNu(geheim) }, c);
+   const na = db.prepare('SELECT totp_secret, totp_confirmed_at FROM admin_users WHERE id = 1').get();
+   ok('met de goede code gaat hij uit', [na.totp_secret, na.totp_confirmed_at], [null, null]);
+   ok('en de herstelcodes gaan mee', telling(db, 'SELECT COUNT(*) FROM admin_recovery_codes'), 0);
+ }
+ 
++/* ══ 6 · DE HALVE SESSIE EN DE GRENS PER ACCOUNT — 8 oktober 2026 ═════════ */
++console.log('\nde halve sessie leeft kort, en raden telt per account');
++{
++  db.exec('DELETE FROM admin_sessions');
++  db.exec('DELETE FROM rate_limits');
++  const geheim = 'JBSWY3DPEHPK3PXP';
++  db.prepare("UPDATE admin_users SET totp_secret = ?, totp_confirmed_at = datetime('now') WHERE id = 1").run(geheim);
++  const half = await post('/admin/login', { email: 'lucas@visuails.com', password: WACHTWOORD });
++  const rij = db.prepare('SELECT expires_at FROM admin_sessions WHERE totp_pending = 1').get();
++  const minuten = (Date.parse(rij.expires_at) - Date.now()) / 60000;
++  ok('een halve sessie verloopt binnen een kwartier', minuten > 0 && minuten <= 15.5, true, minuten);
++  await post('/admin/code', { code: await codeNu(geheim) }, koekje(half));
++  const heel = db.prepare('SELECT expires_at FROM admin_sessions WHERE totp_pending = 0').get();
++  ok('na de code krijgt hij de volle termijn', (Date.parse(heel.expires_at) - Date.now()) / 86400000 > 7, true, heel.expires_at);
++
++  db.exec('DELETE FROM rate_limits');
++  let laatste = null;
++  for (let i = 0; i < 21; i++) {
++    /* Elke poging uit een ANDER /64-blok, zodat alleen de grens per account kan
++       ingrijpen en niet die per IP. */
++    laatste = await adminPost({
++      request: new Request('https://visuails.com/admin/login', {
++        method: 'POST',
++        headers: { origin: 'https://visuails.com', 'cf-connecting-ip': `2001:db8:${(i + 1).toString(16)}::1` },
++        body: new URLSearchParams({ email: 'lucas@visuails.com', password: 'fout' }),
++      }),
++      env, waitUntil() {},
++    });
++  }
++  ok('na twintig foute pogingen op één account volgt een 429, ook vanaf steeds een ander adres', laatste.status, 429);
++
++  /* Een volle emmer mag de eigenaar niet buitensluiten als zijn tweede stap aan
++     staat: het goede wachtwoord brengt hem nog bij de code. */
++  const metCode = await adminPost({
++    request: new Request('https://visuails.com/admin/login', {
++      method: 'POST',
++      headers: { origin: 'https://visuails.com', 'cf-connecting-ip': '198.51.100.77' },
++      body: new URLSearchParams({ email: 'lucas@visuails.com', password: WACHTWOORD }),
++    }),
++    env, waitUntil() {},
++  });
++  ok('met tweede stap: het goede wachtwoord gaat door naar de code', [metCode.status, metCode.headers.get('location')], [303, '/admin/code']);
++  db.prepare('UPDATE admin_users SET totp_secret = NULL, totp_confirmed_at = NULL WHERE id = 1').run();
++  const zonderCode = await adminPost({
++    request: new Request('https://visuails.com/admin/login', {
++      method: 'POST',
++      headers: { origin: 'https://visuails.com', 'cf-connecting-ip': '198.51.100.78' },
++      body: new URLSearchParams({ email: 'lucas@visuails.com', password: WACHTWOORD }),
++    }),
++    env, waitUntil() {},
++  });
++  ok('zonder tweede stap: een volle emmer houdt ook het goede wachtwoord tegen', zonderCode.status, 429);
++  db.exec('DELETE FROM rate_limits');
++  const weerOpen = await post('/admin/login', { email: 'lucas@visuails.com', password: WACHTWOORD });
++  ok('en een goede inlog telt zelf niet mee', [weerOpen.status, telling(db, "SELECT COUNT(*) FROM rate_limits WHERE bucket LIKE 'admin-login-acct:%'")], [303, 0]);
++
++  db.exec('DELETE FROM rate_limits');
++  let perIp = null;
++  for (let i = 0; i < 11; i++) {
++    perIp = await adminPost({
++      request: new Request('https://visuails.com/admin/login', {
++        method: 'POST',
++        headers: { origin: 'https://visuails.com', 'cf-connecting-ip': `2001:db8:aa:bb::${(i + 1).toString(16)}` },
++        body: new URLSearchParams({ email: `iemand${i}@example.com`, password: 'fout' }),
++      }),
++      env, waitUntil() {},
++    });
++  }
++  ok('elf pogingen uit één /64-blok lopen tegen de grens per IP', perIp.status, 429);
++  db.exec('DELETE FROM rate_limits');
++  db.prepare('UPDATE admin_users SET totp_secret = NULL, totp_confirmed_at = NULL WHERE id = 1').run();
++}
++
+ console.log(`\n${goed}/${totaal} geslaagd`);
+ if (goed !== totaal) process.exit(1);

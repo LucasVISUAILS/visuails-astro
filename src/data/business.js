@@ -96,6 +96,41 @@ export function currentBusiness(lang = 'en') {
   return businessText(BUSINESS_VERSION, lang);
 }
 
+/*
+ * ── DE VERLEGGINGSZIN IN HET ZAKELIJK-VINKJE — 8 oktober 2026 (8.06, V19 = a) ──
+ *
+ * Tot vandaag zette een EU-klant in stap 3 een APART vinkje ("ik verklaar dat
+ * mijn bedrijf buiten Nederland is gevestigd …") voordat er 0% kon komen. Lucas:
+ * dat vinkje stond er zonder bijzondere reden, het mag weg. De verklaring zit nu
+ * in het verplichte zakelijk-vinkje van de laatste stap: voor een klant in een
+ * ander EU-land met een btw-nummer staat déze zin vóór de zakelijke verklaring
+ * (BUSINESS_TEXT hierboven, die woord voor woord blijft staan), ingevuld met het
+ * merk en het nummer dat hij zelf typte.
+ *
+ * Een door VIES bevestigd nummer PLUS dit vinkje is 0% verlegd. Zonder vinkje
+ * geen 0% — zie verleggingTelt() in src/data/vat.js. De zin wordt ingevuld met de
+ * bestelling opgeslagen (details.vat_declaration), als extra bewijs naast het
+ * VIES-raadplegingsnummer.
+ *
+ * Voeg een versie toe; wijzig er nooit een.
+ */
+export const VERLEGGING_VERSION = 'verlegd-v1-2026-10';
+export const VERLEGGING_TEXT = {
+  'verlegd-v1-2026-10': {
+    nl: 'Ik bestel zakelijk voor {merk}, het btw-nummer {btw} is van dit bedrijf, en de btw wordt verlegd naar mijn bedrijf.',
+    en: 'I am ordering as a business for {merk}, the VAT number {btw} belongs to this company, and the VAT is reverse-charged to my company.',
+  },
+};
+
+/** De verleggingszin, ingevuld. Zonder merk of nummer: null (dan is er niets te verklaren). */
+export function verleggingZin(lang = 'en', { merk = '', btw = '' } = {}, version = VERLEGGING_VERSION) {
+  const entry = VERLEGGING_TEXT[version];
+  const m = String(merk || '').trim();
+  const b = String(btw || '').trim();
+  if (!entry || !m || !b) return null;
+  return entry[lang === 'nl' ? 'nl' : 'en'].replace('{merk}', m).replace('{btw}', b);
+}
+
 /** De drie soorten bewijs, als constanten in plaats van losse tekst per plek. */
 export const REG_KIND = {
   kvk: 'kvk',

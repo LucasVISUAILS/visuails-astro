@@ -1,9 +1,11 @@
 ---
+// VISUAILS — /video/<stijl>: in de hal sinds 13 oktober 2026 (afvinklijst 16, alles doen). De pagina
+// staat in VideoStyleHal.astro; de vorige (VideoStyleDetail.astro) staat op de opruimlijst.
 // VISUAILS — /video/[slug] (English). De inhoud staat in VideoStyleDetail.astro
 // zodat deze route en /nl/video/[slug] niet uit elkaar kunnen lopen; zie de kop
 // daar, ook voor waarom de beeldkaart bij het sjabloon hoort en niet bij de taal.
 import Layout from '../../layouts/Layout.astro';
-import VideoStyleDetail from '../../components/VideoStyleDetail.astro';
+import VideoStyleHal from '../../components/VideoStyleHal.astro';
 import { videoStyles } from '../../data/videoStyles.js';
 import { reviewClaim } from '../../data/pricing.js';
 import { metaDescription } from '../../data/meta.js';
@@ -28,7 +30,7 @@ const TIMING = 'Format and delivery time agreed in the quote';
 const REVIEW = reviewClaim('unattended', 'en');
 ---
 
-<Layout
+<Layout huid="hal"
   title={`${style.name} — Video style | VISUAILS`}
   description={metaDescription([
     `${style.name}: a signature VISUAILS video style`,
@@ -37,5 +39,5 @@ const REVIEW = reviewClaim('unattended', 'en');
     REVIEW,
   ])}
 >
-  <VideoStyleDetail lang="en" style={style} zusters={zusters} />
+  <VideoStyleHal lang="en" style={style} zusters={zusters} />
 </Layout>

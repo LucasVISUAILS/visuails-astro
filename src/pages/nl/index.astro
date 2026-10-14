@@ -1,6 +1,10 @@
 ---
-// VISUAILS — /nl (Nederlands). De pagina-inhoud staat in Voorpagina.astro,
-// zodat / en /nl niet uit elkaar kunnen lopen; alleen de meta verschilt hier.
+// VISUAILS — /nl (Nederlands). De pagina-inhoud staat in VoorpaginaHal.astro
+// ("de witte hal", sinds 12 oktober 2026), zodat / en /nl niet uit elkaar kunnen
+// lopen; alleen de meta verschilt hier. Tot die dag was het Voorpagina.astro;
+// Lucas keurde het voorbeeld op /nl/voorbeeld/ goed en koos: live bij de volgende
+// UITROLLEN, vóór de andere pagina's hun eigen voorbeeld krijgen. /nl/voorbeeld/
+// stuurt nu met een 301 hierheen.
 //
 // De description komt uit pricing.js en wordt niet ingetypt: een prijs of een
 // levertijd in een <meta>-tag is een belofte die de ladder niet kan afdwingen.
@@ -12,7 +16,7 @@
 // bedragen voor terug, en dat moeten er twee zijn: het instaptarief is wat
 // één product kost en de bodem is wat een hele collectie per product kost.
 import Layout from '../../layouts/Layout.astro';
-import Voorpagina from '../../components/Voorpagina.astro';
+import VoorpaginaHal from '../../components/VoorpaginaHal.astro';
 import { euro, AMOUNT, ladderRate, ladderFloor, LADDER, vatLabel } from '../../data/pricing.js';
 
 // `complete` is de scope die de homepage verkoopt — per product een catalogset
@@ -32,6 +36,7 @@ const description =
   title="Productbeelden zonder fotoshoot | VISUAILS"
   description={description}
   ogImage="/img/og-nl.png"
+  huid="hal"
 >
-  <Voorpagina lang="nl" />
+  <VoorpaginaHal lang="nl" uitleg />
 </Layout>

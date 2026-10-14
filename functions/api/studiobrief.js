@@ -45,6 +45,7 @@
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from '../../src/lib/ratelimit.js';
 import { sendMail } from '../../src/lib/mail.js';
 import { shell, h1, p, rows, esc } from '../../src/lib/mailTemplate.js';
+import { controleerBotcheck, botcheckBesluit, botcheckUitleg, TOKEN_VELD } from '../../src/lib/turnstile.js';
 
 /** De plekken op de site waar het veld staat. Iets anders is geen bron maar invoer. */
 export const BRONNEN = ['voet', 'gidsen', 'editions'];
@@ -124,6 +125,20 @@ export async function onRequestPost(context) {
   const email = get('email').toLowerCase();
   if (!isEmail(email)) return fout('email');
 
+  /* ── DE BOTCHECK — 8 oktober 2026 (o03) ───────────────────────────────────
+     Deze aanmelding mailt naar elk adres dat iemand intypt en zet het in de
+     Resend-lijst. Zie src/lib/turnstile.js: zonder sleutels uit; zonder token
+     of bij een storing door, maar hooguit 2 per 10 minuten in plaats van 5;
+     alleen een token dat Cloudflare uitdrukkelijk ongeldig noemt, wordt
+     geweigerd (de melding in Studiobrief.astro noemt hello@visuails.com). */
+  const botcheck = (await controleerBotcheck(env, { token: get(TOKEN_VELD), ip: clientIp(request) })).stand;
+  const besluit = botcheckBesluit(botcheck);
+  if (besluit === 'weiger') return fout('botcheck', 403);
+  if (besluit === 'streng') {
+    const streng = await checkRate(env, { ip: clientIp(request), action: 'studiobrief-zonder-botcheck', limit: 2, windowSeconds: 600 });
+    if (!streng.allowed) return fout('rate', 429);
+  }
+
   const bronLabel = `studiobrief-${bron}-${lang}`;
   let nieuw = true;
   await safe(async () => {
@@ -169,6 +184,7 @@ export async function onRequestPost(context) {
           ['E-mail', esc(email)],
           ['Taal', lang === 'nl' ? 'Nederlands' : 'Engels'],
           ['Waar', esc(bron)],
+          ...(botcheckUitleg(botcheck) ? [['Botcheck', esc(botcheckUitleg(botcheck))]] : []),
         ]),
       }),
     }));

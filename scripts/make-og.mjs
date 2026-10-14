@@ -57,8 +57,16 @@ function fontFile(pkg, file, what) {
   if (!fs.existsSync(abs)) throw new Error(`make-og: ${what} niet gevonden op ${abs}`);
   return abs;
 }
-const heading = fontFile('@fontsource-variable/archivo', 'archivo-latin-wght-normal.woff2', 'kopfont (Archivo)');
-const editorial = fontFile('@fontsource-variable/anybody', 'anybody-latin-wght-italic.woff2', 'accentfont (Anybody italic)');
+/* ── DE HAL, 14 OKTOBER 2026 ────────────────────────────────────────────────
+   Lucas: het nieuwe kleurenschema "volledig toevoegen". Dit plaatje was nog het
+   donkere vlak van 20 september, in Archivo, met het V-merk en het woord
+   VISUAILS naast elkaar. Nu de opening van de voorpagina: wit, de kop in
+   Urbanist in drie tonen (kop-licht, violet, inkt — zoals de h1), de laptopfoto
+   rechts, en het woordmerk van de hal linksboven (uit src/data/woordmerk.js,
+   niet het V-merk ernaast: die twee staan nooit samen). */
+const urbanist = fontFile('@fontsource-variable/urbanist', 'urbanist-latin-wght-normal.woff2', 'Urbanist');
+const { WOORDMERK } = await import('../src/data/woordmerk.js');
+const KOP_LICHT = '#807E97', INKT = '#0F0C24', INKT_3 = '#6A6880', VIOLET = '#4A1FFF';
 
 function pick(candidates, what) {
   for (const c of candidates) {
@@ -67,42 +75,34 @@ function pick(candidates, what) {
   }
   throw new Error(`make-og: geen ${what} gevonden — gezocht naar ${candidates.join(', ')}`);
 }
-const photo = pick(['img/hero-dunes.webp', 'img/banners-05.webp'], 'achtergrondfoto');
-const mark = pick(['img/mail/mark-groen.png'], 'merkteken');
+const photo = pick(['img/hal/laptop-1600.webp', 'img/hal/laptop-1000.webp'], 'laptopfoto');
 
 /* ── WELKE CHROME — 26 augustus 2026 ─────────────────────────────────────────
-   Hier stond een hard pad naar /opt/pw-browsers. Dat is de map van de
-   Linux-container waarin dit project ook wordt gebouwd, en op Lucas' machine
-   bestaat /opt niet eens: dit script viel daar dus om nog voordat het iets deed.
-   scripts/lib/browserpad.mjs bestaat precies hiervoor en waarschuwt er in zijn
-   eigen noot voor — hij werd alleen door één script gebruikt. */
+   scripts/lib/browserpad.mjs: op Lucas' machine bestaat /opt niet. */
 const browser = await chromium.launch({ executablePath: browserPad() });
 
 for (const [lang, t] of Object.entries(TAGLINE)) {
   const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
+  const [l1, l2, l3] = t.lines;
   await page.setContent(`<!doctype html><meta charset="utf-8"><style>
-    @font-face { font-family: 'Archivo'; src: url('${dataUrl(heading, 'font/woff2')}') format('woff2'); font-weight: 100 900; font-display: block; }
-    @font-face { font-family: 'Anybody'; src: url('${dataUrl(editorial, 'font/woff2')}') format('woff2'); font-weight: 100 900; font-style: italic; font-display: block; }
+    @font-face { font-family: 'Urbanist'; src: url('${dataUrl(urbanist, 'font/woff2')}') format('woff2'); font-weight: 100 900; font-display: block; }
     * { margin: 0; box-sizing: border-box; }
-    body { width: ${W}px; height: ${H}px; background: ${INK}; overflow: hidden; position: relative; font-family: 'Archivo', sans-serif; }
-    .photo { position: absolute; inset: 0; background: url('${dataUrl(photo, 'image/webp')}') center / cover no-repeat; }
-    /* De foto blijft zichtbaar en de tekst blijft leesbaar: een verloop van
-       bijna-zwart links naar niets rechts, zodat de kop op zijn eigen grond
-       staat in plaats van op wisselende beeldinhoud. */
-    .veil { position: absolute; inset: 0; background:
-      linear-gradient(100deg, ${INK} 0%, rgb(8 9 11 / .92) 38%, rgb(8 9 11 / .35) 72%, rgb(8 9 11 / .15) 100%); }
-    .wrap { position: absolute; inset: 0; padding: 64px 72px; display: flex; flex-direction: column; justify-content: space-between; }
-    .brand { display: flex; align-items: center; gap: 14px; }
-    .brand img { height: 34px; display: block; }
-    .brand span { color: #fff; font-size: 19px; font-weight: 700; letter-spacing: .22em; }
-    h1 { color: #fff; font-size: 86px; line-height: .98; font-weight: 900; letter-spacing: -.015em; max-width: 15ch; }
-    h1 em { font-family: 'Anybody', serif; font-style: italic; font-weight: 900; color: ${GREEN}; letter-spacing: -.03em; }
-    .foot { color: #8A8F98; font-size: 21px; letter-spacing: .02em; }
+    body { width: ${W}px; height: ${H}px; background: #FFFFFF; overflow: hidden; position: relative; font-family: 'Urbanist', sans-serif; }
+    /* De foto rechts, met de linkerrand weggevaagd zoals in de opening (hal.css, .hl-doos). */
+    .photo { position: absolute; right: -230px; top: -10px; width: 860px; height: 645px; background: url('${dataUrl(photo, 'image/webp')}') center / cover no-repeat;
+      -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 30%); mask-image: linear-gradient(90deg, transparent 0, #000 30%); }
+    .wrap { position: absolute; inset: 0; padding: 60px 64px; display: flex; flex-direction: column; justify-content: space-between; }
+    .wm { width: 150px; height: auto; display: block; }
+    h1 { font-size: 70px; line-height: 1.02; font-weight: 500; letter-spacing: -.025em; color: ${INKT}; max-width: 9.5em; }
+    h1 .l { color: ${KOP_LICHT}; font-weight: 400; }
+    h1 em { font-style: normal; color: ${VIOLET}; }
+    h1 span { display: block; }
+    .foot { color: ${INKT_3}; font-size: 22px; font-weight: 500; }
   </style>
-  <div class="photo"></div><div class="veil"></div>
+  <div class="photo"></div>
   <div class="wrap">
-    <div class="brand"><img src="${dataUrl(mark, 'image/png')}" alt=""><span>VISUAILS</span></div>
-    <h1>${t.lines.join(' ')}</h1>
+    <svg class="wm" viewBox="${WOORDMERK.symbool}" aria-hidden="true"><path fill="${INKT}" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg>
+    <h1><span class="l">${l1}</span><span>${l2}</span><span>${l3}</span></h1>
     <div class="foot">visuails.com</div>
   </div>`);
 

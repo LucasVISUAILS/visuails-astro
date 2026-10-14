@@ -35,7 +35,7 @@ import { readFileSync, existsSync, readdirSync, statSync, globSync } from 'node:
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { join, resolve, relative, sep } from 'node:path';
-import { LAATST_BIJGEWERKT, bijgewerktOp } from '../src/data/juridischeDatums.js';
+import { LAATST_BIJGEWERKT, bijgewerktOp, WET_DATUMS, wetDatum } from '../src/data/juridischeDatums.js';
 import { ontdaanVanCommentaar } from '../scripts/lib/importketen.mjs';
 
 const WORTEL = resolve(fileURLToPath(new URL('..', import.meta.url)));
@@ -60,7 +60,8 @@ const BRONNEN = {
   'cookie-policy': ['src/pages/cookie-policy.astro', 'src/pages/nl/cookie-policy.astro'],
   'data-processing-agreement': [
     'src/pages/data-processing-agreement.astro', 'src/pages/nl/data-processing-agreement.astro'],
-  'ai-act': ['src/components/AiActPage.astro'],
+  /* Sinds 13 oktober 2026 AiActHal.astro (de hal); AiActPage.astro staat op de opruimlijst. */
+  'ai-act': ['src/components/AiActHal.astro'],
 };
 
 console.log('1 · één bron, geen elfde kopie');
@@ -272,83 +273,83 @@ const DOCUMENTEN = {
   'cookie-policy': ['src/pages/cookie-policy.astro', 'src/pages/nl/cookie-policy.astro'],
   'data-processing-agreement': [
     'src/pages/data-processing-agreement.astro', 'src/pages/nl/data-processing-agreement.astro'],
-  'ai-act': ['src/components/AiActPage.astro'],
+  /* Sinds 13 oktober 2026 (afvinklijst 19) AiActHal.astro; AiActPage.astro staat op de opruimlijst. */
+  'ai-act': ['src/components/AiActHal.astro'],
 };
+/* ── IN DE HAL — 13 oktober 2026 (afvinklijst 19) ──────────────────────────
+   Alle vijf de documenten staan in JuridischHal.astro: de pagina geeft rubriek,
+   titel en datum als eigenschappen en de lead als slot; het onderdeel zet ze in
+   de kop, in die volgorde, en zet het document in één `.legal`-blok. Wat deze
+   toets bewaakt verandert niet: dezelfde vier onderdelen, in de kop en in die
+   volgorde, één `.legal`-blok, geen tweede ritme en geen eigen h1-maat. Alleen
+   waar hij dat ziet is anders: de vier staan nu in de aanroep op de pagina, de
+   volgorde in het onderdeel. */
+const OMHULLING = ontdaanVanCommentaar(readFileSync(join(WORTEL, 'src/components/JuridischHal.astro'), 'utf8'));
+{
+  const kop = OMHULLING.slice(OMHULLING.indexOf('<header class="h-paginakop h-jur-kop"'), OMHULLING.indexOf('</header>'));
+  const posities = [['rubriek', /class="h-pil[^"]*"[^>]*><span>\{rubriek\}/], ['titel', /<h1[^>]*>\{titel\}<\/h1>/], ['lead', /class="[^"]*\bh-jur-lead\b/], ['datum', /class="h-jur-datum[^"]*"[^>]*>[\s\S]*?\{datum\}/]]
+    .map(([naam, re2]) => [naam, kop.search(re2)]);
+  ok('JuridischHal · kop draagt rubriek, titel, lead, datum', posities.filter(([, i]) => i === -1).map(([d]) => d), []);
+  ok('JuridischHal · en in die volgorde', posities.every(([, i], n) => n === 0 || i > posities[n - 1][1]), true);
+  ok('JuridischHal · het document in één .legal-blok', /class="legal h-jur-tekst/.test(OMHULLING), true);
+}
 for (const [doc, bestanden] of Object.entries(DOCUMENTEN)) {
   for (const rel of bestanden) {
     const bron = ontdaanVanCommentaar(readFileSync(join(WORTEL, rel), 'utf8'));
     const heeft = (re) => re.test(bron);
-    /* ── ALLEEN IN DE KOP, EN IN DEZE VOLGORDE ────────────────────────────
-       De eerste versie zocht deze vier in het HELE bestand, en die liet zich
-       betrappen: ik haalde `class="lead"` uit de kop van /privacy weg en de toets
-       bleef groen, omdat de afsluitende cta-band ook een `.lead` heeft. Een
-       bewaker die het goede woord op de verkeerde plek accepteert, bewaakt de
-       plek niet. Dus: binnen `.page-hero`, en op VOLGORDE — rubriek, titel, de
-       ene zin die zegt waar het document over gaat, en dan de datum. */
-    /* ── DE VORM IS DIE VAN SECTIE 22 GEWORDEN — 7 september 2026 ─────────
-       Deze toets zocht `.page-hero`, `h1 class="display"` en
-       `.container.narrow.legal`: de vorm van de oude opmaak. Alle vijf de
-       documenten staan sinds vandaag in één `.paneel` met een `.paneel-kop`
-       erboven en het `.legal`-blok eronder.
-
-       WAT DE TOETS BEWAAKT VERANDERT NIET, en dat is het punt. Hij eist nog
-       steeds dat de kop dezelfde vier onderdelen draagt — rubriek, titel, de
-       ene zin die zegt waar het document over gaat, en de datum — en in die
-       volgorde, binnen de KOP en niet ergens anders op de pagina. Dat de
-       klassenamen mee veranderd zijn, maakt hem niet zwakker: `eyebrow-page`
-       en `lead` staan er nog steeds bij, náást de nieuwe, precies zodat deze
-       bewaker één ding blijft toetsen in plaats van twee vormen te moeten
-       kennen.
-
-       Toen /ai-act als eerste overging viel deze regel om met de naam van dat
-       bestand erin. Het antwoord daarop was niet de toets versoepelen maar de
-       andere vier meenemen — zie de noot bovenaan elk van die bestanden. */
-    const heroStart = bron.indexOf('class="paneel-kop');
-    const hero = heroStart === -1 ? '' : bron.slice(heroStart, bron.indexOf('</header>', heroStart));
-    /* Op patroon en niet op een letterlijke tekenreeks: de klassen staan naast
-       elkaar in het attribuut ("lopend lead jur-lead"), en `indexOf('class="lead')`
-       vond dat niet — een bewaker die het goede element mist omdat er een tweede
-       klasse voor staat, bewaakt niets. */
-    const posities = [
-      /* `.etiket` en niet `.eyebrow-page`. Die tweede klasse stond er even bij,
-         alleen om deze toets te laten vinden wat hij zocht — en zij brengt haar
-         eigen `::before` met "VISUAILS®" mee, dat daardoor boven elke juridische
-         kop verscheen. Een bewaker die de pagina VORMT in plaats van hem te
-         controleren, is de verkeerde kant op. */
-      ['rubriek', /class="[^"]*\betiket\b/],
-      /* `<h1 ... class="hoog">`: /ai-act draagt er een `id` op omdat zijn sectie
-         een aria-labelledby heeft. Het patroon laat daarom attributen tussen de
-         tag en de klasse toe — wat getoetst wordt is dat er een h1 in de kop
-         staat en dat die de kopletter van deze stijl draagt. */
-      ['titel', /<h1[^>]*class="[^"]*\bhoog\b/],
-      ['lead', /class="[^"]*\bjur-lead\b/],
-      ['datum', /class="legal-meta"/],
-    ].map(([naam, re2]) => [naam, hero.search(re2)]);
-    ok(`${rel} · kop draagt rubriek, titel, lead, datum`,
-      posities.filter(([, i]) => i === -1).map(([d]) => d), []);
-    ok(`${rel} · en in die volgorde`,
-      posities.every(([, i], n) => n === 0 || i > posities[n - 1][1]), true);
-    /* Het document zelf blijft één `.legal`-blok, want dáár hangt de opmaak
-       aan die alle vijf de pagina's delen. */
-    ok(`${rel} · body in één .legal-blok`,
-      heeft(/class="legal jur-tekst"/), true);
-    /* Geen tweede ritme naast `.legal`: geen `stack-lg` op de wikkel, en geen
-       handgezette marge op iets in de body. De lead in de HERO mag er één hebben —
-       die staat op alle vijf identiek en hoort bij de kop, niet bij het document. */
+    const aanroep = (bron.match(/<JuridischHal\b[^>]*>/) || [''])[0];
+    ok(`${rel} · in JuridischHal, met rubriek, titel en datum`,
+      ['rubriek=', 'titel=', 'datum=', `doc="${doc}"`].filter((a) => !aanroep.includes(a)), []);
+    ok(`${rel} · en de lead als slot`, heeft(/<Fragment slot="lead">/), true);
+    ok(`${rel} · geen tweede omhulling (s22, paneel) eromheen`, heeft(/class="s22|class="paneel/), false);
     ok(`${rel} · geen stack-lg op de wikkel`, heeft(/legal[^"]*stack-lg|stack-lg[^"]*legal/), false);
-    /* ALLEEN DE BODY, en niet alles wat erna komt. De eerste versie van deze
-       regel las tot het einde van het bestand en meldde vier keer de knoppenrij van
-       de afsluitende cta-band — die staat buiten het document en heeft met het
-       leesritme niets te maken. Een bewaker die ruis geeft, wordt weggeklikt. */
-    const vanaf = bron.search(/class="legal jur-tekst"/);
-    const tot = bron.indexOf('</section>', vanaf);
+    /* ALLEEN DE BODY: tussen de opening en het einde van JuridischHal. */
+    const vanaf = bron.indexOf('<JuridischHal');
+    const tot = bron.indexOf('</JuridischHal>', vanaf);
     const naBody = bron.slice(vanaf, tot === -1 ? undefined : tot);
     const handmarges = [...naBody.matchAll(/style="[^"]*margin-top[^"]*"/g)].map((m) => m[0]);
     ok(`${rel} · geen handgezette marge in de body`, handmarges, []);
-    /* En geen eigen h1-maat. `.page-hero h1` in global.css zet hem; twintig
-       pagina's hadden daar een inline kopie van staan die precies hetzelfde deed.
-       Gemeten op 95 pagina's × 2 breedtes vóór en na het weghalen: geen verschil. */
     ok(`${rel} · geen eigen h1-maat`, heeft(/font-size:\s*var\(--t-page-h1\)/), false);
+  }
+}
+
+console.log('\n7 · en de wettelijke datums op /ai-act komen ook uit één bron');
+/*
+ * ── WAAROM DIT ERBIJ KWAM — 8 oktober 2026 ──────────────────────────────────
+ *
+ * /ai-act typte drie wettelijke datums uit (20 juli, 2 augustus en 2 december
+ * 2026), en de doorlichting van oktober kon niet nagaan waar ze vandaan kwamen.
+ * Ze zijn nagelezen in officiële bronnen en staan nu in WET_DATUMS, met die bron
+ * erbij. Dezelfde constructie als de bijgewerkt-datum hierboven, dus dezelfde
+ * bewaker: de waarden hebben de goede vorm, de opmaak klopt in beide talen, en
+ * AiActPage.astro typt geen datum meer zelf uit.
+ */
+for (const [sleutel, waarde] of Object.entries(WET_DATUMS)) {
+  ok(`${sleutel} heeft de vorm JJJJ-MM-DD`, /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(waarde), true);
+}
+ok('de drie die de pagina gebruikt',
+  Object.keys(WET_DATUMS).sort(), ['art50Geldt', 'markeringTot', 'richtsnoeren']);
+ok('Engels, zonder voorloopnul', wetDatum('markeringTot', 'en'), '2\u00a0December 2026');
+ok('Nederlands, met een kleine maand', wetDatum('art50Geldt', 'nl'), '2\u00a0augustus 2026');
+let wierpWet = false;
+try { wetDatum('bestaat-niet', 'nl'); } catch { wierpWet = true; }
+ok('een onbekende sleutel werpt', wierpWet, true);
+
+const DATUM_UITGETYPT = new RegExp(`\\b\\d{1,2}\\s+(?:${MAANDEN})\\s+\\d{4}\\b`);
+ok('de zoekterm herkent een uitgetypte datum wél', DATUM_UITGETYPT.test('tot 2 december 2026'), true);
+/* 14 oktober 2026: de hal (AiActHal.astro). De oude AiActPage.astro staat op de
+   opruimlijst; na OPRUIMEN.bat viel deze toets anders om op een ontbrekend bestand. */
+const aiBron = ontdaanVanCommentaar(readFileSync(join(WORTEL, 'src/components/AiActHal.astro'), 'utf8'));
+ok('AiActHal.astro typt geen datum uit', (aiBron.match(DATUM_UITGETYPT) || [])[0] || null, null);
+
+if (existsSync(join(DIST, 'index.html'))) {
+  for (const [taal, pad] of [['en', 'ai-act/index.html'], ['nl', 'nl/ai-act/index.html']]) {
+    const vol = join(DIST, pad);
+    if (!existsSync(vol)) { ok(`${pad} bestaat`, false, true); continue; }
+    const html = readFileSync(vol, 'utf8');
+    for (const sleutel of Object.keys(WET_DATUMS)) {
+      ok(`${pad} toont ${sleutel} als "${wetDatum(sleutel, taal)}"`, html.includes(wetDatum(sleutel, taal)), true);
+    }
   }
 }
 
