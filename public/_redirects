@@ -88,7 +88,6 @@
 # Engelse 404. Gevonden 19 september 2026.
 /nl/account             /account?lang=nl    301
 /nl/account/            /account?lang=nl    301
-/nl/account/*           /account/:splat     301
 /order-status           /o                  301
 /order-status/          /o                  301
 /nl/order-status        /o                  301
@@ -425,3 +424,15 @@
 /voorbeeld/opening/editions/              /editions                     301
 /nl/voorbeeld/opening/editions            /nl/editions                  301
 /nl/voorbeeld/opening/editions/           /nl/editions                  301
+
+
+# ── de enige regel met een splat, en daarom de laatste — 14 oktober 2026 ──────
+# Cloudflare telt een regel als "dynamisch" zodra hij een * of :naam heeft, én
+# elke regel die daarna komt ook (wrangler, parseRedirects: canCreateStaticRule).
+# Er mogen er hoogstens 100 dynamisch zijn. Deze regel stond eerst bij de andere
+# /nl/account-regels hierboven, en dan telden alle ~185 regels erna mee: de
+# uitrol weigerde de site met "Maximum number of dynamic _redirects rules limit
+# of 100 exceeded [code: 100324]". Hier onderaan is hij de enige dynamische.
+# Geen andere regel begint met /nl/account/, dus de volgorde verandert niets aan
+# waar iemand uitkomt. tests/paths.test.mjs bewaakt het.
+/nl/account/*           /account/:splat     301

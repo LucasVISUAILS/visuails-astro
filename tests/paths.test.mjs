@@ -295,6 +295,24 @@ console.log('\ngeen enkele redirect-bron is een pagina die de site echt serveert
   ok('er zijn routes gevonden om tegenaan te houden', routes.size > 20, true, routes.size);
   ok('er staan regels in _redirects', regels.length > 0, true, regels.length);
 
+  /* DE TELLING VAN CLOUDFLARE — 14 oktober 2026. Zoals wrangler hem doet
+     (parseRedirects in workers-shared): een regel is dynamisch als de bron een *
+     of :naam heeft, en vanaf de eerste dynamische regel telt ELKE regel erna ook
+     als dynamisch. Meer dan 100 dynamische: de uitrol weigert de hele site
+     (code 100324, UITROLLEN.bat stap 6). Meer dan 2000 statische: idem. */
+  {
+    let statisch = 0;
+    let dynamisch = 0;
+    let magStatisch = true;
+    for (const r of regels) {
+      const bron = r.split(/\s+/)[0];
+      if (magStatisch && !/\*/.test(bron) && !/:[A-Za-z]\w*/.test(bron)) statisch += 1;
+      else { dynamisch += 1; magStatisch = false; }
+    }
+    ok(`_redirects: hoogstens 100 dynamische regels voor Cloudflare (${dynamisch})`, dynamisch <= 100, true, dynamisch);
+    ok(`_redirects: hoogstens 2000 statische regels (${statisch})`, statisch <= 2000, true, statisch);
+  }
+
   const botsingen = regels
     .map((r) => r.split(/\s+/)[0])
     .filter((bron) => routes.has(bron));
