@@ -94,7 +94,9 @@ export async function onRequestGet({ request, env, waitUntil }) {
       description: o.service === SAMPLE_SERVICE
         ? `VISUAILS ${o.ref}`
         : paymentDescription({ service: ladderKey(o.service), products: o.product_count || 1, ref: o.ref, offerte: o.service === 'video' || o.service === 'custom' }, taal),
-      successUrl: `${back}?paid=${encodeURIComponent(o.ref)}`,
+      /* Doorloop 27 (B17): een offerte (video, eigen look) en een merkmodel zijn
+         geen beeldenbestelling; de bedankpagina zegt dan wat de mail zegt. */
+      successUrl: `${back}?paid=${encodeURIComponent(o.ref)}${o.service === 'video' || o.service === 'custom' ? '&soort=offerte' : o.service === 'brand-model' ? '&soort=merkmodel' : ''}`,
       webhookUrl: `${url.origin}/api/webhook/mollie`,
       /* Bij 0% geen iDEAL — dezelfde regel als op de drie andere betaalpaden. */
       excludeIdeal: Number(o.vat_rate) === 0,

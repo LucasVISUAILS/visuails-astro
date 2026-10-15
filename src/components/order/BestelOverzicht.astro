@@ -51,6 +51,11 @@ import { beeldenVoor } from '../../data/pricing.js';
 /* De strook staat sinds vandaag ook op de plaat van /start/plan; de lijst
    staat daarom in data/ en niet hier. Zie de kop van dat bestand. */
 import { tegelsVoor, ECHTE_BESTELLING } from '../../data/overzichtbeelden.js';
+/* De bijbestelde hoeken als tegel (15 oktober 2026, Lucas: *"Wanneer iemand een
+   extra angle toevoegt komt deze hierbij te staan zodat de klant precies weet wat
+   hij krijgt."*). Alleen bij catalog: daar staat de hoekenkiezer. pipeline.js
+   (paintAngles) zet de tegel aan zodra de hoek is aangevinkt. */
+import { ANGLES, ANGLE_GROUPS, EIGEN_ANGLE_PREFIX } from '../../data/angles.js';
 
 interface Props {
   lang: 'en' | 'nl';
@@ -64,6 +69,10 @@ const nl = lang === 'nl';
 const perProduct = beeldenVoor(service);
 
 const tegels = tegelsVoor(service, lang);
+const hoekTegels = service === 'catalog' ? [
+  ...ANGLES.map((a) => ({ id: a.id, src: `/img/schets/hoek-${a.id}.svg`, label: a.name[lang] })),
+  ...ANGLE_GROUPS.map((g) => ({ id: `${EIGEN_ANGLE_PREFIX}${g}`, src: `/img/schets/hoek-eigen-${g}.svg`, label: lang === 'nl' ? 'Eigen hoek' : 'Your own angle', eigen: true })),
+] : [];
 
 const c = nl ? {
   h: 'Wat je krijgt',
@@ -100,10 +109,13 @@ const c = nl ? {
     <div class="bo-set">
       <ul class="bo-tegels" role="list">
         {tegels.map((t) => (
-          <li><img src={t.src} width="760" height="760" alt={t.alt} loading="lazy" decoding="async" /></li>
+          <li><span class="bo-tegel"><img src={t.src} width="120" height="120" alt={t.alt} loading="lazy" decoding="async" /></span><span class="bo-tegel-naam" aria-hidden="true">{t.label}</span></li>
+        ))}
+        {hoekTegels.map((h) => (
+          <li class="bo-tegel-extra" data-bo-hoek={h.id} hidden><span class="bo-tegel"><img src={h.src} width="120" height="120" alt="" loading="lazy" decoding="async" /><span class="bo-plus" aria-hidden="true">+</span></span><span class="bo-tegel-naam" data-bo-hoek-naam={h.eigen ? h.label : undefined}>{h.label}</span></li>
         ))}
       </ul>
-      {perProduct && <p class="bo-set-noot">{c.perProduct(perProduct)}</p>}
+      {perProduct && <p class="bo-set-noot" data-bo-per={c.perProduct(999).replace('999', '{n}')}>{c.perProduct(perProduct)}</p>}
       <p class="bo-set-noot bo-set-klein">{c.noot}</p>
     </div>
   )}
@@ -184,12 +196,19 @@ const c = nl ? {
      catalog vier. Met een vast viertal hield lifestyle een lege vierde kolom
      over, en de drie beelden stonden dus smaller dan de strook waar ze in
      zaten — een gat aan de rechterkant dat er als een ontbrekend beeld uitzag. */
+  /* Vier per rij: een bijbestelde hoek komt op een tweede rij (15 oktober 2026). */
   .bo-tegels {
     list-style: none; margin: 0; padding: 0;
-    display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px;
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 4px;
   }
-  .bo-tegels li { aspect-ratio: 1; overflow: hidden; background: var(--surface); }
-  .bo-tegels img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .bo-tegel { position: relative; }
+  .bo-plus { position: absolute; top: 4px; right: 4px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: var(--h-violet, #4A1FFF); color: #fff; font: 600 13px/1 var(--h-letter, sans-serif); }
+  /* Schetsen sinds 15 oktober 2026 (overzichtbeelden.js): een licht vlak met de
+     tekening erin en de naam van het beeld eronder, in de maat van de noten. */
+  .bo-tegels li { display: grid; gap: .35rem; min-width: 0; }
+  .bo-tegel { display: block; aspect-ratio: 1; overflow: hidden; border-radius: 10px; background: var(--h-nevel, #F5F5F9); }
+  .bo-tegels img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .bo-tegel-naam { font-size: .75rem; line-height: 1.25; color: var(--ink-2); text-align: center; overflow-wrap: anywhere; }
   .bo-set-noot { margin: .55rem 0 0; font-size: .8rem; line-height: 1.45; color: var(--ink-2); }
   .bo-set-klein { color: var(--ink-3); font-size: .74rem; }
 

@@ -23,3 +23,20 @@ export function studioHeaders() {
       `default-src 'none'; img-src 'self' data:; style-src 'self'; font-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'`,
   };
 }
+
+/* ── DE KLAP-VLAG — 15 oktober 2026 ──────────────────────────────────────────
+ * Lucas: *"als ik van tab wissel in /studio dat er elke keer een animatie afspeelt,
+ * dit hoeft niet."* De overgang tussen pagina's (studio.css, "DE OVERGANG") is er
+ * voor het dicht- en openklappen van de zijbalk; tussen twee tabs hoort er niets te
+ * bewegen. Studio draait zonder script, dus de pagina moet zelf weten of hij na een
+ * klap komt: ?nav= zet naast vis_nav deze korte vlag (account.js), StudioLayout zet
+ * dan data-klap op <html> (alleen dan bewegen de view-transition-lagen), en de
+ * middleware wist de vlag op dat antwoord, zodat de volgende tab weer stil is. */
+export const KLAP_COOKIE = 'vis_klap';
+const KLAP_VLAGGEN = 'Path=/account; HttpOnly; Secure; SameSite=Lax';
+export const klapZet = () => `${KLAP_COOKIE}=1; Max-Age=30; ${KLAP_VLAGGEN}`;
+export const klapWis = () => `${KLAP_COOKIE}=; Max-Age=0; ${KLAP_VLAGGEN}`;
+export function heeftKlap(request) {
+  const raw = (request && request.headers && request.headers.get('cookie')) || '';
+  return new RegExp(`(?:^|;\\s*)${KLAP_COOKIE}=1(?:;|$)`).test(raw);
+}

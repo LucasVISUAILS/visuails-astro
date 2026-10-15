@@ -130,7 +130,9 @@ export const catalogStyles = [
        zie `cardPrice: 'Custom pricing'` hierboven. Een knop naar het gewone
        bestelformulier zou een prijs beloven die er nog niet is, dus gaat hij
        naar dezelfde aanvraag als een look op maat bij Lifestyle. */
-    orderHref: '/start/custom-look/',
+    /* ?voor=catalog: het aanvraagformulier zet "Waar moet de look te gebruiken
+       zijn?" dan op Catalogsets (doorloop 27, B16; interactions.js). */
+    orderHref: '/start/custom-look/?voor=catalog',
     orderLabel: 'Ask for a Custom Brand look',
     heroIcon: 'bag',
     heroWidth: '26%',

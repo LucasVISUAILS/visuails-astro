@@ -318,10 +318,23 @@ export function knopVoor(r, plek = 'dashboard', origin = '') {
       }
       return { label: 'Leverkeuring', href: pad('melden') };
     case 'revisie': {
+      /* Op de bestelpagina naar het vakje zelf (B10, doorloop 27): daar vervang
+         je het beeld. Tot 14 oktober 2026 ging de knop terug naar het dashboard,
+         weg van het werkbord waar je al stond. Het vakje draagt dezelfde id als
+         de kaart op het dashboard (rev-<file_id>, zie slotHtml in admin.js). */
       const anker = `rev-${r.extra}`;
-      return { label: 'Revisie openen', href: plek === 'dashboard' ? `#${anker}` : `${origin}/admin#${anker}` };
+      return { label: 'Revisie openen', href: plek === 'rapport' ? `${origin}/admin#${anker}` : `#${anker}` };
     }
-    case 'oppakken': return { label: 'Oppakken', href: pad('status') };
+    case 'oppakken':
+      /* ── OPPAKKEN IS ÉÉN KLIK — 14 oktober 2026 (doorloop 27, B03) ─────────
+         De knop opende de bestelling bij het statuslijstje, en daar moest Lucas
+         nog "In productie" kiezen en op Status bijwerken drukken. Nu zet hij de
+         status zelf en landt op de bestelpagina (back=files). Een statuswissel
+         naar In productie stuurt de klant geen mail; hij ziet het op zijn
+         tijdlijn. Het nachtrapport is een mail en kan niet posten: daar blijft
+         het een link naar het lijstje. */
+      if (plek === 'rapport') return { label: 'Oppakken', href: pad('status') };
+      return { label: 'Oppakken', href: `/admin/orders/${r.id}/status`, post: true, velden: { status: 'in_production', back: 'files' } };
     case 'fotos': return { label: 'Foto’s vragen', href: pad('ontbreekt') };
     case 'offerte': return { label: 'Offerte maken', href: pad('offerte') };
     case 'review': {
@@ -394,7 +407,10 @@ function rustTekst(o) {
   if (o.status === 'delivered') return 'niets, de klant beoordeelt de beelden.';
   if (o.review_state === 'rejected') return 'niets, de btw-controle is afgewezen.';
   if (String(o.payment_status || 'unpaid') === 'unpaid' && (Number(o.total_cents) || 0) > 0) return 'niets, de bestelling wacht op betaling.';
-  if (o.status === 'in_production') return 'de beelden maken en in het bord zetten; daarna de status op In controle.';
+  /* Doorloop 27 (B43): hier stond "daarna de status op In controle", maar de
+     knop onderaan ("Op geleverd zetten en klant mailen") slaat die stand over.
+     De zin zegt nu wat Lucas echt doet. */
+  if (o.status === 'in_production') return 'de beelden maken en in het bord zetten; daarna "Op geleverd zetten en klant mailen" (dan gaat de levermail).';
   return 'niets wacht op jou bij deze bestelling.';
 }
 
@@ -405,7 +421,9 @@ export function volgendeStapHtml(order, { regels = [], fout = null } = {}, nu = 
   if (!eerste) return `<p class="volgende-stap is-rust"><strong>Volgende stap:</strong> ${esc(rustTekst(order))}</p>`;
   const k = knopVoor(eerste, 'bestelling');
   const daarna = rest.length ? ` <span class="meta">Daarna: ${rest.map((r) => esc(knopVoor(r, 'bestelling').label.toLowerCase())).join(', ')}.</span>` : '';
-  return `<div class="volgende-stap"><p><strong>Volgende stap:</strong> ${esc(k.label)} &mdash; ${esc(waaromTekst(eerste, nu))}.${daarna}</p>${knopHtml(k, 'btn btn-sm')}</div>`;
+  /* Doorloop 27 (B09): de knop bij "Volgende stap" is de aanbevolen handeling en
+     dus paars; de knoppen per product op het werkbord zijn stil (admin.js). */
+  return `<div class="volgende-stap"><p><strong>Volgende stap:</strong> ${esc(k.label)} &mdash; ${esc(waaromTekst(eerste, nu))}.${daarna}</p>${knopHtml(k, 'btn btn-primary btn-sm')}</div>`;
 }
 
 /* ── HET NACHTRAPPORT (platte tekst) ─────────────────────────────────────── */

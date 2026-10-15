@@ -274,7 +274,7 @@ const bestelling = (klant) => { volg += 1; db.prepare(`INSERT INTO orders (id, r
   ok('  de volgende termijn: alleen 120 boven het plafond, de bijgekochte blijven heel', [t4.boven, bpNa.rest], [PLAN_CREDITS.studio, 25]);
   ok('  en houden hun eigen datum (schuiven niet mee)', bpNa.vervalt_op, bp.vervalt_op);
   const w = (await import('../src/lib/creditWeergave.js')).saldoWeergave(na, 'nl');
-  ok('  Studio noemt ze apart', /^Waarvan 25 bijgekocht: die gaan als eerste op en tellen niet mee voor je spaarplafond; ze vervallen op /.test(w.bijgekocht), true);
+  ok('  Studio noemt ze apart', /^Waarvan 25 bijgekocht: die gaan als eerste op en tellen niet mee voor je spaarplafond; ze blijven geldig tot en met /.test(w.bijgekocht), true);
   db.prepare("UPDATE subscriptions SET status = 'cancelled' WHERE id = 4").run();
   const st = await creditSaldo(env, { customerId: 4 });
   ok('  na opzeggen gelden ze tot hun eigen datum', st.bijgekocht.vervalt.map((v) => v.op), [bp.vervalt_op]);

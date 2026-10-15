@@ -315,11 +315,18 @@ export const spamNote = lang => note(esc(mailNoteInMail(lang)));
    gewone wa.me-link met het kenmerk erin, zonder persoonsgegevens. Dit is de
    knop voor wie zelf een vraag heeft; wij appen nooit uit onszelf over een
    statuswissel (overzicht §21). */
-export function vragen(lang = 'nl', ref = '') {
+/* Doorloop 27 (B46): de bevestiging van een AANVRAAG eindigde met "een vraag
+   over mijn bestelling". { aanvraag: true } zet het woord goed, net als de
+   WhatsApp-link op de bedankpagina. */
+export function vragen(lang = 'nl', ref = '', { aanvraag = false, over = '' } = {}) {
   const nl = lang !== 'en';
+  const wat = aanvraag ? (nl ? 'aanvraag' : 'request') : (nl ? 'bestelling' : 'order');
+  /* `over` (15 oktober 2026): een mail die niet over een bestelling gaat (tegoed)
+     zegt dat ook in de WhatsApp-tekst, zoals B24/B46 dat deden voor de aanvraag. */
+  const onderwerp = over || `${nl ? 'mijn' : 'my'} ${wat}${ref ? ` ${ref}` : ''}`;
   const tekst = nl
-    ? `Hoi VISUAILS, een vraag over mijn bestelling${ref ? ` ${ref}` : ''}:`
-    : `Hi VISUAILS, a question about my order${ref ? ` ${ref}` : ''}:`;
+    ? `Hoi VISUAILS, een vraag over ${onderwerp}:`
+    : `Hi VISUAILS, a question about ${onderwerp}:`;
   const a = `<a href="${esc(waHref(tekst))}" style="color:${C.head};font-weight:700">${nl ? 'app ons' : 'WhatsApp us'}</a>`;
   return p(nl ? `Vragen? Antwoord op deze mail of ${a}.` : `Questions? Reply to this email or ${a}.`, { top: 14, bottom: 0 });
 }

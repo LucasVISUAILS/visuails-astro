@@ -170,7 +170,8 @@ try {
     const page = await ctx.newPage();
     await page.goto(`${studio.url}/admin/formaten`, { waitUntil: 'load' });
     await Promise.all([page.waitForNavigation({ waitUntil: 'load' }), page.locator('table.files button', { hasText: 'Klaar' }).first().click()]);
-    ok('admin Klaar: "Op klaar gezet." en één rij open', /Op klaar gezet\./.test(await page.locator('.okline').innerText()) && (await page.locator('table.files button', { hasText: 'Klaar' }).count()) === 1);
+    /* B31 (doorloop 27): Klaar mailt de klant meteen; de regel zegt of dat lukte. */
+    ok('admin Klaar: "Op klaar gezet (en de klant gemaild)." en één rij open', /Op klaar gezet( en de klant gemaild)?\./.test(await page.locator('.okline').innerText()) && (await page.locator('table.files button', { hasText: 'Klaar' }).count()) === 1);
     await ctx.close();
     const s = await studioPagina(1280, 'licht');
     ok('studio: "PNG geleverd · <vandaag>"', /^PNG geleverd · \d{1,2} [a-z]{3}$/.test((await s.page.locator(`#formaten-${ORDER} .st-formaat-staat.is-klaar`).innerText()).trim()));

@@ -65,9 +65,11 @@ import { paymentMismatch } from '../../../src/data/vat.js';
    staan — zie de kop van dat bestand. */
 import { issueInvoice, issueCreditNote, issueSubscriptionInvoice } from '../../../src/lib/invoice.js';
 import { mailInvoice, mailSubscriptionInvoice } from '../../../src/lib/invoiceMail.js';
+/* B04 (doorloop 27): de bevestiging die wacht op de betaalstatus. */
+import { leesUitgesteld, wisUitgesteld, stuurUitgesteld } from '../../../src/lib/uitgesteld.js';
 /* De direct-inlogknop in de welkomstmail van een abonnement (24 september 2026). */
 import { welkomLink } from '../../../src/lib/account.js';
-import { mailCreditNote, mailOngewensteBetaling, mailIncassoMislukt, mailBetalingOntvangen } from '../../../src/lib/cancelMail.js';
+import { mailCreditNote, mailOngewensteBetaling, mailIncassoMislukt, mailBetalingOntvangen, mailTermijnTeruggeboekt } from '../../../src/lib/cancelMail.js';
 import { vulVasteLookAan } from '../../../src/lib/vasteLook.js';
 import { notifyBtwTwijfel, notifyPaid, notifyPaymentFailed, notifySampleBlocked, notifySubscriptionFailed, notifySubscriptionRefunded, notifySubscriptionStarted, notifyOngewensteBetaling, notifyChargeback, notifyTermijnTeruggeboekt } from '../../../src/lib/notify.js';
 /* Of Mollie het zelf heeft opgegeven. Zie de kop van recordSubscriptionFailed()
@@ -337,6 +339,11 @@ export async function onRequestPost({ request, env, waitUntil }) {
           if (row.payment_status !== 'paid' && row.status !== 'cancelled' && !(Number(al?.n) > 0)) {
             await notifyPaymentFailed(env, row.id, payment.status);
           }
+          /* B04: de bevestiging die op de uitkomst wachtte, gaat nu alsnog uit —
+             met de betaalknop. Eén keer: daarna staat hij niet meer in R2. */
+          if (row.payment_status !== 'paid' && row.status !== 'cancelled') {
+            await stuurUitgesteld(env, ref);
+          }
         }
       } catch (err) {
         console.error('[mollie-webhook] kon geen bericht sturen over', payment.status, '—', err?.message || err);
@@ -531,12 +538,17 @@ async function termijnTeruggeboekt(env, payment, mode, { sub, cents, terug }) {
     paymentId: payment.id, toelichting: `terugboeking (${terug} van ${cents} cent)`, door: 'systeem',
   }).catch((e) => { console.error('[mollie-webhook] credits niet bevroren —', payment.id, '—', e?.message || e); return null; });
   console.error('[mollie-webhook] TERUGBOEKING op abonnement', sub.id, '—', payment.id, `(${mode}) — ${terug} van ${cents} cent; gepauzeerd, ${bevroren?.bevroren || 0} credits bevroren`);
-  const klant = await env.DB.prepare('SELECT email, brand FROM customers WHERE id = ?1').bind(sub.customer_id).first().catch(() => null);
+  const klant = await env.DB.prepare('SELECT email, brand, name, first_name FROM customers WHERE id = ?1').bind(sub.customer_id).first().catch(() => null);
   const betaald = String(payment.paidAt || payment.createdAt || '');
   await notifyTermijnTeruggeboekt(env, {
     subRef: sub.ref || '', plan: sub.plan, brand: klant?.brand, email: klant?.email,
     bedragCents: cents, terugCents: terug, maand: /^\d{4}-\d{2}/.test(betaald) ? betaald.slice(0, 7) : '',
     bevroren: bevroren ? (bevroren.bevroren || bevroren.al || 0) : null,
+  });
+  /* B19 (doorloop 27): en de klant, met de vraag of het klopt. */
+  await mailTermijnTeruggeboekt(env, {
+    subId: sub.id, ref: sub.ref || '', email: klant?.email, name: klant?.first_name || klant?.name || klant?.brand || '',
+    terugCents: terug, origin: env.PUBLIC_ORIGIN || 'https://visuails.com',
   });
 }
 
@@ -1756,6 +1768,9 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
           earlierAt: earlier.paid_at,
           refunded,
         });
+        /* B04: de bevestiging die op deze betaling wachtte, klopt niet meer
+           (de proef is geannuleerd). Weg ermee; de terugkeerpagina zegt het. */
+        await wisUitgesteld(env, ref);
 
         /* Hier stopt het. Geen notifyPaid (dat is het sein om te beginnen) en geen
            factuur (die zou meteen gecorrigeerd moeten worden). Wat de bezoeker te
@@ -1855,16 +1870,22 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
         'SELECT ref, email, name, lang, service, window_start, window_end FROM orders WHERE id = ?1'
       ).bind(order.id).first();
       if (full) full.noNext = full.service === SAMPLE_SERVICE;
-      await mailInvoice(env, { order: full, invoice });
+      /* B04: wachtte de bevestiging op deze betaling, dan krijgt de betaalmail
+         het overzicht erbij en is dit de enige mail. */
+      const uitgesteld = await leesUitgesteld(env, ref);
+      const verstuurd = await mailInvoice(env, { order: full, invoice, uitgesteld });
+      if (uitgesteld && verstuurd) await wisUitgesteld(env, ref);
     } else {
-      await mailBetalingOntvangen(env, order.id);
+      const uitgesteld = await leesUitgesteld(env, ref);
+      if (await mailBetalingOntvangen(env, order.id, { uitgesteld }) && uitgesteld) await wisUitgesteld(env, ref);
     }
   } catch (e) {
     console.error('[mollie-webhook] factuur voor', ref, 'niet uitgegeven —', e && e.message ? e.message : e,
       '— wordt hersteld zodra de klant VISUAILS Studio opent (/account/invoices).');
     /* De betaling is wel binnen; de klant hoort het ook zonder factuur (ronde 8,
        M-B6). De factuur volgt in Studio zodra hij er is. */
-    await mailBetalingOntvangen(env, order.id);
+    const uitgesteld = await leesUitgesteld(env, ref);
+    if (await mailBetalingOntvangen(env, order.id, { uitgesteld }) && uitgesteld) await wisUitgesteld(env, ref);
   }
 }
 

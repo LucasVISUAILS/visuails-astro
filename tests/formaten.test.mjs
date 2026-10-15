@@ -145,13 +145,15 @@ const aPost = (pad, velden) => adminPost({ request: new Request(`https://visuail
   ok('  en op andere pagina\'s als link', /<a class="bar-link" href="\/admin\/formaten">Formaten<\/a>/.test(await (await aGet('/admin/proef')).text()));
   ok('open: VIS-TEST-0501 twee keer, met link naar de bestelling', (html.match(/href="\/admin\/orders\/501\/files">VIS-TEST-0501</g) || []).length === 2);
   ok('  per formaat, met het aantal geleverde beelden', /<strong>PNG<\/strong>/.test(html) && /<strong>WebP<\/strong>/.test(html) && /<span class="meta">3 beelden<\/span>/.test(html));
-  ok('  met een knop Klaar per rij', (html.match(/>Klaar<\/button>/g) || []).length === 2);
+  /* Doorloop 27 (B31): Klaar mailt de klant meteen, dus heet de knop zo. */
+  ok('  met een knop Klaar per rij', (html.match(/>Klaar en klant mailen<\/button>/g) || []).length === 2);
   ok('telOpenFormaten: 2', await telOpenFormaten(env) === 2);
   const dash = await (await aGet('/admin')).text();
   ok('het dashboard heeft de chip "Formaten · 2"', /href="\/admin\/formaten">Formaten &middot; 2 &rarr;<\/a>/.test(dash));
   const id = db.prepare("SELECT id FROM formaat_verzoeken WHERE order_id = 501 AND formaat = 'png'").get().id;
   const r = await aPost('/admin/formaten', { id: String(id) });
-  ok('Klaar: 303 terug met een melding', r.status === 303 && r.headers.get('location') === '/admin/formaten?klaar=1');
+  ok('Klaar: 303 terug met een melding', r.status === 303 && r.headers.get('location') === '/admin/formaten?klaar=1&mail=ok');
+  ok('  en de klant is gemaild (logboek formaat.gemaild)', telling(db, "SELECT COUNT(*) FROM admin_log WHERE action = 'formaat.gemaild'") === 1);
   const eerst = db.prepare('SELECT klaar_at FROM formaat_verzoeken WHERE id = ?').get(id).klaar_at;
   ok('  klaar_at staat', !!eerst);
   db.prepare("UPDATE formaat_verzoeken SET klaar_at = '2026-10-12 08:00:00' WHERE id = ?").run(id);
@@ -159,7 +161,8 @@ const aPost = (pad, velden) => adminPost({ request: new Request(`https://visuail
   ok('  nog een keer: de datum blijft', db.prepare('SELECT klaar_at FROM formaat_verzoeken WHERE id = ?').get(id).klaar_at === '2026-10-12 08:00:00');
   ok('  in het logboek', telling(db, "SELECT COUNT(*) FROM admin_log WHERE action = 'formaat.klaar'") >= 1);
   html = await (await aGet('/admin/formaten?klaar=1')).text();
-  ok('na Klaar: één open, één onder Geleverd', (html.match(/>Klaar<\/button>/g) || []).length === 1 && /<h2>Geleverd<\/h2>/.test(html) && /geleverd 2026-10-12 08:00/.test(html));
+  ok('na Klaar: één open, één onder Geleverd', (html.match(/>Klaar en klant mailen<\/button>/g) || []).length === 1 && /<h2>Geleverd<\/h2>/.test(html) && /geleverd 2026-10-12 08:00/.test(html));
+  ok('  met "klant gemaild" erbij, geen tweede mailknop', /klant gemaild/.test(html) && !/>Klant mailen<\/button>/.test(html));
   const lijst = await formatenLijst(env);
   ok('formatenLijst: open en klaar apart', lijst.open.length === 1 && lijst.klaar.length === 1);
   ok('zonder tabel: een regel over migratie 0065', /migratie 0065/.test(await (await adminGet({ request: new Request('https://visuails.com/admin/formaten', { headers: { cookie: `vis_admin=${adminToken}` } }), env: { DB: { prepare(sql) { if (/formaat_verzoeken/.test(sql)) throw new Error('no such table'); return env.DB.prepare(sql); } } }, waitUntil() {} })).text()));

@@ -191,7 +191,7 @@ console.log('\n4 · de studiomail zonder bijlagen (9.07), met de bestelmail erna
   const inhoud = new Map();
   let gelezen = 0;
   const bucket = {
-    async put(key, body, o) { inhoud.set(key, { bytes: 1000, opts: o }); return { key }; },
+    async put(key, body, o) { inhoud.set(key, { bytes: 1000, opts: o, body: typeof body === 'string' ? body : '' }); return { key }; },
     async get() { gelezen += 1; return { arrayBuffer: async () => new ArrayBuffer(1000) }; },
     async head(key) { return inhoud.has(key) ? {} : null; },
     async delete(key) { inhoud.delete(key); },
@@ -243,14 +243,29 @@ console.log('\n4 · de studiomail zonder bijlagen (9.07), met de bestelmail erna
   ok('  wat ontbreekt: "p2 Shirt wit: geen achterkant"', s.includes('Wat ontbreekt') && s.includes('p2 Shirt wit: geen achterkant'));
   ok('  geen bestandstabel met R2-sleutels meer', /alleen R2|als bijlage in deze mail/.test(s), false);
 
-  ok('de bestelmail: "Je bestelling staat erin"', tekst(klant?.html || '').includes('Je bestelling staat erin'));
-  ok('  met "Zo gaat het verder"', tekst(klant?.html || '').includes('Zo gaat het verder'));
-  ok('  en, bij de eerste bestelling op dit adres, de contactenregel', /orders@visuails\.com in je contacten/.test(klant?.html || ''));
+  /* ── DOORLOOP 27 (B04): DE BEVESTIGING WACHT OP DE BETAALSTATUS ──────────
+     Deze klant gaat meteen naar Mollie. De bevestiging gaat dan niet nu uit,
+     maar staat in R2 (mail-uitgesteld/<ref>.json): de webhook stuurt hem bij
+     mislukt/afgebroken/verlopen, en bij betaald krijgt de factuurmail het
+     overzicht. */
+  const ref1 = db.prepare("SELECT ref FROM orders WHERE email = 'sanne@voorbeeld-kleding.nl'").get()?.ref;
+  ok('de bestelmail gaat niet meteen uit (de klant zit aan de kassa)', !!klant, false);
+  const bewaard = (ref) => { const r = inhoud.get(`mail-uitgesteld/${ref}.json`); return r ? JSON.parse(r.body || 'null') : null; };
+  const b1 = bewaard(ref1);
+  ok('  maar staat klaar in R2, voor de webhook', !!b1 && b1.to === 'sanne@voorbeeld-kleding.nl' && /We hebben je bestelling/.test(b1.subject));
+  ok('  de bewaarde mail: "Je bestelling staat erin"', tekst(b1?.html || '').includes('Je bestelling staat erin'));
+  ok('    zegt dat de betaling nog niet gelukt is (niet "al betaald?")', tekst(b1?.html || '').includes('De betaling is nog niet gelukt') && !tekst(b1?.html || '').includes('Al betaald bij Mollie'));
+  ok('    met "Zo gaat het verder"', tekst(b1?.html || '').includes('Zo gaat het verder'));
+  ok('    en, bij de eerste bestelling op dit adres, de contactenregel', /orders@visuails\.com in je contacten/.test(b1?.html || ''));
+  ok('  en het overzicht voor de betaalmail ("Wat je bestelde")', tekst(b1?.samenvatting || '').includes('Wat je bestelde') && tekst(b1?.samenvatting || '').includes('Catalog'));
+  ok('  nieuwAdres reist mee', b1?.nieuwAdres, true);
 
   const voor = mails().length;
   await bestel('sanne@voorbeeld-kleding.nl');
-  const tweede = mails().slice(voor).find((m) => /We hebben je bestelling/.test(m.subject || ''));
+  const ref2 = db.prepare("SELECT ref FROM orders WHERE email = 'sanne@voorbeeld-kleding.nl' ORDER BY id DESC LIMIT 1").get()?.ref;
+  const tweede = bewaard(ref2);
   ok('  bij de tweede bestelling op hetzelfde adres niet meer', /orders@visuails\.com in je contacten/.test(tweede?.html || ''), false);
+  ok('  en ook die tweede ging niet meteen uit', mails().slice(voor).some((m) => /We hebben je bestelling/.test(m.subject || '')), false);
   ok('order.js leest geen foto’s meer voor de mail', /packAttachments\(|MAIL_ATTACH_MAX/.test(lees('functions/api/order.js').replace(/\/\*[\s\S]*?\*\//g, '')), false);
   globalThis.fetch = echteFetch;
 }

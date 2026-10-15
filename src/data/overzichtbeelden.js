@@ -35,30 +35,44 @@
  * kader achter.
  */
 
+/* ── SCHETSEN IN PLAATS VAN DE ROZE BROEK — 15 oktober 2026 ─────────────────
+ * Lucas (afvinklijst 27, k-credits): *"De roze broek fotos mogen aangepast
+ * worden naar schetsen omdat dit afleid en niks te maken heeft met wat de klant
+ * besteld."* Een foto van iemands broek naast je eigen bestelling leest als
+ * "dit krijg jij", en dat klopt nooit. Een schets per beeld zegt wat er komt
+ * (voorkant, achterkant, detail, op een model) zonder te doen alsof het jouw
+ * product is.
+ *
+ * De schetsen staan in public/img/schets/ en worden getekend door
+ * scripts/schetsen-zijpaneel.py (lijnen in inkt, één neutraal shirt, geen
+ * merk). Het label onder elke tegel is de naam van het vak in Studio en op de
+ * privélink (levervakken.js), ingekort waar de tegel smal is. */
+const S = (naam) => `/img/schets/${naam}.svg`;
+
 const CATALOG = [
-  { src: '/img/ba2-na-front.webp', nl: 'Vooraanzicht op wit', en: 'Front view on white' },
-  { src: '/img/ba2-na-achter.webp', nl: 'Achterkant op wit', en: 'Back view on white' },
-  { src: '/img/ba2-na-detail.webp', nl: 'Detail van de knoop', en: 'Button detail' },
-  { src: '/img/ba2-na-model-wit.webp', nl: 'Gedragen door een model', en: 'Worn by a model' },
+  { src: S('catalog-voorkant'), nl: 'Voorkant', en: 'Front', altNl: 'Schets: het product van voren, op wit', altEn: 'Sketch: the product from the front, on white' },
+  { src: S('catalog-achterkant'), nl: 'Achterkant', en: 'Back', altNl: 'Schets: het product van achteren, op wit', altEn: 'Sketch: the product from the back, on white' },
+  { src: S('catalog-detail'), nl: 'Detail', en: 'Detail', altNl: 'Schets: een detail van de stof, dichtbij', altEn: 'Sketch: a close-up of the fabric' },
+  { src: S('catalog-model'), nl: 'Op model', en: 'On model', altNl: 'Schets: het product gedragen door een model', altEn: 'Sketch: the product worn by a model' },
 ];
 
+/* De vier beelden van een carrousel, in de volgorde van LIFESTYLE in levervakken.js. */
 const LIFESTYLE = [
-  { src: '/img/lifestyle-band-01.webp', nl: 'Lifestylebeeld op locatie', en: 'Lifestyle image on location' },
-  { src: '/img/lifestyle-band-04.webp', nl: 'Lifestylebeeld, tweede look', en: 'Lifestyle image, second look' },
-  { src: '/img/lifestyle-flash-02.webp', nl: 'Lifestylebeeld met flits', en: 'Lifestyle image with flash' },
-  /* 14 oktober 2026: een carrousel is vier beelden; de vierde tegel is een model van achteren. */
-  { src: '/img/lifestyle-flash-05.webp', nl: 'Lifestylebeeld van achteren', en: 'Lifestyle image from behind' },
+  { src: S('lifestyle-voorkant'), nl: 'Voorkant', en: 'Front', altNl: 'Schets: een model met het product, van voren, in een setting', altEn: 'Sketch: a model wearing the product, from the front, in a setting' },
+  { src: S('lifestyle-achterkant'), nl: 'Achterkant', en: 'Back', altNl: 'Schets: een model met het product, van achteren, in een setting', altEn: 'Sketch: a model wearing the product, from the back, in a setting' },
+  { src: S('lifestyle-product'), nl: 'Product', en: 'Product', altNl: 'Schets: alleen het product, in een setting', altEn: 'Sketch: the product on its own, in a setting' },
+  { src: S('lifestyle-detail'), nl: 'Detail', en: 'Detail', altNl: 'Schets: een detail van het product, gedragen door een model', altEn: 'Sketch: a close-up of the product, worn by a model' },
 ];
 
-/* Twee van elk: dat is letterlijk wat één product op een compleet pakket en op
-   elk abonnement oplevert — een catalogset én een lifestyle-carrousel.
-
-   NIET de eerste twee uit CATALOG. Dat waren het voor- en achteraanzicht van
-   dezelfde broek op wit, en op 90 pixels breed zijn die twee niet uit elkaar te
-   houden: de strook las als hetzelfde beeld twee keer, precies het tegendeel
-   van wat hij moet laten zien. Het vooraanzicht en het detail verschillen wél
-   op die maat, en samen vertellen ze ook beter wat een catalogset is. */
-const BEIDE = [CATALOG[0], CATALOG[2], ...LIFESTYLE.slice(0, 2)];
+/* Twee van elk: dat is wat één product op een abonnement oplevert — een
+   catalogset én een lifestylecarrousel. Vier tegels met vier verschillende
+   labels, anders lijkt het hetzelfde beeld twee keer. */
+const BEIDE = [
+  { ...CATALOG[0], nl: 'Op wit', en: 'On white' },
+  { ...CATALOG[3] },
+  { ...LIFESTYLE[0], nl: 'Lifestyle', en: 'Lifestyle' },
+  { ...LIFESTYLE[3] },
+];
 
 const PER_DIENST = {
   catalog: CATALOG,
@@ -72,11 +86,12 @@ const PER_DIENST = {
  * De tegels voor één dienst, met de alt-tekst al in de goede taal.
  * @param {string} service  catalog | lifestyle | complete | drop | plan | …
  * @param {'nl'|'en'} lang
- * @returns {Array<{src: string, alt: string}>}  leeg als de dienst er geen heeft
+ * @returns {Array<{src: string, label: string, alt: string}>}  leeg als de dienst er geen heeft
  */
 export function tegelsVoor(service, lang) {
   const lijst = PER_DIENST[service] || [];
-  return lijst.map((t) => ({ src: t.src, alt: (lang === 'nl' ? t.nl : t.en) }));
+  const nl = lang === 'nl';
+  return lijst.map((t) => ({ src: t.src, label: nl ? t.nl : t.en, alt: nl ? t.altNl : t.altEn }));
 }
 
 /* De noot die onder elke strook hoort: dit zijn echte beelden, en wat de klant
@@ -88,7 +103,8 @@ export function tegelsVoor(service, lang) {
    mengt looks van verschillende producten, dus de noot zegt alleen wat ze zijn:
    voorbeeldbeelden. De naam van de constante blijft, zodat de twee aanroepers
    (BestelOverzicht, PlanPicker) niet hoeven te veranderen. */
+/* 15 oktober 2026: schetsen in plaats van voorbeeldbeelden, dus de noot zegt dat. */
 export const ECHTE_BESTELLING = {
-  nl: 'Voorbeeldbeelden. Wat jij stuurt bepaalt hoe de jouwe eruitzien.',
-  en: 'Example images. What you send decides how yours look.',
+  nl: 'Een schets per beeld. Wij maken ze van jouw product, met de foto’s die je stuurt.',
+  en: 'One sketch per image. We make them of your product, from the photos you send.',
 };

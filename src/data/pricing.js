@@ -3379,6 +3379,9 @@ export const TEST_SAMPLE = {
        en "Probeer VISUAILS · €1" maakt nieuwsgierig naar wat je voor €1 krijgt.
        Elke knop die naar /test-sample leidt leest dit veld. */
     cta: `Try VISUAILS · ${euro(AMOUNT.testSample, 'en')}`,
+    /* Doorloop 27 (B42): op de videopagina's. De proef is één product in foto's,
+       geen video; zonder dit woord verwacht een videoklant een clip voor €1. */
+    ctaFotos: `Try VISUAILS · ${euro(AMOUNT.testSample, 'en')}, in photos`,
     unit: 'one per business',
     feeNote: `${euro(AMOUNT.testSample, 'en')} fee to prevent abuse`,
     /*
@@ -3425,6 +3428,7 @@ export const TEST_SAMPLE = {
     price: euro(AMOUNT.testSample, 'nl'),
     /* Zie de Engelse `cta`. */
     cta: `Probeer VISUAILS · ${euro(AMOUNT.testSample, 'nl')}`,
+    ctaFotos: `Probeer VISUAILS · ${euro(AMOUNT.testSample, 'nl')}, met foto’s`,
     unit: 'één per bedrijf',
     // Geen "vergoeding" of "bijdrage" — dat zijn de woorden waarmee je een bedrag
     // mooier maakt dan het is, en dan ben je terug bij het probleem met

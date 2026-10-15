@@ -28,6 +28,9 @@ export const KLANT = {
     start: 'Start een bestelling',
     credits: 'Bestel met je credits · {n} over',
     plan: 'Sluit een abonnement af',
+    /* 15 oktober 2026: de tweede knop van een abonnee gaat naar zijn abonnement, niet
+       nog een keer naar /start (dat doet de eerste al, met zijn credits erin). */
+    jeAbonnement: 'Je abonnement',
     welkom: 'Welkom terug',
     welkomNaam: 'Welkom terug, {naam}',
     leeg: 'Je bestellingen en beelden staan in VISUAILS Studio.',
@@ -57,6 +60,7 @@ export const KLANT = {
     herbestel: 'Order again in your look',
     start: 'Start an order',
     credits: 'Order with your credits · {n} left',
+    jeAbonnement: 'Your plan',
     plan: 'Start a plan',
     welkom: 'Welcome back',
     welkomNaam: 'Welcome back, {naam}',
@@ -95,11 +99,16 @@ export function planKnop(lang, lp) {
   const k = klantTekst(lang);
   return {
     'data-vis-klant': 'plan',
-    'data-vis-credits': k.credits,
-    'data-vis-start-label': k.start,
-    'data-vis-start': lp('/start'),
+    'data-vis-abo-label': k.jeAbonnement,
+    'data-vis-abo': '/account/plan',
     hidden: true,
   };
+}
+
+/** De hoofdknop "Start een bestelling": met credits "Bestel met je credits · 48 over". */
+export function startKnop(lang) {
+  const k = klantTekst(lang);
+  return { 'data-vis-klant': 'start-credits', 'data-vis-credits': k.credits };
 }
 
 /** De attributen van een generieke WhatsApp-knop die het kenmerk mag krijgen. */

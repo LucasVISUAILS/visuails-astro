@@ -345,8 +345,10 @@ export async function mailIncassoMislukt(env, { subId, ref, email, name, bedragC
               ? `De afschrijving van <strong>${esc(eur)}</strong> is een paar keer niet gelukt, en de bank heeft de machtiging gestopt. Je abonnement staat daarom stil. Je credits zijn bewaard, maar je kunt ze pas weer gebruiken als de betaling rond is.`
               : `The payment of <strong>${esc(eur)}</strong> failed a few times and the bank stopped the mandate, so your plan is on hold. Your credits are kept, but you can only use them again once the payment is settled.`)
             : (nl
-              ? `De afschrijving van <strong>${esc(eur)}</strong> voor je abonnement is niet gelukt. Meestal is dat een tijdelijk saldoprobleem; we proberen het binnen een paar dagen opnieuw. Klopt je rekening niet meer, vernieuw dan je machtiging.`
-              : `The payment of <strong>${esc(eur)}</strong> for your plan did not go through. Usually that is a temporary balance issue; we try again within a few days. If your account has changed, renew your mandate.`)),
+              /* Doorloop 27 (B20): hier stond "vernieuw dan je machtiging", maar
+                 Studio heeft daar geen knop voor. Nu de weg die wél bestaat. */
+              ? `De afschrijving van <strong>${esc(eur)}</strong> voor je abonnement is niet gelukt. Meestal is dat een tijdelijk saldoprobleem; we proberen het binnen een paar dagen opnieuw. Is je rekening veranderd? Beantwoord deze mail of app ons, dan sturen we je een link om je nieuwe rekening te koppelen.`
+              : `The payment of <strong>${esc(eur)}</strong> for your plan did not go through. Usually that is a temporary balance issue; we try again within a few days. Has your bank account changed? Reply to this email or message us on WhatsApp, and we send you a link to connect your new account.`)),
           button(href, nl ? 'Naar mijn abonnement' : 'Go to my plan'),
           '<div style="height:18px;font-size:0;line-height:0">&nbsp;</div>',
           note(nl ? 'Vragen? Beantwoord deze mail of app ons.' : 'Questions? Reply to this email or message us on WhatsApp.'),
@@ -360,10 +362,51 @@ export async function mailIncassoMislukt(env, { subId, ref, email, name, bedragC
   }
 }
 
+/* ── EEN TERUGBOEKING: DE KLANT HOORT HET OOK — 15 oktober 2026 (doorloop 27, B19)
+   Boekt de klant een termijn terug, dan kreeg Lucas een mail en ging het
+   abonnement op pauze; de klant zag het pas in Studio. Een terugboeking kan een
+   bankfout zijn, dus deze mail beweert niets: hij zegt wat er gebeurde, wat dat
+   betekent, en vraagt of het klopt. Dezelfde toon als de WhatsApp-tekst bij
+   'terugboeking' (src/lib/waLink.js). */
+export async function mailTermijnTeruggeboekt(env, { subId, ref, email, name, terugCents = 0, origin = 'https://visuails.com' }) {
+  if (!email) return false;
+  try {
+    const rij = await env.DB.prepare('SELECT lang FROM subscription_invoices WHERE subscription_id = ?1 ORDER BY id DESC LIMIT 1').bind(subId).first().catch(() => null);
+    const nl = (rij?.lang || 'nl') !== 'en';
+    const eur = new Intl.NumberFormat(nl ? 'nl-NL' : 'en-GB', { style: 'currency', currency: 'EUR' }).format((Number(terugCents) || 0) / 100);
+    const href = `${origin}/account/plan?lang=${nl ? 'nl' : 'en'}`;
+    await sendMail(env, {
+      to: email,
+      subject: nl ? `Je abonnement staat even stil — ${ref}` : `Your plan is on hold for now — ${ref}`,
+      html: shell({
+        lang: nl ? 'nl' : 'en',
+        preheader: nl ? 'Een betaling is via je bank teruggeboekt.' : 'A payment was reversed through your bank.',
+        body: [
+          h1(nl ? 'Je abonnement staat even stil' : 'Your plan is on hold for now', esc(ref)),
+          p(greeting(name, nl ? 'nl' : 'en')),
+          p(nl
+            ? `Een betaling van <strong>${esc(eur)}</strong> voor je abonnement is via je bank teruggeboekt. Daarom staat je abonnement even stil: er wordt niets afgeschreven en de credits van die maand staan vast tot het rond is.`
+            : `A payment of <strong>${esc(eur)}</strong> for your plan was reversed through your bank. That is why your plan is on hold for now: nothing is collected, and the credits for that month are held until it is sorted.`),
+          p(nl
+            ? 'Klopt dat, of is er iets misgegaan? Laat het ons weten, dan zoeken we het samen uit.'
+            : 'Is that right, or did something go wrong? Let us know, and we will sort it out together.'),
+          button(href, nl ? 'Naar mijn abonnement' : 'Go to my plan'),
+          /* Eén keer "antwoord of app ons", en de WhatsApp-tekst noemt het abonnement. */
+          vragen(nl ? 'nl' : 'en', '', { over: nl ? `mijn abonnement ${ref}` : `my plan ${ref}` }),
+        ].join(''),
+      }),
+    });
+    return true;
+  } catch (e) {
+    console.error('[mail] bericht over terugboeking niet verstuurd —', e?.message || e);
+    return false;
+  }
+}
+
 /* De betaalbevestiging zonder factuur (ronde 8, M-B6): mislukt het uitgeven van
    de factuur, dan kreeg de klant niets. Kort, en met de belofte dat de factuur
    in Studio komt. */
-export async function mailBetalingOntvangen(env, orderId) {
+export async function mailBetalingOntvangen(env, orderId, { uitgesteld = null } = {}) {
   try {
     const o = await env.DB.prepare('SELECT ref, email, name, lang FROM orders WHERE id = ?1').bind(orderId).first();
     if (!o?.email) return false;
@@ -387,6 +430,9 @@ export async function mailBetalingOntvangen(env, orderId) {
             : 'Thank you — your payment is in. Your invoice will be in VISUAILS Studio, under Invoices.'),
           button(ctx.link || `https://visuails.com${nl ? '/nl' : ''}/account/orders`, nl ? 'Bekijk je bestelling' : 'See your order'),
           verderBlokHtml({ lang, levering: ctx.levering, factuur: 'bijgevoegd', ontbreekt: ctx.ontbreekt }),
+          /* B04 (doorloop 27): wat de klant bestelde, als de bevestiging op deze
+             betaling wachtte. */
+          uitgesteld?.samenvatting || '',
           vragen(lang, o.ref),
         ].join(''),
       }),

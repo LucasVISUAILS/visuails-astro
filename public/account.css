@@ -323,7 +323,7 @@
      a `stroke` inside a data: URL cannot see var(). Hand-copy of the ink
      ramp's top step; when that moves, this moves with it or the caret stops
      matching. */
-  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23FFFFFF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --select-caret: url("/img/ui/keuzepijl-ffffff.svg");
 
   --font: "Figtree Variable", "Helvetica Neue", Arial, sans-serif;
 
@@ -489,7 +489,7 @@
   --focus-ring: #000000;
 
   /* Het pijltje in een <select> is een tekening in de kleur van de tekst. */
-  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23000000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --select-caret: url("/img/ui/keuzepijl-000000.svg");
 
   /* Violet is op wit 7,16:1 en mag dus zelf de lijn en de data dragen — zie
      de noot in KLEURENSCHEMA.md dat het violet, anders dan het geel, wél een

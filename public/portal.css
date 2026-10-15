@@ -280,7 +280,7 @@
      a `stroke` inside a data: URL cannot see var(). Hand-copy of the ink
      ramp's top step; when that moves, this moves with it or the caret stops
      matching. */
-  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23000000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --select-caret: url("/img/ui/keuzepijl-000000.svg");
 
   --font: "Figtree Variable", "Helvetica Neue", Arial, sans-serif;
 
@@ -1220,7 +1220,7 @@ html body {
   --st-can-fill: #ECEBF3; --st-can-edge: #8E8BA2; --st-can-ink: #4B4960;
   --signal: #F1EEFF; --signal-ink: #2A0E8F; --verify: #2A0E8F; --verify-ink: #FFFFFF;
   --warn: #F6E7D1; --warn-ink: #8A4D06; --flag: #F6E7D1; --flag-ink: #8A4D06; --clay: #8A4D06; --clay-text: #8A4D06; --mist-clay: #F6E7D1;
-  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%230F0C24' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --select-caret: url("/img/ui/keuzepijl-0f0c24.svg");
   --pt-r-kaart: 28px; --pt-r: 22px; --r-pill: 999px;
   background: #FFFFFF; color: #4B4960; font-family: var(--h-letter); font-size: 1rem;
 }
@@ -1250,3 +1250,18 @@ html body textarea, html body input[type="text"], html body input[type="email"],
 html body .stand { border-radius: 999px; font-family: var(--h-letter); font-weight: 600; }
 html body .pad .is-now .pad-stip { background: #4A1FFF; }
 html body .foot { color: #6A6880; }
+
+/* ── DOORLOOP 27 (15 oktober 2026) ──────────────────────────────────────────
+   B36: per product een kop, per beeld het vak, de bestandsnaam klein eronder.
+   B44: onder een aangevinkt beeld een eigen notitievak (zonder script: :has). */
+.shots-groep + .shots-groep { margin-top: 2.2rem; }
+.shots-kop { margin: 0 0 .9rem; font-size: 1rem; line-height: 1.3; font-weight: 600; color: var(--ink); }
+.shot .file { display: block; margin: 0 0 .25rem; font-size: .75rem; line-height: 1.35; color: var(--ink-3); overflow-wrap: anywhere; }
+.pick-notitie { display: none; margin-top: .6rem; }
+.shot:has(.pick input:checked) .pick-notitie { display: block; }
+.pick-notitie textarea { width: 100%; min-height: 4.4rem; resize: vertical; font: inherit; font-size: .875rem; line-height: 1.45; }
+
+/* "Aanvraag intrekken" stond 18 px ingesprongen onder het label (gemeten 15 oktober 2026):
+   een latere .btn-regel gaf de stille knop zijn opvulling terug. Een tekstlink lijnt uit
+   met de tekst erboven. */
+.btn.btn-quiet { padding-left: 0; padding-right: 0; }

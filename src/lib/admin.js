@@ -239,7 +239,7 @@ import { beeldenStand, beeldenBlok } from './beeldenDiagnose.js';
 /* G2 (8 oktober 2026): proef tijdelijk dicht, en de wachtlijst. */
 import { leesProefStand, zetProefStand, telWachtlijst, mailWachtlijst } from './proefStand.js';
 /* k401 (11 oktober 2026): de pagina Formaten — png/webp die klanten in Studio aanvroegen. */
-import { formatenLijst, formaatKlaar, telOpenFormaten, FORMAAT_NAAM } from './formaten.js';
+import { formatenLijst, formaatKlaar, formaatMail, telOpenFormaten, FORMAAT_NAAM } from './formaten.js';
 /* De rem op abonnementen in credits (6.05, 8 oktober 2026): één regel op Klanten. */
 import { aboStand, zetAboPlafond } from './aboPlafond.js';
 import { ABO_CREDITS_PLAFOND } from '../data/plans.js';
@@ -3647,7 +3647,10 @@ async function renderFiles(context, orderId) {
     }
     const revising = f.review_state === 'revision_requested';
     const fresh = migrated && !f.announced_at;
-    return `<div class="slot${revising ? ' is-revising' : ''}${fresh ? ' is-fresh' : ''}">
+    /* id="rev-<file_id>": de knop "Revisie openen" in Volgende stap springt
+       hierheen (B10, doorloop 27). Dezelfde id als de kaart op het dashboard;
+       die twee staan nooit op dezelfde pagina. */
+    return `<div class="slot${revising ? ' is-revising' : ''}${fresh ? ' is-fresh' : ''}"${revising ? ` id="rev-${f.id}"` : ''}>
       <span class="slot-label">${esc(vakLabel(shotKey))}</span>
       ${/* De link had geen enkele tekst: een <img alt=""> erin en verder niets,
            dus axe-core las "Links must have discernible text" — twaalf keer.
@@ -3787,10 +3790,14 @@ async function renderFiles(context, orderId) {
     // Per product melden mag alleen als de bestelling al één keer aangekondigd
     // is — de eerste keer gaat via de status, met de mail die zegt dat de
     // bestelling klaar is. Zie handleAnnounceRedelivery.
+    /* Doorloop 27 (B09): stil (geen paars). Na een revisieronde stonden er drie
+       paarse knoppen: twee keer "1 naar de klant sturen" en onderaan "2 nieuwe
+       beelden melden". De eerste in beeld was die per product, en de klant kreeg
+       twee mails. De knop die alles in één mail meldt, is de vanzelfsprekende. */
     const push = fresh && order.delivery_mailed_at
       ? `<form method="post" action="/admin/orders/${order.id}/announce" class="board-push">
            <input type="hidden" name="product" value="${esc(key)}">
-           <button class="btn btn-primary btn-sm" type="submit">${fresh} naar de klant sturen</button>
+           <button class="btn btn-sm" type="submit">Alleen dit product sturen (${fresh})</button>
          </form>`
       : '';
     const n = Number(key.slice(1)) || 0;
@@ -7109,7 +7116,7 @@ async function handleCustomerCredit(context, customerId) {
   if (!Number.isInteger(customerId)) {
     return html(page({ title: 'Admin', body: errorBody('Ongeldig klantnummer.') }), 400);
   }
-  const customer = await env.DB.prepare('SELECT id FROM customers WHERE id = ?1').bind(customerId).first();
+  const customer = await env.DB.prepare('SELECT id, email, name, first_name FROM customers WHERE id = ?1').bind(customerId).first();
   if (!customer) return html(page({ title: 'Admin', body: errorBody('Die klant bestaat niet.') }), 404);
 
   const form = await request.formData().catch(() => null);
@@ -7180,7 +7187,51 @@ async function handleCustomerCredit(context, customerId) {
     customerId,
     detail: `${cents > 0 ? '+' : ''}${(cents / 100).toFixed(2)} — ${reason}${orderId ? ` (bestelling #${orderId})` : ''}`,
   });
+
+  /* ── DE KLANT HOORT HET, ALS JIJ DAT WILT — 15 oktober 2026 (doorloop 27, B33)
+     Een tegoed als excuus dat de klant nergens ziet behalve in Studio, werkt
+     niet als excuus. Het vinkje staat standaard uit, want de reden is ook je
+     eigen notitie; aangevinkt komt hij letterlijk in de mail. Alleen bij
+     bijboeken: een afboeking is een correctie, geen bericht. Een mislukte mail
+     maakt de boeking niet ongedaan: die staat er al, en het scherm zegt het. */
+  if (cents > 0 && String(form?.get('mail') || '') === '1' && customer.email) {
+    const taalRij = await env.DB.prepare('SELECT lang FROM orders WHERE customer_id = ?1 ORDER BY id DESC LIMIT 1').bind(customerId).first().catch(() => null);
+    const lang = taalRij?.lang === 'en' ? 'en' : 'nl';
+    const saldoRij = await env.DB.prepare('SELECT COALESCE(SUM(delta_cents), 0) AS n FROM customer_credits WHERE customer_id = ?1').bind(customerId).first().catch(() => null);
+    const origin = (() => { try { return new URL(request.url).origin; } catch { return 'https://visuails.com'; } })();
+    try {
+      await sendMail(env, {
+        to: customer.email,
+        subject: lang === 'nl' ? `Er staat ${mailBedrag(cents, 'nl')} tegoed voor je klaar` : `${mailBedrag(cents, 'en')} credit is waiting for you`,
+        html: tegoedMail({ naam: customer.first_name || customer.name, lang, cents, reden: reason, saldoCents: Number(saldoRij?.n) || cents, studio: `${origin}/account${lang === 'en' ? '?lang=en' : ''}` }),
+      });
+      return seeOther(`/admin/customers/${customerId}?tegoed=gemaild#tegoed`);
+    } catch (err) {
+      return html(page({ title: 'Admin', body: errorBody(
+        `Het tegoed is geboekt, maar de mail aan de klant kwam niet weg (${esc(String(err?.message || err))}). Laat het hem zelf weten. <a href="/admin/customers/${customerId}#tegoed">Terug naar de klant</a>`
+      ) }), 502);
+    }
+  }
   return seeOther(back);
+}
+
+/** De mail bij een tegoed dat Lucas bijboekte (B33, doorloop 27). */
+export function tegoedMail({ naam, lang = 'nl', cents, reden, saldoCents, studio }) {
+  const nl = lang !== 'en';
+  return mailShell({
+    lang: nl ? 'nl' : 'en',
+    preheader: nl ? `${mailBedrag(cents, 'nl')} tegoed, voor je volgende bestelling.` : `${mailBedrag(cents, 'en')} credit, for your next order.`,
+    body: [
+      mailH1(nl ? 'Er staat tegoed voor je klaar' : 'There is credit waiting for you', mailBedrag(cents, nl ? 'nl' : 'en')),
+      mailP(mailGreeting(naam, nl ? 'nl' : 'en')),
+      mailQuote(esc(reden)),
+      mailP(nl
+        ? `We hebben <strong>${esc(mailBedrag(cents, 'nl'))}</strong> tegoed op je account gezet${saldoCents > cents ? `; je hebt nu <strong>${esc(mailBedrag(saldoCents, 'nl'))}</strong>` : ''}. Bestel je ingelogd, dan gaat het vanzelf van het bedrag af. Je hoeft er niets voor te doen.`
+        : `We have added <strong>${esc(mailBedrag(cents, 'en'))}</strong> credit to your account${saldoCents > cents ? `; you now have <strong>${esc(mailBedrag(saldoCents, 'en'))}</strong>` : ''}. Order while signed in and it comes off the amount automatically. There is nothing you need to do.`),
+      mailButton(studio, nl ? 'Naar VISUAILS Studio' : 'Go to VISUAILS Studio'),
+      mailVragen(nl ? 'nl' : 'en', '', { over: nl ? 'mijn tegoed' : 'my credit' }),
+    ].join(''),
+  });
 }
 
 /**
@@ -8006,6 +8057,7 @@ async function renderCustomer(context, customerId) {
     <label class="sr-only" for="cr-order">Bestelling (kenmerk, optioneel)</label>
     <input id="cr-order" name="order_id" type="text" maxlength="24" placeholder="VIS-…" size="14">
     <button class="btn btn-primary" type="submit">Boeken</button>
+    <label class="vink-rij"><input type="checkbox" name="mail" value="1"> Klant mailen (alleen bij bijboeken) — je reden staat dan letterlijk in de mail</label>
   </form>
   <p class="meta">Positief is bijboeken, negatief is afboeken. Maximaal € 1.000 per boeking — die grens houdt een
   typefout van drie nullen tegen.</p>
@@ -8013,11 +8065,14 @@ async function renderCustomer(context, customerId) {
   /* ?signin=1 kwam van de knop "inloglink sturen" en werd nergens gelezen. */
   let inlogGestuurd = false;
   try { inlogGestuurd = new URL(context.request.url).searchParams.get('signin') === '1'; } catch { inlogGestuurd = false; }
+  let tegoedGemaild = false;
+  try { tegoedGemaild = new URL(context.request.url).searchParams.get('tegoed') === 'gemaild'; } catch { tegoedGemaild = false; }
   const regLabel = /^NL/i.test(String(customer.country || 'NL')) ? 'KVK' : 'reg.';
   const body = `
 ${adminNav('customers')}
   <h1>${esc(customer.brand || customer.name || customer.email)}</h1>
   ${inlogGestuurd ? `<p class="okline">Inloglink gemaild naar ${esc(customer.email)}.</p>` : ''}
+  ${tegoedGemaild ? `<p class="okline">Tegoed geboekt en ${esc(customer.email)} gemaild.</p>` : ''}
   <p class="lede">${esc(customer.email)}${customer.vat_number ? ` · btw ${esc(customer.vat_number)}` : ''}${!customer.vat_number && customer.reg_number ? ` · ${regLabel} ${esc(customer.reg_number)}` : ''}${customer.website ? ` · ${esc(customer.website)}` : ''}${customer.country ? ` · ${esc(landNaamAdmin(customer.country))}` : ''}${sinds ? ` · klant sinds ${esc(sinds)}` : ''}</p>
   ${klantBounce ? `<p class="warnline is-rood">${esc(bounceLine(klantBounce))}</p>` : ''}
 
@@ -8121,6 +8176,11 @@ ${adminNav('customers')}
       <label>KVK- of registratienummer (als er geen btw-nummer is)
         <input name="reg_number" type="text" maxlength="40" value="${esc(customer.reg_number || '')}" placeholder="alleen bij een eenmanszaak zonder btw-nummer"></label>
     </div>
+    ${/* Doorloop 27 (B34): de bestelroute eist een telefoonnummer. Stond er geen
+         bij de klant, dan kwam er een 500 met "(400, phone)". Nu vul je het hier
+         in (vooringevuld als het er is); het komt ook bij de klant te staan. */ ''}
+    <label>Telefoon of WhatsApp van de klant
+      <input name="phone" type="tel" maxlength="40" required value="${esc(customer.phone || '')}" placeholder="+31 6 …"></label>
     ${customer.vat_number && !/^NL/i.test(String(customer.country || customer.vat_number || '').trim())
       ? `<label class="checkline"><input type="checkbox" name="vat_confirmed" value="yes">
           <span>De klant bevestigde zelf (bv. in WhatsApp of per mail) dat ${esc(customer.vat_number)} klopt en dat hij zakelijk bestelt — dan gaat de 0% verlegde btw meteen door en krijgt hij direct de betaallink. Niet aangevinkt: eerst op de btw-lijst.</span></label>`
@@ -10727,10 +10787,18 @@ ${knop}
  * Jpg is de standaard; een klant vraagt op een geleverde bestelling in Studio
  * ook png of webp aan (src/lib/formaten.js). Hier staat wat openstaat, per
  * bestelling en formaat, met de link naar de bestelling en "Klaar" zodra je het
- * geleverd hebt. Er gebeurt niets vanzelf: geen omzetting, geen mail. */
+ * geleverd hebt. Er gebeurt niets vanzelf: geen omzetting. Klaar mailt de klant
+ * (B31, doorloop 27); zette FORMATEN.bat het op Klaar, dan staat hier "Klant mailen". */
 async function renderFormaten({ env }, url) {
   const lijst = await formatenLijst(env);
   const klaar = url?.searchParams?.get('klaar') || '';
+  const mailUit = url?.searchParams?.get('mail') || '';
+  /* B31 (doorloop 27): welke geleverde verzoeken de klant al hoorde. */
+  const gemaild = new Set();
+  try {
+    const r = await env.DB.prepare("SELECT detail FROM admin_log WHERE action = 'formaat.gemaild' ORDER BY id DESC LIMIT 500").all();
+    for (const x of r.results || []) gemaild.add(String(x.detail || ''));
+  } catch { /* geen log: dan staat overal de knop */ }
   const datum = (d) => esc(String(d || '').slice(0, 16).replace('T', ' '));
   /* Vier kolommen, zodat Klaar ook op een telefoon in beeld staat: het merk
      onder het kenmerk, het aantal beelden onder het formaat. */
@@ -10739,8 +10807,11 @@ async function renderFormaten({ env }, url) {
     <td><strong>${esc(FORMAAT_NAAM[r.formaat] || r.formaat)}</strong><br><span class="meta">${Number(r.beelden) || 0} ${Number(r.beelden) === 1 ? 'beeld' : 'beelden'}</span></td>
     <td>${datum(r.aangevraagd_at)}</td>
     <td>${open
-      ? `<form class="cel-knop" method="post" action="/admin/formaten"><input type="hidden" name="id" value="${Number(r.id)}"><button class="btn btn-sm" type="submit">Klaar</button></form>`
-      : `geleverd ${datum(r.klaar_at)}`}</td>
+      ? `<form class="cel-knop" method="post" action="/admin/formaten"><input type="hidden" name="id" value="${Number(r.id)}"><button class="btn btn-sm" type="submit">Klaar en klant mailen</button></form>`
+      : `geleverd ${datum(r.klaar_at)}${gemaild.has(`verzoek ${Number(r.id)}`)
+        ? '<br><span class="meta">klant gemaild</span>'
+        /* B31: op Klaar gezet door FORMATEN.bat, dus nog niet gemaild. */
+        : `<form class="cel-knop" method="post" action="/admin/formaten"><input type="hidden" name="id" value="${Number(r.id)}"><input type="hidden" name="do" value="mail"><button class="btn btn-sm btn-primary" type="submit">Klant mailen</button></form>`}`}</td>
   </tr>`;
   const tabel = (rijen, open) => `<div class="or-lijst"><table class="files">
     <thead><tr><th>Bestelling</th><th>Formaat</th><th>Aangevraagd</th><th>${open ? 'Geleverd?' : 'Klaar'}</th></tr></thead>
@@ -10754,8 +10825,10 @@ ${lijst.klaar.length ? `<h2>Geleverd</h2>\n<p class="meta">De laatste ${lijst.kl
   const body = `
 ${adminNav('formaten')}
 <h1>Formaten</h1>
-<p class="lede">Leverbeelden zijn jpg. Een klant kan op een geleverde bestelling in Studio ook PNG of WebP aanvragen; dat staat hier, per bestelling en formaat, met het aantal geleverde beelden. Lever het formaat met <strong>FORMATEN.bat</strong> in de projectmap (de PNG-originelen uit Magnific in een map, bestelnummer typen, map erin slepen): dat maakt de WebP, zet beide in de zip van de klant en zet het verzoek hier op Klaar zodra elk beeld ze heeft. Lever je het anders, klik dan zelf op Klaar. In Studio staat daarna "PNG geleverd" met de datum.</p>
-${klaar === '1' ? '<p class="okline">Op klaar gezet.</p>' : ''}
+<p class="lede">Leverbeelden zijn jpg. Een klant kan op een geleverde bestelling in Studio ook PNG of WebP aanvragen; dat staat hier, per bestelling en formaat, met het aantal geleverde beelden. Lever het formaat met <strong>FORMATEN.bat</strong> in de projectmap (de PNG-originelen uit Magnific in een map, bestelnummer typen, map erin slepen): dat maakt de WebP, zet beide in de zip van de klant en zet het verzoek hier op Klaar zodra elk beeld ze heeft. Lever je het anders, klik dan zelf op "Klaar en klant mailen". In Studio staat daarna "PNG geleverd" met de datum, en de klant krijgt een mail. Zette FORMATEN.bat het op Klaar, klik dan bij Geleverd op "Klant mailen".</p>
+${klaar === '1' ? `<p class="okline">Op klaar gezet${mailUit === 'ok' ? ' en de klant gemaild' : ''}.</p>` : ''}
+${klaar === 'mail' ? '<p class="okline">De klant is gemaild.</p>' : ''}
+${mailUit === 'fout' ? '<p class="warnline">De mail aan de klant kwam niet weg. Probeer "Klant mailen" nog eens, of laat het hem zelf weten.</p>' : ''}
 ${klaar === 'fout' ? '<p class="warnline">Dat lukte niet. Probeer het opnieuw.</p>' : ''}
 ${inhoud}`;
   return html(page({ title: 'Formaten', body }));
@@ -10765,9 +10838,24 @@ async function handleFormatenPost(context, admin) {
   const { request, env } = context;
   const form = await request.formData().catch(() => null);
   const id = Number(form?.get('id'));
+  const origin = (() => { try { return new URL(request.url).origin; } catch { return 'https://visuails.com'; } })();
+  const mailDeps = { origin, sendMail, mail: { shell: mailShell, h1: mailH1, p: mailP, button: mailButton, greeting: mailGreeting, vragen: mailVragen, esc } };
+  /* B31 (doorloop 27): "Klant mailen" bij een verzoek dat FORMATEN.bat al op
+     Klaar zette. */
+  if (String(form?.get('do') || '') === 'mail') {
+    const m = await formaatMail(env, id, mailDeps);
+    if (!m.ok) return seeOther('/admin/formaten?mail=fout');
+    await logAdmin(env, admin, 'formaat.gemaild', { detail: `verzoek ${id}` }).catch(() => {});
+    return seeOther('/admin/formaten?klaar=mail');
+  }
   const uit = await formaatKlaar(env, id);
   if (!uit.ok) return seeOther('/admin/formaten?klaar=fout');
   await logAdmin(env, admin, 'formaat.klaar', { detail: `verzoek ${id}` }).catch(() => {});
+  if (uit.veranderd) {
+    const m = await formaatMail(env, id, mailDeps);
+    if (m.ok) await logAdmin(env, admin, 'formaat.gemaild', { detail: `verzoek ${id}` }).catch(() => {});
+    return seeOther(`/admin/formaten?klaar=1&mail=${m.ok ? 'ok' : 'fout'}`);
+  }
   return seeOther('/admin/formaten?klaar=1');
 }
 
@@ -11035,10 +11123,12 @@ async function handleWindowMove(context, orderId, admin) {
   const vandaag = new Date().toISOString().slice(0, 10);
   let paar = [];
   let eerste = '';
+  let dicht = false;
   try {
     const { blackouts, booked } = await readCalendar(env, vandaag, { exceptId: orderId });
     eerste = firstOfferableDay(vandaag, blackouts);
-    if (dag >= eerste) paar = windowFor(dag, punten, booked, blackouts);
+    dicht = blackouts.has(dag);
+    if (dag >= eerste && !dicht) paar = windowFor(dag, punten, booked, blackouts);
   } catch (e) {
     /* De agenda is niet te lezen. Dan wordt er geen dag vastgelegd — dezelfde
        weigering die account.js aanhoudt, en om dezelfde reden: een venster dat is
@@ -11053,9 +11143,24 @@ async function handleWindowMove(context, orderId, admin) {
       `De eerste dag die beloofd kan worden is ${eerste}. De twee aanloopdagen zijn waarom het venster houdt; een venster dat eerder begint, is een belofte waarvan het systeem al weet dat hij niet te houden is.`
     ) }), 400);
   }
+  /* ── EEN DICHTE DAG IS GEEN VOLLE DAG — 14 oktober 2026 (doorloop 27, B39) ──
+     Verzetten naar een dag die Lucas zelf had dichtgezet gaf "hij zit echt vol",
+     met de raad "Sluit een dag". De dag was niet vol maar dicht; nu zegt de
+     melding dat, met de reden die hij erbij typte, en de weg terug naar waar hij
+     vandaan kwam (de planning of de bestelling). */
+  const terugLink = naarPlanning
+    ? '<a href="/admin/planning#dagen">Naar de planning</a>'
+    : `<a href="/admin/orders/${orderId}/files">Terug naar de bestelling</a>`;
+  if (dicht) {
+    const rij = await env.DB.prepare('SELECT reason FROM blackout_days WHERE day = ?1').bind(dag).first().catch(() => null);
+    const waarom = String(rij?.reason || '').trim();
+    return html(page({ title: 'Admin', body: errorBody(
+      `${esc(mailDatum(dag, 'nl'))} staat dicht${waarom ? ` (${esc(waarom)})` : ''}. Kies een andere dag, of zet hem weer open onderaan de planning. ${terugLink}`
+    ) }), 409);
+  }
   if (paar.length !== WINDOW_DAYS) {
     return html(page({ title: 'Admin', body: errorBody(
-      `Er is geen plek voor deze bestelling (${Number(order.product_count) || 1} product${Number(order.product_count) === 1 ? '' : 'en'}) vanaf ${dag}. Sluit een dag of kies een andere start — de agenda is gelezen zonder deze bestelling, dus hij zit echt vol.`
+      `Er is geen plek voor deze bestelling (${Number(order.product_count) || 1} product${Number(order.product_count) === 1 ? '' : 'en'}) vanaf ${esc(mailDatum(dag, 'nl'))}. Kies een latere dag, of maak ruimte door een andere bestelling te verzetten — de agenda is gelezen zonder deze bestelling, dus hij zit echt vol. ${terugLink}`
     ) }), 409);
   }
 
@@ -12796,7 +12901,9 @@ async function handleOrderForCustomer({ request, env, waitUntil }, customerId, a
   zet('first_name', c.first_name); zet('last_name', c.last_name);
   zet('brand', c.brand || c.name || c.email);
   zet('email', c.email);
-  zet('phone', c.phone); zet('website', c.website);
+  /* Doorloop 27 (B34): het nummer uit het formulier gaat voor. */
+  const telefoon = String(form?.get('phone') || '').trim().slice(0, 40) || c.phone;
+  zet('phone', telefoon); zet('website', c.website);
   zet('country', c.country || 'NL');
   zet('address_line1', c.address_line1); zet('address_line2', c.address_line2);
   zet('postal_code', c.postal_code); zet('city', c.city); zet('region', c.region);
@@ -12822,7 +12929,18 @@ async function handleOrderForCustomer({ request, env, waitUntil }, customerId, a
   let uit = null;
   try { uit = await res.json(); } catch { uit = null; }
   if (!uit?.ok || !uit.ref) {
-    return html(page({ title: 'Admin', body: errorBody(`De bestelling is niet aangemaakt (${res.status}${uit?.error ? `, ${esc(String(uit.error))}` : ''}).`) }), 500);
+    /* Doorloop 27 (B34): de foutcode in gewone taal, met de weg terug. Geen 500:
+       er is niets kapot, er mist iets. */
+    const WAT = {
+      phone: 'Er staat geen geldig telefoonnummer bij (minstens acht cijfers). Vul het in het formulier in.',
+      email: 'Het e-mailadres van deze klant is niet compleet. Pas het aan bij de gegevens bovenaan deze pagina.',
+      name: 'Er staat geen naam of merk bij deze klant. Vul die in bij de gegevens bovenaan deze pagina.',
+      rate: 'Er zijn net te veel bestellingen achter elkaar aangemaakt. Wacht een paar minuten en probeer het opnieuw.',
+    };
+    const code = String(uit?.error || '');
+    const uitleg = WAT[code] || `De bestelroute weigerde (${res.status}${code ? `, ${esc(code)}` : ''}).`;
+    const fotoZin = uploadBatch ? " Kies de foto's opnieuw: ze zijn niet aan een bestelling gehangen." : '';
+    return html(page({ title: 'Admin', body: errorBody(`De bestelling is niet aangemaakt. ${uitleg}${fotoZin} <a href="/admin/customers/${customerId}#namens">Terug naar ${esc(c.brand || c.name || 'de klant')}</a>`) }), 400);
   }
   const rij = await env.DB.prepare('SELECT id FROM orders WHERE ref = ?1').bind(uit.ref).first();
   await logAdmin(env, admin, 'order.namens', { orderId: rij?.id || null, customerId, detail: `${uit.ref}: ${service} × ${products} namens ${c.email}${uploadBatch ? `, met foto's` : ''}${overgeslagen.length ? ` (overgeslagen: ${overgeslagen.join(', ')})` : ''}` });
@@ -13474,6 +13592,9 @@ function orderDanger(o) {
            <h4>Annuleren</h4>
            <p class="meta">De bestelling blijft bewaard; de klant ziet &ldquo;geannuleerd&rdquo; en jouw reden op zijn tijdlijn.</p>
            <input type="text" name="reason" required maxlength="500" placeholder="Waarom gaat dit niet door? Dit leest de klant${o.lang === 'en' ? ' — in het Engels schrijven, de klant leest Engels' : ''}.">
+           ${/* Doorloop 27 (B32): de taal stond alleen in de placeholder, en die is
+                weg zodra je typt. Een Engelse klant kreeg zo een Nederlandse reden. */ ''}
+           <p class="meta">Je reden komt letterlijk in de annuleringsmail en op de tijdlijn${o.lang === 'en' ? ' — <strong>deze klant leest Engels</strong>, schrijf hem in het Engels' : ''}.</p>
            ${paid
              ? `<label class="danger-money">Wat gebeurt er met het geld?
                   <select name="payment" required>

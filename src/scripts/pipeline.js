@@ -235,6 +235,7 @@ import { groterGoedkoper } from '../data/pricing.js';
 /* Ronde B (8 oktober 2026): wat een bestelling in credits kost — dezelfde som als
    /account/order, zodat stap 5 nooit een ander getal noemt dan wat afgaat. */
 import { creditKosten, watPast, oudsteEerst, CREDIT_DIENSTEN } from '../data/creditKosten.js';
+import { EXTRA_CREDITS } from '../data/pricing.js';
 /* 1.08: het WhatsApp-nummer en de codering van het bericht, op één plek. */
 import { waHref } from '../data/whatsapp.js';
 /* 8.06: de verleggingszin in het zakelijk-vinkje (ingevuld met merk en nummer). */
@@ -281,6 +282,20 @@ let cfg = null;
    en syncTotal() roept syncCredits() aan — een `let` verderop zou dan nog niet
    bestaan. */
 let creditsMe = null;
+/* Doorloop 27 (B26): hoeveel credits deze bestelling kost als hij er helemaal
+   mee betaald wordt, anders 0. syncCredits() zet hem, renderSummary() leest hem. */
+let creditsKosten = 0;
+/* 15 oktober 2026 (Lucas: *"krijg nu te zien dat ik in euro moet betalen terwijl
+   ik mijn credits wil gebruiken"*): gaat deze bestelling met credits, dan noemt
+   stap 1 ook de prijzen in credits — een extra hoek "2 credits per foto", geen
+   euroladder en geen btw-regel — en staat bij voorrang en een outfit dat die niet
+   met credits kunnen. Ook al vóór er een aantal is ingevuld. syncCredits() zet
+   hem, zetCreditPrijzen() schrijft het op. */
+let prijzenInCredits = false;
+/* B26b: de euroregels zoals syncTotal() ze het laatst schreef, zodat
+   zetGeldRegels() ze terugzet als de klant toch niet met credits betaalt. */
+let totaalEuro = '';
+let totaalNoot = '';
 const CREDITS_BINNENKORT_DAGEN = 31;
 let STEPS = DEFAULT_STEPS;
 /** Null betekent: deze stroom heeft geen capaciteitspoort. */
@@ -1075,18 +1090,105 @@ function bindErrors() {
     // Het registratienummer hangt alleen aan het vinkje, niet aan het land: de
     // eis is "geen btw-nummer, dus iets anders", en die geldt overal.
     if (n === 'no_vat' || n === 'country') syncReg();
+    /* B05 (doorloop 27): VIES al in stap 3. Op `change` (het veld verlaten), niet
+       bij elke toets: één vraag per nummer, niet tien. */
+    if (e.type === 'change' && (n === 'country' || n === 'vat' || n === 'no_vat')) syncVies();
+    if (e.type === 'input' && n === 'vat') verbergVies();
   };
   form.addEventListener('input', watch);
   form.addEventListener('change', watch);
+  const zonder = q('[data-pl-vies-zonder]');
+  if (zonder) {
+    zonder.addEventListener('click', () => {
+      const box = q('input[name="no_vat"]');
+      const veld = q('input[name="vat"]');
+      if (veld) { veld.value = ''; veld.dispatchEvent(new Event('input', { bubbles: true })); }
+      if (box && !box.checked) { box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true })); }
+      verbergVies();
+    });
+  }
+}
+
+/* ── WAT VIES ZEGT, AL IN STAP 3 — 15 oktober 2026 (doorloop 27, B05) ────────
+   Een EU-btw-nummer dat VIES niet kent, werd pas na het bestellen opgemerkt:
+   "we kijken je gegevens na" en geen betaallink. Nu vraagt het formulier het
+   zodra het veld verlaten wordt en de vorm klopt (functions/api/btw.js), en
+   zegt het meteen wat er aan de hand is, met de uitweg "zonder btw-nummer".
+   Geen antwoord (storing, grens, Nederland, buiten de EU): niets tonen. De
+   beslissing blijft bij het bestellen, op de server. */
+let viesVraag = 0;
+function verbergVies() {
+  const p = q('[data-pl-vies]');
+  if (!p) return;
+  p.hidden = true;
+  p.classList.remove('is-ongeldig', 'is-geldig');
+}
+async function syncVies() {
+  const p = q('[data-pl-vies]');
+  const veld = q('input[name="vat"]');
+  if (!p || !veld) return;
+  const land = ((q('select[name=country]') || {}).value || '').trim().toUpperCase();
+  const nummer = (veld.value || '').trim();
+  const box = q('input[name="no_vat"]');
+  const vorm = vatShape(land);
+  verbergVies();
+  if (!nummer || (box && box.checked) || !vorm || land === 'NL' || !new RegExp(`^(?:${vorm.pattern})$`).test(nummer)) return;
+  const deze = ++viesVraag;
+  let stand = 'onbekend';
+  try {
+    const r = await fetch('/api/btw', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ land, nummer }), credentials: 'same-origin' });
+    if (r.ok) stand = String((await r.json())?.stand || 'onbekend');
+  } catch { stand = 'onbekend'; }
+  /* Een later antwoord voor een ouder nummer telt niet. */
+  if (deze !== viesVraag || (veld.value || '').trim() !== nummer) return;
+  if (stand !== 'geldig' && stand !== 'ongeldig') return;
+  const tekst = q('[data-pl-vies-tekst]', p);
+  if (tekst) tekst.textContent = stand === 'geldig' ? (p.dataset.geldig || '') : (p.dataset.ongeldig || '');
+  const knop = q('[data-pl-vies-zonder]', p);
+  if (knop) knop.hidden = stand !== 'ongeldig';
+  p.classList.add(stand === 'geldig' ? 'is-geldig' : 'is-ongeldig');
+  p.hidden = false;
+}
+
+/* ── AL EEN PROEF? AL IN STAP 3 — 15 oktober 2026 (doorloop 27, B41) ─────────
+   Wie al een betaalde €1-proef had, hoorde dat pas na alle stappen en de
+   foto's. Bij het verlaten van de stap met het e-mailadres vraagt het formulier
+   het nu (functions/api/proef-check.js, dezelfde vergelijking als bij het
+   versturen). Ja → de melding in deze stap, en niet verder. Geen antwoord →
+   gewoon door; het versturen beslist. */
+async function proefAlGehad() {
+  if (geposteDienst() !== 'test-sample') return false;
+  const stap = q(`[data-pl-step="${current}"]`);
+  const blok = stap && q('[data-pl-proef-al]', stap);
+  if (!blok || !q('input[name="email"]', stap)) return false;
+  const waarde = (naam) => ((q(`[name="${naam}"]`) || {}).value || '').trim();
+  try {
+    const r = await fetch('/api/proef-check', {
+      method: 'POST', headers: { 'content-type': 'application/json' }, credentials: 'same-origin',
+      body: JSON.stringify({ email: waarde('email'), phone: waarde('phone'), reg_number: waarde('reg_number') }),
+    });
+    const al = r.ok && !!(await r.json())?.al;
+    blok.hidden = !al;
+    if (al) { try { blok.focus({ preventScroll: false }); } catch { blok.scrollIntoView({ block: 'center' }); } }
+    return al;
+  } catch {
+    blok.hidden = true;
+    return false;
+  }
 }
 
 function bindNav() {
   qa('[data-pl-next]').forEach((b) => {
     b.type = 'button';
-    b.addEventListener('click', () => {
+    b.addEventListener('click', async () => {
       if (!validateStep(current)) return;
       /* Stap 2 is geen poort, maar wel een vraag — zie askMissing(). */
       if (current === 2 && !askMissing()) return;
+      /* B41: al een proef op dit adres? Dan hier stoppen, niet na de foto's. */
+      if (b.dataset.plBezig === '1') return;
+      b.dataset.plBezig = '1';
+      const al = await proefAlGehad().finally(() => { delete b.dataset.plBezig; });
+      if (al) return;
       let to = current + 1;
       /* De levertijd-stap bestaat alleen voor een bestelling die een leverdatum
          krijgt. Onder de drempel is het een scherm zonder keuze, dus slaan we
@@ -2037,6 +2139,10 @@ function syncSummaries() {
   if (mp && mp.value !== 'any') {
     const name = mp.closest('.mp-opt')?.querySelector('.mp-name');
     modelText = name ? name.textContent.trim() : mp.value;
+  } else if (mp && !mp.matches(':disabled')) {
+    /* Doorloop 27 (B38): "wij kiezen er een" is een echt antwoord (zie de
+       samenvatting in stap 5), geen leeg veld — het overzicht zei "Gezicht —". */
+    modelText = c('sum.modelKort');
   }
   setSummary('data-pl-sum-model', modelText);
 }
@@ -2729,6 +2835,8 @@ function syncBesparing(kind, n, quote) {
   const el = q('[data-pl-besparing]');
   if (!el) return false;
   el.textContent = '';
+  /* Met credits is een product altijd evenveel credits: geen besparingsregel. */
+  if (prijzenInCredits) { el.hidden = true; return false; }
   const uit = kind && quote && Number.isInteger(n) && n > 0
     ? groterGoedkoper(n, (m) => totaalBij(kind, m), Number(cfg.maxProducts) || 0)
     : null;
@@ -2791,6 +2899,7 @@ function syncTotal() {
   // NET, not gross. The gross figure would be the Dutch 21% shown to a buyer
   // who is charged their own country's rate — see vatNote() in pricing.js.
   setText('[data-pl-total]', quote ? euro(quote.net) : dash);
+  totaalEuro = quote ? euro(quote.net) : dash;
 
   let noteText = '';
   if (quote) {
@@ -2810,6 +2919,10 @@ function syncTotal() {
     noteText = c('total.quote');
   }
   setText('[data-pl-total-note]', noteText);
+  totaalNoot = noteText;
+  /* syncTotal() schreef zojuist de euro's; zetGeldRegels() (via syncCredits)
+     zet er weer credits overheen als die gelden. */
+  for (const el of qa('[data-pl-total], [data-pl-total-note]')) delete el.dataset.plMetCredits;
   /* Ronde B: de creditregel in stap 5 rekent met dezelfde keuzes mee. */
   syncCredits();
 
@@ -2838,7 +2951,8 @@ function syncTotal() {
   const rung = q('[data-pl-rung]');
   if (rung) {
     const next = kind && quote ? nextRung(kind, n) : null;
-    if (next && next.addProducts > 0) {
+    /* Met credits geen euroladder (zie zetCreditPrijzen). */
+    if (next && next.addProducts > 0 && !prijzenInCredits) {
       const then = quoteFor(kind, next.at, Math.min(outfits, next.at), extras);
       // `now` is the CURRENT RATE, not the current total. The sentence used to
       // read "{then} instead of {now}" with two totals in it, which put the
@@ -5210,11 +5324,32 @@ function paintAngles() {
      een bestelling waarvan wij niet weten wat we moeten maken. */
   syncRequired();
 
+  /* Met credits: "2 credits per foto, per product", zonder btw-regel. */
+  const prijsTekst = (eur) => (prijzenInCredits ? `${eur} credits` : euro(eur));
+  const tariefNu = prijzenInCredits ? EXTRA_CREDITS.photo : tarief;
   const rate = q('[data-pl-angle-rate]', angleBox);
   if (rate) {
-    const per = (angleBox.dataset.per || '').replace('{price}', euro(tarief));
+    const sjab = prijzenInCredits ? (angleBox.dataset.perKaal || angleBox.dataset.per || '') : (angleBox.dataset.per || '');
+    const per = sjab.replace('{price}', prijsTekst(tariefNu));
     rate.textContent = vol ? `${per} — ${angleBox.dataset.full || ''}`.trim() : per;
   }
+
+  /* Het zijpaneel "Wat je krijgt" (15 oktober 2026): elke aangevinkte hoek als
+     tegel bij de vier, en "5 beelden per product". De eigen hoek draagt de naam
+     die de klant typte, anders "Eigen hoek". */
+  const gekozenIds = new Set(gekozen.map((b) => String(b.name || '').slice('angle_'.length)));
+  document.querySelectorAll('[data-bo-hoek]').forEach((li) => {
+    const id = li.getAttribute('data-bo-hoek');
+    li.hidden = !gekozenIds.has(id);
+    const naam = li.querySelector('[data-bo-hoek-naam]');
+    if (naam) {
+      const veld = q(`[name="angle_name_${id}"], [data-pl-angle-name="${id}"]`, angleBox);
+      const getypt = veld && 'value' in veld ? String(veld.value || '').trim() : '';
+      naam.textContent = getypt ? getypt.slice(0, 28) : naam.getAttribute('data-bo-hoek-naam');
+    }
+  });
+  const perEl = document.querySelector('[data-bo-per]');
+  if (perEl) perEl.textContent = perEl.getAttribute('data-bo-per').replace('{n}', String(beeldenPerProductNu() || 4));
 
   /* De regel in de DICHTE vouw. Zonder gekozen hoek zegt hij wat je sowieso
      krijgt; met hoeken zegt hij hoeveel je erbij hebt gezet. Zo hoeft niemand de
@@ -5234,7 +5369,7 @@ function paintAngles() {
     som.textContent = '';
     return;
   }
-  const totaal = n * p * tarief;
+  const totaal = n * p * tariefNu;
   const sjabloon = n === 1 && p === 1
     ? angleBox.dataset.totalOneboth
     : n === 1
@@ -5245,8 +5380,8 @@ function paintAngles() {
   som.textContent = String(sjabloon || '')
     .replace('{n}', String(n))
     .replace('{p}', String(p))
-    .replace('{price}', euro(tarief))
-    .replace('{sum}', euro(totaal));
+    .replace('{price}', prijsTekst(tariefNu))
+    .replace('{sum}', prijsTekst(totaal));
   som.hidden = false;
 }
 
@@ -6951,6 +7086,13 @@ function vul(tekst, velden) {
 }
 
 /* 6 november / 6 November, zonder jaar: het gaat altijd om de komende maanden. */
+/* De dag vóór een vervaldatum: "vervalt op 14 januari" = "geldig tot en met 13
+   januari" (doorloop 27, B21; zie dagErvoor in src/lib/creditWeergave.js). */
+function dagVoor(iso) {
+  const t = Date.parse(`${String(iso || '').slice(0, 10)}T00:00:00Z`);
+  return Number.isFinite(t) ? new Date(t - 864e5).toISOString().slice(0, 10) : String(iso || '');
+}
+
 function creditDatum(iso) {
   try {
     return new Intl.DateTimeFormat(cfg.lang === 'nl' ? 'nl-NL' : 'en-GB', { day: 'numeric', month: 'long', timeZone: 'UTC' })
@@ -6999,7 +7141,7 @@ function syncCredits() {
   };
   zetRegel(bijEl, '');
   zetRegel(hintEl, '');
-  const uit = () => { box.hidden = true; box.classList.remove('is-credits'); mollie(true); };
+  const uit = (inCredits = false) => { box.hidden = true; box.classList.remove('is-credits'); mollie(true); creditsKosten = 0; zetGeldRegels(); zetCreditPrijzen(inCredits); };
 
   /* `creditsMe` eerst: zolang die leeg is (ook tijdens het laden), wordt
      `ingelogdBestellen` niet gelezen. */
@@ -7011,10 +7153,11 @@ function syncCredits() {
     service: dienst, products: n, extras: extrasCount(), hoogRes: hoogResCount(),
     outfits: outfitCount(), voorrang: voorrangAan(), toeslagCents: Math.round(stijlToeslagNu() * 100),
   });
-  /* Geen creditprijs ("meer dan 30", nog geen aantal): dan niets zeggen. */
-  if (kost.credits === null) return uit();
-
   const saldo = Math.max(0, Math.floor(Number(creditsMe.saldo) || 0));
+  /* Geen creditprijs ("meer dan 30", nog geen aantal): dan niets zeggen. Wel de
+     prijzen in credits zolang er niets is gekozen dat niet met credits kan. */
+  if (kost.credits === null) return uit(saldo > 0 && !voorrangAan() && outfitCount() === 0 && stijlToeslagNu() === 0);
+
   const net = totaalBij(kindOf(), n);
   const bedrag = Number.isFinite(net) ? euro(net) : '';
   const regels = [];
@@ -7036,13 +7179,13 @@ function syncCredits() {
     const vervalt = Array.isArray(creditsMe.vervalt) ? creditsMe.vervalt : [];
     const op = oudsteEerst(vervalt, kost.credits);
     const grens = new Date(Date.now() + CREDITS_BINNENKORT_DAGEN * 864e5).toISOString().slice(0, 10);
-    if (op.length && op[0].op && op[0].op <= grens) regels.push(vul(t.oudste, { aantal: op[0].aantal, datum: creditDatum(op[0].op) }));
+    if (op.length && op[0].op && op[0].op <= grens) regels.push(vul(t.oudste, { aantal: op[0].aantal, datum: creditDatum(dagVoor(op[0].op)) }));
     let rest = kost.credits;
     for (const g of vervalt) {
       const over = Math.max(0, Number(g.aantal) - rest);
       rest = Math.max(0, rest - Number(g.aantal));
       if (over > 0) {
-        if (g.op <= grens) regels.push(vul(t.binnenkort, { aantal: over, datum: creditDatum(g.op) }));
+        if (g.op <= grens) regels.push(vul(t.binnenkort, { aantal: over, datum: creditDatum(dagVoor(g.op)) }));
         break;
       }
     }
@@ -7105,6 +7248,53 @@ function syncCredits() {
   box.classList.toggle('is-credits', metCredits);
   box.hidden = false;
   mollie(!metCredits);
+  creditsKosten = metCredits ? kost.credits : 0;
+  zetGeldRegels();
+  zetCreditPrijzen(metCredits);
+}
+
+/* De prijzen in stap 1 in credits (zie `prijzenInCredits` bovenaan). Alleen
+   tekst en zichtbaarheid; rekenen doen creditKosten() en de server. */
+function zetCreditPrijzen(aan) {
+  prijzenInCredits = !!aan;
+  /* De euroladder ("nog 3 producten en het tarief zakt van €89 naar €65") en de
+     besparingsregel gelden niet voor credits: die zijn per product vast. */
+  if (prijzenInCredits) qa('[data-pl-rung], [data-pl-besparing]').forEach((el) => { el.hidden = true; });
+  qa('.pl-total-vatnote').forEach((el) => { el.hidden = prijzenInCredits; });
+  /* document en niet `form`: de zin onder de paginakop staat buiten het formulier. */
+  document.querySelectorAll('[data-pl-alleen-credits]').forEach((el) => { el.hidden = !prijzenInCredits; });
+  document.querySelectorAll('[data-pl-alleen-euro]').forEach((el) => { el.hidden = prijzenInCredits; });
+  paintAngles();
+}
+
+/* ── MET CREDITS: GEEN EUROREGELS IN DE SAMENVATTING — 14 oktober 2026 ──────
+   (doorloop 27, B26) Onder "Deze bestelling kost 8 credits · daarna 37" stond
+   in dezelfde stap "Orderbedrag € 178 · Je betaalt bij Mollie € 215,38". Twee
+   prijzen voor één bestelling, en de knop zei "Bestellen met credits". De
+   euroregels dragen data-pl-geld (renderSummary); bij credits gaan ze weg en
+   staat er één regel "Betaling · 8 credits van je abonnement". */
+function zetGeldRegels() {
+  const credits = creditsKosten > 0;
+  /* Het totaal zelf ook (doorloop 27, B26b): het meelopende overzicht naast
+     het formulier en het totaal in stap 1 zeiden bij betalen met credits nog
+     "Totaal € 178 excl. btw · € 89 per product × 2". Met credits staat er
+     "8 credits" en de creditregel; zonder komt de euroregel terug zoals
+     syncTotal() hem het laatst schreef. */
+  for (const el of qa('[data-pl-total]')) {
+    if (credits) { el.textContent = c('sum.creditsTotaal', { n: creditsKosten }); el.dataset.plMetCredits = '1'; }
+    else if (el.dataset.plMetCredits) { el.textContent = totaalEuro; delete el.dataset.plMetCredits; }
+  }
+  for (const el of qa('[data-pl-total-note]')) {
+    if (credits) { el.textContent = c('sum.creditsWaarde', { n: creditsKosten }); el.dataset.plMetCredits = '1'; }
+    else if (el.dataset.plMetCredits) { el.textContent = totaalNoot; delete el.dataset.plMetCredits; }
+  }
+  qa('.bo-totaal-s, .pl-total-excl').forEach((el) => { el.hidden = credits; });
+  const host = q('[data-pl-summary]');
+  if (!host) return;
+  qa('[data-pl-geld]', host).forEach((el) => { el.hidden = credits; });
+  qa('[data-pl-geld-credits]', host).forEach((el) => { el.hidden = !credits; });
+  const dd = q('dd[data-pl-geld-credits]', host);
+  if (dd && credits) dd.textContent = c('sum.creditsWaarde', { n: creditsKosten });
 }
 
 function bindPrefill() {
@@ -8591,7 +8781,9 @@ function renderSummary() {
     if (quote) {
       const voorrang = voorrangAan() ? voorrangBedragNu(quote.net) : null;
       const net = voorrang !== null ? round2(quote.net + voorrang) : quote.net;
-      rows.push([c('sum.net'), euro(net)]);
+      rows.push([c('sum.net'), euro(net), 'geld']);
+      /* De vervangende regel voor betalen met credits; zetGeldRegels() kiest. */
+      rows.push([c('sum.credits'), c('sum.creditsWaarde', { n: creditsKosten || 0 }), 'credits']);
       /* ── WAT MOLLIE ZO meteen VRAAGT — 2 oktober 2026 (ronde 9, F7) ──────
          Tot vandaag stond hier alleen het bedrag excl. btw, en vroeg Mollie
          één klik later € 107,69 voor een bestelling die hier € 89 heette. De
@@ -8612,11 +8804,11 @@ function renderSummary() {
         const buiten = !isEu(land) && land !== HOME_COUNTRY;
         const verlegd = !buiten && land !== HOME_COUNTRY && btwNr && !geenNr;
         if (buiten) {
-          rows.push([c('sum.pay'), c('sum.payOutside', { net: euro(net) })]);
+          rows.push([c('sum.pay'), c('sum.payOutside', { net: euro(net) }), 'geld']);
         } else if (verlegd) {
-          rows.push([c('sum.pay'), c('sum.payReverse', { net: euro(net), gross: euro(bruto), pct })]);
+          rows.push([c('sum.pay'), c('sum.payReverse', { net: euro(net), gross: euro(bruto), pct }), 'geld']);
         } else {
-          rows.push([c('sum.pay'), c('sum.payGross', { gross: euro(bruto), pct })]);
+          rows.push([c('sum.pay'), c('sum.payGross', { gross: euro(bruto), pct }), 'geld']);
         }
         /* ── EN HET TEGOED ERAF — ronde 9, F52 ────────────────────────────
            De regel hierboven noemde € 107,69 terwijl Mollie € 82,69 vroeg: de
@@ -8626,12 +8818,12 @@ function renderSummary() {
         if (tegoedMeCents > 0) {
           const tegoed = tegoedMeCents / 100;
           if (verlegd) {
-            rows.push([c('sum.tegoed'), c('sum.tegoedAf', { tegoed: euro(tegoed) })]);
+            rows.push([c('sum.tegoed'), c('sum.tegoedAf', { tegoed: euro(tegoed) }), 'geld']);
           } else {
             const rest = Math.max(0, round2((buiten ? net : bruto) - tegoed));
             rows.push([c('sum.tegoed'), rest > 0
               ? c('sum.tegoedRest', { tegoed: euro(tegoed), rest: euro(rest) })
-              : c('sum.tegoedNul', { tegoed: euro(tegoed) })]);
+              : c('sum.tegoedNul', { tegoed: euro(tegoed) }), 'geld']);
           }
         }
       }
@@ -8689,15 +8881,18 @@ function renderSummary() {
 
   renderStrip({ bgHex, bgName: (q('input[name="background"]:checked') || {}).dataset?.plBgName || '', ratioId, mp });
 
-  rows.forEach(([k, v]) => {
+  rows.forEach(([k, v, soort]) => {
     if (!k || !v) return;
     const dt = document.createElement('dt');
     dt.textContent = k;
     const dd = document.createElement('dd');
     dd.textContent = v;
+    if (soort === 'geld') { dt.dataset.plGeld = ''; dd.dataset.plGeld = ''; }
+    if (soort === 'credits') { dt.dataset.plGeldCredits = ''; dd.dataset.plGeldCredits = ''; }
     host.appendChild(dt);
     host.appendChild(dd);
   });
+  zetGeldRegels();
 }
 
 /**
@@ -9004,6 +9199,21 @@ function finishSubmit(status, body) {
       email.focus();
       email.select && email.select();
     }
+    return;
+  }
+
+  /* ── DE BESTELLIMIET — 14 oktober 2026 (doorloop 27, B06) ─────────────────
+     /api/order weigert na een paar bestellingen kort na elkaar met 429 en
+     { error: 'rate', retryAfter } (functions/api/order.js, checkRate). Hier
+     stond dan "je bestelling kwam niet aan op onze server" — onwaar. Een bureau
+     dat vijf merken achter elkaar bestelt, of een kantoor met één IP-adres,
+     raakt die grens. Nu de echte reden en hoe lang het duurt. */
+  if (status === 429 && body && body.error === 'rate') {
+    const sec = Math.max(60, Number(body.retryAfter) || 600);
+    const min = Math.ceil(sec / 60);
+    const nl = (document.documentElement.lang || '').startsWith('nl');
+    const duur = nl ? `${min} ${min === 1 ? 'minuut' : 'minuten'}` : `${min} ${min === 1 ? 'minute' : 'minutes'}`;
+    setError(c('submit.rate', { min: duur }));
     return;
   }
 

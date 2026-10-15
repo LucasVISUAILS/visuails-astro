@@ -54,7 +54,7 @@ import { euro, quote } from '../data/pricing.js';
 /* Het woordmerk in de balk van het voorbeeldscherm (14 oktober 2026): het echte merk, niet het woord in een letter. */
 import Woordmerk from './Woordmerk.astro';
 import { DEMO_ORDER, DEMO_TODAY, demoWindow, dayLabel } from '../data/figdemo.js';
-import { geleverd, ingestuurd } from '../data/voorbeeldset.js';
+import { geleverd, ingestuurd, MODEL_EERST, GROND } from '../data/voorbeeldset.js';
 import UitlegBalk from './UitlegBalk.astro';
 
 /* `uitleg` (14 oktober 2026): een rondleiding in vijf stappen, met een cursor die de
@@ -62,6 +62,11 @@ import UitlegBalk from './UitlegBalk.astro';
    Afvinklijst 24 (Lucas): de roze jeans van de voorbeeldset in plaats van de flash-foto's;
    de revisie is geen fout maar een wens ("de klant wou toch liever een witte achtergrond
    in plaats van grijs"), en die wordt voor hem opgelost: de modelfoto komt terug op wit.
+   15 oktober 2026, omgedraaid (Lucas: *"bij de revisie de modelfoto van witte
+   achtergrond naar grijze achtergrond"*): de set staat op lichtgrijs, de modelfoto komt
+   eerst op wit en na de revisie op grijs, zoals de rest. Je vaste look staat daarom ook
+   op lichtgrijs, met de eigen webshop en social als kanalen (een marktplaats zou wit
+   eisen, zie bkChNote).
    De rondleiding stopt op Bestellingen; "Je vaste look" blijft een tab die je zelf opent. */
 interface Props { lang?: 'en' | 'nl'; uitleg?: boolean }
 const { lang = 'en', uitleg = false } = Astro.props;
@@ -116,15 +121,15 @@ const C = nl
       ordFacts: '4 foto’s geleverd · 4 goedgekeurd',
       ordFactsU: '4 foto’s geleverd · 3 goedgekeurd · 1 in je ronde',
       ordFactsKlaar: '4 foto’s geleverd · 3 goedgekeurd · 1 aangepast',
-      veldU: 'Toch liever op wit dan grijs, zoals de rest.',
+      veldU: 'Toch liever op grijs dan wit, zoals de rest.',
       okU: 'Goedgekeurd',
       aangepast: 'Opnieuw geleverd',
       zinnen: [
         'In VISUAILS Studio zie je in één oogopslag hoe je bestellingen ervoor staan.',
         'Per bestelling: waar hij staat, wanneer hij klaar is en wat je betaalde.',
         'Bij levering staat elk beeld naast de foto die je stuurde.',
-        'Goedkeuren doe je per beeld. Wil je iets anders? Vink het aan en zeg wat: hier liever wit dan grijs.',
-        'Wij passen het aan en leveren het opnieuw: nu op wit, net als de rest.',
+        'Goedkeuren doe je per beeld. Wil je iets anders? Vink het aan en zeg wat: hier liever grijs dan wit.',
+        'Wij passen het aan en leveren het opnieuw: nu op grijs, net als de rest.',
       ],
       ordMade: 'Wat wij leverden', ordSent: 'Wat jij stuurde',
       shots: ['Voorkant', 'Achterkant', 'Detail', 'Op model'],
@@ -153,8 +158,8 @@ const C = nl
         { name: 'Aaron', sub: 'Warm · Toegankelijk' },
         { name: 'Ava', sub: 'Editorial · Elegant' },
       ],
-      bkColours: [['#FFFFFF', 'Wit'], ['#F7F5F1', 'Gebroken wit'], ['#EDE4D8', 'Beige']],
-      bkChannels: [['Amazon', '#FFFFFF'], ['bol', '#FFFFFF'], ['Onze eigen webshop', null], ['Social en advertenties', null]],
+      bkColours: [[GROND, 'Lichtgrijs'], ['#FFFFFF', 'Wit'], ['#F7F5F1', 'Gebroken wit']],
+      bkChannels: [['Onze eigen webshop', null], ['Social en advertenties', null], ['Amazon', '#FFFFFF'], ['bol', '#FFFFFF']],
       bkChNote: 'Kies je een marktplaats die een zuiver wit hoofdbeeld eist, dan begint elke bestelling op wit.',
       bkNote: 'Wat hier staat, staat bij je volgende bestelling al ingevuld.',
       detH: 'Je gegevens',
@@ -183,15 +188,15 @@ const C = nl
       ordFacts: '4 images delivered · 4 approved',
       ordFactsU: '4 images delivered · 3 approved · 1 in your round',
       ordFactsKlaar: '4 images delivered · 3 approved · 1 changed',
-      veldU: 'On white rather than grey after all, like the rest.',
+      veldU: 'On grey rather than white after all, like the rest.',
       okU: 'Approved',
       aangepast: 'Delivered again',
       zinnen: [
         'VISUAILS Studio shows at a glance where all your orders stand.',
         'Per order: where it stands, when it is ready and what you paid.',
         'On delivery, every image sits next to the photo you sent.',
-        'You approve image by image. Want something different? Tick it and say what: here, white instead of grey.',
-        'We change it and deliver it again: on white now, like the rest.',
+        'You approve image by image. Want something different? Tick it and say what: here, grey instead of white.',
+        'We change it and deliver it again: on grey now, like the rest.',
       ],
       ordMade: 'What we delivered', ordSent: 'What you sent',
       shots: ['Front', 'Back', 'Detail', 'On model'],
@@ -209,8 +214,8 @@ const C = nl
         { name: 'Aaron', sub: 'Warm · Approachable' },
         { name: 'Ava', sub: 'Editorial · Elegant' },
       ],
-      bkColours: [['#FFFFFF', 'White'], ['#F7F5F1', 'Off-white'], ['#EDE4D8', 'Beige']],
-      bkChannels: [['Amazon', '#FFFFFF'], ['bol.com', '#FFFFFF'], ['Our own webshop', null], ['Social and ads', null]],
+      bkColours: [[GROND, 'Light grey'], ['#FFFFFF', 'White'], ['#F7F5F1', 'Off-white']],
+      bkChannels: [['Our own webshop', null], ['Social and ads', null], ['Amazon', '#FFFFFF'], ['bol.com', '#FFFFFF']],
       bkChNote: 'Pick a marketplace that requires a pure white main image and every order starts on white.',
       bkNote: 'Whatever is set here arrives prefilled on your next order.',
       detH: 'Your details',
@@ -234,10 +239,9 @@ const demoQuote = quote('catalog', DEMO_ORDER.products);
 const money = { net: euro(demoQuote.net, lang), vat: euro(demoQuote.vat, lang), total: euro(demoQuote.gross, lang) };
 
 /* De vier beelden van de bestelling: de roze jeans uit de voorbeeldset (voorkant,
-   achterkant, detail, op model). Het modelbeeld staat tijdens de rondleiding eerst op
-   lichtgrijs, zoals het geleverd werd (ba2-na-model), en na de revisie op wit. */
+   achterkant, detail, op model), op lichtgrijs. Het modelbeeld staat tijdens de
+   rondleiding eerst op wit (MODEL_EERST), en na de revisie op grijs, zoals de rest. */
 const PHOTOS = geleverd(lang).map((b) => b.src);
-const MODEL_GRIJS = '/img/ba2-na-model.webp';
 const UPLOAD = ingestuurd(lang)[0].src;
 /* De gezichten in "Je vaste look": twee uit de vaste modellen (models.js) en het eigen
    merkmodel, dat per definitie niet in die lijst staat. */
@@ -338,8 +342,8 @@ const GEZICHTEN = ['/img/lifestyle-flash-03.webp', '/img/model-aaron-w380.webp',
                 <div class="fd-shots">
                   {C.shots.map((cap, i) => (
                     <div class="fd-shot" style={uitleg ? `--i:${i}` : undefined}>
-                      {uitleg && i === 3 && <img class="fd-grijs" src={MODEL_GRIJS} alt="" loading="lazy" decoding="async" width="200" height="250" />}
-                      <img class:list={[uitleg && i === 3 && 'fd-wit']} src={PHOTOS[i]} alt="" loading="lazy" decoding="async" width="200" height="250" />
+                      {uitleg && i === 3 && <img class="fd-voor" src={MODEL_EERST} alt="" loading="lazy" decoding="async" width="200" height="250" />}
+                      <img class:list={[uitleg && i === 3 && 'fd-na']} src={PHOTOS[i]} alt="" loading="lazy" decoding="async" width="200" height="250" />
                       <span class="fd-cap">{cap}</span>
                       <span class="fd-fakebtn is-sm fd-goed"
                             data-uitleg-klik={uitleg && i < 3 ? '4' : undefined}
@@ -867,7 +871,7 @@ const GEZICHTEN = ['/img/lifestyle-flash-03.webp', '/img/model-aaron-w380.webp',
   /* ── DE RONDLEIDING (alleen met data-uitleg-staat; zie UitlegBalk.astro) ──
      1 de tegels, 2 de stappen van een bestelling, 3 naar Bestellingen (de cursor
      klikt de tab echt), 4 drie beelden goedkeuren en bij het modelbeeld "liever op
-     wit" vragen, 5 de ronde versturen: het modelbeeld komt terug op wit. Wat in een paneel staat dat pas tijdens de stap opengaat, komt
+     grijs" vragen, 5 de ronde versturen: het modelbeeld komt terug op grijs. Wat in een paneel staat dat pas tijdens de stap opengaat, komt
      binnen met een animatie (een overgang begint niet vanuit display: none). */
   .fd[data-uitleg-staat] .fd-tile { transition: opacity .45s, transform .6s cubic-bezier(.34, 1.4, .5, 1); }
   .fd[data-uitleg-staat]:not(.u-s1) .fd-tile { opacity: 0; transform: translateY(8px) scale(.95); }
@@ -908,12 +912,12 @@ const GEZICHTEN = ['/img/lifestyle-flash-03.webp', '/img/model-aaron-w380.webp',
   .fd-ok-u svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .fd[data-uitleg-staat]:not(.u-s4) .fd-ok-u { opacity: 0; transform: scale(.8); }
   .fd.u-s4 .fd-ok-u { transition-delay: calc(var(--i, 0) * .8s + .7s); }
-  /* Het modelbeeld: eerst op grijs, na de ronde (stap 5) op wit, met het label erbij. */
-  .fd[data-uitleg] .fd-shot :is(.fd-grijs, .fd-wit) { grid-area: 1 / 1; transition: opacity .5s; }
-  .fd-grijs { opacity: 0; }
-  .fd[data-uitleg-staat]:not(.u-s5) .fd-grijs { opacity: 1; }
-  .fd[data-uitleg-staat]:not(.u-s5) .fd-wit { opacity: 0; }
-  .fd.u-s5 .fd-wit { transition-delay: 1s; }
+  /* Het modelbeeld: eerst op wit, na de ronde (stap 5) op grijs, met het label erbij. */
+  .fd[data-uitleg] .fd-shot :is(.fd-voor, .fd-na) { grid-area: 1 / 1; transition: opacity .5s; }
+  .fd-voor { opacity: 0; }
+  .fd[data-uitleg-staat]:not(.u-s5) .fd-voor { opacity: 1; }
+  .fd[data-uitleg-staat]:not(.u-s5) .fd-na { opacity: 0; }
+  .fd.u-s5 .fd-na { transition-delay: 1s; }
   .fd[data-uitleg-staat]:not(.u-s5) .fd-aangepast { opacity: 0; transform: scale(.8); }
   .fd.u-s5 .fd-aangepast { transition-delay: 1.4s; }
   .fd.u-s5 .fd-shot:nth-child(4) .fd-goed { opacity: 0; transition-delay: 1.3s; }

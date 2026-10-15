@@ -10,7 +10,8 @@
 import { standKlasse } from '../../data/status.js';
 import NieuwTabblad from '../NieuwTabblad.astro';
 /* `lang` (8 oktober 2026, o26): alleen voor de zin "opent in een nieuw tabblad". */
-const { v, orderId, lang = 'en' } = Astro.props;
+/* `proefEenKeer`: Product.astro zet de proefzin dan één keer onder de beelden. */
+const { v, orderId, lang = 'en', proefEenKeer = false } = Astro.props;
 ---
 <li class="st-beeld" id={`f${v.id}`}>
   {v.gone
@@ -24,7 +25,8 @@ const { v, orderId, lang = 'en' } = Astro.props;
       </a>}
   <div class="st-beeld-body">
     <span class="st-beeld-cap">{v.caption}</span>
-    {v.review.kind === 'sample' && <p class="st-meta st-beeld-noot">{v.review.text}</p>}
+    {v.file && <span class="st-beeld-file">{v.file}</span>}
+    {v.review.kind === 'sample' && !proefEenKeer && <p class="st-meta st-beeld-noot">{v.review.text}</p>}
     {v.review.kind === 'settled' && <p class="st-meta st-beeld-noot">{v.review.text}</p>}
     {v.review.kind === 'undo' && (
       <form class="st-keur" method="post" action="/account/review">

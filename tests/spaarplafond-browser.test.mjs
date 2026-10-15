@@ -184,7 +184,7 @@ try {
           }), true);
         }
         if (stand === 'bijgekocht') {
-          ok(`${label}: "Waarvan 25 bijgekocht: die gaan als eerste op …"`, /Waarvan 25 bijgekocht: die gaan als eerste op en tellen niet mee voor je spaarplafond; ze vervallen op/.test(tekst), true);
+          ok(`${label}: "Waarvan 25 bijgekocht: die gaan als eerste op …"`, /Waarvan 25 bijgekocht: die gaan als eerste op en tellen niet mee voor je spaarplafond; ze blijven geldig tot en met/.test(tekst), true);
           ok(`${label}: het saldo is 145, het plafond blijft 360`, tekst.includes(`Je hebt 145 credits (je kunt er ${PLAFOND} sparen)`), true);
           ok(`${label}: "Eerder bijgekocht" met de aankoop`, await p.evaluate(() => /Eerder bijgekocht \(1\)/.test(document.querySelector('#bijkopen')?.textContent.replace(/\s+/g, ' ') || '')), true);
           ok(`${label}: in het creditboek "Extra credits bijgekocht"`, await p.evaluate(() => [...document.querySelectorAll('.st-boek tr[data-reden="bijgekocht"]')].some((r) => /Extra credits bijgekocht/.test(r.textContent))), true);

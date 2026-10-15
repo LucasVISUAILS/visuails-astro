@@ -1,289 +1,38 @@
 ---
 /*
- * VISUAILS — WAT EEN HOEK VISUEEL BETEKENT, GETEKEND
- * 9 september 2026.
- * ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — de schets bij een extra hoek (de hoekenkiezer in stap 1 en /per-product).
  *
- * Lucas: *"Maak voor de extra angles mock up schetsen zodat de klant ziet wat
- * die angle visueel betekent."*
+ * ── OPNIEUW GETEKEND — 15 oktober 2026 ──────────────────────────────────────
+ * Lucas (afvinklijst 27, en daarna bij de hoekenkiezer): *"De add angle schetsen
+ * kunnen ook aanzienlijk verbeterd worden en een volledige redesign krijgen."* en
+ * *"Maak de extra angles in dezelfde style als deze"* — de schetsen in het
+ * zijpaneel "Wat je krijgt". Hier stonden acht tekeningen in eigen SVG, met een
+ * violet hoekje en een eigen lijndikte: een tweede stijl naast die van het
+ * paneel. Nu is het dezelfde set, uit hetzelfde script
+ * (scripts/schetsen-zijpaneel.py → public/img/schets/hoek-<id>.svg), en dezelfde
+ * tekening komt in het zijpaneel te staan zodra iemand de hoek aanvinkt
+ * (pipeline.js, paintAngles).
  *
- * ── WAAROM EEN SCHETS EN NIET (ALLEEN) EEN FOTO ────────────────────────────
- *
- * Een foto van een driekwarthoek is een foto van ÉÉN kledingstuk in één licht in
- * één stijl. De klant die hem bekijkt, ziet een trui — en moet daar zelf de regel
- * "het model veertig graden gedraaid" uit afleiden. Acht foto's naast elkaar
- * verschillen vooral in wélk product erop staat; acht schetsen verschillen in wat
- * je koopt.
- *
- * ── EN WAAROM HET GEEN CAMERADIAGRAM IS ────────────────────────────────────
- *
- * De eerste versie tekende het standpunt: een stip voor de camera, een gestreepte
- * kijklijn, een kader voor de uitsnede. Nagekeken in de browser was het resultaat
- * dat "driekwart" en "van voren" er identiek uitzagen — het VERSCHIL zat in een
- * boogje bij de voeten, en dat leest niemand op een tegel van 190 pixels.
- *
- * Dus tekent elke schets nu simpelweg DE FOTO. Wat je ziet is wat je krijgt: bij
- * driekwart staat er een gedraaide figuur, bij van achter een rug, bij een detail
- * een uitsnede die de rand raakt. Het standpunt hoef je er niet bij te vertellen,
- * want het is de tekening zelf.
- *
- * Eén vaste vorm eromheen: een liggend kader met een limegroen hoekteken. Dat is
- * het enige gekleurde element, en het zegt bij alle acht hetzelfde — dit is een
- * beeld dat geleverd wordt.
- *
- * ── EN ZE BLIJVEN, OOK ALS DE FOTO'S ER ZIJN ───────────────────────────────
- *
- * `shot` in src/data/angles.js wijst nog steeds naar /img/hoek-<id>.webp. Die
- * foto's zijn nuttig op een dienstpagina of in de galerij; in de KIEZER zijn ze
- * het antwoord op de verkeerde vraag. Wil je ze hier toch, dan is het één regel in
- * AnglePicker.astro en blijft deze component gewoon staan.
- *
- * ── HOE ZE GETEKEND ZIJN ───────────────────────────────────────────────────
- *
- * Eén viewBox voor alle acht (400 × 300, dezelfde 4:3 als de tegel), `currentColor`
- * voor de inkt zodat een donkere grond ze meeneemt, en geen enkele letter in de
- * tekening — de naam staat er al onder, en tekst in een SVG vertaalt niet mee.
- *
- * `aria-hidden`: de schets illustreert een naam en een zin die er allebei al
- * staan. Hem laten voorlezen laat de tegel drie keer zeggen wat hij is.
+ * Een <img> en geen inline SVG: één bestand per hoek, gecachet, en geen id's
+ * meer die twee keer op een pagina staan (de oude clipPath-noot over 'eigen').
+ * De tekening is decoratie bij een tegel met een naam; vandaar alt="".
  */
 import { ANGLE_IDS } from '../../data/angles.js';
 
 interface Props { id: string; sleutel?: string; }
-/* ── WAAROM ER EEN TWEEDE NAAM IS — 17 september 2026 ─────────────────────────
-   De <clipPath> hieronder heeft een id nodig, en dat id was `hs-clip-${id}`.
-   Dat werkt zolang elke schets één keer op een pagina staat. Sinds de eigen
-   hoek erbij kwam, staat `eigen` er TWEE keer — één keer per hoekgroep — en dan
-   staan er twee clipPaths met hetzelfde id op één pagina. Ongeldige HTML, en
-   `url(#hs-clip-eigen)` pakt de eerste; dat het er nu hetzelfde uitziet, komt
-   alleen doordat beide rechthoeken toevallig gelijk zijn.
-
-   `sleutel` is de naam waaronder DIT exemplaar zijn clipPath zet. De kiezer
-   geeft er de hoekgroep in mee; wie niets meegeeft, houdt het oude gedrag. Geen
-   teller die bij elke bouw een ander nummer geeft: dan verandert dist/ bij elke
-   build zonder dat er iets veranderd is. */
 const { id, sleutel } = Astro.props;
-const clipId = `hs-clip-${sleutel || id}`;
-/* ── 'eigen' IS DE ENIGE UITZONDERING — 17 SEPTEMBER 2026 ──────────────────
-   Deze bewaking hield tegen dat er een schets wordt gevraagd voor een hoek die
-   niet bestaat, en dat blijft zo: een tekening zonder hoek is een tekening van
-   niets. Er is nu één id dat met opzet NIET in ANGLE_IDS staat en toch een
-   schets heeft — de hoek die de klant zelf bedenkt. Die heeft geen vaste naam
-   en geen vaste betekenis, dus hij hoort niet in de datalijst; wat hij wél
-   heeft is een plek in de kiezer, en daar moet iets staan.
-
-   Eén uitzondering, met naam genoemd. Een `if (id === 'eigen') return` zonder
-   deze noot zou over een half jaar lezen als een gat in de bewaking. */
+/* 'eigen' is de hoek die de klant zelf bedenkt: geen vaste naam, wel een plek in
+   elke groep. Welke tekening (op een model of op de ondergrond) volgt uit de
+   sleutel die de kiezer meegeeft ("eigen-model" / "eigen-ground"). */
 const VRIJE_SCHETSEN = ['eigen'];
 if (!ANGLE_IDS.includes(id) && !VRIJE_SCHETSEN.includes(id)) {
   throw new Error(`AngleSketch: '${id}' staat niet in ANGLE_IDS — een schets zonder hoek is een tekening van niets.`);
 }
+const bestand = id === 'eigen' ? (sleutel === 'eigen-model' ? 'hoek-eigen-model' : 'hoek-eigen-ground') : `hoek-${id}`;
 ---
-
-<svg
-  class="hs"
-  viewBox="0 0 400 300"
-  role="img"
-  aria-hidden="true"
-  focusable="false"
-  preserveAspectRatio="xMidYMid meet"
->
-  {/* Het kader: de foto zelf. Alles wat erbuiten valt, valt weg — dat is bij de
-      uitsnedes (detail, in de hand, los detail) het halve verhaal. */}
-  <clipPath id={clipId}><rect x="34" y="26" width="332" height="248" rx="6" /></clipPath>
-  <rect class="hs-veld" x="34" y="26" width="332" height="248" rx="6" />
-
-  <g clip-path={`url(#${clipId})`}>
-
-    {id === 'three-quarter' && (
-      <g>
-        {/* Gedraaid, en dat moet je zien zonder de zin eronder te lezen. De
-            eerste versie deed dat met een neusje en een verschoven naad — te
-            weinig; naast "van achter" leek het gewoon een tweede vooraanzicht.
-            Nu doet de SILHOUET het werk: een driekwart romp is zichtbaar SMALLER
-            dan een romp van voren, de ene arm hangt ervóór en van de andere zie
-            je nog net een rand, en de voeten staan achter elkaar in plaats van
-            naast elkaar. Zet deze tegel naast "van achter" en het verschil is de
-            breedte, niet een detail. */}
-        <g class="hs-schaduw"><ellipse cx="186" cy="262" rx="38" ry="6" /></g>
-        <circle class="hs-vlak" cx="176" cy="70" r="22" />
-        <circle class="hs-inkt" cx="176" cy="70" r="22" />
-        <path class="hs-inkt hs-dun" d="M154 66l-8 8 8 5" />
-        <path class="hs-inkt" d="M176 92v12" />
-        {/* De achterste arm: alleen een rand, want de romp staat ervoor. */}
-        <path class="hs-inkt hs-dun" d="M216 112c8 8 11 20 11 34l-8 4" />
-        <path class="hs-vlak" d="M150 104l26-8 32 8 14 18-10 20-8-6-4 106h-46l-4-106-10 6-10-20z" />
-        <path class="hs-inkt" d="M150 104l26-8 32 8 14 18-10 20-8-6-4 106h-46l-4-106-10 6-10-20z" />
-        <path class="hs-inkt hs-dun" d="M160 98a18 11 0 0 0 32 2" />
-        {/* De voorste arm hangt langs de romp en overlapt hem: dat is wat je van
-            opzij-schuin ziet en van voren nooit. */}
-        <path class="hs-wit" d="M144 128c-6 20-6 44 0 66h16c-4-22-4-46 0-66z" />
-        <path class="hs-inkt" d="M144 128c-6 20-6 44 0 66h16c-4-22-4-46 0-66z" />
-        <path class="hs-hulp" d="M196 118c4 40 3 82 1 126" />
-        {/* De voeten staan achter elkaar. */}
-        <path class="hs-inkt" d="M156 246h22l4 14h-26z" />
-        <path class="hs-wit" d="M186 238h20l6 14h-26z" />
-        <path class="hs-inkt" d="M186 238h20l6 14h-26z" />
-      </g>
-    )}
-
-    {id === 'back-on-model' && (
-      <g>
-        {/* Een rug herken je aan wat er NIET is: geen gezicht. En aan wat er wel
-            is: haar tot in de nek, een naad over het midden, en hielen in plaats
-            van tenen. Die drie samen zijn genoeg. */}
-        <g class="hs-schaduw"><ellipse cx="200" cy="262" rx="48" ry="7" /></g>
-        <circle class="hs-vlak" cx="200" cy="70" r="24" />
-        <circle class="hs-inkt" cx="200" cy="70" r="24" />
-        <path class="hs-vlak" d="M176 66a24 24 0 0 1 48 0c0 18-6 26-6 34h-36c0-8-6-16-6-34z" />
-        <path class="hs-inkt" d="M176 68a24 24 0 0 1 48 0c0 18-6 24-6 32h-36c0-8-6-14-6-32z" />
-        <path class="hs-vlak" d="M164 108l36-10 36 10 28 20-14 24-14-10-4 104h-64l-4-104-14 10-14-24z" />
-        <path class="hs-inkt" d="M164 108l36-10 36 10 28 20-14 24-14-10-4 104h-64l-4-104-14 10-14-24z" />
-        {/* De kraag van achteren: een boog die de andere kant op staat dan bij een
-            vooraanzicht. */}
-        <path class="hs-inkt hs-dun" d="M180 100a22 14 0 0 1 40 0" />
-        <path class="hs-hulp" d="M200 104v138" />
-        <path class="hs-inkt" d="M164 246h26v16h-26zM210 246h26v16h-26z" />
-      </g>
-    )}
-
-    {id === 'detail-on-model' && (
-      <g>
-        {/* Een uitsnede, dus het onderwerp raakt de rand aan alle kanten en er is
-            geen silhouet meer. De eerste versie tekende een naad recht door het
-            midden met steken erlangs — en dat is precies hoe je een rits tekent,
-            dus hij leek op de tegel "los detail". Nu is het een SCHOUDER: de
-            kraag linksboven, de schoudernaad schuin naar beneden, de mouwnaad
-            eronder, en de trekplooien die alleen ontstaan als er iemand in zit. */}
-        <path class="hs-vlak" d="M20 12h360v276H20z" />
-        {/* De kraag, aangesneden. */}
-        <path class="hs-wit" d="M20 12h108c-6 30-32 52-108 58z" />
-        <path class="hs-inkt" d="M128 12c-6 32-34 54-108 60" />
-        {/* De schoudernaad, met steken. */}
-        <path class="hs-inkt" d="M96 44c58 18 108 52 150 100" />
-        <g class="hs-inkt hs-dun">
-          <path d="M110 40l-6 12M134 50l-6 12M158 62l-7 11M180 76l-8 10M202 92l-9 9M222 110l-10 8M240 130l-11 7" />
-        </g>
-        {/* De mouwnaad: de tweede lijn, die met de eerste een hoek maakt. Zonder
-            hem is het één streep en geen kledingstuk. */}
-        <path class="hs-inkt" d="M246 136c-24 30-38 66-42 108" />
-        <path class="hs-hulp" d="M262 152c-22 34-34 74-36 122" />
-        {/* De plooien: het bewijs dat het gedragen wordt en niet plat ligt. */}
-        <g class="hs-hulp">
-          <path d="M64 108c46 6 78 24 98 54M56 168c42 2 72 18 90 46M74 236c30-2 54 8 70 30M300 60c-14 24-20 48-20 74M340 96c-12 22-16 44-16 68" />
-        </g>
-      </g>
-    )}
-
-
-    {/* ── DE HOEK DIE DE KLANT ZELF BEDENKT — 17 SEPTEMBER 2026 ──────────
-        Bewust leeg. Bij de zes vaste hoeken tekent deze component de FOTO: je
-        ziet wat je krijgt. Hier bestaat dat beeld nog niet — de klant typt een
-        naam en zet er zelf een foto bij, en die foto is de opdracht.
-
-        Een potlood op een leeg veld zegt precies dat, en het zegt het zonder te
-        beloven hoe het eruit gaat zien. Zou hier wél een tekening staan, dan is
-        het de tekening van ONZE invulling van zijn idee, en dat is de ene
-        belofte die we op deze plek niet moeten doen. */}
-    {id === 'eigen' && (
-      <g>
-        <path class="hs-hulp" d="M96 96h140M96 132h96" />
-        <path class="hs-vlak" d="M132 214l96-96 34 34-96 96-46 12z" />
-        <path class="hs-inkt" d="M132 214l96-96 34 34-96 96-46 12z" />
-        <path class="hs-inkt" d="M216 134l34 34" />
-        <path class="hs-inkt hs-dun" d="M132 214l12 12 34 22" />
-      </g>
-    )}
-
-    {id === 'flat-lay' && (
-      <g>
-        {/* Recht van boven, uitgelegd en rechtgelegd: het stuk ligt symmetrisch,
-            de mouwen staan even ver uit, en de zoom is een rechte lijn. Zo ziet
-            een flat-lay eruit en zo ziet geen enkele andere hoek eruit. */}
-        <g class="hs-schaduw"><path d="M108 122l14-16 62-20h32l62 20 14 16-22 34-24-16v112H154V140l-24 16z" /></g>
-        <path class="hs-vlak" d="M104 118l14-16 60-20h36l60 20 14 16-22 34-24-16v112H150V136l-24 16z" />
-        <path class="hs-inkt" d="M104 118l14-16 60-20h36l60 20 14 16-22 34-24-16v112H150V136l-24 16z" />
-        <path class="hs-inkt hs-dun" d="M178 82a22 14 0 0 0 44 0" />
-        <path class="hs-hulp" d="M200 100v164" />
-        {/* Hoektekens: "rechtgelegd", getekend. */}
-        <g class="hs-hulp">
-          <path d="M62 62h20M62 62v20M338 62h-20M338 62v20M62 266h20M62 266v-20M338 266h-20M338 266v-20" />
-        </g>
-      </g>
-    )}
-
-
-    {id === 'inside' && (
-      <g>
-        {/* De binnenkant: opengeslagen, met de voering als arcering en het label
-            als het enige rechthoekige ding in de tekening. Dat contrast maakt
-            "binnenkant" leesbaar zonder er een woord bij te zetten. */}
-        <path class="hs-vlak" d="M72 74h256l-22 190H94z" />
-        <path class="hs-inkt" d="M72 74h256l-22 190H94z" />
-        <path class="hs-inkt" d="M200 74v190" />
-        {/* De omgeslagen rand: de reden dat je de binnenkant ziet. */}
-        <path class="hs-vlak" d="M72 74c40 26 86 38 128 38v-38z" />
-        <path class="hs-inkt" d="M72 74c40 26 86 38 128 38" />
-        <path class="hs-inkt hs-dun" d="M96 90c30 16 66 24 104 26" />
-        <g class="hs-arcering">
-          <path d="M214 132h84M212 156h84M210 180h82M208 204h80M206 228h78" />
-        </g>
-        <rect class="hs-wit" x="112" y="150" width="62" height="46" rx="4" />
-        <rect class="hs-inkt" x="112" y="150" width="62" height="46" rx="4" />
-        <g class="hs-inkt hs-dun">
-          <path d="M124 164h38M124 174h38M124 184h22" />
-        </g>
-      </g>
-    )}
-
-    {id === 'hardware' && (
-      <g>
-        {/* Eén ding, beeldvullend — dus het loopt aan drie kanten het kader uit.
-            Een rits: twee banen, de tanden ertussen, de trekker eronder. Het
-            detail dat op een productpagina het vaakst gevraagd wordt en het minst
-            vaak te zien is. */}
-        <path class="hs-vlak" d="M20 12h150v276H20zM230 12h150v276H230z" />
-        <path class="hs-inkt" d="M170 12v276M230 12v276" />
-        <g class="hs-arcering">
-          <path d="M40 40h110M40 76h110M40 112h110M40 148h110M40 184h110M40 220h110M40 256h110M250 40h110M250 76h110M250 112h110M250 148h110M250 184h110M250 220h110M250 256h110" />
-        </g>
-        {/* De tanden: om en om, en boven de trekker in elkaar. */}
-        <g class="hs-inkt hs-dun">
-          <path d="M170 24h26v18h-26M230 42h-26v18h26M170 60h26v18h-26M230 78h-26v18h26M170 96h26v18h-26M230 114h-26v18h26" />
-          <path d="M172 140h24M204 140h24M172 164h24M204 164h24M172 188h24M204 188h24M172 212h24M204 212h24M172 236h24M204 236h24M172 260h24M204 260h24" />
-        </g>
-        <path class="hs-wit" d="M166 122h68v34h-68z" />
-        <path class="hs-inkt" d="M166 122h68v34h-68z" />
-        <path class="hs-inkt" d="M188 156c-4 16-4 30 0 42h24c4-12 4-26 0-42" />
-        <path class="hs-inkt" d="M194 168h12" />
-      </g>
-    )}
-  </g>
-
-  {/* Het hoekteken. Het enige gekleurde element, en het zegt bij alle acht
-      hetzelfde: dit is een beeld dat geleverd wordt. */}
-  <path class="hs-hoek" d="M34 52V32a6 6 0 0 1 6-6h20" />
-  <rect class="hs-rand" x="34" y="26" width="332" height="248" rx="6" />
-</svg>
+<img class="hs" src={`/img/schets/${bestand}.svg`} width="120" height="120" alt="" loading="lazy" decoding="async" />
 
 <style>
-  /* De hele tekening staat in `currentColor`, zodat een tegel op een donkere
-     grond hem meeneemt zonder een tweede set kleuren. */
-  .hs { display: block; width: 100%; height: auto; color: var(--inkt, #111); }
-  .hs line, .hs path, .hs rect, .hs circle, .hs ellipse { vector-effect: non-scaling-stroke; }
-
-  .hs-veld { fill: var(--vel, #F5F5F5); stroke: none; }
-  .hs-rand { fill: none; stroke: currentColor; stroke-width: 1.2; opacity: .32; }
-  .hs-hoek { fill: none; stroke: var(--accent, #4A1FFF); stroke-width: 3; stroke-linecap: round; }
-
-  /* Het onderwerp: een vlak met een lijn eromheen. Het vlak is er zodat een
-     tekening met veel binnenwerk (de binnenkant, de rits) niet als een net van
-     lijntjes leest. */
-  .hs-vlak { fill: currentColor; opacity: .08; stroke: none; }
-  .hs-wit { fill: var(--vel, #F5F5F5); stroke: none; }
-  .hs-schaduw { fill: currentColor; opacity: .1; }
-  .hs-inkt { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; }
-  .hs-dun { stroke-width: 1.4; }
-  .hs-hulp { fill: none; stroke: currentColor; stroke-width: 1.2; opacity: .4; }
-  .hs-arcering { fill: none; stroke: currentColor; stroke-width: 1; opacity: .3; }
+  /* Het vak blijft 4:3 (de tegel); de vierkante schets staat erin, zoals in het zijpaneel. */
+  .hs { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: contain; }
 </style>

@@ -45,10 +45,10 @@ export const TIP_VOOR = {
 };
 
 export const TIP_NA = {
-  front: '/img/ba2-na-front.webp',
-  back: '/img/ba2-na-achter.webp',
-  detail: '/img/ba2-na-detail.webp',
-  worn: '/img/ba2-na-model.webp',
+  front: '/img/ba2-na-front-grijs.webp',
+  back: '/img/ba2-na-achter-grijs.webp',
+  detail: '/img/ba2-na-detail-grijs.webp',
+  worn: '/img/ba2-na-model-grijs.webp',
 };
 
 /**

@@ -102,7 +102,7 @@ let s = await scherm('/account/plan');
 ok('één pagina: geen tabbladen meer in de staat', 'tabs' in s.v, false);
 ok('"Je hebt 128 credits"', s.v.saldo.kop, 'Je hebt 128 credits');
 ok('genoeg voor … (uit creditKaart.js)', s.v.saldo.vertaling, `Genoeg voor ${creditVertaling(128, 'nl')}.`);
-ok('wat het eerst vervalt, en dat het als eerste opgaat', /^8 hiervan vervallen op .+ — die gaan als eerste op\.$/.test(s.v.saldo.eerst), true);
+ok('wat het eerst vervalt, en dat het als eerste opgaat', /^8 hiervan blijven geldig tot en met .+ — die gaan als eerste op\.$/.test(s.v.saldo.eerst), true);
 /* Spaarplafond (12 oktober 2026): de rest heeft geen datum, die schuift bij
    de volgende termijn mee; wel het plafond naast het saldo. */
 ok('de rest zonder datum (lopend abonnement)', s.v.saldo.rest, '');
@@ -130,7 +130,7 @@ const regels = s.v.boek.regels;
 ok('nieuwste eerst: de bestelling bovenaan', regels[0].reden, 'bestelling');
 ok('met kenmerk, link naar de bestelling en status Geleverd', [regels[0].ref, regels[0].href, regels[0].status?.tekst], ['VIS-AB12-C3D', '/account/orders?order=7#order-7', 'Geleverd']);
 ok('aantal met teken, saldo erna', [regels[0].aantal, regels[0].saldoNa], ['−12', 128]);
-ok('de termijn als "Credits voor <maand>" met "vervalt op …"', regels.some((r) => r.reden === 'termijn' && /^Credits voor [a-z]+$/.test(r.wat) && /^vervalt op /.test(r.geldig)), true);
+ok('de termijn als "Credits voor <maand>" met "geldig tot en met …"', regels.some((r) => r.reden === 'termijn' && /^Credits voor [a-z]+$/.test(r.wat) && /^geldig tot en met /.test(r.geldig)), true);
 
 /* ── 4 · JE PLAN ───────────────────────────────────────────────────────── */
 console.log('\n4 · je plan');
@@ -158,6 +158,7 @@ ok('de klantmail noemt de dag en tot wanneer de credits gelden', mails.some((m) 
 ok('de studiomail noemt de reden', mails.some((m) => /Abonnement gepauzeerd/.test(m.subject) && /Even een rustige periode/.test(m.html)), true);
 s = await scherm('/account/plan?ok=pauze&r=rustig');
 ok('stand "pauze-straks": de maand loopt door', [s.v.stand, /^Je pauze gaat in op /.test(s.v.standZin)], ['pauze-straks', true]);
+ok('  één bevestiging, in het standblok (B28)', [s.v.bevestiging, /Je krijgt een bevestiging per mail\.$/.test(s.v.standZin)], ['', true]);
 ok('chip "Pauze vanaf …"', /^Pauze vanaf /.test(s.v.chip?.tekst || ''), true);
 ok('credits blijven bruikbaar: het saldo staat er nog', s.v.saldo.getal, 128);
 ok('geen nieuwe credits meer genoemd', s.v.saldo.nieuw, '');
@@ -183,7 +184,10 @@ ok('met reden en woord: ok=opgezegd', r.headers.get('location'), '/account/plan?
 ok('opgezegd, met de reden en de eigen woorden', [sub().status, sub().stop_reden, sub().stop_toelichting], ['cancelled', 'credits', 'teveel over']);
 ok('de studiomail: reden plus Bel/App om de credits te bespreken', mails.some((m) => /Abonnement opgezegd/.test(m.subject) && /Niet duidelijk wat te doen met de overige credits/.test(m.html) && /tel:\+31612345678/.test(m.html) && /wa\.me\/31612345678/.test(m.html)), true);
 s = await scherm('/account/plan?ok=opgezegd&r=credits');
-ok('stand "opgezegd", credits blijven bruikbaar', [s.v.stand, new RegExp(`^Je abonnement stopt op .+ Je credits blijven geldig tot ${CREDITS_GELDIG_MAANDEN} maanden na je laatste termijn\\.$`).test(s.v.standZin), s.v.saldo.getal], ['opgezegd', true, 128]);
+/* Doorloop 27 (B28): direct na het opzeggen staat de bevestiging IN het
+   standblok ("… Je krijgt een bevestiging per mail."), niet nog eens erboven. */
+ok('stand "opgezegd", credits blijven bruikbaar', [s.v.stand, new RegExp(`^Je abonnement stopt op .+ Je credits blijven geldig tot ${CREDITS_GELDIG_MAANDEN} maanden na je laatste termijn\\. Je krijgt een bevestiging per mail\\.$`).test(s.v.standZin), s.v.saldo.getal], ['opgezegd', true, 128]);
+ok('  één bevestiging: geen aparte melding erboven', [s.v.bevestiging, s.v.standNet], ['', true]);
 ok('  en het saldo noemt tot en met wanneer (geen plafond meer)', [/credits blijven geldig tot en met /.test(s.v.saldo.eerst), s.v.saldo.spaar], [true, '']);
 ok('de knop "bespreek je credits" staat groot in beeld', s.v.bespreek?.nadruk, true);
 

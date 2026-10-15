@@ -42,7 +42,7 @@ import HalBeweging from './HalBeweging.astro';
 import KopBeeld from './KopBeeld.astro';
 import {
   ladderFloor, euro, vatLabel, vatLead, vatDetail,
-  WINDOW_THRESHOLD, TEST_SAMPLE, TIERS, clause, eenProductRegel, CATALOG_IMAGES, levervlakken,
+  WINDOW_THRESHOLD, TEST_SAMPLE, TIERS, clause, eenProductRegel, CATALOG_IMAGES, levervlakken, SERVICE_CREDITS,
 } from '../data/pricing.js';
 import { catalogStyles as catalogEn } from '../data/catalogStyles.js';
 import { catalogStyles as catalogNl } from '../data/catalogStyles.nl.js';
@@ -109,7 +109,7 @@ const COPY = {
     pil: 'Start',
     h1: ['Pick a look.', 'The form follows.'],
     lede: 'Nothing is charged until you pay.',
-    vanaf: 'From', per: `per product, ${vatLabel('excl', 'en')}`,
+    vanaf: 'From', per: `per product, ${vatLabel('excl', 'en')}`, perCredits: 'per product, with your plan',
     kies: 'Pick this look', meer: 'More about this look',
     setKop: 'Per product', setZin: `${setSize('catalog', CATALOG_IMAGES, 'en')}, ready for your shop.`, setMeer: 'More images can be added in the order form.',
     ladder: eenProductRegel('en'), ladderCta: 'See the full rate card',
@@ -136,7 +136,7 @@ const COPY = {
     pil: 'Start',
     h1: ['Kies een look.', 'Het formulier volgt.'],
     lede: 'Er wordt niets afgeschreven tot je betaalt.',
-    vanaf: 'Vanaf', per: `per product, ${vatLabel('excl', 'nl')}`,
+    vanaf: 'Vanaf', per: `per product, ${vatLabel('excl', 'nl')}`, perCredits: 'per product, met je abonnement',
     kies: 'Kies deze look', meer: 'Meer over deze look',
     setKop: 'Per product', setZin: `${setSize('catalog', CATALOG_IMAGES, 'nl').replace(/^v/, 'V')}, klaar voor je webshop.`, setMeer: 'Meer beelden kies je erbij in het bestelformulier.',
     ladder: eenProductRegel('nl'), ladderCta: 'Bekijk de volledige prijslijst',
@@ -214,7 +214,9 @@ const BEELD = {
               <div class="h-st-tekst">
                 <h3 class="h-st-naam">{l.naam}</h3>
                 <p class="h-st-zin">{l.zin}</p>
-                <p class="h-st-tarief"><span>{c.vanaf}</span> <b>{g.vanaf}</b> <span>{c.per}</span></p>
+                {/* Een abonnee bestelt met credits (15 oktober 2026): dan die prijs. */}
+                <p class="h-st-tarief" data-vis-klant="niet-abonnee"><span>{c.vanaf}</span> <b>{g.vanaf}</b> <span>{c.per}</span></p>
+                {SERVICE_CREDITS[g.id] && <p class="h-st-tarief" data-vis-klant="abonnee" hidden><b>{SERVICE_CREDITS[g.id]} credits</b> <span>{c.perCredits}</span></p>}
                 <p class="h-st-wegen">
                   <a class="h-knop h-knop-inkt h-knop-klein" href={l.kies} data-st-kies>{c.kies}<span class="o" set:html={ik('rechts')} /></a>
                 </p>
@@ -253,7 +255,9 @@ const BEELD = {
     <nav class="h-st-ook h-in" aria-label={c.ookLabel}>
       <span class="h-st-ook-l">{c.ook}</span>
       <ul class="h-st-ook-rij st-ook-rij" role="list">
-        {c.rij.map((r) => <li><a class="h-st-chip" href={lp(r.href)}>{r.naam}</a></li>)}
+        {c.rij.map((r) => <li data-vis-uit={r.href === '/test-sample' ? '' : undefined}>{r.href === door('plan')!.lees
+          ? <a class="h-st-chip" href={lp(r.href)} data-vis-klant="plan-kies" data-vis-abo-label={nl ? 'Je abonnement' : 'Your plan'} data-vis-abo="/account/plan">{r.naam}</a>
+          : <a class="h-st-chip" href={lp(r.href)}>{r.naam}</a>}</li>)}
         <li><a class="h-st-chip" href={waHref(c.waText)} target="_blank" rel="noopener">{c.wa}<span set:html={ik('pijl')} /><NieuwTabblad lang={lang} /></a></li>
       </ul>
     </nav>

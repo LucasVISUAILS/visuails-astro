@@ -74,6 +74,8 @@ const c = nl ? {
   vTelefoon: 'Telefoon of WhatsApp',
   vTelefoonHouder: '+31 6 …',
   vTelefoonHint: 'Alleen nodig als je liever via telefoon of WhatsApp antwoord krijgt.',
+  /* Doorloop 27 (B29): wie WhatsApp kiest, moet een nummer geven. */
+  vTelefoonWa: 'Vul je nummer in, dan kunnen we je via WhatsApp antwoorden — met landcode als het geen Nederlands nummer is.',
   vOptioneel: 'optioneel',
   vOnderwerp: 'Onderwerp',
   onderwerpen: [
@@ -130,6 +132,7 @@ const c = nl ? {
   vTelefoon: 'Phone or WhatsApp',
   vTelefoonHouder: '+31 6 …',
   vTelefoonHint: 'Only needed if you would rather get a reply by phone or WhatsApp.',
+  vTelefoonWa: 'Fill in your number so we can reply on WhatsApp — with the country code if it is not a Dutch number.',
   vOptioneel: 'optional',
   vOnderwerp: 'Topic',
   onderwerpen: [
@@ -239,7 +242,7 @@ const BEELD = {
         </div>
         <div class="field">
           <label for="c-phone">{c.vTelefoon} <span class="ct-opt">{c.vOptioneel}</span></label>
-          <input class="input" type="tel" id="c-phone" name="phone" autocomplete="tel" placeholder={c.vTelefoonHouder} maxlength="40" />
+          <input class="input" type="tel" id="c-phone" name="phone" autocomplete="tel" placeholder={c.vTelefoonHouder} maxlength="40" data-melding={c.vTelefoonWa} data-nodig-bij-whatsapp />
           <span class="hint">{c.vTelefoonHint}</span>
         </div>
         <div class="field">

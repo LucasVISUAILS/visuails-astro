@@ -135,7 +135,10 @@ ok('In controle → Leverkeuring (bestelpagina, #melden)', /href="\/admin\/order
 ok('afgehandeld, niet gemeld → een echte knop "2 nieuwe beelden melden" terug naar het dashboard',
   /<form class="nd-knop" method="post" action="\/admin\/orders\/33\/announce"><input type="hidden" name="terug" value="dashboard"><button[^>]*>2 nieuwe beelden melden<\/button><\/form>/.test(knop(33, 'leveren')));
 ok('revisie → Revisie openen (de kaart op dit dashboard)', /href="#rev-350">Revisie openen</.test(knop(35, 'revisie')) && h.includes('id="rev-350"'));
-ok('betaald, niet opgepakt → Oppakken (#status)', /href="\/admin\/orders\/36\/files#status">Oppakken</.test(knop(36, 'oppakken')));
+/* Doorloop 27 (B03): Oppakken is één klik — hij zet de status zelf op In
+   productie en landt op de bestelpagina. */
+ok('betaald, niet opgepakt → Oppakken: een echte knop die de status op In productie zet',
+  /<form class="nd-knop" method="post" action="\/admin\/orders\/36\/status"><input type="hidden" name="status" value="in_production"><input type="hidden" name="back" value="files"><button[^>]*>Oppakken<\/button><\/form>/.test(knop(36, 'oppakken')));
 ok('foto\'s ontbreken → Foto’s vragen (#ontbreekt)', /href="\/admin\/orders\/38\/files#ontbreekt">Foto’s vragen</.test(knop(38, 'fotos')));
 ok('aanvraag → Offerte maken (#offerte)', /href="\/admin\/orders\/40\/files#offerte">Offerte maken</.test(knop(40, 'offerte')));
 ok('afgerond → Review vragen, het reviewformulier in een nieuw tabblad', /action="\/admin\/orders\/41\/review-wa" target="_blank">.*Review vragen/.test(knop(41, 'review')));
@@ -215,7 +218,7 @@ const stap = (html) => {
   const { status, html } = await get('/admin/orders/36/files');
   ok('bestelpagina laadt', status, 200);
   ok('de pagina begint (na de kop) met "Volgende stap:"', /^<\/h1>\s*<div class="volgende-stap"><p><strong>Volgende stap:<\/strong> Oppakken/.test(stap(html)));
-  ok('  de knop springt naar de status, en die heeft id="status"', /href="#status">Oppakken</.test(stap(html)) && /<form class="controls kop-status" id="status"/.test(html));
+  ok('  de knop zet de status zelf (één klik), en het lijstje blijft er voor de rest', /action="\/admin\/orders\/36\/status"><input type="hidden" name="status" value="in_production">/.test(stap(html)) && /<form class="controls kop-status" id="status"/.test(html));
 }
 {
   const { html } = await get('/admin/orders/38/files');
@@ -224,6 +227,12 @@ const stap = (html) => {
 {
   const { html } = await get('/admin/orders/33/files');
   ok('afgehandelde revisie: "2 nieuwe beelden melden" → #melden', /Volgende stap:<\/strong> 2 nieuwe beelden melden[\s\S]*href="#melden"/.test(stap(html)) && /<h2 id="melden">/.test(html));
+}
+{
+  /* Doorloop 27 (B10): op de bestelpagina springt "Revisie openen" naar het
+     vakje zelf, niet terug naar het dashboard. */
+  const { html } = await get('/admin/orders/35/files');
+  ok('revisie: "Revisie openen" → het vakje op deze pagina (#rev-350)', /Volgende stap:<\/strong> Revisie openen[\s\S]*href="#rev-350"/.test(stap(html)) && /class="slot is-revising[^"]*" id="rev-350"/.test(html));
 }
 {
   const { html } = await get('/admin/orders/40/files');

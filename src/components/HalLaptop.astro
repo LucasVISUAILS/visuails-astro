@@ -56,6 +56,12 @@ const cat = catalog.beelden.filter(echt);
    niet is (afvinklijst 24, v24-laptop); de rest valt weg zoals altijd. */
 const life = lifestyle.beelden.filter((b: { src: string; plaat?: boolean }) => echt(b) || b.plaat);
 const KLIP = { src: '/img/hal/sfeer-9x16.webp', w: 648, h: 1152 };
+/* De onscherpe vulling achter de clip als KANT-EN-KLAAR beeld (180 × 320, al
+   vervaagd en donkerder), niet meer als filter: blur(40px) op het grote beeld.
+   Een filter binnen de schuine, gemaskerde schermlaag moest een telefoon elk
+   frame opnieuw uitrekenen; dat gaf de zwarte trappen in het scherm (Lucas,
+   14 oktober 2026, 21:17). Gemaakt met sharp: resize 180×320, blur 5, helderheid .7. */
+const KLIP_VAAG = { src: '/img/hal/sfeer-9x16-vaag.webp', w: 180, h: 320 };
 
 type Stand = { set: 'catalog' | 'lifestyle' | 'video'; i: number; fon: string; fonAlt: string; duur: number };
 const standen: Stand[] = [
@@ -115,7 +121,7 @@ const eerst = standen[0];
           <div class="sc-top"><b>{T.shop.merk}</b>{T.shop.menu.map((m) => <span>{m}</span>)}<i class="sc-ic"></i><i class="sc-ic sc-ic-z"></i></div>
           <div class="sc-wrap">
             <div class="sc-th">{cat.map((b, i) => <img src={b.src} alt="" width="760" height="760" loading="lazy" decoding="async" data-hl-th={i} />)}</div>
-            <div class="sc-hoofd">{cat.map((b, i) => <img src={b.src} alt="" width="760" height="760" loading={i ? 'lazy' : 'eager'} decoding="async" data-hl-beeld={`catalog-${i}`} />)}</div>
+            <div class="sc-hoofd">{cat.map((b, i) => <img class:list={[(b as { vul?: boolean }).vul && 'sc-vul']} src={b.src} alt="" width="760" height="760" loading={i ? 'lazy' : 'eager'} decoding="async" data-hl-beeld={`catalog-${i}`} />)}</div>
             <div class="sc-info">
               <p class="sc-kr">{T.shop.kruimel}</p>
               <p class="sc-h1">{T.shop.titel}</p>
@@ -154,7 +160,7 @@ const eerst = standen[0];
         )}
         {/* De clip (video): verticaal, met hetzelfde beeld onscherp als vulling */}
         <div class="sc sc-klip" data-hl-set="video">
-          <img class="sc-kvul" src={KLIP.src} alt="" width={KLIP.w} height={KLIP.h} loading="lazy" decoding="async" />
+          <img class="sc-kvul" src={KLIP_VAAG.src} alt="" width={KLIP_VAAG.w} height={KLIP_VAAG.h} loading="lazy" decoding="async" />
           <div class="sc-kclip"><img src={KLIP.src} alt="" width={KLIP.w} height={KLIP.h} loading="lazy" decoding="async" /><span class="sc-kbalk"><i></i></span></div>
         </div>
         <span class="sc-glans"></span>
@@ -260,10 +266,50 @@ const eerst = standen[0];
         streep.classList.remove('is-aan'); void streep.offsetWidth; streep.classList.add('is-aan');
       };
       const wissel = (el: HTMLElement) => { el.classList.remove('h-wissel'); void el.offsetWidth; el.classList.add('h-wissel'); };
-      streep.addEventListener('animationend', () => { if (loopt) toon(nu + 1); });
+
+      /* ── PAS WISSELEN ALS HET VOLGENDE BEELD ER HELEMAAL IS — 14 oktober 2026 ──
+         Lucas, 21:17 op zijn telefoon: "De fotos op de homepage in de laptop laden
+         heel erg buggy en glitchy." Een beeld dat nog binnenkwam, tekende de
+         browser half (van boven naar beneden) op het scherm, en een dia met
+         loading="lazy" begon pas te laden als hij al in beeld stond. Nu: alle
+         beelden van de volgende stand laden (eager) én decoderen, en pas dan
+         wisselen. Komt een beeld niet, dan blijft de huidige stand gewoon staan. */
+      const beeldenVan = (s: Stand) => {
+        const lijst: HTMLImageElement[] = [];
+        const neem = (el: Element | null) => {
+          if (!el) return;
+          if (el instanceof HTMLImageElement) lijst.push(el);
+          else for (const i of el.querySelectorAll('img')) lijst.push(i);
+        };
+        const set = root.querySelector(`[data-hl-set="${s.set}"]`);
+        if (s.set === 'video') neem(set);
+        else {
+          neem(root.querySelector(`[data-hl-beeld="${s.set}-${s.i}"]`));
+          if (set) for (const i of set.querySelectorAll('.sc-th img, .sc-rij img, .sc-pkant img')) lijst.push(i as HTMLImageElement);
+        }
+        for (const el of root.querySelectorAll<HTMLImageElement>('[data-hl-fon]')) if (el.dataset.hlFon === s.fon) lijst.push(el);
+        return lijst;
+      };
+      const klaarVoor = (s: Stand) => Promise.all(beeldenVan(s).map((img) => {
+        img.loading = 'eager';
+        const binnen = img.complete && img.naturalWidth > 0
+          ? Promise.resolve()
+          : new Promise<void>((r) => { img.addEventListener('load', () => r(), { once: true }); img.addEventListener('error', () => r(), { once: true }); });
+        return binnen.then(() => (typeof img.decode === 'function' ? img.decode().catch(() => {}) : undefined));
+      }));
+      let beurt = 0;
+      let onderweg: number | null = null;
+      const ga = (stap: number) => {
+        /* Twee keer snel op de pijl: de tweede telt vanaf waar de eerste heen ging. */
+        const doel = ((onderweg ?? nu) + stap + standen.length) % standen.length;
+        onderweg = doel;
+        const deze = ++beurt;
+        klaarVoor(standen[doel]).then(() => { if (deze === beurt) { onderweg = null; toon(doel); } });
+      };
+      streep.addEventListener('animationend', () => { if (loopt) ga(1); });
 
       for (const knop of root.querySelectorAll<HTMLButtonElement>('[data-hl-stap]')) {
-        knop.addEventListener('click', () => { loopt = false; stand(); toon(nu + Number(knop.dataset.hlStap)); });
+        knop.addEventListener('click', () => { loopt = false; stand(); ga(Number(knop.dataset.hlStap)); });
       }
       pauze.hidden = rustig;
       pauze.addEventListener('click', () => { loopt = !loopt; stand(); });
@@ -275,8 +321,24 @@ const eerst = standen[0];
 
       toon(0);
       stand();
-      /* Pas tonen als de laag de goede maat heeft: één frame na de eerste meting. */
-      requestAnimationFrame(() => requestAnimationFrame(() => root.classList.add('hl-leeft')));
+      /* Pas tonen als de laag de goede maat heeft (één frame na de eerste meting) én
+         de beelden van de eerste stand binnen zijn. Tot dan staat de foto er, met het
+         eerste scherm er al in, dus er is niets te zien dat nog laadt. De streep
+         begint daarna opnieuw, zodat de eerste stand zijn volle tijd krijgt. */
+      klaarVoor(standen[0]).then(() => requestAnimationFrame(() => requestAnimationFrame(() => {
+        root.classList.add('hl-leeft');
+        if (nu === 0) toon(0);
+      })));
+      /* En daarna, als de pagina rust, de rest van de reeks alvast binnenhalen, één
+         stand tegelijk. Niet bij "databesparing" van de telefoon: dan laadt alleen
+         steeds de volgende stand, vlak voor hij aan de beurt is. */
+      const zuinig = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
+      if (!zuinig) {
+        const vooruit = async () => { for (const s of standen) await klaarVoor(s); };
+        const rust = (window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+        const start = () => (rust ? rust(() => { vooruit(); }, { timeout: 4000 }) : window.setTimeout(() => { vooruit(); }, 1500));
+        if (document.readyState === 'complete') start(); else window.addEventListener('load', start, { once: true });
+      }
     }
   };
   zet();

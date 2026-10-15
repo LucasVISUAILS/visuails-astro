@@ -59,7 +59,7 @@
  */
 import { withdrawalRecord } from '../../src/data/consent.js';
 import { upsertCustomer } from './order.js';
-import { currentCustomer } from '../../src/lib/account.js';
+import { currentCustomer, setPlanMailCookie } from '../../src/lib/account.js';
 import { handleSubscribeStart } from '../../src/lib/subscribe.js';
 import { offsitePage } from '../../src/lib/offsite.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from '../../src/lib/ratelimit.js';
@@ -268,6 +268,12 @@ export async function onRequestPost(context) {
      Nu terug naar het formulier met de reden. */
   if (antwoord && antwoord.status === 303 && antwoord.headers.get('Location') === '/account/plan') {
     return terug('bestaat', lang);
+  }
+  /* Doorloop 27 (B18): op weg naar Mollie onthoudt deze browser het adres dat
+     hij net zelf typte, zodat de inlogkaart na de betaling het al ingevuld
+     heeft. Zie setPlanMailCookie() in src/lib/account.js. */
+  if (antwoord && antwoord.status === 200 && isEmail(klant?.email)) {
+    try { antwoord.headers.append('set-cookie', setPlanMailCookie(klant.email)); } catch { /* onveranderlijke headers: dan zonder */ }
   }
   return antwoord;
 }

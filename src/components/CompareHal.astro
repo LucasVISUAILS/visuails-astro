@@ -516,7 +516,7 @@ const BEELD = {
         <ul class="h-cmp-tool-lijst is-min" role="list">{t.costs.map((line) => <li><i set:html={ik('min')} /><span>{line}</span></li>)}</ul>
       </div>
     </div>
-    <p class="h-cmp-tool-slot h-in">
+    <p class="h-cmp-tool-slot h-in" data-vis-uit>
       <span>{t.toolClose}</span>
       <a class="h-link" href={lp('/test-sample')} data-track="compare-tool-sample">{t.toolCta}<span class="h-cirkel h-cirkel-mini" set:html={ik('pijl')} /></a>
     </p>

@@ -44,27 +44,32 @@ export function laptopSlides(lang = 'nl') {
       : 'The four finished catalog images of these jeans in a product page gallery',
     beelden: [
       {
-        src: '/img/ba2-na-front.webp', naam: nl ? 'Voorkant' : 'Front',
-        alt: nl ? 'De broek recht van voren op een witte grond' : 'The jeans straight on against white',
+        src: '/img/ba2-na-front-grijs.webp', naam: nl ? 'Voorkant' : 'Front',
+        alt: nl ? 'De broek recht van voren op een lichtgrijze grond' : 'The jeans straight on against light grey',
         fon: '/img/ba2-voor-front.webp',
         fonAlt: nl ? 'Telefoonfoto: de broek plat op een betonnen magazijnvloer, voorkant'
                    : 'Phone photo: the jeans flat on a concrete warehouse floor, front',
       },
       {
-        src: '/img/ba2-na-achter.webp', naam: nl ? 'Achterkant' : 'Back',
+        src: '/img/ba2-na-achter-grijs.webp', naam: nl ? 'Achterkant' : 'Back',
         alt: nl ? 'Dezelfde broek van achteren' : 'The same jeans from the back',
         fon: '/img/ba2-voor-achter.webp',
         fonAlt: nl ? 'Telefoonfoto: dezelfde broek omgedraaid, achterkant'
                    : 'Phone photo: the same jeans turned over, back',
       },
       {
-        src: '/img/ba2-na-model-wit.webp', naam: nl ? 'Op model' : 'On model',
+        /* `vul` (15 oktober 2026, Lucas: *"Op de laptop is de on model foto afgesneden,
+           deze mag iets ingezoomed worden en meer in het scherm fitten"*): de foto
+           loopt tot zijn bovenrand door (het shirt), dus als zwevend vierkant in het
+           staande vak zie je die rand. Nu vult hij de hoogte van het vak; zie
+           .sc-hoofd img.sc-vul in hal.css. */
+        src: '/img/ba2-na-model-grijs.webp', naam: nl ? 'Op model' : 'On model', vul: true,
         alt: nl ? 'De broek gedragen door een model' : 'The jeans worn by a model',
         fon: '/img/ba2-voor-pasvorm.webp',
         fonAlt: nl ? 'Spiegelselfie waarop de broek gedragen wordt' : 'Mirror selfie of the jeans being worn',
       },
       {
-        src: '/img/ba2-na-detail.webp', naam: nl ? 'Detail' : 'Detail',
+        src: '/img/ba2-na-detail-grijs.webp', naam: nl ? 'Detail' : 'Detail',
         alt: nl ? 'Close-up van de knoop en de tailleband' : 'Close-up of the button and waistband',
         fon: '/img/ba2-voor-detail.webp',
         fonAlt: nl ? 'Telefoonfoto: een hand houdt de tailleband met de knoop omhoog'

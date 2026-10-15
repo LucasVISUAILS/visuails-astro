@@ -47,7 +47,7 @@ import { MERK, TAGLINE } from '../data/brand.js';
 import { localizedPath } from '../i18n/ui.js';
 import { ROSTER, modelId, telwoord } from '../data/models.js';
 import { REQUIRED_SHOT_IDS, SHOTS } from '../data/shots.js';
-import { geleverd, ingestuurd } from '../data/voorbeeldset.js';
+import { geleverd, ingestuurd, GROND } from '../data/voorbeeldset.js';
 import { styles as lifestyleEn } from '../data/styles.js';
 import { styles as lifestyleNl } from '../data/styles.nl.js';
 import { catalogStyles as catalogEn } from '../data/catalogStyles.js';
@@ -57,7 +57,11 @@ import HalLaptop from './HalLaptop.astro';
 import Aanbevelingen from './Aanbevelingen.astro';
 import FormatenHal from './FormatenHal.astro';
 import UitlegBalk from './UitlegBalk.astro';
-import { planKnop, waKlant } from '../data/klant.js';
+import { PAD, ANKERS, LIJNEN, MAAT as PAD_MAAT } from '../data/maakPad.js';
+/* De drie halen van het penseel: onder de linkerpijp, onder de rechter, en één keer
+   over allebei — net onder de zoom (LIJNEN.onder), waar de schaduw valt. */
+const KWAST = `M${LIJNEN.links + 8} ${LIJNEN.onder + 6} L${LIJNEN.midden - 24} ${LIJNEN.onder + 6} M${LIJNEN.midden + 18} ${LIJNEN.onder + 6} L${LIJNEN.rechts - 6} ${LIJNEN.onder + 6} M${LIJNEN.links + 14} ${LIJNEN.onder + 14} L${LIJNEN.rechts - 12} ${LIJNEN.onder + 14}`;
+import { planKnop, startKnop, waKlant } from '../data/klant.js';
 
 /* `uitleg` (14 oktober 2026, voorbeeld op /voorbeeld/voorpagina): "Hoe het werkt"
    speelt zich af in drie stappen, en onder die sectie komt het formatenblok. */
@@ -88,8 +92,8 @@ const catalog = nl ? catalogNl : catalogEn;
 const CATALOG_BEELD: Record<string, string> = { classic: '/img/catalog-after.webp' };
 const proef = (slug: string) => `${lp('/test-sample')}?style=${encodeURIComponent(slug)}`;
 const LOOKS = [
-  ...catalog.filter((s: any) => s.slug !== 'custom').map((s: any) => ({ soort: 'Catalog', naam: s.name, beeld: CATALOG_BEELD[s.slug], href: lp(`/catalog/${s.slug}`), proef: proef(s.slug) })),
-  ...lifestyle.filter((s: any) => s.slug !== 'custom').map((s: any) => ({ soort: 'Lifestyle', naam: s.name, beeld: s.cardPhoto, href: lp(`/lifestyle/${s.slug}`), proef: proef(s.slug) })),
+  ...catalog.filter((s: any) => s.slug !== 'custom').map((s: any) => ({ soort: 'Catalog', naam: s.name, beeld: CATALOG_BEELD[s.slug], href: lp(`/catalog/${s.slug}`), proef: proef(s.slug), bestel: `${lp('/start/catalog')}?style=${encodeURIComponent(s.slug)}` })),
+  ...lifestyle.filter((s: any) => s.slug !== 'custom').map((s: any) => ({ soort: 'Lifestyle', naam: s.name, beeld: s.cardPhoto, href: lp(`/lifestyle/${s.slug}`), proef: proef(s.slug), bestel: `${lp('/start/lifestyle')}?style=${encodeURIComponent(s.slug)}` })),
 ].filter((k) => k.beeld);
 const GEZICHTEN_RIJ = ROSTER.slice(0, 5);
 const DRIE = (n: number) => String(n).padStart(2, '0');
@@ -103,13 +107,13 @@ const COPY = {
     hoeLabel: 'Hoe het werkt', hoeKop: ['Dit stuur jij.', 'Dit krijg je terug.'],
     stappen: [
       ['Jij stuurt', `${FOTOS} telefoonfoto’s zijn genoeg om te beginnen.`, 'jouw telefoonfoto’s'],
-      ['Wij maken', `Catalog, lifestyle of video. ${LEVERTIJD}.`, 'Elk beeld dezelfde achtergrond'],
+      ['Wij maken', `Catalog, lifestyle of video. ${LEVERTIJD}.`, 'Met de hand, elk beeld gelijk'],
       ['Jij keurt goed', 'Per beeld goedkeuren. Alles in één keer downloaden.', ''],
     ],
     goedgekeurd: (n: number) => `${n} van ${n} goedgekeurd`,
     uitlegZinnen: [
       `Je stuurt ${fotos} telefoonfoto’s per product: ${SHOT_NAMEN.nl}.`,
-      'Wij werken elk beeld af: uitknippen, jouw achtergrond eronder en een natuurlijke schaduw, bij elk beeld op dezelfde manier.',
+      'Wij werken elk beeld met de hand af: uitknippen met de pen, jouw achtergrond eronder, de schaduw erbij. Zo staat elk beeld van je set op dezelfde lijnen.',
       'Je keurt per beeld goed en downloadt alles in één keer.',
     ],
     restJij: 'Jij stuurt alleen een paar foto’s.', restWij: 'Wij doen de rest:',
@@ -128,7 +132,7 @@ const COPY = {
     ],
     eenProduct: `Eén product: ${e(ladderRate('catalog', 1))} (catalog) of ${e(ladderRate('lifestyle', 1))} (lifestyle). Meer producten, lager tarief.`,
     vorige: 'Vorige', volgende: 'Volgende', veeg: 'Veeg voor de andere twee',
-    looksLabel: 'Looks', looksKop: ['Kies een look.', 'Je collectie als één shoot.'], probeer: `Probeer · ${sample.price}`,
+    looksLabel: 'Looks', looksKop: ['Kies een look.', 'Je collectie als één shoot.'], probeer: `Probeer · ${sample.price}`, bestelLook: 'Bestel deze look',
     vorigeLooks: 'Vorige looks', volgendeLooks: 'Volgende looks',
     gezicht: ['Een gezicht zit erbij.', `${GEZICHTEN.charAt(0).toUpperCase() + GEZICHTEN.slice(1)} modellen, zonder meerprijs.`], alleGezichten: `Alle ${GEZICHTEN}`,
     wetenLabel: 'Meer weten', wetenKop: ['Nog', 'vragen?'],
@@ -138,8 +142,8 @@ const COPY = {
     proefLabel: 'Proef', proefKop: ['Eerst zien?', 'Eén product voor'],
     proefZin: `Gemaakt van jouw eigen foto · ${sample.unit}.`, proefAlt: 'Of start een bestelling',
     vertrouwen: [['Gemaakt in Enschede', '/about'], 'Ingeschreven bij de KVK', 'Elk beeld door ons gecontroleerd', 'Vragen tussendoor via WhatsApp'],
-    stapAlt: ['', 'De roze jeans, uitgeknipt en op wit gezet, met de natuurlijke schaduw eronder'],
-    lagen: ['Uitgeknipt', 'Achtergrond', 'Natuurlijke schaduw'],
+    stapAlt: ['', 'De roze jeans, uitgeknipt en op lichtgrijs gezet, met de natuurlijke schaduw eronder'],
+    lagen: [['Uitgeknipt', 'met de pen'], ['Jouw achtergrond', ''], ['Schaduw', 'met de hand · '], ['Gelijk aan je set', 'zelfde lijnen en grond']],
     dienstAlt: ['Twaalf catalogbeelden op wit in een raster', 'Sfeerbeeld: een model met een violet vest en een tas loopt door een witte hal', 'Een bewogen opname van hetzelfde sfeerbeeld'],
   },
   en: {
@@ -150,13 +154,13 @@ const COPY = {
     hoeLabel: 'How it works', hoeKop: ['What you send.', 'What you get back.'],
     stappen: [
       ['You send', `${FOTOS} phone photos are all you need to start.`, 'your phone photos'],
-      ['We make', `Catalog, lifestyle or video. ${LEVERTIJD}.`, 'Same background on every image'],
+      ['We make', `Catalog, lifestyle or video. ${LEVERTIJD}.`, 'By hand, every image the same'],
       ['You approve', 'Approve image by image. Download everything at once.', ''],
     ],
     goedgekeurd: (n: number) => `${n} of ${n} approved`,
     uitlegZinnen: [
       `You send ${fotos} phone photos per product: ${SHOT_NAMEN.en}.`,
-      'We finish every image: cut out, your background underneath and a natural shadow, the same way on every image.',
+      'We finish every image by hand: cut out with the pen, your background underneath, the shadow added. So every image in your set sits on the same lines.',
       'You approve image by image and download everything at once.',
     ],
     restJij: 'You only send a few photos.', restWij: 'We do the rest:',
@@ -175,7 +179,7 @@ const COPY = {
     ],
     eenProduct: `One product: ${e(ladderRate('catalog', 1))} (catalog) or ${e(ladderRate('lifestyle', 1))} (lifestyle). More products, a lower rate.`,
     vorige: 'Previous', volgende: 'Next', veeg: 'Swipe for the other two',
-    looksLabel: 'Looks', looksKop: ['Pick a look.', 'Your collection as one shoot.'], probeer: `Try · ${sample.price}`,
+    looksLabel: 'Looks', looksKop: ['Pick a look.', 'Your collection as one shoot.'], probeer: `Try · ${sample.price}`, bestelLook: 'Order this look',
     vorigeLooks: 'Previous looks', volgendeLooks: 'Next looks',
     gezicht: ['A face comes with it.', `${GEZICHTEN.charAt(0).toUpperCase() + GEZICHTEN.slice(1)} models, at no extra cost.`], alleGezichten: `All ${GEZICHTEN}`,
     wetenLabel: 'Learn more', wetenKop: ['Any', 'questions?'],
@@ -185,8 +189,8 @@ const COPY = {
     proefLabel: 'Trial', proefKop: ['See it first?', 'One product for'],
     proefZin: `Made from your own photo · ${sample.unit}.`, proefAlt: 'Or start an order',
     vertrouwen: [['Made in Enschede', '/about'], 'Registered with the KVK', 'Every image checked by us', 'Questions mid-order on WhatsApp'],
-    stapAlt: ['', 'The pink jeans, cut out and set on white, with the natural shadow underneath'],
-    lagen: ['Cut out', 'Background', 'Natural shadow'],
+    stapAlt: ['', 'The pink jeans, cut out and set on light grey, with the natural shadow underneath'],
+    lagen: [['Cut out', 'with the pen'], ['Your background', ''], ['Shadow', 'by hand · '], ['Matches your set', 'same lines and colour']],
     dienstAlt: ['Twelve catalog images on white in a grid', 'Mood image: a model in a violet cardigan with a bag walks through a white hall', 'A motion-blurred shot of the same mood image'],
   },
 };
@@ -247,7 +251,7 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
       </h1>
       <p class="h-lede h-op" style="--d:4">{c.lede}</p>
       <p class="h-acties h-op" style="--d:5">
-        <a class="h-knop h-knop-inkt" href={lp('/start')}>{c.ctaStart}<span class="o" set:html={ik('rechts')} /></a>
+        <a class="h-knop h-knop-inkt" href={lp('/start')} {...startKnop(lang)}><span data-vis-label>{c.ctaStart}</span><span class="o" set:html={ik('rechts')} /></a>
         <a class="h-knop h-knop-lijn" href={lp('/test-sample')} data-vis-uit>{sample.cta}</a>
         <a class="h-knop h-knop-lijn" href={lp('/start/plan')} {...planKnop(lang, lp)}><span data-vis-label>{c.planCta}</span></a>
       </p>
@@ -261,7 +265,7 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
   </section>
 
   {/* ── 02 · HOE HET WERKT ───────────────────────────────────────────────── */}
-  <section class="h-sec h-hoe" id="hoe" aria-labelledby="h-hoe" data-uitleg={uitleg ? '' : undefined} data-uitleg-maat="2200 3800 2600" data-uitleg-start="400">
+  <section class="h-sec h-hoe" id="hoe" aria-labelledby="h-hoe" data-uitleg={uitleg ? '' : undefined} data-uitleg-maat="2200 7800 2600" data-uitleg-start="400">
     <header class="h-sec-kop h-in">
       <div>
         <p class="h-pil"><span>{c.hoeLabel}</span></p>
@@ -301,21 +305,55 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
             ) : i === 1 ? (
               <figure class="h-well h-maak">
                 <span class="h-maak-dam" aria-hidden="true"></span>
+                <span class="h-maak-doek" aria-hidden="true"></span>
                 <span class="h-maak-wit" aria-hidden="true"></span>
-                {/* Drie lagen op dezelfde plek, alle drie 760 × 760 en pixel voor pixel
-                    gelijk: de schaduw in wording (de uitsnede, zwart gemaakt en
-                    vervaagd), de uitsnede zelf, en het geleverde beeld. Lucas, 14
-                    oktober: *"Ik wil gewoon de normale schaduw van de normale foto
-                    hebben want dit is ook wat de klant krijgt."* Dus de schaduw schuift
-                    als laag op zijn plek, en dan vloeit alles over in de echte foto. */}
+                {/* ── STAP 2 MET DE HAND — 15 oktober 2026 ──────────────────────────────
+                    Lucas: *"de 2e stap 'we create' wat meer een handmatig gevoel te geven
+                    dat de klant echt ziet dat het met de hand word gedaan de achtergrond en
+                    de Shadow en ook erbij aan te tonen dat dit voor optimale consistentie
+                    zorgt."* Vijf handelingen, elk met zijn gereedschap: (1) de pen trekt de
+                    omtrek, punt voor punt, en het wit valt weg; (2) de pipet pakt de kleur uit
+                    je vaste look en de grond loopt vol; (3) het penseel zet de schaduw in drie
+                    halen, de dekking loopt op tot 20 %; (4) het geleverde beeld, met
+                    hulplijnen boven, onder en in het midden, en de achterkant valt er precies
+                    in (gemeten: 1 à 2 px verschil, zie scripts/maak-pad.py); (5) klaar.
+                    Alle lagen zijn 760 × 760 en liggen pixel voor pixel op elkaar. Het
+                    eindbeeld (zonder script, bij minder beweging, na afloop) is het geleverde
+                    beeld met vier vinkjes; het gereedschap staat er dan niet. */}
                 <span class="h-maak-vlak">
                   <img class="h-maak-schaduw" src="/img/ba2-na-front-uitgeknipt.webp" width="760" height="760" alt="" aria-hidden="true" loading="lazy" decoding="async" />
                   <img class="h-maak-broek" src="/img/ba2-na-front-uitgeknipt.webp" width="760" height="760" alt="" aria-hidden="true" loading="lazy" decoding="async" />
+                  <img class="h-maak-begin" src="/img/ba2-na-front.webp" width="760" height="760" alt="" aria-hidden="true" loading="lazy" decoding="async" />
                   <img class="h-maak-echt" src={geleverd(lang)[0].src} width={geleverd(lang)[0].w} height={geleverd(lang)[0].h} alt={c.stapAlt[1]} loading="lazy" decoding="async" />
+                  <img class="h-maak-achter" src={geleverd(lang)[1].src} width={geleverd(lang)[1].w} height={geleverd(lang)[1].h} alt="" aria-hidden="true" loading="lazy" decoding="async" />
+                  <svg class="h-maak-werk" viewBox={`0 0 ${PAD_MAAT} ${PAD_MAAT}`} aria-hidden="true" focusable="false">
+                    <g class="h-maak-lijnen">
+                      <line x1="0" x2={PAD_MAAT} y1={LIJNEN.boven} y2={LIJNEN.boven} pathLength="1" />
+                      <line x1="0" x2={PAD_MAAT} y1={LIJNEN.onder} y2={LIJNEN.onder} pathLength="1" />
+                      <line x1={LIJNEN.midden} x2={LIJNEN.midden} y1="0" y2={PAD_MAAT} pathLength="1" />
+                    </g>
+                    <path class="h-maak-pad" d={PAD} pathLength="1" />
+                    <g class="h-maak-ankers">{ANKERS.map(([x, y, t]: number[]) => <rect x={x - 6} y={y - 6} width="12" height="12" style={`--t:${t}`} />)}</g>
+                    <g class="h-maak-pen" style={`offset-path: path('${PAD}')`}>
+                      <circle cx="42" cy="-42" r="38" /><g transform="translate(42 -42) scale(1.4) translate(-30 30)"><path d="M30 -48 L41 -37 L36 -19 L24 -19 L19 -37 Z M30 -48 V-32" transform="rotate(45 30 -30)" /></g><circle class="h-maak-punt" cx="0" cy="0" r="6" />
+                    </g>
+                    <g class="h-maak-kwast" style={`offset-path: path('${KWAST}')`}>
+                      <circle cx="42" cy="-42" r="38" /><g transform="translate(42 -42) scale(1.4) translate(-30 30)"><path d="M18 -18 C18 -24 22 -27 26 -26 C29 -25 30 -21 27 -18 C24 -15 19 -16 18 -18 Z M27 -26 L43 -42" /></g><circle class="h-maak-punt" cx="0" cy="0" r="6" />
+                    </g>
+                  </svg>
                 </span>
                 <ol class="h-lagen h-glas" role="list">
-                  {c.lagen.map((l: string, k: number) => (
-                    <li style={`--l:${k}`}><i aria-hidden="true" set:html={ik('check')} /><span>{l}</span>{k === 1 && <b><s aria-hidden="true"></s>#FFFFFF</b>}</li>
+                  {c.lagen.map(([l, onder]: [string, string], k: number) => (
+                    <li style={`--l:${k}`}>
+                      <i aria-hidden="true" set:html={ik('check')} />
+                      <span>{l}</span>
+                      <b>
+                        {k === 1 && <s aria-hidden="true"></s>}
+                        {k === 1 && <span class="h-lagen-hex">{GROND}</span>}
+                        {k === 1 && <em class="h-maak-pipet" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M3 13l.8-3 5.6-5.6 2.2 2.2L6 12.2z M9.6 4.2l1.4-1.4a1.5 1.5 0 0 1 2.2 2.2l-1.4 1.4" /></svg></em>}
+                        {onder}{k === 2 && <span class="h-dek" />}
+                      </b>
+                    </li>
                   ))}
                 </ol>
                 <figcaption class="h-chip h-glas">{bij}</figcaption>
@@ -422,7 +460,8 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
             <span class="h-pil h-pil-glas h-pil-nr">{k.soort}</span>
             <span class="h-cirkel h-cirkel-glas h-look-pijl" aria-hidden="true" set:html={ik('pijl')} />
           </a>
-          <p class="h-look-paneel h-glas"><b>{k.naam}</b><a class="h-mini-knop" href={k.proef}>{c.probeer}</a></p>
+          {/* Een klant (15 oktober 2026): "Bestel deze look" in plaats van de €1-proef. */}
+          <p class="h-look-paneel h-glas"><b>{k.naam}</b><a class="h-mini-knop" href={k.proef} data-vis-uit>{c.probeer}</a><a class="h-mini-knop" href={k.bestel} data-vis-klant-in hidden>{c.bestelLook}</a></p>
         </li>
       ))}
     </ul>

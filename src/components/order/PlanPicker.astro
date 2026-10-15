@@ -291,7 +291,9 @@ for (const p of planList) {
       { t: tt.fixed
           ? (nl ? `Looptijd ${tt.months} maanden` : `${tt.months}-month term`)
           : (nl ? 'Maandelijks opzegbaar' : 'Cancel any month'),
-        sub: tt.fixed ? undefined : (nl ? 'zelf, in je dashboard' : 'yourself, in your dashboard') },
+        /* Doorloop 27 (B22): bovenaan deze pagina heet het "VISUAILS Studio";
+           "je dashboard" is hetzelfde scherm met een ander woord. */
+        sub: tt.fixed ? undefined : (nl ? 'zelf, in VISUAILS Studio' : 'yourself, in VISUAILS Studio') },
     ];
     /* ── HET VOORUITBETAALDE JAAR OP DE PLAAT — 10 september 2026 ─────────
        Twee regels erbij, en allebei staan ze er omdat de klant ze moet lezen
@@ -400,6 +402,8 @@ const gratisTekst = (taal: 'nl' | 'en') => {
 };
 
 const c = nl ? {
+  /* 15 oktober 2026: wie al een abonnement heeft, krijgt hier geen tweede aangeboden. */
+  abo: { kop: 'Je hebt al een abonnement.', zin: 'Overstappen naar een ander plan, credits bijkopen of pauzeren doe je in VISUAILS Studio.', knop: 'Naar je abonnement' },
   h: 'Je abonnement',
   lede: 'Kies hoeveel credits je elke maand wilt. Je besteedt ze aan catalogsets en carrousels, wanneer je wilt.',
   voordelen: [
@@ -437,7 +441,7 @@ const c = nl ? {
   maatCustomBody: 'Een eigen look kan wél in een abonnement, maar pas als hij gemaakt is — anders betaal je voor iets dat nog niet bestaat. Vraag hem aan met de knop hieronder; zodra hij klaar is, kies je hem in je account als vaste look en kost hij gewoon de credits van een carrousel.',
   maatCustomCta: 'Vraag een eigen look aan',
   termMaand: 'Maandelijks',
-  termMaandSub: 'Elke maand opzegbaar, zelf in je dashboard.',
+  termMaandSub: 'Elke maand opzegbaar, zelf in VISUAILS Studio.',
   /* De tussentermijn "12 maanden" is weg sinds 6.04 (8 oktober 2026). */
   termVooruit: '12 maanden vooruit',
   termVooruitSub: `Betaal 10, krijg 12 (${gratisTekst('nl')}), met een prijsgarantie; bij ${planName('studio', 'nl')} je eigen merkmodel. Je betaalt het jaar in één keer. Stop je eerder, dan komt er geen geld terug; je jaar loopt gewoon door tot het einde.`,
@@ -546,6 +550,7 @@ const c = nl ? {
     video: 'Motion clip',
   },
 } : {
+  abo: { kop: 'You already have a plan.', zin: 'Switching plans, buying credits or pausing is done in VISUAILS Studio.', knop: 'Go to your plan' },
   h: 'Your plan',
   lede: 'Choose how many credits you want each month. Spend them on catalog sets and carousels, whenever you like.',
   voordelen: [
@@ -579,7 +584,7 @@ const c = nl ? {
   maatCustomBody: 'A look of your own can go into a plan, but only once it is built — otherwise you pay for something that does not exist yet. Request it with the button below; once it is ready, you pick it in your account as your fixed look and it costs the ordinary carousel credits.',
   maatCustomCta: 'Request a custom look',
   termMaand: 'Monthly',
-  termMaandSub: 'Cancel any month, in your dashboard.',
+  termMaandSub: 'Cancel any month, yourself in VISUAILS Studio.',
   termVooruit: '12 months up front',
   termVooruitSub: `Pay 10, get 12 (${gratisTekst('en')}), with a price lock; on ${planName('studio', 'en')} your own Brand Model. You pay the year in one go. Stop early and there is no refund; your year simply runs on to the end.`,
   termMaat: 'A custom plan always runs monthly.',
@@ -728,6 +733,11 @@ const kaarten = planList.map((p) => {
         ))}
       </ul>
     </header>
+
+    <div class="ps-abonnee" data-vis-klant="abonnee" hidden role="status">
+      <p class="lopend"><b>{c.abo.kop}</b> {c.abo.zin}</p>
+      <p class="acties"><a class="knop knop-inkt" href="/account/plan">{c.abo.knop}</a></p>
+    </div>
 
     {/* foutTekst blijft staan voor het geval deze pagina ooit wél per verzoek
         gerenderd wordt; dan wint de server en heeft het script niets te doen.
@@ -941,7 +951,7 @@ const kaarten = planList.map((p) => {
             <div class="ps-tegelblok">
               <ul class="ps-tegels" role="list">
                 {tegels.map((t) => (
-                  <li><img src={t.src} width="760" height="760" alt={t.alt} loading="lazy" decoding="async" /></li>
+                  <li><span class="ps-tegel"><img src={t.src} width="120" height="120" alt={t.alt} loading="lazy" decoding="async" /></span><span class="ps-tegel-naam" aria-hidden="true">{t.label}</span></li>
                 ))}
               </ul>
               {c.perProductRegel && <p class="ps-tegels-noot">{c.perProductRegel}</p>}
@@ -1834,13 +1844,12 @@ const kaarten = planList.map((p) => {
     list-style: none; margin: 0; padding: 0;
     display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px;
   }
-  .ps-tegels li {
-    aspect-ratio: 1; overflow: hidden;
-    background: rgb(15 12 36 / 0.10);
-    border: 1px solid rgb(15 12 36 / 0.18);
-    border-radius: 2px;
-  }
-  .ps-tegels img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* Schetsen sinds 15 oktober 2026 (overzichtbeelden.js): wit vlak op de plaat,
+     de naam van het beeld eronder. Dezelfde vorm als .bo-tegels. */
+  .ps-tegels li { display: grid; gap: .35rem; min-width: 0; }
+  .ps-tegel { display: block; aspect-ratio: 1; overflow: hidden; border-radius: 10px; background: #fff; }
+  .ps-tegels img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .ps-tegel-naam { font-size: .75rem; line-height: 1.25; color: var(--ink-2); text-align: center; overflow-wrap: anywhere; }
   /* --ink-2 en niet --ink-3: op limoen is 66% zwart al randje, en dit is de
      regel die zegt wat je per product krijgt — precies wat gelezen moet worden. */
   .ps-tegels-noot { margin: .6rem 0 0; font-size: .86rem; line-height: 1.45; color: var(--ink-2); }

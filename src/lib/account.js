@@ -221,6 +221,7 @@ import { vakNaam } from '../data/levervakken.js';
 import { loadDeliveryFiles, deliveryEntries, deliveryDocs, deliveryZipFiles, downloadTaal, orderProductNames, leveringIngetrokken, TOEGANG_KOLOMMEN, ZICHTBAAR_VOOR_KLANT } from './delivery.js';
 /* k401 (11 oktober 2026): "Ook als PNG" / "Ook als WebP" op de bestelkaart. */
 import { formaatView, formatenVoorOrders, handleFormaatPost } from './formaten.js';
+import { klapZet } from './studioKoppen.js';
 // Aliased on import: this file already has `esc`, `note` and a `p` of its own
 // for the account SCREENS, and the mail template exports the same three names
 // for the mail. Two `p`s in one module is a bug waiting for whichever one gets
@@ -455,6 +456,7 @@ const COPY = {
     // scherm dat een link belooft en een codeveld toont, is hetzelfde
     // verschil dat de mail zelf ook had.
     loginLede: 'Use the email address you ordered with and we\u2019ll send you a code and a link to sign in. There is no password.',
+    loginLedeVooraf: 'We\u2019ll send you a code and a link to sign in. There is no password.',
     // WIE HIER KAN INLOGGEN, EN WAAROM DAT ER STAAT. Er is geen aanmeldknop:
     // een account ontstaat bij een bestelling, en verder nergens. Wie dat niet
     // weet, vult zijn adres in, krijgt "check je e-mail", en wacht op een mail
@@ -499,7 +501,9 @@ const COPY = {
     // account-opsomming die de rest van dit bestand overal vermijdt. Nu zegt
     // deze zin hetzelfde tegen iedereen: onbekend adres, verkeerde code,
     // verlopen code, opgebruikte code.
-    codeWrong: 'That code does not work (any more) — a code lasts 10 minutes. Use the link in the same email, or ask for a new one below.',
+    /* Doorloop 27 (B40): de zin las bij een tikfout als "verlopen". Nog steeds
+       één zin voor iedereen (zie hierboven), maar nu met "kijk de cijfers na". */
+    codeWrong: 'That code is wrong or has expired. Check the six digits, use the link in the same email, or ask for a new one below.',
     codeAgain: 'Send a new email',
     codeAgainCta: 'Send a new code',
     codeTooMany: 'Too many attempts from here. Wait a minute, or use the link in the email.',
@@ -578,7 +582,8 @@ const COPY = {
     /* Ronde 9, F16: geen formaatbelofte meer hier — Studio weet op dit scherm
        niet welke formaten er voor deze levering klaarstaan (de privélink wel, en
        noemt ze daar). */
-    folderBody: 'One folder per product with every visual of this order, in the shape you chose.',
+    /* Doorloop 27 (B11): de zip is meestal plat (levering via /admin), dus geen "map per product". */
+    folderBody: 'Every image from this order in one download, in the shape you chose. The filename tells you which product and which shot it is.',
     folderReview: 'The photos below are review copies, at screen size. They are there to approve or to point at when something is wrong. The folder holds the real files.',
     contactH: 'Ask a question',
     contactWa: 'WhatsApp',
@@ -1190,6 +1195,7 @@ const COPY = {
   nl: {
     loginTitle: 'Inloggen',
     loginLede: 'Vul het e-mailadres in waarmee je hebt besteld, dan sturen we je een code en een inloglink. Een wachtwoord heb je niet nodig.',
+    loginLedeVooraf: 'We sturen je een code en een inloglink. Een wachtwoord heb je niet nodig.',
     loginWho: 'Je account ontstaat zodra je een bestelling plaatst. Aanmelden kan niet apart, dus dit werkt alleen met een adres waarmee al besteld is.',
     loginEmailLabel: 'E-mail',
     loginSubmit: 'Stuur mijn code',
@@ -1205,7 +1211,7 @@ const COPY = {
     codeShape: 'Een code bestaat uit zes cijfers.',
     // Zie de Engelse tak: één zin voor elke misser, zodat er niets te lezen
     // valt over of het adres bestaat.
-    codeWrong: 'Die code werkt niet (meer) — een code is 10 minuten geldig. Gebruik de link in dezelfde mail, of vraag hieronder een nieuwe aan.',
+    codeWrong: 'Die code klopt niet of is verlopen. Kijk de zes cijfers na, gebruik de link in dezelfde mail, of vraag hieronder een nieuwe aan.',
     codeAgain: 'Nieuwe mail sturen',
     codeAgainCta: 'Stuur een nieuwe code',
     codeTooMany: 'Te veel pogingen vanaf hier. Wacht even, of gebruik de link in de mail.',
@@ -1256,7 +1262,7 @@ const COPY = {
     fotosDag: 'Je hebt vandaag het maximum aantal foto\u2019s verstuurd. Stuur de rest morgen, of stuur ze ons via WhatsApp of mail.',
     bDownloadAll: 'Downloaden (zip)',
     folderH: 'Jouw bestanden',
-    folderBody: 'Eén map per product met alle beelden van deze bestelling, in de beeldverhouding die je koos.',
+    folderBody: 'Alle beelden van deze bestelling in één download, in de beeldverhouding die je koos. De bestandsnaam zegt welk product en welke opname het is.',
     folderReview: 'De foto\'s hieronder zijn voorbeeldweergaven op schermformaat. Ze staan er om goed te keuren of om naar te wijzen als er iets niet klopt. De echte bestanden zitten in de map.',
     contactH: 'Stel een vraag',
     contactWa: 'WhatsApp',
@@ -2557,7 +2563,7 @@ async function handleCodePost(context) {
      als de taalknop in de zijbalk zet. Anders viel een klant zonder
      bestelling terug op de browser en de referer (zie negotiate()). */
   const terug = readTerug(request);
-  return seeOther(terug || '/account', [setSessionCookie(sessionToken), langCookieHeader(lang), ...(terug ? [clearTerugCookie()] : [])]);
+  return seeOther(terug || '/account', [setSessionCookie(sessionToken), langCookieHeader(lang), ...(terug ? [clearTerugCookie()] : []), `${PLAN_MAIL_COOKIE}=; Max-Age=0; ${COOKIE_FLAGS}`]);
 }
 
 // env.DB is guaranteed here — accountGet checks it before this is ever reached,
@@ -2656,7 +2662,7 @@ async function handleVerify(context, token, { bevestigd = false } = {}) {
      inloglink. */
   let naar = readTerug(request) || '/account';
   try { if (new URL(request.url).searchParams.get('naar') === 'plan') naar = '/account/plan'; } catch { /* dan het overzicht */ }
-  return seeOther(naar, [setSessionCookie(sessionToken), langCookieHeader(lang), clearTerugCookie()]);
+  return seeOther(naar, [setSessionCookie(sessionToken), langCookieHeader(lang), clearTerugCookie(), `${PLAN_MAIL_COOKIE}=; Max-Age=0; ${COOKIE_FLAGS}`]);
 }
 
 async function handleLogout({ env }, customer) {
@@ -2849,7 +2855,8 @@ export async function sectionState(context, customer) {
     if (balk === 'dicht' || balk === 'open') {
       url.searchParams.delete('nav');
       const back = `${url.pathname}${url.search}${url.hash}`;
-      return seeOther(back, [`vis_nav=${balk}; Max-Age=${maxAge(PREFERENCE_COOKIE_DAYS)}; ${COOKIE_FLAGS}`]);
+      /* klapZet(): alleen deze ene paginawissel beweegt (zie studioKoppen.js). */
+      return seeOther(back, [`vis_nav=${balk}; Max-Age=${maxAge(PREFERENCE_COOKIE_DAYS)}; ${COOKIE_FLAGS}`, klapZet()]);
     }
     /* Een oude link met ?thema= (het maantje, tot 14 oktober 2026): terug naar
        dezelfde pagina zonder de parameter, en zonder cookie. Zie themaCookie(). */
@@ -3379,8 +3386,12 @@ export function klantStandVan({ lang = 'nl', row = {}, orders = [], filesByOrder
     abonnee: !!abonnee,
     saldo: Math.max(0, Math.floor(Number(saldo) || 0)),
     /* Nog nooit iets besteld, ook geen proef (14 oktober 2026): dan krijgt
-       deze klant op de site de proef-melding, net als wie niet is ingelogd. */
-    nieuw: orders.length === 0,
+       deze klant op de site de proef-melding, net als wie niet is ingelogd.
+       15 oktober 2026 (Lucas, ingelogd met een abonnement: *"zie nog steeds
+       veel €1 test producten terwijl dit niet meer relevant is voor mij"*): wie
+       een abonnement of credits heeft, is geen nieuwe klant, ook zonder
+       bestelling. Voor hem verdwijnt de proef overal. */
+    nieuw: orders.length === 0 && !abonnee && !(Number(saldo) > 0),
   };
 }
 
@@ -5843,6 +5854,28 @@ export function formulierTerug(request) {
     return '';
   }
 }
+/* ── HET ADRES VAN HET ABONNEMENT, VOOR DE INLOGKAART — 15 oktober 2026 ─────
+   (doorloop 27, B18) Na het afsluiten van een abonnement kwam de klant op de
+   inlogkaart en typte hij zijn adres opnieuw. functions/api/plan.js zet dit
+   koekje in de browser die het formulier invulde (daar typte hij het zelf), en
+   de inlogkaart leest het alleen na ?na=abonnement. Geen adres in een url, en
+   een vreemde browser krijgt niets: alleen de browser die het formulier
+   verstuurde, heeft het koekje. Een uur geldig, weg na het inloggen. */
+export const PLAN_MAIL_COOKIE = 'vs_plan_mail';
+export function setPlanMailCookie(email) {
+  return `${PLAN_MAIL_COOKIE}=${encodeURIComponent(String(email || '').trim().slice(0, 254))}; Max-Age=3600; ${COOKIE_FLAGS}`;
+}
+export function readPlanMail(request) {
+  const header = request.headers.get('Cookie') || '';
+  for (const part of header.split(';')) {
+    const i = part.indexOf('=');
+    if (i === -1 || part.slice(0, i).trim() !== PLAN_MAIL_COOKIE) continue;
+    let v = '';
+    try { v = decodeURIComponent(part.slice(i + 1).trim()); } catch { v = ''; }
+    return /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,}$/.test(v) && v.length <= 254 ? v : '';
+  }
+  return '';
+}
 function setTerugCookie(pad) {
   return `${TERUG_COOKIE}=${encodeURIComponent(pad)}; Max-Age=1800; ${COOKIE_FLAGS}`;
 }
@@ -6005,7 +6038,7 @@ export async function studioAuth(context) {
       const taal = ['nl', 'en'].includes(url.searchParams.get('lang')) ? `?lang=${url.searchParams.get('lang')}` : '';
       return seeOther(`/account/login${taal}`, [setTerugCookie(formulier)]);
     }
-    return authPage(ctx, { view: 'login', lang: negotiate(request), na });
+    return authPage(ctx, { view: 'login', lang: negotiate(request), na, vooraf: na === 'abonnement' ? readPlanMail(request) : '' });
   }
   if (path === '/account/login' && method === 'POST') return handleLoginPost(ctx);
   if (path === '/account/code' && method === 'POST') return handleCodePost(ctx);
@@ -9001,8 +9034,12 @@ export function shotView(t, f, o, inProduct = false) {
       };
     }
   }
+  /* Doorloop 27 (B36, afvinklijst 27 v27-b36 a): het label is het vak
+     ("Voorkant · Op model"), de bestandsnaam staat klein eronder — die ziet de
+     klant in haar webshop terug. Alleen als het label niet al de naam is. */
+  const file = f.filename && caption !== f.filename ? f.filename : '';
   return {
-    id: f.id, gone, isUpload, caption, badge, said, review,
+    id: f.id, gone, isUpload, caption, file, badge, said, review,
     viewable: isViewable(f),
     ext: (String(f.filename || '').split('.').pop() || 'file').toUpperCase(),
     href: `/account/files/${f.id}/f`,
@@ -9531,6 +9568,7 @@ const ABO = {
     standStil: 'Je abonnement staat stil. Neem contact met ons op als je verder wilt.',
     standOpgezegd: (d) => `Je abonnement stopt op ${d}. Er wordt niets meer afgeschreven. Je credits blijven geldig tot ${CREDITS_GELDIG_MAANDEN} maanden na je laatste termijn.`,
     standGestopt: `Je abonnement is gestopt. Je credits blijven geldig tot ${CREDITS_GELDIG_MAANDEN} maanden na je laatste termijn.`,
+    perMail: 'Je krijgt een bevestiging per mail.',
     hervatten: 'Hervatten',
     tochDoor: 'Toch doorgaan',
     bestelH: 'Bestellen met credits',
@@ -9613,6 +9651,7 @@ const ABO = {
     standStil: 'Your plan is on hold. Get in touch if you want to continue.',
     standOpgezegd: (d) => `Your plan stops on ${d}. Nothing more is collected. Your credits stay valid until ${CREDITS_GELDIG_MAANDEN} months after your last monthly credits came in.`,
     standGestopt: `Your plan has stopped. Your credits stay valid until ${CREDITS_GELDIG_MAANDEN} months after your last monthly credits came in.`,
+    perMail: 'We sent a confirmation by email.',
     hervatten: 'Resume',
     tochDoor: 'Keep going after all',
     bestelH: 'Order with credits',
@@ -9783,7 +9822,7 @@ export async function planView(env, request, t, lang, customer, models = [], loc
      `paused_at` staat dan in de toekomst. */
   const pauzeDag = sub?.status === 'paused' && sub.paused_at ? String(sub.paused_at).slice(0, 10) : '';
   const pauzeStraks = !!(pauzeDag && pauzeDag > nu.toISOString().slice(0, 10) && sub.pause_reason === 'customer');
-  const bevestiging = {
+  let bevestiging = {
     pauze: pauzeStraks ? A.pauzeOkStraks(datumLang(pauzeDag, L, nu)) : (jaar ? t.planPauseOkPrepaid : t.planPauseOk),
     hervat: jaar ? t.planResumeOkPrepaid : t.planResumeOk,
     opgezegd: t.planCancelOk,
@@ -9828,6 +9867,20 @@ export async function planView(env, request, t, lang, customer, models = [], loc
   } else if (state.jaarOpgezegd) {
     stand = 'jaaropgezegd';
     standZin = t.planYearCancelledNote(state.jaarTot ? mailDatum(state.jaarTot, L) : (L === 'nl' ? 'het einde van je jaar' : 'the end of your year'));
+  }
+
+  /* ── ÉÉN BEVESTIGING, NIET TWEE — 15 oktober 2026 (doorloop 27, B28) ──────
+     Na opzeggen of pauzeren stond bovenaan "Je opzegging is genoteerd. Je jaar
+     loopt gewoon door…" en eronder in het standblok bijna dezelfde zin, met de
+     datum. Als de bevestiging over dezelfde stand gaat, komt er één blok: de
+     standzin met de datum, plus "je krijgt een bevestiging per mail". Het
+     standblok blijft, want daar staat ook de knop Hervatten. */
+  let standNet = false;
+  const hoortBij = { opgezegd: ['opgezegd'], jaaropgezegd: ['jaaropgezegd'], pauze: ['pauze', 'pauze-straks'] }[ok];
+  if (hoortBij && hoortBij.includes(stand) && standZin) {
+    standZin = `${standZin} ${A.perMail}`;
+    bevestiging = '';
+    standNet = true;
   }
 
   /* ── HET SALDO ───────────────────────────────────────────────────────── */
@@ -9955,7 +10008,7 @@ export async function planView(env, request, t, lang, customer, models = [], loc
   } : null;
 
   return {
-    geen: false, melding, bevestiging, stand, standZin,
+    geen: false, melding, bevestiging, stand, standZin, standNet,
     chip: stand === 'pauze-straks'
       ? { tekst: L === 'nl' ? `Pauze vanaf ${datumLang(pauzeDag, L, nu)}` : `Paused from ${datumLang(pauzeDag, L, nu)}`, toon: 'warn' }
       : planStatus ? { tekst: planStatus, toon: stand === 'actief' ? 'signal' : 'warn' } : (stand === 'gestopt' ? { tekst: t.planStatusEnding, toon: 'warn' } : null),

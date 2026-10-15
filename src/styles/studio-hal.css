@@ -155,6 +155,12 @@ body.studio.st-hal .st-blok { gap: 1rem; }
 body.studio.st-hal .st-blok-kop h2 { font-family: var(--h-letter); font-size: 1.25rem; font-weight: 600; letter-spacing: -.01em; color: #0F0C24; }
 body.studio.st-hal .st-blok-kop .st-link { font-size: .875rem; }
 body.studio.st-hal .st-kaart-vlak:not(.st-cijfers) { border: 1px solid #DEDCE8; border-radius: 28px; background: #FFFFFF; }
+/* ── "NOG GEEN ABONNEMENT" BLIJFT DONKER — 14 oktober 2026 (doorloop 27, B13) ──
+   De regel hierboven maakt elke kaart wit. .st-geenabo (studio.css) zet witte
+   letters en de donkere tokens, want hij hoort donker te zijn. Samen gaf dat
+   wit op wit (1,0:1) op /account/plan bij elke klant zonder abonnement: een
+   lege kaart met twee knoppen. Zelfde specificiteit, later in het bestand. */
+body.studio.st-hal .st-kaart-vlak.st-geenabo { background: #0F0C24; border-color: #0F0C24; }
 body.studio.st-hal .st-leeg { border-radius: 22px; border-color: #C9C6D8; }
 
 /* De link: violet, dun onderstreept — het enige violet in lopende tekst. */

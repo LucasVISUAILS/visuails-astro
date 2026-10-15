@@ -284,7 +284,7 @@
      a `stroke` inside a data: URL cannot see var(). Hand-copy of the ink
      ramp's top step; when that moves, this moves with it or the caret stops
      matching. */
-  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23000000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --select-caret: url("/img/ui/keuzepijl-000000.svg");
 
   --font: "Figtree Variable", "Helvetica Neue", Arial, sans-serif;
 
@@ -437,7 +437,7 @@
 
   /* Het pijltje van een <select> is een SVG met een vaste streekkleur en kan
      geen variabele lezen; die staat hier nog een keer, in het wit. */
-  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23F2F3F5' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --select-caret: url("/img/ui/keuzepijl-f2f3f5.svg");
 }
 
 /* Eén regel die geen token is: de kaartrand mag in het licht wegvallen tegen de
@@ -2590,7 +2590,7 @@ html[data-thema="donker"] body {
   --adm-side: #0A0815; --adm-side-ink: rgb(242 241 248 / .72); --adm-side-ink-1: #F2F1F8; --adm-side-ink-3: rgb(242 241 248 / .58);
   --adm-side-hover: rgb(242 241 248 / .06); --adm-side-actief: #18152A; --adm-side-lijn: rgb(242 241 248 / .09);
   --adm-actief-rand: inset 0 0 0 1px rgb(242 241 248 / .12);
-  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23F2F1F8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --select-caret: url("/img/ui/keuzepijl-f2f1f8.svg");
 }
 html[data-thema="donker"] .card { border-color: rgb(242 241 248 / .12); }
 
@@ -2633,7 +2633,10 @@ html body input[type="text"], html body input[type="email"], html body input[typ
 html body input[type="search"], html body input[type="number"], html body input[type="password"], html body input[type="date"] {
   border-radius: 999px; border-color: var(--veldlijn); padding-left: .95rem; padding-right: .95rem;
 }
-html body select { border-radius: 999px; border-color: var(--veldlijn); padding-left: .95rem; padding-right: 2.2rem; background-position: right .85rem center; }
+/* Doorloop 27 (B02): `input[type=…], textarea, select { background: … }` hogerop
+   wist de background-image, en daarmee het pijltje van bijna elke keuzelijst
+   (de valstrik uit de noot bij VELDEN). Hier staat hij terug, met meer gewicht. */
+html body select { border-radius: 999px; border-color: var(--veldlijn); padding-left: .95rem; padding-right: 2.2rem; background-image: var(--select-caret); background-repeat: no-repeat; background-position: right .85rem center; }
 html body textarea { border-radius: 18px; border-color: var(--veldlijn); }
 html body input:focus, html body textarea:focus, html body select:focus { border-color: var(--ink); }
 .files select, .danger-block select {

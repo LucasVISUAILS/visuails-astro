@@ -20,8 +20,10 @@
  *   /admin   de pagina Formaten: wat openstaat, per bestelling en formaat, met
  *            de link naar de bestelling en de knop "Klaar".
  *
- * Er gebeurt niets vanzelf: geen omzetting, geen mail. Lucas levert het formaat
- * en klikt op Klaar.
+ * Er gebeurt niets vanzelf: geen omzetting. Lucas levert het formaat en klikt
+ * op Klaar. Sinds 15 oktober 2026 (doorloop 27, B31) mailt Klaar de klant dat
+ * het formaat in zijn download staat; zet FORMATEN.bat het verzoek op Klaar,
+ * dan staat er in /admin/formaten een knop "Klant mailen" bij.
  *
  * ── WAAR DE KNOPPEN STAAN, EN WAAR NIET ─────────────────────────────────────
  *
@@ -217,3 +219,58 @@ export async function formaatKlaar(env, id) {
 }
 
 export const FORMAAT_NAAM = NAAM;
+
+/* ── DE KLANT HOORT DAT HET KLAARSTAAT — 15 oktober 2026 (doorloop 27, B31) ──
+   Na "Genoteerd: we maken de beelden ook als PNG" hoorde de klant niets meer;
+   in Studio veranderde alleen een regeltje. Een korte mail, met de weg naar de
+   bestelling in Studio. */
+const MAIL = {
+  nl: {
+    onderwerp: (f, ref) => `Je ${NAAM[f]}-bestanden staan klaar — ${ref}`,
+    kop: (f) => `Je ${NAAM[f]}-bestanden staan klaar`,
+    tekst: (f) => `De beelden van deze bestelling staan nu ook als ${NAAM[f]} in je download, naast de JPG's. Dezelfde map, dezelfde bestandsnamen.`,
+    knop: 'Naar je bestelling in Studio',
+  },
+  en: {
+    onderwerp: (f, ref) => `Your ${NAAM[f]} files are ready — ${ref}`,
+    kop: (f) => `Your ${NAAM[f]} files are ready`,
+    tekst: (f) => `The images of this order are now also in your download as ${NAAM[f]}, next to the JPGs. Same folder, same file names.`,
+    knop: 'Go to your order in Studio',
+  },
+};
+export async function formaatMail(env, id, { origin = 'https://visuails.com', sendMail, mail } = {}) {
+  const n = Number(id);
+  if (!Number.isInteger(n) || n <= 0 || typeof sendMail !== 'function' || !mail) return { ok: false };
+  const r = await env.DB.prepare(
+    `SELECT fv.formaat, fv.klaar_at, o.id AS order_id, o.ref, o.email, o.name, o.lang
+       FROM formaat_verzoeken fv JOIN orders o ON o.id = fv.order_id WHERE fv.id = ?1`
+  ).bind(n).first().catch(() => null);
+  if (!r || !r.klaar_at || !r.email || !formaatGeldig(r.formaat)) return { ok: false };
+  const lang = r.lang === 'en' ? 'en' : 'nl';
+  const t = MAIL[lang];
+  /* /account/orders?order=<id>, zoals elke andere link naar één bestelling in Studio;
+     /account/orders/<id> bestaat alleen voor POST (gemeten: 404). */
+  const oid = Number(r.order_id);
+  const href = `${origin}/account/orders?order=${oid}${lang === 'en' ? '&lang=en' : ''}#order-${oid}`;
+  try {
+    await sendMail(env, {
+      to: r.email,
+      subject: t.onderwerp(r.formaat, r.ref),
+      html: mail.shell({
+        lang,
+        preheader: t.tekst(r.formaat),
+        body: [
+          mail.h1(t.kop(r.formaat), mail.esc(r.ref)),
+          mail.p(mail.greeting(r.name, lang)),
+          mail.p(mail.esc(t.tekst(r.formaat))),
+          mail.button(href, t.knop),
+          mail.vragen(lang, r.ref),
+        ].join(''),
+      }),
+    });
+    return { ok: true, ref: r.ref };
+  } catch (err) {
+    console.error('[formaten] mail niet verstuurd voor verzoek', n, '—', err?.message || err);
+    return { ok: false };
+  }
+}

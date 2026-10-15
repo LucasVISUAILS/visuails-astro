@@ -76,6 +76,8 @@ const VERDER_ALT = {
   /* Naloop A2 (8 okt 2026): voorrang, als pipeline.js 'vis-ty-voorrang' achterliet. */
   voorrang: leverregel({ lang, levering: { soort: 'voorrang' } }),
   onbetaald: stilteRegel({ lang, factuur: 'na-betaling' }),
+  /* B27 (doorloop 27): betaald met abonnementscredits — geen aparte factuur. */
+  credits: stilteRegel({ lang, factuur: 'credits' }),
 };
 
 /*
@@ -153,22 +155,37 @@ const c = nl ? {
   flowModel: 'Je krijgt eerst een paar richtingen om op te reageren, met één correctieronde. Daarna bouwen we het gezicht, halen het door de uniciteitscontrole en leggen het vast op jouw merk. Vanaf dan kies je het in elke bestelling.',
   titleContact: 'Bedankt — we hebben je bericht.',
   flowContact: 'We lezen het zelf en antwoorden via het kanaal dat je koos — meestal binnen het uur, buiten de openingstijden de volgende ochtend.',
+  /* ── DOORLOOP 27 (14 oktober 2026) ──────────────────────────────────────────
+     B17: de terugkeer na het betalen van een offerte (video, eigen look) kreeg
+     de beeldenbestelling: "we kijken je foto's na, zo snel mogelijk, extra
+     close-ups gratis". De mail zegt het goed; dit is dezelfde zin.
+     B15: bij een aanvraag heet de knop "Bekijk je aanvraag", zoals in de mail.
+     B27: met credits betaald komt er geen factuur (de termijnfactuur dekt het). */
+  flowQuote: 'We gaan aan de slag zoals in de offerte staat. Nog geen productfoto’s gestuurd? Beantwoord de mail met de foto’s, of app ze. Je krijgt een mail zodra er iets klaarstaat.',
+  ctaRequest: 'Bekijk je aanvraag',
+  titleCredits: 'Betaald met je credits — we gaan aan de slag.',
   cta: 'Bekijk je bestelling',
-  signin: 'De privélink in je bevestigingsmail opent deze bestelling zonder inloggen. In VISUAILS Studio log je in met het e-mailadres van deze bestelling — we mailen je een code en een link, er is geen wachtwoord.',
+  /* Afvinklijst 27 (k-bedank): compacter. Sinds B04 is de bevestiging bij direct
+     betalen de betaalmail; "de link in je mail" klopt voor allebei. */
+  signin: 'De link in je mail opent deze bestelling zonder inloggen. In VISUAILS Studio log je in met het e‑mailadres van de bestelling: je krijgt een code, geen wachtwoord.',
+  signinRequest: 'De link in je mail opent deze aanvraag zonder inloggen. In VISUAILS Studio log je in met het e‑mailadres van de aanvraag: je krijgt een code, geen wachtwoord.',
   sumH: 'Samenvatting',
   sumRef: 'Kenmerk',
   sumMail: 'Bevestiging verstuurd naar',
   sumMailNone: 'Bevestiging per mail',
   sumTiming: 'Levertijd',
+  /* B23: vanaf de drempel zonder vastgezette dag zei deze regel "zo snel mogelijk",
+     terwijl de stappen links zeggen dat de datum volgt. */
+  timingVolgt: 'Leverdatum volgt — we spreken hem met je af',
   askH: 'Vragen?',
   wa: 'Stuur een WhatsApp',
   mail: 'Mail hello@visuails.com',
   guide: 'Lees hoe je aanlevert',
   guidePdf: 'Fotogids als pdf',
   extraH: 'Meer hoeken, nauwkeuriger resultaat',
-  extraB: 'Hoe meer foto’s we hebben, hoe preciezer we pasvorm, kleur en detail de eerste keer raken. Extra close-ups van de stof en een gedragen foto — gratis toe te voegen.',
+  extraB: 'Met meer foto’s raken we pasvorm, kleur en detail de eerste keer beter. Close-ups van de stof en een gedragen foto voeg je gratis toe.',
   /* Punt 2.05, V31-3 = a (8 oktober 2026): nasturen gaat in Studio, per vak. */
-  extraCta: 'Extra foto’s toevoegen in VISUAILS Studio',
+  extraCta: 'Foto’s toevoegen in VISUAILS Studio',
   sourceQ: 'Nog één ding — hoe heb je ons gevonden?',
   cancelP1: `Uit onze administratie blijkt dat er al een proef naar je bedrijf is gegaan. Er is er één per bedrijf, dus deze tweede aanvraag is geannuleerd — en het betaalde bedrag is onderweg terug naar de rekening waarvandaan je betaalde. Dat duurt meestal een paar werkdagen.`,
   cancelP2: 'Klopt dat niet — een collega bestelde zonder het te zeggen, of de eerste proef kwam nooit aan — reageer dan op de bevestigingsmail en we lossen het met de hand op.',
@@ -196,21 +213,26 @@ const c = nl ? {
   flowModel: 'First you get a few directions to react to, with one correction round. Then we build the face, run it through the uniqueness check and tie it to your brand. From then on you pick it in any order.',
   titleContact: 'Thanks — we have your message.',
   flowContact: 'We read it ourselves and reply through the channel you chose — usually within the hour, outside opening hours the next morning.',
+  flowQuote: 'We get to work as set out in the quote. Not sent your product photos yet? Reply to the email with the photos, or send them on WhatsApp. We email you as soon as something is ready.',
+  ctaRequest: 'See your request',
+  titleCredits: 'Paid with your credits — we are on it.',
   cta: 'See your order',
-  signin: 'The private link in your confirmation email opens this order without signing in. In VISUAILS Studio you sign in with the email address on this order — we email you a code and a link, there is no password.',
+  signin: 'The link in your email opens this order without signing in. In VISUAILS Studio you sign in with the email address on the order: you get a code, no password.',
+  signinRequest: 'The link in your email opens this request without signing in. In VISUAILS Studio you sign in with the email address on the request: you get a code, no password.',
   sumH: 'Summary',
   sumRef: 'Reference',
   sumMail: 'Confirmation sent to',
   sumMailNone: 'Confirmation by email',
   sumTiming: 'Turnaround',
+  timingVolgt: 'Delivery date to follow — we agree it with you',
   askH: 'Questions?',
   wa: 'Message us on WhatsApp',
   mail: 'Email hello@visuails.com',
   guide: 'Read the upload guidelines',
   guidePdf: 'Photo guide as pdf',
   extraH: 'More angles, a closer match',
-  extraB: 'The more we have, the more accurately we match fit, colour and detail first time. Extra close-ups of the fabric and a worn shot — free to add.',
-  extraCta: 'Add extra photos in VISUAILS Studio',
+  extraB: 'With more photos we match fit, colour and detail better first time. Close-ups of the fabric and a worn shot are free to add.',
+  extraCta: 'Add photos in VISUAILS Studio',
   sourceQ: 'One quick thing — how did you find us?',
   cancelP1: `Our records show a test sample already went out to your company. There is one per business, so this second request has been cancelled — and the amount you paid is on its way back to the account you paid from. That usually takes a few working days.`,
   cancelP2: 'If that does not sound right — a colleague ordered without telling you, or the first sample never arrived — reply to the confirmation email and we will sort it out by hand.',
@@ -242,7 +264,7 @@ const bronnen = nl
   <div class="ty-bar" data-ty-bar>
     <div class="ty-bar-in">
       <svg class="ty-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
-      <h1 class="hoog hoog-2" data-ty-title data-ty-title-cancelled={c.cancelled} data-ty-title-afgezegd={c.handTitel} data-ty-title-pay={c.titlePay} data-ty-title-paid={c.titlePaid} data-ty-title-checking={c.titleChecking} data-ty-title-unpaid={c.titleUnpaid} data-ty-title-contact={c.titleContact} data-ty-title-review={c.titleReview}>{c.title}</h1>
+      <h1 class="hoog hoog-2" data-ty-title data-ty-title-cancelled={c.cancelled} data-ty-title-afgezegd={c.handTitel} data-ty-title-pay={c.titlePay} data-ty-title-paid={c.titlePaid} data-ty-title-checking={c.titleChecking} data-ty-title-unpaid={c.titleUnpaid} data-ty-title-contact={c.titleContact} data-ty-title-review={c.titleReview} data-ty-title-credits={c.titleCredits}>{c.title}</h1>
     </div>
   </div>
 
@@ -286,14 +308,14 @@ const bronnen = nl
               (aanvraag, bericht, merkmodel) of bij wie iets anders eerst moet
               (btw-controle, niet betaald). Bij een bestelling zegt het blok
               hieronder het al, in drie regels. */}
-          <p class="lopend" data-ty-flow data-ty-flow-request={c.flowRequest} data-ty-flow-review={c.flowReview} data-ty-flow-contact={c.flowContact} data-ty-flow-model={c.flowModel} hidden>{c.flow}</p>
+          <p class="lopend" data-ty-flow data-ty-flow-request={c.flowRequest} data-ty-flow-review={c.flowReview} data-ty-flow-contact={c.flowContact} data-ty-flow-model={c.flowModel} data-ty-flow-quote={c.flowQuote} hidden>{c.flow}</p>
           <ol class="ty-verder" data-ty-verder data-ty-verder-drempel={String(WINDOW_THRESHOLD)}>
             <li>{VERDER.regels[0]}</li>
             <li data-ty-verder-lever data-ty-verder-datum={VERDER_ALT.datum} data-ty-verder-datum-volgt={VERDER_ALT.datumVolgt} data-ty-verder-voorrang={VERDER_ALT.voorrang}>{VERDER.regels[1]}</li>
-            <li data-ty-verder-stil data-ty-verder-onbetaald={VERDER_ALT.onbetaald}>{VERDER.regels[2]}</li>
+            <li data-ty-verder-stil data-ty-verder-onbetaald={VERDER_ALT.onbetaald} data-ty-verder-credits={VERDER_ALT.credits}>{VERDER.regels[2]}</li>
           </ol>
-          <p class="acties ty-act"><a href={`/account?lang=${lang}`} class="knop knop-inkt">{c.cta}</a></p>
-          <p class="ty-signin" data-ty-signin>{c.signin}</p>
+          <p class="acties ty-act"><a href={`/account?lang=${lang}`} class="knop knop-inkt" data-ty-cta data-ty-cta-request={c.ctaRequest}>{c.cta}</a></p>
+          <p class="ty-signin" data-ty-signin data-ty-signin-request={c.signinRequest}>{c.signin}</p>
         </div>
       </div>
 
@@ -328,12 +350,18 @@ const bronnen = nl
         </div>
         <div class="ty-row">
           <dt data-ty-timing>{c.sumTiming}</dt>
-          <dd data-ty-timing data-ty-timing-voorrang={voorrangZin(lang)}>{TIMING}</dd>
+          <dd data-ty-timing data-ty-timing-voorrang={voorrangZin(lang)} data-ty-timing-volgt={c.timingVolgt}>{TIMING}</dd>
         </div>
         <div class="ty-row ty-row-ask">
           <dt>{c.askH}</dt>
           <dd>
-            <a href={waHref(nl ? 'Hoi VISUAILS, ik heb net een aanvraag gedaan via de site.' : 'Hi VISUAILS, I just sent a request through the site.')} target="_blank" rel="noopener">{c.wa}<NieuwTabblad lang={lang} /></a><br />
+            {/* B24 (doorloop 27): na een bestelling stond hier "ik heb net een
+                aanvraag gedaan", zonder kenmerk. initThankYou() zet het kenmerk en
+                het goede woord erin; zonder script blijft deze neutrale zin. */}
+            <a href={waHref(nl ? 'Hoi VISUAILS, een vraag over wat ik net via de site stuurde.' : 'Hi VISUAILS, a question about what I just sent through the site.')} target="_blank" rel="noopener" data-ty-wa
+              data-ty-wa-bestelling={nl ? 'Hoi VISUAILS, een vraag over mijn bestelling {ref}:' : 'Hi VISUAILS, a question about my order {ref}:'}
+              data-ty-wa-aanvraag={nl ? 'Hoi VISUAILS, een vraag over mijn aanvraag {ref}:' : 'Hi VISUAILS, a question about my request {ref}:'}
+              data-ty-wa-bericht={nl ? 'Hoi VISUAILS, ik stuurde net een bericht via het contactformulier.' : 'Hi VISUAILS, I just sent a message through the contact form.'}>{c.wa}<NieuwTabblad lang={lang} /></a><br />
             <a href="mailto:hello@visuails.com">{c.mail}</a><br />
             <a href={lp('/upload-guidelines')} data-ty-alleen-bestelling>{c.guide}</a><br data-ty-alleen-bestelling />
             {/* Het moment waarop iemand opstaat om de foto's te maken. De

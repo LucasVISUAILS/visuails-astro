@@ -41,7 +41,8 @@ const T = {
     /* Afvinklijst 22 (Lucas, 14 oktober 2026): de stilte tot de levering mag niet lezen als "je staat er
        alleen voor". Dus "mailen we pas weer" (geen statusmails, overzicht §21) in plaats van "hoor je pas weer van
        ons"; wij melden ons als er iets mis is of als we twijfelen, en de klant mag tussendoor altijd. */
-    stil: 'behalve als er iets mis is of als we ergens over twijfelen: dan nemen we contact met je op. Heb jij tussendoor een vraag of nog een foto, app of mail ons gerust.',
+    /* Afvinklijst 27 (k-bedank, "de tekst mag compacter"): dezelfde drie dingen in minder woorden. */
+    stil: 'behalve als er iets mis is of als we twijfelen: dan nemen we contact met je op. Een vraag of nog een foto? App of mail ons gerust.',
     factuur: {
       bijgevoegd: 'Je krijgt weer een mail als je beelden klaarstaan. Tot dan sturen we niets —',
       volgt: 'Je factuur komt zo in je mail. Daarna mailen we pas weer als je beelden klaarstaan —',
@@ -65,7 +66,7 @@ const T = {
     datum: (d) => `We make your images on your delivery date: ${d}. We check every image before it reaches you.`,
     datumVolgt: 'Your delivery date is not fixed yet; we agree it with you. We check every image before it reaches you.',
     voorrang: () => `${voorrangZin('en')}. We check every image before it reaches you.`,
-    stil: 'unless something is wrong or we’re unsure about something: then we get in touch with you. Got a question or another photo along the way? Just message or email us.',
+    stil: 'unless something is wrong or we’re unsure: then we get in touch with you. A question or another photo? Just message or email us.',
     factuur: {
       bijgevoegd: 'You get another email when your images are ready. Until then we send nothing —',
       volgt: 'Your invoice is on its way by email. After that we only email again when your images are ready —',

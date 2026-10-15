@@ -554,7 +554,11 @@ const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="tru
             <p class="h-dienst-extra-zin">{eigen.tagline} <span class="h-dienst-extra-prijs">{c.quoted}</span></p>
           </div>
           <p class="h-dienst-extra-wegen">
-            <a class="h-knop h-knop-lijn h-knop-klein" href={eigen.ctaHref} target="_blank" rel="noopener">{eigen.ctaLabel}<NieuwTabblad lang={lang} /></a>
+            {/* Sinds B14b (15 oktober 2026) gaat de eigen look naar het formulier op deze site,
+                niet meer naar WhatsApp: geen nieuw tabblad. */}
+            {eigen.ctaExternal
+              ? <a class="h-knop h-knop-lijn h-knop-klein" href={eigen.ctaHref} target="_blank" rel="noopener">{eigen.ctaLabel}<NieuwTabblad lang={lang} /></a>
+              : <a class="h-knop h-knop-lijn h-knop-klein" href={eigen.ctaHref}>{eigen.ctaLabel}</a>}
             <a class="h-st-meer" href={lp(`${basis}/video/custom`)}>{H.eigenMeer}<span set:html={ik('pijl')} /></a>
           </p>
         </li>

@@ -114,7 +114,8 @@ export const catalogStyles = [
     priceTrust: 'Op aanvraag',
     priceUnit: '',
     metaPrice: 'Eén keer ontworpen, op aanvraag',
-    orderHref: '/nl/start/custom-look/',
+    /* ?voor=catalog — zie catalogStyles.js (doorloop 27, B16). */
+    orderHref: '/nl/start/custom-look/?voor=catalog',
     orderLabel: 'Vraag een eigen look aan',
     heroIcon: 'bag',
     heroWidth: '26%',

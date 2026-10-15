@@ -118,8 +118,24 @@ const loop = (dir) => {
         verdacht.push(`${path.relative(ROOT, p)}: ${regel.trim().slice(0, 70)}`);
       }
     }
+    for (const v of overTweeRegels(code)) verdacht.push(`${path.relative(ROOT, p)}: ${v}`);
   }
 };
+/* OOK OVER TWEE REGELS. 15 oktober 2026, 07:58, UITROLLEN bij Lucas:
+ *
+ *   ENOENT: no such file or directory, scandir 'E:\E:\Claude%20(VISUAILS)\…\dist\'
+ *
+ * In tests/doorloop-27b stond de file-URL op de ene regel en de .pathname op de
+ * volgende (de URL in een variabele, daarna die variabele met .pathname). De
+ * wacht hierboven keek per regel en zag het dus niet. Nu onthoudt hij per bestand
+ * de namen die een file-URL krijgen, en kijkt hij of een van die namen verderop
+ * met .pathname wordt gelezen. */
+function overTweeRegels(code) {
+  const namen = [...code.matchAll(/(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*new URL\([^;\n]*import\.meta\.url\s*\)/g)].map((m) => m[1]);
+  if (!namen.length) return [];
+  const naam = new RegExp(`(?<![\\w$.])(?:${namen.map((n) => n.replace(/\$/g, '\\$')).join('|')})(?![\\w$])`);
+  return code.split('\n').filter((r) => /\.pathname/.test(r) && naam.test(r)).map((r) => r.trim().slice(0, 70));
+}
 for (const map of ['scripts', 'tests', 'cron']) {
   const d = path.join(ROOT, map);
   if (fs.existsSync(d)) loop(d);
@@ -153,6 +169,11 @@ const gefilterd = nepBestand
   .replace(/(^|[^:])\/\/[^\n]*/g, (m, p1) => p1 + ' '.repeat(m.length - p1.length));
 ok('de wacht vindt de fout nog wél als hij er echt staat',
   /import\.meta\.url/.test(gefilterd) && /\.pathname/.test(gefilterd), true);
+/* En de vorm van 15 oktober, over twee regels, ook in stukken. */
+const nepTwee = ['const dist = new URL(\'../dist/\', import.meta', '.url);\n', 'loop(new URL(dist)', '.pathname);'].join('');
+ok('de wacht vindt hem ook over twee regels (doorloop-27b, 15 okt)', overTweeRegels(nepTwee).length, 1);
+ok('  maar niet een .pathname van een verzoek in hetzelfde bestand',
+  overTweeRegels(['const dist = new URL(\'../dist/\', import.meta', '.url);\n', 'const p = new URL(req.url)', '.pathname;'].join('')).length, 0);
 
 /* ── 2b · EN EEN GLOBRESULTAAT WORDT GENORMALISEERD ─────────────────────────
  *

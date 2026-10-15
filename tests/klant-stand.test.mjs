@@ -237,6 +237,7 @@ else {
         welkom: !!w && !w.hidden && w.classList.contains('is-open'), kop: w?.querySelector('[data-vis-welkom-kop]')?.textContent, regel: w?.querySelector('[data-vis-welkom-stand]')?.textContent,
         knop: w?.querySelector('[data-vis-welkom-knop]')?.getAttribute('href'), knopLabel: w?.querySelector('[data-vis-welkom-knop]')?.textContent?.trim(),
         plan: plan.map((p) => [zicht(p), p.textContent.trim(), p.getAttribute('href')]),
+        start: (() => { const s0 = document.querySelector('[data-vis-klant="start-credits"]'); return s0 ? `${s0.querySelector('[data-vis-label]')?.textContent.trim()} · ${s0.getAttribute('href')}` : ''; })(),
         her: her.map((p) => [p.dataset.visKlant, zicht(p), p.textContent.trim(), p.getAttribute('href')]),
         proef: [...document.querySelectorAll('a.h-knop[href$="/test-sample/"]')].filter((a) => !a.closest('.h-melding')).filter(zicht).length,
         wa: wa?.getAttribute('href'),
@@ -259,7 +260,10 @@ else {
     ok('ingelogd: "Welkom terug, Mara"', st.welkom && st.kop === 'Welkom terug, Mara', JSON.stringify(st));
     ok('  "VIS-2041 · Geleverd, wacht op je goedkeuring"', st.regel === 'VIS-2041 · Geleverd, wacht op je goedkeuring', st.regel);
     ok('  de knop "Bekijk je beelden" naar de bestelkaart', st.knop === '/account/orders?order=7#order-7' && st.knopLabel === 'Bekijk je beelden');
-    ok('  "Bestel met je credits · 48 over" naar het beginscherm', st.plan.length === 1 && st.plan.every(([z, t, h]) => z && t === 'Bestel met je credits · 48 over' && h === '/nl/start/'), JSON.stringify(st.plan));
+    /* 15 oktober 2026: de hoofdknop zegt "Bestel met je credits · 48 over" (naar
+       /start), de tweede knop gaat naar het abonnement — niet twee keer /start. */
+    ok('  "Je abonnement" naar Studio', st.plan.length === 1 && st.plan.every(([z, t, h]) => z && t === 'Je abonnement' && h === '/account/plan'), JSON.stringify(st.plan));
+    ok('  en de hoofdknop "Bestel met je credits · 48 over" naar het beginscherm', st.start === 'Bestel met je credits · 48 over · /nl/start/', st.start);
     ok('  geen proef meer zichtbaar', st.proef === 0);
     ok('  WhatsApp begint met het kenmerk', decodeURIComponent((st.wa || '').split('text=')[1] || '') === 'Hoi VISUAILS, een vraag over bestelling VIS-2041:', st.wa);
     ok('  geen scriptfout', fouten.length === 0, fouten.join(' | '));

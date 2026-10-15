@@ -365,6 +365,13 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
         var l = a.getAttribute('hreflang');
         if (l !== 'nl' && l !== 'en') return;
         document.cookie = 'vis_lang=' + l + '; Max-Age=' + taalMaxAge + '; Path=/; SameSite=Lax' + (location.protocol === 'https:' ? '; Secure' : '');
+        /* Doorloop 27 (B37): de zoekstring en het anker gaan mee. Zonder dit
+           werd /nl/thank-you/?soort=contact&ok=1 de kale /thank-you/ (met de
+           bestel-uitleg) en verloor /start/video/?style=motion zijn keuze. De
+           taalknop zelf is statisch gebouwd en kent de zoekstring niet. */
+        if ((location.search || location.hash) && a.getAttribute('href') && a.getAttribute('href').indexOf('?') < 0) {
+          a.setAttribute('href', a.getAttribute('href').split('#')[0] + location.search + location.hash);
+        }
       }, true);
     })();
   </script>
@@ -1082,7 +1089,8 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           Wat écht altijd in beeld moet, is één deur. Deze drie horen bij de
           lijst en scrollen dus mee. */}
       <a href={waHref(wa.order)} class="btn btn-wa btn-block mobile-wa" target="_blank" rel="noopener" {...waKlant(lang)}>{t('mob_chat')}<NieuwTabblad lang={lang} /></a>
-      <span class="mobile-cta-hint">{t('mob_notsure')} <a href={lp('/test-sample')}>{t('mob_try')}</a></span>
+      {/* data-vis-uit (15 oktober 2026): een klant ziet de €1-proef nergens meer. */}
+      <span class="mobile-cta-hint" data-vis-uit>{t('mob_notsure')} <a href={lp('/test-sample')}>{t('mob_try')}</a></span>
 
       {/* ── ACCOUNT EN TAAL OP ÉÉN REGEL — 9 september 2026 ─────────────────
           Ze stonden onder elkaar, elk gecentreerd. Nu is het één rustige regel:
@@ -1345,7 +1353,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
                 be reading. With no reviews and no client logos it is the
                 studio's single strongest risk-reversal, so leaving it
                 unreachable from the chrome cost more than a footer row. */}
-            <li><a href={lp('/test-sample')}>{t('foot_sample')}</a></li>
+            <li data-vis-uit><a href={lp('/test-sample')}>{t('foot_sample')}</a></li>
           </ul>
         </div>
         {/* ── DE VOETTEKST IS GEEN TWEEDE NAVIGATIE MEER — 18 augustus 2026 ──

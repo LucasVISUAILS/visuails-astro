@@ -91,7 +91,7 @@ const T = v.tekst || {};
         <p class="st-melding is-warn">{t.planFirstUnpaid} <a class="st-link" href={v.opnieuw}>{t.planFirstRetry}</a></p>
       )}
       {v.standZin && (
-        <div class={`st-melding st-abo-stand${['teruggeboekt', 'stil', 'mislukt'].includes(v.stand) ? ' is-warn' : ''}`} data-stand={v.stand}>
+        <div class={`st-melding st-abo-stand${['teruggeboekt', 'stil', 'mislukt'].includes(v.stand) ? ' is-warn' : ''}${v.standNet ? ' is-ok' : ''}`} data-stand={v.stand} role={v.standNet ? 'status' : undefined}>
           <p>{v.standZin}</p>
           {v.beheer?.magHervatten && (
             <form method="post" action="/account/plan/pause">

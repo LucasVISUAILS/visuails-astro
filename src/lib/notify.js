@@ -52,6 +52,8 @@ import { shell, h1, p as mailP, rows as rijenHtml, quote as quoteHtml, statusPil
 import { button as mailKnop, linkLine } from './mailTemplate.js';
 import { waLink, contactMail } from './waLink.js';
 import { CREDITS_GELDIG_MAANDEN } from '../data/pricing.js';
+import { vakNaam } from '../data/levervakken.js';
+import { SHOTS } from '../data/shots.js';
 
 /* ── WAARDEN IN DE STUDIOMAIL WORDEN ONTSNAPT — 29 september 2026 ──────────
    rows() en quote() uit mailTemplate.js nemen HTML aan. Hier gingen merknamen,
@@ -71,7 +73,7 @@ async function orderFor(env, orderId) {
          tegengehouden tweede proefvisual: dat bericht is uitdrukkelijk bedoeld om
          Lucas te laten BELLEN, en een telefoonnummer dat je er zelf bij moet
          zoeken is een telefoonnummer dat niet gebeld wordt. */
-      `SELECT id, ref, service, email, phone, brand, first_name, last_name, name,
+      `SELECT id, ref, service, details_json, email, phone, brand, first_name, last_name, name,
               product_count, total_cents, vat_cents, country, window_start, window_end,
               /* Voor de vaste tekst aan de klant (7.05): taal, betaalklok en het
                  nummer van de klant als de bestelling er geen heeft. */
@@ -411,16 +413,31 @@ export async function notifyRevisionRound(env, { orderId, items = [] }) {
         const res = await env.DB
           .prepare(`SELECT id, filename, product_key, shot FROM files WHERE id IN (${gaten})`)
           .bind(...ids).all();
+        /* ── ZOALS OP HET WERKBORD — 14 oktober 2026 (doorloop 27, B08) ────────
+           Hier stond "p2 · worn": de sleutels uit de database. Nu "Product 2 ·
+           Op een model", de woorden van het werkbord (src/data/levervakken.js),
+           met de bestandsnaam als het vak onbekend is. */
+        const shotNaam = (shot) => vakNaam(o?.service, o?.details_json, shot, 'nl')
+          || SHOTS.find((x) => x.id === shot)?.name?.nl || shot;
         for (const r of res.results || []) {
-          namen.set(Number(r.id), [r.product_key, r.shot].filter(Boolean).join(' · ') || r.filename || '');
+          const product = /^p(\d+)$/.exec(String(r.product_key || ''));
+          const label = product && r.shot ? `Product ${product[1]} · ${shotNaam(r.shot)}` : '';
+          namen.set(Number(r.id), label || [r.product_key, r.shot].filter(Boolean).join(' · ') || r.filename || '');
         }
       }
     } catch { /* dan zonder namen */ }
 
-    const regels = items.map(({ fileId, note }) => {
-      const wat = namen.get(Number(fileId)) || `bestand ${fileId}`;
-      return mailRows([['Beeld', wat]]) + (note ? mailQuote(note) : mailP('Geen toelichting.'));
-    }).join('');
+    /* Eén notitie voor de hele ronde (zo vraagt de privélink het: één veld) kwam
+       onder elk beeld opnieuw te staan. Dezelfde notitie bij alle beelden: één
+       keer bovenaan, daaronder de lijst. Verschillen ze, dan per beeld. */
+    const notities = items.map((x) => String(x.note || '').trim());
+    const eenNotitie = notities.length > 1 && notities[0] && notities.every((n) => n === notities[0]);
+    const regels = eenNotitie
+      ? mailQuote(notities[0]) + mailRows(items.map(({ fileId }) => ['Beeld', namen.get(Number(fileId)) || `bestand ${fileId}`]))
+      : items.map(({ fileId, note }) => {
+        const wat = namen.get(Number(fileId)) || `bestand ${fileId}`;
+        return mailRows([['Beeld', wat]]) + (note ? mailQuote(note) : mailP('Geen toelichting.'));
+      }).join('');
 
     const aantal = items.length;
     await toStudio(

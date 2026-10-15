@@ -570,6 +570,10 @@ a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
 .st-beeld-body { display: flex; flex-direction: column; gap: .45rem; }
 .st-beeld-cap { font-size: .8125rem; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .st-beeld-noot { font-size: .75rem; }
+.st-proef-noot { margin: .9rem 0 0; max-width: 34em; }
+/* De bestandsnaam onder het label (B36). Breekt op elk teken in plaats van de
+   tegel breder te duwen; de kolom ertussen (gap .45rem) houdt hem bij het label. */
+.st-beeld-file { margin-top: -.3rem; font-size: .75rem; line-height: 1.35; color: var(--ink-3); overflow-wrap: anywhere; }
 .st-keur { margin: 0; }
 .st-keur-alles { margin-top: .9rem; }
 .st-keur-bestelling { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin: 0 0 1rem; }
@@ -1564,26 +1568,34 @@ body.studio .st-merk-los { color: var(--ink-1); }
    woord platgedrukt wordt. Openklappen is dezelfde beweging terug.
 
    Een browser zonder view transitions (Firefox nu nog) klapt gewoon direct;
-   bij "minder beweging" ook. Tussen twee tabs doet alleen de romp iets: een
-   korte overvloei. */
+   bij "minder beweging" ook.
+
+   TUSSEN TWEE TABS BEWEEGT NIETS (15 oktober 2026, Lucas: *"als ik van tab wissel
+   in /studio dat er elke keer een animatie afspeelt, dit hoeft niet"*). Hier
+   stond een korte overvloei van de romp, en ook het actieve bolletje in de
+   zijbalk schoof mee. Nu bewegen de lagen alleen op de pagina die na een klap
+   komt: die draagt data-klap op <html> (de vlag uit studioKoppen.js). Op elke
+   andere pagina staan alle lagen op `animation: none`, dus de wissel is direct. */
 @view-transition { navigation: auto; }
 .st-kolom { view-transition-name: st-kolom; }
 .st-romp { view-transition-name: st-romp; }
-::view-transition-group(st-merk), ::view-transition-group(st-kolom), ::view-transition-group(st-romp) {
+:root:not([data-klap])::view-transition-group(*), :root:not([data-klap])::view-transition-old(*), :root:not([data-klap])::view-transition-new(*) { animation: none; }
+:root[data-klap]::view-transition-group(st-merk), :root[data-klap]::view-transition-group(st-kolom), :root[data-klap]::view-transition-group(st-romp) {
   animation-duration: .46s; animation-timing-function: cubic-bezier(.22, .8, .2, 1);
 }
 ::view-transition-group(st-merk), ::view-transition-group(st-kolom) { overflow: clip; }
 ::view-transition-old(st-merk), ::view-transition-new(st-merk),
 ::view-transition-old(st-kolom), ::view-transition-new(st-kolom) {
   inset: 0 auto 0 0; block-size: 100%; inline-size: auto; object-fit: none; object-position: left center;
-  animation-duration: .46s;
 }
+:root[data-klap]::view-transition-old(st-merk), :root[data-klap]::view-transition-new(st-merk),
+:root[data-klap]::view-transition-old(st-kolom), :root[data-klap]::view-transition-new(st-kolom) { animation-duration: .46s; }
 ::view-transition-old(st-merk), ::view-transition-new(st-merk) { object-fit: contain; }
 ::view-transition-old(st-romp), ::view-transition-new(st-romp) {
   inset: 0 auto auto 0; block-size: auto; inline-size: auto; object-fit: none; object-position: left top;
-  animation-duration: .24s;
 }
-::view-transition-old(root), ::view-transition-new(root) { animation-duration: .2s; }
+:root[data-klap]::view-transition-old(st-romp), :root[data-klap]::view-transition-new(st-romp) { animation-duration: .24s; }
+:root[data-klap]::view-transition-old(root), :root[data-klap]::view-transition-new(root) { animation-duration: .2s; }
 @media (prefers-reduced-motion: reduce) {
   @view-transition { navigation: none; }
 }

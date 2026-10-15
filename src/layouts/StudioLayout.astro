@@ -48,6 +48,7 @@ import '@fontsource-variable/martian-mono/standard.css';
 const CHIP_STAND = { signal: 'in_production', warn: 'past_due' };
 
 import { studioHeaders, studioNav, STUDIO_ICONS } from '../lib/account.js';
+import { heeftKlap } from '../lib/studioKoppen.js';
 /* De melding bovenaan (ronde 9) — gezet in /admin/melding, zie src/lib/melding.js. */
 import { leesMelding, meldingTekst } from '../lib/melding.js';
 import { pagesContext } from '../lib/route.js';
@@ -107,7 +108,7 @@ const metParam = (k, v) => {
    src/data/wordmarkPath.js — dezelfde paden als #wordmark in Layout.astro. */
 ---
 <!doctype html>
-<html lang={lang} data-thema={licht ? 'licht' : 'donker'}>
+<html lang={lang} data-thema={licht ? 'licht' : 'donker'} data-klap={heeftKlap(Astro.request) ? '' : undefined}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">

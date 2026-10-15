@@ -103,13 +103,31 @@ console.log('\n3 · verlengen vanaf de planning');
   check('de tijdlijn van de klant noemt het verzetten', /Leverdatum verzet naar/.test(gebeurtenis?.note || ''), true);
   const zonder = await post('/admin/orders/1/window', { do: 'verzet', dag: addDays(nieuw, 3), reason: 'x' });
   check('zonder back=planning landt het nog steeds op de bestandenpagina', zonder.headers.get('location'), '/admin/orders/1/files');
+
+  /* Doorloop 27 (B39): verzetten naar een dag die dicht staat zei "hij zit echt
+     vol". Nu: de dag staat dicht, met de reden, en de weg terug. */
+  const dichteDag = addDays(nieuw, 6);
+  db.prepare('INSERT INTO blackout_days (day, reason) VALUES (?, ?)').run(dichteDag, 'Shoot elders');
+  const naarDicht = await post('/admin/orders/1/window', { do: 'verzet', dag: dichteDag, reason: 'x', back: 'planning' });
+  const tekst = await naarDicht.text();
+  check('naar een dichte dag: 409', naarDicht.status, 409);
+  check('  de melding zegt dat de dag dicht staat, met de reden', /staat dicht \(Shoot elders\)\. Kies een andere dag/.test(tekst), true);
+  check('  en niet dat hij vol zit', /zit echt vol/.test(tekst), false);
+  check('  met de weg terug naar de planning', /href="\/admin\/planning#dagen"/.test(tekst), true);
+  check('  het venster is niet veranderd', db.prepare('SELECT window_start FROM orders WHERE id = 1').get().window_start !== dichteDag, true);
+  db.prepare('DELETE FROM blackout_days WHERE day = ?').run(dichteDag);
 }
 
 console.log('\n4 · het dashboard: één regel per bestelling');
 {
   const h = await (await get('/admin')).text();
   check('elke bestelling is een klapje met de regel als summary', (h.match(/<details class="or" id="order-\d+">/g) || []).length, 4);
-  check('het statusformulier staat er nog, per bestelling', (h.match(/action="\/admin\/orders\/\d+\/status"/g) || []).length, 4);
+  /* Doorloop 27 (B03): de knop "Oppakken" in Nu doen is sindsdien zelf een
+     statusformulier (class nd-knop). Die tellen hier niet mee: deze regel gaat
+     over het formulier in elke bestelregel. */
+  const statusVormen = (h.match(/action="\/admin\/orders\/\d+\/status"/g) || []).length;
+  const ndVormen = (h.match(/<form class="nd-knop" method="post" action="\/admin\/orders\/\d+\/status"/g) || []).length;
+  check('het statusformulier staat er nog, per bestelling', statusVormen - ndVormen, 4);
   /* Het merkmodelformulier staat sinds 29 september 2026 alleen nog op de
      klantpagina; onder elke bestelling was het dubbel. */
   check('annuleren en verbergen ook', /orders\/1\/cancel/.test(h) && /orders\/1\/hide/.test(h), true);

@@ -7,6 +7,10 @@ import Beeld from './Beeld.astro';
 import NieuwTabblad from '../NieuwTabblad.astro';
 /* `lang` (8 oktober 2026, o26): alleen voor de zin "opent in een nieuw tabblad". */
 const { t, v, orderId, lang = 'en' } = Astro.props;
+/* De proefzin ("Dit is de proef van €1, dus er valt niets goed te keuren…") stond
+   onder elk beeld: vier keer dezelfde vijf regels (15 oktober 2026, gemeten op
+   1440 px). Nu één keer, onder de beelden. */
+const proefNoot = v.delivered.length > 0 && v.delivered.every((b) => b.review.kind === 'sample') ? v.delivered[0].review.text : '';
 ---
 <details class={`st-product${v.revising ? ' is-revisie' : ''}`} open={v.open}>
   <summary class="st-product-kop">
@@ -23,8 +27,9 @@ const { t, v, orderId, lang = 'en' } = Astro.props;
       <div class="st-product-kolom">
         <h3>{t.prodWeMade}</h3>
         {v.delivered.length
-          ? <ul class="st-beelden">{v.delivered.map((b) => <Beeld v={b} orderId={orderId} lang={lang} />)}</ul>
+          ? <ul class="st-beelden">{v.delivered.map((b) => <Beeld v={b} orderId={orderId} lang={lang} proefEenKeer={!!proefNoot} />)}</ul>
           : <p class="st-meta">{t.prodNothingYet}</p>}
+        {proefNoot && <p class="st-meta st-proef-noot">{proefNoot}</p>}
         {v.allesGoed && (
           <form class="st-keur st-keur-alles" method="post" action="/account/review">
             <input type="hidden" name="order" value={orderId} />

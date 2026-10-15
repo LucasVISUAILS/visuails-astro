@@ -393,7 +393,7 @@ export async function voerUit(order, plan, io, { maxEdge = 0, werkmap = null, lo
     }
   }
   const tekst = klaar
-    ? `${order.ref} is klaar: elk beeld heeft nu JPG, PNG en WebP in de zip.${gezet ? ` Het verzoek in /admin/formaten staat op Klaar (${gezet === 1 ? 'één formaat' : `${gezet} formaten`}); in Studio staat nu "geleverd".` : ' Er stond geen open verzoek in /admin/formaten.'}`
+    ? `${order.ref} is klaar: elk beeld heeft nu JPG, PNG en WebP in de zip.${gezet ? ` Het verzoek in /admin/formaten staat op Klaar (${gezet === 1 ? 'één formaat' : `${gezet} formaten`}); in Studio staat nu "geleverd". Mail de klant met één klik in /admin/formaten ("Klant mailen").` : ' Er stond geen open verzoek in /admin/formaten.'}`
     : `${order.ref} is nog NIET compleet. Zonder PNG/WebP: ${mist.join(', ')}. Het verzoek in /admin/formaten blijft open; draai FORMATEN.bat nog eens met de ontbrekende PNG's, of klik daar zelf op Klaar als dit zo goed is.`;
   return { klaar, gezet, mist, tekst };
 }

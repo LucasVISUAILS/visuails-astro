@@ -85,7 +85,7 @@ import { offsitePage } from './offsite.js';
 // uit elkaar gelopen op superseded_at.
 import { loadDeliveryFiles, deliveryEntries, deliveryDocs, deliveryZipFiles, deliverySummary, humanBytes, orderProductNames, leveringIngetrokken, ZICHTBAAR_VOOR_KLANT } from './delivery.js';
 import { zipStream, zipDisposition, ZIP_MAX_BYTES, ZIP_MAX_FILES } from './zip.js';
-import { vakIds } from '../data/levervakken.js';
+import { vakIds, vakNaam } from '../data/levervakken.js';
 /* Punt 3.01: de Nu-zin, het statuspad en de leverregel — dezelfde bronnen als
    Studio (nuzin.js) en de bedankpagina (verder.js). */
 import { nuZin, nuKnopLabel, statusPad, eersteMistVan, isAfgerond } from './nuzin.js';
@@ -172,7 +172,9 @@ const COPY = {
     bDownload: 'Download the folder',
     folderH: 'Your files',
     folderBody: 'One folder per product, and in it the same visual as PNG, JPG and WebP — so a print shop, a shop page and a feed each get the file they want without anyone resizing anything.',
-    folderBodyKaal: (fmt) => `One folder per product, with every visual as we delivered it (${fmt}).`,
+    /* Doorloop 27 (B11): een levering via /admin is een platte map, geen map per
+       product (zie deliveryEntries in delivery.js). Deze zin klopt nu in beide gevallen. */
+    folderBodyKaal: (fmt) => `Every image in one download, as we delivered it (${fmt}). The filename tells you which product and which shot it is.`,
     folderReview: 'The photos above are review copies, at screen size. They are there to approve or to point at when something is wrong. The folder holds the real files.',
     folderReviewOnder: 'The photos below are review copies, at screen size. The folder holds the real files.',
     folderMeta: (n, size) => `${n} files · ${size}`,
@@ -192,7 +194,12 @@ const COPY = {
     rrTitle: 'One revision round',
     rrIntro: 'Tick every image that is not right, tell us what is wrong, and send it as one round. We look at all of them together and put them right.',
     rrLabel: 'What is wrong with the ones you ticked?',
-    rrHint: 'One note for the whole round. Mention which image if it differs per image.',
+    /* Doorloop 27 (B44): een notitie per aangevinkt beeld; deze geldt voor alle. */
+    rrHint: 'Optional: one note for every image you ticked. You can also write a note under each image.',
+    rrPerBeeld: 'What should be different about this image?',
+    rrNotitieNodig: 'Nothing was sent yet: one of the images you ticked has no note. Write under each ticked image what should be different, or one note below for all of them.',
+    /* Doorloop 27 (B36): per product een kop. */
+    product: (n, naam) => `Product ${n}${naam ? ` · ${naam}` : ''}`,
     /* Ronde 9, F13: zonder vinkje of zonder notitie laadde de pagina stil opnieuw. */
     rrNone: 'Nothing was sent: no image was ticked. Tick “Mark this one” under each image you would like different and send the round again — your note is still there.',
     /* 14 oktober 2026: het woord van Studio (rdTick in account.js), niet "Not right". */
@@ -281,7 +288,7 @@ const COPY = {
     bApprove: 'Goedkeuren',
     bDownload: 'Download de map',
     folderH: 'Jouw bestanden',
-    folderBodyKaal: (fmt) => `Eén map per product, met elk beeld zoals we het leverden (${fmt}).`,
+    folderBodyKaal: (fmt) => `Al je beelden in één download, zoals we ze leverden (${fmt}). De bestandsnaam zegt welk product en welke opname het is.`,
     folderBody: 'Eén map per product, en daarin hetzelfde beeld als PNG, JPG en WebP — zo krijgen een drukker, een productpagina en een feed elk het bestand dat ze willen, zonder dat iemand nog iets bijschaalt.',
     folderReview: 'De foto\'s hierboven zijn voorbeeldweergaven op schermformaat. Ze staan er om goed te keuren of om naar te wijzen als er iets niet klopt. De echte bestanden zitten in de map.',
     folderReviewOnder: 'De foto\'s hieronder zijn voorbeeldweergaven op schermformaat. De echte bestanden zitten in de map.',
@@ -297,7 +304,10 @@ const COPY = {
     rrTitle: 'Eén revisieronde',
     rrIntro: 'Vink elk beeld aan dat niet goed is, schrijf erbij wat eraan schort, en stuur het als één ronde. We kijken er in één keer naar en zetten het recht.',
     rrLabel: 'Wat klopt er niet aan wat je hebt aangevinkt?',
-    rrHint: 'Eén notitie voor de hele ronde. Noem het beeld erbij als het per beeld verschilt.',
+    rrHint: 'Optioneel: één notitie voor alle aangevinkte beelden. Je kunt ook onder elk beeld iets schrijven.',
+    rrPerBeeld: 'Wat moet er anders aan dit beeld?',
+    rrNotitieNodig: 'Er is nog niets verstuurd: bij een aangevinkt beeld staat geen notitie. Schrijf onder elk aangevinkt beeld wat er anders moet, of hieronder één notitie voor allemaal.',
+    product: (n, naam) => `Product ${n}${naam ? ` · ${naam}` : ''}`,
     rrNone: 'Er is niets verstuurd: je had geen beeld aangevinkt. Vink onder elk beeld dat anders moet “Deze aanmerken” aan en verstuur de ronde opnieuw — je opmerking staat er nog.',
     /* 14 oktober 2026: het woord van Studio (rdTick in account.js), niet "Niet goed". */
     rrPick: 'Deze aanmerken',
@@ -725,7 +735,6 @@ async function handleRevisionRound(env, context, { order, form, home, lang, requ
      belandt in logs en geschiedenis, en dit is wat een klant over zijn werk
      schrijft. */
   const leeg = `${home}?rr=geen#rr`;
-  if (!note) return seeOther(terug);
 
   /*
    * De aangevinkte nummers, ontdaan van alles wat geen nummer is en van
@@ -752,6 +761,24 @@ async function handleRevisionRound(env, context, { order, form, home, lang, requ
       return renderOrder(env, order, token, lang);
     }
     return seeOther(leeg);
+  }
+
+  /* ── EEN NOTITIE PER BEELD — 15 oktober 2026 (doorloop 27, B44) ──────────
+     Onder elk aangevinkt beeld staat nu een eigen vak (`note-<id>`); het vak
+     onderaan geldt voor alles wat geen eigen notitie heeft. Zonder allebei gaat
+     de ronde niet weg, en komt de pagina terug met alles nog ingevuld. Studio
+     vraagt het al per beeld (handleRevisionRoundPost in account.js). */
+  const perBeeld = new Map(gekozen.map((id) => [id, String(form.get(`note-${id}`) || '').trim().slice(0, NOTE_MAX)]));
+  if (gekozen.some((id) => !perBeeld.get(id) && !note)) {
+    const token = home.split('/').filter(Boolean).pop();
+    if (token) {
+      order.rrNotitieMist = true;
+      order.rrNote = note;
+      order.rrGekozen = new Set(gekozen);
+      order.rrPerBeeld = perBeeld;
+      return renderOrder(env, order, token, lang);
+    }
+    return seeOther(terug);
   }
 
   /*
@@ -799,12 +826,13 @@ async function handleRevisionRound(env, context, { order, form, home, lang, requ
      */
     const stappen = [];
     for (const id of eigen) {
+      const eigenNote = perBeeld.get(id) || note;
       stappen.push(env.DB.prepare(
         `UPDATE files SET review_state = 'revision_requested', review_note = ?2, reviewed_at = datetime('now') WHERE id = ?1`
-      ).bind(id, note));
+      ).bind(id, eigenNote));
       stappen.push(env.DB.prepare(
         `INSERT INTO revision_requests (file_id, order_id, customer_id, note) VALUES (?1, ?2, ?3, ?4)`
-      ).bind(id, order.order_id, order.customer_id, note));
+      ).bind(id, order.order_id, order.customer_id, eigenNote));
     }
     stappen.push(env.DB.prepare(
       `UPDATE orders
@@ -812,7 +840,7 @@ async function handleRevisionRound(env, context, { order, form, home, lang, requ
               revision_round_note = ?2,
               revision_round_count = ?3
         WHERE id = ?1 AND revision_round_at IS NULL`
-    ).bind(order.order_id, note, eigen.length));
+    ).bind(order.order_id, note || null, eigen.length));
     stappen.push(env.DB.prepare(
       `INSERT INTO order_events (order_id, status, note, actor)
        VALUES (?1, 'delivered', ?2, 'customer')`
@@ -838,7 +866,7 @@ async function handleRevisionRound(env, context, { order, form, home, lang, requ
      `fileId`, dus het onderwerp werd "bestand undefined" met één beeld in plaats
      van de ronde. Studio gebruikte al notifyRevisionRound(). En de klant krijgt
      een ontvangstbevestiging, net als in Studio. */
-  await notifyRevisionRound(env, { orderId: order.order_id, items: eigen.map((fileId) => ({ fileId, note })) });
+  await notifyRevisionRound(env, { orderId: order.order_id, items: eigen.map((fileId) => ({ fileId, note: perBeeld.get(fileId) || note })) });
   const best = await env.DB.prepare('SELECT ref, email, name, lang FROM orders WHERE id = ?1').bind(order.order_id).first().catch(() => null);
   if (best) await mailRondeOntvangen(env, best, eigen.length);
 
@@ -1407,9 +1435,10 @@ function roundBlock(t, lang, order, files) {
   <h2>${esc(t.rrTitle)}</h2>
   <p>${esc(t.rrIntro)}</p>
   ${order.rrMelding ? `<p class="rr-fout" role="alert">${esc(t.rrNone)}</p>` : ''}
+  ${order.rrNotitieMist ? `<p class="rr-fout" role="alert">${esc(t.rrNotitieNodig)}</p>` : ''}
   <form method="post" action="" id="rr">
     <label class="sr-only" for="rrnote">${esc(t.rrLabel)}</label>
-    <textarea id="rrnote" name="note" rows="3" maxlength="${NOTE_MAX}" placeholder="${esc(t.rrHint)}" required>${esc(order.rrNote || '')}</textarea>
+    <textarea id="rrnote" name="note" rows="3" maxlength="${NOTE_MAX}" placeholder="${esc(t.rrHint)}">${esc(order.rrNote || '')}</textarea>
     <div class="acts"><button class="btn btn-primary" type="submit" name="action" value="round">${esc(t.rrSend)}</button></div>
   </form>
 </section>`;
@@ -1514,11 +1543,11 @@ function attendedBody(t, lang, order, token, files, events, fb = null, folder = 
      bestelling nog een ronde indienen? Zie revisionRoundState() in pricing.js. */
   const ronde = canRequestRevisionRound(order);
   const work = files.length
-    ? `<ul class="shots">${files.map((f) => shot(t, lang, f, token, {
+    ? shotsHtml(t, lang, files, order, token, {
         review: canReviewOrder(order),
         history: canSeeReviewHistory(order),
         round: ronde,
-      })).join('')}</ul>`
+      })
     : `<p class="note">${esc(t.emptyAttended)}</p>`;
   const rr = files.length ? roundBlock(t, lang, order, files) : '';
   /* Alles in één keer goedkeuren (ronde 9, F31): pas vanaf twee open beelden,
@@ -1608,13 +1637,11 @@ function unattendedBody(t, lang, order, token, files, folder = '', feedback = ''
      bestelgrootte en dit scherm dus ook niet. */
   const ronde = canRequestRevisionRound(order);
   const work = files.length
-    ? `<ul class="shots">${files
-        .map((f) => shot(t, lang, f, token, {
-          review: canReviewOrder(order),
-          history: canSeeReviewHistory(order),
-          round: ronde,
-        }))
-        .join('')}</ul>`
+    ? shotsHtml(t, lang, files, order, token, {
+        review: canReviewOrder(order),
+        history: canSeeReviewHistory(order),
+        round: ronde,
+      })
     /* Ronde 9 (F40): video en eigen look lopen via een offerte. Daar geldt de
        wachtrijzin niet, en de klant moet weten hoe zijn foto's bij ons komen. */
     : (order.service === 'video' || order.service === 'custom')
@@ -1737,8 +1764,10 @@ async function serveOrderFolder(context, order, lang) {
      IS de sleutel tot deze bestelling, en een zip is precies het soort bestand dat
      iemand doorstuurt naar zijn bureau of zijn leverancier. Dan reist het
      toegangsbewijs mee in een bestand dat niemand als geheim beschouwt.
-     De leesmij verwijst dus naar /portal, waar de klant zelf om een verse link
-     vraagt. Eén klik meer, en geen sleutel in een archief. */
+     De leesmij verwijst dus naar de levermail en naar VISUAILS Studio
+     (visuails.com/account; tot 14 oktober 2026 stond er /nl/portal, en dat is
+     inmiddels de uitlegpagina /nl/studio/). Eén klik meer, en geen sleutel in
+     een archief. */
   /* Het portaal staat in de taal van de bestelling en heeft geen taalknop, dus
      is dat hier ook de taal van het scherm — zie deliveryDocs(). */
   const docs = deliveryDocs({ order: { ...order, lang }, entries, productNames, taal: lang });
@@ -1788,9 +1817,33 @@ function factList(pairs) {
  * type, same spacing — which is section 13's point: a different service model,
  * not a worse one.
  */
-function shot(t, lang, f, token, { review, history, round = false }) {
+/* ── PER PRODUCT EEN KOP, PER BEELD WAT HET IS — 15 oktober 2026 (B36) ─────
+   Elk beeld heette zijn bestandsnaam ("VIS-11S3-EIA-p1-model-front.jpg"),
+   zonder kop per product. Bij twaalf beelden zocht een klant zich suf, en op
+   een telefoon brak de naam midden in. Nu per product een kop ("Product 1 ·
+   Hoodie zwart") en per beeld het vak ("Voorkant", "Op model"); de
+   bestandsnaam staat klein eronder, want die ziet de klant in zijn webshop
+   terug. Zonder productsleutel (video, oude bestellingen): één lijst zoals
+   voorheen. */
+function shotsHtml(t, lang, files, order, token, opts) {
+  const namen = orderProductNames(order.details_json) || {};
+  const tegel = (f) => shot(t, lang, f, token, { ...opts, order });
+  const metSleutel = files.filter((f) => /^p\d+$/.test(String(f.product_key || '')));
+  if (!metSleutel.length) return `<ul class="shots">${files.map(tegel).join('')}</ul>`;
+  const groepen = new Map();
+  for (const f of files) {
+    const k = /^p\d+$/.test(String(f.product_key || '')) ? f.product_key : '';
+    if (!groepen.has(k)) groepen.set(k, []);
+    groepen.get(k).push(f);
+  }
+  const volgorde = [...groepen.keys()].sort((a, b) => (a ? Number(a.slice(1)) : 1e9) - (b ? Number(b.slice(1)) : 1e9));
+  return volgorde.map((k) => `<section class="shots-groep">${k ? `<h3 class="shots-kop">${esc(t.product(Number(k.slice(1)), namen[k] || ''))}</h3>` : ''}<ul class="shots">${groepen.get(k).map(tegel).join('')}</ul></section>`).join('');
+}
+
+function shot(t, lang, f, token, { review, history, round = false, order = null }) {
   const gone = f.expires_at && isExpired(f.expires_at, null);
   const name = f.filename || `#${f.id}`;
+  const vak = order && f.shot ? vakNaam(order.service, order.details_json, f.shot, lang) : null;
   /*
    * DE BESTANDSGROOTTE STOND HIER EN IS WEG. Een maat naast een foto is nuttig als
    * je hem gaat downloaden — "18,4 MB" vertelt je of je dit op 4G moet doen. Nu er
@@ -1897,11 +1950,18 @@ function shot(t, lang, f, token, { review, history, round = false }) {
        * Het blijft één ronde die je onderaan in één keer verstuurt — zie de noot
        * hieronder. Wat verandert is dat je kunt ZIEN wat erin zit voordat je hem
        * verstuurt. */
+      const aan = !!order?.rrGekozen?.has(f.id);
       const tik = round
         ? `<label class="pick">
-    <input type="checkbox" form="rr" name="bad" value="${f.id}">
+    <input type="checkbox" form="rr" name="bad" value="${f.id}"${aan ? ' checked' : ''}>
     <span>${esc(t.rrPick)}</span>
   </label>`
+        : '';
+      /* B44: het vak voor dit ene beeld, zichtbaar zodra het is aangevinkt
+         (CSS, .shot:has(.pick input:checked) in portal.css: deze pagina heeft
+         geen script). Hoort bij het rondeformulier verderop (form="rr"). */
+      const eigenNotitie = round
+        ? `<label class="pick-notitie"><span class="sr-only">${esc(t.rrPerBeeld)}</span><textarea form="rr" name="note-${f.id}" rows="2" maxlength="${NOTE_MAX}" placeholder="${esc(t.rrPerBeeld)}">${esc(order?.rrPerBeeld?.get(f.id) || '')}</textarea></label>`
         : '';
       controls = `<form method="post" action="">
   <input type="hidden" name="file" value="${f.id}">
@@ -1909,13 +1969,13 @@ function shot(t, lang, f, token, { review, history, round = false }) {
     <button class="btn btn-primary" type="submit" name="action" value="approve">${esc(t.bApprove)}</button>
     ${tik}
   </div>
-</form>${round ? `<span class="state picked">${esc(t.rrPicked)}</span>` : ''}`;
+</form>${round ? `<span class="state picked">${esc(t.rrPicked)}</span>${eigenNotitie}` : ''}`;
     }
   }
 
   return `<li class="shot" id="f${f.id}">
   ${preview}
-  <span class="name">${esc(name)}</span>
+  ${vak ? `<span class="name">${esc(vak)}</span><span class="file">${esc(name)}</span>` : `<span class="name">${esc(name)}</span>`}
   ${meta ? `<span class="meta">${esc(meta)}</span>` : ''}
   ${state}
   ${controls}

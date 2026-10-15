@@ -40,8 +40,8 @@ ok('twee datums (een teruggave na de stop): elk zelf genoemd', saldoWeergave(twe
    termijn vervalt, gaat als eerste op, en elke datum wordt genoemd. */
 const oud = { ...lopend, saldo: 356, echteDatums: [{ op: '2027-01-20', aantal: 8 }, { op: '2027-02-01', aantal: 24 }] };
 const o = saldoWeergave(oud, 'nl', nu);
-ok('oud: de eerste datum', o.eerst, '8 hiervan vervallen op 20 januari — die gaan als eerste op.');
-ok('oud: de volgende met zijn eigen datum', o.rest, 'Daarna vervallen er nog 24 op 1 februari.');
+ok('oud: de eerste datum (geldig t/m de dag ervoor, doorloop 27 B21)', o.eerst, '8 hiervan blijven geldig tot en met 19 januari — die gaan als eerste op.');
+ok('oud: de volgende met zijn eigen datum', o.rest, 'Daarna blijven er nog 24 geldig tot en met 31 januari.');
 
 for (const x of [l, niets, g, o, saldoWeergave(twee, 'nl', nu)]) {
   if (/De rest vervalt|in stappen/.test(`${x.eerst} ${x.rest}`)) ok('nergens "De rest vervalt" of "in stappen"', `${x.eerst} ${x.rest}`, '');

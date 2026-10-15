@@ -72,7 +72,7 @@ const COPY = {
     producten: 'Products', per: 'per product',
     soort: { catalog: ['Catalog set', setSize('catalog', CATALOG_IMAGES, 'en')], lifestyle: ['Lifestyle carousel', countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')] },
     somKop: ['What that', 'comes to.'], eenheid: 'products', alsLifestyle: 'as lifestyle carousels',
-    tarief: ['The rate on this page is the rate.', `No discounts, no packages. Want to see the work first? That is what the ${sample.price} test sample is for.`],
+    tarief: ['The rate on this page is the rate.', 'No discounts, no packages.', ` Want to see the work first? That is what the ${sample.price} test sample is for.`],
     vergelijk: 'A shoot day, priced against an order',
     extraPil: 'Own rate', extraKop: ['What else', 'has a rate.'], extraSub: 'Not per product, so not in the table.',
     merk: 'Your Brand Model', merkZin: 'One face, the same in every order you use it in. Only yours.', merkEenheid: 'one-time setup',
@@ -114,7 +114,7 @@ const COPY = {
     producten: 'Producten', per: 'per product',
     soort: { catalog: ['Catalogset', setSize('catalog', CATALOG_IMAGES, 'nl')], lifestyle: ['Lifestyle\u00ADcarrousel', countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')] },
     somKop: ['Wat dat', 'wordt.'], eenheid: 'producten', alsLifestyle: 'als lifestylecarrousels',
-    tarief: ['Het tarief op deze pagina is het tarief.', `Geen kortingen, geen pakketten. Wil je het werk eerst zien? Daarvoor is de proef van ${sample.price}.`],
+    tarief: ['Het tarief op deze pagina is het tarief.', 'Geen kortingen, geen pakketten.', ` Wil je het werk eerst zien? Daarvoor is de proef van ${sample.price}.`],
     vergelijk: 'Een shootdag, afgezet tegen een bestelling',
     extraPil: 'Eigen tarief', extraKop: ['Wat er verder', 'een tarief heeft.'], extraSub: 'Niet per product, dus niet in de tabel.',
     merk: 'Jouw merkmodel', merkZin: 'Eén gezicht, hetzelfde in elke bestelling waarin je het gebruikt. Alleen van jou.', merkEenheid: 'eenmalige setup',
@@ -241,7 +241,7 @@ const BEELD = {
     </div>
 
     <div class="h-pr-tarief h-in">
-      <p class="h-pr-tarief-zin"><span class="h-cirkel h-cirkel-mini h-cirkel-mist" aria-hidden="true" set:html={ik('check')} /><span><b>{c.tarief[0]}</b> {c.tarief[1]}</span></p>
+      <p class="h-pr-tarief-zin"><span class="h-cirkel h-cirkel-mini h-cirkel-mist" aria-hidden="true" set:html={ik('check')} /><span><b>{c.tarief[0]}</b> {c.tarief[1]}<span data-vis-uit>{c.tarief[2]}</span></span></p>
       <p class="h-pr-tarief-wegen">
         <a class="h-knop h-knop-inkt h-knop-klein" href={lp('/start')}>{c.start}<span class="o" set:html={ik('rechts')} /></a>
         <a class="h-link" href={lp('/compare')}>{c.vergelijk}<span class="h-cirkel h-cirkel-klein" aria-hidden="true" set:html={ik('pijl')} /></a>

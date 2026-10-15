@@ -803,7 +803,7 @@ console.log('\nde staat van elke sectie');
   check('/account/plan draagt één creditsaldo',
     plan.view.geen === false && plan.view.saldo.getal === 130 && plan.view.saldo.kop === 'You have 130 credits');
   check('met de vertaling in producten en wat er eerst vervalt',
-    /^Enough for /.test(plan.view.saldo.vertaling) && /^10 of these expire on /.test(plan.view.saldo.eerst));
+    /^Enough for /.test(plan.view.saldo.vertaling) && /^10 of these stay valid up to and including /.test(plan.view.saldo.eerst));
   /* Twee bestelknoppen (catalog, lifestyle) met de prijs in credits erbij. */
   check('en twee bestelknoppen met hun creditprijs',
     plan.view.bestel.length === 2 && plan.view.bestel.every((d) => d.kosten > 0 && /credits per product/.test(d.per)));

@@ -84,6 +84,7 @@ import {
 } from '../../src/data/attributes.js';
 import { isWellFormedBatch, listBatch } from '../../src/lib/uploads.js';
 import { normalizeEmail, normalizePhone } from '../../src/lib/payer.js';
+import { proefGebruikt } from '../../src/lib/proefGebruikt.js';
 import { voorkeurMet } from '../../src/data/contactvoorkeur.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from '../../src/lib/ratelimit.js';
 import { controleerBotcheck, botcheckBesluit, botcheckUitleg, TOKEN_VELD } from '../../src/lib/turnstile.js';
@@ -102,7 +103,8 @@ import { vragen as mailVragen, button as mailButton } from '../../src/lib/mailTe
 import { verderBlokHtml, leveringVan } from '../../src/lib/verder.js';
 import { ontbrekendeFotos, ontbrekendRegels, vakNaam } from '../../src/lib/ontbreekt.js';
 /* De klant bereiken bij foto's die ontbreken (punt 7.05): dezelfde waLink() als /admin. */
-import { waLink, contactMail } from '../../src/lib/waLink.js';
+import { waLink, contactMail, waNummer } from '../../src/lib/waLink.js';
+import { uitgesteldSleutel, stuurUitgesteld } from '../../src/lib/uitgesteld.js';
 import { SHOT_IDS, isRefShotId, isExtraShotId, isContextShotId } from '../../src/data/shots.js';
 /* De checklistmail (subscriberEmail) leest de fotogids uit dezelfde bron als
    /upload-guidelines en de pdf — punt 5.07, 8 oktober 2026. */
@@ -809,7 +811,8 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
             /* o03: alleen als het bericht zonder geldige botcheck doorkwam. */
             ...(botcheckUitleg(details.botcheck) ? [['Botcheck', esc(botcheckUitleg(details.botcheck))]] : []),
           ])
-          + (body ? mailQuote(esc(body).replace(/\n/g, '<br>')) : p('Er stond geen bericht bij.', { muted: true })),
+          + (body ? mailQuote(esc(body).replace(/\n/g, '<br>')) : p('Er stond geen bericht bij.', { muted: true }))
+          + contactAppKnop({ kanaal, phone, country, name, brand }),
       }),
     }));
     /* ── EN DE BEZOEKER KRIJGT EEN KOPIE — 1 oktober 2026 (ronde 8, M-C9) ────
@@ -832,7 +835,14 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
        (met links, die een mailprogramma klikbaar maakt) via ons adres versturen.
        Zonder het bericht valt er niets meer mee te sturen dan onze eigen zin. */
     const nlC = lang === 'nl';
-    const vasteOnderwerp = TOPICS[String(get('topic') || '').trim()] || '';
+    /* Doorloop 27 (B30): de Engelse kopie noemde het onderwerp in het
+       Nederlands ("Vraag over een bestelling"). Lucas' mail blijft Nederlands. */
+    const TOPICS_EN = { 'order-support': 'Question about an order', 'new-order': 'New order', 'custom-request': 'Something custom', other: 'Other' };
+    const vasteOnderwerp = (nlC ? TOPICS : TOPICS_EN)[String(get('topic') || '').trim()] || '';
+    /* Doorloop 27 (B29): WhatsApp gekozen zonder nummer. Het formulier vraagt het
+       nummer nu wel, maar zonder script (of met een ongeldig nummer) zet
+       voorkeurMet() het stil om naar e-mail; dan zegt de kopie dat ook. */
+    const wildeWhatsapp = String(get('contact_preference') || '').trim() === 'whatsapp' && kanaal !== 'WhatsApp';
     const voornaam = String(name || '').trim().split(/\s+/)[0] || '';
     const groet = /^[\p{L}][\p{L}'-]{0,29}$/u.test(voornaam) ? `, ${esc(voornaam)}` : '';
     await safe(() => sendMail(env, {
@@ -843,8 +853,8 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
         preheader: nlC ? 'Je hoort snel van ons.' : 'You will hear from us soon.',
         body: h1(nlC ? 'Je bericht is binnen' : 'Your message is in', vasteOnderwerp ? esc(vasteOnderwerp) : undefined)
           + p(nlC
-            ? `Bedankt${groet}. We hebben je bericht en antwoorden ${kanaal === 'WhatsApp' ? 'via WhatsApp' : 'per mail'}, meestal binnen het uur; buiten openingstijden de volgende ochtend.`
-            : `Thank you${groet}. We have your message and reply ${kanaal === 'WhatsApp' ? 'on WhatsApp' : 'by email'}, usually within the hour; outside opening hours the next morning.`),
+            ? `Bedankt${groet}. We hebben je bericht en antwoorden ${kanaal === 'WhatsApp' ? 'via WhatsApp' : wildeWhatsapp ? 'per mail (je koos WhatsApp, maar er stond geen telefoonnummer bij)' : 'per mail'}, meestal binnen het uur; buiten openingstijden de volgende ochtend.`
+            : `Thank you${groet}. We have your message and reply ${kanaal === 'WhatsApp' ? 'on WhatsApp' : wildeWhatsapp ? 'by email (you chose WhatsApp, but there was no phone number)' : 'by email'}, usually within the hour; outside opening hours the next morning.`),
       }),
     }));
     const okUrl = back + (back.includes('?') ? '&' : '?') + 'ok=1';
@@ -980,45 +990,11 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
       return redirect(`${lang === 'nl' ? '/nl' : ''}/test-sample/?error=proef-dicht#even-dicht`);
     }
 
-    let used = 0;
-    let checked = false;
-    await safe(async () => {
-      if (!env.DB) return;
-      const wantMail = normalizeEmail(email);
-      const wantPhone = normalizePhone(phone);
-      /* ── HET REGISTRATIENUMMER TELT MEE — 23 september 2026 ──────────────
-         Lucas: *"volgens mij kan je gewoon een nep kvk neerzetten"*. Klopt: het
-         nummer wordt alleen op vorm gecontroleerd. Maar een ÉCHT nummer dat al
-         een betaalde proef had, is hier nu een derde herkenningspunt naast mail
-         en telefoon. Een verzonnen nummer omzeilt het nog steeds — dit vangt de
-         eerlijke herhaling met een nieuw adres; de harde controle blijft de
-         betaler in de webhook. Zie regKey() hieronder. */
-      const wantReg = regKey(get('reg_number'));
-
-      const { results } = await env.DB
-        .prepare(`SELECT email, phone, details_json FROM orders
-                   WHERE service = 'test-sample'
-                     AND payment_status = 'paid'
-                   LIMIT 20000`)
-        .all();
-
-      used = (results || []).filter((r) => {
-        if (wantMail && normalizeEmail(r.email) === wantMail) return true;
-        if (wantReg) {
-          let eerder = '';
-          try { eerder = regKey(JSON.parse(r.details_json || '{}').business_reg); } catch { /* onleesbaar: telt niet */ }
-          if (eerder && eerder === wantReg) return true;
-        }
-        // Alleen als BEIDE nummers bruikbaar zijn. normalizePhone() geeft leeg
-        // terug bij minder dan acht cijfers, en twee lege waarden zijn gelijk —
-        // zonder deze regel matcht een bestelling zonder nummer op elke andere
-        // bestelling zonder nummer, en wordt iedereen geweigerd.
-        const theirs = normalizePhone(r.phone);
-        return !!wantPhone && theirs === wantPhone;
-      }).length;
-
-      checked = true;
-    });
+    /* De vergelijking zelf staat sinds 15 oktober 2026 in src/lib/proefGebruikt.js
+       (doorloop 27, B41): het formulier vraagt hem al in stap 3 via
+       /api/proef-check, en dat moet hetzelfde antwoord zijn als hier. Het
+       registratienummer telt mee (23 september 2026, zie regKey()). */
+    const { used, checked } = await proefGebruikt(env, { email, phone, reg: get('reg_number') });
 
     if (checked && used > 0) {
       console.log('[order] tweede proefvisual geweigerd voor', email, `(${used} betaald)`);
@@ -1457,10 +1433,23 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
   }
 
   const bizReasons = bizCheck.ok ? [] : bizCheck.reasons;
+  /* ── EEN AANVRAAG ZONDER PRIJS HOORT NIET OP DE BTW-LIJST — 14 oktober 2026 ──
+     (doorloop 27, B35) Elke video- of eigen-look-aanvraag kwam in de
+     btw-controle, omdat het formulier geen land en geen zakelijke verklaring
+     vraagt. Lucas zag dan bij € 0 "Opgave klopt — 0% blijft staan / Btw alsnog
+     rekenen — € 0,00 erbij", en "Volgende stap: Beoordelen" vóór de offerte.
+     Er is nog niets te betalen: de btw volgt bij de offerte (handleQuote zet
+     review_state op approved, de offertemail vraagt een EU-btw-nummer vóór het
+     betalen en zegt dat betalen de zakelijke verklaring is). De redenen blijven
+     in business_notes staan. Eerst de gewone uitkomst, daarna de uitzondering:
+     de regel "een ontbrekend bewijs leidt tot een beoordeling" blijft zo staan
+     zoals hij voor elke bestelling geldt (tests/business-only). */
+  const aanvraagZonderPrijs = !effCountry && ['video', 'custom'].includes(svc);
   const review = {
     needsReview: vatReview.needsReview || !bizCheck.ok,
     reasons: [...vatReview.reasons, ...bizReasons],
   };
+  if (aanvraagZonderPrijs) { review.needsReview = false; review.reasons = []; }
 
   /*
    * ── DE PROEFVISUAL KRIJGT NU OOK EEN BEDRAG — 12 AUGUSTUS 2026 ─────────────
@@ -2157,16 +2146,14 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
       .bind(email, orderId || 0).first();
     nieuwAdres = !(Number(eerder?.n) > 0);
   });
-  await safe(() => sendMail(env, {
-    to: email,
-    /* Aanvraag of bestelling (24 september 2026): een gewone bestelling met prijs
-       kreeg "We hebben je aanvraag" in de onderwerpregel, boven de kop "Je
-       bestelling staat genoteerd". */
-    subject: quote
-      ? (lang === 'nl' ? `We hebben je bestelling — ${ref}` : `We've got your order — ${ref}`)
-      : (lang === 'nl' ? `We hebben je aanvraag — ${ref}` : `We've got your request — ${ref}`),
-    html: customerEmail(lang, ref, svc, name,
-      { tier, window: finalWindow, upgrade: upgradeLine, portal: portalLink,
+  /* Aanvraag of bestelling (24 september 2026): een gewone bestelling met prijs
+     kreeg "We hebben je aanvraag" in de onderwerpregel, boven de kop "Je
+     bestelling staat genoteerd". */
+  const bevestigingOnderwerp = quote
+    ? (lang === 'nl' ? `We hebben je bestelling — ${ref}` : `We've got your order — ${ref}`)
+    : (lang === 'nl' ? `We hebben je aanvraag — ${ref}` : `We've got your request — ${ref}`);
+  const bevestigingOpties = {
+        tier, window: finalWindow, upgrade: upgradeLine, portal: portalLink,
         /* Niet de Mollie-link zelf: die verloopt binnen een kwartier tot een
            paar uur. /api/order-pay maakt bij elke klik een verse betaling. */
         pay: payUrl ? `${requestOrigin(request)}/api/order-pay?ref=${encodeURIComponent(ref)}&lang=${lang}` : null, quote, vat: vatCall,
@@ -2185,8 +2172,42 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
         fotos: (!staged.length && ['catalog', 'lifestyle', 'drop'].includes(svc))
           ? `${requestOrigin(request)}${lang === 'nl' ? '/nl' : ''}/account/orders`
           : null,
-        nieuwAdres }),
-  }));
+        nieuwAdres };
+  const bevestigingHtml = customerEmail(lang, ref, svc, name, bevestigingOpties);
+  /* ── ÉÉN MAIL NA HET BETALEN, NIET TWEE — 15 oktober 2026 (doorloop 27, B04) ──
+     Wie meteen betaalt, kreeg binnen seconden "We hebben je bestelling" (met
+     een groot blok "Nog niet betaald?") en daarna "Betaling ontvangen". Voor
+     een voorzichtige klant leest de eerste alsof het betalen mislukt is.
+     Gaat de klant nu naar Mollie (er is een betaallink), dan wacht de
+     bevestiging op de uitkomst: betaald → de betaalmail met de factuur krijgt
+     het overzicht erbij en er komt geen tweede mail; mislukt, afgebroken of
+     verlopen → deze bevestiging, met de betaalknop (de webhook). Lukt het
+     bewaren niet, dan gaat hij meteen, zoals vroeger. */
+  /* Alleen wie nu echt naar Mollie gaat (zie de kassaregel onderaan): niet bij
+     een vergeven venster of een grote bestelling zonder datum (die landen op de
+     bedankpagina met een betaalknop), en niet bij een bestelling die Lucas
+     namens de klant zet (die klant zit niet aan de kassa). */
+  /* De €1-proef maakt zijn betaling pas verderop aan (createTestSampleMolliePayment,
+     onder de kassaregel) en gaat dan óók meteen naar Mollie. Gemeten in de
+     harness (VIS-ODHW-1M2): die kreeg nog twee mails. Na een mislukte betaling
+     wijst de knop in de bevestiging naar /api/order-pay, dat ook de proef kent. */
+  const proefNaarKassa = svc === SAMPLE_SERVICE && !!orderId && !!env.MOLLIE_API_KEY;
+  const naarKassaNu = ((!!payUrl && !raced && !(tier === 'attended' && !finalWindow)) || proefNaarKassa)
+    && get('business_version') !== 'admin-namens-klant';
+  const betaalOpnieuw = bevestigingOpties.pay
+    || (proefNaarKassa ? `${requestOrigin(request)}/api/order-pay?ref=${encodeURIComponent(ref)}&lang=${lang}` : null);
+  const uitgesteld = naarKassaNu
+    ? await bewaarBevestiging(env, orderId, ref, {
+      to: email,
+      subject: bevestigingOnderwerp,
+      html: customerEmail(lang, ref, svc, name, { ...bevestigingOpties, pay: betaalOpnieuw, naMislukking: true }),
+      lang, nieuwAdres,
+      samenvatting: customerEmail(lang, ref, svc, name, { ...bevestigingOpties, alleenSamenvatting: true }),
+    })
+    : false;
+  if (!uitgesteld) {
+    await safe(() => sendMail(env, { to: email, subject: bevestigingOnderwerp, html: bevestigingHtml }));
+  }
 
   /*
    * DE BETAALLINK REIST MEE NAAR DE BEDANKTPAGINA — 7 augustus 2026.
@@ -2220,7 +2241,9 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
      zodat de bedankpagina "Betaald" zegt (29 september 2026). */
   /* Met credits betaald: ook meteen `paid=` (ronde B). */
   const done = (betaaldMetTegoed || metCredits)
-    ? back + (back.includes('?') ? '&' : '?') + 'paid=' + encodeURIComponent(ref)
+    /* &credits=1 (doorloop 27, B27): de bedankpagina zegt dan "betaald met je
+       credits" en belooft geen aparte factuur. */
+    ? back + (back.includes('?') ? '&' : '?') + 'paid=' + encodeURIComponent(ref) + (metCredits ? '&credits=1' : '')
     : back + (back.includes('?') ? '&' : '?') + 'ref=' + encodeURIComponent(ref)
       + (payUrl ? `&pay=${encodeURIComponent(payUrl)}` : '')
       + (nakijk ? '&nakijk=1' : '');
@@ -2325,6 +2348,9 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
       }
       return naarKassa(checkoutUrl, lang);
     }
+    /* Geen kassa (Mollie gaf geen link): de bevestiging die op de betaling
+       wachtte, gaat nu alsnog uit — met de knop naar /api/order-pay. */
+    if (uitgesteld) await safe(() => stuurUitgesteld(env, ref));
   }
 
   /*
@@ -3307,6 +3333,40 @@ function productLabel(key, details) {
   return typed ? `${typed} (${key})` : key;
 }
 
+/* B04 (doorloop 27): de uitgestelde bevestiging in R2, onder een vaste sleutel
+   per kenmerk. De webhook leest hem (src/lib/uitgesteld.js). */
+async function bewaarBevestiging(env, orderId, ref, mail) {
+  if (!env?.UPLOADS || !orderId || !ref) return false;
+  try {
+    await env.UPLOADS.put(uitgesteldSleutel(ref), JSON.stringify(mail), { httpMetadata: { contentType: 'application/json' } });
+    return true;
+  } catch (err) {
+    console.warn('[order] bevestiging niet bewaard voor', ref, '— gaat meteen —', err?.message || err);
+    return false;
+  }
+}
+
+/* ── "APP <NAAM>" ONDER EEN CONTACTBERICHT — 15 oktober 2026 (doorloop 27, B29b)
+   Koos de bezoeker "antwoord via WhatsApp", dan had Lucas' mail geen knop om
+   meteen te appen; de abonnementsmails wel. Dezelfde vorm (contactMail): App
+   voorop, Bel eronder als tekstlink. De tekst die klaarstaat is alleen de
+   aanhef; het antwoord typt Lucas zelf. */
+export function contactAppKnop({ kanaal, phone, country, name, brand }) {
+  if (kanaal !== 'WhatsApp' || !phone) return '';
+  /* Het contactformulier vraagt geen land. Een 06 met acht cijfers erachter is
+     alleen in Nederland een mobiel nummer (België 04…, Duitsland 015/016/017…),
+     dus dan NL; elk ander nummer zonder landnummer blijft zonder knop
+     (waNummer gokt niet, zie waLink.js). Gemeten met "06 12345678": geen knop. */
+  const kaal = String(phone).replace(/[^\d+]/g, '');
+  const land = String(country || '').toUpperCase() || (/^06\d{8}$/.test(kaal) ? 'NL' : '');
+  const nummer = waNummer(String(phone), land);
+  if (!nummer) return '';
+  const voornaam = String(name || '').trim().split(/\s+/)[0] || '';
+  const tekst = `Hoi${voornaam ? ` ${voornaam}` : ''}, dank voor je bericht via de site. `;
+  const link = { wa: `https://wa.me/${nummer}?text=${encodeURIComponent(tekst).replace(/'/g, '%27')}`, tel: `tel:+${nummer}`, belEerst: false };
+  return contactMail(link, { wie: brand || voornaam || 'de klant', knop: mailButton, regel: linkLine });
+}
+
 function detailRows(obj) {
   return Object.entries(obj).map(([k, v]) =>
     /* word-break op de waarde (9.07, 8 oktober 2026): een upload_batch van 43
@@ -3407,8 +3467,30 @@ function studioProductRegels(files, details, products) {
 
 const mailBedragNl = (c) => `€ ${String(Math.floor(Math.abs(Number(c) || 0) / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')},${String(Math.abs(Math.round(Number(c) || 0)) % 100).padStart(2, '0')}`;
 
+/* ── DE AANVRAAGMAIL, IN GEWONE WOORDEN — 15 oktober 2026 (doorloop 27, B15b) ──
+   Een aanvraag zonder prijs (video, eigen look, meer dan 20 producten) begon
+   met "Btw: nl_standard tegen 21% · Reden: no-country" en eindigde met ruwe
+   velden als "business_declaration MISSING" en "withdrawal_consent MISSING".
+   Btw en verklaring regelt de offerte; hier staat alleen wat Lucas nodig heeft
+   om een offerte te maken: wie, hoe te bereiken, wat, en het bericht. */
+const AANVRAAG_LABELS = {
+  name: 'Naam', brand: 'Merk', email: 'E-mail', phone: 'Telefoon', website: 'Website',
+  country: 'Land', address: 'Adres', vat: 'Btw-nummer', style: 'Soort', clips: 'Clips',
+  products: 'Producten', voor: 'Waarvoor', message: 'Bericht', contact: 'Contact via',
+};
+const AANVRAAG_WEG = new Set(['request', 'business_declaration', 'business_version', 'business_kind', 'business_reg', 'business_ok', 'business_notes', 'withdrawal_consent']);
+function aanvraagRows(obj) {
+  const stijlNaam = (slug) => (VIDEO_STYLES.find((v) => v.slug === slug) || STYLES.find((v) => v.slug === slug) || {}).name || slug;
+  return Object.entries(obj)
+    .filter(([k, v]) => !AANVRAAG_WEG.has(k) && v !== null && v !== undefined && String(v).trim() !== '')
+    .map(([k, v]) => [AANVRAAG_LABELS[k] || k, k === 'style' ? stijlNaam(String(v)) : v])
+    .map(([k, v]) => `<tr><td style="padding:4px 12px 4px 0;color:#8F8C87;vertical-align:top">${esc(k)}</td><td style="padding:4px 0;word-break:break-word"><strong>${esc(v)}</strong></td></tr>`)
+    .join('');
+}
+
 function notifyEmail(ref, service, top, details, gate = {}) {
-  const rows = detailRows({ ...top, ...details });
+  const aanvraag = !gate.quote && !(gate.credits && gate.credits.gebruikt > 0);
+  const rows = aanvraag ? aanvraagRows({ ...top, ...details }) : detailRows({ ...top, ...details });
   const { tier, products, window, raced, asked, uploads, upgrade, portal } = gate;
   const files = gate.files || [];
 
@@ -3416,7 +3498,7 @@ function notifyEmail(ref, service, top, details, gate = {}) {
   // Amber rather than red for the unconfirmed case: it is not an error, it is
   // an order that was charged 21% where the customer may have expected 0%, and
   // the studio is the only party who can put that right before the invoice.
-  const v = gate.vat;
+  const v = aanvraag ? null : gate.vat;
   const vies = gate.vies;
   const vatBlock = v
     ? `<p style="margin:0 0 16px;padding:12px;background:${v.treatment === 'nl_standard' ? '#1F2229' : '#23301C'};color:#fff;font-size:13px;line-height:1.6">
@@ -3580,7 +3662,7 @@ function notifyEmail(ref, service, top, details, gate = {}) {
 export function customerEmail(lang, ref, service, name,
   { tier = 'unattended', window = null, upgrade = null, portal = null, pay = null, quote = null, vat = null,
     inReview = false, voorrang = false, aanvraag = false, tegoed = 0, betaaldMetTegoed = false, details = null, fotos = null,
-    nieuwAdres = false, credits = null } = {}) {
+    nieuwAdres = false, credits = null, alleenSamenvatting = false, naMislukking = false } = {}) {
   const nl = lang === 'nl';
   const hi = greeting(name, lang);
   const attended = tier === 'attended';
@@ -3620,9 +3702,14 @@ export function customerEmail(lang, ref, service, name,
      "al betaald bij Mollie? dan hoef je niets te doen". Pas daaronder de
      betaalknop. Zonder betaallink (btw-controle, betaald met tegoed, of het
      aanmaken van de betaling lukte niet) alleen de eerste helft. */
+  /* B04 (doorloop 27): de uitgestelde bevestiging gaat pas uit als de betaling
+     mislukt, is afgebroken of verloopt. Dan zegt hij dat, en niet "al betaald?". */
   const alBetaald = pay && !aanvraag
-    ? (nl ? ' Al betaald bij Mollie? Dan hoef je niets te doen: je krijgt zo een tweede mail met je factuur.'
-      : ' Already paid at Mollie? Then there is nothing you need to do: a second email with your invoice follows shortly.')
+    ? (naMislukking
+      ? (nl ? ' De betaling is nog niet gelukt. Wil je hem nog? Hieronder kun je opnieuw betalen; er is niets afgeschreven.'
+        : ' The payment has not gone through yet. Still want it? You can pay again below; nothing has been charged.')
+      : (nl ? ' Al betaald bij Mollie? Dan hoef je niets te doen: je krijgt zo een tweede mail met je factuur.'
+        : ' Already paid at Mollie? Then there is nothing you need to do: a second email with your invoice follows shortly.'))
     : '';
   const received = aanvraag
     ? (wat
@@ -3676,7 +3763,9 @@ export function customerEmail(lang, ref, service, name,
       lang,
       levering: leveringVan({ window_start: dated ? window.start : null, window_end: dated ? window.end : null, tier, details: { voorrang: voorrang ? '1' : '' } }),
       /* Met credits betaald (ronde B): geen aparte factuur, de termijnfactuur dekt hem. */
-      factuur: credits ? 'credits' : betaaldMetTegoed ? 'volgt' : pay ? 'na-factuur' : 'na-betaling',
+      /* Na een mislukte betaling (B04, de uitgestelde bevestiging) zegt de eerste zin
+         niets over de factuur; dan de regel die het wel zegt. */
+      factuur: credits ? 'credits' : betaaldMetTegoed ? 'volgt' : (pay && !naMislukking) ? 'na-factuur' : 'na-betaling',
     })
     : '';
 
@@ -3914,6 +4003,12 @@ export function customerEmail(lang, ref, service, name,
     ...keuzeRijen,
   ].filter(Boolean));
 
+  /* B04 (doorloop 27): het overzicht en de verklaringen apart, voor in de
+     betaalmail als de bevestiging is uitgesteld. Zie bewaarBevestiging(). */
+  if (alleenSamenvatting) {
+    return p(nl ? '<strong>Wat je bestelde</strong>' : '<strong>What you ordered</strong>', { top: 20, bottom: 6 }) + summary + verklaringBlok;
+  }
+
   return shell({
     lang,
     // The inbox preview line. It names the reference rather than repeating the
@@ -3970,7 +4065,7 @@ export function customerEmail(lang, ref, service, name,
       aanvraag || !care ? '' : p(care, { top: 20 }),
       verklaringBlok,
       upgradeNote,
-      mailVragen(lang, ref),
+      mailVragen(lang, ref, { aanvraag }),
       /* De contactenregel alleen in de eerste mail aan een nieuw adres (7.07,
          V21-1): order.js geeft door of dit adres al eerder besteld heeft. */
       nieuwAdres ? `<div style="height:18px;font-size:0;line-height:0">&nbsp;</div>${spamNote(lang)}` : '',

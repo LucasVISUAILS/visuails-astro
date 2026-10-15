@@ -35,7 +35,7 @@
  */
 
 import { sendMail, toBase64 } from './mail.js';
-import { shell, h1, p, rows, note, linkLine, esc, button, greeting, vragen } from './mailTemplate.js';
+import { shell, h1, p, rows, note, linkLine, esc, button, greeting, vragen, spamNote } from './mailTemplate.js';
 /* Punt 7.01 (8 oktober 2026): "Zo gaat het verder" uit één bron met de
    bedankpagina en de bestelmail, de privélink bovenaan, en wat er ontbreekt. */
 import { verderBlokHtml, leveringVan } from './verder.js';
@@ -143,7 +143,7 @@ const dateLine = (iso, lang) => formatDate(String(iso || ''), lang);
  * @param {object} o.snap  de bewaarde momentopname
  * @param {boolean} o.attached  zit de pdf er echt bij? Bepaalt één alinea.
  */
-export function invoiceEmail({ lang = 'nl', order = {}, invoice, snap = {}, attached = true, link = '', levering = null, ontbreekt = null }) {
+export function invoiceEmail({ lang = 'nl', order = {}, invoice, snap = {}, attached = true, link = '', levering = null, ontbreekt = null, uitgesteld = null }) {
   const t = COPY[lang === 'en' ? 'en' : 'nl'];
   const gross = Number(snap.netCents || 0) + Number(snap.vatCents || 0);
   // Dezelfde drie waarden als vat.js en invoicePdf.js, uit de constante en niet
@@ -181,6 +181,10 @@ export function invoiceEmail({ lang = 'nl', order = {}, invoice, snap = {}, atta
        VISUAILS Studio, waar dezelfde bestelling staat. */
     order.ref ? button(link || `${portaal}/orders`, t.knop) : '',
     watNu,
+    /* B04 (doorloop 27): wachtte de bevestiging op deze betaling, dan is dit de
+       enige mail, en staat hier wat de klant bestelde (de rijen uit de
+       bevestiging, al opgemaakt in functions/api/order.js). */
+    uitgesteld?.samenvatting || '',
     rows([
       [t.rInvoice, esc(invoice.number)],
       [t.rDate, esc(dateLine(snap.date, lang))],
@@ -198,6 +202,9 @@ export function invoiceEmail({ lang = 'nl', order = {}, invoice, snap = {}, atta
     // rommelig maakt.
     note(esc(t.keep)),
     order.ref ? vragen(lang, order.ref) : '',
+    /* De contactenregel hoort in de eerste mail aan een nieuw adres (7.07); bij
+       een uitgestelde bevestiging is dat deze. */
+    uitgesteld?.nieuwAdres ? `<div style="height:18px;font-size:0;line-height:0">&nbsp;</div>${spamNote(lang)}` : '',
   ].join('');
 
   return {
@@ -257,7 +264,7 @@ export async function betaalMailContext(env, ref, lang = 'nl') {
  *
  * @returns {Promise<boolean>} of er iets is verstuurd.
  */
-export async function mailInvoice(env, { order, invoice }) {
+export async function mailInvoice(env, { order, invoice, uitgesteld = null }) {
   try {
     if (!order?.email || !invoice) return false;
     const lang = invoice.lang === 'en' ? 'en' : (order.lang === 'en' ? 'en' : 'nl');
@@ -280,7 +287,7 @@ export async function mailInvoice(env, { order, invoice }) {
     }
 
     const ctx = await betaalMailContext(env, order.ref, lang);
-    const { subject, html } = invoiceEmail({ lang, order, invoice, snap, attached: !!attachment, ...ctx });
+    const { subject, html } = invoiceEmail({ lang, order, invoice, snap, attached: !!attachment, ...ctx, uitgesteld });
     await sendMail(env, {
       to: order.email,
       /* ── EN EEN KOPIE VOOR DE EIGEN ADMINISTRATIE — 20 augustus 2026 ───────

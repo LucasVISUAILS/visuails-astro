@@ -50,13 +50,16 @@ const I18N = {
     tyRefTitle: 'Your reference', tyRefNote: 'Keep this handy — quote it if you message us about this order.',
     tyPayNote: 'This order is not paid yet. Production starts once the payment comes through.',
     tyPayCta: 'Complete the payment',
-    tyPaidNote: 'The payment is in. There is nothing left for you to do.',
+    /* Afvinklijst 27 (k-bedank, "de tekst mag compacter"): de kop zegt al "Betaald" of
+       "Betaald met je credits"; het vlak eronder zegt alleen nog wat de klant moet weten. */
+    tyPaidNote: 'There is nothing left for you to do.',
+    tyPaidNoteCredits: 'There is nothing left for you to do.',
     /* Punt 1.05 (8 oktober 2026): de tussenstand. Geen knop — wie net betaald
        heeft, mag hier niet de indruk krijgen dat het nog een keer moet. */
-    tyCheckingNote: 'You do not need to pay again. This page updates itself as soon as Mollie confirms the payment.',
-    tyCheckingSlow: 'This is taking longer than usual. There is nothing you need to do: we email you as soon as the payment is in. Did you stop the payment yourself? Then the payment link is in your confirmation email.',
+    tyCheckingNote: 'You do not need to pay again. This page updates itself.',
+    tyCheckingSlow: 'This is taking longer than usual. There is nothing you need to do: we email you as soon as the payment is in. Stopped it yourself? The payment link is in your confirmation email.',
     tyUnpaidFlow: 'Nothing is being made yet: we start as soon as the payment is in. Your photos and choices are saved with the order.',
-    tyUnpaidNote: 'The payment was not completed — cancelled, declined or the link expired. Nothing has been charged. The order is recorded under this reference; pay now, or later through the link in your confirmation email.',
+    tyUnpaidNote: 'Cancelled, declined or expired — nothing has been charged. Your order is saved: pay now, or later through the link in your email.',
     tyRetryCta: 'Pay again',
     tySignedIn: 'You are signed in — the order is already in VISUAILS Studio.',
     tsSending: 'Uploading…',
@@ -94,11 +97,12 @@ const I18N = {
     tyRefTitle: 'Je referentie', tyRefNote: 'Bewaar deze — vermeld hem als je ons over deze bestelling appt of mailt.',
     tyPayNote: 'Deze bestelling is nog niet betaald. Zodra de betaling binnen is, gaan we aan de slag.',
     tyPayCta: 'Rond de betaling af',
-    tyPaidNote: 'De betaling is binnen. Je hoeft niets meer te doen.',
-    tyCheckingNote: 'Je hoeft niet opnieuw te betalen. Deze pagina werkt zichzelf bij zodra Mollie de betaling bevestigt.',
-    tyCheckingSlow: 'Dit duurt langer dan normaal. Je hoeft niets te doen: we mailen je zodra de betaling binnen is. Heb je de betaling zelf afgebroken? Dan staat de betaallink in je bevestigingsmail.',
+    tyPaidNote: 'Je hoeft niets meer te doen.',
+    tyPaidNoteCredits: 'Je hoeft niets meer te doen.',
+    tyCheckingNote: 'Je hoeft niet opnieuw te betalen. Deze pagina werkt zichzelf bij.',
+    tyCheckingSlow: 'Dit duurt langer dan normaal. Je hoeft niets te doen: we mailen je zodra de betaling binnen is. Zelf afgebroken? De betaallink staat in je bevestigingsmail.',
     tyUnpaidFlow: 'Er wordt nog niets gemaakt: we beginnen zodra de betaling binnen is. Je foto’s en keuzes staan bewaard bij de bestelling.',
-    tyUnpaidNote: 'De betaling is niet afgerond — afgebroken, geweigerd of de link was verlopen. Er is niets afgeschreven. Je bestelling staat genoteerd onder dit kenmerk; betaal nu, of later via de link in je bevestigingsmail.',
+    tyUnpaidNote: 'Afgebroken, geweigerd of verlopen — er is niets afgeschreven. Je bestelling staat bewaard: betaal nu, of later via de link in je mail.',
     tyRetryCta: 'Opnieuw betalen',
     tySignedIn: 'Je bent ingelogd — de bestelling staat al in VISUAILS Studio.',
     tsSending: 'Uploaden…',
@@ -1110,6 +1114,7 @@ function initThankYou() {
     const mailCel = document.querySelector('[data-ty-mail]');
     if (mailCel && !mailCel.textContent.trim()) (mailCel.closest('.ty-row') || mailCel).hidden = true;
     document.querySelectorAll('.ty-now .ty-act, .ty-now [data-ty-signin], [data-ty-niet-bij-contact]').forEach((el) => { el.hidden = true; });
+    zetWhatsappTekst('bericht', '');
     return;
   }
   const betaald = (params.get('paid') || '').trim();
@@ -1178,6 +1183,9 @@ function initThankYou() {
         regel.textContent = regel.dataset.tyVerderVoorrang;
       } else if (regel && Number.isInteger(aantal) && Number.isInteger(drempel) && aantal >= drempel && regel.dataset.tyVerderDatumVolgt) {
         regel.textContent = regel.dataset.tyVerderDatumVolgt;
+        /* B23 (doorloop 27): de Levertijd-rij rechts zei hier nog "zo snel
+           mogelijk". Nu zegt hij hetzelfde als de regel links. */
+        document.querySelectorAll('dd[data-ty-timing][data-ty-timing-volgt]').forEach((el) => { el.textContent = el.dataset.tyTimingVolgt; });
       }
     } catch { /* geen opslag: de standaardregel blijft */ }
   }
@@ -1185,6 +1193,15 @@ function initThankYou() {
      "je factuur komt zo" zeggen; bij elke andere aankomst is er nog niet
      betaald. */
   if (!(betaald && !params.get('ref'))) verderOnbetaald();
+  /* B27 (doorloop 27): met credits betaald (order.js zet &credits=1) komt er
+     geen aparte factuur; de termijnfactuur dekt de bestelling. */
+  const metCredits = params.get('credits') === '1' && betaald && !params.get('ref');
+  if (metCredits && verder) {
+    const stil = verder.querySelector('[data-ty-verder-stil]');
+    if (stil && stil.dataset.tyVerderCredits) stil.textContent = stil.dataset.tyVerderCredits;
+  }
+  /* B24 (doorloop 27): de WhatsApp-link met het kenmerk en het goede woord. */
+  zetWhatsappTekst(params.get('soort') === 'aanvraag' ? 'aanvraag' : 'bestelling', ref.toUpperCase());
 
   /* Het adres waar de bevestiging heen ging, als pipeline.js het achterliet. */
   try {
@@ -1249,6 +1266,24 @@ function initThankYou() {
     document.querySelectorAll('[data-ty-alleen-bestelling]').forEach((el) => { el.hidden = true; });
     const mailCel = document.querySelector('[data-ty-mail]');
     if (mailCel && !mailCel.textContent.trim()) (mailCel.closest('.ty-row') || mailCel).hidden = true;
+    /* B15 (doorloop 27): "Bekijk je aanvraag", zoals in de mail. */
+    const cta = document.querySelector('[data-ty-cta]');
+    if (cta && cta.dataset.tyCtaRequest) cta.textContent = cta.dataset.tyCtaRequest;
+    /* En de zin eronder zegt "aanvraag" (afvinklijst 27, k-bedank). */
+    const inlog = document.querySelector('[data-ty-signin]');
+    if (inlog && inlog.dataset.tySigninRequest) inlog.textContent = inlog.dataset.tySigninRequest;
+  }
+  /* ── EEN BETAALDE OFFERTE — 14 oktober 2026 (doorloop 27, B17) ─────────────
+     order-pay.js stuurt ?soort=offerte mee bij een video of eigen look. Dan
+     geen beeldenverhaal en geen levertijd, maar wat de mail ook zegt: we gaan
+     aan de slag zoals in de offerte staat. */
+  if (params.get('soort') === 'offerte') {
+    const flow = document.querySelector('[data-ty-flow]');
+    if (flow && flow.dataset.tyFlowQuote) flow.textContent = flow.dataset.tyFlowQuote;
+    if (flow) flow.hidden = false;
+    if (verder) verder.hidden = true;
+    document.querySelectorAll('dd[data-ty-timing]').forEach((el) => { (el.closest('.ty-row') || el).hidden = true; });
+    document.querySelectorAll('[data-ty-alleen-bestelling]').forEach((el) => { el.hidden = true; });
   }
   /* Eerst de controle (order.js stuurt ?nakijk=1 mee): de betaallink komt per
      mail. Zonder deze tak stond hier "we maken je visuals" bij een bestelling
@@ -1412,6 +1447,18 @@ function initThankYou() {
  * Dertien vragen in een minuut, plus drie van checkCancelled(): ruim onder de
  * dertig die order-status per bezoeker toelaat.
  */
+/* B24 (doorloop 27): de WhatsApp-tekst op de bedankpagina, met het kenmerk.
+   De sjablonen staan in ThankYouPage.astro (data-ty-wa-*). */
+function zetWhatsappTekst(soort, ref) {
+  const a = document.querySelector('a[data-ty-wa]');
+  if (!a) return;
+  const sjabloon = a.dataset[`tyWa${soort.charAt(0).toUpperCase()}${soort.slice(1)}`];
+  if (!sjabloon || (soort !== 'bericht' && !ref)) return;
+  const basis = String(a.getAttribute('href') || '').split('?')[0];
+  if (!/^https:\/\/wa\.me\/\d+$/.test(basis)) return;
+  a.setAttribute('href', `${basis}?text=${encodeURIComponent(sjabloon.replace('{ref}', ref))}`);
+}
+
 function verifyPaid(ref, noot, d, attempt = 0) {
   const DELAYS = [0, 2000, 3000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000];
   if (attempt >= DELAYS.length) return;
@@ -1429,8 +1476,11 @@ function verifyPaid(ref, noot, d, attempt = 0) {
         const kop = document.querySelector('[data-ty-title]');
         const balk = document.querySelector('[data-ty-bar]');
         if (s.paid) {
-          noot.textContent = d.tyPaidNote;
-          if (kop && kop.dataset.tyTitlePaid) kop.textContent = kop.dataset.tyTitlePaid;
+          let metCredits = false;
+          try { metCredits = new URLSearchParams(location.search).get('credits') === '1'; } catch { /* oude browser */ }
+          noot.textContent = metCredits && d.tyPaidNoteCredits ? d.tyPaidNoteCredits : d.tyPaidNote;
+          if (kop && metCredits && kop.dataset.tyTitleCredits) kop.textContent = kop.dataset.tyTitleCredits;
+          else if (kop && kop.dataset.tyTitlePaid) kop.textContent = kop.dataset.tyTitlePaid;
           /* Nu is er iets af: het vinkje terug. */
           if (balk) balk.removeAttribute('data-ty-pay-state');
           return;
@@ -2153,14 +2203,27 @@ function vulKlant(stand) {
       if (her) { el.href = her.href; label.textContent = el.dataset.visHerbestel || label.textContent; }
     } else if (soort === 'start-naast') {
       toon = toon && !!her;
+    } else if (soort === 'niet-abonnee') {
+      toon = !(ingelogd === true && stand && stand.abonnee);
+    } else if (soort === 'abonnee') {
+      /* Alleen voor wie nu een lopend abonnement heeft (15 oktober 2026). */
+      toon = toon && !!stand && !!stand.abonnee;
+    } else if (soort === 'plan-kies') {
+      if (stand && stand.abonnee && el.dataset.visAboLabel) { label.textContent = el.dataset.visAboLabel; el.href = el.dataset.visAbo || el.href; }
+      toon = true;
+    } else if (soort === 'start-credits') {
+      /* De hoofdknop blijft voor iedereen staan; met credits zegt hij dat. */
+      const n = stand ? Math.max(0, Math.floor(Number(stand.saldo) || 0)) : 0;
+      if (n > 0 && el.dataset.visCredits) label.textContent = el.dataset.visCredits.replace('{n}', String(n));
+      toon = true;
     } else if (soort === 'plan' && stand) {
+      /* 15 oktober 2026: een abonnee (of wie credits heeft) krijgt "Je abonnement"
+         naar Studio. Hier stond "Bestel met je credits" naar /start, naast een
+         hoofdknop die ook naar /start ging: twee knoppen, één deur. */
       const n = Math.max(0, Math.floor(Number(stand.saldo) || 0));
-      if (n > 0 && el.dataset.visCredits) {
-        label.textContent = el.dataset.visCredits.replace('{n}', String(n));
-        el.href = el.dataset.visStart || el.href;
-      } else if (stand.abonnee && el.dataset.visStartLabel) {
-        label.textContent = el.dataset.visStartLabel;
-        el.href = el.dataset.visStart || el.href;
+      if ((stand.abonnee || n > 0) && el.dataset.visAboLabel) {
+        label.textContent = el.dataset.visAboLabel;
+        el.href = el.dataset.visAbo || el.href;
       }
     } else if (soort === 'proefblok') {
       vulProefblok(el, stand, her);
@@ -2327,8 +2390,11 @@ function meldingen() {
 function pasKlantstandToe() {
   const uit = [...document.querySelectorAll('[data-vis-uit]')];
   const aan = [...document.querySelectorAll('[data-vis-in]')];
+  /* data-vis-klant-in (15 oktober 2026): het tegendeel van data-vis-uit — staat er
+     precies wanneer de proef weg is ("Bestel deze look" in plaats van "Probeer · €1"). */
+  const klantIn = [...document.querySelectorAll('[data-vis-klant-in]')];
   const vul = document.querySelector('[data-vis-klant]');
-  if (!uit.length && !aan.length && !vul) return;
+  if (!uit.length && !aan.length && !klantIn.length && !vul) return;
 
   /* data-vis-uit is sinds 14 oktober 2026 "alleen voor wie nog niets bestelde":
      een nieuw account mag de proef nog doen, dus de proefknop blijft voor hem
@@ -2340,13 +2406,14 @@ function pasKlantstandToe() {
   const zet = (klant) => {
     const metBestelling = klant && !(klantStand && klantStand.nieuw === true);
     uit.forEach((el) => { el.hidden = metBestelling; });
+    klantIn.forEach((el) => { el.hidden = !metBestelling; });
     aan.forEach((el) => { el.hidden = !klant; });
   };
 
   /* Het antwoord is er al (zachte navigatie), en de stand ook als deze pagina
      hem nodig heeft: meteen goed zetten, zonder tweede vraag. */
   if (ingelogd === false) { zet(false); if (vul) vulKlant(null); meldingen(); gezet(); return; }
-  const wilStand = !!vul || uit.length > 0;
+  const wilStand = !!vul || uit.length > 0 || klantIn.length > 0;
   if (ingelogd === true && (!wilStand || klantStand !== undefined)) { zet(true); if (vul) vulKlant(klantStand); meldingen(); gezet(); return; }
   if (typeof fetch !== 'function') return;
 
@@ -2412,8 +2479,51 @@ export function init() {
   initFormRefusal();
   initWizards();
   initVeldmeldingen();
+  initNummerBijWhatsapp();
+  initAanvraagKeuze();
   /* Na de stapformulieren, die bij hetzelfde laadmoment hun stappen opbouwen. */
   setTimeout(initFormulierTerug, 0);
+}
+
+/* ── WHATSAPP KIEZEN = EEN NUMMER GEVEN — 14 oktober 2026 (doorloop 27, B29) ──
+   Het contactformulier liet "antwoord via WhatsApp" zonder nummer door; de
+   server zette het dan stil om naar e-mail, terwijl de bedankpagina zei "via
+   het kanaal dat je koos". Nu is het veld verplicht zodra WhatsApp aanstaat,
+   met de melding uit data-melding (initVeldmeldingen controleert ook de vorm). */
+function initNummerBijWhatsapp() {
+  document.querySelectorAll('input[data-nodig-bij-whatsapp]').forEach((tel) => {
+    const form = tel.form;
+    if (!form || form.__waNummer) return;
+    form.__waNummer = 1;
+    const zet = () => {
+      const wa = form.querySelector('input[name="contact_preference"][value="whatsapp"]');
+      tel.required = !!(wa && wa.checked);
+      if (!tel.required) tel.setCustomValidity('');
+    };
+    form.addEventListener('change', (e) => { if (e.target && e.target.name === 'contact_preference') zet(); });
+    zet();
+  });
+}
+
+/* ── DE KEUZE UIT DE LINK — 14 oktober 2026 (doorloop 27, B14 en B16) ───────
+   "Vraag Motion aan" op /video/motion opende het aanvraagformulier met
+   "Weet ik nog niet", en "Vraag een eigen look aan" op /catalog/custom met
+   "Lifestylescènes". De stijlpagina's sturen nu ?style= en ?voor= mee; hier
+   wordt alleen gekozen wat het formulier zelf als optie heeft. Een bewaarde
+   invoer (initFormulierTerug, daarna) gaat voor: wie terugkomt, ziet zijn
+   eigen keuze. */
+function initAanvraagKeuze() {
+  let q;
+  try { q = new URLSearchParams(location.search); } catch { return; }
+  const zet = (sel, waarde) => {
+    const el = document.querySelector(sel);
+    if (!el || !waarde || el.dataset.uitLink === '1') return;
+    if (![...el.options].some((o) => o.value === waarde)) return;
+    el.value = waarde;
+    el.dataset.uitLink = '1';
+  };
+  zet('select#h-style', q.get('style'));
+  zet('select#h-for', q.get('voor'));
 }
 
 // The reveal safety net is bound FIRST and unconditionally, so reveal-gated

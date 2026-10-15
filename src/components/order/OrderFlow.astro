@@ -264,11 +264,13 @@ const SERVICE = {
       title: 'Catalog sets',
       gets: 'From 4 images per product — front, back, detail, on model',
       lead: `The rate falls as the count rises, from ${euro(ladderRate('catalog', 1), 'en')} to ${euro(ladderFloor('catalog'), 'en')} a product.`,
+      leadCredits: `With your plan: ${SERVICE_CREDITS.catalog} credits a product.`,
     },
     lifestyle: {
       title: 'Lifestyle carousels',
       gets: '4 images per product — one styled look, three on a model and one of the product on its own',
       lead: `The rate falls as the count rises, from ${euro(ladderRate('lifestyle', 1), 'en')} to ${euro(ladderFloor('lifestyle'), 'en')} a product.`,
+      leadCredits: `With your plan: ${SERVICE_CREDITS.lifestyle} credits a product.`,
     },
     change: 'Order something else',
   },
@@ -277,11 +279,13 @@ const SERVICE = {
       title: 'Catalogsets',
       gets: 'Vanaf 4 beelden per product — voor, achter, detail, op model',
       lead: `Het tarief daalt naarmate het aantal stijgt, van ${euro(ladderRate('catalog', 1), 'nl')} naar ${euro(ladderFloor('catalog'), 'nl')} per product.`,
+      leadCredits: `Met je abonnement: ${SERVICE_CREDITS.catalog} credits per product.`,
     },
     lifestyle: {
       title: 'Lifestylecarrousels',
       gets: '4 beelden per product — één gestylede look, drie op een model en één van het product alleen',
       lead: `Het tarief daalt naarmate het aantal stijgt, van ${euro(ladderRate('lifestyle', 1), 'nl')} naar ${euro(ladderFloor('lifestyle'), 'nl')} per product.`,
+      leadCredits: `Met je abonnement: ${SERVICE_CREDITS.lifestyle} credits per product.`,
     },
     change: 'Iets anders bestellen',
   },
@@ -442,6 +446,9 @@ const PIPE = {
       formatJpg: 'JPG, which every marketplace accepts (PNG on request for Amazon and bol; Zalando takes JPG only)',
       model: 'The on-model photo',
       modelAny: 'We pick a face that suits your brand',
+      /* Doorloop 27 (B38): de korte vorm voor het overzicht naast het formulier,
+         waar "Gezicht —" stond alsof er iets ontbrak. */
+      modelKort: 'We pick one',
       /* "Look" heet sinds 9 september "Style"; zie StijlRegel.astro. De twee
          regels eronder staan er alleen bij een complete-bestelling, waar er
          één per helft is. */
@@ -474,6 +481,12 @@ const PIPE = {
       tegoedRest: '− {tegoed}: you pay {rest} at Mollie',
       tegoedNul: '− {tegoed}: your account balance covers it all, nothing to pay',
       tegoedAf: '− {tegoed}, comes off the amount at checkout',
+      /* Doorloop 27 (B26): met credits betaald staan de euroregels niet meer
+         onder de creditregel; deze rij komt ervoor in de plaats. */
+      credits: 'Payment',
+      creditsWaarde: '{n} credits from your plan — nothing to pay at Mollie',
+      /* B26b: het totaal in het meelopende overzicht en in stap 1. */
+      creditsTotaal: '{n} credits',
       files: 'Reference material',
       noFiles: 'Nothing sent yet — we will get back to you',
       window: 'Delivery',
@@ -547,9 +560,12 @@ const PIPE = {
     },
     submit: {
       sending: 'Sending…',
-      email: 'That does not look like a complete email address — it needs an @ and a domain, like naam@merk.nl. Check it and send again.',
+      email: 'That does not look like a complete email address — it needs an @ and a domain, like name@brand.com. Check it and send again.',
       network: 'The request did not finish, and we cannot tell whether it reached us. Rather than send it twice, email hello@visuails.com and we will confirm what arrived.',
       generic: 'Your order did not reach our server. Nothing has been charged and nothing was created. Try again, or email hello@visuails.com and we will enter it by hand.',
+      /* Doorloop 27 (B06): de bestellimiet is geen verbindingsfout. Hier stond
+         "did not reach our server" — onwaar, de server weigerde bewust. */
+      rate: 'You have placed several orders in a short time. Nothing has been created and nothing charged. Try again in {min} — or email hello@visuails.com and we will enter it by hand.',
     },
   },
   nl: {
@@ -629,6 +645,7 @@ const PIPE = {
       formatJpg: 'JPG, dat elke marktplaats aanneemt (PNG op aanvraag bij Amazon en bol; Zalando neemt alleen JPG)',
       model: 'De foto op een model',
       modelAny: 'Wij kiezen een gezicht dat bij je merk past',
+      modelKort: 'Wij kiezen er een',
       /* Zie de Engelse tegenhanger. */
       hoogRes: 'Resolutie',
       hoogResN: '{px} px bij {n} producten',
@@ -655,6 +672,9 @@ const PIPE = {
       tegoedRest: '− {tegoed}: je betaalt bij Mollie {rest}',
       tegoedNul: '− {tegoed}: je tegoed dekt alles, je betaalt niets',
       tegoedAf: '− {tegoed}, gaat bij het afrekenen van het bedrag af',
+      credits: 'Betaling',
+      creditsWaarde: '{n} credits van je abonnement — je betaalt niets bij Mollie',
+      creditsTotaal: '{n} credits',
       files: 'Referentiemateriaal',
       noFiles: 'Nog niets gestuurd — we nemen contact met je op',
       window: 'Levering',
@@ -711,6 +731,7 @@ const PIPE = {
       email: 'Dat lijkt geen volledig e-mailadres — er moet een @ en een domein in, zoals naam@merk.nl. Kijk het na en verstuur opnieuw.',
       network: 'Het verzoek is niet afgerond en we kunnen niet zien of het is aangekomen. Verstuur het niet twee keer maar mail hello@visuails.com, dan bevestigen wij wat er binnen is.',
       generic: 'Je bestelling kwam niet aan op onze server. Er is niets in rekening gebracht en er is niets aangemaakt. Probeer het opnieuw, of mail hello@visuails.com — dan zetten we hem met de hand in.',
+      rate: 'Je hebt kort na elkaar een paar bestellingen geplaatst. Er is niets aangemaakt en niets in rekening gebracht. Probeer het over {min} opnieuw — of mail hello@visuails.com, dan zetten we hem met de hand in.',
     },
   },
 };
@@ -1044,7 +1065,7 @@ const REQUIRED_COPY = [
   'sum.angles', 'sum.anglesN',
   'sum.ratio', 'sum.ratioAfwijk', 'sum.ratioAfwijkVeel', 'sum.outfit', 'sum.outfitN',
   'sum.channels', 'sum.channelsNone', 'sum.bgLocked', 'sum.format', 'sum.formatJpg',
-  'sum.model', 'sum.modelAny',
+  'sum.model', 'sum.modelAny', 'sum.modelKort',
   // sum.net and NOTHING ELSE about money — VAT is charged at the rate of the
   // customer's own country, so a gross figure here would be a Dutch rate shown
   // to whoever reads. vatNote() says once how VAT is handled.
@@ -1052,7 +1073,7 @@ const REQUIRED_COPY = [
   // …behalve in stap 5, waar het land bekend is: zie de noot bij sum.pay in
   // renderSummary() (ronde 9, F7).
   'sum.pay', 'sum.payGross', 'sum.payOutside', 'sum.payReverse',
-  'sum.tegoed', 'sum.tegoedRest', 'sum.tegoedNul', 'sum.tegoedAf',
+  'sum.tegoed', 'sum.tegoedRest', 'sum.tegoedNul', 'sum.tegoedAf', 'sum.credits', 'sum.creditsWaarde', 'sum.creditsTotaal',
   'sum.files', 'sum.noFiles', 'sum.window', 'sum.windowLater', 'sum.queue', 'sum.email',
   'upload.sending', 'upload.done', 'upload.retry', 'upload.retrying', 'upload.remove', 'upload.count',
   'upload.err.too-large', 'upload.err.batch-full', 'upload.err.rate',
@@ -1100,7 +1121,7 @@ const REQUIRED_COPY = [
   'concept.dienst', 'concept.wat', 'concept.product1', 'concept.productN',
   'concept.foto0', 'concept.foto1', 'concept.fotoN', 'concept.weg1', 'concept.wegN',
   'gate.windowSub', 'gate.chosen', 'gate.none', 'gate.earlier', 'gate.later',
-  'submit.sending', 'submit.email', 'submit.network', 'submit.generic',
+  'submit.sending', 'submit.email', 'submit.network', 'submit.generic', 'submit.rate',
   ...(bgApplies
     ? ['bg.warn', `bg.note.${CUSTOM_ID}`, ...BACKGROUNDS.map((b) => `bg.note.${b.id}`)]
     : []),
@@ -1241,6 +1262,10 @@ const FORM = {
       voorrangWhen: 'When can it be rushed?',
       voorrangLimits: VOORRANG_COPY.en.limits,
       voorrangGeen: '— pick a count first',
+      /* 15 oktober 2026 (Lucas, bestellen vanuit Studio): wie met credits betaalt, ziet
+         bij een keuze die niet met credits kan meteen dat die in euro gaat. */
+      nietMetCredits: '· not with credits',
+      outfitNietCredits: 'With an outfit you pay this order in euros, not with credits.',
       /* ── DE MERKKIT-STROOK ────────────────────────────────────────────────
          Zie toonMerkkit() in pipeline.js. De labels zijn kort omdat ze naast
          hun waarde staan en niet erboven: "Face · Ava" leest in één oog. */
@@ -1332,6 +1357,13 @@ const FORM = {
          een omleiding zonder zichtbare reden is een doodlopende weg. */
       refusePhone: 'We could not read a phone number in what you sent. Fill in a number we can reach you on and send it again.',
       refuseVat: 'That VAT number does not have the right shape for the country you picked. Correct it, or tick “I do not have a VAT number”.',
+      /* Doorloop 27 (B05): wat VIES zegt, al in stap 3 (functions/api/btw.js). */
+      viesGeldig: 'Found in the European VAT check (VIES). With the business declaration in the last step, VAT is reverse-charged.',
+      viesOngeldig: 'This number is not in the European VAT check (VIES). Please check it. Right after all? Then we check it by hand and send the payment link within one working day.',
+      viesZonder: 'Order without a VAT number (with VAT)',
+      /* Doorloop 27 (B41): al een proef op dit adres, al bij het verlaten van stap 3. */
+      proefAlKop: 'You’ve already had your test sample.',
+      proefAl: ['It is one per business, and this email address or phone number already has one. Nothing has been ordered. ', 'Order normally', ' from a single product, or ', 'send us a message', ' if the first sample never arrived.'],
       /* o03, 8 oktober 2026: Cloudflare zei uitdrukkelijk dat de botcheck niet
          klopte. Er is niets aangemaakt of afgeschreven. */
       refuseBotcheck: 'We could not confirm that this order came from a person, so it was not sent and nothing was charged. Try again in a moment, or place the order with us directly:',
@@ -1424,8 +1456,9 @@ const FORM = {
          {velden} in; zie syncCredits(). */
       credits: {
         kost: 'This order costs {kosten} credits · you have {saldo} · {daarna} left after',
-        oudste: 'The oldest go first: {aantal} of these expire on {datum}.',
-        binnenkort: 'After this order, {aantal} credits expire on {datum}.',
+        /* Doorloop 27 (B21): dezelfde datumvorm als Studio — geldig tot en met de dag ervoor. */
+        oudste: 'The oldest go first: {aantal} of these stay valid up to and including {datum}.',
+        binnenkort: 'After this order, {aantal} credits are only valid up to and including {datum}.',
         /* Het spaarplafond (12 oktober 2026): wat er na deze bestelling bij de
            volgende termijn nog boven het plafond zou vervallen. */
         boven: 'On {datum}, {aantal} more come in: use {eraf} more before that day, or they lapse.',
@@ -1576,6 +1609,8 @@ const FORM = {
       voorrangWhen: 'Wanneer kan het sneller?',
       voorrangLimits: VOORRANG_COPY.nl.limits,
       voorrangGeen: '— kies eerst een aantal',
+      nietMetCredits: '· niet met credits',
+      outfitNietCredits: 'Met een outfit betaal je deze bestelling in euro, niet met credits.',
       /* Zie de Engelse tegenhanger. */
       kitH: 'Uit je merkkit',
       kitOpen: 'Wijzigen voor deze bestelling',
@@ -1665,6 +1700,11 @@ const FORM = {
       refuseBotcheckWa: 'Hoi VISUAILS, ik probeerde een bestelling te plaatsen op de site en dat lukte niet. Kunnen jullie me helpen hem te plaatsen?',
       refuseBotcheckOf: 'of mail',
       refuseVat: 'Dit btw-nummer heeft niet de vorm die bij het gekozen land hoort. Verbeter het, of zet het vinkje “Ik heb geen btw-nummer” aan.',
+      viesGeldig: 'Gevonden in de Europese btw-controle (VIES). Met de zakelijke verklaring in de laatste stap wordt de btw verlegd.',
+      viesOngeldig: 'Dit nummer staat niet in de Europese btw-controle (VIES). Kijk het even na. Klopt het toch? Dan controleren we het met de hand en krijg je de betaallink binnen een werkdag.',
+      viesZonder: 'Bestel zonder btw-nummer (met btw)',
+      proefAlKop: 'Je hebt VISUAILS al geprobeerd.',
+      proefAl: ['Er is één proef per bedrijf, en op dit e-mailadres of telefoonnummer staat er al een. Er is niets besteld. ', 'Bestel gewoon', ' vanaf één product, of ', 'stuur ons een bericht', ' als de eerste proef nooit aankwam.'],
       noVat: 'Ik heb geen btw-nummer',
       vatHint: 'Zakelijk in een ander EU-land: we controleren hem bij VIES, en klopt hij, dan rekenen we geen Nederlandse btw.',
       reg: 'Registratienummer',
@@ -1744,8 +1784,8 @@ const FORM = {
       /* Zie de Engelse tegenhanger. */
       credits: {
         kost: 'Deze bestelling kost {kosten} credits · je hebt er {saldo} · daarna {daarna}',
-        oudste: 'De oudste gaan eerst: {aantal} daarvan vervallen op {datum}.',
-        binnenkort: 'Na deze bestelling vervallen er {aantal} op {datum}.',
+        oudste: 'De oudste gaan eerst: {aantal} daarvan blijven geldig tot en met {datum}.',
+        binnenkort: 'Na deze bestelling zijn er {aantal} nog maar geldig tot en met {datum}.',
         boven: 'Op {datum} komen er {aantal} bij: gebruik er vóór die dag nog {eraf}, anders vallen ze weg.',
         tekort: 'Je komt {tekort} credits tekort. Koop {pakket} credits bij voor {bedrag} excl. btw, of betaal deze bestelling gewoon via Mollie.',
         tekortAlgemeen: 'Je komt {tekort} credits tekort. Je kunt deze maand nog {ruimte} credits bijkopen, of je betaalt deze bestelling gewoon via Mollie.',
@@ -2098,7 +2138,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         de dienst hier nog niet gekozen: dat is de eerste vraag van het formulier
         eronder. `sample.line` zegt wat je krijgt zonder de soort te noemen. */}
     <h1 class="hoog">{isSample ? sample.h : svc.title}</h1>
-    <p class="lopend">{isSample ? sample.line : `${svc.gets}. ${svc.lead}`}</p>
+    <p class="lopend">{isSample ? sample.line : <Fragment>{svc.gets}. <span data-pl-alleen-euro>{svc.lead}</span><span data-pl-alleen-credits hidden>{svc.leadCredits}</span></Fragment>}</p>
   </div>
 </section>
 )}
@@ -2475,6 +2515,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           {outfitCounts.slice(1).map((n) => <option value={String(n)}>{f.s1.outfitCount(n)}</option>)}
         </select>
         <span class="hint">{f.s1.outfitHint}</span>
+        <span class="hint" data-pl-alleen-credits hidden>{f.s1.outfitNietCredits}</span>
         {/* OUTFIT_COPY, verbatim — pricing.js requires it wherever the outfit
             choice is offered. Folded rather than dropped. */}
         <Disclose summary={f.s1.outfitWhy} tone="plain">
@@ -2696,6 +2737,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
               <span class="pl-voorrang-t">
                 <b>{f.s1.voorrangLabel}</b>
                 <span class="pl-voorrang-bedrag" data-pl-voorrang-bedrag>{f.s1.voorrangGeen}</span>
+                <span class="pl-voorrang-bedrag" data-pl-alleen-credits hidden>{f.s1.nietMetCredits}</span>
               </span>
             </label>
             <span class="hint">{f.s1.voorrangLine}</span>
@@ -3010,6 +3052,8 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           <div data-pl-vatveld>
           <label for="pl-vat">{f.s3.vat} <span class="req" data-pl-vat-req>*</span><span class="pl-opt" data-pl-vat-opt hidden>{f.optional}</span><Uitleg tekst={f.s3.vatHint} over={f.s3.vat} lang={lang} /></label>
           <input class="input" type="text" id="pl-vat" name="vat" autocomplete="off" placeholder="NL000000000B00" data-pl-req="1" data-pl-req-unless="no_vat" data-pl-err-msg={f.s3.vatErr} />
+          {/* B05 (doorloop 27): het antwoord van VIES, zodra het nummer de goede vorm heeft. */}
+          <p class="pl-vies" data-pl-vies data-geldig={f.s3.viesGeldig} data-ongeldig={f.s3.viesOngeldig} role="status" hidden><span data-pl-vies-tekst></span> <button type="button" class="pl-vies-zonder" data-pl-vies-zonder hidden>{f.s3.viesZonder}</button></p>
           <label class="pl-check" for="pl-no-vat" data-pl-novat>
             <input type="checkbox" id="pl-no-vat" name="no_vat" value="1" />
             <span>{f.s3.noVat}</span>
@@ -3137,6 +3181,11 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       </div>
       )}
 
+      {isSample && (
+        <div class="pl-weigering pl-proef-al" data-pl-proef-al role="status" tabindex="-1" hidden>
+          <strong>{f.s3.proefAlKop}</strong> {f.s3.proefAl[0]}<a href={lp('/start')}>{f.s3.proefAl[1]}</a>{f.s3.proefAl[2]}<a href={lp('/contact')}>{f.s3.proefAl[3]}</a>{f.s3.proefAl[4]}
+        </div>
+      )}
       <p class="pl-step-err" id="pl-err-3" data-pl-step-error hidden></p>
 
       <div class="pl-nav">
@@ -3462,7 +3511,8 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
 </section>
 
 <!-- NOT SURE YET -->
-<section class="paneel paneel-slot of-slot">
+{/* data-vis-uit (15 oktober 2026): wie al klant is, krijgt hier geen €1-proef aangeboden. */}
+<section class="paneel paneel-slot of-slot" data-vis-uit>
   <h2 class="hoog hoog-2">{f.footH}</h2>
   <p class="lopend">{f.footBody}</p>
   <div class="acties">
@@ -4420,6 +4470,20 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   /* [hidden] wint van display, anders staat de melding er altijd. Zelfde val
      als bij .ps-mailnoot op 11 september. */
   .pl-weigering[hidden] { display: none; }
+  /* B41 (doorloop 27): dezelfde melding, maar in stap 3 bij de knop. */
+  .pl-proef-al { margin: 1rem 0 0; }
+  .pl-proef-al a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ── WAT VIES ZEGT (B05, doorloop 27) ── onder het btw-veld, zodra het veld
+     verlaten is. Gewone tekst bij gevonden, de waarschuwingskleur bij niet
+     gevonden, met de uitweg als tekstknop. */
+  .pl-vies { margin: .5rem 0 .2rem; font-size: .86rem; line-height: 1.5; color: var(--ink-2); max-width: 60ch; }
+  /* De zin zelf in de tekstmaat van de hal (5–7 woorden per regel); de knop eronder. */
+  .pl-vies [data-pl-vies-tekst] { display: block; max-width: var(--h-maat, 60ch); margin-bottom: .2rem; }
+  .pl-vies[hidden] { display: none; }
+  .pl-vies.is-ongeldig { color: var(--warn-ink); }
+  .pl-vies-zonder { display: inline; padding: 0; margin: 0; border: 0; background: none; color: var(--ink); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  .pl-vies-zonder[hidden] { display: none; }
 
   .pl-error {
     scroll-margin-top: 6rem;

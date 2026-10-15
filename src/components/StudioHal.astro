@@ -32,7 +32,6 @@ import { WINDOW_THRESHOLD, TEST_SAMPLE } from '../data/pricing.js';
 import { PORTAL_TTL_DAYS } from '../lib/token.js';
 import { UPLOAD_DAYS, DELIVERY_DAYS } from '../lib/retention.js';
 import { DEMO_ORDER, demoWindow, dayLabel } from '../data/figdemo.js';
-import { geleverd } from '../data/voorbeeldset.js';
 import { LEVERTAG, TAG_WOORD, tagNaam } from '../lib/iptc.js';
 import { deliveryEntries } from '../lib/delivery.js';
 import FigDash from './FigDash.astro';
@@ -307,13 +306,18 @@ const ONDERWEG = c.states.slice(4);
    PNG en WebP met de opmerking dat je ze erbij vraagt. */
 const ZIP = deliveryEntries([{ id: 1, product_key: 'p1', shot: 'front', r2_key: 'x/0', bytes: 0, filename: 'front.jpg',
   assets: ['jpg', 'png', 'webp'].map((format) => ({ format, r2_key: `x/0.${format}`, bytes: 0 })) }],
-  lang, { ref: DEMO_ORDER.ref, productNames: { p1: nl ? 'Wijde jeans' : 'Wide leg jeans' } })
+  lang, { ref: DEMO_ORDER.ref, productNames: { p1: nl ? 'Gewassen T-shirt' : 'Washed T-shirt' } })
   .map((e) => e.name.split('/').slice(1));
 const productMap = ZIP[0][0];
 const VOLG = ['JPG', 'PNG', 'WEBP'];
 const bestanden = ZIP.map((p) => p.slice(1)).sort((x, y) => VOLG.indexOf(x[0]) - VOLG.indexOf(y[0]));
 const opAanvraag = nl ? 'met één klik erbij' : 'one click to add';
-const MAPFOTO = geleverd(lang)[3];
+/* 15 oktober 2026 (Lucas: *"Deze foto mag ook aangepast worden naar een gehele andere
+   foto omdat deze lage kwaliteit is"*): hier stond de modelfoto van de roze jeans, 760 px
+   breed en op deze plek op ruim 650 px getoond. Nu het gewassen T-shirt uit de
+   voor-en-na op /catalog, 1800 × 1800 — een voorkant, net als "1-front.jpg" in de map
+   eronder, en de map heet nu naar dat product. */
+const MAPFOTO = { src: '/img/catalog-after.webp', w: 1800, h: 1800 };
 /* Het label op de voorpagina: de waarde die écht in elk bestand komt (src/lib/iptc.js). */
 const IPTC_WAARDE = tagNaam(LEVERTAG);
 const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];

@@ -517,7 +517,13 @@ console.log('\nde leesmij van de klant');
      niemand als geheim beschouwt. */
   const alles = `${docs[0].text}${docs[1].text}`;
   check('geen /o/-link met een token', /\/o\/[A-Za-z0-9_-]{8,}/.test(alles), false);
-  check('wel de weg terug via /portal', /\/portal/.test(mij), true);
+  /* Doorloop 27 (B12): de weg terug was visuails.com/nl/portal, en dat is een
+     doorverwijzing naar de uitlegpagina /nl/studio/, niet naar de bestelling.
+     Nu VISUAILS Studio (visuails.com/account) en de link uit de levermail —
+     nog steeds zonder token. */
+  check('wel de weg terug via Studio', /visuails\.com\/account/.test(mij), true);
+  check('en via de levermail', /link in je[\s\S]{0,4}levermail/.test(mij), true);
+  check('niet meer via /portal', /\/portal/.test(mij), false);
 
   /* Kladblok op Windows. Zelfde afweging als in scaffold.js, en hier zwaarder: daar
      was de lezer de studio, hier de klant. */

@@ -126,6 +126,7 @@
 import { leverVakken } from '../data/levervakken.js';
 import { DELIVERY_DAYS } from './retention.js';
 import { licenceText } from './scaffold.js';
+import { WHATSAPP_DISPLAY } from '../data/whatsapp.js';
 
 /** De mapnaam per formaat. Hoofdletters, zodat een map als map leest. */
 const FORMAT_DIR = { png: 'PNG', jpg: 'JPG', webp: 'WEBP' };
@@ -732,20 +733,27 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
       '',
       ...kop("3 · ALLE JPG'S IN ÉÉN KEER"),
       '',
-      'Je hoeft niet dertig mappen langs. Pak de hoofdmap en zoek erin:',
-      '',
-      '    Windows    open de map, typ  *.jpg  in het zoekvak rechtsboven',
-      '    macOS      Cmd+F in de map, "Soort is Afbeelding" of typ  .jpg',
-      '',
-      'Selecteer alles wat hij vindt en sleep dat naar je webshop. De',
-      'bestandsnamen blijven leesbaar, dus je ziet in je shop nog terug welk',
-      'beeld bij welk product hoort.',
+      /* Doorloop 27 (B12): een platte map heeft geen dertig mappen. */
+      ...(plat ? [
+        'Ze staan al bij elkaar in deze map. Selecteer ze allemaal en sleep',
+        'ze naar je webshop.',
+      ] : [
+        'Je hoeft niet dertig mappen langs. Pak de hoofdmap en zoek erin:',
+        '',
+        '    Windows    open de map, typ  *.jpg  in het zoekvak rechtsboven',
+        '    macOS      Cmd+F in de map, "Soort is Afbeelding" of typ  .jpg',
+        '',
+        'Selecteer alles wat hij vindt en sleep dat naar je webshop.',
+      ]),
+      'De bestandsnamen blijven leesbaar, dus je ziet in je shop nog terug',
+      'welk beeld bij welk product hoort.',
       '',
       ...kop('4 · TOT WANNEER JE HIERBIJ KUNT'),
       '',
-      `De map blijft ${DELIVERY_DAYS} dagen te downloaden vanuit je dashboard op`,
-      'visuails.com. Daarna wordt hij opgeruimd — dat is een afspraak uit onze',
-      'voorwaarden en geen technische grens.',
+      `De map blijft ${DELIVERY_DAYS} dagen te downloaden in VISUAILS Studio`,
+      '(visuails.com/account) en via de link in je levermail. Daarna wordt',
+      'hij opgeruimd — dat is een afspraak uit onze voorwaarden en geen',
+      'technische grens.',
       '',
       'Zet er dus één kopie van op je eigen schijf of in je eigen cloud: dit',
       'zijn de originelen en een back-up van je eigen beeldmateriaal hoort bij',
@@ -761,13 +769,17 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
       /* Twee losse regels en geen \n in één string: dit bestand wordt met CRLF
          geschreven en een losse \n er middenin geeft op Windows precies de kapotte
          regelafbreking die CRLF moest voorkomen. */
+      /* Doorloop 27 (B12): de terugval was visuails.com/nl/portal, en dat is
+         een doorverwijzing naar /nl/studio/ — de uitlegpagina, niet de
+         bestelling. Nu VISUAILS Studio, of de link uit de levermail. */
       ...(portalUrl
         ? ['Vraag een revisie aan bij het beeld zelf:', `    ${portalUrl}`]
-        : ['Vraag een revisie aan bij het beeld zelf, in je dashboard op', 'visuails.com/nl/portal.']),
+        : ['Vraag een revisie aan bij het beeld zelf: via de link in je', 'levermail, of in VISUAILS Studio op visuails.com/account.']),
       '',
       'Zeg daarbij zo precies als je kunt wat er anders moet — "de kleur van de',
       'stof is te warm" helpt ons meer dan "hij klopt niet". Liever bellen of',
-      `appen? Mail ${CONTACT} en we bellen je terug.`,
+      `appen? App ons op ${WHATSAPP_DISPLAY} of mail ${CONTACT}, dan bellen`,
+      'we je terug.',
       '',
       '='.repeat(68),
       '',
@@ -825,21 +837,27 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
     '',
     ...kop('3 · ALL THE JPGS AT ONCE'),
     '',
-    'You do not have to walk through thirty folders. Take the top folder and',
-    'search inside it:',
-    '',
-    '    Windows    open the folder, type  *.jpg  in the search box',
-    '    macOS      Cmd+F in the folder, "Kind is Image", or type  .jpg',
-    '',
-    'Select everything it finds and drag that into your shop. The filenames',
-    'stay readable, so you can still tell which image belongs to which',
-    'product once they are uploaded.',
+    ...(plat ? [
+      'They are already together in this folder. Select them all and drag',
+      'them into your shop.',
+    ] : [
+      'You do not have to walk through thirty folders. Take the top folder and',
+      'search inside it:',
+      '',
+      '    Windows    open the folder, type  *.jpg  in the search box',
+      '    macOS      Cmd+F in the folder, "Kind is Image", or type  .jpg',
+      '',
+      'Select everything it finds and drag that into your shop.',
+    ]),
+    'The filenames stay readable, so you can still tell which image belongs',
+    'to which product once they are uploaded.',
     '',
     ...kop('4 · HOW LONG YOU CAN COME BACK'),
     '',
-    `The folder stays downloadable from your dashboard on visuails.com for`,
-    `${DELIVERY_DAYS} days. After that it is cleaned up — that is a commitment in our`,
-    'terms, not a technical limit.',
+    `The folder stays downloadable for ${DELIVERY_DAYS} days in VISUAILS Studio`,
+    '(visuails.com/account) and through the link in your delivery email.',
+    'After that it is cleaned up — that is a commitment in our terms, not a',
+    'technical limit.',
     '',
     'So put one copy on your own disk or in your own cloud: these are the',
     'originals, and a backup of your own image library belongs with you. We',
@@ -854,11 +872,12 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
     '',
     ...(portalUrl
       ? ['Ask for a revision on the image itself:', `    ${portalUrl}`]
-      : ['Ask for a revision on the image itself, in your dashboard on', 'visuails.com/portal.']),
+      : ['Ask for a revision on the image itself: through the link in your', 'delivery email, or in VISUAILS Studio at visuails.com/account.']),
     '',
     'Say as precisely as you can what should change — "the fabric colour is',
     'too warm" helps us more than "it is off". Prefer a call or a message?',
-    `Mail ${CONTACT} and we will call you back.`,
+    `WhatsApp us on ${WHATSAPP_DISPLAY} or mail ${CONTACT}, and we`,
+    'will call you back.',
     '',
     '='.repeat(68),
     '',

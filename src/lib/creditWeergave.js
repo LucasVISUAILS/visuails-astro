@@ -28,15 +28,20 @@ const T = {
     geen: 'Je hebt geen credits',
     genoeg: (v) => `Genoeg voor ${v}.`,
     teWeinig: (k) => `Niet genoeg voor een catalogset (${k} credits). Bestel je toch, dan betaal je die bestelling gewoon via Mollie.`,
-    eersteOp: (n, d) => `${n} hiervan ${n === 1 ? 'vervalt' : 'vervallen'} op ${d} — die gaan als eerste op.`,
-    daarna: (n, d) => `Daarna ${n === 1 ? 'vervalt er nog 1' : `vervallen er nog ${n}`} op ${d}.`,
+    /* ── ÉÉN SOORT DATUM — 14 oktober 2026 (doorloop 27, B21) ─────────────────
+       Op dezelfde Studio-pagina stond "geldig tot en met 13 januari" (saldo) en
+       "vervalt op 14 januari" (creditboek, bijgekocht): dezelfde grens, twee
+       datums. Nu overal "geldig tot en met" de dag ervóór (dagErvoor), zoals de
+       mails en de bijkoopbevestiging het al zeiden. */
+    eersteOp: (n, d) => `${n} hiervan ${n === 1 ? 'blijft' : 'blijven'} geldig tot en met ${d} — die gaan als eerste op.`,
+    daarna: (n, d) => `Daarna ${n === 1 ? 'blijft er nog 1' : `blijven er nog ${n}`} geldig tot en met ${d}.`,
     /* Het spaarplafond (12 oktober 2026). */
     spaar: (p) => `(je kunt er ${p} sparen)`,
     boven: (d, n, eraf) => `Op ${d} komen er ${n} bij: gebruik er vóór die dag ${eraf}, anders vallen ze weg.`,
     totEnMet: (d) => `Je credits blijven geldig tot en met ${d}.`,
     totEnMetDelen: (delen) => `${delen.map(([n, d], i) => (i === 0 ? `${n} credits blijven geldig tot en met ${d}` : `${n} tot en met ${d}`)).join(', ')}.`,
     /* Extra credits bijkopen (12 oktober 2026). */
-    bijgekocht: (n, delen) => `Waarvan ${n} bijgekocht: die gaan als eerste op en tellen niet mee voor je spaarplafond; ${delen.length === 1 ? `ze vervallen op ${delen[0][1]}` : delen.map(([k, d], i) => (i === 0 ? `${k} vervallen op ${d}` : `${k} op ${d}`)).join(', ')}.`,
+    bijgekocht: (n, delen) => `Waarvan ${n} bijgekocht: die gaan als eerste op en tellen niet mee voor je spaarplafond; ${delen.length === 1 ? `ze blijven geldig tot en met ${delen[0][1]}` : delen.map(([k, d], i) => (i === 0 ? `${k} blijven geldig tot en met ${d}` : `${k} tot en met ${d}`)).join(', ')}.`,
     nieuw: (d, n) => `Op ${d} komen er ${n} bij.`,
     bevroren: (n) => `${n} ${n === 1 ? 'credit staat' : 'credits staan'} vast: een betaling van je abonnement is via de bank teruggeboekt. Ze komen weer vrij zodra dat is opgelost.`,
     geldig: (m) => `Zolang je abonnement loopt, vervallen je credits niet; je kunt tot ${m} maanden aan credits sparen. Pauzeer of stop je, dan blijven ze geldig tot ${m} maanden na je laatste termijn.`,
@@ -53,7 +58,7 @@ const T = {
     plafondRegel: 'Vervallen: boven je spaarplafond',
     bijgekochtRegel: 'Extra credits bijgekocht',
     onbekend: 'Credits',
-    geldigTot: (d) => `vervalt op ${d}`,
+    geldigTot: (d) => `geldig tot en met ${d}`,
     status: {
       received: 'Ontvangen', in_production: 'In productie', human_check: 'Wordt nagekeken',
       delivered: 'Geleverd', cancelled: 'Geannuleerd',
@@ -65,13 +70,13 @@ const T = {
     geen: 'You have no credits',
     genoeg: (v) => `Enough for ${v}.`,
     teWeinig: (k) => `Not enough for a catalog set (${k} credits). If you order anyway, you simply pay for that order through Mollie.`,
-    eersteOp: (n, d) => `${n} of these ${n === 1 ? 'expires' : 'expire'} on ${d} — they are used first.`,
-    daarna: (n, d) => `After that, ${n} more ${n === 1 ? 'expires' : 'expire'} on ${d}.`,
+    eersteOp: (n, d) => `${n} of these ${n === 1 ? 'stays' : 'stay'} valid up to and including ${d} — they are used first.`,
+    daarna: (n, d) => `After that, ${n} more ${n === 1 ? 'stays' : 'stay'} valid up to and including ${d}.`,
     spaar: (p) => `(you can save up to ${p})`,
     boven: (d, n, eraf) => `On ${d}, ${n} more come in: use ${eraf} before that day, or they lapse.`,
     totEnMet: (d) => `Your credits stay valid up to and including ${d}.`,
     totEnMetDelen: (delen) => `${delen.map(([n, d], i) => (i === 0 ? `${n} credits stay valid up to and including ${d}` : `${n} up to and including ${d}`)).join(', ')}.`,
-    bijgekocht: (n, delen) => `Of these, ${n} were bought: they are used first and do not count towards your savings limit; ${delen.length === 1 ? `they expire on ${delen[0][1]}` : delen.map(([k, d], i) => (i === 0 ? `${k} expire on ${d}` : `${k} on ${d}`)).join(', ')}.`,
+    bijgekocht: (n, delen) => `Of these, ${n} were bought: they are used first and do not count towards your savings limit; ${delen.length === 1 ? `they stay valid up to and including ${delen[0][1]}` : delen.map(([k, d], i) => (i === 0 ? `${k} stay valid up to and including ${d}` : `${k} up to and including ${d}`)).join(', ')}.`,
     nieuw: (d, n) => `On ${d}, ${n} more come in.`,
     bevroren: (n) => `${n} ${n === 1 ? 'credit is' : 'credits are'} on hold: a payment for your plan was reversed by the bank. They are released as soon as that is resolved.`,
     geldig: (m) => `While your plan runs, your credits do not expire; you can save up to ${m} months of them. If you pause or stop, they stay valid until ${m} months after your last monthly credits came in.`,
@@ -88,7 +93,7 @@ const T = {
     plafondRegel: 'Lapsed: above your savings limit',
     bijgekochtRegel: 'Extra credits bought',
     onbekend: 'Credits',
-    geldigTot: (d) => `expires on ${d}`,
+    geldigTot: (d) => `valid up to and including ${d}`,
     status: {
       received: 'Received', in_production: 'In production', human_check: 'Being checked',
       delivered: 'Delivered', cancelled: 'Cancelled',
@@ -211,8 +216,8 @@ export function saldoWeergave(s, lang = 'nl', nu = new Date()) {
     if (loopt) {
       /* Een lopend abonnement met partijen die vóór de volgende termijn
          vervallen (van vóór het plafond): die gaan als eerste op. */
-      uit.eerst = t.eersteOp(heel(datums[0].aantal), datumLang(datums[0].op, L, nu));
-      uit.rest = datums.slice(1).map((v) => t.daarna(heel(v.aantal), datumLang(v.op, L, nu))).join(' ');
+      uit.eerst = t.eersteOp(heel(datums[0].aantal), datumLang(dagErvoor(datums[0].op), L, nu));
+      uit.rest = datums.slice(1).map((v) => t.daarna(heel(v.aantal), datumLang(dagErvoor(v.op), L, nu))).join(' ');
     } else if (datums.length === 1) {
       uit.eerst = t.totEnMet(datumLang(dagErvoor(datums[0].op), L, nu));
     } else {
@@ -223,7 +228,7 @@ export function saldoWeergave(s, lang = 'nl', nu = new Date()) {
      plafond — in één zin onder het saldo. */
   const bij = s?.bijgekocht && heel(s.bijgekocht.saldo) ? s.bijgekocht : null;
   if (bij && Array.isArray(bij.vervalt) && bij.vervalt.length) {
-    uit.bijgekocht = t.bijgekocht(heel(bij.saldo), bij.vervalt.map((v) => [heel(v.aantal), datumLang(v.op, L, nu)]));
+    uit.bijgekocht = t.bijgekocht(heel(bij.saldo), bij.vervalt.map((v) => [heel(v.aantal), datumLang(dagErvoor(v.op), L, nu)]));
   }
   uit.bijna = !!((datums[0] && n && dagenTot(datums[0].op, nu) <= BIJNA_DAGEN)
     || (boven && dagenTot(s.nieuw.op, nu) <= BIJNA_DAGEN));
@@ -303,7 +308,7 @@ export function boekWeergave(regels, { lang = 'nl', nu = new Date(), orderHref =
        vervalt, schuift op die dag mee en krijgt geen datum. */
     const schuiftOp = !!loopt && r.soort !== 'bijgekocht' && (typeof loopt !== 'string' || String(r.vervaltOp) > loopt);
     const geldig = plus && !schuiftOp && r.vervaltOp && heel(r.rest) > 0 && String(r.vervaltOp) > vandaag
-      ? t.geldigTot(datumLang(r.vervaltOp, L, nu)) : '';
+      ? t.geldigTot(datumLang(dagErvoor(r.vervaltOp), L, nu)) : '';
     return {
       reden: r.reden,
       datum: r.dag,

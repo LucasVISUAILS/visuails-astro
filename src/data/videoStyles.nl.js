@@ -48,7 +48,7 @@ export const videoStyles = [
        aanvraag, en dát is waar deze knop hoort te landen. "Order" beloofde
        bovendien iets wat deze dienst nog niet doet. Zie src/data/orderDoors.js. */
     ctaLabel: 'Vraag Motion aan',
-    ctaHref: '/nl/start/video',
+    ctaHref: '/nl/start/video/?style=motion',
     ctaExternal: false,
     heroIcon: 'bottle',
     heroWidth: '26%',
@@ -99,7 +99,7 @@ export const videoStyles = [
     priceTrust: LIFESTYLE_PRIJS,
     priceUnit: PER_CLIP,
     ctaLabel: 'Vraag Lifestyle Video aan',
-    ctaHref: '/nl/start/video',
+    ctaHref: '/nl/start/video/?style=lifestyle',
     ctaExternal: false,
     heroIcon: 'jar',
     heroWidth: '26%',
@@ -151,8 +151,11 @@ export const videoStyles = [
     priceTrust: 'Offerte per project',
     priceUnit: '',
     ctaLabel: 'Vraag een offerte aan',
-    ctaHref: waHref("Hoi VISUAILS, ik wil graag een offerte voor een campagnevideo."),
-    ctaExternal: true,
+    /* Doorloop 27 (B14b): naar het aanvraagformulier, net als Motion; WhatsApp
+       staat eronder als tweede weg (waHref). Wie liever mailt, hoeft niet te appen. */
+    ctaHref: '/nl/start/video/?style=campaign',
+    ctaExternal: false,
+    waHref: waHref("Hoi VISUAILS, ik wil graag een offerte voor een campagnevideo."),
     heroIcon: 'sneaker',
     heroWidth: '26%',
     cardIcon: 'sneaker',
@@ -203,8 +206,11 @@ export const videoStyles = [
     priceTrust: 'Offerte per project',
     priceUnit: '',
     ctaLabel: 'Vraag een eigen look aan',
-    ctaHref: waHref("Hoi VISUAILS, ik wil graag een video op maat bespreken."),
-    ctaExternal: true,
+    /* Doorloop 27 (B14b): naar het aanvraagformulier, net als Motion; WhatsApp
+       staat eronder als tweede weg (waHref). Wie liever mailt, hoeft niet te appen. */
+    ctaHref: '/nl/start/video/?style=custom',
+    ctaExternal: false,
+    waHref: waHref("Hoi VISUAILS, ik wil graag een video op maat bespreken."),
     heroIcon: 'jar',
     heroWidth: '26%',
     cardIcon: 'jar',

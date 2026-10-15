@@ -69,6 +69,7 @@ const COPY = {
     merkmodelVooruit: 'Your own Brand Model included when you pay a year up front',
     spaar: (n: number) => `Save up to ${n} credits; nothing expires while it runs`,
     kiesPlan: (n: string) => `Choose ${n}`,
+    overstappen: 'Switch in VISUAILS Studio', aboKop: 'You already have a plan.', aboZin: 'Switching plans or buying credits is done in VISUAILS Studio.', aboLink: 'Go to your plan',
     maatRegel: `Need something else? Choose your own number, from ${CUSTOM_CREDITS_MIN} to ${CUSTOM_CREDITS_MAX} credits a month, from ${e(maatVanaf)} ${ex}.`,
     maatLink: 'Set your own number',
     zoPil: 'How it works', zoKop: ['You order', 'like everyone else.'],
@@ -107,6 +108,7 @@ const COPY = {
     merkmodelVooruit: 'Je eigen merkmodel inbegrepen bij een jaar vooruit',
     spaar: (n: number) => `Sparen tot ${n} credits; zolang het loopt vervalt er niets`,
     kiesPlan: (n: string) => `Kies ${n}`,
+    overstappen: 'Overstappen in VISUAILS Studio', aboKop: 'Je hebt al een abonnement.', aboZin: 'Overstappen of credits bijkopen doe je in VISUAILS Studio.', aboLink: 'Naar je abonnement',
     maatRegel: `Iets anders nodig? Kies zelf je aantal, van ${CUSTOM_CREDITS_MIN} tot ${CUSTOM_CREDITS_MAX} credits per maand, vanaf ${e(maatVanaf)} ${ex}.`,
     maatLink: 'Stel je eigen aantal in',
     zoPil: 'Hoe het werkt', zoKop: ['Je bestelt', 'zoals iedereen.'],
@@ -164,6 +166,8 @@ const BEELD = {
       <p class="h-acties h-op" style="--d:3">
         <a class="h-knop h-knop-inkt" href="#plannen">{c.kies}<span class="o" set:html={ik('onder')} /></a>
       </p>
+      {/* 15 oktober 2026: een abonnee ziet waar hij zijn abonnement wijzigt. */}
+      <p class="h-pl-abonnee h-op" style="--d:4" data-vis-klant="abonnee" hidden><b>{c.aboKop}</b> {c.aboZin} <a class="h-link" href="/account/plan">{c.aboLink}<span class="h-cirkel h-cirkel-mini" set:html={ik('pijl')} /></a></p>
     </div>
     <KopBeeld {...BEELD} />
   </header>
@@ -208,7 +212,7 @@ const BEELD = {
               {b && <li><i set:html={ik('check')} />{c.bespaar(e(b.saving), b.count, e(b.los))}</li>}
             </ul>
             <p class="h-pk-voet">
-              <a href={`${lp('/start/plan')}?plan=${p.id}`} class="h-knop h-knop-inkt">{c.kiesPlan(p.name)}<span class="o" set:html={ik('rechts')} /></a>
+              <a href={`${lp('/start/plan')}?plan=${p.id}`} class="h-knop h-knop-inkt" data-vis-klant="plan-kies" data-vis-abo-label={c.overstappen} data-vis-abo="/account/plan#je-plan"><span data-vis-label>{c.kiesPlan(p.name)}</span><span class="o" set:html={ik('rechts')} /></a>
             </p>
           </li>
         );

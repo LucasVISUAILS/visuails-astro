@@ -58,12 +58,13 @@ import { DEMO_ORDER } from '../data/figdemo.js';
 /* Het woordmerk in de balk van het voorbeeldscherm (14 oktober 2026): het echte merk, niet het woord in een letter. */
 import Woordmerk from './Woordmerk.astro';
 import { CATALOG_IMAGES } from '../data/pricing.js';
-import { geleverd } from '../data/voorbeeldset.js';
+import { geleverd, MODEL_EERST } from '../data/voorbeeldset.js';
 import { deliveryEntries } from '../lib/delivery.js';
 import UitlegBalk from './UitlegBalk.astro';
 
 /* `uitleg` (14 oktober 2026): een cursor keurt twee beelden goed, vraagt bij het
-   modelbeeld om wit in plaats van grijs, en opent de map. Zie UitlegBalk.astro.
+   modelbeeld om grijs in plaats van wit (sinds 15 oktober 2026; daarvoor andersom),
+   en opent de map. Zie UitlegBalk.astro.
    Afvinklijst 24 (Lucas): de roze jeans uit de voorbeeldset ("ook hier mag je de roze
    broek gebruiken"), en de map zoals hij echt is: elk beeld als JPG, PNG en WebP op
    aanvraag (k401, 11 oktober). Hier stond "als PNG, JPG en WebP" en drie formaten per beeld. */
@@ -82,12 +83,14 @@ const TOTAAL = DEMO_ORDER.products * CATALOG_IMAGES;
 /* Eén bestand per beeld: JPG is de standaard. */
 const BESTANDEN = TOTAAL;
 
-/* De vier beelden van product 1: de roze jeans. Het modelbeeld is het beeld waarvoor
-   de klant om een witte achtergrond vraagt, dus hier staat het nog op lichtgrijs. */
+/* De vier beelden van product 1: de roze jeans, op lichtgrijs. Het modelbeeld is het
+   beeld waarvoor de klant om grijs vraagt, "zoals de rest", dus hier staat het nog op
+   wit (MODEL_EERST). Lucas, 15 oktober 2026: *"bij de revisie de modelfoto van witte
+   achtergrond naar grijze achtergrond"*. */
 const UIT = geleverd(lang);
-const PHOTOS = [UIT[0].src, UIT[1].src, UIT[2].src, '/img/ba2-na-model.webp'];
-/* Na de revisie (stap 4): hetzelfde modelbeeld op wit, zoals in FigDash. */
-const MODEL_WIT = UIT[3].src;
+const PHOTOS = [UIT[0].src, UIT[1].src, UIT[2].src, MODEL_EERST];
+/* Na de revisie (stap 4): hetzelfde modelbeeld op grijs, zoals in FigDash. */
+const MODEL_NA = UIT[3].src;
 const PRODUCT = nl ? 'Wijde jeans' : 'Wide leg jeans';
 /* Het boompje uit dezelfde functie als de echte zip (delivery.js), met alleen JPG. */
 const SHOTS = ['front', 'back', 'detail', 'worn'];
@@ -109,7 +112,7 @@ const C = nl
         'Je keurt per beeld goed: één klik, en dat beeld is klaar.',
         'De rest van je bestelling wacht niet op de beelden die je nog niet bekeek.',
         'Wil je iets anders? Zeg het in je eigen woorden. Alleen dat beeld gaat terug.',
-        'Wij passen het aan en leveren het opnieuw: nu op wit, net als de rest.',
+        'Wij passen het aan en leveren het opnieuw: nu op grijs, net als de rest.',
         'Je bestanden staan in één map, per product, als JPG. PNG of WebP vraag je erbij aan.',
       ],
       tallyNa: `2 van ${TOTAAL} goedgekeurd · 1 aangepast`,
@@ -119,7 +122,7 @@ const C = nl
         { cap: 'Product 1 · voorkant', state: 'ok', label: 'Goedgekeurd' },
         { cap: 'Product 1 · achterkant', state: 'ok', label: 'Goedgekeurd' },
         { cap: 'Product 1 · detail', state: 'open' },
-        { cap: 'Product 1 · op model', state: 'rev', label: 'Revisie aangevraagd', said: 'Toch liever op wit dan grijs, zoals de rest.' },
+        { cap: 'Product 1 · op model', state: 'rev', label: 'Revisie aangevraagd', said: 'Toch liever op grijs dan wit, zoals de rest.' },
       ],
       bApprove: 'Goedkeuren',
       /* 14 oktober 2026: de woorden van het echte scherm (rdTick en rdHint in account.js), en
@@ -147,7 +150,7 @@ const C = nl
         'You approve image by image: one click and that image is done.',
         'The rest of your order does not wait for the images you have not looked at yet.',
         'Want something different? Say it in your own words. Only that image goes back.',
-        'We change it and deliver it again: on white now, like the rest.',
+        'We change it and deliver it again: on grey now, like the rest.',
         'Your files sit in one folder, per product, as JPG. PNG or WebP you request on top.',
       ],
       tallyNa: `2 of ${TOTAAL} approved · 1 changed`,
@@ -156,7 +159,7 @@ const C = nl
         { cap: 'Product 1 · front', state: 'ok', label: 'Approved' },
         { cap: 'Product 1 · back', state: 'ok', label: 'Approved' },
         { cap: 'Product 1 · detail', state: 'open' },
-        { cap: 'Product 1 · on model', state: 'rev', label: 'Revision requested', said: 'On white rather than grey after all, like the rest.' },
+        { cap: 'Product 1 · on model', state: 'rev', label: 'Revision requested', said: 'On grey rather than white after all, like the rest.' },
       ],
       bApprove: 'Approve',
       bAsk: 'Mark this one',
@@ -195,7 +198,7 @@ const C = nl
           <li class={`fg-tile is-${tile.state}`} data-u={uitleg ? ['1', '2', '', '3'][i] : undefined}>
             <span class="fg-foto">
               <img src={PHOTOS[i]} alt="" loading="lazy" decoding="async" width="200" height="250" />
-              {uitleg && tile.state === 'rev' && <img class="fg-foto-na" src={MODEL_WIT} alt="" loading="lazy" decoding="async" width="200" height="250" />}
+              {uitleg && tile.state === 'rev' && <img class="fg-foto-na" src={MODEL_NA} alt="" loading="lazy" decoding="async" width="200" height="250" />}
             </span>
             <div class="fg-tile-body">
               <span class="fg-cap">{tile.cap}</span>
@@ -463,9 +466,10 @@ const C = nl
   .fg[data-uitleg-staat]:not(.u-s3) .fg-tile[data-u="3"] img { box-shadow: inset 0 0 0 1px var(--line-strong); }
   .fg.u-s1 .fg-tile[data-u="1"] img, .fg.u-s2 .fg-tile[data-u="2"] img { transition-delay: 1.05s; }
   .fg.u-s3 .fg-tile[data-u="3"] img { transition-delay: 3.5s; }
-  /* ── STAP 4: OPNIEUW GELEVERD, NU OP WIT — 14 oktober 2026 ─────────────────
+  /* ── STAP 4: OPNIEUW GELEVERD, NU OP GRIJS — 14 en 15 oktober 2026 ──────────
      Lucas (afvinklijst 25): "mag de grijze on model foto ook veranderen na de revisie
-     naar witte achtergrond foto." Het witte beeld ligt in dezelfde cel als het grijze
+     naar witte achtergrond foto." Op 15 oktober omgedraaid: van wit naar grijs, zoals
+     de rest van de set. Het nieuwe beeld ligt in dezelfde cel als het eerste
      (ook als de bouw er een <picture> omheen zet: daarom :global) en komt er overheen;
      "Revisie aangevraagd" wordt "Opnieuw geleverd". */
   .fg-foto { display: grid; }

@@ -118,11 +118,17 @@ const c = nl ? {
   idealH: ['Ideaal ', 'voor'],
   krijgH: ['Wat je ', 'krijgt'],
   modelNoot: ['Iemand in een ', '-clip kan ', 'je eigen merkmodel', ' zijn.'],
+  /* Doorloop 27 (B14b): campaign en eigen look gaan naar het formulier; wie liever
+     eerst overlegt, appt. Een zin met een link, geen derde knop. */
+  wa: ['Liever eerst even overleggen? ', 'App ons', '.'],
   slotH: ['Bestel in ', '.'],
   /* Video is op aanvraag, en de proef is een beeld en geen clip
      (24 september 2026): hier stond "plaats vandaag je bestelling".
      Het bedrag van de proef uit TEST_SAMPLE en niet getypt (8 oktober 2026, §17.17). */
-  slotP: `Op aanvraag: je krijgt eerst schriftelijk een prijs. Eerst zien hoe we werken? Dat kan met één product in beeld, voor ${TEST_SAMPLE.nl.price}.`,
+  /* 15 oktober 2026 (Lucas: geen €1 meer voor wie al klant is): de tweede zin
+     is de proef en staat los, met data-vis-uit — zie de <p> onderaan. */
+  slotP: 'Op aanvraag: je krijgt eerst schriftelijk een prijs.',
+  slotProef: ` Eerst zien hoe we werken? Dat kan met één product in beeld, voor ${TEST_SAMPLE.nl.price}.`,
   proef: 'Probeer VISUAILS',
 } : {
   terug: 'Video styles',
@@ -136,8 +142,10 @@ const c = nl ? {
   idealH: ['Best ', 'for'],
   krijgH: ['What you ', 'get'],
   modelNoot: ['Someone in a ', ' clip can be ', 'your own Brand Model', '.'],
+  wa: ['Rather talk it through first? ', 'Message us on WhatsApp', '.'],
   slotH: ['Order in ', '.'],
-  slotP: `On request: you get a written price first. Want to see how we work before that? Try one product in images, for ${TEST_SAMPLE.en.price}.`,
+  slotP: 'On request: you get a written price first.',
+  slotProef: ` Want to see how we work before that? Try one product in images, for ${TEST_SAMPLE.en.price}.`,
   proef: 'Test sample',
 };
 
@@ -185,8 +193,9 @@ const moodTonen = (() => { const m = style.moodTitle || ''; const i = m.toLowerC
       {style.ctaExternal
         ? <a class="h-knop h-knop-inkt" href={style.ctaHref} target="_blank" rel="noopener">{style.ctaLabel}<span class="o" set:html={ik('rechts')} /><NieuwTabblad lang={lang} /></a>
         : <a class="h-knop h-knop-inkt" href={style.ctaHref}>{style.ctaLabel}<span class="o" set:html={ik('rechts')} /></a>}
-      <a class="h-knop h-knop-lijn" href={lp('/test-sample')} data-vis-uit>{TEST_SAMPLE[lang].cta}</a>
+      <a class="h-knop h-knop-lijn" href={lp('/test-sample')} data-vis-uit>{TEST_SAMPLE[lang].ctaFotos}</a>
     </p>
+    {style.waHref && <p class="h-vs-model h-vs-wa h-op">{c.wa[0]}<a href={style.waHref} target="_blank" rel="noopener">{c.wa[1]}<NieuwTabblad lang={lang} /></a>{c.wa[2]}</p>}
     <ul class="h-feiten h-vs-feiten h-op" role="list">
       <li><i set:html={ik('check')} /><span><b>{style.priceTrust}{style.priceUnit}</b></span></li>
       <li><i set:html={ik('check')} /><span>{TIMING}</span></li>
@@ -280,13 +289,14 @@ const moodTonen = (() => { const m = style.moodTitle || ''; const i = m.toLowerC
       <ul class="h-bm-vink" role="list">
         {style.whatYouGet.map((item: string) => <li><i set:html={ik('check')} /><span>{item}</span></li>)}
       </ul>
-      <p class="h-vs-slot-zin">{c.slotP}</p>
+      <p class="h-vs-slot-zin">{c.slotP}<span data-vis-uit>{c.slotProef}</span></p>
       <p class="h-acties">
         {style.ctaExternal
           ? <a class="h-knop h-knop-inkt" href={style.ctaHref} target="_blank" rel="noopener">{style.ctaLabel}<span class="o" set:html={ik('rechts')} /><NieuwTabblad lang={lang} /></a>
           : <a class="h-knop h-knop-inkt" href={style.ctaHref}>{style.ctaLabel}<span class="o" set:html={ik('rechts')} /></a>}
-        <a class="h-knop h-knop-lijn" href={lp('/test-sample')} data-vis-uit>{TEST_SAMPLE[lang].cta}</a>
+        <a class="h-knop h-knop-lijn" href={lp('/test-sample')} data-vis-uit>{TEST_SAMPLE[lang].ctaFotos}</a>
       </p>
+      {style.waHref && <p class="h-vs-model h-vs-wa">{c.wa[0]}<a href={style.waHref} target="_blank" rel="noopener">{c.wa[1]}<NieuwTabblad lang={lang} /></a>{c.wa[2]}</p>}
       <p class="h-vs-model">{c.modelNoot[0]}{style.name}{c.modelNoot[1]}<a href={lp('/custom-models')}>{c.modelNoot[2]}</a>{c.modelNoot[3]}</p>
     </div>
   </section>

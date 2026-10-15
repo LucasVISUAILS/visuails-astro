@@ -156,5 +156,25 @@ export default defineConfig({
   // commentaarUitDePagina() (ronde 9): werknotities uit de gebouwde HTML — vóór de
   // stijl- en CSP-stappen, want csp-scripts hasht de scripts zoals ze er ná deze
   // stap uitzien. Zie de kop van scripts/commentaar-uit-de-pagina.mjs.
+  /* ── GEEN MODULESCRIPT IN DE PAGINA — 15 OKTOBER 2026 (doorloop 27, B01) ────
+   *
+   * Astro zet een klein <script> uit een component (onder 4 kB, zonder imports)
+   * als <script type="module"> IN de pagina. De hash daarvan staat netjes in de
+   * CSP, dus bij het laden is er niets aan de hand. Maar klik je via de site door
+   * (ClientRouter), dan voegt Astro's router voor zo'n inline modulescript een
+   * leeg `<script type="module" src="data:application/javascript,">` toe om op
+   * de volgorde te wachten — en `data:` staat bewust niet in script-src. Gevolg:
+   * één rode regel in de console op /start (Note.astro en het .h-pagina-script).
+   *
+   * Vandaar: elk scriptbestand wordt een bestand onder /_astro/ (valt onder
+   * 'self'). Andere assets houden de standaard van 4 kB (undefined = standaard).
+   * De is:inline-scripts in Layout.astro raakt dit niet; die zijn klassiek en
+   * gaan niet langs die omweg.
+   */
+  vite: {
+    build: {
+      assetsInlineLimit: (bestand) => (/\.js$/.test(bestand) ? false : undefined),
+    },
+  },
   integrations: [brandLockupGuard(), gewijzigdOp(), sitemapAnd404(), llmsTxt(), plaatshouders(), avifNaastWebp(), fontsVoorWorker(), commentaarUitDePagina(), stijlUitDePagina(), cspScripts()],
 });
