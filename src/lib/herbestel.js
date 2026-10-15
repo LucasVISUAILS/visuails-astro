@@ -22,9 +22,11 @@
 import { getStyle } from '../data/styles.js';
 import { getCatalogStyle } from '../data/catalogStyles.js';
 import { achtergrondNaam } from '../data/backgrounds.js';
+import { beeldAchtergrondInstellingen } from '../data/beeldachtergrond.js';
 import { ratioById, ratioLabel } from '../data/ratios.js';
 import { MODEL_ANY } from '../data/models.js';
 import { SAMPLE_SERVICE, creditsVoorDienst, ladderFloor, euro } from '../data/pricing.js';
+import { ANGLE_IDS, EIGEN_ANGLE_IDS } from '../data/angles.js';
 
 const T = {
   nl: {
@@ -138,4 +140,89 @@ export function herbestelHtml(k, esc) {
   ${regel ? `<p class="herbestel-regel">${esc(regel)}</p>` : ''}
   <p class="herbestel-uitleg">${esc(k.uitleg)}</p>
 </section>`;
+}
+
+/* ── OPNIEUW BESTELLEN MET ALLE INSTELLINGEN — 15 oktober 2026 (werklijst 33) ──
+ *
+ * Lucas bij k-hoeken: *"de klant wanneer hij de bestelling in /studio heeft staan
+ * hem de order settings van een specifieke order laten kopiëren zodat alle extra
+ * angles en alles er al goed in staat en hij het alleen hoeft na te lopen."*
+ *
+ * Waar "Bestel met dezelfde look" hierboven bewust alleen de look meeneemt (V28 =
+ * a: wat geld kost, komt niet stil terug), neemt deze knop ALLES mee wat bij de
+ * bestelling hoort en niet bij de producten: de look, de achtergrond, de
+ * verhouding, het gezicht, de kanalen, de extra hoeken (met wat de klant bij een
+ * eigen hoek typte) en de notitie. Niet stil: het formulier zet bovenaan wat er
+ * is overgenomen, en de klant loopt het na. Wat NIET meegaat: de producten en de
+ * foto's (die zijn nieuw), voorrang (die hoort bij een datum), en de gegevens.
+ *
+ * De link draagt alleen het nummer van de bestelling (?van=<id>) plus de
+ * lookkeuzes van hierboven, zodat de look ook zonder script meekomt. De rest
+ * haalt het formulier op bij GET /account/orders/<id>/instellingen, achter de
+ * sessie en alleen voor de eigenaar: een notitie hoort niet in een URL.
+ */
+const T_ALLES = {
+  nl: {
+    label: 'Opnieuw bestellen met alle instellingen',
+    wat: { catalog: 'de achtergrond (ook per foto), de verhouding, het model, de kanalen en de extra hoeken', lifestyle: 'de look, de verhouding, het model, het aantal outfits en je notitie' },
+    uitleg: (wat) => `Neemt alles van deze bestelling over: ${wat}. Je loopt het na voordat je bestelt; je producten en foto’s voeg je zelf toe.`,
+  },
+  en: {
+    label: 'Order again with all settings',
+    wat: { catalog: 'the background (per photo too), the aspect ratio, the model, the channels and the extra angles', lifestyle: 'the look, the aspect ratio, the model, the number of outfits and your note' },
+    uitleg: (wat) => `Copies everything from this order: ${wat}. You check it before you order; you add your products and photos yourself.`,
+  },
+};
+
+const BEKENDE_HOEKEN = new Set([...ANGLE_IDS, ...EIGEN_ANGLE_IDS]);
+
+/** De knop in Studio, of null (geen formulier, proef, of geannuleerd). */
+export function herbestelAllesKnop(o, { lang = 'nl' } = {}) {
+  if (!o || o.status === 'cancelled' || o.service === SAMPLE_SERVICE) return null;
+  const dienst = herbestelDienst(o);
+  if (!dienst) return null;
+  const L = lang === 'en' ? 'en' : 'nl';
+  const look = herbestelKnop(o, { lang: L });
+  const basis = look ? look.href : `${L === 'nl' ? '/nl' : ''}/start/${dienst}/`;
+  const id = Number(o.id) || 0;
+  if (!id) return null;
+  return { href: `${basis}${basis.includes('?') ? '&' : '?'}van=${id}`, label: T_ALLES[L].label, uitleg: T_ALLES[L].uitleg(T_ALLES[L].wat[dienst]) };
+}
+
+/**
+ * Wat het formulier overneemt, uit details_json. Alleen waarden van een vaste
+ * vorm; het formulier vergelijkt ze daarna nog eens met wat het zelf tekent.
+ * @returns {null | { ref, dienst, style, bg, beelden: {sleutel, hex}[], ratio, model, kanalen: string[], hoeken: {id, note}[], notitie, outfits }}
+ */
+export function bestelInstellingen(o) {
+  if (!o || o.service === SAMPLE_SERVICE) return null;
+  const dienst = herbestelDienst(o);
+  if (!dienst) return null;
+  const d = details(o);
+  const kort = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, n);
+  const hoeken = [];
+  for (const [k, v] of Object.entries(d)) {
+    const m = /^angle_([a-z0-9-]{1,40})$/.exec(k);
+    if (!m || !v || v === '0') continue;
+    if (!BEKENDE_HOEKEN.has(m[1])) continue; // vervallen (flat lay) of onbekend
+    hoeken.push({ id: m[1], note: kort(d[`angle_note_${m[1]}`], 120) });
+  }
+  const stijl = String(d.style || '');
+  const hex = String(d.background_hex || '').replace(/^#/, '').toUpperCase();
+  const face = String(d.model || d.model_p1 || '');
+  const outfits = Number.parseInt(String(d.outfit_count || ''), 10);
+  return {
+    ref: String(o.ref || ''),
+    dienst,
+    style: dienst === 'lifestyle' && (/^cs-\d{1,9}$/.test(stijl) || /^[a-z-]{2,24}$/.test(stijl)) ? stijl : '',
+    bg: dienst === 'catalog' && /^[0-9A-F]{6}$/.test(hex) ? hex : '',
+    /* Werklijst 27 en v29-hex: de achtergrond per foto, ook een eigen kleur. */
+    beelden: dienst === 'catalog' ? beeldAchtergrondInstellingen('catalog', d).slice(0, 16) : [],
+    ratio: /^[a-z0-9-]{2,16}$/.test(String(d.ratio || '')) ? String(d.ratio) : '',
+    model: face && face !== MODEL_ANY && /^[a-z0-9-]{1,24}$/.test(face) ? face : '',
+    kanalen: String(d.channels || '').split(',').map((x) => x.trim()).filter((x) => /^[a-z0-9-]{1,32}$/.test(x)).slice(0, 12),
+    hoeken: hoeken.slice(0, 12),
+    notitie: kort(d.message, 2000),
+    outfits: Number.isFinite(outfits) && outfits > 0 && outfits <= 20 ? outfits : 0,
+  };
 }

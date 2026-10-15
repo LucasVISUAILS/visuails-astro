@@ -52,6 +52,7 @@ const c = nl ? {
   mailP: 'Voor uitgebreide briefings, facturen of bijlagen.',
   urenKop: 'Openingstijden',
   uren: ['Ma–vr 08:00–20:00 (Nederlandse tijd)', 'Za–zo 09:00–20:00 (Nederlandse tijd)'],
+  urenKort: 'Ma–vr 08:00–20:00 · za–zo 09:00–20:00 (Nederlandse tijd)',
   plaatsKop: 'Locatie',
   plaats: ['Enschede, Nederland', 'KVK 99742993'],
   plaatsLink: 'Volledige bedrijfsgegevens',
@@ -112,6 +113,7 @@ const c = nl ? {
   mailP: 'For a long request, an invoice question or files you want to attach.',
   urenKop: 'Opening hours',
   uren: ['Mon–Fri 08:00–20:00 (Dutch time)', 'Sat–Sun 09:00–20:00 (Dutch time)'],
+  urenKort: 'Mon–Fri 08:00–20:00 · Sat–Sun 09:00–20:00 (Dutch time)',
   plaatsKop: 'Location',
   plaats: ['Enschede, the Netherlands', 'KVK 99742993'],
   plaatsLink: 'Full company details',
@@ -163,7 +165,10 @@ const BEELD = {
   label: 'WhatsApp',
   href: '#kanalen', linkNaam: nl ? 'Naar de manieren om ons te bereiken' : 'To the ways to reach us',
   voor: nl ? 'meestal antwoord binnen' : 'usually a reply within', getal: '1', eenheid: nl ? 'uur' : 'hour',
-  voet: c.uren.join('. ') + '.',
+  /* Eén regel in de kaart (15 oktober 2026): "(Nederlandse tijd)" één keer, en een
+     woordverbinder (U+2060) na het streepje, zodat 09:00–20:00 niet midden in de
+     tijd breekt (dat deed hij: "09:00– / 20:00"). */
+  voet: c.urenKort.replace(/(\d)–(\d)/g, '$1–\u2060$2'),
 };
 ---
 <div class="h-pagina h-ct">
@@ -172,7 +177,7 @@ const BEELD = {
   <header class="h-paginakop h-ct-kop met-kopbeeld">
     <div class="h-paginakop-tekst">
       <p class="h-pil h-op" style="--d:0"><span>{c.etiket}</span></p>
-      <h1 id="ct-h1" class="h-kop h-h1 h-op" style="--d:1"><span class="l">{c.h1[0]}</span> <span>{c.h1[1]}</span></h1>
+      <h1 id="ct-h1" class="h-kop h-h1 h-op h-een-regel" style="--d:1"><span class="l">{c.h1[0]}</span> <span>{c.h1[1]}</span></h1>
       <p class="h-lede h-op" style="--d:2">{c.lead}</p>
     </div>
     <KopBeeld {...BEELD} />

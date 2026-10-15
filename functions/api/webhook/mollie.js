@@ -56,6 +56,7 @@
 // status change of the same payment (a refund, a chargeback) — so this is a
 // normal path, not an edge case.
 
+import { overstapToepassen } from '../../../src/lib/overstap.js';
 import { betalingGedekt } from '../../../src/lib/invoice.js';
 import { boekTegoedAf, tegoedTeruggeboekt } from '../../../src/lib/tegoedVerrekening.js';
 import { getMolliePayment, isMolliePaymentId, mollieAmountToCents, refundMolliePayment } from '../../../src/lib/mollie.js';
@@ -655,6 +656,14 @@ async function recordSubscriptionPaid(env, payment, mode, { subRef = null } = {}
     return;
   }
   await termijnTerugboekingTerug(env, payment, mode, { sub });
+
+  /* ═══ EEN OVERSTAP DIE KLAARSTOND — 15 oktober 2026 (v29-overstap = a) ═══
+     Vóór de controle van het bedrag hieronder: Mollie schrijft sinds de overstap
+     het nieuwe bedrag af, en vanaf hier moet de rij dat plan ook zijn — voor de
+     controle, de credits, het spaarplafond en de factuur. Alleen bij een termijn
+     die Mollie NA de overstap aanmaakte; zie overstapToepassen() in
+     src/lib/overstap.js. De eerste betaling (subRef) heeft nooit een overstap. */
+  if (!subRef) sub = await overstapToepassen(env, sub, payment);
 
   /* De maand waar deze termijn bij hoort, uit de betaaldatum van Mollie en niet
      uit `datetime('now')`. Een melding die een dag later wordt afgeleverd — of

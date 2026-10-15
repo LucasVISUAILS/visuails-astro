@@ -15,6 +15,7 @@
  *       GET  /checkout/<tr_id>    de nep-betaalpagina (knoppen betaald/mislukt/geannuleerd)
  *       POST /pay/<tr_id>/<status>  status zetten + webhook naar de Worker
  *       POST /sub/<sub_id>/charge   een termijn incasseren (recurring betaling + webhook)
+ *       POST /sub/nieuw?klant=&bedrag=  een lopend abonnement bij nep-Mollie (overstappen)
  *       GET  /sql?q=SELECT …      lezen uit de D1 (node:sqlite op hetzelfde bestand)
  *       POST /sql  (body = SQL)   schrijven
  *
@@ -91,7 +92,7 @@ const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, 
 async function mollie(req, url) {
   const p = url.pathname.replace(/^\/v2/, '');
   const m = req.method;
-  const body = m === 'POST' ? await req.json().catch(() => ({})) : null;
+  const body = m === 'POST' || m === 'PATCH' ? await req.json().catch(() => ({})) : null;
   let x;
   if (m === 'GET' && p.startsWith('/methods')) return json({ count: 2, _embedded: { methods: [{ resource: 'method', id: 'ideal', description: 'iDEAL', status: 'activated' }, { resource: 'method', id: 'creditcard', description: 'Card', status: 'activated' }] } });
   if (m === 'POST' && p === '/payments') {
@@ -137,6 +138,14 @@ async function mollie(req, url) {
     const sub = subs.get(x[2]);
     if (!sub) return json({ status: 404, title: 'Not Found', detail: 'No subscription exists with token ' + x[2] }, 404);
     if (m === 'DELETE') { sub.status = 'canceled'; sub.canceledAt = nu(); console.log(`[mollie] abonnement ${x[2]} opgezegd`); return json(sub); }
+    /* Overstappen (afvinklijst 29, v29-overstap): PATCH zet het bedrag en de omschrijving voor de volgende termijn. */
+    if (m === 'PATCH') {
+      if (sub.status === 'canceled') return json({ status: 422, title: 'Unprocessable Entity', detail: 'The subscription has been canceled' }, 422);
+      if (body?.amount) sub.amount = body.amount;
+      if (body?.description) sub.description = body.description;
+      console.log(`[mollie] abonnement ${x[2]} bijgewerkt: ${sub.amount?.value} "${sub.description}"`);
+      return json(sub);
+    }
     return json(sub);
   }
   console.warn('[mollie] ONBEKEND', m, p);
@@ -267,6 +276,15 @@ http.createServer(async (req, res) => {
       const status = await webhook(pay);
       if (url.searchParams.get('json')) return send(200, { ok: true, webhook: status, payment: paymentView(pay) });
       res.writeHead(303, { location: pay.redirectUrl || `http://localhost:${PORT}/` }); return res.end();
+    }
+    /* Afvinklijst 29 (overstappen): een lopend Mollie-abonnement klaarzetten voor een
+       rij uit de seed, zonder de hele afsluitroute. ?klant=cst_…&bedrag=955.90 */
+    if (url.pathname === '/sub/nieuw' && req.method === 'POST') {
+      const id = rid('sub_');
+      const klant = url.searchParams.get('klant') || rid('cst_');
+      const start = nu().slice(0, 10);
+      subs.set(id, { resource: 'subscription', id, mode: 'test', createdAt: nu(), status: 'active', amount: { currency: 'EUR', value: url.searchParams.get('bedrag') || '0.00' }, times: null, timesRemaining: null, interval: '1 month', startDate: start, nextPaymentDate: start, description: 'VISUAILS (seed)', method: 'directdebit', mandateId: 'mdt_seed', webhookUrl: '', customerId: klant });
+      return send(200, { ok: true, id, klant });
     }
     if ((x = url.pathname.match(/^\/sub\/(sub_[A-Za-z0-9]+)\/charge$/)) && req.method === 'POST') {
       const sub = subs.get(x[1]);

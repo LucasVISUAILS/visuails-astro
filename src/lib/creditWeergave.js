@@ -203,7 +203,10 @@ export function saldoWeergave(s, lang = 'nl', nu = new Date()) {
     boven,
     bijgekocht: '',
     bevroren: heel(s?.bevroren) ? t.bevroren(heel(s.bevroren)) : '',
-    geldig: t.geldig(CREDITS_GELDIG_MAANDEN),
+    /* Alleen zolang het abonnement loopt (doorloop 15 oktober 2026): bij een pauze of
+       na opzeggen zegt het blok erboven al hoe lang je credits geldig blijven, en
+       "zolang je abonnement loopt … je kunt sparen" klopt dan niet meer. */
+    geldig: loopt ? t.geldig(CREDITS_GELDIG_MAANDEN) : '',
     weinig: n > 0 && n < SERVICE_CREDITS.catalog,
     leeg: n === 0,
     bijna: false,

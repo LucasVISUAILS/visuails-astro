@@ -1507,7 +1507,11 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
   background: var(--line); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden;
 }
 .pl-dag { background: var(--paper); min-height: 150px; padding: .55rem .6rem .7rem; display: flex; flex-direction: column; gap: .4rem; }
-.pl-dag.is-voorbij { opacity: .5; }
+/* Voorbij: niet meer de hele dag op .5 (dat gaf 2,2 : 1 op de kleine tekst, axe,
+   volledige controle 15 oktober 2026). De tekst blijft leesbaar in --ink-3, het
+   getal zakt naar --ink-3 en alleen de balkjes worden zwak. */
+.pl-dag.is-voorbij .pl-dag-nr { color: var(--ink-3); }
+.pl-dag.is-voorbij .pl-last { opacity: .55; }
 .pl-dag.is-vandaag { background: var(--mist-stone, var(--paper-lift)); box-shadow: inset 0 3px 0 var(--teal); }
 .pl-dag.is-dicht { background: repeating-linear-gradient(135deg, transparent 0 8px, rgb(255 255 255 / .03) 8px 16px); }
 .pl-dag.is-vol .pl-last span { background: var(--warn-ink); }

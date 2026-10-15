@@ -167,7 +167,9 @@ const SUBS = subverwerkers('nl');
       <p>Met elke partij hieronder geldt een verwerkersovereenkomst die dezelfde verplichtingen doorlegt die wij aan jou hebben (art. 28 lid 4): rechtstreeks met ons, of bij een modelmaker via Magnific. Voor WhatsApp zijn dat de zakelijke voorwaarden en verwerkersvoorwaarden die WhatsApp voor elk bedrijf vastlegt dat het gebruikt, en die wij aanvaarden zoals ze zijn. Wij blijven jegens jou aansprakelijk voor wat zij doen.</p>
       {/* tabindex + role: zie de noot bij .fb-tblwrap in FigBoard.astro.
           Deze tabel schuift horizontaal en was zonder muis niet te lezen. */}
-      <p class="legal-meta" id="subverwerkers">{lijstRegel('nl')}</p>
+      {/* Geen id hier: de kop van §8 heeft id="subverwerkers" al (dubbel gevonden
+          bij de volledige controle, 15 oktober 2026); #subverwerkers landt op de kop. */}
+      <p class="legal-meta">{lijstRegel('nl')}</p>
       <div class="table-scroll" tabindex="0" role="region" aria-label="Subverwerkers">
       <table class="files">
         <thead><tr><th>Wie</th><th>Waar</th><th>Waarvoor</th><th>Grondslag doorgifte</th></tr></thead>

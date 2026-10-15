@@ -351,7 +351,7 @@ for (const breed of [1280, 390]) {
   await page.waitForTimeout(400);
   const lijst = await page.locator('[data-pl-missing-list] .pu-mis-regel').allTextContents();
   /* p1–p4 zijn af; p5 heeft alleen een geweigerde (te kleine) voorkant. */
-  ok(`${tag}: het tussenscherm noemt per product wat er mist (ontbreekt.js)`, lijst, ['p5: geen voorkant, geen achterkant, geen detail']);
+  ok(`${tag}: het tussenscherm noemt per product wat er mist (ontbreekt.js)`, lijst, ['Product 5: geen voorkant, geen achterkant, geen detail']);
   ok(`${tag}: met de zin over VISUAILS Studio`, /VISUAILS Studio/.test(await page.textContent('[data-pl-missing]')), true);
   await leesbaarOk(page, '.pu-mis-regel', tag);
   await page.click('[data-pl-missing-go]');

@@ -212,7 +212,7 @@ const BEELD = {
               {b && <li><i set:html={ik('check')} />{c.bespaar(e(b.saving), b.count, e(b.los))}</li>}
             </ul>
             <p class="h-pk-voet">
-              <a href={`${lp('/start/plan')}?plan=${p.id}`} class="h-knop h-knop-inkt" data-vis-klant="plan-kies" data-vis-abo-label={c.overstappen} data-vis-abo="/account/plan#je-plan"><span data-vis-label>{c.kiesPlan(p.name)}</span><span class="o" set:html={ik('rechts')} /></a>
+              <a href={`${lp('/start/plan')}?plan=${p.id}`} class="h-knop h-knop-inkt" data-vis-klant="plan-kies" data-vis-abo-label={c.overstappen} data-vis-abo="/account/plan?tab=plan#overstappen"><span data-vis-label>{c.kiesPlan(p.name)}</span><span class="o" set:html={ik('rechts')} /></a>
             </p>
           </li>
         );

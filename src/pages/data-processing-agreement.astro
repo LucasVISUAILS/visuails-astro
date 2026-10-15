@@ -104,7 +104,9 @@ const SUBS = subverwerkers('en');
       <p>With each party below there is a processor agreement that passes on the same obligations we owe you (Art. 28(4)): with us directly, or, for a model maker, through Magnific. For WhatsApp these are the business terms and data processing terms WhatsApp sets for every business that uses it, which we accept as they are. We remain liable to you for what they do.</p>
       {/* tabindex + role: zie de noot bij .fb-tblwrap in FigBoard.astro.
           Deze tabel schuift horizontaal en was zonder muis niet te lezen. */}
-      <p class="legal-meta" id="sub-processors">{lijstRegel('en')}</p>
+      {/* Geen id hier: de kop van §8 heeft id="sub-processors" al (dubbel gevonden
+          bij de volledige controle, 15 oktober 2026); #sub-processors landt op de kop. */}
+      <p class="legal-meta">{lijstRegel('en')}</p>
       <div class="table-scroll" tabindex="0" role="region" aria-label="Sub-processors">
       <table class="files">
         <thead><tr><th>Who</th><th>Where</th><th>For what</th><th>Transfer basis</th></tr></thead>

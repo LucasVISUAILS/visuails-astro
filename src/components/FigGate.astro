@@ -448,7 +448,10 @@ const ZINNEN = nl
      de rijen, niet om hoe zwak de zwakste mag zijn. Gemeten met leesbaar.mjs,
      dat de dekking van alle voorouders meerekent voordat het contrast bepaald
      wordt; zonder die optelsom is dit soort fout onzichtbaar. */
-  .fgt-row.is-early, .fgt-row.is-closed { opacity: .68; }
+  /* 15 oktober 2026: .80. In de hal is de inkt van deze rijen #4C4960 en niet
+     --ink-2; op .68 gaf dat #858393 op wit, 3,7 : 1 (axe, volledige controle).
+     Op .80 is het #6F6D80, 5,0 : 1. Het verschil met een dag die wél kan, blijft. */
+  .fgt-row.is-early, .fgt-row.is-closed { opacity: .8; }
   .fgt-row.is-closed .fgt-track { visibility: hidden; }
 
   /* Vol is de enige toestand met een waarschuwingskleur, en niet rood: er is
@@ -523,8 +526,8 @@ const ZINNEN = nl
   .fgt[data-uitleg-staat]:not(.u-s3) .fgt-row[data-u="3"] .fgt-s,
   .fgt[data-uitleg-staat]:not(.u-s4) .fgt-row[data-u="4"] .fgt-s,
   .fgt[data-uitleg-staat]:not(.u-s5) .fgt-row[data-u="5"] .fgt-s { opacity: 0; }
-  /* De te-vroege dagen houden hun eigen demping (.68), ook tijdens de uitleg. */
-  .fgt.u-s2 .fgt-row[data-u="2"] { opacity: .68; }
+  /* De te-vroege dagen houden hun eigen demping (.8, zie .is-early), ook na de uitleg. */
+  .fgt.u-s2 .fgt-row[data-u="2"] { opacity: .8; }
 
   /* AFVINKLIJST 24: "de story telling in de video mag iets beter te zien zijn". Per stap
      staan alleen de rijen van die stap vol in beeld (de rest zakt naar .32), krijgen ze een

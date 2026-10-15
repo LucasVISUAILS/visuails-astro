@@ -42,8 +42,12 @@ import HalBeweging from './HalBeweging.astro';
 import KopBeeld from './KopBeeld.astro';
 import {
   ladderFloor, euro, vatLabel, vatLead, vatDetail,
-  WINDOW_THRESHOLD, TEST_SAMPLE, TIERS, clause, eenProductRegel, CATALOG_IMAGES, levervlakken, SERVICE_CREDITS,
+  WINDOW_THRESHOLD, TEST_SAMPLE, TIERS, clause, eenProductRegel, CATALOG_IMAGES, levervlakken, SERVICE_CREDITS, levertijdDelen, aboVanafPerProduct,
 } from '../data/pricing.js';
+import { videoStyles as videoEn } from '../data/videoStyles.js';
+import { videoStyles as videoNl } from '../data/videoStyles.nl.js';
+import { telwoord } from '../data/models.js';
+import { REQUIRED_SHOT_IDS } from '../data/shots.js';
 import { catalogStyles as catalogEn } from '../data/catalogStyles.js';
 import { catalogStyles as catalogNl } from '../data/catalogStyles.nl.js';
 import { styles as lifestyleEn } from '../data/styles.js';
@@ -92,6 +96,7 @@ const groepen = (await Promise.all((['catalog', 'lifestyle'] as const).map(async
     naam: d.naam[lang],
     kort: d.kort[lang],
     vanaf: euro(ladderFloor(id), lang),
+    abo: aboVanafPerProduct(id),
     stand: productStand(id),
     looks: await Promise.all(data.filter(bestelbaar).map((s: any) => naarLook(s, id))),
   };
@@ -123,6 +128,17 @@ const COPY = {
     ],
     wa: 'Message us on WhatsApp',
     waText: "Hi VISUAILS, I'm not sure which look fits my products.",
+    aboRegel: (b: string) => `Or from ${b} per product with a plan`,
+    kortLabel: 'How it goes',
+    kort: [['You send a few photos', `${telwoord(REQUIRED_SHOT_IDS.length, 'en', true)} phone photos per product are enough.`], ['We do the rest', `${levertijdDelen('unattended', 'en').filter(Boolean).join(', ')}.`], ['You approve', 'Image by image, then download everything at once.']],
+    beeldPil: 'Images',
+    videoPil: 'Video', videoH: ['Video.', 'On request.'], videoLead: 'Pick a style and send a short brief; we reply with a price and a date.', videoCta: 'Ask about a video', videoMeer: 'See',
+    maatPil: 'Made to fit', maatH: ['Made to fit.', 'When you want more.'],
+    maat: [
+      { id: 'look', naam: 'Your own look', zin: 'A look that is yours alone, built around your brand.', knop: 'Ask for your own look', href: '/start/custom-look' },
+      { id: 'model', naam: 'Your Brand Model', zin: 'One face for your brand, used by nobody else.', knop: 'More about your Brand Model', href: door('brand-model')!.lees },
+      { id: 'plan', naam: door('plan')!.naam.en, zin: 'A fixed number of credits each month, for brands that release often.', knop: 'See the plans', href: door('plan')!.lees, abo: 'Your plan' },
+    ],
     afterPil: 'After you press it', afterH: ['Five steps,', 'then it’s with us.'],
     afterLead: 'Video and custom work start with a short brief; we reply with a price and a date.',
     steps: ['Order', 'Your photos', 'Your details', 'Timing', 'Confirm'],
@@ -150,6 +166,17 @@ const COPY = {
     ],
     wa: 'App ons',
     waText: 'Hoi VISUAILS, ik weet niet zeker welke look bij mijn producten past.',
+    aboRegel: (b: string) => `Of vanaf ${b} per product met een abonnement`,
+    kortLabel: 'Zo gaat het',
+    kort: [['Jij stuurt een paar foto’s', `${telwoord(REQUIRED_SHOT_IDS.length, 'nl', true)} telefoonfoto’s per product zijn genoeg.`], ['Wij doen de rest', `${levertijdDelen('unattended', 'nl').filter(Boolean).join(', ')}.`], ['Jij keurt goed', 'Beeld voor beeld, daarna alles in één keer downloaden.']],
+    beeldPil: 'Beeld',
+    videoPil: 'Video', videoH: ['Video.', 'Op aanvraag.'], videoLead: 'Kies een stijl en stuur een korte briefing; wij antwoorden met een prijs en een datum.', videoCta: 'Vraag een video aan', videoMeer: 'Bekijk',
+    maatPil: 'Op maat', maatH: ['Op maat.', 'Voor wie meer wil.'],
+    maat: [
+      { id: 'look', naam: 'Eigen look', zin: 'Een look die alleen van jou is, gemaakt rond je merk.', knop: 'Vraag een eigen look aan', href: '/start/custom-look' },
+      { id: 'model', naam: 'Jouw merkmodel', zin: 'Eén gezicht voor je merk, door niemand anders gebruikt.', knop: 'Meer over je merkmodel', href: door('brand-model')!.lees },
+      { id: 'plan', naam: door('plan')!.naam.nl, zin: 'Elke maand een vast aantal credits, voor merken die vaak iets nieuws uitbrengen.', knop: 'Bekijk de abonnementen', href: door('plan')!.lees, abo: 'Je abonnement' },
+    ],
     afterPil: 'Nadat je erop drukt', afterH: ['Vijf stappen,', 'dan ligt het bij ons.'],
     afterLead: 'Video en maatwerk beginnen met een korte briefing; wij antwoorden met een prijs en een datum.',
     steps: ['Bestelling', 'Je foto’s', 'Jouw gegevens', 'Levertijd', 'Bevestigen'],
@@ -161,6 +188,8 @@ const COPY = {
   },
 };
 const c = COPY[lang];
+/* De vier videostijlen, als rij kleine kaarten (v28-start = a). */
+const VIDEO = (nl ? videoNl : videoEn).map((v: any) => ({ slug: v.slug, naam: v.name, zin: v.tagline, prijs: v.cardPrice }));
 const ICOON = {
   rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
   pijl: '<path d="M4.5 11.5l7-7M5.5 4.5h6v6"/>',
@@ -194,9 +223,21 @@ const BEELD = {
     <KopBeeld {...BEELD} />
   </header>
 
+  {/* ── 1b · ZO GAAT HET ── v28-start = a (15 oktober 2026): de vijf stappen van
+      onderaan als korte strook bovenaan, in drie woorden: jij stuurt, wij doen de
+      rest, jij keurt goed. */}
+  <section class="h-st-kort h-in" aria-label={c.kortLabel}>
+    <ol class="h-st-kort-rij" role="list">
+      {c.kort.map(([kop, zin], i) => (
+        <li><span class="h-st-kort-nr" aria-hidden="true">{i + 1}</span><span><b>{kop}</b><span>{zin}</span></span></li>
+      ))}
+    </ol>
+  </section>
+
   {/* ── 2 · DE LOOKS, PER DIENST ───────────────────────────────────────────
       Met id: de voorpagina en oude links springen naar #catalog en #lifestyle. */}
   <section class="h-sec h-st-kies" aria-label="Looks">
+    <p class="h-pil h-st-band-pil h-in"><span>{c.beeldPil}</span></p>
     {groepen.map((g) => (
       <section class:list={['h-st-groep', `n-${g.looks.length}`]} id={g.id} aria-labelledby={`st-g-${g.id}`} data-st-groep={g.id}>
         <div class="h-st-groep-kop h-in">
@@ -216,6 +257,9 @@ const BEELD = {
                 <p class="h-st-zin">{l.zin}</p>
                 {/* Een abonnee bestelt met credits (15 oktober 2026): dan die prijs. */}
                 <p class="h-st-tarief" data-vis-klant="niet-abonnee"><span>{c.vanaf}</span> <b>{g.vanaf}</b> <span>{c.per}</span></p>
+                {/* 15 oktober 2026 (k-klant): wat het met een abonnement kost, in euro's.
+                    Alleen voor wie geen abonnement heeft. */}
+                {g.abo && <p class="h-st-abo" data-vis-klant="niet-abonnee"><a href={lp('/plans')}>{c.aboRegel(euro(g.abo, lang))}<span set:html={ik('pijl')} /></a></p>}
                 {SERVICE_CREDITS[g.id] && <p class="h-st-tarief" data-vis-klant="abonnee" hidden><b>{SERVICE_CREDITS[g.id]} credits</b> <span>{c.perCredits}</span></p>}
                 <p class="h-st-wegen">
                   <a class="h-knop h-knop-inkt h-knop-klein" href={l.kies} data-st-kies>{c.kies}<span class="o" set:html={ik('rechts')} /></a>
@@ -251,40 +295,56 @@ const BEELD = {
       <p class="h-st-btw">{vatLead(lang)} <Note lang={lang} term={nl ? vatLabel('excl', lang) : 'VAT'} wide>{vatDetail(lang)}</Note></p>
     </div>
 
-    {/* ── 3 · DE REST, IN ÉÉN RUSTIGE RIJ ── geen kaarten: dit zijn andere wegen. */}
+  </section>
+
+  {/* ── 3 · VIDEO ── de vier stijlen als rij kleine kaarten, "op aanvraag". */}
+  <section class="h-sec h-st-video" id="video" aria-labelledby="st-video">
+    <header class="h-st-band-kop h-in">
+      <p class="h-pil"><span>{c.videoPil}</span></p>
+      <h2 id="st-video" class="h-kop h-h3">{c.videoH[0]} <span class="l">{c.videoH[1]}</span></h2>
+      <p class="h-st-band-lead">{c.videoLead}</p>
+    </header>
+    <ul class="h-st-vk" role="list">
+      {VIDEO.map((v, i) => (
+        <li class="h-in" style={`--d:${i}`}>
+          <a class="h-st-vk-a" href={lp(`/video/${v.slug}`)}>
+            <b>{v.naam}</b>
+            <span class="h-st-vk-zin">{v.zin}</span>
+            <span class="h-st-vk-voet"><span>{v.prijs}</span><span class="h-st-vk-meer">{c.videoMeer}<span class="h-cirkel h-cirkel-klein" aria-hidden="true" set:html={ik('rechts')} /></span></span>
+          </a>
+        </li>
+      ))}
+    </ul>
+    <p class="h-st-wegen h-in"><a class="h-knop h-knop-lijn h-knop-klein" href={lp(door('video')!.bestel)}>{c.videoCta}<span class="o" set:html={ik('rechts')} /></a></p>
+  </section>
+
+  {/* ── 4 · OP MAAT ── eigen look, merkmodel en het abonnement als drie kaarten. Een
+      abonnee ziet bij het abonnement "Je abonnement" (data-vis-klant="plan-kies"). */}
+  <section class="h-sec h-st-maat" id="op-maat" aria-labelledby="st-maat">
+    <header class="h-st-band-kop h-in">
+      <p class="h-pil"><span>{c.maatPil}</span></p>
+      <h2 id="st-maat" class="h-kop h-h3">{c.maatH[0]} <span class="l">{c.maatH[1]}</span></h2>
+    </header>
+    <ul class="h-st-mk" role="list">
+      {c.maat.map((m, i) => (
+        <li class="h-st-mk-k h-in" style={`--d:${i}`}>
+          <b class="h-st-mk-naam">{m.naam}</b>
+          <p class="h-st-mk-zin">{m.zin}</p>
+          {m.abo
+            ? <a class="h-link" href={lp(m.href)} data-vis-klant="plan-kies" data-vis-abo-label={m.abo} data-vis-abo="/account/plan"><span data-vis-label>{m.knop}</span><span class="h-cirkel h-cirkel-klein" aria-hidden="true" set:html={ik('rechts')} /></a>
+            : <a class="h-link" href={lp(m.href)}>{m.knop}<span class="h-cirkel h-cirkel-klein" aria-hidden="true" set:html={ik('rechts')} /></a>}
+        </li>
+      ))}
+    </ul>
+
+    {/* De rest, in één rustige rij: de proef (niet voor wie al klant is) en App ons. */}
     <nav class="h-st-ook h-in" aria-label={c.ookLabel}>
       <span class="h-st-ook-l">{c.ook}</span>
       <ul class="h-st-ook-rij st-ook-rij" role="list">
-        {c.rij.map((r) => <li data-vis-uit={r.href === '/test-sample' ? '' : undefined}>{r.href === door('plan')!.lees
-          ? <a class="h-st-chip" href={lp(r.href)} data-vis-klant="plan-kies" data-vis-abo-label={nl ? 'Je abonnement' : 'Your plan'} data-vis-abo="/account/plan">{r.naam}</a>
-          : <a class="h-st-chip" href={lp(r.href)}>{r.naam}</a>}</li>)}
+        <li data-vis-uit=""><a class="h-st-chip" href={lp('/test-sample')}>{sample.cta}</a></li>
         <li><a class="h-st-chip" href={waHref(c.waText)} target="_blank" rel="noopener">{c.wa}<span set:html={ik('pijl')} /><NieuwTabblad lang={lang} /></a></li>
       </ul>
     </nav>
-  </section>
-
-  {/* ── 4 · WAT ER DAARNA GEBEURT ── de vijf stappen uit de rail van OrderFlow.astro. */}
-  <section class="h-sec h-st-daarna" aria-labelledby="st-daarna">
-    <div class="h-st-band h-in">
-      <header class="h-st-band-kop">
-        <p class="h-pil h-pil-wit"><span>{c.afterPil}</span></p>
-        <h2 id="st-daarna" class="h-kop h-h2"><span class="l">{c.afterH[0]}</span> {c.afterH[1]}</h2>
-        <p class="h-st-band-lead">{c.afterLead}</p>
-      </header>
-      <ol class="h-st-stappen" role="list">
-        {c.steps.map((s, i) => (
-          <li class="h-st-stap" style={`--d:${i}`}>
-            <p class="h-nr" aria-hidden="true"><b>{DRIE(i + 1)}</b><i></i><span>/ {DRIE(c.steps.length)}</span></p>
-            <span class="h-st-stap-naam">{s}</span>
-          </li>
-        ))}
-      </ol>
-      <ul class="h-st-feiten" role="list">
-        {c.facts.map(([h, b], i) => (
-          <li style={`--d:${i}`}><i set:html={ik('check')} /><span><b>{h}</b>{b}</span></li>
-        ))}
-      </ul>
-    </div>
   </section>
 </div>
 <HalBeweging />

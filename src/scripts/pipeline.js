@@ -223,7 +223,7 @@ import { keurBeeld } from '../data/shots.js';
    bron als Studio, de mails en /admin. Zonder DOM en zonder database. */
 import { ontbrekendeFotos, ontbrekendRegels } from '../lib/ontbreekt.js';
 /* 1.04: de sleutel en de termijn van het concept op het apparaat van de klant. */
-import { CONCEPT_SLEUTEL, CONCEPT_DAGEN } from '../data/cookies.js';
+import { CONCEPT_SLEUTEL, CONCEPT_DAGEN, TIPS_SLEUTEL } from '../data/cookies.js';
 // De EU-lijst staat op één plek. Hem hier overtypen zou betekenen dat het
 // formulier en de server het ooit oneens worden over of een land in de EU zit,
 // en dan biedt het formulier 0% aan waar de server 21% rekent.
@@ -704,6 +704,12 @@ function show(n, opts) {
   const to = Math.min(STEPS, Math.max(1, n));
   current = to;
   measure(to);
+  /* De tips van stap 2 en 5 (v28-tips = a): één keer, als de stap in beeld komt. */
+  setTimeout(() => {
+    if (current !== to) return;
+    if (to === 2) toonTip('fotos');
+    if (to === 5 && q('[data-pl-credits]') && !q('[data-pl-credits]').hidden) toonTip('credits');
+  }, 0);
   /* ── DE TERUGKNOP VAN DE BROWSER IS DE VORIGE STAP — ronde 9, 2 oktober ──
      De stappen stonden niet in de geschiedenis. Terug op stap 2 verliet het
      formulier (met de vertrekwaarschuwing ervoor), en wie dan toch ging en
@@ -2131,7 +2137,10 @@ function syncSummaries() {
     const hex = isCustom ? typed : (bgChecked.dataset.plBgHex || '');
     if (!isCustom || typed) bgText = hex ? `${name} · ${hex}` : name;
   }
-  setSummary('data-pl-sum-bg', bgText);
+  /* Werklijst 27: een beeld met een eigen achtergrond staat erachter
+     ("Wit · #FFFFFF · Op model: beige"). */
+  const perBeeld = syncBeeldBg();
+  setSummary('data-pl-sum-bg', bgText && perBeeld ? `${bgText} · ${perBeeld}` : bgText);
 
   // Model — the chosen face, or nothing, which restores "we choose one".
   const mp = q('input[name="model"]:checked');
@@ -2291,8 +2300,13 @@ function syncChannels() {
 
 function bindBackground() {
   qa('input[name="background"]').forEach((r) => {
-    r.addEventListener('change', () => syncBackground(kindOf()));
+    r.addEventListener('change', (e) => {
+      syncBackground(kindOf());
+      /* Tip 1 (v28-tips = a): na de eerste kleurkeuze van de klant zelf. */
+      if (e.isTrusted) toonTip('bgfoto');
+    });
   });
+  bindBeeldBg();
 
   const color = q('[data-pl-bg-color]');
   const text = q('[data-pl-bg-text]');
@@ -2316,6 +2330,173 @@ function bindBackground() {
     });
   }
 }
+
+/* ── EEN ANDERE ACHTERGROND PER BEELD — 15 oktober 2026 (werklijst 27) ──────
+ *
+ * In stap 1, onder de achtergrond: "Een foto een andere achtergrond geven"
+ * (BackgroundPicker.astro), een <select> per beeld. En in "Wat je krijgt"
+ * (BestelOverzicht.astro) draagt elke tegel de achtergrond van zijn beeld; een
+ * klik op een tegel opent die keuze op dat beeld. De hoeken komen erbij zodra
+ * ze zijn aangevinkt. Eist een kanaal een witte hoofdafbeelding, dan staat de
+ * voorkant vast op wit. De server houdt dezelfde regels aan
+ * (src/data/beeldachtergrond.js); dit is alleen wat de klant ziet.
+ *
+ * Geeft de regel voor de samenvatting terug: "Op model: beige", of ''.
+ */
+function huidigeAchtergrond() {
+  const r = q('input[name="background"]:checked');
+  if (!r) return '';
+  if (r.dataset.plBgCustom !== undefined) return normalizeHex(q('[data-pl-bg-text]') ? q('[data-pl-bg-text]').value : '') || '';
+  return String(r.dataset.plBgHex || '').toUpperCase();
+}
+function syncBeeldBg() {
+  const box = q('[data-pl-bgfoto]');
+  if (!box) return '';
+  const hoofd = huidigeAchtergrond() || '#FFFFFF';
+  const lock = q('[data-pl-bg-lock]');
+  const wit = !!(lock && !lock.hidden);
+  const lockNoot = q('[data-pl-bgfoto-lock]', box);
+  if (lockNoot) lockNoot.hidden = !wit;
+  const regels = [];
+  qa('[data-pl-bgfoto-beeld]', box).forEach((rij) => {
+    const id = rij.dataset.plBgfotoBeeld;
+    const sel = q('[data-pl-bgfoto-select]', rij);
+    if (!sel) return;
+    /* Een hoek alleen als hij gekozen is; een eigen hoek met de naam die de klant typte. */
+    if (rij.dataset.plBgfotoHoek) {
+      const b = q(`input[name="angle_${id}"]`);
+      const aan = !!(b && b.checked && !b.disabled);
+      rij.hidden = !aan;
+      sel.disabled = !aan;
+      if (!aan) sel.value = '';
+      const naamEl = q('[data-pl-bgfoto-naam]', rij);
+      if (naamEl && aan) naamEl.textContent = hoekNaam(id) || naamEl.dataset.plBgfotoNaam || naamEl.textContent;
+    }
+    if (id === 'front') {
+      sel.disabled = wit;
+      if (wit) sel.value = '';
+    }
+    /* v29-hex = b: "Eigen kleur…" opent het kleurvak en het veld met de code.
+       Dicht staat het veld uit, zodat er geen oude code meereist. */
+    const isEigen = sel.value === 'eigen' && !sel.disabled && !rij.hidden;
+    const eigenVak = q('[data-pl-bgfoto-eigen]', rij);
+    const hexIn = q('[data-pl-bgfoto-hex]', rij);
+    if (eigenVak) eigenVak.hidden = !isEigen;
+    if (hexIn) hexIn.disabled = !isEigen;
+    const eigen = isEigen ? normalizeHex(hexIn ? hexIn.value : '') : String(sel.value || '').toUpperCase();
+    const anders = !!eigen && eigen !== hoofd;
+    const kleur = anders ? eigen : hoofd;
+    const donker = q('[data-pl-bgfoto-donker]', rij);
+    if (donker) donker.hidden = !(isEigen && eigen && isLight(eigen) === false);
+    const staal = q('[data-pl-bgfoto-staal]', rij);
+    if (staal) staal.style.setProperty('--bgfoto', kleur);
+    rij.classList.toggle('is-anders', anders);
+    if (anders && !rij.hidden) {
+      const naam = (q('.bg-perfoto-naam', rij) || {}).textContent || id;
+      const opt = sel.options[sel.selectedIndex];
+      regels.push(isEigen
+        ? `${naam.trim()}: ${c('bgfoto.eigen')} ${eigen}`
+        : `${naam.trim()}: ${String(opt ? opt.textContent : eigen).trim().toLowerCase()}`);
+    }
+    /* De tegel in "Wat je krijgt": het vak van een catalogbeeld, of de hoek. */
+    const tegel = q(`[data-bo-beeld="${id}"] .bo-tegel`) || q(`[data-bo-hoek="${id}"] .bo-tegel`);
+    if (tegel) {
+      tegel.style.setProperty('--bo-bg', kleur);
+      tegel.classList.toggle('is-anders', anders);
+    }
+  });
+  return regels.join(' · ');
+}
+function bindBeeldBg() {
+  const box = q('[data-pl-bgfoto]');
+  if (!box) return;
+  qa('[data-pl-bgfoto-select]', box).forEach((sel) => sel.addEventListener('change', () => {
+    syncSummaries();
+    /* Net "Eigen kleur…" gekozen: meteen naar het veld met de code. */
+    if (sel.value === 'eigen') { const hx = q('[data-pl-bgfoto-hex]', sel.closest('[data-pl-bgfoto-beeld]')); if (hx && !hx.value) hx.focus(); }
+  }));
+  /* Het kleurvak en het codeveld zijn één antwoord in twee vormen, zoals bij de
+     hele bestelling (bindBackground): wat je in het ene doet, staat in het andere. */
+  qa('[data-pl-bgfoto-beeld]', box).forEach((rij) => {
+    const kleur = q('[data-pl-bgfoto-kleur]', rij);
+    const hx = q('[data-pl-bgfoto-hex]', rij);
+    if (kleur && hx) {
+      kleur.addEventListener('input', () => { hx.value = normalizeHex(kleur.value) || kleur.value; syncSummaries(); });
+      hx.addEventListener('input', () => { const h = normalizeHex(hx.value); if (h) kleur.value = h; syncSummaries(); });
+    }
+  });
+  /* De hoeken en de kanalen veranderen welke rijen er zijn en of de voorkant vastligt. */
+  if (form) form.addEventListener('change', (e) => {
+    const n = (e.target && e.target.name) || '';
+    if (/^angle_/.test(n) || n === 'channels') syncSummaries();
+  });
+  if (form) form.addEventListener('input', (e) => { if (/^angle_note_/.test((e.target && e.target.name) || '')) syncSummaries(); });
+  /* Een tegel in "Wat je krijgt" kiezen: de keuze opent op dat beeld. */
+  qa('[data-bo-beeld], [data-bo-hoek]').forEach((li) => {
+    const id = li.dataset.boBeeld || li.dataset.boHoek;
+    const rij = q(`[data-pl-bgfoto-beeld="${id}"]`, box);
+    const tegel = q('.bo-tegel', li);
+    if (!rij || !tegel) return;
+    const naam = ((q('.bo-tegel-naam', li) || {}).textContent || id).trim();
+    tegel.classList.add('is-kiesbaar');
+    tegel.setAttribute('role', 'button');
+    tegel.setAttribute('tabindex', '0');
+    tegel.setAttribute('aria-label', c('bgfoto.kies', { beeld: naam }));
+    const kies = () => {
+      const sel = q('[data-pl-bgfoto-select]', rij);
+      if (!sel || sel.disabled || rij.hidden) { box.open = true; box.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
+      box.open = true;
+      rij.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      try { sel.focus({ preventScroll: true }); } catch { sel.focus(); }
+    };
+    tegel.addEventListener('click', kies);
+    tegel.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); kies(); } });
+  });
+  syncSummaries();
+}
+
+/* ── DE UITLEG-TIPS — 15 oktober 2026 (afvinklijst 28, v28-tips = a) ─────────
+ *
+ * Elke tip is een element met data-pl-tip="<id>" in de opmaak, verborgen tot
+ * toonTip() hem laat zien. De regels (src/data/tips.js): één tegelijk, Begrepen
+ * en een kruisje, Esc sluit hem, en wat je wegklikt komt niet terug (localStorage
+ * TIPS_SLEUTEL; zonder opslag alleen dit tabblad). Hij staat in de stroom van
+ * de pagina en dekt dus nooit een knop af.
+ */
+const tipsWegNu = new Set();
+function tipWeg(id) {
+  if (tipsWegNu.has(id)) return true;
+  try { const lijst = JSON.parse(localStorage.getItem(TIPS_SLEUTEL) || '[]'); return Array.isArray(lijst) && lijst.includes(id); } catch { return false; }
+}
+function tipWegklikken(el) {
+  const id = el.dataset.plTip;
+  el.hidden = true;
+  tipsWegNu.add(id);
+  try {
+    const lijst = JSON.parse(localStorage.getItem(TIPS_SLEUTEL) || '[]');
+    const nieuw = Array.isArray(lijst) ? lijst.filter((x) => typeof x === 'string').slice(-20) : [];
+    if (!nieuw.includes(id)) nieuw.push(id);
+    localStorage.setItem(TIPS_SLEUTEL, JSON.stringify(nieuw));
+  } catch { /* geen opslag: dan alleen dit tabblad */ }
+}
+function toonTip(id) {
+  const el = q(`[data-pl-tip="${id}"]`);
+  if (!el || !el.hidden || tipWeg(id)) return;
+  /* Eén tegelijk. */
+  if (qa('[data-pl-tip]').some((x) => !x.hidden)) return;
+  /* Niet als hij in een verborgen deel van het formulier staat. */
+  if (el.closest('[hidden]') && el.closest('[hidden]') !== el) return;
+  el.hidden = false;
+  if (!el.dataset.plTipGebonden) {
+    el.dataset.plTipGebonden = '1';
+    qa('[data-pl-tip-weg]', el).forEach((b) => b.addEventListener('click', () => tipWegklikken(el)));
+  }
+}
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const open = qa('[data-pl-tip]').find((x) => !x.hidden);
+  if (open) tipWegklikken(open);
+});
 
 /** Check the custom radio (if it is not already) and re-render from it. */
 function pickCustom() {
@@ -7226,7 +7407,7 @@ function syncCredits() {
       if (p) {
         zetRegel(bijEl, vul(t.tekort, { tekort, pakket: p.credits, bedrag: euro(p.euros) }),
           `/account/plan/?pakket=${p.credits}&verder=${terug}#bijkopen`, t.bijkoopLink);
-        if (p.hint) zetRegel(hintEl, vul(t.hint, { plan: p.hint.naam, bedrag: euro(p.hint.bedrag), credits: p.hint.credits }), '/account/plan/#je-plan', t.hintLink);
+        if (p.hint) zetRegel(hintEl, vul(t.hint, { plan: p.hint.naam, bedrag: euro(p.hint.bedrag), credits: p.hint.credits }), `/account/plan/?tab=plan${p.hint.naar ? `&naar=${encodeURIComponent(p.hint.naar)}` : ''}#overstappen`, t.hintLink);
       } else if (ruimte >= tekort) {
         zetRegel(bijEl, vul(t.tekortAlgemeen, { tekort, ruimte }), `/account/plan/?verder=${terug}#bijkopen`, t.bijkoopLink);
       }
@@ -7247,6 +7428,7 @@ function syncCredits() {
   }
   box.classList.toggle('is-credits', metCredits);
   box.hidden = false;
+  if (current === 5) toonTip('credits');
   mollie(!metCredits);
   creditsKosten = metCredits ? kost.credits : 0;
   zetGeldRegels();
@@ -7425,6 +7607,9 @@ function applyAccount(me) {
   /* Een eigen merkmodel (?face=c<id>) bestaat pas nu; de link gaat vóór de
      brand kit, want dat is een keuze van zojuist (punt 3.07). */
   applyLookUitUrl({ alleenGezicht: true });
+  /* Werklijst 33: "Opnieuw bestellen met alle instellingen" (?van=<id>), als
+     laatste: de keuzes van die bestelling gaan voor de brand kit. */
+  applyVanBestelling(me);
 
   // The collapse needs the fields it hides to actually be filled. A saved
   // record missing a name is a saved record that cannot answer step 3, and
@@ -7819,25 +8004,7 @@ function applyLookUitUrl({ alleenGezicht = false } = {}) {
     r.dispatchEvent(new Event('change', { bubbles: true }));
   };
   if (!alleenGezicht) {
-    const bg = String(qs.get('bg') || '').replace(/^#/, '').toUpperCase();
-    if (/^[0-9A-F]{6}$/.test(bg)) {
-      const hex = `#${bg}`;
-      const vast = qa('input[name="background"]').find((r) => (r.dataset.plBgHex || '').toUpperCase() === hex);
-      if (vast) kies(vast);
-      else {
-        /* Een eigen kleur: de eigen-kleurradio, met de waarde in de twee velden
-           (zelfde vorm als applySavedBackground()). */
-        const eigen = q('input[name="background"][data-pl-bg-custom]');
-        if (eigen && !eigen.disabled) {
-          const text = q('[data-pl-bg-text]');
-          const color = q('[data-pl-bg-color]');
-          if (text) text.value = hex;
-          if (color) color.value = hex;
-          kies(eigen);
-          syncBackground(kindOf());
-        }
-      }
-    }
+    kiesAchtergrond(String(qs.get('bg') || ''), kies);
     const ratio = String(qs.get('ratio') || '');
     if (/^[a-z0-9-]{2,16}$/.test(ratio)) kies(qa('input[name="ratio"]').find((r) => r.value === ratio));
   }
@@ -7850,6 +8017,134 @@ function applyLookUitUrl({ alleenGezicht = false } = {}) {
     }
   }
   syncSummaries();
+}
+
+/** Een achtergrond als hexcode kiezen: een vaste tegel als die er is, anders de
+    eigen kleur (zelfde vorm als applySavedBackground()). true als het lukte. */
+function kiesAchtergrond(waarde, kies) {
+  const bg = String(waarde || '').replace(/^#/, '').toUpperCase();
+  if (!/^[0-9A-F]{6}$/.test(bg)) return false;
+  const hex = `#${bg}`;
+  const vast = qa('input[name="background"]').find((r) => (r.dataset.plBgHex || '').toUpperCase() === hex);
+  if (vast) { if (vast.disabled) return false; kies(vast); return true; }
+  const eigen = q('input[name="background"][data-pl-bg-custom]');
+  if (!eigen || eigen.disabled) return false;
+  const text = q('[data-pl-bg-text]');
+  const color = q('[data-pl-bg-color]');
+  if (text) text.value = hex;
+  if (color) color.value = hex;
+  kies(eigen);
+  syncBackground(kindOf());
+  return true;
+}
+
+/* ── OPNIEUW BESTELLEN MET ALLE INSTELLINGEN — 15 oktober 2026 (werklijst 33) ──
+ *
+ * De link in Studio (herbestelAllesKnop() in src/lib/herbestel.js) opent dit
+ * formulier met ?van=<id>. Voor een ingelogde klant haalt dit de instellingen van
+ * die bestelling op (GET /account/orders/<id>/instellingen, alleen de eigenaar)
+ * en zet ze in het formulier: de kanalen (eerst, want een marktplaats zet de
+ * grond vast), de look, de achtergrond, de verhouding, het gezicht, de extra
+ * hoeken met wat de klant bij een eigen hoek typte, de notitie en het aantal
+ * outfits. Daarna zegt het blok bovenaan wat er overgenomen is, zodat de klant
+ * het naloopt; het blok is weg te klikken. Producten, foto's en voorrang gaan
+ * niet mee.
+ *
+ * DEZELFDE DISCIPLINE ALS applyLookUitUrl(): elke waarde wordt alleen vergeleken
+ * met een veld dat de pagina zelf tekent. Wat er niet (meer) is, wordt
+ * overgeslagen. Uitgelogd of een bestelling van iemand anders: niets.
+ */
+function applyVanBestelling(me) {
+  let id = 0;
+  try { id = Number.parseInt(new URLSearchParams(location.search).get('van') || '', 10) || 0; } catch { return; }
+  const box = q('[data-pl-van]');
+  if (!id || id < 1 || !box || !me || typeof fetch !== 'function') return;
+  const wat = q('[data-pl-van-wat]', box);
+  const toon = (tekst) => {
+    if (wat) wat.textContent = tekst;
+    box.hidden = false;
+    const sluit = q('[data-pl-van-sluit]', box);
+    if (sluit && !sluit.dataset.plGebonden) {
+      sluit.dataset.plGebonden = '1';
+      sluit.addEventListener('click', () => { box.hidden = true; });
+      box.addEventListener('keydown', (e) => { if (e.key === 'Escape') box.hidden = true; });
+    }
+  };
+  fetch(`/account/orders/${id}/instellingen`, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((inst) => {
+      if (!inst || !inst.dienst) { toon(c('van.fout')); return; }
+      if (inst.dienst !== kindOf()) return;
+      const kies = (r) => {
+        if (!r || r.disabled) return false;
+        if (!r.checked) { r.checked = true; r.dispatchEvent(new Event('change', { bubbles: true })); }
+        return true;
+      };
+      const delen = [];
+      /* De kanalen eerst: precies die van toen. */
+      const kanalen = Array.isArray(inst.kanalen) ? inst.kanalen : [];
+      const vakjes = qa('input[name="channels"]');
+      if (vakjes.length && kanalen.length) {
+        let n = 0;
+        vakjes.forEach((b) => {
+          const aan = kanalen.includes(b.value);
+          if (b.disabled) return;
+          if (b.checked !== aan) { b.checked = aan; b.dispatchEvent(new Event('change', { bubbles: true })); }
+          if (aan) n += 1;
+        });
+        if (n) delen.push(n === 1 ? c('van.kanaal1') : c('van.kanaalN', { n }));
+      }
+      if (inst.style && kies(qa('input[name="style"]').find((x) => x.value === inst.style))) delen.push(c('van.look'));
+      if (inst.bg && kiesAchtergrond(inst.bg, kies)) delen.push(c('van.achtergrond'));
+      if (inst.ratio && kies(qa('input[name="ratio"]').find((x) => x.value === inst.ratio))) delen.push(c('van.verhouding'));
+      if (inst.model) {
+        const r = qa('input[name="model"]').find((x) => x.value === inst.model);
+        if (kies(r)) { paintModelDefaults(); delen.push(c('van.model')); }
+      }
+      const namen = [];
+      for (const h of (Array.isArray(inst.hoeken) ? inst.hoeken : [])) {
+        const b = q(`input[name="angle_${h.id}"]`);
+        if (!b || b.disabled) continue;
+        const veld = q(`input[name="angle_note_${h.id}"]`);
+        if (veld && h.note && !veld.value) { veld.value = String(h.note); veld.dispatchEvent(new Event('input', { bubbles: true })); }
+        kies(b);
+        namen.push(hoekNaam(h.id) || h.id);
+      }
+      if (namen.length) delen.push(namen.length === 1 ? c('van.hoek1', { namen: namen[0] }) : c('van.hoekN', { n: namen.length, namen: namen.join(', ') }));
+      /* De achtergrond per foto (werklijst 27, en v29-hex = b: ook een eigen
+         kleur). Na de hoeken, want een hoek heeft pas een rij als hij gekozen is. */
+      syncSummaries();
+      let perBeeld = 0;
+      for (const b of (Array.isArray(inst.beelden) ? inst.beelden : [])) {
+        const hex = normalizeHex(b && b.hex);
+        const rij = hex && q(`[data-pl-bgfoto-beeld="${String(b.sleutel || '').replace(/[^a-z0-9-]/g, '')}"]`);
+        const sel = rij && q('[data-pl-bgfoto-select]', rij);
+        if (!sel || sel.disabled || rij.hidden) continue;
+        const aanbevolen = [...sel.options].find((o) => String(o.value).toUpperCase() === hex);
+        if (aanbevolen) sel.value = aanbevolen.value;
+        else {
+          const hx = q('[data-pl-bgfoto-hex]', rij);
+          const kl = q('[data-pl-bgfoto-kleur]', rij);
+          if (!hx) continue;
+          sel.value = 'eigen'; hx.disabled = false; hx.value = hex; if (kl) kl.value = hex;
+        }
+        perBeeld += 1;
+      }
+      if (perBeeld) delen.push(perBeeld === 1 ? c('van.beeld1') : c('van.beeldN', { n: perBeeld }));
+      const noot = q('textarea[name="message"]');
+      if (noot && inst.notitie && !noot.value) { noot.value = String(inst.notitie); noot.dispatchEvent(new Event('input', { bubbles: true })); delen.push(c('van.notitie')); }
+      const outfit = q('select[name="outfit_count"]');
+      if (outfit && inst.outfits && [...outfit.options].some((o) => o.value === String(inst.outfits))) {
+        outfit.value = String(inst.outfits);
+        outfit.dispatchEvent(new Event('change', { bubbles: true }));
+        delen.push(c('van.outfits'));
+      }
+      syncSummaries();
+      const en = c('van.en');
+      const lijst = delen.length > 1 ? `${delen.slice(0, -1).join(', ')} ${en} ${delen[delen.length - 1]}` : (delen[0] || c('van.niets'));
+      toon(c('van.wat', { ref: String(inst.ref || ''), lijst }));
+    })
+    .catch(() => toon(c('van.fout')));
 }
 
 function applyBrandKit(me) {

@@ -82,6 +82,9 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
         {v.herbestel.proef && v.herbestel.delen.length > 0 && <p class="st-meta">{v.herbestel.delen.join(' · ')}</p>}
         {(v.herbestel.proef || v.herbestel.credits) && <p class="st-herbestel-regel">{[v.herbestel.proef ? v.herbestel.vanaf : '', v.herbestel.credits].filter(Boolean).join(' · ')}</p>}
         <p class="st-meta">{v.herbestel.uitleg}</p>
+        {v.herbestelAlles && (
+          <p class="st-herbestel-alles"><a class="st-link" href={v.herbestelAlles.href}>{v.herbestelAlles.label} →</a> <span class="st-meta">{v.herbestelAlles.uitleg}</span></p>
+        )}
       </section>
     )}
     </div>
@@ -100,8 +103,14 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
       const f = q.get('fotos');
       const n = Number(f);
       const mis = Number(q.get('mis')) || 0;
-      const tekst = f === 'dicht' ? t.fotosDicht : f === 'dag' ? t.fotosDag : n > 0 ? (mis > 0 ? t.fotosDeels(n, mis) : t.fotosOk(n)) : t.fotosNiets;
-      return <p class={`st-melding ${n > 0 && !mis ? 'is-ok' : 'is-warn'}`} role="status">{tekst}</p>;
+      /* Sinds 15 oktober (werklijst 14) ook: vervangen (vv) en verwijderd (weg). */
+      const vv = Number(q.get('vv')) || 0;
+      const weg = Number(q.get('weg')) || 0;
+      const iets = n > 0 || vv > 0 || weg > 0;
+      const tekst = f === 'dicht' ? t.fotosDicht : f === 'dag' ? t.fotosDag : iets
+        ? [n > 0 ? (mis > 0 ? t.fotosDeels(n, mis) : t.fotosOk(n)) : '', vv > 0 ? t.fotosVervangen(vv) : '', weg > 0 ? t.fotosWeg(weg) : '', !n && mis > 0 ? t.fotosNiets : ''].filter(Boolean).join(' ')
+        : t.fotosNiets;
+      return <p class={`st-melding ${iets && !mis ? 'is-ok' : 'is-warn'}`} role="status">{tekst}</p>;
     })()}
     {/* Punt 2.05 (8 oktober 2026): per product de vier vakken, gevuld of leeg
         met een eigen bestandsveld, en bovenaan de ene lijst "wat ontbreekt".
@@ -120,7 +129,7 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
       </form>
     ) : (() => {
       const product = (p) => (
-        <fieldset class="st-vak-product">
+        <fieldset class="st-vak-product" id={p.anker}>
           <legend class="st-vak-legend">{p.label}</legend>
           <ul class="st-vakken">
             {p.vakken.map((vak) => (
@@ -138,6 +147,29 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
               </li>
             ))}
           </ul>
+          {/* Extra foto's: vervangen of verwijderen (werklijst 14, 15 oktober 2026).
+              "Verwijderen" is een verzendknop van ditzelfde formulier met het
+              nummer van de foto als waarde; wat je verder koos, gaat mee. */}
+          {p.extra.length > 0 && (
+            <ul class="st-vakken is-extra">
+              {p.extra.map((x) => (
+                <li class="st-vak is-gevuld is-extra">
+                  <span class="st-vak-beeld" aria-hidden="true">
+                    {x.gevuld.beeld ? <img src={x.gevuld.href} alt="" loading="lazy" decoding="async" /> : <span class="st-vak-ext">{x.gevuld.ext || '—'}</span>}
+                  </span>
+                  <span class="st-vak-naam">{x.naam}</span>
+                  <label class="st-vak-vervang">
+                    <span>{x.vervangLabel}</span>
+                    <input class="st-vak-veld" type="file" name={x.vervang} aria-label={x.vervangAria} accept=".jpg,.jpeg,.png,.webp,.avif,.heic,.heif,image/jpeg,image/png,image/webp,image/avif,image/heic" />
+                  </label>
+                  <details class="st-vak-weg">
+                    <summary>{x.wegLabel}</summary>
+                    <button class="btn btn-ghost btn-sm" type="submit" name="weg" value={String(x.id)} aria-label={x.wegAria} formnovalidate>{x.wegJa}</button>
+                  </details>
+                </li>
+              ))}
+            </ul>
+          )}
           {p.ander && (
             <label class="st-vak-ander">
               <span>{p.ander.label}</span>
@@ -157,6 +189,7 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
             </div>
           )}
           <p>{v.fotos.p}</p>
+          {v.fotos.vast && <p class="st-meta st-vak-vast">{v.fotos.vast}</p>}
           {v.fotos.producten.map(product)}
           {v.fotos.compleet.length > 0 && (
             <details class="st-vak-compleet" open={v.fotos.producten.length === 0}>
@@ -234,6 +267,12 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
       </form>
     )}
 
+    {/* Werklijst 33: bij een bestelling die nog loopt staat "Opnieuw bestellen met
+        alle instellingen" hier (bij een geleverde staat hij bij "Meer producten
+        in deze look?"). */}
+    {!v.herbestel && v.herbestelAlles && (
+      <p class="st-herbestel-alles"><a class="st-link" href={v.herbestelAlles.href}>{v.herbestelAlles.label} →</a> <span class="st-meta">{v.herbestelAlles.uitleg}</span></p>
+    )}
     {/* Eén vaste weg naar een mens, onder elke bestelling (ronde 8, S-B17). */}
     {v.contact && (
       <p class="st-contact">

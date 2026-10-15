@@ -187,7 +187,9 @@ const aria = nl ? `Uitleg over ${over}` : `More about ${over}`;
     letter-spacing: normal;
     word-spacing: normal;
     font-variant: normal;
-    max-inline-size: min(34ch, calc(100vw - 2rem));
+    /* 42ch (was 34): acht à tien woorden per regel, zoals de andere kleine tekst
+       (afvinklijst 29, k-maat). */
+    max-inline-size: min(42ch, calc(100vw - 2rem));
     padding: .7rem .85rem;
     border: 1px solid var(--line, #DFDFDF);
     border-radius: 0;

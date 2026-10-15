@@ -138,14 +138,17 @@ const meet = (page, selectors) => page.evaluate((sels) => {
   return { geteld, fout: fout.slice(0, 6) };
 }, selectors);
 
-const STUDIO_BLOKKEN = ['.st-abo-stand', '.st-abo-saldo', '.st-abo-bestel', '.st-boek', '#je-plan', '.st-bespreek', '.ck', '.st-saldostrook'];
+const STUDIO_BLOKKEN = ['.st-abo-tabs', '.st-abo-stand', '.st-abo-saldo', '.st-abo-bestel', '.st-boek', '#je-plan', '.st-bespreek', '.ck', '.st-saldostrook', '.st-tabelvlak'];
 const ADMIN_BLOKKEN = ['#abonnement'];
 
 try {
   for (const thema of ['licht', 'donker']) {
     for (const breed of [390, 1280]) {
       for (const [stand, k] of Object.entries(KLANTEN)) {
-        const ctx = await browser.newContext({ viewport: { width: breed, height: breed < 600 ? 844 : 900 } });
+        /* Elke context een eigen adres: sinds de tabs (15 oktober 2026) laadt
+           deze toets vier keer zoveel Studio-pagina's, en de paginalimiet
+           (PAGE_LIMIT in account.js) telt per adres. */
+        const ctx = await browser.newContext({ viewport: { width: breed, height: breed < 600 ? 844 : 900 }, extraHTTPHeaders: { 'CF-Connecting-IP': `10.49.${breed % 250}.${(thema === 'licht' ? 0 : 100) + Object.keys(KLANTEN).indexOf(stand)}` } });
         await ctx.addCookies([
           { name: 'vis_account', value: k.token, domain: host, path: '/' },
           { name: 'vis_lang', value: 'nl', domain: host, path: '/' },
@@ -155,17 +158,22 @@ try {
         await p.route(/^https?:\/\/(?!localhost|127\.0\.0\.1)/, (r) => r.abort());
         await p.goto(`${studio.url}/account/plan`, { waitUntil: 'load' });
         const label = `${stand} ${breed}px ${thema}`;
-        ok(`/account/plan ${label}: saldo, bestelknoppen, creditboek en je plan`,
-          await p.evaluate(() => ['.st-abo-saldo', '.st-abo-knoppen', '.st-boek', '#je-plan'].every((s) => !!document.querySelector(s))), true);
-        ok(`/account/plan ${label}: geen horizontale scroll`, await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), true);
-        const m = await meet(p, STUDIO_BLOKKEN);
-        ok(`/account/plan ${label}: ${m.geteld} teksten ≥ 11,5 px en ≥ 4,5:1`, m.fout, []);
         if (stand === 'pauze' || stand === 'teruggeboekt') {
           ok(`/account/plan ${label}: de stand staat bovenaan`, await p.evaluate(() => !!document.querySelector('.st-abo-stand')), true);
         }
         if (stand === 'pauze') ok(`/account/plan ${label}: "bespreek je credits" groot in beeld (reden credits)`, await p.evaluate(() => !!document.querySelector('.st-bespreek.is-nadruk')), true);
         if (stand === 'bijna') ok(`/account/plan ${label}: wat bijna vervalt valt op`, await p.evaluate(() => !!document.querySelector('.st-abo-verval.is-bijna')), true);
-        await p.screenshot({ path: path.join(OUT, `b3-plan-${stand}-${breed}-${thema}.png`), fullPage: true });
+        /* Vier tabs sinds 15 oktober 2026 (v28-abotabs = a): elke tab gemeten. */
+        const WAT = { '': ['.st-abo-tabs', '.st-abo-saldo', '.st-abo-knoppen'], credits: ['.st-boek', '.ck'], facturen: ['#abo-facturen-h'], plan: ['#je-plan'] };
+        for (const [tab, moet] of Object.entries(WAT)) {
+          if (tab) await p.goto(`${studio.url}/account/plan?tab=${tab}`, { waitUntil: 'load' });
+          const naam = tab || 'overzicht';
+          ok(`/account/plan ${label} · ${naam}: ${moet.join(', ')}`, await p.evaluate((m) => m.every((s) => !!document.querySelector(s)), moet), true);
+          ok(`/account/plan ${label} · ${naam}: geen horizontale scroll`, await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), true);
+          const m = await meet(p, STUDIO_BLOKKEN);
+          ok(`/account/plan ${label} · ${naam}: ${m.geteld} teksten ≥ 11,5 px en ≥ 4,5:1`, m.fout, []);
+          await p.screenshot({ path: path.join(OUT, `b3-plan-${stand}-${naam}-${breed}-${thema}.png`), fullPage: true });
+        }
         if (stand === 'actief') {
           /* Opzeggen openklappen: het aanbod om te pauzeren, de redenen, de knoppen. */
           await p.click('#opzeggen > summary');

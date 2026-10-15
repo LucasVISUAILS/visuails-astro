@@ -105,7 +105,10 @@ console.log('\n6 · de roze-jeans-set op lichtgrijs, gemeten');
   ok('  je vaste look staat op lichtgrijs', studio.includes(`fill="${GROND}"`) && /Lichtgrijs/.test(studio));
   ok('  "Eén map" toont het T-shirt van 1800 px, en de map heet zo', /h-sd-map[^]*?catalog-after\.(webp|avif)/.test(studio) && studio.includes('01 - Gewassen T-shirt/'));
   const lap = fs.readFileSync(path.join(DIST, 'index.html'), 'utf8');
-  ok('de laptop: de modelfoto vult het vak (sc-vul)', /class="sc-vul"[^>]*ba2-na-model-grijs|ba2-na-model-grijs[^>]*class="sc-vul"/.test(lap) || /sc-vul/.test(lap));
+  /* 15 okt 08:14: de laptop toont kant-en-klare standen (src/data/halStanden.js), met de
+     catalogbeelden op 1:1 in het vak; de `vul` van 05:59 is opgegaan in dat vierkant.
+     Wat er in de foto's staat, kijkt tests/laptop-standen.test.mjs na. */
+  ok('de laptop: de standen staan erin als foto, de eerste meteen', /data-hl-stand="0"/.test(lap) && /\/img\/hal\/stand\/en-catalog-0-/.test(lap));
 }
 
 /* ── 8 · DE MODELPORTRETTEN: ÉÉN GROND (06:06) ─────────────────────────────── */
@@ -161,16 +164,30 @@ console.log('\n9 · stap 2 met de hand');
   for (const [bestand, taal] of [['nl/index.html', 'nl'], ['index.html', 'en']]) {
     const h = fs.readFileSync(path.join(DIST, bestand), 'utf8');
     const maak = h.slice(h.indexOf('h-well h-maak'), h.indexOf('h-well h-keur'));
-    ok(`${taal}: de pen, de ankers, het penseel en de hulplijnen staan in stap 2`, maak.includes(`d="${PAD}"`) && (maak.match(/<rect /g) || []).length === ANKERS.length && maak.includes('h-maak-kwast') && (maak.match(/<line /g) || []).length === 3);
+    ok(`${taal}: de pen, de ankers, het penseel en de hulplijnen staan in stap 2`, maak.includes(`d="${PAD}"`) && (maak.slice(maak.indexOf('h-maak-ankers'), maak.indexOf('</g>', maak.indexOf('h-maak-ankers'))).match(/<rect /g) || []).length === ANKERS.length && maak.includes('h-maak-kwast') && (maak.slice(maak.indexOf('h-maak-lijnen'), maak.indexOf('</g>', maak.indexOf('h-maak-lijnen'))).match(/<line /g) || []).length === 3);
     const lijst = maak.slice(maak.indexOf('h-lagen'), maak.indexOf('</ol>'));
-    ok(`${taal}:   vier lagen, met ${GROND_HEX()} en de dekking`, (lijst.match(/<li[ >]/g) || []).length === 4 && lijst.includes('h-dek') && lijst.includes('#EFEFEF'), String((lijst.match(/<li[ >]/g) || []).length));
+    /* Vijf sinds 15 oktober (werklijst 40): eerst "Nagekeken" (knoop, stiksel, kleur). */
+    ok(`${taal}:   vijf lagen: nagekeken, dan uitgeknipt, ${GROND_HEX()}, de dekking`, (lijst.match(/<li[ >]/g) || []).length === 5 && lijst.includes('h-lagen-punten') && lijst.includes('h-dek') && lijst.includes('#EFEFEF'), String((lijst.match(/<li[ >]/g) || []).length));
+    /* 15 oktober 11:59: rechtzetten (kader, acht grepen, de muis), opbouwen (het penseel
+       met een zachte rand), nakijken (een loep die vergroot, met je rechtgezette foto). */
+    ok(`${taal}:   eerst je telefoonfoto in het vierkante vak, het kader met acht grepen en de muis`, /h-maak-laag">(<picture>[\s\S]{0,400}?)?<img src="\/img\/ba2-voor-front\./.test(maak) && maak.includes('h-maak-doos') && (maak.match(/class="h-maak-kader/g) || []).length === 2 && (maak.match(/class="h-maak-greep"/g) || []).length === 8 && maak.includes('h-maak-muis'));
+    ok(`${taal}:   het penseel bouwt het beeld op (zachte rand), de loep vergroot je foto en ons beeld`, maak.includes('h-maak-bouwkwast') && maak.includes('mask="url(#h-maak-bouw)"') && maak.includes('filter="url(#h-maak-zacht)"') && maak.includes('href="/img/ba2-voor-front-recht.webp"') && (maak.match(/class="h-maak-lp-in"/g) || []).length === 2 && maak.includes('h-maak-lp-vink') && !maak.includes('h-maak-ref'));
+    ok(`${taal}:   het label noemt de drie handelingen`, (maak.match(/<span class="h-maak-doe[^>]*>((?:<span>[^<]+<\/span>){3})<\/span>/) || [])[1]?.split('</span>').filter(Boolean).length === 3);
     ok(`${taal}:   het beeld vóór de afwerking (op wit) en de achterkant voor de vergelijking`, /h-maak-begin[^>]*ba2-na-front\.(webp|avif)|ba2-na-front\.(webp|avif)[^>]*h-maak-begin/.test(maak) || (maak.includes('h-maak-begin') && maak.includes('ba2-na-front.')));
-    ok(`${taal}:   de stap duurt 7,8 s`, h.includes('data-uitleg-maat="2200 7800 2600"'));
+    ok(`${taal}:   de stap duurt 12,1 s (4,25 s rechtzetten, opbouwen en nakijken)`, h.includes('data-uitleg-maat="3000 12100 3600"'));
   }
   const css = lees('src/styles/hal.css');
   ok('de pauzeknop zet ook deze animaties stil', css.includes('.hal .h-hoe[data-uitleg-staat="pauze"] .h-maak *,') && css.includes('animation-play-state: paused !important;'));
   ok('zonder uitleg (en bij minder beweging) staat het gereedschap er niet', /\.hal \.h-maak-pad \{[^}]*opacity: 0;/.test(css) && /\.hal \.h-maak-pen, \.hal \.h-maak-kwast \{ opacity: 0;/.test(css) && /\.hal \.h-maak-lijnen line \{[^}]*opacity: 0;/.test(css));
-  ok('  en een browser zonder offset-path laat de cursors weg', css.includes("@supports not (offset-path: path('M0 0')) { .hal .h-maak-pen, .hal .h-maak-kwast { display: none; } }"));
+  ok('  en een browser zonder offset-path laat de cursors weg', css.includes("@supports not (offset-path: path('M0 0')) { .hal .h-maak-pen, .hal .h-maak-kwast, .hal .h-maak-bouwkwast { display: none; } }"));
+  ok('  ook de foto, het kader, de grepen, de muis, het opgebouwde beeld, de loep en het label niet', /\.hal \.h-maak-laag \{[^}]*opacity: 0;/.test(css) && /\.hal \.h-maak-kader \{[^}]*opacity: 0;/.test(css) && /\.hal \.h-maak-greep rect \{[^}]*opacity: 0;/.test(css) && /\.hal \.h-maak-muis \{ opacity: 0; \}/.test(css) && /\.hal \.h-maak-bouwbeeld \{ opacity: 0; \}/.test(css) && /\.hal \.h-maak-lp \{ opacity: 0; \}/.test(css) && /\.hal \.h-maak-doe \{[^}]*opacity: 0;/.test(css));
+  /* De gegenereerde tijden: alles onder .hal, en de transform in % en cqw (geen px, dus op elke breedte gelijk). */
+  const mr = fs.readFileSync(path.join(ROOT, 'src', 'styles', 'maak-recht.css'), 'utf8');
+  const sel = mr.split('\n').filter((r) => r.includes('{') && !r.startsWith('@') && !/^\s+[0-9.]+%/.test(r) && !r.startsWith('/*'));
+  ok('maak-recht.css: elke regel onder .hal, geen :is()', sel.length > 20 && sel.every((r) => r.startsWith('.hal ')) && !mr.includes(':is('), sel.find((r) => !r.startsWith('.hal ')) || '');
+  const naar = (mr.match(/@keyframes h-maak-recht \{[\s\S]*?100% \{ transform: ([^;]+);/) || [])[1] || '';
+  ok('  het rechtzetten rekent in % en cqw, functie voor functie', /^translate\([-0-9.]+%, [-0-9.]+%\) rotate\([-0-9.]+deg\) skewX\([-0-9.]+deg\) scale\([0-9.]+, [0-9.]+\) perspective\([0-9.]+cqw\) rotateX\([-0-9.]+deg\) rotateY\([-0-9.]+deg\)$/.test(naar), naar);
+  ok('  Safari (zonder d) laat de lijn van het kader weg, de grepen blijven', css.includes("@supports not (d: path('M0 0')) { .hal .h-maak-kader { display: none; } }"));
 }
 function GROND_HEX() { return '#EFEFEF'; }
 
@@ -250,8 +267,12 @@ for (const breed of [1280, 1440, 1920]) {
   const r = await page.evaluate(() => {
     const R = (e) => (e ? e.getBoundingClientRect() : null);
     const tekstR = Math.max(...[...document.querySelectorAll('.h-open-tekst > *')].map((e) => e.getBoundingClientRect().right));
-    const lap = R(document.querySelector('.hl-scherm-lap'));
-    const fon = R(document.querySelector('.hl-scherm-fon'));
+    /* De schermen zitten sinds 15 oktober in de foto zelf; hun plek volgt uit de doos
+       en de gemeten hoeken van src/data/halLaptop.js (laptop 536,74 tot 1620,17 breed en
+       tot 1171,48 hoog, telefoon tot 1905,49, op een foto van 2304 × 1728). */
+    const d = R(document.querySelector('[data-hl-doos]'));
+    const lap = d && { left: d.left + d.width * 536.74 / 2304, bottom: d.top + d.height * 1171.48 / 1728 };
+    const fon = d && { right: d.left + d.width * 1905.49 / 2304 };
     const bed = R(document.querySelector('.hl-bediening'));
     const uitleg = R(document.querySelector('.hl-uitleg'));
     const opening = R(document.querySelector('.h-opening'));
@@ -274,19 +295,31 @@ console.log('\n9b · stap 2 in de browser');
     const dek = document.querySelector('#hoe .h-dek');
     return {
       pad: Number(st('.h-maak-pad')?.opacity), pen: Number(st('.h-maak-pen')?.opacity), echt: Number(st('.h-maak-echt')?.opacity),
-      begin: Number(st('.h-maak-begin')?.opacity), vink4: st('.h-lagen li:nth-child(4) i')?.transform,
+      begin: Number(st('.h-maak-begin')?.opacity), vink4: st('.h-lagen li:nth-child(5) i')?.transform,
       dek: dek ? getComputedStyle(dek).getPropertyValue('--dek').trim() : null, klassen: document.querySelector('#hoe').className,
     };
   });
   await page.evaluate(() => document.querySelector('#hoe')?._u?.opnieuw());
   await page.waitForFunction(() => document.querySelector('#hoe').classList.contains('u-s2'), null, { timeout: 12000 }).catch(() => {});
+  /* Sinds 15 oktober 11:59 begint stap 2 met 4,25 s rechtzetten, opbouwen en
+     nakijken: de pen komt pas na 4,5 s. Op 0,9 s: het kader, de muis, de foto kantelt. */
+  const o = () => page.evaluate(() => { const g = (s) => Number(getComputedStyle(document.querySelector(`#hoe ${s}`)).opacity); return { foto: g('.h-maak-laag'), kader: g('.h-maak-greep rect'), muis: g('.h-maak-muis'), kwast: g('.h-maak-bouwkwast'), loep: g('.h-maak-lp'), pen: g('.h-maak-pen'), echt: g('.h-maak-echt'), schuin: getComputedStyle(document.querySelector('#hoe .h-maak-laag')).transform !== 'none' }; });
+  await page.waitForTimeout(900);
+  const recht = await o();
+  ok('tijdens stap 2, eerst: je foto in het kader, de muis zet hem recht; nog geen pen en geen eindbeeld', recht.foto > 0.9 && recht.kader > 0.9 && recht.muis > 0.9 && recht.schuin && recht.pen < 0.05 && recht.echt < 0.05, JSON.stringify(recht));
   await page.waitForTimeout(1000);
+  const bouw = await o();
+  ok('  dan het penseel dat het beeld opbouwt', bouw.kwast > 0.9 && bouw.kader < 0.05, JSON.stringify(bouw));
+  await page.waitForTimeout(1100);
+  const loep = await o();
+  ok('  dan de loep langs knoop, stiksel en kleur', loep.loep > 0.9 && loep.kwast < 0.05, JSON.stringify(loep));
+  await page.waitForTimeout(2100);
   const tijdens = await stand();
-  ok('tijdens stap 2: de pen trekt de omtrek, het geleverde beeld staat er nog niet', tijdens.pad > 0.9 && tijdens.pen > 0.9 && tijdens.echt < 0.05 && tijdens.begin > 0.9, JSON.stringify(tijdens));
+  ok('tijdens stap 2: de pen trekt de omtrek, het geleverde beeld staat er nog niet', tijdens.pad > 0.9 && tijdens.pen > 0.9 && tijdens.echt < 0.05, JSON.stringify(tijdens));
   await page.evaluate(() => document.querySelector('#hoe')?._u?.stop());
   await page.waitForTimeout(300);
   const klaar = await stand();
-  ok('na afloop: het geleverde beeld, geen gereedschap, vier vinkjes, dekking 20%', klaar.pad === 0 && klaar.pen === 0 && klaar.echt === 1 && klaar.begin === 0 && klaar.vink4 === 'none' && klaar.dek === '20', JSON.stringify(klaar));
+  ok('na afloop: het geleverde beeld, geen gereedschap, vijf vinkjes, dekking 20%', klaar.pad === 0 && klaar.pen === 0 && klaar.echt === 1 && klaar.begin === 0 && klaar.vink4 === 'none' && klaar.dek === '20', JSON.stringify(klaar));
   ok('  geen scriptfout', fouten.length === 0, fouten.join(' | '));
   await ctx.close();
 }
@@ -397,10 +430,10 @@ for (const [url, taal] of [['/nl/start/catalog/', 'nl'], ['/start/catalog/', 'en
   let s = await stap1(page);
   ok('uitgelogd: de extra hoek kost euro\'s', !!s.tarief && /€/.test(s.tarief) && !/credits/.test(s.tarief), s.tarief);
   ok('  geen creditzinnen', s.creditsZicht.length === 0, JSON.stringify(s.creditsZicht));
-  await vinkAan(page, 'flat-lay');
+  await vinkAan(page, 'inside');
   await page.waitForTimeout(250);
   s = await stap1(page);
-  ok('  ook dan komt de hoek als tegel in het paneel', JSON.stringify(s.tegels) === '["flat-lay"]', JSON.stringify(s.tegels));
+  ok('  ook dan komt de hoek als tegel in het paneel', JSON.stringify(s.tegels) === '["inside"]', JSON.stringify(s.tegels));
   ok('  geen scriptfout', fouten.length === 0, fouten.join(' | '));
   await ctx.close();
 }

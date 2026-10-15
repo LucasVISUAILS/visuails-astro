@@ -328,7 +328,7 @@ export async function mailIncassoMislukt(env, { subId, ref, email, name, bedragC
     const rij = await env.DB.prepare('SELECT lang FROM subscription_invoices WHERE subscription_id = ?1 ORDER BY id DESC LIMIT 1').bind(subId).first().catch(() => null);
     const nl = (rij?.lang || 'nl') !== 'en';
     const eur = new Intl.NumberFormat(nl ? 'nl-NL' : 'en-GB', { style: 'currency', currency: 'EUR' }).format((Number(bedragCents) || 0) / 100);
-    const href = `${origin}/account/plan?tab=facturering&lang=${nl ? 'nl' : 'en'}`;
+    const href = `${origin}/account/plan?tab=plan&lang=${nl ? 'nl' : 'en'}`;
     await sendMail(env, {
       to: email,
       subject: gestopt

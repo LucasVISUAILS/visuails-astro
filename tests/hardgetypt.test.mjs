@@ -98,7 +98,9 @@ const TOEGESTAAN = {
   'src/components/LaptopCarousel.astro': [2, `${VOORBEELD}: de prijs op de getekende webshop van een klant`],
   /* 12 oktober 2026: dezelfde getekende webshop, nu in het laptopscherm van het
      voorbeeld van de nieuwe voorpagina (/voorbeeld/). Ook geen prijs van ons. */
-  'src/components/HalLaptop.astro': [2, `${VOORBEELD}: de prijs op de getekende webshop van een klant (JOUWMERK), NL en EN`],
+  /* 15 oktober 2026: de getekende webshop staat sinds levering 48b in de bron van de
+     laptopstanden (HalLaptopSchermen.astro); HalLaptop.astro toont alleen nog foto's. */
+  'src/components/HalLaptopSchermen.astro': [2, `${VOORBEELD}: de prijs op de getekende webshop van een klant (JOUWMERK), NL en EN`],
 };
 
 const telt = telling();

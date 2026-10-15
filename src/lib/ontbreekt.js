@@ -99,14 +99,18 @@ export function vakNaam(id, lang = 'nl', namen = null) {
 }
 
 /**
- * Eén regel per product: "p4 Hoodie zwart: geen achterkant, geen detail".
+ * Eén regel per product: "Product 4 · Hoodie zwart: geen achterkant, geen detail".
  * Dezelfde vorm in de mail, in Studio en in /admin.
  */
 export function ontbrekendRegels(lijst, lang = 'nl') {
   if (!lijst) return [];
   const geen = lang === 'nl' ? 'geen' : 'no';
   return lijst.map((p) => {
-    const wie = p.naam ? `${p.key} ${p.naam}` : p.key;
+    /* "Product 2 · Hoodie zwart" en niet "p2 Hoodie zwart" (15 oktober 2026):
+       de klant leest dit in Studio, in het formulier en in zijn mail, en kent
+       zijn producten als Product 1, 2, 3 — niet als p1, p2, p3. */
+    const nr = String(p.key || '').replace(/^p/, '');
+    const wie = p.naam ? `Product ${nr} · ${p.naam}` : `Product ${nr}`;
     return `${wie}: ${p.mist.map((id) => `${geen} ${vakNaam(id, lang, p.namen)}`).join(', ')}`;
   });
 }

@@ -209,6 +209,13 @@ body.studio.st-hal .st-filters { gap: .5rem; }
 body.studio.st-hal .st-filter { min-height: 38px; padding: 0 1rem; border: 0; box-shadow: inset 0 0 0 1px #DEDCE8; font-size: .875rem; color: #4B4960; }
 body.studio.st-hal a.st-filter:hover { background: #F5F5F9; color: #0F0C24; }
 body.studio.st-hal .st-filter.is-actief { background: #0F0C24; color: #FFFFFF; box-shadow: none; }
+/* De vier tabs van het abonnement (15 oktober 2026): altijd op één rij. Op een
+   telefoon van 390 px viel "Je plan" anders alleen op een tweede regel; nu
+   worden de pillen iets smaller en schuift de rij als het echt niet past. */
+body.studio.st-hal .st-abo-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 2px; margin: -2px; }
+body.studio.st-hal .st-abo-tabs::-webkit-scrollbar { display: none; }
+body.studio.st-hal .st-abo-tabs .st-filter { flex: 0 0 auto; white-space: nowrap; }
+@media (max-width: 400px) { body.studio.st-hal .st-abo-tabs { gap: .3rem; } body.studio.st-hal .st-abo-tabs .st-filter { padding: 0 .6rem; font-size: .8125rem; } }
 body.studio.st-hal .st-bestellingen { gap: 1.25rem; }
 body.studio.st-hal .st-bestelling-kop { padding: 1.25rem 1.6rem; min-height: 72px; border-radius: 28px; }
 body.studio.st-hal .st-bestelling-klap[open] .st-bestelling-kop { border-radius: 28px 28px 0 0; }

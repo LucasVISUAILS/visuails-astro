@@ -1718,6 +1718,9 @@ const kaarten = planList.map((p) => {
   .ps-plan-prijs { white-space: nowrap; font-variant-numeric: tabular-nums; }
   .ps-plan-prijs b { font-weight: 800; font-size: 1.1rem; color: var(--ink); }
   .ps-plan-prijs small { margin-left: .2rem; font-size: .8rem; color: var(--ink-3); }
+  /* Op de gekozen kaart (6% accent) haalde --ink-3 maar 4,46 : 1 (axe, volledige
+     controle 15 oktober 2026); --ink-2 haalt het ruim. */
+  .ps-plan:has(input:checked) .ps-plan-prijs small { color: var(--ink-2); }
   .ps-plan-line { color: var(--ink-2); font-size: .93rem; line-height: 1.5; }
   /* ── WAT JE KRIJGT EN WAT JE BESPAART, OP DE KAART — 23 september 2026 ───
      Was één grijze regel "12 producten · 2 clips" en daaronder "Zelf te

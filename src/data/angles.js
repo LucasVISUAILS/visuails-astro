@@ -140,16 +140,6 @@ export const ANGLES = [
 
   // ── OP DE ONDERGROND ─────────────────────────────────────────────────────
   {
-    id: 'flat-lay',
-    group: 'ground',
-    shot: '/img/hoek-flat-lay.webp',
-    name: { en: 'Flat-lay', nl: 'Flat-lay' },
-    line: {
-      en: 'Straight down from above, laid out and squared up.',
-      nl: 'Recht van boven, uitgelegd en rechtgelegd.',
-    },
-  },
-  {
     id: 'inside',
     group: 'ground',
     shot: '/img/hoek-inside.webp',
@@ -163,11 +153,37 @@ export const ANGLES = [
     id: 'hardware',
     group: 'ground',
     shot: '/img/hoek-hardware.webp',
-    name: { en: 'One detail, off the body', nl: 'Los detail' },
+    /* 15 oktober 2026 — Lucas bij k-hoeken: *"Kijk uit dat de extra angles die
+       klanten kunnen kiezen niet al in de standaard order staan."* De set heeft al
+       een detail (het logo, de print of het label). Deze hoek is dus een TWEEDE
+       detail, en zo heet hij nu ook; "Los detail" las als hetzelfde beeld. */
+    name: { en: 'A second detail', nl: 'Tweede detail' },
     line: {
-      en: 'A logo, a zip, a sole, a button — one thing, filling the frame.',
-      nl: 'Een logo, een rits, een zool, een knoop — één ding, beeldvullend.',
+      en: 'One more next to the detail in your set: a zip, a sole, a button, filling the frame.',
+      nl: 'Nog één naast het detail in je set: een rits, een zool, een knoop, beeldvullend.',
     },
+  },
+];
+
+/* ── HOEKEN DIE NIET MEER TE KIEZEN ZIJN — 15 oktober 2026 ──────────────────
+ * Flat-lay is weg uit de kiezer. Lucas: *"bijvoorbeeld flat lay is letterlijk de
+ * eerste foto die de klant kan kiezen."* De voorkant van de set is het product
+ * plat en recht van voren; een flat-lay erbij is hetzelfde beeld twee keer.
+ *
+ * Hij staat hier nog, met naam en groep, zodat een bestelling die hem al heeft
+ * (in /admin, de werkmap, Studio en de prijs) hem blijft herkennen. Niet in
+ * ANGLES: wat daar staat, toont de kiezer. */
+export const VERVALLEN_ANGLES = [
+  {
+    id: 'flat-lay',
+    group: 'ground',
+    shot: '/img/hoek-flat-lay.webp',
+    name: { en: 'Flat-lay', nl: 'Flat-lay' },
+    line: {
+      en: 'Straight down from above, laid out and squared up.',
+      nl: 'Recht van boven, uitgelegd en rechtgelegd.',
+    },
+    vervallen: true,
   },
 ];
 
@@ -208,13 +224,15 @@ export function isEigenAngleId(id) {
 }
 
 /** Alles wat als bijbestelde hoek mag meetellen: de vaste plus de zelfbedachte. */
-export const TELBARE_ANGLE_IDS = [...ANGLE_IDS, ...EIGEN_ANGLE_IDS];
+/* De vervallen hoeken tellen nog mee: een formulier dat vlak voor een uitrol is
+   geopend, kan er een posten, en dan moet de prijs kloppen met het uploadvak. */
+export const TELBARE_ANGLE_IDS = [...ANGLE_IDS, ...VERVALLEN_ANGLES.map((a) => a.id), ...EIGEN_ANGLE_IDS];
 
 /** Eén hoek op id, of null. Nooit een gok: een onbekende id is een gesleuteld
  *  formulier en die hoort niets op te leveren. */
 export function angleById(id) {
   const v = String(id || '');
-  return ANGLES.filter((a) => a.id === v)[0] || null;
+  return ANGLES.filter((a) => a.id === v)[0] || VERVALLEN_ANGLES.filter((a) => a.id === v)[0] || null;
 }
 
 export const ANGLE_COPY = {

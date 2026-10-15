@@ -56,13 +56,12 @@ const require = createRequire(import.meta.url);
 const wortel = join(dirname(fileURLToPath(import.meta.url)), '..');
 const UIT = join(wortel, 'public', 'downloads');
 
-/* Dezelfde drie families als de site. Uit node_modules en niet uit public/, om
+/* Dezelfde letter als de site. Uit node_modules en niet uit public/, om
    dezelfde reden die scripts/fonts-voor-worker.mjs noemt: @fontsource is de bron
    en een kopie in de repo veroudert stil bij een npm update. */
+/* Sinds 15 oktober 2026 de hal-stijl: alleen Urbanist, zoals de site. */
 const LETTERS = [
-  ['Anybody Variable', '@fontsource-variable/anybody/files/anybody-latin-standard-normal.woff2'],
-  ['Figtree Variable', '@fontsource-variable/figtree/files/figtree-latin-wght-normal.woff2'],
-  ['Martian Mono Variable', '@fontsource-variable/martian-mono/files/martian-mono-latin-standard-normal.woff2'],
+  ['Urbanist Variable', '@fontsource-variable/urbanist/files/urbanist-latin-wght-normal.woff2'],
 ];
 
 async function fontRegels() {
@@ -71,7 +70,7 @@ async function fontRegels() {
     const bin = await readFile(require.resolve(pad));
     stukken.push(
       `@font-face { font-family: "${naam}"; font-style: normal; font-weight: 100 900; `
-      + `font-stretch: 50% 150%; src: url(data:font/woff2;base64,${bin.toString('base64')}) format("woff2"); }`
+      + `src: url(data:font/woff2;base64,${bin.toString('base64')}) format("woff2"); }`
     );
   }
   return stukken.join('\n');

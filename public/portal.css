@@ -1265,3 +1265,12 @@ html body .foot { color: #6A6880; }
    een latere .btn-regel gaf de stille knop zijn opvulling terug. Een tekstlink lijnt uit
    met de tekst erboven. */
 .btn.btn-quiet { padding-left: 0; padding-right: 0; }
+
+/* ── DE TIP VAN DE PRIVÉLINK — 15 oktober 2026 (afvinklijst 28, v28-tips = a) ──
+   In de stroom, onder de kop: hij dekt nooit een knop af. "Begrepen" en het
+   kruisje zijn links (deze pagina draait zonder script). */
+.tip { position: relative; margin: 0 0 1.5rem; padding: 1rem 3.25rem 1rem 1.1rem; border-radius: 18px; background: var(--paper-2); border: 1px solid var(--line); }
+.tip p { margin: 0; max-width: 60ch; font-size: .9375rem; line-height: 1.5; color: var(--ink); }
+.tip .tip-acts { margin-top: .6rem; }
+.tip-x { position: absolute; top: .55rem; right: .55rem; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; font-size: 1.25rem; line-height: 1; color: var(--ink); text-decoration: none; }
+.tip-x:hover, .tip-x:focus-visible { background: var(--btn-ghost-fill-hover, var(--line)); }

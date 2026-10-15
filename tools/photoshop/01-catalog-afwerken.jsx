@@ -140,6 +140,14 @@ function verhoudingVoorVak(inst, mapnaam) {
   return inst.verhouding || "";
 }
 
+/* De achtergrond voor dit vak: een andere kleur per beeld (achtergrond_4) wint
+   (15 oktober 2026: de klant kan bijvoorbeeld de foto op model beige geven). */
+function achtergrondVoorVak(inst, mapnaam) {
+  var n = vakVolgnummer(mapnaam);
+  if (n && /^#?[0-9a-f]{6}$/i.test(inst["achtergrond_" + n] || "")) return inst["achtergrond_" + n];
+  return inst.achtergrond || "";
+}
+
 /* De eindnaam: VIS-2608-4471-p1-voorkant.jpg. */
 function eindNaam(kenmerk, product, mapnaam) {
   return String(kenmerk) + "-" + String(product) + "-" + vakWoord(mapnaam) + ".jpg";
@@ -294,7 +302,7 @@ function werkProductAf(productMap, t) {
     }
     if (ruw.length > 1) { t.overgeslagen.push(label + " (" + ruw.length + " ruwe beelden \u2014 laat er \u00e9\u00e9n staan)"); continue; }
     var route = behandeling(vnaam, inst.dienst);
-    if ((route === "product" || route === "model" || route === "detail") && !/^#?[0-9a-f]{6}$/i.test(inst.achtergrond || "")) {
+    if ((route === "product" || route === "model" || route === "detail") && !/^#?[0-9a-f]{6}$/i.test(achtergrondVoorVak(inst, vnaam))) {
       t.overgeslagen.push(label + " (geen achtergrond in INSTELLINGEN)");
       continue;
     }
@@ -320,7 +328,7 @@ function werkBeeldAf(file, vak, vnaam, inst, route) {
     if (!besluit.ok) return besluit.melding;
 
     if (route === "scene") zetCanvas(doc, besluit);
-    else processDocument(doc, route, inst.achtergrond, besluit);
+    else processDocument(doc, route, achtergrondVoorVak(inst, vnaam), besluit);
 
     doc.flatten();
     if (doc.mode !== DocumentMode.RGB) doc.changeMode(ChangeMode.RGB);

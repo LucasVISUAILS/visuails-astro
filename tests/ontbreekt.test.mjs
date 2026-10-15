@@ -24,8 +24,8 @@ is('lijst', lijst, [
   { key: 'p2', index: 2, naam: 'Hoodie zwart', mist: ['back', 'detail'] },
   { key: 'p3', index: 3, naam: '', mist: ['detail'] },
 ]);
-is('regels nl', ontbrekendRegels(lijst, 'nl'), ['p2 Hoodie zwart: geen achterkant, geen detail', 'p3: geen detail']);
-is('regels en', ontbrekendRegels(lijst, 'en'), ['p2 Hoodie zwart: no back, no detail', 'p3: no detail']);
+is('regels nl', ontbrekendRegels(lijst, 'nl'), ['Product 2 · Hoodie zwart: geen achterkant, geen detail', 'Product 3: geen detail']);
+is('regels en', ontbrekendRegels(lijst, 'en'), ['Product 2 · Hoodie zwart: no back, no detail', 'Product 3: no detail']);
 is('aantal', aantalOntbrekend(lijst), 3);
 is('regels bij onbekend', ontbrekendRegels(null), []);
 

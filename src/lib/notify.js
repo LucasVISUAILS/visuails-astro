@@ -52,6 +52,9 @@ import { shell, h1, p as mailP, rows as rijenHtml, quote as quoteHtml, statusPil
 import { button as mailKnop, linkLine } from './mailTemplate.js';
 import { waLink, contactMail } from './waLink.js';
 import { CREDITS_GELDIG_MAANDEN } from '../data/pricing.js';
+import { planName } from '../data/planNames.js';
+/* De stand van een abonnement in de studiomail, in gewone woorden. */
+const ABO_STAND = { active: 'loopt', paused: 'gepauzeerd', cancelled: 'opgezegd', pending: 'wacht op eerste betaling', ending: 'loopt af' };
 import { vakNaam } from '../data/levervakken.js';
 import { SHOTS } from '../data/shots.js';
 
@@ -475,7 +478,7 @@ export async function notifyRevisionRound(env, { orderId, items = [] }) {
 /* Punt 2.05 (8 oktober 2026): `vakken` noemt waar elke foto terechtkwam
    ("p3 achterkant, p5 detail"), `ontbreekt` wat er daarna nog mist (regels uit
    ontbrekendRegels(); null = onbekend, dan geen regel). Beide optioneel. */
-export async function notifyFotosToegevoegd(env, { orderId, count, vakken = [], ontbreekt = null }) {
+export async function notifyFotosToegevoegd(env, { orderId, count, vakken = [], ontbreekt = null, vervangen = [], verwijderd = [] }) {
   try {
     const o = await orderFor(env, orderId);
     const ref = o?.ref || `#${orderId}`;
@@ -486,12 +489,17 @@ export async function notifyFotosToegevoegd(env, { orderId, count, vakken = [], 
     ];
     const metVak = Array.isArray(vakken) && vakken.length > 0;
     if (metVak) rijen.push(['Vakken', vakken.join(', ')]);
+    /* Werklijst 14 (15 oktober 2026): de klant kan een extra foto vervangen of
+       verwijderen. Dat staat dan in dezelfde mail. */
+    if (vervangen.length) rijen.push(['Vervangen', vervangen.join(', ')]);
+    if (verwijderd.length) rijen.push(['Verwijderd', verwijderd.join(', ')]);
+    const alleenWijziging = !count && (vervangen.length || verwijderd.length);
     if (Array.isArray(ontbreekt)) rijen.push(['Ontbreekt nog', ontbreekt.length ? ontbreekt.join('; ') : 'niets']);
     await toStudio(
       env,
-      `Foto's binnen · ${ref} · ${count}`,
+      alleenWijziging ? `Foto's gewijzigd · ${ref}` : `Foto's binnen · ${ref} · ${count}`,
       [
-        h1('De klant heeft foto\u2019s toegevoegd', ref),
+        h1(alleenWijziging ? 'De klant heeft extra foto\u2019s gewijzigd' : 'De klant heeft foto\u2019s toegevoegd', ref),
         mailRows(rijen),
         mailP(metVak
           ? 'Ze staan op het bord van de bestelling, elk in zijn vak, met \u201cnagestuurd\u201d erbij.'
@@ -723,7 +731,32 @@ export async function notifyAboBtwNakijken(env, { customerId, email, brand, phon
 /* ── PAUZEREN, HERVATTEN, OPZEGGEN — 24 september 2026 ──────────────────────
    Een klant die zijn abonnement stopt, is precies de klant waar je als studio
    iets over wilt horen — tot vandaag gebeurde het zonder bericht. */
-export async function notifyAboWijziging(env, { soort, subRef, plan, brand, email, jaarDoor = null, prepaid = false, reden = '', vanaf = null, creditsBespreken = false }) {
+export async function notifyAboWijziging(env, { soort, subRef, plan, brand, email, jaarDoor = null, prepaid = false, reden = '', vanaf = null, creditsBespreken = false, naar = null }) {
+  /* Overstappen (v29-overstap = a, 15 oktober 2026): een eigen bericht, met het
+     nieuwe plan en wanneer het ingaat. Hier en niet in de tekst hieronder, die
+     anders bij elke onbekende soort op "hervat" uitkomt. */
+  if (soort === 'overstap' || soort === 'overstap-terug') {
+    const terug = soort === 'overstap-terug';
+    try {
+      await toStudio(env, `Abonnement ${terug ? 'overstap teruggedraaid' : `overstap naar ${naar?.naam || ''}`} · ${subRef || ''} · ${brand || email || ''}`, [
+        h1(terug ? 'Een overstap is teruggedraaid' : 'Een abonnee stapt over', subRef || ''),
+        mailRows([
+          ['Abonnement', subRef || ''],
+          ['Klant', brand || email || '—'],
+          ['E-mail', email || ''],
+          ['Plan nu', plan || ''],
+          ...(naar ? [[terug ? 'Was' : 'Wordt', `${naar.naam} · ${naar.credits} credits · ${naar.bedrag}`]] : []),
+          ...(!terug && vanaf ? [['Gaat in bij de termijn van', datum(vanaf, 'nl')]] : []),
+        ]),
+        mailP(terug
+          ? 'De klant heeft de overstap zelf teruggedraaid in Studio. Mollie schrijft weer het oude bedrag af; er hoeft niets met de hand.'
+          : 'De klant is zelf overgestapt in Studio. Mollie schrijft vanaf de volgende termijn het nieuwe bedrag af, en bij die betaling krijgt hij de credits van het nieuwe plan. Er hoeft niets met de hand.'),
+      ].join(''));
+    } catch (err) {
+      console.error('[notify] overstap niet gemeld voor', subRef, '—', err?.message || err);
+    }
+    return;
+  }
   const woord = { pauze: 'gepauzeerd', hervat: 'hervat', opgezegd: 'opgezegd' }[soort] || soort;
   try {
     await toStudio(env, `Abonnement ${woord} · ${subRef || ''} · ${brand || email || ''}`, [
@@ -786,7 +819,8 @@ export async function notifyCreditsBespreken(env, { klant = {}, lang = 'nl', sal
         ['Klant', naam],
         ['E-mail', klant.email || ''],
         ['Telefoon', klant.phone || '—'],
-        ['Abonnement', abonnement ? `${abonnement.ref || ''} · ${abonnement.plan || ''} · ${abonnement.status || ''}` : '—'],
+        /* "Pro · gepauzeerd" en niet "studio · paused" (doorloop 15 oktober 2026). */
+        ['Abonnement', abonnement ? [abonnement.ref, abonnement.plan ? planName(abonnement.plan, 'nl') : '', ABO_STAND[abonnement.status] || abonnement.status || ''].filter(Boolean).join(' · ') : '—'],
         ['Credits nu', String(saldo)],
         ['Vervallen', vervaltRegel],
         ...(reden ? [['Laatste reden bij stoppen', reden]] : []),

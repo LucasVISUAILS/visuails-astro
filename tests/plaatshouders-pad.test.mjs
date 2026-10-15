@@ -89,7 +89,10 @@ const bron = (p) => readFileSync(path.join(ROOT, p), 'utf8');
    voorpagina en heeft hij geen van beide; die twee beelden staan daarom ook niet
    meer in BEELDEN_NODIG. Wat de hal wel aan een beeld hangt: de laptop laat een
    beeld dat er nog niet is weg (isEcht), in plaats van het grijs te tonen. */
-ok('voorpagina (de hal): de laptop laat een ontbrekend beeld weg', /const echt = \(b: \{ src: string \}\) => isEcht\(b\.src\)/.test(bron('src/components/HalLaptop.astro')));
+/* Sinds levering 48b (15 oktober 2026) toont de laptop kant-en-klare standen: de
+   reeks laat een beeld dat er niet is weg (halReeks in halStanden.js), en een stand
+   zonder foto valt uit de laptop (standenVoor). */
+ok('voorpagina (de hal): de laptop laat een ontbrekend beeld weg', /catalog\.beelden\.filter\(\(b\) => isEcht\(b\.src\)\)/.test(bron('src/data/halStanden.js')) && /standenVoor\(lang, sets\)/.test(bron('src/components/HalLaptop.astro')));
 ok('en de oude Editions-beelden staan niet meer op de lijst', !BEELDEN_NODIG.some((b) => /^editions-(breed|staand)$/.test(b.naam)));
 ok('/about: portret hangt aan lucas.webp', /toonPortret = isEcht\(PORTRET\)/.test(bron('src/components/OverHal.astro')));
 ok('/hooks: geen <Placeholder> meer naast de kop', !/<Placeholder\s+lang=/.test(bron('src/components/HooksHal.astro')));

@@ -503,7 +503,9 @@ console.log('\nde handlers roepen het aan, en in de goede volgorde');
   ok('pauzeren roept stopIncasso aan', /stopIncasso\(env, state\.sub\)/.test(pauseBody), true);
   ok('en staat vóór pauseSubscription',
     pauseBody.indexOf('stopIncasso') < pauseBody.indexOf('pauseSubscription'), true);
-  ok('hervatten roept hervatIncasso aan', /hervatIncasso\(env, state\.sub/.test(pauseBody), true);
+  /* Sinds 15 oktober 2026 (v29-overstap = a) met het abonnement na een klaarstaande
+     overstap (subNu = overstapToepassen(env, state.sub)). */
+  ok('hervatten roept hervatIncasso aan', /hervatIncasso\(env, (state\.sub|subNu)/.test(pauseBody) && /const subNu = await overstapToepassen\(env, state\.sub\)/.test(pauseBody), true);
   ok('en staat vóór activateSubscription',
     pauseBody.indexOf('hervatIncasso') < pauseBody.indexOf('activateSubscription'), true);
   ok('pauzeren wist het Mollie-id', /clearMollieSubscriptionId\(env, state\.sub\.id\)/.test(pauseBody), true);

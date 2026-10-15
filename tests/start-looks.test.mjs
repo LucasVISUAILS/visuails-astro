@@ -65,12 +65,20 @@ for (const [taal, pre, ls, cat] of [['en', '', lsEn, catEn], ['nl', '/nl', lsNl,
       }
     }
   }
-  /* De rustige rij. */
+  /* De banden (15 oktober 2026, v28-start = a): Video met de vier stijlen en de
+     aanvraag, Op maat met eigen look, merkmodel en abonnement. De rustige rij houdt
+     alleen de proef en App ons. */
+  const band = (id) => html.slice(html.indexOf(`id="${id}"`), html.indexOf('</section>', html.indexOf(`id="${id}"`)));
+  const video = band('video');
+  for (const slug of ['motion', 'lifestyle', 'campaign', 'custom']) ok(`${taal}: de band Video heeft ${slug} → ${pre}/video/${slug}/`, video.includes(`href="${pre}/video/${slug}/"`));
+  ok(`${taal}: en de aanvraag → ${pre}/start/video/`, video.includes(`href="${pre}/start/video/"`));
+  const maat = band('op-maat');
+  for (const doel of ['/start/custom-look/', '/custom-models/', '/plans/']) ok(`${taal}: de band Op maat linkt naar ${pre}${doel}`, maat.includes(`href="${pre}${doel}"`));
+  ok(`${taal}:   het abonnement wordt "Je abonnement" voor een abonnee`, /data-vis-klant="plan-kies"[^>]*data-vis-abo="\/account\/plan"/.test(maat) && /data-vis-label/.test(maat));
   const rij = html.slice(html.indexOf('st-ook-rij'), html.indexOf('</nav>', html.indexOf('st-ook-rij')));
-  for (const doel of ['/plans/', '/video/', '/start/custom-look/', '/custom-models/', '/test-sample/']) {
-    ok(`${taal}: de rij linkt naar ${pre}${doel}`, rij.includes(`href="${pre}${doel}"`));
-  }
+  ok(`${taal}: de rij linkt naar ${pre}/test-sample/ (niet voor wie al klant is)`, rij.includes(`href="${pre}/test-sample/"`) && /<li data-vis-uit[^>]*><a[^>]*href="[^"]*\/test-sample\/"/.test(rij));
   ok(`${taal}: de rij heeft App ons (wa.me)`, /href="https:\/\/wa\.me\//.test(rij));
+  ok(`${taal}: bovenaan de strook in drie stappen`, (html.slice(html.indexOf('h-st-kort-rij'), html.indexOf('</ol>', html.indexOf('h-st-kort-rij'))).match(/<li>/g) || []).length === 3);
   ok(`${taal}: geen grijs vlak op /start`, !html.includes('/img/plaatshouder/') && !html.includes('data-placeholder='));
 }
 

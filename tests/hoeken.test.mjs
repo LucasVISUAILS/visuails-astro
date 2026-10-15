@@ -53,21 +53,25 @@ const net = (o) => { const r = quoteOrder(o); return r ? r.netCents / 100 : null
    Zie de kop van ANGLES in src/data/angles.js. */
 console.log('\nde zes hoeken zijn een lijst en geen vrije tekst');
 {
-  ok('er zijn er zes', ANGLES.length, 6);
-  ok('en de ids zijn uniek', new Set(ANGLE_IDS).size, 6);
+  /* Vijf sinds 15 oktober 2026 (k-hoeken): flat lay is de eerste foto van de
+     standaardset en stond dubbel in de keuze. Hij staat nu in VERVALLEN_ANGLES,
+     zodat een oude bestelling met flat lay nog gelezen en geteld wordt. */
+  ok('er zijn er vijf', ANGLES.length, 5);
+  ok('en de ids zijn uniek', new Set(ANGLE_IDS).size, 5);
   ok('twee groepen', ANGLE_GROUPS, ['model', 'ground']);
-  for (const g of ANGLE_GROUPS) {
-    ok(`groep ${g} heeft er drie`, ANGLES.filter((a) => a.group === g).length, 3);
-  }
+  ok('groep model heeft er drie', ANGLES.filter((a) => a.group === 'model').length, 3);
+  ok('groep ground heeft er twee (zonder flat lay)', ANGLES.filter((a) => a.group === 'ground').length, 2);
+  ok('flat lay is geen keuze meer', ANGLE_IDS.includes('flat-lay'), false);
   /* Elke hoek draagt zijn eigen foto, want dat is de hele reden dat deze kiezer
      bestaat: je ziet wat je koopt in plaats van het te moeten omschrijven. */
-  ok('elke hoek heeft een eigen beeld', new Set(ANGLES.map((a) => a.shot)).size, 6);
+  ok('elke hoek heeft een eigen beeld', new Set(ANGLES.map((a) => a.shot)).size, 5);
   ok('en dat beeld heet naar zijn hoek',
     ANGLES.every((a) => a.shot === `/img/hoek-${a.id}.webp`), true);
   ok('elke hoek heeft een naam en een regel in beide talen',
     ANGLES.every((a) => a.name.en && a.name.nl && a.line.en && a.line.nl), true);
   /* Een onbekende id is een gesleuteld formulier en hoort niets op te leveren. */
-  ok('angleById kent zijn eigen lijst', angleById('flat-lay').group, 'ground');
+  ok('angleById kent zijn eigen lijst', angleById('inside').group, 'ground');
+  ok('  en een vervallen hoek nog, voor oude bestellingen', angleById('flat-lay')?.vervallen, true);
   ok('en geeft niets terug voor iets verzonnens', angleById('van-onderen'), null);
   ok('en niets voor leeg', angleById(''), null);
 }

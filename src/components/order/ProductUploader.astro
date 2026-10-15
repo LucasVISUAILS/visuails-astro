@@ -1146,15 +1146,23 @@ const hint = lang === 'nl'
      Still a grid rather than a block: auto-fit gives the single field the full
      card width today and lays a second one beside it without a rewrite. 190px
      is where the material placeholder stops wrapping mid-word. */
+  /* FLEX EN GEEN RASTER MEER — 15 oktober 2026 (afvinklijst 29, k-maat).
+     De kopieerregel op de eerste kaart stond op `grid-column: 1 / -1`, en een vak
+     dat tot de laatste kolom loopt, houdt alle auto-fit-kolommen open: vier van
+     196 px op een kaart van 818. De twee vragen kregen er elk één, met hun uitleg
+     in zes à acht regels van vijf woorden, en de rechterhelft bleef leeg. Met flex
+     delen de vragen de rij (elk minstens 260 px, anders onder elkaar) en nemen de
+     kopieerregel en de 4K-regel een eigen hele rij. */
   .pu-cards :global(.pu-about) {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: .55rem .7rem;
     margin-top: .85rem;
     padding-top: .8rem;
     border-top: 1px solid var(--line);
   }
-  .pu-cards :global(.pu-q) { display: flex; flex-direction: column; gap: .28rem; min-width: 0; }
+  .pu-cards :global(.pu-q) { display: flex; flex-direction: column; gap: .28rem; min-width: 0; flex: 1 1 260px; }
+  .pu-cards :global(.pu-about > .pu-hoog) { flex: 1 1 100%; }
   .pu-cards :global(.pu-q-label) {
     font-size: .74rem; font-weight: 600; line-height: 1.3;
     color: var(--ink-2);
@@ -1310,7 +1318,7 @@ const hint = lang === 'nl'
      already typed something into product 9 has said something more specific
      than this button can, and losing that would be worse than not offering it. */
   .pu-cards :global(.pu-copy) {
-    grid-column: 1 / -1;
+    flex: 1 1 100%;
     display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .7rem;
     margin-top: .15rem;
   }

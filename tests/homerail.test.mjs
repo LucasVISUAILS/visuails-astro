@@ -152,7 +152,9 @@ console.log('\ngeen rij op de homepage is verticaal scrollbaar');
          `.h-koppen` (de gezichten). Dezelfde eis als altijd. De oude namen
          blijven in de lijst staan: komt die opbouw ooit terug, dan geldt het
          daar ook. */
-      for (const sel of ['.h-pagina .h-cf', '.h-pagina .h-strook', '.h-pagina .h-koppen', '.s22 .kaarten', '.s22 .rij', '.s22 .cast']) {
+      /* 15 oktober 2026: de drie diensten zijn platte kaarten (.h-dk), op een
+         telefoon een veegrij. .h-cf blijft in de lijst om dezelfde reden als hierboven. */
+      for (const sel of ['.h-pagina .h-dk', '.h-pagina .h-cf', '.h-pagina .h-strook', '.h-pagina .h-koppen', '.s22 .kaarten', '.s22 .rij', '.s22 .cast']) {
         const el = document.querySelector(sel);
         if (!el) continue;
         uit[sel] = { v: el.scrollHeight - el.clientHeight, h: el.scrollWidth - el.clientWidth };

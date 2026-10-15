@@ -204,7 +204,11 @@ const label = lang === 'nl'
     z-index: 60;
 
     inline-size: max-content;
-    max-inline-size: min(30ch, calc(100vw - 2rem));
+    /* 42ch en niet 30: een uitleg van 50 woorden stond op 240 px, zes regels van
+       vijf à zes woorden (afvinklijst 29, k-maat; gemeten op /start/catalog,
+       /start/lifestyle en /start/plan). Met 42ch zijn het er acht à tien, zoals
+       de rest van de kleine tekst. */
+    max-inline-size: min(42ch, calc(100vw - 2rem));
     padding: .7rem .85rem;
     border: 1px solid var(--line-strong);
     border-radius: var(--r-sm, 8px);

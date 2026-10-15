@@ -22,13 +22,23 @@
  * blokken met wat werkt, en vijf vragen om zelf na te lopen.
  *
  * LEESBAARHEID: geen letter onder 8,7 pt (11,6 px bij 100 %), contrast van elke
- * tekst minstens 4,5:1 op zijn ondergrond. De kleuren zijn een handkopie van
- * KLEURENSCHEMA.md, net als in src/lib/mailTemplate.js — een pdf kent geen
- * CSS-variabelen uit global.css.
+ * tekst minstens 4,5:1 op zijn ondergrond.
+ *
+ * DE HAL-STIJL — 15 oktober 2026. Lucas om 12:32: *"Visuails upload guidelines
+ * moet nog aangepast worden naar de nieuwe style."* Dus niet meer de zwarte balk,
+ * hoofdletters en monospace van september, maar wat de site nu is (src/styles/
+ * hal.css): Urbanist, inkt #0F0C24, violet #4A1FFF, een lila pil met een stip,
+ * zachte vlakken (nevel #F5F5F9, mist #F1EEFF) met ronde hoeken, en de kop in
+ * twee tonen. Het woordmerk komt uit src/data/woordmerk.js, als vector en
+ * onveranderd (net als op de factuur). Het lichte deel van de kop is hier
+ * #6A6880 en niet het #807E97 van de site: op papier geldt 4,5:1 voor élke tekst,
+ * en #807E97 haalt op wit 3,9:1. De kleuren zijn een handkopie van hal.css — een
+ * pdf kent de CSS-variabelen van de site niet.
  */
 import { createHash } from 'node:crypto';
 import { fotogids } from '../../src/data/fotogids.js';
 import { WHATSAPP_DISPLAY } from '../../src/data/whatsapp.js';
+import { WOORDMERK } from '../../src/data/woordmerk.js';
 
 export const BESTAND = { nl: 'visuails-fotogids-nl.pdf', en: 'visuails-fotogids-en.pdf' };
 
@@ -53,11 +63,11 @@ const VEL = {
   },
 };
 
-/* Het merk, letterlijk het pad uit de <symbol id="markglyph"> in Layout.astro.
-   Nooit natekenen — alleen de kleur mag anders zijn. */
-const MERK = `<svg class="merk" viewBox="0 0 702.00 813.25" aria-hidden="true">
-  <path d="M 0.0 16.0 L 144.25 266.75 L 463.25 813.25 L 662.75 354.75 L 619.25 408.25 L 515.5 546.25 L 264.5 119.0 A 201.21 201.21 0 0 0 101.0 15.75 L 0.0 16.0 Z" />
-  <path d="M 701.75 0.0 L 543.25 366.25 L 507.25 453.75 L 652.0 259.25 L 702.0 338.25 L 701.75 0.0 Z" />
+/* Het woordmerk, letterlijk uit src/data/woordmerk.js. Nooit natekenen — alleen de
+   kleur mag anders zijn. De verschuiving staat in een <g> en niet in de viewBox:
+   zie de kop van woordmerk.js. */
+const MERK = `<svg class="woordmerk" viewBox="0 0 ${WOORDMERK.breed} ${WOORDMERK.hoog}" role="img" aria-label="VISUAILS">
+  <g transform="translate(0 ${(WOORDMERK.hoog * (1 - WOORDMERK.onder)).toFixed(2)})"><path fill-rule="evenodd" d="${WOORDMERK.d}" /></g>
 </svg>`;
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -99,78 +109,73 @@ function css(fonts) {
   return `
 ${fonts}
 :root {
-  --inkt: #000000; --inkt-2: rgba(0,0,0,.70); --vel: #F2F3F5; --wit: #FFFFFF;
-  --geel: #4A1FFF; --op-geel: #FFFFFF; --gloed: #3D17D6;
-  --lijn: rgba(0,0,0,.20); --lijn-sterk: rgba(0,0,0,.34);
-  --kop: "Anybody Variable", system-ui, sans-serif;
-  --tekst: "Figtree Variable", system-ui, sans-serif;
-  --mono: "Martian Mono Variable", ui-monospace, monospace;
+  --inkt: #0F0C24; --inkt-2: #4B4960; --inkt-3: #6A6880; --violet: #4A1FFF; --violet-diep: #3D17D6;
+  --mist: #F1EEFF; --nevel: #F5F5F9; --lijn: #DEDCE8; --wit: #FFFFFF;
+  --letter: "Urbanist Variable", system-ui, sans-serif;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
 body {
-  font-family: var(--tekst); color: var(--inkt); background: var(--wit);
-  font-size: 9.5pt; line-height: 1.42; -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  font-family: var(--letter); color: var(--inkt); background: var(--wit);
+  font-size: 9.6pt; line-height: 1.45; -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
 .blad { width: 210mm; height: 297mm; position: relative; overflow: hidden; }
 .binnen { padding: 0 14mm; }
 
-.balk { background: var(--inkt); color: var(--vel); padding: 5.5mm 14mm; display: flex; align-items: center; justify-content: space-between; }
-.balk-merk { display: flex; align-items: center; gap: 3mm; }
-.merk { width: 6mm; height: 7mm; fill: var(--vel); }
-.woord { font-family: var(--kop); font-weight: 500; font-stretch: 125%; font-size: 12.5pt; letter-spacing: .02em; text-transform: uppercase; }
-.etiket { font-family: var(--mono); font-size: 8.7pt; font-stretch: 82%; letter-spacing: .08em; text-transform: uppercase; }
-.balk .etiket { color: rgba(242,243,245,.80); }
+/* ── DE KOP: woordmerk links, de pil rechts ───────────────────────────────── */
+.balk { display: flex; align-items: center; justify-content: space-between; padding: 9mm 14mm 0; }
+.woordmerk { display: block; height: 4.6mm; width: auto; fill: var(--inkt); }
+.pil-kop { display: inline-flex; align-items: center; gap: 2.2mm; height: 7mm; padding: 0 3.6mm 0 2.6mm; border-radius: 99mm; background: var(--mist); font-size: 9.2pt; font-weight: 600; color: var(--inkt); }
+.pil-kop::before { content: ""; width: 1.7mm; height: 1.7mm; border-radius: 50%; background: var(--violet); box-shadow: 0 0 0 .9mm var(--wit); }
 
-h1 { font-family: var(--kop); font-weight: 500; font-stretch: 125%; font-size: 21pt; line-height: 1.04; letter-spacing: -.02em; text-transform: uppercase; margin: 6.5mm 0 0; }
-h1 em { font-style: normal; color: var(--op-geel); background: linear-gradient(var(--geel), var(--geel)) no-repeat 0 .06em / 100% .84em; padding-inline: .04em; }
-h2 { font-family: var(--kop); font-weight: 500; font-stretch: 125%; font-size: 12.5pt; line-height: 1.1; letter-spacing: -.01em; text-transform: uppercase; margin: 0; }
+h1 { font-weight: 500; font-size: 25pt; line-height: 1.04; letter-spacing: -.025em; margin: 7mm 0 0; text-wrap: balance; }
+h1 .l { color: var(--inkt-3); font-weight: 400; }
+h2 { font-weight: 600; font-size: 12.5pt; line-height: 1.15; letter-spacing: -.01em; margin: 0; }
 p { margin: 0; }
-.lead { color: var(--inkt-2); max-width: 175mm; margin-top: 2.6mm; font-size: 10pt; }
+.lead { color: var(--inkt-2); max-width: 165mm; margin-top: 3mm; font-size: 10.6pt; line-height: 1.45; }
 
-/* ── PER PRODUCT: de vier vakken uit shots.js ──────────────────────────────── */
-.vakken { margin: 6.5mm 0 0; padding: 3.2mm 0 0; border-top: .35mm solid var(--lijn); }
-.vakken-kop { display: flex; align-items: baseline; gap: 4mm; margin-bottom: 2.4mm; }
-.vakken-kop .etiket { color: var(--inkt-2); }
-.vak-rij { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4mm; list-style: none; margin: 0; padding: 0; }
-.vak b { font-family: var(--kop); font-weight: 500; font-stretch: 125%; font-size: 10pt; text-transform: uppercase; letter-spacing: -.01em; }
-.vak-kop { margin-bottom: 1.2mm; }
-.pil { display: inline-block; font-family: var(--mono); font-size: 8.7pt; font-stretch: 82%; letter-spacing: .03em; text-transform: uppercase; padding: 0 1.6mm; margin-right: 1.4mm; border-radius: 99mm; white-space: nowrap; line-height: 1.45; }
-.pil-nodig { background: var(--geel); color: var(--op-geel); }
-.pil-los { border: .3mm solid var(--lijn-sterk); color: var(--inkt-2); }
-.vak p { font-size: 9pt; line-height: 1.38; color: var(--inkt-2); }
-.vak p + p { margin-top: 1mm; color: var(--inkt); }
+/* ── PER PRODUCT: de vier vakken uit shots.js, op een nevelvlak ────────────── */
+.vakken { margin: 5.5mm 0 0; padding: 4.4mm 5.2mm 4.8mm; background: var(--nevel); border-radius: 5mm; }
+.vakken-kop { margin-bottom: 3.2mm; }
+.vak-rij { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5mm; list-style: none; margin: 0; padding: 0; }
+.vak b { font-weight: 600; font-size: 10.6pt; letter-spacing: -.01em; }
+.vak-kop { display: flex; align-items: center; justify-content: space-between; gap: 2mm; margin-bottom: 1.8mm; }
+.pil { display: inline-flex; align-items: center; height: 5.4mm; font-size: 8.8pt; font-weight: 600; letter-spacing: .01em; padding: 0 2.4mm; border-radius: 99mm; white-space: nowrap; }
+.pil-nodig { background: var(--violet); color: var(--wit); }
+.pil-los { background: var(--wit); color: var(--inkt-2); box-shadow: inset 0 0 0 .3mm var(--lijn); }
+.vak p { font-size: 9.2pt; line-height: 1.42; color: var(--inkt-2); }
+.vak p + p { margin-top: 1.2mm; color: var(--inkt); }
 
-/* ── DE VIER BLOKKEN ───────────────────────────────────────────────────────── */
-.blokken { display: grid; grid-template-columns: 1fr 1fr; gap: 4.5mm; margin-top: 6.5mm; }
-.blok { border: .35mm solid var(--lijn); border-radius: 3mm; padding: 3.8mm 4.2mm 4mm; display: grid; grid-template-columns: 25mm minmax(0, 1fr); gap: 3.8mm; align-items: start; }
-.blok-beeld { margin: 0; display: grid; gap: 1.2mm; }
-.blok-beeld img { display: block; width: 25mm; height: 33mm; object-fit: cover; border-radius: 1.6mm; }
-.blok-beeld figcaption { font-family: var(--mono); font-size: 8.7pt; font-stretch: 75%; letter-spacing: 0; color: var(--inkt-2); line-height: 1.25; }
+/* ── DE VIER BLOKKEN: witte kaarten met een zachte rand ────────────────────── */
+.blokken { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin-top: 4.5mm; }
+.blok { border-radius: 5mm; box-shadow: inset 0 0 0 .3mm var(--lijn); padding: 4.2mm 4.6mm 4.4mm; display: grid; grid-template-columns: 25mm minmax(0, 1fr); gap: 4.2mm; align-items: start; }
+.blok-beeld { margin: 0; display: grid; gap: 1.6mm; }
+.blok-beeld img { display: block; width: 25mm; height: 33mm; object-fit: cover; border-radius: 3mm; }
+.blok-beeld figcaption { font-size: 8.8pt; color: var(--inkt-3); line-height: 1.25; }
 .tek { display: block; width: 25mm; height: auto; margin-top: 1mm; }
 .tek path, .tek circle, .tek rect { fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .tek .stuk { stroke: var(--inkt); stroke-width: 2.2; }
-.tek .fijn, .tek .fijn path, .tek .fijn rect { stroke: var(--lijn-sterk); stroke-width: 1.3; }
-.tek .aanwijs, .tek .aanwijs path, .tek .aanwijs circle { stroke: var(--gloed); stroke-width: 2.2; }
+.tek .fijn, .tek .fijn path, .tek .fijn rect { stroke: var(--lijn); stroke-width: 1.6; }
+.tek .aanwijs, .tek .aanwijs path, .tek .aanwijs circle { stroke: var(--violet); stroke-width: 2.2; }
 .tek .schaduw { fill: var(--lijn); stroke: none; }
-.blok-kop { display: flex; align-items: baseline; gap: 2.5mm; margin-bottom: 2mm; }
-.blok-nr { font-family: var(--mono); font-size: 8.7pt; font-stretch: 82%; color: var(--gloed); letter-spacing: .04em; }
-.blok ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.5mm; }
-.blok li { display: grid; grid-template-columns: 3mm minmax(0, 1fr); gap: 1.6mm; font-size: 9.5pt; line-height: 1.38; }
-.blok li::before { content: ""; width: 1.6mm; height: 1.6mm; border-radius: 50%; background: var(--gloed); margin-top: 1.55mm; }
+.blok-kop { display: flex; align-items: center; gap: 2.6mm; margin-bottom: 2.4mm; }
+.blok-nr { display: inline-grid; place-items: center; min-width: 7.4mm; height: 5.6mm; padding: 0 1.6mm; border-radius: 99mm; background: var(--mist); font-size: 9pt; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--violet-diep); }
+.blok ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.4mm; }
+.blok li { display: grid; grid-template-columns: 3mm minmax(0, 1fr); gap: 1.4mm; font-size: 9.6pt; line-height: 1.42; color: var(--inkt-2); }
+.blok li::before { content: ""; width: 1.5mm; height: 1.5mm; border-radius: 50%; background: var(--violet); margin-top: 1.65mm; }
 
-/* ── DE VIJF VRAGEN ────────────────────────────────────────────────────────── */
-.vragen { margin-top: 6.5mm; background: var(--geel); color: var(--op-geel); border-radius: 3mm; padding: 4.5mm 5mm 5mm; }
-.vragen h2 { color: var(--op-geel); margin-bottom: 2.6mm; }
-.vragen ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3mm; }
-.vragen li { display: grid; grid-template-columns: 4.2mm minmax(0, 1fr); gap: 2mm; align-items: start; font-size: 10pt; line-height: 1.32; font-weight: 600; }
-.vakje { width: 4.2mm; height: 4.2mm; border: .45mm solid var(--op-geel); border-radius: .8mm; }
+/* ── DE VIJF VRAGEN: het violette vlak, zoals de oproep op de site ─────────── */
+.vragen { margin-top: 4.5mm; background: var(--violet); color: var(--wit); border-radius: 5mm; padding: 4.4mm 5.2mm 4.8mm; }
+.vragen h2 { color: var(--wit); margin-bottom: 3mm; }
+.vragen ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3.4mm; }
+.vragen li { display: grid; grid-template-columns: 4.4mm minmax(0, 1fr); gap: 2mm; align-items: start; font-size: 10pt; line-height: 1.32; font-weight: 600; }
+.vakje { width: 4.4mm; height: 4.4mm; border: .45mm solid var(--wit); border-radius: 1.2mm; margin-top: .2mm; }
 
 /* ── DE VOET ───────────────────────────────────────────────────────────────── */
-.contact { position: absolute; left: 14mm; right: 14mm; bottom: 15mm; display: flex; flex-wrap: wrap; gap: 1mm 4mm; align-items: baseline; font-size: 9.5pt; }
-.contact span { font-family: var(--mono); font-size: 8.7pt; font-stretch: 82%; letter-spacing: .03em; }
-.voet { position: absolute; left: 14mm; right: 14mm; bottom: 7mm; display: flex; justify-content: space-between; align-items: baseline; padding-top: 2.4mm; border-top: .3mm solid var(--lijn); }
-.voet span { font-family: var(--mono); font-size: 8.7pt; font-stretch: 82%; letter-spacing: .06em; text-transform: uppercase; color: var(--inkt-2); }
+.contact { position: absolute; left: 14mm; right: 14mm; bottom: 15mm; display: flex; flex-wrap: wrap; gap: 1mm 4mm; align-items: baseline; font-size: 9.6pt; color: var(--inkt-2); }
+.contact span { font-weight: 600; color: var(--inkt); }
+.voet { position: absolute; left: 14mm; right: 14mm; bottom: 7mm; display: flex; justify-content: space-between; align-items: baseline; padding-top: 2.6mm; border-top: .3mm solid var(--lijn); }
+.voet span { font-size: 8.8pt; letter-spacing: .02em; color: var(--inkt-3); }
 `;
 }
 
@@ -189,8 +194,8 @@ export function gidsHtml(lang, { fonts = '', beelden = {} } = {}) {
 
   const vak = (x) => `
       <li class="vak">
-        <div class="vak-kop"><b>${esc(x.naam)}</b></div>
-        <p><span class="pil ${x.nodig ? 'pil-nodig' : 'pil-los'}">${esc(x.label)}</span>${esc(x.regel)}</p>${x.zonder ? `
+        <div class="vak-kop"><b>${esc(x.naam)}</b><span class="pil ${x.nodig ? 'pil-nodig' : 'pil-los'}">${esc(x.label)}</span></div>
+        <p>${esc(x.regel)}</p>${x.zonder ? `
         <p>${esc(x.zonder)}</p>` : ''}
       </li>`;
 
@@ -216,11 +221,11 @@ export function gidsHtml(lang, { fonts = '', beelden = {} } = {}) {
 <body>
   <section class="blad">
     <header class="balk">
-      <div class="balk-merk">${MERK}<span class="woord">VISUAILS</span></div>
-      <span class="etiket">${esc(g.etiket)}</span>
+      ${MERK}
+      <span class="pil-kop">${esc(g.etiket)}</span>
     </header>
     <div class="binnen">
-      <h1>${esc(g.titel[0])}<em>${esc(g.titel[1])}</em></h1>
+      <h1><span class="l">${esc(g.titel[0])}</span>${esc(g.titel[1])}</h1>
       <p class="lead">${esc(g.intro)}</p>
 
       <section class="vakken">

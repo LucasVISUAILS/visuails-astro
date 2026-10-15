@@ -99,7 +99,7 @@ const sub = () => db.prepare('SELECT status, paused_at, pause_reason, stop_reden
 /* ── 1 · HET SALDO ─────────────────────────────────────────────────────── */
 console.log('\n1 · het saldo uit het creditboek');
 let s = await scherm('/account/plan');
-ok('één pagina: geen tabbladen meer in de staat', 'tabs' in s.v, false);
+ok('vier tabs in de staat (15 oktober 2026), Overzicht staat aan', [s.v.tabs.map((x) => x.id).join(','), s.v.tab, s.v.tabs.find((x) => x.id === 'credits').n], ['overzicht,credits,facturen,plan', 'overzicht', '128']);
 ok('"Je hebt 128 credits"', s.v.saldo.kop, 'Je hebt 128 credits');
 ok('genoeg voor … (uit creditKaart.js)', s.v.saldo.vertaling, `Genoeg voor ${creditVertaling(128, 'nl')}.`);
 ok('wat het eerst vervalt, en dat het als eerste opgaat', /^8 hiervan blijven geldig tot en met .+ — die gaan als eerste op\.$/.test(s.v.saldo.eerst), true);
@@ -136,9 +136,21 @@ ok('de termijn als "Credits voor <maand>" met "geldig tot en met …"', regels.s
 console.log('\n4 · je plan');
 ok('plan, termijn, bedrag met btw', [s.v.plan.naam.length > 0, s.v.plan.termijn, /per maand incl\. btw$/.test(s.v.plan.bedrag)], [true, 'maandelijks', true]);
 ok('volgende afschrijving met datum en bedrag', /^\d+ [a-z]+( \d{4})? · /.test(s.v.plan.volgende), true);
-ok('facturen: link naar Facturen op de pagina', /href="\/account\/invoices"/.test(pagina), true);
+ok('facturen: een eigen tab, met een link naar alle facturen', /href="\/account\/invoices"/.test(pagina) && /href="\/account\/plan\?tab=facturen"/.test(pagina), true);
 ok('pauzeren en opzeggen mogen', [s.v.beheer.magPauzeren, s.v.beheer.magOpzeggen, s.v.beheer.magHervatten], [true, true, false]);
-ok('oude ?tab=facturering gaat naar #je-plan', await scherm('/account/plan?tab=facturering').then((r) => r instanceof Response ? r.headers.get('location') : ''), '/account/plan#je-plan');
+ok('oude ?tab=facturering gaat naar de tab Je plan', await scherm('/account/plan?tab=facturering').then((r) => r instanceof Response ? r.headers.get('location') : ''), '/account/plan?tab=plan');
+/* De vier tabs (15 oktober 2026): zonder ?tab= de tab bij wat er net gebeurde. */
+{
+  const { planTabVan } = await import('../src/lib/account.js');
+  const q = (x) => new URLSearchParams(x);
+  ok('tab: zonder iets Overzicht', planTabVan(q('')), 'overzicht');
+  ok('tab: terug van een bijkoop op Credits', [planTabVan(q('bijkoop=4')), planTabVan(q('fout=bijkoop-vaak')), planTabVan(q('pakket=25&verder=%2Fstart%2F')), planTabVan(q('ok=bespreek'))], ['credits', 'credits', 'credits', 'credits']);
+  ok('tab: na pauzeren of opzeggen op Je plan', [planTabVan(q('ok=pauze&r=rustig')), planTabVan(q('fout=reden')), planTabVan(q('ok=opgezegd')), planTabVan(q('fout=bevestig'))], ['plan', 'plan', 'plan', 'plan']);
+  ok('tab: Je plan zonder plan wordt Overzicht', planTabVan(q('tab=plan'), { heeftPlan: false }), 'overzicht');
+  ok('tab: een onbekende tab wordt Overzicht', planTabVan(q('tab=hack')), 'overzicht');
+  ok('tab: de pagina zelf kiest zo ook', [s.v.tab, (await scherm('/account/plan?ok=hervat')).v.tab, (await scherm('/account/plan?tab=facturen')).v.tab], ['overzicht', 'plan', 'facturen']);
+  ok('tab: Facturen haalt alleen de facturen van het abonnement op', Array.isArray((await scherm('/account/plan?tab=facturen')).v.facturen?.rows), true);
+}
 
 /* ── 5 · PAUZEREN ──────────────────────────────────────────────────────── */
 console.log('\n5 · pauzeren: reden verplicht, in bij de volgende afschrijving');

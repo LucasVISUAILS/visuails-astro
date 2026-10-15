@@ -58,12 +58,9 @@ export function laptopSlides(lang = 'nl') {
                    : 'Phone photo: the same jeans turned over, back',
       },
       {
-        /* `vul` (15 oktober 2026, Lucas: *"Op de laptop is de on model foto afgesneden,
-           deze mag iets ingezoomed worden en meer in het scherm fitten"*): de foto
-           loopt tot zijn bovenrand door (het shirt), dus als zwevend vierkant in het
-           staande vak zie je die rand. Nu vult hij de hoogte van het vak; zie
-           .sc-hoofd img.sc-vul in hal.css. */
-        src: '/img/ba2-na-model-grijs.webp', naam: nl ? 'Op model' : 'On model', vul: true,
+        /* Sinds 15 oktober 08:14 staat elk beeld in een vierkant vak op zijn eigen 1:1
+           (zie .sc-hoofd in hal.css); de `vul` van 05:59 is daarmee overbodig. */
+        src: '/img/ba2-na-model-grijs.webp', naam: nl ? 'Op model' : 'On model',
         alt: nl ? 'De broek gedragen door een model' : 'The jeans worn by a model',
         fon: '/img/ba2-voor-pasvorm.webp',
         fonAlt: nl ? 'Spiegelselfie waarop de broek gedragen wordt' : 'Mirror selfie of the jeans being worn',

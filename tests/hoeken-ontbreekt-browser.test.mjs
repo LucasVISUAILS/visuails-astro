@@ -6,8 +6,8 @@
  * regel naast de lijst uit src/lib/ontbreekt.js. Nu telt ontbreekt.js de hoeken
  * zelf, dus hoort het scherm precies te zeggen wat Studio, de mails en /admin
  * zeggen. Gemeten: catalog, één hoek (Driekwart) gekozen, twee producten:
- *   · p1 met voorkant, achterkant en detail → "p1: geen driekwart";
- *   · p2 met alleen voorkant en achterkant  → één regel "p2: geen detail, geen
+ *   · p1 met voorkant, achterkant en detail → "Product 1: geen driekwart";
+ *   · p2 met alleen voorkant en achterkant  → één regel "Product 2: geen detail, geen
  *     driekwart" (vroeger twee regels voor hetzelfde product);
  *   · NL en EN, 390 en 1280 px, contrast en lettergrootte van de regels.
  *
@@ -139,7 +139,7 @@ for (const [url, taal] of [['/nl/start/catalog', 'nl'], ['/start/catalog', 'en']
     await page.waitForTimeout(400);
     const lijst = await page.locator('[data-pl-missing-list] .pu-mis-regel').allTextContents();
     ok(`${tag}: het tussenscherm noemt de hoek, één regel per product (ontbreekt.js)`, lijst,
-      taal === 'nl' ? ['p1: geen driekwart', 'p2: geen detail, geen driekwart'] : ['p1: no three-quarter', 'p2: no detail, no three-quarter']);
+      taal === 'nl' ? ['Product 1: geen driekwart', 'Product 2: geen detail, geen driekwart'] : ['Product 1: no three-quarter', 'Product 2: no detail, no three-quarter']);
     const l = await leesbaar(page, '.pu-mis-regel');
     ok(`${tag}: de regels: contrast ≥ 4,5 (${l.ratio}) en tekst ≥ 11,5 px (${l.px})`, l.ratio >= 4.5 && l.px >= 11.5, true);
     ok(`${tag}: geen horizontale scroll`, await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), true);

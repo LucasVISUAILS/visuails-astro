@@ -165,9 +165,10 @@ for (const [url, taal] of [['/nl/start/catalog/', 'nl'], ['/start/catalog/', 'en
         await naarStap5(page);
         const h = await tekst(page, '[data-pl-credits-hint]');
         ok(`${tag}: met de hint "Overstappen naar … is voordeliger"`, h, taal === 'nl'
-          ? `Overstappen naar Merk is voordeliger: €${PLAN_AMOUNT.brand.toLocaleString('nl-NL')} per maand voor ${PLAN_CREDITS.brand} credits. Naar je abonnement`
-          : `Switching to Merk is better value: €${PLAN_AMOUNT.brand.toLocaleString('en-GB')} a month for ${PLAN_CREDITS.brand} credits. Go to your plan`);
-        ok(`${tag}:   met een link naar /account/plan`, await href(page, '[data-pl-credits-hint-link]'), '/account/plan/#je-plan');
+          ? `Overstappen naar Merk is voordeliger: €${PLAN_AMOUNT.brand.toLocaleString('nl-NL')} per maand voor ${PLAN_CREDITS.brand} credits. Overstappen`
+          : `Switching to Merk is better value: €${PLAN_AMOUNT.brand.toLocaleString('en-GB')} a month for ${PLAN_CREDITS.brand} credits. Switch plans`);
+        /* Sinds 15 oktober 2026 (v29-overstap = a) naar het overstapformulier, met het plan erbij. */
+        ok(`${tag}:   met een link naar Overstappen in /account/plan`, /^\/account\/plan\/\?tab=plan(&naar=[a-z]+)?#overstappen$/.test(await href(page, '[data-pl-credits-hint-link]')), true);
         if (breed === 390) await leesbaarOk(page, '[data-pl-credits-hint] span, [data-pl-credits-hint] a', tag);
         ok(`${tag}: geen scriptfouten (hint)`, fouten, []);
         await page.close();

@@ -149,6 +149,7 @@ import { leesProefStand, proefOpenVoor } from '../../src/lib/proefStand.js';
 import {
   isGarmentId, contextAllowed, contextDefault, CONTEXT_SLOT_IDS, CONTEXT_OURS,
 } from '../../src/data/garments.js';
+import { schoonBeeldAchtergronden, beeldAchtergrondRegel } from '../../src/data/beeldachtergrond.js';
 
 /*
  * 'brand-model' STAAT NAAST 'custom' EN VERVANGT HEM NIET — 23 augustus 2026.
@@ -751,6 +752,11 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
      voor een bestelling zonder JavaScript of met de hand gepost. Alleen bij
      catalog: lifestyle kiest per beeld en kent geen kanaalvraag. */
   if (service === 'catalog') lockChannelRatio(details);
+  /* ── EEN ANDERE ACHTERGROND PER BEELD — 15 oktober 2026 (werklijst 27) ─────
+     Alleen aanbevolen kleuren, alleen bestaande vakken of gekozen hoeken, niet
+     gelijk aan de achtergrond van de bestelling, en de voorkant blijft wit als
+     een kanaal dat eist. Zie src/data/beeldachtergrond.js. */
+  schoonBeeldAchtergronden(details, service);
 
   // ---- subscribe (lead magnet) --------------------------------------------
   if (service === 'subscribe') {
@@ -3962,6 +3968,9 @@ export function customerEmail(lang, ref, service, name,
       const hex = String(d.background_hex || d.background_custom || '').trim();
       uit.push([nl ? 'Achtergrond' : 'Background', esc(b ? `${b.name[nl ? 'nl' : 'en']} · ${b.hex}` : (hex || bg))]);
     }
+    /* Werklijst 27 (15 oktober 2026): een beeld met een eigen achtergrond. */
+    const perBeeld = beeldAchtergrondRegel(service, d, nl ? 'nl' : 'en');
+    if (perBeeld) uit.push([nl ? 'Per beeld' : 'Per image', esc(perBeeld)]);
     const r = ratioById(String(d.ratio || ''), service);
     if (r) uit.push([nl ? 'Beeldverhouding' : 'Image shape', esc(r.name[nl ? 'nl' : 'en'])]);
     const hoeken = extraVakken(d);

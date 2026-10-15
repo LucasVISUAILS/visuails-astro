@@ -198,7 +198,9 @@ export default function avifNaastWebp() {
                    op warn, want een vergeten stap moet je kunnen zien. */
                 for (const stuk of String(bron).split(',')) {
                   const url = stuk.trim().split(/\s+/)[0];
-                  if (url.includes('/img/')) zonderAvif.add(url.split('/').pop());
+                  /* Alleen webp (15 oktober 2026): een svg in een <picture> hoeft geen
+                     AVIF, en stond hier als vijftien "ontbrekende" beelden. */
+                  if (url.includes('/img/') && /\.webp$/i.test(url)) zonderAvif.add(url.split('/').pop());
                 }
               }
               continue;

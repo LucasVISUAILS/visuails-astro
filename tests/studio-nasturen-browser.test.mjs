@@ -118,7 +118,7 @@ try {
       if (breed === 1280 && thema === 'licht') {
         const kaart = page.locator(`#order-${ORDER}`);
         ok('de lopende bestelling staat open, met de Nu-zin over de ontbrekende foto', await kaart.evaluate((d) => d.open) && /Er ontbreekt nog een foto: Product 1 · Hoodie zwart · detail/.test(await kaart.locator('.st-nu-zin').innerText()));
-        ok('de lijst "wat ontbreekt" staat bovenaan de foto’s', (await page.locator(`#fotos-${ORDER} .st-ontbreekt li`).allInnerTexts()).join(' | ') === 'p1 Hoodie zwart: geen detail | p2: geen achterkant, geen detail');
+        ok('de lijst "wat ontbreekt" staat bovenaan de foto’s', (await page.locator(`#fotos-${ORDER} .st-ontbreekt li`).allInnerTexts()).join(' | ') === 'Product 1 · Hoodie zwart: geen detail | Product 2: geen achterkant, geen detail');
         ok('gevulde vakken tonen een kleine weergave', await page.locator(`#fotos-${ORDER} .st-vak.is-gevuld img`).count() >= 3);
         ok('lege verplichte vakken: gestippeld, met "Nog niet ontvangen" en een eigen veld', await page.locator(`#fotos-${ORDER} .st-vak.is-mist input[type=file]`).count() === 3);
         const zichtbareKnoppen = await page.locator('.st-nu-knop:visible').count();
@@ -151,7 +151,7 @@ try {
     ok('versturen: terug op dezelfde bestelling met een melding', /order=7095&fotos=1/.test(page.url()) && /1 foto toegevoegd/.test(await page.locator(`#order-${ORDER} .st-melding`).first().innerText()), page.url());
     const na = await page.locator(`#fotos-${ORDER} .st-vak.is-mist`).count();
     ok('versturen: de lijst "wat ontbreekt" wordt korter', na === voor - 1, `${voor} → ${na}`);
-    ok('versturen: de achterkant van product 2 is nu gevuld', /p2: geen detail/.test((await page.locator(`#fotos-${ORDER} .st-ontbreekt li`).allInnerTexts()).join(' | ')));
+    ok('versturen: de achterkant van product 2 is nu gevuld', /Product 2: geen detail/.test((await page.locator(`#fotos-${ORDER} .st-ontbreekt li`).allInnerTexts()).join(' | ')));
     fs.rmSync(tmp, { recursive: true, force: true });
     await ctx.close();
   }

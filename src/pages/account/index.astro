@@ -44,7 +44,7 @@ const samen = !!(w && w.boven && v.featured && w.boven.id === v.featured.id);
 /* Staat er een andere bestelling bovenaan, dan niet nog eens in de rij eronder. */
 const restZonderBoven = v.rest.filter((o) => !(w && w.boven && o.id === w.boven.id));
 ---
-<StudioLayout
+<StudioLayout tip={st.tip}
   lang={lang} t={t} thema={thema} navDicht={navDicht} actief="overview" customer={customer}
   title={t.navOverview}
   kop={`${orders.length > 1 ? t.ovWelcome : t.ovWelcomeFirst}, ${v.name}`} lede={t.ovLede} chip={v.chip}

@@ -68,11 +68,13 @@ interface Props {
   lede?: string;
   chip?: { tekst: string; toon?: string } | null;
   actie?: { href: string; label: string } | null;
+  /** Een uitleg-tip (studioTip() in account.js), of null. */
+  tip?: { id: string; weg: string; begrepen: string; sluit: string; h: string; tekst: string; punten: string[] } | null;
 }
 
 const {
   lang, title, t, thema = 'licht', vorm = 'schil', navDicht = false, actief = '',
-  customer = null, kop = '', lede = '', chip = null, actie = null,
+  customer = null, kop = '', lede = '', chip = null, actie = null, tip = null,
 } = Astro.props;
 
 for (const [k, v] of Object.entries(studioHeaders())) Astro.response.headers.set(k, v);
@@ -207,6 +209,21 @@ const metParam = (k, v) => {
           {actie && <a class="btn btn-primary st-top-actie" href={actie.href}>{actie.label}</a>}
         </header>
         <main class="st-main" id="inhoud">
+          {/* De uitleg-tip (afvinklijst 28, v28-tips = a): één per pagina, in de
+              stroom zodat hij nooit een knop afdekt. Studio heeft geen script:
+              "Begrepen" en het kruisje zijn links (?tipweg=<id>), en wat je
+              wegklikt komt niet terug (cookie, zie src/data/tips.js). */}
+          {tip && (
+            <aside class="st-tip" role="note" aria-label={tip.h || t.tipLabel || 'Tip'} data-tip={tip.id}>
+              <div class="st-tip-tekst">
+                {tip.h && <p class="st-tip-h">{tip.h}</p>}
+                {tip.tekst && <p>{tip.tekst}</p>}
+                {tip.punten.length > 0 && <ul>{tip.punten.map((x) => <li>{x}</li>)}</ul>}
+                <a class="btn btn-2nd btn-sm" href={tip.weg}>{tip.begrepen}</a>
+              </div>
+              <a class="st-tip-x" href={tip.weg} aria-label={tip.sluit}>×</a>
+            </aside>
+          )}
           <slot />
         </main>
       </div>

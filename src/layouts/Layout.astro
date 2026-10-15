@@ -274,10 +274,18 @@ const ACCOUNT_UI = {
     // Screen-reader name for the link that becomes the brand's own name. On
     // its own "VISUAILS" in a nav bar does not say it is an account link.
     aria: 'Your account',
+    menu: 'Your account: VISUAILS Studio, language and sign out',
+    wie: 'Signed in as',
+    studio: 'VISUAILS Studio',
+    taal: 'Language',
   },
   nl: {
     signout: 'Uitloggen',
     aria: 'Je account',
+    menu: 'Je account: VISUAILS Studio, taal en uitloggen',
+    wie: 'Ingelogd als',
+    studio: 'VISUAILS Studio',
+    taal: 'Taal',
   },
 };
 const acct = ACCOUNT_UI[lang === 'nl' ? 'nl' : 'en'];
@@ -422,6 +430,12 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
       .ico goes first as the floor and the SVG last as the ceiling: anything
       modern renders the vector and stays crisp at 16px on a scaled display,
       anything old falls back down the list. */}
+  {/* ── SINDS 15 OKTOBER 2026 UIT HET LOGOPAKKET ─────────────────────────────
+      De bestanden hieronder zijn een kopie van images/Logo/visuails-logo-nieuw/
+      favicon (zie KLEURENSCHEMA.md daar): een afgeronde violette tegel, met
+      verloop vanaf 32 px; de svg en de 16 px vlak violet met een grotere V.
+      apple-touch-icon.png is favicon-180: vierkant, want iOS rondt zelf af.
+      scripts/make-favicons.mjs maakt ze niet meer. */}
   {/* ── DE REEKS UIT KLEURENSCHEMA.md — 20 september 2026 ─────────────────
       Het schema schrijft vier regels voor: `sizes="any"` op de .ico, 32 en 16
       als PNG, en 180 als apple-touch-icon. De 192 stond er al en blijft, want
@@ -944,23 +958,38 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
             styles below to the elements it sees at BUILD time, so a node
             created in JS carries no scope attribute and gets none of them. */}
         <a href={`/account?lang=${lang}`} class="nav-account-link" data-acct="out" aria-current={isActive('/account') ? 'page' : undefined}>{t('nav_account')}</a>
-        <span class="nav-account-in" data-acct="in" hidden>
-          <a href={`/account?lang=${lang}`} class="nav-account-link nav-account-name" data-acct-label aria-label={acct.aria} aria-current={isActive('/account') ? 'page' : undefined}></a>
-          {/* A form, not a link: signing out is a state change and it has to be
-              a POST — /account/logout deletes the session row, and account.js
-              checks Origin on every POST behind a session. The cookie is
-              HttpOnly and Path=/account, so script on this page cannot clear it
-              itself even if it wanted to; the server is the only thing that
-              can, which is the correct arrangement. SameSite=Strict lets this
-              same-origin post carry the cookie. */}
-          <form method="post" action="/account/logout" class="nav-signout" data-acct-signout>
-            <button type="submit" class="nav-signout-btn">{acct.signout}</button>
-          </form>
-        </span>
-        <div class="lang-switch" role="group" aria-label={t('lang_label')}>
-          {switchLangs.map((l) => (
-            <a href={localizedPath(l, base)} hreflang={l} class:list={['ls', l === lang && 'on']} aria-current={l === lang ? 'true' : undefined}>{localeNames[l]}</a>
+        {/* ── DE BALK, KLEINER EN RUSTIGER — 15 oktober 2026 (v28-balk = a) ──────
+            Lucas, 07:24: *"Top bar mag denk ik iets moderner/compacter."* Rechts
+            stonden je naam, "Uitloggen", de taalknop en Bestellen naast elkaar.
+            Nu: uitgelogd "Inloggen" en één kleine knop naar de andere taal;
+            ingelogd één rondje met je initiaal, en daarachter Studio, de taal en
+            Uitloggen. Het menu is een gewone uitklapper (.has-menu/.nav-trigger),
+            dus klik, Escape en klik-ernaast werken zoals bij de andere drie. */}
+        <div class="lang-switch nav-taal-klein" role="group" aria-label={t('lang_label')} data-acct="out">
+          {switchLangs.filter((l) => l !== lang).map((l) => (
+            <a href={localizedPath(l, base)} hreflang={l} class="ls" aria-label={localeNames[l] === 'NL' ? 'Nederlands' : localeNames[l] === 'EN' ? 'English' : localeNames[l]}>{localeNames[l]}</a>
           ))}
+        </div>
+        <div class="nav-account-in has-menu nav-ik" data-acct="in" hidden>
+          <button type="button" class="nav-trigger nav-ik-knop" aria-expanded="false" aria-controls="nav-ik-menu" aria-label={acct.menu}>
+            <span class="nav-ik-letter" data-acct-initiaal aria-hidden="true"></span>
+          </button>
+          <div class="nav-menu nav-ik-menu" id="nav-ik-menu">
+            <p class="nav-ik-wie"><span>{acct.wie}</span><b data-acct-label></b></p>
+            <a href={`/account?lang=${lang}`} class="nav-ik-item" aria-current={isActive('/account') ? 'page' : undefined}>{acct.studio}</a>
+            <div class="lang-switch nav-ik-taal" role="group" aria-label={acct.taal}>
+              <span class="nav-ik-taal-l" aria-hidden="true">{acct.taal}</span>
+              {switchLangs.map((l) => (
+                <a href={localizedPath(l, base)} hreflang={l} class:list={['ls', l === lang && 'on']} aria-current={l === lang ? 'true' : undefined}>{localeNames[l]}</a>
+              ))}
+            </div>
+            {/* A form, not a link: signing out is a state change and it has to be
+                a POST — /account/logout deletes the session row, and account.js
+                checks Origin on every POST behind a session. */}
+            <form method="post" action="/account/logout" class="nav-signout" data-acct-signout>
+              <button type="submit" class="nav-ik-item nav-signout-btn">{acct.signout}</button>
+            </form>
+          </div>
         </div>
         {/* The header CTA is the one door into the order pipeline. It replaced
             "Order now" → /order, which was one of five parallel order pages
@@ -1231,6 +1260,11 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
         if (!signedIn) return;
         var labels = document.querySelectorAll('[data-acct-label]');
         for (var j = 0; j < labels.length; j += 1) labels[j].textContent = label || '';
+        /* De initiaal in het rondje (15 oktober 2026): de eerste letter of het
+           eerste cijfer van je merk, je naam of je e-mailadres. */
+        var m = String(label || '').trim().match(/[0-9A-Za-z\u00C0-\u024F]/);
+        var ini = document.querySelectorAll('[data-acct-initiaal]');
+        for (var k = 0; k < ini.length; k += 1) ini[k].textContent = m ? m[0].toUpperCase() : '·';
       }
 
       function boot() {
@@ -2036,6 +2070,11 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      tegen één klasse plus een pseudo) en gaat er weer af zodra de bezoeker iets
      anders doet dan Escape — zie interactions.js. */
   .has-menu.esc-closed:focus-within .nav-menu { opacity: 0; visibility: hidden; transform: translateY(-6px); }
+  /* Het menu achter het rondje met je initiaal (15 oktober 2026): één kolom,
+     rechts uitgelijnd onder de knop. De hal maakt het verder op (hal.css). */
+  .nav-ik { position: relative; }
+  .nav-ik .nav-menu { left: auto; right: 0; min-width: 240px; grid-template-columns: 1fr; }
+  .nav-ik-knop { display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 0; cursor: pointer; }
   /* ── DE GROEPEN IN HET DIENSTENMENU — 8 september 2026 ────────────────────
      Het paneel was een raster van twee kolommen waar zeven items in willekeurige
      volgorde in vielen. Nu is elke groep zelf een cel, met zijn items eronder —

@@ -38,10 +38,14 @@ const proefNoot = v.delivered.length > 0 && v.delivered.every((b) => b.review.ki
           </form>
         )}
       </div>
-      {v.uploaded.length > 0 && (
+      {(v.uploaded.length > 0 || v.fotosBeheer) && (
         <div class="st-product-kolom is-ref">
           <h3>{t.prodYouSent}</h3>
-          <ul class="st-beelden is-ref">{v.uploaded.map((b) => <Beeld v={b} orderId={orderId} lang={lang} />)}</ul>
+          {v.uploaded.length > 0 && <ul class="st-beelden is-ref">{v.uploaded.map((b) => <Beeld v={b} orderId={orderId} lang={lang} />)}</ul>}
+          {/* Werklijst 14 (15 oktober 2026): de knop onder "Wat jij stuurde",
+              naar dit product in "Je foto's" (toevoegen, extra foto vervangen of
+              verwijderen). Alleen zolang er nog foto's bij kunnen. */}
+          {v.fotosBeheer && <a class="btn btn-2nd btn-sm st-fotos-beheer" href={v.fotosBeheer.href}>{v.fotosBeheer.label}</a>}
         </div>
       )}
     </div>

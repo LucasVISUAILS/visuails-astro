@@ -567,7 +567,19 @@ const markStreams = streamsOf(markPdf).join('\n');
    op 0 en watermark() tekent dan niets. Wat de suite nu bewaakt is het
    omgekeerde: géén gevuld pad meer in de stroom, zodat een teruggedraaide
    opacity of een nieuw ingeplakt merkteken hier meteen opvalt. */
-check('er wordt géén gevuld pad meer getekend (het V-watermerk is weg)', /(^|\s)f\*?(\s|$)/m.test(markStreams), false);
+/* ── HET NIEUWE UITERLIJK — 15 oktober 2026 (werklijst 16) ────────────────────
+   Sinds vandaag staan er wél gevulde paden op: het woordmerk (vector) en drie
+   vlakken (het lila vlak achter "Factuur aan", de band achter de kolomkoppen en
+   het vlak achter het totaal). Wat de suite blijft bewaken is dat het V-watermerk
+   niet terugkomt: precies vier vullingen op een factuur van één blad, het watermerk
+   uit (WM_OPACITY 0), en het woordmerk is het pad uit src/data/woordmerk.js. */
+const vullingen = (markStreams.match(/(^|\s)f\*?(?=\s|$)/gm) || []).length;
+check('vier vullingen: het woordmerk en drie vlakken, geen watermerk', vullingen, 4);
+check('  het watermerk staat uit', /const WM_OPACITY = 0;/.test(source), true);
+{
+  const { WOORDMERK } = await import('../src/data/woordmerk.js');
+  check('  het woordmerk is het pad uit woordmerk.js', source.includes(JSON.stringify(WOORDMERK.d)), true);
+}
 check('het blijft vector: geen ingesloten afbeelding',
   Buffer.from(markPdf).toString('latin1').includes('/Image'), false);
 check('en het teken kost bijna niets', markPdf.length < 6000, true);

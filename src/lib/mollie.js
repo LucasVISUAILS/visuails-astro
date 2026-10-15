@@ -530,6 +530,30 @@ export async function cancelMollieSubscription(env, { mollieCustomerId, subscrip
 }
 
 /**
+ * Het bedrag en de omschrijving van een lopend abonnement aanpassen — 15 oktober
+ * 2026 (afvinklijst 29, v29-overstap = a: overstappen per volgende termijn).
+ *
+ * WAAROM PATCH EN NIET STOPPEN EN OPNIEUW AANMAKEN, zoals pauzeren en hervatten
+ * doen. Bij een overstap loopt het abonnement gewoon door: dezelfde dag van de
+ * maand, hetzelfde mandaat, hetzelfde Mollie-id. Mollie's PATCH past het bedrag
+ * toe op elke betaling die het daarna aanmaakt; een betaling die al onderweg is,
+ * houdt het oude bedrag. Wat er met die laatste gebeurt, beslist de webhook
+ * (overstapToepassen in subscription.js), niet deze functie.
+ *
+ * `valueEuros` is het BRUTO maandbedrag, zoals createMollieSubscription() hem krijgt.
+ */
+export async function updateMollieSubscription(env, { mollieCustomerId, subscriptionId, valueEuros, description }) {
+  const body = {};
+  if (valueEuros != null) body.amount = { currency: 'EUR', value: Number(valueEuros).toFixed(2) };
+  if (description) body.description = String(description).slice(0, 255);
+  return mollieRequest(
+    env, 'PATCH',
+    `/customers/${encodeURIComponent(mollieCustomerId)}/subscriptions/${encodeURIComponent(subscriptionId)}`,
+    body
+  );
+}
+
+/**
  * Eén verzoek aan Mollie, met de foutbehandeling die dit bestand al had.
  *
  * WAAROM DIT ER NU IS. De drie bestaande aanroepen hadden elk hun eigen fetch met

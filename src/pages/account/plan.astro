@@ -2,7 +2,15 @@
 /**
  * /account/plan — de abonnementspagina. Alles komt uit planView() in account.js.
  *
- * PUNT 2.07, 8 oktober 2026: ÉÉN PAGINA ZONDER TABBLADEN, zonder script. Van
+ * VIER TABS, 15 oktober 2026 (v28-abotabs = a): Overzicht (saldo, bestellen,
+ * de maandset) · Credits (bijkopen, het creditboek, wat een credit koopt,
+ * bespreken) · Facturen (termijnen en bijkopen) · Je plan (plan, termijn,
+ * pauzeren, opzeggen). Gewone links met ?tab=…, zonder script; zonder ?tab=
+ * kiest planTabVan() in account.js de tab bij wat er net gebeurde. Wat op elke
+ * tab staat: de meldingen, de stand van het abonnement (met Hervatten) en, na
+ * de reden "weet niet wat ik met mijn credits moet", Bespreek in het groot.
+ *
+ * PUNT 2.07, 8 oktober 2026 (tot 15 oktober): één pagina zonder tabbladen. Van
  * boven naar beneden: het saldo (creditboek, niet meer subscription_slots), twee
  * bestelknoppen met je vaste look erin, de creditkaart (6.01), de maandset, het
  * creditboek (elke bij- en afschrijving, met de bestelling en haar status), en
@@ -35,10 +43,17 @@ const { st, v, bk } = s;
 const { t, lang, customer, thema, navDicht } = st;
 const T = v.tekst || {};
 ---
-<StudioLayout
+<StudioLayout tip={st.tip}
   lang={lang} t={t} thema={thema} navDicht={navDicht} actief="plan" customer={customer}
   title={t.planHeading} kop={t.planHeading} chip={v.chip} actie={v.actie}
 >
+  {!v.geen && (
+    <nav class="st-filters st-abo-tabs" aria-label={T.tabsLabel}>
+      {v.tabs.map((x) => x.nu
+        ? <span class="st-filter is-actief" aria-current="page" data-tab={x.id}>{x.label}{x.n && <span class="st-filter-n">{x.n}</span>}</span>
+        : <a class="st-filter" href={x.href} data-tab={x.id}>{x.label}{x.n && <span class="st-filter-n">{x.n}</span>}</a>)}
+    </nav>
+  )}
   {v.melding && <p class="st-melding is-warn" role="alert">{v.melding}</p>}
   {v.bevestiging && <p class="st-melding is-ok" role="status">{v.bevestiging}</p>}
 
@@ -117,6 +132,9 @@ const T = v.tekst || {};
         </section>
       )}
 
+      {/* ═══ TAB OVERZICHT ═══ */}
+      {v.tab === 'overzicht' && (
+      <Fragment>
       {/* ── HET SALDO ── */}
       <section class="st-blok" aria-labelledby="saldo-h">
         <div class={`st-kaart-vlak st-vlak st-abo-saldo${v.saldo.leeg ? ' is-leeg' : ''}`} id="saldo">
@@ -132,7 +150,7 @@ const T = v.tekst || {};
           {v.saldo.nieuw && <p class={`st-abo-nieuw${v.saldo.boven ? ' is-boven' : ''}`} data-boven={v.saldo.boven || undefined}>{v.saldo.nieuw}</p>}
           {v.saldo.bijgekocht && <p class="st-abo-verval" data-bijgekocht>{v.saldo.bijgekocht}</p>}
           {v.saldo.bevroren && <p class="st-melding is-warn" data-bevroren>{v.saldo.bevroren}</p>}
-          <p class="st-meta">{v.saldo.geldig}</p>
+          {v.saldo.geldig && <p class="st-meta">{v.saldo.geldig}</p>}
         </div>
       </section>
 
@@ -151,58 +169,7 @@ const T = v.tekst || {};
           </ul>
           <p class="st-meta st-abo-links"><a class="st-link" href={v.andereLook.href}>{v.andereLook.label}</a> · <a class="st-link" href={v.lookAanpassen.href}>{v.lookAanpassen.label}</a></p>
         </div>
-        <CreditKaart lang={lang} plannen={false} kern />
       </section>
-
-      {/* ── EXTRA CREDITS BIJKOPEN — 12 oktober 2026 (ab-v3 = c, ab-v4 = b) ──
-          Een gewoon formulier zonder script: drie keuzerondjes en een knop, naar
-          /account/plan/bijkopen (dezelfde Origin-controle als elk Studio-
-          formulier). Daarvandaan naar Mollie; terug op ?bijkoop=… zegt de
-          melding bovenaan wat er gebeurde. */}
-      {v.bijkoop && (
-        <section class="st-blok" aria-labelledby="bijkopen-h">
-          <div class="st-kaart-vlak st-vlak st-bijkoop" id="bijkopen">
-            <h2 id="bijkopen-h">{v.bijkoop.h}</h2>
-            <p class="st-meta">{v.bijkoop.lede}</p>
-            {v.bijkoop.verder && <p class="st-bijkoop-verder"><a class="btn btn-primary btn-sm" href={v.bijkoop.verder.href}>{v.bijkoop.verder.label}</a></p>}
-            {v.bijkoop.hint && <p class="st-bijkoop-hint">{v.bijkoop.hint} <a class="st-link" href={v.bijkoop.hintLink.href}>{v.bijkoop.hintLink.label}</a></p>}
-            {v.bijkoop.kan
-              ? (
-                <form method="post" action="/account/plan/bijkopen" class="st-bijkoop-form">
-                  {v.bijkoop.verderVeld && <input type="hidden" name="verder" value={v.bijkoop.verderVeld} />}
-                  <fieldset class="st-bijkoop-keuze">
-                    <legend class="sr-only">{v.bijkoop.h}</legend>
-                    {v.bijkoop.pakketten.map((p) => (
-                      <label class={`st-bijkoop-pakket${p.kan ? '' : ' is-uit'}`} data-pakket={p.credits}>
-                        <input type="radio" name="pakket" value={String(p.credits)} checked={p.gekozen} disabled={!p.kan} required={p.kan} />
-                        <span class="st-bijkoop-tekst">
-                          <span class="st-bijkoop-n">{p.label}{p.korting && <span class="st-bijkoop-korting">{p.korting}</span>}</span>
-                          <span class="st-bijkoop-prijs">{p.prijs}</span>
-                          <span class="st-meta">{p.sub}</span>
-                        </span>
-                      </label>
-                    ))}
-                  </fieldset>
-                  {v.bijkoop.pakketten.filter((p) => p.hint).map((p) => (
-                    <p class="st-bijkoop-hint" data-hint={p.credits}>{p.hint} <a class="st-link" href={v.bijkoop.hintLink.href}>{v.bijkoop.hintLink.label}</a></p>
-                  ))}
-                  <p class="st-meta">{v.bijkoop.ruimte}</p>
-                  <p class="st-meta">{v.bijkoop.betaal}</p>
-                  <div class="st-knoppen"><button class="btn btn-primary" type="submit">{v.bijkoop.knop}</button></div>
-                </form>
-              )
-              : <p class="st-meta">{v.bijkoop.ruimte}</p>}
-            {v.bijkoop.eerder.length > 0 && (
-              <details class="st-boek-eerder">
-                <summary class="st-link">{v.bijkoop.eerderH} ({v.bijkoop.eerder.length})</summary>
-                <ul class="st-bijkoop-eerder" role="list">
-                  {v.bijkoop.eerder.map((a) => <li><span class="st-boek-dag">{a.dag}</span> {a.tekst} · <span class={a.betaald ? '' : 'st-meta'}>{a.status}</span></li>)}
-                </ul>
-              </details>
-            )}
-          </div>
-        </section>
-      )}
 
       {/* ── DE MAANDSET ── */}
       {v.maandset && (
@@ -236,6 +203,62 @@ const T = v.tekst || {};
             )}
           </div>
           <p class="st-meta st-editions-regel">{t.planEditionsRegel} <a class="st-link" href={lang === 'nl' ? '/nl/plans#editions' : '/plans#editions'}>{t.planEditionsMeer} →</a></p>
+        </section>
+      )}
+
+      </Fragment>
+      )}
+
+      {/* ═══ TAB CREDITS ═══ */}
+      {v.tab === 'credits' && (
+      <Fragment>
+      {/* ── EXTRA CREDITS BIJKOPEN — 12 oktober 2026 (ab-v3 = c, ab-v4 = b) ──
+          Een gewoon formulier zonder script: drie keuzerondjes en een knop, naar
+          /account/plan/bijkopen (dezelfde Origin-controle als elk Studio-
+          formulier). Daarvandaan naar Mollie; terug op ?bijkoop=… zegt de
+          melding bovenaan wat er gebeurde. */}
+      {v.bijkoop && (
+        <section class="st-blok" aria-labelledby="bijkopen-h">
+          <div class="st-kaart-vlak st-vlak st-bijkoop" id="bijkopen">
+            <h2 id="bijkopen-h">{v.bijkoop.h}</h2>
+            <p class="st-meta">{v.bijkoop.lede}</p>
+            {v.bijkoop.verder && <p class="st-bijkoop-verder"><a class="btn btn-primary btn-sm" href={v.bijkoop.verder.href}>{v.bijkoop.verder.label}</a></p>}
+            {v.bijkoop.hint && <p class="st-bijkoop-hint">{v.bijkoop.hint} <a class="st-link" href={v.bijkoop.hintLink.href}>{v.bijkoop.hintLink.label}</a></p>}
+            {v.bijkoop.kan
+              ? (
+                <form method="post" action="/account/plan/bijkopen" class="st-bijkoop-form">
+                  {v.bijkoop.verderVeld && <input type="hidden" name="verder" value={v.bijkoop.verderVeld} />}
+                  <fieldset class="st-bijkoop-keuze">
+                    <legend class="sr-only">{v.bijkoop.h}</legend>
+                    {v.bijkoop.pakketten.map((p) => (
+                      <label class={`st-bijkoop-pakket${p.kan ? '' : ' is-uit'}`} data-pakket={p.credits}>
+                        <input type="radio" name="pakket" value={String(p.credits)} checked={p.gekozen} disabled={!p.kan} required={p.kan} />
+                        <span class="st-bijkoop-tekst">
+                          <span class="st-bijkoop-n">{p.label}{p.korting && <span class="st-bijkoop-korting">{p.korting}</span>}</span>
+                          <span class="st-bijkoop-prijs">{p.prijs}</span>
+                          <span class="st-meta">{p.sub}</span>
+                        </span>
+                      </label>
+                    ))}
+                  </fieldset>
+                  {v.bijkoop.pakketten.filter((p) => p.hint).map((p) => (
+                    <p class="st-bijkoop-hint" data-hint={p.credits}>{p.hint} <a class="st-link" href={p.hintHref}>{v.bijkoop.hintLink.label}</a></p>
+                  ))}
+                  <p class="st-meta">{v.bijkoop.ruimte}</p>
+                  <p class="st-meta">{v.bijkoop.betaal}</p>
+                  <div class="st-knoppen"><button class="btn btn-primary" type="submit">{v.bijkoop.knop}</button></div>
+                </form>
+              )
+              : <p class="st-meta">{v.bijkoop.ruimte}</p>}
+            {v.bijkoop.eerder.length > 0 && (
+              <details class="st-boek-eerder">
+                <summary class="st-link">{v.bijkoop.eerderH} ({v.bijkoop.eerder.length})</summary>
+                <ul class="st-bijkoop-eerder" role="list">
+                  {v.bijkoop.eerder.map((a) => <li><span class="st-boek-dag">{a.dag}</span> {a.tekst} · <span class={a.betaald ? '' : 'st-meta'}>{a.status}</span></li>)}
+                </ul>
+              </details>
+            )}
+          </div>
         </section>
       )}
 
@@ -295,6 +318,11 @@ const T = v.tekst || {};
         </div>
       </section>
 
+      {/* ── WAT EEN CREDIT KOOPT ── */}
+      <section class="st-blok" aria-label={T.tabCredits}>
+        <CreditKaart lang={lang} plannen={false} kern />
+      </section>
+
       {/* ── BESPREEK JE CREDITS (rustig, als er credits zijn) ── */}
       {v.bespreek && !v.bespreek.nadruk && !v.bespreek.gevraagd && (
         <section class="st-blok" aria-labelledby="bespreek-h2">
@@ -308,8 +336,44 @@ const T = v.tekst || {};
         </section>
       )}
 
-      {/* ── JE PLAN ── */}
-      {v.plan && (
+      </Fragment>
+      )}
+
+      {/* ═══ TAB FACTUREN ═══ */}
+      {v.tab === 'facturen' && v.facturen && (
+        <section class="st-blok" aria-labelledby="abo-facturen-h">
+          <div class="st-blok-kop"><h2 id="abo-facturen-h">{T.facturenH}</h2></div>
+          <p class="st-meta">{T.facturenLede}</p>
+          {v.facturen.rows.length === 0
+            ? <p class="st-leeg">{T.facturenLeeg}</p>
+            : (
+              <div class="st-kaart-vlak st-tabelvlak">
+                <table class="st-tabel">
+                  <thead><tr>
+                    <th>{t.invNumber}</th><th>{t.invDate}</th><th>{t.invOrder}</th>
+                    <th class="is-bedrag">{t.invAmount}</th><th><span class="sr-only">{t.invDownloadCol}</span></th>
+                  </tr></thead>
+                  <tbody>
+                    {v.facturen.rows.map((r) => (
+                      <tr>
+                        <td><b>{r.number}</b>{r.flags.map((f) => <span class="st-vlag">{f}</span>)}</td>
+                        <td data-label={t.invDate}>{r.date}</td>
+                        <td data-label={t.invOrder}>{r.ref}</td>
+                        <td class="is-bedrag" data-label={t.invAmount}>{r.amount}</td>
+                        <td class="is-actie">{r.href ? <a class="btn btn-ghost btn-sm" href={r.href}>{t.invDownload}</a> : <span class="st-meta">{r.state}</span>}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {v.facturen.anyPending && <p class="st-meta st-tabel-noot">{t.invPendingNote}</p>}
+              </div>
+            )}
+          <p class="st-meta"><a class="st-link" href="/account/invoices">{T.facturenAlle} →</a></p>
+        </section>
+      )}
+
+      {/* ═══ TAB JE PLAN ═══ */}
+      {v.tab === 'plan' && v.plan && (
         <section class="st-blok" aria-labelledby="je-plan-h">
           <div class="st-kaart-vlak st-vlak" id="je-plan">
             <h2 id="je-plan-h">{T.planH}</h2>
@@ -321,7 +385,53 @@ const T = v.tekst || {};
               {v.plan.jaarTot && <div class="st-feit"><dt>{T.jaarTot}</dt><dd>{v.plan.jaarTot}</dd></div>}
               {v.plan.status && <div class="st-feit"><dt>{T.status}</dt><dd>{v.plan.status}</dd></div>}
             </dl>
-            <p class="st-meta">{T.facturen} <a class="st-link" href="/account/invoices">{T.facturenLink} →</a></p>
+            <p class="st-meta">{T.facturen} <a class="st-link" href="/account/plan?tab=facturen">{T.facturenLink} →</a></p>
+
+            {/* ── OVERSTAPPEN (v29-overstap = a, 15 oktober 2026) ──────────────
+                Per volgende termijn; src/lib/overstap.js. Een gewoon formulier: Studio
+                draait zonder script (zie StudioLayout.astro). */}
+            {v.overstap && (
+              <div class="st-overstap" id="overstappen">
+                <h3 class="st-overstap-h">{T.overstapH}</h3>
+                {v.overstap.klaar && (
+                  <div class="st-melding st-overstap-klaar" role="status">
+                    <p>{v.overstap.klaar.zin}</p>
+                    <form method="post" action="/account/plan/overstap">
+                      <input type="hidden" name="do" value="terug" />
+                      <button class="btn btn-ghost btn-sm" type="submit">{v.overstap.klaar.knop}</button>
+                    </form>
+                  </div>
+                )}
+                {v.overstap.mag ? (
+                  <form method="post" action="/account/plan/overstap" class="st-overstap-form">
+                    <p class="st-meta">{v.overstap.lede}</p>
+                    <fieldset class="st-bijkoop-keuze st-overstap-keuze">
+                      <legend class="sr-only">{T.overstapH}</legend>
+                      {v.overstap.opties.map((o) => (
+                        <label class="st-bijkoop-pakket st-overstap-optie">
+                          <input type="radio" name="plan" value={o.id} checked={o.gekozen} required />
+                          <span class="st-bijkoop-tekst">
+                            <span class="st-bijkoop-n">{o.naam}</span>
+                            {o.credits && <span class="st-bijkoop-prijs">{o.credits}</span>}
+                            <span class="st-meta">{o.bedrag}</span>
+                            {o.verschil && <span class="st-meta">{o.verschil}</span>}
+                          </span>
+                        </label>
+                      ))}
+                    </fieldset>
+                    {v.overstap.opties.some((o) => o.maat) && (
+                      <div class="st-veldgroep st-overstap-maat">
+                        <label for="ov-credits">{v.overstap.maat.label}</label>
+                        <input id="ov-credits" class="st-veld" name="credits" type="number" inputmode="numeric" min={v.overstap.maat.min} max={v.overstap.maat.max} step={v.overstap.maat.stap} value={v.overstap.maat.waarde} />
+                        <p class="st-meta">{v.overstap.maat.hint} {v.overstap.maat.ijk}</p>
+                        <p class="st-meta">{v.overstap.maat.zonder}</p>
+                      </div>
+                    )}
+                    <div class="st-knoppen"><button class="btn btn-primary btn-sm" type="submit">{v.overstap.knop}</button></div>
+                  </form>
+                ) : (v.overstap.niet && <p class="st-meta">{v.overstap.niet}</p>)}
+              </div>
+            )}
 
             {v.beheer?.magPauzeren && (
               <details class="st-opzeggen st-stop" id="pauzeren">

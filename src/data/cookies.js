@@ -128,4 +128,16 @@ export const CONCEPT_DAGEN = 6;
  * localStorage en geen cookie: hij gaat nooit mee naar de server. Het
  * cookiebeleid noemt hem onder "In je browser bewaard, niet als cookie". */
 export const MELDING_SLEUTEL = 'vis-melding';
+
+/* ── DE UITLEG-TIPS — 15 oktober 2026 (afvinklijst 28, v28-tips = a) ───────────
+ *
+ * Welke tips je hebt weggeklikt (zie src/data/tips.js), en verder niets: alleen
+ * de namen van die tips. In het bestelformulier in localStorage (TIPS_SLEUTEL),
+ * want daar draait een script en hoeft het nooit naar de server. In VISUAILS
+ * Studio en op de privélink als cookie (TIPS_COOKIE), want daar draait geen
+ * script: wegklikken is een link (?tipweg=<id>) en de server moet het weten om
+ * de tip niet meer te tekenen. Alleen gezet als je op Begrepen of het kruisje
+ * klikt. Een jaar, net als vis_nav: hetzelfde soort voorkeur. */
+export const TIPS_SLEUTEL = 'vis-tips';
+export const TIPS_COOKIE = 'vis_tips';
 export const PROEF_WEG_DAGEN = 30;

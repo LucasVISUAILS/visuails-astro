@@ -77,8 +77,9 @@ console.log('\n1 · Studio: geen weekroutes meer, oude links sturen door');
     ok(`?tab=${tab} stuurt door naar /account/plan`, r instanceof Response ? [r.status, r.headers.get('location')] : 'geen doorverwijzing', [303, '/account/plan']);
   }
   const s = await scherm('/account/plan');
-  /* 2.07 (8 oktober 2026): één pagina zonder tabbladen (tests/abonnementspagina.test.mjs). */
-  ok('de abonnementspagina heeft geen tabbladen meer', 'tabs' in s.v, false);
+  /* 2.07 (8 oktober 2026): één pagina zonder tabbladen; sinds 15 oktober vier
+     nieuwe (tests/abonnementspagina.test.mjs), geen van de oude. */
+  ok('de abonnementspagina heeft alleen de vier nieuwe tabs', s.v.tabs.map((x) => x.id), ['overzicht', 'credits', 'facturen', 'plan']);
   ok('geen week, geen lijst en geen kalender in de staat',
     ['week', 'weekZin', 'weekstrip', 'wachtrij', 'planning', 'kalender', 'weekVerzetbaar'].filter((k) => k in s.v), []);
   ok('de knop bovenaan gaat naar het gewone bestelformulier', s.v.actie?.href, '/nl/start');

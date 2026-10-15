@@ -105,16 +105,16 @@ async function stuur(orderId, velden, { sessie = token, origin = 'https://visuai
 
 /* ── 1 · STUDIO: DE VAKKEN EN DE LIJST ─────────────────────────────────────── */
 const rijen = () => db.prepare('SELECT * FROM files WHERE order_id = 501 ORDER BY id').all();
-const kaart = (orderId, lang = 'nl') => {
+const kaart = (orderId, lang = 'nl', p = '') => {
   const o = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId);
   const files = db.prepare('SELECT * FROM files WHERE order_id = ?').all(orderId);
-  return orderView(COPY[lang], lang, o, files, [], null, 0, 0, '');
+  return orderView(COPY[lang], lang, o, files, [], null, 0, p ? orderId : 0, p);
 };
 {
   const v = kaart(501).fotos;
   ok('Studio: het blok staat er tot de levering (in productie)', !!v && v.los === false);
   ok('Studio: de lijst "wat ontbreekt" staat bovenaan, uit ontbreekt.js',
-    v.ontbreekt && v.ontbreekt.regels.join(' | ') === 'p1 Hoodie zwart: geen detail | p2: geen achterkant, geen detail', JSON.stringify(v.ontbreekt?.regels));
+    v.ontbreekt && v.ontbreekt.regels.join(' | ') === 'Product 1 · Hoodie zwart: geen detail | Product 2: geen achterkant, geen detail', JSON.stringify(v.ontbreekt?.regels));
   const p1 = v.producten.find((p) => p.key === 'p1');
   ok('Studio: een gevuld vak toont een kleine weergave (de bestandsroute)', /^\/account\/files\/\d+\/f$/.test(p1.vakken[0].gevuld?.href || ''));
   ok('Studio: een leeg verplicht vak heeft een eigen veld en zegt "Nog niet ontvangen"',
@@ -123,7 +123,7 @@ const kaart = (orderId, lang = 'nl') => {
   ok('Studio: elk veld heeft een eigen naam voor schermlezers', /Detail voor Product 1 · Hoodie zwart/.test(p1.vakken[2].aria));
   ok('Studio: per product een veld "Andere foto"', p1.ander?.veld === 'ref_p1');
   ok('Studio: een compleet product staat ingeklapt onder de open producten', v.compleet.map((p) => p.key).join() === 'p3' && v.producten.map((p) => p.key).join() === 'p1,p2');
-  ok('Studio: Engels heeft dezelfde vorm', kaart(501, 'en').fotos.ontbreekt.regels[1] === 'p2: no back, no detail');
+  ok('Studio: Engels heeft dezelfde vorm', kaart(501, 'en').fotos.ontbreekt.regels[1] === 'Product 2: no back, no detail');
 }
 {
   const v = kaart(503).fotos;
@@ -152,12 +152,51 @@ const voor = aantalOntbrekend(await ontbrekendVoorOrder(env.DB, 501));
     nieuw.every((f) => /^aangeleverd\/VIS-TEST-0501\/\d{3}-[0-9a-f]{8}-/.test(f.r2_key)) && [...r2.keys()].length === 2);
   ok('nasturen: product en vak reizen mee in de R2-metadata', [...r2.values()].some((x) => x.opts?.customMetadata?.product === 'p2' && x.opts?.customMetadata?.shot === 'back'));
   const ev = db.prepare("SELECT note, actor FROM order_events WHERE order_id = 501 ORDER BY id DESC LIMIT 1").get();
-  ok('nasturen: een regel op de tijdlijn, met de vakken', ev?.actor === 'customer' && ev?.note === 'Nagestuurd in Studio: p2 achterkant, p3 andere foto', ev?.note);
+  ok('nasturen: een regel op de tijdlijn, met de vakken', ev?.actor === 'customer' && ev?.note === 'Nagestuurd in Studio: Product 2 achterkant, Product 3 extra foto 1', ev?.note);
   const na = aantalOntbrekend(await ontbrekendVoorOrder(env.DB, 501));
   ok('nasturen: de lijst "wat ontbreekt" wordt korter', na === voor - 1, `${voor} → ${na}`);
   const studiomail = mails.find((m) => /Foto's binnen/.test(m.subject || ''));
-  ok('nasturen: de studiomail noemt de vakken en wat er nog mist', !!studiomail && /p2 achterkant/.test(studiomail.html) && /Ontbreekt nog/.test(studiomail.html));
+  ok('nasturen: de studiomail noemt de vakken en wat er nog mist', !!studiomail && /Product 2 achterkant/.test(studiomail.html) && /Ontbreekt nog/.test(studiomail.html));
   ok('Studio: na het nasturen is het vak gevuld', kaart(501).fotos.producten.find((p) => p.key === 'p2').vakken[1].gevuld !== null);
+}
+
+/* ── 2b · EXTRA FOTO'S VERVANGEN EN VERWIJDEREN — 15 oktober 2026 (werklijst 14) ── */
+{
+  const extraRij = () => db.prepare("SELECT * FROM files WHERE order_id = 501 AND product_key = 'p3' AND shot LIKE 'ref%' ORDER BY id").all();
+  const [eerste] = extraRij();
+  const v3 = kaart(501).fotos.compleet.find((p) => p.key === 'p3') || kaart(501).fotos.producten.find((p) => p.key === 'p3');
+  ok('extra: Studio toont de extra foto met "Vervangen" en "Verwijderen"', v3?.extra?.length === 1 && v3.extra[0].vervang === `vervang_${eerste.id}` && v3.extra[0].naam === 'Extra foto 1' && v3.extra[0].wegLabel === 'Verwijderen');
+  ok('extra: de vaste vakken hebben geen van beide', v3.vakken.every((x) => !('vervang' in x)));
+  ok('extra: ?p=p3 zet een compleet product bovenaan open', kaart(501, 'nl', 'p3').fotos.producten.some((p) => p.key === 'p3'));
+  /* Vervangen: dezelfde plek, het nieuwe bestand; de oude rij en het oude bestand weg. */
+  const oudeSleutel = eerste.r2_key;
+  r2.set(oudeSleutel, { bytes: 1 });
+  let r = await stuur(501, [[`vervang_${eerste.id}`, bestand(JPEG, 'nieuw-label.jpg')]]);
+  ok('extra: vervangen geeft vv=1', /fotos=0&vv=1#order-501$/.test(r.to), r.to);
+  const na = extraRij();
+  ok('extra: één extra foto, op ref1, met het nieuwe bestand', na.length === 1 && na[0].shot === 'ref1' && na[0].filename === 'nieuw-label.jpg' && na[0].id !== eerste.id, JSON.stringify(na.map((f) => [f.shot, f.filename])));
+  ok('extra: het oude bestand is uit R2', !r2.has(oudeSleutel));
+  /* Een vast vak vervangen kan niet: het veld bestaat niet en de route weigert het. */
+  const voor = db.prepare("SELECT id FROM files WHERE order_id = 501 AND product_key = 'p3' AND shot = 'front'").get();
+  r = await stuur(501, [[`vervang_${voor.id}`, bestand(JPEG, 'andere-voorkant.jpg')]]);
+  ok('extra: een vaste foto vervangen wordt geweigerd', /fotos=0/.test(r.to) && db.prepare("SELECT filename FROM files WHERE id = ?").get(voor.id)?.filename === 'voor3.jpg', r.to);
+  r = await stuur(501, [['weg', String(voor.id)]]);
+  ok('extra: een vaste foto verwijderen wordt geweigerd', !!db.prepare('SELECT 1 FROM files WHERE id = ?').get(voor.id), r.to);
+  /* Een tweede extra erbij, dan de eerste weg: de volgende nieuwe krijgt het vrije nummer. */
+  await stuur(501, [['ref_p3', bestand(PNG, 'tweede.png', 'image/png')]]);
+  const twee = extraRij();
+  r = await stuur(501, [['weg', String(twee[0].id)]]);
+  ok('extra: verwijderen geeft weg=1', /fotos=0&weg=1#order-501$/.test(r.to), r.to);
+  ok('extra: de rij is weg, de andere blijft', extraRij().map((f) => f.shot).join(',') === 'ref2', extraRij().map((f) => f.shot).join(','));
+  await stuur(501, [['ref_p3', bestand(PNG, 'derde.png', 'image/png')]]);
+  ok('extra: een nieuwe extra foto krijgt het vrije nummer (ref1), geen dubbele ref2', extraRij().map((f) => f.shot).sort().join(',') === 'ref1,ref2', extraRij().map((f) => f.shot).join(','));
+  const ev = db.prepare("SELECT note FROM order_events WHERE order_id = 501 AND note LIKE 'Verwijderd%' ORDER BY id DESC LIMIT 1").get();
+  ok('extra: de tijdlijn zegt wat er verwijderd is', ev?.note === 'Verwijderd in Studio: Product 3 extra foto 1', ev?.note);
+  ok('extra: de studiomail heet "Foto\'s gewijzigd" en noemt het', mails.some((m) => /Foto's gewijzigd/.test(m.subject || '') && /Verwijderd/.test(m.html)));
+  /* Een andere klant kan geen foto van deze bestelling weghalen. */
+  const nu = extraRij()[0];
+  await stuur(501, [['weg', String(nu.id)]], { sessie: ander });
+  ok('extra: een andere klant kan niets verwijderen', !!db.prepare('SELECT 1 FROM files WHERE id = ?').get(nu.id));
 }
 
 /* ── 3 · DE GRENZEN ──────────────────────────────────────────────────────── */

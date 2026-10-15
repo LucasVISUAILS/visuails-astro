@@ -12,7 +12,8 @@
  *     pipeline.js) en vergelijkt ze alleen met radio's die er al staan.
  */
 import { readFileSync } from 'node:fs';
-import { herbestelKnop, herbestelDienst } from '../src/lib/herbestel.js';
+import { herbestelKnop, herbestelDienst, herbestelAllesKnop, bestelInstellingen } from '../src/lib/herbestel.js';
+import { accountGet } from '../src/lib/account.js';
 import { orderView, COPY } from '../src/lib/account.js';
 import { creditsVoorDienst, ladderFloor, euro } from '../src/data/pricing.js';
 import { portalGet } from '../src/lib/portal.js';
@@ -99,13 +100,54 @@ ok('geen getypt bedrag of getal in herbestel.js', !/€\s?\d|\d+\s?credits/.test
 /* Het formulier leest ?bg=, ?ratio= en ?face=. */
 {
   const pl = lees('src/scripts/pipeline.js');
-  const fn = pl.slice(pl.indexOf('function applyLookUitUrl('), pl.indexOf('function applyBrandKit('));
+  const fn = pl.slice(pl.indexOf('function applyLookUitUrl('), pl.indexOf('function applyVanBestelling('));
   ok('pipeline.js: applyLookUitUrl leest bg, ratio en face', /qs\.get\('bg'\)/.test(fn) && /qs\.get\('ratio'\)/.test(fn) && /qs\.get\('face'\)/.test(fn));
   ok('  filtert eerst en vergelijkt alleen met radio\'s die er staan', /\^\[0-9A-F\]\{6\}\$/.test(fn) && /qa\('input\[name="ratio"\]'\)\.find/.test(fn) && /qa\('input\[name="model"\]'\)\.find/.test(fn));
   ok('  zet nooit HTML uit de URL op de pagina', !/innerHTML|insertAdjacentHTML|textContent\s*=/.test(fn));
   ok('  slaat een uitgezette radio over', /r\.disabled/.test(fn));
   ok('  draait na het binden en opnieuw voor een eigen merkmodel na /account/me', /bindModel\(\);\s*\/\*[\s\S]*?\*\/\s*applyLookUitUrl\(\);/.test(pl) && /applyBrandKit\(me\);\s*\/\*[\s\S]*?\*\/\s*applyLookUitUrl\(\{ alleenGezicht: true \}\);/.test(pl));
   ok('StylePicker leest ?style= al (niet dubbel gebouwd)', /get\('style'\)/.test(lees('src/components/order/StylePicker.astro')) && !/get\('style'\)/.test(fn));
+}
+
+/* ── OPNIEUW BESTELLEN MET ALLE INSTELLINGEN — 15 oktober 2026 (werklijst 33) ── */
+console.log('\nopnieuw bestellen met alle instellingen (werklijst 33)');
+{
+  const det = { background: 'custom', background_hex: '#EFEFEF', ratio: 'portrait45', model: 'ava', channels: 'own,social',
+    angle_inside: '1', 'angle_three-quarter': '1', 'angle_eigen-ground': '1', 'angle_note_eigen-ground': 'Binnenkant van de kraag',
+    'angle_flat-lay': '1', name: 'Mara', email: 'mara@voorbeeldmerk.test', vat: 'NL000000000B01', voorrang: '1' };
+  const o = { id: 42, ref: 'VIS-TEST-0042', service: 'catalog', status: 'in_production', details_json: JSON.stringify(det) };
+  const k = herbestelAllesKnop(o, { lang: 'nl' });
+  ok('Studio-link: lookkeuzes plus ?van=<id>, verder niets', k && k.href === '/nl/start/catalog/?bg=EFEFEF&ratio=portrait45&face=ava&van=42', k?.href);
+  ok('  ook bij een bestelling die nog loopt', !!k);
+  ok('  niet bij een proef, een geannuleerde of video', !herbestelAllesKnop({ ...o, service: 'test-sample' }) && !herbestelAllesKnop({ ...o, status: 'cancelled' }) && !herbestelAllesKnop({ ...o, service: 'video' }));
+  ok('  de uitleg noemt wat er meegaat, per dienst', /extra hoeken/.test(k.uitleg) && /notitie/.test(herbestelAllesKnop({ ...o, service: 'lifestyle', details_json: '{}' }, { lang: 'nl' }).uitleg));
+  const inst = bestelInstellingen(o);
+  ok('instellingen: achtergrond, verhouding, model, kanalen', [inst.bg, inst.ratio, inst.model, inst.kanalen.join(',')].join('|') === 'EFEFEF|portrait45|ava|own,social', JSON.stringify(inst));
+  ok('  de extra hoeken met de eigen naam; flat lay (vervallen) niet', inst.hoeken.map((h) => h.id).sort().join(',') === 'eigen-ground,inside,three-quarter' && inst.hoeken.find((h) => h.id === 'eigen-ground').note === 'Binnenkant van de kraag', JSON.stringify(inst.hoeken));
+  ok('  nooit naam, e-mail, btw-nummer of voorrang', !/Mara|mara@|NL000000000B01/.test(JSON.stringify(inst)) && !('voorrang' in inst));
+  /* De route: alleen de eigenaar. */
+  const { db } = verseDb(new URL('../schema.sql', import.meta.url));
+  db.exec("INSERT INTO customers (id, email, brand) VALUES (1, 'studio@voorbeeld-volt.nl', 'VOLT'), (2, 'iemand@anders.test', 'ANDERS')");
+  db.prepare("INSERT INTO orders (id, ref, customer_id, service, status, name, brand, email, total_cents, lang, product_count, details_json) VALUES (42, 'VIS-TEST-0042', 1, 'catalog', 'in_production', 'Mara', 'VOLT', 'studio@voorbeeld-volt.nl', 0, 'nl', 2, ?)").run(JSON.stringify(det));
+  const eigen = await mintToken(); const ander = await mintToken();
+  db.prepare("INSERT INTO account_sessions (customer_id, token_hash, issued_at, expires_at) VALUES (1, ?, datetime('now'), datetime('now', '+30 days'))").run(await hashToken(eigen));
+  db.prepare("INSERT INTO account_sessions (customer_id, token_hash, issued_at, expires_at) VALUES (2, ?, datetime('now'), datetime('now', '+30 days'))").run(await hashToken(ander));
+  const vraag = async (tok) => accountGet({ request: new Request('https://visuails.com/account/orders/42/instellingen', { headers: tok ? { cookie: `vis_account=${tok}` } : {} }), env: { DB: d1(db) }, waitUntil() {} });
+  const r1 = await vraag(eigen);
+  const j = await r1.json();
+  ok('route: de eigenaar krijgt de instellingen als JSON, niet gecachet', r1.status === 200 && j.ref === 'VIS-TEST-0042' && j.hoeken.length === 3 && r1.headers.get('cache-control') === 'no-store', `${r1.status}`);
+  ok('route: een andere klant krijgt 404', (await vraag(ander)).status === 404);
+  ok('route: uitgelogd 401', (await vraag('')).status === 401);
+  /* Het formulier. */
+  const pl = lees('src/scripts/pipeline.js');
+  const fn = pl.slice(pl.indexOf('function applyVanBestelling('), pl.indexOf('function applyBrandKit('));
+  ok('formulier: haalt de instellingen op bij de eigen route, met de sessie', /fetch\(`\/account\/orders\/\$\{id\}\/instellingen`/.test(fn) && /credentials: 'same-origin'/.test(fn));
+  ok('  zet nooit HTML uit het antwoord op de pagina', !/innerHTML|insertAdjacentHTML/.test(fn));
+  ok('  vergelijkt alleen met velden die de pagina tekent', /qa\('input\[name="style"\]'\)\.find/.test(fn) && /q\(`input\[name="angle_\$\{h\.id\}"\]`\)/.test(fn));
+  ok('  het blok is weg te klikken (knop en Esc)', /data-pl-van-sluit/.test(fn) && /Escape/.test(fn));
+  ok('  draait na de brand kit (de keuzes van toen gaan voor)', /applyLookUitUrl\(\{ alleenGezicht: true \}\);\s*\/\*[\s\S]*?\*\/\s*applyVanBestelling\(me\);/.test(pl));
+  const of = lees('src/components/order/OrderFlow.astro');
+  ok('  het blok staat in het formulier, verborgen tot het gevuld is', /<div class="pl-lost pl-open pl-van" data-pl-van hidden role="status">/.test(of));
 }
 
 console.log(`\n${pass}/${pass + fail} geslaagd`);

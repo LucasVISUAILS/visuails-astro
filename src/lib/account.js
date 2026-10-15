@@ -96,7 +96,7 @@ import { leverDatumsVan } from './leverdatums.js';
 /* De Nu-zin (punt 3.01): één functie voor bestelkaart, overzicht en privélink. */
 import { nuZin, nuKnopLabel, ACTIE_SOORTEN, RANG as NU_RANG, isAfgerond as nuAfgerond, standKort } from './nuzin.js';
 /* Punt 3.07: "Bestel met dezelfde look" — alleen lookkeuzes in de link. */
-import { herbestelKnop } from './herbestel.js';
+import { herbestelKnop, herbestelAllesKnop, bestelInstellingen } from './herbestel.js';
 import { sendMail } from './mail.js';
 import { mailRondeOntvangen } from './cancelMail.js';
 import {
@@ -171,6 +171,7 @@ import { creditsVoor, creditsPerSoort, dienstenVoorAbo } from './slots.js';
  * er staat hier geen enkele query op subscriptions of plan_queue.
  */
 import { handleSubscribeStart, handleSubscribeReturn, stopIncasso, hervatIncasso } from './subscribe.js';
+import { vraagOverstapAan, annuleerOverstap, overstapVan, overstapToepassen, magOverstappen, overstapDoel, overstapBedragen, OVERSTAP_PLANNEN, OVERSTAP_MAAT } from './overstap.js';
 import {
   planState, loadQueue, queueAdd, queueRemove, queueReorder, queueMax,
   queueLock, queueUnlock, queueWindow, queueAsap, queueVerzet,
@@ -208,7 +209,8 @@ const MERKBALK = `<div class="bar"><a class="mark" href="/" aria-label="VISUAILS
    ze daar bijstelt, staat hier hetzelfde. Zie de noot bij AMOUNT.editions. */
 import { AMOUNT as BEDRAG, euro as euroBedrag, vatLabel as btwLabel } from '../data/pricing.js';
 import { centsToMollieValue, paymentDescription, isPayableService, ladderKey, VAT_RATE } from './quote.js';
-import { SESSION_COOKIE_DAYS, PREFERENCE_COOKIE_DAYS, maxAge } from '../data/cookies.js';
+import { SESSION_COOKIE_DAYS, PREFERENCE_COOKIE_DAYS, maxAge, TIPS_COOKIE } from '../data/cookies.js';
+import { TIPS, TIP_IDS, tipsUitCookie } from '../data/tips.js';
 import { GARMENTS } from '../data/garments.js';
 /* De vaste look als poort en als feit per product — ronde 4, 19 sept 2026. */
 import { laadLocks, lookCompleet, lookGezet, lookGeldig, isEigenLook, gezichtVan } from './vasteLook.js';
@@ -568,7 +570,18 @@ const COPY = {
     vakLeeg: 'Not received yet',
     vakMagLeeg: 'Optional',
     vakKies: (vak, product) => `${vak} for ${product}`,
-    vakAnder: 'Other photo (example or detail)',
+    vakAnder: 'Extra photo (example or detail)',
+    /* Werklijst 14 (15 oktober 2026): extra foto's vervangen en verwijderen. */
+    vakExtraNaam: (n) => `Extra photo ${n}`,
+    vakVervang: 'Choose another photo',
+    vakVervangAria: (naam, product) => `Choose a different photo for ${naam} of ${product}`,
+    vakWeg: 'Remove',
+    vakWegJa: 'Yes, remove this photo',
+    vakWegAria: (naam, product) => `Remove ${naam} of ${product}`,
+    vakVast: 'Front, back, detail and worn stay as they are once we have them. Is one not right? Let us know and we will sort it out.',
+    fotosWeg: (n) => (n === 1 ? 'The photo has been removed.' : `${n} photos have been removed.`),
+    fotosVervangen: (n) => (n === 1 ? 'The photo has been replaced.' : `${n} photos have been replaced.`),
+    prodFotosBeheer: 'Add or change photos',
     vakCta: 'Send photos',
     vakHint: `Accepted: ${uploadFormatsSentence('en')}, at most ${Math.round(MAX_FILE_BYTES / 1048576)} MB per photo. Up to ${FOTOS_PER_KEER} per send.`,
     vakCompleet: (n) => `${n} complete ${n === 1 ? 'product' : 'products'}`,
@@ -1254,7 +1267,18 @@ const COPY = {
     vakLeeg: 'Nog niet ontvangen',
     vakMagLeeg: 'Mag leeg',
     vakKies: (vak, product) => `${vak} voor ${product}`,
-    vakAnder: 'Andere foto (voorbeeld of detail)',
+    vakAnder: 'Extra foto (voorbeeld of detail)',
+    /* Werklijst 14 (15 oktober 2026): extra foto's vervangen en verwijderen. */
+    vakExtraNaam: (n) => `Extra foto ${n}`,
+    vakVervang: 'Andere foto kiezen',
+    vakVervangAria: (naam, product) => `Een andere foto kiezen voor ${naam} van ${product}`,
+    vakWeg: 'Verwijderen',
+    vakWegJa: 'Ja, verwijder deze foto',
+    vakWegAria: (naam, product) => `${naam} van ${product} verwijderen`,
+    vakVast: 'Voorkant, achterkant, detail en gedragen staan vast zodra we ze hebben. Klopt er een niet? Laat het ons weten, dan lossen we het op.',
+    fotosWeg: (n) => (n === 1 ? 'De foto is verwijderd.' : `${n} foto\u2019s zijn verwijderd.`),
+    fotosVervangen: (n) => (n === 1 ? 'De foto is vervangen.' : `${n} foto\u2019s zijn vervangen.`),
+    prodFotosBeheer: 'Foto\u2019s toevoegen of wijzigen',
     vakCta: 'Foto\u2019s versturen',
     vakHint: `Toegestaan: ${uploadFormatsSentence('nl')}, hoogstens ${Math.round(MAX_FILE_BYTES / 1048576)} MB per foto. Tot ${FOTOS_PER_KEER} per keer.`,
     vakCompleet: (n) => `${n} ${n === 1 ? 'product' : 'producten'} compleet`,
@@ -1772,6 +1796,11 @@ export async function accountGet(context) {
     return serveMaandsetZip(context, customer, Number(setZipMatch[1]));
   }
 
+  /* Werklijst 33 (15 oktober 2026): de instellingen van een bestelling, voor
+     "Opnieuw bestellen met alle instellingen". JSON, alleen voor de eigenaar. */
+  const instMatch = path.match(/^\/account\/orders\/(\d+)\/instellingen$/);
+  if (instMatch) return handleOrderInstellingen(context, Number(instMatch[1]));
+
   const zipMatch = path.match(/^\/account\/orders\/(\d+)\/zip$/);
   if (zipMatch) {
     const gate = await checkRate(env, { ip: clientIp(request), action: 'account-zip', limit: ZIP_LIMIT });
@@ -2074,6 +2103,7 @@ ${MERKBALK}
   if (path === '/account/plan/cancel') return handlePlanCancel(context, customer);
   if (path === '/account/plan/bespreek') return handlePlanBespreek(context, customer);
   if (path === '/account/plan/bijkopen') return handlePlanBijkopen(context, customer);
+  if (path === '/account/plan/overstap') return handlePlanOverstap(context, customer);
 
   if (path === '/account/feedback') return handleFeedback(context, customer);
 
@@ -2858,6 +2888,17 @@ export async function sectionState(context, customer) {
       /* klapZet(): alleen deze ene paginawissel beweegt (zie studioKoppen.js). */
       return seeOther(back, [`vis_nav=${balk}; Max-Age=${maxAge(PREFERENCE_COOKIE_DAYS)}; ${COOKIE_FLAGS}`, klapZet()]);
     }
+    /* Een tip wegklikken (afvinklijst 28, v28-tips = a): Studio draait zonder
+       script, dus is "Begrepen" een link met ?tipweg=<id>, net als de zijbalk.
+       De cookie onthoudt welke tips weg zijn; terug naar dezelfde pagina zonder
+       de parameter. Zie src/data/tips.js. */
+    const tipWeg = url.searchParams.get('tipweg');
+    if (tipWeg && TIP_IDS.includes(tipWeg)) {
+      url.searchParams.delete('tipweg');
+      const weg = tipsUitCookie(request.headers.get('cookie'), TIPS_COOKIE);
+      weg.add(tipWeg);
+      return seeOther(`${url.pathname}${url.search}${url.hash}`, [`${TIPS_COOKIE}=${[...weg].join(',')}; Max-Age=${maxAge(PREFERENCE_COOKIE_DAYS)}; ${COOKIE_FLAGS}`]);
+    }
     /* Een oude link met ?thema= (het maantje, tot 14 oktober 2026): terug naar
        dezelfde pagina zonder de parameter, en zonder cookie. Zie themaCookie(). */
     const kleur = url.searchParams.get('thema');
@@ -2985,6 +3026,31 @@ export async function sectionState(context, customer) {
     filesByOrder, eventsByOrder, lockByStyle,
     justSaved, statusFilter, payFailed, payHeld, detailsMissing, rondeFlag, openOrderId, openProduct, savedLock,
     thema: themaCookie(request), navDicht: navCookie(request) === 'dicht',
+    tipsWeg: tipsUitCookie(request.headers.get('cookie'), TIPS_COOKIE),
+  };
+}
+
+/**
+ * De tip voor deze Studio-pagina, of null (afvinklijst 28, v28-tips = a). Eén per
+ * pagina, en alleen als hij niet is weggeklikt. `weg` is de link die hem
+ * wegklikt: dezelfde pagina met ?tipweg=<id> (sectionState zet de cookie).
+ */
+export function studioTip(request, lang, id, tipsWeg) {
+  if (!id || !TIP_IDS.includes(id) || (tipsWeg && tipsWeg.has(id))) return null;
+  const T = TIPS[lang === 'en' ? 'en' : 'nl'];
+  let weg = '';
+  try {
+    const u = new URL(request.url);
+    u.searchParams.delete('tipweg');
+    u.searchParams.set('tipweg', id);
+    weg = `${u.pathname}${u.search}`;
+  } catch { weg = `?tipweg=${id}`; }
+  const inhoud = T[id];
+  return {
+    id, weg, begrepen: T.begrepen, sluit: T.sluit,
+    h: typeof inhoud === 'object' ? inhoud.h : '',
+    tekst: typeof inhoud === 'string' ? inhoud : '',
+    punten: typeof inhoud === 'object' ? inhoud.punten : [],
   };
 }
 
@@ -3096,6 +3162,22 @@ export async function currentCustomer(env, request) {
  * "signed in, nothing on file" without reading the status — and the difference
  * is whether a stranger's browser draws a signed-in nav bar.
  */
+/** GET /account/orders/<id>/instellingen — zie bestelInstellingen() in herbestel.js. */
+async function handleOrderInstellingen({ request, env }, orderId) {
+  const gate = await checkRate(env, { ip: clientIp(request), action: 'account-page', limit: PAGE_LIMIT });
+  if (!gate.allowed) return json({}, 429);
+  const customer = await currentCustomer(env, request);
+  if (!customer) return json({}, 401);
+  if (!Number.isInteger(orderId) || orderId <= 0) return json({}, 404);
+  /* De eigenaar: de sessie zegt wie hij is, het nummer in de URL niets. */
+  const o = await env.DB.prepare(
+    'SELECT id, ref, service, status, details_json FROM orders WHERE id = ?1 AND customer_id = ?2'
+  ).bind(orderId, customer.customer_id).first().catch(() => null);
+  const inst = o ? bestelInstellingen(o) : null;
+  if (!inst) return json({}, 404);
+  return json(inst);
+}
+
 async function handleMe({ request, env }) {
   if (!env?.DB) return json({}, 503); // currentCustomer() would throw on env.DB.prepare — fail as JSON, not a 500
 
@@ -4994,7 +5076,7 @@ const anderVeld = (key) => `ref_${key}`;
 const VAK_VELD = /^vak_(p[1-9][0-9]{0,2})_([a-z]+(?:[1-9][0-9]?)?)$/;
 const ANDER_VELD = /^ref_(p[1-9][0-9]{0,2})$/;
 
-function fotosView(t, lang, o, uploaded) {
+function fotosView(t, lang, o, uploaded, openProduct = '') {
   if (!nasturenOpen(o)) return null;
   if (uploaded.length >= MAX_BATCH_FILES) return null;
   const basis = {
@@ -5039,9 +5121,27 @@ function fotosView(t, lang, o, uploaded) {
         staat: f ? t.vakOntvangen : (s.required ? (bekend ? t.vakLeeg : '') : t.vakMagLeeg),
       };
     });
-    const refs = eigen.filter((f) => isRefShotId(f.shot)).length;
+    /* ── EXTRA FOTO'S: VERVANGEN EN VERWIJDEREN — 15 oktober 2026 (werklijst 14) ──
+       Lucas: extra foto's aanpasbaar en verwijderbaar, de vier vaste nooit. Een
+       extra foto (ref1…) staat nu als eigen vak met een veld "Vervangen" en een
+       knop "Verwijderen" (een gewone verzendknop in hetzelfde formulier, met het
+       nummer van de foto als waarde: geen script). De vier vaste vakken en de
+       bijbestelde hoeken blijven zoals ze zijn zodra ze gevuld zijn. */
+    const refRijen = eigen.filter((f) => isRefShotId(f.shot))
+      .sort((a, b) => Number(String(a.shot).replace(/\D/g, '')) - Number(String(b.shot).replace(/\D/g, '')));
+    const refs = refRijen.length;
+    const extra = refRijen.map((f, j) => {
+      const naam = t.vakExtraNaam(j + 1);
+      return {
+        id: f.id, naam,
+        gevuld: { href: `/account/files/${f.id}/f`, beeld: isViewable(f), ext: (String(f.filename || '').split('.').pop() || '').toUpperCase() },
+        vervang: `vervang_${f.id}`, vervangLabel: t.vakVervang, vervangAria: t.vakVervangAria(naam, label),
+        wegLabel: t.vakWeg, wegJa: t.vakWegJa, wegAria: t.vakWegAria(naam, label),
+      };
+    });
     producten.push({
-      key, label, vakken,
+      key, label, vakken, extra,
+      anker: `fotos-${o.id}-${key}`,
       ander: refs < MAX_REF_PER_PRODUCT ? { veld: anderVeld(key), label: t.vakAnder, aria: t.vakKies(t.vakAnder, label) } : null,
       /* Compleet = geen verplicht vak leeg, en dat weten we zeker. */
       compleet: bekend && vakken.every((v) => !v.verplicht || v.gevuld),
@@ -5051,11 +5151,14 @@ function fotosView(t, lang, o, uploaded) {
     ...basis,
     los: false,
     p: t.vakLede,
+    vast: producten.some((p) => p.vakken.some((v) => v.gevuld)) ? t.vakVast : '',
     ontbreekt: lijst && lijst.length ? { h: t.vakOntbreektH, regels: ontbrekendRegels(lijst, lang), na: t.vakOntbreektNa } : null,
-    /* Wat nog open is bovenaan; complete producten ingeklapt eronder. */
-    producten: producten.filter((p) => !p.compleet),
-    compleet: producten.filter((p) => p.compleet),
-    compleetLabel: t.vakCompleet(producten.filter((p) => p.compleet).length),
+    /* Wat nog open is bovenaan; complete producten ingeklapt eronder. Een
+       product waar de klant net "Foto's toevoegen of wijzigen" bij koos (?p=),
+       staat bovenaan open, ook als hij compleet is. */
+    producten: producten.filter((p) => !p.compleet || p.key === openProduct),
+    compleet: producten.filter((p) => p.compleet && p.key !== openProduct),
+    compleetLabel: t.vakCompleet(producten.filter((p) => p.compleet && p.key !== openProduct).length),
   };
 }
 
@@ -5074,12 +5177,30 @@ async function handleOrderFotos({ request, env }, customer, orderId) {
   if (!nasturenOpen(o) || !env?.UPLOADS) return seeOther(anchor('fotos=dicht'));
 
   const bestaand = await env.DB.prepare(
-    "SELECT product_key, shot FROM files WHERE order_id = ?1 AND kind = 'upload'"
+    "SELECT id, r2_key, product_key, shot FROM files WHERE order_id = ?1 AND kind = 'upload'"
   ).bind(orderId).all().then((r) => r.results || []).catch(() => []);
   const al = bestaand.length;
   const gevuld = new Set(bestaand.filter((f) => f.product_key && f.shot).map((f) => `${f.product_key}|${f.shot}`));
-  const refsVan = new Map();
-  for (const f of bestaand) if (f.product_key && isRefShotId(f.shot)) refsVan.set(f.product_key, (refsVan.get(f.product_key) || 0) + 1);
+  /* Welke extra-nummers (ref1…) per product bezet zijn. Een nieuwe extra foto
+     krijgt het laagste vrije nummer, en niet "aantal + 1": sinds een extra foto
+     weg kan (15 oktober 2026) zou dat een nummer twee keer geven. */
+  const refNrs = new Map();
+  const refNr = (shot) => Number(String(shot).replace(/\D/g, '')) || 0;
+  for (const f of bestaand) if (f.product_key && isRefShotId(f.shot)) {
+    if (!refNrs.has(f.product_key)) refNrs.set(f.product_key, new Set());
+    refNrs.get(f.product_key).add(refNr(f.shot));
+  }
+  const vrijRef = (key) => {
+    const bezet = refNrs.get(key) || new Set();
+    for (let i = 1; i <= MAX_REF_PER_PRODUCT; i++) if (!bezet.has(i)) { bezet.add(i); refNrs.set(key, bezet); return refShotId(i); }
+    return '';
+  };
+  /* Een extra foto van deze bestelling (alleen die: de vaste vakken en de
+     bijbestelde hoeken blijven staan zodra ze gevuld zijn — werklijst 14). */
+  const extraRij = (id) => bestaand.find((f) => f.id === id && f.product_key && isRefShotId(f.shot)) || null;
+  const wegId = Number.parseInt(String(form?.get('weg') || ''), 10);
+  const weg = wegId > 0 && extraRij(wegId) ? [extraRij(wegId)] : [];
+  for (const r of weg) refNrs.get(r.product_key)?.delete(refNr(r.shot));
   const n = Math.min(Number(o.product_count) || 0, 200);
   const productBestaat = (key) => (Number(key.slice(1)) || 0) >= 1 && (Number(key.slice(1)) || 0) <= n;
   let det = {};
@@ -5100,17 +5221,22 @@ async function handleOrderFotos({ request, env }, customer, orderId) {
   for (const [veld, f] of (form ? form.entries() : [])) {
     if (!f || typeof f !== 'object' || typeof f.arrayBuffer !== 'function' || !(f.size > 0)) continue;
     let m;
-    if ((m = VAK_VELD.exec(veld))) {
+    if ((m = /^vervang_(\d{1,12})$/.exec(veld))) {
+      /* Een extra foto vervangen: dezelfde plek, het nieuwe bestand. Wat ook
+         verwijderd wordt, wordt niet ook vervangen. */
+      const oud = extraRij(Number(m[1]));
+      if (!oud || weg.some((r) => r.id === oud.id) || kandidaten.some((k) => k.vervangt?.id === oud.id)) { mis += 1; continue; }
+      kandidaten.push({ f, key: oud.product_key, shot: oud.shot, vervangt: oud });
+    } else if ((m = VAK_VELD.exec(veld))) {
       const [, key, shotId] = m;
       if (!productBestaat(key) || !vakIds.has(shotId) || gevuld.has(`${key}|${shotId}`)) { mis += 1; continue; }
       gevuld.add(`${key}|${shotId}`);
       kandidaten.push({ f, key, shot: shotId });
     } else if ((m = ANDER_VELD.exec(veld))) {
       const key = m[1];
-      const volgende = (refsVan.get(key) || 0) + 1;
-      if (!productBestaat(key) || volgende > MAX_REF_PER_PRODUCT) { mis += 1; continue; }
-      refsVan.set(key, volgende);
-      kandidaten.push({ f, key, shot: refShotId(volgende) });
+      const vrij = productBestaat(key) ? vrijRef(key) : '';
+      if (!vrij) { mis += 1; continue; }
+      kandidaten.push({ f, key, shot: vrij });
     } else if (veld === 'fotos') {
       kandidaten.push({ f, key: n === 1 ? 'p1' : null, shot: null });
     }
@@ -5122,7 +5248,8 @@ async function handleOrderFotos({ request, env }, customer, orderId) {
   const rijen = [];
   const vakken = [];
   let dagVol = false;
-  for (const [i, { f, key, shot: shotId }] of kandidaten.slice(0, ruimte).entries()) {
+  const vervangen = [];
+  for (const [i, { f, key, shot: shotId, vervangt }] of kandidaten.slice(0, ruimte).entries()) {
     /* Dezelfde keuring als /api/upload, in dezelfde volgorde: te groot, onbekend
        type, en niet te lezen als beeld (o05). Een bestand dat afvalt stopt de
        rest niet. */
@@ -5149,36 +5276,59 @@ async function handleOrderFotos({ request, env }, customer, orderId) {
         customMetadata: { bron: 'studio', original: naam, ...(key ? { product: key } : {}), ...(shotId ? { shot: shotId } : {}) },
       });
       rijen.push([orderId, sleutel, naam, f.size, key, shotId]);
-      vakken.push({ key, shot: shotId });
+      if (vervangt) vervangen.push({ key, shot: shotId, oud: vervangt });
+      else vakken.push({ key, shot: shotId });
     } catch (e) {
       mis += 1;
       console.error('[account] foto niet opgeslagen:', e?.message || e);
     }
   }
-  if (!rijen.length) return seeOther(anchor(dagVol ? 'fotos=dag' : 'fotos=0'));
+  if (!rijen.length && !weg.length) return seeOther(anchor(dagVol ? 'fotos=dag' : 'fotos=0'));
   const sql = "INSERT INTO files (order_id, kind, r2_key, filename, bytes, product_key, shot) VALUES (?1, 'upload', ?2, ?3, ?4, ?5, ?6)";
-  try {
-    const stmt = env.DB.prepare(sql);
-    await env.DB.batch(rijen.map((r) => stmt.bind(...r)));
-  } catch (e) {
-    console.error('[account] fotorijen niet vastgelegd:', e?.message || e);
-    return seeOther(anchor('fotos=0'));
+  if (rijen.length) {
+    try {
+      const stmt = env.DB.prepare(sql);
+      await env.DB.batch(rijen.map((r) => stmt.bind(...r)));
+    } catch (e) {
+      console.error('[account] fotorijen niet vastgelegd:', e?.message || e);
+      return seeOther(anchor('fotos=0'));
+    }
   }
-  const aantal = rijen.length;
+  /* Pas nu de nieuwe foto's vastliggen: de vervangen en verwijderde extra foto's
+     weg, rij én bestand. Een bestand dat niet weg wil, blijft als wees in R2
+     staan (de rij is wat telt); de klant ziet hem niet meer. */
+  const wegRijen = [...vervangen.map((v) => v.oud), ...weg];
+  for (const r of wegRijen) {
+    try {
+      await env.DB.prepare("DELETE FROM files WHERE id = ?1 AND order_id = ?2 AND kind = 'upload'").bind(r.id, orderId).run();
+      if (r.r2_key) await env.UPLOADS.delete(r.r2_key).catch(() => {});
+    } catch (e) { console.error('[account] extra foto niet verwijderd:', e?.message || e); }
+  }
+  const aantal = vakken.length;
   /* Op de tijdlijn, in de taal van de bestelling (de klant leest hem ook), met
      de vakken erbij: zo ziet Lucas in /admin wat er binnenkwam en waar. */
   const taal = o.lang === 'en' ? 'en' : 'nl';
   const vakTekst = (v, tl) => (v.key
-    ? `${v.key} ${isRefShotId(v.shot) ? (tl === 'en' ? 'other photo' : 'andere foto') : ontbreektVakNaam(v.shot, tl, hoekNamen)}`
+    ? `Product ${String(v.key).replace(/^p/, '')} ${isRefShotId(v.shot) ? (tl === 'en' ? `extra photo ${refNr(v.shot)}` : `extra foto ${refNr(v.shot)}`) : ontbreektVakNaam(v.shot, tl, hoekNamen)}`
     : (tl === 'en' ? 'photo without a slot' : 'foto zonder vak'));
-  const lijstTekst = vakken.map((v) => vakTekst(v, taal)).join(', ');
+  const regel = (tl) => [
+    vakken.length ? `${tl === 'en' ? 'Sent later in Studio' : 'Nagestuurd in Studio'}: ${vakken.map((v) => vakTekst(v, tl)).join(', ')}` : '',
+    vervangen.length ? `${tl === 'en' ? 'Replaced in Studio' : 'Vervangen in Studio'}: ${vervangen.map((v) => vakTekst(v, tl)).join(', ')}` : '',
+    weg.length ? `${tl === 'en' ? 'Removed in Studio' : 'Verwijderd in Studio'}: ${weg.map((r) => vakTekst({ key: r.product_key, shot: r.shot }, tl)).join(', ')}` : '',
+  ].filter(Boolean).join(' · ');
   await env.DB.prepare(
     "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, 'customer')"
-  ).bind(orderId, o.status, taal === 'en' ? `Sent later in Studio: ${lijstTekst}` : `Nagestuurd in Studio: ${lijstTekst}`).run().catch(() => {});
+  ).bind(orderId, o.status, regel(taal)).run().catch(() => {});
   const nogOpen = await ontbrekendVoorOrder(env.DB, orderId).catch(() => null);
-  /* De studiomail "Foto's binnen" noemt de vakken (Nederlands: hij is voor Lucas). */
-  await notifyFotosToegevoegd(env, { orderId, count: aantal, vakken: vakken.some((v) => v.key) ? vakken.map((v) => vakTekst(v, 'nl')) : [], ontbreekt: nogOpen === null ? null : ontbrekendRegels(nogOpen, 'nl') });
-  return seeOther(anchor(`fotos=${aantal}${mis ? `&mis=${mis}` : ''}`));
+  /* De studiomail "Foto's binnen" noemt de vakken (Nederlands: hij is voor Lucas),
+     en sinds 15 oktober ook wat er vervangen of verwijderd is. */
+  await notifyFotosToegevoegd(env, { orderId, count: aantal,
+    vakken: vakken.some((v) => v.key) ? vakken.map((v) => vakTekst(v, 'nl')) : [],
+    ontbreekt: nogOpen === null ? null : ontbrekendRegels(nogOpen, 'nl'),
+    vervangen: vervangen.map((v) => vakTekst(v, 'nl')),
+    verwijderd: weg.map((r) => vakTekst({ key: r.product_key, shot: r.shot }, 'nl')),
+  });
+  return seeOther(anchor(`fotos=${aantal}${vervangen.length ? `&vv=${vervangen.length}` : ''}${weg.length ? `&weg=${weg.length}` : ''}${mis ? `&mis=${mis}` : ''}`));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -7008,6 +7158,27 @@ function brandKitRegels(t, lang, models, lockByStyle, metClips) {
    door naar /account/plan (zie PLAN_TAB_WEG). */
 /* De tabbladen van vóór 2.07 (8 oktober 2026): alleen nog om oude links door te sturen. */
 const PLAN_TABS = ['maand', 'facturering'];
+/* ── DE VIER TABS VAN NU — 15 oktober 2026 (v28-abotabs = a) ───────────────
+   Lucas om 06:11: hij miste overzicht. Alles stond onder elkaar, van saldo tot
+   opzeggen. Nu vier tabs, gewone links zonder script (?tab=…): Overzicht (saldo,
+   bestellen, de maandset), Credits (wat een credit koopt, bijkopen, het
+   creditboek), Facturen (termijnen en bijkopen) en Je plan (plan, termijn,
+   pauzeren, opzeggen). Zo staat wat je elke week doet los van wat je één keer
+   per jaar doet. Zonder ?tab= kiest planTabVan() de tab bij wat er net gebeurde:
+   terug van een bijkoop op Credits, na pauzeren of opzeggen op Je plan. */
+export const PLAN_TABBLADEN = ['overzicht', 'credits', 'facturen', 'plan'];
+export function planTabVan(params, { heeftPlan = true } = {}) {
+  const g = (k) => String(params?.get?.(k) || '');
+  let tab = g('tab');
+  if (!PLAN_TABBLADEN.includes(tab)) {
+    const fout = g('fout'), ok = g('ok');
+    if (g('bijkoop') || g('pakket') || g('verder') || /^bijkoop-/.test(fout) || ok === 'bespreek' || ok === 'bespreekal') tab = 'credits';
+    else if (['bevestig', 'reden', 'stoppen', 'hervatten', 'pending'].includes(fout) || /^overstap-/.test(fout) || ['opgezegd', 'jaaropgezegd', 'pauze', 'hervat', 'overstap', 'overstap-terug'].includes(ok) || g('naar')) tab = 'plan';
+    else tab = 'overzicht';
+  }
+  if (tab === 'plan' && !heeftPlan) tab = 'overzicht';
+  return tab;
+}
 const PLAN_TAB_OUD = { look: 'maand', edities: 'maand' };
 const PLAN_TAB_WEG = ['planning', 'bestellen'];
 /* De routes van het weeksysteem: een GET of POST hierheen gaat naar /account/plan. */
@@ -7180,10 +7351,14 @@ async function handlePlanPause({ request, env }, customer) {
        ingaan: er valt geen termijn weg en er komt er geen dubbel. */
     const dag = String(state.sub.paused_at || '').slice(0, 10);
     const startDate = /^\d{4}-\d{2}-\d{2}$/.test(dag) && dag > new Date().toISOString().slice(0, 10) ? dag : null;
-    if (!await hervatIncasso(env, state.sub, origin, { startDate })) return seeOther(`${home}?fout=hervatten`);
+    /* Een overstap die klaarstond (v29-overstap = a), gaat nu in: hervatten is
+       een nieuwe termijn, en het nieuwe Mollie-abonnement krijgt meteen het
+       nieuwe bedrag. Zie overstapToepassen() in overstap.js. */
+    const subNu = await overstapToepassen(env, state.sub);
+    if (!await hervatIncasso(env, subNu, origin, { startDate })) return seeOther(`${home}?fout=hervatten`);
     await activateSubscription(env, state.sub.id);
     await env.DB.prepare('UPDATE subscriptions SET pauze_vraag_at = NULL WHERE id = ?1').bind(state.sub.id).run().catch(() => {});
-    await mailAboWijziging(env, { soort: 'hervat', sub: state.sub, customer, lang });
+    await mailAboWijziging(env, { soort: 'hervat', sub: subNu, customer, lang });
     return terugOk('hervat');
   } else if (doen === 'pause') {
     if (state.sub.status === 'pending') return seeOther(`${home}?fout=pending`);
@@ -7209,9 +7384,50 @@ async function handlePlanPause({ request, env }, customer) {
   return seeOther(home);
 }
 
+/*
+ * ── OVERSTAPPEN NAAR EEN ANDER ABONNEMENT — 15 oktober 2026 (v29-overstap = a) ──
+ *
+ * Het formulier "Overstappen" onder Je plan post `plan` (starter, studio, brand of
+ * maat) en bij maat `credits`; "Overstap terugdraaien" post do=terug. Alles wat
+ * het betekent, staat in src/lib/overstap.js; hier alleen de route, de mails en
+ * waar de klant terugkomt.
+ */
+async function handlePlanOverstap({ request, env }, customer) {
+  const home = '/account/plan';
+  const form = await request.formData().catch(() => null);
+  const doen = String(form?.get('do') || '');
+  const plan = String(form?.get('plan') || '').slice(0, 20);
+  const lang = langCookie(request) || negotiate(request);
+  const gate = await checkRate(env, { key: `overstap:${customer.customer_id}`, action: 'abo-overstap', limit: 10, windowSeconds: 3600 });
+  if (!gate.allowed) return seeOther(`${home}?fout=overstap-vaak#overstappen`);
+  const state = await planState(env, customer.customer_id).catch(() => null);
+  const sub = state?.sub || null;
+  if (!sub) return seeOther(home);
+  const naarVan = (doel) => {
+    const b = overstapBedragen(sub, doel);
+    const nl = lang !== 'en';
+    const std = (sub.vat_treatment || VAT_TREATMENT.standard) === VAT_TREATMENT.standard;
+    return { naam: planName(doel.plan, nl ? 'nl' : 'en'), naamNl: planName(doel.plan, 'nl'), credits: b.credits, bruto: b.bruto, std };
+  };
+  if (doen === 'terug') {
+    const r = await annuleerOverstap(env, sub);
+    if (!r.ok) return seeOther(`${home}?fout=overstap-${r.fout}#overstappen`);
+    await mailAboWijziging(env, { soort: 'overstap-terug', sub, customer, lang, naar: naarVan(r.doel) });
+    return seeOther(`${home}?ok=overstap-terug#overstappen`);
+  }
+  const r = await vraagOverstapAan(env, sub, { plan, credits: String(form?.get('credits') || '').trim() });
+  if (!r.ok) return seeOther(`${home}?fout=overstap-${r.fout}${/^[a-z]{2,10}$/.test(plan) ? `&naar=${plan}` : ''}#overstappen`);
+  if (r.terug) {
+    await mailAboWijziging(env, { soort: 'overstap-terug', sub, customer, lang, naar: naarVan(r.doel) });
+    return seeOther(`${home}?ok=overstap-terug#overstappen`);
+  }
+  if (!r.al) await mailAboWijziging(env, { soort: 'overstap', sub, customer, lang, vanaf: state.termijnTot || null, naar: naarVan(r.doel) });
+  return seeOther(`${home}?ok=overstap#overstappen`);
+}
+
 /* De bevestiging aan de klant en het bericht aan de studio bij pauzeren,
    hervatten en opzeggen. Nooit werpen: de wijziging zelf is al gedaan. */
-async function mailAboWijziging(env, { soort, sub, customer, lang, jaarTot = '', vanaf = null, reden = null }) {
+async function mailAboWijziging(env, { soort, sub, customer, lang, jaarTot = '', vanaf = null, reden = null, naar = null }) {
   /* De taal van het ABONNEMENT, niet van de taalknop in Studio (29 september
      2026): de andere abonnementsmails volgen de factuurtaal, en een klant die
      even op English klikte, kreeg anders één Engelse mail tussen Nederlandse. */
@@ -7246,6 +7462,12 @@ async function mailAboWijziging(env, { soort, sub, customer, lang, jaarTot = '',
       : ['Your plan is running again', `${hoofd(yourPlan)} is running again. The next payment follows the usual rhythm, and you can order with your credits again.`],
     opgezegd: nl ? ['Je abonnement is opgezegd', `${hoofd(jeAbo)} is opgezegd en er wordt niets meer afgeschreven. ${geldigNl} Wat je al hebt laten maken, blijft van jou.`]
       : ['Your plan is cancelled', `${hoofd(yourPlan)} is cancelled and nothing more will be collected. ${geldigEn} Everything you have had made stays yours.`],
+    /* v29-overstap = a (15 oktober 2026). */
+    overstap: naar ? (nl
+      ? ['Je overstap staat klaar', `Vanaf je volgende termijn${vanaf ? ` op ${mailDatum(vanaf, 'nl')}` : ''} heb je ${naar.naam}: ${naar.credits} credits per maand voor ${money(naar.bruto, 'nl')} per maand${naar.std ? ' (incl. btw)' : ''}. Tot dan loopt ${jeAbo} gewoon door, met je credits van nu. Je kunt de overstap tot die dag terugdraaien in VISUAILS Studio, onder Abonnement → Je plan.`]
+      : ['Your switch is ready', `From your next monthly payment${vanaf ? ` on ${mailDatum(vanaf, 'en')}` : ''} you have ${naar.naam}: ${naar.credits} credits a month for ${money(naar.bruto, 'en')} a month${naar.std ? ' (incl. VAT)' : ''}. Until then ${yourPlan} simply runs on, with your current credits. You can undo the switch until that day in VISUAILS Studio, under Plan → Your plan.`]) : null,
+    'overstap-terug': nl ? ['Je overstap is teruggedraaid', `Je blijft op ${jeAbo}${naar ? `; de overstap naar ${naar.naam} gaat niet door` : ''}. De volgende afschrijving is weer het bedrag van nu.`]
+      : ['Your switch is undone', `You stay on ${yourPlan}${naar ? `; the switch to ${naar.naam} will not happen` : ''}. The next payment is the current amount again.`],
   }[soort];
   if (!koppen) return;
   /* Vooruitbetaald en gepauzeerd of hervat: er is geen incasso, dus ook geen
@@ -7291,6 +7513,7 @@ async function mailAboWijziging(env, { soort, sub, customer, lang, jaarTot = '',
     soort, subRef: sub.ref, plan: planName(sub.plan, 'nl'), brand: customer.brand, email: customer.email, jaarDoor, prepaid: sub.term === 'prepaid',
     reden: reden?.ok ? redenLabel(reden.reden, reden.toelichting, 'nl') : '', vanaf,
     creditsBespreken: reden?.reden === REDEN_CREDITS,
+    naar: naar ? { naam: naar.naamNl || naar.naam, credits: naar.credits, bedrag: `${money(naar.bruto, 'nl')} per maand${naar.std ? ' incl. btw' : ''}` } : null,
   });
 }
 
@@ -7347,6 +7570,9 @@ async function handlePlanCancel({ request, env }, customer) {
   }
   if (!await stopIncasso(env, state.sub)) return seeOther(`${home}?fout=stoppen`);
   await cancelSubscription(env, state.sub.id, 'customer');
+  /* Een overstap die klaarstond, vervalt: er komt geen volgende termijn. Mollie
+     hoeft niet meer bijgewerkt: dat abonnement is net gestopt. */
+  await annuleerOverstap(env, state.sub, { mollie: false }).catch(() => null);
   await slaRedenOp(env, state.sub.id, reden);
   await mailAboWijziging(env, { soort: 'opgezegd', sub: state.sub, customer, lang: langCookie(request) || negotiate(request), reden });
   return seeOther(`${home}?ok=opgezegd&r=${encodeURIComponent(reden.reden)}`);
@@ -7669,6 +7895,7 @@ function feedbackFor(t, lang, o, fb) {
     action: '/account/feedback',
     hidden: `<input type="hidden" name="order" value="${o.id}">`,
     feedback: fb,
+    kopId: `fb-h-${o.id}`,
   });
 }
 
@@ -9070,6 +9297,9 @@ export function productView(t, lang, o, g, open = false) {
     delivered: g.delivered.map((f) => shotView(t, f, o, true)),
     /* inProduct ook hier (ronde 8, S-N10): "#2 · Voorkant" binnen het paneel van product 2. */
     uploaded: g.uploaded.map((f) => shotView(t, f, o, true)),
+    /* Werklijst 14: onder "Wat jij stuurde" de weg naar dit product in "Je foto's". */
+    fotosBeheer: g.key && nasturenOpen(o) && (Number(o.product_count) || 0) > 0
+      ? { href: `/account/orders?order=${o.id}&p=${g.key}#fotos-${o.id}-${g.key}`, label: t.prodFotosBeheer } : null,
     allesGoed,
     waHref: `https://wa.me/${WHATSAPP_NUMBER}?text=${waText}`,
   };
@@ -9181,7 +9411,7 @@ export function orderView(t, lang, o, files, events = [], fb = null, index = 0, 
 
   const grouped = groupByProduct(delivered, uploaded);
   const progress = progressView(t, lang, o, events, files);
-  const fotos = fotosView(t, lang, o, uploaded);
+  const fotos = fotosView(t, lang, o, uploaded, Number(openOrderId) === Number(o.id) ? openProduct : '');
   /* Alleen met levende beelden (ronde 8, S-B5): zijn ze allemaal verlopen,
      dan gaf de knop een lege 404. Dan de datum en de weg naar ons. */
   const levendGeleverd = delivered.filter((f) => !f.superseded_at && !(f.expires_at && isExpired(f.expires_at, null)));
@@ -9277,6 +9507,8 @@ export function orderView(t, lang, o, files, events = [], fb = null, index = 0, 
     afrondScherm: nuAfgerond(o) && o.status !== 'cancelled',
     /* Punt 3.07: "Bestel met dezelfde look" bij elke geleverde bestelling. */
     herbestel: o.status === 'delivered' && !ingetrokken ? herbestelKnop(o, { lang, abonnee }) : null,
+    /* Werklijst 33 (15 oktober 2026): alles van deze bestelling overnemen. */
+    herbestelAlles: !ingetrokken ? herbestelAllesKnop(o, { lang }) : null,
     allesGoed,
     id: o.id, ref: o.ref, status: unpaid ? 'awaiting_payment' : o.status,
     statusLabel: statusLabel(unpaid ? 'awaiting_payment' : o.status, lang) || o.status,
@@ -9320,11 +9552,17 @@ export async function invoicesView(env, t, lang, customer, orders) {
     const flags = [];
     if (inv.kind === 'credit') flags.push(t.invCredit);
     /* 2.02: een termijnfactuur dekt de creditsbestellingen van die termijn. */
-    if (inv.isSubscription && inv.kind !== 'credit') flags.push(STROOK[lang === 'en' ? 'en' : 'nl'].termijnVlag);
+    if (inv.isSubscription && inv.kind !== 'credit') {
+      /* Een bijkoop van extra credits (12 oktober) komt uit dezelfde reeks als een
+         termijn; sinds 15 oktober zegt de vlag ook wat het is. */
+      const T = STROOK[lang === 'en' ? 'en' : 'nl'];
+      flags.push(snap.kind === 'bijkoop' ? T.bijkoopVlag : T.termijnVlag);
+    }
     if (treatment === VAT_TREATMENT.reverseCharge) flags.push(t.invReverse);
     else if (treatment === VAT_TREATMENT.outsideScope) flags.push(t.invOutside);
     return {
       number: inv.number, flags,
+      abo: Boolean(inv.isSubscription),
       date: invoiceDate(snap.date || inv.created_at, lang),
       ref: inv.ref || '',
       amount: money(gross, lang),
@@ -9588,8 +9826,8 @@ const ABO = {
     volgende: 'Volgende afschrijving',
     status: 'Status',
     jaarTot: 'Loopt tot en met',
-    facturen: 'Je termijnfacturen staan bij Facturen.',
-    facturenLink: 'Naar Facturen',
+    facturen: 'Je termijnfacturen staan onder de tab Facturen.',
+    facturenLink: 'Bekijk ze',
     pauzeren: 'Pauzeren',
     opzeggen: 'Opzeggen',
     waarom: 'Waarom stop je? (verplicht)',
@@ -9615,6 +9853,16 @@ const ABO = {
     termijnJaar: '12 maanden vooruit',
     perMaand: 'per maand',
     geenSaldoBestel: 'Bestellen kan altijd; zonder credits betaal je in stap 5 via Mollie.',
+    /* De vier tabs (15 oktober 2026, v28-abotabs = a). */
+    tabsLabel: 'Je abonnement',
+    tabOverzicht: 'Overzicht',
+    tabCredits: 'Credits',
+    tabFacturen: 'Facturen',
+    tabPlan: 'Je plan',
+    facturenH: 'Facturen van je abonnement',
+    facturenLede: 'Elke termijn en elke bijkoop van extra credits. Facturen van losse bestellingen staan onder Facturen in het menu.',
+    facturenLeeg: 'Er is nog geen factuur van je abonnement. Je eerste komt zodra je eerste termijn betaald is.',
+    facturenAlle: 'Al je facturen',
     /* Extra credits bijkopen (12 oktober 2026, ab-v3 = c, ab-v4 = b). */
     bijH: 'Extra credits bijkopen',
     bijLede: (kortingen) => `Tegen de prijs per credit van je abonnement${kortingen.length ? `: ${kortingen.map(([n, k], i) => (i === 0 ? `bij ${n} krijg je ${k}% korting` : `bij ${n} ${k}%`)).join(', ')}` : ''}. Bijgekochte credits gaan als eerste op, blijven ${CREDITS_GELDIG_MAANDEN} maanden geldig en tellen niet mee voor je spaarplafond.`,
@@ -9627,7 +9875,41 @@ const ABO = {
     bijBetaal: (ideal) => `Je betaalt ${ideal ? 'via iDEAL of kaart' : 'met een kaart'}, los van je maandtermijn; de factuur krijg je per mail. Zodra de betaling binnen is, staan de credits erbij.`,
     bijHintPakket: (n, naam, bedrag, c) => `Koop je er ${n} bij, dan is overstappen naar ${naam} voordeliger: ${bedrag} per maand voor ${c} credits.`,
     bijHint: (naam, bedrag, c) => `Overstappen naar ${naam} is voordeliger: ${bedrag} per maand voor ${c} credits, elke maand.`,
-    bijHintLink: 'Bekijk je plan',
+    bijHintLink: 'Overstappen',
+    /* ── OVERSTAPPEN (v29-overstap = a, 15 oktober 2026) ── */
+    overstapH: 'Overstappen',
+    overstapLede: (datum) => `Kies een ander abonnement. Het gaat in bij je volgende termijn${datum ? `, op ${datum}` : ''}: dan schrijven we het nieuwe bedrag af en krijg je de credits van het nieuwe plan. Tot die dag blijft alles zoals het is.`,
+    overstapKnop: 'Overstappen',
+    overstapCredits: (n) => `${n} credits per maand`,
+    overstapVerschil: (d) => (d > 0 ? `${d} meer dan nu` : `${-d} minder dan nu`),
+    overstapMaatLabel: 'Credits per maand',
+    overstapMaatHint: (min, max, stap) => `Van ${min} tot ${max}, per ${stap}.`,
+    overstapMaatZonder: 'Kies je een ander aantal, dan zie je het bedrag meteen na het overstappen. Terugdraaien kan tot je volgende termijn.',
+    overstapMaatBij: (n, bedrag) => `Bij ${n} credits: ${bedrag}`,
+    overstapMaatIjk: (lijst, per) => `Bijvoorbeeld: ${lijst.join(' · ')}, ${per}.`,
+    overstapKlaar: (naam, credits, bedrag, datum) => `Je stapt over naar ${naam}: ${credits} credits per maand voor ${bedrag}, vanaf je volgende termijn${datum ? ` op ${datum}` : ''}. Tot dan blijft je huidige abonnement gewoon staan.`,
+    overstapKlaarPauze: (naam) => `Je overstap naar ${naam} staat klaar. Hij gaat in zodra je je abonnement hervat.`,
+    overstapTerugKnop: 'Overstap terugdraaien',
+    overstapNieuw: 'nieuw',
+    overstapNiet: {
+      jaar: 'Je hebt een vooruitbetaald jaar. Overstappen kan bij de verlenging; wil je eerder, mail ons dan.',
+      status: 'Overstappen kan zodra je abonnement loopt.',
+      mollie: 'Overstappen lukt hier nu niet. Mail ons, dan zetten we het voor je om.',
+    },
+    overstapOk: (naam, datum) => `Je overstap naar ${naam} staat klaar. Hij gaat in bij je volgende termijn${datum ? `, op ${datum}` : ''}. Je krijgt een bevestiging per mail.`,
+    overstapTerugOk: 'Je overstap is teruggedraaid. Je abonnement blijft zoals het was; je krijgt een bevestiging per mail.',
+    overstapFout: {
+      keuze: 'Kies een abonnement, en bij een abonnement op maat 30 tot 300 credits (per 5). Er is niets veranderd.',
+      zelfde: 'Dat is het abonnement dat je nu hebt. Er is niets veranderd.',
+      vol: 'Voor zoveel credits per maand is op dit moment geen plek. Er is niets veranderd; mail ons, dan kijken we wanneer het kan.',
+      bijwerken: 'Mollie kon het bedrag nu niet aanpassen. Er is niets veranderd; probeer het zo nog eens.',
+      opslaan: 'Er ging iets mis bij het opslaan. Er is niets veranderd; probeer het zo nog eens.',
+      vaak: 'Je probeerde het vaak achter elkaar. Probeer het over een uur nog eens.',
+      geen: 'Er stond geen overstap klaar. Er is niets veranderd.',
+      jaar: 'Je hebt een vooruitbetaald jaar. Overstappen kan bij de verlenging; wil je eerder, mail ons dan.',
+      status: 'Overstappen kan zodra je abonnement loopt. Er is niets veranderd.',
+      mollie: 'Overstappen lukt hier nu niet. Mail ons, dan zetten we het voor je om.',
+    },
     bijBetaald: (n, d) => `Je ${n} extra credits staan erbij. Ze gaan als eerste op${d ? ` en blijven geldig tot en met ${d}` : ''}.`,
     bijWacht: 'We wachten nog op de bevestiging van je betaling. Je credits staan erbij zodra die binnen is; ververs deze pagina over een minuut.',
     bijMislukt: 'De betaling is niet gelukt. Er is niets afgeschreven en er zijn geen credits bijgekomen.',
@@ -9671,8 +9953,8 @@ const ABO = {
     volgende: 'Next payment',
     status: 'Status',
     jaarTot: 'Runs until',
-    facturen: 'Your plan invoices are under Invoices.',
-    facturenLink: 'Go to Invoices',
+    facturen: 'Your plan invoices are under the Invoices tab.',
+    facturenLink: 'See them',
     pauzeren: 'Pause',
     opzeggen: 'Cancel',
     waarom: 'Why are you stopping? (required)',
@@ -9698,6 +9980,15 @@ const ABO = {
     termijnJaar: '12 months in advance',
     perMaand: 'per month',
     geenSaldoBestel: 'You can always order; without credits you pay through Mollie in step 5.',
+    tabsLabel: 'Your plan',
+    tabOverzicht: 'Overview',
+    tabCredits: 'Credits',
+    tabFacturen: 'Invoices',
+    tabPlan: 'Your plan',
+    facturenH: 'Your plan invoices',
+    facturenLede: 'Every term and every top-up of extra credits. Invoices for single orders are under Invoices in the menu.',
+    facturenLeeg: 'There is no plan invoice yet. Your first one arrives as soon as your first term is paid.',
+    facturenAlle: 'All your invoices',
     bijH: 'Buy extra credits',
     bijLede: (kortingen) => `At the price per credit of your plan${kortingen.length ? `: ${kortingen.map(([n, k]) => `${k}% off with ${n}`).join(', ')}` : ''}. Bought credits are used first, stay valid for ${CREDITS_GELDIG_MAANDEN} months and do not count towards your savings limit.`,
     bijPakket: (n) => `${n} credits`,
@@ -9709,7 +10000,41 @@ const ABO = {
     bijBetaal: (ideal) => `You pay ${ideal ? 'by iDEAL or card' : 'by card'}, separately from your monthly payment; the invoice comes by email. As soon as the payment is in, the credits are added.`,
     bijHintPakket: (n, naam, bedrag, c) => `If you buy ${n}, switching to ${naam} is better value: ${bedrag} a month for ${c} credits.`,
     bijHint: (naam, bedrag, c) => `Switching to ${naam} is better value: ${bedrag} a month for ${c} credits, every month.`,
-    bijHintLink: 'See your plan',
+    bijHintLink: 'Switch plans',
+    /* ── SWITCHING (v29-overstap = a, 15 October 2026) ── */
+    overstapH: 'Switch plans',
+    overstapLede: (datum) => `Choose another plan. It starts with your next monthly payment${datum ? `, on ${datum}` : ''}: we then collect the new amount and you get the credits of the new plan. Until that day everything stays as it is.`,
+    overstapKnop: 'Switch plans',
+    overstapCredits: (n) => `${n} credits a month`,
+    overstapVerschil: (d) => (d > 0 ? `${d} more than now` : `${-d} fewer than now`),
+    overstapMaatLabel: 'Credits a month',
+    overstapMaatHint: (min, max, stap) => `From ${min} to ${max}, in steps of ${stap}.`,
+    overstapMaatZonder: 'Choose another number and you will see the amount right after switching. You can undo it until your next monthly payment.',
+    overstapMaatBij: (n, bedrag) => `At ${n} credits: ${bedrag}`,
+    overstapMaatIjk: (lijst, per) => `For example: ${lijst.join(' · ')}, ${per}.`,
+    overstapKlaar: (naam, credits, bedrag, datum) => `You are switching to ${naam}: ${credits} credits a month for ${bedrag}, from your next monthly payment${datum ? ` on ${datum}` : ''}. Until then your current plan simply stays.`,
+    overstapKlaarPauze: (naam) => `Your switch to ${naam} is ready. It starts as soon as you resume your plan.`,
+    overstapTerugKnop: 'Undo the switch',
+    overstapNieuw: 'new',
+    overstapNiet: {
+      jaar: 'You have a prepaid year. You can switch when it renews; to switch sooner, email us.',
+      status: 'You can switch plans once your plan is running.',
+      mollie: 'Switching does not work here right now. Email us and we will switch it for you.',
+    },
+    overstapOk: (naam, datum) => `Your switch to ${naam} is ready. It starts with your next monthly payment${datum ? `, on ${datum}` : ''}. You will get a confirmation by email.`,
+    overstapTerugOk: 'Your switch is undone. Your plan stays as it was; you will get a confirmation by email.',
+    overstapFout: {
+      keuze: 'Choose a plan, and for a custom plan 30 to 300 credits (in steps of 5). Nothing has changed.',
+      zelfde: 'That is the plan you have now. Nothing has changed.',
+      vol: 'There is no room for that many credits a month right now. Nothing has changed; email us and we will see when it can.',
+      bijwerken: 'Mollie could not change the amount right now. Nothing has changed; please try again shortly.',
+      opslaan: 'Something went wrong while saving. Nothing has changed; please try again shortly.',
+      vaak: 'You tried several times in a row. Please try again in an hour.',
+      geen: 'There was no switch waiting. Nothing has changed.',
+      jaar: 'You have a prepaid year. You can switch when it renews; to switch sooner, email us.',
+      status: 'You can switch plans once your plan is running. Nothing has changed.',
+      mollie: 'Switching does not work here right now. Email us and we will switch it for you.',
+    },
     bijBetaald: (n, d) => `Your ${n} extra credits have been added. They are used first${d ? ` and stay valid up to and including ${d}` : ''}.`,
     bijWacht: 'We are still waiting for the confirmation of your payment. Your credits are added as soon as it is in; refresh this page in a minute.',
     bijMislukt: 'The payment did not go through. Nothing was charged and no credits were added.',
@@ -9756,14 +10081,17 @@ export async function planView(env, request, t, lang, customer, models = [], loc
   const nu = new Date();
   const state = await planState(env, customer.customer_id);
   let fout = '', ok = '', stopReden = '';
-  let bijkoopTerug = '', gekozenPakket = 0, verder = '';
+  let bijkoopTerug = '', gekozenPakket = 0, verder = '', naarParam = '';
+  let params = null;
   try {
     const u = new URL(request.url);
+    params = u.searchParams;
     fout = u.searchParams.get('fout') || '';
     ok = u.searchParams.get('ok') || '';
     stopReden = u.searchParams.get('r') || '';
     bijkoopTerug = u.searchParams.get('bijkoop') || '';
     gekozenPakket = Number.parseInt(u.searchParams.get('pakket') || '', 10) || 0;
+    naarParam = String(u.searchParams.get('naar') || '');
     const v = String(u.searchParams.get('verder') || '');
     verder = /^\/(nl\/)?start(\/[a-z0-9-]*)*\/?$/.test(v) ? v : '';
   } catch { /* geen geldige URL */ }
@@ -9794,6 +10122,8 @@ export async function planView(env, request, t, lang, customer, models = [], loc
   const boekRijen = Array.isArray(boekRuw) ? boekRuw : [];
 
   const sub = state?.sub || null;
+  /* Een overstap die klaarstaat (v29-overstap = a). Eigen query, eigen vangnet. */
+  const klaar = sub ? await overstapVan(env, sub.id).catch(() => null) : null;
   const planStatus = !sub ? '' : (sub.status === 'active' ? (state.jaarOpgezegd ? t.planYearEnding : t.planStatusActive)
     : sub.status === 'pending' ? t.planStatusPending
       : sub.status === 'cancelled' ? t.planStatusEnding
@@ -9814,7 +10144,9 @@ export async function planView(env, request, t, lang, customer, models = [], loc
     return `${l.slice(0, -1).join(', ')} ${L === 'nl' ? 'of' : 'or'} ${l[l.length - 1]} credits`;
   })();
   const bijFout = /^bijkoop-(.+)$/.exec(fout);
+  const ovFout = /^overstap-([a-z]+)$/.exec(fout);
   const melding = { stoppen: t.planStopFail, hervatten: t.planResumeFail, reden: A.redenNodig, ...extraFout }[fout]
+    || (ovFout && A.overstapFout[ovFout[1]] ? A.overstapFout[ovFout[1]] : '')
     || (bijFout && A.bijFout[bijFout[1]] ? A.bijFout[bijFout[1]](BIJKOOP_MAX_PER_MAAND, pakketZin) : '')
     || (bijkoopUit && ['failed', 'canceled', 'expired'].includes(bijkoopUit.status) ? A.bijMislukt : '');
   const jaar = sub?.term === 'prepaid';
@@ -9829,6 +10161,8 @@ export async function planView(env, request, t, lang, customer, models = [], loc
     jaaropgezegd: t.planYearCancelOk,
     bespreek: A.bespreekOk,
     bespreekal: A.bespreekTeVaak,
+    overstap: klaar ? A.overstapOk(planName(klaar.plan, L), state?.termijnTot ? datumLang(state.termijnTot, L, nu) : '') : '',
+    'overstap-terug': A.overstapTerugOk,
   }[ok] || (bijkoopUit?.status === 'paid'
     ? A.bijBetaald(bijkoopUit.pakket, (() => {
       const d = /^(\d{4}-\d{2}-\d{2})/.exec(String(bijkoopUit.paid_at || ''));
@@ -9920,6 +10254,7 @@ export async function planView(env, request, t, lang, customer, models = [], loc
         kan: p.credits <= ruimte.ruimte,
         gekozen: p.credits === kies,
         hint: h && h.reden === 'pakket' ? A.bijHintPakket(p.credits, h.naam, money(h.bedrag * 100, L), h.credits) : '',
+        hintHref: h && h.naar ? `/account/plan?tab=plan&naar=${encodeURIComponent(h.naar)}#overstappen` : '/account/plan?tab=plan#overstappen',
       });
     }
     const algemeen = await overstapHint(env, subVol, { nu, lang: L }).catch(() => null);
@@ -9935,7 +10270,7 @@ export async function planView(env, request, t, lang, customer, models = [], loc
       knop: A.bijKnop,
       betaal: A.bijBetaal(std),
       hint: algemeen && algemeen.reden === 'twee-maanden' ? A.bijHint(algemeen.naam, money(algemeen.bedrag * 100, L), algemeen.credits) : '',
-      hintLink: { href: '#je-plan', label: A.bijHintLink },
+      hintLink: { href: `/account/plan?tab=plan${algemeen?.naar ? `&naar=${encodeURIComponent(algemeen.naar)}` : ''}#overstappen`, label: A.bijHintLink },
       verder: verder && bijkoopUit?.status === 'paid' ? { href: verder, label: A.bijVerder } : null,
       verderVeld: verder,
       eerderH: A.bijEerder,
@@ -9972,7 +10307,9 @@ export async function planView(env, request, t, lang, customer, models = [], loc
       ? `${money(subEersteBetalingBruto(sub), L)} ${btwLabel('incl', L)}`
       : `${money(subMaandBruto(sub), L)} ${A.perMaand} ${btwLabel('incl', L)}`,
     volgende: sub.status === 'active' && !jaar && state.termijnTot
-      ? `${datumLang(state.termijnTot, L, nu)} · ${money(subMaandBruto(sub), L)} ${btwLabel('incl', L)}` : '',
+      ? (klaar
+        ? `${datumLang(state.termijnTot, L, nu)} · ${money(overstapBedragen(sub, klaar).bruto, L)} ${btwLabel('incl', L)} (${planName(klaar.plan, L)}, ${A.overstapNieuw})`
+        : `${datumLang(state.termijnTot, L, nu)} · ${money(subMaandBruto(sub), L)} ${btwLabel('incl', L)}`) : '',
     jaarTot: state.jaarTot ? datumLang(state.jaarTot, L, nu) : '',
     status: planStatus,
   } : null;
@@ -10007,8 +10344,70 @@ export async function planView(env, request, t, lang, customer, models = [], loc
     gevraagd: ok === 'bespreek' || ok === 'bespreekal',
   } : null;
 
+  /* ── OVERSTAPPEN (v29-overstap = a, 15 oktober 2026) ────────────────────
+     Een gewoon formulier zonder script: een keuzerondje per ander abonnement,
+     met wat het per maand kost en oplevert, en bij Op maat een getal. Studio
+     draait zonder script, dus bij Op maat staat het bedrag voor het voorgestelde
+     aantal; bij een ander aantal staat het exacte bedrag in de bevestiging, en
+     terugdraaien kan tot de volgende termijn. */
+  let overstap = null;
+  const mo = magOverstappen(sub);
+  /* Ook bij een pauze of een vooruitbetaald jaar staat het blok er, met waarom het
+     nu niet kan: /plans en de bijkoop-hint wijzen hierheen (#overstappen). */
+  if (sub && (mo.mag || klaar || sub.status === 'active' || sub.status === 'paused')) {
+    const std = (sub.vat_treatment || VAT_TREATMENT.standard) === VAT_TREATMENT.standard;
+    const btwW = btwLabel(std ? 'incl' : 'excl', L);
+    const nuCredits = creditsVoor(sub);
+    const bedragVan = (doel) => `${money(overstapBedragen(sub, doel).bruto, L)} ${A.perMaand} ${btwW}`;
+    const rond = (n) => Math.min(OVERSTAP_MAAT.max, Math.max(OVERSTAP_MAAT.min, Math.round(n / OVERSTAP_MAAT.stap) * OVERSTAP_MAAT.stap));
+    const maatStart = rond(nuCredits);
+    const opties = OVERSTAP_PLANNEN
+      .filter((id) => id === 'maat' || id !== sub.plan)
+      .map((id) => {
+        const doel = overstapDoel(id, id === 'maat' ? maatStart : undefined);
+        if (!doel) return null;
+        const d = doel.credits - nuCredits;
+        return {
+          id, naam: planName(id, L), maat: id === 'maat',
+          credits: id === 'maat' ? '' : A.overstapCredits(doel.credits),
+          verschil: id === 'maat' || !d ? '' : A.overstapVerschil(d),
+          bedrag: id === 'maat' ? A.overstapMaatBij(maatStart, bedragVan(doel)) : bedragVan(doel),
+          gekozen: naarParam === id,
+        };
+      }).filter(Boolean);
+    /* Studio draait zonder script: een paar ijkpunten bij Op maat, zodat je ook
+       zonder bevestiging ziet wat een ander aantal ongeveer kost. */
+    const ijk = [60, 150, 300].filter((n) => n >= OVERSTAP_MAAT.min && n <= OVERSTAP_MAAT.max)
+      .map((n) => { const d = overstapDoel('maat', n); return d ? `${n} credits ${money(overstapBedragen(sub, d).bruto, L)}` : ''; }).filter(Boolean);
+    const datum = state.termijnTot ? datumLang(state.termijnTot, L, nu) : '';
+    overstap = {
+      mag: mo.mag,
+      niet: mo.mag ? '' : (A.overstapNiet[mo.reden] || A.overstapNiet.status),
+      lede: A.overstapLede(datum),
+      opties,
+      maat: { label: A.overstapMaatLabel, hint: A.overstapMaatHint(OVERSTAP_MAAT.min, OVERSTAP_MAAT.max, OVERSTAP_MAAT.stap), zonder: A.overstapMaatZonder, ijk: ijk.length ? A.overstapMaatIjk(ijk, `${A.perMaand} ${btwW}`) : '', ...OVERSTAP_MAAT, waarde: maatStart },
+      knop: A.overstapKnop,
+      klaar: klaar ? {
+        zin: sub.status === 'active'
+          ? A.overstapKlaar(planName(klaar.plan, L), klaar.credits, bedragVan(klaar), datum)
+          : A.overstapKlaarPauze(planName(klaar.plan, L)),
+        knop: A.overstapTerugKnop,
+      } : null,
+    };
+  }
+
+  /* ── DE VIER TABS (15 oktober 2026) — zie PLAN_TABBLADEN ─────────────── */
+  const tab = planTabVan(params, { heeftPlan: !!planBlok });
+  const tabs = [
+    { id: 'overzicht', label: A.tabOverzicht },
+    { id: 'credits', label: A.tabCredits, n: String(s.saldo || 0) },
+    { id: 'facturen', label: A.tabFacturen },
+    ...(planBlok ? [{ id: 'plan', label: A.tabPlan }] : []),
+  ].map((x) => ({ ...x, href: x.id === 'overzicht' ? '/account/plan' : `/account/plan?tab=${x.id}`, nu: x.id === tab }));
+
   return {
     geen: false, melding, bevestiging, stand, standZin, standNet,
+    tab, tabs,
     chip: stand === 'pauze-straks'
       ? { tekst: L === 'nl' ? `Pauze vanaf ${datumLang(pauzeDag, L, nu)}` : `Paused from ${datumLang(pauzeDag, L, nu)}`, toon: 'warn' }
       : planStatus ? { tekst: planStatus, toon: stand === 'actief' ? 'signal' : 'warn' } : (stand === 'gestopt' ? { tekst: t.planStatusEnding, toon: 'warn' } : null),
@@ -10025,6 +10424,7 @@ export async function planView(env, request, t, lang, customer, models = [], loc
     boek,
     plan: planBlok,
     beheer,
+    overstap,
     bespreek,
     nooitBetaald: nooitBetaald && !sub?.mollie_mandate_id && !state.betaald,
     opnieuw: `${L === 'nl' ? '/nl' : ''}/start/plan?plan=${encodeURIComponent(state.plan || '')}`,
@@ -10107,6 +10507,7 @@ const STROOK = {
     tegoedBij: 'erbij',
     tegoedAf: 'gebruikt',
     termijnVlag: 'Abonnement (credits)',
+    bijkoopVlag: 'Extra credits',
   },
   en: {
     kop: 'Your balance',
@@ -10126,6 +10527,7 @@ const STROOK = {
     tegoedBij: 'added',
     tegoedAf: 'used',
     termijnVlag: 'Plan (credits)',
+    bijkoopVlag: 'Extra credits',
   },
 };
 
@@ -10235,6 +10637,8 @@ export async function studioScreen(context, section) {
     v.actie = await primaireActie(env, t, lang, customer);
     /* Punt 3.01: het "wat nu"-blok bovenaan, uit dezelfde orderView() als Bestellingen. */
     v.watNu = watNuView(t, lang, st.orders, st.filesByOrder, st.eventsByOrder, await ordersExtra(env, st.orders), v.featured);
+    /* Tip 4: het eerste bezoek aan Studio — wat waar staat. */
+    st.tip = studioTip(request, lang, 'studio', st.tipsWeg);
     return { st, v };
   }
   if (section === 'orders') {
@@ -10266,6 +10670,9 @@ export async function studioScreen(context, section) {
       view: orderView(t, lang, o, st.filesByOrder.get(o.id) || [], st.eventsByOrder.get(o.id) || [], feedbackByOrder.get(o.id) || null, i, st.openOrderId, st.openProduct, { abonnee }),
     }));
     v.rondeTekst = { verstuurd: t.rdSentOk, leeg: t.rdEmptyErr, notitie: t.rdNoteErr, mislukt: t.rdFailErr, dicht: t.rdClosedErr }[st.rondeFlag] || '';
+    /* Tip 5: bij de eerste levering — er staan beelden klaar om goed te keuren. */
+    const teKeuren = (st.files || []).some((f) => f.kind !== 'upload' && f.review_state === 'pending' && !f.superseded_at);
+    st.tip = teKeuren ? studioTip(request, lang, 'levering', st.tipsWeg) : null;
     return { st, v };
   }
   if (section === 'invoices') {
@@ -10288,19 +10695,30 @@ export async function studioScreen(context, section) {
     /* Ronde 10: de tabbladen Planning en Bestellen zijn weg. Een oude link
        (uit een mail, een bladwijzer) gaat naar de abonnementspagina zelf, en
        niet stil naar een ander tabblad met de oude parameters nog in de URL. */
-    /* Sinds 2.07 (8 oktober 2026) is de abonnementspagina één pagina zonder
-       tabbladen. Elke oude ?tab= (uit een mail of bladwijzer) gaat naar de
-       pagina zelf; Facturering naar het blok "Je plan" eronder. */
+    /* Van 2.07 (8 oktober) tot 15 oktober 2026 was de abonnementspagina één
+       pagina zonder tabbladen; sinds 15 oktober heeft hij er weer vier, met
+       nieuwe namen (PLAN_TABBLADEN). Een oude ?tab= (uit een mail of
+       bladwijzer) gaat naar de pagina zelf; Facturering naar Je plan. */
     try {
       const oud = new URL(request.url).searchParams.get('tab') || '';
       if (PLAN_TAB_WEG.includes(oud) || PLAN_TABS.includes(oud) || PLAN_TAB_OUD[oud]) {
-        return seeOther(oud === 'facturering' ? '/account/plan#je-plan' : '/account/plan');
+        return seeOther(oud === 'facturering' ? '/account/plan?tab=plan' : '/account/plan');
       }
     } catch { /* geen geldige URL */ }
     const v = await planView(env, request, t, lang, customer, st.models, st.lockByStyle, st.orders, st.files);
     v.tegoed = tegoedView(t, lang, await tegoedCents(env, customer.customer_id));
+    /* De tab Facturen: alleen de facturen van het abonnement (termijnen en
+       bijkopen), uit dezelfde lijst als /account/invoices. */
+    if (!v.geen && v.tab === 'facturen') {
+      const f = await invoicesView(env, t, lang, customer, st.orders);
+      v.facturen = { rows: f.rows.filter((r) => r.abo), anyPending: f.anyPending };
+    }
     /* De lege stand tekent wat een vaste look is met beeld: dezelfde staat als Je vaste look. */
     const bk = v.geen ? await brandKitView(env, t, lang, customer, st.models, st.lockByStyle, '') : null;
+    /* Tip 6: het abonnement — credits sparen en ermee bestellen. Alleen zolang het
+       loopt (er komen nog credits bij): bij een pauze klopt "zolang je abonnement
+       loopt, spaar je" niet (doorloop 15 oktober 2026). */
+    st.tip = !v.geen && v.plan && v.saldo?.nieuw ? studioTip(request, lang, 'abonnement', st.tipsWeg) : null;
     return { st, v, bk };
   }
   if (section === 'plan-return') {
@@ -10318,8 +10736,8 @@ export function planReturnView(t, lang, uitkomst) {
   const nl = lang === 'nl';
   const M = {
     gelukt: nl
-      ? ['Je abonnement loopt', 'Je eerste maand is betaald en het mandaat is afgegeven. Je saldo staat klaar op de tab Deze maand; de volgende termijn valt precies een maand later.']
-      : ['Your plan is running', 'Your first month is paid and the mandate is in place. Your credits are ready under This month; the next term falls exactly a month later.'],
+      ? ['Je abonnement loopt', 'Je eerste maand is betaald en het mandaat is afgegeven. Je credits staan klaar in je abonnement; de volgende termijn valt precies een maand later.']
+      : ['Your plan is running', 'Your first month is paid and the mandate is in place. Your credits are ready in your plan; the next term falls exactly a month later.'],
     wacht: nl
       ? ['Je betaling wordt verwerkt', 'Je bank heeft het nog niet bevestigd. Dat duurt bij iDEAL soms een paar minuten en er is niets misgegaan — zodra het binnen is, staat je abonnement hier en krijg je bericht.']
       : ['Your payment is being processed', 'Your bank has not confirmed it yet. With iDEAL that can take a few minutes and nothing has gone wrong — as soon as it arrives your plan appears here and you get an email.'],

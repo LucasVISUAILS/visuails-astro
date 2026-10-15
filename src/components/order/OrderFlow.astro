@@ -1,4 +1,5 @@
 ---
+import { TIPS } from '../../data/tips.js';
 import { waHref, WHATSAPP_DISPLAY } from '../../data/whatsapp.js';
 import NieuwTabblad from '../NieuwTabblad.astro';
 /* Het adres staat als tekst in schema.js en de voettekst; hier één constante. */
@@ -1016,6 +1017,41 @@ for (const l of ['en', 'nl'] as const) {
   };
 }
 
+// ── WERKLIJST 27: EEN TEGEL IN "WAT JE KRIJGT" KIEST DE ACHTERGROND VAN DAT BEELD ──
+for (const l of ['en', 'nl'] as const) {
+  (PIPE[l] as Record<string, unknown>).bgfoto = {
+    kies: l === 'nl' ? 'Achtergrond van {beeld} kiezen' : 'Choose the background of {beeld}',
+    /* v29-hex = b: de samenvatting bij een eigen kleur ("Op model: eigen kleur #C9D6E3"). */
+    eigen: l === 'nl' ? 'eigen kleur' : 'own colour',
+  };
+}
+
+// ── WERKLIJST 33: OPNIEUW BESTELLEN MET ALLE INSTELLINGEN — 15 oktober 2026 ──
+// De zin in het blok bovenaan: "Van VIS-2609-5102: 2 kanalen, de achtergrond,
+// de verhouding en 2 extra hoeken (Binnenkant, Driekwart)." pipeline.js
+// (applyVanBestelling) vult hem; de woorden staan hier.
+for (const l of ['en', 'nl'] as const) {
+  (PIPE[l] as Record<string, unknown>).van = l === 'nl' ? {
+    wat: 'Van {ref}: {lijst}.',
+    look: 'de look', achtergrond: 'de achtergrond', verhouding: 'de verhouding', model: 'het model',
+    kanaal1: '1 kanaal', kanaalN: '{n} kanalen',
+    hoek1: '1 extra hoek ({namen})', hoekN: '{n} extra hoeken ({namen})',
+    notitie: 'je notitie', outfits: 'het aantal outfits', en: 'en',
+    beeld1: 'de achtergrond van 1 foto', beeldN: 'de achtergrond van {n} foto’s',
+    niets: 'er was niets om over te nemen',
+    fout: 'De instellingen van die bestelling konden we niet ophalen. Je kiest ze hieronder gewoon zelf.',
+  } : {
+    wat: 'From {ref}: {lijst}.',
+    look: 'the look', achtergrond: 'the background', verhouding: 'the aspect ratio', model: 'the model',
+    kanaal1: '1 channel', kanaalN: '{n} channels',
+    hoek1: '1 extra angle ({namen})', hoekN: '{n} extra angles ({namen})',
+    notitie: 'your note', outfits: 'the number of outfits', en: 'and',
+    beeld1: 'the background of 1 photo', beeldN: 'the background of {n} photos',
+    niets: 'there was nothing to copy',
+    fout: 'We could not fetch the settings of that order. Simply choose them below yourself.',
+  };
+}
+
 // ── 1.04: DE BESTELLING WAAR JE MEE BEZIG WAS — 11 oktober 2026 (F3) ─────────
 // De regel in het blok bovenaan het formulier: "Catalogsets · 3 producten ·
 // 7 foto’s". pipeline.js vult hem; de woorden staan hier. Zie de noot bij
@@ -1118,6 +1154,9 @@ const REQUIRED_COPY = [
     ...(x.options ? x.options.map((o) => `pu.qopt.${x.id}.${o.id || '_'}`) : []),
   ]),
   's3.prefillNote',
+  'bgfoto.kies', 'bgfoto.eigen',
+  'van.wat', 'van.look', 'van.achtergrond', 'van.verhouding', 'van.model', 'van.kanaal1', 'van.kanaalN',
+  'van.hoek1', 'van.hoekN', 'van.notitie', 'van.outfits', 'van.en', 'van.niets', 'van.fout', 'van.beeld1', 'van.beeldN',
   'concept.dienst', 'concept.wat', 'concept.product1', 'concept.productN',
   'concept.foto0', 'concept.foto1', 'concept.fotoN', 'concept.weg1', 'concept.wegN',
   'gate.windowSub', 'gate.chosen', 'gate.none', 'gate.earlier', 'gate.later',
@@ -1415,6 +1454,12 @@ const FORM = {
       nojs: 'Without JavaScript the calendar cannot be checked from this page. Send the form and we will come back with a delivery date in writing — no date is assumed in the meantime.',
     },
     /* 1.04 (F3, 11 oktober 2026): het blok bovenaan als de klant terugkomt. */
+    /* Werklijst 33 (15 oktober 2026): "Order again with all settings" from Studio. */
+    van: {
+      h: 'Settings copied',
+      noot: 'Check them before you order. You add your products and photos yourself; priority is off.',
+      sluit: 'Got it',
+    },
     concept: {
       h: 'You were in the middle of an order',
       noot: 'Your details are not kept; you fill them in again afterwards.',
@@ -1469,7 +1514,7 @@ const FORM = {
         tekortAlgemeen: 'You are {tekort} credits short. You can buy up to {ruimte} extra credits this month, or simply pay for this order through Mollie.',
         bijkoopLink: 'Buy credits',
         hint: 'Switching to {plan} is better value: {bedrag} a month for {credits} credits.',
-        hintLink: 'Go to your plan',
+        hintLink: 'Switch plans',
         na: 'Paid straight away with your credits; your confirmation follows by email. There is no separate invoice: your plan invoice covers this order.',
         tegoed: 'Your account balance of {bedrag} stays for a payment through Mollie.',
         optie: 'With {opties}, this order cannot be paid with credits: you pay it through Mollie, {bedrag} excl. VAT.',
@@ -1743,6 +1788,12 @@ const FORM = {
       lostBody: 'Er is niets aangemaakt en niets in rekening gebracht. Kies hieronder een andere datum en verstuur opnieuw.',
       nojs: 'Zonder JavaScript kunnen we de agenda niet vanaf deze pagina checken. Verstuur het formulier, dan komen we op schrift met een leverdatum terug — tot die tijd staat er geen datum vast.',
     },
+    /* Werklijst 33: zie de Engelse tegenhanger. */
+    van: {
+      h: 'Instellingen overgenomen',
+      noot: 'Loop ze na voordat je bestelt. Je producten en foto’s voeg je zelf toe; voorrang staat uit.',
+      sluit: 'Begrepen',
+    },
     /* Zie de Engelse tegenhanger (1.04). */
     concept: {
       h: 'Je was bezig met een bestelling',
@@ -1791,7 +1842,7 @@ const FORM = {
         tekortAlgemeen: 'Je komt {tekort} credits tekort. Je kunt deze maand nog {ruimte} credits bijkopen, of je betaalt deze bestelling gewoon via Mollie.',
         bijkoopLink: 'Credits bijkopen',
         hint: 'Overstappen naar {plan} is voordeliger: {bedrag} per maand voor {credits} credits.',
-        hintLink: 'Naar je abonnement',
+        hintLink: 'Overstappen',
         na: 'Je bestelling is meteen betaald met credits; je bevestiging komt per mail. Er komt geen aparte factuur: je termijnfactuur dekt deze bestelling.',
         tegoed: 'Je tegoed van {bedrag} blijft staan voor een betaling via Mollie.',
         optie: 'Met {opties} gaat deze bestelling niet met credits: je betaalt hem via Mollie, {bedrag} excl. btw.',
@@ -2202,6 +2253,18 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         bestelling van deze pagina half klaarstaat: de keuzes en de foto's die
         nog bij ons staan, niet de gegevens. Twee knoppen, en zonder script of
         zonder opslag blijft het gewoon weg. */}
+    {/* ── INSTELLINGEN OVERGENOMEN — 15 oktober 2026 (werklijst 33) ──────────
+        Na "Opnieuw bestellen met alle instellingen" in Studio (?van=<id>).
+        pipeline.js (applyVanBestelling) vult de zin en toont het blok; zonder
+        script of uitgelogd blijft het weg. Weg te klikken, Esc sluit het. */}
+    <div class="pl-lost pl-open pl-van" data-pl-van hidden role="status">
+      <h2 class="pl-lost-h">{f.van.h}</h2>
+      <p class="pl-lost-body" data-pl-van-wat></p>
+      <p class="pl-lost-body pl-concept-noot">{f.van.noot}</p>
+      <div class="pl-open-acts">
+        <button type="button" class="knop" data-pl-van-sluit>{f.van.sluit}</button>
+      </div>
+    </div>
     <div class="pl-lost pl-open pl-concept" data-pl-concept hidden role="status" tabindex="-1">
       <h2 class="pl-lost-h">{f.concept.h}</h2>
       <p class="pl-lost-body" data-pl-concept-wat></p>
@@ -2831,6 +2894,12 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         code that has to mean it. */}
     <section class="pl-step" data-pl-step="2">
       <h2 class="pl-h" data-pl-head>{f.s2.h}</h2>
+      {/* Tip 2 (afvinklijst 28, v28-tips = a): één keer, weg te klikken. */}
+      <p class="pl-tip" data-pl-tip="fotos" role="note" hidden>
+        <span class="pl-tip-tekst">{TIPS[lang].fotos}</span>
+        <button type="button" class="pl-tip-ok" data-pl-tip-weg>{TIPS[lang].begrepen}</button>
+        <button type="button" class="pl-tip-x" data-pl-tip-weg aria-label={TIPS[lang].sluit}>×</button>
+      </p>
 
       {/* ── WIE HET DRAAGT STOND HIER — tot 11 oktober 2026 ─────────────────
           Sinds F3 (1.09) staat <slot name="model" /> weer in stap 1; zie de noot
@@ -3390,9 +3459,16 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         <ul class="pl-credits-regels" data-pl-credits-regels></ul>
         {/* Extra credits bijkopen (12 oktober 2026): één regel met een link naar
             Studio, en de hint "Overstappen is voordeliger" als die waar is. */}
-        <p class="pl-credits-bij" data-pl-credits-bij hidden><span data-pl-credits-bij-tekst></span> <a class="pijl" data-pl-credits-bij-link href="/account/plan/#bijkopen"></a></p>
-        <p class="pl-credits-bij" data-pl-credits-hint hidden><span data-pl-credits-hint-tekst></span> <a class="pijl" data-pl-credits-hint-link href="/account/plan/#je-plan"></a></p>
+        <p class="pl-credits-bij" data-pl-credits-bij hidden><span data-pl-credits-bij-tekst></span> <a class="pijl" data-pl-credits-bij-link href="/account/plan/?tab=credits#bijkopen"></a></p>
+        <p class="pl-credits-bij" data-pl-credits-hint hidden><span data-pl-credits-hint-tekst></span> <a class="pijl" data-pl-credits-hint-link href="/account/plan/?tab=plan#overstappen"></a></p>
       </div>
+
+      {/* Tip 3 (v28-tips = a): voor een abonnee, als het creditblok er staat. */}
+      <p class="pl-tip" data-pl-tip="credits" role="note" hidden>
+        <span class="pl-tip-tekst">{TIPS[lang].credits}</span>
+        <button type="button" class="pl-tip-ok" data-pl-tip-weg>{TIPS[lang].begrepen}</button>
+        <button type="button" class="pl-tip-x" data-pl-tip-weg aria-label={TIPS[lang].sluit}>×</button>
+      </p>
 
       {/* Tegoed van een ingelogde klant (29 september 2026) — pipeline.js vult
           het bedrag uit /account/me. Zie src/lib/tegoedVerrekening.js. */}
@@ -4252,19 +4328,25 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
      × font-size .9rem, + .75rem padding top and bottom, + the 1px bottom rule.
      box-sizing is border-box sitewide (global.css:247), so min-height has to
      carry the last two. */
+  /* HET LABEL BOVEN DE WAARDE, en niet ernaast — 15 oktober 2026 (afvinklijst 29,
+     k-maat). Naast een kolom van 6,5rem kreeg de waarde 249 van de 367 px: vier à
+     zes woorden per regel, en de langste waarde liep over drie regels. Erboven
+     krijgt hij de hele kolom, acht à negen woorden, en past de langste weer in
+     twee. min-height telt nu ook het label mee: één regel van .73rem × 1,5 en de
+     gap van .2rem. */
   .level-row {
     display: grid;
-    grid-template-columns: 6.5rem 1fr;
-    gap: .9rem;
+    grid-template-columns: 1fr;
+    gap: .2rem;
     padding: .75rem 0;
     border-bottom: 1px solid var(--line);
-    min-height: calc(2 * 1.5 * .9rem + 1.5rem + 1px);
+    min-height: calc(2 * 1.5 * .9rem + 1.5 * .73rem + .2rem + 1.5rem + 1px);
   }
   /* 11,7px in plaats van 10,9 — de ondergrens van de keuring is 11,5px, en dit
      is het label dat zegt WAT de regel ernaast belooft. */
   .level-row dt {
     font-size: .73rem; font-weight: 700; letter-spacing: .08em;
-    text-transform: uppercase; color: var(--ink-3); padding-top: .18rem;
+    text-transform: uppercase; color: var(--ink-3);
   }
   .level-row dd { margin: 0; font-size: .9rem; color: var(--ink-2); line-height: 1.5; }
 
@@ -4668,7 +4750,6 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   /* .row-2's 620px collapse is in global.css with the rule it collapses. */
 
   @media (max-width: 560px) {
-    .level-row { grid-template-columns: 1fr; gap: .25rem; }
     .pl-summary { grid-template-columns: 1fr; }
     .pl-summary :global(dt) { border-bottom: 0; padding: .8rem 0 0; }
     .pl-summary :global(dd) { padding-top: .25rem; }

@@ -53,14 +53,14 @@ const vol = (key, ...shots) => shots.map((shot) => ({ kind: 'upload', product_ke
   ok('p1 mist de driekwart (extra1)', JSON.stringify(lijst[0].mist) === '["extra1"]', JSON.stringify(lijst));
   ok('p2 mist eerst het vaste vak, dan niets van de hoeken', JSON.stringify(lijst[1].mist) === '["detail"]', JSON.stringify(lijst[1]));
   ok('de namen reizen mee waar een hoek ontbreekt, en alleen daar', !!lijst[0].namen && !('namen' in lijst[1]));
-  ok('NL-regel: "p1 Jas groen: geen driekwart"', ontbrekendRegels(lijst, 'nl')[0] === 'p1 Jas groen: geen driekwart', ontbrekendRegels(lijst, 'nl')[0]);
-  ok('EN-regel: "p1 Jas groen: no three-quarter"', ontbrekendRegels(lijst, 'en')[0] === 'p1 Jas groen: no three-quarter', ontbrekendRegels(lijst, 'en')[0]);
+  ok('NL-regel: "Product 1 · Jas groen: geen driekwart"', ontbrekendRegels(lijst, 'nl')[0] === 'Product 1 · Jas groen: geen driekwart', ontbrekendRegels(lijst, 'nl')[0]);
+  ok('EN-regel: "Product 1 · Jas groen: no three-quarter"', ontbrekendRegels(lijst, 'en')[0] === 'Product 1 · Jas groen: no three-quarter', ontbrekendRegels(lijst, 'en')[0]);
   ok('de telling neemt de hoek mee', aantalOntbrekend(lijst) === 2);
   ok('vakNaam met namen: "driekwart"; zonder: de id', vakNaam('extra1', 'nl', lijst[0].namen) === 'driekwart' && vakNaam('extra1', 'nl') === 'extra1');
 }
 {
   const lijst = ontbrekendeFotos({ productCount: 1, details: DET, files: vol('p1', 'front', 'back', 'detail', 'extra1') });
-  ok('een eigen hoek draagt wat de klant typte', ontbrekendRegels(lijst, 'nl')[0] === 'p1 Jas groen: geen binnenkant van de kraag', ontbrekendRegels(lijst, 'nl')[0]);
+  ok('een eigen hoek draagt wat de klant typte', ontbrekendRegels(lijst, 'nl')[0] === 'Product 1 · Jas groen: geen binnenkant van de kraag', ontbrekendRegels(lijst, 'nl')[0]);
   ok('volgorde: vaste vakken eerst, hoeken daarna (vaknummer)', JSON.stringify(ontbrekendeFotos({ productCount: 1, details: DET, files: vol('p1', 'front') })[0].mist) === '["back","detail","extra1","extra2"]');
 }
 {
@@ -125,23 +125,23 @@ const kaart = (lang = 'nl') => {
 };
 {
   const lijst = await ontbrekendVoorOrder(env.DB, 601);
-  ok('uit D1: p1 geen driekwart, p2 geen binnenkant van de kraag', ontbrekendRegels(lijst, 'nl').join(' | ') === 'p1 Jas groen: geen driekwart | p2: geen binnenkant van de kraag', ontbrekendRegels(lijst, 'nl').join(' | '));
+  ok('uit D1: p1 geen driekwart, p2 geen binnenkant van de kraag', ontbrekendRegels(lijst, 'nl').join(' | ') === 'Product 1 · Jas groen: geen driekwart | Product 2: geen binnenkant van de kraag', ontbrekendRegels(lijst, 'nl').join(' | '));
   const v = kaart().fotos;
-  ok('Studio: de lijst bovenaan noemt de hoeken', v.ontbreekt && v.ontbreekt.regels.join(' | ') === 'p1 Jas groen: geen driekwart | p2: geen binnenkant van de kraag', JSON.stringify(v.ontbreekt?.regels));
+  ok('Studio: de lijst bovenaan noemt de hoeken', v.ontbreekt && v.ontbreekt.regels.join(' | ') === 'Product 1 · Jas groen: geen driekwart | Product 2: geen binnenkant van de kraag', JSON.stringify(v.ontbreekt?.regels));
   const p1 = v.producten.find((p) => p.key === 'p1');
   const dk = p1.vakken.find((x) => x.shot === 'extra1');
   ok('Studio: p1 heeft een vak "Driekwart", leeg, met een eigen veld', dk && dk.naam === 'Driekwart' && dk.veld === 'vak_p1_extra1' && dk.mist === true && dk.staat === 'Nog niet ontvangen', JSON.stringify(dk));
   ok('Studio: de hoekvakken staan na de vaste vier', p1.vakken.map((x) => x.shot).join() === 'front,back,detail,worn,extra1,extra2');
   ok('Studio: het gevulde hoekvak van de eigen hoek draagt de getypte naam', p1.vakken[5].naam === 'Binnenkant van de kraag' && !!p1.vakken[5].gevuld);
   const en = kaart('en').fotos;
-  ok('Studio (EN): "Three-quarter" en "no three-quarter"', en.producten[0].vakken[4].naam === 'Three-quarter' && en.ontbreekt.regels[0] === 'p1 Jas groen: no three-quarter', en.ontbreekt.regels[0]);
+  ok('Studio (EN): "Three-quarter" en "no three-quarter"', en.producten[0].vakken[4].naam === 'Three-quarter' && en.ontbreekt.regels[0] === 'Product 1 · Jas groen: no three-quarter', en.ontbreekt.regels[0]);
 }
 {
   const ctx = await betaalMailContext(env, 'VIS-TEST-0601', 'nl');
   const html = invoiceEmail({ lang: 'nl', order: { ref: 'VIS-TEST-0601', service: 'catalog' }, invoice: { number: 'VIS-2026-0601' }, snap: {}, attached: true, ontbreekt: ctx.ontbreekt }).html;
-  ok('betaalmail: "Er ontbreken nog foto’s" met de driekwart', /Er ontbreken nog foto’s:/.test(html) && html.includes('p1 Jas groen: geen driekwart'), ctx.ontbreekt.join(' | '));
+  ok('betaalmail: "Er ontbreken nog foto’s" met de driekwart', /Er ontbreken nog foto’s:/.test(html) && html.includes('Product 1 · Jas groen: geen driekwart'), ctx.ontbreekt.join(' | '));
   const en = await betaalMailContext(env, 'VIS-TEST-0601', 'en');
-  ok('betaalmail (EN): "no three-quarter"', en.ontbreekt[0] === 'p1 Jas groen: no three-quarter', en.ontbreekt[0]);
+  ok('betaalmail (EN): "no three-quarter"', en.ontbreekt[0] === 'Product 1 · Jas groen: no three-quarter', en.ontbreekt[0]);
 }
 {
   const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01]);
@@ -157,9 +157,9 @@ const kaart = (lang = 'nl') => {
   const rij = db.prepare("SELECT * FROM files WHERE order_id = 601 AND r2_key LIKE 'aangeleverd/%'").get();
   ok('nasturen: de foto staat in vak p1/extra1', rij && rij.product_key === 'p1' && rij.shot === 'extra1');
   const ev = db.prepare('SELECT note FROM order_events WHERE order_id = 601 ORDER BY id DESC LIMIT 1').get();
-  ok('nasturen: de tijdlijn zegt "p1 driekwart"', ev?.note === 'Nagestuurd in Studio: p1 driekwart', ev?.note);
+  ok('nasturen: de tijdlijn zegt "Product 1 driekwart"', ev?.note === 'Nagestuurd in Studio: Product 1 driekwart', ev?.note);
   const studiomail = mails.find((m) => /Foto's binnen/.test(m.subject || ''));
-  ok('studiomail: noemt de hoek en wat er nog mist', !!studiomail && /p1 driekwart/.test(studiomail.html) && /Ontbreekt nog/.test(studiomail.html) && /geen binnenkant van de kraag/.test(studiomail.html));
+  ok('studiomail: noemt de hoek en wat er nog mist', !!studiomail && /Product 1 driekwart/.test(studiomail.html) && /Ontbreekt nog/.test(studiomail.html) && /geen binnenkant van de kraag/.test(studiomail.html));
   ok('Studio: daarna is het vak gevuld en mist p1 niets meer', kaart().fotos.compleet.some((p) => p.key === 'p1'));
 }
 
@@ -187,7 +187,7 @@ db.exec("DELETE FROM files WHERE order_id = 601 AND r2_key LIKE 'aangeleverd/%'"
 {
   const { status, html } = await get('/admin/orders/601/files');
   ok('admin bord: de pagina laadt', status === 200, String(status));
-  ok('admin bord: het blok bovenaan telt twee en noemt de driekwart', /2 foto’s ontbreken/.test(html) && /p1 Jas groen: geen driekwart/.test(html));
+  ok('admin bord: het blok bovenaan telt twee en noemt de driekwart', /2 foto’s ontbreken/.test(html) && /Product 1 · Jas groen: geen driekwart/.test(html));
   ok('admin bord: de kop van p1 zegt "mist driekwart"', /class="or-let is-rood">mist driekwart</.test(html));
   ok('admin bord: een rood leeg vak "Driekwart" bij het product', /class="brief-vak is-mist"><span class="brief-vak-l">Driekwart<\/span><span class="brief-mist">ontbreekt<\/span>/.test(html));
 }
@@ -200,7 +200,7 @@ db.exec("DELETE FROM files WHERE order_id = 601 AND r2_key LIKE 'aangeleverd/%'"
   const { regels, fout } = await nuDoen(env.DB, { nu: Date.parse('2026-10-12T09:00:00Z') });
   const r = regels.find((x) => x.soort === 'fotos' && x.id === 601);
   ok('Nu-doen: een regel "foto’s ontbreken" voor deze bestelling', !fout && !!r, fout || '');
-  ok('Nu-doen: de tekst noemt de driekwart', r && /^2 foto’s ontbreken \(p1 Jas groen: geen driekwart, …\)$/.test(watTekst(r, Date.parse('2026-10-12T09:00:00Z'))), r ? watTekst(r) : '');
+  ok('Nu-doen: de tekst noemt de driekwart', r && /^2 foto’s ontbreken \(Product 1 · Jas groen: geen driekwart, …\)$/.test(watTekst(r, Date.parse('2026-10-12T09:00:00Z'))), r ? watTekst(r) : '');
   /* De bestelpagina is /admin/orders/<id>/files (het bord), met "Volgende stap" bovenaan. */
   const { status, html } = await get('/admin/orders/601/files');
   const stap = (/<div class="volgende-stap">[\s\S]*?<\/p>/.exec(html) || [''])[0];

@@ -55,7 +55,10 @@ try {
      ronde 10 (8 oktober 2026) en stuurt door — zie "het abonnement" hieronder. */
   /* Sinds 2.07 (8 oktober 2026) is /account/plan één pagina zonder tabbladen;
      de oude ?tab=-links sturen door (zie "het abonnement" hieronder). */
-  const SCHERMEN = ['/account', '/account/orders', '/account/brand-kit', '/account/details', '/account/invoices', '/account/plan'];
+  /* Sinds 15 oktober 2026 heeft /account/plan weer tabs (v28-abotabs = a):
+     elke tab is een eigen scherm met dezelfde vorm. */
+  const SCHERMEN = ['/account', '/account/orders', '/account/brand-kit', '/account/details', '/account/invoices', '/account/plan',
+    '/account/plan?tab=credits', '/account/plan?tab=facturen', '/account/plan?tab=plan'];
   const html = {};
   for (const pad of SCHERMEN) {
     const p = await pagina(pad);
@@ -143,27 +146,35 @@ try {
   console.log('\nhet abonnement');
   {
     const h = main(html['/account/plan']);
-    /* ── ÉÉN PAGINA ZONDER TABBLADEN — 8 oktober 2026 (punt 2.07) ──────────
-       Van boven naar beneden: saldo (uit het creditboek), twee bestelknoppen
-       met de vaste look, de creditkaart, de maandset, het creditboek en "Je
-       plan" met pauzeren en opzeggen. Zie ook tests/abonnementspagina.test.mjs. */
-    ok('geen tabbladen meer', !/st-tabs|tab=(facturering|bestellen|planning|look|edities)/.test(h));
+    const hc = main(html['/account/plan?tab=credits']);
+    const hf = main(html['/account/plan?tab=facturen']);
+    const hp = main(html['/account/plan?tab=plan']);
+    /* ── VIER TABS — 15 oktober 2026 (v28-abotabs = a) ─────────────────────
+       Overzicht: saldo (uit het creditboek), twee bestelknoppen met de vaste
+       look, de maandset. Credits: bijkopen, het creditboek, de creditkaart.
+       Facturen: termijnen en bijkopen. Je plan: pauzeren en opzeggen. Zie ook
+       tests/abonnementspagina.test.mjs. */
+    ok('vier tabs, gewone links, de huidige zonder link', tel(h, /class="st-filter[ "]/g) === 4 && /<span class="st-filter is-actief" aria-current="page" data-tab="overzicht">/.test(h)
+      && ['?tab=credits', '?tab=facturen', '?tab=plan'].every((q) => h.includes(`href="/account/plan${q}"`)));
+    ok('  op Credits is Credits de huidige, met het saldo erin', /aria-current="page" data-tab="credits">Credits<span class="st-filter-n">\d+<\/span>/.test(hc));
+    ok('geen oude tabnamen', !/st-tabs|tab=(facturering|bestellen|planning|look|edities)/.test(h + hc + hf + hp));
     ok('het saldo uit het creditboek', /class="[^"]*st-abo-saldo/.test(h) && /Je hebt (geen credits|\d+ credits?)/.test(h));
     ok('  en niet als inline stijl', !/style="[^"]*width:/.test(h));
     ok('twee bestelknoppen naar het gewone formulier', /href="(\/nl)?\/start\/catalog\//.test(h) && /href="(\/nl)?\/start\/lifestyle\//.test(h));
-    ok('de creditkaart staat erop (6.01)', /<section class="ck[\s"]/.test(h));
-    ok('  en de complete bundel staat er niet meer bij', !/Complete bundel|Complete bundle/.test(h));
-    ok('het creditboek', /id="creditboek"/.test(h));
-    ok('je plan met termijn en bedrag', /id="je-plan"/.test(h) && /maandelijks|monthly/.test(h) && /€/.test(h));
-    ok('pauzeren en opzeggen, met een verplichte reden', /action="\/account\/plan\/pause"/.test(h) && /action="\/account\/plan\/cancel"/.test(h) && /name="reden" value="credits" required/.test(h));
-    ok('opzeggen biedt eerst pauzeren aan', /st-stop-aanbod/.test(h) && /formaction="\/account\/plan\/pause"/.test(h));
+    ok('de creditkaart staat op Credits (6.01)', /<section class="ck[\s"]/.test(hc) && !/<section class="ck[\s"]/.test(h));
+    ok('  en de complete bundel staat er niet meer bij', !/Complete bundel|Complete bundle/.test(hc));
+    ok('het creditboek op Credits', /id="creditboek"/.test(hc) && !/id="creditboek"/.test(h));
+    ok('de facturen van het abonnement op Facturen, met een link naar alle facturen', /id="abo-facturen-h"/.test(hf) && /href="\/account\/invoices"/.test(hf));
+    ok('je plan met termijn en bedrag, op Je plan', /id="je-plan"/.test(hp) && /maandelijks|monthly/.test(hp) && /€/.test(hp) && !/id="je-plan"/.test(h));
+    ok('pauzeren en opzeggen, met een verplichte reden', /action="\/account\/plan\/pause"/.test(hp) && /action="\/account\/plan\/cancel"/.test(hp) && /name="reden" value="credits" required/.test(hp));
+    ok('opzeggen biedt eerst pauzeren aan', /st-stop-aanbod/.test(hp) && /formaction="\/account\/plan\/pause"/.test(hp));
     ok('er is geen vaste week meer: geen strook, geen zin, geen formulier', tel(h, /class="st-dag[ "]/g) === 0 && !/loopt van|runs from/.test(h) && !/\/account\/plan\/week/.test(h));
     ok('de knop "Bestellen" wijst naar het gewone bestelformulier', /href="(\/nl)?\/start"[^>]*>(Bestellen|Order)</.test(html['/account/plan']));
     ok('en Editions als één regel', /st-editions-regel/.test(h));
     ok('de maandset-kaart staat erop', /st-maandset|De maandset|monthly set/i.test(h));
 
-    /* De oude tabbladen sturen door naar de ene pagina; Facturering naar "Je plan". */
-    for (const [tab, waar] of [['bestellen', '/account/plan'], ['look', '/account/plan'], ['edities', '/account/plan'], ['facturering', '/account/plan#je-plan']]) {
+    /* De oude tabbladen sturen door naar de pagina; Facturering naar "Je plan". */
+    for (const [tab, waar] of [['bestellen', '/account/plan'], ['look', '/account/plan'], ['edities', '/account/plan'], ['facturering', '/account/plan?tab=plan']]) {
       const oud = await pagina(`/account/plan?tab=${tab}`);
       ok(`een oude link ?tab=${tab} stuurt door naar ${waar}`, [oud.status, oud.headers.get('location')], [303, waar]);
     }

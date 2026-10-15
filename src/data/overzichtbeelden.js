@@ -50,10 +50,10 @@
 const S = (naam) => `/img/schets/${naam}.svg`;
 
 const CATALOG = [
-  { src: S('catalog-voorkant'), nl: 'Voorkant', en: 'Front', altNl: 'Schets: het product van voren, op wit', altEn: 'Sketch: the product from the front, on white' },
-  { src: S('catalog-achterkant'), nl: 'Achterkant', en: 'Back', altNl: 'Schets: het product van achteren, op wit', altEn: 'Sketch: the product from the back, on white' },
-  { src: S('catalog-detail'), nl: 'Detail', en: 'Detail', altNl: 'Schets: een detail van de stof, dichtbij', altEn: 'Sketch: a close-up of the fabric' },
-  { src: S('catalog-model'), nl: 'Op model', en: 'On model', altNl: 'Schets: het product gedragen door een model', altEn: 'Sketch: the product worn by a model' },
+  { id: 'front', src: S('catalog-voorkant'), nl: 'Voorkant', en: 'Front', altNl: 'Schets: het product van voren, op wit', altEn: 'Sketch: the product from the front, on white' },
+  { id: 'back', src: S('catalog-achterkant'), nl: 'Achterkant', en: 'Back', altNl: 'Schets: het product van achteren, op wit', altEn: 'Sketch: the product from the back, on white' },
+  { id: 'detail', src: S('catalog-detail'), nl: 'Detail', en: 'Detail', altNl: 'Schets: een detail van de stof, dichtbij', altEn: 'Sketch: a close-up of the fabric' },
+  { id: 'worn', src: S('catalog-model'), nl: 'Op model', en: 'On model', altNl: 'Schets: het product gedragen door een model', altEn: 'Sketch: the product worn by a model' },
 ];
 
 /* De vier beelden van een carrousel, in de volgorde van LIFESTYLE in levervakken.js. */
@@ -91,7 +91,9 @@ const PER_DIENST = {
 export function tegelsVoor(service, lang) {
   const lijst = PER_DIENST[service] || [];
   const nl = lang === 'nl';
-  return lijst.map((t) => ({ src: t.src, label: nl ? t.nl : t.en, alt: nl ? t.altNl : t.altEn }));
+  /* `id` (15 oktober 2026, werklijst 27): het vak van een catalogbeeld, zodat
+     "Wat je krijgt" per beeld de achtergrond kan tonen en kiezen. */
+  return lijst.map((t) => ({ id: service === 'catalog' ? t.id || '' : '', src: t.src, label: nl ? t.nl : t.en, alt: nl ? t.altNl : t.altEn }));
 }
 
 /* De noot die onder elke strook hoort: dit zijn echte beelden, en wat de klant

@@ -36,7 +36,7 @@ const L = {};
 vm.runInNewContext(`${LOGICA}
   uit.leesInstellingen = leesInstellingen; uit.verhoudingGetal = verhoudingGetal;
   uit.vakVolgnummer = vakVolgnummer; uit.vakWoord = vakWoord; uit.behandeling = behandeling;
-  uit.verhoudingVoorVak = verhoudingVoorVak; uit.eindNaam = eindNaam; uit.isBeeldNaam = isBeeldNaam;
+  uit.verhoudingVoorVak = verhoudingVoorVak; uit.achtergrondVoorVak = achtergrondVoorVak; uit.eindNaam = eindNaam; uit.isBeeldNaam = isBeeldNaam;
   uit.isAlAf = isAlAf; uit.moetDoorPhotoshop = moetDoorPhotoshop; uit.maatBesluit = maatBesluit;
   uit.nieuweTellers = nieuweTellers; uit.slotmelding = slotmelding;`, { uit: L });
 
@@ -90,6 +90,15 @@ for (const [dienst, det] of [['catalog', DET], ['lifestyle', {}]]) {
 ok('eindnaam: VIS-…-p1-voorkant.jpg', L.eindNaam('VIS-2608-4471', 'p1', '1 voorkant') === 'VIS-2608-4471-p1-voorkant.jpg');
 ok('het ruwe beeld in _ruw/ komt nooit als levering terug', isRawPath(`VIS-TEST-0407 - M/p1 - Hoodie/1 voorkant/_ruw/${'gen_0042.png'}`));
 ok('vak 2 met een eigen verhouding: verhouding_2 wint', L.verhoudingVoorVak(gelezen, '2 achterkant') === '1:1' && L.verhoudingVoorVak(gelezen, '1 voorkant') === '4:5');
+/* Werklijst 27 (15 oktober 2026): een andere achtergrond per beeld. Wat de
+   server schrijft (instellingen() met beeldAchtergronden), leest het script. */
+{
+  const regel = `INSTELLINGEN ${instellingen({ ref: 'VIS-TEST-0407', service: 'catalog', kanaal: 'own' }, { index: 1, background: '#F7F5F1', ratio: '4:5', beeldAchtergronden: [{ nr: 4, hex: '#EDE4D8', nl: 'Op een model', naam: { nl: 'Beige' } }] }).map(([k, v]) => `${k}=${v}`).join(' · ')}`;
+  const inst = L.leesInstellingen(regel);
+  ok('per beeld: de server schrijft achtergrond_4', /achtergrond_4=#EDE4D8/.test(regel), regel);
+  ok('per beeld: het script vult vak 4 met die kleur, de rest met de achtergrond', L.achtergrondVoorVak(inst, '4 op-model') === '#EDE4D8' && L.achtergrondVoorVak(inst, '1 voorkant') === '#F7F5F1', JSON.stringify(inst));
+  ok('per beeld: het script gebruikt achtergrondVoorVak bij het afwerken', /processDocument\(doc, route, achtergrondVoorVak\(inst, vnaam\), besluit\)/.test(JSX));
+}
 ok('behandeling: detail', L.behandeling('3 detail', 'catalog') === 'detail');
 ok('behandeling: op-model is Select Subject', L.behandeling('4 op-model', 'catalog') === 'model');
 ok('behandeling: voorkant en extra hoek zijn product', L.behandeling('1 voorkant', 'catalog') === 'product' && L.behandeling('5 driekwart [extra1]', 'catalog') === 'product');

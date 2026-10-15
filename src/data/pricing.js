@@ -3669,6 +3669,21 @@ export function customCreditsTotal(credits) {
 
 /** Hoeveel producten-met-catalog-en-lifestyle een creditsaldo vasthoudt — voor de
  *  capaciteitspoort en de oude `granted`-kolom. Starter 45 → 5, Merk 290 → 33. */
+/**
+ * Wat één product kost met een abonnement, op het voordeligste tarief per credit
+ * van de vaste abonnementen (15 oktober 2026, k-klant). Lucas: *"een extra tekst
+ * bij sommige order knoppen zetten zoals order catalog for 89 of voor 4 credits met
+ * een lopend abonnement"*. In euro's en niet in credits: wie geen abonnement heeft,
+ * weet niet wat een credit is. Op twee decimalen, zodat "vanaf" nooit lager is dan
+ * het echt is. Null voor een dienst zonder credits.
+ */
+export function aboVanafPerProduct(dienst) {
+  const c = SERVICE_CREDITS[dienst];
+  if (!c) return null;
+  const tarief = Math.min(...Object.keys(PLAN_CREDITS).map((p) => PLAN_AMOUNT[p] / PLAN_CREDITS[p]));
+  return Math.ceil(tarief * c * 100) / 100;
+}
+
 export function creditsProductEquivalent(credits) {
   const per = SERVICE_CREDITS.catalog + SERVICE_CREDITS.lifestyle;
   return Math.ceil(Math.max(0, Number(credits) || 0) / per);

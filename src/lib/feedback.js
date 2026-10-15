@@ -562,17 +562,22 @@ function naVersturen(t, action, hidden, fb, clicked, lang) {
  *   (het portaal heeft niets nodig — de token staat in de URL; VISUAILS Studio
  *   stuurt het bestelnummer mee)
  * @param {object|null} o.feedback  de rij uit order_feedback, of null
+ * @param {string} [o.kopId]  het id van de kop (standaard fb-h; Studio: fb-h-<bestelling>)
  * @returns {string} html, of '' als er niets te vragen is
  */
-export function feedbackBlock({ lang = 'nl', action, hidden = '', feedback = null }) {
+export function feedbackBlock({ lang = 'nl', action, hidden = '', feedback = null, kopId = 'fb-h' }) {
+  /* kopId: in VISUAILS Studio staan meer afgeronde bestellingen op één pagina;
+     elk blok krijgt dan een eigen id (fb-h-<id>), anders staat id="${kid}" er
+     dubbel (gevonden bij de volledige controle, 15 oktober 2026). */
+  const kid = esc(String(kopId));
   const t = COPY[lang === 'en' ? 'en' : 'nl'];
   const fb = feedback;
   const clicked = parsePlatforms(fb?.platforms_clicked);
 
   // ── NOG NIETS GEVRAAGD: alleen de vraag ───────────────────────────────────
   if (!fb || !fb.score) {
-    return `<section class="fb" aria-labelledby="fb-h">
-      <h3 id="fb-h">${esc(t.askH)}</h3>
+    return `<section class="fb" aria-labelledby="${kid}">
+      <h3 id="${kid}">${esc(t.askH)}</h3>
       <p class="fb-lede">${esc(t.askLede)}</p>
       ${scoreRow(t, action, hidden)}
     </section>`;
@@ -589,7 +594,7 @@ export function feedbackBlock({ lang = 'nl', action, hidden = '', feedback = nul
     <button class="btn-quiet" type="submit">${esc(t.changeScore)}</button>
   </form>`;
 
-  const head = `<h3 id="fb-h">${esc(t.done)}</h3>
+  const head = `<h3 id="${kid}">${esc(t.done)}</h3>
     <p class="fb-lede"><span class="fb-given">${esc(t.scoreLabel(score))}</span></p>`;
 
   // ── HOGE SCORE: de drie acties naast elkaar ───────────────────────────────
@@ -599,14 +604,14 @@ export function feedbackBlock({ lang = 'nl', action, hidden = '', feedback = nul
      toestemmingsblok (10.05) in plaats van het oude losse vinkje. */
   const verstuurd = !!(fb.toestemming_at || fb.ingetrokken_at || Number(fb.testimonial_consent) === 1 || String(fb.testimonial_text || '').trim());
   if (high && verstuurd) {
-    return `<section class="fb" aria-labelledby="fb-h">
+    return `<section class="fb" aria-labelledby="${kid}">
       ${head}
       ${naVersturen(t, action, hidden, fb, clicked, lang)}
       ${again}
     </section>`;
   }
   if (high) {
-    return `<section class="fb" aria-labelledby="fb-h">
+    return `<section class="fb" aria-labelledby="${kid}">
       ${head}
       <div class="fb-share">
         <h4>${esc(t.shareH)}</h4>
@@ -633,7 +638,7 @@ export function feedbackBlock({ lang = 'nl', action, hidden = '', feedback = nul
         <button class="btn btn-primary" type="submit">${esc(t.fixSend)}</button>
       </form>`;
 
-  return `<section class="fb" aria-labelledby="fb-h">
+  return `<section class="fb" aria-labelledby="${kid}">
     ${head}
     ${fix}
     <div class="fb-also">

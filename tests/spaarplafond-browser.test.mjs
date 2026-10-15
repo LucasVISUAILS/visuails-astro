@@ -172,9 +172,16 @@ try {
           ok(`${label}: "gebruik er vóór die dag 116, anders vallen ze weg"`, tekst.includes(`Je hebt 356 credits (je kunt er ${PLAFOND} sparen)`) && /komen er 120 bij: gebruik er vóór die dag 116, anders vallen ze weg\./.test(tekst), true);
           ok(`${label}: die zin valt op`, await p.evaluate(() => !!document.querySelector('.st-abo-nieuw.is-boven')), true);
         }
+        const heeftSpaar = await p.evaluate(() => !!document.querySelector('.st-abo-spaar'));
+        await p.screenshot({ path: path.join(OUT, `sp-plan-${stand}-${breed}-${thema}.png`), fullPage: true });
+        /* Bijkopen en het creditboek staan sinds 15 oktober 2026 op de tab Credits. */
+        await p.goto(`${studio.url}/account/plan?tab=credits`, { waitUntil: 'load' });
+        ok(`/account/plan?tab=credits ${label}: geen horizontale scroll`, await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), true);
+        const mc = await meet(p, STUDIO_BLOKKEN);
+        ok(`/account/plan?tab=credits ${label}: ${mc.geteld} teksten ≥ 11,5 px en ≥ 4,5:1`, mc.fout, []);
         if (stand === 'pauze' || stand === 'gestopt') {
           ok(`${label}: "Je credits blijven geldig tot en met …"`, /Je credits blijven geldig tot en met \d+ [a-z]+( \d{4})?\./.test(tekst), true);
-          ok(`${label}: geen plafond meer naast het saldo`, await p.evaluate(() => !document.querySelector('.st-abo-spaar')), true);
+          ok(`${label}: geen plafond meer naast het saldo`, heeftSpaar, false);
           ok(`${label}: geen bijkoopblok zonder lopend abonnement`, await p.evaluate(() => !document.querySelector('#bijkopen')), true);
         } else {
           ok(`${label}: het bijkoopblok: een formulier zonder script, drie keuzerondjes, één gekozen`, await p.evaluate(() => {
@@ -191,7 +198,7 @@ try {
           ok(`${label}: nog 75 bij te kopen deze maand`, await p.evaluate(() => /Deze maand kun je nog 75 credits bijkopen/.test(document.querySelector('#bijkopen')?.textContent || '')), true);
           await p.locator('#bijkopen').screenshot({ path: path.join(OUT, `sp-bijkopen-${breed}-${thema}.png`) });
         }
-        await p.screenshot({ path: path.join(OUT, `sp-plan-${stand}-${breed}-${thema}.png`), fullPage: true });
+        await p.screenshot({ path: path.join(OUT, `sp-credits-${stand}-${breed}-${thema}.png`), fullPage: true });
         if (stand === 'plafond') {
           await p.goto(`${studio.url}/account`, { waitUntil: 'load' });
           const strook = await p.evaluate(() => document.querySelector('.st-saldostrook')?.textContent.replace(/\s+/g, ' ') || '');

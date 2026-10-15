@@ -412,6 +412,14 @@ export function instellingen(order, product) {
     ['achtergrond', achtergrond ? `#${achtergrond.toUpperCase()}` : ''],
     ['verhouding', verhouding],
   ];
+  /* Een andere achtergrond per beeld (werklijst 27, 15 oktober 2026):
+     `achtergrond_4=#EDE4D8` is het vierde vak. Het Photoshop-script leest hem
+     met achtergrondVoorVak(), net als verhouding_2. */
+  if (Array.isArray(product.beeldAchtergronden)) {
+    for (const b of product.beeldAchtergronden) {
+      if (b && b.nr && /^#[0-9A-F]{6}$/i.test(String(b.hex || ''))) paren.push([`achtergrond_${b.nr}`, String(b.hex).toUpperCase()]);
+    }
+  }
   /* Een afwijkende verhouding per beeld: `verhouding_2=16:9` is het tweede vak. */
   if (Array.isArray(product.imageRatios)) {
     product.imageRatios.forEach((r, i) => {
@@ -502,6 +510,9 @@ export function briefingText({ order, product }) {
   }
   if (product.material) letOp.push(`  Materiaal   ${product.material}`);
   if (product.background) letOp.push(`  Achtergrond ${product.background}`);
+  if (Array.isArray(product.beeldAchtergronden)) {
+    for (const b of product.beeldAchtergronden) letOp.push(`  Per beeld   ${b.nr} ${b.nl}: ${b.naam.nl.toLowerCase()} ${b.hex}`);
+  }
   if (!product.material && !product.colour && !product.background) {
     letOp.push('  De klant heeft bij dit product geen materiaal, kleur of');
     letOp.push('  achtergrond opgegeven.');

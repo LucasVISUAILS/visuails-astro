@@ -1778,3 +1778,15 @@ CREATE TABLE IF NOT EXISTS credit_aankopen (
 );
 CREATE INDEX IF NOT EXISTS idx_credit_aankopen_klant ON credit_aankopen(customer_id, maand, status);
 ALTER TABLE credit_boek ADD COLUMN soort TEXT;
+
+-- ── MIGRATIE 0068 · OVERSTAPPEN NAAR EEN ANDER ABONNEMENT — 15 oktober 2026 (v29-overstap = a) ──
+--
+-- Een overstap die klaarstaat voor de volgende termijn: het nieuwe plan, bij maat
+-- het bedrag en de credits, wanneer, en het oude plan. Het abonnement zelf blijft
+-- tot die termijn hetzelfde; Mollie krijgt meteen het nieuwe bedrag. Zie
+-- migrations/0068-overstap.sql en src/lib/overstap.js.
+ALTER TABLE subscriptions ADD COLUMN overstap_plan TEXT;
+ALTER TABLE subscriptions ADD COLUMN overstap_cents INTEGER;
+ALTER TABLE subscriptions ADD COLUMN overstap_slots_json TEXT;
+ALTER TABLE subscriptions ADD COLUMN overstap_at TEXT;
+ALTER TABLE subscriptions ADD COLUMN overstap_van TEXT;

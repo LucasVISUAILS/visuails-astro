@@ -63,6 +63,20 @@
  * path everywhere else on the site. ImageMagick in this environment has no
  * librsvg delegate and silently fails on SVG input.
  */
+/* ── SINDS 15 OKTOBER 2026 KOMEN DE FAVICONS UIT HET LOGOPAKKET ──────────────
+   Lucas: alle logo's naar de nieuwe look (images/Logo/visuails-logo-nieuw, met
+   KLEURENSCHEMA.md). Dat pakket heeft een eigen favicon-map: afgeronde violette
+   tegel, verloop vanaf 32 px, en op 16 px en in de svg een grotere V (62,5%).
+   public/favicon* en public/apple-touch-icon.png (= favicon-180) zijn daar een
+   kopie van. Dit script maakte de vorige reeks; wie hem draait, zou de nieuwe
+   overschrijven. Daarom stopt hij, tenzij je hem bewust aanzet. */
+if (process.env.OUDE_FAVICONS !== '1') {
+  console.log('make-favicons.mjs: de favicons komen sinds 15 oktober 2026 uit het logopakket');
+  console.log('  (images/Logo/visuails-logo-nieuw/favicon). Kopieer ze daaruit naar public/.');
+  console.log('  Toch deze oude reeks maken: OUDE_FAVICONS=1 npm run favicons');
+  process.exit(0);
+}
+
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

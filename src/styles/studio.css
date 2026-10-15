@@ -290,6 +290,17 @@ body.studio .st-navlink.is-actief { background: var(--sd-side-actief); color: va
 .st-top-actie { align-self: center; }
 
 .st-main { padding: 1.5rem var(--st-pad) 3rem; display: flex; flex-direction: column; gap: 2rem; max-width: calc(1200px + 2 * var(--st-pad)); width: 100%; box-sizing: border-box; }
+/* ── DE BREEDTE MET DE ZIJBALK DICHT — 15 oktober 2026 (werklijst 15) ───────
+   Lucas: *"Als ik de zijbalk dichtklap merk ik dat er rechts veel te veel vrije
+   ruimte is."* De kolom was hoogstens 1200 px breed en stond links: op 1440 px
+   bleef er rechts 112 px leeg, op 1920 px bijna 600. Nu: met de zijbalk dicht
+   mag de kolom 1360 px breed, en in beide standen staat hij in het midden van
+   wat er over is. De bovenbalk (terugklapknop, kruimelpad, taal) lijnt mee uit
+   met de kolom eronder; zijn achtergrond loopt door tot de rand. */
+.st-shell { --st-kol: 1200px; }
+.st-shell.is-dicht { --st-kol: 1360px; }
+.st-top, .st-main { max-width: calc(var(--st-kol) + 2 * var(--st-pad)); margin-inline: auto; }
+.st-balk { padding-inline: max(calc(var(--st-pad) - .5rem), calc((100% - var(--st-kol)) / 2 - .5rem)) max(var(--st-pad), calc((100% - var(--st-kol)) / 2)); }
 .st-voet { display: none; }
 
 /* ── DE BOUWSTENEN ───────────────────────────────────────────────────────── */
@@ -627,6 +638,16 @@ a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
 .st-vak.is-mist .st-vak-staat { color: var(--st-clay-tekst); font-weight: 600; }
 .st-vak-veld { width: 100%; max-width: 100%; font-size: .75rem; color: var(--ink-2); }
 .st-vak-ander { display: flex; flex-direction: column; gap: .3rem; font-size: .8125rem; color: var(--ink-2); }
+/* Extra foto's: vervangen of verwijderen (werklijst 14, 15 oktober 2026).
+   Verwijderen vraagt eerst "Ja, verwijder deze foto" (een <details>, geen script). */
+.st-vak-vervang { display: flex; flex-direction: column; gap: .2rem; font-size: .75rem; color: var(--ink-2); }
+.st-vak-weg > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; min-height: 32px; font-size: .8125rem; font-weight: 500; color: var(--st-clay-tekst); text-decoration: underline; text-underline-offset: 3px; }
+.st-vak-weg > summary::-webkit-details-marker { display: none; }
+.st-vak-weg[open] > summary { margin-bottom: .3rem; }
+.st-vak-vast { margin: 0; }
+/* Werklijst 33: "Opnieuw bestellen met alle instellingen" — een link met zijn uitleg eronder. */
+.st-herbestel-alles { margin: .25rem 0 0; display: flex; flex-direction: column; gap: .2rem; font-size: .875rem; max-width: 62ch; }
+.st-fotos-beheer { align-self: flex-start; margin-top: .75rem; }
 .st-vak-compleet > summary { cursor: pointer; font-size: .8125rem; color: var(--ink-2); padding: .3rem 0; }
 .st-vak-compleet[open] > summary { margin-bottom: .6rem; }
 @media (max-width: 56.25em) {
@@ -641,6 +662,7 @@ a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
   .st-vak-beeld { grid-row: 1 / span 2; width: 40px; margin-right: .7rem; }
   .st-vak-naam, .st-vak-staat { grid-column: 2; }
   .st-vak-veld { grid-column: 1 / -1; margin-top: .2rem; }
+  .st-vak-vervang, .st-vak-weg { grid-column: 1 / -1; }
 }
 .st-ronde-waarschuwing { color: var(--ink-1) !important; font-weight: 500; }
 .st-beleid details { margin-top: .4rem; }
@@ -1452,7 +1474,11 @@ a.st-kal-dag.is-kies:hover { background: var(--ghost); border-color: var(--ink-1
 .on-ink .st-banner.is-storing { --bn-fill: #2A1414; --bn-ink: #FF9B93; --bn-edge: rgb(255 155 147 / .34); }
 .st-kaartveld > .st-banner { width: min(100%, 34rem); margin: 0 auto 1rem; }
 /* In de schil: dezelfde zijmarge als de kop eronder, niet tegen de rand. */
-.st-romp > .st-banner { margin: 1rem var(--st-pad) 0; max-width: 1200px; box-sizing: border-box; }
+/* (Sinds 15 oktober alleen boven de telefoonbreedte: deze regel stond na die
+   van de telefoon en won daar, zodat de melding op 390 px 32 px van de rand
+   stond in plaats van 16.) */
+.st-romp > .st-banner { box-sizing: border-box; }
+@media (min-width: 56.26em) { .st-romp > .st-banner { margin: 1rem max(var(--st-pad), calc((100% - var(--st-kol, 1200px)) / 2)) 0; } }
 
 /* ══ HERONTWERP 3 OKTOBER 2026 — KLEINE AANVULLINGEN ═══════════════════════
    Het bestandsveld kreeg de grijze standaardknop van de browser; nu is het
@@ -1503,6 +1529,20 @@ body.studio .st-merk-los { color: var(--ink-1); }
 .st-bijkoop-korting { font-weight: 600; font-size: .8125rem; color: var(--ink-1); }
 .st-bijkoop-prijs { color: var(--ink-1); font-size: .9375rem; font-variant-numeric: tabular-nums; }
 .st-bijkoop-pakket .st-meta { font-size: .8125rem; }
+/* ── Overstappen (v29-overstap = a, 15 oktober 2026) ── onder Je plan, met de
+   keuzevakken van Extra credits bijkopen. */
+.st-overstap { margin-top: 1.4rem; padding-top: 1.1rem; border-top: 1px solid var(--line); display: grid; gap: .75rem; }
+.st-overstap-h { margin: 0; font-size: 1.05rem; }
+.st-overstap-form { display: grid; gap: .75rem; }
+.st-overstap-keuze { grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); }
+.st-overstap-klaar { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; }
+.st-overstap-klaar p { margin: 0; flex: 1 1 18rem; }
+.st-overstap-maat { max-width: 22rem; }
+.st-overstap-maat .st-veld { max-width: 9rem; }
+/* Het aantal credits alleen bij "Abonnement op maat" (zonder script: :has). */
+.st-overstap-form:not(:has(input[name="plan"][value="maat"]:checked)) .st-overstap-maat { display: none; }
+/* Lopende tekst op acht à tien woorden per regel, zoals op de rest van de site. */
+.st-overstap-form > .st-meta, .st-overstap-klaar p, .st-overstap-maat .st-meta { max-width: 32em; }
 .st-bijkoop-hint { margin: 0; font-size: .875rem; color: var(--ink-1); }
 .st-bijkoop-verder { margin: 0; }
 .st-bijkoop-eerder { list-style: none; margin: .4rem 0 0; padding: 0; display: grid; gap: .3rem; font-size: .875rem; color: var(--ink-1); }
@@ -1599,3 +1639,16 @@ body.studio .st-merk-los { color: var(--ink-1); }
 @media (prefers-reduced-motion: reduce) {
   @view-transition { navigation: none; }
 }
+
+/* ── DE UITLEG-TIP — 15 oktober 2026 (afvinklijst 28, v28-tips = a) ──────────
+   Eén per pagina, bovenaan de inhoud en in de stroom: hij dekt nooit een knop
+   af. "Begrepen" en het kruisje zijn links (Studio draait zonder script). */
+.st-tip { position: relative; display: flex; gap: .75rem; align-items: flex-start; padding: 1rem 1.1rem; border-radius: 22px; background: #F1EEFF; color: #0F0C24; }
+.st-tip-tekst { display: flex; flex-direction: column; gap: .45rem; min-width: 0; flex: 1 1 auto; max-width: 62ch; }
+.st-tip-tekst p, .st-tip-tekst ul { margin: 0; font-size: .875rem; line-height: 1.5; color: #0F0C24; }
+.st-tip-h { font-weight: 600; font-size: .9375rem !important; }
+.st-tip-tekst ul { padding-left: 1.1rem; display: flex; flex-direction: column; gap: .25rem; }
+.st-tip-tekst .btn { align-self: flex-start; margin-top: .25rem; }
+.st-tip-x { flex: 0 0 auto; margin-left: auto; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; font-size: 1.25rem; line-height: 1; color: #4B4960; text-decoration: none; }
+.st-tip-x:hover { background: #FFFFFF; color: #0F0C24; }
+.st-tip-x:focus-visible { outline: 2px solid #4A1FFF; outline-offset: 2px; }

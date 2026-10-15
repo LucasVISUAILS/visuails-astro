@@ -1,0 +1,106 @@
+---
+/**
+ * VISUAILS — de BRON van de laptopstanden: de twee nagebouwde schermen in het
+ * perspectief van de foto, voor één stand. 15 oktober 2026.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Dit staat NIET op de site. scripts/laptop-standen.mjs bouwt /laptop-bron/<taal>/
+ * (alleen met LAPTOP_BRON=1, zie src/pages/laptop-bron/[lang].astro), zet elke
+ * stand stil op het scherm en maakt er een foto van. Die foto's toont
+ * HalLaptop.astro. Waarom: zie de kop van src/data/halStanden.js.
+ *
+ * Wat hieronder staat is wat er tot vandaag live in de laag lag (een laag van
+ * 2304 × 1728 fotopixels, de schermen elk op hun eigen maat met matrix3d in het
+ * perspectief gezet, het masker per scherm laat de vingers van de foto staan),
+ * alleen staat de stand nu vast: wat `is-nu` is, zet de server.
+ *
+ * De catalogbeelden staan sinds 15 oktober in een vierkant vak, op hun eigen
+ * verhouding (1:1). Lucas, 08:14: *"De foto's op de laptop mogen naar originele
+ * formaat (1:1) omdat de on-model foto nu heel stretchy is en de detail knoop
+ * shot afgesneden word van onder."*
+ *
+ * Het nagemaakte webshopscherm noemt een VERZONNEN prijs van een verzonnen merk
+ * ("JOUWMERK"), geen tarief van ons — net als in LaptopCarousel.astro, en om
+ * dezelfde reden staat hij hier per taal genoteerd (tests/hardgetypt.test.mjs
+ * kent de uitzondering).
+ */
+import { SCHERMEN, matrix3d } from '../data/halLaptop.js';
+import { halReeks } from '../data/halStanden.js';
+import { isEcht } from '../lib/beeldAanwezig.js';
+import '../styles/hal.css';
+
+interface Props { lang: 'en' | 'nl'; stand: { set: string; i: number; fon: string } }
+const { lang, stand } = Astro.props as Props;
+const nl = lang === 'nl';
+const { lifestyle, cat, life } = halReeks(lang);
+const echt = (b: { src: string }) => isEcht(b.src);
+const KLIP = { src: '/img/hal/sfeer-9x16.webp', w: 648, h: 1152 };
+const KLIP_VAAG = { src: '/img/hal/sfeer-9x16-vaag.webp', w: 180, h: 320 };
+const L = SCHERMEN.laptop, F = SCHERMEN.fon;
+const fonnen = [...new Set([stand.fon])];
+const nu = (set: string, i?: number) => stand.set === set && (i === undefined || stand.i === i);
+
+const T = nl
+  ? { shop: { merk: 'JOUWMERK', menu: ['Nieuw', 'Denim', 'Jassen', 'Accessoires'], kruimel: 'Home / Denim', titel: 'Wide leg jeans', prijs: '€ 79,95', mandje: 'In winkelmand', verzend: 'Gratis retour binnen 30 dagen' },
+      post: { naam: lifestyle.post?.naam ?? 'visuails_com', vlag: lifestyle.post?.vlag ?? '', volgen: 'Volgen', bijschrift: lifestyle.post?.bijschrift ?? [], datum: lifestyle.post?.datum ?? '', opmerking: 'Een opmerking toevoegen…', plaatsen: 'Plaatsen' } }
+  : { shop: { merk: 'JOUWMERK', menu: ['New', 'Denim', 'Jackets', 'Accessories'], kruimel: 'Home / Denim', titel: 'Wide leg jeans', prijs: '€79.95', mandje: 'Add to cart', verzend: 'Free returns within 30 days' },
+      post: { naam: lifestyle.post?.naam ?? 'visuails_com', vlag: lifestyle.post?.vlag ?? '', volgen: 'Follow', bijschrift: lifestyle.post?.bijschrift ?? [], datum: lifestyle.post?.datum ?? '', opmerking: 'Add a comment…', plaatsen: 'Post' } };
+---
+<div class="hl-laag" aria-hidden="true">
+  <div class="hl-scherm hl-scherm-lap" style={`transform:${matrix3d(L)}`}>
+    {/* De webshop (catalog), met de foto's op hun eigen verhouding: 1:1 */}
+    <div class:list={['sc sc-shop', nu('catalog') && 'is-nu']}>
+      <div class="sc-top"><b>{T.shop.merk}</b>{T.shop.menu.map((m) => <span>{m}</span>)}<i class="sc-ic"></i><i class="sc-ic sc-ic-z"></i></div>
+      <div class="sc-wrap">
+        <div class="sc-th">{cat.map((b, i) => <img class:list={[nu('catalog', i) && 'is-nu']} src={b.src} alt="" width="760" height="760" />)}</div>
+        <div class="sc-hoofd">{cat.map((b, i) => <img class:list={[nu('catalog', i) && 'is-nu']} src={b.src} alt="" width="760" height="760" />)}</div>
+        <div class="sc-info">
+          <p class="sc-kr">{T.shop.kruimel}</p>
+          <p class="sc-h1">{T.shop.titel}</p>
+          <p class="sc-prijs">{T.shop.prijs}</p>
+          <p class="sc-kl"><i></i><i></i><i></i></p>
+          <p class="sc-mt"><span>XS</span><span class="aan">S</span><span>M</span><span>L</span></p>
+          <p class="sc-knop">{T.shop.mandje}</p>
+          <p class="sc-klein">{T.shop.verzend}</p>
+          <p class="sc-rij">{cat.slice(1).map((b) => <span><img src={b.src} alt="" width="760" height="760" /></span>)}</p>
+        </div>
+      </div>
+    </div>
+    {/* De carrousel (lifestyle), als nagemaakt bericht */}
+    {life.length > 0 && (
+      <div class:list={['sc sc-post', nu('lifestyle') && 'is-nu']}>
+        <div class="sc-kaart">
+          <div class="sc-pbeeld">
+            {life.map((b: { src: string; naam: string }, i: number) => echt(b)
+              ? <img class:list={[nu('lifestyle', i) && 'is-nu']} src={b.src} alt="" width="928" height="1152" />
+              : <span class:list={['sc-plaat', nu('lifestyle', i) && 'is-nu']}><b>{b.naam}</b></span>)}
+            <p class="sc-stippen">{life.map((_, i) => <i class:list={[nu('lifestyle', i) && 'is-nu']}></i>)}</p>
+          </div>
+          <div class="sc-pkant">
+            <p class="sc-pkop"><img src={lifestyle.post?.avatar ?? '/img/merk-tegel.webp'} alt="" width="48" height="48" /><b>{T.post.naam}</b>{T.post.vlag && <span>· {T.post.vlag}</span>}<em>{T.post.volgen}</em></p>
+            <div class="sc-pstroom">
+              <p class="sc-pregel"><img src={lifestyle.post?.avatar ?? '/img/merk-tegel.webp'} alt="" width="48" height="48" /><span><b>{T.post.naam}</b> {T.post.bijschrift.join(' ')}</span></p>
+              {(lifestyle.post?.reacties ?? []).map((r: { naam: number; tekst: number }) => (
+                <p class="sc-preactie"><i class="sc-bol"></i><span><i style={`width:${Math.round(r.naam * 100)}%`}></i><i style={`width:${Math.round(r.tekst * 100)}%`}></i></span></p>
+              ))}
+            </div>
+            <p class="sc-pvoet"><span>{T.post.datum}</span></p>
+            <p class="sc-pinvoer"><span>{T.post.opmerking}</span><b>{T.post.plaatsen}</b></p>
+          </div>
+        </div>
+      </div>
+    )}
+    {/* De clip (video): verticaal, met hetzelfde beeld onscherp als vulling. Stil: de
+        voortgangsbalk staat op ongeveer een derde, zoals een clip die net loopt. */}
+    <div class:list={['sc sc-klip', nu('video') && 'is-nu']}>
+      <img class="sc-kvul" src={KLIP_VAAG.src} alt="" width={KLIP_VAAG.w} height={KLIP_VAAG.h} />
+      <div class="sc-kclip"><img src={KLIP.src} alt="" width={KLIP.w} height={KLIP.h} /><span class="sc-kbalk"><i style="transform:scaleX(.36)"></i></span></div>
+    </div>
+    <span class="sc-glans"></span>
+  </div>
+  <div class="hl-scherm hl-scherm-fon" style={`transform:${matrix3d(F)}`}>
+    {fonnen.map((src) => <img class="is-nu" src={src} alt="" />)}
+    <p class="sc-tijd"><span>9:41</span><span><i></i><i></i></span></p>
+    <span class="sc-glans"></span>
+  </div>
+</div>

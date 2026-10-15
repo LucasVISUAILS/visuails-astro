@@ -11,7 +11,7 @@
  *   $S/zwaar.sh npx astro build && node tests/vanaf-bedragen.test.mjs
  */
 import { readFileSync, existsSync } from 'node:fs';
-import { ladderFloor, ladderRate, euro, eenProductRegel } from '../src/data/pricing.js';
+import { ladderFloor, ladderRate, euro, eenProductRegel, aboVanafPerProduct } from '../src/data/pricing.js';
 
 let pass = 0;
 let fail = 0;
@@ -75,8 +75,19 @@ for (const p of PAGINAS) {
   const t = tekst(lees(p.file));
   /* Elk "vanaf €…" / "from €…" met een productprijs erachter. "per maand" en
      "per month" (abonnement) en "per hook" horen er niet bij. */
-  const vanaf = [...t.matchAll(/\b(?:vanaf|from)\s+(€\s?[\d.,]+)(?!\s*(?:per\s+(?:maand|month|hook)|\/\s*(?:maand|month)))/gi)]
-    .map((m) => m[1].replace(/\s/g, ''));
+  /* Sinds 15 oktober 2026 (levering 49, k-klant) staat op /start onder elke prijs ook
+     "Of vanaf €… per product met een abonnement" / "Or from €… per product with a
+     plan". Dat is een ander bedrag (aboVanafPerProduct, het voordeligste tarief per
+     credit) en hoort niet bij de ladder: apart nagelopen hieronder. */
+  const ABO = /^\s*per\s+product\s+(?:met\s+een\s+abonnement|with\s+a\s+plan)/i;
+  const alle = [...t.matchAll(/\b(?:vanaf|from)\s+(€\s?[\d.,]+)(?!\s*(?:per\s+(?:maand|month|hook)|\/\s*(?:maand|month)))/gi)];
+  const isAbo = (m) => ABO.test(t.slice(m.index + m[0].length, m.index + m[0].length + 60));
+  const vanaf = alle.filter((m) => !isAbo(m)).map((m) => m[1].replace(/\s/g, ''));
+  const abo = alle.filter(isAbo).map((m) => m[1].replace(/\s/g, ''));
+  if (abo.length) {
+    const mag = new Set(p.diensten.map((k) => euro(aboVanafPerProduct(k), p.taal).replace(/\s/g, '')));
+    ok(`${p.url}: de abonnementsregel is aboVanafPerProduct (${[...new Set(abo)].join(', ')})`, abo.every((b) => mag.has(b)));
+  }
   ok(`${p.url}: er staat minstens één vanaf-bedrag`, vanaf.length > 0);
   ok(`${p.url}: elk vanaf-bedrag is de onderste trede (${[...new Set(vanaf)].join(', ')})`, vanaf.every((b) => vloeren.has(b)));
   ok(`${p.url}: nergens "vanaf" met het tarief van één product`, vanaf.filter((b) => instap.has(b)), []);

@@ -93,6 +93,8 @@ import { leverregel, leveringVan } from './verder.js';
 import { ontbrekendVoorOrder } from './ontbreekt.js';
 /* Punt 3.07: "Bestel met dezelfde look" — alleen lookkeuzes in de link. */
 import { herbestelKnop, herbestelHtml } from './herbestel.js';
+import { TIPS, TIP_IDS, tipsUitCookie } from '../data/tips.js';
+import { TIPS_COOKIE, PREFERENCE_COOKIE_DAYS, maxAge } from '../data/cookies.js';
 
 const STUDIO_EMAIL = 'hello@visuails.com';
 
@@ -440,6 +442,25 @@ export async function portalGet(context) {
 
   if (isFile) return serveFile(context, order, route);
   if (route.kind === 'zip') return serveOrderFolder(context, order, lang);
+
+  /* ── TIP 7: DE PRIVÉLINK — 15 oktober 2026 (afvinklijst 28, v28-tips = a) ──
+     "Deze link opent je bestelling zonder inloggen." Eén keer; wegklikken is een
+     link (?tipweg=privelink), want deze pagina draait zonder script. De cookie
+     onthoudt alleen welke tips weg zijn, op /o en nergens anders. */
+  const hier = new URL(request.url);
+  const tipWeg = hier.searchParams.get('tipweg');
+  if (tipWeg && TIP_IDS.includes(tipWeg)) {
+    const weg = tipsUitCookie(request.headers.get('cookie'), TIPS_COOKIE);
+    weg.add(tipWeg);
+    return new Response(null, {
+      status: 303,
+      headers: {
+        Location: hier.pathname, 'cache-control': 'no-store', 'referrer-policy': 'same-origin',
+        'set-cookie': `${TIPS_COOKIE}=${[...weg].join(',')}; Path=/o; Max-Age=${maxAge(PREFERENCE_COOKIE_DAYS)}; HttpOnly; Secure; SameSite=Lax`,
+      },
+    });
+  }
+  order.tipHtml = tipsUitCookie(request.headers.get('cookie'), TIPS_COOKIE).has('privelink') ? '' : privelinkTip(lang, hier.pathname);
 
   later(context, bumpUse(env, order.token_id));
   /* De melding van een lege revisieronde (ronde 9, F13). Alleen dit ene woord
@@ -1579,6 +1600,7 @@ function attendedBody(t, lang, order, token, files, events, fb = null, folder = 
   <h1>${esc(t.orderTitle)}</h1>
   <p class="lede">${esc(t.orderLede)}</p>
 </div>
+${order.tipHtml || ''}
 ${top}
 ${afrond}
 ${factList(facts)}
@@ -1658,6 +1680,7 @@ function unattendedBody(t, lang, order, token, files, folder = '', feedback = ''
   <h1>${esc(t.filesTitle)}</h1>
   <p class="lede">${esc(order.service === SAMPLE_SERVICE ? t.sampleLede : t.filesLede)}</p>
 </div>
+${order.tipHtml || ''}
 ${top}
 ${afrond}
 ${factList(facts)}
@@ -2136,6 +2159,17 @@ function html(body, status = 200) {
         "default-src 'none'; img-src 'self'; media-src 'self'; style-src 'self'; font-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
     },
   });
+}
+
+/** De tip van de privélink (tip 7), als HTML. Zie src/data/tips.js. */
+function privelinkTip(lang, pad) {
+  const T = TIPS[lang === 'nl' ? 'nl' : 'en'];
+  const weg = `${pad}?tipweg=privelink`;
+  return `<aside class="tip" role="note" aria-label="${esc(T.label)}">
+  <p>${esc(T.privelink)}</p>
+  <p class="tip-acts"><a class="btn btn-ghost" href="${esc(weg)}">${esc(T.begrepen)}</a></p>
+  <a class="tip-x" href="${esc(weg)}" aria-label="${esc(T.sluit)}">×</a>
+</aside>`;
 }
 
 function seeOther(location) {

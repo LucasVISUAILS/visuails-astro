@@ -63,6 +63,7 @@ import { herbestelKnop } from './herbestel.js';
 import { TOESTEMMING_WEG_DAGEN, termijnInWoorden } from '../data/termijnen.js';
 import { serviceLabel } from '../data/services.js';
 import { planName } from '../data/planNames.js';
+import { overstapVan } from './overstap.js';
 import { statPil } from '../data/status.js';
 /* G3 (8 oktober 2026): welke aanbeveling nooit op de site komt — één regel voor
    het scherm, het script en de site. */
@@ -116,7 +117,7 @@ import { background as achtergrondVan, achtergrondNaam } from '../data/backgroun
 /* De hoeken die bij de bestelling zijn bijgekozen. Zie de kop van
    src/data/angles.js; ze staan in details_json als `angle_<id>` met een optionele
    `angle_note_<id>` ernaast, en ze gelden voor de HELE bestelling. */
-import { ANGLES } from '../data/angles.js';
+import { ANGLES, VERVALLEN_ANGLES, EIGEN_ANGLE_IDS } from '../data/angles.js';
 const STYLE_LOOKS = ALLE_LOOKS.filter((l) => !l.priceTrust);
 import { ENGINES, GEZICHTSZOEKERS, UITKOMSTEN, merkmodelControleCompleet } from '../data/modelChecks.js';
 import { rosterWoord, ROSTER, modelId, MODEL_ANY } from '../data/models.js';
@@ -261,6 +262,7 @@ import {
 } from './mailTemplate.js';
 /* De vragenregel onder elke klantmail (punt 7.07, 8 oktober 2026). */
 import { vragen as mailVragen } from './mailTemplate.js';
+import { beeldAchtergronden } from '../data/beeldachtergrond.js';
 
 /* Tot wanneer een voorrangsbestelling uiterlijk geleverd moet zijn (29 september
    2026) — zie VOORRANG en voorrangDeadline() in src/data/pricing.js. Leeg als er
@@ -2853,13 +2855,21 @@ async function serveScaffold(context, orderId) {
   /* De hoeken, één keer voor de hele bestelling. Uit ANGLES en niet uit de
      sleutels van details_json: dan staan ze in de volgorde van het scherm, en een
      verzonnen `angle_iets` levert niets op. */
-  const hoeken = ANGLES
-    .filter((a) => details[`angle_${a.id}`])
-    .map((a) => {
-      const naam = a.name.nl || a.name.en;
-      const notitie = tekst(details[`angle_note_${a.id}`]);
-      return notitie ? `${naam} — ${notitie}` : naam;
-    });
+  /* 15 oktober 2026: ook de vervallen hoeken (flat-lay, voor bestellingen van
+     daarvoor) en de zelfbedachte hoek, die hier ontbrak: die heeft geen vaste naam,
+     zijn omschrijving IS de opdracht, dus die gaat mee als naam. */
+  const hoeken = [
+    ...[...ANGLES, ...VERVALLEN_ANGLES]
+      .filter((a) => details[`angle_${a.id}`])
+      .map((a) => {
+        const naam = a.name.nl || a.name.en;
+        const notitie = tekst(details[`angle_note_${a.id}`]);
+        return notitie ? `${naam} — ${notitie}` : naam;
+      }),
+    ...EIGEN_ANGLE_IDS
+      .filter((id) => details[`angle_${id}`])
+      .map((id) => `Eigen hoek — ${tekst(details[`angle_note_${id}`]) || '(geen omschrijving)'}`),
+  ];
 
   const products = [];
   for (let i = 1; i <= count; i++) {
@@ -2913,6 +2923,8 @@ async function serveScaffold(context, orderId) {
       material: tekst(details[`material_${key}`]),
       colour: tekst(details[`colour_${key}`]),
       background: tekst(details.background_hex) || tekst(details.background),
+      /* Werklijst 27 (15 oktober 2026): een beeld met een eigen achtergrond. */
+      beeldAchtergronden: beeldAchtergronden(order.service, details),
       ratio: orderRatio ? orderRatio.label : null,
       imageRatios: imageRatios.some(Boolean) ? imageRatios : null,
       /* ── 4K OP DIT PRODUCT — 9 september 2026 ──────────────────────────
@@ -4330,6 +4342,8 @@ async function renderFiles(context, orderId) {
     const rijen = [
       rij('Stijl', stijlRegel()),
       rij('Achtergrond', achtergrondRegel()),
+      /* Werklijst 27: per beeld een andere achtergrond, met staal. */
+      rij('Per beeld', beeldAchtergronden(order.service, d).map((b) => `<svg class="kleurstaal" viewBox="0 0 10 10" aria-hidden="true"><rect width="10" height="10" fill="${esc(b.hex)}"/></svg>${esc(`${b.nl}: ${b.naam.nl.toLowerCase()}`)} <span class="meta">— ${esc(b.hex)}</span>`).join('<br>')),
       rij('Verhouding', verhoudingRegel()),
       rij('Verhouding per dienst', perDienst('ratio', (v) => verhoudingVan(v, 'lifestyle'))),
       rij('Gezicht', gezichtNaam(d.model)),
@@ -7730,6 +7744,7 @@ async function renderCustomer(context, customerId) {
   const stopRij = aboRij?.id
     ? await env.DB.prepare('SELECT stop_reden, stop_toelichting FROM subscriptions WHERE id = ?1').bind(aboRij.id).first().catch(() => null)
     : null;
+  const aboOverstap = aboRij?.id ? await overstapVan(env, aboRij.id).catch(() => null) : null;
   const aboPanel = !aboRij && !(credSaldo?.saldo) && !(credBoek || []).length ? '' : (() => {
     const sv = saldoWeergave(credSaldo || {}, 'nl');
     const boek = boekWeergave(credBoek || [], { lang: 'nl', eerst: 12, loopt: credSaldo?.nieuw?.op || false, orderHref: (r) => `/admin/orders/${r.orderId}/files` });
@@ -7769,6 +7784,10 @@ async function renderCustomer(context, customerId) {
        </tr>`).join('')}</tbody></table>
     <p class="meta">Bijgekochte credits gaan als eerste op, zijn ${CREDITS_GELDIG_MAANDEN} maanden geldig vanaf de betaling en tellen niet mee voor het spaarplafond. Hoogstens ${BIJKOOP_MAX_PER_MAAND} per kalendermaand.</p>` : '';
     const reden = stopRij?.stop_reden ? redenLabel(stopRij.stop_reden, stopRij.stop_toelichting || '', 'nl') : '';
+    /* Een overstap die klaarstaat (v29-overstap = a, 15 oktober 2026). */
+    const overstapRegel = aboOverstap
+      ? `<p class="warnline"><strong>Overstap klaar:</strong> naar ${esc(planName(aboOverstap.plan, 'nl'))} (${esc(aboOverstap.credits)} credits per maand), vanaf de volgende termijn. Aangevraagd op ${esc(mailDatum(String(aboOverstap.at || '').slice(0, 10), 'nl'))}; Mollie schrijft dan al het nieuwe bedrag af. De klant kan hem in Studio terugdraaien.</p>`
+      : '';
     const pauzeDag = aboRij?.status === 'paused' && aboRij.paused_at ? String(aboRij.paused_at).slice(0, 10) : '';
     const statusWoord = !aboRij ? '' : aboRij.status === 'paused' && aboRij.pause_reason === 'chargeback' ? 'stil: termijn teruggeboekt'
       : aboRij.status === 'paused' && pauzeDag > new Date().toISOString().slice(0, 10) ? `pauze vanaf ${mailDatum(pauzeDag, 'nl')}`
@@ -7800,6 +7819,7 @@ async function renderCustomer(context, customerId) {
         aboRij?.status === 'cancelled' && abo?.termijnTot ? ` &middot; betaald tot ${esc(mailDatum(abo.termijnTot, 'nl'))}` : ''}</span>
     </div>
     ${reden ? `<p class="meta"><strong>Reden van ${aboRij?.status === 'cancelled' || abo?.jaarOpgezegd ? 'opzeggen' : 'pauzeren'}:</strong> ${esc(reden)}</p>` : ''}
+    ${overstapRegel}
     ${saldoHtml}
     <h3>Creditboek</h3>
     ${boekHtml}

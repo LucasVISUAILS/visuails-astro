@@ -26,9 +26,49 @@ import {
 } from '../../data/backgrounds.js';
 
 import Disclose from '../Disclose.astro';
+import { ANGLES, ANGLE_GROUPS, EIGEN_ANGLE_PREFIX } from '../../data/angles.js';
+import { beeldBgVeld, beeldHexVeld, BEELD_BG_EIGEN } from '../../data/beeldachtergrond.js';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
+
+/* ── EEN ANDERE ACHTERGROND PER BEELD — 15 oktober 2026 (werklijst 27) ──────
+   De vier beelden van een catalogset, en elke hoek die bijbesteld kan worden
+   (verborgen en uit tot hij is aangevinkt: pipeline.js, syncBeeldBg). Zie
+   src/data/beeldachtergrond.js voor wat het dossier ermee doet. */
+const PF = lang === 'nl' ? {
+  h: 'Een foto een andere achtergrond geven (optioneel)',
+  lede: 'Elk beeld krijgt de achtergrond hierboven. Wil je er één anders, bijvoorbeeld de foto op een model op beige? Kies het hier.',
+  zoals: 'Zoals de rest',
+  lock: 'De voorkant blijft wit: dat eist de marktplaats die je koos.',
+  eigen: 'Eigen kleur…',
+  kies: (n) => `Kies een eigen kleur voor ${n}`,
+  hex: (n) => `Hexwaarde voor ${n}`,
+  donker: 'Donkerder dan we zouden aanraden: de schaduw valt minder op. We maken het gewoon zo.',
+  fout: 'Vul een hexwaarde in, zoals #E8F0EA — of kies de kleur met het kleurvak ernaast.',
+  tip: 'Tip: je kunt ook één foto een andere achtergrond geven, hieronder of door op een beeld in “Wat je krijgt” te klikken. Helemaal optioneel.',
+  begrepen: 'Begrepen', sluit: 'Tip sluiten',
+} : {
+  h: 'Give one photo a different background (optional)',
+  lede: 'Every image gets the background above. Want one different, for example the on-model photo on beige? Choose it here.',
+  zoals: 'Same as the rest',
+  lock: 'The front stays white: the marketplace you chose requires it.',
+  eigen: 'Your own colour…',
+  kies: (n) => `Pick your own colour for ${n}`,
+  hex: (n) => `Hex value for ${n}`,
+  donker: 'Darker than we would recommend: the shadow shows less. We will make it this way anyway.',
+  fout: 'Enter a hex value such as #E8F0EA — or pick the colour with the swatch next to it.',
+  tip: 'Tip: you can also give one photo a different background, below or by clicking an image in “What you get”. Entirely optional.',
+  begrepen: 'Got it', sluit: 'Close tip',
+};
+const BEELDEN = [
+  { id: 'front', naam: lang === 'nl' ? 'Voorkant' : 'Front', schets: '/img/schets/catalog-voorkant.svg' },
+  { id: 'back', naam: lang === 'nl' ? 'Achterkant' : 'Back', schets: '/img/schets/catalog-achterkant.svg' },
+  { id: 'detail', naam: 'Detail', schets: '/img/schets/catalog-detail.svg' },
+  { id: 'worn', naam: lang === 'nl' ? 'Op model' : 'On model', schets: '/img/schets/catalog-model.svg' },
+  ...ANGLES.map((a) => ({ id: a.id, naam: a.name[lang], hoek: true, schets: `/img/schets/hoek-${a.id}.svg` })),
+  ...ANGLE_GROUPS.map((g) => ({ id: `${EIGEN_ANGLE_PREFIX}${g}`, naam: lang === 'nl' ? 'Eigen hoek' : 'Your own angle', hoek: true, eigen: true, schets: `/img/schets/hoek-eigen-${g}.svg` })),
+];
 
 // The recommendation is "light", and the claim is checked rather than trusted:
 // a value added to RECOMMENDED darker than LIGHT_THRESHOLD would make the
@@ -153,6 +193,48 @@ const fl = FIELD[lang];
     <p>{bgc.matchNote}</p>
   </Disclose>
 
+  {/* Tip 1 (afvinklijst 28, v28-tips = a): één keer, na de eerste kleurkeuze;
+      weg te klikken, Esc sluit hem, en wat je wegklikt komt niet terug
+      (pipeline.js, toonTip). Een regel in de stroom: hij dekt nooit iets af. */}
+  <p class="pl-tip" data-pl-tip="bgfoto" role="note" hidden>
+    <span class="pl-tip-tekst">{PF.tip}</span>
+    <button type="button" class="pl-tip-ok" data-pl-tip-weg>{PF.begrepen}</button>
+    <button type="button" class="pl-tip-x" data-pl-tip-weg aria-label={PF.sluit}>×</button>
+  </p>
+
+  {/* Werklijst 27: per beeld een andere achtergrond. Zonder script staan de vier
+      vaste beelden er gewoon (een <select> per beeld); de hoeken komen erbij
+      zodra ze zijn aangevinkt. */}
+  <details class="bg-perfoto" data-pl-bgfoto>
+    <summary class="bg-perfoto-h">{PF.h}</summary>
+    <p class="bg-perfoto-lede">{PF.lede}</p>
+    <p class="bg-perfoto-lock" data-pl-bgfoto-lock hidden>{PF.lock}</p>
+    {/* v29-hex = b (15 oktober 2026): naast de drie aanbevolen kleuren ook een
+        eigen kleur per beeld. "Eigen kleur…" in de keuzelijst opent een kleurvak
+        en een veld voor de hexcode, zoals bij de hele bestelling. Het kleurvak
+        draagt geen name (het zou #000000 posten als niemand het aanraakt); het
+        tekstveld draagt het antwoord. Geen <label> meer om het hele vak: er staan
+        nu drie velden in, en een label hoort bij één. */}
+    <div class="bg-perfoto-rij">
+      {BEELDEN.map((b) => (
+        <div class="bg-perfoto-veld" data-pl-bgfoto-beeld={b.id} data-pl-bgfoto-hoek={b.hoek ? '1' : undefined} hidden={b.hoek}>
+          <span class="bg-perfoto-staal" data-pl-bgfoto-staal aria-hidden="true"><img src={b.schets} alt="" width="40" height="40" loading="lazy" decoding="async" /></span>
+          <label class="bg-perfoto-naam" for={`pl-bgfoto-${b.id}`} data-pl-bgfoto-naam={b.eigen ? b.naam : undefined}>{b.naam}</label>
+          <select class="select bg-perfoto-kies" id={`pl-bgfoto-${b.id}`} name={beeldBgVeld(b.id)} disabled={b.hoek} data-pl-bgfoto-select>
+            <option value="">{PF.zoals}</option>
+            {BACKGROUNDS.map((x) => <option value={x.hex}>{x.name[lang]}</option>)}
+            <option value={BEELD_BG_EIGEN}>{PF.eigen}</option>
+          </select>
+          <span class="bg-perfoto-eigen" data-pl-bgfoto-eigen>
+            <input type="color" class="bg-perfoto-kleur" value={bgDefaultHex} aria-label={PF.kies(b.naam)} data-pl-bgfoto-kleur />
+            <input class="input bg-perfoto-hex" type="text" name={beeldHexVeld(b.id)} aria-label={PF.hex(b.naam)} placeholder="#RRGGBB" pattern="#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})" maxlength="7" autocomplete="off" autocapitalize="off" spellcheck="false" data-pl-err-msg={PF.fout} data-pl-bgfoto-hex />
+          </span>
+          <span class="bg-perfoto-donker" data-pl-bgfoto-donker hidden>{PF.donker}</span>
+        </div>
+      ))}
+    </div>
+  </details>
+
   {/* Written by pipeline.js. Empty without JS, where `background` and
       `background_custom` already carry the answer. */}
   <input type="hidden" name="background_hex" value="" data-pl-bg-value />
@@ -193,6 +275,26 @@ const fl = FIELD[lang];
   .bg-opt:has(input:disabled) { opacity: .45; cursor: not-allowed; }
   .bg-opt:has(input:disabled):hover { border-color: var(--line-strong); }
   .bg-lock { margin: .2rem 0 .6rem; max-width: 66ch; font-size: .9rem; line-height: 1.5; color: var(--ink-2); }
+  /* ── Per beeld een andere achtergrond (werklijst 27, 15 oktober 2026) ── */
+  .bg-perfoto { margin-top: 1rem; border-top: 1px solid var(--line); padding-top: .8rem; }
+  .bg-perfoto-h { cursor: pointer; font-size: .95rem; font-weight: 600; color: var(--ink); min-height: 32px; display: flex; align-items: center; }
+  .bg-perfoto-lede { margin: .4rem 0 .7rem; max-width: 52ch; font-size: .9rem; line-height: 1.5; color: var(--ink-2); }
+  .bg-perfoto-lock { margin: 0 0 .6rem; font-size: .875rem; color: var(--ink-2); }
+  .bg-perfoto-rij { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr)); gap: .6rem; }
+  .bg-perfoto-veld { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; column-gap: .55rem; row-gap: .3rem; align-items: center; padding: .55rem .6rem; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+  /* De schets van het beeld op zijn kleur, zoals de tegels in "Wat je krijgt". */
+  .bg-perfoto-staal { grid-row: 1; width: 44px; height: 44px; border-radius: 10px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--line-strong); background: var(--bgfoto, #FFFFFF); }
+  .bg-perfoto-staal img { display: block; width: 100%; height: 100%; object-fit: contain; }
+  .bg-perfoto-naam { font-size: .875rem; font-weight: 600; color: var(--ink); }
+  .bg-perfoto-kies { grid-column: 1 / -1; width: 100%; }
+  .bg-perfoto-veld.is-anders { border-color: var(--accent-line); }
+  /* De eigen kleur: een kleurvak van 44 px (de maat van de schets erboven) en het
+     veld met de code ernaast. Zonder script staan ze er gewoon; pipeline.js
+     verbergt ze tot "Eigen kleur…" gekozen is. */
+  .bg-perfoto-eigen { grid-column: 1 / -1; display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: .45rem; align-items: center; }
+  .bg-perfoto-kleur { width: 44px; height: 44px; padding: 0; border: 1px solid var(--line-strong); border-radius: 10px; background: none; cursor: pointer; }
+  .bg-perfoto-hex { width: 100%; min-width: 0; font-variant-numeric: tabular-nums; }
+  .bg-perfoto-donker { grid-column: 1 / -1; font-size: .8rem; line-height: 1.45; color: var(--ink-2); }
   .bg-opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
   .bg-opt:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
   /* The swatch IS the value, so it gets the largest area on the tile and a

@@ -124,10 +124,9 @@ console.log('\n3 · gepubliceerd');
   /* ?lang= sinds 23 september 2026: de licentie in de zip volgt de taal van het
      scherm waarop op de knop gedrukt is — zie downloadTaal() in delivery.js. */
   ok('  en de zipknop', plan.maandset.nu.zip, `/account/set/${setId}/zip?lang=nl`);
-  /* Sinds 2.07 (8 oktober 2026) is de abonnementspagina één pagina zonder
-     tabbladen: de set staat erop, en een oude link naar de facturering-tab
-     stuurt door naar die pagina. */
-  ok('  een oude facturering-link stuurt door naar de ene pagina', await abonnement('volt-token', '/account/plan?tab=facturering'), null);
+  /* Sinds 15 oktober 2026 heeft de abonnementspagina vier nieuwe tabs; de set
+     staat op Overzicht, en een oude link naar de facturering-tab stuurt door. */
+  ok('  een oude facturering-link stuurt door', await abonnement('volt-token', '/account/plan?tab=facturering'), null);
 
   const f = db.prepare('SELECT id FROM shared_files WHERE set_id = ? ORDER BY id').get(setId);
   const beeld = await klant('volt-token', `/account/set/${f.id}/f`);

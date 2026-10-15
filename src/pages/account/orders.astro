@@ -34,7 +34,7 @@ const afgerond = kaarten.filter((k) => k.view.afgerond);
 const gevraagd = Number(Astro.url.searchParams.get('order')) || 0;
 const afgerondOpen = !lopend.length || afgerond.some((k) => Number(k.view.id) === gevraagd);
 ---
-<StudioLayout
+<StudioLayout tip={st.tip}
   lang={lang} t={t} thema={thema} navDicht={navDicht} actief="orders" customer={customer}
   title={t.ordersHeading}
   kop={t.ordersHeading} lede={t.ordersLede}

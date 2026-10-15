@@ -65,8 +65,8 @@ for (const lang of ['nl', 'en']) {
   ok(`${lang} betaalmail: de knop "Bekijk je bestelling" naar de privélink`, betaald.includes('href="https://visuails.com/o/abc"') && tekst(betaald).includes(lang === 'nl' ? 'Bekijk je bestelling' : 'See your order'));
   ok(`${lang} betaalmail: het blok, "je krijgt weer een mail als…"`, heeftBlok(betaald, blok('bijgevoegd')));
 
-  const metGat = invoiceEmail({ lang, order: { ref: 'VIS-TEST-0007', service: 'catalog' }, invoice: { number: 'VIS-2026-0002' }, snap: {}, attached: true, ontbreekt: ['p4 Hoodie zwart: geen achterkant'] }).html;
-  ok(`${lang} betaalmail: ontbrekende foto's worden genoemd`, tekst(metGat).includes('p4 Hoodie zwart: geen achterkant'));
+  const metGat = invoiceEmail({ lang, order: { ref: 'VIS-TEST-0007', service: 'catalog' }, invoice: { number: 'VIS-2026-0002' }, snap: {}, attached: true, ontbreekt: ['Product 4 · Hoodie zwart: geen achterkant'] }).html;
+  ok(`${lang} betaalmail: ontbrekende foto's worden genoemd`, tekst(metGat).includes('Product 4 · Hoodie zwart: geen achterkant'));
   const zonderGat = invoiceEmail({ lang, order: { ref: 'VIS-TEST-0008', service: 'catalog' }, invoice: { number: 'VIS-2026-0003' }, snap: {}, attached: true, ontbreekt: [] }).html;
   ok(`${lang} betaalmail: zonder gat (of onbekend) geen regel, ook geen "alles compleet"`, /ontbreken nog|still missing|compleet binnen|all complete/i.test(tekst(zonderGat)), false);
 
@@ -240,7 +240,7 @@ console.log('\n4 · de studiomail zonder bijlagen (9.07), met de bestelmail erna
   ok('  kenmerk, dienst, aantal en bedrag', /Referentie VIS-/.test(s) && /Dienst Catalog/.test(s) && /Aantal 3 producten/.test(s) && /Bedrag € /.test(s));
   ok('  per product één regel: "p1 Hoodie zwart · voorkant, achterkant, detail · 2 referenties"', s.includes('p1 Hoodie zwart · voorkant, achterkant, detail · 2 referenties'));
   ok('  p3 met de draagfoto erbij', s.includes('p3 Jas groen · voorkant, achterkant, detail, gedragen'));
-  ok('  wat ontbreekt: "p2 Shirt wit: geen achterkant"', s.includes('Wat ontbreekt') && s.includes('p2 Shirt wit: geen achterkant'));
+  ok('  wat ontbreekt: "Product 2 · Shirt wit: geen achterkant"', s.includes('Wat ontbreekt') && s.includes('Product 2 · Shirt wit: geen achterkant'));
   ok('  geen bestandstabel met R2-sleutels meer', /alleen R2|als bijlage in deze mail/.test(s), false);
 
   /* ── DOORLOOP 27 (B04): DE BEVESTIGING WACHT OP DE BETAALSTATUS ──────────
