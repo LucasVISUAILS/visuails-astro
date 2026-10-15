@@ -1222,10 +1222,21 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
        * for a network failure or a 429, because the honest fallback for "we
        * could not tell" is the state that reveals nothing about anyone.
        */
+      /* vis_in (15 oktober 2026, v31-me = a): alleen als het inloggen dit kleine
+         cookie heeft gezet, wordt /account/me gevraagd. Een bezoeker zonder
+         account kost dan geen verzoek meer, en de console geen rode 401. Zegt de
+         server toch "niemand" (de sessie verliep), dan gaat het cookie weg. */
+      function magVragen() {
+        try { return /(?:^|;\s*)vis_in=1(?:;|$)/.test(document.cookie); } catch (e) { return true; }
+      }
       window.visAccount = function () {
         if (pending) return pending;
+        if (!magVragen()) { remember(null); pending = Promise.resolve(null); return pending; }
         pending = fetch('/account/me', { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
-          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (r) {
+            if (r.status === 401) { try { document.cookie = 'vis_in=; Max-Age=0; Path=/; Secure; SameSite=Lax'; } catch (e) { /* niets */ } }
+            return r.ok ? r.json() : null;
+          })
           .then(function (me) {
             // A 200 with no email is not a session. account.js answers 401 for
             // that and this is the belt to its braces: nothing downstream may

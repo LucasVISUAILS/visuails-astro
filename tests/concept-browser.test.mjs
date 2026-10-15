@@ -25,6 +25,7 @@
  * Zwaar (browser): $S/zwaar.sh node tests/concept-browser.test.mjs — na een build.
  */
 import http from 'node:http';
+import { metVisIn } from './lib/vis-in.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -101,7 +102,7 @@ const server = http.createServer((req, res) => {
   return res.end(fs.readFileSync(f));
 });
 await new Promise((r) => server.listen(PORT, r));
-const browser = await chromium.launch({ executablePath: process.env.CHROME || browserPad() });
+const browser = metVisIn(await chromium.launch({ executablePath: process.env.CHROME || browserPad() }));
 
 const beeld = async (naam, kleur) => ({ name: naam, mimeType: 'image/jpeg', buffer: await sharp({ create: { width: 1200, height: 1500, channels: 3, background: kleur } }).jpeg().toBuffer() });
 const vier = await Promise.all(['IMG_1.jpg', 'IMG_2.jpg', 'IMG_3.jpg', 'IMG_4.jpg'].map((n, i) => beeld(n, ['#c66', '#6c6', '#66c', '#cc6'][i])));

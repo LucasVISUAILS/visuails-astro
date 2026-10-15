@@ -407,20 +407,28 @@ export async function createBijkoopMolliePayment(env, {
  * en het is dezelfde afweging als bij RETURNING in admin.js: vraag het aan de
  * bron in plaats van te hopen dat een veld al gevuld is.
  *
- * `valid` en niet 'pending': een mandaat dat nog niet geldig is, kan niet
- * afschrijven, en een subscription erop aanmaken levert een abonnement op dat
- * niets doet.
+ * ── `valid`, EN ANDERS `pending` — 15 oktober 2026 (controle op de live site) ──
+ *
+ * Hier stond alleen `valid`, met de redenering dat een mandaat in 'pending' niet
+ * kan afschrijven. Op visuails.com (testsleutel) bleef het mandaat na een
+ * iDEAL-eerste-betaling minutenlang 'pending'. Dan maakte koppelSubscription()
+ * nooit een Mollie-abonnement aan: Studio zei "Loopt" en "volgende afschrijving
+ * 15 november", maar er werd nooit meer afgeschreven, overstappen kon niet en
+ * hervatten mislukte. Mollie zelf zegt bij het aanmaken van een subscription:
+ * "Continue if there's a mandate with its status being either pending or valid"
+ * (docs.mollie.com, recurring payments). Mollie schrijft pas af als het geldig
+ * is, en de eerste termijn valt een maand later. Dus: het nieuwste geldige, en
+ * zonder geldig het nieuwste in 'pending'.
  */
 export async function firstPaymentMandate(env, mollieCustomerId) {
   const list = await mollieRequest(env, 'GET', `/customers/${encodeURIComponent(mollieCustomerId)}/mandates?limit=50`);
   const mandates = list?._embedded?.mandates || [];
-  const geldig = mandates.filter((m) => m.status === 'valid');
-  if (!geldig.length) return null;
   // De nieuwste. Mollie geeft ze nieuwste-eerst, maar dat is niet gedocumenteerd
   // als garantie, dus wordt er op createdAt gesorteerd in plaats van op de
   // volgorde van de lijst.
-  geldig.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
-  return geldig[0];
+  const nieuwste = (status) => mandates.filter((m) => m.status === status)
+    .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))[0] || null;
+  return nieuwste('valid') || nieuwste('pending');
 }
 
 /**
@@ -465,6 +473,23 @@ export async function createMollieSubscription(env, {
   if (Number.isInteger(times) && times > 0) body.times = times;
 
   return mollieRequest(env, 'POST', `/customers/${encodeURIComponent(mollieCustomerId)}/subscriptions`, body);
+}
+
+/**
+ * Een lopend Mollie-abonnement van deze klant voor dit kenmerk, of null.
+ *
+ * ── WAAROM — 15 oktober 2026 (controle van de wijziging hieronder) ────────────
+ * Het koppelen wordt sinds vandaag vanaf vier plekken geprobeerd (webhook,
+ * terugkeerpagina, Studio, de nacht). Lukt het aanmaken bij Mollie maar komt het
+ * antwoord niet aan, of mislukt het opslaan van het id, dan zou elke volgende
+ * poging er nóg een aanmaken: twee incasso's per maand. Dus eerst kijken of hij
+ * er al is. Het kenmerk staat in de omschrijving ("VISUAILS studio — SUB-…").
+ */
+export async function mollieAbonnementVoorRef(env, mollieCustomerId, ref) {
+  if (!mollieCustomerId || !ref) return null;
+  const lijst = await mollieRequest(env, 'GET', `/customers/${encodeURIComponent(mollieCustomerId)}/subscriptions?limit=250`);
+  const alle = lijst?._embedded?.subscriptions || [];
+  return alle.find((s) => ['active', 'pending'].includes(s.status) && String(s.description || '').includes(String(ref))) || null;
 }
 
 /**

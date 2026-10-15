@@ -1558,6 +1558,35 @@ const kaarten = planList.map((p) => {
       if (vb) vb.hidden = true;
     }
     veld.addEventListener('input', teken);
+    /* ── EEN GETAL BUITEN 30–300 HIELD HET FORMULIER STIL TEGEN — 15 oktober 2026 ──
+       Gezien op visuails.com: 5000 credits getypt, daarna Merk gekozen. Het veld
+       bleef 5000 (de samenvatting rekende stil met 300), de browser vond het
+       verborgen veld ongeldig en "Doorgaan naar betalen" deed niets, zonder
+       melding. Nu zet het veld zichzelf terug naar wat de samenvatting toont, en
+       staat het uit (dus niet gekeurd en niet verstuurd) als een ander plan
+       gekozen is. */
+    function klem() {
+      var n = parseInt(veld.value, 10);
+      if (isNaN(n)) return;
+      var m = Math.min(Number(veld.max) || D.max, Math.max(Number(veld.min) || D.min, n));
+      if (m !== n) { veld.value = String(m); teken(); }
+    }
+    veld.addEventListener('change', klem);
+    veld.addEventListener('blur', klem);
+    var vorm = veld.form;
+    if (vorm) {
+      var zetAan = function () {
+        var maat = vorm.querySelector('input[name="plan"][value="maat"]');
+        veld.disabled = !(maat && maat.checked);
+      };
+      /* Op het formulier en niet per radio: ook een keuze die een ander script
+         maakt (de plekkencheck hieronder) komt zo langs. En bij het versturen
+         nog één keer, vóór de browser de velden verzamelt. */
+      vorm.addEventListener('change', zetAan);
+      vorm.addEventListener('submit', function () { zetAan(); klem(); }, true);
+      zetAan();
+    }
+    klem();
     teken();
   })();
 
@@ -1605,7 +1634,9 @@ const kaarten = planList.map((p) => {
         if (gekozen && gekozen.disabled) {
           gekozen.checked = false;
           var eerste = radios.filter(function (r) { return !r.disabled; })[0];
-          if (eerste) eerste.checked = true;
+          /* Met een change-event (15 oktober 2026): het veld credits van Op maat
+             gaat aan of uit met de keuze, en luistert daarnaar. */
+          if (eerste) { eerste.checked = true; eerste.dispatchEvent(new Event('change', { bubbles: true })); }
         }
         /* Een maand op maat die nog past, maar niet tot het maximum. */
         var veld = document.querySelector('[data-ps-credits]');

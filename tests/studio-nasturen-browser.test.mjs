@@ -18,6 +18,7 @@
  * naar de map in $NASTUREN_SHOTS als die gezet is.
  */
 import fs from 'node:fs';
+import { metVisIn } from './lib/vis-in.mjs';
 import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -57,7 +58,7 @@ const BEELD = 'lifestyle-flash-01-w380.webp';
 const extraR2 = ['001-voor', '002-achter', '003-voor2', '004-voor3', '005-achter3', '006-detail3'].map((n) => [`intake/proefbatch/${n}.webp`, BEELD]);
 
 const studio = await startStudio({ extraSql, extraR2 });
-const browser = await chromium.launch(fs.existsSync(EXECUTABLE) ? { executablePath: EXECUTABLE } : {});
+const browser = metVisIn(await chromium.launch(fs.existsSync(EXECUTABLE) ? { executablePath: EXECUTABLE } : {}));
 const host = new URL(studio.url).hostname;
 
 /* Contrast en lettergrootte van de tekst in de nieuwe blokken, in de browser. */

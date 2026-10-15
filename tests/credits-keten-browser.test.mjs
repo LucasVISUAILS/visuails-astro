@@ -15,6 +15,7 @@
  * Schermafdrukken in .render/credits-keten-*.png.
  */
 import fs from 'node:fs';
+import { metVisIn } from './lib/vis-in.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
@@ -48,7 +49,7 @@ const extraSql = [
 ];
 
 const studio = await startStudio({ extraSql });
-const browser = await chromium.launch({ executablePath: process.env.CHROME || browserPad() });
+const browser = metVisIn(await chromium.launch({ executablePath: process.env.CHROME || browserPad() }));
 const host = new URL(studio.url).hostname;
 
 const tekst = (page, sel) => page.evaluate((s) => { const el = document.querySelector(s); return el && !el.hidden ? el.textContent.replace(/\s+/g, ' ').trim() : null; }, sel);

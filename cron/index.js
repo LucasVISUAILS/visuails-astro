@@ -51,11 +51,13 @@
  */
 
 import { EXPIRED_FILES_SQL, UPLOAD_DAYS, DELIVERY_DAYS, STALE_ACCOUNTS_COUNT_SQL, bewaartermijnRegel } from '../src/lib/retention.js';
-import { planState, termijnMaand, termijnEinde, termijnDag } from '../src/lib/subscription.js';
+import { planState, termijnMaand, termijnEinde, termijnDag, loadSubscription } from '../src/lib/subscription.js';
+import { koppelSubscription } from '../src/lib/subscribe.js';
 /* Voor grantPrepaidMonths(): de bundel van een abonnement en hoeveel producten
    er per maand bij horen. Zie de kop van die taak. */
 import { grantSlots, subProducten, loadSlots, vensterVoor, kindLabel, CREDIT_KIND } from '../src/lib/slots.js';
 import { TERMS } from '../src/data/plans.js';
+import { planName } from '../src/data/planNames.js';
 import { SERVICE_CREDITS, CREDITS_GELDIG_MAANDEN } from '../src/data/pricing.js';
 /* Het creditboek (ronde B, migratie 0061): de credits van een vooruitbetaalde
    maand, en de herinnering zeven dagen voordat credits vervallen. */
@@ -1717,9 +1719,15 @@ async function mailPlafondInZicht(env, o) {
         preheader: nl ? `Je kunt ${o.plafond} credits sparen; ${o.boven} vallen anders weg op ${op}.` : `You can save up to ${o.plafond} credits; otherwise ${o.boven} lapse on ${op}.`,
         body: [
           mailH1(nl ? 'Je spaarplafond is in zicht' : 'Your savings limit is in sight'),
-          mailP(nl
-            ? `Je hebt <strong>${o.saldo} credits</strong> (je kunt er ${o.plafond} sparen). Op <strong>${op}</strong> komen er ${o.nieuw} bij: gebruik er vóór die dag <strong>${o.boven}</strong>, anders vallen ze weg.`
-            : `You have <strong>${o.saldo} credits</strong> (you can save up to ${o.plafond}). On <strong>${op}</strong>, ${o.nieuw} more come in: use <strong>${o.boven}</strong> before that day, or they lapse.`),
+          /* Bij een overstap die op die dag ingaat (15 oktober 2026): dan geldt het
+             plafond van het nieuwe plan, en dat is precies waarom er iets wegvalt. */
+          o.overstap
+            ? mailP(nl
+              ? `Je hebt <strong>${o.saldo} credits</strong>. Op <strong>${op}</strong> gaat je overstap naar ${planName(o.overstap, 'nl')} in: dan komen er ${o.nieuw} bij en kun je er ${o.plafond} sparen. Gebruik er vóór die dag <strong>${o.boven}</strong>, anders vallen ze weg.`
+              : `You have <strong>${o.saldo} credits</strong>. On <strong>${op}</strong> your switch to ${planName(o.overstap, 'en')} starts: ${o.nieuw} more come in and you can save up to ${o.plafond}. Use <strong>${o.boven}</strong> before that day, or they lapse.`)
+            : mailP(nl
+              ? `Je hebt <strong>${o.saldo} credits</strong> (je kunt er ${o.plafond} sparen). Op <strong>${op}</strong> komen er ${o.nieuw} bij: gebruik er vóór die dag <strong>${o.boven}</strong>, anders vallen ze weg.`
+              : `You have <strong>${o.saldo} credits</strong> (you can save up to ${o.plafond}). On <strong>${op}</strong>, ${o.nieuw} more come in: use <strong>${o.boven}</strong> before that day, or they lapse.`),
           /* `geldigMaanden` komt mee uit herinnerCredits() (CREDITS_GELDIG_MAANDEN). */
           mailP(nl
             ? `Zolang je abonnement loopt, vervallen je credits niet; je kunt tot ${o.geldigMaanden} maanden aan credits sparen. Alleen wat er boven komt, valt weg, op de dag van je termijn. Dit is de enige herinnering.`
@@ -1886,7 +1894,7 @@ async function incassoSignalen(env) {
 
   const abos = await env.DB.prepare(
     `SELECT s.id, s.ref, s.plan, s.term, s.status, s.pause_reason,
-            s.started_at, s.created_at, s.mollie_subscription_id,
+            s.started_at, s.created_at, s.mollie_subscription_id, s.mollie_customer_id, s.customer_id,
             c.email, c.brand, c.name
        FROM subscriptions s
        JOIN customers c ON c.id = s.customer_id
@@ -1896,8 +1904,25 @@ async function incassoSignalen(env) {
 
   const gepauzeerd = [];
   const uitgebleven = [];
+  const zonderIncasso = [];
+  let gekoppeld = 0;
 
   for (const abo of abos) {
+    /* ── LOPEND, MAAR ZONDER MOLLIE-ABONNEMENT — 15 oktober 2026 ─────────────
+       Gezien op visuails.com: het mandaat van de eerste betaling was nog
+       'pending', en het Mollie-abonnement werd nooit aangemaakt. Dan wordt er na
+       de eerste maand nooit meer afgeschreven, en de toets hieronder sloeg het
+       over (hij kijkt alleen naar abonnementen mét een Mollie-id). Elke nacht nog
+       een poging; lukt het niet, dan staat het in het rapport. */
+    if (abo.status === 'active' && abo.term !== 'prepaid' && abo.mollie_customer_id && !abo.mollie_subscription_id) {
+      try {
+        const vol = await loadSubscription(env, abo.customer_id);
+        const uit = vol && vol.id === abo.id ? await koppelSubscription(env, vol, env.PUBLIC_ORIGIN || 'https://visuails.com') : null;
+        if (uit?.staat === 'gelukt') { gekoppeld += 1; continue; }
+      } catch (e) { console.error('[cron] koppelen mislukt voor', abo.ref, '—', e?.message || e); }
+      zonderIncasso.push(`${abo.ref} (${abo.brand || abo.email})`);
+      continue;
+    }
     /* ── EEN INCASSO DIE NIET EENS GEPROBEERD IS — 24 september 2026 ────────
        Werklijst E6: een verlopen of ingetrokken machtiging. Mollie zet het
        abonnement dan zelf stop en stuurt GEEN webhook — er komt geen mislukte
@@ -1908,11 +1933,16 @@ async function incassoSignalen(env) {
        pauze — het kan ook een trage bank zijn; dat is een besluit voor Lucas,
        met Mollie ernaast. Niet bij een vooruitbetaald jaar (geen incasso) en
        niet in de eerste maand (die komt van de eerste betaling). */
-    if (abo.status === 'active' && abo.term !== 'prepaid' && abo.mollie_subscription_id && abo.started_at) {
+    /* started_at OF created_at (15 oktober 2026): de webhook van de eerste
+       betaling zette een nieuw abonnement op 'active' zonder started_at, en dan
+       sloeg deze toets elk nieuw abonnement over. De webhook zet hem nu wel; voor
+       rijen van daarvoor is created_at de dag van afsluiten. */
+    const begonOp = abo.started_at || abo.created_at;
+    if (abo.status === 'active' && abo.term !== 'prepaid' && abo.mollie_subscription_id && begonOp) {
       const maand = termijnMaand(abo, nu);
       const begon = new Date(`${maand}-${String(termijnDag(abo)).padStart(2, '0')}T00:00:00Z`);
       const dagen = Math.floor((nu.getTime() - begon.getTime()) / 86400000);
-      const eersteMaand = String(abo.started_at).slice(0, 7) === maand;
+      const eersteMaand = String(begonOp).slice(0, 7) === maand;
       if (!eersteMaand && dagen >= 3) {
         const heeft = await env.DB.prepare(
           'SELECT 1 AS er FROM subscription_months WHERE subscription_id = ?1 AND month = ?2 LIMIT 1'
@@ -1928,6 +1958,8 @@ async function incassoSignalen(env) {
   }
 
   const delen = [];
+  if (gekoppeld) delen.push(`${gekoppeld} abonnement${gekoppeld === 1 ? '' : 'en'} alsnog aan Mollie gekoppeld (de incasso loopt nu)`);
+  if (zonderIncasso.length) delen.push(`${zonderIncasso.length} lopend${zonderIncasso.length === 1 ? ' abonnement' : 'e abonnementen'} zonder incasso bij Mollie — er wordt niet afgeschreven; kijk in Mollie of er een machtiging is (${zonderIncasso.join(', ')})`);
   if (gepauzeerd.length) delen.push(`${gepauzeerd.length} abonnement${gepauzeerd.length === 1 ? '' : 'en'} gepauzeerd op een mislukte incasso (${gepauzeerd.join(', ')})`);
   if (uitgebleven.length) delen.push(`${uitgebleven.length} abonnement${uitgebleven.length === 1 ? '' : 'en'} zonder incasso deze termijn — machtiging verlopen of ingetrokken? Kijk in Mollie (${uitgebleven.join(', ')})`);
   return delen.join(' · ');

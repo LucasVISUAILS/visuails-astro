@@ -510,8 +510,13 @@ const bronnen = nl
     margin: 0 0 1.8rem; padding: 0; list-style: none; counter-reset: verder;
     display: grid; gap: .75rem; max-width: 40em;
   }
+  /* De tekstmaat (hal.css, 5 tot 7 woorden) gold voor de hele <li>, nummer
+     incluis: de zin kreeg 14,7 em en stond op 1920 met 3 tot 5 woorden per
+     regel en afbrekingen (live, 15 oktober). Nu krijgt de zin zelf de maat en
+     het nummer komt erbij. hal.css slaat .ty-verder > li daarvoor over. */
   .ty-verder li {
     counter-increment: verder;
+    max-width: calc(var(--h-maat, 16.5em) + 1.8em);
     display: grid; grid-template-columns: 1.8em minmax(0, 1fr); align-items: baseline;
     color: var(--inkt-2); line-height: 1.6; text-wrap: pretty;
   }

@@ -17,6 +17,7 @@
  * Verzonnen merken en adressen; niets hiervan bestaat.
  */
 import http from 'node:http';
+import { metVisIn } from './lib/vis-in.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -105,7 +106,7 @@ const server = http.createServer((req, res) => {
   res.writeHead(404); return res.end('niet gevonden');
 });
 await new Promise((r) => server.listen(PORT, r));
-const browser = await chromium.launch({ executablePath: process.env.CHROME || browserPad() });
+const browser = metVisIn(await chromium.launch({ executablePath: process.env.CHROME || browserPad() }));
 
 const leesbaar = (page, sel) => page.evaluate((s) => {
   const lijst = [...document.querySelectorAll(s)].filter((el) => !el.hidden && el.getClientRects().length);

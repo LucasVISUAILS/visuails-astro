@@ -18,6 +18,7 @@
  *       goed, en een vreemde link in het antwoord wordt niet overgenomen.
  */
 import { readFileSync, existsSync } from 'node:fs';
+import { metVisIn } from './lib/vis-in.mjs';
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -204,7 +205,7 @@ else {
     res.end(readFileSync(f));
   });
   await new Promise((r) => server.listen(0, () => { PORT = server.address().port; r(); }));
-  const browser = await chromium.launch({ executablePath: browserPad() });
+  const browser = metVisIn(await chromium.launch({ executablePath: browserPad() }));
   const STAND = {
     naam: 'Mara',
     laatste: { ref: 'VIS-2041', stand: 'Geleverd, wacht op je goedkeuring', knop: { label: 'Bekijk je beelden', href: '/account/orders?order=7#order-7' } },

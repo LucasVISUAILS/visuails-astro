@@ -841,7 +841,7 @@ export async function notifyCreditsBespreken(env, { klant = {}, lang = 'nl', sal
  * termijn bevroren; de factuur blijft staan. Draait Mollie de terugboeking
  * terug, dan gaat alles vanzelf terug (`terug: true`).
  */
-export async function notifyTermijnTeruggeboekt(env, { subRef, plan, brand, email, bedragCents = 0, terugCents = 0, maand = '', bevroren = null, terug = false }) {
+export async function notifyTermijnTeruggeboekt(env, { subRef, plan, brand, email, bedragCents = 0, terugCents = 0, maand = '', bevroren = null, terug = false, incasso = '', klantId = null }) {
   try {
     const ref = subRef || '(zonder kenmerk)';
     await toStudio(env, terug
@@ -856,12 +856,17 @@ export async function notifyTermijnTeruggeboekt(env, { subRef, plan, brand, emai
         ...(maand ? [['Termijn', maand]] : []),
         ...(terug ? [] : [['Teruggeboekt', `${cents(terugCents)}${bedragCents ? ` van ${cents(bedragCents)}` : ''}`]]),
         ...(bevroren !== null ? [[terug ? 'Credits weer vrij' : 'Credits bevroren', String(bevroren)]] : []),
+        /* v31-terugboeking = a (15 oktober 2026): de incasso stopt mee. */
+        ...(incasso ? [['Incasso bij Mollie', incasso]] : []),
       ]),
       terug
-        ? mailP('De credits van die termijn zijn weer vrij, met hun eigen vervaldatum, en het abonnement loopt weer. De factuur stond al.')
-        : mailP('Het abonnement staat op pauze en de credits van deze termijn zijn bevroren: niet bruikbaar, niet weg. De factuur blijft staan. '
-          + 'Draait Mollie de terugboeking terug, dan gaat dat allemaal vanzelf terug. Bestellingen van deze klant staan niet stil; kijk of er nog iets in productie is. '
+        ? mailP(/NIET/.test(incasso)
+          ? 'De credits van die termijn zijn weer vrij, met hun eigen vervaldatum. De incasso kon niet opnieuw gestart worden, dus het abonnement staat nog stil. Druk in /admin bij de klant op "Weer laten lopen". De factuur stond al.'
+          : 'De credits van die termijn zijn weer vrij, met hun eigen vervaldatum, en het abonnement loopt weer, met de incasso bij Mollie vanaf de volgende termijn. De factuur stond al.')
+        : mailP(`Het abonnement staat op pauze en de credits van deze termijn zijn bevroren: niet bruikbaar, niet weg. De factuur blijft staan. ${/NIET/.test(incasso) ? 'LET OP: de incasso bij Mollie kon niet gestopt worden. Stop het abonnement in het Mollie-dashboard, anders wordt de volgende termijn gewoon afgeschreven. ' : 'De incasso bij Mollie is gestopt, dus er wordt niets meer afgeschreven. '}`
+          + 'Draait Mollie de terugboeking terug, dan gaat dat allemaal vanzelf terug, de incasso ook. Is het met de klant rond, dan zet je het abonnement weer aan met "Weer laten lopen" in /admin bij de klant. Bestellingen van deze klant staan niet stil; kijk of er nog iets in productie is. '
           + 'Neem contact op met de klant: het kan ook een bankfout zijn.'),
+      klantId ? mailP(`<a href="https://visuails.com/admin/customers/${Number(klantId)}#abonnement">Naar de klant in /admin</a>`) : '',
       terug ? '' : await incassoContact(env, { email, brand }, 'terugboeking', { o: { ref } }),
     ].join(''), email || '');
   } catch (err) {

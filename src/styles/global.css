@@ -1817,6 +1817,24 @@ p, li, dd, dt, figcaption, blockquote, .lead, .hint {
 .btn, label, code, kbd, th, .eyebrow, .eyebrow-page, [class*="-pill"], [class*="-tag"] {
   hyphens: manual;
 }
+/* ── ALLEEN LANGE WOORDEN AFBREKEN — 15 oktober 2026 (controle op de live site) ──
+   Op 1920 px stond in de opening van de voorpagina "Krijg catalog, li- / festyle
+   en video terug", in /start/plan "precies wat je no- / dig hebt" en "je abon- /
+   nement". De regel hierboven is er voor lange samenstellingen die anders buiten
+   hun kolom lopen; korte woorden hoeven nooit af te breken. Vanaf tien letters,
+   met minstens vier aan elke kant: "verwerkingsverantwoordelijke" breekt nog,
+   "lifestyle" en "nodig" niet meer. (Safari kent de eigenschap niet en breekt zoals
+   voorheen.) */
+h1, h2, h3, h4, h5, .display, p, li, dd, dt, figcaption, blockquote, .lead, .hint {
+  hyphenate-limit-chars: 10 4 4;
+}
+/* ── EEN VELD MET EEN FOUT NIET ACHTER DE BALK — 15 oktober 2026 ─────────────
+   Bij een fout scrolt de browser het veld naar de bovenrand; op /start/plan, in
+   het bestelformulier en op /contact viel het daarmee onder de vaste balk, en de
+   foutmelding ("Vul je voornaam in") stond half achter het menu. */
+input, select, textarea {
+  scroll-margin-top: calc(var(--kop-h, 76px) + 28px);
+}
 /* ── NIET IN DE NAVIGATIE, EN NIET IN EEN KOP OP EEN BREED SCHERM — 19 sept 2026
    Op 958 px brak het menu "PRIJ-ZEN", "GALE-RIJ" en "CON-TACT" af (de <li>-regel
    hierboven), en de H1 van de voorpagina brak op 1424 px "CAM-PAGNE" af — het

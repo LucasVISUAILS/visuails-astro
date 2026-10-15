@@ -52,6 +52,11 @@ export const LAATST_BIJGEWERKT = {
      laatste termijn.
      14 oktober 2026 (afvinklijst 23): de lifestylecarrousel in de prijslijst is
      vier foto's in plaats van drie (zelfde prijs).
+     15 oktober 2026 (afvinklijst 30, v30-voorwaarden = a): §9a kreeg de
+     alinea "Overstappen" — per volgende termijn, terugdraaien tot dan, pauze en
+     opzeggen, het spaarplafond van het nieuwe abonnement, niet vanaf een
+     vooruitbetaald jaar. En "Als een afschrijving mislukt" zegt nu wat er
+     gebeurt: Mollie probeert het nog een paar keer, pas daarna een pauze.
      Nog steeds oktober, dus de waarde blijft staan. */
   terms: '2026-10',
   /* 11 oktober 2026 (afvinklijst 2): privacy §5/§6 en verwerkersovereenkomst §8/§12
@@ -60,6 +65,7 @@ export const LAATST_BIJGEWERKT = {
      archief, back-ups "uiterlijk na N weken", mail en WhatsApp 2 jaar. Nog steeds
      oktober, dus de maand blijft staan. */
   privacy: '2026-10',
+  /* 15 oktober 2026: vis_in erbij (afvinklijst 31, v31-me = a). Nog oktober, dus dezelfde maand. */
   'cookie-policy': '2026-10',
   'data-processing-agreement': '2026-10',
   /* Oktober 2026: paragraaf 4 (welke foto's verplicht zijn: voorkant, achterkant

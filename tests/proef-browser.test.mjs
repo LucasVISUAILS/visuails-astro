@@ -17,6 +17,7 @@
  *   5 · geen fouten in de console, en op 390 px geen horizontale scroll.
  */
 import fs from 'node:fs';
+import { metVisIn } from './lib/vis-in.mjs';
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -44,7 +45,7 @@ const server = http.createServer((req, res) => {
   return res.end(fs.readFileSync(f));
 });
 await new Promise((r) => server.listen(PORT, r));
-const browser = await chromium.launch({ executablePath: process.env.CHROME || browserPad() });
+const browser = metVisIn(await chromium.launch({ executablePath: process.env.CHROME || browserPad() }));
 
 async function open(url, { stand = 'open', breed = 1280 } = {}) {
   const page = await browser.newPage({ viewport: { width: breed, height: 900 } });

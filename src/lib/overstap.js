@@ -40,7 +40,10 @@ import { aboStand } from './aboPlafond.js';
 import { updateMollieSubscription } from './mollie.js';
 
 export const OVERSTAP_PLANNEN = [...PLAN_IDS, CUSTOM_MONTH_ID];
-export const OVERSTAP_MAAT = { min: CUSTOM_CREDITS_MIN, max: CUSTOM_CREDITS_MAX, stap: CUSTOM_CREDITS_STEP };
+/* `stap` 1 en niet CUSTOM_CREDITS_STEP (15 oktober 2026, A19): /start/plan neemt elk
+   heel aantal aan (step="1", isCustomCredits()), en Studio zei "per 5" maar nam 77
+   ook aan. Nu zeggen ze allebei hetzelfde. `rond` is waarop het voorstel wordt afgerond. */
+export const OVERSTAP_MAAT = { min: CUSTOM_CREDITS_MIN, max: CUSTOM_CREDITS_MAX, stap: 1, rond: CUSTOM_CREDITS_STEP };
 
 /** Het doel als de velden die op de abonnementsrij komen, of null bij een ongeldige keuze. */
 export function overstapDoel(plan, credits) {

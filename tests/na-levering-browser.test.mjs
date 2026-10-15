@@ -12,6 +12,7 @@
  * Met NA_LEVERING_SHOTS=<map> komen er schermafdrukken bij.
  */
 import fs from 'node:fs';
+import { metVisIn } from './lib/vis-in.mjs';
 import path from 'node:path';
 import { chromium } from 'playwright';
 import { startStudio, VOLT } from './lib/studio-worker.mjs';
@@ -42,7 +43,7 @@ const extraSql = [
 ];
 
 const studio = await startStudio({ extraSql });
-const browser = await chromium.launch(fs.existsSync(EXECUTABLE) ? { executablePath: EXECUTABLE } : {});
+const browser = metVisIn(await chromium.launch(fs.existsSync(EXECUTABLE) ? { executablePath: EXECUTABLE } : {}));
 const host = new URL(studio.url).hostname;
 
 const METING = (selectors) => `(() => {

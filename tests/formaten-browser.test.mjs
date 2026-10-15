@@ -17,6 +17,7 @@
  * .render/ (formaten-*.png). Verzonnen merk; niets hiervan bestaat.
  */
 import fs from 'node:fs';
+import { metVisIn } from './lib/vis-in.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
@@ -52,7 +53,7 @@ const BEELD = 'lifestyle-flash-01-w380.webp';
 const extraR2 = [[`proef/${ORDER}/p1-front.webp`, BEELD], [`proef/${ORDER}/p1-back.webp`, BEELD]];
 
 const studio = await startStudio({ extraSql, extraR2 });
-const browser = await chromium.launch(fs.existsSync(EXECUTABLE) ? { executablePath: EXECUTABLE } : {});
+const browser = metVisIn(await chromium.launch(fs.existsSync(EXECUTABLE) ? { executablePath: EXECUTABLE } : {}));
 const host = new URL(studio.url).hostname;
 
 const METING = (selectors) => `(() => {

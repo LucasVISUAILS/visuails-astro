@@ -7,6 +7,7 @@
  * ondergrond, geen horizontale scroll. Schermafdrukken in .render/ (proef-dicht-*.png).
  */
 import fs from 'node:fs';
+import { metVisIn } from './lib/vis-in.mjs';
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -35,7 +36,7 @@ const server = http.createServer((req, res) => {
   return res.end(fs.readFileSync(f));
 });
 await new Promise((r) => server.listen(0, () => { PORT = server.address().port; r(); }));
-const browser = await chromium.launch({ executablePath: process.env.CHROME || browserPad() });
+const browser = metVisIn(await chromium.launch({ executablePath: process.env.CHROME || browserPad() }));
 
 const METING = `(() => {
   const rgba = (c) => { const m = String(c).match(/rgba?\\(([^)]+)\\)/); if (!m) return [0, 0, 0, 0]; const p = m[1].split(/[ ,/]+/).filter(Boolean).map(Number); return [p[0], p[1], p[2], p.length > 3 ? p[3] : 1]; };

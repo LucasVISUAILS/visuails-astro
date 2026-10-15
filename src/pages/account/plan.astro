@@ -396,6 +396,7 @@ const T = v.tekst || {};
                 {v.overstap.klaar && (
                   <div class="st-melding st-overstap-klaar" role="status">
                     <p>{v.overstap.klaar.zin}</p>
+                    {v.overstap.klaar.verlies && <p><strong>{v.overstap.klaar.verlies}</strong></p>}
                     <form method="post" action="/account/plan/overstap">
                       <input type="hidden" name="do" value="terug" />
                       <button class="btn btn-ghost btn-sm" type="submit">{v.overstap.klaar.knop}</button>
@@ -415,6 +416,7 @@ const T = v.tekst || {};
                             {o.credits && <span class="st-bijkoop-prijs">{o.credits}</span>}
                             <span class="st-meta">{o.bedrag}</span>
                             {o.verschil && <span class="st-meta">{o.verschil}</span>}
+                            {o.verlies && <span class="st-meta st-overstap-verlies">{o.verlies}</span>}
                           </span>
                         </label>
                       ))}

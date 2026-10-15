@@ -366,11 +366,19 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 
       <p><strong>Buying extra credits.</strong> While your subscription runs, you can buy extra credits in VISUAILS Studio, {bijkoopRegel('en')}, at most {BIJKOOP_MAX_PER_MAAND} per calendar month. You pay for them separately, with their own invoice; they are added as soon as the payment is in. Bought credits are used first, stay valid for {CREDITS_GELDIG_MAANDEN} months from the purchase, also if you pause or cancel, and do not count towards your savings limit.</p>
 
+      {/* Overstappen — 15 oktober 2026 (afvinklijst 30, v30-voorwaarden = a): Studio
+          kan het sinds levering 50 (src/lib/overstap.js). */}
+      <p><strong>Switching plans.</strong> On the monthly term you can switch to another plan in VISUAILS Studio, including a plan made to measure. The switch starts with your next monthly payment: from then on we collect the new amount and you get the credits of the new plan. Until that day your current plan stays as it is, and you can undo the switch. If you pause in the meantime, the switch starts when you resume; if you cancel, it lapses. The credits you already have stay. From the switch your savings limit follows the new plan: if it is lower, whatever is above it lapses on that day, and we send you a reminder beforehand. You cannot switch partway through a prepaid year; email us instead. More credits a month is only possible if the studio has room for them; if it does not, VISUAILS Studio says so.</p>
+
       <p><strong>Cancelling.</strong> You cancel it yourself in VISUAILS Studio; you do not have to email us and there is no notice period. As soon as you cancel we stop the collection, and nothing further is charged. The month you have already paid for remains yours until the end of it, and the credits you already have stay valid until {CREDITS_GELDIG_MAANDEN} months after your last term. After that the subscription closes. We do not refund the current month, and nothing is given in its place. On a prepaid year, cancelling works as set out under <em>Paying up front</em> above.</p>
 
       <p><strong>Pausing.</strong> You can pause your subscription yourself. That stops the next collection, and while the subscription is paused no new credits come in. The credits you have stay where they are and stay valid until {CREDITS_GELDIG_MAANDEN} months after your last term. Once you resume, collection starts again from the next term; you do not have to give a new mandate for that.</p>
 
-      <p><strong>If a collection fails.</strong> We put the subscription on pause and let you know. Your credits stay where they are and stay valid until {CREDITS_GELDIG_MAANDEN} months after your last term. If the payment comes in after all, the subscription carries on as though nothing had happened.</p>
+      {/* 15 oktober 2026: "we put the subscription on pause" klopte niet met wat er gebeurt. Mollie
+          probeert een mislukte incasso nog een paar keer (docs.mollie.com, recurring payments), het
+          abonnement loopt zolang door, en pas als Mollie stopt gaat het op pauze
+          (recordSubscriptionFailed in functions/api/webhook/mollie.js). */}
+      <p><strong>If a collection fails.</strong> We let you know, and Mollie tries again a few times over the following days. The credits for that term come in as soon as the payment does. If the collection keeps failing, we put the subscription on pause. Your credits stay where they are and stay valid until {CREDITS_GELDIG_MAANDEN} months after your last term. If the payment comes in after all, the subscription carries on as though nothing had happened.</p>
 
       <p><strong>What happens to what has already been made.</strong> Everything you had made and delivered during your subscription stays yours under the same usage rights as any other order — see section 8. Cancelling changes nothing about that. How long we keep your files is governed by section 7.</p>
 

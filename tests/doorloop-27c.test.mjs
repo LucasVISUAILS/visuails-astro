@@ -17,6 +17,7 @@
  * Draai `npx astro build` eerst; alles hieronder leest dist/.
  */
 import http from 'node:http';
+import { metVisIn } from './lib/vis-in.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -62,7 +63,9 @@ const tegels = [...formNl.matchAll(/data-bo-hoek="([a-z-]+)"[^]*?src="\/img\/sch
 ok('het zijpaneel heeft een tegel per hoek, met hetzelfde bestand als de kiezer', tegels.length >= ANGLE_IDS.length && tegels.every(([id, f]) => f === `hoek-${id}`), JSON.stringify(tegels));
 ok('  de tegels staan verborgen tot er een hoek is aangevinkt', [...formNl.matchAll(/<li[^>]*data-bo-hoek="[^"]+"[^>]*>/g)].every((m) => /\shidden/.test(m[0])));
 const hal = lees('src/styles/hal.css');
-ok('de opening: de beeldbreedte volgt de ruimte naast de tekst', /\.hal \.h-open-beeld \{ --hb: min\(90%/.test(hal) && /@media \(min-width: 1500px\) \{ \.hal \.h-open-beeld \{ left: auto; right: -198px; width: 1350px;/.test(hal));
+/* Sinds levering 51 (de kolom, bericht 16:10): boven 1500 px schuift het beeld met de kolom mee,
+   tot -198 px zoals eerst bij 1488 px, en nooit verder dan de rechterrand. */
+ok('de opening: de beeldbreedte volgt de ruimte naast de tekst', /\.hal \.h-open-beeld \{ --hb: min\(90%/.test(hal) && /@media \(min-width: 1500px\) \{ \.hal \.h-open-beeld \{ left: auto; right: min\(0px, calc\(var\(--h-open-zij\) - 198px\)\); width: 1350px;/.test(hal));
 
 /* ── 6 · DE SET OP LICHTGRIJS, GEMETEN (05:58) ──────────────────────────────── */
 console.log('\n6 · de roze-jeans-set op lichtgrijs, gemeten');
@@ -174,7 +177,7 @@ console.log('\n9 · stap 2 met de hand');
     ok(`${taal}:   het penseel bouwt het beeld op (zachte rand), de loep vergroot je foto en ons beeld`, maak.includes('h-maak-bouwkwast') && maak.includes('mask="url(#h-maak-bouw)"') && maak.includes('filter="url(#h-maak-zacht)"') && maak.includes('href="/img/ba2-voor-front-recht.webp"') && (maak.match(/class="h-maak-lp-in"/g) || []).length === 2 && maak.includes('h-maak-lp-vink') && !maak.includes('h-maak-ref'));
     ok(`${taal}:   het label noemt de drie handelingen`, (maak.match(/<span class="h-maak-doe[^>]*>((?:<span>[^<]+<\/span>){3})<\/span>/) || [])[1]?.split('</span>').filter(Boolean).length === 3);
     ok(`${taal}:   het beeld vóór de afwerking (op wit) en de achterkant voor de vergelijking`, /h-maak-begin[^>]*ba2-na-front\.(webp|avif)|ba2-na-front\.(webp|avif)[^>]*h-maak-begin/.test(maak) || (maak.includes('h-maak-begin') && maak.includes('ba2-na-front.')));
-    ok(`${taal}:   de stap duurt 12,1 s (4,25 s rechtzetten, opbouwen en nakijken)`, h.includes('data-uitleg-maat="3000 12100 3600"'));
+    ok(`${taal}:   de stap duurt 12,1 s (4,25 s rechtzetten, opbouwen en nakijken)`, h.includes('data-uitleg-maat="3000 12100 3000"'));
   }
   const css = lees('src/styles/hal.css');
   ok('de pauzeknop zet ook deze animaties stil', css.includes('.hal .h-hoe[data-uitleg-staat="pauze"] .h-maak *,') && css.includes('animation-play-state: paused !important;'));
@@ -223,7 +226,7 @@ const server = http.createServer((req, res) => {
   return res.end(fs.readFileSync(f));
 });
 await new Promise((r) => server.listen(0, () => { PORT = server.address().port; r(); }));
-const browser = await chromium.launch({ executablePath: process.env.CHROME || browserPad() });
+const browser = metVisIn(await chromium.launch({ executablePath: process.env.CHROME || browserPad() }));
 const KEUZE = { name: 'vis_consent', value: encodeURIComponent(JSON.stringify({ version: 1, analytics: false, at: '2026-10-15T00:00:00.000Z' })), domain: 'localhost', path: '/' };
 const dag = (n) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
 

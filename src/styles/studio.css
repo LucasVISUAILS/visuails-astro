@@ -1543,6 +1543,8 @@ body.studio .st-merk-los { color: var(--ink-1); }
 .st-overstap-form:not(:has(input[name="plan"][value="maat"]:checked)) .st-overstap-maat { display: none; }
 /* Lopende tekst op acht à tien woorden per regel, zoals op de rest van de site. */
 .st-overstap-form > .st-meta, .st-overstap-klaar p, .st-overstap-maat .st-meta { max-width: 32em; }
+/* Wat er bij de overstap wegvalt (15 oktober 2026): in de waarschuwingskleur van Studio, zoals .st-melding.is-warn. */
+.st-overstap-verlies { color: var(--st-clay-tekst) !important; font-weight: 600; }
 .st-bijkoop-hint { margin: 0; font-size: .875rem; color: var(--ink-1); }
 .st-bijkoop-verder { margin: 0; }
 .st-bijkoop-eerder { list-style: none; margin: .4rem 0 0; padding: 0; display: grid; gap: .3rem; font-size: .875rem; color: var(--ink-1); }

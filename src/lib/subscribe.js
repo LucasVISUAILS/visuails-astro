@@ -71,7 +71,7 @@
 import { withdrawalRecord } from '../data/consent.js';
 import {
   createSubscriptionRow, loadSubscription, subscriptionByRef,
-  setMollieIds, activateSubscription,
+  setMollieIds, activateSubscription, termijnMaand, termijnEinde,
 } from './subscription.js';
 import {
   PLAN_IDS, SUB_PLAN_IDS, TERM_IDS, OFFERED_TERM_IDS, PLAN_SERVICE, monthlyCents, productsFor,
@@ -91,7 +91,7 @@ import {
 import { subMaandCents, subEersteBetalingCents, subMaandBruto, subEersteBetalingBruto, subProducten } from './slots.js';
 import {
   createMollieCustomer, createFirstPayment, firstPaymentMandate, createMollieSubscription,
-  cancelMollieSubscription, mollieKeyProblems,
+  cancelMollieSubscription, mollieKeyProblems, mollieAbonnementVoorRef,
 } from './mollie.js';
 
 /*
@@ -439,6 +439,14 @@ export async function handleSubscribeReturn(context, customer) {
 export async function koppelSubscription(env, vol, origin) {
   if (vol?.mollie_subscription_id) return { staat: 'actief', sub: vol };
   if (!vol?.mollie_customer_id) return { staat: 'wacht', sub: vol };
+  /* ── ALLEEN EEN NIEUW OF LOPEND ABONNEMENT — 15 oktober 2026 ───────────────
+     Koppelen maakt een incasso en zet een nieuw abonnement aan. Een abonnement
+     dat stilstaat (pauze, terugboeking, mislukte incasso) of is opgezegd, blijft
+     daar af. Gevonden bij de controle van levering 52: sinds een terugboeking de
+     incasso stopt (en het Mollie-id wist), zag de webhook van een teruggeboekte
+     EERSTE betaling "nog geen Mollie-abonnement", koppelde opnieuw en zette het
+     stilgezette abonnement weer aan. Hervatten gaat via hervatIncasso(). */
+  if (!['pending', 'active'].includes(vol.status)) return { staat: 'wacht', sub: vol };
 
   /* ── EEN VOORUITBETAALD JAAR KRIJGT GEEN SUBSCRIPTION — 10 september 2026 ──
    *
@@ -451,57 +459,116 @@ export async function koppelSubscription(env, vol, origin) {
    * maandtaak (zie subscription.js), en die kijkt naar de rij en niet naar
    * Mollie. Twaalf maanden budget komen dus gewoon binnen. */
   if (isPrepaid(vol.term)) {
-    await activateSubscription(env, vol.id);
+    if (vol.status === 'pending') await activateSubscription(env, vol.id);
     return { staat: 'gelukt', sub: await loadSubscription(env, vol.customer_id) };
   }
 
-  let mandaat;
+  /* ── ÉÉN TEGELIJK — 15 oktober 2026 ───────────────────────────────────────
+     Vier aanroepers: de webhook, de terugkeerpagina, Studio (bij elke keer
+     Abonnement openen) en de nacht. Komen de webhook en de terugkeerpagina
+     tegelijk, dan lazen ze allebei "nog geen Mollie-abonnement" en maakten ze er
+     allebei een: twee incasso's per maand. Nu pakt er één het slot (een rij in
+     rate_limits, twee minuten geldig, ook als een poging halverwege stopt); de
+     andere zegt 'wacht', en de eerste maakt het af. */
+  const slot = `koppel:${vol.id}`;
+  if (!(await pakSlot(env, slot, 120))) return { staat: 'wacht', bezig: true, sub: vol };
   try {
-    mandaat = await firstPaymentMandate(env, vol.mollie_customer_id);
-  } catch (err) {
-    console.error('[abonnement] mandaat niet op te halen —', err?.message || err);
-    return { staat: 'wacht', sub: vol };
+    /* Wie het slot had, kan het intussen al gedaan hebben. */
+    const nu = await loadSubscription(env, vol.customer_id);
+    if (nu?.id === vol.id && nu.mollie_subscription_id) return { staat: 'actief', sub: nu };
+    if (nu?.id === vol.id) vol = nu;
+    if (!['pending', 'active'].includes(vol.status)) return { staat: 'wacht', sub: vol };
+
+    let mandaat;
+    try {
+      mandaat = await firstPaymentMandate(env, vol.mollie_customer_id);
+    } catch (err) {
+      console.error('[abonnement] mandaat niet op te halen —', err?.message || err);
+      return { staat: 'wacht', sub: vol };
+    }
+    /* Nog geen mandaat, ook niet in 'pending': de eerste betaling is nog niet
+       rond. Geen fout — zie de kop, en firstPaymentMandate() in mollie.js. */
+    if (!mandaat?.id) return { staat: 'wacht', sub: vol };
+    /* Een mandaat in 'pending' alleen als de eerste maand betaald is: dan staat
+       de rij op 'active' (de webhook van die betaling zet hem zo). Een mandaat is
+       ook 'pending' zolang de eerste betaling nog open staat, en wie dan via
+       "terug naar de webshop" op de terugkeerpagina landt, mag geen lopend
+       abonnement krijgen. 'valid' betekent dat de betaling rond is. */
+    if (mandaat.status !== 'valid' && vol.status !== 'active') return { staat: 'wacht', sub: vol };
+
+    await setMollieIds(env, vol.id, { mandateId: mandaat.id });
+
+    /* subMaandBruto() en niet monthlyCents(): bij een maand op maat staat het
+       bedrag op de rij, bevroren op het moment van afsluiten (zie migratie 0038
+       voor waarom het daar staat en niet elke maand opnieuw uit de ladder komt),
+       en er gaat btw overheen omdat de prijs op /plans exclusief is. Zie de kop
+       van subBrutoCents() in slots.js. */
+    const maandBedrag = subMaandBruto(vol) / 100;
+
+    try {
+      /* Bestaat hij bij Mollie al (een eerdere poging waarvan het antwoord of het
+         opslaan misging), dan die, en geen tweede. */
+      const sc = await mollieAbonnementVoorRef(env, vol.mollie_customer_id, vol.ref) || await createMollieSubscription(env, {
+        mollieCustomerId: vol.mollie_customer_id,
+        mandateId: mandaat.id,
+        valueEuros: maandBedrag,
+        description: `VISUAILS ${vol.plan} — ${vol.ref}`,
+        webhookUrl: `${origin}/api/webhook/mollie`,
+        /* VANAF DE VOLGENDE MAAND. De klant heeft zojuist zijn eerste maand betaald
+           (dezelfde betaling die het mandaat afgeeft); de tweede termijn hoort een
+           maand later te vallen, anders betaalt hij twee keer in dezelfde week.
+           Op de dag van het abonnement en niet van vandaag (15 oktober 2026): sinds
+           Studio het koppelen opnieuw probeert, kan dat dagen na het afsluiten zijn,
+           en dan zou Mollie op een andere dag afschrijven dan Studio noemt. */
+        startDate: volgendeTermijn(vol),
+        /* Een jaarverbintenis stopt zichzelf na twaalf termijnen. Netter dan
+           onthouden dat er iets opgezegd moet worden — zie de noot bij `times` in
+           mollie.js. */
+        /* Elf en niet twaalf sinds de eerste betaling de eerste maand IS: één
+           betaald bij het afsluiten, elf via de subscription = twaalf termijnen. */
+        times: vol.term === 'yearly' ? 11 : undefined,
+      });
+      if (!sc?.id) throw new Error('Mollie gaf geen abonnements-id terug');
+      await setMollieIds(env, vol.id, { subscriptionId: sc.id });
+      /* Alleen van 'pending' naar 'active'; een lopend abonnement blijft lopen. */
+      if (vol.status === 'pending') await activateSubscription(env, vol.id);
+    } catch (err) {
+      console.error('[abonnement] subscription niet aangemaakt —', err?.message || err);
+      return { staat: 'wacht', sub: vol };
+    }
+
+    const na = await loadSubscription(env, vol.customer_id);
+    /* setMollieIds() zwijgt bij een fout. Staat het id er niet, dan is het niet
+       gelukt; de volgende poging vindt hem bij Mollie terug. */
+    if (!na?.mollie_subscription_id) return { staat: 'wacht', sub: na || vol };
+    return { staat: 'gelukt', sub: na };
+  } finally {
+    await laatSlot(env, slot);
   }
-  /* Nog geen geldig mandaat: de bank is nog bezig. Geen fout — zie de kop. */
-  if (!mandaat?.id) return { staat: 'wacht', sub: vol };
-
-  await setMollieIds(env, vol.id, { mandateId: mandaat.id });
-
-  /* subMaandBruto() en niet monthlyCents(): bij een maand op maat staat het
-     bedrag op de rij, bevroren op het moment van afsluiten (zie migratie 0038
-     voor waarom het daar staat en niet elke maand opnieuw uit de ladder komt),
-     en er gaat btw overheen omdat de prijs op /plans exclusief is. Zie de kop
-     van subBrutoCents() in slots.js. */
-  const maandBedrag = subMaandBruto(vol) / 100;
-
-  try {
-    const sc = await createMollieSubscription(env, {
-      mollieCustomerId: vol.mollie_customer_id,
-      mandateId: mandaat.id,
-      valueEuros: maandBedrag,
-      description: `VISUAILS ${vol.plan} — ${vol.ref}`,
-      webhookUrl: `${origin}/api/webhook/mollie`,
-      /* VANAF DE VOLGENDE MAAND. De klant heeft zojuist zijn eerste maand betaald
-         (dezelfde betaling die het mandaat afgeeft); de tweede termijn hoort een
-         maand later te vallen, anders betaalt hij twee keer in dezelfde week. */
-      startDate: eersteTermijn(),
-      /* Een jaarverbintenis stopt zichzelf na twaalf termijnen. Netter dan
-         onthouden dat er iets opgezegd moet worden — zie de noot bij `times` in
-         mollie.js. */
-      /* Elf en niet twaalf sinds de eerste betaling de eerste maand IS: één
-         betaald bij het afsluiten, elf via de subscription = twaalf termijnen. */
-      times: vol.term === 'yearly' ? 11 : undefined,
-    });
-    if (!sc?.id) throw new Error('Mollie gaf geen abonnements-id terug');
-    await setMollieIds(env, vol.id, { subscriptionId: sc.id });
-    await activateSubscription(env, vol.id);
-  } catch (err) {
-    console.error('[abonnement] subscription niet aangemaakt —', err?.message || err);
-    return { staat: 'wacht', sub: vol };
-  }
-
-  return { staat: 'gelukt', sub: await loadSubscription(env, vol.customer_id) };
 }
+
+/** Een slot in rate_limits: true als het van ons is (nieuw, of het vorige was verlopen). */
+export async function pakSlot(env, bucket, seconden) {
+  const nu = new Date();
+  try {
+    const rij = await env.DB.prepare(
+      `INSERT INTO rate_limits (bucket, hits, expires_at) VALUES (?1, 1, ?2)
+         ON CONFLICT(bucket) DO UPDATE SET hits = 1, expires_at = excluded.expires_at
+         WHERE rate_limits.expires_at < ?3
+       RETURNING bucket`
+    ).bind(bucket, new Date(nu.getTime() + seconden * 1000).toISOString(), nu.toISOString()).first();
+    return !!rij;
+  } catch (err) {
+    /* Zonder slot (database even weg) liever niet koppelen dan dubbel. */
+    console.error('[abonnement] slot niet te pakken —', bucket, '—', err?.message || err);
+    return false;
+  }
+}
+
+async function laatSlot(env, bucket) {
+  await env.DB.prepare('DELETE FROM rate_limits WHERE bucket = ?1').bind(bucket).run().catch(() => {});
+}
+
 
 /**
  * De datum waarop de eerste echte termijn valt: dezelfde dag, volgende maand.
@@ -515,6 +582,20 @@ export function eersteTermijn(vanaf = new Date()) {
   d.setUTCMonth(d.getUTCMonth() + 1);
   const dag = Math.min(28, vanaf.getUTCDate());
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(dag).padStart(2, '0')}`;
+}
+
+/** De eerstvolgende termijn van een abonnement dat al loopt (zijn eigen dag,
+ *  uit started_at), of eersteTermijn() als die niet te bepalen is. */
+export function volgendeTermijn(sub, nu = new Date()) {
+  /* Nog niet geactiveerd: dat gebeurt nu, en activateSubscription() zet
+     started_at op vandaag. Dan is de termijndag die van vandaag, en niet die van
+     created_at (een betaling om 23:50 die om 00:05 terugkomt). */
+  if (sub?.status !== 'active' && !sub?.started_at) return eersteTermijn(nu);
+  try {
+    const op = termijnEinde(sub, termijnMaand(sub, nu));
+    if (/^\d{4}-\d{2}-\d{2}$/.test(op) && op > nu.toISOString().slice(0, 10)) return op;
+  } catch { /* valt terug */ }
+  return eersteTermijn(nu);
 }
 
 /** Zelfde vorm als seeOther() in account.js; hier apart zodat dit bestand niets uit de schil hoeft te importeren. */
@@ -632,8 +713,18 @@ export async function hervatIncasso(env, sub, origin, { startDate = null } = {})
      betaald, en er is geen mandaat. `true` en niet `false` — er is niets
      misgegaan, er valt niets te doen. Zie koppelSubscription(). */
   if (isPrepaid(sub?.term)) return true;
-  if (!sub?.mollie_customer_id || !sub?.mollie_mandate_id) return false;
+  if (!sub?.mollie_customer_id) return false;
   if (mollieKeyProblems(env)) return false;
+  /* Geen mandaat op de rij (15 oktober 2026): dat gebeurde als het mandaat bij
+     de eerste betaling nog 'pending' was en koppelSubscription() het daarom nooit
+     opsloeg. Hervatten mislukte dan altijd ("Het hervatten lukte zojuist niet").
+     Nu wordt het hier opgevraagd, net als bij het koppelen. */
+  if (!sub.mollie_mandate_id) {
+    const m = await firstPaymentMandate(env, sub.mollie_customer_id).catch(() => null);
+    if (!m?.id) return false;
+    await setMollieIds(env, sub.id, { mandateId: m.id });
+    sub = { ...sub, mollie_mandate_id: m.id };
+  }
   /* ── HOEVEEL TERMIJNEN ER NOG OVER ZIJN — 23 september 2026 ──────────────
      Hier stond `times: 12` voor een jaartermijn, terwijl koppelSubscription()
      er terecht 11 geeft (de eerste betaling ís de eerste maand). Wie na drie
@@ -647,6 +738,29 @@ export async function hervatIncasso(env, sub, origin, { startDate = null } = {})
     if (over <= 0) return true;
     times = over;
   }
+  /* ── ÉÉN TEGELIJK, EN NOOIT EEN TWEEDE — 15 oktober 2026 (levering 52) ──────
+     Hervatten kan sinds vandaag ook uit /admin ("Weer laten lopen") en uit de
+     webhook (Mollie draait een terugboeking terug). Twee keer klikken, of de knop
+     tegelijk met die webhook, maakte twee Mollie-abonnementen: twee incasso's per
+     maand. Nu hetzelfde slot als koppelSubscription(), en eerst kijken of de rij
+     of Mollie er al een heeft. */
+  const slot = `koppel:${sub.id}`;
+  if (!(await pakSlot(env, slot, 120))) return false;
+  try {
+    const rijNu = await env.DB.prepare('SELECT mollie_subscription_id FROM subscriptions WHERE id = ?1').bind(sub.id).first().catch(() => null);
+    if (rijNu?.mollie_subscription_id) return true;
+    const al = await mollieAbonnementVoorRef(env, sub.mollie_customer_id, sub.ref).catch(() => null);
+    if (al?.id) {
+      await setMollieIds(env, sub.id, { subscriptionId: al.id });
+      return true;
+    }
+    return await maakHervatAbonnement(env, sub, origin, { startDate, times });
+  } finally {
+    await laatSlot(env, slot);
+  }
+}
+
+async function maakHervatAbonnement(env, sub, origin, { startDate, times }) {
   try {
     const sc = await createMollieSubscription(env, {
       mollieCustomerId: sub.mollie_customer_id,

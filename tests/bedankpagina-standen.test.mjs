@@ -20,6 +20,7 @@
  * Start een server en een browser: draai hem via zwaar.sh.
  */
 import { createServer } from 'node:http';
+import { metVisIn } from './lib/vis-in.mjs';
 import { readFile, existsSync, mkdirSync } from 'node:fs';
 import { join, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -57,7 +58,7 @@ const server = createServer((req, res) => {
   });
 });
 await new Promise((r) => server.listen(POORT, '127.0.0.1', r));
-const browser = await chromium.launch({ executablePath: browserPad() });
+const browser = metVisIn(await chromium.launch({ executablePath: browserPad() }));
 
 const STATUS = {
   open: { cancelled: false, kind: null, paid: false, payable: true, failed: false, refund: false },

@@ -39,7 +39,30 @@ import { waLink, REVIEW_GEVRAAGD } from './waLink.js';
 import { serviceLabel } from '../data/services.js';
 
 /** De vaste volgorde. */
-export const NU_DOEN_SOORTEN = Object.freeze(['btw', 'leveren', 'revisie', 'oppakken', 'fotos', 'offerte', 'review']);
+/* 'abonnement' (15 oktober 2026, v31-abonnees = a): een terugboeking, een mislukte
+   incasso, of een abonnement dat loopt zonder incasso bij Mollie. Na de btw: het is
+   geld dat niet binnenkomt. Zie AboSql hieronder; staat alleen op het dashboard en
+   in het nachtrapport, niet bij een bestelling. */
+export const NU_DOEN_SOORTEN = Object.freeze(['btw', 'abonnement', 'leveren', 'revisie', 'oppakken', 'fotos', 'offerte', 'review']);
+
+/* Hoe lang een lopend abonnement zonder Mollie-abonnement mag duren voor het hier
+   staat: het koppelen wordt in Studio, bij de webhook en elke nacht geprobeerd. */
+export const ZONDER_INCASSO_NA_DAGEN = 1;
+
+/* ?1 = vóór dit moment begonnen (zonder incasso). Dezelfde kolommen als kol(). */
+export const ABO_SQL = `SELECT 'abonnement' AS soort, s.customer_id AS id, s.ref AS ref, c.brand AS brand, c.name AS name, c.email AS email,
+          NULL AS lang, s.status AS status, NULL AS service, 0 AS product_count, NULL AS betaling, NULL AS closed_at,
+          COALESCE(s.paused_at, s.started_at, s.created_at) AS sleutel, COALESCE(s.paused_at, s.started_at, s.created_at) AS datum,
+          0 AS n, 0 AS n2,
+          CASE WHEN s.status = 'paused' AND s.pause_reason = 'chargeback' THEN 'terugboeking'
+               WHEN s.status = 'paused' AND s.pause_reason = 'payment_failed' THEN 'mislukt'
+               ELSE 'geen-incasso' END AS extra,
+          NULL AS details_json, NULL AS phone, c.phone AS c_phone, c.country AS land
+     FROM subscriptions s JOIN customers c ON c.id = s.customer_id
+    WHERE (s.status = 'paused' AND s.pause_reason IN ('chargeback', 'payment_failed'))
+       OR (s.status = 'active' AND COALESCE(s.term, '') <> 'prepaid' AND s.mollie_customer_id IS NOT NULL
+           AND s.mollie_subscription_id IS NULL AND datetime(COALESCE(s.started_at, s.created_at)) <= datetime(?1))
+    LIMIT 100`;
 
 /* Na hoeveel dagen een ontbrekende foto in de lijst komt. Intern (geen belofte
    aan de klant): de eerste dag kan de klant zelf nog nasturen in Studio. */
@@ -176,8 +199,10 @@ export async function nuDoen(db, { nu = Date.now(), orderId = null } = {}) {
       REVIEW_GEVRAAGD,
       id,
     ];
-    /* Eén verzoek via batch (D1); een nepdatabase zonder batch krijgt ze los. */
+    /* Eén verzoek via batch (D1); een nepdatabase zonder batch krijgt ze los.
+       De abonnementen alleen voor het dashboard, niet bij één bestelling. */
     const stmts = NU_DOEN_SQL_DELEN.map((sql) => db.prepare(sql).bind(...waarden));
+    if (id === null) stmts.push(db.prepare(ABO_SQL).bind(sqlStempel(t - ZONDER_INCASSO_NA_DAGEN * 864e5)));
     const delen = typeof db.batch === 'function' ? await db.batch(stmts) : await Promise.all(stmts.map((s) => s.all()));
     const results = delen.flatMap((d) => d?.results || []).slice(0, 400);
     /* Alleen rijen die deze query zelf maakt: een nepdatabase in een test (of
@@ -266,6 +291,7 @@ export function soortLabel(r) {
     case 'fotos': return 'Foto’s ontbreken';
     case 'offerte': return 'Aanvraag zonder offerte';
     case 'review': return 'Afgerond';
+    case 'abonnement': return ({ terugboeking: 'Terugboeking', mislukt: 'Incasso mislukt' })[r.extra] || 'Geen incasso';
     default: return String(r.soort || 'Bestelling');
   }
 }
@@ -291,6 +317,10 @@ export function watTekst(r, nu = Date.now()) {
     }
     case 'offerte': return `${serviceLabel(r.service, 'nl') || r.service}${g ? `, aangevraagd ${g}` : ''}`;
     case 'review': return g ? `afgerond ${g}` : 'afgerond';
+    case 'abonnement':
+      if (r.extra === 'terugboeking') return `abonnement stilgezet${g ? ` ${g}` : ''}, de incasso is gestopt`;
+      if (r.extra === 'mislukt') return `abonnement stilgezet${g ? ` ${g}` : ''}: Mollie kreeg de incasso niet rond`;
+      return 'loopt, maar Mollie schrijft niet af';
     default: return '';
   }
 }
@@ -337,6 +367,7 @@ export function knopVoor(r, plek = 'dashboard', origin = '') {
       return { label: 'Oppakken', href: `/admin/orders/${r.id}/status`, post: true, velden: { status: 'in_production', back: 'files' } };
     case 'fotos': return { label: 'Foto’s vragen', href: pad('ontbreekt') };
     case 'offerte': return { label: 'Offerte maken', href: pad('offerte') };
+    case 'abonnement': return { label: 'Bekijken', href: `${origin}/admin/customers/${r.id}#abonnement` };
     case 'review': {
       if (plek === 'dashboard' && waLink('review', r).wa) {
         return { label: 'Review vragen', href: `/admin/orders/${r.id}/review-wa`, post: true, nieuwTab: true };

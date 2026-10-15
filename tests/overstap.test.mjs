@@ -99,7 +99,8 @@ let s = await scherm('/account/plan?tab=plan');
 ok('het blok staat er, met de andere plannen en op maat', s.v.overstap && s.v.overstap.opties.map((o) => o.id), ['starter', 'brand', 'maat']);
 ok('  per plan de credits en het bedrag per maand', s.v.overstap.opties.find((o) => o.id === 'brand').credits, `${PLAN_CREDITS.brand} credits per maand`);
 ok('  "170 meer dan nu"', s.v.overstap.opties.find((o) => o.id === 'brand').verschil, `${PLAN_CREDITS.brand - PLAN_CREDITS.studio} meer dan nu`);
-ok('  op maat begint bij het aantal van nu', s.v.overstap.maat.waarde, PLAN_CREDITS.studio);
+/* Sinds levering 51 (A04): het midden tussen nu en het volgende plan, niet het aantal van nu. */
+ok('  op maat begint tussen Pro en Merk (205)', s.v.overstap.maat.waarde, 205);
 ok('  ?naar=brand kiest Merk alvast (de bijkoop-hint)', (await scherm('/account/plan?tab=plan&naar=brand')).v.overstap.opties.find((o) => o.id === 'brand').gekozen, true);
 
 console.log('\n3 · overstappen naar Merk');
@@ -123,7 +124,7 @@ ok('  Mollie terug naar het bedrag van nu', patches().map((m) => m.body.amount.v
 ok('  niets meer klaar', rij().overstap_plan, null);
 r = await post('/account/plan/overstap', { plan: 'maat', credits: '20' });
 ok('op maat met 20 (onder de 30): melding, niets veranderd', [r.headers.get('location'), rij().overstap_plan], ['/account/plan?fout=overstap-keuze&naar=maat#overstappen', null]);
-ok('  de melding in Studio', (await scherm('/account/plan?fout=overstap-keuze')).v.melding, 'Kies een abonnement, en bij een abonnement op maat 30 tot 300 credits (per 5). Er is niets veranderd.');
+ok('  de melding in Studio', (await scherm('/account/plan?fout=overstap-keuze')).v.melding, 'Kies een abonnement, en bij een abonnement op maat 30 tot 300 credits. Er is niets veranderd.');
 r = await post('/account/plan/overstap', { plan: 'studio' });
 ok('het plan van nu kiezen zonder overstap: "zelfde"', r.headers.get('location'), '/account/plan?fout=overstap-zelfde&naar=studio#overstappen');
 mollie.length = 0;

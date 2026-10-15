@@ -128,14 +128,16 @@ import { rosterWoord, ROSTER, modelId, MODEL_ANY } from '../data/models.js';
 import { bundelVoor, kindLabel } from './slots.js';
 /* Het creditboek (ronde B, migratie 0061): credits terug bij annuleren of een
    product dat niet gemaakt kon worden, en "Credits bijstellen" met een reden. */
-import { creditsTerugVoorBestelling, creditsVanBestelling, boekBij, boekAf, creditsBeschikbaar, CREDIT_REDEN, creditSaldo, creditboek } from './creditboek.js';
+import { creditsTerugVoorBestelling, creditsVanBestelling, boekBij, boekAf, creditsBeschikbaar, CREDIT_REDEN, creditSaldo, creditboek, ontdooiTermijn } from './creditboek.js';
 /* De klantpagina toont saldo en creditboek in dezelfde woorden als Studio (2.07). */
 import { saldoWeergave, boekWeergave, boekKoppen, terugZin } from './creditWeergave.js';
 /* Extra credits bijkopen (12 oktober 2026): de aankopen op de klantpagina. */
 import { aankopenVanKlant } from './bijkopen.js';
 import { redenLabel } from './stopReden.js';
 import { CREDITS_GELDIG_MAANDEN, BIJKOOP_MAX_PER_MAAND } from '../data/pricing.js';
-import { planState, queueTerugNaAnnulering, loadSubscription, termijnMaand } from './subscription.js';
+import { planState, queueTerugNaAnnulering, loadSubscription, termijnMaand, activateSubscription } from './subscription.js';
+import { hervatIncasso, volgendeTermijn } from './subscribe.js';
+import { aboStand as aboStandVan, abonneesOverzicht, termijnenVanKlant } from './abonnees.js';
 /* De beeldverhouding, voor de werkmap. `ratioById` met de dienst erbij, zodat een
    verhouding die deze dienst niet kent ook niet in de briefing komt; `ratioField`
    zodat de sleutel hier niet wordt overgetypt. Zie src/data/ratios.js. */
@@ -152,7 +154,7 @@ import { LEVERTAG, MAANDSETTAG } from './iptc.js';
 import { checkRate, peekRate, clientIp } from './ratelimit.js';
 /* sendLoginLink() komt uit account.js en niet uit een eigen kopie hier — zie de noot
    daar. account.js importeert dit bestand niet, dus er is geen kringverwijzing. */
-import { sendLoginLink } from './account.js';
+import { sendLoginLink, mailAboWijziging } from './account.js';
 /* Foto's die via WhatsApp binnenkomen, bij een bestelling namens de klant — 23 sep 2026. */
 import { mintBatch, batchPrefix, safeName, typeFor, MAX_FILE_BYTES, MAX_BATCH_FILES } from './uploads.js';
 import { zipStream, zipDisposition } from './zip.js';
@@ -438,6 +440,7 @@ async function adminGetInner(context) {
   if (kijkMatch) return servePortaalKijk(context, Number(kijkMatch[1]));
 
   if (path === '/admin/customers') return renderCustomers(context);
+  if (path === '/admin/abonnees') return renderAbonnees(context);
   const customerMatch = path.match(/^\/admin\/customers\/(\d+)$/);
   if (customerMatch) return renderCustomer(context, Number(customerMatch[1]));
 
@@ -664,6 +667,11 @@ async function adminPostInner(context) {
      dezelfde reden: dit is de tweede knop die aan het saldo van een klant komt. */
   const slotMatch = path.match(/^\/admin\/customers\/(\d+)\/slots$/);
   if (slotMatch) return handleSlotCorrectie(context, Number(slotMatch[1]), admin);
+
+  /* Een abonnement dat stilstaat na een terugboeking weer laten lopen
+     (v31-terugboeking = a). Zie handleAboWeerLopen(). */
+  const weerLopenMatch = path.match(/^\/admin\/customers\/(\d+)\/abo-weer$/);
+  if (weerLopenMatch) return handleAboWeerLopen(context, Number(weerLopenMatch[1]), admin);
 
   // Delivery upload — August 2026. The studio's own files going the other way.
   const uploadMatch = path.match(/^\/admin\/orders\/(\d+)\/deliver$/);
@@ -1423,6 +1431,55 @@ async function handleRevisionRights(context, customerId) {
  * akkoord op "NL" zou niets betekenen en een akkoord op een ander land dan de
  * klant opgaf is een vergissing. Zonder migratie 0053 gebeurt er niets.
  */
+/*
+ * ── WEER LATEN LOPEN — v31-terugboeking = a (15 oktober 2026) ──────────────────
+ *
+ * Bij een terugboeking stopt de webhook nu ook de incasso bij Mollie. Draait
+ * Mollie de terugboeking zelf terug, dan gaat alles vanzelf weer aan. Is het met
+ * de klant anders rond (hij betaalde het bedrag over, het was een bankfout die
+ * de bank niet terugdraait), dan zet Lucas het hier weer aan:
+ *   · een nieuw Mollie-abonnement op het mandaat dat er ligt, vanaf de volgende
+ *     termijndag (volgendeTermijn): de teruggeboekte termijn wordt niet opnieuw
+ *     afgeschreven;
+ *   · met het vinkje ook de bevroren credits van die termijn vrij;
+ *   · het abonnement weer actief, een regel in het logboek, en de klant krijgt
+ *     de gewone mail "Je abonnement loopt weer".
+ * Lukt het Mollie-deel niet, dan verandert er niets en staat er waarom.
+ */
+async function handleAboWeerLopen(context, customerId, admin) {
+  const { request, env } = context;
+  const form = await request.formData().catch(() => null);
+  const terug = (m) => seeOther(`/admin/customers/${customerId}?abo=${m}#abonnement`);
+  const sub = await loadSubscription(env, customerId).catch(() => null);
+  if (!sub || sub.status !== 'paused' || sub.pause_reason !== 'chargeback') return terug('niet');
+  const actief = { ...sub, status: 'active' };
+  if (sub.term !== 'prepaid' && sub.mollie_customer_id && !sub.mollie_subscription_id) {
+    /* Een overstap die klaarstaat: Mollie krijgt meteen het nieuwe bedrag, zoals
+       bij hervatten in Studio; de webhook zet hem om bij de eerste termijn. */
+    const ov = await overstapVan(env, sub.id).catch(() => null);
+    const voorMollie = ov ? { ...actief, plan: ov.plan, amount_cents: ov.amount_cents, slots_json: ov.slots_json } : actief;
+    const ok = await hervatIncasso(env, voorMollie, new URL(request.url).origin, { startDate: volgendeTermijn(actief) }).catch(() => false);
+    if (!ok) return terug('mollie');
+  }
+  let vrij = 0;
+  if (String(form?.get('credits') || '') === 'vrij') {
+    const { results = [] } = await env.DB.prepare(
+      "SELECT DISTINCT payment_id FROM credit_boek WHERE subscription_id = ?1 AND reden = 'bevroren' AND payment_id IS NOT NULL"
+    ).bind(sub.id).all().catch(() => ({ results: [] }));
+    for (const r of results) {
+      const uit = await ontdooiTermijn(env, { paymentId: r.payment_id, toelichting: 'vrijgegeven in /admin (weer laten lopen)', door: admin?.email || 'admin' }).catch(() => null);
+      vrij += Number(uit?.vrijgegeven) || 0;
+    }
+  }
+  await activateSubscription(env, sub.id);
+  await logAdmin(env, admin, 'plan.weer-lopen', {
+    customerId, detail: `${sub.ref}: weer laten lopen na een terugboeking${vrij ? `, ${vrij} credits vrij` : ''}`,
+  }).catch(() => {});
+  const klant = await env.DB.prepare('SELECT email, brand, name FROM customers WHERE id = ?1').bind(customerId).first().catch(() => null);
+  if (klant?.email) await mailAboWijziging(env, { soort: 'hervat', sub, customer: klant, lang: 'nl' }).catch(() => {});
+  return terug('loopt');
+}
+
 async function handleBtwLandAkkoord(context, customerId) {
   const { request, env } = context;
   const admin = await currentAdmin(context);
@@ -7733,13 +7790,14 @@ async function renderCustomer(context, customerId) {
      zijn (spaarplafond: geldig tot 3 maanden na de laatste termijn). Erbij:
      waarom de klant pauzeerde of opzei (migratie 0063). */
   const abo = await planState(env, customerId).catch(() => null);
-  const [credSaldo, credBoek, aankopen] = await Promise.all([
+  const [credSaldo, credBoek, aankopen, termijnen] = await Promise.all([
     creditSaldo(env, { customerId }).catch(() => null),
     creditboek(env, { customerId }).catch(() => []),
     aankopenVanKlant(env, customerId, { limit: 10 }).catch(() => []),
+    termijnenVanKlant(env.DB, customerId).catch(() => []),
   ]);
   const aboRij = abo?.sub || (credSaldo?.abonnement?.id
-    ? await env.DB.prepare('SELECT id, ref, plan, term, status, pause_reason, paused_at FROM subscriptions WHERE id = ?1').bind(credSaldo.abonnement.id).first().catch(() => null)
+    ? await env.DB.prepare('SELECT id, ref, plan, term, status, pause_reason, paused_at, mollie_customer_id, mollie_subscription_id FROM subscriptions WHERE id = ?1').bind(credSaldo.abonnement.id).first().catch(() => null)
     : null);
   const stopRij = aboRij?.id
     ? await env.DB.prepare('SELECT stop_reden, stop_toelichting FROM subscriptions WHERE id = ?1').bind(aboRij.id).first().catch(() => null)
@@ -7762,11 +7820,14 @@ async function renderCustomer(context, customerId) {
     /* Het spaarplafond (12 oktober 2026): "(je kunt er 360 sparen)" naast het
        saldo, en vervalt er bij de volgende termijn iets, dan in een eigen regel. */
     const bovenNu = abo?.actief && sv.boven ? sv.nieuw : '';
-    const saldoHtml = `<p class="lead-saldo"><strong>${esc(sv.kop)}</strong>${sv.spaar ? ` ${esc(sv.spaar)}` : ''}${sv.vertaling ? ` &mdash; ${esc(sv.vertaling)}` : ''}</p>
+    /* "Je hebt 165 credits" in /admin (15 oktober 2026, A11): het zijn de zinnen die
+       de klant in Studio leest, en zo staat het er nu ook boven. */
+    const saldoHtml = `<p class="meta">Zo staat het voor de klant in Studio:</p>
+    <p class="lead-saldo"><strong>${esc(sv.kop)}</strong>${sv.spaar ? ` ${esc(sv.spaar)}` : ''}${sv.vertaling ? ` &mdash; ${esc(sv.vertaling)}` : ''}</p>
     ${bovenNu ? `<p class="warnline"><strong>${esc(bovenNu)}</strong></p>` : ''}
     ${[sv.eerst, sv.rest, abo?.actief && !bovenNu ? sv.nieuw : '', sv.geldig].filter(Boolean).length ? `<p class="meta">${[sv.eerst, sv.rest, abo?.actief && !bovenNu ? sv.nieuw : '', sv.geldig].filter(Boolean).map(esc).join(' ')}</p>` : ''}
     ${sv.bijgekocht ? `<p class="meta">${esc(sv.bijgekocht)}</p>` : ''}
-    ${credSaldo?.bevroren ? `<p class="warnline"><strong>${credSaldo.bevroren} credits bevroren</strong> &mdash; een termijn is teruggeboekt. Ze komen vanzelf vrij als Mollie de terugboeking terugdraait.</p>` : ''}`;
+    ${credSaldo?.bevroren ? `<p class="warnline"><strong>${credSaldo.bevroren} credits bevroren</strong> &mdash; een termijn is teruggeboekt. Ze komen vanzelf vrij als Mollie de terugboeking terugdraait, of met het vinkje bij &ldquo;Weer laten lopen&rdquo;.</p>` : ''}`;
     /* ── EXTRA CREDITS GEKOCHT — 12 oktober 2026 (ab-v3 = c) ──────────────────
        De betalingen van bijkopen, met de factuur (uit dezelfde reeks als een
        termijnfactuur, zie src/lib/bijkopen.js). Alleen als er ooit iets is
@@ -7789,9 +7850,37 @@ async function renderCustomer(context, customerId) {
       ? `<p class="warnline"><strong>Overstap klaar:</strong> naar ${esc(planName(aboOverstap.plan, 'nl'))} (${esc(aboOverstap.credits)} credits per maand), vanaf de volgende termijn. Aangevraagd op ${esc(mailDatum(String(aboOverstap.at || '').slice(0, 10), 'nl'))}; Mollie schrijft dan al het nieuwe bedrag af. De klant kan hem in Studio terugdraaien.</p>`
       : '';
     const pauzeDag = aboRij?.status === 'paused' && aboRij.paused_at ? String(aboRij.paused_at).slice(0, 10) : '';
-    const statusWoord = !aboRij ? '' : aboRij.status === 'paused' && aboRij.pause_reason === 'chargeback' ? 'stil: termijn teruggeboekt'
-      : aboRij.status === 'paused' && pauzeDag > new Date().toISOString().slice(0, 10) ? `pauze vanaf ${mailDatum(pauzeDag, 'nl')}`
-        : ({ active: 'loopt', pending: 'wacht op machtiging', paused: 'gepauzeerd', cancelled: 'opgezegd', canceled: 'opgezegd', ended: 'afgelopen' }[aboRij.status] || aboRij.status);
+    /* ── WEER LATEN LOPEN — v31-terugboeking = a (15 oktober 2026) ──────────────
+       Stil na een terugboeking: de incasso bij Mollie is gestopt. De knop zet hem
+       weer aan vanaf de volgende termijndag; het vinkje geeft ook de bevroren
+       credits vrij. Zie handleAboWeerLopen(). */
+    const aboMelding = new URL(context.request.url).searchParams.get('abo') || '';
+    const weerLopen = aboRij?.status === 'paused' && aboRij.pause_reason === 'chargeback' ? `
+    <form class="weer-lopen" method="post" action="/admin/customers/${customer.id}/abo-weer">
+      <p class="warnline"><strong>Staat stil na een terugboeking.</strong> De incasso bij Mollie is gestopt, dus er wordt niets afgeschreven. Is het met de klant rond? Zet het dan hier weer aan: Mollie schrijft dan weer af vanaf de volgende termijn${aboRij.term === 'prepaid' ? '' : ` (${esc(mailDatum(volgendeTermijn({ ...aboRij, status: 'active' }), 'nl'))})`}. De teruggeboekte termijn wordt niet opnieuw afgeschreven.</p>
+      ${credSaldo?.bevroren ? `<label class="check"><input type="checkbox" name="credits" value="vrij"> Ook de ${esc(credSaldo.bevroren)} bevroren credits vrijgeven (de klant heeft die termijn alsnog betaald)</label>` : ''}
+      <button class="btn btn-primary btn-sm" type="submit">Weer laten lopen</button>
+    </form>` : '';
+    const aboMeldingHtml = ({
+      loopt: '<p class="okline">Het abonnement loopt weer. De klant kreeg de mail "Je abonnement loopt weer".</p>',
+      mollie: '<p class="warnline">Mollie kon de incasso niet starten: er is geen geldige machtiging, of Mollie was niet bereikbaar. Er is niets veranderd. Kijk in het Mollie-dashboard bij deze klant.</p>',
+    })[aboMelding] || '';
+    /* Dezelfde woorden als op /admin/abonnees en in Nu doen (abonnees.js). */
+    const aboStandNu = aboStandVan(aboRij);
+    const statusWoord = aboRij ? aboStandNu.woord : '';
+    /* ── DE TERMIJNEN — v31-abonnees = a (15 oktober 2026) ──────────────────────
+       Elke betaling van het abonnement, nieuwste eerst, met wat ermee gebeurde
+       (betaald, mislukt, teruggeboekt, terugbetaald) en de factuur. Tot vandaag
+       stond er alleen het creditboek: daarin zie je credits, niet of er geld kwam. */
+    const termijnenHtml = termijnen.length ? `<h3>Termijnen</h3>
+    <table class="files"><thead><tr><th>Datum</th><th>Termijn</th><th class="num">Bedrag</th><th>Stand</th><th>Mollie</th><th>Factuur</th></tr></thead><tbody>${termijnen.map((t) => `<tr>
+         <td>${esc(t.datum)}</td>
+         <td>${esc(t.maand)}</td>
+         <td class="num">${esc(mailBedrag(t.bedrag, 'nl'))}</td>
+         <td>${statPil(t.stand.key, t.stand.tekst)}</td>
+         <td><span class="meta">${esc(t.paymentId)}</span></td>
+         <td>${t.factuurId ? `<a href="/admin/plan-invoices/${esc(t.factuurId)}/pdf">${esc(t.factuur)}</a>` : '—'}</td>
+       </tr>`).join('')}</tbody></table>` : '';
     /* ── DE CORRECTIEKNOP, DICHTGEKLAPT ────────────────────────────────────────
      * In een <details>: de knop die je twee keer per jaar nodig hebt. Eén pot,
      * één knop; de reden is verplicht en komt als regel in het creditboek. */
@@ -7814,13 +7903,19 @@ async function renderCustomer(context, customerId) {
   <div class="card" id="abonnement">
     <div class="row-head">
       <span class="ref">${aboRij ? `Abonnement &middot; ${esc(planName(aboRij.plan, 'nl'))}` : 'Credits'}</span>
-      <span class="meta">${aboRij ? statPil(aboRij.status, statusWoord) : ''}${
+      <span class="meta">${aboRij ? statPil(aboStandNu.key, statusWoord) : ''}${
         aboRij?.term === 'prepaid' && abo ? ` &middot; vooruitbetaald jaar${abo.jaarTot ? `, loopt tot ${esc(mailDatum(abo.jaarTot, 'nl'))}` : ''}${abo.jaarOpgezegd ? ' &middot; <strong>opgezegd — loopt door tot het einde, daarna stopt het</strong>' : ''}` : ''}${
         aboRij?.status === 'cancelled' && abo?.termijnTot ? ` &middot; betaald tot ${esc(mailDatum(abo.termijnTot, 'nl'))}` : ''}</span>
     </div>
-    ${reden ? `<p class="meta"><strong>Reden van ${aboRij?.status === 'cancelled' || abo?.jaarOpgezegd ? 'opzeggen' : 'pauzeren'}:</strong> ${esc(reden)}</p>` : ''}
+    ${/* Alleen bij een pauze of opzegging van de klant zelf (15 oktober 2026, A10): de
+         reden bleef staan na hervatten, ook als het abonnement later stilstond door
+         een terugboeking. */ ''}${reden && (aboRij?.status === 'cancelled' || abo?.jaarOpgezegd || (aboRij?.status === 'paused' && aboRij?.pause_reason === 'customer')) ? `<p class="meta"><strong>Reden van ${aboRij?.status === 'cancelled' || abo?.jaarOpgezegd ? 'opzeggen' : 'pauzeren'}:</strong> ${esc(reden)}</p>` : ''}
+    ${/* De kenmerken bij Mollie, om in het Mollie-dashboard te zoeken (A12). */ ''}${aboRij?.mollie_customer_id ? `<p class="meta">Mollie: ${esc(aboRij.mollie_customer_id)}${aboRij.mollie_subscription_id ? ` &middot; ${esc(aboRij.mollie_subscription_id)}` : ' &middot; geen lopende incasso'}</p>` : ''}
+    ${aboMeldingHtml}
+    ${weerLopen}
     ${overstapRegel}
     ${saldoHtml}
+    ${termijnenHtml}
     <h3>Creditboek</h3>
     ${boekHtml}
     ${aankoopHtml}
@@ -10509,8 +10604,59 @@ const LOG_LABEL = {
   'maandset.publish': 'Maandset gepubliceerd', 'maandset.unpublish': 'Maandset teruggetrokken', 'maandset.upload': 'Maandset aangevuld',
   'model.delete': 'Model verwijderd', 'model.rename': 'Model hernoemd',
   'admin.2fa-aan': 'Twee stappen aan', 'admin.2fa-uit': 'Twee stappen uit', 'admin.2fa-codes': 'Herstelcodes gemaakt', 'admin.2fa-start': 'Twee stappen ingesteld',
+  /* 15 oktober 2026 (controle op de live site): deze stonden er alleen als code. */
+  'order.credits-terug': 'Credits terug na annuleren', 'order.credits-terug.mislukt': 'Credits terugboeken mislukt', 'order.credits-niet-gemaakt': 'Credits terug: product niet gemaakt',
+  'order.hide': 'Bestelling verborgen', 'order.unhide': 'Bestelling weer zichtbaar', 'order.map': 'Bestanden ingedeeld', 'order.fresh_link': 'Nieuwe bestellink gemaild',
+  'order.model_check': 'Uniekheidscontrole gedraaid', 'order.weer-geopend': 'Bestelling weer geopend', 'payment.credits': 'Betaald met credits',
+  'payment.chargeback-terug': 'Terugboeking teruggedraaid', 'plan.chargeback': 'Terugboeking op een termijn', 'plan.chargeback-terug': 'Terugboeking op een termijn teruggedraaid',
+  'testimonial.approve': 'Aanbeveling goedgekeurd', 'testimonial.unapprove': 'Aanbeveling niet langer goedgekeurd', 'model.hide': 'Model verborgen', 'model.unhide': 'Model weer zichtbaar',
+  'plan.weer-lopen': 'Abonnement weer laten lopen', 'formaat.klaar': 'Formaat klaargezet', 'formaat.gemaild': 'Formaat gemaild', 'boekhouding.opnieuw': 'Boekhouding opnieuw geprobeerd', 'admin.recovery-used': 'Herstelcode gebruikt',
   vat: 'Btw-beslissing',
 };
+
+/*
+ * ── /ADMIN/ABONNEES — 15 oktober 2026 (afvinklijst 31, v31-abonnees = a) ────────
+ *
+ * Alle abonnementen op één pagina: klant, plan, stand, volgende afschrijving,
+ * saldo en wat er aandacht vraagt. Bovenaan wat geld kost (een terugboeking, een
+ * mislukte incasso, een abonnement zonder incasso bij Mollie), dan lopend, op
+ * pauze, wachtend en opgezegd. Wat er met één abonnement kan, gebeurt op de
+ * klantpagina; deze pagina is alleen het overzicht. Zie src/lib/abonnees.js.
+ */
+async function renderAbonnees({ env }) {
+  let data = null;
+  let fout = '';
+  try { data = await abonneesOverzicht(env); } catch (e) { fout = String(e?.message || e); }
+  const t = data?.telling || {};
+  const rij = (r) => `<tr${r.ernst >= 2 ? ' class="is-aandacht"' : ''}>
+       <td><a href="/admin/customers/${r.klantId}#abonnement">${esc(r.klant)}</a><br><span class="meta">${esc(r.ref)}</span></td>
+       <td>${esc(r.plan)}<br><span class="meta">${esc(r.termijn)}</span></td>
+       <td>${statPil(r.stand.key, r.stand.woord)}</td>
+       <td>${r.volgende ? `${esc(mailDatum(r.volgende, 'nl'))}<br><span class="meta">${esc(mailBedrag(r.volgendeBruto, 'nl'))} incl. btw</span>` : '<span class="meta">—</span>'}</td>
+       <td class="num">${esc(r.saldo)}</td>
+       <td>${r.signalen.length ? r.signalen.map((g) => `<span class="abo-signaal is-${g.ernst >= 2 ? 'hoog' : g.ernst === 1 ? 'mid' : 'info'}">${esc(g.tekst)}</span>`).join(' ') : '<span class="meta">—</span>'}</td>
+     </tr>`;
+  const actueel = (data?.rijen || []).filter((r) => !['cancelled', 'canceled', 'ended'].includes(r.status) || r.ernst >= 1);
+  const oud = (data?.rijen || []).filter((r) => !actueel.includes(r));
+  const kop = '<thead><tr><th>Klant</th><th>Plan</th><th>Stand</th><th>Volgende afschrijving</th><th class="num">Credits</th><th>Aandacht</th></tr></thead>';
+  const body = `
+${adminNav('abonnees')}
+<h1>Abonnees</h1>
+<p class="lede">Elk abonnement met zijn stand, de volgende afschrijving en het saldo. Bovenaan wat geld kost: een terugboeking, een mislukte incasso of een abonnement zonder incasso bij Mollie. Klik op de klant voor de termijnen, het creditboek en de knoppen.</p>
+${fout ? `<p class="warnline">De abonnementen konden niet gelezen worden (${esc(fout)}).</p>` : `
+<div class="abo-telling">
+  <span><strong>${esc(t.lopend || 0)}</strong> lopend</span>
+  <span><strong>${esc(t.pauze || 0)}</strong> op pauze of stil</span>
+  <span><strong>${esc(t.wacht || 0)}</strong> wacht op de eerste betaling</span>
+  <span><strong>${esc(t.opgezegd || 0)}</strong> opgezegd</span>
+  <span><strong>${esc(mailBedrag(t.maandNetto || 0, 'nl'))}</strong> per maand, excl. btw</span>
+  ${t.aandacht ? `<span class="is-aandacht"><strong>${esc(t.aandacht)}</strong> ${t.aandacht === 1 ? 'vraagt' : 'vragen'} aandacht</span>` : ''}
+</div>
+${actueel.length ? `<table class="files abo-lijst">${kop}<tbody>${actueel.map(rij).join('')}</tbody></table>` : '<p class="empty">Nog geen abonnees.</p>'}
+${oud.length ? `<details><summary>Opgezegd en afgelopen (${oud.length})</summary><table class="files abo-lijst">${kop}<tbody>${oud.map(rij).join('')}</tbody></table></details>` : ''}
+<p class="meta">Per maand: de lopende maandincasso's, excl. btw (vooruitbetaalde jaren niet). Een overstap die klaarstaat, telt bij de volgende afschrijving al mee; Mollie schrijft dan het nieuwe bedrag af.</p>`}`;
+  return html(page({ title: 'Abonnees', body }));
+}
 
 async function renderLog({ env }) {
   let rows = [];
@@ -10533,7 +10679,7 @@ ${missing
     ? `<table class="files"><thead><tr><th>Wanneer</th><th>Wie</th><th>Wat</th><th>Details</th></tr></thead><tbody>
         ${rows.map((r) => `<tr>
           <td class="muted">${esc(when(r.created_at))}</td>
-          <td class="muted">${esc(r.admin_email || '—')}</td>
+          <td class="muted log-wie">${esc(r.admin_email || '—')}</td>
           <td>${esc(LOG_LABEL[r.action] || LOG_LABEL[String(r.action).split(':')[0]] || r.action)} <code class="meta">${esc(r.action)}</code></td>
           <td>${esc(r.detail || '')}${r.order_id ? ` <a href="/admin/orders/${r.order_id}/files">bestelling &rarr;</a>` : ''}${r.customer_id ? ` <a href="/admin/customers/${r.customer_id}">klant &rarr;</a>` : ''}</td>
         </tr>`).join('')}
@@ -13718,6 +13864,8 @@ const NAV = [
   ['dashboard', '/admin', 'Dashboard'],
   ['planning', '/admin/planning', 'Planning'],
   ['customers', '/admin/customers', 'Klanten'],
+  /* v31-abonnees = a (15 oktober 2026): alle abonnementen op één pagina. */
+  ['abonnees', '/admin/abonnees', 'Abonnees'],
   ['maandset', '/admin/maandset', 'Maandset'],
   ['testimonials', '/admin/testimonials', 'Aanbevelingen'],
   ['formaten', '/admin/formaten', 'Formaten'],

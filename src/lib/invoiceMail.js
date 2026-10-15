@@ -337,6 +337,9 @@ const SUB_COPY = {
        boven een afschrijving van een heel jaar. */
     ledeFirstPrepaid: (plan, credits, dag) => `Bedankt. Je jaar is vooruitbetaald en ${abo(plan)} loopt: twaalf maanden lang ${credits} credits per maand, die je in VISUAILS Studio besteedt aan catalog, lifestyle en video. Er wordt dit jaar niets meer afgeschreven. Je bestelt wanneer je wilt, via het gewone formulier.`,
     ledeNext: (maand, credits) => `De termijn voor ${maand} is binnen. Je ${credits} credits voor deze maand staan klaar in VISUAILS Studio. Zolang je abonnement loopt, vervallen je credits niet; in Studio zie je hoeveel je er kunt sparen.`,
+    /* Viel er bij deze termijn iets boven het spaarplafond weg (15 oktober 2026)?
+       Dan zei de mail "je credits vervallen niet" op de dag dat er vervielen. */
+    ledeBoven: (n, p) => `Je saldo kwam daarmee boven je spaarplafond van ${p}: ${n === 1 ? '1 credit is' : `${n} credits zijn`} vandaag vervallen.`,
     rPlan: 'Abonnement',
     rCredits: 'Credits per maand',
     rInvoice: 'Factuurnummer',
@@ -367,6 +370,7 @@ const SUB_COPY = {
     ledeFirst: (plan, credits, dag) => `Thank you. Your first month is paid and ${planEn(plan)} is running: ${credits} credits a month, which you spend on catalog, lifestyle and video. You order whenever you like, through the regular form.`,
     ledeFirstPrepaid: (plan, credits, dag) => `Thank you. Your year is paid in advance and ${planEn(plan)} is running: twelve months of ${credits} credits a month, which you spend in VISUAILS Studio on catalog, lifestyle and video. Nothing else is charged this year. You order whenever you like, through the regular form.`,
     ledeNext: (maand, credits) => `The payment for ${maand} came through. Your ${credits} credits for this month are ready in VISUAILS Studio. While your plan runs, your credits do not expire; Studio shows how many you can save.`,
+    ledeBoven: (n, p) => `That took your balance above your savings limit of ${p}: ${n === 1 ? '1 credit' : `${n} credits`} lapsed today.`,
     rPlan: 'Plan',
     rCredits: 'Credits per month',
     rInvoice: 'Invoice number',
@@ -407,7 +411,7 @@ function maandNaam(month, lang) {
  * @param {number} o.credits    credits per maand
  * @param {boolean} o.eerste    de eerste betaalde maand (dan de welkomsttekst)
  */
-export async function mailSubscriptionInvoice(env, { sub, customer, invoice, planNaam, credits, eerste, loginLink = '' }) {
+export async function mailSubscriptionInvoice(env, { sub, customer, invoice, planNaam, credits, eerste, loginLink = '', vervallen = 0, plafond = 0 }) {
   try {
     /* De eerste maand is ook zonder factuur een mail waard: dat is de welkomst-
        mail, en die hoort er te zijn ook als het papier even niet lukt. */
@@ -464,6 +468,7 @@ export async function mailSubscriptionInvoice(env, { sub, customer, invoice, pla
     const body = [
       h1(eerste ? t.headWelcome : t.headNext, esc(ref)),
       p(esc(eerste ? (sub.term === 'prepaid' ? t.ledeFirstPrepaid : t.ledeFirst)(planNaam, credits, dag) : t.ledeNext(maand, credits))),
+      !eerste && vervallen > 0 && plafond > 0 ? p(esc(t.ledeBoven(vervallen, plafond))) : '',
       ...welkom,
       factuurRijen,
       /* Zonder factuur (het maken mislukte bij de eerste maand): geen zin over

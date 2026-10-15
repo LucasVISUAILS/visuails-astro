@@ -27,6 +27,7 @@
  *      niet, van 320 tot 1440 px.
  */
 import http from 'node:http';
+import { metVisIn } from './lib/vis-in.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -114,7 +115,7 @@ await new Promise((r) => server.listen(0, r));
 const PORT = server.address().port;
 const { chromium } = await import('playwright');
 const EXE = '/opt/pw-browsers/chromium';
-const browser = await chromium.launch(fs.existsSync(EXE) ? { executablePath: EXE } : {});
+const browser = metVisIn(await chromium.launch(fs.existsSync(EXE) ? { executablePath: EXE } : {}));
 const KEUZE = { name: 'vis_consent', value: encodeURIComponent(JSON.stringify({ version: 1, analytics: false, at: '2026-10-15T00:00:00.000Z' })), domain: 'localhost', path: '/' };
 async function open(url, breed, hoog = 900) {
   const ctx = await browser.newContext({ viewport: { width: breed, height: hoog } });

@@ -47,7 +47,7 @@ import '@fontsource-variable/martian-mono/standard.css';
 
 const CHIP_STAND = { signal: 'in_production', warn: 'past_due' };
 
-import { studioHeaders, studioNav, STUDIO_ICONS } from '../lib/account.js';
+import { studioHeaders, studioNav, STUDIO_ICONS, ingelogdCookie, ingelogdCookieWeg, heeftIngelogdCookie } from '../lib/account.js';
 import { heeftKlap } from '../lib/studioKoppen.js';
 /* De melding bovenaan (ronde 9) — gezet in /admin/melding, zie src/lib/melding.js. */
 import { leesMelding, meldingTekst } from '../lib/melding.js';
@@ -78,6 +78,13 @@ const {
 } = Astro.props;
 
 for (const [k, v] of Object.entries(studioHeaders())) Astro.response.headers.set(k, v);
+/* vis_in (v31-me = a, src/data/cookies.js): de site vraagt /account/me alleen als
+   dit cookie er staat. Elke Studio-pagina zet hem opnieuw, zodat hij zo lang leeft
+   als de sessie (die schuift mee bij gebruik); een sessie van vóór 15 oktober 2026
+   krijgt hem zo de eerste keer in Studio. Het inlogscherm (vorm 'kaart', dus geen
+   sessie) haalt een achtergebleven vis_in weg. */
+if (vorm === 'schil' && customer) Astro.response.headers.append('set-cookie', ingelogdCookie());
+if (vorm === 'kaart' && !customer && heeftIngelogdCookie(Astro.request)) Astro.response.headers.append('set-cookie', ingelogdCookieWeg());
 
 const melding = await leesMelding(pagesContext(Astro).env);
 const meldingTxt = meldingTekst(melding, lang);

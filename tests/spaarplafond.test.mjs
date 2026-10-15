@@ -83,7 +83,7 @@ const s10 = await creditSaldo(env, { customerId: 1 }, { nu: dag('2027-01-10') })
 ok('10 januari: 356 credits', s10.saldo, 356);
 ok('  zonder datums die gelden (vier datums nu: één, en die schuift mee)', [s10.echteDatums, s10.vervalt.map((v) => v.op)], [[], ['2027-04-08']]);
 ok('  het plafond 360', s10.plafond, PLAFOND);
-ok('  op 8 februari komen er 120 bij en vervalt 116', s10.boven, { op: '2027-02-08', nieuw: 120, aantal: 116 });
+ok('  op 8 februari komen er 120 bij en vervalt 116', s10.boven, { op: '2027-02-08', nieuw: 120, aantal: 116, plafond: 360, overstap: false });
 const w = saldoWeergave(s10, 'nl', dag('2027-01-10'));
 ok('  Studio: "Je hebt 356 credits (je kunt er 360 sparen). Op 8 februari … 116 …"', `${w.zin} ${w.nieuw}`,
   'Je hebt 356 credits (je kunt er 360 sparen). Op 8 februari komen er 120 bij: gebruik er vóór die dag 116, anders vallen ze weg.');
@@ -95,7 +95,7 @@ ok('  niets vervalt er tussendoor (geen herinnering per partij)',
 
 console.log('\n2 · de herinnering vóór de termijn');
 ok('op 1 februari (7 dagen vooraf): één herinnering met 116', await plafondInZicht(env, { dagen: 7, nu: dag('2027-02-01') }),
-  [{ customerId: 1, subscriptionId: 1, op: '2027-02-08', nieuw: 120, boven: 116, saldo: 356, plafond: PLAFOND }]);
+  [{ customerId: 1, subscriptionId: 1, op: '2027-02-08', nieuw: 120, boven: 116, saldo: 356, plafond: PLAFOND, overstap: '' }]);
 ok('op 31 januari en 2 februari niet', [(await plafondInZicht(env, { dagen: 7, nu: dag('2027-01-31') })).length, (await plafondInZicht(env, { dagen: 7, nu: dag('2027-02-02') })).length], [0, 0]);
 mails.length = 0;
 const nacht = await tasks.herinnerCredits(env, dag('2027-02-01', '03:00:00'));
@@ -126,7 +126,7 @@ const mrt = await boekTermijnBij(env, sub, '2027-03', 'tr_mrt', dag('2027-03-08'
 ok('8 maart: 260 + 120 = 380, dus 20 boven het plafond', mrt.boven, 20);
 const t2 = await creditsTerugVoorBestelling(env, { orderId: honderd, reden: CREDIT_REDEN.annulering, nu: dag('2027-03-10') });
 ok('10 maart: de 100 komen helemaal terug (wie op tijd bestelde, raakt niets kwijt)', [t2.aantal, await creditsBeschikbaar(env, 1, dag('2027-03-10'))], [100, 460]);
-ok('  maar bij de volgende termijn tellen ze mee: 460 + 120 − 360 = 220', t2.boven, { op: '2027-04-08', nieuw: 120, aantal: 220 });
+ok('  maar bij de volgende termijn tellen ze mee: 460 + 120 − 360 = 220', t2.boven, { op: '2027-04-08', nieuw: 120, aantal: 220, plafond: 360, overstap: false });
 ok('  en de annuleringsmail zegt dat', terugZin(t2, 'nl', dag('2027-03-10')),
   '100 credits staan weer op je saldo. Op 8 april komen er 120 bij: gebruik er vóór die dag 220, anders vallen ze weg.');
 const apr = await boekTermijnBij(env, sub, '2027-04', 'tr_apr', dag('2027-04-08'));

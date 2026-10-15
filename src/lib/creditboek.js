@@ -889,7 +889,10 @@ export async function creditboek(db, wie, { nu = new Date() } = {}) {
  *     saldo,                                   // nu bruikbaar
  *     vervalt:      [{ op, aantal }],          // per vervaldatum, oplopend
  *     vervaltEerst: { op, aantal } | null,     // de eerstvolgende
- *     nieuw:        { op, aantal } | null,     // volgende termijn (alleen bij een lopend abonnement)
+ *     nieuw:        { op, aantal, overstap? } | null,
+ *                   // volgende termijn (alleen bij een lopend abonnement); bij een
+ *                   // overstap die klaarstaat de credits van het nieuwe plan, en
+ *                   // overstap: { plan, credits, plafond }
  *     partijen:     [{ id, aantal, rest, binnen, vervaltOp, reden, maand, soort }],
  *     abonnement:   { id, ref, plan, term, status } | null,
  *     bevroren,                                // vast na een terugboeking (8.11), niet in `saldo`
@@ -897,9 +900,11 @@ export async function creditboek(db, wie, { nu = new Date() } = {}) {
  *     ── het spaarplafond (12 oktober 2026) ──
  *     plafond,      // spaarPlafond() van het huidige abonnement, of null zonder abonnement
  *     aboSaldo,     // het saldo zonder bijgekochte credits: dat telt voor het plafond
- *     boven:        { op, aantal, nieuw } | null,
+ *     boven:        { op, aantal, nieuw, plafond, overstap } | null,
  *                   // bij een lopend abonnement: wat er bij de volgende termijn
- *                   // (op `op`, `nieuw` erbij) boven het plafond zou vervallen
+ *                   // (op `op`, `nieuw` erbij) boven het plafond zou vervallen;
+ *                   // `plafond` is dat van die termijn (bij een overstap het
+ *                   // nieuwe), `overstap` zegt of er dan een overstap ingaat
  *     aboEinde,     // de dag waarop de credits van het abonnement vervallen als er
  *                   // geen termijn meer komt (3 maanden na de laatste), of ''
  *     echteDatums:  [{ op, aantal }],
@@ -916,6 +921,17 @@ export async function creditboek(db, wie, { nu = new Date() } = {}) {
  * lopend abonnement bij de volgende termijn opschuiven; een scherm leest
  * `echteDatums`.
  */
+/** De overstap die klaarstaat, voor het saldo. Eigen query met een vangnet: zonder
+ *  migratie 0068 bestaan de kolommen niet, en dan is er gewoon geen overstap. */
+async function overstapVoorSaldo(D, subId) {
+  const r = await D.prepare(
+    'SELECT overstap_plan, overstap_slots_json FROM subscriptions WHERE id = ?1'
+  ).bind(subId).first().catch(() => null);
+  if (!r?.overstap_plan) return null;
+  const credits = creditsVoor({ plan: r.overstap_plan, slots_json: r.overstap_slots_json });
+  return credits ? { plan: r.overstap_plan, credits } : null;
+}
+
 export async function creditSaldo(db, wie, { nu = new Date() } = {}) {
   const D = dbVan(db);
   const leeg = {
@@ -954,13 +970,25 @@ export async function creditSaldo(db, wie, { nu = new Date() } = {}) {
       if (Number(t?.n || 0) >= TERMS.prepaid.months) volgt = false;
     }
     const op = termijnEinde(sub, maand);
-    if (volgt && op) nieuw = { op, aantal: creditsVoor(sub) };
+    if (volgt && op) {
+      /* EEN OVERSTAP DIE KLAARSTAAT (15 oktober 2026). Die gaat in bij deze
+         termijn: dan komen de credits van het nieuwe plan erbij, en geldt het
+         spaarplafond van het nieuwe plan. Zonder dit zei Studio bij een overstap
+         van Merk naar Starter "op 15 november komen er 290 bij: gebruik er 290",
+         terwijl er 45 bijkwamen en 780 wegvielen. */
+      const ov = await overstapVoorSaldo(D, sub.id);
+      nieuw = { op, aantal: ov ? ov.credits : creditsVoor(sub) };
+      if (ov) nieuw.overstap = { plan: ov.plan, credits: ov.credits, plafond: spaarPlafond(ov.credits) };
+    }
   }
   /* Het plafond van het huidige abonnement (ook gepauzeerd: bij hervatten geldt
      het weer); een opgezegd of afgelopen abonnement heeft er geen meer. */
   const plafond = sub && ['active', 'paused', 'pending'].includes(sub.status) ? spaarPlafond(creditsVoor(sub)) : null;
-  const boven = nieuw && plafond
-    ? { op: nieuw.op, nieuw: nieuw.aantal, aantal: Math.max(0, aboSaldo + nieuw.aantal - plafond) }
+  /* Bij de volgende termijn telt het plafond dat dan geldt: bij een overstap dat
+     van het nieuwe plan. */
+  const plafondTermijn = nieuw?.overstap ? nieuw.overstap.plafond : plafond;
+  const boven = nieuw && plafondTermijn
+    ? { op: nieuw.op, nieuw: nieuw.aantal, aantal: Math.max(0, aboSaldo + nieuw.aantal - plafondTermijn), plafond: plafondTermijn, overstap: !!nieuw.overstap }
     : null;
   /* Een partij die op de dag van de termijn vervalt, vervalt om middernacht:
      vóór de termijn binnen is. Vandaar <=. */
@@ -1031,7 +1059,8 @@ export async function plafondInZicht(db, { dagen = 7, nu = new Date() } = {}) {
     if (!s.boven || s.boven.op !== op || !s.boven.aantal) continue;
     uit.push({
       customerId, subscriptionId: s.abonnement?.id ?? null, op,
-      nieuw: s.boven.nieuw, boven: s.boven.aantal, saldo: s.aboSaldo, plafond: s.plafond,
+      nieuw: s.boven.nieuw, boven: s.boven.aantal, saldo: s.aboSaldo, plafond: s.boven.plafond ?? s.plafond,
+      overstap: s.boven.overstap ? s.nieuw?.overstap?.plan || '' : '',
     });
   }
   return uit;
@@ -1057,6 +1086,8 @@ export async function creditsVoorFormulier(db, customerId, nu = new Date()) {
   /* In de volgorde waarin ze opgaan: eerst de bijgekochte, dan het abonnement. */
   return {
     saldo: s.saldo, vervalt: [...s.bijgekocht.vervalt, ...s.echteDatums], nieuw: s.nieuw,
-    plafond: s.nieuw ? s.plafond : null, aboSaldo: s.aboSaldo,
+    /* Het plafond dat bij de volgende termijn geldt (bij een overstap dat van het
+       nieuwe plan): stap 5 rekent daarmee uit wat er dan zou wegvallen. */
+    plafond: s.nieuw ? (s.boven?.plafond ?? s.plafond) : null, aboSaldo: s.aboSaldo,
   };
 }

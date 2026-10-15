@@ -38,6 +38,10 @@ const T = {
     /* Het spaarplafond (12 oktober 2026). */
     spaar: (p) => `(je kunt er ${p} sparen)`,
     boven: (d, n, eraf) => `Op ${d} komen er ${n} bij: gebruik er vóór die dag ${eraf}, anders vallen ze weg.`,
+    /* Bij een overstap die klaarstaat (15 oktober 2026): dan geldt het plafond van
+       het nieuwe plan, en dat moet de klant weten. */
+    nieuwOverstap: (d, n) => `Op ${d} gaat je overstap in en komen er ${n} bij.`,
+    bovenOverstap: (d, n, eraf, p) => `Op ${d} gaat je overstap in en komen er ${n} bij; je kunt er dan ${p} sparen. Gebruik er vóór die dag ${eraf}, anders vallen ze weg.`,
     totEnMet: (d) => `Je credits blijven geldig tot en met ${d}.`,
     totEnMetDelen: (delen) => `${delen.map(([n, d], i) => (i === 0 ? `${n} credits blijven geldig tot en met ${d}` : `${n} tot en met ${d}`)).join(', ')}.`,
     /* Extra credits bijkopen (12 oktober 2026). */
@@ -74,6 +78,8 @@ const T = {
     daarna: (n, d) => `After that, ${n} more ${n === 1 ? 'stays' : 'stay'} valid up to and including ${d}.`,
     spaar: (p) => `(you can save up to ${p})`,
     boven: (d, n, eraf) => `On ${d}, ${n} more come in: use ${eraf} before that day, or they lapse.`,
+    nieuwOverstap: (d, n) => `On ${d} your switch starts and ${n} more come in.`,
+    bovenOverstap: (d, n, eraf, p) => `On ${d} your switch starts and ${n} more come in; you can then save up to ${p}. Use ${eraf} before that day, or they lapse.`,
     totEnMet: (d) => `Your credits stay valid up to and including ${d}.`,
     totEnMetDelen: (delen) => `${delen.map(([n, d], i) => (i === 0 ? `${n} credits stay valid up to and including ${d}` : `${n} up to and including ${d}`)).join(', ')}.`,
     bijgekocht: (n, delen) => `Of these, ${n} were bought: they are used first and do not count towards your savings limit; ${delen.length === 1 ? `they stay valid up to and including ${delen[0][1]}` : delen.map(([k, d], i) => (i === 0 ? `${k} stay valid up to and including ${d}` : `${k} up to and including ${d}`)).join(', ')}.`,
@@ -197,9 +203,11 @@ export function saldoWeergave(s, lang = 'nl', nu = new Date()) {
     vertaling: '',
     eerst: '',
     rest: '',
-    nieuw: loopt
-      ? (boven ? t.boven(datumLang(s.nieuw.op, L, nu), heel(s.nieuw.aantal), boven) : t.nieuw(datumLang(s.nieuw.op, L, nu), heel(s.nieuw.aantal)))
-      : '',
+    nieuw: !loopt ? ''
+      : s.nieuw.overstap
+        ? (boven ? t.bovenOverstap(datumLang(s.nieuw.op, L, nu), heel(s.nieuw.aantal), boven, heel(s.nieuw.overstap.plafond))
+          : t.nieuwOverstap(datumLang(s.nieuw.op, L, nu), heel(s.nieuw.aantal)))
+        : (boven ? t.boven(datumLang(s.nieuw.op, L, nu), heel(s.nieuw.aantal), boven) : t.nieuw(datumLang(s.nieuw.op, L, nu), heel(s.nieuw.aantal))),
     boven,
     bijgekocht: '',
     bevroren: heel(s?.bevroren) ? t.bevroren(heel(s.bevroren)) : '',

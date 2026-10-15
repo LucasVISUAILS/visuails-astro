@@ -12,7 +12,7 @@ import JuridischHal from '../components/JuridischHal.astro';
 // De levensduren komen uit src/data/cookies.js en worden hier niet meer getypt:
 // deze pagina is de plek waar wij opschrijven hoe lang een cookie leeft, en die
 // belofte hoorde naast de code te staan die hem zet. Zie de noot in dat bestand.
-import { SESSION_COOKIE_DAYS, PREFERENCE_COOKIE_DAYS, cookieDuur, CONCEPT_SLEUTEL, CONCEPT_DAGEN, MELDING_SLEUTEL, PROEF_WEG_DAGEN, TIPS_SLEUTEL, TIPS_COOKIE } from '../data/cookies.js';
+import { SESSION_COOKIE_DAYS, PREFERENCE_COOKIE_DAYS, cookieDuur, CONCEPT_SLEUTEL, CONCEPT_DAGEN, MELDING_SLEUTEL, PROEF_WEG_DAGEN, TIPS_SLEUTEL, TIPS_COOKIE, INGELOGD_COOKIE } from '../data/cookies.js';
 // ── WAT ER AF GING — 14 oktober 2026 (afvinklijst 26) ─────────────────────────
 // v26-donker = a: VISUAILS Studio is alleen licht en zet geen thema-cookie meer,
 // dus die regel is weg. /admin zet onder /admin nog een cookie met dezelfde naam,
@@ -68,6 +68,7 @@ import { bijgewerktOp } from '../data/juridischeDatums.js';
     <h2>What we actually set today</h2><p>Naming them is more useful than describing categories, so here they are in full. This is the complete list.</p>
     <ul class="checklist">
       <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_account</code></strong> — keeps you signed in to VISUAILS Studio after you sign in with the code or the link we email you. Essential. Expires after {cookieDuur(SESSION_COOKIE_DAYS)}, or when you sign out.</span></li>
+      <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>{INGELOGD_COOKIE}</code></strong> — tells the website that you are signed in, so it only asks for your account then (to show your name in the bar, for example). It holds nothing but a 1. Set when you sign in. Essential. Expires together with <code>vis_account</code>, or when you sign out.</span></li>
       <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_consent</code></strong> — remembers the choice you made in the cookie banner, so we stop asking. Essential, and the reason a refusal sticks. Expires after {cookieDuur(PREFERENCE_COOKIE_DAYS)}, when we ask again.</span></li>
       <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_lang</code></strong> — remembers whether you read VISUAILS in Dutch or English, set only when you use the language switch (on the site or in Studio). With it, visuails.com opens in the language you picked last time. Essential. Expires after {cookieDuur(PREFERENCE_COOKIE_DAYS)}.</span></li>
       <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_nav</code></strong> — remembers whether you collapsed the menu in VISUAILS Studio, set only when you click that button. Essential. Expires after {cookieDuur(PREFERENCE_COOKIE_DAYS)}.</span></li>

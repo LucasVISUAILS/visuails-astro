@@ -14,6 +14,7 @@
  * Schermafdrukken in .render/b3-*.png.
  */
 import fs from 'node:fs';
+import { metVisIn } from './lib/vis-in.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
@@ -97,7 +98,7 @@ const partij = (k, id, aantal, rest, binnen, vervalt) => `INSERT INTO credit_boe
 }
 
 const studio = await startStudio({ extraSql });
-const browser = await chromium.launch({ executablePath: process.env.CHROME || browserPad() });
+const browser = metVisIn(await chromium.launch({ executablePath: process.env.CHROME || browserPad() }));
 const host = new URL(studio.url).hostname;
 
 /* Alle tekst in de gegeven blokken: maat en contrast (met doorzichtige lagen gemengd). */

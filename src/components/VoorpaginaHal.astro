@@ -106,6 +106,8 @@ const LOOKS = [
 ].filter((k) => k.beeld);
 const GEZICHTEN_RIJ = ROSTER.slice(0, 5);
 const DRIE = (n: number) => String(n).padStart(2, '0');
+/* Stap 3: wanneer elk vinkje komt, in seconden vanaf het begin van de stap (zie de li hieronder). */
+const KEUR_TIK = [0.45, 0.9, 1.25, 1.75];
 
 const COPY = {
   nl: {
@@ -120,7 +122,7 @@ const COPY = {
       ['Jij keurt goed', 'Per beeld goedkeuren. Alles in één keer downloaden.', ''],
     ],
     goedgekeurd: (n: number) => `${n} van ${n} goedgekeurd`,
-    compleet: 'Compleet', revisie: 'Revisie: kleur', opnieuwGeleverd: 'Opnieuw geleverd',
+    compleet: 'Compleet',
     uitlegZinnen: [
       `Je stuurt ${fotos} telefoonfoto’s per product: ${SHOT_NAMEN.nl}. We kijken meteen of ze compleet zijn.`,
       'Elk beeld kijken we zorgvuldig na en werken we met de hand af, zodat je hele set dezelfde professionele uitstraling heeft: als een fotostudio, maar sneller, en jij houdt tijd over voor je merk.',
@@ -171,7 +173,7 @@ const COPY = {
       ['You approve', 'Approve image by image. Download everything at once.', ''],
     ],
     goedgekeurd: (n: number) => `${n} of ${n} approved`,
-    compleet: 'Complete', revisie: 'Revision: colour', opnieuwGeleverd: 'Delivered again',
+    compleet: 'Complete',
     uitlegZinnen: [
       `You send ${fotos} phone photos per product: ${SHOT_NAMEN.en}. We check right away that they are complete.`,
       'We check every image carefully and finish it by hand, so your whole set has the same professional look: like a photo studio, only faster, and you keep your time for your brand.',
@@ -282,7 +284,7 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
   </section>
 
   {/* ── 02 · HOE HET WERKT ───────────────────────────────────────────────── */}
-  <section class="h-sec h-hoe" id="hoe" aria-labelledby="h-hoe" data-uitleg={uitleg ? '' : undefined} data-uitleg-maat="3000 12100 3600" data-uitleg-start="400">
+  <section class="h-sec h-hoe" id="hoe" aria-labelledby="h-hoe" data-uitleg={uitleg ? '' : undefined} data-uitleg-maat="3000 12100 3000" data-uitleg-start="400">
     <header class="h-sec-kop h-in">
       <div>
         <p class="h-pil"><span>{c.hoeLabel}</span></p>
@@ -437,10 +439,14 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
                 <ul class="h-keur-rij" role="list">
                   {/* Voorkant en achterkant staan op wit en blijven heel (h-heel:
                       passend in het vak); het detail en de draagfoto vullen hun vak. */}
-                  {/* AFVINKLIJST 29 (v29-stap3 = a): de draagfoto gaat eerst terug voor een
-                      revisie (de kleur), komt opnieuw binnen en krijgt dan zijn vinkje. */}
+                  {/* ALLEEN GOEDKEUREN — Lucas, 15 oktober 2026, 20:42: "Het revisie
+                      gedeelte hoeft daar niet, alleen laten zien dat de klant de beelden
+                      simpelweg goedkeurde." (Dat verving v29-stap3 = a.) Vier beelden, vier
+                      tikken, in het tempo van iemand die elk beeld even bekijkt: niet
+                      gelijk verdeeld, want zo keurt niemand. `--kt` is het moment van het
+                      vinkje vanaf het begin van stap 3 (zie hal.css). */}
                   {geleverd(lang).map((b, k) => (
-                    <li class:list={[k < 2 && 'h-heel', k === 3 && 'h-keur-rev']} style={`--d:${k}`}><img src={b.src} width={b.w} height={b.h} alt="" loading="lazy" decoding="async" />{k === 3 && <span class="h-keur-glans" aria-hidden="true" />}{k === 3 && <span class="h-keur-revchip" aria-hidden="true"><span set:html={ik('opnieuw')} /><span class="h-keur-rev-a">{c.revisie}</span><span class="h-keur-rev-b">{c.opnieuwGeleverd}</span></span>}<span class="h-vink" aria-hidden="true" set:html={ik('check')} /></li>
+                    <li class:list={[k < 2 && 'h-heel']} style={`--d:${k};--kt:${KEUR_TIK[k]}s`}><img src={b.src} width={b.w} height={b.h} alt="" loading="lazy" decoding="async" /><span class="h-vink" aria-hidden="true" set:html={ik('check')} /></li>
                   ))}
                 </ul>
                 <figcaption class="h-chip h-glas">{c.goedgekeurd(geleverd(lang).length)}</figcaption>

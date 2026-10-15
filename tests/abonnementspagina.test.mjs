@@ -198,7 +198,7 @@ ok('de studiomail: reden plus Bel/App om de credits te bespreken', mails.some((m
 s = await scherm('/account/plan?ok=opgezegd&r=credits');
 /* Doorloop 27 (B28): direct na het opzeggen staat de bevestiging IN het
    standblok ("… Je krijgt een bevestiging per mail."), niet nog eens erboven. */
-ok('stand "opgezegd", credits blijven bruikbaar', [s.v.stand, new RegExp(`^Je abonnement stopt op .+ Je credits blijven geldig tot ${CREDITS_GELDIG_MAANDEN} maanden na je laatste termijn\\. Je krijgt een bevestiging per mail\\.$`).test(s.v.standZin), s.v.saldo.getal], ['opgezegd', true, 128]);
+ok('stand "opgezegd", credits blijven bruikbaar', [s.v.stand, /* Met de datum sinds 15 oktober 2026 (live: Studio zei "tot 3 maanden na", de opzegmail "tot en met 14 januari"). */ new RegExp(`^Je abonnement stopt op .+ Je credits blijven geldig tot en met .+: ${CREDITS_GELDIG_MAANDEN} maanden na je laatste termijn\\. Je krijgt een bevestiging per mail\\.$`).test(s.v.standZin), s.v.saldo.getal], ['opgezegd', true, 128]);
 ok('  één bevestiging: geen aparte melding erboven', [s.v.bevestiging, s.v.standNet], ['', true]);
 ok('  en het saldo noemt tot en met wanneer (geen plafond meer)', [/credits blijven geldig tot en met /.test(s.v.saldo.eerst), s.v.saldo.spaar], [true, '']);
 ok('de knop "bespreek je credits" staat groot in beeld', s.v.bespreek?.nadruk, true);
@@ -251,7 +251,12 @@ ok('de bevroren credits genoemd', /40 credits bevroren/.test(ah), true);
 ok('Credits bijstellen staat er nog', /Credits bijstellen/.test(ah), true);
 ok('geen "Abonnementsweek" of "Start deze week"', /Abonnementsweek|Start deze week/.test(ah), false);
 db.prepare("UPDATE subscriptions SET stop_reden = 'prijs', stop_toelichting = NULL WHERE id = 2").run();
-ok('de reden van stoppen', /Te duur voor wat er nu nodig is/.test(await admin('/admin/customers/1')), true);
+/* Levering 51 (A10): de reden alleen bij een pauze of opzegging van de klant zelf, niet
+   bij een stilstand door een terugboeking. */
+ok('een oude reden staat er niet bij een stilstand door een terugboeking', /Te duur voor wat er nu nodig is/.test(await admin('/admin/customers/1')), false);
+db.prepare("UPDATE subscriptions SET pause_reason = 'customer' WHERE id = 2").run();
+ok('de reden van stoppen, bij een pauze van de klant', /Te duur voor wat er nu nodig is/.test(await admin('/admin/customers/1')), true);
+db.prepare("UPDATE subscriptions SET pause_reason = 'chargeback' WHERE id = 2").run();
 
 /* ── 10 · DE NACHTTAAK ─────────────────────────────────────────────────── */
 console.log(`\n10 · na ${PAUZE_MAX_MAANDEN} maanden pauze één mail "hervatten of opzeggen?"`);

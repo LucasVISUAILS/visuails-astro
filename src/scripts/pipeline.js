@@ -7550,6 +7550,8 @@ function vulLandVoor() {
  */
 function accountMe() {
   if (typeof window.visAccount === 'function') return window.visAccount();
+  /* Zonder vis_in is er niemand ingelogd (v31-me = a, src/data/cookies.js). */
+  try { if (!/(?:^|;\s*)vis_in=1(?:;|$)/.test(document.cookie)) return Promise.resolve(null); } catch { /* dan vragen */ }
   return fetch('/account/me', { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
     .then((r) => (r.ok ? r.json() : null))
     .then((me) => (me && me.email ? me : null));

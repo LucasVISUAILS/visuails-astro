@@ -1327,7 +1327,8 @@ function initThankYou() {
 
   /* Wie al is ingelogd, hoeft geen inloglink: dan zegt de regel dat. */
   const signin = document.querySelector('[data-ty-signin]');
-  if (signin && typeof fetch === 'function') {
+  /* Alleen met vis_in (v31-me = a): zonder is er niemand ingelogd. */
+  if (signin && typeof fetch === 'function' && magAccountVragen()) {
     /* ── ALLEEN ALS HET DEZELFDE KLANT IS — 2 oktober 2026 (ronde 9, F28) ──────
        "Je bent ingelogd — de bestelling staat al in Studio" stond er ook als er
        een ANDER account ingelogd was dan het adres van deze bestelling (een
@@ -2445,10 +2446,20 @@ function pasKlantstandToe() {
   vraag();
 
   function vraag() {
+  /* Zonder vis_in is er niemand ingelogd (v31-me = a): geen vraag, en geen 401. */
+  if (!magAccountVragen()) {
+    ingelogd = false;
+    zet(false);
+    if (vul) vulKlant(null);
+    meldingen(); gezet();
+    return;
+  }
   const adres = wilStand ? `/account/me?stand=1&taal=${taal}` : '/account/me';
   fetch(adres, { credentials: 'same-origin', headers: { accept: 'application/json' } })
     .then(async (r) => {
       ingelogd = r.ok;
+      /* Geen sessie meer: vis_in weg, zodat de volgende pagina niet opnieuw vraagt. */
+      if (r.status === 401) { try { document.cookie = 'vis_in=; Max-Age=0; Path=/; Secure; SameSite=Lax'; } catch { /* niets */ } }
       if (r.ok && wilStand) {
         try { klantStand = (await r.json()).stand || null; } catch { klantStand = null; }
       }
@@ -2458,6 +2469,14 @@ function pasKlantstandToe() {
     })
     .catch(() => { /* offline of onbereikbaar: de pagina blijft zoals hij is */ });
   }
+}
+
+/* ── vis_in — 15 oktober 2026 (afvinklijst 31, v31-me = a) ───────────────────
+   Het inloggen zet naast de sessie een klein cookie zonder gegevens (zie
+   src/data/cookies.js). Staat het er niet, dan is er niemand ingelogd en vraagt
+   de pagina /account/me niet: geen verzoek, en geen rode 401 in de console. */
+function magAccountVragen() {
+  try { return /(?:^|;\s*)vis_in=1(?:;|$)/.test(document.cookie); } catch { return true; }
 }
 
 export function init() {

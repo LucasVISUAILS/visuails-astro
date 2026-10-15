@@ -170,7 +170,7 @@ import { creditsVoor, creditsPerSoort, dienstenVoorAbo } from './slots.js';
  * is). Dit dashboard leest ze allebei en schrijft alleen via subscription.js —
  * er staat hier geen enkele query op subscriptions of plan_queue.
  */
-import { handleSubscribeStart, handleSubscribeReturn, stopIncasso, hervatIncasso } from './subscribe.js';
+import { handleSubscribeStart, handleSubscribeReturn, stopIncasso, hervatIncasso, koppelSubscription, pakSlot } from './subscribe.js';
 import { vraagOverstapAan, annuleerOverstap, overstapVan, overstapToepassen, magOverstappen, overstapDoel, overstapBedragen, OVERSTAP_PLANNEN, OVERSTAP_MAAT } from './overstap.js';
 import {
   planState, loadQueue, queueAdd, queueRemove, queueReorder, queueMax,
@@ -182,7 +182,7 @@ import {
   ATTENDED_PUNTEN_PER_DAG, PUNTEN_PER_DAG, QUEUE_FLOOR_PUNTEN, WINDOW_DAYS,
   addDays, firstOfferableDay, isOpenDay, windowFor,
 } from '../data/capacity.js';
-import { puntenVoor, PRODUCT_SLOT_KINDS, SERVICE_CREDITS, CREDITS_GELDIG_MAANDEN, BIJKOOP_PAKKETTEN, BIJKOOP_KORTING_PCT, BIJKOOP_MAX_PER_MAAND } from '../data/pricing.js';
+import { puntenVoor, PRODUCT_SLOT_KINDS, SERVICE_CREDITS, CREDITS_GELDIG_MAANDEN, BIJKOOP_PAKKETTEN, BIJKOOP_KORTING_PCT, BIJKOOP_MAX_PER_MAAND, spaarPlafond } from '../data/pricing.js';
 import { PAUZE_MAX_MAANDEN } from '../data/termijnen.js';
 import { PLAN_SERVICE, rolloverMonths } from '../data/plans.js';
 import { readCalendar } from './agenda.js';
@@ -209,7 +209,7 @@ const MERKBALK = `<div class="bar"><a class="mark" href="/" aria-label="VISUAILS
    ze daar bijstelt, staat hier hetzelfde. Zie de noot bij AMOUNT.editions. */
 import { AMOUNT as BEDRAG, euro as euroBedrag, vatLabel as btwLabel } from '../data/pricing.js';
 import { centsToMollieValue, paymentDescription, isPayableService, ladderKey, VAT_RATE } from './quote.js';
-import { SESSION_COOKIE_DAYS, PREFERENCE_COOKIE_DAYS, maxAge, TIPS_COOKIE } from '../data/cookies.js';
+import { SESSION_COOKIE_DAYS, PREFERENCE_COOKIE_DAYS, maxAge, TIPS_COOKIE, INGELOGD_COOKIE } from '../data/cookies.js';
 import { TIPS, TIP_IDS, tipsUitCookie } from '../data/tips.js';
 import { GARMENTS } from '../data/garments.js';
 /* De vaste look als poort en als feit per product — ronde 4, 19 sept 2026. */
@@ -619,6 +619,7 @@ const COPY = {
        "toegang ingetrokken" — dat klinkt als een straf voor iets wat de klant
        zelf heeft aangevraagd of wat wij hebben teruggedraaid. */
     cancelledNote: 'This order was cancelled and the payment was settled with you, so the images are no longer here. Your invoice — and a credit note, where there is one — stays under Invoices.',
+    cancelledNoteCredits: 'This order was cancelled, so there are no images here. What happened to your credits is in the credit log under Plan.',
     // Anders dan closedNote: die nodigt uit om iets terug te draaien. Deze zegt
     // dat dat niet meer aan de orde is — geen besluit op dit beeld, of de
     // bewaartermijn van de bestelling is voorbij. Zie reopenable().
@@ -1297,6 +1298,8 @@ const COPY = {
     sampleNote: `Dit is de proef van ${TEST_SAMPLE.nl.price}, dus er valt niets goed te keuren — maar laat gerust weten wat je ervan vindt, we reageren altijd.`,
     closedNote: 'Je hebt alles in deze bestelling goedgekeurd. Toch nog iets? Maak het hieronder ongedaan.',
     cancelledNote: 'Deze bestelling is geannuleerd en de betaling is met je afgerekend, dus de beelden staan hier niet meer. Je factuur — en een eventuele creditnota — vind je onder Facturen.',
+    /* Een creditsbestelling heeft geen betaling en geen eigen factuur (15 oktober 2026, live). */
+    cancelledNoteCredits: 'Deze bestelling is geannuleerd, dus er staan hier geen beelden. Wat er met je credits is gebeurd, staat in het creditboek onder Abonnement.',
     settledNote: `Deze bestelling is afgerond. Alles blijft hier te downloaden tot ${DELIVERY_DAYS} dagen na levering — is er toch nog iets, stuur ons dan een bericht.`,
 
     payNet: 'Excl. btw',
@@ -2593,7 +2596,7 @@ async function handleCodePost(context) {
      als de taalknop in de zijbalk zet. Anders viel een klant zonder
      bestelling terug op de browser en de referer (zie negotiate()). */
   const terug = readTerug(request);
-  return seeOther(terug || '/account', [setSessionCookie(sessionToken), langCookieHeader(lang), ...(terug ? [clearTerugCookie()] : []), `${PLAN_MAIL_COOKIE}=; Max-Age=0; ${COOKIE_FLAGS}`]);
+  return seeOther(terug || '/account', [setSessionCookie(sessionToken), ingelogdCookie(), langCookieHeader(lang), ...(terug ? [clearTerugCookie()] : []), `${PLAN_MAIL_COOKIE}=; Max-Age=0; ${COOKIE_FLAGS}`]);
 }
 
 // env.DB is guaranteed here — accountGet checks it before this is ever reached,
@@ -2692,12 +2695,12 @@ async function handleVerify(context, token, { bevestigd = false } = {}) {
      inloglink. */
   let naar = readTerug(request) || '/account';
   try { if (new URL(request.url).searchParams.get('naar') === 'plan') naar = '/account/plan'; } catch { /* dan het overzicht */ }
-  return seeOther(naar, [setSessionCookie(sessionToken), langCookieHeader(lang), clearTerugCookie(), `${PLAN_MAIL_COOKIE}=; Max-Age=0; ${COOKIE_FLAGS}`]);
+  return seeOther(naar, [setSessionCookie(sessionToken), ingelogdCookie(), langCookieHeader(lang), clearTerugCookie(), `${PLAN_MAIL_COOKIE}=; Max-Age=0; ${COOKIE_FLAGS}`]);
 }
 
 async function handleLogout({ env }, customer) {
   await env.DB.prepare('DELETE FROM account_sessions WHERE id = ?1').bind(customer.session_id).run().catch(() => {});
-  return seeOther('/account/login', [clearSessionCookie()]);
+  return seeOther('/account/login', [clearSessionCookie(), ingelogdCookieWeg()]);
 }
 
 /** A fresh { token, tokenHash } pair — used for both the emailed link and the session cookie; see the file header on why they are two tables. */
@@ -3192,7 +3195,9 @@ async function handleMe({ request, env }) {
   if (!gate.allowed) return json({}, 429);
 
   const customer = await currentCustomer(env, request);
-  if (!customer) return json({}, 401);
+  /* Geen sessie meer, maar wel vis_in: dat weghalen, anders blijft elke pagina
+     het vragen (v31-me = a). */
+  if (!customer) return json({}, 401, heeftIngelogdCookie(request) ? { 'set-cookie': ingelogdCookieWeg() } : {});
 
   // ?1 is currentCustomer()'s id — the one the session cookie resolved to, never
   // anything the caller sent. There is no id in this request to trust: the URL
@@ -3377,7 +3382,7 @@ async function handleMe({ request, env }) {
       const taal = vraag.get('taal') === 'en' ? 'en' : 'nl';
       return { stand: await klantStand(env, customer, row, taal).catch(() => null) };
     })()),
-  });
+  }, 200, { 'set-cookie': ingelogdCookie() }); /* vis_in verlengen zolang de site hem gebruikt (v31-me = a) */
 }
 
 /**
@@ -3436,7 +3441,12 @@ export function klantStandVan({ lang = 'nl', row = {}, orders = [], filesByOrder
 
   let laatste = null;
   const o = wn.boven;
-  if (o) {
+  /* ── NIET VOOR EEN GEANNULEERDE BESTELLING — 15 oktober 2026 (live) ────────
+     De melding onderin elke pagina zei "Welkom terug · VIS-… · Geannuleerd ·
+     Open deze bestelling": de klant weet het al, en er valt niets te doen. Vraagt
+     een geannuleerde bestelling wél iets (watNuView zet hem dan bovenaan als
+     actie), dan blijft hij. Studio zelf toont hem gewoon. */
+  if (o && !(o.status === 'cancelled' && !wn.bovenIsActie)) {
     const v = orderView(t, L, o, filesByOrder.get(o.id) || [], eventsByOrder.get(o.id) || [], feedbackByOrder.get(o.id) || null, 0, 0, '', { abonnee });
     const open = `/account/orders?order=${o.id}#order-${o.id}`;
     const k = v.nu.knop;
@@ -5967,6 +5977,20 @@ function clearSessionCookie() {
   return `${SESSION_COOKIE}=; Max-Age=0; ${COOKIE_FLAGS}`;
 }
 
+/* vis_in (v31-me = a, zie src/data/cookies.js): leesbaar voor de pagina en op het
+   hele domein, want de site vraagt /account/me alleen als dit er staat. Geen
+   HttpOnly met opzet; er staat alleen "1" in. */
+export function ingelogdCookie() {
+  return `${INGELOGD_COOKIE}=1; Max-Age=${ACCOUNT_SESSION_TTL_DAYS * 86400}; Path=/; Secure; SameSite=Lax`;
+}
+export function ingelogdCookieWeg() {
+  return `${INGELOGD_COOKIE}=; Max-Age=0; Path=/; Secure; SameSite=Lax`;
+}
+/** Staat vis_in=1 in dit verzoek? */
+export function heeftIngelogdCookie(request) {
+  return /(?:^|;\s*)vis_in=1(?:;|$)/.test(request?.headers?.get?.('cookie') || '');
+}
+
 /* ── NA HET INLOGGEN TERUG WAAR JE HEEN WILDE — 1 oktober 2026 (ronde 8, S-B13) ──
    Een link naar /account/orders?order=91 (uit WhatsApp, een bladwijzer, een
    collega) eindigde na het inloggen op het overzicht. Het doel gaat nu een half
@@ -7353,12 +7377,25 @@ async function handlePlanPause({ request, env }, customer) {
     const startDate = /^\d{4}-\d{2}-\d{2}$/.test(dag) && dag > new Date().toISOString().slice(0, 10) ? dag : null;
     /* Een overstap die klaarstond (v29-overstap = a), gaat nu in: hervatten is
        een nieuwe termijn, en het nieuwe Mollie-abonnement krijgt meteen het
-       nieuwe bedrag. Zie overstapToepassen() in overstap.js. */
-    const subNu = await overstapToepassen(env, state.sub);
-    if (!await hervatIncasso(env, subNu, origin, { startDate })) return seeOther(`${home}?fout=hervatten`);
+       nieuwe bedrag. Zie overstapToepassen() in overstap.js.
+       BEHALVE ALS DE PAUZE NOG NIET WAS INGEGAAN (15 oktober 2026): dan is deze
+       maand al betaald op het oude plan. De overstap ging dan meteen in, midden
+       in die maand: een Starter die pauzeerde en hervatte, stond een maand te
+       vroeg op Pro (het plafond en de bijkoopprijs van Pro, voor het geld van
+       Starter). Nu blijft hij klaarstaan; Mollie krijgt wel al het nieuwe bedrag,
+       en de webhook zet hem om bij de eerste termijn, zoals zonder pauze. */
+    const ovKlaar = await overstapVan(env, state.sub.id).catch(() => null);
+    const subNu = startDate ? state.sub : await overstapToepassen(env, state.sub);
+    const voorMollie = startDate && ovKlaar
+      ? { ...state.sub, plan: ovKlaar.plan, amount_cents: ovKlaar.amount_cents, slots_json: ovKlaar.slots_json }
+      : subNu;
+    if (!await hervatIncasso(env, voorMollie, origin, { startDate })) return seeOther(`${home}?fout=hervatten`);
     await activateSubscription(env, state.sub.id);
     await env.DB.prepare('UPDATE subscriptions SET pauze_vraag_at = NULL WHERE id = ?1').bind(state.sub.id).run().catch(() => {});
-    await mailAboWijziging(env, { soort: 'hervat', sub: subNu, customer, lang });
+    await mailAboWijziging(env, {
+      soort: 'hervat', sub: subNu, customer, lang,
+      overstap: ovKlaar ? { naam: planName(ovKlaar.plan, 'nl'), naamEn: planName(ovKlaar.plan, 'en'), credits: ovKlaar.credits, op: startDate || '', nu: !startDate } : null,
+    });
     return terugOk('hervat');
   } else if (doen === 'pause') {
     if (state.sub.status === 'pending') return seeOther(`${home}?fout=pending`);
@@ -7378,7 +7415,11 @@ async function handlePlanPause({ request, env }, customer) {
     const vanaf = pauzeVanaf(state);
     await pauseSubscription(env, state.sub.id, 'customer', vanaf);
     await slaRedenOp(env, state.sub.id, reden);
-    await mailAboWijziging(env, { soort: 'pauze', sub: state.sub, customer, lang, vanaf, reden });
+    const ovKlaar = await overstapVan(env, state.sub.id).catch(() => null);
+    await mailAboWijziging(env, {
+      soort: 'pauze', sub: state.sub, customer, lang, vanaf, reden,
+      overstap: ovKlaar ? { naam: planName(ovKlaar.plan, 'nl'), naamEn: planName(ovKlaar.plan, 'en'), credits: ovKlaar.credits } : null,
+    });
     return terugOk('pauze', reden.reden);
   }
   return seeOther(home);
@@ -7427,7 +7468,7 @@ async function handlePlanOverstap({ request, env }, customer) {
 
 /* De bevestiging aan de klant en het bericht aan de studio bij pauzeren,
    hervatten en opzeggen. Nooit werpen: de wijziging zelf is al gedaan. */
-async function mailAboWijziging(env, { soort, sub, customer, lang, jaarTot = '', vanaf = null, reden = null, naar = null }) {
+export async function mailAboWijziging(env, { soort, sub, customer, lang, jaarTot = '', vanaf = null, reden = null, naar = null, overstap = null }) {
   /* De taal van het ABONNEMENT, niet van de taalknop in Studio (29 september
      2026): de andere abonnementsmails volgen de factuurtaal, en een klant die
      even op English klikte, kreeg anders één Engelse mail tussen Nederlandse. */
@@ -7470,6 +7511,18 @@ async function mailAboWijziging(env, { soort, sub, customer, lang, jaarTot = '',
       : ['Your switch is undone', `You stay on ${yourPlan}${naar ? `; the switch to ${naar.naam} will not happen` : ''}. The next payment is the current amount again.`],
   }[soort];
   if (!koppen) return;
+  /* EEN OVERSTAP DIE KLAARSTOND, BIJ PAUZEREN EN HERVATTEN (15 oktober 2026).
+     De pauzemail zweeg erover, en na hervatten stond er ineens "Je Pro-abonnement
+     loopt weer" zonder te zeggen dat de overstap daarmee was ingegaan. */
+  if (overstap && (soort === 'pauze' || soort === 'hervat')) {
+    const naamO = nl ? overstap.naam : (overstap.naamEn || overstap.naam);
+    const zin = soort === 'pauze'
+      ? (nl ? `Je overstap naar ${naamO} blijft klaarstaan en gaat in zodra je hervat.` : `Your switch to ${naamO} stays ready and starts as soon as you resume.`)
+      : overstap.nu
+        ? (nl ? `Je overstap naar ${naamO} is daarmee ingegaan: vanaf je volgende afschrijving krijg je ${overstap.credits} credits per maand.` : `Your switch to ${naamO} has started with it: from your next payment you get ${overstap.credits} credits a month.`)
+        : (nl ? `Je overstap naar ${naamO} gaat in${overstap.op ? ` op ${mailDatum(overstap.op, 'nl')}` : ' bij je volgende termijn'}, zoals gepland.` : `Your switch to ${naamO} starts${overstap.op ? ` on ${mailDatum(overstap.op, 'en')}` : ' with your next payment'}, as planned.`);
+    koppen[1] = `${koppen[1]} ${zin}`;
+  }
   /* Vooruitbetaald en gepauzeerd of hervat: er is geen incasso, dus ook geen
      afschrijving om over te praten — het gaat om de maanden (zelfde tekst als
      planPauseNotePrepaid in Studio). */
@@ -7636,8 +7689,16 @@ async function handlePlanBijkopen({ request, env }, customer) {
   if (!gate.allowed) return seeOther(`${home}?fout=bijkoop-vaak#bijkopen`);
   const state = await planState(env, customer.customer_id).catch(() => null);
   const sub = state?.sub ? { ...state.sub, customer_id: customer.customer_id } : null;
+  /* De factuur en de mail in de taal van het abonnement (15 oktober 2026, A16),
+     zoals de andere abonnementsmails (mailAboWijziging): wie even op English
+     klikte, kreeg anders één Engelse factuur tussen Nederlandse. Het scherm naar
+     Mollie blijft in de taal van Studio. */
+  const aboTaal = sub ? await env.DB.prepare(
+    'SELECT lang FROM subscription_invoices WHERE subscription_id = ?1 ORDER BY id DESC LIMIT 1'
+  ).bind(sub.id).first().catch(() => null) : null;
+  const factuurTaal = aboTaal?.lang === 'en' || aboTaal?.lang === 'nl' ? aboTaal.lang : lang;
   const r = await maakAankoop(env, {
-    customerId: customer.customer_id, sub, pakket, lang, verder,
+    customerId: customer.customer_id, sub, pakket, lang: factuurTaal, verder,
     origin: (() => { try { return new URL(request.url).origin; } catch { return 'https://visuails.com'; } })(),
   });
   if (!r.ok) return seeOther(`${home}?fout=bijkoop-${r.reden}#bijkopen`);
@@ -7712,16 +7773,28 @@ export function paymentView(t, lang, o) {
      studioScreen() erbij (termijnFacturenVoor()); zonder staat er alleen de
      regel. Credits nooit met €: dat woord is van het tegoed. */
   if (String(o.payment_status || '') === 'credits') {
+    const T = STROOK[lang === 'en' ? 'en' : 'nl'];
     const n = Math.max(0, Math.floor(Number(o.credits_used) || 0));
     const facturen = Array.isArray(o._termijnFacturen) ? o._termijnFacturen : [];
     const maanden = [...new Set(facturen.map((f) => maandNaam(f.month, lang)).filter(Boolean))];
+    /* ── TERUGGEZET — 15 oktober 2026 (controle op de live site) ─────────────
+       Een geannuleerde creditsbestelling zei "Betaald met 4 credits", met de
+       factuur van de bijgekochte credits erbij, terwijl die 4 credits allang
+       weer op het saldo stonden. `_creditsTerug` zet studioScreen() erbij
+       (creditsTerugVoor(): wat er met reden annulering of niet-gemaakt voor deze
+       bestelling is teruggeboekt). Alles terug: geen factuur meer, want die
+       dekt deze bestelling niet. Een deel terug: allebei. */
+    const terug = Math.min(n, Math.max(0, Math.floor(Number(o._creditsTerug) || 0)));
+    const allesTerug = n > 0 && terug >= n;
+    const rows = n ? [[T.betaaldMet, T.creditsN(n)]] : [];
+    if (terug) rows.push([T.teruggezet, T.creditsN(terug)]);
     return {
       cls: 'is-paid',
-      rows: n ? [[STROOK[lang === 'en' ? 'en' : 'nl'].betaaldMet, STROOK[lang === 'en' ? 'en' : 'nl'].creditsN(n)]] : [],
-      line: maanden.length ? STROOK[lang === 'en' ? 'en' : 'nl'].uitTermijn(maanden) : STROOK[lang === 'en' ? 'en' : 'nl'].uitAbonnement,
+      rows,
+      line: allesTerug ? T.weerOpSaldo : (maanden.length ? T.uitTermijn(maanden) : T.uitAbonnement),
       payHref: '',
-      facturen: facturen.map((f) => ({ href: `/account/plan-invoices/${f.id}/pdf`, label: f.number })),
-      factuurLabel: STROOK[lang === 'en' ? 'en' : 'nl'].factuur,
+      facturen: allesTerug ? [] : facturen.map((f) => ({ href: `/account/plan-invoices/${f.id}/pdf`, label: f.number })),
+      factuurLabel: T.factuur,
     };
   }
   const m = orderMoney(o);
@@ -8353,7 +8426,7 @@ function seeOther(location, setCookies = []) {
 }
 
 /** Same shape as functions/api/order.js's json() — see handleMe() for the one caller. */
-function json(body, status = 200) {
+function json(body, status = 200, extra = {}) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
@@ -8362,6 +8435,7 @@ function json(body, status = 200) {
       'referrer-policy': 'same-origin',
       'x-robots-tag': 'noindex, nofollow',
       'x-content-type-options': 'nosniff',
+      ...extra,
     },
   });
 }
@@ -9518,7 +9592,9 @@ export function orderView(t, lang, o, files, events = [], fb = null, index = 0, 
     payment,
     progress,
     note: o.customer_note || '',
-    closedNote: ingetrokken ? t.cancelledNote : ((o.closed_at && !isSample(o)) ? t.closedNote : ''),
+    closedNote: ingetrokken
+      ? (o.status === 'cancelled' && ['credits', 'plan'].includes(String(o.payment_status || '')) ? t.cancelledNoteCredits : t.cancelledNote)
+      : ((o.closed_at && !isSample(o)) ? t.closedNote : ''),
     feedbackHtml: feedbackFor(t, lang, o, fb),
     products: grouped ? grouped.map((g) => productView(t, lang, o, g, Number(openOrderId) === Number(o.id) && openProduct === g.key)) : null,
     sides: grouped ? null : {
@@ -9804,7 +9880,8 @@ const ABO = {
     standPauzeMax: (n) => `Een pauze duurt hoogstens ${n} maanden; daarna vragen we per mail of je hervat of opzegt.`,
     standTeruggeboekt: 'Je abonnement staat stil: een betaling is via de bank teruggeboekt. Neem contact met ons op, dan zoeken we het samen uit.',
     standStil: 'Je abonnement staat stil. Neem contact met ons op als je verder wilt.',
-    standOpgezegd: (d) => `Je abonnement stopt op ${d}. Er wordt niets meer afgeschreven. Je credits blijven geldig tot ${CREDITS_GELDIG_MAANDEN} maanden na je laatste termijn.`,
+    /* Met de datum, zoals de opzegmail (15 oktober 2026): Studio zei alleen "tot 3 maanden na je laatste termijn", de mail "tot en met 14 januari 2027". */
+    standOpgezegd: (d, tot = '') => `Je abonnement stopt op ${d}. Er wordt niets meer afgeschreven. ${tot ? `Je credits blijven geldig tot en met ${tot}: ${CREDITS_GELDIG_MAANDEN} maanden na je laatste termijn.` : `Je credits blijven geldig tot ${CREDITS_GELDIG_MAANDEN} maanden na je laatste termijn.`}`,
     standGestopt: `Je abonnement is gestopt. Je credits blijven geldig tot ${CREDITS_GELDIG_MAANDEN} maanden na je laatste termijn.`,
     perMail: 'Je krijgt een bevestiging per mail.',
     hervatten: 'Hervatten',
@@ -9865,7 +9942,7 @@ const ABO = {
     facturenAlle: 'Al je facturen',
     /* Extra credits bijkopen (12 oktober 2026, ab-v3 = c, ab-v4 = b). */
     bijH: 'Extra credits bijkopen',
-    bijLede: (kortingen) => `Tegen de prijs per credit van je abonnement${kortingen.length ? `: ${kortingen.map(([n, k], i) => (i === 0 ? `bij ${n} krijg je ${k}% korting` : `bij ${n} ${k}%`)).join(', ')}` : ''}. Bijgekochte credits gaan als eerste op, blijven ${CREDITS_GELDIG_MAANDEN} maanden geldig en tellen niet mee voor je spaarplafond.`,
+    bijLede: (kortingen) => `Tegen de prijs per credit van je abonnement, afgerond op hele euro's${kortingen.length ? `: ${kortingen.map(([n, k], i) => (i === 0 ? `bij ${n} krijg je ${k}% korting` : `bij ${n} ${k}%`)).join(', ')}` : ''}. Bijgekochte credits gaan als eerste op, blijven ${CREDITS_GELDIG_MAANDEN} maanden geldig en tellen niet mee voor je spaarplafond.`,
     bijPakket: (n) => `${n} credits`,
     bijPerCredit: (b) => `${b} per credit`,
     bijKorting: (k) => `${k}% korting`,
@@ -9883,7 +9960,7 @@ const ABO = {
     overstapCredits: (n) => `${n} credits per maand`,
     overstapVerschil: (d) => (d > 0 ? `${d} meer dan nu` : `${-d} minder dan nu`),
     overstapMaatLabel: 'Credits per maand',
-    overstapMaatHint: (min, max, stap) => `Van ${min} tot ${max}, per ${stap}.`,
+    overstapMaatHint: (min, max) => `Van ${min} tot ${max}.`,
     overstapMaatZonder: 'Kies je een ander aantal, dan zie je het bedrag meteen na het overstappen. Terugdraaien kan tot je volgende termijn.',
     overstapMaatBij: (n, bedrag) => `Bij ${n} credits: ${bedrag}`,
     overstapMaatIjk: (lijst, per) => `Bijvoorbeeld: ${lijst.join(' · ')}, ${per}.`,
@@ -9891,22 +9968,24 @@ const ABO = {
     overstapKlaarPauze: (naam) => `Je overstap naar ${naam} staat klaar. Hij gaat in zodra je je abonnement hervat.`,
     overstapTerugKnop: 'Overstap terugdraaien',
     overstapNieuw: 'nieuw',
+    /* Minder credits per maand is ook een lager spaarplafond (15 oktober 2026). */
+    overstapVerlies: (n, p, d) => `Je kunt er dan ${p} sparen: gebruik er ${d ? `vóór ${d} ` : ''}${n}, anders vallen ze bij de overstap weg.`,
     overstapNiet: {
-      jaar: 'Je hebt een vooruitbetaald jaar. Overstappen kan bij de verlenging; wil je eerder, mail ons dan.',
+      jaar: 'Je hebt een vooruitbetaald jaar. Dat verlengt niet vanzelf: een ander abonnement kies je als het jaar om is. Wil je eerder overstappen, mail ons dan.',
       status: 'Overstappen kan zodra je abonnement loopt.',
       mollie: 'Overstappen lukt hier nu niet. Mail ons, dan zetten we het voor je om.',
     },
     overstapOk: (naam, datum) => `Je overstap naar ${naam} staat klaar. Hij gaat in bij je volgende termijn${datum ? `, op ${datum}` : ''}. Je krijgt een bevestiging per mail.`,
     overstapTerugOk: 'Je overstap is teruggedraaid. Je abonnement blijft zoals het was; je krijgt een bevestiging per mail.',
     overstapFout: {
-      keuze: 'Kies een abonnement, en bij een abonnement op maat 30 tot 300 credits (per 5). Er is niets veranderd.',
+      keuze: 'Kies een abonnement, en bij een abonnement op maat 30 tot 300 credits. Er is niets veranderd.',
       zelfde: 'Dat is het abonnement dat je nu hebt. Er is niets veranderd.',
       vol: 'Voor zoveel credits per maand is op dit moment geen plek. Er is niets veranderd; mail ons, dan kijken we wanneer het kan.',
       bijwerken: 'Mollie kon het bedrag nu niet aanpassen. Er is niets veranderd; probeer het zo nog eens.',
       opslaan: 'Er ging iets mis bij het opslaan. Er is niets veranderd; probeer het zo nog eens.',
       vaak: 'Je probeerde het vaak achter elkaar. Probeer het over een uur nog eens.',
       geen: 'Er stond geen overstap klaar. Er is niets veranderd.',
-      jaar: 'Je hebt een vooruitbetaald jaar. Overstappen kan bij de verlenging; wil je eerder, mail ons dan.',
+      jaar: 'Je hebt een vooruitbetaald jaar. Dat verlengt niet vanzelf: een ander abonnement kies je als het jaar om is. Wil je eerder overstappen, mail ons dan.',
       status: 'Overstappen kan zodra je abonnement loopt. Er is niets veranderd.',
       mollie: 'Overstappen lukt hier nu niet. Mail ons, dan zetten we het voor je om.',
     },
@@ -9931,7 +10010,7 @@ const ABO = {
     standPauzeMax: (n) => `A pause lasts at most ${n} months; after that we ask by email whether you resume or cancel.`,
     standTeruggeboekt: 'Your plan is on hold: a payment was reversed by the bank. Get in touch and we will sort it out together.',
     standStil: 'Your plan is on hold. Get in touch if you want to continue.',
-    standOpgezegd: (d) => `Your plan stops on ${d}. Nothing more is collected. Your credits stay valid until ${CREDITS_GELDIG_MAANDEN} months after your last monthly credits came in.`,
+    standOpgezegd: (d, tot = '') => `Your plan stops on ${d}. Nothing more is collected. ${tot ? `Your credits stay valid up to and including ${tot}: ${CREDITS_GELDIG_MAANDEN} months after your last monthly credits came in.` : `Your credits stay valid until ${CREDITS_GELDIG_MAANDEN} months after your last monthly credits came in.`}`,
     standGestopt: `Your plan has stopped. Your credits stay valid until ${CREDITS_GELDIG_MAANDEN} months after your last monthly credits came in.`,
     perMail: 'We sent a confirmation by email.',
     hervatten: 'Resume',
@@ -9990,7 +10069,7 @@ const ABO = {
     facturenLeeg: 'There is no plan invoice yet. Your first one arrives as soon as your first term is paid.',
     facturenAlle: 'All your invoices',
     bijH: 'Buy extra credits',
-    bijLede: (kortingen) => `At the price per credit of your plan${kortingen.length ? `: ${kortingen.map(([n, k]) => `${k}% off with ${n}`).join(', ')}` : ''}. Bought credits are used first, stay valid for ${CREDITS_GELDIG_MAANDEN} months and do not count towards your savings limit.`,
+    bijLede: (kortingen) => `At the price per credit of your plan, rounded to whole euros${kortingen.length ? `: ${kortingen.map(([n, k]) => `${k}% off with ${n}`).join(', ')}` : ''}. Bought credits are used first, stay valid for ${CREDITS_GELDIG_MAANDEN} months and do not count towards your savings limit.`,
     bijPakket: (n) => `${n} credits`,
     bijPerCredit: (b) => `${b} per credit`,
     bijKorting: (k) => `${k}% off`,
@@ -10008,7 +10087,7 @@ const ABO = {
     overstapCredits: (n) => `${n} credits a month`,
     overstapVerschil: (d) => (d > 0 ? `${d} more than now` : `${-d} fewer than now`),
     overstapMaatLabel: 'Credits a month',
-    overstapMaatHint: (min, max, stap) => `From ${min} to ${max}, in steps of ${stap}.`,
+    overstapMaatHint: (min, max) => `From ${min} to ${max}.`,
     overstapMaatZonder: 'Choose another number and you will see the amount right after switching. You can undo it until your next monthly payment.',
     overstapMaatBij: (n, bedrag) => `At ${n} credits: ${bedrag}`,
     overstapMaatIjk: (lijst, per) => `For example: ${lijst.join(' · ')}, ${per}.`,
@@ -10016,22 +10095,23 @@ const ABO = {
     overstapKlaarPauze: (naam) => `Your switch to ${naam} is ready. It starts as soon as you resume your plan.`,
     overstapTerugKnop: 'Undo the switch',
     overstapNieuw: 'new',
+    overstapVerlies: (n, p, d) => `You can then save up to ${p}: use ${n}${d ? ` before ${d}` : ''}, or they lapse at the switch.`,
     overstapNiet: {
-      jaar: 'You have a prepaid year. You can switch when it renews; to switch sooner, email us.',
+      jaar: 'You have a prepaid year. It does not renew by itself: you choose another plan when the year is over. To switch sooner, email us.',
       status: 'You can switch plans once your plan is running.',
       mollie: 'Switching does not work here right now. Email us and we will switch it for you.',
     },
     overstapOk: (naam, datum) => `Your switch to ${naam} is ready. It starts with your next monthly payment${datum ? `, on ${datum}` : ''}. You will get a confirmation by email.`,
     overstapTerugOk: 'Your switch is undone. Your plan stays as it was; you will get a confirmation by email.',
     overstapFout: {
-      keuze: 'Choose a plan, and for a custom plan 30 to 300 credits (in steps of 5). Nothing has changed.',
+      keuze: 'Choose a plan, and for a custom plan 30 to 300 credits. Nothing has changed.',
       zelfde: 'That is the plan you have now. Nothing has changed.',
       vol: 'There is no room for that many credits a month right now. Nothing has changed; email us and we will see when it can.',
       bijwerken: 'Mollie could not change the amount right now. Nothing has changed; please try again shortly.',
       opslaan: 'Something went wrong while saving. Nothing has changed; please try again shortly.',
       vaak: 'You tried several times in a row. Please try again in an hour.',
       geen: 'There was no switch waiting. Nothing has changed.',
-      jaar: 'You have a prepaid year. You can switch when it renews; to switch sooner, email us.',
+      jaar: 'You have a prepaid year. It does not renew by itself: you choose another plan when the year is over. To switch sooner, email us.',
       status: 'You can switch plans once your plan is running. Nothing has changed.',
       mollie: 'Switching does not work here right now. Email us and we will switch it for you.',
     },
@@ -10079,7 +10159,29 @@ export async function planView(env, request, t, lang, customer, models = [], loc
   const L = lang === 'en' ? 'en' : 'nl';
   const A = ABO[L];
   const nu = new Date();
-  const state = await planState(env, customer.customer_id);
+  let state = await planState(env, customer.customer_id);
+  /* ── EEN LOPEND ABONNEMENT ZONDER INCASSO BIJ MOLLIE — 15 oktober 2026 ────
+     Gezien op visuails.com: na een iDEAL-betaling was het mandaat nog 'pending',
+     de webhook kon het Mollie-abonnement niet aanmaken, en de terugkeerpagina
+     (die het opnieuw probeert) zag de klant nooit: zonder sessie ging hij naar
+     het inlogscherm. Dus probeert elke keer dat hij Abonnement opent het nog een
+     keer. koppelSubscription() doet het één keer tegelijk en kijkt eerst bij
+     Mollie of hij er al is.
+     Hoogstens één poging per minuut (een slot in rate_limits dat niet wordt
+     vrijgegeven), en de pagina wacht er hoogstens 5 seconden op: een ingetrokken
+     machtiging of een trage Mollie mag Abonnement niet ophouden. */
+  if (state?.sub && state.sub.status === 'active' && state.sub.term !== 'prepaid'
+    && state.sub.mollie_customer_id && !state.sub.mollie_subscription_id
+    && await pakSlot(env, `koppel-studio:${state.sub.id}`, 60)) {
+    try {
+      const origin = new URL(request.url).origin;
+      const uit = await Promise.race([
+        koppelSubscription(env, state.sub, origin),
+        new Promise((klaar) => setTimeout(() => klaar({ staat: 'traag' }), 5000)),
+      ]);
+      if (uit?.staat === 'gelukt' || uit?.staat === 'actief') state = await planState(env, customer.customer_id);
+    } catch (e) { console.error('[abonnement] koppelen vanuit Studio mislukt —', e?.message || e); }
+  }
   let fout = '', ok = '', stopReden = '';
   let bijkoopTerug = '', gekozenPakket = 0, verder = '', naarParam = '';
   let params = null;
@@ -10191,7 +10293,7 @@ export async function planView(env, request, t, lang, customer, models = [], loc
   let standZin = '';
   if (!sub) { stand = 'gestopt'; standZin = A.standGestopt; }
   else if (sub.status === 'pending') stand = 'wacht';
-  else if (sub.status === 'cancelled') { stand = 'opgezegd'; standZin = A.standOpgezegd(datumLang(state.termijnTot, L, nu) || maandNaam(state.maand, L)); }
+  else if (sub.status === 'cancelled') { stand = 'opgezegd'; standZin = A.standOpgezegd(datumLang(state.termijnTot, L, nu) || maandNaam(state.maand, L), s.aboSaldo && s.aboEinde ? datumLang(dagErvoor(s.aboEinde), L, nu) : ''); }
   else if (sub.status === 'paused') {
     if (sub.pause_reason === 'chargeback') { stand = 'teruggeboekt'; standZin = A.standTeruggeboekt; }
     else if (sub.pause_reason === 'customer' && pauzeStraks) { stand = 'pauze-straks'; standZin = A.standPauzeStraks(datumLang(pauzeDag, L, nu)); }
@@ -10311,7 +10413,10 @@ export async function planView(env, request, t, lang, customer, models = [], loc
         ? `${datumLang(state.termijnTot, L, nu)} · ${money(overstapBedragen(sub, klaar).bruto, L)} ${btwLabel('incl', L)} (${planName(klaar.plan, L)}, ${A.overstapNieuw})`
         : `${datumLang(state.termijnTot, L, nu)} · ${money(subMaandBruto(sub), L)} ${btwLabel('incl', L)}`) : '',
     jaarTot: state.jaarTot ? datumLang(state.jaarTot, L, nu) : '',
-    status: planStatus,
+    /* Een pauze die nog moet ingaan (15 oktober 2026, gezien op de live site):
+       de rij stond op "Gepauzeerd" terwijl de melding erboven zei "tot dan loopt
+       je maand gewoon door". Nu zegt de rij dat ook. */
+    status: pauzeStraks ? (L === 'nl' ? `Loopt tot ${datumLang(pauzeDag, L, nu)}, daarna pauze` : `Running until ${datumLang(pauzeDag, L, nu)}, then paused`) : planStatus,
   } : null;
 
   /* Wat er te beslissen valt. Een opgezegd jaar, een eerste betaling die nooit
@@ -10359,19 +10464,37 @@ export async function planView(env, request, t, lang, customer, models = [], loc
     const btwW = btwLabel(std ? 'incl' : 'excl', L);
     const nuCredits = creditsVoor(sub);
     const bedragVan = (doel) => `${money(overstapBedragen(sub, doel).bruto, L)} ${A.perMaand} ${btwW}`;
-    const rond = (n) => Math.min(OVERSTAP_MAAT.max, Math.max(OVERSTAP_MAAT.min, Math.round(n / OVERSTAP_MAAT.stap) * OVERSTAP_MAAT.stap));
-    const maatStart = rond(nuCredits);
+    const rond = (n) => Math.min(OVERSTAP_MAAT.max, Math.max(OVERSTAP_MAAT.min, Math.round(n / OVERSTAP_MAAT.rond) * OVERSTAP_MAAT.rond));
+    /* HET VOORGESTELDE AANTAL BIJ OP MAAT (15 oktober 2026). Het was het aantal van
+       nu: een Starter zag "Bij 45 credits: € 471,90", precies wat hij al heeft. Nu
+       het midden tussen nu en het volgende vaste plan (bij Merk: het vorige), en
+       bij een abonnement op maat gewoon het eigen aantal. */
+    const vast = OVERSTAP_PLANNEN.filter((id) => id !== 'maat').map((id) => overstapDoel(id)?.credits || 0).filter(Boolean).sort((a, b) => a - b);
+    const buur = sub.plan === 'maat' ? nuCredits
+      : (vast.find((c) => c > nuCredits) ?? [...vast].reverse().find((c) => c < nuCredits) ?? nuCredits);
+    const maatStart = rond((nuCredits + buur) / 2);
+    /* Een harde spatie tussen dag en maand: "vóór 15 / november" brak precies daar
+       af in een kaart van 330 px (15 oktober 2026), zoals wetDatum() het al doet. */
+    const datum = state.termijnTot ? datumLang(state.termijnTot, L, nu).replace(' ', '\u00a0') : '';
+    /* WAT ER BIJ DE OVERSTAP WEGVALT (15 oktober 2026). Het spaarplafond hoort bij
+       het plan: wie van Merk (870) naar Starter (135) gaat met 870 credits, verliest
+       er bij de overstap 780 als hij ze niet eerst gebruikt. Dat staat nu bij de
+       keuze zelf, vóór hij overstapt, en niet pas in het saldo erna. */
+    const aboSaldo = Math.max(0, Math.floor(Number(s.aboSaldo) || 0));
+    const verliesBij = (credits) => Math.max(0, aboSaldo + credits - spaarPlafond(credits));
     const opties = OVERSTAP_PLANNEN
       .filter((id) => id === 'maat' || id !== sub.plan)
       .map((id) => {
         const doel = overstapDoel(id, id === 'maat' ? maatStart : undefined);
         if (!doel) return null;
         const d = doel.credits - nuCredits;
+        const weg = verliesBij(doel.credits);
         return {
           id, naam: planName(id, L), maat: id === 'maat',
           credits: id === 'maat' ? '' : A.overstapCredits(doel.credits),
           verschil: id === 'maat' || !d ? '' : A.overstapVerschil(d),
           bedrag: id === 'maat' ? A.overstapMaatBij(maatStart, bedragVan(doel)) : bedragVan(doel),
+          verlies: weg ? A.overstapVerlies(weg, spaarPlafond(doel.credits), datum) : '',
           gekozen: naarParam === id,
         };
       }).filter(Boolean);
@@ -10379,18 +10502,22 @@ export async function planView(env, request, t, lang, customer, models = [], loc
        zonder bevestiging ziet wat een ander aantal ongeveer kost. */
     const ijk = [60, 150, 300].filter((n) => n >= OVERSTAP_MAAT.min && n <= OVERSTAP_MAAT.max)
       .map((n) => { const d = overstapDoel('maat', n); return d ? `${n} credits ${money(overstapBedragen(sub, d).bruto, L)}` : ''; }).filter(Boolean);
-    const datum = state.termijnTot ? datumLang(state.termijnTot, L, nu) : '';
+    const wegKlaar = klaar && sub.status === 'active' ? verliesBij(klaar.credits) : 0;
     overstap = {
       mag: mo.mag,
-      niet: mo.mag ? '' : (A.overstapNiet[mo.reden] || A.overstapNiet.status),
+      /* Bij een pauze die nog moet ingaan: zeg hoe het wél kan (15 oktober 2026). */
+      niet: mo.mag ? '' : pauzeStraks
+        ? (L === 'nl' ? `Je pauze gaat in op ${datumLang(pauzeDag, L, nu)}. Wil je liever overstappen, kies dan eerst "${A.tochDoor}".` : `Your pause starts on ${datumLang(pauzeDag, L, nu)}. To switch instead, choose "${A.tochDoor}" first.`)
+        : (A.overstapNiet[mo.reden] || A.overstapNiet.status),
       lede: A.overstapLede(datum),
       opties,
-      maat: { label: A.overstapMaatLabel, hint: A.overstapMaatHint(OVERSTAP_MAAT.min, OVERSTAP_MAAT.max, OVERSTAP_MAAT.stap), zonder: A.overstapMaatZonder, ijk: ijk.length ? A.overstapMaatIjk(ijk, `${A.perMaand} ${btwW}`) : '', ...OVERSTAP_MAAT, waarde: maatStart },
+      maat: { label: A.overstapMaatLabel, hint: A.overstapMaatHint(OVERSTAP_MAAT.min, OVERSTAP_MAAT.max), zonder: A.overstapMaatZonder, ijk: ijk.length ? A.overstapMaatIjk(ijk, `${A.perMaand} ${btwW}`) : '', ...OVERSTAP_MAAT, waarde: maatStart },
       knop: A.overstapKnop,
       klaar: klaar ? {
         zin: sub.status === 'active'
           ? A.overstapKlaar(planName(klaar.plan, L), klaar.credits, bedragVan(klaar), datum)
           : A.overstapKlaarPauze(planName(klaar.plan, L)),
+        verlies: wegKlaar ? A.overstapVerlies(wegKlaar, spaarPlafond(klaar.credits), datum) : '',
         knop: A.overstapTerugKnop,
       } : null,
     };
@@ -10501,6 +10628,8 @@ const STROOK = {
     creditsN: (n) => (n === 1 ? '1 credit' : `${n} credits`),
     uitTermijn: (m) => `Uit je termijn van ${m.join(' en ')}.`,
     uitAbonnement: 'Uit de credits van je abonnement.',
+    teruggezet: 'Teruggezet',
+    weerOpSaldo: 'De credits staan weer op je saldo.',
     factuur: 'Factuur',
     tegoedKop: 'Je tegoed',
     tegoedLede: 'Geld van een eerdere bestelling. Het gaat automatisch van je volgende bestelling af als je ingelogd bestelt en via Mollie betaalt; een bestelling met credits laat het staan.',
@@ -10521,6 +10650,8 @@ const STROOK = {
     creditsN: (n) => (n === 1 ? '1 credit' : `${n} credits`),
     uitTermijn: (m) => `From your plan term for ${m.join(' and ')}.`,
     uitAbonnement: 'From the credits of your plan.',
+    teruggezet: 'Returned',
+    weerOpSaldo: 'The credits are back on your balance.',
     factuur: 'Invoice',
     tegoedKop: 'Your account balance',
     tegoedLede: 'Money from an earlier order. It comes off your next order automatically when you order signed in and pay through Mollie; an order paid with credits leaves it as it is.',
@@ -10577,6 +10708,23 @@ async function termijnFacturenVoor(env, customerId) {
     }
   } catch (err) {
     console.error('[studio] termijnfacturen bij creditsbestellingen niet gelezen —', err?.message || err);
+  }
+  return uit;
+}
+
+/** Per creditsbestelling hoeveel credits er teruggeboekt zijn (annulering of
+ *  niet gemaakt), voor "Teruggezet" op de bestelkaart. Leeg bij een fout. */
+async function creditsTerugVoor(env, customerId) {
+  const uit = new Map();
+  try {
+    const { results = [] } = await env.DB.prepare(
+      `SELECT order_id, SUM(aantal) AS n FROM credit_boek
+        WHERE customer_id = ?1 AND order_id IS NOT NULL AND aantal > 0 AND reden IN ('annulering', 'niet-gemaakt')
+        GROUP BY order_id`
+    ).bind(customerId).all();
+    for (const r of results) uit.set(Number(r.order_id), Number(r.n) || 0);
+  } catch (err) {
+    console.error('[studio] teruggezette credits niet gelezen —', err?.message || err);
   }
   return uit;
 }
@@ -10656,8 +10804,9 @@ export async function studioScreen(context, section) {
     }
     /* 2.02: bij elke creditsbestelling de termijnfactuur die hem dekt. */
     if (st.orders.some((o) => o.payment_status === 'credits')) {
-      const facturen = await termijnFacturenVoor(env, customer.customer_id);
+      const [facturen, terug] = await Promise.all([termijnFacturenVoor(env, customer.customer_id), creditsTerugVoor(env, customer.customer_id)]);
       for (const o of st.orders) if (facturen.has(o.id)) o._termijnFacturen = facturen.get(o.id);
+      for (const o of st.orders) if (terug.has(o.id)) o._creditsTerug = terug.get(o.id);
     }
     /* Punt 3.07: een abonnee ziet bij "Bestel met dezelfde look" de credits per product. */
     const abonnee = !!(await env.DB.prepare(

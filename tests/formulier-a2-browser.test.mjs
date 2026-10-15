@@ -24,6 +24,7 @@
  * Zwaar (browser): $S/zwaar.sh node tests/formulier-a2-browser.test.mjs — na een build.
  */
 import http from 'node:http';
+import { metVisIn } from './lib/vis-in.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -61,7 +62,7 @@ const server = http.createServer((req, res) => {
   return res.end(fs.readFileSync(f));
 });
 await new Promise((r) => server.listen(PORT, r));
-const browser = await chromium.launch({ executablePath: process.env.CHROME || browserPad() });
+const browser = metVisIn(await chromium.launch({ executablePath: process.env.CHROME || browserPad() }));
 
 /* ── HULP ────────────────────────────────────────────────────────────────── */
 async function open(url, { breed = 1280, land = 'NL' } = {}) {

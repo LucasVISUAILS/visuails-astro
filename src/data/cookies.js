@@ -36,6 +36,17 @@
 /** vis_account — de ingelogde sessie in VISUAILS Studio. */
 export const SESSION_COOKIE_DAYS = 30;
 
+/* ── vis_in — "ER IS IEMAND INGELOGD" — 15 oktober 2026 (afvinklijst 31, v31-me = a) ──
+ * Elke pagina vroeg /account/me of je bent ingelogd. Voor een bezoeker zonder
+ * account antwoordt de server 401, en de browser zet dat als rode regel in de
+ * console (Lighthouse telt hem bij Best Practices). Nu zet het inloggen naast de
+ * sessie (vis_account: HttpOnly, alleen onder /account) dit kleine cookie, dat
+ * de pagina wél kan lezen. Alleen als het er staat, vraagt de pagina /account/me.
+ * Er staat niets in behalve "1": geen naam, geen adres, geen kenmerk. Even lang
+ * als de sessie, weg bij uitloggen, en weggehaald zodra de server zegt dat de
+ * sessie niet meer geldt. */
+export const INGELOGD_COOKIE = 'vis_in';
+
 /**
  * vis_consent, vis_lang, vis_nav — de drie voorkeuren die een jaar meegaan.
  *

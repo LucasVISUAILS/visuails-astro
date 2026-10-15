@@ -34,6 +34,12 @@ body.hal {
   --h-korrel: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='k'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='1.5 0 0 0 -.25  1.5 0 0 0 -.25  1.5 0 0 0 -.25  0 0 0 0 1'/></filter><rect width='100%' height='100%' filter='url(%23k)'/></svg>");
   --h-verloop-licht: radial-gradient(120% 90% at 75% 15%, #DCD5FF 0%, #F1EEFF 42%, #FFFFFF 100%);
   --h-rand: 40px;
+  /* DE KOLOM, 15 oktober 2026. Lucas (op 1920 px): *"De content breedte mag iets minder
+     breed."* Gemeten op 1920: de secties liepen van 280 tot 1640 px (1440 breed met
+     --h-rand erin), de opening van 64 tot 1884, de footer van 166 tot 1754. Drie
+     breedtes. Nu lezen secties, paginakoppen, het slotbeeld, de opening en de footer
+     allemaal deze ene waarde: de buitenmaat van de inhoud, met --h-rand erin. */
+  --h-kolom: 1440px;
 
   /* De rest van de site (balk, lade, footer) leest deze variabelen: zo gaan ook
      zij in de hal over op Urbanist en de nieuwe kleuren, zonder hun opmaak te kopiëren. */
@@ -339,6 +345,11 @@ body.hal .site-footer {
   margin: 80px 12px 12px; border-radius: 40px; background: var(--h-nevel); color: var(--h-inkt-2); overflow: hidden; border: 0; }
 body.hal .site-footer { padding: 0; }
 body.hal .site-footer > .container { padding-top: 72px; }
+/* De inhoud van de footer op de kolom (15 oktober 2026): de kaart heeft 12 px marge,
+   dus is de binnenmaat de kolom min 2 × 12 en de zijruimte --h-rand min 12. Gemeten op
+   1920: 280 tot 1640, net als de secties (was 166 tot 1754). Onder 1181 px blijft het
+   zoals het was: daar is de kaart 8 px van de rand en --h-rand kleiner. */
+@media (min-width: 1181px) { body.hal .site-footer > .container { max-width: calc(var(--h-kolom) - 24px); padding-inline: calc(var(--h-rand) - 12px); } }
 body.hal .site-footer .footer-col li { font: 500 15px/1.3 var(--h-letter); }
 body.hal .site-footer .footer-brand p { font-size: 15px; line-height: 1.5; color: var(--h-inkt-2); }
 body.hal .site-footer .mi-soon { font: 600 11.5px/1 var(--h-letter); text-transform: none; letter-spacing: 0; color: var(--h-nacht); background: var(--h-mist); border: 0; border-radius: 999px; padding: 4px 8px; }
@@ -385,8 +396,12 @@ body.hal .foot-mark .foot-mark-light { display: none; }
 body.hal .hal-wm-reus { display: block; width: calc(100% - 48px); height: auto; aspect-ratio: 4651.24 / 813.83; margin: 10px auto -6%; }
 
 /* ── 01 · de opening ────────────────────────────────────────────────────── */
-.hal .h-opening { position: relative; isolation: isolate; padding: 0; min-height: max(760px, min(62vw, 900px)); overflow: hidden; }
-.hal .h-open-tekst { position: relative; z-index: 6; width: min(540px, 40vw); margin-left: 64px; padding-top: 196px; display: flex; flex-direction: column; align-items: flex-start; gap: 24px; }
+.hal .h-opening { position: relative; isolation: isolate; padding: 0; min-height: max(760px, min(62vw, 900px)); overflow: hidden;
+  /* Hoeveel de opening naar binnen schuift zodra het scherm breder is dan de kolom
+     (15 oktober 2026): de tekst begint dan op dezelfde lijn als de secties eronder,
+     en het beeld schuift even ver mee. Tot 1488 px is het 0 en verandert er niets. */
+  --h-open-zij: max(0px, calc((100% - var(--h-kolom)) / 2 + var(--h-rand) - 64px)); }
+.hal .h-open-tekst { position: relative; z-index: 6; width: min(540px, 40vw); margin-left: calc(64px + var(--h-open-zij)); padding-top: 196px; display: flex; flex-direction: column; align-items: flex-start; gap: 24px; }
 .hal .h-regel { display: block; overflow: hidden; padding-bottom: .06em; margin-bottom: -.06em; }
 .hal .h-regel-in { display: block; }
 /* De regel zelf ook als blok: als inline span was zijn rechthoek de inhoud van de
@@ -435,10 +450,16 @@ body.hal .hal-wm-reus { display: block; width: calc(100% - 48px); height: auto; 
    Op 1440: 90 % breed zoals het was, 54 px naar links; op 1024 iets kleiner (79 %).
    Boven 1500 px blijft hij 1350 breed en schuift 57 px naar links (−255 → −198 px). De
    ondergrens van `top` volgt de breedte: 184 px − 0,1976 × breedte (zie hierboven). */
-.hal .h-open-beeld { --hb: min(90%, calc((100% - 132px - min(540px, 40%)) / 0.594));
+.hal .h-open-beeld { --hb: min(90%, calc((100% - 132px - var(--h-open-zij) - min(540px, 40%)) / 0.594));
   position: absolute; z-index: 4; width: var(--hb); left: calc(100% - 36px - 0.827 * var(--hb));
   top: max(calc(-60 / 1440 * 100vw), calc(184px - 0.1976 * min(90vw, calc((100vw - 132px - min(540px, 40vw)) / 0.594)))); }
-@media (min-width: 1500px) { .hal .h-open-beeld { left: auto; right: -198px; width: 1350px; top: -60px; } }
+/* MET DE KOLOM MEE (15 oktober 2026): het beeld schuift even ver naar binnen als de
+   tekst, maar nooit zo ver dat zijn rechterrand in beeld komt. Die rand is niet
+   uitgevloeid (links en onder wel), en de violette strepen rechtsboven lopen tot de
+   rand van het scherm. Tot 1884 px schuift het helemaal mee; daarboven blijft het
+   tegen de rechterrand staan en wordt alleen de ruimte tussen tekst en laptop groter
+   (op 1920: 18 px). */
+@media (min-width: 1500px) { .hal .h-open-beeld { left: auto; right: min(0px, calc(var(--h-open-zij) - 198px)); width: 1350px; top: -60px; } }
 .hal .hl-raam { position: relative; }
 .hal .hl-doos { position: relative; aspect-ratio: 2304 / 1728; width: 100%;
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 24%), linear-gradient(180deg, #000 64%, transparent 93%); -webkit-mask-composite: source-in;
@@ -609,7 +630,7 @@ body.hal .hal-wm-reus { display: block; width: calc(100% - 48px); height: auto; 
 @keyframes h-woord { from { opacity: 0; filter: blur(6px); transform: translateY(4px); } to { opacity: 1; filter: none; transform: none; } }
 
 /* ── secties ────────────────────────────────────────────────────────────── */
-.hal .h-sec { position: relative; max-width: 1440px; margin: 0 auto; padding: 110px var(--h-rand) 0; }
+.hal .h-sec { position: relative; max-width: var(--h-kolom); margin: 0 auto; padding: 110px var(--h-rand) 0; }
 .hal .h-sec-kop { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 20px; margin-bottom: 40px; }
 .hal .h-sec-kop .h-pil { margin-bottom: 22px; }
 .hal .h-sec-rechts { display: flex; gap: 10px; align-items: center; }
@@ -766,7 +787,7 @@ body.hal .h-ab .ab-beeld { background: var(--h-wit); }
 body.hal .h-ab .ab-raam:focus-visible { outline-color: var(--h-violet); }
 
 /* 06 · het slotbeeld: €1 */
-.hal .h-proef { position: relative; overflow: hidden; isolation: isolate; max-width: calc(1440px - 80px); margin: 110px auto 0; border-radius: 40px; padding: 64px;
+.hal .h-proef { position: relative; overflow: hidden; isolation: isolate; max-width: calc(var(--h-kolom) - 80px); margin: 110px auto 0; border-radius: 40px; padding: 64px;
   background: linear-gradient(135deg, rgba(42, 14, 143, .94) 0%, rgba(61, 23, 214, .9) 55%, rgba(74, 31, 255, .84) 100%), url(/img/hal/sfeer-bewogen.webp) center / cover;
   display: grid; grid-template-columns: 1.15fr 1fr; gap: 40px; align-items: center; color: #fff; }
 @media (max-width: 1520px) { .hal .h-proef { margin-left: var(--h-rand); margin-right: var(--h-rand); } }
@@ -1055,25 +1076,26 @@ html.h-js body.hal .h-stap.is-in .h-keur figcaption { opacity: 1; transform: non
 }
 html.h-js body.hal .h-hoe[data-uitleg-staat]:not(.u-s3) .h-keur .h-vink { transform: scale(0); }
 html.h-js body.hal .h-hoe[data-uitleg-staat]:not(.u-s3) .h-keur figcaption { opacity: 0; transform: translateY(6px); }
-html.h-js body.hal .h-hoe.u-s3 .h-keur .h-vink { transition-delay: calc(var(--d, 0) * 220ms + .5s); }
-html.h-js body.hal .h-hoe.u-s3 .h-keur figcaption { transition-delay: 3s; }
-/* ── STAP 1 · COMPLEET, STAP 3 · EEN REVISIE — afvinklijst 29 (15 oktober 2026) ──
+html.h-js body.hal .h-hoe.u-s3 .h-keur .h-vink { transition-delay: var(--kt, calc(var(--d, 0) * 220ms + .5s)); }
+html.h-js body.hal .h-hoe.u-s3 .h-keur figcaption { transition-delay: 2.3s; }
+/* ── STAP 1 · COMPLEET, STAP 3 · GOEDKEUREN — afvinklijst 29 (15 oktober 2026) ──
    v29-stap1 = a: een lijstje zoals in stap 2, met per verplichte foto een vinkje zodra
    hij binnen is, en dan "Compleet": wat het formulier echt doet (het kijkt of
    voorkant, achterkant en detail er zijn).
-   v29-stap3 = a: de draagfoto gaat terug voor een revisie (de kleur stond iets te
-   warm), komt opnieuw binnen en krijgt dan zijn vinkje. Tijden vanaf het begin van
-   de stap; stap 1 duurt nu 3,0 s en stap 3 3,6 s (data-uitleg-maat).
+   Stap 3: eerst (v29-stap3 = a) ging de draagfoto terug voor een revisie. Lucas,
+   15 oktober 20:42: "Het revisie gedeelte hoeft daar niet, alleen laten zien dat de
+   klant de beelden simpelweg goedkeurde." Nu vier tikken, elk beeld even ingedrukt
+   en dan zijn vinkje, in een ongelijk tempo (KEUR_TIK in VoorpaginaHal.astro): zo
+   kijkt iemand die elk beeld bekijkt. Tijden vanaf het begin van de stap; stap 1
+   duurt 3,0 s en stap 3 3,0 s (data-uitleg-maat).
      stap 1  0,15–1,3 de foto's vallen in de waaier · 1,3 / 1,54 / 1,78 de vinkjes
              2,2 Compleet
-     stap 3  0,5 / 0,72 / 0,94 de vinkjes op drie beelden · 1,1 "Revisie: kleur"
-             1,75–2,35 het beeld komt opnieuw binnen (de glans), de kleur klopt
-             2,05 "Opnieuw geleverd" · 2,55 het vierde vinkje · 3,0 "4 van 4"
-   Zonder uitleg staat alles er af: de vinkjes, Compleet, geen revisiechip. */
+     stap 3  0,45 / 0,9 / 1,25 / 1,75 de tikken en de vinkjes · 2,3 "4 van 4 goedgekeurd"
+   Zonder uitleg staat alles er af: de vinkjes en Compleet. */
 .hal .h-stuur-lijst { position: absolute; top: 12px; right: 12px; z-index: 4; display: grid; gap: 7px; padding: 10px 12px 10px 9px; border-radius: 16px; }
 .hal .h-stuur-v { display: grid; grid-template-columns: 20px auto; align-items: center; column-gap: 7px; font: 600 12.5px/1.2 var(--h-letter); color: var(--h-inkt); white-space: nowrap; }
 .hal .h-stuur-v i { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--h-violet); color: #fff; }
-.hal .h-stuur-v i svg, .hal .h-keur-revchip svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.hal .h-stuur-v i svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .hal .h-stuur-compleet { margin-top: 2px; padding-top: 7px; border-top: 1px solid var(--h-lijn); font: 700 12.5px/1.2 var(--h-letter); color: var(--h-violet-diep); }
 html.h-js body.hal .h-stuur-v i { transition: scale .5s var(--h-veer), background-color .3s; transition-delay: calc(var(--d, 0) * 180ms + .95s); }
 html.h-js body.hal .h-stuur-compleet { transition: opacity .4s var(--h-zacht); transition-delay: 1.6s; }
@@ -1084,27 +1106,10 @@ html.h-js body.hal .h-stap:not(.is-in) .h-stuur-compleet { opacity: 0; }
 html.h-js body.hal .h-hoe.u-s1 .h-stuur-v i { transition-delay: calc(var(--d, 0) * 240ms + 1.3s); }
 html.h-js body.hal .h-hoe.u-s1 .h-stuur-compleet { transition-delay: 2.2s; }
 @container (max-width: 300px) { .hal .h-stuur-lijst { top: 8px; right: 8px; padding: 8px 9px 8px 7px; gap: 6px; } }
-/* Stap 3: de revisie op de draagfoto. */
-.hal .h-keur-glans { position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0;
-  background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, .75) 50%, transparent 70%) no-repeat; background-size: 220% 100%; }
-.hal .h-keur-revchip { position: absolute; left: 7px; bottom: 7px; z-index: 2; display: inline-grid; grid-template-columns: auto auto; align-items: center; column-gap: 5px;
-  padding: 4px 9px 4px 6px; border-radius: 999px; background: rgba(255, 255, 255, .95); color: var(--h-inkt); font: 600 12px/1.25 var(--h-letter); white-space: nowrap;
-  box-shadow: 0 6px 14px -6px rgba(15, 12, 36, .4); opacity: 0; }
-.hal .h-keur-revchip > span:first-child { grid-row: 1; color: var(--h-violet); display: grid; }
-.hal .h-keur-rev-a, .hal .h-keur-rev-b { grid-row: 1; grid-column: 2; }
-.hal .h-keur-rev-b { opacity: 0; }
-.hal .h-hoe.u-s3:not([data-uitleg-staat="klaar"]) .h-keur-rev img { animation: h-keur-kleur 2.35s linear both; }
-.hal .h-hoe.u-s3:not([data-uitleg-staat="klaar"]) .h-keur-glans { animation: h-keur-glans .6s ease-in-out 1.75s both; }
-.hal .h-hoe.u-s3:not([data-uitleg-staat="klaar"]) .h-keur-revchip { animation: h-keur-chip 2.3s var(--h-zacht) 1.1s both; }
-.hal .h-hoe.u-s3:not([data-uitleg-staat="klaar"]) .h-keur-rev-a { animation: h-keur-tekst-a .25s linear 2s both; }
-.hal .h-hoe.u-s3:not([data-uitleg-staat="klaar"]) .h-keur-rev-b { animation: h-keur-tekst-b .25s linear 2.05s both; }
-html.h-js body.hal .h-hoe.u-s3 .h-keur-rev .h-vink { transition-delay: 2.55s; }
-/* De kleur stond iets te warm; na de revisie is het het geleverde beeld. */
-@keyframes h-keur-kleur { 0% { filter: none; } 10%, 78% { filter: sepia(.4) saturate(1.35) hue-rotate(-12deg) brightness(1.03); } 100% { filter: none; } }
-@keyframes h-keur-glans { 0% { opacity: 1; background-position: 120% 0; } 100% { opacity: 1; background-position: -20% 0; } }
-@keyframes h-keur-chip { 0% { opacity: 0; translate: 0 6px; } 10%, 82% { opacity: 1; translate: 0 0; } 100% { opacity: 0; translate: 0 0; } }
-@keyframes h-keur-tekst-a { to { opacity: 0; } }
-@keyframes h-keur-tekst-b { to { opacity: 1; } }
+/* Stap 3: de tik. Het beeld geeft even mee, vlak voor zijn vinkje (--kt), alleen
+   terwijl de stap speelt. */
+.hal .h-hoe.u-s3:not([data-uitleg-staat="klaar"]) .h-keur-rij li { animation: h-keur-tik .34s var(--h-zacht) calc(var(--kt, .5s) - .14s) both; }
+@keyframes h-keur-tik { 0% { scale: 1; } 40% { scale: .965; } 100% { scale: 1; } }
 /* meer weten: de vragen komen binnen, het kenmerk typt zichzelf */
 html.h-js body.hal .h-vragen span { transition: opacity .5s var(--h-zacht), transform .6s var(--h-veer); transition-delay: calc(var(--d, 0) * 110ms + .35s); }
 html.h-js body.hal .h-faq:not(.is-in) .h-vragen span { opacity: 0; transform: translateY(10px) scale(.94); }
@@ -1157,6 +1162,7 @@ html.h-js body.hal .h-groot:not(.is-in) .h-getal { filter: blur(8px); opacity: .
   body.hal { --h-rand: 28px; }
   /* de koppen schalen hier mee (zie KOPPEN OP HOOGUIT TWEE REGELS bovenaan) */
   .hal .h-open-tekst { margin-left: 40px; padding-top: 170px; }
+  .hal .h-opening { --h-open-zij: 0px; }
   .hal .h-rest { grid-template-columns: 1fr; gap: 10px; }
   .hal .h-rest-jij { flex-direction: row; align-items: center; justify-content: flex-start; gap: 26px; }
   .hal .h-rest-fotos { flex: none; width: 196px; }
@@ -1315,7 +1321,7 @@ body.hal .mobile-nav .mi-soon { font: 600 11.5px/1 var(--h-letter); text-transfo
    Maten in px, uitgerekend op 1440 / 1024 / 390. */
 
 /* De kop van een pagina: onder de zwevende balk (18 + 66 px), dan lucht. */
-.hal .h-paginakop { max-width: 1440px; margin: 0 auto; padding: 172px var(--h-rand) 0; display: grid; gap: 22px; justify-items: start; }
+.hal .h-paginakop { max-width: var(--h-kolom); margin: 0 auto; padding: 172px var(--h-rand) 0; display: grid; gap: 22px; justify-items: start; }
 .hal .h-paginakop .h-h1 { max-width: none; } /* was 920 px; een toon past nu op één regel (twee regels, k-vd) */
 /* de twee tonen van de paginakop op een eigen regel: eerst het lichte deel */
 .hal .h-paginakop .h-h1 > span { display: block; }
@@ -1391,7 +1397,7 @@ body.hal .mobile-nav .mi-soon { font: 600 11.5px/1 var(--h-letter); text-transfo
 .hal .h-st-chip svg { font-size: 12px; }
 /* /start in drie banden (15 oktober 2026, v28-start = a): bovenaan een korte strook
    (jij stuurt, wij doen de rest, jij keurt goed), dan Beeld, Video en Op maat. */
-.hal .h-st-kort { max-width: 1440px; margin: 0 auto; padding: 40px var(--h-rand) 0; }
+.hal .h-st-kort { max-width: var(--h-kolom); margin: 0 auto; padding: 40px var(--h-rand) 0; }
 .hal .h-st-kort-rij { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
 .hal .h-st-kort-rij li { display: flex; align-items: flex-start; gap: 14px; max-width: none; padding: 18px 20px; border-radius: 24px; background: var(--h-nevel); }
 .hal .h-st-kort-nr { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--h-wit); box-shadow: inset 0 0 0 1px var(--h-lijn); font: 600 14px/1 var(--h-letter); color: var(--h-violet); }
@@ -1945,7 +1951,7 @@ body.hal .h-lk-diensten .svcsw-a { font: 600 14.5px/1.5 var(--h-letter); color: 
 .hal .h-ts-hp { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
 /* de weigeringen: alleen zichtbaar als er een open staat */
-.hal .h-ts-weigeringen { max-width: 1440px; margin: 0 auto; padding: 32px var(--h-rand) 0; }
+.hal .h-ts-weigeringen { max-width: var(--h-kolom); margin: 0 auto; padding: 32px var(--h-rand) 0; }
 .hal .h-ts-weigeringen:not(:has(.h-ts-geweigerd:not([hidden]))) { display: none; }
 .hal .h-ts-geweigerd:not([hidden]) { display: grid; gap: 8px; max-width: 860px; padding: 28px 32px; border-radius: 32px; background: var(--h-mist); box-shadow: inset 0 0 0 1.5px var(--h-lila); scroll-margin-top: 120px; }
 .hal .h-ts-geweigerd strong { font: 600 20px/1.25 var(--h-letter); color: var(--h-inkt); }
@@ -1959,7 +1965,7 @@ body.hal .h-lk-diensten .svcsw-a { font: 600 14.5px/1.5 var(--h-letter); color: 
    (--surface, --accent-soft, --ronding), en waar een vorm vast staat
    (hoofdletters, hoek 0) met een regel op body.hal (0,2,1 wint van de
    onderdeelregels van Astro, 0,2,0). */
-.hal .h-ts-form { max-width: 1440px; margin: 0 auto; padding: 40px var(--h-rand) 0; }
+.hal .h-ts-form { max-width: var(--h-kolom); margin: 0 auto; padding: 40px var(--h-rand) 0; }
 body.hal .h-form .s22 {
   --surface: #FFFFFF; --paper-2: #FFFFFF; --accent-soft: var(--h-mist); --accent-line: var(--h-lila);
   --wit: #FFFFFF; --vel: #FFFFFF; --ronding: 32px; --grond: transparent; --r-lg: 24px; --r-md: 14px;
@@ -2062,7 +2068,7 @@ html body.hal .h-form .s22 .btn { font: 600 14px/1 var(--h-letter); }
    Zelfde aanpak als de proef: `html body.hal .h-form` (0,3,2 en hoger) omdat
    stijl22.css `.s22.s22 …` (0,3,1) gebruikt. De algemene regels van het
    formulier zelf (stappenrij, kaarten, knoppen) staan hierboven onder .h-form. */
-body.hal .h-form:not(.h-ts-form) { max-width: 1440px; margin: 0 auto; padding: 132px var(--h-rand) 0; }
+body.hal .h-form:not(.h-ts-form) { max-width: var(--h-kolom); margin: 0 auto; padding: 132px var(--h-rand) 0; }
 /* de kop van de pagina: het eerste paneel, op wit en zonder vlak */
 html body.hal .h-form:not(.h-ts-form) .s22 > .paneel:first-child { margin: 0; padding: 0 0 32px; border-radius: 0; background: transparent; box-shadow: none; }
 html body.hal .h-form:not(.h-ts-form) .s22 > .paneel:first-child .paneel-kop { margin-bottom: 0; }
@@ -2464,7 +2470,7 @@ html body.hal .h-cmp-fig .cv * { text-transform: none; letter-spacing: normal; f
 .hal .h-cmp-tool-lijst i { flex: none; width: 24px; height: 24px; margin-top: -1px; border-radius: 50%; background: #fff; color: var(--h-violet); display: grid; place-items: center; font-size: 12px; }
 .hal .h-cmp-tool-lijst.is-min i { color: var(--h-inkt); }
 .hal .h-cmp-tool-slot { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; margin-top: 24px; font: 500 18px/1.4 var(--h-letter); color: var(--h-inkt); }
-.hal .h-cmp-antwoord { max-width: calc(1440px - 80px); margin: 16px auto 0; padding: 0 var(--h-rand); font-size: 14px; line-height: 1.5; color: var(--h-inkt-2); text-align: center; }
+.hal .h-cmp-antwoord { max-width: calc(var(--h-kolom) - 80px); margin: 16px auto 0; padding: 0 var(--h-rand); font-size: 14px; line-height: 1.5; color: var(--h-inkt-2); text-align: center; }
 @media (max-width: 1100px) {
   .hal .h-cmp-wint { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -3120,7 +3126,7 @@ html body.hal .h-lv .h-lv-noot { --h-maat: 26em; }
    met het scherm er direct onder op het lichte violette vlak (het enige van dat scherm),
    kaarten met label linksboven, ↗ rechtsboven en één groot dun getal, bento-rasters met
    16 px tussenruimte, haarlijnen, glas alleen over een foto. */
-.hal .h-sd-kop { max-width: 1440px; margin: 0 auto; padding: 172px var(--h-rand) 0; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 22px 56px; align-items: end; }
+.hal .h-sd-kop { max-width: var(--h-kolom); margin: 0 auto; padding: 172px var(--h-rand) 0; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 22px 56px; align-items: end; }
 .hal .h-sd-kop-links { display: grid; gap: 22px; justify-items: start; }
 .hal .h-sd-kop-rechts { display: grid; gap: 26px; justify-items: start; padding-bottom: 8px; }
 .hal .h-sd-kop .h-h1 > span { display: block; }
@@ -3362,7 +3368,7 @@ html body.hal .h-jur-tekst .jur-uit .h-knop { text-decoration: none; }
 html body.hal .h-jur-tekst .jur-uit .h-knop-inkt { color: #fff; }
 .hal .h-jur-kolom { max-width: 760px; margin-top: 40px; }
 /* de 404: de kop met één groot dun getal, en de zes plekken als kaarten */
-.hal .h-nf-kop { max-width: 1440px; margin: 0 auto; padding: 172px var(--h-rand) 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px 56px; align-items: center; }
+.hal .h-nf-kop { max-width: var(--h-kolom); margin: 0 auto; padding: 172px var(--h-rand) 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px 56px; align-items: center; }
 .hal .h-nf-tekst { display: grid; gap: 22px; justify-items: start; }
 .hal .h-nf-tekst .h-h1 > span { display: block; }
 .hal .h-nf-getal { position: relative; overflow: hidden; display: grid; place-items: center; min-height: 420px; border-radius: 40px; background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E7E2FF; }
@@ -3432,7 +3438,7 @@ html[lang="nl"] body.hal { --h-maat: min(max(16.5em, calc((15.75px - 1em) * 1000
    vormen (label | waarde, nummer + streep, kaartjes) en niet de pillen en chips:
    die zijn geen lopende tekst. Een tekst IN zo'n rij krijgt de maat hieronder apart. */
 .hal main p:not(.h-pil):not(.h-kop):not(.sb-kop):not(.h-dienst-extra-kop):not(.h-pl-soon-naam):not(.h-ct-groot):not(.hold-status-word):not(.h-rest-kop):not(.h-nr):not(.h-hw-verder):not(.h-pr-prijs):not(.sr1):not(.pl-hoeken-h):not(.h-ts-gids):not(.bm-price-hero):not(.ps-sum-h):not(.ps-hp):not(.h-st-ook-links):not(.svcsw):not(.h-look-paneel):not(.acties):not(.h-pk-kop):not(.h-pk-credits):not(.etiket):not(.pl-svc):not(.bo-totaal):not(.h-bm-regel):not(.sb-hp):not(.h-acties):not(.h-st-wegen):not(.h-st-tarief):not(:has(.h-knop)):not(:has(.h-chip)):not(:has(.h-pil)):not(:has(.h-link)):not(:has(.knop)):not(:has(button)):not(:has(img)):not(.hl *):not(.fgt *):not(.fd *):not(.fg *) { max-width: var(--h-maat) !important; }
-.hal main li:not(:has(> div)):not(:has(> p)):not(:has(> ul)):not(:has(> ol)):not(:has(> figure)):not(:has(> img)):not(:has(> picture)):not(:has(> a)):not(:has(button)):not(:has(.h-knop)):not(:has(.h-chip)):not(.h-vs-kaarten > li):not(.ck-lijst > li):not(.pl-hoek-rooster > li):not(.h-hw-land-rij > li):not(.h-cmp-wint > li):not(.h-bm-props > li):not(.h-hw-regel-lijst > li):not(.fgt-list > li):not(.h-pl-feiten > li):not(.h-vertrouwen > li):not(.an-keys > li):not(.h-cmp-week-rij > li):not(.h-hw-details > li):not(.h-pr-som-rij > li):not(.h-st-feiten > li):not(.h-st-kort-rij > li):not(.ps-voordelen > li):not(.ps-sum-list > li):not(.h-ts-feiten > li):not(.h-feiten > li):not(.bm-rail > li):not(.h-sd-onderweg > li):not(.h-sd-formaten > li):not(.h-sd-sleutel > li):not(.h-jur-inhoud-lijst > li):not(.h-kopbeeld-regels > li):not(.h-fmt-rij > li):not(.hl *):not(.fd *):not(.fg *) { max-width: var(--h-maat) !important; }
+.hal main li:not(:has(> div)):not(:has(> p)):not(:has(> ul)):not(:has(> ol)):not(:has(> figure)):not(:has(> img)):not(:has(> picture)):not(:has(> a)):not(:has(button)):not(:has(.h-knop)):not(:has(.h-chip)):not(.h-vs-kaarten > li):not(.ck-lijst > li):not(.pl-hoek-rooster > li):not(.h-hw-land-rij > li):not(.h-cmp-wint > li):not(.h-bm-props > li):not(.h-hw-regel-lijst > li):not(.fgt-list > li):not(.h-pl-feiten > li):not(.h-vertrouwen > li):not(.an-keys > li):not(.h-cmp-week-rij > li):not(.h-hw-details > li):not(.h-pr-som-rij > li):not(.h-st-feiten > li):not(.h-st-kort-rij > li):not(.ps-voordelen > li):not(.ps-sum-list > li):not(.h-ts-feiten > li):not(.h-feiten > li):not(.bm-rail > li):not(.h-sd-onderweg > li):not(.h-sd-formaten > li):not(.h-sd-sleutel > li):not(.h-jur-inhoud-lijst > li):not(.h-kopbeeld-regels > li):not(.h-fmt-rij > li):not(.ty-verder > li):not(.hl *):not(.fd *):not(.fg *) { max-width: var(--h-maat) !important; }
 .hal main dd:not(.h-pr-regel > dd):not(.hl *):not(.fd *):not(.fg *) { max-width: var(--h-maat) !important; }
 .hal main dt:not(.hl *):not(.fd *):not(.fg *) { max-width: var(--h-maat) !important; }
 .hal main td:not(.hl *):not(.fd *):not(.fg *) { max-width: var(--h-maat) !important; }
