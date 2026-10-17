@@ -36,7 +36,7 @@ export const KLANT = {
     leeg: 'Je bestellingen en beelden staan in VISUAILS Studio.',
     studio: 'Naar VISUAILS Studio',
     /* Letterlijk de zin uit Studio — tests/klant-stand.test.mjs vergelijkt. */
-    wa: 'Hoi VISUAILS, een vraag over bestelling {ref}:',
+    wa: 'Hallo VISUAILS, een vraag over bestelling {ref}:',
     /* De melding onderin het scherm (KlantMelding.astro), 14 oktober 2026. */
     meldingLabel: 'Je bestelling',
     sluit: 'Sluit deze melding',
@@ -66,7 +66,7 @@ export const KLANT = {
     welkomNaam: 'Welcome back, {naam}',
     leeg: 'Your orders and images are in VISUAILS Studio.',
     studio: 'Go to VISUAILS Studio',
-    wa: 'Hi VISUAILS, a question about order {ref}:',
+    wa: 'Hello VISUAILS, a question about order {ref}:',
     meldingLabel: 'Your order',
     sluit: 'Close this message',
     proefLabel: 'Test sample',

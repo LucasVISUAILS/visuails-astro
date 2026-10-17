@@ -49,7 +49,7 @@ import { REVIEW_PLATFORMS, REVIEW_VOORKEUR, parsePlatforms, SCORE_HIGH, SCORE_MA
 import { TOESTEMMING_WEG_DAGEN, termijnInWoorden } from '../data/termijnen.js';
 import { nieuwTabbladHtml } from '../data/nieuwTabblad.js';
 import { sendMail } from './mail.js';
-import { shell, h1, p as mailP, rows as mailRows, quote as mailQuote, note as mailNote } from './mailTemplate.js';
+import { shell, h1, p as mailP, rows as mailRows, quote as mailQuote, note as mailNote, kenmerk } from './mailTemplate.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (ch) => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
@@ -713,7 +713,7 @@ async function notifyStudio(env, { orderId, kind, score, note }) {
           lang: 'nl',
           preheader: `${who} wil niet meer dat we zijn beelden of tekst laten zien.`,
           body: [
-            h1('Een klant trekt zijn toestemming in', ref),
+            h1('Een klant trekt zijn toestemming in', kenmerk('bestelling', ref)),
             mailRows([
               ['Bestelling', esc(ref)],
               ['Klant', esc(who)],
@@ -731,7 +731,7 @@ async function notifyStudio(env, { orderId, kind, score, note }) {
       : `Lage score bij ${ref} — ${score}/${SCORE_MAX}`;
 
     const body = [
-      h1(kind === 'note' ? 'Een klant heeft uitgelegd wat er misging' : 'Een klant is niet tevreden', ref),
+      h1(kind === 'note' ? 'Een klant heeft uitgelegd wat er misging' : 'Een klant is niet tevreden', kenmerk('bestelling', ref)),
       /* Elke waarde als tekst (8 oktober 2026). rows() uit mailTemplate.js neemt
          HTML aan, en `who` is de merknaam of naam die de klant zelf typte: een
          merk dat "<a href=…>Open in admin</a>" heette, stond hier als echte link

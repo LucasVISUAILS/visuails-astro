@@ -25,6 +25,7 @@
  */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
+import { ikoon, IKOON } from '../data/iconen.js';
 import HalBeweging from './HalBeweging.astro';
 
 interface Props {
@@ -89,8 +90,8 @@ const DOCS = nl
    live wordt dit de gewone route (zie de pagina's). */
 const voorbeeld = Astro.url.pathname.includes('/voorbeeld/');
 const docHref = (d: string) => `${pre}${voorbeeld ? '/voorbeeld' : ''}/${d}/`;
-const KLOK = '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 4.8V8l2.2 1.6"/></svg>';
-const PLUS = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>';
+const KLOK = ikoon('klok');
+const PLUS = ikoon('plus');
 ---
 <div class="h-pagina h-jur-pagina">
   <header class="h-paginakop h-jur-kop">

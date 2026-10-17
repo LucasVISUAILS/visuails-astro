@@ -1,5 +1,6 @@
 ---
 import { TIPS } from '../../data/tips.js';
+import { ikoon, IKOON } from '../../data/iconen.js';
 import { waHref, WHATSAPP_DISPLAY } from '../../data/whatsapp.js';
 import NieuwTabblad from '../NieuwTabblad.astro';
 /* Het adres staat als tekst in schema.js en de voettekst; hier één constante. */
@@ -361,7 +362,7 @@ const PIPE = {
     },
     /* 1.08: het bericht achter "App ons". {aantal} is "1 product" of "3 products". */
     appOns: {
-      bericht: 'Hi, I am at step {stap} ({naam}) of {wat}.',
+      bericht: 'Hello, I am at step {stap} ({naam}) of {wat}.',
       wat: appOnsWat('en'),
       watAantal: isSample ? appOnsWat('en') : `${appOnsWat('en')} with {aantal}`,
       een: '1 product',
@@ -595,7 +596,7 @@ const PIPE = {
     },
     /* Zie de Engelse noot (1.08). */
     appOns: {
-      bericht: 'Hoi, ik zit bij stap {stap} ({naam}) van {wat}.',
+      bericht: 'Hallo, ik zit bij stap {stap} ({naam}) van {wat}.',
       wat: appOnsWat('nl'),
       watAantal: isSample ? appOnsWat('nl') : `${appOnsWat('nl')} met {aantal}`,
       een: '1 product',
@@ -1247,10 +1248,10 @@ const FORM = {
         ? `That is more than one order holds, so we split it over delivery dates together. The rate does not change: from ${vloerVanaf} products up it is ${euro(ladderVloer, 'en')} per product, however many there are. Send us the number and a link to your shop; we usually answer within the hour; outside opening hours, the next morning.`
         : `That is more than one order holds, so we split it over delivery dates together and you get one quote. Send us the number and a link to your shop; we usually answer within the hour; outside opening hours, the next morning.`,
       moreWa: 'Send a WhatsApp',
-      moreWaText: `Hi VISUAILS, I would like images for more than ${maxProducts} products. `,
+      moreWaText: `Hello VISUAILS, I would like images for more than ${maxProducts} products. `,
       moreMail: 'Send an email',
       moreMailSubject: `More than ${maxProducts} products`,
-      moreMailBody: `Hi VISUAILS,\n\nI would like images for more than ${maxProducts} products.\nRoughly how many: \nMy shop: \nWhen it should be live: \n`,
+      moreMailBody: `Hello VISUAILS,\n\nI would like images for more than ${maxProducts} products.\nRoughly how many: \nMy shop: \nWhen it should be live: \n`,
       moreBack: `Fewer than ${maxProducts}? Choose a number instead`,
       /* ── De soortkeuze op de proefvisual, 11 augustus 2026 ─────────────────
          Wat je krijgt staat naast de naam en niet eronder in een hint: het is
@@ -1407,7 +1408,7 @@ const FORM = {
          klopte. Er is niets aangemaakt of afgeschreven. */
       refuseBotcheck: 'We could not confirm that this order came from a person, so it was not sent and nothing was charged. Try again in a moment, or place the order with us directly:',
       refuseBotcheckWaLabel: 'send a WhatsApp',
-      refuseBotcheckWa: 'Hi VISUAILS, I tried to place an order on the site and it did not go through. Can you help me place it?',
+      refuseBotcheckWa: 'Hello VISUAILS, I tried to place an order on the site and it did not go through. Can you help me place it?',
       refuseBotcheckOf: 'or email',
       noVat: 'I do not have a VAT number',
       vatHint: 'A business in another EU country: we check it against VIES, and if it is valid no Dutch VAT is charged.',
@@ -1571,7 +1572,7 @@ const FORM = {
     // invoerveld, zodat wie hier klikt zelf moet bedenken wat hij schrijft —
     // op precies het punt waar hij vastliep in het bestelformulier. Elke
     // andere WhatsApp-knop op de site opent met een zin; deze twee niet.
-    footWaText: "Hi VISUAILS, I'm filling in an order and got stuck.",
+    footWaText: "Hello VISUAILS, I'm filling in an order and got stuck.",
     // The signed-out sign-in prompt at the head of the form. See the markup by
     // .pl-signin for why it exists and why it is [data-acct="out"].
     signInH: 'Ordered with us before?',
@@ -1621,10 +1622,10 @@ const FORM = {
         ? `Dat is meer dan er in één bestelling past, dus verdelen we het samen over leverdata. Aan de prijs verandert dat niets: vanaf ${vloerVanaf} producten is het ${euro(ladderVloer, 'nl')} per product, hoeveel het er ook worden. Stuur ons het aantal en een link naar je shop; we antwoorden meestal binnen het uur, buiten openingstijden de volgende ochtend.`
         : `Dat is meer dan er in één bestelling past, dus we verdelen het samen over leverdata en je krijgt één offerte. Stuur ons het aantal en een link naar je shop; we antwoorden meestal binnen het uur, buiten openingstijden de volgende ochtend.`,
       moreWa: 'Stuur een WhatsApp',
-      moreWaText: `Hoi VISUAILS, ik wil beelden laten maken voor meer dan ${maxProducts} producten. `,
+      moreWaText: `Hallo VISUAILS, ik wil beelden laten maken voor meer dan ${maxProducts} producten. `,
       moreMail: 'Stuur een mail',
       moreMailSubject: `Meer dan ${maxProducts} producten`,
-      moreMailBody: `Hoi VISUAILS,\n\nIk wil beelden laten maken voor meer dan ${maxProducts} producten.\nOngeveer hoeveel: \nMijn shop: \nWanneer het live moet: \n`,
+      moreMailBody: `Hallo VISUAILS,\n\nIk wil beelden laten maken voor meer dan ${maxProducts} producten.\nOngeveer hoeveel: \nMijn shop: \nWanneer het live moet: \n`,
       moreBack: `Toch ${maxProducts} of minder? Kies dan een aantal`,
       /* Zie de noot bij de Engelse tegenhanger. */
       sampleKindLabel: 'Wat maken we voor je?',
@@ -1742,7 +1743,7 @@ const FORM = {
       /* Zie de Engelse refuseBotcheck. */
       refuseBotcheck: 'We konden niet bevestigen dat deze bestelling van een mens komt, dus is hij niet verstuurd en is er niets afgeschreven. Probeer het zo nog eens, of plaats de bestelling rechtstreeks bij ons:',
       refuseBotcheckWaLabel: 'stuur een WhatsApp',
-      refuseBotcheckWa: 'Hoi VISUAILS, ik probeerde een bestelling te plaatsen op de site en dat lukte niet. Kunnen jullie me helpen hem te plaatsen?',
+      refuseBotcheckWa: 'Hallo VISUAILS, ik probeerde een bestelling te plaatsen op de site en dat lukte niet. Kunnen jullie me helpen hem te plaatsen?',
       refuseBotcheckOf: 'of mail',
       refuseVat: 'Dit btw-nummer heeft niet de vorm die bij het gekozen land hoort. Verbeter het, of zet het vinkje “Ik heb geen btw-nummer” aan.',
       viesGeldig: 'Gevonden in de Europese btw-controle (VIES). Met de zakelijke verklaring in de laatste stap wordt de btw verlegd.',
@@ -1873,7 +1874,7 @@ const FORM = {
     footBody: `${sample.deliverable} van een eigen product, voor ${sample.price}.`,
     footCta: sample.cta,
     footWa: 'Vraag het via WhatsApp',
-    footWaText: 'Hoi VISUAILS, ik ben een bestelling aan het invullen en kom er niet uit.',
+    footWaText: 'Hallo VISUAILS, ik ben een bestelling aan het invullen en kom er niet uit.',
     signInH: 'Al eerder bij ons besteld?',
     signInBody: 'Log in en je gegevens staan er al in.',
     signInCta: 'Inloggen',
@@ -3542,7 +3543,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       <button type="button" class="pl-combi-knop" data-pl-combi-schuif aria-expanded="false" aria-controls="pl-combi-in">
         <span class="pl-combi-woord" data-pl-combi-woord></span>
         <span class="pl-combi-prijs" data-pl-combi-prijs></span>
-        <svg class="pl-combi-pijl" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m6 9 6 6 6-6"/></svg>
+        <svg class="ik pl-combi-pijl" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d={IKOON.uitklap} /></svg>
       </button>
       <div class="pl-combi-in" id="pl-combi-in" hidden>
         <slot name="combi" />

@@ -81,18 +81,24 @@ const MAILS = [
   },
 ];
 
+/* Sinds 17 oktober 2026 (afvinklijst 33) niet meer "Hoi": het dagdeel als de klant
+   nu leest ("Goedemiddag Mara,"), anders "Hallo Mara,". Zie src/lib/aanhef.js. */
+const AANHEF_NL = new RegExp(`(Goedemorgen|Goedemiddag|Goedenavond|Hallo) ${NAAM},`);
+const AANHEF_EN = new RegExp(`(Good morning|Good afternoon|Good evening|Hello) ${NAAM},`);
 console.log('\nde aanhef volgt de taal van de brief');
 for (const m of MAILS) {
-  for (const [lang, verwacht] of [['nl', `Hoi ${NAAM},`], ['en', `Hi ${NAAM},`]]) {
+  for (const lang of ['nl', 'en']) {
     let html = '';
     try { html = String(m.render(lang) || ''); } catch (e) { html = `RENDERFOUT: ${e.message}`; }
-    ok(`${m.naam} — ${lang}: "${verwacht}"`, html.includes(verwacht), true);
+    const goed = lang === 'nl' ? AANHEF_NL : AANHEF_EN;
+    ok(`${m.naam} — ${lang}: "${lang === 'nl' ? 'Hallo' : 'Hello'} ${NAAM}," of het dagdeel`, goed.test(html), true);
 
-    /* DE ANDERE TAAL MAG ER NIET IN STAAN. Zonder deze helft zou "Hi Mara," in
-       een Nederlandse mail blijven staan zolang "Hoi Mara," er ook maar ergens
+    /* DE ANDERE TAAL MAG ER NIET IN STAAN. Zonder deze helft zou "Hello Mara," in
+       een Nederlandse mail blijven staan zolang "Hallo Mara," er ook maar ergens
        stond — en een mail met twee aanhef-regels is niet minder fout. */
-    const andere = lang === 'nl' ? `Hi ${NAAM},` : `Hoi ${NAAM},`;
-    ok(`  en niet "${andere}"`, html.includes(andere), false);
+    const andere = lang === 'nl' ? AANHEF_EN : AANHEF_NL;
+    ok(`  en niet de aanhef in de andere taal`, andere.test(html), false);
+    ok(`  en nergens meer "Hoi" of "Hi"`, new RegExp(`>(Hoi|Hi) ${NAAM},`).test(html), false);
   }
 
   /* De taal van de BODY, uit een ander woord dan de aanhef. */
@@ -102,21 +108,33 @@ for (const m of MAILS) {
 
 console.log('\nde helper zelf');
 {
-  ok('Nederlands groet met Hoi', greeting('Mara', 'nl'), 'Hoi Mara,');
-  ok('Engels met Hi', greeting('Mara', 'en'), 'Hi Mara,');
-  ok('een onbekende taal valt terug op Engels', greeting('Mara', 'de'), 'Hi Mara,');
-  ok('geen taal ook', greeting('Mara'), 'Hi Mara,');
+  ok('Nederlands zonder tijd: Hallo', greeting('Mara', 'nl'), 'Hallo Mara,');
+  ok('Engels zonder tijd: Hello', greeting('Mara', 'en'), 'Hello Mara,');
+  ok('een onbekende taal valt terug op Engels', greeting('Mara', 'de'), 'Hello Mara,');
+  ok('geen taal ook', greeting('Mara'), 'Hello Mara,');
+
+  /* Het dagdeel, in de tijd van het land (17 oktober 2026 is zomertijd: UTC+2). */
+  const om = (uurNL) => new Date(Date.UTC(2026, 9, 17, uurNL - 2, 30));
+  ok('08:30 in Nederland: Goedemorgen', greeting('Mara', 'nl', { nu: om(8), land: 'NL' }), 'Goedemorgen Mara,');
+  ok('14:30: Goedemiddag', greeting('Mara', 'nl', { nu: om(14), land: 'NL' }), 'Goedemiddag Mara,');
+  ok('20:30: Goedenavond', greeting('Mara', 'nl', { nu: om(20), land: 'NL' }), 'Goedenavond Mara,');
+  ok('02:30, nacht: gewoon Hallo', greeting('Mara', 'nl', { nu: om(2), land: 'NL' }), 'Hallo Mara,');
+  ok('Engels in Londen (een uur eerder): Good morning om 12:30 bij ons', greeting('Mara', 'en', { nu: om(12), land: 'GB' }), 'Good morning Mara,');
+  ok('een land met meer tijdzones (VS): geen dagdeel', greeting('Mara', 'en', { nu: om(14), land: 'US' }), 'Hello Mara,');
+  ok('Nederlands zonder land: de tijd van Nederland', greeting('Mara', 'nl', { nu: om(14) }), 'Goedemiddag Mara,');
+  ok('Engels zonder land: geen dagdeel', greeting('Mara', 'en', { nu: om(14) }), 'Hello Mara,');
 
   /* GEEN NAAM IS EEN GELDIG GEVAL — een proefvisual vraagt er niet altijd om.
-     "Hoi ," met een spatie voor de komma leest als een omgevallen sjabloon. */
-  ok('zonder naam alleen de aanhef', greeting('', 'nl'), 'Hoi,');
-  ok('null telt als zonder naam', greeting(null, 'en'), 'Hi,');
-  ok('en spaties ook', greeting('   ', 'nl'), 'Hoi,');
+     "Hallo ," met een spatie voor de komma leest als een omgevallen sjabloon. */
+  ok('zonder naam alleen de aanhef', greeting('', 'nl'), 'Hallo,');
+  ok('null telt als zonder naam', greeting(null, 'en'), 'Hello,');
+  ok('en spaties ook', greeting('   ', 'nl'), 'Hallo,');
+  ok('zonder naam met het dagdeel', greeting('', 'nl', { nu: om(9), land: 'BE' }), 'Goedemorgen,');
 
   /* De esc() zit IN de helper en niet bij de aanroeper: vier aanroepers die hem
      zelf moeten zetten, zijn vier kansen om de naam van een klant ongefilterd in
      de HTML te zetten. */
-  ok('de naam wordt ontsmet', greeting('A<b>&', 'nl'), 'Hoi A&lt;b&gt;&amp;,');
+  ok('de naam wordt ontsmet', greeting('A<b>&', 'nl'), 'Hallo A&lt;b&gt;&amp;,');
 }
 
 console.log('\nen de regel staat nergens meer met de hand');

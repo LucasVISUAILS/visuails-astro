@@ -24,6 +24,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
+import { ikoon, IKOON } from '../data/iconen.js';
 import VideoExamples from './VideoExamples.astro';
 import HalBeweging from './HalBeweging.astro';
 /*
@@ -109,7 +110,7 @@ const m = media[style.slug] ?? media.motion;
 const c = nl ? {
   terug: 'Video-stijlen',
   wa: 'WhatsApp',
-  waTekst: `Hoi VISUAILS, ik wil graag praten over de ${style.name}-stijl.`,
+  waTekst: `Hallo VISUAILS, ik wil graag praten over de ${style.name}-stijl.`,
   andere: 'Andere looks:',
   heroAlt: `De ${style.name}-videostijl van VISUAILS`,
   voeltH: ['Wat ', ' kenmerkt'],
@@ -133,7 +134,7 @@ const c = nl ? {
 } : {
   terug: 'Video styles',
   wa: 'WhatsApp',
-  waTekst: `Hi VISUAILS, I’d like to talk about the ${style.name} style.`,
+  waTekst: `Hello VISUAILS, I’d like to talk about the ${style.name} style.`,
   andere: 'Other looks:',
   heroAlt: `The VISUAILS ${style.name} video style`,
   voeltH: ['What defines ', ''],
@@ -166,11 +167,10 @@ const H = nl ? {
   slotPil: style.name,
 };
 const DRIE = (n: number) => String(n).padStart(2, '0');
-const ICOON = {
-  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
-  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
-};
-const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+/* De iconen uit het kit (levering 54, afvinklijst 34): links de naam in dit
+   onderdeel, rechts het icoon in src/data/iconen.js. */
+const ICOON = { rechts: 'pijl', check: 'vink' } as const;
+const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
 /* "Hoe Motion eruitziet." in twee tonen: tot en met de naam licht, de rest donker (k-vd, 13 okt) */
 const moodTonen = (() => { const m = style.moodTitle || ''; const i = m.toLowerCase().indexOf(String(style.name).toLowerCase()); return i < 0 ? [m, ''] : [m.slice(0, i + style.name.length), m.slice(i + style.name.length).trim()]; })();
 ---

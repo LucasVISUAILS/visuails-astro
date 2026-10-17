@@ -45,7 +45,7 @@
 
 import { serviceLabel } from '../data/services.js';
 import { sendMail } from './mail.js';
-import { shell, h1, p as mailP, rows as rijenHtml, quote as quoteHtml, statusPil, bedrag as mailBedrag, datum, esc } from './mailTemplate.js';
+import { shell, h1, p as mailP, rows as rijenHtml, quote as quoteHtml, statusPil, bedrag as mailBedrag, datum, esc, kenmerk, C as MAILC } from './mailTemplate.js';
 /* De klant bereiken bij een open betaling of een mislukte incasso (punt 7.05,
    8 oktober 2026): de knop met de vaste tekst, Bellen voorop bij een
    Nederlandse klant. Zie src/lib/waLink.js. */
@@ -129,7 +129,7 @@ export async function notifyPaid(env, orderId) {
     const ref = o?.ref || `#${orderId}`;
     const gross = (Number(o?.total_cents) || 0) + (Number(o?.vat_cents) || 0);
     await toStudio(env, `Betaald · ${ref} · ${cents(gross)}`, [
-      h1('Er is betaald', ref),
+      h1('Er is betaald', kenmerk('bestelling', ref)),
       mailRows([
         ['Bestelling', ref],
         ['Klant', who(o)],
@@ -162,7 +162,7 @@ export async function notifyPaymentFailed(env, orderId, reason = '') {
     const o = await orderFor(env, orderId);
     const ref = o?.ref || `#${orderId}`;
     await toStudio(env, `Betaling niet gelukt · ${ref}`, [
-      h1('Een betaling is niet doorgegaan', ref),
+      h1('Een betaling is niet doorgegaan', kenmerk('bestelling', ref)),
       mailRows([
         ['Bestelling', ref],
         ['Klant', who(o)],
@@ -199,7 +199,7 @@ export async function notifyOngewensteBetaling(env, { orderId, soort, betaalId, 
     const ref = o?.ref || `#${orderId}`;
     const wat = soort === 'geannuleerd' ? 'Betaling op een geannuleerde bestelling' : 'Dubbel betaald';
     await toStudio(env, `${wat} · ${ref} · ${cents(bedragCents)}`, [
-      h1(wat, ref),
+      h1(wat, kenmerk('bestelling', ref)),
       mailRows([
         ['Bestelling', ref],
         ['Klant', who(o)],
@@ -232,7 +232,7 @@ export async function notifyChargeback(env, { orderId, betaalId, bedragCents, to
     const o = await orderFor(env, orderId);
     const ref = o?.ref || `#${orderId}`;
     await toStudio(env, `Terugboeking (chargeback) · ${ref} · ${cents(bedragCents)}`, [
-      h1('De klant heeft de betaling laten terugboeken', ref),
+      h1('De klant heeft de betaling laten terugboeken', kenmerk('bestelling', ref)),
       mailRows([
         ['Bestelling', ref],
         ['Klant', who(o)],
@@ -266,7 +266,7 @@ export async function notifyBtwTwijfel(env, orderId, reden) {
     const o = await orderFor(env, orderId);
     const ref = o?.ref || `#${orderId}`;
     await toStudio(env, `Even nakijken: btw · ${ref}`, [
-      h1('Betaald op 0%, maar het betaalmiddel komt uit de EU', ref),
+      h1('Betaald op 0%, maar het betaalmiddel komt uit de EU', kenmerk('bestelling', ref)),
       mailRows([
         ['Bestelling', ref],
         ['Klant', who(o)],
@@ -302,7 +302,7 @@ export async function notifySampleBlocked(env, { orderId, earlierRef, earlierAt,
     const o = await orderFor(env, orderId);
     const ref = o?.ref || `#${orderId}`;
     await toStudio(env, `Tweede proefvisual tegengehouden · ${ref}`, [
-      h1('Een tweede proefvisual is geannuleerd', ref),
+      h1('Een tweede proefvisual is geannuleerd', kenmerk('bestelling', ref)),
       mailRows([
         ['Nieuwe aanvraag', ref],
         ['Klant', who(o)],
@@ -362,7 +362,7 @@ export async function notifyRevision(env, { orderId, fileId, note }) {
       || f?.filename
       || `bestand ${fileId}`;
     await toStudio(env, `Revisie gevraagd · ${ref} · ${what}`, [
-      h1('Een klant vraagt een revisie', ref),
+      h1('Een klant vraagt een revisie', kenmerk('bestelling', ref)),
       mailRows([
         ['Bestelling', ref],
         ['Klant', who(o)],
@@ -447,7 +447,7 @@ export async function notifyRevisionRound(env, { orderId, items = [] }) {
       env,
       `Revisieronde · ${ref} · ${aantal} ${aantal === 1 ? 'beeld' : 'beelden'}`,
       [
-        h1('Een klant heeft zijn revisieronde ingediend', ref),
+        h1('Een klant heeft zijn revisieronde ingediend', kenmerk('bestelling', ref)),
         mailRows([
           ['Bestelling', ref],
           ['Klant', who(o)],
@@ -499,7 +499,7 @@ export async function notifyFotosToegevoegd(env, { orderId, count, vakken = [], 
       env,
       alleenWijziging ? `Foto's gewijzigd · ${ref}` : `Foto's binnen · ${ref} · ${count}`,
       [
-        h1(alleenWijziging ? 'De klant heeft extra foto\u2019s gewijzigd' : 'De klant heeft foto\u2019s toegevoegd', ref),
+        h1(alleenWijziging ? 'De klant heeft extra foto\u2019s gewijzigd' : 'De klant heeft foto\u2019s toegevoegd', kenmerk('bestelling', ref)),
         mailRows(rijen),
         mailP(metVak
           ? 'Ze staan op het bord van de bestelling, elk in zijn vak, met \u201cnagestuurd\u201d erbij.'
@@ -545,7 +545,7 @@ export async function notifySubscriptionFailed(env, {
         ? `Abonnement gepauzeerd · ${ref} · incasso mislukt`
         : `Incasso niet gelukt · ${ref}`,
       [
-        h1(gestopt ? 'Een abonnement staat stil' : 'Een incasso ging niet door', ref),
+        h1(gestopt ? 'Een abonnement staat stil' : 'Een incasso ging niet door', kenmerk('abonnement', ref)),
         mailRows([
           ['Abonnement', ref],
           ['Klant', brand || email || '—'],
@@ -633,7 +633,7 @@ export async function notifySubscriptionRefunded(env, {
       env,
       `Geld terug op een abonnement · ${ref}${volledig ? ' · volledig' : ' · gedeeltelijk'}`,
       [
-        h1('Er is geld teruggegaan op een abonnement', ref),
+        h1('Er is geld teruggegaan op een abonnement', kenmerk('abonnement', ref)),
         mailRows([
           ['Abonnement', ref],
           ['Klant', brand || email || '—'],
@@ -676,7 +676,7 @@ export async function notifySubscriptionStarted(env, { subRef, plan, term, brand
   try {
     const ref = subRef || '(zonder kenmerk)';
     await toStudio(env, `Nieuw abonnement · ${ref} · ${plan || ''}`, [
-      h1('Een abonnement is gestart', ref),
+      h1('Een abonnement is gestart', kenmerk('abonnement', ref)),
       mailRows([
         ['Abonnement', ref],
         ['Klant', brand || email || '—'],
@@ -709,7 +709,9 @@ export async function notifyAboBtwNakijken(env, { customerId, email, brand, phon
   try {
     const origin = env.PUBLIC_ORIGIN || 'https://visuails.com';
     await toStudio(env, `Even nakijken: abonnement · ${brand || email || ''} · ${land} vanaf ${ipLand}`, [
-      h1('Een abonnement wacht op je: land buiten de EU, ip in de EU', brand || email || ''),
+      /* esc(): het merk typt de klant zelf, en de regel onder de kop wordt niet
+         ge-escapet (17 oktober 2026, bij de controle van alle mails). */
+      h1('Een abonnement wacht op je: land buiten de EU, ip in de EU', esc(brand || email || '')),
       mailRows([
         ['Klant', brand || '—'],
         ['E-mail', email || ''],
@@ -717,7 +719,7 @@ export async function notifyAboBtwNakijken(env, { customerId, email, brand, phon
         ['Plan', `${plan || ''}${term ? ` · ${({ monthly: 'maandelijks', yearly: '12 maanden', prepaid: '12 maanden vooruit' })[term] || term}` : ''}`],
         ['Gekozen land', land || ''],
         ['Land van het ip-adres', ipLand || ''],
-        ['Klantpagina', { html: `<a href="${esc(`${origin}/admin/customers/${customerId}`)}">${esc(`/admin/customers/${customerId}`)}</a>` }],
+        ['Klantpagina', { html: `<a href="${esc(`${origin}/admin/customers/${customerId}`)}" style="color:${MAILC.head}">${esc(`/admin/customers/${customerId}`)}</a>` }],
       ]),
       mailP('Er is niets afgeschreven en er staat nog geen abonnement. De klant las dat we zijn gegevens eerst nakijken en dat hij meestal binnen het uur van ons hoort (buiten openingstijden de volgende ochtend). '
         + 'Klopt het land (een bedrijf buiten de EU, met iemand die nu in Europa is)? Druk dan op de klantpagina op "Land goedkeuren" en vraag de klant het formulier nog een keer te versturen; dan gaat hij gewoon door naar de betaling, met 0% btw. '
@@ -739,7 +741,7 @@ export async function notifyAboWijziging(env, { soort, subRef, plan, brand, emai
     const terug = soort === 'overstap-terug';
     try {
       await toStudio(env, `Abonnement ${terug ? 'overstap teruggedraaid' : `overstap naar ${naar?.naam || ''}`} · ${subRef || ''} · ${brand || email || ''}`, [
-        h1(terug ? 'Een overstap is teruggedraaid' : 'Een abonnee stapt over', subRef || ''),
+        h1(terug ? 'Een overstap is teruggedraaid' : 'Een abonnee stapt over', kenmerk('abonnement', subRef)),
         mailRows([
           ['Abonnement', subRef || ''],
           ['Klant', brand || email || '—'],
@@ -760,7 +762,7 @@ export async function notifyAboWijziging(env, { soort, subRef, plan, brand, emai
   const woord = { pauze: 'gepauzeerd', hervat: 'hervat', opgezegd: 'opgezegd' }[soort] || soort;
   try {
     await toStudio(env, `Abonnement ${woord} · ${subRef || ''} · ${brand || email || ''}`, [
-      h1(`Een abonnement is ${woord}`, subRef || ''),
+      h1(`Een abonnement is ${woord}`, kenmerk('abonnement', subRef)),
       mailRows([
         ['Abonnement', subRef || ''],
         ['Klant', brand || email || '—'],
@@ -814,7 +816,7 @@ export async function notifyCreditsBespreken(env, { klant = {}, lang = 'nl', sal
       saldo, vervalt: eerste ? datum(eerste.op, klantTaal) : '',
     });
     await toStudio(env, `Credits bespreken · ${naam} · ${saldo} credits`, [
-      h1('Een klant wil bespreken wat hij met zijn credits kan doen', naam),
+      h1('Een klant wil bespreken wat hij met zijn credits kan doen', esc(naam)),
       mailRows([
         ['Klant', naam],
         ['E-mail', klant.email || ''],
@@ -847,7 +849,7 @@ export async function notifyTermijnTeruggeboekt(env, { subRef, plan, brand, emai
     await toStudio(env, terug
       ? `Terugboeking ongedaan · ${ref}`
       : `Termijn teruggeboekt · ${ref} · ${cents(terugCents)}`, [
-      h1(terug ? 'Mollie heeft de terugboeking teruggedraaid' : 'Een termijn is via de bank teruggeboekt', ref),
+      h1(terug ? 'Mollie heeft de terugboeking teruggedraaid' : 'Een termijn is via de bank teruggeboekt', kenmerk('abonnement', ref)),
       mailRows([
         ['Abonnement', ref],
         ['Klant', brand || email || '—'],
@@ -866,7 +868,7 @@ export async function notifyTermijnTeruggeboekt(env, { subRef, plan, brand, emai
         : mailP(`Het abonnement staat op pauze en de credits van deze termijn zijn bevroren: niet bruikbaar, niet weg. De factuur blijft staan. ${/NIET/.test(incasso) ? 'LET OP: de incasso bij Mollie kon niet gestopt worden. Stop het abonnement in het Mollie-dashboard, anders wordt de volgende termijn gewoon afgeschreven. ' : 'De incasso bij Mollie is gestopt, dus er wordt niets meer afgeschreven. '}`
           + 'Draait Mollie de terugboeking terug, dan gaat dat allemaal vanzelf terug, de incasso ook. Is het met de klant rond, dan zet je het abonnement weer aan met "Weer laten lopen" in /admin bij de klant. Bestellingen van deze klant staan niet stil; kijk of er nog iets in productie is. '
           + 'Neem contact op met de klant: het kan ook een bankfout zijn.'),
-      klantId ? mailP(`<a href="https://visuails.com/admin/customers/${Number(klantId)}#abonnement">Naar de klant in /admin</a>`) : '',
+      klantId ? mailP(`<a href="https://visuails.com/admin/customers/${Number(klantId)}#abonnement" style="color:${MAILC.head};font-weight:700">Naar de klant in /admin &rarr;</a>`) : '',
       terug ? '' : await incassoContact(env, { email, brand }, 'terugboeking', { o: { ref } }),
     ].join(''), email || '');
   } catch (err) {

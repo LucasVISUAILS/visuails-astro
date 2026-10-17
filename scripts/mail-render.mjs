@@ -9,10 +9,11 @@
  * there is nothing for it to disagree with.
  *
  * The mark is swapped to a data: URL before rendering — the templates point at
- * https://visuails.com/img/mail/mark-groen.png, which does not exist until the
- * next deploy, and a broken image in the preview reads as a design decision.
+ * https://visuails.com/img/mail/woordmerk-plaat.png, which does not exist until
+ * the next deploy, and a broken image in the preview reads as a design decision.
  *
- * Run: node scripts/mail-render.mjs
+ * Run: node scripts/mail-render.mjs  (de plaat mails-definitief.png, en sinds
+ * 17 oktober 2026 alle mails in .render/mails/ — zie onderaan)
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -163,3 +164,33 @@ await sharp({
   .toFile(path.join(ROOT, 'mails-definitief.png'));
 
 console.log(`▶ mails-definitief.png — ${MAILS.length} mails, drawn from the real builders`);
+
+/* ── EN ALLE MAILS, IN DRIE STANDEN — 17 oktober 2026 ────────────────────────
+   Hierboven staan acht klantmails op één plaat. Sinds de controle van alle
+   mails (Lucas: "kijk even goed of de VISUAILS branding wel goed is bij alle
+   mails") tekent dit script ook ALLE 66 die tests/lib/alle-mails.mjs kan
+   oproepen, elk in drie standen, in .render/mails/:
+     <naam>-licht.png   op 640 breed, zoals in een gewone mailapp
+     <naam>-donker.png  op 412 breed, donker gemaakt zoals de Gmail-app dat doet
+                        (Chromium: WebContentsForceDark — de vlakken donker, de
+                        letters licht, beelden zoals ze zijn)
+     <naam>-390.png     op een telefoon van 390 breed
+   Kijk vooral naar de donkere: daar zag Lucas het woordmerk verdwijnen. */
+const { alleMails } = await import('../tests/lib/alle-mails.mjs');
+const alle = (await alleMails()).filter((m) => m.html);
+const MAP = path.join(ROOT, '.render', 'mails');
+fs.mkdirSync(MAP, { recursive: true });
+const veilig = (id) => id.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').slice(0, 50);
+for (const [stand, breed, args] of [['licht', 640, []], ['donker', 412, ['--enable-features=WebContentsForceDark']], ['390', 390, []]]) {
+  const b = await chromium.launch({ executablePath: browserPad(), args });
+  const ctx = await b.newContext({ viewport: { width: breed, height: 900 }, deviceScaleFactor: 2 });
+  for (const [i, m] of alle.entries()) {
+    const page = await ctx.newPage();
+    await page.route(/^https?:/, (r) => r.abort());
+    await page.setContent(localise(m.html), { waitUntil: 'load' });
+    await page.screenshot({ path: path.join(MAP, `${String(i + 1).padStart(2, '0')}-${veilig(m.id)}-${stand}.png`), fullPage: true });
+    await page.close();
+  }
+  await b.close();
+}
+console.log(`▶ .render/mails/ — ${alle.length} mails, elk licht, Gmail-donker en op 390`);

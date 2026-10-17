@@ -21,10 +21,12 @@ import {
   p as mailP,
   spamNote as mailSpamNote,
   payPanel as mailPayPanel,
-  linkLine as mailLinkLine,
   bedrag as mailBedrag,
   greeting as mailGreeting,
   vragen as mailVragen,
+  kenmerk as mailKenmerk,
+  terugval as mailTerugval,
+  C as MAILKLEUR,
 } from './mailTemplate.js';
 import { BETALEN_NA_BTW_AKKOORD, VERVAL_DAG } from '../data/termijnen.js';
 
@@ -133,8 +135,8 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
      factuur alleen een naam; Studio (Je gegevens) is waar hij het kwijt kan. */
   const adresVraag = offerte && !String(o.address_line1 || '').trim()
     ? (lang === 'nl'
-      ? `Wil je je factuuradres op de factuur? Vul het in bij <a href="${origin}/nl/account/details">VISUAILS Studio → Je gegevens</a> vóór je betaalt.`
-      : `Want your billing address on the invoice? Fill it in at <a href="${origin}/account/details">VISUAILS Studio → Your details</a> before you pay.`)
+      ? `Wil je je factuuradres op de factuur? Vul het in bij <a href="${origin}/nl/account/details" style="color:${MAILKLEUR.head};font-weight:700">VISUAILS Studio → Je gegevens</a> vóór je betaalt.`
+      : `Want your billing address on the invoice? Fill it in at <a href="${origin}/account/details" style="color:${MAILKLEUR.head};font-weight:700">VISUAILS Studio → Your details</a> before you pay.`)
     : '';
   const verklaring = !verklaringOntbreekt ? '' : (lang === 'nl'
     ? `VISUAILS levert uitsluitend aan bedrijven. Met je betaling bevestig je dat je deze opdracht als bedrijf geeft, en dat we meteen mogen beginnen. Bestel je vanuit een ander EU-land met een btw-nummer? Stuur het ons vóór je betaalt; dan passen we de btw aan.`
@@ -163,7 +165,10 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
               ? (lang === 'nl' ? 'Nagekeken — met btw' : 'Checked — with VAT')
               : euBtwNietBevestigd
                 ? (lang === 'nl' ? 'Klaar om te betalen' : 'Ready to pay')
-                : (lang === 'nl' ? 'Goedgekeurd — klaar om te betalen' : 'Approved — ready to pay')),
+                : (lang === 'nl' ? 'Goedgekeurd — klaar om te betalen' : 'Approved — ready to pay'),
+          /* Het kenmerk onder de kop, zoals in de andere mails (17 oktober 2026). Ook
+             bij een offerte "Referentie": het is hetzelfde nummer als in de aanvraag. */
+          mailKenmerk('bestelling', o.ref, lang)),
         /* De aanhef met voornaam, zoals in elke andere klantmail (ronde 9, O21). */
         mailP(mailGreeting(o.name, lang)),
         /* Bij een OFFERTE (eigen look, video) is dit de eerste keer dat de klant
@@ -212,7 +217,9 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
           href: url,
           cta: lang === 'nl' ? 'Betalen' : 'Pay now',
         }),
-        mailLinkLine(url, lang === 'nl' ? 'Werkt de knop niet? Gebruik deze link:' : 'Button not working? Use this link:'),
+        /* "Werkt de knop niet?" in de vorm van de andere mails: met het adres voluit
+           (hier stond een vette zin met een pijl, zonder adres). */
+        mailTerugval(url, lang),
         /* De contactenregel is weg (7.07, V21-1: alleen in de eerste mail aan
            een nieuw adres); de vragenregel staat in elke klantmail. */
         mailVragen(lang, o.ref),

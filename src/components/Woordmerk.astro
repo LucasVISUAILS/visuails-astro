@@ -20,14 +20,19 @@
            simpelweg meer gevoel te geven."* De beweging staat in hal.css; bij
            "minder beweging" staan de lagen uit.
    verloop het woordmerk groot onderaan de footer, in een zacht verloop dat van
-           lila naar de kleur van de kaart loopt (plan §08, sectie 07). */
+           lila naar de kleur van de kaart loopt (plan §08, sectie 07).
+   electro dezelfde elektrische lijn als het V-merk in de balk (VMerk electro),
+           op alle logo's van de site (levering 54; Lucas, afvinklijst 34: *"Ik wil
+           dit effect op alle logo's die zichtbaar zijn op elke pagina, dus top bar
+           en footer logo's."*). De lijn gebruikt #woordmerk-lijn: dezelfde omtrek,
+           maar per deel een eigen pad, zodat elke letter intekent. */
 import { WOORDMERK } from '../data/woordmerk.js';
 
-interface Props { klasse?: string; glitch?: boolean; verloop?: boolean }
-const { klasse = '', glitch = false, verloop = false } = Astro.props as Props;
+interface Props { klasse?: string; glitch?: boolean; verloop?: boolean; electro?: boolean }
+const { klasse = '', glitch = false, verloop = false, electro = false } = Astro.props as Props;
 const B = WOORDMERK.breed, H = WOORDMERK.hoog;
 ---
-<svg class:list={['wm', klasse, glitch && 'wm-glitch']} viewBox={`0 0 ${B} ${H}`} aria-hidden="true" focusable="false">
+<svg class:list={['wm', klasse, glitch && 'wm-glitch', electro && 'mk']} viewBox={`0 0 ${B} ${H}`} aria-hidden="true" focusable="false">
   {verloop && (
     <defs>
       <linearGradient id="hal-wm-verloop" x1="0" y1="0" x2="0" y2="1">
@@ -38,5 +43,6 @@ const B = WOORDMERK.breed, H = WOORDMERK.hoog;
   )}
   {glitch && <use class="wm-echo wm-echo-1" href="#woordmerk" width={B} height={H} />}
   {glitch && <use class="wm-echo wm-echo-2" href="#woordmerk" width={B} height={H} />}
-  <use class="wm-vorm" href="#woordmerk" width={B} height={H} fill={verloop ? 'url(#hal-wm-verloop)' : undefined} />
+  {electro && <use class="mk-line mk-line-a" href="#woordmerk-lijn" width={B} height={H} />}
+  <use class:list={['wm-vorm', electro && 'mk-fill']} href="#woordmerk" width={B} height={H} fill={verloop ? 'url(#hal-wm-verloop)' : undefined} />
 </svg>

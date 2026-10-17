@@ -36,6 +36,7 @@ import { REVIEW_PLATFORMS } from '../data/reviews.js';
 import { VERVAL_DAG, BETALEN_NA_BTW_AKKOORD, FOTO_WACHT_DAGEN, inWoorden } from '../data/termijnen.js';
 import { SHOTS as SHOTS_DATA } from '../data/shots.js';
 import { aantalOntbrekend, vakNaam } from './ontbreekt.js';
+import { aanhefTekst } from './aanhef.js';
 
 /*
  * ── HET LANDNUMMER UIT HET LAND VAN DE KLANT — naloop A2, 8 oktober 2026 ─────
@@ -172,10 +173,9 @@ export function reviewLink() {
  * waar de klant het kwijt kan, en dat we na FOTO_WACHT_DAGEN zonder antwoord
  * maken wat er is. In zijn taal. (Verhuisd uit admin.js, ontbreektKlantTekst().)
  */
-function fotosTekst(order, lijst) {
+function fotosTekst(order, lijst, groet) {
   if (!lijst || !lijst.length) return '';
   const en = order?.lang === 'en';
-  const voornaam = order?.name ? String(order.name).trim().split(/\s+/)[0] : '';
   /* Een bijbestelde hoek ("driekwart") staat niet in shots.js: zijn naam komt
      uit p.namen (ontbreekt.js, k-hoeken 12 oktober 2026). */
   const shotNaam = (id, namen) => {
@@ -188,12 +188,12 @@ function fotosTekst(order, lijst) {
   const dagen = FOTO_WACHT_DAGEN;
   if (en) {
     const wacht = dagen === 1 ? 'after a day' : `after ${inWoorden(dagen, 'en')} days`;
-    return `Hi${voornaam ? ` ${voornaam}` : ''}, about ${order.ref}: we are still missing ${n === 1 ? 'a photo' : 'photos'} of ${delen.join('; ')}. `
+    return `${groet} about ${order.ref}: we are still missing ${n === 1 ? 'a photo' : 'photos'} of ${delen.join('; ')}. `
       + `Could you send ${n === 1 ? 'it' : 'them'}? You can add ${n === 1 ? 'it' : 'them'} to your order in VISUAILS Studio (sign in with your email address), or reply to this message. `
       + `If we have not heard from you ${wacht}, we make your images with what we have. VISUAILS`;
   }
   const wacht = dagen === 1 ? 'na een dag' : `na ${inWoorden(dagen, 'nl')} dagen`;
-  return `Hoi${voornaam ? ` ${voornaam}` : ''}, over ${order.ref}: we missen nog ${n === 1 ? 'een foto' : 'foto’s'} van ${delen.join('; ')}. `
+  return `${groet} over ${order.ref}: we missen nog ${n === 1 ? 'een foto' : 'foto’s'} van ${delen.join('; ')}. `
     + `Kun je ${n === 1 ? 'hem' : 'ze'} sturen? Dat kan bij je bestelling in VISUAILS Studio (log in met je e-mailadres), of als antwoord op dit bericht. `
     + `Hebben we ${wacht} niets gehoord, dan maken we je beelden met wat er is. VISUAILS`;
 }
@@ -210,7 +210,10 @@ function fotosTekst(order, lijst) {
 export function waTekst(moment, o = {}, extra = {}) {
   const en = String(o?.lang || 'nl') === 'en';
   const naam = voornaamVan(o);
-  const hoi = en ? `Hi${naam ? ` ${naam}` : ''},` : `Hoi${naam ? ` ${naam}` : ''},`;
+  /* De aanhef (17 oktober 2026, afvinklijst 33): Lucas stuurt dit nu, dus het
+     dagdeel in het land van de klant ("Goedemiddag Sanne,"), anders "Hallo".
+     `extra.nu` is voor de tests; zie src/lib/aanhef.js. */
+  const hoi = aanhefTekst(naam, en ? 'en' : 'nl', { nu: extra.nu || new Date(), land: o?.land || o?.country || o?.c_country || '' });
   const ref = String(o?.ref || '');
   switch (moment) {
     case 'betaling': {
@@ -220,7 +223,7 @@ export function waTekst(moment, o = {}, extra = {}) {
         : `${hoi} je bestelling ${ref} staat nog open: de betaling is niet afgerond. Betalen kan met de link in je mail of in VISUAILS Studio (log in met je e-mailadres).${datum ? ` Betaal je niet, dan vervalt de bestelling na ${datum}.` : ''} Lukt het niet, laat het dan weten. VISUAILS`;
     }
     case 'fotos':
-      return fotosTekst(o, extra.lijst);
+      return fotosTekst(o, extra.lijst, hoi);
     case 'bounce': {
       const adres = halfAdres(o?.email);
       return en
@@ -319,8 +322,9 @@ export function contactMail(link, { wie = 'de klant', knop, regel }) {
   const [eerst, dan] = link.belEerst ? [bel, app] : [app, bel];
   const delen = [];
   if (eerst) delen.push(knop(eerst.href, eerst.label));
-  if (dan) delen.push(`<div style="height:10px;line-height:10px;font-size:0">&nbsp;</div>${regel(dan.href, dan.label)}`);
-  else if (eerst) delen.push('<div style="height:16px;line-height:16px;font-size:0">&nbsp;</div>');
+  /* De ruimte onder de knop zit sinds 17 oktober 2026 in de knop zelf
+     (button() in mailTemplate.js); hier stonden 10 en 16 px extra. */
+  if (dan) delen.push(regel(dan.href, dan.label));
   return delen.join('');
 }
 

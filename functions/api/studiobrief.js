@@ -44,7 +44,7 @@
 
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from '../../src/lib/ratelimit.js';
 import { sendMail } from '../../src/lib/mail.js';
-import { shell, h1, p, rows, esc } from '../../src/lib/mailTemplate.js';
+import { shell, h1, p, rows, esc, greeting, C as MC } from '../../src/lib/mailTemplate.js';
 import { controleerBotcheck, botcheckBesluit, botcheckUitleg, TOKEN_VELD } from '../../src/lib/turnstile.js';
 
 /** De plekken op de site waar het veld staat. Iets anders is geen bron maar invoer. */
@@ -84,7 +84,8 @@ export function welkomMail(lang) {
     preheader: nl ? 'Je staat op de lijst. Hooguit één mail per maand.' : 'You are on the list. One email a month, at most.',
     body: [
       h1(nl ? 'Je staat op de lijst' : 'You are on the list'),
-      p(nl ? 'Hoi,' : 'Hi,'),
+      /* De aanhef van src/lib/aanhef.js: hij meldde zich net aan (17 oktober 2026). */
+      p(greeting('', nl ? 'nl' : 'en', { nu: new Date() })),
       p(esc(nl
         ? 'Dank je. Je krijgt de Studiobrief van VISUAILS: hooguit één mail per maand, met de nieuwe looks en wat er bij ons verandert. Geen acties, geen kortingscodes.'
         : 'Thank you. You will get the VISUAILS Studio letter: one email a month at most, with the new looks and what changes on our side. No promotions, no discount codes.')),
@@ -94,7 +95,7 @@ export function welkomMail(lang) {
          List-Unsubscribe bovendien zelf een knop "Afmelden". */
       p(`${esc(nl
         ? 'Afmelden kan onderaan elke brief, met één klik — of nu meteen: '
-        : 'You can unsubscribe at the bottom of every letter, in one click — or right now: ')}<a href="${esc(afmeldMailto(lang))}">${esc(nl ? 'meld me af' : 'unsubscribe me')}</a>.${esc(nl
+        : 'You can unsubscribe at the bottom of every letter, in one click — or right now: ')}<a href="${esc(afmeldMailto(lang))}" style="color:${MC.muted}">${esc(nl ? 'meld me af' : 'unsubscribe me')}</a>.${esc(nl
         ? ' Heb je je niet zelf aangemeld, dan hoef je niets te doen.'
         : ' If you did not sign up yourself, you need not do anything.')}`, { muted: true }),
       p(esc('— VISUAILS')),

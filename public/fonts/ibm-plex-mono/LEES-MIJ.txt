@@ -1,0 +1,6 @@
+IBM Plex Mono — zelf gehost (levering 54, 17 oktober 2026)
+
+De vaste breedte-letter voor labels, kenmerken en stapnummers (afvinklijst 34,
+v34-mono = a). Alleen de Latijnse tekens, gewicht 500 en 600, uit
+@fontsource/ibm-plex-mono 5.1.0. De @font-face staat in src/styles/hal.css.
+Licentie: SIL Open Font License 1.1 (OFL.txt): vrij te gebruiken en zelf te hosten.

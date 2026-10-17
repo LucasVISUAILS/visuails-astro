@@ -84,3 +84,51 @@ await sharp(Buffer.from(wsvg), { density: 384 })
   .toFile(wfile);
 const wmeta = await sharp(wfile).metadata();
 console.log(`  ${path.relative(ROOT, wfile)}  ${wmeta.width}×${wmeta.height}  ${(fs.statSync(wfile).size / 1024).toFixed(1)} kB  (124 × 22 in de mail)`);
+
+/* ── HET WOORDMERK OP EEN WIT PLAATJE — 17 oktober 2026 ──────────────────────
+   De Gmail-app maakt een lichte mail zelf donker, maar laat beelden zoals ze
+   zijn: inkt op doorzichtig stond daar donker op donker (zie de kop van
+   src/lib/mailTemplate.js). Dit is hetzelfde woordmerk, even groot (124 × 22),
+   in een witte pil met 16 px links en rechts en 12 px boven en onder: 156 × 46
+   in de mail, 3× in het bestand. Op wit is de pil onzichtbaar. De hoeken zijn
+   doorzichtig, zodat de pil in de donkere stand rond is.
+   woordmerk-inkt.png blijft bestaan: mails die al verstuurd zijn, wijzen ernaar. */
+const PX = 16, PY = 12;
+const PW = (124 + 2 * PX) * 3, PH = (22 + 2 * PY) * 3;
+const psvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${PW}" height="${PH}" viewBox="0 0 ${PW} ${PH}">`
+  + `<rect width="${PW}" height="${PH}" rx="${PH / 2}" fill="#FFFFFF"/>`
+  + `<svg x="${PX * 3}" y="${PY * 3}" width="${124 * 3}" height="${22 * 3}" viewBox="${WOORDMERK.symbool}" preserveAspectRatio="xMidYMid meet">`
+  + `<path fill="#0F0C24" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg></svg>`;
+const pfile = path.join(OUT, 'woordmerk-plaat.png');
+await sharp(Buffer.from(psvg), { density: 72 }).png({ compressionLevel: 9 }).toFile(pfile);
+const pmeta = await sharp(pfile).metadata();
+console.log(`  ${path.relative(ROOT, pfile)}  ${pmeta.width}×${pmeta.height}  ${(fs.statSync(pfile).size / 1024).toFixed(1)} kB  (156 × 46 in de mail)`);
+
+/* ── DE SNEDE EN HET WOORDMERK IN DE VOET — levering 55, 17 oktober 2026 ──────
+   Afvinklijst 34, E (m-kop en m-stap, "doen"):
+   - snede.png: het violette streepje waarmee de lijn onder de kop begint, 28 × 3
+     in de mail, met een schuin eind op 53,13° (de snede van het merk: over 3 px
+     hoogte 2,25 px opzij). 3× in het bestand.
+   - voet-woordmerk.png: het woordmerk in lila (#C9BFFF), 376 breed (de breedte
+     van de tekstkolom: 440 min 2 × 32), en alleen de bovenste 58% (38 px): de rest
+     valt weg onder de rand, zoals het grote woordmerk onder de site. 3×. */
+{
+  const SW = 28 * 3, SH = 3 * 3, schuin = SH * 0.75;
+  const ssvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${SW}" height="${SH}" viewBox="0 0 ${SW} ${SH}"><path fill="#4A1FFF" d="M0 0H${SW}L${SW - schuin} ${SH}H0Z"/></svg>`;
+  const sfile = path.join(OUT, 'snede.png');
+  await sharp(Buffer.from(ssvg), { density: 72 }).png({ compressionLevel: 9 }).toFile(sfile);
+  const smeta = await sharp(sfile).metadata();
+  console.log(`  ${path.relative(ROOT, sfile)}  ${smeta.width}×${smeta.height}  (28 × 3 in de mail)`);
+
+  const VW = 376 * 3, VH = 38 * 3;
+  const volle = Math.round(VW * (WOORDMERK.hoog / WOORDMERK.breed));
+  const vsvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${VW}" height="${volle}" viewBox="${WOORDMERK.symbool}"><path fill="#C9BFFF" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg>`;
+  const vfile = path.join(OUT, 'voet-woordmerk.png');
+  await sharp(Buffer.from(vsvg), { density: 384 })
+    .resize({ width: VW, height: volle, fit: 'fill' })
+    .extract({ left: 0, top: 0, width: VW, height: VH })
+    .png({ compressionLevel: 9 })
+    .toFile(vfile);
+  const vmeta = await sharp(vfile).metadata();
+  console.log(`  ${path.relative(ROOT, vfile)}  ${vmeta.width}×${vmeta.height}  (376 × 38 in de mail)`);
+}

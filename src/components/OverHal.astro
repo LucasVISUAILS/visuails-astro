@@ -35,6 +35,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
+import { ikoon, IKOON } from '../data/iconen.js';
 import { waHref } from '../data/whatsapp.js';
 import NieuwTabblad from './NieuwTabblad.astro';
 import { MERK } from '../data/brand.js';
@@ -101,7 +102,7 @@ const c = nl ? {
   werkH: ['Van je eerste foto', 'tot na de levering.'],
   werkZin: 'Eén vast aanspreekpunt, het hele traject door: voor je bestelt, terwijl we eraan werken en na de levering.',
   werkLink: 'App ons, ook als je bestelling al loopt',
-  werkWa: 'Hoi VISUAILS, ik heb een vraag.',
+  werkWa: 'Hallo VISUAILS, ik heb een vraag.',
   werk: [
     ['Een vraag tussendoor', 'App of mail. Meestal heb je binnen het uur antwoord, buiten openingstijden de volgende ochtend.'],
     ['Een foto vergeten', 'Stuur hem na in VISUAILS Studio of via WhatsApp. Hij gaat mee in je bestelling.'],
@@ -155,7 +156,7 @@ const c = nl ? {
   werkH: ['From your first photo', 'to after delivery.'],
   werkZin: 'One regular point of contact all the way through: before you order, while we work, and after delivery.',
   werkLink: 'Message us, even mid-order',
-  werkWa: 'Hi VISUAILS, I have a question.',
+  werkWa: 'Hello VISUAILS, I have a question.',
   werk: [
     ['A question along the way', 'Message or email. You usually hear back within the hour; outside opening hours, the next morning.'],
     ['A photo you forgot', 'Send it later in VISUAILS Studio or on WhatsApp. It goes into your order.'],
@@ -185,9 +186,9 @@ const c = nl ? {
   slotPlan: 'Start a plan',
 };
 const NR = (n: number) => String(n).padStart(2, '0');
-const PIJL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5l7-7M5.5 4.5h6v6"/></svg>';
-const RECHTS = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/></svg>';
-const VINK = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
+const PIJL = ikoon('pijl-schuin');
+const RECHTS = ikoon('pijl');
+const VINK = ikoon('vink');
 /* De controle in de opening: twee echte beelden van één bestelling (de roze jeans van de voorbeeldset). */
 ---
 <div class="h-pagina h-ab h-ov">
@@ -245,7 +246,7 @@ const VINK = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L
         <h2 id="ov-werk" class="h-kop h-h2"><span class="l">{c.strookH[0]}</span> {c.strookH[1]}</h2>
       </div>
       <div class="h-ab-werk-acties">
-        <button type="button" class="h-cirkel h-cirkel-klein h-ab-pauze" data-ab-pauze aria-pressed="false" aria-label={c.pauze} data-uit={c.pauze} data-aan={c.speel} hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path class="h-ab-p-uit" d="M6 4v8M10 4v8" /><path class="h-ab-p-aan" d="M5.5 3.8v8.4L12.5 8z" /></svg></button>
+        <button type="button" class="h-cirkel h-cirkel-klein h-ab-pauze" data-ab-pauze aria-pressed="false" aria-label={c.pauze} data-uit={c.pauze} data-aan={c.speel} hidden><svg class="ik" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="h-ab-p-uit" fill-rule="evenodd" d={IKOON.pauze} /><path class="h-ab-p-aan" fill-rule="evenodd" d={IKOON.afspelen} /></svg></button>
         <a class="h-link" href={lp('/gallery')}>{c.naarGalerij}<span class="h-cirkel h-cirkel-klein" aria-hidden="true" set:html={PIJL} /></a>
       </div>
     </header>

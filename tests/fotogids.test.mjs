@@ -199,7 +199,7 @@ for (const taal of TALEN) {
   ok(`${taal}: elke zin van de gids staat in de mail`, mis.length === 0, mis.join(' | '));
   ok(`${taal}: de mail linkt naar dezelfde pdf en dezelfde pagina`,
     html.includes(`https://visuails.com${g.pdf}`) && html.includes(`https://visuails.com${g.pagina}"`));
-  ok(`${taal}: en groet in zijn eigen taal`, t.includes(taal === 'nl' ? 'Hoi,' : 'Hi,'));
+  ok(`${taal}: en groet in zijn eigen taal`, (taal === 'nl' ? /(Goedemorgen|Goedemiddag|Goedenavond|Hallo),/ : /(Good morning|Good afternoon|Good evening|Hello),/).test(t));
 }
 ok('het onderwerp van de mail is de titel uit de bron', /subject: fotogids\(lang\)\.titelVol/.test(lees('functions/api/order.js')));
 

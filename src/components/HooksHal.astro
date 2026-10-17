@@ -12,6 +12,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
+import { ikoon, IKOON } from '../data/iconen.js';
 import HalVragen from './HalVragen.astro';
 import Disclose from './Disclose.astro';
 import HalBeweging from './HalBeweging.astro';
@@ -225,7 +226,7 @@ const COPY = {
     ctaPrimary: 'Talk to us about Hooks',
     ctaPrices: 'See pricing',
     ctaSecondary: 'Contact us',
-    wa: waHref("Hi VISUAILS, I'd like to talk about Hooks."),
+    wa: waHref("Hello VISUAILS, I'd like to talk about Hooks."),
     waLabel: 'WhatsApp',
     /* Twee feiten, prijs eerst — dezelfde volgorde als /catalog, /lifestyle en
        /video sinds HeroFacts.astro er is. */
@@ -329,7 +330,7 @@ const COPY = {
     ctaPrimary: 'Praat met ons over Hooks',
     ctaPrices: 'Bekijk de prijzen',
     ctaSecondary: 'Neem contact op',
-    wa: waHref('Hoi VISUAILS, ik wil het graag over Hooks hebben.'),
+    wa: waHref('Hallo VISUAILS, ik wil het graag over Hooks hebben.'),
     waLabel: 'WhatsApp',
     trust: [
       [`Vanaf ${vanaf}`, `per hook · ${vatLabel('excl', 'nl')}`],
@@ -402,13 +403,10 @@ const c = COPY[lang];
 /* Een kop met een <br> wordt de kop in twee tonen: eerst het lichte deel. */
 const tonen = (h: string) => h.split(/<br\s*\/?>/).map((d) => d.replace(/<[^>]+>/g, '').trim());
 const pil = (s: string) => s.replace(/^\(\s*|\s*\)$/g, '');
-const ICOON = {
-  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
-  pijl: '<path d="M4.5 11.5l7-7M5.5 4.5h6v6"/>',
-  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
-  klok: '<circle cx="8" cy="8" r="5.5"/><path d="M8 5v3.2l2 1.3"/>',
-};
-const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+/* De iconen uit het kit (levering 54, afvinklijst 34): links de naam in dit
+   onderdeel, rechts het icoon in src/data/iconen.js. */
+const ICOON = { rechts: 'pijl', pijl: 'pijl-schuin', check: 'vink', klok: 'klok' } as const;
+const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
 const H = nl ? {
   krijg: ['Wat er in je map', 'komt te staan.'], clean: ['Waar je op', 'kunt rekenen.'],
   krijgPil: 'Wat je krijgt', prijsPil: 'Wat het kost', slotPil: 'Hooks', hoe: 'Hoe een hook loopt',

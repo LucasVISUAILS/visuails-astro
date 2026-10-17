@@ -191,6 +191,7 @@
 // arrive in the config blob like every other string on this page — shots.js's
 // own COPY table is never read from here, and importing it would put half the
 // Dutch for one step in a file no translator opens.
+import { ikoon, IKOON } from '../data/iconen.js';
 import {
   SHOT_IDS, REQUIRED_SHOT_IDS, isRequiredShot, MUST_DECIDE_SHOT_IDS, mustDecideShot, guessShot, productStem, productKeyFromPath, extraShotId,
   /* De GRATIS referentievakken. Lucas, 13 augustus 2026: *"Ook wil ik dat het
@@ -4564,7 +4565,7 @@ function buildMeer(card, blokken) {
   const pijl = document.createElement('span');
   pijl.className = 'pu-meer-pijl';
   pijl.setAttribute('aria-hidden', 'true');
-  pijl.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6 L8 11 L13 6"/></svg>';
+  pijl.innerHTML = ikoon('uitklap');
 
   knop.append(kop, vat, pijl);
 
@@ -5777,7 +5778,7 @@ function buildSlot(card, id) {
   const dia = document.createElement('span');
   dia.className = 'pu-slot-dia';
   dia.setAttribute('aria-hidden', 'true');
-  dia.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+  dia.innerHTML = ikoon('plus');
 
   const img = document.createElement('img');
   img.className = 'pu-slot-img';
@@ -5802,7 +5803,7 @@ function buildSlot(card, id) {
   const vink = document.createElement('span');
   vink.className = 'pu-slot-vink';
   vink.setAttribute('aria-hidden', 'true');
-  vink.innerHTML = '<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>';
+  vink.innerHTML = ikoon('vink');
 
   /* ── DE WOORDEN STAAN ONDER HET BEELD, NIET ERIN — 17 september 2026 ──────
      Lucas, over de rij naast het concept: *"Ik vind die nieuwe juist wel

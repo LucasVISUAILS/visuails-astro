@@ -47,6 +47,7 @@
 import { mailNote, mailNoteInMail } from '../data/mailNote.js';
 import { tagline } from '../data/brand.js';
 import { waHref } from '../data/whatsapp.js';
+import { groetwoord, AANHEF } from './aanhef.js';
 
 const SITE = 'https://visuails.com';
 
@@ -109,7 +110,27 @@ const C = {
 
 import { stand } from '../data/status.js';
 
-const FONT = 'Arial,Helvetica,sans-serif';
+export const FONT = 'Arial,Helvetica,sans-serif';
+/* De vaste breedte-letter van de labels en kenmerken (levering 55, afvinklijst 34
+   E: m-kop, m-stap). Op de site is dat IBM Plex Mono; een webfont laadt in mail
+   niet betrouwbaar, dus hier de mono die elke computer al heeft (v34-mono). */
+export const MONO = 'Menlo,Consolas,monospace';
+export { C };
+
+/* ── DE MATEN VAN DE BRIEF — 17 oktober 2026 ─────────────────────────────────
+   Lucas: *"Kijk even goed of de VISUAILS branding wel goed is bij alle mails"*
+   en *"ook controleren … of ze allemaal consistent zijn en kloppen"*. Gemeten in
+   alle 66 mails: op 600 breed met 15 px liep de lopende tekst tot 15 woorden per
+   regel (zijn regel: 8–10). Nu 544 breed met 36 px marge, dus 472 px tekst, en
+   16 px letter: 9–10 woorden per regel op een computer. Op een telefoon van 390
+   blijft er 318 px over, net als voorheen (326). Kop, brief en voet gebruiken
+   dezelfde marge, zodat het woordmerk boven de eerste letter van de tekst staat.
+   440 BREED (17 oktober 2026, afvinklijst 33, v33-maat = c): zijn regel is 5–7
+   woorden per regel. Gemeten in alle klantmails, de mediaan per alinea: bij 544
+   breed 8,8 op een computer en 6,5 op een telefoon; bij 440 met 32 px marge (376
+   px tekst) 7,5 en 6,8. Niets loopt over, ook de tabellen in de studiomails niet. */
+const BREED = 440;
+const MARGE = 32;
 
 /* Een bedrag in centen, met duizendtallen, in de tekens van de taal:
    nl € 1.512,50 · en € 1,512.50. Hier stond in vier bestanden
@@ -168,10 +189,14 @@ export function esc(s) {
  * en "Hoi ," met een spatie voor de komma leest als een sjabloon dat is
  * omgevallen. Dan alleen de aanhef.
  */
-export const greeting = (name, lang = 'en') => {
-  const hoi = lang === 'nl' ? 'Hoi' : 'Hi';
+/* Sinds 17 oktober 2026 (afvinklijst 33) niet meer "Hoi": "Goedemiddag Sanne," als
+   de klant de mail nu leest (hij zette hem zelf in gang) en we de tijd in zijn land
+   kennen, anders "Hallo Sanne,". Het waarom staat in src/lib/aanhef.js. Een
+   aanroeper die weet dat de klant nu leest, geeft { nu: new Date(), land } mee. */
+export const greeting = (name, lang = 'en', { nu = null, land = '' } = {}) => {
+  const woord = groetwoord(lang === 'nl' ? 'nl' : 'en', { nu, land });
   const naam = voornaam(name);
-  return naam ? `${hoi} ${esc(naam)},` : `${hoi},`;
+  return naam ? `${woord} ${esc(naam)},` : `${woord},`;
 };
 
 /* ── DE VOORNAAM — 1 oktober 2026 (ronde 8) ───────────────────────────────
@@ -192,12 +217,52 @@ export function voornaam(name) {
 
 /** A paragraph of body copy. */
 export const p = (html, { muted = false, top = 0, bottom = 16 } = {}) =>
-  `<p style="margin:${top}px 0 ${bottom}px;font-family:${FONT};font-size:15px;line-height:1.65;color:${muted ? C.muted : C.text}">${html}</p>`;
+  `<p style="margin:${top}px 0 ${bottom}px;font-family:${FONT};font-size:16px;line-height:1.6;color:${muted ? C.muted : C.text}">${html}</p>`;
 
 /** The headline, and the reference line under it. */
 export const h1 = (text, sub = '') =>
-  `<h1 style="margin:0 0 ${sub ? '6' : '18'}px;font-family:${FONT};font-size:22px;line-height:1.25;font-weight:700;color:${C.head}">${esc(text)}</h1>` +
-  (sub ? `<p style="margin:0 0 22px;font-family:${FONT};font-size:13px;color:${C.muted};letter-spacing:.04em">${sub}</p>` : '');
+  `<h1 style="margin:0 0 ${sub ? '6' : '18'}px;font-family:${FONT};font-size:24px;line-height:1.25;font-weight:700;color:${C.head}">${esc(text)}</h1>` +
+  (sub ? `<p style="margin:0 0 22px;font-family:${MONO};font-size:12px;color:${C.muted};letter-spacing:.1em;text-transform:uppercase">${sub}</p>` : '');
+
+/* ── HET KENMERK ONDER DE KOP — 17 oktober 2026 ──────────────────────────────
+   Onder de kop stond het ene keer "Referentie VIS-2608-4471", het andere keer
+   alleen "VIS-2026-0031" of "VIS-AB-0012", en bij het tegoed een bedrag. Een
+   nummer zonder woord ervoor laat de lezer raden wat het is (een factuur? een
+   bestelling?). Nu altijd een woord en dan het nummer, uit deze ene tabel. */
+const KENMERK = {
+  bestelling: ['Referentie', 'Reference'],
+  abonnement: ['Abonnement', 'Plan'],
+  factuur: ['Factuur', 'Invoice'],
+  creditnota: ['Creditnota', 'Credit note'],
+  tegoed: ['Tegoed', 'Credit'],
+  merkmodel: ['Merkmodel', 'Brand model'],
+};
+/** "Referentie VIS-2608-4471" / "Plan VIS-AB-0012": het woord en het nummer (ge-escapet), als html. */
+export function kenmerk(soort, nummer, lang = 'nl') {
+  if (!nummer) return '';
+  const [nl, en] = KENMERK[soort] || KENMERK.bestelling;
+  /* Levering 55 (m-kop): als een label op een doos, het woord en het nummer los
+     van elkaar, het nummer in inkt en vet: REFERENTIE  VIS-2608-4471. */
+  return `${lang === 'en' ? en : nl}&nbsp;&nbsp;<span style="color:${C.head};font-weight:700">${esc(nummer)}</span>`;
+}
+
+/* ── EEN UITGESCHREVEN LINK — 17 oktober 2026 ─────────────────────────────────
+   Vier mails zetten de portaallink voluit onder een notitie, in #8A8F98: een
+   grijs uit het palet van augustus, 3,25:1 op wit. Nu het grijs van de hal
+   (C.muted, 5,4:1), op één plek. */
+export const linkUit = (href) =>
+  `<span style="color:${C.muted};word-break:break-all">${esc(href)}</span>`;
+
+/* ── "WERKT DE KNOP NIET?" — 17 oktober 2026 ─────────────────────────────────
+   Drie vormen: "Kopieer deze link in je browser:" met de link in het blauw van
+   de mailapp, "Open deze link:", en bij de betaallink een vette zin met een pijl
+   en geen adres. Nu één: een stille regel met het adres voluit, aanklikbaar. */
+export function terugval(href, lang = 'nl', { top = 14 } = {}) {
+  /* top: 14 onder het betaalvlak; 0 direct onder button(), dat zelf al 20 px ruimte meegeeft. */
+  const zin = lang === 'en' ? 'Button not working? Open this link:' : 'Werkt de knop niet? Open deze link:';
+  return `<p style="margin:${top}px 0 18px;font-family:${FONT};font-size:13px;line-height:1.6;color:${C.muted}">${zin}<br>`
+    + `<a href="${esc(href)}" style="color:${C.muted};word-break:break-all">${esc(href)}</a></p>`;
+}
 
 /**
  * The label/value table.
@@ -253,32 +318,42 @@ export const statusPil = (status, label) => {
 };
 
 /** The green call-to-action. A table cell with bgcolor, which Outlook honours. */
-export const button = (href, label) =>
+const knop = (href, label) =>
   `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-    <td bgcolor="${C.green}" align="center" style="background:${C.green};padding:14px 26px;border-radius:999px">
+    <!-- Levering 55 (m-knop): één zachte hoek linksboven, zoals de knop op de site.
+         Outlook op Windows kent border-radius niet en toont hem recht; dat is goed zo. -->
+    <td bgcolor="${C.green}" align="center" style="background:${C.green};padding:15px 24px;border-radius:14px 3px 3px 3px">
       <!-- De letter op het accent is WIT sinds 20 september: zwart op violet
            haalt 2,93:1 en is in KLEURENSCHEMA.md met zoveel woorden afgekeurd. -->
-      <a href="${esc(href)}" style="font-family:${FONT};font-size:15px;font-weight:700;color:${C.onAccent};text-decoration:none;display:block">${esc(label)}</a>
+      <a href="${esc(href)}" style="font-family:${FONT};font-size:16px;font-weight:700;color:${C.onAccent};text-decoration:none;display:block">${esc(label)}</a>
     </td>
   </tr></table>`;
+
+/* ── DE RUIMTE ONDER DE KNOP — 17 oktober 2026 ────────────────────────────────
+   Zes mails zetten na de knop zelf een lege regel van 22 px, de rest niet: daar
+   stond de volgende alinea tegen de knop aan (gezien bij de proefronde-mail en
+   de welkomstmail). Nu zit de ruimte in de knop zelf, overal gelijk (20 px).
+   In het betaalvak niet: daar sluit de knop het vak af. */
+export const button = (href, label) =>
+  `${knop(href, label)}<div style="height:20px;font-size:0;line-height:0">&nbsp;</div>`;
 
 /** The amount-due panel: a mist panel with the total and the button. Sinds 14
     oktober 2026 zonder de violette rand links (violet is voor de knop). */
 export const payPanel = ({ label, amount, sub, href, cta }) =>
-  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.tintBg}" style="background:${C.tintBg};margin:8px 0 0;border-radius:22px">
+  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.tintBg}" style="background:${C.tintBg};margin:8px 0 0;border-radius:22px 3px 3px 3px">
     <tr>
       <td style="padding:22px 24px;font-family:${FONT}">
-        <p style="margin:0 0 2px;font-size:12px;letter-spacing:.1em;color:${C.tintInk};text-transform:uppercase">${esc(label)}</p>
+        <p style="margin:0 0 2px;font-family:${MONO};font-size:12px;letter-spacing:.1em;color:${C.tintInk};text-transform:uppercase">${esc(label)}</p>
         <p style="margin:0 0 4px;font-size:26px;font-weight:700;color:${C.head}">${esc(amount)}</p>
         ${sub ? `<p style="margin:0 0 16px;font-size:12px;line-height:1.5;color:${C.muted}">${sub}</p>` : ''}
-        ${href ? button(href, cta) : ''}
+        ${href ? knop(href, cta) : ''}
       </td>
     </tr>
   </table>`;
 
 /** A quiet aside with a hairline down its left — the spam note lives in one. */
 export const note = html =>
-  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 0"><tr>
+  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 16px"><tr>
     <!-- De lijn van de hal (#DEDCE8), als bgcolor: dat slikt elke mailclient. -->
     <td width="3" bgcolor="${C.rule}" style="width:3px;font-size:0;line-height:0">&nbsp;</td>
     <td style="padding:2px 0 2px 14px">
@@ -296,9 +371,9 @@ export const note = html =>
  * before the button rather than after.
  */
 export const quote = html =>
-  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.tintBg}" style="background:${C.tintBg};margin:2px 0 0;border-radius:18px"><tr>
+  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.tintBg}" style="background:${C.tintBg};margin:2px 0 16px;border-radius:18px"><tr>
     <td style="padding:16px 20px">
-      <p style="margin:0;font-family:${FONT};font-size:15px;line-height:1.6;color:${C.text}">${html}</p>
+      <p style="margin:0;font-family:${FONT};font-size:16px;line-height:1.6;color:${C.text}">${html}</p>
     </td>
   </tr></table>`;
 
@@ -325,15 +400,15 @@ export function vragen(lang = 'nl', ref = '', { aanvraag = false, over = '' } = 
      zegt dat ook in de WhatsApp-tekst, zoals B24/B46 dat deden voor de aanvraag. */
   const onderwerp = over || `${nl ? 'mijn' : 'my'} ${wat}${ref ? ` ${ref}` : ''}`;
   const tekst = nl
-    ? `Hoi VISUAILS, een vraag over ${onderwerp}:`
-    : `Hi VISUAILS, a question about ${onderwerp}:`;
+    ? `Hallo VISUAILS, een vraag over ${onderwerp}:`
+    : `Hello VISUAILS, a question about ${onderwerp}:`;
   const a = `<a href="${esc(waHref(tekst))}" style="color:${C.head};font-weight:700">${nl ? 'app ons' : 'WhatsApp us'}</a>`;
   return p(nl ? `Vragen? Antwoord op deze mail of ${a}.` : `Questions? Reply to this email or ${a}.`, { top: 14, bottom: 0 });
 }
 
 /** A prominent text link on its own line, the way the portal link is offered. */
 export const linkLine = (href, label) =>
-  `<p style="margin:0 0 20px;font-family:${FONT};font-size:15px"><a href="${esc(href)}" style="color:${C.head};font-weight:700">${esc(label)} &rarr;</a></p>`;
+  `<p style="margin:0 0 20px;font-family:${FONT};font-size:16px"><a href="${esc(href)}" style="color:${C.head};font-weight:700">${esc(label)} &rarr;</a></p>`;
 
 /* ── the shell ───────────────────────────────────────────────────────────── */
 
@@ -342,13 +417,27 @@ export const linkLine = (href, label) =>
    en een haarlijn eronder. Hier stond een zwarte band met het V-merk en het
    woord VISUAILS ernaast — twee merken naast elkaar, wat nergens anders mag —
    en een violette streep van 4 px. Zonder beelden leest de alt-tekst
-   "VISUAILS" op dezelfde plek. */
+   "VISUAILS" op dezelfde plek.
+
+   HET WOORDMERK STAAT OP EEN WIT PLAATJE — 17 oktober 2026. Lucas stuurde een
+   schermafdruk uit de Gmail-app op zijn telefoon, in de donkere stand: het
+   woordmerk was bijna weg. Gmail op Android en iOS maakt een lichte mail zelf
+   donker (de achtergrond zwart, de letters licht) maar laat beelden zoals ze
+   zijn, en `color-scheme: light` hieronder helpt daar niet. Een woordmerk in
+   inkt op een doorzichtige png stond dus donker op donker (1,2:1). Nu is het
+   beeld zelf een witte pil (woordmerk-plaat.png, 156 × 46) met het woordmerk
+   erin: op wit is de pil onzichtbaar en staat alles op de pixel waar het stond;
+   in de donkere stand staat er een witte pil met VISUAILS erin, zoals de pillen
+   op de site. De marges om het beeld zijn met de pil verminderd (16 en 12 px),
+   zodat de letters op dezelfde plek blijven. */
 const letterhead = () => `
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.paper}" style="background:${C.paper}">
-  <tr><td style="padding:26px 32px 22px">
-    <a href="${SITE}" style="font-family:${FONT};font-size:15px;font-weight:700;letter-spacing:.12em;color:${C.ink};text-decoration:none"><img src="${SITE}/img/mail/woordmerk-inkt.png" width="124" height="22" alt="VISUAILS" style="display:block;border:0;outline:none;text-decoration:none;color:${C.ink}"></a>
+  <tr><td style="padding:14px ${MARGE - 16}px 10px">
+    <a href="${SITE}" style="font-family:${FONT};font-size:15px;font-weight:700;letter-spacing:.12em;color:${C.ink};text-decoration:none"><img src="${SITE}/img/mail/woordmerk-plaat.png" width="156" height="46" alt="VISUAILS" style="display:block;border:0;outline:none;text-decoration:none;color:${C.ink}"></a>
   </td></tr>
-  <tr><td style="padding:0 32px"><div style="height:1px;background:${C.rule};font-size:0;line-height:0">&nbsp;</div></td></tr>
+  <!-- Levering 55 (m-kop): de lijn onder de kop begint met een violet streepje met
+       een schuin eind op 53°, de snede van het merk (snede.png, 28 × 3). -->
+  <tr><td style="padding:0 ${MARGE}px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td width="28" style="width:28px;font-size:0;line-height:0"><img src="${SITE}/img/mail/snede.png" width="28" height="3" alt="" style="display:block;border:0"></td><td valign="bottom" style="font-size:0;line-height:0"><div style="height:1px;background:${C.rule};font-size:0;line-height:0">&nbsp;</div></td></tr></table></td></tr>
 </table>`;
 
 const footer = lang => {
@@ -358,8 +447,11 @@ const footer = lang => {
   const privacy = nl ? 'Privacyverklaring' : 'Privacy policy';
   return `
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr><td style="padding:28px 32px 0"><div style="height:1px;background:${C.rule};font-size:0;line-height:0">&nbsp;</div></td></tr>
-  <tr><td bgcolor="${C.foot}" style="padding:20px 32px 26px;background:${C.foot};font-family:${FONT}">
+  <!-- Levering 55 (m-stap): onderaan zakt het woordmerk in lila in de voet, door de
+       rand afgesneden, zoals het grote woordmerk onder de site. Een beeld
+       (voet-woordmerk.png, 376 × 38), dus het staat er ook in de donkere stand. -->
+  <tr><td style="padding:30px ${MARGE}px 0;font-size:0;line-height:0"><img src="${SITE}/img/mail/voet-woordmerk.png" width="376" height="38" alt="" style="display:block;border:0;width:100%;max-width:376px;height:auto"></td></tr>
+  <tr><td bgcolor="${C.foot}" style="padding:20px ${MARGE}px 26px;background:${C.foot};font-family:${FONT}">
     <p style="margin:0 0 6px;font-size:12px;color:${C.faint}">
       <a href="${base}/terms" style="color:${C.faint}">${terms}</a> &middot;
       <a href="${base}/privacy" style="color:${C.faint}">${privacy}</a>
@@ -402,11 +494,12 @@ export function shell({ lang = 'en', preheader = '', body = '' }) {
     ${/* Ronde 9 (3 okt 2026): op een telefoon van 390 breed stak de vaste 600 px
        210 px buiten beeld — in een mailapp die niet zelf verkleint betekent dat
        zijwaarts scrollen om de betaalknop te zien. Nu 100% tot een maximum van
-       600; Outlook voor Windows kent max-width niet en krijgt via de
-       mso-commentaren zijn eigen tabel van 600. */ ''}<!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.paper}" style="width:100%;max-width:600px;background:${C.paper}">
+       BREED (544 sinds 17 oktober 2026, zie DE MATEN VAN DE BRIEF); Outlook voor
+       Windows kent max-width niet en krijgt via de mso-commentaren zijn eigen
+       tabel van die breedte. */ ''}<!--[if mso]><table role="presentation" width="${BREED}" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.paper}" style="width:100%;max-width:${BREED}px;background:${C.paper}">
       <tr><td><!--tekst:uit-->${letterhead()}<!--/tekst:uit--></td></tr>
-      <tr><td style="padding:34px 32px 26px">${body}</td></tr>
+      <tr><td style="padding:34px ${MARGE}px 26px">${body}</td></tr>
       <tr><td>${footer(lang)}</td></tr>
     </table>
     <!--[if mso]></td></tr></table><![endif]-->

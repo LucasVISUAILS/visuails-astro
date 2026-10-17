@@ -950,7 +950,7 @@ async function recordSubscriptionPaid(env, payment, mode, { subRef = null } = {}
      de factuur: een mail die niet weggaat mag de webhook geen 500 laten geven. */
   try {
     const wie = await env.DB.prepare(
-      `SELECT c.email, c.brand, s.customer_id, s.ref, s.plan, s.term, s.window_day, s.slots_json, s.vat_treatment, s.vat_country,
+      `SELECT c.email, c.brand, c.name, c.first_name, c.country, s.customer_id, s.ref, s.plan, s.term, s.window_day, s.slots_json, s.vat_treatment, s.vat_country,
               (SELECT COUNT(*) FROM subscription_months m WHERE m.subscription_id = s.id) AS maanden
          FROM subscriptions s JOIN customers c ON c.id = s.customer_id WHERE s.id = ?1`
     ).bind(sub.id).first();
@@ -966,7 +966,7 @@ async function recordSubscriptionPaid(env, payment, mode, { subRef = null } = {}
         const loginLink = eerste ? await welkomLink(env, wie.customer_id, lang, env.PUBLIC_ORIGIN || 'https://visuails.com') : '';
         /* Wat er bij deze termijn boven het spaarplafond verviel (15 oktober 2026). */
         const vervallen = geboekt?.ok ? Number(geboekt.boven) || 0 : 0;
-        await mailSubscriptionInvoice(env, { sub: wie, customer: { email: wie.email, lang }, invoice: factuur, planNaam: naam, credits, eerste, loginLink, vervallen, plafond: vervallen ? spaarPlafond(credits) : 0 });
+        await mailSubscriptionInvoice(env, { sub: wie, customer: { email: wie.email, lang, name: wie.first_name || wie.name || '', country: wie.country || '' }, invoice: factuur, planNaam: naam, credits, eerste, loginLink, vervallen, plafond: vervallen ? spaarPlafond(credits) : 0 });
       }
       if (eerste) {
         /* 0% buiten de EU zonder beoordeling vooraf (29 september 2026): het
@@ -1484,7 +1484,7 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
          mailt de nachtelijke taak hem zodra die hem alsnog uitgeeft. Best effort,
          binnen dezelfde try: de boeking hierboven is al gedaan. */
       if (note && note.status === 'issued') {
-        const wie = await env.DB.prepare('SELECT ref, email, lang FROM orders WHERE id = ?1')
+        const wie = await env.DB.prepare('SELECT ref, email, lang, name FROM orders WHERE id = ?1')
           .bind(order.id).first().catch(() => null);
         if (wie) await mailCreditNote(env, { order: wie, note });
       }
@@ -1958,13 +1958,13 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
     const invoice = await issueInvoice(env, order.id);
     if (invoice) {
       const full = await env.DB.prepare(
-        'SELECT ref, email, name, lang, service, window_start, window_end FROM orders WHERE id = ?1'
+        'SELECT ref, email, name, lang, service, window_start, window_end, country FROM orders WHERE id = ?1'
       ).bind(order.id).first();
       if (full) full.noNext = full.service === SAMPLE_SERVICE;
       /* B04: wachtte de bevestiging op deze betaling, dan krijgt de betaalmail
          het overzicht erbij en is dit de enige mail. */
       const uitgesteld = await leesUitgesteld(env, ref);
-      const verstuurd = await mailInvoice(env, { order: full, invoice, uitgesteld });
+      const verstuurd = await mailInvoice(env, { order: full, invoice, uitgesteld, direct: true });
       if (uitgesteld && verstuurd) await wisUitgesteld(env, ref);
     } else {
       const uitgesteld = await leesUitgesteld(env, ref);

@@ -239,6 +239,10 @@ import {
   linkLine as mailLinkLine,
   datum as mailDatum,
   voornaam,
+  kenmerk as mailKenmerk,
+  terugval as mailTerugval,
+  vragen as mailVragen,
+  C as MAILKLEUR,
 } from './mailTemplate.js';
 
 /** account_tokens.expires_at — long enough to find the email on a phone, short enough that a stale inbox hit is dead. */
@@ -7468,7 +7472,9 @@ async function handlePlanOverstap({ request, env }, customer) {
 
 /* De bevestiging aan de klant en het bericht aan de studio bij pauzeren,
    hervatten en opzeggen. Nooit werpen: de wijziging zelf is al gedaan. */
-export async function mailAboWijziging(env, { soort, sub, customer, lang, jaarTot = '', vanaf = null, reden = null, naar = null, overstap = null }) {
+/* `direct` (17 oktober 2026): de klant deed dit net zelf in Studio en leest de mail
+   nu, dus de aanhef met het dagdeel (src/lib/aanhef.js). /admin geeft false mee. */
+export async function mailAboWijziging(env, { soort, sub, customer, lang, jaarTot = '', vanaf = null, reden = null, naar = null, overstap = null, direct = true }) {
   /* De taal van het ABONNEMENT, niet van de taalknop in Studio (29 september
      2026): de andere abonnementsmails volgen de factuurtaal, en een klant die
      even op English klikte, kreeg anders één Engelse mail tussen Nederlandse. */
@@ -7551,9 +7557,16 @@ export async function mailAboWijziging(env, { soort, sub, customer, lang, jaarTo
       subject: `${koppen[0]} — ${sub.ref}`,
       html: mailShell({
         lang: nl ? 'nl' : 'en',
-        preheader: koppen[0],
-        body: mailH1(koppen[0], esc(sub.ref)) + mailP(esc(koppen[1]))
-          + mailLinkLine(`https://visuails.com${nl ? '/nl' : ''}/account/plan`, nl ? 'Naar je abonnement' : 'Go to your plan'),
+        /* De voorregel is de eerste zin van de mail, niet nog eens het onderwerp
+           (17 oktober 2026). En de aanhef, het kenmerk met een woord ervoor en de
+           vragenregel, zoals in de andere klantmails. */
+        /* Een zin eindigt waar na de punt een hoofdletter volgt, niet bij "incl. btw". */
+        preheader: (String(koppen[1]).match(/^.*?[.!?](?=\s+["'“‘(]?[A-ZÀ-Ý]|\s*$)/) || [koppen[0]])[0],
+        body: mailH1(koppen[0], mailKenmerk('abonnement', sub.ref, nl ? 'nl' : 'en'))
+          + mailP(mailGreeting(customer.name, nl ? 'nl' : 'en', direct ? { nu: new Date(), land: customer.country || '' } : {}))
+          + mailP(esc(koppen[1]))
+          + mailLinkLine(`https://visuails.com${nl ? '/nl' : ''}/account/plan`, nl ? 'Naar je abonnement' : 'Go to your plan')
+          + mailVragen(nl ? 'nl' : 'en', '', { over: nl ? `mijn abonnement ${sub.ref}` : `my plan ${sub.ref}` }),
       }),
     });
   } catch (e) { console.error('[abonnement] bevestiging', soort, 'niet verstuurd —', e?.message || e); }
@@ -8941,14 +8954,12 @@ export function emailChangeConfirmEmail(lang, link, newEmail, minutes) {
     h: 'Bevestig je nieuwe e-mailadres',
     p: `Je hebt gevraagd om het e-mailadres van je VISUAILS-account te wijzigen naar <strong>${esc(newEmail)}</strong>. Klik hieronder om dat te bevestigen. Tot dat moment blijft je huidige adres gewoon werken.`,
     b: 'Nieuw adres bevestigen',
-    alt: 'Werkt de knop niet? Open deze link:',
     f: `Deze link is ${minutes} minuten geldig en werkt één keer. Heb je dit niet aangevraagd, dan kun je deze mail negeren — er verandert dan niets.`,
     pre: 'Eén klik om je nieuwe adres te bevestigen.',
   } : {
     h: 'Confirm your new email address',
     p: `You asked to change the email address on your VISUAILS account to <strong>${esc(newEmail)}</strong>. Click below to confirm. Until you do, your current address keeps working.`,
     b: 'Confirm new address',
-    alt: 'Button not working? Open this link:',
     f: `This link is valid for ${minutes} minutes and works once. If you did not request this, you can ignore this email — nothing will change.`,
     pre: 'One click to confirm your new address.',
   };
@@ -8964,10 +8975,10 @@ export function emailChangeConfirmEmail(lang, link, newEmail, minutes) {
       mailH1(copy.h),
       mailP(copy.p),
       mailButton(link, copy.b),
-      '<div style="height:22px;font-size:0;line-height:0">&nbsp;</div>',
-      mailP(`${copy.alt}<br><a href="${link}" style="color:#6B7078;word-break:break-all">${link}</a>`, { muted: true }),
+      /* De vorm van "werkt de knop niet?" uit mailTemplate.js (17 oktober 2026). */
+      mailTerugval(link, lang === 'en' ? 'en' : 'nl', { top: 0 }),
       mailNote2(copy.f),
-      '<div style="height:14px;font-size:0;line-height:0">&nbsp;</div>',
+      /* Geen eigen tussenruimte meer: note() geeft sinds 17 oktober 2026 zelf 16 px. */
       mailSpamNote(lang),
     ].join(''),
   });
@@ -9001,7 +9012,6 @@ export function emailChangedEmail(lang, undoLink, newEmail, days) {
     p: `Vanaf nu log je in met <strong>${gemaskeerd}</strong>. Dit adres werkt niet meer om in te loggen.`,
     p2: 'Was dit jij? Dan hoef je niets te doen.',
     b: 'Nee, zet dit terug',
-    alt: 'Werkt de knop niet? Open deze link:',
     f: `Deze link zet het adres terug op dit adres en logt alle apparaten uit. Hij is ${days} dagen geldig. Lukt het niet, mail dan direct hello@visuails.com.`,
     pre: 'Was dit niet jij? Eén klik zet het terug.',
   } : {
@@ -9009,7 +9019,6 @@ export function emailChangedEmail(lang, undoLink, newEmail, days) {
     p: `From now on you sign in with <strong>${gemaskeerd}</strong>. This address no longer works for signing in.`,
     p2: 'Was this you? Then there is nothing to do.',
     b: 'No, change it back',
-    alt: 'Button not working? Open this link:',
     f: `This link restores the address to this one and signs out every device. It is valid for ${days} days. If it does not work, email hello@visuails.com straight away.`,
     pre: 'Was this not you? One click puts it back.',
   };
@@ -9022,8 +9031,8 @@ export function emailChangedEmail(lang, undoLink, newEmail, days) {
       mailP(copy.p),
       mailP(copy.p2),
       mailButton(undoLink, copy.b),
-      '<div style="height:22px;font-size:0;line-height:0">&nbsp;</div>',
-      mailP(`${copy.alt}<br><a href="${undoLink}" style="color:#6B7078;word-break:break-all">${undoLink}</a>`, { muted: true }),
+      /* De vorm van "werkt de knop niet?" uit mailTemplate.js (17 oktober 2026). */
+      mailTerugval(undoLink, lang === 'en' ? 'en' : 'nl', { top: 0 }),
       mailNote2(copy.f),
     ].join(''),
   });
@@ -9086,7 +9095,6 @@ export function magicLinkEmail(lang, link, code = null) {
           : `Klik op de link hieronder om in te loggen bij je VISUAILS-account. De link blijft ${hours === 1 ? 'een uur' : `${mins} minuten`} geldig.`,
         b: 'Inloggen',
         f: 'Heb je dit niet aangevraagd? Dan kun je deze e-mail negeren — er verandert niets aan je account.',
-        alt: 'Werkt de knop niet? Kopieer deze link in je browser:',
         codeH: 'Vul deze code in op het scherm waar je vandaan komt:',
         codeF: `${LOGIN_CODE_TTL_MINUTES} minuten geldig, één keer te gebruiken.`,
       }
@@ -9097,7 +9105,6 @@ export function magicLinkEmail(lang, link, code = null) {
           : `Click the link below to sign in to your VISUAILS account. The link stays valid for ${hours === 1 ? 'an hour' : `${mins} minutes`}.`,
         b: 'Sign in',
         f: 'Did not request this? You can ignore this email — nothing about your account changes.',
-        alt: 'Button not working? Copy this link into your browser:',
         codeH: 'Type this code on the screen you came from:',
         codeF: `Valid for ${LOGIN_CODE_TTL_MINUTES} minutes, single use.`,
       };
@@ -9122,7 +9129,7 @@ export function magicLinkEmail(lang, link, code = null) {
   const codeBlock = code
     ? [
         mailP(copy.codeH),
-        mailP(`<span style="font-size:30px;line-height:1.2;letter-spacing:.16em;font-weight:700;color:#0B0C0E">${spaced}</span>`),
+        mailP(`<span style="font-size:30px;line-height:1.2;letter-spacing:.16em;font-weight:700;color:${MAILKLEUR.ink}">${spaced}</span>`),
         mailP(copy.codeF, { muted: true }),
         '<div style="height:22px;font-size:0;line-height:0">&nbsp;</div>',
       ].join('')
@@ -9143,8 +9150,8 @@ export function magicLinkEmail(lang, link, code = null) {
       codeBlock,
       mailP(copy.p),
       mailButton(link, copy.b),
-      '<div style="height:22px;font-size:0;line-height:0">&nbsp;</div>',
-      mailP(`${copy.alt}<br><a href="${link}" style="color:#6B7078;word-break:break-all">${link}</a>`, { muted: true }),
+      /* De vorm van "werkt de knop niet?" uit mailTemplate.js (17 oktober 2026). */
+      mailTerugval(link, lang === 'en' ? 'en' : 'nl', { top: 0 }),
       mailNote2(copy.f),
       /* De contactenregel staat sinds 8 oktober 2026 (7.07, V21-1) op het
          scherm "kijk in je mail", niet meer in deze mail: wie hem leest, heeft
@@ -9364,8 +9371,8 @@ export function productView(t, lang, o, g, open = false) {
     ? { product: g.key, label: t.prodApproveAll(teKeuren.length) }
     : null;
   const waText = encodeURIComponent(lang === 'nl'
-    ? `Hoi VISUAILS, over bestelling ${o.ref} (${label}):`
-    : `Hi VISUAILS, about order ${o.ref} (${label}):`);
+    ? `Hallo VISUAILS, over bestelling ${o.ref} (${label}):`
+    : `Hello VISUAILS, about order ${o.ref} (${label}):`);
   return {
     key: g.key, label, facts, revising, open: open || revising, coverHref: cover ? `/account/files/${cover.id}/f` : '',
     delivered: g.delivered.map((f) => shotView(t, f, o, true)),
@@ -9611,7 +9618,7 @@ export function orderView(t, lang, o, files, events = [], fb = null, index = 0, 
        nergens een. */
     contact: {
       h: t.contactH, note: t.contactNote,
-      wa: { label: t.contactWa, href: `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lang === 'nl' ? `Hoi VISUAILS, een vraag over bestelling ${o.ref}:` : `Hi VISUAILS, a question about order ${o.ref}:`)}` },
+      wa: { label: t.contactWa, href: `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lang === 'nl' ? `Hallo VISUAILS, een vraag over bestelling ${o.ref}:` : `Hello VISUAILS, a question about order ${o.ref}:`)}` },
       mail: { label: t.contactMail, href: `mailto:hello@visuails.com?subject=${encodeURIComponent(o.ref)}` },
     },
   };

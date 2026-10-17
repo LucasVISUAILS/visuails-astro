@@ -53,6 +53,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { offsitePage } from '../../src/lib/offsite.js';
+import { aanhefTekst } from '../../src/lib/aanhef.js';
 import { readCalendar } from '../../src/lib/agenda.js';
 import { aftercare, turnaround, tierRow, clause, shouldPromptUpgrade, upgradePrompt, vatPercent, tierFor, FORM_MAX_PRODUCTS, voorrangZin, VOORRANG, VIDEO_OP_AANVRAAG, SAMPLE_SERVICE, LIFESTYLE_IMAGES, LIFESTYLE_BEELDEN_VELD } from '../../src/data/pricing.js';
 import { videoStyles as VIDEO_STYLES } from '../../src/data/videoStyles.js';
@@ -96,7 +97,7 @@ import { serviceLabel } from '../../src/data/services.js';
    in de HELE functie: het contactformulier riep `quote(…)` aan vóór die regel
    en kreeg "Cannot access 'quote' before initialization". safe() slikte de
    fout, dus geen enkel contactbericht heeft ooit de studio bereikt. */
-import { shell, h1, p, rows, quote as mailQuote, payPanel, note, spamNote, linkLine, greeting, datum as mailDatumKort } from '../../src/lib/mailTemplate.js';
+import { shell, h1, p, rows, quote as mailQuote, payPanel, note, spamNote, linkLine, greeting, datum as mailDatumKort, kenmerk, linkUit, C as MC } from '../../src/lib/mailTemplate.js';
 /* "Zo gaat het verder" (punten 7.01/7.02), de vragenregel (7.07) en wat er
    ontbreekt (2.05, 9.07). */
 import { vragen as mailVragen, button as mailButton } from '../../src/lib/mailTemplate.js';
@@ -1823,20 +1824,27 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
     await safe(() => sendMail(env, {
       to: env.NOTIFY_EMAIL || 'hello@visuails.com',
       subject: `!! Bestelling niet weggeschreven — ${ref}`,
-      html: `<p><strong>De rij in <code>orders</code> ontbreekt na het invoegen.</strong>
-        De klant heeft wél een bevestiging gekregen; er is met opzet GEEN betaallink
-        aangemaakt. Maak deze bestelling met de hand aan of neem contact op.</p>
-        <p>Kenmerk: <strong>${esc(ref)}</strong><br>
-        Dienst: ${esc(svc)}<br>
-        Naam: ${esc(name || '—')}<br>
-        Merk: ${esc(brand || '—')}<br>
-        E-mail: ${esc(email)}<br>
-        Telefoon: ${esc(phone || '—')}<br>
-        Producten: ${esc(String(products ?? '—'))}<br>
-        Land: ${esc(effCountry || country || '—')}<br>
-        Btw-nummer: ${esc(vat || '—')}</p>
-        <p>Volledige inhoud van het formulier:</p>
-        <pre style="white-space:pre-wrap;font:12px/1.5 monospace">${esc(JSON.stringify(details, null, 2))}</pre>`,
+      /* In het gedeelde briefhoofd sinds 17 oktober 2026 (de controle van alle
+         mails): dit was de enige studiomail met kale <p>'s, zonder kop, voet of
+         voorregel. Dezelfde inhoud, nu met de kop en de rijen van de rest. */
+      html: shell({
+        lang: 'nl',
+        preheader: `De rij in orders ontbreekt — ${ref}. Er is geen betaallink gemaakt.`,
+        body: h1('Een bestelling is niet weggeschreven', kenmerk('bestelling', ref))
+          + p('<strong>De rij in <code>orders</code> ontbreekt na het invoegen.</strong> De klant heeft wél een bevestiging gekregen; er is met opzet GEEN betaallink aangemaakt. Maak deze bestelling met de hand aan of neem contact op.')
+          + rows([
+            ['Dienst', esc(svc)],
+            ['Naam', esc(name || '—')],
+            ['Merk', esc(brand || '—')],
+            ['E-mail', esc(email)],
+            ['Telefoon', esc(phone || '—')],
+            ['Producten', esc(String(products ?? '—'))],
+            ['Land', esc(effCountry || country || '—')],
+            ['Btw-nummer', esc(vat || '—')],
+          ])
+          + p('Volledige inhoud van het formulier:', { top: 12, bottom: 8 })
+          + `<pre style="margin:0;white-space:pre-wrap;word-break:break-all;font:12px/1.5 monospace;color:${MC.text}">${esc(JSON.stringify(details, null, 2))}</pre>`,
+      }),
     }));
   }
 
@@ -2178,7 +2186,7 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
         fotos: (!staged.length && ['catalog', 'lifestyle', 'drop'].includes(svc))
           ? `${requestOrigin(request)}${lang === 'nl' ? '/nl' : ''}/account/orders`
           : null,
-        nieuwAdres };
+        nieuwAdres, land: country };
   const bevestigingHtml = customerEmail(lang, ref, svc, name, bevestigingOpties);
   /* ── ÉÉN MAIL NA HET BETALEN, NIET TWEE — 15 oktober 2026 (doorloop 27, B04) ──
      Wie meteen betaalt, kreeg binnen seconden "We hebben je bestelling" (met
@@ -3368,7 +3376,8 @@ export function contactAppKnop({ kanaal, phone, country, name, brand }) {
   const nummer = waNummer(String(phone), land);
   if (!nummer) return '';
   const voornaam = String(name || '').trim().split(/\s+/)[0] || '';
-  const tekst = `Hoi${voornaam ? ` ${voornaam}` : ''}, dank voor je bericht via de site. `;
+  /* De aanhef van src/lib/aanhef.js (17 oktober 2026): Lucas antwoordt nu. */
+  const tekst = `${aanhefTekst(voornaam, 'nl', { nu: new Date(), land })} dank voor je bericht via de site. `;
   const link = { wa: `https://wa.me/${nummer}?text=${encodeURIComponent(tekst).replace(/'/g, '%27')}`, tel: `tel:+${nummer}`, belEerst: false };
   return contactMail(link, { wie: brand || voornaam || 'de klant', knop: mailButton, regel: linkLine });
 }
@@ -3378,7 +3387,7 @@ function detailRows(obj) {
     /* word-break op de waarde (9.07, 8 oktober 2026): een upload_batch van 43
        tekens zonder spatie duwde de mail op een telefoon van 390 px tot 545 px
        breed. */
-    `<tr><td style="padding:4px 12px 4px 0;color:#8F8C87;vertical-align:top">${esc(k)}</td><td style="padding:4px 0;word-break:break-all"><strong>${esc(v)}</strong></td></tr>`
+    `<tr><td style="padding:4px 12px 4px 0;color:${MC.muted};vertical-align:top">${esc(k)}</td><td style="padding:4px 0;word-break:break-all;color:${MC.head}"><strong>${esc(v)}</strong></td></tr>`
   ).join('');
 }
 
@@ -3490,9 +3499,22 @@ function aanvraagRows(obj) {
   return Object.entries(obj)
     .filter(([k, v]) => !AANVRAAG_WEG.has(k) && v !== null && v !== undefined && String(v).trim() !== '')
     .map(([k, v]) => [AANVRAAG_LABELS[k] || k, k === 'style' ? stijlNaam(String(v)) : v])
-    .map(([k, v]) => `<tr><td style="padding:4px 12px 4px 0;color:#8F8C87;vertical-align:top">${esc(k)}</td><td style="padding:4px 0;word-break:break-word"><strong>${esc(v)}</strong></td></tr>`)
+    .map(([k, v]) => `<tr><td style="padding:4px 12px 4px 0;color:${MC.muted};vertical-align:top">${esc(k)}</td><td style="padding:4px 0;word-break:break-word;color:${MC.head}"><strong>${esc(v)}</strong></td></tr>`)
     .join('');
 }
+
+/* ── DE STUDIOMAIL IN DE KLEUREN VAN DE HAL — 17 oktober 2026 ─────────────────
+   Bij de controle van alle mails: deze ene had nog zijn eigen palet van vóór de
+   hal. Donkergrijze en donkergroene banen (#1F2229, #23301C) uit de tijd van het
+   lime-accent, een roestrode (#8F4023) en vijf losse grijzen. Nu dezelfde vlakken
+   als overal: mist voor gewoon, de werktint (violet) voor iets dat goed gaat,
+   amber voor iets om naar te kijken, en amber vol voor de noodgeval-baan. En elke
+   alinea krijgt zijn letter: een <p> zonder font-family viel in sommige
+   mailapps terug op een schreefletter. */
+const vlak = (bg, ink, html, { size = 14 } = {}) =>
+  `<p style="margin:0 0 16px;padding:12px 14px;background:${bg};color:${ink};font-family:Arial,Helvetica,sans-serif;font-size:${size}px;line-height:1.6;border-radius:12px">${html}</p>`;
+const regel = (html, { kleur = MC.text, size = 14 } = {}) =>
+  `<p style="margin:0 0 16px;font-family:Arial,Helvetica,sans-serif;font-size:${size}px;line-height:1.6;color:${kleur}">${html}</p>`;
 
 function notifyEmail(ref, service, top, details, gate = {}) {
   const aanvraag = !gate.quote && !(gate.credits && gate.credits.gebruikt > 0);
@@ -3507,42 +3529,38 @@ function notifyEmail(ref, service, top, details, gate = {}) {
   const v = aanvraag ? null : gate.vat;
   const vies = gate.vies;
   const vatBlock = v
-    ? `<p style="margin:0 0 16px;padding:12px;background:${v.treatment === 'nl_standard' ? '#1F2229' : '#23301C'};color:#fff;font-size:13px;line-height:1.6">
-         <strong>Btw: ${esc(v.treatment)}</strong> tegen ${Math.round(v.rate * 100)}%${gate.quote ? ` — netto ${mailBedragNl(gate.quote.netCents)}, btw ${mailBedragNl(gate.quote.vatCents)}, in rekening ${mailBedragNl(gate.quote.grossCents)}` : ''}<br>
+    ? vlak(v.reason === 'eu-unconfirmed' ? MC.stRevFill : v.treatment === 'nl_standard' ? MC.foot : MC.tintBg,
+        v.reason === 'eu-unconfirmed' ? MC.stRevInk : v.treatment === 'nl_standard' ? MC.text : MC.tintInk,
+        `<strong>Btw: ${esc(v.treatment)}</strong> tegen ${Math.round(v.rate * 100)}%${gate.quote ? ` — netto ${mailBedragNl(gate.quote.netCents)}, btw ${mailBedragNl(gate.quote.vatCents)}, in rekening ${mailBedragNl(gate.quote.grossCents)}` : ''}<br>
          Reden: ${esc(v.reason)}${top.country ? ` · land ${esc(top.country)}` : ''}
          ${vies ? `<br>VIES: ${vies.ok ? (vies.valid ? 'geldig' : 'ONGELDIG') : `niet bereikbaar (${esc(vies.error || '?')})`}${vies.consultation ? ` · consultatienummer ${esc(vies.consultation)}` : ''}${vies.name ? ` · ${esc(vies.name)}` : ''}` : ''}
-         ${v.reason === 'eu-unconfirmed' ? `<br><strong>${vatPercent()} gerekend bij een EU-klant met een nummer dat we niet konden bevestigen. Even naar kijken vóór de factuur.</strong>` : ''}
-       </p>`
+         ${v.reason === 'eu-unconfirmed' ? `<br><strong>${vatPercent()} gerekend bij een EU-klant met een nummer dat we niet konden bevestigen. Even naar kijken vóór de factuur.</strong>` : ''}`, { size: 13 })
     : '';
 
   /* Betaald met abonnementscredits (ronde B, 8 oktober 2026): meteen betaald,
      geen Mollie en geen factuur — het btw-blok gaat dan over een bedrag dat
      niemand betaalt, dus dat vervalt. */
   const creditsBlok = gate.credits && gate.credits.gebruikt > 0
-    ? `<p style="margin:0 0 16px;padding:12px;background:#23301C;color:#fff;font-size:13px;line-height:1.6">
-         <strong>BETAALD MET CREDITS</strong> — ${Number(gate.credits.gebruikt)} credits afgeboekt (oudste eerst), er staan er nog ${Number(gate.credits.saldoNa)}.
-         Geen Mollie en geen factuur: de termijnfactuur dekt deze bestelling. Het werk kan beginnen.
-       </p>`
+    ? vlak(MC.tintBg, MC.tintInk, `<strong>BETAALD MET CREDITS</strong> — ${Number(gate.credits.gebruikt)} credits afgeboekt (oudste eerst), er staan er nog ${Number(gate.credits.saldoNa)}.
+         Geen Mollie en geen factuur: de termijnfactuur dekt deze bestelling. Het werk kan beginnen.`, { size: 13 })
     : '';
 
   const banner = raced
-    ? `<p style="margin:0 0 16px;padding:12px;background:#8F4023;color:#fff;font-size:14px">
-         <strong>Venster kwijt.</strong> Deze bestelling vroeg
+    ? vlak(MC.stRevInk, MC.paper, `<strong>Venster kwijt.</strong> Deze bestelling vroeg
          ${esc(asked?.start || '?')}&nbsp;→&nbsp;${esc(asked?.end || '?')} en kwam door de poort, maar een
          gelijktijdige boeking was eerder, dus er is geen datum vastgelegd. De klant heeft gehoord dat we
-         terugkomen met de data. <strong>Bel ze.</strong>
-       </p>`
+         terugkomen met de data. <strong>Bel ze.</strong>`)
     : '';
 
   const reserved = window
-    ? `<p style="margin:0 0 16px">Venster vastgelegd: <strong>${esc(window.start)} → ${esc(window.end)}</strong></p>`
+    ? regel(`Venster vastgelegd: <strong style="color:${MC.head}">${esc(window.start)} → ${esc(window.end)}</strong>`)
     : tier === 'attended'
-      ? `<p style="margin:0 0 16px;color:#8F4023">Bestelling met leverdatum, maar <strong>zonder vastgelegd venster</strong>.</p>`
+      ? regel('Bestelling met leverdatum, maar <strong>zonder vastgelegd venster</strong>.', { kleur: MC.stRevInk })
       : (details && (details.voorrang === '1' || details.voorrang === 1 || details.voorrang === true))
-        ? `<p style="margin:0 0 16px;color:#8F4023"><strong>VOORRANG</strong> — de klant betaalt de toeslag: uiterlijk de volgende werkdag om ${VOORRANG.klaarUur}:00 geleverd (betaald na ${VOORRANG.bestelVoorUur}:00: de werkdag daarna), anders gaat de toeslag terug.</p>`
+        ? regel(`<strong>VOORRANG</strong> — de klant betaalt de toeslag: uiterlijk de volgende werkdag om ${VOORRANG.klaarUur}:00 geleverd (betaald na ${VOORRANG.bestelVoorUur}:00: de werkdag daarna), anders gaat de toeslag terug.`, { kleur: MC.stRevInk })
         : (details && details.request && (service === 'video' || service === 'custom'))
-          ? `<p style="margin:0 0 16px;color:#666">Aanvraag zonder prijs — zet de offerte op de bestelpagina.</p>`
-          : `<p style="margin:0 0 16px;color:#666">Gewone wachtrij — geen venster, met opzet.</p>`;
+          ? regel('Aanvraag zonder prijs — zet de offerte op de bestelpagina.', { kleur: MC.muted })
+          : regel('Gewone wachtrij — geen venster, met opzet.', { kleur: MC.muted });
 
   // SECTION 13 · the upgrade path, from the studio's side. Deliberately its own
   // line rather than a fact buried in `meta`: a brand that has put 12+ products
@@ -3555,11 +3573,9 @@ function notifyEmail(ref, service, top, details, gate = {}) {
   // one; this is an opportunity, and dressing it the same way would train the eye
   // to skip both.
   const upgradeNote = upgrade
-    ? `<p style="margin:0 0 16px;padding:10px 12px;background:#f4f4f8;color:#333;font-size:14px">
-         <strong>Abonnementsvoorstel meegestuurd.</strong> ${esc(upgrade)} losse producten in het
+    ? vlak(MC.foot, MC.text, `<strong>Abonnementsvoorstel meegestuurd.</strong> ${esc(upgrade)} losse producten in het
          afgelopen kwartaal, dus de bevestiging noemt wat een abonnement dekt. Die ene keer per kwartaal
-         is nu gebruikt — een volgende keer dit kwartaal is een gesprek, geen automatisme.
-       </p>`
+         is nu gebruikt — een volgende keer dit kwartaal is een gesprek, geen automatisme.`)
     : '';
 
   // THE LINK, ON THE STUDIO'S COPY TOO. Same URL the client got, and there is no
@@ -3567,12 +3583,8 @@ function notifyEmail(ref, service, top, details, gate = {}) {
   // deleted the only way back into that order is to issue a new token. Worth
   // saying once, here, rather than discovering it the first time it matters.
   const portalNote = portal
-    ? `<p style="margin:0 0 16px">
-         <a href="${esc(portal)}">Open de bestelpagina van de klant →</a><br>
-         <span style="color:#666;font-size:12px">
-           Dezelfde link als de klant kreeg, en de enige kopie — de database bewaart er alleen een hash van.
-         </span>
-       </p>`
+    ? regel(`<a href="${esc(portal)}" style="color:${MC.head};font-weight:700">Open de bestelpagina van de klant →</a><br>
+         <span style="color:${MC.muted};font-size:12px">Dezelfde link als de klant kreeg, en de enige kopie — de database bewaart er alleen een hash van.</span>`)
     : '';
 
   /* ── PER PRODUCT ÉÉN REGEL, EN WAT ER ONTBREEKT — 8 oktober 2026 (9.07) ──────
@@ -3597,19 +3609,17 @@ function notifyEmail(ref, service, top, details, gate = {}) {
       { wie: top.brand || top.name || 'de klant', knop: mailButton, regel: linkLine })
     : '';
   const productBlok = productRegels.length
-    ? `<h3 style="margin:20px 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:14px">Per product</h3>
-       <p style="margin:0 0 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:#2D3138">${productRegels.map((r) => esc(r)).join('<br>')}</p>`
+    ? `<h3 style="margin:20px 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MC.head}">Per product</h3>
+       <p style="margin:0 0 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:${MC.text}">${productRegels.map((r) => esc(r)).join('<br>')}</p>`
     : '';
   const ontbreektBlok = ontbreekt.length
-    ? `<p style="margin:0 0 16px;padding:10px 12px;background:#F6E7D1;color:#8A4D06;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6">
-         <strong>Wat ontbreekt</strong><br>${ontbreekt.map((r) => esc(r)).join('<br>')}
-       </p>${ontbreektContact}`
+    ? vlak(MC.stRevFill, MC.stRevInk, `<strong>Wat ontbreekt</strong><br>${ontbreekt.map((r) => esc(r)).join('<br>')}`) + ontbreektContact
     : '';
   /* Kenmerk staat onder de kop; dienst, aantal en bedrag in één tabel. */
   const kern = mailRows([
     ['Dienst', esc(serviceLabel(service, 'nl') || service)],
     products ? ['Aantal', `${esc(products)} ${Number(products) === 1 ? 'product' : 'producten'}`] : null,
-    gate.quote ? ['Bedrag', `${esc(mailBedragNl(gate.quote.grossCents))} <span style="font-weight:400;color:#6B7078">(netto ${esc(mailBedragNl(gate.quote.netCents))})</span>`] : null,
+    gate.quote ? ['Bedrag', `${esc(mailBedragNl(gate.quote.grossCents))} <span style="font-weight:400;color:${MC.muted}">(netto ${esc(mailBedragNl(gate.quote.netCents))})</span>`] : null,
   ].filter(Boolean));
   const adminKnop = gate.admin ? mailButton(gate.admin, 'Open in /admin') : '';
 
@@ -3630,8 +3640,8 @@ function notifyEmail(ref, service, top, details, gate = {}) {
     preheader: `${kopNaam} · ${ref}${meta ? ` · ${products || ''}` : ''}`.trim(),
     body: `${banner}
     ${creditsBlok || vatBlock}
-    ${h1(esc(kopNaam), `Referentie ${esc(ref)}`)}
-    ${meta ? `<p style="margin:0 0 16px;font-family:Arial,Helvetica,sans-serif;color:#6B7078;font-size:13px">${meta}</p>` : ''}
+    ${h1(esc(kopNaam), kenmerk('bestelling', ref))}
+    ${meta ? `<p style="margin:0 0 16px;font-family:Arial,Helvetica,sans-serif;color:${MC.muted};font-size:13px">${meta}</p>` : ''}
     ${kern}
     ${ontbreektBlok}
     ${adminKnop}
@@ -3639,7 +3649,7 @@ function notifyEmail(ref, service, top, details, gate = {}) {
     ${reserved}
     ${portalNote}
     ${upgradeNote}
-    <table style="border-collapse:collapse;font-size:14px;font-family:Arial,Helvetica,sans-serif;color:#2D3138">${rows}</table>`,
+    <table style="border-collapse:collapse;font-size:14px;font-family:Arial,Helvetica,sans-serif;color:${MC.text}">${rows}</table>`,
   });
 }
 
@@ -3668,9 +3678,11 @@ function notifyEmail(ref, service, top, details, gate = {}) {
 export function customerEmail(lang, ref, service, name,
   { tier = 'unattended', window = null, upgrade = null, portal = null, pay = null, quote = null, vat = null,
     inReview = false, voorrang = false, aanvraag = false, tegoed = 0, betaaldMetTegoed = false, details = null, fotos = null,
-    nieuwAdres = false, credits = null, alleenSamenvatting = false, naMislukking = false } = {}) {
+    nieuwAdres = false, credits = null, alleenSamenvatting = false, naMislukking = false, land = '' } = {}) {
   const nl = lang === 'nl';
-  const hi = greeting(name, lang);
+  /* De klant bestelde net en leest dit nu: de aanhef met het dagdeel in zijn land
+     (17 oktober 2026, src/lib/aanhef.js). */
+  const hi = greeting(name, lang, { nu: new Date(), land });
   const attended = tier === 'attended';
   const dated = attended && window && window.start && window.end;
 
@@ -3823,7 +3835,7 @@ export function customerEmail(lang, ref, service, name,
   // position.
   const upgradeNote = upgrade
     ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:18px 0 0"><tr>
-         <td style="padding-top:14px;border-top:1px solid #E6E7EB;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.6;color:#6B7078">${esc(upgrade)}</td>
+         <td style="padding-top:14px;border-top:1px solid ${MC.rule};font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.6;color:${MC.muted}">${esc(upgrade)}</td>
        </tr></table>`
     : '';
 
@@ -3843,8 +3855,8 @@ export function customerEmail(lang, ref, service, name,
   const portalNote = portal
     ? linkLine(portal, aanvraag ? (nl ? 'Bekijk je aanvraag' : 'View your request') : (nl ? 'Bekijk je bestelling' : 'View your order'))
       + note(nl
-        ? `Deze link is de sleutel tot je bestelling — iedereen die hem heeft, kan meekijken. Deel hem alleen met wie mee moet kijken.<br><span style="color:#8A8F98;word-break:break-all">${esc(portal)}</span>`
-        : `This link is the key to your order — anyone who has it can see it. Only share it with people who need to look.<br><span style="color:#8A8F98;word-break:break-all">${esc(portal)}</span>`)
+        ? `Deze link is de sleutel tot je bestelling — iedereen die hem heeft, kan meekijken. Deel hem alleen met wie mee moet kijken. <br>${linkUit(portal)}`
+        : `This link is the key to your order — anyone who has it can see it. Only share it with people who need to look. <br>${linkUit(portal)}`)
     : '';
 
   // THE AMOUNT AND THE LINK, in that order and never one without the other. A
@@ -4030,7 +4042,7 @@ export function customerEmail(lang, ref, service, name,
       /* 7.02 (8 oktober 2026): "Je bestelling staat erin" — eerst waar de
          bestelling staat, dan pas de betaalknop en het overzicht. */
       h1(aanvraag ? (nl ? 'Je aanvraag is binnen' : 'Your request is in') : (nl ? 'Je bestelling staat erin' : 'Your order is in'),
-        nl ? `Referentie ${esc(ref)}` : `Reference ${esc(ref)}`),
+        kenmerk('bestelling', ref, nl ? 'nl' : 'en')),
       p(hi),
       p(received),
       payBlock,
@@ -4106,7 +4118,9 @@ export function subscriberEmail(lang) {
      voorbeeldfoto's. */
   const g = fotogids(lang);
   const site = 'https://visuails.com';
-  const kop = (t) => `<strong style="color:#000000">${esc(t)}</strong>`;
+  /* De tussenkoppen in de inkt van de hal (17 oktober 2026): hier stond puur
+     zwart (#000000), het enige zwart in alle mails. */
+  const kop = (t) => `<strong style="color:${MC.head}">${esc(t)}</strong>`;
   const blok = (b) => p(`${kop(b.kop)}<br>${b.regels.map((r) => `&middot; ${esc(r)}`).join('<br>')}`, { bottom: 14 });
   return shell({
     lang,
@@ -4122,8 +4136,10 @@ export function subscriberEmail(lang) {
          En dit is de mail waarin het het meest kost. Hij gaat naar iemand die
          zich zojuist heeft ingeschreven en VISUAILS verder niet kent: het is het
          éérste wat zo iemand van ons leest. De andere Nederlandse mails zeggen
-         "Hoi Sanne,", dus zonder naam is "Hoi," de vorm die daarbij hoort. */
-      p(nl ? 'Hoi,' : 'Hi,'),
+         "Hoi Sanne,", dus zonder naam is "Hoi," de vorm die daarbij hoort.
+         Sinds 17 oktober 2026 de aanhef van src/lib/aanhef.js: hij meldde zich net
+         aan, dus het dagdeel ("Goedemiddag,"). */
+      p(greeting('', nl ? 'nl' : 'en', { nu: new Date() })),
       p(esc(g.intro)),
       p(esc(g.nodigZin), { bottom: 22 }),
       ...g.blokken.map(blok),

@@ -269,7 +269,7 @@ for (const klant of KLANTEN) {
     const links5 = await appOns(page);
     ok(`${tag}: vijf App-ons-links, elk met zijn eigen stap`, links5.map(([st]) => st), ['1', '2', '3', '4', '5']);
     ok(`${tag}: stap 5 noemt de stap en het aantal`, (links5[4] || [])[1] || '',
-      taal === 'nl' ? `Hoi, ik zit bij stap 5 (betalen) van een catalogbestelling met ${n} producten.` : `Hi, I am at step 5 (payment) of a lifestyle order with ${n} products.`);
+      taal === 'nl' ? `Hallo, ik zit bij stap 5 (betalen) van een catalogbestelling met ${n} producten.` : `Hello, I am at step 5 (payment) of a lifestyle order with ${n} products.`);
     ok(`${tag}: geen scriptfouten`, fouten, []);
     await page.close();
   }

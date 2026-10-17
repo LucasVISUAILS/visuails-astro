@@ -25,6 +25,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
+import { ikoon, IKOON } from '../data/iconen.js';
 import Compare from './Compare.astro';
 import Note from './Note.astro';
 import Disclose from './Disclose.astro';
@@ -212,12 +213,10 @@ const COPY = {
   },
 };
 const c = COPY[lang];
-const ICOON = {
-  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
-  pijl: '<path d="M4.5 11.5l7-7M5.5 4.5h6v6"/>',
-  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
-};
-const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+/* De iconen uit het kit (levering 54, afvinklijst 34): links de naam in dit
+   onderdeel, rechts het icoon in src/data/iconen.js. */
+const ICOON = { rechts: 'pijl', pijl: 'pijl-schuin', check: 'vink', plus: 'plus' } as const;
+const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
 ---
 <div class="h-pagina h-hw">
 
@@ -251,7 +250,7 @@ const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="tru
     <ol class="h-stappen" role="list">
       {c.stappen.map((s, i) => (
         <li class="h-stap h-in" style={`--d:${i}`}>
-          <p class="h-nr" aria-hidden="true"><b>{DRIE(i + 1)}</b><i></i><span>/ {DRIE(c.stappen.length)}</span></p>
+          <p class="h-nr" aria-hidden="true"><b>{DRIE(i + 1)}</b><i></i><span>/{DRIE(c.stappen.length)}</span></p>
           <h3 class="h-stap-naam">{s.naam}</h3>
           <p class="h-stap-regel">{s.zin}</p>
           <p class="h-hw-duur">{fase(['bestellen', 'maken', 'goedkeuren'][i]).duur}</p>
@@ -329,7 +328,7 @@ const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="tru
           de helft van dit vlak. Daar staat hij ingeklapt onder "Bekijk de agenda"; op een
           breder scherm is hij altijd open en is de knop weg. Zonder JavaScript: open. */}
       <details class="h-hw-agenda" open data-hw-agenda>
-        <summary class="h-hw-agenda-knop"><span>{c.agendaKnop}</span><span class="h-cirkel h-cirkel-mini" aria-hidden="true">+</span></summary>
+        <summary class="h-hw-agenda-knop"><span>{c.agendaKnop}</span><span class="h-cirkel h-cirkel-mini" aria-hidden="true" set:html={ik('plus')} /></summary>
         <FigGate lang={lang} uitleg />
       </details>
 

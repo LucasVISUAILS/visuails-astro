@@ -127,8 +127,8 @@ console.log('\nB19 · terugboeking');
   ok('één keer "antwoord of app ons"', /Beantwoord deze mail of app ons, dan zoeken/.test(cm), false);
   ok('  en de WhatsApp-tekst noemt het abonnement', /vragen\(nl \? 'nl' : 'en', '', \{ over: nl \? `mijn abonnement \$\{ref\}`/.test(cm));
   const { vragen } = await import('../src/lib/mailTemplate.js');
-  ok('vragen() met `over`', waTekst(vragen('nl', '', { over: 'mijn tegoed' })), 'Hoi VISUAILS, een vraag over mijn tegoed:');
-  ok('  en zonder `over` zoals altijd', waTekst(vragen('nl', 'VIS-X')), 'Hoi VISUAILS, een vraag over mijn bestelling VIS-X:');
+  ok('vragen() met `over`', waTekst(vragen('nl', '', { over: 'mijn tegoed' })), 'Hallo VISUAILS, een vraag over mijn tegoed:');
+  ok('  en zonder `over` zoals altijd', waTekst(vragen('nl', 'VIS-X')), 'Hallo VISUAILS, een vraag over mijn bestelling VIS-X:');
 }
 
 /* ── B29b · "App <naam>" onder een contactbericht ────────────────────────── */
@@ -166,7 +166,7 @@ console.log('\nB33 · tegoed boeken');
   const html = tegoedMail({ naam: 'Ria', lang: 'nl', cents: 1500, reden: 'Excuus voor de late levering', saldoCents: 1500, studio: 'https://visuails.com/account' });
   ok('de reden staat er letterlijk', html.includes('Excuus voor de late levering'));
   ok('het bedrag', /€\s?15,00/.test(html));
-  ok('de WhatsApp-tekst gaat over het tegoed', waTekst(html), 'Hoi VISUAILS, een vraag over mijn tegoed:');
+  ok('de WhatsApp-tekst gaat over het tegoed', waTekst(html), 'Hallo VISUAILS, een vraag over mijn tegoed:');
 }
 
 /* ── B36 · vaknaam als label, de bestandsnaam klein eronder ──────────────── */

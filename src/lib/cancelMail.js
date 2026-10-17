@@ -36,7 +36,7 @@
  */
 
 import { sendMail, toBase64 } from './mail.js';
-import { shell, h1, p, rows, note, linkLine, greeting, esc, button, spamNote, vragen } from './mailTemplate.js';
+import { shell, h1, p, rows, note, linkLine, greeting, esc, button, spamNote, vragen, kenmerk, bedrag } from './mailTemplate.js';
 import { verderBlokHtml } from './verder.js';
 import { levertijdDelen } from '../data/pricing.js';
 import { betaalMailContext } from './invoiceMail.js';
@@ -69,10 +69,10 @@ export const CANCEL_MONEY = Object.freeze(['refund', 'credit', 'none', 'plan', '
 
 const COPY = {
   nl: {
-    subject: (ref) => `Je bestelling ${ref} is geannuleerd`,
+    /* Het nummer achteraan, zoals in elk ander onderwerp (17 oktober 2026). */
+    subject: (ref) => `Je bestelling is geannuleerd — ${ref}`,
     pre: (ref) => `Bestelling ${ref} gaat niet door. Hieronder staat waarom en wat er met je betaling gebeurt.`,
     head: 'Je bestelling is geannuleerd',
-    sub: (ref) => `Referentie ${ref}`,
     lede: 'We hebben je bestelling geannuleerd. Dit is de reden:',
     money: {
       refund: (bedrag) => `Je hebt ${bedrag} betaald. Dat bedrag storten we terug op de rekening waarmee je betaald hebt; afhankelijk van je bank staat het binnen een paar werkdagen op je rekening. De creditnota mailen we je zodra de terugbetaling bevestigd is.`,
@@ -94,10 +94,9 @@ const COPY = {
     tail: 'Wil je alsnog iets laten maken, of klopt er iets niet aan deze annulering? Beantwoord deze mail — we lezen elke reactie.',
   },
   en: {
-    subject: (ref) => `Your order ${ref} has been cancelled`,
+    subject: (ref) => `Your order has been cancelled — ${ref}`,
     pre: (ref) => `Order ${ref} will not go ahead. Here is why, and what happens with your payment.`,
     head: 'Your order has been cancelled',
-    sub: (ref) => `Reference ${ref}`,
     lede: 'We have cancelled your order. This is the reason:',
     money: {
       refund: (bedrag) => `You paid ${bedrag}. We are refunding that amount to the account you paid with; depending on your bank it shows up within a few working days. We will email you the credit note as soon as the refund is confirmed.`,
@@ -138,7 +137,7 @@ export function cancelEmail({ order = {}, reason = '', money = 'unpaid', grossCe
         : `You paid for this order with ${euro(tegoedCents, lang)} of credit. It is back on your account.`);
   }
   const body = [
-    h1(t.head, esc(t.sub(order.ref || ''))),
+    h1(t.head, kenmerk('bestelling', order.ref, lang)),
     p(greeting(order.name, lang)),
     p(esc(t.lede)),
     /* De reden staat als citaat en niet als lopende tekst: het zijn de woorden
@@ -176,9 +175,10 @@ export async function mailCancellation(env, { order, reason, money, grossCents, 
 const CREDIT = {
   nl: {
     subject: (ref) => `Je creditnota — ${ref}`,
-    pre: (n) => `Creditnota ${n} zit als pdf bij deze mail.`,
+    pre: (n, bij = true) => (bij ? `Creditnota ${n} zit als pdf bij deze mail.` : `Creditnota ${n} staat klaar in VISUAILS Studio.`),
     head: 'Je creditnota staat klaar',
-    lede: 'De terugbetaling is bevestigd. Hierbij de creditnota die tegenover je factuur staat, voor je eigen administratie.',
+    /* Met of zonder pdf (17 oktober 2026): "Hierbij" klopt alleen als hij erbij zit. */
+    lede: (bij = true) => `De terugbetaling is bevestigd. ${bij ? 'Hierbij' : 'Hieronder'} de creditnota die tegenover je factuur staat, voor je eigen administratie.`,
     rNumber: 'Creditnotanummer',
     rDate: 'Datum',
     rInvoice: 'Op factuur',
@@ -191,9 +191,9 @@ const CREDIT = {
   },
   en: {
     subject: (ref) => `Your credit note — ${ref}`,
-    pre: (n) => `Credit note ${n} is attached as a PDF.`,
+    pre: (n, bij = true) => (bij ? `Credit note ${n} is attached as a PDF.` : `Credit note ${n} is waiting in VISUAILS Studio.`),
     head: 'Your credit note is ready',
-    lede: 'The refund has been confirmed. Attached is the credit note that stands against your invoice, for your own records.',
+    lede: (bij = true) => `The refund has been confirmed. ${bij ? 'Attached' : 'Below'} is the credit note that stands against your invoice, for your own records.`,
     rNumber: 'Credit note number',
     rDate: 'Date',
     rInvoice: 'Against invoice',
@@ -218,8 +218,10 @@ export function creditNoteEmail({ lang = 'nl', order = {}, note: nota, snap = {}
   const t = CREDIT[lang === 'en' ? 'en' : 'nl'];
   const gross = Number(snap.grossCents ?? nota?.gross_cents ?? 0);
   const body = [
-    h1(t.head, esc(nota.number)),
-    p(esc(t.lede)),
+    h1(t.head, kenmerk('creditnota', nota.number, lang)),
+    /* De aanhef en de vragenregel, zoals in de factuurmail (17 oktober 2026). */
+    p(greeting(order.name, lang)),
+    p(esc(t.lede(attached))),
     rows([
       [t.rNumber, esc(nota.number)],
       [t.rDate, esc(formatDate(String(snap.date || ''), lang))],
@@ -231,10 +233,12 @@ export function creditNoteEmail({ lang = 'nl', order = {}, note: nota, snap = {}
     p(attached ? t.attached : t.noAttach, { top: 4 }),
     linkLine(`${SITE}${lang === 'nl' ? '/nl' : ''}/account`, t.portal),
     note(esc(t.keep)),
+    vragen(lang, order.ref || ''),
   ].join('');
   return {
     subject: t.subject(order.ref || nota.number),
-    html: shell({ lang, preheader: t.pre(nota.number), body }),
+    /* De voorregel zei "zit als pdf bij deze mail", ook als de pdf er niet bij zat. */
+    html: shell({ lang, preheader: t.pre(nota.number, attached), body }),
   };
 }
 
@@ -290,7 +294,9 @@ export async function mailOngewensteBetaling(env, orderId, soort, bedragCents) {
     const o = await env.DB.prepare('SELECT ref, email, name, lang FROM orders WHERE id = ?1').bind(orderId).first();
     if (!o?.email) return false;
     const nl = o.lang === 'nl';
-    const eur = (c) => new Intl.NumberFormat(nl ? 'nl-NL' : 'en-GB', { style: 'currency', currency: 'EUR' }).format((Number(c) || 0) / 100);
+    /* Bedragen zoals in elke andere mail: bedrag() uit mailTemplate.js (hier stond
+       Intl, wat in het Engels "€323.07" gaf en elders "€ 323.07"). */
+    const eur = (c) => bedrag(c, nl ? 'nl' : 'en');
     await sendMail(env, {
       to: o.email,
       subject: nl ? `We storten ${eur(bedragCents)} terug — ${o.ref}` : `We are refunding ${eur(bedragCents)} — ${o.ref}`,
@@ -298,8 +304,8 @@ export async function mailOngewensteBetaling(env, orderId, soort, bedragCents) {
         lang: nl ? 'nl' : 'en',
         preheader: nl ? 'Je hebt niets te doen.' : 'There is nothing you need to do.',
         body: [
-          h1(nl ? 'Je geld komt terug' : 'Your money is coming back', nl ? `Referentie ${esc(o.ref)}` : `Reference ${esc(o.ref)}`),
-          p(greeting(o.name, nl ? 'nl' : 'en')),
+          h1(nl ? 'Je geld komt terug' : 'Your money is coming back', kenmerk('bestelling', o.ref, nl ? 'nl' : 'en')),
+          p(greeting(o.name, nl ? 'nl' : 'en', { nu: new Date(), land: o.country || '' })), /* hij betaalde net: het dagdeel */
           p(soort === 'geannuleerd'
             ? (nl
               ? `Er kwam een betaling van <strong>${esc(eur(bedragCents))}</strong> binnen voor <strong>${esc(o.ref)}</strong>, maar die bestelling was al geannuleerd. We storten het bedrag terug; het staat binnen een paar werkdagen weer op je rekening.`
@@ -307,7 +313,7 @@ export async function mailOngewensteBetaling(env, orderId, soort, bedragCents) {
             : (nl
               ? `Je bestelling <strong>${esc(o.ref)}</strong> was al betaald, en er kwam nog een betaling van <strong>${esc(eur(bedragCents))}</strong> binnen. Die storten we terug; hij staat binnen een paar werkdagen weer op je rekening. Je bestelling loopt gewoon door.`
               : `Your order <strong>${esc(o.ref)}</strong> was already paid, and a second payment of <strong>${esc(eur(bedragCents))}</strong> came in. We are refunding it; it is back in your account within a few working days. Your order carries on as normal.`)),
-          note(nl ? 'Vragen? Beantwoord deze mail.' : 'Questions? Just reply to this email.'),
+          vragen(nl ? 'nl' : 'en', o.ref),
         ].join(''),
       }),
     });
@@ -327,7 +333,7 @@ export async function mailIncassoMislukt(env, { subId, ref, email, name, bedragC
   try {
     const rij = await env.DB.prepare('SELECT lang FROM subscription_invoices WHERE subscription_id = ?1 ORDER BY id DESC LIMIT 1').bind(subId).first().catch(() => null);
     const nl = (rij?.lang || 'nl') !== 'en';
-    const eur = new Intl.NumberFormat(nl ? 'nl-NL' : 'en-GB', { style: 'currency', currency: 'EUR' }).format((Number(bedragCents) || 0) / 100);
+    const eur = bedrag(bedragCents, nl ? 'nl' : 'en');
     const href = `${origin}/account/plan?tab=plan&lang=${nl ? 'nl' : 'en'}`;
     await sendMail(env, {
       to: email,
@@ -338,7 +344,7 @@ export async function mailIncassoMislukt(env, { subId, ref, email, name, bedragC
         lang: nl ? 'nl' : 'en',
         preheader: gestopt ? (nl ? 'Je credits zijn bewaard.' : 'Your credits are kept.') : (nl ? 'We proberen het opnieuw.' : 'We will try again.'),
         body: [
-          h1(gestopt ? (nl ? 'Je abonnement staat stil' : 'Your plan is on hold') : (nl ? 'De afschrijving is niet gelukt' : 'The payment did not go through'), esc(ref)),
+          h1(gestopt ? (nl ? 'Je abonnement staat stil' : 'Your plan is on hold') : (nl ? 'De afschrijving is niet gelukt' : 'The payment did not go through'), kenmerk('abonnement', ref, nl ? 'nl' : 'en')),
           p(greeting(name, nl ? 'nl' : 'en')),
           p(gestopt
             ? (nl
@@ -350,8 +356,9 @@ export async function mailIncassoMislukt(env, { subId, ref, email, name, bedragC
               ? `De afschrijving van <strong>${esc(eur)}</strong> voor je abonnement is niet gelukt. Meestal is dat een tijdelijk saldoprobleem; we proberen het binnen een paar dagen opnieuw. Is je rekening veranderd? Beantwoord deze mail of app ons, dan sturen we je een link om je nieuwe rekening te koppelen.`
               : `The payment of <strong>${esc(eur)}</strong> for your plan did not go through. Usually that is a temporary balance issue; we try again within a few days. Has your bank account changed? Reply to this email or message us on WhatsApp, and we send you a link to connect your new account.`)),
           button(href, nl ? 'Naar mijn abonnement' : 'Go to my plan'),
-          '<div style="height:18px;font-size:0;line-height:0">&nbsp;</div>',
-          note(nl ? 'Vragen? Beantwoord deze mail of app ons.' : 'Questions? Reply to this email or message us on WhatsApp.'),
+          /* De vragenregel met een werkende WhatsApp-link (hier stond "app ons"
+             zonder link, 17 oktober 2026). */
+          vragen(nl ? 'nl' : 'en', '', { over: nl ? `mijn abonnement ${ref}` : `my plan ${ref}` }),
         ].join(''),
       }),
     });
@@ -373,7 +380,7 @@ export async function mailTermijnTeruggeboekt(env, { subId, ref, email, name, te
   try {
     const rij = await env.DB.prepare('SELECT lang FROM subscription_invoices WHERE subscription_id = ?1 ORDER BY id DESC LIMIT 1').bind(subId).first().catch(() => null);
     const nl = (rij?.lang || 'nl') !== 'en';
-    const eur = new Intl.NumberFormat(nl ? 'nl-NL' : 'en-GB', { style: 'currency', currency: 'EUR' }).format((Number(terugCents) || 0) / 100);
+    const eur = bedrag(terugCents, nl ? 'nl' : 'en');
     const href = `${origin}/account/plan?lang=${nl ? 'nl' : 'en'}`;
     await sendMail(env, {
       to: email,
@@ -382,7 +389,7 @@ export async function mailTermijnTeruggeboekt(env, { subId, ref, email, name, te
         lang: nl ? 'nl' : 'en',
         preheader: nl ? 'Een betaling is via je bank teruggeboekt.' : 'A payment was reversed through your bank.',
         body: [
-          h1(nl ? 'Je abonnement staat even stil' : 'Your plan is on hold for now', esc(ref)),
+          h1(nl ? 'Je abonnement staat even stil' : 'Your plan is on hold for now', kenmerk('abonnement', ref, nl ? 'nl' : 'en')),
           p(greeting(name, nl ? 'nl' : 'en')),
           p(nl
             ? `Een betaling van <strong>${esc(eur)}</strong> voor je abonnement is via je bank teruggeboekt. Daarom staat je abonnement even stil: er wordt niets afgeschreven en de credits van die maand staan vast tot het rond is.`
@@ -423,8 +430,8 @@ export async function mailBetalingOntvangen(env, orderId, { uitgesteld = null } 
         lang,
         preheader: nl ? 'We zijn aan de slag.' : 'We have started.',
         body: [
-          h1(nl ? 'Je betaling is binnen' : 'We have your payment', esc(o.ref)),
-          p(greeting(o.name, lang)),
+          h1(nl ? 'Je betaling is binnen' : 'We have your payment', kenmerk('bestelling', o.ref, lang)),
+          p(greeting(o.name, lang, { nu: new Date(), land: o.country || '' })), /* hij betaalde net: het dagdeel */
           p(nl
             ? 'Bedankt — je betaling is binnen. Je factuur komt in VISUAILS Studio, onder Facturen.'
             : 'Thank you — your payment is in. Your invoice will be in VISUAILS Studio, under Invoices.'),
@@ -459,8 +466,8 @@ export async function mailRondeOntvangen(env, o, n) {
         lang: nl ? 'nl' : 'en',
         preheader: nl ? `${n} ${n === 1 ? 'beeld' : 'beelden'} genoteerd.` : `${n} ${n === 1 ? 'image' : 'images'} noted.`,
         body: [
-          h1(nl ? 'Je revisieronde is binnen' : 'Your revision round is in', nl ? `Referentie ${esc(o.ref)}` : `Reference ${esc(o.ref)}`),
-          p(greeting(o.name, nl ? 'nl' : 'en')),
+          h1(nl ? 'Je revisieronde is binnen' : 'Your revision round is in', kenmerk('bestelling', o.ref, nl ? 'nl' : 'en')),
+          p(greeting(o.name, nl ? 'nl' : 'en', { nu: new Date(), land: o.country || '' })), /* hij stuurde dit net in */
           p(nl
             ? `We hebben ${n} ${n === 1 ? 'beeld' : 'beelden'} genoteerd met je opmerkingen. We passen ze aan; je krijgt een mail zodra de nieuwe versies klaarstaan${wanneer}.`
             : `We noted ${n} ${n === 1 ? 'image' : 'images'} with your comments. We adjust them; you get an email as soon as the new versions are ready${wanneer}.`),

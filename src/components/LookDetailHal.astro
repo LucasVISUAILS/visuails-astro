@@ -25,6 +25,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
+import { ikoon, IKOON } from '../data/iconen.js';
 import ServiceSwitch from './ServiceSwitch.astro';
 import Compare from './Compare.astro';
 import Disclose from './Disclose.astro';
@@ -97,12 +98,10 @@ const overig = rest.slice(blokken.length);
    dan staan de drie naast elkaar als kaarten in plaats van drie losse regels met
    veel wit ertussen. */
 const rij = blokken.length > 0 && blokken.every((b) => !b.beeld);
-const ICOON = {
-  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
-  terug: '<path d="M13.5 8h-11M7 3.5L2.5 8 7 12.5"/>',
-  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
-};
-const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+/* De iconen uit het kit (levering 54, afvinklijst 34): links de naam in dit
+   onderdeel, rechts het icoon in src/data/iconen.js. */
+const ICOON = { rechts: 'pijl', terug: 'pijl-links', check: 'vink' } as const;
+const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
 ---
 <div class:list={['h-pagina', 'h-lk', `h-lk-${dienst}`]}>
 

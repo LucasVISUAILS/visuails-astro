@@ -241,11 +241,12 @@ console.log('\nF40, O21 · na betalen van een offerte: hoe komen de foto\'s bij 
   const inv = { number: 'PROEF-2026-0001' };
   const v = invoiceEmail({ lang: 'nl', order: { ref: 'VIS-X', service: 'video', name: 'Bram Bureau' }, invoice: inv, snap: { netCents: 13800, vatCents: 2898 } }).html;
   ok('video: "Beantwoord dan deze mail met de foto’s"', /Beantwoord dan deze mail met de foto’s/.test(v) && !/We maken je beelden en lopen elk beeld na/.test(v));
-  ok('O21: met aanhef', /Hoi Bram,/.test(v));
+  ok('O21: met aanhef', /Hallo Bram,/.test(v)); // 17 oktober 2026: "Hallo" in plaats van "Hoi"
   const c = invoiceEmail({ lang: 'en', order: { ref: 'VIS-X', service: 'catalog' }, invoice: inv, snap: { netCents: 100, vatCents: 21 } }).html;
   /* Punt 7.01 (8 oktober 2026): de "Wat nu"-zin is het blok "Zo gaat het verder" geworden. */
-  ok('catalog: "What happens next" uit verder.js, zonder naam geen "Hi,"', /What happens next/.test(c) && /check every image before it reaches you/.test(c) && !/Hi,/.test(c));
-  ok('webhook leest de naam', /SELECT ref, email, name, lang, service, window_start, window_end FROM orders/.test(lees('functions/api/webhook/mollie.js')));
+  /* 17 oktober 2026: zonder naam toch de aanhef, als "Hi," — de vorm van greeting() in elke andere klantmail. */
+  ok('catalog: "What happens next" uit verder.js, zonder naam alleen "Hello,"', /What happens next/.test(c) && /check every image before it reaches you/.test(c) && />Hello,<\/p>/.test(c));
+  ok('webhook leest de naam', /SELECT ref, email, name, lang, service, window_start, window_end(, country)? FROM orders/.test(lees('functions/api/webhook/mollie.js')));
   const po = lees('src/lib/portal.js');
   ok('portaal: eigen lege staat voor video en eigen look', /emptyOfferte:/.test(po) && /emptyRequest:/.test(po) && /o\.payment_status,/.test(po));
   ok('Studio: levertijd uit de offerte', /fOfferte: 'Levertijd zoals afgesproken in de offerte/.test(lees('src/lib/account.js')));

@@ -41,7 +41,7 @@ const ok = (naam, w, v = true) => {
 };
 const lees = (p) => readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
 /* HTML-entiteiten terug naar tekst, zodat een zin met een apostrof vergelijkbaar is. */
-const tekst = (html) => String(html).replace(/<[^>]+>/g, ' ').replace(/&#39;/g, "'").replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/\s+/g, ' ');
+const tekst = (html) => String(html).replace(/<[^>]+>/g, ' ').replace(/&#39;/g, "'").replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
 const bevat = (html, zin) => tekst(html).includes(tekst(zin));
 
 const QUOTE = { products: 3, netCents: 26700, vatCents: 5607, grossCents: 32307 };

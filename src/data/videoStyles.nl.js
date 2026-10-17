@@ -155,7 +155,7 @@ export const videoStyles = [
        staat eronder als tweede weg (waHref). Wie liever mailt, hoeft niet te appen. */
     ctaHref: '/nl/start/video/?style=campaign',
     ctaExternal: false,
-    waHref: waHref("Hoi VISUAILS, ik wil graag een offerte voor een campagnevideo."),
+    waHref: waHref("Hallo VISUAILS, ik wil graag een offerte voor een campagnevideo."),
     heroIcon: 'sneaker',
     heroWidth: '26%',
     cardIcon: 'sneaker',
@@ -210,7 +210,7 @@ export const videoStyles = [
        staat eronder als tweede weg (waHref). Wie liever mailt, hoeft niet te appen. */
     ctaHref: '/nl/start/video/?style=custom',
     ctaExternal: false,
-    waHref: waHref("Hoi VISUAILS, ik wil graag een video op maat bespreken."),
+    waHref: waHref("Hallo VISUAILS, ik wil graag een video op maat bespreken."),
     heroIcon: 'jar',
     heroWidth: '26%',
     cardIcon: 'jar',

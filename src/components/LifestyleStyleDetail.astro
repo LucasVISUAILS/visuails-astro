@@ -26,6 +26,7 @@
    sjabloon (LookDetail.astro) staat op _opruimen/LIJST.txt. hub = waar de pil terug
    naartoe wijst (standaard de eigen dienst). */
 import LookDetailHal from './LookDetailHal.astro';
+import { ikoon, IKOON } from '../data/iconen.js';
 import { reviewClaim, turnaround, TIERS, TEST_SAMPLE } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import { isEcht } from '../lib/beeldAanwezig.js';
@@ -70,7 +71,7 @@ const c = nl ? {
   krijgH: 'What you get',
   modelNoot: ['The model in a ', ' scene: a standard face, or ', 'your own Brand Model', '.'],
 };
-const vink = 'M20 6L9 17l-5-5';
+/* het vinkje uit het kit (levering 54) */
 ---
 
 <LookDetailHal
@@ -92,7 +93,7 @@ const vink = 'M20 6L9 17l-5-5';
       <h3 class="hoog hoog-3">{c.idealH}</h3>
       <ul class="lm-vinkjes" role="list">
         {style.bestFor.map((item: string) => (
-          <li><svg viewBox="0 0 24 24" class="lm-i" aria-hidden="true"><path d={vink} /></svg><span>{item}</span></li>
+          <li><svg viewBox="0 0 24 24" class="ik lm-i" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d={IKOON.vink} /></svg><span>{item}</span></li>
         ))}
       </ul>
       <h3 class="hoog hoog-3">{c.stapH}</h3>
@@ -104,7 +105,7 @@ const vink = 'M20 6L9 17l-5-5';
       <h3 class="hoog hoog-3">{c.krijgH}</h3>
       <ul class="lm-vinkjes" role="list">
         {style.whatYouGet.map((item: string) => (
-          <li><svg viewBox="0 0 24 24" class="lm-i" aria-hidden="true"><path d={vink} /></svg><span>{item}</span></li>
+          <li><svg viewBox="0 0 24 24" class="ik lm-i" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d={IKOON.vink} /></svg><span>{item}</span></li>
         ))}
       </ul>
       <p class="lm-noot">

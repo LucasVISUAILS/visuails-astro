@@ -40,6 +40,7 @@
  * /video is afgehaald.
  */
 import { examplesFor, isReady, VIDEO_RATIOS, VIDEO_FORMAT, videoFilename } from '../data/videoExamples.js';
+import { ikoon, IKOON } from '../data/iconen.js';
 
 interface Props {
   lang: 'en' | 'nl';
@@ -86,7 +87,7 @@ const metaLine = (e: { seconds: number; ratio: string }) =>
   `${e.seconds} ${nl ? 'seconden' : 'seconds'} · ${ratioOf(e.ratio).name[lang]}`;
 /* "Klik om af te spelen" staat er alleen als er iets te spelen valt. */
 const ietsTeSpelen = items.some((e) => isReady(e));
-const SPEEL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 3.8v8.4L12.4 8z"/></svg>';
+const SPEEL = ikoon('afspelen');
 const kopId = `vx-${slug}`;
 ---
 

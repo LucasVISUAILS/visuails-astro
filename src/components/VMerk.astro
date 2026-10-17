@@ -11,13 +11,30 @@
    Hetzelfde symbool als overal (#markglyph in Layout.astro, niet nagetekend),
    en dezelfde twee echolagen als Woordmerk.astro: de glitch staat in hal.css op
    .wm-glitch en werkt dus voor allebei. Bij "minder beweging" staan de lagen uit.
-   De maat zet de aanroeper via `klasse` (hal.css). */
-interface Props { klasse?: string; glitch?: boolean }
-const { klasse = '', glitch = false } = Astro.props as Props;
+   De maat zet de aanroeper via `klasse` (hal.css).
+
+   electro  17 oktober 2026. Lucas: *"Ook had ik ooit een hover effect voor het logo
+           op de top bar die er nu niet meer is, dit was een soort glitch en
+           electric effect van het logo zelf die ik mooi vond en nu is er een effect
+           dat ik niet meer wil wanneer je de pagina opent."* Dat was het effect van
+           de oude balk (BrandMark.astro, augustus 2026): onder de muis tekent een
+           dunne lijn de V nog eens, verschoven naar linksboven, en die lijn
+           schokt onregelmatig, als stroom die overspringt (mk-electro in
+           global.css). Hier dezelfde twee lagen op hetzelfde symbool; in de hal
+           is de lijn violet. De glitch bij het laden staat niet meer in de balk.
+
+           Levering 54 (17 oktober 2026). Lucas: *"Het mag nog wel subtieler, de
+           echo lijnen achter het logo moeten gewoon wat stotterig wiebelen en uit
+           de maat dus random."* Dus dezelfde ene lijn, dunner en dichter op de
+           vorm, die in kleine schokjes wiebelt op drie ritmes die elkaar nooit
+           inhalen (global.css). Het merk zelf beweegt niet. */
+interface Props { klasse?: string; glitch?: boolean; electro?: boolean }
+const { klasse = '', glitch = false, electro = false } = Astro.props as Props;
 const B = 702, H = 813.25;
 ---
-<svg class:list={['wm', 'vm', klasse, glitch && 'wm-glitch']} viewBox={`0 0 ${B} ${H}`} aria-hidden="true" focusable="false">
+<svg class:list={['wm', 'vm', klasse, glitch && 'wm-glitch', electro && 'mk']} viewBox={`0 0 ${B} ${H}`} aria-hidden="true" focusable="false">
   {glitch && <use class="wm-echo wm-echo-1" href="#markglyph" width={B} height={H} />}
   {glitch && <use class="wm-echo wm-echo-2" href="#markglyph" width={B} height={H} />}
-  <use class="wm-vorm" href="#markglyph" width={B} height={H} />
+  {electro && <use class="mk-line mk-line-a" href="#markglyph" width={B} height={H} />}
+  <use class:list={['wm-vorm', electro && 'mk-fill']} href="#markglyph" width={B} height={H} />
 </svg>

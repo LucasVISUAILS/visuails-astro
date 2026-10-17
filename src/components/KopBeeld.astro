@@ -38,12 +38,13 @@ interface Props {
   verhouding?: string;
 }
 import { beeldMaat } from '../lib/beeldAanwezig.js';
+import { ikoon, IKOON } from '../data/iconen.js';
 const { soort, label, href, linkNaam, voor, getal, eenheid, voet, regels = [], foto, fotos = [], verhouding = '4 / 3' } = Astro.props;
 /* width/height van het echte bestand, zodat de browser de ruimte vooraf reserveert. */
 const maat = async (f?: Foto) => (f ? (await beeldMaat(f.src)) || { w: 1200, h: 1500 } : { w: 1200, h: 1500 });
 const fotoMaat = await maat(foto);
 const parenMaat = await Promise.all(fotos.map((f) => maat(f)));
-const PIJL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5l7-7M5.5 4.5h6v6"/></svg>';
+const PIJL = ikoon('pijl-schuin');
 ---
 {soort === 'getal' && (
   <div class="h-kopbeeld h-kopbeeld-getal h-groot h-in">

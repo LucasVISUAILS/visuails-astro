@@ -30,6 +30,7 @@
    en de tekst noemde hem. Sinds de eerste betaling de eerste maand is, noemt de
    tekst geen bedrag meer voor de machtiging; AMOUNT blijft voor de proefvisual. */
 import NieuwTabblad from '../NieuwTabblad.astro';
+import { ikoon, IKOON } from '../../data/iconen.js';
 import {
   plans, euro, vatLabel, AMOUNT, planSaving,
   CUSTOM_MONTH_ID, CUSTOM_CREDITS_MIN, CUSTOM_CREDITS_MAX, CUSTOM_CREDITS_STEP,
@@ -147,14 +148,14 @@ const NAKIJKEN = nl ? {
   tekst: 'Je aanvraag is binnen en er is niets afgeschreven. Je koos een land buiten de EU terwijl je vanuit de EU afsluit, dus kijken we je gegevens eerst even na. We laten je weten hoe je verder kunt, meestal binnen het uur; buiten openingstijden de volgende ochtend.',
   sneller: 'Sneller geregeld?',
   wa: 'Stuur een WhatsApp',
-  waTekst: 'Hoi VISUAILS, ik wil een abonnement afsluiten. Mijn bedrijf zit buiten de EU.',
+  waTekst: 'Hallo VISUAILS, ik wil een abonnement afsluiten. Mijn bedrijf zit buiten de EU.',
   mail: 'mail ons',
   of: 'of',
 } : {
   tekst: 'Your request is in and nothing has been charged. You chose a country outside the EU while signing up from inside the EU, so we check your details first. We let you know how to continue, usually within the hour; outside opening hours the next morning.',
   sneller: 'Want it sorted faster?',
   wa: 'Send a WhatsApp',
-  waTekst: 'Hi VISUAILS, I would like to start a plan. My company is based outside the EU.',
+  waTekst: 'Hello VISUAILS, I would like to start a plan. My company is based outside the EU.',
   mail: 'email us',
   of: 'or',
 };
@@ -243,7 +244,7 @@ const FOUT_IDS = Object.keys(FOUTEN);
  * komen uit plans.js en pricing.js bij het bouwen, zoals hiervoor. Een browser
  * zonder `:has()` (2022 en ouder) ziet alle varianten onder elkaar; dat is
  * lelijker, niet fout. */
-const CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>';
+const CHECK = ikoon('vink');
 
 type Regel = { t: string; sub?: string };
 type Variant = {

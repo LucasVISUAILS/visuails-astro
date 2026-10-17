@@ -40,6 +40,7 @@
 import HalProef from './HalProef.astro';
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
+import { ikoon, IKOON } from '../data/iconen.js';
 /* Na hal.css: de tijden van rechtzetten, opbouwen en nakijken in stap 2 (gegenereerd). */
 import '../styles/maak-recht.css';
 import {
@@ -214,23 +215,10 @@ const COPY = {
 };
 const c = COPY[lang];
 const kop = TAGLINE[lang];
-const ICOON = {
-  label: '<path d="M2.5 8.6V2.5h6.1l5 5-6.1 6.1z"/><circle cx="5.6" cy="5.6" r="1"/>',
-  klok: '<circle cx="8" cy="8" r="6"/><path d="M8 4.8V8l2.2 1.6"/>',
-  doos: '<path d="M2.5 5L8 2.5 13.5 5v6L8 13.5 2.5 11zM2.5 5L8 7.5 13.5 5M8 7.5v6"/>',
-  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
-  pijl: '<path d="M4.5 11.5l7-7M5.5 4.5h6v6"/>',
-  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
-  links: '<path d="M13.5 8h-11M7 3.5L2.5 8 7 12.5"/>',
-  speel: '<path d="M5.5 3.8v8.4L12.5 8z" fill="currentColor" stroke="none"/>',
-  info: '<circle cx="8" cy="8" r="6.2"/><path d="M8 7.2v4.2M8 4.8v.1"/>',
-  maken: '<path d="M8 1.8l1.5 3.9 3.9 1.5-3.9 1.5L8 12.6 6.5 8.7 2.6 7.2l3.9-1.5zM12.8 11.2l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z"/>',
-  bewerken: '<path d="M2.5 4.5h7M12.5 4.5h1M2.5 11.5h1M6.5 11.5h7"/><circle cx="11" cy="4.5" r="1.6"/><circle cx="5" cy="11.5" r="1.6"/>',
-  kenmerk: '<path d="M3 2.5h6.5L13 6v7.5H3z"/><path d="M9.5 2.5V6H13M5.5 9h5M5.5 11.5h3"/>',
-  controle: '<path d="M8 2l5 2v4c0 3-2.2 5-5 6-2.8-1-5-3-5-6V4zM5.8 8l1.6 1.6 3-3"/>',
-  opnieuw: '<path d="M12.9 6.1A5 5 0 1 0 13 9.6"/><path d="M13.3 2.7v3.6H9.7"/>',
-};
-const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+/* De iconen uit het kit (levering 54, afvinklijst 34): links de naam in dit
+   onderdeel, rechts het icoon in src/data/iconen.js. */
+const ICOON = { label: 'prijs', klok: 'klok', doos: 'doos', check: 'vink', pijl: 'pijl-schuin', rechts: 'pijl', links: 'pijl-links', speel: 'afspelen', info: 'info', maken: 'kader', bewerken: 'bewerken', kenmerk: 'bestand', controle: 'schild', opnieuw: 'vernieuwen' } as const;
+const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
 const REST_ICOON: (keyof typeof ICOON)[] = ['maken', 'bewerken', 'kenmerk', 'controle'];
 /* Drie van de telefoonfoto's die ook in de laptop staan (laptopSlides.js): wat
    een klant echt instuurt, geen voorbeeld dat er beter uitziet. */
@@ -294,7 +282,7 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
     <ol class="h-stappen" role="list" data-uitleg-zicht>
       {c.stappen.map(([naam, regel, bij], i) => (
         <li class="h-stap h-in" style={`--d:${i}`}>
-          <p class="h-nr" aria-hidden="true"><b>{DRIE(i + 1)}</b><i></i><span>/ {DRIE(c.stappen.length)}</span></p>
+          <p class="h-nr" aria-hidden="true"><b>{DRIE(i + 1)}</b><i></i><span>/{DRIE(c.stappen.length)}</span></p>
           <h3 class="h-stap-naam">{naam}</h3>
           <p class="h-stap-regel">{regel}</p>
           <div class="h-stap-beeld">
@@ -424,7 +412,7 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
                         <b>
                           <s aria-hidden="true"></s>
                           <span class="h-lagen-hex">{GROND}</span>
-                          <em class="h-maak-pipet" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M3 13l.8-3 5.6-5.6 2.2 2.2L6 12.2z M9.6 4.2l1.4-1.4a1.5 1.5 0 0 1 2.2 2.2l-1.4 1.4" /></svg></em>
+                          <em class="h-maak-pipet" aria-hidden="true" set:html={ikoon('pipet')} />
                         </b>
                       )}
                       {k === 3 && <b><span class="h-dek" /></b>}
@@ -537,8 +525,8 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
       </div>
       <p class="h-sec-rechts">
         <span class="h-lijntje" aria-hidden="true"><i data-h-strook-stand></i></span>
-        <button type="button" class="h-cirkel" data-h-strook-stap="-1" aria-label={c.vorigeLooks} set:html={ik('links')} />
-        <button type="button" class="h-cirkel" data-h-strook-stap="1" aria-label={c.volgendeLooks} set:html={ik('rechts')} />
+        <span class="h-paar"><button type="button" class="h-cirkel" data-h-strook-stap="-1" aria-label={c.vorigeLooks} set:html={ik('links')} />
+        <button type="button" class="h-cirkel" data-h-strook-stap="1" aria-label={c.volgendeLooks} set:html={ik('rechts')} /></span>
       </p>
     </header>
     <ul class="h-strook" role="list" data-h-strook-rij>
@@ -632,6 +620,8 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
 </div>
 
 <script>
+  import { slaOmIn } from '../scripts/omslag.js';
+  import { knoppenNaastElkaar } from '../scripts/knoppaar.js';
   /* ── BEWEGING OP HET VOORBEELD — 12 oktober 2026 ───────────────────────────
      Drie dingen, allemaal zonder luisteraar op window (tests/zachte-navigatie):
      1. BINNENKOMEN: elk .h-in krijgt .is-in zodra het voor een vijfde in beeld
@@ -647,9 +637,16 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
     const html = document.documentElement;
     html.classList.add('h-js');
     const rustig = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    knoppenNaastElkaar();
 
     const io = new IntersectionObserver((rijen) => {
-      for (const r of rijen) if (r.isIntersecting) { r.target.classList.add('is-in'); io.unobserve(r.target); }
+      for (const r of rijen) if (r.isIntersecting) {
+        /* levering 55: de hoogte voor de helling van de wis, en de getallen slaan om */
+        (r.target as HTMLElement).style.setProperty('--h-hoog', `${Math.round(r.boundingClientRect.height)}px`);
+        r.target.classList.add('is-in');
+        slaOmIn(r.target as HTMLElement);
+        io.unobserve(r.target);
+      }
     }, { threshold: 0.2, rootMargin: '0px 0px -6% 0px' });
     for (const el of document.querySelectorAll('.h-pagina .h-in:not(.is-in)')) {
       if (rustig) el.classList.add('is-in'); else io.observe(el);

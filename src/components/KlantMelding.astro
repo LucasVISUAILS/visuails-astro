@@ -41,6 +41,7 @@
  * oriëntatiepunt (aside met een naam), zodat hij te vinden is.
  * ═══════════════════════════════════════════════════════════════════════════ */
 import { klantTekst } from '../data/klant.js';
+import { ikoon, IKOON } from '../data/iconen.js';
 import { TEST_SAMPLE } from '../data/pricing.js';
 import { geleverd } from '../data/voorbeeldset.js';
 import { localizedPath } from '../i18n/ui.js';
@@ -50,8 +51,8 @@ const { lang } = Astro.props;
 const k = klantTekst(lang);
 const s = TEST_SAMPLE[lang];
 const beeld = geleverd(lang)[0];
-const PIJL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/></svg>';
-const KRUIS = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
+const PIJL = ikoon('pijl');
+const KRUIS = ikoon('sluiten');
 ---
 <aside
   class="h-melding"

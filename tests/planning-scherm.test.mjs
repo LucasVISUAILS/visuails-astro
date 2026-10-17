@@ -84,7 +84,7 @@ console.log('\n2 · de aflopende lijst');
   check('het datumveld begint pas bij de eerste dag die te beloven is', h.includes(`min="${firstOfferableDay(vandaag, new Set())}"`), true);
   check('een klant zonder telefoonnummer krijgt geen WhatsApp-knop, wel mail', /Geen telefoonnummer bekend/.test(h) && /mailto:b%40example\.com|mailto:b@example\.com/.test(h), true);
   check('een 06-nummer wordt een wa.me-link met landcode', /https:\/\/wa\.me\/31612345678\?text=/.test(h), true);
-  check('de Engelse klant krijgt Engelse tekst', /Hi%20Joris/.test(h), true);
+  check('de Engelse klant krijgt Engelse tekst', /(?:Hello|Good%20morning|Good%20afternoon|Good%20evening)%20Joris/.test(h), true);
 }
 
 console.log('\n3 · verlengen vanaf de planning');

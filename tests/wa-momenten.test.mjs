@@ -23,6 +23,12 @@ import { VERVAL_DAG, BETALEN_NA_BTW_AKKOORD } from '../src/data/termijnen.js';
 import { mintToken, hashToken } from '../src/lib/token.js';
 
 let goed = 0, fout = 0;
+/* De aanhef (17 oktober 2026, afvinklijst 33): het dagdeel in het land van de klant,
+   of "Hallo"/"Hello". De tekst hangt dus af van het uur waarop de toets draait. */
+const GROET_NL = '(?:Goedemorgen|Goedemiddag|Goedenavond|Hallo)';
+const GROET_EN = '(?:Good morning|Good afternoon|Good evening|Hello)';
+const GROET_NL_URL = GROET_NL;
+const GROET_EN_URL = '(?:Good%20morning|Good%20afternoon|Good%20evening|Hello)';
 const ok = (naam, w, v = true) => {
   const p = JSON.stringify(w) === JSON.stringify(v);
   if (p) goed++; else fout++;
@@ -48,13 +54,13 @@ for (const moment of Object.keys(WA_MOMENTEN)) {
   const extra = moment === 'fotos' ? { lijst } : {};
   const nl = waLink(moment, sanne, extra);
   const en = waLink(moment, lena, extra);
-  ok(`${moment}: NL begint met "Hoi Sanne,"`, nl.tekst.startsWith('Hoi Sanne,'));
-  ok(`${moment}: EN begint met "Hi Lena,"`, en.tekst.startsWith('Hi Lena,'));
+  ok(`${moment}: NL begint met de aanhef ("Goedemiddag Sanne," of "Hallo Sanne,")`, new RegExp(`^${GROET_NL} Sanne,`).test(nl.tekst));
+  ok(`${moment}: EN begint met de aanhef ("Good afternoon Lena," of "Hello Lena,")`, new RegExp(`^${GROET_EN} Lena,`).test(en.tekst));
   ok(`${moment}: eindigt op VISUAILS`, nl.tekst.endsWith('VISUAILS') && en.tekst.endsWith('VISUAILS'));
   ok(`${moment}: zonder ik-vorm`, zonderIk(nl.tekst) && zonderIk(en.tekst), true);
   /* Review: WhatsApp voorop, ook bij een Nederlandse klant (V27 = b). */
-  ok(`${moment}: NL-klant → tel: +wa.me/31…, ${moment === 'review' ? 'appen' : 'Bellen'} voorop`, [nl.tel, nl.wa.startsWith('https://wa.me/31612345678?text=Hoi%20Sanne'), nl.belEerst], ['tel:+31612345678', true, moment !== 'review']);
-  ok(`${moment}: Duitse klant → wa.me/49… en tel:+49…, appen voorop`, [en.wa.startsWith('https://wa.me/4915123456789?text=Hi%20Lena'), en.tel, en.belEerst], [true, 'tel:+4915123456789', false]);
+  ok(`${moment}: NL-klant → tel: +wa.me/31…, ${moment === 'review' ? 'appen' : 'Bellen'} voorop`, [nl.tel, new RegExp(`^https://wa\\.me/31612345678\\?text=${GROET_NL_URL}%20Sanne`).test(nl.wa), nl.belEerst], ['tel:+31612345678', true, moment !== 'review']);
+  ok(`${moment}: Duitse klant → wa.me/49… en tel:+49…, appen voorop`, [new RegExp(`^https://wa\\.me/4915123456789\\?text=${GROET_EN_URL}%20Lena`).test(en.wa), en.tel, en.belEerst], [true, 'tel:+4915123456789', false]);
   if (!['incasso', 'review', 'credits'].includes(moment)) ok(`${moment}: het kenmerk staat erin`, nl.tekst.includes('VIS-AB12-C3D') && en.tekst.includes('VIS-AB12-C3D'));
 }
 ok('credits: saldo en eerste vervaldatum staan erin', /nu 72, de eerste vervallen op 31 oktober/.test(waTekst('credits', sanne, { saldo: 72, vervalt: '31 oktober' })) && /72 right now, the first ones expire on 31 October/.test(waTekst('credits', lena, { saldo: 72, vervalt: '31 October' })));
@@ -72,7 +78,7 @@ ok('incasso: de maand als die er is', /abonnement van oktober/.test(waTekst('inc
 const twijfel = waLink('betaling', { ...sanne, phone: '0470 12 34 56', land: '' });
 ok('landnummer onzeker → geen wa.me, wel bellen', [twijfel.wa, twijfel.tel], ['', 'tel:0470123456']);
 const knoppenNl = contactKnoppen(waLink('betaling', sanne), { wie: 'VOLT', email: sanne.email, onderwerp: 'x' });
-ok('knoppen NL: Bel vóór App, en Mail met dezelfde tekst', knoppenNl.indexOf('Bel VOLT') < knoppenNl.indexOf('App VOLT') && /mailto:sanne@voorbeeld-volt\.test\?subject=x&body=Hoi%20Sanne/.test(knoppenNl));
+ok('knoppen NL: Bel vóór App, en Mail met dezelfde tekst', knoppenNl.indexOf('Bel VOLT') < knoppenNl.indexOf('App VOLT') && new RegExp(`mailto:sanne@voorbeeld-volt\\.test\\?subject=x&body=${GROET_NL_URL}%20Sanne`).test(knoppenNl));
 const knoppenDe = contactKnoppen(waLink('betaling', lena), { wie: 'MUSTER' });
 ok('knoppen DE: App vóór Bel', knoppenDe.indexOf('App MUSTER') < knoppenDe.indexOf('Bel MUSTER'));
 ok('Bellen is de violette knop bij NL, appen bij DE', /btn btn-primary btn-sm" href="tel:/.test(knoppenNl) && /btn btn-primary btn-sm" href="https:\/\/wa\.me/.test(knoppenDe));
@@ -113,14 +119,14 @@ const get = async (pad) => {
   ok('bestelpagina laadt', status, 200);
   ok('betaling open: "dag 5 van 14" en de knoppen, Bellen voorop (NL)',
     /id="betaling"/.test(html) && html.includes(`dag 5 van ${VERVAL_DAG}`) && html.indexOf('href="tel:+31612345678"') > -1
-      && html.indexOf('href="tel:+31612345678"') < html.indexOf('href="https://wa.me/31612345678?text=Hoi%20Sanne'));
+      && html.indexOf('href="tel:+31612345678"') < html.search(new RegExp(`href="https://wa\\.me/31612345678\\?text=${GROET_NL_URL}%20Sanne`)));
 }
 {
   const { html } = await get('/admin/orders/12/files');
   ok('bounce: de rode regel met App (DE, voorop) en Bel, zonder mailknop',
-    /Mail aan lena@muster-mode\.test kwam niet aan/.test(html) && /href="https:\/\/wa\.me\/4915123456789\?text=Hi%20Lena%2C%20our%20email/.test(html)
-      && !/mailto:lena@muster-mode\.test\?subject=[^"]*body=Hi%20Lena%2C%20our%20email/.test(html));
-  ok('betaling open (EN-klant): de tekst in het Engels', /wa\.me\/4915123456789\?text=Hi%20Lena%2C%20your%20order%20VIS-TEST-0012%20is%20still%20open/.test(html));
+    /Mail aan lena@muster-mode\.test kwam niet aan/.test(html) && new RegExp(`href="https://wa\\.me/4915123456789\\?text=${GROET_EN_URL}%20Lena%2C%20our%20email`).test(html)
+      && !new RegExp(`mailto:lena@muster-mode\\.test\\?subject=[^"]*body=${GROET_EN_URL}%20Lena%2C%20our%20email`).test(html));
+  ok('betaling open (EN-klant): de tekst in het Engels', new RegExp(`wa\\.me/4915123456789\\?text=${GROET_EN_URL}%20Lena%2C%20your%20order%20VIS-TEST-0012%20is%20still%20open`).test(html));
 }
 {
   const { html } = await get('/admin/orders/13/files');
@@ -137,7 +143,7 @@ const get = async (pad) => {
   gezien.length = 0;
   await notifyPaymentFailed(env, 11, 'expired');
   const m = mails()[0];
-  ok('studiomail "Betaling niet gelukt": de knop Bel (NL) en de link App', /Betaling niet gelukt/.test(m?.subject || '') && /href="tel:\+31612345678"/.test(m?.html || '') && /wa\.me\/31612345678\?text=Hoi%20Sanne/.test(m?.html || ''));
+  ok('studiomail "Betaling niet gelukt": de knop Bel (NL) en de link App', /Betaling niet gelukt/.test(m?.subject || '') && /href="tel:\+31612345678"/.test(m?.html || '') && new RegExp(`wa\\.me/31612345678\\?text=${GROET_NL_URL}%20Sanne`).test(m?.html || ''));
   ok('  Bel staat vóór App', (m?.html || '').indexOf('tel:+31612345678') < (m?.html || '').indexOf('wa.me/31612345678'));
   gezien.length = 0;
   await notifyPaymentFailed(env, 13, 'expired');
@@ -145,11 +151,11 @@ const get = async (pad) => {
   gezien.length = 0;
   await notifySubscriptionFailed(env, { subRef: 'ABO-TEST-1', plan: 'Studio', brand: 'MUSTER', email: 'lena@muster-mode.test', reason: 'failed' });
   const i = mails()[0];
-  ok('studiomail "Incasso niet gelukt": App (DE) met de Engelse tekst', /Incasso niet gelukt/.test(i?.subject || '') && /wa\.me\/4915123456789\?text=Hi%20Lena%2C%20the%20payment%20for%20your%20VISUAILS%20subscription/.test(i?.html || ''));
+  ok('studiomail "Incasso niet gelukt": App (DE) met de Engelse tekst', /Incasso niet gelukt/.test(i?.subject || '') && new RegExp(`wa\\.me/4915123456789\\?text=${GROET_EN_URL}%20Lena%2C%20the%20payment%20for%20your%20VISUAILS%20subscription`).test(i?.html || ''));
 }
 {
   const regel = await tasks.mailNietAan(env);
-  ok('nachtrapport: "Mail kwam niet aan" met de bestelling en de app-link', /^Mail kwam niet aan bij 1 klant:/.test(regel || '') && /VIS-TEST-0012 \(MUSTER, kwam niet aan\)/.test(regel || '') && /app MUSTER: https:\/\/wa\.me\/4915123456789\?text=Hi%20Lena/.test(regel || ''));
+  ok('nachtrapport: "Mail kwam niet aan" met de bestelling en de app-link', /^Mail kwam niet aan bij 1 klant:/.test(regel || '') && /VIS-TEST-0012 \(MUSTER, kwam niet aan\)/.test(regel || '') && new RegExp(`app MUSTER: https://wa\\.me/4915123456789\\?text=${GROET_EN_URL}%20Lena`).test(regel || ''));
   ok('  en bellen als tweede regel', /\n\s+bel MUSTER: tel:\+4915123456789/.test(regel || ''));
   db.exec("UPDATE mail_bounces SET created_at = datetime('now', '-3 days')");
   ok('  een oude bounce staat er de volgende ochtend niet meer', await tasks.mailNietAan(env), null);

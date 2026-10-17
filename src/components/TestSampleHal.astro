@@ -33,6 +33,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
+import { ikoon, IKOON } from '../data/iconen.js';
 import OrderFlow from './order/OrderFlow.astro';
 import NieuwTabblad from './NieuwTabblad.astro';
 import StylePicker from './order/StylePicker.astro';
@@ -116,7 +117,7 @@ const c = nl ? {
   slotPil: 'Liever overleggen',
   slotKop: ['Eerst even overleggen?', 'App ons je product.'],
   slotZin: 'We helpen je een look kiezen.',
-  slotWa: 'Hoi VISUAILS, ik wil VISUAILS graag eerst proberen.',
+  slotWa: 'Hallo VISUAILS, ik wil VISUAILS graag eerst proberen.',
   slotCta: 'WhatsApp',
   slotCta2: 'Start een bestelling',
 } : {
@@ -170,15 +171,14 @@ const c = nl ? {
   slotPil: 'Rather talk first',
   slotKop: ['Rather talk it through?', 'Send us your product.'],
   slotZin: 'On WhatsApp, and we help you pick a look.',
-  slotWa: 'Hi VISUAILS, I’d like to try a test sample.',
+  slotWa: 'Hello VISUAILS, I’d like to try a test sample.',
   slotCta: 'WhatsApp',
   slotCta2: 'Place a full order',
 };
-const ICOON = {
-  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
-  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
-};
-const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+/* De iconen uit het kit (levering 54, afvinklijst 34): links de naam in dit
+   onderdeel, rechts het icoon in src/data/iconen.js. */
+const ICOON = { check: 'vink', rechts: 'pijl' } as const;
+const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
 const DRIE = (n: number) => String(n).padStart(2, '0');
 ---
 <div class="h-pagina h-ts">

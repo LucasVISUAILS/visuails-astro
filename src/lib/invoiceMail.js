@@ -35,7 +35,7 @@
  */
 
 import { sendMail, toBase64 } from './mail.js';
-import { shell, h1, p, rows, note, linkLine, esc, button, greeting, vragen, spamNote } from './mailTemplate.js';
+import { shell, h1, p, rows, note, linkLine, esc, button, greeting, vragen, spamNote, kenmerk, C as MAILKLEUR } from './mailTemplate.js';
 /* Punt 7.01 (8 oktober 2026): "Zo gaat het verder" uit één bron met de
    bedankpagina en de bestelmail, de privélink bovenaan, en wat er ontbreekt. */
 import { verderBlokHtml, leveringVan } from './verder.js';
@@ -67,7 +67,9 @@ function euro(cents, lang = 'nl') {
 const COPY = {
   nl: {
     subject: (ref) => `Betaling ontvangen — ${ref}`,
-    pre: (n) => `Je factuur ${n} zit als pdf bij deze mail.`,
+    /* De voorregel volgt de bijlage (17 oktober 2026): hij zei "zit als pdf bij
+       deze mail", ook als het lezen van de pdf mislukte en hij er niet bij zat. */
+    pre: (n, bij = true) => (bij ? `Je factuur ${n} zit als pdf bij deze mail.` : `Je factuur ${n} staat klaar in VISUAILS Studio.`),
     head: 'Je betaling is binnen',
     /* Punt 7.07: één zin waar de bestelling staat, dan één knop. */
     lede: (bedrag, bij) => `Bedankt — je betaling van ${bedrag} is binnen. ${bij ? 'De factuur zit als pdf bij deze mail.' : 'Je factuur staat klaar in VISUAILS Studio, onder Facturen.'}`,
@@ -91,7 +93,7 @@ const COPY = {
   },
   en: {
     subject: (ref) => `Payment received — ${ref}`,
-    pre: (n) => `Your invoice ${n} is attached as a PDF.`,
+    pre: (n, bij = true) => (bij ? `Your invoice ${n} is attached as a PDF.` : `Your invoice ${n} is waiting in VISUAILS Studio.`),
     head: 'We have your payment',
     lede: (amount, att) => `Thank you — your payment of ${amount} is in. ${att ? 'The invoice is attached as a PDF.' : 'Your invoice is waiting in VISUAILS Studio, under Invoices.'}`,
     knop: 'See your order',
@@ -143,7 +145,7 @@ const dateLine = (iso, lang) => formatDate(String(iso || ''), lang);
  * @param {object} o.snap  de bewaarde momentopname
  * @param {boolean} o.attached  zit de pdf er echt bij? Bepaalt één alinea.
  */
-export function invoiceEmail({ lang = 'nl', order = {}, invoice, snap = {}, attached = true, link = '', levering = null, ontbreekt = null, uitgesteld = null }) {
+export function invoiceEmail({ lang = 'nl', order = {}, invoice, snap = {}, attached = true, link = '', levering = null, ontbreekt = null, uitgesteld = null, nu = null }) {
   const t = COPY[lang === 'en' ? 'en' : 'nl'];
   const gross = Number(snap.netCents || 0) + Number(snap.vatCents || 0);
   // Dezelfde drie waarden als vat.js en invoicePdf.js, uit de constante en niet
@@ -171,10 +173,10 @@ export function invoiceEmail({ lang = 'nl', order = {}, invoice, snap = {}, atta
       : verderBlokHtml({ lang, levering: levering || leveringVan(order), factuur: 'bijgevoegd', ontbreekt });
   const portaal = `${SITE}${lang === 'nl' ? '/nl' : ''}/account`;
   const body = [
-    h1(t.head, esc(invoice.number)),
-    /* De aanhef, zoals in elke andere klantmail (ronde 9, O21). Alleen met een
-       naam: deze mail gaat ook uit voor een abonnementstermijn. */
-    order.name ? p(greeting(order.name, lang)) : '',
+    h1(t.head, kenmerk('factuur', invoice.number, lang)),
+    /* De aanhef, zoals in elke andere klantmail (ronde 9, O21), ook zonder naam.
+       Met `nu` (de klant betaalde net) het dagdeel, zie src/lib/aanhef.js. */
+    p(greeting(order.name, lang, { nu, land: order.country || '' })),
     p(esc(t.lede(euro(gross, lang), attached))),
     /* De knop bovenaan (7.01): de privélink van deze bestelling. Zonder link
        (een oude bestelling, of het maken van de link lukte niet) gaat hij naar
@@ -201,7 +203,7 @@ export function invoiceEmail({ lang = 'nl', order = {}, invoice, snap = {}, atta
     // precies het soort meegekopieerde alinea dat een transactionele mail
     // rommelig maakt.
     note(esc(t.keep)),
-    order.ref ? vragen(lang, order.ref) : '',
+    vragen(lang, order.ref || ''),
     /* De contactenregel hoort in de eerste mail aan een nieuw adres (7.07); bij
        een uitgestelde bevestiging is dat deze. */
     uitgesteld?.nieuwAdres ? `<div style="height:18px;font-size:0;line-height:0">&nbsp;</div>${spamNote(lang)}` : '',
@@ -209,7 +211,7 @@ export function invoiceEmail({ lang = 'nl', order = {}, invoice, snap = {}, atta
 
   return {
     subject: t.subject(order.ref || invoice.number),
-    html: shell({ lang, preheader: t.pre(invoice.number), body }),
+    html: shell({ lang, preheader: t.pre(invoice.number, attached), body }),
   };
 }
 
@@ -264,7 +266,9 @@ export async function betaalMailContext(env, ref, lang = 'nl') {
  *
  * @returns {Promise<boolean>} of er iets is verstuurd.
  */
-export async function mailInvoice(env, { order, invoice, uitgesteld = null }) {
+/* `direct`: de klant betaalde net en leest dit nu (de webhook, betalen met tegoed);
+   niet bij opnieuw versturen uit /admin. Zie src/lib/aanhef.js. */
+export async function mailInvoice(env, { order, invoice, uitgesteld = null, direct = false }) {
   try {
     if (!order?.email || !invoice) return false;
     const lang = invoice.lang === 'en' ? 'en' : (order.lang === 'en' ? 'en' : 'nl');
@@ -287,7 +291,7 @@ export async function mailInvoice(env, { order, invoice, uitgesteld = null }) {
     }
 
     const ctx = await betaalMailContext(env, order.ref, lang);
-    const { subject, html } = invoiceEmail({ lang, order, invoice, snap, attached: !!attachment, ...ctx, uitgesteld });
+    const { subject, html } = invoiceEmail({ lang, order, invoice, snap, attached: !!attachment, ...ctx, uitgesteld, nu: direct ? new Date() : null });
     await sendMail(env, {
       to: order.email,
       /* ── EN EEN KOPIE VOOR DE EIGEN ADMINISTRATIE — 20 augustus 2026 ───────
@@ -350,7 +354,8 @@ const SUB_COPY = {
     portal: 'Naar je abonnement in VISUAILS Studio',
     stop: 'Pauzeren of opzeggen doe je zelf in Studio, onder Abonnement — zonder mailtje, zonder wachttijd.',
     /* De welkomstmail (24 september 2026) — zie de kop van mailSubscriptionInvoice(). */
-    subjectWelcome: (ref) => `Welkom bij VISUAILS — je abonnement loopt (${ref})`,
+    /* Het nummer achteraan na een streep, zoals in elk ander onderwerp (17 oktober 2026). */
+    subjectWelcome: (ref) => `Welkom bij VISUAILS: je abonnement loopt — ${ref}`,
     headWelcome: 'Welkom — je abonnement loopt',
     stepsH: 'Zo begin je',
     steps: (dag) => [
@@ -380,7 +385,7 @@ const SUB_COPY = {
     noAttach: 'Your invoice is waiting in VISUAILS Studio, under <b>Plan &amp; billing</b>.',
     portal: 'Go to your plan in VISUAILS Studio',
     stop: 'Pausing or cancelling is something you do yourself in Studio, under Plan — no email, no waiting.',
-    subjectWelcome: (ref) => `Welcome to VISUAILS — your plan is running (${ref})`,
+    subjectWelcome: (ref) => `Welcome to VISUAILS: your plan is running — ${ref}`,
     headWelcome: 'Welcome — your plan is running',
     stepsH: 'How to start',
     steps: (dag) => [
@@ -458,7 +463,8 @@ export async function mailSubscriptionInvoice(env, { sub, customer, invoice, pla
        account.js), en daaronder de factuur. */
     const welkom = eerste ? [
       p(`<b>${esc(t.stepsH)}</b>`, { top: 8, bottom: 8 }),
-      ...t.steps(dag).map(([kop, tekst], i) => p(`<b>${i + 1}. ${esc(kop)}</b><br>${tekst}`, { bottom: 12 })),
+      /* De nummers in violet, zoals in "Zo gaat het verder" (17 oktober 2026). */
+      ...t.steps(dag).map(([kop, tekst], i) => p(`<b><span style="color:${MAILKLEUR.accentText}">${i + 1}.</span> ${esc(kop)}</b><br>${tekst}`, { bottom: 12 })),
       p(esc(t.rollover(CREDITS_GELDIG_MAANDEN)), { muted: true }),
       loginLink ? button(loginLink, t.loginBtn) : button(studio, t.portal),
       loginLink ? note(esc(t.loginNote)) : '',
@@ -466,7 +472,10 @@ export async function mailSubscriptionInvoice(env, { sub, customer, invoice, pla
     ] : [];
 
     const body = [
-      h1(eerste ? t.headWelcome : t.headNext, esc(ref)),
+      h1(eerste ? t.headWelcome : t.headNext, kenmerk(sub.ref ? 'abonnement' : 'factuur', ref, lang)),
+      /* Aanhef en vragenregel zoals in de andere klantmails (17 oktober 2026). */
+      /* Het welkom leest de klant nu (hij betaalde net); een maandfactuur later. */
+      p(greeting(customer.name, lang, eerste ? { nu: new Date(), land: customer.country || '' } : {})),
       p(esc(eerste ? (sub.term === 'prepaid' ? t.ledeFirstPrepaid : t.ledeFirst)(planNaam, credits, dag) : t.ledeNext(maand, credits))),
       !eerste && vervallen > 0 && plafond > 0 ? p(esc(t.ledeBoven(vervallen, plafond))) : '',
       ...welkom,
@@ -478,13 +487,14 @@ export async function mailSubscriptionInvoice(env, { sub, customer, invoice, pla
       vatLine ? note(esc(vatLine)) : '',
       note(esc(t.stop)),
       invoice ? note(esc(COPY[lang].keep)) : '',
+      vragen(lang, '', { over: lang === 'en' ? `my plan ${ref}` : `mijn abonnement ${ref}` }),
     ].join('');
 
     await sendMail(env, {
       to: customer.email,
       bcc: invoice ? (env.INVOICE_BCC || undefined) : undefined,
       subject: eerste ? t.subjectWelcome(ref) : t.subjectNext(ref, maand),
-      html: shell({ lang, preheader: invoice ? COPY[lang].pre(invoice.number) : t.headWelcome, body }),
+      html: shell({ lang, preheader: invoice ? COPY[lang].pre(invoice.number, !!attachment) : t.headWelcome, body }),
       attachments: attachment ? [attachment] : undefined,
     });
     return true;
@@ -561,7 +571,9 @@ export async function mailBijkoopFactuur(env, { customer, invoice = null, pakket
     const studio = `${SITE}${L === 'nl' ? '/nl' : ''}/account/plan`;
     const totTekst = tot ? formatDate(String(tot), L) : '';
     const body = [
-      h1(t.head, invoice ? esc(invoice.number) : ''),
+      h1(t.head, invoice ? kenmerk('factuur', invoice.number, L) : ''),
+      /* De klant kocht dit net bij: het dagdeel (src/lib/aanhef.js). */
+      p(greeting(customer.name, L, { nu: new Date(), land: customer.country || '' })),
       p(esc(t.lede(Number(pakket) || 0, totTekst))),
       invoice ? rows([
         [t.rPakket, String(Number(pakket) || 0)],
@@ -573,12 +585,13 @@ export async function mailBijkoopFactuur(env, { customer, invoice = null, pakket
       linkLine(studio, t.portal),
       vatLine ? note(esc(vatLine)) : '',
       invoice ? note(esc(COPY[L].keep)) : '',
+      vragen(L, '', { over: L === 'en' ? 'my extra credits' : 'mijn extra credits' }),
     ].join('');
     await sendMail(env, {
       to: customer.email,
       bcc: invoice ? (env.INVOICE_BCC || undefined) : undefined,
       subject: t.subject(Number(pakket) || 0, invoice?.number || ''),
-      html: shell({ lang: L, preheader: invoice ? COPY[L].pre(invoice.number) : t.head, body }),
+      html: shell({ lang: L, preheader: invoice ? COPY[L].pre(invoice.number, !!attachment) : t.head, body }),
       attachments: attachment ? [attachment] : undefined,
     });
     return true;

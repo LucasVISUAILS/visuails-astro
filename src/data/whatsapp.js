@@ -10,7 +10,7 @@
 // WhatsApp-links in de broncode en de tekst van elke link stond er
 // URL-GECODEERD in:
 //
-//     ?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20talk%20about%20a%20drop.
+//     ?text=Hello%20VISUAILS%2C%20I%27d%20like%20to%20talk%20about%20a%20drop.
 //
 // Dat is precies waarom "drop" overleefde terwijl het woord overal anders al
 // was geschrapt. Je kunt er niet op zoeken. Wie `grep drop` draaide zag deze
@@ -88,18 +88,18 @@ export const WA_CHROME = {
     // opende het gesprek in een woordenschat waar de prijslijst geen antwoord
     // op heeft. De vervanger noemt geen product, want de knop weet niet welke
     // pagina eronder ligt.
-    chat: 'Hi VISUAILS, I have a question about your visuals.',
+    chat: 'Hello VISUAILS, I have a question about your visuals.',
     // De knop in het mobiele menu staat direct onder "Start". Wie daar klikt
     // is niet aan het oriënteren maar aan het bestellen, dus die zin mag
     // concreter zijn.
-    order: "Hi VISUAILS, I'd like to have visuals made for my products.",
+    order: "Hello VISUAILS, I'd like to have visuals made for my products.",
   },
   nl: {
     // Allebei stonden ze in het Engels op alle 42 Nederlandse pagina's — een
     // Nederlandse bezoeker kreeg zijn eigen chat in een taal die hij niet had
     // gekozen. Elke andere WhatsApp-link op de site was al per taal; deze twee
     // zaten in Layout.astro en waren simpelweg overgeslagen.
-    chat: 'Hoi VISUAILS, ik heb een vraag over jullie beelden.',
-    order: 'Hoi VISUAILS, ik wil graag beelden laten maken voor mijn producten.',
+    chat: 'Hallo VISUAILS, ik heb een vraag over jullie beelden.',
+    order: 'Hallo VISUAILS, ik wil graag beelden laten maken voor mijn producten.',
   },
 };

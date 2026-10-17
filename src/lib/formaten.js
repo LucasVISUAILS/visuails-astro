@@ -260,7 +260,8 @@ export async function formaatMail(env, id, { origin = 'https://visuails.com', se
         lang,
         preheader: t.tekst(r.formaat),
         body: [
-          mail.h1(t.kop(r.formaat), mail.esc(r.ref)),
+          /* Het kenmerk met een woord ervoor, als de aanroeper die helper meegeeft. */
+          mail.h1(t.kop(r.formaat), mail.kenmerk ? mail.kenmerk('bestelling', r.ref, lang) : mail.esc(r.ref)),
           mail.p(mail.greeting(r.name, lang)),
           mail.p(mail.esc(t.tekst(r.formaat))),
           mail.button(href, t.knop),

@@ -103,7 +103,8 @@ body.hal {
   font-family: var(--h-letter);
 }
 body.hal .grain { display: none; }
-body.hal ::selection { background: var(--h-waas); color: var(--h-inkt); }
+/* d-sel (levering 54): geselecteerde tekst violet met witte letters (was waas met inkt) */
+body.hal ::selection { background: var(--h-violet); color: #fff; }
 body.hal main { padding-top: 0; }
 
 /* ── bouwstenen ─────────────────────────────────────────────────────────── */
@@ -284,6 +285,22 @@ body.hal .site-header .nav-menu .mi-soon { font: 600 11.5px/1 var(--h-letter) !i
    de oude .brand-glyph (30) plus de 2 px die het blaadje boven de kaplijn steekt. */
 .hal .hal-vm { display: block; height: 32px; width: auto; aspect-ratio: 702 / 813.25; color: var(--h-inkt); }
 .hal .hal-vm-lade { height: 30px; }
+/* De elektrische rand van het V-merk in de balk (VMerk electro, 17 oktober 2026):
+   de lijn in het violet van de hal naast de inkt van de V. De beweging zelf staat
+   in global.css onder .mk (mk-electro). */
+/* Levering 54 (17 oktober 2026, Lucas: "Het mag nog wel subtieler, de echo lijnen
+   achter het logo moeten gewoon wat stotterig wiebelen en uit de maat dus random"):
+   dunner (0,55 px; bij 0,4 breekt hij langs de vlag) en dichter op de vorm
+   (36 eenheden van het tekenvlak = 1,2 px op 28 px hoog; was 6% = 1,7 px). De
+   wiebel staat in global.css; --mk-j is de schokmaat in eenheden van het
+   tekenvlak, --mk-r de kanteling. Hetzelfde op alle logo's: de V in de balk en
+   de lade, het woordmerk in de footer en het grote woordmerk eronder. */
+.hal .hal-vm-balk, .hal .hal-vm-lade { --mk-line-ink: var(--h-violet); --mk-sw: 0.55; --mk-off: 36px; --mk-j: 6px; --mk-r: 1deg; }
+.hal .hal-wm-voet { --mk-line-ink: var(--h-violet); --mk-sw: 0.55; --mk-off: 40px; --mk-j: 6px; --mk-r: .35deg; }
+/* Het grote woordmerk: 1 eenheid is daar ~0,3 px op een computer, dus kleinere
+   getallen voor ongeveer dezelfde beweging op het scherm. */
+body.hal .hal-wm-reus { --mk-line-ink: var(--h-violet); --mk-sw: 0.6; --mk-off: 22px; --mk-j: 2.5px; --mk-r: .12deg; }
+body.hal .foot-mark .hal-wm-reus { pointer-events: auto; }
 /* het woordmerk in de balk van de voorbeeldschermen (FigDash, FigGallery, FigGate): 14 px hoog */
 .hal .fd-wm, .hal .fg-wm, .hal .fgt-wm { display: block; height: 14px; width: auto; aspect-ratio: 4651.24 / 813.83; color: var(--h-inkt); }
 .hal .fd-mark, .hal .fg-mark, .hal .fgt-mark { display: inline-flex; align-items: center; }
@@ -293,9 +310,9 @@ body.hal .site-header .nav-menu .mi-soon { font: 600 11.5px/1 var(--h-letter) !i
 .hal .wm-echo { opacity: 0; }
 .hal .wm-echo-1 { fill: var(--h-violet); }
 .hal .wm-echo-2 { fill: var(--h-lila); }
-.hal .wm-glitch .wm-echo-1 { animation: h-glitch-a .62s steps(1, end) .9s 1 both; }
-.hal .wm-glitch .wm-echo-2 { animation: h-glitch-b .62s steps(1, end) .9s 1 both; }
-.hal .wm-glitch .wm-vorm { animation: h-glitch-c .62s steps(1, end) .9s 1 both; }
+/* Geen glitch meer bij het laden (17 oktober 2026, Lucas: "een effect dat ik niet
+   meer wil wanneer je de pagina opent"). Onder de muis blijft hij, voor wie hem
+   met wm-glitch nog gebruikt. */
 .hal .brand:hover .wm-glitch .wm-echo-1, .hal .brand:focus-visible .wm-glitch .wm-echo-1 { animation: h-glitch-a .48s steps(1, end) 0s 1 both; }
 .hal .brand:hover .wm-glitch .wm-echo-2, .hal .brand:focus-visible .wm-glitch .wm-echo-2 { animation: h-glitch-b .48s steps(1, end) 0s 1 both; }
 .hal .brand:hover .wm-glitch .wm-vorm, .hal .brand:focus-visible .wm-glitch .wm-vorm { animation: h-glitch-c .48s steps(1, end) 0s 1 both; }
@@ -814,9 +831,33 @@ body.hal .h-ab .ab-raam:focus-visible { outline-color: var(--h-violet); }
 .hal .h-regel-in { animation: h-regel 1s var(--h-zacht) both; animation-delay: calc(var(--d, 0) * 110ms + 80ms); }
 @keyframes h-op { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 @keyframes h-regel { from { transform: translateY(105%); } to { transform: none; } }
-/* De rest pas als hij in beeld komt, en alleen als het script draait (html.h-js). */
-.h-js .hal .h-in, html.h-js body.hal .h-in { opacity: 0; transform: translateY(16px); transition: opacity .9s var(--h-zacht), transform .9s var(--h-zacht); transition-delay: calc(var(--d, 0) * 90ms); }
-html.h-js body.hal .h-in.is-in { opacity: 1; transform: none; }
+/* De rest pas als hij in beeld komt, en alleen als het script draait (html.h-js).
+   Levering 55 (afvinklijst 34, b-onthul "doen"): niet meer 16 px omhoog schuiven en
+   vervagen, maar de snede van 53° wist het blok open, van links naar rechts. De wis
+   loopt 24 px buiten het blok door (een schaduw of uitstekende hoek staat er dus niet
+   pas aan het eind), en de helling is 0,75 × de hoogte (3-4-5, de snede van het merk);
+   daarvoor zet het script de hoogte van het blok in --h-hoog. Het is een masker en geen
+   clip-path: een masker laat het aanwijzen met de muis met rust (met clip-path viel de muis
+   tijdens de wis door het blok heen, en sloot de notitie op /how-it-works, tests/zachte-
+   navigatie). Het masker zit alleen in de animatie: daarna staat er niets meer op het blok.
+   Het masker is een verloop met een harde rand op 126,87° (loodrecht op de snede), twee keer
+   zo breed als het blok plus de helling, en schuift van rechts naar links over het blok. */
+.h-js .hal .h-in, html.h-js body.hal .h-in { opacity: 0; transform: none; transition: none; }
+.h-js .hal .h-in.is-in, html.h-js body.hal .h-in.is-in { opacity: 1; transform: none; --h-s: calc((var(--h-hoog, 320px) + 48px) * .75); animation: h-wis .62s cubic-bezier(.7, 0, .2, 1) backwards; animation-delay: calc(var(--d, 0) * 90ms); }
+@keyframes h-wis {
+  from {
+    -webkit-mask-image: linear-gradient(126.87deg, #000 50%, transparent 50%); mask-image: linear-gradient(126.87deg, #000 50%, transparent 50%);
+    -webkit-mask-size: calc(200% + 96px + var(--h-s)) calc(100% + 48px); mask-size: calc(200% + 96px + var(--h-s)) calc(100% + 48px);
+    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-clip: no-clip; mask-clip: no-clip;
+    -webkit-mask-position: calc(100% + 24px) -24px; mask-position: calc(100% + 24px) -24px;
+  }
+  to {
+    -webkit-mask-image: linear-gradient(126.87deg, #000 50%, transparent 50%); mask-image: linear-gradient(126.87deg, #000 50%, transparent 50%);
+    -webkit-mask-size: calc(200% + 96px + var(--h-s)) calc(100% + 48px); mask-size: calc(200% + 96px + var(--h-s)) calc(100% + 48px);
+    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-clip: no-clip; mask-clip: no-clip;
+    -webkit-mask-position: -24px -24px; mask-position: -24px -24px;
+  }
+}
 /* In de strook met looks alleen zichtbaar worden, niet omhoog schuiven. Een kaart
    die nog rechts buiten de strook staat, komt pas "in beeld" als je ernaartoe
    veegt; tot dan stond hij 16 px lager, en die 16 px maakten de strook verticaal
@@ -941,7 +982,7 @@ html.h-js body.hal .h-stap.is-in .h-keur figcaption { opacity: 1; transform: non
 /* De pipet bij het staaltje in het lijstje. */
 .hal .h-lagen b { position: relative; }
 .hal .h-maak-pipet { position: absolute; left: -27px; top: -4px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: #FFFFFF; box-shadow: 0 2px 8px rgba(15, 12, 36, .18); opacity: 0; font-style: normal; }
-.hal .h-maak-pipet svg { width: 12px; height: 12px; fill: none; stroke: var(--h-violet); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.hal .h-maak-pipet svg { width: 12px; height: 12px; color: var(--h-violet); fill: none; stroke: var(--h-violet); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 /* De dekking als getal dat meeloopt (0 → 20 %). Eindstand en zonder animatie: 20. */
 @property --dek { syntax: '<integer>'; inherits: false; initial-value: 20; }
 .hal .h-dek { counter-reset: dek var(--dek); font-variant-numeric: tabular-nums; }
@@ -1123,8 +1164,8 @@ html.h-js body.hal .h-een { clip-path: inset(100% 0 0 0); transition: clip-path 
 html.h-js body.hal .h-proef.is-in .h-een { clip-path: inset(-10% -10% -10% -10%); }
 html.h-js body.hal .h-vertrouwen li { opacity: 0; transform: translateY(8px); transition: opacity .6s var(--h-zacht), transform .6s var(--h-zacht); transition-delay: calc(var(--d, 0) * 90ms); }
 html.h-js body.hal .h-vertrouwen.is-in li { opacity: 1; transform: none; }
-html.h-js body.hal .h-getal { transition: filter 1.2s var(--h-zacht) .25s, opacity 1.2s var(--h-zacht) .25s, letter-spacing 1.4s var(--h-zacht) .25s; }
-html.h-js body.hal .h-groot:not(.is-in) .h-getal { filter: blur(8px); opacity: .2; letter-spacing: .02em; }
+/* Het getal kwam hier uit een waas (blur, letterspatie). Sinds levering 55 slaat het om
+   als een stationsbord (src/scripts/omslag.js, afvinklijst 34 b-getal). */
 
 /* Het sfeervlak beweegt zacht mee bij scrollen (plan §09): de foto zakt 70 px
    terwijl je de eerste 90% van een scherm wegscrolt, dus hij loopt iets
@@ -1607,8 +1648,7 @@ body.hal .h-pl-kaart .ck-per { font: 500 14px/1.4 var(--h-letter); color: var(--
 .hal .h-pl-soon-naam { font: 500 22px/1.2 var(--h-letter); letter-spacing: -.01em; color: var(--h-inkt); }
 .hal .h-pl-soon-voet { margin-top: 18px; font-size: 14.5px; line-height: 1.5; color: var(--h-inkt-3); }
 .hal .h-pl-uit { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 16px; margin: 26px var(--h-rand) 0; font: 500 15.5px/1.4 var(--h-letter); color: var(--h-inkt-2); }
-html.h-js body.hal .h-pk-credits .h-getal { transition: filter 1.2s var(--h-zacht) .25s, opacity 1.2s var(--h-zacht) .25s; }
-html.h-js body.hal .h-pk:not(.is-in) .h-pk-credits .h-getal { filter: blur(6px); opacity: .25; }
+/* Ook de credits slaan sinds levering 55 om in plaats van uit een waas te komen (omslag.js). */
 
 /* ── /per-product ───────────────────────────────────────────────────────── */
 .hal .h-pp-vier { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
@@ -1839,7 +1879,7 @@ body.hal .h-lk-meer .lm p, body.hal .h-lk-meer .lm .lopend { margin: 0; font-siz
 body.hal .h-lk-meer .lm-vinkjes, body.hal .h-lk-meer .lm-stappen { display: grid; gap: 10px; }
 body.hal .h-lk-meer .lm-vinkjes li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: start; }
 body.hal .h-lk-meer .lm-vinkjes span, body.hal .h-lk-meer .lm-stappen li { font-size: 15.5px; line-height: 1.6; color: var(--h-inkt-2); }
-body.hal .h-lk-meer .lm-i { width: 20px; height: 20px; margin-top: 3px; fill: none; stroke: var(--h-violet); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+body.hal .h-lk-meer .lm-i { width: 20px; height: 20px; margin-top: 3px; color: var(--h-violet); fill: none; stroke: var(--h-violet); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 body.hal .h-lk-meer .lm-stappen b { color: var(--h-inkt); font-weight: 600; }
 body.hal .h-lk-meer .lm-nr { font: 600 14px/1 var(--h-letter); color: var(--h-inkt-3); }
 body.hal .h-lk-meer .lm-noot { font-size: 15px; }
@@ -3190,7 +3230,7 @@ html.h-js body.hal .h-sd-staat.is-in .h-st-stappen .h-nr i::after { transform: s
 .hal .h-sd-map img { display: block; width: 100%; height: auto; aspect-ratio: 1 / 1; object-fit: cover; }
 .hal .h-sd-boom { position: absolute; left: 20px; bottom: 20px; display: grid; gap: 10px; padding: 16px 20px 18px; border-radius: 22px; background: rgba(255, 255, 255, .78); -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .8), 0 18px 40px -26px rgba(15, 12, 36, .45); }
 .hal .h-sd-boom-map { display: flex; align-items: center; gap: 8px; font: 600 15px/1.2 var(--h-letter); color: var(--h-inkt); }
-.hal .h-sd-boom-map svg { width: 17px; height: 17px; fill: none; stroke: var(--h-violet); stroke-width: 1.6; stroke-linejoin: round; }
+.hal .h-sd-boom-map svg { width: 17px; height: 17px; color: var(--h-violet); fill: none; stroke: var(--h-violet); stroke-width: 1.6; stroke-linejoin: round; }
 .hal .h-sd-boom-lijst { display: grid; gap: 6px; padding-left: 25px; }
 .hal .h-sd-boom-r { font: 500 14px/1.2 var(--h-letter); color: var(--h-inkt-2); white-space: nowrap; }
 .hal .h-sd-boom-r b { font-weight: 600; color: var(--h-inkt); }
@@ -3518,7 +3558,7 @@ html[lang="nl"] body.hal { --h-maat: min(max(16.5em, calc((15.75px - 1em) * 1000
    per stand (betaald, nog betalen, geannuleerd); de vorm blijft. */
 html body.hal .h-form-bedankt .ty-bar { margin: 0; padding: 0 0 32px; border-radius: 0; background: transparent; }
 html body.hal .h-form-bedankt .ty-bar-in { gap: 20px; }
-html body.hal .h-form-bedankt .ty-check { width: 64px; height: 64px; padding: 19px; border-radius: 50%; background: var(--h-mist); stroke: var(--h-violet); stroke-width: 2.4; }
+html body.hal .h-form-bedankt .ty-check { width: 64px; height: 64px; padding: 19px; border-radius: 18px 4px 4px 4px; background: var(--h-mist); color: var(--h-violet); stroke: var(--h-violet); stroke-width: 2.4; }
 html body.hal .h-form-bedankt .ty-bar .hoog.hoog-2 { font-size: 64px; line-height: 1.02; }
 @media (max-width: 900px) {
   html body.hal .h-form-bedankt .ty-bar .hoog.hoog-2 { font-size: 44px; }
@@ -3894,3 +3934,371 @@ html body.hal .h-form:not(.h-ts-form) .bo .bo-totaal-s { margin-left: auto; }
 html body.hal .h-form .s22 .ps-abonnee { display: grid; gap: 12px; margin: 0 0 24px; padding: 20px 22px; border-radius: 24px; background: var(--h-mist); }
 html body.hal .h-form .s22 .ps-abonnee[hidden] { display: none; }
 html body.hal .h-form .s22 .ps-abonnee .lopend { margin: 0; color: var(--h-inkt); }
+
+/* ══ LEVERING 54 · DE CIRKEL WORDT EEN PLAATJE (17 oktober 2026) ═════════════
+   Afvinklijst 34, v34-plaat = c: "geen vlak achter iconen in lopende tekst; het
+   plaatje alleen bij de grote tegels." En de ontwerptaal: één zachte hoek
+   (linksboven), verder recht. Dus:
+   - een knop of tegel-icoon (.h-cirkel, -klein): een plaatje met één zachte hoek;
+   - een icoon in een zin (.h-cirkel-mini) of achter een tekstlink (.h-link): geen
+     vlak, alleen het icoon, in de kleur van de tekst ernaast (color: inherit), op
+     15 px, de maat van de linktekst;
+   - draaien hoort bij een rondje: een plaatje draait niet. Onder de muis springt
+     de pijl twee pixels in zijn eigen richting (53°, de snede), in twee stappen:
+     het merk springt, het glijdt niet. Een plusje dat een kruisje wordt, draait
+     binnen het plaatje (het icoon, niet het vlak). */
+.hal .h-cirkel { border-radius: 14px 3px 3px 3px; transition: transform .18s steps(2, end), background-color .25s; }
+.hal .h-cirkel-klein { border-radius: 12px 3px 3px 3px; }
+.hal .h-cirkel-mini, .hal .h-link .h-cirkel, .hal .h-link .h-cirkel-klein { width: auto; height: auto; background: none; box-shadow: none; border-radius: 0; color: inherit; font-size: 15px; }
+.hal .h-cirkel-mini:hover, .hal .h-link .h-cirkel:hover { background: none; }
+.hal .h-link .h-cirkel, .hal .h-dk-knop .h-cirkel, .hal .h-weten-rij .h-cirkel, .hal .h-gl-open .h-cirkel, .hal .h-nf-verder .h-cirkel { transition: transform .18s steps(2, end); }
+.hal .h-link:hover .h-cirkel, .hal .h-weten-rij > li > a:hover .h-cirkel, .hal .h-nf-verder a:hover .h-cirkel,
+.hal .h-kopbeeld-boven .h-cirkel:hover, .hal .h-ov-cijfer-boven .h-cirkel:hover, .hal .h-gd-kaart:hover .h-cirkel { transform: translate(1.2px, -1.6px); }
+.hal .h-gl-kaart[open] .h-gl-open .h-cirkel { transform: none; }
+.hal .h-gl-open .h-cirkel svg { transition: rotate .18s steps(2, end); }
+.hal .h-gl-kaart[open] .h-gl-open .h-cirkel svg { rotate: 45deg; }
+
+/* Het kleine rondje achter een icoon in een lijst, een chip of een zin (24 px wit,
+   mist of violet: .h-feiten i, .h-pr-vinken i, .h-label-zegt span …): weg. Het icoon
+   staat los, in violet. Eén regel voor alle plekken, met :has() op het icoon zelf,
+   zodat een rondje zonder icoon (een stip, een foto) blijft wat het is. */
+.hal i:has(> svg.ik), .hal .h-label-zegt span:has(> svg.ik) { width: auto; height: auto; background: none; box-shadow: none; border-radius: 0; color: var(--h-violet); }
+/* Waar het rondje wél moet blijven, als plaatje met één zachte hoek: een vinkje of
+   plusje óp een foto (zonder vlak verdwijnt het in het beeld) en de grote tegels. */
+.hal .h-vink, .hal .h-pp-plus { border-radius: 8px 2px 2px 2px; }
+.hal .h-rest-rij i:has(> svg.ik) { width: 34px; height: 34px; background: var(--h-mist); border-radius: 11px 3px 3px 3px; }
+.hal .h-rest-pijl { border-radius: 14px 3px 3px 3px; }
+.hal .h-bm-check-i { border-radius: 13px 3px 3px 3px; }
+.hal .h-brug { border-radius: 11px 3px 3px 3px; }
+.hal .h-maak-pipet { border-radius: 7px 2px 2px 2px; }
+.hal .h-ug-vakje { border-radius: 10px 2px 2px 2px; }
+/* Uitzondering: de vinkjes in de getekende schermen (de lijst die zich afvinkt in
+   "wij maken", de lagen, de leverlijst, de pipet). Daar IS het vlak de betekenis:
+   grijs = nog niet, violet = klaar. Ze blijven dus een vakje, met één zachte hoek. */
+.hal .h-stuur-v i:has(> svg.ik), .hal .h-lagen i:has(> svg.ik), .hal .h-ctrl-pipet i:has(> svg.ik) { width: 20px; height: 20px; background: var(--h-violet); color: #fff; border-radius: 6px 2px 2px 2px; }
+.hal .h-lv-checks i:has(> svg.ik) { width: 24px; height: 24px; background: var(--h-violet); color: #fff; border-radius: 7px 2px 2px 2px; }
+.hal .h-pl-feiten i:has(> svg.ik) { width: 34px; height: 34px; background: var(--h-wit); border-radius: 11px 3px 3px 3px; }
+.hal .h-sd-manifest-i, .hal .h-sd-logboek-i { border-radius: 10px 2px 2px 2px; }
+/* Een icoon in een zin is violet, zoals de vinkjes in de lijsten; een pijl achter
+   een tekstlink houdt de kleur van de link. */
+.hal .h-cirkel-mini { color: var(--h-violet); }
+.hal .h-link .h-cirkel, .hal .h-link .h-cirkel-mini { color: inherit; }
+/* op de violette band van de proef (/test-sample) zijn de vinkjes wit */
+.hal .h-ts-feiten i:has(> svg.ik) { color: #fff; }
+/* ── DE ZACHTE HOEK WIJST NAAR DE RONDE HOEK VAN DE KAART ─────────────────────
+   Lucas (06:04): "de hoek die het dichtste bij de ronde hoek van de kaart zit
+   rond". Gemeten op 26 pagina's (iconen/hoeken.mjs): per plaatje de kaart eromheen
+   en de kaarthoek die het dichtst bij ligt. Staat het plaatje in een hoek (binnen
+   ~100 px), dan krijgt het daar zijn zachte hoek; staat het midden in een vlak,
+   dan linksboven, zoals het V-merk. De maat van de zachte hoek is die van het merk:
+   24,7% van de hoogte (bij 48 px 12 px, bij 24 px 6 px), de andere drie 3 px. */
+.hal .h-cirkel, .hal .h-rest-pijl, .hal .h-bm-check-i, .hal .h-maak-pipet, .hal .h-ug-vakje, .hal .h-sd-manifest-i, .hal .h-sd-logboek-i { border-radius: 24.7% 3px 3px 3px; }
+.hal .h-rest-rij i:has(> svg.ik), .hal .h-pl-feiten i:has(> svg.ik) { border-radius: 24.7% 3px 3px 3px; }
+.hal .h-stuur-v i:has(> svg.ik), .hal .h-lagen i:has(> svg.ik), .hal .h-lv-checks i:has(> svg.ik) { border-radius: 24.7% 2px 2px 2px; }
+html body.hal .h-form-bedankt .ty-check { border-radius: 24.7% 4px 4px 4px; }
+/* rechtsboven: het plaatje staat in de rechterbovenhoek van zijn kaart of foto */
+.hal .h-look-pijl, .hal .h-weten-boven .h-cirkel, .hal .h-kopbeeld-boven .h-cirkel, .hal .h-hw-dienst .h-cirkel, .hal .h-gl-open .h-cirkel, .hal .h-ov-cijfer-boven .h-cirkel, .hal .h-brug { border-radius: 3px 24.7% 3px 3px; }
+.hal .h-vink, .hal .h-pp-plus, .hal .h-ctrl-pipet i:has(> svg.ik) { border-radius: 2px 24.7% 2px 2px; }
+/* rechtsonder: de knop onderaan rechts in een kaart */
+.hal .h-dk-knop .h-cirkel, .hal .h-st-vk-meer .h-cirkel { border-radius: 3px 3px 24.7% 3px; }
+/* De bedieningsbalk van de laptop was een pil met twee rondjes; met plaatjes erin
+   zou een scherpe hoek naar een ronde balk wijzen. De balk krijgt dus zelf één
+   zachte hoek (linksboven), de plaatjes erin houden de hunne linksboven. */
+.hal .hl-bediening { border-radius: 13px 4px 4px 4px; }
+/* een tekstlink en een icoon in een zin houden geen vlak (zie hierboven) */
+.hal .h-cirkel-mini, .hal .h-link .h-cirkel, .hal .h-link .h-cirkel-klein { border-radius: 0; }
+
+/* ══ LEVERING 54 · DE KNOP (afvinklijst 34, d-knop = doen) ═══════════════════
+   "Eén zachte hoek (linksboven) in plaats van een pil. De pijl in twee delen:
+   onder de muis schuiven ze uit elkaar. Onder de muis wordt de donkere knop
+   violet, in twee stappen." Het rondje om de pijl is weg; de pijl staat los in
+   de kleur van de knoptekst. De zachte hoek: 16 px op 56 hoog (als in de proef:
+   16 op 48), 14 px op de kleine knop. Het springt (steps), het glijdt niet. */
+.hal .h-knop { border-radius: 16px 3px 3px 3px; padding: 0 20px 0 24px; transition: background-color .16s steps(2, end), color .16s steps(2, end), box-shadow .16s steps(2, end); }
+.hal .h-knop-klein { border-radius: 14px 3px 3px 3px; padding: 0 16px 0 20px; }
+.hal .h-knop-lijn, .hal .h-knop-lijnwit { padding: 0 24px; }
+.hal .h-knop .o, .hal .h-knop-klein .o, .hal .h-knop-inkt .o, .hal .h-knop-wit .o { width: auto; height: auto; background: none; border-radius: 0; color: inherit; font-size: 20px; transition: none; }
+.hal .h-knop-klein .o { font-size: 18px; }
+.hal .h-knop-wit .o { color: var(--h-violet); }
+.hal .h-knop:hover, .hal .h-knop:active { transform: none; box-shadow: none; }
+.hal .h-knop:hover .o { transform: none; }
+.hal .h-knop-inkt:hover { background: var(--h-violet); }
+.hal .h-knop-wit:hover { background: var(--h-inkt); color: #fff; }
+.hal .h-knop-wit:hover .o { color: #fff; }
+.hal .h-knop-lijn:hover { background: var(--h-inkt); color: #fff; box-shadow: inset 0 0 0 1.5px var(--h-inkt); }
+.hal .h-knop-lijnwit:hover { background: #fff; color: var(--h-inkt); }
+/* de pijl in twee delen: de schacht wijkt terug, de kop schiet door (in eenheden
+   van het raster van 24; op 20 px is 1 eenheid 0,83 px) */
+.hal .h-knop .ik-schacht, .hal .h-knop .ik-kop { transition: translate .16s steps(2, end); }
+.hal .h-knop:hover .ik-pijl .ik-schacht { translate: -2.4px 0; }
+.hal .h-knop:hover .ik-pijl .ik-kop { translate: 3.6px 0; }
+/* De schuine pijl valt niet uit elkaar (Lucas, 17 oktober 08:03: "Hover effect van pijl schuin
+   omhoog is wat apart"): kop en schacht springen samen 3 px schuin omhoog, op 53°, in twee stappen,
+   net als de pijl in de balk. De kier tussen de twee blijft zoals hij is. */
+.hal .h-knop:hover .ik-pijl-schuin .ik-schacht, .hal .h-knop:hover .ik-pijl-schuin .ik-kop { translate: 1.8px -2.4px; }
+.hal .h-knop:hover .ik-pijl-omlaag .ik-schacht { translate: 0 -2.4px; }
+.hal .h-knop:hover .ik-pijl-omlaag .ik-kop { translate: 0 3.6px; }
+/* de knop in de balk: violet, één zachte hoek, de pijl wit en los */
+body.hal .site-header .nav-cta { border-radius: 11px 3px 3px 3px !important; padding: 0 12px 0 16px !important; transition: background-color .16s steps(2, end) !important; }
+body.hal .site-header .nav-cta::after { width: 16px; height: 16px; border-radius: 0; background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23fff' d='M13 13.39L10.38 11.43L7.39 15.42L8.46 19.45ZM16.82 14.75L16.85 5.53L8.01 8.15Z'/></svg>") center / 16px no-repeat; transition: transform .16s steps(2, end); }
+body.hal .site-header .nav-cta:hover { background: var(--h-inkt) !important; transform: none; }
+body.hal .site-header .nav-cta:hover::after { transform: translate(1.2px, -1.6px); }
+/* de knoppen van de formulieren en de kleine knop in de lookkaart */
+body.hal .btn { border-radius: 14px 3px 3px 3px; }
+.hal .h-mini-knop { border-radius: 11px 3px 3px 3px; }
+
+/* ══ LEVERING 54 · LABELS, STAPPEN, FOCUS, SELECTIE, VOET (afvinklijst 34) ══════ */
+/* De vaste breedte-letter (v34-mono = a): IBM Plex Mono, zelf gehost in
+   public/fonts/ibm-plex-mono/ (OFL), alleen Latijn, 500 en 600. */
+@font-face { font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 500; font-display: swap; src: url(/fonts/ibm-plex-mono/IBMPlexMono-500.woff2) format('woff2'); }
+@font-face { font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 600; font-display: swap; src: url(/fonts/ibm-plex-mono/IBMPlexMono-600.woff2) format('woff2'); }
+.hal { --h-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+
+/* Het sectielabel (d-label): "Geen pil met een bolletje meer. Een schuine streep,
+   een nummer in violet en de naam in een vaste breedte-letter." Het nummer telt
+   de labels op de pagina (01 is het label in de opening), met een CSS-teller: er
+   staat geen getal in de bron, dus een label erbij of eraf nummert vanzelf door.
+   Alleen het label BOVEN een sectie (<p class="h-pil">); een pilletje op een foto
+   of in een kaart (<span class="h-pil">) blijft een pil. */
+body.hal main { counter-reset: h-sectie; }
+.hal p.h-pil { counter-increment: h-sectie; height: auto; padding: 0; gap: 10px; background: none; box-shadow: none; border-radius: 0; -webkit-backdrop-filter: none; backdrop-filter: none; color: var(--h-inkt); font: 600 12px/1.3 var(--h-mono); letter-spacing: .1em; text-transform: uppercase; white-space: normal; }
+.hal p.h-pil::before { order: -2; width: 16px; height: 16px; border-radius: 0; box-shadow: none; background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%234A1FFF' d='M19.75 10.2L17.05 13.8L4.25 13.8L6.95 10.2Z'/></svg>") center / 16px no-repeat; }
+.hal p.h-pil::after { order: -1; content: counter(h-sectie, decimal-leading-zero); color: var(--h-violet); }
+.hal p.h-pil-donker { color: #fff; }
+.hal p.h-pil-donker::after { color: #fff; }
+/* op een donkere band: het nummer wit (lila haalt daar 2:1, te weinig voor tekst), de streep lila */
+.hal p.h-pil-donker::before { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23A694FF' d='M19.75 10.2L17.05 13.8L4.25 13.8L6.95 10.2Z'/></svg>"); }
+
+/* Het stapnummer (d-stap): "Groot en zwaar, met /03 klein ernaast", bij de drie
+   stappen van "Hoe het werkt" (de voorpagina en /how-it-works). De lijn ertussen
+   is weg. */
+.hal .h-stappen .h-nr { align-items: flex-end; gap: 6px; }
+.hal .h-stappen .h-nr b { font: 700 48px/.82 var(--h-letter); letter-spacing: -.02em; }
+.hal .h-stappen .h-nr i { display: none; }
+.hal .h-stappen .h-nr span { font: 600 12px/1 var(--h-mono); color: var(--h-inkt-3); padding-bottom: 3px; letter-spacing: .04em; }
+
+/* De focusrand (d-focus): "Violet, met een lila echo die linksboven verschoven
+   staat." Drie schaduwen in één: een witte kier van 2 px, de violette rand van 2 px,
+   en een lila kopie van die rand die 2 px naar linksboven ligt (alleen boven en
+   links komt hij onder de violette uit). Volgt de hoeken van het element. Een
+   knop met een eigen rand (de lijnknop) houdt die rand erbij. */
+.hal a:focus-visible, .hal button:focus-visible, .hal summary:focus-visible, .hal [tabindex]:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--h-violet), -2px -2px 0 4px var(--h-lila); }
+.hal .h-knop-lijn:focus-visible { box-shadow: inset 0 0 0 1.5px var(--h-inkt), 0 0 0 2px #fff, 0 0 0 4px var(--h-violet), -2px -2px 0 4px var(--h-lila); }
+
+/* Tekst selecteren (d-sel): violet met witte letters; staat bovenaan bij body.hal ::selection. */
+
+/* Het woordmerk onderaan (d-voet): "In inkt in plaats van een lila verloop, en door
+   de onderrand afgesneden." Het verloop is uit Layout.astro (Woordmerk zonder
+   verloop); afgesneden was hij al (de negatieve ondermarge). */
+body.hal .hal-wm-reus { color: var(--h-inkt); }
+/* Lucas (06:18), bij het knopje "Try · €1" in de lookkaart: dezelfde regel als bij de
+   plaatjes. Gemeten op 27 pagina's, op 1440 en op 390 breed (iconen/nest.mjs): een
+   knop of vakje dat in een ronde hoek van zijn kaart, balk of foto zit, krijgt die
+   hoek mee-rond, concentrisch (de straal van de kaart min de afstand ertussen). */
+.hal .h-look-paneel .h-mini-knop { border-radius: 3px 18px 18px 3px; }
+.hal .h-lagen li:last-child i:has(> svg.ik) { border-bottom-left-radius: 6px; }
+body.hal .cc .cc-btn { border-bottom-left-radius: 6px; }
+@media (max-width: 900px) {
+  /* op de telefoon staat de knop onderaan zijn kaart, over de hele breedte */
+  .hal .h-vd-kopen .h-knop, .hal .h-faq-nog .h-knop, .hal .h-ct-vak .h-knop { border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; }
+  .hal .h-pk .h-knop { border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; }
+  .hal .h-gezicht .h-knop, .hal .h-bm-bieb .h-knop { border-bottom-left-radius: 6px; }
+  .hal .h-ug-vakje { border-bottom-left-radius: 6px; }
+}
+
+/* ══ TWEE KNOPPEN WORDEN ÉÉN VORM, MET DE SNEDE ERTUSSEN ══════════════════════
+   Lucas (06:20): "Misschien kan je in dit soort gevallen wel de knoppen aan elkaar
+   zetten en dan een soort cut erin maken zoals in het VISUAILS logo waardoor het
+   alsnog 2 knoppen worden. Anders herhalen de objecten zich." (06:21): "Zelfde bij
+   de 2 pijl knoppen." (06:32): "De cuts mogen heel scherp maar alleen tussen de
+   knoppen bij de cuts voor de rest blijven de knoppen zoals ze zijn."
+   Dus: elke knop houdt zijn eigen vorm en stijl (de donkere knop zijn zachte hoek,
+   de lijnknop zijn lijn, een pil zijn ronde uiteinden), en alleen waar twee knoppen
+   elkaar raken, zit de snede, scherp (hoek 0).
+   De maat is die van het merk: de snede staat op 53,13° (3-4-5), dus over de hoogte
+   h loopt hij 0,75 h opzij (56 px hoog: 42 px). De kier is 7,6% van de hoogte,
+   loodrecht op de snede gemeten (56 px: 4,3 px, horizontaal 5,3 px).
+   De lijn van een lijnknop loopt langs de snede mee: een achtergrondlaag met een
+   schuine streep van 1,5 px precies op de diagonaal van het vak van de snede (een
+   verloop "to bottom right" legt zijn midden altijd op die diagonaal).
+   Met clip-path, dus de focusrand (een schaduw buiten de knop) zou wegvallen: bij
+   focus vervalt de snede even.
+   Gevonden met iconen/herhaling.mjs op 28 pagina's (vormen van dezelfde soort, op
+   één regel, minder dan 24 px uit elkaar). Rijen die over twee regels lopen (de
+   chips met feiten, de stijlfilters) staan als vraag in afvinklijst 35. */
+.hal .h-knop { --h-snede: 42px; --h-kier: 5.3px; }
+.hal .h-knop-klein { --h-snede: 34.5px; --h-kier: 4.4px; }
+.hal .h-knop-lijn { --h-rand: var(--h-inkt); }
+.hal .h-knop-lijnwit { --h-rand: rgba(255, 255, 255, .7); }
+@media (min-width: 901px) {
+  /* Elke zichtbare knop die door een zichtbare knop gevolgd wordt, krijgt rechts de
+     snede; elke zichtbare knop na een zichtbare knop links. Verborgen knoppen (de
+     variant voor wie al klant is, [hidden]) tellen niet mee; een rij van drie wordt
+     één vorm met twee sneden. Op de telefoon staan ze onder elkaar en blijven ze los. */
+  .hal .h-acties:has(> .h-knop:not([hidden]) ~ .h-knop:not([hidden])) { gap: 0; flex-wrap: nowrap; }
+  .hal .h-acties > .h-knop:not([hidden]):has(~ .h-knop:not([hidden])) { clip-path: polygon(0 0, 100% 0, calc(100% - var(--h-snede)) 100%, 0 100%); padding-right: calc(var(--h-snede) + 4px); border-top-right-radius: 0; border-bottom-right-radius: 0; }
+  .hal .h-acties > .h-knop:not([hidden]) ~ .h-knop:not([hidden]) { clip-path: polygon(var(--h-snede) 0, 100% 0, 100% 100%, 0 100%); margin-left: calc(var(--h-kier) - var(--h-snede)); padding-left: calc(var(--h-snede) * .5 + 22px); border-top-left-radius: 0; border-bottom-left-radius: 0; }
+  .hal .h-acties > .h-knop:not([hidden]) ~ .h-knop:not([hidden]):has(~ .h-knop:not([hidden])) { clip-path: polygon(var(--h-snede) 0, 100% 0, calc(100% - var(--h-snede)) 100%, 0 100%); padding-right: calc(var(--h-snede) + 4px); }
+  /* de lijn van de lijnknop langs de snede */
+  .hal .h-acties > .h-knop:not([hidden]) ~ .h-knop-lijn:not([hidden]), .hal .h-acties > .h-knop:not([hidden]) ~ .h-knop-lijnwit:not([hidden]) { background-image: linear-gradient(to bottom right, transparent calc(50% - .9px), var(--h-rand) calc(50% - .9px), var(--h-rand) calc(50% + .9px), transparent calc(50% + .9px)); background-repeat: no-repeat; background-size: var(--h-snede) 100%; background-position: 0 0; }
+  .hal .h-acties > .h-knop:not([hidden]) ~ .h-knop-lijn:not([hidden]):has(~ .h-knop:not([hidden])), .hal .h-acties > .h-knop:not([hidden]) ~ .h-knop-lijnwit:not([hidden]):has(~ .h-knop:not([hidden])) { background-image: linear-gradient(to bottom right, transparent calc(50% - .9px), var(--h-rand) calc(50% - .9px), var(--h-rand) calc(50% + .9px), transparent calc(50% + .9px)), linear-gradient(to bottom right, transparent calc(50% - .9px), var(--h-rand) calc(50% - .9px), var(--h-rand) calc(50% + .9px), transparent calc(50% + .9px)); background-position: 0 0, 100% 0; }
+  .hal .h-acties > .h-knop:focus-visible { clip-path: none !important; position: relative; z-index: 1; }
+}
+/* De twee pijlknoppen (vorige, volgende): één plaatje met de snede ertussen. Elke
+   helft een halve snede breder, zodat de pijl er heel in past. Het plaatje houdt zijn
+   eigen hoeken (de zachte linksboven), de snede is scherp. */
+.hal .h-paar { display: inline-flex; }
+.hal .h-paar .h-cirkel { --h-snede: 36px; --h-kier: 4.6px; width: 66px; }
+.hal .h-paar .h-cirkel-klein { --h-snede: 28.5px; --h-kier: 3.6px; width: 52px; }
+.hal .h-paar .h-cirkel:first-child { clip-path: polygon(0 0, 100% 0, calc(100% - var(--h-snede)) 100%, 0 100%); justify-items: start; padding-left: 15px; border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.hal .h-paar .h-cirkel-klein:first-child { padding-left: 11px; }
+.hal .h-paar .h-cirkel:last-child { clip-path: polygon(var(--h-snede) 0, 100% 0, 100% 100%, 0 100%); margin-left: calc(var(--h-kier) - var(--h-snede)); justify-items: end; padding-right: 15px; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.hal .h-paar .h-cirkel-klein:last-child { padding-right: 11px; }
+.hal .h-paar .h-cirkel:hover, .hal .h-paar .h-cirkel:active { transform: none; }
+.hal .h-paar .h-cirkel:focus-visible { clip-path: none !important; position: relative; z-index: 1; }
+
+/* Rijen van dezelfde knoppen die samen één keuze of één menu zijn: de documenten
+   bovenaan de juridische pagina's, de formaten in "Elk formaat", de soort beeld in de
+   galerij. Het blijven pillen (ronde uiteinden buiten), met de snede ertussen. Alleen
+   breder dan 900 px; daaronder lopen ze om. */
+@media (min-width: 901px) {
+.hal .h-jur-docs { gap: 0; flex-wrap: nowrap; }
+.hal .h-jur-docs > .h-jur-doc:has(~ .h-jur-doc) { clip-path: polygon(0 0, 100% 0, calc(100% - 28.5px) 100%, 0 100%); padding-right: 30px; border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.hal .h-jur-docs > .h-jur-doc ~ .h-jur-doc { clip-path: polygon(28.5px 0, 100% 0, 100% 100%, 0 100%); margin-left: -24.89px; padding-left: 30px; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.hal .h-jur-docs > .h-jur-doc ~ .h-jur-doc:has(~ .h-jur-doc) { clip-path: polygon(28.5px 0, 100% 0, calc(100% - 28.5px) 100%, 0 100%); }
+.hal .h-jur-docs > .h-jur-doc:hover, .hal .h-jur-docs > .h-jur-doc:active { transform: none; }
+.hal .h-jur-docs > .h-jur-doc:focus-visible { clip-path: none !important; position: relative; z-index: 1; }
+.hal .h-jur-docs > .h-jur-doc { --h-rand: var(--h-lijn); background-repeat: no-repeat; background-size: 28.5px 100%; }
+.hal .h-jur-docs > .h-jur-doc:has(~ .h-jur-doc) { background-image: linear-gradient(to bottom right, transparent calc(50% - .6px), var(--h-rand) calc(50% - .6px), var(--h-rand) calc(50% + .6px), transparent calc(50% + .6px)); background-position: 100% 0; }
+.hal .h-jur-docs > .h-jur-doc ~ .h-jur-doc { background-image: linear-gradient(to bottom right, transparent calc(50% - .6px), var(--h-rand) calc(50% - .6px), var(--h-rand) calc(50% + .6px), transparent calc(50% + .6px)); background-position: 0 0; }
+.hal .h-jur-docs > .h-jur-doc ~ .h-jur-doc:has(~ .h-jur-doc) { background-image: linear-gradient(to bottom right, transparent calc(50% - .6px), var(--h-rand) calc(50% - .6px), var(--h-rand) calc(50% + .6px), transparent calc(50% + .6px)), linear-gradient(to bottom right, transparent calc(50% - .6px), var(--h-rand) calc(50% - .6px), var(--h-rand) calc(50% + .6px), transparent calc(50% + .6px)); background-position: 0 0, 100% 0; }
+.hal .h-jur-docs > .h-jur-doc[aria-current="page"], .hal .h-jur-docs > .h-jur-doc:hover { background-image: none; }
+.hal .h-fmt-knoppen { gap: 0; flex-wrap: nowrap; }
+.hal .h-fmt-knoppen > .h-fmt-knop:has(~ .h-fmt-knop) { clip-path: polygon(0 0, 100% 0, calc(100% - 30.0px) 100%, 0 100%); padding-right: 31px; border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.hal .h-fmt-knoppen > .h-fmt-knop ~ .h-fmt-knop { clip-path: polygon(30.0px 0, 100% 0, 100% 100%, 0 100%); margin-left: -26.2px; padding-left: 31px; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.hal .h-fmt-knoppen > .h-fmt-knop ~ .h-fmt-knop:has(~ .h-fmt-knop) { clip-path: polygon(30.0px 0, 100% 0, calc(100% - 30.0px) 100%, 0 100%); }
+.hal .h-fmt-knoppen > .h-fmt-knop:hover, .hal .h-fmt-knoppen > .h-fmt-knop:active { transform: none; }
+.hal .h-fmt-knoppen > .h-fmt-knop:focus-visible { clip-path: none !important; position: relative; z-index: 1; }
+.hal .h-gl-pillen:not(.h-gl-stijlen) { gap: 0; flex-wrap: nowrap; }
+.hal .h-gl-pillen:not(.h-gl-stijlen) > .h-gl-pil:has(~ .h-gl-pil) { clip-path: polygon(0 0, 100% 0, calc(100% - 30.0px) 100%, 0 100%); padding-right: 33px; border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.hal .h-gl-pillen:not(.h-gl-stijlen) > .h-gl-pil ~ .h-gl-pil { clip-path: polygon(30.0px 0, 100% 0, 100% 100%, 0 100%); margin-left: -26.2px; padding-left: 33px; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.hal .h-gl-pillen:not(.h-gl-stijlen) > .h-gl-pil ~ .h-gl-pil:has(~ .h-gl-pil) { clip-path: polygon(30.0px 0, 100% 0, calc(100% - 30.0px) 100%, 0 100%); }
+.hal .h-gl-pillen:not(.h-gl-stijlen) > .h-gl-pil:hover, .hal .h-gl-pillen:not(.h-gl-stijlen) > .h-gl-pil:active { transform: none; }
+.hal .h-gl-pillen:not(.h-gl-stijlen) > .h-gl-pil:focus-visible { clip-path: none !important; position: relative; z-index: 1; }
+}
+/* De drie sociale knoppen onderaan (WhatsApp, Instagram, Facebook): drie rondjes
+   naast elkaar, dus ook één vorm. De buitenkanten blijven rond (een halve cirkel),
+   de lijn eromheen ook, de sneden zijn scherp. 44 px hoog: snede 33 px, kier 4,2 px;
+   elke knop een halve snede breder, zodat het merkteken heel blijft. De merktekens
+   blijven de officiële (v34-wa a). Op elke breedte: ze passen altijd op één regel. */
+body.hal .site-footer ul.foot-social { gap: 0; }
+body.hal .site-footer .foot-social a { --h-rand: var(--h-lijn); width: 60px; background-repeat: no-repeat; background-size: 33px 100%; }
+body.hal .site-footer .foot-social li:first-child a { border-radius: 22px 0 0 22px; }
+body.hal .site-footer .foot-social li:last-child a { border-radius: 0 22px 22px 0; }
+body.hal .site-footer .foot-social li:has(~ li) a { clip-path: polygon(0 0, 100% 0, calc(100% - 33px) 100%, 0 100%); justify-content: flex-start; padding-left: 14px; background-image: linear-gradient(to bottom right, transparent calc(50% - .6px), var(--h-rand) calc(50% - .6px), var(--h-rand) calc(50% + .6px), transparent calc(50% + .6px)); background-position: 100% 0; }
+body.hal .site-footer .foot-social li ~ li { margin-left: -28.8px; }
+body.hal .site-footer .foot-social li ~ li a { clip-path: polygon(33px 0, 100% 0, 100% 100%, 0 100%); justify-content: flex-end; padding-right: 14px; background-image: linear-gradient(to bottom right, transparent calc(50% - .6px), var(--h-rand) calc(50% - .6px), var(--h-rand) calc(50% + .6px), transparent calc(50% + .6px)); background-position: 0 0; }
+body.hal .site-footer .foot-social li ~ li:has(~ li) a { clip-path: polygon(33px 0, 100% 0, calc(100% - 33px) 100%, 0 100%); width: 76px; justify-content: center; padding: 0; border-radius: 0; background-image: linear-gradient(to bottom right, transparent calc(50% - .6px), var(--h-rand) calc(50% - .6px), var(--h-rand) calc(50% + .6px), transparent calc(50% + .6px)), linear-gradient(to bottom right, transparent calc(50% - .6px), var(--h-rand) calc(50% - .6px), var(--h-rand) calc(50% + .6px), transparent calc(50% + .6px)); background-position: 0 0, 100% 0; }
+body.hal .site-footer .foot-social a:hover { background-image: none; }
+body.hal .site-footer .foot-social a:focus-visible { clip-path: none !important; position: relative; z-index: 1; }
+
+/* ══ LEVERING 55: DE BEWEGING (afvinklijst 34, F) — 17 oktober 2026 ═══════════════
+   b-onthul staat bij "binnenkomen" hierboven (de wis), b-getal in src/scripts/omslag.js.
+
+   b-balk: de voortgang van een strook. Een violet balkje met een schuine kop (de snede:
+   3,75 px over 5 px hoog, 53°) op een lijn van 2 px, dat in vier stappen verspringt in
+   plaats van mee te glijden. */
+.hal .h-lijntje { height: 5px; border-radius: 0; background: linear-gradient(var(--h-lijn), var(--h-lijn)) 0 50% / 100% 2px no-repeat; }
+.hal .h-lijntje i { background: var(--h-violet); border-radius: 0; clip-path: polygon(0 0, 100% 0, calc(100% - 3.75px) 100%, 0 100%); transition: transform .4s steps(4, end); }
+
+/* b-getal: zolang het getal omslaat, is de echte tekst doorzichtig en staan de standen
+   erover (::after). De kleur blijft die van het getal. */
+.hal .h-getal.h-slaat { position: relative; -webkit-text-fill-color: transparent; }
+.hal .h-getal.h-slaat::after { content: attr(data-h-stand); position: absolute; left: 0; top: 0; white-space: nowrap; -webkit-text-fill-color: currentColor; pointer-events: none; }
+
+/* b-laden: geen draaiend rondje. Het vlagje van de V springt los en weer terug, op de
+   knop die bezig is: versturen van de bestelling en aanmelden voor de Studiobrief. Het
+   zijn de paden van het V-merk zelf (wit, het vlagje lila), als twee lagen van één
+   ::after; alleen de laag van het vlagje beweegt. Bij "minder beweging" staat de V stil. */
+.hal .h-form .s22 .pl-form.is-sending [data-pl-submit]::after,
+body.hal .sb .sb-veld button:disabled::after {
+  content: ""; flex: none; width: 24px; height: 28px; border-radius: 0; transform: none;
+  background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 702 813.25'><path fill='%23A694FF' d='M701.75 0L543.25 366.25L507.25 453.75L652 259.25L702 338.25Z'/></svg>") 50% 50% / 18px 21px no-repeat,
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 702 813.25'><path fill='%23fff' d='M0 16L144.25 266.75L463.25 813.25L662.75 354.75L619.25 408.25L515.5 546.25L264.5 119A201.21 201.21 0 0 0 101 15.75Z'/></svg>") 50% 50% / 18px 21px no-repeat;
+  animation: h-laad 1.1s steps(1, end) infinite;
+}
+/* Bezig is niet "buiten dienst" (Lucas, afvinklijst 35 bij de knop): de knop houdt zijn kleur,
+   het vlagje laat zien dat hij werkt. Alleen de terugknop naast de verzendknop wordt stiller. */
+body.hal .sb .sb-veld button:disabled { display: inline-flex; align-items: center; gap: 10px; opacity: 1; cursor: progress; }
+.hal .h-form .s22 .pl-form.is-sending .pl-submit-row { opacity: 1; }
+.hal .h-form .s22 .pl-form.is-sending .pl-submit-row > :not([data-pl-submit]) { opacity: .6; }
+.hal .h-form .s22 .pl-form.is-sending [data-pl-submit] { cursor: progress; }
+@keyframes h-laad {
+  0%, 34% { background-position: 50% 50%, 50% 50%; }
+  35% { background-position: calc(50% + 1.5px) calc(50% - 2.2px), 50% 50%; }
+  42% { background-position: calc(50% - .8px) calc(50% + 1.1px), 50% 50%; }
+  48%, 70% { background-position: 50% 50%, 50% 50%; }
+  71% { background-position: 50% calc(50% - 3.2px), 50% 50%; }
+  80%, 100% { background-position: 50% 50%, 50% 50%; }
+}
+
+/* ══ WAT IN LEVERING 54 NOG MIS WAS — 17 oktober 2026 ════════════════════════════
+   1. De inktknop van het bestelformulier had nog de witte cirkel met een lijnpijl (een
+      ::after, daarom zag mijn meting van de iconen hem niet). Nu zoals elke knop: één
+      zachte hoek linksboven, de pijl uit het kit in twee delen, wit; onder de muis
+      schuiven kop en schacht uit elkaar en wordt de knop violet, in twee stappen. */
+html body.hal .h-form .s22 .knop-inkt { padding: 0 18px 0 26px; border-radius: 16px 3px 3px 3px; transition: background-color .16s steps(2, end); }
+html body.hal .h-form .s22 .knop-inkt::after {
+  width: 28px; height: 22px; border-radius: 0;
+  background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23fff' d='M12.8 18.4L21.4 12L12.8 5.6Z'/></svg>") 50% 50% / 22px no-repeat,
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23fff' d='M11.4 13.9L11.4 10.1L5.6 10.1L2.6 13.9Z'/></svg>") 50% 50% / 22px no-repeat;
+  transition: background-position .16s steps(2, end);
+}
+html body.hal .h-form .s22 .knop-inkt:hover { background: var(--h-violet); border-color: var(--h-violet); transform: none; box-shadow: none; }
+html body.hal .h-form .s22 .knop-inkt:hover::after { transform: none; background-position: calc(50% + 3.6px) 50%, calc(50% - 2.4px) 50%; }
+/* 2. Het keuzevak "soort beeld" in de galerij (telefoon) had een lijnpijltje; nu het
+      gevulde uitklap-icoon uit het kit, 16 px. */
+.hal .h-gl-soort select { background: var(--h-wit) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%230F0C24' d='M17.45 10.56L13.96 9.04L12.16 13.19L9.05 7.8L6.86 7.8L5.21 8.75L12.64 21.61Z'/></svg>") right 14px center / 16px no-repeat; }
+
+/* ══ UIT AFVINKLIJST 35 — 17 oktober 2026 ════════════════════════════════════════
+   g-focus, Lucas: "mag wel een stuk subtieler en iets unieker en meer VISUAILS style
+   en minder flashy". Eén violette rand van 2 px, zonder de lila echo, op de kier van
+   het merk van de knop af (3,5 px: 7,6% van een knop van 46 px). De rand volgt de
+   hoeken van de knop, dus ook zijn ene zachte hoek. Op violet blijft de witte kier
+   zichtbaar. */
+.hal a:focus-visible, .hal button:focus-visible, .hal summary:focus-visible, .hal [tabindex]:focus-visible { box-shadow: 0 0 0 3.5px #fff, 0 0 0 5.5px var(--h-violet); }
+.hal .h-knop-lijn:focus-visible { box-shadow: inset 0 0 0 1.5px var(--h-inkt), 0 0 0 3.5px #fff, 0 0 0 5.5px var(--h-violet); }
+
+/* v35-chips b: de feiten in de opening ("Vanaf €39 per product", "Vaak binnen een dag",
+   "Geen minimum") blijven los, maar als plaatje met één zachte hoek (24,7% van 38 px)
+   en in de vaste breedte-letter, in hoofdletters, zoals kenmerken op een doos. */
+.hal .h-feiten li { border-radius: 9px 3px 3px 3px; font: 500 12.5px/1.2 var(--h-mono); letter-spacing: .04em; text-transform: uppercase; }
+.hal .h-feiten b { font-weight: 600; }
+
+/* v35-pillen a: de pilletjes op foto's en in kaarten ("Phone-made · lifestyle", "Per
+   product") zonder bolletje; de naam in de vaste breedte-letter, in hoofdletters, op
+   een plaatje met één zachte hoek linksboven (ze staan linksboven in hun foto of kaart). */
+.hal span.h-pil, .hal figcaption.h-pil, .hal h2.h-pil { gap: 0; height: auto; min-height: 30px; padding: 7px 11px; border-radius: 8px 3px 3px 3px; font: 600 12px/1 var(--h-mono); line-height: 1.3; letter-spacing: .08em; text-transform: uppercase; white-space: normal; min-width: 0; max-width: 100%; }
+.hal span.h-pil::before, .hal figcaption.h-pil::before, .hal h2.h-pil::before { display: none; }
+
+@media (max-width: 900px) {
+  .hal .h-feiten li { font-size: 12px; }
+  /* v35-telefoon b: twee knoppen naast elkaar met de snede, als ze passen
+     (src/scripts/knoppaar.js meet dat per rij, met de klasse h-meet). De snede op
+     52 px hoog: 39 px opzij; de kier 7,6% = 4 px, horizontaal 4,9 px. */
+  .hal .h-acties.h-meet { flex-direction: row; flex-wrap: nowrap; gap: 0; }
+  .hal .h-acties.h-passen { flex-direction: row; flex-wrap: nowrap; gap: 0; }
+  .hal .h-acties.h-meet > .h-knop { --h-snede: 39px; --h-kier: 4.9px; gap: 10px; font-size: 15px; width: auto; flex: none; padding-left: 14px; padding-right: 14px; }
+  .hal .h-acties.h-passen > .h-knop { --h-snede: 39px; --h-kier: 4.9px; gap: 10px; font-size: 15px; width: auto; flex: 1 1 auto; min-width: 0; padding-left: 14px; padding-right: 14px; }
+  .hal .h-acties.h-meet > .h-knop:not([hidden]):has(~ .h-knop:not([hidden])) { padding-right: calc(var(--h-snede) + 2px); }
+  .hal .h-acties.h-passen > .h-knop:not([hidden]):has(~ .h-knop:not([hidden])) { clip-path: polygon(0 0, 100% 0, calc(100% - var(--h-snede)) 100%, 0 100%); padding-right: calc(var(--h-snede) + 2px); border-top-right-radius: 0; border-bottom-right-radius: 0; }
+  .hal .h-acties.h-meet > .h-knop:not([hidden]) ~ .h-knop:not([hidden]) { margin-left: calc(var(--h-kier) - var(--h-snede)); padding-left: calc(var(--h-snede) * .5 + 12px); }
+  .hal .h-acties.h-passen > .h-knop:not([hidden]) ~ .h-knop:not([hidden]) { clip-path: polygon(var(--h-snede) 0, 100% 0, 100% 100%, 0 100%); margin-left: calc(var(--h-kier) - var(--h-snede)); padding-left: calc(var(--h-snede) * .5 + 12px); border-top-left-radius: 0; border-bottom-left-radius: 0; }
+  .hal .h-acties.h-passen > .h-knop:not([hidden]) ~ .h-knop:not([hidden]):has(~ .h-knop:not([hidden])) { clip-path: polygon(var(--h-snede) 0, 100% 0, calc(100% - var(--h-snede)) 100%, 0 100%); padding-right: calc(var(--h-snede) + 2px); }
+  .hal .h-acties.h-meet > .h-knop:not([hidden]) ~ .h-knop:not([hidden]):has(~ .h-knop:not([hidden])) { padding-right: calc(var(--h-snede) + 2px); }
+  .hal .h-acties.h-passen > .h-knop:not([hidden]) ~ .h-knop-lijn:not([hidden]) { background-image: linear-gradient(to bottom right, transparent calc(50% - .9px), var(--h-rand) calc(50% - .9px), var(--h-rand) calc(50% + .9px), transparent calc(50% + .9px)); background-repeat: no-repeat; background-size: var(--h-snede) 100%; background-position: 0 0; }
+  .hal .h-acties.h-passen > .h-knop:not([hidden]) ~ .h-knop-lijnwit:not([hidden]) { background-image: linear-gradient(to bottom right, transparent calc(50% - .9px), var(--h-rand) calc(50% - .9px), var(--h-rand) calc(50% + .9px), transparent calc(50% + .9px)); background-repeat: no-repeat; background-size: var(--h-snede) 100%; background-position: 0 0; }
+  .hal .h-acties.h-passen > .h-knop:focus-visible { clip-path: none !important; position: relative; z-index: 1; }
+}

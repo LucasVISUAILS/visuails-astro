@@ -19,7 +19,7 @@
  * pagina laden dit bestand allemaal.
  */
 import { turnaround, voorrangZin, heeftVoorrang } from '../data/pricing.js';
-import { esc, p as mailP, datum as mailDatum } from './mailTemplate.js';
+import { esc, p as mailP, datum as mailDatum, C as MAILKLEUR } from './mailTemplate.js';
 
 /* De levertijdzin uit pricing.js, als bijzin: "zo snel mogelijk (vaak binnen
    een dag, soms een paar dagen)". Eerste letter klein, punt eraf. */
@@ -171,7 +171,9 @@ export function zoGaatHetVerder({ lang = 'nl', levering = { soort: 'zsm' }, fact
    in Outlook en Gmail elk een eigen inspringing, en een nummer dat de lezer ziet
    staan is hier alles wat een lijst moet doen. De ontbrekende foto's staan
    direct onder de regel over het nakijken, waar ze bij horen. */
-const NUM = (n) => `<span style="display:inline-block;min-width:18px;font-weight:700;color:#3D17D6">${n}.</span>`;
+/* De kleur uit het palet van de mail en niet overgetypt (17 oktober 2026). */
+/* Levering 55 (m-stap): 01, 02, 03 in de vaste breedte-letter, zoals de stappen op de site. */
+const NUM = (n) => `<span style="display:inline-block;min-width:32px;font-family:Menlo,Consolas,monospace;font-size:13px;font-weight:700;letter-spacing:.04em;color:${MAILKLEUR.accentText}">${String(n).padStart(2, '0')}</span>`;
 
 /**
  * Het blok als mail-HTML (mailTemplate-blokken).

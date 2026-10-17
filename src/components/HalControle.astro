@@ -33,6 +33,7 @@
  * pipet, alle vier de vinkjes, "Nagekeken".
  */
 import { ingestuurd, geleverd } from '../data/voorbeeldset.js';
+import { ikoon, IKOON } from '../data/iconen.js';
 import UitlegBalk from './UitlegBalk.astro';
 
 interface Props { lang: 'en' | 'nl'; uitleg?: boolean; d?: number }
@@ -91,10 +92,10 @@ const c = nl
         'If it all matches, it goes to you. If we are unsure, we ask first.',
       ],
     };
-const RECHTS = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/></svg>';
-const VINK = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
-const CHAT = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3.5h10v7H7.5L4.5 13v-2.5H3z"/></svg>';
-const PIPET = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 2.5l3 3-1.6 1.6-3-3zM9.4 4.6L3.5 10.5 3 13l2.5-.5 5.9-5.9"/></svg>';
+const RECHTS = ikoon('pijl');
+const VINK = ikoon('vink');
+const CHAT = ikoon('bericht');
+const PIPET = ikoon('potlood');
 const pos = (p: { x: number; y: number }) => `left:${p.x}%;top:${p.y}%`;
 /* De markeringen van één beeld, voor één kant (jouw foto of ons beeld). */
 const merk = (k: string, kant: 'jouw' | 'ons') => {

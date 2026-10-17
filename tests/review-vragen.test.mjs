@@ -82,14 +82,14 @@ console.log('\n2 · de post: de regel en het doorsturen');
   const r = await post('/admin/orders/22/review-wa');
   ok('de post geeft een tussenpagina (200), geen 303 naar buiten', [r.status, r.location], [200, null]);
   ok('met een meta refresh naar wa.me/49… en de Engelse tekst',
-    /<meta http-equiv="refresh" content="0; url=https:\/\/wa\.me\/4915123456789\?text=Hi%20Lena%2C%20your%20order%20VIS-TEST-0022%20is%20complete/.test(r.html));
+    /<meta http-equiv="refresh" content="0; url=https:\/\/wa\.me\/4915123456789\?text=(?:Hello|Good%20morning|Good%20afternoon|Good%20evening)%20Lena%2C%20your%20order%20VIS-TEST-0022%20is%20complete/.test(r.html));
   ok('de reviewlink staat in de tekst', r.html.includes(encodeURIComponent(reviewLink())));
   ok('onder dezelfde strenge CSP (form-action self)', /form-action 'self'/.test(r.csp));
   ok('"review gevraagd" staat één keer in order_events (intern)', gevraagd(22), 1);
   await post('/admin/orders/22/review-wa');
   ok('nog een keer: geen tweede regel', gevraagd(22), 1);
   const nl = await post('/admin/orders/21/review-wa');
-  ok('NL-bestelling: de tekst in het Nederlands', /url=https:\/\/wa\.me\/31612345678\?text=Hoi%20Sanne%2C%20je%20bestelling%20VIS-TEST-0021%20is%20afgerond/.test(nl.html));
+  ok('NL-bestelling: de tekst in het Nederlands', /url=https:\/\/wa\.me\/31612345678\?text=(?:Hallo|Goedemorgen|Goedemiddag|Goedenavond)%20Sanne%2C%20je%20bestelling%20VIS-TEST-0021%20is%20afgerond/.test(nl.html));
   const open = await post('/admin/orders/23/review-wa');
   ok('niet afgerond: terug naar de bestelpagina, niets geschreven', [open.status, open.location, gevraagd(23)], [303, '/admin/orders/23/files#review', 0]);
 }

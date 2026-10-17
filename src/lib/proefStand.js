@@ -32,7 +32,7 @@
  * naDeMail() hieronder, en nergens anders; privacy §2/§6 zeggen hetzelfde.
  */
 import { sendMail } from './mail.js';
-import { shell, h1, p, button, esc } from './mailTemplate.js';
+import { shell, h1, p, button, esc, greeting } from './mailTemplate.js';
 import { TEST_SAMPLE } from '../data/pricing.js';
 
 export const PROEF_STAND_KEY = 'proef_stand';
@@ -110,7 +110,7 @@ export function weerOpenMail(lang, stand = 'open', origin = 'https://visuails.co
       preheader: nl ? `Eén product voor ${s.price}, gemaakt van jouw eigen foto.` : `One product for ${s.price}, made from your own photo.`,
       body: [
         h1(nl ? 'De nieuwe ronde is open' : 'The new round is open'),
-        p(nl ? 'Hoi,' : 'Hi,'),
+        p(greeting('', nl ? 'nl' : 'en')),
         p(esc(nl
           ? `Je stond op de lijst voor de proef van VISUAILS, dus je hoort het als eerste: de nieuwe ronde is open${alleenLifestyle ? ', voor een lifestylecarrousel' : ''}. Eén product voor ${s.price}, gemaakt van jouw eigen foto. Per ronde nemen we een beperkt aantal proeven aan.`
           : `You were on the list for the VISUAILS test sample, so you are the first to hear: the new round is open${alleenLifestyle ? ', for a lifestyle carousel' : ''}. One product for ${s.price}, made from your own photo. We take a limited number of test samples per round.`)),

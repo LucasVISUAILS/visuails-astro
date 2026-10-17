@@ -21,6 +21,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
+import { ikoon, IKOON } from '../data/iconen.js';
 import {
   ladderFloor, euro, vatLabel, eenProductRegel, WINDOW_THRESHOLD, TIERS, clause, TEST_SAMPLE, LIFESTYLE_IMAGES, levervlakken,
 } from '../data/pricing.js';
@@ -137,21 +138,15 @@ const COPY = {
   },
 };
 const c = COPY[lang];
-const ICOON = {
-  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
-  links: '<path d="M13.5 8h-11M7 3.5L2.5 8 7 12.5"/>',
-  pijl: '<path d="M4.5 11.5l7-7M5.5 4.5h6v6"/>',
-  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
-  label: '<path d="M8.6 2.5H13.5V7.4L7.4 13.5 2.5 8.6z"/><circle cx="10.6" cy="5.4" r=".9"/>',
-  doos: '<path d="M2.5 5L8 2.5 13.5 5v6L8 13.5 2.5 11z"/><path d="M2.5 5L8 7.5 13.5 5M8 7.5v6"/>',
-  plus: '<path d="M8 3v10M3 8h10"/>',
-};
-const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+/* De iconen uit het kit (levering 54, afvinklijst 34): links de naam in dit
+   onderdeel, rechts het icoon in src/data/iconen.js. */
+const ICOON = { rechts: 'pijl', links: 'pijl-links', pijl: 'pijl-schuin', check: 'vink', label: 'prijs', doos: 'doos', plus: 'plus' } as const;
+const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
 /* Het etiket "van jouw eigen productfoto's" in drie VORMEN en niet alleen drie
    kleuren (zoals op de oude /start): een vinkje (met), een streep (zonder), en
    plus-en-min (allebei kan). tests/eigenproduct.test.mjs. */
-const EIGEN_VORM: Record<string, string> = { met: '<path d="M3 8.5l3.2 3L13 4.5"/>', zonder: '<path d="M4.5 8h7"/>', beide: '<path d="M8 3.5v5M5.5 6h5M5.5 12h5"/>' };
-const eigenVorm = (stand: string) => `<svg viewBox="0 0 16 16" aria-hidden="true">${EIGEN_VORM[stand] || EIGEN_VORM.met}</svg>`;
+const EIGEN_VORM: Record<string, string> = { met: '<path fill-rule="evenodd" d="' + IKOON.vink + '"/>', zonder: '<path fill-rule="evenodd" d="' + IKOON.streep + '"/>', beide: '<path fill-rule="evenodd" d="' + IKOON.plusmin + '"/>' };
+const eigenVorm = (stand: string) => `<svg class="ik" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${EIGEN_VORM[stand] || EIGEN_VORM.met}</svg>`;
 const DRIE = (n: number) => String(n).padStart(2, '0');
 ---
 <div class="h-pagina h-dienst h-ls">
@@ -187,8 +182,8 @@ const DRIE = (n: number) => String(n).padStart(2, '0');
       </div>
       <p class="h-sec-rechts">
         <span class="h-lijntje" aria-hidden="true"><i data-h-strook-stand></i></span>
-        <button type="button" class="h-cirkel" data-h-strook-stap="-1" aria-label={c.vorige} set:html={ik('links')} />
-        <button type="button" class="h-cirkel" data-h-strook-stap="1" aria-label={c.volgende} set:html={ik('rechts')} />
+        <span class="h-paar"><button type="button" class="h-cirkel" data-h-strook-stap="-1" aria-label={c.vorige} set:html={ik('links')} />
+        <button type="button" class="h-cirkel" data-h-strook-stap="1" aria-label={c.volgende} set:html={ik('rechts')} /></span>
       </p>
     </header>
     <ul class="h-strook" role="list" data-h-strook-rij>

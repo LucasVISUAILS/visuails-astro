@@ -19,6 +19,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
+import { ikoon, IKOON } from '../data/iconen.js';
 import { faqPageGroups, SERVICE_FAQ_NAMES } from '../data/faq.js';
 import { waHref } from '../data/whatsapp.js';
 import { localizedPath } from '../i18n/ui.js';
@@ -60,7 +61,7 @@ const c = nl ? {
   nogZin: 'Ook als je al besteld hebt: meestal antwoord binnen het uur, buiten openingstijden de volgende ochtend.',
   nogWa: 'Stuur een WhatsApp',
   nogContact: 'Neem contact op',
-  wa: waHref('Hoi VISUAILS, ik heb een vraag over jullie dienst.'),
+  wa: waHref('Hallo VISUAILS, ik heb een vraag over jullie dienst.'),
   slotKop: ['Of zie het meteen', 'op je eigen product, voor'] as [string, string],
   slotZin: 'Zie het eerst op je eigen product.',
   slotAlt: 'Of start een bestelling',
@@ -77,7 +78,7 @@ const c = nl ? {
   nogZin: 'Also once you’ve ordered: usually a reply within the hour; outside opening hours, the next morning.',
   nogWa: 'Send a WhatsApp',
   nogContact: 'Get in touch',
-  wa: waHref('Hi VISUAILS, I have a question about your service.'),
+  wa: waHref('Hello VISUAILS, I have a question about your service.'),
   slotKop: ['Or see it straight away', 'on your own product, for'] as [string, string],
   slotZin: 'See it on your own product first.',
   slotAlt: 'Or start an order',
@@ -94,7 +95,7 @@ const DIENSTEN = new Set(Object.keys(SERVICE_FAQ_NAMES));
 const algemeen = groepen.filter((g) => !DIENSTEN.has(g.id));
 const perDienst = groepen.filter((g) => DIENSTEN.has(g.id));
 
-const PIJL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5l7-7M5.5 4.5h6v6"/></svg>';
+const PIJL = ikoon('pijl-schuin');
 /* Het WhatsApp-teken bij een wa.me-link zet global.css er zelf voor (op href);
    het grote teken in de strook leest hetzelfde bestand, /img/i-whatsapp.svg. */
 ---

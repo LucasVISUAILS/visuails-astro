@@ -172,7 +172,7 @@ const dist = (p) => { const f = path.join(ROOT, 'dist', p); return existsSync(f)
        het proefblok, alleen nog in de opening. */
     ok('  de abonnementsknop draagt de creditszin, geen data-vis-in meer', (thuis.match(/data-vis-klant="plan"/g) || []).length === 1 && !/data-vis-in\b/.test(thuis) && thuis.includes('data-vis-credits="Bestel met je credits · {n} over"'));
     ok('  het proefblok draagt een verborgen klantversie', /data-vis-klant="proefblok"/.test(thuis) && /data-vis-proefklant hidden/.test(thuis) && thuis.includes('data-vis-her="Bestel met je look."'));
-    ok('  de zwevende WhatsApp-knop draagt de zin', /class="wa-launcher"[^>]*data-vis-wa="Hoi VISUAILS, een vraag over bestelling \{ref\}:"/.test(thuis));
+    ok('  de zwevende WhatsApp-knop draagt de zin', /class="wa-launcher"[^>]*data-vis-wa="Hallo VISUAILS, een vraag over bestelling \{ref\}:"/.test(thuis));
     for (const [pad, soort] of [['nl/how-it-works/index.html', 'herbestel'], ['nl/pricing/index.html', 'herbestel'], ['nl/upload-guidelines/index.html', 'herbestel-of-start'], ['nl/upload-guidelines/index.html', 'start-naast'], ['how-it-works/index.html', 'herbestel']]) {
       const h = dist(pad);
       ok(`${pad}: ${soort} staat verborgen klaar`, new RegExp(`data-vis-klant="${soort}"[^>]*hidden`).test(h));
@@ -253,7 +253,7 @@ else {
     /* Sinds de melding op bijna elke pagina staat: wie niet is ingelogd, kost
        alleen de vraag die de kop van de site toch al stelt (window.visAccount). */
     ok('  één vraag, die van de kop: de stand wordt niet gevraagd', vragen.length === 1 && !vragen.some((u) => /stand=1/.test(u)), vragen.join(' '));
-    ok('  de WhatsApp-zin is de gewone', /text=Hoi%20VISUAILS%2C%20ik%20heb/.test(st.wa || ''), st.wa);
+    ok('  de WhatsApp-zin is de gewone', /text=Hallo%20VISUAILS%2C%20ik%20heb/.test(st.wa || ''), st.wa);
     ok('  geen scriptfout', fouten.length === 0, fouten.join(' | '));
   }
   {
@@ -266,7 +266,7 @@ else {
     ok('  "Je abonnement" naar Studio', st.plan.length === 1 && st.plan.every(([z, t, h]) => z && t === 'Je abonnement' && h === '/account/plan'), JSON.stringify(st.plan));
     ok('  en de hoofdknop "Bestel met je credits · 48 over" naar het beginscherm', st.start === 'Bestel met je credits · 48 over · /nl/start/', st.start);
     ok('  geen proef meer zichtbaar', st.proef === 0);
-    ok('  WhatsApp begint met het kenmerk', decodeURIComponent((st.wa || '').split('text=')[1] || '') === 'Hoi VISUAILS, een vraag over bestelling VIS-2041:', st.wa);
+    ok('  WhatsApp begint met het kenmerk', decodeURIComponent((st.wa || '').split('text=')[1] || '') === 'Hallo VISUAILS, een vraag over bestelling VIS-2041:', st.wa);
     ok('  geen scriptfout', fouten.length === 0, fouten.join(' | '));
   }
   {

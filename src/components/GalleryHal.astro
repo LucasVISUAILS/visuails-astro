@@ -48,6 +48,7 @@ import HalBeweging from './HalBeweging.astro';
 import KopBeeld from './KopBeeld.astro';
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
+import { ikoon, IKOON } from '../data/iconen.js';
 import { LEVERINGEN, DIENSTEN, SOORTEN, gebruikteDiensten, gebruikteSoorten } from '../data/leveringen.js';
 import { ingestuurd, geleverd } from '../data/voorbeeldset.js';
 /* 1.02 (8 oktober 2026, V13 = a) — zie de noot bij CLIP_STILL. */
@@ -267,7 +268,7 @@ const c = nl ? {
   slotH: 'Zie je eigen product',
   slotEm: 'in deze reeks.',
   slotBody: `Probeer VISUAILS eerst — één per bedrijf, en je betaalt ${SAMPLE.feeNote}.`,
-  wa: waHref('Hoi VISUAILS, ik wil VISUAILS graag eerst proberen met mijn product.'),
+  wa: waHref('Hallo VISUAILS, ik wil VISUAILS graag eerst proberen met mijn product.'),
 } : {
   eyebrow: 'Gallery',
   h1: 'This is what a delivery looks like.',
@@ -307,7 +308,7 @@ const c = nl ? {
   slotH: 'See your own product',
   slotEm: 'in this range.',
   slotBody: `Start with a test sample — one per business, just a ${SAMPLE.feeNote}.`,
-  wa: waHref("Hi VISUAILS, I'd like to see a sample for my product."),
+  wa: waHref("Hello VISUAILS, I'd like to see a sample for my product."),
 };
 
 /* ── DE LEVERINGEN — 23 september 2026 ─────────────────────────────────────
@@ -346,13 +347,10 @@ const dienstKnoppen = gebruikteDiensten().filter((d) => leveringen.some((l) => l
 const soortKeuzes = gebruikteSoorten().filter((s) => leveringen.some((l) => l.soort === s));
 
 /* ── DE HAL ─────────────────────────────────────────────────────────────── */
-const ICOON = {
-  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
-  plus: '<path d="M8 3v10M3 8h10"/>',
-  beeld: '<rect x="2.5" y="3" width="11" height="10" rx="2"/><path d="M2.5 10.5l3-3 3 3 2-2 3 3"/><circle cx="10.5" cy="6" r="1"/>',
-  speel: '<path d="M5.5 3.8v8.4L12.5 8z"/>',
-};
-const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+/* De iconen uit het kit (levering 54, afvinklijst 34): links de naam in dit
+   onderdeel, rechts het icoon in src/data/iconen.js. */
+const ICOON = { rechts: 'pijl', plus: 'plus', beeld: 'beeld', speel: 'afspelen' } as const;
+const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
 const H = nl ? {
   h1: ['Zo ziet', 'een levering eruit.'],
   alles: ['Alle beelden', 'uit de studio.'],

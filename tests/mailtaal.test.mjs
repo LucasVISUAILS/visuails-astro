@@ -118,8 +118,9 @@ for (const [bestand, naam] of BOUWERS) {
    anders is over een jaar niet meer te zien waar de regel vandaan komt. */
 {
   const bron = lees('functions/api/order.js');
-  ok('de checklistmail groet in het Nederlands met "Hoi,"',
-    /p\(nl \? 'Hoi,' : 'Hi,'\)/.test(bron),
+  /* Sinds 17 oktober 2026 via greeting() met de taal van de mail (src/lib/aanhef.js). */
+  ok('de checklistmail groet in de taal van de mail',
+    /p\(greeting\('', nl \? 'nl' : 'en', \{ nu: new Date\(\) \}\)\)/.test(bron),
     '       hier stond `p(\'Hi,\')` in een verder volledig Nederlandse mail');
 }
 

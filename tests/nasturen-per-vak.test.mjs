@@ -242,14 +242,14 @@ const get = async (pad) => {
   ok('admin: de vaste tekst noemt wat er ontbreekt (NL)', /Hoodie zwart \(detail\)/.test(nl) && /product 2 \(detail\)/.test(nl), nl);
   ok('admin: en dat we na een dag zonder antwoord maken wat er is', FOTO_WACHT_DAGEN === 1 ? /na een dag niets gehoord, dan maken we je beelden met wat er is/.test(nl) : true, nl);
   ok('admin: en waar de klant ze kwijt kan (Studio)', /VISUAILS Studio/.test(nl) && /VISUAILS Studio/.test(en));
-  ok('admin: de tekst in het Engels voor een Engelse klant', /^Hi Mara, about VIS-TEST-0501: we are still missing photos of/.test(en) && /after a day/.test(en), en);
+  ok('admin: de tekst in het Engels voor een Engelse klant', /^(Good morning|Good afternoon|Good evening|Hello) Mara, about VIS-TEST-0501: we are still missing photos of/.test(en) && /after a day/.test(en), en);
   ok('admin: zonder ik-vorm', !/\b(ik|mij|mijn|I|me|my)\b/.test(nl.replace(/VISUAILS/g, '')) && !/\b(I|me|my)\b/.test(en), nl);
 }
 {
   const { status, html } = await get('/admin/orders/501/files');
   ok('admin bord: de pagina laadt', status === 200, String(status));
   ok('admin bord: bovenaan het blok met de telling en de regels', /class="warnline is-rood ontbreekt-blok" id="ontbreekt"/.test(html) && /2 foto’s ontbreken/.test(html));
-  ok('admin bord: bellen (NL-klant, dus voorop) en appen met de tekst erin', /href="tel:\+31612345678"/.test(html) && /href="https:\/\/wa\.me\/31612345678\?text=Hoi%20Mara/.test(html) && html.indexOf('href="tel:') < html.indexOf('href="https://wa.me/'));
+  ok('admin bord: bellen (NL-klant, dus voorop) en appen met de tekst erin', /href="tel:\+31612345678"/.test(html) && /href="https:\/\/wa\.me\/31612345678\?text=(Goedemorgen|Goedemiddag|Goedenavond|Hallo)%20Mara/.test(html) && html.indexOf('href="tel:') < html.indexOf('href="https://wa.me/'));
   ok('admin bord: een rood leeg vak bij het product ("ontbreekt")', /class="brief-vak is-mist"><span class="brief-vak-l">Detail<\/span><span class="brief-mist">ontbreekt<\/span>/.test(html));
   ok('admin bord: de kop van het product zegt wat er mist', /class="or-let is-rood">mist detail</.test(html));
   ok('admin bord: een nagestuurde foto draagt "nagestuurd"', /<span class="brief-nagestuurd">nagestuurd<\/span>/.test(html));

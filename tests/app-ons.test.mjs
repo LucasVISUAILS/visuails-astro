@@ -74,7 +74,7 @@ if (!existsSync(new URL('../dist/start/catalog/index.html', import.meta.url))) {
       const u = new URL(href);
       if (`${u.origin}${u.pathname}` !== `https://wa.me/${WHATSAPP_NUMBER}`) nummer = false;
       const tekst = u.searchParams.get('text') || '';
-      const begin = taal === 'nl' ? `Hoi, ik zit bij stap ${n} (${NAMEN.nl[stappen][n - 1]}) ` : `Hi, I am at step ${n} (${NAMEN.en[stappen][n - 1]}) `;
+      const begin = taal === 'nl' ? `Hallo, ik zit bij stap ${n} (${NAMEN.nl[stappen][n - 1]}) ` : `Hello, I am at step ${n} (${NAMEN.en[stappen][n - 1]}) `;
       if (!tekst.startsWith(begin) || !slot.test(tekst)) { bericht = false; console.log('   ', tekst); }
       if (/@|\+31|\d{6,}|NL\d{9}B/.test(tekst)) privé = false;
     }

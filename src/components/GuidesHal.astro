@@ -16,6 +16,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
+import { ikoon, IKOON } from '../data/iconen.js';
 import { guides as gidsen } from '../data/guides.js';
 import Studiobrief from './Studiobrief.astro';
 import HalProef from './HalProef.astro';
@@ -46,7 +47,7 @@ const c = nl ? {
   slotP: 'Start with a single product, or put a whole set in the queue. There is no minimum.',
   ctaStart: 'Or start an order',
 };
-const PIJL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5l7-7M5.5 4.5h6v6"/></svg>';
+const PIJL = ikoon('pijl-schuin');
 /* Het beeld in de opening: afvinklijst 20 (v20-opening a), live sinds afvinklijst 21. Zie KopBeeld.astro. */
 const nlB = lang === 'nl';
 const BEELD = {

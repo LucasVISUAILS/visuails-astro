@@ -37,6 +37,7 @@
  * (VOORBEELD_REF) en de productnaam zijn voorbeelden. Dat staat onder het blok.
  */
 import { ingestuurd, geleverd, vormen, VOORBEELD_REF } from '../data/voorbeeldset.js';
+import { ikoon, IKOON } from '../data/iconen.js';
 import { deliveryEntries, deliveryDocs } from '../lib/delivery.js';
 import { RESOLUTIE } from '../data/pricing.js';
 import { REQUIRED_SHOT_IDS } from '../data/shots.js';
@@ -165,7 +166,7 @@ const c = nl ? {
   ],
 };
 
-const VINK = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
+const VINK = ikoon('vink');
 const DRIE = (n: number) => String(n).padStart(2, '0');
 ---
 

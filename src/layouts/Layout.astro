@@ -1,5 +1,6 @@
 ---
 import { WA_CHROME, WHATSAPP_DISPLAY, waHref } from '../data/whatsapp.js';
+import { ikoon, IKOON } from '../data/iconen.js';
 /* k-klant-wa (14 okt 2026): een ingelogde klant met een lopende bestelling krijgt
    het kenmerk in zijn WhatsApp-bericht — interactions.js vult het in, alleen op een
    pagina die /account/me toch al vraagt. */
@@ -116,7 +117,7 @@ import Woordmerk from '../components/Woordmerk.astro';
 /* De bovenbalk draagt in de hal het V-merk (14 oktober 2026), het woordmerk de footer. */
 import VMerk from '../components/VMerk.astro';
 import KlantMelding from '../components/KlantMelding.astro';
-import { WOORDMERK } from '../data/woordmerk.js';
+import { WOORDMERK, WOORDMERK_LIJNEN } from '../data/woordmerk.js';
 import urbanistLatin from '@fontsource-variable/urbanist/files/urbanist-latin-wght-normal.woff2?url';
 
 interface Props {
@@ -783,6 +784,12 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
         <use href="#woordmerk">. scripts/brand-lockup-guard.mjs telt #woordmerk als
         woordmerk: het losse V-teken mag er nog steeds niet naast. */}
     {huid === 'hal' && <symbol id="woordmerk" viewBox={WOORDMERK.symbool}><path fill-rule="evenodd" d={WOORDMERK.d} /></symbol>}
+    {/* De omtrek van het woordmerk voor de elektrische lijn (Woordmerk electro):
+        per deel een pad met pathLength 100 en vector-effect, om dezelfde reden als
+        bij #markglyph hierboven. Een streeplijn begint bij elk deelpad opnieuw;
+        in één pad stond de lijn er daardoor in één keer in plaats van in te
+        tekenen. Telt in brand-lockup-guard als woordmerk. */}
+    {huid === 'hal' && <symbol id="woordmerk-lijn" viewBox={WOORDMERK.symbool}>{WOORDMERK_LIJNEN.map((d) => <path pathLength="100" vector-effect="non-scaling-stroke" d={d} />)}</symbol>}
   </svg>
 
   <div class="grain" aria-hidden="true"></div>
@@ -813,14 +820,14 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           staat weer in de balk. */}
       <a href={lp('/')} class="brand" aria-label="VISUAILS home">
         {huid === 'hal'
-          ? <VMerk klasse="hal-vm hal-vm-balk" glitch />
+          ? <VMerk klasse="hal-vm hal-vm-balk" electro />
           : <svg class="mk brand-mark brand-glyph" viewBox="0 0 702.00 813.25" aria-hidden="true"><BrandMark /></svg>}
       </a>
       <nav aria-label={t('nav_primary')} class="primary-nav">
         <ul class="nav-links">
           <li class="has-menu">
             <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">{t('nav_drops')}
-              <svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+              <svg class="ik i" viewBox="0 0 24 24" style="width:14px;height:14px" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d={IKOON.uitklap} /></svg>
             </button>
             <div class="nav-menu" role="menu">
               {/* ── EEN ITEM ZONDER href IS GEEN LINK ─────────────────────────────
@@ -868,7 +875,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
               twee en een wees eronder. */}
           <li class="has-menu">
             <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">{t('nav_how')}
-              <svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+              <svg class="ik i" viewBox="0 0 24 24" style="width:14px;height:14px" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d={IKOON.uitklap} /></svg>
             </button>
             <div class="nav-menu nav-menu-1kol" role="menu">
               {/* ── DEZELFDE UITGESCHAKELDE VORM ALS BIJ `drops` — 26 aug 2026 ──
@@ -909,7 +916,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
               het toetsenbord of op een tablet komt. */}
           <li class="has-menu">
             <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">{t('nav_pricing')}
-              <svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+              <svg class="ik i" viewBox="0 0 24 24" style="width:14px;height:14px" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d={IKOON.uitklap} /></svg>
             </button>
             <div class="nav-menu nav-menu-1kol" role="menu">
               {prijzen.map((s) => (
@@ -1065,7 +1072,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           homepage behalve de terugknop van de browser. */}
       <a href={lp('/')} class="mobile-home" aria-label={t('nav_home')}>
         {huid === 'hal'
-          ? <VMerk klasse="hal-vm hal-vm-lade" />
+          ? <VMerk klasse="hal-vm hal-vm-lade" electro />
           : <svg class="mk brand-mark mobile-mark" viewBox="0 0 702.00 813.25" aria-hidden="true"><BrandMark /></svg>}
       </a>
       <button class="mobile-close" aria-label={t('nav_close')}>&times;</button>
@@ -1355,7 +1362,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
         <div class="footer-brand">
           <a href={lp('/')} class="brand" aria-label="VISUAILS home">
             {huid === 'hal'
-              ? <Woordmerk klasse="hal-wm hal-wm-voet" />
+              ? <Woordmerk klasse="hal-wm hal-wm-voet" electro />
               : <svg class="mk brand-word" viewBox="0 0 1650 278" aria-hidden="true"><BrandMark bron="#wordmark" /></svg>}
           </a>
           <p>{t('foot_tagline')}</p>
@@ -1519,7 +1526,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     <div class="foot-mark reveal pending" aria-hidden="true">
       <span class="foot-mark-light"></span>
       {huid === 'hal'
-        ? <Woordmerk klasse="hal-wm hal-wm-reus" verloop />
+        ? <Woordmerk klasse="hal-wm hal-wm-reus" electro />
         : <svg class="foot-mark-w" viewBox="0 0 1650 278" preserveAspectRatio="xMidYMax meet" focusable="false"><use href="#wordmark" /></svg>}
     </div>
   </footer>

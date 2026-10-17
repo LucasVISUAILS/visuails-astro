@@ -22,6 +22,7 @@
  *                       herbestel-of-start.
  * ═══════════════════════════════════════════════════════════════════════════ */
 import { klantTekst } from '../data/klant.js';
+import { ikoon, IKOON } from '../data/iconen.js';
 import { localizedPath } from '../i18n/ui.js';
 
 interface Props { lang: 'en' | 'nl'; soort: 'herbestel' | 'herbestel-of-start' | 'start-naast'; toon?: 'inkt' | 'lijn'; pijl?: boolean; }
@@ -29,7 +30,7 @@ const { lang, soort, toon = 'lijn', pijl = false } = Astro.props;
 const k = klantTekst(lang);
 const start = localizedPath(lang, '/start');
 const label = soort === 'herbestel' ? k.herbestel : k.start;
-const PIJL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/></svg>';
+const PIJL = ikoon('pijl');
 ---
 <a
   class={`h-knop h-knop-${toon}`}

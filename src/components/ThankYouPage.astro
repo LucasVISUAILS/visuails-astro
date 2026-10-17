@@ -37,6 +37,7 @@
  * leest voordat je iets anders leest.
  */
 import { waHref } from '../data/whatsapp.js';
+import { ikoon, IKOON } from '../data/iconen.js';
 import NieuwTabblad from './NieuwTabblad.astro';
 /* AMOUNT erbij: de annuleringstekst noemt het teruggestorte bedrag van de
    proefvisual, en dat is een prijs — die hoort uit pricing.js te komen. */
@@ -263,7 +264,7 @@ const bronnen = nl
 
   <div class="ty-bar" data-ty-bar>
     <div class="ty-bar-in">
-      <svg class="ty-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+      <svg class="ik ty-check" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d={IKOON.vink} /></svg>
       <h1 class="hoog hoog-2" data-ty-title data-ty-title-cancelled={c.cancelled} data-ty-title-afgezegd={c.handTitel} data-ty-title-pay={c.titlePay} data-ty-title-paid={c.titlePaid} data-ty-title-checking={c.titleChecking} data-ty-title-unpaid={c.titleUnpaid} data-ty-title-contact={c.titleContact} data-ty-title-review={c.titleReview} data-ty-title-credits={c.titleCredits}>{c.title}</h1>
     </div>
   </div>
@@ -358,10 +359,10 @@ const bronnen = nl
             {/* B24 (doorloop 27): na een bestelling stond hier "ik heb net een
                 aanvraag gedaan", zonder kenmerk. initThankYou() zet het kenmerk en
                 het goede woord erin; zonder script blijft deze neutrale zin. */}
-            <a href={waHref(nl ? 'Hoi VISUAILS, een vraag over wat ik net via de site stuurde.' : 'Hi VISUAILS, a question about what I just sent through the site.')} target="_blank" rel="noopener" data-ty-wa
-              data-ty-wa-bestelling={nl ? 'Hoi VISUAILS, een vraag over mijn bestelling {ref}:' : 'Hi VISUAILS, a question about my order {ref}:'}
-              data-ty-wa-aanvraag={nl ? 'Hoi VISUAILS, een vraag over mijn aanvraag {ref}:' : 'Hi VISUAILS, a question about my request {ref}:'}
-              data-ty-wa-bericht={nl ? 'Hoi VISUAILS, ik stuurde net een bericht via het contactformulier.' : 'Hi VISUAILS, I just sent a message through the contact form.'}>{c.wa}<NieuwTabblad lang={lang} /></a><br />
+            <a href={waHref(nl ? 'Hallo VISUAILS, een vraag over wat ik net via de site stuurde.' : 'Hello VISUAILS, a question about what I just sent through the site.')} target="_blank" rel="noopener" data-ty-wa
+              data-ty-wa-bestelling={nl ? 'Hallo VISUAILS, een vraag over mijn bestelling {ref}:' : 'Hello VISUAILS, a question about my order {ref}:'}
+              data-ty-wa-aanvraag={nl ? 'Hallo VISUAILS, een vraag over mijn aanvraag {ref}:' : 'Hello VISUAILS, a question about my request {ref}:'}
+              data-ty-wa-bericht={nl ? 'Hallo VISUAILS, ik stuurde net een bericht via het contactformulier.' : 'Hello VISUAILS, I just sent a message through the contact form.'}>{c.wa}<NieuwTabblad lang={lang} /></a><br />
             <a href="mailto:hello@visuails.com">{c.mail}</a><br />
             <a href={lp('/upload-guidelines')} data-ty-alleen-bestelling>{c.guide}</a><br data-ty-alleen-bestelling />
             {/* Het moment waarop iemand opstaat om de foto's te maken. De

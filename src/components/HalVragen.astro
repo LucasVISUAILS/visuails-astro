@@ -10,6 +10,7 @@
  * sectiekop met pil en tweetonige kop, de vragen als nevelkaarten.
  * ═══════════════════════════════════════════════════════════════════════════ */
 import Disclose from './Disclose.astro';
+import { ikoon, IKOON } from '../data/iconen.js';
 import { localizedPath } from '../i18n/ui.js';
 import { SERVICE_FAQ_NAMES } from '../data/faq.js';
 
@@ -23,7 +24,7 @@ const rest = faqs.length - TOON;
 const meer = rest > 0
   ? (nl ? `Nog ${rest} ${rest === 1 ? 'vraag' : 'vragen'} over ${naam}` : `${rest} more ${rest === 1 ? 'question' : 'questions'} about ${naam}`)
   : (nl ? 'Alle vragen' : 'All questions');
-const PIJL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5l7-7M5.5 4.5h6v6"/></svg>';
+const PIJL = ikoon('pijl-schuin');
 ---
 <section class="h-sec h-vragen-sec" aria-labelledby={id}>
   <header class="h-sec-kop h-in">

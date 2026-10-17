@@ -17,6 +17,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
+import { ikoon, IKOON } from '../data/iconen.js';
 import { waHref, WHATSAPP_DISPLAY } from '../data/whatsapp.js';
 import { VOORKEUR_COPY } from '../data/contactvoorkeur.js';
 import NieuwTabblad from './NieuwTabblad.astro';
@@ -47,7 +48,7 @@ const c = nl ? {
   waKop: 'WhatsApp',
   waP: 'Meestal antwoord binnen het uur.',
   waCta: 'Chat via WhatsApp',
-  waTekst: 'Hoi VISUAILS, ik heb een vraag.',
+  waTekst: 'Hallo VISUAILS, ik heb een vraag.',
   mailKop: 'E-mail',
   mailP: 'Voor uitgebreide briefings, facturen of bijlagen.',
   urenKop: 'Openingstijden',
@@ -62,7 +63,7 @@ const c = nl ? {
   vormP: 'We reageren meestal binnen het uur, via het kanaal dat jij kiest.',
   weigerBotcheck: 'We konden niet bevestigen dat dit bericht van een mens komt, dus het is niet verstuurd. Probeer het zo nog eens, of',
   weigerBotcheckWa: 'stuur een WhatsApp',
-  weigerBotcheckWaTekst: 'Hoi VISUAILS, ik probeerde een bericht te sturen via het contactformulier en dat lukte niet.',
+  weigerBotcheckWaTekst: 'Hallo VISUAILS, ik probeerde een bericht te sturen via het contactformulier en dat lukte niet.',
   weigerBotcheckOf: 'of mail',
   vNaam: 'Naam',
   vNaamMelding: 'Vul je naam in, dan weten we wie er schrijft.',
@@ -108,7 +109,7 @@ const c = nl ? {
   waKop: 'WhatsApp',
   waP: 'Usually replies within the hour.',
   waCta: 'Chat on WhatsApp',
-  waTekst: 'Hi VISUAILS, I have a question.',
+  waTekst: 'Hello VISUAILS, I have a question.',
   mailKop: 'Email',
   mailP: 'For a long request, an invoice question or files you want to attach.',
   urenKop: 'Opening hours',
@@ -123,7 +124,7 @@ const c = nl ? {
   vormP: 'We usually reply within the hour, by your preferred channel.',
   weigerBotcheck: 'We could not confirm this message came from a person, so it was not sent. Try again in a moment, or',
   weigerBotcheckWa: 'send a WhatsApp',
-  weigerBotcheckWaTekst: 'Hi VISUAILS, I tried to send a message through the contact form and it did not go through.',
+  weigerBotcheckWaTekst: 'Hello VISUAILS, I tried to send a message through the contact form and it did not go through.',
   weigerBotcheckOf: 'or email',
   vNaam: 'Name',
   vNaamMelding: 'Add your name, so we know who is writing.',
@@ -158,7 +159,7 @@ const c = nl ? {
   slotP: `You send what a normal order needs and get ${SAMPLE.deliverable} back. One per business.`,
   slotCta2: 'See pricing',
 };
-const PIJL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5l7-7M5.5 4.5h6v6"/></svg>';
+const PIJL = ikoon('pijl-schuin');
 /* Het beeld in de opening: afvinklijst 20 (v20-opening a), live sinds afvinklijst 21. Zie KopBeeld.astro. */
 const BEELD = {
   soort: 'getal' as const,

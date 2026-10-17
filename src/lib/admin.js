@@ -38,6 +38,7 @@
 // different relationships to the site, not an inconsistency.
 
 import { hashToken, mintToken, portalUrl } from './token.js';
+import { aanhefTekst } from './aanhef.js';
 import { portalVoorvertoning } from './portal.js';
 import { WORDMARK_VIEWBOX, WORDMARK_PATHS } from '../data/wordmarkPath.js';
 /* Het getekende woordmerk (14 oktober 2026, /admin in de hal), zoals in Studio,
@@ -261,6 +262,8 @@ import {
   greeting as mailGreeting,
   bedrag as mailBedrag,
   datum as mailDatum,
+  kenmerk as mailKenmerk,
+  linkUit as mailLinkUit,
 } from './mailTemplate.js';
 /* De vragenregel onder elke klantmail (punt 7.07, 8 oktober 2026). */
 import { vragen as mailVragen } from './mailTemplate.js';
@@ -1356,7 +1359,7 @@ async function handleRevisionResolve({ request, env }, fileId) {
         lang: nlR ? 'nl' : 'en',
         preheader: nlR ? 'Op een van je beelden hoefde niets te veranderen.' : 'One of your images did not need changing.',
         body: [
-          mailH1(nlR ? 'Antwoord op je revisie' : 'An answer to your revision', esc(status.ref)),
+          mailH1(nlR ? 'Antwoord op je revisie' : 'An answer to your revision', mailKenmerk('bestelling', status.ref, nlR ? 'nl' : 'en')),
           mailP(mailGreeting(status.name, nlR ? 'nl' : 'en')),
           mailP(nlR
             ? 'We hebben naar het beeld gekeken dat je aanmerkte. Dit is ons antwoord:'
@@ -1364,7 +1367,7 @@ async function handleRevisionResolve({ request, env }, fileId) {
           mailQuote(esc(fixed)),
           mailP(nlR
             ? 'Het beeld staat weer klaar om goed te keuren. Ben je het er niet mee eens? Beantwoord deze mail, dan kijken we samen.'
-            : 'The image is ready to approve again. Disagree? Reply to this mail and we look at it together.', { top: 14 }),
+            : 'The image is ready to approve again. Disagree? Reply to this mail and we look at it together.'),
         ].join(''),
       }),
     }).catch((e) => console.error('[admin] antwoord op revisie niet gemaild —', e?.message || e));
@@ -1476,7 +1479,7 @@ async function handleAboWeerLopen(context, customerId, admin) {
     customerId, detail: `${sub.ref}: weer laten lopen na een terugboeking${vrij ? `, ${vrij} credits vrij` : ''}`,
   }).catch(() => {});
   const klant = await env.DB.prepare('SELECT email, brand, name FROM customers WHERE id = ?1').bind(customerId).first().catch(() => null);
-  if (klant?.email) await mailAboWijziging(env, { soort: 'hervat', sub, customer: klant, lang: 'nl' }).catch(() => {});
+  if (klant?.email) await mailAboWijziging(env, { soort: 'hervat', sub, customer: klant, lang: 'nl', direct: false }).catch(() => {});
   return terug('loopt');
 }
 
@@ -3107,7 +3110,7 @@ export function ontbreektBlok(order, lijst, { tel = '', nl = false, land = '' } 
      blijft beslissen of Bellen voorop staat. */
   const link = { ...waLink('fotos', { ...order, tel, land }, { lijst }), belEerst: nl };
   const tekst = link.tekst;
-  const onderwerp = order?.lang === 'en' ? `${order.ref} — missing photos` : `${order.ref} — ontbrekende foto’s`;
+  const onderwerp = order?.lang === 'en' ? `Missing photos — ${order.ref}` : `Ontbrekende foto’s — ${order.ref}`;
   const wie = order?.brand || order?.name || 'de klant';
   return `<div class="warnline is-rood ontbreekt-blok" id="ontbreekt">
   <p><strong>${esc(ontbreektLabel(lijst))}</strong> &mdash; ${ontbrekendRegels(lijst, 'nl').map(esc).join('; ')}.</p>
@@ -3157,7 +3160,7 @@ export function betaalContactRegel(order, contact = {}, nu = new Date()) {
   const o = { ...order, ...contact };
   const klok = betaalDag(o, nu);
   const link = waLink('betaling', o);
-  const onderwerp = order?.lang === 'en' ? `${order.ref} — payment still open` : `${order.ref} — betaling staat open`;
+  const onderwerp = order?.lang === 'en' ? `Payment still open — ${order.ref}` : `Betaling staat open — ${order.ref}`;
   return `<span class="wa-dag">${klok ? `dag ${klok.dag} van ${klok.van}` : 'wacht op de btw-controle'}</span> `
     + `<span class="pl-contact">${waKnoppen(link, { wie: order?.brand || order?.name || 'de klant', email: order?.email || '', onderwerp })}</span>`;
 }
@@ -5912,17 +5915,16 @@ export function freshLinkEmail({ order, link }) {
     body: [
       mailH1(
         nl ? 'Hier is je nieuwe link' : 'Here is your new link',
-        nl ? `Referentie ${esc(order.ref)}` : `Reference ${esc(order.ref)}`,
+        mailKenmerk('bestelling', order.ref, nl ? 'nl' : 'en'),
       ),
       mailP(hi),
       mailP(nl
         ? 'Je vroeg om een nieuwe link naar je bestelling. Hieronder staat hij. Er is niets veranderd aan je beelden — dit is dezelfde bestelling, met een werkende ingang.'
         : 'You asked for a new link to your order. Here it is. Nothing about your images has changed — this is the same order, with a working way in.'),
       mailButton(link, nl ? 'Open je bestelling' : 'Open your order'),
-      '<div style="height:22px;font-size:0;line-height:0">&nbsp;</div>',
       mailNote(nl
-        ? `Deze link vervangt de vorige en werkt ${HANDLINK_DAGEN} dagen. Je opgeleverde beelden blijven tot ${DELIVERY_DAYS} dagen na levering bij ons staan.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`
-        : `This link replaces the previous one and works for ${HANDLINK_DAGEN} days. Your delivered images stay with us until ${DELIVERY_DAYS} days after delivery.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`),
+        ? `Deze link vervangt de vorige en werkt ${HANDLINK_DAGEN} dagen. Je opgeleverde beelden blijven tot ${DELIVERY_DAYS} dagen na levering bij ons staan. <br>${mailLinkUit(link)}`
+        : `This link replaces the previous one and works for ${HANDLINK_DAGEN} days. Your delivered images stay with us until ${DELIVERY_DAYS} days after delivery. <br>${mailLinkUit(link)}`),
       /* 7.07: de vragenregel in plaats van de contactenregel (V21-1). */
       mailVragen(nl ? 'nl' : 'en', order.ref),
     ].join(''),
@@ -6119,18 +6121,17 @@ export function deliveryEmail({ order, link, n, nu = new Date() }) {
     body: [
       mailH1(
         nl ? 'Je bestelling staat klaar' : 'Your order is ready',
-        nl ? `Referentie ${esc(order.ref)}` : `Reference ${esc(order.ref)}`,
+        mailKenmerk('bestelling', order.ref, nl ? 'nl' : 'en'),
       ),
       mailP(hi),
       mailP(uitleg),
       mailButton(link, clip ? (nl ? 'Bekijk je clips' : 'See your clips') : (nl ? 'Bekijk je beelden' : 'See your images')),
-      '<div style="height:22px;font-size:0;line-height:0">&nbsp;</div>',
       mailP(bewaarZin),
       // The URL in full under the button, for the same reason the sign-in mail
       // prints it: a client that strips anchors, or a phone-to-desktop hop.
       mailNote(nl
-        ? `Deze link is de sleutel tot je bestelling — stuur hem gerust door aan een collega die mee moet kijken.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`
-        : `That link is the key to the order — pass it on to a colleague who needs to look.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`),
+        ? `Deze link is de sleutel tot je bestelling — stuur hem gerust door aan een collega die mee moet kijken. <br>${mailLinkUit(link)}`
+        : `That link is the key to the order — pass it on to a colleague who needs to look. <br>${mailLinkUit(link)}`),
       /* 7.07: de vragenregel in plaats van de contactenregel (V21-1). */
       mailVragen(nl ? 'nl' : 'en', order.ref),
     ].join(''),
@@ -6397,7 +6398,7 @@ export function redeliveryEmail({ order, link, n, revisions = 0, note = '', prod
         isRevision
           ? (nl ? 'Je revisie staat klaar' : 'Your revision is ready')
           : (nl ? 'Er staan nieuwe beelden klaar' : 'New images are ready'),
-        nl ? `Referentie ${esc(order.ref)}` : `Reference ${esc(order.ref)}`,
+        mailKenmerk('bestelling', order.ref, nl ? 'nl' : 'en'),
       ),
       mailP(hi),
       mailP(isRevision
@@ -6412,9 +6413,7 @@ export function redeliveryEmail({ order, link, n, revisions = 0, note = '', prod
       note
         ? mailQuote(esc(note).replace(/\n+/g, '<br>'))
         : '',
-      note ? '<div style="height:18px;font-size:0;line-height:0">&nbsp;</div>' : '',
       mailButton(link, nl ? (n === 1 ? 'Bekijk het nieuwe beeld' : 'Bekijk de nieuwe beelden') : (n === 1 ? 'See the new image' : 'See the new images')),
-      '<div style="height:22px;font-size:0;line-height:0">&nbsp;</div>',
       // Tot 4 september 2026 stond hier "deze link vervangt de vorige", en dat
       // klopte: elke aankondiging trok de vorige link in. Sinds migratie 0044
       // blijven eerdere links werken (doorlichting §3.4), dus de mail belooft
@@ -6422,8 +6421,8 @@ export function redeliveryEmail({ order, link, n, revisions = 0, note = '', prod
       // precies het soort zin dat een klant laat twijfelen welke hij moet
       // gebruiken.
       mailNote(nl
-        ? `Je eerdere link blijft ook werken; allebei brengen je naar dezelfde bestelling.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`
-        : `Your earlier link keeps working too; both take you to the same order.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`),
+        ? `Je eerdere link blijft ook werken; allebei brengen je naar dezelfde bestelling. <br>${mailLinkUit(link)}`
+        : `Your earlier link keeps working too; both take you to the same order. <br>${mailLinkUit(link)}`),
       /* 7.07: de vragenregel in plaats van de contactenregel (V21-1). */
       mailVragen(nl ? 'nl' : 'en', order.ref),
     ].join(''),
@@ -7293,7 +7292,7 @@ export function tegoedMail({ naam, lang = 'nl', cents, reden, saldoCents, studio
     lang: nl ? 'nl' : 'en',
     preheader: nl ? `${mailBedrag(cents, 'nl')} tegoed, voor je volgende bestelling.` : `${mailBedrag(cents, 'en')} credit, for your next order.`,
     body: [
-      mailH1(nl ? 'Er staat tegoed voor je klaar' : 'There is credit waiting for you', mailBedrag(cents, nl ? 'nl' : 'en')),
+      mailH1(nl ? 'Er staat tegoed voor je klaar' : 'There is credit waiting for you', mailKenmerk('tegoed', mailBedrag(cents, nl ? 'nl' : 'en'), nl ? 'nl' : 'en')),
       mailP(mailGreeting(naam, nl ? 'nl' : 'en')),
       mailQuote(esc(reden)),
       mailP(nl
@@ -8497,12 +8496,13 @@ async function handleModelStatus({ request, env }, modelId) {
           lang,
           preheader: nl ? 'Vanaf nu te kiezen in elke bestelling.' : 'From now on you can pick it in any order.',
           body: [
-            mailH1(nl ? 'Je merkmodel staat klaar' : 'Your brand model is ready', naam ? esc(naam) : ''),
+            mailH1(nl ? 'Je merkmodel staat klaar' : 'Your brand model is ready', naam ? mailKenmerk('merkmodel', naam, lang) : ''),
             mailP(mailGreeting((klant && klant.name) || (open[0] && open[0].name) || '', lang)),
             mailP(nl
               ? `${naam ? `<strong>${esc(naam)}</strong>` : 'Je merkmodel'} is af en vastgelegd op ${esc((klant && klant.brand) || 'je merk')}. Vanaf nu staat het als tegel in het bestelformulier en in VISUAILS Studio onder “Je vaste look”: kies het per bestelling, of zet het als standaard voor een dienst. We gebruiken dit gezicht voor geen enkel ander merk.`
               : `${naam ? `<strong>${esc(naam)}</strong>` : 'Your brand model'} is finished and tied to ${esc((klant && klant.brand) || 'your brand')}. From now on it is a tile in the order form and in VISUAILS Studio under “Your fixed look”: pick it per order, or set it as the default for a service. We never use this face for any other brand.`),
             mailButton(`${origin}${nl ? '/nl' : ''}/account/brand-kit/`, nl ? 'Bekijk je merkmodel' : 'See your brand model'),
+            mailVragen(lang, '', { over: nl ? 'mijn merkmodel' : 'my brand model' }),
           ].join(''),
         }),
       }).catch((e) => console.error('[admin] merkmodelmail niet verstuurd —', e?.message || e));
@@ -11005,7 +11005,7 @@ async function handleFormatenPost(context, admin) {
   const form = await request.formData().catch(() => null);
   const id = Number(form?.get('id'));
   const origin = (() => { try { return new URL(request.url).origin; } catch { return 'https://visuails.com'; } })();
-  const mailDeps = { origin, sendMail, mail: { shell: mailShell, h1: mailH1, p: mailP, button: mailButton, greeting: mailGreeting, vragen: mailVragen, esc } };
+  const mailDeps = { origin, sendMail, mail: { shell: mailShell, h1: mailH1, p: mailP, button: mailButton, greeting: mailGreeting, vragen: mailVragen, esc, kenmerk: mailKenmerk } };
   /* B31 (doorloop 27): "Klant mailen" bij een verzoek dat FORMATEN.bat al op
      Klaar zette. */
   if (String(form?.get('do') || '') === 'mail') {
@@ -11477,12 +11477,14 @@ function contactTekst(o, vandaag) {
       ? `${mailDatum(o.window_start, taal)} ${nl ? 'of' : 'or'} ${mailDatum(o.window_end, taal)}`
       : mailDatum(o.window_start, taal))
     : '';
+  /* De aanhef van src/lib/aanhef.js: Lucas stuurt dit nu (17 oktober 2026). */
+  const groet = aanhefTekst(naam, taal, { nu: new Date(), land: o.country || o.c_country || o.land || '' });
   if (nl) {
-    return `Hoi${naam ? ` ${naam}` : ''}, over ${o.ref} (${wat}): we hebben iets meer tijd nodig dan gepland. `
+    return `${groet} over ${o.ref} (${wat}): we hebben iets meer tijd nodig dan gepland. `
       + (venster ? `De nieuwe leverdatum is ${venster}. ` : 'We verwachten het binnen een paar dagen af te hebben. ')
       + 'Sorry voor het ongemak — je hoort van ons zodra het klaarstaat. VISUAILS';
   }
-  return `Hi${naam ? ` ${naam}` : ''}, about ${o.ref} (${wat}): we need a little more time than planned. `
+  return `${groet} about ${o.ref} (${wat}): we need a little more time than planned. `
     + (venster ? `The new delivery date is ${venster}. ` : 'We expect to have it ready within a few days. ')
     + 'Sorry for the inconvenience — you will hear from us the moment it is ready. VISUAILS';
 }
@@ -11492,7 +11494,7 @@ function contactKnoppen(o, vandaag) {
   const tel = waNummer(o.phone || o.c_phone, o.land);
   /* Naloop A2: is het landnummer onzeker, dan geen wa.me maar wel bellen. */
   const telHref = String(o.phone || o.c_phone || '').replace(/[^\d+]/g, '');
-  const onderwerp = (o.lang || 'nl') !== 'en' ? `${o.ref} — nieuwe leverdatum` : `${o.ref} — new delivery date`;
+  const onderwerp = (o.lang || 'nl') !== 'en' ? `Nieuwe leverdatum — ${o.ref}` : `New delivery date — ${o.ref}`;
   return `
 <div class="pl-contact">
   ${tel
@@ -12494,7 +12496,7 @@ async function handleVatDecision({ request, env }, orderId, admin) {
         lang: nlV ? 'nl' : 'en',
         preheader: nlV ? 'Voordat je kunt betalen, willen we iets nagaan.' : 'Before you can pay, we want to check something.',
         body: [
-          mailH1(nlV ? 'Even een vraag' : 'A quick question', nlV ? `Referentie ${esc(order.ref)}` : `Reference ${esc(order.ref)}`),
+          mailH1(nlV ? 'Even een vraag' : 'A quick question', mailKenmerk('bestelling', order.ref, nlV ? 'nl' : 'en')),
           mailP(hi),
           mailP(nlV
             ? `We hebben de btw-gegevens bij <strong>${esc(order.ref)}</strong> nagekeken en konden ze niet bevestigen. Daarom staat er nog geen betaallink klaar. Beantwoord deze mail met je btw-nummer zoals het bij de Belastingdienst (of in je eigen land) staat, of laat weten dat je geen btw-nummer hebt. Dan sturen we je dezelfde dag de betaallink.`

@@ -36,6 +36,7 @@
  * kent de uitzondering).
  */
 import { laptopReeks } from '../data/laptopSlides.js';
+import { ikoon, IKOON } from '../data/iconen.js';
 import { FOTO, SCHERMEN, inFoto } from '../data/halLaptop.js';
 import { RESOLUTIE } from '../data/pricing.js';
 import { standenVoor, standPad, standSrcset } from '../data/halStanden.js';
@@ -119,9 +120,9 @@ const SIZES = '(max-width: 900px) 120vw, 75vw';
     <div class="hl-bediening" data-hl-bediening>
       <p class="hl-naam"><b data-hl-naam>{SET[eerst.set as SetNaam].naam}</b><span class="hl-teller" data-hl-teller>{T.van(1, standen.length)}</span></p>
       <span class="hl-streep" aria-hidden="true"><i data-hl-streep></i></span>
-      <button type="button" class="h-cirkel h-cirkel-klein" data-hl-stap="-1" aria-label={T.vorige}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8h-11M7 3.5L2.5 8 7 12.5" /></svg></button>
-      <button type="button" class="h-cirkel h-cirkel-klein" data-hl-stap="1" aria-label={T.volgende}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5L13.5 8 9 12.5" /></svg></button>
-      <button type="button" class="h-cirkel h-cirkel-klein hl-pauze" data-hl-pauze aria-pressed="false" aria-label={T.pauze} data-uit={T.pauze} data-aan={T.speel} hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path class="hl-p-uit" d="M6 4v8M10 4v8" /><path class="hl-p-aan" d="M5.5 3.8v8.4L12.5 8z" /></svg></button>
+      <span class="h-paar"><button type="button" class="h-cirkel h-cirkel-klein" data-hl-stap="-1" aria-label={T.vorige}><Fragment set:html={ikoon('pijl-links')} /></button>
+      <button type="button" class="h-cirkel h-cirkel-klein" data-hl-stap="1" aria-label={T.volgende}><Fragment set:html={ikoon('pijl')} /></button></span>
+      <button type="button" class="h-cirkel h-cirkel-klein hl-pauze" data-hl-pauze aria-pressed="false" aria-label={T.pauze} data-uit={T.pauze} data-aan={T.speel} hidden><svg class="ik" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="hl-p-uit" fill-rule="evenodd" d={IKOON.pauze} /><path class="hl-p-aan" fill-rule="evenodd" d={IKOON.afspelen} /></svg></button>
     </div>
   )}
   <p class="hl-uitleg">{T.uitleg}</p>

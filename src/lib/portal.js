@@ -218,7 +218,7 @@ const COPY = {
     rrDoneBody: (day, n) => `On ${day} you flagged ${n === 1 ? '1 image' : `${n} images`}; the new version${n === 1 ? ' is' : 's are'} above, with your files. That was this order's revision round. If something is still not right, send us a message.`,
     rrUsedBody: (day, n, open) => `You sent ${n === 1 ? '1 image' : `${n} images`} on ${day}${open && open < n ? ` — ${open} still open, you withdrew the rest` : ''}. That is the round that comes with this order, so the form is closed — but we are not. Anything else about this order, message us and we will sort it out.`,
     rrUsedWa: 'Message us on WhatsApp',
-    rrWaText: (ref) => `Hi VISUAILS, about order ${ref} — I have a question after my revision round.`,
+    rrWaText: (ref) => `Hello VISUAILS, about order ${ref} — I have a question after my revision round.`,
     rrRevokedTitle: 'Revisions are paused on your account',
     rrRevokedBody: 'Message us and we will pick it up with you directly.',
 
@@ -322,7 +322,7 @@ const COPY = {
     rrDoneBody: (day, n) => `Je gaf op ${day} ${n === 1 ? '1 beeld' : `${n} beelden`} door; ${n === 1 ? 'de nieuwe versie staat' : 'de nieuwe versies staan'} hierboven, bij je bestanden. De revisieronde van deze bestelling is daarmee gebruikt. Klopt er toch nog iets niet, stuur ons een bericht.`,
     rrUsedBody: (day, n, open) => `Je hebt op ${day} ${n === 1 ? '1 beeld' : `${n} beelden`} doorgegeven${open && open < n ? ` — daarvan ${open === 1 ? 'staat er nog 1' : `staan er nog ${open}`} open, de rest heb je ingetrokken` : ''}. Dat is de ronde die bij deze bestelling hoort, dus het formulier is dicht — wij niet. Is er verder iets met deze bestelling, stuur ons een bericht en we lossen het op.`,
     rrUsedWa: 'Stuur een WhatsApp-bericht',
-    rrWaText: (ref) => `Hoi VISUAILS, over bestelling ${ref} — ik heb een vraag na mijn revisieronde.`,
+    rrWaText: (ref) => `Hallo VISUAILS, over bestelling ${ref} — ik heb een vraag na mijn revisieronde.`,
     rrRevokedTitle: 'Revisies staan op je account op pauze',
     rrRevokedBody: 'Stuur ons een bericht, dan pakken we het rechtstreeks met je op.',
 

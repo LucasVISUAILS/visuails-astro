@@ -83,7 +83,7 @@ import { nieuweMeter, metMeter, telFetch, drukteRegel, ruimte, noteerStop, plan 
 import { nachtrun as boekhoudingNachtrun } from '../src/lib/eboekhouden.js';
 import { shell as mailShell, h1 as mailH1, p as mailP, spamNote as mailSpamNote, datum as mailDatum, button as mailButton, greeting as mailGreeting } from '../src/lib/mailTemplate.js';
 /* De vragenregel onder een klantmail (punt 7.07, 8 oktober 2026). */
-import { vragen as mailVragen } from '../src/lib/mailTemplate.js';
+import { vragen as mailVragen, kenmerk as mailKenmerk, C as MAILKLEUR } from '../src/lib/mailTemplate.js';
 /* Stil afronden na de revisietermijn (punt 3.03, 8 oktober 2026). */
 import { STIL_AFRONDEN_SQL, STIL_AFRONDEN_DAGEN, rondStilAf } from '../src/lib/close.js';
 /* De klant bereiken met een vaste tekst (punt 7.05, 8 oktober 2026). */
@@ -539,7 +539,7 @@ async function cancelStaleApprovals(env) {
          "binnen": in de lijsten, in de tellers, en met haar tegoed
          vastgehouden. Na ONBETAALD_VERVAL_DAGEN vervalt ze nu ook, met
          dezelfde mail. Abonnementswerk (payment_status 'plan') valt erbuiten. */
-      `SELECT id, ref, email, lang, reviewed_at, total_cents, vat_cents, details_json, review_state, customer_id
+      `SELECT id, ref, email, name, lang, reviewed_at, total_cents, vat_cents, details_json, review_state, customer_id
          FROM orders
         WHERE COALESCE(payment_status, 'unpaid') = 'unpaid'
           AND COALESCE(total_cents, 0) > 0
@@ -638,12 +638,14 @@ async function mailVervallen(env, o, nl) {
   try {
     await sendMail(env, {
       to: o.email,
-      subject: nl ? `Bestelling ${o.ref} is vervallen` : `Order ${o.ref} has expired`,
+      /* Het nummer achteraan, zoals in elk ander onderwerp (17 oktober 2026). */
+      subject: nl ? `Je bestelling is vervallen — ${o.ref}` : `Your order has expired — ${o.ref}`,
       html: mailShell({
         lang,
         preheader: nl ? 'Er is niets in rekening gebracht.' : 'Nothing has been charged.',
         body: [
-          mailH1(nl ? 'Je bestelling is vervallen' : 'Your order has expired', o.ref),
+          mailH1(nl ? 'Je bestelling is vervallen' : 'Your order has expired', mailKenmerk('bestelling', o.ref, lang)),
+          mailP(mailGreeting(o.name, lang)),
           mailP(nl
             ? (o.review_state === 'approved'
               ? `Je bestelling ${o.ref} is vervallen omdat er niet betaald is binnen ${inWoorden(BETALEN_NA_BTW_AKKOORD, 'nl')} dagen nadat wij hem hadden nagekeken. Er is niets in rekening gebracht.`
@@ -1322,7 +1324,7 @@ async function issuePendingInvoices(env) {
         /* De webhook kon deze nota niet mailen — hij had toen nog geen pdf. Nu wel,
            dus nu gaat hij alsnog de deur uit (4 september 2026). */
         if (klaar?.status === 'issued') {
-          const wie = await env.DB.prepare('SELECT ref, email, lang FROM orders WHERE id = ?1')
+          const wie = await env.DB.prepare('SELECT ref, email, lang, name FROM orders WHERE id = ?1')
             .bind(note.order_id).first().catch(() => null);
           if (wie) await mailCreditNote(env, { order: wie, note: klaar });
         }
@@ -1444,7 +1446,7 @@ async function grantPrepaidMonths(env, nu = new Date()) {
     `SELECT s.id, s.ref, s.plan, s.term, s.window_day, s.started_at, s.amount_cents, s.slots_json, s.cancelled_at,
             (SELECT COUNT(*) FROM subscription_months m WHERE m.subscription_id = s.id) AS maanden,
             (SELECT MAX(m.month) FROM subscription_months m WHERE m.subscription_id = s.id) AS laatste,
-            c.email, c.brand, ${KLANT_TAAL_SQL} AS lang
+            c.email, c.brand, COALESCE(NULLIF(TRIM(c.first_name), ''), c.name) AS name, ${KLANT_TAAL_SQL} AS lang
        FROM subscriptions s
        LEFT JOIN customers c ON c.id = s.customer_id
       WHERE s.status = 'active' AND s.term = 'prepaid'`
@@ -1539,7 +1541,8 @@ async function mailLaatsteMaand(env, o) {
         lang,
         preheader: nl ? `Je jaar loopt${tot ? ` tot ${tot}` : ' deze maand af'}.` : `Your year runs${tot ? ` until ${tot}` : ' out this month'}.`,
         body: [
-          mailH1(nl ? 'Dit is de laatste maand van je jaar' : 'This is the last month of your year', o.ref),
+          mailH1(nl ? 'Dit is de laatste maand van je jaar' : 'This is the last month of your year', mailKenmerk('abonnement', o.ref, lang)),
+          mailP(mailGreeting(o.name, lang)),
           mailP(nl
             ? `Je credits voor deze maand staan klaar. Je vooruitbetaalde jaar loopt${tot ? ` tot <strong>${tot}</strong>` : ' deze maand af'}; daarna stopt het vanzelf en wordt er niets afgeschreven.`
             : `Your credits for this month are ready. Your prepaid year runs${tot ? ` until <strong>${tot}</strong>` : ' out this month'}; after that it stops by itself and nothing is charged.`),
@@ -1549,8 +1552,9 @@ async function mailLaatsteMaand(env, o) {
             : (nl ? 'Wil je daarna door? Kies dan een nieuw abonnement; je look, je modellen en alles wat je hebt laten maken blijven staan.'
               : 'Want to carry on after that? Pick a new plan; your look, your models and everything you have had made stay where they are.')),
           mailButton(`https://visuails.com${nl ? '/nl' : ''}/account/plan`, nl ? 'Naar je abonnement' : 'Go to your plan'),
-          opgezegd ? '' : mailP(`<a href="https://visuails.com${nl ? '/nl' : ''}/plans">${nl ? 'Bekijk de abonnementen' : 'See the plans'}</a>`),
-          /* Geen contactenregel meer (7.07, V21-1). */
+          opgezegd ? '' : mailP(`<a href="https://visuails.com${nl ? '/nl' : ''}/plans" style="color:${MAILKLEUR.head};font-weight:700">${nl ? 'Bekijk de abonnementen' : 'See the plans'} &rarr;</a>`),
+          /* De vragenregel, zoals in de andere abonnementsmails (17 oktober 2026). */
+          mailVragen(lang, '', { over: nl ? `mijn abonnement ${o.ref}` : `my plan ${o.ref}` }),
         ].join(''),
       }),
     });
@@ -1661,7 +1665,7 @@ async function herinnerCredits(env, nu = new Date()) {
   for (const x of lijst) {
     if (x.aantal < goedkoopste) continue;
     const klant = await env.DB.prepare(
-      `SELECT c.email, c.brand, s.ref, ${KLANT_TAAL_SQL} AS lang
+      `SELECT c.email, c.brand, COALESCE(NULLIF(TRIM(c.first_name), ''), c.name) AS name, s.ref, ${KLANT_TAAL_SQL} AS lang
          FROM customers c
          LEFT JOIN subscriptions s ON s.id = (SELECT id FROM subscriptions WHERE customer_id = c.id ORDER BY id DESC LIMIT 1)
         WHERE c.id = ?1`
@@ -1680,7 +1684,7 @@ async function herinnerCredits(env, nu = new Date()) {
   for (const x of plafond) {
     if (x.boven < goedkoopste) continue;
     const klant = await env.DB.prepare(
-      `SELECT c.email, c.brand, s.ref, ${KLANT_TAAL_SQL} AS lang
+      `SELECT c.email, c.brand, COALESCE(NULLIF(TRIM(c.first_name), ''), c.name) AS name, s.ref, ${KLANT_TAAL_SQL} AS lang
          FROM customers c
          LEFT JOIN subscriptions s ON s.id = ?2
         WHERE c.id = ?1`
@@ -1719,6 +1723,7 @@ async function mailPlafondInZicht(env, o) {
         preheader: nl ? `Je kunt ${o.plafond} credits sparen; ${o.boven} vallen anders weg op ${op}.` : `You can save up to ${o.plafond} credits; otherwise ${o.boven} lapse on ${op}.`,
         body: [
           mailH1(nl ? 'Je spaarplafond is in zicht' : 'Your savings limit is in sight'),
+          mailP(mailGreeting(o.name, nl ? 'nl' : 'en')),
           /* Bij een overstap die op die dag ingaat (15 oktober 2026): dan geldt het
              plafond van het nieuwe plan, en dat is precies waarom er iets wegvalt. */
           o.overstap
@@ -1739,8 +1744,10 @@ async function mailPlafondInZicht(env, o) {
             : '',
           mailButton(`https://visuails.com${nl ? '/nl' : ''}/start`, nl ? 'Bestellen' : 'Order now'),
           mailP(nl
-            ? 'Weet je niet wat je zou laten maken? Het product dat je het vaakst verkoopt, is bijna altijd het goede antwoord. Twijfel je, app ons even; dan denken we mee.'
-            : 'Not sure what to have made? The product you sell most is almost always the right answer. In doubt? Send us a message and we will help you choose.'),
+            ? 'Weet je niet wat je zou laten maken? Het product dat je het vaakst verkoopt, is bijna altijd het goede antwoord.'
+            : 'Not sure what to have made? The product you sell most is almost always the right answer.'),
+          /* "app ons even" had geen link; nu de vragenregel van de andere mails (17 oktober 2026). */
+          mailVragen(nl ? 'nl' : 'en', '', { over: nl ? 'mijn credits' : 'my credits' }),
         ].join(''),
       }),
     });
@@ -1768,6 +1775,7 @@ async function mailCreditsVervallen(env, o) {
         preheader: nl ? `${o.over} credits vervallen op ${op}.` : `${o.over} credits expire on ${op}.`,
         body: [
           mailH1(nl ? 'Er staan nog credits open' : 'You have credits left'),
+          mailP(mailGreeting(o.name, nl ? 'nl' : 'en')),
           /* `geldigMaanden` komt mee uit herinnerCredits() (CREDITS_GELDIG_MAANDEN),
              zodat deze functie geen eigen getal kent. */
           mailP(nl
@@ -1791,10 +1799,10 @@ async function mailCreditsVervallen(env, o) {
           mailP(nl
             ? 'Weet je niet wat je zou laten maken? Het product dat je het vaakst verkoopt, is bijna altijd '
               + 'het goede antwoord — een tweede set beelden van je bestverkopende artikel doet meer dan een '
-              + 'eerste set van iets wat blijft liggen. Twijfel je, app ons even; dan denken we mee.'
+              + 'eerste set van iets wat blijft liggen.'
             : 'Not sure what to have made? The product you sell most is almost always the right answer — '
-              + 'a second set of your best seller does more than a first set of something that sits on the shelf. '
-              + 'In doubt? Send us a message and we will help you choose.'),
+              + 'a second set of your best seller does more than a first set of something that sits on the shelf.'),
+          mailVragen(nl ? 'nl' : 'en', '', { over: nl ? 'mijn credits' : 'my credits' }),
         ].join(''),
       }),
     });
@@ -1822,7 +1830,7 @@ async function pauzeVraag(env, nu = new Date()) {
   const grens = new Date(Date.UTC(nu.getUTCFullYear(), nu.getUTCMonth() - PAUZE_MAX_MAANDEN, nu.getUTCDate()))
     .toISOString().replace('T', ' ').slice(0, 19);
   const { results = [] } = await env.DB.prepare(
-    `SELECT s.id, s.ref, s.plan, s.paused_at, c.email, c.brand, ${KLANT_TAAL_SQL} AS lang
+    `SELECT s.id, s.ref, s.plan, s.paused_at, c.email, c.brand, COALESCE(NULLIF(TRIM(c.first_name), ''), c.name) AS name, ${KLANT_TAAL_SQL} AS lang
        FROM subscriptions s JOIN customers c ON c.id = s.customer_id
       WHERE s.status = 'paused' AND s.pause_reason = 'customer'
         AND s.pauze_vraag_at IS NULL AND s.paused_at IS NOT NULL AND s.paused_at <= ?1
@@ -1851,16 +1859,19 @@ async function mailPauzeVraag(env, o) {
   try {
     await sendMail(env, {
       to: o.email,
-      subject: nl ? `Je abonnement staat ${PAUZE_MAX_MAANDEN} maanden op pauze — hervatten of opzeggen?` : `Your plan has been paused for ${PAUZE_MAX_MAANDEN} months — resume or cancel?`,
+      /* Het nummer achteraan, zoals in de andere abonnementsmails (17 oktober 2026). */
+      subject: nl ? `Je abonnement staat ${PAUZE_MAX_MAANDEN} maanden op pauze: hervatten of opzeggen? — ${o.ref}` : `Your plan has been paused for ${PAUZE_MAX_MAANDEN} months: resume or cancel? — ${o.ref}`,
       html: mailShell({
         lang,
-        preheader: nl ? 'Hervatten of opzeggen? Allebei met één klik in VISUAILS Studio.' : 'Resume or cancel? Both take one click in VISUAILS Studio.',
+        preheader: nl ? 'Allebei met één klik in VISUAILS Studio. Doe je niets, dan wordt er niets afgeschreven.' : 'Both take one click in VISUAILS Studio. If you do nothing, nothing is charged.',
         body: [
-          mailH1(nl ? 'Hervatten of opzeggen?' : 'Resume or cancel?', o.ref || ''),
+          mailH1(nl ? 'Hervatten of opzeggen?' : 'Resume or cancel?', mailKenmerk('abonnement', o.ref, nl ? 'nl' : 'en')),
+          mailP(mailGreeting(o.name, nl ? 'nl' : 'en')),
           mailP(nl
             ? `Je abonnement staat sinds ${sinds} op pauze. Wil je weer beelden laten maken, dan hervat je het in VISUAILS Studio; de volgende afschrijving volgt dan het gewone ritme. Wil je stoppen, dan zeg je het daar op. Doe je niets, dan blijft het op pauze en wordt er niets afgeschreven.`
             : `Your plan has been paused since ${sinds}. If you want images made again, resume it in VISUAILS Studio; the next payment then follows the usual rhythm. If you want to stop, cancel it there. If you do nothing, it stays paused and nothing is collected.`),
           mailButton(`https://visuails.com${nl ? '/nl' : ''}/account/plan`, nl ? 'Naar je abonnement' : 'Go to your plan'),
+          mailVragen(nl ? 'nl' : 'en', '', { over: nl ? `mijn abonnement ${o.ref || ''}`.trim() : `my plan ${o.ref || ''}`.trim() }),
         ].join(''),
       }),
     });
@@ -1975,8 +1986,41 @@ async function incassoSignalen(env) {
  * lopen door dezelfde Nu-doen-lijst als alle andere.
  */
 
+/* Het nachtrapport als brief: dezelfde regels als de platte tekst, opgemaakt.
+   Leest de regels die sendReport() al heeft, zodat tekst en html niet uit elkaar
+   kunnen lopen. */
+function rapportHtml(onderwerp, lines) {
+  const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  /* Een leesteken direct na een adres hoort bij de zin, niet bij de link ("…/admin):"). */
+  const link = (t) => esc(t).replace(/https?:\/\/[^\s<]*[^\s<.,;:!?)]/g, (u) => `<a href="${u}" style="color:${MAILKLEUR.head};word-break:break-all">${u}</a>`);
+  const F = 'Arial,Helvetica,sans-serif';
+  const blok = [];
+  let i = 0;
+  for (; i < lines.length; i++) {
+    const r = lines[i];
+    const item = /^ {2}(\d+)\. (.*)$/.exec(r);
+    const knop = /^ {5}([^:]+): (https?:\/\/\S+)$/.exec(lines[i + 1] || '');
+    if (item) {
+      blok.push(`<p style="margin:0 0 4px;font-family:${F};font-size:15px;line-height:1.55;color:${MAILKLEUR.text}"><b style="color:${MAILKLEUR.accentText}">${item[1]}.</b> ${esc(item[2])}</p>`
+        + (knop ? `<p style="margin:0 0 14px 22px;font-family:${F};font-size:14px"><a href="${esc(knop[2])}" style="color:${MAILKLEUR.head};font-weight:700">${esc(knop[1])} &rarr;</a></p>` : ''));
+      if (knop) i++;
+    } else if (/^ {2}· /.test(r)) {
+      blok.push(`<p style="margin:0 0 6px;font-family:${F};font-size:14px;line-height:1.55;color:${MAILKLEUR.text}">&middot; ${link(r.replace(/^ {2}· /, ''))}</p>`);
+    } else if (/^(NU DOEN|ER GING IETS MIS|Wat er gebeurd is)/.test(r)) {
+      const mis = /^ER GING IETS MIS/.test(r);
+      blok.push(`<p style="margin:18px 0 10px;font-family:${F};font-size:14px;line-height:1.55;font-weight:700;color:${mis ? MAILKLEUR.stRevInk : MAILKLEUR.head}">${link(r)}</p>`);
+    } else if (r.trim()) {
+      blok.push(`<p style="margin:14px 0 0;font-family:${F};font-size:12px;line-height:1.55;color:${MAILKLEUR.muted}">${link(r)}</p>`);
+    }
+  }
+  const [kop, ...rest] = String(onderwerp).split(' — ');
+  const titel = rest.join(' — ') || kop;
+  return mailShell({ lang: 'nl', preheader: titel, body: mailH1(titel.charAt(0).toUpperCase() + titel.slice(1), esc(kop)) + blok.join('') });
+}
+
 /**
- * Het nachtrapport, platte tekst, alleen aan Lucas.
+ * Het nachtrapport, alleen aan Lucas: platte tekst, en sinds 17 oktober 2026 ook als
+ * brief (rapportHtml() hierboven).
  *
  * Sinds 4.05 (V36 = a) altijd: het begint met de Nu-doen-lijst — dezelfde regels,
  * in dezelfde volgorde, als bovenaan /admin — dan wat er misging, dan het
@@ -2001,18 +2045,21 @@ async function sendReport(env, report, problems, lijst = null, nu = Date.now()) 
     console.log(`[cron] geen RESEND_API_KEY, verslag alleen in de log (${onderwerp}):\n` + text);
     return { onderwerp, text };
   }
+  /* ── OOK ALS BRIEF — 17 oktober 2026 ─────────────────────────────────────────
+     Bij de controle van alle mails was dit de enige zonder het briefhoofd: platte
+     tekst, met een eigen aanroep van Resend zonder afzender als FROM_EMAIL
+     ontbrak, en op een telefoon regels van 1100 px breed. Nu gaat hij via
+     sendMail(), met dezelfde platte tekst als tweede deel (de tests lezen die) en
+     een html-deel in de vorm van de andere studiomails: de lijst genummerd, elke
+     knop als link, en wat misging in amber. */
+  /* De brief apart opbouwen: gaat daar iets mis, dan gaat de platte tekst nog. */
+  let html;
+  try { html = rapportHtml(onderwerp, lines); } catch (err) {
+    console.error('[cron] nachtrapport als brief mislukt, alleen tekst —', err?.message || err);
+    html = `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap">${text.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))}</pre>`;
+  }
   try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from: env.FROM_EMAIL,
-        to: [env.NOTIFY_EMAIL],
-        subject: onderwerp,
-        text,
-      }),
-    });
-    if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
+    await sendMail(env, { to: env.NOTIFY_EMAIL || 'hello@visuails.com', subject: onderwerp, text, html });
   } catch (err) {
     console.error('[cron] verslag niet verstuurd —', err?.message || err, '\n' + text);
   }
@@ -2182,3 +2229,6 @@ export const INTAKE = { INTAKE_SCAN_LIMIT, INTAKE_MAX_PAGINAS, INTAKE_TTL_DAYS }
 export const BACKUP_WATCH = { BACKUP_STALE_DAYS, BACKUP_WARN_EVERY_DAYS };
 /* Het rapport zelf, voor tests/nu-doen.test.mjs (4.05). */
 export const RAPPORT = { sendReport };
+/* De klantmails van de cron, voor tests/lib/alle-mails.mjs (de huisstijl van alle
+   mails, 17 oktober 2026). Ze sturen alleen via sendMail(); de toets vangt dat op. */
+export const KLANTMAILS = { mailCreditsVervallen, mailPlafondInZicht, mailLaatsteMaand };

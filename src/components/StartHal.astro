@@ -35,6 +35,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
+import { ikoon, IKOON } from '../data/iconen.js';
 import { waHref } from '../data/whatsapp.js';
 import NieuwTabblad from './NieuwTabblad.astro';
 import Note from './Note.astro';
@@ -127,7 +128,7 @@ const COPY = {
       { naam: sample.cta, href: '/test-sample' },
     ],
     wa: 'Message us on WhatsApp',
-    waText: "Hi VISUAILS, I'm not sure which look fits my products.",
+    waText: "Hello VISUAILS, I'm not sure which look fits my products.",
     aboRegel: (b: string) => `Or from ${b} per product with a plan`,
     kortLabel: 'How it goes',
     kort: [['You send a few photos', `${telwoord(REQUIRED_SHOT_IDS.length, 'en', true)} phone photos per product are enough.`], ['We do the rest', `${levertijdDelen('unattended', 'en').filter(Boolean).join(', ')}.`], ['You approve', 'Image by image, then download everything at once.']],
@@ -165,7 +166,7 @@ const COPY = {
       { naam: sample.cta, href: '/test-sample' },
     ],
     wa: 'App ons',
-    waText: 'Hoi VISUAILS, ik weet niet zeker welke look bij mijn producten past.',
+    waText: 'Hallo VISUAILS, ik weet niet zeker welke look bij mijn producten past.',
     aboRegel: (b: string) => `Of vanaf ${b} per product met een abonnement`,
     kortLabel: 'Zo gaat het',
     kort: [['Jij stuurt een paar foto’s', `${telwoord(REQUIRED_SHOT_IDS.length, 'nl', true)} telefoonfoto’s per product zijn genoeg.`], ['Wij doen de rest', `${levertijdDelen('unattended', 'nl').filter(Boolean).join(', ')}.`], ['Jij keurt goed', 'Beeld voor beeld, daarna alles in één keer downloaden.']],
@@ -190,18 +191,15 @@ const COPY = {
 const c = COPY[lang];
 /* De vier videostijlen, als rij kleine kaarten (v28-start = a). */
 const VIDEO = (nl ? videoNl : videoEn).map((v: any) => ({ slug: v.slug, naam: v.name, zin: v.tagline, prijs: v.cardPrice }));
-const ICOON = {
-  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
-  pijl: '<path d="M4.5 11.5l7-7M5.5 4.5h6v6"/>',
-  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
-  info: '<circle cx="8" cy="8" r="6.2"/><path d="M8 7.2v4.2M8 4.8v.1"/>',
-};
-const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+/* De iconen uit het kit (levering 54, afvinklijst 34): links de naam in dit
+   onderdeel, rechts het icoon in src/data/iconen.js. */
+const ICOON = { rechts: 'pijl', pijl: 'pijl-schuin', check: 'vink', info: 'info' } as const;
+const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
 /* Het etiket "van jouw eigen productfoto's" in drie VORMEN en niet alleen drie
    kleuren (zoals op de oude /start): een vinkje (met), een streep (zonder), en
    plus-en-min (allebei kan). tests/eigenproduct.test.mjs. */
-const EIGEN_VORM: Record<string, string> = { met: '<path d="M3 8.5l3.2 3L13 4.5"/>', zonder: '<path d="M4.5 8h7"/>', beide: '<path d="M8 3.5v5M5.5 6h5M5.5 12h5"/>' };
-const eigenVorm = (stand: string) => `<svg viewBox="0 0 16 16" aria-hidden="true">${EIGEN_VORM[stand] || EIGEN_VORM.met}</svg>`;
+const EIGEN_VORM: Record<string, string> = { met: '<path fill-rule="evenodd" d="' + IKOON.vink + '"/>', zonder: '<path fill-rule="evenodd" d="' + IKOON.streep + '"/>', beide: '<path fill-rule="evenodd" d="' + IKOON.plusmin + '"/>' };
+const eigenVorm = (stand: string) => `<svg class="ik" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${EIGEN_VORM[stand] || EIGEN_VORM.met}</svg>`;
 const DRIE = (n: number) => String(n).padStart(2, '0');
 /* Het beeld in de opening: afvinklijst 20 (v20-opening a), live sinds afvinklijst 21. Zie KopBeeld.astro. */
 const BEELD = {

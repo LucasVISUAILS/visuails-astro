@@ -124,7 +124,7 @@ console.log(`\nde tekenconventies, over ${bestanden.length} bronbestanden`);
     const regels = src.split('\n');
     for (const m of src.matchAll(/"[^"\n]*?\p{L}'\p{L}[^"\n]*?"|`[^`\n]*?\p{L}'\p{L}[^`\n]*?`/gu)) {
       /* ── DE WHATSAPP-BERICHTEN ZIJN DE UITZONDERING ─────────────────────
-         `waHref('Hi VISUAILS, I'd like to order…')` is geen tekst op de site.
+         `waHref('Hello VISUAILS, I'd like to order…')` is geen tekst op de site.
          Hij wordt url-gecodeerd en verschijnt in het invoerveld van WhatsApp,
          in een andere app, op het toetsenbord van de klant. Daar is de rechte
          apostrof de gewone en de typografische de vreemde.

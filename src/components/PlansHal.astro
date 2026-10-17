@@ -23,6 +23,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
+import { ikoon, IKOON } from '../data/iconen.js';
 import {
   euro, vatLabel, plans, PLAN_AMOUNT, CREDITS_GELDIG_MAANDEN,
   STOCK_OFF_BRAND, STOCK_ON_BRAND,
@@ -136,13 +137,10 @@ const COPY = {
   },
 };
 const c = COPY[lang];
-const ICOON = {
-  rechts: '<path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/>',
-  pijl: '<path d="M4.5 11.5l7-7M5.5 4.5h6v6"/>',
-  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
-  onder: '<path d="M8 2.5v11M3.5 9L8 13.5 12.5 9"/>',
-};
-const ik = (n: keyof typeof ICOON) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICOON[n]}</svg>`;
+/* De iconen uit het kit (levering 54, afvinklijst 34): links de naam in dit
+   onderdeel, rechts het icoon in src/data/iconen.js. */
+const ICOON = { rechts: 'pijl', pijl: 'pijl-schuin', check: 'vink', onder: 'pijl-omlaag' } as const;
+const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
 /* Het beeld in de opening: afvinklijst 20 (v20-opening a), live sinds afvinklijst 21. Zie KopBeeld.astro. */
 const KB_PLAN = 'studio';
 const KB_CR = PLAN_CREDITS[KB_PLAN];

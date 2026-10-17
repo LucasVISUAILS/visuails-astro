@@ -16,12 +16,21 @@
  */
 ---
 <script>
+  import { slaOmIn } from '../scripts/omslag.js';
+  import { knoppenNaastElkaar } from '../scripts/knoppaar.js';
   const zet = () => {
     if (!document.querySelector('.h-pagina')) return;
     document.documentElement.classList.add('h-js');
     const rustig = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    knoppenNaastElkaar();
     const io = new IntersectionObserver((rijen) => {
-      for (const r of rijen) if (r.isIntersecting) { r.target.classList.add('is-in'); io.unobserve(r.target); }
+      for (const r of rijen) if (r.isIntersecting) {
+        /* levering 55: de hoogte voor de helling van de wis, en de getallen slaan om */
+        (r.target as HTMLElement).style.setProperty('--h-hoog', `${Math.round(r.boundingClientRect.height)}px`);
+        r.target.classList.add('is-in');
+        slaOmIn(r.target as HTMLElement);
+        io.unobserve(r.target);
+      }
     }, { threshold: 0.2, rootMargin: '0px 0px -6% 0px' });
     for (const el of document.querySelectorAll('.h-pagina .h-in:not(.is-in)')) {
       if (rustig) el.classList.add('is-in'); else io.observe(el);

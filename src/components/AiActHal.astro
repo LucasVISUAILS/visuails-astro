@@ -6,6 +6,7 @@
  * alleen de omhulling is JuridischHal.astro, zoals bij de vier andere juridische documenten.
  */
 import JuridischHal from './JuridischHal.astro';
+import { ikoon, IKOON } from '../data/iconen.js';
 import NieuwTabblad from './NieuwTabblad.astro';
 import { waHref } from '../data/whatsapp.js';
 // VISUAILS — /ai-act. Rewritten 3 August 2026 from copy supplied by Lucas,
@@ -296,7 +297,7 @@ const COPY = {
     ctaP: 'Email us or send a message on WhatsApp. We will help you work out where the disclosure should sit, even if you are not a customer yet.',
     ctaBtn: 'Contact us',
     wa: 'WhatsApp',
-    waText: 'Hi VISUAILS, I have a question about the AI Act and your images.',
+    waText: 'Hello VISUAILS, I have a question about the AI Act and your images.',
 
     figNoteH: 'What is photographed and what is built',
   },
@@ -407,7 +408,7 @@ const COPY = {
     ctaP: 'Mail ons of stuur een bericht via WhatsApp. We denken mee over waar de vermelding komt te staan, ook als je nog geen klant bent.',
     ctaBtn: 'Neem contact op',
     wa: 'WhatsApp',
-    waText: 'Hoi VISUAILS, ik heb een vraag over de AI Act en jullie beelden.',
+    waText: 'Hallo VISUAILS, ik heb een vraag over de AI Act en jullie beelden.',
 
     figNoteH: 'Wat is gefotografeerd en wat is gebouwd',
   },
@@ -541,7 +542,7 @@ const waLink = waHref(c.waText);
     <h2 data-niet-in-inhoud>{c.ctaH}</h2>
     <p>{c.ctaP}</p>
     <p class="h-acties">
-      <a class="h-knop h-knop-inkt" href={lp('/contact')}>{c.ctaBtn}<span class="o" aria-hidden="true" set:html={'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/></svg>'} /></a>
+      <a class="h-knop h-knop-inkt" href={lp('/contact')}>{c.ctaBtn}<span class="o" aria-hidden="true" set:html={ikoon('pijl')} /></a>
       <a class="h-knop h-knop-lijn" href={waLink} target="_blank" rel="noopener">{c.wa}<NieuwTabblad lang={lang} /></a>
     </p>
   </div>

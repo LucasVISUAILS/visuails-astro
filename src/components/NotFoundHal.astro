@@ -9,6 +9,7 @@
  */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
+import { ikoon, IKOON } from '../data/iconen.js';
 import { waHref } from '../data/whatsapp.js';
 import NieuwTabblad from './NieuwTabblad.astro';
 import HalBeweging from './HalBeweging.astro';
@@ -26,7 +27,7 @@ const c = nl ? {
   home: 'Terug naar home',
   start: 'Start een bestelling',
   wa: 'Meld wat er stuk is',
-  waTekst: 'Hoi VISUAILS, ik volgde een link die niet werkte.',
+  waTekst: 'Hallo VISUAILS, ik volgde een link die niet werkte.',
   verderH: ['Waar de meeste mensen', 'heen gaan.'],
   verder: [
     ['/catalog', 'Catalog', 'Vier foto’s per product op een schone achtergrond.'],
@@ -42,7 +43,7 @@ const c = nl ? {
   home: 'Back to home',
   start: 'Start an order',
   wa: 'Tell us what’s broken',
-  waTekst: 'Hi VISUAILS, I followed a link that didn’t work.',
+  waTekst: 'Hello VISUAILS, I followed a link that didn’t work.',
   verderH: ['Where most people', 'are heading.'],
   verder: [
     ['/catalog', 'Catalog', 'Four photos per product on a clean background.'],
@@ -53,9 +54,9 @@ const c = nl ? {
     ['/contact', 'Contact', 'A question this page does not answer.'],
   ],
 };
-const PIJL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5l7-7M5.5 4.5h6v6"/></svg>';
+const PIJL = ikoon('pijl-schuin');
 /* De pijl van elke inktknop in de hal (rondgang 13 okt: hier stond een huisje). */
-const PIJL_R = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/></svg>';
+const PIJL_R = ikoon('pijl');
 ---
 <div class="h-pagina h-nf-pagina">
   <header class="h-nf-kop">

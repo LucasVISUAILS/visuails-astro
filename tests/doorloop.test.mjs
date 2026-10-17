@@ -125,7 +125,8 @@ console.log('\nde abonnementsmail');
   ok('maar wel de inlogknop', /naar=plan/.test(verstuurd[1]?.html || ''), true);
   ok('de eerste maand geeft een mail', gelukt && /SUB-TEST-1/.test(verstuurd[0]?.subject || ''), true);
   /* Sinds 24 september 2026 is de eerste maand de welkomstmail. */
-  ok('met "Welkom bij VISUAILS — je abonnement loopt" in het onderwerp', /Welkom bij VISUAILS — je abonnement loopt/.test(verstuurd[0]?.subject || ''), true);
+  /* 17 oktober 2026: het nummer staat achteraan na " — ", zoals in elke klantmail. */
+  ok('met "Welkom bij VISUAILS: je abonnement loopt — <nummer>" in het onderwerp', /^Welkom bij VISUAILS: je abonnement loopt — \S+$/.test(verstuurd[0]?.subject || ''), true);
   ok('met de credits per maand erin', /120 credits per maand/.test(verstuurd[0]?.html || ''), true);
   ok('en het bruto bedrag', /€ 955,90/.test(verstuurd[0]?.html || ''), true);
   const webhook = lees('../functions/api/webhook/mollie.js');
@@ -229,9 +230,10 @@ console.log('\nronde drie: cronmails, portaal, gegevens, terugknop, video');
   const verstuurd = [];
   const sendMail = async (_env, m) => { verstuurd.push(m); };
   /* mailLegeWachtrij() is weg met het weeksysteem (ronde 10, 8 oktober 2026). */
-  const maak = new Function('sendMail', 'mailShell', 'mailH1', 'mailP', 'mailSpamNote', 'mailDatum', 'mailButton', 'SERVICE_CREDITS', 'kindLabel', 'mailGreeting',
+  /* mailVragen: de vragenregel staat sinds 17 oktober 2026 ook onder de creditherinnering. */
+  const maak = new Function('sendMail', 'mailShell', 'mailH1', 'mailP', 'mailSpamNote', 'mailDatum', 'mailButton', 'SERVICE_CREDITS', 'kindLabel', 'mailGreeting', 'mailVragen',
     `${knip('creditTips')}\n${knip('mailCreditsVervallen')}\nreturn { mailCreditsVervallen };`);
-  const f = maak(sendMail, tpl.shell, tpl.h1, tpl.p, tpl.spamNote, tpl.datum, tpl.button, SERVICE_CREDITS, kindLabel, tpl.greeting);
+  const f = maak(sendMail, tpl.shell, tpl.h1, tpl.p, tpl.spamNote, tpl.datum, tpl.button, SERVICE_CREDITS, kindLabel, tpl.greeting, tpl.vragen);
   const env = { RESEND_API_KEY: 're_x', FROM_EMAIL: 'x@y.z' };
   await f.mailCreditsVervallen(env, { email: 'a@b.c', ref: 'SUB-X', over: 12, vervalt: '2026-10-10', dagen: 7, lang: 'en' });
   await f.mailCreditsVervallen(env, { email: 'a@b.c', ref: 'SUB-X', over: 12, vervalt: '2026-10-10', dagen: 7, lang: 'nl' });

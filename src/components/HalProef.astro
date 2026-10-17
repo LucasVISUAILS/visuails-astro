@@ -39,6 +39,7 @@
  * credits" in een blok over een proef van €1.
  * ═══════════════════════════════════════════════════════════════════════════ */
 import { TEST_SAMPLE } from '../data/pricing.js';
+import { ikoon, IKOON } from '../data/iconen.js';
 import { geleverd } from '../data/voorbeeldset.js';
 import { localizedPath } from '../i18n/ui.js';
 import NieuwTabblad from './NieuwTabblad.astro';
@@ -52,10 +53,10 @@ const sample = TEST_SAMPLE[lang];
 const pil = label || (nl ? 'Proef' : 'Trial');
 const k = klantTekst(lang);
 const kb = k.blok;
-const PIJL_R = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/></svg>';
+const PIJL_R = ikoon('pijl');
 const extern = /^https?:\/\//.test(alt.href);
 const altHref = extern || alt.href.startsWith('#') ? alt.href : lp(alt.href);
-const PIJL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5l7-7M5.5 4.5h6v6"/></svg>';
+const PIJL = ikoon('pijl-schuin');
 ---
 <section class="h-proef h-in" aria-labelledby={id} data-vis-klant="proefblok" data-vis-klant-kop={`${id}-klant`}>
   <span class="h-korrel" aria-hidden="true"></span>
