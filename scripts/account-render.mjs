@@ -195,7 +195,7 @@ const VORIGE = (() => {
   return d.toISOString().slice(0, 7);
 })();
 const LOCKS = [
-  { style: 'catalog', custom_model_id: 31, roster_model: null, background_hex: '#F7F5F1', ratio: 'portrait45', channels: 'own,bol' },
+  { style: 'catalog', custom_model_id: 31, roster_model: null, background_hex: '#F5F5F5', ratio: 'portrait45', channels: 'own,bol' },
   { style: 'lifestyle', custom_model_id: 31, roster_model: null, background_hex: null, ratio: 'portrait45', channels: null },
 ];
 const SUB_MONTHS = MAAT ? [

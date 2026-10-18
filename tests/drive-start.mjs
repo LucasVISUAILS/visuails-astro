@@ -81,7 +81,8 @@ for (const locale of ['', '/nl']) {
         const digits = shown.replace(/[^\d]/g, '');
         note(digits === String(want), `${n} products → ${shown} (ladderTotal=${want})`);
       }
-      // Outfit surcharge rides on top.
+      // Outfit surcharge rides on top. (Sinds levering 60 bestaat deze keuzelijst niet meer;
+      // de complete look zit in stap 2, zie tests/looks-browser.test.mjs.)
       if (await page.locator('select[name="outfit_count"]').count()) {
         await page.selectOption('select[name="products"]', '10');
         await page.selectOption('select[name="outfit_count"]', '2');

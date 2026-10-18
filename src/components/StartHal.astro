@@ -30,6 +30,14 @@
  * vier beelden van een proef met hun naam uit shots.js, en de setmaat uit het
  * lexicon ("vanaf 4 foto's"). Zo is de lege plek uitleg in plaats van gat.
  *
+ * OP DE TELEFOON (levering 58, afvinklijst 37: b-start en v37-start = a): de looks
+ * van een groep met meer dan één look staan in een rij om opzij te vegen, elke kaart
+ * 80% breed, met alleen het beeld, de naam, de zin en "Kies deze look". De prijs en
+ * de planprijs staan één keer boven de rij (.h-st-groep-prijs), de €1-proef één keer
+ * eronder (.h-st-groep-proef). Die proef begint bij de look die in beeld is: het
+ * scriptje onderaan zet zijn link op die look. Op een breder scherm blijft alles per
+ * kaart, zoals het was; de groepsregels zijn daar weg (display: none in hal.css).
+ *
  * GLAS: geen. Glas staat alleen boven beeld en hoogstens drie keer in beeld;
  * met vier lookkaarten naast elkaar zou elke kaart er één krijgen.
  * ═══════════════════════════════════════════════════════════════════════════ */
@@ -120,6 +128,7 @@ const COPY = {
     setKop: 'Per product', setZin: `${setSize('catalog', CATALOG_IMAGES, 'en')}, ready for your shop.`, setMeer: 'More images can be added in the order form.',
     ladder: eenProductRegel('en'), ladderCta: 'See the full rate card',
     ookLabel: 'Other ways to order', ook: 'Also',
+    rijLabel: (g: string) => `${g} looks, swipe for more`,
     rij: [
       { naam: door('plan')!.naam.en, href: door('plan')!.lees },
       { naam: `${door('video')!.naam.en} (on request)`, href: door('video')!.lees },
@@ -158,6 +167,7 @@ const COPY = {
     setKop: 'Per product', setZin: `${setSize('catalog', CATALOG_IMAGES, 'nl').replace(/^v/, 'V')}, klaar voor je webshop.`, setMeer: 'Meer beelden kies je erbij in het bestelformulier.',
     ladder: eenProductRegel('nl'), ladderCta: 'Bekijk de volledige prijslijst',
     ookLabel: 'Andere manieren om te bestellen', ook: 'Ook',
+    rijLabel: (g: string) => `Looks voor ${g.toLowerCase()}, veeg voor meer`,
     rij: [
       { naam: door('plan')!.naam.nl, href: door('plan')!.lees },
       { naam: `${door('video')!.naam.nl} (op aanvraag)`, href: door('video')!.lees },
@@ -242,7 +252,13 @@ const BEELD = {
           <h2 id={`st-g-${g.id}`} class="h-kop h-h3">{g.naam}. <span class="l">{g.kort}.</span></h2>
           <span class={`h-chip h-st-eigen is-${g.stand}`}><i set:html={eigenVorm(g.stand)} />{PRODUCT_COPY[lang][g.stand]}</span>
         </div>
-        <ul class="h-st-looks" role="list">
+        {/* Alleen op de telefoon: de prijs één keer boven de rij (b-start). */}
+        <div class="h-st-groep-prijs">
+          <p class="h-st-tarief" data-vis-klant="niet-abonnee"><span>{c.vanaf}</span> <b>{g.vanaf}</b> <span>{c.per}</span></p>
+          {g.abo && <p class="h-st-abo" data-vis-klant="niet-abonnee"><a href={lp('/plans')}>{c.aboRegel(euro(g.abo, lang))}<span set:html={ik('pijl')} /></a></p>}
+          {SERVICE_CREDITS[g.id] && <p class="h-st-tarief" data-vis-klant="abonnee" hidden><b>{SERVICE_CREDITS[g.id]} credits</b> <span>{c.perCredits}</span></p>}
+        </div>
+        <ul class="h-st-looks" role="list" data-st-rij={g.looks.length > 1 ? '' : undefined} aria-label={g.looks.length > 1 ? c.rijLabel(g.naam) : undefined}>
           {g.looks.map((l, i) => (
             <li class="h-st-look h-in" style={`--d:${i}`} data-st-look={l.slug}>
               {/* De foto is dezelfde link als de knop (vaste bestelregel, 19 sep): voor
@@ -285,6 +301,9 @@ const BEELD = {
             </li>
           )}
         </ul>
+        {/* Alleen op de telefoon: de proef één keer onder de rij (b-start). Hij
+            begint bij de eerste look; het scriptje onderaan volgt de look in beeld. */}
+        <p class="h-st-groep-proef" data-vis-uit><a class="h-st-proef" href={g.looks[0].proef} data-st-groep-proef>{sample.cta}</a></p>
       </section>
     ))}
 
@@ -346,3 +365,32 @@ const BEELD = {
   </section>
 </div>
 <HalBeweging />
+<script>
+  /* De proef onder de veegrij begint bij de look die in beeld is (levering 58). Alleen
+     de link verandert; zonder script blijft het de eerste look. */
+  function volgLook() {
+    for (const rij of document.querySelectorAll<HTMLElement>('.h-st-kies [data-st-rij]')) {
+      if (rij.dataset.stVolgt) continue;
+      rij.dataset.stVolgt = '1';
+      const groep = rij.closest('[data-st-groep]');
+      const proef = groep?.querySelector<HTMLAnchorElement>('[data-st-groep-proef]');
+      if (!proef) continue;
+      let klok = 0;
+      const zet = () => {
+        klok = 0;
+        const r0 = rij.getBoundingClientRect();
+        let beste: HTMLAnchorElement | null = null, meest = -1;
+        for (const kaart of rij.querySelectorAll<HTMLElement>('[data-st-look]')) {
+          const r = kaart.getBoundingClientRect();
+          const zicht = Math.min(r.right, r0.right) - Math.max(r.left, r0.left);
+          if (zicht > meest) { meest = zicht; beste = kaart.querySelector<HTMLAnchorElement>('[data-st-proef]'); }
+        }
+        const doel = beste?.getAttribute('href');
+        if (doel && proef.getAttribute('href') !== doel) proef.setAttribute('href', doel);
+      };
+      rij.addEventListener('scroll', () => { if (!klok) klok = requestAnimationFrame(zet); }, { passive: true });
+    }
+  }
+  volgLook();
+  document.addEventListener('astro:page-load', volgLook);
+</script>

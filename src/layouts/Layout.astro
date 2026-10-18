@@ -152,6 +152,11 @@ interface Props {
    *  waard dan eerst, want ze zijn de enige plek waar de site nog zonder huid
    *  te zien is. */
   huid?: 'geen' | 'kantig' | 'hal';
+  /** DE WERKPLAATS — levering 59, 17 oktober 2026 (afvinklijst 36, b-werkplaats): het
+   *  bestelformulier voor catalog en lifestyle staat zonder de topbalk, de lade en de voet
+   *  van de site. Bovenaan alleen de balk van het formulier zelf (OrderFlow.astro): de V
+   *  naar de homepage, de stappen en "Hulp nodig?". Wie hier is, heeft al gekozen. */
+  werkplaats?: boolean;
   /* ── 'hal' — 12 oktober 2026 ────────────────────────────────────────────
      De nieuwe stijl uit het ontwerpplan ("de witte hal"), voorlopig alleen op
      /voorbeeld/ en /nl/voorbeeld/. Wat hij hier verandert, en niet meer: de
@@ -174,7 +179,23 @@ interface Props {
 // `noindex, nofollow, noarchive` as a meta tag AND an x-robots-tag response
 // header, because a portal URL contains a token and a meta tag alone is only
 // read by something that parses HTML. See src/lib/portal.js.
-const { title, description, ogImage = '/img/banners-05.webp', noindex = false, ground = 'paper', huid = 'kantig' } = Astro.props;
+const { title: titelRuw, description, ogImage = '/img/banners-05.webp', noindex = false, ground = 'paper', huid = 'kantig', werkplaats = false } = Astro.props;
+/* ── DE PAGINATITEL IN ÉÉN VORM — levering 58, 17 oktober 2026 (afvinklijst 37, b-titels) ──
+   "Overal Onderwerp | VISUAILS, ook in het Nederlands." Er stonden drie vormen door elkaar:
+   "Pricing — … | VISUAILS", "Start an order — VISUAILS" en "VISUAILS — Contact us". De twee
+   laatste worden hier de eerste, op één plek, zodat een nieuwe pagina vanzelf meedoet. Een
+   streep IN het onderwerp ("Plans — credits every month") blijft; het gaat om het einde.
+   Een voorbeeldpagina houdt "(preview)" achter het onderwerp. tests/titels.test.mjs. */
+const titel = (() => {
+  const t = String(titelRuw || '').trim();
+  const hoofd = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
+  let m = t.match(/^(.*?)\s+—\s+VISUAILS(\s+\((?:preview|voorbeeld)\))?$/);
+  if (m) return `${m[1]}${m[2] || ''} | VISUAILS`;
+  m = t.match(/^VISUAILS\s+—\s+(.+?)(\s+\((?:preview|voorbeeld)\))?$/);
+  if (m) return `${hoofd(m[1])}${m[2] || ''} | VISUAILS`;
+  return t;
+})();
+const title = titel;
 
 // Privacy-first analytics — Cloudflare Web Analytics, which is cookieless and
 // sets nothing on the visitor’s device.
@@ -210,6 +231,11 @@ const path = Astro.url.pathname;
 /* De melding onderin het scherm (KlantMelding.astro, 14 oktober 2026): niet
    tijdens het bestellen, niet op de proef zelf en niet op de bedankpagina. */
 const meldingHier = !/^\/(nl\/)?(start|test-sample|thank-you)(\/|$)/.test(path);
+/* De zwevende WhatsApp-knop — levering 58 (afvinklijst 37, b-wa): niet op /contact, waar hij
+   over de knop "Chat on WhatsApp" lag die hetzelfde doet, en niet in het bestelformulier, waar
+   WhatsApp al in de tekst staat (en straks bij Hulp nodig?). Op de telefoon pas na één scherm
+   scrollen, en weg zodra er een knop onder zou vallen: initWaDock() in interactions.js. */
+const waHier = !/^\/(nl\/)?(contact|start)(\/|$)/.test(path);
 const lang = getLangFromPath(path);
 const t = useTranslations(lang);
 // The two WhatsApp prefills in this file — the floating launcher and the
@@ -548,7 +574,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
   </noscript>
   <ClientRouter />
 </head>
-<body class={[ground === "espresso" && "ground-espresso", huid === "kantig" && "huid-kantig", huid === "hal" && "hal"].filter(Boolean).join(" ") || undefined}>
+<body class={[ground === "espresso" && "ground-espresso", huid === "kantig" && "huid-kantig", huid === "hal" && "hal", werkplaats && "werkplaats"].filter(Boolean).join(" ") || undefined}>
 {/* THE FIRST TAB STOP. It has to be the first child of <body>, not merely
     before <main>: placed after the header it is the twelfth stop, which is
     eleven stops too late to be a skip link. Even with the drawer inert, the header is a handful of
@@ -794,6 +820,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
 
   <div class="grain" aria-hidden="true"></div>
 
+  {!werkplaats && (
   <header class="site-header">
     <div class="container nav">
       {/* THE GLYPH, NOT THE LOGOTYPE, since August 2026 — Lucas: *"ik wil links
@@ -1027,6 +1054,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
       </div>
     </div>
   </header>
+  )}
 
   {/* ══════════════════════════════════════════════════════════════════════
       DE LADE OP EEN TELEFOON — herbouwd 9 september 2026
@@ -1064,6 +1092,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
          menu waar de helft van de bezoekers voor komt, hoort de deur altijd
          in beeld te staan.
       ══════════════════════════════════════════════════════════════════════ */}
+  {!werkplaats && (
   <div class="mobile-nav" id="mobile-nav" inert aria-hidden="true">
     <div class="mobile-top">
       {/* ── HET MERK IS EEN LINK NAAR HUIS — 21 augustus 2026 ────────────────
@@ -1159,6 +1188,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
       <a href={lp('/start')} class="btn btn-primary btn-block btn-lg">{t('nav_start')}</a>
     </div>
   </div>
+  )}
 
   {/* ── THE CHROME KNOWS WHO IS SIGNED IN ──────────────────────────────────
       Lucas, August 2026: "Als iemand is ingelogd op de site wil ik dat hij ook
@@ -1356,6 +1386,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
       Het is een grafisch element. De echte merknaam staat als tekstalternatief
       in de footer-link eronder; een schermlezer die hier "VISUAILS" hoort en
       twee tellen later nog eens, leert niets bij. */}
+  {!werkplaats && (
   <footer class="site-footer">
     <div class="container">
       <div class="footer-grid">
@@ -1530,6 +1561,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
         : <svg class="foot-mark-w" viewBox="0 0 1650 278" preserveAspectRatio="xMidYMax meet" focusable="false"><use href="#wordmark" /></svg>}
     </div>
   </footer>
+  )}
 
   <CookieConsent lang={lang} policyHref={lp('/cookie-policy')} />
   {/* De proefkaart (de zwevende "Probeer VISUAILS · €1"-popup) is weg sinds
@@ -1582,6 +1614,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
       en blijft dat, want een gewone <div> maakt geen bevattend blok voor een
       vast geplaatst kind (dat doet alleen transform / filter / contain). */}
   {meldingHier && <KlantMelding lang={lang} />}
+  {waHier && (
   <div class="wa-dock" role="complementary" aria-label={t('wa_launcher_label')}>
   <a
     class="wa-launcher"
@@ -1605,6 +1638,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     <span class="wa-launcher-label">{t('wa_launcher_label')}</span>
   </a>
   </div>
+  )}
 
   <script>
     // Importing runs init() once immediately and registers the

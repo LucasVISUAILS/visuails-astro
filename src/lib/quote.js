@@ -43,8 +43,9 @@
 import {
   LADDER, ladderRate, OUTFIT_SURCHARGE, extraPhotoRate, MAX_EXTRA_PER_PRODUCT,
   MAX_OUTFIT_PRODUCTS, AMOUNT, VAT_RATE,
-  HOOG_PER_PRODUCT, voorrangBedrag, voorrangKan,
+  HOOG_PER_PRODUCT, voorrangBedrag, voorrangKan, LOOK_PRIJS,
 } from '../data/pricing.js';
+import { LOOK_MIN, isLookDienst } from '../data/looks.js';
 /* Twee namen voor dezelfde import, met opzet: de controle onderaan vergelijkt
    ze en dat leest alleen als een controle wanneer er twee namen staan. Zou
    iemand de export hierboven ooit terugzetten naar een eigen constante, dan
@@ -296,7 +297,14 @@ function safeRate(vatRate) {
  *             hem daar niet aan, en een POST die hem tóch meestuurt hoort niet
  *             betaald te worden voor iets wat niet geleverd kan worden.
  */
-export function quoteOrder({ service, products, outfits = 0, extras = 0, hoogRes = 0, voorrang = false, vatRate = VAT_RATE, styleSurchargeCents = 0 }) {
+/* `looks` — 17 oktober 2026 (levering 60, afvinklijst 38). Het AANTAL complete
+ * looks: € 50 per look (LOOK_PRIJS), alleen bij lifestyle. Dit was `outfits`, een
+ * toeslag per product die ook bij catalog meetelde als het veld meegestuurd werd
+ * (d-fouten: het formulier liet hem daar niet zien, de server rekende hem wel).
+ * Nu telt hij alleen waar looks bestaan, en nooit meer dan er looks van twee
+ * stukken in het aantal passen. Welke looks er zijn, beslist schoonLooks() in
+ * looks.js; hier komt alleen het getal binnen. */
+export function quoteOrder({ service, products, looks = 0, extras = 0, hoogRes = 0, voorrang = false, vatRate = VAT_RATE, styleSurchargeCents = 0 }) {
   // Translate first, then decide. Both the payable test and the ladder lookup
   // below have to see the same name, or this is the same bug in a new place.
   const kind = LADDER_KEY[service] || service;
@@ -350,9 +358,9 @@ export function quoteOrder({ service, products, outfits = 0, extras = 0, hoogRes
   // outfits en extras hieronder houden hun clamp wél: die worden niet geweigerd
   // maar begrensd, want daar is 0 een geldig antwoord en is de klem de hele regel.
   const n = asked;
-  // An outfit surcharge is per PRODUCT styled that way, so it can never exceed
-  // the product count — and pricing.js caps it at three regardless.
-  const o = clamp(outfits, 0, Math.min(n, MAX_OUTFIT_PRODUCTS));
+  // Een look heeft minstens twee stukken, dus er passen er hooguit n / 2 in een
+  // bestelling van n producten. Alleen bij lifestyle (looks.js, LOOK_DIENSTEN).
+  const L = isLookDienst(kind) ? clamp(looks, 0, Math.floor(n / LOOK_MIN)) : 0;
   // Extras are per product, capped per product, so the order-wide ceiling is
   // the product count times that cap.
   const x = clamp(extras, 0, n * MAX_EXTRA_PER_PRODUCT);
@@ -369,7 +377,7 @@ export function quoteOrder({ service, products, outfits = 0, extras = 0, hoogRes
      als styleApplies() in pipeline.js. */
   const hoogKan = kind === 'lifestyle';
   const h = hoogKan ? clamp(hoogRes, 0, n) : 0;
-  const net = n * rate + o * OUTFIT_SURCHARGE + x * extraRate + h * HOOG_PER_PRODUCT;
+  const net = n * rate + L * LOOK_PRIJS + x * extraRate + h * HOOG_PER_PRODUCT;
   const netCents = cents(net) + n * surcharge;
 
   /* Voorrang over het HELE bedrag tot hier, inclusief de toeslagen: wat opzij
@@ -403,7 +411,7 @@ export function quoteOrder({ service, products, outfits = 0, extras = 0, hoogRes
   return {
     service,
     products: n,
-    outfits: o,
+    looks: L,
     extras: x,
     hoogRes: h,
     voorrang: voorrangEuro > 0,
@@ -447,7 +455,7 @@ export function quoteTestSample({ vatRate = VAT_RATE } = {}) {
   return {
     service: 'test-sample',
     products: 1,
-    outfits: 0,
+    looks: 0,
     extras: 0,
     netCents,
     vatCents,
@@ -487,7 +495,7 @@ export function quoteBrandModel({ vatRate = VAT_RATE } = {}) {
   return {
     service: 'brand-model',
     products: 1,
-    outfits: 0,
+    looks: 0,
     extras: 0,
     netCents,
     vatCents,
@@ -683,15 +691,17 @@ export function paymentDescription(quote, lang = 'en') {
          nul, een rond bedrag, en één dat niet rond deelt, omdat afronding
          precies is waar twee implementaties uit elkaar lopen. */
       for (const [o, x, sc] of [[0, 0, 0], [1, 0, 0], [0, 3, 0], [2, 5, 0], [0, 0, 1000], [1, 2, 733]]) {
-        const q = quoteOrder({ service, products: lo, outfits: o, extras: x, styleSurchargeCents: sc });
+        const q = quoteOrder({ service, products: lo, looks: o, extras: x, styleSurchargeCents: sc });
+        /* Looks alleen bij lifestyle, en nooit meer dan er looks van twee in passen. */
+        const looks = isLookDienst(service) ? Math.min(o, Math.floor(lo / LOOK_MIN)) : 0;
         const expectedNet = cents(
           lo * ladderRate(service, lo)
-          + Math.min(o, Math.min(lo, MAX_OUTFIT_PRODUCTS)) * OUTFIT_SURCHARGE
+          + looks * LOOK_PRIJS
           + Math.min(x, lo * MAX_EXTRA_PER_PRODUCT) * extraPhotoRate(lo)
         ) + lo * sc;
         if (q.netCents !== expectedNet) {
           throw new Error(
-            `quote.js: ${service} at ${lo} products (${o} outfits, ${x} extras, ${sc}c style surcharge) came to `
+            `quote.js: ${service} at ${lo} products (${o} looks, ${x} extras, ${sc}c style surcharge) came to `
             + `${q.netCents} cents, expected ${expectedNet}. The server quote and the ladder `
             + 'have drifted — see src/data/pricing.js.'
           );

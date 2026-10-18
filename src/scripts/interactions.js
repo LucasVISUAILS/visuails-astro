@@ -2233,7 +2233,10 @@ function vulKlant(stand) {
       /* Tonen of niet beslist meldingen(), niet deze lus: de melding wacht op
          de cookiekeuze en op het kruisje van eerder. Hier alleen de woorden. */
       if (stand) {
-        const kop = el.querySelector('[data-vis-welkom-kop]');
+        /* Sinds levering 58 staat de kop in een <span> naast het streepje (het label van
+           de ontwerptaal); de tekst gaat dus in de span, niet over het streepje heen. */
+        const kopEl = el.querySelector('[data-vis-welkom-kop]');
+        const kop = kopEl ? (kopEl.querySelector('span') || kopEl) : null;
         const naam = String(stand.naam || '').trim();
         if (kop) kop.textContent = naam ? String(el.dataset.visWelkomNaam || '').replace('{naam}', naam) : (el.dataset.visWelkom || kop.textContent);
         const l = stand.laatste;
@@ -2247,6 +2250,17 @@ function vulKlant(stand) {
             regel.append(b, ' \u00b7 ');
           }
           regel.append(String(l.stand));
+        }
+        /* De voortgang (v36-melding = c): alleen een getal van 0 tot 3 telt als stap. */
+        const stappen = el.querySelector('[data-vis-welkom-stappen]');
+        if (stappen) {
+          const stap = l && Number.isInteger(l.stap) && l.stap >= 0 && l.stap < stappen.children.length ? l.stap : -1;
+          stappen.hidden = stap < 0;
+          Array.from(stappen.children).forEach((li, i) => {
+            li.classList.toggle('is-af', i < stap);
+            li.classList.toggle('is-nu', i === stap);
+            if (i === stap) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
+          });
         }
         if (l && knop && l.knop && veiligeLink(l.knop.href)) {
           knop.href = l.knop.href;
@@ -2331,9 +2345,26 @@ function meldingen() {
   if (ingelogd === true && sleutel && elStand && n.s !== sleutel && meldingDicht.s !== sleutel) { el = elStand; soort = 'stand'; }
   else if ((ingelogd === false || (ingelogd === true && klantStand && klantStand.nieuw === true)) && elProef && !(n.p > Date.now()) && !meldingDicht.p) { el = elProef; soort = 'proef'; }
   if (!el) return;
+  /* Welke melding en welke stand: bij elke ronde opnieuw op het element, zodat het
+     kruisje en de knop na een zachte navigatie de stand van NU onthouden en niet die
+     van de eerste pagina (de luisteraars worden maar één keer gebonden). */
+  el.dataset.visSoort = soort;
+  el.dataset.visSleutel = sleutel;
 
   if (!el.dataset.visGebonden) {
     el.dataset.visGebonden = '1';
+    /* Weggeklikt of gevolgd: allebei onthouden. Lucas (17 oktober 2026, 10:22): "Wanneer
+       ik klik op open this order en ik ga weer terug naar home page komt hij weer terug.
+       Nadat ik erop heb geklikt moet hij weg blijven." Wie de knop volgt, heeft de
+       melding gelezen; hij komt pas terug als de stand van de bestelling verandert (de
+       proef: na PROEF_WEG_DAGEN), net als na het kruisje. */
+    const onthoud = () => {
+      meldingOpen = null;
+      const nu = meldingNotitie();
+      const s = el.dataset.visSleutel || '';
+      if (el.dataset.visSoort === 'stand') { nu.s = s; meldingDicht.s = s; } else { nu.p = Date.now() + PROEF_WEG_DAGEN * 86400000; meldingDicht.p = true; }
+      try { localStorage.setItem(MELDING_SLEUTEL, JSON.stringify(nu)); } catch { /* dan alleen dit tabblad */ }
+    };
     el.querySelector('[data-vis-melding-sluit]')?.addEventListener('click', () => {
       const focus = el.contains(document.activeElement);
       el.classList.remove('is-open', 'is-meteen');
@@ -2342,12 +2373,22 @@ function meldingen() {
       const weg = () => { el.hidden = true; };
       el.addEventListener('transitionend', weg, { once: true });
       setTimeout(weg, 600);
-      meldingOpen = null;
-      const nu = meldingNotitie();
-      if (soort === 'stand') { nu.s = sleutel; meldingDicht.s = sleutel; } else { nu.p = Date.now() + PROEF_WEG_DAGEN * 86400000; meldingDicht.p = true; }
-      try { localStorage.setItem(MELDING_SLEUTEL, JSON.stringify(nu)); } catch { /* dan alleen dit tabblad */ }
+      onthoud();
       /* De focus niet in het niets laten vallen: terug naar het begin van de inhoud. */
       if (focus) document.getElementById('main')?.focus({ preventScroll: true });
+    });
+    /* De knop: onthouden en meteen weg, zonder de navigatie op te houden (ook met
+       de middelste knop of in een nieuw tabblad: dan is hij evengoed gelezen). */
+    const gevolgd = () => {
+      onthoud();
+      el.classList.remove('is-open', 'is-meteen');
+      el.hidden = true;
+      document.documentElement.style.removeProperty('--h-melding-h');
+      document.documentElement.style.scrollPaddingBottom = '';
+    };
+    el.querySelectorAll('a[href]').forEach((a) => {
+      a.addEventListener('click', gevolgd);
+      a.addEventListener('auxclick', gevolgd);
     });
   }
 
@@ -2500,8 +2541,44 @@ export function init() {
   initVeldmeldingen();
   initNummerBijWhatsapp();
   initAanvraagKeuze();
+  initWaDock();
   /* Na de stapformulieren, die bij hetzelfde laadmoment hun stappen opbouwen. */
   setTimeout(initFormulierTerug, 0);
+}
+
+/* ── DE ZWEVENDE WHATSAPP-KNOP OP DE TELEFOON — levering 58, 17 oktober 2026 ──
+   Afvinklijst 37 (b-wa): op de telefoon dekte hij rechts kaarten en knoppen af. Nu:
+   tot 600 px breed pas zichtbaar na één scherm scrollen (is-wacht), en hij schuift
+   weg zodra er op zijn plek iets klikbaars zou liggen (is-weg). Gemeten op zijn
+   VASTE plek (rechts en onder uit de CSS), niet op waar hij op dat moment staat, zodat
+   wegschuiven de meting niet verandert. Eén luisteraar voor de hele site; een zachte
+   navigatie roept alleen meet() opnieuw aan. */
+let waMeet = null;
+function initWaDock() {
+  if (waMeet) { waMeet(); return; }
+  const mq = window.matchMedia ? window.matchMedia('(max-width: 600px)') : null;
+  if (!mq || typeof document.elementsFromPoint !== 'function') return;
+  const KLIK = 'a[href], button, input, select, textarea, summary, label, [role="button"]';
+  let gepland = false;
+  waMeet = () => {
+    const dock = document.querySelector('.wa-dock');
+    const knop = dock && dock.querySelector('.wa-launcher');
+    if (!dock || !knop) return;
+    if (!mq.matches) { dock.classList.remove('is-wacht', 'is-weg'); return; }
+    dock.classList.toggle('is-wacht', (window.scrollY || 0) < window.innerHeight);
+    const cs = getComputedStyle(knop);
+    const w = knop.offsetWidth || 52, h = knop.offsetHeight || 52;
+    const x0 = window.innerWidth - (parseFloat(cs.right) || 0) - w;
+    const y0 = window.innerHeight - (parseFloat(cs.bottom) || 0) - h;
+    const punten = [[x0 + w / 2, y0 + h / 2], [x0 + 6, y0 + 6], [x0 + w - 6, y0 + 6], [x0 + 6, y0 + h - 6], [x0 + w - 6, y0 + h - 6]];
+    const eronder = punten.some(([x, y]) => document.elementsFromPoint(x, y).some((el) => !dock.contains(el) && el.closest(KLIK) && !el.closest('.wa-dock')));
+    dock.classList.toggle('is-weg', eronder);
+  };
+  const plan = () => { if (gepland) return; gepland = true; requestAnimationFrame(() => { gepland = false; try { waMeet(); } catch { /* dan niet */ } }); };
+  window.addEventListener('scroll', plan, { passive: true });
+  window.addEventListener('resize', plan, { passive: true });
+  if (mq.addEventListener) mq.addEventListener('change', plan);
+  waMeet();
 }
 
 /* ── WHATSAPP KIEZEN = EEN NUMMER GEVEN — 14 oktober 2026 (doorloop 27, B29) ──

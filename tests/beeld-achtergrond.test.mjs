@@ -44,18 +44,18 @@ console.log('het dossier');
     background: 'white', background_hex: '#FFFFFF', channels: 'own',
     'angle_three-quarter': '1',
     beeld_bg_worn: '#ede4d8', beeld_bg_back: '#FFFFFF', beeld_bg_detail: '#123456',
-    'beeld_bg_three-quarter': '#F7F5F1', beeld_bg_inside: '#F7F5F1', beeld_bg_bestaat: '#F7F5F1', beeld_bg_front: '',
+    'beeld_bg_three-quarter': '#F5F5F5', beeld_bg_inside: '#F5F5F5', beeld_bg_bestaat: '#F5F5F5', beeld_bg_front: '',
   }, 'catalog');
   ok('een aanbevolen kleur op een vak blijft, in hoofdletters', d.beeld_bg_worn === '#EDE4D8');
   ok('gelijk aan de achtergrond van de bestelling: weg', !('beeld_bg_back' in d));
   ok('een eigen code mag ook (v29-hex = b)', d.beeld_bg_detail === '#123456', d.beeld_bg_detail);
-  ok('een gekozen hoek mag; een niet gekozen hoek niet', d['beeld_bg_three-quarter'] === '#F7F5F1' && !('beeld_bg_inside' in d));
+  ok('een gekozen hoek mag; een niet gekozen hoek niet', d['beeld_bg_three-quarter'] === '#F5F5F5' && !('beeld_bg_inside' in d));
   ok('een onbekend vak en een lege waarde: weg', !('beeld_bg_bestaat' in d) && !('beeld_bg_front' in d));
-  const wit = schoonBeeldAchtergronden({ background_hex: '#F7F5F1', channels: 'own,bol', beeld_bg_front: '#EDE4D8', beeld_bg_worn: '#EDE4D8' }, 'catalog');
+  const wit = schoonBeeldAchtergronden({ background_hex: '#F5F5F5', channels: 'own,bol', beeld_bg_front: '#EDE4D8', beeld_bg_worn: '#EDE4D8' }, 'catalog');
   ok('bol eist een witte hoofdafbeelding: de voorkant valt weg, op model blijft', !('beeld_bg_front' in wit) && wit.beeld_bg_worn === '#EDE4D8');
   const ls = schoonBeeldAchtergronden({ beeld_bg_worn: '#EDE4D8' }, 'lifestyle');
   ok('lifestyle heeft geen achtergrond: alles weg', !('beeld_bg_worn' in ls));
-  ok('de keuzelijst biedt de aanbevolen kleuren', BEELD_BG_HEXES.join(',') === '#FFFFFF,#F7F5F1,#EDE4D8', BEELD_BG_HEXES.join(','));
+  ok('de keuzelijst biedt de aanbevolen kleuren', BEELD_BG_HEXES.join(',') === '#FFFFFF,#F5F5F5,#EDE4D8', BEELD_BG_HEXES.join(','));
   const e = schoonBeeldAchtergronden({
     background_hex: '#FFFFFF', channels: 'own',
     beeld_bg_worn: 'eigen', beeld_hex_worn: '#c9d6e3',
@@ -77,11 +77,11 @@ console.log('het dossier');
 
 console.log('\nwie het leest');
 {
-  const det = { background_hex: '#FFFFFF', extra_slots: 'extra1:three-quarter', 'angle_three-quarter': '1', beeld_bg_worn: '#EDE4D8', 'beeld_bg_three-quarter': '#F7F5F1' };
+  const det = { background_hex: '#FFFFFF', extra_slots: 'extra1:three-quarter', 'angle_three-quarter': '1', beeld_bg_worn: '#EDE4D8', 'beeld_bg_three-quarter': '#F5F5F5' };
   const lijst = beeldAchtergronden('catalog', det);
-  ok('in de volgorde van de vakken, met het vaknummer', lijst.map((b) => `${b.nr}:${b.vak}:${b.hex}`).join(' ') === '4:worn:#EDE4D8 5:extra1:#F7F5F1', lijst.map((b) => `${b.nr}:${b.vak}:${b.hex}`).join(' '));
-  ok('de regel voor mail en scherm', beeldAchtergrondRegel('catalog', det, 'nl') === 'Op een model: beige · Driekwart: gebroken wit', beeldAchtergrondRegel('catalog', det, 'nl'));
-  ok('  en in het Engels', beeldAchtergrondRegel('catalog', det, 'en') === 'On a model: beige · Three-quarter: off-white', beeldAchtergrondRegel('catalog', det, 'en'));
+  ok('in de volgorde van de vakken, met het vaknummer', lijst.map((b) => `${b.nr}:${b.vak}:${b.hex}`).join(' ') === '4:worn:#EDE4D8 5:extra1:#F5F5F5', lijst.map((b) => `${b.nr}:${b.vak}:${b.hex}`).join(' '));
+  ok('de regel voor mail en scherm', beeldAchtergrondRegel('catalog', det, 'nl') === 'Op een model: beige · Driekwart: lichtgrijs', beeldAchtergrondRegel('catalog', det, 'nl'));
+  ok('  en in het Engels', beeldAchtergrondRegel('catalog', det, 'en') === 'On a model: beige · Three-quarter: light grey', beeldAchtergrondRegel('catalog', det, 'en'));
   const detE = { background_hex: '#FFFFFF', beeld_bg_worn: '#C9D6E3' };
   const lijstE = beeldAchtergronden('catalog', detE);
   ok('een eigen kleur heet "eigen kleur" en draagt zijn code', lijstE[0] && lijstE[0].eigen === true && lijstE[0].naam.nl === 'eigen kleur', JSON.stringify(lijstE[0]));
@@ -89,11 +89,11 @@ console.log('\nwie het leest');
   ok('  en in het Engels', beeldAchtergrondRegel('catalog', detE, 'en') === 'On a model: own colour #C9D6E3', beeldAchtergrondRegel('catalog', detE, 'en'));
   const parenE = Object.fromEntries(instellingen({ ref: 'VIS-TEST-0029', service: 'catalog', kanaal: 'own' }, { index: 1, background: '#FFFFFF', beeldAchtergronden: lijstE }));
   ok('  de werkmap krijgt de code zoals elke andere', parenE.achtergrond_4 === '#C9D6E3', JSON.stringify(parenE));
-  ok('opnieuw bestellen neemt de achtergrond per foto mee, ook een eigen kleur', JSON.stringify(beeldAchtergrondInstellingen('catalog', { ...det, beeld_bg_back: '#C9D6E3' })) === JSON.stringify([{ sleutel: 'back', hex: '#C9D6E3' }, { sleutel: 'worn', hex: '#EDE4D8' }, { sleutel: 'three-quarter', hex: '#F7F5F1' }]), JSON.stringify(beeldAchtergrondInstellingen('catalog', { ...det, beeld_bg_back: '#C9D6E3' })));
+  ok('opnieuw bestellen neemt de achtergrond per foto mee, ook een eigen kleur', JSON.stringify(beeldAchtergrondInstellingen('catalog', { ...det, beeld_bg_back: '#C9D6E3' })) === JSON.stringify([{ sleutel: 'back', hex: '#C9D6E3' }, { sleutel: 'worn', hex: '#EDE4D8' }, { sleutel: 'three-quarter', hex: '#F5F5F5' }]), JSON.stringify(beeldAchtergrondInstellingen('catalog', { ...det, beeld_bg_back: '#C9D6E3' })));
   const inst = bestelInstellingen({ ref: 'VIS-TEST-0029', service: 'catalog', details_json: JSON.stringify({ ...det, beeld_bg_back: '#C9D6E3' }) });
   ok('  in /account/orders/<id>/instellingen (bestelInstellingen)', inst && Array.isArray(inst.beelden) && inst.beelden.length === 3, JSON.stringify(inst && inst.beelden));
   const paren = Object.fromEntries(instellingen({ ref: 'VIS-TEST-0027', service: 'catalog', kanaal: 'own' }, { index: 1, background: '#FFFFFF', ratio: '4:5', beeldAchtergronden: lijst }));
-  ok('de werkmap: achtergrond_4 en achtergrond_5 in de INSTELLINGEN-regel', paren.achtergrond_4 === '#EDE4D8' && paren.achtergrond_5 === '#F7F5F1' && paren.achtergrond === '#FFFFFF', JSON.stringify(paren));
+  ok('de werkmap: achtergrond_4 en achtergrond_5 in de INSTELLINGEN-regel', paren.achtergrond_4 === '#EDE4D8' && paren.achtergrond_5 === '#F5F5F5' && paren.achtergrond === '#FFFFFF', JSON.stringify(paren));
   ok('/admin leest het (bord en brief)', /beeldAchtergronden: beeldAchtergronden\(order\.service, details\)/.test(lees('src/lib/admin.js')) && /rij\('Per beeld'/.test(lees('src/lib/admin.js')));
   ok('/api/order schoont het op en de bevestiging noemt het', /schoonBeeldAchtergronden\(details, service\)/.test(lees('functions/api/order.js')) && /'Per beeld' : 'Per image'/.test(lees('functions/api/order.js')));
 }

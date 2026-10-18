@@ -1,0 +1,32 @@
+---
+/*
+ * VISUAILS — een blok in stap 1 van de werkplaats. Levering 59, 17 oktober 2026
+ * (afvinklijst 36, b-keuzes: "01 Stijl, 02 Aantal, 03 Gezicht, 04 Levering. Elk blok
+ * met het sectielabel en één vraag als kop.").
+ *
+ * EEN OMSLAG DIE ER OOK NIET KAN ZIJN. Met `aan` rendert hij het sectielabel, de kop en
+ * de inhoud in een <section>; zonder `aan` alleen de inhoud. Zo staat elke slot en elk
+ * veld in OrderFlow.astro nog één keer in de bron, en blijft de proef (/test-sample,
+ * zonder werkplaats) precies zoals hij was.
+ *
+ * `data-wk-blok` is wat syncMore() in pipeline.js gebruikt: boven het maximum gaan de
+ * blokken ná het aantal dicht, en het blok met het aantal zelf blijft staan.
+ */
+interface Props {
+  aan: boolean;
+  id: string;
+  nr?: string;
+  label?: string;
+  kop?: string;
+  zin?: string;
+}
+const { aan, id, nr = '', label = '', kop = '', zin = '' } = Astro.props;
+---
+{aan ? (
+  <section class={`wk-blok wk-blok-${id}`} data-wk-blok={id} aria-labelledby={`wk-h-${id}`}>
+    <p class="wk-label" aria-hidden="true"><i></i><b>{nr}</b>{label}</p>
+    <h2 class="wk-h" id={`wk-h-${id}`}>{kop}</h2>
+    {zin && <p class="wk-zin">{zin}</p>}
+    <slot />
+  </section>
+) : <slot />}

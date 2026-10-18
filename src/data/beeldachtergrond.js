@@ -6,7 +6,7 @@
  *
  * DE REGEL. Elk beeld krijgt de achtergrond van de bestelling (background_hex).
  * Een klant mag één of meer beelden een andere geven, uit dezelfde aanbevolen
- * kleuren (RECOMMENDED: wit, gebroken wit, beige). Alleen catalog: lifestyle
+ * kleuren (RECOMMENDED: wit, lichtgrijs, beige). Alleen catalog: lifestyle
  * heeft een setting en geen achtergrond.
  *
  * IN HET DOSSIER. `beeld_bg_<sleutel>` = "#RRGGBB", per bestelling (niet per

@@ -94,7 +94,7 @@ import { SHOTS as FOTOVAKKEN, refShotId, isRefShotId, MAX_REF_PER_PRODUCT } from
 /* De twee datums na een levering (punt 2.03): dezelfde som als de levermail. */
 import { leverDatumsVan } from './leverdatums.js';
 /* De Nu-zin (punt 3.01): één functie voor bestelkaart, overzicht en privélink. */
-import { nuZin, nuKnopLabel, ACTIE_SOORTEN, RANG as NU_RANG, isAfgerond as nuAfgerond, standKort } from './nuzin.js';
+import { nuZin, nuKnopLabel, ACTIE_SOORTEN, RANG as NU_RANG, isAfgerond as nuAfgerond, standKort, isAanvraag as isAanvraagOrder } from './nuzin.js';
 /* Punt 3.07: "Bestel met dezelfde look" — alleen lookkeuzes in de link. */
 import { herbestelKnop, herbestelAllesKnop, bestelInstellingen } from './herbestel.js';
 import { sendMail } from './mail.js';
@@ -196,7 +196,8 @@ import { creditsVoorFormulier, creditSaldo, creditboek, vervaldatum as vervaldat
 import { saldoWeergave, boekWeergave, boekKoppen, datumLang, dagErvoor } from './creditWeergave.js';
 import { redenKeuzes, REDEN_CREDITS, leesReden, slaRedenOp, redenLabel } from './stopReden.js';
 import { STOCK_ON_BRAND, STOCK_OFF_BRAND } from '../data/pricing.js';
-import { WORDMARK_VIEWBOX, WORDMARK_PATHS } from '../data/wordmarkPath.js';
+import { woordmerkSvg } from '../data/wordmarkPath.js';
+import { ikoon } from '../data/iconen.js';
 
 /* Het woordmerk boven elke losse kaart (inloggen, foutpagina, adreswijziging,
    revisie nakijken). Herontwerp 3 oktober 2026: hetzelfde getekende merk als in
@@ -204,7 +205,8 @@ import { WORDMARK_VIEWBOX, WORDMARK_PATHS } from '../data/wordmarkPath.js';
    geen extra verzoek en niets dat de CSP van deze pagina's hoeft toe te laten. */
 /* 14 oktober 2026: het nieuwe woordmerk (de merkletter, zie wordmarkPath.js),
    één pad, even-oneven gevuld. */
-const MERKBALK = `<div class="bar"><a class="mark" href="/" aria-label="VISUAILS"><svg class="woordmerk" viewBox="${WORDMARK_VIEWBOX}" aria-hidden="true" focusable="false">${WORDMARK_PATHS.map((d) => `<path fill-rule="evenodd" d="${d}"/>`).join('')}</svg></a></div>`;
+/* 17 oktober 2026 (levering 57): met de elektrische lijn onder de muis, zoals op de site. */
+const MERKBALK = `<div class="bar"><a class="mark" href="/" aria-label="VISUAILS">${woordmerkSvg('woordmerk')}</a></div>`;
 /* De twee bedragen van Editions. Uit pricing.js en niet ingetypt — zodra Lucas
    ze daar bijstelt, staat hier hetzelfde. Zie de noot bij AMOUNT.editions. */
 import { AMOUNT as BEDRAG, euro as euroBedrag, vatLabel as btwLabel } from '../data/pricing.js';
@@ -219,7 +221,9 @@ import { licenceText } from './scaffold.js';
 // Eén bouwer voor het archief, gedeeld met portal.js. Zie de kop van delivery.js:
 // deze twee schermen hadden elk hun eigen query over dezelfde levering en die
 // waren al uit elkaar gelopen.
-import { vakNaam } from '../data/levervakken.js';
+import { vakNaam, isLookSleutel } from '../data/levervakken.js';
+/* Levering 60 (afvinklijst 38, d-studio): de stukken van een look bij elkaar, met de map van de look. */
+import { looksVan } from '../data/looks.js';
 import { loadDeliveryFiles, deliveryEntries, deliveryDocs, deliveryZipFiles, downloadTaal, orderProductNames, leveringIngetrokken, TOEGANG_KOLOMMEN, ZICHTBAAR_VOOR_KLANT } from './delivery.js';
 /* k401 (11 oktober 2026): "Ook als PNG" / "Ook als WebP" op de bestelkaart. */
 import { formaatView, formatenVoorOrders, handleFormaatPost } from './formaten.js';
@@ -888,6 +892,10 @@ const COPY = {
     // sleutel, niet bij de zin.
     prodLabel: (n) => `Product ${n}`,
     prodOther: 'Other images',
+    /* Levering 60: de map met de twee beelden van een complete look. */
+    lookLabel: (l) => `Look ${l}`,
+    lookMet: (namen) => `Complete look with ${namen}`,
+    lookPart: (l) => `In look ${l}`,
     prodDelivered: (n) => (n === 1 ? '1 image delivered' : `${n} images delivered`),
     prodApproved: (n) => `${n} approved`,
     prodApproveAll: (n) => `All ${n} are good — approve this product`,
@@ -1478,6 +1486,9 @@ const COPY = {
     stExpired: 'Verwijderd na de bewaartermijn — vraag ons als je hem nog nodig hebt',
     prodLabel: (n) => `Product ${n}`,
     prodOther: 'Overige beelden',
+    lookLabel: (l) => `Look ${l}`,
+    lookMet: (namen) => `Complete look met ${namen}`,
+    lookPart: (l) => `In look ${l}`,
     prodDelivered: (n) => (n === 1 ? '1 beeld geleverd' : `${n} beelden geleverd`),
     prodApproved: (n) => `${n} goedgekeurd`,
     prodApproveAll: (n) => `Alle ${n} zijn goed — keur dit product goed`,
@@ -1956,7 +1967,9 @@ export async function accountGet(context) {
   const gok = GOK[url.pathname.replace(/\/$/, '')];
   if (gok) return seeOther(`${gok}${url.search}`);
 
-  const lang = negotiate(request);
+  /* Levering 57: de taal die de klant in Studio koos (vis_lang) gaat voor de browser;
+     een Engelse sessie kreeg hier "Pagina niet gevonden". */
+  const lang = langCookie(request) || negotiate(request);
   return html(page({ thema: themaCookie(context.request), lang, title: COPY[lang].notFoundTitle, body: errorBody(COPY[lang], COPY[lang].notFound, COPY[lang].notFoundTitle) }), 404);
 }
 
@@ -2130,7 +2143,7 @@ ${MERKBALK}
   const formaat = /^\/account\/orders\/(\d+)\/formaat$/.exec(path);
   if (formaat) return handleFormaatPost(context, customer, Number(formaat[1]), { seeOther });
 
-  const lang = negotiate(request);
+  const lang = langCookie(request) || negotiate(request); // levering 57: de gekozen taal eerst
   if (asJson) return json({ error: 'not-found' }, 404);
   return html(page({ thema: themaCookie(context.request), lang, title: COPY[lang].notFoundTitle, body: errorBody(COPY[lang], COPY[lang].notFound, COPY[lang].notFoundTitle) }), 404);
 }
@@ -3178,7 +3191,7 @@ async function handleOrderInstellingen({ request, env }, orderId) {
   if (!Number.isInteger(orderId) || orderId <= 0) return json({}, 404);
   /* De eigenaar: de sessie zegt wie hij is, het nummer in de URL niets. */
   const o = await env.DB.prepare(
-    'SELECT id, ref, service, status, details_json FROM orders WHERE id = ?1 AND customer_id = ?2'
+    'SELECT id, ref, service, status, product_count, details_json FROM orders WHERE id = ?1 AND customer_id = ?2'
   ).bind(orderId, customer.customer_id).first().catch(() => null);
   const inst = o ? bestelInstellingen(o) : null;
   if (!inst) return json({}, 404);
@@ -3455,8 +3468,14 @@ export function klantStandVan({ lang = 'nl', row = {}, orders = [], filesByOrder
     const open = `/account/orders?order=${o.id}#order-${o.id}`;
     const k = v.nu.knop;
     const gewoneLink = k && typeof k.href === 'string' && /^\/account\/(orders\?order=\d+#[a-z0-9-]+|details)$/.test(k.href);
+    /* Levering 58 (afvinklijst 36, v36-melding = c): de stap voor de voortgang in de
+       melding. Ontvangen (ook als de betaling nog loopt), in productie, nakijken,
+       geleverd. Een aanvraag heeft geen stappen: daar wordt nog niets gemaakt. */
+    const STAP = { awaiting_payment: 0, received: 0, in_production: 1, human_check: 2, delivered: 3 };
+    const stap = isAanvraagOrder(o) ? null : (STAP[o.status] ?? null);
     laatste = {
       ref: o.ref || '',
+      stap,
       stand: standKort(v.nu.soort, L, o),
       knop: gewoneLink ? { label: k.label, href: k.href } : { label: t.ovOpenOrder, href: open },
     };
@@ -4740,7 +4759,7 @@ async function handleFileReview({ request, env }, customer) {
   if (action === 'approve-product') {
     const orderId = Number.parseInt(String(form?.get('order') || ''), 10);
     const product = String(form?.get('product') || '').trim();
-    if (!Number.isInteger(orderId) || !/^p\d{1,3}$/.test(product)) return seeOther(home);
+    if (!Number.isInteger(orderId) || !(/^p\d{1,3}$/.test(product) || isLookSleutel(product))) return seeOther(home);
     const eigen = await env.DB.prepare(
       `SELECT id, closed_at, status FROM orders WHERE id = ?1 AND customer_id = ?2 AND service <> ?3`
     ).bind(orderId, customer.customer_id, SAMPLE_SERVICE).first().catch(() => null);
@@ -6362,15 +6381,21 @@ ${MERKBALK}
 // constants rather than a lookup built at render time — there are exactly
 // five and that will not change without a design decision, not a data one.
 // (Six since August 2026 — see the note on the details item in shellBody.)
-const ICON_OVERVIEW = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>';
-const ICON_NEW = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
-const ICON_ORDERS = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>';
-const ICON_BRAND = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="12" height="12"/><rect x="8" y="8" width="12" height="12"/></svg>';
-const ICON_PLAN = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="13"/><path d="M2 11h20"/></svg>';
+/* LEVERING 57 (17 oktober 2026, v35-studio a): de iconen uit het kit van de site
+   (src/data/iconen.js), gevuld, in currentColor, minstens 14 px (svg.ik in
+   global.css). De klasse "i" blijft erbij voor de maten in studio.css. Drie zijn
+   voor Studio bijgemaakt met dezelfde regels: raster (overzicht), persoon
+   (gegevens, gezicht) en oog (nakijken). Bestellingen en geleverd delen de doos:
+   het zijn verschillende plekken (de zijbalk en een teller). */
+const ICON_OVERVIEW = ikoon('raster', 'i');
+const ICON_NEW = ikoon('plus', 'i');
+const ICON_ORDERS = ikoon('doos', 'i');
+const ICON_BRAND = ikoon('kader', 'i');
+const ICON_PLAN = ikoon('prijs', 'i');
 /* Twee pijlen naar de rand: dichtklappen wijst naar links, uitklappen naar
    rechts. Geen hamburger — die betekent "hier zit een menu", en het menu is in
    beide standen zichtbaar; alleen de woorden ernaast verdwijnen. */
-const ICON_COLLAPSE = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/><path d="M4 4v16"/></svg>';
+const ICON_COLLAPSE = ikoon('pijl-links', 'i');
 /* Zon en maan, in dezelfde vorm als de andere pictogrammen hier: één pad, geen
    vulling, currentColor. Geen emoji — die worden door het besturingssysteem
    getekend en zijn op een dashboard zonder webfont het enige wat niet meebeweegt
@@ -6378,12 +6403,12 @@ const ICON_COLLAPSE = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><pa
 const ICON_ZON = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
 const ICON_MAAN = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a7 7 0 1 0 10.5 10.5z"/></svg>';
 
-const ICON_EXPAND = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/><path d="M20 4v16"/></svg>';
-const ICON_DETAILS = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>';
+const ICON_EXPAND = ikoon('pijl', 'i');
+const ICON_DETAILS = ikoon('persoon', 'i');
 // Een blad met regels en een omgeslagen hoek. Bewust géén euroteken: dat staat
 // naast ICON_PLAN ("Abonnement & facturering") en twee geldglyphs onder elkaar
 // zeggen niet welke van de twee de documenten heeft.
-const ICON_INVOICE = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/><path d="M9 12h6M9 16h4"/></svg>';
+const ICON_INVOICE = ikoon('bestand', 'i');
 
 /**
  * Two icons that are NOT nav items and so are not in the five above.
@@ -6399,15 +6424,15 @@ const ICON_INVOICE = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><pat
  * and colour alone would be the sole carrier of state, which account.css's own
  * token notes rule out.
  */
-const ICON_FACE = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="4.2"/><path d="M4.5 20.5c0-4 3.4-7.2 7.5-7.2s7.5 3.2 7.5 7.2"/></svg>';
+const ICON_FACE = ikoon('persoon', 'i');
 /* De drie tellericonen. Ze bestaan naast ICON_ORDERS (de lijst) omdat de vier
    tegels op het overzicht alleen uit elkaar te houden zijn als hun icoon over
    de SOORT werk gaat en niet over "een bestelling". In productie is een cirkel
    die draait, nagekeken is een oog, geleverd is een doos met een vinkje. */
-const ICON_PROD = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>';
-const ICON_CHECK = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.6"/></svg>';
-const ICON_DELIVERED = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l9-4 9 4v8l-9 4-9-4z"/><path d="M8.5 10.5l2.5 2.5 4.5-4.5"/></svg>';
-const ICON_TICK = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg>';
+const ICON_PROD = ikoon('vernieuwen', 'i');
+const ICON_CHECK = ikoon('oog', 'i');
+const ICON_DELIVERED = ikoon('doos', 'i');
+const ICON_TICK = ikoon('vink', 'i');
 
 /* ════════════════════════════════════════════════════════════════════════════
    DE BOVENBALK · augustus 2026
@@ -8122,7 +8147,7 @@ export function progressView(t, lang, o, events = [], files = []) {
  * draagt is de ergste van de mogelijke keuzes: dan is er een foto waarvoor
  * betaald is die nergens meer te zien is.
  */
-function groupByProduct(delivered, uploaded) {
+function groupByProduct(delivered, uploaded, o = null) {
   const all = [...delivered, ...uploaded];
   if (!all.some((f) => f.product_key)) return null;
 
@@ -8135,11 +8160,32 @@ function groupByProduct(delivered, uploaded) {
   for (const f of delivered) take(f, 'delivered');
   for (const f of uploaded) take(f, 'uploaded');
 
+  /* ── DE STUKKEN VAN EEN LOOK BIJ ELKAAR — 17 oktober 2026 (levering 60) ────
+     Afvinklijst 38 (d-studio): de producten van een look staan na elkaar, en
+     direct daarna de map van de look (`lA`) met de twee lookbeelden. Een product
+     staat op de plek van het eerste stuk van zijn look. */
+  const looks = o ? looksVan(parseDetails(o.details_json), o.product_count) : [];
+  const plekVan = (key) => {
+    if (!key) return [1e6, 0];
+    if (isLookSleutel(key)) {
+      const l = looks.find((x) => x.letter === key.slice(1));
+      return l ? [l.producten[0], 1e3] : [9e5, key.charCodeAt(1)];
+    }
+    const n = Number(key.slice(1)) || 0;
+    const l = looks.find((x) => x.producten.includes(n));
+    return l ? [l.producten[0], l.producten.indexOf(n)] : [n, 0];
+  };
   return [...map.values()].sort((a, b) => {
-    if (!a.key) return 1;           // "overig" onderaan
-    if (!b.key) return -1;
-    return (Number(a.key.slice(1)) || 0) - (Number(b.key.slice(1)) || 0);
+    const [a1, a2] = plekVan(a.key);
+    const [b1, b2] = plekVan(b.key);
+    return a1 - b1 || a2 - b2;
   });
+}
+
+function parseDetails(d) {
+  if (!d) return {};
+  if (typeof d === 'object') return d;
+  try { return JSON.parse(d) || {}; } catch { return {}; }
 }
 
 /**
@@ -9356,13 +9402,25 @@ export function shotView(t, f, o, inProduct = false) {
 }
 
 export function productView(t, lang, o, g, open = false) {
-  const typed = g.key ? (orderProductNames(o.details_json)[g.key] || '') : '';
-  const label = typed || (g.key ? t.prodLabel(g.key.replace(/^p/, '')) : t.prodOther);
+  const namen = orderProductNames(o.details_json);
+  const typed = g.key && !isLookSleutel(g.key) ? (namen[g.key] || '') : '';
+  /* De map van een complete look heet "Look A" (levering 60). */
+  const label = isLookSleutel(g.key) ? t.lookLabel(g.key.slice(1)) : (typed || (g.key ? t.prodLabel(g.key.replace(/^p/, '')) : t.prodOther));
+  const looks = looksVan(parseDetails(o.details_json), o.product_count);
+  const lookHier = isLookSleutel(g.key)
+    ? looks.find((l) => l.letter === g.key.slice(1))
+    : looks.find((l) => g.key && l.producten.includes(Number(g.key.slice(1))));
   const live = g.delivered.filter((f) => !(f.expires_at && isExpired(f.expires_at, null)));
   const revising = live.some((f) => f.review_state === 'revision_requested');
   const approved = live.filter((f) => f.review_state === 'approved').length;
   const cover = live.find(isViewable) || g.uploaded.find(isViewable) || null;
+  const naamVan = (n) => namen[`p${n}`] || t.prodLabel(String(n));
+  const en = lang === 'nl' ? 'en' : 'and';
+  const lijst = (xs) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} ${en} ${xs[xs.length - 1]}` : xs[0] || '');
   const facts = [
+    /* Bij de map van de look: met welke stukken; bij een stuk: in welke look. */
+    lookHier && isLookSleutel(g.key) ? t.lookMet(lijst(lookHier.producten.map(naamVan))) : null,
+    lookHier && !isLookSleutel(g.key) ? t.lookPart(lookHier.letter) : null,
     live.length ? t.prodDelivered(live.length) : t.prodNothingYet,
     live.length && approved ? t.prodApproved(approved) : null,
   ].filter(Boolean).join(' · ');
@@ -9379,7 +9437,8 @@ export function productView(t, lang, o, g, open = false) {
     /* inProduct ook hier (ronde 8, S-N10): "#2 · Voorkant" binnen het paneel van product 2. */
     uploaded: g.uploaded.map((f) => shotView(t, f, o, true)),
     /* Werklijst 14: onder "Wat jij stuurde" de weg naar dit product in "Je foto's". */
-    fotosBeheer: g.key && nasturenOpen(o) && (Number(o.product_count) || 0) > 0
+    look: lookHier ? lookHier.letter : '',
+    fotosBeheer: g.key && !isLookSleutel(g.key) && nasturenOpen(o) && (Number(o.product_count) || 0) > 0
       ? { href: `/account/orders?order=${o.id}&p=${g.key}#fotos-${o.id}-${g.key}`, label: t.prodFotosBeheer } : null,
     allesGoed,
     waHref: `https://wa.me/${WHATSAPP_NUMBER}?text=${waText}`,
@@ -9490,7 +9549,7 @@ export function orderView(t, lang, o, files, events = [], fb = null, index = 0, 
     ? { label: t.orderApproveAll(openTeKeuren.length), note: t.orderApproveAllNote }
     : null;
 
-  const grouped = groupByProduct(delivered, uploaded);
+  const grouped = groupByProduct(delivered, uploaded, o);
   const progress = progressView(t, lang, o, events, files);
   const fotos = fotosView(t, lang, o, uploaded, Number(openOrderId) === Number(o.id) ? openProduct : '');
   /* Alleen met levende beelden (ronde 8, S-B5): zijn ze allemaal verlopen,

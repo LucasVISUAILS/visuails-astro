@@ -132,7 +132,8 @@ console.log('\nde grens met de outfittoeslag staat in de tekst die de klant lees
        outfitshot, en dan is er een toeslag van € 50 die niemand meer betaalt. */
     ok(`${lang}: en dat ze niet als product worden gefotografeerd`,
       /niet als product|not photographed as products/i.test(c.free), true);
-    ok(`${lang}: en wat een volledige outfit dan is`, /outfit/i.test(c.full), true);
+    /* Levering 60: de grens heet nu de complete look (looks.js). */
+    ok(`${lang}: en wat een complete look dan is`, /complete look/i.test(c.full), true);
     ok(`${lang}: en dat het om één beeld per product gaat`,
       /één foto|one photo/i.test(c.lead), true);
   }

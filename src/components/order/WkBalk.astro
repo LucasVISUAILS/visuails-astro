@@ -1,0 +1,51 @@
+---
+/*
+ * VISUAILS — de balk van de werkplaats. Levering 59, 17 oktober 2026 (afvinklijst 36,
+ * b-werkplaats: "Bovenaan alleen de V (naar de homepage), de vier stappen en 'Hulp
+ * nodig?'. Geen menu, geen Order-knop, geen voet.").
+ *
+ * De stappen zelf zijn de rail die OrderFlow.astro al had (<ol class="pl-rail">, door
+ * pipeline.js bijgehouden); die komt hier binnen als inhoud, zodat hij in het formulier
+ * blijft staan waar het script hem zoekt. Zonder `aan` (de proef) is dit alleen die rail.
+ *
+ * "Hulp nodig?" is een <details>: zonder script werkt hij, Esc en een klik ernaast sluiten
+ * hem (pipeline.js, bindWkHulp). Erin staan WhatsApp, mail en de FAQ, en tot 900 px breed
+ * ook de taal (de knop ernaast past dan niet meer in de balk).
+ */
+import VMerk from '../VMerk.astro';
+import NieuwTabblad from '../NieuwTabblad.astro';
+import { ikoon } from '../../data/iconen.js';
+import { waHref } from '../../data/whatsapp.js';
+import { localizedPath } from '../../i18n/ui.js';
+
+interface Props {
+  aan: boolean;
+  lang: 'en' | 'nl';
+  wk?: any;
+  anderePad?: string;
+  email?: string;
+}
+const { aan, lang, wk = {}, anderePad = '/', email = '' } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+---
+{aan ? (
+  <header class="wk-balk" aria-label={wk.balkLabel}>
+    <a class="brand wk-merk" href={lp('/')} aria-label={wk.thuis}><VMerk klasse="hal-vm hal-vm-balk" electro /></a>
+    <slot />
+    <div class="wk-rechts">
+      <details class="wk-hulp" data-wk-hulp>
+        <summary class="wk-hulp-knop"><span class="wk-hulp-i" set:html={ikoon('bericht')} /><span class="wk-hulp-t">{wk.hulp}</span></summary>
+        <div class="wk-hulp-paneel">
+          <p class="wk-hulp-kop">{wk.hulpKop}</p>
+          <p class="wk-hulp-zin">{wk.hulpZin}</p>
+          <a class="wk-hulp-a" href={waHref(wk.hulpWaTekst)} target="_blank" rel="noopener">{wk.hulpWa}<NieuwTabblad lang={lang} /></a>
+          <a class="wk-hulp-a" href={`mailto:${email}`}>{wk.hulpMail} <span class="wk-hulp-adres">{email}</span></a>
+          <a class="wk-hulp-a" href={lp('/faq')}>{wk.hulpFaq}</a>
+          {/* Op een smal scherm is er geen plek voor de taalknop in de balk; dan staat hij hier. */}
+          <a class="wk-hulp-a wk-hulp-taal" href={anderePad} hreflang={lang === 'nl' ? 'en' : 'nl'} lang={lang === 'nl' ? 'en' : 'nl'}>{wk.taal}<span class="wk-hulp-adres" aria-hidden="true">{wk.taalKort}</span></a>
+        </div>
+      </details>
+      <a class="wk-taal" href={anderePad} hreflang={lang === 'nl' ? 'en' : 'nl'} lang={lang === 'nl' ? 'en' : 'nl'} aria-label={wk.taal}>{wk.taalKort}</a>
+    </div>
+  </header>
+) : <slot />}

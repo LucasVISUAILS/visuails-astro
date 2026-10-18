@@ -51,7 +51,8 @@ rij('Vaste datum vanaf: 10 producten', P.WINDOW_THRESHOLD, 10);
 rij('Extra hoek/foto per product: €39 · €34 · €29 · €19, max 4', [prijzen(P.EXTRA_PHOTO_LADDER), P.MAX_EXTRA_PER_PRODUCT], [[39, 34, 29, 19], 4]);
 rij('4K (alleen lifestyle): €9 per product', P.HOOG_PER_PRODUCT, 9);
 rij('Resolutie: 2048 px standaard, 4096 hoog', [P.RESOLUTIE.standaard, P.RESOLUTIE.hoog], [2048, 4096]);
-rij('Outfit: €50 per product, max 3', [P.OUTFIT_SURCHARGE, P.MAX_OUTFIT_PRODUCTS], [50, 3]);
+/* Levering 60 (afvinklijst 38): de outfit is de complete look, € 50 en 4 credits per look. */
+rij('Complete look: €50 per look, 4 credits', [P.LOOK_PRIJS, P.LOOK_CREDITS], [50, 4]);
 rij('Voorrang: 20%, min €49, max €249, tot 20 producten/10 clips, vóór 15:00 → vóór 17:00',
   [P.VOORRANG.deel, P.VOORRANG.bodem, P.VOORRANG.plafond, P.VOORRANG.maxProducten, P.VOORRANG.maxClips, P.VOORRANG.bestelVoorUur, P.VOORRANG.klaarUur],
   [0.2, 49, 249, 20, 10, 15, 17]);

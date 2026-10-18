@@ -4,7 +4,7 @@
  * lukt alleen als dezelfde keuzes terugkomen: dezelfde look, achtergrond,
  * verhouding en hetzelfde gezicht. Deze functie maakt één gewone link naar het
  * formulier met ALLEEN die keuzes erin, en de knoptekst die zegt wat de klant
- * krijgt: "Catalog bestellen — Classic · gebroken wit · 4:5".
+ * krijgt: "Catalog bestellen — Classic · lichtgrijs · 4:5".
  *
  * WAT ER NIET MEEGAAT (V28 = a): naam, KVK, adres, e-mail. De privélink mag
  * gedeeld worden, en een link vol bedrijfsgegevens is een link die je niet
@@ -25,7 +25,9 @@ import { achtergrondNaam } from '../data/backgrounds.js';
 import { beeldAchtergrondInstellingen } from '../data/beeldachtergrond.js';
 import { ratioById, ratioLabel } from '../data/ratios.js';
 import { MODEL_ANY } from '../data/models.js';
-import { SAMPLE_SERVICE, creditsVoorDienst, ladderFloor, euro } from '../data/pricing.js';
+import { SAMPLE_SERVICE, creditsVoorDienst, ladderFloor, euro, FORM_MAX_PRODUCTS } from '../data/pricing.js';
+/* Levering 60: de indeling van de complete looks gaat mee (afvinklijst 38, d-kopie). */
+import { looksVan } from '../data/looks.js';
 import { ANGLE_IDS, EIGEN_ANGLE_IDS } from '../data/angles.js';
 
 const T = {
@@ -164,12 +166,12 @@ export function herbestelHtml(k, esc) {
 const T_ALLES = {
   nl: {
     label: 'Opnieuw bestellen met alle instellingen',
-    wat: { catalog: 'de achtergrond (ook per foto), de verhouding, het model, de kanalen en de extra hoeken', lifestyle: 'de look, de verhouding, het model, het aantal outfits en je notitie' },
+    wat: { catalog: 'het aantal producten, de stijl, de achtergrond (ook per foto), de verhouding, het model, de kanalen en de extra hoeken', lifestyle: 'het aantal producten, de look, de verhouding (ook per foto), het model en welke producten samen een look zijn; je bericht neem je met één klik over' },
     uitleg: (wat) => `Neemt alles van deze bestelling over: ${wat}. Je loopt het na voordat je bestelt; je producten en foto’s voeg je zelf toe.`,
   },
   en: {
     label: 'Order again with all settings',
-    wat: { catalog: 'the background (per photo too), the aspect ratio, the model, the channels and the extra angles', lifestyle: 'the look, the aspect ratio, the model, the number of outfits and your note' },
+    wat: { catalog: 'the number of products, the style, the background (per photo too), the aspect ratio, the model, the channels and the extra angles', lifestyle: 'the number of products, the look, the aspect ratio (per photo too), the model and which products make a look; you copy your message with one click' },
     uitleg: (wat) => `Copies everything from this order: ${wat}. You check it before you order; you add your products and photos yourself.`,
   },
 };
@@ -192,7 +194,7 @@ export function herbestelAllesKnop(o, { lang = 'nl' } = {}) {
 /**
  * Wat het formulier overneemt, uit details_json. Alleen waarden van een vaste
  * vorm; het formulier vergelijkt ze daarna nog eens met wat het zelf tekent.
- * @returns {null | { ref, dienst, style, bg, beelden: {sleutel, hex}[], ratio, model, kanalen: string[], hoeken: {id, note}[], notitie, outfits }}
+ * @returns {null | { ref, dienst, aantal, style, bg, beelden: {sleutel, hex}[], ratio, vormen: {beeld, ratio}[], model, kanalen: string[], hoeken: {id, note}[], notitie, looks: number[][] }}
  */
 export function bestelInstellingen(o) {
   if (!o || o.service === SAMPLE_SERVICE) return null;
@@ -210,19 +212,51 @@ export function bestelInstellingen(o) {
   const stijl = String(d.style || '');
   const hex = String(d.background_hex || '').replace(/^#/, '').toUpperCase();
   const face = String(d.model || d.model_p1 || '');
-  const outfits = Number.parseInt(String(d.outfit_count || ''), 10);
+  /* LEVERING 58 (17 oktober 2026, afvinklijst 36). v36-aantal = a: het oude aantal
+     producten gaat mee; het totaal staat ernaast, dus niemand bestelt per ongeluk te
+     veel. Tot het plafond van het formulier (FORM_MAX_PRODUCTS, 20). */
+  const aantalRuw = Number.parseInt(String(o.product_count ?? ''), 10);
+  const aantal = Number.isInteger(aantalRuw) && aantalRuw >= 1 && aantalRuw <= FORM_MAX_PRODUCTS ? aantalRuw : 0;
+  /* c-kopie: de vorm per beeld gaat mee als hij bij ALLE producten van de vorige
+     bestelling gelijk was ("de foto op een model altijd 4:5"). Verschilde hij per
+     product, dan hoorde hij bij die producten en niet bij de volgende. */
+  const perBeeld = {};
+  for (const [k, v] of Object.entries(d)) {
+    const m = /^ratio_p(\d{1,3})_(\d{1,2})$/.exec(k);
+    if (!m || !/^[a-z0-9-]{2,16}$/.test(String(v || ''))) continue;
+    (perBeeld[m[2]] = perBeeld[m[2]] || {})[m[1]] = String(v);
+  }
+  const vormen = [];
+  for (const [beeld, perProduct] of Object.entries(perBeeld)) {
+    const waarden = Object.values(perProduct);
+    const n = aantal || waarden.length;
+    if (waarden.length === n && waarden.every((x) => x === waarden[0])) vormen.push({ beeld: Number(beeld), ratio: waarden[0] });
+  }
   return {
     ref: String(o.ref || ''),
     dienst,
-    style: dienst === 'lifestyle' && (/^cs-\d{1,9}$/.test(stijl) || /^[a-z-]{2,24}$/.test(stijl)) ? stijl : '',
+    aantal,
+    /* Levering 57 (17 oktober 2026; Lucas: "Style kopieren moet sowieso heel uitgebreid
+       zijn"): ook de eigen stijl van een catalogusbestelling (cs-<id>, het blok "Je eigen
+       look" dat addOwnStyles tekent). De standaardstijl van catalog heet niet zo en blijft
+       leeg: die staat er vanzelf. */
+    style: (dienst === 'lifestyle' && (/^cs-\d{1,9}$/.test(stijl) || /^[a-z-]{2,24}$/.test(stijl))) || (dienst === 'catalog' && /^cs-\d{1,9}$/.test(stijl)) ? stijl : '',
     bg: dienst === 'catalog' && /^[0-9A-F]{6}$/.test(hex) ? hex : '',
     /* Werklijst 27 en v29-hex: de achtergrond per foto, ook een eigen kleur. */
     beelden: dienst === 'catalog' ? beeldAchtergrondInstellingen('catalog', d).slice(0, 16) : [],
     ratio: /^[a-z0-9-]{2,16}$/.test(String(d.ratio || '')) ? String(d.ratio) : '',
+    vormen: vormen.sort((a, b) => a.beeld - b.beeld).slice(0, 8),
     model: face && face !== MODEL_ANY && /^[a-z0-9-]{1,24}$/.test(face) ? face : '',
     kanalen: String(d.channels || '').split(',').map((x) => x.trim()).filter((x) => /^[a-z0-9-]{1,32}$/.test(x)).slice(0, 12),
     hoeken: hoeken.slice(0, 12),
+    /* v36-bericht = a: het bericht gaat NIET vanzelf mee (het ging vaak over die ene
+       levering), maar het formulier zet een knop klaar om het met één tik over te nemen. */
     notitie: kort(d.message, 2000),
-    outfits: Number.isFinite(outfits) && outfits > 0 && outfits <= 20 ? outfits : 0,
+    /* De indeling van de looks (afvinklijst 38, d-kopie): welke plaatsen samen een
+       look zijn, als [[1, 2], [3, 4, 5]]. Net als bij v36-outfits alleen als het
+       aantal producten ook meegaat, en alleen bij lifestyle; de stukken zelf vul je
+       opnieuw in. Een oude bestelling met `outfit_count` had geen indeling en geeft
+       dus niets. */
+    looks: aantal && dienst === 'lifestyle' ? looksVan(d, aantal).map((l) => l.producten).slice(0, 10) : [],
   };
 }

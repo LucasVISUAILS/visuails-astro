@@ -110,7 +110,7 @@ export const WALK_SERVICES = [
   {
     id: 'catalog',
     look: 'background',
-    lookIds: ['white', 'off-white', 'beige'],
+    lookIds: ['white', 'light-grey', 'beige'],
     out: 4,
     /** De vier shots van een catalogset. Ids gelijk aan src/data/shots.js. */
     shots: ['front', 'back', 'detail', 'worn'],
@@ -233,7 +233,7 @@ export const WALK_FASEN = [
  *  erbij zodat de walkthrough een staal kan tekenen. */
 export const DEMO_BACKGROUNDS = [
   { id: 'white', hex: '#FFFFFF' },
-  { id: 'off-white', hex: '#F7F5F1' },
+  { id: 'light-grey', hex: '#F5F5F5' },
   { id: 'beige', hex: '#EDE4D8' },
 ];
 
@@ -439,7 +439,7 @@ export const WALK_COPY = {
     modelRoster: `See the ${rosterWoord('en')} models`,
     outCount: function outCount(n) { return n === 1 ? 'One clip, from that one photo.' : `${n} images, from that one photo.`; },
     shotNames: { front: 'Front', back: 'Back', detail: 'Detail', worn: 'On a model' },
-    backgroundNames: { white: 'White', 'off-white': 'Off-white', beige: 'Beige' },
+    backgroundNames: { white: 'White', 'light-grey': 'Light grey', beige: 'Beige' },
 
     // The captions under the frame. Short — the frame is not the argument, the
     // step beside it is.
@@ -537,7 +537,7 @@ export const WALK_COPY = {
     modelRoster: `Bekijk de ${rosterWoord('nl')} modellen`,
     outCount: function outCount(n) { return n === 1 ? 'Eén clip, uit die ene foto.' : `${n} beelden, uit die ene foto.`; },
     shotNames: { front: 'Voorkant', back: 'Achterkant', detail: 'Detail', worn: 'Op een model' },
-    backgroundNames: { white: 'Wit', 'off-white': 'Gebroken wit', beige: 'Beige' },
+    backgroundNames: { white: 'Wit', 'light-grey': 'Lichtgrijs', beige: 'Beige' },
 
     capUpload: 'Wat jij stuurt',
     capWindow: 'De agendacheck',

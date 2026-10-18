@@ -34,7 +34,7 @@ function db() {
 }
 const PROEF = (d, { closed = false, status = 'delivered' } = {}) => d.prepare(`INSERT INTO orders (id, ref, customer_id, service, status, tier, product_count, email, lang, brand, total_cents, payment_status, delivered_at, delivery_mailed_at, closed_at, details_json)
   VALUES (1, 'VIS-PROEF-0001', 1, 'test-sample', ?, 'unattended', 1, 'studio@voorbeeld-volt.nl', 'nl', 'VOLT', 100, 'paid', datetime('now'), datetime('now'), ${closed ? "datetime('now')" : 'NULL'}, ?)`)
-  .run(status, JSON.stringify({ sample_type: 'catalog', background: 'off-white', background_hex: '#F7F5F1', ratio: 'portrait45', model: 'ava' }));
+  .run(status, JSON.stringify({ sample_type: 'catalog', background: 'light-grey', background_hex: '#F5F5F5', ratio: 'portrait45', model: 'ava' }));
 const BEELD = (d, id = 1) => d.exec(`INSERT INTO files (id, order_id, kind, r2_key, filename, bytes, review_state, product_key, shot) VALUES (${id}, 1, 'delivery', 'k${id}', 'b${id}.jpg', 1000, 'pending', 'p1', 'front')`);
 
 /* ── 1 · AFGEROND BIJ LEVERING ─────────────────────────────────────────────── */
@@ -90,7 +90,7 @@ for (const closed of [true, false]) {
   ok(`${naam}: meteen het afrondblok`, html.includes('id="afgerond"') && html.indexOf('id="afgerond"') < html.indexOf('class="facts"'));
   ok(`  de downloads bovenaan`, html.indexOf('class="folder"', html.indexOf('id="afgerond"')) > -1 && html.indexOf('class="folder"') < html.indexOf('class="herbestel"'));
   ok(`  "Bestel in deze look" vóór de tevredenheidsvraag`, html.indexOf('class="herbestel"') < html.indexOf('class="fb"') && />Bestel in deze look<\/a>/.test(html));
-  ok(`  met de echte keuzes in de link`, html.includes('href="/nl/start/catalog/?bg=F7F5F1&amp;ratio=portrait45&amp;face=ava"'));
+  ok(`  met de echte keuzes in de link`, html.includes('href="/nl/start/catalog/?bg=F5F5F5&amp;ratio=portrait45&amp;face=ava"'));
   ok(`  "catalogfoto’s vanaf ${euro(ladderFloor('catalog'), 'nl')} per product" uit de staffel`, html.includes(`catalogfoto’s vanaf ${euro(ladderFloor('catalog'), 'nl')} per product`));
   ok(`  de tevredenheidsvraag staat er`, html.includes('Ben je tevreden met wat je hebt gekregen?'));
   ok(`  en de zin bovenaan: "Je proefset staat klaar om te downloaden."`, html.includes('Je proefset staat klaar om te downloaden.'));

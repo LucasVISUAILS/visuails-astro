@@ -29,6 +29,7 @@
 import { SHOTS } from './shots.js';
 import { angleById, isEigenAngleId } from './angles.js';
 import { lifestyleBeeldenVan } from './pricing.js';
+import { looksVan } from './looks.js';
 
 /* Een lifestylebestelling van VÓÓR 14 oktober 2026: drie beelden (een scène, op een
    model, een close-up), met de neutrale namen die ze toen hadden. Zo blijven
@@ -113,21 +114,66 @@ export function leverVakken(service, det) {
   return [...CATALOG, ...extraVakken(det)];
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+ * DE TWEE BEELDEN VAN EEN COMPLETE LOOK — 17 oktober 2026 (levering 60)
+ * ═══════════════════════════════════════════════════════════════════════════
+ * Afvinklijst 38 (v38-beelden a): bovenop de vier beelden van elk stuk komen per
+ * look twee beelden van de hele look — van top tot teen van voren, en de stukken
+ * samen zonder model. Ze horen bij geen van de stukken, dus krijgen ze een eigen
+ * sleutel in `files.product_key`: `lA`, `lB` … (de letter van de look, zie
+ * looks.js). Op het werkbord, in de werkmap, in Studio en op de privélink staan
+ * ze als "Look A", naast de stukken van die look. */
+export const LOOK_VAKKEN = [
+  { id: 'look-geheel', nl: 'Look · van top tot teen', en: 'Look · head to toe', woord: { nl: 'van-top-tot-teen', en: 'head-to-toe' } },
+  { id: 'look-samen', nl: 'Look · de stukken samen', en: 'Look · the pieces together', woord: { nl: 'stukken-samen', en: 'pieces-together' } },
+];
+export const LOOK_VAK_IDS = LOOK_VAKKEN.map((v) => v.id);
+
+/** Is dit de sleutel van een look (`lA`) en niet van een product (`p3`)? */
+export function isLookSleutel(key) {
+  return /^l[A-J]$/.test(String(key || ''));
+}
+
+/** De sleutel bij een lookletter: `A` → `lA`. */
+export function lookSleutel(letter) {
+  return `l${String(letter || '').toUpperCase()}`;
+}
+
+/** De sleutels van de looks in deze bestelling (`['lA', 'lB']`), uit details_json. */
+export function lookSleutels(det, aantal) {
+  return looksVan(details(det), aantal).map((l) => lookSleutel(l.letter));
+}
+
+/** De vakjes bij een sleutel: de twee lookbeelden bij `lA`, anders die van de dienst. */
+export function vakkenVoor(service, det, productKey) {
+  return isLookSleutel(productKey) ? LOOK_VAKKEN : leverVakken(service, det);
+}
+
+/** De vakjes van de dienst plus, als het een lookvak is, dat vak (voor naam en woord). */
+function vakVan(service, det, shot) {
+  return leverVakken(service, det).find((x) => x.id === shot) || LOOK_VAKKEN.find((x) => x.id === shot) || null;
+}
+
 /** De naam van één vakje zoals een mens hem leest, of null als het vak onbekend is. */
 export function vakNaam(service, det, shot, lang = 'nl') {
-  const v = leverVakken(service, det).find((x) => x.id === shot);
+  const v = vakVan(service, det, shot);
   if (!v) return null;
   return lang === 'en' ? v.en : v.nl;
 }
 
-/** Het woord in de bestandsnaam: `beeld-1`, `driekwart`, `voorkant`. */
+/** Het woord in de bestandsnaam: `beeld-1`, `driekwart`, `voorkant`, `van-top-tot-teen`. */
 export function vakWoord(service, det, shot, lang = 'nl') {
-  const v = leverVakken(service, det).find((x) => x.id === shot);
+  const v = vakVan(service, det, shot);
   if (!v) return null;
   return v.woord[lang === 'en' ? 'en' : 'nl'];
 }
 
-/** Alle sleutels die op het werkbord een vakje mogen vullen. */
+/** Alle sleutels die op het werkbord een vakje mogen vullen (bij een product). */
 export function vakIds(service, det) {
   return leverVakken(service, det).map((v) => v.id);
+}
+
+/** De vakjes die bij déze sleutel horen: die van de dienst, of de twee van een look. */
+export function vakIdsVoor(service, det, productKey) {
+  return vakkenVoor(service, det, productKey).map((v) => v.id);
 }

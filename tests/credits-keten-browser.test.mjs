@@ -117,7 +117,9 @@ try {
     const kop = p.locator('.st-bestelling', { hasText: ref }).first();
     ok(`Studio ${breed}px: de bestelling staat in Bestellingen`, await kop.count() > 0, true);
     const pil = kop.locator('.credits-pil');
-    ok(`Studio ${breed}px: met de pil "Credits" naast het kenmerk`, (await pil.count()) ? (await pil.locator('[aria-hidden="true"]').innerText()).trim() : '', 'Credits');
+    /* Levering 57: de pil staat in de vaste breedte-letter in hoofdletters (CSS), dus de
+       tekst zelf, niet wat er op het scherm staat. */
+    ok(`Studio ${breed}px: met de pil "Credits" naast het kenmerk`, (await pil.count()) ? (await pil.locator('[aria-hidden="true"]').textContent()).trim() : '', 'Credits');
     ok(`Studio ${breed}px:   voorgelezen als "Betaald met credits van je abonnement"`, (await pil.count()) ? (await pil.locator('.sr-only').textContent()).trim() : '', 'Betaald met credits van je abonnement');
     const maat = await pil.evaluate((el) => {
       const lum = (c) => { const d = String(c).match(/[\d.]+/g).slice(0, 3).map(Number).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * d[0] + 0.7152 * d[1] + 0.0722 * d[2]; };

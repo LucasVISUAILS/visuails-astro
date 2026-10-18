@@ -65,6 +65,8 @@
 //                              is a language-neutral base path; the component
 //                              localizes it.
 
+/* Levering 60: de complete look, één verhaal op de site. */
+import { lookCopy } from './looks.js';
 import {
   AMOUNT, TIERS, TEST_SAMPLE, euro, reviewClaim, turnaround, aftercare, perProduct,
   CATALOG_IMAGES, LIFESTYLE_IMAGES,
@@ -85,7 +87,7 @@ import {
   STOCK_OFF_BRAND, STOCK_ON_BRAND,
   /* De toeslag voor een compleet setje en de extra hoek — zie de nieuwe vragen
      bij catalog en lifestyle, 4 september 2026. */
-  OUTFIT_SURCHARGE, MAX_OUTFIT_PRODUCTS, extraPhotoRate,
+  LOOK_PRIJS, extraPhotoRate,
   /* Wat er na de ene revisieronde gebeurt — zie REVISIEBELEID in pricing.js. */
   revisiebeleid,
   /* Dat het product herkenbaar blijft — zie PRODUCTTROUW in pricing.js. */
@@ -1071,8 +1073,10 @@ const CATALOG_LIFESTYLE_FAQ = {
         a: `Under ${WINDOW_THRESHOLD} products: ${clause(turnaround('unattended', 'en')).toLowerCase()}. That is the standard turnaround, with no fixed date. Orders of ${WINDOW_THRESHOLD} products or more have a date held for them, so in a busy week a smaller order can move back. From ${WINDOW_THRESHOLD} products you get ${clause(turnaround('attended', 'en')).toLowerCase()}.`,
       },
       {
-        q: 'Can several products go into one shot?',
-        a: `Yes — a complete outfit. Trousers, top and shoes styled together on one model counts as one product plus a flat ${euro(OUTFIT_SURCHARGE, 'en')} for that product, for up to ${MAX_OUTFIT_PRODUCTS} products styled that way per order. Send the front and back of every piece, and tick it in the order form.`,
+        q: 'Can several products be worn together?',
+        /* Levering 60 (afvinklijst 38, d-teksten): één verhaal overal. De zin "vink
+           het aan in het bestelformulier" ging over iets wat er niet was. */
+        a: `Yes — a complete look, with lifestyle carousels. ${lookCopy('en').prijs(euro(LOOK_PRIJS, 'en'))} Count every piece in your order, and with your photos choose which two or three are worn together. You get two images of the whole look on top. ${lookCopy('en').set}`,
       },
       {
         q: 'Can I steer within a look?',
@@ -1120,8 +1124,8 @@ const CATALOG_LIFESTYLE_FAQ = {
         a: `Onder ${WINDOW_THRESHOLD} producten: ${clause(turnaround('unattended', 'nl')).toLowerCase()}. ${t0.queue.nl} — een drukke week kan zo’n bestelling dus verschuiven. Vanaf ${WINDOW_THRESHOLD} producten houden we een leverdatum voor je vrij, en die wijkt niet meer voor een latere bestelling: ${clause(turnaround('attended', 'nl')).toLowerCase()}.`,
       },
       {
-        q: 'Kunnen meerdere producten in één shot?',
-        a: `Ja — een compleet setje. Broek, top en schoenen samen gestyled op één model telt als één product plus een vaste ${euro(OUTFIT_SURCHARGE, 'nl')} voor dat product, voor maximaal ${MAX_OUTFIT_PRODUCTS} zo gestylede producten per bestelling. Stuur van elk stuk voor- en achterkant, en vink het aan in het bestelformulier.`,
+        q: 'Kunnen meerdere producten samen gedragen worden?',
+        a: `Ja — een complete look, bij lifestylecarrousels. ${lookCopy('nl').prijs(euro(LOOK_PRIJS, 'nl'))} Tel alle stukken mee in je bestelling, en kies bij je foto’s welke twee of drie samen gedragen worden. Je krijgt er twee beelden van de hele look bij. ${lookCopy('nl').set}`,
       },
       {
         q: 'Kan ik bijsturen binnen een look?',

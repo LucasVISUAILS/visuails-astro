@@ -58,12 +58,12 @@ ok('er is een LEESMIJ over de sneltoets', /Functietoets: F9/.test(readFileSync(n
 
 /* ── 1 · DE INSTELLINGEN-REGEL: WAT DE SERVER SCHRIJFT, LEEST HET SCRIPT ──── */
 const ORDER = { ref: 'VIS-TEST-0407', service: 'catalog', kanaal: 'webshop,amazon' };
-const PRODUCT = { index: 3, name: 'Overhemd · "linnen"', garment: 'top', colour: '#E8E1D5', background: '#f7f5f1', ratio: '4:5', imageRatios: ['', '1:1'], hoogRes: true, extras: [] };
+const PRODUCT = { index: 3, name: 'Overhemd · "linnen"', garment: 'top', colour: '#E8E1D5', background: '#f5f5f5', ratio: '4:5', imageRatios: ['', '1:1'], hoogRes: true, extras: [] };
 const brief = briefingText({ order: ORDER, product: PRODUCT });
 const gelezen = L.leesInstellingen(brief);
 const verwacht = Object.fromEntries(instellingen(ORDER, PRODUCT));
 ok('elke sleutel=waarde komt ongeschonden terug', JSON.stringify(gelezen) === JSON.stringify(verwacht), `${JSON.stringify(gelezen)} vs ${JSON.stringify(verwacht)}`);
-ok('achtergrond in hoofdletters met hekje', gelezen.achtergrond === '#F7F5F1');
+ok('achtergrond in hoofdletters met hekje', gelezen.achtergrond === '#F5F5F5');
 ok('lange_zijde 4096 bij 4K', gelezen.lange_zijde === '4096');
 /* Kladblok of ExtendScript zonder UTF-8: het middenpunt wordt "Â·". */
 const verkeerd = brief.replace(/·/g, 'Â·');
@@ -93,10 +93,10 @@ ok('vak 2 met een eigen verhouding: verhouding_2 wint', L.verhoudingVoorVak(gele
 /* Werklijst 27 (15 oktober 2026): een andere achtergrond per beeld. Wat de
    server schrijft (instellingen() met beeldAchtergronden), leest het script. */
 {
-  const regel = `INSTELLINGEN ${instellingen({ ref: 'VIS-TEST-0407', service: 'catalog', kanaal: 'own' }, { index: 1, background: '#F7F5F1', ratio: '4:5', beeldAchtergronden: [{ nr: 4, hex: '#EDE4D8', nl: 'Op een model', naam: { nl: 'Beige' } }] }).map(([k, v]) => `${k}=${v}`).join(' · ')}`;
+  const regel = `INSTELLINGEN ${instellingen({ ref: 'VIS-TEST-0407', service: 'catalog', kanaal: 'own' }, { index: 1, background: '#F5F5F5', ratio: '4:5', beeldAchtergronden: [{ nr: 4, hex: '#EDE4D8', nl: 'Op een model', naam: { nl: 'Beige' } }] }).map(([k, v]) => `${k}=${v}`).join(' · ')}`;
   const inst = L.leesInstellingen(regel);
   ok('per beeld: de server schrijft achtergrond_4', /achtergrond_4=#EDE4D8/.test(regel), regel);
-  ok('per beeld: het script vult vak 4 met die kleur, de rest met de achtergrond', L.achtergrondVoorVak(inst, '4 op-model') === '#EDE4D8' && L.achtergrondVoorVak(inst, '1 voorkant') === '#F7F5F1', JSON.stringify(inst));
+  ok('per beeld: het script vult vak 4 met die kleur, de rest met de achtergrond', L.achtergrondVoorVak(inst, '4 op-model') === '#EDE4D8' && L.achtergrondVoorVak(inst, '1 voorkant') === '#F5F5F5', JSON.stringify(inst));
   ok('per beeld: het script gebruikt achtergrondVoorVak bij het afwerken', /processDocument\(doc, route, achtergrondVoorVak\(inst, vnaam\), besluit\)/.test(JSX));
 }
 ok('behandeling: detail', L.behandeling('3 detail', 'catalog') === 'detail');

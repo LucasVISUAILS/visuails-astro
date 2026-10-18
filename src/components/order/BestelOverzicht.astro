@@ -56,6 +56,7 @@ import { tegelsVoor, ECHTE_BESTELLING } from '../../data/overzichtbeelden.js';
    hij krijgt."*). Alleen bij catalog: daar staat de hoekenkiezer. pipeline.js
    (paintAngles) zet de tegel aan zodra de hoek is aangevinkt. */
 import { ANGLES, ANGLE_GROUPS, EIGEN_ANGLE_PREFIX } from '../../data/angles.js';
+import { ikoon } from '../../data/iconen.js';
 
 interface Props {
   lang: 'en' | 'nl';
@@ -63,8 +64,18 @@ interface Props {
   service: string;
   /** De proefvisual heeft één product en één beeld; daar is een overzicht ruis. */
   isSample?: boolean;
+  /** ── DE WERKPLAATS — levering 59, 17 oktober 2026 (afvinklijst 36, b-werkplaats en b-kleur) ──
+   *  "Rechts Wat je krijgt met het totaal en de knop, altijd in beeld." Met `wk` (de teksten
+   *  uit OrderFlow.astro) krijgt elk catalogbeeld een vierkantje voor zijn achtergrond, staan
+   *  "Een hoek erbij" en de vorm hier, en eindigt het blok met Verder en de inlogregel. */
+  wk?: any;
+  vormen?: Array<{ id: string; label: string }>;
+  standaardVorm?: string;
+  kleuren?: Array<{ id: string; hex: string; naam: string }>;
+  inlogHref?: string;
 }
-const { lang, service, isSample = false } = Astro.props;
+const { lang, service, isSample = false, wk = null, vormen = [], standaardVorm = 'square', kleuren = [], inlogHref = '/account/login' } = Astro.props;
+const catalog = service === 'catalog';
 const nl = lang === 'nl';
 const perProduct = beeldenVoor(service);
 
@@ -101,59 +112,95 @@ const c = nl ? {
 };
 ---
 
-{!isSample && (
-<aside class="bo" data-pl-overzicht aria-labelledby="bo-h">
-  <h2 id="bo-h" class="bo-h">{c.h}</h2>
+{!isSample && wk && (
+<aside class="bo wk-krijg" data-pl-overzicht aria-labelledby="bo-h">
+  <h2 id="bo-h" class="bo-h wk-krijg-h">{wk.krijgKop}</h2>
 
   {tegels.length > 0 && (
     <div class="bo-set">
       <ul class="bo-tegels" role="list">
         {tegels.map((t) => (
-          <li data-bo-beeld={t.id || undefined}><span class="bo-tegel"><img src={t.src} width="120" height="120" alt={t.alt} loading="lazy" decoding="async" /></span><span class="bo-tegel-naam" aria-hidden="true">{t.label}</span></li>
+          <li data-bo-beeld={t.id || undefined}>
+            <span class="bo-tegel">
+              <img src={t.src} width="120" height="120" alt={t.alt} loading="lazy" decoding="async" />
+              {catalog && t.id && <button type="button" class="wk-kleur" data-wk-kleur={t.id} data-wk-hoek-naam={t.label} aria-haspopup="dialog" aria-expanded="false" aria-label={wk.kleurVoor(t.label, '#FFFFFF')}></button>}
+            </span>
+            <span class="bo-tegel-naam" aria-hidden="true">{t.label}</span>
+          </li>
         ))}
         {hoekTegels.map((h) => (
-          <li class="bo-tegel-extra" data-bo-hoek={h.id} hidden><span class="bo-tegel"><img src={h.src} width="120" height="120" alt="" loading="lazy" decoding="async" /><span class="bo-plus" aria-hidden="true">+</span></span><span class="bo-tegel-naam" data-bo-hoek-naam={h.eigen ? h.label : undefined}>{h.label}</span></li>
+          <li class="bo-tegel-extra" data-bo-hoek={h.id} hidden>
+            <span class="bo-tegel">
+              <img src={h.src} width="120" height="120" alt="" loading="lazy" decoding="async" /><span class="bo-plus" aria-hidden="true">+</span>
+              <button type="button" class="wk-kleur" data-wk-kleur={h.id} data-wk-hoek-naam={h.label} aria-haspopup="dialog" aria-expanded="false" aria-label={wk.kleurVoor(h.label, '#FFFFFF')}></button>
+            </span>
+            <span class="bo-tegel-naam" data-bo-hoek-naam={h.eigen ? h.label : undefined}>{h.label}</span>
+          </li>
         ))}
       </ul>
-      {perProduct && <p class="bo-set-noot" data-bo-per={c.perProduct(999).replace('999', '{n}')}>{c.perProduct(perProduct)}</p>}
-      <p class="bo-set-noot bo-set-klein">{c.noot}</p>
+      {catalog && <p class="wk-kleur-noot"><b>{wk.hoekNoot[0]}</b> {wk.hoekNoot[1]}</p>}
+      {perProduct && <p class="bo-set-noot" data-bo-per={c.perProduct(999).replace('999', '{n}')} hidden>{c.perProduct(perProduct)}</p>}
     </div>
   )}
 
-  {/* ── DE REGELS ────────────────────────────────────────────────────────
-      `data-pl-sum-*` zijn dezelfde haken als de samenvatting op stap 5; de
-      tekst tussen de tags is de terugvalwaarde die setSummary() bewaart en
-      terugzet zodra een keuze weer leeg wordt. Vandaar een streepje en geen
-      lege tag: een regel die verdwijnt laat het overzicht springen. */}
-  <dl class="bo-regels">
-    <div class="bo-regel"><dt>{c.aantal}</dt><dd data-pl-bo-aantal>{c.leeg}</dd></div>
-    {perProduct && (
-      <div class="bo-regel"><dt>{c.beelden}</dt><dd data-pl-bo-beelden>{c.leeg}</dd></div>
-    )}
-    <div class="bo-regel"><dt>{c.model}</dt><dd data-pl-sum-model>{c.leeg}</dd></div>
-    <div class="bo-regel"><dt>{c.bg}</dt><dd data-pl-sum-bg>{c.leeg}</dd></div>
-    <div class="bo-regel"><dt>{c.ratio}</dt><dd data-pl-sum-ratio>{c.leeg}</dd></div>
+  {catalog && (
+    <button type="button" class="wk-erbij" data-wk-hoek-open aria-haspopup="dialog"><span class="wk-erbij-i" set:html={ikoon('plus')} />{wk.hoekErbij}<em data-wk-hoek-prijs>{wk.hoekVanaf}</em></button>
+  )}
+
+  {vormen.length > 0 && (
+    <div class="wk-vormen" role="group" aria-label={wk.vorm} data-wk-vormen>
+      {vormen.map((v) => (
+        <button type="button" data-wk-vorm={v.id} aria-pressed={v.id === standaardVorm ? 'true' : 'false'}>{v.label}</button>
+      ))}
+    </div>
+  )}
+
+  {/* De regels. `data-pl-*` vult pipeline.js zoals altijd; `data-wk-*` zijn de regels van de
+      werkplaats (wkOverzicht in pipeline.js). De tekst tussen de tags is wat er staat zolang
+      er nog niets gekozen is. */}
+  {/* De complete looks (levering 60, c-look): een regel per look, door pipeline.js
+      (wkLooksPaint) gevuld zodra de klant in stap 2 stukken aan elkaar koppelt. */}
+  {!catalog && <div class="wk-looks" data-wk-looks hidden></div>}
+  <dl class="bo-regels wk-rijen">
+    {!catalog && <div class="bo-regel"><dt>{wk.rLook}</dt><dd data-wk-sum-look>{wk.nogKiezen}</dd></div>}
+    <div class="bo-regel"><dt>{wk.rProducten}</dt><dd><span data-wk-sum-producten>{c.leeg}</span><span data-pl-bo-aantal hidden>{c.leeg}</span></dd></div>
+    {!catalog && <div class="bo-regel" data-wk-rij-looks hidden><dt>{wk.rLooks}</dt><dd data-wk-sum-looks></dd></div>}
+    {perProduct && <div class="bo-regel"><dt>{wk.rBeelden}</dt><dd data-pl-bo-beelden>{c.leeg}</dd></div>}
+    <div class="bo-regel"><dt>{wk.rGezicht}</dt><dd data-pl-sum-model>{wk.nogKiezen}</dd></div>
+    <div class="bo-regel" data-wk-rij-voorrang><dt>{wk.rVoorrang}</dt><dd data-wk-sum-voorrang>{wk.nee}</dd></div>
   </dl>
 
-  {/* Het bedrag onderaan en niet bovenaan: alles hierboven is wat het bedrag
-      betekenis geeft, en die volgorde is het hele punt van dit blok.
-
-      ── EN DIT IS HIER DE LIVE REGIO ────────────────────────────────────
-      Boven 1100 pixels verbergt OrderFlow het totaalblok IN het formulier,
-      want dan staat hetzelfde bedrag twee keer op één scherm. Dat blok droeg
-      `aria-live`, en zonder deze regel zou een schermlezer het bedrag dus
-      horen veranderen op smal en niets horen op breed — precies het gat dat
-      de noot bij .pl-total-live beschrijft, opnieuw gemaakt door het op te
-      lossen. Beide blokken zijn nooit tegelijk zichtbaar, dus er wordt ook
-      nooit dubbel aangekondigd. */}
   <div class="bo-geld" aria-live="polite" aria-atomic="true">
-  <p class="bo-totaal">
-    <span class="bo-totaal-l">{c.totaal}</span>
-    <b class="bo-totaal-b" data-pl-total>{c.leeg}</b>
-    <small class="bo-totaal-s">{c.excl}</small>
-  </p>
-  <p class="bo-noot" data-pl-total-note></p>
+    <p class="bo-totaal">
+      <span class="bo-totaal-l">{wk.totaal}</span>
+      <b class="bo-totaal-b" data-pl-total>{c.leeg}</b>
+      <small class="bo-totaal-s">{c.excl}</small>
+    </p>
+    <p class="bo-noot" data-pl-total-note></p>
   </div>
+
+  {/* Verder, altijd in beeld. pipeline.js (paintWkVerder) zet de tekst per stap en
+      verbergt hem op de laatste stap, waar Bestellen en betalen staat. */}
+  <button type="button" class="wk-verder" data-pl-next data-wk-verder><span data-wk-verder-t>{wk.verder[0]}</span><span class="wk-verder-i" set:html={ikoon('pijl')} /></button>
+  <p class="wk-inloggen" data-acct="out">{wk.inloggen[0]} <a href={inlogHref}>{wk.inloggen[1]}</a>{wk.inloggen[2]}</p>
+
+  {catalog && (
+    <div class="wk-paneel" data-wk-paneel hidden role="dialog" aria-labelledby="wk-paneel-h">
+      <p class="wk-paneel-h" id="wk-paneel-h">{wk.paneelKop} · <span data-wk-paneel-hoek></span></p>
+      {kleuren.map((k) => (
+        <button type="button" class="wk-paneel-k" data-wk-c={k.hex} aria-pressed="false" style={`--c:${k.hex}`}><s></s>{k.naam}<em>{k.hex}</em></button>
+      ))}
+      <button type="button" class="wk-paneel-k wk-paneel-eigen-k" data-wk-c="eigen" aria-pressed="false"><s></s>{wk.eigenKleur}<em>#…</em></button>
+      <div class="wk-paneel-eigen" data-wk-eigen hidden>
+        <span aria-hidden="true">#</span>
+        <input type="text" data-wk-eigen-hex maxlength="7" inputmode="text" autocomplete="off" spellcheck="false" aria-label={wk.eigenVeld} placeholder="E7E1F7" />
+        <button type="button" data-wk-eigen-zet>{wk.eigenGebruik}</button>
+      </div>
+      <p class="wk-paneel-fout" data-wk-eigen-fout hidden>{wk.eigenFout}</p>
+      <p class="wk-paneel-wit" data-wk-paneel-wit hidden>{wk.wit}</p>
+      <p class="wk-paneel-amazon">{wk.amazon}</p>
+    </div>
+  )}
 </aside>
 )}
 
@@ -265,5 +312,5 @@ const c = nl ? {
 
      Het totaal is daar niet weg: .pl-total-bar plakt op smal onderaan het
      scherm zolang stap 1 in beeld is. Zie de noot daarbij in OrderFlow.astro. */
-  @media (max-width: 1099px) { .bo { display: none; } }
+  /* In de werkplaats staat het blok ook op smal: onder de keuzes (werkplaats.css). */
 </style>

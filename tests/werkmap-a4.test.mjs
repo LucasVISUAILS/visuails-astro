@@ -54,7 +54,7 @@ ok('_ruw/ is een werkmap, geen levering', isRawPath('VIS-1 - M/p1 - x/1 voorkant
 const ORDER_TEKST = { ref: 'VIS-TEST-0401', service: 'catalog', kanaal: 'webshop', notes: 'Logo niet bijwerken.' };
 const PRODUCT = {
   index: 2, name: 'Hoodie VOORBEELD 2026', garment: 'top', material: '100% katoen',
-  colour: 'washed black #2B2B2B', background: '#F7F5F1', ratio: '4:5', model: 'Ava',
+  colour: 'washed black #2B2B2B', background: '#F5F5F5', ratio: '4:5', model: 'Ava',
   uitsnede: 'heup en hoger', styling: 'effen broek, recht model', extras: [],
 };
 const brief = briefingText({ order: ORDER_TEKST, product: PRODUCT });
@@ -62,7 +62,7 @@ const posities = ['INSTELLINGEN  ', 'PLAKREGEL     ', '\r\nMAKEN\r\n', '\r\nLET 
 ok('vijf blokken, in vaste volgorde', posities.every((p, i) => p > 0 && (i === 0 || p > posities[i - 1])), JSON.stringify(posities));
 ok('de kop: kenmerk · product · naam', brief.startsWith('VIS-TEST-0401 · p2 · Hoodie VOORBEELD 2026\r\n'));
 ok('INSTELLINGEN is één regel sleutel=waarde',
-  /\r\nINSTELLINGEN  kenmerk=VIS-TEST-0401 · product=p2 · dienst=catalog · achtergrond=#F7F5F1 · verhouding=4:5 · lange_zijde=2048 · kanaal=webshop · photoshop=ja\r\n/.test(brief), brief.split('\r\n')[3]);
+  /\r\nINSTELLINGEN  kenmerk=VIS-TEST-0401 · product=p2 · dienst=catalog · achtergrond=#F5F5F5 · verhouding=4:5 · lange_zijde=2048 · kanaal=webshop · photoshop=ja\r\n/.test(brief), brief.split('\r\n')[3]);
 ok('de plakregel: type, kleur met code, materiaal', plakRegel(PRODUCT) === 'top, washed black (#2B2B2B), 100% katoen', plakRegel(PRODUCT));
 ok('de plakregel noemt de productnaam NIET', !/VOORBEELD|Hoodie/i.test(brief.split('\r\n').find((r) => r.startsWith('PLAKREGEL'))));
 ok('MAKEN: gezicht, uitsnede, styling', /  Gezicht     Ava\r\n  Uitsnede    heup en hoger\r\n  Styling     effen broek, recht model/.test(brief));
@@ -134,7 +134,7 @@ db.exec(`
   INSERT INTO customers (id, email, name, brand, country) VALUES (61, 'werkmap@voorbeeldmerk.test', 'Noor Visser', 'Voorbeeld/Merk', 'NL');
   INSERT INTO orders (id, ref, customer_id, service, status, name, brand, email, total_cents, lang, product_count, details_json, payment_status, country)
     VALUES (601, 'VIS-TEST-0601', 61, 'catalog', 'in_production', 'Noor Visser', 'Voorbeeld/Merk', 'werkmap@voorbeeldmerk.test', 12000, 'nl', 2,
-            '${JSON.stringify({ product_p1: 'Hoodie VOORBEELD', garment_p1: 'top', colour_p1: 'zand #D8C7A8', material_p1: 'katoen', background_hex: '#F7F5F1', ratio: 'portrait45', channels: 'webshop', model: 'ava' })}', 'paid', 'NL');
+            '${JSON.stringify({ product_p1: 'Hoodie VOORBEELD', garment_p1: 'top', colour_p1: 'zand #D8C7A8', material_p1: 'katoen', background_hex: '#F5F5F5', ratio: 'portrait45', channels: 'webshop', model: 'ava' })}', 'paid', 'NL');
   INSERT INTO files (order_id, kind, r2_key, filename, bytes, product_key, shot) VALUES
     (601, 'upload', 'intake/b9/001-voor.jpg', 'IMG_2201.JPG', ${KLANT_VOOR.length}, 'p1', 'front'),
     (601, 'upload', 'intake/b9/002-achter.jpg', 'IMG_2202.JPG', ${KLANT_ACHTER.length}, 'p1', 'back');
@@ -175,7 +175,7 @@ function unzip(buf) {
   ok('p2 heeft een lege _aangeleverd/ (er kwam niets)', zip.has(`${root}p2 - product 2/_aangeleverd/`) && !namen.some((n) => n.startsWith(`${root}p2 - product 2/_aangeleverd/p2`)));
   ok('de vakken staan er nog', zip.has(`${root}p1 - Hoodie VOORBEELD/1 voorkant/`) && zip.has(`${root}p2 - product 2/4 op-model/`));
   const b1 = zip.get(`${root}p1 - Hoodie VOORBEELD/_briefing.txt`).toString('utf8');
-  ok('de brief: INSTELLINGEN uit de bestelling', /INSTELLINGEN  kenmerk=VIS-TEST-0601 · product=p1 · dienst=catalog · achtergrond=#F7F5F1 · verhouding=4:5 · lange_zijde=2048 · kanaal=webshop · photoshop=ja\r\n/.test(b1), b1.split('\r\n')[3]);
+  ok('de brief: INSTELLINGEN uit de bestelling', /INSTELLINGEN  kenmerk=VIS-TEST-0601 · product=p1 · dienst=catalog · achtergrond=#F5F5F5 · verhouding=4:5 · lange_zijde=2048 · kanaal=webshop · photoshop=ja\r\n/.test(b1), b1.split('\r\n')[3]);
   ok('de brief: plakregel zonder productnaam', /\r\nPLAKREGEL     top, zand \(#D8C7A8\), katoen\r\n/.test(b1), b1.split('\r\n')[5]);
   ok('de brief: MAKEN met het gezicht en wat wij erbij zetten', /  Gezicht     Ava\r\n/.test(b1) && /  Styling     /.test(b1));
 

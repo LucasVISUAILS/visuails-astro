@@ -33,7 +33,7 @@ export const TIPS = {
     sluit: 'Tip sluiten',
     label: 'Tip',
     fotos: 'Tip: de foto’s die we nodig hebben staan per product bovenaan. Een extra foto mag erbij, maar hoeft niet.',
-    credits: 'Tip: met credits betaal je je producten. Kies je voorrang, een outfit of een eigen look met toeslag, dan betaal je deze bestelling via Mollie.',
+    credits: 'Tip: met credits betaal je je producten, en ook een complete look. Kies je voorrang of een eigen look met toeslag, dan betaal je deze bestelling via Mollie.',
     studio: {
       h: 'Welkom in VISUAILS Studio',
       punten: [
@@ -51,7 +51,7 @@ export const TIPS = {
     sluit: 'Close tip',
     label: 'Tip',
     fotos: 'Tip: the photos we need are at the top of each product. An extra photo is welcome, but not required.',
-    credits: 'Tip: credits pay for your products. Choose priority, an outfit or your own look with a surcharge, and you pay this order through Mollie.',
+    credits: 'Tip: credits pay for your products, and for a complete look too. Choose priority or your own look with a surcharge, and you pay this order through Mollie.',
     studio: {
       h: 'Welcome to VISUAILS Studio',
       punten: [

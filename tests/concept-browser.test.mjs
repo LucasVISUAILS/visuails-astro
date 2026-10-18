@@ -174,6 +174,9 @@ const ctx = await nieuweContext();
   await allesVerstuurd(page);
   await page.locator('.pu-card').nth(0).locator('.pu-name').fill('Hoodie zwart');
   await page.locator('.pu-card').nth(0).locator('.pu-soort-sel').selectOption('top');
+  /* Levering 59: één product tegelijk in beeld; naar product 2 met de knop bovenaan. */
+  await page.locator('[data-pl-rail-knop]').nth(1).click();
+  await page.waitForTimeout(150);
   await page.locator('.pu-card').nth(1).locator('.pu-meer-knop').click();
   await page.locator('.pu-card').nth(1).locator('input[name="material_p2"]').fill('katoen');
   await page.waitForTimeout(800);
@@ -253,7 +256,9 @@ console.log('\n3 · opnieuw beginnen');
   await page.click('[data-pl-concept-opnieuw]');
   await page.waitForTimeout(700);
   ok('Opnieuw beginnen wist het concept', await concept(page), null);
-  ok('  het formulier staat leeg op stap 1', [await huidigeStap(page), await page.inputValue('[data-pl-qty-input]')], [1, '']);
+  /* Levering 59 (afvinklijst 36, b-werkplaats): een leeg formulier staat op 1 product, met
+     meteen een prijs. Het is de standaard en geen keuze (data-wk-standaard). */
+  ok('  het formulier staat leeg op stap 1 (op de standaard van 1 product)', [await huidigeStap(page), await page.inputValue('[data-pl-qty-input]'), await page.evaluate(() => document.querySelector('select[name="products"]').dataset.wkStandaard)], [1, '1', '1']);
   ok('  zonder batch: de eerste nieuwe foto begint een nieuwe', await page.inputValue('input[name="upload_batch"]'), '');
   ok('geen fouten', fouten, []);
   await page.close();

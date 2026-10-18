@@ -116,7 +116,9 @@ console.log('\n2 · waar je wél meer beelden bestelt');
      F3 staat deze strook in de ingeklapte lade "Meer over dit product": wie die
      opent, vraagt erom, dus hij is daar op elke kaart te lezen. */
   ok('in de lade is hij op elke kaart te lezen', /terug\.classList\.add\('is-stil'\)/.test(pl), false);
-  ok('  en de strook staat in de lade', /buildMeer\(card, \[gezicht, about, ratios, refs, erbij\]\)/.test(pl), true);
+  /* De strook hoort bij de referenties, en die staan nog in de lade. "Waarmee
+     draagt het model dit?" staat sinds levering 60 onder de foto's. */
+  ok('  en de strook staat in de lade', /buildMeer\(card, \[gezicht, about, ratios, refs\]\)/.test(pl), true);
 }
 
 console.log('\n3 · wat er gebeurt als wij het niet zeker weten');

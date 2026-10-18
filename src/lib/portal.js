@@ -54,7 +54,7 @@
 // header block above seeOther() and admin.js's originIsSelf().
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { WORDMARK_VIEWBOX, WORDMARK_PATHS } from '../data/wordmarkPath.js';
+import { woordmerkSvg } from '../data/wordmarkPath.js';
 import {
   TEST_SAMPLE, TIERS, aftercare, turnaround, clause,
   canReviewOrder, canSeeReviewHistory, SAMPLE_SERVICE,
@@ -85,7 +85,9 @@ import { offsitePage } from './offsite.js';
 // uit elkaar gelopen op superseded_at.
 import { loadDeliveryFiles, deliveryEntries, deliveryDocs, deliveryZipFiles, deliverySummary, humanBytes, orderProductNames, leveringIngetrokken, ZICHTBAAR_VOOR_KLANT } from './delivery.js';
 import { zipStream, zipDisposition, ZIP_MAX_BYTES, ZIP_MAX_FILES } from './zip.js';
-import { vakIds, vakNaam } from '../data/levervakken.js';
+import { vakIds, vakNaam, isLookSleutel, LOOK_VAK_IDS } from '../data/levervakken.js';
+/* Levering 60 (d-studio): de stukken van een look bij elkaar, met de map van de look. */
+import { looksVan } from '../data/looks.js';
 /* Punt 3.01: de Nu-zin, het statuspad en de leverregel — dezelfde bronnen als
    Studio (nuzin.js) en de bedankpagina (verder.js). */
 import { nuZin, nuKnopLabel, statusPad, eersteMistVan, isAfgerond } from './nuzin.js';
@@ -202,6 +204,7 @@ const COPY = {
     rrNotitieNodig: 'Nothing was sent yet: one of the images you ticked has no note. Write under each ticked image what should be different, or one note below for all of them.',
     /* Doorloop 27 (B36): per product een kop. */
     product: (n, naam) => `Product ${n}${naam ? ` · ${naam}` : ''}`,
+    look: (l, namen) => `Look ${l}${namen ? ` · ${namen}` : ''}`,
     /* Ronde 9, F13: zonder vinkje of zonder notitie laadde de pagina stil opnieuw. */
     rrNone: 'Nothing was sent: no image was ticked. Tick “Mark this one” under each image you would like different and send the round again — your note is still there.',
     /* 14 oktober 2026: het woord van Studio (rdTick in account.js), niet "Not right". */
@@ -310,6 +313,7 @@ const COPY = {
     rrPerBeeld: 'Wat moet er anders aan dit beeld?',
     rrNotitieNodig: 'Er is nog niets verstuurd: bij een aangevinkt beeld staat geen notitie. Schrijf onder elk aangevinkt beeld wat er anders moet, of hieronder één notitie voor allemaal.',
     product: (n, naam) => `Product ${n}${naam ? ` · ${naam}` : ''}`,
+    look: (l, namen) => `Look ${l}${namen ? ` · ${namen}` : ''}`,
     rrNone: 'Er is niets verstuurd: je had geen beeld aangevinkt. Vink onder elk beeld dat anders moet “Deze aanmerken” aan en verstuur de ronde opnieuw — je opmerking staat er nog.',
     /* 14 oktober 2026: het woord van Studio (rdTick in account.js), niet "Niet goed". */
     rrPick: 'Deze aanmerken',
@@ -1276,9 +1280,12 @@ async function renderOrder(env, order, token, lang, { voorvertoning = false } = 
        rij, hoger id) schoof naar het eind: de voorkant van product 1 stond na de
        herlevering als laatste. Nu op product, dan op de plek van het vakje
        binnen dat product, dan pas op id. */
-    const volgorde = vakIds(order.service, order.details_json);
+    const volgorde = [...vakIds(order.service, order.details_json), ...LOOK_VAK_IDS];
     const plek = (f) => { const i = volgorde.indexOf(f.shot); return i < 0 ? 99 : i; };
-    const prod = (f) => { const m = /^p(\d+)$/.exec(String(f.product_key || '')); return m ? Number(m[1]) : 9999; };
+    /* De stukken van een look na elkaar, en de map van de look (lA) erachter
+       (levering 60). */
+    const looksHier = looksVan(parseLookDetails(order.details_json), order.product_count);
+    const prod = (f) => lookVolgorde(String(f.product_key || ''), looksHier);
     files.sort((a, b) => prod(a) - prod(b) || plek(a) - plek(b) || a.id - b.id);
     if (attended) events = await loadEvents(env, order.order_id);
   } catch {
@@ -1359,12 +1366,17 @@ async function renderOrder(env, order, token, lang, { voorvertoning = false } = 
   );
 }
 
+/* Het vinkje dat goedkeurt (levering 57), zoals in Studio: het vinkje uit het kit in
+   drie delen. Hier staat het stil; de privélink heeft geen #f-sprong na goedkeuren. */
+const VINK3 = '<svg class="vink3" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 13.19L7.6 12.9L7.15 12.7L6.66 12.61L1.21 12.6L9.4 20.24L9.4 13.44L9 14.13Z"/><path d="M10 20.8L15.64 11.04L12.9 7.39L9.4 13.44L9.4 20.24Z"/><path d="M14.15 5.21L16.89 8.86L20.6 2.45L15.75 2.45Z"/></svg>';
+
 function masthead(ref) {
   // A wordmark, not a link. This page is reached from an email and leads
   // nowhere: a nav here would walk a client mid-order back onto the sales pages.
   /* 14 oktober 2026: het nieuwe woordmerk (src/data/wordmarkPath.js), inline, net
-     als Studio — de CSP van deze pagina laat geen extern beeld voor het merk nodig. */
-  return `<header class="bar"><span class="mark" role="img" aria-label="VISUAILS"><svg class="woordmerk" viewBox="${WORDMARK_VIEWBOX}" aria-hidden="true" focusable="false">${WORDMARK_PATHS.map((d) => `<path fill-rule="evenodd" d="${d}"/>`).join('')}</svg></span>${
+     als Studio — de CSP van deze pagina laat geen extern beeld voor het merk nodig.
+     17 oktober 2026 (levering 57): met de elektrische lijn onder de muis (portal.css). */
+  return `<header class="bar"><span class="mark" role="img" aria-label="VISUAILS">${woordmerkSvg('woordmerk')}</span>${
     ref ? `<span class="ref">${esc(ref)}</span>` : ''
   }</header>`;
 }
@@ -1851,16 +1863,47 @@ function factList(pairs) {
 function shotsHtml(t, lang, files, order, token, opts) {
   const namen = orderProductNames(order.details_json) || {};
   const tegel = (f) => shot(t, lang, f, token, { ...opts, order });
-  const metSleutel = files.filter((f) => /^p\d+$/.test(String(f.product_key || '')));
+  const geldig = (k) => /^p\d+$/.test(k) || isLookSleutel(k);
+  const metSleutel = files.filter((f) => geldig(String(f.product_key || '')));
   if (!metSleutel.length) return `<ul class="shots">${files.map(tegel).join('')}</ul>`;
   const groepen = new Map();
   for (const f of files) {
-    const k = /^p\d+$/.test(String(f.product_key || '')) ? f.product_key : '';
+    const k = geldig(String(f.product_key || '')) ? f.product_key : '';
     if (!groepen.has(k)) groepen.set(k, []);
     groepen.get(k).push(f);
   }
-  const volgorde = [...groepen.keys()].sort((a, b) => (a ? Number(a.slice(1)) : 1e9) - (b ? Number(b.slice(1)) : 1e9));
-  return volgorde.map((k) => `<section class="shots-groep">${k ? `<h3 class="shots-kop">${esc(t.product(Number(k.slice(1)), namen[k] || ''))}</h3>` : ''}<ul class="shots">${groepen.get(k).map(tegel).join('')}</ul></section>`).join('');
+  /* Levering 60: de map van een look (lA) heet "Look A · Hoodie, Broek", en staat
+     na de stukken van die look. */
+  const looksHier = looksVan(parseLookDetails(order.details_json), order.product_count);
+  const volgorde = [...groepen.keys()].sort((a, b) => (a ? lookVolgorde(a, looksHier) : 1e9) - (b ? lookVolgorde(b, looksHier) : 1e9));
+  const kop = (k) => {
+    if (isLookSleutel(k)) {
+      const l = looksHier.find((x) => x.letter === k.slice(1));
+      return t.look(k.slice(1), l ? l.producten.map((n) => namen[`p${n}`] || t.product(n, '')).join(', ') : '');
+    }
+    return t.product(Number(k.slice(1)), namen[k] || '');
+  };
+  return volgorde.map((k) => `<section class="shots-groep${isLookSleutel(k) ? ' is-look' : ''}">${k ? `<h3 class="shots-kop">${esc(kop(k))}</h3>` : ''}<ul class="shots">${groepen.get(k).map(tegel).join('')}</ul></section>`).join('');
+}
+
+/* De plek van een sleutel in de volgorde: producten op nummer, de stukken van een
+   look na het eerste stuk ervan, en de map van de look daar direct achter. */
+function lookVolgorde(key, looks) {
+  if (isLookSleutel(key)) {
+    const l = looks.find((x) => x.letter === key.slice(1));
+    return l ? l.producten[0] * 100 + 99 : 9000;
+  }
+  const m = /^p(\d+)$/.exec(key);
+  if (!m) return 9999 * 100;
+  const n = Number(m[1]);
+  const l = looks.find((x) => x.producten.includes(n));
+  return l ? l.producten[0] * 100 + l.producten.indexOf(n) : n * 100;
+}
+
+function parseLookDetails(d) {
+  if (!d) return {};
+  if (typeof d === 'object') return d;
+  try { return JSON.parse(d) || {}; } catch { return {}; }
 }
 
 function shot(t, lang, f, token, { review, history, round = false, order = null }) {
@@ -1894,7 +1937,7 @@ function shot(t, lang, f, token, { review, history, round = false, order = null 
   if (!history) {
     // Tier 0 — see the note above. No state, no note, no exceptions.
   } else if (f.review_state === 'approved') {
-    state = `<span class="state approved">${esc(t.stApproved)}${reviewedOn(t, lang, f)}</span>`;
+    state = `<span class="state approved">${VINK3}${esc(t.stApproved)}${reviewedOn(t, lang, f)}</span>`;
   } else if (f.review_state === 'revision_requested') {
     state = `<span class="state revision">${esc(t.stRevision)}${reviewedOn(t, lang, f)}</span>`;
     if (f.review_note) state += `<p class="said">${esc(f.review_note)}</p>`;

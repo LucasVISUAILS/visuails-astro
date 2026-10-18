@@ -363,7 +363,17 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
                     <path class="h-maak-kader is-wit" d={KADER} pathLength="1" />
                     <path class="h-maak-kader" d={KADER} pathLength="1" />
                     <g class="h-maak-grepen">{GREPEN.map(() => <g class="h-maak-greep"><rect x="-10" y="-10" width="20" height="20" rx="3" /></g>)}</g>
-                    <g class="h-maak-muis"><path d="M0 0 L0 54 L14 41 L24 64 L35 59 L25 37 L44 37 Z" /></g>
+                    {/* De muis (levering 56, 17 oktober 2026; Lucas: "Er mag nog een nieuw design
+                        komen voor de muis in animaties"). Het silhouet van een gewone muis, zodat
+                        hij meteen herkend wordt, op de maten van het merk: de staart op 66,5°
+                        (het rechterbeen van de V), losgesneden van de kop met de kier van het
+                        merk (7,6% van de hoogte), zoals de pijl in de knoppen uit schacht en
+                        kop bestaat; één zachte hoek, achter de kop, zoals de ene bocht in de V.
+                        De staart is 4 eenheden langer dan bij de oude pijl, zodat het stuk dat
+                        je ziet even lang blijft (24,6 tegen 25,1); de kier kost die lengte.
+                        De punt blijft op (0, 0): daar landt hij op de greep. Uitgerekend in
+                        kladblok/muis/geo2.py. */}
+                    <g class="h-maak-muis"><path d="M37.14 30.67 Q44 36.33 35.1 36.33 L24.75 36.33 L14 41 L0 54 L0 0 Z" /><path d="M25.74 68 L15.94 45.46 L26.67 40.8 L36.47 63.33 Z" /></g>
                     <g clip-path="url(#h-maak-vierkant)"><g class="h-maak-bouwkwast" style={`offset-path: path('${VEEG}')`}>
                       <circle class="h-maak-ring-wit" cx="0" cy="0" r={KWAST_R} /><circle class="h-maak-ring" cx="0" cy="0" r={KWAST_R} />
                       <g transform="translate(88 -88)"><circle class="h-maak-bel" cx="0" cy="0" r="38" /><g transform="scale(1.4) translate(-30 30)"><path d="M18 -18 C18 -24 22 -27 26 -26 C29 -25 30 -21 27 -18 C24 -15 19 -16 18 -18 Z M27 -26 L43 -42" /></g></g>

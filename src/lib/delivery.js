@@ -123,7 +123,7 @@
    leesmij noemt hetzelfde getal dat de database aanhoudt in plaats van een tweede
    belofte. licenceText() stond in scaffold.js en is bilinguaal; hij verhuist niet,
    want de werkmap gebruikt hem ook. */
-import { leverVakken } from '../data/levervakken.js';
+import { leverVakken, LOOK_VAKKEN, isLookSleutel } from '../data/levervakken.js';
 import { DELIVERY_DAYS } from './retention.js';
 import { licenceText } from './scaffold.js';
 import { WHATSAPP_DISPLAY } from '../data/whatsapp.js';
@@ -373,12 +373,16 @@ export function deliveryEntries(files, lang = 'nl', opts = {}) {
   }, 0);
   const breedte = Math.max(2, String(hoogste).length);
 
+  /* De twee beelden van een complete look (`lA`, levering 60) staan in hun eigen
+     map "Look A", na de producten, met hun eigen nummering (1-van-top-tot-teen). */
+  const lookNaam = Object.fromEntries(LOOK_VAKKEN.map((v) => [v.id, v.woord[taal]]));
+  const lookVolgorde = LOOK_VAKKEN.map((v) => v.id);
   const sorted = [...files].sort((a, b) => {
-    const pa = productNumber(a.product_key);
-    const pb = productNumber(b.product_key);
+    const pa = isLookSleutel(a.product_key) ? 5000 + a.product_key.charCodeAt(1) : productNumber(a.product_key);
+    const pb = isLookSleutel(b.product_key) ? 5000 + b.product_key.charCodeAt(1) : productNumber(b.product_key);
     if (pa !== pb) return pa - pb;
-    const sa = volgorde.indexOf(a.shot);
-    const sb = volgorde.indexOf(b.shot);
+    const sa = (isLookSleutel(a.product_key) ? lookVolgorde : volgorde).indexOf(a.shot);
+    const sb = (isLookSleutel(b.product_key) ? lookVolgorde : volgorde).indexOf(b.shot);
     if (sa !== sb) return (sa < 0 ? 99 : sa) - (sb < 0 ? 99 : sb);
     return a.id - b.id;
   });
@@ -400,10 +404,13 @@ export function deliveryEntries(files, lang = 'nl', opts = {}) {
     }
 
     const product = productNumber(f.product_key);
-    const dir = Number.isFinite(product)
-      ? productFolderName(product, namen[`p${product}`], breedte)
-      : (lang === 'en' ? 'other' : 'overig');
-    const base = shotFilebase(f.shot, shotName, f.id, volgorde);
+    const look = isLookSleutel(f.product_key);
+    const dir = look
+      ? `Look ${f.product_key.slice(1)}`
+      : Number.isFinite(product)
+        ? productFolderName(product, namen[`p${product}`], breedte)
+        : (lang === 'en' ? 'other' : 'overig');
+    const base = look ? shotFilebase(f.shot, lookNaam, f.id, lookVolgorde) : shotFilebase(f.shot, shotName, f.id, volgorde);
 
     const order = Object.keys(FORMAT_DIR);
     const assets = [...f.assets].sort(

@@ -29,6 +29,8 @@
  * factuur meer maar een rapport.
  */
 
+/* Levering 60: de regel per complete look op de factuur. */
+import { lookRegels } from '../data/looks.js';
 import { tegoedOpBestelling } from './tegoedVerrekening.js';
 import { renderInvoicePdf } from './invoicePdf.js';
 import { composeAddress } from '../data/address.js';
@@ -301,9 +303,16 @@ export function snapshotFromOrder(order, env, { number, date, dueDate = null } =
      eigen look. Een onbekende slug laat de regel weg in plaats van hem te raden. */
   const huisstijl = !lookNaam && order.service === 'lifestyle' && d.style && d.style !== 'custom'
     ? (getStyle(String(d.style))?.name || '') : '';
-  const detail = lookNaam
+  const stijlRegel = lookNaam
     ? `${lang === 'nl' ? 'Eigen look' : 'Own look'}: ${lookNaam}`
     : huisstijl ? `Look: ${huisstijl}` : '';
+  /* De complete looks (levering 60, d-studio): per look een regel onder de
+     omschrijving, "Complete look A · Hoodie, Broek, Sneaker · €50". Het bedrag zit
+     in het totaal van de regel; dit zegt wat erin zit. */
+  const lookDelen = order.service === 'lifestyle'
+    ? lookRegels(d, lang, Number(order.product_count) || 0).map((r) => `Complete look ${r}`)
+    : [];
+  const detail = [stijlRegel, ...lookDelen].filter(Boolean).join('\n');
 
   return {
     number,

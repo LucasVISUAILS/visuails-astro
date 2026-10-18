@@ -208,7 +208,7 @@ else {
   const browser = metVisIn(await chromium.launch({ executablePath: browserPad() }));
   const STAND = {
     naam: 'Mara',
-    laatste: { ref: 'VIS-2041', stand: 'Geleverd, wacht op je goedkeuring', knop: { label: 'Bekijk je beelden', href: '/account/orders?order=7#order-7' } },
+    laatste: { ref: 'VIS-2041', stap: 3, stand: 'Geleverd, wacht op je goedkeuring', knop: { label: 'Bekijk je beelden', href: '/account/orders?order=7#order-7' } },
     herbestel: { href: '/nl/start/catalog/?bg=FFFFFF&ratio=portrait45', label: 'Catalog bestellen — Classic · wit · 4:5' },
     lopend: 'VIS-2041', abonnee: true, saldo: 48,
   };
@@ -323,7 +323,16 @@ else {
       try { notitie = JSON.parse(localStorage.getItem('vis-melding') || 'null'); } catch {}
       return {
         stand: !!st, proef: !!pr, rect: rect(open), wa: rect(document.querySelector('.wa-launcher')),
-        tekst: open?.querySelector('.h-melding-tekst')?.innerText.replace(/\s+/g, ' ').trim(),
+        /* De kop van de bestelling staat sinds levering 58 in hoofdletters (CSS): die lezen we
+           als tekst (textContent), de rest zoals hij op het scherm staat (innerText). */
+        tekst: (() => {
+          const t = open?.querySelector('.h-melding-tekst');
+          if (!t) return undefined;
+          const kop = t.querySelector('.h-melding-label span');
+          const regel = t.querySelector('.h-melding-regel');
+          return (kop && regel ? `${kop.textContent} ${regel.innerText}` : t.innerText).replace(/\s+/g, ' ').trim();
+        })(),
+        stappen: open ? [...open.querySelectorAll('[data-vis-welkom-stappen]:not([hidden]) li')].map((li) => (li.classList.contains('is-af') ? 'af' : li.classList.contains('is-nu') ? 'nu' : '-') + ':' + li.textContent.trim() + (li.getAttribute('aria-current') === 'step' ? '*' : '')) : null,
         knop: knop ? [knop.getAttribute('href'), knop.textContent.trim(), ...rect(knop).slice(2)] : null,
         sluit: open?.querySelector('[data-vis-melding-sluit]')?.getAttribute('aria-label'),
         notitie, vw: innerWidth, vh: innerHeight,
@@ -346,6 +355,7 @@ else {
     m = await lees();
     ok('ingelogd: de melding met de stand staat er meteen', m.stand && !m.proef, JSON.stringify(m));
     ok('  "Welkom terug, Mara · VIS-2041 · Geleverd, wacht op je goedkeuring"', m.tekst === 'Welkom terug, Mara VIS-2041 · Geleverd, wacht op je goedkeuring', m.tekst);
+    ok('  de voortgang: vier stappen, Geleverd is waar hij nu is (v36-melding c)', JSON.stringify(m.stappen) === JSON.stringify(['af:Ontvangen', 'af:In productie', 'af:Nakijken', 'nu:Geleverd*']), JSON.stringify(m.stappen));
     ok('  de knop "Bekijk je beelden" naar de bestelkaart', m.knop && m.knop[0] === '/account/orders?order=7#order-7' && m.knop[1] === 'Bekijk je beelden', JSON.stringify(m.knop));
     ok('  linksonder, 16 px van de rand, 420 breed', m.rect && m.rect[0] === 16 && m.rect[2] === 420 && m.vh - (m.rect[1] + m.rect[3]) === 16, JSON.stringify(m.rect));
     ok('  en niet over de WhatsApp-knop', !raakt(m.rect, m.wa), JSON.stringify([m.rect, m.wa]));
@@ -361,6 +371,23 @@ else {
     zet({ ...STAND, laatste: { ...STAND.laatste, stand: 'Afgerond, download je beelden' } });
     await page.reload({ waitUntil: 'networkidle' }); await page.waitForTimeout(300);
     ok('  een nieuwe stand: dan komt hij terug', (await totDat(lees, (x) => x.stand)).stand);
+    ok('  geen scriptfout', fouten.length === 0, fouten.join(' | '));
+    await ctx.close();
+  }
+  /* Levering 56. Lucas (17 oktober 2026, 10:22): "Wanneer ik klik op open this order en
+     ik ga weer terug naar home page komt hij weer terug. Nadat ik erop heb geklikt moet
+     hij weg blijven." De knop volgen telt als gelezen, net als het kruisje. */
+  {
+    const { ctx, page, lees, fouten } = await melding('/nl/', STAND);
+    await page.route('**/account/orders**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>Studio</title><p>Studio</p>' }));
+    await totDat(lees, (x) => x.stand);
+    await Promise.all([page.waitForURL('**/account/orders**'), page.click('.h-melding.is-open .h-melding-knop')]);
+    await page.goto(`http://127.0.0.1:${PORT}/nl/`, { waitUntil: 'networkidle' });
+    await page.waitForFunction(() => document.documentElement.dataset.klantstand === 'gezet', null, { timeout: 8000 }).catch(() => {});
+    await page.waitForTimeout(400);
+    const m = await lees();
+    ok('de knop gevolgd en terug naar de voorpagina: de melding blijft weg', !m.stand, JSON.stringify(m));
+    ok('  en de notitie onthoudt deze bestelling en stand', m.notitie && m.notitie.s === 'VIS-2041|Geleverd, wacht op je goedkeuring', JSON.stringify(m.notitie));
     ok('  geen scriptfout', fouten.length === 0, fouten.join(' | '));
     await ctx.close();
   }

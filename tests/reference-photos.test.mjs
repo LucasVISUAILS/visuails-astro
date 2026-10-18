@@ -144,9 +144,11 @@ console.log('\nhet plusje staat er, naast de vier');
     /const strip = document\.createElement\('div'\);[\s\S]{0,120}strip\.className = 'pu-refs';/.test(pl), true);
   /* Sinds 11 oktober 2026 (F3) in de lade "Meer over dit product": niet
      verplicht, dus niet open op de kaart. De meervoudige kiezer bovenaan de
-     kaart vult ze ook, met de foto's die na de vaste vakken over zijn. */
+     kaart vult ze ook, met de foto's die na de vaste vakken over zijn.
+     Sinds levering 60 staat "Waarmee draagt het model dit?" niet meer in die
+     lade maar onder de foto's; de referenties blijven er wel. */
   ok('die in de lade van de kaart wordt gehangen',
-    /buildMeer\(card, \[gezicht, about, ratios, refs, erbij\]\)/.test(pl), true);
+    /buildMeer\(card, \[gezicht, about, ratios, refs\]\)/.test(pl), true);
   ok('  en de knop voor 3–4 foto\'s zet er de rest in', /card\.voegRefToe\(\)/.test(pl), true);
   ok('het maximum komt uit de config en niet uit een getal hier',
     /Number\(cfg\.maxRefPerProduct\)/.test(pl), true);

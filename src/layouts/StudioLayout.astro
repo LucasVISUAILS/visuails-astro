@@ -27,7 +27,13 @@
  * ze krijgt zonder er zelf aan te denken. no-store, noindex, en de CSP.
  */
 import '../styles/global.css';
-import { WORDMARK_VIEWBOX, WORDMARK_PATHS } from '../data/wordmarkPath.js';
+import { woordmerkSvg } from '../data/wordmarkPath.js';
+import { ikoon } from '../data/iconen.js';
+/* Levering 57 (17 oktober 2026, v35-studio a): het woordmerk met de elektrische lijn
+   onder de muis, zoals op de site (woordmerkSvg; de beweging in global.css, de maten in
+   studio-hal.css), en het uitlog-icoon uit het kit. */
+const MERK_SVG = woordmerkSvg('st-woordmerk');
+const UIT_IK = ikoon('pijl', 'st-uit-ik');
 import { standKlasse } from '../data/status.js';
 import '../styles/studio.css';
 /* De hal (14 oktober 2026): Urbanist en studio-hal.css; alles daarin hangt
@@ -136,7 +142,7 @@ const metParam = (k, v) => {
     <div class="st-kaartveld">
       {meldingTxt && <p class={`st-banner is-${melding.soort}`} role="status"><span class="st-banner-l">{MELDING_LABEL[melding.soort]}</span><span>{meldingTxt}</span></p>}
       <a class="st-merk st-merk-los" href="/" aria-label="VISUAILS">
-        <svg class="st-woordmerk" viewBox={WORDMARK_VIEWBOX} aria-hidden="true" focusable="false">{WORDMARK_PATHS.map((d) => <path fill-rule="evenodd" d={d} />)}</svg>
+        <Fragment set:html={MERK_SVG} />
       </a>
       <main class="st-kaart" id="inhoud">
         <slot />
@@ -148,7 +154,7 @@ const metParam = (k, v) => {
       <aside class="st-side">
         <div class="st-side-kop">
           <a class="st-merk" href="/" aria-label="VISUAILS">
-            <svg class="st-woordmerk" viewBox={WORDMARK_VIEWBOX} aria-hidden="true" focusable="false">{WORDMARK_PATHS.map((d) => <path fill-rule="evenodd" d={d} />)}</svg>
+            <Fragment set:html={MERK_SVG} />
           </a>
           <span class="st-sub">{t.dashSub}</span>
         </div>
@@ -176,7 +182,7 @@ const metParam = (k, v) => {
           )}
           <form method="post" action="/account/logout">
             <button class="st-uit" type="submit" title={navDicht ? t.signOut : undefined}>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5"/><path d="M5 12h11"/></svg>
+              <Fragment set:html={UIT_IK} />
               <span>{t.signOut}</span>
             </button>
           </form>

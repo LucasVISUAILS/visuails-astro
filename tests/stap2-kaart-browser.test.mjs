@@ -20,7 +20,13 @@
  *      met het juiste `shot` (de server verandert niet);
  *   ·  de draagfoto overslaan zonder klik, met de aanname bij het vak;
  *   ·  de soort staat op de kaart en neemt die van het vorige product over;
- *   ·  geen tippaneel, geen "Wat je opstuurt", geen "Volgend product";
+ *   ·  geen tippaneel, geen "Wat je opstuurt";
+ *   ·  SINDS LEVERING 59 (17 oktober 2026, afvinklijst 36 b-stap2 en b-tips): één product
+ *      tegelijk. Alle kaarten staan in de pagina, alleen die van het product waar je bent
+ *      is te zien; bovenaan de productknoppen, onderaan Vorig en Volgend product. De
+ *      tips staan niet meer op de kaart maar in de tipbalk onderin; de telling en de
+ *      zin boven de kaarten zijn de productknoppen en de opening geworden. Deze toets
+ *      kiest dus eerst het product (toon) voordat hij iets op een kaart aanklikt;
  *   ·  een te kleine foto wordt geweigerd zoals altijd; de daggrens ook;
  *   ·  lege verplichte vakken: één lijst uit src/lib/ontbreekt.js, en "later in
  *      VISUAILS Studio" gaat door naar stap 3;
@@ -148,6 +154,13 @@ async function naarStap2(page, n) {
   return huidigeStap(page);
 }
 const kaart = (page, i) => page.locator('.pu-card').nth(i);
+/* Naar product i, met de knop bovenaan (levering 59: één kaart tegelijk in beeld). */
+const toon = async (page, i) => {
+  const zicht = await page.evaluate((k) => { const el = document.querySelectorAll('.pu-card')[k]; return !!el && !el.hidden; }, i);
+  if (zicht) return;
+  await page.locator('[data-pl-rail-knop]').nth(i).click();
+  await page.waitForTimeout(150);
+};
 const vakken = (page, i) => page.evaluate((k) => Object.fromEntries([...document.querySelectorAll('.pu-card')[k].querySelectorAll('.pu-slots .pu-slot')]
   .map((s) => [s.dataset.puSlot, `${s.dataset.state}:${(s.querySelector('.pu-slot-btn').getAttribute('aria-label') || '').split(' — ')[1]?.split(' · ')[0] || ''}`])), i);
 const wachtTot = async (page, fn, arg, ms = 6000) => {
@@ -229,15 +242,20 @@ for (const [url, taal] of [['/nl/start/catalog', 'nl'], ['/start/catalog', 'en']
           tips: !!s.querySelector('[data-pu-tips]'),
           wjo: !!s.querySelector('[data-pl-styling]'),
           volgende: !!s.querySelector('[data-pl-volgende]'),
+          inDom: s.querySelectorAll('.pu-card').length,
+          bladeren: zicht(s.querySelector('[data-wk-bladeren]')),
+          tipbalk: zicht(s.querySelector('[data-wk-tipbalk]')),
           overslaan: [...s.querySelectorAll('button')].filter((b) => zicht(b) && /Sla deze over|Skip this one/.test(b.textContent)).length,
           balk: zicht(s.querySelector('[data-pl-rij]')),
           telling: (s.querySelector('[data-pl-progress]') || {}).textContent || '',
         };
       });
-      ok(`${tag}: ${n} kaarten, allemaal open`, vorm.kaarten, n);
-      ok(`${tag}: één knop voor de foto's per product`, vorm.knoppen, n);
+      ok(`${tag}: ${n} kaarten in de pagina, één in beeld`, [vorm.inDom, vorm.kaarten], [n, 1]);
+      ok(`${tag}: één knop voor de foto's, bij het product in beeld`, vorm.knoppen, 1);
+      ok(`${tag}: Vorig en Volgend product alleen bij meer dan één`, vorm.bladeren, n > 1);
+      ok(`${tag}: de tipbalk staat onderin`, vorm.tipbalk, true);
       ok(`${tag}: geen gezicht open in stap 2`, vorm.gezichten, 0);
-      ok(`${tag}: geen tippaneel, geen "Wat je opstuurt", geen "Volgend product"`, [vorm.tips, vorm.wjo, vorm.volgende], [false, false, false]);
+      ok(`${tag}: geen tippaneel en geen "Wat je opstuurt"`, [vorm.tips, vorm.wjo, vorm.volgende], [false, false, false]);
       ok(`${tag}: geen "Sla deze over"`, vorm.overslaan, 0);
       ok(`${tag}: de balk staat er alleen bij meer dan één product`, vorm.balk, n > 1);
       ok(`${tag}: de telling staat bovenaan`, new RegExp(taal === 'nl' ? `0 van ${n} product` : `0 of ${n} product`).test(vorm.telling), true);
@@ -246,7 +264,7 @@ for (const [url, taal] of [['/nl/start/catalog', 'nl'], ['/start/catalog', 'en']
       telling.push({ tag, woorden: w });
       if (n === 5) ok(`${tag}: stap 2 houdt het onder de 500 woorden (${w})`, w < 500, true);
       if (n === 5) {
-        for (const sel of ['.pu-progress', '.pu-stap-lead', '.pu-kies-hint', '.pu-card.is-uitleg .pu-slot-regel', '.pu-slot-name', '.pu-slot-eis', '.pu-state', '.pu-meer-vat', '.pu-meer-t']) {
+        for (const sel of ['.pu-rail-knop', '.wk-blader-t', '.wk-tip-t', '.pu-kies-hint', '.pu-slot-name', '.pu-slot-eis', '.pu-state', '.pu-meer-vat', '.pu-meer-t']) {
           await leesbaarOk(page, sel, tag);
         }
         await page.screenshot({ path: path.join(OUT, `f3-stap2-${taal}-${breed}.png`), fullPage: true });
@@ -312,6 +330,7 @@ for (const breed of [1280, 390]) {
   await allesVerstuurd(page);
   const refs = await kaart(page, 3).evaluate((el) => [...el.querySelectorAll('.pu-refs .pu-slot')].map((s) => s.dataset.state));
   ok(`${tag}: zes tegelijk: twee in de gratis referentievakken`, refs, ['filled', 'filled']);
+  await toon(page, 3);
   ok(`${tag}: en de lade staat dan open`, await kaart(page, 3).locator('.pu-meer-in').isVisible(), true);
 
   /* Product 5: een te kleine foto wordt geweigerd, zoals altijd. */
@@ -328,15 +347,20 @@ for (const breed of [1280, 390]) {
 
   /* De soort: product 1 kiest, de rest neemt over; een eigen keuze verderop
      geldt voor de producten daarna. */
+  await toon(page, 0);
   await kaart(page, 0).locator('.pu-soort-sel').selectOption('top');
+  await toon(page, 2);
   await kaart(page, 2).locator('.pu-soort-sel').selectOption('trousers');
   const soorten = await page.evaluate(() => [...document.querySelectorAll('.pu-soort-sel')].map((s) => s.value));
   ok(`${tag}: de soort neemt die van het vorige product over`, soorten, ['top', 'top', 'trousers', 'trousers', 'trousers']);
   ok(`${tag}: en de bestelling krijgt die van het eerste product`, await page.evaluate(() => document.querySelector('input[name="garment"]')?.value), 'top');
-  /* Erbij in beeld: de contextvakjes van de soort, in de lade. */
+  /* "Waarmee draagt het model dit?" (levering 60): de plekken van de soort, onder de
+     foto's en niet meer in de lade; per plek een vakje voor een eigen stuk. */
+  await toon(page, 0);
   await kaart(page, 0).locator('.pu-meer-knop').click();
-  const erbij = await kaart(page, 0).evaluate((el) => [...el.querySelectorAll('.pu-erbij .pu-slot')].map((s) => s.dataset.puSlot));
+  const erbij = await kaart(page, 0).evaluate((el) => [...el.querySelectorAll('.wk-draagt .pu-slot')].map((s) => s.dataset.puSlot));
   ok(`${tag}: bij een top kan eronder en een broek erbij`, erbij, ['ctx-underlayer', 'ctx-bottom']);
+  ok(`${tag}: per plek de keuzes, op "Wij kiezen"`, await kaart(page, 0).evaluate((el) => [...el.querySelectorAll('.wk-drie')].map((d) => [...d.querySelectorAll('button')].map((b) => `${b.dataset.wkK}${b.getAttribute('aria-pressed') === 'true' ? '*' : ''}`).join(','))), ['wij*,eigen', 'wij*,eigen']);
   ok(`${tag}: met een verborgen veld per plek op "wij kiezen"`, await page.evaluate(() => [...document.querySelectorAll('input[name^="context_"][name$="_p1"]')].map((i) => `${i.name}=${i.value}`)), ['context_underlayer_p1=ours', 'context_bottom_p1=ours']);
   ok(`${tag}: het gezicht per product staat in de lade`, await kaart(page, 0).locator('.pu-meer-in .pu-mk-rij input').count() > 1, true);
 
@@ -392,8 +416,10 @@ for (const donker of [false, true]) {
     await naarStap2(page, 3);
     await kaart(page, 0).locator('.pu-kies-input').setInputFiles(vier);
     await allesVerstuurd(page);
-    await kaart(page, 1).locator('.pu-meer-knop').click();
-    for (const sel of ['.pu-progress', '.pu-stap-lead', '.pu-kies-hint', '.pu-card.is-uitleg .pu-slot-regel', '.pu-slot-name', '.pu-slot-eis', '.pu-slot-msg', '.pu-act', '.pu-wissel', '.pu-state', '.pu-meer-vat', '.pu-erbij-hint', '.pu-mk-naam', '.pu-q-label']) {
+    /* De lade van het product in beeld (levering 59: één kaart tegelijk); dat is het
+       product met de foto's, dus de vakken met foto en de lade staan allebei open. */
+    await kaart(page, 0).locator('.pu-meer-knop').click();
+    for (const sel of ['.pu-rail-knop', '.wk-tip-t', '.pu-kies-hint', '.pu-slot-name', '.pu-slot-eis', '.pu-slot-msg', '.pu-act', '.pu-wissel', '.pu-state', '.pu-meer-vat', '.wk-uitleg', '.pu-mk-naam', '.pu-q-label']) {
       await leesbaarOk(page, sel, tag);
     }
     ok(`${tag}: geen horizontale scroll`, await geenScroll(page), true);
@@ -447,6 +473,7 @@ console.log('\n5 · een abonnee met een eigen merkmodel');
   ok('abonnee: het eigen merkmodel staat in stap 1', await page.evaluate(() => !!document.querySelector('[data-pl-step="1"] input[name="model"][value="c7"]')), true);
   await page.evaluate(() => { const r = document.querySelector('input[name="model"][value="c7"]'); r.checked = true; r.dispatchEvent(new Event('change', { bubbles: true })); });
   ok('abonnee: naar stap 2', await naarStap2(page, 2), 2);
+  await toon(page, 1);
   await kaart(page, 1).locator('.pu-meer-knop').click();
   const tegels = await kaart(page, 1).locator('.pu-mk-naam').allTextContents();
   ok('abonnee: in de lade staat "Zelfde" voor het merkmodel van de bestelling', tegels[0], 'Zelfde');

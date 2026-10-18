@@ -46,7 +46,7 @@ import {
   TIER_ROWS, tierRow, tierRowLabels, turnaround,
   ladderRate, ladderFloor, LADDER, vatLabel, vatLead, vatDetail,
   WINDOW_THRESHOLD, FORM_MAX_PRODUCTS,
-  OUTFIT_SURCHARGE, MAX_OUTFIT_PRODUCTS, OUTFIT_COPY,
+  LOOK_PRIJS, LOOK_CREDITS,
   EXTRA_PHOTO_LADDER, MAX_EXTRA_PER_PRODUCT, EXTRA_PHOTO_COPY, extraPhotoRate,
   AMOUNT, clause, REVISIE_DAGEN,
   plans, planSaving, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, STOCK_OFF_BRAND, SERVICE_CREDITS, EXTRA_CREDITS,
@@ -61,6 +61,8 @@ const VOORRANG_DIENSTEN = new Set(['catalog', 'lifestyle']);
    is het gezicht onderdeel van het concept en niet een keuze in een formulier. */
 const MODEL_DIENSTEN = new Set(['catalog', 'lifestyle']);
 import '../../styles/stijl22.css';
+/* De werkplaats (levering 59): alles hangt onder body.werkplaats, dus de proef merkt hem niet. */
+import '../../styles/werkplaats.css';
 import { MAX_BATCH_FILES, MAX_FILE_BYTES, UPLOAD_TYPES } from '../../lib/uploads.js';
 /* De beeldkeuring reist NIET mee in cfg. pipeline.js importeert keurBeeld()
    rechtstreeks uit shots.js en leest de drempels daar; ze hier ook nog eens
@@ -106,6 +108,16 @@ import { BUSINESS_VERSION, currentBusiness } from '../../data/business.js';
 import { VOORKEUREN, VOORKEUR_STANDAARD, VOORKEUR_COPY } from '../../data/contactvoorkeur.js';
 
 import Note from '../Note.astro';
+/* Levering 60 (afvinklijst 38): de complete look, een koppeling tussen producten. */
+import { lookCopy, LOOK_MIN, LOOK_MAX, LOOK_BEELDEN, LOOK_LETTERS, LOOK_NOTITIE_MAX } from '../../data/looks.js';
+/* De werkplaats — levering 59 (afvinklijst 36 B). Zie de kop van WkBlok.astro. */
+import WkBlok from './WkBlok.astro';
+import WkBalk from './WkBalk.astro';
+import WkOm from './WkOm.astro';
+import { catalogStyles as catalogStylesEn } from '../../data/catalogStyles.js';
+import { catalogStyles as catalogStylesNl } from '../../data/catalogStyles.nl.js';
+import { RECOMMENDED as BG_AANBEVOLEN } from '../../data/backgrounds.js';
+import { levertijdDelen } from '../../data/pricing.js';
 interface Props {
   lang: 'en' | 'nl';
   /** The ladder kind. Also what the config blob calls the service. */
@@ -333,7 +345,7 @@ const PIPE = {
       more: 'That is more than one reserved delivery date holds, so it is planned with you rather than priced by a form.',
       quote: 'Choose how many products and the total appears here.',
       onRequest: '—',
-      outfit: ' Plus {price} × {n} for a complete look — trousers, top and shoes in one shot.',
+      look: ' Plus {price} × {n} for complete looks: pieces from this order worn together.',
       extra: ' Plus {price} × {n} for extra photos.',
       hoogRes: ' Plus {price} × {n} for lifestyle images at {px} px.',
       voorrang: ' Plus {price} for priority delivery.',
@@ -470,8 +482,8 @@ const PIPE = {
       ratio: 'Image shape',
       ratioAfwijk: 'Different shape per image',
       ratioAfwijkVeel: '{n} images — see the product cards in step 2',
-      outfit: 'Complete look',
-      outfitN: '{price} extra × {n}',
+      look: 'Complete looks',
+      lookN: '{n} × {price}',
       net: `Order value (${vatLabel('excl', 'en')})`,
       pay: 'You pay at Mollie',
       payGross: '{gross} incl. {pct}% VAT',
@@ -576,7 +588,7 @@ const PIPE = {
       more: 'Dat is meer dan er in één week past, dus dit plannen we samen in plaats van het door een formulier te laten uitrekenen.',
       quote: 'Kies hoeveel producten en het totaal verschijnt hier.',
       onRequest: '—',
-      outfit: ' Plus {price} × {n} voor een outfit — broek, top en schoenen samen in één foto.',
+      look: ' Plus {price} × {n} voor complete looks: stukken uit deze bestelling samen gedragen.',
       extra: ' Plus {price} × {n} voor extra foto’s.',
       hoogRes: ' Plus {price} × {n} voor lifestylebeelden op {px} px.',
       voorrang: ' Plus {price} voor voorrang bij levering.',
@@ -663,8 +675,8 @@ const PIPE = {
       ratio: 'Beeldverhouding',
       ratioAfwijk: 'Afwijkend per beeld',
       ratioAfwijkVeel: '{n} beelden — zie de productkaarten in stap 2',
-      outfit: 'Outfit',
-      outfitN: '{price} extra × {n}',
+      look: 'Complete looks',
+      lookN: '{n} × {price}',
       net: `Orderbedrag (${vatLabel('excl', 'nl')})`,
       pay: 'Je betaalt bij Mollie',
       payGross: '{gross} incl. {pct}% btw',
@@ -1037,8 +1049,13 @@ for (const l of ['en', 'nl'] as const) {
     look: 'de look', achtergrond: 'de achtergrond', verhouding: 'de verhouding', model: 'het model',
     kanaal1: '1 kanaal', kanaalN: '{n} kanalen',
     hoek1: '1 extra hoek ({namen})', hoekN: '{n} extra hoeken ({namen})',
-    notitie: 'je notitie', outfits: 'het aantal outfits', en: 'en',
+    notitie: 'je notitie', looks: 'welke producten samen een look zijn', en: 'en',
     beeld1: 'de achtergrond van 1 foto', beeldN: 'de achtergrond van {n} foto’s',
+    /* Levering 58 (afvinklijst 36: v36-aantal a, v36-bericht a, c-kopie). */
+    aantal1: '1 product', aantalN: '{n} producten',
+    vorm1: 'de vorm van foto {nrs}', vormN: 'de vorm van foto’s {nrs}',
+    bericht: 'je bericht staat klaar bij Je gegevens',
+    berichtKnop: 'Neem je bericht van {ref} over',
     niets: 'er was niets om over te nemen',
     fout: 'De instellingen van die bestelling konden we niet ophalen. Je kiest ze hieronder gewoon zelf.',
   } : {
@@ -1046,8 +1063,12 @@ for (const l of ['en', 'nl'] as const) {
     look: 'the look', achtergrond: 'the background', verhouding: 'the aspect ratio', model: 'the model',
     kanaal1: '1 channel', kanaalN: '{n} channels',
     hoek1: '1 extra angle ({namen})', hoekN: '{n} extra angles ({namen})',
-    notitie: 'your note', outfits: 'the number of outfits', en: 'and',
+    notitie: 'your note', looks: 'which products make a look', en: 'and',
     beeld1: 'the background of 1 photo', beeldN: 'the background of {n} photos',
+    aantal1: '1 product', aantalN: '{n} products',
+    vorm1: 'the shape of photo {nrs}', vormN: 'the shape of photos {nrs}',
+    bericht: 'your message is ready under Your details',
+    berichtKnop: 'Copy your message from {ref}',
     niets: 'there was nothing to copy',
     fout: 'We could not fetch the settings of that order. Simply choose them below yourself.',
   };
@@ -1082,7 +1103,7 @@ for (const l of ['en', 'nl'] as const) {
 // backgrounds.js adds its own build-time check instead of shipping a swatch
 // with no line under it.
 const REQUIRED_COPY = [
-  'total.each', 'total.more', 'total.quote', 'total.onRequest', 'total.outfit', 'total.extra',
+  'total.each', 'total.more', 'total.quote', 'total.onRequest', 'total.look', 'total.extra',
   'total.hoogRes', 'total.voorrang',
   's1.kitModel', 's1.kitBg', 's1.kitCh', 's1.kitRatio', 's1.kitLook',
   'pu.hoogResLabel', 'pu.hoogResHint',
@@ -1100,7 +1121,7 @@ const REQUIRED_COPY = [
   'sum.kind', 'sum.count', 'sum.bg', 'sum.style', 'sum.styleCatalog', 'sum.styleLifestyle',
   'sum.hoogRes', 'sum.hoogResN', 'sum.hoogRes1', 'sum.voorrang', 'sum.voorrangJa',
   'sum.angles', 'sum.anglesN',
-  'sum.ratio', 'sum.ratioAfwijk', 'sum.ratioAfwijkVeel', 'sum.outfit', 'sum.outfitN',
+  'sum.ratio', 'sum.ratioAfwijk', 'sum.ratioAfwijkVeel', 'sum.look', 'sum.lookN',
   'sum.channels', 'sum.channelsNone', 'sum.bgLocked', 'sum.format', 'sum.formatJpg',
   'sum.model', 'sum.modelAny', 'sum.modelKort',
   // sum.net and NOTHING ELSE about money — VAT is charged at the rate of the
@@ -1157,7 +1178,8 @@ const REQUIRED_COPY = [
   's3.prefillNote',
   'bgfoto.kies', 'bgfoto.eigen',
   'van.wat', 'van.look', 'van.achtergrond', 'van.verhouding', 'van.model', 'van.kanaal1', 'van.kanaalN',
-  'van.hoek1', 'van.hoekN', 'van.notitie', 'van.outfits', 'van.en', 'van.niets', 'van.fout', 'van.beeld1', 'van.beeldN',
+  'van.hoek1', 'van.hoekN', 'van.notitie', 'van.looks', 'van.en', 'van.niets', 'van.fout', 'van.beeld1', 'van.beeldN',
+  'van.aantal1', 'van.aantalN', 'van.vorm1', 'van.vormN', 'van.bericht', 'van.berichtKnop',
   'concept.dienst', 'concept.wat', 'concept.product1', 'concept.productN',
   'concept.foto0', 'concept.foto1', 'concept.fotoN', 'concept.weg1', 'concept.wegN',
   'gate.windowSub', 'gate.chosen', 'gate.none', 'gate.earlier', 'gate.later',
@@ -1213,6 +1235,8 @@ const FORM = {
        belofte over wat er nog komt, en hij moet op alle drie de diensten
        kloppen. */
     rail: ['Order', 'Your photos', 'Your details', 'Timing', 'Pay'],
+    /* De namen in de balk van de werkplaats (levering 59, afvinklijst 36). */
+    railWerk: ['What you order', 'Your photos', 'Your details', 'Delivery date', 'Pay'],
     next: 'Continue',
     back: 'Back',
     /* 1.08: de regel onder elke stap. Het bericht zelf staat in PIPE.appOns. */
@@ -1287,11 +1311,9 @@ const FORM = {
          leest "in euro's" en haalt zijn schouders op; een Amerikaanse weet
          waar hij aan toe is. */
       euroNote: 'All amounts are in euros. If your card or bank is in another currency, they convert at their own rate — usually with a small foreign-currency fee.',
-      outfitLabel: 'Any complete outfits in here? (trousers, top and shoes together)',
       outfitCatalogShort: 'One product per catalog set.',
       outfitCatalogTerm: 'complete looks',
-      outfitCatalogNote: 'A catalog set is priced and shot per product, so complete looks are not part of this order. Need one because it matters to the brand? Ask us and we will look at it with you.',
-      outfitHint: `${euro(OUTFIT_SURCHARGE, 'en')} per product styled that way, up to ${MAX_OUTFIT_PRODUCTS}.`,
+      outfitCatalogNote: 'A catalog set is priced and shot per product, each on its own. Complete looks, pieces worn together by one model, are part of lifestyle carousels.',
       /* ── VOORRANG — de vier regels bij het vinkje ─────────────────────────
          `voorrangGeen` staat er zolang er geen aantal is: het bedrag is een
          deel van het orderbedrag, dus zonder aantal is er geen getal om te
@@ -1305,7 +1327,6 @@ const FORM = {
       /* 15 oktober 2026 (Lucas, bestellen vanuit Studio): wie met credits betaalt, ziet
          bij een keuze die niet met credits kan meteen dat die in euro gaat. */
       nietMetCredits: '· not with credits',
-      outfitNietCredits: 'With an outfit you pay this order in euros, not with credits.',
       /* ── DE MERKKIT-STROOK ────────────────────────────────────────────────
          Zie toonMerkkit() in pipeline.js. De labels zijn kort omdat ze naast
          hun waarde staan en niet erboven: "Face · Ava" leest in één oog. */
@@ -1316,10 +1337,6 @@ const FORM = {
       kitCh: 'Selling on',
       kitRatio: 'Shape',
       kitLook: 'Style',
-      outfitWhy: 'Why a complete look costs more',
-      outfitWhyBody: OUTFIT_COPY.en,
-      outfitNone: 'None — single product',
-      outfitCount: (n: number) => `${n} complete look${n === 1 ? '' : 's'}`,
       levelsH: 'Standard turnaround and a held date, side by side',
       levelAttended: ['A date held for you', `From ${WINDOW_THRESHOLD} products`],
       levelUnattended: ['Normal turnaround', `Up to ${WINDOW_THRESHOLD - 1} products`],
@@ -1519,7 +1536,7 @@ const FORM = {
         na: 'Paid straight away with your credits; your confirmation follows by email. There is no separate invoice: your plan invoice covers this order.',
         tegoed: 'Your account balance of {bedrag} stays for a payment through Mollie.',
         optie: 'With {opties}, this order cannot be paid with credits: you pay it through Mollie, {bedrag} excl. VAT.',
-        opties: { voorrang: 'priority', outfit: 'an outfit', toeslag: 'the surcharge of your own look' },
+        opties: { voorrang: 'priority', toeslag: 'the surcharge of your own look' },
         en: 'and',
         zonder: 'Without that choice it costs {kosten} credits; you have {saldo}.',
         teWeinig: 'This order costs {kosten} credits; you have {saldo}.',
@@ -1589,6 +1606,8 @@ const FORM = {
        betekende het woord op één scherm twee dingen. De Engelse rail zei al
        'Your photos'. */
     rail: ['Bestelling', 'Je foto’s', 'Jouw gegevens', 'Levertijd', 'Betalen'],
+    /* De namen in de balk van de werkplaats (levering 59, afvinklijst 36). */
+    railWerk: ['Wat je bestelt', 'Je foto’s', 'Je gegevens', 'Leverdatum', 'Betalen'],
     next: 'Verder',
     back: 'Terug',
     /* Zie de Engelse tegenhanger (1.08). */
@@ -1644,11 +1663,9 @@ const FORM = {
       displayNote: 'Dit rekent je browser uit. Op de factuur rekenen wij het opnieuw uit, met dezelfde prijs per product.',
       /* Zie de Engelse tegenhanger. */
       euroNote: 'Alle bedragen zijn in euro’s. Staat je kaart of rekening in een andere munt, dan rekent je bank om tegen zijn eigen koers — meestal met een kleine toeslag voor vreemde valuta.',
-      outfitLabel: 'Zitten er outfits bij? (broek, top en schoenen samen)',
       outfitCatalogShort: 'Eén product per catalogset.',
-      outfitCatalogTerm: 'outfits',
-      outfitCatalogNote: 'Bij een catalogset betaal je per product, dus een outfit — broek, top en schoenen samen — kan in deze bestelling niet. Toch nodig voor je merk? Vraag het ons, dan kijken we er samen naar.',
-      outfitHint: `${euro(OUTFIT_SURCHARGE, 'nl')} extra per product dat zo wordt gestyled, tot maximaal ${MAX_OUTFIT_PRODUCTS}.`,
+      outfitCatalogTerm: 'complete looks',
+      outfitCatalogNote: 'Een catalogset wordt per product gemaakt en geprijsd, elk op zichzelf. Complete looks, stukken samen gedragen door één model, horen bij lifestylecarrousels.',
       /* Zie de Engelse tegenhanger. */
       voorrangLabel: VOORRANG_COPY.nl.label,
       voorrangLine: VOORRANG_COPY.nl.line,
@@ -1656,7 +1673,6 @@ const FORM = {
       voorrangLimits: VOORRANG_COPY.nl.limits,
       voorrangGeen: '— kies eerst een aantal',
       nietMetCredits: '· niet met credits',
-      outfitNietCredits: 'Met een outfit betaal je deze bestelling in euro, niet met credits.',
       /* Zie de Engelse tegenhanger. */
       kitH: 'Uit je merkkit',
       kitOpen: 'Wijzigen voor deze bestelling',
@@ -1665,13 +1681,9 @@ const FORM = {
       kitCh: 'Verkoopt op',
       kitRatio: 'Verhouding',
       kitLook: 'Stijl',
-      outfitWhy: 'Waarom een outfit meer kost',
-      outfitWhyBody: OUTFIT_COPY.nl,
-      outfitNone: 'Geen — los product',
       // "compleete" — het bijvoeglijk naamwoord is `complete`, met één e, en dat
       // valt niet af te leiden uit `compleet` + `e`. Daarom staan beide vormen er
       // voluit, in plaats van dat er een uitgang achter een stam wordt geplakt.
-      outfitCount: (n: number) => `${n} ${n === 1 ? 'outfit' : 'outfits'}`,
       levelsH: 'Normale doorlooptijd en vaste leverdatum, naast elkaar',
       levelAttended: ['Vaste leverdatum', `Vanaf ${WINDOW_THRESHOLD} producten`],
       levelUnattended: ['Normale doorlooptijd', `Tot en met ${WINDOW_THRESHOLD - 1} producten`],
@@ -1847,7 +1859,7 @@ const FORM = {
         na: 'Je bestelling is meteen betaald met credits; je bevestiging komt per mail. Er komt geen aparte factuur: je termijnfactuur dekt deze bestelling.',
         tegoed: 'Je tegoed van {bedrag} blijft staan voor een betaling via Mollie.',
         optie: 'Met {opties} gaat deze bestelling niet met credits: je betaalt hem via Mollie, {bedrag} excl. btw.',
-        opties: { voorrang: 'voorrang', outfit: 'een outfit', toeslag: 'de toeslag van je eigen look' },
+        opties: { voorrang: 'voorrang', toeslag: 'de toeslag van je eigen look' },
         en: 'en',
         zonder: 'Zonder die keuze kost hij {kosten} credits; je hebt er {saldo}.',
         teWeinig: 'Deze bestelling kost {kosten} credits, je hebt er {saldo}.',
@@ -1882,6 +1894,177 @@ const FORM = {
 };
 
 const f = FORM[lang];
+
+/* ═══ DE WERKPLAATS — levering 59, 17 oktober 2026 (afvinklijst 36 B, alles "doen") ═══════
+   Catalog en lifestyle (niet de proef): geen topbalk, menu of voet van de site (Layout
+   werkplaats), maar een eigen balk met de V, de stappen en "Hulp nodig?". Stap 1 in vier
+   blokken (01 Stijl of Look, 02 Aantal, 03 Gezicht, 04 Levering), rechts "Wat je krijgt"
+   met de achtergrond per hoek (catalog), de vorm, de regels, het totaal en Verder. Wat er
+   weggaat: de kanalen ("Waar ga je deze verkopen?"), de achtergrondsectie op pagina 1,
+   "Meer opties", de vergelijking van de doorlooptijden en de blokken onder het formulier.
+
+   DE VELDEN BLIJVEN WAAR ZE WAREN. De kiezers voor achtergrond, kanalen, vorm en extra
+   hoek staan nog in stap 1 (in .wk-opslag, verborgen), zodat pipeline.js ze leest, de
+   concepten ze bewaren en de server dezelfde namen krijgt. Wat de klant ziet zijn de
+   knoppen in "Wat je krijgt", en die zetten die velden (wkKleur, wkVorm in pipeline.js). */
+const werk = !isSample;
+const anderePad = lang === 'nl'
+  ? (Astro.url.pathname.replace(/^\/nl(?=\/)/, '') || '/')
+  : `/nl${Astro.url.pathname}`;
+const catStijlen = (lang === 'nl' ? catalogStylesNl : catalogStylesEn) as any[];
+const catHuis = catStijlen.filter((s0) => s0.slug !== 'custom' && s0.orderHref && !s0.orderLabel);
+const catEigen = catStijlen.find((s0) => s0.slug === 'custom');
+/* De kaarten bij 01 Stijl staan er alleen bij één huisstijl; zijn het er meer, dan is
+   StijlRegel weer de keuzelijst (zie StijlRegel.astro) en blijft die gewoon zichtbaar. */
+const wkStijlKaarten = werk && isCatalog && catHuis.length === 1;
+const wkTrap = LADDER[service].map(([van, tot, prijs]) => ({ van, tot: tot ?? FORM_MAX_PRODUCTS, prijs }));
+const wkLever = levertijdDelen('unattended', lang);
+const wkVormen = isCatalog ? CATALOG_RATIOS : LIFESTYLE_RATIOS;
+const wkKleuren = BG_AANBEVOLEN.map((b: any) => ({ id: b.id, hex: String(b.hex).toUpperCase(), naam: b.name[lang] }));
+const wkHoekVanaf = euro(EXTRA_PHOTO_LADDER[EXTRA_PHOTO_LADDER.length - 1][2], lang);
+const WK = lang === 'nl' ? {
+  balkLabel: 'Bestellen',
+  thuis: 'VISUAILS, naar de homepage',
+  hulp: 'Hulp nodig?',
+  hulpKop: 'Vraag het ons',
+  hulpZin: 'Je keuzes blijven op dit apparaat bewaard, ook als je even weggaat.',
+  hulpWa: 'App ons op WhatsApp',
+  hulpWaTekst: `Hallo VISUAILS, ik heb een vraag over het bestellen van ${isCatalog ? 'catalogsets' : 'lifestylecarrousels'}.`,
+  hulpMail: 'Mail ons',
+  hulpFaq: 'Veelgestelde vragen',
+  taal: 'English',
+  taalKort: 'EN',
+  van: (i: number, n: number) => `${i} van ${n}`,
+  opening: isCatalog
+    ? { l: 'Catalogsets.', h: 'Vier beelden per product.', zin: 'Voorkant, achterkant, een detail en op een model, op jouw achtergrond. Hoe meer producten, hoe lager de prijs per product.' }
+    : { l: 'Lifestylecarrousels.', h: 'Vier beelden per product.', zin: 'Je product op een model in een gestylede scène: van voren, van achteren, een detail en het product alleen. Hoe meer producten, hoe lager de prijs per product.' },
+  stijl: isCatalog ? { label: 'Stijl', kop: 'Welke stijl?' } : { label: 'Look', kop: 'Welke look?' },
+  aantal: { label: 'Aantal', kop: 'Hoeveel producten?' },
+  trapKop: 'Prijs per product',
+  trapRij: (van: number, tot: number) => (van === tot ? `${van} producten` : `${van}–${tot} producten`),
+  gezicht: { label: 'Gezicht', kop: 'Wie draagt het?', zin: 'Voor de foto’s op een model. Kies een gezicht, of de eerste tegel: dan kiezen wij er een dat bij je merk past. Per product aan te passen bij je foto’s.' },
+  levering: { label: 'Levering', kop: 'Wanneer?' },
+  leverOnder: `Zodra het klaar is: ${wkLever[0].toLowerCase()}${wkLever[1] ? `, ${wkLever[1]}` : ''}. Je krijgt een bericht.`,
+  leverBoven: `Vanaf ${WINDOW_THRESHOLD} producten kies je na je gegevens een leverdatum: gereserveerd zodra je bestelt, vast zodra je betaalt.`,
+  voorrang: 'Voorrang',
+  voorrangTerm: 'de grenzen van voorrang',
+  voorrangZin: `Bovenaan de lijst. Betaal je op een werkdag vóór ${VOORRANG.bestelVoorUur}:00, dan is het de volgende werkdag om ${VOORRANG.klaarUur}:00 klaar. Halen we dat niet, dan krijg je de toeslag terug.`,
+  eigenStijl: 'Op aanvraag',
+  krijgKop: 'Wat je krijgt',
+  hoekNoot: ['Achtergrond per hoek.', 'Tik op het vierkantje. Geldt voor de hele bestelling.'],
+  kleurVoor: (hoek: string, kleur: string) => `Achtergrond voor ${hoek.toLowerCase()}: ${kleur}`,
+  paneelKop: 'Achtergrond',
+  eigenKleur: 'Een eigen kleur',
+  eigenVeld: 'Eigen kleur, zes tekens',
+  eigenGebruik: 'Gebruik',
+  eigenFout: 'Zes tekens, 0–9 en A–F. Bijvoorbeeld E7E1F7.',
+  amazon: 'Verkoop je op Amazon? Daar mag de hoofdfoto alleen wit zijn (#FFFFFF).',
+  wit: 'De voorkant staat vast op wit: dat vraagt je vaste look.',
+  hoekErbij: 'Een hoek erbij',
+  hoekVanaf: `vanaf ${wkHoekVanaf}`,
+  hoekPaneel: 'Een hoek erbij',
+  hoekKlaar: 'Klaar',
+  vorm: 'Vorm van het beeld',
+  rProducten: 'Producten',
+  rBeelden: 'Beelden',
+  rGezicht: 'Gezicht',
+  rVoorrang: 'Voorrang',
+  rLooks: 'Complete looks',
+  rLook: 'Look',
+  nee: 'Nee',
+  nogKiezen: 'Nog kiezen',
+  totaal: 'Totaal',
+  verder: ['Verder naar je foto’s', 'Verder naar je gegevens', 'Verder naar je leverdatum', 'Verder naar betalen'],
+  verderKort: 'Verder',
+  onderZin: (n: number) => `${n} beelden`,
+  inloggen: ['Al eerder besteld?', 'Log in', ', dan staan je gegevens klaar.'],
+  s2: {
+    l: 'Je foto’s.', h: 'Eén product tegelijk.',
+    zin: 'Vier foto’s met je telefoon is genoeg. De tips lopen onderin mee.',
+    tipsTerug: 'Toon de tips weer',
+    tipsLabel: 'Tips voor je foto’s', tip: 'Tip',
+    tipVolgende: 'Volgende tip', tipPauze: 'Pauzeer de tips', tipSpeel: 'Laat de tips lopen', tipWeg: 'Tips verbergen',
+    tips: [
+      'Leg het product plat op een lichte vloer of hang het tegen een deur, in daglicht.',
+      'Leg bij het detail een wit vel printpapier half in beeld: dan zien we de echte kleur.',
+      'Kies de foto’s in deze volgorde: voorkant, achterkant, detail, gedragen.',
+      'Verkeerd vak? Wissel de foto om met de keuze onder het vak.',
+      'Een gedragen foto mag met elke telefoon, in elke kamer: het gaat om de pasvorm.',
+      'Zelfde afstand en hoek voor de voor- en achterkant: dan worden je beelden één set.',
+    ],
+  },
+} : {
+  balkLabel: 'Ordering',
+  thuis: 'VISUAILS, to the homepage',
+  hulp: 'Need help?',
+  hulpKop: 'Ask us',
+  hulpZin: 'Your choices stay saved on this device, even if you step away.',
+  hulpWa: 'Message us on WhatsApp',
+  hulpWaTekst: `Hello VISUAILS, I have a question about ordering ${isCatalog ? 'catalog sets' : 'lifestyle carousels'}.`,
+  hulpMail: 'Email us',
+  hulpFaq: 'Frequently asked questions',
+  taal: 'Nederlands',
+  taalKort: 'NL',
+  van: (i: number, n: number) => `${i} of ${n}`,
+  opening: isCatalog
+    ? { l: 'Catalog sets.', h: 'Four images per product.', zin: 'Front, back, a detail and on a model, on your background. The more products, the lower the price per product.' }
+    : { l: 'Lifestyle carousels.', h: 'Four images per product.', zin: 'Your product on a model in a styled scene: from the front, from the back, a detail and the product on its own. The more products, the lower the price per product.' },
+  stijl: isCatalog ? { label: 'Style', kop: 'Which style?' } : { label: 'Look', kop: 'Which look?' },
+  aantal: { label: 'Count', kop: 'How many products?' },
+  trapKop: 'Price per product',
+  trapRij: (van: number, tot: number) => (van === tot ? `${van} products` : `${van}–${tot} products`),
+  gezicht: { label: 'Face', kop: 'Who wears it?', zin: 'For the photos on a model. Pick a face, or the first tile: then we choose one that suits your brand. You can change it per product with your photos.' },
+  levering: { label: 'Delivery', kop: 'When?' },
+  leverOnder: `As soon as it is ready: ${wkLever[0].toLowerCase()}${wkLever[1] ? `, ${wkLever[1]}` : ''}. We let you know.`,
+  leverBoven: `From ${WINDOW_THRESHOLD} products you pick a delivery date after your details: reserved when you order, fixed once you pay.`,
+  voorrang: 'Priority',
+  voorrangTerm: 'the limits of priority',
+  voorrangZin: `Top of the list. Pay on a working day before ${VOORRANG.bestelVoorUur}:00 and it is ready by ${VOORRANG.klaarUur}:00 the next working day. If we do not make it, the surcharge comes back.`,
+  eigenStijl: 'On request',
+  krijgKop: 'What you get',
+  hoekNoot: ['Background per angle.', 'Tap the little square. It applies to the whole order.'],
+  kleurVoor: (hoek: string, kleur: string) => `Background for ${hoek.toLowerCase()}: ${kleur}`,
+  paneelKop: 'Background',
+  eigenKleur: 'Your own colour',
+  eigenVeld: 'Your own colour, six characters',
+  eigenGebruik: 'Use',
+  eigenFout: 'Six characters, 0–9 and A–F. For example E7E1F7.',
+  amazon: 'Selling on Amazon? There the main image may only be white (#FFFFFF).',
+  wit: 'The front is fixed on white: your saved look asks for it.',
+  hoekErbij: 'Add an angle',
+  hoekVanaf: `from ${wkHoekVanaf}`,
+  hoekPaneel: 'Add an angle',
+  hoekKlaar: 'Done',
+  vorm: 'Image shape',
+  rProducten: 'Products',
+  rBeelden: 'Images',
+  rGezicht: 'Face',
+  rVoorrang: 'Priority',
+  rLooks: 'Complete looks',
+  rLook: 'Look',
+  nee: 'No',
+  nogKiezen: 'Still to choose',
+  totaal: 'Total',
+  verder: ['On to your photos', 'On to your details', 'On to your delivery date', 'On to payment'],
+  verderKort: 'Continue',
+  onderZin: (n: number) => `${n} images`,
+  inloggen: ['Ordered before?', 'Sign in', ' and your details are filled in.'],
+  s2: {
+    l: 'Your photos.', h: 'One product at a time.',
+    zin: 'Four phone photos is enough. The tips run along at the bottom.',
+    tipsTerug: 'Show the tips again',
+    tipsLabel: 'Tips for your photos', tip: 'Tip',
+    tipVolgende: 'Next tip', tipPauze: 'Pause the tips', tipSpeel: 'Let the tips run', tipWeg: 'Hide the tips',
+    tips: [
+      'Lay the product flat on a light floor or hang it against a door, in daylight.',
+      'Put a sheet of white printer paper half in the detail shot: then we see the true colour.',
+      'Pick the photos in this order: front, back, detail, worn.',
+      'Wrong slot? Swap the photo with the choice under the slot.',
+      'A worn photo may be taken with any phone, in any room: it is about the fit.',
+      'Same distance and angle for the front and the back: then your images become one set.',
+    ],
+  },
+};
 /* De woorden van de contactvoorkeur, uit dezelfde bron als het formulier op
    /contact en het abonnementsformulier — zie src/data/contactvoorkeur.js. */
 const vk = VOORKEUR_COPY[lang];
@@ -1980,6 +2163,92 @@ const PLAN_ROWS = plans(lang).map((p) => ({
 // whichever radio was checked; there is no radio any more, so the page tells
 // the script what it is. The URL is never parsed — a route rename would
 // otherwise silently reprice every order placed through it.
+const LC = lookCopy(lang);
+/* ── WAARMEE DRAAGT HET MODEL DIT? — 17 oktober 2026 (levering 60, c-erbij) ──
+   De woorden van het blok onder de foto's van elk product. Uit het voorbeeld van
+   afvinklijst 38, nagekeken op 8–10 woorden per kleine regel. */
+const ERBIJ = lang === 'nl' ? {
+  waar: { shoes: 'aan de voeten', top: 'wat het model erboven draagt', bottom: 'wat het model eronder draagt', underlayer: 'een laag onder je product' },
+  toevoegen: { shoes: 'Schoenen toevoegen', top: 'Een top toevoegen', bottom: 'Een broek of rok toevoegen', underlayer: 'Een top toevoegen' },
+  tekst: {
+    label: 'Erbij',
+    kop: 'Waarmee draagt het model dit?',
+    zin: 'Per plek in het beeld. Laat je het staan, dan kiezen wij. Kies je een ander product uit je bestelling, dan wordt het een complete look.',
+    zinCatalog: 'Per plek in het beeld. Laat je het staan, dan kiezen wij: effen, en een andere toon dan je product.',
+    groepLabel: '{plek}: waar komt het vandaan?',
+    wij: 'Wij kiezen',
+    eigen: 'Eigen stuk',
+    gratis: 'gratis',
+    uit: 'Uit je bestelling',
+    lookLetter: 'look {l}',
+    wijUitleg: 'Wij zetten er iets bij: {standaard}, effen en in een andere toon, zodat je product loskomt. Gratis.',
+    eigenUitleg: 'Je eigen stuk, als bijzaak: in beeld staat {gezien}. Het wordt niet als product gefotografeerd en kost niets. Zit er een logo op? Dat halen we weg. Zonder foto kiezen wij.',
+    uitKop: 'Een complete look.',
+    uitUitleg: 'Beide stukken zijn hoofdzaak: scherp en helemaal in beeld, met één model op één plek. Geen extra foto’s nodig: we gebruiken die van dat product.',
+    inLook: 'In deze look',
+    alInLook: 'Zit al in look {l}',
+    vol: 'Een look heeft hooguit drie stukken',
+    dubbel: 'Op die plek staat al een stuk',
+    toeSub: '+ {prijs} · eigen vier beelden',
+    lookLabel: 'Look {l} · {n} stukken',
+    lookH: 'Een complete look',
+    lookWie: '{namen}, samen gedragen door één model.',
+    lookPunten: [
+      'Elk stuk houdt zijn vier beelden, en in elk beeld op het model draagt het de hele look.',
+      LC.beelden,
+      'Eén model en één plek voor alle stukken, dus je productpagina’s horen bij elkaar.',
+    ],
+    notitieLabel: 'Hoe draag je het? Mag leeg.',
+    notitiePlaceholder: 'Bijvoorbeeld: hoodie los over de tailleband',
+    uitElkaar: 'Haal de look uit elkaar',
+    krijgZin: 'Twee beelden van de hele look erbij. {prijs}.',
+    railLook: 'Look {l}',
+    geenPlek: 'Bij deze soort product staat er verder niets in beeld.',
+    eerst: 'Kies eerst de soort product. Dan zie je wat er nog meer in beeld staat.',
+    en: 'en',
+  },
+} : {
+  waar: { shoes: 'on the feet', top: 'what the model wears on top', bottom: 'what the model wears below', underlayer: 'a layer under your product' },
+  toevoegen: { shoes: 'Add shoes', top: 'Add a top', bottom: 'Add trousers or a skirt', underlayer: 'Add a top' },
+  tekst: {
+    label: 'Alongside',
+    kop: 'What does the model wear it with?',
+    zin: 'Per place in the image. Leave it and we choose. Pick another product from your order and it becomes a complete look.',
+    zinCatalog: 'Per place in the image. Leave it and we choose: plain, in a different tone from your product.',
+    groepLabel: '{plek}: where does it come from?',
+    wij: 'We choose',
+    eigen: 'Your own piece',
+    gratis: 'free',
+    uit: 'From your order',
+    lookLetter: 'look {l}',
+    wijUitleg: 'We add something: {standaard}, plain and in a different tone, so your product stands out. Free.',
+    eigenUitleg: 'Your own piece, on the side: the image shows {gezien}. It is not photographed as a product and costs nothing. Has it got a logo? We remove it. No photo, and we choose.',
+    uitKop: 'A complete look.',
+    uitUitleg: 'Both pieces are the subject: sharp and fully in frame, one model in one place. No extra photos needed: we use the ones of that product.',
+    inLook: 'In this look',
+    alInLook: 'Already in look {l}',
+    vol: 'A look has three pieces at most',
+    dubbel: 'That place already has a piece',
+    toeSub: '+ {prijs} · its own four images',
+    lookLabel: 'Look {l} · {n} pieces',
+    lookH: 'A complete look',
+    lookWie: '{namen}, worn together by one model.',
+    lookPunten: [
+      'Each piece keeps its four images, and in every image on the model it wears the whole look.',
+      LC.beelden,
+      'One model and one place for all pieces, so your product pages belong together.',
+    ],
+    notitieLabel: 'How is it worn? Can stay empty.',
+    notitiePlaceholder: 'For example: hoodie loose over the waistband',
+    uitElkaar: 'Take the look apart',
+    krijgZin: 'Two images of the whole look on top. {prijs}.',
+    railLook: 'Look {l}',
+    geenPlek: 'For this kind of product nothing else is in frame.',
+    eerst: 'Choose the kind of product first. Then you see what else is in frame.',
+    en: 'and',
+  },
+};
+
 const config = {
   lang,
   service,
@@ -2023,6 +2292,17 @@ const config = {
    */
   samplePrice: isSample ? AMOUNT.testSample : null,
   ladder: LADDER,
+  /* De werkplaats (levering 59): de teksten die pipeline.js daar schrijft. */
+  werk: werk ? {
+    verder: WK.verder,
+    van: WK.van(9, 8).replace('9', '{i}').replace('8', '{n}'),
+    beelden: WK.onderZin(999).replace('999', '{n}'),
+    excl: vatLabel('excl', lang),
+    nee: WK.nee,
+    nogKiezen: WK.nogKiezen,
+    kleurVoor: WK.kleurVoor('{hoek}', '{kleur}'),
+    hoekPer: lang === 'nl' ? '{prijs} per product' : '{prijs} per product',
+  } : null,
   /* De abonnementen — zie PLAN_ROWS hierboven voor waarom er twee vormen van
      deze regel zijn en waarom Merk hier nooit langskomt. */
   plans: PLAN_ROWS,
@@ -2033,7 +2313,12 @@ const config = {
   maxFileBytes: MAX_FILE_BYTES,
   maxBatchFiles: MAX_BATCH_FILES,
   uploadExt: Object.keys(UPLOAD_TYPES),
-  outfitSurcharge: OUTFIT_SURCHARGE,
+  /* De complete look (levering 60): € 50 en 4 credits per look, twee lookbeelden,
+     twee of drie stukken. Alleen bij lifestyle; pipeline.js (bindLooks) leest dit. */
+  look: !isSample && !isCatalog ? {
+    prijs: LOOK_PRIJS, credits: LOOK_CREDITS, beelden: LOOK_BEELDEN,
+    min: LOOK_MIN, max: LOOK_MAX, letters: LOOK_LETTERS, notitieMax: LOOK_NOTITIE_MAX,
+  } : null,
   /* Hoeveel beelden één product oplevert, of null als dat bij deze dienst geen
      vraag is (video). Alleen voor het meelopende overzicht: pipeline.js
      vermenigvuldigt het met het aantal en toont het, en rekent er verder niets
@@ -2068,10 +2353,17 @@ const config = {
       naam: CONTEXT_SLOTS[id].name[lang],
       standaard: STYLING_STANDAARD[id]?.[lang] || '',
       shot: contextShotId(id),
+      /* Levering 60: de regel onder de naam, wat ervan in beeld staat (de grens met
+         de look, uit garments.js) en de tekst van "toevoegen" bij Uit je bestelling. */
+      waar: ERBIJ.waar[id] || '',
+      gezien: CONTEXT_SLOTS[id].seen[lang],
+      toevoegen: ERBIJ.toevoegen[id] || '',
     }])),
     eigen: STYLING_EIGEN[lang],
   },
-  maxOutfit: MAX_OUTFIT_PRODUCTS,
+  /* "Waarmee draagt het model dit?" in stap 2 (levering 60, c-erbij), en de soort
+     die een toegevoegd stuk krijgt per plek (c-toevoegen). */
+  erbij: { ...ERBIJ.tekst, toeSoort: { shoes: 'shoes', top: 'top', bottom: 'trousers', underlayer: 'top' } },
   bg: { customId: CUSTOM_ID, lightThreshold: LIGHT_THRESHOLD },
   /*
    * ── DE VERHOUDING — 13 augustus 2026 ───────────────────────────────────────
@@ -2158,7 +2450,6 @@ const config = {
 const configJson = JSON.stringify(config).replace(/</g, '\\u003c');
 
 const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
-const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i);
 ---
 
 {/* ── SECTIE 22 OM HET FORMULIER HEEN — 7 september 2026 ────────────────────
@@ -2177,10 +2468,10 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
  * Wat de velden er wél anders uit laat zien: de formulierhuid in stijl22.css.
  * Die hangt aan .field, .input, .select, .textarea en .opt — de primitieven uit
  * global.css die dit formulier al gebruikte — dus hij pakt hier vanzelf. */}
-<div class="s22 of">
+<div class:list={['s22', 'of', werk && 'of-werk']}>
 
-<!-- HERO -->
-{hero && (
+<!-- HERO (in de werkplaats niet: de opening staat in stap 1) -->
+{hero && !werk && (
 <section class="paneel of-open">
   <div class="paneel-kop">
     <p class="etiket">{isSample ? sample.name : (lang === 'nl' ? 'Bestellen' : 'Order')}</p>
@@ -2270,7 +2561,9 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       <h2 class="pl-lost-h">{f.concept.h}</h2>
       <p class="pl-lost-body" data-pl-concept-wat></p>
       <p class="pl-lost-body" data-pl-concept-weg hidden></p>
-      <p class="pl-lost-body pl-concept-noot">{f.concept.noot}</p>
+      {/* Levering 57: alleen voor wie niet is ingelogd. Een ingelogde klant krijgt zijn gegevens
+          uit zijn account; "die vul je straks opnieuw in" klopte voor hem niet. */}
+      <p class="pl-lost-body pl-concept-noot" data-acct="out">{f.concept.noot}</p>
       <div class="pl-open-acts">
         <button type="button" class="knop knop-inkt" data-pl-concept-verder>{f.concept.verder}</button>
         <button type="button" class="knop" data-pl-concept-opnieuw>{f.concept.opnieuw}</button>
@@ -2351,16 +2644,18 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         lopen bij de eerste tekstwijziging uit elkaar. De index staat vast aan de
         volgorde van de stappen zelf, dus als die ooit verandert, verandert deze
         regel mee — en dat is precies de bedoeling. */}
+    <WkBalk aan={werk} lang={lang} wk={WK} anderePad={anderePad} email={CONTACT_EMAIL}>
     <ol class="pl-rail" aria-label={f.railLabel}>
       {RAIL.map((t, i) => (
         <li>
           <button type="button" class="pl-rail-item" data-pl-rail-item={String(i + 1)}>
             <span class="pl-rail-n">{String(i + 1).padStart(2, '0')}</span>
-            <span class="pl-rail-t">{t}</span>
+            <span class="pl-rail-t">{werk && f.railWerk ? f.railWerk[i] : t}</span>
           </button>
         </li>
       ))}
     </ol>
+    </WkBalk>
 
     <noscript><p class="pl-noscript">{f.noscript(railWord, isSample)}</p></noscript>
 
@@ -2376,13 +2671,21 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
 
           De proef leent de kop van zijn eigen eerste vraag. Eén tekst minder om
           uit elkaar te laten lopen, en de kop zegt weer wat eronder staat. */}
+      {werk ? (
+        <div class="wk-opening">
+          <h1 class="pl-h wk-opening-h" data-pl-head><span class="l">{WK.opening.l}</span> <span>{WK.opening.h}</span></h1>
+          <p class="wk-opening-zin"><span data-pl-alleen-euro>{WK.opening.zin}</span><span data-pl-alleen-credits hidden>{svc.leadCredits}</span></p>
+          <a class="wk-wissel" href={lp('/start')}>{SERVICE[lang].change}</a>
+        </div>
+      ) : (
       <h2 class="pl-h" data-pl-head>{isSample ? f.s1.sampleKindLabel : f.s1.h}</h2>
+      )}
 
       {/* What was picked, and a way back. Seven photographs and three
           paragraphs of comparison used to live here; the chooser at /start is
           where that comparison belongs, and repeating it asks a visitor to
           re-decide something they decided one click ago. */}
-      {!isSample && (
+      {!isSample && !werk && (
       <p class="pl-svc">
         <span class="pl-svc-name">{svc.title}</span>
         <span class="pl-svc-gets">{svc.gets}</span>
@@ -2457,8 +2760,32 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
 
           Een pagina die deze slot niet vult, verliest niets: een lege slot
           rendert niets. */}
-      <slot name="look" />
+      <WkBlok aan={werk} id="stijl" nr="01" label={WK.stijl.label} kop={WK.stijl.kop}>
+        {wkStijlKaarten && (
+          <div class="wk-stijlen">
+            {catHuis.map((st: any) => (
+              <a class="wk-stijl is-gekozen" href={lp('/catalog')} aria-current="true">
+                <img src="/img/catalog-after-w420.webp" alt="" width="420" height="420" loading="lazy" decoding="async" />
+                <span class="wk-stijl-t"><b>{st.name}</b><span>{st.tagline}</span></span>
+                <span class="wk-vink" set:html={ikoon('vink')} />
+              </a>
+            ))}
+            {catEigen && (
+              <a class="wk-stijl" href={lp(String(catEigen.orderHref).replace(/^\/nl(?=\/)/, ''))}>
+                <span class="wk-stijl-leeg" set:html={ikoon('plus')} />
+                <span class="wk-stijl-t"><b>{catEigen.name}</b><span>{catEigen.tagline}</span><em>{WK.eigenStijl}</em></span>
+              </a>
+            )}
+          </div>
+        )}
+        {/* De eigen catalogusstijlen van een ingelogde klant komen hier (addOwnStyles). */}
+        {werk && isCatalog && <div class="wk-eigen-stijlen" data-wk-eigen-stijl hidden></div>}
+        <WkOm aan={wkStijlKaarten} klasse="wk-stijlregel">
+          <slot name="look" />
+        </WkOm>
+      </WkBlok>
 
+      <WkBlok aan={werk} id="aantal" nr="02" label={WK.aantal.label} kop={WK.aantal.kop}>
       {/* One select, one name. Every option is a real count and the last one
           deliberately is not — countOf() in /api/order would read "30+" as
           thirty and record a number nobody chose.
@@ -2531,6 +2858,17 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       </div>
       )}
 
+      {/* De prijstrap naast het aantal (b-keuzes): de trede die geldt, staat aan.
+          pipeline.js (paintWkTrap) zet .is-nu; zonder script staat er alleen de lijst. */}
+      {werk && (
+        <ul class="wk-trap" aria-label={WK.trapKop} data-wk-trap>
+          <li class="wk-trap-kop" aria-hidden="true">{WK.trapKop}</li>
+          {wkTrap.map((t) => (
+            <li data-wk-van={String(t.van)} data-wk-tot={String(t.tot)}><span>{WK.trapRij(t.van, t.tot)}</span><b>{euro(t.prijs, lang)}</b></li>
+          ))}
+        </ul>
+      )}
+
       {/* HET CONTACTPANEEL. Verschijnt zodra de keuze "meer dan" is; pipeline.js
           verbergt dan de rest van deze stap én de knop Verder, want een
           formulier dat niet voor dit aantal gebouwd is, moet niet doen alsof.
@@ -2563,29 +2901,19 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       </select>
       )}
 
-      {/* Task #271f — Single Product/Full outfit. Not [data-pl-req]: 0 is
-          always a valid answer, so this field is never required.
-
-          NIET BIJ DE PROEF — 13 augustus 2026. Lucas over /test-sample:
-          *"Zelfde als lifestyle orderflow maar dan simpel."* Een compleet setje
-          is een TOESLAG per product, en de proef kost één vast bedrag voor één
-          product. De vraag zou dus een meerprijs aanbieden die niet in rekening
-          gebracht kan worden, en dat is erger dan hem niet stellen. */}
+      {/* ── STUKKEN DIE SAMEN GEDRAGEN WORDEN — 17 oktober 2026 (levering 60) ──
+          Hier stond "Zitten er outfits bij?", een keuzelijst van 0 tot 3 nog voor
+          de klant had gezegd wat zijn producten zijn. Afvinklijst 38 (c-stap1):
+          één regel onder het aantal. Tel alle stukken mee; welke samen een look
+          zijn, kies je bij je foto's, waar je over de styling nadenkt. Het tekentje
+          zijn twee vlakken met de snede van het merk ertussen: twee stukken, één
+          vorm. De uitleg waarom een look meer kost staat achter het vraagteken
+          (d-teksten). Niet bij catalog en niet bij de proef: die kennen geen looks. */}
       {!isCatalog && !isSample && (
-      <div class="field" data-pl-outfit>
-        <label for="pl-outfit">{f.s1.outfitLabel}</label>
-        <select id="pl-outfit" class="select" name="outfit_count">
-          <option value="0">{f.s1.outfitNone}</option>
-          {outfitCounts.slice(1).map((n) => <option value={String(n)}>{f.s1.outfitCount(n)}</option>)}
-        </select>
-        <span class="hint">{f.s1.outfitHint}</span>
-        <span class="hint" data-pl-alleen-credits hidden>{f.s1.outfitNietCredits}</span>
-        {/* OUTFIT_COPY, verbatim — pricing.js requires it wherever the outfit
-            choice is offered. Folded rather than dropped. */}
-        <Disclose summary={f.s1.outfitWhy} tone="plain">
-          <p>{f.s1.outfitWhyBody}</p>
-        </Disclose>
-      </div>
+      <p class="wk-lookzin" data-pl-lookzin>
+        <span class="wk-paartje" aria-hidden="true"><i></i><i></i></span>
+        <span><b>{LC.stap1Kop}</b> <span data-pl-alleen-euro>{LC.stap1(euro(LOOK_PRIJS, lang))}</span><span data-pl-alleen-credits hidden>{LC.stap1(`${LOOK_CREDITS} credits`)}</span> <Note lang={lang} term={LC.kort}>{LC.waarom} {LC.set}</Note></span>
+      </p>
       )}
 
       {/* De setjes-waarschuwing als notitie achter een vraagteken en niet als
@@ -2603,11 +2931,6 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           die hij beantwoordt. Zonder account, zonder script of zonder merkkit
           gebeurt er niets en staan alle vragen er gewoon — dat is de stand
           waarin dit formulier het altijd al deed. */}
-      <div class="pl-kit" data-pl-merkkit hidden>
-        <p class="pl-kit-kop">{f.s1.kitH}</p>
-        <ul class="pl-kit-lijst" data-pl-merkkit-lijst role="list"></ul>
-        <button type="button" class="pl-kit-knop" data-pl-merkkit-open>{f.s1.kitOpen}</button>
-      </div>
 
       {/* ── VOORRANG BIJ LEVERING — 9 september 2026 ─────────────────────────
           Lucas: *"Ook kan de klant kiezen voor priority delivery, waarbij de
@@ -2708,6 +3031,14 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         <p class="pl-total-vatnote">{f.s1.vatLead} <Note lang={lang} term={lang === 'nl' ? vatLabel('excl', lang) : 'VAT'} wide>{`${f.s1.vatDetail} ${f.s1.displayNote} ${f.s1.euroNote}`}</Note></p>
       </div>
       )}
+      </WkBlok>
+
+      {/* De merkkit — sinds levering 59 onder het aantal en niet erin (zie de noot hierboven). */}
+      <div class="pl-kit" data-pl-merkkit hidden>
+        <p class="pl-kit-kop">{f.s1.kitH}</p>
+        <ul class="pl-kit-lijst" data-pl-merkkit-lijst role="list"></ul>
+        <button type="button" class="pl-kit-knop" data-pl-merkkit-open>{f.s1.kitOpen}</button>
+      </div>
 
       {/* De proef kost één vast bedrag, dus hier staat geen meelopend totaal.
           Het blok hierboven is er om een bedrag te tonen dat MEEBEWEEGT met de
@@ -2736,7 +3067,12 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           the background picker; lifestyle slots in the style picker, because a
           styled scene has no flat ground to choose. Nothing else on this page
           knows which one it got. */}
+      {/* In de werkplaats staan de kanalen en de achtergrond hier verborgen: de achtergrond
+          kies je per hoek in "Wat je krijgt" (b-kleur), de kanalen zijn weg (b-weg). De velden
+          blijven, zodat de merkkit en een kopie ze nog kunnen zetten. */}
+      <WkOm aan={werk} klasse="wk-opslag" verborgen>
       <slot />
+      </WkOm>
 
       {/* ── WIE HET DRAAGT: TERUG IN STAP 1 — 11 oktober 2026 (F3, 1.09) ──────
           Stond sinds 10 september boven de productkaarten in stap 2, en elke
@@ -2747,7 +3083,9 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           afwijken per product kan daar onder het ingeklapte "Meer over dit
           product". De slot heet nog steeds "model", dus de pagina's die hem
           vullen (catalog, lifestyle, de proef) hoeven niets te weten. */}
+      <WkBlok aan={werk} id="gezicht" nr="03" label={WK.gezicht.label} kop={WK.gezicht.kop} zin={WK.gezicht.zin}>
       <slot name="model" />
+      </WkBlok>
 
       {/* DE BEELDVERHOUDING, NA DE SLOT EN NIET ERVOOR. De slot draagt de vraag
           die deze dienst DEFINIEERT — de achtergrond of de look — en die hoort
@@ -2779,39 +3117,52 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           verder te kunnen. De velden staan in de vouw en posten gewoon mee, ook
           als hij dicht blijft. De samenvatting noemt wat erin zit, zodat niemand
           een keuze mist die hij zocht. */}
+      {/* ── 04 LEVERING, EN WAT "MEER OPTIES" WAS — levering 59 (b-levering, b-kleur) ──
+          "Meer opties" (30 september 2026) is weg. Voorrang staat als schakelaar bij Levering;
+          de vorm en een extra hoek kies je in "Wat je krijgt". De RatioPicker en de
+          hoekenkiezer staan hieronder nog in de stap, zodat ze posten, bewaard worden en
+          gecontroleerd: de vorm verborgen (de knoppen rechts zetten hem), de hoeken in een
+          paneel dat "Een hoek erbij" opent. */}
       {isSample
         ? <input type="hidden" name="ratio" value={DEFAULT_RATIO_ID} />
         : (
-      <details class="pl-meeropties" data-pl-meeropties>
-        <summary class="pl-meeropties-kop">
-          <span class="pl-meeropties-t">{f.s1.meerOpties}</span>
-          <span class="pl-meeropties-sub">{isCatalog ? f.s1.meerOptiesSub : f.s1.meerOptiesSubZonderHoek}</span>
-        </summary>
-        <div class="pl-meeropties-body">
-          <slot name="extra" />
-          {/* Geen eigen kop: RatioPicker draagt "Beeldverhouding" al, en de
-              gekozen vorm staat rechts in "Wat je krijgt" onder Formaat. */}
+      <Fragment>
+      <WkBlok aan={werk} id="levering" nr="04" label={WK.levering.label} kop={WK.levering.kop}>
+        <p class="wk-lever-zin" data-wk-lever data-wk-onder={WK.leverOnder} data-wk-boven={WK.leverBoven} data-wk-drempel={String(WINDOW_THRESHOLD)}><span class="wk-lever-i" set:html={ikoon('klok')} /><span data-wk-lever-t>{WK.leverOnder}</span></p>
+          {VOORRANG_DIENSTEN.has(service) && (
+          <div class="pl-voorrang wk-voorrang" data-pl-voorrang>
+            <label class="pl-voorrang-rij wk-voorrang-rij">
+              <input type="checkbox" name="voorrang" value="1" />
+              <span class="wk-schuif" aria-hidden="true"></span>
+              <span class="pl-voorrang-t wk-voorrang-t">
+                <b>{WK.voorrang}</b>
+                <small>{WK.voorrangZin} <Note lang={lang} term={WK.voorrangTerm}>{f.s1.voorrangLimits}</Note></small>
+              </span>
+              <span class="wk-voorrang-prijs">
+                <span class="pl-voorrang-bedrag" data-pl-voorrang-bedrag>{f.s1.voorrangGeen}</span>
+                <span class="pl-voorrang-bedrag wk-niet-credits" data-pl-alleen-credits hidden>{f.s1.nietMetCredits}</span>
+              </span>
+            </label>
+          </div>
+          )}
+      </WkBlok>
+      <div class="wk-opslag" hidden>
           <div class="field pl-meeropties-vorm">
             <RatioPicker lang={lang} />
           </div>
-          {!isSample && VOORRANG_DIENSTEN.has(service) && (
-          <div class="field pl-voorrang" data-pl-voorrang>
-            <label class="pl-voorrang-rij">
-              <input type="checkbox" name="voorrang" value="1" />
-              <span class="pl-voorrang-t">
-                <b>{f.s1.voorrangLabel}</b>
-                <span class="pl-voorrang-bedrag" data-pl-voorrang-bedrag>{f.s1.voorrangGeen}</span>
-                <span class="pl-voorrang-bedrag" data-pl-alleen-credits hidden>{f.s1.nietMetCredits}</span>
-              </span>
-            </label>
-            <span class="hint">{f.s1.voorrangLine}</span>
-            <Disclose summary={f.s1.voorrangWhen} tone="plain">
-              <p>{f.s1.voorrangLimits}</p>
-            </Disclose>
+      </div>
+      {isCatalog && (
+      <div class="wk-hoeken" data-wk-hoeken hidden role="dialog" aria-modal="true" aria-labelledby="wk-hoeken-h">
+        <div class="wk-hoeken-in">
+          <div class="wk-hoeken-kop">
+            <h2 class="wk-hoeken-h" id="wk-hoeken-h">{WK.hoekPaneel}</h2>
+            <button type="button" class="wk-hoeken-klaar" data-wk-hoeken-dicht>{WK.hoekKlaar}</button>
           </div>
-          )}
+          <slot name="extra" />
         </div>
-      </details>
+      </div>
+      )}
+      </Fragment>
         )}
 
       {/* What the count earns. Not a control: the level FOLLOWS the count
@@ -2835,7 +3186,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
 
           Wat de proef over levering te zeggen heeft, staat in stap 4 van "Hoe de
           proef werkt": zodra het klaar is, vaak binnen een dag. */}
-      {!isSample && (
+      {!isSample && !werk && (
       <div class="pl-levels">
         <p class="pl-level-note" data-pl-level-note></p>
         <Disclose summary={f.s1.levelsH} tone="plain" class="pl-levels-why">
@@ -2894,7 +3245,15 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         a client, not an error state — shots.js's header says so and this is the
         code that has to mean it. */}
     <section class="pl-step" data-pl-step="2">
+      {werk ? (
+        <div class="wk-opening">
+          <h2 class="pl-h wk-opening-h" data-pl-head><span class="l">{WK.s2.l}</span> <span>{WK.s2.h}</span></h2>
+          <p class="wk-opening-zin">{WK.s2.zin}</p>
+          <button type="button" class="wk-wissel wk-tips-terug" data-wk-tips-terug hidden>{WK.s2.tipsTerug}</button>
+        </div>
+      ) : (
       <h2 class="pl-h" data-pl-head>{f.s2.h}</h2>
+      )}
       {/* Tip 2 (afvinklijst 28, v28-tips = a): één keer, weg te klikken. */}
       <p class="pl-tip" data-pl-tip="fotos" role="note" hidden>
         <span class="pl-tip-tekst">{TIPS[lang].fotos}</span>
@@ -2918,6 +3277,24 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           er gebeurt als er iets ontbreekt, zegt het tussenscherm van 2.05 nu,
           op het moment dat het speelt. */}
       <ProductUploader lang={lang} />
+
+      {/* ── DE TIPBALK — levering 59 (afvinklijst 36, b-tips) ──────────────────
+          De tips staan niet meer in de kaarten. Onderin de werkkolom een donkere balk
+          met één tip tegelijk, die om de 7 seconden wisselt; stil onder de muis en bij
+          minder beweging, met een knop voor de volgende tip, een pauzeknop (niet op de
+          telefoon) en een kruisje (terug via "Toon de tips weer"). bindWkTips(). */}
+      {werk && (
+        <div class="wk-tipbalk" data-wk-tipbalk role="region" aria-label={WK.s2.tipsLabel} data-wk-tips={JSON.stringify(WK.s2.tips)}>
+          <span class="wk-tip-l"><span class="wk-tip-li" set:html={ikoon('info')} />{WK.s2.tip}</span>
+          <p class="wk-tip-t" data-wk-tip-t aria-live="polite">{WK.s2.tips[0]}</p>
+          <span class="wk-tip-bed">
+            <span class="wk-tip-stip" aria-hidden="true">{WK.s2.tips.map((_t: string, i: number) => <i class={i === 0 ? 'is-nu' : undefined}></i>)}</span>
+            <button type="button" class="wk-tip-k" data-wk-tip-volgende aria-label={WK.s2.tipVolgende}><span set:html={ikoon('pijl')} /></button>
+            <button type="button" class="wk-tip-k" data-wk-tip-pauze aria-label={WK.s2.tipPauze} data-wk-pauze={WK.s2.tipPauze} data-wk-speel={WK.s2.tipSpeel}><span class="wk-i-pauze" set:html={ikoon('pauze')} /><span class="wk-i-speel" set:html={ikoon('afspelen')} /></button>
+            <button type="button" class="wk-tip-k" data-wk-tip-weg aria-label={WK.s2.tipWeg}><span set:html={ikoon('sluiten')} /></button>
+          </span>
+        </div>
+      )}
 
       <p class="pl-step-err" id="pl-err-2" data-pl-step-error hidden></p>
 
@@ -3248,6 +3625,10 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         <label for="pl-msg">{f.s3.message} <span class="pl-opt">{f.optional}</span></label>
         <textarea class="textarea" id="pl-msg" name="message"></textarea>
         <span class="hint">{f.s3.messageHint}</span>
+        {/* Levering 58 (v36-bericht = a): na "Opnieuw bestellen met alle instellingen"
+            zet pipeline.js hier het bericht van de vorige bestelling klaar, als knop.
+            Het gaat niet vanzelf mee: het ging vaak over die ene levering. */}
+        <button type="button" class="knop knop-lijn pl-van-bericht" data-pl-van-bericht hidden></button>
       </div>
       )}
 
@@ -3518,7 +3899,18 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
 
         Onder 1100 pixels valt het blok weg; het totaal staat daar al onderaan
         het scherm vastgeplakt. Zie de noot in BestelOverzicht.astro. */}
-    <BestelOverzicht lang={lang} service={wire} isSample={isSample} />
+    <BestelOverzicht lang={lang} service={wire} isSample={isSample} wk={werk ? WK : null} vormen={wkVormen.map((v: any) => ({ id: v.id, label: v.label }))} standaardVorm={DEFAULT_RATIO_ID} kleuren={wkKleuren} inlogHref={`/account/login?lang=${lang}&terug=${encodeURIComponent(Astro.url.pathname)}`} />
+
+    {/* ── DE BALK ONDERAAN OP DE TELEFOON — levering 59 (afvinklijst 36, b-telefoon) ──
+        "Onderaan altijd het totaal en Verder." Onder 900 px vast onderaan het scherm, op elke
+        stap behalve de laatste (daar staat Bestellen en betalen zelf). Het bedrag komt uit
+        dezelfde haak als elders ([data-pl-total]); de regel eronder schrijft wkOverzicht(). */}
+    {werk && (
+      <div class="wk-onder" data-wk-onder>
+        <p class="wk-onder-som"><b data-pl-total>—</b><span data-wk-onder-zin>{vatLabel('excl', lang)}</span></p>
+        <button type="button" class="wk-verder wk-verder-onder" data-pl-next data-wk-verder><span>{WK.verderKort}</span><span class="wk-verder-i" set:html={ikoon('pijl')} /></button>
+      </div>
+    )}
 
     {/* ── DE BALK ONDERAAN — 17 september 2026 ─────────────────────────────
         Lucas: *"De lifestyle upsell mag weg [uit stap 1]. Ik wil de lifestyle
@@ -3570,7 +3962,10 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
 
     Samen 807 pixels onder een formulier dat juist korter moest. Op /start/*
     blijven ze ongewijzigd staan: daar zijn ze allebei waar. */}
-{!isSample && (
+{/* In de werkplaats niet (afvinklijst 36, b-weg): "wie hier is, heeft al gekozen". Sinds
+    werk = !isSample rendert dit blok dus niet meer; het staat er voor de dag dat er weer een
+    bestelpagina zonder werkplaats komt. */}
+{!isSample && !werk && (
 <>
 <!-- WHAT IS THE SAME IN BOTH -->
 <section class="kamer of-gelijk">
@@ -4876,6 +5271,8 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
     cursor: pointer;
   }
   .pl-qty-more[aria-expanded='true'] { display: none; }
+  /* Levering 58: de knop die het bericht van de vorige bestelling overneemt. */
+  .pl-van-bericht { align-self: flex-start; justify-self: start; width: max-content; max-width: 100%; margin-top: .6rem; white-space: normal; text-align: left; }
   /* Baseline en niet center: de uitlegregel en het knoplabel hebben een andere
      grootte, en dan is de onderkant van de letters de lijn die je ziet. */
   .pl-qty-onder {

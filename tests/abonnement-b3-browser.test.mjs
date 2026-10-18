@@ -69,7 +69,7 @@ const partij = (k, id, aantal, rest, binnen, vervalt) => `INSERT INTO credit_boe
     partij(k, 81011, 20, 8, -80, 10), partij(k, 81012, 120, 120, -2, 88),
     `INSERT INTO orders (id, ref, customer_id, email, name, brand, service, status, payment_status, credits_used, product_count, total_cents, lang) VALUES (81010, 'VIS-VO81-A1B', ${k.id}, 'actief@voorbeeld-actief.test', 'Proef', 'VOLTA', 'catalog', 'delivered', 'credits', 12, 3, 0, 'nl')`,
     `INSERT INTO credit_boek (customer_id, subscription_id, datum, aantal, reden, order_id, order_ref, partijen, sleutel, door) VALUES (${k.id}, ${k.id}, '${moment(-1)}', -12, 'bestelling', 81010, 'VIS-VO81-A1B', '[{"id":81011,"n":12}]', 'bestelling:81010', 'klant')`,
-    `INSERT INTO customer_style_locks (customer_id, style, background_hex, ratio) VALUES (${k.id}, 'catalog', '#F7F5F1', 'portrait45')`,
+    `INSERT INTO customer_style_locks (customer_id, style, background_hex, ratio) VALUES (${k.id}, 'catalog', '#F5F5F5', 'portrait45')`,
     `INSERT INTO customer_style_locks (customer_id, style, look, ratio, roster_model) VALUES (${k.id}, 'lifestyle', 'glow', 'portrait45', 'ava')`,
     `INSERT INTO customer_credits (customer_id, delta_cents, reason) VALUES (${k.id}, 5000, 'annulering')`);
 }

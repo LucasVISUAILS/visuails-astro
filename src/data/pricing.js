@@ -1516,7 +1516,23 @@ export const AMOUNT = {
 // punt 9.01, §17.4): what a styled outfit costs is ladderRate() plus this
 // surcharge, read at the time, never a sum typed into a comment. Applied the same
 // way to video — video's outfit price is AMOUNT.video + OUTFIT_SURCHARGE.
-export const OUTFIT_SURCHARGE = 50;
+/* ── DE COMPLETE LOOK — 17 oktober 2026 (levering 60, afvinklijst 38) ─────────
+   Bij foto's is de outfit vervangen door de LOOK: een koppeling tussen twee of
+   drie producten uit dezelfde lifestylebestelling (src/data/looks.js). € 50 PER
+   LOOK, of hij nu twee of drie stukken heeft (v38-prijs a), en met credits 4 per
+   look (v38-credits a: ongeveer € 51 op de trede van 10 tot 19, dicht bij de
+   € 50). Geen apart maximum aantal looks (v38-max a); elk stuk zit in hooguit één.
+   Catalog heeft geen looks: de server rekende de oude toeslag daar wél als het
+   veld meegestuurd werd, en dat kan niet meer (quoteOrder telt looks alleen bij
+   lifestyle).
+
+   OUTFIT_SURCHARGE en MAX_OUTFIT_PRODUCTS blijven alleen voor quoteVideo(): een
+   clip met een outfit, op een pad dat sinds VIDEO_OP_AANVRAAG niet betaald wordt
+   (er wordt per project geoffreerd). Het is hetzelfde bedrag, dus het leest
+   LOOK_PRIJS in plaats van een tweede getal. */
+export const LOOK_PRIJS = 50;
+export const LOOK_CREDITS = 4;
+export const OUTFIT_SURCHARGE = LOOK_PRIJS;
 export const MAX_OUTFIT_PRODUCTS = 3;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1898,16 +1914,10 @@ export const EXTRA_PHOTO_COPY = {
   nl: 'Een extra foto is er een die jij beschrijft — een detail vanuit een andere hoek, het product op een model bijgesneden bij de hals, een flat-lay voor een banner. Omdat het geschreven is in plaats van gekozen uit een lijst, leest iemand het, bepaalt wat het betekent en legt het resultaat naast wat je vroeg. Dat lezen is het extra werk achter het tarief.',
 };
 
-// The one thing NOT delegated to me: why it costs more. Lucas was explicit
-// that this has to be explained, and explained factually rather than
-// defensively ("Leg dit uit maar niet verdedigend") — so this is a statement
-// of what the extra work actually is, not a justification offered because the
-// price was questioned. Read wherever the outfit choice is offered (the /start
-// step 1 field today; a service page is a reasonable next place to reuse it).
-export const OUTFIT_COPY = {
-  en: 'A complete look means every product in the shot is checked for fit against the others and matched to how it would really look worn together — not composited separately and placed side by side. That check is the extra work behind the price.',
-  nl: 'Een compleet setje betekent dat elk product in het shot wordt gecontroleerd op pasvorm ten opzichte van de andere producten, en zo precies mogelijk wordt nagebootst zoals het er in het echt uit zou zien als je het samen draagt — niet los samengesteld en naast elkaar gezet. Die controle is het extra werk achter de prijs.',
-};
+// OUTFIT_COPY stond hier: waarom een outfit meer kostte. Sinds levering 60
+// (17 oktober 2026, afvinklijst 38) is dat de complete look, en de uitleg staat
+// bij de regels in src/data/looks.js (LOOK_COPY.waarom), achter het vraagteken in
+// stap 1 en in de FAQ.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 2 · FORMATTING — hand-rolled, not Intl, so the output is identical on every

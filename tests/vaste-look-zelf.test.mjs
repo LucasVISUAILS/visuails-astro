@@ -27,8 +27,8 @@ const lees = (p) => readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
 
 /* ── 1 · WAT ER MEE KAN ────────────────────────────────────────────────── */
 console.log('\n1 · lookUitBestelling()');
-ok('catalog: achtergrond, verhouding, gezicht en kanalen', lookUitBestelling({ service: 'catalog', details_json: JSON.stringify({ background_hex: 'f7f5f1', ratio: 'portrait45', model: 'ava', channels: 'bol,nep,zalando' }) }),
-  { dienst: 'catalog', velden: { background_hex: '#F7F5F1', ratio: 'portrait45', roster_model: 'ava', channels: lookUitBestelling({ service: 'catalog', details_json: '{"channels":"bol,zalando"}' }).velden.channels } });
+ok('catalog: achtergrond, verhouding, gezicht en kanalen', lookUitBestelling({ service: 'catalog', details_json: JSON.stringify({ background_hex: 'f5f5f5', ratio: 'portrait45', model: 'ava', channels: 'bol,nep,zalando' }) }),
+  { dienst: 'catalog', velden: { background_hex: '#F5F5F5', ratio: 'portrait45', roster_model: 'ava', channels: lookUitBestelling({ service: 'catalog', details_json: '{"channels":"bol,zalando"}' }).velden.channels } });
 ok('lifestyle: de huisstijl', lookUitBestelling({ service: 'lifestyle', details_json: '{"style":"glow","ratio":"story"}' }).velden, { look: 'glow', ratio: 'story' });
 ok('de look "op aanvraag" gaat nooit mee (§17.18)', lookUitBestelling({ service: 'lifestyle', details_json: '{"style":"custom"}' }).velden, {});
 ok('een eigen look (cs-…) wel', lookUitBestelling({ service: 'lifestyle', details_json: '{"style":"cs-4"}' }).velden, { look: 'cs-4' });
@@ -51,7 +51,7 @@ order(11, 1, 'catalog', 'in_production', 'paid', { background_hex: '#EDE4D8', ra
 order(12, 1, 'catalog', 'in_production', 'paid', { background_hex: '#FFFFFF', ratio: 'portrait34', model: 'elias' });
 order(13, 1, 'lifestyle', 'received', 'unpaid', { style: 'flash' });
 order(14, 1, 'lifestyle', 'received', 'credits', { style: 'glow', ratio: 'portrait45' });
-order(15, 2, 'test-sample', 'received', 'paid', { sample_type: 'catalog', background_hex: '#F7F5F1' });
+order(15, 2, 'test-sample', 'received', 'paid', { sample_type: 'catalog', background_hex: '#F5F5F5' });
 const lock = (klant, stijl) => db.prepare('SELECT background_hex, look, ratio, roster_model, channels, bron_order_id FROM customer_style_locks WHERE customer_id = ? AND style = ?').get(klant, stijl);
 
 ok('eerste betaalde catalogbestelling: gevuld', await vulVasteLookAan(env, 11), { dienst: 'catalog', gevuld: true });
@@ -59,7 +59,7 @@ ok('  met de keuzes van die bestelling en de bron', { ...lock(1, 'catalog') }, {
 ok('een tweede bestelling overschrijft niets', [(await vulVasteLookAan(env, 12)).reden, lock(1, 'catalog').background_hex, lock(1, 'catalog').bron_order_id], ['al-gezet', '#EDE4D8', 11]);
 ok('een onbetaalde bestelling vult niets', (await vulVasteLookAan(env, 13)).gevuld, false);
 ok('een creditsbestelling wel', [(await vulVasteLookAan(env, 14)).gevuld, lock(1, 'lifestyle').look, lock(1, 'lifestyle').ratio], [true, 'glow', 'portrait45']);
-ok('de €1-proef ook', [(await vulVasteLookAan(env, 15)).gevuld, lock(2, 'catalog').background_hex], [true, '#F7F5F1']);
+ok('de €1-proef ook', [(await vulVasteLookAan(env, 15)).gevuld, lock(2, 'catalog').background_hex], [true, '#F5F5F5']);
 /* Een rij die er al is maar niet "gezet" (bijv. alleen een gezicht): lege velden vullen, de rest blijft. */
 db.prepare("INSERT INTO customer_style_locks (customer_id, style, roster_model) VALUES (2, 'lifestyle', 'aaron')").run();
 order(16, 2, 'lifestyle', 'in_production', 'paid', { style: 'dunes', model: 'ava', ratio: 'story' });

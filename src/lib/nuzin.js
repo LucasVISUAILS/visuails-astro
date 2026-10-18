@@ -195,7 +195,7 @@ function onbetaald(o, bedrag) {
   return o.status !== 'cancelled' && (o.status || 'received') === 'received' && ps === 'unpaid' && !!bedrag;
 }
 
-function isAanvraag(o) {
+export function isAanvraag(o) {
   try {
     const d = typeof o.details_json === 'object' && o.details_json ? o.details_json : JSON.parse(o.details_json || '{}') || {};
     return (o.status || 'received') === 'received' && !!String(d.request || '').trim();

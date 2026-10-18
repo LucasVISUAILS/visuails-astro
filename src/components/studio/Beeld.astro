@@ -12,6 +12,12 @@ import NieuwTabblad from '../NieuwTabblad.astro';
 /* `lang` (8 oktober 2026, o26): alleen voor de zin "opent in een nieuw tabblad". */
 /* `proefEenKeer`: Product.astro zet de proefzin dan één keer onder de beelden. */
 const { v, orderId, lang = 'en', proefEenKeer = false } = Astro.props;
+/* HET VINKJE DAT GOEDKEURT (levering 57; afvinklijst 34, b-vink = doen). Het vinkje uit
+   het kit in drie delen: het korte been, het lange been en het vlagje. Na "Goedkeuren"
+   komt de klant terug op #f<id> (account.js); alleen dat beeld is dan :target, en daar
+   zet het vinkje zich in drie tikken (studio-hal.css). Alle andere goedgekeurde beelden
+   staan stil: niets beweegt bij het laden. Geen script (de CSP van Studio). */
+const VINK3 = '<svg class="st-vink3" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="kort" d="M8 13.19L7.6 12.9L7.15 12.7L6.66 12.61L1.21 12.6L9.4 20.24L9.4 13.44L9 14.13Z"/><path class="lang" d="M10 20.8L15.64 11.04L12.9 7.39L9.4 13.44L9.4 20.24Z"/><path class="vlag" d="M14.15 5.21L16.89 8.86L20.6 2.45L15.75 2.45Z"/></svg>';
 ---
 <li class="st-beeld" id={`f${v.id}`}>
   {v.gone
@@ -20,7 +26,7 @@ const { v, orderId, lang = 'en', proefEenKeer = false } = Astro.props;
         {v.viewable
           ? <img src={v.href} alt={v.caption} loading="lazy" decoding="async" />
           : <span class="st-beeld-ext">{v.ext}</span>}
-        {v.badge && <span class={`st-badge ${standKlasse(v.badge.kind)}`}>{v.badge.text}</span>}
+        {v.badge && <span class={`st-badge ${standKlasse(v.badge.kind)}`}>{v.badge.kind === 'approved' && <Fragment set:html={VINK3} />}{v.badge.text}</span>}
         <NieuwTabblad lang={lang} />
       </a>}
   <div class="st-beeld-body">

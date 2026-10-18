@@ -1,0 +1,16 @@
+---
+/*
+ * VISUAILS — een omslag die er alleen in de werkplaats is. Levering 59, 17 oktober 2026.
+ * Met `aan` een <div> met de klasse (en eventueel `hidden`) om de inhoud; zonder `aan`
+ * alleen de inhoud. Zie WkBlok.astro voor waarom: elke slot en elk veld blijft één keer
+ * in de bron van OrderFlow.astro staan, en de proef verandert niet.
+ */
+interface Props {
+  aan: boolean;
+  klasse?: string;
+  verborgen?: boolean;
+  attrs?: Record<string, string>;
+}
+const { aan, klasse = '', verborgen = false, attrs = {} } = Astro.props;
+---
+{aan ? <div class={klasse} hidden={verborgen ? true : undefined} {...attrs}><slot /></div> : <slot />}

@@ -74,8 +74,8 @@ db.prepare(`INSERT INTO orders (id, ref, customer_id, email, name, brand, servic
             VALUES (7, 'VIS-AB12-C3D', 1, 'mara@voorbeeld-volt.test', 'Mara Visser', 'VOLT', 'catalog', 'delivered', 'credits', 12, 3, 0, 'nl')`).run();
 db.prepare(`INSERT INTO credit_boek (customer_id, subscription_id, datum, aantal, reden, order_id, order_ref, partijen, sleutel, door)
             VALUES (1, 1, ?, -12, 'bestelling', 7, 'VIS-AB12-C3D', '[{"id":1,"n":12}]', 'bestelling:7', 'klant')`).run(moment(-1));
-/* De vaste look: catalog op gebroken wit 4:5, lifestyle Glow. */
-db.prepare("INSERT INTO customer_style_locks (customer_id, style, background_hex, ratio) VALUES (1, 'catalog', '#F7F5F1', 'portrait45')").run();
+/* De vaste look: catalog op lichtgrijs 4:5, lifestyle Glow. */
+db.prepare("INSERT INTO customer_style_locks (customer_id, style, background_hex, ratio) VALUES (1, 'catalog', '#F5F5F5', 'portrait45')").run();
 db.prepare("INSERT INTO customer_style_locks (customer_id, style, look, ratio, roster_model) VALUES (1, 'lifestyle', 'glow', 'portrait45', 'ava')").run();
 
 const klantToken = 'volt-token';
@@ -116,7 +116,7 @@ ok('EN: "You have 128 credits" en "Enough for …"', [en.v.saldo.kop, en.v.saldo
 /* ── 2 · BESTELLEN ─────────────────────────────────────────────────────── */
 console.log('\n2 · twee bestelknoppen met de vaste look');
 ok('catalog en lifestyle', s.v.bestel.map((k) => k.dienst), ['catalog', 'lifestyle']);
-ok('catalog: de look in de link (bg, ratio)', s.v.bestel[0].href, '/nl/start/catalog/?bg=F7F5F1&ratio=portrait45');
+ok('catalog: de look in de link (bg, ratio)', s.v.bestel[0].href, '/nl/start/catalog/?bg=F5F5F5&ratio=portrait45');
 ok('catalog: de look in de knoptekst', /^Catalog bestellen — Classic · .+ · 4:5$/.test(s.v.bestel[0].label), true);
 ok('lifestyle: Glow, 4:5 en het gezicht', s.v.bestel[1].href, '/nl/start/lifestyle/?style=glow&ratio=portrait45&face=ava');
 ok('credits per product uit SERVICE_CREDITS', s.v.bestel.map((k) => k.per), [`${SERVICE_CREDITS.catalog} credits per product`, `${SERVICE_CREDITS.lifestyle} credits per product`]);

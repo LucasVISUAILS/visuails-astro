@@ -57,7 +57,9 @@ console.log('\nde vraag staat op de kaart, en alleen waar hij hoort');
      van stap 2 (F3): het gezicht kies je één keer in stap 1, en per product
      afwijken kan onder het ingeklapte "Meer over dit product". */
   ok('  en die staat in de lade "Meer over dit product" (F3)',
-    /buildMeer\(card, \[gezicht, about, ratios, refs, erbij\]\)/.test(pipe));
+    /* Sinds levering 60 staat "Waarmee draagt het model dit?" (erbij) niet meer in de lade maar
+       onder de foto's; het gezicht staat er nog wel in. */
+    /buildMeer\(card, \[gezicht, about, ratios, refs\]\)/.test(pipe));
   /* De Astro-val: een element dat pipeline.js maakt draagt geen scope-attribuut.
      Vandaar een <template> in de bron en :global() in de opmaak. */
   ok('  de tegel komt uit een <template> in de bron', /<template data-pu-model-tegel>/.test(uploader));

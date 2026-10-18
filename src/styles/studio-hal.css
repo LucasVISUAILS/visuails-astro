@@ -267,3 +267,77 @@ body.studio.st-hal .st-banner { border-radius: 22px; padding: .7rem 1.1rem; }
   body.studio.st-hal .st-kaart-vlak, body.studio.st-hal .st-bestelling-kop { border-radius: 24px; }
   body.studio.st-hal .st-bestelling-klap[open] .st-bestelling-kop { border-radius: 24px 24px 0 0; }
 }
+
+/* ══ LEVERING 57 — DE ONTWERPTAAL OOK IN STUDIO (17 oktober 2026) ═══════════════
+   Lucas (afvinklijst 35, v35-studio a): "ook daar het logo-effect en de nieuwe
+   iconen", en (09:30) "Zorg dat alles consistent is". Dus hier wat de site sinds
+   levering 54 en 55 heeft: het woordmerk met de elektrische lijn, de iconen uit het
+   kit (account.js), de knop met één zachte hoek, de statuspil als plaatje in de
+   vaste breedte-letter zonder bolletje, en het vinkje dat goedkeurt. Pillen die de
+   site ook houdt (de taal, het filter, de letter van je naam) blijven rond. */
+@font-face { font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 600; font-display: swap; src: url(/fonts/ibm-plex-mono/IBMPlexMono-600.woff2) format('woff2'); }
+
+/* Het woordmerk. De lijn springt 6% naar linksboven en moet daar buiten zijn vak
+   mogen; rechts blijft het vak afknippen (dichtgeklapt staat alleen de V). Daarom
+   een clip-path met ruimte links, boven en onder in plaats van overflow: hidden.
+   De maten in eenheden van het tekenvlak (4651 breed): op 112 px is 56 ongeveer
+   1,4 px, zoals de V in de balk van de site. */
+body.studio .st-merk { overflow: visible; clip-path: inset(-10px 0 -10px -10px); --mk-line-ink: #4A1FFF; --mk-sw: .55; --mk-off: 56px; --mk-j: 8px; --mk-r: .35deg; }
+body.studio.on-ink .st-merk { --mk-line-ink: #A694FF; }
+
+/* De knop: één zachte hoek linksboven (zoals body.hal .btn op de site), geen
+   optillen of gloed onder de muis; hij springt in twee stappen. */
+body.studio.st-hal .btn { border-radius: 14px 3px 3px 3px; transition: background-color .16s steps(2, end), color .16s steps(2, end), box-shadow .16s steps(2, end); }
+body.studio.st-hal .btn-sm { border-radius: 11px 3px 3px 3px; }
+body.studio.st-hal .btn-primary:hover, body.studio.st-hal .btn-primary:focus-visible { transform: none; box-shadow: none; }
+body.studio.st-hal .st-navlink, body.studio.st-hal .st-uit { border-radius: 12px 3px 3px 3px; }
+body.studio.st-hal .st-klap { border-radius: 11px 3px 3px 3px; }
+body.studio.st-hal .st-uit-ik { width: 16px; height: 16px; flex: none; }
+
+/* De statuspil: een plaatje met één zachte hoek, de naam in de vaste
+   breedte-letter, in hoofdletters, zonder bolletje (v35-pillen a op de site). */
+body.studio.st-hal .stand, body.studio.st-hal .credits-pil { gap: .35rem; min-height: 26px; padding: 0 .6rem; border-radius: 8px 3px 3px 3px; font: 600 11.5px/1.2 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; letter-spacing: .06em; text-transform: uppercase; }
+body.studio.st-hal .stand::before { display: none; }
+body.studio .stand:has(.st-vink3)::before { display: none; }
+
+/* Het vinkje dat goedkeurt: het vinkje uit het kit in drie delen (Beeld.astro). Op het
+   beeld dat je net goedkeurde (:target, de link eindigt op #f<id>) zet het zich in
+   drie tikken: kort been, lang been, en dan springt het vlagje op zijn plek. */
+body.studio .st-vink3 { width: 14px; height: 14px; flex: none; fill: currentColor; overflow: visible; }
+body.studio .st-beeld:target .st-vink3 .kort { animation: st-tik .14s steps(1, end) .1s both; }
+body.studio .st-beeld:target .st-vink3 .lang { animation: st-tik .14s steps(1, end) .26s both; }
+body.studio .st-beeld:target .st-vink3 .vlag { animation: st-vlag .5s steps(1, end) .42s both; }
+@keyframes st-tik { from { opacity: 0; } to { opacity: 1; } }
+@keyframes st-vlag { 0% { opacity: 0; } 1% { opacity: 1; transform: translate(3px, -6px); } 30% { opacity: 1; transform: translate(-2px, 2px); } 55% { opacity: 1; transform: translate(1px, -1px); } 100% { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  body.studio .st-vink3 path { animation: none !important; }
+}
+
+/* Het merkje op een beeld staat linksonder in de tegel (16 px rond, 6 px van de rand):
+   die hoek loopt mee (16 - 6 = 10), de andere zijn licht (de hoekregel, levering 56). */
+body.studio.st-hal .st-badge.stand { border-radius: 3px 3px 3px 10px; }
+/* Uitloggen op de telefoon is een knop: dezelfde zachte hoek (de taal blijft rond, zoals op de site). */
+body.studio.st-hal .st-mob button { border-radius: 11px 3px 3px 3px; }
+
+/* ── DE HOEKREGEL IN STUDIO (levering 57) ──────────────────────────────────
+   Gemeten met kladblok/hoek/hoekmeting.mjs, nu ook in de Worker (Studio, /admin, de
+   privélink), op 1440, 900 en 390 breed. Een knop die in een hoek van zijn kaart zit
+   (beide afstanden kleiner dan de straal), loopt met die hoek mee: de straal van de
+   kaart min de afstand. De andere hoeken zijn licht. Los in het vlak blijft hij zoals
+   hij was. */
+body.studio.st-hal .st-tip .st-tip-tekst .btn { border-radius: 3px 3px 3px 5px; }          /* 22 - 17 */
+body.studio.st-hal .st-nudge > .btn { border-radius: 3px 3px 3px 10px; }                  /* 28 - 18 */
+body.studio.st-hal .st-bijkoop .st-knoppen > .btn:first-child { border-radius: 3px 3px 3px 8px; } /* 28 - 20 */
+body.studio.st-hal .st-rij.is-acties > .btn:first-child { border-radius: 3px 3px 3px 8px; }       /* 28 - 20 */
+body.studio.st-hal .st-vl .st-rij.is-acties > .btn:first-child { border-radius: 3px 3px 3px 9px; } /* 28 - 19 */
+@media (max-width: 900px) {
+  body.studio.st-hal .st-vl .st-rij.is-acties > .btn:first-child { border-radius: 3px 3px 3px 12px; }
+  body.studio.st-hal .st-betaal form > .btn-primary { border-radius: 3px 3px 3px 5.5px; }   /* 22 - 16,5 */
+}
+@media (max-width: 720px) {
+  body.studio.st-hal .st-leegvlak > .btn { border-radius: 3px 3px 3px 8px; }
+  /* op de telefoon is het merkje bijna zo breed als de tegel: beide onderhoeken mee */
+  body.studio.st-hal .st-badge.stand { border-radius: 3px 3px 10px 10px; }
+  /* de kop van een opengeklapte bestelling volgt de kaart (24 op de telefoon) */
+  body.studio.st-hal article.st-bestelling.st-kaart-vlak { border-radius: 24px; } /* zwaarder dan .st-kaart-vlak:not(.st-cijfers) */
+}

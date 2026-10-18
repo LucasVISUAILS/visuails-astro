@@ -963,7 +963,11 @@ function drawTable(sheet, d, fonts) {
     /* Een tweede regel onder de omschrijving, kleiner en grijs — sinds
        24 september 2026 voor de naam van een eigen look (zie
        snapshotFromOrder() in invoice.js). Geen detail, geen extra hoogte. */
-    const detail = line.detail ? sheet.wrap(String(line.detail), fonts.regular, SIZE.small, COL.descW) : [];
+    /* Meer regels onder elkaar mag sinds 17 oktober 2026: een look per regel
+       ("Complete look A · …", levering 60), gescheiden door een regeleinde. */
+    const detail = line.detail
+      ? String(line.detail).split('\n').filter(Boolean).flatMap((r) => sheet.wrap(r, fonts.regular, SIZE.small, COL.descW))
+      : [];
     const height = Math.max(parts.length * LEAD.body, LEAD.body) + detail.length * LEAD.small + 5;
 
     if (sheet.y - height < M.bottom) continuationHead(sheet, d, fonts);

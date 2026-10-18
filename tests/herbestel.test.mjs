@@ -33,21 +33,25 @@ console.log('\nVISUAILS — bestel met dezelfde look (3.07)\n');
 const CAT = {
   service: 'catalog',
   details_json: JSON.stringify({
-    background: 'off-white', background_hex: '#F7F5F1', ratio: 'portrait45', model: 'ava',
+    background: 'light-grey', background_hex: '#F5F5F5', ratio: 'portrait45', model: 'ava',
     company: 'Voorbeeld Mode BV', kvk: '12345678', address_line1: 'Verzonnenstraat 1', email: 'x@voorbeeld.nl', voorrang: '1', angle_p1_side: '1',
   }),
 };
 {
   const k = herbestelKnop(CAT, { lang: 'nl' });
-  ok('catalog: de knop zegt wat je krijgt', k.label === 'Catalog bestellen — Classic · gebroken wit · 4:5', k.label);
-  ok('  de link: formulier met achtergrond, verhouding en gezicht', k.href === '/nl/start/catalog/?bg=F7F5F1&ratio=portrait45&face=ava', k.href);
+  ok('catalog: de knop zegt wat je krijgt', k.label === 'Catalog bestellen — Classic · lichtgrijs · 4:5', k.label);
+  ok('  de link: formulier met achtergrond, verhouding en gezicht', k.href === '/nl/start/catalog/?bg=F5F5F5&ratio=portrait45&face=ava', k.href);
   ok('  geen naam, KVK, adres, e-mail, voorrang of hoeken in de link (V28 = a)', !/company|kvk|address|email|voorrang|angle|Voorbeeld|12345678/i.test(k.href));
   ok('  geen credits zonder abonnement', k.credits === '');
   const en = herbestelKnop(CAT, { lang: 'en', abonnee: true });
-  ok('EN: "Order Catalog — Classic · off-white · 4:5", Engelse route', en.label === 'Order Catalog — Classic · off-white · 4:5' && en.href.startsWith('/start/catalog/?'), en.label);
+  ok('EN: "Order Catalog — Classic · light grey · 4:5", Engelse route', en.label === 'Order Catalog — Classic · light grey · 4:5' && en.href.startsWith('/start/catalog/?'), en.label);
   ok('abonnee: credits per product uit pricing.js (catalog)', en.credits === `${creditsVoorDienst('catalog', 1)} credits per product`);
   const eigen = herbestelKnop({ service: 'catalog', details_json: JSON.stringify({ background: 'custom', background_hex: '#123ABC', ratio: 'square' }) }, { lang: 'nl' });
   ok('een eigen achtergrondkleur reist mee als hexcode', /bg=123ABC/.test(eigen.href) && eigen.label.includes('#123ABC'));
+  /* 17 oktober 2026: gebroken wit is geen aanbevolen kleur meer (lichtgrijs #F5F5F5
+     kwam ervoor in de plaats). Een oude bestelling houdt haar eigen kleur en naam. */
+  const oud = herbestelKnop({ service: 'catalog', details_json: JSON.stringify({ background: 'off-white', background_hex: '#F7F5F1', ratio: 'portrait45' }) }, { lang: 'nl' });
+  ok('een oude bestelling op gebroken wit houdt haar kleur en naam', /bg=F7F5F1/.test(oud.href) && oud.label.includes('gebroken wit'), oud.label);
 }
 {
   const k = herbestelKnop({ service: 'lifestyle', details_json: JSON.stringify({ style: 'dunes', ratio: 'story', model: 'any' }) }, { lang: 'nl', abonnee: true });
@@ -74,7 +78,7 @@ ok('geen getypt bedrag of getal in herbestel.js', !/€\s?\d|\d+\s?credits/.test
 {
   const files = [{ id: 1, kind: 'delivery', review_state: 'pending', product_key: 'p1' }];
   const geleverd = orderView(COPY.nl, 'nl', { id: 5, ref: 'VIS-5', status: 'delivered', payment_status: 'paid', total_cents: 9800, ...CAT }, files, [], null, 0, 0, '', { abonnee: true });
-  ok('Studio: geleverd → de knop, met credits voor de abonnee', geleverd.herbestel?.label === 'Catalog bestellen — Classic · gebroken wit · 4:5' && geleverd.herbestel.credits === '4 credits per product');
+  ok('Studio: geleverd → de knop, met credits voor de abonnee', geleverd.herbestel?.label === 'Catalog bestellen — Classic · lichtgrijs · 4:5' && geleverd.herbestel.credits === '4 credits per product');
   const bezig = orderView(COPY.nl, 'nl', { id: 6, ref: 'VIS-6', status: 'in_production', payment_status: 'paid', total_cents: 9800, ...CAT }, [], [], null, 0);
   ok('Studio: nog in productie → geen knop', bezig.herbestel === null);
   const kaart = lees('src/components/studio/Bestelling.astro');
@@ -93,7 +97,7 @@ ok('geen getypt bedrag of getal in herbestel.js', !/€\s?\d|\d+\s?credits/.test
   db.prepare('INSERT INTO order_tokens (order_id, token_hash) VALUES (1, ?)').run(await hashToken(token));
   const html = await (await portalGet({ request: new Request(`https://visuails.com/o/${token}`), env: { DB: d1(db) }, waitUntil() {} })).text();
   ok('privélink na afronden: de knop in het afrondblok', html.indexOf('class="herbestel"') > html.indexOf('id="afgerond"') && html.indexOf('class="herbestel"') < html.indexOf('class="facts"'));
-  ok('  met de echte keuzes van de bestelling', html.includes('href="/nl/start/catalog/?bg=F7F5F1&amp;ratio=portrait45&amp;face=ava">Catalog bestellen — Classic · gebroken wit · 4:5</a>'));
+  ok('  met de echte keuzes van de bestelling', html.includes('href="/nl/start/catalog/?bg=F5F5F5&amp;ratio=portrait45&amp;face=ava">Catalog bestellen — Classic · lichtgrijs · 4:5</a>'));
   ok('  en de credits voor een abonnee', html.includes('4 credits per product'));
 }
 
@@ -120,7 +124,7 @@ console.log('\nopnieuw bestellen met alle instellingen (werklijst 33)');
   ok('Studio-link: lookkeuzes plus ?van=<id>, verder niets', k && k.href === '/nl/start/catalog/?bg=EFEFEF&ratio=portrait45&face=ava&van=42', k?.href);
   ok('  ook bij een bestelling die nog loopt', !!k);
   ok('  niet bij een proef, een geannuleerde of video', !herbestelAllesKnop({ ...o, service: 'test-sample' }) && !herbestelAllesKnop({ ...o, status: 'cancelled' }) && !herbestelAllesKnop({ ...o, service: 'video' }));
-  ok('  de uitleg noemt wat er meegaat, per dienst', /extra hoeken/.test(k.uitleg) && /notitie/.test(herbestelAllesKnop({ ...o, service: 'lifestyle', details_json: '{}' }, { lang: 'nl' }).uitleg));
+  ok('  de uitleg noemt wat er meegaat, per dienst', /extra hoeken/.test(k.uitleg) && /bericht/.test(herbestelAllesKnop({ ...o, service: 'lifestyle', details_json: '{}' }, { lang: 'nl' }).uitleg));
   const inst = bestelInstellingen(o);
   ok('instellingen: achtergrond, verhouding, model, kanalen', [inst.bg, inst.ratio, inst.model, inst.kanalen.join(',')].join('|') === 'EFEFEF|portrait45|ava|own,social', JSON.stringify(inst));
   ok('  de extra hoeken met de eigen naam; flat lay (vervallen) niet', inst.hoeken.map((h) => h.id).sort().join(',') === 'eigen-ground,inside,three-quarter' && inst.hoeken.find((h) => h.id === 'eigen-ground').note === 'Binnenkant van de kraag', JSON.stringify(inst.hoeken));
@@ -146,6 +150,30 @@ console.log('\nopnieuw bestellen met alle instellingen (werklijst 33)');
   ok('  vergelijkt alleen met velden die de pagina tekent', /qa\('input\[name="style"\]'\)\.find/.test(fn) && /q\(`input\[name="angle_\$\{h\.id\}"\]`\)/.test(fn));
   ok('  het blok is weg te klikken (knop en Esc)', /data-pl-van-sluit/.test(fn) && /Escape/.test(fn));
   ok('  draait na de brand kit (de keuzes van toen gaan voor)', /applyLookUitUrl\(\{ alleenGezicht: true \}\);\s*\/\*[\s\S]*?\*\/\s*applyVanBestelling\(me\);/.test(pl));
+  /* Levering 57: de eigen stijl van een catalogusbestelling gaat mee, de standaard niet. */
+  ok('  catalog: een eigen stijl (cs-<id>) gaat mee', bestelInstellingen({ ...o, details_json: JSON.stringify({ ...det, style: 'cs-31' }) }).style === 'cs-31');
+  ok('  catalog: de standaardstijl of iets anders niet', bestelInstellingen({ ...o, details_json: JSON.stringify({ ...det, style: 'classic' }) }).style === '' && bestelInstellingen({ ...o, details_json: JSON.stringify({ ...det, style: 'cs-1"x' }) }).style === '');
+  ok('  de uitleg van catalog noemt de stijl', /de stijl, de achtergrond/.test(k.uitleg));
+  /* Levering 58 (afvinklijst 36): het aantal, de vorm per foto, het bericht en de outfits. */
+  ok('  v36-aantal a: het aantal producten gaat mee (uit product_count)', bestelInstellingen({ ...o, product_count: 7 }).aantal === 7 && bestelInstellingen({ ...o }).aantal === 0 && bestelInstellingen({ ...o, product_count: 99 }).aantal === 0);
+  ok('  route: het aantal komt mee uit de database', j.aantal === 2, JSON.stringify(j.aantal));
+  const vorm = bestelInstellingen({ ...o, product_count: 2, details_json: JSON.stringify({ ...det, ratio_p1_4: 'portrait45', ratio_p2_4: 'portrait45', ratio_p1_2: 'square', ratio_p2_2: 'story' }) });
+  ok('  c-kopie: de vorm per foto gaat mee als die bij alle producten gelijk was', JSON.stringify(vorm.vormen) === JSON.stringify([{ beeld: 4, ratio: 'portrait45' }]), JSON.stringify(vorm.vormen));
+  ok('  en niet als één product hem niet had', bestelInstellingen({ ...o, product_count: 2, details_json: JSON.stringify({ ...det, ratio_p1_4: 'portrait45' }) }).vormen.length === 0);
+  /* Levering 60 (afvinklijst 38, d-kopie): de indeling van de looks, alleen samen met het aantal. */
+  const ls = { ...o, service: 'lifestyle', details_json: JSON.stringify({ style: 'glow', look_p1: 'A', look_p3: 'A', look_p2: 'B', look_p4: 'B', message: 'Voor de zomercollectie' }) };
+  ok('  d-kopie: de indeling van de looks alleen samen met het aantal', JSON.stringify(bestelInstellingen({ ...ls, product_count: 4 }).looks) === '[[1,3],[2,4]]' && bestelInstellingen(ls).looks.length === 0, JSON.stringify(bestelInstellingen({ ...ls, product_count: 4 }).looks));
+  ok('  en alleen de looks die binnen het aantal vallen', JSON.stringify(bestelInstellingen({ ...ls, product_count: 3 }).looks) === '[[1,3]]');
+  ok('  een oude outfit_count geeft geen indeling', bestelInstellingen({ ...ls, product_count: 3, details_json: JSON.stringify({ style: 'glow', outfit_count: '2' }) }).looks.length === 0);
+  ok('  catalog heeft geen looks', bestelInstellingen({ ...o, product_count: 4, details_json: JSON.stringify({ look_p1: 'A', look_p2: 'A' }) }).looks.length === 0);
+  ok('  v36-bericht a: het bericht staat klaar voor de knop', bestelInstellingen({ ...ls, product_count: 3 }).notitie === 'Voor de zomercollectie');
+  ok('formulier: het aantal via het getalveld, alleen als er nog niets gekozen is', /data-pl-qty-input/.test(fn) && /dispatchEvent\(new Event\('input'/.test(fn) && /aantalSel\.value/.test(fn));
+  ok('  het bericht gaat niet vanzelf mee: alleen met de knop', !/noot\.value = String\(inst\.notitie\); noot\.dispatchEvent/.test(fn) && /data-pl-van-bericht/.test(fn) && /addEventListener\('click'/.test(fn));
+  ok('  de knop staat bij het bericht, verborgen tot hij gevuld is', /name="message"><\/textarea>[\s\S]{0,600}data-pl-van-bericht hidden/.test(lees('src/components/order/OrderFlow.astro')));
+  ok('  de looks na het aantal, met zetLookIndeling', fn.indexOf('zetLookIndeling(inst.looks)') > fn.indexOf('data-pl-qty-input'));
+  /* Levering 57: bij ?van= geen tweede blok "je was nog bezig" eronder. */
+  const cc = pl.slice(pl.indexOf('function checkConcept('), pl.indexOf('function checkConcept(') + 1600);
+  ok('  bij ?van= toont het formulier het concept niet', /get\('van'\)/.test(cc) && /klaar\(\); return; \}/.test(cc));
   const of = lees('src/components/order/OrderFlow.astro');
   ok('  het blok staat in het formulier, verborgen tot het gevuld is', /<div class="pl-lost pl-open pl-van" data-pl-van hidden role="status">/.test(of));
 }

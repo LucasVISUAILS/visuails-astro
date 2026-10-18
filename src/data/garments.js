@@ -320,13 +320,13 @@ export const CONTEXT_RULES = {
     lead: 'One photo of each product is on a model, and in that frame you always see a little more than the product itself.',
     free: 'Tell us what that should be and we will use your own items — free. They appear only in that one frame, and only as much of them as the crop shows: they are not photographed as products.',
     ours: 'Leave it and we choose items that fit the style you picked.',
-    full: 'Want a second product fully and sharply in frame, photographed as a product? That is a full-outfit shot.',
+    full: 'Want a second product fully and sharply in frame, photographed as a product? Then the two are a complete look.',
   },
   nl: {
     lead: 'Van elk product is één foto op een model, en in dat beeld zie je altijd iets meer dan het product zelf.',
     free: 'Zeg wat dat moet zijn en we gebruiken je eigen stukken — gratis. Ze staan alleen in dat ene beeld, en alleen zoveel als de uitsnede toont: ze worden niet als product gefotografeerd.',
     ours: 'Laat je het leeg, dan kiezen wij stukken die bij de gekozen stijl passen.',
-    full: 'Wil je een tweede product volledig en scherp in beeld, gefotografeerd als product? Dan is dat een volledige-outfitshot.',
+    full: 'Wil je een tweede product volledig en scherp in beeld, gefotografeerd als product? Dan zijn die twee een complete look.',
   },
 };
 
@@ -380,23 +380,32 @@ export const STYLING_HUISREGEL = {
 /** Wat de klant leest als hij een eigen stuk erbij zet. */
 export const STYLING_EIGEN = { nl: 'jouw eigen stuk', en: 'your own piece' };
 
+/** Een plek die een ander stuk uit dezelfde complete look vult (levering 60, looks.js). */
+export const STYLING_LOOK = { nl: 'een stuk uit de look', en: 'a piece from the look' };
+
 /**
  * Eén regel per product: wat er naast het product in beeld komt.
  *
- * `keuzes` is { shoes: 'ours'|'own', … } — alleen de plekken die bij dit type
+ * `keuzes` is { shoes: 'ours'|'own'|'look', … } — alleen de plekken die bij dit type
  * horen tellen; de rest wordt genegeerd, net als op de server. Geeft een lijst
  * van { slot, naam, tekst, eigen } terug zodat het formulier en /admin hem elk
  * op hun eigen manier kunnen zetten, en `regel` als kant-en-klare zin.
  */
-export function stylingVoor(garmentId, keuzes = {}, lang = 'en') {
+/* `lookNamen` (levering 60): { plek: 'naam van het stuk' } voor de plekken die een
+   ander stuk uit dezelfde look vult (keuze 'look'); zonder naam staat er "een stuk
+   uit de look". Zo zegt de werkmap "Top: p1 Hoodie zwart" in plaats van een effen T-shirt. */
+export function stylingVoor(garmentId, keuzes = {}, lang = 'en', lookNamen = {}) {
   const l = lang === 'nl' ? 'nl' : 'en';
   const delen = contextSlots(garmentId).map((s) => {
-    const eigen = String(keuzes[s.id] || '') === 'own';
+    const keuze = String(keuzes[s.id] || '');
+    const eigen = keuze === 'own';
+    const look = keuze === 'look';
     return {
       slot: s.id,
       naam: s.name[l],
-      tekst: eigen ? STYLING_EIGEN[l] : (STYLING_STANDAARD[s.id]?.[l] || ''),
+      tekst: look ? (lookNamen[s.id] || STYLING_LOOK[l]) : eigen ? STYLING_EIGEN[l] : (STYLING_STANDAARD[s.id]?.[l] || ''),
       eigen,
+      look,
     };
   });
   return { delen, regel: delen.map((d) => d.tekst).filter(Boolean).join(' · ') };

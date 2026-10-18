@@ -34,7 +34,7 @@ const OPEN = 7097;
 const tokens = { onbetaald: [7092, mintToken()], geleverd: [OPEN, mintToken()], afgerond: [7090, mintToken()], proef: [7088, mintToken()] };
 const extraSql = [
   `INSERT INTO orders (id, ref, customer_id, service, status, name, brand, email, total_cents, lang, created_at, tier, product_count, payment_status, payment_provider, paid_at, vat_cents, vat_rate, vat_treatment, delivered_at, delivery_mailed_at, details_json)
-   VALUES (${OPEN}, 'VIS-2610-0097', ${VOLT.id}, 'catalog', 'delivered', 'Mara', 'VOLT', '${VOLT.email}', 19600, 'nl', '2026-10-06 09:00', 'unattended', 2, 'paid', 'mollie', '2026-10-06', 4116, 0.21, 'nl_standard', datetime('now'), datetime('now'), '{"background":"off-white","background_hex":"#F7F5F1","ratio":"portrait45","model":"ava"}')`,
+   VALUES (${OPEN}, 'VIS-2610-0097', ${VOLT.id}, 'catalog', 'delivered', 'Mara', 'VOLT', '${VOLT.email}', 19600, 'nl', '2026-10-06 09:00', 'unattended', 2, 'paid', 'mollie', '2026-10-06', 4116, 0.21, 'nl_standard', datetime('now'), datetime('now'), '{"background":"light-grey","background_hex":"#F5F5F5","ratio":"portrait45","model":"ava"}')`,
   `INSERT INTO files (id, order_id, kind, r2_key, filename, bytes, review_state, product_key, shot) VALUES
      (70971, ${OPEN}, 'delivery', 'proef/7090/p1-front.webp', 'VOLT-p1-front.webp', 180000, 'pending', 'p1', 'front'),
      (70972, ${OPEN}, 'delivery', 'proef/7090/p2-front.webp', 'VOLT-p2-front.webp', 180000, 'pending', 'p2', 'front')`,
@@ -169,10 +169,10 @@ try {
   {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'nl-NL' });
     const page = await ctx.newPage();
-    const res = await page.goto(`${studio.url}/nl/start/catalog/?bg=F7F5F1&ratio=portrait45&face=ava`, { waitUntil: 'load' });
+    const res = await page.goto(`${studio.url}/nl/start/catalog/?bg=F5F5F5&ratio=portrait45&face=ava`, { waitUntil: 'load' });
     if (res && res.status() === 200) {
       await page.waitForTimeout(300);
-      ok('formulier: achtergrond gebroken wit uit de link', await page.locator('input[name="background"][value="off-white"]').isChecked());
+      ok('formulier: achtergrond lichtgrijs uit de link', await page.locator('input[name="background"][value="light-grey"]').isChecked());
       ok('formulier: verhouding 4:5 uit de link', await page.locator('input[name="ratio"][value="portrait45"]').isChecked().catch(() => false));
       ok('formulier: gezicht uit de link', await page.locator('input[name="model"][value="ava"]').isChecked().catch(() => false));
     } else {

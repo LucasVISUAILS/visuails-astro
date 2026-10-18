@@ -19,11 +19,12 @@
  *   · "Waar je het gebruikt" noemt alleen de kanalen; "beeld dat de scroll
  *     stopt" staat er niet meer (jouw regel). Zie kladblok/TEKSTEN-GROEP-2.md.
  * ═══════════════════════════════════════════════════════════════════════════ */
+import { lookCopy } from '../data/looks.js';
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
 import { ikoon, IKOON } from '../data/iconen.js';
 import {
-  ladderFloor, euro, vatLabel, eenProductRegel, WINDOW_THRESHOLD, TIERS, clause, TEST_SAMPLE, LIFESTYLE_IMAGES, levervlakken,
+  ladderFloor, euro, vatLabel, eenProductRegel, WINDOW_THRESHOLD, TIERS, clause, TEST_SAMPLE, LIFESTYLE_IMAGES, levervlakken, LOOK_PRIJS,
 } from '../data/pricing.js';
 import { serviceFaqs } from '../data/faq.js';
 import { localizedPath } from '../i18n/ui.js';
@@ -100,7 +101,8 @@ const COPY = {
     set: ['Worn by a model, from the front.', 'The same model, from the back.', 'Your product without a model, in the same scene.', 'Up close on the model, in the same colour grade.'],
     setNoot: 'One look per order · another scene is a separate order.',
     waarKop: 'Where it lives', waar: ['Instagram & TikTok', 'Paid ads', 'Your homepage', 'Email & campaigns'],
-    prijsKop: 'What a carousel costs', prijsRegel: `${eenProductRegel('en', ['lifestyle'])} The rate applies to every product in the order; all amounts ${ex}.`,
+    /* Levering 60 (d-teksten): de complete look in dezelfde woorden als de FAQ en /pricing. */
+    prijsKop: 'What a carousel costs', prijsRegel: `${eenProductRegel('en', ['lifestyle'])} The rate applies to every product in the order; all amounts ${ex}. Pieces worn together as a complete look: ${lookCopy('en').prijs(e(LOOK_PRIJS))}`,
     staffelCta: 'See all prices by quantity',
     modelKop: ['Add a consistent', 'model.'], modelZin: 'The same face across your whole collection.', modelCta: 'Explore models',
     modelAlt: 'A VISUAILS model, styled consistently across a campaign',
@@ -128,7 +130,7 @@ const COPY = {
     set: ['Gedragen door een model, van voren.', 'Hetzelfde model, van achteren.', 'Je product zonder model, in dezelfde scène.', 'Van dichtbij op het model, in dezelfde kleurbewerking.'],
     setNoot: 'Eén look per bestelling · een andere scène is een aparte bestelling.',
     waarKop: 'Waar je het gebruikt', waar: ['Instagram & TikTok', 'Advertenties', 'Je homepage', 'E-mail & campagnes'],
-    prijsKop: 'Wat een carrousel kost', prijsRegel: `${eenProductRegel('nl', ['lifestyle'])} Het tarief geldt voor elk product in de bestelling; alle bedragen ${ex}.`,
+    prijsKop: 'Wat een carrousel kost', prijsRegel: `${eenProductRegel('nl', ['lifestyle'])} Het tarief geldt voor elk product in de bestelling; alle bedragen ${ex}. Stukken die je als complete look samen laat dragen: ${lookCopy('nl').prijs(e(LOOK_PRIJS))}`,
     staffelCta: 'Bekijk alle prijzen per aantal',
     modelKop: ['Voeg een consistent', 'model toe.'], modelZin: 'Hetzelfde gezicht door je hele collectie.', modelCta: 'Ontdek modellen',
     modelAlt: 'Een VISUAILS-model, consistent gestyled door een hele campagne',

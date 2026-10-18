@@ -180,7 +180,8 @@ console.log('\nB36 · beelden heten hun vak');
   ok('  zonder vak blijft de naam het label (en geen tweede keer)', shotView(COPY.nl, { ...f, shot: null, product_key: null }, null, true).file, '');
   ok('Beeld.astro toont hem klein', /st-beeld-file/.test(lees('src/components/studio/Beeld.astro')) && /\.st-beeld-file \{[^}]*font-size: \.75rem/.test(lees('src/styles/studio.css')));
   const portal = lees('src/lib/portal.js');
-  ok('privélink: een kopje per product', /<section class="shots-groep">\$\{k \? `<h3 class="shots-kop">/.test(portal));
+  /* Sinds levering 60 krijgt de groep van een complete look er de klasse is-look bij. */
+  ok('privélink: een kopje per product', /<section class="shots-groep\$\{[^}]*\}">\$\{k \? `<h3 class="shots-kop">/.test(portal));
   ok('  en de stille knop lijnt uit met de tekst', /\.btn\.btn-quiet \{ padding-left: 0; padding-right: 0; \}/.test(lees('public/portal.css')));
 }
 

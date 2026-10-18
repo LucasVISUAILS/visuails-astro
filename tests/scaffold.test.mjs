@@ -372,7 +372,9 @@ console.log('\nde admin-kant is bedraad');
   ok('en hetzelfde voor de shot',
     /slotShot \|\| fromPath\.shot \|\| guessed\.shot/.test(code)
     || (/const gok = fromPath\.shot \|\| guessed\.shot/.test(code)
-      && /slotShot \|\| \(VAK_IDS\.includes\(gok\)/.test(code)), true);
+      && (/slotShot \|\| \(VAK_IDS\.includes\(gok\)/.test(code)
+        /* Levering 60: de vakjes van DIT product (een look heeft er twee eigen). */
+        || /slotShot \|\| \(vakIdsVoor\(order\.service, order\.details_json, product\)\.includes\(gok\)/.test(code))), true);
   ok('het bronmateriaal wordt overgeslagen', /isSourcePath\(relPath\)/.test(code), true);
   ok('en dat wordt geteld en gemeld', /skippedSource/.test(code), true);
   ok('de eigen werkbestanden worden ook overgeslagen', /isScaffoldDoc\(relPath\)/.test(code), true);

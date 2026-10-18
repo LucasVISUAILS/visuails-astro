@@ -150,6 +150,8 @@ import { leesProefStand, proefOpenVoor } from '../../src/lib/proefStand.js';
 import {
   isGarmentId, contextAllowed, contextDefault, CONTEXT_SLOT_IDS, CONTEXT_OURS,
 } from '../../src/data/garments.js';
+/* Levering 60 (afvinklijst 38): de complete look, een koppeling tussen producten. */
+import { schoonLooks, lookAantal, CONTEXT_LOOK, isLookDienst, lookRegels } from '../../src/data/looks.js';
 import { schoonBeeldAchtergronden, beeldAchtergrondRegel } from '../../src/data/beeldachtergrond.js';
 
 /*
@@ -701,7 +703,11 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
             continue;
           }
           if (!mag) continue;
-          if (waarde && waarde !== CONTEXT_OURS && waarde !== 'own') {
+          /* 'look' (een ander stuk uit dezelfde look vult deze plek) is sinds
+             17 oktober 2026 de derde keuze, alleen bij lifestyle. Of de look
+             klopt, beslist schoonLooks() hieronder; die zet hem anders op 'ours'. */
+          const lookMag = waarde === CONTEXT_LOOK && isLookDienst(service);
+          if (waarde && waarde !== CONTEXT_OURS && waarde !== 'own' && !lookMag) {
             console.warn(`[order] contextwaarde '${waarde}' op product ${n} is geen keuze, teruggezet op de standaard`);
             details[sleutel] = contextDefault();
           }
@@ -713,6 +719,19 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
         const m = /^(?:garment|context_[a-z]+)_p(\d+)$/.exec(k);
         if (m && Number(m[1]) > aantal) delete details[k];
       }
+
+      /* ── DE COMPLETE LOOK — 17 oktober 2026 (levering 60, afvinklijst 38) ────
+       * `look_p<n>` zegt in welke look product n zit, `look_notitie_<letter>` hoe
+       * je hem draagt. schoonLooks() (src/data/looks.js) houdt alleen geldige
+       * looks over: twee of drie stukken, geen twee op dezelfde plek, alleen bij
+       * lifestyle. Wat sneuvelt, wordt stil weggelaten en gelogd, zoals hierboven.
+       * Het aantal looks dat overblijft, is wat quoteOrder() verderop rekent. */
+      const { weg } = schoonLooks(details, {
+        service,
+        aantal,
+        typeVan: (i) => details[`garment_p${i}`] || geldigType || 'other',
+      });
+      for (const w of weg) console.warn('[order] look weggelaten:', JSON.stringify(w));
     }
   }
 
@@ -1155,7 +1174,18 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
   // customer who asked for two extra photos on product 3 is charged for two
   // extra photos. Counting them here rather than trusting a summary field means
   // there is no total to tamper with, only per-product answers to add up.
-  const outfitCount = countOf(get('outfit_count'));
+  /* De oude outfit (een getal in stap 1, € 50 per product) bestaat bij foto's niet
+     meer: sinds 17 oktober 2026 zijn het looks (looks.js), en het aantal komt uit
+     de looks die schoonLooks() hierboven heeft laten staan. Een oud formulier dat
+     `outfit_count` nog post, betaalt daar niets voor en het veld gaat het dossier
+     niet in. Alleen het (betaalde) videopad leest hem nog — dat staat dicht zolang
+     VIDEO_OP_AANVRAAG geldt. */
+  const outfitCount = svc === 'video' ? countOf(get('outfit_count')) : 0;
+  if (svc !== 'video' && details && typeof details === 'object') {
+    delete details.outfit_count;
+    delete details.outfits;
+  }
+  const lookCount = details && typeof details === 'object' ? lookAantal(details, products) : 0;
   /* ── DE HOEKEN — 9 september 2026 ───────────────────────────────────────────
      Tot vandaag stond hier een teller per productkaart (`extra_p3` = een AANTAL).
      Nu is het één keuze voor de hele bestelling: per hoek één vinkje, en een
@@ -1537,7 +1567,7 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
           /* hoeken × producten: zie de noot bij `angles` hierboven. `products` kan
              null zijn ("weet ik nog niet"); dan is er niets te vermenigvuldigen
              en gaat er 0 in, precies zoals bij een bestelling zonder hoeken. */
-          service: svc, products, outfits: outfitCount,
+          service: svc, products, looks: lookCount,
           extras: angles.length * (Number.isInteger(products) ? products : 0),
           hoogRes: hoogResCount, voorrang: voorrangGevraagd,
           vatRate: vatCall.rate,
@@ -1561,8 +1591,9 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
    *
    * Alleen als de bestelling via /account/order binnenkwam (`sessieKlant`) en
    * het adres van die klant is — dezelfde poort als het tegoed hieronder. En
-   * alleen als ALLES met credits kan: kiest de klant voorrang, een outfit of een
-   * eigen look met toeslag, dan gaat de hele bestelling via Mollie (6.06, V46 =
+   * alleen als ALLES met credits kan: kiest de klant voorrang of een eigen look
+   * met toeslag, dan gaat de hele bestelling via Mollie (6.06, V46 = a). Een
+   * complete look kan sinds 17 oktober 2026 wel, 4 credits per look (v38-credits =
    * a). Niet genoeg credits: ook via Mollie, nooit gemengd. Het afboeken zelf
    * gebeurt na het wegschrijven, atomair (src/lib/creditboek.js); dit is de
    * voorcontrole die bepaalt of het tegoed meedoet en of er een btw-controle
@@ -1574,7 +1605,7 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
   if (quote && ingelogdeKlant) {
     const kost = creditKosten({
       service: svc, products: quote.products, extras: quote.extras, hoogRes: quote.hoogRes,
-      outfits: quote.outfits, voorrang: quote.voorrang, toeslagCents: quote.styleSurchargeCents,
+      looks: quote.looks, voorrang: quote.voorrang, toeslagCents: quote.styleSurchargeCents,
     });
     if (kost.kan) {
       const saldo = await safe(() => creditsBeschikbaar(env, customerId)) || 0;
@@ -3619,6 +3650,8 @@ function notifyEmail(ref, service, top, details, gate = {}) {
   const kern = mailRows([
     ['Dienst', esc(serviceLabel(service, 'nl') || service)],
     products ? ['Aantal', `${esc(products)} ${Number(products) === 1 ? 'product' : 'producten'}`] : null,
+    /* De complete looks bij naam (levering 60): niet meer "outfit_count 1". */
+    ...(details ? lookRegels(details, 'nl', Number(products) || 0).map((r) => ['Complete look', esc(r)]) : []),
     gate.quote ? ['Bedrag', `${esc(mailBedragNl(gate.quote.grossCents))} <span style="font-weight:400;color:${MC.muted}">(netto ${esc(mailBedragNl(gate.quote.netCents))})</span>`] : null,
   ].filter(Boolean));
   const adminKnop = gate.admin ? mailButton(gate.admin, 'Open in /admin') : '';
@@ -3989,6 +4022,9 @@ export function customerEmail(lang, ref, service, name,
     if (hoeken.length) uit.push([nl ? 'Extra hoeken' : 'Extra angles', esc(`${hoeken.map((v) => (nl ? v.nl : v.en)).join(', ')} — ${nl ? 'bij elk product' : 'on every product'}`)]);
     const hoog = Object.keys(d).filter((k) => /^hi_p\d+$/.test(k) && d[k]).length;
     if (hoog) uit.push(['4K', esc(nl ? `${hoog} ${hoog === 1 ? 'product' : 'producten'} op 4096 px` : `${hoog} ${hoog === 1 ? 'product' : 'products'} at 4096 px`)]);
+    /* De complete looks (levering 60, d-studio): "Complete look A · hoodie, broek,
+       sneaker · €50". Wat de klant betaalt, moet hij terugzien. */
+    for (const regel of lookRegels(d, lang)) uit.push([nl ? 'Complete look' : 'Complete look', esc(regel)]);
     return uit;
   })() : [];
   /* ── DE VERKLARING, OP EEN DUURZAME GEGEVENSDRAGER — 8 oktober 2026 (o24) ──

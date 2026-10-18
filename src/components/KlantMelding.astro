@@ -63,9 +63,16 @@ const KRUIS = ikoon('sluiten');
   hidden
 >
   <div class="h-melding-tekst">
-    <p class="h-melding-kop" data-vis-welkom-kop>{k.welkom}</p>
+    <p class="h-melding-kop h-melding-label" data-vis-welkom-kop><i aria-hidden="true"></i><span>{k.welkom}</span></p>
     <p class="h-melding-regel" data-vis-welkom-stand>{k.leeg}</p>
   </div>
+  {/* VOORTGANG — afvinklijst 36, v36-melding = c (17 oktober 2026). De stand als vier
+      stappen: wat al gedaan is in inkt, waar de bestelling nu is in violet met de snede
+      van het merk aan het eind, de rest licht. interactions.js zet de klassen en
+      aria-current, en laat hem weg als de stand geen stap is (een aanvraag). */}
+  <ol class="h-melding-stap" data-vis-welkom-stappen aria-label={k.stappenLabel} hidden>
+    {k.stappen.map((s) => <li><i aria-hidden="true"></i><span>{s}</span></li>)}
+  </ol>
   <a class="h-knop h-knop-inkt h-knop-klein h-melding-knop" href="/account" data-vis-welkom-knop><span class="h-melding-woord" data-vis-label>{k.studio}</span><span class="o" set:html={PIJL} /></a>
   <button type="button" class="h-melding-sluit" data-vis-melding-sluit aria-label={k.sluit} set:html={KRUIS} />
 </aside>

@@ -102,7 +102,7 @@
 //           [data-pl-plan] [data-pl-plan-t] [data-pl-plan-cta]  het abonnement,
 //                                                als tweede lezing van dezelfde vraag
 //           [data-pl-level="attended"|"unattended"] [data-pl-level-note]
-//           [data-pl-outfit] input[name=outfit_count]   task #271f — full outfit
+//           [data-pl-lookzin]                    de regel over complete looks (levering 60)
 //           [data-pl-bg]                         the background fieldset; hidden
 //                                                AND disabled for lifestyle-only
 //             input[name=background][data-pl-bg-hex][data-pl-bg-name]
@@ -210,6 +210,9 @@ import {
 // off this import reaches the screen: every label, placeholder and option name
 // is read out of the config blob like everything else on this page.
 import { PRODUCT_QUESTIONS } from '../data/attributes.js';
+/* De complete look (levering 60): welke soort op welke plek past, en wanneer een
+   groep een look mag zijn. Dezelfde regels als de server leest (schoonLooks). */
+import { pastOp, lookKlopt } from '../data/looks.js';
 /* Het kleurvlakje bij de productkleur leest de hexcode ook uit "bosgroen, #1B3A2F" (5.03). */
 import { hexUit } from '../lib/kleurcode.js';
 /* Alleen de vraag "is dit de zelfbedachte hoek": de veldnamen staan in
@@ -540,6 +543,8 @@ function init(el) {
   bindVertrekWaarschuwing();
   bindPrefill();
   bindMissing();
+  bindWerk();
+  wkStandaardAantal();
   missingOk = false;
 
   syncOrder();
@@ -756,6 +761,7 @@ function show(n, opts) {
       rail.setAttribute('aria-current', i === to ? 'step' : 'false');
     }
   }
+  paintWkStap(to);
 
   /* ── DE LIFESTYLE-BALK HOORT BIJ STAP 2 ───────────────────────────────────
      Daar vult de klant zijn producten in, en dat is het moment waarop "en er
@@ -1270,6 +1276,7 @@ function syncGateVisible(attended) {
     const item = q(`[data-pl-rail-item="${i}"] .pl-rail-n`);
     if (item) item.textContent = String(on ? i : i - 1).padStart(2, '0');
   }
+  paintWkStap(current);
 }
 
 /*
@@ -1574,9 +1581,6 @@ function bindOrder() {
   const count = q('select[name="products"]');
   if (count) count.addEventListener('change', syncOrder);
   bindQty();
-  // Task #271f.
-  const outfit = q('select[name="outfit_count"]');
-  if (outfit) outfit.addEventListener('change', syncTotal);
   /* Voorrang — 9 september 2026. Eén vinkje, en het bedrag eronder beweegt mee
      met het aantal producten; syncTotal() doet allebei via syncVoorrang(). */
   const vrng = q('input[name="voorrang"]');
@@ -1870,6 +1874,15 @@ function bindQty() {
       try { input.focus(); } catch { /* geen focus is geen fout */ }
     });
   }
+  /* ── HET VELD VOLGT DE KEUZELIJST — 17 oktober 2026 (levering 60) ──────────
+     "Nog een product toevoegen" en "Schoenen toevoegen" in stap 2 zetten de
+     keuzelijst (die post) en niet dit veld; wie dan terug naar stap 1 ging, zag
+     het oude aantal staan naast een totaal voor één product meer. */
+  select.addEventListener('change', () => {
+    const n = Number.parseInt(select.value, 10);
+    if (Number.isInteger(n) && input.value !== String(n)) input.value = String(n);
+    paint();
+  });
   // Een herstelde of voorgevulde select (bfcache, terug-knop) landt ook in het veld.
   const start = Number.parseInt(select.value, 10);
   if (Number.isInteger(start)) input.value = String(start);
@@ -1896,7 +1909,6 @@ function bindQty() {
       }
     } catch { /* geen URL, geen voorkeur */ }
   }
-
   paint();
 }
 
@@ -1915,8 +1927,12 @@ function syncMore(on) {
   const more = q('[data-pl-qty-more]');
   if (more) more.setAttribute('aria-expanded', on ? 'true' : 'false');
   let after = false;
+  /* In de werkplaats (levering 59) staat het aantal in een blok (WkBlok.astro): dan is
+     dat blok het ankerpunt, en gaan de blokken erna dicht. */
+  const anker = qty.closest('[data-wk-blok]') || qty;
+  form.classList.toggle('is-meer', !!on);
   Array.from(step.children).forEach((ch) => {
-    if (ch === qty) { after = true; return; }
+    if (ch === anker) { after = true; return; }
     if (!after || ch === panel || ch.hasAttribute('data-pl-step-error')) return;
     if (on) {
       if (!ch.hidden) { ch.hidden = true; ch.dataset.plMoreHid = '1'; }
@@ -1995,7 +2011,6 @@ function syncOrder() {
   syncMore(!!chosen && !Number.isInteger(n));
   syncGateVisible(attended);
 
-  syncOutfit(kind);
   syncBackground(kind);
   // De twee vragen die net als de achtergrond van de SOORT afhangen. Hier en
   // niet aan de soortradio zelf gehangen, want dit is de plek waar elke
@@ -2155,6 +2170,449 @@ function syncSummaries() {
     modelText = c('sum.modelKort');
   }
   setSummary('data-pl-sum-model', modelText);
+  wkKleurPaint();
+  wkLookPaint();
+}
+
+/* ═══ DE WERKPLAATS — levering 59, 17 oktober 2026 (afvinklijst 36 B) ═══════════════════
+ *
+ * OrderFlow.astro (catalog en lifestyle, niet de proef) zet `cfg.werk`. Wat hier gebeurt:
+ *   · paintWkStap: de knoppen Verder (rechts en onderaan) per stap, weg op de laatste, en
+ *     "1 van 4" bij de stap in de balk op de telefoon;
+ *   · wkOverzicht: de trede in de prijstrap, de zin bij Levering, en de regels van "Wat je
+ *     krijgt" (producten × tarief, voorrang, de beelden onderaan, de prijs van een hoek);
+ *   · bindWkKleur: het vierkantje per hoek en het paneel met de kleuren (b-kleur);
+ *   · bindWkVorm, bindWkHoeken, bindWkHulp: de vorm, "Een hoek erbij", "Hulp nodig?".
+ *
+ * GEEN EIGEN VELDEN. Alles schrijft in de velden die er al waren: de achtergrond van de
+ * bestelling (input[name=background], background_custom), de achtergrond per beeld
+ * (beeld_bg_<id>, beeld_hex_<id>), de vorm (input[name=ratio]) en de hoeken (angle_<id>).
+ * De server, de concepten en de samenvatting op stap 5 merken dus niets van de nieuwe
+ * knoppen. De achtergrond van de bestelling is die van de voorkant; een ander beeld met een
+ * andere kleur krijgt die als eigen achtergrond (zie wkZetKleur). */
+function werkAan() {
+  return !!(cfg && cfg.werk);
+}
+
+function paintWkStap(to) {
+  if (!werkAan()) return;
+  const stap = Number(to) || current;
+  const items = qa('[data-pl-rail-item]').filter((b) => {
+    const li = b.closest('li');
+    return !(li && li.hidden);
+  });
+  const van = String(cfg.werk.van || '{i}/{n}');
+  items.forEach((b, i) => {
+    b.dataset.wkVan = ` · ${van.replace('{i}', String(i + 1)).replace('{n}', String(items.length))}`;
+  });
+  let volgende = stap + 1;
+  if (GATE_STEP !== null && volgende === GATE_STEP && !needsGate()) volgende += 1;
+  const teksten = Array.isArray(cfg.werk.verder) ? cfg.werk.verder : [];
+  let tekst = '';
+  if (volgende === 2) tekst = teksten[0];
+  else if (volgende === 3) tekst = teksten[1];
+  else if (GATE_STEP !== null && volgende === GATE_STEP) tekst = teksten[2];
+  else if (volgende === STEPS) tekst = teksten[3];
+  qa('[data-wk-verder]').forEach((b) => {
+    b.hidden = stap >= STEPS;
+    const t = q('[data-wk-verder-t]', b);
+    if (t && tekst) t.textContent = tekst;
+  });
+}
+
+function wkOverzicht(kind, n, quote, voorrang) {
+  if (!werkAan()) return;
+  const geldig = Number.isInteger(n) && n > 0;
+  qa('[data-wk-trap] li[data-wk-van]').forEach((li) => {
+    const lo = Number(li.dataset.wkVan);
+    const hi = Number(li.dataset.wkTot);
+    const laatste = li === li.parentElement.lastElementChild;
+    li.classList.toggle('is-nu', geldig && n >= lo && (n <= hi || laatste));
+  });
+  const lever = q('[data-wk-lever]');
+  if (lever) {
+    const t = q('[data-wk-lever-t]', lever);
+    const boven = geldig && n >= Number(lever.dataset.wkDrempel || 10);
+    if (t) t.textContent = (boven ? lever.dataset.wkBoven : lever.dataset.wkOnder) || t.textContent;
+  }
+  const rate = kind && geldig ? rateFor(kind, n) : null;
+  qa('[data-wk-sum-producten]').forEach((el) => {
+    el.textContent = rate !== null && rate !== undefined ? `${n} × ${euro(rate)}` : '—';
+  });
+  const blok = q('[data-pl-voorrang]');
+  const rij = q('[data-wk-rij-voorrang]');
+  if (rij) rij.hidden = !blok || blok.hidden;
+  qa('[data-wk-sum-voorrang]').forEach((el) => {
+    el.textContent = voorrang !== null && voorrang !== undefined ? euro(voorrang) : String(cfg.werk.nee || '—');
+  });
+  const beelden = geldig ? beeldenPerProductNu() * n + lookBeeldenNu() : 0;
+  wkLooksPaint(geldig);
+  qa('[data-wk-onder-zin]').forEach((el) => {
+    el.textContent = beelden > 0
+      ? `${String(cfg.werk.beelden || '{n}').replace('{n}', String(beelden))} · ${cfg.werk.excl || ''}`
+      : String(cfg.werk.excl || '');
+  });
+  const hp = q('[data-wk-hoek-prijs]');
+  if (hp && geldig) {
+    if (hp.dataset.wkLeeg === undefined) hp.dataset.wkLeeg = hp.textContent;
+    hp.textContent = String(cfg.werk.hoekPer || '{prijs}').replace('{prijs}', euro(extraRateNow()));
+  }
+}
+
+/* De looks in "Wat je krijgt" (levering 60, c-look): een regel per look boven de
+   rijen, en de rij "Complete looks n × €50". Zonder looks staat er niets. */
+function wkLooksPaint(geldig) {
+  const host = q('[data-wk-looks]');
+  const rij = q('[data-wk-rij-looks]');
+  const looks = geldig ? kaartLooks() : [];
+  const t = erbijTekst();
+  if (rij) rij.hidden = !looks.length;
+  qa('[data-wk-sum-looks]').forEach((el) => { el.textContent = looks.length ? `${looks.length} × ${euro(lookPrijs())}` : ''; });
+  if (!host) return;
+  host.textContent = '';
+  host.hidden = !looks.length;
+  looks.forEach((l) => {
+    const div = document.createElement('div');
+    div.className = 'wk-lookregel';
+    const twee = document.createElement('span');
+    twee.className = 'wk-lookregel-twee';
+    twee.setAttribute('aria-hidden', 'true');
+    twee.append(...l.kaarten.slice(0, 3).map((k) => kaartDuim(k)));
+    const tekst = document.createElement('span');
+    const b = document.createElement('b');
+    b.textContent = String(t.lookLabel || '').replace('{l}', l.letter).replace('{n}', String(l.kaarten.length));
+    const small = document.createElement('small');
+    small.textContent = String(t.krijgZin || '').replace('{prijs}', euro(lookPrijs()));
+    tekst.append(b, small);
+    div.append(twee, tekst);
+    host.appendChild(div);
+  });
+}
+
+function wkLookPaint() {
+  const el = q('[data-wk-sum-look]');
+  if (!el) return;
+  if (el.dataset.wkLeeg === undefined) el.dataset.wkLeeg = el.textContent.trim();
+  const st = q('input[name="style"]:checked');
+  el.textContent = (st && (st.dataset.plStyleName || st.value)) || el.dataset.wkLeeg;
+}
+
+/** De kleur die beeld `id` nu krijgt: dezelfde som als syncBeeldBg(). */
+function wkKleurVan(id) {
+  const hoofd = huidigeAchtergrond() || '#FFFFFF';
+  if (id === 'front') return hoofd;
+  const rij = q(`[data-pl-bgfoto-beeld="${id}"]`);
+  const sel = rij && q('[data-pl-bgfoto-select]', rij);
+  if (!sel || sel.disabled || !sel.value) return hoofd;
+  if (sel.value === 'eigen') {
+    const hx = q('[data-pl-bgfoto-hex]', rij);
+    return normalizeHex(hx ? hx.value : '') || hoofd;
+  }
+  return String(sel.value).toUpperCase();
+}
+
+/** Beeld `id` krijgt kleur `hex`; de rest houdt wat hij had. */
+function wkZetKleur(id, hex) {
+  const ids = qa('[data-wk-kleur]').map((b) => b.dataset.wkKleur);
+  const stand = {};
+  ids.forEach((i) => { stand[i] = wkKleurVan(i); });
+  stand[id] = String(hex).toUpperCase();
+  const hoofd = stand.front || '#FFFFFF';
+  /* De bestelling zelf: de kleur van de voorkant. */
+  const vast = qa('input[name="background"]').find((r) => r.dataset.plBgCustom === undefined && String(r.dataset.plBgHex || '').toUpperCase() === hoofd);
+  if (vast) {
+    if (!vast.checked) { vast.checked = true; vast.dispatchEvent(new Event('change', { bubbles: true })); }
+  } else {
+    const eigen = q('input[name="background"][data-pl-bg-custom]');
+    const tekst = q('[data-pl-bg-text]');
+    const kiezer = q('[data-pl-bg-color]');
+    if (eigen && tekst) {
+      tekst.value = hoofd;
+      if (kiezer) kiezer.value = hoofd;
+      eigen.checked = true;
+      eigen.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+  /* De andere beelden: alleen een eigen achtergrond als ze afwijken van de voorkant. */
+  ids.filter((i) => i !== 'front').forEach((i) => {
+    const rij = q(`[data-pl-bgfoto-beeld="${i}"]`);
+    const sel = rij && q('[data-pl-bgfoto-select]', rij);
+    if (!sel) return;
+    const wil = stand[i];
+    let waarde = '';
+    if (wil && wil !== hoofd) {
+      const opt = [...sel.options].find((o) => o.value && o.value !== 'eigen' && String(o.value).toUpperCase() === wil);
+      waarde = opt ? opt.value : 'eigen';
+    }
+    sel.value = waarde;
+    const hx = q('[data-pl-bgfoto-hex]', rij);
+    if (hx) hx.value = waarde === 'eigen' ? wil : '';
+    const kl = q('[data-pl-bgfoto-kleur]', rij);
+    if (kl && waarde === 'eigen') kl.value = wil;
+  });
+  syncBackground(kindOf());
+  syncSummaries();
+}
+
+function wkKleurPaint() {
+  if (!werkAan()) return;
+  const lock = q('[data-pl-bg-lock]');
+  const wit = !!(lock && !lock.hidden);
+  const namen = {};
+  qa('[data-wk-c]').forEach((x) => { if (x.dataset.wkC !== 'eigen') namen[x.dataset.wkC] = (x.childNodes[1] && x.childNodes[1].textContent || '').trim(); });
+  qa('[data-wk-kleur]').forEach((b) => {
+    const kleur = wkKleurVan(b.dataset.wkKleur);
+    b.style.setProperty('--bo-bg', kleur);
+    const tegel = b.closest('.bo-tegel');
+    if (tegel) tegel.style.setProperty('--bo-bg', kleur);
+    const naam = namen[kleur] ? `${namen[kleur]}, ${kleur}` : kleur;
+    b.setAttribute('aria-label', String(cfg.werk.kleurVoor || '{hoek}: {kleur}').replace('{hoek}', String(b.dataset.wkHoekNaam || '').toLowerCase()).replace('{kleur}', naam));
+    b.disabled = wit && b.dataset.wkKleur === 'front';
+  });
+  const pw = q('[data-wk-paneel-wit]');
+  if (pw) pw.hidden = !wit;
+}
+
+function bindWkKleur() {
+  const paneel = q('[data-wk-paneel]');
+  if (!paneel) return;
+  const eigenBox = q('[data-wk-eigen]', paneel);
+  const eigenIn = q('[data-wk-eigen-hex]', paneel);
+  const fout = q('[data-wk-eigen-fout]', paneel);
+  let knop = null;
+  const sluit = (terug) => {
+    paneel.hidden = true;
+    if (knop) {
+      knop.setAttribute('aria-expanded', 'false');
+      if (terug) { try { knop.focus({ preventScroll: true }); } catch { knop.focus(); } }
+    }
+    knop = null;
+  };
+  const druk = (nu) => {
+    const bekend = qa('[data-wk-c]', paneel).some((x) => x.dataset.wkC === nu);
+    qa('[data-wk-c]', paneel).forEach((x) => x.setAttribute('aria-pressed', (x.dataset.wkC === nu || (!bekend && x.dataset.wkC === 'eigen')) ? 'true' : 'false'));
+    if (eigenBox) eigenBox.hidden = bekend;
+    if (eigenIn) eigenIn.value = bekend ? '' : String(nu || '').replace(/^#/, '');
+  };
+  qa('[data-wk-kleur]').forEach((b) => b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (b.disabled) return;
+    if (knop === b && !paneel.hidden) { sluit(true); return; }
+    if (knop) knop.setAttribute('aria-expanded', 'false');
+    knop = b;
+    const li = b.closest('li');
+    if (li) li.appendChild(paneel);
+    const kop = q('[data-wk-paneel-hoek]', paneel);
+    if (kop) kop.textContent = b.dataset.wkHoekNaam || '';
+    if (fout) fout.hidden = true;
+    druk(wkKleurVan(b.dataset.wkKleur));
+    paneel.hidden = false;
+    b.setAttribute('aria-expanded', 'true');
+    /* Binnen het venster houden: het paneel staat onder het vierkantje, en bij de
+       laatste hoek zou het rechts buiten beeld vallen. */
+    paneel.style.setProperty('--wk-schuif', '0px');
+    const r = paneel.getBoundingClientRect();
+    const rechts = r.right - (document.documentElement.clientWidth - 12);
+    const links = 12 - r.left;
+    if (rechts > 0) paneel.style.setProperty('--wk-schuif', `${-Math.ceil(rechts)}px`);
+    else if (links > 0) paneel.style.setProperty('--wk-schuif', `${Math.ceil(links)}px`);
+    const eerste = paneel.querySelector('[data-wk-c][aria-pressed="true"]') || paneel.querySelector('[data-wk-c]');
+    if (eerste) { try { eerste.focus({ preventScroll: true }); } catch { eerste.focus(); } }
+  }));
+  qa('[data-wk-c]', paneel).forEach((x) => x.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!knop) return;
+    if (x.dataset.wkC === 'eigen') {
+      qa('[data-wk-c]', paneel).forEach((y) => y.setAttribute('aria-pressed', y === x ? 'true' : 'false'));
+      if (eigenBox) eigenBox.hidden = false;
+      if (eigenIn) eigenIn.focus();
+      return;
+    }
+    wkZetKleur(knop.dataset.wkKleur, x.dataset.wkC);
+    sluit(true);
+  }));
+  const eigen = () => {
+    const v = normalizeHex(eigenIn ? eigenIn.value : '');
+    if (fout) fout.hidden = !!v;
+    if (v && knop) { wkZetKleur(knop.dataset.wkKleur, v); sluit(true); }
+  };
+  const zet = q('[data-wk-eigen-zet]', paneel);
+  if (zet) zet.addEventListener('click', (e) => { e.stopPropagation(); eigen(); });
+  if (eigenIn) eigenIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); eigen(); } });
+  paneel.addEventListener('click', (e) => e.stopPropagation());
+  document.addEventListener('click', () => { if (document.contains(paneel) && !paneel.hidden) sluit(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.contains(paneel) && !paneel.hidden) sluit(true); });
+  wkKleurPaint();
+}
+
+function paintWkVorm() {
+  qa('[data-wk-vorm]').forEach((b) => {
+    const r = q(`input[name="ratio"][value="${b.dataset.wkVorm}"]`);
+    b.setAttribute('aria-pressed', r && r.checked ? 'true' : 'false');
+    b.disabled = !r || r.disabled;
+  });
+}
+
+function bindWkVorm() {
+  const groep = q('[data-wk-vormen]');
+  if (!groep) return;
+  qa('[data-wk-vorm]', groep).forEach((b) => b.addEventListener('click', () => {
+    const r = q(`input[name="ratio"][value="${b.dataset.wkVorm}"]`);
+    if (!r || r.disabled) return;
+    if (!r.checked) {
+      r.checked = true;
+      r.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    paintWkVorm();
+  }));
+  form.addEventListener('change', (e) => { if (e.target && e.target.name === 'ratio') paintWkVorm(); });
+  paintWkVorm();
+}
+
+function bindWkHoeken() {
+  const open = q('[data-wk-hoek-open]');
+  const dlg = q('[data-wk-hoeken]');
+  if (!open || !dlg) return;
+  const sluit = () => {
+    /* Een eigen hoek vraagt een beschrijving (AnglePicker.astro): die moet er staan
+       voordat het paneel dichtgaat, anders is hij verborgen en niet meer verplicht. */
+    const leeg = qa('[data-pl-req]', dlg).find((f) => !f.disabled && isShown(f) && !String(f.value || '').trim());
+    if (leeg) {
+      markeerVeld(leeg.closest('fieldset, .field, .pl-veld, [data-pl-veldgroep]') || leeg.parentElement, leeg.dataset.plErrMsg || '');
+      try { leeg.focus(); } catch { /* jammer */ }
+      return;
+    }
+    dlg.hidden = true;
+    try { open.focus({ preventScroll: true }); } catch { open.focus(); }
+    syncSummaries();
+  };
+  open.addEventListener('click', () => {
+    dlg.hidden = false;
+    qa('details', dlg).forEach((d) => { d.open = true; });
+    const eerste = q('input:not([type="hidden"]), button', q('[data-pl-angles]', dlg) || dlg);
+    if (eerste) { try { eerste.focus({ preventScroll: true }); } catch { eerste.focus(); } }
+  });
+  qa('[data-wk-hoeken-dicht]', dlg).forEach((b) => b.addEventListener('click', sluit));
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) sluit(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.contains(dlg) && !dlg.hidden) sluit(); });
+}
+
+function bindWkHulp() {
+  const hulp = document.querySelector('[data-wk-hulp]');
+  if (!hulp) return;
+  document.addEventListener('click', (e) => {
+    if (!document.contains(hulp) || !hulp.open) return;
+    if (!hulp.contains(e.target)) hulp.open = false;
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || !document.contains(hulp) || !hulp.open) return;
+    hulp.open = false;
+    const k = hulp.querySelector('summary');
+    if (k) k.focus();
+  });
+}
+
+/* ── DE TIPBALK — levering 59 (afvinklijst 36, b-tips) ────────────────────────────
+   Eén tip tegelijk, om de 7 seconden de volgende. Stil zolang de muis erop staat of de
+   blik erin, bij minder beweging en als je pauzeert. Het kruisje verbergt hem (dat blijft
+   zo op dit apparaat, localStorage); "Toon de tips weer" bovenaan zet hem terug. De klok
+   loopt alleen op stap 2: de balk staat in die stap, dus elders is hij niet te zien. */
+function bindWkTips() {
+  /* Binnen de functie en niet bovenaan de module: init() draait al tijdens het laden
+     van dit bestand, en een const verderop bestaat dan nog niet (zie de noot bij boot). */
+  const WK_TIPS_WEG = 'vis-tipbalk-weg';
+  const balk = q('[data-wk-tipbalk]');
+  if (!balk) return;
+  let tips = [];
+  try { tips = JSON.parse(balk.dataset.wkTips || '[]'); } catch { tips = []; }
+  if (!tips.length) return;
+  const tekst = q('[data-wk-tip-t]', balk);
+  const stippen = qa('.wk-tip-stip i', balk);
+  const pauze = q('[data-wk-tip-pauze]', balk);
+  const terug = q('[data-wk-tips-terug]');
+  let nu = 0;
+  let loopt = !reduced();
+  let stil = false;
+  let klok = 0;
+  const toon = (i) => {
+    nu = (i + tips.length) % tips.length;
+    if (tekst) {
+      tekst.classList.remove('is-in');
+      void tekst.offsetWidth;
+      tekst.textContent = tips[nu];
+      tekst.classList.add('is-in');
+    }
+    stippen.forEach((x, k) => x.classList.toggle('is-nu', k === nu));
+  };
+  const zet = () => {
+    if (klok) { clearInterval(klok); klok = 0; }
+    if (loopt && !stil && !balk.hidden) {
+      klok = setInterval(() => {
+        if (!document.contains(balk)) { clearInterval(klok); klok = 0; return; }
+        if (current === 2 && !document.hidden) toon(nu + 1);
+      }, 7000);
+    }
+    if (pauze) {
+      pauze.classList.toggle('is-gepauzeerd', !loopt);
+      pauze.setAttribute('aria-label', loopt ? (pauze.dataset.wkPauze || '') : (pauze.dataset.wkSpeel || ''));
+    }
+  };
+  let weg = false;
+  try { weg = localStorage.getItem(WK_TIPS_WEG) === '1'; } catch { weg = false; }
+  balk.hidden = weg;
+  if (terug) terug.hidden = !weg;
+  const volgende = q('[data-wk-tip-volgende]', balk);
+  if (volgende) volgende.addEventListener('click', () => { toon(nu + 1); zet(); });
+  if (pauze) pauze.addEventListener('click', () => { loopt = !loopt; zet(); });
+  const verberg = q('[data-wk-tip-weg]', balk);
+  if (verberg) verberg.addEventListener('click', () => {
+    balk.hidden = true;
+    try { localStorage.setItem(WK_TIPS_WEG, '1'); } catch { /* dan alleen nu */ }
+    zet();
+    if (terug) { terug.hidden = false; try { terug.focus({ preventScroll: true }); } catch { terug.focus(); } }
+  });
+  if (terug) terug.addEventListener('click', () => {
+    balk.hidden = false;
+    terug.hidden = true;
+    try { localStorage.removeItem(WK_TIPS_WEG); } catch { /* ok */ }
+    zet();
+  });
+  balk.addEventListener('mouseenter', () => { stil = true; zet(); });
+  balk.addEventListener('mouseleave', () => { stil = false; zet(); });
+  balk.addEventListener('focusin', () => { stil = true; zet(); });
+  balk.addEventListener('focusout', () => { stil = false; zet(); });
+  toon(0);
+  zet();
+}
+
+/* ── IN DE WERKPLAATS STAAT ER METEEN EEN PRIJS — levering 59 (afvinklijst 36,
+   b-werkplaats): "Het lege totaal van nu is weg: er staat meteen een prijs, bij 1
+   product." Na het binden van de uploader (anders bouwt syncCards een kaart die de
+   uploader daarna weer weghaalt). Het aantal is dan een standaard en geen keuze
+   (data-wk-standaard): een kopie (?van) of een concept zet er gewoon het eigen aantal
+   overheen, en zodra de klant zelf iets doet, is het zijn keuze. */
+function wkStandaardAantal() {
+  if (!werkAan()) return;
+  const sel = q('select[name="products"]');
+  const veld = q('[data-pl-qty-input]');
+  if (!sel || !veld || Number.isInteger(Number.parseInt(sel.value, 10))) return;
+  veld.value = '1';
+  veld.dispatchEvent(new Event('input', { bubbles: true }));
+  sel.dataset.wkStandaard = '1';
+  const box = q('[data-pl-qty]');
+  const weg = (e) => { if (e.isTrusted) delete sel.dataset.wkStandaard; };
+  if (box) { box.addEventListener('input', weg); box.addEventListener('click', weg); }
+}
+
+function bindWerk() {
+  if (!werkAan()) return;
+  bindWkKleur();
+  bindWkVorm();
+  bindWkHoeken();
+  bindWkHulp();
+  bindWkTips();
+  form.addEventListener('change', (e) => { if (e.target && e.target.name === 'style') wkLookPaint(); });
+  wkLookPaint();
 }
 
 /**
@@ -2432,8 +2890,9 @@ function bindBeeldBg() {
     if (/^angle_/.test(n) || n === 'channels') syncSummaries();
   });
   if (form) form.addEventListener('input', (e) => { if (/^angle_note_/.test((e.target && e.target.name) || '')) syncSummaries(); });
-  /* Een tegel in "Wat je krijgt" kiezen: de keuze opent op dat beeld. */
-  qa('[data-bo-beeld], [data-bo-hoek]').forEach((li) => {
+  /* Een tegel in "Wat je krijgt" kiezen: de keuze opent op dat beeld. In de werkplaats
+     (levering 59) heeft elke tegel daarvoor zijn eigen vierkantje: zie bindWkKleur(). */
+  if (!q('[data-wk-kleur]')) qa('[data-bo-beeld], [data-bo-hoek]').forEach((li) => {
     const id = li.dataset.boBeeld || li.dataset.boHoek;
     const rij = q(`[data-pl-bgfoto-beeld="${id}"]`, box);
     const tegel = q('.bo-tegel', li);
@@ -2821,50 +3280,14 @@ function syncBackground(kind) {
 }
 
 /**
- * Task #271f — Single Product/Full outfit. Every kind on the ladder has a rate
- * to attach the surcharge to, so this field no longer appears and disappears;
- * what is still narrowed is its option list. An outfit count can never exceed
- * MAX_OUTFIT_PRODUCTS, and it can never exceed the number of products actually
- * being ordered — the surcharge is per product styled as an outfit, so it
- * cannot outnumber the products.
+ * Hoeveel complete looks er in deze bestelling zitten — 17 oktober 2026
+ * (levering 60, afvinklijst 38). Hier stond outfitCount(), het getal uit de
+ * keuzelijst "Zitten er outfits bij?". Die lijst is weg; een look is nu een
+ * koppeling tussen kaarten in stap 2 (kaartLooks() verderop), en dit is hoeveel
+ * er zijn. Alleen bij lifestyle: catalog en de proef kennen geen looks.
  */
-function syncOutfit(kind) {
-  const field = q('[data-pl-outfit]');
-  const select = q('select[name="outfit_count"]');
-  if (!field || !select) return;
-
-  // Nothing chosen at all (which the browser prevents, but a stale form
-  // restored by the back button does not) leaves nothing to surcharge.
-  const applies = !!kind;
-  field.hidden = !applies;
-  if (!applies) {
-    select.value = '0';
-    return;
-  }
-
-  const n = productCount();
-  const cap = Number.isInteger(n) ? Math.min(Number(cfg.maxOutfit), n) : Number(cfg.maxOutfit);
-
-  let firstAllowed = null;
-  [...select.options].forEach((o) => {
-    const v = Number.parseInt(o.value, 10);
-    const allowed = Number.isInteger(v) && v <= cap;
-    o.hidden = !allowed;
-    o.disabled = !allowed;
-    if (allowed && firstAllowed === null) firstAllowed = o.value;
-  });
-
-  const chosen = select.options[select.selectedIndex];
-  if (!chosen || chosen.disabled) select.value = firstAllowed === null ? '0' : firstAllowed;
-}
-
-/** How many products this order marks as a full outfit. Never negative, never
- * unparseable — a select with a bad value falls back to 0 ("single product"),
- * the same direction every other count on this page fails safe in. */
-function outfitCount() {
-  const select = q('select[name="outfit_count"]');
-  const n = select ? Number.parseInt(select.value, 10) : 0;
-  return Number.isInteger(n) && n > 0 ? n : 0;
+function lookCount() {
+  return lookAan() ? kaartLooks().length : 0;
 }
 
 // ── THE LADDER, IN THE BROWSER ───────────────────────────────────────────────
@@ -2941,13 +3364,13 @@ function stijlToeslagNu() {
   return Number.isFinite(cent) && cent > 0 ? cent / 100 : 0;
 }
 
-function quoteFor(kind, n, outfits, extras = 0, hoog = 0) {
+function quoteFor(kind, n, looks, extras = 0, hoog = 0) {
   const rate = rateFor(kind, n);
   if (rate === null) return null;
   // Extra photos follow the ladder (pricing.js EXTRA_PHOTO_LADDER), so their
   // rate is read at the SAME product count as the products themselves — one
   // rung for the whole order, which is the consistency that choice was made
-  // for. The outfit surcharge is flat and does not move with n.
+  // for. De looktoeslag is vlak per look en beweegt niet met n.
   const extraRate = extraRateNow();
   /* 4K is VLAK en volgt de ladder niet: het werk achter een opschaling daalt
      niet met het aantal. Zie HOOG_PER_PRODUCT in pricing.js. */
@@ -2960,7 +3383,7 @@ function quoteFor(kind, n, outfits, extras = 0, hoog = 0) {
        want quoteOrder() op de server telt hem óók in het NETTO — zie de noot
        hierboven. Buiten de som zetten zou betekenen dat voorrang (die over het
        hele nettobedrag rekent) er weer niet over gaat. */
-    net: round2(n * rate + outfits * Number(cfg.outfitSurcharge || 0) + extras * extraRate + hoog * hoogPrijs + n * stijlToeslagNu()),
+    net: round2(n * rate + (kind === 'lifestyle' ? looks : 0) * lookPrijs() + extras * extraRate + hoog * hoogPrijs + n * stijlToeslagNu()),
   };
 }
 
@@ -2968,7 +3391,7 @@ function quoteFor(kind, n, outfits, extras = 0, hoog = 0) {
  * ── MEER PRODUCTEN VOOR HETZELFDE OF MINDER — 8 oktober 2026 (1.07) ──────────
  *
  * Wat de bestelling bij `m` producten zou kosten, met dezelfde keuzes als nu:
- * dezelfde outfits, dezelfde hoeken op élk product (tegen het hoektarief van
+ * dezelfde looks, dezelfde hoeken op élk product (tegen het hoektarief van
  * DAT aantal), dezelfde 4K-vinkjes, dezelfde looktoeslag per product, en
  * voorrang als die aan staat. Bij m = het huidige aantal is dit precies het
  * totaal van syncTotal(), zodat "in plaats van" het bedrag is dat erboven staat.
@@ -2981,7 +3404,7 @@ function totaalBij(kind, m) {
   const hoekTarief = trede ? trede[2] : 0;
   const hoogPrijs = Number((cfg.hoogRes && cfg.hoogRes.prijs) || 0);
   const net = round2(m * rate
-    + outfitCount() * Number(cfg.outfitSurcharge || 0)
+    + (kind === 'lifestyle' ? Math.min(lookCount(), Math.floor(m / 2)) : 0) * lookPrijs()
     + anglesChosen().length * m * hoekTarief
     + hoogResCount() * hoogPrijs
     + m * stijlToeslagNu());
@@ -3061,10 +3484,10 @@ function syncBesparing(kind, n, quote) {
 function syncTotal() {
   const kind = kindOf();
   const n = productCount();
-  const outfits = outfitCount();
+  const looks = lookCount();
   const extras = extrasCount();
   const hoog = hoogResCount();
-  const quote = kind ? quoteFor(kind, n, outfits, extras, hoog) : null;
+  const quote = kind ? quoteFor(kind, n, looks, extras, hoog) : null;
   /* Voorrang staat BUITEN quoteFor(), want het is geen regel maar een deel van
      de uitkomst: eerst weten wat de bestelling kost, dan pas wat voorrang erop
      kost. Dezelfde volgorde als in quoteOrder() op de server. */
@@ -3086,9 +3509,8 @@ function syncTotal() {
   let noteText = '';
   if (quote) {
     noteText = c('total.each', { rate: euro(quote.rate), n });
-    // Task #271f — additive, on top of the rate line. Never on its own: a
-    // surcharge with no base price to attach to is meaningless.
-    if (outfits > 0) noteText += c('total.outfit', { price: euro(cfg.outfitSurcharge), n: outfits });
+    // De looks komen bovenop de regel per product, nooit alleen.
+    if (looks > 0) noteText += c('total.look', { price: euro(lookPrijs()), n: looks });
     if (extras > 0) noteText += c('total.extra', { price: euro(quote.extraRate), n: extras });
     if (hoog > 0) noteText += c('total.hoogRes', { price: euro(quote.hoogPrijs), n: hoog, px: String((cfg.hoogRes && cfg.hoogRes.hoog) || '') });
     if (stijlToeslagNu() > 0 && Number.isInteger(n)) noteText += c('total.eigenLook', { price: euro(stijlToeslagNu()), n });
@@ -3122,8 +3544,9 @@ function syncTotal() {
      "24 beelden" bij zes producten terwijl er met één extra hoek dertig komen,
      en dat is precies het vakje dat moet uitleggen wat je voor je geld krijgt. */
   const perProduct = beeldenPerProductNu();
+  /* En de twee beelden van elke complete look (levering 60, v38-beelden a). */
   setSummary('data-pl-bo-beelden',
-    perProduct && Number.isInteger(n) && n > 0 ? String(perProduct * n) : '');
+    perProduct && Number.isInteger(n) && n > 0 ? String(perProduct * n + lookBeeldenNu()) : '');
 
   // THE LADDER'S OWN UPSELL, and it has to be honest: both totals are computed
   // from the ladder rather than estimated, so a client with a calculator finds
@@ -3135,7 +3558,7 @@ function syncTotal() {
     const next = kind && quote ? nextRung(kind, n) : null;
     /* Met credits geen euroladder (zie zetCreditPrijzen). */
     if (next && next.addProducts > 0 && !prijzenInCredits) {
-      const then = quoteFor(kind, next.at, Math.min(outfits, next.at), extras);
+      const then = quoteFor(kind, next.at, looks, extras);
       // `now` is the CURRENT RATE, not the current total. The sentence used to
       // read "{then} instead of {now}" with two totals in it, which put the
       // larger number on the "instead of" side — more products for more money,
@@ -3176,6 +3599,7 @@ function syncTotal() {
 
   syncAppOns();
   paintPlan(kind, n);
+  wkOverzicht(kind, n, quote, voorrang);
 }
 
 /*
@@ -4054,6 +4478,9 @@ function addCard() {
 }
 
 function dropCard(card) {
+  /* Een kaart die weggaat, gaat ook uit zijn look (levering 60). */
+  ontkoppelAlles(card);
+  card.lookVast = '';
   SHOT_IDS.forEach((id) => {
     const s = card.slots[id];
     // Back to the tray rather than to the bin. The customer answered a question
@@ -4166,12 +4593,17 @@ function buildCard(card) {
   const about = buildAbout(card);
   const ratios = buildRatios(card);
   const refs = buildRefs(card);
+  /* "Waarmee draagt het model dit?" staat sinds 17 oktober 2026 (levering 60,
+     c-erbij) niet meer in de lade maar onder de foto's: hier denkt een klant aan
+     de styling, en hier kiest hij welke stukken samen een look zijn. */
   const erbij = buildErbij(card);
-  const meer = buildMeer(card, [gezicht, about, ratios, refs, erbij]);
+  const meer = buildMeer(card, [gezicht, about, ratios, refs]);
 
   li.append(head);
   if (kies) li.append(kies);
-  li.append(slots, meer);
+  li.append(slots);
+  if (erbij) li.append(erbij);
+  li.append(meer);
   card.el = li;
   /* Het raster wordt later nog aangeraakt: syncHoekVakken() hangt er een vak in
      zodra er een hoek bij komt. */
@@ -4412,10 +4844,12 @@ function buildSoort(card) {
   });
   sel.addEventListener('change', () => {
     card.soortEigen = true;
+    /* Een andere soort past niet meer op dezelfde plekken: de look gaat los. */
+    ontkoppelAlles(card);
     syncSoorten();
-    paintErbij(card);
+    vulLookVast(card);
+    naLookWijziging(card);
     paintMeer(card);
-    bewaarConcept();
   });
   wrap.append(t, sel);
   card.soortEl = sel;
@@ -4440,6 +4874,7 @@ function syncSoorten() {
     if (!card.soortEl) return;
     if (!card.soortEigen && vorige && card.soortEl.value !== vorige) {
       card.soortEl.value = vorige;
+      ontkoppelAlles(card);
       paintErbij(card);
     }
     vorige = card.soortEl.value || vorige;
@@ -4455,37 +4890,422 @@ function syncSoorten() {
   veld.value = eerste;
 }
 
-/* ── ERBIJ IN BEELD: DE CONTEXTSTUKKEN, NU IN DE LADE ─────────────────────
+/* ═══════════════════════════════════════════════════════════════════════════
+ * WAARMEE DRAAGT HET MODEL DIT? — 17 oktober 2026 (levering 60, afvinklijst 38)
+ * ═══════════════════════════════════════════════════════════════════════════
  *
- * Stonden in de rijen van "Wat je opstuurt" (Styling.astro, 22 september 2026):
- * per product de plekken die bij dit type ERBIJ kunnen — de broek onder een
- * hoodie, de schoen onder een jeans — als gewone uploadvakjes uit buildSlot()
- * met `shot: ctx-<plek>`, en per plek een verborgen veld `context_<plek>_pN`
- * dat `own` is zodra er een foto in zit en anders `ours` (wij kiezen). Dezelfde
- * velden en dezelfde vakjes, alleen op een andere plek: in de lade van de kaart,
- * want ze zijn niet verplicht. */
+ * Hier stond "Erbij in beeld", verstopt in Meer over dit product: per plek in
+ * het beeld (de schoen onder een broek, de broek onder een hoodie) een
+ * uploadvakje, en een verborgen veld `context_<plek>_pN` dat `own` was zodra er
+ * een foto in zat en anders `ours`. De outfit van € 50 stond los daarvan, als
+ * getal in stap 1. Twee ideeën over bijna hetzelfde, op twee plekken.
+ *
+ * Nu staat het onder de foto's van elk product, met per plek drie keuzes als
+ * één vorm met de snede ertussen (c-erbij):
+ *
+ *   Wij kiezen          effen, één kleur, een andere toon (gratis)     → ours
+ *   Eigen stuk          je eigen stuk als bijzaak, met een foto        → own
+ *   Uit je bestelling   een ander product uit deze bestelling: samen   → look
+ *                       een complete look (€ 50 per look, lifestyle)
+ *
+ * Catalog krijgt alleen de eerste twee: daar bestaan geen looks.
+ *
+ * ── DE STAAT STAAT OP DE KAART ──────────────────────────────────────────────
+ *
+ * `card.plek[plek] = { keuze: 'wij'|'eigen'|'uit', bron: '<kaartsleutel>' }`.
+ * Een look is wat er via `bron` aan elkaar hangt (kaartLooks), en de letter volgt
+ * de volgorde van het eerste product, net als op de server (schoonLooks in
+ * looks.js). Koppel je de hoodie aan de broek, dan staat de broek ook bij de
+ * hoodie: de koppeling gaat twee kanten op (koppel), zodat je een look één keer
+ * samenstelt. Niets hiervan staat bovenaan het bestand: alleen functies, die in
+ * init() pas worden aangeroepen als de kaarten bestaan (zie de noot bij boot).
+ *
+ * ── WAT ER WORDT VERSTUURD ─────────────────────────────────────────────────
+ *
+ * Dezelfde velden als altijd (`context_<plek>_pN`), met `look` als derde waarde,
+ * plus `look_pN` (de letter) en `look_notitie_<letter>`. De server rekent en
+ * controleert alles opnieuw; zie de kop van src/data/looks.js.
+ */
+function lookAan() {
+  return !!(cfg && cfg.look) && kindOf() === 'lifestyle';
+}
+
+function lookPrijs() {
+  return Number((cfg && cfg.look && cfg.look.prijs) || 0);
+}
+
+function lookBeeldenNu() {
+  return lookCount() * Number((cfg && cfg.look && cfg.look.beelden) || 0);
+}
+
+function erbijTekst() {
+  return (cfg && cfg.erbij) || {};
+}
+
+function plekStaat(card, plek) {
+  if (!card.plek) card.plek = {};
+  if (!card.plek[plek]) card.plek[plek] = { keuze: 'wij', bron: '' };
+  return card.plek[plek];
+}
+
+function kaartMetKey(key) {
+  return cards.find((k) => k.key === key) || null;
+}
+
+/** De plekken van deze kaart, uit de soort (garments.js via CTX_BY_GARMENT). */
+function plekkenVan(card) {
+  const type = soortVan(card);
+  return (type && CTX_BY_GARMENT[type]) || [];
+}
+
+/**
+ * De looks zoals ze nu op de kaarten staan: [{ letter, kaarten: [card, …] }].
+ * Wat via een `bron` aan elkaar hangt, is één look; een groep van één is geen
+ * look. Alleen bij lifestyle.
+ */
+function kaartLooks() {
+  if (!lookAan()) return [];
+  const ouder = new Map(cards.map((k) => [k.key, k.key]));
+  const wortel = (x) => {
+    let r = x;
+    while (ouder.get(r) !== r) r = ouder.get(r);
+    return r;
+  };
+  cards.forEach((k) => {
+    const mag = plekkenVan(k);
+    Object.entries(k.plek || {}).forEach(([plek, st]) => {
+      if (!mag.includes(plek) || st.keuze !== 'uit' || !st.bron || !ouder.has(st.bron)) return;
+      ouder.set(wortel(st.bron), wortel(k.key));
+    });
+  });
+  /* Een indeling die uit een kopie komt (zetLookIndeling): die stukken horen samen,
+     ook voordat de plekken zijn ingevuld. */
+  const vast = new Map();
+  cards.forEach((k) => {
+    if (!k.lookVast) return;
+    if (vast.has(k.lookVast)) ouder.set(wortel(k.key), wortel(vast.get(k.lookVast)));
+    else vast.set(k.lookVast, k.key);
+  });
+  const groep = new Map();
+  cards.forEach((k) => {
+    const w = wortel(k.key);
+    if (!groep.has(w)) groep.set(w, []);
+    groep.get(w).push(k);
+  });
+  const letters = String(cfg.look.letters || 'ABCDEFGHIJ');
+  /* Dezelfde controle als de server (lookKlopt): een groep die daar niet door komt
+     (twee broeken, na een andere soort), telt hier ook niet als look. */
+  return [...groep.values()]
+    .filter((g) => g.length > 1 && lookKlopt(g.map((k) => ({ n: k.n, garment: soortVan(k) || 'other', context: plekContext(k) }))).ok)
+    .sort((a, b) => a[0].n - b[0].n)
+    .map((kaarten, i) => ({ letter: letters[i] || '', kaarten }));
+}
+
+function lookVanKaart(card, looks = kaartLooks()) {
+  return looks.find((l) => l.kaarten.includes(card)) || null;
+}
+
+/** De keuzes per plek van een kaart in de vorm van looks.js (voor lookKlopt). */
+function plekContext(card, extra = {}) {
+  const uit = {};
+  plekkenVan(card).forEach((plek) => {
+    const st = plekStaat(card, plek);
+    uit[plek] = st.keuze === 'uit' && st.bron ? 'look' : 'ours';
+  });
+  return { ...uit, ...extra };
+}
+
+/**
+ * Mag `q` op plek `plek` van kaart `p`? { mag, waarom }.
+ * Dezelfde regels als de server (b-regels): het stuk past op die plek, zit niet
+ * al in een andere look, de look wordt niet groter dan drie, en er komen geen
+ * twee stukken op dezelfde plek.
+ */
+function magOpPlek(p, plek, q, looks = kaartLooks()) {
+  const t = erbijTekst();
+  if (!q || q === p || !pastOp(plek, soortVan(q) || 'other')) return { mag: false };
+  const lp = lookVanKaart(p, looks);
+  const lq = lookVanKaart(q, looks);
+  if (lq && lp && lq === lp) return { mag: true };
+  if (lq) return { mag: false, waarom: String(t.alInLook || '').replace('{l}', lq.letter) };
+  const leden = lp ? lp.kaarten : [p];
+  if (leden.length + 1 > Number(cfg.look.max || 3)) return { mag: false, waarom: t.vol || '' };
+  const proef = [...leden, q].map((k) => ({
+    n: k.n,
+    garment: soortVan(k) || 'other',
+    context: plekContext(k, k === p ? { [plek]: 'look' } : {}),
+  }));
+  const oordeel = lookKlopt(proef);
+  if (!oordeel.ok && oordeel.waarom === 'dubbel') return { mag: false, waarom: t.dubbel || '' };
+  return { mag: true };
+}
+
+/** Koppel kaart q op plek `plek` van kaart p, en de andere kant op als dat past. */
+function koppel(p, plek, q) {
+  ontkoppel(p, plek);
+  const st = plekStaat(p, plek);
+  st.keuze = 'uit';
+  st.bron = q.key;
+  /* De laag eronder koppelt niet terug: de hoodie zit niet "onder" het T-shirt. */
+  if (plek === 'underlayer') return;
+  const terug = plekkenVan(q).find((x) => x !== 'underlayer' && pastOp(x, soortVan(p) || 'other'));
+  if (terug) {
+    const t = plekStaat(q, terug);
+    if (!t.bron || !kaartMetKey(t.bron)) { t.keuze = 'uit'; t.bron = p.key; }
+  }
+}
+
+/** Haal het stuk van plek `plek` van kaart p weg, en de koppeling terug. De keuze blijft "Uit je bestelling". */
+function ontkoppel(p, plek) {
+  const st = plekStaat(p, plek);
+  const q = st.bron ? kaartMetKey(st.bron) : null;
+  st.bron = '';
+  if (!q) return;
+  Object.values(q.plek || {}).forEach((t) => {
+    if (t.bron === p.key) { t.bron = ''; t.keuze = 'wij'; }
+  });
+}
+
+/** Alles van en naar deze kaart los: bij een andere soort, of als de kaart weggaat.
+    Een indeling uit een kopie (lookVast) blijft: die gaat pas weg met de kaart of
+    met "Haal de look uit elkaar". */
+function ontkoppelAlles(p) {
+  Object.values(p.plek || {}).forEach((st) => {
+    if (st.keuze === 'uit') st.keuze = 'wij';
+    st.bron = '';
+  });
+  cards.forEach((k) => Object.values(k.plek || {}).forEach((t) => {
+    if (t.bron === p.key) { t.bron = ''; t.keuze = 'wij'; }
+  }));
+}
+
+/** "Haal de look uit elkaar": elke koppeling binnen de look los, terug op Wij kiezen. */
+function lookUitElkaar(look) {
+  look.kaarten.forEach((k) => {
+    k.lookVast = '';
+    Object.values(k.plek || {}).forEach((st) => {
+      if (st.bron) { st.bron = ''; st.keuze = 'wij'; }
+    });
+  });
+}
+
+/**
+ * Een stuk uit een gekopieerde indeling krijgt zijn soort: vul de plekken waar
+ * precies één ander stuk uit dezelfde groep op past, zolang de klant daar nog
+ * niets koos. Zo staat de look er weer zodra de soorten er zijn.
+ */
+function vulLookVast(card) {
+  if (!card || !card.lookVast || !lookAan()) return;
+  const leden = cards.filter((k) => k !== card && k.lookVast === card.lookVast);
+  plekkenVan(card).forEach((plek) => {
+    const st = plekStaat(card, plek);
+    if (st.bron || st.keuze !== 'wij') return;
+    const past = leden.filter((o) => pastOp(plek, soortVan(o) || 'other'));
+    if (past.length === 1 && magOpPlek(card, plek, past[0]).mag) koppel(card, plek, past[0]);
+  });
+  leden.forEach((o) => plekkenVan(o).forEach((plek) => {
+    const st = plekStaat(o, plek);
+    if (st.bron || st.keuze !== 'wij') return;
+    const past = [card, ...leden].filter((x) => x !== o && pastOp(plek, soortVan(x) || 'other'));
+    if (past.length === 1 && magOpPlek(o, plek, past[0]).mag) koppel(o, plek, past[0]);
+  }));
+}
+
+/* De velden die meegaan: per plek ours/own/look, per kaart de letter, per look de notitie. */
+function syncPlekVelden(card, looks = kaartLooks()) {
+  const st = card && card.erbij;
+  if (!st) return;
+  const look = lookVanKaart(card, looks);
+  plekkenVan(card).forEach((plek) => {
+    const spec = cfg.styling.slots[plek];
+    const veld = spec && st.velden[spec.shot];
+    if (!veld) return;
+    const p = plekStaat(card, plek);
+    let waarde = 'ours';
+    if (p.keuze === 'uit' && p.bron && look && look.kaarten.some((k) => k.key === p.bron)) waarde = 'look';
+    else if (p.keuze === 'eigen' && slotFilled(card, spec.shot) && card.slots[spec.shot].status !== 'failed') waarde = 'own';
+    veld.value = waarde;
+  });
+  if (st.lookVeld) st.lookVeld.value = look ? look.letter : '';
+}
+
+function syncLookNotities(looks = kaartLooks()) {
+  let host = q('[data-wk-look-notities]');
+  if (!host && form) {
+    host = document.createElement('div');
+    host.hidden = true;
+    host.dataset.wkLookNotities = '';
+    form.appendChild(host);
+  }
+  if (!host) return;
+  host.textContent = '';
+  looks.forEach((l) => {
+    const tekst = (l.kaarten.find((k) => k.lookNotitie) || {}).lookNotitie || '';
+    if (!tekst.trim()) return;
+    const v = document.createElement('input');
+    v.type = 'hidden';
+    v.name = `look_notitie_${l.letter}`;
+    v.value = tekst.trim().slice(0, Number(cfg.look.notitieMax) || 300);
+    host.appendChild(v);
+  });
+}
+
 function buildErbij(card) {
   if (cfg.sample || !cfg.styling || !cfg.styling.slots) return null;
+  const t = erbijTekst();
   const wrap = document.createElement('div');
-  wrap.className = 'pu-erbij';
-  const h = document.createElement('p');
-  h.className = 'pu-erbij-h';
-  h.textContent = c('pu.erbijH');
-  const rij = document.createElement('div');
-  rij.className = 'pu-erbij-rij';
+  wrap.className = 'wk-draagt';
+  const label = document.createElement('p');
+  label.className = 'wk-label wk-draagt-label';
+  label.setAttribute('aria-hidden', 'true');
+  label.append(document.createElement('i'), document.createTextNode(t.label || ''));
+  const h = document.createElement('h3');
+  h.className = 'wk-draagt-h';
+  h.id = `wk-draagt-h-${card.key}`;
+  h.textContent = t.kop || c('pu.erbijH');
+  const zin = document.createElement('p');
+  zin.className = 'wk-draagt-zin';
+  const rijen = document.createElement('div');
+  rijen.className = 'wk-plekken';
+  const kaart = document.createElement('div');
+  kaart.className = 'wk-lookkaart-host';
   const hint = document.createElement('p');
-  hint.className = 'pu-erbij-hint';
-  wrap.append(h, rij, hint);
-  card.erbij = { wrap, rij, hint, slotIds: [], velden: {} };
+  hint.className = 'wk-uitleg wk-draagt-hint';
+  wrap.setAttribute('role', 'group');
+  wrap.setAttribute('aria-labelledby', h.id);
+  wrap.append(label, h, zin, rijen, kaart, hint);
+  /* De letter van de look, voor de server. */
+  const lookVeld = document.createElement('input');
+  lookVeld.type = 'hidden';
+  lookVeld.name = `look_${card.key}`;
+  wrap.appendChild(lookVeld);
+  card.erbij = { wrap, rij: rijen, rijen, kaart, hint, zin, lookVeld, slotIds: [], velden: {}, plekEl: {} };
+
+  /* Eén luisteraar per kaart: de knoppen worden bij elke verandering opnieuw getekend. */
+  wrap.addEventListener('click', (e) => {
+    const knop = e.target && e.target.closest ? e.target.closest('button') : null;
+    if (!knop || !wrap.contains(knop)) return;
+    const plek = knop.dataset.wkPlek;
+    if (knop.dataset.wkK && plek) {
+      const st = plekStaat(card, plek);
+      const k = knop.dataset.wkK;
+      if (k !== 'uit' && st.bron) ontkoppel(card, plek);
+      st.keuze = k;
+      naLookWijziging(card, `[data-wk-plek="${plek}"][data-wk-k="${k}"]`);
+      return;
+    }
+    if (knop.dataset.wkStuk && plek) {
+      const q2 = kaartMetKey(knop.dataset.wkStuk);
+      const st = plekStaat(card, plek);
+      if (q2 && st.bron === q2.key) ontkoppel(card, plek);
+      else if (q2 && magOpPlek(card, plek, q2).mag) koppel(card, plek, q2);
+      naLookWijziging(card, `[data-wk-plek="${plek}"][data-wk-stuk="${knop.dataset.wkStuk}"]`);
+      return;
+    }
+    if (knop.dataset.wkToe && plek) {
+      lookStukToevoegen(card, plek);
+      return;
+    }
+    if (knop.hasAttribute('data-wk-uit-elkaar')) {
+      const look = lookVanKaart(card);
+      if (look) lookUitElkaar(look);
+      naLookWijziging(card, `[data-wk-plek] [data-wk-k="wij"]`);
+    }
+  });
+  wrap.addEventListener('input', (e) => {
+    const veld = e.target;
+    if (!veld || !veld.hasAttribute || !veld.hasAttribute('data-wk-look-notitie')) return;
+    const look = lookVanKaart(card);
+    (look ? look.kaarten : [card]).forEach((k) => {
+      k.lookNotitie = veld.value;
+      /* Dezelfde look staat op elke kaart van de look: de andere velden lopen mee,
+         zonder die kaarten opnieuw te tekenen (dan zou de blik hier wegspringen). */
+      const ander = k !== card && k.erbij ? k.erbij.wrap.querySelector('[data-wk-look-notitie]') : null;
+      if (ander) ander.value = veld.value;
+    });
+    syncLookNotities();
+    bewaarConcept();
+  });
   return wrap;
+}
+
+/** Na elke keuze: alle kaarten opnieuw (een look raakt er meer dan één), het totaal en de balk. */
+function naLookWijziging(card, focusSel) {
+  cards.forEach(paintErbij);
+  syncLookNotities();
+  paintRail();
+  syncTotal();
+  syncSummaries();
+  bewaarConcept();
+  if (focusSel && card && card.erbij) {
+    const doel = card.erbij.wrap.querySelector(focusSel);
+    if (doel) { try { doel.focus({ preventScroll: true }); } catch { /* ok */ } }
+  }
+}
+
+/**
+ * "Schoenen toevoegen" bij Uit je bestelling (c-toevoegen): één product erbij,
+ * het aantal en het totaal lopen mee, het krijgt de soort die op die plek past en
+ * zit meteen in de look. De klant blijft bij het product waar hij was.
+ */
+function lookStukToevoegen(card, plek) {
+  if (!kanErbij()) return;
+  const n = productCount();
+  const sel = q('select[name="products"]');
+  if (!Number.isInteger(n) || !sel) return;
+  telViaKnop = true;
+  sel.value = String(n + 1);
+  sel.dispatchEvent(new Event('change', { bubbles: true }));
+  telViaKnop = false;
+  syncAddKnop();
+  const nieuw = cards[cards.length - 1];
+  const soort = (cfg.erbij && cfg.erbij.toeSoort && cfg.erbij.toeSoort[plek]) || '';
+  if (nieuw && nieuw !== card && nieuw.soortEl && soort) {
+    nieuw.soortEl.value = soort;
+    nieuw.soortEigen = true;
+    syncSoorten();
+    paintErbij(nieuw);
+    if (magOpPlek(card, plek, nieuw).mag) koppel(card, plek, nieuw);
+  }
+  const i = cards.indexOf(card);
+  if (i >= 0 && rijNu !== i) naarKaart(i, false);
+  naLookWijziging(card, `[data-wk-plek="${plek}"][data-wk-stuk="${nieuw ? nieuw.key : ''}"]`);
+}
+
+/** Het plaatje van een kaart voor de stukjes: de voorkant als die er is. */
+function kaartDuim(k) {
+  const span = document.createElement('span');
+  span.className = 'wk-duim';
+  span.setAttribute('aria-hidden', 'true');
+  const sl = k && k.slots && (k.slots.front || k.slots.worn);
+  if (sl && sl.url && sl.thumb) {
+    const img = document.createElement('img');
+    img.alt = '';
+    img.src = sl.url;
+    span.appendChild(img);
+  } else {
+    span.classList.add('is-leeg');
+    span.textContent = String(k ? k.n : '').padStart(2, '0');
+  }
+  return span;
+}
+
+function soortNaam(k) {
+  const g = (cfg.styling.garments || []).find((x) => x.id === soortVan(k));
+  return g ? g.naam : '';
 }
 
 function paintErbij(card) {
   const st = card && card.erbij;
   if (!st) return;
+  const t = erbijTekst();
   const type = soortVan(card);
-  const plekken = (type && CTX_BY_GARMENT[type]) || [];
+  const plekken = plekkenVan(card);
+  const looks = kaartLooks();
+  const metLook = lookAan();
+  const look = lookVanKaart(card, looks);
   const wil = plekken.map((p) => cfg.styling.slots[p] && cfg.styling.slots[p].shot).filter(Boolean);
+  st.zin.textContent = metLook ? (t.zin || '') : (t.zinCatalog || t.zin || '');
 
   /* Vakjes van een plek die er niet meer bij hoort: weg, met het bestand terug
      in de bak, net als bij een hoek die uit gaat. */
@@ -4501,37 +5321,252 @@ function paintErbij(card) {
     if (st.velden[id]) { st.velden[id].remove(); delete st.velden[id]; }
     st.slotIds = st.slotIds.filter((x) => x !== id);
   }
+  Object.keys(st.plekEl).forEach((plek) => {
+    if (!plekken.includes(plek)) { st.plekEl[plek].remove(); delete st.plekEl[plek]; }
+  });
 
   plekken.forEach((plek) => {
     const spec = cfg.styling.slots[plek];
     if (!spec) return;
     const id = spec.shot;
-    if (st.slotIds.includes(id) && card.slots[id] && card.slots[id].el) return;
-    if (!card.slots[id]) card.slots[id] = EMPTY_SLOT();
-    st.rij.appendChild(buildSlot(card, id));
-    st.slotIds.push(id);
-    const veld = document.createElement('input');
-    veld.type = 'hidden';
-    veld.name = `context_${plek}_${card.key}`;
-    veld.value = 'ours';
-    st.wrap.appendChild(veld);
-    st.velden[id] = veld;
-    paintSlot(card, id);
+    /* De rij van deze plek: één keer gebouwd, daarna alleen bijgewerkt. */
+    let rij = st.plekEl[plek];
+    if (!rij) {
+      rij = document.createElement('div');
+      rij.className = 'wk-plek';
+      rij.dataset.wkPlekRij = plek;
+      const naam = document.createElement('p');
+      naam.className = 'wk-plek-naam';
+      const b = document.createElement('b');
+      b.textContent = spec.naam;
+      const small = document.createElement('small');
+      small.textContent = spec.waar || '';
+      naam.append(b, small);
+      const binnen = document.createElement('div');
+      binnen.className = 'wk-plek-in';
+      const drie = document.createElement('div');
+      drie.className = 'wk-drie';
+      drie.setAttribute('role', 'group');
+      drie.setAttribute('aria-label', String(t.groepLabel || '{plek}').replace('{plek}', spec.naam));
+      const paneel = document.createElement('div');
+      paneel.className = 'wk-plek-paneel';
+      const eigen = document.createElement('div');
+      eigen.className = 'wk-plek-eigen';
+      const eigenZin = document.createElement('p');
+      eigenZin.className = 'wk-uitleg';
+      eigen.append(eigenZin);
+      binnen.append(drie, paneel, eigen);
+      rij.append(naam, binnen);
+      st.plekEl[plek] = rij;
+      rij.drie = drie;
+      rij.paneel = paneel;
+      rij.eigen = eigen;
+      rij.eigenZin = eigenZin;
+    }
+    /* Het uploadvakje voor het eigen stuk, in de rij van zijn plek. */
+    if (!st.slotIds.includes(id) || !card.slots[id] || !card.slots[id].el) {
+      if (!card.slots[id]) card.slots[id] = EMPTY_SLOT();
+      rij.eigen.prepend(buildSlot(card, id));
+      if (!st.slotIds.includes(id)) st.slotIds.push(id);
+      const veld = document.createElement('input');
+      veld.type = 'hidden';
+      veld.name = `context_${plek}_${card.key}`;
+      veld.value = 'ours';
+      st.wrap.appendChild(veld);
+      st.velden[id] = veld;
+      paintSlot(card, id);
+    } else if (card.slots[id].el.wrap.parentElement !== rij.eigen) {
+      rij.eigen.prepend(card.slots[id].el.wrap);
+    }
+    st.rijen.appendChild(rij);
+
+    const p = plekStaat(card, plek);
+    /* Een foto die er al in zit (een concept, een kopie) is een eigen stuk. */
+    if (p.keuze === 'wij' && !p.bron && slotFilled(card, id)) p.keuze = 'eigen';
+    if (!metLook && p.keuze === 'uit') { p.keuze = 'wij'; p.bron = ''; }
+
+    /* De drie (of bij catalog twee) knoppen. */
+    rij.drie.textContent = '';
+    const knop = (k, tekst, klein) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.dataset.wkPlek = plek;
+      b.dataset.wkK = k;
+      b.setAttribute('aria-pressed', String(p.keuze === k));
+      b.append(document.createTextNode(tekst));
+      if (klein) {
+        const i = document.createElement('i');
+        i.textContent = klein;
+        b.append(i);
+      }
+      rij.drie.appendChild(b);
+    };
+    knop('wij', t.wij || '');
+    knop('eigen', t.eigen || '', t.gratis || '');
+    if (metLook) knop('uit', t.uit || '', look ? String(t.lookLetter || '{l}').replace('{l}', look.letter) : `+ ${euro(lookPrijs())}`);
+    rij.drie.classList.toggle('is-twee', !metLook);
+
+    /* Wat er onder de knoppen staat. */
+    rij.paneel.textContent = '';
+    rij.eigen.hidden = p.keuze !== 'eigen';
+    rij.eigenZin.textContent = String(t.eigenUitleg || '').replace('{gezien}', spec.gezien || '');
+    if (p.keuze === 'wij') {
+      const zin = document.createElement('p');
+      zin.className = 'wk-uitleg';
+      zin.textContent = String(t.wijUitleg || '').replace('{standaard}', spec.standaard || '');
+      rij.paneel.appendChild(zin);
+    } else if (p.keuze === 'uit') {
+      if (!look) {
+        const zin = document.createElement('p');
+        zin.className = 'wk-uitleg';
+        const b = document.createElement('b');
+        b.textContent = t.uitKop || '';
+        zin.append(b, document.createTextNode(` ${t.uitUitleg || ''}`));
+        rij.paneel.appendChild(zin);
+      }
+      const lijst = document.createElement('ul');
+      lijst.className = 'wk-stukken';
+      cards.filter((k) => k !== card && pastOp(plek, soortVan(k) || 'other')).forEach((k) => {
+        const m = magOpPlek(card, plek, k, looks);
+        const aan = p.bron === k.key;
+        const li = document.createElement('li');
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'wk-stuk';
+        b.dataset.wkPlek = plek;
+        b.dataset.wkStuk = k.key;
+        b.setAttribute('aria-pressed', String(aan));
+        if (!m.mag && !aan) b.disabled = true;
+        const tekst = document.createElement('span');
+        const naam = document.createElement('b');
+        naam.textContent = cardLabel(k);
+        const sub = document.createElement('small');
+        sub.textContent = aan ? (t.inLook || '') : (m.waarom || `${String(k.n).padStart(2, '0')} · ${soortNaam(k)}`);
+        tekst.append(naam, sub);
+        b.append(kaartDuim(k), tekst);
+        li.appendChild(b);
+        lijst.appendChild(li);
+      });
+      if (!p.bron && kanErbij() && (cfg.erbij && cfg.erbij.toeSoort && cfg.erbij.toeSoort[plek])) {
+        const li = document.createElement('li');
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'wk-stuk wk-stuk-toe';
+        b.dataset.wkPlek = plek;
+        b.dataset.wkToe = '1';
+        const duim = document.createElement('span');
+        duim.className = 'wk-duim';
+        duim.setAttribute('aria-hidden', 'true');
+        duim.innerHTML = ikoon('plus');
+        const tekst = document.createElement('span');
+        const naam = document.createElement('b');
+        naam.textContent = spec.toevoegen || '';
+        const sub = document.createElement('small');
+        const n = productCount();
+        const rate = Number.isInteger(n) ? rateFor(kindOf(), n + 1) : null;
+        sub.textContent = String(t.toeSub || '').replace('{prijs}', rate !== null && rate !== undefined ? euro(rate) : '');
+        tekst.append(naam, sub);
+        b.append(duim, tekst);
+        li.appendChild(b);
+        lijst.appendChild(li);
+      }
+      rij.paneel.appendChild(lijst);
+    }
   });
-  /* Op volgorde van de plekken houden: een wissel van soort kan ze anders
-     achteraan zetten. */
-  plekken.forEach((plek) => {
-    const spec = cfg.styling.slots[plek];
-    const sl = spec && card.slots[spec.shot];
-    if (sl && sl.el && sl.el.wrap) st.rij.appendChild(sl.el.wrap);
+
+  /* De kaart van de look, onder de plekken (c-look). */
+  st.kaart.textContent = '';
+  if (look) st.kaart.appendChild(lookKaartEl(look));
+
+  st.rijen.hidden = !plekken.length;
+  st.hint.hidden = !!(type && plekken.length);
+  st.hint.textContent = !type ? (t.eerst || c('pu.erbijEerst')) : (plekken.length ? '' : (t.geenPlek || c('pu.erbijGeen')));
+  syncPlekVelden(card, looks);
+}
+
+function lookKaartEl(look) {
+  const t = erbijTekst();
+  const wrap = document.createElement('div');
+  wrap.className = 'wk-lookkaart';
+  wrap.dataset.wkLook = look.letter;
+  const kop = document.createElement('div');
+  kop.className = 'wk-lookkaart-kop';
+  const links = document.createElement('div');
+  const label = document.createElement('p');
+  label.textContent = String(t.lookLabel || '').replace('{l}', look.letter).replace('{n}', String(look.kaarten.length));
+  const h = document.createElement('h4');
+  h.textContent = t.lookH || '';
+  links.append(label, h);
+  const prijs = document.createElement('span');
+  prijs.className = 'wk-lookkaart-prijs';
+  prijs.textContent = `+ ${euro(lookPrijs())}`;
+  kop.append(links, prijs);
+  const namen = look.kaarten.map((k) => cardLabel(k));
+  const en = t.en || '&';
+  const zinNamen = namen.length > 1 ? `${namen.slice(0, -1).join(', ')} ${en} ${namen[namen.length - 1]}` : namen[0];
+  const wie = document.createElement('p');
+  wie.className = 'wk-lookkaart-wie';
+  wie.textContent = String(t.lookWie || '{namen}').replace('{namen}', zinNamen);
+  const samen = document.createElement('span');
+  samen.className = 'wk-lookkaart-samen';
+  look.kaarten.forEach((k) => samen.appendChild(kaartDuim(k)));
+  const ul = document.createElement('ul');
+  (Array.isArray(t.lookPunten) ? t.lookPunten : []).forEach((punt) => {
+    const li = document.createElement('li');
+    const i = document.createElement('span');
+    i.className = 'wk-lookkaart-vink';
+    i.setAttribute('aria-hidden', 'true');
+    i.innerHTML = ikoon('vink');
+    const s = document.createElement('span');
+    s.textContent = punt;
+    li.append(i, s);
+    ul.appendChild(li);
   });
-  /* Het bestand IS de keuze: own als er een foto in zit, anders ours. */
-  st.slotIds.forEach((id) => {
-    const veld = st.velden[id];
-    if (veld) veld.value = slotFilled(card, id) ? 'own' : 'ours';
+  const veld = document.createElement('label');
+  veld.className = 'wk-lookkaart-notitie';
+  const vt = document.createElement('span');
+  vt.textContent = t.notitieLabel || '';
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'input';
+  input.maxLength = Number(cfg.look.notitieMax) || 300;
+  input.placeholder = t.notitiePlaceholder || '';
+  input.setAttribute('data-wk-look-notitie', look.letter);
+  input.value = (look.kaarten.find((k) => k.lookNotitie) || {}).lookNotitie || '';
+  veld.append(vt, input);
+  const uit = document.createElement('button');
+  uit.type = 'button';
+  uit.className = 'wk-lookkaart-uit';
+  uit.setAttribute('data-wk-uit-elkaar', '');
+  uit.textContent = t.uitElkaar || '';
+  wrap.append(kop, wie, samen, ul, veld, uit);
+  return wrap;
+}
+
+/**
+ * De indeling van een eerdere bestelling terugzetten (afvinklijst 38, d-kopie):
+ * welke plaatsen samen een look zijn, met de plekken leeg om in te vullen zolang
+ * de soorten er nog niet zijn. `indeling` is [[1, 2], [3, 4, 5]] (productnummers).
+ * Waar de soorten al passen (een kopie neemt ze niet mee, een concept wel), komt
+ * de koppeling er meteen in. Geeft true als er iets is teruggezet.
+ */
+function zetLookIndeling(indeling) {
+  if (!lookAan() || !Array.isArray(indeling)) return false;
+  let iets = false;
+  indeling.forEach((groep, gi) => {
+    const leden = (Array.isArray(groep) ? groep : []).map((n) => cards[Number(n) - 1]).filter(Boolean);
+    if (leden.length < 2 || leden.length > Number(cfg.look.max || 3) || leden.some((k) => k.lookVast)) return;
+    iets = true;
+    leden.forEach((k) => { k.lookVast = `kopie${gi + 1}`; });
+    for (const k of leden) {
+      for (const plek of plekkenVan(k)) {
+        const ander = leden.find((o) => o !== k && pastOp(plek, soortVan(o) || 'other') && magOpPlek(k, plek, o).mag);
+        if (ander && !plekStaat(k, plek).bron) koppel(k, plek, ander);
+      }
+    }
   });
-  st.rij.hidden = !plekken.length;
-  st.hint.textContent = !type ? c('pu.erbijEerst') : (plekken.length ? c('pu.erbijHint') : c('pu.erbijGeen'));
+  if (iets) naLookWijziging(null);
+  return iets;
 }
 
 /**
@@ -6130,8 +7165,9 @@ function paintSlot(card, id) {
   /* Een contextvak: het verborgen veld volgt het bestand (own / ours). Hier en
      niet met een MutationObserver zoals in de oude rijen — paintSlot() is de
      ene plek waar de staat van een vak op het scherm komt. */
-  const ctx = card.erbij && card.erbij.velden && card.erbij.velden[id];
-  if (ctx) ctx.value = filled && s.status !== 'failed' ? 'own' : 'ours';
+  /* Sinds levering 60 zegt de keuze per plek (Wij kiezen, Eigen stuk, Uit je
+     bestelling) wat het veld wordt; het bestand telt alleen bij Eigen stuk. */
+  if (card.erbij && card.erbij.velden && card.erbij.velden[id]) syncPlekVelden(card);
 }
 
 /** De regel op de kaart: af, of wat er nog moet. */
@@ -6283,6 +7319,7 @@ function naarKaart(i, verplaats = true) {
   if (!cards.length) return;
   rijNu = Math.max(0, Math.min(cards.length - 1, Math.floor(i) || 0));
   paintRail();
+  paintWkKaarten();
   const kaart = cards[rijNu];
   if (verplaats && kaart && kaart.el) {
     kaart.el.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
@@ -6303,6 +7340,43 @@ function paintRij() {
   const out = q('[data-pl-progress]');
   if (out) out.textContent = progressText();
   if (aan) paintRail();
+  paintWkKaarten();
+}
+
+/* ── ÉÉN PRODUCT TEGELIJK — levering 59 (afvinklijst 36, b-stap2) ──────────────────
+   In de werkplaats staat alleen de kaart van het product waar je bent; de knoppen
+   bovenaan (de balk hierboven) en Vorig en Volgend product onderaan wisselen. Elke
+   kaart blijft in de pagina, met al zijn velden: verborgen, niet uitgeschakeld, dus hij
+   post en wordt bewaard zoals altijd. Op 11 oktober 2026 werd dit één lange lijst
+   (afvinklijst 2, form a); deze keuze draait dat terug. */
+function paintWkKaarten() {
+  if (!werkAan()) return;
+  const meer = cards.length > 1;
+  cards.forEach((k, i) => { if (k.el) k.el.hidden = meer && i !== rijNu; });
+  const balk = q('[data-wk-bladeren]');
+  if (!balk) return;
+  balk.hidden = !meer;
+  if (!meer) return;
+  const t = q('[data-wk-bladeren-t]', balk);
+  if (t) t.textContent = String(balk.dataset.wkVan || '{i}/{n}').replace('{i}', String(rijNu + 1)).replace('{n}', String(cards.length));
+  const vorige = q('[data-wk-vorige]', balk);
+  const volgende = q('[data-wk-volgende]', balk);
+  if (vorige) vorige.disabled = rijNu === 0;
+  if (volgende) volgende.hidden = rijNu >= cards.length - 1;
+  if (!balk.dataset.wkGebonden) {
+    balk.dataset.wkGebonden = '1';
+    const naar = (d) => {
+      naarKaart(rijNu + d, false);
+      const stap = stepNode(2);
+      const top = stap ? stap.getBoundingClientRect().top + window.scrollY - 96 : 0;
+      window.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
+      const kaart = cards[rijNu];
+      const doel = kaart && (kaart.input || kaart.kiesKnop);
+      if (doel) { try { doel.focus({ preventScroll: true }); } catch { /* ok */ } }
+    };
+    if (vorige) vorige.addEventListener('click', () => naar(-1));
+    if (volgende) volgende.addEventListener('click', () => naar(1));
+  }
 }
 
 /* ── BOVEN HOEVEEL PRODUCTEN DE STREEPJES RUIS WORDEN ────────────────────────
@@ -6365,6 +7439,13 @@ function paintRail() {
     knop.tabIndex = i === rijNu ? 0 : -1;
     const tekst = knop.querySelector('[data-pl-rail-naam]');
     if (tekst) tekst.textContent = label;
+    /* De werkplaats toont de knop met nummer, naam en telling (levering 59). */
+    const wkNr = knop.querySelector('[data-wk-rail-nr]');
+    if (wkNr) wkNr.textContent = String(i + 1).padStart(2, '0');
+    const wkNaam = knop.querySelector('[data-wk-rail-naam]');
+    if (wkNaam) wkNaam.textContent = label;
+    const wkTel = knop.querySelector('[data-wk-rail-tel]');
+    if (wkTel) wkTel.textContent = klaar || !vakIds.length ? '' : `${vakIds.filter((id) => vakAf(kaart, id)).length}/${vakIds.length}`;
 
     /* ── WAAR HET GAT ZIT ───────────────────────────────────────────────────
        Het vierkantje zei tot nu toe alleen "af" of "niet af". Eén streepje per
@@ -6390,6 +7471,39 @@ function paintRail() {
       knop.dataset.plRailGebonden = '1';
       knop.addEventListener('click', () => naarKaart(i));
     }
+  });
+  paintRailLooks(rail);
+}
+
+/* ── DE STUKKEN VAN EEN LOOK ALS ÉÉN VORM — levering 60 (c-look) ─────────────
+   De knoppen van een look staan naast elkaar onder LOOK A, met de snede ertussen.
+   De volgorde in de DOM blijft die van de producten (rail.children[i] hoort bij
+   cards[i], en de pijltjes volgen de producten); alleen de volgorde OP HET SCHERM
+   schuift, met `order`. De opmaak staat in werkplaats.css. */
+function paintRailLooks(rail) {
+  const looks = kaartLooks();
+  const t = erbijTekst();
+  let plek = 0;
+  const gezet = new Set();
+  cards.forEach((kaart) => {
+    if (gezet.has(kaart)) return;
+    const look = looks.find((l) => l.kaarten.includes(kaart));
+    const rij = look ? look.kaarten : [kaart];
+    rij.forEach((k, j) => {
+      gezet.add(k);
+      const li = rail.children[cards.indexOf(k)];
+      if (!li) return;
+      li.style.order = String(plek++);
+      if (look) {
+        li.dataset.wkLook = look.letter;
+        li.dataset.wkLookPos = j === 0 ? 'eerst' : (j === rij.length - 1 ? 'laatst' : 'midden');
+        li.dataset.wkLookLabel = String(t.railLook || 'Look {l}').replace('{l}', look.letter);
+      } else {
+        delete li.dataset.wkLook;
+        delete li.dataset.wkLookPos;
+        delete li.dataset.wkLookLabel;
+      }
+    });
   });
 }
 
@@ -7249,7 +8363,8 @@ function toonTegoed(me) {
  *
  * Een ingelogde abonnee betaalt met credits: stap 5 zegt "Deze bestelling kost
  * 48 credits · je hebt er 120 · daarna 72" en de knop heet "Bestellen met
- * credits". Kan het niet — voorrang, een outfit of een eigen look met toeslag,
+ * credits". Kan het niet — voorrang of een eigen look met toeslag (een complete
+ * look kan sinds 17 oktober 2026 wel: 4 credits per look),
  * of te weinig credits — dan zegt het waarom, wat wél past, wanneer er nieuwe
  * credits komen en wat het via Mollie kost. Nooit gemengd.
  *
@@ -7333,12 +8448,12 @@ function syncCredits() {
   const n = productCount();
   const kost = creditKosten({
     service: dienst, products: n, extras: extrasCount(), hoogRes: hoogResCount(),
-    outfits: outfitCount(), voorrang: voorrangAan(), toeslagCents: Math.round(stijlToeslagNu() * 100),
+    looks: lookCount(), voorrang: voorrangAan(), toeslagCents: Math.round(stijlToeslagNu() * 100),
   });
   const saldo = Math.max(0, Math.floor(Number(creditsMe.saldo) || 0));
   /* Geen creditprijs ("meer dan 30", nog geen aantal): dan niets zeggen. Wel de
      prijzen in credits zolang er niets is gekozen dat niet met credits kan. */
-  if (kost.credits === null) return uit(saldo > 0 && !voorrangAan() && outfitCount() === 0 && stijlToeslagNu() === 0);
+  if (kost.credits === null) return uit(saldo > 0 && !voorrangAan() && stijlToeslagNu() === 0);
 
   const net = totaalBij(kindOf(), n);
   const bedrag = Number.isFinite(net) ? euro(net) : '';
@@ -7925,6 +9040,9 @@ function addOwnStyles(me) {
   // Catalog: geen lookkiezer op de pagina, dus een klein blok van onszelf.
   const bg = q('[data-pl-bg]');
   if (!bg || q('[data-pl-own-look]')) return;
+  /* In de werkplaats (levering 59) staat de achtergrond verborgen; het blok komt dan bij
+     01 Stijl, onder de kaarten. */
+  const wkHost = q('[data-wk-eigen-stijl]');
   const box = document.createElement('fieldset');
   box.className = 'pl-fieldset pl-own-look';
   box.setAttribute('data-pl-own-look', '');
@@ -7944,7 +9062,7 @@ function addOwnStyles(me) {
      rij open is. Dus wordt de rij zelf gekloond — mét haar scope-attribuut,
      zodat de scoped CSS van Disclose erop blijft werken — en de kop krijgt de
      gekozen look, net zoals "Achtergrond" zijn kleur in de kop draagt. */
-  const rij = bg.closest('details.dc');
+  const rij = wkHost ? null : bg.closest('details.dc');
   const kopLive = () => {
     const gekozen = q('input[name="style"]:checked', box);
     return (gekozen && gekozen.value ? gekozen.dataset.plStyleName : '') || c('pu.ownLookNone') || 'Standard look';
@@ -7965,6 +9083,9 @@ function addOwnStyles(me) {
     rij.insertAdjacentElement('afterend', eigen);
     live.textContent = kopLive();
     qa('input[name="style"]', box).forEach((r) => r.addEventListener('change', () => { live.textContent = kopLive(); }));
+  } else if (wkHost) {
+    wkHost.appendChild(box);
+    wkHost.hidden = false;
   } else {
     bg.insertAdjacentElement('afterend', box);
   }
@@ -8084,6 +9205,21 @@ function applyVanBestelling(me) {
         return true;
       };
       const delen = [];
+      /* LEVERING 58 (afvinklijst 36, v36-aantal = a): het aantal producten eerst, want
+         de kaarten, de outfits en de vorm per foto hangen eraan. Alleen als de klant
+         hier nog niets koos: wat hij net zelf intikte, gaat voor. Via het getalveld,
+         zodat het dezelfde weg loopt als een klik (bindQty). */
+      const aantalVeld = q('[data-pl-qty-input]');
+      const aantalSel = q('select[name="products"]');
+      const aantal = Number(inst.aantal) || 0;
+      if (aantal > 0 && aantalVeld && aantalSel && (!/^\d+$/.test(String(aantalSel.value || '')) || aantalSel.dataset.wkStandaard === '1')) {
+        const max = Number.parseInt(aantalVeld.max, 10) || aantal;
+        if (aantal <= max) {
+          aantalVeld.value = String(aantal);
+          aantalVeld.dispatchEvent(new Event('input', { bubbles: true }));
+          delen.push(aantal === 1 ? c('van.aantal1') : c('van.aantalN', { n: aantal }));
+        }
+      }
       /* De kanalen eerst: precies die van toen. */
       const kanalen = Array.isArray(inst.kanalen) ? inst.kanalen : [];
       const vakjes = qa('input[name="channels"]');
@@ -8134,14 +9270,45 @@ function applyVanBestelling(me) {
         perBeeld += 1;
       }
       if (perBeeld) delen.push(perBeeld === 1 ? c('van.beeld1') : c('van.beeldN', { n: perBeeld }));
-      const noot = q('textarea[name="message"]');
-      if (noot && inst.notitie && !noot.value) { noot.value = String(inst.notitie); noot.dispatchEvent(new Event('input', { bubbles: true })); delen.push(c('van.notitie')); }
-      const outfit = q('select[name="outfit_count"]');
-      if (outfit && inst.outfits && [...outfit.options].some((o) => o.value === String(inst.outfits))) {
-        outfit.value = String(inst.outfits);
-        outfit.dispatchEvent(new Event('change', { bubbles: true }));
-        delen.push(c('van.outfits'));
+      /* c-kopie: de vorm per foto, als die bij alle producten van toen gelijk was
+         (bestelInstellingen() geeft alleen die). Na het aantal, want dan staan de
+         kaarten er; per kaart het keuzeveld van die foto, alleen als het die vorm kent. */
+      const vormNrs = [];
+      for (const v of (Array.isArray(inst.vormen) ? inst.vormen : [])) {
+        const nr = Number(v && v.beeld) || 0;
+        const r = String((v && v.ratio) || '');
+        if (!nr || !/^[a-z0-9-]{2,16}$/.test(r)) continue;
+        const velden = qa(`select[data-pl-ratio-each][name$="_${nr}"]`).filter((sel) => /^ratio_p\d+_\d+$/.test(sel.name) && !sel.disabled && [...sel.options].some((o) => o.value === r));
+        if (!velden.length) continue;
+        velden.forEach((sel) => { if (sel.value !== r) { sel.value = r; sel.dispatchEvent(new Event('change', { bubbles: true })); } });
+        vormNrs.push(nr);
       }
+      if (vormNrs.length) delen.push(c(vormNrs.length === 1 ? 'van.vorm1' : 'van.vormN', { nrs: vormNrs.length > 1 ? `${vormNrs.slice(0, -1).join(', ')} ${c('van.en')} ${vormNrs[vormNrs.length - 1]}` : String(vormNrs[0]) }));
+      /* v36-bericht = a: het bericht niet invullen, wel een knop ernaast. Het ging vaak
+         over die ene levering ("voor de zomercollectie"); met de knop is het één tik
+         als het wel weer klopt. */
+      const noot = q('textarea[name="message"]');
+      const berichtKnop = q('[data-pl-van-bericht]');
+      if (noot && berichtKnop && inst.notitie) {
+        berichtKnop.textContent = c('van.berichtKnop', { ref: String(inst.ref || '') });
+        berichtKnop.hidden = false;
+        if (!berichtKnop.dataset.plGebonden) {
+          berichtKnop.dataset.plGebonden = '1';
+          berichtKnop.addEventListener('click', () => {
+            const tekst = String(inst.notitie);
+            noot.value = noot.value.trim() ? `${noot.value.replace(/\s+$/, '')}\n${tekst}` : tekst;
+            noot.dispatchEvent(new Event('input', { bubbles: true }));
+            berichtKnop.hidden = true;
+            noot.focus();
+          });
+        }
+        delen.push(c('van.bericht'));
+      }
+      /* De indeling van de looks (afvinklijst 38, d-kopie): welke plaatsen samen
+         een look zijn. Net als bij v36-outfits alleen samen met het aantal
+         (bestelInstellingen() geeft anders niets), en na het aantal, want de
+         kaarten bestaan pas dan. De stukken zelf vul je opnieuw in. */
+      if (Array.isArray(inst.looks) && inst.looks.length && zetLookIndeling(inst.looks)) delen.push(c('van.looks'));
       syncSummaries();
       const en = c('van.en');
       const lijst = delen.length > 1 ? `${delen.slice(0, -1).join(', ')} ${en} ${delen[delen.length - 1]}` : (delen[0] || c('van.niets'));
@@ -8890,7 +10057,7 @@ function renderSummary() {
   const attended = value('tier') === 'attended';
   const select = q('select[name="products"]');
   const count = select ? select.options[select.selectedIndex] : null;
-  const outfitN = outfitCount();
+  const lookN = lookCount();
 
   const rows = [];
   if (kind) rows.push([c('sum.kind'), c(`kind.${kind}`)]);
@@ -9016,8 +10183,8 @@ function renderSummary() {
       : c('sum.ratioAfwijkVeel', { n: afwijk.length })]);
   }
 
-  // Task #271f.
-  if (outfitN > 0) rows.push([c('sum.outfit'), c('sum.outfitN', { price: euro(cfg.outfitSurcharge), n: outfitN })]);
+  // De complete looks (levering 60): een regel met het aantal en de prijs per look.
+  if (lookN > 0) rows.push([c('sum.look'), c('sum.lookN', { price: euro(lookPrijs()), n: lookN })]);
 
   /* ── DE TWEE BETAALDE KEUZES VAN 9 SEPTEMBER ──────────────────────────────
      Ze staan hier om dezelfde reden als het setje erboven: het zijn de enige
@@ -9070,12 +10237,12 @@ function renderSummary() {
     rows.push([c('sum.net'), euro(vast)]);
   } else {
     /* ── HETZELFDE GETAL ALS IN DE ZIJBALK — 19 september 2026 ──────────────
-       Dit stond als quoteFor(kind, n, outfitN): zonder extra hoeken, zonder
+       Dit stond als quoteFor(kind, n, outfits): zonder extra hoeken, zonder
        hoge resolutie en zonder voorrang. Gemeten op de livesite: zijbalk
        "€492" (5 × €82 + €82 voorrang), samenvatting "Orderbedrag €410". Het
        scherm dat vraagt of alles klopt, noemde een ander bedrag dan de kassa.
        Nu dezelfde som als syncTotal(). */
-    const quote = kind ? quoteFor(kind, n, outfitN, extrasCount(), hoogResCount()) : null;
+    const quote = kind ? quoteFor(kind, n, lookN, extrasCount(), hoogResCount()) : null;
     if (quote) {
       const voorrang = voorrangAan() ? voorrangBedragNu(quote.net) : null;
       const net = voorrang !== null ? round2(quote.net + voorrang) : quote.net;
@@ -9731,6 +10898,10 @@ function bewaarConcept() {
       eigen: cards.filter((k) => k.soortEigen).map((k) => k.key),
       refs: Object.fromEntries(cards.filter((k) => k.refs).map((k) => [k.key, k.refs])),
       hoeken: { ...hoekVak },
+      /* Wat er per plek gekozen is en welke stukken samen een look zijn (levering 60). */
+      plekken: Object.fromEntries(cards.filter((k) => k.plek).map((k) => [k.key, k.plek])),
+      lookNotities: Object.fromEntries(cards.filter((k) => k.lookNotitie).map((k) => [k.key, k.lookNotitie])),
+      lookVast: Object.fromEntries(cards.filter((k) => k.lookVast).map((k) => [k.key, k.lookVast])),
       batch: fotos.length ? batch : '',
       fotos,
     };
@@ -9778,6 +10949,15 @@ function checkConcept() {
   const blok = q('[data-pl-concept]');
   const klaar = () => { conceptKlaar = true; };
   if (!c0 || !blok) { klaar(); return; }
+  /* Levering 57 (17 oktober 2026). Wie in Studio "Opnieuw bestellen met alle
+     instellingen" kiest (?van=<id>), kreeg bovenaan twee blokken onder elkaar:
+     "Instellingen overgenomen" en "Je was nog bezig met een bestelling". Die
+     spreken elkaar tegen. De kopie is een keuze van zojuist, dus die gaat voor;
+     het concept blijft bewaard tot de klant iets verandert (dan bewaart bindConcept
+     de nieuwe stand, zoals bij opnieuw beginnen). */
+  let van = '';
+  try { van = new URLSearchParams(location.search).get('van') || ''; } catch { /* dan niet */ }
+  if (/^\d{1,12}$/.test(van)) { klaar(); return; }
   const oud = !(Date.now() - Number(c0.t || 0) < CONCEPT_DAGEN * 864e5);
   if (oud || c0.pad !== location.pathname) {
     /* Te oud: weg. Van een andere bestelpagina: laten staan voor die pagina. */
@@ -9886,7 +11066,28 @@ function herstelConcept(c0, daar) {
   cards.forEach((card) => { if (eigen.has(card.key)) card.soortEigen = true; });
   velden.filter((v) => /^garment_p\d+$/.test(v[0])).forEach((v) => zetVeld(v[0], v[1], v[2]));
   syncSoorten();
+  /* De keuzes per plek en de looks, vóór de kaarten geschilderd worden. Alleen de
+     vorm die het concept zelf schreef; een kaart die er niet meer is, valt weg. */
+  if (c0.plekken && typeof c0.plekken === 'object') {
+    cards.forEach((card) => {
+      const p = c0.plekken[card.key];
+      if (!p || typeof p !== 'object') return;
+      card.plek = {};
+      Object.entries(p).forEach(([plek, st]) => {
+        if (!st || !['wij', 'eigen', 'uit'].includes(st.keuze)) return;
+        const bron = typeof st.bron === 'string' && cards.some((k) => k.key === st.bron) ? st.bron : '';
+        card.plek[plek] = { keuze: st.keuze, bron };
+      });
+    });
+  }
+  if (c0.lookVast && typeof c0.lookVast === 'object') {
+    cards.forEach((card) => { if (typeof c0.lookVast[card.key] === 'string') card.lookVast = c0.lookVast[card.key].slice(0, 12); });
+  }
+  if (c0.lookNotities && typeof c0.lookNotities === 'object') {
+    cards.forEach((card) => { if (typeof c0.lookNotities[card.key] === 'string') card.lookNotitie = c0.lookNotities[card.key]; });
+  }
   cards.forEach(paintErbij);
+  syncLookNotities();
   velden.filter((v) => isKaartVeld(v[0]) && !/^garment_p\d+$/.test(v[0])).forEach((v) => zetVeld(v[0], v[1], v[2]));
   /* Referentievakken zoals ze er stonden. */
   if (c0.refs && typeof c0.refs === 'object') {

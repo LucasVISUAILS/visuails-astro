@@ -55,6 +55,8 @@ import { SHOT_IDS, shot as shotInfo, contextShotSlot } from '../data/shots.js';
 import { kleurInfo, rgbVan } from './kleurcode.js';
 /* Het kledingstuk voor de plakregel (4.02): het TYPE, nooit de productnaam. */
 import { garment as garmentVan } from '../data/garments.js';
+/* De twee vakken van een complete look (levering 60). */
+import { LOOK_VAKKEN } from '../data/levervakken.js';
 
 /**
  * De mapnaam per shot, met een cijfer ervoor.
@@ -125,6 +127,43 @@ export function productFolder(index, name) {
 }
 
 /**
+ * De map van een complete look: `lA - Look A` (levering 60). Dezelfde vorm als een
+ * productmap — de sleutel vooraan, want die leest de terugweg — en zonder tekst
+ * van de klant erin, dus het kenmerk kan er gerust in gezocht worden.
+ */
+export function lookFolder(letter) {
+  const l = String(letter || '').toUpperCase();
+  return `l${l} - Look ${l}`;
+}
+
+/** De briefing van een look: welke stukken, de notitie, en de werkwijze. */
+export function lookBriefingText({ order, look }) {
+  const kop = [order.ref, `l${look.letter}`, `Complete look ${look.letter}`].filter(Boolean).join(' · ');
+  const regels = [
+    kop,
+    '='.repeat(Math.min(60, kop.length)),
+    '',
+    `INSTELLINGEN  kenmerk=${order.ref}`,
+    '',
+    'STUKKEN',
+    ...look.stukken.map((st) => `  ${productFolder(st.index, st.name)}${st.garment ? `  (${(garmentVan(st.garment).name.nl || '').toLowerCase()})` : ''}`),
+    '',
+    'MAKEN',
+    '  Eerst het lookbeeld, daarna de beelden van de stukken: zelfde model, zelfde',
+    '  plek, en in elk beeld op het model draagt het stuk de hele look. De uitsnede',
+    '  volgt het stuk.',
+    '  1 van top tot teen   de hele look van voren, op het model',
+    '  2 stukken samen      de stukken samen, zonder model',
+  ];
+  /* Eén gezicht voor de hele look (b-regels): dat van het eerste stuk, ook als de
+     klant bij een ander stuk een ander koos. */
+  if (look.gezicht) regels.push(`  Gezicht              ${look.gezicht} (van het eerste stuk, voor de hele look)`);
+  if (look.notitie) regels.push('', 'HOE GEDRAGEN', `  ${look.notitie}`);
+  regels.push('', 'De foto\'s van de klant van alle stukken staan in _aangeleverd/.', '');
+  return CRLF(regels);
+}
+
+/**
  * Het pad terugleggen op product en shot.
  *
  * DIT IS DE TERUGWEG, en hij is met opzet strikter dan guessProductShot() in
@@ -155,6 +194,11 @@ export function parseScaffoldPath(relPath) {
   for (const seg of folders) {
     const m = seg.match(/^p(\d{1,3})\b/i);
     if (m) { product = `p${Number(m[1])}`; continue; }
+    /* De map van een complete look: `lA - Look A` (levering 60). */
+    const lk = seg.match(/^l([A-J])\b/);
+    if (lk) { product = `l${lk[1]}`; continue; }
+    const lookVak = seg.match(/\[(look-geheel|look-samen)\]\s*$/i);
+    if (lookVak) { shot = lookVak[1].toLowerCase(); continue; }
     if (seg === LOOSE_FOLDER) { loose = true; continue; }
     // Het bronmateriaal van de klant hoort niet als levering terug te komen. Zou
     // iemand die map per ongeluk meesturen, dan is dat geen shot en geen los
@@ -476,6 +520,15 @@ export function briefingText({ order, product }) {
   if (product.uitsnede) maken.push(`  Uitsnede    ${product.uitsnede}`);
   if (product.styling) maken.push(`  Styling     ${product.styling}`);
   if (order.look) maken.push(`  Look        ${order.look}`);
+  /* De complete look (levering 60, d-werk): met welke stukken, en in welke volgorde
+     je het werk doet. De map van de look staat naast deze map. */
+  if (product.look) {
+    const met = (product.look.met || []).map((st) => `p${st.index} ${st.name || `product ${st.index}`}`).join(', ');
+    maken.push(`  Complete look ${product.look.letter}, samen met ${met || 'de andere stukken'}.`);
+    maken.push(`    Maak eerst het lookbeeld (map ${lookFolder(product.look.letter)}); de beelden`);
+    maken.push('    van dit stuk volgen daaruit: zelfde model, zelfde plek, de hele look aan.');
+    if (product.look.notitie) maken.push(`    Hoe gedragen: ${product.look.notitie}`);
+  }
   /* De verhouding is altijd gekozen (het formulier begint op het vierkant); een
      afwijking per beeld staat eronder per nummer (13 augustus 2026). */
   if (product.ratio) maken.push(`  Verhouding  ${product.ratio}`);
@@ -903,6 +956,25 @@ export function scaffoldFiles(order, products, opts = {}) {
         files.push({ name: `${root}/${folder}/${SLOT_FOLDER[shot] || shot}/`, dir: true });
       }
     }
+  }
+
+  /* ── EEN MAP PER COMPLETE LOOK — levering 60 (d-werk) ─────────────────────
+     Met de briefing van de look, de foto's van de klant van ALLE stukken (dezelfde
+     bestanden als in de productmappen, nog een keer, zodat je ze bij het lookbeeld
+     naast elkaar hebt) en de twee vakken van de look. */
+  for (const look of Array.isArray(order.looks) ? order.looks : []) {
+    const folder = lookFolder(look.letter);
+    files.push({ name: `${root}/${folder}/_briefing.txt`, ...txt(lookBriefingText({ order, look })) });
+    files.push({ name: `${root}/${folder}/${SOURCE_FOLDER}/`, dir: true });
+    if (fotos) {
+      for (const st of look.stukken) {
+        const prefix = `${root}/${productFolder(st.index, st.name)}/${SOURCE_FOLDER}/`;
+        for (const f of fotos.ingangen) {
+          if (f.name.startsWith(prefix)) files.push({ ...f, name: `${root}/${folder}/${SOURCE_FOLDER}/${f.name.slice(prefix.length)}` });
+        }
+      }
+    }
+    LOOK_VAKKEN.forEach((v, i) => files.push({ name: `${root}/${folder}/${i + 1} ${v.woord.nl} [${v.id}]/`, dir: true }));
   }
 
   // Eén losse map voor de hele bestelling en niet één per product: extra foto’s

@@ -242,7 +242,10 @@ console.log('\nde rekensom in credits (creditKosten)');
   ok('4K bij catalog telt niet (geen keuze)', creditKosten({ service: 'catalog', products: 2, hoogRes: 2 }).credits, 2 * SERVICE_CREDITS.catalog);
   ok('voorrang: niet met credits (V46 = a)', creditKosten({ service: 'catalog', products: 2, voorrang: true }).nietMet, [NIET_MET_CREDITS.voorrang]);
   ok('  maar wel wat het zonder zou kosten', creditKosten({ service: 'catalog', products: 2, voorrang: true }).credits, 8);
-  ok('outfit: niet met credits', creditKosten({ service: 'lifestyle', products: 2, outfits: 1 }).kan, false);
+  /* Levering 60 (afvinklijst 38, v38-credits a): een complete look kan met credits, 4 per look. */
+  ok('complete look: wel met credits, 4 per look', [creditKosten({ service: 'lifestyle', products: 2, looks: 1 }).kan, creditKosten({ service: 'lifestyle', products: 2, looks: 1 }).credits], [true, 14]);
+  ok('  maar niet bij catalog', creditKosten({ service: 'catalog', products: 2, looks: 1 }).credits, 8);
+  ok('  en nooit meer looks dan er van twee passen', creditKosten({ service: 'lifestyle', products: 3, looks: 5 }).credits, 19);
   ok('eigen look met toeslag: niet met credits', creditKosten({ service: 'lifestyle', products: 2, toeslagCents: 500 }).nietMet, [NIET_MET_CREDITS.toeslag]);
   ok('video (op aanvraag): geen creditprijs', creditKosten({ service: 'video', products: 2 }).credits, null);
   ok('"meer dan 30": geen creditprijs', creditKosten({ service: 'catalog', products: null }).nietMet, [NIET_MET_CREDITS.aantal]);

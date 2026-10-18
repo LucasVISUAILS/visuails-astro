@@ -40,11 +40,13 @@
 import { hashToken, mintToken, portalUrl } from './token.js';
 import { aanhefTekst } from './aanhef.js';
 import { portalVoorvertoning } from './portal.js';
-import { WORDMARK_VIEWBOX, WORDMARK_PATHS } from '../data/wordmarkPath.js';
+import { woordmerkSvg } from '../data/wordmarkPath.js';
 /* Het getekende woordmerk (14 oktober 2026, /admin in de hal), zoals in Studio,
    het portaal en de inlogpagina: geen getypt "VISUAILS" in Anybody meer. De
    naam staat op de link (aria-label), het pad zelf is decoratie. */
-const MERK = `<svg class="woordmerk" viewBox="${WORDMARK_VIEWBOX}" aria-hidden="true" focusable="false">${WORDMARK_PATHS.map((d) => `<path fill-rule="evenodd" d="${d}"/>`).join('')}</svg>`;
+/* 17 oktober 2026 (levering 57, v35-studio a): met de elektrische lijn onder de muis,
+   zoals op de site en in Studio (woordmerkSvg, de beweging in admin.css). */
+const MERK = woordmerkSvg('woordmerk');
 import {
   HERSTEL_AANTAL, TOTP_STAP,
   hashRecoveryCode, mintRecoveryCodes, mintTotpSecret, normaliseRecoveryCode,
@@ -231,7 +233,9 @@ import { readCalendar, videoVelden } from './agenda.js';
 import { videoStyles as VIDEO_STIJLEN_NL } from '../data/videoStyles.nl.js';
 /* Zodat het annuleerregeltje kan zeggen of de klant de bestanden nog heeft. Eén
    waarheid over die vraag; zie de kop van delivery.js. */
-import { leverVakken, vakIds, vakWoord, vakNaam, extraVakken } from '../data/levervakken.js';
+import { leverVakken, vakIds, vakWoord, vakNaam, extraVakken, LOOK_VAKKEN, LOOK_VAK_IDS, isLookSleutel, lookSleutels, vakIdsVoor } from '../data/levervakken.js';
+/* Levering 60 (afvinklijst 38): de complete look op het bord, in de brief en de werkmap. */
+import { looksVan, lookPlekkenVan } from '../data/looks.js';
 import { CHANNELS as KANALEN, channelName } from '../data/channels.js';
 import { leveringIngetrokken } from './delivery.js';
 import { maybeCloseOrder, kanHeropenen, heropenBestelling } from './close.js';
@@ -3016,19 +3020,38 @@ async function serveScaffold(context, orderId) {
         if (!type) return {};
         const keuzes = {};
         for (const sl of contextSlots(type)) keuzes[sl.id] = tekst(details[`context_${sl.id}_${key}`]) || tekst(details[`context_${sl.id}`]) || 'ours';
-        for (const f of klantFotos) if (f.product_key === key && contextShotSlot(f.shot)) keuzes[contextShotSlot(f.shot)] = 'own';
+        for (const f of klantFotos) if (f.product_key === key && contextShotSlot(f.shot) && keuzes[contextShotSlot(f.shot)] !== 'look') keuzes[contextShotSlot(f.shot)] = 'own';
         const crop = cropFor(type);
+        /* De complete look (levering 60): de stukken op hun plek bij naam. */
+        const typeVan = (k) => tekst(details[`garment_p${k}`]) || tekst(details.garment) || '';
+        const naamVan = (k) => `p${k} ${tekst(details[`product_p${k}`]) || `product ${k}`}`;
+        const lookPlek = lookPlekkenVan(details, i, order.product_count, typeVan);
+        const lookNamen = Object.fromEntries(Object.entries(lookPlek).map(([pl, k]) => [pl, naamVan(k)]));
         return {
           garment: type,
           uitsnede: crop ? UITSNEDE_NL[crop.id] || crop.id : null,
-          styling: stylingVoor(type, keuzes, 'nl').regel || null,
+          styling: stylingVoor(type, keuzes, 'nl', lookNamen).regel || null,
         };
       })(),
     });
   }
 
+  /* De complete looks (levering 60, d-werk): per product in welke look het zit, en
+     per look de stukken met hun map — voor de briefing en de map per look. */
+  const looks = looksVan(details, order.product_count).map((l) => ({
+    letter: l.letter,
+    notitie: l.notitie,
+    /* b-regels: één gezicht voor de hele look, dat van het eerste stuk. */
+    gezicht: (products.find((p) => p.index === l.producten[0]) || {}).model || 'wij kiezen er een',
+    stukken: l.producten.map((k) => ({ index: k, name: tekst(details[`product_p${k}`]), garment: tekst(details[`garment_p${k}`]) || tekst(details.garment) || '' })),
+  }));
+  for (const p of products) {
+    const l = looks.find((x) => x.stukken.some((st) => st.index === p.index));
+    if (l) p.look = { letter: l.letter, notitie: l.notitie, met: l.stukken.filter((st) => st.index !== p.index) };
+  }
   const orderForText = {
     ...order,
+    looks,
     notes: tekst(details.message) || tekst(details.notes),
     /* Zie de noot bij VOORRANG in de briefing: een betaalde afspraak met een
        klok eraan hoort in de werkmap en niet alleen in een e-mail. */
@@ -3605,7 +3628,11 @@ async function renderFiles(context, orderId) {
      zie src/data/levervakken.js. De sleutels in de database blijven dezelfde. */
   const VAKKEN = leverVakken(order.service, order.details_json);
   const SHOT_KEYS = VAKKEN.map((v) => v.id);
-  const VAK_LABEL = Object.fromEntries(VAKKEN.map((v) => [v.id, v.nl]));
+  /* De lookvakken erbij voor de namen (levering 60): `look-geheel`, `look-samen`. */
+  const VAK_LABEL = Object.fromEntries([...VAKKEN, ...LOOK_VAKKEN].map((v) => [v.id, v.nl]));
+  /* De looks van deze bestelling, met hun sleutel op het bord (`lA`). */
+  const LOOK_KEYS = lookSleutels(order.details_json, order.product_count);
+  const sleutelNaam = (k) => (isLookSleutel(k) ? `look ${k.slice(1)}` : `product ${k.slice(1)}`);
   const vakLabel = (k) => VAK_LABEL[k] || SHOT_LABEL[k] || k;
   const VAK_ALLE = Object.fromEntries(leverVakken('catalog', order.details_json).map((v) => [v.id, v.nl]));
   const productOptions = (() => {
@@ -3613,8 +3640,10 @@ async function renderFiles(context, orderId) {
     for (const f of files) if (f.product_key) keys.add(f.product_key);
     const n = Number(order.product_count) || 0;
     for (let i = 1; i <= Math.min(n, 60); i++) keys.add(`p${i}`);
-    return [...keys].sort((a, b) => (Number(a.slice(1)) || 0) - (Number(b.slice(1)) || 0));
+    /* Alleen de producten: de looks hebben hun eigen rijen (lookOptions). */
+    return [...keys].filter((k) => !isLookSleutel(k)).sort((a, b) => (Number(a.slice(1)) || 0) - (Number(b.slice(1)) || 0));
   })();
+  const lookOptions = [...new Set([...LOOK_KEYS, ...files.map((f) => f.product_key).filter(isLookSleutel)])].sort();
 
   /* `aria-label` erbij — 2 september 2026. axe-core: "Select element must have
      an accessible name", twaalf keer op één bestandenpagina. In de tabel staat
@@ -3635,8 +3664,8 @@ async function renderFiles(context, orderId) {
     const cls = [revising ? 'is-revising' : '', dead ? 'is-superseded' : ''].filter(Boolean).join(' ');
     return `<tr class="${cls}">
       <td class="thumbcell"><a href="/admin/files/${f.id}" aria-label="${esc(f.filename || `bestand ${f.id}`)} op volle grootte openen"><img class="thumb" src="/admin/files/${f.id}" alt=""></a></td>
-      <td>${select(`p${f.id}`, f.product_key || '', productOptions.map((k) => [k, `Product ${k.slice(1)}`]), '— niet gezet —', `Product voor ${f.filename || `bestand ${f.id}`}`)}</td>
-      <td>${select(`s${f.id}`, f.shot || '', SHOT_KEYS.map((k) => [k, vakLabel(k)]), '— niet gezet —', `Foto voor ${f.filename || `bestand ${f.id}`}`)}</td>
+      <td>${select(`p${f.id}`, f.product_key || '', [...productOptions.map((k) => [k, `Product ${k.slice(1)}`]), ...lookOptions.map((k) => [k, `Look ${k.slice(1)}`])], '— niet gezet —', `Product voor ${f.filename || `bestand ${f.id}`}`)}</td>
+      <td>${select(`s${f.id}`, f.shot || '', [...SHOT_KEYS, ...(lookOptions.length ? LOOK_VAK_IDS : [])].map((k) => [k, vakLabel(k)]), '— niet gezet —', `Foto voor ${f.filename || `bestand ${f.id}`}`)}</td>
       <td><a href="/admin/files/${f.id}">${esc(f.filename || `file-${f.id}`)}</a>
         ${dead ? '<br><span class="muted">vervangen</span>' : ''}
         ${revising ? '<br><strong>revisie gevraagd</strong>' : ''}</td>
@@ -3677,9 +3706,11 @@ async function renderFiles(context, orderId) {
   }
 
   const boardProducts = productOptions.length ? productOptions : [];
-  const totalSlots = boardProducts.length * SHOT_KEYS.length;
+  /* Plus de twee vakjes van elke look (levering 60). */
+  const totalSlots = boardProducts.length * SHOT_KEYS.length + lookOptions.length * LOOK_VAK_IDS.length;
   const filledSlots = boardProducts.reduce((n, key) =>
-    n + SHOT_KEYS.filter((sh) => liveByKey.has(`${key}|${sh}`)).length, 0);
+    n + SHOT_KEYS.filter((sh) => liveByKey.has(`${key}|${sh}`)).length, 0)
+    + lookOptions.reduce((n, key) => n + LOOK_VAK_IDS.filter((sh) => liveByKey.has(`${key}|${sh}`)).length, 0);
 
   /* ── DE HERKOMSTTAG PER BEELD — 8 oktober 2026 (punt 4.01) ────────────────
      "AI-tag" als het opgeslagen bestand de tag draagt, "geen AI-tag" in de
@@ -3712,7 +3743,7 @@ async function renderFiles(context, orderId) {
         <form method="post" action="/admin/orders/${order.id}/deliver" enctype="multipart/form-data">
           <input type="hidden" name="product" value="${esc(productKey)}">
           <input type="hidden" name="shot" value="${esc(shotKey)}">
-          <input type="file" name="files" required aria-label="${esc(vakLabel(shotKey))} uploaden voor product ${esc(productKey.slice(1))}">
+          <input type="file" name="files" required aria-label="${esc(vakLabel(shotKey))} uploaden voor ${esc(sleutelNaam(productKey))}">
           <button class="btn btn-ghost btn-sm" type="submit">Uploaden</button>
         </form>
       </div>`;
@@ -3728,7 +3759,7 @@ async function renderFiles(context, orderId) {
            dus axe-core las "Links must have discernible text" — twaalf keer.
            Het alt blijft leeg, want het beeld zelf is decoratie in deze rij; de
            LINK krijgt de naam, want dat is wat er aangeklikt wordt. */ ''}
-      <a href="/admin/files/${f.id}" target="_blank" rel="noopener" aria-label="${esc(vakLabel(shotKey))} van product ${esc(productKey.slice(1))} op ware grootte openen"><img class="slot-img" src="/admin/files/${f.id}" alt="" loading="lazy"></a>
+      <a href="/admin/files/${f.id}" target="_blank" rel="noopener" aria-label="${esc(vakLabel(shotKey))} van ${esc(sleutelNaam(productKey))} op ware grootte openen"><img class="slot-img" src="/admin/files/${f.id}" alt="" loading="lazy"></a>
       <span class="slot-state">${revising ? 'revisie gevraagd' : fresh ? 'niet gemeld' : 'gemeld'}</span>
       ${tagChips(f)}
       ${/* ── WAT DE KLANT ZEI, OP HET VAKJE ZELF — 2 oktober 2026 (ronde 9, F14) ──
@@ -3742,7 +3773,7 @@ async function renderFiles(context, orderId) {
       <form method="post" action="/admin/orders/${order.id}/deliver" enctype="multipart/form-data">
         <input type="hidden" name="product" value="${esc(productKey)}">
         <input type="hidden" name="shot" value="${esc(shotKey)}">
-        <input type="file" name="files" required aria-label="${esc(vakLabel(shotKey))} vervangen voor product ${esc(productKey.slice(1))}">
+        <input type="file" name="files" required aria-label="${esc(vakLabel(shotKey))} vervangen voor ${esc(sleutelNaam(productKey))}">
         <button class="btn btn-quiet btn-sm" type="submit">Vervangen</button>
       </form>
     </div>`;
@@ -3798,8 +3829,15 @@ async function renderFiles(context, orderId) {
     const keuzes = {};
     for (const sl of slots) keuzes[sl.id] = dPer(`context_${sl.id}`, n) || String(details[`context_${sl.id}`] || '').trim() || 'ours';
     const eigen = uploadsVan(key).filter((f) => contextShotSlot(f.shot));
-    for (const f of eigen) keuzes[contextShotSlot(f.shot)] = 'own';
-    const styling = type ? stylingVoor(type, keuzes, 'nl') : null;
+    /* Een foto van een eigen stuk maakt de plek 'own', behalve waar een stuk uit de
+       look staat (levering 60): dat is de keuze van de klant, de foto is oud. */
+    for (const f of eigen) if (keuzes[contextShotSlot(f.shot)] !== 'look') keuzes[contextShotSlot(f.shot)] = 'own';
+    /* De stukken uit de look bij naam: "top: p1 Hoodie zwart". */
+    const typeVan = (k) => dPer('garment', k) || String(details.garment || '').trim();
+    const lookPlek = lookPlekkenVan(details, n, order.product_count, typeVan);
+    const lookNamen = Object.fromEntries(Object.entries(lookPlek).map(([pl, k]) => [pl, `p${k} ${dPer('product', k) || `Product ${k}`}`]));
+    const styling = type ? stylingVoor(type, keuzes, 'nl', lookNamen) : null;
+    const lookHier = looksVan(details, order.product_count).find((l) => l.producten.includes(n));
 
     const feiten = [
       g ? `<b>${esc(g.name.nl)}</b>` : '<span class="brief-leeg">type niet gekozen</span>',
@@ -3839,7 +3877,8 @@ async function renderFiles(context, orderId) {
     const refs = uploadsVan(key).filter((f) => isRefShotId(f.shot)).map((f) => `<span class="brief-vak"><span class="brief-vak-l">ref</span>${duim(f)}${na(f)}</span>`).join('');
     const los = uploadsVan(key).filter((f) => !f.shot).map((f) => `<span class="brief-vak"><span class="brief-vak-l">?</span>${duim(f)}${na(f)}</span>`).join('');
     const erbij = eigen.map((f) => { const sl = contextShotSlot(f.shot); return `<span class="brief-vak is-erbij"><span class="brief-vak-l">${esc(CONTEXT_SLOTS[sl] ? CONTEXT_SLOTS[sl].name.nl : sl)}</span>${duim(f, true)}</span>`; }).join('');
-    const ons = styling ? styling.delen.filter((d2) => !d2.eigen).map((d2) => `${esc(d2.naam.toLowerCase())}: ${esc(d2.tekst)}`).join(' · ') : '';
+    const ons = styling ? styling.delen.filter((d2) => !d2.eigen && !d2.look).map((d2) => `${esc(d2.naam.toLowerCase())}: ${esc(d2.tekst)}`).join(' · ') : '';
+    const uitLook = styling ? styling.delen.filter((d2) => d2.look).map((d2) => `${esc(d2.naam.toLowerCase())}: ${esc(d2.tekst)}`).join(' · ') : '';
 
     return `<div class="brief">
       <div class="brief-pop">${poppetjeSvg({ crop: crop ? crop.id : 'full', product: type, own: Object.keys(keuzes).filter((k) => keuzes[k] === 'own'), klein: true })}</div>
@@ -3848,6 +3887,7 @@ async function renderFiles(context, orderId) {
         <div class="brief-rij"><span class="brief-kop">Aangeleverd</span><div class="brief-vakken">${perHoek || refs || los ? perHoek + refs + los : '<span class="brief-leeg">nog geen foto’s</span>'}</div></div>
         ${slots.length ? `<div class="brief-rij"><span class="brief-kop">Erbij gezet</span><div class="brief-vakken">${erbij || '<span class="brief-leeg">niets — wij kiezen alles</span>'}</div></div>` : ''}
         ${slots.length ? `<div class="brief-rij"><span class="brief-kop">Wij kiezen</span><p class="brief-ons">${ons || '<span class="brief-leeg">—</span>'}</p></div>` : ''}
+        ${lookHier ? `<div class="brief-rij"><span class="brief-kop">Look ${esc(lookHier.letter)}</span><p class="brief-ons"><strong>Complete look</strong> met ${lookHier.producten.filter((k) => k !== n).map((k) => `<a href="#p${k}">p${k}</a> ${esc(dPer('product', k) || `Product ${k}`)}`).join(', ')}${uitLook ? ` · ${uitLook}` : ''} · <a href="#l${esc(lookHier.letter)}">naar de look</a></p></div>` : ''}
       </div>
     </div>`;
   };
@@ -3894,6 +3934,41 @@ async function renderFiles(context, orderId) {
     </details>`;
   };
 
+  /* ── DE COMPLETE LOOK OP HET BORD — 17 oktober 2026 (levering 60) ──────────
+     Afvinklijst 38 (d-werk): per look de stukken, op welke plek ze staan, de
+     notitie van de klant, en "maak eerst het lookbeeld; de beelden van de stukken
+     volgen daaruit". Daaronder de twee vakjes van de look (LOOK_VAKKEN). Geen
+     eigen meldknop: de looks gaan mee met "alles melden" onderaan. */
+  const looksHier = looksVan(details, order.product_count);
+  const lookRow = (key) => {
+    const letter = key.slice(1);
+    const look = looksHier.find((l) => l.letter === letter);
+    const done = LOOK_VAK_IDS.filter((sh) => liveByKey.has(`${key}|${sh}`)).length;
+    const fresh = LOOK_VAK_IDS.filter((sh) => { const f = liveByKey.get(`${key}|${sh}`); return f && migrated && !f.announced_at; }).length;
+    const revisie = LOOK_VAK_IDS.some((sh) => { const f = liveByKey.get(`${key}|${sh}`); return f && f.review_state === 'revision_requested'; });
+    const klaar = done === LOOK_VAK_IDS.length && fresh === 0 && !revisie;
+    const stand = klaar ? 'af' : revisie ? 'revisie' : fresh ? `${fresh} niet gemeld` : done ? `${done}/${LOOK_VAK_IDS.length}` : 'nog niets';
+    const stukken = look ? look.producten.map((n) => {
+      const type = dPer('garment', n) || String(details.garment || '').trim();
+      const soort = type ? garmentVan(type).name.nl.toLowerCase() : 'soort niet gekozen';
+      return `<a href="#p${n}">p${n}</a> ${esc(dPer('product', n) || `Product ${n}`)} <span class="meta">(${esc(soort)})</span>`;
+    }).join(' · ') : '<span class="brief-leeg">deze look staat niet meer in de bestelling</span>';
+    return `<details class="board-row board-look${klaar ? ' is-af' : ''}${revisie ? ' is-revisie' : ''}" id="${esc(key)}"${klaar ? '' : ' open'}>
+      <summary class="board-head">
+        <h3>Look ${esc(letter)} <span class="board-naam">complete look${look ? ` · ${look.producten.length} stukken` : ''}</span></h3>
+        <span class="board-count${done === LOOK_VAK_IDS.length ? ' is-full' : ''}">${done}/${LOOK_VAK_IDS.length}</span>
+        <span class="board-stand">${esc(stand)}</span>
+      </summary>
+      <div class="brief is-look"><div class="brief-body">
+        <div class="brief-rij"><span class="brief-kop">Stukken</span><p class="brief-ons">${stukken}</p></div>
+        ${look && look.notitie ? `<div class="brief-rij"><span class="brief-kop">Hoe gedragen</span><p class="brief-ons">“${esc(look.notitie)}”</p></div>` : ''}
+        <div class="brief-rij"><span class="brief-kop">Werkwijze</span><p class="brief-ons"><strong>Maak eerst het lookbeeld;</strong> de beelden van de stukken volgen daaruit. Eén model, één plek.</p></div>
+      </div></div>
+      <div class="board-uit"><span class="brief-kop">Leveren</span></div>
+      <div class="slots">${LOOK_VAK_IDS.map((sh) => slot(key, sh)).join('')}</div>
+    </details>`;
+  };
+
   /* ── DE INDEX BOVEN HET BORD — bij vier producten of meer ───────────────────
      Dertig blokken onder elkaar zijn dertig keer scrollen om te zien waar je
      bent. Eén regel bovenaan met elk product als schakel, en zijn stand als
@@ -3913,7 +3988,8 @@ async function renderFiles(context, orderId) {
   const board = boardProducts.length
     ? `<p class="muted">${filledSlots} van ${totalSlots} vakjes gevuld. Bestanden worden meteen opgeslagen. ${order.delivery_mailed_at ? 'Een vervanging ziet de klant meteen; de mail gaat pas als je meldt.' : 'De klant ziet niets tot je de bestelling op geleverd zet.'} Een product dat af én gemeld is, klapt dicht.</p>
        ${index}
-       ${boardProducts.map(productRow).join('')}`
+       ${boardProducts.map(productRow).join('')}
+       ${lookOptions.map(lookRow).join('')}`
     : '<p class="muted">Op deze bestelling staat geen aantal producten, dus er is geen bord om te vullen. Upload hieronder en deel de bestanden met de hand in.</p>';
 
   const unmapped = delivery.filter((f) => !f.superseded_at && (!f.product_key || !f.shot)).length;
@@ -4418,6 +4494,9 @@ async function renderFiles(context, orderId) {
       /* De bijbestelde hoeken: betaald per foto, dus ze horen in dit overzicht
          en niet alleen in de werkmap (ronde 9, F17b). */
       rij('Extra hoeken', (() => { const x = extraVakken(d); return x.length ? `<strong>${x.map((v) => esc(v.nl)).join(', ')}</strong> — bij elk product` : ''; })()),
+      /* De complete looks (levering 60, d-werk): per look de stukken en de notitie.
+         Op het bord staat elke look als eigen rij met zijn twee vakjes. */
+      rij('Complete looks', looksVan(d, order.product_count).map((l) => `<strong><a href="#l${esc(l.letter)}">Look ${esc(l.letter)}</a></strong> — ${l.producten.map((n) => `p${n} ${esc(String(d[`product_p${n}`] || '').trim() || `Product ${n}`)}`).join(', ')}${l.notitie ? ` · “${esc(l.notitie)}”` : ''}`).join('<br>')),
       rij('Kledingsoort', d.garment ? esc(garmentVan(String(d.garment)).name.nl) : ''),
       /* Ronde 9, O39: bij een bestelling die jij namens de klant aanmaakte, is het
          jouw notitie en niet zijn bericht. */
@@ -4802,9 +4881,11 @@ async function handleFileMapping({ request, env }, orderId) {
     if (!mine.has(fileId)) continue;
     if (m[1] === 's') continue;   // shots worden bij het product opgehaald, hieronder
 
-    const product = /^p\d{1,3}$/.test(String(raw)) ? String(raw) : null;
+    const product = /^p\d{1,3}$/.test(String(raw)) || isLookSleutel(String(raw)) ? String(raw) : null;
     const shotRaw = String(form.get(`s${fileId}`) || '');
-    const shot = TOEGESTAAN.includes(shotRaw) ? shotRaw : null;
+    /* Een look heeft zijn eigen twee vakjes (levering 60). */
+    const magHier = product && isLookSleutel(product) ? LOOK_VAK_IDS : TOEGESTAAN;
+    const shot = magHier.includes(shotRaw) ? shotRaw : null;
     updates.push(
       env.DB.prepare('UPDATE files SET product_key = ?2, shot = ?3 WHERE id = ?1 AND order_id = ?4')
         .bind(fileId, product, shot, orderId)
@@ -4930,6 +5011,10 @@ async function serveAdminFile(context, fileId) {
  * "voorkant" — dezelfde regel die schema.sql bij deze kolom noteert.
  */
 const SHOT_WORDS = [
+  /* De twee beelden van een complete look (levering 60), vóór de rest: "van top tot
+     teen" en "stukken samen" bevatten geen ander shotwoord, maar zo blijft het zo. */
+  ['look-geheel', /\b(van top tot teen|head to toe|look geheel)\b/i],
+  ['look-samen', /\b(stukken samen|pieces together|look samen)\b/i],
   ['front', /\b(front|voor|voorkant|vk)\b/i],
   ['back', /\b(back|achter|achterkant|ak)\b/i],
   ['detail', /\b(detail|close|closeup|dtl)\b/i],
@@ -4946,6 +5031,10 @@ export function guessProductShot(filename) {
   const words = base.replace(/[_\-.]+/g, ' ');
 
   let product = null;
+  /* Een complete look: `VIS-2608-4471-lA-van-top-tot-teen.jpg` (levering 60).
+     Hoofdletter-gevoelig, zodat "la" in een gewoon woord geen look wordt. */
+  const look = words.match(/(?:^|\s)l([A-J])(?=\s|$)/);
+  if (look) return { product: `l${look[1]}`, shot: SHOT_WORDS.slice(0, 2).find(([, re]) => re.test(words))?.[0] || null };
   const explicit = words.match(/\b(?:p|prod|product)\s*0*(\d{1,3})\b/i);
   if (explicit) product = `p${Number(explicit[1])}`;
   if (!product) {
@@ -5030,8 +5119,10 @@ async function handleDeliveryUpload({ request, env }, orderId) {
    * losse veld onderaan (een stapel in één keer), dan blijft de gok staan en
    * corrigeer je hem in de indeeltabel.
    */
-  const slotProduct = /^p\d{1,3}$/.test(String(form.get('product') || '')) ? String(form.get('product')) : null;
-  const VAK_IDS = vakIds(order.service, order.details_json);
+  /* Ook een look (`lA`, levering 60), met zijn eigen twee vakjes. */
+  const productVeld = String(form.get('product') || '');
+  const slotProduct = /^p\d{1,3}$/.test(productVeld) || isLookSleutel(productVeld) ? productVeld : null;
+  const VAK_IDS = vakIdsVoor(order.service, order.details_json, slotProduct);
   const slotShot = VAK_IDS.includes(String(form.get('shot') || '')) ? String(form.get('shot')) : null;
 
   /* ── HOORT DEZE MAP BIJ DEZE BESTELLING? — 8 oktober 2026 (punt 4.02) ──────
@@ -5145,7 +5236,9 @@ async function handleDeliveryUpload({ request, env }, orderId) {
     /* Een gok die bij deze dienst geen vakje is (op-model bij lifestyle) wordt
        niets, zodat hij in de indeeltabel als "niet gezet" opvalt (ronde 9). */
     const gok = fromPath.shot || guessed.shot;
-    const shot = slotShot || (VAK_IDS.includes(gok) ? gok : null);
+    /* De vakjes van DIT product: bij een look (`lA`, uit de map `lA - Look A`) de
+       twee lookbeelden (levering 60). */
+    const shot = slotShot || (vakIdsVoor(order.service, order.details_json, product).includes(gok) ? gok : null);
     /* En de naam die de KLANT straks ziet. Weten we product en shot, dan maken wij
        er `VIS-2608-4471-p1-voorkant.png` van in plaats van `upscaled_v3(2).png`.
        Dat is het tweede stuk van "hernoemen helemaal weg": niet alleen hoeft de
@@ -6280,7 +6373,8 @@ async function handleAnnounceRedelivery(context, orderId) {
   // PER PRODUCT OF PER BESTELLING. Lucas wilde allebei kunnen: een product dat
   // af is meteen de deur uit, of aan het eind alles in één bericht. Zonder
   // `product` gaat het over de hele bestelling — dat is de knop onderaan.
-  const product = /^p\d{1,3}$/.test(String(form?.get('product') || '')) ? String(form.get('product')) : null;
+  const productVeld = String(form?.get('product') || '');
+  const product = /^p\d{1,3}$/.test(productVeld) || isLookSleutel(productVeld) ? productVeld : null;
   /* 4.05 / 4.08: de knop staat ook in de Nu-doen-lijst en op de afgehandelde
      revisiekaart van het dashboard. Dan terug naar het dashboard, met de
      bevestiging daar; alleen deze ene waarde, geen vrije terugweg. */

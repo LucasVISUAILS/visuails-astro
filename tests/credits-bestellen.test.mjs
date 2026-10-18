@@ -9,7 +9,8 @@
  *   · genoeg credits → 'credits', paid_at meteen, credits_used, geen Mollie,
  *     geen factuur, bedankpagina met paid=, de mails zeggen "credits" en geen bedrag;
  *   · te weinig → gewoon via Mollie, niets afgeboekt (nooit mengen);
- *   · voorrang / outfit → de hele bestelling via Mollie (6.06, V46 = a);
+ *   · voorrang → de hele bestelling via Mollie (6.06, V46 = a); een complete look
+ *     kan met credits, 4 per look (levering 60, v38-credits a);
  *   · tegoed én credits → credits eerst, het tegoed blijft staan (V40 = a);
  *   · niet ingelogd → nooit credits, ook niet met hetzelfde adres;
  *   · twee bestellingen tegelijk → samen nooit meer dan het saldo;
@@ -130,15 +131,22 @@ console.log('\n2 · te weinig credits: gewoon via Mollie, niets afgeboekt');
   ok('in details staat waarom niet', /te weinig/.test(r.details.credits_niet || ''), true);
 }
 
-console.log('\n3 · voorrang of een outfit: de hele bestelling via Mollie (6.06, V46 = a)');
+console.log('\n3 · voorrang: de hele bestelling via Mollie (6.06, V46 = a); een complete look kan met credits');
 {
   const voor = await creditsBeschikbaar(env, 1);
   const a = await bestel({ products: '2', voorrang: '1' });
   ok('voorrang → onbetaald, via Mollie', [a.o && a.o.payment_status, a.mollie], ['unpaid', true]);
   ok('  saldo onveranderd', await creditsBeschikbaar(env, 1), voor);
+  /* Levering 60 (afvinklijst 38): een oud formulier met `outfit_count` betaalt daar
+     niets meer voor; het veld gaat niet in het dossier. */
   const b = await bestel({ service: 'lifestyle', products: '2', outfit_count: '1' });
-  ok('outfit → onbetaald, via Mollie', [b.o && b.o.payment_status, b.mollie], ['unpaid', true]);
-  ok('  saldo onveranderd', await creditsBeschikbaar(env, 1), voor);
+  ok('een oude outfit_count: gewoon met credits, zonder toeslag', [b.o && b.o.payment_status, b.o && b.o.credits_used], ['credits', 2 * 5]);
+  ok('  en outfit_count staat niet in het dossier', b.details.outfit_count === undefined, true);
+  /* v38-credits a: een complete look kost 4 credits. */
+  const c = await bestel({ service: 'lifestyle', products: '2', garment_p1: 'top', garment_p2: 'trousers', look_p1: 'A', look_p2: 'A', context_bottom_p1: 'look', context_top_p2: 'look' });
+  ok('een complete look → met credits, 2 × 5 + 4', [c.o && c.o.payment_status, c.o && c.o.credits_used, c.mollie], ['credits', 14, false]);
+  ok('  de look staat in het dossier', [c.details.look_p1, c.details.look_p2, c.details.context_bottom_p1], ['A', 'A', 'look']);
+  ok('  saldo 24 lager', await creditsBeschikbaar(env, 1), voor - 24);
 }
 
 console.log('\n4 · tegoed én credits: credits eerst, het tegoed blijft (V40 = a)');

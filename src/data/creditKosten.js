@@ -14,16 +14,18 @@
  * Geen database en geen DOM: alleen rekenen, en dus ook in de browser te laden.
  *
  * ── WAT MET CREDITS KAN (6.06) ───────────────────────────────────────────────
- * Alles wat op de creditkaart staat: catalogset, carrousel, extra foto, 4K.
- * Voorrang (V46 = a), een outfit of de toeslag van een eigen look bestaan alleen
- * in euro's; kiest de klant er één, dan gaat de HELE bestelling via Mollie tegen
- * het gewone tarief. Nooit mengen (§28.2.4): een deelbedrag zou een tweede
- * factuur vragen, en de termijnfactuur is al de factuur.
+ * Alles wat op de creditkaart staat: catalogset, carrousel, extra foto, 4K, en
+ * sinds 17 oktober 2026 de complete look (4 credits per look, afvinklijst 38,
+ * v38-credits a: een abonnee die een look wil, hoefde tot dan ook zijn producten
+ * met geld te betalen). Voorrang (V46 = a) en de toeslag van een eigen look
+ * bestaan alleen in euro's; kiest de klant er één, dan gaat de HELE bestelling via
+ * Mollie tegen het gewone tarief. Nooit mengen (§28.2.4): een deelbedrag zou een
+ * tweede factuur vragen, en de termijnfactuur is al de factuur.
  *
  * Video staat op aanvraag (§2.4) en heeft hier dus geen prijs; een offerte kan
  * later in /admin met credits betaald worden.
  */
-import { SERVICE_CREDITS, EXTRA_CREDITS } from './pricing.js';
+import { SERVICE_CREDITS, EXTRA_CREDITS, LOOK_CREDITS } from './pricing.js';
 
 /** De diensten die in het bestelformulier met credits betaald kunnen worden. */
 export const CREDIT_DIENSTEN = Object.freeze(['catalog', 'lifestyle']);
@@ -33,7 +35,6 @@ export const NIET_MET_CREDITS = Object.freeze({
   dienst: 'dienst',       // geen catalog of lifestyle (video, merkmodel, proef, eigen look aanvragen)
   aantal: 'aantal',       // geen bekend aantal producten ("meer dan 30")
   voorrang: 'voorrang',   // V46 = a
-  outfit: 'outfit',
   toeslag: 'toeslag',     // een eigen look met toeslag
 });
 
@@ -44,8 +45,8 @@ const heel = (n) => Math.max(0, Math.floor(Number(n) || 0));
  *
  * De invoer is wat quoteOrder() al geklemd heeft (server) of wat het formulier
  * nu toont (browser): `products` producten van `service`, `extras` extra foto's
- * (hoeken × producten), `hoogRes` producten in 4K, `outfits`, `voorrang` en de
- * `toeslagCents` van een eigen look per product.
+ * (hoeken × producten), `hoogRes` producten in 4K, `looks` complete looks
+ * (alleen lifestyle), `voorrang` en de `toeslagCents` van een eigen look per product.
  *
  * Geeft altijd een object:
  *   { kan, credits, nietMet: [...], regels: [{ soort, aantal, per, credits }] }
@@ -53,7 +54,7 @@ const heel = (n) => Math.max(0, Math.floor(Number(n) || 0));
  * anders het getal, ook als `kan` false is door een optie — dan weet stap 5 wat
  * het ZONDER die optie zou kosten.
  */
-export function creditKosten({ service, products, extras = 0, hoogRes = 0, outfits = 0, voorrang = false, toeslagCents = 0 } = {}) {
+export function creditKosten({ service, products, extras = 0, hoogRes = 0, looks = 0, voorrang = false, toeslagCents = 0 } = {}) {
   const nietMet = [];
   const dienst = String(service || '');
   const per = CREDIT_DIENSTEN.includes(dienst) ? SERVICE_CREDITS[dienst] : undefined;
@@ -62,7 +63,6 @@ export function creditKosten({ service, products, extras = 0, hoogRes = 0, outfi
   const aantalOk = Number.isFinite(n) && n >= 1;
   if (!aantalOk) nietMet.push(NIET_MET_CREDITS.aantal);
   if (voorrang) nietMet.push(NIET_MET_CREDITS.voorrang);
-  if (heel(outfits) > 0) nietMet.push(NIET_MET_CREDITS.outfit);
   if (heel(toeslagCents) > 0) nietMet.push(NIET_MET_CREDITS.toeslag);
 
   if (!per || !aantalOk) return { kan: false, credits: null, nietMet, regels: [] };
@@ -74,6 +74,10 @@ export function creditKosten({ service, products, extras = 0, hoogRes = 0, outfi
      in het formulier. Geklemd op het aantal producten. */
   const h = dienst === 'lifestyle' ? Math.min(heel(hoogRes), n) : 0;
   if (h) regels.push({ soort: 'hires', aantal: h, per: EXTRA_CREDITS.hires, credits: h * EXTRA_CREDITS.hires });
+  /* Looks alleen bij lifestyle, net als quoteOrder(), en nooit meer dan er looks
+     van twee stukken in het aantal passen. */
+  const l = dienst === 'lifestyle' ? Math.min(heel(looks), Math.floor(n / 2)) : 0;
+  if (l) regels.push({ soort: 'look', aantal: l, per: LOOK_CREDITS, credits: l * LOOK_CREDITS });
   const credits = regels.reduce((s, r) => s + r.credits, 0);
   return { kan: nietMet.length === 0, credits, nietMet, regels };
 }
@@ -87,7 +91,7 @@ export function creditKosten({ service, products, extras = 0, hoogRes = 0, outfi
  * `hoogRes` blijft een aantal producten en gaat mee omlaag als het aantal
  * zakt. Geeft { past, eraf } of null als er geen creditprijs is.
  */
-export function watPast({ service, products, extrasPerProduct = 0, hoogRes = 0, saldo = 0 } = {}) {
+export function watPast({ service, products, extrasPerProduct = 0, hoogRes = 0, looks = 0, saldo = 0 } = {}) {
   const dienst = String(service || '');
   const per = CREDIT_DIENSTEN.includes(dienst) ? SERVICE_CREDITS[dienst] : undefined;
   const n = Math.floor(Number(products));
@@ -95,9 +99,13 @@ export function watPast({ service, products, extrasPerProduct = 0, hoogRes = 0, 
   const s = heel(saldo);
   const hoek = heel(extrasPerProduct);
   const h = dienst === 'lifestyle' ? Math.min(heel(hoogRes), n) : 0;
+  /* De looks blijven staan zolang ze passen: wie producten weghaalt, haalt eerst
+     de losse weg. Een look van twee stukken past niet meer onder de twee. */
+  const l = dienst === 'lifestyle' ? heel(looks) : 0;
   let past = 0;
   for (let m = n; m >= 1; m -= 1) {
-    const kost = m * per + m * hoek * EXTRA_CREDITS.photo + Math.min(h, m) * EXTRA_CREDITS.hires;
+    const kost = m * per + m * hoek * EXTRA_CREDITS.photo + Math.min(h, m) * EXTRA_CREDITS.hires
+      + Math.min(l, Math.floor(m / 2)) * LOOK_CREDITS;
     if (kost <= s) { past = m; break; }
   }
   return { past, eraf: n - past };

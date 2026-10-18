@@ -247,15 +247,18 @@ ok('tests/ronde9.test.mjs kent DOOD niet meer', /DOOD/.test(lees('tests/ronde9.t
 /* Na OPRUIMEN.bat is hij van de lijst, maar dan ook uit src/components: dat telt ook. */
 ok('  en HomeV2.astro staat in LIJST.txt (of is al opgeruimd)', /src\/components\/HomeV2\.astro #/.test(lees('_opruimen/LIJST.txt')) || !existsSync(new URL('../src/components/HomeV2.astro', import.meta.url)), true);
 
-console.log('\nC #17 · §17.25 · Rae laadt haar kleine bestand; lichtgrijs heeft nog een naam');
+console.log('\nC #17 · §17.25 · Rae laadt haar kleine bestand; het oude grijs heeft nog een naam');
 {
   const { ROSTER } = await import('../src/data/models.js');
   const rae = ROSTER.find((m) => m.name === 'Rae');
   ok('de thumb van Rae is het -w800-bestand', rae.thumb, '/img/model-rae-w800.webp');
   ok('  en dat bestand staat in public/img', existsSync(new URL('../public/img/model-rae-w800.webp', import.meta.url)), true);
   const { achtergrondNaam, RECOMMENDED } = await import('../src/data/backgrounds.js');
-  ok('#EDEDED heet Lichtgrijs', [achtergrondNaam('#ededed', 'nl'), achtergrondNaam('#EDEDED', 'en')], ['Lichtgrijs', 'Light grey']);
+  /* 17 oktober 2026 (levering 58): Lichtgrijs is nu #F5F5F5, de aanbevolen kleur. Het oude
+     #EDEDED heet daarom Grijs, zodat twee kleuren niet dezelfde naam dragen. */
+  ok('#EDEDED heet Grijs', [achtergrondNaam('#ededed', 'nl'), achtergrondNaam('#EDEDED', 'en')], ['Grijs', 'Grey']);
   ok('  maar staat niet weer in de keuzelijst', RECOMMENDED.some((b) => b.hex.toUpperCase() === '#EDEDED'), false);
+  ok('  en Lichtgrijs is #F5F5F5', [achtergrondNaam('#f5f5f5', 'nl'), achtergrondNaam('#F5F5F5', 'en')], ['Lichtgrijs', 'Light grey']);
 }
 
 console.log(`\n${pass}/${pass + fail} geslaagd`);

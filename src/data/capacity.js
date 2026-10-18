@@ -50,6 +50,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { WINDOW_THRESHOLD, KIND_PUNTEN, puntenVoor, agendaKind, lifestyleBeeldenVan } from './pricing.js';
+/* Levering 60: een complete look weegt in de agenda een half product (d-werk). */
+import { lookAantal, LOOK_PRODUCT_DEEL } from './looks.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1 · HET PLAFOND
@@ -619,7 +621,23 @@ export function rowPunten(r = {}) {
   /* De stijl gaat mee zodat STYLE_PUNTEN kan afwijken van de soort. Bij video is
      de stijl al in agendaKind() verwerkt (die kiest de soort ermee); bij foto's
      staat hij hier voor het geval een look ooit zwaarder blijkt te wegen. */
-  return puntenVoor(kind, aantal, dienst === 'video' ? '' : r.style);
+  const basis = puntenVoor(kind, aantal, dienst === 'video' ? '' : r.style);
+  /* ── EEN COMPLETE LOOK WEEGT EEN HALF PRODUCT — 17 oktober 2026 (levering 60) ──
+     Afvinklijst 38 (d-werk): de twee lookbeelden zijn twee van de vier beelden
+     van een product. Alleen bij lifestyle en alleen als de rij zijn details
+     meedraagt; zonder details is er niets te tellen en blijft het wat het was. */
+  if (kind === 'lifestyle' && basis !== null && (r.details_json !== undefined || r.details !== undefined)) {
+    const looks = lookAantal(parseDetails(r.details_json !== undefined ? r.details_json : r.details), aantal);
+    /* puntenVoor() telt hele stuks, dus het halve product als punten van één stuk. */
+    if (looks > 0) return basis + Math.round(looks * LOOK_PRODUCT_DEEL * puntenVoor(kind, 1, r.style));
+  }
+  return basis;
+}
+
+function parseDetails(d) {
+  if (!d) return {};
+  if (typeof d === 'string') { try { return JSON.parse(d) || {}; } catch { return {}; } }
+  return typeof d === 'object' ? d : {};
 }
 
 export function bookedFromRows(rows = [], blackouts = new Set()) {

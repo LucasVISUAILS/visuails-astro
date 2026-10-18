@@ -29,13 +29,13 @@
 //
 // HEX VALUES ARE THE CONTRACT. These are what the studio actually renders
 // against, so they are here and not in a component's copy table — a swatch
-// that shows #F7F5F1 while production runs #F5F5F5 is a delivery a client can
-// measure and reject.
+// that shows one value while production runs another is a delivery a client
+// can measure and reject.
 
 /** The three we put forward, lightest-neutral first.
     WAS FOUR. Light grey (#EDEDED) came out at Lucas's direction, August 2026:
     with the custom swatch beside them the row read as five decisions, and grey
-    was the one carrying its weight least — it sits between off-white and beige
+    was the one carrying its weight least — it sat between off-white and beige
     without being either, and a brand that wants a neutral grey ground can set
     it exactly on the custom swatch. Three recommendations plus "your own" is
     four things to look at, which is a row a visitor takes in at a glance. */
@@ -49,13 +49,23 @@ export const RECOMMENDED = [
       nl: 'Zuiver wit. De enige waarde die Amazon op een hoofdafbeelding accepteert, en overal elders de veilige keuze.',
     },
   },
+  /* ── LICHTGRIJS IN PLAATS VAN GEBROKEN WIT — 17 oktober 2026 ────────────────
+     Lucas, afvinklijst 36 (b-kleur): *"Ik wil trouwens gebroken wit nu heel licht
+     grijs maken zoals farfetch heeft. Pas dit overal consistent toe."*
+     GEMETEN, NIET GEGOKT: van 25 productbeelden op een overzichtspagina van Farfetch
+     (de hoodies, 17 oktober) stonden er 20 op #FFFFFF en 5 op precies #F5F5F5,
+     gemeten als het gemiddelde van een vlak van 8 × 8 pixels in de hoek. Dat grijs
+     is het. Neutraal (R = G = B), dus geen warme zweem zoals #F7F5F1 had.
+     De id is nieuw (light-grey): een oude bestelling of vaste look met 'off-white'
+     houdt zijn eigen kleur en naam (OUDE_ACHTERGRONDEN hieronder), en wordt niet
+     stil naar grijs omgezet. */
   {
-    id: 'off-white',
-    hex: '#F7F5F1',
-    name: { en: 'Off-white', nl: 'Gebroken wit' },
+    id: 'light-grey',
+    hex: '#F5F5F5',
+    name: { en: 'Light grey', nl: 'Lichtgrijs' },
     note: {
-      en: 'A hair warmer than white. Stops a white garment disappearing into its own background.',
-      nl: 'Een tikje warmer dan wit. Voorkomt dat een wit kledingstuk in zijn eigen achtergrond verdwijnt.',
+      en: 'The very light grey of the big fashion stores. A white garment keeps its edge, and the image reads as studio.',
+      nl: 'Het heel lichte grijs van de grote modewinkels. Een wit kledingstuk houdt zijn rand, en het beeld leest als studio.',
     },
   },
   {
@@ -80,7 +90,12 @@ export const DEFAULT_ID = 'white';
    in Studio en /admin een naam bij en geen kale hexcode. Dit is alleen een label:
    niets in het formulier of in Studio biedt hem weer aan. */
 export const OUDE_ACHTERGRONDEN = [
-  { hex: '#EDEDED', name: { en: 'Light grey', nl: 'Lichtgrijs' } },
+  /* 17 oktober 2026: deze heette Lichtgrijs, maar die naam is nu van #F5F5F5 (zie
+     RECOMMENDED). Twee kleuren met één naam in /admin is een vergissing die wacht. */
+  { hex: '#EDEDED', name: { en: 'Grey', nl: 'Grijs' } },
+  /* Tot 17 oktober 2026 een aanbevolen kleur. Bestellingen en vaste looks van daarvoor
+     houden deze naam. */
+  { id: 'off-white', hex: '#F7F5F1', name: { en: 'Off-white', nl: 'Gebroken wit' } },
 ];
 
 /** De naam bij een hexcode (ook een oude), of '' als hij nergens bij hoort. */

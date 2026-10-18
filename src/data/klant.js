@@ -39,6 +39,9 @@ export const KLANT = {
     wa: 'Hallo VISUAILS, een vraag over bestelling {ref}:',
     /* De melding onderin het scherm (KlantMelding.astro), 14 oktober 2026. */
     meldingLabel: 'Je bestelling',
+    /* Afvinklijst 36, v36-melding = c (17 oktober 2026): de stand als vier stappen. */
+    stappenLabel: 'Waar je bestelling is',
+    stappen: ['Ontvangen', 'In productie', 'Nakijken', 'Geleverd'],
     sluit: 'Sluit deze melding',
     proefLabel: 'Proef',
     proefKop: ['Eerst zien?', 'Eén product voor'],
@@ -68,6 +71,8 @@ export const KLANT = {
     studio: 'Go to VISUAILS Studio',
     wa: 'Hello VISUAILS, a question about order {ref}:',
     meldingLabel: 'Your order',
+    stappenLabel: 'Where your order is',
+    stappen: ['Received', 'In production', 'Checking', 'Delivered'],
     sluit: 'Close this message',
     proefLabel: 'Test sample',
     proefKop: ['See it first?', 'One product for'],
