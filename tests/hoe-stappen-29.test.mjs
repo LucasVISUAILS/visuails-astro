@@ -38,7 +38,8 @@ for (const [taal, file] of [['nl', 'dist/nl/index.html'], ['en', 'dist/index.htm
   ok(`${taal}: stap 3, vier beelden met elk een vinkje`, (keur.match(/<li\b/g) || []).length === 4 && (keur.match(/class="h-vink"/g) || []).length === 4, true);
   ok(`${taal}:   geen revisie meer (geen chip, geen glans)`, /h-keur-rev|h-keur-glans|Revisie: kleur|Revision: colour|Opnieuw geleverd|Delivered again/.test(h), false);
   ok(`${taal}:   "4 van 4 goedgekeurd"`, /<figcaption class="h-chip h-glas"[^>]*>(4 van 4 goedgekeurd|4 of 4 approved)<\/figcaption>/.test(h), true);
-  ok(`${taal}: de tijden (3,0 / 12,1 / 3,0 s)`, h.includes('data-uitleg-maat="3000 12100 3000"'), true);
+  /* Levering 61 (afvinklijst 39, e-stappen: "iets sneller"): alles op driekwart. */
+  ok(`${taal}: de tijden (2,25 / 9,075 / 2,25 s)`, h.includes('data-uitleg-maat="2250 9075 2250"'), true);
   ok(`${taal}: de uitlegzinnen noemen het`, taal === 'nl'
     ? /We kijken meteen of ze compleet zijn\./.test(h) && /vraagt zo nodig een revisie/.test(h)
     : /We check right away that they are complete\./.test(h) && /ask for a revision if needed/.test(h), true);
@@ -46,11 +47,11 @@ for (const [taal, file] of [['nl', 'dist/nl/index.html'], ['en', 'dist/index.htm
 const css = lees('src/styles/hal.css');
 const blok = css.slice(css.indexOf('STAP 1 · COMPLEET, STAP 3 · GOEDKEUREN'), css.indexOf('@keyframes h-keur-tik'));
 ok('hal.css: alles onder .hal / body.hal, geen :is()', blok.split('\n').filter((r) => /^[^ @/*%].*\{/.test(r) && !/^\s*(from|to|\d)/.test(r)).every((r) => /(^|, )(html\.h-js body\.hal|\.hal) /.test(r)) && !/:is\(/.test(blok), true);
-ok('  de vinkjes in stap 1 na de foto\'s (1,3 s), Compleet op 2,2 s', /u-s1 \.h-stuur-v i \{ transition-delay: calc\(var\(--d, 0\) \* 240ms \+ 1\.3s\); \}/.test(css) && /u-s1 \.h-stuur-compleet \{ transition-delay: 2\.2s; \}/.test(css), true);
+ok('  de vinkjes in stap 1 na de foto\'s (0,975 s), Compleet op 1,65 s', /u-s1 \.h-stuur-v i \{ transition-delay: calc\(var\(--d, 0\) \* 180ms \+ \.975s\); \}/.test(css) && /u-s1 \.h-stuur-compleet \{ transition-delay: 1\.65s; \}/.test(css), true);
 const tik = (/const KEUR_TIK = \[([^\]]+)\]/.exec(lees('src/components/VoorpaginaHal.astro')) || [])[1]?.split(',').map(Number) || [];
 const tussen = tik.slice(1).map((t, i) => Math.round((t - tik[i]) * 100) / 100);
 ok('  stap 3: vier tikken, oplopend, en niet gelijk verdeeld', [tik.length, tik.every((t, i) => !i || t > tik[i - 1]), new Set(tussen).size > 1], [4, true, true]);
-ok('  het vinkje op de tik (--kt), "4 van 4" na de laatste (2,3 s, binnen de 3,0 s)', /u-s3 \.h-keur \.h-vink \{ transition-delay: var\(--kt, / .test(css) && /u-s3 \.h-keur figcaption \{ transition-delay: 2\.3s; \}/.test(css) && tik[3] + .55 <= 2.3 + .05, true);
+ok('  het vinkje op de tik (--kt), "4 van 4" na de laatste (1,725 s, binnen de 2,25 s)', /u-s3 \.h-keur \.h-vink \{ transition-delay: var\(--kt, / .test(css) && /u-s3 \.h-keur figcaption \{ transition-delay: 1\.725s; \}/.test(css) && tik[3] + .55 * .75 <= 1.725 + .05, true);
 ok('  de tik alleen terwijl de stap speelt (niet als hij klaar is)', /\.h-hoe\.u-s3:not\(\[data-uitleg-staat="klaar"\]\) \.h-keur-rij li \{ animation: h-keur-tik /.test(css), true);
 ok('  geen revisieregels meer in hal.css', /h-keur-revchip|h-keur-glans|h-keur-kleur/.test(css), false);
 const rustig = css.slice(css.indexOf('html.h-js body.hal .h-keur .h-vink, html.h-js body.hal .h-keur figcaption { opacity: 1 !important'));

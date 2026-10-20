@@ -5,7 +5,7 @@
  * GEEN PAGINA VAN DE SITE. Zonder LAPTOP_BRON=1 geeft getStaticPaths niets terug,
  * dus bij een gewone build bestaat /laptop-bron/ niet (tests/laptop-standen.test.mjs
  * kijkt dat na). scripts/laptop-standen.mjs start `astro dev` met LAPTOP_BRON=1,
- * opent /laptop-bron/nl/ en /laptop-bron/en/ op 2304 × 1728 en maakt van elk vak
+ * opent /laptop-bron/nl/ en /laptop-bron/en/ op 2304 × 1296 en maakt van elk vak
  * hieronder een foto. Waarom: zie de kop van src/data/halStanden.js.
  */
 import Layout from '../../layouts/Layout.astro';
@@ -25,14 +25,14 @@ const standen = alleStanden(lang);
     body.hal .site-header, body.hal footer, body.hal .mobile-nav, body.hal .mobile-cta, body.hal .wa-dock, body.hal .cc, body.hal .convbar, body.hal [data-klantmelding], astro-dev-toolbar { display: none !important; }
     body.hal { background: #fff; }
     .hl-bron *, .hl-bron *::before, .hl-bron *::after { transition: none !important; animation: none !important; }
-    .hl-bron { width: 2304px; height: 1728px; position: relative; overflow: hidden; }
-    .hl-bron .hl-doos { position: absolute; inset: 0; width: 2304px; height: 1728px; -webkit-mask-image: none; mask-image: none; }
+    .hl-bron { width: 2304px; height: 1296px; position: relative; overflow: hidden; }
+    .hl-bron .hl-doos { position: absolute; inset: 0; width: 2304px; height: 1296px; -webkit-mask-image: none; mask-image: none; }
     .hl-bron .hl-laag { opacity: 1; --hl-k: 1; }
   </style>
   {standen.map((s) => (
     <div class="hl hl-leeft hl-bron" data-bron-stand={standNaam(lang, s)}>
       <div class="hl-doos">
-        <img class="hl-foto" src="/img/hal/laptop-2304.webp" width="2304" height="1728" alt="" />
+        <img class="hl-foto" src="/img/hal/pov-2304.webp" width="2304" height="1296" alt="" />
         <HalLaptopSchermen lang={lang} stand={s} />
       </div>
     </div>

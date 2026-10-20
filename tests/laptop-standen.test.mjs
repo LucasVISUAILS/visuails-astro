@@ -35,6 +35,7 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { alleStanden, standNaam, STAND_BREEDTES } from '../src/data/halStanden.js';
 import { vingerafdruk, BRON_JSON } from '../scripts/lib/laptopbron.mjs';
+import { FOTO } from '../src/data/halLaptop.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = path.join(ROOT, 'dist');
@@ -61,9 +62,9 @@ const verkeerd = [];
 for (const n of verwacht.filter((x) => fs.existsSync(path.join(MAP, `${x}.webp`)))) {
   const w = Number(n.split('-').pop());
   const m = await sharp(path.join(MAP, `${n}.webp`)).metadata();
-  if (m.width !== w || m.height !== Math.round((w * 1728) / 2304)) verkeerd.push(`${n}: ${m.width}×${m.height}`);
+  if (m.width !== w || m.height !== Math.round((w * FOTO.h) / FOTO.w)) verkeerd.push(`${n}: ${m.width}×${m.height}`);
 }
-ok('  elke foto heeft de verhouding van de laptopfoto (4:3) en zijn eigen breedte', verkeerd.length === 0, verkeerd.slice(0, 3).join(', '));
+ok(`  elke foto heeft de verhouding van de laptopfoto (${FOTO.w} × ${FOTO.h}) en zijn eigen breedte`, verkeerd.length === 0, verkeerd.slice(0, 3).join(', '));
 const los = fs.readdirSync(MAP).filter((f) => !verwacht.includes(f.replace(/\.(webp|avif)$/, '')));
 ok('  er liggen geen standen die niet meer in de reeks zitten', los.length === 0, los.join(', '));
 const afdrukken = alleStanden('nl').filter((s) => s.set === 'catalog').map((s) => crypto.createHash('md5').update(fs.readFileSync(path.join(MAP, `${standNaam('nl', s)}-1000.webp`))).digest('hex'));

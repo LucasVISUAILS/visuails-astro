@@ -33,7 +33,7 @@ console.log('B13 · Studio, geen abonnement: de kaart is donker, de letters wit'
   const donker = hal.indexOf('body.studio.st-hal .st-kaart-vlak.st-geenabo');
   ok('studio-hal.css zet .st-geenabo terug op donker', donker > -1);
   ok('  ná de regel die elke kaart wit maakt (zelfde specificiteit)', donker > wit && wit > -1);
-  ok('  met een donkere grond', /\.st-kaart-vlak\.st-geenabo\s*\{[^}]*background:\s*#0F0C24/i.test(hal));
+  ok('  met een donkere grond', /\.st-kaart-vlak\.st-geenabo\s*\{[^}]*background:\s*#000000/i.test(hal));
   ok('de plan-pagina gebruikt die twee klassen samen', /st-kaart-vlak st-geenabo|st-geenabo st-kaart-vlak/.test(lees('src/pages/account/plan.astro')) || /class="[^"]*st-kaart-vlak[^"]*st-geenabo/.test(lees('src/pages/account/plan.astro')));
 }
 

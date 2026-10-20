@@ -1,20 +1,307 @@
 # VISUAILS — kleurenschema
 
-**Stand: 14 oktober 2026. De hal is het schema, overal.** Dit is het ene bestand
-dat de kleuren draagt. Verandert hier iets, dan in de bestanden hieronder ook,
-en andersom niet.
+**Stand: 19 oktober 2026. Schema A, overal.** Dit is het ene bestand dat de
+kleuren draagt. Verandert hier iets, dan in de bestanden hieronder ook, en
+andersom niet.
 
-Lucas, 14 oktober: *"het nieuwe kleurenschema [is] nog niet in mijn map goed
-toegepast. Voeg alles volledig toe en pas waar nodig aan."* Tot vandaag stond
-het schema van de hal (ontwerpplan versie 10, afvinklijst 5) alleen in
-`src/styles/hal.css`, en daar nog maar voor een deel: zes van de ruim vijftig
-tokens. De rest van de site, Studio, de privélink, de mails, /admin, het
-OG-beeld en dit bestand droegen nog het schema van 20 september (verderop, als
-"Het vorige schema").
+Lucas koos in afvinklijst 41 schema A, "wit, zwart, elektrisch violet", met
+zwarte knoppen en een vlak violet €1-blok zonder korrel. Zijn notitie: *"Ook
+alle afbeeldingen/logo's aanpassen en een nieuw kleurenschema maken voor de
+nieuwe kleuren. Zoek of er al een kleurenschema in de map zit zodat je die kan
+aanpassen. Doe dit heel uitgebreid en nauwkeurig."* Op de vraag wat er met de
+kleine plekken violet gebeurt (een kopwoord, het sectienummer, een stip, een
+icoon, een link): *"Ook zwart"*.
+
+Het schema daarvoor (de hal, 14 tot 18 oktober) staat verderop als
+geschiedenis, en daaronder dat van 20 september.
+
+---
+
+## In één zin
+
+Wit, zwart en één elektrisch violet. **Violet staat in de voet, het €1-blok,
+de knop Bestellen bovenin en wat je kiest. Verder nergens.** Het grijs heeft
+geen kleur: geen lila en geen blauwe zweem, zodat het violet nergens op lijkt.
+
+---
+
+## De kleuren (contrast nagerekend, WCAG)
+
+| Rol | Waarde | Token in hal.css | Contrast |
+|---|---|---|---|
+| Grond | `#FFFFFF` | `--h-wit` | — |
+| Nevel (vlakken, de tweede laag) | `#F2F2F2` | `--h-nevel` | — |
+| Vak (beeldvak, lege staat, geannuleerd) | `#E8E8E8` | `--h-vak` | — |
+| Lijn (haarlijn, rand) | `#DDDDDD` | `--h-lijn` | — |
+| Lijn, sterk (een rand die je moet zien) | `#C8C8C8` | `--h-lijn-sterk` | geen tekst |
+| Veldlijn (de rand van een invulveld) | `#8A8A8A` | `--h-veldlijn` | 3,45:1 op wit · 3,08:1 op nevel |
+| Zwart (koppen, knoppen, links) | `#000000` | `--h-inkt` | 21:1 op wit · 18,76:1 op nevel |
+| Grijs 2 (lopende tekst) | `#3D3D3D` | `--h-inkt-2` | 10,86:1 op wit · 9,70:1 op nevel · 8,87:1 op vak |
+| Grijs 3 (kleine tekst) | `#616161` | `--h-inkt-3` | 6,19:1 op wit · 5,53:1 op nevel · 5,05:1 op vak |
+| Lichte kop (het lichte deel van een kop) | `#6E6E6E` | `--h-kop-licht` | 5,10:1 op wit · 4,55:1 op nevel |
+| Violet | `#4400FF` | `--h-violet` | wit erop 7,81:1 · op wit 7,81:1 · op nevel 6,97:1 |
+| Violet diep (hover van violet) | `#3600CC` | `--h-violet-diep` | wit erop 10,35:1 |
+| Lila (alleen de echo bij het logo) | `#8F66FF` | `--h-lila` | 5,51:1 op zwart · 2,05:1 op violet: nooit tekst |
+| Aandacht (amber, een uitzondering) | `#8A4D06` op `#F6E7D1` | `--st-rev-*` | 5,49:1 |
+
+Het violet heeft dezelfde kleurtoon als het violet van daarvoor (256° tegen
+252°), maar zonder groen erin: daardoor feller en dieper.
+
+**Vier namen die niet meer bestaan als kleur.** Ze blijven gedefinieerd, zodat
+een vergeten verwijzing niet breekt, maar ze vallen samen met een andere:
+
+| Token | Was | Is | Waarom |
+|---|---|---|---|
+| `--h-mist` | `#F1EEFF` | `#F2F2F2` (nevel) | de lila vlakken verdwijnen (A5 uit lijst 39) |
+| `--h-waas` | `#DCD5FF` | `#DDDDDD` (lijn) | idem |
+| `--h-verloop-licht` | `#F1EEFF` | `#F2F2F2` (nevel) | idem; was tot 17 oktober een verloop |
+| `--h-nacht` | `#2A0E8F` | `#000000` (zwart) | "geleverd" en de letters op mist zijn nu zwart |
+
+Daarnaast `--kies` (= `--h-violet`) en `--kies-ink` (wit): wat een onderdeel
+leest voor "wat je kiest". `--accent` is in de hal zwart, want dat is de kleur
+van een knop.
+
+---
+
+## Waar violet staat, en waar niet
+
+| Plek | Hoe |
+|---|---|
+| **De voet** (`.site-footer`) | Violet met een bewogen beeld (afvinklijst 42): het figuur als donkere stroom in het violet, `public/img/achter/voet.webp`, met fijne korrel. Zijn kaartvorm (12 px marge, één zachte hoek). Lopende tekst wit op 90 % (6,44:1), kleine koppen en kleine lettertjes wit op 82 % (5,44:1), links en koppen wit (7,81:1). Knoppen zwart, het veld van de Studiobrief en de sociale knoppen wit met zwart. Het woordmerk wit, de echo lila. De focusrand wit |
+| **Het €1-blok** (`.h-proef`) | Een licht bewogen beeld (`glas-proef.webp`, Lucas' foto lifestyle-glow-05 met een lila spookrand) met de tekst op een paneel van **violet glas** (afvinklijst 42, glas 1): 84 % violet, 22 px vervaging, één zachte hoek, rechtsonder de snede van 53°. Het enige glas op de site. Op het glas alleen wit; het lichte deel van de kop wit op 82 %. De vier foto's staan recht. De focusrand wit |
+| **Bestellen bovenin** (`.nav-cta`, en in de lade `.mobile-cta`) | Violet, onder de muis violet diep; de pijl violet in het witte rondje |
+| **Wat je kiest** | Een aangevinkte keuze in een formulier: vakje en rondje (`accent-color`), de gekozen kaart, stijl, look, gezicht, vorm, kleur, verhouding, achtergrond, pakket, termijn en abonnement, en een gekozen andere achtergrond in het overzicht. Via `--kies` of `--h-violet` |
+| **Tekstselectie** | Violet met witte letters, op de site, in Studio, op de privélink en in /admin |
+| **Het logo** | De elektrische lijn onder de muis (`--mk-line-ink`) en de echo's van het woordmerk (`wm-echo`). Op violet is de lijn lila |
+
+**Waar je bent is geen keuze.** Het menu-item van de pagina, een tab, een
+filter, de stap in het formulier, de taal: zwart of wit, zoals daarvoor.
+
+**Nergens anders.** Knoppen zijn zwart (onder de muis grijs 2), links zwart met
+een grijze streep (de veldlijn), iconen, stippen, het sectienummer en de
+schuine streep van het sectielabel zwart, de focusrand zwart (wit op violet).
+Ook geen violet kopwoord meer: "productbeelden." in de opening is zwart.
+
+---
+
+## De statusset
+
+Het gelukte pad loopt voller: een lijn, nevel met een lijn, zwart. Massief
+blijft gereserveerd voor "geleverd". Een stand is geen keuze, dus geen violet.
+De twee uitzonderingen verlaten de reeks met opzet.
+
+| Stand | Vulling | Rand | Letter | Contrast |
+|---|---|---|---|---|
+| Wacht (ontvangen, wachtrij) | geen | `#8A8A8A` | `#3D3D3D` | 10,86:1 |
+| Bezig (in productie, onderweg) | `#F2F2F2` | `#DDDDDD` | `#000000` | 18,76:1 |
+| Klaar (geleverd, betaald) | `#000000` | gelijk | `#FFFFFF` | 21:1 |
+| Aandacht (revisie, actie nodig) | `#F6E7D1` | `rgba(138,77,6,.30)` | `#8A4D06` | 5,49:1 |
+| Geannuleerd, verlopen | `#E8E8E8` | `#8A8A8A` | `#3D3D3D` | 8,87:1 |
+
+Tokennamen zoals altijd: `--st-wait-*`, `--st-work-*`, `--st-done-*`,
+`--st-rev-*`, `--st-can-*` (fill, edge, ink). Buiten CSS: `STAND_KLEUR` in
+`src/data/status.js` en `C.st*` in `src/lib/mailTemplate.js`.
+
+**/admin donker** gebruikt dezelfde rollen zonder de inkttint van daarvoor:
+grond `#0E0E0E`, kaart `#181818`, vlak `#212121`, letters `#F2F2F2` op 100 / 72 /
+58 %. Een knop is daar wit (`#F2F2F2`) met zwarte letters (18,8:1), het
+omgekeerde van de zwarte knop op licht. Bezig `#1E1E1E` met `#C8C8C8`, klaar
+`#F2F2F2` met zwart.
 
 ---
 
 ## Waar het schema staat
+
+| Plek | Bestand | Hoe |
+|---|---|---|
+| De site | `src/styles/hal.css` | `body.hal`: de hal-tokens (`--h-*`) en alle tokens van global.css opnieuw, op schema A. De voet en het €1-blok in hun eigen blok; onderaan "LEVERING 62" (het aangevinkte vakje) |
+| De bestelstroom | `src/styles/werkplaats.css`, `stijl22.css`, de onderdelen in `src/components/order/` | de gekozen kaart, stijl, vorm en kleur violet via `--kies` |
+| VISUAILS Studio | `src/styles/studio-hal.css` | de tokens in `body.studio.st-hal`, onderaan het aangevinkte vakje |
+| De privélink (`/o/…`) | `public/portal.css` | blok "DE HAL" onderaan, op `html body` |
+| De losse kaarten van account.js | `public/account.css` | blok "DE HAL" onderaan, op `html[data-thema="licht"] body` |
+| /admin | `public/admin.css` | licht op `html:not([data-thema="donker"]) body`, donker op `html[data-thema="donker"] body` en het accent in `:root[data-thema="donker"]`; onderaan "LEVERING 62" |
+| De mails | `src/lib/mailTemplate.js` (`C`) en de beelden in `public/img/mail/` | `npm run mail:assets` (scripts/make-mail-assets.mjs): het woordmerk zwart, het streepje onder de kop zwart, het woordmerk in de voet lichtgrijs |
+| De factuur | `src/lib/invoicePdf.js` | `INK`, `MUTED`, `RULE`, `NADRUK` (zwart, was violet), `VLAK` |
+| De fotogids (pdf) | `scripts/lib/fotogids-html.mjs` | `npm run handleiding` |
+| De statuspil buiten CSS | `src/data/status.js` | `STAND_KLEUR` |
+| Het deelplaatje | `scripts/make-og.mjs` | `npm run og` |
+| De schetsen in het formulier | `scripts/schetsen-zijpaneel.py` | `python3 scripts/schetsen-zijpaneel.py` → `public/img/schets/` |
+| De pijl in een keuzelijst | `public/img/ui/keuzepijl-000000.svg`, `-f2f2f2.svg` | een `data:`-adres kan geen variabele lezen |
+| De adresbalk | `src/layouts/Layout.astro` | `theme-color` wit op een hal-pagina |
+| Favicon | `public/favicon*.png`, `favicon.ico`, `favicon.svg`, `apple-touch-icon.png` | een kopie uit het logopakket (`images/Logo/visuails-logo-nieuw/favicon`), wit V-merk op vlak violet |
+| Het logopakket | `E:\Claude (VISUAILS)\images\Logo\visuails-logo-nieuw` | `python3 maak-logopakket.py --site <map van de site>` maakt het hele pakket opnieuw, met zijn eigen KLEURENSCHEMA.md |
+
+**Wat bewust niet meegaat.** De schermen van de laptop op de voorpagina
+(`.sc…` in hal.css, de beelden uit `laptop-standen`) tonen de winkel van een
+klant (JOUWMERK), niet VISUAILS: die houden hun eigen kleuren, en ze tellen mee
+in de vingerafdruk van `scripts/lib/laptopbron.mjs`. Ook de kleuren die inhoud
+zijn blijven staan: de achtergronden waaruit je kiest, kledingkleuren, het
+blauw van Instagram in het voorbeeldscherm.
+
+---
+
+## De kleurentabel (oud → nieuw)
+
+Elke oude kleur kreeg één nieuwe; `kladblok/levering-62/hexmap.py` paste hem toe
+op elke letterlijke waarde (`#hex`, `rgb()`, `%23hex` in een `data:`-adres).
+Een grijs met een zweem werd het grijs met **dezelfde helderheid**, zodat elk
+contrast gelijk bleef. Violet werd zwart, behalve op de plekken hierboven.
+In de hal-regels zelf ging het per rol (`kladblok/levering-62/herkleur.py`): violet zwart, een
+violette hover op een zwarte knop grijs 2, mist en waas nevel en lijn (op een
+hover een tree dieper: vak), lila in een onderstreping de veldlijn.
+
+| Oud | Nieuw | Familie |
+|---|---|---|
+| `#F5F5F9` | `#F2F2F2` | neutraal |
+| `#ECEBF3` | `#E8E8E8` | neutraal |
+| `#DEDCE8` | `#DDDDDD` | neutraal |
+| `#C9C6D8` | `#C8C8C8` | neutraal |
+| `#8E8BA2` | `#8A8A8A` | neutraal |
+| `#0F0C24` | `#000000` | neutraal |
+| `#4B4960` | `#3D3D3D` | neutraal |
+| `#6A6880` | `#616161` | neutraal |
+| `#807E97` | `#6E6E6E` | neutraal |
+| `#74728C` | `#6E6E6E` | neutraal |
+| `#9C9AB0` | `#9C9C9C` | neutraal |
+| `#F1EFF7` | `#F2F2F2` | neutraal |
+| `#E6E4EF` | `#E8E8E8` | neutraal |
+| `#E6E4EE` | `#E8E8E8` | neutraal |
+| `#A3A1B5` | `#A3A3A3` | neutraal |
+| `#A9A7B8` | `#A9A9A9` | neutraal |
+| `#4C4960` | `#3D3D3D` | neutraal |
+| `#858393` | `#858585` | neutraal |
+| `#6F6D80` | `#6F6F6F` | neutraal |
+| `#5B5872` | `#5B5B5B` | neutraal |
+| `#5E5B75` | `#5E5E5E` | neutraal |
+| `#A6A3BC` | `#A6A6A6` | neutraal |
+| `#F4F2FB` | `#F2F2F2` | neutraal |
+| `#EDE9FF` | `#F2F2F2` | neutraal |
+| `#0F0C1C` | `#0E0E0E` | neutraal |
+| `#18152A` | `#181818` | neutraal |
+| `#221E38` | `#212121` | neutraal |
+| `#F2F1F8` | `#F2F2F2` | neutraal |
+| `#1F1C30` | `#1F1F1F` | neutraal |
+| `#0A0815` | `#0A0A0A` | neutraal |
+| `#F1EEFF` | `#F2F2F2` | neutraal |
+| `#E7E2FF` | `#DDDDDD` | neutraal |
+| `#DCD5FF` | `#DDDDDD` | neutraal |
+| `#E4DFFF` | `#EDEDED` | neutraal |
+| `#BFB2FF` | `#BCBCBC` | neutraal |
+| `#C9BFFF` | `#C7C7C7` | neutraal |
+| `#C9BDFF` | `#C5C5C5` | neutraal |
+| `#1E1840` | `#1E1E1E` | neutraal |
+| `#2A0E8F` | `#000000` | neutraal |
+| `#1F0B66` | `#000000` | neutraal |
+| `#4A1FFF` | `#000000`; waar violet blijft `#4400FF` | violet |
+| `#3D17D6` | `#000000`; waar violet blijft `#3600CC` | violet |
+| `#A694FF` | `#C8C8C8`; waar violet blijft `#8F66FF` | violet |
+| `#6B4BFF` | `#000000`; waar violet blijft `#4400FF` | violet |
+| `#F2F3F5` | `#F2F2F2` | vorig schema |
+| `#E4E7EC` | `#E7E7E7` | vorig schema |
+| `#DADEE5` | `#DEDEDE` | vorig schema |
+| `#0C0D10` | `#0D0D0D` | vorig schema |
+| `#14161A` | `#161616` | vorig schema |
+| `#1C1F25` | `#1F1F1F` | vorig schema |
+| `#7C8096` | `#818181` | vorig schema |
+| `#4A4E6B` | `#505050` | vorig schema |
+| `#83868A` | `#868686` | vorig schema |
+| `#3E4145` | `#414141` | vorig schema |
+| `#5B5F7A` | `#606060` | vorig schema |
+| `#A7ABC7` | `#ACACAC` | vorig schema |
+| `#1B1E23` | `#1E1E1E` | vorig schema |
+| `#5C6066` | `#606060` | vorig schema |
+| `#A0A4AA` | `#A4A4A4` | vorig schema |
+| `#17191E` | `#191919` | vorig schema |
+| `#15171C` | `#171717` | vorig schema |
+| `#0A0B0E` | `#0B0B0B` | vorig schema |
+| `#262A33` | `#2A2A2A` | vorig schema |
+| `#34383F` | `#383838` | vorig schema |
+| `#303236` | `#323232` | vorig schema |
+| `#3A3E46` | `#3E3E3E` | vorig schema |
+| `#AFB4BC` | `#B4B4B4` | vorig schema |
+| `#EEF0F6` | `#F0F0F0` | vorig schema |
+| `#F3F5F8` | `#F5F5F5` | vorig schema |
+| `#1F2229` | `#222222` | vorig schema |
+| `#55585F` | `#585858` | vorig schema |
+| `#8A8F98` | `#8F8F8F` | vorig schema |
+| `#F4F5F7` | `#F5F5F5` | vorig schema |
+| `#E9EDEE` | `#ECECEC` | vorig schema |
+| `#0E1013` | `#101010` | vorig schema |
+| `#9BA1A8` | `#A0A0A0` | vorig schema |
+| `#E8EAEC` | `#EAEAEA` | vorig schema |
+| `#16181F` | `#181818` | vorig schema |
+| `#0B0C0E` | `#0C0C0C` | vorig schema |
+| `#1E1E24` | `#1F1F1F` | vorig schema |
+
+---
+
+## Altijd
+
+1. Lopende tekst en knoppen minstens **4,5:1**, ook een kop. Tekst minstens 11,5 px.
+2. **Violet alleen op de vier plekken** hierboven. Geen violet kopwoord, icoon, stip, link of rand.
+3. Op violet staat alleen wit (of een witte knop met zwart erop). Zwart op violet haalt 2,69:1.
+4. **Grijs zonder kleur.** Een nieuwe grijstint heeft drie gelijke kanalen.
+5. Geen verloop als vulling, geen schaduw in een kleur. Een sfeervlak draagt een bewogen foto (hieronder), geen egale kleur en geen verloop.
+6. Een stand is pil plus woord, in grijs en zwart; massief alleen voor "geleverd".
+7. Het logo is één kleur: zwart, violet of wit. Lila alleen als echo. Woordmerk en los V-merk nooit naast elkaar (`scripts/brand-lockup-guard.mjs`).
+8. Beweging stopt helemaal bij "minder beweging".
+9. **Glas alleen op het €1-blok** (het violette paneel). Nergens anders, ook niet op kaarten (`tests/minder-sjabloon-browser.test.mjs`).
+
+---
+
+## Bewogen achtergronden (19 oktober 2026, afvinklijst 42)
+
+Lucas: geen vlakken in één volle kleur, maar een afbeelding met motion blur. Elk
+sfeervlak (waar eerst `--h-verloop-licht` stond) draagt een bewogen foto uit zijn eigen
+shoots. Gemaakt met `scripts/maak-achtergronden.py` (numpy en Pillow), in
+`public/img/achter/`; welk beeld waar staat in `src/styles/hal.css` onder
+BEWOGEN ACHTERGRONDEN.
+
+- **Sluiter** (je ziet een mens, strepen langs de beweging en een scherpere flits): waar
+  een groot getal of lege ruimte is. **Stroom** (het figuur lost op): achter kaarten met
+  tekst.
+- **Licht:** de foto op nevel, de muur weggewerkt, kleuren buiten het violet naar grijs,
+  62 % foto en 38 % nevel. Violet alleen als gloed: een vage, verschoven kopie langs het
+  figuur.
+- **Per soort pagina een eigen foto:** prijzen en abonnementen, contact, edities, Studio,
+  home, 404, juridisch, over, merkmodel, uploadrichtlijnen, elke look, elke videostijl.
+  Het €1-blok en de voet houden één vast beeld.
+- **Korrel:** fijn, als laag in de achtergrond (`--h-korrel-fijn`, 16 %, overlay), niet
+  in het beeld. Een beeld weegt zo 10 tot 30 KB.
+- **Telefoon en kleine tablet** (tot 820 px): in een klein vlak het beeld rechtsboven in
+  de hoek (62 % van de hoogte), in een lang vlak als strook van 180 px bovenaan met de
+  inhoud eronder (192 tot 212 px ruimte bovenin, per vlak gemeten). De samenvatting in het
+  bestelformulier heeft op elke breedte een strook van 160 px. In een band (`.h-st-band`)
+  ligt het beeld tot 1180 px over de volle breedte bovenaan.
+- **Blijft vlak:** kaarten om te lezen (FAQ, stappen, prijskaarten, tabellen),
+  formulieren, de putten achter foto's en video, de laptopschermen van de klantshop,
+  Studio, de privélink, /admin en de mails.
+- **Contrast:** elke regel tekst gemeten tegen de pixels die er echt achter staan, op
+  85 pagina's en 8 breedtes van 390 tot 1440: 1648 metingen, de laagste 4,56:1
+  (`kladblok/levering-62/meting-achter.json`). De lichte helft van een kop is op een
+  beeld grijs 3 (`#616161`).
+
+## Het merk op elke plek (19 oktober 2026)
+
+| Plek | Merk | Kleur |
+|---|---|---|
+| Bovenbalk en lade van de site | het V-merk, met de glitch | zwart; de lijn violet |
+| Footer van de site | het woordmerk, en groot onderaan | wit op violet; de lijn lila |
+| De voorbeeldschermen (/studio, /how-it-works) | het woordmerk in de balk | zwart |
+| Studio, de privélink, /admin | het woordmerk | zwart; de lijn violet (op donker lila) |
+| De mail | het woordmerk als beeld (`woordmerk-plaat.png`, `woordmerk-inkt.png`) | zwart op wit |
+| De factuur en de fotogids | het woordmerk als vector | zwart |
+| Favicon | het V-merk | wit op vlak violet |
+| Deelplaatje | het woordmerk, met de kop van de voorpagina | zwart op wit |
+
+---
+
+# Het schema van de hal (14 – 18 oktober 2026)
+
+Hieronder het schema zoals het gold van 14 tot en met 18 oktober: inkt `#0F0C24`,
+violet `#4A1FFF`, lila vlakken en mist. Het blijft staan als geschiedenis.
+
+### Waar het schema staat
 
 | Plek | Bestand | Hoe |
 |---|---|---|
@@ -32,7 +319,7 @@ OG-beeld en dit bestand droegen nog het schema van 20 september (verderop, als
 
 ---
 
-## De kleuren (contrast nagerekend, WCAG)
+### De kleuren (contrast nagerekend, WCAG)
 
 | Rol | Waarde | Token in hal.css | Contrast |
 |---|---|---|---|
@@ -51,7 +338,7 @@ OG-beeld en dit bestand droegen nog het schema van 20 september (verderop, als
 | Waas (verloop) | `#DCD5FF` | `--h-waas` | inkt erop 13,7:1 |
 | Mist (label, actief) | `#F1EEFF` | `--h-mist` | nacht erop 11,8:1 · inkt 16,8:1 |
 
-### Twee afgeleide lijnen (14 oktober 2026)
+#### Twee afgeleide lijnen (14 oktober 2026)
 
 Niet in het plan, wel nodig. Allebei uit de lijn, in dezelfde toon.
 
@@ -63,7 +350,7 @@ Niet in het plan, wel nodig. Allebei uit de lijn, in dezelfde toon.
 Hier stonden eerst vier verschillende waarden voor hetzelfde (`#CFCCDD`,
 `#B4B1C6`, `#C9C6D8`, `#8E8BA2`); `#B4B1C6` haalde voor een invulveld maar 2,0:1.
 
-### De statusset in de hal
+#### De statusset in de hal
 
 Het gelukte pad loopt voller **in de eigen familie**: een lijn, mist, nacht.
 Massief blijft gereserveerd voor "geleverd". De twee uitzonderingen verlaten de
@@ -80,7 +367,7 @@ familie met opzet.
 Tokennamen zoals altijd: `--st-wait-*`, `--st-work-*`, `--st-done-*`,
 `--st-rev-*`, `--st-can-*` (fill, edge, ink).
 
-### Verlopen, korrel en glas
+#### Verlopen, korrel en glas
 
 | | Waarde | Waar |
 |---|---|---|
@@ -90,14 +377,14 @@ Tokennamen zoals altijd: `--st-wait-*`, `--st-work-*`, `--st-done-*`,
 | Glas | wit 74 %, blur 16–24 | alleen boven een beeld; tekst erop alleen inkt (15,8:1) of inkt 2 (7,2:1) |
 | Zweefschaduw | `0 30px 60px -30px rgba(15,12,36,.28)` | één, onder kaarten en glas boven beeld |
 
-### De vorm
+#### De vorm
 
 Vlak 40 · kaart 28–36 · wat in een kaart ligt 22 · beeld 16–22 · knop, pil en
 eenregelig veld rond (999). Een tekstvak 16–18.
 
 ---
 
-## Altijd in de hal
+### Altijd in de hal
 
 1. Lopende tekst en knoppen minstens **4,5:1**, koppen van 24 px of groter minstens 3:1. Tekst minstens 11,5 px.
 2. **Kop-licht** alleen in koppen van 32 px of groter.
@@ -110,7 +397,7 @@ eenregelig veld rond (999). Een tekstvak 16–18.
 
 ---
 
-## Het merk op elke plek (14 oktober 2026)
+### Het merk op elke plek (14 oktober 2026)
 
 | Plek | Merk | Kleur |
 |---|---|---|
@@ -126,7 +413,7 @@ eenregelig veld rond (999). Een tekstvak 16–18.
 
 ---
 
-## Nog open
+### Nog open
 
 - **Niets meer in de hal zelf.** Afgehandeld op 14 oktober 2026:
   - Studio is alleen nog licht (afvinklijst 26); het maantje en `vis_thema` zijn
@@ -446,6 +733,14 @@ kolomkoppen).
   gebroken-witte gronden (leest als beautymerk), donkere gronden (verlaagt de
   waargenomen prijs en botst met catalogbeelden op wit), en accenten in rood,
   oranje, geel, magenta en groen.
+- 14 okt 2026: de hal. Inkt `#0F0C24` met een violette zweem, lila vlakken (mist
+  `#F1EEFF`, waas `#DCD5FF`), verlopen en korrel, en nacht `#2A0E8F` voor "geleverd".
+- **19 okt 2026: schema A** (afvinklijst 41). Wit, zwart en één elektrisch violet
+  `#4400FF`, zoals Ovyon het blauw laat schreeuwen; Lucas, lijst 39: *"het paars moet
+  echt pijn doen"*. Het grijs zonder lila, de inkt puur zwart, knoppen zwart, de lila
+  vlakken weg, violet alleen in de voet, het €1-blok, Bestellen en wat je kiest.
+  Getest en niet gekozen: B (de inkt `#0F0C24` houden met ultraviolet `#5B00FF`) en
+  C (A met grote violette vlakken op /pricing en /plans).
 
 ---
 

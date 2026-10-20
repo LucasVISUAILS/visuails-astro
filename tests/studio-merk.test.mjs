@@ -40,7 +40,7 @@ console.log('het woordmerk met de lijn');
   }
   const sh = lees('src/styles/studio-hal.css');
   ok('Studio: de lijn mag linksboven buiten het vak, rechts knipt het vak (dichtgeklapt alleen de V)', /body\.studio \.st-merk \{ overflow: visible; clip-path: inset\(-10px 0 -10px -10px\);/.test(sh));
-  ok('  in het donkere thema een lila lijn', /body\.studio\.on-ink \.st-merk \{ --mk-line-ink: #A694FF; \}/.test(sh));
+  ok('  in het donkere thema een lila lijn', /body\.studio\.on-ink \.st-merk \{ --mk-line-ink: #8F66FF; \}/.test(sh));
 }
 
 console.log('\nde iconen');

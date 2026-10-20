@@ -809,7 +809,9 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
   if (service === 'contact') {
     const body = details.message || details.notes || '';
     let customerId = null;
-    await safe(async () => { customerId = await upsertCustomer(env, { email, name, brand, phone, website, vat, country, address, firstName, lastName, noVat, saveRequested, contactPreference, ...addressParts }); });
+    /* Zonder inlog: een nieuwe klant aanmaken, een bestaande niet aanraken (19 oktober
+       2026, zie klantUitFormulier()). Het bericht hangt wel aan hem. */
+    await safe(async () => { customerId = (await klantUitFormulier(env, { email, name, brand, phone, website, vat, country, address, firstName, lastName, noVat, saveRequested, contactPreference, ...addressParts }, { bijwerken: false })).id; });
     /* Het formulier heet het veld `topic` (order-support, new-order,
        custom-request, other); hier stond `subject`, dus elk bericht heette
        "Contact form". */
@@ -1137,8 +1139,25 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
      formulier volgt de controle verderop met het opgeslagen land. */
   if (vat && country && vatFormatOk(country, vat) === false) return terugMet('vat');
 
+  /* ── ZONDER INLOG VERANDER JE EEN BESTAANDE KLANT NIET — 19 oktober 2026 ──
+     De toets klant-tegen-klant (tests/klant-scheiding.test.mjs) vond dat wie het
+     e-mailadres van een klant kende, via dit formulier (zonder inlog) nog lege velden
+     van zijn profiel kon vullen, op zijn opgeslagen land en adres kon bestellen en zijn
+     eigen look of eigen gezicht kon kiezen. Lucas: "dicht de gaten". Nu:
+       · zonder sessie MAAKT dit formulier een klant, en laat een bestaande klant
+         precies zoals hij is (de bestelling draagt haar eigen naam, adres en
+         btw-nummer; zie de kop van upsertWide);
+       · het opgeslagen adres, de eigen look en het eigen gezicht gelden alleen als de
+         bestelling via /account/order binnenkomt met de sessie van DEZE klant, zoals de
+         credits en het tegoed al deden (`ingelogdeKlant` verderop). */
+  const sessieVanDitAdres = !!(sessieKlant && normalizeEmail(sessieKlant.email) === normalizeEmail(email));
   let customerId = null;
-  await safe(async () => { customerId = await upsertCustomer(env, { email, name, brand, phone, website, vat, country, address, firstName, lastName, noVat, saveRequested, contactPreference, ...addressParts }); });
+  let klantNieuw = false;
+  await safe(async () => {
+    const k = await klantUitFormulier(env, { email, name, brand, phone, website, vat, country, address, firstName, lastName, noVat, saveRequested, contactPreference, ...addressParts }, { bijwerken: sessieVanDitAdres });
+    customerId = k.id; klantNieuw = k.nieuw;
+  });
+  const metSessie = !!(sessieVanDitAdres && customerId && Number(sessieKlant.customer_id) === Number(customerId));
   /* HET KVK-NUMMER OP DE KLANT — 4 september 2026 (migratie 0043). Een losse
      UPDATE en geen zestiende kolom in upsertWide(): die valt bij een ontbrekende
      kolom al terug op een smallere query, en een derde variant zou het gat
@@ -1147,7 +1166,8 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
      upsertWide): een formulier zonder inlog vult alleen lege velden. */
   {
     const regNr = get('reg_number').trim().slice(0, 40);
-    if (regNr && customerId) {
+    /* Alleen bij een nieuwe klant, of met de sessie van deze klant (19 oktober 2026). */
+    if (regNr && customerId && (klantNieuw || metSessie)) {
       await safe(() => env.DB.prepare(
         `UPDATE customers SET reg_number = ?1
           WHERE id = ?2 AND (reg_number IS NULL OR reg_number = '')`
@@ -1267,9 +1287,11 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
   // Only ever fills a blank. A country the customer chose on this order always
   // wins over the one on file, because a brand that moved should not be priced
   // from last year's address.
+  /* Alleen met de sessie van deze klant (19 oktober 2026): zonder inlog is het
+     opgeslagen adres van een ander niet bruikbaar door alleen zijn e-mailadres te typen. */
   let effCountry = country;
   let effAddress = address;
-  if ((!effCountry || !effAddress) && customerId) {
+  if ((!effCountry || !effAddress) && customerId && metSessie) {
     await safe(async () => {
       // De losse velden komen mee sinds migratie 0016. Zonder dat zou een
       // bestelling die op het opgeslagen adres terugvalt wél billing_address
@@ -1518,15 +1540,33 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
      merk mag nooit in een bestelling belanden door een aangepast formulier.
      Wat er wél staat, gaat als naam mee in details_json (de studio-mail en
      /admin lezen dat), en de toeslag per product gaat de offerte in. */
+  /* Sinds 19 oktober 2026 alleen met de sessie van deze klant: een eigen look kies je in
+     Studio, en Studio bestelt via /account/order. Op e-mailadres alleen was hij te kiezen
+     door iedereen die het adres kende. */
   let ownStyle = null;
   if (/^cs-\d{1,9}$/.test(String(details.style || ''))) {
-    ownStyle = await ownStyleFor(env, email, Number(details.style.slice(3)), svc).catch(() => null);
+    ownStyle = metSessie ? await ownStyleFor(env, email, Number(details.style.slice(3)), svc, customerId).catch(() => null) : null;
     if (!ownStyle) {
-      console.warn(`[order] eigen stijl ${details.style} hoort niet bij ${email} of is niet actief — genegeerd`);
+      console.warn(`[order] eigen stijl ${details.style} hoort niet bij ${email}${metSessie ? '' : ' (geen sessie)'} of is niet actief — genegeerd`);
       delete details.style;
     } else {
       details.style_name = ownStyle.name;
       details.own_style_id = ownStyle.id;
+    }
+  }
+  /* Het eigen gezicht (`model=c<id>`): dezelfde regel. Alleen een merkmodel van deze
+     klant, met zijn sessie; anders gaat het veld eruit (19 oktober 2026). Tot vandaag
+     ging elk nummer mee in details_json; /admin las het alleen voor de eigen klant,
+     maar de bevestigingsmail noemde het al "Je eigen merkmodel". */
+  if (/^c\d{1,9}$/.test(String(details.model || ''))) {
+    let eigen = null;
+    if (metSessie && env.DB) {
+      eigen = await env.DB.prepare('SELECT id FROM custom_models WHERE id = ?1 AND customer_id = ?2')
+        .bind(Number(String(details.model).slice(1)), customerId).first().catch(() => null);
+    }
+    if (!eigen) {
+      console.warn(`[order] eigen gezicht ${details.model} hoort niet bij ${email}${metSessie ? '' : ' (geen sessie)'} — genegeerd`);
+      delete details.model;
     }
   }
 
@@ -3070,6 +3110,20 @@ export async function upsertCustomer(env, c) {
   return row?.id ?? null;
 }
 
+/* ── EEN FORMULIER ZONDER INLOG — 19 oktober 2026 ────────────────────────────
+   Een nieuwe klant aanmaken mag elk formulier. Een bestaande klant bijwerken
+   (ook alleen zijn lege velden, de regel van 8 oktober) alleen met zijn sessie:
+   `bijwerken` is true als de bestelling via /account/order binnenkomt met de
+   sessie van dit adres. Geeft het klantnummer, en of de klant net is aangemaakt.
+   Zie de noot bij `sessieVanDitAdres` in onRequestPost() en tests/klant-scheiding. */
+export async function klantUitFormulier(env, c, { bijwerken = false } = {}) {
+  if (!env?.DB) return { id: null, nieuw: false };
+  const bestond = await env.DB.prepare('SELECT id FROM customers WHERE email = ?1').bind(c.email).first().catch(() => null);
+  if (bestond && !bijwerken) return { id: bestond.id, nieuw: false };
+  const id = await upsertCustomer(env, c);
+  return { id, nieuw: !bestond && !!id };
+}
+
 /** De brede variant, met de kolommen uit migratie 0016. Zie upsertCustomer(). */
 /* ── EEN BEVESTIGD ACCOUNT WORDT NIET OVERSCHREVEN — 1 oktober 2026 (ronde 8, B-B2) ──
    /api/order en /api/plan zijn niet ingelogd. Wie het e-mailadres van een
@@ -3204,13 +3258,16 @@ async function safe(fn) { try { return await fn(); } catch (e) { console.error('
  * pakket) telt als allebei. Alleen 'active' — een voorgestelde stijl waar de
  * offerte nog van openstaat is nog geen keuze.
  */
-async function ownStyleFor(env, email, styleId, service) {
+async function ownStyleFor(env, email, styleId, service, customerId = null) {
   if (!env?.DB || !Number.isInteger(styleId) || !isEmail(String(email || ''))) return null;
+  /* Met het klantnummer van de sessie erbij (19 oktober 2026): het adres alleen is
+     geen bewijs, het nummer uit de sessie wel. */
   const row = await env.DB.prepare(
     `SELECT s.id, s.name, s.service, s.surcharge_cents
        FROM customer_styles s JOIN customers c ON c.id = s.customer_id
-      WHERE s.id = ?1 AND lower(c.email) = ?2 AND s.status = 'active'`
-  ).bind(styleId, String(email).toLowerCase()).first().catch(() => null);
+      WHERE s.id = ?1 AND lower(c.email) = ?2 AND s.status = 'active'
+        AND (?3 IS NULL OR s.customer_id = ?3)`
+  ).bind(styleId, String(email).toLowerCase(), customerId ?? null).first().catch(() => null);
   if (!row) return null;
   const past = row.service === 'both' || service === 'drop' || row.service === service;
   return past ? row : null;

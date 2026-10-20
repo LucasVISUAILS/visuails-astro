@@ -509,7 +509,7 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
       {vast.map((s: any, i: number) => (
         <li class="h-st-look h-in" style={`--d:${i}`}>
           {opAanvraag ? (
-            <div class="h-st-beeld h-vd-klip" aria-hidden="true">
+            <div class="h-st-beeld h-vd-klip" aria-hidden="true" data-achter={`klip-${s.slug}`}>
               <span class="h-vd-klip-in">
                 <span class="h-cirkel h-cirkel-wit" set:html={ik('speel')} />
                 <span class="h-vd-klip-t">{PLAAT(s.slug)[0]}</span>

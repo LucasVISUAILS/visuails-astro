@@ -74,7 +74,7 @@ export function poppetjeSvg({ crop = 'full', product = '', own = [], klein = fal
 export const POP_CSS = `
 .pop { display: block; width: 100%; height: auto; }
 .pop .r { fill: rgb(0 0 0 / .06); stroke: var(--line-strong, rgb(0 0 0 / .34)); stroke-width: 2; stroke-linejoin: round; }
-.pop .r-head { fill: var(--paper, #F2F3F5); }
+.pop .r-head { fill: var(--paper, #F2F2F2); }
 .pop .r-arms, .pop .r-legs { fill: none; }
 .pop .r-shoes, .pop .r-bottom, .pop .r-top, .pop .r-underlayer { fill: rgb(0 0 0 / .13); stroke-width: 1.5; }
 .pop[data-product="top"] .r-top,
@@ -91,7 +91,7 @@ export const POP_CSS = `
 .pop[data-own*="bottom"] .r-bottom,
 .pop[data-own*="top"] .r-top,
 .pop[data-own*="underlayer"] .r-underlayer { fill: rgb(0 0 0 / .45); stroke: none; }
-.pop .pop-buiten { fill: var(--paper, #F2F3F5); fill-opacity: .8; }
+.pop .pop-buiten { fill: var(--paper, #F2F2F2); fill-opacity: .8; }
 .pop .pop-kader { fill: none; stroke: var(--ink, #000); stroke-width: 2; }
 .pop.pop-klein .pop-buiten { display: none; }
 .pop.pop-klein .r-arms, .pop.pop-klein .r-legs { stroke: var(--line, rgb(0 0 0 / .2)); }

@@ -20,7 +20,8 @@
    Nu wordt elke stand vooraf één keer gefotografeerd, met de schermen erin:
    `node scripts/laptop-standen.mjs` bouwt de bron (HalLaptopSchermen.astro op
    /laptop-bron/<taal>/, alleen met LAPTOP_BRON=1), maakt van elke stand een
-   foto van 2304 × 1728 en zet die als webp en avif in public/img/hal/stand/.
+   foto van 2304 × 1296 (sinds 20 oktober 2026; eerst 2304 × 1728) en zet die als
+   webp en avif in public/img/hal/stand/.
    De laptop zelf is daarna twee foto's die in elkaar overvloeien: geen 3D,
    geen masker, niets dat per frame getekend moet worden.
 
@@ -33,7 +34,7 @@ import { isEcht } from '../lib/beeldAanwezig.js';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
-/** De breedtes waarin elke stand er ligt (de foto is 2304 × 1728). */
+/** De breedtes waarin elke stand er ligt (de foto is 2304 × 1296). */
 export const STAND_BREEDTES = [1000, 1600, 2304];
 export const STAND_MAP = '/img/hal/stand';
 

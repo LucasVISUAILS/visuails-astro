@@ -158,7 +158,7 @@ console.log('\no25 · een inloglink van iemand anders vraagt eerst of je wilt wi
 }
 
 /* ══ o25 (4) · KLANTGEGEVENS NIET TE OVERSCHRIJVEN MET ALLEEN EEN E-MAILADRES ══ */
-console.log('\no25 · een formulier zonder inlog vult bij een bestaande klant alleen lege velden');
+console.log('\no25 · een formulier zonder inlog verandert een bestaande klant niet (sinds 19 oktober 2026 ook geen leeg veld)');
 {
   const { onRequestPost: orderPost, upsertCustomer, MAX_FORM_FIELDS } = await import('../functions/api/order.js');
   const { db } = verseDb(new URL('../schema.sql', import.meta.url));
@@ -180,7 +180,11 @@ console.log('\no25 · een formulier zonder inlog vult bij een bestaande klant al
   ok('het telefoonnummer ook', rij.phone, '+31 6 00000001');
   ok('en btw-nummer en adres', [rij.vat_number, rij.billing_address], ['NL000000000B01', 'Verzonnenstraat 1\n0000 AA Nergenshuizen']);
   ok('en de contactvoorkeur', rij.contact_preference, 'email');
-  ok('een leeg veld mag wel gevuld worden', rij.brand, 'Nieuw Merk');
+  /* Tot 19 oktober 2026 mocht een leeg veld wel gevuld worden. Sindsdien verandert een
+     formulier zonder inlog een bestaande klant helemaal niet (klantUitFormulier() in
+     functions/api/order.js, tests/klant-scheiding.test.mjs): ook een leeg veld van een
+     ander was zo met alleen zijn e-mailadres te vullen. */
+  ok('ook een leeg veld blijft leeg (sinds 19 oktober 2026)', rij.brand, null);
 
   /* Ook via /api/plan's tweede stap: KVK-nummer en "geen btw-nummer" niet omzetten. */
   db.prepare('UPDATE customers SET reg_number = ? WHERE id = ?').run('00000001', id);

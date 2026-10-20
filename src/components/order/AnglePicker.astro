@@ -315,7 +315,7 @@ const vasteRegel = lang === 'nl'
   .pl-hoek input { position: absolute; width: 1px; height: 1px; opacity: 0; margin: 0; pointer-events: none; }
   .pl-hoek-box {
     display: grid; grid-template-rows: auto 1fr; gap: .5rem; height: 100%;
-    border: 1px solid var(--line-strong); border-radius: var(--r-md, 12px);
+    border: 1px solid var(--line-strong); border-radius: var(--r-md, 12px) 3px 3px 3px;
     overflow: hidden; background: var(--surface, #fff);
     transition: border-color .2s var(--ease, ease), box-shadow .2s var(--ease, ease);
   }
@@ -324,7 +324,7 @@ const vasteRegel = lang === 'nl'
   /* Gekozen: een dikkere rand van de inkt en een vinkje in de hoek. Niet een
      ander vlak — dan zou de foto van kleur lijken te veranderen, en juist die
      foto is het antwoord op "wat kies ik hier". */
-  .pl-hoek input:checked + .pl-hoek-box { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+  .pl-hoek input:checked + .pl-hoek-box { border-color: var(--kies, var(--ink)); box-shadow: inset 0 0 0 1px var(--kies, var(--ink)); }
   .pl-hoek input:checked + .pl-hoek-box .pl-hoek-naam::after {
     content: '✓'; margin-left: .4rem; color: var(--accent-bright, currentColor); font-weight: 700;
   }

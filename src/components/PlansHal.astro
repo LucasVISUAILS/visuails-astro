@@ -63,9 +63,9 @@ const COPY = {
     lede: `One monthly budget for catalog sets and carousels: ${pctMin}–${pctMax}% cheaper than ordering the same catalog sets one by one.`,
     kies: 'Choose a plan',
     creditPil: 'What a credit is', creditKop: 'How credits add up',
-    plansPil: 'Plans', plansKop: ['Three', 'plans.'],
+    plansPil: 'Plans', plansKop: ['Choose your', 'monthly budget.'],
     perMaand: 'a month', perCredit: 'per credit', credits: 'credits',
-    bespaar: (s: string, n: number, los: string) => `Save ${s} a month — ${n} catalog sets one-off cost ${los}.`,
+    bespaar: (s: string, n: number, los: string) => `Save ${s} a month: ${n} catalog sets one-off cost ${los}.`,
     merkmodel: 'Your own Brand Model included',
     merkmodelVooruit: 'Your own Brand Model included when you pay a year up front',
     spaar: (n: number) => `Save up to ${n} credits; nothing expires while it runs`,
@@ -102,9 +102,9 @@ const COPY = {
     lede: `Eén maandbudget voor catalogsets en carrousels: ${pctMin}–${pctMax}% goedkoper dan dezelfde catalogsets los bestellen.`,
     kies: 'Kies een abonnement',
     creditPil: 'Wat een credit is', creditKop: 'Zo reken je met credits',
-    plansPil: 'Abonnementen', plansKop: ['Drie', 'abonnementen.'],
+    plansPil: 'Abonnementen', plansKop: ['Kies je', 'maandbudget.'],
     perMaand: 'per maand', perCredit: 'per credit', credits: 'credits',
-    bespaar: (s: string, n: number, los: string) => `Je bespaart ${s} per maand — ${n} catalogsets los kosten ${los}.`,
+    bespaar: (s: string, n: number, los: string) => `Je bespaart ${s} per maand: ${n} catalogsets los kosten ${los}.`,
     merkmodel: 'Je eigen merkmodel inbegrepen',
     merkmodelVooruit: 'Je eigen merkmodel inbegrepen bij een jaar vooruit',
     spaar: (n: number) => `Sparen tot ${n} credits; zolang het loopt vervalt er niets`,
@@ -204,10 +204,10 @@ const BEELD = {
             <p class="h-pk-fit">{creditVertaling(p.credits, lang)}</p>
             <p class="h-pk-prijs"><b>{p.price}</b> <span>{c.perMaand} · {ex}</span></p>
             <ul class="h-pk-lijst" role="list">
-              <li><i set:html={ik('check')} />{p.perCredit} {c.perCredit}</li>
-              <li><i set:html={ik('check')} />{c.spaar(spaarPlafond(p.credits))}</li>
-              {p.id === 'studio' && <li><i set:html={ik('check')} />{c.merkmodelVooruit}</li>}
-              {b && <li><i set:html={ik('check')} />{c.bespaar(e(b.saving), b.count, e(b.los))}</li>}
+              <li>{p.perCredit} {c.perCredit}</li>
+              <li>{c.spaar(spaarPlafond(p.credits))}</li>
+              {p.id === 'studio' && <li>{c.merkmodelVooruit}</li>}
+              {b && <li>{c.bespaar(e(b.saving), b.count, e(b.los))}</li>}
             </ul>
             <p class="h-pk-voet">
               <a href={`${lp('/start/plan')}?plan=${p.id}`} class="h-knop h-knop-inkt" data-vis-klant="plan-kies" data-vis-abo-label={c.overstappen} data-vis-abo="/account/plan?tab=plan#overstappen"><span data-vis-label>{c.kiesPlan(p.name)}</span><span class="o" set:html={ik('rechts')} /></a>

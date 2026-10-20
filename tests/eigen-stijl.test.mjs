@@ -94,7 +94,7 @@ const get = (path) => adminGet({ request: new Request(`https://visuails.com${pat
 const gaatDoor = (res) => (res.status >= 300 && res.status < 400)
   || (res.status === 200 && /text\/html/.test(res.headers.get('content-type') || ''));
 
-async function bestel(velden, ip = '10.0.0.1') {
+async function bestel(velden, ip = '10.0.0.1', sessieKlant = null) {
   const { onRequestPost } = await import('../functions/api/order.js');
   const fd = new FormData();
   /* Een telefoonnummer standaard erbij: /api/order weigert sinds 11 september
@@ -103,7 +103,7 @@ async function bestel(velden, ip = '10.0.0.1') {
      dezelfde zet en dezelfde reden. */
   const alles = { phone: '+31 6 12345678', ...velden };
   for (const [k, v] of Object.entries(alles)) fd.append(k, String(v));
-  return onRequestPost({ request: new Request('https://visuails.com/api/order', { method: 'POST', headers: { 'cf-connecting-ip': ip }, body: fd }), env, waitUntil: () => {} });
+  return onRequestPost({ request: new Request('https://visuails.com/api/order', { method: 'POST', headers: { 'cf-connecting-ip': ip }, body: fd }), env, waitUntil: () => {}, sessieKlant });
 }
 const KLANT = {
   name: 'Mara Visser', brand: 'VOLT', email: 'studio@voorbeeld-volt.nl', phone: '+31 6 12345678',
@@ -230,7 +230,13 @@ const klantId = aanvraag.customer_id;
 console.log('\n4 · bestellen met de eigen look');
 {
   const basis = { ...KLANT, service: 'lifestyle', products: 3, background: 'studio-white' };
-  const res = await bestel({ ...basis, style: `cs-${stijl.id}` }, '10.0.0.2');
+  /* Sinds 19 oktober 2026 telt de eigen look alleen met de sessie van de klant: zo
+     bestelt Studio (via /account/order). Zonder sessie gaat hij eruit, ook voor de
+     eigenaar zelf — zie tests/klant-scheiding.test.mjs. */
+  const sessie = { customer_id: klantId, email: KLANT.email };
+  const zonderSessie = await bestel({ ...basis, style: `cs-${stijl.id}` }, '10.0.0.9');
+  ok('zonder sessie, op het adres van de eigenaar: door, maar zonder de look', [gaatDoor(zonderSessie), JSON.parse(db.prepare(`SELECT details_json FROM orders ORDER BY id DESC LIMIT 1`).get().details_json || '{}').style || ''], [true, '']);
+  const res = await bestel({ ...basis, style: `cs-${stijl.id}` }, '10.0.0.2', sessie);
   ok('de bestelling gaat door', gaatDoor(res));
   const o = db.prepare(`SELECT total_cents, details_json FROM orders ORDER BY id DESC LIMIT 1`).get();
   const d = JSON.parse(o.details_json || '{}');
@@ -252,7 +258,7 @@ console.log('\n4 · bestellen met de eigen look');
 
   /* Alleen catalog, dan niet bij lifestyle. */
   db.prepare(`UPDATE customer_styles SET service = 'catalog' WHERE id = ?`).run(stijl.id);
-  const verkeerd = await bestel({ ...basis, style: `cs-${stijl.id}` }, '10.0.0.4');
+  const verkeerd = await bestel({ ...basis, style: `cs-${stijl.id}` }, '10.0.0.4', sessie);
   ok('een catalog-look op een lifestylebestelling gaat door', gaatDoor(verkeerd));
   const d3 = JSON.parse(db.prepare(`SELECT details_json FROM orders ORDER BY id DESC LIMIT 1`).get().details_json || '{}');
   ok('  zonder de look', d3.style || '', '');

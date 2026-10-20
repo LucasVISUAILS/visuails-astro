@@ -388,13 +388,13 @@ const thumbSet = (m) => {
     min-width: 0;
     padding: .5rem;
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-md);
+    border-radius: var(--r-md) 3px 3px 3px;
     background: var(--surface);
     cursor: pointer;
     transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
   }
   .mp-opt:hover { border-color: var(--accent-line); }
-  .mp-opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  .mp-opt:has(input:checked) { border-color: var(--kies, var(--accent)); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--kies, var(--accent)); }
   .mp-opt:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
   /* 3:4, which is what every roster portrait actually is — models.js argues
@@ -405,7 +405,7 @@ const thumbSet = (m) => {
     width: 100%;
     aspect-ratio: 3 / 4;
     object-fit: cover;
-    border-radius: var(--r-sm);
+    border-radius: var(--r-sm) 3px 3px 3px;
     background: var(--surface-2);
     box-shadow: inset 0 0 0 1px var(--line-strong);
   }
@@ -461,7 +461,7 @@ const thumbSet = (m) => {
   .mp-signin {
     display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
     margin: 1.1rem 0 0; padding: .8rem 1rem;
-    border-radius: var(--r-md);
+    border-radius: var(--r-md) 3px 3px 3px;
     background: var(--surface);
     box-shadow: inset 3px 0 0 var(--accent), inset 0 1px 0 rgb(255 255 255 / 0.05);
     font-size: .9rem; line-height: 1.5; color: var(--ink-2);
@@ -505,7 +505,7 @@ const thumbSet = (m) => {
      onbekenden te vinden. */
   .mp-opt.is-own {
     border-color: var(--ink);
-    box-shadow: 0 0 0 1px var(--ink), 0 6px 18px rgb(15 12 36 / .07);
+    box-shadow: 0 0 0 1px var(--ink);
     background: var(--surface);
   }
   /* Aangevinkt wint van "van jou": zonder deze regel houdt de inktrand hierboven
@@ -514,13 +514,13 @@ const thumbSet = (m) => {
   .mp-opt.is-own:has(input:checked) {
     border-color: var(--accent);
     background: var(--accent-soft);
-    box-shadow: inset 0 0 0 1px var(--accent), 0 6px 18px rgb(15 12 36 / .07);
+    box-shadow: inset 0 0 0 1px var(--accent);
   }
   .mp-opt.is-own .mp-thumb {
     box-shadow: inset 0 0 0 1px var(--line-strong);
     transition: scale .35s var(--ease, ease);
   }
-  .mp-opt.is-own:hover .mp-thumb { scale: 1.03; }
+  .mp-opt.is-own:hover .mp-thumb { }
   .mp-opt.is-own .mp-name { font-weight: 600; }
   .mp-opt.is-own .mp-traits { color: var(--ink-2); font-weight: 600; }
   @media (prefers-reduced-motion: reduce) {
@@ -549,8 +549,8 @@ const thumbSet = (m) => {
     top: .3rem;
     left: .3rem;
     padding: .12rem .38rem;
-    border-radius: var(--r-sm);
-    background: rgb(15 12 36 / .88);
+    border-radius: var(--r-sm) 3px 3px 3px;
+    background: rgb(0 0 0 / .88);
     /* ── DONKER OP DONKER — 10 september 2026 ─────────────────────────────
        Lucas: *"de label tekst is ook niet goed zichtbaar."* Hier stond
        `var(--accent-bright)`, en die naam liegt: in global.css is
@@ -590,7 +590,7 @@ const thumbSet = (m) => {
     color: var(--accent-bright);
     text-decoration: underline;
     text-underline-offset: 3px;
-    border-radius: var(--r-sm);
+    border-radius: var(--r-sm) 3px 3px 3px;
   }
   .pl-why > summary:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
   .pl-why > p { margin-top: .5rem; font-size: .82rem; color: var(--ink-3); line-height: 1.55; max-width: 70ch; }

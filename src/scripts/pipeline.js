@@ -9097,7 +9097,7 @@ function addOwnStyles(me) {
    naam in het accent. Alleen tekens die in een SVG-tekstknoop mogen. */
 function ownLookPlaceholder(name) {
   const tekst = escHtml(String(name || '').slice(0, 24));
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="#1C1D18"/><text x="24" y="264" font-family="Hanken Grotesk, Arial, sans-serif" font-size="22" font-weight="700" fill="#4A1FFF">${tekst}</text></svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="#1C1C1C"/><text x="24" y="264" font-family="Hanken Grotesk, Arial, sans-serif" font-size="22" font-weight="700" fill="#FFFFFF">${tekst}</text></svg>`;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 

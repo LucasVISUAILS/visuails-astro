@@ -80,32 +80,36 @@ const SITE = 'https://visuails.com';
    wit papier op nevel, de lijn #DEDCE8 en mist met nacht voor een vlak. Violet
    alleen op de knop. `faint` was zwart op 45 %, 3,4:1 op wit voor de voettekst
    van 12 px; nu inkt 3, 5,4:1. */
+/* ── SCHEMA A, 19 OKTOBER 2026 (afvinklijst 41) ─────────────────────────────
+   Wit, zwart en grijs zonder kleur: inkt #000000, lopende tekst #3D3D3D,
+   klein #616161 (6,2:1 op wit), de lijn #DDDDDD, nevel #F2F2F2. Violet staat
+   in de mail nergens: ook de knop is zwart, zoals de gewone knoppen op de site. */
 const C = {
-  green: '#4A1FFF',
+  green: '#000000',
   onAccent: '#FFFFFF',
-  accentText: '#3D17D6',
-  ink: '#0F0C24',
-  text: '#4B4960',
-  head: '#0F0C24',
-  muted: '#6A6880',
-  faint: '#6A6880',
-  rule: '#DEDCE8',
-  ruleSoft: '#ECEBF3',
+  accentText: '#000000',
+  ink: '#000000',
+  text: '#3D3D3D',
+  head: '#000000',
+  muted: '#616161',
+  faint: '#616161',
+  rule: '#DDDDDD',
+  ruleSoft: '#E8E8E8',
   paper: '#FFFFFF',
-  foot: '#F5F5F9',
-  tintBg: '#F1EEFF',
-  tintInk: '#2A0E8F',
-  page: '#F5F5F9',
+  foot: '#F2F2F2',
+  tintBg: '#F2F2F2',
+  tintInk: '#000000',
+  page: '#F2F2F2',
 
   /* De vijf toestanden, lichte stand — zie de tabel in KLEURENSCHEMA.md.
      Mail kent geen donkere stand: een mailclient kan zijn eigen donkere modus
      hebben, maar die herkleurt ons vlak niet, dus een tweede set zou alleen
      maar een tweede waarheid zijn. */
-  stWaitFill: 'transparent', stWaitEdge: '#8E8BA2',            stWaitInk: '#4B4960',
-  stWorkFill: '#F1EEFF',     stWorkEdge: '#DCD5FF',             stWorkInk: '#2A0E8F',
-  stDoneFill: '#2A0E8F',     stDoneEdge: '#2A0E8F',             stDoneInk: '#FFFFFF',
+  stWaitFill: 'transparent', stWaitEdge: '#8A8A8A',            stWaitInk: '#3D3D3D',
+  stWorkFill: '#F2F2F2',     stWorkEdge: '#DDDDDD',             stWorkInk: '#000000',
+  stDoneFill: '#000000',     stDoneEdge: '#000000',             stDoneInk: '#FFFFFF',
   stRevFill:  '#F6E7D1',     stRevEdge:  'rgba(138,77,6,.30)',  stRevInk:  '#8A4D06',
-  stCanFill:  '#ECEBF3',     stCanEdge:  '#8E8BA2',             stCanInk:  '#4B4960',
+  stCanFill:  '#E8E8E8',     stCanEdge:  '#8A8A8A',             stCanInk:  '#3D3D3D',
 };
 
 import { stand } from '../data/status.js';
@@ -310,7 +314,7 @@ export const statusPil = (status, label) => {
     can: [C.stCanFill, C.stCanEdge, C.stCanInk],
   }[stand(status)];
   const [vul, rand, inkt] = k;
-  return `<span style="display:inline-block;padding:5px 11px;border:1px solid ${rand};border-radius:999px;`
+  return `<span style="display:inline-block;padding:5px 11px;border:1px solid ${rand};border-radius:8px 3px 3px 3px;`
     + `background:${vul === 'transparent' ? 'none' : vul};font-family:${FONT};font-size:12px;line-height:16px;`
     + `font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${inkt};white-space:nowrap">`
     + `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${inkt};margin-right:6px;vertical-align:1px"></span>`
@@ -354,7 +358,7 @@ export const payPanel = ({ label, amount, sub, href, cta }) =>
 /** A quiet aside with a hairline down its left — the spam note lives in one. */
 export const note = html =>
   `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 16px"><tr>
-    <!-- De lijn van de hal (#DEDCE8), als bgcolor: dat slikt elke mailclient. -->
+    <!-- De lijn van de hal (#DDDDDD), als bgcolor: dat slikt elke mailclient. -->
     <td width="3" bgcolor="${C.rule}" style="width:3px;font-size:0;line-height:0">&nbsp;</td>
     <td style="padding:2px 0 2px 14px">
       <p style="margin:0;font-family:${FONT};font-size:13px;line-height:1.6;color:${C.muted}">${html}</p>
@@ -371,7 +375,7 @@ export const note = html =>
  * before the button rather than after.
  */
 export const quote = html =>
-  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.tintBg}" style="background:${C.tintBg};margin:2px 0 16px;border-radius:18px"><tr>
+  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.tintBg}" style="background:${C.tintBg};margin:2px 0 16px;border-radius:18px 3px 3px 3px"><tr>
     <td style="padding:16px 20px">
       <p style="margin:0;font-family:${FONT};font-size:16px;line-height:1.6;color:${C.text}">${html}</p>
     </td>

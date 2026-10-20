@@ -119,16 +119,16 @@
      de kleur op één plek in plaats van op duizend, en houdt de geschiedenis
      leesbaar. Wat NIET blijft is een oude WAARDE: elke alias hieronder wijst
      naar een token uit het schema. */
-  --paper:       #F2F3F5;
-  --surface:     #E4E7EC;
-  --sunken:      #DADEE5;
+  --paper:       #F2F2F2;
+  --surface:     #E7E7E7;
+  --sunken:      #DEDEDE;
   --ink:         #000000;
   --ink-2:       rgb(0 0 0 / .66);   /* lopende tekst · 6,95:1 */
   --ink-3:       rgb(0 0 0 / .56);   /* labels en microcopy · 4,81:1 — de laatste trede die letter mag zijn */
   --line:        rgb(0 0 0 / .20);
   --line-soft:   rgb(0 0 0 / .10);
   --panel:       #000000;
-  --on-panel:    #F2F3F5;
+  --on-panel:    #F2F2F2;
 
   /* ── DRIE AANVULLINGEN OP HET SCHEMA, EN WAAROM ZE ER ZIJN ───────────────
      Het schema kent twee lijnen en drie gronden. Deze codebase heeft er op
@@ -154,8 +154,8 @@
   --bg-0:        var(--paper);
   --surface-2:   var(--sunken);
   --glass:       var(--panel);
-  --glass-2:     #0C0D10;
-  --glass-3:     #14161A;
+  --glass-2:     #0D0D0D;
+  --glass-3:     #161616;
   --ink-1:       var(--ink);
   --ink-4:       var(--line-strong);
   --line-ui:     rgb(0 0 0 / .45);
@@ -217,11 +217,11 @@
      bijna-zwart, want zwart op lime is 15:1 en wit op lime 1,91:1. Op violet is
      het omgekeerd: wit haalt 7,16:1 en zwart 2,93:1. Die ene omkering raakt
      elke knop op de site, en hij gaat hier — niet per knop. */
-  --accent:          #4A1FFF;
+  --accent:          #000000;
   --on-accent:       #FFFFFF;
-  --accent-text:     #3D17D6;   /* het violet als LETTER op de grond · 8,25:1 */
-  --accent-tint:     #E4DFFF;   /* zacht accentvlak — hoogstens één per scherm */
-  --on-accent-tint:  #2A0E8F;   /* · 10,46:1 */
+  --accent-text:     #000000;   /* het violet als LETTER op de grond · 8,25:1 */
+  --accent-tint:     #EDEDED;   /* zacht accentvlak — hoogstens één per scherm */
+  --on-accent-tint:  #000000;   /* · 10,46:1 */
   /* Eén trede donkerder voor hover en ingedrukt. Staat niet in het schema
      omdat het schema over kleuren gaat en niet over toestanden; hij is de
      lettervariant, zodat er geen zesde violet bij komt. */
@@ -487,11 +487,11 @@
      De namen zijn neutraal gehouden zodat ze ook op facturen, abonnementen en
      in admin kloppen — zie de tabel in KLEURENSCHEMA.md voor welke waarde waar
      op slaat. */
-  --st-wait-fill: transparent;  --st-wait-edge: #7C8096;              --st-wait-ink: #4A4E6B;
-  --st-work-fill: #E4DFFF;      --st-work-edge: rgb(61 23 214 / .30);  --st-work-ink: #3D17D6;
-  --st-done-fill: #1F0B66;      --st-done-edge: #1F0B66;               --st-done-ink: #FFFFFF;
+  --st-wait-fill: transparent;  --st-wait-edge: #818181;              --st-wait-ink: #505050;
+  --st-work-fill: #EDEDED;      --st-work-edge: rgb(0 0 0 / .30);  --st-work-ink: #000000;
+  --st-done-fill: #000000;      --st-done-edge: #000000;               --st-done-ink: #FFFFFF;
   --st-rev-fill:  #F6E7D1;      --st-rev-edge:  rgb(138 77 6 / .30);   --st-rev-ink:  #8A4D06;
-  --st-can-fill:  #E4E7EC;      --st-can-edge:  #83868A;               --st-can-ink:  #3E4145;
+  --st-can-fill:  #E7E7E7;      --st-can-edge:  #868686;               --st-can-ink:  #414141;
 
   /* THE LOGOTYPE IS THE ACCENT NOW, August 2026. It was --ink-1 (flat white)
      for as long as the mark has been an SVG, which was the right value while
@@ -1117,7 +1117,7 @@
      fout in plaats van als een keuze. En de figuur erin heeft zijn eigen rand;
      die mag niet tegen de rand van dit blok liggen. */
   padding: clamp(.9rem, 2vw, 1.6rem);
-  border-radius: var(--r-lg);
+  border-radius: var(--r-lg) 3px 3px 3px;
   /* Vanzelfsprekend voor een blok dat een afgeronde grond schildert onder een
      kind dat ook afrondt, en toch de reden dat de hoeken anders lichte puntjes
      krijgen. */
@@ -1278,11 +1278,11 @@ body.studio.on-ink {
      (#E9963B, precies de waarde die hier stond), en de hele statusset kantelt
      mee in deze scope — zie het blok eronder. De val blijft dezelfde: elke rol
      die naar een andere rol wijst, moet hier OPNIEUW gezet worden. */
-  --st-wait-fill: transparent;  --st-wait-edge: #5B5F7A;               --st-wait-ink: #A7ABC7;
-  --st-work-fill: #1E1840;      --st-work-edge: rgb(166 148 255 / .34);  --st-work-ink: #A694FF;
-  --st-done-fill: #A694FF;      --st-done-edge: #A694FF;                --st-done-ink: #000000;
+  --st-wait-fill: transparent;  --st-wait-edge: #606060;               --st-wait-ink: #ACACAC;
+  --st-work-fill: #1E1E1E;      --st-work-edge: rgb(200 200 200 / .34);  --st-work-ink: #C8C8C8;
+  --st-done-fill: #C8C8C8;      --st-done-edge: #C8C8C8;                --st-done-ink: #000000;
   --st-rev-fill:  #2B1D0A;      --st-rev-edge:  rgb(233 150 59 / .34);   --st-rev-ink:  #E9963B;
-  --st-can-fill:  #1B1E23;      --st-can-edge:  #5C6066;                --st-can-ink:  #A0A4AA;
+  --st-can-fill:  #1E1E1E;      --st-can-edge:  #606060;                --st-can-ink:  #A4A4A4;
 
   --clay:        var(--st-rev-ink);
   --clay-text:   var(--st-rev-ink);
@@ -1314,15 +1314,15 @@ body.studio.on-ink {
 
      Als LETTER is het op donker dezelfde #A694FF — één violet per modus, geen
      aparte tekstvariant zoals op licht. */
-  --accent:        #A694FF;
+  --accent:        #C8C8C8;
   --on-accent:     #000000;
   --accent-ink:    var(--on-accent);
-  --accent-dim:    #BFB2FF;
-  --accent-tint:   #1E1840;
-  --on-accent-tint: #A694FF;
-  --accent-text:   #A694FF;
-  --accent-word:   #A694FF;
-  --accent-bright: #A694FF;
+  --accent-dim:    #BCBCBC;
+  --accent-tint:   #1E1E1E;
+  --on-accent-tint: #C8C8C8;
+  --accent-text:   #C8C8C8;
+  --accent-word:   #C8C8C8;
+  --accent-bright: #C8C8C8;
   --accent-soft:   rgb(255 255 255 / 0.10);
   --accent-line:   rgb(255 255 255 / 0.28);
 
@@ -1411,7 +1411,7 @@ body.studio.on-ink {
 .stand {
   display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
   min-height: 28px; padding: 0 .7rem;
-  border: 0; border-radius: var(--r-pill);
+  border: 0; border-radius: 8px 3px 3px 3px;
   font-family: var(--font-mono); font-stretch: var(--stretch-mono);
   font-size: 11.5px; line-height: 1; font-weight: 600; letter-spacing: .06em;
   text-transform: uppercase; text-decoration: none; white-space: nowrap;
@@ -1465,7 +1465,7 @@ a.stand:hover { box-shadow: inset 0 0 0 1px currentColor; }
 /* media */
 .photo-band, .photo-split-media, .vis, .cmp, .tile-media, .hv-svc-media,
 .card > img, .card > picture > img, figure.bm-model, .bm-model {
-  border-radius: var(--r-lg);
+  border-radius: var(--r-lg) 3px 3px 3px;
   overflow: hidden;
 }
 /* A media box that abuts a tile body is half of one shape — it keeps the
@@ -1478,13 +1478,13 @@ a.stand:hover { box-shadow: inset 0 0 0 1px currentColor; }
 .card, .step, .anchor, .addon, .svc-explain-side, .ed-head,
 .hv-vs-col, .hv-dash-row, .hv-dash-log, .hv-ob-item, .hv-faq-item,
 .pl-total, .acc-item {
-  border-radius: var(--r-md);
+  border-radius: var(--r-md) 3px 3px 3px;
 }
 
 /* hairline grids — radius plus clipping, per the note above */
 .hv-pipe, .hv-week, .hv-ch, .hv-vs, .hv-dash, .hv-ob, .hv-faq,
 .compare-grid, .ladder-wrap {
-  border-radius: var(--r-md);
+  border-radius: var(--r-md) 3px 3px 3px;
   overflow: hidden;
 }
 
@@ -1503,14 +1503,14 @@ a.stand:hover { box-shadow: inset 0 0 0 1px currentColor; }
    site went round — found by walking the cascade in a browser, not by reading.
    Any per-surface button radius belongs nowhere: .btn owns its own shape. */
 .choice, .pl-panel, .bg-swatch {
-  border-radius: var(--r-md);
+  border-radius: var(--r-md) 3px 3px 3px;
 }
 /* Photographs that sit on their own rather than inside a plate. Scoped to
    content contexts on purpose — a blanket `img { border-radius }` would round
    the logotype and every inline icon. */
 figure > img, figure > picture > img, .card img, .grid img,
 .reveal > img, .reveal > picture > img, img.wide {
-  border-radius: var(--r-lg);
+  border-radius: var(--r-lg) 3px 3px 3px;
 }
 
 /* marks — small standalone labels. Pill, not --r-sm, since August 2026.
@@ -1526,7 +1526,7 @@ figure > img, figure > picture > img, .card img, .grid img,
   border-radius: var(--r-pill);
 }
 /* De taalwissel is weer een pil, net als de knoppen (sectie 21, tweede ronde). */
-.ls { border-radius: var(--r-pill); }
+.ls { border-radius: 14px 3px 3px 3px; }
 
 /* Round objects, not pills. A control that is as tall as it is wide has no long
    axis for a pill to express — 999px on a square is a circle, which is what
@@ -1539,7 +1539,7 @@ figure > img, figure > picture > img, .card img, .grid img,
    focusable, and a link nobody can focus is not a skip link. */
 .skip-link {
   position: absolute; left: 1rem; top: -4rem; z-index: var(--z-toast);
-  padding: .7rem 1.1rem; border-radius: var(--r-md);
+  padding: .7rem 1.1rem; border-radius: var(--r-md) 3px 3px 3px;
   background: var(--accent); color: var(--accent-ink);
   font-size: .9rem; font-weight: 700; text-decoration: none;
   transition: top var(--dur-1) var(--ease);
@@ -1706,7 +1706,7 @@ button,
 input,
 optgroup,
 select,
-textarea { font: inherit; color: inherit; border-radius: var(--r-md); }
+textarea { font: inherit; color: inherit; border-radius: var(--r-md) 3px 3px 3px; }
 
 input[type="text"], input[type="email"], input[type="tel"], input[type="url"],
 input[type="number"], input[type="password"], input[type="search"],
@@ -2641,7 +2641,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(115% 130% at 16% 26%, #262A33 0%, #15171C 46%, #0A0B0E 100%);
+  background: radial-gradient(115% 130% at 16% 26%, #2A2A2A 0%, #171717 46%, #0B0B0B 100%);
   --los: clamp(4rem, 9vw, 9rem);
   --los-onder: clamp(3rem, 6vw, 5rem);
   -webkit-mask-image: linear-gradient(to bottom,
@@ -2955,7 +2955,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 /* 3 · PLATE — a hard-edged media rectangle. Wrapper AND element both take the
    zero radius, because a rounded <img> inside a square box is the single most
    common way a radius comes back. */
-.plate { position: relative; overflow: hidden; background: var(--surface-2); border-radius: var(--r-lg); }
+.plate { position: relative; overflow: hidden; background: var(--surface-2); border-radius: var(--r-lg) 3px 3px 3px; }
 .plate > img, .plate > picture > img, .plate > video, .plate > canvas, .plate > svg { display: block; width: 100%; height: 100%; object-fit: cover; }
 /* Stacked and left-aligned, not spread. space-between pushed the note to the
    card's right edge, which reads as belonging to whatever is next to it. */
@@ -3013,7 +3013,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
   grid-column: span 12;
   background: var(--surface);
   overflow: hidden;
-  border-radius: var(--r-lg);
+  border-radius: var(--r-lg) 3px 3px 3px;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -3089,7 +3089,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    SEQUENCE, where the items are steps in one thing rather than objects beside
    each other. OPP uses both too. Keeping the two named apart is what stops
    the next page picking one by accident. */
-.sheet { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr)); gap: 1px; background: var(--line); border-radius: var(--r-lg); overflow: hidden; }
+.sheet { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr)); gap: 1px; background: var(--line); border-radius: var(--r-lg) 3px 3px 3px; overflow: hidden; }
 .sheet > * { background: var(--bg); padding: clamp(1.2rem, 2.2vw, 1.8rem); }
 
 /* 6 · RAIL — a row you push sideways. Snap points so it always lands on a
@@ -3118,8 +3118,8 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 }
 .rail > * { flex: 0 0 clamp(15rem, 26vw, 21rem); scroll-snap-align: start; }
 .rail::-webkit-scrollbar { height: 6px; }
-.rail::-webkit-scrollbar-track { background: var(--line); border-radius: 99px; }
-.rail::-webkit-scrollbar-thumb { background: var(--line-ui); border-radius: 99px; }
+.rail::-webkit-scrollbar-track { background: var(--line); border-radius: 14px 3px 3px 3px; }
+.rail::-webkit-scrollbar-thumb { background: var(--line-ui); border-radius: 14px 3px 3px 3px; }
 
 /* 7 · CLOSING — the last fold. One idea, one action, the whole viewport. */
 .closing { text-align: center; display: grid; place-items: center; min-height: min(78svh, 44rem); }
@@ -3229,7 +3229,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
   /* Sectie 21, tweede ronde — Lucas: "Knoppen moeten pilvormig zijn en een fijne
      modieuze feel hebben." Dus weer de pil, met wat ruimere zijkanten, en op
      glas (zie .glas hieronder) een doorschijnende vulling. */
-  background: var(--ghost); color: var(--ink); border: 0; border-radius: var(--r-pill);
+  background: var(--ghost); color: var(--ink); border: 0; border-radius: 14px 3px 3px 3px;
   transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease),
               border-color var(--dur-1) var(--ease), filter var(--dur-1) var(--ease);
 }
@@ -3531,19 +3531,15 @@ svg.ik path { fill: inherit !important; stroke: none !important; }
    toen dit hier kwam te staan. Eén definitie, of het is over een maand op vier
    pagina's net iets anders. */
 .card, .tile {
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.06),
-    0 18px 34px -26px rgb(0 0 0 / 0.55);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06);
 }
 /* Op een heldere grond keert het licht om: daar is de bovenrand de donkere kant
    en zou een witte lichtlijn een streep zijn die nergens vandaan komt. */
 .on-bright .card, .on-bright .tile, .on-paper .card, .on-paper .tile {
-  box-shadow:
-    inset 0 1px 0 rgb(0 0 0 / 0.06),
-    0 18px 34px -26px rgb(0 0 0 / 0.22);
+  box-shadow: inset 0 1px 0 rgb(0 0 0 / 0.06);
 }
 .card { background: var(--surface); border: 1px solid var(--line); padding: clamp(1.4rem, 2.5vw, 2rem); transition: transform var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease); }
-.card-hover:hover { transform: translateY(-4px); border-color: var(--line-strong); }
+.card-hover:hover { border-color: var(--line-strong); }
 
 .trust-row { display: flex; flex-wrap: wrap; gap: 1.1rem 2.2rem; align-items: baseline; }
 .trust-item { display: flex; align-items: baseline; gap: .5rem; color: var(--ink-3); font-size: .9rem; }
@@ -3689,7 +3685,7 @@ svg.ik path { fill: inherit !important; stroke: none !important; }
 /* The border was --ink-900, i.e. the same value as the fill. On paper that
    read as a crisp edge around a dark block; on a dark ground it is a band with
    an invisible outline, so the edge comes from --line like every other one. */
-.cta-band { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: var(--r-lg); padding: clamp(3rem, 7vw, 6rem); text-align: center; background: var(--ink-900); }
+.cta-band { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: var(--r-lg) 3px 3px 3px; padding: clamp(3rem, 7vw, 6rem); text-align: center; background: var(--ink-900); }
 .cta-band > * { position: relative; }
 
 /* §8 bans feathered or blurred mask edges everywhere outside the chrome
@@ -3701,7 +3697,7 @@ svg.ik path { fill: inherit !important; stroke: none !important; }
 .marquee { overflow: hidden; padding-block: clamp(1rem, 2vw, 1.6rem); }
 .marquee-track { display: flex; gap: clamp(.9rem,1.4vw,1.3rem); width: max-content; }
 .marquee-item { width: clamp(280px, 26vw, 380px); aspect-ratio: 4/5; overflow: hidden; flex: 0 0 auto;
-  border-radius: var(--r-lg); box-shadow: inset 0 0 0 1px var(--line); }
+  border-radius: var(--r-lg) 3px 3px 3px; box-shadow: inset 0 0 0 1px var(--line); }
 
 /* Product visual scenes ("vis") — placeholder for the rare spot with no
    real "clean product on white" photography (see IMAGES.md). */
@@ -4202,7 +4198,7 @@ svg.ik path { fill: inherit !important; stroke: none !important; }
 .cmp .cmp-knob { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 44px; height: 44px; background: var(--accent); color: var(--accent-on); display: grid; place-items: center; box-shadow: 3px 3px 0 0 rgb(var(--scrim) / 0.35); cursor: ew-resize; touch-action: none; }
 .cmp .cmp-knob svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: butt; stroke-linejoin: miter; }
 .cmp .cmp-knob:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.cmp .cmp-tag { position: absolute; bottom: 14px; z-index: 4; padding: .32rem .75rem; font-size: .72rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; background: rgb(var(--scrim) / 0.78); color: #F2F3F5; pointer-events: none; }
+.cmp .cmp-tag { position: absolute; bottom: 14px; z-index: 4; padding: .32rem .75rem; font-size: .72rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; background: rgb(var(--scrim) / 0.78); color: #F2F2F2; pointer-events: none; }
 /* Each label fades out as its own side shrinks — i.e. as the divider (driven
    by --cmp-pos, from both the auto-animation and manual drag) sweeps toward it.
    opacity accepts a percentage; calc(...*6) means fully opaque until ~value
@@ -4923,7 +4919,6 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
   .lift:hover,
   .tile:hover,
   .guide-card:hover {
-    transform: translateY(-3px) scale(1.012);
     /* De rand wordt sterker in plaats van dat er een wolk onder groeit. */
     box-shadow: inset 0 0 0 1px var(--line-strong);
   }
@@ -5031,7 +5026,7 @@ a[href*="facebook.com"]  { --soc: url('/img/i-facebook.svg'); }
   max-width: 46ch;
   text-align: left;
   padding: .7rem .9rem .7rem 1rem;
-  border-radius: var(--r-md);
+  border-radius: var(--r-md) 3px 3px 3px;
   background: var(--surface);
   box-shadow: inset 3px 0 0 var(--accent), inset 0 1px 0 rgb(255 255 255 / 0.05);
   font-size: .88rem;
@@ -5284,7 +5279,7 @@ body { position: relative; }
   font-size: .72rem; font-weight: 700; letter-spacing: .02em;
   color: var(--accent-bright);
   border: 1px solid var(--accent-line);
-  border-radius: var(--r-sm, 4px);
+  border-radius: var(--r-sm, 4px) 3px 3px 3px;
   white-space: nowrap;
 }
 .pl-own-look { border: 0; padding: 0; margin: 0; min-width: 0; }
@@ -5299,7 +5294,7 @@ body { position: relative; }
   display: flex; align-items: center; gap: .8rem;
   padding: .7rem .85rem;
   border: 1px solid var(--line-strong);
-  border-radius: var(--r-lg);
+  border-radius: var(--r-lg) 3px 3px 3px;
   background: var(--surface);
   cursor: pointer;
   transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
@@ -5308,7 +5303,7 @@ body { position: relative; }
 .own-look-opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
 .own-look-opt:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .own-look-opt input { accent-color: var(--accent); width: 18px; height: 18px; flex: none; margin: 0; }
-.own-look-img { width: 64px; height: 48px; object-fit: cover; border-radius: var(--r-md); background: var(--surface-2); flex: none; }
+.own-look-img { width: 64px; height: 48px; object-fit: cover; border-radius: var(--r-md) 3px 3px 3px; background: var(--surface-2); flex: none; }
 .own-look-text { display: grid; gap: .15rem; min-width: 0; }
 .own-look-name { font-family: var(--font-display); font-weight: 800; font-size: 1rem; color: var(--ink); }
 .own-look-line { font-size: .82rem; color: var(--ink-3); line-height: 1.45; }
@@ -5891,8 +5886,8 @@ body { position: relative; }
   background: var(--surface-2);
   border: 1px solid rgb(255 255 255 / 0.10);
   padding: clamp(1.6rem, 3vw, 2.4rem);
-  border-radius: var(--r-md);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.10), 0 18px 40px -24px rgb(0 0 0 / 0.5);
+  border-radius: var(--r-md) 3px 3px 3px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.10);
 }
 /* En de inkt binnen de plaat draait TERUG naar de donkere ramp. Zonder deze
    regel erft hij .on-bright van het paneel eromheen en staat er bijna-zwarte
@@ -5910,19 +5905,19 @@ body { position: relative; }
   /* 20 september 2026: dezelfde rol, het nieuwe accent. Op een donkere plaat
      is dat het LICHTE violet (#A694FF, 8,30:1); het violet van de vulling
      haalt daar 2,93:1 — zie de afgekeurde combinaties in KLEURENSCHEMA.md. */
-  --accent: #A694FF;
-  --accent-text: #A694FF;
-  --accent-word: #A694FF;
+  --accent: #C8C8C8;
+  --accent-text: #C8C8C8;
+  --accent-word: #C8C8C8;
   /* --accent-dim STOND HIER NIET, en dat was een knop die op hover verdween.
      `.btn-primary:hover` schildert `var(--accent-dim)`, en die kwam uit de
      .on-bright-scope van het paneel eromheen: daar is hij bijna zwart, want
      daar staat hij op een heldere grond. Op deze donkere plaat werd de
      limoenknop dus zwart-op-zwart zodra je hem aanwees. Elke plek die --accent
      terugdraait, moet zijn hele familie terugdraaien. */
-  --accent-dim: #BFB2FF;
+  --accent-dim: #BCBCBC;
   --accent-ink: #000000;
   --accent-on: #000000;
-  --accent-bright: #A694FF;
+  --accent-bright: #C8C8C8;
   /* ── SECTIE 22 LEEST ZIJN EIGEN NAMEN — 20 september 2026 ────────────────
      stijl22.css zet `--inkt`, `--lijn` en `--geel-letter` op de LICHTE waarden,
      want een .s22-pagina is licht papier met donkere panelen. Een component op
@@ -5936,7 +5931,7 @@ body { position: relative; }
   --inkt-3: rgb(255 255 255 / 0.66);
   --lijn: rgb(255 255 255 / 0.16);
   --lijn-sterk: rgb(255 255 255 / 0.28);
-  --geel-letter: #A694FF;
+  --geel-letter: #C8C8C8;
   --op-inkt: #000000;
   --btn-ghost-fill: rgb(255 255 255 / 0.08);
   --btn-ghost-fill-hover: rgb(255 255 255 / 0.16);
@@ -6068,39 +6063,39 @@ body { position: relative; }
    tweede vlak, nooit uit een schaduw); wat overblijft is de lijn. */
 .plaat-vol.lime-plate {
   background: var(--panel);
-  border: 1px solid rgb(242 243 245 / 0.18);
+  border: 1px solid rgb(242 242 242 / 0.18);
   box-shadow: none;
   color: var(--on-panel);
-  --ink: #F2F3F5;
-  --ink-1: #F2F3F5;
-  --ink-2: rgb(242 243 245 / 0.72);
-  --ink-3: rgb(242 243 245 / 0.55);
-  --ink-4: rgb(242 243 245 / 0.34);
-  --line: rgb(242 243 245 / 0.20);
-  --line-strong: rgb(242 243 245 / 0.34);
-  --line-ui: rgb(242 243 245 / 0.55);
+  --ink: #F2F2F2;
+  --ink-1: #F2F2F2;
+  --ink-2: rgb(242 242 242 / 0.72);
+  --ink-3: rgb(242 242 242 / 0.55);
+  --ink-4: rgb(242 242 242 / 0.34);
+  --line: rgb(242 242 242 / 0.20);
+  --line-strong: rgb(242 242 242 / 0.34);
+  --line-ui: rgb(242 242 242 / 0.55);
   /* De hele accentfamilie draait om, niet alleen --accent — zie de noot bij
      .lime-plate hierboven: wie er één vergeet, krijgt een knop die op hover
      verdwijnt. */
-  --accent: #A694FF;
-  --accent-dim: #BFB2FF;
+  --accent: #C8C8C8;
+  --accent-dim: #BCBCBC;
   --accent-ink: #000000;
   --accent-on: #000000;
-  --accent-bright: #A694FF;
-  --accent-word: #A694FF;
-  --fill-blue: #A694FF;
-  --focus-ring: #F2F3F5;
-  --btn-ghost-fill: rgb(242 243 245 / 0.10);
-  --btn-ghost-fill-hover: rgb(242 243 245 / 0.20);
-  --btn-2nd-fill: rgb(242 243 245 / 0.08);
-  --btn-2nd-fill-hover: rgb(242 243 245 / 0.16);
-  --btn-2nd-ink: #F2F3F5;
+  --accent-bright: #C8C8C8;
+  --accent-word: #C8C8C8;
+  --fill-blue: #C8C8C8;
+  --focus-ring: #F2F2F2;
+  --btn-ghost-fill: rgb(242 242 242 / 0.10);
+  --btn-ghost-fill-hover: rgb(242 242 242 / 0.20);
+  --btn-2nd-fill: rgb(242 242 242 / 0.08);
+  --btn-2nd-fill-hover: rgb(242 242 242 / 0.16);
+  --btn-2nd-ink: #F2F2F2;
   /* De rand van de tweede knop stond in ZWART op 42%. Op een limoen plaat was
      dat een zichtbare rand; op een zwarte plaat is het niets. Licht dus, in
      dezelfde twee stappen. */
-  --btn-2nd-border: rgb(242 243 245 / 0.42);
-  --btn-2nd-border-hover: rgb(242 243 245 / 0.70);
-  --accent-text: #A694FF;
+  --btn-2nd-border: rgb(242 242 242 / 0.42);
+  --btn-2nd-border-hover: rgb(242 242 242 / 0.70);
+  --accent-text: #C8C8C8;
   /* ── SECTIE 22 LEEST ZIJN EIGEN NAMEN — 20 september 2026 ────────────────
      stijl22.css zet `--inkt`, `--lijn` en `--geel-letter` op de LICHTE waarden,
      want een .s22-pagina is licht papier met donkere panelen. Een component op
@@ -6109,12 +6104,12 @@ body { position: relative; }
      kladblok/leesbaar-alles.mjs op de twee akkoordregels van /start/plan.
      Zolang de plaat LIMOEN was, klopte de zwarte inkt hier — dit is dezelfde
      omkering als bij de voet en de deurtegel. */
-  --inkt: #F2F3F5;
-  --inkt-2: rgb(242 243 245 / 0.72);
-  --inkt-3: rgb(242 243 245 / 0.55);
-  --lijn: rgb(242 243 245 / 0.20);
-  --lijn-sterk: rgb(242 243 245 / 0.34);
-  --geel-letter: #A694FF;
+  --inkt: #F2F2F2;
+  --inkt-2: rgb(242 242 242 / 0.72);
+  --inkt-3: rgb(242 242 242 / 0.55);
+  --lijn: rgb(242 242 242 / 0.20);
+  --lijn-sterk: rgb(242 242 242 / 0.34);
+  --geel-letter: #C8C8C8;
   --op-inkt: #000000;
 }
 
@@ -6126,14 +6121,13 @@ body { position: relative; }
    verder niets — geen glans, geen schaduw. De chips, de feitenkaart op de hero
    en de proefkaart lezen dit. */
 :root {
-  --glas-vul:        rgb(17 17 17 / .62);
+  --glas-vul:        #111111;
   --glas-rand:       rgb(255 255 255 / .18);
-  --glas-licht-vul:  rgb(245 245 245 / .72);
+  --glas-licht-vul:  #F5F5F5;
   --glas-licht-rand: rgb(17 17 17 / .14);
   --glas-waas:       blur(16px) saturate(1.2);
 }
 .glas, .glas-licht {
-  -webkit-backdrop-filter: var(--glas-waas); backdrop-filter: var(--glas-waas);
   /* 22px en niet --r-lg: de kantige huid zet die op 0, en een glazen kaart met
      scherpe hoeken is een scherm, geen kaart. Komma's kaarten zijn rond. */
   border-radius: 22px;
@@ -6177,26 +6171,26 @@ body { position: relative; }
   --bg:          var(--panel);
   --ink:         var(--on-panel);
   --ink-1:       var(--on-panel);
-  --ink-2:       rgb(242 243 245 / .82);
-  --ink-3:       rgb(242 243 245 / .70);
-  --ink-4:       rgb(242 243 245 / .60);
-  --ink-faint:   rgb(242 243 245 / .56);
+  --ink-2:       rgb(242 242 242 / .82);
+  --ink-3:       rgb(242 242 242 / .70);
+  --ink-4:       rgb(242 242 242 / .60);
+  --ink-faint:   rgb(242 242 242 / .56);
   --paper:              var(--on-panel);
   --paper-on-dark:      var(--on-panel);
-  --paper-soft-on-dark: rgb(242 243 245 / .82);
-  --paper-muted-on-dark: rgb(242 243 245 / .70);
-  --line:        rgb(242 243 245 / .18);
-  --line-strong: rgb(242 243 245 / .32);
-  --line-ui:     rgb(242 243 245 / .45);
+  --paper-soft-on-dark: rgb(242 242 242 / .82);
+  --paper-muted-on-dark: rgb(242 242 242 / .70);
+  --line:        rgb(242 242 242 / .18);
+  --line-strong: rgb(242 242 242 / .32);
+  --line-ui:     rgb(242 242 242 / .45);
   --brand:       var(--on-panel);
   --mk-ink:      var(--on-panel);
   /* Het accent als LETTER kan op zwart niet het violet van papier zijn
      (#3D17D6 op zwart is 2,4:1). Dit is dezelfde waarde als de donkere stand
      van de site gebruikt — zie de donkere tokenblok hierboven. */
-  --accent-text: #A694FF;
-  --ghost:       rgb(242 243 245 / .08);
-  --surface:     rgb(242 243 245 / .06);
-  --surface-2:   rgb(242 243 245 / .10);
+  --accent-text: #C8C8C8;
+  --ghost:       rgb(242 242 242 / .08);
+  --surface:     rgb(242 242 242 / .06);
+  --surface-2:   rgb(242 242 242 / .10);
 }
 .site-footer a { color: inherit; }
 .site-footer :is(.brand-word, .brand-mark, .mk) { fill: var(--on-panel); }
@@ -6324,7 +6318,7 @@ body::before { display: none; }
    kleur — zie de kop van Poppetje.astro. */
 .pop { display: block; width: 100%; height: auto; }
 .pop .r { fill: rgb(0 0 0 / .06); stroke: var(--line-strong, rgb(0 0 0 / .34)); stroke-width: 2; stroke-linejoin: round; }
-.pop .r-head { fill: var(--paper, #F2F3F5); }
+.pop .r-head { fill: var(--paper, #F2F2F2); }
 .pop .r-arms, .pop .r-legs { fill: none; }
 .pop .r-shoes, .pop .r-bottom, .pop .r-top, .pop .r-underlayer { fill: rgb(0 0 0 / .13); stroke-width: 1.5; }
 .pop[data-product="top"] .r-top,
@@ -6341,7 +6335,7 @@ body::before { display: none; }
 .pop[data-own*="bottom"] .r-bottom,
 .pop[data-own*="top"] .r-top,
 .pop[data-own*="underlayer"] .r-underlayer { fill: rgb(0 0 0 / .45); stroke: none; }
-.pop .pop-buiten { fill: var(--paper, #F2F3F5); fill-opacity: .8; }
+.pop .pop-buiten { fill: var(--paper, #F2F2F2); fill-opacity: .8; }
 .pop .pop-kader { fill: none; stroke: var(--ink, #000); stroke-width: 2; }
 .pop.pop-klein .pop-buiten { display: none; }
 .pop.pop-klein .r-arms, .pop.pop-klein .r-legs { stroke: var(--line, rgb(0 0 0 / .2)); }
@@ -6353,7 +6347,7 @@ body::before { display: none; }
   margin: 0 0 1.2rem;
   padding: .85rem 1rem;
   border: 1px solid var(--st-rev-edge);
-  border-radius: 10px;
+  border-radius: 10px 3px 3px 3px;
   background: var(--warn);
   color: var(--warn-ink);
   font-size: .95rem;

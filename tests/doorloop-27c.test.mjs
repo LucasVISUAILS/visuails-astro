@@ -23,6 +23,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { EXTRA_CREDITS } from '../src/data/pricing.js';
 import { ANGLE_IDS } from '../src/data/angles.js';
+import { SCHERMEN, FOTO } from '../src/data/halLaptop.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = path.join(ROOT, 'dist');
@@ -63,9 +64,10 @@ const tegels = [...formNl.matchAll(/data-bo-hoek="([a-z-]+)"[^]*?src="\/img\/sch
 ok('het zijpaneel heeft een tegel per hoek, met hetzelfde bestand als de kiezer', tegels.length >= ANGLE_IDS.length && tegels.every(([id, f]) => f === `hoek-${id}`), JSON.stringify(tegels));
 ok('  de tegels staan verborgen tot er een hoek is aangevinkt', [...formNl.matchAll(/<li[^>]*data-bo-hoek="[^"]+"[^>]*>/g)].every((m) => /\shidden/.test(m[0])));
 const hal = lees('src/styles/hal.css');
-/* Sinds levering 51 (de kolom, bericht 16:10): boven 1500 px schuift het beeld met de kolom mee,
-   tot -198 px zoals eerst bij 1488 px, en nooit verder dan de rechterrand. */
-ok('de opening: de beeldbreedte volgt de ruimte naast de tekst', /\.hal \.h-open-beeld \{ --hb: min\(90%/.test(hal) && /@media \(min-width: 1500px\) \{ \.hal \.h-open-beeld \{ left: auto; right: min\(0px, calc\(var\(--h-open-zij\) - 198px\)\); width: 1350px;/.test(hal));
+/* Sinds levering 51 (de kolom, bericht 16:10) volgt het beeld de ruimte naast de tekst. Sinds
+   levering 63 (de POV-foto, 20 oktober 2026): de duim 16 px rechts van de tekst, de klep 36 px
+   voor de rand, hooguit 1400 px breed; de rechterrand van de foto ligt altijd buiten beeld. */
+ok('de opening: de beeldbreedte volgt de ruimte naast de tekst', /\.hal \.h-open-beeld \{ --hb: min\(1400px, calc\(\(100% - 116px - var\(--h-open-zij\) - min\(540px, 40%\)\) \/ 0\.633\)\);/.test(hal) && /left: calc\(100% - 36px - 0\.868 \* var\(--hb\)\);/.test(hal));
 
 /* ── 6 · DE SET OP LICHTGRIJS, GEMETEN (05:58) ──────────────────────────────── */
 console.log('\n6 · de roze-jeans-set op lichtgrijs, gemeten');
@@ -177,7 +179,8 @@ console.log('\n9 · stap 2 met de hand');
     ok(`${taal}:   het penseel bouwt het beeld op (zachte rand), de loep vergroot je foto en ons beeld`, maak.includes('h-maak-bouwkwast') && maak.includes('mask="url(#h-maak-bouw)"') && maak.includes('filter="url(#h-maak-zacht)"') && maak.includes('href="/img/ba2-voor-front-recht.webp"') && (maak.match(/class="h-maak-lp-in"/g) || []).length === 2 && maak.includes('h-maak-lp-vink') && !maak.includes('h-maak-ref'));
     ok(`${taal}:   het label noemt de drie handelingen`, (maak.match(/<span class="h-maak-doe[^>]*>((?:<span>[^<]+<\/span>){3})<\/span>/) || [])[1]?.split('</span>').filter(Boolean).length === 3);
     ok(`${taal}:   het beeld vóór de afwerking (op wit) en de achterkant voor de vergelijking`, /h-maak-begin[^>]*ba2-na-front\.(webp|avif)|ba2-na-front\.(webp|avif)[^>]*h-maak-begin/.test(maak) || (maak.includes('h-maak-begin') && maak.includes('ba2-na-front.')));
-    ok(`${taal}:   de stap duurt 12,1 s (4,25 s rechtzetten, opbouwen en nakijken)`, h.includes('data-uitleg-maat="3000 12100 3000"'));
+    /* Levering 61 (afvinklijst 39, e-stappen: "Animatie mag wel iets sneller"): alles op driekwart. */
+    ok(`${taal}:   de stap duurt 9,075 s (driekwart van 12,1 s)`, h.includes('data-uitleg-maat="2250 9075 2250"'));
   }
   const css = lees('src/styles/hal.css');
   ok('de pauzeknop zet ook deze animaties stil', css.includes('.hal .h-hoe[data-uitleg-staat="pauze"] .h-maak *,') && css.includes('animation-play-state: paused !important;'));
@@ -267,24 +270,27 @@ console.log('\n1 · de opening');
 for (const breed of [1280, 1440, 1920]) {
   const { ctx, page, fouten } = await open('/', { breed, hoog: 940 });
   await page.waitForTimeout(1100);
-  const r = await page.evaluate(() => {
+  const r = await page.evaluate(({ S, F }) => {
     const R = (e) => (e ? e.getBoundingClientRect() : null);
     const tekstR = Math.max(...[...document.querySelectorAll('.h-open-tekst > *')].map((e) => e.getBoundingClientRect().right));
-    /* De schermen zitten sinds 15 oktober in de foto zelf; hun plek volgt uit de doos
-       en de gemeten hoeken van src/data/halLaptop.js (laptop 536,74 tot 1620,17 breed en
-       tot 1171,48 hoog, telefoon tot 1905,49, op een foto van 2304 × 1728). */
+    /* De schermen zitten in de foto zelf; hun plek volgt uit de doos en de gemeten hoeken
+       van src/data/halLaptop.js. Sinds 20 oktober 2026 de POV-foto (2304 × 1296): de
+       telefoon links, de laptop rechts. */
     const d = R(document.querySelector('[data-hl-doos]'));
-    const lap = d && { left: d.left + d.width * 536.74 / 2304, bottom: d.top + d.height * 1171.48 / 1728 };
-    const fon = d && { right: d.left + d.width * 1905.49 / 2304 };
+    const k = d ? d.width / F.w : 0;
+    const fonL = d && d.left + Math.min(S.fon.tl[0], S.fon.bl[0]) * k;
+    const lapL = d && d.left + Math.min(S.laptop.tl[0], S.laptop.bl[0]) * k;
+    const lapR = d && d.left + Math.max(S.laptop.tr[0], S.laptop.br[0]) * k;
     const bed = R(document.querySelector('.hl-bediening'));
     const uitleg = R(document.querySelector('.hl-uitleg'));
     const opening = R(document.querySelector('.h-opening'));
-    return { vw: document.documentElement.clientWidth, tekstR, lapL: lap && lap.left, fonR: fon && fon.right, lapO: lap && lap.bottom, bedB: bed && bed.top, uitlegO: uitleg && uitleg.bottom, openingO: opening && opening.bottom };
-  });
-  ok(`${breed}px: de telefoon staat helemaal in beeld (rechts ${Math.round(r.vw - r.fonR)} px over)`, r.fonR != null && r.fonR <= r.vw - 20, JSON.stringify(r));
-  ok(`${breed}px: de laptop begint ${Math.round(r.lapL - r.tekstR)} px na de tekst`, r.lapL != null && r.lapL >= r.tekstR + 24, JSON.stringify(r));
-  /* 07:28 · de balk hoort bij de laptop en de zin eronder valt niet weg. */
-  ok(`${breed}px: de balk hangt onder de laptop (${Math.round(r.bedB - r.lapO)} px onder het scherm) en de zin eronder staat helemaal in beeld`, r.bedB != null && r.bedB - r.lapO < 130 && r.uitlegO <= r.openingO, JSON.stringify(r));
+    return { vw: document.documentElement.clientWidth, tekstR, fonL, lapL, lapR, doosO: d && d.bottom, bedT: bed && bed.top, bedM: bed && (bed.left + bed.right) / 2, uitlegO: uitleg && uitleg.bottom, openingO: opening && opening.bottom };
+  }, { S: SCHERMEN, F: FOTO });
+  ok(`${breed}px: de laptop staat helemaal in beeld (rechts ${Math.round(r.vw - r.lapR)} px over)`, r.lapR != null && r.lapR <= r.vw - 20, JSON.stringify(r));
+  ok(`${breed}px: de telefoon begint ${Math.round(r.fonL - r.tekstR)} px na de tekst`, r.fonL != null && r.fonL >= r.tekstR + 24, JSON.stringify(r));
+  /* 07:28 (15 oktober) · de balk hoort bij de laptop en de zin eronder valt niet weg. Sinds
+     de POV-foto hangt hij net onder de foto (daar liggen in de foto de toetsen), onder de laptop. */
+  ok(`${breed}px: de balk hangt onder de laptop (${Math.round(r.bedT - r.doosO)} px onder de foto) en de zin eronder staat helemaal in beeld`, r.bedT != null && r.bedT - r.doosO >= 0 && r.bedT - r.doosO < 40 && r.bedM >= r.lapL && r.bedM <= r.lapR && r.uitlegO <= r.openingO, JSON.stringify(r));
   ok(`${breed}px: geen scriptfout`, fouten.length === 0, fouten.join(' | '));
   await ctx.close();
 }
@@ -304,19 +310,22 @@ console.log('\n9b · stap 2 in de browser');
   });
   await page.evaluate(() => document.querySelector('#hoe')?._u?.opnieuw());
   await page.waitForFunction(() => document.querySelector('#hoe').classList.contains('u-s2'), null, { timeout: 12000 }).catch(() => {});
-  /* Sinds 15 oktober 11:59 begint stap 2 met 4,25 s rechtzetten, opbouwen en
-     nakijken: de pen komt pas na 4,5 s. Op 0,9 s: het kader, de muis, de foto kantelt. */
+  /* Sinds 15 oktober 11:59 begint stap 2 met rechtzetten, opbouwen en nakijken, en
+     komt de pen pas daarna. Sinds levering 61 (lijst 39, e-stappen: "Animatie mag wel
+     iets sneller") loopt alles op 0,75 keer de tijd: 3,19 s rechtzetten, opbouwen en
+     nakijken, de pen na 3,375 s. De meetmomenten schuiven mee: 0,675 s, 1,425 s,
+     2,25 s en 3,825 s (was 0,9, 1,9, 3,0 en 5,1). */
   const o = () => page.evaluate(() => { const g = (s) => Number(getComputedStyle(document.querySelector(`#hoe ${s}`)).opacity); return { foto: g('.h-maak-laag'), kader: g('.h-maak-greep rect'), muis: g('.h-maak-muis'), kwast: g('.h-maak-bouwkwast'), loep: g('.h-maak-lp'), pen: g('.h-maak-pen'), echt: g('.h-maak-echt'), schuin: getComputedStyle(document.querySelector('#hoe .h-maak-laag')).transform !== 'none' }; });
-  await page.waitForTimeout(900);
+  await page.waitForTimeout(675);
   const recht = await o();
   ok('tijdens stap 2, eerst: je foto in het kader, de muis zet hem recht; nog geen pen en geen eindbeeld', recht.foto > 0.9 && recht.kader > 0.9 && recht.muis > 0.9 && recht.schuin && recht.pen < 0.05 && recht.echt < 0.05, JSON.stringify(recht));
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(750);
   const bouw = await o();
   ok('  dan het penseel dat het beeld opbouwt', bouw.kwast > 0.9 && bouw.kader < 0.05, JSON.stringify(bouw));
-  await page.waitForTimeout(1100);
+  await page.waitForTimeout(825);
   const loep = await o();
   ok('  dan de loep langs knoop, stiksel en kleur', loep.loep > 0.9 && loep.kwast < 0.05, JSON.stringify(loep));
-  await page.waitForTimeout(2100);
+  await page.waitForTimeout(1575);
   const tijdens = await stand();
   ok('tijdens stap 2: de pen trekt de omtrek, het geleverde beeld staat er nog niet', tijdens.pad > 0.9 && tijdens.pen > 0.9 && tijdens.echt < 0.05, JSON.stringify(tijdens));
   await page.evaluate(() => document.querySelector('#hoe')?._u?.stop());

@@ -492,7 +492,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
   {/* 14 oktober 2026, de hal: wit, de grond van de pagina. Een violette
       adresbalk boven een witte pagina is een vlak violet dat geen actie is, en
       dat staat de hal niet toe (KLEURENSCHEMA.md). */}
-  <meta name="theme-color" content={huid === 'hal' ? '#FFFFFF' : '#4A1FFF'} />
+  <meta name="theme-color" content={huid === 'hal' ? '#FFFFFF' : '#4400FF'} />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:image" content={ogImageAbs} />
@@ -1787,7 +1787,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   body:has(.hero-cover, .hero-editorial, .hv-hero) .site-header:not(.scrolled) .nav-links > li > a,
   body:has(.hero-cover, .hero-editorial, .hv-hero) .site-header:not(.scrolled) .nav-trigger,
   body:has(.hero-cover, .hero-editorial, .hv-hero) .site-header:not(.scrolled) .nav-account-link,
-  body:has(.hero-cover, .hero-editorial, .hv-hero) .site-header:not(.scrolled) .lang-switch .ls { transition: none; border-radius: var(--r-pill); }
+  body:has(.hero-cover, .hero-editorial, .hv-hero) .site-header:not(.scrolled) .lang-switch .ls { transition: none; border-radius: 14px 3px 3px 3px; }
   /* --r-pill, not --r-sm. This selector is longer than the base `.nav-trigger`
      rule and therefore wins, which is how the header's dropdown trigger stayed
      at 8px while every button beside it went round — found by walking the
@@ -1860,8 +1860,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     pointer-events: none;
     /* Sectie 20: de grond is licht, dus de balk die na het scrollen verschijnt
        is licht glas — de inkt eronder is de gewone inkt van de pagina. */
-    background: rgb(245 245 245 / 0.88);
-    backdrop-filter: saturate(140%) blur(14px);
+    background: #F5F5F5;
     box-shadow: 0 1px 0 var(--line);
     opacity: 0;
     transition: opacity 480ms cubic-bezier(.45, 0, .25, 1);
@@ -1895,7 +1894,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      ging over een scoped regel die van global.css won, deze over dezelfde
      scoped regel die nu van sectie 22 wint. `:not(:has(.s22))` laat hem staan
      waar hij nog werk doet en haalt hem weg waar sectie 22 het overneemt. */
-  :global(body.ground-espresso:not(:has(.s22))) .site-header::after { background: rgb(245 245 245 / 0.88); box-shadow: 0 1px 0 var(--line); }
+  :global(body.ground-espresso:not(:has(.s22))) .site-header::after { background: #F5F5F5; box-shadow: 0 1px 0 var(--line); }
 
   /* ---- the header over a dark hero -------------------------------------
      MEASURED BUG, not a refinement: on every page that opens with a
@@ -2066,7 +2065,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   /* Sectie 21 (5 september 2026): de navigatie in kleine mono-kapitalen, zoals
      op Komma en Lue — de tweede stem van de site, naast de koppen in Hanken. De
      hoeken zijn recht; de pil is met de rest van sectie 20 verdwenen. */
-  .nav-links > li > a, .nav-trigger { border-radius: var(--r-pill); display: inline-flex; align-items: center; gap: .35rem; padding: .55rem .7rem; font-family: var(--font-mono); font-stretch: 82%; font-size: .72rem; font-weight: 400; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); background: none; border: none; cursor: pointer; transition: color var(--dur-1) var(--ease); }
+  .nav-links > li > a, .nav-trigger { border-radius: 3px; display: inline-flex; align-items: center; gap: .35rem; padding: .55rem .7rem; font-family: var(--font-mono); font-stretch: 82%; font-size: .72rem; font-weight: 400; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); background: none; border: none; cursor: pointer; transition: color var(--dur-1) var(--ease); }
   .nav-links > li > a:hover, .nav-trigger:hover { color: var(--ink); }
   .nav-links > li > a[aria-current="page"] { color: var(--ink); }
   .nav-actions { display: flex; align-items: center; gap: .6rem; }
@@ -2099,7 +2098,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .nav-signout-btn {
     font: inherit; font-size: .78rem; font-weight: 500; letter-spacing: .02em;
     color: var(--ink-3); background: none; border: 0; cursor: pointer;
-    padding: .5rem .45rem; border-radius: var(--r-pill);
+    padding: .5rem .45rem; border-radius: 14px 3px 3px 3px;
     text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px;
     transition: color var(--dur-1) var(--ease);
   }
@@ -2110,7 +2109,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .mobile-signout { margin: 0; }
   .mobile-signout .nav-signout-btn { font-size: .9rem; }
   .has-menu { position: relative; }
-  .nav-menu { position: absolute; top: calc(100% + 10px); left: 0; min-width: 470px; background: var(--menu-surface); border: 1px solid var(--line); padding: .6rem; display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease), visibility var(--dur-2) var(--ease); box-shadow: 6px 6px 0 0 rgb(var(--scrim) / 0.16); border-radius: var(--r-lg); }
+  .nav-menu { position: absolute; top: calc(100% + 10px); left: 0; min-width: 470px; background: var(--menu-surface); border: 1px solid var(--line); padding: .6rem; display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease), visibility var(--dur-2) var(--ease); box-shadow: 6px 6px 0 0 rgb(var(--scrim) / 0.16); border-radius: var(--r-lg) 3px 3px 3px; }
   .has-menu:hover .nav-menu, .has-menu:focus-within .nav-menu, .has-menu.menu-open .nav-menu { opacity: 1; visibility: visible; transform: translateY(0); }
   /* ── ESCAPE MOET HET PANEEL OOK ECHT DICHT DOEN ─────────────────────────────
      9 augustus 2026, gemeten: na Escape stond `aria-expanded` op false en het paneel
@@ -2204,7 +2203,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     font-size: .72rem; letter-spacing: .08em; text-transform: uppercase;
     color: var(--ink-3);
     padding: .1rem .35rem;
-    border: 1px solid var(--line-strong); border-radius: var(--r-pill);
+    border: 1px solid var(--line-strong); border-radius: 8px 3px 3px 3px;
     vertical-align: middle;
   }
   .menu-toggle { display: none; width: 44px; height: 44px; align-items: center; justify-content: center; border: 1px solid var(--line-strong); background: none; cursor: pointer; }
@@ -2356,7 +2355,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   /* Prijzen · Galerij · Contact — één rij chips, niet drie volle regels. */
   .mobile-rij { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.2rem; }
   .mobile-rij a {
-    padding: .5rem .9rem; border: 1px solid var(--line-strong); border-radius: var(--r-pill);
+    padding: .5rem .9rem; border: 1px solid var(--line-strong); border-radius: 14px 3px 3px 3px;
     font-family: var(--font-mono); font-size: .74rem; letter-spacing: .06em; text-transform: uppercase;
     color: var(--ink-2);
   }

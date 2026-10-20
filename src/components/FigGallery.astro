@@ -290,7 +290,7 @@ const C = nl
 
   .fg-frame {
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-lg);
+    border-radius: var(--r-lg) 3px 3px 3px;
     background: var(--surface);
     overflow: hidden;
   }
@@ -310,7 +310,7 @@ const C = nl
     font-size: .72rem; letter-spacing: .04em;
     color: var(--ink-3);
     padding: .18rem .5rem;
-    border: 1px solid var(--line); border-radius: var(--r-pill);
+    border: 1px solid var(--line); border-radius: 3px;
   }
 
   .fg-body { padding: .9rem; display: grid; gap: .8rem; }
@@ -327,7 +327,7 @@ const C = nl
   .fg-tile { display: grid; gap: .3rem; align-content: start; }
   .fg-tile img {
     width: 100%; aspect-ratio: 4 / 5; object-fit: cover;
-    border-radius: var(--r-sm, 6px);
+    border-radius: var(--r-sm, 6px) 3px 3px 3px;
     /* De rand zegt de staat mee. Niet ALLEEN de rand: de woorden eronder doen het
        werk, want een staat die alleen een kleur is, is voor niemand te lezen die
        de twee tinten niet kan scheiden — en dit is de staat die beslist of een
@@ -344,7 +344,7 @@ const C = nl
      Lucas: "De Goedkeuren knoppen zijn niet consistent." */
   .fg-state.is-ok {
     display: inline-flex; align-items: center; justify-content: center; gap: .3rem; justify-self: stretch;
-    padding: .26rem .5rem; border-radius: var(--r-pill);
+    padding: .26rem .5rem; border-radius: 8px 3px 3px 3px;
     background: color-mix(in srgb, var(--accent) 10%, var(--surface)); color: var(--accent-text); white-space: nowrap;
   }
   .fg-state.is-ok svg { width: 11px; height: 11px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -371,7 +371,7 @@ const C = nl
     display: inline-block;
     font-size: .72rem; font-weight: 600; letter-spacing: .02em;
     padding: .26rem .5rem;
-    border: 1px solid var(--line-strong); border-radius: var(--r-pill);
+    border: 1px solid var(--line-strong); border-radius: 14px 3px 3px 3px;
     color: var(--ink-2); white-space: nowrap;
   }
   .fg-btn.is-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-on); }
@@ -381,7 +381,7 @@ const C = nl
     padding: .65rem .7rem;
     background: var(--surface-2);
     border: 1px solid var(--line);
-    border-radius: var(--r-md);
+    border-radius: var(--r-md) 3px 3px 3px;
   }
   .fg-ask-l { margin: 0; font-size: .74rem; color: var(--ink-3); }
   .fg-ask-field {
@@ -389,8 +389,10 @@ const C = nl
     padding: .45rem .55rem;
     font-size: .74rem; line-height: 1.55; color: var(--ink-2);
     background: var(--surface);
-    border: 1px solid var(--line-strong); border-radius: var(--r-sm, 6px);
+    border: 1px solid var(--line-strong); border-radius: 3px;
   }
+  /* De knop in het vak ligt langs zijn rechte onderrand: lichte hoeken (levering 61). */
+  .fg-ask .fg-btn { border-radius: 3px; }
 
   .fg-fine { margin: 0; font-size: .74rem; line-height: 1.55; color: var(--ink-3); }
 
@@ -404,7 +406,7 @@ const C = nl
     padding: .8rem .85rem;
     background: var(--surface-2);
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-md);
+    border-radius: var(--r-md) 3px 3px 3px;
   }
   @container (max-width: 30rem) {
     .fg-folder { grid-template-columns: 1fr; }

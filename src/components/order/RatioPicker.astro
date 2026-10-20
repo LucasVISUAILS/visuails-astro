@@ -188,14 +188,14 @@ const tiles = [...LIFESTYLE_RATIOS, ...CHANNEL_RATIOS].map((r: any) => ({
     display: grid; justify-items: center; align-content: start; gap: .3rem;
     padding: .9rem .7rem 1rem;
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-lg);
+    border-radius: var(--r-lg) 3px 3px 3px;
     background: var(--surface);
     text-align: center;
     cursor: pointer;
     transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
   }
   .ratio:hover { border-color: var(--accent-line); }
-  .ratio:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  .ratio:has(input:checked) { border-color: var(--kies, var(--accent)); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--kies, var(--accent)); }
   .ratio:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
   .ratio:has([aria-invalid='true']) { border-color: var(--warn); }
   /* Vastgezet door een kanaal (Zalando, 14 oktober 2026): zichtbaar, maar niet te kiezen. */
@@ -222,7 +222,7 @@ const tiles = [...LIFESTYLE_RATIOS, ...CHANNEL_RATIOS].map((r: any) => ({
   .ratio-shape {
     display: block; height: 76px; width: auto; max-width: 100%;
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-sm);
+    border-radius: var(--r-sm) 3px 3px 3px;
     background: #fff;
     overflow: hidden;
   }
@@ -230,14 +230,14 @@ const tiles = [...LIFESTYLE_RATIOS, ...CHANNEL_RATIOS].map((r: any) => ({
      verhouding en staat er bij 16:9 wit naast in plaats van een uitsnede. */
   .ratio-shape img { display: block; width: 100%; height: 100%; object-fit: cover; }
   .ratio-shape img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
-  .ratio:has(input:checked) .ratio-shape { border-color: var(--accent); background: var(--surface); }
+  .ratio:has(input:checked) .ratio-shape { border-color: var(--kies, var(--accent)); background: var(--surface); }
 
   .ratio-label { margin-top: .45rem; font-family: var(--font-display); font-weight: 800; font-size: 1rem; color: var(--ink); font-variant-numeric: tabular-nums; }
   .ratio-name { font-size: .84rem; color: var(--ink-2); }
   .ratio-use { font-size: .78rem; line-height: 1.4; color: var(--ink-3); text-wrap: balance; }
   .ratio-tag {
     margin-top: .2rem; font-size: .73rem; letter-spacing: .04em; text-transform: uppercase;
-    padding: .1rem .4rem; border-radius: var(--r-sm);
+    padding: .1rem .4rem; border-radius: var(--r-sm) 3px 3px 3px;
     background: var(--accent-soft); color: var(--ink-2);
   }
 

@@ -231,8 +231,14 @@ for (const pad of HAL) {
       const box = (s) => { const e = document.querySelector(s); if (!e) return null; const r = e.getBoundingClientRect(); return { l: r.left, r: r.right, t: r.top, b: r.bottom }; };
       const lap = box('.hl-bel-lap'), fon = box('.hl-bel-fon'), balk = box('.site-header .nav'), bed = box('.hl-bediening'), laag = document.querySelector('.hl');
       const raken = lap && fon && !(lap.r <= fon.l || fon.r <= lap.l || lap.b <= fon.t || fon.b <= lap.t);
+      /* Levering 64 (afvinklijst 43): op de telefoon eerst kop en knoppen, dan de foto,
+         dan de zin en de labels; en de foto loopt tot de rechterrand van het venster. */
+      const knop = box('.h-opening .h-acties'), raam = box('.h-opening .hl-raam'), uitleg = box('.h-opening .hl-uitleg'),
+        kop = box('.h-opening .h-kop'), zin = box('.h-opening .h-lede'), feiten = box('.h-opening .h-feiten');
+      const volgorde = !!(knop && raam && uitleg && kop && zin && feiten) && kop.b <= knop.t && knop.b <= raam.t && uitleg.b <= zin.t && zin.b <= feiten.t;
+      const rand = !!raam && Math.abs(raam.r - document.documentElement.clientWidth) < 0.5;
       return {
-        w,
+        w, volgorde, rand,
         zijwaarts: document.documentElement.scrollWidth > w,
         raken,
         achterBalk: w > 900 && balk && [lap, fon].some((b) => b && b.t < balk.b),
@@ -312,6 +318,8 @@ check('de twee belletjes raken elkaar nergens', meting.filter((m) => m.raken).ma
 check('boven 900 px valt geen belletje achter de balk', meting.filter((m) => m.achterBalk).map((m) => m.w), []);
 check('de bediening staat overal binnen het scherm', meting.filter((m) => m.bedieningBuiten).map((m) => m.w), []);
 check('het script zet de schermen aan (hl-leeft)', meting.filter((m) => !m.leeft).map((m) => m.w), []);
+check('op de telefoon: kop en knoppen boven de foto, de zin en de labels eronder', meting.filter((m) => m.w <= 900 && !m.volgorde).map((m) => m.w), []);
+check('op de telefoon loopt de foto tot de rechterrand', meting.filter((m) => m.w <= 900 && !m.rand).map((m) => m.w), []);
 
 console.log(`\n${goed}/${totaal} geslaagd`);
 process.exit(goed === totaal ? 0 : 1);

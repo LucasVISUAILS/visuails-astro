@@ -13,7 +13,7 @@
  *
  * WAT HET DOET
  *   1. Start `astro dev` met LAPTOP_BRON=1. Alleen dan bestaat /laptop-bron/<taal>/:
- *      elke stand als een vak van 2304 × 1728 (de maat van de foto), met de
+ *      elke stand als een vak van 2304 × 1296 (de maat van de foto), met de
  *      schermen erin in het perspectief van de foto.
  *   2. Opent die pagina in Chromium op precies 2304 px breed, wacht op de letters
  *      en tot elk beeld geladen en gedecodeerd is, en maakt van elk vak een foto.
@@ -21,7 +21,11 @@
  *      en 2304 px, en een AVIF ernaast als die kleiner is (dezelfde regels als
  *      scripts/make-avif.mjs: kwaliteit 52, effort 4).
  *   4. Haalt standen weg die niet meer in de reeks zitten.
- *   5. Schrijft de vingerafdruk van de bron naar src/data/halStanden.bron.json.
+ *   5. Zet de eerste stand (NL, catalog) ook neer als public/img/hal/laptop-<breedte>.webp
+ *      (en .avif): de foto met de schermen erin, voor het deelplaatje (make-og.mjs) en
+ *      voor als er geen enkele stand is (HalLaptop.astro). Sinds 20 oktober 2026; eerst
+ *      was dat een los gemaakte foto, en de bron lag eronder (nu pov-2304.webp).
+ *   6. Schrijft de vingerafdruk van de bron naar src/data/halStanden.bron.json.
  *
  * tests/laptop-standen.test.mjs kijkt daarna na of elke stand er in elke breedte
  * ligt en of de foto's de maat van de foto hebben.
@@ -34,6 +38,7 @@ import sharp from 'sharp';
 import { chromium } from 'playwright';
 import { browserPad } from './lib/browserpad.mjs';
 import { vingerafdruk, BRON_JSON } from './lib/laptopbron.mjs';
+import { FOTO } from '../src/data/halLaptop.js';
 
 const WORTEL = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const MAP = path.join(WORTEL, 'public', 'img', 'hal', 'stand');
@@ -69,7 +74,7 @@ try {
   await wachtOpServer();
   const browser = await chromium.launch({ executablePath: process.env.CHROME || browserPad() });
   for (const lang of ['nl', 'en']) {
-    const page = await browser.newPage({ viewport: { width: 2304, height: 1728 }, deviceScaleFactor: 1 });
+    const page = await browser.newPage({ viewport: { width: FOTO.w, height: FOTO.h }, deviceScaleFactor: 1 });
     await page.goto(`${basis}/laptop-bron/${lang}/`, { waitUntil: 'load' });
     await page.evaluate(async () => {
       await document.fonts.ready;
@@ -87,9 +92,9 @@ try {
       await page.waitForTimeout(120);
       const png = await vak.screenshot({ type: 'png' });
       const meta = await sharp(png).metadata();
-      if (meta.width !== 2304 || meta.height !== 1728) throw new Error(`${naam}: ${meta.width} × ${meta.height}, verwacht 2304 × 1728`);
+      if (meta.width !== FOTO.w || meta.height !== FOTO.h) throw new Error(`${naam}: ${meta.width} × ${meta.height}, verwacht ${FOTO.w} × ${FOTO.h}`);
       for (const w of BREEDTES) {
-        const h = Math.round((w * 1728) / 2304);
+        const h = Math.round((w * FOTO.h) / FOTO.w);
         const webp = await sharp(png).resize(w, h, { kernel: 'lanczos3' }).webp(WEBP).toBuffer();
         const doel = path.join(MAP, `${naam}-${w}.webp`);
         fs.writeFileSync(doel, webp);
@@ -103,6 +108,11 @@ try {
     await page.close();
   }
   await browser.close();
+  /* De foto met de schermen erin: de eerste stand, NL, catalog. */
+  for (const w of BREEDTES) for (const ext of ['webp', 'avif']) {
+    const van = path.join(MAP, `nl-catalog-0-${w}.${ext}`), naar = path.join(WORTEL, 'public', 'img', 'hal', `laptop-${w}.${ext}`);
+    if (fs.existsSync(van)) fs.copyFileSync(van, naar); else if (fs.existsSync(naar)) fs.unlinkSync(naar);
+  }
   /* Standen die niet meer in de reeks zitten, weg. */
   for (const f of fs.readdirSync(MAP)) if (!gemaakt.has(f)) { fs.unlinkSync(path.join(MAP, f)); console.log(`  weg: ${f}`); }
   /* De vingerafdruk van wat er op de schermen stond: tests/laptop-standen.test.mjs

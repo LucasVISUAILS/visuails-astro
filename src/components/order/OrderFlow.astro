@@ -4219,7 +4219,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
     z-index: calc(var(--z-bar) + 1);
     background: var(--surface);
     border-top: 1px solid var(--line-strong);
-    box-shadow: 0 -6px 24px rgb(0 0 0 / .1);
+    box-shadow: none;
     border-radius: var(--r-lg) var(--r-lg) 0 0;
     padding: 0 clamp(1rem, 4vw, 2rem) env(safe-area-inset-bottom);
     max-height: 82vh;
@@ -4236,7 +4236,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
     background: none; border: 0; color: inherit; font: inherit;
     text-align: left; cursor: pointer;
   }
-  .pl-combi-knop:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; border-radius: var(--r-sm); }
+  .pl-combi-knop:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; border-radius: var(--r-sm) 3px 3px 3px; }
   .pl-combi-woord { font-weight: 600; font-size: .95rem; }
   .pl-combi-prijs {
     flex: 1; min-width: 0;
@@ -4392,7 +4392,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
   .pl-saved {
     margin: 1.2rem 0 1.8rem; padding: clamp(1rem, 2.5vw, 1.4rem);
     border: 1px solid var(--line); background: var(--surface-2, var(--surface));
-    border-radius: var(--r-lg); max-width: 62ch;
+    border-radius: var(--r-lg) 3px 3px 3px; max-width: 62ch;
   }
   .pl-saved-h { margin: 0; font-size: .78rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3); }
   .pl-saved-list { list-style: none; margin: .6rem 0 0; padding: 0; display: grid; gap: .2rem; }
@@ -4418,7 +4418,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
      de twee erboven, zodat de linkerkant van alle drie op één lijn ligt. */
   .pl-tegoed {
     margin: 1.2rem 0 0; padding: .75rem 1rem; max-width: 64ch;
-    border: 1px solid var(--line); border-radius: var(--r-md, 8px);
+    border: 1px solid var(--line); border-radius: var(--r-md, 8px) 3px 3px 3px;
     font-size: .94rem; line-height: 1.5; color: var(--ink);
   }
   /* De creditregel (ronde B): dezelfde vorm als het tegoed, met de kopregel
@@ -4426,7 +4426,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
      betaald krijgt de rand de inktkleur; anders blijft hij rustig. */
   .pl-credits {
     margin: 1.2rem 0 0; padding: .8rem 1rem; max-width: 64ch;
-    border: 1px solid var(--line); border-radius: var(--r-md, 8px);
+    border: 1px solid var(--line); border-radius: var(--r-md, 8px) 3px 3px 3px;
     color: var(--ink);
   }
   .pl-credits.is-credits { border-color: var(--ink); }
@@ -4503,7 +4503,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
   }
   .pl-kind:hover { border-color: var(--ink-3); }
   .pl-kind:focus-within { outline: 2px solid var(--ink); outline-offset: 2px; }
-  .pl-kind:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  .pl-kind:has(input:checked) { border-color: var(--kies, var(--accent)); background: var(--accent-soft); }
   .pl-kind input { margin: 0 0 .35rem; }
   .pl-kind-name { font-weight: 600; color: var(--ink); }
   .pl-kind-gets { font-size: .88rem; color: var(--ink-3); }
@@ -4579,7 +4579,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
     color: var(--accent-bright);
     text-decoration: underline;
     text-underline-offset: 3px;
-    border-radius: var(--r-sm);
+    border-radius: var(--r-sm) 3px 3px 3px;
   }
   .pl-why > summary:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
   .pl-why > p { margin-top: .5rem; font-size: .82rem; color: var(--ink-3); line-height: 1.55; max-width: 70ch; }
@@ -4828,7 +4828,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
     height: 6.4rem;
     padding: .7rem .3rem .5rem;
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-sm);
+    border-radius: var(--r-sm) 3px 3px 3px;
     background: var(--surface);
     color: var(--ink);
     cursor: pointer;
@@ -4879,7 +4879,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
   .pl-windows :global(.pl-dagen-knop) {
     padding: .35rem .7rem;
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-pill);
+    border-radius: 14px 3px 3px 3px;
     background: transparent;
     color: var(--ink);
     font: inherit;
@@ -5010,7 +5010,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
     margin-top: 1.2rem;
     padding: .9rem 1.05rem;
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-md);
+    border-radius: var(--r-md) 3px 3px 3px;
     background: var(--surface);
     max-width: 64ch;
     cursor: pointer;
@@ -5182,7 +5182,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
     margin-top: .9rem;
     padding: .75rem 1rem;
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-md);
+    border-radius: var(--r-md) 3px 3px 3px;
     background: var(--surface);
   }
   .pl-svc-name { font-weight: 600; color: var(--ink); }
@@ -5214,7 +5214,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
     height: 2.6rem;
     padding: 0 .7rem;
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-md);
+    border-radius: var(--r-md) 3px 3px 3px;
     background: var(--surface);
     color: var(--ink);
     font: inherit;
@@ -5244,7 +5244,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
     font-variant-numeric: tabular-nums;
   }
   .pl-qty-chip:hover { border-color: transparent; color: var(--ink); text-decoration-color: var(--line-strong); }
-  .pl-qty-chip.is-on { color: var(--ink); font-weight: 700; text-decoration-color: var(--accent); text-decoration-thickness: 2px; }
+  .pl-qty-chip.is-on { color: var(--ink); font-weight: 700; text-decoration-color: var(--kies, var(--accent)); text-decoration-thickness: 2px; }
   /* Tikvlak (1 oktober 2026, Web Interface Guidelines): "1" was 20 × 27 px.
      Minstens 24 breed overal, en op een aanraakscherm 44 hoog en 40 breed. De
      tekst blijft even klein; alleen het vlak eromheen groeit. */
@@ -5298,13 +5298,13 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
   .pl-voorkeur-optie {
     display: inline-flex; align-items: center; gap: .45rem;
     min-height: 44px; padding: 0 .8rem 0 .6rem;
-    border: 1px solid var(--line-strong); border-radius: 999px;
+    border: 1px solid var(--line-strong); border-radius: 14px 3px 3px 3px;
     font-size: .9rem; cursor: pointer;
     transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
   }
   .pl-voorkeur-optie input { accent-color: var(--accent); width: 15px; height: 15px; flex: none; }
   .pl-voorkeur-optie:hover { border-color: var(--accent-line); }
-  .pl-voorkeur-optie:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  .pl-voorkeur-optie:has(input:checked) { border-color: var(--kies, var(--accent)); background: var(--accent-soft); }
   .pl-voorkeur-optie:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
   /* Op een telefoon past de regel niet en wikkelt hij naar drie regels. Dan is
      `margin-left: auto` geen uitlijning meer maar een link die in zijn eentje
@@ -5315,7 +5315,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
     margin-top: 1.1rem;
     padding: 1.1rem 1.25rem;
     border: 1px solid var(--accent);
-    border-radius: var(--r-md);
+    border-radius: var(--r-md) 3px 3px 3px;
     background: var(--surface);
     max-width: var(--pl-measure);
   }
@@ -5329,7 +5329,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
     margin: .9rem 0 1.1rem;
     padding: .9rem;
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-md);
+    border-radius: var(--r-md) 3px 3px 3px;
     background: var(--surface);
   }
   .pl-sum-strip :global(.pl-sum-item) { display: flex; flex-direction: column; align-items: center; gap: .3rem; width: 84px; }
@@ -5367,7 +5367,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
     margin-top: 1.2rem;
     padding: .85rem 1.05rem;
     border: 1px solid var(--warn);
-    border-radius: var(--r-md);
+    border-radius: var(--r-md) 3px 3px 3px;
     background: var(--paper-2);
     color: var(--warn-ink);
     font-size: .92rem;
@@ -5498,7 +5498,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
      vraag "Wanneer kan het sneller?" als kleine regel eronder. De override op
      de veldkop staat in stijl22.css (bij `.field > label`). */
   /* "Meer opties" — zie de noot bij de vouw in stap 1 (30 september 2026). */
-  .pl-meeropties { margin-top: clamp(1.2rem, 2.4vw, 1.8rem); border: 1px solid var(--line); border-radius: var(--r-md); }
+  .pl-meeropties { margin-top: clamp(1.2rem, 2.4vw, 1.8rem); border: 1px solid var(--line); border-radius: var(--r-md) 3px 3px 3px; }
   .pl-meeropties-kop { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: .8rem; row-gap: .2rem; padding: 1rem 1.1rem; cursor: pointer; list-style: none; }
   .pl-meeropties-kop::-webkit-details-marker { display: none; }
   .pl-meeropties-t, .pl-meeropties-sub { grid-column: 1; }
@@ -5508,7 +5508,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
   .pl-meeropties-sub { color: var(--ink-3, currentColor); font-size: .92rem; }
   .pl-meeropties-body { padding: 0 1.1rem 1.1rem; display: grid; gap: clamp(1rem, 2vw, 1.4rem); }
   .pl-meeropties-body > :global(*) { margin-top: 0; }
-  .pl-voorrang { margin-top: clamp(1.2rem, 2.4vw, 1.8rem); padding: 1rem 1.1rem; border: 1px solid var(--line); border-radius: var(--r-md); }
+  .pl-voorrang { margin-top: clamp(1.2rem, 2.4vw, 1.8rem); padding: 1rem 1.1rem; border: 1px solid var(--line); border-radius: var(--r-md) 3px 3px 3px; }
   .pl-voorrang-rij { display: flex; align-items: flex-start; gap: .7rem; cursor: pointer; }
   .pl-voorrang-rij input { margin-top: .25rem; flex: 0 0 auto; }
   .pl-voorrang-t { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; width: 100%; }
@@ -5541,8 +5541,8 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
   .pl-kit {
     margin: clamp(1.2rem, 2.4vw, 1.8rem) 0 0;
     padding: .9rem 1rem .9rem 1.1rem;
-    background: var(--ghost, rgb(15 12 36 / .04));
-    border-left: 3px solid var(--accent, #4A1FFF);
+    background: var(--ghost, rgb(0 0 0 / .04));
+    border-left: 3px solid var(--accent, #000000);
     border-radius: 0 var(--r-sm, 8px) var(--r-sm, 8px) 0;
     max-width: var(--pl-measure);
   }

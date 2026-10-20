@@ -23,7 +23,19 @@
 
 ---
 
-## Het palet (sectie 22 — licht en donker, violet) — 20 september 2026
+## Het palet van nu: schema A — 19 oktober 2026
+
+`docs/KLEURENSCHEMA.md` is leidend. Wit, zwart en één elektrisch violet `#4400FF`;
+grijs zonder kleur (nevel `#F2F2F2`, vak `#E8E8E8`, lijn `#DDDDDD`), inkt `#000000`
+met grijs 2 `#3D3D3D` en grijs 3 `#616161`. Violet alleen in de voet, het €1-blok,
+de knop Bestellen bovenin en wat je kiest. Knoppen zwart. De tabel hieronder (het
+palet van 20 september) is daarmee afgeschreven en blijft staan als verantwoording.
+
+Sinds afvinklijst 42 (19 oktober 2026) draagt elk sfeervlak een bewogen foto in plaats
+van een egale kleur, en staat de tekst van het €1-blok op violet glas. Zie
+`docs/KLEURENSCHEMA.md`, Bewogen achtergronden.
+
+## Het palet (sectie 22 — licht en donker, violet) — 20 september 2026 · INGETROKKEN 19 oktober 2026 (schema A)
 
 > **20 september 2026.** `KLEURENSCHEMA.md` in de wortel van dit project is
 > leidend; wijkt de code daarvan af, dan volgt de code het document. Deze tabel
@@ -283,6 +295,19 @@ legibility to buy a harder hairline. Adding a step inside the ink ramp is not a 
 ramp; "two ramps, no third" is a rule about ink versus paper.
 
 #### Changing the palette — the places a colour is hand-carried
+
+> **19 October 2026 (levering 62, scheme A).** The palette is now white, black and one
+> electric violet `#4400FF`; greys carry no tint. The authority is
+> `docs/KLEURENSCHEMA.md` ("Waar het schema staat" lists every file, "De kleurentabel"
+> every old → new value). Since then the hand-carried places also include
+> `src/lib/invoicePdf.js`, `src/data/status.js` (`STAND_KLEUR`),
+> `scripts/lib/fotogids-html.mjs` (`npm run handleiding`), `scripts/make-og.mjs`
+> (`npm run og`), `scripts/make-mail-assets.mjs` (`npm run mail:assets`),
+> `scripts/schetsen-zijpaneel.py` (the sketches in the order form) and the select
+> carets `public/img/ui/keuzepijl-000000.svg` / `-f2f2f2.svg`. The favicons are no longer
+> made by `scripts/make-favicons.mjs` but copied from the logo package
+> (`maak-logopakket.py`). The table below is the state of 20 September and is kept as
+> history.
 
 Editing `:root` in `global.css` does **not** change the palette. A dozen colours live
 outside it, in languages that cannot read a custom property, and each one silently keeps
@@ -912,7 +937,8 @@ for JavaScript.
 - **Gradient text.** `background-clip: text` on any copy. Emphasis is weight and size.
 - **Success green**, and every inline `stroke:var(--success)` tick in the page files.
 - **Circular avatars** for model thumbnails.
-- **Glassmorphism** as a default surface treatment.
+- **Glassmorphism** as a default surface treatment. One exception since 19 October 2026
+  (afvinklijst 42): the violet glass panel of the €1 block, over a moving photo. Nowhere else.
 - **Uppercase tracked eyebrows** above every section, and `01 / 02 / 03` scaffolding on
   sections that are not sequences.
 - **The hero-metric template** — big number, small label, supporting stats.

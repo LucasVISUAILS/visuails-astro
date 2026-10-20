@@ -120,6 +120,7 @@ const FOUTEN: Record<string, string> = nl ? {
   mollie: 'Het betaalscherm ging niet open. Er is niets afgeschreven. Probeer het opnieuw, of mail hello@visuails.com.',
   verklaring: 'Vink de verklaring onderaan aan — VISUAILS levert uitsluitend zakelijk.',
   bestaat: 'Op dit e-mailadres loopt al een abonnement. Log in (rechtsboven, of via de link bij je gegevens) om het te bekijken of te wijzigen.',
+  account: 'Dit e-mailadres hoort al bij een account. Log in (rechtsboven, of via de link bij je gegevens); daarna sluit je hier je abonnement af.',
   bedrijf: 'Vul je bedrijfsnaam in, en in Nederland je KVK-nummer (8 cijfers). In een ander EU-land: je btw-nummer, of je registratienummer als je geen btw-nummer hebt.',
 } : {
   plan: 'Choose a plan first.',
@@ -132,6 +133,7 @@ const FOUTEN: Record<string, string> = nl ? {
   mollie: 'The payment screen did not open. Nothing has been charged. Try again, or email hello@visuails.com.',
   verklaring: 'Tick the declaration at the bottom — VISUAILS supplies businesses only.',
   bestaat: 'There is already a plan on this email address. Sign in (top right, or via the link by your details) to view or change it.',
+  account: 'This email address already has an account. Sign in (top right, or via the link by your details), then start your plan here.',
   bedrijf: 'Fill in your company name, and in the Netherlands your KVK number (8 digits). In another EU country: your VAT number, or your registration number if you have no VAT number.',
 };
 const foutTekst = FOUTEN[fout] || '';
@@ -1737,13 +1739,13 @@ const kaarten = planList.map((p) => {
   .ps-plan {
     position: relative; display: grid; gap: .35rem; align-content: start;
     padding: 1.1rem 1.2rem 1.15rem;
-    border: 1px solid var(--line); border-radius: var(--r-lg);
+    border: 1px solid var(--line); border-radius: var(--r-lg) 3px 3px 3px;
     background: var(--paper-2); cursor: pointer;
     transition: border-color .15s ease, background-color .15s ease;
   }
   .ps-plan input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
   .ps-plan:hover { border-color: var(--line-strong); }
-  .ps-plan:has(input:checked) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
+  .ps-plan:has(input:checked) { border-color: var(--kies, var(--accent)); background: var(--accent-soft); }
   .ps-plan:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
   .ps-plan-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .2rem .6rem; }
   .ps-plan-naam { font-family: var(--font-heading); font-weight: 800; font-size: 1.35rem; letter-spacing: -0.01em; color: var(--ink); }
@@ -1767,9 +1769,9 @@ const kaarten = planList.map((p) => {
   .ps-plan-jaar { font-size: .84rem; color: var(--accent-bright, var(--accent)); }
   /* De beschikbaarheid (24 september 2026). Geen violet: dit is informatie,
      geen actie. Een vol plan blijft leesbaar maar is zichtbaar niet te kiezen. */
-  .ps-plek { margin: 1.5rem 0 1.25rem; padding: .75rem 1rem; border: 1px solid var(--line); border-radius: 10px; font-size: .95rem; color: var(--ink-2); }
+  .ps-plek { margin: 1.5rem 0 1.25rem; padding: .75rem 1rem; border: 1px solid var(--line); border-radius: 10px 3px 3px 3px; font-size: .95rem; color: var(--ink-2); }
   .ps-plek.is-deels, .ps-plek.is-niets { color: var(--ink); border-color: currentColor; }
-  .ps-plan-vol { display: inline-block; align-self: flex-start; justify-self: start; width: fit-content; margin-top: .45rem; padding: .15rem .55rem; border: 1px solid currentColor; border-radius: 999px; font-size: .8rem; font-weight: 600; color: var(--ink); }
+  .ps-plan-vol { display: inline-block; align-self: flex-start; justify-self: start; width: fit-content; margin-top: .45rem; padding: .15rem .55rem; border: 1px solid currentColor; border-radius: 14px 3px 3px 3px; font-size: .8rem; font-weight: 600; color: var(--ink); }
   .ps-plan-vol[hidden] { display: none; }
   .ps-plan-plekken { display: inline-block; justify-self: start; width: fit-content; margin-top: .45rem; font-size: .8rem; font-weight: 600; color: var(--ink); }
   .ps-plan-plekken[hidden] { display: none; }
@@ -1789,7 +1791,7 @@ const kaarten = planList.map((p) => {
      gewoon altijd. */
   .maat-velden {
     flex-wrap: wrap; gap: .8rem 1rem;
-    padding: 1rem 1.2rem; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--paper-2);
+    padding: 1rem 1.2rem; border: 1px solid var(--line); border-radius: var(--r-lg) 3px 3px 3px; background: var(--paper-2);
   }
   @supports selector(:has(input)) {
     .maat-velden { display: none; }
@@ -1802,7 +1804,7 @@ const kaarten = planList.map((p) => {
   .maat-veld label { font-size: .74rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
   .maat-veld input[type="number"] {
     width: 100%; padding: .6rem .9rem;
-    border-radius: var(--r-md); border: 1px solid var(--line-strong);
+    border-radius: var(--r-md) 3px 3px 3px; border: 1px solid var(--line-strong);
     background: var(--paper); color: inherit; font: inherit;
   }
   .maat-veld input[type="number"]::placeholder { color: var(--ink-4); }
@@ -1835,12 +1837,12 @@ const kaarten = planList.map((p) => {
   @media (max-width: 40rem) { .ps-terms { grid-template-columns: 1fr; } }
   .ps-term {
     position: relative; display: grid; gap: .3rem; align-content: start;
-    padding: 1rem 1.2rem; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--paper-2); cursor: pointer;
+    padding: 1rem 1.2rem; border: 1px solid var(--line); border-radius: var(--r-lg) 3px 3px 3px; background: var(--paper-2); cursor: pointer;
     transition: border-color .15s ease, background-color .15s ease;
   }
   .ps-term input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
   .ps-term:hover { border-color: var(--line-strong); }
-  .ps-term:has(input:checked) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
+  .ps-term:has(input:checked) { border-color: var(--kies, var(--accent)); background: var(--accent-soft); }
   .ps-term:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
   .ps-term-kop { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
   .ps-term-naam { font-weight: 800; color: var(--ink); }
@@ -1849,7 +1851,7 @@ const kaarten = planList.map((p) => {
      lichte kleur en draagt geen kleine letters — zie de noot bij het YOURS-etiket
      in ModelPicker.astro, waar dezelfde fout stond. */
   .ps-term-label {
-    padding: .12rem .5rem; border-radius: 999px; background: var(--accent); color: var(--on-accent, #FFFFFF);
+    padding: .12rem .5rem; border-radius: 11px 3px 3px 3px; background: var(--accent); color: var(--on-accent, #FFFFFF);
     font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap;
   }
   .ps-term-sub { font-size: .88rem; line-height: 1.5; color: var(--ink-2); }
@@ -1860,7 +1862,7 @@ const kaarten = planList.map((p) => {
   /* ── DE PLAAT ──────────────────────────────────────────────────────────────
      Kleur en inkt komen van `.plaat-vol.lime-plate` in global.css; hier alleen
      de indeling. Eén variant zichtbaar, gekozen door de radio's. */
-  .ps-sum { padding: clamp(1.4rem, 2.6vw, 2rem); border-radius: var(--r-lg); display: grid; gap: 1.1rem; }
+  .ps-sum { padding: clamp(1.4rem, 2.6vw, 2rem); border-radius: var(--r-lg) 3px 3px 3px; display: grid; gap: 1.1rem; }
   .ps-sum-label { margin: 0; font-size: .74rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
 
   /* ── DE BEELDSTROOK OP DE PLAAT ─────────────────────────────────────────
@@ -1882,7 +1884,7 @@ const kaarten = planList.map((p) => {
   /* Schetsen sinds 15 oktober 2026 (overzichtbeelden.js): wit vlak op de plaat,
      de naam van het beeld eronder. Dezelfde vorm als .bo-tegels. */
   .ps-tegels li { display: grid; gap: .35rem; min-width: 0; }
-  .ps-tegel { display: block; aspect-ratio: 1; overflow: hidden; border-radius: 10px; background: #fff; }
+  .ps-tegel { display: block; aspect-ratio: 1; overflow: hidden; border-radius: 10px 3px 3px 3px; background: #fff; }
   .ps-tegels img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .ps-tegel-naam { font-size: .75rem; line-height: 1.25; color: var(--ink-2); text-align: center; overflow-wrap: anywhere; }
   /* --ink-2 en niet --ink-3: op limoen is 66% zwart al randje, en dit is de
@@ -1932,7 +1934,7 @@ const kaarten = planList.map((p) => {
      Een licht vlak met een lijn, dezelfde grond als de kaarten links: het is
      een stap van het formulier, en geen tweede plaat. De knop is inkt op
      licht — de knoppenscan vond hem als donkere knop op de zwarte plaat. */
-  .ps-af { padding: clamp(1.3rem, 2.4vw, 1.8rem); border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--paper-2); }
+  .ps-af { padding: clamp(1.3rem, 2.4vw, 1.8rem); border: 1px solid var(--line); border-radius: var(--r-lg) 3px 3px 3px; background: var(--paper-2); }
   .ps-bevestig { gap: 1rem; }
   .ps-nu { display: grid; gap: .6rem; }
   .ps-nu-list { margin: 0; padding: 0 0 0 1.2rem; display: grid; gap: .4rem; font-size: .9rem; line-height: 1.5; color: var(--ink-2); }
@@ -1968,7 +1970,7 @@ const kaarten = planList.map((p) => {
   .ps-veld input, .ps-veld select {
     font: inherit; font-size: .95rem; color: var(--ink);
     background: var(--surface, #fff);
-    border: 1px solid var(--line-strong); border-radius: var(--r-sm, 8px);
+    border: 1px solid var(--line-strong); border-radius: var(--r-sm, 8px) 3px 3px 3px;
     padding: .55rem .7rem; min-height: 44px; width: 100%;
   }
   .ps-veld input:focus-visible, .ps-veld select:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
@@ -2011,12 +2013,12 @@ const kaarten = planList.map((p) => {
   .ps-voorkeur-optie {
     display: inline-flex; align-items: center; gap: .45rem;
     min-height: 44px; padding: 0 .8rem 0 .6rem;
-    border: 1px solid var(--line-strong); border-radius: 999px;
+    border: 1px solid var(--line-strong); border-radius: 14px 3px 3px 3px;
     font-size: .9rem; cursor: pointer;
   }
   .ps-voorkeur-optie input { accent-color: var(--accent); width: 15px; height: 15px; flex: none; }
   .ps-voorkeur-optie:hover { border-color: var(--accent-line); }
-  .ps-voorkeur-optie:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  .ps-voorkeur-optie:has(input:checked) { border-color: var(--kies, var(--accent)); background: var(--accent-soft); }
   .ps-voorkeur-optie:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
   .plan-al-klant a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 

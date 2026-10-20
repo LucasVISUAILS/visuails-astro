@@ -103,7 +103,7 @@ const rij = blokken.length > 0 && blokken.every((b) => !b.beeld);
 const ICOON = { rechts: 'pijl', terug: 'pijl-links', check: 'vink' } as const;
 const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
 ---
-<div class:list={['h-pagina', 'h-lk', `h-lk-${dienst}`]}>
+<div class:list={['h-pagina', 'h-lk', `h-lk-${dienst}`]} data-achter={`${dienst}-${style.slug}`}>
 
   {/* ── KOP ────────────────────────────────────────────────────────────────── */}
   <header class="h-paginakop h-lk-kop">
@@ -198,7 +198,7 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
       <p class="h-pil h-pil-wit"><span>{c.slotPil}</span></p>
       <h2 id="lk-slot-h" class="h-kop h-h2"><span class="l">{c.slot[0]}</span> {c.slot[1]}</h2>
       <ul class="h-feiten" role="list">
-        {feiten.map((f) => <li><i set:html={ik('check')} /><span>{f}</span></li>)}
+        {feiten.map((f) => <li><span>{f}</span></li>)}
       </ul>
       {queue && <p class="h-lk-queue">{queue}</p>}
       <p class="h-acties">

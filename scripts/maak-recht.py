@@ -38,6 +38,7 @@ functies (translate, rotate, skewX, scale, perspective, rotateX, rotateY), zodat
 browser hem functie voor functie overvloeit: de banen van de grepen hieronder zijn
 daardoor uit te rekenen in plaats van te schatten.
 """
+import re
 import json, math, os
 import numpy as np, cv2
 from PIL import Image
@@ -231,7 +232,17 @@ def kf(naam, stappen):
     css.append(f'@keyframes {naam} {{\n' + '\n'.join(f'  {pct} {{ {decl} }}' for pct, decl in stappen) + '\n}')
 def pct(t, van, tot):
     return f'{(t - van) / (tot - van) * 100:.2f}'.rstrip('0').rstrip('.') + '%'
+# TEMPO (levering 61, afvinklijst 39, e-stappen: "Animatie mag wel iets sneller"): de
+# hele stap loopt op driekwart van de tijd, net als de rest van "Hoe het werkt" in
+# hal.css en data-uitleg-maat in VoorpaginaHal.astro. De tijdlijn hieronder blijft in
+# de oude seconden staan; elke duur en elk moment gaat bij het schrijven maal TEMPO.
+TEMPO = 0.75
+def _tempo(m):
+    v = float(m.group(1)) * TEMPO
+    return (f'{v:.3f}'.rstrip('0').rstrip('.') or '0') + 's'
 def regel(sel, decl):
+    if decl.startswith('animation'):
+        decl = re.sub(r'(?<![\w.-])(\d*\.?\d+)s\b', _tempo, decl)
     css.append(f'{PRE} {sel} {{ {decl} }}')
 
 dur = T['recht_tot'] - T['recht_van']

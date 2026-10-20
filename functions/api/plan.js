@@ -209,6 +209,21 @@ export async function onRequestPost(context) {
        optioneel; alleen een ingevuld nummer dat niet klopt, klopt niet. */
     if (vatFormatOk(land, btw) === false) return terug('btw', lang);
 
+    /* ── EEN BESTAAND ADRES LOGT EERST IN — 19 oktober 2026 ──────────────────
+       Hier liep tot vandaag ook een bestaande klant door, alleen op zijn e-mailadres.
+       Wie dat adres kende, kon zo (zonder inlog) zien of er al een abonnement liep
+       (`?fout=bestaat`), een onbetaald abonnement van die klant laten vervangen door
+       een nieuw, en lege velden in zijn profiel vullen. Lucas: "dicht de gaten".
+       Nu krijgt elk adres dat al bij een klant hoort hetzelfde antwoord, wat er ook
+       loopt: log in, en sluit het abonnement af in Studio (PlanPicker stuurt een
+       ingelogde klant naar /account/plan/start, achter de sessie). Een nieuw adres
+       gaat zoals altijd door naar Mollie. Op kleine letters vergeleken: een rij die
+       ooit met hoofdletters is opgeslagen, is hetzelfde postvak. */
+    const bestaand = env.DB
+      ? await env.DB.prepare('SELECT id FROM customers WHERE lower(email) = ?1').bind(email).first().catch(() => null)
+      : null;
+    if (bestaand) return terug('account', lang);
+
     let id = null;
     try {
       /* ── DE SLEUTELNAMEN ZIJN DIE VAN upsertWide() — 11 september 2026 ───

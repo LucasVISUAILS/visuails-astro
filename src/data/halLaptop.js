@@ -1,26 +1,33 @@
-/* VISUAILS — de maten van het laptopbeeld op het voorbeeld van de voorpagina (12 oktober 2026).
+/* VISUAILS — de maten van het laptopbeeld in de opening (20 oktober 2026; eerst 12 oktober).
    ═══════════════════════════════════════════════════════════════════════════
 
-   Het beeld is van Lucas (images/Website Banners - Unspecified/magnific__a-
-   photorealistic-…67462.jpg, 2304 × 1728): een laptop op schoot en een telefoon
-   in de hand, met witte schermen. De schermen zijn GEMETEN en niet geschat: de
-   witte vlakken met een vloedvulling, en de vier hoeken van elk scherm uit een
-   lijnfit langs de vier randen — ook de hoeken die onder een hand vallen.
+   Het beeld is van Lucas (images/BG/magnific__pov-photo-through-my-own-eyes-…99352.png,
+   2048 × 1152, gekozen op 20 oktober 2026): door zijn eigen ogen, een telefoon in de
+   linkerhand en een laptop op schoot, allebei met een wit scherm, links de violette
+   schets van een studio. Hij is 1,125 × groter gemaakt tot 2304 × 1296, zodat de
+   standen hun breedtes en namen houden (1000, 1600, 2304).
 
-   Zonder JavaScript staat de foto er met de schermen al ingezet (het eerste
-   beeld van de reeks). Met JavaScript legt HalLaptop.astro de schermen er los
-   in, in precies dit perspectief (een homografie van de vier hoeken), zodat de
-   beelden kunnen wisselen. De vingers blijven van de foto: het masker per
-   scherm (public/img/hal/masker-*.png) is het witte vlak, in schermcoördinaten.
+   De schermen zijn GEMETEN en niet geschat (scripts/laptop-foto.py): langs elke rand
+   honderden scanlijnen van het witte scherm naar buiten tot de val naar de zwarte
+   rand, op de helft; per rand een lijn door die punten, de hoeken zijn de snijpunten.
+   Grootste afwijking van een punt tot zijn lijn: 0,21 px. Bij de telefoon telt alleen
+   het rechte stuk van elke rand mee (de hoeken zijn rond), bovenaan niet het eiland.
 
-   Gemaakt met design/hal/beelden.py en laptop2/zet.py in de ontwerpmap. */
+   De standen zijn foto's met de schermen er al in (src/data/halStanden.js). De bron
+   daarvan legt de schermen in precies dit perspectief (een homografie van de vier
+   hoeken); het masker per scherm (public/img/hal/masker-*.png, ook uit laptop-foto.py)
+   is het witte vlak in schermcoördinaten, dus de inkeping van de laptop, het eiland
+   van de telefoon en de ronde hoeken blijven van de foto.
 
-export const FOTO = { w: 2304, h: 1728 };
+   Het vorige beeld (de laptop van boven, 2304 × 1728, 12 oktober) staat niet meer op
+   de site. */
+
+export const FOTO = { w: 2304, h: 1296 };
 
 /** De schermen: hun maat in schermpixels (de pagina wordt op die maat opgebouwd) en hun hoeken in de foto. */
 export const SCHERMEN = {
-  laptop: { w: 1600, h: 1034, tl: [617.76, 454.90], tr: [1620.17, 458.79], br: [1555.30, 1171.48], bl: [536.74, 1091.66] },
-  fon: { w: 540, h: 1170, tl: [1652.64, 522.93], tr: [1905.49, 530.14], br: [1776.64, 1148.09], bl: [1526.16, 1114.86] },
+  laptop: { w: 1600, h: 1034, tl: [1071.72, 262.72], tr: [1983.34, 241.44], br: [1957.62, 805.76], bl: [1077.90, 798.44] },
+  fon: { w: 540, h: 1170, tl: [630.39, 450.01], tr: [820.73, 430.64], br: [884.05, 889.67], bl: [696.72, 934.04] },
 };
 
 /** Homografie die de rechthoek 0..w × 0..h op de vier hoeken legt (8 vergelijkingen, Gauss). */

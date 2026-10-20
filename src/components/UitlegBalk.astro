@@ -80,7 +80,7 @@ const T = nl
     bottom: 12px; z-index: 6;
     display: flex; align-items: center; gap: 14px;
     margin-top: 14px; padding: 10px 18px 10px 10px;
-    border-radius: 999px; background: #F5F5F9;
+    border-radius: 14px 3px 3px 3px; background: #F2F2F2;
     font-family: var(--h-letter, 'Urbanist Variable', system-ui, sans-serif);
   }
   .u-balk[hidden] { display: none; }
@@ -93,12 +93,12 @@ const T = nl
   .u-knop {
     flex: none; width: 40px; height: 40px; border-radius: 50%; border: 0; padding: 0;
     display: grid; place-items: center; cursor: pointer;
-    background: #0F0C24; color: #fff;
+    background: #000000; color: #fff;
     transition: transform .35s cubic-bezier(.34, 1.4, .5, 1);
   }
-  .u-knop:hover { transform: scale(1.06); }
-  .u-knop:active { transform: scale(.94); }
-  .u-knop:focus-visible { outline: 2px solid #4A1FFF; outline-offset: 3px; }
+  .u-knop:hover { }
+  .u-knop:active { }
+  .u-knop:focus-visible { outline: 2px solid #000000; outline-offset: 3px; }
   .u-ik { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; display: none; }
   .u-ik-speel { fill: currentColor; stroke: none; }
   .u-balk[data-knop="pauze"] .u-ik-pauze,
@@ -107,8 +107,8 @@ const T = nl
 
   .u-rechts { flex: 1; min-width: 0; display: grid; gap: 7px; }
   .u-tijd { list-style: none; margin: 0; padding: 0; display: flex; gap: 4px; }
-  .u-tijd li { flex: 1; height: 3px; border-radius: 999px; background: #DEDCE8; overflow: hidden; }
-  .u-tijd i { display: block; height: 100%; width: 100%; background: #0F0C24; transform-origin: left; transform: scaleX(0); }
+  .u-tijd li { flex: 1; height: 3px; border-radius: 8px 3px 3px 3px; background: #DDDDDD; overflow: hidden; }
+  .u-tijd i { display: block; height: 100%; width: 100%; background: #000000; transform-origin: left; transform: scaleX(0); }
   .u-tijd li.is-af i { transform: scaleX(1); }
   .u-tijd li.is-nu i { animation: u-vul var(--u-duur, 2s) linear forwards; }
   .u-balk[data-pauze] .u-tijd li.is-nu i { animation-play-state: paused; }
@@ -116,13 +116,13 @@ const T = nl
 
   /* De zinnen staan op elkaar in één cel: de balk springt niet als een zin
      langer is dan de vorige, want de cel is zo hoog als de langste. */
-  .u-zin { margin: 0; display: grid; font-size: 14px; line-height: 1.35; color: #4B4960; }
+  .u-zin { margin: 0; display: grid; font-size: 14px; line-height: 1.35; color: #3D3D3D; }
   .u-zin span { grid-area: 1 / 1; opacity: 0; transform: translateY(6px); transition: opacity .35s, transform .45s cubic-bezier(.22, .8, .2, 1); }
   .u-zin span.is-nu { opacity: 1; transform: none; }
-  .u-zin b { font-weight: 600; color: #0F0C24; margin-right: .35em; font-variant-numeric: tabular-nums; }
+  .u-zin b { font-weight: 600; color: #000000; margin-right: .35em; font-variant-numeric: tabular-nums; }
 
   @media (max-width: 640px) {
-    .u-balk { border-radius: 22px; padding: 10px 14px 10px 10px; align-items: flex-start; }
+    .u-balk { border-radius: 22px 3px 3px 3px; padding: 10px 14px 10px 10px; align-items: flex-start; }
     .u-zin { font-size: 13.5px; }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -135,15 +135,15 @@ const T = nl
     position: absolute; left: 0; top: 0; z-index: 40; width: 26px; height: 26px; pointer-events: none;
     transform: translate(var(--cx, 50%), var(--cy, 50%)); opacity: 0;
     transition: transform .5s cubic-bezier(.65, 0, .25, 1), opacity .25s;
-    background: no-repeat center / contain url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M4 2.5l15 8.6-6.6 1.4 3.8 7.2-2.8 1.5-3.8-7.3L4.9 18z' fill='%230F0C24' stroke='white' stroke-width='1.6' stroke-linejoin='round'/></svg>");
-    filter: drop-shadow(0 4px 8px rgba(15, 12, 36, .25));
+    background: no-repeat center / contain url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M4 2.5l15 8.6-6.6 1.4 3.8 7.2-2.8 1.5-3.8-7.3L4.9 18z' fill='%23000000' stroke='white' stroke-width='1.6' stroke-linejoin='round'/></svg>");
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .25));
   }
   /* Wanneer de cursor klikt (zie KLIK_MS in het script): mockups die op de klik wachten, lezen dit. */
   :global([data-uitleg]) { --u-klik: .56s; }
   :global(.u-cursor.is-aan) { opacity: 1; }
   :global(.u-cursor)::after {
     content: ""; position: absolute; left: -9px; top: -9px; width: 22px; height: 22px; border-radius: 50%;
-    border: 2px solid #4A1FFF; opacity: 0; transform: scale(.4);
+    border: 2px solid #000000; opacity: 0; transform: scale(.4);
   }
   :global(.u-cursor.is-klik)::after { animation: u-klik .5s ease-out; }
   @keyframes u-klik { 0% { opacity: .9; transform: scale(.4); } 100% { opacity: 0; transform: scale(1.6); } }

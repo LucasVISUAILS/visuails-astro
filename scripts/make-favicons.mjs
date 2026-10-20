@@ -95,19 +95,24 @@ const DRAWER = path.join(ROOT, 'brand', 'logo');
    kleuren: een constante die GREEN heet en #4A1FFF is, is geen naam maar een
    valstrik — de eerste die hem leest denkt dat hier nog gifgroen staat. De
    bestandsnamen die dit script schrijft veranderen niet mee; die zijn extern. */
-const ACCENT = '#4A1FFF';      // --accent (violet; heette hier GREEN tot 22 sep 2026)
-const ACCENT_DIM = '#A694FF';  // --accent in de donkere modus (violet-licht)
-const DARK = '#0F0C24';        // inkt van de hal (14 okt 2026; was #000000, --panel)
+/* ── SCHEMA A — 19 oktober 2026 (afvinklijst 41) ────────────────────────────
+   Violet zonder groen erin, de inkt puur zwart, lila alleen als echo. De
+   favicons van levering 62 komen uit Lucas' logopakket (maak-logopakket.py in
+   images/Logo/visuails-logo-nieuw); dit script draagt dezelfde kleuren, zodat
+   een nieuwe run geen oud violet terugzet. */
+const ACCENT = '#4400FF';      // violet (was #4A1FFF; heette hier GREEN tot 22 sep 2026)
+const ACCENT_DIM = '#8F66FF';  // lila, de echo (was #A694FF)
+const DARK = '#000000';        // zwart (was #0F0C24, de inkt van de hal van 14 okt)
 const WHITE = '#FFFFFF';       // wit van de hal (14 okt 2026; was #F2F3F5, de oude grond)
 
 /** id → { ground, ink, note }. `ACTIVE` picks the one that ships. */
 const VARIANTS = {
-  c:  { ground: DARK,      ink: ACCENT,     note: 'violet op zwart — 2,93:1, AFGEKEURD' },
-  b:  { ground: ACCENT,     ink: WHITE,     note: 'wit op violet — 6,45:1, LIVE' },
-  b2: { ground: ACCENT,     ink: DARK,      note: 'zwart op violet — 2,93:1, AFGEKEURD' },
-  a:  { ground: WHITE,     ink: ACCENT,     note: 'violet op wit — 6,45:1' },
-  a2: { ground: DARK,      ink: ACCENT_DIM, note: 'violet-licht op zwart — 8,30:1, het alternatief' },
-  mono: { ground: DARK,    ink: WHITE,     note: 'wit op zwart — 18,91:1' },
+  c:  { ground: DARK,      ink: ACCENT,     note: 'violet op zwart — 2,69:1, AFGEKEURD' },
+  b:  { ground: ACCENT,     ink: WHITE,     note: 'wit op violet — 7,81:1, LIVE' },
+  b2: { ground: ACCENT,     ink: DARK,      note: 'zwart op violet — 2,69:1, AFGEKEURD' },
+  a:  { ground: WHITE,     ink: ACCENT,     note: 'violet op wit — 7,81:1' },
+  a2: { ground: DARK,      ink: ACCENT_DIM, note: 'lila op zwart — 5,51:1, het alternatief' },
+  mono: { ground: DARK,    ink: WHITE,     note: 'wit op zwart — 21:1' },
 };
 /* ── WIT OP GIFGROEN — 8 september 2026 ────────────────────────────────────
    Lucas stuurde de tegel: het witte V-teken op #D2E04A. Dat is variant `b`,

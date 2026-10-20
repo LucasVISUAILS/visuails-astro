@@ -34,6 +34,12 @@
  * #6A6880 en niet het #807E97 van de site: op papier geldt 4,5:1 voor élke tekst,
  * en #807E97 haalt op wit 3,9:1. De kleuren zijn een handkopie van hal.css — een
  * pdf kent de CSS-variabelen van de site niet.
+ *
+ * SCHEMA A (levering 62, 19 oktober 2026, afvinklijst 41): inkt puur zwart, grijs
+ * zonder lila. Violet staat alleen op de site (de voet, het €1-blok, Bestellen, wat je
+ * kiest), dus in de gids nergens: de stip, de pil "nodig", de aanwijzers in de
+ * tekening en het vlak met de vijf vragen zijn zwart (--violet heet nog zo, zodat de
+ * regels hieronder niet veranderen). Het lichte deel van de kop blijft inkt 3, #616161.
  */
 import { createHash } from 'node:crypto';
 import { fotogids } from '../../src/data/fotogids.js';
@@ -109,8 +115,8 @@ function css(fonts) {
   return `
 ${fonts}
 :root {
-  --inkt: #0F0C24; --inkt-2: #4B4960; --inkt-3: #6A6880; --violet: #4A1FFF; --violet-diep: #3D17D6;
-  --mist: #F1EEFF; --nevel: #F5F5F9; --lijn: #DEDCE8; --wit: #FFFFFF;
+  --inkt: #000000; --inkt-2: #3D3D3D; --inkt-3: #616161; --violet: #000000; --violet-diep: #3D3D3D; /* schema A: zie de kop */
+  --mist: #F2F2F2; --nevel: #F2F2F2; --lijn: #DDDDDD; --wit: #FFFFFF;
   --letter: "Urbanist Variable", system-ui, sans-serif;
 }
 * { box-sizing: border-box; }

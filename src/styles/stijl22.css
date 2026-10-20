@@ -44,7 +44,7 @@
    Het schema zet het donkere paneel op puur zwart (`--panel`) en de panelen op
    #F2F3F5, en dan is de ondergrond juist wél de diepste waarde. Hij volgt dus
    `--panel`. */
-:root { --s22-rand: clamp(.75rem, 2vw, 1.5rem); --s22-ronding: var(--r-card, 12px); --s22-grond: var(--panel, #000000); --s22-donker: #14161A;
+:root { --s22-rand: clamp(.75rem, 2vw, 1.5rem); --s22-ronding: var(--r-card, 12px); --s22-grond: var(--panel, #000000); --s22-donker: #161616;
     /* RONDE 9 — `--inkt` bestond alleen BINNEN .s22. De balk staat erbuiten en
        zette `--ink: var(--inkt)` (zie .site-header:not(.scrolled) hieronder):
        een verwijzing naar niets, dus `--ink` werd ongeldig. Tekst merkt dat niet
@@ -90,7 +90,7 @@
        van beide te kennen: ze schrijven `var(--geel-letter)` zoals ze altijd
        deden en krijgen de goede. Gevonden met kladblok/leesbaar-alles.mjs:
        veertig accentwoorden, zes pijllinks en een handvol etiketten. */
-    --geel-letter-donker: #A694FF;
+    --geel-letter-donker: #C8C8C8;
     /* ── --gloed STOND ALLEEN NOG IN DE FALLBACKS — 7 september 2026 ────────
        Zeven componenten schrijven `var(--gloed, #9EB42F)` voor het vinkje
        voor een lijstregel, en de token zelf is nooit gedefinieerd geweest:
@@ -185,9 +185,9 @@
   .s22 .mono, .s22 .etiket { font-family: var(--mono2); font-size: .75rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; line-height: 1.45; }
   .s22 .mini { font-size: .72rem; }
   .s22 .etiket { color: var(--inkt-2); }
-  .s22 .kamer .etiket, .s22 .poster .etiket { color: rgb(242 243 245 / .66); }
+  .s22 .kamer .etiket, .s22 .poster .etiket { color: rgb(242 242 242 / .66); }
   .s22 .lopend { max-width: 34em; text-wrap: pretty; color: var(--inkt-2); }
-  .s22 .kamer .lopend { color: rgb(242 243 245 / .68); }
+  .s22 .kamer .lopend { color: rgb(242 242 242 / .68); }
   /* ── NADRUK IS GEWICHT, NIET EEN VLAKJE — 8 september 2026 ────────────────
      Lucas over het gele blok achter een woord: *"Verzin iets anders voor de
      gearceerde teksten want het ziet er niet zo mooi uit."* Over de eerste
@@ -257,7 +257,7 @@
      `transparent` staat hier en niet bij .knop-lijn, want het is de bodem van de
      hele familie: wie een variant toevoegt zonder vulling hoort niet ineens een
      systeemgrijs te krijgen. De varianten hieronder winnen op volgorde. */
-  .s22 .knop { background: transparent; display: inline-flex; align-items: center; gap: .6em; min-height: 46px; padding: 0 1.5rem; border-radius: 999px; border: 1px solid currentColor; font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; transition: background-color .25s var(--uit), color .25s var(--uit), border-color .25s var(--uit); }
+  .s22 .knop { background: transparent; display: inline-flex; align-items: center; gap: .6em; min-height: 46px; padding: 0 1.5rem; border-radius: 14px 3px 3px 3px; border: 1px solid currentColor; font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; transition: background-color .25s var(--uit), color .25s var(--uit), border-color .25s var(--uit); }
   /* ── OP EEN TELEFOON MAG EEN KNOP AFBREKEN — 17 september 2026 ──────────
      `white-space: nowrap` hierboven staat er zodat een knop van twee woorden
      niet na het eerste woord breekt. Op een breed scherm klopt dat. Op een
@@ -308,7 +308,7 @@
   .s22 .knop-lijn:hover { background: var(--inkt); color: var(--vel); }
   .s22 .pijl { display: inline-flex; align-items: center; gap: .5em; font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; }
   .s22 .pijl::after { content: "→"; transition: transform .3s var(--uit); }
-  .s22 .pijl:hover::after { transform: translateX(.35em); }
+  .s22 .pijl:hover::after { }
   /* ── HET RAAKVLAK IS GROTER DAN DE LETTER — 7 september 2026 ──────────────
      Gemeten met kladblok/personas.mjs op 390px: elke .pijl is 18px hoog met nul
      padding. Dat is prima voor een link middenin een zin — WCAG 2.5.8 zondert
@@ -536,8 +536,8 @@
   body:has(.s22) .site-header {
     --ink: var(--on-panel);
     --ink-900: var(--on-panel);
-    --ink-700: rgb(242 243 245 / .84);
-    --ink-500: rgb(242 243 245 / .68);
+    --ink-700: rgb(242 242 242 / .84);
+    --ink-500: rgb(242 242 242 / .68);
     /* ── --ink-2 EN --ink-3 STONDEN HIER NIET, EN DAT WAS DE HELE NAVIGATIE ──
        8 september 2026, gevonden bij het omkleuren van de balk. Dit blok klapt
        de inktschaal om voor een donkere balk, maar sloeg juist de twee waarden
@@ -551,14 +551,14 @@
        hero opdook. Dit is de tweede plek waar hij toesloeg.
        Een doorzichtigheid van #F5F5F5 en geen tweede vaste kleur: dan volgt de
        schaal de grond, ook als die grond ooit iets anders wordt. */
-    --ink-2: rgb(242 243 245 / .8);
-    --ink-3: rgb(242 243 245 / .64);
+    --ink-2: rgb(242 242 242 / .8);
+    --ink-3: rgb(242 242 242 / .64);
     --brand: var(--on-panel);
-    --line: rgb(242 243 245 / .20);
-    --line-strong: rgb(242 243 245 / .34);
-    --ghost: rgb(242 243 245 / .14);
-    --btn-ghost-fill: rgb(242 243 245 / .14);
-    --btn-ghost-fill-hover: rgb(242 243 245 / .22);
+    --line: rgb(242 242 242 / .20);
+    --line-strong: rgb(242 242 242 / .34);
+    --ghost: rgb(242 242 242 / .14);
+    --btn-ghost-fill: rgb(242 242 242 / .14);
+    --btn-ghost-fill-hover: rgb(242 242 242 / .22);
     --focus-ring: var(--on-panel);
   }
   /* ── HET UITKLAPMENU IS EEN WIT VLAK EN ERFT DUS DE ZWARTE INKT ──────────
@@ -759,8 +759,8 @@
     background: linear-gradient(180deg,
       var(--paper) 0%,
       var(--paper) 69%,
-      rgb(242 243 245 / .55) 84%,
-      rgb(242 243 245 / 0) 100%);
+      rgb(242 242 242 / .55) 84%,
+      rgb(242 242 242 / 0) 100%);
   }
   body:has(.s22) .site-header.scrolled::after { background: var(--s22-grond, #1B1C1E); }
   body:has(.s22) .site-header:not(.scrolled) {
@@ -843,7 +843,7 @@
   .s22.thuis .slot-proef { grid-template-columns: minmax(0, 1fr) minmax(0, .8fr); align-items: center; column-gap: clamp(1.5rem, 4vw, 4rem); }
   .s22.thuis .slot-woord { display: grid; gap: 1.1rem; justify-items: start; }
   .s22.thuis .slot-beelden { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; width: 100%; justify-self: end; max-width: 30rem; }
-  .s22.thuis .slot-beelden li { aspect-ratio: 1; overflow: hidden; border-radius: calc(var(--ronding) - 8px); background: rgb(242 243 245 / .08); }
+  .s22.thuis .slot-beelden li { aspect-ratio: 1; overflow: hidden; border-radius: calc(var(--ronding) - 8px); background: rgb(242 242 242 / .08); }
   .s22.thuis .slot-beelden img { width: 100%; height: 100%; object-fit: cover; display: block; }
   @media (max-width: 900px) {
     .s22.thuis .slot-proef { grid-template-columns: minmax(0, 1fr); }
@@ -871,7 +871,7 @@
      product" op één regel: dan mag de prijsregel breken in plaats van "per p…". */
   @media (min-width: 761px) and (max-width: 1100px) {
     .s22.thuis .kiezer .kaart-tekst .mono { white-space: normal; overflow: visible; }
-    .s22.thuis .kiezer .kaart-pil { border-radius: 1.25rem; }
+    .s22.thuis .kiezer .kaart-pil { border-radius: 1.25rem 3px 3px 3px; }
     /* Drie pillen even hoog, ook als er één op één regel past (video). */
     .s22.thuis .kiezer .kaart-tekst { min-height: 3.45rem; align-content: center; }
   }
@@ -968,7 +968,7 @@
   /* 02 · de beelden op één vaste hoogte: catalog één vierkant, lifestyle drie
      naast elkaar, video staand op donker. */
   .s22.thuis .dd-beeld { display: flex; gap: 6px; height: var(--dd-hoog); min-width: 0; }
-  .s22.thuis .dd-beeld > :is(img, video, picture) { display: block; height: 100%; width: auto; aspect-ratio: 1; object-fit: cover; border-radius: calc(var(--ronding, 12px) - 6px); overflow: hidden; background: var(--surface, #E4E7EC); min-width: 0; }
+  .s22.thuis .dd-beeld > :is(img, video, picture) { display: block; height: 100%; width: auto; aspect-ratio: 1; object-fit: cover; border-radius: calc(var(--ronding, 12px) - 6px); overflow: hidden; background: var(--surface, #E7E7E7); min-width: 0; }
   .s22.thuis .dd-beeld picture img { display: block; width: 100%; height: 100%; object-fit: cover; }
   .s22.thuis .dd-dia-lifestyle .dd-beeld > * { aspect-ratio: 4 / 5; flex: 0 1 auto; }
   .s22.thuis .dd-dia-video .dd-beeld > * { aspect-ratio: 9 / 16; background: var(--s22-donker); }
@@ -979,7 +979,7 @@
   /* 03 · de vormen: drie kaders op dezelfde hoogte, de verhouding zichtbaar. */
   .s22.thuis .dd-vormen { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: flex-end; gap: .9rem 1.1rem; }
   .s22.thuis .dd-vormen li { display: grid; gap: .45rem; }
-  .s22.thuis .dd-vorm { display: block; height: var(--dd-hoog); aspect-ratio: var(--dd-ratio); overflow: hidden; border-radius: calc(var(--ronding, 12px) - 6px); background: var(--surface, #E4E7EC); }
+  .s22.thuis .dd-vorm { display: block; height: var(--dd-hoog); aspect-ratio: var(--dd-ratio); overflow: hidden; border-radius: calc(var(--ronding, 12px) - 6px); background: var(--surface, #E7E7E7); }
   .s22.thuis .dd-vorm img { display: block; width: 100%; height: 100%; object-fit: cover; }
   .s22.thuis .dd-ook { margin: 0; }
 
@@ -1015,9 +1015,9 @@
   .s22.thuis .gz-links { display: flex; flex-wrap: wrap; gap: .6rem 1.6rem; margin: .3rem 0 0; }
   .s22.thuis .gz-rij { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: clamp(.5rem, 1.2vw, .9rem); }
   .s22.thuis .gz-rij a { display: grid; gap: .55rem; color: inherit; text-decoration: none; }
-  .s22.thuis .gz-foto { display: block; aspect-ratio: 4 / 5; overflow: hidden; border-radius: calc(var(--ronding, 12px) - 4px); background: var(--paper-2, #E4E7EC); }
+  .s22.thuis .gz-foto { display: block; aspect-ratio: 4 / 5; overflow: hidden; border-radius: calc(var(--ronding, 12px) - 4px); background: var(--paper-2, #E7E7E7); }
   .s22.thuis .gz-foto img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s var(--uit); }
-  .s22.thuis .gz-rij a:hover img { transform: scale(1.03); }
+  .s22.thuis .gz-rij a:hover img { }
   .s22.thuis .gz-rij .mono { font-size: .72rem; color: var(--inkt-2); }
   @media (max-width: 900px) { .s22.thuis .gz { grid-template-columns: minmax(0, 1fr); } }
 
@@ -1239,7 +1239,7 @@
     /* Een SLUIER van de eigen grond, niet een kleurverloop: één kleur die
        uitdooft zodat de kop leesbaar blijft op de foto eronder. Die blijft
        bestaan; wat eruit ging is het verloop dat de hero zijn GROND gaf. */
-    background: linear-gradient(180deg, rgb(242 243 245 / .92) 0%, rgb(242 243 245 / .72) 34%, rgb(242 243 245 / .12) 62%, transparent 78%);
+    background: linear-gradient(180deg, rgb(242 242 242 / .92) 0%, rgb(242 242 242 / .72) 34%, rgb(242 242 242 / .12) 62%, transparent 78%);
   }
 
   /* De uitloop. z-index 1, dus boven de foto (0) en onder de tekst (2) — de zin
@@ -1248,7 +1248,7 @@
   .s22 .hero::after {
     content: ""; position: absolute; left: 0; right: 0; bottom: 0; z-index: 1;
     height: clamp(6rem, 22%, 15rem); pointer-events: none;
-    background: linear-gradient(180deg, rgb(242 243 245 / 0) 0%, rgb(242 243 245 / .55) 46%, var(--paper) 100%);
+    background: linear-gradient(180deg, rgb(242 242 242 / 0) 0%, rgb(242 242 242 / .55) 46%, var(--paper) 100%);
   }
 
   /* ══════════════════════════════════════════════════════════════════════════
@@ -1546,7 +1546,7 @@
        binnen — en dooft daarna uit tot niets op de rand. Kern sterk, rand
        onzichtbaar, en de twee eisen bijten elkaar niet meer.
        Nagemeten met kladblok/beeldtekst.mjs: slechtste punt 8,6:1. */
-    background: rgb(242 243 245 / .93);
+    background: rgb(242 242 242 / .93);
     -webkit-mask-image: radial-gradient(closest-side at 46% 50%, #000 68%, transparent 100%);
     mask-image: radial-gradient(closest-side at 46% 50%, #000 68%, transparent 100%);
   }
@@ -1611,7 +1611,7 @@
   .s22 .kaarten li { display: grid; gap: .8rem; }
   .s22 .kaart { position: relative; display: block; border-radius: calc(var(--ronding) - 8px); overflow: hidden; background: var(--inkt); aspect-ratio: 4 / 5; }
   .s22 .kaart img { width: 100%; height: 100%; object-fit: cover; transition: scale .6s var(--uit); }
-  .s22 .kaart:hover img { scale: 1.04; }
+  .s22 .kaart:hover img { }
   .s22 .kaart::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgb(var(--scrim, 0 0 0) / .55), transparent 42%); }
   /* ── DE NUMMERS OP DE KAARTEN ZIJN WEG — 8 september 2026 ─────────────────
      Lucas: *"Ik wil ook geen 01, 02, 03… cijfers per sectie hebben, verwijder
@@ -1629,14 +1629,14 @@
      vorm waarin dit over drie maanden terugkomt — dezelfde reden als bij
      `.spook` eerder vandaag. Alleen /concept/zweef.astro houdt zijn eigen
      kopie, want dat is een vastgelegd concept en geen levende pagina. */
-  .s22 .kaart-pil { position: absolute; z-index: 1; inset-inline: .6rem; bottom: .6rem; display: flex; align-items: center; justify-content: space-between; gap: .6rem; background: var(--wit); color: var(--inkt); border-radius: 999px; padding: .45rem .45rem .45rem 1rem; }
+  .s22 .kaart-pil { position: absolute; z-index: 1; inset-inline: .6rem; bottom: .6rem; display: flex; align-items: center; justify-content: space-between; gap: .6rem; background: var(--wit); color: var(--inkt); border-radius: 11px 3px 3px 3px; padding: .45rem .45rem .45rem 1rem; }
   .s22 .kaart-tekst { display: grid; min-width: 0; }
   .s22 .kaart-tekst b { font-weight: 500; font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .s22 .kaart-tekst .mono { font-size: .72rem; color: var(--inkt-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* De pijl in de cirkel is WIT en niet zwart sinds 20 september: zwart op
      violet is 2,93:1 en staat in KLEURENSCHEMA.md bij de afgekeurde paren. */
   .s22 .rond { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 50%; background: var(--geel); color: var(--op-geel); display: grid; place-items: center; font-size: .9rem; transition: transform .3s var(--uit); }
-  .s22 .kaart:hover .rond { transform: translateX(3px); }
+  .s22 .kaart:hover .rond { }
   .s22 .kaart-wat { font-size: .95rem; color: var(--inkt-2); }
 
   /* ── DE VIERDE TEGEL: EEN DEUR ─────────────────────────────────────────────
@@ -1666,7 +1666,7 @@
      niet op om het te vullen: ze zeggen wat er achter de tegel zit, wat precies
      de vraag is die "bekijk alle diensten" oproept. */
   .s22 .deur-lijst { display: grid; margin-top: .3rem; }
-  .s22 .deur-item { font-size: .92rem; line-height: 1; padding: .55rem 0; color: rgb(242 243 245 / .78); border-top: 1px solid rgb(242 243 245 / .16); }
+  .s22 .deur-item { font-size: .92rem; line-height: 1; padding: .55rem 0; color: rgb(242 242 242 / .78); border-top: 1px solid rgb(242 242 242 / .16); }
   .s22 .deur-item:first-child { border-top: 0; padding-top: .1rem; }
   /* De pil op deze tegel is wit op zwart; de cirkel daarin doet gewoon mee met
      de andere tegels — violet met een witte pijl. De omkering die hier stond
@@ -1686,8 +1686,7 @@
   .s22 .foto-pil {
     position: absolute; z-index: 1; left: .7rem; bottom: .7rem;
     background: rgb(0 0 0 / .82); color: var(--vel);
-    padding: .35rem .75rem; border-radius: 999px;
-    backdrop-filter: blur(6px);
+    padding: .35rem .75rem; border-radius: 11px 3px 3px 3px;
   }
 
   /* ── DE DIMMING VAN DRIE VAN DE VIER KAARTEN IS WEG — 8 september 2026 ────
@@ -1723,9 +1722,9 @@
   .s22 .draad b { color: var(--geel-letter); }
 
   /* ── DE STAPPEN ───────────────────────────────────────────────────────────*/
-  .s22 .stappen li { display: grid; grid-template-columns: auto minmax(0, 19rem) minmax(0, 34rem); align-items: baseline; gap: clamp(1rem, 3vw, 2.5rem); padding: clamp(1.1rem, 2.4vw, 1.8rem) 0; border-top: 1px solid rgb(242 243 245 / .14); }
-  .s22 .stappen li:last-child { border-bottom: 1px solid rgb(242 243 245 / .14); }
-  .s22 .stap-nr { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(2rem, 5vw, 4.2rem); line-height: .8; color: rgb(242 243 245 / .22); }
+  .s22 .stappen li { display: grid; grid-template-columns: auto minmax(0, 19rem) minmax(0, 34rem); align-items: baseline; gap: clamp(1rem, 3vw, 2.5rem); padding: clamp(1.1rem, 2.4vw, 1.8rem) 0; border-top: 1px solid rgb(242 242 242 / .14); }
+  .s22 .stappen li:last-child { border-bottom: 1px solid rgb(242 242 242 / .14); }
+  .s22 .stap-nr { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(2rem, 5vw, 4.2rem); line-height: .8; color: rgb(242 242 242 / .22); }
   .s22 .stappen b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.45rem); text-transform: uppercase; letter-spacing: -.01em; text-wrap: balance; }
 
   /* ── DE SET ───────────────────────────────────────────────────────────────*/
@@ -1840,7 +1839,7 @@
      Regel "Altijd 5": diepte komt uit een lijn of een tweede vlak, nooit uit
      een schaduw. De poster staat op de donkere ondergrond en heeft dus een
      lijn nodig om zijn rand te tonen, niet een wolk eronder. */
-  .s22 .poster { position: relative; width: min(100%, 30rem); border-radius: var(--ronding); overflow: hidden; background: var(--inkt); aspect-ratio: 3 / 4; box-shadow: inset 0 0 0 1px rgb(242 243 245 / .14); }
+  .s22 .poster { position: relative; width: min(100%, 30rem); border-radius: var(--ronding); overflow: hidden; background: var(--inkt); aspect-ratio: 3 / 4; box-shadow: inset 0 0 0 1px rgb(242 242 242 / .14); }
   .s22 .poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .s22 .poster-tekst { position: absolute; inset: auto 0 0; display: grid; gap: .7rem; padding: clamp(1.25rem, 3vw, 2rem); background: linear-gradient(to top, rgb(var(--scrim, 0 0 0) / .92), rgb(var(--scrim, 0 0 0) / .55) 60%, transparent); color: var(--vel); }
   /* ── HET SLOTPANEEL IS DONKER, EN HEET DAAROM NIET MEER GEEL — 7 sep 2026 ─
@@ -1868,11 +1867,11 @@
        donkere palet in KLEURENSCHEMA.md, koel zoals de rest. #1A1A1A stond
        in geen enkele tabel. */
     background: var(--s22-donker); color: var(--vel);
-    border: 1px solid rgb(242 243 245 / .14);
+    border: 1px solid rgb(242 242 242 / .14);
     display: grid; gap: 1.1rem; justify-items: start;
   }
-  .s22 .paneel-slot .etiket { color: rgb(242 243 245 / .66); }
-  .s22 .paneel-slot .lopend { color: rgb(242 243 245 / .72); }
+  .s22 .paneel-slot .etiket { color: rgb(242 242 242 / .66); }
+  .s22 .paneel-slot .lopend { color: rgb(242 242 242 / .72); }
   /* De knoppen die de pagina's al meegeven, omgedraaid voor deze ondergrond.
      Zo hoeft geen van de dertig aanroepplekken zijn klassen te wijzigen — en
      `.s22.s22` omdat .knop-inkt in dit bestand zelf ook twee klassen diep is. */
@@ -1933,7 +1932,7 @@
      zit — dezelfde val die global.css twee keer eerder heeft opgelopen en
      waarvan de noot daar zegt dat de lege 2,4rem eruitzag als opzet. */
   .s22.s22 :where(.input, .textarea, .select) {
-    background-color: var(--wit); border: 1px solid var(--lijn-sterk); border-radius: 10px;
+    background-color: var(--wit); border: 1px solid var(--lijn-sterk); border-radius: 10px 3px 3px 3px;
     color: var(--inkt); font-family: var(--tekst2); font-size: .95rem; padding: .8rem 1rem;
   }
   .s22.s22 .select { padding-right: 2.4rem; }
@@ -1955,10 +1954,10 @@
   .s22.s22 :where(.input, .textarea, .select):focus {
     outline: 2px solid var(--accent); outline-offset: 2px; border-color: var(--inkt); box-shadow: none;
   }
-  .s22.s22 .opt { border: 1px solid var(--lijn-sterk); border-radius: 10px; background: var(--wit); }
+  .s22.s22 .opt { border: 1px solid var(--lijn-sterk); border-radius: 10px 3px 3px 3px; background: var(--wit); }
   /* De gekozen optie krijgt een INKTRAND en geen lavendel vlak — regel
      "Nooit 3": de tint is voor een statuslabel, niet voor een oppervlak. */
-  .s22.s22 .opt:has(input:checked) { border-color: var(--inkt); background: var(--surface); box-shadow: inset 0 0 0 1px var(--inkt); }
+  .s22.s22 .opt:has(input:checked) { border-color: var(--kies, var(--inkt)); background: var(--surface); box-shadow: inset 0 0 0 1px var(--kies, var(--inkt)); }
   .s22.s22 .opt input { accent-color: var(--accent); }
   .s22.s22 .opt .opt-title { color: var(--inkt); font-weight: 600; }
   .s22.s22 .opt .opt-desc { color: var(--inkt-2); font-size: .82rem; }
@@ -1969,11 +1968,11 @@
      "De vorm"); dit zijn feiten. Dezelfde vorm als .feiten hieronder, op één
      rij en in de lichte inkt van de donkere grond. */
   .s22 .trustlijn { display: flex; flex-wrap: wrap; gap: .5rem 1.8rem; padding: clamp(2rem, 4vw, 3rem) var(--x) 0; }
-  .s22 .trustlijn li { position: relative; padding-left: 1.4rem; font-size: .9rem; line-height: 1.5; color: rgb(242 243 245 / .72); }
+  .s22 .trustlijn li { position: relative; padding-left: 1.4rem; font-size: .9rem; line-height: 1.5; color: rgb(242 242 242 / .72); }
   .s22 .trustlijn li::before { content: ""; position: absolute; left: .15rem; top: .4em; width: .58rem; height: .3rem; border-left: 1.75px solid currentColor; border-bottom: 1.75px solid currentColor; transform: rotate(-45deg); }
   /* De regel met een deur (de naam → /about): onderstreept, en 24 px hoog om
      op te tikken zonder dat de rij hoger wordt. */
-  .s22 .trustlijn a { position: relative; color: #f2f3f5; text-decoration: underline; text-decoration-color: rgb(242 243 245 / .4); text-underline-offset: .2em; }
+  .s22 .trustlijn a { position: relative; color: #f2f2f2; text-decoration: underline; text-decoration-color: rgb(242 242 242 / .4); text-underline-offset: .2em; }
   .s22 .trustlijn a::after { content: ""; position: absolute; inset: -4px 0; }
   .s22 .trustlijn a:hover, .s22 .trustlijn a:focus-visible { text-decoration-color: currentColor; }
 
@@ -2038,7 +2037,7 @@
        een staande uitsnede, en dat midden is bij deze foto de lege capsule. */
     .s22 .hero { min-height: min(88svh, 760px); padding-bottom: clamp(1.5rem, 5vw, 2.5rem); }
     .s22 .hero-foto { object-position: 58% 56%; }
-    .s22 .hero::before { background: linear-gradient(180deg, rgb(242 243 245 / .94) 0%, rgb(242 243 245 / .88) 30%, rgb(242 243 245 / .34) 48%, rgb(242 243 245 / .06) 68%, transparent 82%); }
+    .s22 .hero::before { background: linear-gradient(180deg, rgb(242 242 242 / .94) 0%, rgb(242 242 242 / .88) 30%, rgb(242 242 242 / .34) 48%, rgb(242 242 242 / .06) 68%, transparent 82%); }
     /* ── DE WAS WORDT EEN BAND, EN DE LETTER WORDT DONKERDER ────────────────
        Vier uitsnedes naast elkaar gezet en ze waren niet uit elkaar te houden:
        niet de uitsnede wiste het beeld maar de LAGEN erboven. De ovale was om
@@ -2060,10 +2059,10 @@
          waar de tekst staat. Gemeten: 1,24:1 zolang deze regel ontbrak. */
       -webkit-mask-image: none; mask-image: none;
       background: linear-gradient(180deg,
-        rgb(242 243 245 / 0) 0%,
-        rgb(242 243 245 / .74) 16%,
-        rgb(242 243 245 / .76) 84%,
-        rgb(242 243 245 / 0) 100%);
+        rgb(242 242 242 / 0) 0%,
+        rgb(242 242 242 / .74) 16%,
+        rgb(242 242 242 / .76) 84%,
+        rgb(242 242 242 / 0) 100%);
     }
     .s22 .hero-clip { aspect-ratio: 16 / 9; }
     .s22 .maatlijn { grid-auto-flow: row; gap: .9rem; }
@@ -2343,19 +2342,19 @@ body:has(.s22) .site-header .brand-glyph { --mk-line-ink: currentColor; }
 .s22.s22 .svcsw-a[aria-current="page"] { color: var(--inkt); text-decoration-color: var(--lijn-sterk); background: none; }
 .s22.s22 .svcsw-dot { width: auto; height: auto; border-radius: 0; background: none; color: var(--lijn-sterk); }
 /* In een donkere kamer draait de inkt om — zie 7 september, /plans. */
-.s22.s22 :where(.kamer) .svcsw-k { color: rgb(242 243 245 / .6); }
-.s22.s22 :where(.kamer) .svcsw-a { color: rgb(242 243 245 / .82); }
+.s22.s22 :where(.kamer) .svcsw-k { color: rgb(242 242 242 / .6); }
+.s22.s22 :where(.kamer) .svcsw-a { color: rgb(242 242 242 / .82); }
 .s22.s22 :where(.kamer) .svcsw-a:hover,
 .s22.s22 :where(.kamer) .svcsw-a:focus-visible,
-.s22.s22 :where(.kamer) .svcsw-a[aria-current="page"] { color: var(--vel); text-decoration-color: rgb(242 243 245 / .45); background: none; }
+.s22.s22 :where(.kamer) .svcsw-a[aria-current="page"] { color: var(--vel); text-decoration-color: rgb(242 242 242 / .45); background: none; }
 
 /* De schuifvergelijking: ronde hoeken en de greep in het accent. */
 .s22.s22 .cmp { border-radius: calc(var(--ronding) - 8px); overflow: hidden; }
-.s22.s22 .cmp-tag { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; border-radius: 999px; }
+.s22.s22 .cmp-tag { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; border-radius: 8px 3px 3px 3px; }
 /* VOOR / NA: licht op donker, altijd — 23 september 2026. De pil nam `--scrim` (donker) met
    `--ink` (ook donker) over en was onleesbaar (Lucas' schermafdruk). Het label ligt op een
    foto, dus hangt het niet aan het thema maar aan zichzelf: bijna zwart, met vel erop. */
-.s22.s22 .cmp-tag { background: rgb(8 9 11 / .78); color: #F2F3F5; }
+.s22.s22 .cmp-tag { background: rgb(8 9 11 / .78); color: #F2F2F2; }
 .s22.s22 .cmp-knob { background: var(--geel); color: var(--op-geel); border: 0; }
 .s22.s22 .cmp-divider { background: var(--vel); }
 
@@ -2409,7 +2408,7 @@ body:has(.s22) .site-header .brand-glyph { --mk-line-ink: currentColor; }
 
 /* Knoppen die uit de oude opmaak komen en binnen deze stijl staan, krijgen de
    pil van deze stijl — anders staat er een hoekige knop tussen ronde. */
-.s22.s22 .btn { border-radius: 999px; font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; min-height: 46px; }
+.s22.s22 .btn { border-radius: 14px 3px 3px 3px; font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; min-height: 46px; }
 .s22.s22 .link-arrow { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; }
 
 /* De kleine labels van StyleRows stonden op 9,3 tot 10,9px. Binnen deze stijl

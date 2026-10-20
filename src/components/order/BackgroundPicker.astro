@@ -265,7 +265,7 @@ const fl = FIELD[lang];
     gap: .45rem;
     padding: .55rem;
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-md);
+    border-radius: var(--r-md) 3px 3px 3px;
     background: var(--surface);
     cursor: pointer;
     transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
@@ -281,9 +281,9 @@ const fl = FIELD[lang];
   .bg-perfoto-lede { margin: .4rem 0 .7rem; max-width: 52ch; font-size: .9rem; line-height: 1.5; color: var(--ink-2); }
   .bg-perfoto-lock { margin: 0 0 .6rem; font-size: .875rem; color: var(--ink-2); }
   .bg-perfoto-rij { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr)); gap: .6rem; }
-  .bg-perfoto-veld { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; column-gap: .55rem; row-gap: .3rem; align-items: center; padding: .55rem .6rem; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+  .bg-perfoto-veld { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; column-gap: .55rem; row-gap: .3rem; align-items: center; padding: .55rem .6rem; border: 1px solid var(--line); border-radius: var(--r-md) 3px 3px 3px; background: var(--surface); }
   /* De schets van het beeld op zijn kleur, zoals de tegels in "Wat je krijgt". */
-  .bg-perfoto-staal { grid-row: 1; width: 44px; height: 44px; border-radius: 10px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--line-strong); background: var(--bgfoto, #FFFFFF); }
+  .bg-perfoto-staal { grid-row: 1; width: 44px; height: 44px; border-radius: 10px 3px 3px 3px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--line-strong); background: var(--bgfoto, #FFFFFF); }
   .bg-perfoto-staal img { display: block; width: 100%; height: 100%; object-fit: contain; }
   .bg-perfoto-naam { font-size: .875rem; font-weight: 600; color: var(--ink); }
   .bg-perfoto-kies { grid-column: 1 / -1; width: 100%; }
@@ -292,10 +292,10 @@ const fl = FIELD[lang];
      veld met de code ernaast. Zonder script staan ze er gewoon; pipeline.js
      verbergt ze tot "Eigen kleur…" gekozen is. */
   .bg-perfoto-eigen { grid-column: 1 / -1; display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: .45rem; align-items: center; }
-  .bg-perfoto-kleur { width: 44px; height: 44px; padding: 0; border: 1px solid var(--line-strong); border-radius: 10px; background: none; cursor: pointer; }
+  .bg-perfoto-kleur { width: 44px; height: 44px; padding: 0; border: 1px solid var(--line-strong); border-radius: 10px 3px 3px 3px; background: none; cursor: pointer; }
   .bg-perfoto-hex { width: 100%; min-width: 0; font-variant-numeric: tabular-nums; }
   .bg-perfoto-donker { grid-column: 1 / -1; font-size: .8rem; line-height: 1.45; color: var(--ink-2); }
-  .bg-opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  .bg-opt:has(input:checked) { border-color: var(--kies, var(--accent)); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--kies, var(--accent)); }
   .bg-opt:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
   /* The swatch IS the value, so it gets the largest area on the tile and a
      hairline of its own — white on a white card is otherwise an empty box.
@@ -341,9 +341,9 @@ const fl = FIELD[lang];
     justify-items: center;
     height: 104px;
     padding: 0 12% 0;
-    border-radius: var(--r-md);
+    border-radius: var(--r-md) 3px 3px 3px;
     background: var(--swatch, var(--surface-2));
-    box-shadow: inset 0 0 0 1px rgb(15 12 36 / .22);
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / .22);
     overflow: hidden;
   }
   .bg-eg {
@@ -353,14 +353,18 @@ const fl = FIELD[lang];
   }
   .bg-swatch.is-empty .bg-eg { display: none; }
   /* Before a custom colour exists there is no value to show, and showing a
-     grey would be showing a fifth recommendation. A spectrum says "any colour"
-     — it is decoration and contains no hex, because hexes are backgrounds.js's
-     contract with the studio and a gradient is not one of them. */
+     grey would be showing a fifth recommendation. Levering 61 (afvinklijst 39,
+     a-regen): no spectrum any more (the only rainbow on the site). An empty
+     swatch with #RRGGBB in the fixed-width letter, like the hex under the
+     swatches next to it: the language of a studio colour card. The placeholder
+     is CSS content, so it is no hex and no part of backgrounds.js's contract. */
   .bg-swatch.is-empty {
-    background: conic-gradient(
-      hsl(0 55% 72%), hsl(60 55% 72%), hsl(120 55% 72%),
-      hsl(180 55% 72%), hsl(240 55% 72%), hsl(300 55% 72%), hsl(360 55% 72%)
-    );
+    display: grid; place-items: center;
+    background: #FFFFFF; box-shadow: inset 0 0 0 1px var(--h-lijn, #DDDDDD);
+  }
+  .bg-swatch.is-empty::before {
+    content: "#RRGGBB"; font: 600 15px/1 var(--h-mono, 'IBM Plex Mono', ui-monospace, monospace);
+    letter-spacing: .08em; color: var(--h-inkt-3, #616161); white-space: nowrap;
   }
   .bg-row { display: flex; align-items: center; gap: .45rem; }
   .bg-row input { accent-color: var(--accent); width: 16px; height: 16px; flex: none; }
@@ -396,19 +400,19 @@ const fl = FIELD[lang];
     width: 3.6rem; height: 3.15rem;
     padding: .25rem;
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-md);
+    border-radius: var(--r-md) 3px 3px 3px;
     background: var(--surface);
     cursor: pointer;
   }
   /* The native swatch inside the control keeps its own square corners unless
      both engines' pseudo-elements are told otherwise. */
   .bg-color::-webkit-color-swatch-wrapper { padding: 0; }
-  .bg-color::-webkit-color-swatch { border: 0; border-radius: var(--r-sm); }
-  .bg-color::-moz-color-swatch { border: 0; border-radius: var(--r-sm); }
+  .bg-color::-webkit-color-swatch { border: 0; border-radius: var(--r-sm) 3px 3px 3px; }
+  .bg-color::-moz-color-swatch { border: 0; border-radius: var(--r-sm) 3px 3px 3px; }
   .bg-hexinput { text-transform: uppercase; font-variant-numeric: tabular-nums; }
   /* A consequence, not a refusal — so it is the warn colour and not an error
      box, and nothing about it blocks the form. */
-  .bg-warn { margin: .9rem 0 0; border-radius: var(--r-md); max-width: 70ch; }
+  .bg-warn { margin: .9rem 0 0; border-radius: var(--r-md) 3px 3px 3px; max-width: 70ch; }
   .pl-bg-match { display: block; margin-top: .8rem; max-width: 70ch; }
   /* Moved out of the page sheet with the markup — Astro scopes a component's
      styles to that component, so a rule left behind in OrderFlow.astro would
@@ -432,7 +436,7 @@ const fl = FIELD[lang];
     margin: .9rem 0 0;
     padding: .85rem 1.05rem;
     border: 1px solid var(--warn);
-    border-radius: var(--r-md);
+    border-radius: var(--r-md) 3px 3px 3px;
     background: var(--paper-2);
     color: var(--warn-ink);
     font-size: .9rem;
@@ -446,7 +450,7 @@ const fl = FIELD[lang];
     color: var(--accent-bright);
     text-decoration: underline;
     text-underline-offset: 3px;
-    border-radius: var(--r-sm);
+    border-radius: var(--r-sm) 3px 3px 3px;
   }
   .pl-why > summary:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
   .pl-why > p { margin-top: .5rem; font-size: .82rem; color: var(--ink-3); line-height: 1.55; max-width: 70ch; }

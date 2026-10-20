@@ -25,7 +25,7 @@
   93.75% { d: path('M173.3 34.7 L587 34.9 L586.6 727.8 L172.6 727.5 Z'); }
   100% { d: path('M173 34 L587 34 L587 727 L173 727 Z'); }
 }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-kader { animation: h-maak-kader-d 0.70s linear 0.6s both, h-maak-trek 0.35s var(--h-zacht) 0.15s both, h-maak-even 1.33s linear 0.15s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-kader { animation: h-maak-kader-d 0.525s linear 0.45s both, h-maak-trek 0.262s var(--h-zacht) 0.112s both, h-maak-even 0.998s linear 0.112s both; }
 @keyframes h-maak-greep-0 {
   0% { transform: translate(304.3px, 162.3px); }
   6.25% { transform: translate(303.7px, 162.2px); }
@@ -45,8 +45,8 @@
   93.75% { transform: translate(173.3px, 34.7px); }
   100% { transform: translate(173px, 34px); }
 }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(1) { animation: h-maak-greep-0 0.70s linear 0.6s both; }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(1) rect { animation: h-maak-anker .28s var(--h-veer) 0.250s both, h-maak-weg .18s ease 1.35s forwards; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(1) { animation: h-maak-greep-0 0.525s linear 0.45s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(1) rect { animation: h-maak-anker 0.21s var(--h-veer) 0.188s both, h-maak-weg 0.135s ease 1.013s forwards; }
 @keyframes h-maak-greep-1 {
   0% { transform: translate(451.8px, 185.2px); }
   6.25% { transform: translate(451.4px, 185.1px); }
@@ -66,8 +66,8 @@
   93.75% { transform: translate(380.1px, 34.8px); }
   100% { transform: translate(380px, 34px); }
 }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(2) { animation: h-maak-greep-1 0.70s linear 0.6s both; }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(2) rect { animation: h-maak-anker .28s var(--h-veer) 0.285s both, h-maak-weg .18s ease 1.35s forwards; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(2) { animation: h-maak-greep-1 0.525s linear 0.45s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(2) rect { animation: h-maak-anker 0.21s var(--h-veer) 0.214s both, h-maak-weg 0.135s ease 1.013s forwards; }
 @keyframes h-maak-greep-2 {
   0% { transform: translate(608.6px, 209.5px); }
   6.25% { transform: translate(608.4px, 209.4px); }
@@ -87,8 +87,8 @@
   93.75% { transform: translate(587px, 34.9px); }
   100% { transform: translate(587px, 34px); }
 }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(3) { animation: h-maak-greep-2 0.70s linear 0.6s both; }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(3) rect { animation: h-maak-anker .28s var(--h-veer) 0.320s both, h-maak-weg .18s ease 1.35s forwards; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(3) { animation: h-maak-greep-2 0.525s linear 0.45s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(3) rect { animation: h-maak-anker 0.21s var(--h-veer) 0.24s both, h-maak-weg 0.135s ease 1.013s forwards; }
 @keyframes h-maak-greep-3 {
   0% { transform: translate(569.4px, 421.1px); }
   6.25% { transform: translate(569.1px, 421.8px); }
@@ -108,8 +108,8 @@
   93.75% { transform: translate(586.8px, 381.3px); }
   100% { transform: translate(587px, 380.5px); }
 }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(4) { animation: h-maak-greep-3 0.70s linear 0.6s both; }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(4) rect { animation: h-maak-anker .28s var(--h-veer) 0.355s both, h-maak-weg .18s ease 1.35s forwards; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(4) { animation: h-maak-greep-3 0.525s linear 0.45s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(4) rect { animation: h-maak-anker 0.21s var(--h-veer) 0.266s both, h-maak-weg 0.135s ease 1.013s forwards; }
 @keyframes h-maak-greep-4 {
   0% { transform: translate(516.1px, 708.8px); }
   6.25% { transform: translate(515.8px, 710.2px); }
@@ -129,8 +129,8 @@
   93.75% { transform: translate(586.6px, 727.8px); }
   100% { transform: translate(587px, 727px); }
 }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(5) { animation: h-maak-greep-4 0.70s linear 0.6s both; }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(5) rect { animation: h-maak-anker .28s var(--h-veer) 0.390s both, h-maak-weg .18s ease 1.35s forwards; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(5) { animation: h-maak-greep-4 0.525s linear 0.45s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(5) rect { animation: h-maak-anker 0.21s var(--h-veer) 0.292s both, h-maak-weg 0.135s ease 1.013s forwards; }
 @keyframes h-maak-greep-5 {
   0% { transform: translate(309px, 655.4px); }
   6.25% { transform: translate(308.7px, 657px); }
@@ -150,8 +150,8 @@
   93.75% { transform: translate(379.6px, 727.7px); }
   100% { transform: translate(380px, 727px); }
 }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(6) { animation: h-maak-greep-5 0.70s linear 0.6s both; }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(6) rect { animation: h-maak-anker .28s var(--h-veer) 0.425s both, h-maak-weg .18s ease 1.35s forwards; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(6) { animation: h-maak-greep-5 0.525s linear 0.45s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(6) rect { animation: h-maak-anker 0.21s var(--h-veer) 0.319s both, h-maak-weg 0.135s ease 1.013s forwards; }
 @keyframes h-maak-greep-6 {
   0% { transform: translate(118.3px, 606.3px); }
   6.25% { transform: translate(118px, 607.9px); }
@@ -171,8 +171,8 @@
   93.75% { transform: translate(172.6px, 727.5px); }
   100% { transform: translate(173px, 727px); }
 }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(7) { animation: h-maak-greep-6 0.70s linear 0.6s both; }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(7) rect { animation: h-maak-anker .28s var(--h-veer) 0.460s both, h-maak-weg .18s ease 1.35s forwards; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(7) { animation: h-maak-greep-6 0.525s linear 0.45s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(7) rect { animation: h-maak-anker 0.21s var(--h-veer) 0.345s both, h-maak-weg 0.135s ease 1.013s forwards; }
 @keyframes h-maak-greep-7 {
   0% { transform: translate(224.5px, 352.8px); }
   6.25% { transform: translate(223.9px, 353.6px); }
@@ -192,9 +192,9 @@
   93.75% { transform: translate(172.9px, 381px); }
   100% { transform: translate(173px, 380.5px); }
 }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(8) { animation: h-maak-greep-7 0.70s linear 0.6s both; }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(8) rect { animation: h-maak-anker .28s var(--h-veer) 0.495s both, h-maak-weg .18s ease 1.35s forwards; }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(5) rect { animation: h-maak-anker .28s var(--h-veer) 0.390s both, h-maak-gepakt .12s ease 0.55s both, h-maak-weg .18s ease 1.35s forwards; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(8) { animation: h-maak-greep-7 0.525s linear 0.45s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(8) rect { animation: h-maak-anker 0.21s var(--h-veer) 0.371s both, h-maak-weg 0.135s ease 1.013s forwards; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-greep:nth-child(5) rect { animation: h-maak-anker 0.21s var(--h-veer) 0.292s both, h-maak-gepakt 0.09s ease 0.413s both, h-maak-weg 0.135s ease 1.013s forwards; }
 @keyframes h-maak-muis {
   0% { opacity: 0; transform: translate(586.1px, 788.8px); }
   15.45% { opacity: 1; transform: translate(516.1px, 708.8px); }
@@ -219,10 +219,10 @@
   87.27% { opacity: 1; transform: translate(587px, 727px); }
   100% { opacity: 0; transform: translate(637px, 787px); }
 }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-muis { animation: h-maak-muis 1.10s linear 0.38s both; }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-veeg { animation: h-maak-trek 0.90s cubic-bezier(.4, 0, .6, 1) 1.45s both; }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-bouwkwast { animation: h-maak-loop 0.90s cubic-bezier(.4, 0, .6, 1) 1.45s both, h-maak-even 1.05s linear 1.40s both; }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-laag { animation: h-maak-recht 0.70s cubic-bezier(0.65, 0, 0.3, 1) 0.6s both, h-maak-tot 2.42s linear 0s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-muis { animation: h-maak-muis 0.825s linear 0.285s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-veeg { animation: h-maak-trek 0.675s cubic-bezier(.4, 0, .6, 1) 1.087s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-bouwkwast { animation: h-maak-loop 0.675s cubic-bezier(.4, 0, .6, 1) 1.087s both, h-maak-even 0.788s linear 1.05s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-laag { animation: h-maak-recht 0.525s cubic-bezier(0.65, 0, 0.3, 1) 0.45s both, h-maak-tot 1.815s linear 0s both; }
 @keyframes h-maak-lp {
   0% { opacity: 0; transform: translate(383px, 88px) scale(.6); }
   8.11% { opacity: 1; transform: translate(383px, 88px) scale(1); }
@@ -290,16 +290,16 @@
   93.51% { opacity: 1; transform: scale(1); }
   100% { opacity: 0; transform: scale(1); }
 }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-lp { animation: h-maak-lp 1.85s cubic-bezier(.5, 0, .3, 1) 2.4s both; }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-lp-in { animation: h-maak-lp-in 1.85s cubic-bezier(.5, 0, .3, 1) 2.4s both; }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-lp-gordijn { animation: h-maak-lp-gordijn 1.85s cubic-bezier(.45, 0, .35, 1) 2.4s both; }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-lp-deler { animation: h-maak-lp-deler 1.85s cubic-bezier(.45, 0, .35, 1) 2.4s both; }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-lp-vink { animation: h-maak-lp-vink 1.85s var(--h-veer) 2.4s both; }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-lagen-punten span:nth-child(1) { animation: h-maak-punt .32s var(--h-veer) 2.85s both; }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-lagen-punten span:nth-child(2) { animation: h-maak-punt .32s var(--h-veer) 3.44s both; }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-lagen-punten span:nth-child(3) { animation: h-maak-punt .32s var(--h-veer) 4.03s both; }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-lagen li:nth-child(1) i { animation-delay: 4.25s; }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-doe { animation: h-maak-even 4.35s linear 0.05s both; }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-doe > span:nth-child(1) { animation: h-maak-woord 1.35s linear 0.05s both; }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-doe > span:nth-child(2) { animation: h-maak-woord 1.00s linear 1.40s both; }
-.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-doe > span:nth-child(3) { animation: h-maak-woord 1.85s linear 2.40s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-lp { animation: h-maak-lp 1.388s cubic-bezier(.5, 0, .3, 1) 1.8s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-lp-in { animation: h-maak-lp-in 1.388s cubic-bezier(.5, 0, .3, 1) 1.8s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-lp-gordijn { animation: h-maak-lp-gordijn 1.388s cubic-bezier(.45, 0, .35, 1) 1.8s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-lp-deler { animation: h-maak-lp-deler 1.388s cubic-bezier(.45, 0, .35, 1) 1.8s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-lp-vink { animation: h-maak-lp-vink 1.388s var(--h-veer) 1.8s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-lagen-punten span:nth-child(1) { animation: h-maak-punt 0.24s var(--h-veer) 2.138s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-lagen-punten span:nth-child(2) { animation: h-maak-punt 0.24s var(--h-veer) 2.58s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-lagen-punten span:nth-child(3) { animation: h-maak-punt 0.24s var(--h-veer) 3.022s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-lagen li:nth-child(1) i { animation-delay: 3.188s; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-doe { animation: h-maak-even 3.262s linear 0.038s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-doe > span:nth-child(1) { animation: h-maak-woord 1.013s linear 0.038s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-doe > span:nth-child(2) { animation: h-maak-woord 0.75s linear 1.05s both; }
+.hal .h-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-maak-doe > span:nth-child(3) { animation: h-maak-woord 1.388s linear 1.8s both; }

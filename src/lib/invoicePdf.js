@@ -346,14 +346,18 @@ const LABEL_RIGHT = COL.unitRight;   // totals labels end where unit prices do
    gegevens, dezelfde volgorde, dezelfde teksten en bedragen; alleen kleur, vlak
    en woordmerk zijn nieuw. Inkt, lijn en violet zijn die van de site
    (src/styles/hal.css: --h-inkt, --h-lijn, --h-violet, --h-mist, --h-nevel).
-   MUTED is #5B5872: 6,9:1 op wit en 6,2:1 op het lila vlak, gemeten. */
+   MUTED is #5B5872: 6,9:1 op wit en 6,2:1 op het lila vlak, gemeten.
+   SCHEMA A — levering 62 (19 oktober 2026, afvinklijst 41): wit, zwart en grijs zonder
+   lila. Violet staat alleen op de site (de voet, het €1-blok, Bestellen, wat je kiest),
+   dus op de factuur nergens: de titel, "Factuur aan" en het totaal zijn zwart (NADRUK),
+   het vlak is nevel. MUTED #5B5B5B haalt 6,8:1 op wit en 6,1:1 op nevel. */
 const hex = (h) => rgb(parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255);
-const INK = hex('#0F0C24');
-const MUTED = hex('#5B5872');
-const RULE = hex('#DEDCE8');
-const VIOLET = hex('#4A1FFF');
-const VLAK = hex('#F1EEFF');
-const NEVEL = hex('#F5F5F9');
+const INK = hex('#000000');
+const MUTED = hex('#5B5B5B');
+const RULE = hex('#DDDDDD');
+const NADRUK = hex('#000000');
+const VLAK = hex('#F2F2F2');
+const NEVEL = hex('#F2F2F2');
 
 /* ── HET WOORDMERK, ALS VECTOR ─────────────────────────────────────────────────
    Letterlijk het pad uit src/data/woordmerk.js (de merkletter van de hal), hier
@@ -778,7 +782,7 @@ function drawHeader(sheet, d, fonts) {
      staat als tekst in de voet en in de metadata. */
   const kap = SIZE.h1 * 0.72;
   sheet.svg(WOORDMERK_D, { x: M.left, y: baseline, scale: kap / WOORDMERK_KAP, color: INK });
-  sheet.draw(t.title, { x: CONTENT_RIGHT, y: top - 2, size: SIZE.h2, font: fonts.bold, align: 'right', color: VIOLET });
+  sheet.draw(t.title, { x: CONTENT_RIGHT, y: top - 2, size: SIZE.h2, font: fonts.bold, align: 'right', color: NADRUK });
 
   // Seller identity. The VAT number and the KVK number are not decoration here:
   // both are required on every invoice we send.
@@ -855,7 +859,7 @@ function drawParties(sheet, d, fonts) {
   const top = sheet.y;
   const colW = CONTENT_W * 0.52;
 
-  sheet.draw(t.billedTo.toUpperCase(), { x: M.left, y: top, size: SIZE.tiny, font: fonts.bold, color: VIOLET });
+  sheet.draw(t.billedTo.toUpperCase(), { x: M.left, y: top, size: SIZE.tiny, font: fonts.bold, color: NADRUK });
   let y = top - 15;
 
   const name = winAnsi(d.customer.name);
@@ -1012,7 +1016,7 @@ function drawTotals(sheet, d, fonts) {
     });
     sheet.draw(amount, {
       x: COL.totalRight, y, size: bold ? SIZE.h2 : SIZE.body, align: 'right',
-      font: bold ? fonts.bold : fonts.regular, color: bold ? VIOLET : INK,
+      font: bold ? fonts.bold : fonts.regular, color: bold ? NADRUK : INK,
     });
     y -= LEAD.body + 4 + (bold ? 3 : 0);
   };

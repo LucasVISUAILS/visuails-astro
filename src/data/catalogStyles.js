@@ -46,7 +46,7 @@ export const catalogStyles = [
   {
     slug: 'classic',
     name: 'Classic',
-    tagline: 'Clean. Consistent. Relentlessly so.',
+    tagline: 'Every product in the same clean style.',
     /* De lookpagina, kort (k101, 11 oktober 2026): drie korte regels onder
        vaste koppen — voor welke kleding, welk gevoel, welke kanalen. */
     kort: {

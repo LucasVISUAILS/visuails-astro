@@ -438,7 +438,7 @@ const BEELD = {
         <a class="h-knop h-knop-lijn" href={lp('/pricing')}>{c.ctaPrices}</a>
       </p>
       <ul class="h-feiten h-vd-feiten h-op" style="--d:4" role="list">
-        {feiten.map(([sterk, rest]) => <li><i set:html={ik('check')} /><span><b>{sterk}</b> {rest}</span></li>)}
+        {feiten.map(([sterk, rest]) => <li><span><b>{sterk}</b> {rest}</span></li>)}
       </ul>
       <div class="h-vd-wacht h-op" style="--d:5">
         <p><span class="h-chip h-pl-tag">{c.soonTag}</span> {c.queueKort}</p>

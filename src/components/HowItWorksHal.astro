@@ -359,7 +359,7 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
         <h2 id="hw-hand" class="h-kop h-h2"><span class="l">{c.handKop[0]}</span> {c.handKop[1]}</h2>
         <p class="h-hw-zin">{c.handZin}</p>
         <ul class="h-feiten h-hw-chips" role="list">
-          {c.chips.map((chip) => <li><i set:html={ik('check')} /><span>{chip}</span></li>)}
+          {c.chips.map((chip) => <li><span>{chip}</span></li>)}
         </ul>
       </div>
     </div>

@@ -10,7 +10,7 @@
  * HOE HET WERKT. De fotodoos heeft de verhouding van de foto (4:3). Daarin:
  *   1. de foto, met de schermen al ingezet (het eerste beeld) — dit is wat je
  *      ziet zonder JavaScript, en wat er staat tot het script klaar is;
- *   2. een laag van 2304 × 1728 "fotopixels" met de twee schermen erin, elk op
+ *   2. een laag van 2304 × 1296 "fotopixels" (sinds 20 oktober 2026, de POV-foto) met de twee schermen erin, elk op
  *      zijn eigen maat opgebouwd (1600 × 1034 en 540 × 1170) en met matrix3d in
  *      het perspectief van de foto gezet (src/data/halLaptop.js). Het script zet
  *      alleen de schaal (--hl-k) en wisselt de beelden; het masker per scherm laat
@@ -73,12 +73,19 @@ const T = nl
       fotoAlt: 'A laptop on a lap showing a shop page, and a phone in hand with the photo you send in' };
 
 /* De belletjes wijzen naar een punt OP de bovenrand van elk scherm (in fotopixels,
-   dus als fractie van de fotodoos). Laptop: op een tiende van de breedte, boven de
-   duimnagels van de rij. Telefoon: op 58%, tussen de camera en de rechterrand. */
+   dus als fractie van de fotodoos). Laptop: op een tiende van de breedte, het belletje
+   hangt rechts van zijn punt. Telefoon (sinds 20 oktober links in de foto): op 80 %,
+   rechts van het eiland en nog op het rechte stuk van de rand; het belletje hangt
+   links van zijn punt, boven het witte deel met de schets. */
 const L = SCHERMEN.laptop, F = SCHERMEN.fon;
 const [lx, ly] = inFoto(L, L.w * 0.1, 0);
-const [fx, fy] = inFoto(F, F.w * 0.58, 0);
+const [fx, fy] = inFoto(F, F.w * 0.8, 0);
 const punt = (x: number, y: number) => `--px:${(x / FOTO.w).toFixed(5)};--py:${(y / FOTO.h).toFixed(5)}`;
+/* Het telefoonbelletje staat op dezelfde hoogte als dat van de laptop (--pyb), met een
+   langer lijntje naar zijn scherm: zo blijven ze allebei boven de tekst en de foto, op
+   één lijn, ook op een smal scherm waar het label van de opening er anders tegenaan
+   kwam (op 901 px 6 px overlap). */
+const lijn = `;--pyb:${(ly / FOTO.h).toFixed(5)}`;
 const eerst = standen[0] ?? { set: sets[0] ?? 'catalog', i: 0, duur: 0 };
 /* Op een telefoon ligt de foto 1,59 × zo breed als het scherm, maar je ziet er
    alleen het midden van. 120vw kiest daar de foto van 1600 px (DPR 2 tot 3) in
@@ -93,7 +100,7 @@ const SIZES = '(max-width: 900px) 120vw, 75vw';
       staan de belletjes in de hoeken van het paneel, niet in de foto. */}
   <div class="hl-raam">
   <div class="hl-doos" data-hl-doos>
-    {/* De standen: elk een foto van 2304 × 1728 met de schermen er al in. De eerste
+    {/* De standen: elk een foto van 2304 × 1296 met de schermen er al in. De eerste
         staat er meteen (ook zonder JavaScript); de rest ligt klaar met display:none
         en laadt pas als het script hem vraagt. Er tekent per wissel niets dan twee
         foto's die in elkaar overvloeien. */}
@@ -109,9 +116,9 @@ const SIZES = '(max-width: 900px) 120vw, 75vw';
 
     {/* De belletjes. De tekst is echte tekst (geen aria-hidden): hij zegt wat je ziet. */}
     <p class="hl-bel hl-bel-lap" style={punt(lx, ly)}><span class="hl-stip" aria-hidden="true"></span><span><em>{T.krijg}</em><b data-hl-wat>{SET[eerst.set as SetNaam].wat}</b></span></p>
-    <p class="hl-bel hl-bel-fon" style={punt(fx, fy)}><span class="hl-stip" aria-hidden="true"></span><span><em>{T.stuur}</em><b>{T.stuurWat}</b></span></p>
+    <p class="hl-bel hl-bel-fon" style={punt(fx, fy) + lijn}><span class="hl-stip" aria-hidden="true"></span><span><em>{T.stuur}</em><b>{T.stuurWat}</b></span></p>
     <span class="hl-draad hl-draad-lap" style={punt(lx, ly)} aria-hidden="true"></span>
-    <span class="hl-draad hl-draad-fon" style={punt(fx, fy)} aria-hidden="true"></span>
+    <span class="hl-draad hl-draad-fon" style={punt(fx, fy) + lijn} aria-hidden="true"></span>
   </div>
 
   {/* De bediening: naam van de set, de streep, terug en verder. Eronder de ene

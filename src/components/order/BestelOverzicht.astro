@@ -249,19 +249,19 @@ const c = nl ? {
     display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 4px;
   }
   .bo-tegel { position: relative; }
-  .bo-plus { position: absolute; top: 4px; right: 4px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: var(--h-violet, #4A1FFF); color: #fff; font: 600 13px/1 var(--h-letter, sans-serif); }
+  .bo-plus { position: absolute; top: 4px; right: 4px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: var(--h-inkt, #000000); color: #fff; font: 600 13px/1 var(--h-letter, sans-serif); }
   /* Schetsen sinds 15 oktober 2026 (overzichtbeelden.js): een licht vlak met de
      tekening erin en de naam van het beeld eronder, in de maat van de noten. */
   .bo-tegels li { display: grid; gap: .35rem; min-width: 0; }
-  .bo-tegel { display: block; aspect-ratio: 1; overflow: hidden; border-radius: 10px; background: var(--bo-bg, var(--h-nevel, #F5F5F9)); }
+  .bo-tegel { display: block; aspect-ratio: 1; overflow: hidden; border-radius: 10px 3px 3px 3px; background: var(--bo-bg, var(--h-nevel, #F2F2F2)); }
   /* Werklijst 27 (15 oktober 2026): bij catalog draagt elke tegel de achtergrond
      van dat beeld (pipeline.js zet --bo-bg), met een haarlijn zodat wit op de
      witte kaart een vak blijft, en een tegel is te kiezen: dan opent "Een foto
      een andere achtergrond geven" in stap 1 op dat beeld. */
-  .bo-tegel.is-kiesbaar { cursor: pointer; box-shadow: inset 0 0 0 1px var(--h-lijn, #DEDCE8); }
-  .bo-tegel.is-kiesbaar:hover { box-shadow: inset 0 0 0 1px var(--h-lila, #A694FF); }
-  .bo-tegel.is-kiesbaar:focus-visible { outline: 2px solid var(--h-violet, #4A1FFF); outline-offset: 2px; }
-  .bo-tegel.is-anders { box-shadow: inset 0 0 0 2px var(--h-violet, #4A1FFF); }
+  .bo-tegel.is-kiesbaar { cursor: pointer; box-shadow: inset 0 0 0 1px var(--h-lijn, #DDDDDD); }
+  .bo-tegel.is-kiesbaar:hover { box-shadow: inset 0 0 0 1px var(--h-inkt, #000000); }
+  .bo-tegel.is-kiesbaar:focus-visible { outline: 2px solid var(--h-inkt, #000000); outline-offset: 2px; }
+  .bo-tegel.is-anders { box-shadow: inset 0 0 0 2px var(--h-violet, #4400FF); } /* een gekozen andere achtergrond: wat je kiest, violet (schema A) */
   .bo-tegels img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .bo-tegel-naam { font-size: .75rem; line-height: 1.25; color: var(--ink-2); text-align: center; overflow-wrap: anywhere; }
   .bo-set-noot { margin: .55rem 0 0; font-size: .8rem; line-height: 1.45; color: var(--ink-2); }

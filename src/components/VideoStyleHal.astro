@@ -174,7 +174,7 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
 /* "Hoe Motion eruitziet." in twee tonen: tot en met de naam licht, de rest donker (k-vd, 13 okt) */
 const moodTonen = (() => { const m = style.moodTitle || ''; const i = m.toLowerCase().indexOf(String(style.name).toLowerCase()); return i < 0 ? [m, ''] : [m.slice(0, i + style.name.length), m.slice(i + style.name.length).trim()]; })();
 ---
-<div class="h-pagina h-lk h-lk-video h-vs">
+<div class="h-pagina h-lk h-lk-video h-vs" data-achter={`video-${style.slug}`}>
 
   {/* ── KOP ────────────────────────────────────────────────────────────────── */}
   <header class="h-paginakop h-lk-kop">
@@ -197,8 +197,8 @@ const moodTonen = (() => { const m = style.moodTitle || ''; const i = m.toLowerC
     </p>
     {style.waHref && <p class="h-vs-model h-vs-wa h-op">{c.wa[0]}<a href={style.waHref} target="_blank" rel="noopener">{c.wa[1]}<NieuwTabblad lang={lang} /></a>{c.wa[2]}</p>}
     <ul class="h-feiten h-vs-feiten h-op" role="list">
-      <li><i set:html={ik('check')} /><span><b>{style.priceTrust}{style.priceUnit}</b></span></li>
-      <li><i set:html={ik('check')} /><span>{TIMING}</span></li>
+      <li><span><b>{style.priceTrust}{style.priceUnit}</b></span></li>
+      <li><span>{TIMING}</span></li>
       <li><i set:html={ik('check')} /><span>{REVIEW}</span></li>
     </ul>
     <p class="h-dienst-wacht h-op">{QUEUE}</p>

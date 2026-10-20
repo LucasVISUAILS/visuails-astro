@@ -38,7 +38,10 @@ const OUT = path.join(ROOT, 'brand', 'visuails-logo');
  *
  * De naam GREEN bestaat hier niet meer: hij is ACCENT geworden, want hij
  * staat maar op vijf plekken in dit bestand. */
-const ACCENT = '#4A1FFF';
+/* Schema A, 19 oktober 2026: violet #4400FF (was #4A1FFF). Het logopakket dat
+ * Lucas gebruikt komt sinds levering 62 uit maak-logopakket.py in zijn map
+ * images/Logo/visuails-logo-nieuw; dit script geeft dezelfde kleuren. */
+const ACCENT = '#4400FF';
 const DARK = '#000000';
 const WHITE = '#FFFFFF';
 

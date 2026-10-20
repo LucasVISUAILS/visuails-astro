@@ -107,13 +107,14 @@ const LOOKS = [
 ].filter((k) => k.beeld);
 const GEZICHTEN_RIJ = ROSTER.slice(0, 5);
 const DRIE = (n: number) => String(n).padStart(2, '0');
-/* Stap 3: wanneer elk vinkje komt, in seconden vanaf het begin van de stap (zie de li hieronder). */
-const KEUR_TIK = [0.45, 0.9, 1.25, 1.75];
+/* Stap 3: wanneer elk vinkje komt, in seconden vanaf het begin van de stap (zie de li hieronder).
+   Levering 61 (e-stappen, "iets sneller"): driekwart van 0,45 / 0,9 / 1,25 / 1,75 s, net als de rest van de stappen. */
+const KEUR_TIK = [0.338, 0.675, 0.938, 1.313];
 
 const COPY = {
   nl: {
     plek: 'Enschede, NL',
-    lede: 'Stuur je productfoto’s. Krijg catalog, lifestyle en video terug.',
+    lede: 'Stuur je productfoto’s. Krijg catalog, lifestyle en video terug. Knoop, stiksel en kleur nagekeken.',
     ctaStart: 'Start een bestelling', planCta: 'Sluit een abonnement af',
     feiten: [`Vanaf <b>${e(ladderFloor('catalog'))}</b> per product`, LEVERTIJD, 'Geen minimum'],
     hoeLabel: 'Hoe het werkt', hoeKop: ['Dit stuur jij.', 'Dit krijg je terug.'],
@@ -164,7 +165,7 @@ const COPY = {
   },
   en: {
     plek: 'Enschede, NL',
-    lede: 'Send your product photos. Get catalog, lifestyle and video back.',
+    lede: 'Send your product photos. Get catalog, lifestyle and video back. Buttons, stitching and colour checked.',
     ctaStart: 'Start an order', planCta: 'Start a plan',
     feiten: [`From <b>${e(ladderFloor('catalog'))}</b> per product`, LEVERTIJD, 'No minimum'],
     hoeLabel: 'How it works', hoeKop: ['What you send.', 'What you get back.'],
@@ -272,7 +273,7 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
   </section>
 
   {/* ── 02 · HOE HET WERKT ───────────────────────────────────────────────── */}
-  <section class="h-sec h-hoe" id="hoe" aria-labelledby="h-hoe" data-uitleg={uitleg ? '' : undefined} data-uitleg-maat="3000 12100 3000" data-uitleg-start="400">
+  <section class="h-sec h-hoe" id="hoe" aria-labelledby="h-hoe" data-uitleg={uitleg ? '' : undefined} data-uitleg-maat="2250 9075 2250" data-uitleg-start="300">
     <header class="h-sec-kop h-in">
       <div>
         <p class="h-pil"><span>{c.hoeLabel}</span></p>
@@ -355,7 +356,7 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
                       <clipPath id="h-maak-vierkant"><rect x="0" y="0" width={PAD_MAAT} height={PAD_MAAT} /></clipPath>
                       <clipPath id="h-maak-lp-rond"><circle cx="0" cy="0" r={LOEP.r} /></clipPath>
                       <mask id="h-maak-lp-veeg" maskUnits="userSpaceOnUse" x={-LOEP.r - 8} y={-LOEP.r - 8} width={2 * LOEP.r + 16} height={2 * LOEP.r + 16}><rect class="h-maak-lp-gordijn" x={-LOEP.r - 2} y={-LOEP.r - 2} width={2 * LOEP.r + 4} height={2 * LOEP.r + 4} fill="#FFFFFF" /></mask>
-                      <filter id="h-maak-lp-schaduw" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#0F0C24" flood-opacity=".28" /></filter>
+                      <filter id="h-maak-lp-schaduw" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000000" flood-opacity=".28" /></filter>
                     </defs>
                     {/* 2 · Het beeld dat het penseel uit je rechtgezette foto opbouwt. */}
                     <image class="h-maak-bouwbeeld" href="/img/ba2-na-front.webp" x="0" y="0" width={PAD_MAAT} height={PAD_MAAT} mask="url(#h-maak-bouw)" preserveAspectRatio="xMidYMid meet" />

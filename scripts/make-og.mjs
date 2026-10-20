@@ -36,7 +36,7 @@ const W = 1200, H = 630;
    met een lichte kop; het accentwoord staat er als LETTER op, dus het is het
    lichte violet uit de donkere modus (#A694FF, 8,30:1 op zwart) en niet het
    violet van de vulling — dat haalt op zwart 2,93:1. */
-const GREEN = '#A694FF';
+const GREEN = '#C8C8C8';
 const INK = '#000000';
 
 /** Een bestand als data-URL — Chromium mag geen file:// laden bij setContent. */
@@ -61,12 +61,13 @@ function fontFile(pkg, file, what) {
    Lucas: het nieuwe kleurenschema "volledig toevoegen". Dit plaatje was nog het
    donkere vlak van 20 september, in Archivo, met het V-merk en het woord
    VISUAILS naast elkaar. Nu de opening van de voorpagina: wit, de kop in
-   Urbanist in drie tonen (kop-licht, violet, inkt — zoals de h1), de laptopfoto
+   Urbanist in drie tonen (kop-licht, violet, inkt — zoals de h1; sinds schema A,
+   19 oktober 2026, is het violette woord zwart, zoals in de h1), de laptopfoto
    rechts, en het woordmerk van de hal linksboven (uit src/data/woordmerk.js,
    niet het V-merk ernaast: die twee staan nooit samen). */
 const urbanist = fontFile('@fontsource-variable/urbanist', 'urbanist-latin-wght-normal.woff2', 'Urbanist');
 const { WOORDMERK } = await import('../src/data/woordmerk.js');
-const KOP_LICHT = '#807E97', INKT = '#0F0C24', INKT_3 = '#6A6880', VIOLET = '#4A1FFF';
+const KOP_LICHT = '#6E6E6E', INKT = '#000000', INKT_3 = '#616161', VIOLET = '#000000';
 
 function pick(candidates, what) {
   for (const c of candidates) {
@@ -88,13 +89,17 @@ for (const [lang, t] of Object.entries(TAGLINE)) {
     @font-face { font-family: 'Urbanist'; src: url('${dataUrl(urbanist, 'font/woff2')}') format('woff2'); font-weight: 100 900; font-display: block; }
     * { margin: 0; box-sizing: border-box; }
     body { width: ${W}px; height: ${H}px; background: #FFFFFF; overflow: hidden; position: relative; font-family: 'Urbanist', sans-serif; }
-    /* De foto rechts, met de linkerrand weggevaagd zoals in de opening (hal.css, .hl-doos). */
-    .photo { position: absolute; right: -230px; top: -10px; width: 860px; height: 645px; background: url('${dataUrl(photo, 'image/webp')}') center / cover no-repeat;
-      -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 30%); mask-image: linear-gradient(90deg, transparent 0, #000 30%); }
+    /* De foto rechts, vervloeid in het wit zoals in de opening (hal.css, .hl-doos). Sinds
+       20 oktober 2026 de POV-foto (16:9); zijn plek en maat zet het script hieronder,
+       net als op de site: de duim (0,235 van de breedte) 16 px rechts van de kop, de
+       klep (0,868) 24 px voor de rand. */
+    .photo { position: absolute; background: url('${dataUrl(photo, 'image/webp')}') center / 100% 100% no-repeat; aspect-ratio: 2304 / 1296;
+      -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 26%), linear-gradient(180deg, transparent 0, #000 12%, #000 72%, transparent 97%); -webkit-mask-composite: source-in;
+      mask-image: linear-gradient(90deg, transparent 0, #000 26%), linear-gradient(180deg, transparent 0, #000 12%, #000 72%, transparent 97%); mask-composite: intersect; }
     .wrap { position: absolute; inset: 0; padding: 60px 64px; display: flex; flex-direction: column; justify-content: space-between; }
     .wm { width: 150px; height: auto; display: block; }
     h1 { font-size: 70px; line-height: 1.02; font-weight: 500; letter-spacing: -.025em; color: ${INKT}; max-width: 9.5em; }
-    h1 .l { color: ${KOP_LICHT}; font-weight: 400; }
+    h1 .l { color: ${INKT_3}; font-weight: 400; }  /* op de schets van de foto grijs 3, zoals in de opening */
     h1 em { font-style: normal; color: ${VIOLET}; }
     h1 span { display: block; }
     .foot { color: ${INKT_3}; font-size: 22px; font-weight: 500; }
@@ -107,6 +112,11 @@ for (const [lang, t] of Object.entries(TAGLINE)) {
   </div>`);
 
   await page.evaluate(() => document.fonts.ready);
+  await page.evaluate(({ W, H }) => {
+    const kop = document.querySelector('h1'); const r = Math.max(...[...kop.querySelectorAll('span')].map((s) => { const g = document.createRange(); g.selectNodeContents(s); return Math.max(...[...g.getClientRects()].map((q) => q.right)); }));
+    const b = (W - 24 - (r + 16)) / 0.633, h = b * 1296 / 2304, f = document.querySelector('.photo');
+    Object.assign(f.style, { width: `${b}px`, height: `${h}px`, left: `${W - 24 - 0.868 * b}px`, top: `${(H - h) / 2}px` });
+  }, { W, H });
   const file = path.join(OUT, `og-${lang}.png`);
   await page.screenshot({ path: file });
   await page.close();

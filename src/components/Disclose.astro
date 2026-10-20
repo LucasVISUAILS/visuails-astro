@@ -143,7 +143,7 @@ const {
   .dc[open] > .dc-sum::after { content: '\2212'; }
   .dc-sum:hover::after { color: var(--accent-bright); }
 
-  .dc-sum:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; border-radius: var(--r-sm); }
+  .dc-sum:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; border-radius: var(--r-sm) 3px 3px 3px; }
 
   .dc-body { margin-top: .85rem; }
   /* Lucht onder een opengeklapt antwoord (4 september 2026): de laatste alinea
@@ -181,7 +181,7 @@ const {
   .dc-panel {
     background: var(--surface);
     border: 0;
-    border-radius: var(--r-md);
+    border-radius: var(--r-md) 3px 3px 3px;
     padding: 1.1rem 1.3rem;
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
     transition: background var(--dur-1) var(--ease);

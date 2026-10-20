@@ -44,9 +44,9 @@ const COPY = {
     waText: 'Hello VISUAILS, I\'d like to ask about the standard models.',
     heroAlt: 'A VISUAILS standard model',
     trust: [
-      ['No fee', 'per model, ever'],
-      [`${rosterWoord('en', true)} faces`, 'shared across brands'],
-      ['Swap freely', 'order to order'],
+      ['No extra charge', 'per model'],
+      [`${rosterWoord('en', true)} faces`, 'for all brands'],
+      ['Swap', 'with every order'],
     ],
     rosterPil: `All ${rosterWoord('en')}`,
     rosterH: ['The full', 'roster.'],
@@ -73,9 +73,9 @@ const COPY = {
     waText: 'Hallo VISUAILS, ik wil graag iets vragen over de standaardmodellen.',
     heroAlt: 'Een VISUAILS-standaardmodel',
     trust: [
-      ['Geen kosten', 'per model, nooit'],
-      [`${rosterWoord('nl', true)} gezichten`, 'die we voor alle merken gebruiken'],
-      ['Vrij wisselen', 'van bestelling tot bestelling'],
+      ['Geen meerprijs', 'per model'],
+      [`${rosterWoord('nl', true)} gezichten`, 'voor alle merken'],
+      ['Wisselen', 'per bestelling'],
     ],
     rosterPil: `Alle ${rosterWoord('nl')}`,
     rosterH: ['De volledige', 'bibliotheek.'],
@@ -126,7 +126,7 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
         <a class="h-knop h-knop-lijn" href={wa} target="_blank" rel="noopener">{c.ctaWa}<NieuwTabblad lang={lang} /></a>
       </p>
       <ul class="h-feiten h-op" style="--d:4" role="list">
-        {c.trust.map((t) => <li><i set:html={ik('check')} /><span><b>{t[0]}</b> — {t[1]}</span></li>)}
+        {c.trust.map((t) => <li><span><b>{t[0]}</b> {t[1]}</span></li>)}
       </ul>
     </div>
     <figure class="h-md-kop-beeld h-op" style="--d:2">

@@ -106,7 +106,7 @@
   color: var(--ink);
   background: var(--surface-2);
   border: 1px solid var(--line-strong);
-  border-radius: var(--r-md);
+  border-radius: var(--r-md) 3px 3px 3px;
   resize: vertical;
 }
 .fb-fix textarea::placeholder, .fb-quote textarea::placeholder, .fb-quote input::placeholder { color: var(--ink-3); }
@@ -197,7 +197,7 @@
 .fb-kopie {
   width: 100%; max-width: 52ch; padding: .6rem .7rem;
   font: inherit; font-size: .92rem; line-height: 1.5; color: var(--ink);
-  background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: var(--r-md);
+  background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: var(--r-md) 3px 3px 3px;
   resize: vertical;
 }
 .fb-na .fb-actions { margin-top: .2rem; }
