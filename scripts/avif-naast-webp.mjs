@@ -116,6 +116,10 @@ export default function avifNaastWebp() {
     hooks: {
       'astro:build:done': async ({ dir, logger }) => {
         const distDir = fileURLToPath(dir);
+        /* De telefoonversies (levering 66): zie DE TELEFOONVERSIE hieronder. */
+        const { TELEFOONBEELDEN, telefoonPad } = await import(new URL('../src/data/telefoonbeelden.js', import.meta.url).href);
+        const opDist = async (p) => { try { await access(join(distDir, p.slice(1))); return true; } catch { return false; } };
+        let telefoon = 0;
 
         /* Eén cache voor de hele build. Zonder dat doet /gallery 38 keer
            `access` op dezelfde paden, en twee keer (en + nl). */
@@ -175,16 +179,31 @@ export default function avifNaastWebp() {
 
             const eind = eindeVanTag(html, a + 4);
             if (eind === -1) break;
-            const heel = html.slice(a, eind + 1);
+            let heel = html.slice(a, eind + 1);
 
             if (a < inPictureTot) { uit += html.slice(i, eind + 1); i = eind + 1; overgeslagen++; continue; }
 
-            const at = attributen(html.slice(a + 4, eind));
+            let at = attributen(html.slice(a + 4, eind));
+            /* ── DE TELEFOONVERSIE — levering 66 (afvinklijst 44) ───────────────
+               Staat de foto in src/data/telefoonbeelden.js en ligt zijn kleine
+               versie in dist, dan krijgt de <img> een srcset met beide en
+               sizes="100vw" (of houdt hij zijn eigen sizes). De
+               src blijft de volle foto: dat is de terugval, en wat een script leest
+               dat naar src kijkt. Waarom 100vw genoeg is (ook bij object-fit:
+               cover) staat gemeten in telefoonbeelden.js. */
+            if (!at.srcset && at.src && TELEFOONBEELDEN[at.src] && await opDist(telefoonPad(at.src))) {
+              const { vol, klein } = TELEFOONBEELDEN[at.src];
+              const set = `${telefoonPad(at.src)} ${klein}w, ${at.src} ${vol}w`;
+              heel = `<img srcset="${set}"${at.sizes ? '' : ' sizes="100vw"'}` + heel.slice(4);
+              at = { ...at, srcset: set, sizes: at.sizes || '100vw' };
+              telefoon++;
+            }
             const bron = at.srcset || at.src || '';
             const avif = bron ? await avifLijst(bron) : '';
 
             if (!avif) {
-              uit += html.slice(i, eind + 1);
+              uit += html.slice(i, a) + heel;
+              if (heel !== html.slice(a, eind + 1)) veranderd = true;
               i = eind + 1;
               if (bron.includes('/img/')) {
                 overgeslagen++;
@@ -259,7 +278,8 @@ export default function avifNaastWebp() {
         } else {
           logger.info(
             `avif: ${omgezet} <img> in een <picture> op ${geraakt} pagina's` +
-            (overgeslagen ? ` (${overgeslagen} overgeslagen — al in een <picture>)` : '')
+            (overgeslagen ? ` (${overgeslagen} overgeslagen — al in een <picture>)` : '') +
+            `, ${telefoon} met een telefoonversie`
           );
         }
       },

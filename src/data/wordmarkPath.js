@@ -30,8 +30,12 @@ export const V_TOT = 740;
    pagina's die global.css niet laden, als kopie in account.css, admin.css en
    portal.css. Inline in plaats van <use>, want Studio, /admin en de privélink
    hebben de symbolen van Layout.astro niet. Geen script nodig: de lijn komt onder
-   de muis (en bij focus op de link) met CSS. */
+   de muis (en bij focus op de link) met CSS.
+
+   LEVERING 68 (24 oktober 2026, lijst 55 logo a): geen elektrische lijn meer. Het woordmerk
+   staat stil en zijn kleur schommelt van inkt naar blauw uur en terug: een tweede pad in
+   blauw (.mk-kleur) op de vulling, en alleen de dekking beweegt (global.css en de kopie
+   in account.css, admin.css en portal.css). */
 export function woordmerkSvg(klasse = 'woordmerk') {
-  const lijn = WOORDMERK_LIJNEN.map((d) => `<path pathLength="100" vector-effect="non-scaling-stroke" d="${d}"/>`).join('');
-  return `<svg class="${klasse} mk" viewBox="${WORDMARK_VIEWBOX}" aria-hidden="true" focusable="false"><g class="mk-line mk-line-a">${lijn}</g><path class="mk-fill" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg>`;
+  return `<svg class="${klasse} mk" viewBox="${WORDMARK_VIEWBOX}" aria-hidden="true" focusable="false"><path class="mk-fill" fill-rule="evenodd" d="${WOORDMERK.d}"/><path class="mk-kleur" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg>`;
 }

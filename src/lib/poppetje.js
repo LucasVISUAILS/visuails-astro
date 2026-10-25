@@ -73,10 +73,10 @@ export function poppetjeSvg({ crop = 'full', product = '', own = [], klein = fal
  */
 export const POP_CSS = `
 .pop { display: block; width: 100%; height: auto; }
-.pop .r { fill: rgb(0 0 0 / .06); stroke: var(--line-strong, rgb(0 0 0 / .34)); stroke-width: 2; stroke-linejoin: round; }
-.pop .r-head { fill: var(--paper, #F2F2F2); }
+.pop .r { fill: rgb(11 15 23 / .06); stroke: var(--line-strong, rgb(11 15 23 / .34)); stroke-width: 2; stroke-linejoin: round; }
+.pop .r-head { fill: var(--paper, #F4F5F7); }
 .pop .r-arms, .pop .r-legs { fill: none; }
-.pop .r-shoes, .pop .r-bottom, .pop .r-top, .pop .r-underlayer { fill: rgb(0 0 0 / .13); stroke-width: 1.5; }
+.pop .r-shoes, .pop .r-bottom, .pop .r-top, .pop .r-underlayer { fill: rgb(11 15 23 / .13); stroke-width: 1.5; }
 .pop[data-product="top"] .r-top,
 .pop[data-product="outerwear"] .r-top,
 .pop[data-product="underwear"] .r-top,
@@ -86,14 +86,14 @@ export const POP_CSS = `
 .pop[data-product="dress"] .r-top,
 .pop[data-product="dress"] .r-bottom,
 .pop[data-product="shoes"] .r-shoes,
-.pop[data-product="socks"] .r-shoes { fill: var(--ink, #000); stroke: var(--ink, #000); }
+.pop[data-product="socks"] .r-shoes { fill: var(--ink, #0B0F17); stroke: var(--ink, #0B0F17); }
 .pop[data-own*="shoes"] .r-shoes,
 .pop[data-own*="bottom"] .r-bottom,
 .pop[data-own*="top"] .r-top,
-.pop[data-own*="underlayer"] .r-underlayer { fill: rgb(0 0 0 / .45); stroke: none; }
-.pop .pop-buiten { fill: var(--paper, #F2F2F2); fill-opacity: .8; }
-.pop .pop-kader { fill: none; stroke: var(--ink, #000); stroke-width: 2; }
+.pop[data-own*="underlayer"] .r-underlayer { fill: rgb(11 15 23 / .45); stroke: none; }
+.pop .pop-buiten { fill: var(--paper, #F4F5F7); fill-opacity: .8; }
+.pop .pop-kader { fill: none; stroke: var(--ink, #0B0F17); stroke-width: 2; }
 .pop.pop-klein .pop-buiten { display: none; }
-.pop.pop-klein .r-arms, .pop.pop-klein .r-legs { stroke: var(--line, rgb(0 0 0 / .2)); }
+.pop.pop-klein .r-arms, .pop.pop-klein .r-legs { stroke: var(--line, rgb(11 15 23 / .2)); }
 .pop.pop-klein .pop-kader { stroke-width: 3; }
 `;

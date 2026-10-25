@@ -492,7 +492,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
   {/* 14 oktober 2026, de hal: wit, de grond van de pagina. Een violette
       adresbalk boven een witte pagina is een vlak violet dat geen actie is, en
       dat staat de hal niet toe (KLEURENSCHEMA.md). */}
-  <meta name="theme-color" content={huid === 'hal' ? '#FFFFFF' : '#4400FF'} />
+  <meta name="theme-color" content={huid === 'hal' ? '#FFFFFF' : '#25508B'} />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:image" content={ogImageAbs} />
@@ -1860,7 +1860,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     pointer-events: none;
     /* Sectie 20: de grond is licht, dus de balk die na het scrollen verschijnt
        is licht glas — de inkt eronder is de gewone inkt van de pagina. */
-    background: #F5F5F5;
+    background: #F5F5F7;
     box-shadow: 0 1px 0 var(--line);
     opacity: 0;
     transition: opacity 480ms cubic-bezier(.45, 0, .25, 1);
@@ -1894,7 +1894,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      ging over een scoped regel die van global.css won, deze over dezelfde
      scoped regel die nu van sectie 22 wint. `:not(:has(.s22))` laat hem staan
      waar hij nog werk doet en haalt hem weg waar sectie 22 het overneemt. */
-  :global(body.ground-espresso:not(:has(.s22))) .site-header::after { background: #F5F5F5; box-shadow: 0 1px 0 var(--line); }
+  :global(body.ground-espresso:not(:has(.s22))) .site-header::after { background: #F5F5F7; box-shadow: 0 1px 0 var(--line); }
 
   /* ---- the header over a dark hero -------------------------------------
      MEASURED BUG, not a refinement: on every page that opens with a
@@ -2057,7 +2057,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      hover niet van pagina tot pagina een andere kleur heeft. */
   .site-header:not(.scrolled) .brand-glyph { --mk-line-ink: currentColor; }
   @media (forced-colors: active) { .brand-word, .brand-mark { fill: CanvasText; --mk-ink: CanvasText; --mk-line-ink: CanvasText; } }
-  @media print { .brand-word, .brand-mark { fill: #000; --mk-ink: #000; --mk-line-ink: #000; } }
+  @media print { .brand-word, .brand-mark { fill: #0B0F17; --mk-ink: #0B0F17; --mk-line-ink: #0B0F17; } }
   .nav-links { display: flex; align-items: center; gap: .1rem; list-style: none; margin: 0; padding: 0; }
   /* Pill, like everything else pressable in this bar. A 14px trigger standing
      next to a fully round Start button is the specific "blokkerig" Lucas
@@ -2595,8 +2595,8 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
        is. Naar NUL vervagen was de andere optie en is fout: dan zweeft het merk
        en raakt het de rand niet meer, en dat is nu juist het idee. */
     fill: #FFFFFF;
-    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 62%, rgb(0 0 0 / .40) 100%);
-    mask-image: linear-gradient(to bottom, #000 0%, #000 62%, rgb(0 0 0 / .40) 100%);
+    -webkit-mask-image: linear-gradient(to bottom, #0B0F17 0%, #0B0F17 62%, rgb(11 15 23 / .40) 100%);
+    mask-image: linear-gradient(to bottom, #0B0F17 0%, #0B0F17 62%, rgb(11 15 23 / .40) 100%);
   }
 
   /* ── DEZE REGEL HEEFT DE GLOED VERPLAATST, EN NIEMAND ZAG HET ────────────

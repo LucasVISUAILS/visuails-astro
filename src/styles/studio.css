@@ -44,15 +44,15 @@
    blijven lezen. --surface is nu de KAART, --surface-2 de vulling erbinnen,
    --bg-0 de grond eronder. */
 body.studio {
-  --bg-0: #F2F3F5;
-  --bg: #F2F3F5;
+  --bg-0: #F4F5F7;
+  --bg: #F4F5F7;
   --surface: #FFFFFF;
   --surface-2: #F4F5F7;
-  --line: rgb(0 0 0 / .09);
-  --line-strong: rgb(0 0 0 / .18);
-  --line-ui: rgb(0 0 0 / .24);
-  --ghost: rgb(0 0 0 / .04);
-  --ink-4: rgb(0 0 0 / .30);
+  --line: rgb(11 15 23 / .09);
+  --line-strong: rgb(11 15 23 / .18);
+  --line-ui: rgb(11 15 23 / .24);
+  --ghost: rgb(11 15 23 / .04);
+  --ink-4: rgb(11 15 23 / .30);
 
   --st-accent-tekst: var(--accent-text);
   --st-accent-lijn: var(--accent);
@@ -60,9 +60,9 @@ body.studio {
   --st-clay-tekst: var(--st-rev-ink);
 
   /* Het donkere paneel van de zijbalk — in beide thema's donker. */
-  --sd-side: #0C0D10;
+  --sd-side: #0B0D11;
   --sd-side-ink: rgb(242 243 245 / .70);
-  --sd-side-ink-1: #F2F3F5;
+  --sd-side-ink-1: #F4F5F7;
   --sd-side-ink-3: rgb(242 243 245 / .55);
   --sd-side-hover: rgb(242 243 245 / .06);
   --sd-side-actief: rgb(242 243 245 / .11);
@@ -78,12 +78,12 @@ body.studio {
   --st-balk-h: 56px;
 }
 body.studio.on-ink {
-  --bg-0: #0C0D10;
-  --bg: #0C0D10;
-  --surface: #14161A;
-  --surface-2: #1C1F25;
-  --ink: #F2F3F5;
-  --ink-1: #F2F3F5;
+  --bg-0: #0B0D11;
+  --bg: #0B0D11;
+  --surface: #14161B;
+  --surface-2: #1C2025;
+  --ink: #F4F5F7;
+  --ink-1: #F4F5F7;
   --ink-2: rgb(242 243 245 / .72);
   --ink-3: rgb(242 243 245 / .58);
   --ink-4: rgb(242 243 245 / .30);
@@ -97,7 +97,7 @@ body.studio.on-ink {
   --st-accent-tint: var(--accent-tint);
   --st-clay-tekst: var(--st-rev-ink);
 
-  --sd-side: #000000;
+  --sd-side: #0B0F17;
   --sd-side-lijn: rgb(242 243 245 / .09);
 }
 
@@ -1645,12 +1645,12 @@ body.studio .st-merk-los { color: var(--ink-1); }
 /* ── DE UITLEG-TIP — 15 oktober 2026 (afvinklijst 28, v28-tips = a) ──────────
    Eén per pagina, bovenaan de inhoud en in de stroom: hij dekt nooit een knop
    af. "Begrepen" en het kruisje zijn links (Studio draait zonder script). */
-.st-tip { position: relative; display: flex; gap: .75rem; align-items: flex-start; padding: 1rem 1.1rem; border-radius: 22px 3px 3px 3px; background: #F2F2F2; color: #000000; }
+.st-tip { position: relative; display: flex; gap: .75rem; align-items: flex-start; padding: 1rem 1.1rem; border-radius: 22px 3px 3px 3px; background: #F4F5F7; color: #0B0F17; }
 .st-tip-tekst { display: flex; flex-direction: column; gap: .45rem; min-width: 0; flex: 1 1 auto; max-width: 62ch; }
-.st-tip-tekst p, .st-tip-tekst ul { margin: 0; font-size: .875rem; line-height: 1.5; color: #000000; }
+.st-tip-tekst p, .st-tip-tekst ul { margin: 0; font-size: .875rem; line-height: 1.5; color: #0B0F17; }
 .st-tip-h { font-weight: 600; font-size: .9375rem !important; }
 .st-tip-tekst ul { padding-left: 1.1rem; display: flex; flex-direction: column; gap: .25rem; }
 .st-tip-tekst .btn { align-self: flex-start; margin-top: .25rem; }
-.st-tip-x { flex: 0 0 auto; margin-left: auto; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; font-size: 1.25rem; line-height: 1; color: #3D3D3D; text-decoration: none; }
-.st-tip-x:hover { background: #FFFFFF; color: #000000; }
-.st-tip-x:focus-visible { outline: 2px solid #000000; outline-offset: 2px; }
+.st-tip-x { flex: 0 0 auto; margin-left: auto; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; font-size: 1.25rem; line-height: 1; color: #0B0F17; text-decoration: none; }
+.st-tip-x:hover { background: #FFFFFF; color: #0B0F17; }
+.st-tip-x:focus-visible { outline: 2px solid #0B0F17; outline-offset: 2px; }

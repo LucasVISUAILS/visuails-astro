@@ -97,7 +97,7 @@ for (const [pagina, aantal] of [['index.html', alleStanden('en').length], ['nl/i
   const imgs = [...doos.matchAll(/<img[^>]*data-hl-stand="(\d+)"[^>]*>/g)].map((m) => m[0]);
   ok(`${pagina}: ${aantal} standen`, imgs.length === aantal, String(imgs.length));
   ok(`  de eerste staat er meteen (is-nu, eager, voorrang), de rest wacht (lazy)`, /is-nu is-klaar/.test(imgs[0] || '') && /loading="eager"/.test(imgs[0] || '') && /fetchpriority="high"/.test(imgs[0] || '') && imgs.slice(1).every((i) => /loading="lazy"/.test(i) && !/is-klaar/.test(i)));
-  ok('  elke stand met een AVIF-bron, en op een telefoon hooguit de foto van 1600', (doos.match(/<source type="image\/avif"/g) || []).length === aantal && imgs.every((i) => i.includes('sizes="(max-width: 900px) 120vw, 75vw"')));
+  ok('  elke stand met een AVIF-bron, en op een telefoon hooguit de foto van 1600', (doos.match(/<source type="image\/avif"/g) || []).length === aantal && imgs.every((i) => i.includes('sizes="(max-width: 900px) 120vw, (max-width: 1503px) 93vw, 1400px"')));
   ok('  geen 3D en geen masker meer in de pagina', !/matrix3d|masker-laptop|masker-fon/.test(h));
 }
 

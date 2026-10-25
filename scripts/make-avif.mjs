@@ -37,6 +37,28 @@
  * gooien. Op de grote beelden staat het uit, want daar zie je het niet en scheelt
  * het een derde van de bestandsgrootte.
  *
+ * ── KWALITEIT 64 VANAF 1000 PX — 20 oktober 2026 (levering 66) ───────────────
+ *
+ * Lucas, afvinklijst 44 vraag 2 = b. Op een MacBook of iPhone staan de grote foto's
+ * bijna op ware grootte, en dan verdween op kwaliteit 52 het fijne detail: het
+ * spikkelen van beton, de draad van stof. Gemeten op acht grote foto's, op
+ * schermgrootte (1200 px) tegen de webp: SSIM gemiddeld 0,979 op 52 en 0,991 op 64.
+ * Samen 1375 kB op 52, 2462 kB op 64. Daarom 64 vanaf 1000 px breed (GROOT); de
+ * kleinere afgeleiden houden 52, daar was niets te zien. Telefoons laden van de
+ * grootste foto's een kleinere versie (scripts/make-telefoon.mjs), dus op een
+ * telefoon wordt het lichter in plaats van zwaarder.
+ *
+ *   npm run avif -- --groot   maakt alleen de beelden vanaf 1000 px opnieuw
+ *
+ * ── WAT DIT SCRIPT NIET AANRAAKT ────────────────────────────────────────────
+ *
+ * De laptopstanden (hal/stand/ en hal/laptop-*) en de telefoonversies (de -w1200 en
+ * -w1400 uit src/data/telefoonbeelden.js) hebben elk een eigen script, dat de AVIF
+ * rechtstreeks uit een verliesloze foto maakt (laptop-standen.mjs: kwaliteit 78,
+ * 4:4:4; make-telefoon.mjs: 64). Tot levering 66
+ * stonden ze hier niet uitgezonderd: `npm run avif -- --al` had de standen dan
+ * opnieuw uit de webp gemaakt, op 52.
+ *
  * ── IDEMPOTENT ──────────────────────────────────────────────────────────────
  *
  * Een bestand wordt overgeslagen als de AVIF nieuwer is dan de webp. Dat maakt dit
@@ -48,14 +70,21 @@ import sharp from 'sharp';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { telefoonVersies } from '../src/data/telefoonbeelden.js';
 
 /* fileURLToPath en niet .pathname — zie tests/paths.test.mjs. */
 const WORTEL = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const IMG = path.join(WORTEL, 'public', 'img');
 
 const ALLES = process.argv.includes('--al');
+const ALLEEN_GROOT = process.argv.includes('--groot');
 const KLEIN = 700;           // onder deze breedte: 4:4:4
 const KWALITEIT = 52;
+const GROOT = 1000;          // vanaf deze breedte: KWALITEIT_GROOT (levering 66)
+const KWALITEIT_GROOT = 64;
+/* eigen scripts, zie WAT DIT SCRIPT NIET AANRAAKT */
+const TELEFOON = new Set(telefoonVersies().map((p) => p.replace(/^\/img\//, '')));
+const EIGEN_SCRIPT = (rel) => rel.startsWith('hal/stand/') || rel.startsWith('hal/laptop-') || TELEFOON.has(rel);
 const EFFORT = 4;
 
 function alleWebp(map) {
@@ -68,7 +97,7 @@ function alleWebp(map) {
   return uit;
 }
 
-const bestanden = alleWebp(IMG).sort();
+const bestanden = alleWebp(IMG).filter((f) => !EIGEN_SCRIPT(path.relative(IMG, f).split(path.sep).join('/'))).sort();
 let gemaakt = 0, overgeslagen = 0, webpBytes = 0, avifBytes = 0;
 
 console.log(`\nVISUAILS — AVIF naast ${bestanden.length} webp-bestanden\n`);
@@ -78,20 +107,27 @@ for (const bron of bestanden) {
   const bronStat = fs.statSync(bron);
   webpBytes += bronStat.size;
 
-  if (!ALLES && fs.existsSync(doel) && fs.statSync(doel).mtimeMs >= bronStat.mtimeMs) {
+  const meta = await sharp(bron).metadata();
+  const groot = (meta.width || 0) >= GROOT;
+  const opnieuw = ALLES || (ALLEEN_GROOT && groot);
+  if (!opnieuw && fs.existsSync(doel) && fs.statSync(doel).mtimeMs >= bronStat.mtimeMs) {
     avifBytes += fs.statSync(doel).size;
     overgeslagen++;
     continue;
   }
+  if (ALLEEN_GROOT && !groot && fs.existsSync(doel)) { avifBytes += fs.statSync(doel).size; overgeslagen++; continue; }
 
-  const meta = await sharp(bron).metadata();
-  const buf = await sharp(bron)
+  const pak = (q) => sharp(bron)
     .avif({
-      quality: KWALITEIT,
+      quality: q,
       effort: EFFORT,
       chromaSubsampling: (meta.width || 0) <= KLEIN ? '4:4:4' : '4:2:0',
     })
     .toBuffer();
+  let buf = await pak(groot ? KWALITEIT_GROOT : KWALITEIT);
+  /* Wordt een groot beeld op 64 groter dan zijn webp (bij veel korrel, zoals de
+     voor-foto van catalog-before-1x1), dan eerst 52 proberen, zoals voorheen. */
+  if (groot && buf.length >= bronStat.size) buf = await pak(KWALITEIT);
 
   /* ── EEN AVIF DIE GROTER IS DAN ZIJN WEBP, SCHRIJVEN WE NIET ──────────────
      Dat gebeurt: bij hele kleine beelden en bij vlakken met weinig detail wint

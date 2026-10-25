@@ -27,7 +27,14 @@
            echo lijnen achter het logo moeten gewoon wat stotterig wiebelen en uit
            de maat dus random."* Dus dezelfde ene lijn, dunner en dichter op de
            vorm, die in kleine schokjes wiebelt op drie ritmes die elkaar nooit
-           inhalen (global.css). Het merk zelf beweegt niet. */
+           inhalen (global.css). Het merk zelf beweegt niet.
+
+   schommel Levering 68 (24 oktober 2026). Lucas: *"Ik wil dat het logo niet zelf
+           beweegt maar dat de kleuren op als een soort schommel, als in snelheid,
+           bewegen."* Lijst 55, logo a: het hele logo kleurt, inkt → blauw uur en
+           terug, in 3,6 s. De elektrische lijn is weg. Een tweede <use> in blauw ligt
+           op de vorm (.mk-kleur) en alleen zijn dekking schommelt (global.css). De
+           prop heet nog `electro`, zodat elke aanroep blijft werken. */
 interface Props { klasse?: string; glitch?: boolean; electro?: boolean }
 const { klasse = '', glitch = false, electro = false } = Astro.props as Props;
 const B = 702, H = 813.25;
@@ -35,6 +42,6 @@ const B = 702, H = 813.25;
 <svg class:list={['wm', 'vm', klasse, glitch && 'wm-glitch', electro && 'mk']} viewBox={`0 0 ${B} ${H}`} aria-hidden="true" focusable="false">
   {glitch && <use class="wm-echo wm-echo-1" href="#markglyph" width={B} height={H} />}
   {glitch && <use class="wm-echo wm-echo-2" href="#markglyph" width={B} height={H} />}
-  {electro && <use class="mk-line mk-line-a" href="#markglyph" width={B} height={H} />}
   <use class:list={['wm-vorm', electro && 'mk-fill']} href="#markglyph" width={B} height={H} />
+  {electro && <use class="mk-kleur" href="#markglyph" width={B} height={H} />}
 </svg>

@@ -66,8 +66,10 @@ ok('  de tegels staan verborgen tot er een hoek is aangevinkt', [...formNl.match
 const hal = lees('src/styles/hal.css');
 /* Sinds levering 51 (de kolom, bericht 16:10) volgt het beeld de ruimte naast de tekst. Sinds
    levering 63 (de POV-foto, 20 oktober 2026): de duim 16 px rechts van de tekst, de klep 36 px
-   voor de rand, hooguit 1400 px breed; de rechterrand van de foto ligt altijd buiten beeld. */
-ok('de opening: de beeldbreedte volgt de ruimte naast de tekst', /\.hal \.h-open-beeld \{ --hb: min\(1400px, calc\(\(100% - 116px - var\(--h-open-zij\) - min\(540px, 40%\)\) \/ 0\.633\)\);/.test(hal) && /left: calc\(100% - 36px - 0\.868 \* var\(--hb\)\);/.test(hal));
+   voor de rand. Sinds de handenfoto (23 oktober 2026): de laptop 16 px rechts van de tekst, de
+   hand om de telefoon 36 px voor de rand, hooguit 1400 px breed; de rechterrand van de foto
+   ligt altijd buiten beeld. */
+ok('de opening: de beeldbreedte volgt de ruimte naast de tekst', /\.hal \.h-open-beeld \{ --hb: min\(1400px, calc\(\(100% - 116px - var\(--h-open-zij\) - min\(540px, 40%\)\) \/ 0\.6048\)\);/.test(hal) && /left: calc\(100% - 36px - 0\.85 \* var\(--hb\)\);/.test(hal));
 
 /* ── 6 · DE SET OP LICHTGRIJS, GEMETEN (05:58) ──────────────────────────────── */
 console.log('\n6 · de roze-jeans-set op lichtgrijs, gemeten');
@@ -274,8 +276,8 @@ for (const breed of [1280, 1440, 1920]) {
     const R = (e) => (e ? e.getBoundingClientRect() : null);
     const tekstR = Math.max(...[...document.querySelectorAll('.h-open-tekst > *')].map((e) => e.getBoundingClientRect().right));
     /* De schermen zitten in de foto zelf; hun plek volgt uit de doos en de gemeten hoeken
-       van src/data/halLaptop.js. Sinds 20 oktober 2026 de POV-foto (2304 × 1296): de
-       telefoon links, de laptop rechts. */
+       van src/data/halLaptop.js. Sinds 23 oktober 2026 de handenfoto (2304 × 1296): de
+       laptop links, de telefoon rechts ervoor (20 oktober: de POV-foto, telefoon links). */
     const d = R(document.querySelector('[data-hl-doos]'));
     const k = d ? d.width / F.w : 0;
     const fonL = d && d.left + Math.min(S.fon.tl[0], S.fon.bl[0]) * k;
@@ -287,9 +289,11 @@ for (const breed of [1280, 1440, 1920]) {
     return { vw: document.documentElement.clientWidth, tekstR, fonL, lapL, lapR, doosO: d && d.bottom, bedT: bed && bed.top, bedM: bed && (bed.left + bed.right) / 2, uitlegO: uitleg && uitleg.bottom, openingO: opening && opening.bottom };
   }, { S: SCHERMEN, F: FOTO });
   ok(`${breed}px: de laptop staat helemaal in beeld (rechts ${Math.round(r.vw - r.lapR)} px over)`, r.lapR != null && r.lapR <= r.vw - 20, JSON.stringify(r));
-  ok(`${breed}px: de telefoon begint ${Math.round(r.fonL - r.tekstR)} px na de tekst`, r.fonL != null && r.fonL >= r.tekstR + 24, JSON.stringify(r));
+  ok(`${breed}px: het laptopscherm begint ${Math.round(r.lapL - r.tekstR)} px na de tekst`, r.lapL != null && r.lapL >= r.tekstR + 24, JSON.stringify(r));
+  ok(`${breed}px: de telefoon staat rechts van de tekst (${Math.round(r.fonL - r.tekstR)} px)`, r.fonL != null && r.fonL >= r.tekstR + 24, JSON.stringify(r));
   /* 07:28 (15 oktober) · de balk hoort bij de laptop en de zin eronder valt niet weg. Sinds
-     de POV-foto hangt hij net onder de foto (daar liggen in de foto de toetsen), onder de laptop. */
+     de POV-foto (20 oktober) hangt hij net onder de foto, onder de laptop; zo ook in de
+     handenfoto (23 oktober). */
   ok(`${breed}px: de balk hangt onder de laptop (${Math.round(r.bedT - r.doosO)} px onder de foto) en de zin eronder staat helemaal in beeld`, r.bedT != null && r.bedT - r.doosO >= 0 && r.bedT - r.doosO < 40 && r.bedM >= r.lapL && r.bedM <= r.lapR && r.uitlegO <= r.openingO, JSON.stringify(r));
   ok(`${breed}px: geen scriptfout`, fouten.length === 0, fouten.join(' | '));
   await ctx.close();

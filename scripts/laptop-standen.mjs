@@ -18,8 +18,7 @@
  *   2. Opent die pagina in Chromium op precies 2304 px breed, wacht op de letters
  *      en tot elk beeld geladen en gedecodeerd is, en maakt van elk vak een foto.
  *   3. Schrijft public/img/hal/stand/<taal>-<set>-<n>-<breedte>.webp in 1000, 1600
- *      en 2304 px, en een AVIF ernaast als die kleiner is (dezelfde regels als
- *      scripts/make-avif.mjs: kwaliteit 52, effort 4).
+ *      en 2304 px, en een AVIF ernaast als die kleiner is. Zie DE SCHERPTE hieronder.
  *   4. Haalt standen weg die niet meer in de reeks zitten.
  *   5. Zet de eerste stand (NL, catalog) ook neer als public/img/hal/laptop-<breedte>.webp
  *      (en .avif): de foto met de schermen erin, voor het deelplaatje (make-og.mjs) en
@@ -29,6 +28,20 @@
  *
  * tests/laptop-standen.test.mjs kijkt daarna na of elke stand er in elke breedte
  * ligt en of de foto's de maat van de foto hebben.
+ *
+ * DE SCHERPTE (levering 65, 20 oktober 2026). Lucas: "De foto's zijn van enorm lage
+ * kwaliteit. Dit is niet goed voor vertrouwen bij de klant." Gemeten op en-catalog-2,
+ * de stand van zijn schermafbeelding, tegen een verliesloze foto op DPR 2:
+ *   - De AVIF kwam uit de WebP (twee keer verlies), op kwaliteit 52 met 4:2:0. Op 1600
+ *     px was dat 44 kB, en de stof van de jeans, de regel "Free returns" en de foto op
+ *     de telefoon waren uitgesmeerd (SSIM telefoonscherm 0,938).
+ *   - Nu: de bron op DPR 2 gefotografeerd (4608 × 2592), zodat de schuine schermen
+ *     dubbel zo fijn getekend worden, en met lanczos3 terug naar 1000, 1600 en 2304.
+ *     Elke WebP en elke AVIF komt rechtstreeks uit die verliesloze foto.
+ *   - AVIF 78 met 4:4:4 (volle kleur): op 1600 px 81 kB, SSIM laptopscherm 0,996 en
+ *     telefoonscherm 0,983. Kwaliteit 70 haalde op de telefoon 0,977 (64 kB); de eis
+ *     was 0,98 of meer, want de telefoonfoto is het fijnste stuk van het beeld.
+ *   - WebP 90 (voor de paar browsers zonder AVIF): 111 kB, SSIM 0,994 en 0,979.
  */
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -45,8 +58,9 @@ const MAP = path.join(WORTEL, 'public', 'img', 'hal', 'stand');
 const BREEDTES = [1000, 1600, 2304];
 const poortArg = process.argv.indexOf('--poort');
 const POORT = poortArg > -1 ? Number(process.argv[poortArg + 1]) : 4399;
-const WEBP = { quality: 84, effort: 6 };
-const AVIF = { quality: 52, effort: 4, chromaSubsampling: '4:2:0' };
+const WEBP = { quality: 90, effort: 6, smartSubsample: true };
+const AVIF = { quality: 78, effort: 6, chromaSubsampling: '4:4:4' };
+const DPR = 2;   // de bron dubbel zo fijn fotograferen (zie DE SCHERPTE)
 
 fs.mkdirSync(MAP, { recursive: true });
 
@@ -74,7 +88,7 @@ try {
   await wachtOpServer();
   const browser = await chromium.launch({ executablePath: process.env.CHROME || browserPad() });
   for (const lang of ['nl', 'en']) {
-    const page = await browser.newPage({ viewport: { width: FOTO.w, height: FOTO.h }, deviceScaleFactor: 1 });
+    const page = await browser.newPage({ viewport: { width: FOTO.w, height: FOTO.h }, deviceScaleFactor: DPR });
     await page.goto(`${basis}/laptop-bron/${lang}/`, { waitUntil: 'load' });
     await page.evaluate(async () => {
       await document.fonts.ready;
@@ -92,13 +106,15 @@ try {
       await page.waitForTimeout(120);
       const png = await vak.screenshot({ type: 'png' });
       const meta = await sharp(png).metadata();
-      if (meta.width !== FOTO.w || meta.height !== FOTO.h) throw new Error(`${naam}: ${meta.width} × ${meta.height}, verwacht ${FOTO.w} × ${FOTO.h}`);
+      if (meta.width !== FOTO.w * DPR || meta.height !== FOTO.h * DPR) throw new Error(`${naam}: ${meta.width} × ${meta.height}, verwacht ${FOTO.w * DPR} × ${FOTO.h * DPR}`);
       for (const w of BREEDTES) {
         const h = Math.round((w * FOTO.h) / FOTO.w);
-        const webp = await sharp(png).resize(w, h, { kernel: 'lanczos3' }).webp(WEBP).toBuffer();
+        /* eerst verliesloos naar de breedte, dan elk formaat apart uit die foto */
+        const klein = await sharp(png).resize(w, h, { kernel: 'lanczos3' }).png().toBuffer();
+        const webp = await sharp(klein).webp(WEBP).toBuffer();
         const doel = path.join(MAP, `${naam}-${w}.webp`);
         fs.writeFileSync(doel, webp);
-        const avif = await sharp(webp).avif(AVIF).toBuffer();
+        const avif = await sharp(klein).avif(AVIF).toBuffer();
         const avifDoel = doel.replace(/\.webp$/, '.avif');
         if (avif.length < webp.length) fs.writeFileSync(avifDoel, avif); else if (fs.existsSync(avifDoel)) fs.unlinkSync(avifDoel);
         gemaakt.add(path.basename(doel)); gemaakt.add(path.basename(avifDoel));

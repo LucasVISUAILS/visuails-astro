@@ -9,6 +9,10 @@
  *     admin.css, portal.css), met "minder beweging" en zonder data-URL's;
  *   · Studio heeft geen lijniconen meer (alleen zon en maan, die nergens staan);
  *   · het vinkje dat goedkeurt zet zich alleen op het beeld dat je net goedkeurde (:target).
+ *
+ * Levering 68 (24 oktober 2026, lijst 55 logo a): de elektrische lijn is weg. Het woordmerk
+ * staat stil en zijn kleur schommelt van inkt naar blauw uur en terug: een tweede pad
+ * (.mk-kleur) op de vulling, en alleen de dekking beweegt (vs-schommel, 3,6 s).
  */
 import fs from 'node:fs';
 import { woordmerkSvg } from '../src/data/wordmarkPath.js';
@@ -23,24 +27,26 @@ function ok(name, cond, extra = '') {
 }
 const lees = (p) => fs.readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
 
-console.log('het woordmerk met de lijn');
+console.log('het woordmerk met de schommel');
 {
   const s = woordmerkSvg('st-woordmerk');
-  ok('klasse mk erbij, de lijn eerst en de vulling erop', /^<svg class="st-woordmerk mk"/.test(s) && s.indexOf('mk-line mk-line-a') < s.indexOf('mk-fill'));
-  ok('  één lijnpad per deel, elk met pathLength en vector-effect', (s.match(/pathLength="100" vector-effect="non-scaling-stroke"/g) || []).length === WOORDMERK_LIJNEN.length);
+  ok('klasse mk erbij, eerst de vulling en de blauwe laag erop', /^<svg class="st-woordmerk mk"/.test(s) && s.indexOf('mk-fill') < s.indexOf('mk-kleur'));
+  ok('  geen elektrische lijn meer', !s.includes('mk-line') && !/pathLength/.test(s));
   ok('  de vulling is het ene even-oneven pad', s.includes(`<path class="mk-fill" fill-rule="evenodd" d="${WOORDMERK.d}"/>`));
+  ok('  de blauwe laag is hetzelfde pad', s.includes(`<path class="mk-kleur" fill-rule="evenodd" d="${WOORDMERK.d}"/>`));
   ok('  geen inline stijl (de CSP van Studio en het portaal)', !/style=/.test(s));
   ok('Studio (de zijbalk en het inlogscherm) gebruikt woordmerkSvg', /woordmerkSvg\('st-woordmerk'\)/.test(lees('src/layouts/StudioLayout.astro')) && (lees('src/layouts/StudioLayout.astro').match(/set:html=\{MERK_SVG\}/g) || []).length === 2);
   ok('  de losse kaarten van Studio, /admin en de privélink ook', /MERKBALK = `[^`]*\$\{woordmerkSvg\('woordmerk'\)\}/.test(lees('src/lib/account.js')) && /const MERK = woordmerkSvg\('woordmerk'\);/.test(lees('src/lib/admin.js')) && /\$\{woordmerkSvg\('woordmerk'\)\}<\/span>/.test(lees('src/lib/portal.js')));
   for (const f of ['public/account.css', 'public/admin.css', 'public/portal.css']) {
     const css = lees(f);
-    ok(`${f}: de beweging (mk-electro) onder de muis en bij focus`, /@keyframes mk-electro/.test(css) && /a:hover > \.mk \.mk-line-a/.test(css) && /a:focus-visible > \.mk \.mk-line-a/.test(css));
-    ok(`  ${f}: bij minder beweging geen trilling`, /prefers-reduced-motion: reduce\)\s*\{[^}]*\.mk \.mk-line \{[^}]*\}\s*\.mk \.mk-line-a \{ animation: none !important; \}/.test(css));
+    ok(`${f}: de schommel (vs-schommel, 3,6 s) onder de muis en bij focus`, /@keyframes vs-schommel/.test(css) && /\.mk \{ --vs-amp: 0; animation: vs-schommel 3\.6s linear infinite paused;/.test(css) && /a:hover > \.mk, a:focus-visible > \.mk/.test(css));
+    ok(`  ${f}: de kleur beweegt als een slinger, (1 − cos t) / 2`, /opacity: calc\(var\(--vs-amp\) \* \(1 - cos\(var\(--vs-fase\) \* 360deg\)\) \/ 2\)/.test(css));
+    ok(`  ${f}: bij minder beweging geen schommel, meteen blauw`, /prefers-reduced-motion: reduce\) \{\s*\.mk \{ animation: none; transition: none; \}\s*\.mk \.mk-kleur \{ opacity: var\(--vs-amp\); \}/.test(css));
     ok(`  ${f}: geen data-URL`, !/url\(\s*["']?data:/.test(css));
   }
   const sh = lees('src/styles/studio-hal.css');
-  ok('Studio: de lijn mag linksboven buiten het vak, rechts knipt het vak (dichtgeklapt alleen de V)', /body\.studio \.st-merk \{ overflow: visible; clip-path: inset\(-10px 0 -10px -10px\);/.test(sh));
-  ok('  in het donkere thema een lila lijn', /body\.studio\.on-ink \.st-merk \{ --mk-line-ink: #8F66FF; \}/.test(sh));
+  ok('Studio: rechts knipt het vak (dichtgeklapt alleen de V)', /body\.studio \.st-merk \{ overflow: visible; clip-path: inset\(-10px 0 -10px -10px\);/.test(sh));
+  ok('  de schommel naar blauw uur, in het donkere thema naar blauw licht', /body\.studio \.st-merk \{[^}]*--mk-kleur: #25508B;/.test(sh) && /body\.studio\.on-ink \.st-merk \{[^}]*--mk-kleur: #80A7DD;/.test(sh));
 }
 
 console.log('\nde iconen');

@@ -72,7 +72,7 @@
    overschrijven. Daarom stopt hij, tenzij je hem bewust aanzet. */
 if (process.env.OUDE_FAVICONS !== '1') {
   console.log('make-favicons.mjs: de favicons komen sinds 15 oktober 2026 uit het logopakket');
-  console.log('  (images/Logo/visuails-logo-nieuw/favicon). Kopieer ze daaruit naar public/.');
+  console.log('  (images/Logo/visuails-logo-blauw-uur/favicon). Kopieer ze daaruit naar public/.');
   console.log('  Toch deze oude reeks maken: OUDE_FAVICONS=1 npm run favicons');
   process.exit(0);
 }
@@ -100,9 +100,9 @@ const DRAWER = path.join(ROOT, 'brand', 'logo');
    favicons van levering 62 komen uit Lucas' logopakket (maak-logopakket.py in
    images/Logo/visuails-logo-nieuw); dit script draagt dezelfde kleuren, zodat
    een nieuwe run geen oud violet terugzet. */
-const ACCENT = '#4400FF';      // violet (was #4A1FFF; heette hier GREEN tot 22 sep 2026)
-const ACCENT_DIM = '#8F66FF';  // lila, de echo (was #A694FF)
-const DARK = '#000000';        // zwart (was #0F0C24, de inkt van de hal van 14 okt)
+const ACCENT = '#25508B';      // blauw uur (levering 68; was violet #4400FF, daarvoor #4A1FFF; heette hier GREEN tot 22 sep 2026)
+const ACCENT_DIM = '#80A7DD';  // blauw licht, alleen op inkt (was lila #8F66FF)
+const DARK = '#0B0F17';        // inkt (levering 68; was zwart #000000, daarvoor #0F0C24)
 const WHITE = '#FFFFFF';       // wit van de hal (14 okt 2026; was #F2F3F5, de oude grond)
 
 /** id → { ground, ink, note }. `ACTIVE` picks the one that ships. */

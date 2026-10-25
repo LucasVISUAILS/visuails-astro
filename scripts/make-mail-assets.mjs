@@ -44,7 +44,7 @@ const COLOURS = {
   /* Op de donkere kopband van de mail. Uit KLEURENSCHEMA.md, 20 september
      2026: op zwart is het accent het LICHTE violet (8,30:1); het violet van de
      vulling haalt daar 2,93:1. */
-  groen: '#8F66FF',
+  groen: '#80A7DD',
   wit: '#FFFFFF',     // spare, for a light-on-dark variant of any future template
 };
 
@@ -76,7 +76,7 @@ console.log(`\n▶ mark drawn from <symbol id="markglyph"> (${VW}×${VH}) at ${H
 const { WOORDMERK } = await import('../src/data/woordmerk.js');
 const WH = 66;
 const WW = Math.round(WH * (WOORDMERK.breed / WOORDMERK.hoog));
-const wsvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${WW}" height="${WH}" viewBox="${WOORDMERK.symbool}"><path fill="#000000" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg>`;
+const wsvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${WW}" height="${WH}" viewBox="${WOORDMERK.symbool}"><path fill="#0B0F17" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg>`;
 const wfile = path.join(OUT, 'woordmerk-inkt.png');
 await sharp(Buffer.from(wsvg), { density: 384 })
   .resize({ width: WW, height: WH, fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
@@ -98,7 +98,7 @@ const PW = (124 + 2 * PX) * 3, PH = (22 + 2 * PY) * 3;
 const psvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${PW}" height="${PH}" viewBox="0 0 ${PW} ${PH}">`
   + `<rect width="${PW}" height="${PH}" rx="${PH / 2}" fill="#FFFFFF"/>`
   + `<svg x="${PX * 3}" y="${PY * 3}" width="${124 * 3}" height="${22 * 3}" viewBox="${WOORDMERK.symbool}" preserveAspectRatio="xMidYMid meet">`
-  + `<path fill="#000000" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg></svg>`;
+  + `<path fill="#0B0F17" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg></svg>`;
 const pfile = path.join(OUT, 'woordmerk-plaat.png');
 await sharp(Buffer.from(psvg), { density: 72 }).png({ compressionLevel: 9 }).toFile(pfile);
 const pmeta = await sharp(pfile).metadata();
@@ -115,7 +115,7 @@ console.log(`  ${path.relative(ROOT, pfile)}  ${pmeta.width}×${pmeta.height}  $
      valt weg onder de rand, zoals het grote woordmerk onder de site. 3×. */
 {
   const SW = 28 * 3, SH = 3 * 3, schuin = SH * 0.75;
-  const ssvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${SW}" height="${SH}" viewBox="0 0 ${SW} ${SH}"><path fill="#000000" d="M0 0H${SW}L${SW - schuin} ${SH}H0Z"/></svg>`;
+  const ssvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${SW}" height="${SH}" viewBox="0 0 ${SW} ${SH}"><path fill="#0B0F17" d="M0 0H${SW}L${SW - schuin} ${SH}H0Z"/></svg>`;
   const sfile = path.join(OUT, 'snede.png');
   await sharp(Buffer.from(ssvg), { density: 72 }).png({ compressionLevel: 9 }).toFile(sfile);
   const smeta = await sharp(sfile).metadata();
@@ -123,7 +123,7 @@ console.log(`  ${path.relative(ROOT, pfile)}  ${pmeta.width}×${pmeta.height}  $
 
   const VW = 376 * 3, VH = 38 * 3;
   const volle = Math.round(VW * (WOORDMERK.hoog / WOORDMERK.breed));
-  const vsvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${VW}" height="${volle}" viewBox="${WOORDMERK.symbool}"><path fill="#C7C7C7" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg>`;
+  const vsvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${VW}" height="${volle}" viewBox="${WOORDMERK.symbool}"><path fill="#C5C8CF" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg>`;
   const vfile = path.join(OUT, 'voet-woordmerk.png');
   await sharp(Buffer.from(vsvg), { density: 384 })
     .resize({ width: VW, height: volle, fit: 'fill' })

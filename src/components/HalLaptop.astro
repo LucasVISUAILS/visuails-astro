@@ -10,7 +10,7 @@
  * HOE HET WERKT. De fotodoos heeft de verhouding van de foto (4:3). Daarin:
  *   1. de foto, met de schermen al ingezet (het eerste beeld) — dit is wat je
  *      ziet zonder JavaScript, en wat er staat tot het script klaar is;
- *   2. een laag van 2304 × 1296 "fotopixels" (sinds 20 oktober 2026, de POV-foto) met de twee schermen erin, elk op
+ *   2. een laag van 2304 × 1296 "fotopixels" (sinds 20 oktober 2026; sinds 23 oktober de handenfoto) met de twee schermen erin, elk op
  *      zijn eigen maat opgebouwd (1600 × 1034 en 540 × 1170) en met matrix3d in
  *      het perspectief van de foto gezet (src/data/halLaptop.js). Het script zet
  *      alleen de schaal (--hl-k) en wisselt de beelden; het masker per scherm laat
@@ -65,20 +65,22 @@ const T = nl
       vorige: 'Vorig beeld', volgende: 'Volgend beeld', pauze: 'Zet de beelden stil', speel: 'Laat de beelden lopen',
       van: (a: number, b: number) => `${a} / ${b}`,
       uitleg: 'Een voorbeeld. Je krijgt de losse bestanden en gebruikt ze waar je wilt.',
-      fotoAlt: 'Een laptop op schoot met een webshoppagina, en een telefoon in de hand met de foto die je instuurt' }
+      fotoAlt: 'Een hand houdt een laptop met een webshoppagina, een andere hand een telefoon met de foto die je instuurt' }
   : { stuur: 'What you send', stuurWat: 'A few phone photos', krijg: 'What you get back',
       vorige: 'Previous image', volgende: 'Next image', pauze: 'Pause the images', speel: 'Play the images',
       van: (a: number, b: number) => `${a} / ${b}`,
       uitleg: 'An example. You get the files and use them wherever you like.',
-      fotoAlt: 'A laptop on a lap showing a shop page, and a phone in hand with the photo you send in' };
+      fotoAlt: 'One hand holds a laptop showing a shop page, the other a phone with the photo you send in' };
 
 /* De belletjes wijzen naar een punt OP de bovenrand van elk scherm (in fotopixels,
-   dus als fractie van de fotodoos). Laptop: op een tiende van de breedte, het belletje
-   hangt rechts van zijn punt. Telefoon (sinds 20 oktober links in de foto): op 80 %,
-   rechts van het eiland en nog op het rechte stuk van de rand; het belletje hangt
-   links van zijn punt, boven het witte deel met de schets. */
+   dus als fractie van de fotodoos). Sinds de handenfoto (23 oktober 2026) staat de
+   laptop links en de telefoon rechts ervoor, en hangen allebei de belletjes LINKS van
+   hun punt (hal.css). Laptop: op 4 % van de breedte, het belletje hangt boven de lege
+   grond links van de laptop. Telefoon: op 80 %, rechts van het eiland en nog op het
+   rechte stuk van de rand; die plek ligt rechts naast de laptop, dus de draad loopt
+   langs de laptop en niet eroverheen. */
 const L = SCHERMEN.laptop, F = SCHERMEN.fon;
-const [lx, ly] = inFoto(L, L.w * 0.1, 0);
+const [lx, ly] = inFoto(L, L.w * 0.04, 0);
 const [fx, fy] = inFoto(F, F.w * 0.8, 0);
 const punt = (x: number, y: number) => `--px:${(x / FOTO.w).toFixed(5)};--py:${(y / FOTO.h).toFixed(5)}`;
 /* Het telefoonbelletje staat op dezelfde hoogte als dat van de laptop (--pyb), met een
@@ -90,8 +92,13 @@ const eerst = standen[0] ?? { set: sets[0] ?? 'catalog', i: 0, duur: 0 };
 /* Op een telefoon ligt de foto 1,59 × zo breed als het scherm, maar je ziet er
    alleen het midden van. 120vw kiest daar de foto van 1600 px (DPR 2 tot 3) in
    plaats van die van 2304: twee van die foto's tegelijk in het geheugen is wat
-   een telefoon aankan, twee van 2304 × 1728 vraagt het dubbele. */
-const SIZES = '(max-width: 900px) 120vw, 75vw';
+   een telefoon aankan, twee van 2304 × 1728 vraagt het dubbele.
+   Op een breed scherm (levering 65) volgt de maat de opening: de foto is
+   (100vw − 116 − min(540, 40vw)) / 0,6048 breed (de handenfoto, 23 oktober 2026; eerst
+   / 0,633), tot 1400 px. Dat is tot 1503 px hooguit 93vw (op 1440: 1296 px), daarboven
+   1400 px. Zo kiest een laptop met 125 % schaal (1536 × 864) de foto van 2304 en niet
+   die van 1600. */
+const SIZES = '(max-width: 900px) 120vw, (max-width: 1503px) 93vw, 1400px';
 ---
 <div class="hl" data-hl data-sets={standen.map((s) => s.set).join(' ')}>
   {/* HET RAAM. Op een breed scherm is het precies zo groot als de fotodoos, dus

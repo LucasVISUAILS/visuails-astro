@@ -32,6 +32,7 @@ import Disclose from './Disclose.astro';
 import HalBeweging from './HalBeweging.astro';
 import KlantKnop from './KlantKnop.astro';
 import { kleiner, beeldMaat } from '../lib/beeldAanwezig.js';
+import { TELEFOONBEELDEN, telefoonPad } from '../data/telefoonbeelden.js';
 import { localizedPath } from '../i18n/ui.js';
 
 interface Beeld { src: string; alt: string }
@@ -73,11 +74,19 @@ const c = nl ? {
 };
 
 /* De maten van elk beeld (geen verspringende pagina) en een kleinere versie voor
-   een smal scherm, zoals in LookDetail.astro. */
+   een smal scherm, zoals in LookDetail.astro.
+   Levering 66: tussen de -w760 en de volle foto staat de telefoonversie uit
+   src/data/telefoonbeelden.js, als de foto daar in staat: per foto zo ingepakt dat
+   een telefoon hem minstens zo scherp ziet als vóór levering 66 (afvinklijst 45,
+   vraag 1 = b). Bewust NIET de -w1560: die is uit de webp gemaakt en gemeten
+   zachter dan de volle foto (SSIM op 1440 px 0,942 tegen 0,962, op een telefoon
+   0,925 tegen 0,965). */
 const metMaat = await Promise.all(beelden.map(async (b) => {
   const m = await beeldMaat(b.src);
   const klein = kleiner(b.src, 760);
-  return { ...b, w: m?.w, h: m?.h, srcset: klein !== b.src && m?.w ? `${klein} 760w, ${b.src} ${m.w}w` : undefined };
+  const tel = TELEFOONBEELDEN[b.src];
+  const stap = tel && m?.w === tel.vol ? `${telefoonPad(b.src)} ${tel.klein}w, ` : '';
+  return { ...b, w: m?.w, h: m?.h, srcset: klein !== b.src && m?.w ? `${klein} 760w, ${stap}${b.src} ${m.w}w` : undefined };
 }));
 const staand = (b: any) => !!(b && b.w && b.h && b.h > b.w);
 const vorm = (b: any) => {
@@ -124,9 +133,14 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
   {hero && (
     <section class="h-sec h-lk-held-sec" aria-label={style.name}>
       <figure class:list={['h-lk-held', 'h-op', paar ? `is-paar paar-${vorm(helden[0])}-${vorm(helden[1])}` : staand(hero) ? 'is-staand' : 'is-liggend']}>
+        {/* sizes voor een paar, gemeten (levering 66): tot 900 px staan ze in een
+            schuifrij, elk 82 % breed (78 tot 79vw gemeten; hal.css, max-width 900px);
+            daarboven naast elkaar, de eerste 55vw en vanaf 1440 px 789 px. De oude
+            waarde "(min-width: 700px) 50vw" liet een tablet van 800 × 1,5 de -w760
+            kiezen voor een foto van 945 px. */}
         {helden.map((b, i) => (
           <span class="h-lk-held-beeld">
-            <img src={b.src} srcset={b.srcset} sizes={paar ? '(min-width: 700px) 50vw, 86vw' : '100vw'} alt={b.alt} width={b.w} height={b.h} fetchpriority={i === 0 ? 'high' : undefined} loading={i === 0 ? undefined : 'lazy'} decoding="async" />
+            <img src={b.src} srcset={b.srcset} sizes={paar ? '(min-width: 1440px) 790px, (min-width: 901px) 56vw, 82vw' : '100vw'} alt={b.alt} width={b.w} height={b.h} fetchpriority={i === 0 ? 'high' : undefined} loading={i === 0 ? undefined : 'lazy'} decoding="async" />
             {i === 0 && <span class="h-pil h-pil-glas h-pil-nr" aria-hidden="true">{dienstNaam} · {style.name}</span>}
           </span>
         ))}
@@ -173,9 +187,13 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
   {overig.length > 0 && (
     <section class="h-sec h-lk-rest-sec">
       <ul class:list={['h-lk-raster', overig.length % 2 === 1 && 'is-oneven']} role="list">
-        {overig.map((b) => (
+        {/* Bij een oneven aantal staat de laatste over beide kolommen (hal.css,
+            .is-oneven li:last-child), dus die is niet 50vw maar bijna de hele breedte.
+            Met 50vw koos een laptop van 1440 de -w760 voor een vak van 1360 px: wazig.
+            Gevonden door tests/telefoonbeelden.test.mjs in levering 66. */}
+        {overig.map((b, i) => (
           <li class="h-in">
-            <img src={b.src} srcset={b.srcset} sizes="(min-width: 900px) 50vw, 100vw" alt={b.alt} width={b.w} height={b.h} loading="lazy" decoding="async" />
+            <img src={b.src} srcset={b.srcset} sizes={overig.length % 2 === 1 && i === overig.length - 1 ? '100vw' : '(min-width: 900px) 50vw, 100vw'} alt={b.alt} width={b.w} height={b.h} loading="lazy" decoding="async" />
           </li>
         ))}
       </ul>

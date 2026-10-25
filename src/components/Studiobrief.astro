@@ -145,9 +145,9 @@ const c = nl ? {
     /* Uit de tokens van de pagina (14 oktober 2026): --inkt en --inkt-2 bestonden
        nergens, dus stonden hier altijd de terugvalwaarden #0B0C0E en #55585F, ook
        in de hal. Nu de inkt van het schema, in de hal de hal-inkt. */
-    --sb-inkt: var(--ink-1, #000000);
-    --sb-inkt-2: var(--ink-2, #3D3D3D);
-    --sb-lijn: var(--line-ui, #8A8A8A);
+    --sb-inkt: var(--ink-1, #0B0F17);
+    --sb-inkt-2: var(--ink-2, #0B0F17);
+    --sb-lijn: var(--line-ui, #858A94);
     --sb-veld: #fff;
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
@@ -190,7 +190,7 @@ const c = nl ? {
     font-size: 1rem;
   }
   .sb-veld input::placeholder { color: var(--sb-inkt-2); opacity: 1; }
-  .sb-veld input:focus-visible { outline: 2px solid var(--accent, #000000); outline-offset: 2px; }
+  .sb-veld input:focus-visible { outline: 2px solid var(--accent, #0B0F17); outline-offset: 2px; }
   /* De knop is de actie, dus violet — het enige violet in dit blok
      (KLEURENSCHEMA: violet alleen voor actie). */
   .sb-veld button {
@@ -199,7 +199,7 @@ const c = nl ? {
     padding: 0 1.3rem;
     border: 0;
     border-radius: 14px 3px 3px 3px;
-    background: var(--accent, #000000);
+    background: var(--accent, #0B0F17);
     color: var(--on-accent, #fff);
     font-family: var(--mono2, var(--font-mono, ui-monospace, monospace));
     font-size: .78rem;

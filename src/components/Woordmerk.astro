@@ -25,7 +25,10 @@
            op alle logo's van de site (levering 54; Lucas, afvinklijst 34: *"Ik wil
            dit effect op alle logo's die zichtbaar zijn op elke pagina, dus top bar
            en footer logo's."*). De lijn gebruikt #woordmerk-lijn: dezelfde omtrek,
-           maar per deel een eigen pad, zodat elke letter intekent. */
+           maar per deel een eigen pad, zodat elke letter intekent.
+           Levering 68 (24 oktober 2026, lijst 55 logo a): geen lijn meer. Het hele
+           woordmerk kleurt van inkt naar blauw uur en terug, met de snelheid van een
+           schommel; de vorm staat stil (.mk-kleur, global.css). */
 import { WOORDMERK } from '../data/woordmerk.js';
 
 interface Props { klasse?: string; glitch?: boolean; verloop?: boolean; electro?: boolean }
@@ -36,13 +39,13 @@ const B = WOORDMERK.breed, H = WOORDMERK.hoog;
   {verloop && (
     <defs>
       <linearGradient id="hal-wm-verloop" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#C7C7C7" />
-        <stop offset=".9" stop-color="#F2F2F2" />
+        <stop offset="0" stop-color="#C4C7CE" />
+        <stop offset=".9" stop-color="#F4F5F7" />
       </linearGradient>
     </defs>
   )}
   {glitch && <use class="wm-echo wm-echo-1" href="#woordmerk" width={B} height={H} />}
   {glitch && <use class="wm-echo wm-echo-2" href="#woordmerk" width={B} height={H} />}
-  {electro && <use class="mk-line mk-line-a" href="#woordmerk-lijn" width={B} height={H} />}
   <use class:list={['wm-vorm', electro && 'mk-fill']} href="#woordmerk" width={B} height={H} fill={verloop ? 'url(#hal-wm-verloop)' : undefined} />
+  {electro && <use class="mk-kleur" href="#woordmerk" width={B} height={H} />}
 </svg>

@@ -84,32 +84,37 @@ const SITE = 'https://visuails.com';
    Wit, zwart en grijs zonder kleur: inkt #000000, lopende tekst #3D3D3D,
    klein #616161 (6,2:1 op wit), de lijn #DDDDDD, nevel #F2F2F2. Violet staat
    in de mail nergens: ook de knop is zwart, zoals de gewone knoppen op de site. */
+/* ── BLAUW UUR, 24 OKTOBER 2026 (levering 68, lijst 55) ───────────────────────
+   Inkt #0B0F17 voor alle tekst en de knop, klein #636974 (5,52:1 op wit), de lijn
+   #E6E8EC, vlak #F4F5F7, aandacht blauw uur #25508B op vlak (7,41:1). De mail houdt
+   de knop inkt: een mailclient kent geen muis, dus het blauw van de site (Bestellen,
+   het logo onder de muis) komt hier niet. */
 const C = {
-  green: '#000000',
+  green: '#0B0F17',
   onAccent: '#FFFFFF',
-  accentText: '#000000',
-  ink: '#000000',
-  text: '#3D3D3D',
-  head: '#000000',
-  muted: '#616161',
-  faint: '#616161',
-  rule: '#DDDDDD',
-  ruleSoft: '#E8E8E8',
+  accentText: '#0B0F17',
+  ink: '#0B0F17',
+  text: '#0B0F17',
+  head: '#0B0F17',
+  muted: '#636974',
+  faint: '#636974',
+  rule: '#E6E8EC',
+  ruleSoft: '#E6E8EC',
   paper: '#FFFFFF',
-  foot: '#F2F2F2',
-  tintBg: '#F2F2F2',
-  tintInk: '#000000',
-  page: '#F2F2F2',
+  foot: '#F4F5F7',
+  tintBg: '#F4F5F7',
+  tintInk: '#0B0F17',
+  page: '#F4F5F7',
 
   /* De vijf toestanden, lichte stand — zie de tabel in KLEURENSCHEMA.md.
      Mail kent geen donkere stand: een mailclient kan zijn eigen donkere modus
      hebben, maar die herkleurt ons vlak niet, dus een tweede set zou alleen
      maar een tweede waarheid zijn. */
-  stWaitFill: 'transparent', stWaitEdge: '#8A8A8A',            stWaitInk: '#3D3D3D',
-  stWorkFill: '#F2F2F2',     stWorkEdge: '#DDDDDD',             stWorkInk: '#000000',
-  stDoneFill: '#000000',     stDoneEdge: '#000000',             stDoneInk: '#FFFFFF',
-  stRevFill:  '#F6E7D1',     stRevEdge:  'rgba(138,77,6,.30)',  stRevInk:  '#8A4D06',
-  stCanFill:  '#E8E8E8',     stCanEdge:  '#8A8A8A',             stCanInk:  '#3D3D3D',
+  stWaitFill: 'transparent', stWaitEdge: '#858A94',            stWaitInk: '#0B0F17',
+  stWorkFill: '#F4F5F7',     stWorkEdge: '#E6E8EC',             stWorkInk: '#0B0F17',
+  stDoneFill: '#0B0F17',     stDoneEdge: '#0B0F17',             stDoneInk: '#FFFFFF',
+  stRevFill:  '#F4F5F7',     stRevEdge:  'rgba(37,80,139,.30)',  stRevInk:  '#25508B',
+  stCanFill:  '#E6E8EC',     stCanEdge:  '#858A94',             stCanInk:  '#0B0F17',
 };
 
 import { stand } from '../data/status.js';
@@ -358,7 +363,7 @@ export const payPanel = ({ label, amount, sub, href, cta }) =>
 /** A quiet aside with a hairline down its left — the spam note lives in one. */
 export const note = html =>
   `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 16px"><tr>
-    <!-- De lijn van de hal (#DDDDDD), als bgcolor: dat slikt elke mailclient. -->
+    <!-- De lijn van de hal (#E6E8EC), als bgcolor: dat slikt elke mailclient. -->
     <td width="3" bgcolor="${C.rule}" style="width:3px;font-size:0;line-height:0">&nbsp;</td>
     <td style="padding:2px 0 2px 14px">
       <p style="margin:0;font-family:${FONT};font-size:13px;line-height:1.6;color:${C.muted}">${html}</p>

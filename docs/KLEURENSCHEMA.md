@@ -1,8 +1,291 @@
 # VISUAILS — kleurenschema
 
-**Stand: 19 oktober 2026. Schema A, overal.** Dit is het ene bestand dat de
-kleuren draagt. Verandert hier iets, dan in de bestanden hieronder ook, en
+**Stand: 24 oktober 2026. Schema Blauw uur, overal (levering 68).** Dit is het ene
+bestand dat de kleuren draagt. Verandert hier iets, dan in de bestanden hieronder ook, en
 andersom niet.
+
+Lucas koos in lijst 55 (*"Wit, inkt en kobalt"*): blauw **a** (Blauw uur `#25508B`, uit de
+fade van het logo), logo **a** (het hele logo kleurt), tempo **b** (3,6 s), warm **a** (geen
+warme kleur), blok **b** (één inktblok per pagina, op 53°) en effecten **a** (E1, E4, E5, E6).
+Zijn woorden:
+
+- *"Ik wil de website eigenlijk puur wit als achtergrond maken en de blauwe/zwarte kleuren
+  er in laten snijden (een beetje zoals de ovyon website) zoals het logo en sommige knoppen
+  en eventueel hier en daar wat subtiele effecten gebruiken voor bepaalde delen maar nooit
+  overdreven en rustig."*
+- *"Ik wil dat het logo niet zelf beweegt maar dat de kleuren op als een soort schommel,
+  als in snelheid, bewegen."*
+- *"Ik denk dat deze kleur de kleur word, het voelt niet als een ai tool kleur en ook niet
+  als een copy cat van een ander merk. Misschien is de kleur wat anders dan wat gebruikelijk
+  is maar het zorgt er wel voor dat VISUAILS anders voelt wanneer je de website bezoekt."*
+
+Het schema daarvoor (schema A, violet, 19 tot 23 oktober) staat verderop als geschiedenis,
+en daaronder de hal (14 tot 18 oktober) en het schema van 20 september. Kelvin (lijst 50) en
+Blauw uur als palet (lijst 54) zijn alleen schetsen geweest; ze stonden nooit op de site.
+
+---
+
+## In één zin
+
+Puur wit. Inkt en één blauw snijden erin, zoals het logo. **Blauw staat op één plek per
+scherm (Bestellen bovenin), bij het logo onder de muis, in een link in de tekst, in de
+focusrand en in geselecteerde tekst. Verder nergens.** Eén inktblok per pagina, afgesneden
+op 53°. Geen verloop als vlak, geen glas, geen bewogen achtergrond, geen warme kleur.
+
+---
+
+## De vijf kleuren (contrast nagerekend, WCAG)
+
+| Kleur | Waarde | Token in hal.css | Rol | Contrast |
+|---|---|---|---|---|
+| **Wit** | `#FFFFFF` | `--h-wit` | De grond, overal, ook achter de foto's. Kaarten | — |
+| **Inkt** | `#0B0F17` | `--h-inkt` | Alle tekst, koppen én lopende tekst. Het logo, de knoppen, het ene blok, "geleverd" | 19,18:1 op wit · 17,58:1 op vlak · 15,63:1 op lijn |
+| **Blauw uur** | `#25508B` | `--h-blauw` | Eén plek per scherm, het logo onder de muis, links, de focusrand, selectie | 8,08:1 op wit · 7,41:1 op vlak · wit erop 8,08:1 |
+| **Grijs** | `#636974` | `--h-grijs` | Alleen kleine tekst: bijschriften, labels, de lichte helft van een kop | 5,52:1 op wit · 5,06:1 op vlak · 4,50:1 op lijn |
+| **Lijn** | `#E6E8EC` | `--h-lijn` | Alleen scheiding: haarlijnen, de rand van een kaart. Nooit tekst | 1,23:1 op wit |
+
+**Blauw en inkt staan nooit op elkaar.** Naast elkaar haalt blauw op inkt maar 2,37:1. Zet
+een blauwe en een zwarte knop dus nooit als gelijken tegen elkaar: wit ertussen, of de snede.
+
+### Afgeleid: geen nieuwe kleuren, elk één rol
+
+| Naam | Waarde | Token | Alleen voor | Gemeten |
+|---|---|---|---|---|
+| Vlak | `#F4F5F7` | `--h-vlak` (en de oude naam `--h-nevel`) | Het vlakje onder een pil, chip of klein knopje; een lege plek; iets onder de muis | 1,09:1 op wit · grijs erop 5,06:1 |
+| Lijn sterk | `#C5C8CF` | `--h-lijn-sterk` | Een rand die je moet zien (de tweede knop) | 1,68:1 op wit, geen tekst |
+| Veldlijn | `#858A94` | `--h-veldlijn` | De rand van een invulveld, een vinkvakje | 3,47:1 op wit · 3,18:1 op vlak (een veldgrens vraagt 3:1) |
+| Blauw diep | `#1A4279` | `--h-blauw-diep` | Een blauwe knop onder de muis | wit erop 10,00:1 |
+| Blauw licht | `#80A7DD` | `--h-blauw-licht` | Alleen op inkt: de focusrand en het logo op het inktblok, links in donkere modus | 7,75:1 op inkt · 7,19:1 op de donkere kaart |
+
+Alle grijzen hebben de toon van de inkt (263°) en een klein beetje kleur, zodat ze bij het
+blauw horen en niet bij een ander merk. Een grijs dat uit het vorige schema komt, kreeg het
+koele grijs met **dezelfde helderheid**, dus elk contrast is gelijk gebleven.
+
+**Oude namen.** `--h-nevel` = vlak, `--h-vak` = lijn, `--h-inkt-2` = inkt, `--h-inkt-3` en
+`--h-kop-licht` = grijs, `--h-violet` = blauw, `--h-violet-diep` = blauw diep, `--h-lila` =
+blauw licht, `--h-mist` = vlak, `--h-waas` = lijn, `--h-nacht` = inkt. Ze blijven bestaan
+zodat een vergeten verwijzing niet breekt. Schrijf in nieuwe regels de nieuwe namen.
+
+---
+
+## 60 · 30 · 10, in elke sectie
+
+| Deel | Wat | Waar |
+|---|---|---|
+| 60 | wit | de grond, de kaarten, de grond van elke foto |
+| 30 | inkt en beeld | de tekst, de knoppen, het logo, de foto's zelf, het ene inktblok |
+| 10 | blauw | Bestellen bovenin, een link, de focusrand; onder de muis het logo en een inktknop |
+
+De producten zijn het warme. Een vierde kleur (amber, lamplicht) maakt er weer een palet van
+(lijst 55, warm a).
+
+---
+
+## Waar blauw staat, en waar niet
+
+| Plek | Hoe |
+|---|---|
+| **Bestellen bovenin** (`.nav-cta`, in de lade `.mobile-cta`) | Blauw met wit. Onder de muis inkt. Dit is de ene plek per scherm |
+| **Het logo onder de muis** | De schommel, zie hieronder. Op de balk, in de lade, in de voet en het grote woordmerk onderaan, in Studio, op de privélink en in /admin |
+| **Een link in de tekst** | Blauw, met een streep in blauw op 38 %. In de voet: inkt, onder de muis blauw |
+| **De focusrand** | 2 px blauw (`--focus-ring`). Op het inktblok blauw licht |
+| **Geselecteerde tekst** | Blauw met witte letters |
+| **Een inktknop onder de muis** | De knop wordt blauw (`.h-knop-inkt:hover`, `--teal-hover`). Het merk reageert op de hand |
+| **Aandacht** (revisie, jij bent aan zet) | Blauw op vlak, zie de statusset. Blauw betekent: actie |
+
+**Wat je kiest is inkt.** Een aangevinkte keuze, de gekozen kaart, stijl, look, gezicht, vorm,
+kleur, verhouding of achtergrond: inkt (`--kies`). In schema A was dat violet.
+
+**Nergens anders.** Geen blauw kopwoord, sectienummer, stip, icoon, rand of vlak. Geen blauwe
+achtergrond van een sectie. Het blauw snijdt, het vult niet.
+
+---
+
+## Het ene inktblok per pagina (E6)
+
+Eén blok inkt dat het wit in snijdt, afgesneden op 53° rechtsonder (een 3-4-5-driehoek: 36 ×
+48 px, op een groot blok 48 × 64), met één zachte hoek linksboven. Het staat stil: het is
+papier, geen beweging.
+
+| Pagina | Het blok |
+|---|---|
+| Met het €1-blok (home, prijzen, start, catalog, lifestyle, vergelijken, contact, FAQ, galerij, gidsen, hoe het werkt, abonnementen, Studio, proef, uploadrichtlijnen) | `.h-proef`: het paneel met de tekst is inkt; de vier foto's staan ernaast op wit |
+| Zonder €1-blok (elke look, video, edities, hooks, modellen, merkmodel, over ons) | `.h-lk-slot`: het slot onderaan |
+
+Op inkt alleen wit: koppen wit, de lichte helft van een kop wit op 72 % (10,09:1) of 82 %
+(12,92:1), lopende tekst wit op 86 % (14,14:1), de feitjes wit op een vlak van 10 % wit
+(14,99:1). De inktknop wordt daar een witte knop met inkt; de knop met een rand krijgt een
+witte rand. De focusrand en het logo zijn daar blauw licht.
+
+---
+
+## Kaarten en vlakken
+
+- **Een kaart is wit met een haarlijn** (`--h-kaart` wit, `--h-kaart-rand` 1 px lijn), met
+  één zachte hoek linksboven zoals altijd. In schema A waren kaarten nevelgrijs; nu snijdt
+  alleen de inkt en het blauw, de rest is papier.
+- **Vlak** (`#F4F5F7`) alleen onder iets kleins: een pil, een chip, een rond knopje, een lege
+  fotoplek, of onder de muis.
+- **De bewogen achtergronden van levering 62 zijn weg.** Elk sfeervlak is een witte kaart met
+  een haarlijn. De beelden staan nog in `public/img/achter/` maar worden niet meer gebruikt.
+- **Geen glas.** Ook het €1-blok niet meer.
+- **De voet is wit**, met een haarlijn bovenaan, de tekst in inkt, de kleine koppen in grijs,
+  en het woordmerk groot in inkt, door de onderrand afgesneden.
+
+---
+
+## Het logo: staat stil, de kleur schommelt
+
+Lijst 55, logo a en tempo b. Het logo beweegt niet. Onder de muis (en bij focus op de link)
+kleurt het **hele** logo van inkt naar blauw uur en terug, als één vlak, in **3,6 s** heen
+en terug. De snelheid is die van een schommel: de dekking van de blauwe laag is
+`(1 − cos t) / 2`. Aan de uiteinden (inkt, blauw) remt de kleur af en hangt hij even; door het
+midden gaat hij het snelst.
+
+- Hoe: een tweede laag in blauw (`.mk-kleur`, hetzelfde symbool, niet nagetekend) ligt op de
+  inkt. Alleen zijn dekking beweegt. `--vs-fase` loopt van 0 tot 1 (`@property`, lineair),
+  `--vs-amp` schuift in 450 ms open en in 700 ms dicht, zodat de kleur nooit verspringt.
+- Waar: `src/styles/global.css` (de site en Studio) en een kopie in `public/account.css`,
+  `public/admin.css` en `public/portal.css`. De vorm komt uit `VMerk.astro`, `Woordmerk.astro`
+  en `woordmerkSvg()` in `src/data/wordmarkPath.js`.
+- `--mk-kleur` zet per plek de kleur: blauw uur op wit, blauw licht op inkt.
+- Minder beweging: onder de muis meteen blauw, zonder schommel.
+- Niets beweegt bij het laden. De elektrische lijn (mk-line) en de echo's zijn weg.
+- Het logo zelf is altijd één kleur: inkt (de standaard), blauw of wit.
+
+---
+
+## De effecten (lijst 55, effecten a)
+
+Elk effect speelt één keer, op de hand of als iets in beeld komt. Nooit bij het laden, nooit
+in een lus, behalve bij echte voortgang. Alleen het idee kwam uit *Logo in Kelvin* en *Logo
+ronde 2*, niet de kleuren.
+
+| | Effect | Waar | Duur |
+|---|---|---|---|
+| E1 | **De snede-wis**: koppen en beelden komen binnen langs 53°, in stappen | elke `.h-in` (bestond al: `h-wis` in hal.css) | 420 tot 620 ms |
+| E4 | **De tl-buis**: de streep van een sectielabel springt aan, twee keer haperen, dan aan | `.h-sec-kop.is-in p.h-pil::before` (nieuw, `h-tl`) | 460 ms, in stappen |
+| E5 | **Het vlagje vult**: bij uploaden vult het vlagje van de V zich met de echte voortgang; vol is één sprong. Geen spinner | het uploaden van je foto's (bestond al, levering 55) | zo lang als het uploaden |
+| E6 | **Het blok op 53°**: één inktblok per pagina | zie hierboven | staat stil |
+
+Niet gebruikt: de haarlijn bij hover (E2) en het scherpstellen (E3). Bewaard voor later, bijvoorbeeld
+voor de stijlpagina's.
+
+---
+
+## De statusset
+
+Het gelukte pad loopt voller: een lijn, vlak met een lijn, inkt. Massief alleen voor
+"geleverd". Aandacht is blauw, want blauw is de actie. Geen amber meer.
+
+| Stand | Vulling | Rand | Letter | Contrast |
+|---|---|---|---|---|
+| Wacht (ontvangen, wachtrij) | geen | veldlijn `#858A94` | inkt | 19,18:1 |
+| Bezig (in productie, onderweg) | vlak `#F4F5F7` | lijn `#E6E8EC` | inkt | 17,58:1 |
+| Klaar (geleverd, betaald) | inkt | inkt | wit | 19,18:1 |
+| Aandacht (revisie, actie nodig) | vlak `#F4F5F7` | blauw op 40 % | blauw | 7,41:1 |
+| Geannuleerd, verlopen | lijn `#E6E8EC` | veldlijn | inkt | 15,63:1 |
+
+Tokens: `--st-wait-*`, `--st-work-*`, `--st-done-*`, `--st-rev-*`, `--st-can-*` (fill, edge,
+ink). Buiten CSS: `STAND_KLEUR` in `src/data/status.js` en `C.st*` in `src/lib/mailTemplate.js`.
+
+**Een fout in een formulier** blijft rood (`#B3261E` in het bestelformulier, de rode tinten in
+/admin en Studio), altijd met een woord erbij. Dat is geen merkkleur maar een waarschuwing.
+
+---
+
+## Donker (Studio donker, /admin donker)
+
+Dezelfde rollen, omgekeerd, in de koele grijzen van inkt:
+
+| Rol | Waarde | Gemeten |
+|---|---|---|
+| Grond | inkt `#0B0F17` | — |
+| Kaart | `#16181E` | — |
+| Vlak | `#1E2128` | — |
+| Letters | `#F4F5F7` op 100 / 72 / 58 % | 17,58:1 op de grond (100 %) |
+| Knop | wit-vlak `#F4F5F7` met inkt | 17,58:1 |
+| Links, focusrand, logo onder de muis | blauw licht `#80A7DD` | 7,75:1 op inkt · 7,19:1 op de kaart |
+
+---
+
+## Waar het schema staat
+
+| Plek | Bestand | Hoe |
+|---|---|---|
+| De site | `src/styles/hal.css` | `body.hal`: de tokens bovenaan (SCHEMA BLAUW UUR), alle tokens van global.css opnieuw; onderaan het blok "LEVERING 68" (sfeervlakken, het inktblok, het €1-blok, de voet, het logo, E4) |
+| Het logo onder de muis | `src/styles/global.css` (HET LOGO SCHOMMELT IN KLEUR) | en een kopie in `public/account.css`, `public/admin.css`, `public/portal.css` |
+| De bestelstroom | `src/styles/werkplaats.css`, `stijl22.css`, de onderdelen in `src/components/order/` | wat je kiest via `--kies` (inkt) |
+| VISUAILS Studio | `src/styles/studio-hal.css` | de tokens in `body.studio.st-hal`; `--mk-kleur` op `.st-merk` |
+| De privélink (`/o/…`) | `public/portal.css` | blok "DE HAL" onderaan |
+| De losse kaarten van account.js | `public/account.css` | blok "DE HAL" onderaan |
+| /admin | `public/admin.css` | licht en donker; de focusrand blauw, donker blauw licht |
+| De mails | `src/lib/mailTemplate.js` (`C`) en de beelden in `public/img/mail/` | `npm run mail:assets`: het woordmerk inkt, het streepje inkt, het woordmerk in de voet in lijn sterk |
+| De factuur | `src/lib/invoicePdf.js` | `INK`, `MUTED`, `RULE`, `NADRUK`, `VLAK` |
+| De fotogids (pdf) | `scripts/lib/fotogids-html.mjs` | `npm run handleiding` |
+| De statuspil buiten CSS | `src/data/status.js` | `STAND_KLEUR` |
+| Het deelplaatje | `scripts/make-og.mjs` | `npm run og` |
+| De schetsen in het formulier | `scripts/schetsen-zijpaneel.py` | → `public/img/schets/` |
+| De pijl in een keuzelijst | `public/img/ui/keuzepijl-0b0f17.svg`, `-f4f5f7.svg` | een `data:`-adres kan geen variabele lezen |
+| De adresbalk | `src/layouts/Layout.astro` | `theme-color` wit op een hal-pagina |
+| Favicon | `public/favicon*.png`, `favicon.ico`, `favicon.svg`, `apple-touch-icon.png` | een kopie uit het logopakket (`images/Logo/visuails-logo-blauw-uur/favicon`): wit V-merk op vlak blauw uur |
+| Het logopakket | `E:\Claude (VISUAILS)\images\Logo\visuails-logo-blauw-uur` | `python3 maak-logopakket.py --site <map van de site>`, met een eigen KLEURENSCHEMA.md |
+| De laptopfoto in de opening | `public/img/hal/pov-2304.webp` en de standen in `public/img/hal/stand/` | `python3 scripts/laptop-foto.py <de witte foto>` en `node scripts/laptop-standen.mjs`. De grond is na het decoderen precies `#FFFFFF` |
+
+**Wat bewust niet meegaat.** De schermen van de laptop in de opening (`.sc…` in hal.css,
+`HalLaptopSchermen.astro`) tonen de winkel van een klant (JOUWMERK), niet VISUAILS: die
+houden hun eigen kleuren. Ook de kleuren die inhoud zijn blijven staan: de achtergronden
+waaruit je kiest, kledingkleuren, het lichtgrijs van de geleverde set (`#EFEFEF`, de grond
+van de foto's), het blauw van Instagram in het voorbeeldscherm, de rode tekst van een fout.
+
+---
+
+## De kleurentabel (oud → nieuw)
+
+`kladblok/levering-68/kleurmap.py` paste dit toe op elke letterlijke waarde (`#hex`,
+`rgb()`, `%23hex` in een `data:`-adres), buiten commentaar en buiten de laptopschermen.
+
+| Oud (schema A) | Nieuw | Rol |
+|---|---|---|
+| `#000000` | `#0B0F17` | inkt |
+| `#3D3D3D` | `#0B0F17` | lopende tekst is inkt; als vlak van een knop onder de muis: `#25508B` |
+| `#616161`, `#6E6E6E` | `#636974` | grijs |
+| `#F2F2F2` | `#F4F5F7` | vlak (kaarten worden wit met een haarlijn) |
+| `#E8E8E8`, `#DDDDDD` | `#E6E8EC` | lijn |
+| `#C8C8C8` | `#C5C8CF` | lijn sterk |
+| `#8A8A8A` | `#858A94` | veldlijn |
+| `#4400FF` | `#25508B` | blauw uur |
+| `#3600CC` | `#1A4279` | blauw diep |
+| `#8F66FF` | `#80A7DD` | blauw licht (alleen op inkt) |
+| `#F6E7D1` · `#8A4D06` | `#F4F5F7` · `#25508B` | aandacht: geen amber meer |
+| `#0E0E0E` | `#0B0F17` | de donkere grond |
+| elk ander grijs zonder kleur | het koele grijs met dezelfde helderheid | bijvoorbeeld `#181818` → `#16181E`, `#212121` → `#1E2128`, `#F5F5F5` → `#F5F5F7` |
+| `rgb(0 0 0 / x)` | `rgb(11 15 23 / x)` | schaduw en lijn in inkt |
+
+---
+
+## Altijd
+
+1. Wit is de grond, ook achter de foto's. Geen grijze sectie, geen getinte band.
+2. Lopende tekst en knoppen minstens **4,5:1**, ook een kop. Tekst minstens 11,5 px.
+3. **Blauw op één plek per scherm**, plus het logo onder de muis, links, de focusrand en
+   selectie. Geen blauw kopwoord, icoon, stip, rand of vlak.
+4. **Eén inktblok per pagina**, afgesneden op 53°, één zachte hoek.
+5. Blauw en inkt nooit op elkaar (2,37:1). Op inkt alleen wit en blauw licht.
+6. Geen verloop als vulling, geen glas, geen schaduw in een kleur, geen bewogen achtergrond.
+7. Een kaart is wit met een haarlijn. Vlak alleen onder iets kleins.
+8. Een stand is pil plus woord; massief alleen voor "geleverd"; aandacht blauw.
+9. Het logo is één kleur: inkt, blauw of wit. Onder de muis de schommel. Woordmerk en los
+   V-merk nooit naast elkaar (`scripts/brand-lockup-guard.mjs`).
+10. Niets beweegt bij het laden; beweging stopt helemaal bij "minder beweging".
+11. Een nieuw grijs heeft de toon van de inkt (263°) en de helderheid van wat het vervangt.
+
+---
+
+# Schema A (19 – 23 oktober 2026)
+
+Tot levering 68 stond dit op de site: wit, zwart en één elektrisch violet `#4400FF`.
+Hieronder staat het zoals het toen was, als geschiedenis.
 
 Lucas koos in afvinklijst 41 schema A, "wit, zwart, elektrisch violet", met
 zwarte knoppen en een vlak violet €1-blok zonder korrel. Zijn notitie: *"Ook
@@ -12,8 +295,6 @@ aanpassen. Doe dit heel uitgebreid en nauwkeurig."* Op de vraag wat er met de
 kleine plekken violet gebeurt (een kopwoord, het sectienummer, een stip, een
 icoon, een link): *"Ook zwart"*.
 
-Het schema daarvoor (de hal, 14 tot 18 oktober) staat verderop als
-geschiedenis, en daaronder dat van 20 september.
 
 ---
 

@@ -1,34 +1,44 @@
 """
-VISUAILS — de foto onder de laptopstanden: meten, maskers en maten. 20 oktober 2026.
+VISUAILS — de foto onder de laptopstanden: meten, maskers en maten. 23 oktober 2026.
 ═══════════════════════════════════════════════════════════════════════════════
 
     python scripts/laptop-foto.py "<pad naar de foto>"
 
-Lucas koos voor de opening zijn POV-foto uit images/BG (een telefoon in de linkerhand,
-een laptop op schoot, allebei met een wit scherm, en links de violette schets van een
-studio). Dit script maakt daaruit wat de laptopstanden nodig hebben:
+Lucas koos op 23 oktober 2026 een nieuwe foto voor de opening, uit images/BG
+(magnific__a-minimal-studio-product-photograph-a-dark-silhoue__50205.png, 5504 × 3072):
+twee donkere handen in silhouet op een lichte studiogrond, links een hand onder een
+laptop, rechts een hand met een telefoon die voor de rechteronderhoek van de laptop
+hangt. Beide schermen wit. (Tot vandaag de POV-foto van 20 oktober, 2048 × 1152.)
+Dit script maakt daaruit wat de laptopstanden nodig hebben:
 
-  1. DE FOTO op de maat van de doos: 2304 × 1296 (16:9). De bron is 2048 × 1152; hij
-     wordt 1,125 × groter gemaakt (Lanczos), zodat de namen en breedtes van de standen
-     (1000, 1600, 2304) blijven wat ze waren en elke stand zijn oude bestand overschrijft.
+  1. DE FOTO op de maat van de doos: 2304 × 1296 (16:9). De bron is 5504 × 3072
+     (1,7917:1, iets breder dan 16:9): links en rechts gaan er 21 px af (5461 × 3072,
+     alleen lege grond), dan Lanczos naar 2304 × 1296. Zo blijven de namen en breedtes
+     van de standen (1000, 1600, 2304) wat ze waren.
      public/img/hal/pov-2304.webp, met de lege schermen: de ondergrond van de bron van de
-     standen (src/pages/laptop-bron). De foto MET schermen (laptop-<breedte>.webp, voor
-     het deelplaatje en als er geen standen zijn) maakt scripts/laptop-standen.mjs.
+     standen (src/pages/laptop-bron). De naam blijft, al is het geen POV-foto meer: de
+     vingerafdruk (scripts/lib/laptopbron.mjs) en de bron noemen hem zo.
   2. DE HOEKEN van de twee schermen, GEMETEN: langs elke rand op honderden scanlijnen
      van binnen (het witte scherm) naar buiten tot de val naar de zwarte rand, op de
      helft (subpixel); per rand een lijn door die punten (uitschieters eruit), de hoeken
-     zijn de snijpunten. Bij de telefoon alleen het rechte stuk van elke rand (zijn hoeken
-     zijn rond) en bovenaan niet onder het eiland. Ze komen in src/data/halLaptop.js.
+     zijn de snijpunten. Waar iets voor een rand hangt, telt dat stuk niet mee:
+       laptop  rechts alleen boven de telefoon (de telefoon dekt de rand vanaf y 466),
+               onder alleen links van de vingers (die beginnen bij x 1494);
+       telefoon de ronde hoeken niet, en bovenaan niet onder het eiland (x 1624 tot 1728).
+     Ze komen in src/data/halLaptop.js.
   3. DE MASKERS, in schermcoördinaten (laptop 1600 × 1034, telefoon 540 × 1170): voor elk
      schermpixel waar het in de foto valt (de homografie), en hoe wit de foto daar is.
-     Wat zwart is (de inkeping van de laptop, het eiland van de telefoon, de ronde hoeken)
-     blijft van de foto. public/img/hal/masker-laptop.png en masker-fon.png.
+     NIEUW: alleen het witte vlak dat aan het scherm zelf vastzit telt mee (vanuit het
+     midden van het scherm gevuld, 3 px verruimd voor de zachte rand). Anders zou de
+     laptop ook door het witte scherm van de telefoon heen tekenen, want dat ligt binnen
+     de hoeken van de laptop. Wat zwart is (de vingers, de telefoon, het eiland, de ronde
+     hoeken) blijft van de foto. public/img/hal/masker-laptop.png en masker-fon.png.
 
 Daarna: `node scripts/laptop-standen.mjs` fotografeert de standen opnieuw.
 """
-import json, os, sys
+import os, sys
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFilter
 
 WORTEL = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HAL = os.path.join(WORTEL, 'public', 'img', 'hal')
@@ -36,12 +46,17 @@ DOOS = (2304, 1296)
 SCHERM = {'laptop': (1600, 1034), 'fon': (540, 1170)}
 
 bron = Image.open(sys.argv[1]).convert('RGB')
+# naar 16:9: wat te breed is gaat er links en rechts gelijk af
+bw = round(bron.height * DOOS[0] / DOOS[1])
+if bw < bron.width:
+    x0 = (bron.width - bw) // 2
+    bron = bron.crop((x0, 0, x0 + bw, bron.height))
 foto = bron.resize(DOOS, Image.LANCZOS)
 L = np.asarray(foto).astype(np.float64) @ np.array([.299, .587, .114])
 
 
 # ── 2. meten ─────────────────────────────────────────────────────────────────
-def val(prof, binnen=28):
+def val(prof, binnen=20):
     """Van binnen naar buiten: de eerste plek (subpixel) onder de helft tussen het wit
     hier en het donkerste stuk erachter."""
     hi = np.median(prof[:binnen]); lo = prof[binnen:].min(); mid = (hi + lo) / 2
@@ -50,22 +65,23 @@ def val(prof, binnen=28):
             return i - 1 + (prof[i - 1] - mid) / (prof[i - 1] - prof[i])
     return None
 
-def rand(kant, bereik, midden, verst):
+def rand(kant, bereik, binnen, verst):
+    """binnen: een coördinaat op het scherm (loodrecht op de rand), verst: tot waar buiten."""
     pts = []
     for t in bereik:
-        prof = {'boven': lambda: L[verst:midden + 1, t][::-1], 'onder': lambda: L[midden:verst + 1, t],
-                'links': lambda: L[t, verst:midden + 1][::-1], 'rechts': lambda: L[t, midden:verst + 1]}[kant]()
+        prof = {'boven': lambda: L[verst:binnen + 1, t][::-1], 'onder': lambda: L[binnen:verst + 1, t],
+                'links': lambda: L[t, verst:binnen + 1][::-1], 'rechts': lambda: L[t, binnen:verst + 1]}[kant]()
         k = val(prof)
         if k is None: continue
-        pts.append({'boven': (t, midden - k), 'onder': (t, midden + k), 'links': (midden - k, t), 'rechts': (midden + k, t)}[kant])
+        pts.append({'boven': (t, binnen - k), 'onder': (t, binnen + k), 'links': (binnen - k, t), 'rechts': (binnen + k, t)}[kant])
     return np.array(pts)
 
 def lijn(pts, horizontaal):
     p = pts.copy()
-    for _ in range(4):
+    for _ in range(6):
         u, v = (p[:, 0], p[:, 1]) if horizontaal else (p[:, 1], p[:, 0])
         a, b = np.polyfit(u, v, 1); r = v - (a * u + b)
-        keep = np.abs(r) < max(1.0, 2.5 * r.std())
+        keep = np.abs(r) < max(.6, 2.5 * r.std())
         if keep.all(): break
         p = p[keep]
     u, v = (p[:, 0], p[:, 1]) if horizontaal else (p[:, 1], p[:, 0])
@@ -77,30 +93,22 @@ def snij(h, v):
     y = (a1 * b2 + b1) / (1 - a1 * a2)
     return [round(float(a2 * y + b2), 2), round(float(y), 2)]
 
-def meet(naam, kader, eiland, hoekvrij):
-    """kader: grofweg het witte vlak (x0, y0, x1, y1) in doospixels; eiland: het stuk van de
-    bovenrand (fractie van de breedte) dat niet meedoet; hoekvrij: hoeveel van elke rand bij
-    de hoeken niet meedoet (ronde hoeken)."""
-    x0, y0, x1, y1 = kader; cx, cy = (x0 + x1) // 2, (y0 + y1) // 2; m = 34
-    h = y1 - y0
-    rijen = range(int(y0 + hoekvrij * h), int(y1 - hoekvrij * h))
-    links, nl, el = lijn(rand('links', rijen, cx, x0 - m), False)
-    rechts, nr, er = lijn(rand('rechts', rijen, cx, x1 + m), False)
-    def kolommen(y, stukken):
-        xl = links[0] * y + links[1]; xr = rechts[0] * y + rechts[1]
-        return [x for x in range(int(xl), int(xr) + 1) if any(a <= (x - xl) / (xr - xl) <= b for a, b in stukken)]
-    vrij = (hoekvrij, 1 - hoekvrij)
-    boven, nb, eb = lijn(rand('boven', kolommen(y0, [(vrij[0], eiland[0]), (eiland[1], vrij[1])]), cy, y0 - m), True)
-    onder, no, eo = lijn(rand('onder', kolommen(y1, [vrij]), cy, y1 + m), True)
-    hoek = {'tl': snij(boven, links), 'tr': snij(boven, rechts), 'br': snij(onder, rechts), 'bl': snij(onder, links)}
-    print(f'{naam:7s} punten {nb}/{no}/{nl}/{nr}  grootste afwijking {max(eb, eo, el, er):.2f} px  {hoek}')
+def meet(naam, links, rechts, boven, onder):
+    """Per rand: (welke rijen of kolommen, een punt op het scherm, tot waar buiten), in doospixels."""
+    r = {}
+    for k, kant, (bereik, binnen, verst) in (('l', 'links', links), ('r', 'rechts', rechts), ('b', 'boven', boven), ('o', 'onder', onder)):
+        r[k] = lijn(rand(kant, bereik, binnen, verst), kant in ('boven', 'onder'))
+    hoek = {'tl': snij(r['b'][0], r['l'][0]), 'tr': snij(r['b'][0], r['r'][0]), 'br': snij(r['o'][0], r['r'][0]), 'bl': snij(r['o'][0], r['l'][0])}
+    print(f"{naam:7s} punten {r['b'][1]}/{r['o'][1]}/{r['l'][1]}/{r['r'][1]}  grootste afwijking {max(v[2] for v in r.values()):.2f} px  {hoek}")
     return hoek
 
-k = DOOS[0] / bron.width
 hoeken = {
-    'laptop': meet('laptop', [round(v * k) for v in (954, 216, 1762, 716)], (.40, .60), .12),
-    'fon': meet('fon', [round(v * k) for v in (565, 386, 783, 824)], (.32, .68), .22),
+    'laptop': meet('laptop', (range(330, 880), 640, 540), (range(310, 440), 1600, 1700),
+                   (range(660, 1600), 330, 215), (range(660, 1440), 880, 990)),
+    'fon': meet('fon', (range(570, 940), 1640, 1520), (range(570, 940), 1720, 1840),
+                (list(range(1592, 1616)) + list(range(1738, 1760)), 560, 450), (range(1598, 1755), 940, 1060)),
 }
+MIDDEN = {'laptop': (1100, 600), 'fon': (1676, 750)}   # een punt midden op elk wit scherm
 
 
 # ── 3. de maskers ────────────────────────────────────────────────────────────
@@ -119,17 +127,25 @@ def bilineair(img, x, y):
     a = img[y0, x0]; b = img[y0, x0 + 1]; c = img[y0 + 1, x0]; d = img[y0 + 1, x0 + 1]
     return (a * (1 - fx) + b * fx) * (1 - fy) + (c * (1 - fx) + d * fx) * fy
 
+# het wit van de schermen is hier 242 (telefoon) tot 251 (laptop), de zwarte rand 2 tot 15.
+# De overgang ligt HOOG (185 tot 230) en niet op de helft: de nagels van de vingers voor de
+# laptop zijn 100 tot 175 licht, en die moeten foto blijven. Aan de rand van een scherm
+# verschuift dat het masker minder dan een halve pixel (de val naar zwart is 2 px breed).
+wit = np.clip((L - 185) / 45, 0, 1)
 for naam, (w, h) in SCHERM.items():
+    # alleen het witte vlak dat aan dit scherm vastzit (vullen vanuit het midden)
+    vlak = Image.fromarray(np.where(L > 128, 255, 0).astype(np.uint8), 'L').copy()
+    ImageDraw.floodfill(vlak, MIDDEN[naam], 128)
+    eigen = (np.asarray(vlak) == 128)
+    eigen = np.asarray(Image.fromarray((eigen * 255).astype(np.uint8)).filter(ImageFilter.MaxFilter(7))) > 0
+    dekking = wit * eigen
     Hm = homografie(w, h, hoeken[naam])
     # 2 × 2 deelpixels per schermpixel, zodat de rand van het masker zacht en juist is
     ss = 2
     u, v = np.meshgrid((np.arange(w * ss) + .5) / ss, (np.arange(h * ss) + .5) / ss)
     p = Hm @ np.stack([u.ravel(), v.ravel(), np.ones(u.size)])
     x, y = p[0] / p[2], p[1] / p[2]
-    lum = bilineair(L, x, y).reshape(h * ss, w * ss)
-    # het wit van het scherm is hier zo'n 225 tot 235, de zwarte rand 15 tot 40: de helft
-    # (≈ 128) is de rand, met een overgang van 50 luminantie breed
-    a = np.clip((lum - 103) / 50, 0, 1)
+    a = bilineair(dekking, x, y).reshape(h * ss, w * ss)
     a = a.reshape(h, ss, w, ss).mean((1, 3))
     rgba = np.zeros((h, w, 4), np.uint8); rgba[..., :3] = 255; rgba[..., 3] = np.round(a * 255).astype(np.uint8)
     Image.fromarray(rgba, 'RGBA').save(os.path.join(HAL, f'masker-{naam}.png'), optimize=True)

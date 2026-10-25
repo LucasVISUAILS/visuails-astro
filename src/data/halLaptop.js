@@ -1,33 +1,33 @@
-/* VISUAILS — de maten van het laptopbeeld in de opening (20 oktober 2026; eerst 12 oktober).
+/* VISUAILS — de maten van het laptopbeeld in de opening (23 oktober 2026; eerst 20 en 12 oktober).
    ═══════════════════════════════════════════════════════════════════════════
 
-   Het beeld is van Lucas (images/BG/magnific__pov-photo-through-my-own-eyes-…99352.png,
-   2048 × 1152, gekozen op 20 oktober 2026): door zijn eigen ogen, een telefoon in de
-   linkerhand en een laptop op schoot, allebei met een wit scherm, links de violette
-   schets van een studio. Hij is 1,125 × groter gemaakt tot 2304 × 1296, zodat de
-   standen hun breedtes en namen houden (1000, 1600, 2304).
+   Het beeld is van Lucas (images/BG/magnific__a-minimal-studio-product-photograph-a-dark-silhoue__50205.png,
+   5504 × 3072, gekozen op 23 oktober 2026): twee donkere handen in silhouet op een lichte
+   studiogrond, links een hand onder een laptop, rechts een hand met een telefoon die voor
+   de rechteronderhoek van de laptop hangt; allebei een wit scherm. Links en rechts 21 px
+   eraf naar 16:9, dan 2304 × 1296, zodat de standen hun breedtes en namen houden
+   (1000, 1600, 2304).
 
    De schermen zijn GEMETEN en niet geschat (scripts/laptop-foto.py): langs elke rand
-   honderden scanlijnen van het witte scherm naar buiten tot de val naar de zwarte
-   rand, op de helft; per rand een lijn door die punten, de hoeken zijn de snijpunten.
-   Grootste afwijking van een punt tot zijn lijn: 0,21 px. Bij de telefoon telt alleen
-   het rechte stuk van elke rand mee (de hoeken zijn rond), bovenaan niet het eiland.
+   honderden scanlijnen van het witte scherm naar buiten tot de val naar de zwarte rand, op de
+   helft; per rand een lijn door die punten, de hoeken zijn de snijpunten. Grootste afwijking
+   van een punt tot zijn lijn: 0,27 px. De laptop staat recht voor de lens (zijn hoeken liggen
+   op 0,4 px na in een rechthoek); van zijn rechterrand telt alleen het stuk boven de telefoon.
 
    De standen zijn foto's met de schermen er al in (src/data/halStanden.js). De bron
    daarvan legt de schermen in precies dit perspectief (een homografie van de vier
    hoeken); het masker per scherm (public/img/hal/masker-*.png, ook uit laptop-foto.py)
-   is het witte vlak in schermcoördinaten, dus de inkeping van de laptop, het eiland
-   van de telefoon en de ronde hoeken blijven van de foto.
+   is het witte vlak van dát scherm in schermcoördinaten, dus de vingers en de telefoon voor
+   de laptop, het eiland van de telefoon en de ronde hoeken blijven van de foto.
 
-   Het vorige beeld (de laptop van boven, 2304 × 1728, 12 oktober) staat niet meer op
-   de site. */
+   Het vorige beeld (de POV-foto, 2048 × 1152, 20 oktober) staat niet meer op de site. */
 
 export const FOTO = { w: 2304, h: 1296 };
 
 /** De schermen: hun maat in schermpixels (de pagina wordt op die maat opgebouwd) en hun hoeken in de foto. */
 export const SCHERMEN = {
-  laptop: { w: 1600, h: 1034, tl: [1071.72, 262.72], tr: [1983.34, 241.44], br: [1957.62, 805.76], bl: [1077.90, 798.44] },
-  fon: { w: 540, h: 1170, tl: [630.39, 450.01], tr: [820.73, 430.64], br: [884.05, 889.67], bl: [696.72, 934.04] },
+  laptop: { w: 1600, h: 1034, tl: [586.37, 253.23], tr: [1663.57, 253.23], br: [1664.0, 951.17], bl: [586.36, 951.1] },
+  fon: { w: 540, h: 1170, tl: [1551.69, 479.35], tr: [1799.67, 479.36], br: [1799.91, 1023.44], bl: [1552.13, 1023.45] },
 };
 
 /** Homografie die de rechthoek 0..w × 0..h op de vier hoeken legt (8 vergelijkingen, Gauss). */

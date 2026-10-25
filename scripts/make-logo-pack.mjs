@@ -41,8 +41,10 @@ const OUT = path.join(ROOT, 'brand', 'visuails-logo');
 /* Schema A, 19 oktober 2026: violet #4400FF (was #4A1FFF). Het logopakket dat
  * Lucas gebruikt komt sinds levering 62 uit maak-logopakket.py in zijn map
  * images/Logo/visuails-logo-nieuw; dit script geeft dezelfde kleuren. */
-const ACCENT = '#4400FF';
-const DARK = '#000000';
+/* Levering 68 (24 oktober 2026): blauw uur #25508B en inkt #0B0F17. Het pakket staat nu in
+ * images/Logo/visuails-logo-blauw-uur. */
+const ACCENT = '#25508B';
+const DARK = '#0B0F17';
 const WHITE = '#FFFFFF';
 
 /* Shared with make-favicons.mjs, so the pack and the tab icon cannot disagree

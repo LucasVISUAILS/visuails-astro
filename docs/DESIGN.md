@@ -1,6 +1,6 @@
 # Design
 
-> **Stand: 22 september 2026.** `KLEURENSCHEMA.md` in de wortel draagt de
+> **Stand: 24 oktober 2026 (palet); de rest 22 september 2026.** `KLEURENSCHEMA.md` draagt de
 > kleuren; dit bestand draagt de rest van het systeem (elevatie, focus, motion,
 > layout, z-index, toegankelijkheid, en de lijst met wat we niet doen). Wijkt
 > de code van KLEURENSCHEMA.md af, dan volgt de code dat document.
@@ -23,17 +23,29 @@
 
 ---
 
-## Het palet van nu: schema A — 19 oktober 2026
+## Het palet van nu: Blauw uur — 24 oktober 2026 (levering 68)
 
-`docs/KLEURENSCHEMA.md` is leidend. Wit, zwart en één elektrisch violet `#4400FF`;
-grijs zonder kleur (nevel `#F2F2F2`, vak `#E8E8E8`, lijn `#DDDDDD`), inkt `#000000`
-met grijs 2 `#3D3D3D` en grijs 3 `#616161`. Violet alleen in de voet, het €1-blok,
-de knop Bestellen bovenin en wat je kiest. Knoppen zwart. De tabel hieronder (het
-palet van 20 september) is daarmee afgeschreven en blijft staan als verantwoording.
+`docs/KLEURENSCHEMA.md` is leidend. Puur wit als grond, en inkt en één blauw die erin
+snijden, zoals het logo (lijst 55). Vijf kleuren:
 
-Sinds afvinklijst 42 (19 oktober 2026) draagt elk sfeervlak een bewogen foto in plaats
-van een egale kleur, en staat de tekst van het €1-blok op violet glas. Zie
-`docs/KLEURENSCHEMA.md`, Bewogen achtergronden.
+| Token | Waarde | Rol |
+|---|---|---|
+| `--h-wit` | `#FFFFFF` | de grond, de kaarten, de grond van elke foto |
+| `--h-inkt` | `#0B0F17` | alle tekst, het logo, de knoppen, het ene inktblok per pagina (19,18:1) |
+| `--h-blauw` | `#25508B` | blauw uur: één plek per scherm (Bestellen bovenin), het logo onder de muis, links, de focusrand (8,08:1) |
+| `--h-grijs` | `#636974` | alleen kleine tekst (5,52:1) |
+| `--h-lijn` | `#E6E8EC` | alleen scheiding: haarlijn, de rand van een kaart |
+
+Afgeleid, elk met één rol: vlak `#F4F5F7` (onder een pil of chip), lijn sterk `#C5C8CF`,
+veldlijn `#858A94` (de rand van een veld, 3,47:1), blauw diep `#1A4279` (blauw onder de
+muis) en blauw licht `#80A7DD` (alleen op inkt). In global.css is `--accent` inkt
+`#0B0F17`: een knop is inkt en wordt onder de muis blauw.
+
+Een kaart is wit met een haarlijn. Eén inktblok per pagina, afgesneden op 53° (het €1-blok,
+of het slot onderaan). Geen verloop als vlak, geen glas, geen bewogen achtergrond, geen
+warme kleur. Het logo staat stil; onder de muis schommelt zijn kleur van inkt naar blauw uur
+en terug (3,6 s). Het palet van schema A (19 – 23 oktober, violet `#4400FF`) en de tabel
+hieronder (20 september) zijn daarmee afgeschreven en blijven staan als verantwoording.
 
 ## Het palet (sectie 22 — licht en donker, violet) — 20 september 2026 · INGETROKKEN 19 oktober 2026 (schema A)
 

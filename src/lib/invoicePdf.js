@@ -352,12 +352,12 @@ const LABEL_RIGHT = COL.unitRight;   // totals labels end where unit prices do
    dus op de factuur nergens: de titel, "Factuur aan" en het totaal zijn zwart (NADRUK),
    het vlak is nevel. MUTED #5B5B5B haalt 6,8:1 op wit en 6,1:1 op nevel. */
 const hex = (h) => rgb(parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255);
-const INK = hex('#000000');
-const MUTED = hex('#5B5B5B');
-const RULE = hex('#DDDDDD');
-const NADRUK = hex('#000000');
-const VLAK = hex('#F2F2F2');
-const NEVEL = hex('#F2F2F2');
+const INK = hex('#0B0F17');
+const MUTED = hex('#565C65');
+const RULE = hex('#E6E8EC');
+const NADRUK = hex('#0B0F17');
+const VLAK = hex('#F4F5F7');
+const NEVEL = hex('#F4F5F7');
 
 /* ── HET WOORDMERK, ALS VECTOR ─────────────────────────────────────────────────
    Letterlijk het pad uit src/data/woordmerk.js (de merkletter van de hal), hier

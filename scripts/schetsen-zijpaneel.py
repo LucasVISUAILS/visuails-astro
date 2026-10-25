@@ -2,7 +2,7 @@
 # Illustraties van de beeldsoorten, geen logo's en geen merk: één neutraal shirt, inkt op wit.
 # Schema A (levering 62, 19 oktober 2026): zwart op wit, het grijs zonder lila (vak en licht
 # als in hal.css, de lijn van de stof #9C9C9C met dezelfde helderheid als #9C9C9C).
-INKT = '#000000'; WIT = '#FFFFFF'; VAK = '#E8E8E8'; LICHT = '#F2F2F2'
+INKT = '#0B0F17'; WIT = '#FFFFFF'; VAK = '#E6E8EC'; LICHT = '#F4F5F7'
 SW = 2.2
 
 def svg(binnen, titel):
@@ -79,7 +79,7 @@ def loep(inhoud, cx=54, cy=54, r=33):
 
 def stof():
     # keperbinding: schuine lijntjes, een zoom en een knoop
-    g = ''.join(f'<path d="M{x} 10 L{x+60} 110" stroke-width="0.9" stroke="#9C9C9C"/>' for x in range(-40, 100, 7))
+    g = ''.join(f'<path d="M{x} 10 L{x+60} 110" stroke-width="0.9" stroke="#989CA6"/>' for x in range(-40, 100, 7))
     g += '<path d="M10 70 Q54 64 100 70" stroke-width="1.4" stroke-dasharray="2.4 2.6"/>'
     g += '<path d="M10 76 Q54 70 100 76" stroke-width="1.4"/>'
     g += f'<circle cx="54" cy="46" r="10.5" fill="{WIT}"/>'
@@ -94,7 +94,7 @@ def kraag():
     g = f'<defs><clipPath id="s"><path d="{vorm}"/></clipPath></defs>'
     g += f'<path d="M47 34 V60 M63 34 V60" fill="{WIT}"/>'
     g += f'<path d="{vorm}" fill="{WIT}"/>'
-    g += '<g clip-path="url(#s)">' + ''.join(f'<path d="M{x} 40 L{x+50} 125" stroke-width="0.9" stroke="#9C9C9C"/>' for x in range(-60, 110, 7)) + '</g>'
+    g += '<g clip-path="url(#s)">' + ''.join(f'<path d="M{x} 40 L{x+50} 125" stroke-width="0.9" stroke="#989CA6"/>' for x in range(-60, 110, 7)) + '</g>'
     g += f'<path d="{vorm}"/>'
     g += f'<path d="M42 55 Q55 80 68 55" stroke-width="1.6" fill="{WIT}"/>'
     g += '<path d="M8 84 Q26 70 37 66" stroke-width="1.4" stroke-dasharray="2.4 2.6"/>'
@@ -102,7 +102,7 @@ def kraag():
     return g
 
 def stofklein():
-    g = ''.join(f'<path d="M{x} 10 L{x+40} 90" stroke-width="0.9" stroke="#9C9C9C"/>' for x in range(20, 120, 6))
+    g = ''.join(f'<path d="M{x} 10 L{x+40} 90" stroke-width="0.9" stroke="#989CA6"/>' for x in range(20, 120, 6))
     g += '<path d="M50 52 Q79 46 110 52" stroke-width="1.3" stroke-dasharray="2.2 2.4"/>'
     g += '<path d="M50 58 Q79 52 110 58" stroke-width="1.3"/>'
     return g

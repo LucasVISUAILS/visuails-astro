@@ -97,9 +97,9 @@ const aria = nl ? `Uitleg over ${over}` : `More about ${over}`;
     margin-inline-start: .3em;
     vertical-align: super;
     font: inherit; font-size: .72em; line-height: 1;
-    color: var(--ink-3, #686868);
+    color: var(--ink-3, #636872);
     background: transparent;
-    border: 1px solid var(--line-strong, #BDBDBD);
+    border: 1px solid var(--line-strong, #BABEC5);
     border-radius: 8px 3px 3px 3px;
     cursor: help;
     padding: 0;
@@ -151,11 +151,11 @@ const aria = nl ? `Uitleg over ${over}` : `More about ${over}`;
   /* Zolang het paneel openstaat blijft het teken opgelicht. Zonder deze regel
      lijkt een paneel dat met het toetsenbord is geopend bij niets te horen. */
   .uitleg-mark:has(+ .uitleg-paneel:popover-open) {
-    color: var(--ink, #000000);
-    border-color: var(--ink, #000000);
+    color: var(--ink, #0B0F17);
+    border-color: var(--ink, #0B0F17);
   }
   .uitleg-mark:focus-visible {
-    outline: 2px solid var(--accent-bright, #000000);
+    outline: 2px solid var(--accent-bright, #0B0F17);
     outline-offset: 2px;
   }
 
@@ -191,10 +191,10 @@ const aria = nl ? `Uitleg over ${over}` : `More about ${over}`;
        (afvinklijst 29, k-maat). */
     max-inline-size: min(42ch, calc(100vw - 2rem));
     padding: .7rem .85rem;
-    border: 1px solid var(--line, #DFDFDF);
+    border: 1px solid var(--line, #DDDFE3);
     border-radius: 0;
     background: var(--surface, #FFF);
-    color: var(--ink-2, #454545);
+    color: var(--ink-2, #41464E);
     font-size: .86rem;
     line-height: 1.5;
     text-align: start;

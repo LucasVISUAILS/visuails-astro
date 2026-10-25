@@ -120,11 +120,11 @@ export function standKlasse(status) {
 /* Sinds 14 oktober 2026 de standen van de hal (KLEURENSCHEMA.md): een lijn,
    mist met nacht, nacht met wit; amber en vak-grijs voor de twee uitzonderingen. */
 export const STAND_KLEUR = {
-  wait: { fill: 'transparent', edge: '#8A8A8A', ink: '#3D3D3D' },
-  work: { fill: '#F2F2F2', edge: '#DDDDDD', ink: '#000000' },
-  done: { fill: '#000000', edge: '#000000', ink: '#FFFFFF' },
-  rev: { fill: '#F6E7D1', edge: 'rgba(138,77,6,.30)', ink: '#8A4D06' },
-  can: { fill: '#E8E8E8', edge: '#8A8A8A', ink: '#3D3D3D' },
+  wait: { fill: 'transparent', edge: '#858A94', ink: '#0B0F17' },
+  work: { fill: '#F4F5F7', edge: '#E6E8EC', ink: '#0B0F17' },
+  done: { fill: '#0B0F17', edge: '#0B0F17', ink: '#FFFFFF' },
+  rev: { fill: '#F4F5F7', edge: 'rgba(37,80,139,.30)', ink: '#25508B' },
+  can: { fill: '#E6E8EC', edge: '#858A94', ink: '#0B0F17' },
 };
 
 

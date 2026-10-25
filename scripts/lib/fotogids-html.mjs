@@ -115,8 +115,8 @@ function css(fonts) {
   return `
 ${fonts}
 :root {
-  --inkt: #000000; --inkt-2: #3D3D3D; --inkt-3: #616161; --violet: #000000; --violet-diep: #3D3D3D; /* schema A: zie de kop */
-  --mist: #F2F2F2; --nevel: #F2F2F2; --lijn: #DDDDDD; --wit: #FFFFFF;
+  --inkt: #0B0F17; --inkt-2: #0B0F17; --inkt-3: #636974; --violet: #0B0F17; --violet-diep: #0B0F17; /* schema A: zie de kop */
+  --mist: #F4F5F7; --nevel: #F4F5F7; --lijn: #E6E8EC; --wit: #FFFFFF;
   --letter: "Urbanist Variable", system-ui, sans-serif;
 }
 * { box-sizing: border-box; }

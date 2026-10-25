@@ -36,8 +36,8 @@ const W = 1200, H = 630;
    met een lichte kop; het accentwoord staat er als LETTER op, dus het is het
    lichte violet uit de donkere modus (#A694FF, 8,30:1 op zwart) en niet het
    violet van de vulling — dat haalt op zwart 2,93:1. */
-const GREEN = '#C8C8C8';
-const INK = '#000000';
+const GREEN = '#C5C8CF';
+const INK = '#0B0F17';
 
 /** Een bestand als data-URL — Chromium mag geen file:// laden bij setContent. */
 const dataUrl = (abs, mime) =>
@@ -67,7 +67,7 @@ function fontFile(pkg, file, what) {
    niet het V-merk ernaast: die twee staan nooit samen). */
 const urbanist = fontFile('@fontsource-variable/urbanist', 'urbanist-latin-wght-normal.woff2', 'Urbanist');
 const { WOORDMERK } = await import('../src/data/woordmerk.js');
-const KOP_LICHT = '#6E6E6E', INKT = '#000000', INKT_3 = '#616161', VIOLET = '#000000';
+const KOP_LICHT = '#636974', INKT = '#0B0F17', INKT_3 = '#636974', VIOLET = '#0B0F17';
 
 function pick(candidates, what) {
   for (const c of candidates) {
