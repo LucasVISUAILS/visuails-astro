@@ -41,8 +41,12 @@
 import { LIFESTYLE_RATIOS, CATALOG_RATIOS } from '../data/ratios.js';
 import UitlegBalk from './UitlegBalk.astro';
 
-interface Props { lang: 'en' | 'nl'; uitleg?: boolean }
-const { lang, uitleg = true } = Astro.props as Props;
+/* kaal (de voorpagina, 25 oktober 2026, 16:56): zonder de tekst links en zonder de zinnen in
+   de uitlegbalk. Lucas: "ik ga echt voor een minimale visuele uitleg dus dit soort onnodige
+   tekst, ook op andere plekken op de homepage kunnen weg." Wat de kleine regel beloofde (16:9
+   en 9:16 alleen bij lifestyle) staat dan in het beeld zelf: "Lifestyle" naast de maat. */
+interface Props { lang: 'en' | 'nl'; uitleg?: boolean; kaal?: boolean }
+const { lang, uitleg = true, kaal = false } = Astro.props as Props;
 const nl = lang === 'nl';
 const r = (id: string) => LIFESTYLE_RATIOS.find((x: any) => x.id === id)!;
 const eerste = (s: string) => s.split('.')[0];
@@ -71,6 +75,9 @@ const STANDEN = [
   { k: '916', id: 'story' },
   { k: '11', id: 'square', hoog: MEER_H },
 ].map((s) => ({ ...s, label: r(s.id).label, waar: gebruik(s.id), ...vorm(s.id, s.hoog) }));
+/* Wat catalog niet kent (catalog: 1:1, 4:5 en 3:4, ratios.js), uit dezelfde bron. */
+const CAT_IDS = CATALOG_RATIOS.map((x: any) => x.id);
+const ALLEEN_LIFESTYLE = LIFESTYLE_RATIOS.map((x: any) => x.id).filter((id: string) => !CAT_IDS.includes(id));
 /* Het tweede vak bij "En meer": 3:4, even hoog als het vierkant. */
 const MINI = { id: 'portrait34', label: r('portrait34').label, waar: gebruik('portrait34'), ...vorm('portrait34', MEER_H) };
 /* Waar de twee vakken staan: samen gecentreerd, vierkant links. */
@@ -125,7 +132,7 @@ const C = nl
 const BEELD = { src: '/img/lifestyle-phone-made-04.webp', w: 2400, h: 1792, pos: '50% 32%' };
 const BEELD_MINI = { src: '/img/lifestyle-phone-made-07.webp', w: 2400, h: 1792, pos: '78% 30%' };
 ---
-<section class="h-sec h-fmt" aria-labelledby="h-fmt-kop" style={VORM_CSS}
+<section class:list={['h-sec h-fmt', kaal && 'h-fmt-kaal']} aria-labelledby="h-fmt-kop" style={VORM_CSS}
          data-uitleg={uitleg ? '' : undefined} data-uitleg-lus={uitleg ? '' : undefined}
          data-uitleg-maat="2400 2400 2400 3800" data-uitleg-start="600">
   <header class="h-sec-kop h-in">
@@ -135,16 +142,18 @@ const BEELD_MINI = { src: '/img/lifestyle-phone-made-07.webp', w: 2400, h: 1792,
     </div>
   </header>
   <div class="h-fmt-raster">
+  {!kaal && (
   <div class="h-fmt-tekst h-in">
     <div class="h-fmt-lede">{C.lede}</div>
     <div class="h-fmt-klein">{C.klein}</div>
   </div>
+  )}
 
   <div class="h-fmt-vlak h-in" style="--d:1" data-uitleg-zicht>
     <div class="h-fmt-knoppen" role="group" aria-label={C.knoppenLabel}>
       {STANDEN.map((s, i) => (
         <button type="button" class="h-fmt-knop" data-fmt={s.k} data-uitleg-stop data-uitleg-klik={uitleg ? String(i + 1) : undefined}
-                aria-pressed={s.k === '11' ? 'true' : 'false'}>{s.k === '11' ? C.meer : s.label}</button>
+                aria-pressed={s.k === '11' ? 'true' : 'false'}>{s.k === '11' ? C.meer : s.label}{kaal && ALLEEN_LIFESTYLE.includes(s.id) && <span class="sr-only">{lang === 'nl' ? ', alleen lifestyle' : ', lifestyle only'}</span>}</button>
       ))}
     </div>
 
@@ -153,7 +162,9 @@ const BEELD_MINI = { src: '/img/lifestyle-phone-made-07.webp', w: 2400, h: 1792,
         <img src={BEELD.src} width={BEELD.w} height={BEELD.h} alt={C.alt} loading="lazy" decoding="async" style={`object-position:${BEELD.pos}`} />
         {STANDEN.map((s) => (
           <figcaption class="h-fmt-label" data-v={s.k} aria-hidden={s.k === '11' ? undefined : 'true'}>
-            <span class="h-fmt-maat h-glas">{s.label}</span>
+            {/* 25 oktober (de controle): "Lifestyle" staat in een figcaption die voor een schermlezer
+                verborgen is; daarom staat het ook, onzichtbaar, op de knop van die maat. */}
+            <span class="h-fmt-maat h-glas">{s.label}{kaal && ALLEEN_LIFESTYLE.includes(s.id) && <small class="h-fmt-alleen">Lifestyle</small>}</span>
             <span class="h-fmt-waar h-glas">{s.waar}</span>
           </figcaption>
         ))}
@@ -227,7 +238,21 @@ const BEELD_MINI = { src: '/img/lifestyle-phone-made-07.webp', w: 2400, h: 1792,
   /* var(--h-maat): vijf tot zeven woorden per regel, zoals de rest van de hal (14 oktober 2026; 24em gaf er tien). */
   .h-fmt-klein { margin-top: 16px; max-width: var(--h-maat, 16.5em); font-size: 14px; line-height: 1.5; color: var(--h-inkt-3); }
 
-  .h-fmt-vlak { background: var(--h-nevel); border-radius: 40px 3px 3px 3px; padding: 28px; display: grid; gap: 20px; }
+  .h-fmt-vlak { background: var(--h-nevel); border-radius: var(--r-kaart); padding: 28px; display: grid; gap: 20px; }
+  /* kaal: het vlak over de hele breedte, de balk alleen voortgang en pauze (zoals Hoe het werkt) */
+  .h-fmt-kaal .h-fmt-raster { grid-template-columns: minmax(0, 1fr); }
+  .h-fmt-kaal :global(.u-balk .u-zin) { display: none; }
+  .h-fmt-kaal :global(.u-balk) { justify-self: center; width: min(100%, 560px); padding: 8px 16px 8px 8px; }
+  /* Op de computer is dit een stop van de stroom (HalOpening.astro): de hele sectie in één
+     scherm. Het podium krimpt dus mee met de schermhoogte, en de balk hoeft niet te plakken. */
+  @media (min-width: 901px) {
+    .h-fmt-kaal .h-fmt-podium { max-width: clamp(300px, calc(100svh - 492px), 500px); }
+    .h-fmt-kaal :global(.u-balk) { position: relative !important; bottom: auto !important; }
+    /* het podium is hier kleiner: het label over de hele onderkant, zodat het altijd in beide
+       onderhoeken ligt (concentrisch, 24 - 12), net als op de telefoon */
+    .h-fmt-kaal .h-fmt-waar { width: auto; border-radius: 3px 3px calc(var(--r-kaart) - 12px) calc(var(--r-kaart) - 12px); }
+  }
+  .h-fmt-alleen { margin-left: 10px; font: 600 11.5px/1 var(--h-mono, 'IBM Plex Mono', monospace); letter-spacing: .08em; text-transform: uppercase; color: var(--h-inkt); }
 
   /* ── DE TIJD ── --t0 is het moment van de klik: tijdens de uitleg --u-klik (de
      cursor is dan bij de knop), bij een eigen klik meteen. Bij de klik verdwijnt
@@ -239,7 +264,7 @@ const BEELD_MINI = { src: '/img/lifestyle-phone-made-07.webp', w: 2400, h: 1792,
   /* ── DE KNOPPEN ── een rij pillen; de gekozen is inkt. */
   .h-fmt-knoppen { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
   .h-fmt-knop {
-    height: 40px; padding: 0 18px; border-radius: 14px 3px 3px 3px; border: 0; cursor: pointer;
+    height: 40px; padding: 0 18px; border-radius: var(--hoek-knop); border: 0; cursor: pointer;
     background: #fff; color: var(--h-inkt); font: 600 14px/1 var(--h-letter); font-variant-numeric: tabular-nums;
     transition: background-color .25s var(--t0), color .25s var(--t0), transform .35s var(--h-veer);
   }
@@ -250,7 +275,7 @@ const BEELD_MINI = { src: '/img/lifestyle-phone-made-07.webp', w: 2400, h: 1792,
   /* ── HET PODIUM ── een vierkant waarin het kader van vorm verandert. De maten
      komen uit ratios.js (style op de sectie: --b-169, --h-169 …). */
   .h-fmt-podium { position: relative; width: 100%; max-width: 500px; margin: 0 auto; aspect-ratio: 1 / 1; }
-  .h-fmt-kader, .h-fmt-mini { margin: 0; position: absolute; top: 50%; border-radius: 22px 3px 3px 3px; overflow: hidden; background: var(--h-vak); box-shadow: none; }
+  .h-fmt-kader, .h-fmt-mini { margin: 0; position: absolute; top: 50%; border-radius: var(--r-kaart); overflow: hidden; background: var(--h-vak); box-shadow: none; }
   .h-fmt-kader {
     --b: var(--b-11); --h: var(--h-11); --x: var(--x-11);
     left: var(--x);
@@ -288,13 +313,19 @@ const BEELD_MINI = { src: '/img/lifestyle-phone-made-07.webp', w: 2400, h: 1792,
   .h-fmt[data-stand="45"] .h-fmt-label[data-v="45"],
   .h-fmt[data-stand="916"] .h-fmt-label[data-v="916"],
   .h-fmt-mini .h-fmt-label { opacity: 1; transition: opacity .3s var(--t1); }
-  .h-fmt-maat { position: absolute; left: 12px; top: 12px; height: 34px; padding: 0 14px; border-radius: 11px 3px 3px 3px; display: inline-flex; align-items: center; font: 600 17px/1 var(--h-letter); color: var(--h-inkt); font-variant-numeric: tabular-nums; }
-  .h-fmt-waar { position: absolute; left: 12px; right: 12px; bottom: 12px; width: max-content; max-width: calc(100% - 24px); min-height: 32px; padding: 7px 14px; border-radius: 3px; display: inline-flex; align-items: center; font: 500 14px/1.3 var(--h-letter); color: var(--h-inkt); }
+  /* De maat linksboven en het label linksonder in het kader lopen mee met de hoek van het
+     kader (25 oktober 2026: het kader is rond, 24): 12 px van de rand, dus 24 - 12. Het
+     label onderaan in het kleine vak en op de telefoon over de hele breedte, zodat het
+     altijd in beide onderhoeken ligt en niet van de lengte van de tekst afhangt. */
+  .h-fmt-maat { position: absolute; left: 12px; top: 12px; height: 34px; padding: 0 14px; border-radius: calc(var(--r-kaart) - 12px) 3px 3px 3px; display: inline-flex; align-items: center; font: 600 17px/1 var(--h-letter); color: var(--h-inkt); font-variant-numeric: tabular-nums; }
+  .h-fmt-waar { position: absolute; left: 12px; right: 12px; bottom: 12px; width: max-content; max-width: calc(100% - 24px); min-height: 32px; padding: 7px 14px; border-radius: 3px 3px 3px calc(var(--r-kaart) - 12px); display: inline-flex; align-items: center; font: 500 14px/1.3 var(--h-letter); color: var(--h-inkt); }
+
+  .h-fmt-mini .h-fmt-waar { width: auto; border-radius: 3px 3px calc(var(--r-kaart) - 12px) calc(var(--r-kaart) - 12px); }
 
   /* De rij onder het podium: alleen bij "En meer". */
   .h-fmt-rij { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
   .h-fmt-rij li {
-    min-height: 36px; padding: 8px 14px; border-radius: 11px 3px 3px 3px; background: #fff; max-width: 100%;
+    min-height: 36px; padding: 8px 14px; border-radius: var(--r-klein); background: #fff; max-width: 100%;
     font: 500 14px/1.3 var(--h-letter); color: var(--h-inkt);
     opacity: 0; transform: translateY(10px) scale(.96);
     transition: opacity .2s var(--t0), transform .2s var(--t0);
@@ -306,21 +337,22 @@ const BEELD_MINI = { src: '/img/lifestyle-phone-made-07.webp', w: 2400, h: 1792,
 
   @media (max-width: 900px) {
     .h-fmt-raster { grid-template-columns: minmax(0, 1fr); gap: 24px; }
-    .h-fmt-vlak { border-radius: 32px 3px 3px 3px; padding: 20px; }
+    .h-fmt-vlak { border-radius: var(--r-kaart); padding: 20px; }
   }
   @media (max-width: 640px) {
-    .h-fmt-vlak { border-radius: 28px 3px 3px 3px; padding: 16px; gap: 16px; }
+    .h-fmt-vlak { border-radius: var(--r-kaart); padding: 16px; gap: 16px; }
     .h-fmt-knop { height: 38px; padding: 0 14px; font-size: 13.5px; }
-    .h-fmt-waar { font-size: 13px; left: 8px; right: 8px; bottom: 8px; max-width: calc(100% - 16px); padding: 6px 10px; }
-    .h-fmt-maat { font-size: 15px; height: 30px; left: 8px; top: 8px; }
-    .h-fmt-kader, .h-fmt-mini { border-radius: 18px 3px 3px 3px; }
+    .h-fmt-waar, .h-fmt-mini .h-fmt-waar { width: auto; font-size: 13px; left: 8px; right: 8px; bottom: 8px; max-width: calc(100% - 16px); padding: 6px 10px; border-radius: 3px 3px calc(var(--r-kaart) - 8px) calc(var(--r-kaart) - 8px); }
+    .h-fmt-maat { font-size: 15px; height: 30px; left: 8px; top: 8px; border-radius: calc(var(--r-kaart) - 8px) 3px 3px 3px; }
+    .h-fmt-kader, .h-fmt-mini { border-radius: var(--r-kaart); }
   }
   /* Op de smalste telefoons loopt de rij knoppen tot in de hoek van het vlak. Dan
      links uitgelijnd, zodat de eerste knop altijd op dezelfde plek staat en zijn
-     hoek concentrisch kan meelopen: 28 - 16 (levering 61, de hoekregel). */
+     hoek concentrisch kan meelopen: 28 - 16 (levering 61, de hoekregel); sinds 25 oktober
+     2026 is het vlak 24 rond, dus 24 - 16 = 8. */
   @media (max-width: 380px) {
     .h-fmt-knoppen { justify-content: flex-start; }
-    .h-fmt-knop:first-child { border-radius: 12px 3px 3px 3px; }
+    .h-fmt-knop:first-child { border-radius: 8px 3px 3px 3px; }
   }
   @media (prefers-reduced-motion: reduce) {
     .h-fmt-kader, .h-fmt-mini, .h-fmt-rij li, .h-fmt-label, .h-fmt-knop { transition: none !important; }

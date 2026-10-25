@@ -303,6 +303,14 @@
   --r-sm: var(--r-field);
   --r-pill: 999px; /* buttons only — see global.css */
   --radius: var(--r-md);
+  /* De hoeken van nu (25 oktober 2026), met de hand overgenomen uit global.css zoals
+     de rest van dit blok: kaart 24 rond aan alle vier de hoeken, groot vlak 32, kleine
+     tegel 12; alleen wat je bedient houdt de zachte hoek (Lucas: "puur alleen voor
+     bijvoorbeeld knoppen"). */
+  --r-kaart: 24px;
+  --r-vlak: 32px;
+  --r-klein: 12px;
+  --hoek-knop: 14px 3px 3px 3px;
 
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   /* The four-step duration scale, copied from global.css for the same reason
@@ -478,7 +486,7 @@ h1 {
 .shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 2rem 1.6rem; list-style: none; margin: 0; padding: 0; }
 .shot img { width: 100%; background: var(--paper-2); }
 /* Een clip (ronde 9, F42): staand 9:16, dezelfde breedte en rand als een beeld. */
-.shot video { display: block; width: 100%; aspect-ratio: 9 / 16; background: #000; border-radius: var(--r-md) 3px 3px 3px; }
+.shot video { display: block; width: 100%; aspect-ratio: 9 / 16; background: #000; border-radius: var(--r-klein); }
 .shot .name { display: block; margin: .7rem 0 .1rem; font-size: .92rem; color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
 .shot .meta { font-size: .82rem; color: var(--ink-3); }
 
@@ -507,7 +515,7 @@ h1 {
   margin: 1.6rem 0 0; padding: 1.2rem 1.3rem;
   background: var(--surface-2, var(--surface));
   border: 1px solid var(--line-strong);
-  border-radius: var(--r-md, 10px) 3px 3px 3px;
+  border-radius: var(--r-kaart);
 }
 .folder h2 { margin: 0 0 .35rem; font-size: 1.0625rem; }
 .folder-n { margin: 0; font-size: .92rem; line-height: 1.55; color: var(--ink-2); max-width: 62ch; }
@@ -801,13 +809,13 @@ details.ask > summary:hover { color: var(--ink-700); }
    The blanket reset is gone (see :root). These are the surfaces the scale is
    for, and nothing else takes a corner: not a table cell, not a rule, not a
    bare <img> that is already clipped by its frame. */
-.card, .facts, .note, .panel, .sheet, .shot img, .thumb img, .box, .revision-note { border-radius: var(--r-lg) 3px 3px 3px; }
+.card, .facts, .note, .panel, .sheet, .shot img, .thumb img, .box, .revision-note { border-radius: var(--r-kaart); }
 input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r-md) 3px 3px 3px; }
 /* Buttons are fully round since August 2026, at Lucas's direction — see the
    --r-pill note in src/styles/global.css for why buttons and nothing else.
    Hand-copied with the rest of the scale so the dashboard keeps matching the
    site it links back into. */
-.btn { border-radius: 14px 3px 3px 3px; }
+.btn { border-radius: var(--hoek-knop); }
 .btn-quiet { border-radius: 0; }
 .btn-quiet { border-radius: 0; }
 
@@ -845,7 +853,7 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
   margin: 1rem 0 0;
   max-width: 52ch;
   padding: .7rem .9rem .7rem 1rem;
-  border-radius: var(--r-md) 3px 3px 3px;
+  border-radius: var(--r-klein);
   background: var(--surface);
   box-shadow: inset 3px 0 0 var(--accent);
   font-size: .92rem;
@@ -908,7 +916,7 @@ body {
 .said {
   padding: .55rem .85rem;
   box-shadow: none;
-  border-radius: var(--r-md) 3px 3px 3px;
+  border-radius: var(--r-klein);
   background: var(--paper-2);
   font-style: normal;
 }
@@ -920,7 +928,7 @@ body {
 
 /* De beelden krijgen de ronding van hun kaart mee. Een scherpe hoek in een
    afgerond paneel is het enige wat dan nog uit de toon valt. */
-.shot img { border-radius: var(--r-md) 3px 3px 3px; }
+.shot img { border-radius: var(--r-klein); }
 
 /* ── DRIE DINGEN DIE OP DE AFDRUK OPVIELEN ──────────────────────────────────
 
@@ -934,12 +942,12 @@ body {
    en daarin nog een omkaderd blokje. Drie kaders om één mededeling. De vulling
    doet het werk; de rand kan weg, en het blokje erin gaat een tint lichter in
    plaats van omlijnd. */
-.folder { border: 0; border-radius: var(--r-lg) 3px 3px 3px; background: var(--paper-2); }
+.folder { border: 0; border-radius: var(--r-kaart); background: var(--paper-2); }
 .folder .note { border: 0; background: var(--paper-lift); }
 
 /* DRIE. .note stond op --paper-2, dezelfde tint als de map eromheen, dus binnen
    die sectie was hij onzichtbaar. Buiten die sectie blijft hij zoals hij was. */
-.note { border-radius: var(--r-md) 3px 3px 3px; }
+.note { border-radius: var(--r-klein); }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    .stand — DE STATUSPIL. HANDKOPIE — 20 september 2026
@@ -977,7 +985,7 @@ a.stand:hover { box-shadow: inset 0 0 0 1px currentColor; }
 /* Ronde 9, F13 — een lege revisieronde zegt nu wat er misging, in plaats van
    stil terug te komen. Zelfde paars als de rest van de pagina: dit is een
    aanwijzing, geen alarm. */
-.rr-fout { margin: .6rem 0 .8rem; padding: .7rem .9rem; border-radius: var(--r-md) 3px 3px 3px; background: var(--accent-tint); color: var(--accent-text); font-size: .95rem; }
+.rr-fout { margin: .6rem 0 .8rem; padding: .7rem .9rem; border-radius: var(--r-klein); background: var(--accent-tint); color: var(--accent-text); font-size: .95rem; }
 
 /* Ronde 9, F31: "Keur alle … resterende beelden goed" boven het raster. */
 .alles { display: grid; justify-items: start; gap: .4rem; margin: .4rem 0 1.2rem; }
@@ -1223,7 +1231,8 @@ html body {
   --signal: #F4F5F7; --signal-ink: #0B0F17; --verify: #0B0F17; --verify-ink: #FFFFFF;
   --warn: #F4F5F7; --warn-ink: #25508B; --flag: #F4F5F7; --flag-ink: #25508B; --clay: #25508B; --clay-text: #25508B; --mist-clay: #F4F5F7;
   --select-caret: url("/img/ui/keuzepijl-0b0f17.svg");
-  --pt-r-kaart: 28px; --pt-r: 22px; --r-pill: 999px;
+  --pt-r-kaart: var(--r-kaart); --pt-r: 22px;  /* kaart 24 rond (25 oktober 2026); was 28 met één zachte hoek */
+  --r-pill: 999px;
   background: #FFFFFF; color: #0B0F17; font-family: var(--h-letter); font-size: 1rem;
 }
 html body ::selection { background: #25508B; color: #FFFFFF; }
@@ -1235,7 +1244,7 @@ html body .mark .woordmerk { display: block; height: 22px; width: auto; aspect-r
 html body .ref { font-size: .875rem; color: #636974; }
 html body h1 { font-weight: 500; font-size: 2.25rem; letter-spacing: -.025em; color: #0B0F17; }
 html body .lede { font-size: 1rem; color: #636974; }
-html body :is(.facts, .work, .rr, .folder, .nu, .herbestel) { border-color: #E6E8EC; border-radius: 28px 3px 3px 3px; }
+html body :is(.facts, .work, .rr, .folder, .nu, .herbestel) { border-color: #E6E8EC; border-radius: var(--r-kaart); }
 html body .work, html body .rr, html body .folder { padding: 1.5rem 1.6rem; }
 html body .work h2, html body .rr h2, html body .folder h2, html body .herbestel h2 { font-size: 1.125rem; font-weight: 600; color: #0B0F17; }
 /* De violette streep links was een gekleurde zijrand, en violet is voor een knop. */
@@ -1244,12 +1253,12 @@ html body .nu-zin { font-size: 1.0625rem; color: #0B0F17; }
 html body .fact dt { font-size: .8125rem; font-weight: 500; letter-spacing: 0; text-transform: none; color: #636974; }
 html body .fact dt::first-letter { text-transform: uppercase; }
 html body .fact dd { font-size: 1rem; }
-html body .note { border-radius: 18px 3px 3px 3px; border-color: #E6E8EC; }
-html body .btn { min-height: 42px; padding: 0 1.15rem; border-radius: 14px 3px 3px 3px; font-family: var(--h-letter); font-weight: 600; font-size: .9375rem; }
+html body .note { border-radius: var(--r-klein); border-color: #E6E8EC; }
+html body .btn { min-height: 42px; padding: 0 1.15rem; border-radius: var(--hoek-knop); font-family: var(--h-letter); font-weight: 600; font-size: .9375rem; }
 html body .btn-primary { background: #0B0F17; color: #FFFFFF; }
 html body .btn-primary:hover, html body .btn-primary:focus-visible { background: #25508B; }
-html body .pick { border-radius: 14px 3px 3px 3px; }
-html body .shot img { border-radius: 16px 3px 3px 3px; background: #F4F5F7; }
+html body .pick { border-radius: var(--hoek-knop); }
+html body .shot img { border-radius: var(--r-klein); background: #F4F5F7; }
 html body textarea, html body input[type="text"], html body input[type="email"], html body input[type="tel"], html body select { border-color: #858A94; border-radius: 18px 3px 3px 3px; font-family: var(--h-letter); }
 html body .stand { border-radius: 11px 3px 3px 3px; font-family: var(--h-letter); font-weight: 600; }
 html body .pad .is-now .pad-stip { background: #0B0F17; }
@@ -1273,7 +1282,7 @@ html body .foot { color: #636974; }
 /* ── DE TIP VAN DE PRIVÉLINK — 15 oktober 2026 (afvinklijst 28, v28-tips = a) ──
    In de stroom, onder de kop: hij dekt nooit een knop af. "Begrepen" en het
    kruisje zijn links (deze pagina draait zonder script). */
-.tip { position: relative; margin: 0 0 1.5rem; padding: 1rem 3.25rem 1rem 1.1rem; border-radius: 18px 3px 3px 3px; background: var(--paper-2); border: 1px solid var(--line); }
+.tip { position: relative; margin: 0 0 1.5rem; padding: 1rem 3.25rem 1rem 1.1rem; border-radius: var(--r-klein); background: var(--paper-2); border: 1px solid var(--line); }
 .tip p { margin: 0; max-width: 60ch; font-size: .9375rem; line-height: 1.5; color: var(--ink); }
 .tip .tip-acts { margin-top: .6rem; }
 .tip-x { position: absolute; top: .55rem; right: .55rem; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; font-size: 1.25rem; line-height: 1; color: var(--ink); text-decoration: none; }
@@ -1370,7 +1379,7 @@ html body .foot { color: #636974; }
 /* De knop en de statuspil zoals op de site en in Studio (levering 57): de knop met één
    zachte hoek linksboven, de pil als plaatje in de vaste breedte-letter zonder bolletje. */
 @font-face { font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 600; font-display: swap; src: url(/fonts/ibm-plex-mono/IBMPlexMono-600.woff2) format('woff2'); }
-html body .btn { border-radius: 14px 3px 3px 3px; }
+html body .btn { border-radius: var(--hoek-knop); }
 html body .btn-quiet { border-radius: 0; }
 html body .stand { border-radius: 8px 3px 3px 3px; font-family: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
 html body .stand::before { display: none; }
@@ -1379,9 +1388,11 @@ html body .state.approved::before { content: none; }
 html body .state .vink3 { width: 14px; height: 14px; flex: none; fill: currentColor; }
 /* De hoekregel op de privélink (levering 57, gemeten): de knop in de tip zit zo dicht op de
    hoek dat er geen zachte hoek overblijft (18 - 17): licht. De stand in het feitenblok staat
-   linksonder in het blok (28 - 18 = 10), behalve op een middelbreed scherm. */
+   linksonder in het blok (28 - 18 = 10), behalve op een middelbreed scherm. Sinds 25
+   oktober 2026 is het blok een kaart van 24 rond aan alle vier de hoeken: 24 - 18 = 6,
+   dus het minimum, 8. */
 html body .tip .tip-acts .btn { border-radius: 3px; }
-html body .facts .stand { border-radius: 3px 3px 3px 10px; }
+html body .facts .stand { border-radius: 3px 3px 3px 8px; }
 @media (min-width: 601px) and (max-width: 1100px) { html body .facts .stand { border-radius: 3px; } }
 /* "Meer producten in deze look?" is geen kaart maar een blok onder een scheidingslijn (de
    inset-schaduw bovenaan). Met de 28 px van de kaarten boog die lijn aan beide uiteinden

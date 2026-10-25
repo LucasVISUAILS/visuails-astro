@@ -2385,16 +2385,20 @@ export const REVIEW_CLAIM = {
    wil, roept producttrouw() aan en merkt er niets van. Geen tweede kopie. */
 export const PRODUCTTROUW = {
   lang: {
-    en: ['Your product stays recognisable.', ' Every image is held against your own photo — colour, print, logo, closures and seams are checked and corrected by hand wherever the AI drifts, so your customer sees the product they will actually receive.'],
-    nl: ['Je product blijft herkenbaar.', ' Elk beeld wordt naast je eigen foto gelegd — kleur, print, logo, sluitingen en naden worden nagelopen en met de hand bijgewerkt waar de AI ervan afwijkt, zodat je klant het product ziet dat hij ook krijgt.'],
+    en: ['Your product stays recognisable.', ' Every image is held against your own photo — colour, print, logo, closures and seams are checked and corrected wherever the AI drifts, so your customer sees the product they will actually receive.'],
+    nl: ['Je product blijft herkenbaar.', ' Elk beeld wordt naast je eigen foto gelegd — kleur, print, logo, sluitingen en naden worden nagelopen en bijgewerkt waar de AI ervan afwijkt, zodat je klant het product ziet dat hij ook krijgt.'],
   },
   /* Zelfde afspraak als bij REVIEW_CLAIM_SHORT: de korte vorm mag MINDER
      zeggen, nooit iets anders. Deze laat weg wát er nagelopen wordt; hij
      belooft nergens meer dan de lange regel. */
   kort: {
-    en: 'Recognisable, corrected by hand',
-    nl: 'Herkenbaar, met de hand nagelopen',
+    en: 'Recognisable, checked against your photo',
+    nl: 'Herkenbaar, nagelopen tegen je foto',
   },
+  /* 25 oktober 2026 (de controle van levering 74): "met de hand" / "by hand" uit beide vormen.
+     Lucas, 16:57: geen "met de hand"-labels, "voelt veel te verdedigend", en om 19:15 "overal
+     rechtzetten". De korte vorm zegt nog steeds minder dan de lange: die noemt ook wát er
+     nagelopen wordt. */
 };
 
 /** De producttrouwbelofte in één taal, als één zin. */

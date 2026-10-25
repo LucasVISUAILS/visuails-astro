@@ -1,6 +1,6 @@
 # Design
 
-> **Stand: 24 oktober 2026 (palet); de rest 22 september 2026.** `KLEURENSCHEMA.md` draagt de
+> **Stand: 24 oktober 2026 (palet), 25 oktober 2026 (hoeken; de opening, de stroom, Hoe het werkt, de lagen, de knoppen en de iconen, levering 74); de rest 22 september 2026.** `KLEURENSCHEMA.md` draagt de
 > kleuren; dit bestand draagt de rest van het systeem (elevatie, focus, motion,
 > layout, z-index, toegankelijkheid, en de lijst met wat we niet doen). Wijkt
 > de code van KLEURENSCHEMA.md af, dan volgt de code dat document.
@@ -17,9 +17,10 @@
 > Wat historie is, is als historie gemarkeerd: "Twee ingetrokken paletten" en
 > "Section 21" staan er om de REDENERING, niet om de waarden.
 >
-> De radius-paragraaf hieronder ("zero, one token, no exceptions") is sinds
-> augustus 2026 onwaar in beide richtingen: er is een schaal, en hij is niet
-> nul. Zie `--r-sm` / `--r-md` / `--r-card` / `--r-pill` in `global.css`.
+> **Hoeken: 25 oktober 2026.** De paragraaf "Hoeken" onder Foundations is de
+> regel van nu: kaarten 24 px rond aan alle vier de hoeken, grote vlakken 32, kleine
+> tegels 12, en de zachte hoek linksboven alleen nog op wat je bedient. De oude
+> regel ("zero, one token, no exceptions") is daar vervangen, niet doorgestreept.
 
 ---
 
@@ -139,30 +140,62 @@ samenvatting daarvan.
 
 ## Foundations
 
-### Radius — zero, one token, no exceptions
+### Hoeken — 25 oktober 2026
+
+Lucas, 25 oktober 2026: *"Wat ik overigens wel aan de style wil aanpassen is het 1 zachte
+hoek en de rest harde hoeken systeem voor alles. Ik wil dit alleen op hele specifieke
+plekken behouden en niet voor grote kaarten of objecten en puur alleen voor bijvoorbeeld
+knoppen. De hoeken van kaarten worden gewoon heel rond, iets ronder dan in het
+voorbeeld."* Zijn voorbeeld had ongeveer 19 px op een paneel van 415 × 311; 24 is "iets
+ronder". Zijn keuzes in de afvinklijst: kaarten 24 rond aan alle vier de hoeken, grote
+vlakken 32, knoppen en chips houden de zachte hoek; en overal in één keer (de site,
+Studio, de privélink, /admin, account en de mails).
 
 ```css
-:root { --radius: 0; }
+:root {
+  --r-kaart: 24px;                 /* kaart, paneel, foto, beeldkader, modal, blok, tabel in een kader */
+  --r-vlak: 32px;                  /* groot vlak: een brede band of een paneel over de pagina */
+  --r-klein: 12px;                 /* kleine tegel, duimnagel, een strook van één regel */
+  --hoek-knop: 14px 3px 3px 3px;   /* de zachte hoek: alleen op wat je bedient */
+}
 ```
 
-Every corner in the product is square. There is no radius scale, no `--r-sm` / `--r-lg` /
-`--r-pill`, no "small radius for inputs, larger for cards". One token, so a rounded corner
-cannot be reintroduced by accident and so a future decision is a one-line change.
+De tokens staan in `global.css` (de site en Studio) en met de hand overgenomen in
+`public/account.css`, `public/admin.css` en `public/portal.css`; de mails
+(`src/lib/mailTemplate.js`) hebben ze als getal.
 
-The point is not minimalism. It is that a hard edge is the cheapest visible proof of
-control, and control is the argument this brand makes in place of testimonials it does
-not have.
+- **De zachte hoek** (één zware hoek linksboven, 3 px op de andere drie) staat alleen
+  op wat je bedient: een knop (ook een link-knop), chip, pil, tab, segment, invulveld,
+  en de kleine status- en icoonplaatjes. Een grote knop houdt zijn eigen maat (16 op
+  56 px hoog), een kleine 14 (`--hoek-knop`), een chip 8 tot 11.
+- **Rondom rond**: kaarten, panelen, vlakken, foto's en beeldkaders, modals en panelen
+  in de lade, blokken, tabellen in een kader. Het inktblok houdt zijn snede op 53°
+  rechtsonder; alleen de andere drie hoeken zijn rond.
+- **Concentrisch**: ligt iets in een hoek van een rond vlak (beide afstanden kleiner
+  dan de straal), dan is die hoek de straal min de afstand, met een minimum van 8 (in
+  een klein vlak de helft van zijn straal). Een foto die zijn vlak vult neemt de vorm
+  over (`border-radius: inherit`). Een knop of pil in een hoek houdt op zijn andere
+  hoeken lichte hoeken; aan de kant van een snede blijft het 0. Waar de afstand een
+  vaste maat is, staat de hoek als `calc(var(--r-kaart) - 12px)`, zodat hij meeloopt als
+  de kaart verandert.
+- **Rondjes blijven rond**, pillen houden hun ronde uiteinden, en wat recht tegen een
+  rand ligt (`0`) blijft recht.
 
-Applies to: cards, inputs, selects, textareas, buttons, badges, tabs, modals, toasts,
-tooltips, image containers, video posters, model thumbnails (**square, never circular** —
-a circular avatar is a social-app tell and a crop the brand does not control),
-progress bars, checkboxes, radios, range thumbs and tracks, focus rings, the WhatsApp
-launcher, and Stripe Elements (`appearance.variables.borderRadius = '0px'`).
+De regel staat in `hal.css` ("DE HOEKREGEL"), in `studio-hal.css` ("DE HOEKREGEL IN
+STUDIO") en onderaan `public/admin.css` en `public/portal.css`. `tests/hoekregel-browser`
+bewaakt hem op de site: een groot object (breder dan 160, hoger dan 100) met de oude
+zachte hoek is een fout, en wat in een hoek ligt moet concentrisch zijn.
+`tests/minder-sjabloon-browser` bewaakt dat een knop of chip niet even rond wordt als
+een kaart.
 
-Native controls need `appearance: none` **per element** to actually go square — iOS
+Geschiedenis, kort: het eerste systeem was overal 0; in augustus 2026 kwam de schaal
+24/14/8 met pillen voor knoppen; vanaf levering 54 (17 oktober) had alles één zachte
+hoek linksboven, en sinds levering 61 elk vlak ook. Die laatste stap is op 25 oktober
+teruggedraaid voor alles wat geen bedieningsdeel is.
+
+Native controls need `appearance: none` **per element** to take the shape — iOS
 Safari re-rounds `<input type="search">`, `<select>`, `<button>`, and range thumbs
-independently, and a blanket `* { appearance: none }` does not survive it. Checkboxes,
-radios, range and progress get rebuilt square rather than reset.
+independently, and a blanket `* { appearance: none }` does not survive it.
 
 ### Colour — ink and paper, OKLCH ~ **INGETROKKEN, 18 augustus 2026**
 
@@ -668,6 +701,83 @@ only then realise was there the whole time.
 
 ---
 
+## De opening en Hoe het werkt — 25 oktober 2026 (levering 74)
+
+De voorpagina begint met een podium van 3,3 schermhoogtes dat vastgezet staat
+(`HalOpening.astro`, `opening.css`): de still met de winkel en de telefoonfoto, de kop en
+één zin. Scrollen speelt de video af (1,2 schermhoogte, beeld 17 – 133 op een canvas, de
+schermen per beeld op hun hoeken; het laptopscherm wordt donker met de klep), dan gaat de
+kop weg langs de snede van 53° en reist elke letter van het accentwoord naar het label van
+Hoe het werkt (0,6 schermhoogte), en Hoe het werkt komt omhoog in delen: de kop met de tabs,
+de drie kaarten na elkaar, de balk met de knoppen.
+
+- **De stroom: één scroll, één sectie** (16:56, alleen op de computer). Een wieltik of een
+  toets (pijl, Page, spatie) glijdt naar de volgende stop: het begin → Hoe het werkt (de video
+  in 3 s, rustig op gang en lang uitlopend) → Formaten → Wat we maken (elk in 1,15 s, snel weg
+  en zacht aankomen: de "smooth ontploffing"). Op een stop maken de kaarten en beelden één
+  rustige golf (3 px omhoog en terug in 4,4 s, kort na elkaar) en staan dan stil; eerst zweefden
+  ze zonder einde, Lucas koos op 25 oktober "één keer, dan stil" (WCAG 2.2.2: wat vanzelf
+  beweegt, stopt binnen 5 s). De tijd van het glijden hangt af van de afstand. Voorbij Wat we
+  maken: gewoon scrollen. Een
+  sectie die langer is dan het scherm scrolt eerst gewoon door. Aan en uit in `HalOpening.astro`
+  met `STROOM` (`tot: 1` = alleen de opening). Zonder de stroom (telefoon, minder beweging):
+  vastklikken met scroll-snap op het begin en op Hoe het werkt. De €1-melding wacht tot de
+  laatste stop voorbij is.
+- **Gemeten, niet geschat.** De kop staat onder de handen (Lucas' voorbeeld) of in het wit
+  links naast de laptop, wat de grootste kop geeft; de beelden in de kaarten krijgen de
+  hoogte die er onder de kop, de tabs en de balk overblijft (196 – 420 px). Past het niet,
+  dan alles onder elkaar.
+- **Hoe het werkt**: drie witte kaarten (01, 02, 03) met de animaties van de stappen van
+  vroeger (`#hoe` is de wortel van de uitleg). De tabs Catalog, Lifestyle en Video wisselen
+  het verhaal (`data-dienst`, `data-v`) en spelen het opnieuw. Catalog: je stuurt je foto's,
+  wij maken (eerst rechtzetten en nakijken, dan de lagen in 3D, zie hieronder), je keurt goed.
+  Lifestyle: je kiest een look (of laat er een ontwerpen), je uploadt de foto's van je product,
+  je krijgt de beelden in die look. Video: hetzelfde, met "Voorbeelden volgen binnenkort".
+  Geen regel tekst onder de stappen; de uitlegbalk toont alleen de voortgang en de pauzeknop.
+- **De lagen (de manier van uitleggen, 16:40).** Eerst vlak; dan springen achtergrond,
+  schaduw en product uit elkaar en kantelen in 3D (snel open, lang uitlopen), de lagen zweven
+  op hun eigen moment; op het hoogtepunt een zachte gloed in blauw uur om het product en
+  "Gemaakt met AI" eronder; dan worden ze weer in elkaar gezogen, vlak, en door naar stap 3.
+  Zo laat de site precies zien waar AI zit. Geen labels als "met de hand" ernaast (16:57:
+  "voelt veel te verdedigend"). Nieuwe uitleg op andere plekken gaat op dezelfde manier.
+- **Op de telefoon één kaart** (16:42): de drie stappen liggen op elkaar en wisselen 01 → 02
+  → 03, zonder scrollen. Minder beweging en zonder script: onder elkaar.
+- **Minimaal.** Op de voorpagina geen zinnen onder de stappen, in de kaarten van Wat we maken,
+  onder Veelgestelde vragen en AI en de AI Act, en geen tekst naast Formaten (daar staat
+  "Lifestyle" naast 16:9 en 9:16 in het beeld zelf).
+- **Niets beweegt bij het laden.** Het accentwoord ademt pas na de eerste beweging, één keer
+  (4,8 s), en blijft dan inkt. De
+  stilstaande stand (minder beweging, geen script) staat al in de css vóór het script
+  (`body:not(.o-aan)`), zodat de pagina niet verspringt (CLS 0,002 – 0,016).
+- **Stappen die nog komen**: alleen het beeld zachter (40 %), de tekst grijs; nooit de tekst
+  doorzichtig (contrast). Ook ín de vakken van lifestyle en video (de namen van de looks en
+  stijlen, "Voorbeeldclips volgen binnenkort"): daar worden alleen de beelden en tekens zacht.
+  De looks die niet gekozen zijn: het beeld op 55 %, de naam grijs. Zo blijft alles leesbaar
+  als je de uitleg stilzet.
+- **Stilgezet en dan een andere tab**: de nieuwe dienst staat meteen in zijn eindstand, zonder
+  beweging; "opnieuw" speelt hem af.
+- **De kop op de telefoon** krimpt mee met de breedte (tot 26 px), zodat hij op 320 px en in het
+  Engels twee regels blijft.
+- **De cookiekaart** staat op de computer rechtsonder, op de telefoon over de breedte. Staat de
+  kop onderaan, dan staat de kaart er net boven (`--o-cc-onder`) en zakt hij terug naar de hoek
+  zodra de kop helemaal weg is (`o-kopweg`).
+- **Wat de opening verder belooft** (de controle, 25 oktober): zonder script staan de schermen
+  in de rechthoek van beeld 0 (geen verkeerd stuk schermbeeld); terug en herladen komen uit waar
+  je was (geen scroll anchoring op de voorpagina); `/#hoe` opent Hoe het werkt; elk deel van Hoe
+  het werkt is klikbaar zodra het staat; het glijden duurt naar de afstand; niet glijden achter
+  een open dialoog; 900 px is telefoon; de wielluisteraar alleen als de stroom aan kan; de
+  opening wordt één keer opgezet en ruimt alles op bij een zachte navigatie.
+- Bewaakt door `tests/opening-74.test.mjs`.
+
+## De knoppen — 25 oktober 2026 (levering 74)
+
+48 px hoog (klein 40), letter 15 px, pijl 17 px, de ene zachte hoek (14 · 3 · 3 · 3). De
+inktknop heeft een dunne lichtrand bovenaan; de lijnknop een haarlijn in lijn sterk. Onder
+de muis komt een gloed in blauw uur van de onderrand op, in 0,32 s (`.h-knop::before`), in
+plaats van de harde wissel naar vol blauw of vol inkt. Twee knoppen naast elkaar blijven één
+vorm met de snede ertussen (0,75 × de hoogte). Kleur en gloed: `KLEURENSCHEMA.md`, "Glas en
+gloed" en "De knoppen".
+
 ## Motion
 
 Motion is part of the build, not a pass at the end — but it is the **last** section of the
@@ -935,15 +1045,15 @@ for JavaScript.
 ## What this system rejects
 
 - ~~**Rounded corners.** Any radius above 0, anywhere.~~ **Retired.** This was the
-  first system's rule and it has been false in the code since the three-step scale
-  landed; leaving it here as a live prohibition meant the document forbade what
-  every stylesheet already did. The scale is **24 / 14 / 8** (`--r-lg` / `--r-md` /
-  `--r-sm`), raised from 16 / 8 / 4 in August 2026 at Lucas's direction after
-  seeing four options rendered side by side. What survives of the original rule is
-  the part that was always the real point: **no pill**, and **one scale**. A fully
-  round control beside a 14px input is the undecided look, and a hardcoded px
-  radius anywhere is a fourth step nobody decided on — every corner on this site
-  reads a token, verified by grep.
+  first system's rule. Since 25 October 2026 the rule is the one under "Hoeken": cards
+  24 round on all four corners, large panels 32, small tiles 12, and the one soft
+  corner top-left only on what you operate. What this system still rejects: **the soft
+  corner on a card or a large object** (the look of levering 54–61, tested in
+  `tests/hoekregel-browser`), **a button as round as a card** (tested in
+  `tests/minder-sjabloon-browser`), and a radius off the scale that is not a
+  concentric value — a concentric corner is written as `calc(var(--r-kaart) - …)`
+  where the distance is a fixed size, and as a measured number with its distance in a
+  comment where it is not.
 - **Shadow as depth.** Blur and spread are removed; level 4 offset-only is the exception.
 - **Gradients on UI.** Buttons, cards, grounds, bars. The chrome field only.
 - **Gradient text.** `background-clip: text` on any copy. Emphasis is weight and size.

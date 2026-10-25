@@ -1,5 +1,9 @@
 # VISUAILS — volledig overzicht, stand 24 oktober 2026
 
+> **Bijgewerkt 25 okt 2026, 22:40 (de controle van levering 74: twintig punten opgelost, `kladblok/LEVERING-74.md` §7b).** **Levering 74 staat in zijn map, niet live** (`kladblok/LEVERING-74.md`): de opening met scrollvideo, Hoe het werkt in drie witte kaarten per dienst met de lagen in 3D en kort "Gemaakt met AI", de stroom (één scroll, één sectie, alleen op de computer), minder tekst op de voorpagina, iconen zonder plaatje, de nieuwe hoeken op de hele site, glas op wat zweeft, rustiger knoppen met een gloed in blauw uur; §16.3 punt 1 en §31.8 aangepast. **Lucas, 16:57: geen "met de hand"-labels of andere verdedigende zinnen over AI; streng op letten.** Nieuwe uitleg gaat zoals de lagen: eerst vlak, dan uit elkaar in 3D, laten zien waar AI zit, weer vlak. Volgorde (Lucas, 19:15): eerst 74 uitrollen, dan de cloudsessie starten; `kladblok/PROMPT-CLOUD-CODE.md` is daarop bijgewerkt en stopt als de opening niet op main staat. "Met de hand" is ook uit /how-it-works, de FAQ en de doorloop (`kladblok/TEKSTEN-74.md`); de cookiekaart staat rechtsonder.
+>
+> **Eerder op 25 okt.** Leveringen 65, 66 en 68 staan live (uitrol 25 okt 10:37, commit 4d05476); §15.2, §16, §23, §29.4 en §31 zijn aangepast. Nieuw: lijst 56 "Tekstronde en beeldkaart" (zelf tekst, beelden en iconen; https://claude.ai/artifact/ATQhaeTovWp1mSwVN5qESV) en `kladblok/PLAN-OPENING-SCROLL.md` (de opening met scrollvideo en Hoe het werkt per dienst, plus de nieuwe hoekregel: opgeslagen voor later, niet beginnen voordat Lucas het zegt). **Let op:** `kladblok/PROMPT-CLOUD-CODE.md` (25 okt 12:36, uit een andere chat) laat een cloudsessie de leveringen 69 tot en met 73 bouwen op de branch `claude/voor-de-launch`; levering 71 daar is hetzelfde werk als lijst 56. Lucas kiest één route; bouw het niet dubbel.
+
 Dit document beschrijft VISUAILS van top tot teen zoals het **nu** is: het bedrijf, elke dienst, de prijzen, het abonnement, de website, de bestelstroom, VISUAILS Studio (klantportaal), de privélink, het adminportaal, de mails, de automatisering, de techniek, de regels, de huisstijl, waar Lucas naartoe wil en hoe Claude met hem werkt. Het is geschreven zodat een andere chat er zonder voorkennis mee kan werken. Het vervangt `VISUAILS-OVERZICHT-6-OKT.md`.
 
 Bron: de code in zijn map `E:\Claude (VISUAILS)\visuails-astro` na levering 68 (24 okt), de notities `kladblok/LEVERING-48.md` t/m `LEVERING-68.md`, `DOORLOOP-27.md`, `VOORTGANG-8-OKT.md`, `LIVE-STAPPEN.md`, `uitrol-log.txt`, `docs/KLEURENSCHEMA.md` en `docs/DESIGN.md`, de afvinklijsten 1–47, 50, 54 en 55 en de Launchlijst, en wat Lucas zelf zei (met datum). Alle bedragen zijn excl. btw tenzij anders vermeld. Waar code en bedoeling nog uiteenlopen, staat dat in §17. Wat sinds het overzicht van 6 okt veranderde, staat per paragraaf verwerkt; de geschiedenis staat in §15 en §23.
@@ -881,7 +885,7 @@ Kort per periode. De details staan per levering in `kladblok/LEVERING-48.md` tot
 
 ### 15.2 Wat staat live en wat alleen in zijn map
 
-Bron: `kladblok/uitrol-log.txt` (één regel per keer UITROLLEN.bat; laatste regel 20 okt 11:56). Alleen de geslaagde uitrollen staan hieronder.
+Bron: `kladblok/uitrol-log.txt` (één regel per keer UITROLLEN.bat; laatste regel 25 okt 10:37). Alleen de geslaagde uitrollen staan hieronder.
 
 | Uitrol | Commit | Wat erin zat | Migraties |
 |---|---|---|---|
@@ -892,11 +896,11 @@ Bron: `kladblok/uitrol-log.txt` (één regel per keer UITROLLEN.bat; laatste reg
 | 17 okt 08:35 | 6a24d72 | 52b, 52c, 53, 54, 55 | — |
 | 18 okt 02:04 | 1ae93a8 | 56–60 | — |
 | 20 okt 11:56 | c1086f6 | 62, 63, 64 (en vermoedelijk 61) | — |
-| **niet uitgerold** | — | **65, 66 en 68: alleen in zijn map**, samen uitrollen | geen (lev. 65, lev. 66, lev. 68) |
+| 25 okt 10:37 | 4d05476 | 65, 66 en 68 (Blauw uur, scherpe laptopstanden, telefoonversies); 395 bestanden, testreeks 268/268, adressen 6/6 | — |
 
-- **De live site loopt tot en met levering 64.** Levering 61 ging vermoedelijk mee op 20 okt: haar commitbericht is van 18 okt 07:06, ná de uitrol van 02:04, en UITROLLEN commit de hele map.
-- **Levering 67 bestaat niet.** Het volgende nummer is 69.
-- `kladblok/COMMIT-BERICHT.txt` beschrijft 65, 66 en 68, de drie leveringen die nog niet live zijn (bijgewerkt 24 okt).
+- **De live site loopt tot en met levering 68** (uitrol 25 okt). Levering 61 ging vermoedelijk mee op 20 okt: haar commitbericht is van 18 okt 07:06, ná de uitrol van 02:04, en UITROLLEN commit de hele map.
+- **Levering 67 bestaat niet.** 69 tot en met 73 zijn voor de cloudsessie (`kladblok/PROMPT-CLOUD-CODE.md`); levering 74 (25 okt) staat in zijn map, niet live.
+- `kladblok/COMMIT-BERICHT.txt` beschrijft nog 65, 66 en 68; die staan sinds 25 okt live. Bij de volgende levering vervangen door alleen wat dan nog niet live is.
 - Niet bekend: wat er vóór 14 okt live stond (het vorige overzicht bevestigt de deploy van 3 okt; die van 6 okt is onbekend). Deze tabel is de stand van de log op 24 okt; is er daarna uitgerold, dan staat dat onderaan `uitrol-log.txt`.
 - Los van de code: Mollie stond op 15 okt nog in testmodus (lev. 51, deel 5). De testrecords op live staan in §16.1.
 
@@ -908,7 +912,7 @@ Eén lijst, in volgorde: eerst wat Lucas zelf doet (Claude zet nooit een sleutel
 
 ### 16.1 Lucas zelf (in deze volgorde)
 
-1. **Leveringen 65, 66 en 68 uitrollen** met `UITROLLEN.bat`, zonder migratie. `kladblok/COMMIT-BERICHT.txt` beschrijft ze alle drie. Daarna staan Blauw uur, de scherpe laptopstanden en de telefoonversies live. (lev. 66, lev. 68; `uitrol-log.txt`)
+1. ~~Leveringen 65, 66 en 68 uitrollen~~ **Gedaan op 25 okt 10:37** (commit 4d05476, `uitrol-log.txt`).
 2. **De open stappen van `kladblok/LIVE-STAPPEN.md`.** Stap 2 (uitrollen) is gedaan. Van de rest staat nergens vast of ze gedaan zijn; /admin/diagnose kleurt elke regel (blokken "Klaar voor live", "Nachtwerk, wissen en mail", "De secrets"). Zonder bewijs:
    - stap 1: een oud geheim `PURGE_ENABLED` weghalen bij visuails-cron (alleen als het er staat);
    - stap 3: `BACKUP.bat` instellen (Google Drive) en de proef tot "TERUGZETTEN WERKT"; daarna de oude back-ups in `backups\` weggooien, want daar zitten de wachtwoordhash en het tweestapsgeheim nog in;
@@ -933,8 +937,9 @@ Eén lijst, in volgorde: eerst wat Lucas zelf doet (Claude zet nooit een sleutel
 
 | Wat | Stand | Bron |
 |---|---|---|
-| **De repo op GitHub is openbaar**, en `kladblok/` gaat bij elke uitrol mee (dit overzicht met de modelnaam en zijn lokale paden, de LEVERING-notities met testabonnementen en werkwijze). Privé zetten (GitHub → Settings → Change visibility; hij doet het zelf) of `kladblok/` buiten git houden | niet besloten; de site zelf werkt in beide gevallen | `.gitignore` (uit `kladblok/` blijven alleen png's, `tekst/*.txt`, de concepten, `drukteproef/`, `uitrol-log.txt` en `uitrol-tests.txt` buiten git; alle .md-notities gaan mee); §31.1 |
-| **Schets 58**: de opening over de volle breedte; de foto "leeft in het scherm", geen fade, armen uit de zijkanten | niet gebouwd; nu wit met een zachte rand | lev. 68 §4; 24 okt; §29.6 |
+| **De repo op GitHub is openbaar**, en `kladblok/` gaat bij elke uitrol mee (dit overzicht met de modelnaam en zijn lokale paden, de LEVERING-notities met testabonnementen en werkwijze). Privé zetten (GitHub → Settings → Change visibility; hij doet het zelf) of `kladblok/` buiten git houden | 25 okt: hij zet hem zelf privé. Daarna kan een nieuwe chat de code niet meer anoniem clonen: haal hem via de brug uit zijn map, of laat hem toegang geven (§31.3) | `.gitignore` (uit `kladblok/` blijven alleen png's, `tekst/*.txt`, de concepten, `drukteproef/`, `uitrol-log.txt` en `uitrol-tests.txt` buiten git; alle .md-notities gaan mee); §31.1 |
+| **Schets 58**: de opening over de volle breedte; de foto "leeft in het scherm", geen fade, armen uit de zijkanten | vervallen: op 25 okt vervangen door de opdracht voor de opening met scrollvideo (`kladblok/PLAN-OPENING-SCROLL.md`), opgeslagen voor later | lev. 68 §4; 24 en 25 okt; §29.6 |
+| **Lijst 56** "Tekstronde en beeldkaart": zelf alle tekst nalopen (NL en EN) en beelden en iconen vervangen, het plan dat hij op 18 okt vroeg | gepubliceerd 25 okt, wacht op invullen (https://claude.ai/artifact/ATQhaeTovWp1mSwVN5qESV, database `afvinklijst/ronde56`); hetzelfde werk staat als levering 71 in `kladblok/PROMPT-CLOUD-CODE.md`: één route kiezen | 25 okt |
 | **Het merkboek** (deck) naar Blauw uur | nog violet | lev. 68 §4 |
 | **De site in lijn met het launchschema**: welke looks eraf (Dunes, Glow, Lifestyle Video, Campaign) en erbij (CASUAL, AUGUST, SHIFT, IG SPLIT) | niets veranderd; niet zonder zijn akkoord | 22 okt; §24.2, §30.2 |
 | **Prijs BRAND MODEL** | "Prijs vastzetten" staat open op de Launchlijst; de code zegt €450 (`pricing.js`, besluit 23 aug); €1.250 vond hij in augustus aan de dure kant. Vragen of €450 blijft | Launchlijst 22 okt; §23 |
@@ -956,7 +961,8 @@ Eén lijst, in volgorde: eerst wat Lucas zelf doet (Claude zet nooit een sleutel
 
 ### 16.3 Wat Claude daarna kan bouwen
 
-1. **Na zijn akkoord op Schets 58**: de opening en de homepage volgens §30.1 en de richting van 22–24 okt. Eerst een schets of voorbeeldpagina; de homepage pas ombouwen als zijn eigen beelden klaar zijn. (22–24 okt)
+0. **Zelf tekst, beelden en iconen beheren** (lijst 56; tekstblad, TEKST.bat, BEELDEN.bat, beeldkaart, iconenblad): staat ook als levering 71 in `kladblok/PROMPT-CLOUD-CODE.md`. Niet dubbel bouwen; Lucas kiest de route. (25 okt)
+1. ~~De opening met scrollvideo en Hoe het werkt per dienst~~ **Gebouwd als levering 74** (25 okt; `kladblok/LEVERING-74.md`, `kladblok/PLAN-OPENING-SCROLL.md`). Nog van Lucas: lifestyle-beelden en videoclips van de roze jeans (lifestyle toont nu de look Flash, video "binnenkort") en of de stroom tot en met Wat we maken blijft (`STROOM.tot` in `HalOpening.astro`). De cookiekaart staat sinds 25 okt, 20:00 rechtsonder. Eerst 74 uitrollen, dan de cloudsessie (69 – 73).
 2. **Het merkboek op Blauw uur**, als hij ja zegt. De skill `visuails-ontwerptaal` noemt nog de violette kleuren; bijwerken op zijn verzoek (§29).
 3. **De site naar het launchschema**, na zijn akkoord: looks van de site halen en nieuwe stijlen zetten zodra ze af zijn (§24.2).
 4. **Na zijn live-stappen**: `PURGE_ENABLED` aan (LS stap 5) en `WORKERS_PLAN` "betaald" (LS stap 9).
@@ -1585,6 +1591,7 @@ Chronologisch, alleen keuzes die een eerdere keuze vervangen of een regel zetten
 - **22 okt:** **het launchschema** (§30.2), met zijn zeven keuzes op de Launchlijst. Violet is "simpelweg te generiek en ai tool achtig". De homepage groter maar rustiger.
 - **23 okt:** altijd 60 · 30 · 10 per sectie; effecten subtieler (gloed achter het logo "heel erg generiek en saai", sluiter en wis op het logo "net een PowerPoint-effect"); geen letterlijke studio-achtergronden. Kelvin (lijst 50) gekozen, maar bleef een schets. Een nieuwe foto voor de opening (twee handen, laptop en telefoon).
 - **24 okt:** **Blauw uur** (lijst 55; vervangt schema A en Kelvin): "het voelt niet als een ai tool kleur en ook niet als een copy cat van een ander merk." Het logo beweegt niet meer; onder de muis schommelt de kleur (vervangt de echolijn van 17 okt). Geen fade om de laptopfoto (wacht op Schets 58). Blauw uur als palet (lijst 54) vond hij eerst "te generiek, vooral als een ai schema".
+- **25 okt:** uitrol van 65, 66 en 68. Lijst 56: zelf tekst nalopen en beelden en iconen vervangen. De opdracht voor de opening met zijn scrollvideo en Hoe het werkt per dienst (lagen uit elkaar; catalog: achtergrond, schaduw, product "gemaakt door middel van AI"), opgeslagen voor later; vervangt Schets 58. **Hoeken**: de zachte hoek alleen nog op specifieke plekken zoals knoppen, kaarten en grote vlakken heel rond (vervangt "één zachte hoek, verder recht" van 17 okt, nog niet gebouwd). **Accentwoorden**: geen gekleurde woorden zoals AI-tools, maar een blauwe animatie zoals de kleurschommel van het logo, binnen het kleurenschema. Repo: hij zet hem zelf privé. Plan: `kladblok/PLAN-OPENING-SCROLL.md`.
 
 ### De huisstijlen op een rij (alle vervangen behalve de laatste)
 | Wanneer | Grond / accent | Letters |
@@ -1860,6 +1867,7 @@ Linkerbeen 59,8° (60°), rechterbeen 66,5°: twee hoeken, geen spiegel. De sned
 
 ### 29.4 Vormen en onderdelen
 
+- **Hoeken, besluit 25 okt (gebouwd in levering 74: kaarten 24, vlakken 32, tegels 12, de zachte hoek op knoppen, chips, pillen, tabs en velden; `docs/KLEURENSCHEMA.md`, "De hoeken"):** de ene zachte hoek blijft alleen op specifieke plekken zoals knoppen; kaarten en grote vlakken krijgen gewoon ronde hoeken, "iets ronder dan in het voorbeeld" (zijn voorbeeld: ±19 px op een paneel van 415 × 311). Maten en uitwerking: `kladblok/PLAN-OPENING-SCROLL.md`, fase 1 en vraag 7. Wat hieronder staat over "één zachte hoek", geldt sinds levering 74 alleen nog voor knoppen en wat je bedient.
 - **Knop**: één zachte hoek linksboven (bijv. `14px 3px 3px 3px`), de pijl in twee delen (schacht en kop met kier). Twee gelijke knoppen naast elkaar: aan elkaar met een scherpe snede ertussen, zoals in het logo; verder blijven de knoppen gewoon.
 - **Hoeken in een kaart**: de hoek van een beeld of knop die het dichtst bij de ronde hoek van de kaart zit, is ook rond; nooit scherp naar rond.
 - **Sectielabel**: schuine streep (het vlagje), nummer, naam in IBM Plex Mono in hoofdletters (`/ 02`), automatisch genummerd per pagina. Bij in beeld komen springt de streep aan als een tl-buis (E4).
@@ -1941,7 +1949,7 @@ Dit is hoe de leveringen 1 tot en met 68 gemaakt zijn. Volg het precies; elke re
 | Wat | Waar |
 |---|---|
 | De site (de code, zijn werkmap) | `E:\Claude (VISUAILS)\visuails-astro` op zijn Windows-pc. Dit is de enige waarheid. |
-| De code op GitHub | `github.com/LucasVISUAILS/visuails-astro` (**openbaar**, laatste push 20 okt 2026 09:55 UTC). Loopt achter op zijn map zolang hij niet gepusht heeft. |
+| De code op GitHub | `github.com/LucasVISUAILS/visuails-astro` (**openbaar**, laatste push 25 okt 2026 09:36 UTC, commit 4d05476; Lucas zet hem privé). Loopt achter op zijn map zolang hij niet gepusht heeft. |
 | Logo's | `E:\Claude (VISUAILS)\images\Logo\visuails-logo-blauw-uur\` (het pakket van nu, met `maak-logopakket.py`, `LEES-MIJ.txt`, `KLEURENSCHEMA.md`); `visuails-logo-nieuw\` (violet, schema A, mag weg); `visuails-logo\` (ouder) |
 | Posters en andere beelden | `E:\Claude (VISUAILS)\images\Posters\blauw-uur\` (23 PNG's, twee contactbladen, `LEES-MIJ.txt`); het script in `visuails-astro\kladblok\levering-68\posters\` |
 | Fotomateriaal | `E:\Claude (VISUAILS)\images\`: `BG\` (de witte laptopfoto en `Phone bg.png`), `Website Banners - Unspecified\`, `Instagram\reeks-1\`, `Glow/Flash/Dunes/Phone-made Lifestyle\`, `Models\`, `Before & After\`, `Video\` |
@@ -1958,7 +1966,7 @@ De chat draait in een eigen werkruimte in de cloud. Zijn pc is alleen bereikbaar
 ### 31.3 De code in de werkruimte krijgen
 
 1. Voeg de repo toe (`LucasVISUAILS/visuails-astro`, alleen lezen) en clone hem. Nooit `git push`, nooit `git commit` in iets wat bij hem terechtkomt.
-2. Leg zijn map ernaast: `device_list_dir` op de mappen waar je gaat werken en vergelijk grootte en wijzigtijd. Alles wat in zijn map nieuwer is dan de laatste push (of anders groot), haal je op en zet je over je kopie heen. Staan 65, 66 en 68 nog niet op GitHub (laatste push 20 okt 09:55 UTC, t/m levering 64), haal dan de bestanden uit de lijsten "Bestanden" van `LEVERING-65.md`, `-66.md` én `-68.md` op, en vergelijk daarna met `device_list_dir` alles in zijn map dat na 20 okt gewijzigd is. `kladblok/uitrol-log.txt` en `uitrol-tests.txt` staan nooit op GitHub (`.gitignore`); die lees je alleen in zijn map.
+2. Leg zijn map ernaast: `device_list_dir` op de mappen waar je gaat werken en vergelijk grootte en wijzigtijd. Alles wat in zijn map nieuwer is dan de laatste push (of anders groot), haal je op en zet je over je kopie heen. Sinds de uitrol van 25 okt (commit 4d05476, 09:36 UTC) staat alles tot en met levering 68 op GitHub; vergelijk met `device_list_dir` alles in zijn map dat daarna gewijzigd is. Heeft hij de repo privé gezet (25 okt besloten), dan werkt anoniem clonen niet meer: haal de bestanden dan via de brug op. `kladblok/uitrol-log.txt` en `uitrol-tests.txt` staan nooit op GitHub (`.gitignore`); die lees je alleen in zijn map.
 3. `npm ci` (of `npm install`) in de werkruimte. Daarna kun je bouwen en toetsen.
 4. Lees vóór elke levering opnieuw de mappen die je gaat overschrijven. Is een bestand bij hem veranderd sinds je het ophaalde, haal het opnieuw op en werk daarop verder. Nooit een ouder eigen exemplaar over zijn bestand heen zetten (12 aug: een verouderde kopie overschreef vijf bestanden).
 
@@ -1984,7 +1992,7 @@ De chat draait in een eigen werkruimte in de cloud. Zijn pc is alleen bereikbaar
 
 ### 31.6 Afvinklijsten en schetsen
 
-- Een keuzeronde is een **afvinklijst**: een gepubliceerde pagina (artifact) met een database, per voorstel een levend voorbeeld met Goed / Kan beter / Niet doen plus een notitieveld, en a/b/c-vragen met jouw advies en de reden. Hij vult in en zegt "ingevuld"; jij leest de antwoorden met het databasegereedschap van de artifacts. Het volgende nummer is **lijst 56**. Een voorbeeld om de opbouw van over te nemen: lijst 55 "Wit, inkt en kobalt" (https://claude.ai/artifact/YMrWFVU2VCZWzzpyVQaQqN).
+- Een keuzeronde is een **afvinklijst**: een gepubliceerde pagina (artifact) met een database, per voorstel een levend voorbeeld met Goed / Kan beter / Niet doen plus een notitieveld, en a/b/c-vragen met jouw advies en de reden. Hij vult in en zegt "ingevuld"; jij leest de antwoorden met het databasegereedschap van de artifacts. Het volgende nummer is **lijst 57** (lijst 56 = "Tekstronde en beeldkaart", 25 okt). Een voorbeeld om de opbouw van over te nemen: lijst 55 "Wit, inkt en kobalt" (https://claude.ai/artifact/YMrWFVU2VCZWzzpyVQaQqN).
 - Een **schets** is een voorbeeldpagina van een ombouw (bijv. Schets 58, "Heldere homepage": https://claude.ai/artifact/1aEkWo3ksoZKQSxohowRMe). Het volgende nummer is **Schets 59**. Notities in een schets die alleen "in deze browser" bewaard worden, kun jij niet lezen: vraag hem dan om zijn keuzes.
 - Bij elk voorstel je eigen mening: goed en waarom, en hoe het nog beter kan; of onhandig, en wat dan het logische alternatief is.
 
@@ -2005,7 +2013,10 @@ De chat draait in een eigen werkruimte in de cloud. Zijn pc is alleen bereikbaar
 |---|---|
 | Launchlijst (22 okt, zijn schema tot launch; vinkjes en 7 keuzes in de database) | https://claude.ai/artifact/W4ajKcVRGRWGKYoKcHS5sU |
 | Lijst 55 · Wit, inkt en kobalt (het kleurenschema van nu, ingevuld) | https://claude.ai/artifact/YMrWFVU2VCZWzzpyVQaQqN |
-| Schets 58 · Heldere homepage (nog niet beslist) | https://claude.ai/artifact/1aEkWo3ksoZKQSxohowRMe |
+| Schets 58 · Heldere homepage (vervallen op 25 okt, zie `kladblok/PLAN-OPENING-SCROLL.md`) | https://claude.ai/artifact/1aEkWo3ksoZKQSxohowRMe |
+| Lijst 56 · Tekstronde en beeldkaart (25 okt; database `afvinklijst/ronde56`) | https://claude.ai/artifact/ATQhaeTovWp1mSwVN5qESV |
+| Lijst 57 · De opening en Hoe het werkt (25 okt, ingevuld 13:04) | https://claude.ai/artifact/3KBiMsoAYgGduox39HdtZF |
+| Schets 59 · De opening met scrollvideo (25 okt; daarna gebouwd als levering 74, geen schetsen meer tenzij hij erom vraagt) | https://claude.ai/artifact/FpjRmRDd1yHWVv7vhGXZqA |
 | Merkboek VISUAILS (deck; volgens levering 68 nog violet, gaat naar Blauw uur als Lucas het zegt) | https://claude.ai/artifact/Y5PzMknrdH9f85jVe1w2Jg |
 | VISUAILS Productieboek (recepten per stijl) | https://claude.ai/artifact/MEuvo2Jah7EJQ8G7JsTzfb |
 | Werklijst VISUAILS (15 okt) | https://claude.ai/artifact/UXYdpdvkH9RS7rvVStJCYE |

@@ -44,8 +44,13 @@ import { ikoon, IKOON } from '../data/iconen.js';
  * Geen luisteraar op window (tests/zachte-navigatie): alles hangt aan de
  * elementen zelf en aan astro:page-load.
  */
-interface Props { zinnen: string[]; lang: 'en' | 'nl' }
-const { zinnen, lang } = Astro.props as Props;
+/* `varianten` (levering 74, 25 oktober 2026): dezelfde uitleg in een paar versies, bijvoorbeeld
+ * per dienst in Hoe het werkt op de voorpagina. Elke zin krijgt dan per versie een <i data-v>,
+ * en de pagina laat er één zien (opening.css). Het script telt alleen de spans. Hoort er per
+ * versie een ander tempo bij, dan zet de pagina data-uitleg-maat opnieuw vóór ze de uitleg
+ * opnieuw laat spelen; het script leest de tijden bij elke start. */
+interface Props { zinnen: string[]; lang: 'en' | 'nl'; varianten?: { v: string; zinnen: string[] }[] }
+const { zinnen, lang, varianten } = Astro.props as Props;
 const nl = lang === 'nl';
 const T = nl
   ? { pauze: 'Zet de uitleg stil', speel: 'Speel de uitleg verder', opnieuw: 'Speel de uitleg opnieuw', van: 'van' }
@@ -64,7 +69,7 @@ const T = nl
     </ol>
     <p class="u-zin">
       {zinnen.map((z, i) => (
-        <span data-k={i + 1}><b>{i + 1} {T.van} {zinnen.length}</b> {z}</span>
+        <span data-k={i + 1}><b>{i + 1} {T.van} {zinnen.length}</b> {varianten ? varianten.map((x) => <i class="u-v" data-v={x.v}>{x.zinnen[i] ?? z}</i>) : z}</span>
       ))}
     </p>
   </div>
@@ -80,7 +85,7 @@ const T = nl
     bottom: 12px; z-index: 6;
     display: flex; align-items: center; gap: 14px;
     margin-top: 14px; padding: 10px 18px 10px 10px;
-    border-radius: 14px 3px 3px 3px; background: #F4F5F7;
+    border-radius: var(--hoek-knop); background: #F4F5F7;
     font-family: var(--h-letter, 'Urbanist Variable', system-ui, sans-serif);
   }
   .u-balk[hidden] { display: none; }
@@ -155,11 +160,16 @@ const T = nl
   const rustig = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
   /* Wanneer de cursor klikt, gerekend vanaf het moment dat hij vertrekt. Zie --u-klik. */
   const KLIK_MS = 560;
+  /* 25 oktober 2026 (de controle van levering 74): elke start liet een IntersectionObserver en een
+     luisteraar op document achter, die bij een zachte navigatie bleven hangen (met de oude pagina
+     eraan vast). Nu ruimt elke uitleg zichzelf op voor de wissel. */
+  const opruimers: (() => void)[] = [];
 
   function start(w: Wortel) {
     if (w.dataset.uKlaar) return;
     w.dataset.uKlaar = '1';
-    const maat = String(w.dataset.uitlegMaat || '').trim().split(/\s+/).map(Number).filter((n) => n > 0);
+    const leesMaat = () => String(w.dataset.uitlegMaat || '').trim().split(/\s+/).map(Number).filter((n) => n > 0);
+    let maat = leesMaat();
     const n = maat.length;
     const aanloop = Number(w.dataset.uitlegStart || 400);
     const lus = w.hasAttribute('data-uitleg-lus');
@@ -248,9 +258,14 @@ const T = nl
       }, ms);
     };
     const speel = () => {
+      const nieuw = leesMaat();
+      if (nieuw.length === n) maat = nieuw;
       clearTimeout(klok);
       wisKlikken();
       vorige = 0;
+      /* 25 oktober: een nieuwe start is geen pauze meer. Bleef dit staan, dan hervatte de uitleg
+         niet meer vanzelf als hij na wegscrollen weer in beeld kwam. */
+      delete w.dataset.uitlegHand;
       w.dispatchEvent(new CustomEvent('uitleg-begin'));
       stap = 0;
       zetStaat('speelt');
@@ -303,10 +318,12 @@ const T = nl
       }
     }, { threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.45, 0.5, 0.6, 0.7, 0.8, 0.9, 1] });
     io.observe(w.querySelector<HTMLElement>('[data-uitleg-zicht]') || w);
-    document.addEventListener('visibilitychange', () => {
+    const opZicht = () => {
       if (document.hidden && staat === 'speelt') pauze();
       else if (!document.hidden && zichtbaar && staat === 'pauze' && !w.dataset.uitlegHand) hervat();
-    });
+    };
+    document.addEventListener('visibilitychange', opZicht);
+    opruimers.push(() => { io.disconnect(); document.removeEventListener('visibilitychange', opZicht); clearTimeout(klok); wisKlikken(); });
   }
 
   /* ── DE WHATSAPP-KNOP BOVEN DE PLAKKENDE BALK — 14 oktober 2026 ─────────────
@@ -345,4 +362,5 @@ const T = nl
   const zoek = () => { for (const w of document.querySelectorAll<Wortel>('[data-uitleg]')) start(w); waLater(); };
   zoek();
   document.addEventListener('astro:page-load', zoek);
+  document.addEventListener('astro:before-swap', () => { opruimers.splice(0).forEach((f) => f()); });
 </script>

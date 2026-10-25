@@ -327,11 +327,14 @@ export const statusPil = (status, label) => {
 };
 
 /** The green call-to-action. A table cell with bgcolor, which Outlook honours. */
-const knop = (href, label) =>
+/* De hoek is een argument sinds 25 oktober 2026: in het betaalvak ligt de knop in de
+   ronde hoek linksonder van het vak en loopt die hoek concentrisch mee (zie payPanel). */
+const knop = (href, label, hoek = '14px 3px 3px 3px') =>
   `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
     <!-- Levering 55 (m-knop): één zachte hoek linksboven, zoals de knop op de site.
+         Sinds 25 oktober 2026 houdt alleen wat je bedient die zachte hoek; de knop dus wel.
          Outlook op Windows kent border-radius niet en toont hem recht; dat is goed zo. -->
-    <td bgcolor="${C.green}" align="center" style="background:${C.green};padding:15px 24px;border-radius:14px 3px 3px 3px">
+    <td bgcolor="${C.green}" align="center" style="background:${C.green};padding:15px 24px;border-radius:${hoek}">
       <!-- De letter op het accent is WIT sinds 20 september: zwart op violet
            haalt 2,93:1 en is in KLEURENSCHEMA.md met zoveel woorden afgekeurd. -->
       <a href="${esc(href)}" style="font-family:${FONT};font-size:16px;font-weight:700;color:${C.onAccent};text-decoration:none;display:block">${esc(label)}</a>
@@ -347,15 +350,19 @@ export const button = (href, label) =>
   `${knop(href, label)}<div style="height:20px;font-size:0;line-height:0">&nbsp;</div>`;
 
 /** The amount-due panel: a mist panel with the total and the button. Sinds 14
-    oktober 2026 zonder de violette rand links (violet is voor de knop). */
+    oktober 2026 zonder de violette rand links (violet is voor de knop).
+    25 oktober 2026 (Lucas: "De hoeken van kaarten worden gewoon heel rond"): het vak
+    is een kaart, 24 px rond aan alle vier de hoeken, zoals --r-kaart op de site. De
+    knop ligt linksonder, 24 px van de linkerrand en 22 px van de onderrand, dus in de
+    ronde hoek: die hoek loopt mee (24 - 23 = 1, het minimum is 8), de andere drie licht. */
 export const payPanel = ({ label, amount, sub, href, cta }) =>
-  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.tintBg}" style="background:${C.tintBg};margin:8px 0 0;border-radius:22px 3px 3px 3px">
+  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.tintBg}" style="background:${C.tintBg};margin:8px 0 0;border-radius:24px">
     <tr>
       <td style="padding:22px 24px;font-family:${FONT}">
         <p style="margin:0 0 2px;font-family:${MONO};font-size:12px;letter-spacing:.1em;color:${C.tintInk};text-transform:uppercase">${esc(label)}</p>
         <p style="margin:0 0 4px;font-size:26px;font-weight:700;color:${C.head}">${esc(amount)}</p>
         ${sub ? `<p style="margin:0 0 16px;font-size:12px;line-height:1.5;color:${C.muted}">${sub}</p>` : ''}
-        ${href ? knop(href, cta) : ''}
+        ${href ? knop(href, cta, '3px 3px 3px 8px') : ''}
       </td>
     </tr>
   </table>`;
@@ -378,9 +385,11 @@ export const note = html =>
  * "here is what we changed", the changed-bit must not look like the footnotes.
  * Green edge and a tinted ground, same pair as payPanel, so the eye lands on it
  * before the button rather than after.
+ * 25 oktober 2026: rond aan alle vier de hoeken, 12 px (--r-klein: een blok tekst, geen
+ * kaart), in plaats van één zachte hoek linksboven.
  */
 export const quote = html =>
-  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.tintBg}" style="background:${C.tintBg};margin:2px 0 16px;border-radius:18px 3px 3px 3px"><tr>
+  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.tintBg}" style="background:${C.tintBg};margin:2px 0 16px;border-radius:12px"><tr>
     <td style="padding:16px 20px">
       <p style="margin:0;font-family:${FONT};font-size:16px;line-height:1.6;color:${C.text}">${html}</p>
     </td>

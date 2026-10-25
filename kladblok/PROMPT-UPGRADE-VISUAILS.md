@@ -1,4 +1,4 @@
-# Start van een nieuwe chat over VISUAILS (stand 24 oktober 2026)
+# Start van een nieuwe chat over VISUAILS (stand 24 oktober 2026, bijgewerkt 25 oktober)
 
 Je werkt voor Lucas, de enige persoon achter VISUAILS (visuails.com): een done-for-you dienst die van telefoonfoto's van kleding catalog- en lifestylebeelden en korte video's maakt met AI. Er is een website (NL en EN), een bestelformulier, een klantportaal (VISUAILS Studio), een privélink per bestelling, een adminportaal, een abonnement met credits, mails en nachtelijke automatisering. Lucas maakt de beelden zelf (Magnific, Photoshop, DaVinci); Claude bouwt en onderhoudt de site en helpt met ontwerp, teksten, prompts en plannen.
 
@@ -22,14 +22,16 @@ Het oude `VISUAILS-OVERZICHT-6-OKT.md` is geschiedenis; gebruik het niet meer al
 
 Lees eerst de huidige stand in zijn map voordat je iets schrijft of bouwt. Ga nooit uit van het overzicht alleen, en nooit van een eigen kopie.
 
-- Kijk in `kladblok/uitrol-log.txt` of hij leveringen 65, 66 en 68 al heeft uitgerold (op 24 okt nog niet; de laatste uitrol was c1086f6 op 20 okt).
-- Haal de code binnen zoals §31.3 beschrijft: de openbare repo `LucasVISUAILS/visuails-astro` clonen en leggen naast zijn map. Wat in zijn map nieuwer is, gaat voor.
-- Kijk of er na 24 okt nieuwe `LEVERING-*.md`-bestanden in `kladblok/` staan. Zo ja, dan heeft een andere chat verder gewerkt: lees ze en werk het overzicht bij voordat je verdergaat.
+- Kijk in `kladblok/uitrol-log.txt` wat er na de laatste bekende uitrol gebeurde (25 okt 10:37, commit 4d05476: alles tot en met levering 68 staat live).
+- Haal de code binnen zoals §31.3 beschrijft: de repo `LucasVISUAILS/visuails-astro` clonen (heeft hij hem privé gezet, dan via de brug uit zijn map) en leggen naast zijn map. Wat in zijn map nieuwer is, gaat voor.
+- Kijk of er na 25 okt nieuwe `LEVERING-*.md`-bestanden in `kladblok/` staan, en wat er in `kladblok/PLAN-OPENING-SCROLL.md` is afgevinkt. Zo ja, dan heeft een andere chat verder gewerkt: lees ze en werk het overzicht bij voordat je verdergaat.
 
-## 3. Wat er nu ligt (24 okt)
+## 3. Wat er nu ligt (25 okt)
 
-- **Live** staat de site tot en met levering 64. **Alleen in zijn map** staan 65, 66 en 68 (Blauw uur). Hij rolt die samen uit met `UITROLLEN.bat`; `kladblok/COMMIT-BERICHT.txt` beschrijft ze alle drie.
-- **Wacht op Lucas:** Schets 58 (een heldere homepage met de opening over de volle breedte), het merkboek naar Blauw uur, en zijn plan om alle teksten zelf na te lopen en beelden en iconen zelf te kunnen vervangen (18 okt: "eerst een plan, pas na zijn akkoord bouwen"). Afvinklijst 6 (Instagram reeks 1) is nog niet ingevuld.
+- **Live** staat de site tot en met levering 68 (uitrol 25 okt). `kladblok/COMMIT-BERICHT.txt` beschrijft nog 65–68: vervangen bij de volgende levering. De repo zet hij zelf privé (25 okt).
+- **Wacht op Lucas:** lijst 56 "Tekstronde en beeldkaart" (https://claude.ai/artifact/ATQhaeTovWp1mSwVN5qESV): het plan om alle tekst zelf na te lopen en beelden en iconen zelf te vervangen; hetzelfde werk staat als levering 71 in `kladblok/PROMPT-CLOUD-CODE.md` (een cloudsessie, 25 okt); Lucas kiest één route. Verder het merkboek naar Blauw uur en afvinklijst 6 (Instagram reeks 1).
+- **Opgeslagen voor later (25 okt):** de opening met zijn scrollvideo, Hoe het werkt per dienst en de nieuwe hoekregel. Alles staat in `kladblok/PLAN-OPENING-SCROLL.md`, met fases om af te vinken. Lucas zei op 25 okt "begin": eerst lijst 57 en Schets 59. Bouwen pas na het uitrollen van de cloudleveringen uit `kladblok/PROMPT-CLOUD-CODE.md`. Schets 58 is daarmee vervallen.
+- **Een cloudsessie** (`kladblok/PROMPT-CLOUD-CODE.md`, 25 okt) bouwt de leveringen 69 tot en met 73 op de branch `claude/voor-de-launch`. Kijk of die branch bestaat en wat erop staat, voordat je zelf een levering nummert.
 - **Zijn eigen werk** op de Launchlijst staat op "CLASSIC · script 06 testen" en daarna "CLASSIC · voorbeeld". Dat doet hij in Photoshop en Magnific; jij helpt alleen als hij erom vraagt.
 - **Bij "we gaan live"**: herinner hem aan Cloudflare Workers Paid (§30.1). De Mollie live key, het adminwachtwoord, 2FA en de e-Boekhouden-token zet hij zelf.
 
@@ -47,7 +49,7 @@ Begin niet zelf aan een ombouw. Vraag Lucas wat hij als eerste wil, met de open 
 - Meten, nooit gokken: contrast ≥ 4,5:1, tekst ≥ 11,5 px, koppen hoogstens twee regels, 60 : 30 : 10 per sectie. Niets beweegt bij het laden.
 - Nederlands, "je", beknopt, geen beeldspraak of lege woorden (§26).
 - Bij elk idee een **eigen mening**: goed en waarom, en hoe het nog beter kan; of onhandig, en wat dan het logische alternatief is. Lucas beslist zelf: geef opties, dicteer niet. Bij twijfel over hoe iets hoort te werken: vragen, niet aannemen.
-- Keuzes als afvinklijst (volgende: lijst 56). Bij een ombouw eerst een plan of schets (volgende: Schets 59), bouwen na zijn akkoord. De volgende levering is 69.
+- Keuzes als afvinklijst (volgende: lijst 57). Bij een ombouw eerst een plan of schets (volgende: Schets 59), bouwen na zijn akkoord. De volgende levering is 69.
 - Processen alleen op pid afsluiten.
 
 ---

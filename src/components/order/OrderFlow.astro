@@ -4392,7 +4392,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
   .pl-saved {
     margin: 1.2rem 0 1.8rem; padding: clamp(1rem, 2.5vw, 1.4rem);
     border: 1px solid var(--line); background: var(--surface-2, var(--surface));
-    border-radius: var(--r-lg) 3px 3px 3px; max-width: 62ch;
+    border-radius: var(--r-kaart); max-width: 62ch;
   }
   .pl-saved-h { margin: 0; font-size: .78rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3); }
   .pl-saved-list { list-style: none; margin: .6rem 0 0; padding: 0; display: grid; gap: .2rem; }
@@ -4418,7 +4418,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
      de twee erboven, zodat de linkerkant van alle drie op één lijn ligt. */
   .pl-tegoed {
     margin: 1.2rem 0 0; padding: .75rem 1rem; max-width: 64ch;
-    border: 1px solid var(--line); border-radius: var(--r-md, 8px) 3px 3px 3px;
+    border: 1px solid var(--line); border-radius: var(--r-klein);
     font-size: .94rem; line-height: 1.5; color: var(--ink);
   }
   /* De creditregel (ronde B): dezelfde vorm als het tegoed, met de kopregel
@@ -4426,7 +4426,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
      betaald krijgt de rand de inktkleur; anders blijft hij rustig. */
   .pl-credits {
     margin: 1.2rem 0 0; padding: .8rem 1rem; max-width: 64ch;
-    border: 1px solid var(--line); border-radius: var(--r-md, 8px) 3px 3px 3px;
+    border: 1px solid var(--line); border-radius: var(--r-klein);
     color: var(--ink);
   }
   .pl-credits.is-credits { border-color: var(--ink); }
@@ -4879,7 +4879,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
   .pl-windows :global(.pl-dagen-knop) {
     padding: .35rem .7rem;
     border: 1px solid var(--line-strong);
-    border-radius: 14px 3px 3px 3px;
+    border-radius: var(--hoek-knop);
     background: transparent;
     color: var(--ink);
     font: inherit;
@@ -5010,7 +5010,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
     margin-top: 1.2rem;
     padding: .9rem 1.05rem;
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: var(--r-klein);
     background: var(--surface);
     max-width: 64ch;
     cursor: pointer;
@@ -5182,7 +5182,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
     margin-top: .9rem;
     padding: .75rem 1rem;
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: var(--r-klein);
     background: var(--surface);
   }
   .pl-svc-name { font-weight: 600; color: var(--ink); }
@@ -5298,7 +5298,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
   .pl-voorkeur-optie {
     display: inline-flex; align-items: center; gap: .45rem;
     min-height: 44px; padding: 0 .8rem 0 .6rem;
-    border: 1px solid var(--line-strong); border-radius: 14px 3px 3px 3px;
+    border: 1px solid var(--line-strong); border-radius: var(--hoek-knop);
     font-size: .9rem; cursor: pointer;
     transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
   }
@@ -5315,7 +5315,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
     margin-top: 1.1rem;
     padding: 1.1rem 1.25rem;
     border: 1px solid var(--accent);
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: var(--r-klein);
     background: var(--surface);
     max-width: var(--pl-measure);
   }
@@ -5329,7 +5329,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
     margin: .9rem 0 1.1rem;
     padding: .9rem;
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: var(--r-klein);
     background: var(--surface);
   }
   .pl-sum-strip :global(.pl-sum-item) { display: flex; flex-direction: column; align-items: center; gap: .3rem; width: 84px; }
@@ -5367,7 +5367,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
     margin-top: 1.2rem;
     padding: .85rem 1.05rem;
     border: 1px solid var(--warn);
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: var(--r-klein);
     background: var(--paper-2);
     color: var(--warn-ink);
     font-size: .92rem;
@@ -5498,7 +5498,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
      vraag "Wanneer kan het sneller?" als kleine regel eronder. De override op
      de veldkop staat in stijl22.css (bij `.field > label`). */
   /* "Meer opties" — zie de noot bij de vouw in stap 1 (30 september 2026). */
-  .pl-meeropties { margin-top: clamp(1.2rem, 2.4vw, 1.8rem); border: 1px solid var(--line); border-radius: var(--r-md) 3px 3px 3px; }
+  .pl-meeropties { margin-top: clamp(1.2rem, 2.4vw, 1.8rem); border: 1px solid var(--line); border-radius: var(--r-klein); }
   .pl-meeropties-kop { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: .8rem; row-gap: .2rem; padding: 1rem 1.1rem; cursor: pointer; list-style: none; }
   .pl-meeropties-kop::-webkit-details-marker { display: none; }
   .pl-meeropties-t, .pl-meeropties-sub { grid-column: 1; }
@@ -5508,7 +5508,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
   .pl-meeropties-sub { color: var(--ink-3, currentColor); font-size: .92rem; }
   .pl-meeropties-body { padding: 0 1.1rem 1.1rem; display: grid; gap: clamp(1rem, 2vw, 1.4rem); }
   .pl-meeropties-body > :global(*) { margin-top: 0; }
-  .pl-voorrang { margin-top: clamp(1.2rem, 2.4vw, 1.8rem); padding: 1rem 1.1rem; border: 1px solid var(--line); border-radius: var(--r-md) 3px 3px 3px; }
+  .pl-voorrang { margin-top: clamp(1.2rem, 2.4vw, 1.8rem); padding: 1rem 1.1rem; border: 1px solid var(--line); border-radius: var(--r-kaart); }
   .pl-voorrang-rij { display: flex; align-items: flex-start; gap: .7rem; cursor: pointer; }
   .pl-voorrang-rij input { margin-top: .25rem; flex: 0 0 auto; }
   .pl-voorrang-t { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; width: 100%; }

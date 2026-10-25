@@ -265,7 +265,7 @@ const fl = FIELD[lang];
     gap: .45rem;
     padding: .55rem;
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: var(--r-klein);
     background: var(--surface);
     cursor: pointer;
     transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
@@ -281,7 +281,7 @@ const fl = FIELD[lang];
   .bg-perfoto-lede { margin: .4rem 0 .7rem; max-width: 52ch; font-size: .9rem; line-height: 1.5; color: var(--ink-2); }
   .bg-perfoto-lock { margin: 0 0 .6rem; font-size: .875rem; color: var(--ink-2); }
   .bg-perfoto-rij { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr)); gap: .6rem; }
-  .bg-perfoto-veld { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; column-gap: .55rem; row-gap: .3rem; align-items: center; padding: .55rem .6rem; border: 1px solid var(--line); border-radius: var(--r-md) 3px 3px 3px; background: var(--surface); }
+  .bg-perfoto-veld { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; column-gap: .55rem; row-gap: .3rem; align-items: center; padding: .55rem .6rem; border: 1px solid var(--line); border-radius: var(--r-kaart); background: var(--surface); }
   /* De schets van het beeld op zijn kleur, zoals de tegels in "Wat je krijgt". */
   .bg-perfoto-staal { grid-row: 1; width: 44px; height: 44px; border-radius: 10px 3px 3px 3px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--line-strong); background: var(--bgfoto, #FFFFFF); }
   .bg-perfoto-staal img { display: block; width: 100%; height: 100%; object-fit: contain; }
@@ -341,7 +341,7 @@ const fl = FIELD[lang];
     justify-items: center;
     height: 104px;
     padding: 0 12% 0;
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: var(--r-klein);
     background: var(--swatch, var(--surface-2));
     box-shadow: inset 0 0 0 1px rgb(11 15 23 / .22);
     overflow: hidden;
@@ -412,7 +412,7 @@ const fl = FIELD[lang];
   .bg-hexinput { text-transform: uppercase; font-variant-numeric: tabular-nums; }
   /* A consequence, not a refusal — so it is the warn colour and not an error
      box, and nothing about it blocks the form. */
-  .bg-warn { margin: .9rem 0 0; border-radius: var(--r-md) 3px 3px 3px; max-width: 70ch; }
+  .bg-warn { margin: .9rem 0 0; border-radius: var(--r-klein); max-width: 70ch; }
   .pl-bg-match { display: block; margin-top: .8rem; max-width: 70ch; }
   /* Moved out of the page sheet with the markup — Astro scopes a component's
      styles to that component, so a rule left behind in OrderFlow.astro would
@@ -436,7 +436,7 @@ const fl = FIELD[lang];
     margin: .9rem 0 0;
     padding: .85rem 1.05rem;
     border: 1px solid var(--warn);
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: var(--r-klein);
     background: var(--paper-2);
     color: var(--warn-ink);
     font-size: .9rem;

@@ -10,9 +10,22 @@
  *   - glas: geen backdrop-filter, op geen enkel element of ::before/::after — met één
  *     uitzondering (afvinklijst 42, 19 oktober 2026, glas 1): het violette glaspaneel van
  *     het €1-blok (.h-proef > .h-proef-woord), want daar staat een bewogen beeld achter;
- *   - schaduw: geen schaduw met vervaging (een rand als inset of zonder blur mag);
- *   - hoeken: geen vlak met vier gelijke hoeken van 10 px of meer (cirkels en pillen die
- *     een cirkel zijn tellen niet); een vlak heeft één zachte hoek, linksboven;
+ *     Sinds levering 74 (25 oktober 2026, 15:24, Lucas: "gebruik voor plekken als top bar
+ *     wel glas") ook wat boven de pagina zweeft: de balk, zijn uitklapmenu's, de
+ *     WhatsApp-knop en de uitlegbalk zolang hij onderin plakt (ZWEEFT hieronder);
+ *   - schaduw: geen schaduw met vervaging (een rand als inset of zonder blur mag), behalve
+ *     onder wat zweeft (een glazen laag ligt ergens op) en de gloed in blauw uur onder
+ *     Bestellen bovenin ("Gloed mag in accentkleur", dezelfde dag);
+ *   - hoeken: geen knop, veld, chip of pil met vier gelijke ronde hoeken van 10 px of meer
+ *     (cirkels en pillen die een cirkel zijn tellen niet): wat je bedient heeft één zachte
+ *     hoek, linksboven. Tot 25 oktober 2026 gold dit voor elk vlak ("een vlak heeft één
+ *     zachte hoek, linksboven"). Die dag veranderde Lucas het: "Wat ik overigens wel aan de
+ *     style wil aanpassen is het 1 zachte hoek en de rest harde hoeken systeem voor alles.
+ *     Ik wil dit alleen op hele specifieke plekken behouden en niet voor grote kaarten of
+ *     objecten en puur alleen voor bijvoorbeeld knoppen. De hoeken van kaarten worden
+ *     gewoon heel rond." Een kaart is nu 24 rond aan alle vier de hoeken en een groot vlak
+ *     32; dat bewaakt tests/hoekregel-browser. Hier blijft over dat een knop of chip niet
+ *     even rond wordt als een kaart;
  *   - geen ✦, ✧, ✨, ★ of emoji in de zichtbare tekst;
  *   - gedachtestreepjes: niet méér dan nu. Het aantal per pagina staat hieronder vast;
  *     Lucas kiest per zin in de tekstronde, en een nieuw streepje valt hier op;
@@ -111,14 +124,18 @@ function meet() {
       const cs = getComputedStyle(el, ps || null);
       if (ps && (cs.content === 'none' || cs.content === 'normal')) continue;
       const bd = cs.backdropFilter || cs.webkitBackdropFilter;
-      // het €1-blok mag glas dragen (lijst 42); verder nergens
-      const glasMag = !ps && el.matches('.h-proef > .h-proef-woord');
+      // het €1-blok mag glas dragen (lijst 42), en wat boven de pagina zweeft (levering 74)
+      const zweeft = el.matches('.site-header .nav, .site-header .nav-menu, .wa-launcher, .u-balk');
+      const glasMag = (!ps && el.matches('.h-proef > .h-proef-woord')) || zweeft;
       if (bd && bd !== 'none' && !glasMag) uit.glas.push(naam(el, ps));
-      if (zacht(cs.boxShadow)) uit.schaduw.push(`${naam(el, ps)} ${cs.boxShadow.slice(0, 60)}`);
+      if (zacht(cs.boxShadow) && !zweeft && !el.matches('.site-header .nav-cta')) uit.schaduw.push(`${naam(el, ps)} ${cs.boxShadow.slice(0, 60)}`);
       if (ps && /[✦✧✨★☆]/u.test(cs.content)) uit.teken.push(`${naam(el, ps)} ${cs.content}`);
       if (ps) continue;
       const rs = [cs.borderTopLeftRadius, cs.borderTopRightRadius, cs.borderBottomRightRadius, cs.borderBottomLeftRadius];
-      if (rs.every((x) => x === rs[0]) && rs[0] !== '0px' && !rs[0].includes('%')) {
+      /* alleen wat je bedient (25 oktober 2026): een kaart mag rondom rond zijn */
+      const bediening = el.matches('button, input:not([type="checkbox"]):not([type="radio"]), select, textarea, [role="button"], [role="tab"], .h-chip, .h-pil, .chip, .pill')
+        || (el.tagName === 'A' && /(^|[\s-])(knop|btn|cta)/.test(el.className || ''));
+      if (bediening && rs.every((x) => x === rs[0]) && rs[0] !== '0px' && !rs[0].includes('%')) {
         const v = parseFloat(rs[0]);
         const rond = Math.abs(rc.width - rc.height) <= 1.5 && v >= rc.width / 2 - 1;
         const zichtbaar = cs.backgroundColor !== 'rgba(0, 0, 0, 0)' || cs.borderTopWidth !== '0px' || cs.boxShadow !== 'none' || el.tagName === 'IMG' || cs.overflow === 'hidden';
@@ -186,7 +203,7 @@ try {
       const r = await page.evaluate(meet);
       check(`${p} op ${w}: geen glas`, r.glas.length === 0, r.glas.slice(0, 3).join(' · '));
       check(`${p} op ${w}: geen zachte schaduw`, r.schaduw.length === 0, r.schaduw.slice(0, 3).join(' · '));
-      check(`${p} op ${w}: geen vlak met vier gelijke ronde hoeken`, r.hoek.length === 0, r.hoek.slice(0, 3).join(' · '));
+      check(`${p} op ${w}: geen knop of chip met vier gelijke ronde hoeken`, r.hoek.length === 0, r.hoek.slice(0, 3).join(' · '));
       check(`${p} op ${w}: geen ✦ of emoji`, r.teken.length === 0, r.teken.slice(0, 5).join(' '));
       check(`${p} op ${w}: niet meer gedachtestreepjes (${r.streepjes} van ${STREEPJES[p]})`, r.streepjes <= STREEPJES[p], `nieuw: ${r.streepjes - STREEPJES[p]}`);
       if (w === 1440 && r.streepjes < STREEPJES[p]) zakken.push(`${p}: ${r.streepjes}`);

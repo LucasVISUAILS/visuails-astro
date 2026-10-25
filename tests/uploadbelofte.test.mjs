@@ -104,8 +104,13 @@ const BELOFTE = /(all (?:you|we) need|genoeg om te beginnen|enough to start|are 
    stond `nodig === 2 ? 'Two' : String(nodig)` — een tweede vertaling van getal
    naar woord, die bij drie een cijfer opleverde waar de regex een woord zoekt.
    Eén bron, en dan klopt hij bij elk aantal. */
+/* 25 oktober 2026 (levering 74), Lucas om 16:28: niet meer "telefoonfoto's", want "het is een
+   aanname dat de klant alleen met zijn telefoon foto's maakt. Hou dit gewoon 'upload de foto's
+   van je product'". De belofte zegt nu "foto's van je product"; deze toets zoekt daarom elk
+   soort foto, met of zonder telefoon ervoor. */
+const FOTO = /(?:phone |smartphone )?photos?|(?:telefoon)?foto’?s?/i;
 const REGELS = home.replace(/\$\{FOTOS\}/g, telwoord(nodig, 'en', true)).split('\n')
-  .filter((r) => /phone photos?|smartphone photos?|telefoonfoto/i.test(r))
+  .filter((r) => FOTO.test(r))
   .filter((r) => BELOFTE.test(r));
 
 console.log('\nelke zin die zegt hoeveel foto’s je moet sturen');
@@ -118,7 +123,7 @@ const TELWOORD = {
 };
 /* Het telwoord vlak vóór "foto('s)". `[\w-]+` en niet `\w+`, want er staat
    "well-lit" en "goed belichte" tussen — een koppelteken hoort bij het woord. */
-const TELLING = /\b(one|two|three|four|a|an|een|één|twee|drie|vier)\b\s+(?:[\w-]+[\s’']+){0,3}?(?:phone photos?|smartphone photos?|telefoonfoto’?s?)/i;
+const TELLING = /\b(one|two|three|four|a|an|een|één|twee|drie|vier)\b\s+(?:[\w-]+[\s’']+){0,3}?(?:phone photos?|smartphone photos?|photos?|telefoonfoto’?s?|foto’?s?)/i;
 
 for (const regel of REGELS) {
   const kort = regel.trim().replace(/^\s*\w+:\s*/, '').slice(0, 50);
@@ -127,7 +132,7 @@ for (const regel of REGELS) {
 }
 
 console.log('\nen nergens meer het enkelvoud');
-const ENKELVOUD = /\b(a|an|one|een|één)\s+(?:[\w-]+[\s’']+){0,3}?(?:phone photo|smartphone photo|telefoonfoto)(?!’?s)\b/i;
+const ENKELVOUD = /\b(a|an|one|een|één)\s+(?:[\w-]+[\s’']+){0,3}?(?:phone photo|smartphone photo|photo|telefoonfoto|foto)(?!’?s)\b/i;
 for (const regel of REGELS) {
   const kort = regel.trim().replace(/^\s*\w+:\s*/, '').slice(0, 50);
   ok(`geen enkelvoud — ${kort}…`, ENKELVOUD.test(regel), false);

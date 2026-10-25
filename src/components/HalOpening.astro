@@ -1,0 +1,664 @@
+---
+/**
+ * VISUAILS — de opening van de voorpagina met de scrollvideo, en "Hoe het werkt" in
+ * hetzelfde scherm. 25 oktober 2026.
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas (25 oktober, 12:17): *"Ik wil de begin sectie pagina een andere indeling geven
+ * zoals het bijgevoegde voorbeeld. Ik heb dan ook een video hiervan die ik als scroll
+ * animatie op de beginsectie wil hebben … Zorg ervoor dat de animatie snappy en
+ * satisfying voelt. Nadat de laptop en telefoon weg zijn wil ik dat het lijkt alsof je
+ * niet omlaag hebt gescrollt maar nog steeds op de eerste pagina staat en de "How it
+ * works" uitleg naar boven komt ook met een satisfying animatie. Bij how it works moet de
+ * klant bij catalog, lifestyle en video het proces kunnen kiezen … Vooral het effect
+ * waar de onderdelen van elkaar worden gehaald … Nadat dat is gebeurd scroll je gewoon
+ * normaal verder."* Het plan staat in kladblok/PLAN-OPENING-SCROLL.md, zijn keuzes in
+ * afvinklijst 57 (§5b daar), de levering in kladblok/LEVERING-74.md.
+ *
+ * Lucas (14:39): *"Ik wil de how it works animatie blokken in de 3 stappen houden"*, met zijn
+ * keuzes "Blokken onder de tabs" en "De animaties van nu": de drie stappen van vroeger (met
+ * hun animaties en de uitlegbalk) staan naast elkaar onder de tabs. Om 16:28: wit in plaats
+ * van donker ("De donkere achtergrond maakt het ook wat heftiger"), en per dienst een eigen
+ * verhaal: catalog stuurt, wij maken (de lagen uit elkaar), keurt goed; lifestyle en video
+ * kiezen een look, uploaden de foto's van het product en ontvangen hun beelden.
+ * De blokken zelf staan in VoorpaginaHal.astro (slot "stappen"), omdat ze daar hun data
+ * vandaan halen; deze sectie is de wortel van de uitleg (#hoe, data-uitleg).
+ *
+ * HOE HET WERKT, IN VOLGORDE VAN DE SCROLL
+ *   0. Het rustbeeld: de still (beeld 0 op 2×) met de winkel en de telefoonfoto in de
+ *      schermen. Daaronder of ernaast de kop en één zin (vraag 1a).
+ *   1. De video volgt de scroll over 1,2 schermhoogte: beeld 17 – 133 op een canvas,
+ *      de schermen per beeld op hun vier hoeken (src/data/openingSchermen.json). Het
+ *      laptopscherm wordt donker met de hoek van de klep (Lucas, 13:07).
+ *   2. De overgang (0,6 schermhoogte): kop en zin gaan weg met de snede onder 53°; elke
+ *      letter van het accentwoord reist apart naar het label boven Hoe het werkt, en de
+ *      punt wordt de schuine streep (vraag 4d, "meer satisfying, minder powerpoint").
+ *      Daarna komen de kop met de tabs, de drie blokken (na elkaar) en de balk omhoog.
+ *      Zodra blok 02 in beeld is, speelt de uitleg (UitlegBalk.astro).
+ *   3. Een rustpunt (0,5 schermhoogte), dan gewoon verder scrollen.
+ *   Vastklikken op begin en Hoe het werkt (scroll-snap, "proximity": alleen dichtbij).
+ *
+ * WAAR DE TEKST STAAT. Lucas' voorbeeld zet de kop onder de apparaten. De armen gaan via
+ * de zijkant het beeld uit, dus het beeld moet over de volle breedte; dan is het op een
+ * breed scherm zo hoog dat er onder de handen geen plek meer is (1440 × 780: 58 px). Het
+ * script rekent daarom per scherm twee indelingen uit, "onder" (zoals het voorbeeld) en
+ * "links" (in het wit naast de laptop), en kiest die waarin de kop het grootst kan.
+ * Gemeten, niet geschat: de letters worden in de browser zelf op maat gezet. Zo ook de
+ * hoogte van de beelden in de blokken: wat er onder de kop, de tabs en de balk overblijft.
+ *
+ * ZONDER SCRIPT, BIJ MINDER BEWEGING, OP DE TELEFOON (< 900 px, vraag 11c) EN OP EEN
+ * SCHERM DAT TE LAAG IS VOOR DE BLOKKEN: geen scrollvideo. De still met de schermen, de
+ * kop, en Hoe het werkt gewoon eronder.
+ */
+import '../styles/opening.css';
+import SCHERMEN from '../data/openingSchermen.json';
+
+interface Props {
+  lang: 'en' | 'nl';
+  kop: { lines: string[]; plain: string };
+  lede: string;
+  hoeKop: [string, string];
+  /** de uitleg speelt (data-uitleg, UitlegBalk.astro) */
+  uitleg?: boolean;
+}
+const { lang, kop, lede, hoeKop, uitleg = false } = Astro.props as Props;
+const nl = lang === 'nl';
+const kaal = (s: string) => s.replace(/<[^>]+>/g, '');
+/* De kop is "Al je productbeelden. Zonder shoot.": de laatste regel is het accentwoord.
+   Die regel reist straks naar het label, zonder de punt (de punt wordt de streep). */
+const voor = kop.lines.slice(0, -1).map(kaal).join(' ');
+const accent = kaal(kop.lines[kop.lines.length - 1]);
+const label = accent.replace(/[.!?]$/, '');
+/* Per dienst de tijden van de drie stappen (UitlegBalk leest ze bij elke start): catalog
+   heeft het handwerk in stap 2 en daarna de lagen in 3D (12,9 s), lifestyle en video een
+   upload (3 s). */
+const TABS = [['catalog', 'Catalog', '2250 12900 2250'], ['lifestyle', 'Lifestyle', '2250 3000 2250'], ['video', 'Video', '2250 3000 2250']] as const;
+const kies = nl ? 'Kies wat je wilt zien' : 'Pick what you want to see';
+/* Zonder script (en zolang het script de schermen nog niet op hun hoeken heeft gezet) staat elk
+   scherm in de rechthoek om zijn vierhoek in beeld 0; de still ligt erboven en dekt de rand af
+   (opening.css, "zonder script"). Eerst stond dan de linkerbovenhoek van het schermbeeld in het
+   gat (25 oktober, de controle). */
+const rechthoek = (q: number[][]) => {
+  const xs = q.map((p) => p[0]), ys = q.map((p) => p[1]);
+  const x0 = Math.min(...xs), y0 = Math.min(...ys), x1 = Math.max(...xs), y1 = Math.max(...ys);
+  const pc = (v: number, op: number) => `${((v / op) * 100).toFixed(3)}%`;
+  return `--o-x:${pc(x0, SCHERMEN.w)};--o-y:${pc(y0, SCHERMEN.h)};--o-b:${pc(x1 - x0, SCHERMEN.w)};--o-h:${pc(y1 - y0, SCHERMEN.h)}`;
+};
+const [lapQ, fonQ] = SCHERMEN.b[0] as number[][][];
+---
+<section class="o-podium" data-o-podium aria-labelledby="h-h1">
+  <span class="o-snap" data-o-snap="0" aria-hidden="true"></span>
+  <span class="o-snap" data-o-snap="1" aria-hidden="true"></span>
+  <div class="o-vast" data-o-vast>
+    <div class="o-beeld" data-o-beeld>
+      <div class="o-schermen" aria-hidden="true">
+        <div class="o-sc o-sc-lap" data-o-lap style={rechthoek(lapQ)}>
+          <picture>
+            <source type="image/avif" srcset={`/img/hal/opening/scherm-${lang}-laptop.avif`} />
+            <img src={`/img/hal/opening/scherm-${lang}-laptop.webp`} width="1600" height="1034" alt="" decoding="async" />
+          </picture>
+          <span class="o-donker" data-o-donker></span>
+        </div>
+        <div class="o-sc o-sc-fon" data-o-fon style={rechthoek(fonQ)}>
+          <picture>
+            <source type="image/avif" srcset="/img/hal/opening/scherm-telefoon.avif" />
+            <img src="/img/hal/opening/scherm-telefoon.webp" width="540" height="1170" alt="" decoding="async" />
+          </picture>
+        </div>
+      </div>
+      <picture>
+        <source type="image/avif" srcset="/img/hal/opening/still-1200.avif 1200w, /img/hal/opening/still-1600.avif 1600w, /img/hal/opening/still-2400.avif 2400w" sizes="100vw" />
+        <img class="o-still" data-o-still src="/img/hal/opening/still-1600.webp"
+             srcset="/img/hal/opening/still-1200.webp 1200w, /img/hal/opening/still-1600.webp 1600w, /img/hal/opening/still-2400.webp 2400w" sizes="100vw"
+             width="2400" height="1259" fetchpriority="high" decoding="async"
+             alt={nl ? 'Twee handen houden een laptop met de webshop van een merk en een telefoon met de telefoonfoto van dezelfde roze jeans' : 'Two hands hold a laptop showing a brand’s web shop and a phone with the phone photo of the same pink jeans'} />
+      </picture>
+      <canvas class="o-doek" data-o-doek aria-hidden="true"></canvas>
+    </div>
+
+    <div class="o-tekst" data-o-tekst>
+      <h1 id="h-h1" class="o-kop" data-o-kop aria-label={kop.plain}>
+        <span class="o-kop-rest" data-o-rest aria-hidden="true">{voor}</span>{' '}
+        <span class="o-acc" data-o-acc aria-hidden="true"><span class="o-acc-t" data-o-acc-t>{accent}</span><span class="o-acc-blauw">{accent}</span></span>
+      </h1>
+      <p class="o-lede" data-o-lede>{lede}</p>
+    </div>
+
+    <div class="o-reis" data-o-reis aria-hidden="true"></div>
+
+    {/* De wortel van de uitleg (UitlegBalk.astro): data-uitleg, de tijden van de drie
+        stappen en id="hoe" (tests/doorloop-27c en laptop-standen spelen hem zo af). */}
+    <section class="o-hoe h-hoe" id="hoe" data-o-hoe data-dienst="catalog" aria-labelledby="h-hoe"
+             data-uitleg={uitleg ? '' : undefined} data-uitleg-maat="2250 12900 2250" data-uitleg-start="300">
+      <header class="o-hoe-kop" data-o-kopdeel>
+        <div class="o-hoe-titel">
+          {/* het sectielabel van de site (hal.css, p.h-pil): vlagje, nummer, naam in mono */}
+          <p class="h-pil o-label" data-o-pil><span data-o-label>{label}</span></p>
+          <h2 id="h-hoe" class="h-kop h-h2 o-h2"><span class="l">{hoeKop[0]}</span> {hoeKop[1]}</h2>
+        </div>
+        {/* Eén paneel voor drie tabs: de blokken blijven staan, de inhoud wisselt per dienst. */}
+        <div class="o-tabs" role="tablist" aria-label={kies} data-o-tabs>
+          {TABS.map(([id, naam, maat], i) => (
+            <button type="button" role="tab" id={`o-tab-${id}`} data-dienst={id} data-maat={maat} aria-controls="o-blokken" aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1}>{naam}</button>
+          ))}
+        </div>
+      </header>
+      <div class="o-blokken" id="o-blokken" role="tabpanel" aria-labelledby="o-tab-catalog" data-o-panelen>
+        <slot name="stappen" />
+      </div>
+      <div class="o-voet" data-o-voet>
+        <slot name="balk" />
+        <div class="o-acties"><slot name="acties" /></div>
+      </div>
+    </section>
+  </div>
+</section>
+
+<script>
+  import Q from '../data/openingSchermen.json';
+  /* Het gedrag. Elke luisteraar op window gaat bij een zachte navigatie weer weg
+     (tests/zachte-navigatie.test.mjs telt ze); alles hangt aan één podium tegelijk. */
+  type Laag = { k: number; ch: string; el: HTMLElement; a: HTMLElement; b: HTMLElement; sx: number; sy: number; tx: number; ty: number; aw: number; ah: number; bw: number; bh: number };
+  type Wortel = HTMLElement & { _u?: { stop: () => void; opnieuw: () => void } };
+  let ruim: (() => void) | null = null;
+  /* De beelden van de video één keer per bezoek (25 oktober, de controle): bij een zachte navigatie
+     terug naar de voorpagina hoeven ze niet opnieuw geladen en gedecodeerd te worden. naBeeld is
+     de opening die nu leeft; een oude krijgt de beelden niet meer. */
+  const BEELDEN: (HTMLImageElement | undefined)[] = [];
+  let reeksBegon = false;
+  let naBeeld: ((i: number) => void) | null = null;
+  function laadReeks() {
+    if (reeksBegon) return; reeksBegon = true;
+    for (let i = Q.eerste; i <= Q.laatste; i++) {
+      const im = new Image();
+      im.decoding = 'async';
+      im.onload = () => { (im.decode ? im.decode() : Promise.resolve()).catch(() => {}).then(() => { BEELDEN[i] = im; naBeeld?.(i); }); };
+      im.src = `/img/hal/opening/f/${String(i).padStart(3, '0')}.avif`;
+    }
+  }
+
+  const klem = (x: number) => Math.max(0, Math.min(1, x));
+  const tussen = (a: number, b: number, x: number) => klem((x - a) / (b - a));
+  const zacht = (x: number) => x * x * x * (x * (x * 6 - 15) + 10);          // smootherstep: rustig weg, rustig aan
+  const uit4 = (x: number) => 1 - Math.pow(1 - x, 4);                         // ease-out quart
+
+  /* Een rechthoek (b × h) op een vierhoek zetten (Heckbert). */
+  function matrix(b: number, h: number, q: number[][]) {
+    const [[x0, y0], [x1, y1], [x2, y2], [x3, y3]] = q;
+    const sx = x0 - x1 + x2 - x3, sy = y0 - y1 + y2 - y3;
+    let g = 0, k = 0;
+    if (Math.abs(sx) > 1e-6 || Math.abs(sy) > 1e-6) {
+      const dx1 = x1 - x2, dx2 = x3 - x2, dy1 = y1 - y2, dy2 = y3 - y2, den = dx1 * dy2 - dx2 * dy1;
+      g = (sx * dy2 - dx2 * sy) / den; k = (dx1 * sy - sx * dy1) / den;
+    }
+    const a = x1 - x0 + g * x1, bb = x3 - x0 + k * x3, d = y1 - y0 + g * y1, e = y3 - y0 + k * y3;
+    return `matrix3d(${[a / b, d / b, 0, g / b, bb / h, e / h, 0, k / h, 0, 0, 1, 0, x0, y0, 0, 1].join(',')})`;
+  }
+
+  function start() {
+    const podium = document.querySelector<HTMLElement>('[data-o-podium]');
+    /* start() draait bij het laden van de module én op astro:page-load; dat is bij de eerste keer
+       dezelfde pagina. Eén keer opzetten (25 oktober, de controle: alles gebeurde twee keer). */
+    if (podium && podium.dataset.oKlaar && ruim) return;
+    ruim?.();
+    if (!podium) return;
+    podium.dataset.oKlaar = '1';
+    const $ = <T extends Element = HTMLElement>(s: string) => podium.querySelector<T>(s)!;
+    const html = document.documentElement, body = document.body;
+    const vast = $('[data-o-vast]'), beeld = $('[data-o-beeld]'), doek = $<HTMLCanvasElement>('[data-o-doek]'), still = $('[data-o-still]');
+    const lap = $('[data-o-lap]'), fon = $('[data-o-fon]'), donker = $('[data-o-donker]');
+    const tekst = $('[data-o-tekst]'), kop = $('[data-o-kop]'), rest = $('[data-o-rest]'), acc = $('[data-o-acc]'), accT = $('[data-o-acc-t]'), lede = $('[data-o-lede]');
+    const reisLaag = $('[data-o-reis]'), pil = $('[data-o-pil]'), label = $('[data-o-label]');
+    const hoe = $<Wortel>('[data-o-hoe]'), kopdeel = $('[data-o-kopdeel]'), tabs = $('[data-o-tabs]'), panelen = $('[data-o-panelen]'), voet = $('[data-o-voet]');
+    const rij = panelen.querySelector<HTMLElement>('ol') || panelen;
+    const blokken = [...rij.querySelectorAll<HTMLElement>(':scope > li')];
+    const snap1 = $('[data-o-snap="1"]');
+    const delen = [kopdeel, rij, voet];
+    const ctx = doek.getContext('2d')!;
+    let stil = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let actief = false, VW = 0, VH = 0, kF = 1, V = 1, T = 1, podTop = 0, beeldNu = -1, geland = false, binnen = false;
+    const onderRand = [0, 0, 0];                    // hoe ver elk deel van Hoe het werkt onder de rand begint
+
+    /* ── de beelden: pas na de still, en alleen als ze gebruikt worden (laadReeks, bovenaan) ── */
+    naBeeld = (i: number) => { if (Math.abs(i - beeldNu) < 20) { beeldNu = -1; werk(); } };
+    const dichtstbij = (i: number) => { for (let d = 0; d < 24; d++) { if (BEELDEN[i - d]) return i - d; if (BEELDEN[i + d]) return i + d; } return -1; };
+
+    function zetSchermen(i: number) {
+      podium.classList.add('o-gezet');   // vanaf nu de hoeken uit het script, niet meer de rechthoek uit de css
+      const b = Q.b[i] || [null, null], s = kF;
+      const schaal = (q: number[][]) => q.map(([x, y]) => [x * s, y * s]);
+      if (b[0]) { lap.style.visibility = 'visible'; lap.style.transform = matrix(1600, 1034, schaal(b[0])); donker.style.opacity = String(Q.d[i]); }
+      else lap.style.visibility = 'hidden';
+      if (b[1]) {
+        fon.style.visibility = 'visible'; fon.style.transform = matrix(540, 1170, schaal(b[1]));
+        const v0 = Q.b[Math.max(0, i - 1)][1];
+        const v = v0 ? Math.hypot((b[1][0][0] + b[1][2][0] - v0[0][0] - v0[2][0]) / 2, (b[1][0][1] + b[1][2][1] - v0[0][1] - v0[2][1]) / 2) * s : 0;
+        fon.style.filter = v > 2 ? `blur(${Math.min(5, v * 0.12).toFixed(1)}px)` : '';
+      } else fon.style.visibility = 'hidden';
+    }
+    function tekenBeeld(i: number) {
+      if (i === beeldNu) return; beeldNu = i;
+      if (i <= Q.eerste) { zetSchermen(0); doek.style.visibility = 'hidden'; still.style.visibility = ''; return; }
+      const j = dichtstbij(i);                           // nog niet binnen: het dichtstbijzijnde beeld, met zijn eigen schermen
+      if (j < 0) { zetSchermen(0); doek.style.visibility = 'hidden'; still.style.visibility = ''; return; }
+      zetSchermen(j);
+      ctx.clearRect(0, 0, doek.width, doek.height);
+      ctx.drawImage(BEELDEN[j]!, 0, 0, doek.width, doek.height);
+      doek.style.visibility = 'visible'; still.style.visibility = 'hidden';
+    }
+
+    /* ── de letters die reizen: elke letter heeft twee gezichten (de kop en het label) ── */
+    const letters: Laag[] = [];
+    reisLaag.textContent = '';
+    for (let k = 0; k < accent().length; k++) {
+      const ch = accent()[k]; if (ch === ' ') continue;
+      const el = document.createElement('span'); el.className = 'o-rl';
+      const a = document.createElement('span'); a.className = 'o-rl-a'; a.textContent = ch;
+      const b = document.createElement('span'); b.className = /[.!?]/.test(ch) ? 'o-rl-b o-rl-streep' : 'o-rl-b';
+      if (!b.classList.contains('o-rl-streep')) b.textContent = ch.toLocaleUpperCase();
+      el.append(a, b); reisLaag.append(el);
+      letters.push({ k, ch, el, a, b, sx: 0, sy: 0, tx: 0, ty: 0, aw: 0, ah: 0, bw: 0, bh: 0 });
+    }
+    function accent() { return accT.textContent || ''; }
+    const fs = [1, 1];
+    const tekenRect = (node: Node, i: number) => { const r = document.createRange(); r.setStart(node, i); r.setEnd(node, i + 1); return r.getBoundingClientRect(); };
+    function meetReis() {
+      const oud = delen.map((e) => e.style.transform);
+      delen.forEach((e) => { e.style.transform = 'none'; });
+      /* de laag met de letters even onzichtbaar uitklappen: anders is elke letter 0 px breed
+         en staat hij bij vertrek en aankomst een halve letter naast zijn plek */
+      reisLaag.style.display = 'block'; reisLaag.style.visibility = 'hidden';
+      const v = vast.getBoundingClientRect(), bron = accT.firstChild!, doel = label.firstChild as Text;
+      const csB = getComputedStyle(accT), csD = getComputedStyle(label);
+      fs[0] = parseFloat(csB.fontSize); fs[1] = parseFloat(csD.fontSize);
+      const lsB = parseFloat(csB.letterSpacing) || 0, lsD = parseFloat(csD.letterSpacing) || 0;
+      /* het vlagje is pil::before (16 × 16, vooraan in de rij): daar landt de punt */
+      const rp = pil.getBoundingClientRect(), vlag = { x: rp.left + 8, y: rp.top + rp.height / 2 };
+      let ti = 0;
+      for (const L of letters) {
+        const r = tekenRect(bron, L.k);
+        L.sx = r.left - v.left + (r.width - lsB) / 2; L.sy = r.top - v.top + r.height / 2;
+        if (L.b.classList.contains('o-rl-streep')) { L.tx = vlag.x - v.left; L.ty = vlag.y - v.top; }
+        else {
+          while (doel.data[ti] === ' ') ti++;
+          const t = tekenRect(doel, Math.min(ti, doel.data.length - 1)); ti++;
+          L.tx = t.left - v.left + (t.width - lsD) / 2; L.ty = t.top - v.top + t.height / 2;
+        }
+        L.a.style.fontSize = `${fs[0]}px`; L.a.style.fontWeight = csB.fontWeight; L.b.style.fontSize = `${fs[1]}px`;
+        L.aw = L.a.offsetWidth; L.ah = L.a.offsetHeight; L.bw = L.b.offsetWidth; L.bh = L.b.offsetHeight;
+      }
+      /* elk deel begint net onder de onderrand en komt omhoog naar zijn plek */
+      delen.forEach((e, i) => { onderRand[i] = Math.max(0, VH - (e.getBoundingClientRect().top - v.top) + 24); });
+      reisLaag.style.display = ''; reisLaag.style.visibility = '';
+      delen.forEach((e, i) => { e.style.transform = oud[i]; });
+    }
+
+    /* ── de indeling: "onder" of "links", wat de grootste kop geeft (gemeten) ── */
+    function past(maxB: number, maxH: number, regels: 'een' | 'vrij') {
+      kop.classList.toggle('o-kop-een', regels === 'een');
+      let lo = 28, hi = 92;
+      for (let n = 0; n < 12; n++) {
+        const f = (lo + hi) / 2;
+        kop.style.fontSize = `${f}px`;
+        const b = Math.max(rest.getBoundingClientRect().width + (regels === 'een' ? acc.getBoundingClientRect().width + f * 0.25 : 0), acc.getBoundingClientRect().width);
+        const h = tekst.getBoundingClientRect().height;
+        if (b <= maxB && h <= maxH) lo = f; else hi = f;
+      }
+      return lo;
+    }
+    function indeling(balk: number) {
+      const rand = parseFloat(getComputedStyle(tekst).paddingLeft) || 40;
+      const y0 = balk + 10 - 76 * kF;                    // de bovenkant van de laptop 10 px onder de balk
+      beeld.style.top = `${y0}px`;
+      /* onder: de kop op één regel, onder de handen (die reiken tot rij 830 van 840) */
+      body.classList.remove('o-links'); body.classList.add('o-onder');
+      const onderTop = y0 + 834 * kF;
+      tekst.style.top = `${onderTop}px`; tekst.style.maxWidth = '';
+      lede.style.maxWidth = `${Math.min(760, VW - 2 * rand)}px`;
+      const fOnder = past(VW - 2 * rand, VH - 22 - onderTop, 'een');
+      /* links: in het wit naast de laptop, tot boven de linkerarm (rij 524) */
+      body.classList.remove('o-onder'); body.classList.add('o-links');
+      const zoneB = Math.max(200, 463 * kF - rand - 30), zoneT = balk + 26, zoneH = y0 + 510 * kF - zoneT;
+      tekst.style.top = `${zoneT}px`; tekst.style.maxWidth = `${zoneB + rand}px`;
+      lede.style.maxWidth = `${zoneB}px`;
+      const fLinks = past(zoneB, zoneH, 'vrij');
+      /* onder is Lucas' voorbeeld: die wint, tenzij de kop links minstens 15 % groter kan */
+      const onder = fOnder >= fLinks * 0.85;
+      body.classList.toggle('o-onder', onder); body.classList.toggle('o-links', !onder);
+      if (onder) { tekst.style.top = `${onderTop}px`; tekst.style.maxWidth = ''; lede.style.maxWidth = `${Math.min(760, VW - 2 * rand)}px`; past(VW - 2 * rand, VH - 22 - onderTop, 'een'); }
+      else past(zoneB, zoneH, 'vrij');
+      /* De cookiekaart staat rechtsonder (Lucas, 25 okt). Onder de handen loopt de kop over de
+         hele breedte; daar gaat de kaart erboven staan, over de hand met de telefoon (hal.css). */
+      if (onder) html.style.setProperty('--o-cc-onder', `${Math.round(VH - onderTop + 12)}px`);
+      else html.style.removeProperty('--o-cc-onder');
+      kop.style.fontSize = `${Math.floor(parseFloat(kop.style.fontSize))}px`;
+      podium.dataset.oIndeling = onder ? 'onder' : 'links';
+    }
+
+    /* ── de hoogte van de beelden in de blokken: wat er overblijft (gemeten) ── */
+    const BEELD_MIN = 196, BEELD_MAX = 420;
+    function blokMaat() {
+      hoe.style.setProperty('--o-beeld', '260px');
+      const vrij = VH - 18 - hoe.querySelector<HTMLElement>('.o-voet')!.getBoundingClientRect().bottom + vast.getBoundingClientRect().top;
+      const h = Math.floor(Math.min(BEELD_MAX, 260 + vrij));
+      hoe.style.setProperty('--o-beeld', `${Math.max(BEELD_MIN, h)}px`);
+      return h >= BEELD_MIN;
+    }
+
+    function meet() {
+      VW = vast.clientWidth || window.innerWidth; VH = window.innerHeight;
+      actief = window.innerWidth > 900 && !stil;   // > en niet >=: de css telt 900 als telefoon (25 okt)
+      const balk = document.querySelector('.site-header .nav')?.getBoundingClientRect().bottom ?? 66;
+      html.style.setProperty('--o-vh', `${VH / 100}px`);
+      hoe.style.setProperty('--o-balk', `${Math.round(balk)}px`);
+      if (actief) {
+        /* past Hoe het werkt (kop, tabs, blokken, balk) niet in één scherm, dan gewoon onder elkaar */
+        delen.forEach((e) => { e.style.transform = 'none'; });
+        blokken.forEach((e) => { e.style.transform = ''; });
+        body.classList.add('o-aan'); body.classList.remove('o-stil');
+        if (!blokMaat()) actief = false;
+      }
+      body.classList.toggle('o-aan', actief); body.classList.toggle('o-stil', !actief);
+      html.classList.toggle('o-klik', actief && !STROOM.aan);
+      kF = VW / Q.w;
+      beeld.style.width = `${VW}px`; beeld.style.height = `${Q.h * kF}px`;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      doek.width = Math.round(Math.min(Q.w, VW * dpr)); doek.height = Math.round(doek.width * Q.h / Q.w);
+      if (actief) {
+        indeling(balk);
+        V = VH * 1.2; T = VH * 0.6;
+        podium.style.height = `${VH + V + T + VH * 0.5}px`;
+        snap1.style.top = `${V + T}px`;
+      } else {
+        podium.style.height = ''; beeld.style.top = ''; tekst.style.top = ''; tekst.style.maxWidth = ''; lede.style.maxWidth = ''; kop.style.fontSize = '';
+        kop.classList.remove('o-kop-een'); body.classList.remove('o-onder', 'o-links'); html.style.removeProperty('--o-cc-onder');
+        beeld.style.width = ''; beeld.style.height = '';
+        hoe.style.removeProperty('--o-beeld');
+        delen.forEach((e) => { e.style.transform = ''; });
+        blokken.forEach((e) => { e.style.transform = ''; });
+        snap1.style.top = `${hoe.offsetTop}px`;
+      }
+      podTop = podium.getBoundingClientRect().top + window.scrollY;
+      body.classList.remove('o-reist');
+      if (actief) { meetReis(); laadReeks(); }
+      meetStops();
+      /* Gaat de stroom uit (smaller venster, minder beweging): niet meer zweven en niet verder
+         glijden; de wielluisteraar alleen als de stroom aan kan (25 okt, de controle) */
+      if (!stroomAan()) { cancelAnimationFrame(glijRaf); glijdt = false; veegBezig = false; zweef(-1); }
+      zetWiel();
+      beeldNu = -1; werk();
+    }
+
+    const REIS0 = 0.02, STAP = 0.014, DUUR = 0.5;
+    const LAND = REIS0 + (letters.length - 1) * STAP + DUUR;   // de laatste (de punt) komt aan
+    const BINNEN = 0.97;                                       // alles staat
+
+    function werk() {
+      if (!actief) {
+        if (VW) zetSchermen(0);
+        rest.style.clipPath = ''; lede.style.clipPath = '';
+        delen.forEach((e) => { e.style.pointerEvents = ''; });
+        body.classList.remove('o-reist', 'o-onderweg', 'o-kopweg');
+        if (!geland) { geland = true; body.classList.add('o-geland'); }
+        return;
+      }
+      const s = window.scrollY - podTop;
+      if (hier >= 0 && !glijdt && Math.abs(window.scrollY - (stops[hier] ?? -1e9)) > 40) zweef(-1);
+      const pv = klem(s / V), pt = klem((s - V) / T);
+      tekenBeeld(pv > 0 ? Math.round(Q.eerste + pv * (Q.laatste - Q.eerste)) : 0);
+      /* kop en zin: weg met de snede onder 53°, van rechts naar links */
+      const w = zacht(tussen(0, 0.28, pt)), x = (1 - w) * 135;
+      const snede = w > 0 ? `polygon(-5% -20%, ${x}% -20%, ${x - 35}% 120%, -5% 120%)` : '';
+      rest.style.clipPath = snede; lede.style.clipPath = snede;
+      /* Hoe het werkt komt omhoog, in delen na elkaar; pas als de letters langs zijn. De drie
+         blokken elk met een eigen kleine vertraging, zodat ze na elkaar aankomen. */
+      ([0.42, 0.5, 0.62] as const).forEach((a, n) => {
+        const ri = uit4(tussen(a, a + 0.38, pt));
+        delen[n].style.transform = ri < 1 ? `translateY(${((1 - ri) * onderRand[n]).toFixed(1)}px)` : '';
+        /* een deel dat staat, is aan te klikken; eerst wachtte alles op o-binnen (25 okt, de controle) */
+        delen[n].style.pointerEvents = ri > 0.995 ? 'auto' : '';
+      });
+      blokken.forEach((e, n) => {
+        const ri = uit4(tussen(0.5 + 0.05 * n, 0.88 + 0.05 * n, pt));
+        e.style.transform = ri < 1 && n ? `translateY(${((1 - ri) * 56 * n).toFixed(1)}px)` : '';
+      });
+      body.classList.toggle('o-onderweg', pt > 0);
+      body.classList.toggle('o-kopweg', w >= 1);   // de kop is helemaal weg; de cookiekaart mag terug naar de hoek (hal.css)
+      const reist = pt > 0 && pt < LAND;
+      body.classList.toggle('o-reist', reist);
+      if (reist) letters.forEach((L, n) => {
+        const q = zacht(tussen(REIS0 + n * STAP, REIS0 + n * STAP + DUUR, pt));
+        const dx = L.tx - L.sx, dy = L.ty - L.sy, len = Math.hypot(dx, dy) || 1;
+        let nx = -dy / len, ny = dx / len; if (ny > 0) { nx = -nx; ny = -ny; }   // de boog bolt altijd naar boven
+        const boog = Math.min(90, len * 0.22), cx = (L.sx + L.tx) / 2 + nx * boog, cy = (L.sy + L.ty) / 2 + ny * boog;
+        const px = (1 - q) * (1 - q) * L.sx + 2 * (1 - q) * q * cx + q * q * L.tx, py = (1 - q) * (1 - q) * L.sy + 2 * (1 - q) * q * cy + q * q * L.ty;
+        const f = 1 + (fs[1] / fs[0] - 1) * q;
+        const streep = L.b.classList.contains('o-rl-streep');
+        const mix = streep ? zacht(tussen(0.72, 1, q)) : zacht(tussen(0.42, 0.72, q));
+        L.el.style.transform = `translate(${px.toFixed(2)}px,${py.toFixed(2)}px)`;
+        L.a.style.opacity = (1 - mix).toFixed(3); L.b.style.opacity = mix.toFixed(3);
+        L.a.style.transform = `translate(${(-L.aw / 2).toFixed(1)}px,${(-L.ah / 2).toFixed(1)}px) scale(${f.toFixed(4)})`;
+        L.b.style.transform = streep
+          ? `translate(-8px,-8px) scaleX(${(0.25 + 0.75 * mix).toFixed(3)})`   // de punt rekt uit tot het vlagje
+          : `translate(${(-L.bw / 2).toFixed(1)}px,${(-L.bh / 2).toFixed(1)}px) scale(${(f * fs[0] / fs[1]).toFixed(4)})`;
+      });
+      if (pt >= LAND && !geland) { geland = true; body.classList.add('o-geland'); }        // het vlagje gaat aan als een tl-buis (E4)
+      else if (pt < LAND && geland) { geland = false; body.classList.remove('o-geland'); }
+      if (pt >= BINNEN && !binnen) { binnen = true; body.classList.add('o-binnen'); }
+      else if (pt < BINNEN && binnen) { binnen = false; body.classList.remove('o-binnen'); }
+    }
+
+    /* ── de keuze per dienst (tabs, met de pijltjes) ──
+       De blokken blijven staan; data-dienst op de sectie kiest wat erin staat (opening.css),
+       en de uitleg begint opnieuw, zodat je het proces van die dienst ziet. */
+    const knoppen = [...tabs.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    function kies(t: HTMLButtonElement, focus: boolean) {
+      if (t.getAttribute('aria-selected') === 'true') { if (focus) t.focus(); return; }
+      for (const b of knoppen) {
+        const aan = b === t;
+        b.setAttribute('aria-selected', aan ? 'true' : 'false'); b.tabIndex = aan ? 0 : -1;
+      }
+      hoe.dataset.dienst = t.dataset.dienst;
+      if (t.dataset.maat) hoe.dataset.uitlegMaat = t.dataset.maat;
+      panelen.setAttribute('aria-labelledby', t.id);
+      if (focus) t.focus();
+      /* 25 oktober (de controle): had je de uitleg met de hand stilgezet, dan begon hij bij een
+         andere tab toch weer te bewegen. Nu krijg je de nieuwe dienst in zijn eindstand, stil;
+         met "opnieuw" speel je hem af (WCAG 2.2.2: jouw pauze blijft gelden). */
+      if (!stil && hoe.dataset.uitlegStaat && hoe.dataset.uitlegStaat !== 'wacht') {
+        if (hoe.dataset.uitlegHand) hoe._u?.stop(); else hoe._u?.opnieuw();
+      }
+    }
+    knoppen.forEach((b, i) => {
+      b.addEventListener('click', () => kies(b, false));
+      b.addEventListener('keydown', (e) => {
+        const n = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : e.key === 'Home' ? -i : e.key === 'End' ? knoppen.length - 1 - i : 0;
+        if (!n) return;
+        e.preventDefault(); kies(knoppen[(i + n + knoppen.length) % knoppen.length], true);
+      });
+    });
+    /* Met de tab-toets: komt de focus in Hoe het werkt terwijl dat nog onder de rand staat,
+       dan springt de pagina naar de stand waarin het staat (de tabs, Start een bestelling). */
+    const opFocus = () => {
+      if (!actief) return;
+      const s = window.scrollY - podTop;
+      if (s < V + T * BINNEN || s > V + T + VH * 0.5) window.scrollTo({ top: podTop + V + T, behavior: 'instant' as ScrollBehavior });
+    };
+    hoe.addEventListener('focusin', opFocus);
+
+    /* ── DE STROOM: ÉÉN SCROLL, ÉÉN SECTIE — 25 oktober 2026, 16:56 ─────────────────────────
+       Lucas: *"Wanneer ik omlaag scroll vanaf de laptop begin sectie wil ik dat hij afspeelt en
+       gelijk in een soort smooth snelheid naar de volgende sectie gaat waarbij de elementen in die
+       sectie heel langzaam golvend zweven (echt heel rustig en subtiel), tot je weer verder
+       scrollt en je weer heel snel naar de volgende sectie gaat en weer hetzelfde gebeurt."* En:
+       "Elke scroll = volgende sectie klopt tot en met de services/producten. Hierna … normaal
+       doorscrollen", "Alleen op de computer", en "Smooth ontploffing … dit moet zo voelen in de
+       scroll animatie" (snel weg, lang en zacht uitlopen).
+       De stops: het begin, Hoe het werkt (na de video), Elk formaat, Wat we maken. Een wieltik of
+       een toets (pijl, Page, spatie) daartussen glijdt naar de volgende stop; een sectie die
+       langer is dan het scherm scrolt eerst gewoon door. Voorbij Wat we maken: gewoon scrollen.
+       Aan en uit met STROOM hieronder ("misschien alleen bij de laptop": tot = 1). */
+    const STROOM = { aan: true, tot: 3 };
+    const bezier = (x1: number, y1: number, x2: number, y2: number) => (x: number) => {
+      let lo = 0, hi = 1, t = x;
+      for (let n = 0; n < 20; n++) { t = (lo + hi) / 2; const bx = 3 * (1 - t) * (1 - t) * t * x1 + 3 * (1 - t) * t * t * x2 + t * t * t; if (bx < x) lo = t; else hi = t; }
+      return 3 * (1 - t) * (1 - t) * t * y1 + 3 * (1 - t) * t * t * y2 + t * t * t;
+    };
+    const VIDEO_CURVE = bezier(0.42, 0, 0.12, 1);      // de video: rustig op gang, lang uitlopen
+    const SPRONG_CURVE = bezier(0.2, 0.75, 0.08, 1);   // de "smooth ontploffing": snel weg, zacht aankomen
+    const fmtSec = document.querySelector<HTMLElement>('.h-fmt'), makenSec = document.querySelector<HTMLElement>('#maken');
+    const zweefDelen = [null, hoe, fmtSec, makenSec];
+    let stops: number[] = [], glijdt = false, veegBezig = false, laatsteWiel = 0, glijRaf = 0, hier = -1, glijK = -1;
+    const kopY = (s: HTMLElement | null) => {
+      if (!s) return NaN;
+      const k = s.querySelector<HTMLElement>('.h-sec-kop') || s;
+      const balk = document.querySelector('.site-header .nav')?.getBoundingClientRect().bottom ?? 66;
+      return Math.round(k.getBoundingClientRect().top + window.scrollY - balk - 36);
+    };
+    const stroomAan = () => STROOM.aan && actief && !stil && window.innerWidth > 900;
+    function meetStops() {
+      stops = [podTop, podTop + V + T, kopY(fmtSec), kopY(makenSec)].slice(0, STROOM.tot + 1).filter((y) => Number.isFinite(y));
+      /* de laatste sectie van de stroom: de €1-melding wacht tot die voorbij is (interactions.js),
+         anders ligt hij linksonder over elke sectie die een scherm vult */
+      zweefDelen.forEach((e) => e?.removeAttribute('data-o-stroom-eind'));
+      if (stroomAan()) zweefDelen[stops.length - 1]?.setAttribute('data-o-stroom-eind', '');
+    }
+    function zweef(k: number) {
+      hier = k;
+      zweefDelen.forEach((e, i) => e?.classList.toggle('is-zweeft', i === k && stroomAan()));
+    }
+    function glijNaar(k: number) {
+      const y0 = window.scrollY, y1 = stops[k], video = (k <= 1 && y0 <= stops[1] + 4);
+      /* De tijd hangt af van de afstand (25 okt, de controle): 10 px voor de stop duurde 3 s en
+         hield zolang elke tik tegen. De hele video blijft 3 s, een hele sectie 1,15 s. */
+      const afstand = Math.abs(y1 - y0);
+      if (afstand < 4) { zweef(k); return; }
+      const vol = video ? Math.max(1, stops[1] - stops[0]) : VH;
+      const duur = (video ? 3000 : 1150) * Math.min(1, Math.max(video ? 0.2 : 0.35, afstand / vol));
+      const curve = video ? VIDEO_CURVE : SPRONG_CURVE, t0 = performance.now();
+      glijdt = true; veegBezig = true; glijK = k; zweef(-1);
+      cancelAnimationFrame(glijRaf);
+      const stap = (nu: number) => {
+        const p = Math.min(1, (nu - t0) / duur);
+        const doel = stops[k] ?? y1;                                     // verandert het venster onderweg, dan de nieuwe stop
+        window.scrollTo({ top: y0 + (doel - y0) * curve(p), behavior: 'instant' as ScrollBehavior });
+        if (p < 1) glijRaf = requestAnimationFrame(stap);
+        else { glijdt = false; zweef(k); }
+      };
+      glijRaf = requestAnimationFrame(stap);
+    }
+    /* waar naartoe vanaf y in richting r; -1 = gewoon scrollen. Een sectie die langer is dan het
+       scherm scrolt eerst gewoon door tot haar einde; het podium telt niet als lang (de halve
+       schermhoogte rust na Hoe het werkt is geen inhoud). */
+    const eindVan = (k: number) => {
+      const s = zweefDelen[k]; if (!s || k <= 1) return -Infinity;
+      const eind = s.getBoundingClientRect().bottom + window.scrollY - VH;
+      return eind - stops[k] > VH * 0.25 ? eind : -Infinity;             // een kwart scherm extra telt nog niet als lang
+    };
+    function volgende(y: number, r: number) {
+      if (stops.length < 2) return -1;
+      const laatste = stops.length - 1;
+      if (r > 0) {
+        if (y < stops[1] - 4) return 1;                                  // de video speelt in één keer
+        let cur = 0; for (let i = 0; i < stops.length; i++) if (stops[i] <= y + 4) cur = i;
+        if (cur >= laatste) return -1;                                   // voorbij Wat we maken: vrij
+        if (y < eindVan(cur) - 4) return -1;                             // eerst de rest van deze sectie
+        return cur + 1;
+      }
+      if (y <= stops[1] + 4) return y > stops[0] + 4 ? 0 : -1;           // terug naar het begin
+      if (y > stops[laatste] + 4) return -1;                             // onder Wat we maken: vrij
+      let cur = -1; for (let i = 0; i < stops.length; i++) if (stops[i] < y - 4) cur = i;
+      if (cur < 0) return -1;
+      const opStop = stops.some((s) => Math.abs(s - y) <= 4);
+      if (!opStop && eindVan(cur) > -Infinity) return -1;                // midden in een lange sectie: gewoon scrollen
+      return cur;
+    }
+    /* een open dialoog (de cookie-instellingen) maakt de pagina erachter onbereikbaar: dan ook niet glijden */
+    const modaal = () => { try { return !!document.querySelector(':modal'); } catch { return false; } };
+    const opWiel = (e: WheelEvent) => {
+      if (!stroomAan() || e.ctrlKey || !e.deltaY || Math.abs(e.deltaY) < Math.abs(e.deltaX) || modaal()) return;
+      const nu = performance.now(), los = nu - laatsteWiel > 160; laatsteWiel = nu;
+      if (glijdt || (veegBezig && !los)) { e.preventDefault(); return; }
+      veegBezig = false;
+      const k = volgende(window.scrollY, Math.sign(e.deltaY));
+      if (k < 0) return;
+      e.preventDefault(); glijNaar(k);
+    };
+    const TOETS: Record<string, number> = { ArrowDown: 1, PageDown: 1, ' ': 1, ArrowUp: -1, PageUp: -1 };
+    const opToets = (e: KeyboardEvent) => {
+      if (!stroomAan() || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || modaal()) return;
+      const doel = e.target as HTMLElement | null;
+      if (doel && doel.closest('input, textarea, select, button, a, [role="tab"], [contenteditable="true"]')) return;
+      let r = TOETS[e.key]; if (!r) return;
+      if (e.key === ' ' && e.shiftKey) r = -1;
+      if (glijdt) { e.preventDefault(); return; }
+      const k = volgende(window.scrollY, r);
+      if (k < 0) return;
+      e.preventDefault(); glijNaar(k);
+    };
+    /* niet-passief alleen als het moet: anders wacht elk wieltje op de pagina op dit script */
+    let wielAan = false;
+    function zetWiel() {
+      const moet = stroomAan();
+      if (moet && !wielAan) { window.addEventListener('wheel', opWiel, { passive: false }); wielAan = true; }
+      else if (!moet && wielAan) { window.removeEventListener('wheel', opWiel); wielAan = false; }
+    }
+    window.addEventListener('keydown', opToets);
+
+    /* ── het accentwoord ademt (Lucas, 13:52): pas na de eerste beweging van de bezoeker ── */
+    const ADEM = ['pointermove', 'keydown', 'touchstart', 'wheel'] as const;
+    const adem = () => { podium.classList.add('o-ademt'); ADEM.forEach((t) => window.removeEventListener(t, adem)); };
+    if (!stil) ADEM.forEach((t) => window.addEventListener(t, adem, { passive: true }));
+
+    /* ── luisteraars op window: één scroll en één resize, en weer weg bij een zachte navigatie ── */
+    let bezig = false;
+    const opScroll = () => { if (bezig) return; bezig = true; requestAnimationFrame(() => { bezig = false; werk(); }); };
+    let rt = 0;
+    const opResize = () => {
+      clearTimeout(rt);
+      rt = window.setTimeout(() => {
+        const k = glijdt ? glijK : hier;                                 // stond je op een stop, dan blijf je daar
+        meet();
+        if (k >= 0 && stroomAan() && !glijdt && stops[k] !== undefined) { window.scrollTo({ top: stops[k], behavior: 'instant' as ScrollBehavior }); zweef(k); }
+      }, 120);
+    };
+    const mq = matchMedia('(prefers-reduced-motion: reduce)');
+    const opMq = () => { stil = mq.matches; meet(); };
+    window.addEventListener('scroll', opScroll, { passive: true });
+    window.addEventListener('resize', opResize);
+    mq.addEventListener?.('change', opMq);
+
+    /* /#hoe: dan Hoe het werkt zoals het staat, niet halverwege de video (25 okt, de controle) */
+    const naarHoe = () => { if (location.hash === '#hoe' && actief && podium.isConnected) window.scrollTo({ top: podTop + V + T, behavior: 'instant' as ScrollBehavior }); };
+    window.addEventListener('hashchange', naarHoe);
+
+    meet();
+    if (location.hash === '#hoe') { requestAnimationFrame(naarHoe); if (document.readyState !== 'complete') window.addEventListener('load', naarHoe, { once: true }); }
+    document.fonts?.ready.then(() => { if (podium.isConnected) meet(); });
+    if (still instanceof HTMLImageElement && !still.complete) still.addEventListener('load', () => { if (podium.isConnected) meet(); }, { once: true });
+
+    ruim = () => {
+      window.removeEventListener('scroll', opScroll);
+      window.removeEventListener('resize', opResize);
+      mq.removeEventListener?.('change', opMq);
+      ADEM.forEach((t) => window.removeEventListener(t, adem));
+      window.removeEventListener('wheel', opWiel); wielAan = false;
+      window.removeEventListener('keydown', opToets);
+      window.removeEventListener('hashchange', naarHoe);
+      window.removeEventListener('load', naarHoe);
+      naBeeld = null;
+      delete podium.dataset.oKlaar; podium.classList.remove('o-gezet');
+      cancelAnimationFrame(glijRaf);
+      zweefDelen.forEach((e) => { e?.classList.remove('is-zweeft'); e?.removeAttribute('data-o-stroom-eind'); });
+      clearTimeout(rt);
+      html.classList.remove('o-klik');
+      body.classList.remove('o-aan', 'o-stil', 'o-onder', 'o-links', 'o-reist', 'o-onderweg', 'o-kopweg', 'o-geland', 'o-binnen');
+      html.style.removeProperty('--o-cc-onder');
+      ruim = null;
+    };
+  }
+
+  start();
+  document.addEventListener('astro:page-load', start);
+  document.addEventListener('astro:before-swap', () => ruim?.());
+</script>

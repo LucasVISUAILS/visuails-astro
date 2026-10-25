@@ -166,7 +166,9 @@ const dist = (p) => { const f = path.join(ROOT, 'dist', p); return existsSync(f)
     ok('voorpagina: de melding met de stand staat verborgen in de pagina', /<aside class="h-melding"[^>]*data-vis-klant="melding"[^>]*hidden/.test(thuis));
     ok('  en de proef-melding ook', /<aside class="h-melding h-melding-proef"[^>]*data-vis-proef[^>]*hidden/.test(thuis));
     ok('  zonder naam of kenmerk in de html', !/Welkom terug, [A-Z]|VIS-\d/.test(thuis));
-    ok('  het label van de opening staat er voor iedereen', /class="h-pil h-op[^"]*"[^>]*>/.test(thuis) && !/class="h-pil h-op[^"]*"[^>]*data-vis-uit/.test(thuis));
+    /* Levering 74 (25 oktober 2026): de opening heeft geen label meer boven de kop (alleen de
+       kop en één zin, HalOpening.astro); die twee staan er voor iedereen. */
+    ok('  de kop en de zin van de opening staan er voor iedereen', /<h1 id="h-h1" class="o-kop"(?![^>]*data-vis-uit)[^>]*>/.test(thuis) && /<p class="o-lede"(?![^>]*data-vis-uit)[^>]*>/.test(thuis));
     ok('  de oude welkomstregel bovenin is weg', !/class="h-welkom"/.test(thuis));
     /* 14 oktober 2026 (v26-proefblok a): de abonnementsknop staat niet meer in
        het proefblok, alleen nog in de opening. */
@@ -412,7 +414,16 @@ else {
     const blok = await page.evaluate(() => { const b = document.querySelector('section.h-proef'); return b ? b.getBoundingClientRect().top + scrollY : 0; });
     await scrolNaar(page, Math.max(0, blok - 100));
     ok('  ook niet met het proefblok in beeld', !(await lees()).proef);
-    await scrolNaar(page, 1400);
+    /* Levering 74: de opening is een podium met de scrollvideo; voorbij de opening is daar
+       voorbij het podium (src/scripts/interactions.js, meldingen). En met de stroom (één scroll,
+       één sectie, 16:56) pas als de laatste sectie ervan half voorbij is ([data-o-stroom-eind]):
+       daar vult elke sectie het scherm en lag de melding er linksonder overheen. */
+    const voorbij = await page.evaluate(() => {
+      const e = document.querySelector('[data-o-stroom-eind]'), p = document.querySelector('[data-o-podium]');
+      if (e) return Math.round(e.getBoundingClientRect().bottom + scrollY - innerHeight * 0.5 + 100);
+      return p ? Math.round(p.getBoundingClientRect().bottom + scrollY + 100) : 1400;
+    });
+    await scrolNaar(page, voorbij);
     let m = await totDat(lees, (x) => x.proef);
     ok('  voorbij de opening: "Eerst zien? Eén product voor €1"', m.proef && /^Eerst zien\? Eén product voor €1/.test(m.tekst || ''), JSON.stringify(m));
     ok('  de knop "Probeer VISUAILS · €1" naar /nl/test-sample/', m.knop && m.knop[0] === '/nl/test-sample/' && m.knop[1] === 'Probeer VISUAILS · €1', JSON.stringify(m.knop));
@@ -421,7 +432,7 @@ else {
     m = await lees();
     const dagen = m.notitie ? (m.notitie.p - Date.now()) / 86400000 : 0;
     ok(`  Escape sluit hem, en hij blijft ${PROEF_WEG_DAGEN} dagen weg`, !m.proef && Math.abs(dagen - PROEF_WEG_DAGEN) < 0.01, String(dagen));
-    await page.reload({ waitUntil: 'networkidle' }); await scrolNaar(page, 1400);
+    await page.reload({ waitUntil: 'networkidle' }); await scrolNaar(page, voorbij);
     ok('  na herladen en scrollen: weg', !(await lees()).proef);
     ok('  geen scriptfout', fouten.length === 0, fouten.join(' | '));
     await ctx.close();

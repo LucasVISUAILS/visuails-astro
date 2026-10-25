@@ -440,7 +440,7 @@ function algemeneGroepen(lang = 'en') {
                twee kopieën van een geldbelofte lopen binnen een maand uit
                elkaar. */
             q: 'Lijkt het beeld echt op mijn product?',
-            a: `${producttrouw('nl')} Wat we niet beloven, is dat AI je product tot op de draad kopieert — dat kan geen enkele tool, en zo’n belofte merk je pas bij levering. Wat we wél doen: elk verschil dat we zien met de hand rechtzetten, en bij twijfel nemen we contact met je op voordat we verdergaan, in plaats van te gokken. Lukt het alsnog niet, dan lees je bij “Wat als de visuals niet kloppen?” hieronder wat er dan gebeurt.`,
+            a: `${producttrouw('nl')} Wat we niet beloven, is dat AI je product tot op de draad kopieert — dat kan geen enkele tool, en zo’n belofte merk je pas bij levering. Wat we wél doen: elk verschil dat we zien rechtzetten, en bij twijfel nemen we contact met je op voordat we verdergaan, in plaats van te gokken. Lukt het alsnog niet, dan lees je bij “Wat als de visuals niet kloppen?” hieronder wat er dan gebeurt.`,
           },
           {
             q: 'Wordt elk beeld echt gecontroleerd?',
@@ -526,7 +526,7 @@ function algemeneGroepen(lang = 'en') {
           },
           {
             q: 'Zijn de visuals AI-gegenereerd?',
-            a: 'Ja, en dat zeggen we gewoon. Elke visual wordt gegenereerd uit foto’s van jouw echte product en met de hand afgewerkt voordat die wordt geleverd — een gemaakt beeld, geen foto van een shoot die heeft plaatsgevonden. We beschrijven precies hoe jouw beelden gemaakt zijn. We vertellen je niet wat dat voor jouw bedrijf betekent.',
+            a: 'Ja, en dat zeggen we gewoon. Elke visual wordt gegenereerd uit foto’s van jouw echte product en nagekeken voordat die wordt geleverd — een gemaakt beeld, geen foto van een shoot die heeft plaatsgevonden. We beschrijven precies hoe jouw beelden gemaakt zijn. We vertellen je niet wat dat voor jouw bedrijf betekent.',
             linkText: 'Lees onze AI Act-pagina',
             linkHref: '/ai-act',
           },
@@ -672,7 +672,7 @@ function algemeneGroepen(lang = 'en') {
           /* Zie de noot bij de Nederlandse tegenhanger, en de kop van
              PRODUCTTROUW in pricing.js. */
           q: 'Will the image really look like my product?',
-          a: `${producttrouw('en')} What we do not promise is that AI copies your product thread for thread — no tool does, and a promise like that only breaks on delivery. What we do: correct every difference we spot by hand, and when we are unsure we contact you before going further instead of guessing. If it still cannot be done, “What if the visuals are not right?” below says what happens then.`,
+          a: `${producttrouw('en')} What we do not promise is that AI copies your product thread for thread — no tool does, and a promise like that only breaks on delivery. What we do: correct every difference we spot, and when we are unsure we contact you before going further instead of guessing. If it still cannot be done, “What if the visuals are not right?” below says what happens then.`,
         },
         {
           q: 'Is every image really checked?',
@@ -783,7 +783,7 @@ function algemeneGroepen(lang = 'en') {
         },
         {
           q: 'Are the visuals AI-generated?',
-          a: 'Yes, and we say so plainly. Every visual is generated from photographs of your real product and finished by hand before it is delivered — a made image, not a photograph of a shoot that happened. We will describe exactly how yours were made. We will not tell you what that means for your business.',
+          a: 'Yes, and we say so plainly. Every visual is generated from photographs of your real product and checked before it is delivered — a made image, not a photograph of a shoot that happened. We will describe exactly how yours were made. We will not tell you what that means for your business.',
           linkText: 'Read our AI Act page',
           linkHref: '/ai-act',
         },
@@ -982,7 +982,7 @@ const CATALOG_LIFESTYLE_FAQ = {
       },
       {
         q: 'Is this AI, and do I have to say so?',
-        a: 'Yes, and we say so plainly: every image is generated from photographs of your real product and finished by hand. The photos also carry an AI marking inside the file, but do not rely on that as the disclosure: the one that counts is the visible one, which you place with the image. What a marketplace or a social platform asks of you on top of that — an AI toggle on a post, a label on an ad — is theirs to set, and we list it on our AI Act page.',
+        a: 'Yes, and we say so plainly: every image is generated from photographs of your real product and checked. The photos also carry an AI marking inside the file, but do not rely on that as the disclosure: the one that counts is the visible one, which you place with the image. What a marketplace or a social platform asks of you on top of that — an AI toggle on a post, a label on an ad — is theirs to set, and we list it on our AI Act page.',
         linkText: 'Read our AI Act page',
         linkHref: '/ai-act',
       },
@@ -1031,7 +1031,7 @@ const CATALOG_LIFESTYLE_FAQ = {
       },
       {
         q: 'Is dit AI, en moet ik dat vermelden?',
-        a: 'Ja, en dat zeggen we gewoon: elk beeld wordt gegenereerd uit foto’s van je echte product en met de hand afgewerkt. In de foto’s zit ook een AI-markering in het bestand, maar reken daar niet op als vermelding: de vermelding die telt is de zichtbare, en die plaats je zelf bij het beeld. Wat een marktplaats of socialmediaplatform daarbovenop van jou vraagt — een AI-schakelaar op een post, een label op een advertentie — is aan hen, en staat op onze AI Act-pagina.',
+        a: 'Ja, en dat zeggen we gewoon: elk beeld wordt gegenereerd uit foto’s van je echte product en nagekeken. In de foto’s zit ook een AI-markering in het bestand, maar reken daar niet op als vermelding: de vermelding die telt is de zichtbare, en die plaats je zelf bij het beeld. Wat een marktplaats of socialmediaplatform daarbovenop van jou vraagt — een AI-schakelaar op een post, een label op een advertentie — is aan hen, en staat op onze AI Act-pagina.',
         linkText: 'Lees onze AI Act-pagina',
         linkHref: '/ai-act',
       },
@@ -1084,7 +1084,7 @@ const CATALOG_LIFESTYLE_FAQ = {
       },
       {
         q: 'Is this AI, and do I have to say so?',
-        a: 'Yes, and we say so plainly: every image is generated from photographs of your real product and finished by hand. The photos also carry an AI marking inside the file, but do not rely on that as the disclosure: the one that counts is the visible one, which you place with the image. What a marketplace or a social platform asks of you on top of that — an AI toggle on a post, a label on an ad — is theirs to set, and we list it on our AI Act page.',
+        a: 'Yes, and we say so plainly: every image is generated from photographs of your real product and checked. The photos also carry an AI marking inside the file, but do not rely on that as the disclosure: the one that counts is the visible one, which you place with the image. What a marketplace or a social platform asks of you on top of that — an AI toggle on a post, a label on an ad — is theirs to set, and we list it on our AI Act page.',
         linkText: 'Read our AI Act page',
         linkHref: '/ai-act',
       },
@@ -1133,7 +1133,7 @@ const CATALOG_LIFESTYLE_FAQ = {
       },
       {
         q: 'Is dit AI, en moet ik dat vermelden?',
-        a: 'Ja, en dat zeggen we gewoon: elk beeld wordt gegenereerd uit foto’s van je echte product en met de hand afgewerkt. In de foto’s zit ook een AI-markering in het bestand, maar reken daar niet op als vermelding: de vermelding die telt is de zichtbare, en die plaats je zelf bij het beeld. Wat een marktplaats of socialmediaplatform daarbovenop van jou vraagt — een AI-schakelaar op een post, een label op een advertentie — is aan hen, en staat op onze AI Act-pagina.',
+        a: 'Ja, en dat zeggen we gewoon: elk beeld wordt gegenereerd uit foto’s van je echte product en nagekeken. In de foto’s zit ook een AI-markering in het bestand, maar reken daar niet op als vermelding: de vermelding die telt is de zichtbare, en die plaats je zelf bij het beeld. Wat een marktplaats of socialmediaplatform daarbovenop van jou vraagt — een AI-schakelaar op een post, een label op een advertentie — is aan hen, en staat op onze AI Act-pagina.',
         linkText: 'Lees onze AI Act-pagina',
         linkHref: '/ai-act',
       },

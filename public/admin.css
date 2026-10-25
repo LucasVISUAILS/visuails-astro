@@ -309,6 +309,14 @@
   --r-sm: var(--r-field);  /* the small stuff inside them */
   --r-pill: 999px; /* buttons only — see global.css */
   --radius: var(--r-md);
+  /* De hoeken van nu (25 oktober 2026), met de hand overgenomen uit global.css zoals
+     de rest van dit blok: kaart 24 rond aan alle vier de hoeken, groot vlak 32, kleine
+     tegel 12; alleen wat je bedient houdt de zachte hoek (Lucas: "puur alleen voor
+     bijvoorbeeld knoppen"). */
+  --r-kaart: 24px;
+  --r-vlak: 32px;
+  --r-klein: 12px;
+  --hoek-knop: 14px 3px 3px 3px;
 
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   /* The four-step duration scale, copied from global.css for the same reason
@@ -2539,8 +2547,9 @@ html body {
   --h-letter: "Urbanist Variable", ui-sans-serif, system-ui, sans-serif;
   --font: var(--h-letter); --font-kop: var(--h-letter); --font-display: var(--h-letter); --font-mono: var(--h-letter);
   --stretch-kop: 100%; --stretch-mono: 100%;
-  --r-card: 22px; --r-field: 16px; --r-lg: 22px; --r-md: 16px; --r-sm: 10px;
-  --adm-r-kaart: 22px; --adm-r: 16px;
+  /* kaarten 24 rond (25 oktober 2026, Lucas: "De hoeken van kaarten worden gewoon heel rond"); was 22 */
+  --r-card: var(--r-kaart); --r-field: 16px; --r-lg: var(--r-kaart); --r-md: 16px; --r-sm: 10px;
+  --adm-r-kaart: var(--r-kaart); --adm-r: 16px;
   font-family: var(--h-letter);
 }
 
@@ -2813,18 +2822,25 @@ form.login {
 .adm-side .bar-link { border-radius: 12px 3px 3px 3px; }
 .bar-thema { border-radius: 11px 3px 3px 3px; }
 /* De hoekregel in /admin (levering 57, gemeten): de knop in "Nu doen" staat rechts in zijn
-   regel. Alleen in de bovenste en de onderste regel raakt hij een hoek van de lijst (22 px):
-   daar loopt die hoek mee (22 - 12 = 10), in het midden is hij recht, zoals de vinkjes in de
-   animatie op de site. Op de telefoon staat hij linksonder in zijn regel. De knoppen onder
-   een notitie zitten te dicht op de rand voor een zachte hoek: licht. */
+   regel. Alleen in de bovenste en de onderste regel raakt hij een hoek van de lijst:
+   daar loopt die hoek mee, in het midden is hij recht, zoals de vinkjes in de animatie op
+   de site. Op de telefoon staat hij linksonder in zijn regel. 25 oktober 2026: de lijst is
+   een kaart van 24 rond (was 22), dus 24 - 12 = 12; en een knop die in een hoek van zijn
+   vlak ligt, loopt mee met minstens 8 (de knop onder een notitie, 16 en 14 van de hoek in
+   een vlak van 16; de knop in de dagkeuze van de planning, 20 en 18 van de hoeken). */
 .nd-regel .btn { border-radius: 3px; }
-.nd-regel:first-child .btn { border-top-right-radius: 10px; }
-.nd-regel:last-child .btn { border-bottom-right-radius: 10px; }
+.nd-regel:first-child .btn { border-top-right-radius: 12px; }
+.nd-regel:last-child .btn { border-bottom-right-radius: 12px; }
 @media (max-width: 600px) {
   .nd-regel:first-child .btn { border-top-right-radius: 3px; }
-  .nd-regel:last-child .btn { border-bottom-right-radius: 3px; border-bottom-left-radius: 10px; }
+  .nd-regel:last-child .btn { border-bottom-right-radius: 3px; border-bottom-left-radius: 12px; }
 }
 .notepanel .controls .btn { border-radius: 3px; }
+.notepanel .controls.is-under > .btn:first-child { border-bottom-left-radius: 8px; }
+.card .ag-dagform > .btn { border-radius: 3px 8px 8px 3px; }
+@media (max-width: 600px) {
+  .card .ag-dagform > .btn { border-radius: 3px 3px 8px 8px; }
+}
 
 /* ══ LEVERING 62 · SCHEMA A (19 oktober 2026, afvinklijst 41) ═══════════════════
    Zwart, wit en grijs zonder lila of blauwe zweem; violet alleen bij wat je kiest.
@@ -2832,3 +2848,12 @@ form.login {
    tekst ook, zoals op de site. */
 html body input[type="checkbox"], html body input[type="radio"] { accent-color: #25508B; }
 html body ::selection { background: #25508B; color: #FFFFFF; }
+
+/* ══ LEVERING 74 · GLAS OP DE BOVENBALK (25 oktober 2026) ═══════════════════════════
+   Lucas, 15:24: "gebruik voor plekken als top bar wel glas". De balk van /admin blijft bovenaan
+   staan boven de lijsten. Zijn eigen kleur (licht of donker) op 92 %: grijze letters halen boven
+   de donkerste rij in licht nog 4,69 : 1, in donker blijft wit boven 13 : 1. 16 px vervaging.
+   Zonder backdrop-filter of color-mix: vol, zoals hiervoor. */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) and (background: color-mix(in srgb, red 50%, transparent)) {
+  .adm-balk { background: color-mix(in srgb, var(--paper-lift) 92%, transparent); -webkit-backdrop-filter: blur(16px) saturate(1.6); backdrop-filter: blur(16px) saturate(1.6); }
+}

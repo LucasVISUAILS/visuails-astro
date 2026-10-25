@@ -364,7 +364,7 @@ const looks = ORDERABLE.map((s) => {
     gap: .45rem;
     padding: .6rem;
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-lg) 3px 3px 3px;
+    border-radius: var(--r-kaart);
     background: var(--surface);
     cursor: pointer;
     transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
@@ -383,7 +383,7 @@ const looks = ORDERABLE.map((s) => {
     display: none;
     margin-left: auto;
     padding: .15rem .5rem;
-    border-radius: 14px 3px 3px 3px;
+    border-radius: var(--hoek-knop);
     background: var(--ink);
     color: var(--accent);
     font-family: var(--font-mono);
@@ -397,7 +397,7 @@ const looks = ORDERABLE.map((s) => {
     width: 100%;
     aspect-ratio: 4 / 3;
     object-fit: cover;
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: var(--r-kaart);
     background: var(--surface-2);
   }
   .look-row { display: flex; align-items: center; gap: .5rem; }
@@ -427,10 +427,10 @@ const looks = ORDERABLE.map((s) => {
     display: grid; grid-template-columns: 4.5rem minmax(0, 1fr) auto;
     gap: .9rem; align-items: center;
     margin-top: .9rem; padding: .7rem .8rem;
-    border: 1px solid var(--accent); border-radius: var(--r-lg) 3px 3px 3px;
+    border: 1px solid var(--accent); border-radius: var(--r-kaart);
     background: var(--accent-soft);
   }
-  .look-vast-shot { width: 4.5rem; height: 3.4rem; object-fit: cover; border-radius: var(--r-sm) 3px 3px 3px; display: block; background: var(--surface-2); }
+  .look-vast-shot { width: 4.5rem; height: 3.4rem; object-fit: cover; border-radius: var(--r-klein); display: block; background: var(--surface-2); }
   .look-vast-t { display: grid; gap: .1rem; min-width: 0; }
   /* 11,7px in plaats van 10,9 — de ondergrens van de keuring is 11,5px. */
   .look-vast-l { font-size: .73rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
@@ -438,7 +438,7 @@ const looks = ORDERABLE.map((s) => {
   .look-vast-hint { font-size: .78rem; color: var(--ink-3); line-height: 1.4; }
   .look-vast-btn {
     font: inherit; font-size: .86rem; font-weight: 700;
-    padding: .45rem .8rem; border-radius: 14px 3px 3px 3px;
+    padding: .45rem .8rem; border-radius: var(--hoek-knop);
     border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink);
     cursor: pointer;
     transition: border-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);

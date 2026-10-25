@@ -1,7 +1,8 @@
 # VISUAILS — kleurenschema
 
-**Stand: 24 oktober 2026. Schema Blauw uur, overal (levering 68).** Dit is het ene
-bestand dat de kleuren draagt. Verandert hier iets, dan in de bestanden hieronder ook, en
+**Stand: 24 oktober 2026. Schema Blauw uur, overal (levering 68). De hoeken, glas en gloed,
+de knoppen, Hoe het werkt in witte kaarten, de gloed van "Gemaakt met AI" en de iconen zonder
+plaatje: 25 oktober 2026 (levering 74).** Dit is het ene bestand dat de kleuren draagt. Verandert hier iets, dan in de bestanden hieronder ook, en
 andersom niet.
 
 Lucas koos in lijst 55 (*"Wit, inkt en kobalt"*): blauw **a** (Blauw uur `#25508B`, uit de
@@ -28,9 +29,11 @@ Blauw uur als palet (lijst 54) zijn alleen schetsen geweest; ze stonden nooit op
 ## In één zin
 
 Puur wit. Inkt en één blauw snijden erin, zoals het logo. **Blauw staat op één plek per
-scherm (Bestellen bovenin), bij het logo onder de muis, in een link in de tekst, in de
-focusrand en in geselecteerde tekst. Verder nergens.** Eén inktblok per pagina, afgesneden
-op 53°. Geen verloop als vlak, geen glas, geen bewogen achtergrond, geen warme kleur.
+scherm (Bestellen bovenin), bij het logo onder de muis, in het accentwoord van de opening
+dat ademt, in een link in de tekst, in de focusrand en in geselecteerde tekst. Verder
+nergens.** Eén inktblok per pagina, afgesneden op 53°. Geen verloop als vlak, geen bewogen
+achtergrond, geen warme kleur. Glas op wat boven de pagina zweeft; een gloed in blauw uur op een
+knop onder de muis en, even, om het product dat met AI gemaakt is (levering 74).
 
 ---
 
@@ -85,32 +88,43 @@ De producten zijn het warme. Een vierde kleur (amber, lamplicht) maakt er weer e
 
 | Plek | Hoe |
 |---|---|
-| **Bestellen bovenin** (`.nav-cta`, in de lade `.mobile-cta`) | Blauw met wit. Onder de muis inkt. Dit is de ene plek per scherm |
+| **Bestellen bovenin** (`.nav-cta`, in de lade `.mobile-cta`) | Blauw met wit, met een zachte gloed in blauw uur eronder. Onder de muis blauw diep, de gloed iets sterker (levering 74). Dit is de ene plek per scherm |
 | **Het logo onder de muis** | De schommel, zie hieronder. Op de balk, in de lade, in de voet en het grote woordmerk onderaan, in Studio, op de privélink en in /admin |
+| **Het accentwoord in de opening** (`.o-acc`, alleen de voorpagina) | Inkt, met een laag blauw uur die ademt. Zie "Het accentwoord: inkt dat ademt" hieronder (levering 74) |
 | **Een link in de tekst** | Blauw, met een streep in blauw op 38 %. In de voet: inkt, onder de muis blauw |
 | **De focusrand** | 2 px blauw (`--focus-ring`). Op het inktblok blauw licht |
 | **Geselecteerde tekst** | Blauw met witte letters |
-| **Een inktknop onder de muis** | De knop wordt blauw (`.h-knop-inkt:hover`, `--teal-hover`). Het merk reageert op de hand |
+| **Een knop onder de muis** | Blauw uur komt als gloed van de onderrand op (`.h-knop::before`, levering 74); tot 25 oktober werd een inktknop vol blauw. Het merk reageert op de hand |
+| **"Gemaakt met AI" in de lagen** (Hoe het werkt, catalog, stap 02; `.o-ont-ai`) | Op het hoogtepunt van de lagen (ruim een seconde, met in- en uitlopen anderhalf, van de 12,9 s): een zachte gloed in blauw uur om het product en eronder "Gemaakt met AI" in mono, blauw uur op wit (8,08 : 1, 12 px). Daarna weg. Lucas, 16:57: *"laat alleen kort tijdens de lagen animatie zien met een soort subtiele gloed om het product heen dat het met ai gemaakt is"* |
 | **Aandacht** (revisie, jij bent aan zet) | Blauw op vlak, zie de statusset. Blauw betekent: actie |
 
 **Wat je kiest is inkt.** Een aangevinkte keuze, de gekozen kaart, stijl, look, gezicht, vorm,
 kleur, verhouding of achtergrond: inkt (`--kies`). In schema A was dat violet.
 
-**Nergens anders.** Geen blauw kopwoord, sectienummer, stip, icoon, rand of vlak. Geen blauwe
-achtergrond van een sectie. Het blauw snijdt, het vult niet.
+**Nergens anders.** Geen blauw kopwoord (op het ene ademende accentwoord van de opening na,
+en dat is in rust inkt), sectienummer, stip, icoon, rand of vlak. Geen blauwe achtergrond
+van een sectie. Het blauw snijdt, het vult niet.
 
 ---
 
 ## Het ene inktblok per pagina (E6)
 
 Eén blok inkt dat het wit in snijdt, afgesneden op 53° rechtsonder (een 3-4-5-driehoek: 36 ×
-48 px, op een groot blok 48 × 64), met één zachte hoek linksboven. Het staat stil: het is
-papier, geen beweging.
+48 px, op een groot blok 48 × 64). Sinds 25 oktober 2026 zijn de andere drie hoeken rond: het
+€1-paneel 24 (`--r-kaart`), het slot onderaan, een brede band, 32 (`--r-vlak`); tot die dag had
+het één zachte hoek linksboven. Het staat stil: het is papier, geen beweging.
 
 | Pagina | Het blok |
 |---|---|
 | Met het €1-blok (home, prijzen, start, catalog, lifestyle, vergelijken, contact, FAQ, galerij, gidsen, hoe het werkt, abonnementen, Studio, proef, uploadrichtlijnen) | `.h-proef`: het paneel met de tekst is inkt; de vier foto's staan ernaast op wit |
 | Zonder €1-blok (elke look, video, edities, hooks, modellen, merkmodel, over ons) | `.h-lk-slot`: het slot onderaan |
+
+**Hoe het werkt op de voorpagina: geen uitzondering meer** (levering 74). Om 14:39 vroeg Lucas
+de drie stappen "meer als het voorbeeld met de donkere blokken"; om 16:28: *"De donkere
+achtergrond maakt het ook wat heftiger dan dat het zou moeten dus deze mag wit zijn."* De drie
+stappen zijn nu witte kaarten met een haarlijn (24 rond), het middelste iets breder (1 : 1,15 :
+1); tussen de kaarten een lijn in lijn sterk door het wit, met een blokje in inkt dat oversteekt
+als de volgende stap begint. Het €1-blok verderop is het ene inktblok van de pagina.
 
 Op inkt alleen wit: koppen wit, de lichte helft van een kop wit op 72 % (10,09:1) of 82 %
 (12,92:1), lopende tekst wit op 86 % (14,14:1), de feitjes wit op een vlak van 10 % wit
@@ -121,16 +135,128 @@ witte rand. De focusrand en het logo zijn daar blauw licht.
 
 ## Kaarten en vlakken
 
-- **Een kaart is wit met een haarlijn** (`--h-kaart` wit, `--h-kaart-rand` 1 px lijn), met
-  één zachte hoek linksboven zoals altijd. In schema A waren kaarten nevelgrijs; nu snijdt
-  alleen de inkt en het blauw, de rest is papier.
+- **Een kaart is wit met een haarlijn** (`--h-kaart` wit, `--h-kaart-rand` 1 px lijn), 24 px
+  rond aan alle vier de hoeken (zie "De hoeken" hieronder). In schema A waren kaarten
+  nevelgrijs; nu snijdt alleen de inkt en het blauw, de rest is papier.
 - **Vlak** (`#F4F5F7`) alleen onder iets kleins: een pil, een chip, een rond knopje, een lege
   fotoplek, of onder de muis.
 - **De bewogen achtergronden van levering 62 zijn weg.** Elk sfeervlak is een witte kaart met
   een haarlijn. De beelden staan nog in `public/img/achter/` maar worden niet meer gebruikt.
-- **Geen glas.** Ook het €1-blok niet meer.
+- **Glas op wat zweeft, nergens in de pagina zelf.** Zie "Glas en gloed" hieronder.
 - **De voet is wit**, met een haarlijn bovenaan, de tekst in inkt, de kleine koppen in grijs,
   en het woordmerk groot in inkt, door de onderrand afgesneden.
+
+---
+
+## De hoeken (25 oktober 2026)
+
+Lucas: *"Wat ik overigens wel aan de style wil aanpassen is het 1 zachte hoek en de rest harde
+hoeken systeem voor alles. Ik wil dit alleen op hele specifieke plekken behouden en niet voor
+grote kaarten of objecten en puur alleen voor bijvoorbeeld knoppen. De hoeken van kaarten
+worden gewoon heel rond, iets ronder dan in het voorbeeld."* (Zijn voorbeeld: ongeveer 19 px op
+een paneel van 415 × 311; 24 is "iets ronder".) Zijn keuzes: kaarten 24 px rond aan alle vier de
+hoeken, grote vlakken 32, knoppen en chips houden de zachte hoek; overal in één keer.
+
+| Wat | Hoek | Token |
+|---|---|---|
+| Kaart, paneel, foto, beeldkader, modal, paneel in de lade, blok, tabel in een kader | 24 rondom | `--r-kaart` |
+| Groot vlak: een brede band, een paneel over de pagina, het slot onderaan | 32 rondom | `--r-vlak` |
+| Kleine tegel, duimnagel, een strook van één regel | 12 rondom | `--r-klein` |
+| Knop (ook een link-knop), chip, pil, tab, segment, invulveld, klein statusplaatje | één zachte hoek linksboven, 3 px op de andere drie | `--hoek-knop` (14 · 3 · 3 · 3); een grote knop 16, een chip 8 tot 11 |
+| Een icoonplaatje dat blijft (een pijl of afspeelknop op een foto, een knopje op /about of in de galerij) | vier gelijke hoeken, 24,7 % van de hoogte; in de hoek van een kaart concentrisch (alle vier op die maat). Geen zachte hoek (16:44, zie "De iconen") | — |
+| Het inktblok | rond, rechtsonder de snede van 53° | `--r-kaart` of `--r-vlak` |
+| Rondjes en pillen | blijven rond | — |
+
+- **Concentrisch.** Ligt iets in een hoek van een rond vlak, dan is die hoek de straal min de
+  afstand tot de rand, minstens 8 (in een klein vlak de helft van zijn straal). Een foto die
+  zijn vlak vult neemt de vorm over (`inherit`). Een knop in een hoek: die hoek loopt mee, de
+  andere zijn licht (3 px), langs een snede 0.
+- **Waar het staat.** De tokens in `global.css` (site en Studio) en met de hand in
+  `public/account.css`, `public/admin.css`, `public/portal.css`. De regels in `hal.css` ("DE
+  HOEKREGEL"), `studio-hal.css` ("DE HOEKREGEL IN STUDIO"), onderaan `public/admin.css` en
+  `public/portal.css`. De mails (`src/lib/mailTemplate.js`): het betaalvak 24, een citaat 12, de
+  knop en de statuspil houden de zachte hoek.
+- **Bewaakt** door `tests/hoekregel-browser` (geen zachte hoek op een groot object; wat in een
+  hoek ligt is concentrisch) en `tests/minder-sjabloon-browser` (een knop wordt niet even rond
+  als een kaart).
+
+---
+
+## Glas en gloed (levering 74)
+
+Lucas, 25 oktober 2026: *"Ik wil dat je de topbar ook gaat redesignen en weer een wat meer glas
+effect geeft dat goed past bij de nieuwe moderne minimalistische style van de website"*, en om
+15:24: *"gebruik voor plekken als top bar wel glas en maak de knoppen wat mooier, ze zijn nu wat
+in your face en mogen wat subtieler. Gloed mag in accentkleur, zolang het er modern en eruit
+ziet als iets dat bij VISUAILS past."*
+
+**Glas** ligt op wat boven de pagina zweeft, en alleen daar:
+
+| Waar | Glas | Waarom het leesbaar blijft |
+|---|---|---|
+| De balk bovenin (`.site-header .nav::before`) | wit 68 %, 18 px vervaging, verzadiging 1,6; witte binnenrand, haarlijn in inkt op 7 %, lage zachte schaduw; 18 px rond | boven inkt blijft de grond minstens `#B1B2B5`: de menuletters 9,1 : 1 |
+| De uitklapmenu's van de balk (`.nav-menu`) | wit 90 %, 20 px vervaging; dezelfde randen; 20 px rond | de grijze kopjes halen boven inkt nog 4,5 : 1 |
+| De WhatsApp-knop rechtsonder (`.wa-launcher`) | wit 72 %, 16 px vervaging | alleen een icoon in inkt |
+| De uitlegbalk zolang hij onderin plakt (`.u-balk`) | vlak 78 %, 16 px vervaging | inkt op de donkerste grond nog 10 : 1 |
+| De bovenbalk van Studio (`.st-balk`) en van /admin (`.adm-balk`), die bovenaan blijven staan | wit (in /admin donker: de eigen kaartkleur) op 92 %, 16 px vervaging | de grijze kruimels halen boven inkt nog 4,69 : 1 |
+
+Niet op een kaart, een blok, een sectie of het €1-blok: wat in de pagina ligt, is papier.
+Zonder `backdrop-filter` (oude browsers) zijn ze vol wit of vol vlak.
+
+**Gloed** is licht in blauw uur, en hoort bij de hand of bij de ene blauwe knop:
+
+- **Een knop onder de muis** (`.h-knop::before` in `hal.css`, "LEVERING 74 · KNOPPEN"): blauw
+  uur komt als een radiaal verloop van de onderrand op, in 0,32 s, zoals het blauwe uur aan de
+  horizon. Binnen de knop, dus ook binnen de snede van een knoppenpaar. Wit op inkt (19,18 : 1)
+  en wit op blauw uur (8,08 : 1): elke tussenstand haalt het. Op een witte knop is hij zwak (16 tot
+  20 %); op het inktblok in blauw licht.
+- **Bestellen bovenin**: een zachte gloed in blauw uur eronder, iets sterker onder de muis.
+- **Het accentwoord van de opening**: een zachte gloed die met de adem meekomt (zie hieronder).
+- **Het product in de lagen** (Hoe het werkt, catalog, stap 02): een zachte gloed in blauw uur
+  (`drop-shadow` 12 px op 50 %, met een smalle zoom van 2 px in blauw licht: licht, geen vlak), ruim
+  een seconde op het hoogtepunt van de lagen, met "Gemaakt met AI" eronder.
+  Dit is de enige plek waar de site zegt wat AI doet; geen labels als "met de hand" ernaast
+  (16:57: *"Voelt veel te verdedigend, wees hier voortaan streng op"*).
+- Geen gloed achter het logo, geen gloed als vlak of achtergrond, geen andere kleur dan blauw uur
+  (op inkt blauw licht). Minder beweging: geen overgang; hoog contrast: geen gloed.
+
+`tests/minder-sjabloon-browser.test.mjs` laat glas en een zachte schaduw alleen toe op wat
+zweeft en onder Bestellen.
+
+---
+
+## De knoppen (levering 74)
+
+Lucas (15:24): *"maak de knoppen wat mooier, ze zijn nu wat in your face en mogen wat
+subtieler."* Wat er veranderde, in `hal.css` onderaan:
+
+| | Was | Nu |
+|---|---|---|
+| Hoogte (klein) | 56 px (46) | 48 px (40) |
+| Letter | 16 px | 15 px (klein 14) |
+| De pijl | 20 px | 17 px |
+| De inktknop | inkt, onder de muis vol blauw | inkt met een dunne lichtrand bovenaan; onder de muis de gloed |
+| De lijnknop | 1,5 px inkt, onder de muis vol inkt | 1 px lijn sterk; onder de muis een lijn in inkt en een zweem blauw uur |
+| De snede tussen twee knoppen | 42 px, kier 5,3 | 0,75 × de hoogte: 36 px, kier 4,5 (klein 30 en 3,8) |
+
+De ene zachte hoek blijft (14 px, klein 12). Bestellen bovenin houdt zijn maat (38 px).
+
+---
+
+## De iconen (levering 74)
+
+Lucas, 16:44: *"Als het kan wil ik de vinkjes gewoon zonder achtergrond maken om het er schoner
+uit te laten zien. Let er wel op dat ze zichtbaar zijn dus als wit niet goed zichtbaar is maak hem
+dan zwart. Ook wil ik hier niet meer de zachte rand gebruiken voor plekken waar het icoontje met
+achtergrond nog wel word toegepast."* In `hal.css` onderaan ("ICOONTJES ZONDER PLAATJE"):
+
+| Wat | Nu |
+|---|---|
+| Een vinkje op een beeld (Hoe het werkt, /per-product, /how-it-works, het bestelformulier) | geen plaatje, het vinkje zelf 19 tot 22 px, lijn 2,6, in inkt. Wit alleen op een beeld dat gemeten donker is (de beelden van Flash op de voorpagina: 4 – 5 van 255) |
+| Een vinkje of icoon in een lijst of naast een zin (de leverlijst, de feiten van een abonnement, de controles op /custom-models en /upload-guidelines, Studio, de kleine iconen `.h-cirkel-mini` op /pricing, /ai-act en in links) | geen plaatje, inkt; in een lijst die zich afvinkt lijn sterk zolang het nog moet |
+| Een pijl naast tekst of rechtsboven in een lichte kaart (Wat we maken, Nog vragen?, /start, /how-it-works) | geen plaatje, de pijl in inkt |
+| Wat een plaatje houdt (een pijl of afspeelknop op een foto, de knopjes op /about en in de galerij) | vier gelijke hoeken, 24,7 % van de hoogte; concentrisch in de hoek van een kaart |
+| Knoppenparen met de snede (vorige · volgende) | blijven knoppen, met hun vorm |
 
 ---
 
@@ -152,6 +278,31 @@ midden gaat hij het snelst.
 - Minder beweging: onder de muis meteen blauw, zonder schommel.
 - Niets beweegt bij het laden. De elektrische lijn (mk-line) en de echo's zijn weg.
 - Het logo zelf is altijd één kleur: inkt (de standaard), blauw of wit.
+
+---
+
+## Het accentwoord: inkt dat ademt (levering 74)
+
+Lucas, 25 oktober 2026: *"Normaalgesproken hebben veel ai tools accentwoorden in zinnen
+gekleurd maar ik denk dat ik een soort blauwe animatie gloed wil gebruiken in plaats van de
+gekleurde woorden, een soortgelijk effect als over het logo"*, en na Schets 59: *"Ik bedoel dat
+er wel echt een soort breathing effect op het woord zit en het woord niet zelf gekleurd is,
+net zoals het hover effect op het logo in de topbar maar dan wat smoother en rustiger. Zoals
+het nu is lijkt het weer meer op een ai tool, dit wil ik tegen gaan."*
+
+- Eén woord op de hele site: het laatste stuk van de kop van de voorpagina ("Zonder shoot." /
+  "Without a shoot."), `.o-acc` in `src/styles/opening.css`.
+- In rust is het **inkt**, zoals de rest van de kop. Een tweede laag in blauw uur (dezelfde
+  letters, niet nagetekend) ademt erop met de slinger van het logo, `(1 − cos t) / 2`, maar
+  rustiger: één keer heen en terug in 4,8 s (het logo 3,6 s), en de amplitude groeit in 1,6 s
+  aan zodat het nooit verspringt. Daarna blijft het inkt. (Eerst ademde het zonder einde, elke
+  8 s; Lucas koos op 25 oktober "één keer, dan stil": wat vanzelf beweegt en langer duurt dan
+  5 s, moet stil te zetten zijn, WCAG 2.2.2.) Sinds 15:24 ("Gloed mag in accentkleur") komt er met de adem een zachte
+  gloed in blauw uur mee (`text-shadow`, 38 % en 18 %); geen verloop, geen lijn licht (dat was
+  Schets 59).
+- Hij begint pas na de eerste beweging van de bezoeker (muis, toets, aanraking, wiel): niets
+  beweegt bij het laden. Minder beweging: inkt, zonder adem. Hoog contrast: geen blauwe laag.
+- Contrast: inkt 19,18 : 1 en blauw uur 8,08 : 1 op wit, en elke tussenstand ligt daartussen.
 
 ---
 
@@ -268,12 +419,19 @@ van de foto's), het blauw van Instagram in het voorbeeldscherm, de rode tekst va
 
 1. Wit is de grond, ook achter de foto's. Geen grijze sectie, geen getinte band.
 2. Lopende tekst en knoppen minstens **4,5:1**, ook een kop. Tekst minstens 11,5 px.
-3. **Blauw op één plek per scherm**, plus het logo onder de muis, links, de focusrand en
-   selectie. Geen blauw kopwoord, icoon, stip, rand of vlak.
-4. **Eén inktblok per pagina**, afgesneden op 53°, één zachte hoek.
+3. **Blauw op één plek per scherm**, plus het logo onder de muis, het ademende accentwoord
+   van de opening, links, de focusrand en selectie. Geen blauw kopwoord, icoon, stip, rand of
+   vlak.
+4. **Eén inktblok per pagina**, afgesneden op 53°, de andere hoeken rond.
 5. Blauw en inkt nooit op elkaar (2,37:1). Op inkt alleen wit en blauw licht.
-6. Geen verloop als vulling, geen glas, geen schaduw in een kleur, geen bewogen achtergrond.
-7. Een kaart is wit met een haarlijn. Vlak alleen onder iets kleins.
+6. Geen verloop als vulling, geen bewogen achtergrond. Glas alleen op wat zweeft (de balk,
+   zijn menu's, de WhatsApp-knop, de plakkende uitlegbalk). Een gloed alleen in blauw uur (op
+   inkt blauw licht): een knop onder de muis, Bestellen bovenin, het ademende accentwoord, en
+   kort het product dat met AI gemaakt is (de lagen van Hoe het werkt).
+12. Een vinkje of icoon in een lijst, zin of beeld heeft geen plaatje: het icoon zelf, in inkt
+   (wit alleen op een gemeten donker beeld). Een plaatje dat blijft heeft vier gelijke hoeken.
+7. Een kaart is wit met een haarlijn, 24 rond aan alle vier de hoeken. Vlak alleen onder iets
+   kleins. De zachte hoek linksboven alleen op wat je bedient.
 8. Een stand is pil plus woord; massief alleen voor "geleverd"; aandacht blauw.
 9. Het logo is één kleur: inkt, blauw of wit. Onder de muis de schommel. Woordmerk en los
    V-merk nooit naast elkaar (`scripts/brand-lockup-guard.mjs`).
@@ -994,7 +1152,7 @@ spaarzaam. Wat er voor deze drie werkschermen bij komt:
 | Zijbalk | `#0C0D10` | `#000000` (`--panel`) | Studio en /admin; letter `--on-panel` op 70 %, actief item 11 % wit |
 
 De hoek van een kaart is **10 px**, van een knop, veld of tegel **8 px**; een
-statuspil blijft een pil. Het actieve menu-item is een witte tint en geen violet
+statuspil blijft een pil. *(Vervangen op 25 oktober 2026: zie "De hoeken" bovenaan.)* Het actieve menu-item is een witte tint en geen violet
 ("waar je bent" is een toestand, "Altijd 2"). Letters: alleen Figtree, in gewone
 zinsbouw; kleine kapitalen alleen voor etiketten bij data (cijfertegels,
 kolomkoppen).

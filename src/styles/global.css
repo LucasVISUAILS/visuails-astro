@@ -21,7 +21,7 @@
    rule below, on purpose: that rule fires on every page site-wide (pricing,
    faq, about, ...), and Lucas confirmed the smaller scope, not "overal waar
    passend". Widening it later is a one-line change in that shared rule —
-   see each component's own <style> block for its `em`/quote override. */
+   see each component's own \3c style> block for its `em`/quote override. */
 
 :root {
   /* De site is met opzet alleen donker. Zonder deze regel tekent de browser zijn
@@ -366,6 +366,26 @@
      leftover. */
   --r-pill: 999px;
   --radius: var(--r-md);   /* legacy alias — components still read this */
+
+  /* ---- DE HOEKEN VAN NU — 25 oktober 2026 --------------------------------
+     Lucas: "Wat ik overigens wel aan de style wil aanpassen is het 1 zachte
+     hoek en de rest harde hoeken systeem voor alles. Ik wil dit alleen op hele
+     specifieke plekken behouden en niet voor grote kaarten of objecten en puur
+     alleen voor bijvoorbeeld knoppen. De hoeken van kaarten worden gewoon heel
+     rond, iets ronder dan in het voorbeeld." (Zijn voorbeeld: ongeveer 19 px op
+     een paneel van 415 × 311, dus 24 is "iets ronder".)
+     Dus: een kaart, paneel, foto, beeldkader, modal, blok of tabel in een kader
+     is rond aan alle vier de hoeken. Alleen wat je bedient (een knop, ook een
+     link-knop, een chip, pil, tab, segment, invulveld, en de kleine status- en
+     icoonplaatjes) houdt de zachte hoek linksboven. Ligt iets in een hoek van
+     een rond vlak, dan loopt die hoek concentrisch mee: de straal min de
+     afstand, minstens 8 (tests/hoekregel-browser).
+     Dezelfde vier staan in public/account.css, public/admin.css en
+     public/portal.css; de mails hebben ze als getal (src/lib/mailTemplate.js). */
+  --r-kaart: 24px;                  /* kaart, paneel, foto, modal */
+  --r-vlak: 32px;                   /* groot vlak: een brede band of een paneel over de pagina */
+  --r-klein: 12px;                  /* kleine tegel, duimnagel, een strook van één regel */
+  --hoek-knop: 14px 3px 3px 3px;    /* de zachte hoek: alleen op wat je bedient */
 
   /* ---- role aliases -----------------------------------------------------
      The rest of the codebase addresses colour through these, which is what
@@ -1129,7 +1149,7 @@
      fout in plaats van als een keuze. En de figuur erin heeft zijn eigen rand;
      die mag niet tegen de rand van dit blok liggen. */
   padding: clamp(.9rem, 2vw, 1.6rem);
-  border-radius: var(--r-lg) 3px 3px 3px;
+  border-radius: var(--r-vlak);
   /* Vanzelfsprekend voor een blok dat een afgeronde grond schildert onder een
      kind dat ook afrondt, en toch de reden dat de hoeken anders lichte puntjes
      krijgen. */
@@ -1472,31 +1492,31 @@ a.stand:hover { box-shadow: inset 0 0 0 1px currentColor; }
    Astro's scoped styles win on specificity when they set border-radius
    themselves; none of the components below do, they simply never set it. So
    these apply. If a component ever needs a different corner, it says so in its
-   own <style> and that wins — which is the correct precedence. */
+   own \3c style> and that wins — which is the correct precedence. */
 
 /* media */
 .photo-band, .photo-split-media, .vis, .cmp, .tile-media, .hv-svc-media,
 .card > img, .card > picture > img, figure.bm-model, .bm-model {
-  border-radius: var(--r-lg) 3px 3px 3px;
+  border-radius: var(--r-kaart);
   overflow: hidden;
 }
 /* A media box that abuts a tile body is half of one shape — it keeps the
    tile's outer corners and squares off where the two meet. That rule already
    existed further down for .tile-media; this is the same idea stated once. */
-.tile > .tile-media:first-child { border-radius: var(--r-lg) var(--r-lg) 0 0; }
-.tile > .tile-media:last-child  { border-radius: 0 0 var(--r-lg) var(--r-lg); }
+.tile > .tile-media:first-child { border-radius: var(--r-kaart) var(--r-kaart) 0 0; }
+.tile > .tile-media:last-child  { border-radius: 0 0 var(--r-kaart) var(--r-kaart); }
 
 /* surfaces */
 .card, .step, .anchor, .addon, .svc-explain-side, .ed-head,
 .hv-vs-col, .hv-dash-row, .hv-dash-log, .hv-ob-item, .hv-faq-item,
 .pl-total, .acc-item {
-  border-radius: var(--r-md) 3px 3px 3px;
+  border-radius: var(--r-kaart);
 }
 
 /* hairline grids — radius plus clipping, per the note above */
 .hv-pipe, .hv-week, .hv-ch, .hv-vs, .hv-dash, .hv-ob, .hv-faq,
 .compare-grid, .ladder-wrap {
-  border-radius: var(--r-md) 3px 3px 3px;
+  border-radius: var(--r-kaart);
   overflow: hidden;
 }
 
@@ -1515,14 +1535,14 @@ a.stand:hover { box-shadow: inset 0 0 0 1px currentColor; }
    site went round — found by walking the cascade in a browser, not by reading.
    Any per-surface button radius belongs nowhere: .btn owns its own shape. */
 .choice, .pl-panel, .bg-swatch {
-  border-radius: var(--r-md) 3px 3px 3px;
+  border-radius: var(--r-kaart);
 }
 /* Photographs that sit on their own rather than inside a plate. Scoped to
    content contexts on purpose — a blanket `img { border-radius }` would round
    the logotype and every inline icon. */
 figure > img, figure > picture > img, .card img, .grid img,
 .reveal > img, .reveal > picture > img, img.wide {
-  border-radius: var(--r-lg) 3px 3px 3px;
+  border-radius: var(--r-kaart);
 }
 
 /* marks — small standalone labels. Pill, not --r-sm, since August 2026.
@@ -1538,7 +1558,7 @@ figure > img, figure > picture > img, .card img, .grid img,
   border-radius: var(--r-pill);
 }
 /* De taalwissel is weer een pil, net als de knoppen (sectie 21, tweede ronde). */
-.ls { border-radius: 14px 3px 3px 3px; }
+.ls { border-radius: var(--hoek-knop); }
 
 /* Round objects, not pills. A control that is as tall as it is wide has no long
    axis for a pill to express — 999px on a square is a circle, which is what
@@ -2046,7 +2066,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    Het stond in de pagina's zelf, zes keer dezelfde regels. Op 24 augustus 2026
    is het uit drie van die zes gehaald, met de noot "staat sinds vandaag één keer
    in src/styles/global.css, bij `.legal`" — en die noot was niet waar. Er is
-   nooit iets in dit bestand aangekomen. Astro scopeert een <style> in een
+   nooit iets in dit bestand aangekomen. Astro scopeert een \3c style> in een
    paginabestand aan díé pagina, dus de drie die hun blok hielden bleven goed en
    de drie die het kwijtraakten hadden vanaf dat moment geen opmaak meer.
 
@@ -2967,7 +2987,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 /* 3 · PLATE — a hard-edged media rectangle. Wrapper AND element both take the
    zero radius, because a rounded <img> inside a square box is the single most
    common way a radius comes back. */
-.plate { position: relative; overflow: hidden; background: var(--surface-2); border-radius: var(--r-lg) 3px 3px 3px; }
+.plate { position: relative; overflow: hidden; background: var(--surface-2); border-radius: var(--r-kaart); }
 .plate > img, .plate > picture > img, .plate > video, .plate > canvas, .plate > svg { display: block; width: 100%; height: 100%; object-fit: cover; }
 /* Stacked and left-aligned, not spread. space-between pushed the note to the
    card's right edge, which reads as belonging to whatever is next to it. */
@@ -3025,7 +3045,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
   grid-column: span 12;
   background: var(--surface);
   overflow: hidden;
-  border-radius: var(--r-lg) 3px 3px 3px;
+  border-radius: var(--r-kaart);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -3101,7 +3121,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    SEQUENCE, where the items are steps in one thing rather than objects beside
    each other. OPP uses both too. Keeping the two named apart is what stops
    the next page picking one by accident. */
-.sheet { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr)); gap: 1px; background: var(--line); border-radius: var(--r-lg) 3px 3px 3px; overflow: hidden; }
+.sheet { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr)); gap: 1px; background: var(--line); border-radius: var(--r-kaart); overflow: hidden; }
 .sheet > * { background: var(--bg); padding: clamp(1.2rem, 2.2vw, 1.8rem); }
 
 /* 6 · RAIL — a row you push sideways. Snap points so it always lands on a
@@ -3130,8 +3150,8 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 }
 .rail > * { flex: 0 0 clamp(15rem, 26vw, 21rem); scroll-snap-align: start; }
 .rail::-webkit-scrollbar { height: 6px; }
-.rail::-webkit-scrollbar-track { background: var(--line); border-radius: 14px 3px 3px 3px; }
-.rail::-webkit-scrollbar-thumb { background: var(--line-ui); border-radius: 14px 3px 3px 3px; }
+.rail::-webkit-scrollbar-track { background: var(--line); border-radius: var(--hoek-knop); }
+.rail::-webkit-scrollbar-thumb { background: var(--line-ui); border-radius: var(--hoek-knop); }
 
 /* 7 · CLOSING — the last fold. One idea, one action, the whole viewport. */
 .closing { text-align: center; display: grid; place-items: center; min-height: min(78svh, 44rem); }
@@ -3241,7 +3261,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
   /* Sectie 21, tweede ronde — Lucas: "Knoppen moeten pilvormig zijn en een fijne
      modieuze feel hebben." Dus weer de pil, met wat ruimere zijkanten, en op
      glas (zie .glas hieronder) een doorschijnende vulling. */
-  background: var(--ghost); color: var(--ink); border: 0; border-radius: 14px 3px 3px 3px;
+  background: var(--ghost); color: var(--ink); border: 0; border-radius: var(--hoek-knop);
   transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease),
               border-color var(--dur-1) var(--ease), filter var(--dur-1) var(--ease);
 }
@@ -3697,7 +3717,7 @@ svg.ik path { fill: inherit !important; stroke: none !important; }
 /* The border was --ink-900, i.e. the same value as the fill. On paper that
    read as a crisp edge around a dark block; on a dark ground it is a band with
    an invisible outline, so the edge comes from --line like every other one. */
-.cta-band { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: var(--r-lg) 3px 3px 3px; padding: clamp(3rem, 7vw, 6rem); text-align: center; background: var(--ink-900); }
+.cta-band { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: var(--r-vlak); padding: clamp(3rem, 7vw, 6rem); text-align: center; background: var(--ink-900); }
 .cta-band > * { position: relative; }
 
 /* §8 bans feathered or blurred mask edges everywhere outside the chrome
@@ -3709,7 +3729,7 @@ svg.ik path { fill: inherit !important; stroke: none !important; }
 .marquee { overflow: hidden; padding-block: clamp(1rem, 2vw, 1.6rem); }
 .marquee-track { display: flex; gap: clamp(.9rem,1.4vw,1.3rem); width: max-content; }
 .marquee-item { width: clamp(280px, 26vw, 380px); aspect-ratio: 4/5; overflow: hidden; flex: 0 0 auto;
-  border-radius: var(--r-lg) 3px 3px 3px; box-shadow: inset 0 0 0 1px var(--line); }
+  border-radius: var(--r-kaart); box-shadow: inset 0 0 0 1px var(--line); }
 
 /* Product visual scenes ("vis") — placeholder for the rare spot with no
    real "clean product on white" photography (see IMAGES.md). */
@@ -4512,7 +4532,7 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 @media (max-width: 760px) { .ed-head { grid-template-columns: 1fr; gap: .8rem; } .ed-meta { padding-top: 0; } }
 
 /* ---- form primitives -----------------------------------------------------
-   One copy. These lived in five Astro <style> blocks — StartPage.astro,
+   One copy. These lived in five Astro \3c style> blocks — StartPage.astro,
    test-sample.astro ×2, contact.astro ×2 — and had already drifted: the
    textarea was 110px tall on two pages and 120px on three, and the
    reduced-motion opt-out existed on /start alone, so the same four transitions
@@ -4636,7 +4656,7 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 /* ─────────────────────────────────────────────────────────────────────────────
    /test-sample uploader.
    The twin of /start's .pl-* family, which lives in StartPage.astro's scoped
-   <style>. This one is global because its markup is written out by two page
+   \3c style>. This one is global because its markup is written out by two page
    files — test-sample.astro and nl/test-sample.astro — and a scoped block in
    either would style only its own copy. The rows themselves are built by
    tsRow() in interactions.js, so the class names here are a contract with that
@@ -4692,7 +4712,7 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 /* ============================================================
    Standard model roster — square plates, name and traits below the frame.
    Ten faces at a size you can actually judge, not ten 60px thumbnails.
-   Moved here from BrandModelPage.astro's own scoped <style> (task #268,
+   Moved here from BrandModelPage.astro's own scoped \3c style> (task #268,
    2026-07-29): /models now renders the same grid at full roster size, and
    /custom-models renders a four-model taste of it under #standard, so the
    rules need to reach both instead of living inside one component.
@@ -5038,7 +5058,7 @@ a[href*="facebook.com"]  { --soc: url('/img/i-facebook.svg'); }
   max-width: 46ch;
   text-align: left;
   padding: .7rem .9rem .7rem 1rem;
-  border-radius: var(--r-md) 3px 3px 3px;
+  border-radius: var(--r-klein);
   background: var(--surface);
   box-shadow: inset 3px 0 0 var(--accent), inset 0 1px 0 rgb(255 255 255 / 0.05);
   font-size: .88rem;
@@ -5306,7 +5326,7 @@ body { position: relative; }
   display: flex; align-items: center; gap: .8rem;
   padding: .7rem .85rem;
   border: 1px solid var(--line-strong);
-  border-radius: var(--r-lg) 3px 3px 3px;
+  border-radius: var(--r-kaart);
   background: var(--surface);
   cursor: pointer;
   transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
@@ -5315,7 +5335,7 @@ body { position: relative; }
 .own-look-opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
 .own-look-opt:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .own-look-opt input { accent-color: var(--accent); width: 18px; height: 18px; flex: none; margin: 0; }
-.own-look-img { width: 64px; height: 48px; object-fit: cover; border-radius: var(--r-md) 3px 3px 3px; background: var(--surface-2); flex: none; }
+.own-look-img { width: 64px; height: 48px; object-fit: cover; border-radius: var(--r-klein); background: var(--surface-2); flex: none; }
 .own-look-text { display: grid; gap: .15rem; min-width: 0; }
 .own-look-name { font-family: var(--font-display); font-weight: 800; font-size: 1rem; color: var(--ink); }
 .own-look-line { font-size: .82rem; color: var(--ink-3); line-height: 1.45; }
@@ -5922,7 +5942,7 @@ body { position: relative; }
   background: var(--surface-2);
   border: 1px solid rgb(255 255 255 / 0.10);
   padding: clamp(1.6rem, 3vw, 2.4rem);
-  border-radius: var(--r-md) 3px 3px 3px;
+  border-radius: var(--r-kaart);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.10);
 }
 /* En de inkt binnen de plaat draait TERUG naar de donkere ramp. Zonder deze
@@ -6349,7 +6369,7 @@ body::before { display: none; }
 /* ══ HET POPPETJE — 22 september 2026 ══════════════════════════════════════
    De tekening van wat er op de draagfoto staat (Poppetje.astro, en /admin uit
    dezelfde bron). Deze regels komen uit POP_CSS in src/lib/poppetje.js en staan
-   hier LETTERLIJK, omdat een inline <style> onder de CSP een hash zou vragen;
+   hier LETTERLIJK, omdat een inline \3c style> onder de CSP een hash zou vragen;
    tests/poppetje-css.test.mjs houdt de twee gelijk. Drie tinten inkt, geen
    kleur — zie de kop van Poppetje.astro. */
 .pop { display: block; width: 100%; height: auto; }
@@ -6383,7 +6403,7 @@ body::before { display: none; }
   margin: 0 0 1.2rem;
   padding: .85rem 1rem;
   border: 1px solid var(--st-rev-edge);
-  border-radius: 10px 3px 3px 3px;
+  border-radius: var(--r-klein);
   background: var(--warn);
   color: var(--warn-ink);
   font-size: .95rem;

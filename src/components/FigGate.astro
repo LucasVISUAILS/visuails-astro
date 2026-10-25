@@ -308,7 +308,7 @@ const ZINNEN = nl
 
   .fgt-frame {
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-lg) 3px 3px 3px;
+    border-radius: var(--r-kaart);
     background: var(--surface);
     overflow: hidden;
     /* Geen slagschaduw (KLEURENSCHEMA "Altijd 5"); het frame heeft zijn lijn
@@ -342,7 +342,7 @@ const ZINNEN = nl
     padding: .55rem .65rem;
     background: var(--surface-2);
     border: 1px solid var(--line);
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: var(--r-klein);
   }
   .fgt-ask-l {
     font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
@@ -350,7 +350,9 @@ const ZINNEN = nl
   }
   .fgt-ask-v { font-size: .72rem; color: var(--ink); font-variant-numeric: tabular-nums; }
   /* Wat de aanvraag per dag vraagt: het getal waar elke rij hieronder aan gemeten wordt. */
-  .fgt-ask-per { margin-left: auto; padding: .14rem .55rem; border-radius: 3px; background: var(--accent); color: var(--accent-on); font-size: .72rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  /* Rechts in het vak van 12, 9 tot 10 px van de rand: de helft van 12, rondom, zodat hij
+     ook meeloopt als hij op een tweede regel valt (25 oktober 2026). */
+  .fgt-ask-per { margin-left: auto; padding: .14rem .55rem; border-radius: 6px; background: var(--accent); color: var(--accent-on); font-size: .72rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
   /* Het aantal en het woord hebben tijdens de uitleg een tweede stand ("8 vrij", "Te krap"),
      op dezelfde plek; de kolom krijgt de breedte van de langste. */
   .fgt-n, .fgt-s { display: inline-grid; justify-items: end; }
@@ -487,7 +489,7 @@ const ZINNEN = nl
     display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .6rem;
     padding: .6rem .7rem;
     border: 1px solid var(--accent);
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: var(--r-klein);
     background: color-mix(in srgb, var(--accent) 8%, transparent);
   }
   .fgt-v-l {

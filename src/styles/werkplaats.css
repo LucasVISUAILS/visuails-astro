@@ -111,8 +111,12 @@ html body.werkplaats.hal .of-werk .pl-step[data-pl-step="1"] > .wk-blok { margin
 html body.werkplaats.hal .of-werk .wk-opening { display: grid; gap: 14px; justify-items: start; }
 html body.werkplaats.hal .of-werk .wk-opening-h,
 html body.werkplaats.hal .of-werk .pl-step > .pl-h {
-  margin: 0; max-width: 18ch; font: 500 44px/1.05 var(--h-letter); letter-spacing: -.03em; color: var(--h-inkt); text-wrap: balance;
+  margin: 0; max-width: 22ch; font: 500 44px/1.05 var(--h-letter); letter-spacing: -.03em; color: var(--h-inkt); text-wrap: balance;
 }
+/* 25 oktober 2026 (de controle van levering 74): met 18ch brak "Vier beelden per product." in twee,
+   en de kop werd met "Catalogsets." erboven drie regels, ook op de computer (Lucas: koppen
+   hoogstens twee regels). Gemeten in de browser: breedte / lettergrootte = 11,21 voor de langste
+   regel ("Vier beelden per product."). */
 html body.werkplaats.hal .of-werk .wk-opening-h .l { display: block; font-weight: 400; color: var(--h-inkt-3); }
 html body.werkplaats.hal .of-werk .wk-opening-zin { margin: 0; max-width: 46ch; font-size: 17px; line-height: 1.55; color: var(--h-inkt-2); }
 html body.werkplaats.hal .of-werk .wk-wissel { font: 600 14px/1.3 var(--h-letter); color: var(--h-inkt); text-decoration: underline; text-underline-offset: 3px; }
@@ -134,21 +138,22 @@ html body.werkplaats.hal .of-werk .wk-zin { margin: -8px 0 0; max-width: 54ch; f
 html body.werkplaats.hal .of-werk .wk-stijlen { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 html body.werkplaats.hal .of-werk .wk-stijl {
   position: relative; display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 16px; align-items: center;
-  padding: 12px; border-radius: 24px 3px 3px 3px; background: var(--h-kaart); color: var(--h-inkt); text-decoration: none; box-shadow: var(--h-kaart-rand); }
+  padding: 12px; border-radius: var(--r-kaart); background: var(--h-kaart); color: var(--h-inkt); text-decoration: none; box-shadow: var(--h-kaart-rand); }
 html body.werkplaats.hal .of-werk .wk-stijl:hover { background: var(--h-vak); }
 /* Wat je kiest is violet (schema A, levering 62): de gekozen stijl, het gekozen gezicht, de gekozen
    vorm, kleur, foto en verhouding. Waar je bent (de stap, het tabblad) blijft zwart of wit. */
 html body.werkplaats.hal .of-werk .wk-stijl.is-gekozen { background: var(--h-wit); box-shadow: inset 0 0 0 2px var(--kies); }
 html body.werkplaats.hal .of-werk .wk-stijl img,
-html body.werkplaats.hal .of-werk .wk-stijl-leeg { display: block; width: 96px; height: 96px; border-radius: 12px 3px 3px 3px; object-fit: cover; background: var(--h-vak); }
+html body.werkplaats.hal .of-werk .wk-stijl-leeg { display: block; width: 96px; height: 96px; border-radius: var(--r-klein); object-fit: cover; background: var(--h-vak); }
 html body.werkplaats.hal .of-werk .wk-stijl-leeg { display: grid; place-items: center; color: var(--h-inkt); }
 html body.werkplaats.hal .of-werk .wk-stijl-leeg .ik { width: 22px; height: 22px; }
 html body.werkplaats.hal .of-werk .wk-stijl-t { display: grid; gap: 4px; min-width: 0; padding-right: 30px; }
 html body.werkplaats.hal .of-werk .wk-stijl-t b { font: 600 17px/1.2 var(--h-letter); }
 html body.werkplaats.hal .of-werk .wk-stijl-t span { font-size: 14px; line-height: 1.4; color: var(--h-inkt-2); }
 html body.werkplaats.hal .of-werk .wk-stijl-t em { font: 500 11.5px/1 var(--h-mono); font-style: normal; letter-spacing: .06em; text-transform: uppercase; color: var(--h-inkt-3); }
-html body.werkplaats.hal .of-werk .wk-vink { position: absolute; top: 10px; right: 10px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 3px 14px 3px 3px; background: var(--h-inkt); color: var(--h-wit); }
-html body.werkplaats.hal .of-werk .wk-vink .ik { width: 14px; height: 14px; }
+/* 25 oktober 2026 (levering 74, Lucas 16:44): het vinkje zonder plaatje, in inkt op de witte kaart. */
+html body.werkplaats.hal .of-werk .wk-vink { position: absolute; top: 10px; right: 10px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 0; background: none; color: var(--h-inkt); }
+html body.werkplaats.hal .of-werk .wk-vink .ik { width: 21px; height: 21px; }
 /* De regel van StijlRegel draagt het verborgen veld catalog_style; de kaarten zeggen het al. */
 html body.werkplaats.hal .of-werk .wk-stijlregel { display: none; }
 /* De lookkiezer (lifestyle): de kop staat in het blok, die van de kiezer zelf valt weg. */
@@ -232,7 +237,7 @@ html body.werkplaats.hal .of-werk .wk-blok-gezicht .mp-opt:has(input:checked) .m
 /* ── 04 LEVERING ────────────────────────────────────────────────────────── */
 html body.werkplaats.hal .of-werk .wk-lever-zin {
   display: flex; gap: 12px; align-items: flex-start; margin: 0; padding: 18px 20px;
-  border-radius: 24px 3px 3px 3px; background: var(--h-kaart); font-size: 15.5px; line-height: 1.5; color: var(--h-inkt); box-shadow: var(--h-kaart-rand); }
+  border-radius: var(--r-kaart); background: var(--h-kaart); font-size: 15.5px; line-height: 1.5; color: var(--h-inkt); box-shadow: var(--h-kaart-rand); }
 html body.werkplaats.hal .of-werk .wk-lever-i { display: inline-flex; margin-top: 3px; color: var(--h-inkt); }
 html body.werkplaats.hal .of-werk .wk-lever-i .ik { width: 18px; height: 18px; }
 html body.werkplaats.hal .of-werk .wk-voorrang { margin: 0; padding: 0; max-width: none; border: 0; background: none; box-shadow: none; }
@@ -262,11 +267,11 @@ html body.werkplaats.hal .of-werk .wk-hoeken {
 html body.werkplaats.hal .of-werk .wk-hoeken[hidden] { display: none; }
 html body.werkplaats.hal .of-werk .wk-hoeken-in {
   width: min(720px, 100%); max-height: calc(100vh - 48px); max-height: calc(100dvh - 48px); overflow: auto;
-  padding: 24px; border-radius: 24px 3px 3px 3px; background: var(--h-wit); box-shadow: none;
+  padding: 24px; border-radius: var(--r-kaart); background: var(--h-wit); box-shadow: none;
 }
 html body.werkplaats.hal .of-werk .wk-hoeken-kop { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
 html body.werkplaats.hal .of-werk .wk-hoeken-h { margin: 0; font: 600 22px/1.2 var(--h-letter); color: var(--h-inkt); }
-html body.werkplaats.hal .of-werk .wk-hoeken-klaar { height: 44px; padding: 0 18px; border: 0; border-radius: 12px 3px 3px 3px; background: var(--h-inkt); color: var(--h-wit); font: 600 15px/1 var(--h-letter); cursor: pointer; }
+html body.werkplaats.hal .of-werk .wk-hoeken-klaar { height: 44px; padding: 0 18px; border: 0; border-radius: var(--r-klein); background: var(--h-inkt); color: var(--h-wit); font: 600 15px/1 var(--h-letter); cursor: pointer; }
 html body.werkplaats.hal .of-werk .wk-hoeken-klaar:hover { background: var(--h-blauw); }
 /* De hoekenkiezer is zelf een uitklapper; in het paneel staat hij altijd open en zonder kop. */
 html body.werkplaats.hal .of-werk .wk-hoeken details.dc > summary { display: none; }
@@ -281,7 +286,7 @@ html body.werkplaats.hal .of-werk .pl-nav > span:empty { display: none; }
 /* ── WAT JE KRIJGT ──────────────────────────────────────────────────────── */
 html body.werkplaats.hal .of-werk .bo.wk-krijg {
   position: sticky; top: calc(var(--wk-balk) + 32px); align-self: start;
-  display: grid; gap: 18px; margin: 0; padding: 24px; border: 0; border-radius: 32px 3px 3px 3px; background: var(--h-kaart); box-shadow: var(--h-kaart-rand); }
+  display: grid; gap: 18px; margin: 0; padding: 24px; border: 0; border-radius: var(--r-kaart); background: var(--h-kaart); box-shadow: var(--h-kaart-rand); }
 html body.werkplaats.hal .of-werk .wk-krijg-h { margin: 0; font: 600 20px/1.2 var(--h-letter); letter-spacing: -.01em; text-transform: none; color: var(--h-inkt); }
 html body.werkplaats.hal .of-werk .wk-krijg .bo-set { display: grid; gap: 12px; }
 html body.werkplaats.hal .of-werk .wk-krijg .bo-tegels { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
@@ -418,7 +423,7 @@ html body.werkplaats.hal .of-werk .pu-card[hidden] { display: none; }
 html body.werkplaats.hal .of-werk .pu-head .pu-n { display: none; }
 html body.werkplaats.hal .of-werk .pu-cards .pu-card .pu-head { grid-template-columns: minmax(0, 1fr) 240px; align-items: center; gap: 8px 12px; }
 html body.werkplaats.hal .of-werk .pu-cards .pu-card .pu-head .pu-name {
-  grid-column: 1; grid-row: 1; height: 52px; width: 100%; padding: 0 16px; border: 0; border-radius: 14px 3px 3px 3px;
+  grid-column: 1; grid-row: 1; height: 52px; width: 100%; padding: 0 16px; border: 0; border-radius: var(--hoek-knop);
   background: var(--h-wit); box-shadow: inset 0 0 0 1px #858A94; font: 500 16px/1.2 var(--h-letter); letter-spacing: 0; color: var(--h-inkt);
 }
 html body.werkplaats.hal .of-werk .pu-cards .pu-card .pu-head .pu-name:focus-visible { box-shadow: inset 0 0 0 2px var(--h-inkt); }
@@ -464,7 +469,7 @@ html body.werkplaats.hal .of-werk .wk-blader {
 html body.werkplaats.hal .of-werk .wk-blader:hover { background: var(--h-vak); }
 html body.werkplaats.hal .of-werk .wk-blader:disabled { color: #A5AAB2; cursor: default; background: var(--h-nevel); }
 html body.werkplaats.hal .of-werk .wk-blader[hidden] { display: none; }
-html body.werkplaats.hal .of-werk .wk-blader-vol { margin-left: auto; background: var(--h-inkt); color: var(--h-wit); border-radius: 16px 3px 3px 3px; }
+html body.werkplaats.hal .of-werk .wk-blader-vol { margin-left: auto; background: var(--h-inkt); color: var(--h-wit); border-radius: var(--r-klein); }
 html body.werkplaats.hal .of-werk .wk-blader-vol:hover { background: var(--h-blauw); }
 html body.werkplaats.hal .of-werk .wk-blader-i { display: inline-flex; }
 html body.werkplaats.hal .of-werk .wk-blader-i .ik { width: 16px; height: 16px; }
@@ -594,7 +599,7 @@ html body.werkplaats.hal .of-werk .wk-duim img { display: block; width: 100%; he
 html body.werkplaats.hal .of-werk .wk-duim.is-leeg { display: grid; place-items: center; font: 600 12px/1 var(--h-mono); color: var(--h-inkt-3); }
 /* De kaart van de look (c-look). */
 html body.werkplaats.hal .of-werk .wk-lookkaart-host:empty { display: none; }
-html body.werkplaats.hal .of-werk .wk-lookkaart { display: grid; gap: 16px; padding: 22px 24px; border-radius: 24px 3px 3px 3px; background: var(--h-kaart); box-shadow: var(--h-kaart-rand); }
+html body.werkplaats.hal .of-werk .wk-lookkaart { display: grid; gap: 16px; padding: 22px 24px; border-radius: var(--r-kaart); background: var(--h-kaart); box-shadow: var(--h-kaart-rand); }
 html body.werkplaats.hal .of-werk .wk-lookkaart-kop { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 12px; }
 html body.werkplaats.hal .of-werk .wk-lookkaart-kop p { margin: 0; font: 600 12px/1 var(--h-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--h-inkt); }
 html body.werkplaats.hal .of-werk .wk-lookkaart-kop h4 { margin: 6px 0 0; font: 500 22px/1.2 var(--h-letter); letter-spacing: -.015em; color: var(--h-inkt); }
@@ -602,7 +607,7 @@ html body.werkplaats.hal .of-werk .wk-lookkaart-prijs { font: 600 16px/1 var(--h
 html body.werkplaats.hal .of-werk .wk-lookkaart-wie { margin: -8px 0 0; font: 500 15px/1.45 var(--h-letter); color: var(--h-inkt-2); }
 html body.werkplaats.hal .of-werk .wk-lookkaart-samen { display: flex; gap: 8px; }
 html body.werkplaats.hal .of-werk .wk-lookkaart-samen .wk-duim { width: 56px; height: 70px; box-shadow: 0 0 0 1px rgba(11, 15, 23, .08); }
-html body.werkplaats.hal .of-werk .wk-lookkaart-samen .wk-duim:first-child { border-radius: 12px 2px 2px 2px; }
+html body.werkplaats.hal .of-werk .wk-lookkaart-samen .wk-duim:first-child { border-radius: var(--r-klein); }
 html body.werkplaats.hal .of-werk .wk-lookkaart ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; font: 500 14.5px/1.45 var(--h-letter); color: var(--h-inkt); }
 html body.werkplaats.hal .of-werk .wk-lookkaart li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 10px; }
 html body.werkplaats.hal .of-werk .wk-lookkaart-vink .ik { width: 14px; height: 14px; margin-top: 3px; color: var(--h-inkt); }
@@ -637,7 +642,7 @@ html body.werkplaats.hal .of-werk .wk-looks[hidden] { display: none; }
 html body.werkplaats.hal .of-werk .wk-lookregel { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: center; padding: 12px; border-radius: 3px; background: var(--h-wit); box-shadow: inset 0 0 0 1px var(--h-lijn); }
 html body.werkplaats.hal .of-werk .wk-lookregel-twee { display: flex; gap: 4px; }
 html body.werkplaats.hal .of-werk .wk-lookregel-twee .wk-duim { width: 32px; height: 40px; }
-html body.werkplaats.hal .of-werk .wk-lookregel-twee .wk-duim:first-child { border-radius: 10px 2px 2px 2px; }
+html body.werkplaats.hal .of-werk .wk-lookregel-twee .wk-duim:first-child { border-radius: var(--r-klein); }
 html body.werkplaats.hal .of-werk .wk-lookregel b { display: block; font: 600 14px/1.25 var(--h-letter); color: var(--h-inkt); }
 html body.werkplaats.hal .of-werk .wk-lookregel small { display: block; margin-top: 3px; font: 500 13px/1.4 var(--h-letter); color: var(--h-inkt-2); }
 
@@ -657,13 +662,13 @@ html body.werkplaats.hal .of-werk .wk-lookregel small { display: block; margin-t
   html body.werkplaats.hal .of-werk .wk-hulp-paneel { position: fixed; top: calc(var(--wk-balk) + 8px); left: 16px; right: 16px; width: auto; }
   html body.werkplaats.hal .of-werk .pl-form { grid-template-columns: minmax(0, 1fr); padding: calc(var(--wk-balk) + 32px) max(16px, env(safe-area-inset-right, 0px)) 160px max(16px, env(safe-area-inset-left, 0px)); }
   html body.werkplaats.hal .of-werk .pl-form > .bo { grid-column: 1; grid-row: auto; }
-  html body.werkplaats.hal .of-werk .bo.wk-krijg { position: static; margin-top: 48px; padding: 20px; border-radius: 28px 3px 3px 3px; }
+  html body.werkplaats.hal .of-werk .bo.wk-krijg { position: static; margin-top: 48px; padding: 20px; border-radius: var(--r-kaart); }
   html body.werkplaats.hal .of-werk .wk-krijg .wk-verder,
   html body.werkplaats.hal .of-werk .wk-krijg .bo-geld,
   html body.werkplaats.hal .of-werk .wk-krijg .wk-inloggen { display: none; }
   html body.werkplaats.hal .of-werk .pl-step[data-pl-step="1"] > .wk-blok { margin-top: 48px; }
   html body.werkplaats.hal .of-werk .wk-opening-h,
-  html body.werkplaats.hal .of-werk .pl-step > .pl-h { font-size: 34px; }
+  html body.werkplaats.hal .of-werk .pl-step > .pl-h { font-size: min(34px, calc((100vw - 32px) / 11.6)); }   /* 25 okt: zo past de langste regel (11,21 × de letter, 3,5 % speling) op 320 – 414 px */
   html body.werkplaats.hal .of-werk .wk-h { font-size: 24px; }
   html body.werkplaats.hal .of-werk .wk-stijl { grid-template-columns: 72px minmax(0, 1fr); }
   html body.werkplaats.hal .of-werk .wk-stijl img,
@@ -731,7 +736,7 @@ html body.werkplaats.hal .of-werk .wk-lookregel small { display: block; margin-t
   html body.werkplaats.hal .of-werk .wk-drie button:first-child,
   html body.werkplaats.hal .of-werk .wk-drie button:nth-child(2),
   html body.werkplaats.hal .of-werk .wk-drie button:last-child { flex: none; height: 48px; margin: 0; padding: 0 16px; border-radius: 3px; clip-path: none; text-align: left; }
-  html body.werkplaats.hal .of-werk .wk-drie button:first-child { border-radius: 14px 3px 3px 3px; }
+  html body.werkplaats.hal .of-werk .wk-drie button:first-child { border-radius: var(--hoek-knop); }
   html body.werkplaats.hal .of-werk .wk-drie.is-twee { max-width: none; }
   html body.werkplaats.hal .of-werk .wk-stukken { display: grid; }
   html body.werkplaats.hal .of-werk .wk-stuk { width: 100%; min-width: 0; }

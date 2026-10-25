@@ -384,7 +384,7 @@ const hint = lang === 'nl'
   .pu-swap .hint { flex: 1 1 26ch; max-width: 62ch; margin: 0; }
   .pu-sub-h { font-size: 1.05rem; line-height: 1.3; }
   .pu-sub-lead { margin-top: .45rem; font-size: .9rem; color: var(--ink-3); line-height: 1.6; max-width: 66ch; }
-  .pu-drop { margin-top: .9rem; border-radius: var(--r-md) 3px 3px 3px; }
+  .pu-drop { margin-top: .9rem; border-radius: var(--r-klein); }
   .pu-file-input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
   .pu-folder-row { margin-top: .7rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .7rem; }
   .pu-folder-hint { margin: 0; }
@@ -415,7 +415,7 @@ const hint = lang === 'nl'
     margin-top: 1rem;
     padding: 1rem 1.15rem;
     border: 1px solid var(--warn);
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: var(--r-klein);
     background: var(--paper-2);
   }
   .pu-missing:focus { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
@@ -430,7 +430,7 @@ const hint = lang === 'nl'
     display: inline; padding: .15rem 0; border: 0; background: none;
     font: inherit; font-size: .9rem; line-height: 1.5; text-align: left;
     color: var(--ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
-    border-radius: var(--r-sm) 3px 3px 3px;
+    border-radius: var(--r-klein);
   }
   .pu-missing :global(.pu-mis-regel:hover) { color: var(--accent-bright); }
   .pu-missing :global(.pu-mis-regel:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
@@ -448,7 +448,7 @@ const hint = lang === 'nl'
     margin: 1.2rem 0 0;
     padding: 1.05rem 1.25rem;
     border: 1px solid var(--warn);
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: var(--r-klein);
     background: var(--paper-2);
     color: var(--warn-ink);
     font-size: .95rem;
@@ -463,7 +463,7 @@ const hint = lang === 'nl'
     margin: 1.2rem 0 0;
     padding: 1.1rem 1.25rem;
     border: 1px solid var(--accent);
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: var(--r-klein);
     background: var(--surface);
     max-width: 78ch;
   }
@@ -476,7 +476,7 @@ const hint = lang === 'nl'
     margin-top: clamp(1.6rem, 3.4vw, 2.4rem);
     padding: clamp(1rem, 2.6vw, 1.5rem);
     border: 1px solid var(--signal);
-    border-radius: var(--r-lg) 3px 3px 3px;
+    border-radius: var(--r-kaart);
     background: var(--paper-2);
   }
   .pu-later .pu-sub-h { color: var(--signal-ink); }
@@ -559,7 +559,7 @@ const hint = lang === 'nl'
 
   .pu-cards :global(.pu-card) {
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-lg) 3px 3px 3px;
+    border-radius: var(--r-kaart);
     background: var(--surface);
     /* ── RUIMER — 17 september 2026 ────────────────────────────────────────
        Lucas: *"het voelt heel krap allemaal nu."* Gemeten stond de kaart op
@@ -1245,7 +1245,7 @@ const hint = lang === 'nl'
     margin-top: 1rem;
     padding: .85rem .9rem;
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: var(--r-klein);
     background: var(--paper-2);
     transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
   }
@@ -1361,7 +1361,7 @@ const hint = lang === 'nl'
   .pu-tray {
     padding: clamp(.9rem, 2.4vw, 1.3rem);
     border: 1px solid var(--warn);
-    border-radius: var(--r-lg) 3px 3px 3px;
+    border-radius: var(--r-kaart);
     background: var(--paper-2);
   }
   .pu-tray .pu-sub-h { color: var(--warn-ink); }
@@ -1374,7 +1374,7 @@ const hint = lang === 'nl'
     align-items: center;
     padding: .6rem;
     border: 1px solid var(--line);
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: var(--r-klein);
     background: var(--surface);
   }
   .pu-tray-list :global(.pu-tray-item.is-dragging) { opacity: .5; }
@@ -1520,8 +1520,8 @@ const hint = lang === 'nl'
   .pu-cards :global(.pu-erbij .pu-slot) { display: flex; flex-direction: column; width: 92px; gap: .25rem; }
   .pu-cards :global(.pu-refs .pu-slot-btn),
   .pu-cards :global(.pu-erbij .pu-slot-btn) { width: 100%; aspect-ratio: 1; padding: .3rem; }
-  .pu-cards :global(.pu-erbij .pu-slot-btn) { border-radius: 14px 3px 3px 3px; border-style: dashed; }
-  .pu-cards :global(.pu-erbij .pu-slot-img) { border-radius: 14px 3px 3px 3px; }
+  .pu-cards :global(.pu-erbij .pu-slot-btn) { border-radius: var(--hoek-knop); border-style: dashed; }
+  .pu-cards :global(.pu-erbij .pu-slot-img) { border-radius: var(--r-klein); }
   .pu-cards :global(.pu-erbij .pu-slot-eis) { display: none; }
   .pu-cards :global(.pu-erbij .pu-slot-name) {
     font-family: var(--font-mono); font-size: .72rem; font-weight: 400;

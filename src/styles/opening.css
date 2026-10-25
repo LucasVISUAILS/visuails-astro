@@ -1,0 +1,456 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   VISUAILS — de opening met de scrollvideo en "Hoe het werkt" (HalOpening.astro)
+   25 oktober 2026. Het waarom staat in de kop van HalOpening.astro.
+   ═══════════════════════════════════════════════════════════════════════════════
+
+   Twee standen:
+   - body.o-aan (≥ 900 px, beweging aan): een vastgezet podium van één schermhoogte in
+     een hoger blok. De maten (waar het beeld staat, waar de tekst staat, hoe groot de
+     kop is) rekent het script uit; hier staan alleen de vormen.
+   - body.o-stil (telefoon, minder beweging, zonder script): alles onder elkaar.
+
+   De hoeken volgen de nieuwe regel (Lucas, 25 oktober): kaarten 24 px rond aan alle
+   vier de kanten, knoppen houden de ene zachte hoek. */
+
+.o-podium { position: relative; --o-r-kaart: 24px; --o-hoek-knop: 14px 3px 3px 3px; }
+.o-snap { position: absolute; left: 0; top: 0; width: 1px; height: 1px; scroll-snap-align: start; pointer-events: none; }
+html.o-klik { scroll-snap-type: y proximity; }
+.o-vast { position: relative; }
+/* clip en niet hidden: clip maakt geen scrollvak, dus een element dat de focus krijgt kan
+   het podium niet van binnen verschuiven (zie de focusin in HalOpening.astro) */
+.o-aan .o-vast { position: sticky; top: 0; height: calc(var(--o-vh, 1vh) * 100); overflow: clip; }
+
+/* ── het beeld ───────────────────────────────────────────────────────────── */
+.o-beeld { position: relative; width: 100%; aspect-ratio: 1600 / 840; }
+.o-aan .o-beeld { position: absolute; left: 0; top: 0; }
+.o-schermen { position: absolute; inset: 0; overflow: hidden; }
+.o-sc { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+.o-sc picture, .o-sc img { display: block; width: 100%; height: 100%; max-width: none; }
+.o-sc-lap { width: 1600px; height: 1034px; background: #FAFAFA; }
+.o-sc-fon { width: 540px; height: 1170px; background: #9A9894; }
+/* zonder script, en tot het script de schermen op hun hoeken zet (o-gezet): de rechthoek om de
+   vierhoek van beeld 0, uitgerekend in HalOpening.astro (25 oktober, de controle) */
+.o-podium:not(.o-gezet) .o-sc { left: var(--o-x); top: var(--o-y); width: var(--o-b); height: var(--o-h); transform: none !important; }
+/* het scherm wordt donker met de hoek van de klep: een laag inkt, dekking per beeld */
+.o-donker { position: absolute; inset: 0; background: var(--h-inkt, #0B0F17); opacity: 0; }
+.o-beeld picture { display: contents; }
+.o-still, .o-doek { position: absolute; left: 0; top: 0; width: 100%; height: 100%; max-width: none; display: block; }
+.o-doek { visibility: hidden; }
+body:not(.o-aan) .o-doek { display: none; }
+
+/* ── de kop en de zin ────────────────────────────────────────────────────── */
+.o-tekst { position: relative; z-index: 2; display: grid; gap: 14px; align-content: start; padding: 0 var(--h-rand, 40px); box-sizing: border-box; }
+.o-aan .o-tekst { position: absolute; left: 0; right: 0; }
+/* Intenser (Lucas): vet en in één kleur. Was 500 met een grijze eerste helft. */
+.o-kop { margin: 0; font: 700 64px/1 var(--h-letter); letter-spacing: -.035em; color: var(--h-inkt); text-wrap: balance; }
+.o-kop-rest { display: inline; }
+/* links: elk deel op één regel (max-content, nowrap), zodat de kop nooit drie regels wordt
+   en het script de echte breedte meet (koppen hoogstens twee regels) */
+.o-links .o-kop-rest { display: block; width: max-content; white-space: nowrap; }
+.o-kop-een { white-space: nowrap; text-wrap: nowrap; }
+.o-podium .o-lede { margin: 0; font: 500 19px/1.45 var(--h-letter); color: var(--h-inkt-2, #0B0F17); --h-maat: 44em; }
+.o-links .o-podium .o-lede, .o-links .o-lede { font-size: 18px; }
+
+/* ── het accentwoord ademt ────────────────────────────────────────────────────
+   Lucas (25 oktober, 13:52): "dat er wel echt een soort breathing effect op het woord
+   zit en het woord niet zelf gekleurd is, net zoals het hover effect op het logo in de
+   topbar maar dan wat smoother en rustiger." Dus: het woord is inkt, en een tweede laag
+   in blauw uur (dezelfde letters, niet nagetekend) ademt erop, met de slinger van het
+   logo: (1 − cos t) / 2, traag aan de uiteinden. Het logo doet heen en terug in 3,6 s;
+   dit in 8 s, en de amplitude groeit in 1,6 s aan, zodat het nooit verspringt.
+   Pas na de eerste beweging van de bezoeker (muis, toets, aanraking): niets beweegt bij
+   het laden. Minder beweging: inkt, zonder adem. Contrast: inkt 19,18 : 1, blauw uur
+   8,08 : 1 op wit, en elke tussenstand ligt daartussen. */
+@property --o-adem { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --o-amp { syntax: '<number>'; inherits: true; initial-value: 0; }
+@keyframes o-adem { to { --o-adem: 1; } }
+.o-acc { position: relative; display: inline-block; white-space: nowrap; color: var(--h-inkt); --o-amp: 0; transition: --o-amp 1.6s cubic-bezier(.25, 1, .5, 1); }
+/* inline-block: dan is het vak van de letters zo hoog als de regel en niet als de letter,
+   en steekt het niet in de regel erboven (tests/a11y.test.mjs meet dat) */
+.o-acc-t { display: inline-block; }
+.o-acc-blauw { position: absolute; left: 0; top: 0; color: var(--h-blauw, #25508B); pointer-events: none; opacity: calc(var(--o-amp) * (1 - cos(var(--o-adem) * 360deg)) / 2);
+  /* een zachte gloed in blauw uur die met de adem meekomt (Lucas, 15:24: "Gloed mag in
+     accentkleur, zolang het er modern en eruit ziet als iets dat bij VISUAILS past") */
+  text-shadow: 0 0 .32em rgba(37, 80, 139, .38), 0 0 .9em rgba(37, 80, 139, .18); }
+/* 25 oktober (de controle): één keer, dan inkt. Eerst ademde het zonder einde (8 s per ronde);
+   Lucas koos "één keer, dan stil": wat vanzelf beweegt en langer duurt dan 5 s, moet stil te
+   zetten zijn (WCAG 2.2.2). Aan het eind is --o-adem 1 en de blauwe laag weer 0. */
+.o-ademt .o-acc { --o-amp: 1; animation: o-adem 4.8s linear 1 forwards; }
+@media (prefers-reduced-motion: reduce) { .o-ademt .o-acc { animation: none; --o-amp: 0; } }
+@media (forced-colors: active) { .o-acc-blauw { display: none; } }
+@media (prefers-reduced-motion: reduce) { .o-acc-blauw { text-shadow: none; } }
+
+/* ── de letters onderweg ─────────────────────────────────────────────────── */
+.o-reis { position: absolute; inset: 0; z-index: 4; pointer-events: none; display: none; }
+.o-reist .o-reis { display: block; }
+.o-onderweg .o-acc { visibility: hidden; }
+.o-rl { position: absolute; left: 0; top: 0; will-change: transform; }
+.o-rl > span { position: absolute; left: 0; top: 0; line-height: 1; white-space: pre; transform-origin: 50% 50%; will-change: transform, opacity; }
+.o-rl-a { font-family: var(--h-letter); color: var(--h-inkt); letter-spacing: 0; }
+.o-rl-b { font: 600 12px/1 var(--h-mono, monospace); color: var(--h-inkt); opacity: 0; }
+/* de punt wordt het vlagje van het label (hal.css, p.h-pil::before) */
+.o-rl-b.o-rl-streep { width: 16px; height: 16px; background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%230B0F17' d='M19.75 10.2L17.05 13.8L4.25 13.8L6.95 10.2Z'/></svg>") center / 16px no-repeat; }
+
+
+/* ── Hoe het werkt ───────────────────────────────────────────────────────── */
+/* Lucas (14:39): "Ik wil de how it works animatie blokken in de 3 stappen houden maar dan
+   meer als het voorbeeld met de donkere blokken." De sectie is de wortel van de uitleg
+   (#hoe); de kop met de tabs, de drie blokken (VoorpaginaHal.astro) en de balk eronder. */
+.o-hoe { position: relative; z-index: 3; max-width: var(--h-kolom, 1440px); margin: 0 auto; padding: 72px var(--h-rand, 40px) 40px; box-sizing: border-box; display: flex; flex-direction: column; gap: 22px; --o-gat: 40px; }
+/* in het podium: in één scherm, bovenaan onder de balk; het script zet --o-beeld (de hoogte
+   van de beelden in de blokken) op wat er overblijft */
+.o-aan .o-hoe { position: absolute; left: 0; right: 0; top: 0; padding-top: calc(var(--o-balk, 66px) + 22px); padding-bottom: 18px; gap: 18px; pointer-events: none; }
+.o-aan.o-binnen .o-hoe { pointer-events: auto; }
+.o-hoe-kop { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 40px; }
+.o-hoe-titel { display: grid; gap: 14px; }
+.o-hoe-kop .h-pil { margin: 0; }
+.o-aan .o-label { visibility: hidden; }
+.o-aan.o-geland .o-label { visibility: visible; }
+.o-aan.o-geland .o-label::before { animation: h-tl .46s steps(1, end) both; }
+.o-h2 { margin: 0; }
+.o-aan .o-h2 { font-size: clamp(32px, 2.9vw, 44px); }
+
+/* de tabs: drie knoppen in één vorm, met de snede uit het logo ertussen (de ontwerptaal) */
+.o-tabs { display: flex; flex: none; --h: 44px; --loop: 33px; --kier: 4px; }
+.o-tabs button { height: var(--h); border: 0; background: var(--h-vlak, #F4F5F7); color: var(--h-inkt); font: 600 15.5px/1 var(--h-letter); cursor: pointer; padding: 0 calc(var(--loop) * .55 + 16px); white-space: nowrap; transition: background-color .16s steps(2, end); }
+.o-tabs button:first-child { border-radius: var(--o-hoek-knop); padding-left: 20px; clip-path: polygon(0 0, 100% 0, calc(100% - var(--loop)) 100%, 0 100%); }
+.o-tabs button:not(:first-child) { margin-left: calc(var(--kier) - var(--loop)); clip-path: polygon(var(--loop) 0, 100% 0, calc(100% - var(--loop)) 100%, 0 100%); }
+.o-tabs button:last-child { padding-right: 20px; border-radius: 3px; clip-path: polygon(var(--loop) 0, 100% 0, 100% 100%, 0 100%); }
+.o-tabs button:hover { background: var(--h-lijn, #E6E8EC); }
+.o-tabs button[aria-selected="true"] { background: var(--h-inkt); color: #FFFFFF; }
+.o-tabs button:focus-visible { clip-path: none; z-index: 1; outline: 2px solid var(--h-blauw, #25508B); outline-offset: 2px; }
+
+.o-blokken { position: relative; }
+.o-voet { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; }
+/* rechts plek voor de WhatsApp-knop, die vast rechtsonder staat (anders valt hij over de knoppen) */
+.o-aan .o-voet { padding-right: 56px; }
+.o-voet .u-balk { flex: 1 1 460px; min-width: 0; margin-top: 0; }
+.o-acties { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+.o-acties .h-acties, .o-acties .h-feiten { margin: 0; }
+/* in één scherm: de balk plakt niet (hij staat al in beeld), en de feitjes alleen als er
+   hoogte voor is (de prijs en de levertijd staan ook in Wat we maken) */
+.o-aan .o-hoe .u-balk { position: relative !important; bottom: auto; }
+/* de zin over de hele balk, niet op de maat van lopende tekst (hal.css: .hal main p) */
+/* Lucas (16:56): de zinnen in de balk weg, alleen de voortgang en de pauzeknop (die blijft:
+   WCAG 2.2.2, wat langer dan 5 s beweegt moet stil kunnen). De zinnen staan nog in de html. */
+.o-hoe .u-balk .u-zin { display: none; }
+html body.hal.hal .o-hoe .u-balk { padding: 8px 16px 8px 8px; }
+.o-hoe .u-balk .u-rechts { align-self: center; }
+@media (max-height: 959px) { .o-aan .o-acties .h-feiten { display: none; } }
+
+/* ── de drie stappen: witte kaarten ────────────────────────────────────────────
+   Lucas (16:28): "De "How it works" sectie mag er echt wel wat rustiger uit zien. De donkere
+   achtergrond maakt het ook wat heftiger dan dat het zou moeten dus deze mag wit zijn." De
+   kaarten, vakken, lijstjes en etiketjes zijn die van hal.css (wit met een haarlijn, de
+   hoeken concentrisch); hier alleen de indeling, de lijnen ertussen en wat per dienst nieuw is. */
+html body.hal.hal .o-hoe .h-stappen { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1fr); gap: var(--o-gat); }
+.o-hoe .h-stap-beeld { height: var(--o-beeld, 308px); }
+.o-aan .o-hoe .h-stap { gap: 8px; }
+.o-aan .o-hoe .h-stappen .h-nr b { font-size: 40px; }
+html body.hal.hal.o-aan .o-hoe .h-stap-naam { font-size: 26px; margin-top: 2px; }
+.o-aan .o-hoe .h-stap-regel { font-size: 14.5px; }
+/* het binnenkomen gebeurt hier met de scroll (HalOpening.astro), niet met de wis van .h-in */
+html.h-js body.hal.o-aan .o-hoe .h-in { opacity: 1; animation: none; }
+
+/* de lijnen tussen de stappen: een haarlijn door het wit, op de hoogte van het vak, met een
+   blokje in inkt dat oversteekt als de volgende stap begint */
+html body.hal.hal .o-hoe .h-brug { right: calc(-1 * var(--o-gat)); left: auto; top: auto; bottom: calc(26px + (var(--o-beeld, 308px) - 8px) / 2); width: var(--o-gat); height: 1px; padding: 0; border-radius: 0; background: var(--h-lijn-sterk, #C5C8CF); box-shadow: none; transform: none; animation: none !important; display: block; z-index: 0; }
+html body.hal.hal .o-hoe .h-brug svg { display: none; }
+html body.hal.hal .o-hoe .h-brug::after { content: ""; position: absolute; left: 0; top: -3px; width: 7px; height: 7px; border-radius: 2px; background: var(--h-inkt); opacity: 0; }
+html body.hal.hal .o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .h-stap:nth-child(1) .h-brug::after,
+html body.hal.hal .o-hoe.u-s3:not([data-uitleg-staat="klaar"]) .h-stap:nth-child(2) .h-brug::after { animation: o-oversteek .62s cubic-bezier(.16, 1, .3, 1) both; }
+@keyframes o-oversteek { 0% { opacity: 1; transform: translateX(-3px); } 85% { opacity: 1; } 100% { opacity: 0; transform: translateX(calc(var(--o-gat) - 4px)); } }
+
+/* ── per dienst (data-dienst op #hoe, data-v op wat bij een dienst hoort) ─────────── */
+.o-hoe[data-dienst="catalog"] [data-v]:not([data-v~="catalog"]),
+.o-hoe[data-dienst="lifestyle"] [data-v]:not([data-v~="lifestyle"]),
+.o-hoe[data-dienst="video"] [data-v]:not([data-v~="video"]) { display: none !important; }
+.o-hoe .u-zin .u-v { font-style: normal; }
+
+/* een vak dat niet het eerste in zijn stap is, ligt over de hele hoogte (de varianten) */
+html body.hal.hal .o-hoe .h-stap-beeld > .h-well { height: 100%; }
+
+/* ── catalog, stap 2: de lagen in 3D ─────────────────────────────────────────────
+   Lucas (16:40): eerst vlak, dan springen de lagen uit elkaar en kantelen in 3D, dan worden ze
+   weer in elkaar gezogen en is het vlak, en door naar stap 3. Om 16:56: het moet voelen als een
+   "smooth ontploffing" (snel open, heel lang zacht uitlopen) en daarna rustig golvend zweven.
+   Om 16:57: geen labels "met de hand" ("voelt veel te verdedigend"); alleen kort een zachte
+   gloed in blauw uur om het product, met "Gemaakt met AI".
+   Stap 2 duurt 12,9 s: het handwerk loopt als altijd, en vanaf 9,1 s ligt deze figuur precies
+   over het geleverde beeld. De tijden als procent van 12,9 s:
+     9,10 s  70,5 %  de figuur neemt het over (vlak: op het oog hetzelfde beeld)
+     9,20 s  71,3 %  open: de ontploffing, 1,3 s, snel weg en heel lang uitlopen
+    10,2 s   79 %    de gloed om het product en "Gemaakt met AI"; de lagen zweven
+    11,85 s  91,9 %  gloed en woorden weg
+    12,05 s  93,4 %  dichtklappen, 0,55 s, alsof hij wordt ingezogen
+    12,7 s   98,5 %  het geleverde beeld staat er weer; stap 3 */
+@property --o-zweef { syntax: '<length>'; inherits: true; initial-value: 0px; }
+@property --o-golf { syntax: '<number>'; inherits: false; initial-value: 0; }
+html body.hal.hal .o-hoe .o-ontleed { position: absolute; left: 0; right: 0; bottom: 0; top: 8px; height: auto; container-type: size; overflow: hidden; background: #FFFFFF; opacity: 0; visibility: hidden; }
+.o-ont-ruimte { position: absolute; left: 50%; top: 50%; height: 72%; aspect-ratio: 1; max-width: 70%; transform: translate(-50%, -54%); perspective: 1100px; }
+.o-ont-stapel { position: absolute; inset: 0; transform-style: preserve-3d; transform-origin: 50% 55%; --z: 13cqh; }
+.o-ont-laag { position: absolute; inset: 0; transform-style: preserve-3d; background: none; translate: 0 0 calc(var(--o-zweef) * var(--o-golf)); }
+.o-ont-laag img { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; display: block; object-fit: contain; }
+.o-ont-vlak { background: #EFEFEF; }
+.o-ont-laag .o-ont-donker { opacity: .2; transform: translateY(.5%); filter: brightness(0) blur(2.5px); }
+/* de rand van elke laag, alleen als ze uit elkaar liggen (vlak is het één beeld) */
+.o-ont-laag::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 0 1px rgba(11, 15, 23, .16); opacity: 0; pointer-events: none; }
+.o-ont-los::after { display: none; }
+.o-ont-schaduw::before { content: ""; position: absolute; inset: 0; background: repeating-conic-gradient(#E6E8EC 0% 25%, #FFFFFF 0% 50%) 50% / 12px 12px; opacity: 0; }
+/* de gloed om het product: blauw uur, langs de vorm van de broek (drop-shadow volgt de uitsnede) */
+.o-ont-los img { filter: drop-shadow(0 0 0 rgba(37, 80, 139, 0)) drop-shadow(0 0 0 rgba(128, 167, 221, 0)); }
+.o-ont-ai { position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%); font: 600 12px/1 var(--h-mono, monospace); letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; color: var(--h-blauw, #25508B); opacity: 0; }
+
+/* open: zo staat hij zonder uitleg en bij minder beweging */
+.o-hoe:not([data-uitleg-staat]) .o-ontleed { opacity: 1; visibility: visible; }
+.o-hoe:not([data-uitleg-staat]) .h-maak { visibility: hidden; }
+.o-hoe:not([data-uitleg-staat]) .o-ont-stapel { transform: rotateX(54deg) rotateZ(-38deg) scale(.66); }
+.o-hoe:not([data-uitleg-staat]) .o-ont-laag { transform: translateZ(calc((2 - var(--i)) * var(--z))); }
+.o-hoe:not([data-uitleg-staat]) .o-ont-laag::after, .o-hoe:not([data-uitleg-staat]) .o-ont-schaduw::before, .o-hoe:not([data-uitleg-staat]) .o-ont-ai { opacity: 1; }
+.o-hoe:not([data-uitleg-staat]) .o-ont-los img { filter: drop-shadow(0 0 10px rgba(37, 80, 139, .45)) drop-shadow(0 0 2px rgba(128, 167, 221, .7)); }
+@media (prefers-reduced-motion: reduce) {
+  .o-hoe .o-ontleed { opacity: 1 !important; visibility: visible !important; }
+  .o-hoe .h-maak { visibility: hidden; }
+  .o-ont-stapel { transform: rotateX(54deg) rotateZ(-38deg) scale(.66); }
+  .o-ont-laag { transform: translateZ(calc((2 - var(--i)) * var(--z))); }
+  .o-ont-laag::after, .o-ont-schaduw::before, .o-ont-ai { opacity: 1 !important; }
+  .o-ont-los img { filter: drop-shadow(0 0 10px rgba(37, 80, 139, .45)) drop-shadow(0 0 2px rgba(128, 167, 221, .7)); }
+}
+
+/* in stap 2, met de uitleg: één keer open, even zweven, en weer dicht */
+.o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .o-ontleed { animation: o-ont-zicht 12.9s linear both; }
+.o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .h-maak { animation: o-maak-zicht 12.9s linear both; }
+.o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .o-ont-stapel { animation: o-ont-kantel 12.9s both; }
+.o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .o-ont-laag { animation: o-ont-til 12.9s both, o-ont-golf 3.8s ease-in-out infinite; animation-delay: 0s, calc(var(--i) * -1.27s); }
+.o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .o-ont-laag::after,
+.o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .o-ont-schaduw::before { animation: o-ont-rand 12.9s linear both; }
+.o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .o-ont-los img { animation: o-ont-gloed 12.9s both; }
+.o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .o-ont-ai { animation: o-ont-woord 12.9s both; }
+.o-hoe[data-uitleg-staat="pauze"] .o-ontleed, .o-hoe[data-uitleg-staat="pauze"] .o-ontleed *, .o-hoe[data-uitleg-staat="pauze"] .o-ontleed *::before,
+.o-hoe[data-uitleg-staat="pauze"] .o-ontleed *::after, .o-hoe[data-uitleg-staat="pauze"] .h-maak { animation-play-state: paused !important; }
+@keyframes o-ont-zicht {
+  0%, 70.5% { opacity: 0; visibility: hidden; background-color: #EFEFEF; }
+  70.6% { opacity: 1; visibility: visible; background-color: #EFEFEF; }
+  71.3% { background-color: #EFEFEF; }
+  76%, 93.4% { opacity: 1; visibility: visible; background-color: #FFFFFF; }
+  97.6% { background-color: #EFEFEF; }
+  98.4% { opacity: 1; visibility: visible; background-color: #EFEFEF; }
+  98.5%, 100% { opacity: 0; visibility: hidden; }
+}
+@keyframes o-maak-zicht { 0%, 70.6% { opacity: 1; } 70.7%, 98.4% { opacity: 0; } 98.5%, 100% { opacity: 1; } }
+/* de ontploffing: snel weg (expo), heel lang uitlopen; het zweven groeit mee aan */
+@keyframes o-ont-kantel {
+  0%, 71.3% { transform: none; --o-zweef: 0px; animation-timing-function: cubic-bezier(.12, .9, .16, 1); }
+  81.4% { transform: rotateX(54deg) rotateZ(-38deg) scale(.66); --o-zweef: 7px; }
+  93.4% { transform: rotateX(54deg) rotateZ(-38deg) scale(.66); --o-zweef: 7px; animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
+  97.6%, 100% { transform: none; --o-zweef: 0px; }
+}
+@keyframes o-ont-til {
+  0%, 71.3% { transform: translateZ(0); animation-timing-function: cubic-bezier(.12, .9, .16, 1); }
+  81.4%, 93.4% { transform: translateZ(calc((2 - var(--i)) * var(--z))); animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
+  97.4%, 100% { transform: translateZ(0); }
+}
+/* golvend zweven: elke laag op zijn eigen moment in dezelfde golf */
+@keyframes o-ont-golf { 0%, 100% { --o-golf: -1; } 50% { --o-golf: 1; } }
+@keyframes o-ont-rand { 0%, 74% { opacity: 0; } 77%, 92.6% { opacity: 1; } 94.2%, 100% { opacity: 0; } }
+@keyframes o-ont-gloed {
+  0%, 78% { filter: drop-shadow(0 0 0 rgba(37, 80, 139, 0)) drop-shadow(0 0 0 rgba(128, 167, 221, 0)); }
+  82%, 90.6% { filter: drop-shadow(0 0 12px rgba(37, 80, 139, .5)) drop-shadow(0 0 2px rgba(128, 167, 221, .8)); }
+  92.6%, 100% { filter: drop-shadow(0 0 0 rgba(37, 80, 139, 0)) drop-shadow(0 0 0 rgba(128, 167, 221, 0)); }
+}
+@keyframes o-ont-woord {
+  0%, 79% { opacity: 0; transform: translate(-50%, 6px); animation-timing-function: cubic-bezier(.16, 1, .3, 1); }
+  82.5%, 90.6% { opacity: 1; transform: translate(-50%, 0); }
+  92.2%, 100% { opacity: 0; transform: translate(-50%, 0); }
+}
+
+/* ── lifestyle, stap 1: kies je look ────────────────────────────────────────────── */
+.o-kies-rij { list-style: none; margin: 0; padding: 0; position: absolute; inset: 14px 14px 60px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 10px 10px; }
+html body.hal.hal .o-kies-rij li { position: relative; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 6px; min-height: 0; max-width: none; }
+.o-kies-beeld { position: relative; display: grid; place-items: center; min-height: 0; border-radius: 4px; overflow: hidden; background: var(--h-vlak, #F4F5F7); box-shadow: inset 0 0 0 1px var(--h-lijn, #E6E8EC); transition: opacity .3s; }
+.o-kies-beeld img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.o-kies-beeld i { font: 300 26px/1 var(--h-letter); font-style: normal; color: var(--h-inkt); }
+.o-kies-rij b { font: 600 12.5px/1.2 var(--h-letter); color: var(--h-inkt); transition: color .3s; }
+.o-kies-vink { position: absolute; top: 6px; right: 6px; z-index: 1; width: 20px; height: 20px; display: grid; place-items: center; color: #FFFFFF; transition: transform .38s var(--h-veer, ease), opacity .2s; }
+.o-kies-vink svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.o-stijl-rij .o-kies-vink { color: var(--h-inkt); }
+.o-kies-rij li.is-gekozen .o-kies-beeld { box-shadow: 0 0 0 2px var(--h-inkt); }
+/* tijdens stap 1: eerst de looks, dan valt de keuze op Flash en zakken de andere weg.
+   25 oktober (de controle): de andere looks zakten met hun naam erbij weg naar 55 %, en
+   inkt op 55 % haalt 4,24 : 1, ook in de eindstand. Nu wordt alleen het beeld zacht en de
+   naam grijs (5,52 : 1). Zolang stap 1 niet aan de beurt is, doet de regel onderaan dit
+   bestand hetzelfde voor het hele vak. */
+.o-hoe[data-uitleg-staat]:not(.u-s1) .o-kies-vink { transform: scale(0); }
+.o-hoe[data-uitleg-staat]:not(.u-s1) .o-kies-rij li.is-gekozen .o-kies-beeld { box-shadow: inset 0 0 0 1px var(--h-lijn, #E6E8EC); }
+.o-hoe.u-s1 .o-kies-rij li :is(.o-kies-beeld, b) { transition-delay: calc(var(--d) * 120ms); }
+.o-hoe.u-s1 .o-kies-rij li:not(.is-gekozen) .o-kies-beeld { opacity: .55; transition: opacity .3s 1.15s; }
+.o-hoe.u-s1 .o-kies-rij li:not(.is-gekozen) b { color: var(--h-grijs, #636974); transition: color .3s 1.15s; }
+.o-hoe.u-s1 .o-kies-vink { transition-delay: 1.05s; }
+.o-hoe.u-s1 .o-kies-rij li.is-gekozen .o-kies-beeld { transition: box-shadow .2s steps(2, end) 1s, opacity .3s calc(var(--d) * 120ms); }
+.o-hoe[data-uitleg-staat="klaar"] .o-kies-rij li:not(.is-gekozen) .o-kies-beeld, .o-hoe:not([data-uitleg-staat]) .o-kies-rij li:not(.is-gekozen) .o-kies-beeld { opacity: .55; }
+.o-hoe[data-uitleg-staat="klaar"] .o-kies-rij li:not(.is-gekozen) b, .o-hoe:not([data-uitleg-staat]) .o-kies-rij li:not(.is-gekozen) b { color: var(--h-grijs, #636974); }
+
+/* ── video, stap 1: de stijlen, als lijstje ─────────────────────────────────────── */
+.o-stijl-rij { list-style: none; margin: 0; position: absolute; left: 14px; right: 14px; top: 50%; transform: translateY(-58%); padding: 8px; display: grid; gap: 4px; border-radius: 8px; background: #FFFFFF; box-shadow: inset 0 0 0 1px var(--h-lijn, #E6E8EC); }
+html body.hal.hal .o-stijl-rij li { position: relative; display: flex; align-items: center; justify-content: space-between; min-height: 36px; padding: 0 10px; border-radius: 6px; max-width: none; font: 600 13.5px/1.2 var(--h-letter); color: var(--h-inkt); }
+html body.hal.hal .o-stijl-rij li.is-gekozen { background: var(--h-vlak, #F4F5F7); box-shadow: inset 0 0 0 1px var(--h-inkt); }
+.o-stijl-rij .o-kies-vink { position: static; }
+.o-hoe[data-uitleg-staat]:not(.u-s1) .o-stijl-rij li.is-gekozen { background: none; box-shadow: none; }
+.o-hoe.u-s1 .o-stijl-rij li.is-gekozen { transition: background-color .2s steps(2, end) 1s, box-shadow .2s steps(2, end) 1s; }
+.o-binnenkort-zin { position: absolute; left: 14px; right: 14px; bottom: 14px; margin: 0; font: 500 12.5px/1.4 var(--h-mono, monospace); letter-spacing: .02em; color: var(--h-grijs, #636974); }
+
+/* ── lifestyle en video, stap 2: upload je foto's ───────────────────────────────── */
+html body.hal.hal .o-upload-rij { list-style: none; margin: 0; position: absolute; left: 14px; right: 14px; top: 50%; transform: translateY(-58%); padding: 10px; display: grid; gap: 6px; border-radius: 8px; }
+html body.hal.hal .o-upload-rij li { display: grid; grid-template-columns: 26px auto minmax(40px, 1fr) 20px; align-items: center; gap: 10px; min-height: 38px; padding: 0 8px 0 6px; border-radius: 6px; max-width: none; font: 600 13.5px/1.2 var(--h-letter); color: var(--h-inkt); }
+.o-upload-ik { width: 26px; height: 26px; display: grid; place-items: center; color: var(--h-inkt); }
+.o-upload-ik svg { width: 15px; height: 15px; }
+.o-upload-balk { height: 4px; border-radius: 2px; background: var(--h-lijn, #E6E8EC); overflow: hidden; }
+.o-upload-balk s { display: block; height: 100%; background: var(--h-inkt); transform-origin: 0 50%; transform: scaleX(1); }
+.o-upload-vink { width: 20px; height: 20px; display: grid; place-items: center; color: var(--h-inkt); transition: transform .38s var(--h-veer, ease); }
+.o-upload-vink svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+html body.hal.hal .o-upload-rij li.o-upload-klaar { display: block; min-height: 0; margin-top: 2px; padding: 9px 8px 2px; border-top: 1px solid var(--h-lijn, #E6E8EC); border-radius: 0; font-weight: 700; transition: opacity .3s var(--o-klaar-wacht, 0s); }
+.o-hoe[data-uitleg-staat]:not(.u-s2) .o-upload-balk s { transform: scaleX(0); }
+.o-hoe[data-uitleg-staat]:not(.u-s2) .o-upload-vink { transform: scale(0); }
+.o-hoe[data-uitleg-staat]:not(.u-s2) .o-upload-klaar { opacity: 0; }
+.o-hoe.u-s2:not([data-uitleg-staat="klaar"]) .o-upload-balk s { animation: o-laad .55s cubic-bezier(.65, 0, .35, 1) both; animation-delay: calc(.25s + var(--d) * .55s); }
+.o-hoe.u-s2 .o-upload-vink { transition-delay: calc(.8s + var(--d) * .55s); }
+.o-hoe.u-s2 { --o-klaar-wacht: 2.3s; }
+@keyframes o-laad { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+/* na afloop (ook als je de uitleg stilzet of overslaat): meteen de eindstand, zonder wachten */
+.o-hoe[data-uitleg-staat="klaar"] { --o-klaar-wacht: 0s; }
+.o-hoe[data-uitleg-staat="klaar"] .o-upload-vink, .o-hoe[data-uitleg-staat="klaar"] .o-kies-vink,
+.o-hoe[data-uitleg-staat="klaar"] .o-kies-rij li, .o-hoe[data-uitleg-staat="klaar"] .o-kies-beeld, .o-hoe[data-uitleg-staat="klaar"] .o-kies-rij b,
+.o-hoe[data-uitleg-staat="klaar"] .o-stijl-rij li { transition-delay: 0s !important; }
+
+/* ── video, stap 3: de plek voor de clip ────────────────────────────────────────── */
+.o-klip-plek { position: absolute; left: 50%; top: 14px; bottom: 52px; aspect-ratio: 9 / 16; transform: translateX(-50%); border-radius: 4px; display: grid; place-items: center; background: var(--h-vlak, #F4F5F7); box-shadow: inset 0 0 0 1px var(--h-lijn, #E6E8EC); color: var(--h-inkt); }
+.o-klip-plek i { width: 22px; height: 22px; display: grid; place-items: center; }
+.o-klip-plek svg { width: 22px; height: 22px; }
+
+/* ── de vinkjes zonder vlak ─────────────────────────────────────────────────────────
+   Lucas (16:44): "Als het kan wil ik de vinkjes gewoon zonder achtergrond maken om het er
+   schoner uit te laten zien. Let er wel op dat ze zichtbaar zijn dus als wit niet goed
+   zichtbaar is maak hem dan zwart." Gemeten onder elk vinkje (de rechterbovenhoek van het
+   beeld): de catalogbeelden zijn licht (193 – 239 van 255), dus inkt; de beelden van Flash
+   donker (4 – 5), dus wit. In de lijstjes: inkt als het af is, lijn sterk zolang het nog moet. */
+html body.hal.hal .o-hoe .h-keur-rij > li:nth-child(n) .h-vink { width: 22px; height: 22px; top: 6px; right: 6px; background: none; box-shadow: none; border-radius: 0; color: var(--h-inkt); }
+html body.hal.hal .o-hoe .h-keur-rij .h-vink svg { width: 19px; height: 19px; stroke-width: 2.6; }
+html body.hal.hal .o-hoe [data-v~="lifestyle"] .h-keur-rij > li:nth-child(n) .h-vink { color: #FFFFFF; }
+html body.hal.hal .o-hoe .h-stuur-v i, html body.hal.hal .o-hoe .h-lagen li > i { background: none !important; box-shadow: none; border-radius: 0; color: var(--h-inkt); }
+html body.hal.hal .o-hoe .h-stuur-v i svg, html body.hal.hal .o-hoe .h-lagen li > i svg { width: 15px; height: 15px; stroke-width: 2.6; }
+html.h-js body.hal.hal .o-hoe .h-stuur-v i { transition-property: scale, color; }
+html.h-js body.hal.hal .o-hoe .h-stap:not(.is-in) .h-stuur-v i,
+html.h-js body.hal.hal .o-hoe[data-uitleg-staat]:not(.u-s1) .h-stuur-v i,
+html body.hal.hal .o-hoe[data-uitleg-staat]:not(.u-s2) .h-lagen li > i { color: var(--h-lijn-sterk, #C5C8CF); }
+html body.hal.hal .o-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-lagen li > i { animation-name: o-vink; }
+@keyframes o-vink { from { transform: scale(.55); color: #C5C8CF; } to { transform: none; color: #0B0F17; } }
+
+/* ── op de telefoon: één blok dat van 01 naar 02 naar 03 gaat ─────────────────────────
+   Lucas (16:42): "Op telefoon wil ik dat de animatie 1 blok blijft en van 01 naar 02 naar 03
+   veranderd en je niet hoeft te scrollen." De drie stappen liggen in één vak op elkaar (zo
+   hoog als de hoogste, dus niets verspringt); de stap die speelt staat er, de andere zijn weg.
+   Na afloop blijft stap 03 staan; de balk eronder speelt hem opnieuw af. Zonder uitleg en bij
+   minder beweging wisselt er niets: dan staan ze onder elkaar. */
+@media (max-width: 900px) and (prefers-reduced-motion: no-preference) {
+  html body.hal.hal .o-hoe[data-uitleg-staat] .h-stappen { display: grid; grid-template-columns: minmax(0, 1fr); }
+  html body.hal.hal .o-hoe[data-uitleg-staat] .h-stappen > .h-stap { grid-area: 1 / 1; opacity: 0 !important; visibility: hidden; transform: translateX(18px); transition: opacity .3s, transform .45s cubic-bezier(.16, 1, .3, 1), visibility 0s .45s; }
+  html body.hal.hal .o-hoe[data-uitleg-staat]:not(.u-s1) .h-stappen > .h-stap:nth-child(1),
+  html body.hal.hal .o-hoe.u-s1:not(.u-s2) .h-stappen > .h-stap:nth-child(1),
+  html body.hal.hal .o-hoe.u-s2:not(.u-s3) .h-stappen > .h-stap:nth-child(2),
+  html body.hal.hal .o-hoe.u-s3 .h-stappen > .h-stap:nth-child(3) { opacity: 1 !important; visibility: visible; transform: none; transition: opacity .35s .12s, transform .5s cubic-bezier(.16, 1, .3, 1) .12s, visibility 0s; }
+  html body.hal.hal .o-hoe[data-uitleg-staat] .h-stap > * { opacity: 1 !important; }
+  html body.hal.hal .o-hoe[data-uitleg-staat] .h-brug { display: none; }
+}
+
+/* ── het zweven na een sprong (de stroom, HalOpening.astro) ─────────────────────────
+   Lucas (16:56): "de elementen in die sectie heel langzaam golvend zweven (echt heel rustig en
+   subtiel)". Alleen na een sprong van de stroom (op de computer, met beweging aan), alleen in de
+   sectie waar je bent, en weg zodra je verder scrolt. 3 px heen en terug in 9 s, elk deel een
+   tel later: een golf door de rij. Het eerste moment staat alles op zijn plek, dus niets springt. */
+/* 25 oktober (de controle): één rustige golf per stop, dan stil (Lucas: "één keer, dan stil";
+   WCAG 2.2.2). Eerst 9 s zonder einde. 3 px omhoog en terug in 4,4 s, kort na elkaar: alles staat
+   binnen 5 s. */
+@keyframes o-zweef { 0%, 100% { translate: 0 0; } 50% { translate: 0 -3px; } }
+html.h-js body.hal.hal .is-zweeft .h-stappen > .h-stap.h-in, html.h-js body.hal.hal .is-zweeft .h-fmt-kader, html.h-js body.hal.hal .is-zweeft .h-fmt-mini, html.h-js body.hal.hal .is-zweeft .h-dk > .h-dk-k { animation: o-zweef 4.4s ease-in-out 1 both; }
+html.h-js body.hal.hal .is-zweeft .h-stappen > .h-stap.h-in:nth-child(2), html.h-js body.hal.hal .is-zweeft .h-fmt-mini, html.h-js body.hal.hal .is-zweeft .h-dk > .h-dk-k:nth-child(2) { animation-delay: .3s; }
+html.h-js body.hal.hal .is-zweeft .h-stappen > .h-stap.h-in:nth-child(3), html.h-js body.hal.hal .is-zweeft .h-dk > .h-dk-k:nth-child(3) { animation-delay: .6s; }
+
+/* ── zonder scrollvideo: alles onder elkaar ─────────────────────────────── */
+/* body:not(.o-aan) en niet .o-stil (25 oktober, de eindcontrole): zo staat deze indeling er al
+   vóór het script draait. Met .o-stil sprong de pagina als het script de klasse zette: CLS 0,40
+   bij minder beweging, 0,20 op de telefoon. */
+/* de bovenkant van de laptop net onder de balk (die eindigt op 62 px; het beeld heeft
+   bovenin 76/1600 van zijn breedte wit). Als padding op .o-vast en niet als marge op het beeld:
+   die marge viel door tot de body, zette de hele pagina 53 px lager en haalde op de telefoon de
+   link "Naar de inhoud" bovenin half in beeld. */
+body:not(.o-aan) .o-vast { padding-top: max(0px, calc(72px - 4.75vw)); }
+/* 25 oktober (de controle): terug of herladen zette je zo'n 2250 px te laag. De browser zet de
+   oude scrollstand terug terwijl het podium nog kort is; groeit het daarna, dan schuift scroll
+   anchoring de stand mee. Op de voorpagina rekent het podium zelf, dus hier geen anchoring. */
+html:has(.o-podium) { overflow-anchor: none; }
+body:not(.o-aan) .o-tekst { padding-top: 18px; }
+/* 25 oktober (de controle): met 34 px als bodem brak de kop op 320 px (NL en EN) en op 390 – 414 px
+   (EN) in drie regels. Nu krimpt hij mee zodat het eerste deel op één regel past: gemeten
+   breedte / lettergrootte = 8,89 ("Al je productbeelden.") en 10,53 ("All your product
+   imagery."), met 3,5 % speling; de kolom is het venster min 2 × 16 px. Waar het al paste
+   (390 NL en breder) blijft hij 34 – 64 px. */
+body:not(.o-aan) .o-kop { font-size: clamp(26px, min(max(34px, 8.6vw), (100vw - 32px) / 9.2), 64px); }
+html[lang="en"] body:not(.o-aan) .o-kop { font-size: clamp(26px, min(max(34px, 8.6vw), (100vw - 32px) / 10.9), 64px); }
+body:not(.o-aan) .o-kop-rest { display: block; }
+body:not(.o-aan) .o-hoe { padding-top: 64px; }
+/* onder elkaar: de voet lost op in de sectie, zodat de uitlegbalk over de hele sectie onderin
+   kan plakken terwijl de uitleg speelt (sticky blijft binnen zijn ouder; UitlegBalk.astro) */
+body:not(.o-aan) .o-voet { display: contents; }
+body:not(.o-aan) .o-voet .u-balk { flex: none; }
+@media (max-width: 1180px) { .o-hoe { --o-gat: 28px; } }
+@media (max-width: 900px) {
+  .o-hoe { --o-gat: 26px; }
+  html body.hal.hal .o-hoe .h-stappen { grid-template-columns: minmax(0, 1fr); gap: var(--o-gat); }
+  .o-hoe .h-stap-beeld { height: 340px; }
+  html body.hal.hal .o-hoe .h-brug { left: 50%; right: auto; bottom: calc(-1 * var(--o-gat)); width: 1px; height: var(--o-gat); }
+  html body.hal.hal .o-hoe .h-brug::after { display: none; }
+  .o-tabs button { font-size: 15px; }
+  .o-hoe-kop { align-items: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .o-kies-rij li, .o-kies-rij b, .o-kies-vink, .o-kies-beeld, .o-stijl-rij li, .o-upload-vink, .o-upload-klaar { transition: none !important; }
+  .o-upload-balk s { animation: none !important; }
+  .o-aan.o-geland .o-label::before { animation: none; }
+}
+
+/* ── wat nog niet aan de beurt is: het beeld zacht, de letters grijs ──────────────────
+   25 oktober (de eindcontrole, axe): de hele kaart stond op 40 % (hal.css, "HOE HET WERKT IN
+   BEWEGING"), en daarmee de koppen ook: inkt op 40 % haalt 2,7 : 1. Nu blijft de kaart staan,
+   wordt alleen het beeld zacht, en worden het nummer en de naam grijs (5,52 : 1). Het
+   verschil tussen "nu" en "nog niet" blijft even groot. Op de telefoon (één kaart) speelt dit
+   niet: daar staat alleen de kaart die aan de beurt is. */
+html body.hal.hal .o-hoe[data-uitleg-staat] .h-stappen > .h-stap { opacity: 1; }
+html body.hal.hal .o-hoe[data-uitleg-staat] .h-stap > .h-stap-beeld { transition: opacity .338s; }
+html body.hal.hal .o-hoe[data-uitleg-staat] .h-stap :is(.h-nr b, .h-stap-naam) { transition: color .338s; }
+html body.hal.hal .o-hoe[data-uitleg-staat]:not(.u-s1) .h-stap:nth-child(1) > .h-stap-beeld,
+html body.hal.hal .o-hoe[data-uitleg-staat]:not(.u-s2) .h-stap:nth-child(2) > .h-stap-beeld,
+html body.hal.hal .o-hoe[data-uitleg-staat]:not(.u-s3) .h-stap:nth-child(3) > .h-stap-beeld { opacity: .4; }
+html body.hal.hal .o-hoe[data-uitleg-staat]:not(.u-s1) .h-stap:nth-child(1) :is(.h-nr b, .h-stap-naam),
+html body.hal.hal .o-hoe[data-uitleg-staat]:not(.u-s2) .h-stap:nth-child(2) :is(.h-nr b, .h-stap-naam),
+html body.hal.hal .o-hoe[data-uitleg-staat]:not(.u-s3) .h-stap:nth-child(3) :is(.h-nr b, .h-stap-naam) { color: var(--h-grijs, #636974); }
+@media (prefers-reduced-motion: reduce) { html body.hal.hal .o-hoe .h-stap > .h-stap-beeld, html body.hal.hal .o-hoe .h-stap :is(.h-nr b, .h-stap-naam) { transition: none; } }
+
+/* ── lifestyle en video: in de vakken staat tekst ────────────────────────────────────
+   25 oktober (de controle van levering 74): de regel hierboven maakt het hele vak van een stap
+   die nog moet komen zacht (40 %). Bij catalog staan daar alleen beelden in; bij lifestyle en
+   video ook tekst ("Voorbeeldclips volgen binnenkort", de namen van de looks en de stijlen, de
+   foto's die binnenkomen), en die zakte naar 1,76 : 1. Met de pauzeknop bleef het zo staan, dus
+   precies als je wilt lezen. Hier blijft het vak staan, worden alleen de beelden en tekens
+   zacht en wordt de tekst grijs (5,52 : 1), net als het nummer en de naam boven het vak. */
+html body.hal.hal .o-hoe:not([data-dienst="catalog"])[data-uitleg-staat] .h-stap:nth-child(n) > .h-stap-beeld { opacity: 1; }
+/* een overgang alleen op wat er zelf geen heeft (de looks, de vinkjes en "Compleet" houden hun
+   eigen timing) */
+html body.hal.hal .o-hoe:not([data-dienst="catalog"])[data-uitleg-staat] .h-stap-beeld :is(.o-klip-plek, .o-upload-ik, .o-upload-balk) { transition: opacity .338s; }
+html body.hal.hal .o-hoe:not([data-dienst="catalog"])[data-uitleg-staat] .h-stap-beeld :is(.o-stijl-rij b, .o-upload-rij li:not(.o-upload-klaar) b, .o-binnenkort-zin) { transition: color .338s; }
+html body.hal.hal .o-hoe:not([data-dienst="catalog"])[data-uitleg-staat]:not(.u-s1) .h-stap:nth-child(1) > .h-stap-beeld :is(.o-kies-beeld, .h-keur-rij img, .o-klip-plek, .o-upload-ik, .o-upload-balk),
+html body.hal.hal .o-hoe:not([data-dienst="catalog"])[data-uitleg-staat]:not(.u-s2) .h-stap:nth-child(2) > .h-stap-beeld :is(.o-kies-beeld, .h-keur-rij img, .o-klip-plek, .o-upload-ik, .o-upload-balk),
+html body.hal.hal .o-hoe:not([data-dienst="catalog"])[data-uitleg-staat]:not(.u-s3) .h-stap:nth-child(3) > .h-stap-beeld :is(.o-kies-beeld, .h-keur-rij img, .o-klip-plek, .o-upload-ik, .o-upload-balk) { opacity: .4; }
+html body.hal.hal .o-hoe:not([data-dienst="catalog"])[data-uitleg-staat]:not(.u-s1) .h-stap:nth-child(1) > .h-stap-beeld :is(b, figcaption, .o-upload-klaar),
+html body.hal.hal .o-hoe:not([data-dienst="catalog"])[data-uitleg-staat]:not(.u-s2) .h-stap:nth-child(2) > .h-stap-beeld :is(b, figcaption, .o-upload-klaar),
+html body.hal.hal .o-hoe:not([data-dienst="catalog"])[data-uitleg-staat]:not(.u-s3) .h-stap:nth-child(3) > .h-stap-beeld :is(b, figcaption, .o-upload-klaar) { color: var(--h-grijs, #636974); }
+@media (prefers-reduced-motion: reduce) { html body.hal.hal .o-hoe .h-stap-beeld :is(.o-klip-plek, .o-upload-ik, .o-upload-balk, .o-stijl-rij b, .o-upload-rij b, .o-binnenkort-zin) { transition: none; } }

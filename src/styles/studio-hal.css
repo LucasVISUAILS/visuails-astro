@@ -28,7 +28,10 @@
    · Violet alleen bij wat je kiest (een aangevinkt vakje) en in het logo.
      Knoppen, links en de stip "nu" zijn zwart; waar je bent (de zijbalk, het
      filter) is een toestand: zwart of wit.
-   · Hoeken: kaart 28, wat erin ligt 22, een beeld 16, knop en pil rond.
+   · Hoeken: kaart 28, wat erin ligt 22, een beeld 16, knop en pil rond. Sinds 25
+     oktober 2026: kaart en wat erin ligt 24 rond aan alle vier de hoeken (--r-kaart),
+     een beeld of tegel 12 (--r-klein); alleen een knop, pil, tab of veld houdt de
+     zachte hoek linksboven (zie "DE HOEKREGEL IN STUDIO" onderaan).
    · Tekst minstens 4,5:1 en 11,5 px. --ink-4 (#A3A3A3) alleen voor wat
      niet gelezen hoeft te worden: een scheidingspunt, een lege stip.
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -61,8 +64,9 @@ body.studio.st-hal {
   --sd-side-ink: #0B0F17; --sd-side-ink-1: #0B0F17; --sd-side-ink-3: #636974;
   --sd-side-hover: rgb(11 15 23 / .05); --sd-side-actief: #FFFFFF; --sd-side-lijn: #E6E8EC;
 
-  --sd-r-kaart: 28px; --sd-r: 999px; --sd-r-klein: 999px;
-  --st-ronding: 28px; --st-ronding-in: 22px;
+  /* 25 oktober 2026: kaarten 24 rond aan alle vier de hoeken (--r-kaart, global.css) */
+  --sd-r-kaart: var(--r-kaart); --sd-r: 999px; --sd-r-klein: 999px;
+  --st-ronding: var(--r-kaart); --st-ronding-in: 22px;
   --r-sm: 22px; --r-pill: 999px;
 
   --st-side-w: 256px;
@@ -83,7 +87,7 @@ body.studio.st-hal .st-meta { font-size: .84375rem; }
    inkt erin — de tweede knop van de hal (h-knop-lijn), een maat kleiner omdat
    Studio een werkscherm is. */
 body.studio.st-hal .btn {
-  min-height: 42px; padding: 0 1.15rem; border-radius: 14px 3px 3px 3px;
+  min-height: 42px; padding: 0 1.15rem; border-radius: var(--hoek-knop);
   font-family: var(--h-letter); font-size: .875rem; font-weight: 600;
   background: #FFFFFF; color: #0B0F17; box-shadow: inset 0 0 0 1.5px #C5C8CF;
   transition: background .2s, box-shadow .2s, transform .25s cubic-bezier(.22, .8, .2, 1);
@@ -108,7 +112,7 @@ body.studio.st-hal .st-merk { --merk-h: 19.6px; color: #0B0F17; } /* 112 px bree
 body.studio.st-hal .is-dicht .st-merk { --merk-h: 26px; }
 body.studio.st-hal .st-sub { font-size: .8125rem; color: #636974; }
 body.studio.st-hal .st-nav { gap: 4px; }
-body.studio.st-hal .st-navlink { min-height: 44px; padding: 0 .9rem; border-radius: 14px 3px 3px 3px; font-size: .9375rem; font-weight: 500; color: #0B0F17; }
+body.studio.st-hal .st-navlink { min-height: 44px; padding: 0 .9rem; border-radius: var(--hoek-knop); font-size: .9375rem; font-weight: 500; color: #0B0F17; }
 body.studio.st-hal .st-navlink:hover { background: rgb(11 15 23 / .05); color: #0B0F17; }
 body.studio.st-hal .st-navlink.is-actief { background: #FFFFFF; color: #0B0F17; font-weight: 600; box-shadow: inset 0 0 0 1px #E6E8EC; }
 body.studio.st-hal .st-navlink .i { width: 18px; height: 18px; }
@@ -116,7 +120,7 @@ body.studio.st-hal .st-side-voet { border-top: 1px solid #E6E8EC; }
 body.studio.st-hal .st-wie-letter { width: 34px; height: 34px; background: #FFFFFF; color: #0B0F17; box-shadow: inset 0 0 0 1px #E6E8EC; font-size: .8125rem; }
 body.studio.st-hal .st-wie-naam { font-size: .875rem; color: #0B0F17; }
 body.studio.st-hal .st-wie-mail { font-size: .8125rem; color: #636974; }
-body.studio.st-hal .st-uit { min-height: 44px; padding: 0 .9rem; border-radius: 14px 3px 3px 3px; font-size: .9375rem; color: #0B0F17; }
+body.studio.st-hal .st-uit { min-height: 44px; padding: 0 .9rem; border-radius: var(--hoek-knop); font-size: .9375rem; color: #0B0F17; }
 body.studio.st-hal .st-uit:hover { background: rgb(11 15 23 / .05); color: #0B0F17; }
 /* Dichtgeklapt (breed scherm): een kolom van 76 px, zodat het item een rondje
    van 44 px is met 16 px lucht. Zonder deze regels hield het item de padding
@@ -156,21 +160,21 @@ body.studio.st-hal .st-main { padding: 2rem var(--st-pad) 4rem; gap: 2.5rem; }
 body.studio.st-hal .st-blok { gap: 1rem; }
 body.studio.st-hal .st-blok-kop h2 { font-family: var(--h-letter); font-size: 1.25rem; font-weight: 600; letter-spacing: -.01em; color: #0B0F17; }
 body.studio.st-hal .st-blok-kop .st-link { font-size: .875rem; }
-body.studio.st-hal .st-kaart-vlak:not(.st-cijfers) { border: 1px solid #E6E8EC; border-radius: 28px 3px 3px 3px; background: #FFFFFF; }
+body.studio.st-hal .st-kaart-vlak:not(.st-cijfers) { border: 1px solid #E6E8EC; border-radius: var(--r-kaart); background: #FFFFFF; }
 /* ── "NOG GEEN ABONNEMENT" BLIJFT DONKER — 14 oktober 2026 (doorloop 27, B13) ──
    De regel hierboven maakt elke kaart wit. .st-geenabo (studio.css) zet witte
    letters en de donkere tokens, want hij hoort donker te zijn. Samen gaf dat
    wit op wit (1,0:1) op /account/plan bij elke klant zonder abonnement: een
    lege kaart met twee knoppen. Zelfde specificiteit, later in het bestand. */
 body.studio.st-hal .st-kaart-vlak.st-geenabo { background: #0B0F17; border-color: #0B0F17; }
-body.studio.st-hal .st-leeg { border-radius: 22px 3px 3px 3px; border-color: #C5C8CF; }
+body.studio.st-hal .st-leeg { border-radius: var(--r-kaart); border-color: #C5C8CF; }
 
 /* De link: zwart, dun onderstreept (schema A: violet niet in lopende tekst). */
 body.studio.st-hal .st-link { color: #25508B; text-decoration-color: rgb(37 80 139 / .38); text-decoration-thickness: 1.5px; text-underline-offset: .22em; font-weight: 500; }
 
 /* De tellers: geen kleine kapitalen meer. Het getal groot in Urbanist 500. */
 body.studio.st-hal .st-kaart-vlak.st-cijfers { gap: 1rem; }
-body.studio.st-hal .st-cijfer { padding: 1.25rem 1.4rem; border-radius: 28px 3px 3px 3px; border-color: #E6E8EC; gap: .35rem .5rem; }
+body.studio.st-hal .st-cijfer { padding: 1.25rem 1.4rem; border-radius: var(--r-kaart); border-color: #E6E8EC; gap: .35rem .5rem; }
 body.studio.st-hal a.st-cijfer:hover { border-color: #0B0F17; }
 body.studio.st-hal .st-cijfer-label { font-size: .875rem; font-weight: 500; letter-spacing: 0; text-transform: none; color: #0B0F17; }
 body.studio.st-hal .st-cijfer-label::first-letter { text-transform: uppercase; }
@@ -203,7 +207,7 @@ body.studio.st-hal .st-details > summary { font-size: .875rem; color: #0B0F17; }
 
 /* De strook laatst geleverde beelden: beelden met een hoek van 16. */
 body.studio.st-hal .st-strook { grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: .75rem; }
-body.studio.st-hal .st-strook a { border-radius: 16px 3px 3px 3px; border: 0; background: #F4F5F7; }
+body.studio.st-hal .st-strook a { border-radius: var(--r-klein); border: 0; background: #F4F5F7; }
 body.studio.st-hal .st-strook a:hover { }
 
 /* ── BESTELLINGEN ───────────────────────────────────────────────────────── */
@@ -219,8 +223,8 @@ body.studio.st-hal .st-abo-tabs::-webkit-scrollbar { display: none; }
 body.studio.st-hal .st-abo-tabs .st-filter { flex: 0 0 auto; white-space: nowrap; }
 @media (max-width: 400px) { body.studio.st-hal .st-abo-tabs { gap: .3rem; } body.studio.st-hal .st-abo-tabs .st-filter { padding: 0 .6rem; font-size: .8125rem; } }
 body.studio.st-hal .st-bestellingen { gap: 1.25rem; }
-body.studio.st-hal .st-bestelling-kop { padding: 1.25rem 1.6rem; min-height: 72px; border-radius: 28px 3px 3px 3px; }
-body.studio.st-hal .st-bestelling-klap[open] .st-bestelling-kop { border-radius: 28px 28px 0 0; }
+body.studio.st-hal .st-bestelling-kop { padding: 1.25rem 1.6rem; min-height: 72px; border-radius: var(--r-kaart); }
+body.studio.st-hal .st-bestelling-klap[open] .st-bestelling-kop { border-radius: var(--r-kaart) var(--r-kaart) 0 0; }
 body.studio.st-hal .st-bestelling-kop .st-ref { font-size: 1rem; }
 body.studio.st-hal .st-bestelling-meta { font-size: .9375rem; }
 body.studio.st-hal .st-bestelling-body { padding: 1.4rem 1.6rem 1.6rem; gap: 1.25rem; }
@@ -241,19 +245,19 @@ body.studio.st-hal .st-h3 { font-family: var(--h-letter); font-size: 1rem; font-
 body.studio.st-hal .st-h1 .l { color: #636974; }
 
 /* Binnen een kaart: de vulling is nevel met een hoek van 22. */
-body.studio.st-hal :is(.st-betaal, .st-product, .st-map, .st-ronde, .st-melding) { border-radius: 22px 3px 3px 3px; background: #F4F5F7; }
+body.studio.st-hal :is(.st-betaal, .st-product, .st-map, .st-ronde, .st-melding) { border-radius: var(--r-kaart); background: #F4F5F7; }
 body.studio.st-hal .st-map { padding: 1.4rem 1.5rem; }
-body.studio.st-hal .st-product-cover, body.studio.st-hal .st-beeld-media, body.studio.st-hal .st-model-img { border-radius: 16px 3px 3px 3px; }
-body.studio.st-hal :is(.st-vast, .st-nota, .st-gezegd) { border-radius: 18px 3px 3px 3px; }
+body.studio.st-hal .st-product-cover, body.studio.st-hal .st-beeld-media, body.studio.st-hal .st-model-img { border-radius: var(--r-klein); }
+body.studio.st-hal :is(.st-vast, .st-nota, .st-gezegd) { border-radius: var(--r-klein); }
 
 /* Velden: rond voor één regel, een zachte hoek voor een tekstvak. */
-body.studio.st-hal .st-veld { min-height: 44px; padding: 0 1.05rem; border-radius: 14px 3px 3px 3px; border-color: #858A94; font-size: .9375rem; }
+body.studio.st-hal .st-veld { min-height: 44px; padding: 0 1.05rem; border-radius: var(--hoek-knop); border-color: #858A94; font-size: .9375rem; }
 body.studio.st-hal textarea.st-veld, body.studio.st-hal .studio textarea { border-radius: 18px 3px 3px 3px; padding: .75rem 1rem; }
 body.studio.st-hal textarea { border-radius: 18px 3px 3px 3px; }
 body.studio.st-hal input[type="file"]::file-selector-button { border-radius: 11px 3px 3px 3px; min-height: 36px; padding: 0 1rem; }
 
 /* De melding bovenaan (/admin/melding): een pil, geen balk. */
-body.studio.st-hal .st-banner { border-radius: 22px 3px 3px 3px; padding: .7rem 1.1rem; }
+body.studio.st-hal .st-banner { border-radius: var(--r-kaart); padding: .7rem 1.1rem; }
 
 /* ── DE TELEFOON ────────────────────────────────────────────────────────── */
 @media (max-width: 56.25em) {
@@ -263,11 +267,11 @@ body.studio.st-hal .st-banner { border-radius: 22px 3px 3px 3px; padding: .7rem 
   body.studio.st-hal { --st-pad: 1.1rem; }
   body.studio.st-hal .st-h1 { font-size: 2rem; }
   body.studio.st-hal .st-kaart-vlak.st-cijfers { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
-  body.studio.st-hal .st-cijfer { padding: 1rem 1.1rem; border-radius: 22px 3px 3px 3px; }
+  body.studio.st-hal .st-cijfer { padding: 1rem 1.1rem; border-radius: var(--r-kaart); }
   body.studio.st-hal .st-cijfer-n { font-size: 1.75rem; }
   body.studio.st-hal .st-order, body.studio.st-hal .st-bestelling-kop, body.studio.st-hal .st-bestelling-body { padding-inline: 1.15rem; }
-  body.studio.st-hal .st-kaart-vlak, body.studio.st-hal .st-bestelling-kop { border-radius: 24px 3px 3px 3px; }
-  body.studio.st-hal .st-bestelling-klap[open] .st-bestelling-kop { border-radius: 24px 24px 0 0; }
+  body.studio.st-hal .st-kaart-vlak, body.studio.st-hal .st-bestelling-kop { border-radius: var(--r-kaart); }
+  body.studio.st-hal .st-bestelling-klap[open] .st-bestelling-kop { border-radius: var(--r-kaart) var(--r-kaart) 0 0; }
 }
 
 /* ══ LEVERING 57 — DE ONTWERPTAAL OOK IN STUDIO (17 oktober 2026) ═══════════════
@@ -289,7 +293,7 @@ body.studio.on-ink .st-merk { --mk-line-ink: #80A7DD; --mk-kleur: #80A7DD; }
 
 /* De knop: één zachte hoek linksboven (zoals body.hal .btn op de site), geen
    optillen of gloed onder de muis; hij springt in twee stappen. */
-body.studio.st-hal .btn { border-radius: 14px 3px 3px 3px; transition: background-color .16s steps(2, end), color .16s steps(2, end), box-shadow .16s steps(2, end); }
+body.studio.st-hal .btn { border-radius: var(--hoek-knop); transition: background-color .16s steps(2, end), color .16s steps(2, end), box-shadow .16s steps(2, end); }
 body.studio.st-hal .btn-sm { border-radius: 11px 3px 3px 3px; }
 body.studio.st-hal .btn-primary:hover, body.studio.st-hal .btn-primary:focus-visible { transform: none; box-shadow: none; }
 body.studio.st-hal .st-navlink, body.studio.st-hal .st-uit { border-radius: 12px 3px 3px 3px; }
@@ -315,36 +319,59 @@ body.studio .st-beeld:target .st-vink3 .vlag { animation: st-vlag .5s steps(1, e
   body.studio .st-vink3 path { animation: none !important; }
 }
 
-/* Het merkje op een beeld staat linksonder in de tegel (16 px rond, 6 px van de rand):
-   die hoek loopt mee (16 - 6 = 10), de andere zijn licht (de hoekregel, levering 56). */
-body.studio.st-hal .st-badge.stand { border-radius: 3px 3px 3px 10px; }
+/* Het merkje op een beeld staat linksonder in de tegel, 6 px van de rand. Sinds 25 oktober
+   2026 is de tegel een kleine tegel (12 rond, --r-klein): die hoek loopt mee, 12 - 6 = 6;
+   de andere zijn licht (de hoekregel, levering 56). */
+body.studio.st-hal .st-badge.stand { border-radius: 3px 3px 3px 6px; }
 /* Uitloggen op de telefoon is een knop: dezelfde zachte hoek (de taal blijft rond, zoals op de site). */
 body.studio.st-hal .st-mob button { border-radius: 11px 3px 3px 3px; }
 
-/* ── DE HOEKREGEL IN STUDIO (levering 57) ──────────────────────────────────
-   Gemeten met kladblok/hoek/hoekmeting.mjs, nu ook in de Worker (Studio, /admin, de
-   privélink), op 1440, 900 en 390 breed. Een knop die in een hoek van zijn kaart zit
-   (beide afstanden kleiner dan de straal), loopt met die hoek mee: de straal van de
-   kaart min de afstand. De andere hoeken zijn licht. Los in het vlak blijft hij zoals
-   hij was. */
-body.studio.st-hal .st-tip .st-tip-tekst .btn { border-radius: 3px 3px 3px 5px; }          /* 22 - 17 */
-body.studio.st-hal .st-nudge > .btn { border-radius: 3px 3px 3px 10px; }                  /* 28 - 18 */
-body.studio.st-hal .st-bijkoop .st-knoppen > .btn:first-child { border-radius: 3px 3px 3px 8px; } /* 28 - 20 */
-body.studio.st-hal .st-rij.is-acties > .btn:first-child { border-radius: 3px 3px 3px 8px; }       /* 28 - 20 */
-body.studio.st-hal .st-vl .st-rij.is-acties > .btn:first-child { border-radius: 3px 3px 3px 9px; } /* 28 - 19 */
+/* ── DE HOEKREGEL IN STUDIO (levering 57; 25 oktober 2026) ─────────────────
+   Gemeten in de Worker (Studio, /admin, de privélink), op 1280, 900 en 390 breed, met de
+   meting van tests/hoekregel-browser. Een knop die in een hoek van zijn kaart zit (beide
+   afstanden kleiner dan de straal), loopt met die hoek mee: de straal van de kaart min
+   de afstand, minstens 8 (in een klein vlak de helft van zijn straal). De andere hoeken
+   zijn licht. Los in het vlak blijft hij zoals hij was.
+   25 oktober 2026: kaarten zijn 24 rond aan alle vier de hoeken (was 28 met één zachte
+   hoek linksboven), de vulling in een kaart ook 24, een beeld of tegel 12. Lucas: "De
+   hoeken van kaarten worden gewoon heel rond, iets ronder dan in het voorbeeld." */
+body.studio.st-hal .st-tip .st-tip-tekst .btn { border-radius: 3px 3px 3px 8px; }          /* 18 en 16 van de rand: 24 - 17, dus het minimum */
+body.studio.st-hal .st-nudge > .btn { border-radius: 3px 3px 3px 8px; }                   /* 20 en 16: 24 - 18 */
+body.studio.st-hal .st-bijkoop .st-knoppen > .btn:first-child { border-radius: 3px 3px 3px 8px; } /* 24 - 20 */
+body.studio.st-hal .st-rij.is-acties > .btn:first-child { border-radius: 3px 3px 3px 8px; }       /* 24 - 20 */
+body.studio.st-hal .st-vl .st-rij.is-acties > .btn:first-child { border-radius: 3px 3px 3px 8px; } /* 16 van de rand: 24 - 16 */
+body.studio.st-hal .st-betaal form > .btn-primary { border-radius: 3px 8px 8px 3px; }      /* rechts in het betaalvak, 18 en 23: het minimum */
+body.studio.st-hal .st-map > .btn { border-radius: 3px 3px 3px 8px; }                      /* linksonder in de map, 24 en 22 */
+/* De beelden in een keuzetegel van de vaste look: 7 px van de rand van de tegel (12): de helft, 6. */
+body.studio.st-hal :is(.st-tegel-img, .st-look-img) { border-radius: 6px; }
+/* De taal (EN | NL) is een klein vak van 8: het eerste knopje loopt linksboven mee (8 - 3). */
+body.studio.st-hal .st-taal > :first-child { border-radius: 5px 3px 3px 3px; }
+body.studio.st-hal .st-taal > :last-child { border-radius: 3px; }
 @media (max-width: 900px) {
-  body.studio.st-hal .st-vl .st-rij.is-acties > .btn:first-child { border-radius: 3px 3px 3px 12px; }
-  body.studio.st-hal .st-betaal form > .btn-primary { border-radius: 3px 3px 3px 5.5px; }   /* 22 - 16,5 */
+  body.studio.st-hal .st-betaal form > .btn-primary { border-radius: 3px 3px 3px 8px; }   /* linksonder, 18 en 15: het minimum */
 }
 @media (max-width: 720px) {
   body.studio.st-hal .st-leegvlak > .btn { border-radius: 3px 3px 3px 8px; }
   /* op de telefoon is het merkje bijna zo breed als de tegel: beide onderhoeken mee */
-  body.studio.st-hal .st-badge.stand { border-radius: 3px 3px 10px 10px; }
-  /* de kop van een opengeklapte bestelling volgt de kaart (24 op de telefoon) */
-  body.studio.st-hal article.st-bestelling.st-kaart-vlak { border-radius: 24px 3px 3px 3px; } /* zwaarder dan .st-kaart-vlak:not(.st-cijfers) */
+  body.studio.st-hal .st-badge.stand { border-radius: 3px 3px 6px 6px; }
+  /* de kop van een opengeklapte bestelling volgt de kaart */
+  body.studio.st-hal article.st-bestelling.st-kaart-vlak { border-radius: var(--r-kaart); } /* zwaarder dan .st-kaart-vlak:not(.st-cijfers) */
+  /* een melding onderaan de kaart met je gegevens, 20 van de onderhoeken: het minimum,
+     rondom (het is een korte strook) */
+  body.studio.st-hal .st-gegevens-kort > .st-melding { border-radius: 8px; }
 }
 
 /* ══ LEVERING 62 · SCHEMA A (19 oktober 2026, afvinklijst 41) ═══════════════════
    Zwart, wit en grijs zonder lila; violet alleen bij wat je kiest. Een aangevinkt
    vakje of rondje (een extra bij een bestelling, een reden, een kanaal) is violet. */
 body.studio.st-hal input[type="checkbox"], body.studio.st-hal input[type="radio"] { accent-color: #25508B; }
+
+/* ══ LEVERING 74 · GLAS OP DE BOVENBALK (25 oktober 2026) ═══════════════════════════
+   Lucas, 15:24: "gebruik voor plekken als top bar wel glas". De bovenbalk van Studio blijft
+   bovenaan staan terwijl de bestellingen en beelden eronder door schuiven; dat is precies zo'n
+   plek. Wit op 92 %: de kruimels in grijs halen zo boven de donkerste foto nog 4,69 : 1
+   (gerekend met inkt eronder), 16 px vervaging, verzadiging 1,6. Zonder backdrop-filter vol wit.
+   Zie docs/KLEURENSCHEMA.md, "Glas en gloed". */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  body.studio.st-hal .st-balk { background: rgba(255, 255, 255, .92); -webkit-backdrop-filter: blur(16px) saturate(1.6); backdrop-filter: blur(16px) saturate(1.6); }
+}

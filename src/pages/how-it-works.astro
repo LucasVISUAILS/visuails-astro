@@ -20,9 +20,10 @@ import HowItWorksHal from '../components/HowItWorksHal.astro';
 // capacity calendar and gets the reserved window.
 import { WINDOW_THRESHOLD } from '../data/pricing.js';
 
+// 25 October 2026: "hand-check" removed (Lucas: no defensive lines about AI; fix it everywhere).
 const description =
-  `You send the products and pick a delivery date. We produce ` +
-  `and hand-check every visual. From ${WINDOW_THRESHOLD} products, the delivery date ` +
+  `You send the products and pick a delivery date. We make every visual ` +
+  `and check it against your photo. From ${WINDOW_THRESHOLD} products, the delivery date ` +
   `is fixed once you pay.`;
 ---
 

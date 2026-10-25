@@ -91,7 +91,9 @@ ok('  en de naam krijgt niet de klasse van het wisselwoord (h-wissel maakte hem 
 const css = lees('src/styles/hal.css');
 ok('hal.css: een stand is pas in de opmaak als hij klaar is, en alleen is-nu is zichtbaar', css.includes('.hal .hl-stand { position: absolute; inset: 0; width: 100%; height: 100%; display: none; opacity: 0;') && css.includes('.hal .hl-stand.is-klaar { display: block; }') && css.includes('.hal .hl-stand.is-nu { opacity: 1; }'));
 ok('  de catalogbeelden staan in een vierkant vak, op hun eigen 1:1 (08:14)', /\.hal \.sc-hoofd \{[^}]*width: 860px; height: 860px;/.test(css) && /\.hal \.sc-hoofd img \{[^}]*inset: 0; width: 100%; height: 100%; object-fit: cover;/.test(css));
-for (const [pagina, aantal] of [['index.html', alleStanden('en').length], ['nl/index.html', alleStanden('nl').length], ['catalog/index.html', alleStanden('en', ['catalog']).length], ['nl/lifestyle/index.html', alleStanden('nl', ['lifestyle']).length]]) {
+/* Levering 74 (25 oktober 2026): de voorpagina heeft geen laptop meer (de opening is een
+   scrollvideo, HalOpening.astro); de laptop staat op /catalog, /lifestyle en /video. */
+for (const [pagina, aantal] of [['catalog/index.html', alleStanden('en', ['catalog']).length], ['nl/catalog/index.html', alleStanden('nl', ['catalog']).length], ['nl/lifestyle/index.html', alleStanden('nl', ['lifestyle']).length], ['video/index.html', alleStanden('en', ['video']).length]]) {
   const h = fs.readFileSync(path.join(DIST, pagina), 'utf8');
   const doos = h.slice(h.indexOf('data-hl-doos'), h.indexOf('hl-bel hl-bel-lap'));
   const imgs = [...doos.matchAll(/<img[^>]*data-hl-stand="(\d+)"[^>]*>/g)].map((m) => m[0]);
@@ -132,8 +134,9 @@ async function open(url, breed, hoog = 900) {
 }
 
 {
-  const { ctx, page, fouten } = await open('/nl/', 1440);
+  const { ctx, page, fouten } = await open('/nl/catalog/', 1440);
   await page.waitForTimeout(800);
+  const N = await page.evaluate(() => document.querySelectorAll('[data-hl-stand]').length);
   const voor = await page.evaluate(() => ({ nu: [...document.querySelectorAll('[data-hl-stand]')].findIndex((f) => f.classList.contains('is-nu')), naam: document.querySelector('[data-hl-naam]').textContent }));
   await page.click('[data-hl-stap="1"]');
   await page.waitForFunction((v) => [...document.querySelectorAll('[data-hl-stand]')].findIndex((f) => f.classList.contains('is-nu')) !== v, voor.nu, { timeout: 8000 }).catch(() => {});
@@ -142,8 +145,8 @@ async function open(url, breed, hoog = 900) {
     const n = f.findIndex((x) => x.classList.contains('is-nu'));
     return { nu: n, geladen: f[n].complete && f[n].naturalWidth > 0, zichtbaar: getComputedStyle(f[n]).display !== 'none', teller: document.querySelector('[data-hl-teller]').textContent, naamKlasse: document.querySelector('[data-hl-naam]').className };
   });
-  ok('een klik op verder: de volgende foto is geladen, in de opmaak en zichtbaar', na.nu === (voor.nu + 1) % 9 && na.geladen && na.zichtbaar, JSON.stringify(na));
-  ok('  de teller loopt mee, en de naam blijft gewoon inkt (geen h-wissel)', na.teller === `${na.nu + 1} / 9` && !/h-wissel/.test(na.naamKlasse), JSON.stringify(na));
+  ok('een klik op verder: de volgende foto is geladen, in de opmaak en zichtbaar', N > 1 && na.nu === (voor.nu + 1) % N && na.geladen && na.zichtbaar, JSON.stringify(na));
+  ok('  de teller loopt mee, en de naam blijft gewoon inkt (geen h-wissel)', na.teller === `${na.nu + 1} / ${N}` && !/h-wissel/.test(na.naamKlasse), JSON.stringify(na));
   ok('  geen scriptfout', fouten.length === 0, fouten.join(' | '));
   await ctx.close();
 }
@@ -169,8 +172,12 @@ for (const lang of ['nl', 'en']) for (const breed of [320, 360, 390, 430, 1024, 
   await ctx.close();
 }
 const voorpagina = fs.readFileSync(path.join(DIST, 'nl/index.html'), 'utf8');
-ok('NL: de uitleg van stap 2 is één zin over nakijken en afwerken (08:30)', voorpagina.includes('Elk beeld kijken we zorgvuldig na en werken we met de hand af, zodat je hele set dezelfde professionele uitstraling heeft: als een fotostudio, maar sneller, en jij houdt tijd over voor je merk.'));
-ok('EN: idem', fs.readFileSync(path.join(DIST, 'index.html'), 'utf8').includes('We check every image carefully and finish it by hand, so your whole set has the same professional look: like a photo studio, only faster, and you keep your time for your brand.'));
+/* Levering 74 (25 oktober 2026, 16:57). Lucas: ""Met de hand" is wat overkill en voelt alsof we de
+   klant proberen over te halen met dat ons product niet volledig met ai word gemaakt. Voelt veel te
+   verdedigend, wees hier voortaan streng op." De zin van stap 2 zegt nu wat er gebeurt, zonder "met de
+   hand" (en staat sinds 16:56 niet meer in beeld: de balk toont alleen de voortgang). */
+ok('NL: de uitleg van stap 2 is één zin, zonder "met de hand" (16:57)', voorpagina.includes('Wij maken elk beeld uit je foto’s, met dezelfde uitstraling voor je hele set.') && !/met de hand/i.test(voorpagina.replace(/<script[\s\S]*?<\/script>/g, '')));
+ok('EN: idem', (() => { const en = fs.readFileSync(path.join(DIST, 'index.html'), 'utf8'); return en.includes('We make every image from your photos, with the same look across your whole set.') && !/by hand/i.test(en.replace(/<script[\s\S]*?<\/script>/g, '')); })());
 
 await browser.close();
 server.close();

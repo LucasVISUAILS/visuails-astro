@@ -111,7 +111,9 @@ console.log('\n6 · de roze-jeans-set op lichtgrijs, gemeten');
   ok('  eerst het witte modelbeeld, daarna het grijze', /class="fd-voor"[^>]*src="\/img\/ba2-na-model-wit\.webp"|src="\/img\/ba2-na-model-wit\.webp"[^>]*class="fd-voor"/.test(studio) && /fg-foto-na[^>]*ba2-na-model-grijs|ba2-na-model-grijs[^>]*fg-foto-na/.test(studio));
   ok('  je vaste look staat op lichtgrijs', studio.includes(`fill="${GROND}"`) && /Lichtgrijs/.test(studio));
   ok('  "Eén map" toont het T-shirt van 1800 px, en de map heet zo', /h-sd-map[^]*?catalog-after\.(webp|avif)/.test(studio) && studio.includes('01 - Gewassen T-shirt/'));
-  const lap = fs.readFileSync(path.join(DIST, 'index.html'), 'utf8');
+  /* Sinds levering 74 (25 oktober 2026) staat de laptop niet meer op de voorpagina (daar is
+     de opening nu een scrollvideo, HalOpening.astro), wel op /catalog, /lifestyle en /video. */
+  const lap = fs.readFileSync(path.join(DIST, 'catalog/index.html'), 'utf8');
   /* 15 okt 08:14: de laptop toont kant-en-klare standen (src/data/halStanden.js), met de
      catalogbeelden op 1:1 in het vak; de `vul` van 05:59 is opgegaan in dat vierkant.
      Wat er in de foto's staat, kijkt tests/laptop-standen.test.mjs na. */
@@ -181,8 +183,10 @@ console.log('\n9 · stap 2 met de hand');
     ok(`${taal}:   het penseel bouwt het beeld op (zachte rand), de loep vergroot je foto en ons beeld`, maak.includes('h-maak-bouwkwast') && maak.includes('mask="url(#h-maak-bouw)"') && maak.includes('filter="url(#h-maak-zacht)"') && maak.includes('href="/img/ba2-voor-front-recht.webp"') && (maak.match(/class="h-maak-lp-in"/g) || []).length === 2 && maak.includes('h-maak-lp-vink') && !maak.includes('h-maak-ref'));
     ok(`${taal}:   het label noemt de drie handelingen`, (maak.match(/<span class="h-maak-doe[^>]*>((?:<span>[^<]+<\/span>){3})<\/span>/) || [])[1]?.split('</span>').filter(Boolean).length === 3);
     ok(`${taal}:   het beeld vóór de afwerking (op wit) en de achterkant voor de vergelijking`, /h-maak-begin[^>]*ba2-na-front\.(webp|avif)|ba2-na-front\.(webp|avif)[^>]*h-maak-begin/.test(maak) || (maak.includes('h-maak-begin') && maak.includes('ba2-na-front.')));
-    /* Levering 61 (afvinklijst 39, e-stappen: "Animatie mag wel iets sneller"): alles op driekwart. */
-    ok(`${taal}:   de stap duurt 9,075 s (driekwart van 12,1 s)`, h.includes('data-uitleg-maat="2250 9075 2250"'));
+    /* Levering 61 (afvinklijst 39, e-stappen: "Animatie mag wel iets sneller"): alles op driekwart.
+       Levering 74 (25 oktober 2026, 16:40): na het handwerk komen de lagen in 3D (uit elkaar, de gloed
+       met "Gemaakt met AI", weer vlak); de stap duurt sindsdien 12,9 s, het handwerk zelf niet langer. */
+    ok(`${taal}:   de stap duurt 12,9 s (het handwerk en daarna de lagen)`, h.includes('data-uitleg-maat="2250 12900 2250"'));
   }
   const css = lees('src/styles/hal.css');
   ok('de pauzeknop zet ook deze animaties stil', css.includes('.hal .h-hoe[data-uitleg-staat="pauze"] .h-maak *,') && css.includes('animation-play-state: paused !important;'));
@@ -269,7 +273,10 @@ async function open(url, { me = null, breed = 1440, hoog = 900, wachtOp = null }
 
 /* ── 1 · DE OPENING ────────────────────────────────────────────────────────── */
 console.log('\n1 · de opening');
-for (const breed of [1280, 1440, 1920]) {
+/* Levering 74 (25 oktober 2026): de opening met de laptopfoto naast de tekst is vervangen
+   door de scrollvideo (HalOpening.astro); die wordt nagekeken in tests/opening-74.test.mjs.
+   Deze metingen horen bij de oude opening en staan stil. */
+for (const breed of []) {
   const { ctx, page, fouten } = await open('/', { breed, hoog: 940 });
   await page.waitForTimeout(1100);
   const r = await page.evaluate(({ S, F }) => {

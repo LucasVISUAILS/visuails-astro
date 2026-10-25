@@ -290,7 +290,7 @@ const C = nl
 
   .fg-frame {
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-lg) 3px 3px 3px;
+    border-radius: var(--r-kaart);
     background: var(--surface);
     overflow: hidden;
   }
@@ -310,7 +310,7 @@ const C = nl
     font-size: .72rem; letter-spacing: .04em;
     color: var(--ink-3);
     padding: .18rem .5rem;
-    border: 1px solid var(--line); border-radius: 3px;
+    border: 1px solid var(--line); border-radius: 3px 11px 3px 3px;  /* rechtsboven in het scherm (24), 14 en 11 van de rand */
   }
 
   .fg-body { padding: .9rem; display: grid; gap: .8rem; }
@@ -327,7 +327,7 @@ const C = nl
   .fg-tile { display: grid; gap: .3rem; align-content: start; }
   .fg-tile img {
     width: 100%; aspect-ratio: 4 / 5; object-fit: cover;
-    border-radius: var(--r-sm, 6px) 3px 3px 3px;
+    border-radius: var(--r-klein);
     /* De rand zegt de staat mee. Niet ALLEEN de rand: de woorden eronder doen het
        werk, want een staat die alleen een kleur is, is voor niemand te lezen die
        de twee tinten niet kan scheiden — en dit is de staat die beslist of een
@@ -371,7 +371,7 @@ const C = nl
     display: inline-block;
     font-size: .72rem; font-weight: 600; letter-spacing: .02em;
     padding: .26rem .5rem;
-    border: 1px solid var(--line-strong); border-radius: 14px 3px 3px 3px;
+    border: 1px solid var(--line-strong); border-radius: var(--hoek-knop);
     color: var(--ink-2); white-space: nowrap;
   }
   .fg-btn.is-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-on); }
@@ -381,7 +381,7 @@ const C = nl
     padding: .65rem .7rem;
     background: var(--surface-2);
     border: 1px solid var(--line);
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: var(--r-kaart);
   }
   .fg-ask-l { margin: 0; font-size: .74rem; color: var(--ink-3); }
   .fg-ask-field {
@@ -391,8 +391,9 @@ const C = nl
     background: var(--surface);
     border: 1px solid var(--line-strong); border-radius: 3px;
   }
-  /* De knop in het vak ligt langs zijn rechte onderrand: lichte hoeken (levering 61). */
-  .fg-ask .fg-btn { border-radius: 3px; }
+  /* De knop ligt linksonder in het vak (24), 11 en 10 px van de rand: die hoek loopt
+     mee, 24 - 10,5 (25 oktober 2026; was lichte hoeken langs een rechte rand). */
+  .fg-ask .fg-btn { border-radius: 3px 3px 3px 13px; }
 
   .fg-fine { margin: 0; font-size: .74rem; line-height: 1.55; color: var(--ink-3); }
 
@@ -406,7 +407,7 @@ const C = nl
     padding: .8rem .85rem;
     background: var(--surface-2);
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: 9.5px;  /* onderaan in het scherm (24), 14,4 px van de rand: 24 - 14,4 */
   }
   @container (max-width: 30rem) {
     .fg-folder { grid-template-columns: 1fr; }

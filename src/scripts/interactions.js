@@ -2411,6 +2411,17 @@ function meldingen() {
     if (!readConsent()) return false;
     if (soort !== 'proef') return true;
     if (window.scrollY < window.innerHeight * 0.6) return false;
+    /* 25 oktober 2026: de opening van de voorpagina is een podium met de scrollvideo en
+       Hoe het werkt (HalOpening.astro), en daar staat de €1-knop al bij. "De opening
+       voorbij" is daar dus: het hele podium uit beeld. Alleen met de scrollvideo (o-aan);
+       op de telefoon staat alles gewoon onder elkaar en geldt de regel hierboven. */
+    const podium = document.querySelector('[data-o-podium]');
+    if (podium && document.body.classList.contains('o-aan') && podium.getBoundingClientRect().bottom > 0) return false;
+    /* En met de stroom (één scroll, één sectie; HalOpening.astro) tot de laatste sectie ervan
+       half voorbij is: daar vult elke sectie het scherm en zou de melding er linksonder overheen
+       liggen. */
+    const stroomEind = document.querySelector('[data-o-stroom-eind]');
+    if (stroomEind && stroomEind.getBoundingClientRect().bottom > window.innerHeight * 0.5) return false;
     for (const blok of document.querySelectorAll('section.h-proef')) {
       const r = blok.getBoundingClientRect();
       if (r.top < window.innerHeight && r.bottom > 0) return false;

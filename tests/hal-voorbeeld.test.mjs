@@ -154,7 +154,10 @@ for (const p of HAL) {
   /* stap 3: vier beelden, vier vinkjes, "4 van 4" — en geen 9:16 meer */
   const i3 = h.indexOf('h-keur"');
   const stap3 = i3 < 0 ? '' : h.slice(i3, h.indexOf('</figure>', i3));
-  const stappen = h.slice(h.indexOf('class="h-stappen"'), h.indexOf('class="h-rest'));
+  /* levering 74: de band "Wij doen de rest" (h-rest) is weg; de stappen lopen tot de balk
+     eronder (class="o-voet", HalOpening.astro) */
+  const s0 = h.indexOf('class="h-stappen"');
+  const stappen = h.slice(s0, h.indexOf('class="o-voet"', s0));
   check(`${p}: stap 3 toont vier beelden met elk een vinkje, en geen formaten`, [(stap3.match(/class="h-vink"/g) || []).length, /9:16|4:5/.test(stappen)], [4, false]);
   check(`${p}: met "4 van 4 goedgekeurd" / "4 of 4 approved"`, /4 (van|of) 4 (goedgekeurd|approved)/.test(stap3), true);
 }
@@ -216,7 +219,12 @@ const EXE = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 const browser = await chromium.launch(existsSync(EXE) ? { executablePath: EXE } : {});
 const fouten = [];
 const meting = [];
-for (const pad of HAL) {
+/* Levering 74 (25 oktober 2026): de voorpagina heeft geen laptop meer (de opening is een
+   scrollvideo, HalOpening.astro; zie tests/opening-74.test.mjs). De laptop staat nog op
+   /catalog, /lifestyle en /video; de metingen van de laptop lopen daarom op /catalog, de
+   algemene (zijwaarts, fouten) op alle vier. */
+const LAPTOP = ['/catalog/', '/nl/catalog/'];
+for (const pad of [...HAL, ...LAPTOP]) {
   for (const w of [1440, 1280, 1024, 900, 760, 390, 320]) {
     const ctx = await browser.newContext({ viewport: { width: w, height: w < 700 ? 844 : 900 }, reducedMotion: 'reduce' });
     /* zonder cookiebalk: die is van de site, niet van het voorbeeld */
@@ -238,7 +246,7 @@ for (const pad of HAL) {
       const volgorde = !!(knop && raam && uitleg && kop && zin && feiten) && kop.b <= knop.t && knop.b <= raam.t && uitleg.b <= zin.t && zin.b <= feiten.t;
       const rand = !!raam && Math.abs(raam.r - document.documentElement.clientWidth) < 0.5;
       return {
-        w, volgorde, rand,
+        w, volgorde, rand, laptop: !!laag,
         zijwaarts: document.documentElement.scrollWidth > w,
         raken,
         achterBalk: w > 900 && balk && [lap, fon].some((b) => b && b.t < balk.b),
@@ -246,6 +254,7 @@ for (const pad of HAL) {
         leeft: !!laag && laag.classList.contains('hl-leeft'),
       };
     }, w));
+    meting[meting.length - 1].pad = pad;
     await ctx.close();
   }
 }
@@ -272,8 +281,9 @@ const zf = [];
     zacht: window.__zacht === 1,
     hal: document.body.classList.contains('hal'),
     letter: /urbanist/i.test(getComputedStyle(document.querySelector('.h-h1') || document.body).fontFamily),
-    opening: (document.querySelector('.h-opening')?.getBoundingClientRect().height || 0) > 300,
-    inBeeld: [...document.querySelectorAll('.h-opening .h-op')].every((e) => getComputedStyle(e).opacity !== '0'),
+    /* levering 74: de opening is het podium met de scrollvideo (HalOpening.astro) */
+    opening: (document.querySelector('[data-o-podium]')?.getBoundingClientRect().height || 0) > 300,
+    inBeeld: [...document.querySelectorAll('[data-o-kop], [data-o-lede]')].every((e) => getComputedStyle(e).opacity !== '0' && getComputedStyle(e).visibility !== 'hidden'),
   }));
   check('zacht naar de hal: zelfde venster, body.hal, Urbanist, de opening staat', heen, { zacht: true, hal: true, letter: true, opening: true, inBeeld: true });
   await page.locator('.h-vertrouwen').evaluate((el) => el.scrollIntoView({ block: 'center' }));
@@ -317,9 +327,10 @@ check('nergens zijwaarts scrollen', meting.filter((m) => m.zijwaarts).map((m) =>
 check('de twee belletjes raken elkaar nergens', meting.filter((m) => m.raken).map((m) => m.w), []);
 check('boven 900 px valt geen belletje achter de balk', meting.filter((m) => m.achterBalk).map((m) => m.w), []);
 check('de bediening staat overal binnen het scherm', meting.filter((m) => m.bedieningBuiten).map((m) => m.w), []);
-check('het script zet de schermen aan (hl-leeft)', meting.filter((m) => !m.leeft).map((m) => m.w), []);
-check('op de telefoon: kop en knoppen boven de foto, de zin en de labels eronder', meting.filter((m) => m.w <= 900 && !m.volgorde).map((m) => m.w), []);
-check('op de telefoon loopt de foto tot de rechterrand', meting.filter((m) => m.w <= 900 && !m.rand).map((m) => m.w), []);
+check('/catalog: het script zet de schermen aan (hl-leeft)', meting.filter((m) => LAPTOP.includes(m.pad) && !m.leeft).map((m) => m.w), []);
+check('/catalog: de laptop staat erin, de voorpagina heeft hem niet meer', [meting.filter((m) => LAPTOP.includes(m.pad)).every((m) => m.laptop), meting.filter((m) => HAL.includes(m.pad)).some((m) => m.laptop)], [true, false]);
+/* De volgorde op de telefoon (kop, knoppen, foto, zin, labels) en de foto tot de rand waren
+   van de opening van de voorpagina (levering 64); die is vervangen (levering 74). */
 
 console.log(`\n${goed}/${totaal} geslaagd`);
 process.exit(goed === totaal ? 0 : 1);

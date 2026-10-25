@@ -257,7 +257,7 @@
      `transparent` staat hier en niet bij .knop-lijn, want het is de bodem van de
      hele familie: wie een variant toevoegt zonder vulling hoort niet ineens een
      systeemgrijs te krijgen. De varianten hieronder winnen op volgorde. */
-  .s22 .knop { background: transparent; display: inline-flex; align-items: center; gap: .6em; min-height: 46px; padding: 0 1.5rem; border-radius: 14px 3px 3px 3px; border: 1px solid currentColor; font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; transition: background-color .25s var(--uit), color .25s var(--uit), border-color .25s var(--uit); }
+  .s22 .knop { background: transparent; display: inline-flex; align-items: center; gap: .6em; min-height: 46px; padding: 0 1.5rem; border-radius: var(--hoek-knop); border: 1px solid currentColor; font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; transition: background-color .25s var(--uit), color .25s var(--uit), border-color .25s var(--uit); }
   /* ── OP EEN TELEFOON MAG EEN KNOP AFBREKEN — 17 september 2026 ──────────
      `white-space: nowrap` hierboven staat er zodat een knop van twee woorden
      niet na het eerste woord breekt. Op een breed scherm klopt dat. Op een
@@ -2408,7 +2408,7 @@ body:has(.s22) .site-header .brand-glyph { --mk-line-ink: currentColor; }
 
 /* Knoppen die uit de oude opmaak komen en binnen deze stijl staan, krijgen de
    pil van deze stijl — anders staat er een hoekige knop tussen ronde. */
-.s22.s22 .btn { border-radius: 14px 3px 3px 3px; font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; min-height: 46px; }
+.s22.s22 .btn { border-radius: var(--hoek-knop); font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; min-height: 46px; }
 .s22.s22 .link-arrow { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; }
 
 /* De kleine labels van StyleRows stonden op 9,3 tot 10,9px. Binnen deze stijl

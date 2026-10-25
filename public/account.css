@@ -346,6 +346,14 @@
   --r-sm: var(--r-field);
   --r-pill: 999px; /* buttons only — see global.css */
   --radius: var(--r-md);
+  /* De hoeken van nu (25 oktober 2026), met de hand overgenomen uit global.css zoals
+     de rest van dit blok: kaart 24 rond aan alle vier de hoeken, groot vlak 32, kleine
+     tegel 12; alleen wat je bedient houdt de zachte hoek (Lucas: "puur alleen voor
+     bijvoorbeeld knoppen"). */
+  --r-kaart: 24px;
+  --r-vlak: 32px;
+  --r-klein: 12px;
+  --hoek-knop: 14px 3px 3px 3px;
 
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   /* The four-step duration scale, copied from global.css for the same reason
@@ -954,7 +962,7 @@ h3 { margin: 1.2rem 0 .5rem; font-size: .92rem; font-weight: 700; color: var(--i
    27 augustus wegging. */
 .card.ord {
   border: 1px solid var(--line-strong);
-  border-radius: var(--r-lg) 3px 3px 3px;
+  border-radius: var(--r-kaart);
   background: var(--paper-lift);
   padding: 0 clamp(.9rem, 2vw, 1.3rem) clamp(.9rem, 2vw, 1.2rem);
   margin: 0 0 1rem;
@@ -1080,7 +1088,7 @@ h3 { margin: 1.2rem 0 .5rem; font-size: .92rem; font-weight: 700; color: var(--i
 .shot { min-width: 0; }
 .shot-media {
   display: block; position: relative; aspect-ratio: 4 / 5; overflow: hidden;
-  border: 1px solid var(--line); border-radius: var(--r-sm, 6px) 3px 3px 3px; background: var(--surface-2);
+  border: 1px solid var(--line); border-radius: var(--r-klein); background: var(--surface-2);
 }
 .shot-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
 /* Alleen op apparaten die echt hoveren, en niet voor wie beweging heeft
@@ -1189,7 +1197,7 @@ details.ask .btn { margin-top: .6rem; }
 /* De waarschuwing is het enige dat de klant vóór de klik moet begrijpen, dus hij
    krijgt de amberkleur die dit dashboard al gebruikt voor "let op" en niet voor
    "er ging iets mis". */
-.ronde-warn { color: var(--ink, #0F1116); background: rgb(229 180 92 / .16); border-radius: 10px 3px 3px 3px; padding: .7rem .9rem; }
+.ronde-warn { color: var(--ink, #0F1116); background: rgb(229 180 92 / .16); border-radius: var(--r-klein); padding: .7rem .9rem; }
 /* Afgerond: de haarlijn wordt groen in plaats van dat er een groene doos komt. */
 .ronde.is-done { box-shadow: inset 0 1px 0 rgb(143 209 79 / .5); }
 
@@ -1228,7 +1236,7 @@ details.ask .btn { margin-top: .6rem; }
 .authcard.nakijk h1 { font-size: clamp(1.6rem, 3vw, 2rem); text-wrap: balance; }
 .nakijk-item { grid-template-columns: 6.5rem minmax(0, 1fr); column-gap: 1rem; align-items: start; }
 .nakijk-item > :not(.nakijk-duim) { grid-column: 2; }
-.nakijk-duim { grid-column: 1; grid-row: 1 / span 4; width: 6.5rem; aspect-ratio: 1; object-fit: cover; border-radius: 10px 3px 3px 3px; background: var(--line); }
+.nakijk-duim { grid-column: 1; grid-row: 1 / span 4; width: 6.5rem; aspect-ratio: 1; object-fit: cover; border-radius: var(--r-klein); background: var(--line); }
 @media (max-width: 520px) {
   .nakijk-item { grid-template-columns: 4.5rem minmax(0, 1fr); }
   .nakijk-duim { width: 4.5rem; }
@@ -1370,7 +1378,7 @@ select { min-height: 38px; padding: 0 2.2rem 0 .65rem; }
   gap: .9rem;
   margin-top: 1.3rem;
 }
-.bk-model { margin: 0; border: 1px solid var(--line); border-radius: var(--r-lg) 3px 3px 3px; overflow: hidden; background: var(--paper-lift); }
+.bk-model { margin: 0; border: 1px solid var(--line); border-radius: var(--r-kaart); overflow: hidden; background: var(--paper-lift); }
 /* `height: auto` is load-bearing, not tidying. Both of these <img> elements
    carry width/height ATTRIBUTES — deliberately, so the browser reserves the
    right box before the bytes land and the grid does not jump. But an attribute
@@ -1393,7 +1401,7 @@ select { min-height: 38px; padding: 0 2.2rem 0 .65rem; }
 .bk-empty {
   display: flex; gap: clamp(1rem, 3vw, 1.6rem); align-items: flex-start;
   padding: clamp(1.3rem, 3vw, 1.8rem);
-  border: 1px solid var(--line); border-radius: var(--r-lg) 3px 3px 3px;
+  border: 1px solid var(--line); border-radius: var(--r-kaart);
   background: var(--paper-lift);
 }
 .bk-empty-fig {
@@ -1424,7 +1432,7 @@ select { min-height: 38px; padding: 0 2.2rem 0 .65rem; }
    `overflow: hidden` stond hier al en doet nu ook echt iets: hij snijdt de balk
    op de radius af. */
 .bk-card {
-  border: 1px solid var(--line-strong); border-radius: var(--r-lg) 3px 3px 3px;
+  border: 1px solid var(--line-strong); border-radius: var(--r-kaart);
   background: var(--paper-lift); overflow: hidden;
 }
 .bk-card + .bk-card { box-shadow: none; }
@@ -1445,7 +1453,7 @@ select { min-height: 38px; padding: 0 2.2rem 0 .65rem; }
 .bk-sum-figs { display: flex; align-items: center; gap: .5rem; flex: 0 0 auto; }
 .bk-sum-face {
   width: 42px; height: 56px; object-fit: cover; object-position: center top;
-  border-radius: var(--r-sm) 3px 3px 3px; background: var(--paper-2); display: block;
+  border-radius: var(--r-klein); background: var(--paper-2); display: block;
 }
 .bk-sum-face.is-blank { display: grid; place-items: center; color: var(--ink-300); border: 1px dashed var(--line-strong); }
 .bk-sum-face.is-blank .i { width: 20px; height: 20px; }
@@ -1495,7 +1503,7 @@ select { min-height: 38px; padding: 0 2.2rem 0 .65rem; }
 .bk-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr)); gap: .6rem; }
 .bk-tile {
   position: relative; display: block; cursor: pointer;
-  border: 1px solid var(--line); border-radius: var(--r-md) 3px 3px 3px;
+  border: 1px solid var(--line); border-radius: var(--r-klein);
   background: var(--paper-2); overflow: hidden;
   transition: border-color .12s ease;
 }
@@ -1594,7 +1602,7 @@ select { min-height: 38px; padding: 0 2.2rem 0 .65rem; }
   width: 150px; max-width: 100%;
   align-content: start;
   cursor: pointer; padding: .55rem .6rem .6rem;
-  border: 1px solid var(--line); border-radius: var(--r-md) 3px 3px 3px;
+  border: 1px solid var(--line); border-radius: var(--r-klein);
   background: var(--paper-2); text-align: center;
   transition: border-color .12s ease;
 }
@@ -1626,7 +1634,7 @@ select { min-height: 38px; padding: 0 2.2rem 0 .65rem; }
      wordt afgekapt, toont 3:2 en beweert 16:9. Nu begrenst alleen de tegel zelf,
      en die is met 150px breed genoeg voor alle vier. */
   display: block; height: 64px; width: auto; max-width: 100%;
-  border: 1px solid var(--line-strong); border-radius: var(--r-sm) 3px 3px 3px;
+  border: 1px solid var(--line-strong); border-radius: var(--r-klein);
   background: var(--paper-3, var(--line));
 }
 /* "Wordt per bestelling gevraagd" heeft geen vorm om te tonen, dus krijgt hij een
@@ -1647,7 +1655,7 @@ select { min-height: 38px; padding: 0 2.2rem 0 .65rem; }
 .bk-sw {
   position: relative; display: grid; gap: .3rem; cursor: pointer;
   width: 96px; padding: .5rem .5rem .6rem;
-  border: 1px solid var(--line); border-radius: var(--r-md) 3px 3px 3px;
+  border: 1px solid var(--line); border-radius: var(--r-klein);
   background: var(--paper-2); text-align: center;
   transition: border-color .12s ease;
 }
@@ -1814,24 +1822,24 @@ form.login input[type="email"] {
    won hij. In de render bleef er daardoor een afgeronde hoek zweven boven een
    kaart die verder geen kader meer had — een boogje zonder doos eromheen. Een
    radius hoort bij een RAND of een VLAK; een cel heeft geen van beide. */
-.facts, .note, .panel, .sheet, .shot img, .thumb img, .box, .revision-note { border-radius: var(--r-lg) 3px 3px 3px; }
+.facts, .note, .panel, .sheet, .shot img, .thumb img, .box, .revision-note { border-radius: var(--r-kaart); }
 input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r-md) 3px 3px 3px; }
 /* Buttons are fully round since August 2026, at Lucas's direction — see the
    --r-pill note in src/styles/global.css for why buttons and nothing else.
    Hand-copied with the rest of the scale so the dashboard keeps matching the
    site it links back into. */
-.btn { border-radius: 14px 3px 3px 3px; }
+.btn { border-radius: var(--hoek-knop); }
 .btn-quiet { border-radius: 0; }
 .btn-quiet { border-radius: 0; }
 
 /* ============================================================
    "YOUR DETAILS" — the saved-order-details form.
 
-   THESE RULES USED TO LIVE IN src/lib/account.js as an inline <style> admitted
+   THESE RULES USED TO LIVE IN src/lib/account.js as an inline \3c style> admitted
    by a per-response CSP nonce, because the task that wrote them did not own
    this file. Its own comment asked whoever was free to touch account.css to
    move them here verbatim and delete the nonce plumbing with it. August 2026
-   did both — page() has no <style> element now and style-src is plain 'self'.
+   did both — page() has no \3c style> element now and style-src is plain 'self'.
 
    The form also moved: it was a panel on the Brand kit page and is now its own
    section at /account/details. The two background fields it used to carry are
@@ -1912,8 +1920,8 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
 /* The account email, shown and not editable — see handleDetails(). It is
    deliberately not a disabled <input>: a greyed-out field reads as one that
    could be switched on, and this one never can. */
-.det-fixed { margin: 0; padding: .7rem .8rem; border: 1px dashed var(--line-strong); border-radius: var(--r-md) 3px 3px 3px; background: var(--paper-2); color: var(--ink); font-size: .96rem; overflow-wrap: anywhere; }
-.det-ok { margin: 0 0 1.2rem; padding: .7rem .9rem; border: 1px solid var(--line); border-radius: var(--r-md) 3px 3px 3px; background: var(--paper-2); color: var(--signal-ink); font-size: .92rem; }
+.det-fixed { margin: 0; padding: .7rem .8rem; border: 1px dashed var(--line-strong); border-radius: var(--r-klein); background: var(--paper-2); color: var(--ink); font-size: .96rem; overflow-wrap: anywhere; }
+.det-ok { margin: 0 0 1.2rem; padding: .7rem .9rem; border: 1px solid var(--line); border-radius: var(--r-klein); background: var(--paper-2); color: var(--signal-ink); font-size: .92rem; }
 .detform .btn { justify-self: start; }
 
 /* Buttons are tracked capitals since August 2026 — see the .btn note in
@@ -1950,7 +1958,7 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
   margin: 1rem 0 0;
   max-width: 52ch;
   padding: .7rem .9rem .7rem 1rem;
-  border-radius: var(--r-md) 3px 3px 3px;
+  border-radius: var(--r-klein);
   background: var(--surface);
   box-shadow: inset 3px 0 0 var(--accent);
   font-size: .92rem;
@@ -1994,7 +2002,7 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
   grid-template-columns: repeat(6, 1fr); }
 .latest-item a {
   display: block; aspect-ratio: 4 / 5; overflow: hidden;
-  border: 1px solid var(--line); border-radius: var(--r-sm, 6px) 3px 3px 3px; background: var(--surface-2);
+  border: 1px solid var(--line); border-radius: var(--r-klein); background: var(--surface-2);
 }
 .latest-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
@@ -2227,7 +2235,7 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
 
 .prod-cover {
   flex: 0 0 auto; width: 52px; aspect-ratio: 4 / 5; overflow: hidden;
-  border-radius: var(--r-sm, 6px) 3px 3px 3px; background: var(--surface); display: block;
+  border-radius: var(--r-klein); background: var(--surface); display: block;
 }
 .prod-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
@@ -2482,7 +2490,7 @@ details.ask { margin-top: 0; }
 .more-orders { margin-top: .7rem; }
 .more-orders > summary {
   cursor: pointer; list-style: none; width: max-content;
-  padding: .45rem .8rem; border: 1px solid var(--line); border-radius: 14px 3px 3px 3px;
+  padding: .45rem .8rem; border: 1px solid var(--line); border-radius: var(--hoek-knop);
   font-size: .82rem; color: var(--ink-2);
 }
 .more-orders > summary::-webkit-details-marker { display: none; }
@@ -3584,7 +3592,7 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
   position: relative;
   isolation: isolate;
   margin: 0 0 clamp(1.4rem, 3vw, 2rem);
-  border-radius: var(--r-lg) 3px 3px 3px;
+  border-radius: var(--r-kaart);
   overflow: hidden;
   min-block-size: clamp(320px, 40vw, 420px);
   display: flex;
@@ -3761,7 +3769,7 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
 .q-merk {
   flex: 0 0 auto;
   font-size: .72rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
-  padding: .3rem .6rem; border-radius: 14px 3px 3px 3px;
+  padding: .3rem .6rem; border-radius: var(--hoek-knop);
   color: var(--ink-3); box-shadow: inset 0 0 0 1px var(--line);
 }
 .q-merk.is-vast { color: var(--accent-2); box-shadow: inset 0 0 0 1px var(--accent-rand); }
@@ -3856,7 +3864,7 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
   position: relative; display: grid; gap: .28rem; justify-items: center; align-content: start;
   width: 150px; max-width: 100%;
   cursor: pointer; padding: .55rem .6rem .6rem;
-  border: 1px solid var(--line); border-radius: var(--r-md) 3px 3px 3px;
+  border: 1px solid var(--line); border-radius: var(--r-klein);
   background: var(--paper-2); text-align: center;
   transition: border-color .12s ease;
 }
@@ -3864,7 +3872,7 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
 .bk-look:has(input:checked) { border-color: var(--teal); box-shadow: inset 0 0 0 1px var(--teal); }
 .bk-look:has(input:focus-visible) { outline: 2px solid var(--teal); outline-offset: 2px; }
 .bk-look > input { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
-.bk-look-img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: var(--r-sm) 3px 3px 3px; border: 1px solid var(--line-strong); }
+.bk-look-img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: var(--r-klein); border: 1px solid var(--line-strong); }
 .bk-look-img.is-blank {
   background: repeating-linear-gradient(45deg, var(--paper-2) 0 5px, var(--paper-lift) 5px 10px);
   border-style: dashed;
@@ -3920,9 +3928,9 @@ main .lede, .main .lede { margin-bottom: 1.4rem; }
    knop die het bestelformulier opent met die stijl al aangevinkt. Een
    voorgestelde stijl (offerte open) krijgt een gestippelde rand en geen knop. */
 .os-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); margin-top: 1.4rem; }
-.os-card { display: grid; grid-template-columns: 132px 1fr; gap: 1.1rem; padding: 1.1rem; border: 1px solid var(--line); border-radius: var(--r-lg) 3px 3px 3px; background: var(--paper-lift); }
+.os-card { display: grid; grid-template-columns: 132px 1fr; gap: 1.1rem; padding: 1.1rem; border: 1px solid var(--line); border-radius: var(--r-kaart); background: var(--paper-lift); }
 .os-card.is-proposed { border-style: dashed; }
-.os-fig { aspect-ratio: 4 / 3; border-radius: var(--r-md) 3px 3px 3px; overflow: hidden; background: var(--paper-2); }
+.os-fig { aspect-ratio: 4 / 3; border-radius: var(--r-klein); overflow: hidden; background: var(--paper-2); }
 .os-fig img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .os-fig-empty { display: block; width: 100%; height: 100%; background: repeating-linear-gradient(135deg, transparent 0 8px, rgb(255 255 255 / .04) 8px 16px); }
 .os-body { display: grid; gap: .5rem; align-content: start; min-width: 0; }
@@ -3944,7 +3952,7 @@ main .lede, .main .lede { margin-bottom: 1.4rem; }
 .ms-n { font-size: .82rem; color: var(--ink-3); }
 .ms-strook { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: .5rem; margin-bottom: 1rem; }
 .ms-strook.is-klein { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: .35rem; }
-.ms-strook img { width: 100%; aspect-ratio: 1; height: auto; object-fit: cover; border-radius: var(--r-md) 3px 3px 3px; background: var(--surface-2); display: block; }
+.ms-strook img { width: 100%; aspect-ratio: 1; height: auto; object-fit: cover; border-radius: var(--r-klein); background: var(--surface-2); display: block; }
 .ms-eerder-h { margin: 1.6rem 0 0; font-size: .82rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
 .ms-leeg { margin-top: .8rem; }
 
@@ -4011,7 +4019,7 @@ body:not(.has-shell) .mark { display: block; width: 124px; height: 22px; color: 
 body:not(.has-shell) .authcard {
   width: min(100%, 400px); max-width: none; margin: 0; box-sizing: border-box;
   padding: 2rem; display: flex; flex-direction: column; gap: 1rem;
-  background: var(--kv-kaart); border: 1px solid var(--kv-lijn); border-radius: 10px 3px 3px 3px;
+  background: var(--kv-kaart); border: 1px solid var(--kv-lijn); border-radius: var(--r-kaart);
   font-size: .9375rem; line-height: 1.55;
 }
 body:not(.has-shell) .authcard.nakijk { width: min(100%, 46rem); }
@@ -4071,8 +4079,8 @@ html[data-thema="licht"] body {
   --st-rev-fill: #F4F5F7; --st-rev-edge: rgb(37 80 139 / .30); --st-rev-ink: #25508B;
   font-family: var(--h-letter);
 }
-html[data-thema="licht"] body:not(.has-shell) .authcard { border-radius: 28px 3px 3px 3px; }
-html[data-thema="licht"] body .btn, html[data-thema="licht"] body:not(.has-shell) .authcard .btn { border-radius: 14px 3px 3px 3px; font-family: var(--h-letter); }
+html[data-thema="licht"] body:not(.has-shell) .authcard { border-radius: var(--r-kaart); }
+html[data-thema="licht"] body .btn, html[data-thema="licht"] body:not(.has-shell) .authcard .btn { border-radius: var(--hoek-knop); font-family: var(--h-letter); }
 
 /* ══ LEVERING 57 — HET WOORDMERK MET DE ELEKTRISCHE LIJN (17 oktober 2026) ══════
    Lucas (afvinklijst 35, v35-studio a): "ook daar het logo-effect". Een kopie van
@@ -4168,4 +4176,4 @@ html[data-thema="licht"] body ::selection { background: #25508B; color: #FFFFFF;
 
 /* De knop en de statuspil zoals op de site en in Studio (levering 57): de knop met één
    zachte hoek linksboven, de pil als plaatje in de vaste breedte-letter zonder bolletje. */
-html[data-thema="licht"] body .btn, html[data-thema="licht"] body:not(.has-shell) .authcard .btn { border-radius: 14px 3px 3px 3px; }
+html[data-thema="licht"] body .btn, html[data-thema="licht"] body:not(.has-shell) .authcard .btn { border-radius: var(--hoek-knop); }
