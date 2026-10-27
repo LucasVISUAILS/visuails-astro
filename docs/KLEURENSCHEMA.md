@@ -1,6 +1,6 @@
 # VISUAILS — kleurenschema
 
-**Stand: 24 oktober 2026. Schema Blauw uur, overal (levering 68). De hoeken, glas en gloed,
+**Stand: 24 oktober 2026. Schema Blauw uur, overal (levering 68). Levering 75 (26 oktober): de balk als zwevende pil van licht glas, en E1 (de snede) vervallen. Levering 76 (26 oktober): de pil doorzichtiger, zonder rand, licht getint. De hoeken, glas en gloed,
 de knoppen, Hoe het werkt in witte kaarten, de gloed van "Gemaakt met AI" en de iconen zonder
 plaatje: 25 oktober 2026 (levering 74).** Dit is het ene bestand dat de kleuren draagt. Verandert hier iets, dan in de bestanden hieronder ook, en
 andersom niet.
@@ -182,7 +182,14 @@ hoeken, grote vlakken 32, knoppen en chips houden de zachte hoek; overal in éé
 
 ---
 
-## Glas en gloed (levering 74)
+## Glas en gloed (levering 74, de balk in 75)
+
+Levering 75 (Lucas, 23:35): *"De top bar mag ook van glas had ik aangegeven en ik wil deze echt wat
+mooier en meer van de website af willen hebben door lichte schaduw toe te voegen … De topbar en
+andere glazen gedeelten moeten een beetje dezelfde look hebben als ovyon labs top bar maar niet
+kopieren, alleen de verhoudingen en look wat inspiratie uit halen."* Zijn keuze: een pil van licht
+glas, zwevend. Alleen de verhoudingen (rond, los van de rand, lichte dubbele schaduw) komen uit
+zijn voorbeeld; geen vorm, kleur of beeld van Ovyon.
 
 Lucas, 25 oktober 2026: *"Ik wil dat je de topbar ook gaat redesignen en weer een wat meer glas
 effect geeft dat goed past bij de nieuwe moderne minimalistische style van de website"*, en om
@@ -194,9 +201,9 @@ ziet als iets dat bij VISUAILS past."*
 
 | Waar | Glas | Waarom het leesbaar blijft |
 |---|---|---|
-| De balk bovenin (`.site-header .nav::before`) | wit 68 %, 18 px vervaging, verzadiging 1,6; witte binnenrand, haarlijn in inkt op 7 %, lage zachte schaduw; 18 px rond | boven inkt blijft de grond minstens `#B1B2B5`: de menuletters 9,1 : 1 |
-| De uitklapmenu's van de balk (`.nav-menu`) | wit 90 %, 20 px vervaging; dezelfde randen; 20 px rond | de grijze kopjes halen boven inkt nog 4,5 : 1 |
-| De WhatsApp-knop rechtsonder (`.wa-launcher`) | wit 72 %, 16 px vervaging | alleen een icoon in inkt |
+| De balk bovenin (`.site-header .nav::before`), sinds levering 75 een **zwevende pil**, sinds 76 **zonder rand en licht getint** | 16 px van boven (telefoon 10), 58 px hoog (telefoon 54), helemaal rond. Levering 76 (Lucas: *"doorzichtiger en subtieler met geen outlining eromheen … door de zichtbaarheid te verlagen een licht andere kleur … wel duidelijk zichtbaar"*): de lijnkleur `#E6E8EC` op 56 %, 22 px vervaging, verzadiging 1,6; geen haarlijn, geen binnenrand, geen lichtrand meer, één zachte schaduw (0 10 30 −16 px, inkt 22 %). Op wit wordt dat `#F1F2F4`. Het taal- en het ik-knopje zijn er wit glas in (70 %). De menuknoppen, de taal en Bestellen als pil | boven inkt blijft de grond minstens `#86898E`: de menuletters 5,5 : 1; op wit 17,1 : 1 |
+| De uitklapmenu's van de balk (`.nav-menu`) | sinds 76 `#F1F2F4` op 94 %, 24 px vervaging, zonder randen, één zachte schaduw; 24 px rond | de grijze kopjes halen boven inkt nog 4,5 : 1 |
+| De WhatsApp-knop rechtsonder (`.wa-launcher`) | sinds 76 hetzelfde glas als de balk (lijnkleur op 56 %, zonder rand, één zachte schaduw) | alleen een icoon in inkt |
 | De uitlegbalk zolang hij onderin plakt (`.u-balk`) | vlak 78 %, 16 px vervaging | inkt op de donkerste grond nog 10 : 1 |
 | De bovenbalk van Studio (`.st-balk`) en van /admin (`.adm-balk`), die bovenaan blijven staan | wit (in /admin donker: de eigen kaartkleur) op 92 %, 16 px vervaging | de grijze kruimels halen boven inkt nog 4,69 : 1 |
 
@@ -314,7 +321,7 @@ ronde 2*, niet de kleuren.
 
 | | Effect | Waar | Duur |
 |---|---|---|---|
-| E1 | **De snede-wis**: koppen en beelden komen binnen langs 53°, in stappen | elke `.h-in` (bestond al: `h-wis` in hal.css) | 420 tot 620 ms |
+| E1 | ~~De snede-wis~~ **vervallen in levering 75** (Lucas, 25 oktober, 23:39: *"Haal het slice effect ook weg die op elk element zit wanneer het tevoorschijn komt"*; zijn keuze: zacht infaden, zonder beweging). Elke `.h-in` komt nu binnen met alleen de dekking (`h-zacht-in` in hal.css) | elke `.h-in` | 400 ms |
 | E4 | **De tl-buis**: de streep van een sectielabel springt aan, twee keer haperen, dan aan | `.h-sec-kop.is-in p.h-pil::before` (nieuw, `h-tl`) | 460 ms, in stappen |
 | E5 | **Het vlagje vult**: bij uploaden vult het vlagje van de V zich met de echte voortgang; vol is één sprong. Geen spinner | het uploaden van je foto's (bestond al, levering 55) | zo lang als het uploaden |
 | E6 | **Het blok op 53°**: één inktblok per pagina | zie hierboven | staat stil |
@@ -387,7 +394,8 @@ Dezelfde rollen, omgekeerd, in de koele grijzen van inkt:
 `HalLaptopSchermen.astro`) tonen de winkel van een klant (JOUWMERK), niet VISUAILS: die
 houden hun eigen kleuren. Ook de kleuren die inhoud zijn blijven staan: de achtergronden
 waaruit je kiest, kledingkleuren, het lichtgrijs van de geleverde set (`#EFEFEF`, de grond
-van de foto's), het blauw van Instagram in het voorbeeldscherm, de rode tekst van een fout.
+van de foto's; ook het vlak achter de jeans bij Productfoto's in Wat we maken, levering 76, zodat
+het beeld naadloos doorloopt), het blauw van Instagram in het voorbeeldscherm, de rode tekst van een fout.
 
 ---
 
@@ -752,7 +760,7 @@ violet `#4A1FFF`, lila vlakken en mist. Het blijft staan als geschiedenis.
 | De mails | `src/lib/mailTemplate.js` | `C` en de kop (het woordmerk als beeld) |
 | De statuspil buiten CSS | `src/data/status.js` | `STAND_KLEUR` |
 | Het deelplaatje | `scripts/make-og.mjs` | `npm run og` |
-| De letter op de Worker-pagina's | `scripts/fonts-voor-worker.mjs` | Urbanist in `/fonts/gedeeld.css` |
+| De letter op de Worker-pagina's | `scripts/fonts-voor-worker.mjs` | Instrument Sans (sinds levering 76; Urbanist als terugval) in `/fonts/gedeeld.css` |
 | De adresbalk | `src/layouts/Layout.astro` | `theme-color` wit op een hal-pagina |
 | Favicon | `public/favicon.svg`, `scripts/make-favicons.mjs` | wit V-merk op violet |
 

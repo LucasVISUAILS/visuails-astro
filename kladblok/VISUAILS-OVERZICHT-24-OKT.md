@@ -899,7 +899,7 @@ Bron: `kladblok/uitrol-log.txt` (één regel per keer UITROLLEN.bat; laatste reg
 | 25 okt 10:37 | 4d05476 | 65, 66 en 68 (Blauw uur, scherpe laptopstanden, telefoonversies); 395 bestanden, testreeks 268/268, adressen 6/6 | — |
 
 - **De live site loopt tot en met levering 68** (uitrol 25 okt). Levering 61 ging vermoedelijk mee op 20 okt: haar commitbericht is van 18 okt 07:06, ná de uitrol van 02:04, en UITROLLEN commit de hele map.
-- **Levering 67 bestaat niet.** 69 tot en met 73 zijn voor de cloudsessie (`kladblok/PROMPT-CLOUD-CODE.md`); levering 74 (25 okt) staat in zijn map, niet live.
+- **Levering 67 bestaat niet.** 69 tot en met 73 zijn voor de cloudsessie (`kladblok/PROMPT-CLOUD-CODE.md`); levering 74 (25 okt) staat live (Lucas' commit van 23:21); levering 75 (26 okt: de opening gecentreerd, de standen terug, één pagina met Hoe het werkt, de balk als pil; `kladblok/LEVERING-75.md`) staat in zijn map. Eerst 75 uitrollen, dan de cloudsessie.
 - `kladblok/COMMIT-BERICHT.txt` beschrijft nog 65, 66 en 68; die staan sinds 25 okt live. Bij de volgende levering vervangen door alleen wat dan nog niet live is.
 - Niet bekend: wat er vóór 14 okt live stond (het vorige overzicht bevestigt de deploy van 3 okt; die van 6 okt is onbekend). Deze tabel is de stand van de log op 24 okt; is er daarna uitgerold, dan staat dat onderaan `uitrol-log.txt`.
 - Los van de code: Mollie stond op 15 okt nog in testmodus (lev. 51, deel 5). De testrecords op live staan in §16.1.
@@ -962,7 +962,7 @@ Eén lijst, in volgorde: eerst wat Lucas zelf doet (Claude zet nooit een sleutel
 ### 16.3 Wat Claude daarna kan bouwen
 
 0. **Zelf tekst, beelden en iconen beheren** (lijst 56; tekstblad, TEKST.bat, BEELDEN.bat, beeldkaart, iconenblad): staat ook als levering 71 in `kladblok/PROMPT-CLOUD-CODE.md`. Niet dubbel bouwen; Lucas kiest de route. (25 okt)
-1. ~~De opening met scrollvideo en Hoe het werkt per dienst~~ **Gebouwd als levering 74** (25 okt; `kladblok/LEVERING-74.md`, `kladblok/PLAN-OPENING-SCROLL.md`). Nog van Lucas: lifestyle-beelden en videoclips van de roze jeans (lifestyle toont nu de look Flash, video "binnenkort") en of de stroom tot en met Wat we maken blijft (`STROOM.tot` in `HalOpening.astro`). De cookiekaart staat sinds 25 okt, 20:00 rechtsonder. Eerst 74 uitrollen, dan de cloudsessie (69 – 73).
+1. ~~De opening met scrollvideo en Hoe het werkt per dienst~~ **Gebouwd als levering 74** (25 okt; `kladblok/LEVERING-74.md`, `kladblok/PLAN-OPENING-SCROLL.md`). Nog van Lucas: lifestyle-beelden en videoclips van de roze jeans (lifestyle toont nu de look Flash, video "binnenkort") en of de stroom tot en met Wat we maken blijft (`STROOM.tot` in `HalOpening.astro`). De cookiekaart staat sinds 25 okt, 20:00 rechtsonder. 74 staat live; levering 75 (26 okt) deelt de opening opnieuw in (gecentreerd, de kop eronder, de standen terug, Hoe het werkt compacter en als één pagina, de balk als pil). Eerst 75 uitrollen, dan de cloudsessie (69 – 73).
 2. **Het merkboek op Blauw uur**, als hij ja zegt. De skill `visuails-ontwerptaal` noemt nog de violette kleuren; bijwerken op zijn verzoek (§29).
 3. **De site naar het launchschema**, na zijn akkoord: looks van de site halen en nieuwe stijlen zetten zodra ze af zijn (§24.2).
 4. **Na zijn live-stappen**: `PURGE_ENABLED` aan (LS stap 5) en `WORKERS_PLAN` "betaald" (LS stap 9).
@@ -1592,6 +1592,7 @@ Chronologisch, alleen keuzes die een eerdere keuze vervangen of een regel zetten
 - **23 okt:** altijd 60 · 30 · 10 per sectie; effecten subtieler (gloed achter het logo "heel erg generiek en saai", sluiter en wis op het logo "net een PowerPoint-effect"); geen letterlijke studio-achtergronden. Kelvin (lijst 50) gekozen, maar bleef een schets. Een nieuwe foto voor de opening (twee handen, laptop en telefoon).
 - **24 okt:** **Blauw uur** (lijst 55; vervangt schema A en Kelvin): "het voelt niet als een ai tool kleur en ook niet als een copy cat van een ander merk." Het logo beweegt niet meer; onder de muis schommelt de kleur (vervangt de echolijn van 17 okt). Geen fade om de laptopfoto (wacht op Schets 58). Blauw uur als palet (lijst 54) vond hij eerst "te generiek, vooral als een ai schema".
 - **25 okt:** uitrol van 65, 66 en 68. Lijst 56: zelf tekst nalopen en beelden en iconen vervangen. De opdracht voor de opening met zijn scrollvideo en Hoe het werkt per dienst (lagen uit elkaar; catalog: achtergrond, schaduw, product "gemaakt door middel van AI"), opgeslagen voor later; vervangt Schets 58. **Hoeken**: de zachte hoek alleen nog op specifieke plekken zoals knoppen, kaarten en grote vlakken heel rond (vervangt "één zachte hoek, verder recht" van 17 okt, nog niet gebouwd). **Accentwoorden**: geen gekleurde woorden zoals AI-tools, maar een blauwe animatie zoals de kleurschommel van het logo, binnen het kleurenschema. Repo: hij zet hem zelf privé. Plan: `kladblok/PLAN-OPENING-SCROLL.md`.
+- **26 okt:** levering 76 (met 75): de opening ruimer in één beeld, de snede als overgang naar Hoe het werkt, de balk zonder rand. **Lijst 58**: Instrument Sans overal (kop 600), labels IBM Plex Mono; met als eigen zet de smalle stem op 80 % en de schaal van 4 : 3. Formaten klein in stap 3 van Hoe het werkt (12:29). **13:00**: de regels uit zijn video's (één groot en twee middel; 60 : 30 : 10; 5 – 7 woorden per regel) op elke pagina, en "de editorial rust in de foto op het computerscherm" op elke sectie van de voorpagina: elke sectie een productvel (§29.4).
 
 ### De huisstijlen op een rij (alle vervangen behalve de laatste)
 | Wanneer | Grond / accent | Letters |
@@ -1605,7 +1606,7 @@ Chronologisch, alleen keuzes die een eerdere keuze vervangen of een regel zetten
 | 12 okt (voorbeeld), 14 – 18 okt (live) | "de hal": wit, inkt #0F0C24, violet #4A1FFF, lila #A694FF, nacht #2A0E8F, mist #F1EEFF; verlopen, korrel en glas | Urbanist; labels IBM Plex Mono vanaf 17 okt |
 | 19 – 23 okt | schema A: wit, nevel #F2F2F2, lijn #DDDDDD, zwart #000000, grijs #616161, violet #4400FF; bewogen achtergronden, glas alleen op het €1-blok | Urbanist + IBM Plex Mono |
 | — | Kelvin (lijst 50) en Blauw uur als palet (lijst 54): alleen schetsen, nooit op de site | — |
-| **24 okt → nu** | **Blauw uur: wit #FFFFFF, inkt #0B0F17, blauw uur #25508B, grijs #636974, lijn #E6E8EC; één inktblok per pagina; geen verloop, geen glas (§29)** | **Urbanist + IBM Plex Mono**; `docs/KLEURENSCHEMA.md` is de enige kleurbron |
+| **24 okt → nu** | **Blauw uur: wit #FFFFFF, inkt #0B0F17, blauw uur #25508B, grijs #636974, lijn #E6E8EC; één inktblok per pagina; geen verloop, geen glas (§29)** | **Urbanist + IBM Plex Mono; sinds levering 76 (26 okt, Lijst 58) Instrument Sans + IBM Plex Mono**; `docs/KLEURENSCHEMA.md` is de enige kleurbron |
 
 Let op: "nu" betekent in zijn map. Live staat tot de volgende uitrol nog schema A (§15.2).
 
@@ -1871,7 +1872,8 @@ Linkerbeen 59,8° (60°), rechterbeen 66,5°: twee hoeken, geen spiegel. De sned
 - **Knop**: één zachte hoek linksboven (bijv. `14px 3px 3px 3px`), de pijl in twee delen (schacht en kop met kier). Twee gelijke knoppen naast elkaar: aan elkaar met een scherpe snede ertussen, zoals in het logo; verder blijven de knoppen gewoon.
 - **Hoeken in een kaart**: de hoek van een beeld of knop die het dichtst bij de ronde hoek van de kaart zit, is ook rond; nooit scherp naar rond.
 - **Sectielabel**: schuine streep (het vlagje), nummer, naam in IBM Plex Mono in hoofdletters (`/ 02`), automatisch genummerd per pagina. Bij in beeld komen springt de streep aan als een tl-buis (E4).
-- **Letters**: in de hal (de site) Urbanist voor alles, IBM Plex Mono voor labels (zelf gehost). Studio, /admin en de privélink volgen de hal-tokens.
+- **Letters** (sinds levering 76, 26 okt, Lijst 58): in de hal (de site, Studio, /admin, de privélink) **Instrument Sans** voor alles, zelf gehost, in drie stemmen: koppen, namen en grote cijfers smal op 80 % (de 4 : 5 van de snede, `--h-smal`), tekst op volle breedte, labels IBM Plex Mono. Op de voorpagina een schaal van 4 : 3 (13,5 · 18 · 24 · 32 · 42,7 · 56,9). De mails blijven Arial. Was Urbanist.
+- **Het productvel** (26 okt, 13:00): elke sectie van de voorpagina na Hoe het werkt is opgebouwd als de productpagina op het laptopscherm: één groot beeld, een smalle kolom (label, kop, keuzes als knopjes, één inktknop, een kleine regel), geen kaders. Met de drie regels uit Lucas' video's: één groot en twee middel; 60 : 30 : 10 per sectie; 5 – 7 woorden per regel (kleine tekst 8 – 10). Lucas: "Vergeet niet gebruik te maken van deze regels op elke pagina."
 - **Iconen**: gevuld, uit het eigen iconenkit (raster 24, één snede, één zachte hoek), minimaal 14 px. Het WhatsApp-icoon blijft het officiële.
 - **Voet**: wit, het woordmerk groot in inkt, door de onderrand afgesneden.
 

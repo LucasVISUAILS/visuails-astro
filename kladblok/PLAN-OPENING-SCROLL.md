@@ -375,3 +375,16 @@ component. Geen inline script (CSP-hashes van de build). Geen bibliotheek nodig:
 - **25 okt 2026, 21:31 – 22:40** · Lucas: "Doe een volledige controle … en werk ze allemaal stap voor stap af." Alle
   95 pagina's gemeten, de voorpagina op 15 breedtes, axe in elke tab, en een tweede blik op de code. Twintig punten
   gevonden en opgelost (notitie §7b). Zijn keus bij ademen en zweven: één keer, dan stil (WCAG 2.2.2).
+- **25 okt 2026, 23:35 – 26 okt** · Lucas: de opening te druk; de foto groot maar gecentreerd en niet het hele beeld, de
+  kop eronder (links, op de rand van de foto); de standen van de laptop terug (de webshop, het Instagram-bericht, de
+  clip); stap 2 korter, alleen de lagen, en zonder terugsnappen; Hoe het werkt compacter en licht zichtbaar terwijl de
+  laptop weggaat, dan erin klikken ("echt 1 pagina"); de balk een zwevende pil van licht glas; geen snede bij het
+  verschijnen. Gebouwd als levering 75 (`kladblok/LEVERING-75.md`): de hele breedte van de video met de armen
+  doorgetrokken, één indeling op elk scherm, de standen met naam, streep, pijlen en pauze, één weg van 1,6
+  schermhoogte, stap 2 van 5,2 s.
+- **26 okt 2026, 10:52 – 13:30** · Lucas: laptop en kop nog krap in één beeld; een nieuwe, vrije, moderne letter; de
+  tekst weg laten snijden "op een VISUAILS style manier" terwijl de laptop verdwijnt, kort wit, en de nieuwe kop met
+  een soortgelijk effect binnen; de balk doorzichtiger zonder rand; de rest van de voorpagina in de stijl van de eerste
+  twee secties (met ideeën uit vijf video's). Daarna: Instrument Sans (Lijst 58), met een eigen zet (smalle koppen op
+  80 %, een schaal van 4 : 3), en Formaten klein in stap 3 van Hoe het werkt in plaats van een eigen sectie. Gebouwd
+  als levering 76 (`kladblok/LEVERING-76.md`).

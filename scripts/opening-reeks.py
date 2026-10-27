@@ -29,8 +29,15 @@ WAT DIT SCRIPT DOET, PER BEELD (0 – 133):
   5. Beeld 42 – 46: daar is het scherm een reepje dat niet meer als gat te vinden is. Per
      kolom onder de bovenrand van de klep gevonden, per regel doorgetrokken langs de
      vingers, en naar inkt getrokken (rand en scherm samen, zoals bij een echte laptop).
-  6. Uitsnijden (x 0 – 1681, y 110 – 992: beide armen gaan via de zijkant het beeld uit,
-     de onderste rij is wit) en verkleinen naar 1600 × 840.
+  6. Uitsnijden: sinds levering 75 (25 oktober 2026, 23:35) het HELE beeld in de breedte
+     (x 0 – 1920) en tot onderaan (y 150 – 1080). Lucas: de foto gecentreerd en niet het hele
+     venster vullend, "zonder dat de foto in het midden van het witte komt te staan", en "er
+     zou nog een stuk van de rechter arm toegevoegd moeten kunnen worden": dat stuk zat rechts
+     van x 1681. Met de hele breedte staan de apparaten vanzelf in het midden.
+  7. De armen doortrekken buiten het beeld (scripts/opening_armen.py): links 720, rechts 720
+     en onder 360 videopixels erbij, zodat ze op elk venster tot de rand lopen. Wat geen arm
+     is, vervaagt vlak voor de rand (de laptop en de telefoon schuiven aan het eind het beeld
+     uit). Alles op 0,7 × de video: 2352 × 903.
 Beeld 133 is het eerste helemaal witte beeld; daar houdt de reeks op. Beeld 0 – 16 staan
 stil (de still dekt ze), dus de pagina laadt 17 – 133.
 
@@ -41,6 +48,8 @@ licht randje langs het scherm komt, en het donker per beeld).
 import json, os, subprocess, sys, tempfile
 import cv2
 import numpy as np
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import opening_armen as armen_mod
 
 HIER = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HIER)
@@ -48,11 +57,13 @@ VIDEO, STILL = sys.argv[1], sys.argv[2]
 WERK = sys.argv[3] if len(sys.argv) > 3 else os.path.join(tempfile.gettempdir(), 'opening-reeks')
 os.makedirs(os.path.join(WERK, 'png'), exist_ok=True)
 
-X0, Y0, X1, Y1 = 0, 110, 1681, 992
-BW = 1600
-K = BW / (X1 - X0)
-BH = round((Y1 - Y0) * K)          # 840
+X0, Y0, X1, Y1 = 0, 150, 1920, 1080
+EL, ER, EB = 720, 720, 360         # erbij, in videopixels (de armen lopen door)
+K = 0.7
+BW = round((X1 - X0 + EL + ER) * K)   # 2352
+BH = round((Y1 - Y0 + EB) * K)        # 903
 N = 134                            # beeld 0 – 133
+UIT0, UIT1 = 74, 82                 # de armen lossen op (de apparaten gaan het beeld uit)
 INKT = np.array([11, 15, 23], float)
 
 # ── de beelden uit de video ──────────────────────────────────────────────
@@ -110,7 +121,7 @@ def telefoon_quad(mask, vorige):
 
 
 def naar_reeks(q):
-    return [[(float(x) - X0) * K, (float(y) - Y0) * K] for x, y in q]
+    return [[(float(x) - X0 + EL) * K, (float(y) - Y0) * K] for x, y in q]
 
 
 def ruimer(q, e=2.5):
@@ -178,6 +189,10 @@ def gaten(g, bgr_vlakken, quads):
 # ── de reeks ─────────────────────────────────────────────────────────────
 beelden = []
 vorige_fon = None
+armen_reeks = []
+SNEDE = os.path.join(WERK, 'snede')
+os.makedirs(SNEDE, exist_ok=True)
+hoogste = 10 ** 9
 for i in range(N):
     bgr = cv2.imread(os.path.join(BRON, f'{i + 1:03d}.png'))
     g = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
@@ -200,8 +215,27 @@ for i in range(N):
     buiten = (alfa >= 1)[..., None]
     rgb = np.where(buiten & (rgb >= 248), 255, rgb)    # wit trekken: geen rand om het beeld
     rgba = np.dstack([rgb, alfa * 255]).clip(0, 255).astype(np.uint8)
-    klein = cv2.resize(rgba[Y0:Y1, X0:X1], (BW, BH), interpolation=cv2.INTER_AREA)
-    cv2.imwrite(os.path.join(WERK, 'png', f'{i:03d}.png'), cv2.cvtColor(klein, cv2.COLOR_RGBA2BGRA))
+    snede = cv2.cvtColor(rgba[Y0:Y1, X0:X1], cv2.COLOR_RGBA2BGRA)
+    cv2.imwrite(os.path.join(SNEDE, f'{i:03d}.png'), snede)
+    armen_reeks.append({kant: armen_mod.meet_arm(snede, kant) for kant in ('links', 'rechts')})
+    dk = np.nonzero((g[:Y0 + 40] < 150).any(1))[0]
+    if len(dk): hoogste = min(hoogste, int(dk.min()))
+
+if hoogste < Y0:
+    print(f'LET OP: er staat iets boven de uitsnede (rij {hoogste} < {Y0})')
+# de lijnen van de armen rustig over de beelden heen, dan doortrekken en verkleinen
+glad = {kant: armen_mod.glad([a[kant] for a in armen_reeks]) for kant in ('links', 'rechts')}
+for i in range(N):
+    snede = cv2.imread(os.path.join(SNEDE, f'{i:03d}.png'), cv2.IMREAD_UNCHANGED)
+    breed = armen_mod.verleng(snede, EL, ER, EB, {kant: glad[kant][i] for kant in ('links', 'rechts')})
+    # beeld 74 – 82: de doorgetrokken armen lossen op; daarna schuiven de apparaten de video uit
+    # en lost wat de rand raakt op in het wit (armen_mod.kaal), in plaats van een harde lijn.
+    e = min(1.0, max(0.0, (UIT1 - i) / (UIT1 - UIT0)))
+    e = e * e * (3 - 2 * e)
+    if e < 1:
+        breed = (breed.astype(np.float32) * e + armen_mod.kaal(snede, EL, ER, EB).astype(np.float32) * (1 - e)).round().astype(np.uint8)
+    klein = cv2.resize(breed, (BW, BH), interpolation=cv2.INTER_AREA)
+    cv2.imwrite(os.path.join(WERK, 'png', f'{i:03d}.png'), klein)
 
 h0 = beelden[17]['l'][3][1] - beelden[17]['l'][0][1]
 donker = []
@@ -227,15 +261,26 @@ sbuiten = (gat == 0)[..., None]
 srgb = np.where(sbuiten & (srgb >= 248), 255, srgb)
 srgba = np.dstack([srgb, (1 - gat) * 255]).clip(0, 255).astype(np.uint8)
 sx0, sy0, sx1, sy1 = [round(v * sch) for v in (X0, Y0, X1, Y1)]
-still = cv2.resize(srgba[sy0:sy1, sx0:sx1], (2400, round((sy1 - sy0) * 2400 / (sx1 - sx0))), interpolation=cv2.INTER_AREA)
-cv2.imwrite(os.path.join(WERK, 'still.png'), cv2.cvtColor(still, cv2.COLOR_RGBA2BGRA))
+ssnede = cv2.cvtColor(srgba[sy0:sy1, sx0:sx1], cv2.COLOR_RGBA2BGRA)
+# dezelfde armen als beeld 0, op 2× (niet opnieuw gemeten: dan verspringt het doorgetrokken stuk
+# als de reeks begint)
+sarmen = {kant: armen_mod.geschaald(glad[kant][0], sch) for kant in ('links', 'rechts')}
+sbreed = armen_mod.verleng(ssnede, round(EL * sch), round(ER * sch), round(EB * sch), sarmen, f=sch)
+cv2.imwrite(os.path.join(WERK, 'still.png'), sbreed)
 
+# waar het videobeeld zelf ligt (de kern), en de onderkant van de linkerhand in beeld 0: de
+# pagina zet de kop eronder, links op de rand van de laptop (Lucas, 23:35)
+s0 = cv2.imread(os.path.join(SNEDE, '000.png'), cv2.IMREAD_UNCHANGED)
+g0 = cv2.cvtColor(s0[..., :3], cv2.COLOR_BGR2GRAY)
+hand = np.nonzero((g0[:, 500:1150] < 120).any(1))[0]
 data = {
-    'bron': 'scripts/opening-reeks.py, 25 oktober 2026',
+    'bron': 'scripts/opening-reeks.py, levering 75 (25 oktober 2026)',
     'w': BW, 'h': BH, 'eerste': 17, 'laatste': N - 1,
+    'kern': {'x': round(EL * K, 1), 'y': 0, 'w': round((X1 - X0) * K, 1), 'h': round((Y1 - Y0) * K, 1)},
+    'hand': round(float(hand.max()) * K, 1) if len(hand) else None,
     'b': [[ruimer(q['l']), ruimer(q['f'])] for q in beelden],
     'd': donker,
 }
 with open(os.path.join(REPO, 'src', 'data', 'openingSchermen.json'), 'w') as f:
     json.dump(data, f, separators=(',', ':'))
-print('klaar:', N, 'beelden, laptop tot', max(i for i, q in enumerate(beelden) if q['l']), ', telefoon tot', max(i for i, q in enumerate(beelden) if q['f']), ', still', still.shape[1], '×', still.shape[0])
+print('klaar:', N, 'beelden, laptop tot', max(i for i, q in enumerate(beelden) if q['l']), ', telefoon tot', max(i for i, q in enumerate(beelden) if q['f']), ', still', sbreed.shape[1], '×', sbreed.shape[0])

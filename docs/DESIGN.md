@@ -1,6 +1,6 @@
 # Design
 
-> **Stand: 24 oktober 2026 (palet), 25 oktober 2026 (hoeken; de opening, de stroom, Hoe het werkt, de lagen, de knoppen en de iconen, levering 74); de rest 22 september 2026.** `KLEURENSCHEMA.md` draagt de
+> **Stand: 24 oktober 2026 (palet), 25 oktober 2026 (hoeken; de opening, de stroom, Hoe het werkt, de lagen, de knoppen en de iconen, levering 74; de opening opnieuw ingedeeld, de standen, Hoe het werkt compacter, verschijnen zonder snede en de balk als pil, levering 75 op 26 oktober); de rest 22 september 2026.** `KLEURENSCHEMA.md` draagt de
 > kleuren; dit bestand draagt de rest van het systeem (elevatie, focus, motion,
 > layout, z-index, toegankelijkheid, en de lijst met wat we niet doen). Wijkt
 > de code van KLEURENSCHEMA.md af, dan volgt de code dat document.
@@ -468,6 +468,37 @@ a colour change alone, and never suppressed on mouse input for form fields.
 
 ## Typography
 
+### De letter van de hal — 26 oktober 2026 (levering 76, Lijst 58)
+
+Wat hieronder staat gaat over de oude site (Layout zonder hal). **De hal** (de site, Studio, de
+privélink en /admin) gebruikt sinds levering 76 **Instrument Sans** (OFL 1.1, zelf gehost in
+`public/fonts/instrument-sans/`; was Urbanist, die als terugval in de rij blijft staan). Lucas
+koos hem in Lijst 58 en vroeg erbij om een eigen zet: *"make at least one deliberate move - a
+distinctive pairing, a considered scale, custom spacing - so it reads as your choice, not the
+builder's default."*
+
+**Eén familie, drie stemmen, de maten uit de snede van de V** (de 3-4-5-driehoek van 53,13°):
+
+| Stem | Waar | Hoe |
+|---|---|---|
+| **Smal** | koppen (`.h-kop`), de kop van de opening, namen van stappen, looks en kaarten, grote cijfers (`.h-getal`, de €1) | breedte-as **80 %** (de 4 : 5 van de driehoek, `--h-smal`); spatiëring −0,01 em, de grote kop en grote cijfers −0,015 em; de kop van de opening in 600 |
+| **Normaal** | alles wat je leest en bedient: tekst, knoppen, de balk | 100 %, geen extra spatiëring; gewicht 400 – 700 (wat 300 vroeg, wordt 400) |
+| **Mono** | labels, nummers, kenmerken (de studiotaal) | IBM Plex Mono, hoofdletters, +0,04 tot +0,14 em |
+
+**De schaal op de voorpagina** springt per stap 4 : 3, de andere verhouding uit dezelfde driehoek:
+13,5 · 18 · 24 · 32 · 42,7 · 56,9 … 179,8. Tekst 18, namen in kaarten 24, sectiekoppen 24 – 32,
+de naam van een look en de kop van de opening hoogstens 56,9, de €1 hoogstens 179,8.
+
+Gemeten: smal op 80 % is 13 % smaller dan Urbanist op dezelfde grootte, dus een kop breekt nergens
+eerder af dan vroeger; de kop van de opening is 13,4 × zo breed als hoog (Engels 14,9), het eerste
+deel op de telefoon 8,0 (Engels 9,35), met dezelfde speling als eerst.
+
+**De tekstmaat, nagemeten met de nieuwe letter** (13:00, Lucas' regel "5 – 7 woorden per regel",
+op alle pagina's, per woord op een volle regel geteld): lopende tekst vanaf 16 px mediaan 5,8
+(1440) en 5,7 (390); kleine tekst mediaan 8,5 en 7,5; beide binnen hun afspraak. De vijf juridische
+documenten kwamen op mediaan 10 en tot 13: hun maat is 8 % smaller gezet (23,5 / 26,6 em, was
+25,5 / 28,9), nu mediaan 9,2.
+
 > **Herschreven 22 september 2026.** Wat hier stond ging over Archivo, over een
 > `wdth`-as die uit één familie display-contrast moest halen, en over IBM Plex
 > Mono als derde rol — een stapel beslissingen uit sectie 15. Daarna zijn de
@@ -701,19 +732,44 @@ only then realise was there the whole time.
 
 ---
 
-## De opening en Hoe het werkt — 25 oktober 2026 (levering 74)
+## De opening en Hoe het werkt — 25 oktober 2026 (levering 74, opnieuw ingedeeld in 75, rustiger in 76)
 
-De voorpagina begint met een podium van 3,3 schermhoogtes dat vastgezet staat
-(`HalOpening.astro`, `opening.css`): de still met de winkel en de telefoonfoto, de kop en
-één zin. Scrollen speelt de video af (1,2 schermhoogte, beeld 17 – 133 op een canvas, de
-schermen per beeld op hun hoeken; het laptopscherm wordt donker met de klep), dan gaat de
-kop weg langs de snede van 53° en reist elke letter van het accentwoord naar het label van
-Hoe het werkt (0,6 schermhoogte), en Hoe het werkt komt omhoog in delen: de kop met de tabs,
-de drie kaarten na elkaar, de balk met de knoppen.
+De voorpagina begint met een podium van 3 schermhoogtes dat vastgezet staat
+(`HalOpening.astro`, `opening.css`). **Sinds levering 75** (Lucas, 23:35: *"te druk … de foto
+groot maar wel gecentreerd, goed in verhouding en niet dat het het hele beeld vult en zet de
+kop eronder"*): het beeld met de apparaten in het midden, de apparaten op hoogstens 58 % van de
+breedte, de armen doorgetrokken tot de rand van het venster; de kop eronder op één regel, links
+op de rand van de laptop en tot de rechterrand van de telefoon; daaronder de zin en rechts de
+standen van de schermen. Op de telefoon vullen de apparaten 86 % van de breedte en staat de kop
+op twee regels. De css zet dit neer zonder script; het script meet alleen de tekst.
+**Sinds levering 76** (*"Past de laptop en kop wel samen in 1 beeld. Voor mijn gevoel is het nog
+krap"*): de apparaten op hoogstens 48 %, lucht onder de balk (28 – 64 px), tussen de hand en de kop
+(26 – 52 px) en onderaan (32 – 72 px), en wat er over is komt in gelijke delen boven en onder. De
+kop is hoogstens 60 px.
+
+- **De standen van de schermen** (terug in 75: *"het wisselen van scherm (zoals het instagram
+  voorbeeld mockup) … ik wil dit terug"*): de webshop met de vier catalogbeelden, het
+  Instagram-bericht met de vier lifestylebeelden en de clip, net als de laptop vóór 74. Naam en
+  teller, de streep als klok, vorige en volgende (één vorm met de snede), pauze. Alleen in het
+  rustbeeld, stil onder de muis, de focus en buiten beeld, voorgoed stil na een pijl of pauze;
+  bij minder beweging niet vanzelf. Twee schermen vloeien in 0,45 s in elkaar over, pas als het
+  volgende geladen en gedecodeerd is.
+- **Eén weg** (1,6 schermhoogte): de video (beeld 17 – 133) loopt tot 70 %. **Sinds levering 76
+  de snede** (*"de tekst weg word gesneden op een VISUAILS style manier tijdens dat de laptop ook
+  verdwijnt en dan heel kort wit scherm dan komt de tekst op de nieuwe plek terecht met een
+  soortgelijk effect"*): van 36 tot 56 %, terwijl de apparaten het beeld uit schuiven, gaat één
+  rechte snede op 53,13° (horizontaal 0,75 × de hoogte, de snede van de V) door kop, zin en
+  standen; wat links ligt is weg, en een dunne lijn in inkt loopt een kier (7,6 % van de kop)
+  achter de snijrand, in het wit. Het beeld lost op tot 66 %; tot 72 % is het scherm wit. Dan
+  legt dezelfde snede het label ("Zonder shoot") en de kop van Hoe het werkt bloot (72 – 84 %),
+  het vlagje van het label gaat aan als een tl-buis, en de tabs, de blokken en de balk eronder
+  verschijnen kort na elkaar (dekking en 14 px omhoog). Dan de stop: het voelt als één pagina.
+  De letters die naar het label vlogen (74, 75) en de lichte stand (75) zijn weg.
 
 - **De stroom: één scroll, één sectie** (16:56, alleen op de computer). Een wieltik of een
   toets (pijl, Page, spatie) glijdt naar de volgende stop: het begin → Hoe het werkt (de video
-  in 3 s, rustig op gang en lang uitlopend) → Formaten → Wat we maken (elk in 1,15 s, snel weg
+  in 2,8 s, rustig op gang en lang uitlopend) → Wat we maken (in 1,15 s, snel weg; Formaten was een
+  stop tot levering 76
   en zacht aankomen: de "smooth ontploffing"). Op een stop maken de kaarten en beelden één
   rustige golf (3 px omhoog en terug in 4,4 s, kort na elkaar) en staan dan stil; eerst zweefden
   ze zonder einde, Lucas koos op 25 oktober "één keer, dan stil" (WCAG 2.2.2: wat vanzelf
@@ -723,10 +779,10 @@ de drie kaarten na elkaar, de balk met de knoppen.
   met `STROOM` (`tot: 1` = alleen de opening). Zonder de stroom (telefoon, minder beweging):
   vastklikken met scroll-snap op het begin en op Hoe het werkt. De €1-melding wacht tot de
   laatste stop voorbij is.
-- **Gemeten, niet geschat.** De kop staat onder de handen (Lucas' voorbeeld) of in het wit
-  links naast de laptop, wat de grootste kop geeft; de beelden in de kaarten krijgen de
-  hoogte die er onder de kop, de tabs en de balk overblijft (196 – 420 px). Past het niet,
-  dan alles onder elkaar.
+- **Compact** (75: *"niet zo in your face … strakker en minimalistisch/rustiger"*): Hoe het werkt
+  is hoogstens 1240 px breed, de kop 28 – 36 px, de cijfers 30 px, de namen 20 px, de tabs 40 px
+  hoog; de beelden in de kaarten krijgen de hoogte die overblijft (180 – 300 px), en het geheel
+  staat in het midden van wat er onder de balk over is. Past het niet, dan alles onder elkaar.
 - **Hoe het werkt**: drie witte kaarten (01, 02, 03) met de animaties van de stappen van
   vroeger (`#hoe` is de wortel van de uitleg). De tabs Catalog, Lifestyle en Video wisselen
   het verhaal (`data-dienst`, `data-v`) en spelen het opnieuw. Catalog: je stuurt je foto's,
@@ -734,10 +790,13 @@ de drie kaarten na elkaar, de balk met de knoppen.
   Lifestyle: je kiest een look (of laat er een ontwerpen), je uploadt de foto's van je product,
   je krijgt de beelden in die look. Video: hetzelfde, met "Voorbeelden volgen binnenkort".
   Geen regel tekst onder de stappen; de uitlegbalk toont alleen de voortgang en de pauzeknop.
-- **De lagen (de manier van uitleggen, 16:40).** Eerst vlak; dan springen achtergrond,
-  schaduw en product uit elkaar en kantelen in 3D (snel open, lang uitlopen), de lagen zweven
-  op hun eigen moment; op het hoogtepunt een zachte gloed in blauw uur om het product en
-  "Gemaakt met AI" eronder; dan worden ze weer in elkaar gezogen, vlak, en door naar stap 3.
+- **De lagen (de manier van uitleggen, 16:40; korter in 75).** Stap 2 van catalog is alleen de
+  lagen (5,2 s; eerst 12,9 s met het handwerk ervoor): vlak op de grijze grond van het beeld; dan
+  springen achtergrond, schaduw en product uit elkaar en kantelen in 3D (snel open, lang
+  uitlopen), de lagen zweven op hun eigen moment; op het hoogtepunt een zachte gloed in blauw
+  uur om het product en "Gemaakt met AI" eronder; dan zakken ze rustig terug en landen vlak,
+  precies op hun plek (geen wissel naar een ander beeld meer, dus niets springt), en door naar
+  stap 3.
   Zo laat de site precies zien waar AI zit. Geen labels als "met de hand" ernaast (16:57:
   "voelt veel te verdedigend"). Nieuwe uitleg op andere plekken gaat op dezelfde manier.
 - **Op de telefoon één kaart** (16:42): de drie stappen liggen op elkaar en wisselen 01 → 02
@@ -767,7 +826,56 @@ de drie kaarten na elkaar, de balk met de knoppen.
   het werkt is klikbaar zodra het staat; het glijden duurt naar de afstand; niet glijden achter
   een open dialoog; 900 px is telefoon; de wielluisteraar alleen als de stroom aan kan; de
   opening wordt één keer opgezet en ruimt alles op bij een zachte navigatie.
-- Bewaakt door `tests/opening-74.test.mjs`.
+- Bewaakt door `tests/opening-74.test.mjs` (bijgewerkt voor levering 75 en 76).
+
+## De voorpagina na de opening — 26 oktober 2026 (levering 76)
+
+Lucas: *"Ik wil dat je de style van de eerste 2 secties op de homepagina gaat overnemen voor de
+rest van de homepagina."* Alles in `src/styles/voorpagina-rust.css`, alleen op de voorpagina
+(`.h-voor`), en als laatste stijlblad geladen.
+
+- **Het kader**: één kolom van 1240 px (1160 binnen de rand), zoals Hoe het werkt; het label en een
+  kop van 24 – 32 px in twee tinten staan bovenaan de kolom van het productvel (hieronder); erboven
+  13 % van de schermhoogte lucht (96 – 150 px). Elke sectie past in één scherm.
+- **De nummers**: het podium telt als 01 (Hoe het werkt), dus Wat we maken 02 tot de proef 05.
+  (`container-type` sluit tellers in; daarom telt het podium zelf.)
+- **Formaten** (Lucas, 12:29: *"De format sectie mag wel subtiel/klein toegevoegd worden aan how
+  it works animatie om de homepage wat kleiner en compacter te houden"*): geen eigen sectie meer. In
+  stap 3 van Hoe het werkt snijdt na de vinkjes een kader de geleverde beelden bij tot het formaat
+  (catalog 1:1 → 4:5, lifestyle 4:5 → 9:16, 0,5 s), en rechtsonder staat klein in mono welke er
+  zijn (uit `ratios.js`), de gekozen in inkt: één keuze, niet "alle drie". FormatenHal staat nog op
+  /voorbeeld/uitleg.
+- **Het productvel** (Lucas, 13:00, met vier regels uit zijn video's: één groot en twee middel,
+  60 : 30 : 10, 5 – 7 woorden per regel, en *"de editorial rust in de foto op het computerscherm
+  wil ik op elke sectie terug zien"*). Het scherm in de opening toont een productpagina: één groot
+  beeld op lichtgrijs, ernaast een smalle kolom die bovenaan begint (kruimel, naam, prijs, de maten
+  als knopjes, één inktknop, een kleine regel) en korter is dan het beeld. Zo staan Wat we maken
+  en Looks nu: geen kaarten en geen kaders.
+  - één groot: het beeld, 4 : 5, zo hoog als past onder de balk (`100svh − 240`, 400 – 660 px)
+  - twee middel: de kop van de sectie (32 px, de tweede toon op een eigen regel) en de naam of de knop
+  - de rest klein: het label als kruimel, de prijs (18), de knopjes, de regel eronder (13,5)
+  - om en om: Wat we maken het beeld links, Looks rechts (zoals een lookbook)
+- **Wat we maken**: de drie soorten zijn knopjes in de vorm van de tabs van Hoe het werkt (met de
+  snede ertussen, de gekozen in inkt). Het beeld, de prijs en de knop wisselen mee; het beeld komt
+  langs dezelfde snede als bij de looks. Productfoto's: de jeans zoals hij geleverd wordt, op zijn
+  eigen grond (`#EFEFEF`, `voorbeeldset.js`); lifestyle: het sfeerbeeld; video: een staande clip
+  (9 : 16) midden op het vlak. Was: drie gelijke kaarten.
+- **Looks** (uit zijn voorbeeld *"Complete o look"*): de look groot, in de kolom de soort en "Look
+  1 van 5", de naam (32 px), de vijf looks als kleine beelden (de gekozen in inkt), de gezichten als
+  de kleurbolletjes van een productpagina met één regel ernaast, en de proef. Wisselen met de snede
+  van de opening: het nieuwe beeld komt langs 53° over het oude met een witte kier op de snijrand
+  (0,56 s; bij minder beweging meteen). Niets beweegt vanzelf. De pijlen en de teller bovenaan
+  zijn weg: de kleine beelden kiezen.
+- **Meer weten**: de regels onder de knop van een productpagina. Links de kop groot (57 px, het ene
+  grote element), rechts drie onderwerpen met een haarlijn: de naam (24 px) en klein wat erachter
+  zit (de prijs van een shootdag, de vier onderwerpen, de IPTC-waarde). Bewust geen foto: een gezicht
+  naast "Nog vragen?" leest als een medewerker die er niet is.
+- **De proef** (HalProef, ook op de andere pagina's): in dezelfde kolom, de kop 30 – 40 px, de €1
+  hoogstens 180 px (was 260). Naast het inktblok één beeld groot (de jeans gedragen) en de andere
+  drie als een strook kleine beelden, zoals op het scherm; op de telefoon de drie eronder. Dezelfde
+  vier beelden in de HTML, dus een klant die al bestelde ziet nog zijn eigen vier.
+- **De regel eronder**: tekst met een vinkje, zonder vlak.
+- Een pijltje onder de muis springt in twee stappen (geen glijden; `tests/minder-sjabloon-browser`).
 
 ## De knoppen — 25 oktober 2026 (levering 74)
 

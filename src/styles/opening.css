@@ -1,55 +1,120 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
    VISUAILS — de opening met de scrollvideo en "Hoe het werkt" (HalOpening.astro)
-   25 oktober 2026. Het waarom staat in de kop van HalOpening.astro.
+   25 oktober 2026, opnieuw ingedeeld in levering 75. Het waarom staat in de kop van
+   HalOpening.astro.
    ═══════════════════════════════════════════════════════════════════════════════
 
-   Twee standen:
-   - body.o-aan (≥ 900 px, beweging aan): een vastgezet podium van één schermhoogte in
-     een hoger blok. De maten (waar het beeld staat, waar de tekst staat, hoe groot de
-     kop is) rekent het script uit; hier staan alleen de vormen.
-   - body.o-stil (telefoon, minder beweging, zonder script): alles onder elkaar.
+   Eén indeling op elk scherm (levering 75): het beeld met de apparaten in het midden, de kop
+   eronder, links op de rand van de laptop. Deze css zet hem neer, zonder script al goed (dus
+   niets springt als het script begint); het script meet alleen de hoogte van de tekst (--o-th)
+   en zet de kop op één regel op maat. Twee standen daarbovenop:
+   - body.o-aan (> 900 px, beweging aan): het podium staat vast in een hoger blok en de scroll
+     speelt de video en de overgang naar Hoe het werkt af.
+   - body.o-stil (telefoon, minder beweging, zonder script): Hoe het werkt staat eronder.
 
-   De hoeken volgen de nieuwe regel (Lucas, 25 oktober): kaarten 24 px rond aan alle
-   vier de kanten, knoppen houden de ene zachte hoek. */
+   De hoeken volgen de regel van 25 oktober: kaarten 24 px rond aan alle vier de kanten,
+   knoppen houden de ene zachte hoek. */
 
 .o-podium { position: relative; --o-r-kaart: 24px; --o-hoek-knop: 14px 3px 3px 3px; }
+/* Levering 76: het podium telt als sectie 01. Het label van Hoe het werkt telt binnen .o-vast
+   (container-type sluit tellers in), dus telde Formaten ook als 01. Nu: Formaten 02, enz. */
+.o-podium { counter-increment: h-sectie; }
 .o-snap { position: absolute; left: 0; top: 0; width: 1px; height: 1px; scroll-snap-align: start; pointer-events: none; }
 html.o-klik { scroll-snap-type: y proximity; }
-.o-vast { position: relative; }
+/* een container, zodat de maten hieronder de breedte van het podium gebruiken (cqw) en niet die
+   van het venster met de schuifbalk erbij (vw): op Windows scheelt dat 17 px */
+.o-vast { position: relative; container-type: inline-size; --o-balk: 74px; }
 /* clip en niet hidden: clip maakt geen scrollvak, dus een element dat de focus krijgt kan
-   het podium niet van binnen verschuiven (zie de focusin in HalOpening.astro) */
+   de inhoud niet verschuiven */
 .o-aan .o-vast { position: sticky; top: 0; height: calc(var(--o-vh, 1vh) * 100); overflow: clip; }
 
+/* ── het toneel: het beeld en de kop ──────────────────────────────────────────
+   De maten uit beeld 0 staan als deel van de breedte van het beeld op het podium (--o-q-…,
+   HalOpening.astro). --o-iw is de breedte van het hele beeld, met de doorgetrokken armen:
+   zo groot dat de apparaten hoogstens 58 % van het venster beslaan ("goed in verhouding en
+   niet dat het het hele beeld vult") en dat de kop er nog onder past. */
+/* Levering 76 (Lucas, 26 oktober): "Past de laptop en kop wel samen in 1 beeld. Voor mijn gevoel
+   is het nog krap. Ik wil echt dat het beeld rustig en overzichtelijk aanvoelt." Dus meer lucht
+   op drie plekken (onder de balk, tussen de hand en de kop, onderaan), de apparaten op hoogstens
+   48 % van de breedte (was 58 %), en wat er dan nog over is van de hoogte komt in gelijke delen
+   boven en onder: het geheel staat in het midden onder de balk. */
+.o-toneel {
+  position: relative;
+  --o-lucht: clamp(28px, 5.6vh, 64px);    /* van de balk tot de bovenkant van de laptop */
+  --o-tussen: clamp(26px, 4.4vh, 52px);   /* van de hand tot de kop */
+  --o-onder: clamp(32px, 6.4vh, 72px);
+  --o-th: 130px;   /* de hoogte van de tekst; het script meet hem, dit is de schatting tot dan */
+  --o-iw: min(calc((var(--o-vh, 1vh) * 100 - var(--o-balk) - var(--o-lucht) - var(--o-tussen) - var(--o-th) - var(--o-onder)) * var(--o-q-per-hoogte)), calc(100cqw * var(--o-q-per-breedte)), 3175px);
+  /* de hoogte die over is als de breedte het beeld begrenst: de helft komt erboven */
+  --o-vrij: max(0px, (var(--o-vh, 1vh) * 100 - var(--o-balk) - var(--o-lucht) - var(--o-tussen) - var(--o-th) - var(--o-onder) - var(--o-iw) * var(--o-q-hand)) / 2);
+  /* de tekst: van de linkerrand van de laptop tot net voorbij de telefoon (--o-q-tekst, nog in
+     het wit, niet tot de rechterarm); passen de zin en de standen niet naast elkaar, dan komen de
+     standen onder de zin */
+  --o-tw: calc(var(--o-iw) * var(--o-q-tekst));
+  --o-tl: max(var(--h-rand, 40px), min(calc(50cqw - var(--o-iw) * var(--o-q-half)), calc(100cqw - var(--h-rand, 40px) - var(--o-tw))));
+  padding: calc(var(--o-balk) + var(--o-lucht) + var(--o-vrij)) 0 var(--o-onder);
+  overflow: clip;
+}
+/* De schatting van de tekst zo dicht mogelijk bij wat het script meet, zodat er bij het laden
+   niets verschuift: Engels heeft een kleinere kop (een langere zin), en waar de standen onder de
+   zin komen (een laag of smal venster) is de tekst hoger. */
+html[lang="en"] .o-toneel { --o-th: 122px; }
+@media (max-height: 790px), (max-width: 1060px) { .o-toneel, html[lang="en"] .o-toneel { --o-th: 160px; } }
+/* in het vaste podium lopen de armen door tot de onderrand van het venster */
+.o-aan .o-toneel { overflow: visible; }
+
 /* ── het beeld ───────────────────────────────────────────────────────────── */
-.o-beeld { position: relative; width: 100%; aspect-ratio: 1600 / 840; }
-.o-aan .o-beeld { position: absolute; left: 0; top: 0; }
+.o-beeld { position: absolute; left: calc(50cqw - var(--o-iw) * var(--o-q-mid)); top: calc(var(--o-balk) + var(--o-lucht) + var(--o-vrij) - var(--o-iw) * var(--o-q-top)); width: var(--o-iw); aspect-ratio: 2352 / 903; }
 .o-schermen { position: absolute; inset: 0; overflow: hidden; }
 .o-sc { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
 .o-sc picture, .o-sc img { display: block; width: 100%; height: 100%; max-width: none; }
 .o-sc-lap { width: 1600px; height: 1034px; background: #FAFAFA; }
 .o-sc-fon { width: 540px; height: 1170px; background: #9A9894; }
+/* de standen liggen op elkaar en vloeien in elkaar over (het script zet is-nu) */
+.o-sc picture.o-st { position: absolute; inset: 0; opacity: 0; transition: opacity .45s cubic-bezier(.25, .8, .3, 1); }
+.o-sc picture.o-st.is-nu { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .o-sc picture.o-st { transition: none; } }
 /* zonder script, en tot het script de schermen op hun hoeken zet (o-gezet): de rechthoek om de
-   vierhoek van beeld 0, uitgerekend in HalOpening.astro (25 oktober, de controle) */
+   vierhoek in beeld 0; de still ligt erboven en dekt de rand af */
 .o-podium:not(.o-gezet) .o-sc { left: var(--o-x); top: var(--o-y); width: var(--o-b); height: var(--o-h); transform: none !important; }
 /* het scherm wordt donker met de hoek van de klep: een laag inkt, dekking per beeld */
 .o-donker { position: absolute; inset: 0; background: var(--h-inkt, #0B0F17); opacity: 0; }
-.o-beeld picture { display: contents; }
+.o-beeld > picture { display: contents; }
 .o-still, .o-doek { position: absolute; left: 0; top: 0; width: 100%; height: 100%; max-width: none; display: block; }
 .o-doek { visibility: hidden; }
 body:not(.o-aan) .o-doek { display: none; }
 
-/* ── de kop en de zin ────────────────────────────────────────────────────── */
-.o-tekst { position: relative; z-index: 2; display: grid; gap: 14px; align-content: start; padding: 0 var(--h-rand, 40px); box-sizing: border-box; }
-.o-aan .o-tekst { position: absolute; left: 0; right: 0; }
-/* Intenser (Lucas): vet en in één kleur. Was 500 met een grijze eerste helft. */
-.o-kop { margin: 0; font: 700 64px/1 var(--h-letter); letter-spacing: -.035em; color: var(--h-inkt); text-wrap: balance; }
+/* ── de kop, de zin en de standen ────────────────────────────────────────── */
+.o-tekst { position: relative; z-index: 2; box-sizing: border-box; display: grid; gap: 20px; align-content: start;
+  width: var(--o-tw); margin: calc(var(--o-iw) * var(--o-q-hand) + var(--o-tussen)) 0 0 var(--o-tl); }
+/* Intenser (Lucas): vet en in één kleur. Op de computer op één regel; het script zet hem op maat
+   (o-kop-een), dit is de schatting tot dan (de kop is 15,4 × zo breed als hoog, Engels 17,2). */
+/* Levering 76: hoogstens 60 px (was 76); op een groot scherm loopt de kop dan niet meer tot de
+   telefoon, en dat is rustiger. */
+.o-kop { margin: 0; font: 600 clamp(28px, calc(var(--o-tw) / 13.4), 56.89px)/1 var(--h-letter); font-stretch: var(--h-smal, 80%); letter-spacing: -.015em; color: var(--h-inkt); white-space: nowrap; }
+html[lang="en"] .o-kop { font-size: clamp(28px, calc(var(--o-tw) / 14.92), 56.89px); }
 .o-kop-rest { display: inline; }
-/* links: elk deel op één regel (max-content, nowrap), zodat de kop nooit drie regels wordt
-   en het script de echte breedte meet (koppen hoogstens twee regels) */
-.o-links .o-kop-rest { display: block; width: max-content; white-space: nowrap; }
 .o-kop-een { white-space: nowrap; text-wrap: nowrap; }
-.o-podium .o-lede { margin: 0; font: 500 19px/1.45 var(--h-letter); color: var(--h-inkt-2, #0B0F17); --h-maat: 44em; }
-.o-links .o-podium .o-lede, .o-links .o-lede { font-size: 18px; }
+/* margin 0: de algemene regel "kop + blok" (global.css, --gap-head-block) zette hier 32 px boven */
+.o-tekst > .o-rij { margin: 0; }
+.o-rij { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 32px; }
+.o-podium .o-lede { flex: 1 1 360px; max-width: 34em; margin: 0; font: 500 18px/1.45 var(--h-letter); color: var(--h-inkt-2, #0B0F17); --h-maat: 34em; text-wrap: balance; }
+
+/* de standen: naam en teller, de streep (de klok), vorige en volgende, pauze. Zichtbaar zodra
+   het script draait (html.h-js); zonder script doen de knoppen niets. visibility en geen
+   display, zodat er niets verspringt. */
+.o-stand { flex: 0 1 auto; min-width: 0; max-width: 100%; display: flex; align-items: center; gap: 8px; visibility: hidden; }
+html.h-js .o-stand { visibility: visible; }
+.o-stand-naam { display: grid; grid-template-columns: minmax(0, auto) auto; align-items: baseline; column-gap: 12px; row-gap: 8px; min-width: 0; margin: 0 8px 0 0; }
+.o-stand-naam b { min-width: 0; overflow: hidden; text-overflow: ellipsis; font: 600 13.5px/1.15 var(--h-letter); color: var(--h-inkt); white-space: nowrap; }
+.o-stand-teller { justify-self: end; font: 600 12.5px/1 var(--h-letter); color: var(--h-grijs, #636974); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.o-stand-streep { grid-column: 1 / -1; position: relative; height: 2px; border-radius: 2px; background: rgba(11, 15, 23, .12); overflow: hidden; }
+.o-stand-streep i { position: absolute; inset: 0; border-radius: 2px; background: var(--h-inkt); transform-origin: 0 50%; transform: scaleX(0); }
+.o-stand-streep i.is-aan { animation: h-streep linear both; animation-play-state: paused; }
+.o-loopt .o-stand-streep i.is-aan { animation-play-state: running; }
+.o-pauze .o-p-aan { display: none; }
+.o-pauze[aria-pressed="true"] .o-p-aan { display: block; fill: currentColor; stroke: none; }
+.o-pauze[aria-pressed="true"] .o-p-uit { display: none; }
 
 /* ── het accentwoord ademt ────────────────────────────────────────────────────
    Lucas (25 oktober, 13:52): "dat er wel echt een soort breathing effect op het woord
@@ -80,16 +145,21 @@ body:not(.o-aan) .o-doek { display: none; }
 @media (forced-colors: active) { .o-acc-blauw { display: none; } }
 @media (prefers-reduced-motion: reduce) { .o-acc-blauw { text-shadow: none; } }
 
-/* ── de letters onderweg ─────────────────────────────────────────────────── */
-.o-reis { position: absolute; inset: 0; z-index: 4; pointer-events: none; display: none; }
-.o-reist .o-reis { display: block; }
-.o-onderweg .o-acc { visibility: hidden; }
-.o-rl { position: absolute; left: 0; top: 0; will-change: transform; }
-.o-rl > span { position: absolute; left: 0; top: 0; line-height: 1; white-space: pre; transform-origin: 50% 50%; will-change: transform, opacity; }
-.o-rl-a { font-family: var(--h-letter); color: var(--h-inkt); letter-spacing: 0; }
-.o-rl-b { font: 600 12px/1 var(--h-mono, monospace); color: var(--h-inkt); opacity: 0; }
-/* de punt wordt het vlagje van het label (hal.css, p.h-pil::before) */
-.o-rl-b.o-rl-streep { width: 16px; height: 16px; background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%230B0F17' d='M19.75 10.2L17.05 13.8L4.25 13.8L6.95 10.2Z'/></svg>") center / 16px no-repeat; }
+/* ── de snede: weg en terug (levering 76) ──────────────────────────────────────
+   Lucas (26 oktober): "een effect dat wanneer je scrollt de tekst weg word gesneden op een
+   VISUAILS style manier tijdens dat de laptop ook verdwijnt en dan heel kort wit scherm dan komt
+   de tekst op de nieuwe plek terecht met een soortgelijk effect en komen de elementen
+   tevoorschijn." Eén rechte snede op 53,13° (de snede van de V: horizontaal 0,75 × de hoogte)
+   gaat door kop, zin en standen tegelijk; wat links van de snede ligt is weg. Het mes is een
+   dunne lijn in inkt, een kier (7,6 % van de kop) van de snijrand af, in het wit: de lijn als
+   echo, dun en verschoven (de ontwerptaal). Dan even alleen wit, en dezelfde snede legt het
+   label en de kop van Hoe het werkt bloot, van links naar rechts. Het script zet de clip-path
+   per beeld (HalOpening.astro, snij()); zonder het podium (telefoon, minder beweging) niets. */
+.o-mes { position: absolute; left: 0; top: 0; z-index: 3; display: none; pointer-events: none; background: var(--h-inkt, #0B0F17);
+  clip-path: polygon(calc(100% - 2px) 0, 100% 0, 2px 100%, 0 100%); will-change: transform, opacity; }
+.o-aan .o-mes { display: block; opacity: 0; }
+.o-hoe-titel { position: relative; }
+@media (forced-colors: active) { .o-mes { display: none !important; } }
 
 
 /* ── Hoe het werkt ───────────────────────────────────────────────────────── */
@@ -99,20 +169,24 @@ body:not(.o-aan) .o-doek { display: none; }
 .o-hoe { position: relative; z-index: 3; max-width: var(--h-kolom, 1440px); margin: 0 auto; padding: 72px var(--h-rand, 40px) 40px; box-sizing: border-box; display: flex; flex-direction: column; gap: 22px; --o-gat: 40px; }
 /* in het podium: in één scherm, bovenaan onder de balk; het script zet --o-beeld (de hoogte
    van de beelden in de blokken) op wat er overblijft */
-.o-aan .o-hoe { position: absolute; left: 0; right: 0; top: 0; padding-top: calc(var(--o-balk, 66px) + 22px); padding-bottom: 18px; gap: 18px; pointer-events: none; }
+/* Levering 75 (Lucas, 23:39): "compacter … zodat het allemaal niet zo in your face is en wat
+   strakker en minimalistisch/rustiger oogt". Smaller (1240 px), kleinere koppen en cijfers,
+   beelden van hoogstens 300 px, en het geheel in het midden van wat er onder de balk over is
+   (het script zet --o-hoe-top). */
+.o-aan .o-hoe { position: absolute; left: 0; right: 0; top: 0; max-width: 1240px; padding-top: var(--o-hoe-top, calc(var(--o-balk, 66px) + 20px)); padding-bottom: 18px; gap: 16px; --o-gat: 32px; pointer-events: none; }
 .o-aan.o-binnen .o-hoe { pointer-events: auto; }
 .o-hoe-kop { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 40px; }
-.o-hoe-titel { display: grid; gap: 14px; }
+.o-hoe-titel { display: grid; gap: 12px; }
 .o-hoe-kop .h-pil { margin: 0; }
-.o-aan .o-label { visibility: hidden; }
-.o-aan.o-geland .o-label { visibility: visible; }
+/* het vlagje van het label gaat aan als een tl-buis (E4) als de snede het label heeft blootgelegd */
 .o-aan.o-geland .o-label::before { animation: h-tl .46s steps(1, end) both; }
 .o-h2 { margin: 0; }
-.o-aan .o-h2 { font-size: clamp(32px, 2.9vw, 44px); }
+/* levering 76: de schaal van 4 : 3 (24 · 32), zie hal.css "DE LETTER" */
+.o-h2.o-h2 { font-size: clamp(24px, 2.25vw, 32px); }
 
 /* de tabs: drie knoppen in één vorm, met de snede uit het logo ertussen (de ontwerptaal) */
-.o-tabs { display: flex; flex: none; --h: 44px; --loop: 33px; --kier: 4px; }
-.o-tabs button { height: var(--h); border: 0; background: var(--h-vlak, #F4F5F7); color: var(--h-inkt); font: 600 15.5px/1 var(--h-letter); cursor: pointer; padding: 0 calc(var(--loop) * .55 + 16px); white-space: nowrap; transition: background-color .16s steps(2, end); }
+.o-tabs { display: flex; flex: none; --h: 40px; --loop: 30px; --kier: 3.6px; }
+.o-tabs button { height: var(--h); border: 0; background: var(--h-vlak, #F4F5F7); color: var(--h-inkt); font: 600 14.5px/1 var(--h-letter); cursor: pointer; padding: 0 calc(var(--loop) * .55 + 16px); white-space: nowrap; transition: background-color .16s steps(2, end); }
 .o-tabs button:first-child { border-radius: var(--o-hoek-knop); padding-left: 20px; clip-path: polygon(0 0, 100% 0, calc(100% - var(--loop)) 100%, 0 100%); }
 .o-tabs button:not(:first-child) { margin-left: calc(var(--kier) - var(--loop)); clip-path: polygon(var(--loop) 0, 100% 0, calc(100% - var(--loop)) 100%, 0 100%); }
 .o-tabs button:last-child { padding-right: 20px; border-radius: 3px; clip-path: polygon(var(--loop) 0, 100% 0, 100% 100%, 0 100%); }
@@ -144,17 +218,17 @@ html body.hal.hal .o-hoe .u-balk { padding: 8px 16px 8px 8px; }
    kaarten, vakken, lijstjes en etiketjes zijn die van hal.css (wit met een haarlijn, de
    hoeken concentrisch); hier alleen de indeling, de lijnen ertussen en wat per dienst nieuw is. */
 html body.hal.hal .o-hoe .h-stappen { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1fr); gap: var(--o-gat); }
-.o-hoe .h-stap-beeld { height: var(--o-beeld, 308px); }
-.o-aan .o-hoe .h-stap { gap: 8px; }
-.o-aan .o-hoe .h-stappen .h-nr b { font-size: 40px; }
-html body.hal.hal.o-aan .o-hoe .h-stap-naam { font-size: 26px; margin-top: 2px; }
-.o-aan .o-hoe .h-stap-regel { font-size: 14.5px; }
+.o-hoe .h-stap-beeld { height: var(--o-beeld, 280px); }
+.o-aan .o-hoe .h-stap { gap: 6px; }
+.o-aan .o-hoe .h-stappen .h-nr b { font-size: 32px; }
+html body.hal.hal.o-aan .o-hoe .h-stap-naam { font-size: 24px; margin-top: 2px; }
+.o-aan .o-hoe .h-stap-regel { font-size: 14px; }
 /* het binnenkomen gebeurt hier met de scroll (HalOpening.astro), niet met de wis van .h-in */
 html.h-js body.hal.o-aan .o-hoe .h-in { opacity: 1; animation: none; }
 
 /* de lijnen tussen de stappen: een haarlijn door het wit, op de hoogte van het vak, met een
    blokje in inkt dat oversteekt als de volgende stap begint */
-html body.hal.hal .o-hoe .h-brug { right: calc(-1 * var(--o-gat)); left: auto; top: auto; bottom: calc(26px + (var(--o-beeld, 308px) - 8px) / 2); width: var(--o-gat); height: 1px; padding: 0; border-radius: 0; background: var(--h-lijn-sterk, #C5C8CF); box-shadow: none; transform: none; animation: none !important; display: block; z-index: 0; }
+html body.hal.hal .o-hoe .h-brug { right: calc(-1 * var(--o-gat)); left: auto; top: auto; bottom: calc(26px + (var(--o-beeld, 280px) - 8px) / 2); width: var(--o-gat); height: 1px; padding: 0; border-radius: 0; background: var(--h-lijn-sterk, #C5C8CF); box-shadow: none; transform: none; animation: none !important; display: block; z-index: 0; }
 html body.hal.hal .o-hoe .h-brug svg { display: none; }
 html body.hal.hal .o-hoe .h-brug::after { content: ""; position: absolute; left: 0; top: -3px; width: 7px; height: 7px; border-radius: 2px; background: var(--h-inkt); opacity: 0; }
 html body.hal.hal .o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .h-stap:nth-child(1) .h-brug::after,
@@ -176,8 +250,7 @@ html body.hal.hal .o-hoe .h-stap-beeld > .h-well { height: 100%; }
    "smooth ontploffing" (snel open, heel lang zacht uitlopen) en daarna rustig golvend zweven.
    Om 16:57: geen labels "met de hand" ("voelt veel te verdedigend"); alleen kort een zachte
    gloed in blauw uur om het product, met "Gemaakt met AI".
-   Stap 2 duurt 12,9 s: het handwerk loopt als altijd, en vanaf 9,1 s ligt deze figuur precies
-   over het geleverde beeld. De tijden als procent van 12,9 s:
+   (Tot levering 75 duurde stap 2 12,9 s, met eerst het handwerk; zie hieronder.) De oude tijden:
      9,10 s  70,5 %  de figuur neemt het over (vlak: op het oog hetzelfde beeld)
      9,20 s  71,3 %  open: de ontploffing, 1,3 s, snel weg en heel lang uitlopen
     10,2 s   79 %    de gloed om het product en "Gemaakt met AI"; de lagen zweven
@@ -203,65 +276,69 @@ html body.hal.hal .o-hoe .o-ontleed { position: absolute; left: 0; right: 0; bot
 
 /* open: zo staat hij zonder uitleg en bij minder beweging */
 .o-hoe:not([data-uitleg-staat]) .o-ontleed { opacity: 1; visibility: visible; }
-.o-hoe:not([data-uitleg-staat]) .h-maak { visibility: hidden; }
 .o-hoe:not([data-uitleg-staat]) .o-ont-stapel { transform: rotateX(54deg) rotateZ(-38deg) scale(.66); }
 .o-hoe:not([data-uitleg-staat]) .o-ont-laag { transform: translateZ(calc((2 - var(--i)) * var(--z))); }
 .o-hoe:not([data-uitleg-staat]) .o-ont-laag::after, .o-hoe:not([data-uitleg-staat]) .o-ont-schaduw::before, .o-hoe:not([data-uitleg-staat]) .o-ont-ai { opacity: 1; }
 .o-hoe:not([data-uitleg-staat]) .o-ont-los img { filter: drop-shadow(0 0 10px rgba(37, 80, 139, .45)) drop-shadow(0 0 2px rgba(128, 167, 221, .7)); }
 @media (prefers-reduced-motion: reduce) {
   .o-hoe .o-ontleed { opacity: 1 !important; visibility: visible !important; }
-  .o-hoe .h-maak { visibility: hidden; }
   .o-ont-stapel { transform: rotateX(54deg) rotateZ(-38deg) scale(.66); }
   .o-ont-laag { transform: translateZ(calc((2 - var(--i)) * var(--z))); }
   .o-ont-laag::after, .o-ont-schaduw::before, .o-ont-ai { opacity: 1 !important; }
   .o-ont-los img { filter: drop-shadow(0 0 10px rgba(37, 80, 139, .45)) drop-shadow(0 0 2px rgba(128, 167, 221, .7)); }
 }
 
-/* in stap 2, met de uitleg: één keer open, even zweven, en weer dicht */
-.o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .o-ontleed { animation: o-ont-zicht 12.9s linear both; }
-.o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .h-maak { animation: o-maak-zicht 12.9s linear both; }
-.o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .o-ont-stapel { animation: o-ont-kantel 12.9s both; }
-.o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .o-ont-laag { animation: o-ont-til 12.9s both, o-ont-golf 3.8s ease-in-out infinite; animation-delay: 0s, calc(var(--i) * -1.27s); }
+/* in stap 2, met de uitleg: één keer open, even zweven, en weer dicht.
+   LEVERING 75 (25 oktober 2026, 23:35). Lucas: "stap 2 van de How it works animatie [mag] veel
+   korter en simpeler, wel met de 3 lagen erin houden maar deze ook wat smoother op het vlakke
+   gedeelte laten aansluiten, nu snapt hij terug terwijl ik wil dat hij op precies de goede plek
+   eindigt." Het handwerk van levering 29 (pen, pipet, penseel, loep: 9 s) is van de pagina af
+   (VoorpaginaHal.astro); stap 2 is alleen nog de lagen, 5,2 s. Het terugsnappen kwam van de wissel aan het eind: deze figuur ging
+   weg en het geleverde beeld (.h-maak) kwam terug, en die twee lagen niet precies op elkaar. Nu
+   blijft deze figuur staan, van begin tot eind: hij begint vlak en eindigt vlak, op dezelfde plek.
+   De tijden als procent van 5,2 s:
+      0 – 10 %   vlak (het geleverde beeld)
+     10 – 34 %   open: snel weg, lang uitlopen (1,25 s)
+     34 – 70 %   zweven; de gloed om het product en "Gemaakt met AI" (38 – 66 %)
+     70 – 92 %   weer dicht, rustig op gang en zacht neerkomen (1,15 s), precies op zijn plek
+     92 – 100 %  vlak */
+html body.hal.hal .o-hoe[data-uitleg-staat] .o-ontleed { opacity: 1; visibility: visible; background-color: #EFEFEF; }   /* vlak: de grijze grond van het beeld, net als in het begin en aan het eind van de animatie */
+.o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .o-ont-stapel { animation: o-ont-kantel 5.2s both; }
+.o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .o-ont-laag { animation: o-ont-til 5.2s both, o-ont-golf 3.8s ease-in-out infinite; animation-delay: 0s, calc(var(--i) * -1.27s); }
 .o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .o-ont-laag::after,
-.o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .o-ont-schaduw::before { animation: o-ont-rand 12.9s linear both; }
-.o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .o-ont-los img { animation: o-ont-gloed 12.9s both; }
-.o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .o-ont-ai { animation: o-ont-woord 12.9s both; }
+.o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .o-ont-schaduw::before { animation: o-ont-rand 5.2s linear both; }
+.o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .o-ont-los img { animation: o-ont-gloed 5.2s both; }
+.o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .o-ont-ai { animation: o-ont-woord 5.2s both; }
+.o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .o-ontleed { animation: o-ont-grond 5.2s linear both; }
 .o-hoe[data-uitleg-staat="pauze"] .o-ontleed, .o-hoe[data-uitleg-staat="pauze"] .o-ontleed *, .o-hoe[data-uitleg-staat="pauze"] .o-ontleed *::before,
-.o-hoe[data-uitleg-staat="pauze"] .o-ontleed *::after, .o-hoe[data-uitleg-staat="pauze"] .h-maak { animation-play-state: paused !important; }
-@keyframes o-ont-zicht {
-  0%, 70.5% { opacity: 0; visibility: hidden; background-color: #EFEFEF; }
-  70.6% { opacity: 1; visibility: visible; background-color: #EFEFEF; }
-  71.3% { background-color: #EFEFEF; }
-  76%, 93.4% { opacity: 1; visibility: visible; background-color: #FFFFFF; }
-  97.6% { background-color: #EFEFEF; }
-  98.4% { opacity: 1; visibility: visible; background-color: #EFEFEF; }
-  98.5%, 100% { opacity: 0; visibility: hidden; }
-}
-@keyframes o-maak-zicht { 0%, 70.6% { opacity: 1; } 70.7%, 98.4% { opacity: 0; } 98.5%, 100% { opacity: 1; } }
-/* de ontploffing: snel weg (expo), heel lang uitlopen; het zweven groeit mee aan */
+.o-hoe[data-uitleg-staat="pauze"] .o-ontleed *::after { animation-play-state: paused !important; }
+/* de grond van het vak: in de vlakke stand de grijze grond van het beeld, open wit */
+@keyframes o-ont-grond { 0%, 10% { background-color: #EFEFEF; } 22%, 78% { background-color: #FFFFFF; } 92%, 100% { background-color: #EFEFEF; } }
+/* open: snel weg (expo), lang uitlopen; dicht: rustig op gang en zacht neerkomen, zonder
+   overschot (dat zou er weer als een snap uitzien) */
 @keyframes o-ont-kantel {
-  0%, 71.3% { transform: none; --o-zweef: 0px; animation-timing-function: cubic-bezier(.12, .9, .16, 1); }
-  81.4% { transform: rotateX(54deg) rotateZ(-38deg) scale(.66); --o-zweef: 7px; }
-  93.4% { transform: rotateX(54deg) rotateZ(-38deg) scale(.66); --o-zweef: 7px; animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
-  97.6%, 100% { transform: none; --o-zweef: 0px; }
+  0%, 10% { transform: none; --o-zweef: 0px; animation-timing-function: cubic-bezier(.12, .9, .16, 1); }
+  34% { transform: rotateX(54deg) rotateZ(-38deg) scale(.66); --o-zweef: 7px; }
+  70% { transform: rotateX(54deg) rotateZ(-38deg) scale(.66); --o-zweef: 7px; animation-timing-function: cubic-bezier(.55, 0, .2, 1); }
+  92%, 100% { transform: none; --o-zweef: 0px; }
 }
 @keyframes o-ont-til {
-  0%, 71.3% { transform: translateZ(0); animation-timing-function: cubic-bezier(.12, .9, .16, 1); }
-  81.4%, 93.4% { transform: translateZ(calc((2 - var(--i)) * var(--z))); animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
-  97.4%, 100% { transform: translateZ(0); }
+  0%, 10% { transform: translateZ(0); animation-timing-function: cubic-bezier(.12, .9, .16, 1); }
+  34%, 70% { transform: translateZ(calc((2 - var(--i)) * var(--z))); animation-timing-function: cubic-bezier(.55, 0, .2, 1); }
+  92%, 100% { transform: translateZ(0); }
 }
 /* golvend zweven: elke laag op zijn eigen moment in dezelfde golf */
 @keyframes o-ont-golf { 0%, 100% { --o-golf: -1; } 50% { --o-golf: 1; } }
-@keyframes o-ont-rand { 0%, 74% { opacity: 0; } 77%, 92.6% { opacity: 1; } 94.2%, 100% { opacity: 0; } }
+@keyframes o-ont-rand { 0%, 16% { opacity: 0; } 26%, 74% { opacity: 1; } 86%, 100% { opacity: 0; } }
 @keyframes o-ont-gloed {
-  0%, 78% { filter: drop-shadow(0 0 0 rgba(37, 80, 139, 0)) drop-shadow(0 0 0 rgba(128, 167, 221, 0)); }
-  82%, 90.6% { filter: drop-shadow(0 0 12px rgba(37, 80, 139, .5)) drop-shadow(0 0 2px rgba(128, 167, 221, .8)); }
-  92.6%, 100% { filter: drop-shadow(0 0 0 rgba(37, 80, 139, 0)) drop-shadow(0 0 0 rgba(128, 167, 221, 0)); }
+  0%, 38% { filter: drop-shadow(0 0 0 rgba(37, 80, 139, 0)) drop-shadow(0 0 0 rgba(128, 167, 221, 0)); }
+  46%, 62% { filter: drop-shadow(0 0 12px rgba(37, 80, 139, .5)) drop-shadow(0 0 2px rgba(128, 167, 221, .8)); }
+  68%, 100% { filter: drop-shadow(0 0 0 rgba(37, 80, 139, 0)) drop-shadow(0 0 0 rgba(128, 167, 221, 0)); }
 }
 @keyframes o-ont-woord {
-  0%, 79% { opacity: 0; transform: translate(-50%, 6px); animation-timing-function: cubic-bezier(.16, 1, .3, 1); }
-  82.5%, 90.6% { opacity: 1; transform: translate(-50%, 0); }
-  92.2%, 100% { opacity: 0; transform: translate(-50%, 0); }
+  0%, 38% { opacity: 0; transform: translate(-50%, 6px); animation-timing-function: cubic-bezier(.16, 1, .3, 1); }
+  45%, 62% { opacity: 1; transform: translate(-50%, 0); }
+  68%, 100% { opacity: 0; transform: translate(-50%, 0); }
 }
 
 /* ── lifestyle, stap 1: kies je look ────────────────────────────────────────────── */
@@ -379,24 +456,25 @@ html.h-js body.hal.hal .is-zweeft .h-stappen > .h-stap.h-in:nth-child(3), html.h
 /* body:not(.o-aan) en niet .o-stil (25 oktober, de eindcontrole): zo staat deze indeling er al
    vóór het script draait. Met .o-stil sprong de pagina als het script de klasse zette: CLS 0,40
    bij minder beweging, 0,20 op de telefoon. */
-/* de bovenkant van de laptop net onder de balk (die eindigt op 62 px; het beeld heeft
-   bovenin 76/1600 van zijn breedte wit). Als padding op .o-vast en niet als marge op het beeld:
-   die marge viel door tot de body, zette de hele pagina 53 px lager en haalde op de telefoon de
-   link "Naar de inhoud" bovenin half in beeld. */
-body:not(.o-aan) .o-vast { padding-top: max(0px, calc(72px - 4.75vw)); }
 /* 25 oktober (de controle): terug of herladen zette je zo'n 2250 px te laag. De browser zet de
    oude scrollstand terug terwijl het podium nog kort is; groeit het daarna, dan schuift scroll
    anchoring de stand mee. Op de voorpagina rekent het podium zelf, dus hier geen anchoring. */
 html:has(.o-podium) { overflow-anchor: none; }
-body:not(.o-aan) .o-tekst { padding-top: 18px; }
-/* 25 oktober (de controle): met 34 px als bodem brak de kop op 320 px (NL en EN) en op 390 – 414 px
-   (EN) in drie regels. Nu krimpt hij mee zodat het eerste deel op één regel past: gemeten
+/* Op de telefoon (levering 75): het beeld zo groot dat de apparaten 86 % van de breedte vullen
+   (2,84 × het venster; de armen lopen er links en rechts uit), de kop eronder op twee regels.
+   25 oktober (de controle): met 34 px als bodem brak de kop op 320 px (NL en EN) en op 390 – 414
+   px (EN) in drie regels. Hij krimpt mee zodat het eerste deel op één regel past: gemeten
    breedte / lettergrootte = 8,89 ("Al je productbeelden.") en 10,53 ("All your product
-   imagery."), met 3,5 % speling; de kolom is het venster min 2 × 16 px. Waar het al paste
-   (390 NL en breder) blijft hij 34 – 64 px. */
-body:not(.o-aan) .o-kop { font-size: clamp(26px, min(max(34px, 8.6vw), (100vw - 32px) / 9.2), 64px); }
-html[lang="en"] body:not(.o-aan) .o-kop { font-size: clamp(26px, min(max(34px, 8.6vw), (100vw - 32px) / 10.9), 64px); }
-body:not(.o-aan) .o-kop-rest { display: block; }
+   imagery."), met 3,5 % speling. */
+@media (max-width: 900px) {
+  .o-vast { --o-balk: 64px; }   /* de balk: 10 px van boven, 54 px hoog (hal.css, levering 75) */
+  .o-toneel { --o-iw: calc(100cqw * 2.84); --o-lucht: 30px; --o-tussen: 22px; --o-onder: 36px; --o-vrij: 0px;
+    --o-tl: max(var(--h-rand, 16px), calc(50cqw - var(--o-iw) * var(--o-q-half))); --o-tw: calc(100cqw - 2 * var(--o-tl)); }
+  .o-kop { font-size: clamp(26px, min(max(34px, 8.6cqw), var(--o-tw) / 8.0), 64px); white-space: normal; text-wrap: balance; }
+  html[lang="en"] .o-kop { font-size: clamp(26px, min(max(34px, 8.6cqw), var(--o-tw) / 9.35), 64px); }
+  .o-kop-rest { display: block; }
+  .o-podium .o-lede { flex-basis: 100%; font-size: 17px; }
+}
 body:not(.o-aan) .o-hoe { padding-top: 64px; }
 /* onder elkaar: de voet lost op in de sectie, zodat de uitlegbalk over de hele sectie onderin
    kan plakken terwijl de uitleg speelt (sticky blijft binnen zijn ouder; UitlegBalk.astro) */
@@ -454,3 +532,42 @@ html body.hal.hal .o-hoe:not([data-dienst="catalog"])[data-uitleg-staat]:not(.u-
 html body.hal.hal .o-hoe:not([data-dienst="catalog"])[data-uitleg-staat]:not(.u-s2) .h-stap:nth-child(2) > .h-stap-beeld :is(b, figcaption, .o-upload-klaar),
 html body.hal.hal .o-hoe:not([data-dienst="catalog"])[data-uitleg-staat]:not(.u-s3) .h-stap:nth-child(3) > .h-stap-beeld :is(b, figcaption, .o-upload-klaar) { color: var(--h-grijs, #636974); }
 @media (prefers-reduced-motion: reduce) { html body.hal.hal .o-hoe .h-stap-beeld :is(.o-klip-plek, .o-upload-ik, .o-upload-balk, .o-stijl-rij b, .o-upload-rij b, .o-binnenkort-zin) { transition: none; } }
+
+/* ── het formaat, in stap 3 (levering 76) ─────────────────────────────────────────────
+   Lucas (26 oktober, 12:29): "De format sectie mag wel subtiel/klein toegevoegd worden aan how
+   it works animatie om de homepage wat kleiner en compacter te houden." Dus geen eigen sectie
+   meer: in stap 3 snijdt een kader de geleverde beelden bij tot het formaat (catalog 1:1 → 4:5,
+   lifestyle 4:5 → 9:16), en rechtsonder staat klein welk formaat het is, uit de keuzes die er
+   zijn (ratios.js; de gekozen in inkt). Eén formaat tegelijk: de klant kiest er één per
+   bestelling (catalog) of per beeld (lifestyle), niet allemaal. Na de vier vinkjes (1,45 s in de
+   stap) in 0,5 s. Zonder uitleg en bij minder beweging: meteen de eindstand.
+   --o-r is breedte / hoogte; elk vakje is een container, dus het kader rekent in zijn eigen maten. */
+@property --o-r { syntax: '<number>'; inherits: true; initial-value: 1; }
+.o-hoe .o-fmt-vak { --o-r: var(--o-r1); }
+html.h-js body.hal .o-hoe[data-uitleg-staat]:not(.u-s3) .o-fmt-vak { --o-r: var(--o-r0); }
+html.h-js body.hal .o-hoe.u-s3:not([data-uitleg-staat="klaar"]) .o-fmt-vak { animation: o-fmt-r .5s cubic-bezier(.65, 0, .25, 1) 1.45s both; }
+@keyframes o-fmt-r { from { --o-r: var(--o-r0); } to { --o-r: var(--o-r1); } }
+html body.hal.hal .o-hoe .o-fmt-vak .h-keur-rij > li { container-type: size; background: var(--h-vlak, #F4F5F7); }
+/* li img, niet li > img: de bouwstap zet om elke img een <picture> (scripts/avif-naast-webp.mjs) */
+html body.hal.hal .o-hoe .o-fmt-vak .h-keur-rij > li img {
+  --o-y: max(0px, (100cqh - 100cqw / var(--o-r)) / 2); --o-x: max(0px, (100cqw - 100cqh * var(--o-r)) / 2);
+  clip-path: inset(var(--o-y) var(--o-x) round 3px); }
+/* het vinkje blijft in de hoek van het bijgesneden beeld */
+html body.hal.hal .o-hoe .o-fmt-vak .h-keur-rij > li:nth-child(n) .h-vink { top: calc(max(0px, (100cqh - 100cqw / var(--o-r)) / 2) + 6px); right: calc(max(0px, (100cqw - 100cqh * var(--o-r)) / 2) + 6px); }
+/* rechtsonder klein welk formaat: mono, de gekozen in inkt; concentrisch in de hoek (24 − 12) */
+.o-fmt { position: absolute; right: 12px; bottom: 12px; z-index: 2; display: inline-flex; align-items: center; gap: 10px; height: 30px; padding: 0 11px;
+  border-radius: 3px 3px calc(var(--r-kaart, 24px) - 12px) 3px; font: 600 11.5px/1 var(--h-mono, 'IBM Plex Mono', monospace); letter-spacing: .04em; font-variant-numeric: tabular-nums; pointer-events: none; }
+.o-fmt b { font-weight: 600; color: var(--h-grijs, #636974); }
+.o-fmt b.is-eind { color: var(--h-inkt); }
+html.h-js body.hal .o-hoe[data-uitleg-staat]:not(.u-s3) .o-fmt b.is-eind { color: var(--h-grijs, #636974); }
+html.h-js body.hal .o-hoe[data-uitleg-staat]:not(.u-s3) .o-fmt b.is-begin { color: var(--h-inkt); }
+html.h-js body.hal .o-hoe.u-s3:not([data-uitleg-staat="klaar"]) .o-fmt b.is-begin { animation: o-fmt-af 1ms steps(1, start) 1.6s both; }
+html.h-js body.hal .o-hoe.u-s3:not([data-uitleg-staat="klaar"]) .o-fmt b.is-eind { animation: o-fmt-aan 1ms steps(1, start) 1.6s both; }
+@keyframes o-fmt-af { from { color: var(--h-inkt); } to { color: var(--h-grijs, #636974); } }
+@keyframes o-fmt-aan { from { color: var(--h-grijs, #636974); } to { color: var(--h-inkt); } }
+@media (prefers-reduced-motion: reduce) {
+  html.h-js body.hal .o-hoe .o-fmt-vak, html.h-js body.hal .o-hoe .o-fmt b { animation: none !important; }
+  html.h-js body.hal .o-hoe[data-uitleg-staat] .o-fmt-vak { --o-r: var(--o-r1); }
+  html.h-js body.hal .o-hoe[data-uitleg-staat] .o-fmt b.is-eind { color: var(--h-inkt); }
+  html.h-js body.hal .o-hoe[data-uitleg-staat] .o-fmt b.is-begin:not(.is-eind) { color: var(--h-grijs, #636974); }
+}

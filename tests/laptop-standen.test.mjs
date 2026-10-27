@@ -151,26 +151,8 @@ async function open(url, breed, hoog = 900) {
   await ctx.close();
 }
 
-/* Stap 2: de rechterpijp (op 569 van 760 in het beeld) en de linkerrand van het
-   lijstje, op telefoonbreedtes en op de drie kolommen van 1024. */
-for (const lang of ['nl', 'en']) for (const breed of [320, 360, 390, 430, 1024, 1440]) {
-  const { ctx, page, fouten } = await open(lang === 'nl' ? '/nl/' : '/', breed);
-  await page.evaluate(() => document.querySelector('#hoe')?.scrollIntoView());
-  await page.waitForTimeout(250);
-  await page.evaluate(() => document.querySelector('#hoe')?._u?.stop());
-  await page.waitForTimeout(200);
-  const r = await page.evaluate(() => {
-    const v = document.querySelector('#hoe .h-maak-vlak').getBoundingClientRect();
-    const l = document.querySelector('#hoe .h-lagen').getBoundingClientRect();
-    const f = document.querySelector('#hoe .h-maak').getBoundingClientRect();
-    const s = Math.min(v.width, v.height); const x0 = v.left + (v.width - s) / 2;
-    return { gat: Math.round(l.left - (x0 + (s * 569) / 760)), binnen: l.right <= f.right + 0.5 && l.bottom <= f.bottom + 0.5 && l.top >= f.top - 0.5, onder: [...document.querySelectorAll('#hoe .h-lagen li')].map((li) => li.textContent.trim()).join(' | ') };
-  });
-  ok(`${lang} ${breed}px: stap 2, ${r.gat} px tussen de pijp en het lijstje, en het lijstje staat in het vak`, r.gat >= 8 && r.binnen, JSON.stringify(r));
-  if (breed === 390) ok(`${lang}:   geen "met de pen" of "met de hand" meer in het lijstje (08:30)`, !/met de pen|met de hand|with the pen|by hand/i.test(r.onder), r.onder);
-  if (fouten.length) ok(`${lang} ${breed}px: geen scriptfout`, false, fouten.join(' | '));
-  await ctx.close();
-}
+/* Stap 2 met de pijp en het lijstje van de lagen: sinds levering 75 niet meer op de voorpagina
+   (stap 2 van catalog is alleen de lagen in 3D; tests/opening-74.test.mjs). */
 const voorpagina = fs.readFileSync(path.join(DIST, 'nl/index.html'), 'utf8');
 /* Levering 74 (25 oktober 2026, 16:57). Lucas: ""Met de hand" is wat overkill en voelt alsof we de
    klant proberen over te halen met dat ons product niet volledig met ai word gemaakt. Voelt veel te

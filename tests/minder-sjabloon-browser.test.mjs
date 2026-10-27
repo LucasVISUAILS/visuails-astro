@@ -25,7 +25,8 @@
  *     objecten en puur alleen voor bijvoorbeeld knoppen. De hoeken van kaarten worden
  *     gewoon heel rond." Een kaart is nu 24 rond aan alle vier de hoeken en een groot vlak
  *     32; dat bewaakt tests/hoekregel-browser. Hier blijft over dat een knop of chip niet
- *     even rond wordt als een kaart;
+ *     even rond wordt als een kaart. Uitzondering sinds levering 75: Bestellen in de balk, die
+ *     zelf een pil is (Lucas koos "een pil van licht glas, zwevend");
  *   - geen ✦, ✧, ✨, ★ of emoji in de zichtbare tekst;
  *   - gedachtestreepjes: niet méér dan nu. Het aantal per pagina staat hieronder vast;
  *     Lucas kiest per zin in de tekstronde, en een nieuw streepje valt hier op;
@@ -135,7 +136,10 @@ function meet() {
       /* alleen wat je bedient (25 oktober 2026): een kaart mag rondom rond zijn */
       const bediening = el.matches('button, input:not([type="checkbox"]):not([type="radio"]), select, textarea, [role="button"], [role="tab"], .h-chip, .h-pil, .chip, .pill')
         || (el.tagName === 'A' && /(^|[\s-])(knop|btn|cta)/.test(el.className || ''));
-      if (bediening && rs.every((x) => x === rs[0]) && rs[0] !== '0px' && !rs[0].includes('%')) {
+      /* levering 75 (25 oktober 2026, 23:35): Lucas koos de balk als zwevende pil van licht glas,
+         met Bestellen erin als pil (de vorm van de balk); de knop in de balk telt hier niet */
+      const inPil = el.matches('.site-header .nav-cta');
+      if (bediening && !inPil && rs.every((x) => x === rs[0]) && rs[0] !== '0px' && !rs[0].includes('%')) {
         const v = parseFloat(rs[0]);
         const rond = Math.abs(rc.width - rc.height) <= 1.5 && v >= rc.width / 2 - 1;
         const zichtbaar = cs.backgroundColor !== 'rgba(0, 0, 0, 0)' || cs.borderTopWidth !== '0px' || cs.boxShadow !== 'none' || el.tagName === 'IMG' || cs.overflow === 'hidden';

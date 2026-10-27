@@ -10,7 +10,7 @@
    DE REGELS UIT HET PLAN, KORT (de kleuren sinds levering 62: schema A)
    · Wit als grond (#FFFFFF); diepte met nevel #F2F2F2 en vak #E8E8E8 (§04),
      grijs zonder lila. De inkt is puur zwart.
-   · Eén letter: Urbanist, 500 voor nadruk en 400 in licht (§05). Kop-licht
+   · Eén letter: Urbanist (sinds levering 76 Instrument Sans), 500 voor nadruk en 400 in licht (§05). Kop-licht
      #6E6E6E (5,1:1).
    · Tekst minstens 4,5:1 en 11,5 px. Op violet alleen wit.
    · Violet (#4400FF) alleen in de voet, het €1-blok, Bestellen bovenin en wat
@@ -47,7 +47,9 @@ body.hal {
   --h-inkt-2: #0B0F17; --h-inkt-3: #636974; --h-kop-licht: #636974;
   --h-violet: #25508B; --h-violet-diep: #1A4279; --h-lila: #80A7DD;
   --h-nacht: #0B0F17; --h-waas: #E6E8EC; --h-mist: #F4F5F7;
-  --h-letter: 'Urbanist Variable', 'Urbanist', ui-sans-serif, system-ui, sans-serif;
+  /* De letter (levering 76, Lijst 58: a): Instrument Sans, zelf gehost (public/fonts/instrument-sans/,
+     de @font-face bij IBM Plex Mono hieronder). Urbanist blijft als terugval. */
+  --h-letter: 'Instrument Sans', 'Urbanist Variable', 'Urbanist', ui-sans-serif, system-ui, sans-serif;
   --h-zacht: cubic-bezier(.22, .8, .2, 1);
   --h-veer: cubic-bezier(.34, 1.4, .5, 1);
   --h-korrel: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='k'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='1.5 0 0 0 -.25  1.5 0 0 0 -.25  1.5 0 0 0 -.25  0 0 0 0 1'/></filter><rect width='100%' height='100%' filter='url(%23k)'/></svg>");
@@ -941,21 +943,12 @@ body.hal .h-ab .ab-raam:focus-visible { outline-color: var(--focus-ring); }
    Het masker is een verloop met een harde rand op 126,87° (loodrecht op de snede), twee keer
    zo breed als het blok plus de helling, en schuift van rechts naar links over het blok. */
 .h-js .hal .h-in, html.h-js body.hal .h-in { opacity: 0; transform: none; transition: none; }
-.h-js .hal .h-in.is-in, html.h-js body.hal .h-in.is-in { opacity: 1; transform: none; --h-s: calc((var(--h-hoog, 320px) + 48px) * .75); animation: h-wis .62s cubic-bezier(.7, 0, .2, 1) backwards; animation-delay: calc(var(--d, 0) * 90ms); }
-@keyframes h-wis {
-  from {
-    -webkit-mask-image: linear-gradient(126.87deg, #0B0F17 50%, transparent 50%); mask-image: linear-gradient(126.87deg, #0B0F17 50%, transparent 50%);
-    -webkit-mask-size: calc(200% + 96px + var(--h-s)) calc(100% + 48px); mask-size: calc(200% + 96px + var(--h-s)) calc(100% + 48px);
-    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-clip: no-clip; mask-clip: no-clip;
-    -webkit-mask-position: calc(100% + 24px) -24px; mask-position: calc(100% + 24px) -24px;
-  }
-  to {
-    -webkit-mask-image: linear-gradient(126.87deg, #0B0F17 50%, transparent 50%); mask-image: linear-gradient(126.87deg, #0B0F17 50%, transparent 50%);
-    -webkit-mask-size: calc(200% + 96px + var(--h-s)) calc(100% + 48px); mask-size: calc(200% + 96px + var(--h-s)) calc(100% + 48px);
-    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-clip: no-clip; mask-clip: no-clip;
-    -webkit-mask-position: -24px -24px; mask-position: -24px -24px;
-  }
-}
+.h-js .hal .h-in.is-in, html.h-js body.hal .h-in.is-in { opacity: 1; transform: none; animation: h-zacht-in .4s cubic-bezier(.25, .8, .3, 1) backwards; animation-delay: calc(var(--d, 0) * 60ms); }
+/* LEVERING 75 (25 oktober 2026, 23:39) — de snede weg. Lucas: "Haal het slice effect ook weg die op
+   elk element zit wanneer het tevoorschijn komt." Zijn keus: zacht infaden, zonder beweging. Alleen
+   de dekking, 0,4 s, een kleine vertraging per blok (60 ms). De wis langs 53° (E1, levering 55)
+   is vervallen; het script zet --h-hoog nog, maar niets leest het meer. */
+@keyframes h-zacht-in { from { opacity: 0; } to { opacity: 1; } }
 /* In de strook met looks alleen zichtbaar worden, niet omhoog schuiven. Een kaart
    die nog rechts buiten de strook staat, komt pas "in beeld" als je ernaartoe
    veegt; tot dan stond hij 16 px lager, en die 16 px maakten de strook verticaal
@@ -3560,8 +3553,10 @@ html.h-js body.hal .h-sd-staat.is-in .h-st-stappen .h-nr i::after { transform: s
    regel in plaats van 5 tot 7. Gemeten (kijkplan/woorden.mjs): gemiddeld 9,7 woorden per volle regel, 39 %
    minder regels; de voorwaarden van 32.660 naar 20.440 px op 1440. Alleen hier; de rest van de site blijft
    op --h-maat 15em / 16,5em. --maat erbij voor de oude .legal-regels in global.css. */
-body.hal .h-jur-tekst { --h-maat: 25.5em; --maat: 25.5em; }
-html[lang="nl"] body.hal .h-jur-tekst { --h-maat: 28.9em; --maat: 28.9em; }
+/* Levering 76: met de nieuwe letter (Instrument Sans, smaller dan Urbanist) stonden er mediaan 10 en tot
+   13 woorden op een volle regel (gemeten op alle vijf de documenten, 1440). 8 % smaller: mediaan 9,2. */
+body.hal .h-jur-tekst { --h-maat: 23.5em; --maat: 23.5em; }
+html[lang="nl"] body.hal .h-jur-tekst { --h-maat: 26.6em; --maat: 26.6em; }
 .hal .h-jur-rijen { margin-top: 40px; }
 .hal .h-jur-voor { padding-bottom: 32px; }
 .hal .h-jur-deel { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 20px 56px; padding: 40px 0 44px; border-top: 1px solid var(--h-lijn); }
@@ -4291,6 +4286,12 @@ body.hal .btn { border-radius: var(--hoek-knop); }
 .hal .h-mini-knop { border-radius: 11px 3px 3px 3px; }
 
 /* ══ LEVERING 54 · LABELS, STAPPEN, FOCUS, SELECTIE, VOET (afvinklijst 34) ══════ */
+/* De letter van de hal (levering 76, 26 oktober 2026, Lijst 58: a): Instrument Sans, zelf gehost in
+   public/fonts/instrument-sans/ (OFL 1.1). Lucas: "een nieuwe free to use maar wel moderne en
+   vernieuwende tekst font". Gewicht 400 – 700 (wat 300 vroeg, wordt 400), breedte 75 – 100 %. */
+@font-face { font-family: 'Instrument Sans'; font-style: normal; font-weight: 400 700; font-stretch: 75% 100%; font-display: swap; src: url(/fonts/instrument-sans/instrument-sans-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF; }
+@font-face { font-family: 'Instrument Sans'; font-style: normal; font-weight: 400 700; font-stretch: 75% 100%; font-display: swap; src: url(/fonts/instrument-sans/instrument-sans-latin.woff2) format('woff2'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+
 /* De vaste breedte-letter (v34-mono = a): IBM Plex Mono, zelf gehost in
    public/fonts/ibm-plex-mono/ (OFL), alleen Latijn, 500 en 600. */
 @font-face { font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 500; font-display: swap; src: url(/fonts/ibm-plex-mono/IBMPlexMono-500.woff2) format('woff2'); }
@@ -5205,3 +5206,131 @@ body.hal:has(#cc-bar:not([hidden])) .wa-launcher { bottom: calc(16px + var(--cc-
    niet midden over Hoe het werkt komt te liggen; de snede haalt de kop van rechts weg, dus de kaart
    valt nooit over zichtbare letters */
 @media (min-width: 901px) and (prefers-reduced-motion: no-preference) { body.hal.o-aan .cc { transition: bottom .32s cubic-bezier(.22, .8, .2, 1); } }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   LEVERING 75 · DE BALK ALS ZWEVENDE PIL VAN LICHT GLAS
+   25 oktober 2026, 23:35. Lucas: "De top bar mag ook van glas had ik aangegeven en ik wil deze
+   echt wat mooier en meer van de website af willen hebben door lichte schaduw toe te voegen en
+   eventueel andere effecten die hiervoor zorgen. De topbar en andere glazen gedeelten moeten een
+   beetje dezelfde look hebben als ovyon labs top bar maar niet kopieren, alleen de verhoudingen
+   en look wat inspiratie uit halen." Zijn keus: een pil van licht glas, zwevend.
+   Wat we van die balk leren (de verhoudingen, niet de vorm of de kleuren): helemaal ronde
+   uiteinden, de knop concentrisch in het uiteinde, ruim glas met veel vervaging, en een balk die
+   duidelijk boven de pagina hangt. Hier: 58 px hoog, 16 px van de bovenrand, wit op 64 % met
+   24 px vervaging, een lichtrand bovenin (het glas vangt licht), een haarlijn in inkt op 6 % en
+   drie lagen schaduw: dicht en klein, middel, en ver en zacht. Bestellen is een pil van 42 px,
+   8 px van de rand: 29 − 8 = 21 px, concentrisch (de hoekregel). Contrast: boven het donkerste
+   vlak (inkt) blijft de grond van de balk minstens #A9AAAC, de menuletters halen daar 7,8 : 1.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+html body.hal .site-header { top: 16px; }
+html body.hal .site-header .nav, html body.hal .site-header .container.nav { height: 58px; padding: 0 8px 0 22px; border-radius: 999px; }
+html body.hal .site-header .nav::before {
+  background: rgba(255, 255, 255, .64);
+  -webkit-backdrop-filter: blur(24px) saturate(1.8); backdrop-filter: blur(24px) saturate(1.8);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .95),
+    inset 0 0 0 1px rgba(255, 255, 255, .5),
+    0 0 0 1px rgba(11, 15, 23, .06),
+    0 2px 6px -2px rgba(11, 15, 23, .08),
+    0 14px 32px -12px rgba(11, 15, 23, .2),
+    0 34px 70px -36px rgba(11, 15, 23, .3);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  html body.hal .site-header .nav::before { background: rgba(255, 255, 255, .97); }
+}
+/* binnen een pil: alles wat je aanwijst ook als pil */
+html body.hal .site-header .nav-links > li > a, html body.hal .site-header .nav-trigger { border-radius: 999px !important; height: 38px; }
+html body.hal .site-header .lang-switch, html body.hal .site-header .lang-switch .ls,
+html body.hal .site-header .nav-taal-klein .ls { border-radius: 999px !important; }
+html body.hal .site-header .nav-taal-klein .ls { width: 40px; height: 40px; }
+html body.hal .site-header .nav-ik-knop { width: 40px; height: 40px; }
+html body.hal .site-header .nav-cta, html body.hal .site-header .container.nav .nav-cta {
+  height: 42px; padding: 0 16px 0 20px !important; border-radius: 999px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), 0 6px 16px -8px rgba(37, 80, 139, .7) !important; }
+/* de uitklapmenu's en de WhatsApp-knop: hetzelfde glas en dezelfde schaduw, zodat alles wat zweeft
+   één familie is */
+html body.hal .site-header .nav-menu { border-radius: 24px !important; background: rgba(255, 255, 255, .88) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.8); backdrop-filter: blur(24px) saturate(1.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .95), inset 0 0 0 1px rgba(255, 255, 255, .5), 0 0 0 1px rgba(11, 15, 23, .06),
+    0 2px 6px -2px rgba(11, 15, 23, .08), 0 18px 40px -16px rgba(11, 15, 23, .22), 0 40px 80px -40px rgba(11, 15, 23, .3) !important; }
+html body.hal .wa-launcher { background: rgba(255, 255, 255, .7); -webkit-backdrop-filter: blur(24px) saturate(1.8); backdrop-filter: blur(24px) saturate(1.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .95), inset 0 0 0 1px rgba(255, 255, 255, .5), 0 0 0 1px rgba(11, 15, 23, .06),
+    0 2px 6px -2px rgba(11, 15, 23, .08), 0 14px 30px -12px rgba(11, 15, 23, .22); }
+@media (max-width: 900px) {
+  html body.hal .site-header { top: 10px; }
+  html body.hal .site-header .nav, html body.hal .site-header .container.nav { height: 54px; padding: 0 7px 0 20px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   LEVERING 76 · DE PIL DOORZICHTIGER, ZONDER RAND, LICHT GETINT
+   26 oktober 2026. Lucas: "De topbar mag nog wel wat doorzichtiger en subtieler met geen
+   outlining eromheen, dus zorg dat hij door de zichtbaarheid te verlagen hij ook een licht
+   andere kleur krijgt maar wel duidelijk zichtbaar blijft."
+   Dus: geen haarlijn, geen witte binnenrand en geen lichtrand bovenin meer, één zachte schaduw
+   in plaats van drie. Het glas is de lijnkleur (#E6E8EC) op 56 % in plaats van wit op 64 %: op
+   wit wordt dat #F1F2F4, een licht grijze pil in de toon van de inkt, die zonder rand toch
+   zichtbaar is; over een beeld zie je meer van wat eronder ligt. Gemeten: boven het donkerste
+   vlak (inkt) blijft de grond minstens #86898E, de menuletters halen daar 5,5 : 1, op wit
+   17,1 : 1. Het taalknopje en het ik-knopje zijn in de pil wit glas (ze waren vlak, en dat is nu
+   lichter dan de pil zelf). Dezelfde look op de menu's (dichter, er staat meer tekst op) en de
+   WhatsApp-knop.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+html body.hal .site-header .nav::before {
+  background: rgba(230, 232, 236, .56);
+  -webkit-backdrop-filter: blur(22px) saturate(1.6); backdrop-filter: blur(22px) saturate(1.6);
+  box-shadow: 0 10px 30px -16px rgba(11, 15, 23, .22);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  html body.hal .site-header .nav::before { background: rgba(241, 242, 244, .97); }
+}
+html body.hal .site-header .nav-taal-klein .ls, html body.hal .site-header .nav-ik-knop,
+html body.hal .site-header .lang-switch { background: rgba(255, 255, 255, .7); }
+html body.hal .site-header .nav-taal-klein .ls:hover, html body.hal .site-header .nav-ik-knop:hover,
+html body.hal .site-header .nav-ik-knop[aria-expanded="true"] { background: var(--h-wit); box-shadow: none; }
+html body.hal .site-header .nav-cta, html body.hal .site-header .container.nav .nav-cta { box-shadow: 0 6px 16px -10px rgba(37, 80, 139, .6) !important; }
+html body.hal .site-header .nav-menu { background: rgba(241, 242, 244, .94) !important;
+  box-shadow: 0 18px 44px -18px rgba(11, 15, 23, .26) !important; }
+html body.hal .wa-launcher { background: rgba(230, 232, 236, .56); -webkit-backdrop-filter: blur(22px) saturate(1.6); backdrop-filter: blur(22px) saturate(1.6);
+  box-shadow: 0 10px 28px -14px rgba(11, 15, 23, .26); }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   LEVERING 76 · DE LETTER: INSTRUMENT SANS IN DRIE STEMMEN
+   26 oktober 2026. Lucas koos Instrument Sans (Lijst 58: a), en vroeg erbij: "make at least
+   one deliberate move - a distinctive pairing, a considered scale, custom spacing - so it reads
+   as your choice, not the builder's default. Zorg dat het echt een unieke VISUAILS achtig gevoel
+   krijgt."
+   DE ZET: één familie, drie stemmen, en de maten komen uit de snede van de V (de 3-4-5-driehoek
+   van 53,13°):
+   - SMAL, voor koppen, namen en grote cijfers: de breedte-as op 80 %, de 4 : 5 van die driehoek.
+     Een smalle, hoge kop leest als een modeblad; dezelfde letter op volle breedte voor de tekst
+     ernaast houdt het rustig en leesbaar. Smal heeft minder negatieve spatiëring nodig dan breed:
+     -0,01 em (was -0,025 bij Urbanist), de kop van de opening -0,015 em.
+   - NORMAAL, 100 %, voor alles wat je leest en bedient (tekst, knoppen, de balk).
+   - MONO, IBM Plex Mono, voor labels, nummers en kenmerken (de studiotaal), zoals het was.
+   - De schaal op de voorpagina (voorpagina-rust.css, opening.css) springt per stap 4 : 3, de
+     andere verhouding uit dezelfde driehoek: 13,5 · 18 · 24 · 32 · 42,7 · 56,9 … tot de €1
+     (179,8). Gemeten: smal is 13 % smaller dan Urbanist; een kop breekt dus nooit eerder af.
+   Instrument Sans heeft gewicht 400 – 700: wat 300 vroeg (de grote cijfers), wordt 400.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+body.hal { --h-smal: 80%; }
+.hal .h-kop, .hal .h-getal, .hal .h-een, .hal .h-stap-naam, .hal .h-stappen .h-nr b { font-stretch: var(--h-smal); }
+.hal .h-kop { letter-spacing: -.01em; }
+.hal .h-getal, .hal .h-een { letter-spacing: -.015em; }
+
+/* ══ LEVERING 76 · DE PROEF ALS PRODUCTVEL ═══════════════════════════════════════
+   Lucas (26 oktober, 13:00): de regels uit zijn video's (één groot, twee middel; 60 : 30 : 10) en
+   "de editorial rust in de foto op het computerscherm wil ik op elke sectie terug zien". Het €1-blok
+   (HalProef, op de voorpagina en tien andere pagina's) had vier gelijke vakken naast het inktblok.
+   Nu zoals de productpagina op dat scherm: één beeld groot (de jeans gedragen, het vierde beeld),
+   de drie andere als een strook van kleine beelden ernaast. Dezelfde vier beelden en dezelfde
+   volgorde in de HTML, dus een klant die al bestelde ziet nog steeds zijn eigen vier
+   (interactions.js, vulProefblok). Niet op /test-sample (.h-ts-open, daar staat de proef zelf). */
+html body.hal .h-proef:not(.h-ts-open) > .h-vier { grid-template-columns: minmax(0, 1fr) clamp(64px, 7vw, 92px); grid-template-rows: auto auto auto 1fr; gap: 10px; align-items: start; }
+html body.hal .h-proef:not(.h-ts-open) > .h-vier > li:nth-child(4) { grid-column: 1; grid-row: 1 / -1; }
+html body.hal .h-proef:not(.h-ts-open) > .h-vier > li:nth-child(-n+3) { grid-column: 2; border-radius: 10px; }
+@media (max-width: 900px) {
+  /* op de telefoon het grote beeld over de breedte, de drie kleine eronder */
+  html body.hal .h-proef:not(.h-ts-open) > .h-vier { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: none; }
+  html body.hal .h-proef:not(.h-ts-open) > .h-vier > li:nth-child(4) { grid-column: 1 / -1; grid-row: 1; }
+  html body.hal .h-proef:not(.h-ts-open) > .h-vier > li:nth-child(-n+3) { grid-column: auto; grid-row: 2; }
+}

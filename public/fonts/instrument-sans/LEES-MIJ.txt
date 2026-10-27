@@ -1,0 +1,9 @@
+Instrument Sans — zelf gehost (levering 76, 26 oktober 2026)
+
+De letter van de site, Studio, de privélink en /admin (Lijst 58: a). Lucas: "een nieuwe
+free to use maar wel moderne en vernieuwende tekst font". Variabel: gewicht 400 – 700,
+breedte 75 – 100 %. Alleen de Latijnse tekens (latin en latin-ext), uit
+@fontsource-variable/instrument-sans 5.3.0. De @font-face staat in src/styles/hal.css,
+src/styles/studio-hal.css en (voor /admin, Studio-kaarten en de privélink)
+scripts/fonts-voor-worker.mjs. Urbanist blijft als terugval in de rij staan.
+Licentie: SIL Open Font License 1.1 (OFL.txt): vrij te gebruiken, ook commercieel, en zelf te hosten.

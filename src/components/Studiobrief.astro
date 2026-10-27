@@ -222,6 +222,9 @@ const c = nl ? {
   .sb.is-klaar .sb-ok, .sb-ok:target { display: block; }
   .sb.is-fout .sb-fout, .sb-fout:target { display: block; }
   .sb-sr, .sb-hp { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  /* levering 76: het lokveld is onzichtbaar (geknipt), maar de hoekregel meet zijn vak; met de nieuwe letter
+     viel het binnen het vlak van de brief. Zonder ronding telt het daar niet mee. */
+  .sb-hp input { border-radius: 0 !important; }
 
   @media (max-width: 760px) {
     .sb { grid-template-columns: minmax(0, 1fr); }

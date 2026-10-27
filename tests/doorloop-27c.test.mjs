@@ -105,7 +105,9 @@ console.log('\n6 · de roze-jeans-set op lichtgrijs, gemeten');
     halCss.includes(`.hal .h-maak-wit { background: ${GROND};`) && halCss.includes(`border-radius: 22px; background: ${GROND}; overflow: hidden; }`) && halCss.includes(`border-radius: 3px; background: ${GROND};`));
   ok('  en geen multiply meer op de laptopbeelden', !/\.sc-(hoofd|rij) img[^}]*mix-blend-mode: multiply/.test(halCss));
   const voor = fs.readFileSync(path.join(DIST, 'nl/index.html'), 'utf8');
-  ok(`de laag "Achtergrond" noemt ${GROND} op de voorpagina`, voor.includes(`h-lagen-hex">${GROND}<`) && !voor.includes('</s>#FFFFFF</b>'));
+  /* levering 75: het lijstje met de lagen (en de hex van de achtergrond) stond in het handwerk van
+     stap 2, dat van de pagina af is; de achtergrondlaag zelf is nu de onderste van de lagen in 3D */
+  ok(`de achtergrondlaag van de lagen in 3D is ${GROND}`, lees('src/styles/opening.css').includes(`.o-ont-vlak { background: ${GROND}; }`) && voor.includes('o-ont-laag o-ont-vlak') && !voor.includes('</s>#FFFFFF</b>'));
   const studio = fs.readFileSync(path.join(DIST, 'nl/studio/index.html'), 'utf8');
   ok('Studio: de revisie vraagt om grijs', studio.includes('Toch liever op grijs dan wit, zoals de rest.') && !studio.includes('Toch liever op wit dan grijs'));
   ok('  eerst het witte modelbeeld, daarna het grijze', /class="fd-voor"[^>]*src="\/img\/ba2-na-model-wit\.webp"|src="\/img\/ba2-na-model-wit\.webp"[^>]*class="fd-voor"/.test(studio) && /fg-foto-na[^>]*ba2-na-model-grijs|ba2-na-model-grijs[^>]*fg-foto-na/.test(studio));
@@ -148,58 +150,15 @@ console.log('\n8 · de modelportretten op één grond');
   ok('  en de maat is gebleven: 1195 × 1600', maten.every((m) => m.width === 1195 && m.height === 1600));
 }
 
-/* ── 9 · STAP 2 "WIJ MAKEN" MET DE HAND (06:21) ─────────────────────────────── */
-console.log('\n9 · stap 2 met de hand');
-{
-  const { default: sharp } = await import('sharp');
-  const { PAD, ANKERS, LIJNEN, MAAT } = await import('../src/data/maakPad.js');
-  /* De hulplijnen zijn gemeten, niet getekend: de rand van de uitsnede (voorkant)… */
-  const { data, info } = await sharp(path.join(ROOT, 'public/img/ba2-na-front-uitgeknipt.webp')).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-  let boven = MAAT, onder = 0, links = MAAT, rechts = 0;
-  for (let y = 0; y < info.height; y += 1) for (let x = 0; x < info.width; x += 1) {
-    if (data[(y * info.width + x) * 4 + 3] > 128) { boven = Math.min(boven, y); onder = Math.max(onder, y); links = Math.min(links, x); rechts = Math.max(rechts, x); }
-  }
-  ok(`de hulplijnen zijn de rand van de uitsnede (boven ${boven}, onder ${onder}, midden ${Math.round((links + rechts) / 2)})`, LIJNEN.boven === boven && LIJNEN.onder === onder && LIJNEN.midden === Math.round((links + rechts) / 2));
-  /* …en de achterkant valt erin: zijn roze (R − G > 13) begint en eindigt op dezelfde lijnen. */
-  const a = await sharp(path.join(ROOT, 'public/img/ba2-na-achter-grijs.webp')).removeAlpha().raw().toBuffer({ resolveWithObject: true });
-  let ab = MAAT, ao = 0;
-  for (let y = 0; y < a.info.height; y += 1) {
-    let n = 0;
-    for (let x = 0; x < a.info.width; x += 1) { const i = (y * a.info.width + x) * 3; if (a.data[i] - a.data[i + 1] > 13) n += 1; }
-    if (n > 6) { ab = Math.min(ab, y); ao = Math.max(ao, y); }
-  }
-  ok(`  de achterkant staat op dezelfde lijnen (±3 px: boven ${ab}, onder ${ao})`, Math.abs(ab - LIJNEN.boven) <= 3 && Math.abs(ao - LIJNEN.onder) <= 3);
-  ok('het pad van de pen is gesloten en de ankers zijn zijn hoekpunten', /^M\d+ \d+( L\d+ \d+)+ Z$/.test(PAD) && ANKERS.length === (PAD.match(/L/g) || []).length + 1 && ANKERS.every(([, , t], i) => i === 0 || t >= ANKERS[i - 1][2]));
-  for (const [bestand, taal] of [['nl/index.html', 'nl'], ['index.html', 'en']]) {
-    const h = fs.readFileSync(path.join(DIST, bestand), 'utf8');
-    const maak = h.slice(h.indexOf('h-well h-maak'), h.indexOf('h-well h-keur'));
-    ok(`${taal}: de pen, de ankers, het penseel en de hulplijnen staan in stap 2`, maak.includes(`d="${PAD}"`) && (maak.slice(maak.indexOf('h-maak-ankers'), maak.indexOf('</g>', maak.indexOf('h-maak-ankers'))).match(/<rect /g) || []).length === ANKERS.length && maak.includes('h-maak-kwast') && (maak.slice(maak.indexOf('h-maak-lijnen'), maak.indexOf('</g>', maak.indexOf('h-maak-lijnen'))).match(/<line /g) || []).length === 3);
-    const lijst = maak.slice(maak.indexOf('h-lagen'), maak.indexOf('</ol>'));
-    /* Vijf sinds 15 oktober (werklijst 40): eerst "Nagekeken" (knoop, stiksel, kleur). */
-    ok(`${taal}:   vijf lagen: nagekeken, dan uitgeknipt, ${GROND_HEX()}, de dekking`, (lijst.match(/<li[ >]/g) || []).length === 5 && lijst.includes('h-lagen-punten') && lijst.includes('h-dek') && lijst.includes('#EFEFEF'), String((lijst.match(/<li[ >]/g) || []).length));
-    /* 15 oktober 11:59: rechtzetten (kader, acht grepen, de muis), opbouwen (het penseel
-       met een zachte rand), nakijken (een loep die vergroot, met je rechtgezette foto). */
-    ok(`${taal}:   eerst je telefoonfoto in het vierkante vak, het kader met acht grepen en de muis`, /h-maak-laag">(<picture>[\s\S]{0,400}?)?<img src="\/img\/ba2-voor-front\./.test(maak) && maak.includes('h-maak-doos') && (maak.match(/class="h-maak-kader/g) || []).length === 2 && (maak.match(/class="h-maak-greep"/g) || []).length === 8 && maak.includes('h-maak-muis'));
-    ok(`${taal}:   het penseel bouwt het beeld op (zachte rand), de loep vergroot je foto en ons beeld`, maak.includes('h-maak-bouwkwast') && maak.includes('mask="url(#h-maak-bouw)"') && maak.includes('filter="url(#h-maak-zacht)"') && maak.includes('href="/img/ba2-voor-front-recht.webp"') && (maak.match(/class="h-maak-lp-in"/g) || []).length === 2 && maak.includes('h-maak-lp-vink') && !maak.includes('h-maak-ref'));
-    ok(`${taal}:   het label noemt de drie handelingen`, (maak.match(/<span class="h-maak-doe[^>]*>((?:<span>[^<]+<\/span>){3})<\/span>/) || [])[1]?.split('</span>').filter(Boolean).length === 3);
-    ok(`${taal}:   het beeld vóór de afwerking (op wit) en de achterkant voor de vergelijking`, /h-maak-begin[^>]*ba2-na-front\.(webp|avif)|ba2-na-front\.(webp|avif)[^>]*h-maak-begin/.test(maak) || (maak.includes('h-maak-begin') && maak.includes('ba2-na-front.')));
-    /* Levering 61 (afvinklijst 39, e-stappen: "Animatie mag wel iets sneller"): alles op driekwart.
-       Levering 74 (25 oktober 2026, 16:40): na het handwerk komen de lagen in 3D (uit elkaar, de gloed
-       met "Gemaakt met AI", weer vlak); de stap duurt sindsdien 12,9 s, het handwerk zelf niet langer. */
-    ok(`${taal}:   de stap duurt 12,9 s (het handwerk en daarna de lagen)`, h.includes('data-uitleg-maat="2250 12900 2250"'));
-  }
-  const css = lees('src/styles/hal.css');
-  ok('de pauzeknop zet ook deze animaties stil', css.includes('.hal .h-hoe[data-uitleg-staat="pauze"] .h-maak *,') && css.includes('animation-play-state: paused !important;'));
-  ok('zonder uitleg (en bij minder beweging) staat het gereedschap er niet', /\.hal \.h-maak-pad \{[^}]*opacity: 0;/.test(css) && /\.hal \.h-maak-pen, \.hal \.h-maak-kwast \{ opacity: 0;/.test(css) && /\.hal \.h-maak-lijnen line \{[^}]*opacity: 0;/.test(css));
-  ok('  en een browser zonder offset-path laat de cursors weg', css.includes("@supports not (offset-path: path('M0 0')) { .hal .h-maak-pen, .hal .h-maak-kwast, .hal .h-maak-bouwkwast { display: none; } }"));
-  ok('  ook de foto, het kader, de grepen, de muis, het opgebouwde beeld, de loep en het label niet', /\.hal \.h-maak-laag \{[^}]*opacity: 0;/.test(css) && /\.hal \.h-maak-kader \{[^}]*opacity: 0;/.test(css) && /\.hal \.h-maak-greep rect \{[^}]*opacity: 0;/.test(css) && /\.hal \.h-maak-muis \{ opacity: 0; \}/.test(css) && /\.hal \.h-maak-bouwbeeld \{ opacity: 0; \}/.test(css) && /\.hal \.h-maak-lp \{ opacity: 0; \}/.test(css) && /\.hal \.h-maak-doe \{[^}]*opacity: 0;/.test(css));
-  /* De gegenereerde tijden: alles onder .hal, en de transform in % en cqw (geen px, dus op elke breedte gelijk). */
-  const mr = fs.readFileSync(path.join(ROOT, 'src', 'styles', 'maak-recht.css'), 'utf8');
-  const sel = mr.split('\n').filter((r) => r.includes('{') && !r.startsWith('@') && !/^\s+[0-9.]+%/.test(r) && !r.startsWith('/*'));
-  ok('maak-recht.css: elke regel onder .hal, geen :is()', sel.length > 20 && sel.every((r) => r.startsWith('.hal ')) && !mr.includes(':is('), sel.find((r) => !r.startsWith('.hal ')) || '');
-  const naar = (mr.match(/@keyframes h-maak-recht \{[\s\S]*?100% \{ transform: ([^;]+);/) || [])[1] || '';
-  ok('  het rechtzetten rekent in % en cqw, functie voor functie', /^translate\([-0-9.]+%, [-0-9.]+%\) rotate\([-0-9.]+deg\) skewX\([-0-9.]+deg\) scale\([0-9.]+, [0-9.]+\) perspective\([0-9.]+cqw\) rotateX\([-0-9.]+deg\) rotateY\([-0-9.]+deg\)$/.test(naar), naar);
-  ok('  Safari (zonder d) laat de lijn van het kader weg, de grepen blijven', css.includes("@supports not (d: path('M0 0')) { .hal .h-maak-kader { display: none; } }"));
+/* ── 9 · STAP 2 "WIJ MAKEN" ─────────────────────────────────────────────────────
+   Tot levering 75 stond hier het handwerk van 06:21 (rechtzetten, opbouwen, nakijken, de pen en
+   de vijf lagen). Lucas, 25 oktober, 23:35: "stap 2 … veel korter en simpeler, wel met de 3 lagen
+   erin". Het handwerk is van de pagina af; de lagen bewaakt tests/opening-74.test.mjs. */
+console.log('\n9 · stap 2: alleen de lagen');
+for (const [bestand, taal] of [['nl/index.html', 'nl'], ['index.html', 'en']]) {
+  const h = fs.readFileSync(path.join(DIST, bestand), 'utf8');
+  ok(`${taal}: het handwerk staat er niet meer, de lagen wel`, !/h-well h-maak|h-maak-werk/.test(h) && /class="h-well o-ontleed" data-v="catalog"/.test(h));
+  ok(`${taal}:   de stap duurt 5,2 s (alleen de lagen; levering 75, eerst 12,9 s met het handwerk)`, h.includes('data-uitleg-maat="2250 5200 2250"'));
 }
 function GROND_HEX() { return '#EFEFEF'; }
 
@@ -303,47 +262,6 @@ for (const breed of []) {
      handenfoto (23 oktober). */
   ok(`${breed}px: de balk hangt onder de laptop (${Math.round(r.bedT - r.doosO)} px onder de foto) en de zin eronder staat helemaal in beeld`, r.bedT != null && r.bedT - r.doosO >= 0 && r.bedT - r.doosO < 40 && r.bedM >= r.lapL && r.bedM <= r.lapR && r.uitlegO <= r.openingO, JSON.stringify(r));
   ok(`${breed}px: geen scriptfout`, fouten.length === 0, fouten.join(' | '));
-  await ctx.close();
-}
-
-/* ── 9b · STAP 2 IN DE BROWSER ─────────────────────────────────────────────── */
-console.log('\n9b · stap 2 in de browser');
-{
-  const { ctx, page, fouten } = await open('/nl/', { breed: 1440 });
-  const stand = () => page.evaluate(() => {
-    const st = (s) => { const e = document.querySelector(`#hoe ${s}`); return e ? getComputedStyle(e) : null; };
-    const dek = document.querySelector('#hoe .h-dek');
-    return {
-      pad: Number(st('.h-maak-pad')?.opacity), pen: Number(st('.h-maak-pen')?.opacity), echt: Number(st('.h-maak-echt')?.opacity),
-      begin: Number(st('.h-maak-begin')?.opacity), vink4: st('.h-lagen li:nth-child(5) i')?.transform,
-      dek: dek ? getComputedStyle(dek).getPropertyValue('--dek').trim() : null, klassen: document.querySelector('#hoe').className,
-    };
-  });
-  await page.evaluate(() => document.querySelector('#hoe')?._u?.opnieuw());
-  await page.waitForFunction(() => document.querySelector('#hoe').classList.contains('u-s2'), null, { timeout: 12000 }).catch(() => {});
-  /* Sinds 15 oktober 11:59 begint stap 2 met rechtzetten, opbouwen en nakijken, en
-     komt de pen pas daarna. Sinds levering 61 (lijst 39, e-stappen: "Animatie mag wel
-     iets sneller") loopt alles op 0,75 keer de tijd: 3,19 s rechtzetten, opbouwen en
-     nakijken, de pen na 3,375 s. De meetmomenten schuiven mee: 0,675 s, 1,425 s,
-     2,25 s en 3,825 s (was 0,9, 1,9, 3,0 en 5,1). */
-  const o = () => page.evaluate(() => { const g = (s) => Number(getComputedStyle(document.querySelector(`#hoe ${s}`)).opacity); return { foto: g('.h-maak-laag'), kader: g('.h-maak-greep rect'), muis: g('.h-maak-muis'), kwast: g('.h-maak-bouwkwast'), loep: g('.h-maak-lp'), pen: g('.h-maak-pen'), echt: g('.h-maak-echt'), schuin: getComputedStyle(document.querySelector('#hoe .h-maak-laag')).transform !== 'none' }; });
-  await page.waitForTimeout(675);
-  const recht = await o();
-  ok('tijdens stap 2, eerst: je foto in het kader, de muis zet hem recht; nog geen pen en geen eindbeeld', recht.foto > 0.9 && recht.kader > 0.9 && recht.muis > 0.9 && recht.schuin && recht.pen < 0.05 && recht.echt < 0.05, JSON.stringify(recht));
-  await page.waitForTimeout(750);
-  const bouw = await o();
-  ok('  dan het penseel dat het beeld opbouwt', bouw.kwast > 0.9 && bouw.kader < 0.05, JSON.stringify(bouw));
-  await page.waitForTimeout(825);
-  const loep = await o();
-  ok('  dan de loep langs knoop, stiksel en kleur', loep.loep > 0.9 && loep.kwast < 0.05, JSON.stringify(loep));
-  await page.waitForTimeout(1575);
-  const tijdens = await stand();
-  ok('tijdens stap 2: de pen trekt de omtrek, het geleverde beeld staat er nog niet', tijdens.pad > 0.9 && tijdens.pen > 0.9 && tijdens.echt < 0.05, JSON.stringify(tijdens));
-  await page.evaluate(() => document.querySelector('#hoe')?._u?.stop());
-  await page.waitForTimeout(300);
-  const klaar = await stand();
-  ok('na afloop: het geleverde beeld, geen gereedschap, vijf vinkjes, dekking 20%', klaar.pad === 0 && klaar.pen === 0 && klaar.echt === 1 && klaar.begin === 0 && klaar.vink4 === 'none' && klaar.dek === '20', JSON.stringify(klaar));
-  ok('  geen scriptfout', fouten.length === 0, fouten.join(' | '));
   await ctx.close();
 }
 

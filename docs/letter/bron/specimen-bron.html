@@ -1,0 +1,482 @@
+<title>VISUAILS Display</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/*@LETTERS@*/
+/* Het specimen van VISUAILS Display, in Blauw uur. Eén kolom van 1240 px; elk blok laat de letter zelf het werk doen.
+   Wit als grond, inkt voor tekst en keuzes, grijs alleen voor kleine tekst, blauw alleen voor focus en links.
+   Eén inktblok (In gebruik). Bewust één thema: de site is wit. */
+:root {
+  --wit: #FFFFFF; --inkt: #0B0F17; --blauw: #25508B; --grijs: #636974; --lijn: #E6E8EC;
+  --vlak: #F4F5F7; --lijn-sterk: #C5C8CF; --veldlijn: #858A94; --blauw-licht: #80A7DD;
+  --op-inkt: rgba(255, 255, 255, .86);
+  --vd: 'VISUAILS Display', 'DM Sans L', ui-sans-serif, system-ui, sans-serif;
+  --font: 'DM Sans L', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'Plex Mono L', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --gew: 700;
+  --r-kaart: 24px; --r-vlak: 32px; --hoek-knop: 14px 3px 3px 3px;
+  color-scheme: light;
+}
+body { background: var(--wit); color: var(--inkt); font: 400 17px/1.55 var(--font); font-optical-sizing: auto; margin: 0; overflow-x: hidden; }
+p, h1, h2, h3, figure, ul, ol, dl, dd, dt { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+a { color: var(--blauw); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+button, input, textarea, select { font-family: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--blauw); outline-offset: 3px; }
+::selection { background: var(--blauw); color: var(--wit); }
+.vd { font-family: var(--vd); font-weight: var(--gew); font-synthesis: none; }
+.bin { max-width: 1240px; margin: 0 auto; box-sizing: border-box; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+@media (min-width: 760px) { .bin { padding-left: max(40px, env(safe-area-inset-left, 0px)); padding-right: max(40px, env(safe-area-inset-right, 0px)); } }
+
+.lbl { display: flex; align-items: center; gap: 12px; font: 600 12px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--inkt); }
+.lbl .sl { display: inline-block; width: 3px; height: 15px; background: currentColor; transform: skewX(-37deg); flex: none; }
+.mono { font: 600 12px/1.5 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--grijs); }
+.klein { font-size: 15px; line-height: 1.5; color: var(--grijs); max-width: 62ch; }
+.klein b { color: var(--inkt); font-weight: 600; }
+
+/* ── de kop van de pagina ─────────────────────────────────────────────────────────────── */
+.held { padding-block: clamp(56px, 10vh, 112px) clamp(28px, 5vh, 48px); }
+.held h1 { margin-top: 26px; font-family: var(--vd); font-weight: 700; font-size: clamp(46px, 9.4vw, 96px); line-height: .95; letter-spacing: -.02em; }
+.held-zin { margin-top: 22px; font-size: clamp(17px, 1.5vw, 20px); line-height: 1.5; max-width: 44ch; text-wrap: pretty; }
+.held-zin .z { color: var(--grijs); }
+.feiten { margin-top: 34px; display: grid; grid-template-columns: repeat(6, minmax(0, auto)); justify-content: start; gap: 14px 40px; }
+.feiten dt { font: 600 11.5px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--grijs); }
+.feiten dd { font: 600 16px/1.35 var(--font); margin-top: 4px; font-variant-numeric: tabular-nums; }
+.reeks { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); border-top: 1px solid var(--lijn); border-bottom: 1px solid var(--lijn); margin-top: clamp(36px, 6vh, 56px); }
+.reeks > div { padding: 18px 0 14px; display: grid; gap: 6px; justify-items: start; min-width: 0; }
+.reeks > div + div { box-shadow: inset 1px 0 0 var(--lijn); padding-left: clamp(8px, 1.2vw, 16px); }
+.reeks .aa { font-family: var(--vd); font-size: clamp(44px, 6.6vw, 92px); line-height: 1; letter-spacing: -.01em; font-synthesis: none; }
+.reeks .mono { font-size: 11.5px; letter-spacing: .04em; }
+
+/* ── blokken ─────────────────────────────────────────────────────────────────────────── */
+.blok { padding-block: clamp(56px, 9vh, 104px) 0; }
+.blok-kop { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 440px); gap: 18px 56px; align-items: end; margin-bottom: clamp(24px, 4vh, 36px); }
+.blok-kop h2 { margin-top: 20px; font-family: var(--vd); font-weight: 700; font-size: clamp(30px, 3.6vw, 44px); line-height: 1.02; letter-spacing: -.01em; text-wrap: balance; }
+.blok-kop h2 .l { color: var(--grijs); }
+.blok-kop .uitleg { font-size: 16.5px; line-height: 1.5; max-width: 44ch; text-wrap: pretty; }
+.blok-kop .uitleg .z { color: var(--grijs); }
+
+/* de gewichtkeuze: knoppen naast elkaar met de snede van het logo ertussen (53°, kier 7,6 % van de hoogte) */
+.gew { display: flex; --hoog: 38px; --loop: calc(var(--hoog) * .75); --kier: 3px; }
+.gew button { height: var(--hoog); min-width: 0; border: 0; padding: 0 calc(var(--loop) * .5 + 9px); background: var(--vlak); color: var(--inkt); font: 600 13.5px/1 var(--font); font-variant-numeric: tabular-nums; cursor: pointer;
+  clip-path: polygon(var(--loop) 0, 100% 0, calc(100% - var(--loop)) 100%, 0 100%); margin-left: calc(var(--kier) - var(--loop)); }
+.gew button:first-child { margin-left: 0; padding-left: 14px; border-radius: 12px 3px 3px 3px; clip-path: polygon(0 0, 100% 0, calc(100% - var(--loop)) 100%, 0 100%); }
+.gew button:last-child { padding-right: 14px; border-radius: 3px; clip-path: polygon(var(--loop) 0, 100% 0, 100% 100%, 0 100%); }
+.gew button:hover { background: var(--lijn); }
+.gew button[aria-pressed="true"] { background: var(--inkt); color: var(--wit); }
+.gew button:focus-visible { clip-path: none; position: relative; z-index: 1; }
+.regel-keus { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+.regel-keus .naam-gew { font: 600 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--grijs); }
+
+/* stijlen */
+.stijl-balk { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; margin-bottom: 10px; }
+.veld { display: grid; gap: 7px; min-width: 0; }
+.veld input[type="text"] { box-sizing: border-box; width: min(520px, 100%); min-height: 46px; border-radius: 12px 3px 3px 3px; border: 0; box-shadow: inset 0 0 0 1px var(--veldlijn); background: var(--wit); font: 500 16px/1.3 var(--font); padding: 0 14px; }
+.veld input[type="range"] { width: 200px; max-width: 100%; accent-color: var(--inkt); height: 28px; margin: 0; }
+.veld .mono b { color: var(--inkt); font-weight: 600; }
+.stijlen { display: grid; }
+.stijl { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 6px 28px; align-items: center; padding: 16px 0 18px; border-top: 1px solid var(--lijn); }
+.stijl:last-child { border-bottom: 1px solid var(--lijn); }
+.stijl .wie { display: grid; gap: 2px; }
+.stijl .wie b { font: 600 15px/1.3 var(--font); }
+.stijl .proef { font-family: var(--vd); font-synthesis: none; line-height: 1.04; letter-spacing: -.01em; overflow-wrap: break-word; text-wrap: balance; }
+.stijl-balk .veld:first-child { flex: 0 1 520px; }
+.stijl-balk .veld:first-child input { width: 100%; }
+
+/* typetester */
+.tester { box-shadow: inset 0 0 0 1px var(--lijn); border-radius: var(--r-kaart) 3px 3px 3px; display: grid; min-width: 0; }
+.tester-balk { display: flex; flex-wrap: wrap; align-items: end; gap: 14px 28px; padding: 18px 20px; border-bottom: 1px solid var(--lijn); }
+.tester-veld { padding: clamp(20px, 3vw, 40px); min-height: 220px; outline: none; font-family: var(--vd); font-synthesis: none; overflow-wrap: break-word; text-wrap: pretty; }
+.tester-veld:focus-visible { box-shadow: inset 0 0 0 2px var(--blauw); border-radius: 0 0 3px 3px; }
+.terug { min-height: 38px; padding: 0 14px; border: 0; border-radius: var(--hoek-knop); background: var(--vlak); font: 600 13.5px/1 var(--font); cursor: pointer; }
+.terug:hover { background: var(--lijn); }
+
+/* tekens */
+.tekens { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 28px 40px; align-items: start; }
+.kijker { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); box-shadow: inset 0 0 0 1px var(--lijn); border-radius: var(--r-kaart) 3px 3px 3px; padding: 16px; display: grid; gap: 14px; }
+.kijker svg { width: 100%; height: auto; display: block; }
+.kijker .k-lijn { stroke: var(--lijn-sterk); stroke-width: 1; }
+.kijker .k-lijn.basis { stroke: var(--veldlijn); }
+.kijker .k-tekst { font: 600 11.5px var(--mono); fill: var(--grijs); letter-spacing: .04em; }
+.kijker .k-teken { font-family: var(--vd); font-synthesis: none; fill: var(--inkt); }
+.kijker-info { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 16px; font: 500 13px/1.5 var(--mono); }
+.kijker-info dt { color: var(--grijs); }
+.kijker-info dd { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.chip { justify-self: start; display: inline-block; font: 600 11.5px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; padding: 5px 7px 4px; background: var(--vlak); border-radius: 6px 2px 2px 2px; }
+.groepen { display: grid; gap: 26px; min-width: 0; }
+.groep h3 { font: 600 12px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--grijs); margin-bottom: 10px; display: flex; gap: 10px; }
+.groep h3 span { color: var(--inkt); }
+.rooster { display: grid; grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); }
+.rooster button { aspect-ratio: 1; border: 0; background: var(--wit); box-shadow: inset 0 0 0 .5px var(--lijn); font-family: var(--vd); font-weight: var(--gew); font-size: 27px; color: var(--inkt); line-height: 1; cursor: pointer; padding: 0; display: grid; place-items: center; min-width: 0; font-synthesis: none; }
+.rooster button:hover { background: var(--vlak); }
+.rooster button[aria-pressed="true"] { background: var(--inkt); color: var(--wit); }
+.rooster button { position: relative; }
+.rooster button.v::after { content: ""; position: absolute; top: 5px; right: 5px; width: 7px; height: 7px; background: var(--inkt); clip-path: polygon(0 0, 100% 0, 100% 100%); }
+.rooster button.v[aria-pressed="true"]::after { background: var(--wit); }
+
+/* de details */
+.drie { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.detail { box-shadow: inset 0 0 0 1px var(--lijn); border-radius: var(--r-kaart) 3px 3px 3px; padding: 18px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+.detail svg { width: 100%; height: auto; display: block; background: var(--wit); }
+.detail h3 { font-family: var(--vd); font-weight: 700; font-size: 24px; line-height: 1.15; letter-spacing: -.01em; }
+.detail p { font-size: 15.5px; line-height: 1.5; color: var(--grijs); }
+.detail p b { color: var(--inkt); font-weight: 600; }
+.detail .waar { font-family: var(--vd); font-weight: 700; font-size: 34px; line-height: 1.1; letter-spacing: .02em; font-synthesis: none; color: var(--inkt); }
+.d-oud { fill: none; stroke: var(--lijn-sterk); stroke-width: 3; stroke-dasharray: 10 8; }
+.d-letter { fill: var(--inkt); }
+.d-weg { fill: none; stroke: var(--veldlijn); stroke-width: 3; stroke-dasharray: 8 6; }
+.d-maat { fill: none; stroke: var(--grijs); stroke-width: 2.5; }
+.d-op-inkt { stroke: var(--wit); }
+.d-tekst { font: 600 var(--d-maat, 25px) var(--mono); fill: var(--grijs); }
+
+/* groottes */
+.water { display: grid; }
+.water > div { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 20px; align-items: baseline; padding: 12px 0; border-top: 1px solid var(--lijn); }
+.water > div:last-child { border-bottom: 1px solid var(--lijn); }
+.water .w-tekst { font-family: var(--vd); font-synthesis: none; line-height: 1.08; letter-spacing: -.005em; overflow-wrap: break-word; }
+
+/* in gebruik: het ene inktblok van deze pagina, rechtsonder afgesneden op 53° */
+.gebruik { background: var(--inkt); color: var(--op-inkt); border-radius: var(--r-vlak) var(--r-vlak) 0 var(--r-vlak); clip-path: polygon(0 0, 100% 0, 100% calc(100% - 64px), calc(100% - 48px) 100%, 0 100%); padding: clamp(24px, 4vw, 56px) clamp(22px, 4vw, 56px) clamp(64px, 7vw, 88px); display: grid; gap: clamp(36px, 5vw, 56px); }
+.gebruik .mono { color: var(--op-inkt); }
+.g-open { font-family: var(--vd); font-weight: 700; color: var(--wit); font-size: clamp(34px, 5.6vw, 72px); line-height: 1; letter-spacing: -.015em; text-wrap: balance; max-width: 14ch; }
+.g-twee { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 28px 56px; align-items: end; }
+.g-pagina { font-family: var(--vd); font-weight: 700; color: var(--wit); font-size: clamp(30px, 4vw, 52px); line-height: 1.02; letter-spacing: -.01em; text-wrap: balance; }
+.g-pagina .l { color: var(--op-inkt); }
+.g-tekst { font-size: 17px; line-height: 1.55; max-width: 36ch; }
+.g-prijs { display: flex; gap: 10px 36px; flex-wrap: wrap; align-items: baseline; }
+.g-prijs div { display: grid; gap: 4px; }
+.g-prijs b { font-family: var(--vd); font-weight: 700; font-size: clamp(44px, 6vw, 80px); line-height: 1; color: var(--wit); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.g-knop { justify-self: start; display: inline-flex; align-items: center; gap: 12px; min-height: 46px; padding: 0 22px; border-radius: var(--hoek-knop); background: var(--wit); color: var(--inkt); font: 600 15px/1 var(--font); }
+.pijl { display: inline-flex; align-items: center; gap: 1.5px; }
+.pijl b { display: block; background: currentColor; }
+.pijl b:first-child { width: 9px; height: 2.4px; }
+.pijl b:last-child { width: 7px; height: 11px; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+
+/* talen */
+.talen { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); border-top: 1px solid var(--lijn); }
+.talen > div { padding: 16px 16px 18px 0; border-bottom: 1px solid var(--lijn); display: grid; gap: 6px; min-width: 0; }
+.talen .t-proef { font-family: var(--vd); font-synthesis: none; font-size: 28px; line-height: 1.12; letter-spacing: -.005em; overflow-wrap: break-word; }
+
+/* opentype */
+.ot { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.ot > div { box-shadow: inset 0 0 0 1px var(--lijn); border-radius: 18px 3px 3px 3px; padding: 16px 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.ot .paar { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; align-items: baseline; }
+.ot .paar span.vd { font-size: 40px; line-height: 1.1; }
+.ot p { font-size: 14.5px; color: var(--grijs); line-height: 1.45; }
+
+/* bestanden */
+.tabel-wrap { overflow-x: auto; }
+.tabel { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 520px; }
+.tabel th, .tabel td { text-align: left; padding: 11px 16px 11px 0; border-bottom: 1px solid var(--lijn); }
+.tabel th { font: 600 11.5px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--grijs); }
+.tabel td.n { font: 500 13px/1.5 var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tabel td .vd { font-size: 22px; }
+.twee-kol { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px 48px; margin-top: 28px; }
+.twee-kol h3 { font-family: var(--vd); font-weight: 700; font-size: 22px; line-height: 1.2; margin-bottom: 8px; }
+.twee-kol p, .twee-kol li { font-size: 15.5px; line-height: 1.55; color: var(--grijs); max-width: 60ch; }
+.twee-kol li { padding-left: 16px; position: relative; }
+.twee-kol li::before { content: ""; position: absolute; left: 0; top: .62em; width: 6px; height: 6px; background: var(--inkt); clip-path: polygon(0 0, 62% 0, 100% 50%, 100% 100%, 0 100%); }
+.twee-kol ul { display: grid; gap: 6px; }
+code { font: 500 .88em/1.4 var(--mono); background: var(--vlak); padding: 1px 5px; border-radius: 4px; color: var(--inkt); }
+
+.voet { padding-block: clamp(56px, 9vh, 96px) clamp(40px, 6vh, 64px); }
+.voet-in { border-top: 1px solid var(--lijn); padding-top: 20px; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+
+@media (max-width: 1040px) {
+  .feiten { grid-template-columns: repeat(3, minmax(0, auto)); }
+  .drie, .ot { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .reeks { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .reeks > div:nth-child(6) { box-shadow: none; padding-left: 0; }
+  .reeks > div:nth-child(n+6) { border-top: 1px solid var(--lijn); }
+}
+@media (max-width: 860px) {
+  .blok-kop, .tekens, .g-twee, .twee-kol { grid-template-columns: minmax(0, 1fr); }
+  .kijker { position: static; }
+  .kijker svg { max-width: 320px; }
+}
+@media (max-width: 640px) {
+  .feiten { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 20px; }
+  .drie, .ot { grid-template-columns: minmax(0, 1fr); }
+  .reeks { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .reeks > div { box-shadow: none !important; padding-left: 0 !important; }
+  .reeks > div:nth-child(n+4) { border-top: 1px solid var(--lijn); }
+  .stijl { grid-template-columns: minmax(0, 1fr); }
+  .water > div { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .tester-balk .veld:first-child { flex-basis: 100%; }
+  /* onder elkaar: de knoppen los, zonder snede */
+  .gew { flex-wrap: wrap; gap: 6px; }
+  .gew button, .gew button:first-child, .gew button:last-child { clip-path: none; margin-left: 0; border-radius: 10px 3px 3px 3px; flex: 1 0 calc(20% - 6px); padding: 0 6px; }
+  .tester-balk { padding: 16px; }
+  .veld input[type="range"] { width: 100%; }
+  .tester-balk .veld { flex: 1 1 140px; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<header class="held bin">
+  <p class="lbl"><span class="sl" aria-hidden="true"></span>Letter · versie 1.000</p>
+  <h1>VISUAILS Display</h1>
+  <p class="held-zin">De letter van VISUAILS: DM Sans met drie details uit de V. <span class="z">De snede, de vierkante punt en het gat van de a. Voor koppen; lopende tekst blijft DM Sans.</span></p>
+  <dl class="feiten">
+    <div><dt>Stijlen</dt><dd>9</dd></div>
+    <div><dt>Gewicht</dt><dd>100 tot 900</dd></div>
+    <div><dt>Tekens</dt><dd>@AANTAL@</dd></div>
+    <div><dt>Talen</dt><dd>16 (Latijns schrift)</dd></div>
+    <div><dt>Basis</dt><dd>DM Sans 40pt</dd></div>
+    <div><dt>Licentie</dt><dd>SIL OFL 1.1</dd></div>
+  </dl>
+  <div class="reeks" id="reeks" aria-label="De negen gewichten"></div>
+</header>
+
+<main>
+  <section class="blok bin" aria-labelledby="h-stijlen" style="padding-top:clamp(24px,4vh,40px)">
+    <div class="blok-kop">
+      <div><p class="lbl"><span class="sl" aria-hidden="true"></span>Stijlen</p><h2 id="h-stijlen">Negen gewichten. <span class="l">Van dun tot zwart.</span></h2></div>
+      <p class="uitleg">Elk gewicht heeft dezelfde details. <span class="z">Ze groeien mee met de dikte van de streek, dus in Thin zijn ze fijn en in Black groot.</span></p>
+    </div>
+    <div class="stijl-balk">
+      <label class="veld" for="stijl-tekst"><span class="mono">Proeftekst</span><input type="text" id="stijl-tekst" maxlength="90" autocomplete="off" placeholder="Al je productbeelden. Zonder shoot."></label>
+      <label class="veld" for="stijl-maat"><span class="mono">Grootte <b id="stijl-maat-w">48 px</b></span><input type="range" id="stijl-maat" min="20" max="96" step="1" value="48"></label>
+    </div>
+    <div class="stijlen" id="stijlen"></div>
+  </section>
+
+  <section class="blok bin" aria-labelledby="h-tester">
+    <div class="blok-kop">
+      <div><p class="lbl"><span class="sl" aria-hidden="true"></span>Typetester</p><h2 id="h-tester">Typ je eigen kop.</h2></div>
+      <p class="uitleg">Klik in het vak en typ. <span class="z">Gewicht, grootte, spatiëring en regelafstand stel je hier in; je keuze blijft in deze browser bewaard.</span></p>
+    </div>
+    <div class="tester">
+      <div class="tester-balk">
+        <div class="veld"><span class="mono" id="t-gew-lbl">Gewicht</span><div class="gew" data-gew role="group" aria-labelledby="t-gew-lbl"></div></div>
+        <label class="veld" for="t-maat"><span class="mono">Grootte <b id="t-maat-w"></b></span><input type="range" id="t-maat" min="12" max="160" step="1"></label>
+        <label class="veld" for="t-spat"><span class="mono">Spatiëring <b id="t-spat-w"></b></span><input type="range" id="t-spat" min="-6" max="8" step="1"></label>
+        <label class="veld" for="t-rgl"><span class="mono">Regelafstand <b id="t-rgl-w"></b></span><input type="range" id="t-rgl" min="90" max="160" step="5"></label>
+        <button type="button" class="terug" id="t-terug">Begintekst terug</button>
+      </div>
+      <div class="tester-veld" id="t-veld" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true" aria-label="Typetester: typ hier je eigen tekst"></div>
+    </div>
+  </section>
+
+  <section class="blok bin" aria-labelledby="h-tekens">
+    <div class="blok-kop">
+      <div><p class="lbl"><span class="sl" aria-hidden="true"></span>Tekens</p><h2 id="h-tekens">Alle @AANTAL@ tekens.</h2></div>
+      <p class="uitleg">Klik een teken om het groot te zien, met de maten. <span class="z">Een teken met een V-detail heeft een vlagje in de hoek; dat zijn er @MET_DETAIL@.</span></p>
+    </div>
+    <div class="regel-keus" style="margin-bottom:18px"><div class="gew" data-gew role="group" aria-label="Gewicht van de tekens"></div><span class="naam-gew" data-gew-naam></span></div>
+    <div class="tekens">
+      <div class="kijker" aria-live="polite">
+        <svg viewBox="0 0 360 380" id="kijk-svg" role="img" aria-labelledby="kijk-titel"><title id="kijk-titel">Het gekozen teken</title>
+          <line x1="0" x2="360" class="k-lijn" id="l-kap"/><line x1="0" x2="360" class="k-lijn" id="l-x"/><line x1="0" x2="360" class="k-lijn basis" id="l-basis"/><line x1="0" x2="360" class="k-lijn" id="l-onder"/>
+          <text x="4" class="k-tekst" id="t-kap">kapitaal 700</text><text x="4" class="k-tekst" id="t-x">x-hoogte 496</text><text x="4" class="k-tekst" id="t-basis">basislijn 0</text><text x="4" class="k-tekst" id="t-onder">onderkast</text>
+          <text x="180" text-anchor="middle" class="k-teken" id="kijk-teken">a</text>
+        </svg>
+        <dl class="kijker-info"><dt>Teken</dt><dd id="i-teken"></dd><dt>Unicode</dt><dd id="i-uni"></dd><dt>Naam</dt><dd id="i-naam"></dd><dt>Breedte</dt><dd id="i-breed"></dd></dl>
+        <span class="chip" id="i-detail" hidden>Met V-detail</span>
+      </div>
+      <div class="groepen" id="groepen"></div>
+    </div>
+  </section>
+
+  <section class="blok bin" aria-labelledby="h-details">
+    <div class="blok-kop">
+      <div><p class="lbl"><span class="sl" aria-hidden="true"></span>De details</p><h2 id="h-details">Drie details. <span class="l">Eén hoek: 53,13°.</span></h2></div>
+      <p class="uitleg">De hoek van de 3-4-5-driehoek, uit de vlag van de V. <span class="z">Gemeten in Bold; de gestippelde lijn is DM Sans.</span></p>
+    </div>
+    <div class="drie">
+      <div class="detail"><h3>De snede</h3>@SNEDE@<p>Een recht, open uiteinde eindigt schuin, als het vlagje: <b>0,75 × de dikte opzij</b>. In Bold is dat @SNEDE_D@ op @SNEDE_H@ eenheden.</p><p class="waar" aria-label="Waar: f, g, j, r en t">f g j r t</p></div>
+      <div class="detail"><h3>De vierkante punt</h3>@PUNT@<p>Elke punt wordt een vierkant van ongeveer de stam, met <b>de hoek rechtsboven eraf op 53,13°</b>: het vlagje als punt.</p><p class="waar" aria-label="Waar: i, j, ë, ï, punt, uitroepteken, vraagteken">i j ë ï . ! ?</p></div>
+      <div class="detail"><h3>Het gat van de a</h3>@GAT@<p>Rechts staand langs de stam, links <b>schuin op 53,13°</b>, en even groot als het oude gat. In de dunne gewichten blijft alleen de schuine kant over.</p><p class="waar" aria-label="Waar: a, ä, á, æ">a ä á æ</p></div>
+    </div>
+    <p class="klein" style="margin-top:18px"><b>Wat bewust zo blijft:</b> de ronde uiteinden (c, e, s, a, 2, 3, 5, C, G, J, S), omdat een schuine snede daar een hap uit de bocht neemt. De vormen, de afstanden en het kernen zijn die van DM Sans. De ª en de tekenvarianten (ss01 tot ss08) zijn DM Sans zonder details.</p>
+  </section>
+
+  <section class="blok bin" aria-labelledby="h-water">
+    <div class="blok-kop">
+      <div><p class="lbl"><span class="sl" aria-hidden="true"></span>Groottes</p><h2 id="h-water">Van 12 tot 96 px.</h2></div>
+      <p class="uitleg">Gemaakt voor koppen vanaf 20 px. <span class="z">Daaronder doet DM Sans het werk; de details worden dan te klein om te zien.</span></p>
+    </div>
+    <div class="regel-keus" style="margin-bottom:14px"><div class="gew" data-gew role="group" aria-label="Gewicht van de groottes"></div><span class="naam-gew" data-gew-naam></span></div>
+    <div class="water" id="water"></div>
+  </section>
+
+  <section class="blok bin" aria-labelledby="h-gebruik">
+    <div class="blok-kop">
+      <div><p class="lbl"><span class="sl" aria-hidden="true"></span>In gebruik</p><h2 id="h-gebruik">Zo staat hij op de site.</h2></div>
+      <p class="uitleg">Koppen in Bold, de tweede toon lichter; de tekst in DM Sans. <span class="z">Wit op inkt, zoals in het inktblok.</span></p>
+    </div>
+    <div class="gebruik">
+      <div><p class="mono">De opening</p><p class="g-open" style="margin-top:14px">Al je productbeelden. Zonder shoot.</p></div>
+      <div class="g-twee">
+        <div><p class="mono">Een paginakop</p><p class="g-pagina" style="margin-top:12px">Prijs per product. <span class="l">Hoe meer, hoe lager.</span></p></div>
+        <div style="display:grid;gap:22px"><p class="g-tekst">Stuur je productfoto’s. Krijg catalog, lifestyle en video terug. Knoop, stiksel en kleur nagekeken.</p>
+          <div class="g-prijs"><div><b>€89</b><span class="mono">Catalog, één product</span></div><div><b>€109</b><span class="mono">Lifestyle, één product</span></div></div>
+          <span class="g-knop">Bekijk de prijzen <span class="pijl" aria-hidden="true"><b></b><b></b></span></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="blok bin" aria-labelledby="h-talen">
+    <div class="blok-kop">
+      <div><p class="lbl"><span class="sl" aria-hidden="true"></span>Talen</p><h2 id="h-talen">Zestien talen, één letter.</h2></div>
+      <p class="uitleg">Alle letters en accenten voor deze talen zitten erin. <span class="z">Geteld in de letter zelf, niet aangenomen.</span></p>
+    </div>
+    <div class="talen" id="talen"></div>
+  </section>
+
+  <section class="blok bin" aria-labelledby="h-ot">
+    <div class="blok-kop">
+      <div><p class="lbl"><span class="sl" aria-hidden="true"></span>OpenType</p><h2 id="h-ot">Wat de letter vanzelf doet.</h2></div>
+      <p class="uitleg">Uit DM Sans meegekomen. <span class="z">Het kernen en de fi staan vanzelf aan; breuken en superscript zet je aan in de css.</span></p>
+    </div>
+    <div class="ot">
+      <div><span class="mono">Kernen · kern</span><div class="paar"><span class="mono">uit</span><span class="vd" style="font-kerning:none">AV To Wa</span><span class="mono">aan</span><span class="vd">AV To Wa</span></div><p>Paren als AV en To schuiven in elkaar, zoals in DM Sans.</p></div>
+      <div><span class="mono">Ligatuur · liga</span><div class="paar"><span class="mono">uit</span><span class="vd" style="font-variant-ligatures:none">fijn fit</span><span class="mono">aan</span><span class="vd">fijn fit</span></div><p>De fi is één teken, met de snede en de vierkante punt.</p></div>
+      <div><span class="mono">Breuken · frac</span><div class="paar"><span class="mono">uit</span><span class="vd">1/2 3/4</span><span class="mono">aan</span><span class="vd" style="font-variant-numeric:diagonal-fractions">1/2 3/4</span></div><p><code>font-variant-numeric: diagonal-fractions</code></p></div>
+      <div><span class="mono">Superscript · sups</span><div class="paar"><span class="mono">uit</span><span class="vd">m2 m3</span><span class="mono">aan</span><span class="vd">m<span style="font-feature-settings:'sups'">2</span> m<span style="font-feature-settings:'sups'">3</span></span></div><p><code>font-feature-settings: "sups"</code></p></div>
+    </div>
+  </section>
+
+  <section class="blok bin" aria-labelledby="h-bestanden">
+    <div class="blok-kop">
+      <div><p class="lbl"><span class="sl" aria-hidden="true"></span>Bestanden</p><h2 id="h-bestanden">In je map. <span class="l">docs/letter</span></h2></div>
+      <p class="uitleg">Elk gewicht als .ttf voor je computer en als .woff2 voor de site. <span class="z">Deze pagina heeft de letters ingebouwd en werkt ook zonder internet.</span></p>
+    </div>
+    <div class="tabel-wrap"><table class="tabel"><thead><tr><th scope="col">Stijl</th><th scope="col">Gewicht</th><th scope="col">Voor je computer</th><th scope="col">Voor de site</th></tr></thead><tbody id="bestanden"></tbody></table></div>
+    <div class="twee-kol">
+      <div><h3>Gebruiken</h3><ul>
+        <li>Op je computer: dubbelklik een .ttf in <code>docs/letter/fonts</code> en kies Installeren. Daarna staat hij in je programma’s (zoals Word en Figma) onder VISUAILS Display.</li>
+        <li>Op de site: de .woff2-bestanden, alleen voor koppen. Lopende tekst blijft DM Sans.</li>
+        <li>Opnieuw bouwen kan met <code>docs/letter/bron/familie.py</code>, vanuit DM Sans 40pt.</li></ul></div>
+      <div><h3>Licentie</h3><p>SIL Open Font License 1.1 (<code>OFL.txt</code>). Gebaseerd op DM Sans van Colophon Foundry, © 2014 The DM Sans Project Authors. Je mag de letter gebruiken, aanpassen en meeleveren met je site en je materiaal. Los verkopen mag niet, en een aangepaste versie blijft onder dezelfde licentie.</p></div>
+    </div>
+  </section>
+</main>
+
+<footer class="voet bin"><div class="voet-in"><span class="mono">VISUAILS Display · versie 1.000 · 27 oktober 2026</span><span class="mono">Gebouwd uit DM Sans 40pt 4.004</span></div></footer>
+
+<script>
+(function () {
+  'use strict';
+  try { document.documentElement.lang = 'nl'; } catch (e) { /* prima */ }
+  var GEW = [['Thin', 100], ['ExtraLight', 200], ['Light', 300], ['Regular', 400], ['Medium', 500], ['SemiBold', 600], ['Bold', 700], ['ExtraBold', 800], ['Black', 900]];
+  var TEKENS = /*@TEKENS@*/;
+  var BREEDTE = /*@BREEDTE@*/;
+  var MATEN = /*@MATEN@*/;
+  var TALEN = [['Nederlands', 'Eén geïnspireerde collectie, ’s ochtends klaar.'], ['English', 'Your product imagery, without a shoot.'], ['Deutsch', 'Größe, Mäntel und Übergänge.'], ['Français', 'Été, garçon, cœur et œillet.'], ['Español', '¿Qué tal? Señora, añadir.'], ['Italiano', 'Perché la città è così.'], ['Português', 'Coleção, ação e coração.'], ['Dansk · Norsk', 'Blåbær og økologisk.'], ['Svenska · Suomi', 'Höst, mönster · päivä.'], ['Polski', 'Łódź, źródło, gęś.'], ['Čeština', 'Žluťoučký kůň.'], ['Türkçe', 'Ağaç, şık, İstanbul.'], ['Română', 'Țară, școală, mâine.'], ['Magyar', 'Őszi gyűjtemény.']];
+  var BEGIN = 'Stuur je productfoto’s. Krijg catalog, lifestyle en video terug.';
+  var SLEUTEL = 'visuails-display-specimen';
+  /* op de telefoon kleinere begingroottes, zodat het langste woord op een regel past */
+  var smal = false; try { smal = window.matchMedia('(max-width: 640px)').matches; } catch (e) { /* prima */ }
+  var staat = { w: 700, maat: smal ? 44 : 72, spat: -1, rgl: 105, stijlMaat: smal ? 34 : 48, stijlTekst: '', teken: 'a', tester: '' };
+  try { var oud = JSON.parse(localStorage.getItem(SLEUTEL) || 'null'); if (oud && typeof oud === 'object') staat = Object.assign(staat, oud); } catch (e) { /* prima */ }
+  function bewaar() { try { localStorage.setItem(SLEUTEL, JSON.stringify(staat)); } catch (e) { /* geen opslag */ } }
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, tekst) { var e = document.createElement(tag); if (cls) e.className = cls; if (tekst != null) e.textContent = tekst; return e; }
+  function naamVan(w) { for (var i = 0; i < GEW.length; i++) if (GEW[i][1] === w) return GEW[i][0]; return ''; }
+
+  /* de reeks bovenaan */
+  GEW.forEach(function (g) { var d = el('div'); var a = el('span', 'aa', 'Aa'); a.style.fontWeight = g[1]; d.appendChild(a); d.appendChild(el('span', 'mono', g[1] + ' ' + g[0])); $('reeks').appendChild(d); });
+
+  /* stijlen */
+  var stijlProeven = [];
+  GEW.forEach(function (g) {
+    var r = el('div', 'stijl'); var wie = el('div', 'wie'); wie.appendChild(el('b', null, g[0])); wie.appendChild(el('span', 'mono', String(g[1]))); r.appendChild(wie);
+    var p = el('p', 'proef'); p.style.fontWeight = g[1]; r.appendChild(p); stijlProeven.push(p); $('stijlen').appendChild(r);
+  });
+  function tekenStijlen() {
+    var t = (staat.stijlTekst || '').trim() || 'Al je productbeelden. Zonder shoot.';
+    stijlProeven.forEach(function (p) { p.textContent = t; p.style.fontSize = staat.stijlMaat + 'px'; });
+    $('stijl-maat-w').textContent = staat.stijlMaat + ' px';
+  }
+  var sTekst = $('stijl-tekst'), sMaat = $('stijl-maat');
+  if (smal) { sMaat.max = 40; staat.stijlMaat = Math.min(staat.stijlMaat, 40); $('t-maat').max = 96; staat.maat = Math.min(staat.maat, 96); }
+  sTekst.value = staat.stijlTekst || ''; sMaat.value = staat.stijlMaat;
+  sTekst.addEventListener('input', function () { staat.stijlTekst = sTekst.value; tekenStijlen(); bewaar(); });
+  sMaat.addEventListener('input', function () { staat.stijlMaat = Number(sMaat.value); tekenStijlen(); bewaar(); });
+
+  /* de gewichtkeuze: drie plekken, één keuze */
+  document.querySelectorAll('[data-gew]').forEach(function (rij) {
+    GEW.forEach(function (g) {
+      var b = el('button', null, String(g[1])); b.type = 'button'; b.setAttribute('data-w', g[1]); b.setAttribute('aria-label', g[0] + ' ' + g[1]); b.title = g[0];
+      b.addEventListener('click', function () { staat.w = g[1]; tekenGewicht(); bewaar(); });
+      rij.appendChild(b);
+    });
+  });
+  function tekenGewicht() {
+    document.documentElement.style.setProperty('--gew', staat.w);
+    document.querySelectorAll('[data-gew] button').forEach(function (b) { b.setAttribute('aria-pressed', String(Number(b.getAttribute('data-w')) === staat.w)); });
+    document.querySelectorAll('[data-gew-naam]').forEach(function (s) { s.textContent = naamVan(staat.w) + ' ' + staat.w; });
+    $('t-veld').style.fontWeight = staat.w; $('kijk-teken').style.fontWeight = staat.w;
+    document.querySelectorAll('.w-tekst, .t-proef').forEach(function (e) { e.style.fontWeight = staat.w; });
+    toonTeken(staat.teken, false);
+  }
+
+  /* typetester */
+  var veld = $('t-veld'), tMaat = $('t-maat'), tSpat = $('t-spat'), tRgl = $('t-rgl');
+  veld.textContent = staat.tester || BEGIN;
+  tMaat.value = staat.maat; tSpat.value = staat.spat; tRgl.value = staat.rgl;
+  function tekenTester() {
+    veld.style.fontSize = staat.maat + 'px'; veld.style.letterSpacing = (staat.spat / 100) + 'em'; veld.style.lineHeight = (staat.rgl / 100);
+    $('t-maat-w').textContent = staat.maat + ' px';
+    $('t-spat-w').textContent = (staat.spat > 0 ? '+' : staat.spat < 0 ? '−' : '') + (Math.abs(staat.spat) / 100).toFixed(2).replace('.', ',') + ' em';
+    $('t-rgl-w').textContent = (staat.rgl / 100).toFixed(2).replace('.', ',');
+  }
+  tMaat.addEventListener('input', function () { staat.maat = Number(tMaat.value); tekenTester(); bewaar(); });
+  tSpat.addEventListener('input', function () { staat.spat = Number(tSpat.value); tekenTester(); bewaar(); });
+  tRgl.addEventListener('input', function () { staat.rgl = Number(tRgl.value); tekenTester(); bewaar(); });
+  veld.addEventListener('input', function () { staat.tester = veld.textContent; bewaar(); });
+  veld.addEventListener('paste', function (e) { e.preventDefault(); var t = (e.clipboardData || window.clipboardData).getData('text/plain'); document.execCommand('insertText', false, t); });
+  $('t-terug').addEventListener('click', function () { staat.tester = ''; veld.textContent = BEGIN; bewaar(); });
+
+  /* tekens */
+  var knoppen = {};
+  var GROEPEN = [['hoofd', 'Hoofdletters'], ['klein', 'Kleine letters'], ['accent', 'Letters met accent'], ['cijfer', 'Cijfers'], ['lees', 'Leestekens'], ['teken', 'Valuta en tekens']];
+  GROEPEN.forEach(function (G) {
+    var lijst = TEKENS.filter(function (t) { return t[3] === G[0]; }); if (!lijst.length) return;
+    var g = el('div', 'groep'); var h = el('h3'); h.appendChild(document.createTextNode(G[1])); h.appendChild(el('span', null, String(lijst.length))); g.appendChild(h);
+    var r = el('div', 'rooster');
+    lijst.forEach(function (t) {
+      var b = el('button', t[4] ? 'v' : null, t[0]); b.type = 'button'; b.setAttribute('aria-label', t[0] + ', ' + t[2] + (t[4] ? ', met V-detail' : ''));
+      b.addEventListener('click', function () { toonTeken(t[0], true); });
+      r.appendChild(b); knoppen[t[0]] = b;
+    });
+    g.appendChild(r); $('groepen').appendChild(g);
+  });
+  /* de maatlijnen: 1 eenheid = 0,3 px; basislijn op 270 */
+  var S = 0.3, BASIS = 270;
+  function zetLijn(id, tid, y, tekst) { var l = $(id); l.setAttribute('y1', y); l.setAttribute('y2', y); var t = $(tid); t.setAttribute('y', y - 6); t.textContent = tekst; }
+  zetLijn('l-kap', 't-kap', BASIS - MATEN.kap * S, 'kapitaal ' + MATEN.kap);
+  zetLijn('l-x', 't-x', BASIS - MATEN.x * S, 'x-hoogte ' + MATEN.x);
+  zetLijn('l-basis', 't-basis', BASIS, 'basislijn 0');
+  zetLijn('l-onder', 't-onder', BASIS - MATEN.onder * S, 'onderkast ' + String(MATEN.onder).replace('-', '−'));
+  var kt = $('kijk-teken'); kt.setAttribute('y', BASIS); kt.setAttribute('font-size', 1000 * S);
+  function toonTeken(c, focus) {
+    var t = null; for (var i = 0; i < TEKENS.length; i++) if (TEKENS[i][0] === c) { t = TEKENS[i]; break; }
+    if (!t) t = TEKENS[0];
+    staat.teken = t[0]; kt.textContent = t[0];
+    $('i-teken').textContent = t[0]; $('i-uni').textContent = t[2]; $('i-naam').textContent = t[1];
+    var br = BREEDTE[t[1]]; $('i-breed').textContent = br ? br[GEW.findIndex(function (g) { return g[1] === staat.w; })] + ' eenheden in ' + naamVan(staat.w) : '';
+    $('i-detail').hidden = !t[4];
+    $('kijk-titel').textContent = 'Het teken ' + t[0] + ' in ' + naamVan(staat.w);
+    Object.keys(knoppen).forEach(function (k) { knoppen[k].setAttribute('aria-pressed', String(k === t[0])); });
+    if (focus) bewaar();
+  }
+
+  /* groottes */
+  [12, 14, 16, 20, 24, 32, 40, 56, 72, 96].forEach(function (m) {
+    var r = el('div'); r.appendChild(el('span', 'mono', m + ' px'));
+    var p = el('p', 'w-tekst', m >= 56 ? 'Zonder shoot. Klaar.' : 'Al je productbeelden. Zonder shoot. Catalog, lifestyle en video.'); p.style.fontSize = m + 'px'; r.appendChild(p); $('water').appendChild(r);
+  });
+
+  /* talen */
+  TALEN.forEach(function (T) { var d = el('div'); d.appendChild(el('span', 'mono', T[0])); d.appendChild(el('p', 't-proef', T[1])); $('talen').appendChild(d); });
+
+  /* bestanden */
+  /*@BESTANDEN@*/.forEach(function (b) {
+    var tr = el('tr'); var c1 = el('td'); var s = el('span', 'vd', b[0]); s.style.fontWeight = b[1]; c1.appendChild(s); tr.appendChild(c1);
+    tr.appendChild(el('td', 'n', String(b[1]))); tr.appendChild(el('td', 'n', b[2])); tr.appendChild(el('td', 'n', b[3])); $('bestanden').appendChild(tr);
+  });
+
+  tekenStijlen(); tekenTester(); tekenGewicht();
+})();
+</script>

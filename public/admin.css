@@ -2544,7 +2544,7 @@ h1 .terugboek-pil { font-size: .8rem; }
 
 /* ── DE LETTER, IN ALLEBEI DE THEMA'S ──────────────────────────────────────── */
 html body {
-  --h-letter: "Urbanist Variable", ui-sans-serif, system-ui, sans-serif;
+  --h-letter: "Instrument Sans", "Urbanist Variable", ui-sans-serif, system-ui, sans-serif;  /* levering 76: Instrument Sans (Lijst 58); de @font-face in /fonts/gedeeld.css */
   --font: var(--h-letter); --font-kop: var(--h-letter); --font-display: var(--h-letter); --font-mono: var(--h-letter);
   --stretch-kop: 100%; --stretch-mono: 100%;
   /* kaarten 24 rond (25 oktober 2026, Lucas: "De hoeken van kaarten worden gewoon heel rond"); was 22 */

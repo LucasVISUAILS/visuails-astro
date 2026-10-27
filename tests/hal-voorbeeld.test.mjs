@@ -150,15 +150,19 @@ const html = Object.fromEntries(HAL.map((p) => [p, readFileSync(join(DIST, p, 'i
 for (const p of HAL) {
   const h = html[p];
   check(`${p}: geen noindex, body.hal, het woordmerk als symbool`, [/<meta name="robots" content="noindex/.test(h), /<body[^>]*class="[^"]*\bhal\b/.test(h), /<symbol id="woordmerk"/.test(h)], [false, true, true]);
-  check(`${p}: Urbanist wordt vooraf geladen`, /<link rel="preload"[^>]+urbanist[^>]+\.woff2/i.test(h), true);
-  /* stap 3: vier beelden, vier vinkjes, "4 van 4" — en geen 9:16 meer */
-  const i3 = h.indexOf('h-keur"');
+  /* levering 76: de letter is Instrument Sans (Lijst 58) */
+  check(`${p}: de letter (Instrument Sans) wordt vooraf geladen`, /<link rel="preload"[^>]+instrument-sans[^>]+\.woff2/i.test(h), true);
+  /* stap 3: vier beelden, vier vinkjes, "4 van 4". Levering 76 (Lucas, 26 oktober, 12:29: "De format
+     sectie mag wel subtiel/klein toegevoegd worden aan how it works animatie"): het formaat staat er
+     nu klein bij, als één keuze tegelijk (de gekozen in inkt, is-eind), niet als "alle drie". */
+  const i3 = h.indexOf('class="h-well h-keur');
   const stap3 = i3 < 0 ? '' : h.slice(i3, h.indexOf('</figure>', i3));
   /* levering 74: de band "Wij doen de rest" (h-rest) is weg; de stappen lopen tot de balk
      eronder (class="o-voet", HalOpening.astro) */
   const s0 = h.indexOf('class="h-stappen"');
   const stappen = h.slice(s0, h.indexOf('class="o-voet"', s0));
-  check(`${p}: stap 3 toont vier beelden met elk een vinkje, en geen formaten`, [(stap3.match(/class="h-vink"/g) || []).length, /9:16|4:5/.test(stappen)], [4, false]);
+  const fmt = (stap3.match(/<span class="o-fmt[^"]*"[^>]*>[\s\S]*?<\/span>/) || [''])[0];
+  check(`${p}: stap 3 toont vier beelden met elk een vinkje, en het formaat als één keuze`, [(stap3.match(/class="h-vink"/g) || []).length, (fmt.match(/is-eind/g) || []).length, /9:16/.test(fmt)], [4, 1, false]);
   check(`${p}: met "4 van 4 goedgekeurd" / "4 of 4 approved"`, /4 (van|of) 4 (goedgekeurd|approved)/.test(stap3), true);
 }
 const metHal = globSync('dist/**/index.html').map((f) => f.replace(/\\/g, '/'))
@@ -280,12 +284,12 @@ const zf = [];
   const heen = await page.evaluate(() => ({
     zacht: window.__zacht === 1,
     hal: document.body.classList.contains('hal'),
-    letter: /urbanist/i.test(getComputedStyle(document.querySelector('.h-h1') || document.body).fontFamily),
+    letter: /^"?Instrument Sans/i.test(getComputedStyle(document.querySelector('.h-h1') || document.body).fontFamily),
     /* levering 74: de opening is het podium met de scrollvideo (HalOpening.astro) */
     opening: (document.querySelector('[data-o-podium]')?.getBoundingClientRect().height || 0) > 300,
     inBeeld: [...document.querySelectorAll('[data-o-kop], [data-o-lede]')].every((e) => getComputedStyle(e).opacity !== '0' && getComputedStyle(e).visibility !== 'hidden'),
   }));
-  check('zacht naar de hal: zelfde venster, body.hal, Urbanist, de opening staat', heen, { zacht: true, hal: true, letter: true, opening: true, inBeeld: true });
+  check('zacht naar de hal: zelfde venster, body.hal, Instrument Sans, de opening staat', heen, { zacht: true, hal: true, letter: true, opening: true, inBeeld: true });
   await page.locator('.h-vertrouwen').evaluate((el) => el.scrollIntoView({ block: 'center' }));
   await page.waitForTimeout(1500);
   check('en wat in beeld scrolt, komt binnen (is-in)', await page.evaluate(() => document.querySelector('.h-vertrouwen')?.classList.contains('is-in')), true);

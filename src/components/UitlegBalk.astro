@@ -309,21 +309,31 @@ const T = nl
        tweede is voor een telefoon: daar is een mockup als VISUAILS Studio langer dan het
        scherm, en bij het openen van een langere tab zakte hij onder de 45% en zette de
        uitleg zichzelf stil (gemeten 14 oktober, 390 px). */
+    /* Levering 75: in de opening van de voorpagina staat Hoe het werkt altijd in het venster (vast,
+       onzichtbaar of licht) tot het erin klikt. Daar zegt de opening met data-uitleg-houd dat hij
+       nog niet echt te zien is, en met het event "uitleg-houd" dat dat veranderd is. Anders
+       speelde de uitleg al bij het laden, onzichtbaar. */
+    let inBeeld = false;
+    const bepaal = () => {
+      zichtbaar = inBeeld && !('uitlegHoud' in w.dataset);
+      if (zichtbaar && staat === 'wacht') speel();
+      else if (zichtbaar && staat === 'pauze' && !w.dataset.uitlegHand) hervat();
+      else if (!zichtbaar && staat === 'speelt') pauze();
+    };
     const io = new IntersectionObserver((rijen) => {
       for (const r of rijen) {
-        zichtbaar = r.isIntersecting && (r.intersectionRatio >= 0.45 || r.intersectionRect.height >= innerHeight * 0.5);
-        if (zichtbaar && staat === 'wacht') speel();
-        else if (zichtbaar && staat === 'pauze' && !w.dataset.uitlegHand) hervat();
-        else if (!zichtbaar && staat === 'speelt') pauze();
+        inBeeld = r.isIntersecting && (r.intersectionRatio >= 0.45 || r.intersectionRect.height >= innerHeight * 0.5);
+        bepaal();
       }
     }, { threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.45, 0.5, 0.6, 0.7, 0.8, 0.9, 1] });
     io.observe(w.querySelector<HTMLElement>('[data-uitleg-zicht]') || w);
+    w.addEventListener('uitleg-houd', bepaal);
     const opZicht = () => {
       if (document.hidden && staat === 'speelt') pauze();
       else if (!document.hidden && zichtbaar && staat === 'pauze' && !w.dataset.uitlegHand) hervat();
     };
     document.addEventListener('visibilitychange', opZicht);
-    opruimers.push(() => { io.disconnect(); document.removeEventListener('visibilitychange', opZicht); clearTimeout(klok); wisKlikken(); });
+    opruimers.push(() => { io.disconnect(); w.removeEventListener('uitleg-houd', bepaal); document.removeEventListener('visibilitychange', opZicht); clearTimeout(klok); wisKlikken(); });
   }
 
   /* ── DE WHATSAPP-KNOP BOVEN DE PLAKKENDE BALK — 14 oktober 2026 ─────────────

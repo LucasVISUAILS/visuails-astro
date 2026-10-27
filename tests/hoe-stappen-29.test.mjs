@@ -37,10 +37,12 @@ for (const [taal, file] of [['nl', 'dist/nl/index.html'], ['en', 'dist/index.htm
   const keur = (/<ul class="h-keur-rij"[^>]*>([\s\S]*?)<\/ul>/.exec(h) || [])[1] || '';
   ok(`${taal}: stap 3, vier beelden met elk een vinkje`, (keur.match(/<li\b/g) || []).length === 4 && (keur.match(/class="h-vink"/g) || []).length === 4, true);
   ok(`${taal}:   geen revisie meer (geen chip, geen glans)`, /h-keur-rev|h-keur-glans|Revisie: kleur|Revision: colour|Opnieuw geleverd|Delivered again/.test(h), false);
-  ok(`${taal}:   "4 van 4 goedgekeurd"`, /<figcaption class="h-chip h-glas"[^>]*>(4 van 4 goedgekeurd|4 of 4 approved)<\/figcaption>/.test(h), true);
+  /* levering 76: na de woorden staat voor een schermlezer het formaat ("In het formaat dat jij kiest: …"),
+     zichtbaar alleen als klein mono-label rechtsonder in het beeld (opening.css, "het formaat, in stap 3") */
+  ok(`${taal}:   "4 van 4 goedgekeurd"`, /<figcaption class="h-chip h-glas"[^>]*>(4 van 4 goedgekeurd|4 of 4 approved)(<span class="sr-only">[^<]*<\/span>)?<\/figcaption>/.test(h), true);
   /* Levering 61 (afvinklijst 39, e-stappen: "iets sneller"): alles op driekwart. Levering 74 (25 okt,
      16:40): stap 2 krijgt na het handwerk de lagen in 3D, en duurt daarom 12,9 s. */
-  ok(`${taal}: de tijden (2,25 / 12,9 / 2,25 s)`, h.includes('data-uitleg-maat="2250 12900 2250"'), true);
+  ok(`${taal}: de tijden (2,25 / 5,2 / 2,25 s; levering 75)`, h.includes('data-uitleg-maat="2250 5200 2250"'), true);
   ok(`${taal}: de uitlegzinnen noemen het`, taal === 'nl'
     ? /We kijken meteen of ze compleet zijn\./.test(h) && /vraagt zo nodig een revisie/.test(h)
     : /We check right away that they are complete\./.test(h) && /ask for a revision if needed/.test(h), true);

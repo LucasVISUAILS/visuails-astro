@@ -41,8 +41,6 @@ import HalProef from './HalProef.astro';
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
 import { ikoon, IKOON } from '../data/iconen.js';
-/* Na hal.css: de tijden van rechtzetten, opbouwen en nakijken in stap 2 (gegenereerd). */
-import '../styles/maak-recht.css';
 import {
   euro, TEST_SAMPLE, reviewClaim, ladderFloor, ladderRate, videoPrijsLabel, levertijdDelen, SHOOT_DAY, RESOLUTIE,
 } from '../data/pricing.js';
@@ -60,19 +58,16 @@ import HalOpening from './HalOpening.astro';
 import { videoStyles as videoNl } from '../data/videoStyles.nl.js';
 import { videoStyles as videoEn } from '../data/videoStyles.js';
 import Aanbevelingen from './Aanbevelingen.astro';
-import FormatenHal from './FormatenHal.astro';
+/* levering 76: Formaten staat niet meer als eigen sectie op de voorpagina, maar klein in stap 3
+   van Hoe het werkt (Lucas, 12:29); FormatenHal blijft op /voorbeeld/uitleg */
+import { CATALOG_RATIOS, LIFESTYLE_RATIOS } from '../data/ratios.js';
 import UitlegBalk from './UitlegBalk.astro';
-import { PAD, ANKERS, LIJNEN, MAAT as PAD_MAAT } from '../data/maakPad.js';
-/* De drie halen van het penseel: onder de linkerpijp, onder de rechter, en één keer
-   over allebei — net onder de zoom (LIJNEN.onder), waar de schaduw valt. */
-/* ── RECHTZETTEN, OPBOUWEN, NAKIJKEN — 15 oktober 2026 ───────────────────────
-   Lucas om 08:17: *"eerst een soort van handmatige generatie animatie en detail
-   controle"*, en om 11:59: *"mag wel iets interessanter en mooier ogen … Ook mag de
-   controle animatie wel wat mooier en interessanter."* Het kader, de grepen, het
-   penseel en de loep komen uit scripts/maak-recht.py (src/data/maakRecht.js), net
-   als hun tijden (src/styles/maak-recht.css). Zie de kop van dat script. */
-import { KADER, GREPEN, VEEG, KWAST_R, LOEP, RECHT } from '../data/maakRecht.js';
-const KWAST = `M${LIJNEN.links + 8} ${LIJNEN.onder + 6} L${LIJNEN.midden - 24} ${LIJNEN.onder + 6} M${LIJNEN.midden + 18} ${LIJNEN.onder + 6} L${LIJNEN.rechts - 6} ${LIJNEN.onder + 6} M${LIJNEN.links + 14} ${LIJNEN.onder + 14} L${LIJNEN.rechts - 12} ${LIJNEN.onder + 14}`;
+/* levering 76: de secties na de opening in de stijl van de opening en Hoe het werkt; als laatste,
+   na hal.css en opening.css (HalOpening), anders verschuift de volgorde van de stijlbladen */
+import '../styles/voorpagina-rust.css';
+/* Levering 75 (Lucas, 25 oktober, 23:35): stap 2 van catalog is alleen nog de lagen in 3D
+   ("veel korter en simpeler, wel met de 3 lagen erin"). Het handwerk ervoor (rechtzetten,
+   opbouwen, nakijken, de pen; scripts/maak-recht.py en maak-pad.py) staat niet meer op de pagina. */
 import { planKnop, startKnop, waKlant } from '../data/klant.js';
 
 /* `uitleg` (14 oktober 2026, voorbeeld op /voorbeeld/voorpagina): "Hoe het werkt"
@@ -108,6 +103,9 @@ const LOOKS = [
   ...lifestyle.filter((s: any) => s.slug !== 'custom').map((s: any) => ({ soort: 'Lifestyle', naam: s.name, beeld: s.cardPhoto, href: lp(`/lifestyle/${s.slug}`), proef: proef(s.slug), bestel: `${lp('/start/lifestyle')}?style=${encodeURIComponent(s.slug)}` })),
 ].filter((k) => k.beeld);
 const GEZICHTEN_RIJ = ROSTER.slice(0, 5);
+/* Levering 76 (13:00): het beeld bij Productfoto's in Wat we maken is de jeans zoals hij geleverd
+   wordt (voorbeeldset.js), dezelfde als op het laptopscherm in de opening. */
+const GELEVERD = geleverd(lang);
 /* Hoe het werkt, lifestyle (HalOpening): de look Flash wordt in stap 1 gekozen en komt in
    stap 3 terug. Uit de data, niet getypt: een look die verandert, verandert hier mee. */
 const FLASH = lifestyle.find((s: any) => s.slug === 'flash') || lifestyle[0];
@@ -115,6 +113,16 @@ const DRIE = (n: number) => String(n).padStart(2, '0');
 /* Stap 3: wanneer elk vinkje komt, in seconden vanaf het begin van de stap (zie de li hieronder).
    Levering 61 (e-stappen, "iets sneller"): driekwart van 0,45 / 0,9 / 1,25 / 1,75 s, net als de rest van de stappen. */
 const KEUR_TIK = [0.338, 0.675, 0.938, 1.313];
+/* Levering 76: het formaat in stap 3 (uit ratios.js, niet getypt). Catalog: één verhouding per
+   bestelling (1:1, 4:5 of 3:4), de beelden gaan van 1:1 naar 4:5. Lifestyle: per beeld te kiezen,
+   hier 4:5, 9:16 en 16:9, van 4:5 naar 9:16 (Reels en Stories). [verhoudingen, begin, eind] */
+const getal = (x: any) => { const [b, h] = String(x.ratio).split('x').map(Number); return b / h; };
+const ratio = (id: string) => LIFESTYLE_RATIOS.find((x: any) => x.id === id)!;
+const FMT = {
+  catalog: { lijst: CATALOG_RATIOS, begin: 0, eind: 1 },
+  lifestyle: { lijst: ['portrait45', 'story', 'wide'].map(ratio), begin: 0, eind: 1 },
+} as const;
+const fmtStijl = (d: 'catalog' | 'lifestyle') => `--o-r0:${getal(FMT[d].lijst[FMT[d].begin]).toFixed(4)};--o-r1:${getal(FMT[d].lijst[FMT[d].eind]).toFixed(4)}`;
 
 /* De punten van de loep (stap 2). */
 const PUNTEN = { nl: ['Knoop', 'Stiksel', 'Kleur'], en: ['Button', 'Seams', 'Colour'] };
@@ -133,6 +141,7 @@ const COPY = {
       ['Jij keurt goed', 'Per beeld goedkeuren. Alles in één keer downloaden.', ''],
     ],
     goedgekeurd: (n: number) => `${n} van ${n} goedgekeurd`,
+    inFormaat: (l: string[]) => `In het formaat dat jij kiest: ${l.slice(0, -1).join(', ')} of ${l[l.length - 1]}.`,
     compleet: 'Compleet',
     uitlegZinnen: [
       `Je uploadt ${fotos} foto’s per product: ${SHOT_NAMEN.nl}. We kijken meteen of ze compleet zijn.`,
@@ -156,7 +165,8 @@ const COPY = {
     eenProduct: `Eén product: ${e(ladderRate('catalog', 1))} (catalog) of ${e(ladderRate('lifestyle', 1))} (lifestyle). Meer producten, lager tarief.`,
     vorige: 'Vorige', volgende: 'Volgende', veeg: 'Veeg voor de andere twee',
     looksLabel: 'Looks', looksKop: ['Kies een look.', 'Je collectie als één shoot.'], probeer: `Probeer · ${sample.price}`, bestelLook: 'Bestel deze look',
-    vorigeLooks: 'Vorige looks', volgendeLooks: 'Volgende looks',
+    vorigeLooks: 'Vorige look', volgendeLooks: 'Volgende look',
+    kiesLook: 'Kies een look', kiesSoort: 'Kies een soort beeld', lookVan: (n: number | string, t: number) => `Look ${n} van ${t}`, bekijkLook: 'Bekijk de look',
     gezicht: ['Een gezicht zit erbij.', `${GEZICHTEN.charAt(0).toUpperCase() + GEZICHTEN.slice(1)} modellen, zonder meerprijs.`], alleGezichten: `Alle ${GEZICHTEN}`,
     wetenLabel: 'Meer weten', wetenKop: ['Nog', 'vragen?'],
     shootLabel: 'Shootdag vs VISUAILS', shootZin: 'per shootdag, alles meegerekend.',
@@ -212,6 +222,7 @@ const COPY = {
       ['You approve', 'Approve image by image. Download everything at once.', ''],
     ],
     goedgekeurd: (n: number) => `${n} of ${n} approved`,
+    inFormaat: (l: string[]) => `In the format you choose: ${l.slice(0, -1).join(', ')} or ${l[l.length - 1]}.`,
     compleet: 'Complete',
     uitlegZinnen: [
       `You upload ${fotos} photos per product: ${SHOT_NAMEN.en}. We check right away that they are complete.`,
@@ -235,7 +246,8 @@ const COPY = {
     eenProduct: `One product: ${e(ladderRate('catalog', 1))} (catalog) or ${e(ladderRate('lifestyle', 1))} (lifestyle). More products, a lower rate.`,
     vorige: 'Previous', volgende: 'Next', veeg: 'Swipe for the other two',
     looksLabel: 'Looks', looksKop: ['Pick a look.', 'Your collection as one shoot.'], probeer: `Try · ${sample.price}`, bestelLook: 'Order this look',
-    vorigeLooks: 'Previous looks', volgendeLooks: 'Next looks',
+    vorigeLooks: 'Previous look', volgendeLooks: 'Next look',
+    kiesLook: 'Pick a look', kiesSoort: 'Pick a kind of image', lookVan: (n: number | string, t: number) => `Look ${n} of ${t}`, bekijkLook: 'See the look',
     gezicht: ['A face comes with it.', `${GEZICHTEN.charAt(0).toUpperCase() + GEZICHTEN.slice(1)} models, at no extra cost.`], alleGezichten: `All ${GEZICHTEN}`,
     wetenLabel: 'Learn more', wetenKop: ['Any', 'questions?'],
     shootLabel: 'Shoot day vs VISUAILS', shootZin: 'per shoot day, all in.',
@@ -327,7 +339,7 @@ const [faqTitel, faqOnderwerpen] = c.faq as [string, string[]];
 const IPTC_WAARDE = tagNaam(LEVERTAG);
 const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
 ---
-<div class="h-pagina">
+<div class="h-pagina h-voor">
 
   {/* ── 01 · DE OPENING EN HOE HET WERKT — 25 oktober 2026 ──────────────────────
       Lucas: *"Ik wil de begin sectie pagina een andere indeling geven zoals het
@@ -416,118 +428,6 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
               </>
             ) : i === 1 ? (
               <>
-              <figure class="h-well h-maak" data-v="catalog">
-                <span class="h-maak-dam" aria-hidden="true"></span>
-                <span class="h-maak-doek" aria-hidden="true"></span>
-                <span class="h-maak-wit" aria-hidden="true"></span>
-                {/* ── STAP 2 MET DE HAND — 15 oktober 2026 ──────────────────────────────
-                    Lucas: *"de 2e stap 'we create' wat meer een handmatig gevoel te geven
-                    dat de klant echt ziet dat het met de hand word gedaan de achtergrond en
-                    de Shadow en ook erbij aan te tonen dat dit voor optimale consistentie
-                    zorgt."* Vijf handelingen, elk met zijn gereedschap: (1) de pen trekt de
-                    omtrek, punt voor punt, en het wit valt weg; (2) de pipet pakt de kleur uit
-                    je vaste look en de grond loopt vol; (3) het penseel zet de schaduw in drie
-                    halen, de dekking loopt op tot 20 %; (4) het geleverde beeld, met
-                    hulplijnen boven, onder en in het midden, en de achterkant valt er precies
-                    in (gemeten: 1 à 2 px verschil, zie scripts/maak-pad.py); (5) klaar.
-                    Alle lagen zijn 760 × 760 en liggen pixel voor pixel op elkaar. Het
-                    eindbeeld (zonder script, bij minder beweging, na afloop) is het geleverde
-                    beeld met vier vinkjes; het gereedschap staat er dan niet. */}
-                <span class="h-maak-vlak">
-                  <img class="h-maak-schaduw" src="/img/ba2-na-front-uitgeknipt.webp" width="760" height="760" alt="" aria-hidden="true" loading="lazy" decoding="async" />
-                  <img class="h-maak-broek" src="/img/ba2-na-front-uitgeknipt.webp" width="760" height="760" alt="" aria-hidden="true" loading="lazy" decoding="async" />
-                  <img class="h-maak-begin" src="/img/ba2-na-front.webp" width="760" height="760" alt="" aria-hidden="true" loading="lazy" decoding="async" />
-                  <img class="h-maak-echt" src={geleverd(lang)[0].src} width={geleverd(lang)[0].w} height={geleverd(lang)[0].h} alt={c.stapAlt[1]} loading="lazy" decoding="async" />
-                  <img class="h-maak-achter" src={geleverd(lang)[1].src} width={geleverd(lang)[1].w} height={geleverd(lang)[1].h} alt="" aria-hidden="true" loading="lazy" decoding="async" />
-                  {/* Je telefoonfoto, in een vierkant vak (container-type: size) zodat de
-                      transform die hem rechtzet op elke breedte hetzelfde doet. Boven de
-                      uitsnede: in de wachtstand stak die er anders overheen. */}
-                  <span class="h-maak-doos" aria-hidden="true"><span class="h-maak-laag"><img src="/img/ba2-voor-front.webp" width="760" height="1013" alt="" loading="lazy" decoding="async" /></span></span>
-                  <svg class="h-maak-werk" viewBox={`0 0 ${PAD_MAAT} ${PAD_MAAT}`} aria-hidden="true" focusable="false">
-                    <defs>
-                      {/* De halen van het penseel, met een zachte rand. */}
-                      <filter id="h-maak-zacht" filterUnits="userSpaceOnUse" x="-200" y="-200" width="1160" height="1160"><feGaussianBlur stdDeviation="16" /></filter>
-                      <mask id="h-maak-bouw" maskUnits="userSpaceOnUse" x="-100" y="-100" width="960" height="960"><path class="h-maak-veeg" d={VEEG} pathLength="1" filter="url(#h-maak-zacht)" /></mask>
-                      <clipPath id="h-maak-vierkant"><rect x="0" y="0" width={PAD_MAAT} height={PAD_MAAT} /></clipPath>
-                      <clipPath id="h-maak-lp-rond"><circle cx="0" cy="0" r={LOEP.r} /></clipPath>
-                      <mask id="h-maak-lp-veeg" maskUnits="userSpaceOnUse" x={-LOEP.r - 8} y={-LOEP.r - 8} width={2 * LOEP.r + 16} height={2 * LOEP.r + 16}><rect class="h-maak-lp-gordijn" x={-LOEP.r - 2} y={-LOEP.r - 2} width={2 * LOEP.r + 4} height={2 * LOEP.r + 4} fill="#FFFFFF" /></mask>
-                      <filter id="h-maak-lp-schaduw" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#0B0F17" flood-opacity=".28" /></filter>
-                    </defs>
-                    {/* 2 · Het beeld dat het penseel uit je rechtgezette foto opbouwt. */}
-                    <image class="h-maak-bouwbeeld" href="/img/ba2-na-front.webp" x="0" y="0" width={PAD_MAAT} height={PAD_MAAT} mask="url(#h-maak-bouw)" preserveAspectRatio="xMidYMid meet" />
-                    {/* 1 · Het transformatiekader om de broek, de acht grepen en de muis. */}
-                    <path class="h-maak-kader is-wit" d={KADER} pathLength="1" />
-                    <path class="h-maak-kader" d={KADER} pathLength="1" />
-                    <g class="h-maak-grepen">{GREPEN.map(() => <g class="h-maak-greep"><rect x="-10" y="-10" width="20" height="20" rx="3" /></g>)}</g>
-                    {/* De muis (levering 56, 17 oktober 2026; Lucas: "Er mag nog een nieuw design
-                        komen voor de muis in animaties"). Het silhouet van een gewone muis, zodat
-                        hij meteen herkend wordt, op de maten van het merk: de staart op 66,5°
-                        (het rechterbeen van de V), losgesneden van de kop met de kier van het
-                        merk (7,6% van de hoogte), zoals de pijl in de knoppen uit schacht en
-                        kop bestaat; één zachte hoek, achter de kop, zoals de ene bocht in de V.
-                        De staart is 4 eenheden langer dan bij de oude pijl, zodat het stuk dat
-                        je ziet even lang blijft (24,6 tegen 25,1); de kier kost die lengte.
-                        De punt blijft op (0, 0): daar landt hij op de greep. Uitgerekend in
-                        kladblok/muis/geo2.py. */}
-                    <g class="h-maak-muis"><path d="M37.14 30.67 Q44 36.33 35.1 36.33 L24.75 36.33 L14 41 L0 54 L0 0 Z" /><path d="M25.74 68 L15.94 45.46 L26.67 40.8 L36.47 63.33 Z" /></g>
-                    <g clip-path="url(#h-maak-vierkant)"><g class="h-maak-bouwkwast" style={`offset-path: path('${VEEG}')`}>
-                      <circle class="h-maak-ring-wit" cx="0" cy="0" r={KWAST_R} /><circle class="h-maak-ring" cx="0" cy="0" r={KWAST_R} />
-                      <g transform="translate(88 -88)"><circle class="h-maak-bel" cx="0" cy="0" r="38" /><g transform="scale(1.4) translate(-30 30)"><path d="M18 -18 C18 -24 22 -27 26 -26 C29 -25 30 -21 27 -18 C24 -15 19 -16 18 -18 Z M27 -26 L43 -42" /></g></g>
-                      <circle class="h-maak-punt" cx="0" cy="0" r="6" />
-                    </g></g>
-                    {/* 3 · De loep: 2x vergroot, eerst je foto op die plek, dan schuift de
-                        scheidslijn over en staat ons beeld er. Een vinkje per punt. */}
-                    <g class="h-maak-lp">
-                      <circle class="h-maak-lp-bord" cx="0" cy="0" r={LOEP.r + 6} filter="url(#h-maak-lp-schaduw)" />
-                      <line class="h-maak-lp-steel" x1={-LOEP.r * 0.74} y1={LOEP.r * 0.74} x2={-LOEP.r * 1.18} y2={LOEP.r * 1.18} />
-                      <g clip-path="url(#h-maak-lp-rond)">
-                        <g class="h-maak-lp-in"><image href="/img/ba2-na-front.webp" x="0" y="0" width={PAD_MAAT} height={PAD_MAAT} /></g>
-                        <g mask="url(#h-maak-lp-veeg)"><g class="h-maak-lp-in"><image href={RECHT.foto} x="0" y="0" width={PAD_MAAT} height={PAD_MAAT} /></g></g>
-                        <g class="h-maak-lp-deler"><line x1={-LOEP.r} x2={-LOEP.r} y1={-LOEP.r} y2={LOEP.r} /><circle cx={-LOEP.r} cy="0" r="17" /><path d={`M${-LOEP.r - 5} -6 L${-LOEP.r - 10} 0 L${-LOEP.r - 5} 6 M${-LOEP.r + 5} -6 L${-LOEP.r + 10} 0 L${-LOEP.r + 5} 6`} /></g>
-                      </g>
-                      <circle class="h-maak-lp-ring" cx="0" cy="0" r={LOEP.r} /><circle class="h-maak-lp-ring2" cx="0" cy="0" r={LOEP.r + 4} />
-                      <g transform={`translate(${LOEP.r * 0.72} ${-LOEP.r * 0.72})`}><g class="h-maak-lp-vink"><circle cx="0" cy="0" r="30" /><path d="M-13 1 L-4 10 L13 -9" /></g></g>
-                    </g>
-                    <g class="h-maak-lijnen">
-                      <line x1="0" x2={PAD_MAAT} y1={LIJNEN.boven} y2={LIJNEN.boven} pathLength="1" />
-                      <line x1="0" x2={PAD_MAAT} y1={LIJNEN.onder} y2={LIJNEN.onder} pathLength="1" />
-                      <line x1={LIJNEN.midden} x2={LIJNEN.midden} y1="0" y2={PAD_MAAT} pathLength="1" />
-                    </g>
-                    <path class="h-maak-pad" d={PAD} pathLength="1" />
-                    <g class="h-maak-ankers">{ANKERS.map(([x, y, t]: number[]) => <rect x={x - 6} y={y - 6} width="12" height="12" style={`--t:${t}`} />)}</g>
-                    <g class="h-maak-pen" style={`offset-path: path('${PAD}')`}>
-                      <circle cx="42" cy="-42" r="38" /><g transform="translate(42 -42) scale(1.4) translate(-30 30)"><path d="M30 -48 L41 -37 L36 -19 L24 -19 L19 -37 Z M30 -48 V-32" transform="rotate(45 30 -30)" /></g><circle class="h-maak-punt" cx="0" cy="0" r="6" />
-                    </g>
-                    <g class="h-maak-kwast" style={`offset-path: path('${KWAST}')`}>
-                      <circle cx="42" cy="-42" r="38" /><g transform="translate(42 -42) scale(1.4) translate(-30 30)"><path d="M18 -18 C18 -24 22 -27 26 -26 C29 -25 30 -21 27 -18 C24 -15 19 -16 18 -18 Z M27 -26 L43 -42" /></g><circle class="h-maak-punt" cx="0" cy="0" r="6" />
-                    </g>
-                  </svg>
-                </span>
-                <ol class="h-lagen h-glas" role="list">
-                  {/* 15 oktober 08:30, Lucas: *"With the pen en by hand zijn wat overbodig."*
-                      Alleen nog wat er gebeurt, met de twee waarden die erbij horen: de
-                      kleur van je grond en de dekking van de schaduw. */}
-                  {c.lagen.map((l: string, k: number) => (
-                    <li style={`--l:${k}`}>
-                      <i aria-hidden="true" set:html={ik('check')} />
-                      <span>{l}</span>
-                      {k === 0 && (
-                        <b class="h-lagen-punten">{c.punten.map((pt: string, j: number) => <span style={`--p:${j}`}>{pt}</span>)}</b>
-                      )}
-                      {k === 2 && (
-                        <b>
-                          <s aria-hidden="true"></s>
-                          <span class="h-lagen-hex">{GROND}</span>
-                          <em class="h-maak-pipet" aria-hidden="true" set:html={ikoon('pipet')} />
-                        </b>
-                      )}
-                      {k === 3 && <b><span class="h-dek" /></b>}
-                    </li>
-                  ))}
-                </ol>
-                <span class="h-maak-doe h-chip h-glas" aria-hidden="true">{c.doe.map((w: string) => <span>{w}</span>)}</span>
-                <figcaption class="h-chip h-glas">{bij}</figcaption>
-              </figure>
               {/* CATALOG · DE LAGEN UIT ELKAAR, IN 3D — 25 oktober 2026, 16:40. Lucas: *"Ik wil dat hij
                   eerst vlak is dan uit elkaar springt en in 3d word weergeven met die lagen en de
                   broek word aangeduid op een manier als 'Gemaakt en bewerkt door middel van ai en
@@ -538,7 +438,10 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
                   het geleverde beeld (de grond, de schaduw, de uitgeknipte broek), kantelt open,
                   zweeft even, en klapt weer dicht (opening.css, "de lagen in 3D"). Zonder uitleg en
                   bij minder beweging staat hij open. */}
-              <figure class="h-well o-ontleed" data-v="catalog" aria-hidden="true">
+              {/* levering 75: in de opening is dit het enige beeld van stap 2 bij catalog (het handwerk
+                  ervoor staat er niet meer, opening.css), dus hij draagt nu de beschrijving, met
+                  "Gemaakt met AI" erbij (dat staat in het beeld, maar niet voor een schermlezer) */}
+              <figure class="h-well o-ontleed" data-v="catalog" role="img" aria-label={`${c.stapAlt[1]}. ${c.gemaaktMetAI}.`}>
                 <span class="o-ont-ruimte">
                   <span class="o-ont-stapel">
                     {ONT_LAGEN.map((l, k) => k).reverse().map((k) => {
@@ -567,7 +470,7 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
               </>
             ) : (
               <>
-              <figure class="h-well h-keur" data-v="catalog">
+              <figure class="h-well h-keur o-fmt-vak" data-v="catalog" style={fmtStijl('catalog')}>
                 <ul class="h-keur-rij" role="list">
                   {/* Voorkant en achterkant staan op wit en blijven heel (h-heel:
                       passend in het vak); het detail en de draagfoto vullen hun vak. */}
@@ -581,16 +484,18 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
                     <li class:list={[k < 2 && 'h-heel']} style={`--d:${k};--kt:${KEUR_TIK[k]}s`}><img src={b.src} width={b.w} height={b.h} alt="" loading="lazy" decoding="async" /><span class="h-vink" aria-hidden="true" set:html={ik('check')} /></li>
                   ))}
                 </ul>
-                <figcaption class="h-chip h-glas">{c.goedgekeurd(geleverd(lang).length)}</figcaption>
+                <figcaption class="h-chip h-glas">{c.goedgekeurd(geleverd(lang).length)}<span class="sr-only"> {c.inFormaat(FMT.catalog.lijst.map((x: any) => x.label))}</span></figcaption>
+                <span class="o-fmt h-glas" aria-hidden="true">{FMT.catalog.lijst.map((x: any, k: number) => <b class:list={[k === FMT.catalog.begin && 'is-begin', k === FMT.catalog.eind && 'is-eind']}>{x.label}</b>)}</span>
               </figure>
               {/* LIFESTYLE · ONTVANG JE BEELDEN: vier beelden in de look van stap 1 (Flash). */}
-              <figure class="h-well h-keur" data-v="lifestyle">
+              <figure class="h-well h-keur o-fmt-vak" data-v="lifestyle" style={fmtStijl('lifestyle')}>
                 <ul class="h-keur-rij" role="list">
                   {LIFESTYLE_SET.map((b, k) => (
                     <li style={`--d:${k};--kt:${KEUR_TIK[k]}s`}><img src={b.src} width={b.w} height={b.h} alt="" loading="lazy" decoding="async" /><span class="h-vink" aria-hidden="true" set:html={ik('check')} /></li>
                   ))}
                 </ul>
-                <figcaption class="h-chip h-glas">{c.inDeLook(LIFESTYLE_SET.length, FLASH.name)}</figcaption>
+                <figcaption class="h-chip h-glas">{c.inDeLook(LIFESTYLE_SET.length, FLASH.name)}<span class="sr-only"> {c.inFormaat(FMT.lifestyle.lijst.map((x: any) => x.label))}</span></figcaption>
+                <span class="o-fmt h-glas" aria-hidden="true">{FMT.lifestyle.lijst.map((x: any, k: number) => <b class:list={[k === FMT.lifestyle.begin && 'is-begin', k === FMT.lifestyle.eind && 'is-eind']}>{x.label}</b>)}</span>
               </figure>
               {/* VIDEO · ONTVANG JE CLIP: de plek voor een verticale clip; de voorbeelden volgen. */}
               <figure class="h-well o-binnenkort" data-v="video">
@@ -617,7 +522,9 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
     </Fragment>
   </HalOpening>
 
-  {uitleg && <FormatenHal lang={lang} uitleg kaal />}
+  {/* Formaten (FormatenHal) stond hier als eigen sectie; sinds levering 76 klein in stap 3 van Hoe
+      het werkt (Lucas, 26 oktober, 12:29: "De format sectie mag wel subtiel/klein toegevoegd worden
+      aan how it works animatie om de homepage wat kleiner en compacter te houden"). */}
 
   {/* ── 03 · WAT WE MAKEN ────────────────────────────────────────────────────
       Drie beelden: het middelste recht en vooraan, de zijkanten gedraaid. Komt
@@ -637,114 +544,120 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
       de shootdag (nu "per shootdag, alles meegerekend") en de tekst links van Formaten
       (FormatenHal kaal). De regel over één product blijft: zonder hem lijkt "vanaf €39" de prijs
       van één product. */}
-  <section class="h-sec h-maken" id="maken" aria-labelledby="h-maken">
-    <header class="h-sec-kop h-in">
-      <div>
-        <p class="h-pil"><span>{c.makenLabel}</span></p>
-        <h2 id="h-maken" class="h-kop h-h2">{c.makenKop[0]} <span class="l">{c.makenKop[1]}</span></h2>
-      </div>
+  {/* Levering 76, 13:00. Lucas: "de editorial rust in de foto op het computerscherm wil ik op elke
+      sectie terug zien". Het scherm in de opening toont een productpagina: één groot beeld op
+      lichtgrijs, ernaast een smalle kolom met de naam, de prijs, de maten als knopjes, één inktknop
+      en een kleine regel. Zo staat Wat we maken nu ook (het productvel, voorpagina-rust.css): de
+      drie soorten zijn de knopjes; het beeld, de prijs en de knop wisselen mee. Was: drie gelijke
+      kaarten. Zonder JavaScript staan productfoto's er, met hun link; de knopjes doen dan niets,
+      het menu bovenin heeft alle drie. */}
+  <section class="h-sec h-maken h-pv" id="maken" aria-labelledby="h-maken" data-h-pv>
+    <header class="h-sec-kop h-pv-kop h-in">
+      <p class="h-pil"><span>{c.makenLabel}</span></p>
+      <h2 id="h-maken" class="h-kop h-h2">{c.makenKop[0]} <span class="l">{c.makenKop[1]}</span></h2>
     </header>
-    <ul class="h-dk h-in" role="list">
-      {c.diensten.map(([naam, prijs, href, zin, knop], i) => (
-        <li class="h-dk-k">
-          <a href={lp(href)} class="h-dk-a">
-            <span class="h-dk-beeld">
-              <img src={['/img/catalog-raster-w760.webp', '/img/hal/sfeer-4x5.webp', '/img/hal/sfeer-bewogen.webp'][i]}
-                   srcset={i === 0 ? '/img/catalog-raster-w760.webp 760w, /img/catalog-raster-w1560.webp 1560w' : undefined}
-                   sizes="(max-width: 900px) 78vw, 30vw" width={[760, 921, 1600][i]} height={[573, 1152, 900][i]}
-                   alt={c.dienstAlt[i]} loading="lazy" decoding="async" class:list={[i === 1 && 'h-pos-1', i === 2 && 'h-pos-2']} />
-              {i === 2 && <span class="h-cirkel h-cirkel-glas h-speel" aria-hidden="true" set:html={ik('speel')} />}
-            </span>
-            <span class="h-dk-tekst">
-              <b class="h-dk-naam">{naam}</b>
-              <span class="h-dk-voet"><span class="h-dk-prijs">{prijs}</span><span class="h-dk-knop">{knop}<span class="h-cirkel h-cirkel-klein" aria-hidden="true" set:html={ik('rechts')} /></span></span>
-            </span>
-          </a>
-        </li>
+    <div class="h-pv-beeld h-in" style="--d:1" data-h-pv-vak>
+      {c.diensten.map((_d, i) => (
+        <figure class:list={['h-pv-laag', `h-pv-${DIENSTEN_HOE[i]}`, i === 0 && 'is-nu']} data-h-pv-laag={i} style={i === 0 ? `--grond:${GROND}` : undefined}>
+          {i === 0 && <img src={GELEVERD[0].src} width={GELEVERD[0].w} height={GELEVERD[0].h} alt={GELEVERD[0].alt} loading="lazy" decoding="async" />}
+          {i === 1 && <img src="/img/hal/sfeer-4x5.webp" width="921" height="1152" alt={c.dienstAlt[1]} loading="lazy" decoding="async" />}
+          {i === 2 && <span class="h-pv-klip"><img src="/img/hal/sfeer-bewogen.webp" width="1600" height="900" alt={c.dienstAlt[2]} loading="lazy" decoding="async" /><span class="h-cirkel h-cirkel-glas h-speel" aria-hidden="true" set:html={ik('speel')} /></span>}
+        </figure>
       ))}
-    </ul>
-    <p class="h-onderregel h-in"><span class="h-cirkel h-cirkel-mini h-cirkel-mist" aria-hidden="true" set:html={ik('info')} />{c.eenProduct}</p>
-    <p class="h-veeg" aria-hidden="true">{c.veeg}</p>
+      <span class="h-pv-mes" data-h-pv-mes aria-hidden="true" hidden></span>
+    </div>
+    <div class="h-pv-rest h-in" style="--d:2">
+      <div class="h-pv-keus" role="group" aria-label={c.kiesSoort}>
+        {c.diensten.map(([naam], i) => <button type="button" data-h-pv-kies={i} aria-pressed={i === 0 ? 'true' : 'false'}>{naam}</button>)}
+      </div>
+      {c.diensten.map(([, prijs, href, , knop], i) => (
+        <div class="h-pv-per" data-h-pv-per={i} hidden={i !== 0}>
+          <p class="h-pv-prijs">{prijs}</p>
+          <p class="h-acties"><a class="h-knop h-knop-inkt" href={lp(href)}>{knop}<span class="o" set:html={ik('pijl')} /></a></p>
+        </div>
+      ))}
+      <p class="h-onderregel">{c.eenProduct}</p>
+    </div>
   </section>
 
   {/* ── 04 · LOOKS EN HET GEZICHT ──────────────────────────────────────────── */}
-  <section class="h-sec h-looks" aria-labelledby="h-looks" data-h-strook>
-    <header class="h-sec-kop h-in">
-      <div>
-        <p class="h-pil"><span>{c.looksLabel}</span></p>
-        <h2 id="h-looks" class="h-kop h-h2">{c.looksKop[0]} <span class="l">{c.looksKop[1]}</span></h2>
-      </div>
-      <p class="h-sec-rechts">
-        <span class="h-lijntje" aria-hidden="true"><i data-h-strook-stand></i></span>
-        <span class="h-paar"><button type="button" class="h-cirkel" data-h-strook-stap="-1" aria-label={c.vorigeLooks} set:html={ik('links')} />
-        <button type="button" class="h-cirkel" data-h-strook-stap="1" aria-label={c.volgendeLooks} set:html={ik('rechts')} /></span>
-      </p>
+  {/* Levering 76. Eerst (10:52) één paneel zoals de laptop in de opening: links de look groot,
+      rechts de naam, de proef en de vijf looks als kleine beelden om te kiezen (uit zijn voorbeeld
+      "Complete o look"); wisselen gaat met de snede van de opening (het nieuwe beeld komt langs 53°
+      over het oude). Daarna (13:00) ook een productvel: zonder kader, het beeld rechts (om en om
+      met Wat we maken), de naam bovenaan in de kolom, en de gezichten als de kleurbolletjes van
+      een productpagina in de kolom (was een losse rij eronder). Niets beweegt vanzelf. Zonder
+      JavaScript staat de eerste look er, met de link ernaar. */}
+  <section class="h-sec h-looks h-lp h-pv h-pv-om" aria-labelledby="h-looks" data-h-lp>
+    <header class="h-sec-kop h-pv-kop h-in">
+      <p class="h-pil"><span>{c.looksLabel}</span></p>
+      <h2 id="h-looks" class="h-kop h-h2">{c.looksKop[0]} <span class="l">{c.looksKop[1]}</span></h2>
     </header>
-    <ul class="h-strook" role="list" data-h-strook-rij>
-      {LOOKS.map((k, i) => (
-        <li class="h-look h-in" style={`--d:${Math.min(i, 5)}`}>
-          <a class="h-look-a" href={k.href} aria-label={`${k.naam} · ${k.soort}`}>
-            <img src={k.beeld} alt="" width="800" height="1000" loading="lazy" decoding="async" />
-            <span class="h-pil h-pil-glas h-pil-nr">{k.soort}</span>
-            <span class="h-cirkel h-cirkel-glas h-look-pijl" aria-hidden="true" set:html={ik('pijl')} />
-          </a>
-          {/* Een klant (15 oktober 2026): "Bestel deze look" in plaats van de €1-proef. */}
-          <p class="h-look-paneel h-glas"><b>{k.naam}</b><a class="h-mini-knop" href={k.proef} data-vis-uit>{c.probeer}</a><a class="h-mini-knop" href={k.bestel} data-vis-klant-in hidden>{c.bestelLook}</a></p>
-        </li>
-      ))}
-    </ul>
-    <div class="h-gezicht h-in">
-      <p class="h-kop h-h3">{c.gezicht[0]} <span class="l">{c.gezicht[1]}</span></p>
-      <p class="h-gezicht-rechts">
+    <a class="h-lp-podium h-pv-beeld h-in" style="--d:1" href={LOOKS[0]?.href} data-h-lp-link data-bekijk={c.bekijkLook} aria-label={`${c.bekijkLook}: ${LOOKS[0]?.naam}`}>
+      <img class="h-lp-nu" data-h-lp-nu src={LOOKS[0]?.beeld} sizes="(max-width: 900px) 125vw, 560px" alt="" width="800" height="1000" loading="lazy" decoding="async" />
+      <img class="h-lp-nieuw" data-h-lp-nieuw alt="" width="800" height="1000" decoding="async" hidden />
+      <span class="h-lp-mes" data-h-lp-mes aria-hidden="true" hidden></span>
+    </a>
+    <div class="h-pv-rest h-lp-info h-in" style="--d:2">
+      <p class="h-lp-boven"><span class="h-pil h-pil-nr h-lp-soort" data-h-lp-soort>{LOOKS[0]?.soort}</span><span class="h-lp-van" data-h-lp-van data-vorm={c.lookVan('{n}', LOOKS.length)} aria-live="polite">{c.lookVan(1, LOOKS.length)}</span></p>
+      {/* Per look de naam en de proefknop, één tegelijk zichtbaar: zo staat elke proef in de HTML
+          (ook zonder script te bereiken) en wisselt het script alleen welke er staat. De klantstand
+          (interactions.js) zet "hidden" op de knoppen zelf, het script op het omhulsel. */}
+      {LOOKS.map((k, i) => <p class="h-lp-naam" data-h-lp-per={i} hidden={i !== 0}>{k.naam}</p>)}
+      <ul class="h-lp-keus" role="list" aria-label={c.kiesLook}>
+        {LOOKS.map((k, i) => (
+          <li><button type="button" class="h-lp-mini" data-h-lp-kies={i} aria-pressed={i === 0 ? 'true' : 'false'}
+                      data-naam={k.naam} data-soort={k.soort} data-beeld={k.beeld} data-href={k.href}>
+            <img src={k.beeld} sizes="(max-width: 900px) 125vw, 560px" alt="" width="800" height="1000" loading="lazy" decoding="async" /><span class="sr-only">{k.naam} · {k.soort}</span>
+          </button></li>
+        ))}
+      </ul>
+      <div class="h-gezicht">
         <span class="h-koppen">
           {GEZICHTEN_RIJ.map((m: any) => <a href={`${lp('/models')}#${modelId(m.name)}`} aria-label={m.name}><img src={m.thumb} width={m.tw} height={m.th} alt="" loading="lazy" decoding="async" /></a>)}
         </span>
-        <a class="h-knop h-knop-inkt h-knop-klein" href={lp('/models')}>{c.alleGezichten}<span class="o" set:html={ik('pijl')} /></a>
-      </p>
+        <p class="h-gezicht-zin"><b>{c.gezicht[0]}</b> {c.gezicht[1]} <a href={lp('/models')}>{c.alleGezichten}</a></p>
+      </div>
+      {LOOKS.map((k, i) => (
+        <p class="h-acties h-lp-acties" data-h-lp-per={i} hidden={i !== 0}>
+          <a class="h-knop h-knop-inkt" href={k.proef} data-vis-uit>{c.probeer}<span class="o" set:html={ik('pijl')} /></a>
+          <a class="h-knop h-knop-inkt" href={k.bestel} data-vis-klant-in hidden>{c.bestelLook}<span class="o" set:html={ik('pijl')} /></a>
+          <a class="h-link h-lp-meer" href={k.href}>{c.bekijkLook}</a>
+        </p>
+      ))}
     </div>
   </section>
 
   {/* ── 05 · MEER WETEN ──────────────────────────────────────────────────── */}
-  <section class="h-sec h-weten" aria-labelledby="h-weten">
-    <header class="h-sec-kop h-in">
-      <div>
-        <p class="h-pil"><span>{c.wetenLabel}</span></p>
-        <h2 id="h-weten" class="h-kop h-h2"><span class="l">{c.wetenKop[0]}</span> {c.wetenKop[1]}</h2>
-      </div>
+  {/* Levering 76 (13:00): geen kaarten meer, maar de regels onder de knop van een productpagina:
+      links de kop groot (het ene grote element van deze sectie), rechts drie regels met een
+      haarlijn. Bewust geen foto: een gezicht naast "Nog vragen?" leest als een medewerker die er
+      niet is. Was (10:52): drie gelijke kaarten met een grijs vlak. */}
+  <section class="h-sec h-weten h-pv h-pv-tekst" aria-labelledby="h-weten">
+    <header class="h-sec-kop h-pv-kop h-in">
+      <p class="h-pil"><span>{c.wetenLabel}</span></p>
+      <h2 id="h-weten" class="h-kop h-h2"><span class="l">{c.wetenKop[0]}</span> {c.wetenKop[1]}</h2>
     </header>
-    <ul class="h-weten-rij" role="list">
-      <li class="h-in h-groot" style="--d:0">
+    <ul class="h-pv-rest h-wt-rijen h-in" role="list" style="--d:1">
+      <li>
         <a href={lp('/compare')}>
-          <span class="h-korrel" aria-hidden="true"></span>
-          <span class="h-weten-boven"><span class="h-pil h-pil-wit"><span>{c.shootLabel}</span></span><span class="h-cirkel h-cirkel-wit" aria-hidden="true" set:html={ik('pijl')} /></span>
-          <span class="h-weten-onder"><span class="h-getal">{SHOOT_DAY[lang].range}</span><span class="h-weten-zin">{c.shootZin}</span></span>
+          <b>{c.shootLabel}</b>
+          <span class="h-wt-detail"><span class="h-wt-getal">{SHOOT_DAY[lang].range}</span> {c.shootZin}</span>
+          <span class="h-cirkel h-cirkel-klein" aria-hidden="true" set:html={ik('pijl')} />
         </a>
       </li>
-      {/* Twee kaarten met een klein, stil beeld erin, zodat ze niet leeg ogen naast
-          het grote getal. Beide beelden zijn versiering (aria-hidden): de kop en
-          de zin eronder zeggen hetzelfde in woorden. */}
-      <li class="h-in h-faq" style="--d:1">
+      <li>
         <a href={lp('/faq')}>
-          <span class="h-weten-boven">
-            <span class="h-vragen" aria-hidden="true">
-              {faqOnderwerpen.map((w, i) => <span style={`--d:${i}`}>{w}?</span>)}
-            </span>
-            <span class="h-cirkel h-cirkel-wit" aria-hidden="true" set:html={ik('pijl')} />
-          </span>
-          <span class="h-weten-onder"><b>{faqTitel}</b></span>
+          <b>{faqTitel}</b>
+          <span class="h-wt-detail">{faqOnderwerpen.join(' · ')}</span>
+          <span class="h-cirkel h-cirkel-klein" aria-hidden="true" set:html={ik('pijl')} />
         </a>
       </li>
-      <li class="h-in h-act" style="--d:2">
+      <li>
         <a href={lp('/ai-act')}>
-          <span class="h-weten-boven">
-            <span class="h-label" aria-hidden="true">
-              <span class="h-label-kop"><i>IPTC</i>Digital Source Type</span>
-              <span class="h-label-waarde" style={`--n:${IPTC_WAARDE.length}`}>{IPTC_WAARDE}</span>
-              <span class="h-label-zegt"><span set:html={ik('check')} />{IPTC_WOORD}</span>
-            </span>
-            <span class="h-cirkel h-cirkel-wit" aria-hidden="true" set:html={ik('pijl')} />
-          </span>
-          <span class="h-weten-onder"><b>{c.aiact[0]}</b></span>
+          <b>{c.aiact[0]}</b>
+          <span class="h-wt-detail"><i>IPTC</i>{IPTC_WAARDE}</span>
+          <span class="h-cirkel h-cirkel-klein" aria-hidden="true" set:html={ik('pijl')} />
         </a>
       </li>
     </ul>
@@ -825,6 +738,111 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
           rij.scrollBy({ left: stap * Number(b.dataset.hStrookStap), behavior: rustig ? 'auto' : 'smooth' });
         });
       }
+    }
+
+    /* 4. HET LOOKPANEEL (levering 76). Een klik op een klein beeld of een pijl kiest een look:
+       de naam, de soort, de teller en de links wisselen meteen; het grote beeld komt langs de
+       snede van de opening (53°, horizontaal 0,75 × de hoogte) over het oude, met een witte kier
+       op de snijrand. 0,56 s, één keer per klik; bij minder beweging meteen. */
+    for (const lp of document.querySelectorAll<HTMLElement>('[data-h-lp]')) {
+      if (lp.dataset.hKlaar) continue;
+      lp.dataset.hKlaar = '1';
+      const q = <T extends Element = HTMLElement>(s: string) => lp.querySelector<T>(s);
+      const keus = [...lp.querySelectorAll<HTMLButtonElement>('[data-h-lp-kies]')];
+      const podium = q<HTMLAnchorElement>('[data-h-lp-link]'), nu = q<HTMLImageElement>('[data-h-lp-nu]'), nieuw = q<HTMLImageElement>('[data-h-lp-nieuw]');
+      const mes = q('[data-h-lp-mes]'), soort = q('[data-h-lp-soort]'), van = q('[data-h-lp-van]'), nr = q('[data-h-lp-nr]');
+      const per = [...lp.querySelectorAll<HTMLElement>('[data-h-lp-per]')];
+      if (keus.length < 2 || !podium || !nu || !nieuw || !mes || !soort || !van) continue;
+      const vorm = van.dataset.vorm || '{n}', bekijk = podium.dataset.bekijk || '';
+      /* De bouwstap (scripts/avif-naast-webp.mjs) zet elke <img> in een <picture> met een AVIF-bron;
+         die wint van img.src. Voor het wisselen gaat de bron eruit, met het beeld dat er al stond. */
+      const los = (img: HTMLImageElement) => {
+        const pic = img.parentElement;
+        if (pic?.tagName !== 'PICTURE' || !pic.querySelector('source')) return;
+        const was = img.currentSrc || img.src;
+        pic.querySelectorAll('source').forEach((s) => s.remove());
+        img.removeAttribute('srcset'); img.removeAttribute('sizes');
+        if (was) img.src = was;
+      };
+      /* het beeld dat het kleine knopje al heeft (AVIF of webp, wat de browser koos) */
+      const bron = (j: number) => keus[j].querySelector('img')?.currentSrc || keus[j].dataset.beeld || '';
+      let k = 0, bezig = false, wacht: number | null = null;
+      const tekst = (j: number) => {
+        const d = keus[j].dataset;
+        soort.textContent = d.soort || '';
+        van.textContent = vorm.replace('{n}', String(j + 1));
+        if (nr) nr.textContent = String(j + 1).padStart(2, '0');
+        podium.href = d.href || podium.href; podium.setAttribute('aria-label', `${bekijk}: ${d.naam || ''}`);
+        per.forEach((x) => { x.hidden = Number(x.dataset.hLpPer) !== j; });
+        keus.forEach((x, i) => x.setAttribute('aria-pressed', String(i === j)));
+      };
+      const ga = async (j: number) => {
+        j = (j + keus.length) % keus.length;
+        if (bezig) { wacht = j; return; }
+        if (j === k) return;
+        k = j; tekst(j); los(nu); los(nieuw);
+        const src = bron(j);
+        if (matchMedia('(prefers-reduced-motion: reduce)').matches || typeof nieuw.animate !== 'function') { nu.src = src; return; }
+        bezig = true;
+        nieuw.src = src;
+        try { await nieuw.decode(); } catch { /* dan zonder te wachten */ }
+        const W = podium.clientWidth, H = podium.clientHeight, T = 0.75 * H, kier = Math.max(4, Math.round(H * 0.012));
+        const vorm1 = (c: number) => `polygon(-2px -2px, ${(c + T).toFixed(1)}px -2px, ${c.toFixed(1)}px ${H + 2}px, -2px ${H + 2}px)`;
+        nieuw.style.clipPath = vorm1(-T - kier - 2); nieuw.hidden = false;
+        mes.style.width = `${T + kier}px`; mes.style.setProperty('--kier', `${kier}px`); mes.hidden = false;
+        const opties = { duration: 560, easing: 'cubic-bezier(.65, 0, .25, 1)', fill: 'forwards' as FillMode };
+        const a = nieuw.animate([{ clipPath: vorm1(-T - kier - 2) }, { clipPath: vorm1(W + 2) }], opties);
+        const b = mes.animate([{ transform: `translateX(${-T - kier - 2}px)` }, { transform: `translateX(${W + 2}px)` }], opties);
+        await a.finished.catch(() => {});
+        nu.src = src;
+        try { await nu.decode(); } catch { /* prima */ }
+        nieuw.hidden = true; mes.hidden = true; a.cancel(); b.cancel(); nieuw.style.clipPath = '';
+        bezig = false;
+        if (wacht !== null) { const w = wacht; wacht = null; ga(w); }
+      };
+      keus.forEach((x, i) => x.addEventListener('click', () => ga(i)));
+      for (const b of lp.querySelectorAll<HTMLButtonElement>('[data-h-lp-stap]')) b.addEventListener('click', () => ga((wacht ?? k) + Number(b.dataset.hLpStap)));
+    }
+
+    /* 5. WAT WE MAKEN ALS PRODUCTVEL (levering 76, 13:00). De drie soorten zijn knopjes, zoals de
+       maten op een productpagina: de prijs en de knop wisselen meteen; het grote beeld komt langs
+       dezelfde snede als bij de looks (53°, een witte kier op de snijrand) over het oude. 0,56 s,
+       één keer per klik; bij minder beweging meteen. */
+    for (const pv of document.querySelectorAll<HTMLElement>('[data-h-pv]')) {
+      if (pv.dataset.hKlaar) continue;
+      pv.dataset.hKlaar = '1';
+      const vak = pv.querySelector<HTMLElement>('[data-h-pv-vak]'), mes = pv.querySelector<HTMLElement>('[data-h-pv-mes]');
+      const keus = [...pv.querySelectorAll<HTMLButtonElement>('[data-h-pv-kies]')];
+      const lagen = [...pv.querySelectorAll<HTMLElement>('[data-h-pv-laag]')];
+      const per = [...pv.querySelectorAll<HTMLElement>('[data-h-pv-per]')];
+      if (!vak || !mes || keus.length < 2 || lagen.length !== keus.length) continue;
+      let k = 0, bezig = false, wacht: number | null = null;
+      const ga = async (j: number) => {
+        if (bezig) { wacht = j; return; }
+        if (j === k) return;
+        const oud = lagen[k], nieuw = lagen[j];
+        k = j;
+        keus.forEach((x, i) => x.setAttribute('aria-pressed', String(i === j)));
+        per.forEach((x) => { x.hidden = Number(x.dataset.hPvPer) !== j; });
+        if (matchMedia('(prefers-reduced-motion: reduce)').matches || typeof nieuw.animate !== 'function') {
+          oud.classList.remove('is-nu'); nieuw.classList.add('is-nu'); return;
+        }
+        bezig = true;
+        try { await nieuw.querySelector('img')?.decode(); } catch { /* dan zonder te wachten */ }
+        const W = vak.clientWidth, H = vak.clientHeight, T = 0.75 * H, kier = Math.max(4, Math.round(H * 0.012));
+        const vorm = (c: number) => `polygon(-2px -2px, ${(c + T).toFixed(1)}px -2px, ${c.toFixed(1)}px ${H + 2}px, -2px ${H + 2}px)`;
+        nieuw.style.clipPath = vorm(-T - kier - 2); nieuw.classList.add('is-komt');
+        mes.style.width = `${T + kier}px`; mes.style.setProperty('--kier', `${kier}px`); mes.hidden = false;
+        const opties = { duration: 560, easing: 'cubic-bezier(.65, 0, .25, 1)', fill: 'forwards' as FillMode };
+        const a = nieuw.animate([{ clipPath: vorm(-T - kier - 2) }, { clipPath: vorm(W + 2) }], opties);
+        const b = mes.animate([{ transform: `translateX(${-T - kier - 2}px)` }, { transform: `translateX(${W + 2}px)` }], opties);
+        await a.finished.catch(() => {});
+        oud.classList.remove('is-nu'); nieuw.classList.add('is-nu'); nieuw.classList.remove('is-komt');
+        a.cancel(); b.cancel(); nieuw.style.clipPath = ''; mes.hidden = true;
+        bezig = false;
+        if (wacht !== null) { const w = wacht; wacht = null; ga(w); }
+      };
+      keus.forEach((x, i) => x.addEventListener('click', () => ga(i)));
     }
   };
   zet();

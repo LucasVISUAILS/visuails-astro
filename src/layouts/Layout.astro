@@ -118,7 +118,8 @@ import Woordmerk from '../components/Woordmerk.astro';
 import VMerk from '../components/VMerk.astro';
 import KlantMelding from '../components/KlantMelding.astro';
 import { WOORDMERK, WOORDMERK_LIJNEN } from '../data/woordmerk.js';
-import urbanistLatin from '@fontsource-variable/urbanist/files/urbanist-latin-wght-normal.woff2?url';
+/* levering 76: de letter van de hal is Instrument Sans, zelf gehost (public/fonts/instrument-sans/) */
+const LETTER_HAL = '/fonts/instrument-sans/instrument-sans-latin.woff2';
 
 interface Props {
   title: string;
@@ -435,7 +436,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
     </script>
   )}
   {huid === 'hal'
-    ? <link rel="preload" as="font" type="font/woff2" href={urbanistLatin} crossorigin="anonymous" />
+    ? <link rel="preload" as="font" type="font/woff2" href={LETTER_HAL} crossorigin="anonymous" />
     : <link rel="preload" as="font" type="font/woff2" href={archivoRoman} crossorigin="anonymous" />}
   {/* The heading face IS the LCP element on most pages — same measured
        reasoning as the Archivo preload above. Anybody is deliberately NOT

@@ -86,3 +86,5 @@
 # ── 14 oktober 2026 · moet weg (Lucas: "Beeld 1 niet gebruiken, dat is de hoodie met de rode cirkel van een ander echt merk") ──
 #
 # ── 14 oktober 2026 · mag weg (onderdelen van de vorige opmaak die geen pagina meer laadt; nagekeken: de site bouwt zonder, ook zonder alles hierboven) ──
+#
+# ── 26 oktober 2026 · moet weg (levering 75: de opening gebruikt nu still-1800, -2700 en -3600; tests/opening-74 kijkt na dat de oude maten weg zijn) ──

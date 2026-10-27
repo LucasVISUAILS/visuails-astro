@@ -154,7 +154,7 @@ console.log('\ngeen rij op de homepage is verticaal scrollbaar');
          daar ook. */
       /* 15 oktober 2026: de drie diensten zijn platte kaarten (.h-dk), op een
          telefoon een veegrij. .h-cf blijft in de lijst om dezelfde reden als hierboven. */
-      for (const sel of ['.h-pagina .h-dk', '.h-pagina .h-cf', '.h-pagina .h-strook', '.h-pagina .h-koppen', '.s22 .kaarten', '.s22 .rij', '.s22 .cast']) {
+      for (const sel of ['.h-pagina .h-dk', '.h-pagina .h-pv-keus', '.h-pagina .h-cf', '.h-pagina .h-strook', '.h-pagina .h-koppen', '.s22 .kaarten', '.s22 .rij', '.s22 .cast']) {
         const el = document.querySelector(sel);
         if (!el) continue;
         uit[sel] = { v: el.scrollHeight - el.clientHeight, h: el.scrollWidth - el.clientWidth };
@@ -182,8 +182,13 @@ console.log('\ngeen rij op de homepage is verticaal scrollbaar');
     /* Sinds 12 oktober 2026 is de rij met kaarten op de voorpagina de strook
        met looks (`.h-strook`, VoorpaginaHal.astro): die schuift op elk scherm
        zijwaarts, met pijlen erboven. */
+    /* Levering 76 (26 oktober): de strook met looks is één paneel geworden (de looks kies je met
+       kleine beelden). De rij met kaarten is nu die van Wat we maken (.h-dk): op de computer
+       passen de drie, op een telefoon is het een veegrij. */
     const kaarten = await page.evaluate(() => {
-      const rail = document.querySelector('.h-pagina .h-strook') || document.querySelector('.s22 .kaarten');
+    /* Levering 76 (13:00): Wat we maken is een productvel geworden; de drie soorten zijn knopjes
+       (.h-pv-keus), zoals de maten op een productpagina. Dezelfde eis: alle drie bereikbaar. */
+      const rail = document.querySelector('.h-pagina .h-strook') || document.querySelector('.h-pagina .h-dk') || document.querySelector('.h-pagina .h-pv-keus') || document.querySelector('.s22 .kaarten');
       if (!rail) return null;
       const r = rail.getBoundingClientRect();
       const items = [...rail.children].map((el) => el.getBoundingClientRect());
