@@ -1,0 +1,129 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   DE OPENING ALS ZWARTE TABLET — levering 78, 27 oktober 2026
+   ═══════════════════════════════════════════════════════════════════════════════
+   Lucas, 16:03: "in plaats van een grijs vak een soort zwarte tablet … net als in het voorbeeld",
+   en "het grijze vak komt tegen de top bar aan. Dit soort fouten zijn visueel enorm onprettig".
+   Lijst 61 (a, a, a) en 62 (a: rond, als een echte tablet). 16:50: "Alleen de eerste laptop pagina
+   krijgt het scroll effect en daarna scrollt de pagina normaal."
+
+   DE MATEN (docs/RUIMTE-EN-RUST.md):
+   - 48 px lucht onder de balk (72 px hoog). De tablet staat in het midden, liggend in 3 : 2.
+   - De rand is 3 % van de hoogte, de hoek 5,7 % (34 px op 595), het scherm concentrisch erin.
+   - Het scherm toont alleen gefilmd beeld: uit de still (3600 × 1382) de strook x 1777 ± de halve
+     breedte, y −40 tot 975 (boven de klep is de grond effen wit). De laptop staat in het midden.
+   - Eronder de kop op één regel, die een stap S = 0,75 × de korpsgrootte links buiten de tablet hangt
+     (R1, de snede van 53,13°) en rechts tot de rand van de tablet loopt; de zin en de standen op de
+     lijn van de tablet.
+   - De hoogte rekent de css uit, zonder script: A = 100svh − 272 px (de balk, de lucht, de kop- en
+     rijruimte); de tablet is max(A − 56,89, A / (1 + 1,5 / c)) hoog, met c de breedte van de kop in
+     korpsgroottes min de stap (NL 14,34, EN 17,06, gemeten met 1 % speling).
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.t-podium {
+  --t-balk: 72px; --t-boven: 48px; --t-gat: 38px; --t-rijgat: 21px; --t-rij: 98px; --t-onder: 40px;
+  --t-c: 14.34;
+  --t-marge: max(20px, 5.2vw);
+  --t-a: calc(100svh - var(--t-balk) - var(--t-boven) - var(--t-gat) - var(--t-rijgat) - var(--t-rij) - var(--t-onder));
+  /* minstens 290 hoog: dan staat alles nog op een venster van 600 px hoog (gemeten op 1280 × 600) */
+  --t-h: clamp(290px, min(max(calc(var(--t-a) - 56.89px), calc(var(--t-a) / (1 + 1.5 / var(--t-c)))), calc((100vw - 2 * var(--t-marge) - 60px) / 1.5), 760px), 760px);
+  --t-w: calc(var(--t-h) * 1.5);
+  --t-rand: calc(var(--t-h) * .03);
+  --t-hoek: calc(var(--t-h) * .057);
+  --t-f: min(56.89px, calc(var(--t-w) / var(--t-c)));
+  --t-s: calc(var(--t-f) * .75);
+  position: relative; z-index: 2; background: #FFFFFF;
+}
+html[lang="en"] .t-podium { --t-c: 17.06; }
+/* DE RIJ (review 78: op een laptop van 1366 × 657, 1280 × 700, 1440 × 790 en 1536 × 730 viel de zin
+   onder het scherm). De zin is 1006 px lang (NL, 18 px; EN 972) en de standen 334 px. Naast elkaar
+   past de zin in twee regels als de tablet minstens 880 px breed is; daaronder staat de zin over de
+   hele breedte (de letter zo dat hij in twee regels past) en de standen eronder, rechts. De ruimte
+   voor de rij (--t-rij) volgt dezelfde grens: 53 px naast elkaar, 98 px onder elkaar (twee regels, 12
+   px, de standen). De tablet is 880 px breed vanaf 916 px hoog (met 53 px voor de rij) en 1050 px
+   breed; met 98 px wordt hij alleen smaller, dus de twee kanten blijven het eens. */
+@media (min-width: 1050px) and (min-height: 916px) { .t-podium { --t-rij: 53px; } }
+.t-spoor { position: relative; }
+.t-vast { position: relative; min-height: 100svh; box-sizing: border-box; padding-top: calc(var(--t-balk) + var(--t-boven)); background: #FFFFFF; }
+
+/* ── de tablet ───────────────────────────────────────────────────────────── */
+.t-tablet { position: relative; width: var(--t-w); height: var(--t-h); margin: 0 auto; box-sizing: border-box; padding: var(--t-rand);
+  border-radius: var(--t-hoek); background: var(--h-inkt, #0B0F17); transform-origin: 50% 0; }
+.t-camera { position: absolute; left: 50%; top: calc(var(--t-rand) / 2); width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px; border-radius: 50%; background: #262A33; }
+.t-scherm { position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: calc(var(--t-hoek) - var(--t-rand)); background: #FFFFFF; container-type: size; }
+.t-beeld { --k: calc(100cqh / 1015); position: absolute; width: calc(var(--k) * 3600); height: calc(var(--k) * 1382);
+  left: calc(50cqw - var(--k) * 1777); top: calc(var(--k) * 40); }
+.t-beeld > picture { display: contents; }
+.t-still { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; display: block; }
+/* de schermen van laptop en telefoon: achter de still (die heeft daar een gat) */
+.t-sc { position: absolute; left: var(--o-x); top: var(--o-y); width: var(--o-b); height: var(--o-h); }
+.t-podium.t-gezet .t-sc { left: 0; top: 0; transform-origin: 0 0; }
+.t-podium.t-gezet .t-sc-lap { width: 1600px; height: 1034px; }
+.t-podium.t-gezet .t-sc-fon { width: 540px; height: 1170px; }
+.t-sc-lap { background: #FAFAFA; }
+.t-sc-fon { background: #9A9894; }
+.t-sc picture, .t-sc img { display: block; width: 100%; height: 100%; max-width: none; }
+.t-sc picture.t-st { position: absolute; inset: 0; opacity: 0; transition: opacity .45s cubic-bezier(.25, .8, .3, 1); }
+.t-sc picture.t-st.is-nu { opacity: 1; }
+/* de plek van de foto in het scherm (het vertrekpunt van de vlucht); per stand een andere plek */
+.t-foto-plek { position: absolute; left: 11.125%; top: 11.219%; width: 53.75%; height: 83.172%; pointer-events: none; }
+.t-podium[data-stand="lifestyle"] .t-foto-plek { left: 10.625%; top: 6.48%; width: 45%; height: 87.04%; }
+.t-podium[data-stand="video"] .t-foto-plek { left: 0; top: 0; width: 100%; height: 100%; }
+
+/* ── de kop, de zin en de standen ───────────────────────────────────────── */
+.t-tekst { width: var(--t-w); margin: var(--t-gat) auto 0; container: t-tekst / inline-size; }
+.t-kop.h-kop { margin: 0 0 0 calc(-1 * var(--t-s)); font-size: var(--t-f); line-height: 1; letter-spacing: -.03em; white-space: nowrap; text-wrap: nowrap; }
+.t-rij { display: flex; align-items: center; justify-content: space-between; gap: 12px 32px; margin-top: var(--t-rijgat); }
+.t-lede { --h-maat: 34em; flex: 1 1 360px; max-width: 34em; margin: 0; font: 500 18px/1.45 var(--h-letter); color: var(--h-inkt-2, #0B0F17); text-wrap: balance; }
+.t-stand { flex: none; display: flex; align-items: center; gap: 10px; }
+.t-stand-naam { display: grid; grid-template-columns: auto auto; align-items: baseline; gap: 2px 10px; margin: 0 4px 0 0; font: 500 14px/1.2 var(--h-letter); color: var(--h-inkt); }
+.t-stand-naam b { font-weight: 600; }
+.t-stand-teller { font: 500 12px/1 var(--h-mono, monospace); color: var(--h-grijs, #636974); font-variant-numeric: tabular-nums; }
+.t-stand-streep { grid-column: 1 / -1; position: relative; display: block; height: 2px; background: var(--h-lijn, #E6E8EC); overflow: hidden; }
+.t-stand-streep i { position: absolute; inset: 0; background: var(--h-inkt); transform-origin: 0 50%; transform: scaleX(0); }
+.t-stand-streep i.is-aan { animation: t-klok linear forwards; animation-play-state: paused; }
+.t-podium.t-loopt .t-stand-streep i.is-aan { animation-play-state: running; }
+@keyframes t-klok { to { transform: scaleX(1); } }
+.t-pauze .t-p-aan { display: none; }
+.t-pauze[aria-pressed="true"] .t-p-aan { display: block; }
+.t-pauze[aria-pressed="true"] .t-p-uit { display: none; }
+
+/* ── de vlucht: de foto uit het scherm wordt de foto van Wat we maken ───── */
+.t-vlieg { position: fixed; z-index: 3; left: 0; top: 0; overflow: hidden; pointer-events: none; background: #EFEFEF; }
+.t-vlieg[hidden] { display: none; }
+.t-vlieg-doel { position: absolute; inset: 0; opacity: 0; }
+.t-vlieg-scherm { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background-repeat: no-repeat; }
+
+/* ── het scrolleffect (alleen op de computer, met beweging): html.t-aan ───
+   Het spoor is één scherm hoog plus de weg (--t-weg); Wat we maken schuift onder het podium door
+   (marge −100svh), zodat de foto op zijn echte plek landt en de pagina daarna gewoon doorscrolt. */
+html.t-aan .t-spoor { height: calc(100svh + var(--t-weg, 90svh)); }
+html.t-aan .t-vast { position: sticky; top: 0; height: 100svh; overflow: clip; }
+html.t-aan .t-podium { background: transparent; }
+html.t-aan body.hal .h-voor > .t-na { margin-top: -100svh; position: relative; z-index: 1; }
+html.t-aan .t-vast.t-weg { visibility: hidden; }
+/* het spoor is 190svh hoog en ligt boven Wat we maken: alleen het vaste scherm vangt klikken, en ook dat
+   alleen zolang het Wat we maken nog bedekt (het script zet dan pointer-events: none op .t-vast) */
+html.t-aan .t-podium, html.t-aan .t-spoor { pointer-events: none; }
+html.t-aan .t-vast { pointer-events: auto; }
+
+/* ── de telefoon (≤ 900 px): geen effect; de tablet 4 : 3 over de breedte, de kop op twee regels
+   (het eerste deel past op één regel: 9,00 × de letter, Engels 10,51, met 3,5 % speling) ── */
+@media (max-width: 900px) {
+  .t-podium { --t-balk: 60px; --t-boven: 28px; --t-marge: 16px;
+    --t-w: calc(100vw - 2 * var(--t-marge)); --t-h: calc(var(--t-w) * .75);
+    --t-f: clamp(26px, min(max(34px, 8.6vw), calc(var(--t-w) / 9.31)), 64px); }
+  html[lang="en"] .t-podium { --t-f: clamp(26px, min(max(34px, 8.6vw), calc(var(--t-w) / 10.88)), 64px); }
+  .t-vast { min-height: 0; padding-bottom: 8px; }
+  .t-tekst { width: auto; margin: 26px var(--t-marge) 0; padding-left: calc(var(--t-s) / 2); }
+  .t-kop.h-kop { margin-left: calc(var(--t-s) / -2); white-space: normal; text-wrap: balance; }
+  .t-kop .t-kop-voor { display: block; }
+  .t-rij { flex-wrap: wrap; }
+  .t-lede { flex-basis: 100%; font-size: 17px; }
+}
+@media (min-width: 901px) {
+  @container t-tekst (max-width: 879.98px) {
+    .t-rij { flex-direction: column; align-items: stretch; gap: 12px; }
+    .t-lede { flex: none; max-width: none; font-size: clamp(15px, calc(var(--t-w) * .0335), 18px); }
+    .t-stand { align-self: flex-end; }
+  }
+}
+@media (prefers-reduced-motion: reduce) { .t-sc picture.t-st { transition: none; } }

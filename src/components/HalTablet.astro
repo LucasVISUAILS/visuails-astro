@@ -1,0 +1,409 @@
+---
+/**
+ * VISUAILS — de opening van de voorpagina als zwarte tablet (levering 78, 27 oktober 2026).
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Vervangt HalOpening.astro (de scrollvideo met Hoe het werkt in hetzelfde scherm, 74 – 77).
+ * Lucas: lijst 61 (a, a, a): het beeld op een vlak met de echte armen, de foto vliegt naar zijn
+ * plek in Wat we maken, en daarna Hoe het werkt. 16:03: "in plaats van een grijs vak een soort
+ * zwarte tablet … net als in het voorbeeld" en lucht onder de balk. Lijst 62 (a): rond, als een
+ * echte tablet. 16:50: "Alleen de eerste laptop pagina krijgt het scroll effect en daarna scrollt
+ * de pagina normaal." De maten en het waarom: tablet.css en docs/RUIMTE-EN-RUST.md.
+ *
+ * HET SCROLLEFFECT (u van 0 tot 1, over 0,9 schermhoogte (90svh); alleen > 900 px en met beweging)
+ *   0    – .18   de kop, de zin en de standen gaan weg (dekking, 12 px omhoog)
+ *   0    – .32   de tablet komt iets dichterbij (1,12 ×), de bovenkant blijft 48 px onder de balk
+ *   .16  – .90   de foto komt uit het winkelscherm en vliegt naar de foto van Wat we maken; onderweg
+ *                wordt het beeld uit het scherm het beeld van Wat we maken (overvloeien .24 – .58)
+ *   .30  – .58   de tablet lost op (en schuift 40 px omhoog); de witte grond van het podium lost op
+ *                (.48 – .78), zodat Wat we maken eronder zichtbaar wordt. De foto landt op een kopie
+ *                van de laag die Wat we maken op dat moment toont (dezelfde soort als het scherm)
+ *   1            de foto ligt op zijn echte plek; het podium is weg; gewoon verder scrollen
+ * Geen sprong per wieltik en niets vastgezet daarna: de scroll is gewoon de scroll.
+ *
+ * ZONDER SCRIPT, BIJ MINDER BEWEGING EN OP DE TELEFOON: de tablet, de kop en de zin, en Wat we
+ * maken gewoon eronder.
+ */
+import '../styles/tablet.css';
+import SCHERMEN from '../data/openingSchermen.json';
+import { openingStanden, openingVersie } from '../data/openingStanden.js';
+import { laptopReeks } from '../data/laptopSlides.js';
+import { ikoon, IKOON } from '../data/iconen.js';
+
+interface Props {
+  lang: 'en' | 'nl';
+  kop: { lines: string[]; plain: string };
+  lede: string;
+}
+const { lang, kop, lede } = Astro.props as Props;
+const nl = lang === 'nl';
+const kaal = (s: string) => s.replace(/<[^>]+>/g, '');
+/* "Al je productbeelden. Zonder shoot.": de laatste regel is de tweede toon (de gloed, hal.css) */
+const voor = kop.lines.slice(0, -1).map(kaal).join(' ');
+const accent = kaal(kop.lines[kop.lines.length - 1]);
+
+const [lapQ, fonQ] = SCHERMEN.b[0] as number[][][];
+const rechthoek = (q: number[][]) => {
+  const qx = q.map((p) => p[0]), qy = q.map((p) => p[1]);
+  const x0 = Math.min(...qx), y0 = Math.min(...qy), x1 = Math.max(...qx), y1 = Math.max(...qy);
+  const pc = (v: number, op: number) => `${((v / op) * 100).toFixed(3)}%`;
+  return `--o-x:${pc(x0, SCHERMEN.w)};--o-y:${pc(y0, SCHERMEN.h)};--o-b:${pc(x1 - x0, SCHERMEN.w)};--o-h:${pc(y1 - y0, SCHERMEN.h)}`;
+};
+
+const standen = openingStanden(lang);
+const [cat, life, vid] = laptopReeks(lang);
+const SET: Record<string, string> = { catalog: cat.naam, lifestyle: life.naam, video: vid.naam };
+const eerste = standen[0] ?? { lap: `/img/hal/opening/scherm-${lang}-laptop`, tel: '/img/hal/opening/scherm-telefoon', set: 'catalog', duur: 0 };
+/* levering 77: ?v= achter elk beeld van de opening (src/data/openingStanden.js, openingVersie) */
+const V = openingVersie();
+const mv = (u: string) => `${u}?v=${V}`;
+const T = nl
+  ? { groep: 'De voorbeeldschermen', vorige: 'Vorig beeld', volgende: 'Volgend beeld', pauze: 'Zet de beelden stil', speel: 'Laat de beelden lopen' }
+  : { groep: 'The example screens', vorige: 'Previous image', volgende: 'Next image', pauze: 'Pause the images', speel: 'Play the images' };
+const STILL = [1800, 2700, 3600];
+const STILL_H = Math.round((3600 * SCHERMEN.h) / SCHERMEN.w);
+/* de still is in de tablet ± 1,05 × zo breed als het venster (op de telefoon ± 2,3 ×) */
+const SIZES = '(max-width: 900px) 230vw, 105vw';
+---
+<script is:inline>
+  /* Het scrolleffect staat er vanaf het eerste beeld: zet het script t-aan pas later, dan schuift
+     Wat we maken bij het laden onder de opening door (gemeten: CLS 0,005 – 0,007). Dezelfde
+     voorwaarden als meet() hieronder; vindt dat script geen landingsplek, dan haalt het t-aan weg. */
+  (function () { try { if (innerWidth > 900 && !matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('t-aan'); } catch (e) { /* dan zet het script het */ } })();
+</script>
+<section class="t-podium" data-t-podium data-o-v={V} data-stand={eerste.set} aria-labelledby="h-h1">
+  <div class="t-spoor" data-t-spoor>
+    <div class="t-vast" data-t-vast>
+      <div class="t-tablet" data-t-tablet>
+        <span class="t-camera" aria-hidden="true"></span>
+        <div class="t-scherm">
+          <div class="t-beeld" data-t-beeld>
+            <div class="t-sc t-sc-lap" data-t-lap style={rechthoek(lapQ)} aria-hidden="true">
+              <picture class="t-st is-nu" data-t-st-lap="0">
+                <source type="image/avif" srcset={mv(`${eerste.lap}.avif`)} />
+                <img src={mv(`${eerste.lap}.webp`)} width="1600" height="1034" alt="" decoding="async" />
+              </picture>
+              <span class="t-foto-plek" data-t-plek></span>
+            </div>
+            <div class="t-sc t-sc-fon" data-t-fon style={rechthoek(fonQ)} aria-hidden="true">
+              <picture class="t-st is-nu" data-t-st-fon={eerste.tel}>
+                <source type="image/avif" srcset={mv(`${eerste.tel}.avif`)} />
+                <img src={mv(`${eerste.tel}.webp`)} width="540" height="1170" alt="" decoding="async" />
+              </picture>
+            </div>
+            <picture>
+              <source type="image/avif" srcset={STILL.map((w) => `${mv(`/img/hal/opening/still-${w}.avif`)} ${w}w`).join(', ')} sizes={SIZES} />
+              <img class="t-still" data-t-still src={mv('/img/hal/opening/still-2700.webp')}
+                   srcset={STILL.map((w) => `${mv(`/img/hal/opening/still-${w}.webp`)} ${w}w`).join(', ')} sizes={SIZES}
+                   width="3600" height={STILL_H} fetchpriority="high" decoding="async"
+                   alt={nl ? 'Twee handen houden een laptop met de webshop van een merk en een telefoon met de telefoonfoto van dezelfde roze jeans' : 'Two hands hold a laptop showing a brand’s web shop and a phone with the phone photo of the same pink jeans'} />
+            </picture>
+          </div>
+        </div>
+      </div>
+
+      <div class="t-tekst" data-t-tekst>
+        <h1 id="h-h1" class="t-kop h-kop" data-t-kop aria-label={kop.plain}>
+          <span class="t-kop-voor" aria-hidden="true">{voor}</span>{' '}<span class="l" aria-hidden="true">{accent}</span>
+        </h1>
+        <div class="t-rij">
+          <p class="t-lede" data-t-lede>{lede}</p>
+          {standen.length > 1 && (
+            <div class="t-stand" role="group" aria-label={T.groep} data-t-stand>
+              <p class="t-stand-naam"><b data-t-naam>{SET[eerste.set]}</b><span class="t-stand-teller" data-t-teller>1 / {standen.length}</span><span class="t-stand-streep" aria-hidden="true"><i data-t-streep></i></span></p>
+              <span class="h-paar"><button type="button" class="h-cirkel h-cirkel-klein" data-t-stap="-1" aria-label={T.vorige}><Fragment set:html={ikoon('pijl-links')} /></button><button type="button" class="h-cirkel h-cirkel-klein" data-t-stap="1" aria-label={T.volgende}><Fragment set:html={ikoon('pijl')} /></button></span>
+              <button type="button" class="h-cirkel h-cirkel-klein t-pauze" data-t-pauze aria-pressed="false" aria-label={T.pauze} data-uit={T.pauze} data-aan={T.speel}><svg class="ik" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="t-p-uit" fill-rule="evenodd" d={IKOON.pauze} /><path class="t-p-aan" fill-rule="evenodd" d={IKOON.afspelen} /></svg></button>
+            </div>
+          )}
+        </div>
+      </div>
+      {standen.length > 1 && (
+        <script type="application/json" data-t-standen set:html={JSON.stringify({ standen: standen.map((s) => ({ set: s.set, duur: s.duur, lap: s.lap, tel: s.tel })), sets: SET })} />
+      )}
+    </div>
+  </div>
+  <div class="t-vlieg" data-t-vlieg aria-hidden="true" hidden>
+    <span class="t-vlieg-scherm" data-t-vlieg-scherm></span>
+    <span class="t-vlieg-doel" data-t-vlieg-doel></span>
+  </div>
+</section>
+
+<script>
+  import Q from '../data/openingSchermen.json';
+  /* Elke luisteraar op window gaat bij een zachte navigatie weer weg (tests/zachte-navigatie). */
+  type Stand = { set: string; duur: number; lap: string; tel: string };
+  let ruim: (() => void) | null = null;
+
+  const klem = (x: number) => Math.max(0, Math.min(1, x));
+  const tussen = (a: number, b: number, x: number) => klem((x - a) / (b - a));
+  const zacht = (x: number) => x * x * x * (x * (x * 6 - 15) + 10);          // smootherstep
+  const uit3 = (x: number) => 1 - Math.pow(1 - x, 3);
+  const in2 = (x: number) => x * x;
+  const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+  /* een rechthoek (b × h) op een vierhoek zetten (Heckbert), zoals in de opening van 75 – 77 */
+  function matrix(b: number, h: number, q: number[][]) {
+    const [[x0, y0], [x1, y1], [x2, y2], [x3, y3]] = q;
+    const sx = x0 - x1 + x2 - x3, sy = y0 - y1 + y2 - y3;
+    let g = 0, k = 0;
+    if (Math.abs(sx) > 1e-6 || Math.abs(sy) > 1e-6) {
+      const dx1 = x1 - x2, dx2 = x3 - x2, dy1 = y1 - y2, dy2 = y3 - y2, den = dx1 * dy2 - dx2 * dy1;
+      g = (sx * dy2 - dx2 * sy) / den; k = (dx1 * sy - sx * dy1) / den;
+    }
+    const a = x1 - x0 + g * x1, bb = x3 - x0 + k * x3, d = y1 - y0 + g * y1, e = y3 - y0 + k * y3;
+    return `matrix3d(${[a / b, d / b, 0, g / b, bb / h, e / h, 0, k / h, 0, 0, 1, 0, x0, y0, 0, 1].join(',')})`;
+  }
+
+  function start() {
+    const podium = document.querySelector<HTMLElement>('[data-t-podium]');
+    if (podium && podium.dataset.tKlaar && ruim) return;
+    ruim?.();
+    if (!podium) return;
+    podium.dataset.tKlaar = '1';
+    const $ = <T extends Element = HTMLElement>(s: string) => podium.querySelector<T>(s)!;
+    const html = document.documentElement;
+    const spoor = $('[data-t-spoor]'), vast = $('[data-t-vast]'), tablet = $('[data-t-tablet]'), beeld = $('[data-t-beeld]');
+    const lap = $('[data-t-lap]'), fon = $('[data-t-fon]'), plek = $('[data-t-plek]'), tekst = $('[data-t-tekst]');
+    const vlieg = $('[data-t-vlieg]'), vliegScherm = $('[data-t-vlieg-scherm]'), vliegDoel = $('[data-t-vlieg-doel]');
+    const mq = matchMedia('(prefers-reduced-motion: reduce)');
+    let stil = mq.matches;
+
+    /* ── de schermen precies op hun hoeken (beeld 0 van de reeks) ── */
+    function zetSchermen() {
+      /* offsetWidth: zonder de schaal (tot 1,12 ×) die het scrolleffect op de tablet zet (review 78) */
+      const k = beeld.offsetWidth / Q.w || 1;
+      const [lq, fq] = (Q.b[0] as number[][][]).map((q) => q.map(([x, y]) => [x * k, y * k]));
+      lap.style.transform = matrix(1600, 1034, lq);
+      fon.style.transform = matrix(540, 1170, fq);
+      podium.classList.add('t-gezet');
+    }
+
+    /* ── de standen van de schermen (zoals in de opening van 75 – 77) ── */
+    const standJson = podium.querySelector('[data-t-standen]');
+    const standKnop = podium.querySelector<HTMLElement>('[data-t-stand]');
+    let huidig: Stand | null = null;
+    let standRust: (rust: boolean) => void = () => {};
+    let standOpruim: () => void = () => {};
+    let standStil: () => void = () => {};
+    if (standJson && standKnop) {
+      const data = JSON.parse(standJson.textContent || '{}') as { standen: Stand[]; sets: Record<string, string> };
+      const lijst = data.standen || [];
+      const streep = $('[data-t-streep]'), naam = $('[data-t-naam]'), teller = $('[data-t-teller]');
+      const pauze = $<HTMLButtonElement>('[data-t-pauze]');
+      const rustig = stil;
+      let nu = 0, loopt = !rustig, zicht = false, erboven = false, rust = true, bewogen = false;
+      const laps = new Map<number, { el: HTMLElement; p: Promise<void> }>();
+      const fons = new Map<string, { el: HTMLElement; p: Promise<void> }>();
+      const klaar = (img: HTMLImageElement) => (img.complete && img.naturalWidth > 0 ? Promise.resolve() : new Promise<void>((r) => { img.addEventListener('load', () => r(), { once: true }); img.addEventListener('error', () => r(), { once: true }); }))
+        .then(() => (typeof img.decode === 'function' ? img.decode().catch(() => {}) : undefined)).then(() => {});
+      const bestaand = (el: HTMLElement | null) => (el ? { el, p: klaar(el.querySelector('img')!) } : null);
+      const l0 = bestaand(lap.querySelector<HTMLElement>('[data-t-st-lap="0"]')); if (l0) laps.set(0, l0);
+      const f0 = bestaand(fon.querySelector<HTMLElement>('[data-t-st-fon]')); if (f0) fons.set(f0.el.dataset.tStFon || '', f0);
+      const ver = podium.dataset.oV || '';
+      const maak = (pad: string, b: number, h: number) => {
+        const pic = document.createElement('picture'); pic.className = 't-st';
+        const src = document.createElement('source'); src.type = 'image/avif'; src.srcset = `${pad}.avif?v=${ver}`;
+        const img = document.createElement('img'); img.width = b; img.height = h; img.alt = ''; img.decoding = 'async'; img.src = `${pad}.webp?v=${ver}`;
+        pic.append(src, img);
+        return { el: pic as HTMLElement, img };
+      };
+      const klaarVoor = (k: number) => {
+        const s = lijst[k];
+        if (!laps.has(k)) { const { el, img } = maak(s.lap, 1600, 1034); lap.insertBefore(el, plek); laps.set(k, { el, p: klaar(img) }); }
+        if (!fons.has(s.tel)) { const { el, img } = maak(s.tel, 540, 1170); fon.append(el); fons.set(s.tel, { el, p: klaar(img) }); }
+        return Promise.all([laps.get(k)!.p, fons.get(s.tel)!.p]).then(() => {});
+      };
+      const toestand = () => {
+        podium.classList.toggle('t-loopt', loopt && bewogen && zicht && rust && !erboven);
+        pauze.setAttribute('aria-pressed', String(!loopt));
+      };
+      const wissel = (el: HTMLElement) => { if (!rustig && typeof el.animate === 'function') el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: 'cubic-bezier(.25, .8, .3, 1)' }); };
+      const herstart = (ms: number) => {
+        streep.style.animationDuration = `${ms}ms`;
+        if (!streep.classList.contains('is-aan')) { streep.classList.add('is-aan'); return; }
+        const a = typeof streep.getAnimations === 'function' ? streep.getAnimations()[0] : undefined;
+        if (a) a.currentTime = 0;
+        else { streep.classList.remove('is-aan'); requestAnimationFrame(() => streep.classList.add('is-aan')); }
+      };
+      const toon = (k: number) => {
+        nu = (k + lijst.length) % lijst.length;
+        const s = lijst[nu];
+        huidig = s;
+        podium.dataset.stand = s.set;
+        laps.forEach((v, j) => v.el.classList.toggle('is-nu', j === nu));
+        fons.forEach((v, t) => v.el.classList.toggle('is-nu', t === s.tel));
+        const n = data.sets[s.set] || '';
+        if (naam.textContent !== n) { naam.textContent = n; wissel(naam); }
+        teller.textContent = `${nu + 1} / ${lijst.length}`;
+        herstart(s.duur);
+      };
+      let beurt = 0, onderweg: number | null = null;
+      const ga = (stap: number) => {
+        const doel = ((onderweg ?? nu) + stap + lijst.length) % lijst.length;
+        onderweg = doel;
+        const deze = ++beurt;
+        klaarVoor(doel).then(() => { if (deze === beurt) { onderweg = null; toon(doel); klaarVoor((doel + 1) % lijst.length); } });
+      };
+      const opEind = () => { if (loopt) ga(1); };
+      streep.addEventListener('animationend', opEind);
+      for (const knop of standKnop.querySelectorAll<HTMLButtonElement>('[data-t-stap]')) knop.addEventListener('click', () => { loopt = false; toestand(); ga(Number(knop.dataset.tStap)); });
+      pauze.hidden = rustig;
+      pauze.addEventListener('click', () => { loopt = !loopt; toestand(); });
+      const op = () => { erboven = true; toestand(); }, af = () => { erboven = false; toestand(); };
+      tablet.addEventListener('pointerenter', op); tablet.addEventListener('pointerleave', af);
+      standKnop.addEventListener('pointerenter', op); standKnop.addEventListener('pointerleave', af);
+      standKnop.addEventListener('focusin', op); standKnop.addEventListener('focusout', af);
+      const io = new IntersectionObserver(([e]) => { zicht = e.isIntersecting; toestand(); }, { threshold: 0.35 });
+      io.observe(tablet);
+      standRust = (r: boolean) => { if (r !== rust) { rust = r; toestand(); } };
+      /* zet je "minder beweging" aan terwijl de pagina open is, dan staan de beelden meteen stil */
+      standStil = () => { loopt = false; pauze.hidden = true; toestand(); };
+      /* "Niets beweegt bij het laden": pas na de eerste beweging van de bezoeker */
+      const EERST = ['pointermove', 'keydown', 'touchstart', 'wheel'] as const;
+      const eerst = () => { bewogen = true; EERST.forEach((t) => window.removeEventListener(t, eerst)); toestand(); };
+      if (!rustig) EERST.forEach((t) => window.addEventListener(t, eerst, { passive: true }));
+      standOpruim = () => { io.disconnect(); streep.removeEventListener('animationend', opEind); EERST.forEach((t) => window.removeEventListener(t, eerst)); };
+      toon(0);
+      toestand();
+      klaarVoor(1);
+      const zuinig = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
+      if (!zuinig) {
+        const vooruit = async () => { for (let k = 2; k < lijst.length; k++) { if (!podium.isConnected) return; await klaarVoor(k); } };
+        const rustF = (window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+        const begin = () => (rustF ? rustF(() => { vooruit(); }, { timeout: 4000 }) : window.setTimeout(() => { vooruit(); }, 1500));
+        if (document.readyState === 'complete') begin(); else window.addEventListener('load', begin, { once: true });
+      }
+    }
+
+    /* ── het scrolleffect ── */
+    /* Wat we maken (class t-na): de eerstvolgende sectie na het podium (Astro zet het script ertussen) */
+    let na = podium.nextElementSibling as HTMLElement | null;
+    while (na && !na.classList.contains('t-na') && na.tagName === 'SCRIPT') na = na.nextElementSibling as HTMLElement | null;
+    if (na && !na.classList.contains('t-na')) na = null;
+    const doelVak = () => na?.querySelector<HTMLElement>('[data-t-doel]') ?? null;
+    let aan = false, weg = 0, top0 = 0, vh = 0, vliegt = false, plekA = 1;
+    const PLEK: Record<string, [number, number, number, number]> = {
+      catalog: [178, 116, 860, 860], lifestyle: [170, 67, 720, 900], video: [0, 0, 1600, 1034],
+    };
+    function meet() {
+      vh = window.innerHeight;
+      aan = window.innerWidth > 900 && !stil && !!na && !!doelVak();
+      html.classList.toggle('t-aan', aan);
+      /* de weg is 90svh, zoals in tablet.css: niet zelf zetten, dan verspringt er niets */
+      weg = vh * 0.9;
+      top0 = podium.getBoundingClientRect().top + window.scrollY;
+      zetSchermen();
+      werk();
+    }
+    function zetVlieg(r: DOMRect, t: number, u: number) {
+      const d = doelVak()!.getBoundingClientRect();
+      const x = lerp(r.left, d.left, t), y = lerp(r.top, d.top, t), w = lerp(r.width, d.width, t), h = lerp(r.height, d.height, t);
+      vlieg.style.left = `${x.toFixed(1)}px`; vlieg.style.top = `${y.toFixed(1)}px`;
+      vlieg.style.width = `${w.toFixed(1)}px`; vlieg.style.height = `${h.toFixed(1)}px`;
+      const hoek = getComputedStyle(doelVak()!).borderTopLeftRadius;
+      const eind = parseFloat(hoek) || 24;
+      vlieg.style.borderRadius = `${lerp(3, eind, t).toFixed(1)}px`;   /* een groot beeld: vier gelijke hoeken */
+      /* de foto uit het scherm houdt zijn eigen verhouding (niet uitgerekt), in het midden */
+      const sw = Math.min(w, h * plekA), sh = sw / plekA;
+      vliegScherm.style.width = `${sw.toFixed(1)}px`; vliegScherm.style.height = `${sh.toFixed(1)}px`;
+      vliegScherm.style.left = `${((w - sw) / 2).toFixed(1)}px`; vliegScherm.style.top = `${((h - sh) / 2).toFixed(1)}px`;
+      const m = zacht(tussen(0.24, 0.58, u));
+      vliegScherm.style.opacity = (1 - m).toFixed(3);
+      vliegDoel.style.opacity = m.toFixed(3);
+    }
+    function beginVlucht() {
+      const s = huidig?.set || podium.dataset.stand || 'catalog';
+      const [x0, y0, rw, rh] = PLEK[s] || PLEK.catalog;
+      const img = lap.querySelector<HTMLImageElement>('picture.t-st.is-nu img');
+      vliegScherm.style.backgroundImage = img ? `url("${img.currentSrc || img.src}")` : '';
+      vliegScherm.style.backgroundSize = `${(1600 / rw) * 100}% ${(1034 / rh) * 100}%`;
+      vliegScherm.style.backgroundPosition = `${rw < 1600 ? (x0 / (1600 - rw)) * 100 : 0}% ${rh < 1034 ? (y0 / (1034 - rh)) * 100 : 0}%`;
+      plekA = rw / rh;
+      /* Wat we maken toont meteen dezelfde soort als het scherm (catalog, lifestyle of video), en de
+         vlucht eindigt op een kopie van die laag: aan het eind ligt er precies hetzelfde beeld */
+      na?.dispatchEvent(new CustomEvent('h-pv-zet', { detail: s }));
+      const laag = doelVak()?.querySelector<HTMLElement>('[data-h-pv-laag].is-nu');
+      vliegDoel.replaceChildren();
+      if (laag) {
+        const kopie = laag.cloneNode(true) as HTMLElement;
+        kopie.removeAttribute('data-h-pv-laag'); kopie.classList.remove('is-komt'); kopie.style.clipPath = '';
+        kopie.querySelectorAll('img').forEach((i) => { i.loading = 'eager'; i.alt = ''; });
+        vliegDoel.append(kopie);
+      }
+      vlieg.style.backgroundColor = laag ? getComputedStyle(laag).backgroundColor : '';
+      vlieg.hidden = false; vliegt = true;
+    }
+    function werk() {
+      const doel = doelVak();
+      if (!aan) {
+        [tablet, tekst, vast].forEach((e) => { e.style.transform = ''; e.style.opacity = ''; });
+        tekst.style.visibility = ''; plek.style.visibility = ''; vast.style.pointerEvents = '';
+        vast.style.backgroundColor = ''; vast.classList.remove('t-weg');
+        vlieg.hidden = true; vliegt = false;
+        if (doel) doel.style.opacity = '';
+        standRust(true);
+        return;
+      }
+      const s = window.scrollY - top0;
+      const u = klem(s / weg);
+      standRust(s < 8);
+      /* de kop, de zin en de standen */
+      const kt = uit3(tussen(0, 0.18, u));
+      tekst.style.opacity = kt > 0 ? (1 - kt).toFixed(3) : '';
+      tekst.style.transform = kt > 0 ? `translateY(${(-12 * kt).toFixed(1)}px)` : '';
+      tekst.style.visibility = kt >= 1 ? 'hidden' : '';
+      /* de tablet: iets dichterbij, en lost op terwijl de foto eruit komt (hij schuift niet weg:
+         de foto en de tablet gaan dan niet twee kanten op) */
+      const sc = 1 + 0.12 * uit3(tussen(0, 0.32, u));
+      const op = zacht(tussen(0.30, 0.58, u));
+      tablet.style.transform = u > 0 ? `translateY(${(-40 * op).toFixed(1)}px) scale(${sc.toFixed(4)})` : '';
+      tablet.style.opacity = op > 0 ? (1 - op).toFixed(3) : '';
+      /* de witte grond lost op: Wat we maken komt eronder tevoorschijn */
+      const g = tussen(0.48, 0.78, u);
+      vast.style.backgroundColor = g > 0 ? `rgba(255, 255, 255, ${(1 - g).toFixed(3)})` : '';
+      /* zolang het podium Wat we maken nog bedekt, vangt het de klikken; daarna gaan ze erdoorheen (review 78) */
+      vast.style.pointerEvents = g > 0.5 ? 'none' : '';
+      /* de vlucht */
+      const t = zacht(tussen(0.16, 0.90, u));
+      if (u > 0.16 && u < 1) {
+        if (!vliegt) beginVlucht();
+        zetVlieg(plek.getBoundingClientRect(), t, u);
+        if (doel) doel.style.opacity = '0';
+        plek.style.visibility = 'hidden';
+      } else {
+        vlieg.hidden = true; vliegt = false; plek.style.visibility = '';
+        if (doel) doel.style.opacity = '';
+      }
+      vast.classList.toggle('t-weg', u >= 1);
+    }
+
+    let bezig = false;
+    const opScroll = () => { if (bezig) return; bezig = true; requestAnimationFrame(() => { bezig = false; werk(); }); };
+    let rt = 0;
+    const opResize = () => { clearTimeout(rt); rt = window.setTimeout(meet, 120); };
+    const opMq = () => { stil = mq.matches; if (stil) standStil(); meet(); };
+    window.addEventListener('scroll', opScroll, { passive: true });
+    window.addEventListener('resize', opResize);
+    mq.addEventListener?.('change', opMq);
+    meet();
+    const still = podium.querySelector<HTMLImageElement>('[data-t-still]');
+    if (still && !still.complete) still.addEventListener('load', () => { if (podium.isConnected) meet(); }, { once: true });
+
+    ruim = () => {
+      window.removeEventListener('scroll', opScroll);
+      window.removeEventListener('resize', opResize);
+      mq.removeEventListener?.('change', opMq);
+      standOpruim();
+      clearTimeout(rt);
+      html.classList.remove('t-aan');
+      podium.classList.remove('t-loopt', 't-gezet');
+      delete podium.dataset.tKlaar;
+      const doel = doelVak(); if (doel) doel.style.opacity = '';
+      ruim = null;
+    };
+  }
+
+  start();
+  document.addEventListener('astro:page-load', start);
+  document.addEventListener('astro:before-swap', () => ruim?.());
+</script>

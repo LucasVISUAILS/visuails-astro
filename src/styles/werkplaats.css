@@ -111,13 +111,19 @@ html body.werkplaats.hal .of-werk .pl-step[data-pl-step="1"] > .wk-blok { margin
 html body.werkplaats.hal .of-werk .wk-opening { display: grid; gap: 14px; justify-items: start; }
 html body.werkplaats.hal .of-werk .wk-opening-h,
 html body.werkplaats.hal .of-werk .pl-step > .pl-h {
-  margin: 0; max-width: 22ch; font: 500 44px/1.05 var(--h-letter); letter-spacing: -.03em; color: var(--h-inkt); text-wrap: balance;
+  margin: 0; max-width: 22ch; font: 700 44px/1.05 var(--h-kopletter, var(--h-letter)); letter-spacing: -.03em; color: var(--h-inkt); text-wrap: balance;  /* levering 77: VISUAILS Display Bold, beide tonen */
 }
 /* 25 oktober 2026 (de controle van levering 74): met 18ch brak "Vier beelden per product." in twee,
    en de kop werd met "Catalogsets." erboven drie regels, ook op de computer (Lucas: koppen
    hoogstens twee regels). Gemeten in de browser: breedte / lettergrootte = 11,21 voor de langste
    regel ("Vier beelden per product."). */
-html body.werkplaats.hal .of-werk .wk-opening-h .l { display: block; font-weight: 400; color: var(--h-inkt-3); }
+html body.werkplaats.hal .of-werk .wk-opening-h .l { display: block; font-weight: 700; color: var(--h-inkt-3); }
+/* levering 77: in VISUAILS Display Bold is de langste regel 10,74 × de letter; op 901 px is de kolom
+   485 px, dus daar 4 % kleiner (41,4 px), vanaf 957 px weer 44 */
+@media (min-width: 901px) and (max-width: 1100px) {
+  html body.werkplaats.hal .of-werk .wk-opening-h,
+  html body.werkplaats.hal .of-werk .pl-step > .pl-h { font-size: clamp(40px, 4.6vw, 44px); }
+}
 html body.werkplaats.hal .of-werk .wk-opening-zin { margin: 0; max-width: 46ch; font-size: 17px; line-height: 1.55; color: var(--h-inkt-2); }
 html body.werkplaats.hal .of-werk .wk-wissel { font: 600 14px/1.3 var(--h-letter); color: var(--h-inkt); text-decoration: underline; text-underline-offset: 3px; }
 

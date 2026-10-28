@@ -168,7 +168,8 @@ const dist = (p) => { const f = path.join(ROOT, 'dist', p); return existsSync(f)
     ok('  zonder naam of kenmerk in de html', !/Welkom terug, [A-Z]|VIS-\d/.test(thuis));
     /* Levering 74 (25 oktober 2026): de opening heeft geen label meer boven de kop (alleen de
        kop en één zin, HalOpening.astro); die twee staan er voor iedereen. */
-    ok('  de kop en de zin van de opening staan er voor iedereen', /<h1 id="h-h1" class="o-kop"(?![^>]*data-vis-uit)[^>]*>/.test(thuis) && /<p class="o-lede"(?![^>]*data-vis-uit)[^>]*>/.test(thuis));
+    /* levering 78: de opening is de tablet (HalTablet.astro) */
+    ok('  de kop en de zin van de opening staan er voor iedereen', /<h1 id="h-h1" class="t-kop h-kop"(?![^>]*data-vis-uit)[^>]*>/.test(thuis) && /<p class="t-lede"(?![^>]*data-vis-uit)[^>]*>/.test(thuis));
     ok('  de oude welkomstregel bovenin is weg', !/class="h-welkom"/.test(thuis));
     /* 14 oktober 2026 (v26-proefblok a): de abonnementsknop staat niet meer in
        het proefblok, alleen nog in de opening. */
@@ -419,7 +420,7 @@ else {
        één sectie, 16:56) pas als de laatste sectie ervan half voorbij is ([data-o-stroom-eind]):
        daar vult elke sectie het scherm en lag de melding er linksonder overheen. */
     const voorbij = await page.evaluate(() => {
-      const e = document.querySelector('[data-o-stroom-eind]'), p = document.querySelector('[data-o-podium]');
+      const e = document.querySelector('[data-o-stroom-eind]'), p = document.querySelector('[data-o-podium], [data-t-podium]');   /* levering 78: de tablet */
       if (e) return Math.round(e.getBoundingClientRect().bottom + scrollY - innerHeight * 0.5 + 100);
       return p ? Math.round(p.getBoundingClientRect().bottom + scrollY + 100) : 1400;
     });

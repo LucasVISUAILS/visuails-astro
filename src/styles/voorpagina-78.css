@@ -1,0 +1,137 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   DE VOORPAGINA, OPNIEUW INGEDEELD — levering 78, 27 oktober 2026
+   ═══════════════════════════════════════════════════════════════════════════════
+   Lucas, 16:50: "de homepage van de grond af opnieuw uitgebreid … indelen … goed gebruik maken van
+   ruimte en rust … de teksten mogen express (maar wel consistent uitgerekend) een beetje off
+   staan … volgens een systeem dat telkens weer terugkomt."
+   Het systeem staat in docs/RUIMTE-EN-RUST.md. Hier de voorpagina:
+   - het raster: 12 kolommen, 24 px tussen, hoogstens 1440 px breed;
+   - de stap S = 0,75 × de korpsgrootte van de sectiekop (de snede van 53,13°): de kop hangt, alles
+     eronder staat S naar rechts (R1); een tekst naast een beeld staat in het midden van het beeld en
+     dan S hoger (R2); een beeld steekt aan de buitenkant S door (R3); de drie stappen staan als een
+     trap, elk S lager (R4);
+   - de ruimte tussen de secties wisselt: zwaar 213, gewoon 160, licht 120 (de 4 : 3-schaal);
+   - geen label en geen nummer boven de secties, en niets komt binnen met een beweging.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+html body.hal.hal .h-voor {
+  --v-max: 1440px;
+  --v-marge: max(20px, 5.2vw, calc((100vw - var(--v-max)) / 2));
+  --v-gat: 24px;
+  --v-f: clamp(32px, 2.96vw, 42.67px);          /* de sectiekop: 42,67 px op 1440 */
+  --v-s: calc(var(--v-f) * .75);                /* de stap: 32 px op 1440 */
+  --r-9: 120px; --r-10: 160px; --r-11: 213px;
+}
+/* het kader van de nieuwe secties (de oude max-width en lucht van voorpagina-rust.css vervallen) */
+html body.hal.hal .h-voor > .v-maken, html body.hal.hal .h-voor > .v-looks, html body.hal.hal .h-voor > .v-weten {
+  max-width: none; box-sizing: border-box; margin-left: 0; margin-right: 0; padding-left: var(--v-marge); padding-right: var(--v-marge);
+  display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--v-gat); align-items: center;
+}
+/* de oude rasternamen van voorpagina-rust.css (beeld, kop, rest) gelden hier niet */
+html body.hal.hal .h-voor :is(.v-maken-tekst, .v-looks-tekst, .v-looks-beeld) > *, html body.hal.hal .h-voor .v-maken-beeld { grid-area: auto; }
+html body.hal.hal .h-voor .v-kop { margin: 0; font-size: var(--v-f); line-height: 1.02; text-wrap: balance; }
+html body.hal.hal .h-voor .v-kop > .l { display: block; }
+/* R1: alles onder de kop een stap naar rechts */
+html body.hal.hal .h-voor .v-kopgroep > .v-na-kop { margin-left: var(--v-s); }
+
+/* ── Wat we maken (sectie A): het beeld links over 6 kolommen, de tekst rechts over 5 ───────── */
+html body.hal.hal .h-voor > .v-maken { padding-top: 120px; padding-bottom: 0; min-height: 0; }
+html body.hal.hal .h-voor .v-maken-beeld {
+  grid-column: 1 / span 6; grid-row: 1; justify-self: start;
+  --v-h: clamp(460px, calc(100svh - 120px - 64px), 760px);
+  /* zo hoog als het scherm toelaat, maar nooit breder dan zijn zes kolommen plus de stap (review 78:
+     op 901 – 1100 px liep het beeld over de tekst) */
+  width: min(calc(100% + var(--v-s)), calc(var(--v-h) * .8)); height: auto; aspect-ratio: 4 / 5;
+  margin-left: calc(-1 * var(--v-s));                                    /* R3: steekt S door */
+  border-radius: var(--r-kaart, 24px);                                    /* een groot beeld: vier gelijke hoeken (de hoekregel van 25 oktober) */
+}
+html body.hal.hal .h-voor .v-maken-tekst { grid-column: 8 / span 5; grid-row: 1; position: relative; top: calc(-1 * var(--v-s)); display: grid; gap: 38px; }
+html body.hal.hal .h-voor .v-maken-tekst .h-pv-rest { gap: 21px; }
+html body.hal.hal .h-voor .v-maken-tekst .h-pv-per { display: grid; gap: 21px; }
+html body.hal.hal .h-voor .v-maken-tekst .h-pv-per[hidden] { display: none; }
+html body.hal.hal .h-voor .v-maken-tekst .h-pv-per .h-acties { margin: 0; }
+/* wat er verder is: een rustige lijst met een haarlijn, geen kaarten */
+html body.hal.hal .h-voor .v-ook { display: grid; gap: 12px; padding-top: 28px; border-top: 1px solid var(--h-lijn, #E6E8EC); max-width: 420px; }
+html body.hal.hal .h-voor .v-ook-kop { margin: 0; font: 600 13.5px/1.3 var(--h-letter); color: var(--h-grijs, #636974); }
+html body.hal.hal .h-voor .v-ook-rij { display: grid; grid-template-columns: repeat(2, minmax(0, max-content)); gap: 10px 32px; margin: 0; padding: 0; list-style: none; }
+html body.hal.hal .h-voor .v-ook-rij a { display: inline-flex; align-items: center; gap: 8px; font: 500 16px/1.3 var(--h-letter); color: var(--h-inkt); text-decoration: none; }
+html body.hal.hal .h-voor .v-ook-rij a .o { display: inline-flex; width: 14px; height: 14px; color: var(--h-inkt); }
+html body.hal.hal .h-voor .v-ook-rij a .o svg { width: 14px; height: 14px; }
+html body.hal.hal .h-voor .v-ook-rij a:hover { color: var(--h-blauw, #25508B); }
+html body.hal.hal .h-voor .v-ook-rij a:hover .o { color: var(--h-blauw, #25508B); }
+html body.hal.hal .h-voor .v-ook-anders { margin: 4px 0 0; font: 400 14.5px/1.45 var(--h-letter); color: var(--h-inkt-2, #0B0F17); }
+
+/* ── Hoe het werkt (sectie B): de kop over de breedte, de stappen als trap ──────────────────── */
+html body.hal.hal .h-voor > .v-hoe { max-width: none; margin-left: 0; margin-right: 0; padding: var(--r-10) var(--v-marge) 0; box-sizing: border-box; gap: 51px; }
+html body.hal.hal .h-voor .v-hoe .o-hoe-kop { align-items: flex-end; }
+html body.hal.hal .h-voor .v-hoe .o-blokken { padding-left: var(--v-s); }               /* R1 */
+html body.hal.hal .h-voor .v-hoe .h-stappen { align-items: start; }
+html body.hal.hal .h-voor .v-hoe .h-stappen > .h-stap:nth-child(2) { margin-top: var(--v-s); }       /* R4 */
+html body.hal.hal .h-voor .v-hoe .h-stappen > .h-stap:nth-child(3) { margin-top: calc(2 * var(--v-s)); }
+html body.hal.hal .h-voor .v-hoe .h-stap-beeld { height: 300px; }
+html body.hal.hal .h-voor .v-hoe .o-voet { margin-left: var(--v-s); }
+
+/* ── Looks (sectie A, omgekeerd): de tekst links over 5 kolommen, het beeld rechts op een vlak ─ */
+html body.hal.hal .h-voor > .v-looks { padding-top: var(--r-11); padding-bottom: 0; }
+html body.hal.hal .h-voor .v-looks-tekst { grid-column: 1 / span 5; grid-row: 1; position: relative; top: calc(-1 * var(--v-s)); display: grid; gap: 38px; }
+html body.hal.hal .h-voor .v-looks-tekst .h-lp-info { display: flex; flex-direction: column; align-items: flex-start; gap: 21px; }
+html body.hal.hal .h-voor .v-looks-beeld {
+  grid-column: 7 / span 6; grid-row: 1; position: relative; display: grid; place-items: center;
+  margin-right: calc(-1 * var(--v-s));                                   /* R3 */
+  --v-vlak-pad: 51px; padding: var(--v-vlak-pad); background: var(--h-vlak, #F4F5F7); border-radius: var(--r-vlak, 32px);   /* een groot vlak: 32, rondom */
+}
+html body.hal.hal .h-voor .v-looks-podium { position: relative; display: block; aspect-ratio: 4 / 5; height: auto;
+  width: min(100%, calc(clamp(420px, calc(100svh - 120px - 64px - 102px), 640px) * .8));   /* niet breder dan zijn vlak */
+  border-radius: max(8px, calc(var(--r-vlak, 32px) - var(--v-vlak-pad))); overflow: hidden; }   /* concentrisch met het vlak, minstens 8 */
+html body.hal.hal .h-voor .v-looks-podium img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; max-width: none; }
+/* de regels van het productvel (voorpagina-rust.css hing ze aan .h-pv, dat de nieuwe secties niet meer
+   hebben): de kleine regel onder de knop en de gezichten als kleurbolletjes */
+html body.hal.hal .h-voor :is(.v-maken, .v-looks) .h-onderregel { margin: 0; max-width: 34ch; font-size: var(--v-klein); line-height: 1.5; color: var(--h-grijs, #636974); }
+html body.hal.hal .h-voor .v-looks .h-gezicht { display: flex; align-items: center; gap: 14px; margin: 0; padding: 0; background: none; box-shadow: none; border-radius: 0; }
+html body.hal.hal .h-voor .v-looks .h-koppen { flex: none; }
+html body.hal.hal .h-voor .v-looks .h-koppen img { width: 34px; height: 34px; box-shadow: 0 0 0 2px var(--h-wit); }
+html body.hal.hal .h-voor .v-looks .h-koppen a + a, html body.hal.hal .h-voor .v-looks .h-koppen:hover a + a { margin-left: -9px; }
+
+/* ── Meer weten (sectie C): de kop groot over 5 kolommen, de lijst over 6 ───────────────────── */
+html body.hal.hal .h-voor > .v-weten { padding-top: var(--r-9); align-items: start; }
+html body.hal.hal .h-voor .v-weten-kop { grid-column: 1 / span 5; font-size: clamp(42.67px, 3.95vw, 56.89px); }
+html body.hal.hal .h-voor .v-weten-kop > .l { display: inline; }
+html body.hal.hal .h-voor .v-weten-rijen { grid-column: 7 / span 6; margin-top: calc(var(--v-s) * .5); }
+
+/* ── het €1-blok en de regel eronder ─────────────────────────────────────────────────────── */
+/* soort D: op het raster van de pagina (links op de marge, over de volle breedte), 7 + 5 met het gat
+   van een verdeling (--r-6, 51 px); het label zonder nummer: er is geen 02 */
+html body.hal.hal .h-voor > .h-proef { max-width: none; margin: var(--r-11) var(--v-marge) 0; box-sizing: border-box; }
+@media (min-width: 901px) { html body.hal.hal .h-voor > .h-proef { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); column-gap: 51px; } }
+html body.hal.hal .h-voor > .h-proef p.h-pil::after { content: none; }
+
+/* ── de telefoon en een smal venster: één kolom ─────────────────────────────────────────── */
+@media (max-width: 1100px) and (min-width: 901px) {
+  html body.hal.hal .h-voor .v-maken-beeld { grid-column: 1 / span 6; --v-h: clamp(420px, calc(100svh - 184px), 620px); }
+  html body.hal.hal .h-voor .v-maken-tekst { grid-column: 7 / span 6; }
+  html body.hal.hal .h-voor .v-looks-tekst { grid-column: 1 / span 6; }
+  html body.hal.hal .h-voor .v-looks-beeld { grid-column: 7 / span 6; --v-vlak-pad: 32px; }
+}
+@media (max-width: 900px) {
+  html body.hal.hal .h-voor { --v-marge: 16px; --v-f: clamp(24px, 7.7vw, 32px); --v-s: 12px; --r-9: 72px; --r-10: 90px; --r-11: 120px; }
+  html body.hal.hal .h-voor > .v-maken, html body.hal.hal .h-voor > .v-looks, html body.hal.hal .h-voor > .v-weten { grid-template-columns: minmax(0, 1fr); row-gap: 28px; }
+  html body.hal.hal .h-voor > .v-maken { padding-top: 72px; }
+  html body.hal.hal .h-voor .v-maken-beeld, html body.hal.hal .h-voor .v-maken-tekst, html body.hal.hal .h-voor .v-looks-tekst,
+  html body.hal.hal .h-voor .v-looks-beeld, html body.hal.hal .h-voor .v-weten-kop, html body.hal.hal .h-voor .v-weten-rijen { grid-column: 1; grid-row: auto; top: 0; margin-left: 0; margin-right: 0; }
+  html body.hal.hal .h-voor .v-maken-beeld { height: auto; width: 100%; }   /* de telefoon: over de hele breedte */
+  html body.hal.hal .h-voor .v-maken-tekst, html body.hal.hal .h-voor .v-looks-tekst { gap: 28px; }
+  html body.hal.hal .h-voor .v-looks-beeld { order: 2; --v-vlak-pad: 20px; }
+  html body.hal.hal .h-voor .v-looks-podium { height: auto; width: 100%; }
+  html body.hal.hal .h-voor .v-weten-kop { font-size: 42.67px; }
+  html body.hal.hal .h-voor .v-ook-rij { grid-template-columns: minmax(0, 1fr); }
+  html body.hal.hal .h-voor .v-hoe .h-stappen > .h-stap:nth-child(n) { margin-top: 0; }
+  html body.hal.hal .h-voor .v-hoe .o-blokken, html body.hal.hal .h-voor .v-hoe .o-voet { padding-left: 0; margin-left: 0; }
+}
+/* de sectiekop op de telefoon: 7,7 vw (gemeten: "Van productpagina tot feed." past op 390 px tot 30,5 px, op 360 tot 27,9) */
+@media (max-width: 380px) { html body.hal.hal .h-voor .v-weten-kop { font-size: 36px; } }
+
+/* ── niets komt binnen met een beweging (docs/RUIMTE-EN-RUST.md §8) ───────────────────────────
+   Het €1-blok (het getal, de vier foto's) en de regel met vertrouwen stonden in 74 – 77 pas na een
+   fade-up of een wis; op de voorpagina staan ze er meteen. Wat binnen een sectie iets vertelt (de
+   stappen van Hoe het werkt) blijft bewegen. */
+html.h-js body.hal.hal .h-voor .h-in, html.h-js body.hal.hal .h-voor .h-vier .h-well, html.h-js body.hal.hal .h-voor > .h-vertrouwen li { opacity: 1; transform: none; transition: none; animation: none; }
+html.h-js body.hal.hal .h-voor .h-een { clip-path: none; transition: none; }

@@ -4064,7 +4064,7 @@ body:not(.has-shell) .nakijk-knoppen { display: flex; flex-wrap: wrap; gap: .6re
    zwart, grijs zonder lila, knoppen zwart, violet alleen bij wat je kiest. Het donkere thema blijft wat het was
    tot die vraag beantwoord is (afvinklijst 26). */
 html[data-thema="licht"] body {
-  --h-letter: "Instrument Sans", "Urbanist Variable", ui-sans-serif, system-ui, sans-serif;  /* levering 76: Instrument Sans (Lijst 58); de @font-face in /fonts/gedeeld.css */
+  --h-letter: "DM Sans", "Urbanist Variable", ui-sans-serif, system-ui, sans-serif;  /* levering 77: DM Sans (lijst 60; was Instrument Sans, levering 76); de @font-face in /fonts/gedeeld.css */
   --font: var(--h-letter); --font-display: var(--h-letter); --stretch-kop: 100%;
   --kv-veld: #F4F5F7; --kv-kaart: #FFFFFF; --kv-lijn: #E6E8EC; --kv-veld-lijn: #858A94;
   --kv-ink-1: #0B0F17; --kv-ink-2: #0B0F17; --kv-ink-3: #636974;

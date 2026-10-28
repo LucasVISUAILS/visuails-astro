@@ -118,8 +118,11 @@ import Woordmerk from '../components/Woordmerk.astro';
 import VMerk from '../components/VMerk.astro';
 import KlantMelding from '../components/KlantMelding.astro';
 import { WOORDMERK, WOORDMERK_LIJNEN } from '../data/woordmerk.js';
-/* levering 76: de letter van de hal is Instrument Sans, zelf gehost (public/fonts/instrument-sans/) */
-const LETTER_HAL = '/fonts/instrument-sans/instrument-sans-latin.woff2';
+/* levering 77 (lijst 60): de letters van de hal, zelf gehost: DM Sans voor de tekst
+   (public/fonts/dm-sans/) en VISUAILS Display Bold voor de grote koppen (public/fonts/visuails-display/).
+   Allebei vooraf geladen: de kop is op bijna elke pagina het grootste wat er bij het laden staat. */
+const LETTER_HAL = '/fonts/dm-sans/dm-sans-latin.woff2';
+const KOPLETTER_HAL = '/fonts/visuails-display/VISUAILSDisplay-Bold.woff2';
 
 interface Props {
   title: string;
@@ -438,6 +441,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
   {huid === 'hal'
     ? <link rel="preload" as="font" type="font/woff2" href={LETTER_HAL} crossorigin="anonymous" />
     : <link rel="preload" as="font" type="font/woff2" href={archivoRoman} crossorigin="anonymous" />}
+  {huid === 'hal' && <link rel="preload" as="font" type="font/woff2" href={KOPLETTER_HAL} crossorigin="anonymous" />}
   {/* The heading face IS the LCP element on most pages — same measured
        reasoning as the Archivo preload above. Anybody is deliberately NOT
        preloaded: it draws one word, below the fold on every page but the

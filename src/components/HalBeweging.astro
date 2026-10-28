@@ -18,11 +18,13 @@
 <script>
   import { slaOmIn } from '../scripts/omslag.js';
   import { knoppenNaastElkaar } from '../scripts/knoppaar.js';
+  import { gloed, stopGloed } from '../scripts/gloed.js';
   const zet = () => {
     if (!document.querySelector('.h-pagina')) return;
     document.documentElement.classList.add('h-js');
     const rustig = matchMedia('(prefers-reduced-motion: reduce)').matches;
     knoppenNaastElkaar();
+    gloed();   // levering 78: af en toe de gloed op de tweede toon van een kop
     const io = new IntersectionObserver((rijen) => {
       for (const r of rijen) if (r.isIntersecting) {
         /* levering 55: de hoogte voor de helling van de wis, en de getallen slaan om */
@@ -59,4 +61,5 @@
   };
   zet();
   document.addEventListener('astro:page-load', zet);
+  document.addEventListener('astro:before-swap', stopGloed);
 </script>

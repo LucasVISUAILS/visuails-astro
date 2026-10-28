@@ -1208,7 +1208,7 @@ textarea, input[type="text"], input[type="email"], input[type="tel"], select {
    `html body` (0,0,2) wint van de `body {}` en `:root {}` hierboven, zonder dat
    er een !important nodig is; alleen tokens die dit blad leest. */
 html body {
-  --h-letter: "Instrument Sans", "Urbanist Variable", ui-sans-serif, system-ui, sans-serif;  /* levering 76: Instrument Sans (Lijst 58); de @font-face in /fonts/gedeeld.css */
+  --h-letter: "DM Sans", "Urbanist Variable", ui-sans-serif, system-ui, sans-serif;  /* levering 77: DM Sans (lijst 60; was Instrument Sans, levering 76); de @font-face in /fonts/gedeeld.css */
   --font: var(--h-letter); --font-kop: var(--h-letter); --font-display: var(--h-letter); --stretch-kop: 100%;
   --paper: #FFFFFF; --paper-2: #F4F5F7; --paper-lift: #F4F5F7; --bg: #FFFFFF; --bg-raise: #F4F5F7;
   --surface: #FFFFFF; --surface-2: #F4F5F7; --surface-3: #E6E8EC; --sunken: #E6E8EC;

@@ -79,7 +79,13 @@ SIL Open Font License 1.1 (`OFL.txt`). Gebaseerd op DM Sans van Colophon Foundry
 zoals de licentie aanraadt. Je mag hem gebruiken, aanpassen en meeleveren met de site en je materiaal.
 Los verkopen mag niet, en een aangepaste versie blijft onder dezelfde licentie.
 
-## Nog niet
+## Op de site
 
-Nog niet op de site. Dat is levering 77: de grote koppen in VISUAILS Display Bold (lijst 59: vet, beide tonen),
-de lopende tekst in DM Sans, en elke kop opnieuw gemeten op hoogstens twee regels.
+Sinds levering 77 (27 oktober 2026) staan de grote koppen van de site in VISUAILS Display Bold (lijst 59: vet,
+beide tonen) en de lopende tekst in DM Sans. De site gebruikt `public/fonts/visuails-display/VISUAILSDisplay-Bold.woff2`,
+een kopie van `fonts/VISUAILSDisplay-Bold.woff2` hier; `tests/letter-77.test.mjs` controleert dat ze gelijk zijn.
+Bouw je de letter opnieuw, kopieer dan de nieuwe Bold ook naar `public/fonts/visuails-display/`.
+De maten en waar welke letter staat: `docs/DESIGN.md`, "De letters van de hal".
+
+De `.ttf` die je op je computer installeert, is alleen voor je eigen programma's (Figma, Word, Photoshop).
+De site haalt zijn letters zelf mee, als `.woff2`; een bezoeker hoeft niets te installeren.

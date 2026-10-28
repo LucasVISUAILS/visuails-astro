@@ -131,7 +131,9 @@ html body.hal.hal .h-voor .h-gezicht-zin a { color: var(--h-inkt); font-weight: 
 html body.hal.hal .h-voor .h-gezicht-zin a:hover { color: var(--h-blauw); text-decoration-color: currentColor; }
 
 /* ── 04 · meer weten: de kop groot, de drie onderwerpen als regels ──────────────── */
-html body.hal.hal .h-voor .h-pv-tekst { grid-template-columns: minmax(0, 1fr) minmax(0, 700px); grid-template-rows: auto; grid-template-areas: "kop rest"; justify-content: stretch; }
+/* levering 77: de kop houdt minstens 280 px; op 901 px kreeg hij er 89 (de tweede kolom pakte eerst
+   zijn 700 px), en "Any questions?" liep over vier regels */
+html body.hal.hal .h-voor .h-pv-tekst { grid-template-columns: minmax(280px, 1fr) minmax(0, 700px); grid-template-rows: auto; grid-template-areas: "kop rest"; justify-content: stretch; }
 html body.hal.hal .h-voor .h-pv-tekst .h-pv-kop .h-h2 { font-size: clamp(42.67px, 4vw, 56.89px); line-height: .98; }
 html body.hal.hal .h-voor .h-wt-rijen { display: block; margin: 0; padding: 0; list-style: none; }
 html body.hal.hal .h-voor .h-wt-rijen > li { box-shadow: inset 0 1px 0 var(--h-lijn); }

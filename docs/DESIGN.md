@@ -1,6 +1,6 @@
 # Design
 
-> **Stand: 24 oktober 2026 (palet), 25 oktober 2026 (hoeken; de opening, de stroom, Hoe het werkt, de lagen, de knoppen en de iconen, levering 74; de opening opnieuw ingedeeld, de standen, Hoe het werkt compacter, verschijnen zonder snede en de balk als pil, levering 75 op 26 oktober); de rest 22 september 2026.** `KLEURENSCHEMA.md` draagt de
+> **Stand: 27 oktober 2026 (de voorpagina opnieuw ingedeeld, de balk rechthoekig, de gloed op de tweede toon: levering 78; het systeem staat in `docs/RUIMTE-EN-RUST.md`), 24 oktober 2026 (palet), 25 oktober 2026 (hoeken; de opening, de stroom, Hoe het werkt, de lagen, de knoppen en de iconen, levering 74; de opening opnieuw ingedeeld, de standen, Hoe het werkt compacter, verschijnen zonder snede en de balk als pil, levering 75 op 26 oktober); de rest 22 september 2026.** `KLEURENSCHEMA.md` draagt de
 > kleuren; dit bestand draagt de rest van het systeem (elevatie, focus, motion,
 > layout, z-index, toegankelijkheid, en de lijst met wat we niet doen). Wijkt
 > de code van KLEURENSCHEMA.md af, dan volgt de code dat document.
@@ -468,6 +468,49 @@ a colour change alone, and never suppressed on mouse input for form fields.
 
 ## Typography
 
+### De letters van de hal — 27 oktober 2026 (levering 77, lijst 59 en 60)
+
+**Twee letters en een mono.** Sinds levering 77 staat de hal (de site, Studio, de privélink en
+/admin) in **DM Sans** voor de tekst, en de grote koppen van de site in **VISUAILS Display Bold**:
+de eigen kopletter, DM Sans 40pt met drie details uit de V (de snede op 53,13° in f g j r t, de
+vierkante punt, het gat van de a; zie `docs/letter/LEESMIJ.md` en het specimen daar). Beide OFL 1.1
+en zelf gehost. Instrument Sans (levering 76) en de smalle stem op 80 % zijn weg: DM Sans heeft geen
+breedte-as, en lijst 60 koos DM Sans op volle breedte.
+
+| Rol | Letter | Waar | Hoe |
+|---|---|---|---|
+| **Kop** | VISUAILS Display Bold 700 (`--h-kopletter`) | elke `.h-kop` (h1, h2, h3, de €1-kop), de kop van de opening, de paginakop van het bestelformulier (`.pl-h`, `.wk-opening-h`), de koppen van de bedankpagina (`.hoog`) en de slotkop van de juridische pagina's (`.jur-uit h2`) | beide tonen 700 (lijst 59: vet, beide tonen); de tweede toon alleen in grijs (#636974, 5,52 : 1). Spatiëring −0,03 em op h1, h2, de €1-kop en de kop van de opening; −0,02 em op h3 en kleinere koppen. Nooit strakker dan −0,035 em |
+| **Tekst** | DM Sans 400 – 700 (`--h-letter`) | alles wat je leest en bedient: tekst, knoppen, de balk, en ook namen in kaarten en stappen, vragen in een formulier, grote cijfers | volle breedte; de optische grootte (9 – 40) kiest de browser zelf bij de lettergrootte; wat 300 vraagt, wordt 400 |
+| **Mono** | IBM Plex Mono 500 / 600 | labels, nummers, kenmerken (de studiotaal) | hoofdletters, +0,04 tot +0,14 em, zoals het was |
+
+**Wat geen kopletter is.** Namen (van een look, een stap, een kaart, een plan) zijn geen koppen: die
+blijven DM Sans 500, zodat de kop de enige stem in Display is. Studio, /admin en de privélink zijn
+werkplaatsen: daar is alles DM Sans, ook de koppen.
+
+**De bestanden.** `public/fonts/dm-sans/` (latin 42 kB en latin-ext 20 kB, gewicht ingeperkt tot
+400 – 700, uit DMSans[opsz,wght].ttf 4.004) en `public/fonts/visuails-display/VISUAILSDisplay-Bold.woff2`
+(29 kB, alle 486 tekens; byte voor byte die uit `docs/letter/fonts/`, tests/letter-77 bewaakt dat).
+De @font-face staat in `hal.css`, `studio-hal.css` en, voor /admin, de kaarten en de privélink,
+in `scripts/fonts-voor-worker.mjs` (`/fonts/gedeeld.css`). Layout.astro laadt DM Sans latin en de
+kopletter vooraf. Urbanist blijft als terugval in de rij.
+
+**De maten, opnieuw gemeten** (kopschaal.mjs: elke kop op elke pagina, veertien breedtes van 320 tot
+1920; boven 340 px hoogstens twee regels, tot 340 px drie):
+- De €1-kop 42,67 px (een stap op de 4 : 3-schaal; was 44), op 341 – 380 px 27 px.
+- De h1 op 901 – 1439 px 5,2 vw (was 5,28), op de telefoon 39 px (was 40), en 36 / 32 zoals het was.
+- De h3 op 341 – 380 px 23 px (was 26). In de modelkaart op /lifestyle 20 – 26 px (6,1 vw).
+- /test-sample: de kop in het €1-blok op 901 – 1180 px 32 – 40 px (3,6 vw).
+- De voorpagina: de kop van een tekstsectie (Meer weten) houdt minstens 280 px; op 901 px kreeg hij
+  er 89 en liep "Any questions?" over vier regels.
+- De kop van de opening is in Display Bold 14,95 × zo breed als hoog (Engels 17,64), het eerste deel
+  op de telefoon 9,00 (Engels 10,51); opening.css rekent daarmee. Het script maakt hem alleen nog
+  kleiner als hij toch niet past, dus hij verspringt niet meer bij het laden (was 48 → 44 px).
+- De paginakop van het bestelformulier op de telefoon: de langste regel is 10,74 × de letter
+  ("Vier beelden per product."); de bestaande maat (100 vw − 32) / 11,6 houdt meer dan 3,5 % speling.
+
+> **Vervangen 27 oktober 2026 (levering 77).** Wat hieronder staat over Instrument Sans en de
+> smalle stem geldt niet meer; de schaal van 4 : 3 op de voorpagina wel.
+
 ### De letter van de hal — 26 oktober 2026 (levering 76, Lijst 58)
 
 Wat hieronder staat gaat over de oude site (Layout zonder hal). **De hal** (de site, Studio, de
@@ -732,7 +775,32 @@ only then realise was there the whole time.
 
 ---
 
-## De opening en Hoe het werkt — 25 oktober 2026 (levering 74, opnieuw ingedeeld in 75, rustiger in 76)
+## De voorpagina opnieuw ingedeeld — 27 oktober 2026 (levering 78)
+
+Lucas, 16:50: *"Ik wil dat je de homepage van de grond af opnieuw uitgebreid gaat indelen … goed
+gebruik maken van ruimte en rust. Alleen de eerste laptop pagina krijgt het scroll effect en daarna
+scrollt de pagina normaal."* Het systeem (raster, ruimtematen, de stap S, de soorten secties, de gloed,
+de balk) staat in **`docs/RUIMTE-EN-RUST.md`**; hier alleen wat waar staat.
+
+- **De opening** (`HalTablet.astro`, `tablet.css`): een zwarte tablet (lijst 61 en 62: rond, als een
+  echte tablet), liggend 3 : 2, 48 px onder de balk, met op het scherm de laptop en de telefoon uit de
+  still. Eronder de kop op één regel, die een stap S links buiten de tablet hangt; de zin en de standen
+  op de lijn van de tablet. De css rekent de maten uit, zonder script.
+- **Het ene scrolleffect** (alleen op de computer, met beweging): de tablet komt iets dichterbij en lost
+  op, en de foto uit het scherm vliegt naar zijn plek in Wat we maken (de sectie schuift onder de
+  opening door, marge −100svh). Hij landt op een kopie van de echte laag, dus aan het eind ligt er
+  precies hetzelfde beeld (gemeten: geen zichtbaar verschil). Wat we maken toont meteen dezelfde soort als
+  het scherm. Daarna scrolt de pagina gewoon. Telefoon en minder beweging: geen effect.
+- **De volgorde**: Wat we maken (A), Hoe het werkt (B, `HalHoe.astro`, de stappen als trap), de looks (A
+  gespiegeld), Meer weten (C), het €1-blok (D), de regel met vertrouwen. Geen label en geen nummer
+  boven de secties; alleen "Proef" bij het €1-blok. Opmaak: `voorpagina-78.css`.
+- **De balk** (`hal.css`, "LEVERING 78 · DE BALK"): rechthoekig over de hele breedte, 72 px, wit met een
+  haarlijn, op het raster van de voorpagina. Vervangt de pil van 75 – 77.
+- **De gloed op de tweede toon** (`src/scripts/gloed.js`, `hal.css`): zie `KLEURENSCHEMA.md`.
+- De twee secties hieronder (74 – 76) zijn geschiedenis voor de voorpagina; `HalOpening.astro` wordt
+  niet meer gebruikt.
+
+## De opening en Hoe het werkt — 25 oktober 2026 (levering 74, opnieuw ingedeeld in 75, rustiger in 76) ~ HISTORIE sinds 78
 
 De voorpagina begint met een podium van 3 schermhoogtes dat vastgezet staat
 (`HalOpening.astro`, `opening.css`). **Sinds levering 75** (Lucas, 23:35: *"te druk … de foto
@@ -828,7 +896,7 @@ kop is hoogstens 60 px.
   opening wordt één keer opgezet en ruimt alles op bij een zachte navigatie.
 - Bewaakt door `tests/opening-74.test.mjs` (bijgewerkt voor levering 75 en 76).
 
-## De voorpagina na de opening — 26 oktober 2026 (levering 76)
+## De voorpagina na de opening — 26 oktober 2026 (levering 76) ~ HISTORIE sinds 78
 
 Lucas: *"Ik wil dat je de style van de eerste 2 secties op de homepagina gaat overnemen voor de
 rest van de homepagina."* Alles in `src/styles/voorpagina-rust.css`, alleen op de voorpagina

@@ -150,8 +150,10 @@ const html = Object.fromEntries(HAL.map((p) => [p, readFileSync(join(DIST, p, 'i
 for (const p of HAL) {
   const h = html[p];
   check(`${p}: geen noindex, body.hal, het woordmerk als symbool`, [/<meta name="robots" content="noindex/.test(h), /<body[^>]*class="[^"]*\bhal\b/.test(h), /<symbol id="woordmerk"/.test(h)], [false, true, true]);
-  /* levering 76: de letter is Instrument Sans (Lijst 58) */
-  check(`${p}: de letter (Instrument Sans) wordt vooraf geladen`, /<link rel="preload"[^>]+instrument-sans[^>]+\.woff2/i.test(h), true);
+  /* levering 77 (lijst 60): DM Sans voor de tekst en VISUAILS Display Bold voor de koppen, allebei vooraf
+     geladen (was Instrument Sans, levering 76) */
+  check(`${p}: de letters (DM Sans en VISUAILS Display) worden vooraf geladen`,
+    [/<link rel="preload"[^>]+\/fonts\/dm-sans\/dm-sans-latin\.woff2/i.test(h), /<link rel="preload"[^>]+\/fonts\/visuails-display\/VISUAILSDisplay-Bold\.woff2/i.test(h), /instrument-sans/i.test(h)], [true, true, false]);
   /* stap 3: vier beelden, vier vinkjes, "4 van 4". Levering 76 (Lucas, 26 oktober, 12:29: "De format
      sectie mag wel subtiel/klein toegevoegd worden aan how it works animatie"): het formaat staat er
      nu klein bij, als één keuze tegelijk (de gekozen in inkt, is-eind), niet als "alle drie". */
@@ -284,15 +286,17 @@ const zf = [];
   const heen = await page.evaluate(() => ({
     zacht: window.__zacht === 1,
     hal: document.body.classList.contains('hal'),
-    letter: /^"?Instrument Sans/i.test(getComputedStyle(document.querySelector('.h-h1') || document.body).fontFamily),
-    /* levering 74: de opening is het podium met de scrollvideo (HalOpening.astro) */
-    opening: (document.querySelector('[data-o-podium]')?.getBoundingClientRect().height || 0) > 300,
-    inBeeld: [...document.querySelectorAll('[data-o-kop], [data-o-lede]')].every((e) => getComputedStyle(e).opacity !== '0' && getComputedStyle(e).visibility !== 'hidden'),
+    letter: /^"?DM Sans/i.test(getComputedStyle(document.body).fontFamily) && /^"?VISUAILS Display/i.test(getComputedStyle(document.querySelector('.o-kop, .h-kop') || document.body).fontFamily),
+    /* levering 78: de opening is de zwarte tablet (HalTablet.astro) */
+    opening: (document.querySelector('[data-t-podium]')?.getBoundingClientRect().height || 0) > 300,
+    inBeeld: [...document.querySelectorAll('[data-t-kop], [data-t-lede]')].every((e) => getComputedStyle(e).opacity !== '0' && getComputedStyle(e).visibility !== 'hidden'),
   }));
-  check('zacht naar de hal: zelfde venster, body.hal, Instrument Sans, de opening staat', heen, { zacht: true, hal: true, letter: true, opening: true, inBeeld: true });
-  await page.locator('.h-vertrouwen').evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  check('zacht naar de hal: zelfde venster, body.hal, DM Sans en VISUAILS Display, de opening staat', heen, { zacht: true, hal: true, letter: true, opening: true, inBeeld: true });
+  /* levering 78: op de voorpagina komt niets meer binnen met een fade (RUIMTE-EN-RUST §8), maar het
+     €1-blok krijgt na zacht navigeren nog steeds is-in (de omslag van het getal hangt eraan) */
+  await page.locator('.h-voor > .h-proef').evaluate((el) => el.scrollIntoView({ block: 'center' }));
   await page.waitForTimeout(1500);
-  check('en wat in beeld scrolt, komt binnen (is-in)', await page.evaluate(() => document.querySelector('.h-vertrouwen')?.classList.contains('is-in')), true);
+  check('en wat in beeld scrolt, komt binnen (is-in)', await page.evaluate(() => document.querySelector('.h-voor > .h-proef')?.classList.contains('is-in')), true);
   /* van de hal naar de hal: /pricing staat er sinds 12 oktober ook in */
   await page.click('.site-footer a[href="/pricing/"], footer a[href="/pricing/"]');
   await page.waitForFunction(() => location.pathname === '/pricing/', null, { timeout: 8000 }).catch(() => {});

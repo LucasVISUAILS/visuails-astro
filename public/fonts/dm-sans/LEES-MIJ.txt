@@ -1,0 +1,10 @@
+DM Sans — zelf gehost (levering 77, 27 oktober 2026)
+
+De tekstletter van de site, Studio, de privélink en /admin (lijst 60: DM Sans op volle breedte).
+Variabel: gewicht 400 – 700 en optische grootte 9 – 40 (de browser kiest die zelf bij de
+lettergrootte). Alleen de Latijnse tekens (latin en latin-ext), gemaakt uit DMSans[opsz,wght].ttf
+van github.com/googlefonts/dm-fonts (versie 4.004): gewicht ingeperkt tot 400 – 700 en
+gesplitst met dezelfde unicode-range als de andere letters. De @font-face staat in
+src/styles/hal.css, src/styles/studio-hal.css en (voor /admin, Studio-kaarten en de privélink)
+scripts/fonts-voor-worker.mjs. Urbanist blijft als terugval in de rij staan.
+Licentie: SIL Open Font License 1.1 (OFL.txt): vrij te gebruiken, ook commercieel, en zelf te hosten.

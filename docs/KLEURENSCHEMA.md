@@ -1,6 +1,6 @@
 # VISUAILS — kleurenschema
 
-**Stand: 24 oktober 2026. Schema Blauw uur, overal (levering 68). Levering 75 (26 oktober): de balk als zwevende pil van licht glas, en E1 (de snede) vervallen. Levering 76 (26 oktober): de pil doorzichtiger, zonder rand, licht getint. De hoeken, glas en gloed,
+**Stand: 27 oktober 2026 (levering 78): de balk rechthoekig over de hele breedte, wit met een haarlijn, zonder glas; de tweede toon van een kop in inkt, met af en toe een gloed in blauw uur (zie "De gloed op de tweede toon"). Schema Blauw uur, overal (levering 68). Levering 75 (26 oktober): de balk als zwevende pil van licht glas, en E1 (de snede) vervallen. Levering 76 (26 oktober): de pil doorzichtiger, zonder rand, licht getint. De hoeken, glas en gloed,
 de knoppen, Hoe het werkt in witte kaarten, de gloed van "Gemaakt met AI" en de iconen zonder
 plaatje: 25 oktober 2026 (levering 74).** Dit is het ene bestand dat de kleuren draagt. Verandert hier iets, dan in de bestanden hieronder ook, en
 andersom niet.
@@ -90,7 +90,7 @@ De producten zijn het warme. Een vierde kleur (amber, lamplicht) maakt er weer e
 |---|---|
 | **Bestellen bovenin** (`.nav-cta`, in de lade `.mobile-cta`) | Blauw met wit, met een zachte gloed in blauw uur eronder. Onder de muis blauw diep, de gloed iets sterker (levering 74). Dit is de ene plek per scherm |
 | **Het logo onder de muis** | De schommel, zie hieronder. Op de balk, in de lade, in de voet en het grote woordmerk onderaan, in Studio, op de privélink en in /admin |
-| **Het accentwoord in de opening** (`.o-acc`, alleen de voorpagina) | Inkt, met een laag blauw uur die ademt. Zie "Het accentwoord: inkt dat ademt" hieronder (levering 74) |
+| **De tweede toon van een kop** (`.h-kop .l`, levering 78) | Inkt, en af en toe één keer een gloed als een golf: blauw uur rolt in 1,9 s van links het woord in, staat 0,5 s en trekt in 2,4 s naar rechts weg (4,8 s). Alleen de kleur, zoals het logo; geen lichtrand. In het blauw een omgekleurde lucht uit hero-dunes en een fijne korrel. Nooit twee tegelijk, elke kop één keer per bezoek. Op inkt van wit naar blauw licht. Zie "De gloed op de tweede toon" hieronder. Vervangt het accentwoord van de opening (`.o-acc`, levering 74) |
 | **Een link in de tekst** | Blauw, met een streep in blauw op 38 %. In de voet: inkt, onder de muis blauw |
 | **De focusrand** | 2 px blauw (`--focus-ring`). Op het inktblok blauw licht |
 | **Geselecteerde tekst** | Blauw met witte letters |
@@ -101,8 +101,8 @@ De producten zijn het warme. Een vierde kleur (amber, lamplicht) maakt er weer e
 **Wat je kiest is inkt.** Een aangevinkte keuze, de gekozen kaart, stijl, look, gezicht, vorm,
 kleur, verhouding of achtergrond: inkt (`--kies`). In schema A was dat violet.
 
-**Nergens anders.** Geen blauw kopwoord (op het ene ademende accentwoord van de opening na,
-en dat is in rust inkt), sectienummer, stip, icoon, rand of vlak. Geen blauwe achtergrond
+**Nergens anders.** Geen blauw kopwoord (op de gloed van de tweede toon na, en die is in rust
+inkt), sectienummer, stip, icoon, rand of vlak. Geen blauwe achtergrond
 van een sectie. Het blauw snijdt, het vult niet.
 
 ---
@@ -201,8 +201,8 @@ ziet als iets dat bij VISUAILS past."*
 
 | Waar | Glas | Waarom het leesbaar blijft |
 |---|---|---|
-| De balk bovenin (`.site-header .nav::before`), sinds levering 75 een **zwevende pil**, sinds 76 **zonder rand en licht getint** | 16 px van boven (telefoon 10), 58 px hoog (telefoon 54), helemaal rond. Levering 76 (Lucas: *"doorzichtiger en subtieler met geen outlining eromheen … door de zichtbaarheid te verlagen een licht andere kleur … wel duidelijk zichtbaar"*): de lijnkleur `#E6E8EC` op 56 %, 22 px vervaging, verzadiging 1,6; geen haarlijn, geen binnenrand, geen lichtrand meer, één zachte schaduw (0 10 30 −16 px, inkt 22 %). Op wit wordt dat `#F1F2F4`. Het taal- en het ik-knopje zijn er wit glas in (70 %). De menuknoppen, de taal en Bestellen als pil | boven inkt blijft de grond minstens `#86898E`: de menuletters 5,5 : 1; op wit 17,1 : 1 |
-| De uitklapmenu's van de balk (`.nav-menu`) | sinds 76 `#F1F2F4` op 94 %, 24 px vervaging, zonder randen, één zachte schaduw; 24 px rond | de grijze kopjes halen boven inkt nog 4,5 : 1 |
+| ~~De balk bovenin~~ (tot levering 77 een zwevende pil van glas) | **Sinds levering 78 geen glas meer** (Lucas, 27 oktober: *"niet meer als pilvormige balk maar gewoon een moderne die de hele bovenkant bedekt en rechthoekig is"*): over de hele breedte, 72 px hoog (telefoon 60), wit, onderaan een haarlijn `#E6E8EC`, geen schaduw, geen ronding. Zie `docs/RUIMTE-EN-RUST.md` §7 | inkt op wit 19,18 : 1 |
+| ~~De uitklapmenu's van de balk~~ (`.nav-menu`) | **Sinds 78 wit met een haarlijn**, zonder vervaging of schaduw, de zachte hoek linksboven (20 · 3 · 3 · 3), 8 px onder de haarlijn van de balk | de grijze kopjes op wit 5,52 : 1 |
 | De WhatsApp-knop rechtsonder (`.wa-launcher`) | sinds 76 hetzelfde glas als de balk (lijnkleur op 56 %, zonder rand, één zachte schaduw) | alleen een icoon in inkt |
 | De uitlegbalk zolang hij onderin plakt (`.u-balk`) | vlak 78 %, 16 px vervaging | inkt op de donkerste grond nog 10 : 1 |
 | De bovenbalk van Studio (`.st-balk`) en van /admin (`.adm-balk`), die bovenaan blijven staan | wit (in /admin donker: de eigen kaartkleur) op 92 %, 16 px vervaging | de grijze kruimels halen boven inkt nog 4,69 : 1 |
@@ -288,7 +288,40 @@ midden gaat hij het snelst.
 
 ---
 
-## Het accentwoord: inkt dat ademt (levering 74)
+## De gloed op de tweede toon (levering 78)
+
+Lucas, 27 oktober 2026, 16:50: *"Ik wil dat de geciteerde woorden … de "blue hour" kleur krijgen en
+een soort rustig gloeiend animatie effect hebben, geen ai achtige gloei of flitsen/golven. Gewoon een
+hele subtiele ademende gloed die komt en weer verdwijnt. Wanneer de gloed weg is is de tekst dan ook
+de normale donkere tekst kleur en af en toe komt een hele langzame maar intense "blue hour" gloed om
+het woord te citeren, maar het moet de lezer niet afleiden."*
+
+- De tweede toon van elke kop (`.h-kop .l`) staat in **inkt** (tot 77 grijs `#636974`).
+- `src/scripts/gloed.js` geeft af en toe één tweede toon in beeld `.is-gloeit`: de kop die het
+  dichtst bij het midden van het scherm staat. Nooit twee tegelijk, elke kop hoogstens één keer per
+  bezoek, en 9 – 13 s rust tussen twee. De eerste pas na je eerste beweging (muis, toets, aanraking,
+  wiel), 1,5 s later: niets beweegt bij het laden.
+- De beweging (`hal.css`, "DE GLOED OP DE TWEEDE TOON"), sinds 17:56 – 17:58 (*"veel te licht"*,
+  *"een soortgelijke gloed … als die op het logo"*, *"een soort golvende beweging heel smooth en
+  langzaam en die ook weer heel langzaam wegtrekt"*): geen lichtrand, alleen de kleur, als een golf.
+  Een verloop (inkt · zachte rand · blauw uur `#25508B` · zachte rand · inkt), vijf keer zo breed als
+  het woord, schuift door de letters (`background-clip: text`, alleen zolang hij loopt; in rust is het
+  gewoon inkt): 1,9 s erin, 0,5 s vol, 2,4 s eruit, per stuk de sinus van de schommel van het logo.
+  4,8 s, onder de 5 s van WCAG 2.2.2. In het open stuk een lucht uit Lucas' beeld hero-dunes,
+  omgekleurd naar blauw diep, blauw uur en `#2D61A8` (overal minstens 6 : 1;
+  `public/img/hal/lucht-blauw-uur.webp`), die langzaam meeschuift, en een fijne korrel (10 %, twaalf
+  keer per seconde; `public/img/hal/korrel.webp`; het lichtste korreltje in de browser minstens 4,7 : 1). Zo lang de lucht
+  laadt: blauw uur. Op inkt (het €1-blok, het slot): wit en blauw licht `#80A7DD`, zonder lucht en korrel.
+- Contrast: inkt 19,18 : 1, blauw uur 8,08 : 1 op wit, blauw licht 7,75 : 1 op inkt; elke tussenstand
+  ligt daartussen.
+- Minder beweging en hoog contrast: geen gloed, alleen inkt (of wit).
+- Het systeem erachter: `docs/RUIMTE-EN-RUST.md` §6.
+
+## Het accentwoord: inkt dat ademt (levering 74, vervallen in 78)
+
+Sinds levering 78 staat de opening van 74 – 77 (`HalOpening.astro`) niet meer op de voorpagina, en
+daarmee ook `.o-acc` niet. De gloed op de tweede toon (hierboven) is ervoor in de plaats gekomen.
+Wat volgt is geschiedenis.
 
 Lucas, 25 oktober 2026: *"Normaalgesproken hebben veel ai tools accentwoorden in zinnen
 gekleurd maar ik denk dat ik een soort blauwe animatie gloed wil gebruiken in plaats van de
@@ -427,14 +460,16 @@ het beeld naadloos doorloopt), het blauw van Instagram in het voorbeeldscherm, d
 
 1. Wit is de grond, ook achter de foto's. Geen grijze sectie, geen getinte band.
 2. Lopende tekst en knoppen minstens **4,5:1**, ook een kop. Tekst minstens 11,5 px.
-3. **Blauw op één plek per scherm**, plus het logo onder de muis, het ademende accentwoord
-   van de opening, links, de focusrand en selectie. Geen blauw kopwoord, icoon, stip, rand of
+3. **Blauw op één plek per scherm**, plus het logo onder de muis, de gloed van de tweede toon
+   (af en toe, één tegelijk), links, de focusrand en selectie. Geen blauw kopwoord, icoon, stip, rand of
    vlak.
 4. **Eén inktblok per pagina**, afgesneden op 53°, de andere hoeken rond.
 5. Blauw en inkt nooit op elkaar (2,37:1). Op inkt alleen wit en blauw licht.
-6. Geen verloop als vulling, geen bewogen achtergrond. Glas alleen op wat zweeft (de balk,
-   zijn menu's, de WhatsApp-knop, de plakkende uitlegbalk). Een gloed alleen in blauw uur (op
-   inkt blauw licht): een knop onder de muis, Bestellen bovenin, het ademende accentwoord, en
+6. Geen verloop als vulling, geen bewogen achtergrond, geen korrel; de ene uitzondering is de golf op de
+   tweede toon (levering 78, Lucas' vraag): 4,8 s, daarna weer gewoon inkt. Glas alleen op wat zweeft (de
+   WhatsApp-knop, de plakkende uitlegbalk; de balk en zijn menu's sinds 78 niet meer). Een gloed
+   alleen in blauw uur (op inkt blauw licht): een knop onder de muis, Bestellen bovenin, de gloed van
+   de tweede toon, en
    kort het product dat met AI gemaakt is (de lagen van Hoe het werkt).
 12. Een vinkje of icoon in een lijst, zin of beeld heeft geen plaatje: het icoon zelf, in inkt
    (wit alleen op een gemeten donker beeld). Een plaatje dat blijft heeft vier gelijke hoeken.

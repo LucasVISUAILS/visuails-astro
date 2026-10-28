@@ -58,8 +58,14 @@ html.o-klik { scroll-snap-type: y proximity; }
 /* De schatting van de tekst zo dicht mogelijk bij wat het script meet, zodat er bij het laden
    niets verschuift: Engels heeft een kleinere kop (een langere zin), en waar de standen onder de
    zin komen (een laag of smal venster) is de tekst hoger. */
-html[lang="en"] .o-toneel { --o-th: 122px; }
-@media (max-height: 790px), (max-width: 1060px) { .o-toneel, html[lang="en"] .o-toneel { --o-th: 160px; } }
+/* Levering 77, opnieuw gemeten met DM Sans en de kopletter (twaalf schermmaten, oth.mjs): op 1440 –
+   1920 px is de tekst Nederlands 124 – 130 px hoog en Engels 120 – 143 (de Engelse zin loopt op 1440 en
+   1536 over drie regels); tot 1300 px breed of 790 px hoog 153 – 166. Was 130 / 122 en 160 tot 1060 px:
+   op 1100 – 1280 × 800 – 900 zat de schatting er 35 – 44 px naast (ook in 76). */
+.o-toneel { --o-th: 127px; }
+html[lang="en"] .o-toneel { --o-th: 125px; }
+@media (min-width: 1301px) and (max-width: 1600px) { html[lang="en"] .o-toneel { --o-th: 142px; } }
+@media (max-height: 790px), (max-width: 1300px) { .o-toneel, html[lang="en"] .o-toneel { --o-th: 160px; } }
 /* in het vaste podium lopen de armen door tot de onderrand van het venster */
 .o-aan .o-toneel { overflow: visible; }
 
@@ -87,12 +93,15 @@ body:not(.o-aan) .o-doek { display: none; }
 /* ── de kop, de zin en de standen ────────────────────────────────────────── */
 .o-tekst { position: relative; z-index: 2; box-sizing: border-box; display: grid; gap: 20px; align-content: start;
   width: var(--o-tw); margin: calc(var(--o-iw) * var(--o-q-hand) + var(--o-tussen)) 0 0 var(--o-tl); }
-/* Intenser (Lucas): vet en in één kleur. Op de computer op één regel; het script zet hem op maat
-   (o-kop-een), dit is de schatting tot dan (de kop is 15,4 × zo breed als hoog, Engels 17,2). */
+/* Intenser (Lucas): vet en in één kleur. Op de computer op één regel; dit is de maat, het script
+   (o-kop-een) maakt hem alleen kleiner als hij toch niet past. Levering 77, gemeten in VISUAILS
+   Display Bold met -0,03 em: de kop is 14,95 × zo breed als hoog (Engels 17,64), inclusief de
+   ruimte die het script voor de spatie rekent (0,25 em); met een half procent speling. */
 /* Levering 76: hoogstens 60 px (was 76); op een groot scherm loopt de kop dan niet meer tot de
    telefoon, en dat is rustiger. */
-.o-kop { margin: 0; font: 600 clamp(28px, calc(var(--o-tw) / 13.4), 56.89px)/1 var(--h-letter); font-stretch: var(--h-smal, 80%); letter-spacing: -.015em; color: var(--h-inkt); white-space: nowrap; }
-html[lang="en"] .o-kop { font-size: clamp(28px, calc(var(--o-tw) / 14.92), 56.89px); }
+/* Levering 77: VISUAILS Display Bold (lijst 60), zoals elke grote kop; de maat hieronder opnieuw gemeten. */
+.o-kop { margin: 0; font: 700 clamp(28px, calc(var(--o-tw) / 15.03), 56.89px)/1 var(--h-kopletter, var(--h-letter)); font-stretch: normal; letter-spacing: -.03em; color: var(--h-inkt); white-space: nowrap; }
+html[lang="en"] .o-kop { font-size: clamp(28px, calc(var(--o-tw) / 17.73), 56.89px); }
 .o-kop-rest { display: inline; }
 .o-kop-een { white-space: nowrap; text-wrap: nowrap; }
 /* margin 0: de algemene regel "kop + blok" (global.css, --gap-head-block) zette hier 32 px boven */
@@ -470,8 +479,10 @@ html:has(.o-podium) { overflow-anchor: none; }
   .o-vast { --o-balk: 64px; }   /* de balk: 10 px van boven, 54 px hoog (hal.css, levering 75) */
   .o-toneel { --o-iw: calc(100cqw * 2.84); --o-lucht: 30px; --o-tussen: 22px; --o-onder: 36px; --o-vrij: 0px;
     --o-tl: max(var(--h-rand, 16px), calc(50cqw - var(--o-iw) * var(--o-q-half))); --o-tw: calc(100cqw - 2 * var(--o-tl)); }
-  .o-kop { font-size: clamp(26px, min(max(34px, 8.6cqw), var(--o-tw) / 8.0), 64px); white-space: normal; text-wrap: balance; }
-  html[lang="en"] .o-kop { font-size: clamp(26px, min(max(34px, 8.6cqw), var(--o-tw) / 9.35), 64px); }
+  /* levering 77: VISUAILS Display Bold met -0,03 em, opnieuw gemeten: 9,00 ("Al je productbeelden.")
+     en 10,51 ("All your product imagery."), met dezelfde 3,5 % speling (was 8,0 en 9,35) */
+  .o-kop { font-size: clamp(26px, min(max(34px, 8.6cqw), var(--o-tw) / 9.31), 64px); white-space: normal; text-wrap: balance; }
+  html[lang="en"] .o-kop { font-size: clamp(26px, min(max(34px, 8.6cqw), var(--o-tw) / 10.88), 64px); }
   .o-kop-rest { display: block; }
   .o-podium .o-lede { flex-basis: 100%; font-size: 17px; }
 }

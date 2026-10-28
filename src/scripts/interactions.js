@@ -2420,6 +2420,10 @@ function meldingen() {
     /* En met de stroom (één scroll, één sectie; HalOpening.astro) tot de laatste sectie ervan
        half voorbij is: daar vult elke sectie het scherm en zou de melding er linksonder overheen
        liggen. */
+    /* Levering 78: de opening is de tablet (HalTablet.astro). Met het scrolleffect (html.t-aan) pas
+       als het effect voorbij is: daarvoor vliegt de foto, en de melding zou er doorheen komen. */
+    const tablet = document.querySelector('[data-t-podium]');
+    if (tablet && document.documentElement.classList.contains('t-aan') && window.scrollY < tablet.offsetTop + tablet.offsetHeight - window.innerHeight) return false;
     const stroomEind = document.querySelector('[data-o-stroom-eind]');
     if (stroomEind && stroomEind.getBoundingClientRect().bottom > window.innerHeight * 0.5) return false;
     for (const blok of document.querySelectorAll('section.h-proef')) {

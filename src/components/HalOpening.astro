@@ -52,7 +52,7 @@
  */
 import '../styles/opening.css';
 import SCHERMEN from '../data/openingSchermen.json';
-import { openingStanden } from '../data/openingStanden.js';
+import { openingStanden, openingVersie } from '../data/openingStanden.js';
 import { laptopReeks } from '../data/laptopSlides.js';
 import { ikoon, IKOON } from '../data/iconen.js';
 
@@ -119,6 +119,10 @@ const standen = openingStanden(lang);
 const [cat, life, vid] = laptopReeks(lang);
 const SET: Record<string, string> = { catalog: cat.naam, lifestyle: life.naam, video: vid.naam };
 const eerste = standen[0] ?? { lap: `/img/hal/opening/scherm-${lang}-laptop`, tel: '/img/hal/opening/scherm-telefoon', set: 'catalog', duur: 0 };
+/* levering 77: ?v= achter elk beeld van de opening, zodat een nieuw beeld onder een oude naam nooit
+   uit de cache van gisteren komt (src/data/openingStanden.js, openingVersie) */
+const V = openingVersie();
+const mv = (u: string) => `${u}?v=${V}`;
 const T = nl
   ? { groep: 'De voorbeeldschermen', vorige: 'Vorig beeld', volgende: 'Volgend beeld', pauze: 'Zet de beelden stil', speel: 'Laat de beelden lopen' }
   : { groep: 'The example screens', vorige: 'Previous image', volgende: 'Next image', pauze: 'Pause the images', speel: 'Play the images' };
@@ -127,7 +131,7 @@ const STILL_H = Math.round((3600 * SCHERMEN.h) / SCHERMEN.w);
 /* het beeld is op de computer ± 1,4 – 1,75 × zo breed als het venster, op de telefoon 2,84 × */
 const SIZES = '(max-width: 900px) 284vw, 170vw';
 ---
-<section class="o-podium" data-o-podium aria-labelledby="h-h1" style={MATEN}>
+<section class="o-podium" data-o-podium data-o-v={V} aria-labelledby="h-h1" style={MATEN}>
   <span class="o-snap" data-o-snap="0" aria-hidden="true"></span>
   <span class="o-snap" data-o-snap="1" aria-hidden="true"></span>
   <div class="o-vast" data-o-vast>
@@ -136,22 +140,22 @@ const SIZES = '(max-width: 900px) 284vw, 170vw';
         <div class="o-schermen" aria-hidden="true">
           <div class="o-sc o-sc-lap" data-o-lap style={rechthoek(lapQ)}>
             <picture class="o-st is-nu" data-o-st-lap="0">
-              <source type="image/avif" srcset={`${eerste.lap}.avif`} />
-              <img src={`${eerste.lap}.webp`} width="1600" height="1034" alt="" decoding="async" />
+              <source type="image/avif" srcset={mv(`${eerste.lap}.avif`)} />
+              <img src={mv(`${eerste.lap}.webp`)} width="1600" height="1034" alt="" decoding="async" />
             </picture>
             <span class="o-donker" data-o-donker></span>
           </div>
           <div class="o-sc o-sc-fon" data-o-fon style={rechthoek(fonQ)}>
             <picture class="o-st is-nu" data-o-st-fon={eerste.tel}>
-              <source type="image/avif" srcset={`${eerste.tel}.avif`} />
-              <img src={`${eerste.tel}.webp`} width="540" height="1170" alt="" decoding="async" />
+              <source type="image/avif" srcset={mv(`${eerste.tel}.avif`)} />
+              <img src={mv(`${eerste.tel}.webp`)} width="540" height="1170" alt="" decoding="async" />
             </picture>
           </div>
         </div>
         <picture>
-          <source type="image/avif" srcset={STILL.map((w) => `/img/hal/opening/still-${w}.avif ${w}w`).join(', ')} sizes={SIZES} />
-          <img class="o-still" data-o-still src="/img/hal/opening/still-2700.webp"
-               srcset={STILL.map((w) => `/img/hal/opening/still-${w}.webp ${w}w`).join(', ')} sizes={SIZES}
+          <source type="image/avif" srcset={STILL.map((w) => `${mv(`/img/hal/opening/still-${w}.avif`)} ${w}w`).join(', ')} sizes={SIZES} />
+          <img class="o-still" data-o-still src={mv('/img/hal/opening/still-2700.webp')}
+               srcset={STILL.map((w) => `${mv(`/img/hal/opening/still-${w}.webp`)} ${w}w`).join(', ')} sizes={SIZES}
                width="3600" height={STILL_H} fetchpriority="high" decoding="async"
                alt={nl ? 'Twee handen houden een laptop met de webshop van een merk en een telefoon met de telefoonfoto van dezelfde roze jeans' : 'Two hands hold a laptop showing a brand’s web shop and a phone with the phone photo of the same pink jeans'} />
         </picture>
@@ -224,13 +228,13 @@ const SIZES = '(max-width: 900px) 284vw, 170vw';
   const BEELDEN: (HTMLImageElement | undefined)[] = [];
   let reeksBegon = false;
   let naBeeld: ((i: number) => void) | null = null;
-  function laadReeks() {
+  function laadReeks(v: string) {
     if (reeksBegon) return; reeksBegon = true;
     for (let i = Q.eerste; i <= Q.laatste; i++) {
       const im = new Image();
       im.decoding = 'async';
       im.onload = () => { (im.decode ? im.decode() : Promise.resolve()).catch(() => {}).then(() => { BEELDEN[i] = im; naBeeld?.(i); }); };
-      im.src = `/img/hal/opening/f/${String(i).padStart(3, '0')}.avif`;
+      im.src = `/img/hal/opening/f/${String(i).padStart(3, '0')}.avif?v=${v}`;
     }
   }
 
@@ -369,14 +373,21 @@ const SIZES = '(max-width: 900px) 284vw, 170vw';
        hier wordt de kop op maat gezet, de echte hoogte gemeten en teruggegeven. Twee rondes:
        een andere hoogte geeft een ander beeld en dus een andere breedte. */
     const KOP_MAX = 56.89;   // levering 76: hoogstens 56,89 px (de schaal van 4 : 3), net als opening.css
+    /* Levering 77: eerst kijken of de maat uit opening.css past (die rekent met de gemeten breedte van
+       VISUAILS Display Bold); alleen als hij niet past, zoekt het script een kleinere. Zo verspringt de
+       kop niet bij het laden (eerst de schatting, dan de maat van het script: 48 → 44 px). En de
+       breedte is die van het tekstvak (--o-tw), niet die van de rij eronder: een kop op één regel die
+       te breed is, maakte de rij mee breder, zodat hij zichzelf de ruimte gaf (11 px te breed). */
+    const kopBreedte = (f: number) => rest.getBoundingClientRect().width + acc.getBoundingClientRect().width + f * 0.25;
     function past() {
-      const maxB = rijTekst.getBoundingClientRect().width;
+      const maxB = tekst.getBoundingClientRect().width;
+      kop.style.fontSize = '';
+      if (kopBreedte(parseFloat(getComputedStyle(kop).fontSize)) <= maxB) return;
       let lo = 28, hi = KOP_MAX + 1;
       for (let n = 0; n < 12; n++) {
         const f = (lo + hi) / 2;
         kop.style.fontSize = `${f}px`;
-        const b = rest.getBoundingClientRect().width + acc.getBoundingClientRect().width + f * 0.25;
-        if (b <= maxB) lo = f; else hi = f;
+        if (kopBreedte(f) <= maxB) lo = f; else hi = f;
       }
       kop.style.fontSize = `${Math.min(KOP_MAX, Math.floor(lo))}px`;
     }
@@ -444,7 +455,7 @@ const SIZES = '(max-width: 900px) 284vw, 170vw';
         snap1.style.top = `${hoe.offsetTop}px`;
       }
       podTop = podium.getBoundingClientRect().top + window.scrollY;
-      if (actief) { meetSnede(); laadReeks(); }
+      if (actief) { meetSnede(); laadReeks(podium.dataset.oV || ''); }
       meetStops();
       /* Gaat de stroom uit (smaller venster, minder beweging): niet meer zweven en niet verder
          glijden; de wielluisteraar alleen als de stroom aan kan (25 okt, de controle) */
@@ -533,10 +544,11 @@ const SIZES = '(max-width: 900px) 284vw, 170vw';
       const bestaand = (el: HTMLElement | null) => (el ? { el, p: klaar(el.querySelector('img')!) } : null);
       const l0 = bestaand(lap.querySelector<HTMLElement>('[data-o-st-lap="0"]')); if (l0) laps.set(0, l0);
       const f0 = bestaand(fon.querySelector<HTMLElement>('[data-o-st-fon]')); if (f0) fons.set(f0.el.dataset.oStFon || '', f0);
+      const ver = podium.dataset.oV || '';
       const maak = (pad: string, b: number, h: number) => {
         const pic = document.createElement('picture'); pic.className = 'o-st';
-        const src = document.createElement('source'); src.type = 'image/avif'; src.srcset = `${pad}.avif`;
-        const img = document.createElement('img'); img.width = b; img.height = h; img.alt = ''; img.decoding = 'async'; img.src = `${pad}.webp`;
+        const src = document.createElement('source'); src.type = 'image/avif'; src.srcset = `${pad}.avif?v=${ver}`;
+        const img = document.createElement('img'); img.width = b; img.height = h; img.alt = ''; img.decoding = 'async'; img.src = `${pad}.webp?v=${ver}`;
         pic.append(src, img);
         return { el: pic as HTMLElement, img };
       };
@@ -808,6 +820,9 @@ const SIZES = '(max-width: 900px) 284vw, 170vw';
     meet();
     if (location.hash === '#hoe') { requestAnimationFrame(naarHoe); if (document.readyState !== 'complete') window.addEventListener('load', naarHoe, { once: true }); }
     document.fonts?.ready.then(() => { if (podium.isConnected) meet(); });
+    /* levering 77: fonts.ready is al klaar voordat de kopletter gevraagd wordt (een preload telt daar niet
+       mee); dus nog één keer meten als VISUAILS Display er echt is */
+    document.fonts?.load?.('700 40px "VISUAILS Display"').then(() => { if (podium.isConnected) meet(); }).catch(() => {});
     if (still instanceof HTMLImageElement && !still.complete) still.addEventListener('load', () => { if (podium.isConnected) meet(); }, { once: true });
 
     ruim = () => {

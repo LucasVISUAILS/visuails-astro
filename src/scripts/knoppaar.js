@@ -12,8 +12,26 @@
  */
 const SMAL = '(max-width: 900px)';
 
+/* Levering 77 (27 oktober 2026): op de computer is een paar altijd één vorm, op één regel. In een smal
+   vak (een kaart in twee kolommen, de kop naast een beeld) op 901 – 1240 px paste dat soms niet, en
+   liep de tweede knop over de rand van zijn vak (tot 164 px op de 404). Dan krijgt de rij h-los: de
+   knoppen los, en onder elkaar als ze niet naast elkaar passen (hal.css). Gemeten tegen het vak van
+   de ouder, niet tegen de rij zelf: in een raster maakt een te brede rij zijn eigen kolom breder. */
+function meetBreed(rij, knoppen) {
+  rij.classList.remove('h-los');
+  const ouder = rij.parentElement;
+  if (!ouder) return;
+  const oc = getComputedStyle(ouder);
+  const links = rij.getBoundingClientRect().left;
+  const ruimte = ouder.getBoundingClientRect().right - parseFloat(oc.paddingRight) - parseFloat(oc.borderRightWidth) - links;
+  const nodig = Math.max(...knoppen.map((k) => k.getBoundingClientRect().right)) - links;
+  rij.classList.toggle('h-los', nodig > ruimte + 1);
+}
+
 function meet(rij) {
   const knoppen = [...rij.children].filter((k) => k.classList.contains('h-knop') && !k.hidden);
+  if (knoppen.length >= 2 && !matchMedia(SMAL).matches) { rij.classList.remove('h-passen'); meetBreed(rij, knoppen); return; }
+  rij.classList.remove('h-los');
   if (knoppen.length < 2 || !matchMedia(SMAL).matches) { rij.classList.remove('h-passen'); return; }
   rij.classList.remove('h-passen');
   rij.classList.add('h-meet');

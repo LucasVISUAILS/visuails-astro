@@ -54,7 +54,8 @@ import { styles as lifestyleNl } from '../data/styles.nl.js';
 import { catalogStyles as catalogEn } from '../data/catalogStyles.js';
 import { catalogStyles as catalogNl } from '../data/catalogStyles.nl.js';
 import { LEVERTAG, TAG_WOORD, tagNaam } from '../lib/iptc.js';
-import HalOpening from './HalOpening.astro';
+import HalTablet from './HalTablet.astro';
+import HalHoe from './HalHoe.astro';
 import { videoStyles as videoNl } from '../data/videoStyles.nl.js';
 import { videoStyles as videoEn } from '../data/videoStyles.js';
 import Aanbevelingen from './Aanbevelingen.astro';
@@ -65,6 +66,7 @@ import UitlegBalk from './UitlegBalk.astro';
 /* levering 76: de secties na de opening in de stijl van de opening en Hoe het werkt; als laatste,
    na hal.css en opening.css (HalOpening), anders verschuift de volgorde van de stijlbladen */
 import '../styles/voorpagina-rust.css';
+import '../styles/voorpagina-78.css';
 /* Levering 75 (Lucas, 25 oktober, 23:35): stap 2 van catalog is alleen nog de lagen in 3D
    ("veel korter en simpeler, wel met de 3 lagen erin"). Het handwerk ervoor (rechtzetten,
    opbouwen, nakijken, de pen; scripts/maak-recht.py en maak-pad.py) staat niet meer op de pagina. */
@@ -129,7 +131,8 @@ const PUNTEN = { nl: ['Knoop', 'Stiksel', 'Kleur'], en: ['Button', 'Seams', 'Col
 const COPY = {
   nl: {
     plek: 'Enschede, NL',
-    lede: 'Stuur je productfoto’s. Krijg catalog, lifestyle en video terug. Knoop, stiksel en kleur nagekeken.',
+    /* levering 78 (Lucas, 16:50): niet het idee geven dat catalog en lifestyle alles zijn wat VISUAILS doet */
+    lede: 'Stuur een paar foto’s van je product. Je krijgt elk beeld terug dat je merk nodig heeft. Knoop, stiksel en kleur nagekeken.',
     ctaStart: 'Start een bestelling', planCta: 'Sluit een abonnement af',
     feiten: [`Vanaf <b>${e(ladderFloor('catalog'))}</b> per product`, LEVERTIJD, 'Geen minimum'],
     hoeLabel: 'Hoe het werkt', hoeKop: ['Dit stuur jij.', 'Dit krijg je terug.'],
@@ -137,7 +140,7 @@ const COPY = {
       /* 25 okt, 16:28: niet "telefoonfoto's" ("een aanname dat de klant alleen met zijn telefoon
          foto's maakt") */
       ['Jij stuurt', `${FOTOS} foto’s van je product zijn genoeg om te beginnen.`, 'jouw foto’s'],
-      ['Wij maken', `Catalog, lifestyle of video. ${LEVERTIJD}.`, 'Elk beeld gelijk'],
+      ['Wij maken', `Het beeld dat je kiest, in jouw look. ${LEVERTIJD}.`, 'Elk beeld gelijk'],
       ['Jij keurt goed', 'Per beeld goedkeuren. Alles in één keer downloaden.', ''],
     ],
     goedgekeurd: (n: number) => `${n} van ${n} goedgekeurd`,
@@ -156,7 +159,11 @@ const COPY = {
       ['Controle', reviewClaim('unattended', 'nl')],
     ],
     restLink: 'Meer over de AI-markering',
-    makenLabel: 'Wat we maken', makenKop: ['Drie soorten beeld.', 'Per product geprijsd.'],
+    makenLabel: 'Wat we maken', makenKop: ['Elk beeld voor je merk.', 'Van productpagina tot feed.'],
+    /* levering 78: wat er verder is, zodat niemand denkt dat het hier ophoudt (Lucas, 16:50) */
+    ookKop: 'Ook voor jouw merk',
+    ook: [['Een eigen look', '/lifestyle/custom'], ['Je eigen merkmodel', '/custom-models'], ['Hooks voor je ads', '/hooks'], ['Een abonnement', '/plans']],
+    ookAnders: ['Iets anders nodig?', 'Vraag het ons', '/contact'],
     diensten: [
       ['Productfoto’s', `vanaf ${e(ladderFloor('catalog'))} per product`, '/catalog', 'Voorkant, achterkant, detail en op model, op de achtergrond die bij je merk past.', 'Bekijk productfoto’s'],
       ['Lifestyle', `vanaf ${e(ladderFloor('lifestyle'))} per product`, '/lifestyle', 'Je product in een sfeer: vier beelden in één look, klaar voor een carrousel.', 'Bekijk lifestyle'],
@@ -212,13 +219,13 @@ const COPY = {
   },
   en: {
     plek: 'Enschede, NL',
-    lede: 'Send your product photos. Get catalog, lifestyle and video back. Buttons, stitching and colour checked.',
+    lede: 'Send a few photos of your product. Get back every image your brand needs. Buttons, stitching and colour checked.',
     ctaStart: 'Start an order', planCta: 'Start a plan',
     feiten: [`From <b>${e(ladderFloor('catalog'))}</b> per product`, LEVERTIJD, 'No minimum'],
     hoeLabel: 'How it works', hoeKop: ['What you send.', 'What you get back.'],
     stappen: [
       ['You send', `${FOTOS} photos of your product are all you need to start.`, 'your photos'],
-      ['We make', `Catalog, lifestyle or video. ${LEVERTIJD}.`, 'Every image the same'],
+      ['We make', `The image you pick, in your look. ${LEVERTIJD}.`, 'Every image the same'],
       ['You approve', 'Approve image by image. Download everything at once.', ''],
     ],
     goedgekeurd: (n: number) => `${n} of ${n} approved`,
@@ -237,7 +244,10 @@ const COPY = {
       ['Checking', reviewClaim('unattended', 'en')],
     ],
     restLink: 'More about the AI marking',
-    makenLabel: 'What we make', makenKop: ['Three kinds of image.', 'Priced per product.'],
+    makenLabel: 'What we make', makenKop: ['Every image for your brand.', 'From product page to feed.'],
+    ookKop: 'Also for your brand',
+    ook: [['A look of your own', '/lifestyle/custom'], ['Your own brand model', '/custom-models'], ['Hooks for your ads', '/hooks'], ['A monthly plan', '/plans']],
+    ookAnders: ['Need something else?', 'Ask us', '/contact'],
     diensten: [
       ['Product photos', `from ${e(ladderFloor('catalog'))} per product`, '/catalog', 'Front, back, detail and on model, on the background that suits your brand.', 'See product photos'],
       ['Lifestyle', `from ${e(ladderFloor('lifestyle'))} per product`, '/lifestyle', 'Your product in a setting: four images in one look, ready for a carousel.', 'See lifestyle'],
@@ -352,7 +362,53 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
       knoppen en de feiten staan onder de blokken (vraag 1a: in het eerste scherm alleen de
       kop en één zin). Het wisselwoord in de kop staat stil: één beweging in de kop (het
       ademende accentwoord) is genoeg. */}
-  <HalOpening lang={lang} kop={kop} lede={c.lede} hoeKop={c.hoeKop as [string, string]} uitleg={uitleg}>
+  {/* ── DE OPENING: DE ZWARTE TABLET — levering 78 (lijst 61 en 62, Lucas 16:03 en 16:50) ──────
+      Het enige scrolleffect van de pagina (HalTablet.astro): de foto uit het winkelscherm vliegt
+      naar de foto van Wat we maken, daarna scrolt de pagina gewoon. */}
+  <HalTablet lang={lang} kop={kop} lede={c.lede} />
+
+  {/* ── WAT WE MAKEN — levering 78 (Lucas, 16:50) ────────────────────────────────
+      Sectie A (docs/RUIMTE-EN-RUST.md): het beeld links over 6 kolommen, één kolom lucht, de tekst rechts in het
+      optische midden van het beeld (R2), de kop hangt een stap S buiten de rest (R1). Hier landt de
+      foto uit de tablet (data-t-doel, HalTablet.astro). Geen label en geen nummer meer. De kop zegt
+      niet meer "drie soorten": wat er verder is, staat eronder als "Ook voor jouw merk". */}
+  <section class="h-sec h-maken v-maken t-na" id="maken" aria-labelledby="h-maken" data-h-pv>
+    <div class="h-pv-beeld v-maken-beeld" data-h-pv-vak data-t-doel>
+      {c.diensten.map((_d, i) => (
+        <figure class:list={['h-pv-laag', `h-pv-${DIENSTEN_HOE[i]}`, i === 0 && 'is-nu']} data-h-pv-laag={i} style={i === 0 ? `--grond:${GROND}` : undefined}>
+          {i === 0 && <img src={GELEVERD[0].src} width={GELEVERD[0].w} height={GELEVERD[0].h} alt={GELEVERD[0].alt} decoding="async" />}
+          {i === 1 && <img src="/img/hal/sfeer-4x5.webp" width="921" height="1152" alt={c.dienstAlt[1]} loading="lazy" decoding="async" />}
+          {i === 2 && <span class="h-pv-klip"><img src="/img/hal/sfeer-bewogen.webp" width="1600" height="900" alt={c.dienstAlt[2]} loading="lazy" decoding="async" /><span class="h-cirkel h-cirkel-glas h-speel" aria-hidden="true" set:html={ik('speel')} /></span>}
+        </figure>
+      ))}
+      <span class="h-pv-mes" data-h-pv-mes aria-hidden="true" hidden></span>
+    </div>
+    <div class="v-maken-tekst v-kopgroep">
+      <h2 id="h-maken" class="h-kop h-h2 v-kop">{c.makenKop[0]} <span class="l">{c.makenKop[1]}</span></h2>
+      <div class="h-pv-rest v-na-kop">
+        <div class="h-pv-keus" role="group" aria-label={c.kiesSoort}>
+          {c.diensten.map(([naam], i) => <button type="button" data-h-pv-kies={i} aria-pressed={i === 0 ? 'true' : 'false'}>{naam}</button>)}
+        </div>
+        {c.diensten.map(([, prijs, href, , knop], i) => (
+          <div class="h-pv-per" data-h-pv-per={i} hidden={i !== 0}>
+            <p class="h-pv-prijs">{prijs}</p>
+            <p class="h-acties"><a class="h-knop h-knop-inkt" href={lp(href)}>{knop}<span class="o" set:html={ik('pijl')} /></a></p>
+          </div>
+        ))}
+        <p class="h-onderregel">{c.eenProduct}</p>
+      </div>
+      <div class="v-ook v-na-kop">
+        <p class="v-ook-kop">{c.ookKop}</p>
+        <ul class="v-ook-rij" role="list">
+          {c.ook.map(([naam, href]: string[]) => <li><a href={lp(href)}>{naam}<span class="o" aria-hidden="true" set:html={ik('pijl')} /></a></li>)}
+        </ul>
+        <p class="v-ook-anders">{c.ookAnders[0]} <a class="h-link" href={lp(c.ookAnders[2])}>{c.ookAnders[1]}</a></p>
+      </div>
+    </div>
+  </section>
+
+  {/* ── HOE HET WERKT — levering 78: een gewone sectie na Wat we maken (lijst 61, v61-volgorde a) ── */}
+  <HalHoe lang={lang} hoeKop={c.hoeKop as [string, string]} uitleg={uitleg}>
     {/* De drie stappen van vroeger (Lucas, 14:39), in drie witte kaarten (16:28: "De donkere
         achtergrond maakt het ook wat heftiger dan dat het zou moeten dus deze mag wit zijn").
         Per dienst een eigen verhaal (data-v): catalog stuurt, wij maken (de lagen uit elkaar),
@@ -520,7 +576,7 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
         {c.feiten.map((f, i) => <li><i set:html={ik((['label', 'klok', 'doos'] as const)[i])} /><span set:html={f} /></li>)}
       </ul>
     </Fragment>
-  </HalOpening>
+  </HalHoe>
 
   {/* Formaten (FormatenHal) stond hier als eigen sectie; sinds levering 76 klein in stap 3 van Hoe
       het werkt (Lucas, 26 oktober, 12:29: "De format sectie mag wel subtiel/klein toegevoegd worden
@@ -551,34 +607,7 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
       drie soorten zijn de knopjes; het beeld, de prijs en de knop wisselen mee. Was: drie gelijke
       kaarten. Zonder JavaScript staan productfoto's er, met hun link; de knopjes doen dan niets,
       het menu bovenin heeft alle drie. */}
-  <section class="h-sec h-maken h-pv" id="maken" aria-labelledby="h-maken" data-h-pv>
-    <header class="h-sec-kop h-pv-kop h-in">
-      <p class="h-pil"><span>{c.makenLabel}</span></p>
-      <h2 id="h-maken" class="h-kop h-h2">{c.makenKop[0]} <span class="l">{c.makenKop[1]}</span></h2>
-    </header>
-    <div class="h-pv-beeld h-in" style="--d:1" data-h-pv-vak>
-      {c.diensten.map((_d, i) => (
-        <figure class:list={['h-pv-laag', `h-pv-${DIENSTEN_HOE[i]}`, i === 0 && 'is-nu']} data-h-pv-laag={i} style={i === 0 ? `--grond:${GROND}` : undefined}>
-          {i === 0 && <img src={GELEVERD[0].src} width={GELEVERD[0].w} height={GELEVERD[0].h} alt={GELEVERD[0].alt} loading="lazy" decoding="async" />}
-          {i === 1 && <img src="/img/hal/sfeer-4x5.webp" width="921" height="1152" alt={c.dienstAlt[1]} loading="lazy" decoding="async" />}
-          {i === 2 && <span class="h-pv-klip"><img src="/img/hal/sfeer-bewogen.webp" width="1600" height="900" alt={c.dienstAlt[2]} loading="lazy" decoding="async" /><span class="h-cirkel h-cirkel-glas h-speel" aria-hidden="true" set:html={ik('speel')} /></span>}
-        </figure>
-      ))}
-      <span class="h-pv-mes" data-h-pv-mes aria-hidden="true" hidden></span>
-    </div>
-    <div class="h-pv-rest h-in" style="--d:2">
-      <div class="h-pv-keus" role="group" aria-label={c.kiesSoort}>
-        {c.diensten.map(([naam], i) => <button type="button" data-h-pv-kies={i} aria-pressed={i === 0 ? 'true' : 'false'}>{naam}</button>)}
-      </div>
-      {c.diensten.map(([, prijs, href, , knop], i) => (
-        <div class="h-pv-per" data-h-pv-per={i} hidden={i !== 0}>
-          <p class="h-pv-prijs">{prijs}</p>
-          <p class="h-acties"><a class="h-knop h-knop-inkt" href={lp(href)}>{knop}<span class="o" set:html={ik('pijl')} /></a></p>
-        </div>
-      ))}
-      <p class="h-onderregel">{c.eenProduct}</p>
-    </div>
-  </section>
+  {/* Wat we maken staat sinds levering 78 direct na de opening (hierboven). */}
 
   {/* ── 04 · LOOKS EN HET GEZICHT ──────────────────────────────────────────── */}
   {/* Levering 76. Eerst (10:52) één paneel zoals de laptop in de opening: links de look groot,
@@ -588,43 +617,47 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
       met Wat we maken), de naam bovenaan in de kolom, en de gezichten als de kleurbolletjes van
       een productpagina in de kolom (was een losse rij eronder). Niets beweegt vanzelf. Zonder
       JavaScript staat de eerste look er, met de link ernaar. */}
-  <section class="h-sec h-looks h-lp h-pv h-pv-om" aria-labelledby="h-looks" data-h-lp>
-    <header class="h-sec-kop h-pv-kop h-in">
-      <p class="h-pil"><span>{c.looksLabel}</span></p>
-      <h2 id="h-looks" class="h-kop h-h2">{c.looksKop[0]} <span class="l">{c.looksKop[1]}</span></h2>
-    </header>
-    <a class="h-lp-podium h-pv-beeld h-in" style="--d:1" href={LOOKS[0]?.href} data-h-lp-link data-bekijk={c.bekijkLook} aria-label={`${c.bekijkLook}: ${LOOKS[0]?.naam}`}>
-      <img class="h-lp-nu" data-h-lp-nu src={LOOKS[0]?.beeld} sizes="(max-width: 900px) 125vw, 560px" alt="" width="800" height="1000" loading="lazy" decoding="async" />
-      <img class="h-lp-nieuw" data-h-lp-nieuw alt="" width="800" height="1000" decoding="async" hidden />
-      <span class="h-lp-mes" data-h-lp-mes aria-hidden="true" hidden></span>
-    </a>
-    <div class="h-pv-rest h-lp-info h-in" style="--d:2">
-      <p class="h-lp-boven"><span class="h-pil h-pil-nr h-lp-soort" data-h-lp-soort>{LOOKS[0]?.soort}</span><span class="h-lp-van" data-h-lp-van data-vorm={c.lookVan('{n}', LOOKS.length)} aria-live="polite">{c.lookVan(1, LOOKS.length)}</span></p>
-      {/* Per look de naam en de proefknop, één tegelijk zichtbaar: zo staat elke proef in de HTML
-          (ook zonder script te bereiken) en wisselt het script alleen welke er staat. De klantstand
-          (interactions.js) zet "hidden" op de knoppen zelf, het script op het omhulsel. */}
-      {LOOKS.map((k, i) => <p class="h-lp-naam" data-h-lp-per={i} hidden={i !== 0}>{k.naam}</p>)}
-      <ul class="h-lp-keus" role="list" aria-label={c.kiesLook}>
+  {/* levering 78: sectie A omgekeerd (docs/RUIMTE-EN-RUST.md): de tekst links in het optische midden
+      van het beeld (R2), het beeld rechts op een vlak dat aan de buitenkant een stap doorsteekt (R3).
+      Geen label meer. */}
+  <section class="h-sec h-looks h-lp v-looks" aria-labelledby="h-looks" data-h-lp>
+    <div class="v-looks-tekst v-kopgroep">
+      <h2 id="h-looks" class="h-kop h-h2 v-kop">{c.looksKop[0]} <span class="l">{c.looksKop[1]}</span></h2>
+    <div class="h-lp-info v-na-kop">
+        <p class="h-lp-boven"><span class="h-pil h-pil-nr h-lp-soort" data-h-lp-soort>{LOOKS[0]?.soort}</span><span class="h-lp-van" data-h-lp-van data-vorm={c.lookVan('{n}', LOOKS.length)} aria-live="polite">{c.lookVan(1, LOOKS.length)}</span></p>
+        {/* Per look de naam en de proefknop, één tegelijk zichtbaar: zo staat elke proef in de HTML
+            (ook zonder script te bereiken) en wisselt het script alleen welke er staat. De klantstand
+            (interactions.js) zet "hidden" op de knoppen zelf, het script op het omhulsel. */}
+        {LOOKS.map((k, i) => <p class="h-lp-naam" data-h-lp-per={i} hidden={i !== 0}>{k.naam}</p>)}
+        <ul class="h-lp-keus" role="list" aria-label={c.kiesLook}>
+          {LOOKS.map((k, i) => (
+            <li><button type="button" class="h-lp-mini" data-h-lp-kies={i} aria-pressed={i === 0 ? 'true' : 'false'}
+                        data-naam={k.naam} data-soort={k.soort} data-beeld={k.beeld} data-href={k.href}>
+              <img src={k.beeld} sizes="(max-width: 900px) 125vw, 560px" alt="" width="800" height="1000" loading="lazy" decoding="async" /><span class="sr-only">{k.naam} · {k.soort}</span>
+            </button></li>
+          ))}
+        </ul>
+        <div class="h-gezicht">
+          <span class="h-koppen">
+            {GEZICHTEN_RIJ.map((m: any) => <a href={`${lp('/models')}#${modelId(m.name)}`} aria-label={m.name}><img src={m.thumb} width={m.tw} height={m.th} alt="" loading="lazy" decoding="async" /></a>)}
+          </span>
+          <p class="h-gezicht-zin"><b>{c.gezicht[0]}</b> {c.gezicht[1]} <a href={lp('/models')}>{c.alleGezichten}</a></p>
+        </div>
         {LOOKS.map((k, i) => (
-          <li><button type="button" class="h-lp-mini" data-h-lp-kies={i} aria-pressed={i === 0 ? 'true' : 'false'}
-                      data-naam={k.naam} data-soort={k.soort} data-beeld={k.beeld} data-href={k.href}>
-            <img src={k.beeld} sizes="(max-width: 900px) 125vw, 560px" alt="" width="800" height="1000" loading="lazy" decoding="async" /><span class="sr-only">{k.naam} · {k.soort}</span>
-          </button></li>
+          <p class="h-acties h-lp-acties" data-h-lp-per={i} hidden={i !== 0}>
+            <a class="h-knop h-knop-inkt" href={k.proef} data-vis-uit>{c.probeer}<span class="o" set:html={ik('pijl')} /></a>
+            <a class="h-knop h-knop-inkt" href={k.bestel} data-vis-klant-in hidden>{c.bestelLook}<span class="o" set:html={ik('pijl')} /></a>
+            <a class="h-link h-lp-meer" href={k.href}>{c.bekijkLook}</a>
+          </p>
         ))}
-      </ul>
-      <div class="h-gezicht">
-        <span class="h-koppen">
-          {GEZICHTEN_RIJ.map((m: any) => <a href={`${lp('/models')}#${modelId(m.name)}`} aria-label={m.name}><img src={m.thumb} width={m.tw} height={m.th} alt="" loading="lazy" decoding="async" /></a>)}
-        </span>
-        <p class="h-gezicht-zin"><b>{c.gezicht[0]}</b> {c.gezicht[1]} <a href={lp('/models')}>{c.alleGezichten}</a></p>
       </div>
-      {LOOKS.map((k, i) => (
-        <p class="h-acties h-lp-acties" data-h-lp-per={i} hidden={i !== 0}>
-          <a class="h-knop h-knop-inkt" href={k.proef} data-vis-uit>{c.probeer}<span class="o" set:html={ik('pijl')} /></a>
-          <a class="h-knop h-knop-inkt" href={k.bestel} data-vis-klant-in hidden>{c.bestelLook}<span class="o" set:html={ik('pijl')} /></a>
-          <a class="h-link h-lp-meer" href={k.href}>{c.bekijkLook}</a>
-        </p>
-      ))}
+    </div>
+    <div class="v-looks-beeld">
+    <a class="h-lp-podium v-looks-podium" href={LOOKS[0]?.href} data-h-lp-link data-bekijk={c.bekijkLook} aria-label={`${c.bekijkLook}: ${LOOKS[0]?.naam}`}>
+        <img class="h-lp-nu" data-h-lp-nu src={LOOKS[0]?.beeld} sizes="(max-width: 900px) 125vw, 560px" alt="" width="800" height="1000" loading="lazy" decoding="async" />
+        <img class="h-lp-nieuw" data-h-lp-nieuw alt="" width="800" height="1000" decoding="async" hidden />
+        <span class="h-lp-mes" data-h-lp-mes aria-hidden="true" hidden></span>
+      </a>
     </div>
   </section>
 
@@ -633,12 +666,10 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
       links de kop groot (het ene grote element van deze sectie), rechts drie regels met een
       haarlijn. Bewust geen foto: een gezicht naast "Nog vragen?" leest als een medewerker die er
       niet is. Was (10:52): drie gelijke kaarten met een grijs vlak. */}
-  <section class="h-sec h-weten h-pv h-pv-tekst" aria-labelledby="h-weten">
-    <header class="h-sec-kop h-pv-kop h-in">
-      <p class="h-pil"><span>{c.wetenLabel}</span></p>
-      <h2 id="h-weten" class="h-kop h-h2"><span class="l">{c.wetenKop[0]}</span> {c.wetenKop[1]}</h2>
-    </header>
-    <ul class="h-pv-rest h-wt-rijen h-in" role="list" style="--d:1">
+  {/* levering 78: sectie C, een kop en een lijst, zonder beeld en zonder label */}
+  <section class="h-sec h-weten v-weten" aria-labelledby="h-weten">
+    <h2 id="h-weten" class="h-kop h-h2 v-kop v-weten-kop"><span class="l">{c.wetenKop[0]}</span> {c.wetenKop[1]}</h2>
+    <ul class="h-wt-rijen v-weten-rijen" role="list">
       <li>
         <a href={lp('/compare')}>
           <b>{c.shootLabel}</b>
@@ -678,7 +709,7 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
       bestelde: zijn eigen look en zijn eigen beelden, geen €1 (v26-proefblok a). */}
   <HalProef lang={lang} id="h-proef" label={c.proefLabel} kop={c.proefKop} zin={c.proefZin} alt={{ label: c.proefAlt, href: '/start' }} />
 
-  <ul class="h-vertrouwen h-in" role="list">
+  <ul class="h-vertrouwen" role="list">
     {c.vertrouwen.map((t, i) => <li style={`--d:${i}`}><i set:html={ik('check')} />{Array.isArray(t) ? <a href={lp(t[1])}>{t[0]}</a> : t}</li>)}
   </ul>
 </div>
@@ -686,6 +717,7 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
 <script>
   import { slaOmIn } from '../scripts/omslag.js';
   import { knoppenNaastElkaar } from '../scripts/knoppaar.js';
+  import { gloed, stopGloed } from '../scripts/gloed.js';
   /* ── BEWEGING OP HET VOORBEELD — 12 oktober 2026 ───────────────────────────
      Drie dingen, allemaal zonder luisteraar op window (tests/zachte-navigatie):
      1. BINNENKOMEN: elk .h-in krijgt .is-in zodra het voor een vijfde in beeld
@@ -702,6 +734,7 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
     html.classList.add('h-js');
     const rustig = matchMedia('(prefers-reduced-motion: reduce)').matches;
     knoppenNaastElkaar();
+    gloed();   // levering 78: af en toe de gloed op de tweede toon van een kop
 
     const io = new IntersectionObserver((rijen) => {
       for (const r of rijen) if (r.isIntersecting) {
@@ -843,8 +876,19 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
         if (wacht !== null) { const w = wacht; wacht = null; ga(w); }
       };
       keus.forEach((x, i) => x.addEventListener('click', () => ga(i)));
+      /* de opening (HalTablet) zet de soort van zijn scherm meteen, zonder beweging: de foto vliegt
+         dan naar dezelfde soort (de sectie is op dat moment nog onzichtbaar) */
+      pv.addEventListener('h-pv-zet', (e) => {
+        const j = lagen.findIndex((l) => l.classList.contains(`h-pv-${(e as CustomEvent<string>).detail}`));
+        if (j < 0 || j === k || bezig) return;
+        lagen[k].classList.remove('is-nu'); lagen[j].classList.add('is-nu');
+        k = j; wacht = null;
+        keus.forEach((x, i) => x.setAttribute('aria-pressed', String(i === j)));
+        per.forEach((x) => { x.hidden = Number(x.dataset.hPvPer) !== j; });
+      });
     }
   };
   zet();
   document.addEventListener('astro:page-load', zet);
+  document.addEventListener('astro:before-swap', stopGloed);
 </script>

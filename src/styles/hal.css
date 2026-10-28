@@ -47,9 +47,12 @@ body.hal {
   --h-inkt-2: #0B0F17; --h-inkt-3: #636974; --h-kop-licht: #636974;
   --h-violet: #25508B; --h-violet-diep: #1A4279; --h-lila: #80A7DD;
   --h-nacht: #0B0F17; --h-waas: #E6E8EC; --h-mist: #F4F5F7;
-  /* De letter (levering 76, Lijst 58: a): Instrument Sans, zelf gehost (public/fonts/instrument-sans/,
-     de @font-face bij IBM Plex Mono hieronder). Urbanist blijft als terugval. */
-  --h-letter: 'Instrument Sans', 'Urbanist Variable', 'Urbanist', ui-sans-serif, system-ui, sans-serif;
+  /* De letters (levering 77, lijst 60): DM Sans voor de tekst, VISUAILS Display (DM Sans met drie
+     details uit de V, docs/letter/) voor de grote koppen. Beide zelf gehost (public/fonts/dm-sans/,
+     public/fonts/visuails-display/; de @font-face bij IBM Plex Mono hieronder). Urbanist blijft als
+     terugval. Was Instrument Sans (levering 76, Lijst 58: a). */
+  --h-letter: 'DM Sans', 'Urbanist Variable', 'Urbanist', ui-sans-serif, system-ui, sans-serif;
+  --h-kopletter: 'VISUAILS Display', 'DM Sans', 'Urbanist Variable', 'Urbanist', ui-sans-serif, system-ui, sans-serif;
   --h-zacht: cubic-bezier(.22, .8, .2, 1);
   --h-veer: cubic-bezier(.34, 1.4, .5, 1);
   --h-korrel: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='k'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='1.5 0 0 0 -.25  1.5 0 0 0 -.25  1.5 0 0 0 -.25  0 0 0 0 1'/></filter><rect width='100%' height='100%' filter='url(%23k)'/></svg>");
@@ -2202,7 +2205,7 @@ body.hal .h-form .paneel.of-vorm { padding: 48px 56px 40px; border-radius: var(-
 /* één kolom in het midden: de proef heeft geen meelopend overzicht (BestelOverzicht),
    dus de tweede kolom van OrderFlow (vanaf 1100 px) bleef leeg */
 html body.hal .h-ts-form .pl-form { --pl-measure: 760px; display: block; max-width: 760px; margin-inline: auto; }
-html body.hal .h-form .of .pl-h { margin-bottom: 20px; font: 500 34px/1.1 var(--h-letter); letter-spacing: -.02em; color: var(--h-inkt); }
+html body.hal .h-form .of .pl-h { margin-bottom: 20px; font: 700 34px/1.1 var(--h-kopletter); letter-spacing: -.02em;  /* levering 77: VISUAILS Display Bold */ color: var(--h-inkt); }
 html body.hal .h-form .of .pl-sub-h { font: 600 19px/1.3 var(--h-letter); color: var(--h-inkt); }
 html body.hal .h-form .s22 .field > label, html body.hal .h-form .s22 .veldkop, html body.hal .h-form .s22 .etiket, html body.hal .h-form .s22 .mono { font: 600 14px/1.35 var(--h-letter); color: var(--h-inkt); }
 body.hal .h-form .pl-form.is-live .pl-rail { gap: 6px; border: 0; }
@@ -2317,7 +2320,7 @@ html body.hal .h-form:not(.h-ts-form) .s22 .paneel-slot .etiket, html body.hal .
 html body.hal .h-form:not(.h-ts-form) .s22 .paneel-slot .knop-inkt { background: var(--h-inkt); border-color: var(--h-inkt); color: #fff; }
 html body.hal .h-form:not(.h-ts-form) .s22 .paneel-slot .knop-lijn, html body.hal .h-form:not(.h-ts-form) .s22 .paneel-slot .knop-wit { background: transparent; border-color: var(--h-inkt); color: var(--h-inkt); }
 /* koppen, etiketten en lopende tekst */
-html body.hal .h-form:not(.h-ts-form) .s22 .hoog { font: 500 64px/1.02 var(--h-letter); letter-spacing: -.025em; color: var(--h-inkt); text-wrap: balance; }
+html body.hal .h-form:not(.h-ts-form) .s22 .hoog { font: 700 64px/1.02 var(--h-kopletter); letter-spacing: -.03em;  /* levering 77: VISUAILS Display Bold */ color: var(--h-inkt); text-wrap: balance; }
 html body.hal .h-form:not(.h-ts-form) .s22 .hoog.hoog-2 { font-size: 44px; line-height: 1.05; }
 html body.hal .h-form:not(.h-ts-form) .s22 .hoog.hoog-3 { font-size: 28px; line-height: 1.12; letter-spacing: -.015em; }
 html body.hal .h-form:not(.h-ts-form) .s22 .lopend { font-size: 17px; line-height: 1.5; color: var(--h-inkt-2); }
@@ -3598,7 +3601,7 @@ html body.hal .h-jur-tekst .legal-folds .dc-body { padding: 0 0 18px; }
 /* het slot van het document: een adres, geen aanbieding — het enige lichte violette vlak */
 .hal .h-jur-staart { margin-top: 24px; }
 html body.hal .h-jur-tekst .jur-uit { margin: 0; padding: 44px 48px; border: 0; border-radius: var(--r-vlak); background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E6E8EC; }
-html body.hal .h-jur-tekst .jur-uit h2 { margin: 0; font: 500 34px/1.1 var(--h-letter); letter-spacing: -.02em; color: var(--h-inkt); text-wrap: balance; }
+html body.hal .h-jur-tekst .jur-uit h2 { margin: 0; font: 700 34px/1.1 var(--h-kopletter); letter-spacing: -.02em;  /* levering 77: VISUAILS Display Bold */ color: var(--h-inkt); text-wrap: balance; }
 html body.hal .h-jur-tekst .jur-uit .h-acties { margin-top: 24px; max-width: none !important; }
 html body.hal .h-jur-tekst .jur-uit .h-knop { text-decoration: none; }
 html body.hal .h-jur-tekst .jur-uit .h-knop-inkt { color: #fff; }
@@ -4286,11 +4289,15 @@ body.hal .btn { border-radius: var(--hoek-knop); }
 .hal .h-mini-knop { border-radius: 11px 3px 3px 3px; }
 
 /* ══ LEVERING 54 · LABELS, STAPPEN, FOCUS, SELECTIE, VOET (afvinklijst 34) ══════ */
-/* De letter van de hal (levering 76, 26 oktober 2026, Lijst 58: a): Instrument Sans, zelf gehost in
-   public/fonts/instrument-sans/ (OFL 1.1). Lucas: "een nieuwe free to use maar wel moderne en
-   vernieuwende tekst font". Gewicht 400 – 700 (wat 300 vroeg, wordt 400), breedte 75 – 100 %. */
-@font-face { font-family: 'Instrument Sans'; font-style: normal; font-weight: 400 700; font-stretch: 75% 100%; font-display: swap; src: url(/fonts/instrument-sans/instrument-sans-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF; }
-@font-face { font-family: 'Instrument Sans'; font-style: normal; font-weight: 400 700; font-stretch: 75% 100%; font-display: swap; src: url(/fonts/instrument-sans/instrument-sans-latin.woff2) format('woff2'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+/* De letters van de hal (levering 77, 27 oktober 2026, lijst 60). Was Instrument Sans (levering 76).
+   DM Sans, zelf gehost in public/fonts/dm-sans/ (OFL 1.1): gewicht 400 – 700 (wat 300 vraagt, wordt
+   400) en optische grootte 9 – 40, die de browser zelf bij de lettergrootte kiest. Geen breedte-as:
+   de smalle stem van levering 76 is weg (lijst 60: DM Sans op volle breedte).
+   VISUAILS Display Bold, zelf gehost in public/fonts/visuails-display/ (OFL 1.1): alleen 700, alleen
+   voor de grote koppen (lijst 59 en 60: vet, beide tonen). Eén bestand, alle 486 tekens. */
+@font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(/fonts/dm-sans/dm-sans-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF; }
+@font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(/fonts/dm-sans/dm-sans-latin.woff2) format('woff2'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+@font-face { font-family: 'VISUAILS Display'; font-style: normal; font-weight: 700; font-display: swap; src: url(/fonts/visuails-display/VISUAILSDisplay-Bold.woff2) format('woff2'); }
 
 /* De vaste breedte-letter (v34-mono = a): IBM Plex Mono, zelf gehost in
    public/fonts/ibm-plex-mono/ (OFL), alleen Latijn, 500 en 600. */
@@ -4379,15 +4386,18 @@ body.hal .hal-wm-reus { color: var(--h-inkt); }
   /* Elke zichtbare knop die door een zichtbare knop gevolgd wordt, krijgt rechts de
      snede; elke zichtbare knop na een zichtbare knop links. Verborgen knoppen (de
      variant voor wie al klant is, [hidden]) tellen niet mee; een rij van drie wordt
-     één vorm met twee sneden. Op de telefoon staan ze onder elkaar en blijven ze los. */
-  .hal .h-acties:has(> .h-knop:not([hidden]) ~ .h-knop:not([hidden])) { gap: 0; flex-wrap: nowrap; }
-  .hal .h-acties > .h-knop:not([hidden]):has(~ .h-knop:not([hidden])) { clip-path: polygon(0 0, 100% 0, calc(100% - var(--h-snede)) 100%, 0 100%); padding-right: calc(var(--h-snede) + 4px); border-top-right-radius: 0; border-bottom-right-radius: 0; }
-  .hal .h-acties > .h-knop:not([hidden]) ~ .h-knop:not([hidden]) { clip-path: polygon(var(--h-snede) 0, 100% 0, 100% 100%, 0 100%); margin-left: calc(var(--h-kier) - var(--h-snede)); padding-left: calc(var(--h-snede) * .5 + 22px); border-top-left-radius: 0; border-bottom-left-radius: 0; }
-  .hal .h-acties > .h-knop:not([hidden]) ~ .h-knop:not([hidden]):has(~ .h-knop:not([hidden])) { clip-path: polygon(var(--h-snede) 0, 100% 0, calc(100% - var(--h-snede)) 100%, 0 100%); padding-right: calc(var(--h-snede) + 4px); }
+     één vorm met twee sneden. Op de telefoon staan ze onder elkaar en blijven ze los.
+     Levering 77: past het paar niet in zijn vak (op 901 – 1240 px gebeurde dat op /video, /catalog,
+     /lifestyle, /editions, /compare, /models en de 404, met Instrument Sans al, met DM Sans 10 px
+     meer), dan zet src/scripts/knoppaar.js h-los op de rij: de knoppen los, onder elkaar als het moet. */
+  .hal .h-acties:not(.h-los):has(> .h-knop:not([hidden]) ~ .h-knop:not([hidden])) { gap: 0; flex-wrap: nowrap; }
+  .hal .h-acties:not(.h-los) > .h-knop:not([hidden]):has(~ .h-knop:not([hidden])) { clip-path: polygon(0 0, 100% 0, calc(100% - var(--h-snede)) 100%, 0 100%); padding-right: calc(var(--h-snede) + 4px); border-top-right-radius: 0; border-bottom-right-radius: 0; }
+  .hal .h-acties:not(.h-los) > .h-knop:not([hidden]) ~ .h-knop:not([hidden]) { clip-path: polygon(var(--h-snede) 0, 100% 0, 100% 100%, 0 100%); margin-left: calc(var(--h-kier) - var(--h-snede)); padding-left: calc(var(--h-snede) * .5 + 22px); border-top-left-radius: 0; border-bottom-left-radius: 0; }
+  .hal .h-acties:not(.h-los) > .h-knop:not([hidden]) ~ .h-knop:not([hidden]):has(~ .h-knop:not([hidden])) { clip-path: polygon(var(--h-snede) 0, 100% 0, calc(100% - var(--h-snede)) 100%, 0 100%); padding-right: calc(var(--h-snede) + 4px); }
   /* de lijn van de lijnknop langs de snede */
-  .hal .h-acties > .h-knop:not([hidden]) ~ .h-knop-lijn:not([hidden]), .hal .h-acties > .h-knop:not([hidden]) ~ .h-knop-lijnwit:not([hidden]) { background-image: linear-gradient(to bottom right, transparent calc(50% - .9px), var(--h-rand) calc(50% - .9px), var(--h-rand) calc(50% + .9px), transparent calc(50% + .9px)); background-repeat: no-repeat; background-size: var(--h-snede) 100%; background-position: 0 0; }
-  .hal .h-acties > .h-knop:not([hidden]) ~ .h-knop-lijn:not([hidden]):has(~ .h-knop:not([hidden])), .hal .h-acties > .h-knop:not([hidden]) ~ .h-knop-lijnwit:not([hidden]):has(~ .h-knop:not([hidden])) { background-image: linear-gradient(to bottom right, transparent calc(50% - .9px), var(--h-rand) calc(50% - .9px), var(--h-rand) calc(50% + .9px), transparent calc(50% + .9px)), linear-gradient(to bottom right, transparent calc(50% - .9px), var(--h-rand) calc(50% - .9px), var(--h-rand) calc(50% + .9px), transparent calc(50% + .9px)); background-position: 0 0, 100% 0; }
-  .hal .h-acties > .h-knop:focus-visible { clip-path: none !important; position: relative; z-index: 1; }
+  .hal .h-acties:not(.h-los) > .h-knop:not([hidden]) ~ .h-knop-lijn:not([hidden]), .hal .h-acties:not(.h-los) > .h-knop:not([hidden]) ~ .h-knop-lijnwit:not([hidden]) { background-image: linear-gradient(to bottom right, transparent calc(50% - .9px), var(--h-rand) calc(50% - .9px), var(--h-rand) calc(50% + .9px), transparent calc(50% + .9px)); background-repeat: no-repeat; background-size: var(--h-snede) 100%; background-position: 0 0; }
+  .hal .h-acties:not(.h-los) > .h-knop:not([hidden]) ~ .h-knop-lijn:not([hidden]):has(~ .h-knop:not([hidden])), .hal .h-acties:not(.h-los) > .h-knop:not([hidden]) ~ .h-knop-lijnwit:not([hidden]):has(~ .h-knop:not([hidden])) { background-image: linear-gradient(to bottom right, transparent calc(50% - .9px), var(--h-rand) calc(50% - .9px), var(--h-rand) calc(50% + .9px), transparent calc(50% + .9px)), linear-gradient(to bottom right, transparent calc(50% - .9px), var(--h-rand) calc(50% - .9px), var(--h-rand) calc(50% + .9px), transparent calc(50% + .9px)); background-position: 0 0, 100% 0; }
+  .hal .h-acties:not(.h-los) > .h-knop:focus-visible { clip-path: none !important; position: relative; z-index: 1; }
 }
 /* De twee pijlknoppen (vorige, volgende): één plaatje met de snede ertussen. Elke
    helft een halve snede breder, zodat de pijl er heel in past. Het plaatje houdt zijn
@@ -5334,3 +5344,164 @@ html body.hal .h-proef:not(.h-ts-open) > .h-vier > li:nth-child(-n+3) { grid-col
   html body.hal .h-proef:not(.h-ts-open) > .h-vier > li:nth-child(4) { grid-column: 1 / -1; grid-row: 1; }
   html body.hal .h-proef:not(.h-ts-open) > .h-vier > li:nth-child(-n+3) { grid-column: auto; grid-row: 2; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   LEVERING 77 · DE EIGEN KOPLETTER: VISUAILS DISPLAY BOLD, EN DM SANS VOOR DE TEKST
+   27 oktober 2026, lijst 60 (alle vijf volgens advies) en lijst 59 (vet, beide tonen).
+   - Elke grote kop (.h-kop: h-h1, h-h2, h-h3, h-proef-kop, en .o-kop in opening.css) staat in
+     VISUAILS Display Bold 700, ook de tweede, grijze toon (.l, #636974, 5,52 : 1). Het verschil
+     tussen de tonen zit nu alleen in de kleur, niet meer in het gewicht.
+   - Al het andere is DM Sans op volle breedte: de smalle stem van levering 76 (font-stretch 80 %)
+     vervalt, want DM Sans heeft geen breedte-as. Namen en grote cijfers houden hun gewicht.
+   - Spatiëring: DM Sans 40pt is op kopgrootte ruim gezet. De grote koppen (h1, h2, de €1-kop en de
+     kop van de opening) -0,03 em, de kleinere (h3, 24 – 34 px) -0,02 em; nooit strakker dan -0,035 em
+     (docs/DESIGN.md). Gemeten over alle pagina's op veertien breedtes (320 – 1920): met -0,02 em
+     liepen 19 koppen over drie regels, met -0,03 em op de grote koppen nog maar een handvol, en die
+     hebben hieronder hun eigen maat.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+body.hal { --h-smal: normal; }
+.hal .h-kop { font-family: var(--h-kopletter); font-weight: 700; letter-spacing: -.02em; }
+.hal .h-kop.h-h1, .hal .h-kop.h-h2, .hal .h-kop.h-proef-kop { letter-spacing: -.03em; }
+.hal .h-kop .l, .hal .h-kop .d { font-weight: 700; }
+
+/* ── LEVERING 77 · DE MATEN DIE MET DE NIEUWE LETTER MOESTEN ──────────────────────────────────────
+   VISUAILS Display Bold is breder dan Instrument Sans op 80 %. Gemeten met kopschaal.mjs (elke kop op
+   elke pagina, 14 breedtes van 320 tot 1920; boven 340 px hoogstens twee regels, tot 340 px drie, de
+   huisregel van 14 oktober). Per regel: welke kop, hoeveel kleiner hij moest. */
+/* de €1-kop: 42,67 px, de stap van de 4 : 3-schaal onder 56,89 (was 44; "Rather see it first? One of
+   your own products, for €1" op /contact moest op 1280 px 2,3 % kleiner) */
+@media (min-width: 901px) { .hal .h-proef-kop { font-size: 42.67px; } }
+/* de paginakop (twee tonen onder elkaar): op 901 – 1440 px 1,5 % kleiner ("Video that stands out
+   in the feed." op /hooks paste op 901 px net niet), op de telefoon 39 in plaats van 40 (390 px) */
+@media (max-width: 1439px) and (min-width: 901px) { .hal .h-h1 { font-size: clamp(44px, 5.2vw, 76px); } }
+@media (max-width: 480px) { .hal .h-h1 { font-size: 39px; } }
+@media (max-width: 380px) { .hal .h-h1 { font-size: 36px; } }
+@media (max-width: 340px) { .hal .h-h1 { font-size: 32px; } }
+/* /test-sample: de kop in het €1-blok, tussen 901 en 1180 px in een kolom van 300 – 450 px (moest op
+   901 px 18 % kleiner: 32,8 px) */
+@media (max-width: 1180px) and (min-width: 901px) { .hal .h-ts-open .h-proef-kop { font-size: clamp(32px, 3.6vw, 40px); } }
+/* op een smalle telefoon (341 – 380 px): de h3 23 px en de €1-kop 27 px (de langste moesten 8 en 9 %
+   kleiner: "This is what every product gets. Now choose your look.", "Or see it straight away …") */
+@media (max-width: 380px) {
+  .hal .h-h3 { font-size: 23px; }
+  .hal .h-proef-kop { font-size: 27px; }
+}
+/* /lifestyle: de kop in de modelkaart staat naast het beeld, in 192 px op 360 */
+@media (max-width: 480px) { .hal .h-ls-model .h-h3 { font-size: clamp(20px, 6.1vw, 26px); } }
+/* levering 77: een paar dat op de computer niet in zijn vak past (knoppaar.js, h-los): los, en
+   onder elkaar waar het niet naast elkaar past */
+@media (min-width: 901px) { .hal .h-acties.h-los { flex-wrap: wrap; gap: 10px 12px; } }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   LEVERING 78 · DE BALK: RECHTHOEKIG OVER DE HELE BREEDTE
+   27 oktober 2026. Lucas, 16:50: "Ik wil de topbar niet meer als pilvormige balk maar gewoon een
+   moderne die de hele bovenkant bedekt en rechthoekig is zoals gebruikelijk."
+   72 px hoog (telefoon 60), wit, onderaan een haarlijn #E6E8EC; geen glas, geen schaduw, geen
+   ronding. De inhoud staat op het raster van de pagina (hoogstens 1440 px, dezelfde marge als de
+   secties). Links het V-merk met de menu's ernaast, rechts Inloggen, de taal en Bestellen, de
+   enige blauwe knop. Een knop heeft zijn ene zachte hoek linksboven (de hoekregel).
+   docs/RUIMTE-EN-RUST.md §7. Vervangt de pil van 75 – 77 (hierboven).
+   ═══════════════════════════════════════════════════════════════════════════════ */
+html body.hal .site-header { position: fixed; top: 0; left: 0; right: 0; z-index: var(--z-sticky, 40);
+  background: #FFFFFF !important; box-shadow: inset 0 -1px 0 #E6E8EC !important; border-radius: 0; }
+html body.hal .site-header .nav, html body.hal .site-header .container.nav {
+  height: 72px; max-width: none; margin: 0; border-radius: 0; gap: 8px;
+  padding: 0 max(20px, 5.2vw, calc((100vw - 1440px) / 2)) !important; }
+html body.hal .site-header .nav::before { display: none !important; }
+html body.hal .site-header .brand { height: 40px; margin-right: 40px; }
+html body.hal .site-header .primary-nav { margin: 0 auto 0 0; }
+html body.hal .site-header .nav-links > li > a, html body.hal .site-header .nav-trigger { height: 40px; border-radius: 10px 3px 3px 3px !important; }
+html body.hal .site-header .nav-links > li > a:hover, html body.hal .site-header .nav-trigger:hover,
+html body.hal .site-header .nav-trigger[aria-expanded="true"] { background: var(--h-vlak, #F4F5F7) !important; }
+html body.hal .site-header .lang-switch, html body.hal .site-header .lang-switch .ls,
+html body.hal .site-header .nav-taal-klein .ls { border-radius: 10px 3px 3px 3px !important; }
+html body.hal .site-header .nav-taal-klein .ls { width: 40px; height: 40px; }
+html body.hal .site-header .nav-ik-knop { width: 40px; height: 40px; }
+html body.hal .site-header .nav-cta, html body.hal .site-header .container.nav .nav-cta {
+  height: 40px; padding: 0 16px 0 18px !important; border-radius: 12px 3px 3px 3px !important; box-shadow: none !important; }
+html body.hal .site-header .nav-cta:hover { box-shadow: none !important; }
+/* de uitklapmenu's: wit met een haarlijn, de ene zachte hoek linksboven, net onder de balk */
+html body.hal .site-header .nav-menu { background: #FFFFFF !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  border-radius: 20px 3px 3px 3px !important; box-shadow: 0 0 0 1px #E6E8EC !important; }
+/* 8 px onder de haarlijn (niet erdoorheen), met een onzichtbare brug zodat de muis erheen kan */
+@media (min-width: 901px) {
+  html body.hal .site-header .has-menu > .nav-menu { top: calc(100% + 24px) !important; }   /* !important: de basisregel staat buiten de laag (Layout.astro) */
+  html body.hal .site-header .has-menu:hover::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 26px; }
+}
+@media (max-width: 900px) {
+  html body.hal .site-header { top: 0; left: 0; right: 0; }
+  html body.hal .site-header .nav, html body.hal .site-header .container.nav { height: 60px; padding: 0 12px 0 16px !important; }
+  html body.hal .site-header .brand { margin-right: 0; }
+  html body.hal .menu-toggle { border-radius: 10px 3px 3px 3px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   LEVERING 78 · DE GLOED OP DE TWEEDE TOON
+   Lucas, 16:50: "de geciteerde woorden … de 'blue hour' kleur … een hele subtiele ademende gloed
+   die komt en weer verdwijnt. Wanneer de gloed weg is is de tekst … de normale donkere tekst kleur
+   en af en toe komt een hele langzame maar intense 'blue hour' gloed om het woord te citeren, maar
+   het moet de lezer niet afleiden."
+   - De tweede toon (.l) staat in inkt, net als de eerste (was grijs #636974).
+   - src/scripts/gloed.js zet af en toe .is-gloeit op één tweede toon in beeld (de kop die het
+     dichtst bij het midden van het scherm staat), nooit op twee tegelijk, elke kop hoogstens één
+     keer per bezoek, pas na de eerste beweging van de bezoeker.
+   - Lucas, 17:56 – 18:06: "veel te licht … een soortgelijke gloed … als die op het logo zit. Heel
+     subtiel", "een soort golvende beweging heel smooth en langzaam en die ook weer heel langzaam
+     wegtrekt", een lucht uit zijn eigen beelden (keuze: "Lucht, rustig") en "een soort hele
+     fijne/subtiele film grain". Dus geen lichtrand meer, alleen kleur, als een golf: hij rolt met een
+     zachte rand van links het woord in (1,9 s), staat even helemaal (0,5 s) en trekt langzaam naar
+     rechts weg (2,4 s). 4,8 s, één keer, dus onder de 5 s van WCAG 2.2.2.
+   - In de golf de lucht uit hero-dunes (rechtsboven, de wolkenstrepen bij de horizon), omgekleurd
+     naar het schema: het donkerste deel blauw diep #1A4279 (10 : 1), het midden blauw uur #25508B
+     (8,08 : 1), het lichtste #2D61A8, de toon van blauw uur die na het opslaan nog 6,15 : 1 haalt (img/hal/lucht-blauw-uur.webp,
+     2,3 kB). Hij schuift langzaam door het woord. Zo lang hij laadt: blauw uur.
+   - Daarop een fijne korrel (img/hal/korrel.webp, 112 × 112, 10 %), die als film twaalf keer per
+     seconde verspringt; het lichtste korreltje haalt in de browser nog minstens 4,7 : 1.
+   - Alles als achtergrond op de letters (background-clip: text), alleen zolang de golf loopt; in rust
+     is het gewoon inkt. Op inkt: van wit naar blauw licht #80A7DD (7,75 : 1), zonder lucht en korrel,
+     zoals het logo op inkt. Elk moment haalt 4,5 : 1.
+   - Minder beweging of hoog contrast: geen gloed, alleen inkt (of wit).
+   Bewust anders dan KLEURENSCHEMA.md ("geen blauw kopwoord"): Lucas vroeg het (27 oktober).
+   ═══════════════════════════════════════════════════════════════════════════════ */
+html body.hal.hal .h-kop .l, html body.hal.hal .h-kop .l * { color: var(--h-inkt); }
+html body.hal.hal .h-lk-slot .h-kop .l, html body.hal.hal .h-proef-kop .l, html body.hal.hal .h-lk-slot .h-kop .l *, html body.hal.hal .h-proef-kop .l * { color: #FFFFFF; }
+/* de golf (17:58), met een lucht uit hero-dunes (18:00, "Lucht, rustig") en een fijne korrel (18:06):
+   bovenop een venster (inkt · zachte rand · open · zachte rand · inkt), vijf keer zo breed als het
+   woord, dat erdoorheen schuift; daaronder de korrel, die als film springt (12 keer per seconde, 10 %);
+   daaronder de lucht, die langzaam meeschuift; daaronder blauw uur, zo lang de lucht laadt. Per stuk de
+   sinus van de schommel van het logo. */
+@property --gl-v { syntax: '<percentage>'; inherits: false; initial-value: 100%; }
+@property --gl-l { syntax: '<percentage>'; inherits: false; initial-value: 0%; }
+@property --gl-kx { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@property --gl-ky { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@keyframes h-gloed {
+  0% { --gl-v: 100%; --gl-l: 0%; animation-timing-function: cubic-bezier(.37, 0, .63, 1); }
+  40% { --gl-v: 50%; --gl-l: 40%; animation-timing-function: linear; }
+  50% { --gl-v: 50%; --gl-l: 50%; animation-timing-function: cubic-bezier(.37, 0, .63, 1); }
+  100% { --gl-v: 0%; --gl-l: 100%; }
+}
+@keyframes h-korrel {
+  0% { --gl-kx: 0px; --gl-ky: 0px; }
+  16.67% { --gl-kx: -37px; --gl-ky: 23px; }
+  33.33% { --gl-kx: 51px; --gl-ky: -41px; }
+  50% { --gl-kx: -13px; --gl-ky: -67px; }
+  66.67% { --gl-kx: 71px; --gl-ky: 29px; }
+  83.33% { --gl-kx: -59px; --gl-ky: 53px; }
+  100% { --gl-kx: 0px; --gl-ky: 0px; }
+}
+html body.hal.hal .h-kop .l.is-gloeit, html body.hal.hal .h-kop .l.is-gloeit * { color: transparent; }
+html body.hal.hal .h-kop .l.is-gloeit {
+  --gl-a: var(--h-inkt); --gl-b: #25508B;
+  --gl-korrel: url('/img/hal/korrel.webp'); --gl-lucht: url('/img/hal/lucht-blauw-uur.webp');
+  -webkit-background-clip: text; background-clip: text; -webkit-box-decoration-break: slice; box-decoration-break: slice;
+  background-color: var(--gl-b);
+  background-image: linear-gradient(90deg, var(--gl-a) 0%, var(--gl-a) 30%, transparent 42%, transparent 58%, var(--gl-a) 70%, var(--gl-a) 100%), var(--gl-korrel), var(--gl-lucht);
+  background-position: var(--gl-v) 0, var(--gl-kx) var(--gl-ky), var(--gl-l) 72%;
+  background-size: 500% 100%, 112px 112px, 170% auto;
+  background-repeat: no-repeat, repeat, no-repeat;
+  animation: h-gloed 4.8s 1 both, h-korrel .5s steps(1, end) infinite;
+}
+/* op inkt (het €1-blok, het slot): van wit naar blauw licht, zonder lucht en korrel, zoals het logo op inkt */
+html body.hal.hal .h-lk-slot .h-kop .l.is-gloeit, html body.hal.hal .h-proef-kop .l.is-gloeit { --gl-a: #FFFFFF; --gl-b: #80A7DD; --gl-korrel: none; --gl-lucht: none; }
+@media (prefers-reduced-motion: reduce) { html body.hal .h-kop .l.is-gloeit { animation: none; } }
+@media (forced-colors: active) { html body.hal .h-kop .l.is-gloeit { animation: none; } }

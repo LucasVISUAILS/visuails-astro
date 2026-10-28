@@ -27,8 +27,8 @@ import { euro, AMOUNT, ladderRate, ladderFloor, LADDER, vatLabel } from '../../d
 // Onder de 152 tekens (META_LIMIT), zodat Google hem heel toont: dit is de
 // description die niet afgekapt mag worden, en de €1-haak staat achteraan.
 const description =
-  `Catalogbeelden en lifestyle voor kledingmerken, van je eigen productfoto’s. ` +
-  `Zonder shoot. Vanaf ${euro(ladderRate('catalog', 1), 'nl')} per product, ` +
+  `Elk beeld voor je kledingmerk, van je eigen productfoto’s. ` +
+  `Zonder shoot. Vanaf ${euro(ladderFloor('catalog'), 'nl')} per product, ` +   /* levering 78: "vanaf" is de onderste trede, zoals op de pagina (tests/vanaf-bedragen) */
   `${vatLabel('excl', 'nl')}. Eerst zien voor ${euro(AMOUNT.testSample, 'nl')}.`;
 ---
 

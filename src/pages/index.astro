@@ -21,16 +21,17 @@ import Layout from '../layouts/Layout.astro';
 import VoorpaginaHal from '../components/VoorpaginaHal.astro';
 import { euro, AMOUNT, ladderRate, ladderFloor, LADDER, vatLabel } from '../data/pricing.js';
 
-// Catalog + Lifestyle (`complete`) is no longer sold (ronde 8, 1 oktober 2026):
-// the description quotes the two services that are, each from its own ladder.
+// Catalog + Lifestyle (`complete`) is no longer sold (ronde 8, 1 oktober 2026).
+// Levering 78 (Lucas, 27 oktober): the first clause no longer lists two services,
+// so nobody reads catalog and lifestyle as all VISUAILS makes.
 
 // Kept under 152 characters — META_LIMIT, and below Google's snippet cut
 // rather than level with it. This is the one description that has to survive
 // truncation intact, and the €1 hook is the last clause, so it is the
 // clause a cut would take.
 const description =
-  `Catalog and lifestyle images for clothing brands, from your own photos. ` +
-  `No shoot. From ${euro(ladderRate('catalog', 1), 'en')} a product, ` +
+  `Every image your clothing brand needs, from your own photos. ` +
+  `No shoot. From ${euro(ladderFloor('catalog'), 'en')} a product, ` +   /* levering 78: "from" is the lowest rung, as on the page (tests/vanaf-bedragen) */
   `${vatLabel('excl', 'en')}. Try one for ${euro(AMOUNT.testSample, 'en')}.`;
 ---
 

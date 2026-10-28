@@ -1,0 +1,83 @@
+---
+/**
+ * VISUAILS — Hoe het werkt op de voorpagina, als gewone sectie (levering 78, 27 oktober 2026).
+ *
+ * Stond van 74 tot 77 in de opening (HalOpening.astro), in hetzelfde scherm als de scrollvideo.
+ * Lucas, lijst 61 (v61-volgorde a): eerst Wat we maken, dan Hoe het werkt; en 16:50: "Alleen de
+ * eerste laptop pagina krijgt het scroll effect en daarna scrollt de pagina normaal." Dezelfde
+ * inhoud (de drie stappen per dienst, de uitlegbalk, de knoppen; VoorpaginaHal vult de slots), de
+ * opmaak van de blokken uit opening.css (.o-hoe), de indeling uit voorpagina-78.css: de kop hangt,
+ * de drie stappen staan als een trap (R4, docs/RUIMTE-EN-RUST.md).
+ */
+import '../styles/opening.css';
+
+interface Props {
+  lang: 'en' | 'nl';
+  hoeKop: [string, string];
+  /** de uitleg speelt (data-uitleg, UitlegBalk.astro) */
+  uitleg?: boolean;
+}
+const { lang, hoeKop, uitleg = false } = Astro.props as Props;
+const nl = lang === 'nl';
+const TABS = [['catalog', 'Catalog', '2250 5200 2250'], ['lifestyle', 'Lifestyle', '2250 3000 2250'], ['video', 'Video', '2250 3000 2250']] as const;
+const kies = nl ? 'Kies wat je wilt zien' : 'Pick what you want to see';
+---
+<section class="h-sec o-hoe h-hoe v-hoe" id="hoe" data-o-hoe data-dienst="catalog" aria-labelledby="h-hoe"
+         data-uitleg={uitleg ? '' : undefined} data-uitleg-maat="2250 5200 2250" data-uitleg-start="300">
+  <header class="o-hoe-kop v-kopgroep">
+    <h2 id="h-hoe" class="h-kop h-h2 v-kop">{hoeKop[0]} <span class="l">{hoeKop[1]}</span></h2>
+    <div class="o-tabs v-na-kop" role="tablist" aria-label={kies} data-o-tabs>
+      {TABS.map(([id, naam, maat], i) => (
+        <button type="button" role="tab" id={`o-tab-${id}`} data-dienst={id} data-maat={maat} aria-controls="o-blokken" aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1}>{naam}</button>
+      ))}
+    </div>
+  </header>
+  <div class="o-blokken" id="o-blokken" role="tabpanel" aria-labelledby="o-tab-catalog" data-o-panelen>
+    <slot name="stappen" />
+  </div>
+  <div class="o-voet" data-o-voet>
+    <slot name="balk" />
+    <div class="o-acties"><slot name="acties" /></div>
+  </div>
+</section>
+
+<script>
+  type Wortel = HTMLElement & { _u?: { stop: () => void; opnieuw: () => void } };
+  /* de keuze per dienst (tabs, met de pijltjes): data-dienst op de sectie kiest wat erin staat
+     (opening.css), en de uitleg begint opnieuw, zodat je het proces van die dienst ziet */
+  function start() {
+    const hoe = document.querySelector<Wortel>('[data-o-hoe]');
+    if (!hoe || hoe.dataset.oKlaar) return;
+    hoe.dataset.oKlaar = '1';
+    const tabs = hoe.querySelector<HTMLElement>('[data-o-tabs]')!;
+    const panelen = hoe.querySelector<HTMLElement>('[data-o-panelen]')!;
+    const stil = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const knoppen = [...tabs.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    function kies(t: HTMLButtonElement, focus: boolean) {
+      if (t.getAttribute('aria-selected') === 'true') { if (focus) t.focus(); return; }
+      for (const b of knoppen) {
+        const aan = b === t;
+        b.setAttribute('aria-selected', aan ? 'true' : 'false'); b.tabIndex = aan ? 0 : -1;
+      }
+      hoe!.dataset.dienst = t.dataset.dienst;
+      if (t.dataset.maat) hoe!.dataset.uitlegMaat = t.dataset.maat;
+      panelen.setAttribute('aria-labelledby', t.id);
+      if (focus) t.focus();
+      /* had je de uitleg met de hand stilgezet, dan krijg je de nieuwe dienst in zijn eindstand,
+         stil; met "opnieuw" speel je hem af (WCAG 2.2.2: jouw pauze blijft gelden) */
+      if (!stil && hoe!.dataset.uitlegStaat && hoe!.dataset.uitlegStaat !== 'wacht') {
+        if (hoe!.dataset.uitlegHand) hoe!._u?.stop(); else hoe!._u?.opnieuw();
+      }
+    }
+    knoppen.forEach((b, i) => {
+      b.addEventListener('click', () => kies(b, false));
+      b.addEventListener('keydown', (e) => {
+        const n = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : e.key === 'Home' ? -i : e.key === 'End' ? knoppen.length - 1 - i : 0;
+        if (!n) return;
+        e.preventDefault(); kies(knoppen[(i + n + knoppen.length) % knoppen.length], true);
+      });
+    });
+  }
+  start();
+  document.addEventListener('astro:page-load', start);
+</script>
