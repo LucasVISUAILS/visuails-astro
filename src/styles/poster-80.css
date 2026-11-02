@@ -1,0 +1,49 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   DE LOGOPOSTER — levering 80, 1 november 2026 (HalPoster80.astro, src/scripts/poster80.js)
+   ═══════════════════════════════════════════════════════════════════════════════
+   DE MATEN EN KLEUREN (docs/RUST-80.md §4):
+   - de fade boven het podium: de grond → Nevel in vier stappen van de Nevel-fade (#E6EAF4 · #D0D8E9 ·
+     #B9C7DE · #A2B7D2), clamp(200, 50 svh, 520) hoog;
+   - het podium: Nevel bovenaan → #6283AF (50 %) → Blauw uur onderaan; 100 svh, met het script sticky in een
+     baan van 280 svh (180 svh scrollen);
+   - het V-merk in Wit (#FBFCFF), clamp(150, 34 svh, 360) hoog, zijn midden op 44 % van het podium;
+   - de regel in hoofdletters, Wit, clamp(26, 3,33 vw, 48): hij staat op #44699D – #25508B, 5,6 – 8,1 : 1;
+   - de hoekbijschriften in mono, Wit op 86 %, 11,5 px, op Blauw uur (7,0 : 1).
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.p8.p8 { --p8-vh: clamp(150px, 34svh, 360px); --p8-m: var(--r8-m, max(20px, min(8.333vw, 160px), calc((100vw - 1280px) / 2))); position: relative; padding: 0; }
+.p8-fade { height: clamp(200px, 50svh, 520px); background: linear-gradient(180deg, var(--h-grond, #FBFCFF) 0%, #E6EAF4 25%, #D0D8E9 50%, #B9C7DE 75%, #A2B7D2 100%); }
+.p8-baan { position: relative; }
+.p8-podium {
+  position: relative; height: 100svh; min-height: 520px; max-height: 1100px; overflow: hidden;
+  background: linear-gradient(180deg, #A2B7D2 0%, #829DC0 22%, #6283AF 48%, #44699D 74%, #25508B 100%);
+  color: #FBFCFF;
+}
+.p8 .p8-v { position: absolute; left: 50%; top: 44%; height: var(--p8-vh); width: auto; max-width: none; max-height: none; aspect-ratio: 702 / 813.25; transform: translate(-50%, -50%); fill: #FBFCFF; color: #FBFCFF; overflow: visible; }
+.p8-doek { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.p8-doek[hidden] { display: none; }
+.p8 .p8-kop.h-kop { position: absolute; left: var(--p8-m); right: var(--p8-m); top: calc(44% + var(--p8-vh) / 2 + clamp(28px, 5svh, 56px)); margin: 0; text-align: center; font: 700 clamp(26px, 3.33vw, 48px)/.92 var(--h-kopletter); letter-spacing: -.01em; text-transform: uppercase; color: #FBFCFF; text-wrap: balance; opacity: calc(1 - var(--p8-weg, 0)); transform: translate3d(0, calc(var(--p8-weg, 0) * -18px), 0); }
+.p8 .p8-hoek { position: absolute; bottom: 24px; margin: 0; max-width: none; font: 500 11.5px/1 var(--h-mono); letter-spacing: .08em; text-transform: uppercase; color: rgba(251, 252, 255, .86); opacity: calc(1 - var(--p8-weg, 0)); }
+.p8-hoek-l { left: var(--p8-m); }
+.p8-hoek-r { right: var(--p8-m); }
+/* de look van de foto, als die het scherm vult: hetzelfde plaatje als in de galerij */
+.p8 .p8-look { position: absolute; left: var(--p8-m); bottom: 24px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 11px 8px 12px; border-radius: 8px 3px 3px 3px; background: #FBFCFF; font: 600 11.5px/1 var(--h-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--h-inkt); text-decoration: none; opacity: 0; pointer-events: none; transform: translate3d(0, 6px, 0); transition: opacity .3s cubic-bezier(.2, .8, .2, 1), transform .3s cubic-bezier(.2, .8, .2, 1); }
+.p8 .p8-look b { color: var(--h-inkt); font-weight: 600; }
+.p8 .p8-look span { color: var(--h-grijs, #636974); font-weight: 500; }
+.p8 .p8-look:focus-visible { opacity: 1; pointer-events: auto; transform: none; outline: 2px solid #80A7DD; outline-offset: 3px; }
+.p8.is-eind .p8-look { opacity: 1; pointer-events: auto; transform: none; }
+
+/* met het script: het podium blijft staan, het doek tekent de V (en daarna het venster) */
+.p8.p8-aan .p8-baan { height: 280svh; }
+.p8.p8-aan .p8-podium { position: sticky; top: 0; max-height: none; }
+.p8.p8-aan .p8-v { visibility: hidden; }
+/* zonder script geen link naar de foto (er staat geen foto) */
+.p8:not(.p8-aan) .p8-look { display: none; }
+
+@media (max-width: 700px) {
+  .p8.p8 { --p8-vh: clamp(130px, 28svh, 240px); }
+  .p8 .p8-hoek { bottom: 18px; }
+  .p8 .p8-look { bottom: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .p8 .p8-look { transition: none; }
+}

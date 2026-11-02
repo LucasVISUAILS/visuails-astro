@@ -259,7 +259,11 @@ const bestelling = (klant) => { volg += 1; db.prepare(`INSERT INTO orders (id, r
   /* Klant 4: drie termijnen = precies het plafond, plus 25 bijgekocht. */
   const s4 = sub(4);
   const dagen = [-62, -32, -2].map((d) => new Date(Date.now() + d * 864e5));
-  for (const d of dagen) await boekTermijnBij(env, s4, d.toISOString().slice(0, 7) + (d === dagen[0] ? '' : ''), `tr_p${d.getTime()}`, d);
+  /* De sleutel van een termijn is zijn maand. Uit de datum gehaald botsten ze op de 1e en 2e van een maand (2 en 32
+     dagen terug vallen dan in dezelfde maand: één termijn viel weg, 240 in plaats van 360; gezien op 2 november
+     2026). Daarom een eigen maand per termijn: twee, één en nul maanden terug, en de volgende is de maand erna. */
+  const maandSleutel = (k) => { const n = new Date(); return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth() + k, 1)).toISOString().slice(0, 7); };
+  for (const [i, d] of dagen.entries()) await boekTermijnBij(env, s4, maandSleutel(i - 2), `tr_p${d.getTime()}`, d);
   const voor = await creditSaldo(env, { customerId: 4 });
   ok('klant aan het plafond: 360 van het abonnement', [voor.aboSaldo, voor.plafond], [spaarPlafond(PLAN_CREDITS.studio), spaarPlafond(PLAN_CREDITS.studio)]);
   const b = await maakAankoop(env, { customerId: 4, sub: s4, pakket: 25, origin: 'https://visuails.com' });
@@ -269,7 +273,7 @@ const bestelling = (klant) => { volg += 1; db.prepare(`INSERT INTO orders (id, r
   ok('  met 25 bijgekocht: saldo 385, het plafond telt alleen het abonnement', [na.saldo, na.aboSaldo, na.bijgekocht.saldo, na.boven?.aantal], [385, 360, 25, PLAN_CREDITS.studio]);
   const bp = db.prepare("SELECT id, vervalt_op FROM credit_boek WHERE reden = 'bijgekocht' AND customer_id = 4").get();
   const volgende = new Date(Date.now() + 28 * 864e5);
-  const t4 = await boekTermijnBij(env, s4, volgende.toISOString().slice(0, 7), 'tr_p_volgende', volgende);
+  const t4 = await boekTermijnBij(env, s4, maandSleutel(1), 'tr_p_volgende', volgende);
   const bpNa = db.prepare('SELECT rest, vervalt_op FROM credit_boek WHERE id = ?').get(bp.id);
   ok('  de volgende termijn: alleen 120 boven het plafond, de bijgekochte blijven heel', [t4.boven, bpNa.rest], [PLAN_CREDITS.studio, 25]);
   ok('  en houden hun eigen datum (schuiven niet mee)', bpNa.vervalt_op, bp.vervalt_op);

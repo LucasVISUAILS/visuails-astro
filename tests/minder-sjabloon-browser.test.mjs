@@ -12,7 +12,8 @@
  *     het €1-blok (.h-proef > .h-proef-woord), want daar staat een bewogen beeld achter;
  *     Sinds levering 74 (25 oktober 2026, 15:24, Lucas: "gebruik voor plekken als top bar
  *     wel glas") ook wat boven de pagina zweeft: de balk, zijn uitklapmenu's, de
- *     WhatsApp-knop en de uitlegbalk zolang hij onderin plakt (ZWEEFT hieronder);
+ *     WhatsApp-knop en de uitlegbalk zolang hij onderin plakt (ZWEEFT hieronder). Sinds levering 80
+ *     (1 november 2026) is de balk zelf vloeibaar glas over de hele breedte (.site-header);
  *   - schaduw: geen schaduw met vervaging (een rand als inset of zonder blur mag), behalve
  *     onder wat zweeft (een glazen laag ligt ergens op) en de gloed in blauw uur onder
  *     Bestellen bovenin ("Gloed mag in accentkleur", dezelfde dag);
@@ -125,8 +126,9 @@ function meet() {
       const cs = getComputedStyle(el, ps || null);
       if (ps && (cs.content === 'none' || cs.content === 'normal')) continue;
       const bd = cs.backdropFilter || cs.webkitBackdropFilter;
-      // het €1-blok mag glas dragen (lijst 42), en wat boven de pagina zweeft (levering 74)
-      const zweeft = el.matches('.site-header .nav, .site-header .nav-menu, .wa-launcher, .u-balk');
+      // het €1-blok mag glas dragen (lijst 42), en wat boven de pagina zweeft (levering 74); sinds levering 80
+      // (1 november 2026, 17:05, Lucas: "de top bar een soort liquid glass gevoel") is de hele balk het glas
+      const zweeft = el.matches('.site-header, .site-header .nav, .site-header .nav-menu, .wa-launcher, .u-balk');
       const glasMag = (!ps && el.matches('.h-proef > .h-proef-woord')) || zweeft;
       if (bd && bd !== 'none' && !glasMag) uit.glas.push(naam(el, ps));
       if (zacht(cs.boxShadow) && !zweeft && !el.matches('.site-header .nav-cta')) uit.schaduw.push(`${naam(el, ps)} ${cs.boxShadow.slice(0, 60)}`);

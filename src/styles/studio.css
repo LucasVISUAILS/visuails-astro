@@ -97,7 +97,7 @@ body.studio.on-ink {
   --st-accent-tint: var(--accent-tint);
   --st-clay-tekst: var(--st-rev-ink);
 
-  --sd-side: #0B0F17;
+  --sd-side: #0F1217;
   --sd-side-lijn: rgb(242 243 245 / .09);
 }
 
@@ -155,7 +155,7 @@ body.studio a:not(.btn) { color: inherit; }
    een pil een etiket is en geen roep. */
 .studio .stand {
   min-height: 22px; padding: 0 .55rem; gap: .35rem;
-  font-family: var(--font-body); font-stretch: 100%; font-size: .75rem; font-weight: 500;
+  font-family: var(--font-body); font-stretch: 100%; font-size: .75rem; font-weight: 450;
   letter-spacing: 0; text-transform: none;
 }
 .studio .stand::before { width: 6px; height: 6px; }
@@ -206,7 +206,7 @@ body.studio a:not(.btn) { color: inherit; }
 .st-navlink {
   display: flex; align-items: center; gap: .65rem;
   min-height: 36px; padding: 0 .6rem; border-radius: var(--sd-r);
-  font-size: .875rem; font-weight: 500; color: var(--sd-side-ink);
+  font-size: .875rem; font-weight: 450; color: var(--sd-side-ink);
   transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
 }
 body.studio .st-navlink { color: var(--sd-side-ink); }
@@ -229,7 +229,7 @@ body.studio .st-navlink.is-actief { background: var(--sd-side-actief); color: va
 .st-uit {
   display: flex; align-items: center; gap: .65rem; width: 100%; min-height: 36px; padding: 0 .6rem;
   border: 0; border-radius: var(--sd-r); background: none; cursor: pointer;
-  font: inherit; font-size: .875rem; font-weight: 500; color: var(--sd-side-ink); text-align: left;
+  font: inherit; font-size: .875rem; font-weight: 450; color: var(--sd-side-ink); text-align: left;
 }
 .st-uit:hover { background: var(--sd-side-hover); color: var(--sd-side-ink-1); }
 .st-uit svg { width: 16px; height: 16px; flex: none; }
@@ -260,7 +260,7 @@ body.studio .st-navlink.is-actief { background: var(--sd-side-actief); color: va
 .st-klap:hover { background: var(--ghost); color: var(--ink-1); }
 .st-klap .i { width: 16px; height: 16px; }
 .st-kruim { display: flex; align-items: center; gap: .45rem; font-size: .8125rem; color: var(--ink-3); min-width: 0; }
-.st-kruim b { font-weight: 500; color: var(--ink-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-kruim b { font-weight: 450; color: var(--ink-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .st-kruim i { font-style: normal; color: var(--ink-4); }
 .st-schakel { margin-left: auto; display: flex; align-items: center; gap: .5rem; }
 /* Taal als twee segmenten: wat je nu hebt staat vast, het andere is een link. */
@@ -314,7 +314,7 @@ body.studio .st-navlink.is-actief { background: var(--sd-side-actief); color: va
 .st-blok { display: flex; flex-direction: column; gap: .75rem; min-width: 0; }
 .st-blok-kop { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
 .st-blok-kop h2 { font-family: var(--font-body); font-weight: 600; font-size: .875rem; letter-spacing: -.005em; line-height: 1.35; color: var(--ink-1); margin: 0; }
-.st-blok-kop .st-tel { color: var(--ink-3); font-weight: 500; margin-left: .35rem; }
+.st-blok-kop .st-tel { color: var(--ink-3); font-weight: 450; margin-left: .35rem; }
 .st-leeg { margin: 0; padding: 1rem 1.25rem; border: 1px dashed var(--line-strong); border-radius: var(--sd-r-kaart); background: var(--surface); color: var(--ink-3); font-size: .875rem; }
 
 .st-kaart-vlak { background: var(--surface); border: 1px solid var(--line); border-radius: var(--sd-r-kaart); }
@@ -436,7 +436,7 @@ a.st-cijfer:hover { border-color: var(--line-strong); }
 .st-filters { display: flex; flex-wrap: wrap; gap: .4rem; }
 .st-filter {
   display: inline-flex; align-items: center; gap: .4rem; min-height: 30px; padding: 0 .75rem;
-  border-radius: 8px 3px 3px 3px; border: 1px solid var(--line); background: var(--surface); font-size: .8125rem; font-weight: 500; color: var(--ink-2);
+  border-radius: 8px 3px 3px 3px; border: 1px solid var(--line); background: var(--surface); font-size: .8125rem; font-weight: 450; color: var(--ink-2);
   transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
 }
 a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
@@ -641,7 +641,7 @@ a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
 /* Extra foto's: vervangen of verwijderen (werklijst 14, 15 oktober 2026).
    Verwijderen vraagt eerst "Ja, verwijder deze foto" (een <details>, geen script). */
 .st-vak-vervang { display: flex; flex-direction: column; gap: .2rem; font-size: .75rem; color: var(--ink-2); }
-.st-vak-weg > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; min-height: 32px; font-size: .8125rem; font-weight: 500; color: var(--st-clay-tekst); text-decoration: underline; text-underline-offset: 3px; }
+.st-vak-weg > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; min-height: 32px; font-size: .8125rem; font-weight: 450; color: var(--st-clay-tekst); text-decoration: underline; text-underline-offset: 3px; }
 .st-vak-weg > summary::-webkit-details-marker { display: none; }
 .st-vak-weg[open] > summary { margin-bottom: .3rem; }
 .st-vak-vast { margin: 0; }
@@ -664,7 +664,7 @@ a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
   .st-vak-veld { grid-column: 1 / -1; margin-top: .2rem; }
   .st-vak-vervang, .st-vak-weg { grid-column: 1 / -1; }
 }
-.st-ronde-waarschuwing { color: var(--ink-1) !important; font-weight: 500; }
+.st-ronde-waarschuwing { color: var(--ink-1) !important; font-weight: 450; }
 .st-beleid details { margin-top: .4rem; }
 .st-beleid summary { cursor: pointer; font-size: .8125rem; color: var(--ink-3); }
 .st-beleid ul { margin: .5rem 0 0; padding-left: 1.1rem; font-size: .8125rem; color: var(--ink-2); display: flex; flex-direction: column; gap: .3rem; }
@@ -699,7 +699,7 @@ a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
 .st-veldgroep { display: flex; flex-direction: column; gap: .4rem; min-width: 0; }
 .st-veldgroep.is-breed { grid-column: 1 / -1; }
 .st-veldgroep label, .st-label { font-size: .8125rem; font-weight: 600; color: var(--ink-2); }
-.st-optioneel { font-weight: 400; color: var(--ink-3); }
+.st-optioneel { font-weight: 370; color: var(--ink-3); }
 .st-vast { margin: 0; min-height: 38px; display: flex; align-items: center; padding: 0 .95rem; border-radius: var(--r-klein); background: var(--surface-2); color: var(--ink-1); }
 select.st-veld { appearance: none; -webkit-appearance: none; background-image: var(--select-caret); background-repeat: no-repeat; background-position: right .75rem center; background-size: 10px auto; padding-right: 2.2rem; }
 .st-btw:has(input[name="no_vat"]:checked) #det-vat { opacity: .45; }
@@ -834,7 +834,7 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 }
 
 /* ── ABONNEMENT & FACTURERING — Studio fase 2 ──────────────────────────────── */
-.st-eyebrow { display: block; font-size: .75rem; font-weight: 500; color: var(--ink-3); }
+.st-eyebrow { display: block; font-size: .75rem; font-weight: 450; color: var(--ink-3); }
 .st-vlak { padding: 1.25rem; display: flex; flex-direction: column; gap: .8rem; }
 .st-vlak h2 { font-family: var(--font-body); font-weight: 600; font-size: .875rem; letter-spacing: -.005em; line-height: 1.35; margin: 0; color: var(--ink-1); }
 .st-vlak > p { margin: 0; color: var(--ink-2); }
@@ -900,7 +900,7 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 
 .st-tabs { display: inline-flex; flex-wrap: wrap; align-self: flex-start; gap: 2px; padding: 3px; border-radius: calc(var(--sd-r) + 2px); background: var(--surface); border: 1px solid var(--line); max-width: 100%; box-sizing: border-box; }
 .st-tabs::-webkit-scrollbar { display: none; }
-.st-tab { flex: 0 0 auto; min-height: 30px; display: inline-flex; align-items: center; padding: 0 .8rem; border-radius: var(--sd-r); font-size: .8125rem; font-weight: 500; color: var(--ink-3); white-space: nowrap; }
+.st-tab { flex: 0 0 auto; min-height: 30px; display: inline-flex; align-items: center; padding: 0 .8rem; border-radius: var(--sd-r); font-size: .8125rem; font-weight: 450; color: var(--ink-3); white-space: nowrap; }
 .st-tab:hover { color: var(--ink-1); background: var(--ghost); }
 .st-tab.is-nu { color: var(--ink-1); background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line-strong); }
 
@@ -964,7 +964,7 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 
 .st-kal-asap { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
 .st-kal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
-.st-kal-kop { font-size: .75rem; font-weight: 500; color: var(--ink-3); padding: .3rem .4rem; }
+.st-kal-kop { font-size: .75rem; font-weight: 450; color: var(--ink-3); padding: .3rem .4rem; }
 .st-kal-dag { position: relative; display: flex; flex-direction: column; gap: .15rem; min-height: 64px; padding: .45rem .5rem; border: 1px solid var(--line); border-radius: var(--r-sm) 3px 3px 3px; background: var(--surface); font: inherit; color: var(--ink-2); text-align: left; }
 button.st-kal-dag { cursor: pointer; }
 button.st-kal-dag:hover { border-color: var(--ink-1); }
@@ -1028,7 +1028,7 @@ button.st-kal-dag:hover { border-color: var(--ink-1); }
 a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
 .st-frame.is-meer { display: grid; place-items: center; border-style: dashed; background: none; font-size: .75rem; font-weight: 600; color: var(--ink-3); }
 .st-frame-leeg { display: grid; place-items: center; width: 100%; height: 100%; font-size: 1.2rem; font-weight: 300; }
-.st-frame-legenda { display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; font-size: .75rem; font-weight: 500; color: var(--ink-3); align-items: center; }
+.st-frame-legenda { display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; font-size: .75rem; font-weight: 450; color: var(--ink-3); align-items: center; }
 .st-frame-legenda span { display: inline-flex; align-items: center; gap: .4rem; }
 .st-frame-legenda i { width: 10px; height: 12px; border-radius: 2px; border: 1px solid var(--line-strong); background: var(--surface-2); }
 .st-frame-legenda i.is-vast { border-color: var(--ink-1); background: var(--ink-1); }
@@ -1064,7 +1064,7 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
 .st-lookvak-leeg.is-arcering { background: repeating-linear-gradient(-45deg, transparent 0 5px, var(--line) 5px 6px); }
 .st-lookvak-vorm { display: grid; place-items: center; padding: 12px; box-sizing: border-box; }
 .st-lookvak-vorm .st-ratio-vorm { height: 100%; width: auto; max-width: 100%; }
-.st-lookvak-l { font-size: .75rem; font-weight: 500; color: var(--ink-3); margin-top: .2rem; }
+.st-lookvak-l { font-size: .75rem; font-weight: 450; color: var(--ink-3); margin-top: .2rem; }
 .st-lookvak-w { font-size: .75rem; color: var(--ink-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .st-q { grid-template-columns: auto minmax(0, 1fr) auto auto auto; }
@@ -1107,7 +1107,7 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
 .st-q-fotos-veld { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; clip: rect(0 0 0 0); }
 /* De vier fotovakken van het lijstformulier. */
 .st-fotovakken { margin: .9rem 0 0; padding: 0; border: 0; min-width: 0; }
-.st-fotovakken legend { font-size: .75rem; font-weight: 500; color: var(--ink-3); margin-bottom: .5rem; }
+.st-fotovakken legend { font-size: .75rem; font-weight: 450; color: var(--ink-3); margin-bottom: .5rem; }
 .st-rij.is-vakken { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: .6rem .9rem; }
 .st-fotovak label { font-size: .8125rem; }
 .st-q-frame .st-ph { width: 100%; height: 100%; }
@@ -1513,7 +1513,7 @@ body.studio .st-merk-los { color: var(--ink-1); }
 /* Het spaarplafond (12 oktober 2026): "(je kunt er 360 sparen)" naast het
    getal, kleiner en rustiger; en de zin "gebruik er vóór die dag …" in de
    kleur van "bijna", want dan valt er iets weg. */
-.st-vlak .st-abo-getal .st-abo-spaar { font-size: .9375rem; font-weight: 500; letter-spacing: 0; color: var(--ink-2); white-space: normal; }
+.st-vlak .st-abo-getal .st-abo-spaar { font-size: .9375rem; font-weight: 450; letter-spacing: 0; color: var(--ink-2); white-space: normal; }
 .st-vlak > .st-abo-nieuw.is-boven { color: var(--st-clay-tekst); font-weight: 600; }
 /* Extra credits bijkopen (12 oktober 2026): drie pakketten als keuzerondjes in
    een rij (onder elkaar op een telefoon), zonder script. */
@@ -1645,12 +1645,12 @@ body.studio .st-merk-los { color: var(--ink-1); }
 /* ── DE UITLEG-TIP — 15 oktober 2026 (afvinklijst 28, v28-tips = a) ──────────
    Eén per pagina, bovenaan de inhoud en in de stroom: hij dekt nooit een knop
    af. "Begrepen" en het kruisje zijn links (Studio draait zonder script). */
-.st-tip { position: relative; display: flex; gap: .75rem; align-items: flex-start; padding: 1rem 1.1rem; border-radius: var(--r-kaart); background: #F4F5F7; color: #0B0F17; }
+.st-tip { position: relative; display: flex; gap: .75rem; align-items: flex-start; padding: 1rem 1.1rem; border-radius: var(--r-kaart); background: #F4F5F7; color: #0F1217; }
 .st-tip-tekst { display: flex; flex-direction: column; gap: .45rem; min-width: 0; flex: 1 1 auto; max-width: 62ch; }
-.st-tip-tekst p, .st-tip-tekst ul { margin: 0; font-size: .875rem; line-height: 1.5; color: #0B0F17; }
+.st-tip-tekst p, .st-tip-tekst ul { margin: 0; font-size: .875rem; line-height: 1.5; color: #0F1217; }
 .st-tip-h { font-weight: 600; font-size: .9375rem !important; }
 .st-tip-tekst ul { padding-left: 1.1rem; display: flex; flex-direction: column; gap: .25rem; }
 .st-tip-tekst .btn { align-self: flex-start; margin-top: .25rem; }
-.st-tip-x { flex: 0 0 auto; margin-left: auto; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; font-size: 1.25rem; line-height: 1; color: #0B0F17; text-decoration: none; }
-.st-tip-x:hover { background: #FFFFFF; color: #0B0F17; }
-.st-tip-x:focus-visible { outline: 2px solid #0B0F17; outline-offset: 2px; }
+.st-tip-x { flex: 0 0 auto; margin-left: auto; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; font-size: 1.25rem; line-height: 1; color: #0F1217; text-decoration: none; }
+.st-tip-x:hover { background: #FFFFFF; color: #0F1217; }
+.st-tip-x:focus-visible { outline: 2px solid #0F1217; outline-offset: 2px; }

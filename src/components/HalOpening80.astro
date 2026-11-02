@@ -1,0 +1,418 @@
+---
+/**
+ * VISUAILS — de opening van de voorpagina in rust (levering 80, 1 november 2026).
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas, 17:05: "Ik wil de homepage zoals in de foto: eerst groot tekst van wat VISUAILS is en daaronder
+ * al licht de laptop in beeld" (lijst 64: gecentreerd zoals zijn voorbeeld, voor nu zonder model) … "1x omlaag
+ * scrollen wanneer de laptop volledig in beeld is en de hele animatie speelt zich af in de golvende lijn
+ * beweging." Zijn antwoorden (17:13): twee stappen, de winkel klapt mee, de preloader alleen als nodig.
+ * Vervangt HalLaptopBreed.astro (79). Alle maten: docs/RUST-80.md en opening-80.css.
+ *
+ * WAT ER GEBEURT (computer met een muis of trackpad, ≥ 1100 px, met beweging)
+ *   laden     de titel, de zin, de knoppen en de feiten, in het midden; onderaan steekt de klep het beeld in.
+ *             Niets beweegt.
+ *   scroll 1  de pagina glijdt (--golf, 900 ms) tot de laptop in het midden onder de balk staat. Op het
+ *             scherm de winkel (na), op de telefoon de telefoonfoto (voor); drie standen wisselen.
+ *   scroll 2  de video (src/data/laptopVideo.json, public/video/laptop-80-*.mp4) speelt op 1,3 × de
+ *             snelheid: de klep klapt dicht met de winkel erin, telefoon en laptop gaan het beeld uit. Bij
+ *             4,1 s (videotijd) glijdt Wat we maken omhoog en stopt precies in het midden van het scherm
+ *             (lijst 64, Lucas). Daarna scrolt de pagina gewoon.
+ *   terug     scrol je weer naar boven, dan staat de laptop er weer (zacht, in één keer).
+ * Elke volgende scroll tijdens de video versnelt hem (3 ×). De toetsen ↓, PageDown en spatie doen hetzelfde
+ * als het wiel; Home, End, de schuifbalk en een vinger nooit (die scrollen gewoon).
+ *
+ * ZONDER SCRIPT, ZONDER WEBGL, BIJ MINDER BEWEGING, OP DE TELEFOON EN DE TABLET: alles staat stil onder
+ * elkaar; de laptop staat open met de winkel erop, en Wat we maken volgt gewoon.
+ */
+import '../styles/opening-80.css';
+import { openingStanden, openingVersie } from '../data/openingStanden.js';
+import { laptopReeks } from '../data/laptopSlides.js';
+import { IKOON } from '../data/iconen.js';
+import VIDEO from '../data/laptopVideo.json';
+import { createHash } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+
+interface Props {
+  lang: 'en' | 'nl';
+  kop: [string, string];
+  zin: string;
+  feiten?: string[];
+  knop: { label: string; href: string; attrs?: Record<string, string> };
+  link: { label: string; href: string };
+  /* lijst 64, knoppen: "een ingelogde klant [ziet] andere knoppen en soms ook tekst". Wie al bestelde
+     krijgt in plaats van de proef de link naar Studio (data-vis-uit / data-vis-klant-in, interactions.js). */
+  klantLink?: { label: string; href: string };
+}
+const { lang, kop, zin, feiten = [], knop, link, klantLink } = Astro.props as Props;
+const nl = lang === 'nl';
+
+/* De standen: één per dienst (lijst 64, A7 advies a): de winkel, het Instagram-bericht, de clip. */
+const alle = openingStanden(lang);
+const standen = ['catalog', 'lifestyle', 'video'].map((s) => alle.find((x) => x.set === s)).filter(Boolean) as typeof alle;
+const [cat, life, vid] = laptopReeks(lang);
+const SET: Record<string, string> = { catalog: cat.naam, lifestyle: life.naam, video: vid.naam };
+const eerste = standen[0] ?? { lap: `/img/hal/opening/scherm-${lang}-laptop`, tel: '/img/hal/opening/scherm-telefoon', set: 'catalog', duur: 0 };
+const V = openingVersie();
+const mv = (u: string) => `${u}?v=${V}`;
+
+/* De foto van de laptop in beeld 0 (dezelfde als in 79: de video is van deze foto gemaakt) */
+const MATEN = [960, 1440, 1920, 2560, 3200, 3840];
+const SIZES = '(max-width: 900px) 160vw, 100vw';
+const set = (ext: string) => MATEN.map((w) => `${mv(`/img/hal/breed/laptop-${w}.${ext}`)} ${w}w`).join(', ');
+
+/* De schermen in beeld 0, in breukdelen van het beeld (gemeten uit de video). De stilstaande schermen
+   krijgen een matrix3d in px van een vak van 1000 × 1000 dat de css schaalt (het script zet de echte). */
+const [Q_LAP, Q_FON] = VIDEO.schermen[0] as [number[][], number[][]];
+const pct = (q: number[][]) => {
+  const xs = q.map((p) => p[0]), ys = q.map((p) => p[1]);
+  return `left:${(Math.min(...xs) * 100).toFixed(3)}%;top:${(Math.min(...ys) * 100).toFixed(3)}%;width:${((Math.max(...xs) - Math.min(...xs)) * 100).toFixed(3)}%;height:${((Math.max(...ys) - Math.min(...ys)) * 100).toFixed(3)}%`;
+};
+
+const T = nl
+  ? { groep: 'De voorbeeldschermen', pauze: 'Zet de beelden stil', speel: 'Laat de beelden lopen',
+      laptop: 'Twee handen houden een laptop met de webshop van een merk en een telefoon met de telefoonfoto van hetzelfde product', laden: 'De video laadt' }
+  : { groep: 'The example screens', pauze: 'Pause the images', speel: 'Play the images',
+      laptop: 'Two hands hold a laptop showing a brand’s web shop and a phone with the phone photo of the same product', laden: 'The video is loading' };
+const VIDEO_MATEN = [1280, 1920, 2560];
+/* het teken achter de video: verandert de video, dan haalt elke browser hem opnieuw (public/_headers laat
+   /img/* zeven dagen staan; zoals openingVersie voor de beelden) */
+const vh = createHash('sha1');
+for (const b of VIDEO_MATEN) for (const ext of ['mp4', 'webm']) {
+  const f = path.join(process.cwd(), 'public', 'img', 'hal', 'laptop-video', `laptop-80-${b}.${ext}`);
+  if (existsSync(f)) vh.update(readFileSync(f));
+}
+const VIDEO_V = vh.digest('hex').slice(0, 10);
+---
+<script is:inline>
+  /* Het effect staat er vanaf het eerste beeld (dan verspringt er niets): o8-aan als het kan. Het script
+     hieronder haalt hem weg als WebGL of de video ontbreekt. */
+  (function () { try { if (innerWidth >= 1100 && matchMedia('(pointer: fine)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('o8-aan'); } catch (e) { /* dan zet het script het */ } })();
+</script>
+<section class="o8" data-o8 data-o-v={V} data-video-v={VIDEO_V} data-stand={eerste.set} aria-labelledby="h-h1">
+  <div class="o8-held">
+    <div class="o8-tekst">
+      <h1 id="h-h1" class="o8-kop h-kop" aria-label={kop.join(' ')}>
+        <span class="o8-r" aria-hidden="true">{kop[0]}</span><span class="o8-r" aria-hidden="true">{kop[1]}</span>
+      </h1>
+      <p class="o8-zin">{zin}</p>
+      <p class="o8-acties">
+        <a class="h-knop h-knop-inkt" href={knop.href} {...(knop.attrs || {})}><span data-vis-label>{knop.label}</span><span class="o"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d={IKOON.pijl} /></svg></span></a>
+        <a class="h-link" href={link.href} data-vis-uit>{link.label}</a>
+        {klantLink && <a class="h-link" href={klantLink.href} data-vis-klant-in hidden>{klantLink.label}</a>}
+      </p>
+      {feiten.length > 0 && <ul class="o8-feiten" role="list">{feiten.map((f) => <li set:html={f} />)}</ul>}
+    </div>
+  </div>
+
+  <div class="o8-podium" data-o8-podium>
+    <span class="o8-vlak" aria-hidden="true"></span>
+    <div class="o8-foto" data-o8-foto>
+      <div class="o8-sc o8-lap" data-o8-lap aria-hidden="true" style={pct(Q_LAP)}>
+        <picture class="o8-st is-nu" data-o8-st-lap="0">
+          <source type="image/avif" srcset={mv(`${eerste.lap}.avif`)} />
+          <img src={mv(`${eerste.lap}.webp`)} width="1600" height="1034" alt="" decoding="async" />
+        </picture>
+      </div>
+      <div class="o8-sc o8-fon" data-o8-fon aria-hidden="true" style={pct(Q_FON)}>
+        <picture class="o8-st is-nu" data-o8-st-fon={eerste.tel}>
+          <source type="image/avif" srcset={mv(`${eerste.tel}.avif`)} />
+          <img src={mv(`${eerste.tel}.webp`)} width="540" height="1170" alt="" decoding="async" />
+        </picture>
+      </div>
+      <picture>
+        <source type="image/avif" srcset={set('avif')} sizes={SIZES} />
+        <img class="o8-beeld" data-o8-beeld src={mv('/img/hal/breed/laptop-1920.webp')} srcset={set('webp')} sizes={SIZES}
+             width="2944" height="1248" decoding="async" alt={T.laptop} />
+      </picture>
+      <canvas class="o8-doek" data-o8-doek aria-hidden="true" hidden></canvas>
+      <span class="o8-laden" data-o8-laden role="img" aria-label={T.laden} hidden>
+        <svg viewBox="0 0 702 813.25" aria-hidden="true"><path fill="var(--h-inkt)" opacity=".18" d="M 0.0 16.0 L 144.25 266.75 L 463.25 813.25 L 662.75 354.75 L 619.25 408.25 L 515.5 546.25 L 264.5 119.0 A 201.21 201.21 0 0 0 101.0 15.75 L 0.0 16.0 Z"/><path fill="var(--h-inkt)" opacity=".18" d="M 701.75 0.0 L 543.25 366.25 L 507.25 453.75 L 652.0 259.25 L 702.0 338.25 L 701.75 0.0 Z"/><clipPath id="o8-vlag"><rect data-o8-vul x="0" y="813.25" width="702" height="0" /></clipPath><path fill="var(--h-inkt)" clip-path="url(#o8-vlag)" d="M 701.75 0.0 L 543.25 366.25 L 507.25 453.75 L 652.0 259.25 L 702.0 338.25 L 701.75 0.0 Z"/></svg>
+      </span>
+    </div>
+    {standen.length > 1 && (
+      <div class="o8-stand" role="group" aria-label={T.groep} data-o8-stand>
+        <p class="o8-stand-naam"><b data-o8-naam>{SET[eerste.set]}</b><span class="o8-stand-streep" aria-hidden="true"><i data-o8-streep></i></span></p>
+        <button type="button" class="h-cirkel h-cirkel-klein o8-pauze" data-o8-pauze aria-pressed="false" aria-label={T.pauze} data-uit={T.pauze} data-aan={T.speel}><svg class="ik" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="o8-p-uit" fill-rule="evenodd" d={IKOON.pauze} /><path class="ik-m" d={IKOON['pauze-m']} /><path class="o8-p-aan" fill-rule="evenodd" d={IKOON.afspelen} /></svg></button>
+      </div>
+    )}
+    <script type="application/json" data-o8-data set:html={JSON.stringify({
+      standen: standen.map((s) => ({ set: s.set, duur: s.duur, lap: s.lap, tel: s.tel })), sets: SET,
+      video: { maten: VIDEO_MATEN, fps: VIDEO.fps, beelden: VIDEO.beelden, b: VIDEO.b, h: VIDEO.h, schermen: VIDEO.schermen },
+    })} />
+  </div>
+</section>
+
+<script>
+  import { maakDoek, cssMatrix } from '../scripts/laptopdoek.js';
+  type Stand = { set: string; duur: number; lap: string; tel: string };
+  type Q = number[][] | null;
+  type Data = { standen: Stand[]; sets: Record<string, string>; video: { maten: number[]; fps: number; beelden: number; b: number; h: number; schermen: [Q, Q][] } };
+
+  /* de golf (docs/RUST-80.md §5) */
+  const golf = (x: number) => { const p = [0.7, 0, 0.2, 1]; let t = x; for (let i = 0; i < 6; i++) { const bx = 3 * p[0] * t * (1 - t) ** 2 + 3 * p[2] * t * t * (1 - t) + t ** 3 - x; const d = 3 * p[0] * (1 - t) ** 2 + 6 * (p[2] - p[0]) * t * (1 - t) + 3 * (1 - p[2]) * t * t; if (Math.abs(d) < 1e-6) break; t = Math.min(1, Math.max(0, t - bx / d)); } return 3 * p[1] * t * (1 - t) ** 2 + 3 * p[3] * t * t * (1 - t) + t ** 3; };
+  const GLIJ = 900, SNEL = 1.3, VERDER = 4.1, STIL_NA = 170;
+
+  let ruim: (() => void) | null = null;
+
+  function start() {
+    const o8 = document.querySelector<HTMLElement>('[data-o8]');
+    if (o8 && o8.dataset.o8Klaar && ruim) return;
+    ruim?.();
+    if (!o8) return;
+    o8.dataset.o8Klaar = '1';
+    const $ = <T extends Element = HTMLElement>(s: string) => o8.querySelector<T>(s)!;
+    const html = document.documentElement;
+    const data = JSON.parse($('[data-o8-data]').textContent || '{}') as Data;
+    const podium = $('[data-o8-podium]'), foto = $('[data-o8-foto]');
+    const lap = $('[data-o8-lap]'), fon = $('[data-o8-fon]');
+    const doek = $<HTMLCanvasElement>('[data-o8-doek]'), laden = $('[data-o8-laden]'), vul = $<SVGRectElement>('[data-o8-vul]');
+    const mq = matchMedia('(prefers-reduced-motion: reduce)');
+    let stil = mq.matches;
+
+    /* ── de schermen in beeld 0: in perspectief op de hoeken uit de video ── */
+    const [q0l, q0f] = data.video.schermen[0];
+    function zetSchermen() {
+      const r = foto.getBoundingClientRect(); if (!r.width) return;
+      for (const [el, q] of [[lap, q0l], [fon, q0f]] as [HTMLElement, Q][]) {
+        if (!q) continue;
+        const b = el.offsetWidth || 1, h = el.offsetHeight || 1;
+        const px = q.map(([x, y]) => [x * r.width, y * r.height]);
+        /* 3 bronpixels ruimer, zodat de rand van het toestel het scherm afsnijdt */
+        const k = (3 / data.video.b) * r.width, cx = px.reduce((s, p) => s + p[0], 0) / 4, cy = px.reduce((s, p) => s + p[1], 0) / 4;
+        const bw = Math.max(...px.map((p) => p[0])) - Math.min(...px.map((p) => p[0])), bh = Math.max(...px.map((p) => p[1])) - Math.min(...px.map((p) => p[1]));
+        const rq = px.map(([x, y]) => [cx + (x - cx) * (1 + (2 * k) / bw), cy + (y - cy) * (1 + (2 * k) / bh)]);
+        el.style.left = '0'; el.style.top = '0';
+        el.style.transform = cssMatrix(rq, b, h);
+      }
+    }
+
+    /* ── de standen (drie, één per dienst) ── */
+    const lijst = data.standen || [];
+    const standKnop = o8.querySelector<HTMLElement>('[data-o8-stand]');
+    let huidig: Stand | null = lijst[0] || null;
+    let standVast = (_v: boolean) => {}, standOpruim = () => {}, standStil = () => {};
+    if (standKnop && lijst.length > 1) {
+      const streep = $('[data-o8-streep]'), naam = $('[data-o8-naam]'), pauze = $<HTMLButtonElement>('[data-o8-pauze]');
+      let nu = 0, loopt = !stil, zicht = false, erboven = false, vast = false, bewogen = false;
+      const laps = new Map<number, { el: HTMLElement; img: HTMLImageElement; p: Promise<void> }>();
+      const fons = new Map<string, { el: HTMLElement; img: HTMLImageElement; p: Promise<void> }>();
+      const klaar = (img: HTMLImageElement) => (img.complete && img.naturalWidth > 0 ? Promise.resolve() : new Promise<void>((r) => { img.addEventListener('load', () => r(), { once: true }); img.addEventListener('error', () => r(), { once: true }); }))
+        .then(() => (typeof img.decode === 'function' ? img.decode().catch(() => {}) : undefined)).then(() => {});
+      const bestaand = (el: HTMLElement | null) => { if (!el) return null; const img = el.querySelector('img')!; return { el, img, p: klaar(img) }; };
+      const l0 = bestaand(lap.querySelector<HTMLElement>('[data-o8-st-lap="0"]')); if (l0) laps.set(0, l0);
+      const f0 = bestaand(fon.querySelector<HTMLElement>('[data-o8-st-fon]')); if (f0) fons.set(f0.el.dataset.o8StFon || '', f0);
+      const ver = o8.dataset.oV || '';
+      const maak = (pad: string, b: number, h: number) => {
+        const pic = document.createElement('picture'); pic.className = 'o8-st';
+        const src = document.createElement('source'); src.type = 'image/avif'; src.srcset = `${pad}.avif?v=${ver}`;
+        const img = document.createElement('img'); img.width = b; img.height = h; img.alt = ''; img.decoding = 'async'; img.src = `${pad}.webp?v=${ver}`;
+        pic.append(src, img); return { el: pic as HTMLElement, img };
+      };
+      const klaarVoor = (k: number) => {
+        const s = lijst[k];
+        if (!laps.has(k)) { const m = maak(s.lap, 1600, 1034); lap.append(m.el); laps.set(k, { ...m, p: klaar(m.img) }); }
+        if (!fons.has(s.tel)) { const m = maak(s.tel, 540, 1170); fon.append(m.el); fons.set(s.tel, { ...m, p: klaar(m.img) }); }
+        return Promise.all([laps.get(k)!.p, fons.get(s.tel)!.p]).then(() => {});
+      };
+      const toestand = () => { o8.classList.toggle('o8-loopt', loopt && bewogen && zicht && !erboven && !vast); pauze.setAttribute('aria-pressed', String(!loopt)); pauze.setAttribute('aria-label', loopt ? pauze.dataset.uit || '' : pauze.dataset.aan || ''); };
+      const herstart = (ms: number) => {
+        streep.style.animationDuration = `${ms}ms`;
+        if (!streep.classList.contains('is-aan')) { streep.classList.add('is-aan'); return; }
+        const a = typeof streep.getAnimations === 'function' ? streep.getAnimations()[0] : undefined;
+        if (a) a.currentTime = 0; else { streep.classList.remove('is-aan'); requestAnimationFrame(() => streep.classList.add('is-aan')); }
+      };
+      const toon = (k: number) => {
+        nu = (k + lijst.length) % lijst.length; const s = lijst[nu]; huidig = s; o8.dataset.stand = s.set;
+        laps.forEach((v, j) => v.el.classList.toggle('is-nu', j === nu));
+        fons.forEach((v, t) => v.el.classList.toggle('is-nu', t === s.tel));
+        naam.textContent = data.sets[s.set] || '';
+        herstart(s.duur);
+      };
+      let beurt = 0;
+      const ga = (stap: number) => { const doel = (nu + stap + lijst.length) % lijst.length; const deze = ++beurt; klaarVoor(doel).then(() => { if (deze === beurt && !vast) { toon(doel); klaarVoor((doel + 1) % lijst.length); } }); };
+      const opEind = () => { if (loopt && !vast) ga(1); };
+      streep.addEventListener('animationend', opEind);
+      pauze.hidden = stil;
+      pauze.addEventListener('click', () => { loopt = !loopt; toestand(); });
+      const op = () => { erboven = true; toestand(); }, af = () => { erboven = false; toestand(); };
+      lap.addEventListener('pointerenter', op); lap.addEventListener('pointerleave', af);
+      const io = new IntersectionObserver(([e]) => { zicht = e.isIntersecting; toestand(); }, { threshold: 0.35 });
+      io.observe(foto);
+      /* "Niets beweegt bij het laden": pas na de eerste beweging van de bezoeker */
+      const EERST = ['pointermove', 'keydown', 'touchstart', 'wheel'] as const;
+      const eerst = () => { bewogen = true; EERST.forEach((t) => window.removeEventListener(t, eerst)); toestand(); };
+      if (!stil) EERST.forEach((t) => window.addEventListener(t, eerst, { passive: true }));
+      standVast = (v: boolean) => { vast = v; toestand(); };
+      standStil = () => { loopt = false; pauze.hidden = true; toestand(); };
+      standOpruim = () => { io.disconnect(); streep.removeEventListener('animationend', opEind); EERST.forEach((t) => window.removeEventListener(t, eerst)); };
+      toon(0); toestand(); klaarVoor(1).then(() => klaarVoor(2));
+      (window as any).__o8Beelden = () => ({ lap: laps.get(nu)?.img, fon: fons.get(lijst[nu].tel)?.img });
+    }
+    const huidigeBeelden = (): { lap?: HTMLImageElement; fon?: HTMLImageElement } =>
+      (window as any).__o8Beelden ? (window as any).__o8Beelden() : { lap: lap.querySelector('img') || undefined, fon: fon.querySelector('img') || undefined };
+
+    /* ── de video en het doek ── */
+    let aan = false, video: HTMLVideoElement | null = null, tekenaar: ReturnType<typeof maakDoek> = null, videoKlaar = false;
+    const kanHet = () => window.innerWidth >= 1100 && matchMedia('(pointer: fine)').matches && !stil;
+    function maakVideo() {
+      if (video) return video;
+      const d = Math.min(window.devicePixelRatio || 1, 2), nodig = window.innerWidth * d;
+      let b = data.video.maten.find((m) => m >= nodig * 0.9) ?? data.video.maten[data.video.maten.length - 1];
+      video = document.createElement('video');
+      /* H.264 (mp4) speelt in Chrome, Edge, Firefox en Safari; alleen een browser zonder H.264 (Chromium
+         zonder de gepatenteerde codecs) krijgt de VP9-reserve (webm, tot 1920 breed) */
+      const mp4 = !!video.canPlayType('video/mp4; codecs="avc1.640028"');
+      const ext = mp4 ? 'mp4' : 'webm';
+      if (!mp4) b = Math.min(b, 1920);
+      video.muted = true; video.playsInline = true; video.preload = 'auto'; video.crossOrigin = 'anonymous';
+      video.setAttribute('muted', ''); video.setAttribute('playsinline', '');
+      video.src = `/img/hal/laptop-video/laptop-80-${b}.${ext}?v=${o8.dataset.videoV || ''}`;
+      video.addEventListener('canplaythrough', () => { videoKlaar = true; }, { once: true });
+      video.addEventListener('progress', () => {
+        if (!video || !video.duration || !video.buffered.length) return;
+        const p = video.buffered.end(video.buffered.length - 1) / video.duration;
+        vul.setAttribute('y', String(813.25 * (1 - p))); vul.setAttribute('height', String(813.25 * p));
+      });
+      video.load();
+      return video;
+    }
+
+    /* ── het scrollen in twee stappen ── */
+    let stap = 0;             /* 0 bovenaan · 1 de laptop in beeld · 2 de video speelt · 3 voorbij */
+    let bezig = false, laatsteWiel = 0, gebaarBegin = 0, gebaarGebruikt = 0, anim = 0;
+    const balk = () => (window.innerWidth >= 1100 ? 56 : 52);
+    const top = (el: Element) => el.getBoundingClientRect().top + window.scrollY;
+    const doel1 = () => { const r = foto.getBoundingClientRect(); const vh = window.innerHeight; return Math.max(0, Math.round(top(foto) + r.height / 2 - (balk() + (vh - balk()) / 2))); };
+    /* Wat we maken (de sectie na de opening) in het midden van het scherm onder de balk */
+    const na = (): HTMLElement | null => { let n = o8.nextElementSibling as HTMLElement | null; while (n && n.tagName === 'SCRIPT') n = n.nextElementSibling as HTMLElement | null; return n; };
+    const doel2 = () => { const n = na(); if (!n) return Math.round(top(podium) + podium.offsetHeight - balk()); const vh = window.innerHeight; return Math.max(0, Math.round(top(n) + n.offsetHeight / 2 - (balk() + (vh - balk()) / 2))); };
+    function glij(naar: number, duur = GLIJ, klaar?: () => void) {
+      cancelAnimationFrame(anim);
+      const van = window.scrollY, t0 = performance.now();
+      bezig = true;
+      const stapje = (nu: number) => {
+        const x = Math.min(1, (nu - t0) / duur);
+        window.scrollTo(0, van + (naar - van) * golf(x));
+        if (x < 1) anim = requestAnimationFrame(stapje); else { bezig = false; klaar?.(); }
+      };
+      anim = requestAnimationFrame(stapje);
+    }
+    /* de video afspelen, beeld voor beeld op het doek */
+    let tekenId = 0, verderGegaan = false;
+    function speel() {
+      const v = maakVideo();
+      stap = 2; standVast(true);
+      const begin = () => {
+        if (stap !== 2) return;
+        laden.hidden = true;
+        if (!tekenaar) { try { tekenaar = maakDoek(doek, v, data.video); } catch { tekenaar = null; } }
+        if (!tekenaar) { stap = 1; standVast(false); return; }
+        const b = huidigeBeelden();
+        tekenaar.zetBeelden(b.lap || null, b.fon || null);
+        v.currentTime = 0; v.playbackRate = SNEL; verderGegaan = false;
+        const teken = () => {
+          if (stap !== 2) return;
+          const beeld = Math.min(data.video.beelden - 1, Math.round(v.currentTime * data.video.fps));
+          tekenaar!.teken(beeld);
+          if (doek.hidden) { doek.hidden = false; o8.classList.add('o8-speelt'); }
+          if (!verderGegaan && v.currentTime >= VERDER) { verderGegaan = true; glij(doel2(), GLIJ, klaarMetVideo); }
+          if (!v.ended && !v.paused) tekenId = 'requestVideoFrameCallback' in v ? (v as any).requestVideoFrameCallback(teken) : requestAnimationFrame(teken);
+        };
+        v.addEventListener('ended', () => { if (!verderGegaan) { verderGegaan = true; glij(doel2(), GLIJ, klaarMetVideo); } }, { once: true });
+        v.play().then(() => { tekenId = 'requestVideoFrameCallback' in v ? (v as any).requestVideoFrameCallback(teken) : requestAnimationFrame(teken); }, () => { stap = 1; standVast(false); });
+      };
+      if (videoKlaar || v.readyState >= 4) begin();
+      else { laden.hidden = false; v.addEventListener('canplaythrough', begin, { once: true }); }
+    }
+    function klaarMetVideo() {
+      stap = 3; o8.classList.add('o8-weg'); o8.classList.remove('o8-speelt');
+      doek.hidden = true;
+    }
+    function terug() {
+      /* weer naar boven na de video: de laptop staat er weer */
+      if (stap !== 3) return;
+      stap = window.scrollY <= doel1() + 4 ? 1 : 0;
+      o8.classList.remove('o8-weg'); o8.classList.add('o8-terug');
+      setTimeout(() => o8.classList.remove('o8-terug'), 700);
+      standVast(false);
+    }
+
+    function nieuwGebaar(e: WheelEvent) { const nu = performance.now(); const nieuw = nu - laatsteWiel > STIL_NA; laatsteWiel = nu; if (nieuw) gebaarBegin = nu; void e; return nieuw; }
+    function opWiel(e: WheelEvent) {
+      if (!aan || e.ctrlKey) return;
+      const nieuw = nieuwGebaar(e);
+      const y = window.scrollY, d1 = doel1();
+      if (stap === 2) { e.preventDefault(); if (nieuw && e.deltaY > 0 && video) video.playbackRate = 3; return; }
+      if (bezig) { e.preventDefault(); return; }
+      /* een gebaar dat al een stap zette, zet er geen tweede (de nadeining van een trackpad) */
+      if (gebaarGebruikt === gebaarBegin && !nieuw) { if (y <= d1 + 2) e.preventDefault(); return; }
+      if (e.deltaY > 0) {
+        if (y < d1 - 2) { e.preventDefault(); gebaarGebruikt = gebaarBegin; stap = 1; glij(d1); maakVideo(); return; }
+        if (Math.abs(y - d1) <= 2 && stap <= 1) { e.preventDefault(); gebaarGebruikt = gebaarBegin; speel(); return; }
+      } else if (e.deltaY < 0) {
+        if (y > 0 && y <= d1 + 2 && stap === 1) { e.preventDefault(); gebaarGebruikt = gebaarBegin; stap = 0; glij(0); return; }
+      }
+    }
+    function opToets(e: KeyboardEvent) {
+      if (!aan || e.altKey || e.ctrlKey || e.metaKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(t.tagName))) return;
+      const omlaag = e.key === 'ArrowDown' || e.key === 'PageDown' || (e.key === ' ' && !e.shiftKey);
+      const omhoog = e.key === 'ArrowUp' || e.key === 'PageUp' || (e.key === ' ' && e.shiftKey);
+      if (!omlaag && !omhoog) return;
+      const y = window.scrollY, d1 = doel1();
+      if (stap === 2 || bezig) { e.preventDefault(); if (stap === 2 && omlaag && video) video.playbackRate = 3; return; }
+      if (omlaag && y < d1 - 2) { e.preventDefault(); stap = 1; glij(d1); maakVideo(); }
+      else if (omlaag && Math.abs(y - d1) <= 2 && stap <= 1) { e.preventDefault(); speel(); }
+      else if (omhoog && y > 0 && y <= d1 + 2 && stap === 1) { e.preventDefault(); stap = 0; glij(0); }
+    }
+    function opScroll() {
+      if (!aan) return;
+      if (stap === 3 && window.scrollY < doel2() - window.innerHeight * 0.5) terug();
+      if (stap === 1 && !bezig && Math.abs(window.scrollY - doel1()) > 40 && window.scrollY < doel1()) stap = 0;
+    }
+
+    function meet() {
+      aan = kanHet();
+      html.classList.toggle('o8-aan', aan);
+      zetSchermen();
+      if (!aan && stap === 2) { video?.pause(); klaarMetVideo(); terug(); }
+    }
+    let rt = 0;
+    const opResize = () => { clearTimeout(rt); rt = window.setTimeout(meet, 120); };
+    const opMq = () => { stil = mq.matches; if (stil) standStil(); meet(); };
+    /* capture: vóór het zachte scrollen (zachtscrollen.js), dat een afgevangen wiel met rust laat */
+    window.addEventListener('wheel', opWiel, { passive: false, capture: true });
+    window.addEventListener('keydown', opToets);
+    window.addEventListener('scroll', opScroll, { passive: true });
+    window.addEventListener('resize', opResize);
+    mq.addEventListener?.('change', opMq);
+    meet();
+    const beeld = $<HTMLImageElement>('[data-o8-beeld]');
+    if (!beeld.complete) beeld.addEventListener('load', () => { if (o8.isConnected) zetSchermen(); }, { once: true });
+    /* de video vast laden zodra de pagina rustig is (alleen als het effect kan) */
+    const vooruit = () => { if (aan && o8.isConnected) maakVideo(); };
+    const rustF = (window as any).requestIdleCallback as undefined | ((f: () => void, o?: { timeout: number }) => number);
+    const begin = () => (rustF ? rustF(vooruit, { timeout: 3000 }) : window.setTimeout(vooruit, 1200));
+    if (document.readyState === 'complete') begin(); else window.addEventListener('load', begin, { once: true });
+
+    ruim = () => {
+      window.removeEventListener('wheel', opWiel, { capture: true });
+      window.removeEventListener('keydown', opToets);
+      window.removeEventListener('scroll', opScroll);
+      window.removeEventListener('resize', opResize);
+      mq.removeEventListener?.('change', opMq);
+      cancelAnimationFrame(anim); cancelAnimationFrame(tekenId);
+      standOpruim(); tekenaar?.weg(); video?.pause();
+      html.classList.remove('o8-aan');
+      delete o8.dataset.o8Klaar; delete (window as any).__o8Beelden;
+      ruim = null;
+    };
+  }
+
+  start();
+  document.addEventListener('astro:page-load', start);
+  document.addEventListener('astro:before-swap', () => ruim?.());
+</script>

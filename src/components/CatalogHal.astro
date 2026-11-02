@@ -39,6 +39,7 @@ import { kleiner, beeldMaat } from '../lib/beeldAanwezig.js';
 import Compare from './Compare.astro';
 import HalLaptop from './HalLaptop.astro';
 import HalVragen from './HalVragen.astro';
+import HalHoeDienst from './HalHoeDienst.astro';
 import HalProef from './HalProef.astro';
 import HalBeweging from './HalBeweging.astro';
 
@@ -274,6 +275,10 @@ const eigenVorm = (stand: string) => `<svg class="ik" viewBox="0 0 24 24" aria-h
       <a class="h-knop h-knop-lijn" href={lp('/pricing')}>{c.staffelCta}</a>
     </div>
   </section>
+
+  {/* ── HOE HET WERKT — levering 81 (Lucas, 1 november, 22:10: "Ja, nu meenemen"): de drie stappen van
+      catalog met de animaties, zoals tot levering 80 op de voorpagina (HalHoeDienst.astro). ── */}
+  <HalHoeDienst lang={lang} dienst="catalog" />
 
   {/* ── 5 · VRAGEN — de eerste vier; de rest op /faq ─────────────────────── */}
   <HalVragen lang={lang} id="cat-faq" dienst="catalog" faqs={serviceFaqs('catalog', lang)} />

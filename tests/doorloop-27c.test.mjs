@@ -107,7 +107,9 @@ console.log('\n6 · de roze-jeans-set op lichtgrijs, gemeten');
   const voor = fs.readFileSync(path.join(DIST, 'nl/index.html'), 'utf8');
   /* levering 75: het lijstje met de lagen (en de hex van de achtergrond) stond in het handwerk van
      stap 2, dat van de pagina af is; de achtergrondlaag zelf is nu de onderste van de lagen in 3D */
-  ok(`de achtergrondlaag van de lagen in 3D is ${GROND}`, lees('src/styles/opening.css').includes(`.o-ont-vlak { background: ${GROND}; }`) && voor.includes('o-ont-laag o-ont-vlak') && !voor.includes('</s>#FFFFFF</b>'));
+  /* levering 81: Hoe het werkt met de animaties (en dus de lagen in 3D) staat op /catalog (HalHoeDienst.astro) */
+  const cat = fs.readFileSync(path.join(DIST, 'nl/catalog/index.html'), 'utf8');
+  ok(`de achtergrondlaag van de lagen in 3D is ${GROND}`, lees('src/styles/opening.css').includes(`.o-ont-vlak { background: ${GROND}; }`) && cat.includes('o-ont-laag o-ont-vlak') && !cat.includes('</s>#FFFFFF</b>') && !voor.includes('</s>#FFFFFF</b>'));
   const studio = fs.readFileSync(path.join(DIST, 'nl/studio/index.html'), 'utf8');
   ok('Studio: de revisie vraagt om grijs', studio.includes('Toch liever op grijs dan wit, zoals de rest.') && !studio.includes('Toch liever op wit dan grijs'));
   ok('  eerst het witte modelbeeld, daarna het grijze', /class="fd-voor"[^>]*src="\/img\/ba2-na-model-wit\.webp"|src="\/img\/ba2-na-model-wit\.webp"[^>]*class="fd-voor"/.test(studio) && /fg-foto-na[^>]*ba2-na-model-grijs|ba2-na-model-grijs[^>]*fg-foto-na/.test(studio));
@@ -155,7 +157,9 @@ console.log('\n8 · de modelportretten op één grond');
    de vijf lagen). Lucas, 25 oktober, 23:35: "stap 2 … veel korter en simpeler, wel met de 3 lagen
    erin". Het handwerk is van de pagina af; de lagen bewaakt tests/opening-74.test.mjs. */
 console.log('\n9 · stap 2: alleen de lagen');
-for (const [bestand, taal] of [['nl/index.html', 'nl'], ['index.html', 'en']]) {
+/* levering 80 (lijst 64): de voorpagina toont Hoe het werkt kort (drie stapnamen, HalHoeKort80); levering 81:
+   Hoe het werkt met de lagen staat op /catalog (HalHoeDienst.astro), dus daar. */
+for (const [bestand, taal] of [['nl/catalog/index.html', 'nl'], ['catalog/index.html', 'en']]) {
   const h = fs.readFileSync(path.join(DIST, bestand), 'utf8');
   ok(`${taal}: het handwerk staat er niet meer, de lagen wel`, !/h-well h-maak|h-maak-werk/.test(h) && /class="h-well o-ontleed" data-v="catalog"/.test(h));
   ok(`${taal}:   de stap duurt 5,2 s (alleen de lagen; levering 75, eerst 12,9 s met het handwerk)`, h.includes('data-uitleg-maat="2250 5200 2250"'));
@@ -309,13 +313,15 @@ ok('  geen scriptfout op die pagina\'s', fouten3.length === 0, fouten3.slice(0, 
     const zicht = (e) => !!e && !e.closest('[hidden]') && getComputedStyle(e).display !== 'none';
     return [...document.querySelectorAll('[data-vis-klant-in]')].filter(zicht).map((a) => `${a.textContent.trim()} → ${a.getAttribute('href')}`);
   });
-  ok('ingelogd: bij de looks "Bestel deze look" naar het formulier', looks.length > 0 && looks.every((x) => /^Bestel deze look → \/nl\/start\//.test(x)), JSON.stringify(looks));
+  /* levering 80: de looks op de voorpagina zijn de galerij (elk beeld gaat naar zijn lookpagina, daar staat
+     "Bestel deze look"); in de opening ziet een klant in plaats van de €1-link "Naar VISUAILS Studio" (lijst 64) */
+  ok('ingelogd: wat alleen een klant ziet, gaat naar het formulier of naar Studio', looks.length > 0 && looks.every((x) => /^Bestel deze look → \/nl\/start\//.test(x) || x === 'Naar VISUAILS Studio → /account'), JSON.stringify(looks));
   await ctx.close();
 }
 {
   const { ctx, page } = await open('/nl/', {});
   const looks = await page.evaluate(() => [...document.querySelectorAll('[data-vis-klant-in]')].filter((e) => !e.closest('[hidden]') && getComputedStyle(e).display !== 'none').length);
-  ok('  uitgelogd staat "Bestel deze look" er niet', looks === 0, String(looks));
+  ok('  uitgelogd staat dat er niet', looks === 0, String(looks));
   await ctx.close();
 }
 

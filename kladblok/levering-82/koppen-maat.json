@@ -1,0 +1,362 @@
+{
+ "uitleg": "Levering 82, 2 november 2026. De paginakop van Studio (.st-h1) en de privélink (h1) in VISUAILS Display Bold, hoofdletters. Per soort en breedte: de grootste letter in px waarbij de krapste kop nog op twee regels past, in de echte kop van de pagina gemeten (zelfde kolom, zelfde buren); nu = de maat die er staat. Studio met een lange voornaam (Maximiliaan) in de welkomstkop. De pagina’s zonder bestelling (los) staan sinds de meting op min(36 px, 7 vw): nu is die maat.",
+ "metingen": [
+  {
+   "soort": "studio",
+   "breedte": 1440,
+   "nu": 40,
+   "hoogstens": 98.6,
+   "krapste": "Welcome back, Maximiliaan"
+  },
+  {
+   "soort": "studio",
+   "breedte": 1280,
+   "nu": 40,
+   "hoogstens": 77.9,
+   "krapste": "Welcome back, Maximiliaan"
+  },
+  {
+   "soort": "studio",
+   "breedte": 1180,
+   "nu": 40,
+   "hoogstens": 64.9,
+   "krapste": "Welcome back, Maximiliaan"
+  },
+  {
+   "soort": "studio",
+   "breedte": 1024,
+   "nu": 40,
+   "hoogstens": 44.5,
+   "krapste": "Welcome back, Maximiliaan"
+  },
+  {
+   "soort": "studio",
+   "breedte": 901,
+   "nu": 40,
+   "hoogstens": 45.7,
+   "krapste": "Welcome back, Maximiliaan"
+  },
+  {
+   "soort": "studio",
+   "breedte": 900,
+   "nu": 40,
+   "hoogstens": 78.9,
+   "krapste": "Welcome back, Maximiliaan"
+  },
+  {
+   "soort": "studio",
+   "breedte": 768,
+   "nu": 40,
+   "hoogstens": 61.7,
+   "krapste": "Welcome back, Maximiliaan"
+  },
+  {
+   "soort": "studio",
+   "breedte": 721,
+   "nu": 40,
+   "hoogstens": 55.5,
+   "krapste": "Welcome back, Maximiliaan"
+  },
+  {
+   "soort": "studio",
+   "breedte": 720,
+   "nu": 32,
+   "hoogstens": 63.2,
+   "krapste": "Welcome back, Maximiliaan"
+  },
+  {
+   "soort": "studio",
+   "breedte": 600,
+   "nu": 32,
+   "hoogstens": 47.7,
+   "krapste": "Welcome back, Maximiliaan"
+  },
+  {
+   "soort": "studio",
+   "breedte": 480,
+   "nu": 32,
+   "hoogstens": 56.9,
+   "krapste": "Welcome back, Maximiliaan"
+  },
+  {
+   "soort": "studio",
+   "breedte": 430,
+   "nu": 32,
+   "hoogstens": 50.4,
+   "krapste": "Welcome back, Maximiliaan"
+  },
+  {
+   "soort": "studio",
+   "breedte": 390,
+   "nu": 32,
+   "hoogstens": 45.2,
+   "krapste": "Welcome back, Maximiliaan"
+  },
+  {
+   "soort": "studio",
+   "breedte": 375,
+   "nu": 32,
+   "hoogstens": 43.3,
+   "krapste": "Welcome back, Maximiliaan"
+  },
+  {
+   "soort": "studio",
+   "breedte": 360,
+   "nu": 32,
+   "hoogstens": 41.3,
+   "krapste": "Welcome back, Maximiliaan"
+  },
+  {
+   "soort": "studio",
+   "breedte": 341,
+   "nu": 32,
+   "hoogstens": 38.8,
+   "krapste": "Welcome back, Maximiliaan"
+  },
+  {
+   "soort": "studio",
+   "breedte": 320,
+   "nu": 32,
+   "hoogstens": 36.1,
+   "krapste": "Welcome back, Maximiliaan"
+  },
+  {
+   "soort": "portaal",
+   "breedte": 1440,
+   "nu": 36,
+   "hoogstens": 159.9,
+   "krapste": "Je bestelling"
+  },
+  {
+   "soort": "portaal",
+   "breedte": 1280,
+   "nu": 36,
+   "hoogstens": 159.9,
+   "krapste": "Je bestelling"
+  },
+  {
+   "soort": "portaal",
+   "breedte": 1180,
+   "nu": 36,
+   "hoogstens": 159.9,
+   "krapste": "Je bestelling"
+  },
+  {
+   "soort": "portaal",
+   "breedte": 1024,
+   "nu": 36,
+   "hoogstens": 159.9,
+   "krapste": "Je bestelling"
+  },
+  {
+   "soort": "portaal",
+   "breedte": 901,
+   "nu": 36,
+   "hoogstens": 158.2,
+   "krapste": "Je bestelling"
+  },
+  {
+   "soort": "portaal",
+   "breedte": 900,
+   "nu": 36,
+   "hoogstens": 158,
+   "krapste": "Je bestelling"
+  },
+  {
+   "soort": "portaal",
+   "breedte": 768,
+   "nu": 36,
+   "hoogstens": 133.3,
+   "krapste": "Je bestelling"
+  },
+  {
+   "soort": "portaal",
+   "breedte": 721,
+   "nu": 36,
+   "hoogstens": 124.5,
+   "krapste": "Je bestelling"
+  },
+  {
+   "soort": "portaal",
+   "breedte": 720,
+   "nu": 36,
+   "hoogstens": 124.3,
+   "krapste": "Je bestelling"
+  },
+  {
+   "soort": "portaal",
+   "breedte": 600,
+   "nu": 36,
+   "hoogstens": 101.9,
+   "krapste": "Je bestelling"
+  },
+  {
+   "soort": "portaal",
+   "breedte": 480,
+   "nu": 36,
+   "hoogstens": 82.1,
+   "krapste": "Je bestelling"
+  },
+  {
+   "soort": "portaal",
+   "breedte": 430,
+   "nu": 36,
+   "hoogstens": 72.8,
+   "krapste": "Je bestelling"
+  },
+  {
+   "soort": "portaal",
+   "breedte": 390,
+   "nu": 36,
+   "hoogstens": 65.3,
+   "krapste": "Je bestelling"
+  },
+  {
+   "soort": "portaal",
+   "breedte": 375,
+   "nu": 36,
+   "hoogstens": 62.5,
+   "krapste": "Je bestelling"
+  },
+  {
+   "soort": "portaal",
+   "breedte": 360,
+   "nu": 36,
+   "hoogstens": 59.7,
+   "krapste": "Je bestelling"
+  },
+  {
+   "soort": "portaal",
+   "breedte": 341,
+   "nu": 36,
+   "hoogstens": 56.1,
+   "krapste": "Je bestelling"
+  },
+  {
+   "soort": "portaal",
+   "breedte": 320,
+   "nu": 36,
+   "hoogstens": 52.2,
+   "krapste": "Je bestelling"
+  },
+  {
+   "soort": "los",
+   "breedte": 1440,
+   "nu": 36,
+   "hoogstens": 60.1,
+   "krapste": "We kunnen je bestelling nu niet bereiken"
+  },
+  {
+   "soort": "los",
+   "breedte": 1280,
+   "nu": 36,
+   "hoogstens": 60.1,
+   "krapste": "We kunnen je bestelling nu niet bereiken"
+  },
+  {
+   "soort": "los",
+   "breedte": 1180,
+   "nu": 36,
+   "hoogstens": 60.1,
+   "krapste": "We kunnen je bestelling nu niet bereiken"
+  },
+  {
+   "soort": "los",
+   "breedte": 1024,
+   "nu": 36,
+   "hoogstens": 60.1,
+   "krapste": "We kunnen je bestelling nu niet bereiken"
+  },
+  {
+   "soort": "los",
+   "breedte": 901,
+   "nu": 36,
+   "hoogstens": 60.1,
+   "krapste": "We kunnen je bestelling nu niet bereiken"
+  },
+  {
+   "soort": "los",
+   "breedte": 900,
+   "nu": 36,
+   "hoogstens": 60.1,
+   "krapste": "We kunnen je bestelling nu niet bereiken"
+  },
+  {
+   "soort": "los",
+   "breedte": 768,
+   "nu": 36,
+   "hoogstens": 58.2,
+   "krapste": "We kunnen je bestelling nu niet bereiken"
+  },
+  {
+   "soort": "los",
+   "breedte": 721,
+   "nu": 36,
+   "hoogstens": 54.3,
+   "krapste": "We kunnen je bestelling nu niet bereiken"
+  },
+  {
+   "soort": "los",
+   "breedte": 720,
+   "nu": 36,
+   "hoogstens": 54.3,
+   "krapste": "We kunnen je bestelling nu niet bereiken"
+  },
+  {
+   "soort": "los",
+   "breedte": 600,
+   "nu": 36,
+   "hoogstens": 44.4,
+   "krapste": "We kunnen je bestelling nu niet bereiken"
+  },
+  {
+   "soort": "los",
+   "breedte": 480,
+   "nu": 33.6,
+   "hoogstens": 35.8,
+   "krapste": "We kunnen je bestelling nu niet bereiken"
+  },
+  {
+   "soort": "los",
+   "breedte": 430,
+   "nu": 30.1,
+   "hoogstens": 31.7,
+   "krapste": "We kunnen je bestelling nu niet bereiken"
+  },
+  {
+   "soort": "los",
+   "breedte": 390,
+   "nu": 27.3,
+   "hoogstens": 28.4,
+   "krapste": "We kunnen je bestelling nu niet bereiken"
+  },
+  {
+   "soort": "los",
+   "breedte": 375,
+   "nu": 26.3,
+   "hoogstens": 27.2,
+   "krapste": "We kunnen je bestelling nu niet bereiken"
+  },
+  {
+   "soort": "los",
+   "breedte": 360,
+   "nu": 25.2,
+   "hoogstens": 26,
+   "krapste": "We kunnen je bestelling nu niet bereiken"
+  },
+  {
+   "soort": "los",
+   "breedte": 341,
+   "nu": 23.9,
+   "hoogstens": 24.4,
+   "krapste": "We kunnen je bestelling nu niet bereiken"
+  },
+  {
+   "soort": "los",
+   "breedte": 320,
+   "nu": 22.4,
+   "hoogstens": 22.7,
+   "krapste": "We kunnen je bestelling nu niet bereiken"
+  }
+ ]
+}

@@ -24,6 +24,7 @@ import '../styles/hal.css';
 import { ikoon, IKOON } from '../data/iconen.js';
 import HalLaptop from './HalLaptop.astro';
 import HalVragen from './HalVragen.astro';
+import HalHoeDienst from './HalHoeDienst.astro';
 import HalBeweging from './HalBeweging.astro';
 import { waHref } from '../data/whatsapp.js';
 import NieuwTabblad from './NieuwTabblad.astro';
@@ -589,6 +590,10 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
       </div>
     </div>
   </section>
+
+  {/* ── HOE HET WERKT — levering 81 (Lucas, 1 november, 22:10: "Ja, nu meenemen"): de drie stappen van
+      video met de animaties, zoals tot levering 80 op de voorpagina (HalHoeDienst.astro). ── */}
+  <HalHoeDienst lang={lang} dienst="video" />
 
   {/* ── 4 · VRAGEN ─────────────────────────────────────────────────────────── */}
   <HalVragen lang={lang} id="vd-faq" dienst="video" faqs={c.faqs} />

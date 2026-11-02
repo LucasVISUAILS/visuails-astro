@@ -62,8 +62,11 @@ const zonderUitleg = (t) => t
   .replace(/\/\*[\s\S]*?\*\//g, '')
   .replace(/(^|[^:])\/\/.*$/gm, '$1');
 
-/* Sinds 12 oktober 2026 is de voorpagina VoorpaginaHal.astro (de hal). */
-const home = zonderUitleg(readFileSync(new URL('../src/components/VoorpaginaHal.astro', import.meta.url), 'utf8'));
+/* Sinds 12 oktober 2026 is de voorpagina VoorpaginaHal.astro (de hal). Sinds levering 81 (1 november 2026)
+   staan de woorden van Hoe het werkt (de stappen, met de belofte) in src/data/hoeHetWerkt.js, dat de
+   voorpagina en de dienstpagina's allebei lezen; die telt hier mee als bron. */
+const home = zonderUitleg(readFileSync(new URL('../src/components/VoorpaginaHal.astro', import.meta.url), 'utf8')
+  + '\n' + readFileSync(new URL('../src/data/hoeHetWerkt.js', import.meta.url), 'utf8'));
 
 const nodig = REQUIRED_SHOT_IDS.length;
 

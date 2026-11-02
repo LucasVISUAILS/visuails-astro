@@ -2155,6 +2155,7 @@ function page({ lang, title, body }) {
 <title>${esc(title)} — VISUAILS</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="stylesheet" href="/fonts/gedeeld.css">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/visuails-display/VISUAILSDisplay-Bold.woff2" crossorigin="anonymous">
 <link rel="stylesheet" href="/portal.css">
 <!-- Het tevredenheidsblok, uit één stylesheet die ook VISUAILS Studio inlaadt.
      Zie de kop van public/feedback.css over waarom dat een derde bestand is en

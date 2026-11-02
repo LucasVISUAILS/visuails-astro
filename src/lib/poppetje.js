@@ -86,13 +86,13 @@ export const POP_CSS = `
 .pop[data-product="dress"] .r-top,
 .pop[data-product="dress"] .r-bottom,
 .pop[data-product="shoes"] .r-shoes,
-.pop[data-product="socks"] .r-shoes { fill: var(--ink, #0B0F17); stroke: var(--ink, #0B0F17); }
+.pop[data-product="socks"] .r-shoes { fill: var(--ink, #0F1217); stroke: var(--ink, #0F1217); }
 .pop[data-own*="shoes"] .r-shoes,
 .pop[data-own*="bottom"] .r-bottom,
 .pop[data-own*="top"] .r-top,
 .pop[data-own*="underlayer"] .r-underlayer { fill: rgb(11 15 23 / .45); stroke: none; }
 .pop .pop-buiten { fill: var(--paper, #F4F5F7); fill-opacity: .8; }
-.pop .pop-kader { fill: none; stroke: var(--ink, #0B0F17); stroke-width: 2; }
+.pop .pop-kader { fill: none; stroke: var(--ink, #0F1217); stroke-width: 2; }
 .pop.pop-klein .pop-buiten { display: none; }
 .pop.pop-klein .r-arms, .pop.pop-klein .r-legs { stroke: var(--line, rgb(11 15 23 / .2)); }
 .pop.pop-klein .pop-kader { stroke-width: 3; }

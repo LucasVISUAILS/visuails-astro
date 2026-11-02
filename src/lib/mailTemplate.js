@@ -85,17 +85,17 @@ const SITE = 'https://visuails.com';
    klein #616161 (6,2:1 op wit), de lijn #DDDDDD, nevel #F2F2F2. Violet staat
    in de mail nergens: ook de knop is zwart, zoals de gewone knoppen op de site. */
 /* ── BLAUW UUR, 24 OKTOBER 2026 (levering 68, lijst 55) ───────────────────────
-   Inkt #0B0F17 voor alle tekst en de knop, klein #636974 (5,52:1 op wit), de lijn
+   Inkt #0F1217 voor alle tekst en de knop, klein #636974 (5,52:1 op wit), de lijn
    #E6E8EC, vlak #F4F5F7, aandacht blauw uur #25508B op vlak (7,41:1). De mail houdt
    de knop inkt: een mailclient kent geen muis, dus het blauw van de site (Bestellen,
    het logo onder de muis) komt hier niet. */
 const C = {
-  green: '#0B0F17',
+  green: '#0F1217',
   onAccent: '#FFFFFF',
-  accentText: '#0B0F17',
-  ink: '#0B0F17',
-  text: '#0B0F17',
-  head: '#0B0F17',
+  accentText: '#0F1217',
+  ink: '#0F1217',
+  text: '#0F1217',
+  head: '#0F1217',
   muted: '#636974',
   faint: '#636974',
   rule: '#E6E8EC',
@@ -103,18 +103,18 @@ const C = {
   paper: '#FFFFFF',
   foot: '#F4F5F7',
   tintBg: '#F4F5F7',
-  tintInk: '#0B0F17',
+  tintInk: '#0F1217',
   page: '#F4F5F7',
 
   /* De vijf toestanden, lichte stand — zie de tabel in KLEURENSCHEMA.md.
      Mail kent geen donkere stand: een mailclient kan zijn eigen donkere modus
      hebben, maar die herkleurt ons vlak niet, dus een tweede set zou alleen
      maar een tweede waarheid zijn. */
-  stWaitFill: 'transparent', stWaitEdge: '#858A94',            stWaitInk: '#0B0F17',
-  stWorkFill: '#F4F5F7',     stWorkEdge: '#E6E8EC',             stWorkInk: '#0B0F17',
-  stDoneFill: '#0B0F17',     stDoneEdge: '#0B0F17',             stDoneInk: '#FFFFFF',
+  stWaitFill: 'transparent', stWaitEdge: '#858A94',            stWaitInk: '#0F1217',
+  stWorkFill: '#F4F5F7',     stWorkEdge: '#E6E8EC',             stWorkInk: '#0F1217',
+  stDoneFill: '#0F1217',     stDoneEdge: '#0F1217',             stDoneInk: '#FFFFFF',
   stRevFill:  '#F4F5F7',     stRevEdge:  'rgba(37,80,139,.30)',  stRevInk:  '#25508B',
-  stCanFill:  '#E6E8EC',     stCanEdge:  '#858A94',             stCanInk:  '#0B0F17',
+  stCanFill:  '#E6E8EC',     stCanEdge:  '#858A94',             stCanInk:  '#0F1217',
 };
 
 import { stand } from '../data/status.js';

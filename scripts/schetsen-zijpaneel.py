@@ -2,7 +2,7 @@
 # Illustraties van de beeldsoorten, geen logo's en geen merk: één neutraal shirt, inkt op wit.
 # Schema A (levering 62, 19 oktober 2026): zwart op wit, het grijs zonder lila (vak en licht
 # als in hal.css, de lijn van de stof #9C9C9C met dezelfde helderheid als #9C9C9C).
-INKT = '#0B0F17'; WIT = '#FFFFFF'; VAK = '#E6E8EC'; LICHT = '#F4F5F7'
+INKT = '#0F1217'; WIT = '#FFFFFF'; VAK = '#E6E8EC'; LICHT = '#F4F5F7'
 SW = 2.2
 
 def svg(binnen, titel):

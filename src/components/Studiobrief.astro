@@ -145,8 +145,8 @@ const c = nl ? {
     /* Uit de tokens van de pagina (14 oktober 2026): --inkt en --inkt-2 bestonden
        nergens, dus stonden hier altijd de terugvalwaarden #0B0C0E en #55585F, ook
        in de hal. Nu de inkt van het schema, in de hal de hal-inkt. */
-    --sb-inkt: var(--ink-1, #0B0F17);
-    --sb-inkt-2: var(--ink-2, #0B0F17);
+    --sb-inkt: var(--ink-1, #0F1217);
+    --sb-inkt-2: var(--ink-2, #0F1217);
     --sb-lijn: var(--line-ui, #858A94);
     --sb-veld: #fff;
     display: grid;
@@ -190,7 +190,7 @@ const c = nl ? {
     font-size: 1rem;
   }
   .sb-veld input::placeholder { color: var(--sb-inkt-2); opacity: 1; }
-  .sb-veld input:focus-visible { outline: 2px solid var(--accent, #0B0F17); outline-offset: 2px; }
+  .sb-veld input:focus-visible { outline: 2px solid var(--accent, #0F1217); outline-offset: 2px; }
   /* De knop is de actie, dus violet — het enige violet in dit blok
      (KLEURENSCHEMA: violet alleen voor actie). */
   .sb-veld button {
@@ -199,7 +199,7 @@ const c = nl ? {
     padding: 0 1.3rem;
     border: 0;
     border-radius: var(--hoek-knop);
-    background: var(--accent, #0B0F17);
+    background: var(--accent, #0F1217);
     color: var(--on-accent, #fff);
     font-family: var(--mono2, var(--font-mono, ui-monospace, monospace));
     font-size: .78rem;

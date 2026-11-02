@@ -51,7 +51,8 @@ const fam = (f) => (/font-family:\s*['"]([^'"]+)['"]/.exec(f) || [])[1];
 const hal = lees('src/styles/hal.css'), studio = lees('src/styles/studio-hal.css'), gedeeld = fontFaces();
 const halFam = faces(hal).map(fam);
 ok('hal.css: DM Sans twee keer (latin, latin-ext), VISUAILS Display één keer, IBM Plex Mono', halFam.filter((f) => f === 'DM Sans').length === 2 && halFam.filter((f) => f === 'VISUAILS Display').length === 1 && halFam.includes('IBM Plex Mono'), halFam.join(', '));
-ok('  VISUAILS Display alleen in 700, DM Sans 400 – 700', faces(hal).filter((f) => fam(f) === 'VISUAILS Display').every((f) => /font-weight:\s*700;/.test(f)) && faces(hal).filter((f) => fam(f) === 'DM Sans').every((f) => /font-weight:\s*400 700;/.test(f)));
+/* levering 80 (1 november 2026): lopende tekst 370, dus DM Sans 300 – 700 (was 400 – 700) */
+ok('  VISUAILS Display alleen in 700, DM Sans 300 – 700', faces(hal).filter((f) => fam(f) === 'VISUAILS Display').every((f) => /font-weight:\s*700;/.test(f)) && faces(hal).filter((f) => fam(f) === 'DM Sans').every((f) => /font-weight:\s*300 700;/.test(f)));
 ok('studio-hal.css en gedeeld.css: DM Sans', faces(studio).map(fam).filter((f) => f === 'DM Sans').length === 2 && faces(gedeeld).map(fam).filter((f) => f === 'DM Sans').length === 2);
 ok('  nergens nog een @font-face voor Instrument Sans', ![hal, studio, gedeeld].some((c) => faces(c).some((f) => fam(f) === 'Instrument Sans')));
 ok('de tekstletter van de site, Studio, /admin, de kaarten en de privélink is DM Sans',
@@ -68,17 +69,18 @@ ok(`het teken is tien tekens hex (${V})`, /^[0-9a-f]{10}$/.test(V));
 for (const [taal, pad] of [['en', 'index.html'], ['nl', 'nl/index.html']]) {
   const h = fs.readFileSync(path.join(DIST, pad), 'utf8');
   ok(`${taal}: DM Sans en VISUAILS Display vooraf geladen`, /<link rel="preload"[^>]+\/fonts\/dm-sans\/dm-sans-latin\.woff2/.test(h) && /<link rel="preload"[^>]+\/fonts\/visuails-display\/VISUAILSDisplay-Bold\.woff2/.test(h));
-  ok(`${taal}: het podium draagt het teken (data-o-v; sinds 78 de tablet)`, new RegExp(`data-t-podium data-o-v="${V}"`).test(h));
+  /* levering 80: de opening (HalOpening80.astro) draagt het teken op de sectie zelf */
+  ok(`${taal}: de opening draagt het teken (data-o-v; sinds 80 HalOpening80)`, new RegExp(`<section class="o8[^"]*" data-o8 data-o-v="${V}"`).test(h));
   /* alleen echte adressen (met .avif of .webp); de standen in de JSON staan zonder extensie, het script
      zet die er zelf achter, met ?v= (zie hieronder) */
-  const adressen = [...h.matchAll(/\/img\/hal\/opening\/[^\s"',)?]+\.(?:avif|webp)(?:\?v=[0-9a-z]+)?/g)].map((m) => m[0]);
+  const adressen = [...h.matchAll(/\/img\/hal\/(?:opening|breed)\/[^\s"',)?]+\.(?:avif|webp)(?:\?v=[0-9a-z]+)?/g)].map((m) => m[0]);   /* 79: ook de laptopfoto (breed/) */
   const zonder = adressen.filter((a) => !a.endsWith(`?v=${V}`));
   ok(`${taal}: elk beeld van de opening in de pagina met ?v=${V} (${adressen.length} adressen)`, adressen.length >= 8 && zonder.length === 0, zonder.slice(0, 3).join(' '));
 }
 /* levering 78: geen video meer; het script van de tablet haalt de volgende schermen met ?v= (het
    staat in de pagina zelf of in _astro/) */
 const bronnen = [...fs.readdirSync(path.join(DIST, '_astro')).filter((f) => f.endsWith('.js')).map((f) => fs.readFileSync(path.join(DIST, '_astro', f), 'utf8')), fs.readFileSync(path.join(DIST, 'index.html'), 'utf8')];
-const js = bronnen.find((s) => s.includes('data-t-standen') || s.includes('[data-t-standen]'));
+const js = bronnen.find((s) => s.includes('data-o8-data') || s.includes('[data-o8-data]'));   /* 80: de opening van 80 */
 ok('het script vraagt de schermen met ?v=', !!js && /\.avif\?v=\$\{/.test(js) && /\.webp\?v=\$\{/.test(js));
 const kop = fs.readFileSync(path.join(ROOT, 'public/_headers'), 'utf8');
 ok('_headers: /img/* blijft zeven dagen (het teken maakt dat veilig)', /\/img\/\*\s+Cache-Control: public, max-age=604800/.test(kop));
@@ -105,13 +107,13 @@ try {
       const page = await ctx.newPage();
       const fouten = [], beelden = [];
       page.on('pageerror', (e) => fouten.push(String(e).slice(0, 200)));
-      page.on('request', (q) => { if (/\/img\/hal\/opening\//.test(q.url())) beelden.push(q.url()); });
+      page.on('request', (q) => { if (/\/img\/hal\/(?:opening|breed)\//.test(q.url())) beelden.push(q.url()); });
       await page.route('**/account/me**', (r) => r.fulfill({ status: 401, contentType: 'application/json', body: 'null' }));
       await page.route('**/api/**', (r) => r.fulfill({ status: 204, body: '' }));
       /* de maat van de kop vanaf het eerste beeld, tot alles geladen is */
       await page.addInitScript(() => {
         window.__maten = [];
-        const kijk = () => { const k = document.querySelector('.t-kop, .o-kop'); if (k) window.__maten.push(Math.round(parseFloat(getComputedStyle(k).fontSize) * 10) / 10); };
+        const kijk = () => { const k = document.querySelector('.o8-kop, .lb-kop, .t-kop, .o-kop'); if (k) window.__maten.push(Math.round(parseFloat(getComputedStyle(k).fontSize) * 10) / 10); };
         document.addEventListener('DOMContentLoaded', kijk);
         document.fonts.addEventListener('loadingdone', kijk);
         window.addEventListener('load', () => { kijk(); setTimeout(kijk, 600); });
@@ -122,10 +124,10 @@ try {
       if (breed === 1440) { await page.mouse.wheel(0, 600); await page.waitForTimeout(900); }
       const m = await page.evaluate(() => {
         const cs = (e) => getComputedStyle(e);
-        /* levering 78: de opening is de tablet (HalTablet.astro); de kop hangt een stap S links buiten
-           de tablet (RUIMTE-EN-RUST R1), dus "binnen zijn vak" is: rechts binnen de tablet, links binnen het venster */
-        const k = document.querySelector('.t-kop'), tekst = document.querySelector('[data-t-tekst]');
-        const regels = (e) => { const tops = new Set(); for (const s of e.querySelectorAll('.t-kop-voor, .l')) { const rg = document.createRange(); rg.selectNodeContents(s); for (const q of rg.getClientRects()) if (q.width > 1) tops.add(Math.round(q.top)); } return tops.size; };
+        /* levering 80: de titel staat in het midden (HalOpening80.astro), altijd op twee regels; "binnen zijn
+           vak" is: binnen het venster */
+        const k = document.querySelector('.o8-kop'), tekst = { getBoundingClientRect: () => ({ right: document.documentElement.clientWidth }) };
+        const regels = (e) => { const tops = new Set(); for (const s of e.querySelectorAll('.o8-r')) { const rg = document.createRange(); rg.selectNodeContents(s); for (const q of rg.getClientRects()) if (q.width > 1) tops.add(Math.round(q.top)); } return tops.size; };
         const koppen = [...document.querySelectorAll('.h-kop')];
         return {
           body: cs(document.body).fontFamily.split(',')[0].replace(/"/g, ''),
@@ -138,7 +140,7 @@ try {
       });
       const vast = new Set(m.maten).size === 1;
       ok(`${taal} ${breed}: tekst DM Sans, kop VISUAILS Display ${m.kopGewicht}, alle .h-kop in 700 (beide tonen), letters geladen`, m.body === 'DM Sans' && m.kop === 'VISUAILS Display' && m.kopGewicht === '700' && m.hKop && m.geladen, JSON.stringify(m));
-      ok(`${taal} ${breed}:   de kop op ${m.regels} regel(s) en binnen zijn vak`, (breed > 900 ? m.regels === 1 : m.regels === 2) && m.past, JSON.stringify(m));
+      ok(`${taal} ${breed}:   de kop op ${m.regels} regel(s) en binnen zijn vak`, m.regels === 2 && m.past, JSON.stringify(m));
       ok(`${taal} ${breed}:   verspringt niet bij het laden (${[...new Set(m.maten)].join(' → ')} px)`, vast, m.maten.join(', '));
       const zonder = beelden.filter((u) => !u.endsWith(`?v=${V}`));
       const reeks = beelden.filter((u) => /\/f\/\d{3}\.avif/.test(u));

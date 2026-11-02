@@ -126,19 +126,19 @@
      LICHTSTE stand. De logica blijft dezelfde — vol = klaar.
      ═══════════════════════════════════════════════════════════════════════ */
   --accent:          #C5C8CF;
-  --on-accent:       #0B0F17;
+  --on-accent:       #0F1217;
   --accent-text:     #C5C8CF;
   --accent-tint:     #1B1E24;
   --on-accent-tint:  #C5C8CF;
   --accent-dim:      #B9BCC4;
-  --panel:           #0B0F17;
+  --panel:           #0F1217;
   --on-panel:        #F4F5F7;
   --sunken:          #1C2025;
   --line-soft:       rgb(244 245 247 / .11);
 
   --st-wait-fill: transparent;  --st-wait-edge: #5B606A;                --st-wait-ink: #A8ADB5;
   --st-work-fill: #1B1E24;      --st-work-edge: rgb(197 200 207 / .34);  --st-work-ink: #C5C8CF;
-  --st-done-fill: #C5C8CF;      --st-done-edge: #C5C8CF;                --st-done-ink: #0B0F17;
+  --st-done-fill: #C5C8CF;      --st-done-edge: #C5C8CF;                --st-done-ink: #0F1217;
   --st-rev-fill:  #122039;      --st-rev-edge:  rgb(128 167 221 / .34);   --st-rev-ink:  #80A7DD;
   --st-can-fill:  #1B1E24;      --st-can-edge:  #5B606A;                 --st-can-ink:  #A0A4AD;
 
@@ -239,7 +239,7 @@
      darkest ink and, by coincidence of value, the dark ground — and every
      rule that used it as a ground went white the moment the ramp flipped.
      The deep ground is stated as a ground. */
-  --bg-deep:    #0B0F17;
+  --bg-deep:    #0F1217;
   --bg-raise:   var(--paper-2);
   --surface:    var(--paper-lift);
   --surface-2:  var(--paper-2);
@@ -420,18 +420,18 @@
      De hele reeks keert om, inclusief de statusset: in het licht is "vol"
      juist de DONKERSTE stand (geleverd = #1F0B66 met wit erop), in het donker
      de lichtste. Zie het blok bovenaan dit bestand. */
-  --accent:          #0B0F17;
+  --accent:          #0F1217;
   --on-accent:       #FFFFFF;
-  --accent-text:     #0B0F17;
+  --accent-text:     #0F1217;
   --accent-tint:     #ECEDEF;
-  --on-accent-tint:  #0B0F17;
-  --accent-dim:      #0B0F17;
+  --on-accent-tint:  #0F1217;
+  --accent-dim:      #0F1217;
   --sunken:          #DCDFE3;
   --line-soft:       rgb(11 15 23 / .10);
 
   --st-wait-fill: transparent;  --st-wait-edge: #7C818B;              --st-wait-ink: #4B515A;
-  --st-work-fill: #ECEDEF;      --st-work-edge: rgb(11 15 23 / .30);  --st-work-ink: #0B0F17;
-  --st-done-fill: #0B0F17;      --st-done-edge: #0B0F17;               --st-done-ink: #FFFFFF;
+  --st-work-fill: #ECEDEF;      --st-work-edge: rgb(11 15 23 / .30);  --st-work-ink: #0F1217;
+  --st-done-fill: #0F1217;      --st-done-edge: #0F1217;               --st-done-ink: #FFFFFF;
   --st-rev-fill:  #F4F5F7;      --st-rev-edge:  rgb(37 80 139 / .30);   --st-rev-ink:  #25508B;
   --st-can-fill:  #E6E7EA;      --st-can-edge:  #818790;               --st-can-ink:  #3D414A;
 
@@ -443,7 +443,7 @@
      accent hoort en niet als een tweede, koudere kleur leest. De verhoudingen
      zijn dezelfde rollen als in het donker — 18,1:1 / 9,3:1 / 5,2:1 voor tekst,
      en de onderste twee zijn lijnen en nooit letters. */
-  --ink-900:  #0B0F17;
+  --ink-900:  #0F1217;
   --ink-700:  rgb(11 15 23 / .66);
   /* #686868 en niet #6E6E6E — 7 september 2026. global.css staat al op #686868
      met de noot "5,6:1 op wit · 4,53:1 op #EDEDED"; deze drie handkopieën waren
@@ -454,7 +454,7 @@
   --ink-500:  rgb(11 15 23 / .56);
   --ink-300:  rgb(11 15 23 / .34);      /* rules, never text */
   --ink-200:  rgb(11 15 23 / .20);      /* hairlines */
-  --ink-100:  #0B0F17;
+  --ink-100:  #0F1217;
 
   /* De vier mistkleuren zijn in het donker één lichtere trede; hier zijn ze één
      donkerdere. Vier namen, één waarde, om dezelfde reden als hierboven. */
@@ -484,7 +484,7 @@
   --btn-ghost-fill-hover:  rgb(11 15 23 / .12);
   --btn-2nd-fill:          transparent;
   --btn-2nd-fill-hover:    rgb(11 15 23 / .06);
-  --btn-2nd-ink:           #0B0F17;
+  --btn-2nd-ink:           #0F1217;
   --btn-2nd-border:        rgb(11 15 23 / .24);
   --btn-2nd-border-hover:  rgb(11 15 23 / .60);
 
@@ -497,7 +497,7 @@
   --focus-ring: #25508B;
 
   /* Het pijltje in een <select> is een tekening in de kleur van de tekst. */
-  --select-caret: url("/img/ui/keuzepijl-0b0f17.svg");
+  --select-caret: url("/img/ui/keuzepijl-0f1217.svg");
 
   /* Violet is op wit 7,16:1 en mag dus zelf de lijn en de data dragen — zie
      de noot in KLEURENSCHEMA.md dat het violet, anders dan het geel, wél een
@@ -1180,7 +1180,7 @@ details.ask .btn { margin-top: .6rem; }
 @supports selector(:has(input)) {
   .ask-mark:not(:has(input:checked)) textarea { display: none; }
 }
-.ask-mark:has(input:checked) textarea { border-color: var(--accent, #0B0F17); }
+.ask-mark:has(input:checked) textarea { border-color: var(--accent, #0F1217); }
 .ask-mark:has(input:checked) .ask-tick { color: var(--ink); }
 
 /* "Alles goed" per product: één knop onder de tegels, los van het rondeformulier. */
@@ -4067,15 +4067,15 @@ html[data-thema="licht"] body {
   --h-letter: "DM Sans", "Urbanist Variable", ui-sans-serif, system-ui, sans-serif;  /* levering 77: DM Sans (lijst 60; was Instrument Sans, levering 76); de @font-face in /fonts/gedeeld.css */
   --font: var(--h-letter); --font-display: var(--h-letter); --stretch-kop: 100%;
   --kv-veld: #F4F5F7; --kv-kaart: #FFFFFF; --kv-lijn: #E6E8EC; --kv-veld-lijn: #858A94;
-  --kv-ink-1: #0B0F17; --kv-ink-2: #0B0F17; --kv-ink-3: #636974;
+  --kv-ink-1: #0F1217; --kv-ink-2: #0F1217; --kv-ink-3: #636974;
   --paper: #FFFFFF; --paper-2: #F4F5F7; --paper-lift: #F4F5F7; --surface: #FFFFFF; --surface-2: #F4F5F7;
-  --ink: #0B0F17; --ink-2: #0B0F17; --ink-3: #636974; --ink-4: #C5C8CF; --ink-900: #0B0F17; --ink-700: #0B0F17; --ink-500: #636974; --ink-300: #C5C8CF; --ink-200: #E6E8EC;
+  --ink: #0F1217; --ink-2: #0F1217; --ink-3: #636974; --ink-4: #C5C8CF; --ink-900: #0F1217; --ink-700: #0F1217; --ink-500: #636974; --ink-300: #C5C8CF; --ink-200: #E6E8EC;
   --line: #E6E8EC; --line-strong: #C5C8CF; --line-ui: #858A94; --ghost: rgb(11 15 23 / .04); --btn-ghost-fill: rgb(11 15 23 / .05);
-  --accent: #0B0F17; --on-accent: #FFFFFF; --accent-text: #0B0F17; --accent-dim: #0B0F17; --accent-2: #0B0F17; --teal: #0B0F17; --teal-hover: #25508B; --teal-text: #0B0F17; --focus-ring: #25508B;
-  --signal: #F4F5F7; --signal-ink: #0B0F17; --warn: #F4F5F7; --warn-ink: #25508B;
-  --st-wait-fill: transparent; --st-wait-edge: #858A94; --st-wait-ink: #0B0F17;
-  --st-work-fill: #F4F5F7; --st-work-edge: #E6E8EC; --st-work-ink: #0B0F17;
-  --st-done-fill: #0B0F17; --st-done-edge: #0B0F17; --st-done-ink: #FFFFFF;
+  --accent: #0F1217; --on-accent: #FFFFFF; --accent-text: #0F1217; --accent-dim: #0F1217; --accent-2: #0F1217; --teal: #0F1217; --teal-hover: #25508B; --teal-text: #0F1217; --focus-ring: #25508B;
+  --signal: #F4F5F7; --signal-ink: #0F1217; --warn: #F4F5F7; --warn-ink: #25508B;
+  --st-wait-fill: transparent; --st-wait-edge: #858A94; --st-wait-ink: #0F1217;
+  --st-work-fill: #F4F5F7; --st-work-edge: #E6E8EC; --st-work-ink: #0F1217;
+  --st-done-fill: #0F1217; --st-done-edge: #0F1217; --st-done-ink: #FFFFFF;
   --st-rev-fill: #F4F5F7; --st-rev-edge: rgb(37 80 139 / .30); --st-rev-ink: #25508B;
   font-family: var(--h-letter);
 }

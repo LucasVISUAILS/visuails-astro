@@ -58,7 +58,7 @@ html body.hal.hal .h-voor .v-ook-rij a .o { display: inline-flex; width: 14px; h
 html body.hal.hal .h-voor .v-ook-rij a .o svg { width: 14px; height: 14px; }
 html body.hal.hal .h-voor .v-ook-rij a:hover { color: var(--h-blauw, #25508B); }
 html body.hal.hal .h-voor .v-ook-rij a:hover .o { color: var(--h-blauw, #25508B); }
-html body.hal.hal .h-voor .v-ook-anders { margin: 4px 0 0; font: 400 14.5px/1.45 var(--h-letter); color: var(--h-inkt-2, #0B0F17); }
+html body.hal.hal .h-voor .v-ook-anders { margin: 4px 0 0; font: 400 14.5px/1.45 var(--h-letter); color: var(--h-inkt-2, #0F1217); }
 
 /* ── Hoe het werkt (sectie B): de kop over de breedte, de stappen als trap ──────────────────── */
 html body.hal.hal .h-voor > .v-hoe { max-width: none; margin-left: 0; margin-right: 0; padding: var(--r-10) var(--v-marge) 0; box-sizing: border-box; gap: 51px; }

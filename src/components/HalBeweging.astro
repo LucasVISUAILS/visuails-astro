@@ -19,12 +19,14 @@
   import { slaOmIn } from '../scripts/omslag.js';
   import { knoppenNaastElkaar } from '../scripts/knoppaar.js';
   import { gloed, stopGloed } from '../scripts/gloed.js';
+  import { schakelaars } from '../scripts/schakel.js';   // levering 83: de schakelaars glijden (lijst 68, a)
   const zet = () => {
     if (!document.querySelector('.h-pagina')) return;
     document.documentElement.classList.add('h-js');
     const rustig = matchMedia('(prefers-reduced-motion: reduce)').matches;
     knoppenNaastElkaar();
     gloed();   // levering 78: af en toe de gloed op de tweede toon van een kop
+    schakelaars();
     const io = new IntersectionObserver((rijen) => {
       for (const r of rijen) if (r.isIntersecting) {
         /* levering 55: de hoogte voor de helling van de wis, en de getallen slaan om */

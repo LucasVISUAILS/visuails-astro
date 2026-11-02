@@ -102,20 +102,20 @@
      stylesheet van de site niet bereiken. De waarden zijn letterlijk die uit
      KLEURENSCHEMA.md — verandert daar iets, dan hier ook.
      ═══════════════════════════════════════════════════════════════════════ */
-  --accent:          #0B0F17;
+  --accent:          #0F1217;
   --on-accent:       #FFFFFF;
-  --accent-text:     #0B0F17;
+  --accent-text:     #0F1217;
   --accent-tint:     #ECEDEF;
-  --on-accent-tint:  #0B0F17;
-  --accent-dim:      #0B0F17;
-  --panel:           #0B0F17;
+  --on-accent-tint:  #0F1217;
+  --accent-dim:      #0F1217;
+  --panel:           #0F1217;
   --on-panel:        #F4F5F7;
   --sunken:          #DCDFE3;
   --line-soft:       rgb(11 15 23 / .10);
 
   --st-wait-fill: transparent;  --st-wait-edge: #7C818B;              --st-wait-ink: #4B515A;
-  --st-work-fill: #ECEDEF;      --st-work-edge: rgb(11 15 23 / .30);  --st-work-ink: #0B0F17;
-  --st-done-fill: #0B0F17;      --st-done-edge: #0B0F17;               --st-done-ink: #FFFFFF;
+  --st-work-fill: #ECEDEF;      --st-work-edge: rgb(11 15 23 / .30);  --st-work-ink: #0F1217;
+  --st-done-fill: #0F1217;      --st-done-edge: #0F1217;               --st-done-ink: #FFFFFF;
   --st-rev-fill:  #F4F5F7;      --st-rev-edge:  rgb(37 80 139 / .30);   --st-rev-ink:  #25508B;
   --st-can-fill:  #E6E7EA;      --st-can-edge:  #818790;               --st-can-ink:  #3D414A;
 
@@ -132,7 +132,7 @@
   /* ---- ink ----
      Light on dark, as alphas rather than as mixed greys, so a step lands the
      same way on every one of the three surfaces above. */
-  --ink-900:  #0B0F17;
+  --ink-900:  #0F1217;
   --ink-700:  rgb(11 15 23 / .66);
   /* #686868 en niet #6E6E6E — 7 september 2026. global.css staat al op #686868
      met de noot "5,6:1 op wit · 4,53:1 op #EDEDED"; deze drie handkopieën waren
@@ -143,7 +143,7 @@
   --ink-500:  rgb(11 15 23 / .56);
   --ink-300:  rgb(11 15 23 / .34);  /* rules, never text */
   --ink-200:  rgb(11 15 23 / .20);  /* hairlines */
-  --ink-100:  #0B0F17;
+  --ink-100:  #0F1217;
 
   /* The three "on dark" names are now the same values as the ink ramp, because
      every ground is dark. They stay as separate names rather than being
@@ -199,7 +199,7 @@
   --btn-ghost-fill-hover:  rgb(11 15 23 / .12);
   --btn-2nd-fill:          transparent;
   --btn-2nd-fill-hover:    rgb(11 15 23 / .06);
-  --btn-2nd-ink:           #0B0F17;
+  --btn-2nd-ink:           #0F1217;
   --btn-2nd-border:        rgb(11 15 23 / .24);
   --btn-2nd-border-hover:  rgb(11 15 23 / .60);
 
@@ -280,7 +280,7 @@
      a `stroke` inside a data: URL cannot see var(). Hand-copy of the ink
      ramp's top step; when that moves, this moves with it or the caret stops
      matching. */
-  --select-caret: url("/img/ui/keuzepijl-0b0f17.svg");
+  --select-caret: url("/img/ui/keuzepijl-0f1217.svg");
 
   --font: "Figtree Variable", "Helvetica Neue", Arial, sans-serif;
 
@@ -424,7 +424,7 @@ h1 {
 }
 .fact { min-width: 0; }
 .fact dt { font-size: .72rem; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
-.fact dd { margin: .35rem 0 0; color: var(--ink); font-weight: 500; }
+.fact dd { margin: .35rem 0 0; color: var(--ink); font-weight: 450; }
 
 /* ---- system note --------------------------------------------------------
    The one place colour is allowed on this page, and it is state, not
@@ -482,12 +482,12 @@ h1 {
    the number changes on every approval and the line should not shift when it
    does. The "·" separator is in the markup, not here: it is content, and a
    screen reader announcing "8 of 20 approved" needs it spoken. */
-.tally { font-weight: 400; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.tally { font-weight: 370; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 2rem 1.6rem; list-style: none; margin: 0; padding: 0; }
 .shot img { width: 100%; background: var(--paper-2); }
 /* Een clip (ronde 9, F42): staand 9:16, dezelfde breedte en rand als een beeld. */
 .shot video { display: block; width: 100%; aspect-ratio: 9 / 16; background: #000; border-radius: var(--r-klein); }
-.shot .name { display: block; margin: .7rem 0 .1rem; font-size: .92rem; color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
+.shot .name { display: block; margin: .7rem 0 .1rem; font-size: .92rem; color: var(--ink); font-weight: 450; overflow-wrap: anywhere; }
 .shot .meta { font-size: .82rem; color: var(--ink-3); }
 
 /* State reads as a word, never as a colour alone — a colour-only state is
@@ -760,7 +760,7 @@ details.ask > summary:hover { color: var(--ink-700); }
   font-size: .78rem; letter-spacing: .08em; text-transform: uppercase;
   color: var(--ink-3); font-variant-numeric: tabular-nums; padding-top: .18rem;
 }
-.log .what { color: var(--ink); font-weight: 500; }
+.log .what { color: var(--ink); font-weight: 450; }
 /* The note belongs to the event above it, so it sits under the event and not
    under the date — which is why it is placed in column 2 explicitly. */
 .log .why { grid-column: 2; max-width: 68ch; font-size: .92rem; color: var(--ink-2); text-wrap: pretty; }
@@ -1048,7 +1048,7 @@ h1 { margin: 0; font-size: 1.75rem; font-weight: 600; line-height: 1.2; letter-s
   box-shadow: none;
 }
 .fact dt { font-size: .75rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
-.fact dd { margin: .3rem 0 0; font-size: .875rem; font-weight: 500; color: var(--ink); }
+.fact dd { margin: .3rem 0 0; font-size: .875rem; font-weight: 450; color: var(--ink); }
 
 .note {
   margin: 1rem 0 0; padding: .65rem .9rem; max-width: 72ch;
@@ -1067,7 +1067,7 @@ h1 { margin: 0; font-size: 1.75rem; font-weight: 600; line-height: 1.2; letter-s
 }
 .rr h2 { margin-bottom: .4rem; }
 .rr > p { margin: 0 0 .75rem; max-width: 72ch; }
-.tally { font-weight: 400; color: var(--ink-3); }
+.tally { font-weight: 370; color: var(--ink-3); }
 .alles { margin: 0 0 1.25rem; gap: .5rem; }
 
 .shots { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem 1rem; }
@@ -1075,7 +1075,7 @@ h1 { margin: 0; font-size: 1.75rem; font-weight: 600; line-height: 1.2; letter-s
    trap. `contain` en niet `cover`: dit is het scherm waar je een beeld
    goedkeurt, en een uitsnede keur je niet goed. */
 .shot img { width: 100%; aspect-ratio: 4 / 5; object-fit: contain; border-radius: var(--pt-r); background: var(--surface-2); }
-.shot .name { margin: .6rem 0 .1rem; font-size: .8125rem; font-weight: 500; }
+.shot .name { margin: .6rem 0 .1rem; font-size: .8125rem; font-weight: 450; }
 .shot .meta { font-size: .75rem; }
 .acts { margin-top: .6rem; gap: .4rem; }
 .state { font-size: .75rem; font-weight: 600; letter-spacing: 0; text-transform: none; }
@@ -1119,7 +1119,7 @@ textarea, input[type="text"], input[type="email"], input[type="tel"], select {
 /* De statuspil zoals in Studio: kleiner, gewone letters. */
 .stand {
   min-height: 22px; padding: 0 .55rem; gap: .35rem;
-  font-family: var(--font); font-stretch: 100%; font-size: .75rem; font-weight: 500;
+  font-family: var(--font); font-stretch: 100%; font-size: .75rem; font-weight: 450;
   letter-spacing: 0; text-transform: none;
 }
 .rr-fout { font-size: .8125rem; }
@@ -1142,7 +1142,7 @@ textarea, input[type="text"], input[type="email"], input[type="tel"], select {
   background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent);
   border-radius: var(--pt-r-kaart);
 }
-.nu-zin { margin: 0; max-width: 68ch; font-size: .9375rem; line-height: 1.55; font-weight: 500; color: var(--ink); }
+.nu-zin { margin: 0; max-width: 68ch; font-size: .9375rem; line-height: 1.55; font-weight: 450; color: var(--ink); }
 .nu-datums { margin: .5rem 0 0; display: flex; flex-wrap: wrap; gap: .2rem 1.25rem; font-size: .8125rem; color: var(--ink-2); }
 .nu-knoppen { margin: 1rem 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.1rem; }
 .nu-form { margin: 0; }
@@ -1177,7 +1177,7 @@ textarea, input[type="text"], input[type="email"], input[type="tel"], select {
 .afrond { margin: 1.5rem 0 0; padding: 0 1.25rem 1.25rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--pt-r-kaart); scroll-margin-top: 1rem; }
 .afrond .folder { margin: 0; padding: 1.25rem 0 0; border: 0; border-radius: 0; background: none; }
 .afrond .fb { margin-top: 1.25rem; }
-.folder-datum { margin: .2rem 0 0; font-size: .8125rem; font-weight: 500; color: var(--ink); }
+.folder-datum { margin: .2rem 0 0; font-size: .8125rem; font-weight: 450; color: var(--ink); }
 @media (max-width: 560px) {
   .afrond { padding: 0 1rem 1rem; }
   .afrond .folder { padding-top: 1rem; }
@@ -1212,56 +1212,56 @@ html body {
   --font: var(--h-letter); --font-kop: var(--h-letter); --font-display: var(--h-letter); --stretch-kop: 100%;
   --paper: #FFFFFF; --paper-2: #F4F5F7; --paper-lift: #F4F5F7; --bg: #FFFFFF; --bg-raise: #F4F5F7;
   --surface: #FFFFFF; --surface-2: #F4F5F7; --surface-3: #E6E8EC; --sunken: #E6E8EC;
-  --ink-900: #0B0F17; --ink-100: #0B0F17; --ink-700: #0B0F17; --ink-500: #636974; --ink-300: #C5C8CF; --ink-200: #E6E8EC;
-  --ink: #0B0F17; --ink-2: #0B0F17; --ink-3: #636974; --ink-4: #C5C8CF; --ink-faint: #636974;
+  --ink-900: #0F1217; --ink-100: #0F1217; --ink-700: #0F1217; --ink-500: #636974; --ink-300: #C5C8CF; --ink-200: #E6E8EC;
+  --ink: #0F1217; --ink-2: #0F1217; --ink-3: #636974; --ink-4: #C5C8CF; --ink-faint: #636974;
   --line: #E6E8EC; --line-soft: #E6E8EC; --line-strong: #C5C8CF; --line-ui: #858A94;
   --ghost: rgb(11 15 23 / .04); --btn-ghost-fill: rgb(11 15 23 / .05); --btn-ghost-fill-hover: #E6E8EC;
-  --btn-2nd-ink: #0B0F17; --btn-2nd-border: #C5C8CF; --btn-2nd-border-hover: #0B0F17; --btn-2nd-fill-hover: #F4F5F7;
-  --panel: #0B0F17; --on-panel: #FFFFFF; --paper-on-dark: #FFFFFF;
-  --accent: #0B0F17; --on-accent: #FFFFFF; --accent-on: #FFFFFF; --accent-ink: #FFFFFF;
-  --accent-text: #0B0F17; --accent-dim: #0B0F17; --accent-2: #0B0F17; --accent-word: #0B0F17; --accent-bright: #0B0F17;
-  --accent-tint: #F4F5F7; --on-accent-tint: #0B0F17; --accent-soft: #F4F5F7; --accent-line: #858A94;
-  --teal: #0B0F17; --teal-hover: #25508B; --teal-text: #0B0F17; --brand: #0B0F17; --focus-ring: #25508B;
+  --btn-2nd-ink: #0F1217; --btn-2nd-border: #C5C8CF; --btn-2nd-border-hover: #0F1217; --btn-2nd-fill-hover: #F4F5F7;
+  --panel: #0F1217; --on-panel: #FFFFFF; --paper-on-dark: #FFFFFF;
+  --accent: #0F1217; --on-accent: #FFFFFF; --accent-on: #FFFFFF; --accent-ink: #FFFFFF;
+  --accent-text: #0F1217; --accent-dim: #0F1217; --accent-2: #0F1217; --accent-word: #0F1217; --accent-bright: #0F1217;
+  --accent-tint: #F4F5F7; --on-accent-tint: #0F1217; --accent-soft: #F4F5F7; --accent-line: #858A94;
+  --teal: #0F1217; --teal-hover: #25508B; --teal-text: #0F1217; --brand: #0F1217; --focus-ring: #25508B;
   --mist-teal: #F4F5F7; --mist-slate: #F4F5F7; --mist-stone: #F4F5F7;
-  --st-wait-fill: transparent; --st-wait-edge: #858A94; --st-wait-ink: #0B0F17;
-  --st-work-fill: #F4F5F7; --st-work-edge: #E6E8EC; --st-work-ink: #0B0F17;
-  --st-done-fill: #0B0F17; --st-done-edge: #0B0F17; --st-done-ink: #FFFFFF;
+  --st-wait-fill: transparent; --st-wait-edge: #858A94; --st-wait-ink: #0F1217;
+  --st-work-fill: #F4F5F7; --st-work-edge: #E6E8EC; --st-work-ink: #0F1217;
+  --st-done-fill: #0F1217; --st-done-edge: #0F1217; --st-done-ink: #FFFFFF;
   --st-rev-fill: #F4F5F7; --st-rev-edge: rgb(37 80 139 / .30); --st-rev-ink: #25508B;
-  --st-can-fill: #E6E8EC; --st-can-edge: #858A94; --st-can-ink: #0B0F17;
-  --signal: #F4F5F7; --signal-ink: #0B0F17; --verify: #0B0F17; --verify-ink: #FFFFFF;
+  --st-can-fill: #E6E8EC; --st-can-edge: #858A94; --st-can-ink: #0F1217;
+  --signal: #F4F5F7; --signal-ink: #0F1217; --verify: #0F1217; --verify-ink: #FFFFFF;
   --warn: #F4F5F7; --warn-ink: #25508B; --flag: #F4F5F7; --flag-ink: #25508B; --clay: #25508B; --clay-text: #25508B; --mist-clay: #F4F5F7;
-  --select-caret: url("/img/ui/keuzepijl-0b0f17.svg");
+  --select-caret: url("/img/ui/keuzepijl-0f1217.svg");
   --pt-r-kaart: var(--r-kaart); --pt-r: 22px;  /* kaart 24 rond (25 oktober 2026); was 28 met één zachte hoek */
   --r-pill: 999px;
-  background: #FFFFFF; color: #0B0F17; font-family: var(--h-letter); font-size: 1rem;
+  background: #FFFFFF; color: #0F1217; font-family: var(--h-letter); font-size: 1rem;
 }
 html body ::selection { background: #25508B; color: #FFFFFF; }
 /* Schema A (levering 62): een aangevinkt vakje is violet, zoals op de site (wat je kiest). */
 html body input[type="checkbox"], html body input[type="radio"] { accent-color: #25508B; }
 html body .bar { min-height: 68px; background: rgb(255 255 255 / .94); box-shadow: inset 0 -1px 0 #E6E8EC; }
-html body .mark { display: block; color: #0B0F17; line-height: 0; }
+html body .mark { display: block; color: #0F1217; line-height: 0; }
 html body .mark .woordmerk { display: block; height: 22px; width: auto; aspect-ratio: 4651.24 / 813.83; fill: currentColor; }
 html body .ref { font-size: .875rem; color: #636974; }
-html body h1 { font-weight: 500; font-size: 2.25rem; letter-spacing: -.025em; color: #0B0F17; }
+html body h1 { font-weight: 450; font-size: 2.25rem; letter-spacing: -.025em; color: #0F1217; }
 html body .lede { font-size: 1rem; color: #636974; }
 html body :is(.facts, .work, .rr, .folder, .nu, .herbestel) { border-color: #E6E8EC; border-radius: var(--r-kaart); }
 html body .work, html body .rr, html body .folder { padding: 1.5rem 1.6rem; }
-html body .work h2, html body .rr h2, html body .folder h2, html body .herbestel h2 { font-size: 1.125rem; font-weight: 600; color: #0B0F17; }
+html body .work h2, html body .rr h2, html body .folder h2, html body .herbestel h2 { font-size: 1.125rem; font-weight: 600; color: #0F1217; }
 /* De violette streep links was een gekleurde zijrand, en violet is voor een knop. */
 html body .nu { border-left: 1px solid #E6E8EC; padding: 1.4rem 1.6rem; }
-html body .nu-zin { font-size: 1.0625rem; color: #0B0F17; }
-html body .fact dt { font-size: .8125rem; font-weight: 500; letter-spacing: 0; text-transform: none; color: #636974; }
+html body .nu-zin { font-size: 1.0625rem; color: #0F1217; }
+html body .fact dt { font-size: .8125rem; font-weight: 450; letter-spacing: 0; text-transform: none; color: #636974; }
 html body .fact dt::first-letter { text-transform: uppercase; }
 html body .fact dd { font-size: 1rem; }
 html body .note { border-radius: var(--r-klein); border-color: #E6E8EC; }
 html body .btn { min-height: 42px; padding: 0 1.15rem; border-radius: var(--hoek-knop); font-family: var(--h-letter); font-weight: 600; font-size: .9375rem; }
-html body .btn-primary { background: #0B0F17; color: #FFFFFF; }
+html body .btn-primary { background: #0F1217; color: #FFFFFF; }
 html body .btn-primary:hover, html body .btn-primary:focus-visible { background: #25508B; }
 html body .pick { border-radius: var(--hoek-knop); }
 html body .shot img { border-radius: var(--r-klein); background: #F4F5F7; }
 html body textarea, html body input[type="text"], html body input[type="email"], html body input[type="tel"], html body select { border-color: #858A94; border-radius: 18px 3px 3px 3px; font-family: var(--h-letter); }
 html body .stand { border-radius: 11px 3px 3px 3px; font-family: var(--h-letter); font-weight: 600; }
-html body .pad .is-now .pad-stip { background: #0B0F17; }
+html body .pad .is-now .pad-stip { background: #0F1217; }
 html body .foot { color: #636974; }
 
 /* ── DOORLOOP 27 (15 oktober 2026) ──────────────────────────────────────────
@@ -1398,3 +1398,27 @@ html body .facts .stand { border-radius: 3px 3px 3px 8px; }
    inset-schaduw bovenaan). Met de 28 px van de kaarten boog die lijn aan beide uiteinden
    omlaag. Een lijn blijft recht. */
 html body .herbestel { border-radius: 0; }
+
+/* ══ LEVERING 82 · DE LETTER EN DE LUCHT VAN 80 OP DE PRIVÉLINK (2 november 2026) ═══════════════════════════
+   Lucas, 01:52: "Ja door met Studio en admin"; zijn keuzes: de letter van 80, alleen de paginakop in VISUAILS
+   Display in hoofdletters, en één stap ruimer op de 4 : 3-schaal (zoals Studio, src/styles/studio-hal.css).
+   DE LETTER: lopende tekst 370, wat 500 was 450 (in de regels zelf aangepast).
+   DE KOP ("Je bestelling"): Display Bold, hoofdletters, −0,01 em, regelafstand 0,92, gemeten op twee regels.
+   DE LUCHT: de zijmarge 24 → 28 (telefoon 16 → 21), boven de kop 28 → 38, tussen de blokken 24 → 28, de noot
+   onder de feiten 16 → 21, onderaan 48 → 67 (telefoon 40 → 51), de voet 32 → 38. Binnen een blok niets. */
+html body { font-weight: 370; }
+html body h1 { font-family: 'VISUAILS Display', var(--font); font-weight: 700; text-transform: uppercase; letter-spacing: -.01em; line-height: .92; text-wrap: balance; }
+/* De pagina's zonder bestelling ("We kunnen je bestelling nu niet bereiken"): gemeten past de langste op twee
+   regels tot 7,1 vw (320 px: 22,7). Daarom min(36 px, 7 vw); de bestelpagina zelf ("Je bestelling") blijft 36. */
+html body main.plain h1 { font-size: min(2.25rem, 7vw); }
+/* De zin onder de kop: met regelafstand 0,92 en zonder onderstokken kwam hij er bijna tegenaan (4,8 px). Zoals
+   in Studio (.st-lede): 8 px. */
+html body .head .lede { margin-top: .5rem; }
+html body .wrap { padding-left: 28px; padding-right: 28px; padding-bottom: 67px; }
+html body .head { padding-top: 38px; }
+html body .wrap > main > .tip { margin-bottom: 28px; }
+html body .wrap > main > * + .nu, html body .wrap > main > * + .afrond, html body .wrap > main > * + .facts,
+html body .wrap > main > * + .work, html body .wrap > main > * + .rr, html body .wrap > main > * + .folder { margin-top: 28px; }
+html body .wrap > main > * + .note { margin-top: 21px; }
+html body .foot { margin-top: 38px; }
+@media (max-width: 560px) { html body .wrap { padding-left: 21px; padding-right: 21px; padding-bottom: 51px; } }

@@ -2420,10 +2420,15 @@ function meldingen() {
     /* En met de stroom (één scroll, één sectie; HalOpening.astro) tot de laatste sectie ervan
        half voorbij is: daar vult elke sectie het scherm en zou de melding er linksonder overheen
        liggen. */
-    /* Levering 78: de opening is de tablet (HalTablet.astro). Met het scrolleffect (html.t-aan) pas
-       als het effect voorbij is: daarvoor vliegt de foto, en de melding zou er doorheen komen. */
-    const tablet = document.querySelector('[data-t-podium]');
-    if (tablet && document.documentElement.classList.contains('t-aan') && window.scrollY < tablet.offsetTop + tablet.offsetHeight - window.innerHeight) return false;
+    /* Levering 78 – 79: de opening met het scrolleffect (de laptop over de hele breedte,
+       HalLaptopBreed.astro; in 78 de tablet). Met het effect (html.lb-aan) pas als het voorbij is:
+       daarvoor vliegt de foto, en de melding zou er doorheen komen. */
+    const opening = document.querySelector('[data-lb-podium]');
+    if (opening && document.documentElement.classList.contains('lb-aan') && window.scrollY < opening.offsetTop + opening.offsetHeight - window.innerHeight) return false;
+    /* Levering 80: de opening in rust (HalOpening80.astro). Met het effect (html.o8-aan) pas als de laptop
+       uit beeld is: tot dan speelt daar de video en zou de melding erover komen. */
+    const o8 = document.querySelector('[data-o8-podium]');
+    if (o8 && document.documentElement.classList.contains('o8-aan') && o8.getBoundingClientRect().bottom > 0) return false;
     const stroomEind = document.querySelector('[data-o-stroom-eind]');
     if (stroomEind && stroomEind.getBoundingClientRect().bottom > window.innerHeight * 0.5) return false;
     for (const blok of document.querySelectorAll('section.h-proef')) {
@@ -2579,7 +2584,9 @@ function initWaDock() {
     const dock = document.querySelector('.wa-dock');
     const knop = dock && dock.querySelector('.wa-launcher');
     if (!dock || !knop) return;
-    if (!mq.matches) { dock.classList.remove('is-wacht', 'is-weg'); return; }
+    /* levering 83: alleen weghalen als ze er staan. remove() schrijft de klasse anders bij elke scroll opnieuw,
+       en dan rekent de browser de stijl van de knop elke keer opnieuw uit (gemeten in lijst 68). */
+    if (!mq.matches) { if (dock.classList.contains('is-wacht') || dock.classList.contains('is-weg')) dock.classList.remove('is-wacht', 'is-weg'); return; }
     dock.classList.toggle('is-wacht', (window.scrollY || 0) < window.innerHeight);
     const cs = getComputedStyle(knop);
     const w = knop.offsetWidth || 52, h = knop.offsetHeight || 52;

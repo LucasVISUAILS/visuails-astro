@@ -1,0 +1,98 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   DE OPENING IN RUST — levering 80, 1 november 2026 (HalOpening80.astro)
+   ═══════════════════════════════════════════════════════════════════════════════
+   Lucas, 17:05: "eerst groot tekst van wat VISUAILS is en daaronder al licht de laptop in beeld,
+   misschien met een uitgeknipt model bij de tekst-only sectie." Alle maten uit docs/RUST-80.md.
+
+   DE MATEN (computer, ≥ 1100 px; de css rekent ze uit, geen script):
+   - de balk 56 px; de marge m = max(20, min(8,333 vw, 160), (100vw − 1280) / 2)
+   - het vlak van de laptop steekt P het eerste scherm in: P = 28 + 7,576 vw + clamp(56, 14 svh, 150).
+     28 px boven de foto, 7,576 vw is de strook boven de klep (.1786 van de foto, die 42,42 vw hoog is),
+     en de rest is hoeveel klep je ziet (op 1440 × 900: 126 px, op 1366 × 657: 92 px)
+   - geen model (lijst 64, Lucas: "Voor nu nog geen model op deze sectie … waarbij alles mooi gecentreerd
+     staat"): de tekst staat in het midden, zoals zijn voorbeeld.
+   - de titel: f = min(104, 7,22 vw, wat in de hoogte past (100svh − P − 340) / 1,84, de breedte tussen de
+     marges / w), met w de breedste regel in em (NL "ZOALS JIJ HEM ZIET." 8,94; EN "AS YOU SEE IT." 6,52).
+     Op 1440 × 900: 104 px. Nooit kleiner dan 40.
+   - het vlak: de Nevel-fade (#D0D8E9 → #E6EAF4 → de grond), de zachte hoek linksboven 40 px.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.o8 {
+  --o8-balk: 56px;
+  --o8-m: max(20px, min(8.333vw, 160px), calc((100vw - 1280px) / 2));
+  --o8-P: calc(28px + 7.576vw + clamp(56px, 14svh, 150px));
+  --o8-w: 8.94;
+  --o8-f: clamp(40px, min(7.22vw, calc((100svh - var(--o8-P) - 340px) / 1.84), calc((100vw - 2 * var(--o8-m)) / var(--o8-w))), 104px);
+  position: relative;
+}
+html[lang="en"] .o8 { --o8-w: 6.52; }
+
+/* ── het eerste scherm: de titel, de zin, de knoppen en het model ───────── */
+.o8-held { position: relative; z-index: 1; height: calc(100svh - var(--o8-P)); min-height: 360px; }
+.o8-tekst { position: absolute; z-index: 2; left: var(--o8-m); right: var(--o8-m); top: var(--o8-balk); bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 0; padding-bottom: 20px; }
+.o8 .o8-kop.h-kop { margin: 0; font: 700 var(--o8-f)/.92 var(--h-kopletter); letter-spacing: -.01em; text-transform: uppercase; white-space: nowrap; text-wrap: nowrap; color: var(--h-inkt); }
+.o8-kop .o8-r { display: block; }
+.o8 .o8-zin { --h-maat: 20em; margin: 26px 0 0; max-width: 20em; font: 370 clamp(17px, 1.32vw, 19px)/1.5 var(--h-letter); color: var(--h-inkt); text-wrap: pretty; }
+/* de feiten onder de knoppen: klein, grijs (5,15 : 1 op de grond), met een schuine streep ertussen */
+.o8 .o8-feiten { margin: 22px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 0; font: 500 14px/1.4 var(--h-letter); color: var(--h-grijs, #636974); }
+.o8 .o8-feiten li { display: inline; max-width: none !important; }
+.o8 .o8-feiten li + li::before { content: ""; display: inline-block; vertical-align: -1px; width: 1.5px; height: 12px; margin: 0 12px; background: currentColor; opacity: .55; transform: skewX(-37deg); }
+.o8 .o8-feiten b { font-weight: 600; color: var(--h-inkt); }
+.o8 .o8-acties { margin: 34px 0 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px 26px; }
+.o8 .o8-acties .h-link { font: 500 16px/1.3 var(--h-letter); }
+
+/* ── het vlak met de laptop ─────────────────────────────────────────────── */
+.o8-podium { position: relative; z-index: 2; padding: 28px 0 40px; }
+.o8-vlak { position: absolute; inset: 0; z-index: 0; border-radius: 40px 0 0 0; background: linear-gradient(180deg, #D0D8E9 0%, #E6EAF4 38%, var(--h-grond, #FBFCFF) 100%); }
+.o8-foto { position: relative; z-index: 1; width: 100%; aspect-ratio: 2944 / 1248; }
+.o8-foto > picture { display: contents; }
+.o8-beeld { position: absolute; inset: 0; z-index: 2; display: block; width: 100%; height: 100%; max-width: none; pointer-events: none; }
+/* de schermen in beeld 0: ónder de foto, in perspectief op de hoeken uit de video (matrix3d) */
+.o8-sc { position: absolute; left: 0; top: 0; z-index: 1; transform-origin: 0 0; overflow: hidden; background: #FAFAFA; }
+.o8-sc picture, .o8-sc img { display: block; width: 100%; height: 100%; max-width: none; object-fit: cover; }
+.o8-sc picture.o8-st { position: absolute; inset: 0; opacity: 0; transition: opacity .45s cubic-bezier(.16, 1, .3, 1); }
+.o8-sc picture.o8-st.is-nu { opacity: 1; }
+.o8-fon { background: #9A9894; }
+.o8-doek { position: absolute; inset: 0; z-index: 3; width: 100%; height: 100%; display: block; pointer-events: none; }
+.o8-doek[hidden] { display: none; }
+/* de video speelt: de stilstaande foto en de schermen zijn weg, het doek tekent alles */
+.o8.o8-speelt .o8-beeld, .o8.o8-speelt .o8-sc { visibility: hidden; }
+/* terug naar boven na de video: de laptop komt weer (in één keer, zacht) */
+.o8.o8-terug .o8-foto { animation: o8-terug .6s cubic-bezier(.16, 1, .3, 1) both; }
+@keyframes o8-terug { from { opacity: 0; transform: translateY(14px); } }
+.o8.o8-weg .o8-beeld, .o8.o8-weg .o8-sc { visibility: hidden; }
+
+/* de stand onder de laptop: de naam, de streep en de pauzeknop */
+.o8-stand { position: relative; z-index: 2; margin: 18px var(--o8-m) 0; display: flex; align-items: center; gap: 14px; }
+.o8-stand-naam { display: grid; grid-template-columns: auto; gap: 6px; margin: 0; font: 500 14px/1.2 var(--h-letter); color: var(--h-inkt); }
+.o8-stand-streep { position: relative; display: block; width: 96px; height: 2px; background: var(--h-lijn, #E6E8EC); overflow: hidden; }
+.o8-stand-streep i { position: absolute; inset: 0; background: var(--h-inkt); transform-origin: 0 50%; transform: scaleX(0); }
+.o8-stand-streep i.is-aan { animation: o8-klok linear forwards; animation-play-state: paused; }
+.o8.o8-loopt .o8-stand-streep i.is-aan { animation-play-state: running; }
+@keyframes o8-klok { to { transform: scaleX(1); } }
+.o8-pauze .o8-p-aan { display: none; }
+.o8-pauze[aria-pressed="true"] .o8-p-aan { display: block; }
+.o8-pauze[aria-pressed="true"] .o8-p-uit { display: none; }
+
+/* het vlagje dat vult terwijl de video laadt (alleen als je sneller scrolt dan hij binnenkomt) */
+.o8-laden { position: absolute; z-index: 4; left: 50%; top: 46%; width: 44px; height: 51px; transform: translate(-50%, -50%); pointer-events: none; }
+.o8-laden[hidden] { display: none; }
+.o8-laden svg { width: 100%; height: 100%; overflow: visible; }
+
+/* ── tot 1100 px: alles onder elkaar, geen scrolleffect ──────────────────── */
+@media (max-width: 1099.98px) {
+  .o8 { --o8-balk: 52px; --o8-m: 20px; }
+  .o8-held { height: auto; min-height: 0; padding: calc(var(--o8-balk) + 32px) var(--o8-m) 0; display: grid; }
+  .o8-tekst { position: relative; left: auto; right: auto; top: auto; bottom: auto; padding: 0; }
+  .o8 .o8-kop.h-kop { --o8-f: clamp(30px, calc((100vw - 40px) / var(--o8-w)), 76px); }
+  .o8-held { padding-bottom: 40px; }
+  .o8 .o8-zin { font-size: 17px; }
+  .o8-podium { padding-top: 24px; }
+}
+@media (max-width: 900px) {
+  .o8-foto { width: 160%; margin-left: -40.4%; }
+  .o8-podium { overflow-x: clip; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .o8-sc picture.o8-st { transition: none; }
+  .o8.o8-terug .o8-foto { animation: none; }
+}

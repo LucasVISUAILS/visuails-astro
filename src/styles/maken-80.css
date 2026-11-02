@@ -1,0 +1,61 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   WAT WE MAKEN — levering 80, 1 november 2026 (HalMaken80.astro)
+   ═══════════════════════════════════════════════════════════════════════════════
+   DE MATEN (docs/RUST-80.md):
+   - de kop in hoofdletters zoals de galerij, clamp(32, 4,44 vw, 64), de zin eronder 370 in grijs;
+   - drie kolommen tussen de marges (hoogstens 1280), 24 px ertussen; de producten op één lijn, de rij
+     h = clamp(150, min(21 vw, 32 svh), 320) hoog; elk product h × --s (even zwaar, gemeten);
+   - de naam 20 px 450 in inkt, de prijs 15 px 370 in grijs (5,3 : 1 op de grond);
+   - de lucht boven clamp(72, 8,3 vw, 120), onder clamp(64, 7,5 vw, 108): op 1440 × 900 past de hele sectie
+     onder de balk, met de regel wat één product kost erbij (afvinklijst 5)
+     (120 + 59 + 44 + 64 + 288 + 70 + 36 + 22 + 10 + 20 + 108 = 841 < 844).
+   - de pijl springt onder de muis in twee stappen uit elkaar (schacht en kop), zoals op de knoppen: niets glijdt.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.m8.m8 {
+  --m8-m: var(--r8-m, max(20px, min(8.333vw, 160px), calc((100vw - 1280px) / 2)));
+  --m8-h: clamp(150px, min(21vw, 32svh), 320px);
+  position: relative; padding: clamp(72px, 8.3vw, 120px) var(--m8-m) clamp(64px, 7.5vw, 108px);
+}
+.m8-kopgroep { text-align: center; display: flex; flex-direction: column; align-items: center; }
+.m8 .m8-kop.h-kop { margin: 0; font: 700 clamp(32px, 4.44vw, 64px)/.92 var(--h-kopletter); letter-spacing: -.01em; text-transform: uppercase; color: var(--h-inkt); text-wrap: balance; }
+.m8 .m8-zin { --h-maat: 26em; margin: 18px 0 0; max-width: 26em; font: 370 clamp(16px, 1.25vw, 18px)/1.5 var(--h-letter); color: var(--h-grijs, #636974); text-wrap: pretty; }
+
+.m8-rij { margin: 64px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.m8-dienst { margin: 0; padding: 0; min-width: 0; }
+.m8 .m8-link { display: flex; flex-direction: column; align-items: center; text-align: center; color: var(--h-inkt); text-decoration: none; border-radius: 3px; }
+/* het product: onderaan op de lijn, zo hoog als de rij × zijn schaal */
+.m8-beeld { display: flex; align-items: flex-end; justify-content: center; width: 100%; height: var(--m8-h); }
+.m8-beeld > picture { display: contents; }
+.m8-beeld img { display: block; height: calc(var(--m8-h) * var(--s, 1)); width: auto; max-width: 100%; object-fit: contain; object-position: 50% 100%; }
+.m8 .m8-naam { margin-top: 26px; display: inline-flex; align-items: center; gap: 8px; font: 450 20px/1.2 var(--h-letter); color: var(--h-inkt); }
+.m8-pijl { display: inline-flex; font-size: 16px; }
+.m8 .m8-pijl .ik-schacht, .m8 .m8-pijl .ik-kop { transition: translate .16s steps(2, end); }
+.m8-pijl svg { width: 1em; height: 1em; }
+.m8 .m8-prijs { margin-top: 6px; font: 370 15px/1.4 var(--h-letter); color: var(--h-grijs, #636974); }
+.m8 .m8-link:hover .m8-naam { color: var(--h-blauw, #25508B); }
+.m8 .m8-link:hover .m8-pijl .ik-schacht { translate: -2.4px 0; }
+.m8 .m8-link:hover .m8-pijl .ik-kop { translate: 3.6px 0; }
+.m8 .m8-link:focus-visible { outline: 2px solid var(--h-blauw, #25508B); outline-offset: 6px; }
+
+/* wat er verder is: één regel, klein, met de schuine streep ertussen */
+.m8 .m8-ook { --h-maat: none; margin: 36px auto 0; max-width: none; display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 6px 0; font: 370 15px/1.5 var(--h-letter); color: var(--h-grijs, #636974); }
+.m8-ook-kop { margin-right: 14px; font: 500 11.5px/1 var(--h-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--h-grijs, #636974); }
+.m8 .m8-ook a { color: var(--h-inkt); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, var(--h-inkt) 32%, transparent); }
+.m8 .m8-ook a:hover { color: var(--h-blauw, #25508B); text-decoration-color: currentColor; }
+/* wat één product kost: één regel eronder, nog kleiner (13 px, grijs 5,3 : 1) */
+.m8 .m8-regel.h-onderregel { --h-maat: none; display: block; margin: 10px auto 0; max-width: none; text-align: center; font: 370 13px/1.5 var(--h-letter); color: var(--h-grijs, #636974); }
+.m8 .m8-ook a + a::before { content: ""; display: inline-block; vertical-align: -1px; width: 1.5px; height: 12px; margin: 0 12px; background: var(--h-grijs, #636974); opacity: .55; transform: skewX(-37deg); }
+
+@media (max-width: 700px) {
+  .m8.m8 { --m8-h: clamp(110px, 30vw, 160px); }
+  .m8-rij { gap: 12px; margin-top: 36px; }
+  .m8 .m8-naam { margin-top: 16px; font-size: 15px; gap: 5px; }
+  .m8-pijl { font-size: 13px; }
+  .m8 .m8-prijs { font-size: 12.5px; }
+  .m8 .m8-ook { margin-top: 32px; font-size: 14px; }
+  .m8 .m8-regel.h-onderregel { max-width: 30ch; font-size: 12.5px; text-wrap: balance; }
+  .m8-ook-kop { flex-basis: 100%; margin: 0 0 6px; text-align: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .m8 .m8-pijl .ik-schacht, .m8 .m8-pijl .ik-kop { transition: none; }
+}

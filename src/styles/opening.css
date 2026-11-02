@@ -84,7 +84,7 @@ html[lang="en"] .o-toneel { --o-th: 125px; }
    vierhoek in beeld 0; de still ligt erboven en dekt de rand af */
 .o-podium:not(.o-gezet) .o-sc { left: var(--o-x); top: var(--o-y); width: var(--o-b); height: var(--o-h); transform: none !important; }
 /* het scherm wordt donker met de hoek van de klep: een laag inkt, dekking per beeld */
-.o-donker { position: absolute; inset: 0; background: var(--h-inkt, #0B0F17); opacity: 0; }
+.o-donker { position: absolute; inset: 0; background: var(--h-inkt, #0F1217); opacity: 0; }
 .o-beeld > picture { display: contents; }
 .o-still, .o-doek { position: absolute; left: 0; top: 0; width: 100%; height: 100%; max-width: none; display: block; }
 .o-doek { visibility: hidden; }
@@ -107,7 +107,7 @@ html[lang="en"] .o-kop { font-size: clamp(28px, calc(var(--o-tw) / 17.73), 56.89
 /* margin 0: de algemene regel "kop + blok" (global.css, --gap-head-block) zette hier 32 px boven */
 .o-tekst > .o-rij { margin: 0; }
 .o-rij { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 32px; }
-.o-podium .o-lede { flex: 1 1 360px; max-width: 34em; margin: 0; font: 500 18px/1.45 var(--h-letter); color: var(--h-inkt-2, #0B0F17); --h-maat: 34em; text-wrap: balance; }
+.o-podium .o-lede { flex: 1 1 360px; max-width: 34em; margin: 0; font: 500 18px/1.45 var(--h-letter); color: var(--h-inkt-2, #0F1217); --h-maat: 34em; text-wrap: balance; }
 
 /* de standen: naam en teller, de streep (de klok), vorige en volgende, pauze. Zichtbaar zodra
    het script draait (html.h-js); zonder script doen de knoppen niets. visibility en geen
@@ -117,7 +117,7 @@ html.h-js .o-stand { visibility: visible; }
 .o-stand-naam { display: grid; grid-template-columns: minmax(0, auto) auto; align-items: baseline; column-gap: 12px; row-gap: 8px; min-width: 0; margin: 0 8px 0 0; }
 .o-stand-naam b { min-width: 0; overflow: hidden; text-overflow: ellipsis; font: 600 13.5px/1.15 var(--h-letter); color: var(--h-inkt); white-space: nowrap; }
 .o-stand-teller { justify-self: end; font: 600 12.5px/1 var(--h-letter); color: var(--h-grijs, #636974); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.o-stand-streep { grid-column: 1 / -1; position: relative; height: 2px; border-radius: 2px; background: rgba(11, 15, 23, .12); overflow: hidden; }
+.o-stand-streep { grid-column: 1 / -1; position: relative; height: 2px; border-radius: 2px; background: rgba(15, 18, 23, .12); overflow: hidden; }
 .o-stand-streep i { position: absolute; inset: 0; border-radius: 2px; background: var(--h-inkt); transform-origin: 0 50%; transform: scaleX(0); }
 .o-stand-streep i.is-aan { animation: h-streep linear both; animation-play-state: paused; }
 .o-loopt .o-stand-streep i.is-aan { animation-play-state: running; }
@@ -164,7 +164,7 @@ html.h-js .o-stand { visibility: visible; }
    echo, dun en verschoven (de ontwerptaal). Dan even alleen wit, en dezelfde snede legt het
    label en de kop van Hoe het werkt bloot, van links naar rechts. Het script zet de clip-path
    per beeld (HalOpening.astro, snij()); zonder het podium (telefoon, minder beweging) niets. */
-.o-mes { position: absolute; left: 0; top: 0; z-index: 3; display: none; pointer-events: none; background: var(--h-inkt, #0B0F17);
+.o-mes { position: absolute; left: 0; top: 0; z-index: 3; display: none; pointer-events: none; background: var(--h-inkt, #0F1217);
   clip-path: polygon(calc(100% - 2px) 0, 100% 0, 2px 100%, 0 100%); will-change: transform, opacity; }
 .o-aan .o-mes { display: block; opacity: 0; }
 .o-hoe-titel { position: relative; }
@@ -276,7 +276,7 @@ html body.hal.hal .o-hoe .o-ontleed { position: absolute; left: 0; right: 0; bot
 .o-ont-vlak { background: #EFEFEF; }
 .o-ont-laag .o-ont-donker { opacity: .2; transform: translateY(.5%); filter: brightness(0) blur(2.5px); }
 /* de rand van elke laag, alleen als ze uit elkaar liggen (vlak is het één beeld) */
-.o-ont-laag::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 0 1px rgba(11, 15, 23, .16); opacity: 0; pointer-events: none; }
+.o-ont-laag::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 0 1px rgba(15, 18, 23, .16); opacity: 0; pointer-events: none; }
 .o-ont-los::after { display: none; }
 .o-ont-schaduw::before { content: ""; position: absolute; inset: 0; background: repeating-conic-gradient(#E6E8EC 0% 25%, #FFFFFF 0% 50%) 50% / 12px 12px; opacity: 0; }
 /* de gloed om het product: blauw uur, langs de vorm van de broek (drop-shadow volgt de uitsnede) */
@@ -429,7 +429,7 @@ html.h-js body.hal.hal .o-hoe .h-stap:not(.is-in) .h-stuur-v i,
 html.h-js body.hal.hal .o-hoe[data-uitleg-staat]:not(.u-s1) .h-stuur-v i,
 html body.hal.hal .o-hoe[data-uitleg-staat]:not(.u-s2) .h-lagen li > i { color: var(--h-lijn-sterk, #C5C8CF); }
 html body.hal.hal .o-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-lagen li > i { animation-name: o-vink; }
-@keyframes o-vink { from { transform: scale(.55); color: #C5C8CF; } to { transform: none; color: #0B0F17; } }
+@keyframes o-vink { from { transform: scale(.55); color: #C5C8CF; } to { transform: none; color: #0F1217; } }
 
 /* ── op de telefoon: één blok dat van 01 naar 02 naar 03 gaat ─────────────────────────
    Lucas (16:42): "Op telefoon wil ik dat de animatie 1 blok blijft en van 01 naar 02 naar 03

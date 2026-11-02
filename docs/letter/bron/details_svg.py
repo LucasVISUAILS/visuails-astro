@@ -1,5 +1,6 @@
 """De drie details als tekening met maten, uit de echte omtrekken van VISUAILS Display Bold en DM Sans 40pt Bold.
-Elke maat wordt uit de letter gemeten, niet ingetikt."""
+Elke maat wordt uit de letter gemeten, niet ingetikt. Sinds levering 80 (1 november 2026, lijst 65) een vierde
+tekening: de hoofdletters, met de snede en de zachte hoek op de E."""
 import math
 from fontTools.ttLib import TTFont
 from fontTools.pens.svgPathPen import SVGPathPen
@@ -121,12 +122,37 @@ def maak(nieuw_pad, oud_pad):
 <text x="{ax + hr + 8 - X0:.1f}" y="{Y1 - ay - 10:.1f}" class="d-tekst">53,13°</text>
 <text x="{20:.1f}" y="{H - 24:.1f}" class="d-tekst">gat: {opp_nieuw / opp_oud * 100:.0f} % van DM Sans</text>
 </svg>'''
+    # ── 4. de hoofdletters: de snede en de zachte hoek op de E (levering 80) ────────────────────
+    v = staande(of, 'E'); ex, ey1, ey2 = max((s for s in v if s[1] > 400), key=lambda s: s[0])
+    eh = ey2 - ey1; ed = T * eh
+    stam = min(s for s in staande(of, 'E') if s[2] - s[1] > 400)
+    sx, kap = stam[0], stam[2]
+    nco, _e, nfl = nf['glyf']['E'].getCoordinates(nf['glyf'])
+    hoek_eind = min((p for p, fl in zip(nco, nfl) if fl & 1 and abs(p[1] - kap) < 1), key=lambda p: p[0])   # waar de bocht de bovenkant raakt (op de lijn, geen stuurpunt)
+    R = hoek_eind[0] - sx
+    X0, X1, Y0, Y1 = -60, 900, 290, 790      # breed: de maat van de snede staat rechts naast de arm
+    W, H = X1 - X0, Y1 - Y0
+    def P(px, py): return f'{px - X0:.1f},{Y1 - py:.1f}'
+    cx, cy = sx + R, kap - R
+    import math as _m
+    rx, ry = cx - R * _m.cos(_m.radians(45)), cy + R * _m.sin(_m.radians(45))
+    svgs['kap'] = f'''<svg viewBox="0 0 {W} {H}" role="img" aria-labelledby="t-kap"><title id="t-kap">De E met de twee details van de hoofdletters: linksboven een zachte hoek met een straal van {R:.0f} eenheden, rechts op de bovenarm de snede, {ed:.0f} eenheden schuin op een arm van {eh:.0f}.</title>
+<g transform="translate({-X0},{Y1}) scale(1,-1)"><path d="{pad(og, 'E')}" class="d-oud"/><path d="{pad(ng, 'E')}" class="d-letter"/></g>
+<path d="M{P(ex, ey2)} L{P(ex, ey1)} L{P(ex - ed, ey1)}" class="d-weg"/>
+<path d="M{P(ex + 40, ey1)} L{P(ex + 40, ey2)} M{P(ex + 30, ey1)} L{P(ex + 50, ey1)} M{P(ex + 30, ey2)} L{P(ex + 50, ey2)}" class="d-maat"/>
+<text x="{ex + 60 - X0:.1f}" y="{Y1 - (ey1 + ey2) / 2 + 9:.1f}" class="d-tekst">{eh:.0f}</text>
+<path d="M{P(ex - ed, ey1 - 40)} L{P(ex, ey1 - 40)} M{P(ex - ed, ey1 - 30)} L{P(ex - ed, ey1 - 50)} M{P(ex, ey1 - 30)} L{P(ex, ey1 - 50)}" class="d-maat"/>
+<text x="{ex + 16 - X0:.1f}" y="{Y1 - (ey1 - 40) + 9:.1f}" class="d-tekst">{ed:.0f} = 0,75 × {eh:.0f}</text>
+<path d="M{P(sx, kap)} L{P(sx + R, kap)} M{P(sx, kap)} L{P(sx, kap - R)}" class="d-weg"/>
+<path d="M{P(cx, cy)} L{P(rx, ry)}" class="d-maat d-op-inkt"/>
+<text x="{sx + R + 14 - X0:.1f}" y="{Y1 - kap - 22:.1f}" class="d-tekst">R {R:.0f} = 0,247 × {kap:.0f}</text>
+</svg>'''
     maten = {'snede_h': round(h), 'snede_d': round(d), 'punt_zijde': round(zijde), 'stam': round(sr - sl),
-             'gat_pct': round(opp_nieuw / opp_oud * 100)}
+             'gat_pct': round(opp_nieuw / opp_oud * 100), 'kap_h': round(eh), 'kap_d': round(ed), 'kap_r': round(R)}
     return svgs, maten
 
 
 if __name__ == '__main__':
     import sys
     s, m = maak(sys.argv[1], sys.argv[2]); print(m)
-    open(sys.argv[3], 'w').write('<meta charset=utf-8><style>svg{width:420px;border:1px solid #ddd;margin:8px} .d-oud{fill:none;stroke:#C5C8CF;stroke-width:3;stroke-dasharray:10 8} .d-letter{fill:#0B0F17} .d-weg{fill:none;stroke:#858A94;stroke-width:3;stroke-dasharray:8 6} .d-maat{fill:none;stroke:#636974;stroke-width:2.5} .d-op-inkt{stroke:#fff} .d-tekst{font:600 26px monospace;fill:#636974}</style>' + ''.join(s.values()))
+    open(sys.argv[3], 'w').write('<meta charset=utf-8><style>svg{width:420px;border:1px solid #ddd;margin:8px} .d-oud{fill:none;stroke:#C5C8CF;stroke-width:3;stroke-dasharray:10 8} .d-letter{fill:#0F1217} .d-weg{fill:none;stroke:#858A94;stroke-width:3;stroke-dasharray:8 6} .d-maat{fill:none;stroke:#636974;stroke-width:2.5} .d-op-inkt{stroke:#fff} .d-tekst{font:600 26px monospace;fill:#636974}</style>' + ''.join(s.values()))

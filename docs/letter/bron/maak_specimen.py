@@ -66,7 +66,8 @@ vervang = {'/*@LETTERS@*/': '\n'.join(css), '/*@TEKENS@*/': json.dumps(tekens, e
            '/*@MATEN@*/': json.dumps(maten), '/*@BESTANDEN@*/': json.dumps(bestanden, ensure_ascii=False),
            '@AANTAL@': str(len(tekens)), '@MET_DETAIL@': str(sum(1 for x in tekens if x[4])),
            '@SNEDE@': svgs['snede'], '@PUNT@': svgs['punt'], '@GAT@': svgs['gat'],
-           '@SNEDE_D@': str(dm['snede_d']), '@SNEDE_H@': str(dm['snede_h'])}
+           '@SNEDE_D@': str(dm['snede_d']), '@SNEDE_H@': str(dm['snede_h']),
+           '@KAP@': svgs['kap'], '@KAP_D@': str(dm['kap_d']), '@KAP_H@': str(dm['kap_h']), '@KAP_R@': str(dm['kap_r'])}
 for k, v in vervang.items():
     if k not in t:
         raise SystemExit('ontbreekt in de bron: ' + k)

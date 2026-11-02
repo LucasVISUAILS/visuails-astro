@@ -1,0 +1,63 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   DE GALERIJ — levering 80, 1 november 2026 (HalGalerij80.astro, src/scripts/galerij80.js)
+   ═══════════════════════════════════════════════════════════════════════════════
+   DE MATEN (docs/RUST-80.md):
+   - de kop in hoofdletters, gecentreerd: f = clamp(32, 4,44 vw, 64) (64 = 48 × 4/3, een stap op de schaal);
+     de zin eronder 370, zoals de opening;
+   - de rijhoogte h = clamp(170, min(22 vw, 30 svh), 330): op 1440 × 900 270 px, twee rijen en de kop passen
+     samen in één scherm onder de balk (56 + 140 + 48 + 2 × 270 + 12 = 796 < 900);
+   - 12 px tussen de beelden en tussen de rijen; elk beeld één zachte hoek linksboven (14 px), verder 3 px;
+   - lucht boven: gewoon (213 op 1440), zoals tussen de andere secties.
+   (.g8.g8: anders wint .h-pagina section { padding-block: 0 } uit global.css)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.g8.g8 {
+  --g8-h: clamp(170px, min(22vw, 30svh), 330px);
+  --g8-gat: 12px;
+  --g8-m: var(--r8-m, max(20px, min(8.333vw, 160px), calc((100vw - 1280px) / 2)));
+  position: relative;
+  padding: clamp(120px, 14.8vw, 213px) 0 clamp(90px, 11.1vw, 160px);
+}
+.g8-kopgroep { margin: 0 var(--g8-m); text-align: center; display: flex; flex-direction: column; align-items: center; }
+.g8 .g8-kop.h-kop { margin: 0; font: 700 clamp(32px, 4.44vw, 64px)/.92 var(--h-kopletter); letter-spacing: -.01em; text-transform: uppercase; color: var(--h-inkt); text-wrap: balance; }
+.g8 .g8-zin { --h-maat: 26em; margin: 18px 0 0; max-width: 26em; font: 370 clamp(16px, 1.25vw, 18px)/1.5 var(--h-letter); color: var(--h-grijs, #636974); text-wrap: pretty; }
+
+.g8-rijen { margin-top: 48px; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--g8-gat); }
+/* een rij: over de hele breedte; zonder script een rij om zelf opzij te scrollen */
+.g8-rij { position: relative; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; overscroll-behavior-x: contain; padding: 0 var(--g8-m); scroll-padding: 0 var(--g8-m); }
+.g8-rij::-webkit-scrollbar { display: none; }
+.g8-baan { display: flex; gap: var(--g8-gat); width: max-content; margin: 0; padding: 0; }
+.g8-tegel[data-g8-kopie] { display: none; }
+
+/* met het script: de rij is een venster, de baan schuift (transform, op de grafische kaart) */
+.g8.g8-aan .g8-rij { overflow: clip; padding: 0; touch-action: pan-y; cursor: grab; }
+.g8.g8-aan .g8-rij.is-slepen { cursor: grabbing; }
+.g8.g8-aan .g8-baan { will-change: transform; transform: translate3d(0, 0, 0); }
+.g8.g8-aan .g8-tegel[data-g8-kopie] { display: block; }
+
+/* een tegel is een beeld, geen knop: rond aan alle vier de hoeken (de hoekregel van 25 oktober, --r-klein 12) */
+.g8-tegel { position: relative; flex: none; display: block; height: var(--g8-h); width: calc(var(--g8-h) * var(--a)); overflow: hidden; border-radius: var(--r-klein, 12px); background: #F0F1F6; color: var(--h-inkt); -webkit-user-drag: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+.g8-tegel > picture:first-child { display: block; width: 100%; height: 100%; }
+.g8-tegel img { display: block; width: 100%; height: 100%; max-width: none; object-fit: cover; pointer-events: none; }
+/* de veeg: dezelfde foto, horizontaal onscherp; zijn dekking volgt de vaart van de rij (--g8-veeg) */
+.g8-tegel .g8-veeg { position: absolute; inset: 0; opacity: var(--g8-veeg, 0); }
+.g8-tegel:focus-visible { outline: 2px solid var(--h-blauw, #25508B); outline-offset: 3px; }
+
+/* de naam van de look: een wit plaatje linksonder, onder de muis of met de toets. 14 px van de rand, dus los van de
+   ronde hoek van de tegel: het houdt zijn eigen zachte hoek. Het springt aan (twee stappen), het glijdt niet. */
+.g8-naam { position: absolute; left: 14px; bottom: 14px; z-index: 2; display: inline-flex; align-items: center; gap: 8px; padding: 7px 10px 7px 11px; border-radius: 8px 3px 3px 3px; background: #FBFCFF; font: 600 11.5px/1 var(--h-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--h-inkt); opacity: 0; transition: opacity .16s steps(2, end); pointer-events: none; white-space: nowrap; }
+.g8-naam span { color: var(--h-grijs, #636974); font-weight: 500; }
+.g8-tegel:hover .g8-naam, .g8-tegel:focus-visible .g8-naam { opacity: 1; }
+/* in de vaart geen naam: hij zou meeveegen */
+.g8.is-vaart .g8-naam { opacity: 0 !important; }
+@media (hover: none) {
+  .g8-naam { opacity: 1; padding: 6px 8px 6px 9px; font-size: 11.5px; }
+  .g8-naam span { display: none; }
+}
+
+@media (max-width: 700px) {
+  .g8 { --g8-gat: 8px; }
+  .g8-rijen { margin-top: 32px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .g8-naam { transition: none; }
+}

@@ -117,7 +117,11 @@ for (const f of globSync('**/*.html', { cwd: DIST }).map((x) => x.replace(/\\/g,
 }
 const lookKeer = [...looks.values()].reduce((a, b) => a + b, 0);
 check(`lookpagina's: srcset met de -w760 (en de telefoonversie) en een AVIF-bron (${lookKeer} keer, ${looks.size} pagina's)`, lookKeer > 0 && fout2b.length === 0 ? [] : fout2b.length ? fout2b : ['geen enkele'], []);
-check('elke foto in de lijst staat ook echt op een pagina', FOTOS.filter((s) => ![...paginas.values()].some((v) => v.has(s))), []);
+/* Levering 80 (1 november 2026): lifestyle-phone-made-11 stond op de voorpagina (Kies een look, cover op 390);
+   de galerij van 80 heeft zijn eigen uitsneden (public/img/hal/rust/galerij-*). De telefoonversie blijft staan voor
+   als hij terugkomt; op /lifestyle staat hij als lookbeeld (-w760). */
+const RUST80 = new Set(['/img/lifestyle-phone-made-11.webp']);
+check('elke foto in de lijst staat ook echt op een pagina', FOTOS.filter((s) => !RUST80.has(s) && ![...paginas.values()].some((v) => v.has(s))), []);
 
 /* ── 3 · in een browser ───────────────────────────────────────────────────── */
 console.log('\nin een browser');

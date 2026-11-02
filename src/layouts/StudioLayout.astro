@@ -134,6 +134,9 @@ const metParam = (k, v) => {
       stylesheet (public/feedback.css, gedeeld met het klantportaal). Op tokens,
       dus hij kleurt mee met licht en donker. */}
   <link rel="stylesheet" href="/feedback.css">
+  {/* Levering 82: de paginakop staat in VISUAILS Display (studio-hal.css); vooraf laden, zodat hij niet
+      verspringt als de letter binnenkomt. Alleen in de hal, want alleen daar staat de kop in die letter. */}
+  {hal && <link rel="preload" as="font" type="font/woff2" href="/fonts/visuails-display/VISUAILSDisplay-Bold.woff2" crossorigin="anonymous" />}
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 </head>

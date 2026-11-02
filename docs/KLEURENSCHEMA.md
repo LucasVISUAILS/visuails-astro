@@ -1,6 +1,8 @@
 # VISUAILS — kleurenschema
 
-**Stand: 27 oktober 2026 (levering 78): de balk rechthoekig over de hele breedte, wit met een haarlijn, zonder glas; de tweede toon van een kop in inkt, met af en toe een gloed in blauw uur (zie "De gloed op de tweede toon"). Schema Blauw uur, overal (levering 68). Levering 75 (26 oktober): de balk als zwevende pil van licht glas, en E1 (de snede) vervallen. Levering 76 (26 oktober): de pil doorzichtiger, zonder rand, licht getint. De hoeken, glas en gloed,
+**Stand: 1 november 2026 (levering 80): de vijf kleuren uit Lucas' voorbeeld, in Blauw uur gezet: Inkt `#0F1217`, Wit `#FBFCFF`, Mist `#E4E7ED`, Nevel `#A2B7D2` en Blauw uur `#25508B`, elk met een eigen fade (zie "Levering 80: de vijf kleuren"). De grond is Wit `#FBFCFF` (lijst 64, grond b); wat als vlak op de grond stond is `#F0F1F6` (halverwege de Wit-fade). De balk is van vloeibaar glas (zie daar). Het logopakket is herkleurd (images/Logo/visuails-logo-80).**
+
+**Daarvoor, levering 79 (1 november 2026): de grond is #F4F7FD, een heel licht grijs in de toon van de inkt met een vleugje blauw uur (zie "De grond"); wit is de kaart. Wat als vlak op de grond stond, is wit. De opening is de laptop van Lucas over de hele breedte, met een doorzichtige achtergrond. Levering 78 (27 oktober 2026): de balk rechthoekig over de hele breedte, wit met een haarlijn, zonder glas; de tweede toon van een kop in inkt, met af en toe een gloed in blauw uur (zie "De gloed op de tweede toon"). Schema Blauw uur, overal (levering 68). Levering 75 (26 oktober): de balk als zwevende pil van licht glas, en E1 (de snede) vervallen. Levering 76 (26 oktober): de pil doorzichtiger, zonder rand, licht getint. De hoeken, glas en gloed,
 de knoppen, Hoe het werkt in witte kaarten, de gloed van "Gemaakt met AI" en de iconen zonder
 plaatje: 25 oktober 2026 (levering 74).** Dit is het ene bestand dat de kleuren draagt. Verandert hier iets, dan in de bestanden hieronder ook, en
 andersom niet.
@@ -20,15 +22,77 @@ Zijn woorden:
   als een copy cat van een ander merk. Misschien is de kleur wat anders dan wat gebruikelijk
   is maar het zorgt er wel voor dat VISUAILS anders voelt wanneer je de website bezoekt."*
 
+Op 1 november 2026 (levering 79) koos Lucas een grijze grond. Zijn woorden:
+
+- *"Anders wil ik sowieso de achtergrond heel licht grijs maken omdat #FFFFFF niet word aangeraden"*
+  (02:33), *"Dit moet dan ook in het kleurenschema aangepast worden"* (02:34), en *"Website
+  achtergrond wil ik heel uniek licht grijs hebben die bij het kleurenschema past en ik wil dat de
+  achtergrond van de laptop dit dus ook heeft, exact die kleur."* (02:42)
+- Uit drie tinten van dezelfde toon koos hij **B, #F4F7FD**, en voor het vlak op de grond **wit**.
+
 Het schema daarvoor (schema A, violet, 19 tot 23 oktober) staat verderop als geschiedenis,
 en daaronder de hal (14 tot 18 oktober) en het schema van 20 september. Kelvin (lijst 50) en
 Blauw uur als palet (lijst 54) zijn alleen schetsen geweest; ze stonden nooit op de site.
 
 ---
 
+## Levering 80: de vijf kleuren (1 november 2026)
+
+Lucas, 1 november, 17:05: *"Pas het kleurenschema aan naar de 5 kleuren met behoud van de Blue Hour feeling,
+en per kleur een fade/bewegingskleur."* Zijn voorbeeld had vijf kleuren: #121212, roze, #FCFCFC, #E4E7EB en
+#9DBACB. Elke kleur is heel licht naar de toon van Blauw uur gezet (OKLCH-tint 255 – 264°); het roze vervalt
+en wordt Blauw uur. In lijst 64 koos hij: kleuren goed, fades goed, **grond b: Wit**. Uitgerekend in
+`docs/RUST-80.md` §4.
+
+| Kleur | Waarde | OKLCH | Token | Rol | Contrast (WCAG) |
+|---|---|---|---|---|---|
+| **Inkt** | `#0F1217` (was `#0B0F17`) | .182 / .012 / 264° | `--h-inkt` | Alle tekst, het logo, de knoppen, het ene inktblok | 18,29:1 op de grond · 18,76:1 op wit · 16,63:1 op het vlak · 9,15:1 op Nevel |
+| **Wit** | `#FBFCFF` | .991 / .0035 / 264° | `--h-grond` | **De grond** van elke pagina, de balk (als glas), de voet; het logo op blauw en op inkt | — |
+| **Mist** | `#E4E7ED` | .927 / .0085 / 264° | — | De onderrand van het glas, het eind van de Wit-fade. Nooit tekst | 1,21:1 op de grond |
+| **Nevel** | `#A2B7D2` | .773 / .045 / 255° | — | Fades, posters, de grond achter een beeld. **Nooit tekst** (2,0:1) | inkt erop 9,15:1 |
+| **Blauw uur** | `#25508B` | .432 / .109 / 257° | `--h-blauw` | Het accent, zoals het was: één plek per scherm, het logo onder de muis, links, de focusrand | 7,88:1 op de grond · wit erop 8,08:1 |
+
+**De lijn blijft `#E6E8EC`** (`--h-lijn`), niet Mist: gemeten haalt grijs op de lijn 4,501:1 en op Mist maar
+4,457:1, en grijze tekst op een lijnvlak (een pil die wacht) moet 4,5:1 halen. Het verschil zie je niet (ΔE < 1).
+
+Blijven zoals ze waren: **grijs** `#636974` (alleen kleine tekst; 5,38:1 op de grond, 4,90:1 op het vlak),
+**veldlijn** `#858A94` (3,38:1 op de grond), **blauw diep** `#1A4279`, **blauw licht** `#80A7DD` (alleen op
+inkt, 7,59:1), en **wit** `#FFFFFF` voor kaarten, velden en het menu (op de grond scheidt de haarlijn ze).
+
+**Het vlak op de grond** (pil, chip, rond knopje, de lege fotoplek) is `#F0F1F6`, halverwege de Wit-fade
+(was wit in 79, toen de grond grijs was). Binnen een witte kaart blijft het vlak `#F4F5F7`.
+
+**Elke kleur een fade** (OKLCH, van – naar). Een fade is een vlak voor een poster, een overgang of een
+beweging, nooit de grond onder lopende tekst:
+
+| Fade | Van → naar | 25 · 50 · 75 % | Waar nu |
+|---|---|---|---|
+| Inkt | `#0F1217` → `#1A4279` | `#141D2D` · `#172945` · `#19355F` | (klaar voor het €1-blok) |
+| Wit | `#FBFCFF` → `#E4E7ED` | `#F5F7FA` · `#F0F1F6` · `#EAECF1` | het vlak op de grond (50 %) |
+| Mist | `#E4E7ED` → `#A2B7D2` | `#D4DBE6` · `#C4CEE0` · `#B3C3D9` | — |
+| Nevel | `#A2B7D2` → `#FBFCFF` | `#B9C7DE` · `#D0D8E9` · `#E6EAF4` | het vlak achter de laptop; de overgang van de galerij naar de poster |
+| Blauw uur | `#25508B` → `#A2B7D2` | `#44699D` · `#6283AF` · `#829DC0` | de logoposter |
+
+**Uitzonderingen op "geen verloop als vlak"** (alle drie op de voorpagina, Lucas' vraag van 17:05):
+het vlak achter de laptop (Nevel-fade), de overgang van de galerij naar de poster (Nevel) en de logoposter
+(Blauw uur, het V-merk in Wit erop, 7,88:1). Witte tekst op de poster staat alleen op het donkere deel
+(`#44699D` – `#25508B`, 5,6 – 8,1:1).
+
+**Glas: de balk** (Lucas, 17:05: *"liquid glass feel met subtiele, smooth animatie in het glas tijdens
+het scrollen"*). De grond op 72 % (`rgba(251, 252, 255, .72)`), vervaging 20 px en verzadiging 160 %, een
+lichtlijn bovenaan (Wit op 70 %) en Mist onderaan; een zachte lichtvlek schuift met het scrollen mee.
+Waarom 72 %: de inkt haalt op het glas ook boven het zwartste beeld 4,5:1 (boven zwart 8,84:1; bij 50 %
+maar 4,48:1). Dit is het enige glas; de regel "geen glas" uit de ontwerptaal geldt verder.
+
+**Wat niet meegaat:** de foto's (inhoud), de kleuren die een keuze zijn (achtergronden, kledingkleuren),
+Studio donker en /admin donker (eigen schema; de inkt is wel `#0F1217`). De mails gebruiken de nieuwe inkt
+(`npm run mail:assets` opnieuw gedraaid).
+
+---
+
 ## In één zin
 
-Puur wit. Inkt en één blauw snijden erin, zoals het logo. **Blauw staat op één plek per
+Wit (`#FBFCFF`, levering 80; was het lichte grijs #F4F7FD) als grond, met witte kaarten en een haarlijn erop. Inkt en één blauw snijden erin, zoals het logo. **Blauw staat op één plek per
 scherm (Bestellen bovenin), bij het logo onder de muis, in het accentwoord van de opening
 dat ademt, in een link in de tekst, in de focusrand en in geselecteerde tekst. Verder
 nergens.** Eén inktblok per pagina, afgesneden op 53°. Geen verloop als vlak, geen bewogen
@@ -41,11 +105,12 @@ knop onder de muis en, even, om het product dat met AI gemaakt is (levering 74).
 
 | Kleur | Waarde | Token in hal.css | Rol | Contrast |
 |---|---|---|---|---|
-| **Wit** | `#FFFFFF` | `--h-wit` | De grond, overal, ook achter de foto's. Kaarten | — |
-| **Inkt** | `#0B0F17` | `--h-inkt` | Alle tekst, koppen én lopende tekst. Het logo, de knoppen, het ene blok, "geleverd" | 19,18:1 op wit · 17,58:1 op vlak · 15,63:1 op lijn |
-| **Blauw uur** | `#25508B` | `--h-blauw` | Eén plek per scherm, het logo onder de muis, links, de focusrand, selectie | 8,08:1 op wit · 7,41:1 op vlak · wit erop 8,08:1 |
-| **Grijs** | `#636974` | `--h-grijs` | Alleen kleine tekst: bijschriften, labels, de lichte helft van een kop | 5,52:1 op wit · 5,06:1 op vlak · 4,50:1 op lijn |
-| **Lijn** | `#E6E8EC` | `--h-lijn` | Alleen scheiding: haarlijnen, de rand van een kaart. Nooit tekst | 1,23:1 op wit |
+| **Grond** | `#FBFCFF` (Wit, levering 80; was `#F4F7FD`) | `--h-grond` | De grond van elke pagina, de balk (als glas), de lade en de voet. Ook achter de foto's: die zijn doorzichtig waar de grond is (levering 79) | — |
+| **Wit** | `#FFFFFF` | `--h-wit` | Kaarten, vensters, velden, het menu. Wat op de grond oplicht (pil, chip, knopje) is sinds 80 `#F0F1F6` | 1,03:1 op de grond |
+| **Inkt** | `#0F1217` (levering 80; was `#0B0F17`) | `--h-inkt` | Alle tekst, koppen én lopende tekst. Het logo, de knoppen, het ene blok, "geleverd" | 18,29:1 op de grond · 18,76:1 op wit · 17,20:1 op vlak |
+| **Blauw uur** | `#25508B` | `--h-blauw` | Eén plek per scherm, het logo onder de muis, links, de focusrand, selectie | 7,88:1 op de grond · 8,08:1 op wit · 7,41:1 op vlak · wit erop 8,08:1 |
+| **Grijs** | `#636974` | `--h-grijs` | Alleen kleine tekst: bijschriften, labels, de lichte helft van een kop | 5,38:1 op de grond · 5,52:1 op wit · 5,06:1 op vlak · 4,90:1 op het vlak op de grond · 4,50:1 op lijn |
+| **Lijn** | `#E6E8EC` (blijft; Mist zou grijs onder 4,5:1 zetten) | `--h-lijn` | Alleen scheiding: haarlijnen, de rand van een kaart. Nooit tekst | 1,19:1 op de grond · 1,23:1 op wit · grijs erop 4,50:1 |
 
 **Blauw en inkt staan nooit op elkaar.** Naast elkaar haalt blauw op inkt maar 2,37:1. Zet
 een blauwe en een zwarte knop dus nooit als gelijken tegen elkaar: wit ertussen, of de snede.
@@ -54,15 +119,42 @@ een blauwe en een zwarte knop dus nooit als gelijken tegen elkaar: wit ertussen,
 
 | Naam | Waarde | Token | Alleen voor | Gemeten |
 |---|---|---|---|---|
-| Vlak | `#F4F5F7` | `--h-vlak` (en de oude naam `--h-nevel`) | Het vlakje onder een pil, chip of klein knopje; een lege plek; iets onder de muis | 1,09:1 op wit · grijs erop 5,06:1 |
+| Vlak | `#F4F5F7` | `--h-vlak` (en de oude naam `--h-nevel`) | Binnen een witte kaart: het vlakje onder een pil, chip of klein knopje; een lege plek; iets onder de muis. Op de grond is dat vlakje wit (levering 79) | 1,09:1 op wit · grijs erop 5,06:1 |
 | Lijn sterk | `#C5C8CF` | `--h-lijn-sterk` | Een rand die je moet zien (de tweede knop) | 1,68:1 op wit, geen tekst |
-| Veldlijn | `#858A94` | `--h-veldlijn` | De rand van een invulveld, een vinkvakje | 3,47:1 op wit · 3,18:1 op vlak (een veldgrens vraagt 3:1) |
+| Veldlijn | `#858A94` | `--h-veldlijn` | De rand van een invulveld, een vinkvakje | 3,47:1 op wit · 3,38:1 op de grond · 3,18:1 op vlak (een veldgrens vraagt 3:1) |
 | Blauw diep | `#1A4279` | `--h-blauw-diep` | Een blauwe knop onder de muis | wit erop 10,00:1 |
-| Blauw licht | `#80A7DD` | `--h-blauw-licht` | Alleen op inkt: de focusrand en het logo op het inktblok, links in donkere modus | 7,75:1 op inkt · 7,19:1 op de donkere kaart |
+| Blauw licht | `#80A7DD` | `--h-blauw-licht` | Alleen op inkt: de focusrand en het logo op het inktblok, links in donkere modus | 7,59:1 op inkt · 7,19:1 op de donkere kaart |
 
 Alle grijzen hebben de toon van de inkt (263°) en een klein beetje kleur, zodat ze bij het
 blauw horen en niet bij een ander merk. Een grijs dat uit het vorige schema komt, kreeg het
 koele grijs met **dezelfde helderheid**, dus elk contrast is gelijk gebleven.
+
+### De grond (levering 79, 1 november 2026)
+
+`#F4F7FD`: OKLCH .976 / .0086 / 264,5°, de toon van de inkt (263,9°) en van lijn en vlak (264,5°),
+met net genoeg kleur om blauw uur te laten doorklinken. Gekozen uit drie tinten van dezelfde toon
+en helderheid (A `#F5F7FB` bijna neutraal, **B `#F4F7FD`**, C `#F3F7FF` al lichtblauw). Elk heel
+licht grijs ligt dicht bij een bestaand grijs (de dichtstbijzijnde bekende, `#F6F8FA`, verschilt
+0,41 ΔE); het eigene zit in de toon. Alle tekst haalt het: inkt 17,87:1, blauw 7,53:1, grijs 5,15:1,
+de veldlijn 3,23:1.
+
+- **Wat grijs wordt:** de grond van de pagina, de balk (met zijn haarlijn), de lade op de telefoon,
+  de voet, het €1-blok (dat schilderde wit zonder rand), de balk van het bestelformulier en de
+  adresbalk van de telefoon (`theme-color`).
+- **Wat wit blijft:** alles met een eigen vorm: kaarten, vensters in de figuren, velden, het menu,
+  de cookiekaart, de WhatsApp-knop. Een venster dat alleen wit leek omdat de pagina wit was (de
+  agenda op /how-it-works, de map op /studio) is nu echt wit.
+- **Wat wit wordt:** wat als vlak op de grond stond (pil, chip, rond knopje, de feitjes, de tabs,
+  de lege fotoplek in Wat we maken en Kies een look, code in de juridische tekst). Gemeten op 40
+  pagina's op 1440 en 390 breed: elk element met een eigen achtergrond, met wat eronder ligt
+  (`kladblok/levering-79/LEESMIJ.md`). De taalknop in de balk heeft geen vlakje meer.
+- **De foto's:** een foto met een ingebakken witte grond (de laptop in de opening, de standen van
+  de laptop op de dienstpagina's) is doorzichtig gemaakt met een ontmenging van de rand: elke
+  randpixel is een menging van het voorwerp en de grond, dus die wordt een halfdoorzichtige pixel
+  in de kleur van het voorwerp. Zo is de grond achter de foto exact #F4F7FD, zonder witte zoom, en
+  blijft hij dat als de grond ooit verandert.
+- **Wat niet meegaat:** de mails (een mailprogramma toont zijn eigen wit) en Studio, account en
+  /admin (die hebben hun eigen schema).
 
 **Oude namen.** `--h-nevel` = vlak, `--h-vak` = lijn, `--h-inkt-2` = inkt, `--h-inkt-3` en
 `--h-kop-licht` = grijs, `--h-violet` = blauw, `--h-violet-diep` = blauw diep, `--h-lila` =
@@ -75,7 +167,7 @@ zodat een vergeten verwijzing niet breekt. Schrijf in nieuwe regels de nieuwe na
 
 | Deel | Wat | Waar |
 |---|---|---|
-| 60 | wit | de grond, de kaarten, de grond van elke foto |
+| 60 | grond en wit | de grond (#F4F7FD, ook achter de foto's), de witte kaarten erop |
 | 30 | inkt en beeld | de tekst, de knoppen, het logo, de foto's zelf, het ene inktblok |
 | 10 | blauw | Bestellen bovenin, een link, de focusrand; onder de muis het logo en een inktknop |
 
@@ -138,13 +230,16 @@ witte rand. De focusrand en het logo zijn daar blauw licht.
 - **Een kaart is wit met een haarlijn** (`--h-kaart` wit, `--h-kaart-rand` 1 px lijn), 24 px
   rond aan alle vier de hoeken (zie "De hoeken" hieronder). In schema A waren kaarten
   nevelgrijs; nu snijdt alleen de inkt en het blauw, de rest is papier.
-- **Vlak** (`#F4F5F7`) alleen onder iets kleins: een pil, een chip, een rond knopje, een lege
-  fotoplek, of onder de muis.
+- **Vlak** (`#F4F5F7`) alleen onder iets kleins, binnen een witte kaart: een pil, een chip, een
+  rond knopje, een lege fotoplek, of onder de muis. **Op de grond is dat vlakje wit** (levering 79):
+  op een grijze grond is wit het lichte vlak. In hal.css zet het blok LEVERING 79 op die onderdelen
+  `--h-vlak` (en nevel, mist) op wit; binnen een kaart staat hij weer op #F4F5F7.
 - **De bewogen achtergronden van levering 62 zijn weg.** Elk sfeervlak is een witte kaart met
   een haarlijn. De beelden staan nog in `public/img/achter/` maar worden niet meer gebruikt.
 - **Glas op wat zweeft, nergens in de pagina zelf.** Zie "Glas en gloed" hieronder.
-- **De voet is wit**, met een haarlijn bovenaan, de tekst in inkt, de kleine koppen in grijs,
-  en het woordmerk groot in inkt, door de onderrand afgesneden.
+- **De voet staat op de grond** (tot levering 79 wit), met een haarlijn bovenaan, de tekst in inkt,
+  de kleine koppen in grijs, en het woordmerk groot in inkt, door de onderrand afgesneden. De balk
+  bovenaan en de lade op de telefoon ook: één vlak met de pagina, alleen de haarlijn scheidt.
 
 ---
 
@@ -417,11 +512,12 @@ Dezelfde rollen, omgekeerd, in de koele grijzen van inkt:
 | De statuspil buiten CSS | `src/data/status.js` | `STAND_KLEUR` |
 | Het deelplaatje | `scripts/make-og.mjs` | `npm run og` |
 | De schetsen in het formulier | `scripts/schetsen-zijpaneel.py` | → `public/img/schets/` |
-| De pijl in een keuzelijst | `public/img/ui/keuzepijl-0b0f17.svg`, `-f4f5f7.svg` | een `data:`-adres kan geen variabele lezen |
-| De adresbalk | `src/layouts/Layout.astro` | `theme-color` wit op een hal-pagina |
+| De pijl in een keuzelijst | `public/img/ui/keuzepijl-0f1217.svg` (was `-0b0f17`), `-f4f5f7.svg` | een `data:`-adres kan geen variabele lezen |
+| De adresbalk | `src/layouts/Layout.astro` | `theme-color` de grond (#F4F7FD) op een hal-pagina |
 | Favicon | `public/favicon*.png`, `favicon.ico`, `favicon.svg`, `apple-touch-icon.png` | een kopie uit het logopakket (`images/Logo/visuails-logo-blauw-uur/favicon`): wit V-merk op vlak blauw uur |
 | Het logopakket | `E:\Claude (VISUAILS)\images\Logo\visuails-logo-blauw-uur` | `python3 maak-logopakket.py --site <map van de site>`, met een eigen KLEURENSCHEMA.md |
-| De laptopfoto in de opening | `public/img/hal/pov-2304.webp` en de standen in `public/img/hal/stand/` | `python3 scripts/laptop-foto.py <de witte foto>` en `node scripts/laptop-standen.mjs`. De grond is na het decoderen precies `#FFFFFF` |
+| De laptop in de opening (levering 79) | `public/img/hal/breed/laptop-*.avif/webp`, uit `kladblok/levering-79/laptop-21x9-gaten.png` | `node scripts/laptop-breed.mjs`. Doorzichtig waar de grond is en waar de schermen zijn: de grond van de pagina schijnt er exact doorheen |
+| De laptop op /catalog, /lifestyle en /video | `public/img/hal/pov-2304.webp`, de doorzichtige versie `pov-2304-doorzichtig.webp`, en de standen in `public/img/hal/stand/` | `python3 scripts/laptop-foto.py <de witte foto>`, `python3 scripts/wit-naar-doorzichtig.py public/img/hal/pov-2304.webp public/img/hal/pov-2304-doorzichtig.webp` en `node scripts/laptop-standen.mjs` (sinds 79 zonder achtergrond) |
 
 **Wat bewust niet meegaat.** De schermen van de laptop in de opening (`.sc…` in hal.css,
 `HalLaptopSchermen.astro`) tonen de winkel van een klant (JOUWMERK), niet VISUAILS: die
@@ -458,7 +554,9 @@ het beeld naadloos doorloopt), het blauw van Instagram in het voorbeeldscherm, d
 
 ## Altijd
 
-1. Wit is de grond, ook achter de foto's. Geen grijze sectie, geen getinte band.
+1. De grond is #F4F7FD, overal, ook achter de foto's (een foto met een eigen grond wordt doorzichtig
+   gemaakt, zodat de grond er exact doorheen schijnt). Wit is de kaart. Geen andere grijze sectie,
+   geen getinte band.
 2. Lopende tekst en knoppen minstens **4,5:1**, ook een kop. Tekst minstens 11,5 px.
 3. **Blauw op één plek per scherm**, plus het logo onder de muis, de gloed van de tweede toon
    (af en toe, één tegelijk), links, de focusrand en selectie. Geen blauw kopwoord, icoon, stip, rand of
@@ -474,7 +572,8 @@ het beeld naadloos doorloopt), het blauw van Instagram in het voorbeeldscherm, d
 12. Een vinkje of icoon in een lijst, zin of beeld heeft geen plaatje: het icoon zelf, in inkt
    (wit alleen op een gemeten donker beeld). Een plaatje dat blijft heeft vier gelijke hoeken.
 7. Een kaart is wit met een haarlijn, 24 rond aan alle vier de hoeken. Vlak alleen onder iets
-   kleins. De zachte hoek linksboven alleen op wat je bedient.
+   kleins in een kaart; op de grond is dat vlakje wit. De zachte hoek linksboven alleen op wat je
+   bedient.
 8. Een stand is pil plus woord; massief alleen voor "geleverd"; aandacht blauw.
 9. Het logo is één kleur: inkt, blauw of wit. Onder de muis de schommel. Woordmerk en los
    V-merk nooit naast elkaar (`scripts/brand-lockup-guard.mjs`).

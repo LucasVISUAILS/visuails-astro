@@ -25,6 +25,9 @@
  *      voor als er geen enkele stand is (HalLaptop.astro). Sinds 20 oktober 2026; eerst
  *      was dat een los gemaakte foto, en de bron lag eronder (nu pov-2304.webp).
  *   6. Schrijft de vingerafdruk van de bron naar src/data/halStanden.bron.json.
+ *   Sinds levering 79 (1 november 2026) zonder achtergrond: de foto onder de schermen is
+ *   public/img/hal/pov-2304-doorzichtig.webp (scripts/wit-naar-doorzichtig.py), dus de standen
+ *   zijn doorzichtig waar de grond was en passen op elke grond van de site.
  *
  * tests/laptop-standen.test.mjs kijkt daarna na of elke stand er in elke breedte
  * ligt en of de foto's de maat van de foto hebben.
@@ -58,7 +61,7 @@ const MAP = path.join(WORTEL, 'public', 'img', 'hal', 'stand');
 const BREEDTES = [1000, 1600, 2304];
 const poortArg = process.argv.indexOf('--poort');
 const POORT = poortArg > -1 ? Number(process.argv[poortArg + 1]) : 4399;
-const WEBP = { quality: 90, effort: 6, smartSubsample: true };
+const WEBP = { quality: 90, alphaQuality: 100, effort: 6, smartSubsample: true };
 const AVIF = { quality: 78, effort: 6, chromaSubsampling: '4:4:4' };
 const DPR = 2;   // de bron dubbel zo fijn fotograferen (zie DE SCHERPTE)
 
@@ -104,7 +107,9 @@ try {
       const naam = await vak.getAttribute('data-bron-stand');
       await vak.scrollIntoViewIfNeeded();
       await page.waitForTimeout(120);
-      const png = await vak.screenshot({ type: 'png' });
+      /* levering 79: zonder achtergrond. De foto (pov-2304-doorzichtig.webp) is doorzichtig waar de grond
+         was, dus elke stand ook: op de site schijnt de grond (#F4F7FD) erdoor, exact. */
+      const png = await vak.screenshot({ type: 'png', omitBackground: true });
       const meta = await sharp(png).metadata();
       if (meta.width !== FOTO.w * DPR || meta.height !== FOTO.h * DPR) throw new Error(`${naam}: ${meta.width} × ${meta.height}, verwacht ${FOTO.w * DPR} × ${FOTO.h * DPR}`);
       for (const w of BREEDTES) {

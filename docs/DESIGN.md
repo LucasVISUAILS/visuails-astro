@@ -32,7 +32,7 @@ snijden, zoals het logo (lijst 55). Vijf kleuren:
 | Token | Waarde | Rol |
 |---|---|---|
 | `--h-wit` | `#FFFFFF` | de grond, de kaarten, de grond van elke foto |
-| `--h-inkt` | `#0B0F17` | alle tekst, het logo, de knoppen, het ene inktblok per pagina (19,18:1) |
+| `--h-inkt` | `#0F1217` | alle tekst, het logo, de knoppen, het ene inktblok per pagina (19,18:1) |
 | `--h-blauw` | `#25508B` | blauw uur: één plek per scherm (Bestellen bovenin), het logo onder de muis, links, de focusrand (8,08:1) |
 | `--h-grijs` | `#636974` | alleen kleine tekst (5,52:1) |
 | `--h-lijn` | `#E6E8EC` | alleen scheiding: haarlijn, de rand van een kaart |
@@ -40,7 +40,7 @@ snijden, zoals het logo (lijst 55). Vijf kleuren:
 Afgeleid, elk met één rol: vlak `#F4F5F7` (onder een pil of chip), lijn sterk `#C5C8CF`,
 veldlijn `#858A94` (de rand van een veld, 3,47:1), blauw diep `#1A4279` (blauw onder de
 muis) en blauw licht `#80A7DD` (alleen op inkt). In global.css is `--accent` inkt
-`#0B0F17`: een knop is inkt en wordt onder de muis blauw.
+`#0F1217`: een knop is inkt en wordt onder de muis blauw.
 
 Een kaart is wit met een haarlijn. Eén inktblok per pagina, afgesneden op 53° (het €1-blok,
 of het slot onderaan). Geen verloop als vlak, geen glas, geen bewogen achtergrond, geen
@@ -468,6 +468,17 @@ a colour change alone, and never suppressed on mouse input for form fields.
 
 ## Typography
 
+### De letter van 80 op elke publieke pagina — 1 november 2026 (levering 80 en 81)
+
+Sinds levering 80 (de voorpagina) en 81 (de rest van de publieke pagina's) geldt voor de site:
+- **Koppen in hoofdletters**: VISUAILS Display Bold, spatiëring −0,01 em, regelafstand 0,92. De maten staan in
+  `docs/RUST-80.md` §2 (de voorpagina) en §9 (de rest), gemeten op hoogstens twee regels.
+- **Lopende tekst 370** (was 400), wat 500 was **450**. DM Sans is daarvoor opnieuw uitgesneden met de gewichten
+  300 – 700. De balk en de mono-labels blijven zoals ze waren.
+- Sinds levering 82 ook in Studio, de privélink en /admin: lopende tekst 370, wat 500 was 450. De paginakop van
+  Studio en de privélink staat in VISUAILS Display, in hoofdletters; de kleine koppen in kaarten en heel /admin
+  blijven DM Sans (`docs/RUST-80.md` §10).
+
 ### De letters van de hal — 27 oktober 2026 (levering 77, lijst 59 en 60)
 
 **Twee letters en een mono.** Sinds levering 77 staat de hal (de site, Studio, de privélink en
@@ -485,7 +496,8 @@ breedte-as, en lijst 60 koos DM Sans op volle breedte.
 
 **Wat geen kopletter is.** Namen (van een look, een stap, een kaart, een plan) zijn geen koppen: die
 blijven DM Sans 500, zodat de kop de enige stem in Display is. Studio, /admin en de privélink zijn
-werkplaatsen: daar is alles DM Sans, ook de koppen.
+werkplaatsen: daar is alles DM Sans, ook de koppen (sinds levering 82 op één na: de paginakop van Studio en de
+privélink staat in VISUAILS Display, in hoofdletters).
 
 **De bestanden.** `public/fonts/dm-sans/` (latin 42 kB en latin-ext 20 kB, gewicht ingeperkt tot
 400 – 700, uit DMSans[opsz,wght].ttf 4.004) en `public/fonts/visuails-display/VISUAILSDisplay-Bold.woff2`
@@ -775,6 +787,30 @@ only then realise was there the whole time.
 
 ---
 
+## De grond en de laptop over de hele breedte — 1 november 2026 (levering 79)
+
+Lucas, 02:30: *"Ik heb de laptop nu 21:9 gemaakt. Zou dit beter passen over het hele pc scherm?"*,
+02:32: *"De tablet is dan niet meer nodig"*, en 02:42: *"Website achtergrond wil ik heel uniek licht
+grijs hebben die bij het kleurenschema past en ik wil dat de achtergrond van de laptop dit dus ook heeft,
+exact die kleur."* Gekozen: B, **#F4F7FD**, en wit voor het vlak op de grond (`KLEURENSCHEMA.md`, "De grond").
+
+- **De opening** (`HalLaptopBreed.astro`, `laptop-breed.css`): zijn foto 21 : 9 over de volle breedte,
+  zodat de armen tegen de rand van het venster lopen. De foto is doorzichtig waar de grond is en waar
+  de schermen zijn (`kladblok/levering-79/LEESMIJ.md`, `scripts/laptop-breed.mjs`): de grond van de
+  pagina schijnt er exact doorheen, en de webshop en de telefoonfoto liggen ónder de foto, zodat de
+  rand van het toestel (ook de inkeping van de telefoon) ze afsnijdt. Vanaf 1200 px de kop op één regel
+  in de lege strook boven de klep, op de lijn van het logo, en de zin en de standen links boven de arm;
+  op 901 – 1199 de kop boven en de zin onder de foto; op de telefoon de foto 1,6 × zo breed. Alle maten
+  rekent de css uit de foto (de klep op .3084 – .6731 van de breedte, bovenkant .1786 van de hoogte).
+- **Het scrolleffect** blijft dat van 78: de tekst gaat weg, de laptop komt iets dichterbij en lost op,
+  de foto uit het winkelscherm vliegt naar Wat we maken. `tests/voorpagina-78.test.mjs` meet het na.
+- **De grond**: `--h-grond` in hal.css, op de pagina, de balk, de lade, de voet en de adresbalk; het
+  vlak op de grond is wit (het blok LEVERING 79 onderaan hal.css). `tests/grond-79.test.mjs`.
+- **De laptop op /catalog, /lifestyle en /video** (`HalLaptop.astro`) blijft, maar zijn standen zijn nu
+  doorzichtig (`pov-2304-doorzichtig.webp`, `scripts/laptop-standen.mjs` fotografeert zonder grond).
+- Weg uit de voorpagina: `HalTablet.astro` en `tablet.css` (78), en de still van de opening
+  (`public/img/hal/opening/still-*`); ze staan nog in de map en worden nergens meer gebruikt.
+
 ## De voorpagina opnieuw ingedeeld — 27 oktober 2026 (levering 78)
 
 Lucas, 16:50: *"Ik wil dat je de homepage van de grond af opnieuw uitgebreid gaat indelen … goed
@@ -1001,6 +1037,12 @@ overshoot is playfulness, and this brand's argument is control.
   >
   > In dezelfde week ging Lenis eruit, om dezelfde reden. Wat overblijft is de
   > browser.
+- **De schakelaars glijden** (levering 83, `docs/RUST-80.md` §11). Een tab of filter op een publieke pagina laat
+  het gekozen blok in 240 ms op `--golf-klein` naar de keuze glijden: een kopie van de rij in de gekozen stand,
+  afgeknipt tot een venster (`clip-path`) dat glijdt. Rechte knoppen: `inset(… round …)` met de grond van de
+  gekozen knop; knoppen met de snede: `polygon()`. Studio wisselt zonder animatie. De pauzeknop gaat over in de
+  driehoek (CSS `d`), het vinkje tekent zich in twee stappen (ook op het eigen vakje van de fotogids), en op de
+  voorpagina kleurt één zin per woord van grijs naar inkt. Minder beweging: overal de eindstand meteen.
 
 ---
 

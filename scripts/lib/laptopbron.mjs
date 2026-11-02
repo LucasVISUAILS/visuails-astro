@@ -33,7 +33,7 @@ export function schermBeelden(wortel) {
   const bron = tekst(path.join(wortel, 'src', 'data', 'laptopSlides.js')) + tekst(path.join(wortel, 'src', 'components', 'HalLaptopSchermen.astro'));
   const paden = new Set([...bron.matchAll(/['"`](\/img\/[a-z0-9/_.-]+\.(?:webp|png|jpe?g|avif))['"`]/gi)].map((m) => m[1]));
   /* de ondergrond (de foto met lege schermen, sinds 20 oktober 2026 de POV-foto) en de maskers */
-  for (const vast of ['/img/hal/pov-2304.webp', '/img/hal/masker-laptop.png', '/img/hal/masker-fon.png']) paden.add(vast);
+  for (const vast of ['/img/hal/pov-2304.webp', '/img/hal/pov-2304-doorzichtig.webp', '/img/hal/masker-laptop.png', '/img/hal/masker-fon.png']) paden.add(vast);   /* doorzichtig: levering 79 */
   return [...paden].sort();
 }
 

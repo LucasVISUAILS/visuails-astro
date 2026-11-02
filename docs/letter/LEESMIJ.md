@@ -1,10 +1,11 @@
 # VISUAILS Display
 
 De eigen kopletter van VISUAILS. Gekozen in lijst 60 (27 oktober 2026), alle vijf keuzes volgens advies.
-DM Sans 40pt (SIL OFL 1.1) met drie details uit de V. Alleen voor koppen; lopende tekst blijft DM Sans.
+DM Sans 40pt (SIL OFL 1.1) met drie details uit de V, en sinds versie 1.100 (levering 80, 1 november 2026, lijst 65)
+twee in de hoofdletters. Alleen voor koppen; lopende tekst blijft DM Sans.
 
 **Open `VISUAILS-Display-specimen.html`** (dubbelklik) voor het hele specimen: de negen gewichten, een typetester,
-alle 385 tekens met hun maten, de drie details, groottes, talen en de bestanden. De letters zitten in de pagina zelf,
+alle 385 tekens met hun maten, de drie details en de hoofdletters, groottes, talen en de bestanden. De letters zitten in de pagina zelf,
 dus hij werkt ook zonder internet.
 
 ## In deze map
@@ -42,11 +43,26 @@ Eén hoek voor alles: 53,13°, de 3-4-5-driehoek uit de vlag van de V (0,75 opzi
    van zijn dikte. Daardoor groeit het detail mee met het gewicht: in Bold het hele vlagje (gat 98 % van DM Sans),
    in Thin alleen een smalle rechte kant.
 
-Samen hebben 66 tekens een detail (ook de samengestelde, zoals à á â ä å ã ā ă ą ǽ ĳ ŀ ŕ ř ť ğ ﬂ).
+## De hoofdletters (versie 1.100, levering 80, 1 november 2026)
+
+Lijst 65, *kap*: Lucas koos a + b, de snede en de zachte hoek samen, in alle gewichten.
+
+4. **De snede in de hoofdletters.** Eén recht, open uiteinde per teken eindigt schuin als "/", met dezelfde maat:
+   0,75 × de dikte van de arm opzij. Rechts op de bovenarm van E en F, rechts op de arm van L, rechts aan de balk
+   van T, rechts aan de voet van Z. In Bold: 82 op 109.
+5. **Eén zachte hoek.** De buitenhoek linksboven, waar de stam en de bovenarm samenkomen (E F B D P R), wordt rond
+   met R = 24,7 % van de kaphoogte: de bocht van het V-merk (R = 201,21 op een merk van 813,25 hoog). In Bold 173.
+   De binnenkant loopt mee als een kwart ellips (R − stam bij R − arm), zodat de lijn in de bocht overal even dik
+   blijft, ook in Thin. Eén zachte hoek per teken, zoals de knoppen van de site.
+
+Samen hebben 96 tekens een detail (ook de samengestelde, zoals à á â ä å ã ā ă ą ǽ ĳ ŀ ŕ ř ť ğ ﬂ, È Ł Ž Ř Ď).
+De bron is `bron/familie.py` (KAP_SNEDE, KAP_HOEK, KAP_R); het specimen tekent beide op de E.
 
 ## Wat bewust zo blijft
 
 - De ronde uiteinden (c, e, s, a, 2, 3, 5, C, G, J, S): een schuine snede neemt daar een hap uit de bocht.
+- In de hoofdletters zonder rechte bovenarm of met twee gelijke kanten (A H I K M N O U V W X Y) geen detail:
+  één snede of hoek zou daar scheef ogen in plaats van eigen.
 - De vormen, de afstanden (voortgang) en het kernen: precies die van DM Sans, nagekeken per gewicht.
 - De ª (in DM Sans een a met één verdieping) en de tekenvarianten ss01 tot ss08.
 - Cursief is er niet. Kan later, op dezelfde manier.
@@ -54,7 +70,8 @@ Samen hebben 66 tekens een detail (ook de samengestelde, zoals à á â ä å ã
 ## Gecontroleerd
 
 - Elk gewicht geldig volgens OTS (de controle die Chrome en Firefox zelf doen), als .ttf en als .woff2.
-- Voortgang van alle 486 glyphs, het kernen (GPOS) en de ligaturen (GSUB) gelijk aan DM Sans.
+- Voortgang van alle 486 glyphs, het kernen (GPOS) en de ligaturen (GSUB) gelijk aan DM Sans (versie 1.100
+  opnieuw nagekeken, alle negen gewichten).
 - Opnieuw hinten met ttfautohint, zoals DM Sans zelf.
 - Alle letters en accenten voor 16 talen: Nederlands, Engels, Duits, Frans, Spaans, Italiaans, Portugees, Deens,
   Noors, Zweeds, Fins, Pools, Tsjechisch, Turks, Roemeens en Hongaars.

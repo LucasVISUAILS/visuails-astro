@@ -1,0 +1,63 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════════
+   HOE HET WERKT, KORT — levering 80, 1 november 2026 (lijst 64, s-hoe)
+   ═══════════════════════════════════════════════════════════════════════════════
+   "Drie stappen in één regel: jij stuurt, wij maken, jij keurt goed. Met de levertijd uit de code. Geen
+   animaties meer op de voorpagina." De animaties van Hoe het werkt (HalHoe.astro) verhuizen later naar
+   /catalog, /lifestyle en /video (s-categorie); het onderdeel blijft daarvoor bestaan.
+
+   De drie stappen staan als één regel in hoofdletters, met de snede van het merk ertussen (53°), elk met
+   een klein nummer erboven. Daaronder de levertijd (levertijdDelen() in pricing.js) en de link naar de
+   hele uitleg. Op de telefoon staan de stappen onder elkaar.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+import '../styles/hoe-80.css';
+import { localizedPath } from '../i18n/ui.js';
+
+interface Props { lang: 'nl' | 'en'; titel: string; stappen: string[]; levertijd: string; link: string; }
+const { lang, titel, stappen, levertijd, link } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+---
+<section class="w8" aria-labelledby="w8-kop" data-w8>
+  <h2 id="w8-kop" class="sr-only">{titel}</h2>
+  <ol class="w8-regel" role="list">
+    {stappen.map((s, i) => (
+      <li class="w8-stap"><span class="w8-nr" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span><span class="w8-woord">{`${s}${i === stappen.length - 1 ? '.' : ''}`.split(' ').map((w, j, a) => <><span class="w8-w">{w}</span>{j < a.length - 1 ? ' ' : ''}</>)}</span></li>
+    ))}
+  </ol>
+  <p class="w8-onder"><span>{levertijd}.</span> <a class="w8-link" href={lp('/how-it-works')}>{link}</a></p>
+</section>
+
+<script>
+  /* GRIJS NAAR INKT (levering 83, lijst 68: grijs = a). Alleen hier, op deze ene zin: terwijl je scrolt kleurt
+     hij woord voor woord van grijs (#636974, 5,4 : 1, dus ook vóór het kleuren te lezen) naar inkt, in de
+     volgorde van het werk. De regel begint te kleuren als hij op 80 % van het scherm staat en is helemaal inkt
+     op 45 %; woord k (van n) is inkt vanaf (k + ½) / n. De snede tussen twee stappen kleurt mee met het eerste
+     woord erna. Zonder script of bij minder beweging: meteen inkt. */
+  let stop: (() => void) | null = null;
+  function start() {
+    stop?.(); stop = null;
+    const w8 = document.querySelector<HTMLElement>('[data-w8]');
+    if (!w8 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const regel = w8.querySelector<HTMLElement>('.w8-regel');
+    const woorden = [...w8.querySelectorAll<HTMLElement>('.w8-w')];
+    if (!regel || !woorden.length) return;
+    w8.classList.add('w8-grijs');
+    let raf = 0, dichtbij = false;
+    const kijk = () => {
+      raf = 0;
+      const top = regel.getBoundingClientRect().top, h = innerHeight;
+      const p = Math.max(0, Math.min(1, (h * 0.8 - top) / (h * 0.35)));
+      woorden.forEach((w, k) => w.classList.toggle('aan', p >= (k + 0.5) / woorden.length));
+      for (const st of w8.querySelectorAll<HTMLElement>('.w8-stap')) st.classList.toggle('aan', !!st.querySelector('.w8-w.aan'));
+    };
+    const opScroll = () => { if (dichtbij && !raf) raf = requestAnimationFrame(kijk); };
+    const io = new IntersectionObserver((r) => { dichtbij = r[0].isIntersecting; if (dichtbij) kijk(); }, { rootMargin: '20% 0px' });
+    io.observe(w8);
+    addEventListener('scroll', opScroll, { passive: true });
+    kijk();
+    stop = () => { io.disconnect(); removeEventListener('scroll', opScroll); cancelAnimationFrame(raf); w8.classList.remove('w8-grijs'); };
+  }
+  start();
+  document.addEventListener('astro:page-load', start);
+  document.addEventListener('astro:before-swap', () => { stop?.(); stop = null; });
+</script>

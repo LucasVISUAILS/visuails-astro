@@ -122,12 +122,12 @@
   --paper:       #F4F5F7;
   --surface:     #E6E7EA;
   --sunken:      #DCDFE3;
-  --ink:         #0B0F17;
+  --ink:         #0F1217;
   --ink-2:       rgb(11 15 23 / .66);   /* lopende tekst · 6,95:1 */
   --ink-3:       rgb(11 15 23 / .56);   /* labels en microcopy · 4,81:1 — de laatste trede die letter mag zijn */
   --line:        rgb(11 15 23 / .20);
   --line-soft:   rgb(11 15 23 / .10);
-  --panel:       #0B0F17;
+  --panel:       #0F1217;
   --on-panel:    #F4F5F7;
 
   /* ── DRIE AANVULLINGEN OP HET SCHEMA, EN WAAROM ZE ER ZIJN ───────────────
@@ -220,7 +220,7 @@
   /* HET SCHEMA BLAUW UUR (levering 68, 24 oktober 2026, docs/KLEURENSCHEMA.md): de vijf
      kleuren en de afgeleide, als vaste waarden voor alles wat geen hal-tokens leest. */
   --merk-wit:        #FFFFFF;
-  --merk-inkt:       #0B0F17;   /* 19,18:1 op wit */
+  --merk-inkt:       #0F1217;   /* 19,18:1 op wit */
   --merk-blauw:      #25508B;   /* blauw uur · 8,08:1 op wit, wit erop 8,08:1 */
   --merk-grijs:      #636974;   /* alleen kleine tekst · 5,52:1 */
   --merk-lijn:       #E6E8EC;   /* alleen scheiding */
@@ -229,11 +229,11 @@
   --merk-veldlijn:   #858A94;   /* 3,47:1 */
   --merk-blauw-diep: #1A4279;   /* wit erop 10,00:1 */
   --merk-blauw-licht: #80A7DD;  /* alleen op inkt · 7,75:1 */
-  --accent:          #0B0F17;
+  --accent:          #0F1217;
   --on-accent:       #FFFFFF;
-  --accent-text:     #0B0F17;   /* het violet als LETTER op de grond · 8,25:1 */
+  --accent-text:     #0F1217;   /* het violet als LETTER op de grond · 8,25:1 */
   --accent-tint:     #ECEDEF;   /* zacht accentvlak — hoogstens één per scherm */
-  --on-accent-tint:  #0B0F17;   /* · 10,46:1 */
+  --on-accent-tint:  #0F1217;   /* · 10,46:1 */
   /* Eén trede donkerder voor hover en ingedrukt. Staat niet in het schema
      omdat het schema over kleuren gaat en niet over toestanden; hij is de
      lettervariant, zodat er geen zesde violet bij komt. */
@@ -261,7 +261,7 @@
      the near-black that .on-bright writes over an inverted ramp, it has eleven
      readers, and renaming it is churn. Read it as "the ink a bright surface
      uses". */
-  --grad-ink: #0B0F17;
+  --grad-ink: #0F1217;
 
   /* ---- the bright tile fills --------------------------------------------
      Lucas: *"de tegels (met bijvoorbeeld headers en uitleg) vellere kleuren"*,
@@ -520,8 +520,8 @@
      in admin kloppen — zie de tabel in KLEURENSCHEMA.md voor welke waarde waar
      op slaat. */
   --st-wait-fill: transparent;  --st-wait-edge: #7C818B;              --st-wait-ink: #4B515A;
-  --st-work-fill: #ECEDEF;      --st-work-edge: rgb(11 15 23 / .30);  --st-work-ink: #0B0F17;
-  --st-done-fill: #0B0F17;      --st-done-edge: #0B0F17;               --st-done-ink: #FFFFFF;
+  --st-work-fill: #ECEDEF;      --st-work-edge: rgb(11 15 23 / .30);  --st-work-ink: #0F1217;
+  --st-done-fill: #0F1217;      --st-done-edge: #0F1217;               --st-done-ink: #FFFFFF;
   --st-rev-fill:  #F4F5F7;      --st-rev-edge:  rgb(37 80 139 / .30);   --st-rev-ink:  #25508B;
   --st-can-fill:  #E6E7EA;      --st-can-edge:  #818790;               --st-can-ink:  #3D414A;
 
@@ -562,7 +562,7 @@
   --btn-2nd-fill-hover:    #EFF1F2;
   --btn-2nd-ink:           var(--ink-1);
   --btn-2nd-border:        #BFC2C9;
-  --btn-2nd-border-hover:  #0B0F17;
+  --btn-2nd-border-hover:  #0F1217;
 
   --select-caret: url("/img/ui/keuzepijl-0a0a0a.svg");
 
@@ -1312,7 +1312,7 @@ body.studio.on-ink {
      die naar een andere rol wijst, moet hier OPNIEUW gezet worden. */
   --st-wait-fill: transparent;  --st-wait-edge: #5B606A;               --st-wait-ink: #A8ADB5;
   --st-work-fill: #1B1E24;      --st-work-edge: rgb(197 200 207 / .34);  --st-work-ink: #C5C8CF;
-  --st-done-fill: #C5C8CF;      --st-done-edge: #C5C8CF;                --st-done-ink: #0B0F17;
+  --st-done-fill: #C5C8CF;      --st-done-edge: #C5C8CF;                --st-done-ink: #0F1217;
   --st-rev-fill:  #122039;      --st-rev-edge:  rgb(128 167 221 / .34);   --st-rev-ink:  #80A7DD;
   --st-can-fill:  #1B1E24;      --st-can-edge:  #5B606A;                --st-can-ink:  #A0A4AD;
 
@@ -1347,7 +1347,7 @@ body.studio.on-ink {
      Als LETTER is het op donker dezelfde #A694FF — één violet per modus, geen
      aparte tekstvariant zoals op licht. */
   --accent:        #C5C8CF;
-  --on-accent:     #0B0F17;
+  --on-accent:     #0F1217;
   --accent-ink:    var(--on-accent);
   --accent-dim:    #B9BCC4;
   --accent-tint:   #1B1E24;
@@ -1783,11 +1783,24 @@ input[type="checkbox"]:hover, input[type="radio"]:hover { border-color: var(--in
 input[type="checkbox"]:checked, input[type="radio"]:checked {
   background: var(--accent); border-color: var(--accent);
 }
-input[type="checkbox"]:checked::after {
-  content: ""; width: 5px; height: 10px;
-  border: solid var(--accent-on); border-width: 0 2px 2px 0;
+/* Het vinkje tekent zich in twee stappen (levering 83, lijst 68: klein = ja): eerst het korte been, 110 ms later
+ * het lange. Twee lagen met dezelfde vorm als het oude vinkje (een gedraaide hoek van 5 × 10 met een rand van 2),
+ * elk met één zichtbare rand; samen precies het oude vinkje. Uitvinken is meteen weg. Een vakje dat al
+ * aangevinkt is als de pagina laadt, staat er meteen heel (een overgang speelt niet bij het laden). */
+input[type="checkbox"]::before, input[type="checkbox"]::after {
+  content: ""; grid-area: 1 / 1; width: 5px; height: 10px;
+  border: solid transparent; border-width: 0 2px 2px 0;
   transform: translateY(-1px) rotate(45deg);
+  visibility: hidden;
 }
+input[type="checkbox"]::before { border-bottom-color: var(--accent-on); }
+input[type="checkbox"]::after { border-right-color: var(--accent-on); }
+input[type="checkbox"]:checked::before { visibility: visible; }
+input[type="checkbox"]:checked::after { visibility: visible; transition: visibility 0s linear 110ms; }
+/* Aanvinken zet het vakje meteen op inkt (lijst 69): met de vervaging van 120 ms stond het korte been wit op een bijna
+ * wit vlak en zag je de twee stappen niet. Uitvinken vervaagt zoals altijd. */
+input[type="checkbox"]:checked { transition: none; }
+@media (prefers-reduced-motion: reduce) { input[type="checkbox"]:checked::after { transition: none; } }
 /* Radio stays square too, distinguished by a solid core rather than a check. */
 input[type="radio"]:checked::after { content: ""; width: 8px; height: 8px; background: var(--accent-on); }
 
@@ -2597,19 +2610,19 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .rand-los {
   --los: clamp(4rem, 9vw, 9rem);
   -webkit-mask-image: linear-gradient(to bottom,
-    transparent 0, #0B0F17 var(--los-boven, var(--los)),
-    #0B0F17 calc(100% - var(--los-onder, var(--los))), transparent 100%);
+    transparent 0, #0F1217 var(--los-boven, var(--los)),
+    #0F1217 calc(100% - var(--los-onder, var(--los))), transparent 100%);
   mask-image: linear-gradient(to bottom,
-    transparent 0, #0B0F17 var(--los-boven, var(--los)),
-    #0B0F17 calc(100% - var(--los-onder, var(--los))), transparent 100%);
+    transparent 0, #0F1217 var(--los-boven, var(--los)),
+    #0F1217 calc(100% - var(--los-onder, var(--los))), transparent 100%);
 }
 /* Alleen de onderrand. Een hero schuift onder de plakkende kop door en raakt
    bovenaan niets; daar uitdoven zou de lucht uit elke hero halen om een naad op
    te lossen die er niet is. */
 .rand-los-voet {
   --los: clamp(5rem, 14vh, 11rem);
-  -webkit-mask-image: linear-gradient(to top, transparent 0, #0B0F17 var(--los));
-  mask-image: linear-gradient(to top, transparent 0, #0B0F17 var(--los));
+  -webkit-mask-image: linear-gradient(to top, transparent 0, #0F1217 var(--los));
+  mask-image: linear-gradient(to top, transparent 0, #0F1217 var(--los));
 }
 
 /* ---- the heroes, bottom edge only -----------------------------------------
@@ -2677,9 +2690,9 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
   --los: clamp(4rem, 9vw, 9rem);
   --los-onder: clamp(3rem, 6vw, 5rem);
   -webkit-mask-image: linear-gradient(to bottom,
-    transparent 0, #0B0F17 var(--los), #0B0F17 calc(100% - var(--los-onder)), transparent 100%);
+    transparent 0, #0F1217 var(--los), #0F1217 calc(100% - var(--los-onder)), transparent 100%);
   mask-image: linear-gradient(to bottom,
-    transparent 0, #0B0F17 var(--los), #0B0F17 calc(100% - var(--los-onder)), transparent 100%);
+    transparent 0, #0F1217 var(--los), #0F1217 calc(100% - var(--los-onder)), transparent 100%);
 }
 
 /* ---- the coloured tiles ----------------------------------------------------
@@ -5237,8 +5250,8 @@ body { position: relative; }
     rgb(255 255 255 / 0.030) 46%,
     rgb(255 255 255 / 0.008) 78%,
     transparent 100%);
-  -webkit-mask-image: linear-gradient(255deg, #0B0F17 0%, #0B0F17 62%, transparent 100%);
-  mask-image: linear-gradient(255deg, #0B0F17 0%, #0B0F17 62%, transparent 100%);
+  -webkit-mask-image: linear-gradient(255deg, #0F1217 0%, #0F1217 62%, transparent 100%);
+  mask-image: linear-gradient(255deg, #0F1217 0%, #0F1217 62%, transparent 100%);
 }
 .beam-left::before {
   clip-path: polygon(0% 2%, 0% 30%, 100% 92%, 100% 58%);
@@ -5248,8 +5261,8 @@ body { position: relative; }
     rgb(255 255 255 / 0.030) 46%,
     rgb(255 255 255 / 0.008) 78%,
     transparent 100%);
-  -webkit-mask-image: linear-gradient(105deg, #0B0F17 0%, #0B0F17 62%, transparent 100%);
-  mask-image: linear-gradient(105deg, #0B0F17 0%, #0B0F17 62%, transparent 100%);
+  -webkit-mask-image: linear-gradient(105deg, #0F1217 0%, #0F1217 62%, transparent 100%);
+  mask-image: linear-gradient(105deg, #0F1217 0%, #0F1217 62%, transparent 100%);
 }
 /* Op een telefoon staat de band rechtop in plaats van breed, en dan snijdt een
    wig van 28 procent hoogte er als een streepje doorheen. Steiler en breder,
@@ -5971,8 +5984,8 @@ body { position: relative; }
      limoenknop dus zwart-op-zwart zodra je hem aanwees. Elke plek die --accent
      terugdraait, moet zijn hele familie terugdraaien. */
   --accent-dim: #B9BCC4;
-  --accent-ink: #0B0F17;
-  --accent-on: #0B0F17;
+  --accent-ink: #0F1217;
+  --accent-on: #0F1217;
   --accent-bright: #C5C8CF;
   /* ── SECTIE 22 LEEST ZIJN EIGEN NAMEN — 20 september 2026 ────────────────
      stijl22.css zet `--inkt`, `--lijn` en `--geel-letter` op de LICHTE waarden,
@@ -5988,7 +6001,7 @@ body { position: relative; }
   --lijn: rgb(255 255 255 / 0.16);
   --lijn-sterk: rgb(255 255 255 / 0.28);
   --geel-letter: #C5C8CF;
-  --op-inkt: #0B0F17;
+  --op-inkt: #0F1217;
   --btn-ghost-fill: rgb(255 255 255 / 0.08);
   --btn-ghost-fill-hover: rgb(255 255 255 / 0.16);
 }
@@ -6135,8 +6148,8 @@ body { position: relative; }
      verdwijnt. */
   --accent: #C5C8CF;
   --accent-dim: #B9BCC4;
-  --accent-ink: #0B0F17;
-  --accent-on: #0B0F17;
+  --accent-ink: #0F1217;
+  --accent-on: #0F1217;
   --accent-bright: #C5C8CF;
   --accent-word: #C5C8CF;
   --fill-blue: #C5C8CF;
@@ -6166,7 +6179,7 @@ body { position: relative; }
   --lijn: rgb(244 245 247 / 0.20);
   --lijn-sterk: rgb(244 245 247 / 0.34);
   --geel-letter: #C5C8CF;
-  --op-inkt: #0B0F17;
+  --op-inkt: #0F1217;
 }
 
 /* ═══ SECTIE 21 · GLAS ══════════════════════════════════════════════════════
@@ -6318,8 +6331,8 @@ section { padding-block: clamp(5rem, 11vw, 11rem); }
 .eyebrow-page { gap: .7em; }
 .eyebrow-page::after {
   content: ""; order: -1; width: 2.2em; height: .9em; background-color: var(--ink-3);
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2000 813'%3E%3Cg fill='none' stroke='%230B0F17' stroke-width='28'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3Cg transform='translate(640 0)'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3C/g%3E%3Cg transform='translate(1280 0)'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2000 813'%3E%3Cg fill='none' stroke='%230B0F17' stroke-width='28'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3Cg transform='translate(640 0)'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3C/g%3E%3Cg transform='translate(1280 0)'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2000 813'%3E%3Cg fill='none' stroke='%230F1217' stroke-width='28'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3Cg transform='translate(640 0)'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3C/g%3E%3Cg transform='translate(1280 0)'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2000 813'%3E%3Cg fill='none' stroke='%230F1217' stroke-width='28'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3Cg transform='translate(640 0)'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3C/g%3E%3Cg transform='translate(1280 0)'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
 }
 
 /* 5 · Harde randen. De voorpagina-banner is een vlak met een rand, geen
@@ -6386,13 +6399,13 @@ body::before { display: none; }
 .pop[data-product="dress"] .r-top,
 .pop[data-product="dress"] .r-bottom,
 .pop[data-product="shoes"] .r-shoes,
-.pop[data-product="socks"] .r-shoes { fill: var(--ink, #0B0F17); stroke: var(--ink, #0B0F17); }
+.pop[data-product="socks"] .r-shoes { fill: var(--ink, #0F1217); stroke: var(--ink, #0F1217); }
 .pop[data-own*="shoes"] .r-shoes,
 .pop[data-own*="bottom"] .r-bottom,
 .pop[data-own*="top"] .r-top,
 .pop[data-own*="underlayer"] .r-underlayer { fill: rgb(11 15 23 / .45); stroke: none; }
 .pop .pop-buiten { fill: var(--paper, #F4F5F7); fill-opacity: .8; }
-.pop .pop-kader { fill: none; stroke: var(--ink, #0B0F17); stroke-width: 2; }
+.pop .pop-kader { fill: none; stroke: var(--ink, #0F1217); stroke-width: 2; }
 .pop.pop-klein .pop-buiten { display: none; }
 .pop.pop-klein .r-arms, .pop.pop-klein .r-legs { stroke: var(--line, rgb(11 15 23 / .2)); }
 .pop.pop-klein .pop-kader { stroke-width: 3; }

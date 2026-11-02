@@ -6,7 +6,7 @@
    Wit als grond, inkt voor tekst en keuzes, grijs alleen voor kleine tekst, blauw alleen voor focus en links.
    Eén inktblok (In gebruik). Bewust één thema: de site is wit. */
 :root {
-  --wit: #FFFFFF; --inkt: #0B0F17; --blauw: #25508B; --grijs: #636974; --lijn: #E6E8EC;
+  --wit: #FFFFFF; --inkt: #0F1217; --blauw: #25508B; --grijs: #636974; --lijn: #E6E8EC;
   --vlak: #F4F5F7; --lijn-sterk: #C5C8CF; --veldlijn: #858A94; --blauw-licht: #80A7DD;
   --op-inkt: rgba(255, 255, 255, .86);
   --vd: 'VISUAILS Display', 'DM Sans L', ui-sans-serif, system-ui, sans-serif;
@@ -117,6 +117,9 @@ button, input, textarea, select { font-family: inherit; color: inherit; }
 .drie { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .detail { box-shadow: inset 0 0 0 1px var(--lijn); border-radius: var(--r-kaart) 3px 3px 3px; padding: 18px; display: grid; gap: 14px; align-content: start; min-width: 0; }
 .detail svg { width: 100%; height: auto; display: block; background: var(--wit); }
+.detail.kap { grid-column: 1 / -1; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 14px 28px; align-items: center; }
+.kap-tekst { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.detail .waar .z { color: var(--lijn-sterk); }
 .detail h3 { font-family: var(--vd); font-weight: 700; font-size: 24px; line-height: 1.15; letter-spacing: -.01em; }
 .detail p { font-size: 15.5px; line-height: 1.5; color: var(--grijs); }
 .detail p b { color: var(--inkt); font-weight: 600; }
@@ -196,6 +199,7 @@ code { font: 500 .88em/1.4 var(--mono); background: var(--vlak); padding: 1px 5p
 @media (max-width: 640px) {
   .feiten { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 20px; }
   .drie, .ot { grid-template-columns: minmax(0, 1fr); }
+  .detail.kap { grid-template-columns: minmax(0, 1fr); }
   .reeks { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .reeks > div { box-shadow: none !important; padding-left: 0 !important; }
   .reeks > div:nth-child(n+4) { border-top: 1px solid var(--lijn); }
@@ -286,6 +290,7 @@ code { font: 500 .88em/1.4 var(--mono); background: var(--vlak); padding: 1px 5p
       <div class="detail"><h3>De snede</h3>@SNEDE@<p>Een recht, open uiteinde eindigt schuin, als het vlagje: <b>0,75 × de dikte opzij</b>. In Bold is dat @SNEDE_D@ op @SNEDE_H@ eenheden.</p><p class="waar" aria-label="Waar: f, g, j, r en t">f g j r t</p></div>
       <div class="detail"><h3>De vierkante punt</h3>@PUNT@<p>Elke punt wordt een vierkant van ongeveer de stam, met <b>de hoek rechtsboven eraf op 53,13°</b>: het vlagje als punt.</p><p class="waar" aria-label="Waar: i, j, ë, ï, punt, uitroepteken, vraagteken">i j ë ï . ! ?</p></div>
       <div class="detail"><h3>Het gat van de a</h3>@GAT@<p>Rechts staand langs de stam, links <b>schuin op 53,13°</b>, en even groot als het oude gat. In de dunne gewichten blijft alleen de schuine kant over.</p><p class="waar" aria-label="Waar: a, ä, á, æ">a ä á æ</p></div>
+      <div class="detail kap">@KAP@<div class="kap-tekst"><h3>En de hoofdletters</h3><p>Sinds versie 1.100 (1 november 2026) hebben de hoofdletters twee details uit de V. <b>De snede</b>: één recht uiteinde per teken eindigt schuin, @KAP_D@ op @KAP_H@ eenheden. <b>Eén zachte hoek</b> linksboven, waar stam en bovenarm samenkomen: R = 24,7 % van de kaphoogte, @KAP_R@ eenheden, de bocht van het V-merk. De binnenkant loopt mee, zodat de lijn overal even dik blijft.</p><p class="waar" aria-label="De snede: E, F, L, T, Z. De zachte hoek: E, F, B, D, P, R">E F L T Z <span class="z">·</span> B D P R</p></div></div>
     </div>
     <p class="klein" style="margin-top:18px"><b>Wat bewust zo blijft:</b> de ronde uiteinden (c, e, s, a, 2, 3, 5, C, G, J, S), omdat een schuine snede daar een hap uit de bocht neemt. De vormen, de afstanden en het kernen zijn die van DM Sans. De ª en de tekenvarianten (ss01 tot ss08) zijn DM Sans zonder details.</p>
   </section>

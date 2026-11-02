@@ -1,0 +1,32 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   DE VOORPAGINA IN RUST — levering 80, 1 november 2026 (docs/RUST-80.md §1 en §2)
+   ═══════════════════════════════════════════════════════════════════════════════
+   Na voorpagina-78.css: dezelfde secties (Meer weten, de proef, het vertrouwen) met de maten van 80.
+   - de inhoud hoogstens 1280 px, de marge m = max(20, min(8,333 vw, 160), (100vw − 1280) / 2), op de
+     telefoon (tot 700 px) 20 px; alle nieuwe secties lezen --r8-m;
+   - de lucht een stap omhoog: licht · gewoon · zwaar = 160 · 213 · 284 (telefoon 90 · 120 · 160);
+   - de koppen van de voorpagina in hoofdletters (lijst 64, koppen a: alleen de grote koppen), VISUAILS
+     Display Bold, −0,01 em, regelafstand 0,92. De rest van de site volgt pas na Lucas' ja op de voorpagina
+     (s-categorie).
+   ═══════════════════════════════════════════════════════════════════════════════ */
+html body.hal.hal .h-voor {
+  --r8-m: max(20px, min(8.333vw, 160px), calc((100vw - 1280px) / 2));
+  --v-max: 1280px; --v-marge: var(--r8-m);
+  --r-9: 160px; --r-10: 213px; --r-11: 284px;
+}
+@media (max-width: 900px) { html body.hal.hal .h-voor { --r-9: 90px; --r-10: 120px; --r-11: 160px; } }
+@media (max-width: 700px) { html body.hal.hal .h-voor { --r8-m: 20px; } }
+
+/* Meer weten: de kop in hoofdletters, lucht gewoon na Hoe het werkt (die zelf licht eindigt) */
+html body.hal.hal .h-voor > .v-weten { padding-top: 0; }
+html body.hal.hal .h-voor .v-weten-kop { font: 700 clamp(32px, 4.44vw, 64px)/.92 var(--h-kopletter); letter-spacing: -.01em; text-transform: uppercase; }
+/* de proef: de kop in hoofdletters (de reuzen-€1 blijft zoals hij is) */
+html body.hal.hal .h-voor > .h-proef { margin-top: var(--r-10); }
+html body.hal.hal .h-voor > .h-proef .h-proef-kop > .l, html body.hal.hal .h-voor > .h-proef .h-proef-kop > .d { font-family: var(--h-kopletter); font-weight: 700; letter-spacing: -.01em; text-transform: uppercase; line-height: .92; }
+
+/* lopende tekst iets dunner (lijst 64, dikte b): 400 → 370; de letter heeft sinds 80 de gewichten 300 – 700
+   (public/fonts/dm-sans). Eerst op de voorpagina; de rest van de site volgt na Lucas' ja. */
+html body.hal.hal .h-voor { font-weight: 370; }
+/* en wat 500 was wordt 450 (de feiten en de link in de opening, de regels van Meer weten) */
+html body.hal.hal .h-voor .o8 .o8-feiten, html body.hal.hal .h-voor .o8 .o8-acties .h-link { font-weight: 450; }
+html body.hal.hal .h-voor .v-weten-rijen b, html body.hal.hal .h-voor .v-weten-rijen .h-wt-detail { font-weight: 450; }

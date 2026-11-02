@@ -1,0 +1,103 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════════
+   HET LAADSCHERM — levering 80, 1 november 2026 (lijst 64, preloader a)
+   ═══════════════════════════════════════════════════════════════════════════════
+   Lucas (17:13): een laadscherm met zijn logo, "alleen als nodig". Uit lijst 64: "Het logo opent de pagina:
+   het vlagje van de V vult zich met de echte voortgang. Daarna groeit de V tot een venster waardoor de
+   pagina verschijnt" — dezelfde beweging als de logoposter verderop (HalPoster80.astro).
+
+   ALLEEN ALS NODIG:
+   - alleen op de voorpagina (Layout.astro, prop voorlader), alleen bij een echte paginalading (niet bij een
+     zachte navigatie, niet als de pagina al geladen is) en alleen met script;
+   - de eerste 350 ms is het scherm gewoon de grond (wat je anders ook zou zien terwijl de pagina laadt);
+     is alles er binnen 350 ms, dan verdwijnt het in één keer en heb je het nooit gezien;
+   - pas daarna staat het V-merk in het midden, in inkt op 18 %, en het vlagje vult zich in inkt met de
+     echte voortgang: de letters (document.fonts), het eerste beeld van de opening en de pagina zelf;
+   - klaar: de V wordt een venster en groeit om zijn dikste punt tot de pagina helemaal te zien is
+     (900 ms, de golf: cubic-bezier(.7, 0, .2, 1)). Minder beweging: 200 ms vervagen.
+   - Noodrem: na 8 s gaat het scherm hoe dan ook weg (ook als het script ergens vastloopt: de css doet het).
+
+   Het merk is het V-merk (#markglyph in Layout.astro), hier letterlijk dezelfde twee paden: het scherm staat
+   vóór de sprite in de pagina. Geen nieuw logo, alleen het bestaande en zijn vlagje.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+const LIJF = 'M 0.0 16.0 L 144.25 266.75 L 463.25 813.25 L 662.75 354.75 L 619.25 408.25 L 515.5 546.25 L 264.5 119.0 A 201.21 201.21 0 0 0 101.0 15.75 L 0.0 16.0 Z';
+const VLAG = 'M 701.75 0.0 L 543.25 366.25 L 507.25 453.75 L 652.0 259.25 L 702.0 338.25 L 701.75 0.0 Z';
+---
+<div class="vl8" id="vl8" aria-hidden="true">
+  <svg class="vl8-doek" data-vl8-doek width="100%" height="100%" focusable="false">
+    <defs>
+      <mask id="vl8-masker" maskUnits="userSpaceOnUse" x="0" y="0" width="100%" height="100%">
+        <rect x="0" y="0" width="100%" height="100%" fill="#fff" />
+        <g data-vl8-gat transform="scale(0)"><path d={LIJF} fill="#000" /><path d={VLAG} fill="#000" /></g>
+      </mask>
+    </defs>
+    <rect x="0" y="0" width="100%" height="100%" fill="#FBFCFF" mask="url(#vl8-masker)" />
+  </svg>
+  <svg class="vl8-v" viewBox="0 0 702 813.25" focusable="false">
+    <path d={LIJF} fill="#0F1217" opacity=".18" /><path d={VLAG} fill="#0F1217" opacity=".18" />
+    <clipPath id="vl8-vlag"><rect data-vl8-vul x="0" y="813.25" width="702" height="0" /></clipPath>
+    <path d={VLAG} fill="#0F1217" clip-path="url(#vl8-vlag)" />
+  </svg>
+</div>
+<script is:inline>
+  (function () {
+    var h = document.documentElement;
+    var el = document.getElementById('vl8');
+    if (!el) return;
+    if (!h.classList.contains('vl8-aan')) { el.remove(); return; }
+    var minder = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var vul = el.querySelector('[data-vl8-vul]'), gat = el.querySelector('[data-vl8-gat]'), v = el.querySelector('.vl8-v');
+    var getoond = 0, klaar = false, weg = false, p = 0, gedaan = 0, TOTAAL = 3;
+    function zet(x) { p = Math.max(p, Math.min(1, x)); vul.setAttribute('y', String(813.25 * (1 - p))); vul.setAttribute('height', String(813.25 * p)); }
+    function stap() { gedaan++; zet(gedaan / TOTAAL); if (gedaan >= TOTAAL) klaarNu(); }
+    function ruim() { if (weg) return; weg = true; h.classList.remove('vl8-aan'); if (el.parentNode) el.parentNode.removeChild(el); }
+    function klaarNu() {
+      if (klaar) return; klaar = true;
+      if (!getoond) { ruim(); return; }
+      /* het vlagje mag even vol staan: minstens 450 ms na het verschijnen */
+      setTimeout(open, Math.max(120, 450 - (performance.now() - getoond)));
+    }
+    function open() {
+      if (weg) return;
+      if (minder) { el.style.transition = 'opacity .2s linear'; el.style.opacity = '0'; setTimeout(ruim, 220); return; }
+      el.style.pointerEvents = 'none';
+      var W = innerWidth, H = innerHeight, r = v.getBoundingClientRect();
+      var k = r.height / 813.25, ox = r.left + 451.25 * k, oy = r.top + 611.25 * k;
+      var sEind = Math.hypot(W, H) / 2 * 1.08 / (91.5 * k);
+      var t0 = performance.now(), duur = 900;
+      /* de golf: cubic-bezier(.7, 0, .2, 1), benaderd met dezelfde vorm als in de rest van de site */
+      function golf(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+      v.style.opacity = '0';
+      function tik(nu) {
+        var t = Math.min(1, (nu - t0) / duur), e = golf(t);
+        var s = k * Math.exp(Math.log(sEind) * e);
+        var px = ox + (W / 2 - ox) * e, py = oy + (H / 2 - oy) * e;
+        gat.setAttribute('transform', 'translate(' + px + ' ' + py + ') scale(' + s + ') translate(-451.25 -611.25)');
+        if (t < 1) requestAnimationFrame(tik); else ruim();
+      }
+      requestAnimationFrame(tik);
+    }
+    /* de voortgang: de letters, het eerste beeld van de opening, de pagina */
+    /* de letters: de kopletter en de tekstletter echt laden (fonts.ready is al klaar zolang er nog niets gevraagd is) */
+    if (document.fonts && document.fonts.load) Promise.all([document.fonts.load('700 1em "VISUAILS Display"'), document.fonts.load('400 1em "DM Sans"')]).then(stap, stap); else stap();
+    function beeld() {
+      var img = document.querySelector('[data-o8-beeld]');
+      if (!img || (img.complete && img.naturalWidth)) { stap(); return; }
+      var een = function () { img.removeEventListener('load', een); img.removeEventListener('error', een); stap(); };
+      img.addEventListener('load', een); img.addEventListener('error', een);
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', beeld, { once: true }); else beeld();
+    if (document.readyState === 'complete') stap(); else addEventListener('load', stap, { once: true });
+    setTimeout(function () { if (!klaar && !weg) { getoond = performance.now(); el.classList.add('is-zichtbaar'); } }, 350);
+    setTimeout(function () { if (!weg) { klaar = true; getoond ? open() : ruim(); } }, 8000);
+  })();
+</script>
+<style is:global>
+  .vl8 { display: none; }
+  html.vl8-aan .vl8 { display: block; position: fixed; inset: 0; z-index: 2147483000; animation: vl8-nood 0s 8.5s forwards; }
+  @keyframes vl8-nood { to { visibility: hidden; } }
+  .vl8-doek { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+  .vl8-v { position: absolute; left: 50%; top: 50%; width: auto; height: clamp(56px, 8svh, 84px); aspect-ratio: 702 / 813.25; transform: translate(-50%, -50%); opacity: 0; transition: opacity .24s cubic-bezier(.2, .8, .2, 1); }
+  .vl8.is-zichtbaar .vl8-v { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .vl8-v { transition: none; } }
+</style>

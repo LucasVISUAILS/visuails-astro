@@ -1,0 +1,35 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   HOE HET WERKT, KORT — levering 80, 1 november 2026 (HalHoeKort80.astro)
+   ═══════════════════════════════════════════════════════════════════════════════
+   DE MATEN: de regel in hoofdletters, f = clamp(26, 3,6 vw, 52): op 1440 is "JIJ STUURT / WIJ MAKEN /
+   JIJ KEURT GOED." 1090 px breed, binnen de 1200 tussen de marges. Tussen de stappen de snede: een streep
+   van 0,08 em, 0,78 em hoog, 37° uit het lood (zoals de feiten in de opening), midden in 1,08 em lucht.
+   Het nummer erboven mono 11,5 px in grijs. Lucht boven gewoon (213), onder licht (160).
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.w8.w8 { --w8-m: var(--r8-m, max(20px, min(8.333vw, 160px), calc((100vw - 1280px) / 2))); position: relative; padding: clamp(120px, 14.8vw, 213px) var(--w8-m) clamp(90px, 11.1vw, 160px); text-align: center; }
+.w8-regel { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; row-gap: 18px; font: 700 clamp(26px, 3.6vw, 52px)/.92 var(--h-kopletter); letter-spacing: -.01em; text-transform: uppercase; color: var(--h-inkt); }
+.w8-stap { display: inline-flex; flex-direction: column; align-items: flex-start; white-space: nowrap; }
+.w8-stap + .w8-stap { position: relative; padding-left: 1.08em; }
+/* de snede in het midden van de 1,08 em: onderaan op .24 em, door de schuinte (tan 37° × .78 = .59 em) bovenaan op .83 em */
+.w8-stap + .w8-stap::before { content: ""; position: absolute; left: .24em; bottom: .02em; width: .08em; height: .78em; background: var(--h-inkt); transform: skewX(-37deg); transform-origin: 0 100%; }
+.w8-nr { margin: 0 0 12px .06em; font: 500 11.5px/1 var(--h-mono); letter-spacing: .08em; color: var(--h-grijs, #636974); }
+.w8 .w8-onder { --h-maat: none; margin: 34px auto 0; max-width: none; font: 370 clamp(16px, 1.25vw, 18px)/1.5 var(--h-letter); color: var(--h-grijs, #636974); }
+.w8 .w8-link { margin-left: 10px; color: var(--h-inkt); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, var(--h-inkt) 32%, transparent); }
+.w8 .w8-link:hover { color: var(--h-blauw, #25508B); text-decoration-color: currentColor; }
+
+@media (max-width: 700px) {
+  .w8-regel { flex-direction: column; align-items: center; row-gap: 22px; font-size: clamp(28px, 9vw, 40px); }
+  .w8-stap { align-items: center; }
+  .w8-stap + .w8-stap { padding-left: 0; }
+  .w8-stap + .w8-stap::before { display: none; }
+  .w8-nr { margin: 0 0 8px; }
+  .w8 .w8-link { display: inline-block; margin: 6px 0 0; }
+}
+
+/* Grijs naar inkt (levering 83, lijst 68: grijs = a; het script staat in HalHoeKort80.astro). Het grijs is ons
+   grijs (5,4 : 1); het woord springt in twee stappen naar inkt (160 ms), zoals het merk springt. */
+.w8.w8-grijs .w8-w { color: var(--h-grijs, #636974); transition: color 160ms steps(2, end); }
+.w8.w8-grijs .w8-w.aan { color: var(--h-inkt); }
+.w8.w8-grijs .w8-stap + .w8-stap:not(.aan)::before { background: var(--h-grijs, #636974); }
+.w8.w8-grijs .w8-stap + .w8-stap::before { transition: background-color 160ms steps(2, end); }
+@media (prefers-reduced-motion: reduce) { .w8.w8-grijs .w8-w { color: var(--h-inkt); transition: none; } }

@@ -164,8 +164,13 @@ for (const p of HAL) {
   const s0 = h.indexOf('class="h-stappen"');
   const stappen = h.slice(s0, h.indexOf('class="o-voet"', s0));
   const fmt = (stap3.match(/<span class="o-fmt[^"]*"[^>]*>[\s\S]*?<\/span>/) || [''])[0];
-  check(`${p}: stap 3 toont vier beelden met elk een vinkje, en het formaat als één keuze`, [(stap3.match(/class="h-vink"/g) || []).length, (fmt.match(/is-eind/g) || []).length, /9:16/.test(fmt)], [4, 1, false]);
-  check(`${p}: met "4 van 4 goedgekeurd" / "4 of 4 approved"`, /4 (van|of) 4 (goedgekeurd|approved)/.test(stap3), true);
+  /* levering 80 (lijst 64, s-hoe en s-categorie): Hoe het werkt met de animaties staat niet meer op de voorpagina;
+     hij verhuist naar /catalog, /lifestyle en /video. Op de voorpagina staat de korte versie (HalHoeKort80). Staat
+     stap 3 ergens, dan gelden de eisen nog. */
+  if (i3 >= 0) {
+    check(`${p}: stap 3 toont vier beelden met elk een vinkje, en het formaat als één keuze`, [(stap3.match(/class="h-vink"/g) || []).length, (fmt.match(/is-eind/g) || []).length, /9:16/.test(fmt)], [4, 1, false]);
+    check(`${p}: met "4 van 4 goedgekeurd" / "4 of 4 approved"`, /4 (van|of) 4 (goedgekeurd|approved)/.test(stap3), true);
+  } else check(`${p}: Hoe het werkt kort, met drie stappen (levering 80)`, (h.match(/class="w8-stap"/g) || []).length, 3);
 }
 const metHal = globSync('dist/**/index.html').map((f) => f.replace(/\\/g, '/'))
   .filter((f) => /<body[^>]*class="[^"]*\bhal\b/.test(readFileSync(f, 'utf8')))
@@ -287,9 +292,9 @@ const zf = [];
     zacht: window.__zacht === 1,
     hal: document.body.classList.contains('hal'),
     letter: /^"?DM Sans/i.test(getComputedStyle(document.body).fontFamily) && /^"?VISUAILS Display/i.test(getComputedStyle(document.querySelector('.o-kop, .h-kop') || document.body).fontFamily),
-    /* levering 78: de opening is de zwarte tablet (HalTablet.astro) */
-    opening: (document.querySelector('[data-t-podium]')?.getBoundingClientRect().height || 0) > 300,
-    inBeeld: [...document.querySelectorAll('[data-t-kop], [data-t-lede]')].every((e) => getComputedStyle(e).opacity !== '0' && getComputedStyle(e).visibility !== 'hidden'),
+    /* levering 79: de opening is de laptop over de hele breedte (HalLaptopBreed.astro; in 78 de tablet) */
+    opening: (document.querySelector('[data-o8-podium]')?.getBoundingClientRect().height || 0) > 300,   /* levering 80: de opening van 80 */
+    inBeeld: [...document.querySelectorAll('.o8-kop, .o8-zin')].every((e) => getComputedStyle(e).opacity !== '0' && getComputedStyle(e).visibility !== 'hidden'),
   }));
   check('zacht naar de hal: zelfde venster, body.hal, DM Sans en VISUAILS Display, de opening staat', heen, { zacht: true, hal: true, letter: true, opening: true, inBeeld: true });
   /* levering 78: op de voorpagina komt niets meer binnen met een fade (RUIMTE-EN-RUST §8), maar het

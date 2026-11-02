@@ -1,0 +1,72 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════════
+   WAT WE MAKEN — levering 80, 1 november 2026 (lijst 64, s-maken)
+   ═══════════════════════════════════════════════════════════════════════════════
+   Lucas: "Echt heel weinig informatie geven en de klant meer te weten laten komen wanneer hij voor een
+   categorie kiest." Dus per dienst alleen: één uitgeknipt product met zijn schaduw, de naam, de vanafprijs
+   (uit de code) en de link naar de categoriepagina. Daaronder klein wat er verder is.
+   Was (76 – 79): het productvel met tabs, één groot beeld, prijs, knop en de regel over één product.
+
+   De producten zijn NON/STD uit zijn map Catalog Custom styles, uitgeknipt met de schaduw
+   (scripts/uitknippen.py, scripts/rust-beelden.mjs): de hoodie voor productfoto's, de jeans voor
+   lifestyle, de sokken voor video. Ze staan op één lijn, elk zo hoog dat ze even zwaar ogen.
+
+   De opening glijdt na de video naar deze sectie en zet hem in het midden van het scherm (doel2 in
+   HalOpening80.astro): daarom past hij op 1440 × 900 helemaal onder de balk.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+import '../styles/maken-80.css';
+import { localizedPath } from '../i18n/ui.js';
+import { ikoon } from '../data/iconen.js';
+
+interface Props {
+  lang: 'nl' | 'en';
+  kop: string;
+  zin: string;
+  diensten: string[][];         /* [naam, prijs, href, …] uit COPY.diensten */
+  ookKop: string;
+  ook: string[][];              /* [naam, href] */
+  eenProduct?: string;          /* wat één product kost (afvinklijst 5): klein onder wat er verder is */
+}
+const { lang, kop, zin, diensten, ookKop, ook, eenProduct } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+const ik = (n: string) => ikoon(n);
+/* per dienst het product en hoe hoog het staat (in delen van de rijhoogte, zodat ze even zwaar ogen:
+   gemeten op het oppervlak van het product zonder schaduw) */
+const BEELD = [
+  { naam: 'hoodie', b: 1564, h: 1811, maten: [480, 720, 960], schaal: 0.92 },
+  { naam: 'jeans', b: 1246, h: 1887, maten: [480, 720, 960], schaal: 1 },
+  { naam: 'sokken', b: 1277, h: 1655, maten: [480, 720, 960], schaal: 0.84 },
+];
+const ALT = lang === 'nl'
+  ? ['Blauwe zip-hoodie van NON/STD, uitgeknipt met zijn schaduw', 'Zwarte jeans met opdruk van NON/STD, uitgeknipt met zijn schaduw', 'Witte sokken met logo van NON/STD, uitgeknipt met hun schaduw']
+  : ['Blue NON/STD zip hoodie, cut out with its shadow', 'Black printed NON/STD jeans, cut out with its shadow', 'White NON/STD logo socks, cut out with their shadow'];
+const srcset = (n: string, maten: number[], ext: string) => maten.map((b) => `/img/hal/rust/${n}-${b}.${ext} ${b}w`).join(', ');
+---
+<section class="m8" id="maken" aria-labelledby="m8-kop">
+  <div class="m8-kopgroep">
+    <h2 id="m8-kop" class="h-kop m8-kop">{kop}</h2>
+    <p class="m8-zin">{zin}</p>
+  </div>
+  <ul class="m8-rij" role="list">
+    {diensten.map(([naam, prijs, href], i) => {
+      const B = BEELD[i];
+      const sizes = `(max-width: 700px) 30vw, ${Math.round(340 * B.schaal * B.b / B.h)}px`;
+      return (
+        <li class="m8-dienst">
+          <a href={lp(href)} class="m8-link">
+            <span class="m8-beeld" style={`--s:${B.schaal}`}>
+              <picture>
+                <source type="image/avif" srcset={srcset(B.naam, B.maten, 'avif')} sizes={sizes} />
+                <img src={`/img/hal/rust/${B.naam}-720.webp`} srcset={srcset(B.naam, B.maten, 'webp')} sizes={sizes} width={B.b} height={B.h} alt={ALT[i]} loading="lazy" decoding="async" />
+              </picture>
+            </span>
+            <span class="m8-naam">{naam}<span class="m8-pijl" aria-hidden="true" set:html={ik('pijl')} /></span>
+            <span class="m8-prijs">{prijs}</span>
+          </a>
+        </li>
+      );
+    })}
+  </ul>
+  <p class="m8-ook"><span class="m8-ook-kop">{ookKop}</span>{ook.map(([naam, href]) => <a href={lp(href)}>{naam}</a>)}</p>
+  {eenProduct && <p class="h-onderregel m8-regel">{eenProduct}</p>}
+</section>

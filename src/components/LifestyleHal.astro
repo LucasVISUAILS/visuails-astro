@@ -35,6 +35,7 @@ import { productStand, PRODUCT_COPY } from '../data/eigenproduct.js';
 import { kleiner, beeldMaat, isEcht } from '../lib/beeldAanwezig.js';
 import HalLaptop from './HalLaptop.astro';
 import HalVragen from './HalVragen.astro';
+import HalHoeDienst from './HalHoeDienst.astro';
 import HalProef from './HalProef.astro';
 import HalBeweging from './HalBeweging.astro';
 
@@ -291,6 +292,10 @@ const DRIE = (n: number) => String(n).padStart(2, '0');
       <span class="h-link">{c.modelCta}<span class="h-cirkel h-cirkel-klein h-cirkel-wit" aria-hidden="true" set:html={ik('pijl')} /></span>
     </a>
   </section>
+
+  {/* ── HOE HET WERKT — levering 81 (Lucas, 1 november, 22:10: "Ja, nu meenemen"): de drie stappen van
+      lifestyle met de animaties, zoals tot levering 80 op de voorpagina (HalHoeDienst.astro). ── */}
+  <HalHoeDienst lang={lang} dienst="lifestyle" />
 
   {/* ── 5 · VRAGEN ─────────────────────────────────────────────────────────── */}
   <HalVragen lang={lang} id="ls-faq" dienst="lifestyle" faqs={serviceFaqs('lifestyle', lang)} />

@@ -49,6 +49,12 @@ export const IKOON = {
   /* erbij in levering 54, met dezelfde regels: plus-en-min ("allebei kan") en pauze */
   'plusmin': 'M9.3 9.6L9.3 6L6.6 6L6.6 9.60ZM10.2 13.2L13.8 13.2L13.8 2.4L10.2 2.40ZM14.7 6L14.7 9.6L17.4 9.6L17.4 6.00ZM5.25 20.2L16.05 20.2L18.75 16.6L7.95 16.60Z',
   'pauze': 'M14.74 2.88L14.74 8.45L18.91 2.88ZM9.8 20.4L9.8 3.6L7.6 3.6L7.26 3.63L6.92 3.71L6.6 3.84L6.31 4.02L6.04 4.24L5.82 4.51L5.64 4.8L5.51 5.12L5.43 5.46L5.4 5.8L5.4 20.40ZM14.2 20.4L18.6 20.4L18.6 5.63L14.2 11.50Z',
+  /* levering 83 (lijst 68, klein = ja): pauze en afspelen met dezelfde opbouw, zodat de pauzeknop van de ene in
+     de andere kan overgaan (CSS d, 240 ms). Elk eindbeeld is precies het icoon hierboven: alle hoekpunten staan
+     er, er zijn alleen punten bij gekomen op de randen (scratch morph.py). Drie stukken: het linkerbeen wordt het
+     kleine stuk linksboven, het rechterbeen het grote stuk, het snippertje boven de snede de punt. */
+  'pauze-m': 'M6.04 4.24 L6.31 4.02 L6.60 3.84 L6.92 3.71 L7.26 3.63 L7.60 3.60 L9.80 3.60 L9.80 20.40 L5.40 20.40 L5.40 5.80 L5.43 5.46 L5.51 5.12 L5.64 4.80 L5.82 4.51 Z M14.20 11.50 L18.60 5.63 L18.60 20.40 L14.20 20.40 Z M14.74 2.88 L18.91 2.88 L14.74 8.45 Z',
+  'afspelen-m': 'M6 3.20 L7.50 4.11 L9 5.01 L10.51 5.92 L12.01 6.82 L10.51 8.82 L9 10.82 L7.50 12.83 L6 14.83 L6 13.38 L6 11.92 L6 9.02 L6 7.56 L6 6.11 Z M13.21 7.55 L20.60 12 L6 20.80 L6 17.17 Z M20.60 12 L20.60 12 L20.60 12 Z',
   /* erbij in levering 57, voor Studio (v35-studio a), met dezelfde regels: raster (het
      overzicht: vier tegels, linksboven de zachte hoek, rechtsonder de snede), persoon (het
      hoofd los van de schouders door de kier; links 60°, rechts 66,5°) en oog (nakijken) */

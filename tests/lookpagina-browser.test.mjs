@@ -109,6 +109,13 @@ const METING = `(() => {
   }
   const held = document.querySelector('.h-lk-held');
   uit.held = held ? Math.round(held.getBoundingClientRect().width / window.innerWidth * 100) : 0;
+  /* Levering 81 (1 november 2026): de marge van de voorpagina geldt nu op elke publieke pagina (max(20, min(8,333 vw,
+     160)), Lucas 22:10 "letter + lucht"). Het eerste beeld vult dan de kolom tussen de marges: op 1280 px is dat
+     83 % van het scherm (was 94 % met 40 px marge). "Vult de breedte" betekent sindsdien: de hele kolom. */
+  const pag = document.querySelector('.h-pagina');
+  let rand = 0;
+  if (pag) { const s = document.createElement('div'); s.style.cssText = 'position:absolute;visibility:hidden;width:var(--h-rand)'; pag.appendChild(s); rand = s.getBoundingClientRect().width; s.remove(); }
+  uit.kolom = Math.floor((window.innerWidth - 2 * rand) / window.innerWidth * 100);
   uit.heldSoort = held ? (/paar-916-916/.test(held.className) ? 'twee hoge' : held.className.match(/is-(paar|staand|liggend)/)?.[1]) : '';
   /* Niets bijgesneden in het eerste beeld: de verhouding van het vak is die van het beeld (±20%). */
   uit.heldKlopt = !held || [...held.querySelectorAll('img')].every((i) => { const r = i.getBoundingClientRect(); const vak = r.width / r.height; const echt = i.naturalWidth / i.naturalHeight; return !i.naturalWidth || Math.abs(vak / echt - 1) < 0.2; });
@@ -139,7 +146,7 @@ try {
       const tag = `${p.lang} ${p.url} ${breed}px`;
       ok(`${tag}: geen horizontale scroll`, m.scroll <= 1, `${m.scroll}px`);
       ok(`${tag}: tekst minstens 11,5 px en 4,5:1`, m.gemeten >= 8 && !m.klein.length && !m.laag.length, `${m.gemeten} · ${m.klein.concat(m.laag).slice(0, 4).join(' | ')}`);
-      if (m.beelden.length) ok(`${tag}: het eerste beeld vult de breedte (${m.held}%, ${m.heldSoort})`, m.heldSoort === 'staand' || m.held >= (m.heldSoort === 'twee hoge' && breed > 700 ? 70 : breed === 390 ? 85 : 90));
+      if (m.beelden.length) ok(`${tag}: het eerste beeld vult de breedte (${m.held}%, ${m.heldSoort})`, m.heldSoort === 'staand' || m.held >= Math.min(m.kolom, m.heldSoort === 'twee hoge' && breed > 700 ? 70 : breed === 390 ? 85 : 90), `kolom ${m.kolom}%`);
       if (m.beelden.length) ok(`${tag}: het eerste beeld is niet zwaar bijgesneden`, m.heldKlopt);
       ok(`${tag}: geen kapot beeld`, !m.kapot.length, m.kapot.join(', '));
       if (FOTO.has(p.url)) await page.screenshot({ path: path.join(OUT, `look-${p.url.replace(/\//g, '-').replace(/^-|-$/g, '')}-${breed}.png`), fullPage: true });

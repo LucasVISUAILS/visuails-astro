@@ -116,6 +116,7 @@ import HuidKantig from '../components/HuidKantig.astro';
 import Woordmerk from '../components/Woordmerk.astro';
 /* De bovenbalk draagt in de hal het V-merk (14 oktober 2026), het woordmerk de footer. */
 import VMerk from '../components/VMerk.astro';
+import Voorlader80 from '../components/Voorlader80.astro';
 import KlantMelding from '../components/KlantMelding.astro';
 import { WOORDMERK, WOORDMERK_LIJNEN } from '../data/woordmerk.js';
 /* levering 77 (lijst 60): de letters van de hal, zelf gehost: DM Sans voor de tekst
@@ -127,6 +128,9 @@ const KOPLETTER_HAL = '/fonts/visuails-display/VISUAILSDisplay-Bold.woff2';
 interface Props {
   title: string;
   description: string;
+  /** Levering 80 (lijst 64, preloader a): het laadscherm met het V-merk, alleen op de voorpagina en
+   *  alleen als het laden langer dan 350 ms duurt (Voorlader80.astro). */
+  voorlader?: boolean;
   ogImage?: string;
   noindex?: boolean;
   /** Opt this page onto the espresso ground (section 17's rebuild). Per-page
@@ -183,7 +187,7 @@ interface Props {
 // `noindex, nofollow, noarchive` as a meta tag AND an x-robots-tag response
 // header, because a portal URL contains a token and a meta tag alone is only
 // read by something that parses HTML. See src/lib/portal.js.
-const { title: titelRuw, description, ogImage = '/img/banners-05.webp', noindex = false, ground = 'paper', huid = 'kantig', werkplaats = false } = Astro.props;
+const { title: titelRuw, description, ogImage = '/img/banners-05.webp', noindex = false, ground = 'paper', huid = 'kantig', werkplaats = false, voorlader = false } = Astro.props;
 /* ── DE PAGINATITEL IN ÉÉN VORM — levering 58, 17 oktober 2026 (afvinklijst 37, b-titels) ──
    "Overal Onderwerp | VISUAILS, ook in het Nederlands." Er stonden drie vormen door elkaar:
    "Pricing — … | VISUAILS", "Start an order — VISUAILS" en "VISUAILS — Contact us". De twee
@@ -438,6 +442,9 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
       })();
     </script>
   )}
+  {/* levering 80: het laadscherm (Voorlader80.astro) alleen bij een echte paginalading met script;
+      de klasse staat er vóór de eerste verf, zodat de pagina niet eerst half verschijnt */}
+  {voorlader && <script is:inline>if (document.readyState === 'loading') document.documentElement.classList.add('vl8-aan');</script>}
   {huid === 'hal'
     ? <link rel="preload" as="font" type="font/woff2" href={LETTER_HAL} crossorigin="anonymous" />
     : <link rel="preload" as="font" type="font/woff2" href={archivoRoman} crossorigin="anonymous" />}
@@ -497,7 +504,9 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
   {/* 14 oktober 2026, de hal: wit, de grond van de pagina. Een violette
       adresbalk boven een witte pagina is een vlak violet dat geen actie is, en
       dat staat de hal niet toe (KLEURENSCHEMA.md). */}
-  <meta name="theme-color" content={huid === 'hal' ? '#FFFFFF' : '#25508B'} />
+  {/* levering 79: op een hal-pagina de grond #F4F7FD (was wit), zodat de adresbalk van de telefoon
+      één vlak is met de balk eronder. */}
+  <meta name="theme-color" content={huid === 'hal' ? '#FBFCFF' : '#25508B'} />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:image" content={ogImageAbs} />
@@ -587,6 +596,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
       user had no way past them — the site had no in-page anchor at all. Visually
       hidden until focused, which is the only state it needs to exist in. */}
 <a class="skip-link" href="#main">{t('nav_skip')}</a>
+{voorlader && <Voorlader80 />}
 
   {/* SVG sprite — product-scene placeholder symbols, the chrome gradients and
        the outlined logotype. The six greys below (three gObj stops, two gGlass
@@ -1661,6 +1671,11 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     // back, the choreography has to come back with it — do not re-add this
     // import on its own, it will cost 70 KB and animate nothing.
     import '../scripts/interactions.js';
+    /* levering 80: het licht in het glas van de balk */
+    import '../scripts/glasbalk.js';
+    /* levering 80: zacht scrollen, alleen met een muiswiel en heel licht (zie de notitie over Lenis
+     * hieronder: dit is bewust kleiner; src/scripts/zachtscrollen.js) */
+    import '../scripts/zachtscrollen.js';
     /* shader-hero.js is hier weg — 7 augustus 2026. Het chroomveld dat het
      * tekende stond op één sectie van de homepage, en die sectie is herbouwd
      * zonder canvas (zie sectie 18 in HomeV2.astro: het was een tweede
@@ -2062,7 +2077,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      hover niet van pagina tot pagina een andere kleur heeft. */
   .site-header:not(.scrolled) .brand-glyph { --mk-line-ink: currentColor; }
   @media (forced-colors: active) { .brand-word, .brand-mark { fill: CanvasText; --mk-ink: CanvasText; --mk-line-ink: CanvasText; } }
-  @media print { .brand-word, .brand-mark { fill: #0B0F17; --mk-ink: #0B0F17; --mk-line-ink: #0B0F17; } }
+  @media print { .brand-word, .brand-mark { fill: #0F1217; --mk-ink: #0F1217; --mk-line-ink: #0F1217; } }
   .nav-links { display: flex; align-items: center; gap: .1rem; list-style: none; margin: 0; padding: 0; }
   /* Pill, like everything else pressable in this bar. A 14px trigger standing
      next to a fully round Start button is the specific "blokkerig" Lucas
@@ -2600,8 +2615,8 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
        is. Naar NUL vervagen was de andere optie en is fout: dan zweeft het merk
        en raakt het de rand niet meer, en dat is nu juist het idee. */
     fill: #FFFFFF;
-    -webkit-mask-image: linear-gradient(to bottom, #0B0F17 0%, #0B0F17 62%, rgb(11 15 23 / .40) 100%);
-    mask-image: linear-gradient(to bottom, #0B0F17 0%, #0B0F17 62%, rgb(11 15 23 / .40) 100%);
+    -webkit-mask-image: linear-gradient(to bottom, #0F1217 0%, #0F1217 62%, rgb(11 15 23 / .40) 100%);
+    mask-image: linear-gradient(to bottom, #0F1217 0%, #0F1217 62%, rgb(11 15 23 / .40) 100%);
   }
 
   /* ── DEZE REGEL HEEFT DE GLOED VERPLAATST, EN NIEMAND ZAG HET ────────────

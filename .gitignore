@@ -71,3 +71,7 @@ kladblok/uitrol-log.txt
 # De nepbeelden van de drukteproef (8 oktober 2026, 9.05): een gigabyte ruis,
 # opnieuw te maken met kladblok\drukteproef-beelden.bat. Geen bron.
 kladblok/drukteproef/
+
+# Levering 80: de uitgeknipte bronnen (png met schaduw, 24 MB) staan op je schijf in kladblok; de site-maten
+# die scripts/rust-beelden.mjs ervan maakt, staan in public/img/hal/rust/ en gaan wel mee.
+kladblok/levering-80/uitgeknipt/*.png

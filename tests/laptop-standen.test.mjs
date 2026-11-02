@@ -158,8 +158,14 @@ const voorpagina = fs.readFileSync(path.join(DIST, 'nl/index.html'), 'utf8');
    klant proberen over te halen met dat ons product niet volledig met ai word gemaakt. Voelt veel te
    verdedigend, wees hier voortaan streng op." De zin van stap 2 zegt nu wat er gebeurt, zonder "met de
    hand" (en staat sinds 16:56 niet meer in beeld: de balk toont alleen de voortgang). */
-ok('NL: de uitleg van stap 2 is één zin, zonder "met de hand" (16:57)', voorpagina.includes('Wij maken elk beeld uit je foto’s, met dezelfde uitstraling voor je hele set.') && !/met de hand/i.test(voorpagina.replace(/<script[\s\S]*?<\/script>/g, '')));
-ok('EN: idem', (() => { const en = fs.readFileSync(path.join(DIST, 'index.html'), 'utf8'); return en.includes('We make every image from your photos, with the same look across your whole set.') && !/by hand/i.test(en.replace(/<script[\s\S]*?<\/script>/g, '')); })());
+/* Levering 81 (1 november 2026): Hoe het werkt met de animaties staat op /catalog, /lifestyle en /video
+   (HalHoeDienst.astro); de zin van stap 2 staat in de uitlegbalk van /catalog. "Met de hand" mag nergens
+   op de voorpagina of op /catalog. */
+const zonderScript = (h) => h.replace(/<script[\s\S]*?<\/script>/g, '');
+const catNl = fs.readFileSync(path.join(DIST, 'nl/catalog/index.html'), 'utf8');
+const catEn = fs.readFileSync(path.join(DIST, 'catalog/index.html'), 'utf8');
+ok('NL: de uitleg van stap 2 is één zin, zonder "met de hand" (16:57)', catNl.includes('Wij maken elk beeld uit je foto’s, met dezelfde uitstraling voor je hele set.') && !/met de hand/i.test(zonderScript(catNl)) && !/met de hand/i.test(zonderScript(voorpagina)));
+ok('EN: idem', (() => { const en = fs.readFileSync(path.join(DIST, 'index.html'), 'utf8'); return catEn.includes('We make every image from your photos, with the same look across your whole set.') && !/by hand/i.test(zonderScript(catEn)) && !/by hand/i.test(zonderScript(en)); })());
 
 await browser.close();
 server.close();

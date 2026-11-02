@@ -1,0 +1,98 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════════
+   DE GALERIJ — levering 80, 1 november 2026 (vervangt "Kies een look" op de voorpagina)
+   ═══════════════════════════════════════════════════════════════════════════════
+   Lucas (lijst 64, s-looks): "In plaats van kies een look is een gallery slide beter … 2 rijen met
+   foto's die in de tegengestelde richting schuiven en dat hoe harder je scrollt hoe sneller de foto's
+   voorbij vliegen met een soort motion blur wanneer je heel hard scrollt … zorg voornamelijk voor een
+   fijn dopamine achtig gevoel tijdens het scrollen. Klanten kunnen op een specifieke foto klikken die
+   ze mooi vinden en worden dan naar de juiste plek geleid waar ze die style kunnen bestellen."
+
+   - Rij 1: lifestyle (de looks uit styles.js), rij 2: catalog (een eigen look en Classic). De beelden
+     en hun maten komen uit src/data/galerij80.json (scripts/galerij-80.mjs).
+   - Elk beeld is een link naar de pagina van zijn look (/lifestyle/<look>, /catalog/classic,
+     /catalog/custom); daar staat de knop om hem te bestellen.
+   - De rijen bewegen alleen als jij scrolt (of een rij opzij sleept), nooit vanzelf: rij 1 naar links,
+     rij 2 naar rechts. Hoe harder je scrolt, hoe sneller, en meer dan evenredig; daarna lopen ze uit.
+     In de vaart komt over elk beeld zijn veeg (dezelfde foto horizontaal onscherp): de bewegingsonscherpte.
+     Het script: src/scripts/galerij80.js.
+   - Zonder script en bij minder beweging: twee rijen om zelf opzij te scrollen, zonder kopieën.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+import '../styles/galerij-80.css';
+import GALERIJ from '../data/galerij80.json';
+import { localizedPath } from '../i18n/ui.js';
+import { styles as lifestyleEn } from '../data/styles.js';
+import { styles as lifestyleNl } from '../data/styles.nl.js';
+import { catalogStyles as catalogEn } from '../data/catalogStyles.js';
+import { catalogStyles as catalogNl } from '../data/catalogStyles.nl.js';
+
+interface Props { lang: 'nl' | 'en'; kop: string; zin: string; }
+const { lang, kop, zin } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+const lifestyle = nl ? lifestyleNl : lifestyleEn;
+const catalog = nl ? catalogNl : catalogEn;
+
+/* waar een beeld heen gaat, en hoe zijn look heet */
+const doel = (it: any) => {
+  if (it.soort === 'lifestyle') {
+    const s = lifestyle.find((x: any) => x.slug === it.stijl);
+    return { href: lp(`/lifestyle/${it.stijl}`), naam: s?.name ?? it.stijl, soort: 'Lifestyle' };
+  }
+  const s = catalog.find((x: any) => x.slug === it.stijl);
+  return { href: lp(`/catalog/${it.stijl}`), naam: s?.name ?? it.stijl, soort: 'Catalog' };
+};
+const bekijk = nl ? 'Bekijk de look' : 'See the look';
+const rijen = (GALERIJ.rijen as any[][]).map((rij) => rij.map((it) => {
+  const a = it.b / it.h;
+  const d = doel(it);
+  const srcset = (ext: string) => it.bronnen.map(([w, p]: [number, string]) => `${p}.${ext} ${w}w`).join(', ');
+  const groot = it.bronnen.filter(([w]: [number]) => w <= 1200).pop() || it.bronnen[it.bronnen.length - 1];
+  return {
+    ...d, a, veeg: it.veeg, alt: it.alt[lang],
+    avif: srcset('avif'), webp: srcset('webp'), src: `${groot[1]}.webp`,
+    /* de breedte op het scherm: de hoogte van de rij (zie --g8-h in galerij-80.css) keer de verhouding */
+    sizes: `(max-width: 700px) ${Math.ceil(a * 190)}px, ${Math.ceil(a * 340)}px`,
+    b: Math.round(it.b), h: Math.round(it.h),
+  };
+}));
+---
+<section class="g8" id="looks" aria-labelledby="g8-kop" data-g8>
+  <div class="g8-kopgroep">
+    <h2 id="g8-kop" class="h-kop g8-kop">{kop}</h2>
+    <p class="g8-zin">{zin}</p>
+  </div>
+  <div class="g8-rijen">
+    {rijen.map((rij, r) => (
+      <div class="g8-rij" data-g8-rij={r}>
+        <div class="g8-baan" data-g8-baan role="list" aria-label={r === 0 ? 'Lifestyle' : 'Catalog'}>
+          {[0, 1].map((kopie) => rij.map((t, i) => (
+            <a class="g8-tegel" href={t.href} role="listitem" style={`--a:${t.a.toFixed(4)}`}
+               data-g8-kopie={kopie ? '' : undefined} aria-hidden={kopie ? 'true' : undefined} tabindex={kopie ? -1 : undefined}
+               aria-label={kopie ? undefined : `${t.naam} · ${t.soort}. ${bekijk}`} draggable="false">
+              <picture>
+                <source type="image/avif" srcset={t.avif} sizes={t.sizes} />
+                <img src={t.src} srcset={t.webp} sizes={t.sizes} alt={kopie ? '' : t.alt} width={t.b} height={t.h} loading="lazy" decoding="async" draggable="false" />
+              </picture>
+              <img class="g8-veeg" src={t.veeg} alt="" aria-hidden="true" loading="lazy" decoding="async" draggable="false" />
+              <span class="g8-naam" aria-hidden="true"><b>{t.naam}</b><span>{t.soort}</span></span>
+            </a>
+          )))}
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
+
+<script>
+  import { galerij } from '../scripts/galerij80.js';
+  let stop: (() => void) | null = null;
+  function start() {
+    stop?.(); stop = null;
+    const el = document.querySelector<HTMLElement>('[data-g8]');
+    if (el) stop = galerij(el);
+  }
+  start();
+  document.addEventListener('astro:page-load', start);
+  document.addEventListener('astro:before-swap', () => { stop?.(); stop = null; });
+</script>

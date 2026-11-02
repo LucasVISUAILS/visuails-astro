@@ -1,0 +1,63 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════════
+   DE LOGOPOSTER — levering 80, 1 november 2026 (lijst 64: posters a en b, s-looks, s-poster)
+   ═══════════════════════════════════════════════════════════════════════════════
+   Lucas: "Deze pagina fade ook mooi en smooth naar de logoposter pagina toe waarna er een animatie moet
+   komen op de logoposter die VISUAILS achtig is en smooth net als op de voorbeeld video. Animatie is ook
+   tijdens het scrollen smooth."
+
+   - De fade: onder de galerij loopt de grond via de Nevel-fade naar Nevel (#A2B7D2), en het podium loopt
+     van Nevel naar Blauw uur (#25508B): één doorlopende Blauw-uur-fade (docs/RUST-80.md §4).
+   - Het podium blijft staan terwijl je scrolt (sticky, 180 svh scrollen). Het V-merk staat groot in Wit,
+     met één regel eronder. Dan wordt de V een venster, zoals het logo in zijn voorbeeldvideo: eerst
+     verschijnt de foto in de V, dan groeit de V tot de foto het hele scherm vult. De foto is Phone-made
+     (de witte jas onder een blauw-uur-lucht): de kleur van de poster loopt door in de lucht.
+   - Het V-merk is #markglyph uit Layout.astro, niet nagetekend: het script leest de twee paden uit de
+     pagina. Geen nieuw logo, alleen het bestaande in Wit en als venster.
+   - Alles volgt het scrollen, met een licht na-ijlen (src/scripts/poster80.js). Niets beweegt vanzelf.
+   - Zonder script en bij minder beweging: de poster staat stil (het V-merk, de regel), zonder venster.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+import '../styles/poster-80.css';
+import { localizedPath } from '../i18n/ui.js';
+import { styles as lifestyleEn } from '../data/styles.js';
+import { styles as lifestyleNl } from '../data/styles.nl.js';
+
+interface Props { lang: 'nl' | 'en'; kop: string; }
+const { lang, kop } = Astro.props;
+const nl = lang === 'nl';
+const STIJL = 'phone-made';
+const look = (nl ? lifestyleNl : lifestyleEn).find((s: any) => s.slug === STIJL);
+const FOTO = '/img/lifestyle-phone-made-04';
+const FOTO_ALT = nl ? 'Model in een witte pufferjas tegen beton, onder een blauwe avondlucht' : 'Model in a white puffer jacket against concrete, under a blue evening sky';
+const bekijk = nl ? 'Bekijk de look' : 'See the look';
+const B = 702, H = 813.25;
+---
+<section class="p8" aria-labelledby="p8-kop" data-p8>
+  <div class="p8-fade" aria-hidden="true"></div>
+  <div class="p8-baan" data-p8-baan>
+    <div class="p8-podium" data-p8-podium>
+      <svg class="p8-v" viewBox={`0 0 ${B} ${H}`} aria-hidden="true" focusable="false"><use href="#markglyph" width={B} height={H} /></svg>
+      <canvas class="p8-doek" data-p8-doek aria-hidden="true" hidden></canvas>
+      <h2 id="p8-kop" class="h-kop p8-kop">{kop}</h2>
+      <p class="p8-hoek p8-hoek-l" aria-hidden="true">VISUAILS</p>
+      <p class="p8-hoek p8-hoek-r" aria-hidden="true">{nl ? 'Blauw uur' : 'Blue hour'} · #25508B</p>
+      <a class="p8-look" href={localizedPath(lang, `/lifestyle/${STIJL}`)} data-p8-look
+         aria-label={`${look?.name ?? 'Phone-made'} · Lifestyle. ${bekijk}`} data-foto={FOTO} data-alt={FOTO_ALT}>
+        <b>{look?.name ?? 'Phone-made'}</b><span>Lifestyle</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { poster } from '../scripts/poster80.js';
+  let stop: (() => void) | null = null;
+  function start() {
+    stop?.(); stop = null;
+    const el = document.querySelector<HTMLElement>('[data-p8]');
+    if (el) stop = poster(el);
+  }
+  start();
+  document.addEventListener('astro:page-load', start);
+  document.addEventListener('astro:before-swap', () => { stop?.(); stop = null; });
+</script>

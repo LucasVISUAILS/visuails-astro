@@ -7,6 +7,13 @@ Gekozen in lijst 60 (27 oktober 2026), alles volgens advies:
           rechtsboven eraf op 53,13°: het vlagje als punt.
   a       het gat van de a (ook in à á â ä å ã ā ą ă): één staande kant langs de stam, één schuine kant op 53,13° aan
           de open kant, even groot als het oude gat.
+Levering 80 (1 november 2026, lijst 65: hoofdletters a + b, Lucas: "de font van CAPSLOCK wat meer eigen"):
+  kap-snede  één recht open uiteinde per hoofdletter eindigt schuin als "/" op 53,13°, 0,75 × de dikte van de arm
+             opzij: de bovenarm van E en F, de arm van L, de balk van T rechts, de voet van Z (één snede per teken);
+  kap-hoek   de buitenhoek linksboven waar stam en bovenarm samenkomen (E F B D P R) wordt rond met R = 24,7 % van
+             de kaphoogte (de ene bocht van het V-merk); de binnenkant volgt (een kwart ellips: R − de stam opzij,
+             R − de bovenarm omlaag), zodat de streek in elk gewicht even dik blijft en in de dunne gewichten niet
+             doorbreekt.
 Alles wat niet in die lijst staat, blijft DM Sans: vormen, afstanden, kernen, ligaturen.
 
 Gebruik: python3 familie.py [map met DMSans40pt-*.ttf] [uitmap]
@@ -25,13 +32,16 @@ from fontTools.pens.basePen import BasePen
 
 FAMILIE = 'VISUAILS Display'
 PS = 'VISUAILSDisplay'
-VERSIE = '1.000'
+VERSIE = '1.100'   # 1.100: de hoofdletters (levering 80)
 T = 0.75  # tan(36,87°): de 3-4-5-driehoek, zoals in de vlag van de V
 GEWICHTEN = [('Thin', 100), ('ExtraLight', 200), ('Light', 300), ('Regular', 400), ('Medium', 500),
              ('SemiBold', 600), ('Bold', 700), ('ExtraBold', 800), ('Black', 900)]
 
 UITEINDEN = ['f', 'fi', 'g', 'j', 'uni0237', 'r', 't']
 A_GAT = ['a', 'ae']   # de a en de a in æ (ª is in DM Sans een a met één verdieping: die blijft rond)
+KAP_SNEDE = {'E': 'boven', 'F': 'boven', 'L': 'onder', 'T': 'boven', 'Z': 'onder'}   # welk uiteinde (rechts)
+KAP_HOEK = ['E', 'F', 'B', 'D', 'P', 'R']
+KAP_R = 0.247   # × de kaphoogte: de bocht van het V-merk (R = 201,21 op een merk van 813,25 hoog)
 PUNTEN = {'i': [0], 'j': [0], 'fi': [1], 'period': [0], 'exclam': [1], 'question': [1], 'exclamdown': [1],
           'questiondown': [1], 'periodcentered': [0], 'uni0308': [0, 1], 'uni0308.case': [0, 1], 'dieresis': [0, 1],
           'uni0307': [0], 'uni0307.case': [0], 'dotaccent': [0]}
@@ -185,10 +195,52 @@ class Letter:
         self.log.append(f'{naam}: buik {dik} schaal {f:.2f} wig {(x0 - 5 - xl):.0f} gat {oud:.0f} → {nieuw:.0f} ({nieuw / oud * 100:.0f} %)')
         return pathops.op(dicht, gat, pathops.PathOp.DIFFERENCE)
 
+    # ── de hoofdletters (levering 80) ───────────────────────────────────────────────────────
+    def kap_snede(self, pad, naam):
+        """het rechter uiteinde van de bovenste (of onderste) arm schuin als "/": de lijn door de bovenhoek (x, y2)
+        naar (x − 0,75 h, y1); weg wat rechtsonder ligt"""
+        g = self.glyf[naam]
+        v = [s for s in self.staande(naam) if abs(s[2] - g.xMax) < 1]
+        kant = KAP_SNEDE[naam]
+        s = max(v, key=lambda s: s[4]) if kant == 'boven' else min(v, key=lambda s: s[3])
+        x, y1, y2 = s[2], s[3], s[4]
+        h = y2 - y1; d = T * h
+        drie = veelhoek([(x + 1, y1 - 1), (x + 1, y2), (x - d, y1 - 1)])
+        self.log.append(f'{naam}: kap-snede x={x:.0f} y={y1:.0f}–{y2:.0f} d={d:.1f}')
+        return pathops.op(pad, drie, pathops.PathOp.DIFFERENCE)
+
+    def kap_hoek(self, pad, naam, kaphoogte):
+        """de buitenhoek linksboven rond (R), de binnenkant concentrisch (R − t), t de dunste van stam en bovenarm"""
+        g = self.glyf[naam]; x0, y1 = g.xMin, g.yMax
+        R = KAP_R * kaphoogte
+        # de stam: op 40 % van de hoogte, waar geen arm of buik is (E F B D P R hebben daar alleen de stam links)
+        ys = y1 * 0.45
+        xs = x0 + 1
+        while self.binnen(naam, xs, ys) and xs < x0 + 400: xs += 1
+        stam = xs - x0
+        # de bovenarm: in het midden van de stam naar rechts toe, net voorbij de stam
+        xa = x0 + stam + 8
+        ya = y1 - 1
+        while self.binnen(naam, xa, ya) and ya > y1 - 400: ya -= 1
+        arm = y1 - ya
+        cx, cy = x0 + R, y1 - R
+        vak = veelhoek([(x0 - 1, y1 + 1), (cx, y1 + 1), (cx, cy), (x0 - 1, cy)])
+        buiten = pathops.op(vak, cirkel(cx, cy, R), pathops.PathOp.DIFFERENCE)
+        pad = pathops.op(pad, buiten, pathops.PathOp.DIFFERENCE)
+        # de binnenkant: een kwart ellips die raakt aan de binnenkant van de stam (R − stam opzij) en van de
+        # bovenarm (R − arm omlaag), dus overal precies even dik als de streek zelf, zonder knik
+        rx, ry = R - stam, R - arm
+        if rx > 1 and ry > 1:
+            ring = pathops.op(cirkel(cx, cy, R), cirkel(cx, cy, rx, ry), pathops.PathOp.DIFFERENCE)
+            pad = pathops.op(pad, pathops.op(ring, vak, pathops.PathOp.INTERSECTION), pathops.PathOp.UNION)
+        self.log.append(f'{naam}: kap-hoek R={R:.0f} stam={stam:.0f} arm={arm:.0f} binnen {max(rx, 0):.0f} × {max(ry, 0):.0f}')
+        return pad
+
     # ── alles ───────────────────────────────────────────────────────────────────────────────
     def pas_toe(self):
         gewijzigd = []
-        for naam in sorted(set(UITEINDEN) | set(PUNTEN) | set(A_GAT)):
+        kaphoogte = self.f['OS/2'].sCapHeight
+        for naam in sorted(set(UITEINDEN) | set(PUNTEN) | set(A_GAT) | set(KAP_SNEDE) | set(KAP_HOEK)):
             if naam not in self.glyf or self.glyf[naam].isComposite():
                 continue
             n = len(self.contouren(naam)); pad = self.pad_van(naam)
@@ -202,6 +254,10 @@ class Letter:
                 pad = self.snede(pad, naam)
             if naam in A_GAT:
                 pad = self.a_gat(pad, naam)
+            if naam in KAP_HOEK:
+                pad = self.kap_hoek(pad, naam, kaphoogte)
+            if naam in KAP_SNEDE:
+                pad = self.kap_snede(pad, naam)
             self.zet(naam, pad); gewijzigd.append(naam)
         return gewijzigd
 
@@ -212,7 +268,7 @@ class Letter:
         sub_oud = stijl if ribbi else 'Regular'
         waarden = {
             0: 'Copyright 2014 The DM Sans Project Authors (https://github.com/googlefonts/dm-fonts). '
-               'Aanpassingen (snede, punten, het gat van de a) 2026 VISUAILS.',
+               'Aanpassingen (snede, punten, het gat van de a, de hoofdletters) 2026 VISUAILS.',
             1: fam_oud, 2: sub_oud,
             3: f'{VERSIE};VSLS;{PS}-{stijl}',
             4: f'{FAMILIE} {stijl}',
@@ -280,6 +336,19 @@ def veelhoek(punten):
     p = pathops.Path(); pen = p.getPen(); pen.moveTo(punten[0])
     for q in punten[1:]:
         pen.lineTo(q)
+    pen.closePath(); return p
+
+
+def cirkel(cx, cy, r, ry=None):
+    """een cirkel (of met ry een ellips) als pad, uit vier kubische bogen"""
+    ry = r if ry is None else ry
+    k, l = 0.5522847498 * r, 0.5522847498 * ry
+    p = pathops.Path(); pen = p.getPen()
+    pen.moveTo((cx + r, cy))
+    pen.curveTo((cx + r, cy + l), (cx + k, cy + ry), (cx, cy + ry))
+    pen.curveTo((cx - k, cy + ry), (cx - r, cy + l), (cx - r, cy))
+    pen.curveTo((cx - r, cy - l), (cx - k, cy - ry), (cx, cy - ry))
+    pen.curveTo((cx + k, cy - ry), (cx + r, cy - l), (cx + r, cy))
     pen.closePath(); return p
 
 

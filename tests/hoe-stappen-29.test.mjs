@@ -23,10 +23,13 @@ function ok(naam, kreeg, verwacht = true) {
   console.log(` ${isGoed ? 'ok  ' : 'FAIL'} ${String(naam).padEnd(70)}${isGoed ? '' : ` verwacht ${JSON.stringify(verwacht)} kreeg ${JSON.stringify(kreeg)}`}`);
 }
 const lees = (p) => readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
-if (!existsSync(new URL('../dist/nl/index.html', import.meta.url))) { console.log(' FAIL er is geen dist/ — bouw eerst'); process.exit(1); }
+if (!existsSync(new URL('../dist/nl/catalog/index.html', import.meta.url))) { console.log(' FAIL er is geen dist/ — bouw eerst'); process.exit(1); }
 
 console.log('\nHoe het werkt: stap 1 compleet, stap 3 goedkeuren\n');
-for (const [taal, file] of [['nl', 'dist/nl/index.html'], ['en', 'dist/index.html']]) {
+/* Levering 80 (1 november 2026, lijst 64): de voorpagina toont Hoe het werkt kort (HalHoeKort80, drie
+   stapnamen). Levering 81 (Lucas, 22:10): Hoe het werkt met de animaties staat op /catalog, /lifestyle en
+   /video (HalHoeDienst.astro); catalog heeft stap 1 compleet en stap 3 goedkeuren, dus daar kijkt deze toets. */
+for (const [taal, file] of [['nl', 'dist/nl/catalog/index.html'], ['en', 'dist/catalog/index.html']]) {
   const h = lees(file);
   const namen = REQUIRED_SHOT_IDS.map((id) => SHOTS.find((x) => x.id === id).name[taal]);
   const lijst = (/<span class="h-stuur-lijst h-glas"[^>]*>([\s\S]*?)<\/span>\s*<figcaption/.exec(h) || [])[1] || '';
@@ -51,7 +54,7 @@ const css = lees('src/styles/hal.css');
 const blok = css.slice(css.indexOf('STAP 1 · COMPLEET, STAP 3 · GOEDKEUREN'), css.indexOf('@keyframes h-keur-tik'));
 ok('hal.css: alles onder .hal / body.hal, geen :is()', blok.split('\n').filter((r) => /^[^ @/*%].*\{/.test(r) && !/^\s*(from|to|\d)/.test(r)).every((r) => /(^|, )(html\.h-js body\.hal|\.hal) /.test(r)) && !/:is\(/.test(blok), true);
 ok('  de vinkjes in stap 1 na de foto\'s (0,975 s), Compleet op 1,65 s', /u-s1 \.h-stuur-v i \{ transition-delay: calc\(var\(--d, 0\) \* 180ms \+ \.975s\); \}/.test(css) && /u-s1 \.h-stuur-compleet \{ transition-delay: 1\.65s; \}/.test(css), true);
-const tik = (/const KEUR_TIK = \[([^\]]+)\]/.exec(lees('src/components/VoorpaginaHal.astro')) || [])[1]?.split(',').map(Number) || [];
+const tik = (/const KEUR_TIK = \[([^\]]+)\]/.exec(lees('src/components/HalHoeDienst.astro')) || [])[1]?.split(',').map(Number) || [];
 const tussen = tik.slice(1).map((t, i) => Math.round((t - tik[i]) * 100) / 100);
 ok('  stap 3: vier tikken, oplopend, en niet gelijk verdeeld', [tik.length, tik.every((t, i) => !i || t > tik[i - 1]), new Set(tussen).size > 1], [4, true, true]);
 ok('  het vinkje op de tik (--kt), "4 van 4" na de laatste (1,725 s, binnen de 2,25 s)', /u-s3 \.h-keur \.h-vink \{ transition-delay: var\(--kt, / .test(css) && /u-s3 \.h-keur figcaption \{ transition-delay: 1\.725s; \}/.test(css) && tik[3] + .55 * .75 <= 1.725 + .05, true);

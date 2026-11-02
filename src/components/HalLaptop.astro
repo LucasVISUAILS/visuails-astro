@@ -136,7 +136,7 @@ const SIZES = '(max-width: 900px) 120vw, (max-width: 1503px) 93vw, 1400px';
       <span class="hl-streep" aria-hidden="true"><i data-hl-streep></i></span>
       <span class="h-paar"><button type="button" class="h-cirkel h-cirkel-klein" data-hl-stap="-1" aria-label={T.vorige}><Fragment set:html={ikoon('pijl-links')} /></button>
       <button type="button" class="h-cirkel h-cirkel-klein" data-hl-stap="1" aria-label={T.volgende}><Fragment set:html={ikoon('pijl')} /></button></span>
-      <button type="button" class="h-cirkel h-cirkel-klein hl-pauze" data-hl-pauze aria-pressed="false" aria-label={T.pauze} data-uit={T.pauze} data-aan={T.speel} hidden><svg class="ik" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="hl-p-uit" fill-rule="evenodd" d={IKOON.pauze} /><path class="hl-p-aan" fill-rule="evenodd" d={IKOON.afspelen} /></svg></button>
+      <button type="button" class="h-cirkel h-cirkel-klein hl-pauze" data-hl-pauze aria-pressed="false" aria-label={T.pauze} data-uit={T.pauze} data-aan={T.speel} hidden><svg class="ik" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="hl-p-uit" fill-rule="evenodd" d={IKOON.pauze} /><path class="ik-m" d={IKOON['pauze-m']} /><path class="hl-p-aan" fill-rule="evenodd" d={IKOON.afspelen} /></svg></button>
     </div>
   )}
   <p class="hl-uitleg">{T.uitleg}</p>

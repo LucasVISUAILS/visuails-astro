@@ -8,6 +8,10 @@
  * inhoud (de drie stappen per dienst, de uitlegbalk, de knoppen; VoorpaginaHal vult de slots), de
  * opmaak van de blokken uit opening.css (.o-hoe), de indeling uit voorpagina-78.css: de kop hangt,
  * de drie stappen staan als een trap (R4, docs/RUIMTE-EN-RUST.md).
+ *
+ * Levering 81 (1 november 2026): sinds 80 staat Hoe het werkt niet meer op de voorpagina maar op elke
+ * dienstpagina (HalHoeDienst.astro vult de slots). Met `dienst` staat de sectie vast op die dienst:
+ * geen tabs, het tempo van die dienst, en de sectie heet naar die dienst (id "hoe").
  */
 import '../styles/opening.css';
 
@@ -16,23 +20,26 @@ interface Props {
   hoeKop: [string, string];
   /** de uitleg speelt (data-uitleg, UitlegBalk.astro) */
   uitleg?: boolean;
+  /** levering 81: vast op één dienst (op zijn eigen pagina), zonder tabs */
+  dienst?: 'catalog' | 'lifestyle' | 'video';
 }
-const { lang, hoeKop, uitleg = false } = Astro.props as Props;
+const { lang, hoeKop, uitleg = false, dienst } = Astro.props as Props;
 const nl = lang === 'nl';
 const TABS = [['catalog', 'Catalog', '2250 5200 2250'], ['lifestyle', 'Lifestyle', '2250 3000 2250'], ['video', 'Video', '2250 3000 2250']] as const;
 const kies = nl ? 'Kies wat je wilt zien' : 'Pick what you want to see';
+const MAAT = Object.fromEntries(TABS.map(([id, , maat]) => [id, maat])) as Record<string, string>;
 ---
-<section class="h-sec o-hoe h-hoe v-hoe" id="hoe" data-o-hoe data-dienst="catalog" aria-labelledby="h-hoe"
-         data-uitleg={uitleg ? '' : undefined} data-uitleg-maat="2250 5200 2250" data-uitleg-start="300">
+<section class:list={['h-sec o-hoe h-hoe v-hoe', dienst && 'is-vast']} id="hoe" data-o-hoe data-dienst={dienst ?? 'catalog'} aria-labelledby="h-hoe"
+         data-uitleg={uitleg ? '' : undefined} data-uitleg-maat={MAAT[dienst ?? 'catalog']} data-uitleg-start="300">
   <header class="o-hoe-kop v-kopgroep">
     <h2 id="h-hoe" class="h-kop h-h2 v-kop">{hoeKop[0]} <span class="l">{hoeKop[1]}</span></h2>
-    <div class="o-tabs v-na-kop" role="tablist" aria-label={kies} data-o-tabs>
+    {!dienst && <div class="o-tabs v-na-kop" role="tablist" aria-label={kies} data-o-tabs>
       {TABS.map(([id, naam, maat], i) => (
         <button type="button" role="tab" id={`o-tab-${id}`} data-dienst={id} data-maat={maat} aria-controls="o-blokken" aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1}>{naam}</button>
       ))}
-    </div>
+    </div>}
   </header>
-  <div class="o-blokken" id="o-blokken" role="tabpanel" aria-labelledby="o-tab-catalog" data-o-panelen>
+  <div class="o-blokken" id="o-blokken" role={dienst ? undefined : 'tabpanel'} aria-labelledby={dienst ? undefined : 'o-tab-catalog'} data-o-panelen>
     <slot name="stappen" />
   </div>
   <div class="o-voet" data-o-voet>
@@ -49,7 +56,9 @@ const kies = nl ? 'Kies wat je wilt zien' : 'Pick what you want to see';
     const hoe = document.querySelector<Wortel>('[data-o-hoe]');
     if (!hoe || hoe.dataset.oKlaar) return;
     hoe.dataset.oKlaar = '1';
-    const tabs = hoe.querySelector<HTMLElement>('[data-o-tabs]')!;
+    const tabs = hoe.querySelector<HTMLElement>('[data-o-tabs]');
+    /* levering 81: vast op één dienst (op zijn eigen pagina): geen tabs, niets te kiezen */
+    if (!tabs) return;
     const panelen = hoe.querySelector<HTMLElement>('[data-o-panelen]')!;
     const stil = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const knoppen = [...tabs.querySelectorAll<HTMLButtonElement>('[role="tab"]')];

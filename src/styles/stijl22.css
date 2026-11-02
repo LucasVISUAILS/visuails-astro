@@ -44,7 +44,7 @@
    Het schema zet het donkere paneel op puur zwart (`--panel`) en de panelen op
    #F2F3F5, en dan is de ondergrond juist wél de diepste waarde. Hij volgt dus
    `--panel`. */
-:root { --s22-rand: clamp(.75rem, 2vw, 1.5rem); --s22-ronding: var(--r-card, 12px); --s22-grond: var(--panel, #0B0F17); --s22-donker: #14161B;
+:root { --s22-rand: clamp(.75rem, 2vw, 1.5rem); --s22-ronding: var(--r-card, 12px); --s22-grond: var(--panel, #0F1217); --s22-donker: #14161B;
     /* RONDE 9 — `--inkt` bestond alleen BINNEN .s22. De balk staat erbuiten en
        zette `--ink: var(--inkt)` (zie .site-header:not(.scrolled) hieronder):
        een verwijzing naar niets, dus `--ink` werd ongeldig. Tekst merkt dat niet
@@ -1547,8 +1547,8 @@
        onzichtbaar, en de twee eisen bijten elkaar niet meer.
        Nagemeten met kladblok/beeldtekst.mjs: slechtste punt 8,6:1. */
     background: rgb(244 245 247 / .93);
-    -webkit-mask-image: radial-gradient(closest-side at 46% 50%, #0B0F17 68%, transparent 100%);
-    mask-image: radial-gradient(closest-side at 46% 50%, #0B0F17 68%, transparent 100%);
+    -webkit-mask-image: radial-gradient(closest-side at 46% 50%, #0F1217 68%, transparent 100%);
+    mask-image: radial-gradient(closest-side at 46% 50%, #0F1217 68%, transparent 100%);
   }
   .s22 .koppen { display: flex; }
   .s22 .koppen li + li { margin-left: -12px; }

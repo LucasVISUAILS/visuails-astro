@@ -23,7 +23,7 @@ const standen = alleStanden(lang);
 <Layout title="Laptopbron | VISUAILS" description="Bron van de laptopstanden; geen pagina van de site." noindex huid="hal">
   <style is:global>
     body.hal .site-header, body.hal footer, body.hal .mobile-nav, body.hal .mobile-cta, body.hal .wa-dock, body.hal .cc, body.hal .convbar, body.hal [data-klantmelding], astro-dev-toolbar { display: none !important; }
-    body.hal { background: #fff; }
+    html, body.hal { background: transparent !important; }   /* levering 79: de standen zonder grond */
     .hl-bron *, .hl-bron *::before, .hl-bron *::after { transition: none !important; animation: none !important; }
     .hl-bron { width: 2304px; height: 1296px; position: relative; overflow: hidden; }
     .hl-bron .hl-doos { position: absolute; inset: 0; width: 2304px; height: 1296px; -webkit-mask-image: none; mask-image: none; }
@@ -32,7 +32,7 @@ const standen = alleStanden(lang);
   {standen.map((s) => (
     <div class="hl hl-leeft hl-bron" data-bron-stand={standNaam(lang, s)}>
       <div class="hl-doos">
-        <img class="hl-foto" src="/img/hal/pov-2304.webp" width="2304" height="1296" alt="" />
+        <img class="hl-foto" src="/img/hal/pov-2304-doorzichtig.webp" width="2304" height="1296" alt="" />
         <HalLaptopSchermen lang={lang} stand={s} />
       </div>
     </div>

@@ -246,7 +246,7 @@ const VINK = ikoon('vink');
         <h2 id="ov-werk" class="h-kop h-h2"><span class="l">{c.strookH[0]}</span> {c.strookH[1]}</h2>
       </div>
       <div class="h-ab-werk-acties">
-        <button type="button" class="h-cirkel h-cirkel-klein h-ab-pauze" data-ab-pauze aria-pressed="false" aria-label={c.pauze} data-uit={c.pauze} data-aan={c.speel} hidden><svg class="ik" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="h-ab-p-uit" fill-rule="evenodd" d={IKOON.pauze} /><path class="h-ab-p-aan" fill-rule="evenodd" d={IKOON.afspelen} /></svg></button>
+        <button type="button" class="h-cirkel h-cirkel-klein h-ab-pauze" data-ab-pauze aria-pressed="false" aria-label={c.pauze} data-uit={c.pauze} data-aan={c.speel} hidden><svg class="ik" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="h-ab-p-uit" fill-rule="evenodd" d={IKOON.pauze} /><path class="ik-m" d={IKOON['pauze-m']} /><path class="h-ab-p-aan" fill-rule="evenodd" d={IKOON.afspelen} /></svg></button>
         <a class="h-link" href={lp('/gallery')}>{c.naarGalerij}<span class="h-cirkel h-cirkel-klein" aria-hidden="true" set:html={PIJL} /></a>
       </div>
     </header>

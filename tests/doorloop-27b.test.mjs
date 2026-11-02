@@ -229,7 +229,8 @@ console.log('\nk-bedank · de bedankpagina');
   ok('de pijl aan de rechterrand van elke formulierknop (space-between)', /html body\.hal \.h-form \.s22 \.knop \{ justify-content: space-between; \}/.test(hal));
   ok('de stappen met een genummerd rondje', /\.ty-verder li::before \{ content: counter\(verder\); width: 28px; height: 28px;/.test(hal));
   ok('het standvlak zo breed als zijn zin', /\.ty-status \{ width: fit-content;/.test(hal));
-  ok('de inlogzin in de letter van de pagina, 15 px', /\.ty-signin \{ margin: 14px 0 0; font: 400 15px\/1\.5 var\(--h-letter\)/.test(hal));
+  /* levering 81: lopende tekst 370 in plaats van 400 (de letter van 80 op elke publieke pagina) */
+  ok('de inlogzin in de letter van de pagina, 15 px', /\.ty-signin \{ margin: 14px 0 0; font: 370 15px\/1\.5 var\(--h-letter\)/.test(hal));
   const ty = lees('src/components/ThankYouPage.astro');
   ok('de inlogzin is korter (NL)', /signin: 'De link in je mail opent deze bestelling zonder inloggen\. In VISUAILS Studio log je in met het e‑mailadres van de bestelling: je krijgt een code, geen wachtwoord\.'/.test(ty));
   ok('  en zegt "aanvraag" bij een aanvraag', /data-ty-signin-request=\{c\.signinRequest\}/.test(ty) && /dataset\.tySigninRequest/.test(lees('src/scripts/interactions.js')));

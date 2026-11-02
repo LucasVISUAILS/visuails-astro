@@ -5,6 +5,12 @@ consistent kan volgen voortaan wanneer ik zeg dat de nieuwe style goed is."* Eer
 Zodra Lucas de nieuwe stijl goedkeurt, geldt dit voor elke pagina. Kleuren blijven die van
 `docs/KLEURENSCHEMA.md`, letters die van `docs/DESIGN.md` ("De letters van de hal").
 
+> **Bijgewerkt 1 november 2026 (levering 80 en 81).** De regels hieronder blijven (de stap S, het optische
+> midden, nooit twee keer dezelfde lucht na elkaar), maar de maten zijn een stap omhoog gegaan: eerst op de
+> voorpagina (levering 80), sinds levering 81 op elke publieke pagina. De marge is nu max(20, min(8,333 vw, 160)),
+> de inhoud hoogstens 1280 px, de sectielucht 213 (licht 160; telefoon 120 en 90). De geldende maten staan in
+> `docs/RUST-80.md` (§1 de voorpagina, §9 de rest); waar dit blad iets anders zegt, gaat RUST-80 voor.
+
 ---
 
 ## 0 · Waar het vandaan komt
@@ -113,7 +119,7 @@ direct na elkaar.
 | **B · Een reeks** | de kop over 12 kolommen, de dingen eronder als trap (R4) | Hoe het werkt |
 | **C · Een kop en een lijst** | de kop groot over 5 kolommen, een lege kolom, de lijst over 6, zonder beeld | Meer weten |
 | **D · Het inktblok** | één per pagina, met de snede rechtsonder | Het €1-blok |
-| **E · Het podium** | één per pagina, alleen bovenaan, het enige scrolleffect | De opening met de tablet |
+| **E · Het podium** | één per pagina, alleen bovenaan, het enige scrolleffect | De opening: de laptop over de hele breedte (sinds 79; in 78 de tablet) |
 
 ## 5 · Wat elke sectie heeft
 
@@ -177,7 +183,7 @@ rechthoekig is."*
   vastgezette secties, geen sprong per wieltik, geen fade-up bij binnenkomen.
 - Wat binnen een sectie beweegt, vertelt iets (de stappen van Hoe het werkt) en begint pas als je
   ernaar kijkt.
-- Wat vanzelf beweegt: de gloed (§6), die per kop één keer komt, en de voorbeeldschermen in de tablet van
+- Wat vanzelf beweegt: de gloed (§6), die per kop één keer komt, en de voorbeeldschermen in de laptop van
   de opening, die je met de pauzeknop stilzet (en die bij minder beweging stilstaan).
 
 ## 9 · Toetsen (meten, nooit gokken)

@@ -1,0 +1,341 @@
+{
+ "uitleg": "Levering 81, 1 november 2026. Per kopmaat (h1/h2/h3 in de kopletter, in hoofdletters) en per breedte: de grootste letter in px waarbij de krapste kop van alle publieke paginas nog op twee regels past (gemeten met scratch pasmaat.cjs; nu = de maat waarmee gemeten is). De maten in hal.css (blok Levering 81) liggen hieronder.",
+ "metingen": [
+  {
+   "kop": "h1",
+   "breedte": 1920,
+   "hoogstens": 56.5,
+   "nu": 76,
+   "pagina": "/editions/",
+   "tekst": "The months with nothing new to shoot."
+  },
+  {
+   "kop": "h1",
+   "breedte": 1280,
+   "hoogstens": 46.9,
+   "nu": 67,
+   "pagina": "/editions/",
+   "tekst": "The months with nothing new to shoot."
+  },
+  {
+   "kop": "h1",
+   "breedte": 1100,
+   "hoogstens": 39.6,
+   "nu": 57,
+   "pagina": "/editions/",
+   "tekst": "The months with nothing new to shoot."
+  },
+  {
+   "kop": "h1",
+   "breedte": 960,
+   "hoogstens": 34.4,
+   "nu": 50,
+   "pagina": "/editions/",
+   "tekst": "The months with nothing new to shoot."
+  },
+  {
+   "kop": "h1",
+   "breedte": 901,
+   "hoogstens": 32.1,
+   "nu": 47,
+   "pagina": "/editions/",
+   "tekst": "The months with nothing new to shoot."
+  },
+  {
+   "kop": "h1",
+   "breedte": 900,
+   "hoogstens": 44,
+   "nu": 44,
+   "pagina": "/about/",
+   "tekst": "The studio behind your product images."
+  },
+  {
+   "kop": "h1",
+   "breedte": 600,
+   "hoogstens": 44,
+   "nu": 44,
+   "pagina": "/about/",
+   "tekst": "The studio behind your product images."
+  },
+  {
+   "kop": "h1",
+   "breedte": 481,
+   "hoogstens": 37.7,
+   "nu": 44,
+   "pagina": "/editions/",
+   "tekst": "The months with nothing new to shoot."
+  },
+  {
+   "kop": "h1",
+   "breedte": 480,
+   "hoogstens": 37.6,
+   "nu": 39,
+   "pagina": "/editions/",
+   "tekst": "The months with nothing new to shoot."
+  },
+  {
+   "kop": "h1",
+   "breedte": 381,
+   "hoogstens": 29.1,
+   "nu": 39,
+   "pagina": "/editions/",
+   "tekst": "The months with nothing new to shoot."
+  },
+  {
+   "kop": "h1",
+   "breedte": 380,
+   "hoogstens": 29.1,
+   "nu": 36,
+   "pagina": "/editions/",
+   "tekst": "The months with nothing new to shoot."
+  },
+  {
+   "kop": "h1",
+   "breedte": 341,
+   "hoogstens": 25.7,
+   "nu": 36,
+   "pagina": "/editions/",
+   "tekst": "The months with nothing new to shoot."
+  },
+  {
+   "kop": "h1",
+   "breedte": 340,
+   "hoogstens": 25.6,
+   "nu": 32,
+   "pagina": "/editions/",
+   "tekst": "The months with nothing new to shoot."
+  },
+  {
+   "kop": "h1",
+   "breedte": 320,
+   "hoogstens": 23.9,
+   "nu": 32,
+   "pagina": "/editions/",
+   "tekst": "The months with nothing new to shoot."
+  },
+  {
+   "kop": "h2",
+   "breedte": 1920,
+   "hoogstens": 47,
+   "nu": 56,
+   "pagina": "/nl/how-it-works/",
+   "tekst": "Gemaakt met AI. Tot in detail nagekeken."
+  },
+  {
+   "kop": "h2",
+   "breedte": 1280,
+   "hoogstens": 38.3,
+   "nu": 50,
+   "pagina": "/nl/how-it-works/",
+   "tekst": "Gemaakt met AI. Tot in detail nagekeken."
+  },
+  {
+   "kop": "h2",
+   "breedte": 1100,
+   "hoogstens": 33.6,
+   "nu": 43,
+   "pagina": "/nl/models/",
+   "tekst": "Inbegrepen, niet iets wat je erbij moet kopen."
+  },
+  {
+   "kop": "h2",
+   "breedte": 960,
+   "hoogstens": 28,
+   "nu": 37,
+   "pagina": "/nl/models/",
+   "tekst": "Inbegrepen, niet iets wat je erbij moet kopen."
+  },
+  {
+   "kop": "h2",
+   "breedte": 901,
+   "hoogstens": 26,
+   "nu": 35,
+   "pagina": "/nl/models/",
+   "tekst": "Inbegrepen, niet iets wat je erbij moet kopen."
+  },
+  {
+   "kop": "h2",
+   "breedte": 900,
+   "hoogstens": 34,
+   "nu": 34,
+   "pagina": "/about/",
+   "tekst": "A whole studio, without the shoot day."
+  },
+  {
+   "kop": "h2",
+   "breedte": 600,
+   "hoogstens": 34,
+   "nu": 34,
+   "pagina": "/about/",
+   "tekst": "A whole studio, without the shoot day."
+  },
+  {
+   "kop": "h2",
+   "breedte": 481,
+   "hoogstens": 33.5,
+   "nu": 34,
+   "pagina": "/nl/models/",
+   "tekst": "Inbegrepen, niet iets wat je erbij moet kopen."
+  },
+  {
+   "kop": "h2",
+   "breedte": 480,
+   "hoogstens": 32,
+   "nu": 32,
+   "pagina": "/about/",
+   "tekst": "A whole studio, without the shoot day."
+  },
+  {
+   "kop": "h2",
+   "breedte": 381,
+   "hoogstens": 25.3,
+   "nu": 32,
+   "pagina": "/nl/models/",
+   "tekst": "Inbegrepen, niet iets wat je erbij moet kopen."
+  },
+  {
+   "kop": "h2",
+   "breedte": 380,
+   "hoogstens": 25.2,
+   "nu": 28,
+   "pagina": "/nl/models/",
+   "tekst": "Inbegrepen, niet iets wat je erbij moet kopen."
+  },
+  {
+   "kop": "h2",
+   "breedte": 341,
+   "hoogstens": 22,
+   "nu": 28,
+   "pagina": "/nl/models/",
+   "tekst": "Inbegrepen, niet iets wat je erbij moet kopen."
+  },
+  {
+   "kop": "h2",
+   "breedte": 340,
+   "hoogstens": 22,
+   "nu": 28,
+   "pagina": "/nl/models/",
+   "tekst": "Inbegrepen, niet iets wat je erbij moet kopen."
+  },
+  {
+   "kop": "h2",
+   "breedte": 320,
+   "hoogstens": 20.3,
+   "nu": 28,
+   "pagina": "/nl/models/",
+   "tekst": "Inbegrepen, niet iets wat je erbij moet kopen."
+  },
+  {
+   "kop": "h3",
+   "breedte": 1920,
+   "hoogstens": 34,
+   "nu": 34,
+   "pagina": "/catalog/",
+   "tekst": "What a catalog set costs"
+  },
+  {
+   "kop": "h3",
+   "breedte": 1280,
+   "hoogstens": 31.7,
+   "nu": 34,
+   "pagina": "/studio/",
+   "tekst": "Every approval and revision stays readable afterwa"
+  },
+  {
+   "kop": "h3",
+   "breedte": 1100,
+   "hoogstens": 34,
+   "nu": 34,
+   "pagina": "/catalog/",
+   "tekst": "What a catalog set costs"
+  },
+  {
+   "kop": "h3",
+   "breedte": 960,
+   "hoogstens": 32.9,
+   "nu": 34,
+   "pagina": "/compare/",
+   "tekst": "And the week around the day"
+  },
+  {
+   "kop": "h3",
+   "breedte": 901,
+   "hoogstens": 30.4,
+   "nu": 34,
+   "pagina": "/compare/",
+   "tekst": "And the week around the day"
+  },
+  {
+   "kop": "h3",
+   "breedte": 900,
+   "hoogstens": 26,
+   "nu": 26,
+   "pagina": "/catalog/",
+   "tekst": "What a catalog set costs"
+  },
+  {
+   "kop": "h3",
+   "breedte": 600,
+   "hoogstens": 26,
+   "nu": 26,
+   "pagina": "/catalog/",
+   "tekst": "What a catalog set costs"
+  },
+  {
+   "kop": "h3",
+   "breedte": 481,
+   "hoogstens": 26,
+   "nu": 26,
+   "pagina": "/catalog/",
+   "tekst": "What a catalog set costs"
+  },
+  {
+   "kop": "h3",
+   "breedte": 480,
+   "hoogstens": 26,
+   "nu": 26,
+   "pagina": "/catalog/",
+   "tekst": "What a catalog set costs"
+  },
+  {
+   "kop": "h3",
+   "breedte": 381,
+   "hoogstens": 19.3,
+   "nu": 23,
+   "pagina": "/nl/lifestyle/",
+   "tekst": "Voeg een consistent model toe."
+  },
+  {
+   "kop": "h3",
+   "breedte": 380,
+   "hoogstens": 19.3,
+   "nu": 23,
+   "pagina": "/nl/lifestyle/",
+   "tekst": "Voeg een consistent model toe."
+  },
+  {
+   "kop": "h3",
+   "breedte": 341,
+   "hoogstens": 15.8,
+   "nu": 21,
+   "pagina": "/nl/lifestyle/",
+   "tekst": "Voeg een consistent model toe."
+  },
+  {
+   "kop": "h3",
+   "breedte": 340,
+   "hoogstens": 15.8,
+   "nu": 21,
+   "pagina": "/nl/lifestyle/",
+   "tekst": "Voeg een consistent model toe."
+  },
+  {
+   "kop": "h3",
+   "breedte": 320,
+   "hoogstens": 13.7,
+   "nu": 20,
+   "pagina": "/nl/lifestyle/",
+   "tekst": "Voeg een consistent model toe."
+  }
+ ]
+}

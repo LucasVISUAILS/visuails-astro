@@ -1,0 +1,91 @@
+{
+ "voor": [
+  {
+   "naam": "De opening: scroll 1, de laptop glijdt in beeld",
+   "werk": 12.5,
+   "opmaak": 4.5,
+   "script": 2,
+   "lang": 0
+  },
+  {
+   "naam": "De opening: scroll 2, de video",
+   "werk": 84.3,
+   "opmaak": 5.8,
+   "script": 37.6,
+   "lang": 17
+  },
+  {
+   "naam": "De galerij: rustig scrollen",
+   "werk": 23.7,
+   "opmaak": 6.8,
+   "script": 3.7,
+   "lang": 0
+  },
+  {
+   "naam": "De galerij: hard scrollen (de veeg)",
+   "werk": 23.3,
+   "opmaak": 7.3,
+   "script": 3.2,
+   "lang": 0
+  },
+  {
+   "naam": "De galerij: uitlopen tot stilstand",
+   "werk": 10.1,
+   "opmaak": 3.4,
+   "script": 0.8,
+   "lang": 0
+  },
+  {
+   "naam": "De logoposter: de V wordt een venster",
+   "werk": 26.1,
+   "opmaak": 10.3,
+   "script": 2.8,
+   "lang": 0
+  }
+ ],
+ "na": [
+  {
+   "naam": "De opening: scroll 1, de laptop glijdt in beeld",
+   "werk": 8.3,
+   "opmaak": 1.4,
+   "script": 1.6,
+   "lang": 0
+  },
+  {
+   "naam": "De opening: scroll 2, de video",
+   "werk": 93.1,
+   "opmaak": 5,
+   "script": 42.3,
+   "lang": 18
+  },
+  {
+   "naam": "De galerij: rustig scrollen",
+   "werk": 19.9,
+   "opmaak": 3.1,
+   "script": 3.7,
+   "lang": 0
+  },
+  {
+   "naam": "De galerij: hard scrollen (de veeg)",
+   "werk": 25,
+   "opmaak": 6.8,
+   "script": 3.7,
+   "lang": 1
+  },
+  {
+   "naam": "De galerij: uitlopen tot stilstand",
+   "werk": 7.8,
+   "opmaak": 1.9,
+   "script": 0.7,
+   "lang": 0
+  },
+  {
+   "naam": "De logoposter: de V wordt een venster",
+   "werk": 26.1,
+   "opmaak": 7.9,
+   "script": 3.5,
+   "lang": 0
+  }
+ ],
+ "uitleg": "Werk per beeld op de hoofddraad (CDP Performance.getMetrics: TaskDuration; opmaak = LayoutDuration + RecalcStyleDuration; script = ScriptDuration), in ms, gemiddeld over twee metingen; voor = levering 82, na = levering 83; Chromium zonder grafische kaart (SwiftShader), 1440 x 900, de voorpagina."
+}

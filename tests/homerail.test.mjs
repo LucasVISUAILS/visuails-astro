@@ -154,7 +154,8 @@ console.log('\ngeen rij op de homepage is verticaal scrollbaar');
          daar ook. */
       /* 15 oktober 2026: de drie diensten zijn platte kaarten (.h-dk), op een
          telefoon een veegrij. .h-cf blijft in de lijst om dezelfde reden als hierboven. */
-      for (const sel of ['.h-pagina .h-dk', '.h-pagina .h-pv-keus', '.h-pagina .h-cf', '.h-pagina .h-strook', '.h-pagina .h-koppen', '.s22 .kaarten', '.s22 .rij', '.s22 .cast']) {
+      /* levering 80: Wat we maken is een rij van drie producten (.m8-rij), de galerij twee rijen (.g8-rij) */
+      for (const sel of ['.h-pagina .m8-rij', '.h-pagina .g8-rij', '.h-pagina .h-dk', '.h-pagina .h-pv-keus', '.h-pagina .h-cf', '.h-pagina .h-strook', '.h-pagina .h-koppen', '.s22 .kaarten', '.s22 .rij', '.s22 .cast']) {
         const el = document.querySelector(sel);
         if (!el) continue;
         uit[sel] = { v: el.scrollHeight - el.clientHeight, h: el.scrollWidth - el.clientWidth };
@@ -188,7 +189,9 @@ console.log('\ngeen rij op de homepage is verticaal scrollbaar');
     const kaarten = await page.evaluate(() => {
     /* Levering 76 (13:00): Wat we maken is een productvel geworden; de drie soorten zijn knopjes
        (.h-pv-keus), zoals de maten op een productpagina. Dezelfde eis: alle drie bereikbaar. */
-      const rail = document.querySelector('.h-pagina .h-strook') || document.querySelector('.h-pagina .h-dk') || document.querySelector('.h-pagina .h-pv-keus') || document.querySelector('.s22 .kaarten');
+    /* Levering 80 (1 november 2026): Wat we maken is drie uitgeknipte producten naast elkaar (.m8-rij, HalMaken80.astro);
+       ze passen op elk scherm, ook op de telefoon. */
+      const rail = document.querySelector('.h-pagina .m8-rij') || document.querySelector('.h-pagina .h-strook') || document.querySelector('.h-pagina .h-dk') || document.querySelector('.h-pagina .h-pv-keus') || document.querySelector('.s22 .kaarten');
       if (!rail) return null;
       const r = rail.getBoundingClientRect();
       const items = [...rail.children].map((el) => el.getBoundingClientRect());

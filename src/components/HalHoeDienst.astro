@@ -1,0 +1,207 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════════
+   HOE HET WERKT, OP DE PAGINA VAN ÉÉN DIENST — levering 81, 1 november 2026
+   ═══════════════════════════════════════════════════════════════════════════════
+   Tot levering 80 stond Hoe het werkt met de animaties op de voorpagina, met tabs voor catalog, lifestyle
+   en video (VoorpaginaHal.astro vulde HalHoe). Sinds 80 toont de voorpagina alleen de drie stapnamen
+   (HalHoeKort80). Lucas, 1 november, 22:10 ("Ja, nu meenemen"): Hoe het werkt komt op /catalog,
+   /lifestyle en /video, elk met het verhaal van die dienst en zonder tabs.
+   Dezelfde stappen, beelden en tijden als op de voorpagina van 79 (de inhoud is hierheen verhuisd, niet
+   opnieuw gemaakt); de woorden staan in src/data/hoeHetWerkt.js.
+   - catalog: je stuurt je foto's (met het lijstje dat compleet raakt), wij maken (de lagen in 3D), jij keurt
+     goed (vier tikken in het tempo van iemand die elk beeld bekijkt);
+   - lifestyle: je kiest een look (Flash), je uploadt je foto's, je ontvangt vier beelden in die look;
+   - video: je kiest een stijl, je uploadt je foto's, je ontvangt je clip (de voorbeelden volgen).
+   Onder de stappen de uitlegbalk en één knop naar het formulier van deze dienst, met de feiten.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+import HalHoe from './HalHoe.astro';
+import UitlegBalk from './UitlegBalk.astro';
+import { ikoon } from '../data/iconen.js';
+import { euro, ladderFloor, levertijdDelen, videoPrijsLabel } from '../data/pricing.js';
+import { localizedPath } from '../i18n/ui.js';
+import { REQUIRED_SHOT_IDS, SHOTS } from '../data/shots.js';
+import { geleverd, ingestuurd } from '../data/voorbeeldset.js';
+import { styles as lifestyleEn } from '../data/styles.js';
+import { styles as lifestyleNl } from '../data/styles.nl.js';
+import { videoStyles as videoNl } from '../data/videoStyles.nl.js';
+import { videoStyles as videoEn } from '../data/videoStyles.js';
+import { CATALOG_RATIOS, LIFESTYLE_RATIOS } from '../data/ratios.js';
+import { startKnop } from '../data/klant.js';
+import { hoeHetWerkt, flashLook } from '../data/hoeHetWerkt.js';
+
+type Dienst = 'catalog' | 'lifestyle' | 'video';
+interface Props { lang: 'en' | 'nl'; dienst: Dienst; uitleg?: boolean }
+const { lang, dienst, uitleg = true } = Astro.props as Props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+const e = (n: number) => euro(n, lang);
+const h = hoeHetWerkt(lang);
+const lifestyle = nl ? lifestyleNl : lifestyleEn;
+const FLASH = flashLook(lang);
+const DRIE = (n: number) => String(n).padStart(2, '0');
+const [snel, traag] = levertijdDelen('unattended', lang);
+const LEVERTIJD = traag ? `${snel}, ${traag}` : snel;
+
+/* De stappen per dienst: de naam boven elk blok (de regel eronder is weg sinds 25 okt, 16:56: "ik ga
+   echt voor een minimale visuele uitleg"). */
+const STAP_TEKST: Record<Dienst, [string, string][]> = {
+  catalog: h.stappen.map(([n, r]: string[]) => [n, r] as [string, string]),
+  lifestyle: h.stappenLifestyle as [string, string][],
+  video: h.stappenVideo as [string, string][],
+};
+const UITLEG_ZINNEN: Record<Dienst, string[]> = { catalog: h.uitlegZinnen, lifestyle: h.uitlegLifestyle, video: h.uitlegVideo };
+/* Stap 3 (catalog en lifestyle): het moment van elk vinkje, vanaf het begin van de stap. Vier tikken, niet
+   gelijk verdeeld, want zo keurt niemand (15 oktober, 20:42). */
+const KEUR_TIK = [0.338, 0.675, 0.938, 1.313];
+/* Het formaat in stap 3 (uit ratios.js). Catalog: één verhouding per bestelling, van 1:1 naar 4:5.
+   Lifestyle: per beeld, van 4:5 naar 9:16. [verhoudingen, begin, eind] */
+const getal = (x: any) => { const [b, hh] = String(x.ratio).split('x').map(Number); return b / hh; };
+const ratio = (id: string) => LIFESTYLE_RATIOS.find((x: any) => x.id === id)!;
+const FMT = {
+  catalog: { lijst: CATALOG_RATIOS, begin: 0, eind: 1 },
+  lifestyle: { lijst: ['portrait45', 'story', 'wide'].map(ratio), begin: 0, eind: 1 },
+} as const;
+const fmtStijl = (d: 'catalog' | 'lifestyle') => `--o-r0:${getal(FMT[d].lijst[FMT[d].begin]).toFixed(4)};--o-r1:${getal(FMT[d].lijst[FMT[d].eind]).toFixed(4)}`;
+/* Catalog, stap 2: de drie lagen van het geleverde beeld, voorop eerst (het product, de schaduw, de grond). */
+const ONT_LAGEN = (['los', 'schaduw', 'vlak'] as const).map((soort, k) => ({ soort, src: k < 2 ? '/img/ba2-na-front-uitgeknipt.webp' : '' }));
+/* Lifestyle, stap 1: drie looks uit de collectie en de eigen look; Flash gekozen, en Flash komt in stap 3 terug. */
+const KIES_LOOKS = [
+  ...['dunes', 'flash', 'glow'].map((slug) => lifestyle.find((s: any) => s.slug === slug)).filter(Boolean)
+    .map((s: any) => ({ naam: s.name, beeld: String(s.cardPhoto).replace(/\.webp$/, '-w380.webp'), gekozen: s.slug === FLASH.slug })),
+  { naam: (lifestyle.find((s: any) => s.slug === 'custom') as any)?.name ?? (nl ? 'Eigen look' : 'Your own look'), beeld: '', gekozen: false },
+];
+/* Video, stap 1: de stijlen uit videoStyles (Motion voorop). */
+const VIDEO_STIJLEN = (nl ? videoNl : videoEn).map((s: any) => s.name);
+/* Lifestyle, stap 3: vier beelden van de look Flash (zoals op /lifestyle/flash). */
+const LIFESTYLE_SET = [
+  { src: '/img/lifestyle-flash-01-w380.webp', w: 380, h: 472 },
+  { src: '/img/lifestyle-flash-02-w380.webp', w: 380, h: 681 },
+  { src: '/img/lifestyle-flash-03-w380.webp', w: 380, h: 681 },
+  { src: '/img/lifestyle-flash-04-w380.webp', w: 380, h: 284 },
+];
+const ICOON = { label: 'prijs', klok: 'klok', doos: 'doos', check: 'vink', rechts: 'pijl', speel: 'afspelen', kenmerk: 'bestand' } as const;
+const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
+/* de feiten onder de knop: de vanafprijs van deze dienst (uit de code), de levertijd, geen minimum */
+const vanaf = dienst === 'video'
+  ? videoPrijsLabel(lang, { hoofdletter: true })
+  : (nl ? `Vanaf <b>${e(ladderFloor(dienst))}</b> per product` : `From <b>${e(ladderFloor(dienst))}</b> per product`);
+const FEITEN = [vanaf, LEVERTIJD, nl ? 'Geen minimum' : 'No minimum'];
+const START = { catalog: '/start/catalog', lifestyle: '/start/lifestyle', video: '/start/video' }[dienst];
+---
+<HalHoe lang={lang} hoeKop={h.hoeKop as [string, string]} uitleg={uitleg} dienst={dienst}>
+  <ol class="h-stappen" role="list" data-uitleg-zicht slot="stappen">
+    {STAP_TEKST[dienst].map(([naam], i) => (
+      <li class="h-stap h-in" style={`--d:${i}`}>
+        <p class="h-nr" aria-hidden="true"><b>{DRIE(i + 1)}</b><i></i><span>/{DRIE(STAP_TEKST[dienst].length)}</span></p>
+        <h3 class="h-stap-naam"><span data-v={dienst}>{naam}</span></h3>
+        <div class="h-stap-beeld">
+          {i === 0 && dienst === 'catalog' && (
+            <figure class="h-well h-stuur" data-v="catalog">
+              <ul class="h-stuur-rij" role="list">
+                {ingestuurd(lang).slice(0, REQUIRED_SHOT_IDS.length).map((b, k) => (
+                  <li style={`--d:${k}`}><img src={b.src} width={b.w} height={b.h} alt={b.alt} loading="lazy" decoding="async" /></li>
+                ))}
+              </ul>
+              <span class="h-stuur-lijst h-glas" aria-hidden="true">
+                {REQUIRED_SHOT_IDS.map((id: string, k: number) => (
+                  <span class="h-stuur-v" style={`--d:${k}`}><i set:html={ik('check')} />{SHOTS.find((x: any) => x.id === id)!.name[lang]}</span>
+                ))}
+                <b class="h-stuur-compleet">{h.compleet}</b>
+              </span>
+              <figcaption class="h-chip h-glas">{h.stappen[0][2]}</figcaption>
+            </figure>
+          )}
+          {i === 0 && dienst === 'lifestyle' && (
+            <figure class="h-well o-kies" data-v="lifestyle">
+              <ul class="o-kies-rij" role="list">
+                {KIES_LOOKS.map((l, k) => (
+                  <li class:list={[l.gekozen && 'is-gekozen']} style={`--d:${k}`}>
+                    <span class="o-kies-beeld">{l.beeld ? <img src={l.beeld} width="380" height="680" alt="" loading="lazy" decoding="async" /> : <i aria-hidden="true">+</i>}</span>
+                    <b>{l.naam}</b>
+                    {l.gekozen && <span class="o-kies-vink" aria-hidden="true" set:html={ik('check')} />}
+                  </li>
+                ))}
+              </ul>
+              <figcaption class="h-chip h-glas">{h.lookGekozen}</figcaption>
+            </figure>
+          )}
+          {i === 0 && dienst === 'video' && (
+            <figure class="h-well o-kies o-kies-lijst" data-v="video">
+              <ul class="o-stijl-rij" role="list">
+                {VIDEO_STIJLEN.map((s, k) => (
+                  <li class:list={[k === 0 && 'is-gekozen']} style={`--d:${k}`}><b>{s}</b>{k === 0 && <span class="o-kies-vink" aria-hidden="true" set:html={ik('check')} />}</li>
+                ))}
+              </ul>
+              <figcaption class="o-binnenkort-zin">{h.binnenkort}</figcaption>
+            </figure>
+          )}
+          {i === 1 && dienst === 'catalog' && (
+            <figure class="h-well o-ontleed" data-v="catalog" role="img" aria-label={`${h.stapAlt[1]}. ${h.gemaaktMetAI}.`}>
+              <span class="o-ont-ruimte">
+                <span class="o-ont-stapel">
+                  {ONT_LAGEN.map((_l, k) => k).reverse().map((k) => {
+                    const l = ONT_LAGEN[k];
+                    return (
+                      <span class:list={['o-ont-laag', `o-ont-${l.soort}`, k === 0 && 'is-gekozen']} style={`--i:${k}`}>
+                        {l.src && <img src={l.src} width="760" height="760" alt="" loading="lazy" decoding="async" class:list={[l.soort === 'schaduw' && 'o-ont-donker']} />}
+                      </span>
+                    );
+                  })}
+                </span>
+              </span>
+              <span class="o-ont-ai">{h.gemaaktMetAI}</span>
+            </figure>
+          )}
+          {i === 1 && dienst !== 'catalog' && (
+            <figure class="h-well o-upload" data-v={dienst}>
+              <ul class="o-upload-rij h-glas" role="list">
+                {REQUIRED_SHOT_IDS.map((id: string, k: number) => (
+                  <li style={`--d:${k}`}><i class="o-upload-ik" aria-hidden="true" set:html={ik('kenmerk')} /><b>{SHOTS.find((x: any) => x.id === id)!.name[lang]}</b><span class="o-upload-balk" aria-hidden="true"><s></s></span><i class="o-upload-vink" aria-hidden="true" set:html={ik('check')} /></li>
+                ))}
+                <li class="o-upload-klaar">{h.compleet}</li>
+              </ul>
+            </figure>
+          )}
+          {i === 2 && dienst === 'catalog' && (
+            <figure class="h-well h-keur o-fmt-vak" data-v="catalog" style={fmtStijl('catalog')}>
+              <ul class="h-keur-rij" role="list">
+                {geleverd(lang).map((b, k) => (
+                  <li class:list={[k < 2 && 'h-heel']} style={`--d:${k};--kt:${KEUR_TIK[k]}s`}><img src={b.src} width={b.w} height={b.h} alt="" loading="lazy" decoding="async" /><span class="h-vink" aria-hidden="true" set:html={ik('check')} /></li>
+                ))}
+              </ul>
+              <figcaption class="h-chip h-glas">{h.goedgekeurd(geleverd(lang).length)}<span class="sr-only"> {h.inFormaat(FMT.catalog.lijst.map((x: any) => x.label))}</span></figcaption>
+              <span class="o-fmt h-glas" aria-hidden="true">{FMT.catalog.lijst.map((x: any, k: number) => <b class:list={[k === FMT.catalog.begin && 'is-begin', k === FMT.catalog.eind && 'is-eind']}>{x.label}</b>)}</span>
+            </figure>
+          )}
+          {i === 2 && dienst === 'lifestyle' && (
+            <figure class="h-well h-keur o-fmt-vak" data-v="lifestyle" style={fmtStijl('lifestyle')}>
+              <ul class="h-keur-rij" role="list">
+                {LIFESTYLE_SET.map((b, k) => (
+                  <li style={`--d:${k};--kt:${KEUR_TIK[k]}s`}><img src={b.src} width={b.w} height={b.h} alt="" loading="lazy" decoding="async" /><span class="h-vink" aria-hidden="true" set:html={ik('check')} /></li>
+                ))}
+              </ul>
+              <figcaption class="h-chip h-glas">{h.inDeLook(LIFESTYLE_SET.length, FLASH.name)}<span class="sr-only"> {h.inFormaat(FMT.lifestyle.lijst.map((x: any) => x.label))}</span></figcaption>
+              <span class="o-fmt h-glas" aria-hidden="true">{FMT.lifestyle.lijst.map((x: any, k: number) => <b class:list={[k === FMT.lifestyle.begin && 'is-begin', k === FMT.lifestyle.eind && 'is-eind']}>{x.label}</b>)}</span>
+            </figure>
+          )}
+          {i === 2 && dienst === 'video' && (
+            <figure class="h-well o-binnenkort" data-v="video">
+              <span class="o-klip-plek" aria-hidden="true"><i set:html={ik('speel')} /></span>
+              <figcaption class="o-binnenkort-zin">{h.binnenkortKlip}</figcaption>
+            </figure>
+          )}
+        </div>
+        {i < 2 && <span class="h-brug" aria-hidden="true" set:html={ik('rechts')} />}
+      </li>
+    ))}
+  </ol>
+  {uitleg && <UitlegBalk slot="balk" zinnen={UITLEG_ZINNEN[dienst]} lang={lang} varianten={[{ v: dienst, zinnen: UITLEG_ZINNEN[dienst] }]} />}
+  <Fragment slot="acties">
+    <p class="h-acties">
+      <a class="h-knop h-knop-inkt" href={lp(START)} {...startKnop(lang)}><span data-vis-label>{h.ctaStart}</span><span class="o" set:html={ik('rechts')} /></a>
+    </p>
+    <ul class="h-feiten" role="list">
+      {FEITEN.map((f, i) => <li><i set:html={ik((['label', 'klok', 'doos'] as const)[i])} /><span set:html={f} /></li>)}
+    </ul>
+  </Fragment>
+</HalHoe>

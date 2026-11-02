@@ -168,12 +168,15 @@ const dist = (p) => { const f = path.join(ROOT, 'dist', p); return existsSync(f)
     ok('  zonder naam of kenmerk in de html', !/Welkom terug, [A-Z]|VIS-\d/.test(thuis));
     /* Levering 74 (25 oktober 2026): de opening heeft geen label meer boven de kop (alleen de
        kop en één zin, HalOpening.astro); die twee staan er voor iedereen. */
-    /* levering 78: de opening is de tablet (HalTablet.astro) */
-    ok('  de kop en de zin van de opening staan er voor iedereen', /<h1 id="h-h1" class="t-kop h-kop"(?![^>]*data-vis-uit)[^>]*>/.test(thuis) && /<p class="t-lede"(?![^>]*data-vis-uit)[^>]*>/.test(thuis));
+    /* levering 79: de opening is de laptop over de hele breedte (HalLaptopBreed.astro; in 78 de tablet) */
+    /* levering 80: de opening van HalOpening80 (de titel en de zin); de €1-link is voor een klant de link naar Studio */
+    ok('  de kop en de zin van de opening staan er voor iedereen', /<h1 id="h-h1" class="o8-kop h-kop"(?![^>]*data-vis-uit)[^>]*>/.test(thuis) && /<p class="o8-zin[^"]*"(?![^>]*data-vis-uit)[^>]*>/.test(thuis));
     ok('  de oude welkomstregel bovenin is weg', !/class="h-welkom"/.test(thuis));
     /* 14 oktober 2026 (v26-proefblok a): de abonnementsknop staat niet meer in
        het proefblok, alleen nog in de opening. */
-    ok('  de abonnementsknop draagt de creditszin, geen data-vis-in meer', (thuis.match(/data-vis-klant="plan"/g) || []).length === 1 && !/data-vis-in\b/.test(thuis) && thuis.includes('data-vis-credits="Bestel met je credits · {n} over"'));
+    /* levering 80 (lijst 64, knoppen): de opening heeft geen abonnementsknop meer; een klant ziet in plaats van de
+       €1-link de link naar Studio (data-vis-klant-in). De hoofdknop draagt de creditszin nog. */
+    ok('  de hoofdknop draagt de creditszin, geen data-vis-in; voor een klant de link naar Studio', !/data-vis-klant="plan"/.test(thuis) && !/data-vis-in\b/.test(thuis) && thuis.includes('data-vis-credits="Bestel met je credits · {n} over"') && /<a class="h-link" href="\/account" data-vis-klant-in hidden>/.test(thuis));
     ok('  het proefblok draagt een verborgen klantversie', /data-vis-klant="proefblok"/.test(thuis) && /data-vis-proefklant hidden/.test(thuis) && thuis.includes('data-vis-her="Bestel met je look."'));
     ok('  de zwevende WhatsApp-knop draagt de zin', /class="wa-launcher"[^>]*data-vis-wa="Hallo VISUAILS, een vraag over bestelling \{ref\}:"/.test(thuis));
     for (const [pad, soort] of [['nl/how-it-works/index.html', 'herbestel'], ['nl/pricing/index.html', 'herbestel'], ['nl/upload-guidelines/index.html', 'herbestel-of-start'], ['nl/upload-guidelines/index.html', 'start-naast'], ['how-it-works/index.html', 'herbestel']]) {
@@ -241,6 +244,7 @@ else {
         welkom: !!w && !w.hidden && w.classList.contains('is-open'), kop: w?.querySelector('[data-vis-welkom-kop]')?.textContent, regel: w?.querySelector('[data-vis-welkom-stand]')?.textContent,
         knop: w?.querySelector('[data-vis-welkom-knop]')?.getAttribute('href'), knopLabel: w?.querySelector('[data-vis-welkom-knop]')?.textContent?.trim(),
         plan: plan.map((p) => [zicht(p), p.textContent.trim(), p.getAttribute('href')]),
+        studio: [...document.querySelectorAll('[data-vis-klant-in]')].map((p) => [zicht(p), p.textContent.trim(), p.getAttribute('href')]),
         start: (() => { const s0 = document.querySelector('[data-vis-klant="start-credits"]'); return s0 ? `${s0.querySelector('[data-vis-label]')?.textContent.trim()} · ${s0.getAttribute('href')}` : ''; })(),
         her: her.map((p) => [p.dataset.visKlant, zicht(p), p.textContent.trim(), p.getAttribute('href')]),
         proef: [...document.querySelectorAll('a.h-knop[href$="/test-sample/"]')].filter((a) => !a.closest('.h-melding')).filter(zicht).length,
@@ -252,7 +256,7 @@ else {
   };
   {
     const { st, vragen, fouten } = await bekijk('/nl/', null);
-    ok('uitgelogd: geen welkom, geen klantknoppen, de proef staat er', !st.welkom && st.plan.every(([z]) => !z) && st.proef > 0, JSON.stringify(st));
+    ok('uitgelogd: geen welkom, geen klantknoppen, de proef staat er', !st.welkom && st.plan.every(([z]) => !z) && st.studio.every(([z]) => !z) && st.proef > 0, JSON.stringify(st));
     /* Sinds de melding op bijna elke pagina staat: wie niet is ingelogd, kost
        alleen de vraag die de kop van de site toch al stelt (window.visAccount). */
     ok('  één vraag, die van de kop: de stand wordt niet gevraagd', vragen.length === 1 && !vragen.some((u) => /stand=1/.test(u)), vragen.join(' '));
@@ -266,7 +270,8 @@ else {
     ok('  de knop "Bekijk je beelden" naar de bestelkaart', st.knop === '/account/orders?order=7#order-7' && st.knopLabel === 'Bekijk je beelden');
     /* 15 oktober 2026: de hoofdknop zegt "Bestel met je credits · 48 over" (naar
        /start), de tweede knop gaat naar het abonnement — niet twee keer /start. */
-    ok('  "Je abonnement" naar Studio', st.plan.length === 1 && st.plan.every(([z, t, h]) => z && t === 'Je abonnement' && h === '/account/plan'), JSON.stringify(st.plan));
+    /* levering 80: in plaats van "Je abonnement" (naar /account/plan) de link "Naar VISUAILS Studio" (naar /account) */
+    ok('  "Naar VISUAILS Studio" in de opening', st.plan.length === 0 && st.studio.length === 1 && st.studio.every(([z, t, h]) => z && t === 'Naar VISUAILS Studio' && h === '/account'), JSON.stringify([st.plan, st.studio]));
     ok('  en de hoofdknop "Bestel met je credits · 48 over" naar het beginscherm', st.start === 'Bestel met je credits · 48 over · /nl/start/', st.start);
     ok('  geen proef meer zichtbaar', st.proef === 0);
     ok('  WhatsApp begint met het kenmerk', decodeURIComponent((st.wa || '').split('text=')[1] || '') === 'Hallo VISUAILS, een vraag over bestelling VIS-2041:', st.wa);
@@ -420,7 +425,7 @@ else {
        één sectie, 16:56) pas als de laatste sectie ervan half voorbij is ([data-o-stroom-eind]):
        daar vult elke sectie het scherm en lag de melding er linksonder overheen. */
     const voorbij = await page.evaluate(() => {
-      const e = document.querySelector('[data-o-stroom-eind]'), p = document.querySelector('[data-o-podium], [data-t-podium]');   /* levering 78: de tablet */
+      const e = document.querySelector('[data-o-stroom-eind]'), p = document.querySelector('[data-o8-podium], [data-o-podium], [data-t-podium], [data-lb-podium]');   /* levering 78: de tablet; 79: de laptop over de breedte; 80: HalOpening80 */
       if (e) return Math.round(e.getBoundingClientRect().bottom + scrollY - innerHeight * 0.5 + 100);
       return p ? Math.round(p.getBoundingClientRect().bottom + scrollY + 100) : 1400;
     });
@@ -473,8 +478,12 @@ else {
   {
     /* Speelt er een uitleg terwijl de melding staat, dan plakt de balk met de
        zin erboven en niet erachter (UitlegBalk.astro, hal.css). */
-    const { ctx, page, lees } = await melding('/nl/', null, { breed: 390, hoog: 844 });
-    const y = await page.evaluate(() => { const e = document.querySelector('.h-hoe'); return e ? e.getBoundingClientRect().top + scrollY + 200 : 0; });
+    /* levering 80: Hoe het werkt met de animaties staat niet meer op de voorpagina; dan op /studio, waar dezelfde
+       uitlegbalk speelt (de laatste uitleg, data-uitleg; op /how-it-works zit hij op de telefoon dicht achter
+       "Bekijk de agenda" en speelt hij niet) */
+    const opVoor = dist('nl/index.html').includes('class="h-hoe');
+    const { ctx, page, lees } = await melding(opVoor ? '/nl/' : '/nl/studio/', null, { breed: 390, hoog: 844 });
+    const y = await page.evaluate((v) => { if (v) { const e = document.querySelector('.h-hoe'); return e ? e.getBoundingClientRect().top + scrollY + 200 : 0; } const a = [...document.querySelectorAll('[data-uitleg]')].pop(); return a ? a.getBoundingClientRect().top + scrollY - 80 : 0; }, opVoor);
     await scrolNaar(page, y);
     await page.waitForTimeout(1500);
     const m = await lees();

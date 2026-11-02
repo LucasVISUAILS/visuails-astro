@@ -1,0 +1,567 @@
+{
+ "bron": "scripts/galerij-80.mjs (levering 80)",
+ "rijen": [
+  [
+   {
+    "src": "/img/lifestyle-dunes-02",
+    "bronnen": [
+     [
+      380,
+      "/img/lifestyle-dunes-02-w380"
+     ],
+     [
+      928,
+      "/img/lifestyle-dunes-02"
+     ]
+    ],
+    "b": 928,
+    "h": 1152,
+    "alt": {
+     "nl": "Lifestylebeeld in de look Dunes",
+     "en": "Lifestyle image in the Dunes look"
+    },
+    "stijl": "dunes",
+    "soort": "lifestyle",
+    "veeg": "/img/hal/rust/veeg-lifestyle-dunes-02.webp"
+   },
+   {
+    "src": "/img/lifestyle-flash-01",
+    "bronnen": [
+     [
+      380,
+      "/img/lifestyle-flash-01-w380"
+     ],
+     [
+      928,
+      "/img/lifestyle-flash-01"
+     ]
+    ],
+    "b": 928,
+    "h": 1152,
+    "alt": {
+     "nl": "Lifestylebeeld in de look Flash",
+     "en": "Lifestyle image in the Flash look"
+    },
+    "stijl": "flash",
+    "soort": "lifestyle",
+    "veeg": "/img/hal/rust/veeg-lifestyle-flash-01.webp"
+   },
+   {
+    "src": "/img/lifestyle-glow-02",
+    "bronnen": [
+     [
+      380,
+      "/img/lifestyle-glow-02-w380"
+     ],
+     [
+      760,
+      "/img/lifestyle-glow-02-w760"
+     ],
+     [
+      1200,
+      "/img/lifestyle-glow-02-w1200"
+     ],
+     [
+      1560,
+      "/img/lifestyle-glow-02-w1560"
+     ],
+     [
+      2400,
+      "/img/lifestyle-glow-02"
+     ]
+    ],
+    "b": 2400,
+    "h": 1792,
+    "alt": {
+     "nl": "Lifestylebeeld in de look Glow",
+     "en": "Lifestyle image in the Glow look"
+    },
+    "stijl": "glow",
+    "soort": "lifestyle",
+    "veeg": "/img/hal/rust/veeg-lifestyle-glow-02.webp"
+   },
+   {
+    "src": "/img/lifestyle-phone-made-02",
+    "bronnen": [
+     [
+      380,
+      "/img/lifestyle-phone-made-02-w380"
+     ],
+     [
+      760,
+      "/img/lifestyle-phone-made-02-w760"
+     ],
+     [
+      1200,
+      "/img/lifestyle-phone-made-02-w1200"
+     ],
+     [
+      1560,
+      "/img/lifestyle-phone-made-02-w1560"
+     ],
+     [
+      2400,
+      "/img/lifestyle-phone-made-02"
+     ]
+    ],
+    "b": 2400,
+    "h": 1792,
+    "alt": {
+     "nl": "Lifestylebeeld in de look Phone-made",
+     "en": "Lifestyle image in the Phone-made look"
+    },
+    "stijl": "phone-made",
+    "soort": "lifestyle",
+    "veeg": "/img/hal/rust/veeg-lifestyle-phone-made-02.webp"
+   },
+   {
+    "src": "/img/lifestyle-flash-02",
+    "bronnen": [
+     [
+      380,
+      "/img/lifestyle-flash-02-w380"
+     ],
+     [
+      760,
+      "/img/lifestyle-flash-02-w760"
+     ],
+     [
+      960,
+      "/img/lifestyle-flash-02-w960"
+     ],
+     [
+      1200,
+      "/img/lifestyle-flash-02-w1200"
+     ],
+     [
+      1340,
+      "/img/lifestyle-flash-02"
+     ]
+    ],
+    "b": 1340,
+    "h": 2400,
+    "alt": {
+     "nl": "Lifestylebeeld in de look Flash",
+     "en": "Lifestyle image in the Flash look"
+    },
+    "stijl": "flash",
+    "soort": "lifestyle",
+    "veeg": "/img/hal/rust/veeg-lifestyle-flash-02.webp"
+   },
+   {
+    "src": "/img/lifestyle-glow-03",
+    "bronnen": [
+     [
+      380,
+      "/img/lifestyle-glow-03-w380"
+     ],
+     [
+      768,
+      "/img/lifestyle-glow-03"
+     ]
+    ],
+    "b": 768,
+    "h": 1376,
+    "alt": {
+     "nl": "Lifestylebeeld in de look Glow",
+     "en": "Lifestyle image in the Glow look"
+    },
+    "stijl": "glow",
+    "soort": "lifestyle",
+    "veeg": "/img/hal/rust/veeg-lifestyle-glow-03.webp"
+   },
+   {
+    "src": "/img/lifestyle-phone-made-03",
+    "bronnen": [
+     [
+      380,
+      "/img/lifestyle-phone-made-03-w380"
+     ],
+     [
+      760,
+      "/img/lifestyle-phone-made-03-w760"
+     ],
+     [
+      1200,
+      "/img/lifestyle-phone-made-03-w1200"
+     ],
+     [
+      1560,
+      "/img/lifestyle-phone-made-03-w1560"
+     ],
+     [
+      2400,
+      "/img/lifestyle-phone-made-03"
+     ]
+    ],
+    "b": 2400,
+    "h": 1792,
+    "alt": {
+     "nl": "Lifestylebeeld in de look Phone-made",
+     "en": "Lifestyle image in the Phone-made look"
+    },
+    "stijl": "phone-made",
+    "soort": "lifestyle",
+    "veeg": "/img/hal/rust/veeg-lifestyle-phone-made-03.webp"
+   },
+   {
+    "src": "/img/lifestyle-flash-03",
+    "bronnen": [
+     [
+      380,
+      "/img/lifestyle-flash-03-w380"
+     ],
+     [
+      760,
+      "/img/lifestyle-flash-03-w760"
+     ],
+     [
+      1200,
+      "/img/lifestyle-flash-03-w1200"
+     ],
+     [
+      1340,
+      "/img/lifestyle-flash-03"
+     ]
+    ],
+    "b": 1340,
+    "h": 2400,
+    "alt": {
+     "nl": "Lifestylebeeld in de look Flash",
+     "en": "Lifestyle image in the Flash look"
+    },
+    "stijl": "flash",
+    "soort": "lifestyle",
+    "veeg": "/img/hal/rust/veeg-lifestyle-flash-03.webp"
+   },
+   {
+    "src": "/img/lifestyle-glow-04",
+    "bronnen": [
+     [
+      380,
+      "/img/lifestyle-glow-04-w380"
+     ],
+     [
+      1200,
+      "/img/lifestyle-glow-04"
+     ]
+    ],
+    "b": 1200,
+    "h": 896,
+    "alt": {
+     "nl": "Lifestylebeeld in de look Glow",
+     "en": "Lifestyle image in the Glow look"
+    },
+    "stijl": "glow",
+    "soort": "lifestyle",
+    "veeg": "/img/hal/rust/veeg-lifestyle-glow-04.webp"
+   },
+   {
+    "src": "/img/lifestyle-phone-made-04",
+    "bronnen": [
+     [
+      380,
+      "/img/lifestyle-phone-made-04-w380"
+     ],
+     [
+      760,
+      "/img/lifestyle-phone-made-04-w760"
+     ],
+     [
+      1200,
+      "/img/lifestyle-phone-made-04-w1200"
+     ],
+     [
+      1560,
+      "/img/lifestyle-phone-made-04-w1560"
+     ],
+     [
+      2400,
+      "/img/lifestyle-phone-made-04"
+     ]
+    ],
+    "b": 2400,
+    "h": 1792,
+    "alt": {
+     "nl": "Lifestylebeeld in de look Phone-made",
+     "en": "Lifestyle image in the Phone-made look"
+    },
+    "stijl": "phone-made",
+    "soort": "lifestyle",
+    "veeg": "/img/hal/rust/veeg-lifestyle-phone-made-04.webp"
+   },
+   {
+    "src": "/img/lifestyle-flash-04",
+    "bronnen": [
+     [
+      380,
+      "/img/lifestyle-flash-04-w380"
+     ],
+     [
+      760,
+      "/img/lifestyle-flash-04-w760"
+     ],
+     [
+      1200,
+      "/img/lifestyle-flash-04-w1200"
+     ],
+     [
+      1560,
+      "/img/lifestyle-flash-04-w1560"
+     ],
+     [
+      2400,
+      "/img/lifestyle-flash-04"
+     ]
+    ],
+    "b": 2400,
+    "h": 1792,
+    "alt": {
+     "nl": "Lifestylebeeld in de look Flash",
+     "en": "Lifestyle image in the Flash look"
+    },
+    "stijl": "flash",
+    "soort": "lifestyle",
+    "veeg": "/img/hal/rust/veeg-lifestyle-flash-04.webp"
+   },
+   {
+    "src": "/img/lifestyle-glow-05",
+    "bronnen": [
+     [
+      380,
+      "/img/lifestyle-glow-05-w380"
+     ],
+     [
+      760,
+      "/img/lifestyle-glow-05-w760"
+     ],
+     [
+      1200,
+      "/img/lifestyle-glow-05-w1200"
+     ],
+     [
+      1560,
+      "/img/lifestyle-glow-05-w1560"
+     ],
+     [
+      2400,
+      "/img/lifestyle-glow-05"
+     ]
+    ],
+    "b": 2400,
+    "h": 1792,
+    "alt": {
+     "nl": "Lifestylebeeld in de look Glow",
+     "en": "Lifestyle image in the Glow look"
+    },
+    "stijl": "glow",
+    "soort": "lifestyle",
+    "veeg": "/img/hal/rust/veeg-lifestyle-glow-05.webp"
+   }
+  ],
+  [
+   {
+    "src": "/img/hal/rust/galerij-nonstd-hoodie-model",
+    "bronnen": [
+     [
+      480,
+      "/img/hal/rust/galerij-nonstd-hoodie-model-480"
+     ],
+     [
+      760,
+      "/img/hal/rust/galerij-nonstd-hoodie-model-760"
+     ]
+    ],
+    "b": 760,
+    "h": 943,
+    "alt": {
+     "nl": "Model in een blauwe zip-hoodie",
+     "en": "Model in a blue zip hoodie"
+    },
+    "stijl": "custom",
+    "soort": "catalog",
+    "veeg": "/img/hal/rust/veeg-galerij-nonstd-hoodie-model.webp"
+   },
+   {
+    "src": "/img/hal/rust/galerij-room84-tas-model",
+    "bronnen": [
+     [
+      480,
+      "/img/hal/rust/galerij-room84-tas-model-480"
+     ],
+     [
+      760,
+      "/img/hal/rust/galerij-room84-tas-model-760"
+     ]
+    ],
+    "b": 760,
+    "h": 943,
+    "alt": {
+     "nl": "Model met een blauwgroene leren tas",
+     "en": "Model with a teal leather bag"
+    },
+    "stijl": "custom",
+    "soort": "catalog",
+    "veeg": "/img/hal/rust/veeg-galerij-room84-tas-model.webp"
+   },
+   {
+    "src": "/img/catalog-after",
+    "bronnen": [
+     [
+      420,
+      "/img/catalog-after-w420"
+     ],
+     [
+      1200,
+      "/img/catalog-after-w1200"
+     ],
+     [
+      1800,
+      "/img/catalog-after"
+     ]
+    ],
+    "b": 1800,
+    "h": 1800,
+    "alt": {
+     "nl": "Zwart T-shirt, catalogbeeld in de stijl Classic",
+     "en": "Black T-shirt, catalog image in the Classic style"
+    },
+    "stijl": "classic",
+    "soort": "catalog",
+    "veeg": "/img/hal/rust/veeg-catalog-after.webp"
+   },
+   {
+    "src": "/img/hal/rust/galerij-nonstd-hoodie-voor",
+    "bronnen": [
+     [
+      480,
+      "/img/hal/rust/galerij-nonstd-hoodie-voor-480"
+     ],
+     [
+      760,
+      "/img/hal/rust/galerij-nonstd-hoodie-voor-760"
+     ]
+    ],
+    "b": 760,
+    "h": 943,
+    "alt": {
+     "nl": "Blauwe zip-hoodie, voorkant",
+     "en": "Blue zip hoodie, front"
+    },
+    "stijl": "custom",
+    "soort": "catalog",
+    "veeg": "/img/hal/rust/veeg-galerij-nonstd-hoodie-voor.webp"
+   },
+   {
+    "src": "/img/hal/rust/galerij-room84-shirt-model",
+    "bronnen": [
+     [
+      480,
+      "/img/hal/rust/galerij-room84-shirt-model-480"
+     ],
+     [
+      760,
+      "/img/hal/rust/galerij-room84-shirt-model-760"
+     ]
+    ],
+    "b": 760,
+    "h": 943,
+    "alt": {
+     "nl": "Model in een wit T-shirt met print",
+     "en": "Model in a white printed T-shirt"
+    },
+    "stijl": "custom",
+    "soort": "catalog",
+    "veeg": "/img/hal/rust/veeg-galerij-room84-shirt-model.webp"
+   },
+   {
+    "src": "/img/hal/rust/galerij-nonstd-jeans-model",
+    "bronnen": [
+     [
+      480,
+      "/img/hal/rust/galerij-nonstd-jeans-model-480"
+     ],
+     [
+      760,
+      "/img/hal/rust/galerij-nonstd-jeans-model-760"
+     ]
+    ],
+    "b": 760,
+    "h": 943,
+    "alt": {
+     "nl": "Model in een zwarte jeans met opdruk",
+     "en": "Model in black printed jeans"
+    },
+    "stijl": "custom",
+    "soort": "catalog",
+    "veeg": "/img/hal/rust/veeg-galerij-nonstd-jeans-model.webp"
+   },
+   {
+    "src": "/img/hal/rust/galerij-room84-laarzen-model",
+    "bronnen": [
+     [
+      480,
+      "/img/hal/rust/galerij-room84-laarzen-model-480"
+     ],
+     [
+      760,
+      "/img/hal/rust/galerij-room84-laarzen-model-760"
+     ]
+    ],
+    "b": 760,
+    "h": 943,
+    "alt": {
+     "nl": "Zwarte leren laarzen, gedragen",
+     "en": "Black leather boots, worn"
+    },
+    "stijl": "custom",
+    "soort": "catalog",
+    "veeg": "/img/hal/rust/veeg-galerij-room84-laarzen-model.webp"
+   },
+   {
+    "src": "/img/hal/rust/galerij-room84-tas-voor",
+    "bronnen": [
+     [
+      480,
+      "/img/hal/rust/galerij-room84-tas-voor-480"
+     ],
+     [
+      760,
+      "/img/hal/rust/galerij-room84-tas-voor-760"
+     ]
+    ],
+    "b": 760,
+    "h": 943,
+    "alt": {
+     "nl": "Blauwgroene leren tas, voorkant",
+     "en": "Teal leather bag, front"
+    },
+    "stijl": "custom",
+    "soort": "catalog",
+    "veeg": "/img/hal/rust/veeg-galerij-room84-tas-voor.webp"
+   },
+   {
+    "src": "/img/hal/rust/galerij-nonstd-sokken-model",
+    "bronnen": [
+     [
+      480,
+      "/img/hal/rust/galerij-nonstd-sokken-model-480"
+     ],
+     [
+      760,
+      "/img/hal/rust/galerij-nonstd-sokken-model-760"
+     ]
+    ],
+    "b": 760,
+    "h": 943,
+    "alt": {
+     "nl": "Witte sokken met logo, gedragen",
+     "en": "White logo socks, worn"
+    },
+    "stijl": "custom",
+    "soort": "catalog",
+    "veeg": "/img/hal/rust/veeg-galerij-nonstd-sokken-model.webp"
+   }
+  ]
+ ]
+}

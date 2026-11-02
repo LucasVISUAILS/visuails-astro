@@ -4,7 +4,7 @@
  *
  * Bewaakt:
  *   1 · elke lookpagina en elke lookkaart (/start, /catalog#looks,
- *       /lifestyle#looks, de stijlenstrook op de voorpagina) heeft de stille
+ *       /lifestyle#looks; op de voorpagina sinds levering 80 de galerij, via de lookpagina) heeft de stille
  *       knop "Probeer VISUAILS · €1" naar /test-sample?style=<look>;
  *   2 · /test-sample kent precies die looks (catalog of lifestyle);
  *   3 · de oude popup (proefkaart) staat op geen enkele pagina meer. Sinds
@@ -47,7 +47,9 @@ for (const [taal, pre, ls, cat] of [['en', '', lsEn, catEn], ['nl', '/nl', lsNl,
     const hub = lees(`${pre ? 'nl/' : ''}${dienst}/index.html`);
     ok(`${taal}: /${dienst}#looks — kaart ${slug} heeft de proefknop`, hub.includes(proef(slug)));
     ok(`${taal}: /start — kaart ${slug} heeft de proefknop`, lees(`${pre ? 'nl/' : ''}start/index.html`).includes(proef(slug)));
-    ok(`${taal}: voorpagina — stijlenstrook ${slug} heeft de proefknop`, thuis.includes(proef(slug)));
+    /* levering 80 (lijst 64, s-looks): op de voorpagina staat de galerij in plaats van de stijlenstrook. Elke look
+       heeft daar een beeld dat naar zijn lookpagina gaat, en daar staat de proefknop (hierboven nagekeken). */
+    ok(`${taal}: voorpagina — de galerij heeft een beeld dat naar ${slug} gaat (met de proefknop)`, new RegExp(`<a class="g8-tegel[^"]*" href="${pre}/${dienst}/${slug}/"`).test(thuis));
   }
   /* De look op maat is een aanvraag: geen ?style=custom. */
   const maat = lees(`${pre ? 'nl/' : ''}lifestyle/custom/index.html`);

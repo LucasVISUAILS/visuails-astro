@@ -1,7 +1,9 @@
 VISUAILS Display Bold — zelf gehost (levering 77, 27 oktober 2026)
 
 De kopletter van de site (lijst 60 en 59: Bold 700, beide tonen van een kop). DM Sans 40pt met
-drie details uit de V: de snede op 53,13°, de vierkante punt en het gat van de a. Alleen de grote
+drie details uit de V: de snede op 53,13°, de vierkante punt en het gat van de a. Sinds versie 1.100
+(levering 80, 1 november 2026) ook in de hoofdletters: de snede (E F L T Z) en één zachte hoek
+linksboven (E F B D P R). Alleen de grote
 koppen (.h-kop en de kop van de opening); de lopende tekst is DM Sans (public/fonts/dm-sans/).
 Dit bestand is precies docs/letter/fonts/VISUAILSDisplay-Bold.woff2; daar staan ook de andere acht
 gewichten, het specimen en de bron om hem opnieuw te bouwen.
