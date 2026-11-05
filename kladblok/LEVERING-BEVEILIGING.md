@@ -1,8 +1,9 @@
 # Levering: de beveiliging en de back-end sterker (5 november 2026)
 
 > **NOG NIET AF** (deze notitie wordt bij elke push bijgewerkt):
-> - De reparaties: stap 1 is af. Stap 2 tot en met 19 in `kladblok/PLAN-BEVEILIGING.md` §4 nog niet (stap 14 tot en
->   met 19 kwamen uit het vierde deel van de naloop, de betaal- en bestelroutes; zie daar).
+> - De reparaties: stap 1, 14, 15 en 16 zijn af. Stap 2 tot en met 13 en 17 tot en met 19 in
+>   `kladblok/PLAN-BEVEILIGING.md` §4 nog niet (stap 14 tot en met 19 kwamen uit het vierde deel van de naloop, de
+>   betaal- en bestelroutes; 14 ging voor omdat hij het zwaarst is).
 > - De eindcontrole.
 
 Cloudsessie, branch `claude/voor-de-launch`. Het plan, met wat niet kapot mag en de nacontrole per stap, staat in
@@ -60,3 +61,34 @@ rood, op de nieuwe 15 van 15 groen.**
 inloggen, /admin), de toetsen van de nachtelijke taak (opruimen 46, nachtgrenzen 65), en de hele testreeks:
 **286 van 286 groen**. De diff regel voor regel teruggelezen: hij raakt geen inlog, geen koekje, geen Origin-controle,
 geen betaling en geen mail; alleen hoe negen lijsten worden opgevraagd.
+
+## Stap 14, 15 en 16 · De betaalwebhook (af)
+
+**14 · Een betaalde bestelling kon voorgoed onbetaald blijven.** De webhook zet eerst een rij in `payments` en daarna
+de bestelling op betaald. Haperde D1 precies daartussen, dan antwoordde hij 500 en kwam Mollie terug, zoals het hoort.
+Maar de herhaling stuitte op de UNIQUE van `payments`, las dat als "al gedaan" en stopte. De bestelling bleef
+onbetaald: de nacht stuurt dan een betaalherinnering en annuleert haar later, terwijl de klant betaald heeft. Nu kijkt
+de webhook bij die UNIQUE eerst hoe de bestelling er nu voor staat. Betaald, terugbetaald of geannuleerd: stil
+aflopen, zoals voorheen. Anders: alsnog afmaken, waarbij de UPDATE naar betaald de claim is (zet hij niets, dan was
+een andere aflevering net eerder en stopt deze, zodat melding en factuur niet twee keer uitgaan).
+Erbij: de tijdlijnregel "Betaling ontvangen" had geen vangnet. Mislukte alleen die regel, dan gingen de melding aan de
+studio en de factuur nooit uit (de herhaling zag een betaalde bestelling). Nu wordt die fout gelogd en loopt de rest
+door.
+
+**15 · Een mislukte incasso gaf bij elke herhaalde aflevering opnieuw een mail** aan de klant en de studio. Nu niet
+meer: zette de INSERT niets, dan is de mail al uit. Het pauzeren loopt wel gewoon (dat is twee keer hetzelfde).
+Hetzelfde voor de melding "betaling niet gelukt" bij een bestelling.
+
+**16 · Een 429 of 401 van Mollie telde als blijvend.** De webhook antwoordde 200 en Mollie hield op, ook als de
+melding een echte `paid` was: weg bij drukte of tijdens een sleutelwissel. Nu krijgen 401, 403, 408 en 429 een 500,
+zodat Mollie het opnieuw probeert. 404 en 422 (een id dat niet van ons is) blijven 200.
+
+**Het bewijs.** `tests/backend-sterker.test.mjs` §14 (tegen een echte SQLite met een D1 die één keer hapert) en §15;
+`tests/mollie-webhook.test.mjs` voor 429 en 401. Op de oude code alle zeven rood. Eén bestaande toets ging uit van het
+gat ("dubbele aflevering op een bestelling die nog niet betaald is → niets doen") en is aangepast: de echte dubbele
+aflevering is er een op een betaalde bestelling; het geval ernaast staat nu als eigen toets.
+
+**Nacontrole.** Alle 28 toetsbestanden die de betaalwebhook aanroepen (abonnementen, bijkopen, terugboekingen,
+creditnota's, de geldroute, de proefvisual, e-Boekhouden en meer), mail (`test:email`, `test:mailsmerk`,
+`test:bounces`), de 2FA-set, en `npx astro build`: groen. De diff teruggelezen: hij raakt geen inlog, geen koekje en
+geen Origin-controle; in de betaalroute alleen de drie plekken hierboven.

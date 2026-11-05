@@ -177,6 +177,17 @@ for (const st of ['open', 'pending', 'authorized', 'canceled', 'expired', 'faile
   }, { status: 200, writes: [] });
 }
 
+// 3b · 429 en 401 van Mollie zijn tijdelijk (5 november 2026): een 200 zou Mollie
+//      laten ophouden met een melding die misschien een echte `paid` is.
+for (const status of [429, 401]) {
+  await check(`Mollie ${status} → 500, Mollie probeert het opnieuw`, async () => {
+    stubFetch({ status, body: { status, title: status === 429 ? 'Too Many Requests' : 'Unauthorized Request', detail: 'proef' } });
+    const d = db();
+    const r = await onRequestPost({ request: form('tr_5B8cwPMGnU6qLbRvo7qEZo'), env: { ...ENV, DB: d } });
+    return { status: r.status, writes: d.writes.length };
+  }, { status: 500, writes: 0 });
+}
+
 // 3 · a forged / unknown id: Mollie 404s, we stop asking
 await check('Mollie 404 (id not ours) → 200, no retry, no writes', async () => {
   stubFetch({ status: 404, body: { status: 404, title: 'Not Found', detail: 'No payment exists with token tr_x.' } });
@@ -225,12 +236,25 @@ await check('JSON body instead of form → 400', async () => {
 }, { status: 400 });
 
 // 6 · duplicate delivery: UNIQUE fires, nothing after it runs
+/* 5 november 2026: de echte dubbele aflevering is er een op een bestelling die AL
+   BETAALD is — de eerste aflevering deed alles. Hier stond de bestelling op 'pending',
+   en dat is precies het geval dat niet stil mocht aflopen: de rij in `payments` staat
+   er, maar de UPDATE naar betaald is nooit gelukt (D1 haperde ertussen, de webhook gaf
+   500, Mollie kwam terug). Dat geval staat nu apart eronder, en in
+   tests/backend-sterker.test.mjs §14 tegen een echte SQLite. */
 await check('duplicate delivery → 200, order NOT touched again', async () => {
   stubFetch({ body: PAID() });
-  const d = db({ dupe: true });
+  const d = db({ dupe: true, order: { id: 7, status: 'in_production', payment_status: 'paid' } });
   const r = await onRequestPost({ request: form('tr_5B8cwPMGnU6qLbRvo7qEZo'), env: { ...ENV, DB: d } });
   return { status: r.status, writes: d.writes.map((w) => w[0]) };
 }, { status: 200, writes: [] });
+
+await check('payment row exists but order still unpaid (earlier delivery stopped halfway) → marked paid now', async () => {
+  stubFetch({ body: PAID() });
+  const d = db({ dupe: true });
+  const r = await onRequestPost({ request: form('tr_5B8cwPMGnU6qLbRvo7qEZo'), env: { ...ENV, DB: d } });
+  return { status: r.status, betaald: d.writes.some((w) => w[0] === 'orders'), regel: d.writes.some((w) => w[0] === 'event') };
+}, { status: 200, betaald: true, regel: true });
 
 // 7 · an order that is already paid
 /* Ronde 8: een tweede betaling op een betaalde bestelling wordt niet meer stil

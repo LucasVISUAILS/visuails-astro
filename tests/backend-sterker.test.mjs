@@ -8,6 +8,10 @@
  *
  *   1 · de grens van D1: hoogstens 100 gebonden waarden per query. De nep-D1 dwingt
  *       hem hier af (`d1(db, { maxWaarden: 100 })`), zoals D1 live doet.
+ *  14 · de betaalwebhook: een aflevering die halverwege stopt (D1 hapert tussen de
+ *       betaalrij en de UPDATE naar betaald) mag een bestelling niet onbetaald laten.
+ *  15 · een mislukte incasso die twee keer wordt afgeleverd, geeft één mail.
+ *       (Stap 16, de 429 en 401 van Mollie, staat in tests/mollie-webhook.test.mjs.)
  */
 import { verseDb, d1 } from './lib/d1sqlite.mjs';
 import { adminGet, adminPost } from '../src/lib/admin.js';
@@ -158,6 +162,121 @@ console.log('\n1b · de andere plekken met een lange lijst');
     ok('de nachtelijke opruiming: 150 verlopen bestanden gaan weg', over === 0, `nog ${over} rijen; ${String(regel).slice(0, 120)}`);
     ok('  met hun webp-variant uit R2', weg.includes('intake/oud/150.webp') && weg.includes('intake/oud/1.webp'), `${weg.length} objecten weg`);
   } catch (e) { ok('de opruiming zonder fout', false, e.message); }
+}
+
+/* ══ 14 · DE BETAALWEBHOOK: EEN BETAALDE BESTELLING MAG NIET ONBETAALD BLIJVEN ══ */
+console.log('\n14 · de betaalwebhook: een aflevering die halverwege stopt');
+{
+  const { onRequestPost: mollieWebhook } = await import('../functions/api/webhook/mollie.js');
+  /* Een D1 die één keer hapert op het statement dat op `patroon` past. */
+  const metStoring = (D, patroon, keer = 1) => {
+    let over = keer;
+    const wrap = (st) => ({
+      ...st,
+      bind: (...a) => wrap(st.bind(...a)),
+      async run() { if (over > 0) { over--; throw new Error('D1_ERROR: storing (toets)'); } return st.run(); },
+    });
+    return { ...D, prepare: (sql) => (patroon.test(sql) ? wrap(D.prepare(sql)) : D.prepare(sql)) };
+  };
+  const BETAALID = 'tr_StapVeertienProef01';
+  const mollieMails = [];
+  const echteFetch2 = globalThis.fetch;
+  globalThis.fetch = async (url, init = {}) => {
+    const u = String(url);
+    if (u.includes(`/v2/payments/${BETAALID}`) && !/refunds/.test(u)) {
+      return new Response(JSON.stringify({
+        resource: 'payment', id: BETAALID, mode: 'live', status: 'paid', paidAt: '2026-11-05T10:00:00+00:00',
+        amount: { value: '121.00', currency: 'EUR' }, method: 'ideal', metadata: { order_ref: 'VIS-BETAAL-14' },
+      }), { status: 200, headers: { 'content-type': 'application/json' } });
+    }
+    if (u.includes('api.resend.com')) { mollieMails.push(JSON.parse(String(init.body || '{}'))); return new Response('{"id":"m"}', { status: 200 }); }
+    return new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } });
+  };
+  const stil = [console.log, console.warn, console.error];
+  const aflevering = (env) => mollieWebhook({
+    request: new Request('https://visuails.com/api/webhook/mollie', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: `id=${BETAALID}` }),
+    env, waitUntil() {},
+  });
+  const nieuweBestelling = () => {
+    const { db } = verseDb(schema);
+    db.prepare("INSERT INTO customers (id, email, name, country) VALUES (3, 'betaal@merk.test', 'Betaal', 'NL')").run();
+    db.prepare("INSERT INTO orders (id, ref, customer_id, email, service, status, payment_status, total_cents, vat_cents, lang) VALUES (3, 'VIS-BETAAL-14', 3, 'betaal@merk.test', 'catalog', 'received', 'unpaid', 10000, 2100, 'nl')").run();
+    return db;
+  };
+  const basis = { MOLLIE_API_KEY: 'live_proefsleutelvoordetoetsabcdef', RESEND_API_KEY: 're_proef', NOTIFY_EMAIL: 'studio@visuails.test', FROM_EMAIL: 'VISUAILS <orders@visuails.test>', PUBLIC_ORIGIN: 'https://visuails.com' };
+  const studioBetaald = () => mollieMails.filter((m) => /^Betaald · VIS-BETAAL-14/.test(m.subject || '')).length;
+  const betaalRegels = (db) => db.prepare("SELECT COUNT(*) AS n FROM order_events WHERE order_id = 3 AND note LIKE 'Betaling ontvangen%'").get().n;
+  try {
+    console.log = console.warn = console.error = () => {};
+    /* a · D1 hapert op de UPDATE die de bestelling op betaald zet. */
+    let db = nieuweBestelling();
+    const eerste = await aflevering({ ...basis, DB: metStoring(d1(db), /UPDATE orders SET payment_status = 'paid'/) });
+    const tweede = await aflevering({ ...basis, DB: d1(db) });
+    const na = db.prepare('SELECT payment_status, paid_at FROM orders WHERE id = 3').get();
+    const mailsNaTweede = studioBetaald();
+    const derde = await aflevering({ ...basis, DB: d1(db) });
+    Object.assign(console, { log: stil[0], warn: stil[1], error: stil[2] });
+    ok('a · de eerste aflevering vraagt om een herhaling (500)', eerste.status === 500, `status ${eerste.status}`);
+    ok('  de herhaling zet de bestelling alsnog op betaald', tweede.status === 200 && na.payment_status === 'paid' && !!na.paid_at, `status ${tweede.status}, ${JSON.stringify(na)}`);
+    ok('  met de regel op de tijdlijn en het bericht aan de studio', betaalRegels(db) === 1 && mailsNaTweede === 1, `${betaalRegels(db)} regels, ${mailsNaTweede} berichten`);
+    ok('  een echte dubbele aflevering daarna doet niets twee keer', derde.status === 200 && betaalRegels(db) === 1 && studioBetaald() === 1, `${betaalRegels(db)} regels, ${studioBetaald()} berichten`);
+
+    /* b · D1 hapert op de tijdlijnregel "Betaling ontvangen", ná de UPDATE. */
+    console.log = console.warn = console.error = () => {};
+    mollieMails.length = 0;
+    db = nieuweBestelling();
+    const b1 = await aflevering({ ...basis, DB: metStoring(d1(db), /INSERT INTO order_events/) });
+    const b2 = await aflevering({ ...basis, DB: d1(db) });
+    Object.assign(console, { log: stil[0], warn: stil[1], error: stil[2] });
+    const nb = db.prepare('SELECT payment_status FROM orders WHERE id = 3').get();
+    ok('b · een mislukte tijdlijnregel houdt het bericht aan de studio niet tegen', nb.payment_status === 'paid' && studioBetaald() === 1, `eerste ${b1.status}, tweede ${b2.status}, ${nb.payment_status}, ${studioBetaald()} berichten`);
+  } catch (e) {
+    Object.assign(console, { log: stil[0], warn: stil[1], error: stil[2] });
+    ok('de betaalwebhook zonder fout', false, e.stack || e.message);
+  }
+  globalThis.fetch = echteFetch2;
+}
+
+/* ══ 15 · EEN MISLUKTE INCASSO, TWEE KEER AFGELEVERD ══════════════════════ */
+console.log('\n15 · een mislukte incasso die Mollie twee keer aflevert');
+{
+  const { onRequestPost: mollieWebhook } = await import('../functions/api/webhook/mollie.js');
+  const mails = [];
+  const echteFetch3 = globalThis.fetch;
+  globalThis.fetch = async (url, init = {}) => {
+    const u = String(url);
+    if (u.includes('api.resend.com')) { mails.push(JSON.parse(String(init.body || '{}'))); return new Response('{"id":"m"}', { status: 200 }); }
+    if (u.includes('/subscriptions/')) return new Response(JSON.stringify({ resource: 'subscription', id: 'sub_ProefVijftien', status: 'active' }), { status: 200, headers: { 'content-type': 'application/json' } });
+    return new Response(JSON.stringify({
+      resource: 'payment', id: 'tr_ProefVijftien01', mode: 'test', status: 'failed', failedAt: '2026-11-05T03:00:41+00:00',
+      amount: { value: '390.00', currency: 'EUR' }, method: 'directdebit', sequenceType: 'recurring',
+      subscriptionId: 'sub_ProefVijftien', customerId: 'cst_ProefVijftien',
+    }), { status: 200, headers: { 'content-type': 'application/json' } });
+  };
+  /* De rij bestaat na de eerste aflevering: de tweede INSERT zet niets, zoals D1 met ON CONFLICT DO NOTHING. */
+  let rijen = 0;
+  const DB = {
+    prepare(sql) {
+      const st = {
+        bind() { return st; },
+        async first() { return /FROM subscriptions/.test(sql) ? { id: 42, ref: 'VIS-ABO-15', plan: 'studio', status: 'active', mollie_customer_id: 'cst_ProefVijftien', mollie_subscription_id: 'sub_ProefVijftien', email: 'abo@merk.test', brand: 'Abo', name: 'Abo' } : null; },
+        async all() { return { results: [] }; },
+        async run() { if (/INSERT INTO subscription_payments/.test(sql)) return { success: true, meta: { changes: rijen++ === 0 ? 1 : 0 } }; return { success: true, meta: { changes: 1 } }; },
+      };
+      return st;
+    },
+    async batch(l) { return l.map(() => ({ success: true, meta: { changes: 1 } })); },
+  };
+  const env = { MOLLIE_API_KEY: 'test_proefsleutelvoordetoetsabcdef', RESEND_API_KEY: 're_proef', NOTIFY_EMAIL: 'studio@visuails.test', FROM_EMAIL: 'VISUAILS <orders@visuails.test>', DB };
+  const aflevering = () => mollieWebhook({ request: new Request('https://visuails.com/api/webhook/mollie', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: 'id=tr_ProefVijftien01' }), env, waitUntil() {} });
+  const stil = [console.log, console.warn, console.error];
+  console.log = console.warn = console.error = () => {};
+  const r1 = await aflevering(); const na1 = mails.length;
+  const r2 = await aflevering(); const na2 = mails.length;
+  Object.assign(console, { log: stil[0], warn: stil[1], error: stil[2] });
+  ok('de eerste aflevering meldt de mislukte incasso', r1.status === 200 && na1 >= 1, `status ${r1.status}, ${na1} mails`);
+  ok('  de tweede aflevering van dezelfde melding stuurt geen tweede mail', r2.status === 200 && na2 === na1, `status ${r2.status}, ${na2 - na1} extra mails`);
+  globalThis.fetch = echteFetch3;
 }
 
 console.log(`\n${pass} goed, ${fail} fout`);

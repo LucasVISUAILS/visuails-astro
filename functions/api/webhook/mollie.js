@@ -51,7 +51,9 @@
 // ── WHY A DUPLICATE DELIVERY IS NOT AN ERROR ────────────────────────────────
 // Same mechanism as the Stripe handler: schema.sql's UNIQUE(provider,
 // external_id) on `payments` is the idempotency gate. The second INSERT for
-// the same payment id throws, and that throw IS the "already handled" signal.
+// the same payment id throws, and that throw IS the "already handled" signal —
+// provided the order is also marked paid (5 november 2026: if D1 failed between
+// the payment row and that UPDATE, the retry finishes the job; see recordPaid).
 // Mollie will re-deliver — on its own retry schedule, and again on any later
 // status change of the same payment (a refund, a chargeback) — so this is a
 // normal path, not an edge case.
@@ -189,11 +191,18 @@ export async function onRequestPost({ request, env, waitUntil }) {
   try {
     payment = await getMolliePayment(env, id);
   } catch (e) {
-    // 404 / 401 / 422: permanent for this delivery. Either the id is not ours
-    // (someone poking the endpoint, or a live payment arriving at a test
-    // deployment) or the key is wrong — and a wrong key does not fix itself
-    // inside Mollie's retry window either. Log it and stop asking.
-    if (e.status && e.status >= 400 && e.status < 500) {
+    // 404 / 422: permanent for this delivery — the id is not ours (someone
+    // poking the endpoint, or a live payment arriving at a test deployment).
+    // Log it and stop asking.
+    //
+    // MAAR NIET 401, 403, 408 EN 429 — 5 november 2026. Die stonden hier ook onder
+    // "blijvend", met de redenering dat een verkeerde sleutel zich binnen het
+    // herhaalvenster niet herstelt. Dat doet hij wel: een sleutelwissel duurt minuten,
+    // en Mollie probeert het 26 uur. En een 429 ("te veel verzoeken") is per definitie
+    // tijdelijk. Met een 200 hierop zei de webhook "stop" tegen een melding van een
+    // echte `paid` — weg. Een 500 kost hooguit wat herhalingen in het log.
+    const tijdelijk = [401, 403, 408, 429].includes(Number(e.status));
+    if (e.status && e.status >= 400 && e.status < 500 && !tijdelijk) {
       console.warn('[mollie-webhook] Mollie will not give us', id, '—', e.message);
       return new Response('ok', { status: 200 });
     }
@@ -323,11 +332,14 @@ export async function onRequestPost({ request, env, waitUntil }) {
              de tabel belooft): dan kan /api/order-status meteen zeggen dat de
              betaling niet doorging, in plaats van tien seconden "even kijken".
              Elke lezer van deze tabel filtert op paid/refunded. */
-          await env.DB.prepare(
+          const vast = await env.DB.prepare(
             `INSERT OR IGNORE INTO payments (order_id, provider, external_id, status, amount_cents, currency)
              VALUES (?1, 'mollie', ?2, ?3, ?4, ?5)`
           ).bind(row.id, payment.id, payment.status, mollieAmountToCents(payment.amount) ?? 0,
-            (payment.amount?.currency || 'EUR').toUpperCase()).run().catch(() => {});
+            (payment.amount?.currency || 'EUR').toUpperCase()).run().catch(() => null);
+          /* Stond deze betaling er al, dan is dit een herhaalde aflevering en ging de
+             melding aan de studio de vorige keer al uit (5 november 2026). */
+          const herhaald = !!vast?.meta && Number(vast.meta.changes) === 0;
           /* Niet melden als er al betaald is, of als de bestelling geannuleerd
              is (ronde 8, M-B5): elke klik op /api/order-pay maakt een nieuwe
              betaling, en elke die later verloopt gaf een "niet gelukt", ook
@@ -337,7 +349,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
             `SELECT COUNT(*) AS n FROM payments WHERE order_id = ?1 AND status IN ('failed', 'expired', 'canceled')
                AND created_at > datetime('now', '-1 day') AND external_id <> ?2`
           ).bind(row.id, payment.id).first().catch(() => null);
-          if (row.payment_status !== 'paid' && row.status !== 'cancelled' && !(Number(al?.n) > 0)) {
+          if (!herhaald && row.payment_status !== 'paid' && row.status !== 'cancelled' && !(Number(al?.n) > 0)) {
             await notifyPaymentFailed(env, row.id, payment.status);
           }
           /* B04: de bevestiging die op de uitkomst wachtte, gaat nu alsnog uit —
@@ -1079,8 +1091,14 @@ async function recordSubscriptionFailed(env, payment, mode) {
      enige plek waar een mislukte incasso bestaat het Cloudflare-log. */
   const wanneer = String(payment.failedAt || payment.createdAt || '');
   const month = /^\d{4}-\d{2}/.test(wanneer) ? wanneer.slice(0, 7) : new Date().toISOString().slice(0, 7);
+  /* Zette de INSERT niets, dan was dit een herhaalde aflevering van dezelfde melding:
+     de klant en de studio hebben hun mail dan al (5 november 2026 — tot dan kregen ze
+     hem bij elke aflevering opnieuw). Het pauzeren hieronder loopt wel gewoon, dat is
+     twee keer hetzelfde. Mislukt de INSERT zelf, dan telt hij als nieuw: liever een
+     mail te veel dan een mislukte incasso waar niemand van hoort. */
+  let alGemeld = false;
   try {
-    await env.DB.prepare(
+    const vast = await env.DB.prepare(
       `INSERT INTO subscription_payments (subscription_id, external_id, status, amount_cents, currency, month, raw_payload)
        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
        ON CONFLICT (external_id) DO NOTHING`
@@ -1088,6 +1106,7 @@ async function recordSubscriptionFailed(env, payment, mode) {
       sub.id, payment.id, payment.status, cents,
       (payment.amount?.currency || 'EUR').toUpperCase(), month, payloadZonderPersoon(payment)
     ).run();
+    alGemeld = !!vast?.meta && Number(vast.meta.changes) === 0;
   } catch (err) {
     console.error('[mollie-webhook] mislukte incasso niet vastgelegd —', payment.id, '—', err?.message || err);
   }
@@ -1122,6 +1141,10 @@ async function recordSubscriptionFailed(env, payment, mode) {
     console.log(`[mollie-webhook] incasso ${payment.id} mislukt voor ${sub.ref || sub.id} — Mollie probeert het opnieuw (${mode})`);
   }
 
+  if (alGemeld) {
+    console.log(`[mollie-webhook] incasso ${payment.id} kwam al eerder binnen — geen tweede mail`);
+    return;
+  }
   await notifySubscriptionFailed(env, {
     subRef: sub.ref,
     plan: sub.plan,
@@ -1547,7 +1570,9 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
   }
 
   // The idempotency gate — see the file header. A UNIQUE violation here means
-  // a previous delivery of this payment already did everything below.
+  // a previous delivery of this payment got at least this far; whether it also
+  // finished is checked in the catch below (5 november 2026).
+  let herstel = false;
   try {
     await env.DB.prepare(
       `INSERT INTO payments (order_id, provider, external_id, status, amount_cents, currency, raw_payload)
@@ -1591,8 +1616,29 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
       console.error('[mollie-webhook] betaling', payment.id, 'niet vastgelegd —', text);
       throw err;
     }
-    console.log('[mollie-webhook] duplicate delivery for', payment.id, '— already processed, skipping');
-    return;
+    /*
+     * ── EN ALLEEN ALS DIE EERDERE AFLEVERING OOK AF IS — 5 november 2026 ──────
+     *
+     * De rij in `payments` staat er vóór de UPDATE die de bestelling op betaald zet.
+     * Haperde D1 precies daartussen, dan antwoordde die aflevering 500 en kwam Mollie
+     * netjes terug — maar de herhaling stuitte hier op de UNIQUE, las dat als "al
+     * gedaan" en stopte. De bestelling bleef voorgoed onbetaald: de nacht stuurde een
+     * betaalherinnering en annuleerde later een bestelling die betaald was.
+     *
+     * Dus nu eerst kijken hoe de bestelling er NU voor staat (niet de rij van bovenaan
+     * deze aflevering, die kan van vóór de andere zijn). Betaald, terugbetaald of
+     * geannuleerd: de eerdere aflevering is af, stil aflopen is juist. Anders: verder,
+     * als herstel. De UPDATE hieronder is dan de claim — zet hij niets (een andere
+     * aflevering was net eerder), dan stopt deze, zodat er niets twee keer uitgaat.
+     * Een fout bij dit lezen gaat omhoog: 500, en Mollie komt terug.
+     */
+    const nu = await env.DB.prepare('SELECT payment_status, status FROM orders WHERE id = ?1').bind(order.id).first();
+    if (payment.status !== 'paid' || !nu || ['paid', 'refunded'].includes(nu.payment_status) || nu.status === 'cancelled') {
+      console.log('[mollie-webhook] duplicate delivery for', payment.id, '— already processed, skipping');
+      return;
+    }
+    console.warn('[mollie-webhook] betaling', payment.id, 'stond al vast maar', ref, 'is nog niet betaald — een eerdere aflevering stopte halverwege; nu alsnog');
+    herstel = true;
   }
 
   /* ── DUBBEL BETAALD, OF BETAALD NA ANNULEREN — 1 oktober 2026 (ronde 8) ────
@@ -1729,13 +1775,19 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
   //
   // Both terminal states are now excluded, which also makes the belt-and-braces
   // return above genuinely redundant rather than load-bearing.
-  await env.DB.prepare(
+  const gezet = await env.DB.prepare(
     `UPDATE orders SET payment_status = 'paid', payment_provider = 'mollie', payment_ref = ?1, paid_at = datetime('now'),
                        window_expires_at = NULL
      WHERE id = ?2 AND payment_status NOT IN ('paid', 'refunded')`
   )
     .bind(payment.id, order.id)
     .run();
+  /* Het herstel van hierboven (5 november 2026): zette deze UPDATE niets, dan was een
+     andere aflevering net eerder, en die verstuurt de melding en de factuur. */
+  if (herstel && gezet?.meta && Number(gezet.meta.changes) === 0) {
+    console.log('[mollie-webhook] herstel van', payment.id, 'niet nodig — een andere aflevering was eerder');
+    return;
+  }
   /* Het verrekende tegoed afboeken, nu de rest betaald is (29 september 2026).
      Zie src/lib/tegoedVerrekening.js. Mislukt het, dan staat het in het log en
      is de betaling niet minder verwerkt. */
@@ -1752,6 +1804,10 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
   /* Sinds 23 september 2026 in de taal van de klant: order_events is óók zijn
      tijdlijn. De betaal-id en de testmodus staan in admin_log, en de testmodus
      bovendien in payments.mode — daar is hij over zes weken nog even hard. */
+  /* Met een vangnet sinds 5 november 2026: hier stond een kale `.run()`. Mislukte deze
+     ene regel, dan antwoordde de webhook 500 — ná de UPDATE hierboven — en de herhaling
+     zag een betaalde bestelling en stopte. De melding aan de studio en de factuur gingen
+     dan nooit uit. Een ontbrekende regel op de tijdlijn is minder erg dan dat. */
   await env.DB.prepare('INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, ?4)')
     .bind(
       order.id,
@@ -1761,7 +1817,8 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
         : `Payment received${mode === 'test' ? ' (test payment)' : ''}`,
       'system'
     )
-    .run();
+    .run()
+    .catch((e) => console.error('[mollie-webhook] regel "betaling ontvangen" niet op de tijdlijn voor', ref, '—', e?.message || e));
   await env.DB.prepare(
     `INSERT INTO admin_log (admin_id, admin_email, action, order_id, customer_id, detail)
      VALUES (NULL, NULL, 'payment.paid', ?1, ?2, ?3)`
