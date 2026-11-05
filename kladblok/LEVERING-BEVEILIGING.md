@@ -1,7 +1,7 @@
 # Levering: de beveiliging en de back-end sterker (5 november 2026)
 
 > **NOG NIET AF** (deze notitie wordt bij elke push bijgewerkt):
-> - De reparaties: stap 1 tot en met 4, en 14, 15 en 16 zijn af. Stap 5 tot en met 13 en 17 tot en met 19 in
+> - De reparaties: stap 1 tot en met 6, en 14, 15 en 16 zijn af. Stap 7 tot en met 13 en 17 tot en met 19 in
 >   `kladblok/PLAN-BEVEILIGING.md` §4 nog niet (stap 14 tot en met 19 kwamen uit het vierde deel van de naloop, de
 >   betaal- en bestelroutes; 14 ging voor omdat hij het zwaarst is).
 > - De eindcontrole.
@@ -151,3 +151,22 @@ begrenst het totaal al; een atomaire teller zou het succespad van het inloggen h
 **Het bewijs.** `tests/backend-sterker.test.mjs` §4, met een verzette klok: op de oude code rood, op de nieuwe groen
 (ook: de volgende dag werkt de goede code weer). **Nacontrole:** de elf toetsbestanden rond inloggen in Studio, de
 2FA-set met `test:code`, de bouw, `test:afvink8okt`: groen.
+
+## Stap 5 en 6 · De privélink en oude bestanden (af)
+
+**5 · Terugdraaien na het venster.** In Studio heropent "terugdraaien" een afgeronde bestelling alleen binnen het
+venster (90 dagen); in de privélink stond die controle niet. Kleiner dan het leek: een gewone privélink verloopt
+samen met dat venster. Maar een link die /admin met de hand opnieuw uitgaf, heeft een eigen einddatum, en daarmee kon
+een bestelling van maanden geleden weer open (met bronmateriaal dat dan al opgeruimd kan zijn). Nu dezelfde regel als
+in Studio.
+
+**6 · Een oud bestand met een onbekend type.** Bestanden werden geserveerd met het type dat R2 had bewaard als de
+extensie onbekend was. Vóór de typecontrole van de upload kon dat alles zijn: een `text/html` met een onbekende
+extensie werd dan een pagina op ons eigen domein, inline (nagespeeld, in de privélink én in Studio). Nu telt een
+opgeslagen type alleen als het in de lijst staat (jpg, png, webp, avif, gif, tiff, mp4, webm, mov, pdf, zip); anders
+wordt het een download zonder type. Bewust geen strengere CSP op de bestanden zelf: die kan de PDF-weergave in de
+browser breken. De previews in /admin worden sinds 31 augustus bij het uploaden al tegen een lijst gehouden.
+
+**Het bewijs.** `tests/backend-sterker.test.mjs` §5 en §6: op de oude code rood (de controles met een geldig geval
+groen), op de nieuwe groen. **Nacontrole:** de bouw, de 30 toetsbestanden rond de privélink en de bestanden van
+Studio, de 2FA-set: groen.

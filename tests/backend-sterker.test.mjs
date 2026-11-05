@@ -15,6 +15,10 @@
  *       terugzetlink van die tweede wijziging in zijn eigen postvak).
  *   4 · Studio: de inlogcode. Naast de grens per kwartier een grens per dag op hetzelfde
  *       account, zodat raden niet de hele dag door kan.
+ *   5 · de privélink: terugdraaien heropent een afgeronde bestelling alleen binnen het
+ *       venster, zoals in Studio (ook met een link die /admin opnieuw uitgaf).
+ *   6 · een oud bestand met een onbekende extensie gaat niet met een willekeurig
+ *       opgeslagen type (text/html) de deur uit, in de privélink en in Studio.
  *  14 · de betaalwebhook: een aflevering die halverwege stopt (D1 hapert tussen de
  *       betaalrij en de UPDATE naar betaald) mag een bestelling niet onbetaald laten.
  *  15 · een mislukte incasso die twee keer wordt afgeleverd, geeft één mail.
@@ -316,6 +320,67 @@ console.log('\n4 · Studio: raden naar de inlogcode, de hele dag door');
     ok('  de volgende dag werkt de goede code weer', morgen.status === 303 && /vis_account=/.test(morgen.headers.get('set-cookie') || ''), `status ${morgen.status}`);
   } catch (e) { ok('raden naar de inlogcode zonder fout', false, e.stack || e.message); }
   globalThis.Date = EchteDate;
+}
+
+/* ══ 5 · DE PRIVÉLINK: TERUGDRAAIEN NA HET VENSTER ═══════════════════════════ */
+console.log('\n5 · de privélink: een afgeronde bestelling na het venster');
+{
+  const opzet = async (dagenGeleden) => {
+    const { db } = verseDb(schema);
+    db.prepare("INSERT INTO customers (id, email, name, brand, country) VALUES (1, 'oud@merk.test', 'Oud', 'OUD', 'NL')").run();
+    db.prepare(`INSERT INTO orders (id, ref, customer_id, service, status, name, brand, email, total_cents, lang, created_at, tier, product_count, payment_status, delivered_at, closed_at)
+      VALUES (1, 'VIS-OUD-5', 1, 'catalog', 'delivered', 'Oud', 'OUD', 'oud@merk.test', 100, 'nl', '2026-01-01', 'attended', 1, 'paid', '2026-01-10', datetime('now', ?))`).run(`-${dagenGeleden} days`);
+    db.prepare("INSERT INTO files (id, order_id, kind, r2_key, filename, bytes, review_state, product_key, shot, reviewed_at) VALUES (1, 1, 'delivery', 'leveringen/oud/1.jpg', 'oud-1.jpg', 1200, 'approved', 'p1', 'front', '2026-01-11')").run();
+    /* Een link die /admin met de hand opnieuw uitgaf: met een eigen einddatum, nog een maand geldig. */
+    const kenmerk = await mintToken();
+    db.prepare("INSERT INTO order_tokens (order_id, token_hash, expires_at) VALUES (1, ?, datetime('now', '+30 days'))").run(await hashToken(kenmerk));
+    return { db, kenmerk };
+  };
+  const terugdraaien = ({ db, kenmerk }) => portalPost({ request: new Request(`https://visuails.com/o/${kenmerk}`, { method: 'POST', headers: { 'sec-fetch-site': 'same-origin', origin: 'https://visuails.com', 'cf-connecting-ip': nieuwIp(), 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ action: 'undo', file: '1' }) }), env: { DB: d1(db) }, waitUntil() {} });
+  try {
+    const oud = await opzet(200);
+    await terugdraaien(oud);
+    const na = oud.db.prepare('SELECT closed_at FROM orders WHERE id = 1').get().closed_at;
+    ok('na het venster (200 dagen dicht) heropent terugdraaien de bestelling niet', !!na, `closed_at ${na}`);
+    const jong = await opzet(5);
+    await terugdraaien(jong);
+    const na2 = jong.db.prepare('SELECT closed_at FROM orders WHERE id = 1').get().closed_at;
+    ok('  binnen het venster (5 dagen dicht) kan het nog, zoals in Studio', na2 === null, `closed_at ${na2}`);
+  } catch (e) { ok('de privélink zonder fout', false, e.stack || e.message); }
+}
+
+/* ══ 6 · EEN OUD BESTAND MET EEN ONBEKEND TYPE ══════════════════════════════ */
+console.log('\n6 · een oud bestand met een onbekende extensie en een opgeslagen type');
+{
+  const { portalGet } = await import('../src/lib/portal.js');
+  const { accountGet } = await import('../src/lib/account.js');
+  const { db } = verseDb(schema);
+  db.prepare("INSERT INTO customers (id, email, name, brand, country) VALUES (1, 'type@merk.test', 'Type', 'TYPE', 'NL')").run();
+  db.prepare(`INSERT INTO orders (id, ref, customer_id, service, status, name, brand, email, total_cents, lang, created_at, tier, product_count, payment_status, delivered_at, delivery_mailed_at)
+    VALUES (1, 'VIS-TYPE-6', 1, 'catalog', 'delivered', 'Type', 'TYPE', 'type@merk.test', 100, 'nl', '2026-08-01', 'attended', 1, 'paid', '2026-08-10', '2026-08-10 09:00')`).run();
+  /* Van vóór de typecontrole: een bestandsnaam zonder bekende extensie, en een type uit de upload. */
+  db.prepare("INSERT INTO files (id, order_id, kind, r2_key, filename, bytes, review_state, product_key, shot, announced_at) VALUES (1, 1, 'delivery', 'leveringen/type/1.htm', 'oud.htm', 40, 'pending', 'p1', 'front', '2026-08-10')").run();
+  db.prepare("INSERT INTO files (id, order_id, kind, r2_key, filename, bytes, review_state, product_key, shot, announced_at) VALUES (2, 1, 'delivery', 'leveringen/type/2.heic', 'oud.heic', 40, 'pending', 'p1', 'side', '2026-08-10')").run();
+  const kenmerk = await mintToken();
+  db.prepare('INSERT INTO order_tokens (order_id, token_hash) VALUES (1, ?)').run(await hashToken(kenmerk));
+  const sessie = 'sessie-voor-de-typetoets-backend-sterker-stap-6-abc';
+  db.prepare("INSERT INTO account_sessions (customer_id, token_hash, expires_at) VALUES (1, ?, datetime('now', '+30 days'))").run(await hashToken(sessie));
+  const opgeslagen = { 'leveringen/type/1.htm': 'text/html; charset=utf-8', 'leveringen/type/2.heic': 'image/jpeg' };
+  const UPLOADS = {
+    async get(key) {
+      if (!opgeslagen[key]) return null;
+      return { body: new TextEncoder().encode('<script>1</script>'), size: 18, httpEtag: '"e"', writeHttpMetadata(h) { h.set('content-type', opgeslagen[key]); } };
+    },
+  };
+  const env = { DB: d1(db), UPLOADS };
+  try {
+    const p1 = await portalGet({ request: new Request(`https://visuails.com/o/${kenmerk}/f/1`), env, waitUntil() {} });
+    ok('de privélink: een opgeslagen text/html gaat niet als pagina de deur uit', p1.status === 200 && p1.headers.get('content-type') === 'application/octet-stream', `${p1.status} ${p1.headers.get('content-type')}`);
+    const p2 = await portalGet({ request: new Request(`https://visuails.com/o/${kenmerk}/f/2`), env, waitUntil() {} });
+    ok('  een opgeslagen beeldtype uit de lijst blijft gewoon werken', p2.headers.get('content-type') === 'image/jpeg', `${p2.status} ${p2.headers.get('content-type')}`);
+    const s1 = await accountGet({ request: new Request('https://visuails.com/account/files/1/f', { headers: { cookie: `vis_account=${sessie}` } }), env, waitUntil() {} });
+    ok('Studio: hetzelfde bestand ook daar niet als pagina', s1.status === 200 && s1.headers.get('content-type') === 'application/octet-stream', `${s1.status} ${s1.headers.get('content-type')}`);
+  } catch (e) { ok('bestanden serveren zonder fout', false, e.stack || e.message); }
 }
 
 /* ══ 14 · DE BETAALWEBHOOK: EEN BETAALDE BESTELLING MAG NIET ONBETAALD BLIJVEN ══ */

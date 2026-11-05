@@ -5965,9 +5965,17 @@ const MIME = {
   zip: 'application/zip',
 };
 
+/* Een opgeslagen type telt alleen als het ook in de lijst staat (5 november 2026). Hier
+   ging elk type dat R2 had bewaard door, en vóór de typecontrole van de upload (augustus
+   2026) kon dat alles zijn: een `text/html` met een onbekende extensie werd dan een pagina
+   op ons eigen domein, inline. Alles daarbuiten wordt een download zonder type. */
+const MIME_TOEGESTAAN = new Set(Object.values(MIME));
+
 function mimeFor(name, stored) {
   const ext = String(name).toLowerCase().split('.').pop();
-  return MIME[ext] || (stored && stored !== 'application/octet-stream' ? stored : 'application/octet-stream');
+  if (MIME[ext]) return MIME[ext];
+  const opgeslagen = String(stored || '').split(';')[0].trim().toLowerCase();
+  return MIME_TOEGESTAAN.has(opgeslagen) ? opgeslagen : 'application/octet-stream';
 }
 
 function dispositionFilename(name) {

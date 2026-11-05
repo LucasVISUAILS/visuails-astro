@@ -629,6 +629,12 @@ export async function portalPost(context) {
   // account.js's handleFileReview, en om dezelfde reden — de knop die dan nog op
   // het scherm staat moet ook echt iets doen.
   if (order.closed_at && action !== 'undo') return seeOther(home);
+  /* En terugdraaien alleen binnen het venster (5 november 2026), zoals Studio dat doet
+     (reopenable() in account.js). Een gewone link verloopt samen met dat venster, maar een
+     link die /admin met de hand opnieuw uitgaf, heeft een eigen einddatum; daarmee kon dit
+     een bestelling heropenen die maanden geleden was afgerond, met bronmateriaal dat dan
+     al opgeruimd kan zijn. */
+  if (order.closed_at && isExpired(null, order.closed_at)) return seeOther(home);
 
   // The file must belong to THIS order. Without this, a valid token for order A
   // could review order B's images by editing one number in a form.
@@ -1226,9 +1232,17 @@ const MIME = {
   zip: 'application/zip',
 };
 
+/* Een opgeslagen type telt alleen als het ook in de lijst staat (5 november 2026). Hier
+   ging elk type dat R2 had bewaard door, en vóór de typecontrole van de upload (augustus
+   2026) kon dat alles zijn: een `text/html` met een onbekende extensie werd dan een pagina
+   op ons eigen domein, inline. Alles daarbuiten wordt een download zonder type. */
+const MIME_TOEGESTAAN = new Set(Object.values(MIME));
+
 function mimeFor(name, stored) {
   const ext = String(name).toLowerCase().split('.').pop();
-  return MIME[ext] || (stored && stored !== 'application/octet-stream' ? stored : 'application/octet-stream');
+  if (MIME[ext]) return MIME[ext];
+  const opgeslagen = String(stored || '').split(';')[0].trim().toLowerCase();
+  return MIME_TOEGESTAAN.has(opgeslagen) ? opgeslagen : 'application/octet-stream';
 }
 
 /**
