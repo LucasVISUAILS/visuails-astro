@@ -75,3 +75,9 @@ kladblok/drukteproef/
 # Levering 80: de uitgeknipte bronnen (png met schaduw, 24 MB) staan op je schijf in kladblok; de site-maten
 # die scripts/rust-beelden.mjs ervan maakt, staan in public/img/hal/rust/ en gaan wel mee.
 kladblok/levering-80/uitgeknipt/*.png
+
+# De map waarin Lucas zijn eigen beelden en iconen zet (BEELDEN.bat, levering 71).
+# Zijn bestanden, het contactblad en de kopieën in _vorige/ en _verwerkt/ horen op
+# zijn schijf; alleen de uitleg gaat mee.
+eigen-beelden/*
+!eigen-beelden/LEES-MIJ.txt

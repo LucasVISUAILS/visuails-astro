@@ -1,6 +1,8 @@
 /*
  * VISUAILS — een ingevulde tekstronde toepassen op de bron.
- *   node scripts/tekst-toepassen.mjs <ingevuld.md> [--schrijf]
+ *   node scripts/tekst-toepassen.mjs <ingevuld.md|ingevuld.xlsx> [--schrijf]
+ *   node scripts/tekst-toepassen.mjs --vraag          (TEKSTEN-TOEPASSEN.bat)
+ *   node scripts/tekst-toepassen.mjs --terug [--vraag] de laatste ronde terugzetten
  *
  * ── WAAROM DIT EEN SCRIPT IS EN GEEN HANDWERK ──────────────────────────────
  *
@@ -44,16 +46,72 @@
  * wat het zou doen. Een toepasser die meteen schrijft, is een toepasser die je
  * één keer per ongeluk draait.
  */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, copyFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { join, dirname } from 'node:path';
+import { join, dirname, relative } from 'node:path';
+import readline from 'node:readline';
+import { leesXlsx } from './lib/xlsx.mjs';
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const [, , bestand, ...vlaggen] = process.argv;
-const SCHRIJF = vlaggen.includes('--schrijf');
+/* TEKST_WORTEL: alleen voor tests/zelf-vervangen-71.test.mjs (schrijven en terugzetten
+   in een tijdelijke map, nooit in src/ terwijl de testreeks loopt). */
+const ROOT = process.env.TEKST_WORTEL || join(dirname(fileURLToPath(import.meta.url)), '..');
+/* ── DE VRAAGSTAND, VOOR TEKSTEN-TOEPASSEN.bat — levering 71, 5 november 2026 ──
+   `--vraag`: vraagt welk bestand (sleep het in het venster), draait eerst droog,
+   toont wat er verandert, en past het pas toe als Lucas J typt. Uitgang 0 = gedaan,
+   3 = niets te doen, 2 = hij koos nee, 1 = er ging iets mis. Zonder `--vraag` werkt
+   het script zoals altijd (droog, of met --schrijf). Het bestand mag nu ook de
+   ingevulde .xlsx van TEKSTEN.bat zijn; de kolommen worden op naam gelezen. */
+const args = process.argv.slice(2);
+const VRAAG = args.includes('--vraag');
+let SCHRIJF = args.includes('--schrijf');
+let bestand = args.find((a) => !a.startsWith('--')) || '';
+/* Eén leesregel voor alle vragen: met een nieuwe per vraag slokt de eerste alles op
+   wat er al klaarstaat (een gesleept pad en de J erachter), en wacht de tweede
+   vergeefs. Is de invoer op, dan is het antwoord leeg, en leeg is nee. */
+let rl = null; let dicht = false; const klaar = []; const wacht = [];
+const vraag = (t) => {
+  if (!rl && !dicht) {
+    rl = readline.createInterface({ input: process.stdin });
+    rl.on('line', (r) => { const w = wacht.shift(); if (w) w(r); else klaar.push(r); });
+    rl.on('close', () => { dicht = true; while (wacht.length) wacht.shift()(''); });
+  }
+  process.stdout.write(t);
+  return new Promise((res) => { if (klaar.length) res(klaar.shift()); else if (dicht) res(''); else wacht.push(res); });
+};
+const sluit = () => { if (rl && !dicht) rl.close(); };
 
+/* ── TERUG — levering 71 ──────────────────────────────────────────────────────
+   Voor het schrijven gaat elk bestand dat verandert als kopie naar
+   tekstronde/terug/<tijd>/ (tekstronde/ gaat niet mee naar GitHub), en de naam
+   van die map in tekstronde/terug/LAATSTE.txt. `--terug` zet die kopieën terug:
+   TEKSTEN-TOEPASSEN.bat biedt dat aan als een toets rood is. */
+const TERUG = join(ROOT, 'tekstronde', 'terug');
+if (args.includes('--terug')) {
+  const laatste = existsSync(join(TERUG, 'LAATSTE.txt')) ? readFileSync(join(TERUG, 'LAATSTE.txt'), 'utf8').trim() : '';
+  const map = laatste && join(TERUG, laatste);
+  if (!map || !existsSync(map)) { console.log('\n  Er is geen ronde om terug te zetten. Er is niets veranderd.'); process.exit(0); }
+  const terugBestanden = readdirSync(map, { recursive: true, withFileTypes: true }).filter((e) => e.isFile()).map((e) => relative(map, join(e.parentPath ?? e.path, e.name)));
+  console.log(`\n  De ronde van ${laatste}: ${terugBestanden.length} bestand(en) gaan terug zoals ze waren:`);
+  for (const f of terugBestanden) console.log(`    ${f.replace(/\\/g, '/')}`);
+  if (VRAAG) {
+    const a = String(await vraag('\n  Terugzetten? Typ J en Enter (of N): ')).trim().toLowerCase();
+    if (a !== 'j' && a !== 'ja') { console.log('\n  Niet teruggezet: je nieuwe teksten blijven staan.'); process.exit(2); }
+  }
+  for (const f of terugBestanden) copyFileSync(join(map, f), join(ROOT, f));
+  writeFileSync(join(TERUG, 'LAATSTE.txt'), '');
+  console.log(`\n  Teruggezet: ${terugBestanden.length} bestand(en). De site staat weer zoals voor deze ronde.`);
+  process.exit(0);
+}
+
+if (!bestand && VRAAG) {
+  bestand = String(await vraag('\n  Sleep je ingevulde tekstronde (.xlsx) in dit venster en druk op Enter:\n  ')).trim().replace(/^"(.*)"$/, '$1').replace(/^'(.*)'$/, '$1').replace(/^& '(.*)'$/, '$1');
+}
 if (!bestand) {
-  console.error('gebruik: node scripts/tekst-toepassen.mjs <ingevuld.md> [--schrijf]');
+  console.error('gebruik: node scripts/tekst-toepassen.mjs <ingevuld.md|ingevuld.xlsx> [--schrijf] [--vraag]');
+  process.exit(1);
+}
+if (!existsSync(bestand)) {
+  console.error(`\n  ROOD: het bestand is er niet: ${bestand}`);
   process.exit(1);
 }
 
@@ -64,9 +122,29 @@ if (!bestand) {
 const apostrof = (t) => t.replace(/(\p{L})'(\p{L})/gu, '$1’$2');
 
 /* ── HET BESTAND UITLEZEN ──────────────────────────────────────────────────── */
-const md = readFileSync(bestand, 'utf8');
-const stukken = md.split(/\n### ([a-z0-9-]+)\n/);
 const items = [];
+/* Een .xlsx van TEKSTEN.bat (scripts/tekstblad-xlsx.mjs): het tabblad Tekst, de
+   kolommen op naam, zodat een verschoven of extra kolom niets breekt. */
+export function itemsUitXlsx(buf) {
+  const rijen = leesXlsx(buf, { blad: 'Tekst' });
+  const kop = (rijen[0] || []).map((k) => String(k || '').trim().toLowerCase());
+  const k = (naam) => kop.indexOf(naam);
+  const [id, en, nl, enN, nlN] = ['id', 'engels nu', 'nederlands nu', 'engels nieuw', 'nederlands nieuw'].map(k);
+  if (id < 0 || en < 0 || nl < 0 || enN < 0 || nlN < 0) throw new Error('dit is geen tekstronde van TEKSTEN.bat: de kolommen id, Engels nu, Nederlands nu, Engels nieuw en Nederlands nieuw ontbreken');
+  return rijen.slice(1).filter((r) => r[id]).map((r) => ({
+    id: String(r[id]).trim(),
+    en: String(r[en] || '').trim(),
+    nl: String(r[nl] || '').trim(),
+    venNieuw: apostrof(String(r[enN] || '').trim()),
+    vnlNieuw: apostrof(String(r[nlN] || '').trim()),
+  }));
+}
+if (/\.xlsx$/i.test(bestand)) {
+  try { items.push(...itemsUitXlsx(readFileSync(bestand))); }
+  catch (e) { console.error(`\n  ROOD: ${e.message}`); process.exit(1); }
+}
+const md = /\.xlsx$/i.test(bestand) ? '' : readFileSync(bestand, 'utf8');
+const stukken = md.split(/\n### ([a-z0-9-]+)\n/);
 for (let i = 1; i < stukken.length; i += 2) {
   const id = stukken[i];
   const blok = stukken[i + 1];
@@ -157,6 +235,7 @@ const vervang = (tekst, oud, nieuw) => {
 };
 
 let raak = 0, mis = 0;
+const toegepast = [];
 const nietGevonden = [];
 const alGedaan = [];
 const perBestand = new Map();
@@ -179,7 +258,7 @@ for (const [oud, { nieuw, id }] of paren) {
      hij veranderd is, de tweede is werk dat af is. Ze op één hoop gooien maakte
      de droogloop van deze ronde onleesbaar — 198 regels "NIET GEVONDEN" waarvan
      er 197 gewoon klaar waren. */
-  if (gevonden) raak += gevonden;
+  if (gevonden) { raak += gevonden; toegepast.push({ id, oud, nieuw, n: gevonden }); }
   else if (stondErAl) alGedaan.push({ id, nieuw });
   else { mis++; nietGevonden.push({ id, oud }); }
 }
@@ -201,16 +280,38 @@ if (nietGevonden.length) {
   for (const n of nietGevonden) console.log(`  ${n.id}  "${n.oud.slice(0, 78)}"`);
 }
 
+if (VRAAG) {
+  /* Wat er verandert, zin voor zin: zo ziet hij het voordat hij J typt. */
+  const kort = (t, n = 600) => (t.length > n ? `${t.slice(0, n - 1)}…` : t);   /* voluit: een wijziging aan het eind moet je zien */
+  if (toegepast.length) {
+    console.log(`\n  WAT ER VERANDERT (${toegepast.length} zin${toegepast.length === 1 ? '' : 'nen'}):`);
+    for (const t of toegepast.slice(0, 60)) console.log(`\n  ${t.id}${t.n > 1 ? `  (${t.n} plekken)` : ''}\n    was:  ${kort(t.oud)}\n    nu:   ${kort(t.nieuw)}`);
+    if (toegepast.length > 60) console.log(`\n  … en nog ${toegepast.length - 60}.`);
+  }
+  if (!raak) {
+    console.log('\n  Er valt niets toe te passen (niets ingevuld, of alles stond er al). Er is niets veranderd.');
+    process.exit(3);
+  }
+  if (botsingen.length || nietGevonden.length) console.log('\n  Let op: de regels hierboven onder TEGENSPRAAK en NIET GEVONDEN worden niet toegepast. De rest wel.');
+  const a = String(await vraag(`\n  ${raak} plek(ken) in ${perBestand.size} bestand(en) aanpassen? Typ J en Enter (of N): `)).trim().toLowerCase();
+  if (a !== 'j' && a !== 'ja') { console.log('\n  Gestopt: er is niets veranderd.'); process.exit(2); }
+  SCHRIJF = true;
+  sluit();
+}
 if (!SCHRIJF) {
   console.log('\n(droog gedraaid — niets geschreven. Voeg --schrijf toe om het echt te doen.)');
   process.exit(0);
 }
 
 let geschreven = 0;
+const stempel = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
 for (const [f, tekst] of inhoud) {
   const oud = readFileSync(join(ROOT, f), 'utf8');
   if (oud === tekst) continue;
+  mkdirSync(dirname(join(TERUG, stempel, f)), { recursive: true });
+  writeFileSync(join(TERUG, stempel, f), oud);
   writeFileSync(join(ROOT, f), tekst);
   geschreven++;
 }
-console.log(`\n${geschreven} bestand(en) geschreven.`);
+if (geschreven) writeFileSync(join(TERUG, 'LAATSTE.txt'), stempel);
+console.log(`\n${geschreven} bestand(en) geschreven.${geschreven ? ` De oude staan in tekstronde/terug/${stempel}/.` : ''}`);

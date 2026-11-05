@@ -1,0 +1,26 @@
+VISUAILS - de map voor je eigen beelden en iconen (levering 71)
+==================================================================
+
+1  Open BEELDVAKKEN.html in deze map (dubbelklik). Daar staat elk vak van de
+   site: de naam, de pagina, de verhouding en hoe breed het beeld minstens moet
+   zijn. Een blauw kader is een vak dat nog een plaatshouder heeft.
+
+2  Zet je beeld hier neer onder precies die naam:
+     lifestyle-august-02.png      (png, jpg of webp; de extensie maakt niet uit)
+   Een icoon: een svg onder de naam van het icoon, bv. vink.svg. Het raster is
+   24 x 24, de vormen zijn gevuld (geen lijn), zonder kleur en zonder transform.
+
+3  Dubbelklik BEELDEN.bat in de projectmap.
+     GROEN  het contactblad gaat open: oud en nieuw naast elkaar. Klopt het,
+            rol dan uit met UITROLLEN.bat.
+     ROOD   per bestand staat er wat er mis is (de verhouding, te klein, een
+            naam die niet bestaat) en wat je doet.
+
+Wat er gebeurt met wat je hier neerzet:
+  - het oude beeld gaat naar _vorige, zodat je terug kunt;
+  - wat je erin zette gaat naar _verwerkt, zodat een tweede dubbelklik het
+    niet nog eens doet;
+  - de herkomst (content credentials, C2PA) van je bestand gaat mee in elk
+    beeld dat de site krijgt.
+
+Deze map gaat niet mee naar GitHub, op dit bestand na.

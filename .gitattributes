@@ -25,3 +25,6 @@
 # Windows converts on checkout (core.autocrlf); on any other machine the test
 # went red. 5 November 2026, delivery 69: pinned here, like the .bat files.
 scripts/TERUGZETTEN.txt text eol=crlf
+
+# De uitleg in eigen-beelden/ leest Lucas in Kladblok (levering 71).
+eigen-beelden/LEES-MIJ.txt text eol=crlf

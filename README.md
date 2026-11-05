@@ -40,6 +40,20 @@ nooit uit de jpg), zet de herkomsttag erin, uploadt ze en hangt ze aan de
 beelden, zodat de zip per product JPG/, PNG/ en WEBP/ heeft. Is elk beeld
 compleet, dan zet het het verzoek op Klaar.
 
+Zelf beelden, iconen en teksten vervangen (5 november 2026, levering 71):
+
+- **`BEELDEN.bat`**: zet een beeld onder de naam van een vak in
+  `eigen-beelden\` (de vakken staan in `eigen-beelden\BEELDVAKKEN.html`), of een
+  svg onder de naam van een icoon, en dubbelklik. Het script
+  (`scripts/beelden.mjs`) keurt verhouding en maat, maakt elke maat, de
+  telefoonversie en de AVIF, neemt de herkomst (C2PA) mee en opent een
+  contactblad. Zie `eigen-beelden\LEES-MIJ.txt`.
+- **`TEKSTEN.bat`**: bouwt de site en zet elke zin die een klant leest in een
+  tabel in `tekstronde\` (`scripts/tekstblad.mjs`, `scripts/tekstblad-xlsx.mjs`).
+- **`TEKSTEN-TOEPASSEN.bat`**: sleep de ingevulde tabel erin, lees wat er
+  verandert, typ J; daarna draaien alle toetsen. Rood: hij biedt aan alles terug
+  te zetten (`scripts/tekst-toepassen.mjs --terug`).
+
 ## Lokaal draaien
 
 Node 22, minimaal 22.12 (staat in `.nvmrc`; Astro 7 eist 22.12 sinds 8 oktober
