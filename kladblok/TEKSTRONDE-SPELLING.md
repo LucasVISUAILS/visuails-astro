@@ -18,6 +18,7 @@ Levering 73, plan 3 van 3. **Er is geen enkele zin veranderd.** Dit is een lijst
 
 | Wat | Waar | Waarom het opvalt |
 |---|---|---|
+| "…achter de **prijs.Verkoop** je een set…" / "…behind the **price.Selling** a set…" | /start/lifestyle en /nl/start/lifestyle, het uitklapvak bij "Stukken die samen gedragen worden?" | **een echte fout** (gevonden in de naloop): twee zinnen zonder spatie aan elkaar. `OrderFlow.astro` r. 2929 zet `{LC.waarom} {LC.set}` neer en de build slikt de spatie in; de reparatie is één regel. Niet gedaan, want deze ronde verandert niets aan de site. |
 | "or a whole product at **once once** you have looked at its images" | /studio (EN), `StudioHal.astro` › `galleryLede` | twee keer "once" achter elkaar: leest als een fout, ook al klopt de zin |
 | "Onze beelden zijn geen pure machine-uitvoer: ze worden **met de hand** gecomponeerd, gecorrigeerd en …" | /nl/terms (de voorwaarden, over het auteursrecht) | dit is precies de soort zin van je regel van 25 oktober (geen verdedigende zinnen over AI). Hij staat in de voorwaarden als juridisch argument, dus niet zomaar weghalen: eerst kijken wat de Engelse versie zegt en of het argument nodig is. |
 | "**met de hand**" (de rest) | /nl/thank-you ("we lossen het met de hand op"), /nl/faq en /nl/hooks ("Hooks plannen we met de hand in"), het formulier op /nl/start/catalog, /nl/start/lifestyle, /nl/start/video en /nl/test-sample ("Dan controleren we het met de hand", "met de hand geoffreerd"), /nl/terms, de verwerkersovereenkomst | deze gaan over een probleem oplossen, plannen of een prijs maken, niet over de beelden. Toch dezelfde woorden: jij beslist. |
@@ -57,9 +58,16 @@ Levering 73, plan 3 van 3. **Er is geen enkele zin veranderd.** Dit is een lijst
   1. `spelling.mjs` knipt een woord op het zachte afbreekstreepje (`&shy;`): "Aansprakelijkheids|beperkingen" en
      "vestigings|adres" komen er als twee halve woorden uit.
   2. `audit-tekst.mjs` kent de klasse `h-regel` niet als blok: "Catalog photos.Every one alike." is in de pagina
-     twee regels van de kop, met niets ertussen omdat ze onder elkaar staan. Zo zijn bijna alle 16 meldingen "punt
-     zonder spatie" de regels van een kop of een prijsregel die met CSS onder elkaar staan. De 5 "dubbel woord"
-     zijn "Plus Five Five, Inc." (de naam van Resend, 4×) en "at once once" hierboven.
+     twee regels van de kop, met niets ertussen omdat ze onder elkaar staan. In de naloop elke melding "punt zonder
+     spatie" in een browser nagekeken (de tekst zoals hij op het scherm staat): 14 van de 16 staan op twee regels of
+     zijn een verborgen variant (de zin voor credits naast die voor euro's). De andere 2 zijn de echte fout bovenaan
+     A. De 5 "dubbel woord" zijn "Plus Five Five, Inc." (de naam van Resend, 4×) en "at once once" hierboven.
+
+## De volledige lijst
+
+Per pagina en per taal, met elk woord en elke melding: **`kladblok/TEKSTRONDE-SPELLING-PER-PAGINA.md`** (naloop,
+5 november). Daar staat bij elke pagina wat de spellingcontrole en `audit:tekst` er vinden, met een ● bij wat in A en
+B staat.
 
 ## Opties
 
