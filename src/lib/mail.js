@@ -88,7 +88,11 @@ export async function sendMail(env, { to, bcc, subject, html, text, attachments,
   const payload = {
     from,
     to,
-    subject,
+    /* Eén regel, zonder stuurtekens (5 november 2026). Onderwerpen dragen soms een
+       merknaam of productnaam die een klant zelf intypte; een regeleinde daarin kon
+       Resend de hele mail laten weigeren, en dan was bijvoorbeeld de melding aan de
+       studio weg. Een gewoon onderwerp blijft precies zoals het was. */
+    subject: String(subject ?? '').replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/ {2,}/g, ' ').trim(),
     /* ── GEEN WERKNOTITIES IN DE MAIL — 2 oktober 2026 (ronde 9, F8) ──────────
        De sjablonen dragen HTML-commentaar met uitleg voor ons ("DE BELOFTE STAAT
        IN DE VOET…", "#CCCCCC is --line…"). Dat kwam gewoon mee naar de klant en

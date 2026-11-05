@@ -1,7 +1,7 @@
 # Levering: de beveiliging en de back-end sterker (5 november 2026)
 
 > **NOG NIET AF** (deze notitie wordt bij elke push bijgewerkt):
-> - De reparaties: stap 1 tot en met 8, en 14, 15 en 16 zijn af. Stap 9 tot en met 13 en 17 tot en met 19 in
+> - De reparaties: stap 1 tot en met 9, en 14, 15 en 16 zijn af. Stap 10 tot en met 13 en 17 tot en met 19 in
 >   `kladblok/PLAN-BEVEILIGING.md` §4 nog niet (stap 14 tot en met 19 kwamen uit het vierde deel van de naloop, de
 >   betaal- en bestelroutes; 14 ging voor omdat hij het zwaarst is).
 > - De eindcontrole.
@@ -204,3 +204,15 @@ vaste lijst).
 de 2FA-set (vangnet 40, tweede stap 51, beveiliging 40, 8 oktober 17, 69 24, klantscheiding 161, inloggen, /admin,
 code), de 86 toetsbestanden die admin.js aanroepen (de taaltoets van /admin las een stuk SQL als Engelse zin; de SQL is
 herschreven met `!=`), de bouw: groen.
+
+## Stap 9 · Mail: één regel in het onderwerp (af)
+
+Het onderwerp gaat als JSON naar Resend, dus een echte kopregel-injectie is niet waarschijnlijk. Maar onderwerpen
+dragen soms een merk- of productnaam die een klant zelf intypte, en een regeleinde of stuurteken daarin kan Resend de
+hele mail laten weigeren (dan is bijvoorbeeld de melding aan de studio weg). `sendMail` maakt van regeleinden, tabs en
+andere stuurtekens nu een spatie; een gewoon onderwerp blijft precies zoals het was. Geen lengtegrens: die zou een
+lang maar echt onderwerp afknippen.
+
+**Het bewijs.** `tests/backend-sterker.test.mjs` §9: rood op de oude code, groen nu. **Nacontrole:** de 34
+toetsbestanden die naar onderwerpen kijken (waaronder alle mails in `test:mailsmerk`), en inloggen met de code en de
+link: groen.

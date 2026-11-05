@@ -21,6 +21,8 @@
  *       opgeslagen type (text/html) de deur uit, in de privélink en in Studio.
  *   8 · /admin: twee foutmeldingen geëscaped, de themaknop, een offerte of restant van
  *       0 cent, en een restant dat bij een dubbelklik niet twee keer ontstaat.
+ *   9 · mail: geen regeleinden of stuurtekens in het onderwerp (een merknaam met een
+ *       regeleinde kon Resend de hele mail laten weigeren).
  *  14 · de betaalwebhook: een aflevering die halverwege stopt (D1 hapert tussen de
  *       betaalrij en de UPDATE naar betaald) mag een bestelling niet onbetaald laten.
  *  15 · een mislukte incasso die twee keer wordt afgeleverd, geeft één mail.
@@ -419,6 +421,22 @@ console.log('\n8 · /admin: twee foutmeldingen, de themaknop, offerte en restant
     ok('twee keer op "restant" drukken (dubbelklik) geeft één restant', rest.length === 1, rest.join(', '));
   } catch (e) { ok('/admin zonder fout', false, e.stack || e.message); }
   [console.log, console.warn, console.error] = stil8;
+}
+
+/* ══ 9 · MAIL: GEEN REGELEINDEN IN HET ONDERWERP ═════════════════════════════ */
+console.log('\n9 · mail: geen regeleinden of stuurtekens in het onderwerp');
+{
+  const { sendMail } = await import('../src/lib/mail.js');
+  let laatste = null;
+  const echteFetch9 = globalThis.fetch;
+  globalThis.fetch = async (url, init = {}) => { laatste = JSON.parse(String(init.body || '{}')); return new Response('{"id":"m"}', { status: 200 }); };
+  try {
+    await sendMail({ RESEND_API_KEY: 're_proef' }, { to: 'klant@merk.test', subject: 'Betaald · VIS-1 · Merk\r\nBcc: kwaad@x.test\t\u0000 ', html: '<p>x</p>' });
+    ok('een regeleinde, tab of nul-teken in het onderwerp wordt een spatie', laatste?.subject === 'Betaald · VIS-1 · Merk Bcc: kwaad@x.test', JSON.stringify(laatste?.subject));
+    await sendMail({ RESEND_API_KEY: 're_proef' }, { to: 'klant@merk.test', subject: 'Je bestelling VIS-ABCD-EF1 is geleverd — bekijk je beelden', html: '<p>x</p>' });
+    ok('  een gewoon onderwerp blijft precies zoals het was', laatste?.subject === 'Je bestelling VIS-ABCD-EF1 is geleverd — bekijk je beelden', JSON.stringify(laatste?.subject));
+  } catch (e) { ok('mail zonder fout', false, e.message); }
+  globalThis.fetch = echteFetch9;
 }
 
 /* ══ 14 · DE BETAALWEBHOOK: EEN BETAALDE BESTELLING MAG NIET ONBETAALD BLIJVEN ══ */
