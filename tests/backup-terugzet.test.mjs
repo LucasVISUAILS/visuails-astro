@@ -85,6 +85,17 @@ console.log('\n2 · elke dump wordt ingelezen en gecontroleerd');
   const lek = await controleerDump(maakDump({ geheim: true }));
   ok('een dump MET een inloggeheim is niet in orde', lek.ok, false);
   ok('en zegt welke tabel', /inloggeheimen in de dump: admin_users/.test(lek.reden || ''), true, lek.reden);
+  /* 5 november 2026: een gevonden geheim houdt de dump buiten Google Drive. */
+  ok('een goede dump heeft geen geheimen', c.geheimen, false);
+  ok('een dump met een inloggeheim zegt dat (dan gaat hij niet naar Drive)', lek.geheimen, true);
+  {
+    const src = lees('scripts/backup.mjs');
+    const controleer = src.indexOf('await controleerDump(sql)');
+    const weiger = src.indexOf('if (controle.geheimen)');
+    const kopie = src.indexOf('fs.copyFileSync(sqlTijdelijk, sqlFile)');
+    ok('backup.mjs: eerst controleren, bij een geheim stoppen, pas dan naar de back-upmap', controleer > 0 && weiger > controleer && kopie > weiger, true, { controleer, weiger, kopie });
+    ok('en nergens wordt de dump nog direct in de back-upmap geschreven', /writeFileSync\(sqlFile\b/.test(src), false);
+  }
   const kapot = await controleerDump(maakDump({ kapot: true }));
   ok('een afgebroken dump is niet in orde', kapot.ok, false);
   ok('en zegt dat hij niet laadt', /laadt niet/.test(kapot.reden || ''), true, kapot.reden);

@@ -157,6 +157,11 @@ const metInhoud = tabellenVoorDump(alleTabellen);
  * even op slot zet. Oudere versies kennen die vlag niet en weigeren hem, dus
  * bij "unknown argument" gaat hij er zonder. */
 const tijdelijk = fs.mkdtempSync(path.join(os.tmpdir(), 'visuails-backup-'));
+/* EERST HIER, DAN PAS IN DRIVE (5 november 2026). Het samengevoegde bestand werd direct in
+ * de map van Google Drive geschreven en pas daarna gecontroleerd; vond de controle toch een
+ * inloggeheim, dan stond dat al in Drive (en Drive synchroniseert binnen seconden). Nu
+ * eerst hier, in de tijdelijke map buiten Drive, en pas na de controle ernaartoe. */
+const sqlTijdelijk = path.join(tijdelijk, path.basename(sqlFile));
 const exporteer = async (extra, uit) => {
   let r = await wrangler(['d1', 'export', DB, WAAR, '-y', ...extra, '--output', uit]);
   if (!r.ok && /unknown argument|unrecognized/i.test(r.out)) {
@@ -182,15 +187,16 @@ if (fout) {
   fs.rmSync(tijdelijk, { recursive: true, force: true });
   process.exit(1);
 }
-fs.writeFileSync(sqlFile, [
+fs.writeFileSync(sqlTijdelijk, [
   `-- VISUAILS back-up ${stamp} (database ${DB}).`,
   `-- Zonder inloggeheimen: de tabellen ${GEHEIME_TABELLEN.join(', ')} staan erin, maar leeg.`,
   '-- Terugzetten: zie LEESMIJ-TERUGZETTEN.txt in deze map.',
   fs.readFileSync(opbouwFile, 'utf8'),
   fs.readFileSync(inhoudFile, 'utf8'),
 ].join('\n'));
-fs.rmSync(tijdelijk, { recursive: true, force: true });
-const sqlKb = (fs.statSync(sqlFile).size / 1024).toFixed(0);
+fs.rmSync(opbouwFile, { force: true });
+fs.rmSync(inhoudFile, { force: true });
+const sqlKb = (fs.statSync(sqlTijdelijk).size / 1024).toFixed(0);
 console.log(`${path.basename(sqlFile)}  ${sqlKb} kB`);
 
 /* EEN EXPORT DIE GEEN TABELLEN BEVAT IS GEEN EXPORT. Dat klinkt onmogelijk,
@@ -198,13 +204,13 @@ console.log(`${path.basename(sqlFile)}  ${sqlKb} kB`);
  * back-up dat je pas ontdekt op de dag dat je hem nodig hebt. Twee goedkope
  * controles: staat er een CREATE TABLE in, en staan de tabellen erin die er
  * horen te zijn. */
-const sql = fs.readFileSync(sqlFile, 'utf8');
+const sql = fs.readFileSync(sqlTijdelijk, 'utf8');
 const tables = [...sql.matchAll(/CREATE TABLE (?:IF NOT EXISTS )?["'`]?(\w+)/gi)].map((m) => m[1]);
 const MUST_HAVE = ['orders', 'customers', 'files'];
 const missing = MUST_HAVE.filter((t) => !tables.includes(t));
 if (missing.length) {
   console.error(`\n  ✖ de export mist ${missing.join(', ')} — dit is geen bruikbare kopie.`);
-  console.error('    Het bestand blijft staan zodat je kunt kijken wat er wél in zit.');
+  console.error(`    Het bestand blijft staan zodat je kunt kijken wat er wél in zit: ${sqlTijdelijk}`);
   process.exit(1);
 }
 console.log(`     ${tables.length} tabellen, waaronder ${MUST_HAVE.join(', ')}`);
@@ -215,6 +221,16 @@ console.log(`     ${tables.length} tabellen, waaronder ${MUST_HAVE.join(', ')}`)
  * in /admin wordt dan oranje. De dump zelf blijft staan, zodat je kunt kijken. */
 process.stdout.write('  controleren (inlezen in een lege database)… ');
 const controle = await controleerDump(sql);
+if (controle.geheimen) {
+  console.log('NIET in orde');
+  console.error(`  ✖ ${controle.reden}`);
+  console.error('    Deze dump gaat NIET naar de back-upmap. Hij staat alleen hier, buiten Google Drive:');
+  console.error(`    ${sqlTijdelijk}`);
+  console.error('    Kijk welke tabel het is (zet hem in GEHEIME_TABELLEN in scripts/lib/backupdelen.mjs) en verwijder dit bestand daarna.');
+  process.exit(1);
+}
+fs.copyFileSync(sqlTijdelijk, sqlFile);
+fs.rmSync(tijdelijk, { recursive: true, force: true });
 fs.writeFileSync(path.join(OUT, `${stamp}-controle.json`), JSON.stringify({
   taken_at: stamp, database: DB, waar: BESTEMMING.waar, ...controle,
   geheime_tabellen_leeg: GEHEIME_TABELLEN,

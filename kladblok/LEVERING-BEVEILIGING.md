@@ -1,7 +1,7 @@
 # Levering: de beveiliging en de back-end sterker (5 november 2026)
 
 > **NOG NIET AF** (deze notitie wordt bij elke push bijgewerkt):
-> - De reparaties: stap 1 tot en met 11, en 14, 15 en 16 zijn af. Stap 12, 13 en 17 tot en met 19 in
+> - De reparaties: stap 1 tot en met 12, en 14, 15 en 16 zijn af. Stap 13 en 17 tot en met 19 in
 >   `kladblok/PLAN-BEVEILIGING.md` §4 nog niet (stap 14 tot en met 19 kwamen uit het vierde deel van de naloop, de
 >   betaal- en bestelroutes; 14 ging voor omdat hij het zwaarst is).
 > - De eindcontrole.
@@ -244,3 +244,19 @@ voorkomt; een datum die niet te lezen is, blijft staan.
 **Het bewijs.** `tests/backend-sterker.test.mjs` §11: weg wat al dagen verlopen is (in beide notaties), blijft wat nog
 geldt of pas net verliep, stil in het rapport, en een geldige /admin-sessie opent daarna nog het dashboard. **Nacontrole:**
 de 33 toetsbestanden die de nachtelijke taak aanroepen (ook het tellen van verzoeken per nacht), de 2FA-set: groen.
+
+## Stap 12 · De back-up: eerst controleren, dan naar Drive (af)
+
+De export laat de tabellen met inloggeheimen al leeg; de controle daarna (`controleerDump`) is het vangnet, voor als er
+ooit een nieuwe geheime tabel bijkomt die nog niet in `GEHEIME_TABELLEN` staat. Maar het samengevoegde bestand werd
+eerst in de map van Google Drive geschreven en pas daarna gecontroleerd, en Drive synchroniseert binnen seconden. Nu
+wordt het bestand in de tijdelijke map (buiten Drive) samengevoegd en gecontroleerd, en pas daarna naar de back-upmap
+gekopieerd. Vindt de controle een geheim, dan gaat het niet naar Drive: het script stopt, zegt waar het bestand staat en
+wat er moet gebeuren. Een dump die om een andere reden niet in orde is, gaat zoals voorheen wél mee, gemarkeerd als
+"niet gecontroleerd", zodat er geen back-up verloren gaat.
+
+**Het bewijs.** `tests/backup-terugzet.test.mjs`: `controleerDump` meldt een gevonden geheim, en in `backup.mjs` staat
+de controle vóór de kopie naar de back-upmap. Op de oude code 4 rood, nu 62 van 62. Het script zelf heb ik niet
+gedraaid (het spreekt de echte database aan); wel `node --check` op de syntaxis. **Eerste echte draai:** Lucas'
+eerstvolgende wekelijkse back-up. Die hoort er hetzelfde uit te zien als altijd. **Nacontrole:** `test:backup`,
+`test:uitrol`, `test:testreeks`, het vangnet, de tweede stap: groen.

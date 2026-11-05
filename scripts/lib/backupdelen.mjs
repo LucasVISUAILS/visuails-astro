@@ -163,6 +163,10 @@ export async function controleerDump(sql) {
   return {
     ok: fouten.length === 0,
     reden: fouten.join('; ') || null,
+    /* Staat er een inloggeheim in? Dan gaat de dump niet naar Google Drive (zie
+       backup.mjs, 5 november 2026). Alleen bij een GEVONDEN geheim: een dump die niet
+       laadt, gaat zoals voorheen mee, als "niet gecontroleerd". */
+    geheimen: lekken.length > 0 || klantHash > 0,
     tabellen: namen.length,
     rijen,
     perTabel,
