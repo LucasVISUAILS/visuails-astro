@@ -1,7 +1,7 @@
 # Naloop van leveringen 69 en 73 (5 november 2026)
 
-> **NOG NIET AF** (deze notitie wordt bij elke push bijgewerkt):
-> - De hele testreeks aan het eind.
+> **Af.** De testreeks (`TESTREEKS_TEGELIJK=4 node scripts/testreeks.mjs`): 284 van 284 groen (9 min 33 s), geen
+> enkele herkansing.
 
 Lucas vroeg of alles van `kladblok/PROMPT-CLOUD-CODE.md` af was. Drie punten waren half gedaan en konden zonder hem
 of zijn beelden af; die staan hier. De rest (Windows, de beelden, de opening) staat open in de notities van 69 tot en
@@ -45,3 +45,21 @@ meldingen "punt zonder spatie" regels onder elkaar waren, is nagekeken in een br
 - **Nagekeken dat ze iets bewaken:** de eigendomscontrole in `aankoopVanKlant` (`bijkopen.js`) en `maandsetToegang`
   (`account.js`) even verzwakt: blok 6 werd rood (2) en blok 7 (4); daarna teruggezet. Aan de site zelf is niets
   veranderd.
+
+## Mag weg
+
+Niets.
+
+## Voor het overzicht
+
+- **§16.2, het weeksysteem:** het plan noemt nu ook dat de aanmaakregels in migratie 0030 en 0036 mee uit moeten en dat
+  `migrate.mjs` `DROP COLUMN` moet leren overslaan.
+- **§17:** nieuw punt: op /start/lifestyle staan in het uitklapvak van de complete look twee zinnen zonder spatie aan
+  elkaar (NL en EN, `OrderFlow.astro` r. 2929); de reparatie is één regel.
+
+## Bestanden
+
+- **Toetsen:** `tests/klant-scheiding.test.mjs`.
+- **Kladblok:** `kladblok/NALOOP-69-73.md` (dit bestand), `kladblok/PLAN-WEEKSYSTEEM-OPRUIMEN.md`,
+  `kladblok/TEKSTRONDE-SPELLING.md`, `kladblok/TEKSTRONDE-SPELLING-PER-PAGINA.md`, `kladblok/LEVERING-69.md`,
+  `kladblok/LEVERING-73.md`, `kladblok/COMMIT-BERICHT.txt`.

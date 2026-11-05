@@ -4,6 +4,9 @@ Cloudsessie, branch `claude/voor-de-launch`, na levering 72. Je antwoord ("alles
 opgeschreven, **niets gebouwd**: geen code, geen migratie, geen zin op de site veranderd. Je kiest later via een
 afvinklijst in de chat met de brug.
 
+> **Naloop, 5 november:** het plan voor het weeksysteem is aangevuld (hoe hij draait, terug, toetsen) en de spellinglijst
+> staat nu ook per pagina en per taal (`kladblok/TEKSTRONDE-SPELLING-PER-PAGINA.md`). Zie `kladblok/NALOOP-69-73.md`.
+
 ## 1 · De drie plannen
 
 | Plan | Waar | Opties | Advies |
