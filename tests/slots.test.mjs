@@ -20,14 +20,15 @@
  * Vandaar een echte SQLite met het echte schema, en een klok die we zelf
  * vooruitzetten in plaats van te wachten.
  */
-import { d1, verseDb, zetLook } from './lib/d1sqlite.mjs';
+import { d1, verseDb } from './lib/d1sqlite.mjs';
 import {
   grantSlots, loadSlots, slotBalans, verbruikSlot, geefSlotTerug, creditsPerSoort, creditsVoor,
   slotsFor, kindsFor, vervaltOp, monthMinus, monthKey, vensterVoor,
+  verbruikCredits, geefCreditsTerug, slotToegestaan,
 } from '../src/lib/slots.js';
 import {
   createSubscriptionRow, activateSubscription, cancelSubscription, pauseSubscription,
-  queueAdd, queueLock, queueUnlock, queueRemove, loadQueue,
+  loadSubscription,
 } from '../src/lib/subscription.js';
 import { PLAN_PRODUCTS, PLAN_CLIPS, PLAN_CREDITS } from '../src/data/pricing.js';
 
@@ -48,7 +49,8 @@ if (mislukt.length) { console.error('schema kon niet geladen worden:', mislukt);
 const env = { DB: d1(db) };
 
 db.exec("INSERT INTO customers (id, email, brand) VALUES (1, 'mara@volt.test', 'VOLT')");
-zetLook(db, 1);
+/* Hier en bij klant 2 en 3 stond zetLook(): queueLock() weigerde zonder vaste
+   look. Die is weg (levering 69, 5 november 2026), en niets hieronder leest de look. */
 const { row: sub } = await createSubscriptionRow(env, { customerId: 1, planId: 'studio', termId: 'monthly', windowDay: 8 });
 await activateSubscription(env, sub.id);
 
@@ -171,83 +173,61 @@ console.log('\néén pot, en een prijs per dienst');
     await verbruikSlot(env, sub.id, 1, 'video-motion', 1, inSep), 0);
 }
 
-/* ── EN DE WACHTRIJ: CONCEPT, VASTZETTEN, LOSMAKEN ────────────────────────── */
-console.log('\ntoevoegen kost niets, vastzetten wel');
+/* ── DE CREDITKANT, MET DE ECHTE KLOK ─────────────────────────────────────────
+   Hier stond "EN DE WACHTRIJ: CONCEPT, VASTZETTEN, LOSMAKEN": queueAdd() zette
+   een item als concept op de lijst, queueLock() schreef de prijs af, queueUnlock()
+   en queueRemove() gaven hem terug, en queueLock() weigerde zonder foto's
+   ('geen-fotos') en bij een tweede keer ('stond-al-vast'). De wachtrij is weg
+   sinds 5 november 2026 (levering 69, §17 punt 14): het weeksysteem bestaat
+   sinds 8 oktober niet meer en niets riep hem aan. Wat queueLock en queueUnlock
+   op het saldo deden, staat hieronder rechtstreeks: verbruikCredits() en
+   geefCreditsTerug(), met dezelfde prijzen en dus dezelfde saldi als eerst. */
+console.log('\nafschrijven en teruggeven met de echte klok');
 {
   /* VANAF HIER DE ECHTE KLOK, en dat is geen slordigheid.
-     queueLock() kijkt naar `new Date()` — hij hoort te weten wat er VANDAAG nog
-     geldig is en niet wat een toets hem influistert. De vaste maanden hierboven
-     zaten in de toekomst ten opzichte van vandaag, en toekomstige toekenningen
-     tellen terecht niet mee. Dus: het saldo leegmaken en deze maand toekennen. */
+     verbruikCredits() kijkt zonder `nu` naar `new Date()`, zoals queueLock() dat
+     deed — hij hoort te weten wat er VANDAAG nog geldig is en niet wat een
+     toets hem influistert. De vaste maanden hierboven zaten in de toekomst ten
+     opzichte van vandaag, en toekomstige toekenningen tellen terecht niet mee.
+     Dus: het saldo leegmaken en deze maand toekennen. */
   const NU = monthKey();
   db.exec("DELETE FROM subscription_slots");
   await grantSlots(env, sub.id, NU, 'studio');
 
-  const a = await queueAdd(env, 1, { name: 'Winterjas', uploadBatch: 'b-1', kind: 'catalog' });
-  ok('het item staat erop', Boolean(a), true);
-  ok('als concept', a.locked_at, null);
-  ok('met een soort', a.kind, 'catalog');
-  ok('en het saldo is niet geraakt',
+  ok('na de toekenning staat het hele saldo er',
     (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'credits').saldo,
     PLAN_CREDITS.studio);
 
-  const v = await queueLock(env, 1, a.id);
-  ok('vastzetten lukt', v.ok, true);
+  ok('een catalogset afschrijven lukt', await verbruikCredits(env, sub.id, 1, CAT), CAT);
   ok('nu zijn er vier credits af — de prijs van een catalogset',
     (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'credits').saldo,
     PLAN_CREDITS.studio - CAT);
-  const na = (await loadQueue(env, 1)).find((q) => q.id === a.id);
-  ok('en het item draagt een tijdstip', Boolean(na.locked_at), true);
 
-  ok('nog een keer vastzetten kost geen tweede keer credits', (await queueLock(env, 1, a.id)).reden, 'stond-al-vast');
-  ok('het saldo staat er nog steeds hetzelfde voor',
-    (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'credits').saldo,
-    PLAN_CREDITS.studio - CAT);
-}
-
-console.log('\nzonder foto\u2019s kan er niets vastgezet worden');
-{
-  const b = await queueAdd(env, 1, { name: 'Cargobroek', uploadBatch: '', kind: 'catalog' });
-  const v = await queueLock(env, 1, b.id);
-  ok('vastzetten weigert', v.ok, false);
-  ok('en zegt waarom', v.reden, 'geen-fotos');
-  ok('er zijn geen credits af',
-    (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'credits').saldo,
-    PLAN_CREDITS.studio - CAT);
-}
-
-console.log('\nlosmaken geeft het slot terug, weghalen ook');
-{
-  const c = await queueAdd(env, 1, { name: 'Trui', uploadBatch: 'b-2', kind: 'catalog' });
-  await queueLock(env, 1, c.id);
+  await verbruikCredits(env, sub.id, 1, CAT);
   ok('twee catalogsets weg', (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'credits').saldo, PLAN_CREDITS.studio - CAT * 2);
-  ok('losmaken lukt', (await queueUnlock(env, 1, c.id)).ok, true);
+  ok('teruggeven lukt', await geefCreditsTerug(env, sub.id, 1, CAT), CAT);
   ok('en de credits zijn terug', (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'credits').saldo, PLAN_CREDITS.studio - CAT);
-
-  /* En weghalen van een VASTGEZET item moet hetzelfde doen — anders betaalt de
-     klant voor iets wat hij zelf heeft ingetrokken. */
-  await queueLock(env, 1, c.id);
-  ok('weer vastgezet', (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'credits').saldo, PLAN_CREDITS.studio - CAT * 2);
-  await queueRemove(env, 1, c.id);
-  ok('weghalen geeft de credits ook terug', (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'credits').saldo, PLAN_CREDITS.studio - CAT);
-  ok('en het item is weg', (await loadQueue(env, 1)).some((q) => q.id === c.id), false);
 }
 
 /* ── TE WEINIG CREDITS ───────────────────────────────────────────────────────
    Hier stond "een soort die het plan niet geeft": hooks zat niet in de bundel
    van Studio en kon daarom niets afschrijven. Met één pot kan elke dienst uit
    dat saldo betaald worden, en is de enige grens of er GENOEG in zit. Dat is de
-   toets geworden — het saldo eerst leegmaken, dan een hook proberen. */
-console.log('\nmet te weinig credits kan er niets vastgezet worden');
+   toets geworden — het saldo eerst leegmaken, dan een hook proberen.
+
+   Tot 5 november 2026 was dat queueLock() met 'geen-credits', de prijs in
+   `kosten` en een item dat concept bleef. Die poort is weg met de wachtrij
+   (levering 69, §17 punt 14). De vraag "past dit nog in het saldo" staat nog in
+   slotToegestaan(), en die wordt hier gesteld. Niet verbruikCredits() zelf: die
+   boekt bij te weinig af wat er is (zie "meer willen dan er is" hierboven). */
+console.log('\nmet te weinig credits past een hook niet meer');
 {
   const balans = (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'credits');
   await verbruikSlot(env, sub.id, 1, 'credits', balans.saldo - 1);
-  const d = await queueAdd(env, 1, { name: 'Hook-idee', uploadBatch: 'b-3', kind: 'hooks' });
-  const v = await queueLock(env, 1, d.id);
-  ok('vastzetten weigert', v.ok, false);
-  ok('en noemt de reden', v.reden, 'geen-credits');
-  ok('met de prijs erbij, zodat het scherm kan zeggen hoeveel je tekortkomt', v.kosten, 10);
-  ok('het item blijft een concept', (await loadQueue(env, 1)).find((q) => q.id === d.id).locked_at, null);
+  const nu = await slotBalans(env, sub.id, 1);
+  ok('een hook kost tien credits — wat het scherm als tekort kan noemen', creditsPerSoort('hooks'), 10);
+  ok('met één credit past hij niet', slotToegestaan(nu, 'credits', creditsPerSoort('hooks')), false);
+  ok('één credit past wel', slotToegestaan(nu, 'credits', 1), true);
   ok('en de ene credit die er was, staat er nog',
     (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'credits').saldo, 1);
 }
@@ -282,7 +262,6 @@ console.log('\nopzeggen: de betaalde maand mag nog op, de vorige maand niet meer
   /* Een eigen klant met een eigen abonnement, want deze zeggen we op en dat is
      onomkeerbaar — hem op de klant hierboven doen zou alles erna vergiftigen. */
   db.exec("INSERT INTO customers (id, email, brand) VALUES (2, 'nina@stop.test', 'STOP')");
-  zetLook(db, 2);
   const { row: s2 } = await createSubscriptionRow(env, { customerId: 2, planId: 'starter', termId: 'monthly', windowDay: 8 });
   await activateSubscription(env, s2.id);
   await grantSlots(env, s2.id, AUG, 'starter');
@@ -304,7 +283,7 @@ console.log('\nopzeggen: de betaalde maand mag nog op, de vorige maand niet meer
     'credits', PLAN_CREDITS.starter + 1, inSep);
   ok('en hij kan niet meer dan zijn laatste maand opmaken', kon, PLAN_CREDITS.starter);
 
-  /* De klantkant: vastzetten mag nog zolang de opgezegde maand loopt. Dat is de
+  /* De klantkant: besteden mag nog zolang de opgezegde maand loopt. Dat is de
      andere helft van Lucas' zin — hij heeft ervoor betaald.
 
      DE MAANDRIJ HOORT ERBIJ EN IS GEEN OPVULLING. loadSubscription() geeft een
@@ -316,30 +295,36 @@ console.log('\nopzeggen: de betaalde maand mag nog op, de vorige maand niet meer
   db.prepare('INSERT INTO subscription_months (subscription_id, month, granted, used) VALUES (?, ?, ?, 0)')
     .run(s2.id, monthKey(), PLAN_PRODUCTS.starter);
   await grantSlots(env, s2.id, monthKey(), 'starter');
-  /* De toekenning van deze maand is hierboven al opgemaakt (monthKey() IS SEP in
-     deze toets), en grantSlots is idempotent — hij zet dus niets nieuws neer.
+  /* Draait de toets in september 2026, dan is monthKey() SEP: de toekenning van
+     deze maand is hierboven al opgemaakt, en grantSlots is idempotent — hij zet
+     dan niets nieuws neer. In een latere maand zet hij een verse rij neer.
      Het saldo teruggeven is hier geen truc maar het herstellen van de toestand
      die de toets wil onderzoeken: een opgezegde klant met een betaalde maand die
      nog open staat. */
   await geefSlotTerug(env, s2.id, 0, 'credits', PLAN_CREDITS.starter, inSep);
-  const q = await queueAdd(env, 2, { name: 'Laatste jas', uploadBatch: 'b-op' });
-  const v = await queueLock(env, 2, q.id);
-  ok('vastzetten mag nog na opzeggen', v.ok, true);
+  /* Hier zette de klant nog een product op de lijst en vast (queueAdd, queueLock;
+     weg sinds 5 november 2026, levering 69, §17 punt 14). Wat queueLock daarvoor
+     deed, staat hier los: het abonnement laden zoals het nu in de database staat,
+     daar het venster van nemen en met de echte klok afschrijven. */
+  const opgezegd = await loadSubscription(env, 2);
+  ok('het opgezegde abonnement is nog te laden, met een venster van nul',
+    [opgezegd?.status, vensterVoor(opgezegd)], ['cancelled', 0]);
+  ok('en de betaalde maand mag nog op na opzeggen',
+    await verbruikCredits(env, s2.id, vensterVoor(opgezegd), CAT), CAT);
 }
 
-console.log('\neen gepauzeerd abonnement kan niets vastzetten');
+console.log('\neen gepauzeerd abonnement houdt zijn credits');
 {
   db.exec("INSERT INTO customers (id, email, brand) VALUES (3, 'ruth@pauze.test', 'PAUZE')");
-  zetLook(db, 3);
   const { row: s3 } = await createSubscriptionRow(env, { customerId: 3, planId: 'starter', termId: 'monthly', windowDay: 8 });
   await activateSubscription(env, s3.id);
   await grantSlots(env, s3.id, monthKey(), 'starter');
   await pauseSubscription(env, s3.id, 'payment_failed');
-  const q = await queueAdd(env, 3, { name: 'Jas in de wacht', uploadBatch: 'b-p' });
-  const v = await queueLock(env, 3, q.id);
-  ok('vastzetten weigert', v.ok, false);
-  ok('met de status in de reden', v.reden, 'abonnement-paused');
-  ok('en de credits staan er nog',
+  /* "Vastzetten weigert" met 'abonnement-paused' was queueLock(); weg met de
+     wachtrij (levering 69, 5 november 2026, §17 punt 14). Dezelfde statusregel
+     staat in verbruikToestaan(), en die toetsen subscription.test.mjs en de
+     keten in abo-keten.test.mjs. Wat hier blijft: de pauze laat het saldo staan. */
+  ok('de credits staan er nog',
     (await slotBalans(env, s3.id, 1)).find((b) => b.kind === 'credits').saldo, PLAN_CREDITS.starter);
 }
 

@@ -293,8 +293,17 @@ console.log('\ngeannuleerde bestellingen');
   db.prepare("UPDATE orders SET created_at = datetime('now','-200 days') WHERE id = ?").run(lopend);
   addFile(db, lopend, { r2_key: b.seed('intake/lopend/e.jpg') });
 
-  /* Een abonnementsbestelling die geannuleerd werd: haar item staat weer op de
-     lijst van de klant, met dezelfde batch. Die foto's moeten blijven. */
+  /* ── OMGEDRAAID OP 5 NOVEMBER 2026 (levering 69, §17 punt 14) ─────────────
+     Hier stond: een geannuleerde abonnementsbestelling zette haar item terug op
+     de lijst van de klant (queueTerugNaAnnulering), met dezelfde batch, dus die
+     foto's moesten blijven zolang de batch in plan_queue stond. Die functie en
+     die uitzondering in EXPIRED_FILES_SQL zijn weg: het weeksysteem bestaat
+     sinds 8 oktober niet meer en plan_queue vult niets meer. Zo'n bestand gaat
+     nu mee na UPLOAD_DAYS, net als elke andere geannuleerde upload, OOK als er
+     nog een oude rij met dezelfde batch in plan_queue staat. Die rij blijft
+     hieronder met opzet staan: hij bewijst dat de opruiming plan_queue niet meer
+     leest, zodat de migratie die de tabel laat vallen hier niets breekt. (Valt
+     de tabel weg, dan gaat deze INSERT mee.) */
   const plan = addOrder(db, { status: 'cancelled' });
   db.prepare("UPDATE orders SET cancelled_at = datetime('now','-100 days') WHERE id = ?").run(plan);
   addFile(db, plan, { r2_key: b.seed('intake/BATCHabc123/p1-voor.jpg') });
@@ -303,7 +312,7 @@ console.log('\ngeannuleerde bestellingen');
 
   await tasks.purgeExpiredFiles({ DB: d1(db), UPLOADS: b, PURGE_ENABLED: 'true' });
   ok('na 90 dagen geannuleerd: weg', b.deleted.includes('intake/geannuleerd/a.jpg'));
-  ok('foto\'s die nog op een abonneelijst staan: blijven', b.deleted.includes('intake/BATCHabc123/p1-voor.jpg'), false);
+  ok('foto\'s met een oude batch in plan_queue: na 90 dagen ook weg', b.deleted.includes('intake/BATCHabc123/p1-voor.jpg'));
   ok('zonder annuleringsdatum telt het plaatsen', b.deleted.includes('intake/vervallen/b.jpg'));
   ok('vijf dagen geannuleerd: blijft', b.deleted.includes('intake/recent/c.jpg'), false);
   ok('een bestand dat een andere bestelling gebruikt: blijft', b.deleted.includes('intake/gedeeld/d.jpg'), false);

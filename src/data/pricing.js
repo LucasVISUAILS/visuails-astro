@@ -1783,12 +1783,16 @@ export const VOORRANG_COPY = {
   // grootste; bijt geen van beide, dan zijn het decoratie.
   const kleinste = LADDER.catalog[0][2];                 // één catalogproduct
   if (Math.ceil(kleinste * deel) >= bodem) throw new Error('VOORRANG.bodem bijt nergens — hij ligt onder 20% van de kleinste bestelling');
-  /* HET PLAFOND BIJT SINDS 14 OKTOBER 2026 NIET MEER, EN DAT IS GEEN FOUT. Hij
-     beet op een complete bestelling (€ 65 × 20); compleet bestaat niet meer, en de
-     grootste fotobestelling die voorrang kan krijgen (19 lifestyleproducten, € 1.216)
-     geeft 20% = € 244, onder € 249. Het plafond blijft staan als grens voor als
-     VOORRANG.maxProducten ooit omhoog gaat; een lager plafond is een prijsbesluit
-     (afvinklijst 24). Wat wél nog moet kloppen: het plafond ligt boven de bodem. */
+  /* HET PLAFOND BIJT, MET OPTIES. Verbeterd op 5 november 2026 (levering 69,
+     §17 punt 4 van het overzicht); hier stond dat hij sinds 14 oktober niet meer
+     beet. Op de producten alleen klopt dat: de grootste fotobestelling met
+     voorrang (19 lifestyleproducten, € 1.216) geeft 20%, afgerond € 244, onder € 249.
+     Maar voorrang rekent over het hele orderbedrag, en met 4K, complete looks of
+     extra foto's komt dat erboven: 19 lifestyleproducten met 4K = € 1.387, 20% is
+     € 277,40, de klant betaalt € 249 (nagerekend met quoteOrder). Het plafond
+     doet dus werk. Een ander plafond is een prijsbesluit (afvinklijst 24); hier
+     verandert niets aan het bedrag. Wat deze controle wél bewaakt: het plafond
+     ligt boven de bodem. */
   void plafond;
 })();
 
@@ -2894,8 +2898,8 @@ export function upgradePrompt(products, lang = 'en') {
   const name = plans(lang).find((p) => p.id === id)?.name || id;
   const price = euro(PLAN_AMOUNT[id], lang);
   return lang === 'nl'
-    ? `Je hebt dit kwartaal ${products} producten besteld — ongeveer ${perMonth} per maand, ${nodig} credits als catalogsets. Het ${name}-abonnement geeft ${PLAN_CREDITS[id]} credits per maand voor ${price}, te besteden aan catalog, lifestyle en video.`
-    : `You’ve ordered ${products} products this quarter — about ${perMonth} a month, ${nodig} credits as catalog sets. The ${name} plan gives ${PLAN_CREDITS[id]} credits a month for ${price}, to spend on catalog, lifestyle and video.`;
+    ? `Je hebt dit kwartaal ${products} producten besteld — ongeveer ${perMonth} per maand, ${nodig} credits als catalogsets. Het ${name}-abonnement geeft ${PLAN_CREDITS[id]} credits per maand voor ${price}, te besteden aan catalog en lifestyle.`
+    : `You’ve ordered ${products} products this quarter — about ${perMonth} a month, ${nodig} credits as catalog sets. The ${name} plan gives ${PLAN_CREDITS[id]} credits a month for ${price}, to spend on catalog and lifestyle.`;
 }
 
 /**

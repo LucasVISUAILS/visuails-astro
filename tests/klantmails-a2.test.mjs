@@ -156,6 +156,38 @@ ok('account.js gebruikt die functie voor het onderwerp', /subject: inlogOnderwer
   ok('herinnering dag 3: tot wanneer de leverdatum vaststaat (13 oktober)', /houden we vast tot <strong>13 oktober<\/strong>/.test(her?.html || ''));
   ok('  en wanneer de bestelling vervalt (20 oktober, VERVAL_DAG na het bestellen)', /vervalt de bestelling na <strong>20 oktober<\/strong>/.test(her?.html || ''));
 
+  /* ── DE KNOP "BETAALLINK OPNIEUW MAILEN" — levering 69, 5 november 2026 ──
+     §17 punt 3 van het overzicht: de knop in /admin (handlePayLinkResend) stuurde
+     de btw-mail ("Je btw-gegevens zijn goedgekeurd", "Alles klopt"), ook bij een
+     bestelling zonder btw-controle. Nu een eigen mail. Een gewone bestelling
+     (geen review_state) en een EU-klant met btw, NL en EN. */
+  rij(4, 'VIS-OPN-0004', 'nl');
+  rij(5, 'VIS-OPN-0005', 'en');
+  db.exec("UPDATE orders SET vat_number = 'DE123456789' WHERE id = 5");
+  rij(6, 'VIS-OPN-0006', 'nl');
+  db.exec(`UPDATE orders SET service = 'custom', details_json = '{"quote_kind":"aanbetaling","request":"custom-look"}' WHERE id = 6`);
+  const voorOpnieuw = mails().length;
+  await stuurBetaallink(env, 4, { origin: 'https://visuails.com', opnieuw: true });
+  await stuurBetaallink(env, 5, { origin: 'https://visuails.com', opnieuw: true });
+  await stuurBetaallink(env, 6, { origin: 'https://visuails.com', opnieuw: true, offerte: true });
+  const [opNl, opEn, opOfferte] = mails().slice(voorOpnieuw);
+  ok('opnieuw NL: een eigen onderwerp', opNl?.subject, 'Je betaallink, opnieuw — VIS-OPN-0004');
+  ok('opnieuw EN: idem', opEn?.subject, 'Your payment link, again — VIS-OPN-0005');
+  for (const [naam, m] of [['NL', opNl], ['EN', opEn], ['offerte', opOfferte]]) {
+    const t = tekst(m?.html || '');
+    ok(`opnieuw ${naam}: geen btw-zin ("Alles klopt", "goedgekeurd", VIES)`, /Alles klopt|Everything is in order|goedgekeurd|approved|VIES|btw-gegevens|VAT details/i.test(`${m?.subject} ${t}`), false);
+    ok(`opnieuw ${naam}: wel de betaallink`, /\/api\/order-pay\?ref=VIS-OPN-/.test(m?.html || ''), true);
+  }
+  ok('opnieuw NL: zegt dat het de link opnieuw is', /Hier is de betaallink voor VIS-OPN-0004 opnieuw\./.test(tekst(opNl?.html || '')), true);
+  ok('opnieuw bij een offerte: de zin over de aanbetaling blijft', /Dit is een aanbetaling/.test(tekst(opOfferte?.html || '')), true);
+  ok('  de tijdlijn zegt "Betaallink opnieuw verstuurd"', /Betaallink opnieuw verstuurd/.test(db.prepare('SELECT note FROM order_events WHERE order_id = 4').all().map((r) => r.note).join(' ')), true);
+  {
+    /* En de knop zelf roept de mail met `opnieuw` aan (en een offerte met `offerte`). */
+    const admin = lees('src/lib/admin.js');
+    const knop = admin.slice(admin.indexOf('async function handlePayLinkResend('), admin.indexOf('async function handlePayLinkResend(') + 1200);
+    ok('handlePayLinkResend stuurt `opnieuw: true`', /stuurBetaallink\(context, orderId, \{ opnieuw: true, offerte: !!d\.quote_kind \}\)/.test(knop), true);
+  }
+
   /* De mail van dag 7 is weg (V21-3 = a). */
   db.exec("UPDATE orders SET window_expires_at = datetime('now', '-1 hours') WHERE id = 3");
   const voorVrij = mails().length;

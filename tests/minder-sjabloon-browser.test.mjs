@@ -82,7 +82,10 @@ const BASIS = `http://127.0.0.1:${poort}`;
 
 /* Het aantal gedachtestreepjes (—) in de zichtbare tekst, per pagina, zoals het op
    18 oktober 2026 stond. Minder mag (dan zegt de toets dat het getal omlaag kan); meer
-   niet. Lucas kiest per zin in de tekstronde (lijst 39, v39-streep b). */
+   niet. Lucas kiest per zin in de tekstronde (lijst 39, v39-streep b).
+   /privacy en /nl/privacy één hoger sinds 5 november 2026 (levering 69): e-Boekhouden
+   staat in de lijst van ontvangers (§5), en de lijst drukt elke partij af als
+   "naam · waar — wat". Geen nieuwe zin met een streepje, wel een rij meer. */
 const STREEPJES = {
   '/': 1, '/about/': 1, '/ai-act/': 9, '/catalog/': 6, '/catalog/classic/': 2, '/catalog/custom/': 1, '/compare/': 4,
   '/contact/': 2, '/cookie-policy/': 15, '/custom-models/': 2, '/data-processing-agreement/': 28, '/editions/': 2,
@@ -93,11 +96,11 @@ const STREEPJES = {
   '/nl/data-processing-agreement/': 28, '/nl/editions/': 2, '/nl/faq/': 1, '/nl/gallery/': 1, '/nl/guides/': 3,
   '/nl/how-it-works/': 2, '/nl/lifestyle/': 2, '/nl/lifestyle/custom/': 1, '/nl/lifestyle/dunes/': 1, '/nl/lifestyle/flash/': 1,
   '/nl/lifestyle/glow/': 1, '/nl/lifestyle/phone-made/': 1, '/nl/models/': 1, '/nl/per-product/': 4, '/nl/plans/': 1,
-  '/nl/pricing/': 3, '/nl/privacy/': 51, '/nl/start/': 1, '/nl/start/brand-model/': 1, '/nl/start/catalog/': 1,
+  '/nl/pricing/': 3, '/nl/privacy/': 52, '/nl/start/': 1, '/nl/start/brand-model/': 1, '/nl/start/catalog/': 1,
   '/nl/start/custom-look/': 4, '/nl/start/lifestyle/': 1, '/nl/start/plan/': 6, '/nl/start/video/': 3, '/nl/studio/': 8,
   '/nl/terms/': 59, '/nl/test-sample/': 3, '/nl/thank-you/': 4, '/nl/upload-guidelines/': 4, '/nl/video/': 6,
   '/nl/video/campaign/': 4, '/nl/video/custom/': 6, '/nl/video/lifestyle/': 6, '/nl/video/motion/': 4, '/per-product/': 4,
-  '/plans/': 1, '/pricing/': 3, '/privacy/': 50, '/start/': 1, '/start/brand-model/': 1, '/start/catalog/': 1,
+  '/plans/': 1, '/pricing/': 3, '/privacy/': 51, '/start/': 1, '/start/brand-model/': 1, '/start/catalog/': 1,
   '/start/custom-look/': 4, '/start/lifestyle/': 1, '/start/plan/': 6, '/start/video/': 3, '/studio/': 7,
   '/terms/': 57, '/test-sample/': 3, '/thank-you/': 4, '/upload-guidelines/': 4, '/video/': 6, '/video/campaign/': 4,
   '/video/custom/': 6, '/video/lifestyle/': 6, '/video/motion/': 4,

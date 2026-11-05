@@ -260,15 +260,18 @@ export function stampDeliveryRetention(env, orderId) {
  * telt voor een geannuleerde bestelling UPLOAD_DAYS (90) dagen vanaf de annulering
  * (of, als die datum ontbreekt, vanaf het plaatsen). Een bestand waar een andere
  * bestelling naar wijst (zelfde r2_key) blijft staan: weggooien zou die andere
- * bestelling zijn bron kosten. Hetzelfde voor foto's die een abonnee nog op
- * zijn lijst heeft: een geannuleerde abonnementsbestelling zet haar items terug
- * op de lijst (queueTerugNaAnnulering), mét dezelfde batch.
+ * bestelling zijn bron kosten. (Hier stond ook een uitzondering voor foto's op de
+ * lijst van een abonnee; die lijst bestaat niet meer, zie hieronder.)
  *
  * `o.status` gaat mee omdat de opruimtaak op de tijdlijn van de bestelling schrijft
  * wat hij weghaalde, en een gebeurtenis in dit project de bestaande status
  * herhaalt in plaats van er een te verzinnen. Zonder deze kolom zou de taak de
  * status apart moeten opvragen, per bestelling, midden in een verwijderlus.
  */
+/* Tot 5 november 2026 sloeg deze zoekopdracht ook bestanden over waarvan de
+   uploadmap nog in plan_queue stond (de wachtrij van het weeksysteem). Die
+   vult niets meer sinds 8 oktober; weg in levering 69 (§17 punt 14), zodat de
+   migratie die plan_queue laat vallen hier niets breekt. */
 export const EXPIRED_FILES_SQL = `
   SELECT f.id, f.r2_key, f.preview_key, f.kind, f.order_id, o.status AS order_status, o.lang AS order_lang
     FROM files f
@@ -281,10 +284,7 @@ export const EXPIRED_FILES_SQL = `
               AND datetime(f.announced_at, '+${DELIVERY_DAYS} days') <= datetime('now'))
         OR (f.kind = 'upload' AND o.status = 'cancelled' AND o.closed_at IS NULL
               AND datetime(COALESCE(o.cancelled_at, o.created_at), '+${UPLOAD_DAYS} days') <= datetime('now')
-              AND NOT EXISTS (SELECT 1 FROM files g WHERE g.r2_key = f.r2_key AND g.order_id <> f.order_id)
-              AND NOT EXISTS (SELECT 1 FROM plan_queue q
-                               WHERE COALESCE(q.upload_batch, '') <> ''
-                                 AND f.r2_key LIKE 'intake/' || q.upload_batch || '/%'))
+              AND NOT EXISTS (SELECT 1 FROM files g WHERE g.r2_key = f.r2_key AND g.order_id <> f.order_id))
          )
    ORDER BY f.id
    LIMIT ?1`;

@@ -62,6 +62,18 @@ ok('de rode test draait twee keer (de tweede keer alleen)', gedraaid.filter((x) 
 ok('de laatste regel noemt de rode test (UITROLLEN.bat leest die)', regels.at(-1).trim(), 'FOUT: test:rood');
 ok('elke stap één regel "n/totaal goed|FOUT naam"', regels.filter((x) => /^\s*\d+\/5\s+(goed|FOUT)\s+test:/.test(x)).length, 5);
 
+/* Levering 69 (5 november 2026, vraag 3 = ja): ook bij één tegelijk een losse
+   kans, maar alleen met `nogEens` (de vlag --nog-eens die UITROLLEN.bat meegeeft). */
+gedraaid.length = 0; wiebelKeer = 0;
+const streng = await testreeks({ wortel: w, tegelijk: 1, zeg: () => {}, run: nepRun });
+ok('één tegelijk zonder --nog-eens: een wiebelende test blijft rood', streng.rood.includes('test:wiebel'), true);
+gedraaid.length = 0; wiebelKeer = 0;
+const mild = await testreeks({ wortel: w, tegelijk: 1, zeg: () => {}, run: nepRun, nogEens: true });
+ok('één tegelijk mét --nog-eens: hij krijgt een losse kans en telt als groen', [mild.wiebel, mild.rood], [['test:wiebel'], ['test:rood']]);
+ok('  de echte fout draait ook twee keer en blijft rood', gedraaid.filter((x) => x === 'rood').length, 2);
+ok('UITROLLEN.bat geeft --nog-eens mee', fs.readFileSync(path.join(ECHT, 'scripts/uitrol.mjs'), 'utf8').includes("[path.join('scripts', 'testreeks.mjs'), '--nog-eens']"), true);
+ok('  en meldt een test die eerst rood was', /Let op: \$\{wiebel\.join\(', '\)\} faalde eerst en slaagde los/.test(fs.readFileSync(path.join(ECHT, 'scripts/uitrol.mjs'), 'utf8')), true);
+
 gedraaid.length = 0;
 const r2 = await testreeks({ wortel: w, tegelijk: 3, zeg: () => {}, run: async (o) => { gedraaid.push(o); return { code: o === 'bouw' ? 1 : 0, uit: 'build kapot', ms: 1 }; } });
 ok('faalt de build, dan draait de rest niet', [r2.goed, r2.rood, gedraaid], [false, ['test:bouw'], ['bouw']]);

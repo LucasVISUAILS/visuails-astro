@@ -795,5 +795,59 @@ console.log('\ndezelfde route met een test-sleutel levert een proefnummer');
   }
 }
 
+/* ── DE DUBBELE BETALING, TERUGGESTORT — levering 69, 5 november 2026 ─────────
+   De naloop van de geldstromen vond dit: een bestelling met twee geslaagde
+   betalingen van het volle bedrag. De webhook stort de tweede vanzelf terug, en
+   bij de melding van die terugstorting was de SOM van de terugstortingen gelijk
+   aan het bruto bedrag. Dus ging de bestelling op 'refunded', met een volledige
+   creditnota tegenover de factuur van de eerste betaling, die gewoon staat.
+   Hier door de echte route: bestellen, twee keer betalen, de tweede terug, en
+   daarna een echte deelrestitutie op de eerste. */
+console.log('\neen teruggestorte dubbele betaling raakt de bestelling niet');
+{
+  const omg = maakOmgeving();
+  try {
+    const { db, env } = verseOmgeving(omg);
+    await bestel(env, {
+      service: 'catalog', products: 3,
+      name: 'Voorbeeld Merk', brand: 'VOORBEELD', email: 'dubbel@voorbeeld.nl',
+      country: 'NL', address_line1: 'Teststraat 1', postal_code: '1234 AB',
+      city: 'Teststad', lang: 'nl',
+      style: 'classic', background: 'studio-white',
+      business_declaration: 'yes', business_version: 'v1',
+      no_vat_number: '1', reg_number: '12345678',
+    });
+    const order = db.prepare('SELECT * FROM orders WHERE email = ?').get('dubbel@voorbeeld.nl');
+    ok('de bestelling is aangenomen', !!order);
+    const a = [...omg.betalingen.keys()][0];
+    const bedrag = omg.betalingen.get(a).amount;
+    omg.zetBetaald(a);
+    await webhook(env, a);
+    ok('  de eerste betaling zet hem op betaald', db.prepare('SELECT payment_status FROM orders WHERE id = ?').get(order.id).payment_status, 'paid');
+
+    const b = omg.maakBetaling(order.ref, { ...bedrag });
+    omg.zetBetaald(b);
+    await webhook(env, b);
+    ok('  een tweede betaling van hetzelfde bedrag: de bestelling blijft betaald', db.prepare('SELECT payment_status FROM orders WHERE id = ?').get(order.id).payment_status, 'paid');
+
+    /* Mollie meldt dat de tweede helemaal is teruggestort. */
+    omg.betalingen.get(b).amountRefunded = { ...bedrag };
+    await webhook(env, b);
+    const na = db.prepare('SELECT payment_status, refunded_cents FROM orders WHERE id = ?').get(order.id);
+    ok('  na de terugstorting van de tweede: nog steeds betaald', na.payment_status, 'paid');
+    ok('  en er staat niets terugbetaald op de bestelling', Number(na.refunded_cents) || 0, 0);
+    ok('  en er is geen creditnota', db.prepare('SELECT COUNT(*) AS n FROM credit_notes WHERE order_id = ?').get(order.id).n, 0);
+
+    /* Daarna een echte deelrestitutie van € 50 op de eerste, uit het Mollie-dashboard. */
+    omg.betalingen.get(a).amountRefunded = { currency: 'EUR', value: '50.00' };
+    await webhook(env, a);
+    const deel = db.prepare('SELECT payment_status, refunded_cents FROM orders WHERE id = ?').get(order.id);
+    ok('  een echte deelrestitutie op de eerste telt wel: € 50 terug', Number(deel.refunded_cents), 5000);
+    ok('  en de bestelling blijft betaald (deels terug)', deel.payment_status, 'paid');
+  } finally {
+    omg.herstel();
+  }
+}
+
 console.log(`\n${geslaagd}/${geslaagd + gezakt} passed`);
 if (gezakt) process.exitCode = 1;

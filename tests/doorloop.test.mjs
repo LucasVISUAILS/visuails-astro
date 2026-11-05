@@ -231,9 +231,12 @@ console.log('\nronde drie: cronmails, portaal, gegevens, terugknop, video');
   const sendMail = async (_env, m) => { verstuurd.push(m); };
   /* mailLegeWachtrij() is weg met het weeksysteem (ronde 10, 8 oktober 2026). */
   /* mailVragen: de vragenregel staat sinds 17 oktober 2026 ook onder de creditherinnering. */
-  const maak = new Function('sendMail', 'mailShell', 'mailH1', 'mailP', 'mailSpamNote', 'mailDatum', 'mailButton', 'SERVICE_CREDITS', 'kindLabel', 'mailGreeting', 'mailVragen',
+  /* CREDIT_DIENSTEN: sinds levering 69 (5 november 2026) tipt creditTips() alleen
+     wat met credits kan, dus heeft hij die lijst nodig. */
+  const { CREDIT_DIENSTEN } = await import('../src/data/creditKosten.js');
+  const maak = new Function('sendMail', 'mailShell', 'mailH1', 'mailP', 'mailSpamNote', 'mailDatum', 'mailButton', 'SERVICE_CREDITS', 'kindLabel', 'mailGreeting', 'mailVragen', 'CREDIT_DIENSTEN',
     `${knip('creditTips')}\n${knip('mailCreditsVervallen')}\nreturn { mailCreditsVervallen };`);
-  const f = maak(sendMail, tpl.shell, tpl.h1, tpl.p, tpl.spamNote, tpl.datum, tpl.button, SERVICE_CREDITS, kindLabel, tpl.greeting, tpl.vragen);
+  const f = maak(sendMail, tpl.shell, tpl.h1, tpl.p, tpl.spamNote, tpl.datum, tpl.button, SERVICE_CREDITS, kindLabel, tpl.greeting, tpl.vragen, CREDIT_DIENSTEN);
   const env = { RESEND_API_KEY: 're_x', FROM_EMAIL: 'x@y.z' };
   await f.mailCreditsVervallen(env, { email: 'a@b.c', ref: 'SUB-X', over: 12, vervalt: '2026-10-10', dagen: 7, lang: 'en' });
   await f.mailCreditsVervallen(env, { email: 'a@b.c', ref: 'SUB-X', over: 12, vervalt: '2026-10-10', dagen: 7, lang: 'nl' });

@@ -67,7 +67,8 @@ export const STAND_VAN = {
 
   /* ── ABONNEMENTEN ─────────────────────────────────────────────────────── */
   active: 'done',              // loopt zoals het hoort
-  trialing: 'work',
+  /* `trialing` stond hier en kwam nergens voor: geen code leest of schrijft hem
+     (nagekeken 5 november 2026, levering 69, §17 punt 16). Weg. */
   past_due: 'rev',             // er moet iets gebeuren voordat het weer loopt
   paused: 'wait',
   canceled: 'can',             // de Mollie-spelling, met één l
@@ -94,6 +95,12 @@ export const STAND_VAN = {
   valid: 'done',
   unpaid: 'wait',
   plan: 'work',
+  /* Betaald met credits (levering 69, 5 november 2026, §17 punt 16): sinds
+     migratie 0061 is dit de betaalstatus van een bestelling die met credits is
+     betaald ('plan' wordt niet meer geschreven). Hij ontbrak, viel terug op
+     'wait', en /admin toonde hem als het kale woord met een wachtpil. Het is
+     betaald: dezelfde stand als `paid`. */
+  credits: 'done',
 };
 
 /**

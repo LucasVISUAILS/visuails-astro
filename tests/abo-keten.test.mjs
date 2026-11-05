@@ -17,13 +17,22 @@
  *
  *    1 · Mollie schrijft af      → maand toegekend, slots per soort toegekend
  *    2 · Mollie levert nog eens  → geen tweede toekenning, geen dubbele slots
- *    3 · De klant zet vast       → er gaat een slot af
- *    4 · Lucas start de week     → bestelling, en er gaat NIETS extra af
- *    5 · Lucas annuleert         → slots terug, producten terug als concept
+ *    3 · Er gaan credits af      → de prijs van wat er besteld wordt
+ *    4 · (weg met het weeksysteem, ronde 10, 8 oktober 2026)
+ *    5 · De credits gaan terug   → saldo weer vol, en /admin toont het
  *    6 · Een maand later         → nieuwe toekenning naast de oude
- *    7 · De incasso mislukt      → gepauzeerd, en vastzetten kan niet meer
- *    8 · De incasso lukt alsnog  → weer actief, en vastzetten kan weer
+ *    7 · De incasso mislukt      → gepauzeerd, en het saldo is niet te besteden
+ *    8 · De incasso lukt alsnog  → weer actief, en het saldo is weer te besteden
  *    9 · De klant zegt op        → betaalde maand nog opmaken, niets doorschuiven
+ *
+ * Tot 5 november 2026 liepen 3, 5, 7, 8 en 9 over de wachtrij: queueAdd() zette
+ * een product op de lijst en queueLock()/queueUnlock() schreven de credits af
+ * en terug. Die functies zijn weg (levering 69, §17 punt 14): het weeksysteem
+ * bestaat sinds 8 oktober niet meer en niets riep ze nog aan. De keten loopt nu
+ * over wat eronder lag en nog bestaat: verbruikCredits()/geefCreditsTerug() in
+ * slots.js op het saldo, en verbruikToestaan() in subscription.js voor de vraag
+ * of het saldo besteed mag worden (dezelfde statusregel die queueLock droeg:
+ * actief of opgezegd ja, gepauzeerd nee).
  *
  * ── WAT DEZE TOETS SPECIFIEK VINDT ──────────────────────────────────────────
  *
@@ -44,9 +53,12 @@ import { d1, verseDb, zetLook } from './lib/d1sqlite.mjs';
 import { onRequestPost } from '../functions/api/webhook/mollie.js';
 import {
   createSubscriptionRow, activateSubscription, pauseSubscription, cancelSubscription,
-  queueAdd, queueLock, monthKey,
+  loadSubscription, planState, verbruikToestaan, monthKey,
 } from '../src/lib/subscription.js';
-import { slotBalans, vensterVoor, monthMinus, subMaandBruto, subEersteBetalingBruto, creditsPerSoort } from '../src/lib/slots.js';
+import {
+  slotBalans, vensterVoor, monthMinus, subMaandBruto, subEersteBetalingBruto, creditsPerSoort,
+  verbruikCredits, geefCreditsTerug,
+} from '../src/lib/slots.js';
 import { PLAN_SLOTS, PLAN_CREDITS } from '../src/data/pricing.js';
 
 let goed = 0; let totaal = 0;
@@ -69,6 +81,16 @@ db.prepare("UPDATE subscriptions SET mollie_subscription_id = 'sub_TEST01' WHERE
 
 const DEZE = monthKey();
 const VORIGE = monthMinus(DEZE, 1);
+/* ── HET ABONNEMENT LOOPT VANAF DE 1E — 5 november 2026 ─────────────────────
+   De incasso's hieronder komen binnen op de 1e van de maand (zie incasso()).
+   Sinds levering 69 (de naloop van de geldstromen) geeft de webhook een
+   vervolgtermijn de maand van termijnMaand() op de betaaldatum, en die hangt aan
+   de dag van started_at. activateSubscription() zet started_at op vandaag; een
+   incasso op de 1e vóór die dag hoort dan bij de VORIGE termijn, en de keten
+   rekende met de verkeerde maand. Een vervolgincasso vóór de eerste betaling
+   bestaat niet, dus de toets zet started_at op de 1e: de incasso's vallen op de
+   afschrijfdag, zoals in het echt. */
+db.prepare('UPDATE subscriptions SET started_at = ? WHERE id = ?').run(`${DEZE}-01 09:00:00`, sub.id);
 const BUNDEL = PLAN_SLOTS.studio;
 const SOORTEN = Object.keys(BUNDEL);
 /* Sinds 19 september 2026 is de toekenning één creditrij per maand in plaats van
@@ -122,6 +144,10 @@ async function incasso(id, maand, status = 'paid') {
 const saldo = async (kind = 'credits', venster = 1) =>
   (await slotBalans(env, sub.id, venster)).find((b) => b.kind === kind) || { saldo: 0, verbruikt: 0, toegekend: 0, ouder: 0 };
 
+/* Het venster zoals queueLock() het nam: van het abonnement zoals het NU in de
+   database staat, zodat een opzegging (venster 0) meetelt. */
+const vensterNu = async () => vensterVoor(await loadSubscription(env, 1));
+
 console.log('1 · Mollie schrijft af');
 {
   const res = await incasso('tr_MAAND1', DEZE);
@@ -165,17 +191,19 @@ console.log('\n2b · en als de slots ontbraken, zet een herhaling ze alsnog neer
     db.prepare('SELECT COUNT(*) AS n FROM subscription_months WHERE subscription_id = ?').get(sub.id).n, 1);
 }
 
-console.log('\n3 · de klant zet twee producten vast');
-let a1; let a2;
+console.log('\n3 · er gaan twee catalogsets van het saldo af');
+const CAT = creditsPerSoort('catalog');
 {
-  a1 = await queueAdd(env, 1, { name: 'Winterjas, zwart', uploadBatch: 'b-1' });
-  a2 = await queueAdd(env, 1, { name: 'Cargobroek, sand', uploadBatch: 'b-2' });
-  const c = await queueAdd(env, 1, { name: 'Sjaal zonder beeld', uploadBatch: '' });
-
-  ok('een concept kost nog niets', (await saldo()).verbruikt, 0);
-  ok('vastzetten lukt', [(await queueLock(env, 1, a1.id)).ok, (await queueLock(env, 1, a2.id)).ok], [true, true]);
-  ok('en kost twee keer de prijs van een catalogset', (await saldo()).verbruikt, creditsPerSoort('catalog') * 2);
-  ok('zonder foto’s kan het niet', (await queueLock(env, 1, c.id)).reden, 'geen-fotos');
+  /* Hier zette de klant twee producten op de lijst (queueAdd) en vast
+     (queueLock), en een derde zonder foto's werd geweigerd ('geen-fotos'). De
+     lijst en die weigering zijn weg met de wachtrij (levering 69, 5 november
+     2026, §17 punt 14). Wat blijft is wat queueLock op het saldo deed:
+     verbruikCredits() met de prijs van de soort. */
+  ok('voor er iets besteld is, staat het verbruik op nul', (await saldo()).verbruikt, 0);
+  ok('twee keer afschrijven lukt',
+    [await verbruikCredits(env, sub.id, await vensterNu(), CAT), await verbruikCredits(env, sub.id, await vensterNu(), CAT)],
+    [CAT, CAT]);
+  ok('en kost twee keer de prijs van een catalogset', (await saldo()).verbruikt, CAT * 2);
   /* De poort "te weinig credits" hoort niet in deze keten thuis: die zou het
      saldo leegmaken dat de rest van de keten nodig heeft. Hij staat in
      tests/slots.test.mjs, met de prijs van een hook erbij. */
@@ -184,13 +212,17 @@ let a1; let a2;
 /* ── 4 EN 5 · DE WEEK STARTEN EN ANNULEREN ZIJN WEG — ronde 10, 8 okt 2026 ──
    "Lucas start de week" en "Lucas annuleert die week weer" gingen mee weg met
    het weeksysteem (§28.6). Om de rest van de keten in dezelfde toestand te
-   laten beginnen, worden de twee producten hier losgemaakt: de credits zijn
-   terug en ze staan weer als concept op de (oude) lijst. */
-console.log('\n5 · de producten worden losgemaakt, en het adminpaneel toont het saldo');
+   laten beginnen, gaan de credits hier terug.
+
+   Tot 5 november 2026 deed queueUnlock() dat, en werd ook getoetst dat de twee
+   producten weer als concept op de lijst stonden. queueUnlock() en de lijst zijn
+   weg (levering 69, §17 punt 14); geefCreditsTerug() is wat hij op het saldo
+   deed. */
+console.log('\n5 · de credits gaan terug, en het adminpaneel toont het saldo');
 {
-  const { queueUnlock } = await import('../src/lib/subscription.js');
-  await queueUnlock(env, 1, a1.id);
-  await queueUnlock(env, 1, a2.id);
+  ok('teruggeven lukt',
+    [await geefCreditsTerug(env, sub.id, await vensterNu(), CAT), await geefCreditsTerug(env, sub.id, await vensterNu(), CAT)],
+    [CAT, CAT]);
   const { adminGet } = await import('../src/lib/admin.js');
   const { mintToken, hashToken } = await import('../src/lib/token.js');
   const token = await mintToken();
@@ -201,9 +233,6 @@ console.log('\n5 · de producten worden losgemaakt, en het adminpaneel toont het
   const kop = { cookie: `vis_admin=${token}`, origin: 'https://visuails.com' };
 
   ok('de credits zijn terug', (await saldo()).verbruikt, 0);
-  ok('en de producten staan weer op de lijst, als concept',
-    db.prepare('SELECT COUNT(*) AS n FROM plan_queue WHERE id IN (?, ?) AND locked_at IS NULL AND taken_at IS NULL')
-      .get(a1.id, a2.id).n, 2);
 
   const paneel = await adminGet({
     request: new Request('https://visuails.com/admin/customers/1', { headers: kop }), env, waitUntil() {},
@@ -237,21 +266,29 @@ console.log('\n6 · een maand later komt er een nieuwe termijn bij');
 
   /* En het afschrijven begint bij de OUDSTE maand. Zou het bij de nieuwste
      beginnen, dan lijkt alles te werken tot er slots vervallen die de klant nog
-     had kunnen gebruiken — en dat merk je pas als hij belt. */
-  await queueLock(env, 1, a1.id);
+     had kunnen gebruiken — en dat merk je pas als hij belt.
+     (Tot 5 november 2026 via queueLock() op het eerste product, een catalogset;
+     nu rechtstreeks verbruikCredits() met diezelfde prijs.) */
+  await verbruikCredits(env, sub.id, await vensterNu(), CAT);
   const vorigeMaand = db.prepare('SELECT used FROM subscription_slots WHERE subscription_id = ? AND month = ? AND kind = ?')
     .get(sub.id, VORIGE, 'credits').used;
-  ok('en de oudste maand gaat er als eerste af', vorigeMaand, creditsPerSoort(a1.kind));
+  ok('en de oudste maand gaat er als eerste af', vorigeMaand, CAT);
 }
 
+/* ── 7 EN 8 · DE STATUSPOORT ───────────────────────────────────────────────
+   Hier stond "vastzetten kan niet meer" en "vastzetten kan weer": queueLock()
+   weigerde bij een pauze met 'abonnement-paused'. Die is weg (levering 69,
+   5 november 2026, §17 punt 14). Dezelfde regel staat nog in verbruikToestaan():
+   actief of opgezegd mag van het saldo besteden, gepauzeerd niet. Die wordt hier
+   gelezen op de toestand die planState() uit deze database opbouwt. */
 console.log('\n7 · de incasso mislukt');
 {
   await pauseSubscription(env, sub.id, 'payment_failed');
   ok('het abonnement staat op pauze',
     db.prepare('SELECT status, pause_reason FROM subscriptions WHERE id = ?').get(sub.id),
     { status: 'paused', pause_reason: 'payment_failed' });
-  ok('vastzetten kan niet meer', (await queueLock(env, 1, a2.id)).reden, 'abonnement-paused');
-  ok('het saldo blijft ongemoeid staan voor als hij terugkomt', (await saldo()).verbruikt, creditsPerSoort('catalog'));
+  ok('van het saldo besteden kan niet meer', verbruikToestaan(await planState(env, 1), 1).reden, 'geen-abonnement');
+  ok('het saldo blijft ongemoeid staan voor als hij terugkomt', (await saldo()).verbruikt, CAT);
 }
 
 console.log('\n8 · en lukt daarna alsnog');
@@ -259,7 +296,7 @@ console.log('\n8 · en lukt daarna alsnog');
   await incasso('tr_MAAND3', DEZE);
   ok('de pauze is opgeheven',
     db.prepare('SELECT status FROM subscriptions WHERE id = ?').get(sub.id).status, 'active');
-  ok('en vastzetten kan weer', (await queueLock(env, 1, a2.id)).ok, true);
+  ok('en van het saldo besteden kan weer', verbruikToestaan(await planState(env, 1), 1).reden, '');
 }
 
 console.log('\n9 · de klant zegt op');
@@ -275,8 +312,11 @@ console.log('\n9 · de klant zegt op');
   ok('alleen deze maand telt nog mee', bAlleenDeze.toegekend, CREDITS);
   ok('en er staat niets doorgeschovens meer bij', bAlleenDeze.ouder, 0);
 
-  const q = await queueAdd(env, 1, { name: 'Laatste jas', uploadBatch: 'b-op' });
-  ok('vastzetten mag nog, want hij heeft ervoor betaald', (await queueLock(env, 1, q.id)).ok, true);
+  /* Hier zette hij nog een product op de lijst en vast (queueAdd/queueLock, weg
+     sinds levering 69). Wat dat toetste: de statuspoort laat een opgezegd
+     abonnement door, en er is in het venster van nul nog genoeg van deze maand. */
+  ok('besteden mag nog, want hij heeft ervoor betaald', verbruikToestaan(await planState(env, 1), 1).reden, '');
+  ok('en de betaalde maand is nog op te maken', await verbruikCredits(env, sub.id, await vensterNu(), CAT), CAT);
 }
 
 /* ── 10 · DE EERSTE MAAND — 4 september 2026 ─────────────────────────────────

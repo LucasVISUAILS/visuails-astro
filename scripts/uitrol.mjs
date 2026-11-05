@@ -594,10 +594,17 @@ export async function uitrollen(o) {
     zeg(`De volledige testreeks (${totaal} stappen, eerst de build). Dit duurt een paar minuten.`);
     /* scripts/testreeks.mjs draait dezelfde keten als `npm test` (hij leest hem
        uit package.json), maar een paar tegelijk en zonder npm per test: punt 9.11. */
-    const r = await run('node', [path.join('scripts', 'testreeks.mjs')], {
+    /* `--nog-eens` (5 november 2026, levering 69, vraag 3 = ja): een rode test
+       draait nog één keer los voordat de uitrol stopt, ook als de reeks één
+       tegelijk draait. Slaagt hij dan, dan gaat de uitrol door en staat hij
+       hieronder als "eerst rood, los goed". */
+    const wiebel = [];
+    const r = await run('node', [path.join('scripts', 'testreeks.mjs'), '--nog-eens'], {
       cwd: wortel,
       opRegel: (regel) => {
         log.write(`${regel}\n`);
+        const w = /^\s*(\S+): los nog een keer → goed/.exec(regel);
+        if (w) wiebel.push(w[1]);
         const f = /^FOUT: (.+)$/.exec(regel.trim());
         if (f) rood = f[1];
         const m = /^\s*(\d+)\/(\d+)\s+(goed|FOUT)\s+(\S+)/.exec(regel);
@@ -618,6 +625,7 @@ export async function uitrollen(o) {
         'Alles staat in kladblok\\uitrol-tests.txt. Geef dat bestand aan Claude.');
     }
     zeg(`Alles groen (${teller || totaal} stappen, ${Math.floor(duur / 60)} min ${duur % 60} s).`);
+    if (wiebel.length) zeg(`Let op: ${wiebel.join(', ')} faalde eerst en slaagde los. Geef kladblok\\uitrol-tests.txt aan Claude als dat vaker gebeurt.`);
   }
 
   /* ── 3 · tonen wat meegaat ────────────────────────────────────────────── */

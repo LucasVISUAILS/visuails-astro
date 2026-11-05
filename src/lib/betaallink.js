@@ -34,7 +34,16 @@ function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
 }
 
-export async function stuurBetaallink(env, orderId, { origin, offerte = false, herinnering = false, btwErbij = false } = {}) {
+/* ── `opnieuw`: DE KNOP "BETAALLINK OPNIEUW MAILEN" — 5 november 2026 ─────
+   Levering 69 (§17 punt 3 van het overzicht). De knop in /admin
+   (handlePayLinkResend) riep deze functie aan zonder te zeggen wat voor mail
+   het was, en kreeg dan de btw-mail: "Je btw-gegevens zijn goedgekeurd" en
+   "Alles klopt", ook bij een bestelling waar nooit een btw-controle was. De
+   knop is voor "ik kan niet betalen" of "ik ben de mail kwijt"; met
+   `opnieuw: true` krijgt de klant een eigen mail: hier is je betaallink
+   opnieuw. De btw-zin komt alleen nog na een echt btw-akkoord (de aanroep
+   vanuit handleVatDecision in admin.js, zonder `opnieuw`). */
+export async function stuurBetaallink(env, orderId, { origin, offerte = false, herinnering = false, btwErbij = false, opnieuw = false } = {}) {
   if (!env.MOLLIE_API_KEY) {
     console.warn('[admin] geen MOLLIE_API_KEY — geen betaallink voor bestelling', orderId);
     return null;
@@ -118,7 +127,7 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
   const restant = offerte && d.quote_kind === 'restant';
   const verklaringOntbreekt = offerte && d.business_declaration === 'MISSING';
   const opgegevenBtw = String(o.vat_number || '').trim();
-  const euBtwNietBevestigd = !offerte && !herinnering && !btwErbij && (Number(o.vat_cents) || 0) > 0
+  const euBtwNietBevestigd = !offerte && !herinnering && !opnieuw && !btwErbij && (Number(o.vat_cents) || 0) > 0
     && !!opgegevenBtw && !/^NL/i.test(opgegevenBtw);
   const offerteSoort = !offerte ? '' : restant
     ? (lang === 'nl'
@@ -145,6 +154,8 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
     to: o.email,
     subject: herinnering
       ? (lang === 'nl' ? `Je bestelling wacht nog op betaling — ${o.ref}` : `Your order is still waiting for payment — ${o.ref}`)
+      : opnieuw
+        ? (lang === 'nl' ? `Je betaallink, opnieuw — ${o.ref}` : `Your payment link, again — ${o.ref}`)
       : offerte
         ? (lang === 'nl' ? `Je offerte — ${o.ref}` : `Your quote — ${o.ref}`)
         /* 7.07 (8 oktober 2026): "nagekeken" is het woord voor het nakijken
@@ -159,6 +170,8 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
       body: [
         mailH1(herinnering
           ? (lang === 'nl' ? 'Nog niet betaald' : 'Not paid yet')
+          : opnieuw
+            ? (lang === 'nl' ? 'Je betaallink' : 'Your payment link')
           : offerte
             ? (lang === 'nl' ? 'Je offerte' : 'Your quote')
             : btwErbij
@@ -179,6 +192,13 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
           ? (lang === 'nl'
             ? `Je bestelling <strong>${esc(o.ref)}</strong> staat nog open: er is nog niet betaald. Wil je hem nog? Dan is dit de link.${vasthoudenTot ? ` Je leverdatum houden we vast tot <strong>${esc(vasthoudenTot)}</strong>; daarna komen die dagen weer vrij.` : ''}${vervalOp ? ` Betaal je niet, dan vervalt de bestelling na <strong>${esc(vervalOp)}</strong>.` : ''} Wil je hem niet meer, dan hoef je niets te doen: er wordt niets in rekening gebracht.`
             : `Your order <strong>${esc(o.ref)}</strong> is still open: it has not been paid yet. Still want it? This is the link.${vasthoudenTot ? ` We hold your delivery date until <strong>${esc(vasthoudenTot)}</strong>; after that those days are released.` : ''}${vervalOp ? ` If it stays unpaid, the order lapses after <strong>${esc(vervalOp)}</strong>.` : ''} If you no longer want it, there is nothing to do: nothing is charged.`)
+          /* De knop "Betaallink opnieuw mailen" (levering 69): geen woord over btw
+             of een controle, alleen de link. Bij een offerte blijft de zin over
+             wat het bedrag is (volledig, aanbetaling of restant) erbij. */
+          : opnieuw
+          ? (lang === 'nl'
+            ? `Hier is de betaallink voor <strong>${esc(o.ref)}</strong> opnieuw.${offerte ? ` ${offerteSoort}` : ''} Na je betaling gaan we voor je aan het werk.`
+            : `Here is the payment link for <strong>${esc(o.ref)}</strong> again.${offerte ? ` ${offerteSoort}` : ''} Once you have paid, we start on it.`)
           : offerte
           ? (lang === 'nl'
             ? `Hieronder staat de prijs voor <strong>${esc(o.ref)}</strong>, zoals besproken. ${offerteSoort} Betalen is je akkoord — daarna gaan we voor je aan het werk.`
@@ -241,8 +261,8 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
     `INSERT INTO order_events (order_id, status, note, actor)
      VALUES (?1, ?3, ?2, 'studio')`
   ).bind(orderId, lang === 'nl'
-    ? `${herinnering ? 'Betaalherinnering' : 'Betaallink'} verstuurd naar ${o.email} voor ${bedrag}.`
-    : `${herinnering ? 'Payment reminder' : 'Payment link'} sent to ${o.email} for ${bedrag}.`, o.status || 'received').run();
+    ? `${herinnering ? 'Betaalherinnering' : opnieuw ? 'Betaallink opnieuw' : 'Betaallink'} verstuurd naar ${o.email} voor ${bedrag}.`
+    : `${herinnering ? 'Payment reminder' : opnieuw ? 'Payment link resent' : 'Payment link'} sent to ${o.email} for ${bedrag}.`, o.status || 'received').run();
 
   console.log('[admin] betaallink verstuurd voor', o.ref);
   return url;

@@ -55,8 +55,9 @@
  * noot over modelnamen in tests/legal.test.mjs).
  */
 
-/** De dag waarop deze lijst voor het laatst inhoudelijk veranderde, 'JJJJ-MM-DD'. */
-export const LIJST_GEWIJZIGD = '2026-10-11';
+/** De dag waarop deze lijst voor het laatst inhoudelijk veranderde, 'JJJJ-MM-DD'.
+    5 november 2026 (levering 69, §17 punt 6): e-Boekhouden erbij. */
+export const LIJST_GEWIJZIGD = '2026-11-05';
 
 /**
  * Zo lang van tevoren melden wij een nieuwe of vervangen subverwerker, en zo lang
@@ -214,6 +215,32 @@ export const ONTVANGERS = [
     grond: {
       nl: 'volgens het privacybeleid van WhatsApp: het EU-VS Data Privacy Framework en standaardcontractbepalingen',
       en: 'according to WhatsApp’s privacy policy: the EU-U.S. Data Privacy Framework and Standard Contractual Clauses',
+    },
+  },
+  /* ── E-BOEKHOUDEN — 5 november 2026 (levering 69, §17 punt 6) ────────────
+     Zodra EBOEKHOUDEN_API_TOKEN gezet is, stuurt src/lib/eboekhouden.js per
+     klant een relatie (bedrijfsnaam, contactnaam, adres, e-mail, btw- en
+     KVK-nummer; relatieVelden()) en elke factuur naar e-Boekhouden. Geen
+     beeldmateriaal, dus `beeld: false`: hij hoort in het privacybeleid (§5),
+     niet in de lijst van §8 van de verwerkersovereenkomst.
+     VOLGORDE: deze regel staat er vanaf vandaag; Lucas zet het token pas als
+     MELDTERMIJN_DAGEN voorbij zijn (stap 2 in de kop). Er zijn nu nog geen
+     klanten om te mailen. De koppeling staat uit, er is nog niets verstuurd. */
+  {
+    id: 'eboekhouden',
+    naam: 'e-Boekhouden.nl',
+    beeld: false,
+    waar: {
+      nl: 'Nederland (EU)',
+      en: 'the Netherlands (EU)',
+    },
+    wat: {
+      nl: 'onze boekhouding: de gegevens op je factuur (bedrijfsnaam, contactnaam, adres, e-mailadres, btw- en KVK-nummer) en de facturen zelf',
+      en: 'our bookkeeping: the details on your invoice (company name, contact name, address, email address, VAT and Chamber of Commerce number) and the invoices themselves',
+    },
+    grond: {
+      nl: 'binnen de EU; wettelijke bewaarplicht voor de administratie (art. 6 lid 1 sub c AVG)',
+      en: 'inside the EU; the legal duty to keep records (Art. 6(1)(c) GDPR)',
     },
   },
 ];

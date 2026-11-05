@@ -260,9 +260,27 @@ try {
   console.log('\n5 · grijs naar inkt');
   for (const stil of [false, true]) {
     const { ctx, page } = await open('/nl/', { stil });
+    /* Wachten op een voorwaarde en niet op 450 ms (levering 69, 5 november 2026,
+       vraag 3): onder drukte (vier tests tegelijk, een uitrol) was de
+       IntersectionObserver van HalHoeKort80 na 450 ms soms nog niet langs, en dan
+       stond alles nog grijs ("0000000 0000000 1111111"). Nu: eerst tot elk woord de
+       klasse `aan` heeft die bij de scrollpositie hoort (dezelfde som als kijk() in
+       HalHoeKort80.astro; zet het script niets, dan verloopt deze wacht en valt de
+       toets gewoon om), dan tot de kleurovergang klaar is, en dan pas meten. In de
+       stand zonder beweging zet het script niets en is de kleur meteen inkt. */
     const stand = async (f) => {
       await page.evaluate((f) => { const r = document.querySelector('.w8-regel'); scrollTo(0, r.getBoundingClientRect().top + scrollY - innerHeight * f); }, f);
-      await page.waitForTimeout(450);
+      if (!stil) {
+        await page.waitForFunction(() => {
+          const regel = document.querySelector('.w8-regel');
+          const woorden = [...document.querySelectorAll('.w8-w')];
+          const top = regel.getBoundingClientRect().top, h = innerHeight;
+          const p = Math.max(0, Math.min(1, (h * 0.8 - top) / (h * 0.35)));
+          return woorden.every((w, k) => w.classList.contains('aan') === (p >= (k + 0.5) / woorden.length));
+        }, null, { timeout: 8000 }).catch(() => {});
+        await page.waitForFunction(() => document.getAnimations().every((a) => !a.effect?.target?.classList?.contains('w8-w') || a.playState !== 'running'), null, { timeout: 4000 }).catch(() => {});
+      }
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
       return page.evaluate(() => [...document.querySelectorAll('.w8-w')].map((w) => (getComputedStyle(w).color === 'rgb(15, 18, 23)' ? 1 : 0)).join(''));
     };
     const s = [await stand(0.92), await stand(0.62), await stand(0.4)];

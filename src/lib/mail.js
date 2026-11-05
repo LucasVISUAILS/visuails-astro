@@ -16,6 +16,16 @@
 //
 // Bindings: env.RESEND_API_KEY (secret), env.FROM_EMAIL (optional override).
 
+/* ── GEEN INLOGCODE IN HET LOGBOEK — 5 november 2026 (levering 69) ─────────
+   Sinds 14 oktober staat de inlogcode vooraan in het onderwerp ("482913 is je
+   inlogcode voor VISUAILS", inlogOnderwerp() in account.js). Mislukte een
+   verzending, dan schreven de twee regels hieronder dat onderwerp in de Workers
+   Logs, en de code bleef tien minuten geldig: wie de logs kon lezen, kon
+   inloggen als die klant. Elke reeks van zes cijfers wordt in het log ••••••. */
+export function zonderCode(subject) {
+  return String(subject ?? '').replace(/\b\d{6}\b/g, '••••••');
+}
+
 /**
  * One message out through Resend.
  *
@@ -53,7 +63,7 @@ export async function sendMail(env, { to, bcc, subject, html, text, attachments,
    * ervan vond. */
   if (!env.RESEND_API_KEY) {
     console.error(
-      `[mail] RESEND_API_KEY is niet ingesteld — "${subject}" is niet verstuurd `
+      `[mail] RESEND_API_KEY is niet ingesteld — "${zonderCode(subject)}" is niet verstuurd `
       + `naar ${Array.isArray(to) ? to.join(', ') : to}.`
     );
     return;
@@ -119,7 +129,7 @@ export async function sendMail(env, { to, bcc, subject, html, text, attachments,
       ? ' — RESEND_API_KEY wordt door Resend geweigerd; zet het secret opnieuw.'
       : '';
     console.error(
-      `[mail] Resend ${res.status} bij "${subject}" naar `
+      `[mail] Resend ${res.status} bij "${zonderCode(subject)}" naar `
       + `${Array.isArray(to) ? to.join(', ') : to}${uitleg} ${lichaam}`
     );
     throw new Error(`Resend ${res.status}: ${lichaam}`);

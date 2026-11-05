@@ -24,10 +24,10 @@
  * ── WAT DE KLANT ZIET, EN WAT HIJ NIET ZIET ──────────────────────────────────
  *
  * Lucas, 17 augustus: *"Ik wil niet dat VISUAILS zegt wat er aan de beurt is."*
- * Dat is een ontwerpregel en hij zit hier in de code: `plan_queue` is van de
- * KLANT. Deze module leest die rij, verplaatst hem en haalt er de bovenste af
- * als er een venster opengaat — maar er staat nergens een functie die bedenkt
- * wat er in zou moeten. Wat er in de wachtrij staat, heeft de klant getypt.
+ * Dat was een ontwerpregel van de wachtrij (`plan_queue`, van de KLANT). Die
+ * wachtrij bestaat sinds 8 oktober niet meer (het abonnement zonder week) en
+ * haar functies zijn op 5 november 2026 uit deze module gehaald (levering 69);
+ * een abonnee bestelt via het gewone formulier en betaalt met credits.
  *
  * En: *"Onthoud ik werk alleen dus ik kan uiteindelijk overzicht verliezen dus
  * zoveel mogelijk moet geautomatiseerd zijn."* Vandaar dat elke functie hier
@@ -51,9 +51,11 @@ import {
 import { VAT_TREATMENT } from '../data/vat.js';
 import { CUSTOM_MONTH_ID } from '../data/pricing.js';
 import {
-  verbruikSlot, geefSlotTerug, slotBalans, vensterVoor,
-  /* De creditkant — zie de kop bij CREDIT_KIND in slots.js. */
-  verbruikCredits, geefCreditsTerug, creditsVoor, creditsPerSoort, dienstenVoorAbo, CREDIT_KIND,
+  slotBalans, vensterVoor,
+  /* De creditkant — zie de kop bij CREDIT_KIND in slots.js. verbruikSlot,
+     geefSlotTerug, verbruikCredits, geefCreditsTerug en creditsPerSoort stonden
+     hier voor de wachtrij en zijn met haar weg (5 november 2026, levering 69). */
+  creditsVoor, dienstenVoorAbo, CREDIT_KIND,
   bundelVoor, subMaandCents, subProducten,
 } from './slots.js';
 // vat.js draagt de BEHANDELINGEN (standaard, verlegd, buiten bereik), quote.js
@@ -64,10 +66,8 @@ import { VAT_RATE } from './quote.js';
    Mollie-sleutel bepaalt of er echt geld door dit abonnement kan lopen. Zie
    isTestmodus() daar, en migrations/0046-proefbestellingen.sql. */
 import { isTestmodus } from './mollie.js';
-/* De poort op de vaste look (ronde 4, 19 september 2026) — zie de kop van
-   vasteLook.js: vastzetten mag pas als de look voor de dienst(en) van dit slot
-   gezet is. Lucas: *"Toestaan als de look gezet is."* */
-import { laadLocks, lookCompleet } from './vasteLook.js';
+/* De poort op de vaste look (laadLocks, lookCompleet uit vasteLook.js) hing aan
+   het vastzetten in de wachtrij en is met haar weg (5 november 2026, levering 69). */
 
 /* De maanden die meetellen voor het saldo: deze plus het venster dat mag
  * doorschuiven. Drie bij een jaartermijn, één bij een maandtermijn — en dus
@@ -295,135 +295,11 @@ export async function loadMonths(env, subId, termId) {
   return (rows?.results || []).slice().reverse();
 }
 
-/** De open wachtrij van een klant, op volgorde. Wat al opgehaald is (taken_at) hoort er niet meer bij. */
-export async function loadQueue(env, customerId) {
-  const rows = await stil(() => env.DB.prepare(
-    /* window_start/window_end/asap staan er sinds migratie 0036 bij: een
-       wachtrij-item draagt zijn eigen twee dagen, of zegt uitdrukkelijk dat het
-       geen datum wil. Zie de kop van die migratie voor waarom dat op het item zit
-       en niet in een aparte planningstabel. */
-    `SELECT id, position, name, note, upload_batch, kind, locked_at, created_at,
-            window_start, window_end, asap, model
-       FROM plan_queue
-      WHERE customer_id = ?1 AND taken_at IS NULL
-      ORDER BY position ASC, id ASC`
-  ).bind(customerId).all(), { results: [] });
-  return rows?.results || [];
-}
-
-/* ── WANNEER EEN WACHTRIJ-ITEM AAN DE BEURT IS — 31 augustus 2026 ───────────
- *
- * Twee schrijfacties en verder niets. Het UITREKENEN van welk paar dagen bij een
- * aangewezen dag hoort, gebeurt niet hier maar in de aanroeper, met windowFor()
- * uit capacity.js en de echte agenda erbij. Dat is met opzet: zou dit bestand
- * zelf een paar samenstellen, dan is er een tweede plek die bepaalt wat een
- * venster is, en die kan afwijken van de poort die de bestelstroom gebruikt.
- *
- * Hier staat alleen wat er in de rij komt te staan, en de voorwaarde eromheen:
- * een item dat al opgehaald is, verandert niet meer van dag. */
-
-/** Twee aangewezen dagen op een wachtrij-item zetten. `start` en `end` zijn ISO-dagen. */
-export async function queueWindow(env, customerId, id, start, end) {
-  const gezet = await stil(() => env.DB.prepare(
-    `UPDATE plan_queue
-        SET window_start = ?3, window_end = ?4, asap = 0
-      WHERE id = ?1 AND customer_id = ?2 AND taken_at IS NULL
-      RETURNING id`
-  ).bind(Number(id) || 0, customerId, start, end).first());
-  return Boolean(gezet);
-}
-
-/**
- * Een ingeplande dag NAAR VOREN halen. Nooit naar achteren.
- *
- * ══════════════════════════════════════════════════════════════════════════
- * DE REGEL, EN WAAROM HIJ MAAR ÉÉN KANT OP WERKT
- * ══════════════════════════════════════════════════════════════════════════
- *
- * Lucas, 19 september 2026: *"waarna ze een melding krijgen van of ze het
- * zeker weten omdat de datum nooit naar achter gezet mag worden, alleen naar
- * voren dus dat ze die dag dan wel kwijt raken als leverdatum."*
- *
- * Twee dingen zitten in die zin en ze zijn allebei hard:
- *
- *   1 · ALLEEN NAAR VOREN. Een dag naar achteren schuiven is een belofte
- *       uitstellen, en die belofte staat in /terms: "een datum die we niet
- *       gereserveerd hebben, is geen datum". Zou het wel mogen, dan is een
- *       leverdatum een intentie geworden. Vandaar dat de nieuwe dag strikt
- *       eerder moet zijn dan de huidige, en dat dit hier wordt getoetst en
- *       niet alleen op het scherm — een knop is geen regel.
- *   2 · DE OUDE DAG IS HIJ KWIJT. Die komt terug in de agenda en kan meteen
- *       door een ander geboekt worden. Daarom hoort er een bevestiging vóór
- *       deze functie, en niet erna; zie handlePlanVerzet() in account.js.
- *
- * ── WAT HIJ NIET DOET, EN DAT IS MET OPZET ────────────────────────────────
- *
- * Hij toetst de CAPACITEIT niet. Dat gebeurt in de aanroeper, met windowFor()
- * uit capacity.js en de agenda uit agenda.js — dezelfde poort die een losse
- * bestelling gebruikt. Zou deze functie zijn eigen versie krijgen, dan zijn er
- * twee poorten die "vol" verschillend uitrekenen, en dan verkoopt er één een
- * dag twee keer. Zie de kop van agenda.js, waar dat al een keer misging.
- *
- * Geeft `{ ok: true, van, naar }` of `{ ok: false, reden }`.
- */
-export async function queueVerzet(env, customerId, id, start, end) {
-  const rij = await stil(() => env.DB.prepare(
-    `SELECT id, name, window_start, window_end, locked_at, taken_at
-       FROM plan_queue WHERE id = ?1 AND customer_id = ?2`
-  ).bind(Number(id) || 0, customerId).first());
-  if (!rij) return { ok: false, reden: 'onbekend' };
-  if (rij.taken_at) return { ok: false, reden: 'opgepakt' };
-  if (!rij.locked_at) return { ok: false, reden: 'niet-vast' };
-  if (!rij.window_start) return { ok: false, reden: 'geen-dag' };
-  if (!(String(start) < String(rij.window_start))) return { ok: false, reden: 'niet-eerder', van: rij.window_start };
-
-  /* De voorwaarde staat ÓÓK in de UPDATE en niet alleen in de controle
-     hierboven. Tussen lezen en schrijven kan een tweede tabblad dezelfde rij al
-     verzet hebben; dan is de dag die we lazen niet meer de dag die er staat, en
-     zou "eerder dan" op een verouderd getal slaan. De database toetst hem op
-     het moment dat het telt. */
-  const gezet = await stil(() => env.DB.prepare(
-    `UPDATE plan_queue
-        SET window_start = ?3, window_end = ?4, asap = 0
-      WHERE id = ?1 AND customer_id = ?2
-        AND taken_at IS NULL AND locked_at IS NOT NULL
-        AND window_start IS NOT NULL AND ?3 < window_start
-      RETURNING id`
-  ).bind(Number(id) || 0, customerId, start, end).first());
-  if (!gezet) return { ok: false, reden: 'ingehaald', van: rij.window_start };
-  return { ok: true, van: rij.window_start, naar: start, naam: rij.name };
-}
-
-/**
- * Terug naar "zo snel mogelijk": de dagen worden losgelaten.
- *
- * DE DAGEN WORDEN ECHT LEEGGEMAAKT EN NIET ALLEEN GENEGEERD. Bleef het paar
- * staan met `asap = 1` ernaast, dan houdt src/lib/agenda.js die dagen bezet voor
- * iemand die er geen aanspraak meer op maakt — en dan is de agenda voller dan de
- * studio is.
- */
-export async function queueAsap(env, customerId, id) {
-  const gezet = await stil(() => env.DB.prepare(
-    `UPDATE plan_queue
-        SET window_start = NULL, window_end = NULL, asap = 1
-      WHERE id = ?1 AND customer_id = ?2 AND taken_at IS NULL
-      RETURNING id`
-  ).bind(Number(id) || 0, customerId).first());
-  return Boolean(gezet);
-}
-
-/** Wat er dit jaar uit de wachtrij is gehaald — "wat je hebt opgebouwd", nieuwste eerst. */
-export async function loadTaken(env, customerId, limit = 20) {
-  const rows = await stil(() => env.DB.prepare(
-    `SELECT q.id, q.name, q.taken_at, q.order_id, o.ref AS order_ref
-       FROM plan_queue q
-       LEFT JOIN orders o ON o.id = q.order_id
-      WHERE q.customer_id = ?1 AND q.taken_at IS NOT NULL
-      ORDER BY q.taken_at DESC
-      LIMIT ?2`
-  ).bind(customerId, limit).all(), { results: [] });
-  return rows?.results || [];
-}
+/* ── loadQueue, queueWindow, queueVerzet, queueAsap EN loadTaken STONDEN HIER
+ * 5 november 2026, levering 69 (§17 punt 14). Het weeksysteem (de wachtrij in
+ * plan_queue) bestaat sinds 8 oktober niet meer; geen scherm las deze functies nog.
+ * De tabel plan_queue en de kolom subscriptions.window_day blijven staan tot de
+ * migratie in kladblok/PLAN-WEEKSYSTEEM-OPRUIMEN.md. */
 
 /**
  * ALLES WAT EEN PAGINA OVER HET ABONNEMENT VAN ÉÉN KLANT MOET WETEN, in één
@@ -582,21 +458,18 @@ export async function planState(env, customerId) {
  * de hele functie gebruikt.
  */
 export async function planAanvullen(env, kort) {
-  /* Geen abonnement, geen wachtrij: loadQueue en loadTaken zouden allebei een
-     lege lijst teruggeven en dat is twee queries voor niets. */
-  if (!kort?.sub) return { ...kort, wachtrij: [], opgehaald: [], slots: [] };
+  /* `wachtrij` en `opgehaald` (de wachtrij van het weeksysteem, uit plan_queue)
+     zijn weg sinds 5 november 2026 (levering 69, §17 punt 14): geen scherm las
+     ze, en het waren twee queries op elke pagina met een abonnement. */
+  if (!kort?.sub) return { ...kort, slots: [] };
 
   /* `slots` erbij sinds migratie 0035. Eén query erbij, en hij hoort hier omdat
      elk scherm dat de toestand van een abonnement toont hem nodig heeft: het
-     saldo is sinds die migratie niet één getal maar een regel per soort. */
-  const [wachtrij, opgehaald, slots] = await Promise.all([
-    loadQueue(env, kort.sub.customer_id),
-    loadTaken(env, kort.sub.customer_id),
-    /* Met de maand van de LOPENDE termijn, niet die van de kalender: anders
-       leest het saldo van iemand die op de 20e betaalt tussen de 1e en de 20e
-       als nul, en bij een opgezegd abonnement (venster 0) helemaal. */
-    slotBalans(env, kort.sub.id, vensterVoor(kort.sub), new Date(), kort.maand),
-  ]);
+     saldo is sinds die migratie niet één getal maar een regel per soort.
+     Met de maand van de LOPENDE termijn, niet die van de kalender: anders
+     leest het saldo van iemand die op de 20e betaalt tussen de 1e en de 20e
+     als nul, en bij een opgezegd abonnement (venster 0) helemaal. */
+  const slots = await slotBalans(env, kort.sub.id, vensterVoor(kort.sub), new Date(), kort.maand);
   /* ── HET CREDITSALDO KOST GEEN ZESDE QUERY ──────────────────────────────
      creditBalans() zou dezelfde rijen nog een keer ophalen. Dat is precies het
      soort stille verdubbeling waar het querybudget in tests/subscription.test.mjs
@@ -606,8 +479,6 @@ export async function planAanvullen(env, kort) {
     || { kind: CREDIT_KIND, toegekend: 0, verbruikt: 0, saldo: 0, dezeMaand: 0, ouder: 0, vervalt: [] };
   return {
     ...kort,
-    wachtrij,
-    opgehaald,
     slots,
     credits,
     /* Wat deze klant per maand krijgt en waaruit hij mag kiezen — allebei uit
@@ -705,374 +576,10 @@ export async function verbruikBoeken(env, subId, maand, aantal, plafond, soort =
   return row ? n : 0;
 }
 
-/* ── DE WACHTRIJ ────────────────────────────────────────────────────────────
- *
- * Van de klant, door de klant gevuld. Deze functies verplaatsen en verwijderen;
- * ze verzinnen niets.
- */
-
-const QUEUE_MAX = 40;
-
-/**
- * Hoeveel er op de lijst mag. Als functie naar buiten en niet als los getal,
- * zodat de grens op één plek staat: het dashboard dat de klant WAARSCHUWT dat
- * zijn lijst vol is en de queueAdd die hem WEIGERT lezen nu hetzelfde getal.
- * Twee keer veertig intypen is precies hoe een melding gaat liegen zodra er
- * ooit vijftig van wordt gemaakt.
- */
-export function queueMax() { return QUEUE_MAX; }
-
-/** Achteraan toevoegen. Geeft de nieuwe rij terug, of null als de rij vol is. */
-/**
- * Een product op de lijst zetten. ALTIJD als CONCEPT.
- *
- * `locked_at` blijft leeg, en dat is de kern van het model dat Lucas op
- * 29 augustus 2026 koos: *"wat de klant dan moet doen is alle informatie van
- * het product invoeren en op confirm klikken waardoor ze een slot hebben
- * gelockt"*. Toevoegen kost dus niets. Pas queueLock() schrijft credits af.
- *
- * Waarom die twee stappen uit elkaar staan: een product invullen is werk dat je
- * kunt onderbreken. Zou de eerste toets al credits kosten, dan durft niemand te
- * beginnen zonder zeker te weten dat hij het afmaakt.
- */
-/* De standaardsoort is 'catalog' en niet meer 'complete': die dienst bestaat
-   niet meer en mag dus ook niet meer als stilzwijgende terugval ontstaan. De
-   aanroeper in account.js toetst de soort al aan dienstenVoorAbo(); dit is het
-   vangnet eronder. */
-export async function queueAdd(env, customerId, { name, note = '', uploadBatch = null, kind = 'catalog', model = null }) {
-  const naam = String(name || '').trim().slice(0, 120);
-  if (!naam) return null;
-  const open = await loadQueue(env, customerId);
-  /* Een grens, en een royale. Niet omdat veertig producten te veel werk zijn,
-   * maar omdat een wachtrij die eindeloos groeit een lijst wordt die niemand
-   * meer bijhoudt — en dan is hij geen plan meer maar een archief. */
-  if (open.length >= QUEUE_MAX) return null;
-  const achteraan = open.length ? Math.max(...open.map((q) => Number(q.position) || 0)) + 1 : 0;
-  return stil(() => env.DB.prepare(
-    `INSERT INTO plan_queue (customer_id, position, name, note, upload_batch, kind, model)
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
-     RETURNING id, position, name, note, upload_batch, kind, locked_at, created_at, model`
-  ).bind(customerId, achteraan, naam, String(note || '').trim().slice(0, 500) || null, uploadBatch,
-         String(kind || 'catalog'), String(model || '').trim().slice(0, 40) || null).first());
-}
-
-/**
- * Wat één rij uit de wachtrij aan credits kost.
- *
- * Vandaag is dat alleen de prijs van de soort. De twee toeslagen uit
- * EXTRA_CREDITS (een extra beeld, 4K) staan al in pricing.js maar zijn binnen
- * een abonnement nog niet te bestellen — `plan_queue` draagt ze niet. Zodra dat
- * wel zo is, is dit de enige plek die het hoeft te weten, en dat is precies
- * waarom deze twee regels een eigen functie zijn in plaats van vier keer
- * `creditsPerSoort(rij.kind)` verspreid over dit bestand.
- *
- * NUL IS EEN ANTWOORD EN EEN FOUT TEGELIJK: een soort die de tabel niet kent
- * kost nul credits, en dan zou vastzetten gratis zijn. Vandaar de log — dit
- * hoort niet te kunnen sinds de soort bij het toevoegen al getoetst wordt.
- */
-function creditsVoorRijMetExtras(rij) {
-  const n = creditsPerSoort(rij?.kind);
-  if (!n) console.error('[abonnement] soort zonder creditprijs in de wachtrij:', rij?.kind);
-  return n;
-}
-
-/**
- * VASTZETTEN: van concept naar geboekt, met één slot eraf.
- *
- * Dit is de handeling waar het hele model op hangt. Hij doet drie dingen, in
- * deze volgorde, en die volgorde is niet vrij:
- *
- *   1 · KIJKEN of het item bestaat, van deze klant is, en nog niet vast staat.
- *   2 · DE CREDITS AFSCHRIJVEN met verbruikCredits() — oudste maand eerst.
- *   3 · PAS DAARNA `locked_at` zetten.
- *
- * Andersom zou een item vast kunnen komen te staan zonder dat er credits voor
- * zijn afgeschreven, en dat is de dure kant van de fout: onzichtbaar werk waar
- * niet voor betaald is. Nu is de goedkope kant mogelijk — afgeschreven credits
- * zonder vastgezet item — en die is zichtbaar in het saldo, dus corrigeerbaar.
- *
- * ZONDER FOTO'S GEEN VASTZETTEN. Een item zonder upload_batch kan niet gemaakt
- * worden; het vastzetten ervan zou een slot kosten voor werk dat blijft liggen.
- * Vandaar dat dit hier weigert en niet pas in de week.
- */
-export async function queueLock(env, customerId, id) {
-  const rij = await stil(() => env.DB.prepare(
-    'SELECT id, kind, upload_batch, locked_at FROM plan_queue WHERE id = ?1 AND customer_id = ?2 AND taken_at IS NULL'
-  ).bind(Number(id) || 0, customerId).first());
-  if (!rij) return { ok: false, reden: 'niet-gevonden' };
-  if (rij.locked_at) return { ok: true, reden: 'stond-al-vast' };
-  if (!String(rij.upload_batch || '').trim()) return { ok: false, reden: 'geen-fotos' };
-
-  const sub = await loadSubscription(env, customerId);
-  if (!sub) return { ok: false, reden: 'geen-abonnement' };
-  /* ── OPGEZEGD MAG NOG, GEPAUZEERD NIET ──────────────────────────────────────
-   *
-   * Hier stond `status !== 'active'`, en dat sloot een opgezegd abonnement
-   * meteen af. Dat is één dag te vroeg: loadSubscription() laat een opgezegd
-   * abonnement zijn BETAALDE maand uitzitten, en dezelfde uitzondering staat al
-   * in verbruikToestaan() met dezelfde reden — wie tot het eind van de maand
-   * betaald heeft, mag tot het eind van de maand vastzetten.
-   *
-   * Wat hij niet meer krijgt is het DOORSCHUIVEN, en dat regelt vensterVoor():
-   * die geeft een opgezegd abonnement een venster van nul, dus verbruikSlot()
-   * hieronder ziet alleen de slots van deze maand. Precies wat Lucas beschreef:
-   * de laatste betaalde maand nog opmaken, maar niets meenemen naar een maand
-   * waarin hij geen abonnement meer heeft.
-   *
-   * Gepauzeerd blijft nee. Pauzeren is de klant die zelf zegt dat het even stil
-   * moet; zijn slots blijven staan voor als hij hervat. */
-  const magVastzetten = sub.status === 'active' || sub.status === 'cancelled';
-  if (!magVastzetten) return { ok: false, reden: `abonnement-${sub.status}` };
-
-  /* Hier blijft 'complete' de terugval, en dat is geen slordigheid: dit leest
-     een rij die er AL staat, en die kan van vóór 19 september zijn. Wat nieuw
-     bijkomt, kan 'complete' niet meer zijn — zie queueAdd(). */
-  const soort = String(rij.kind || 'complete');
-  /* ── ZONDER LOOK GEEN VASTZETTEN — 19 september 2026 ──────────────────────
-     Tot vandaag kon een item vast komen te staan terwijl er voor zijn dienst
-     geen achtergrond (catalog) of look (lifestyle) vastlag; de studio moest
-     het dan alsnog vragen. De poort staat hier, vóór het slot wordt
-     afgeschreven, en zegt welke dienst(en) nog open staan, zodat het scherm
-     naar precies die kaart op /account/brand-kit kan wijzen. */
-  const look = lookCompleet(await laadLocks(env, customerId), soort);
-  if (!look.ok) return { ok: false, reden: 'geen-look', ontbreekt: look.ontbreekt, soort };
-  /* ── DE PRIJS IN CREDITS, 19 september 2026 ──────────────────────────────
-     Hier ging één slot van de SOORT af. Sinds credits is er één saldo en heeft
-     elke dienst een prijs: een catalogset vier, een lifestyle-clip twaalf. Wat
-     onveranderd blijft is het moment — op het vastzetten en niet op de levering
-     — en de volgorde: de oudste toekenning gaat er als eerste af. */
-  const kosten = creditsVoorRijMetExtras(rij);
-  const geboekt = await verbruikCredits(env, sub.id, vensterVoor(sub), kosten);
-  if (geboekt !== kosten) {
-    /* Deels geboekt kan niet blijven staan: dan is de klant credits kwijt voor
-       een product dat niet vaststaat. Terugdraaien wat er wél af ging. */
-    if (geboekt > 0) await geefCreditsTerug(env, sub.id, vensterVoor(sub), geboekt);
-    return { ok: false, reden: 'geen-credits', soort, kosten };
-  }
-
-  const gezet = await stil(() => env.DB.prepare(
-    "UPDATE plan_queue SET locked_at = datetime('now') WHERE id = ?1 AND customer_id = ?2 AND locked_at IS NULL RETURNING id"
-  ).bind(rij.id, customerId).first());
-  if (!gezet) {
-    /* De UPDATE raakte niets terwijl het slot al af is. Eén oorzaak is denkbaar:
-       een tweede tabblad was net eerder. Het slot terugdraaien is dan het juiste
-       antwoord — anders kost één product twee slots. */
-    await geefCreditsTerug(env, sub.id, vensterVoor(sub), kosten);
-    return { ok: true, reden: 'stond-al-vast' };
-  }
-  return { ok: true, soort, kosten };
-}
-
-/**
- * LOSMAKEN: het slot komt terug.
- *
- * Dit moest er zijn. Zonder losmaken kost een typefout een slot, en dan durft
- * niemand meer op vastzetten te drukken — precies het omgekeerde van wat de knop
- * moet doen. Het slot gaat terug naar de NIEUWSTE maand; zie de noot bij
- * geefSlotTerug() voor waarom dat de eerlijke kant is.
- *
- * Alleen zolang het item nog niet is opgepakt. Staat er `taken_at`, dan is het
- * werk begonnen en is losmaken geen administratie meer maar een annulering.
- */
-export async function queueUnlock(env, customerId, id) {
-  const rij = await stil(() => env.DB.prepare(
-    'SELECT id, kind, locked_at FROM plan_queue WHERE id = ?1 AND customer_id = ?2 AND taken_at IS NULL'
-  ).bind(Number(id) || 0, customerId).first());
-  if (!rij) return { ok: false, reden: 'niet-gevonden' };
-  if (!rij.locked_at) return { ok: true, reden: 'stond-al-los' };
-
-  /* ── `taken_at IS NULL` STAAT IN DE UPDATE EN NIET ALLEEN IN DE PEILING ────
-   *
-   * Gevonden bij de misbruikronde van 30 augustus 2026, op Lucas' vraag of een
-   * klant langs deze weg gratis werk kan krijgen. Ja, en zo:
-   *
-   *   · de klant heeft vijf items vastgezet;
-   *   · Lucas drukt op "start deze week" — startPlanWindow() heeft de lijst net
-   *     gelezen en staat op het punt taken_at te zetten;
-   *   · de klant drukt in datzelfde ogenblik op "losmaken".
-   *
-   * De SELECT hierboven zag taken_at nog leeg, dus de oude UPDATE gaf het slot
-   * terug — en een tel later staat het item in een bestelling die gemaakt gaat
-   * worden. Product gemaakt, slot terug: gratis werk, en niets dat het meldt.
-   *
-   * Het venster is klein en het vraagt twee klikken op dezelfde seconde. Dat is
-   * geen reden om het te laten staan: het is precies het soort fout dat een keer
-   * per kwartaal gebeurt en dan niet te reconstrueren is. De voorwaarde hoort in
-   * de UPDATE, want alleen de database kan hem op het juiste moment toetsen. */
-  const gezet = await stil(() => env.DB.prepare(
-    `UPDATE plan_queue SET locked_at = NULL
-      WHERE id = ?1 AND customer_id = ?2 AND locked_at IS NOT NULL AND taken_at IS NULL
-      RETURNING id`
-  ).bind(rij.id, customerId).first());
-  if (!gezet) return { ok: true, reden: 'stond-al-los' };
-
-  const sub = await loadSubscription(env, customerId);
-  if (sub) await geefCreditsTerug(env, sub.id, vensterVoor(sub), creditsVoorRijMetExtras(rij));
-  return { ok: true };
-}
-
-/** Eén item weg. Alleen van deze klant — de customer_id staat in de WHERE en niet in een controle ervoor. */
-export async function queueRemove(env, customerId, id) {
-  /* ── EERST WEGHALEN, DAN PAS TERUGBOEKEN — omgedraaid 30 augustus 2026 ─────
-   *
-   * Hier stond queueUnlock() vóór de DELETE. Dat gaf het slot terug op grond van
-   * een peiling, en pas daarna werd geprobeerd de rij weg te halen. Gaat die
-   * DELETE niet door — omdat de rij inmiddels is opgepakt, of omdat een tweede
-   * tabblad net eerder was — dan is het slot terug en staat het item er nog of
-   * zit het in een bestelling. Gratis werk, langs dezelfde weg als bij
-   * queueUnlock() hierboven.
-   *
-   * Omgekeerd is er precies één bron van waarheid: de DELETE zelf. Wat hij
-   * teruggeeft is wat er werkelijk is weggehaald, en alleen dáárvoor gaat er een
-   * slot terug. Twee tabbladen die tegelijk weghalen leveren dus één teruggave,
-   * zonder dat er een teller of een vlag bijgehouden hoeft te worden.
-   *
-   * MISLUKT HET TERUGBOEKEN NA DE DELETE, dan is de klant een slot kwijt en niet
-   * wij een product. Dat is de goedkope kant van deze fout — het is met de knop
-   * "Slots bijstellen" in /admin recht te zetten — en hij gaat luid naar de log
-   * zodat hij niet stil blijft. */
-  const rij = await stil(() => env.DB.prepare(
-    `DELETE FROM plan_queue
-      WHERE id = ?1 AND customer_id = ?2 AND taken_at IS NULL
-      RETURNING id, kind, locked_at`
-  ).bind(Number(id) || 0, customerId).first());
-  if (!rij) return false;
-  if (!rij.locked_at) return true;   // een concept kostte nog niets
-
-  const sub = await loadSubscription(env, customerId);
-  const kosten = creditsVoorRijMetExtras(rij);
-  const terug = sub
-    ? await geefCreditsTerug(env, sub.id, vensterVoor(sub), kosten)
-    : 0;
-  if (terug !== kosten) {
-    console.error('[abonnement] item', rij.id, 'weggehaald maar de credits niet teruggeboekt —',
-      sub ? 'zet het bij via het abonnementspaneel in /admin' : 'er is geen abonnement meer');
-  }
-  return true;
-}
-
-/**
- * De hele volgorde in één keer zetten.
- *
- * `ids` is de volgorde zoals de klant hem heeft neergelegd. Alles wat niet in
- * zijn eigen open wachtrij zit, valt eruit — een id uit een ander account of een
- * al opgehaald item kan de volgorde dus niet aanraken. Wat hij WEL heeft maar
- * niet meestuurde, blijft achteraan staan in de oude volgorde; een item stilletjes
- * laten verdwijnen omdat een formulier onvolledig postte, is erger dan een item
- * dat onderaan belandt.
- */
-export async function queueReorder(env, customerId, ids) {
-  const open = await loadQueue(env, customerId);
-  const geldig = new Set(open.map((q) => q.id));
-  const volgorde = [];
-  for (const raw of Array.isArray(ids) ? ids : []) {
-    const id = Number(raw);
-    if (geldig.has(id) && !volgorde.includes(id)) volgorde.push(id);
-  }
-  for (const q of open) if (!volgorde.includes(q.id)) volgorde.push(q.id);
-  if (!volgorde.length) return 0;
-
-  const stmts = volgorde.map((id, i) => env.DB
-    .prepare('UPDATE plan_queue SET position = ?1, updated_at = datetime(\'now\') WHERE id = ?2 AND customer_id = ?3')
-    .bind(i, id, customerId));
-  await stil(() => env.DB.batch(stmts));
-  return volgorde.length;
-}
-
-/* ── queueTake() STOND HIER, EN IS WEG — 30 augustus 2026 ───────────────────
- *
- * Hij pakte "de bovenste N van de lijst". Dat was het model tot migratie 0035:
- * wij bepaalden wat er meeging, op volgorde. Sindsdien bepaalt de KLANT dat door
- * vast te zetten, en `startPlanWindow()` gebruikt daarom queueTakeIds() op wat
- * vastgezet is. Deze functie had buiten één toets geen enkele aanroeper meer.
- *
- * Hij is niet weggehaald omdat hij ongebruikt was, maar omdat hij LOOG. Sinds
- * queueTakeIds() ook `locked_at IS NOT NULL` eist, pakte hij niets meer op — en
- * hij gaf nog steeds de rij terug die hij had wíllen pakken. Een functie die
- * meldt dat er werk klaarstaat terwijl er niets is opgepakt, is precies het
- * soort stille fout waar de misbruikronde van vandaag over ging.
- *
- * Wie ooit weer "pak de bovenste N" nodig heeft, bouwt hem op queueTakeIds() en
- * geeft terug wat DIE teruggeeft. */
-
-
-/**
- * Dezelfde handeling, maar op AANGEWEZEN items in plaats van op de bovenste N.
- *
- * Nodig sinds startPlanWindow() in planStart.js: die slaat items zonder foto's
- * over, dus "de bovenste drie" en "de drie die opgepakt worden" zijn niet meer
- * hetzelfde rijtje. Beide wegen delen deze ene UPDATE — twee plekken met
- * dezelfde SQL is één plek die ooit vergeten wordt.
- *
- * `taken_at IS NULL` in de WHERE is het slot: twee keer starten pakt niets
- * dubbel, en dat is precies wat een knop nodig heeft die per ongeluk twee keer
- * kan worden ingedrukt. `customer_id` staat erbij om dezelfde reden als bij
- * queueRemove(): eigendom hoort in de WHERE en niet in een controle ervoor.
- */
-/**
- * Items oppakken. Geeft terug welke er WERKELIJK zijn opgepakt.
- *
- * ── TWEE DINGEN VERANDERD OP 30 AUGUSTUS 2026 ───────────────────────────────
- *
- * 1 · `locked_at IS NOT NULL` staat in de WHERE. Zonder die voorwaarde pakt deze
- *     functie ook een item op dat de klant tussen het lezen van de lijst en dit
- *     moment heeft losgemaakt — en dan is het slot terug én wordt het product
- *     gemaakt. Zie de noot bij queueUnlock(); dit is dezelfde deur, aan de
- *     andere kant.
- *
- * 2 · Hij gaf `lijst.length` terug, ongeacht wat er gebeurde. Dat is geen
- *     telling maar een echo van de vraag: viel er één af, dan zei hij nog steeds
- *     dat alles was opgepakt, en startPlanWindow() bouwde er een bestelling
- *     omheen die niet klopte. Nu telt hij de rijen die de database daadwerkelijk
- *     heeft aangeraakt.
- */
-export async function queueTakeIds(env, customerId, ids) {
-  const lijst = (Array.isArray(ids) ? ids : []).map(Number).filter(Boolean);
-  if (!lijst.length) return 0;
-  const gepakt = [];
-  for (const id of lijst) {
-    const rij = await stil(() => env.DB.prepare(
-      `UPDATE plan_queue SET taken_at = datetime('now')
-        WHERE id = ?1 AND customer_id = ?2 AND taken_at IS NULL AND locked_at IS NOT NULL
-        RETURNING id`
-    ).bind(id, customerId).first());
-    if (rij) gepakt.push(rij.id);
-  }
-  return gepakt;
-}
-
-/**
- * Het oppakken terugdraaien. Alleen voor het geval dat de bestelling er daarna
- * niet komt — zie startPlanWindow().
- *
- * Zonder deze functie zou een mislukte INSERT een klant achterlaten met items
- * die als opgepakt gemarkeerd staan en nergens bij horen: zijn slot is op, er is
- * geen bestelling, en op zijn scherm is het item verdwenen. Dat is de enige
- * uitkomst die erger is dan het werk te veel maken.
- */
-export async function queueUntakeIds(env, ids) {
-  const lijst = (Array.isArray(ids) ? ids : []).map(Number).filter(Boolean);
-  if (!lijst.length) return 0;
-  let terug = 0;
-  for (const id of lijst) {
-    const rij = await stil(() => env.DB.prepare(
-      'UPDATE plan_queue SET taken_at = NULL WHERE id = ?1 AND order_id IS NULL RETURNING id'
-    ).bind(id).first());
-    if (rij) terug += 1;
-  }
-  return terug;
-}
-
-/** De bestelling aan de opgehaalde items hangen, zodra die bestaat. */
-export async function queueLinkOrder(env, ids, orderId) {
-  const lijst = (Array.isArray(ids) ? ids : []).map(Number).filter(Boolean);
-  if (!lijst.length || !orderId) return 0;
-  const stmts = lijst.map((id) => env.DB
-    .prepare('UPDATE plan_queue SET order_id = ?1 WHERE id = ?2')
-    .bind(orderId, id));
-  await stil(() => env.DB.batch(stmts));
-  return lijst.length;
-}
+/* ── DE WACHTRIJ (queueAdd, queueLock, queueUnlock, queueRemove, queueReorder,
+ * queueTakeIds, queueUntakeIds, queueLinkOrder, queueMax) STOND HIER — weg op
+ * 5 november 2026, levering 69 (§17 punt 14). Niets riep ze nog aan; account.js
+ * importeerde ze alleen. */
 
 /* ── DE LEVENSLOOP VAN EEN ABONNEMENT ───────────────────────────────────────
  *
@@ -1387,94 +894,10 @@ export async function bezetting(env) {
   return { per, producten, credits };
 }
 
-/**
- * ═══════════════════════════════════════════════════════════════════════════════
- * EEN GEANNULEERDE ABONNEMENTSWEEK TERUGDRAAIEN
- * ═══════════════════════════════════════════════════════════════════════════════
- *
- * Gevonden op 29 augustus 2026, bij het nalopen van de keten na migratie 0035.
- *
- * Losmaken en weghalen op de klantlijst geven het slot netjes terug. Annuleren
- * in /admin deed dat niet, en dat is de duurste van de drie: de klant heeft zijn
- * slot betaald met zijn maandtermijn, het product is niet gemaakt, en zowel het
- * slot als het item waren weg. Twee keer betalen voor niets, en onzichtbaar —
- * er is geen scherm waarop je ziet dat er een slot ontbreekt.
- *
- * ── DE INVARIANT DIE DIT OVEREIND HOUDT ─────────────────────────────────────
- *
- * `locked_at` gezet ⟺ er is één slot van die soort afgeschreven. Alles in dit
- * model hangt daaraan. Daarom komt een item hier terug als CONCEPT en niet als
- * vastgezet item: het slot gaat terug naar de klant, dus mag de rij niet blijven
- * beweren dat er voor betaald is. Hij ziet zijn product terug op zijn lijst,
- * mét zijn foto’s, en zet het opnieuw vast wanneer hij wil.
- *
- * ── DE UPDATE IS DE AUTORITEIT EN NIET DE PEILING ERVOOR ────────────────────
- *
- * Er wordt niet eerst gelezen welke items eraan hangen en daarna geschreven.
- * De UPDATE draagt zijn eigen voorwaarde en geeft met RETURNING terug wat hij
- * werkelijk heeft losgemaakt — en alleen daarvoor gaan er slots terug. Twee keer
- * annuleren geeft de tweede keer dus nul rijen en nul slots, zonder dat er een
- * teller of een vlag bijgehouden hoeft te worden.
- *
- * ── GEEN ABONNEMENT MEER? DAN GAAT HET ITEM WÉL TERUG EN HET SLOT NIET ──────
- *
- * Een opgezegd abonnement waarvan de betaalde maand voorbij is, bestaat voor
- * loadSubscription() niet meer. Er is dan geen rij om het slot op terug te
- * boeken. Het item terugzetten kan wel en hoort ook: zijn product en zijn foto’s
- * zijn van hem. Dat verschil staat in de uitkomst zodat de aanroeper het luid
- * kan loggen — stil "geen slots teruggegeven" is precies hoe dit gat ontstond.
- *
- * @returns {Promise<{items: number, slots: number, perSoort: Record<string, number>, abonnement: boolean}>}
- */
-export async function queueTerugNaAnnulering(env, orderId) {
-  const leeg = { items: 0, slots: 0, perSoort: {}, abonnement: false };
-  if (!env?.DB || !orderId) return leeg;
-
-  /* Achteraan op de lijst, en niet op hun oude plek. De klant heeft in de tussen-
-     tijd van alles kunnen toevoegen; iets wat weken geleden is opgepakt boven-
-     aan terugzetten zou zijn volgorde omgooien op een moment dat hij er niet bij
-     is. `+ id` houdt ze onderling in dezelfde volgorde als waarin ze stonden. */
-  const achteraan = await stil(() => env.DB.prepare(
-    `SELECT COALESCE(MAX(position), -1) + 1 AS n FROM plan_queue
-      WHERE customer_id = (SELECT customer_id FROM plan_queue WHERE order_id = ?1 LIMIT 1)
-        AND taken_at IS NULL`
-  ).bind(orderId).first().then((r) => Number(r?.n || 0)), 0);
-
-  const terug = await stil(() => env.DB.prepare(
-    `UPDATE plan_queue
-        SET order_id = NULL, taken_at = NULL, locked_at = NULL,
-            position = ?2 + id, updated_at = datetime('now')
-      WHERE order_id = ?1 AND taken_at IS NOT NULL
-      RETURNING id, customer_id, kind`
-  ).bind(orderId, achteraan).all().then((r) => r?.results || []), []);
-  if (!terug.length) return leeg;
-
-  const perSoort = {};
-  for (const r of terug) {
-    const k = String(r.kind || 'complete');
-    perSoort[k] = (perSoort[k] || 0) + 1;
-  }
-
-  const sub = await loadSubscription(env, terug[0].customer_id);
-  if (!sub) {
-    console.error('[abonnement] bestelling', orderId, 'geannuleerd —', terug.length,
-      'item(s) terug op de lijst, maar er is geen abonnement meer om de credits op terug te boeken');
-    return { items: terug.length, slots: 0, credits: 0, perSoort, abonnement: false };
-  }
-
-  /* ── CREDITS TERUG, 19 september 2026 ────────────────────────────────────
-     Hier ging het per soort terug omdat elk saldo per soort werd bijgehouden.
-     Met één saldo is het één optelsom, en dat haalt ook een stille fout weg:
-     een soort die maar deels terugkwam, liet de rest verdampen. `perSoort`
-     blijft in het antwoord staan — /admin toont ermee wát er terugkwam. */
-  const wil = Object.entries(perSoort).reduce((n, [soort, aantal]) => n + creditsPerSoort(soort) * aantal, 0);
-  const slots = await geefCreditsTerug(env, sub.id, vensterVoor(sub), wil);
-  if (slots !== wil) {
-    console.error('[abonnement] niet alle credits terug voor bestelling', orderId,
-      '\u2014', slots, 'van', wil);
-  }
-  return { items: terug.length, slots, credits: slots, wil, perSoort, abonnement: true };
-}
+/* ── queueTerugNaAnnulering() STOND HIER — weg op 5 november 2026, levering 69
+ * (§17 punt 14). Hij hing aan payment_status = 'plan', dat sinds migratie 0061
+ * niets meer schrijft; /admin riep hem bij een annulering nog aan, zonder effect.
+ * Credits terug bij een annulering lopen via het creditboek (creditsTerugVoorBestelling in creditboek.js). */
 
 /**
  * De vorm waarin een abonnement in een mail, een orderregel of een adminpaneel

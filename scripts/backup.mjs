@@ -255,7 +255,7 @@ if (fs.existsSync(PROMPTS)) {
  *
  * DIT SCRIPT DRAAIT OP EEN PC EN DAT IS PRECIES HET PROBLEEM. Zolang de back-up
  * handwerk was, was het herstelpunt "de laatste keer dat ik eraan dacht". Met de
- * wekelijkse taak in de Taakplanner (scripts/backup-weekly.cmd, opzet in DEPLOY.md)
+ * wekelijkse taak in de Taakplanner (scripts/backup-weekly.bat, opzet in DEPLOY.md)
  * draait hij vanzelf — maar áls die taak stilvalt, en dat gebeurt (laptop uit,
  * wachtwoord verlopen, wrangler-login weg, schijf vol), dan gebeurt er niets. En
  * niets is onzichtbaar: geen mail, geen melding, geen bestand dat ontbreekt op een

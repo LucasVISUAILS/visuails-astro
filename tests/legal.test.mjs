@@ -975,9 +975,19 @@ console.log('\nde abonnementsvoorwaarden staan er, en kloppen met de code');
      zie de kop bij CREDIT_KIND in slots.js. De juridische belofte eronder is
      onveranderd: wat je vastzet wordt afgeschreven, wat je losmaakt komt terug,
      en allebei binnen het doorschuifvenster dat bij je status hoort. */
-  ok('vastzetten schrijft de credits af en losmaken geeft ze terug',
-    /verbruikCredits\(env, sub\.id, vensterVoor\(sub\)/.test(subscription)
-    && /geefCreditsTerug\(env, sub\.id, vensterVoor\(sub\)/.test(subscription));
+  /* Bijgewerkt op 5 november 2026 (levering 69): hier stond dat VASTZETTEN in de
+     wachtrij de credits afschreef en LOSMAKEN ze teruggaf (queueLock/queueUnlock
+     in subscription.js). Die wachtrij bestaat sinds 8 oktober niet meer en haar
+     functies zijn weg. Dezelfde belofte loopt nu via het creditboek: betalen met
+     credits boekt ze af (betaalBestellingMetCredits, aangeroepen uit
+     creditBetaling.js), en annuleren in /admin geeft ze terug
+     (creditsTerugVoorBestelling). */
+  const creditboekBron = read('src/lib/creditboek.js');
+  ok('betalen met credits schrijft ze af en annuleren geeft ze terug',
+    /export async function betaalBestellingMetCredits\(/.test(creditboekBron)
+    && /betaalBestellingMetCredits\(env, \{ orderId, customerId, aantal: kosten/.test(read('src/lib/creditBetaling.js'))
+    && /export async function creditsTerugVoorBestelling\(/.test(creditboekBron)
+    && /creditsTerug = await creditsTerugVoorBestelling\(env, \{/.test(read('src/lib/admin.js')));
   ok('en dat saldo mag dan besteed worden',
     /state\?\.sub\?\.status === 'cancelled'/.test(subscription));
   ok('een gepauzeerd abonnement mag dat niet',

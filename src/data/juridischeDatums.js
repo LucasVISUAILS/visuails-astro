@@ -63,11 +63,16 @@ export const LAATST_BIJGEWERKT = {
      inhoudelijk gewijzigd — ByteDance via Magnific, meldtermijn 14 dagen, eigen
      kopieën zolang het account bestaat, geleverde beelden zonder einddatum in het
      archief, back-ups "uiterlijk na N weken", mail en WhatsApp 2 jaar. Nog steeds
-     oktober, dus de maand blijft staan. */
-  privacy: '2026-10',
+     oktober, dus de maand blijft staan.
+     5 november 2026 (levering 69, §17 punt 6): §5 noemt e-Boekhouden. */
+  privacy: '2026-11',
   /* 15 oktober 2026: vis_in erbij (afvinklijst 31, v31-me = a). Nog oktober, dus dezelfde maand. */
   'cookie-policy': '2026-10',
-  'data-processing-agreement': '2026-10',
+  /* November 2026: de lijst die §8 afdrukt, draagt de datum van LIJST_GEWIJZIGD
+     (5 november, e-Boekhouden erbij in het privacybeleid). §8 zelf noemt alleen
+     wie beeldmateriaal krijgt, en dat is niet veranderd; de pagina toont wel de
+     nieuwe datum van de lijst, dus mag zijn eigen datum niet ouder zijn. */
+  'data-processing-agreement': '2026-11',
   /* Oktober 2026: paragraaf 4 (welke foto's verplicht zijn: voorkant, achterkant
      én één close-up; de draagfoto optioneel) en paragraaf 6 ("controle door een
      specialist", "AI-model" in de IPTC-uitleg) zijn inhoudelijk gewijzigd.

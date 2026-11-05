@@ -60,6 +60,17 @@ console.log('elke regel is compleet, in beide talen');
   ok('en de tweede maker, ook via het platform (ko08 = a)',
     ontvangers('nl').some((o) => o.naam === 'ByteDance (BytePlus Pte. Ltd.)' && o.via === 'magnific' && o.waar === 'Singapore'), true);
   ok('de meldtermijn is 14 dagen (kmeld = b)', MELDTERMIJN_DAGEN, 14);
+  /* §17 punt 6 (levering 69): e-Boekhouden krijgt klantgegevens zodra het token
+     gezet is. In het privacybeleid, niet in de lijst met beeldmateriaal. */
+  ok('e-Boekhouden staat erin (privacybeleid §5)', ontvangers('nl').some((o) => o.id === 'eboekhouden'), true);
+  ok('  maar niet bij wie beeldmateriaal krijgt (verwerkersovereenkomst §8)', subverwerkers('nl').some((o) => o.id === 'eboekhouden'), false);
+  {
+    /* En de gegevens die de lijst noemt, zijn de velden die eboekhouden.js stuurt. */
+    const eb = read('src/lib/eboekhouden.js');
+    const velden = eb.slice(eb.indexOf('export function relatieVelden('), eb.indexOf('export function relatieVelden(') + 1600);
+    ok('  de velden van relatieVelden() staan in de omschrijving', ['name', 'contact', 'address', 'emailAddress', 'vatNumber', 'companyRegistrationNumber'].every((v) => velden.includes(`${v}:`)), true);
+    ok('  de register (§5) noemt hem', read('docs/AVG-VERWERKINGSREGISTER.md').includes('e-Boekhouden.nl'), true);
+  }
   /* Mollie is voor de betaling een eigen verantwoordelijke en raakt het
      beeldmateriaal niet; die staat als eigen alinea in het privacybeleid. */
   ok('Mollie staat er niet in', namen.some((n) => /Mollie/.test(n)), false);
@@ -72,9 +83,10 @@ console.log('\nde datum "laatst gewijzigd"');
   ok('LIJST_GEWIJZIGD is een datum', /^\d{4}-\d{2}-\d{2}$/.test(LIJST_GEWIJZIGD), true, LIJST_GEWIJZIGD);
   const d = new Date(`${LIJST_GEWIJZIGD}T00:00:00Z`);
   ok('en geen datum in de toekomst', d.getTime() <= Date.now() + 864e5, true, LIJST_GEWIJZIGD);
-  /* 11 oktober 2026: ByteDance erbij (ko08 = a). */
-  ok('als tekst, Nederlands', lijstGewijzigdOp('nl'), '11 oktober 2026');
-  ok('als tekst, Engels', lijstGewijzigdOp('en'), '11 October 2026');
+  /* 11 oktober 2026: ByteDance erbij (ko08 = a). 5 november 2026 (levering 69,
+     §17 punt 6): e-Boekhouden erbij. */
+  ok('als tekst, Nederlands', lijstGewijzigdOp('nl'), '5 november 2026');
+  ok('als tekst, Engels', lijstGewijzigdOp('en'), '5 November 2026');
   ok('de regel boven de lijst noemt hem', lijstRegel('nl').includes(lijstGewijzigdOp('nl')), true);
   /* Een gewijzigde lijst is een gewijzigd document: de datum bovenaan de twee
      pagina's mag niet ouder zijn dan de lijst die ze afdrukken. */

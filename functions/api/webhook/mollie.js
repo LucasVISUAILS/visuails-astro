@@ -58,7 +58,7 @@
 
 import { overstapToepassen, overstapVan } from '../../../src/lib/overstap.js';
 import { betalingGedekt } from '../../../src/lib/invoice.js';
-import { boekTegoedAf, tegoedTeruggeboekt } from '../../../src/lib/tegoedVerrekening.js';
+import { boekTegoedAf, tegoedTeruggeboekt, tegoedOpBestelling } from '../../../src/lib/tegoedVerrekening.js';
 import { getMolliePayment, isMolliePaymentId, mollieAmountToCents, refundMolliePayment } from '../../../src/lib/mollie.js';
 import { paymentMismatch } from '../../../src/data/vat.js';
 /* Hoeveel producten een plan per maand toekent. Uit plans.js en niet uit een
@@ -97,7 +97,7 @@ import { boekhoudingAchteraf } from '../../../src/lib/eboekhouden.js';
    over FACTUREN en deze gaat over TOEKENNING, en twee dingen die toevallig
    hetzelfde getal hebben horen niet aan elkaar vast te zitten. */
 const TERMIJN_SPELING_CENT = 2;
-import { pauseSubscription, loadSubscription, subscriptionByRef, clearMollieSubscriptionId } from '../../../src/lib/subscription.js';
+import { pauseSubscription, loadSubscription, subscriptionByRef, clearMollieSubscriptionId, termijnMaand } from '../../../src/lib/subscription.js';
 import { koppelSubscription, stopIncasso, hervatIncasso, volgendeTermijn } from '../../../src/lib/subscribe.js';
 import { payerHash } from '../../../src/lib/payer.js';
 
@@ -737,7 +737,25 @@ async function recordSubscriptionPaid(env, payment, mode, { subRef = null } = {}
      opnieuw wordt aangeboden na een storing — hoort bij de maand waarin betaald
      is en niet bij de maand waarin wij hem verwerkten. */
   const betaald = String(payment.paidAt || payment.createdAt || '');
-  const month = /^\d{4}-\d{2}/.test(betaald) ? betaald.slice(0, 7) : new Date().toISOString().slice(0, 7);
+  let month = /^\d{4}-\d{2}/.test(betaald) ? betaald.slice(0, 7) : new Date().toISOString().slice(0, 7);
+  /* ── EEN VERVOLGTERMIJN: DE MAAND VAN DE TERMIJN, NIET VAN DE KALENDER ──────
+     5 november 2026, levering 69 (de naloop van de geldstromen). Alles wat een
+     maandrij leest (planState, de nachtelijke incassocontrole, het creditboek)
+     zoekt hem op met termijnMaand(): vóór de afschrijfdag is dat de vorige
+     kalendermaand. Deze sleutel was de kalendermaand van paidAt. Bij een
+     termijndag van 28 en een SEPA-incasso die pas op de 1e als betaald binnenkomt
+     (Mollie meldt een incasso dagen later), kreeg de termijn van november de
+     sleutel "december": van 1 tot 27 december zag de cron "incasso uitgebleven",
+     en de termijn van december, betaald op de 29e, botste op dezelfde sleutel en
+     verdween stil (ON CONFLICT): betaald, maar geen credits, factuur of mail. Nu
+     termijnMaand() op de betaaldatum, zoals de lezers. Wordt er op of na de
+     afschrijfdag betaald (een kaart, de gewone gang), dan is dat dezelfde maand
+     als voorheen. De eerste betaling houdt de kalendermaand: die zet de dag. */
+  if (!subRef && /^\d{4}-\d{2}-\d{2}/.test(betaald)) {
+    const dag = await env.DB.prepare('SELECT started_at, created_at FROM subscriptions WHERE id = ?1')
+      .bind(sub.id).first().catch(() => null);
+    if (dag && (dag.started_at || dag.created_at)) month = termijnMaand(dag, new Date(betaald));
+  }
 
   /* ═══ DEKT DIT BEDRAG EEN HELE TERMIJN? ═══════════════════════════════════
    *
@@ -1301,6 +1319,26 @@ function orderGrossCents(order) {
  * restitutie erin raakt de UPDATE dus nul rijen, en dan valt de som terug op wat
  * deze betaling meldt. Ook dat is de oude situatie en nooit slechter.
  */
+/**
+ * Hoeveel er op deze bestelling MEER is betaald dan ze kostte: alle geslaagde
+ * betalingen plus het verrekende tegoed, min het bruto bedrag. Nooit negatief;
+ * nul als het bruto bedrag of de betalingen niet te lezen zijn. Zie de noot bij
+ * `orderRefunded` in handleOrderPayment (levering 69, 5 november 2026).
+ */
+async function teveelBetaald(env, order) {
+  const bruto = orderGrossCents(order);
+  if (bruto === null) return 0;
+  try {
+    const r = await env.DB.prepare(
+      "SELECT COALESCE(SUM(amount_cents), 0) AS n FROM payments WHERE order_id = ?1 AND status = 'paid'"
+    ).bind(order.id).first();
+    const betaald = Math.max(0, Math.floor(Number(r?.n) || 0));
+    return Math.max(0, betaald + tegoedOpBestelling(order) - bruto);
+  } catch {
+    return 0;
+  }
+}
+
 async function recordRefundOnPayment(env, orderId, externalId, refunded) {
   const eigen = Math.max(0, Math.floor(Number(refunded) || 0));
   try {
@@ -1397,8 +1435,23 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
   // bestelling kostte. Zie de kop van die migratie voor waarom dat een kolom is
   // en geen som uit `raw_payload`.
   const refunded = mollieAmountToCents(payment.amountRefunded) ?? 0;
-  const orderRefunded = await recordRefundOnPayment(env, order.id, payment.id, refunded);
+  const terugOpBetalingen = await recordRefundOnPayment(env, order.id, payment.id, refunded);
   const known = Math.max(0, Math.floor(Number(order.refunded_cents) || 0));
+  /* ── WAT ER OP DE BESTELLING TERUGGING, EN WAT TEVEEL BETAALD WAS ─────────
+     5 november 2026, levering 69 (de naloop van de geldstromen). De som hierboven
+     telt elke terugstorting op deze bestelling, ook die van een DUBBELE betaling
+     (de tweede betaling die de webhook verderop automatisch terugstort). Een
+     bestelling van € 740,52 met twee betalingen van € 740,52, waarvan de tweede
+     teruggestort: de som is € 740,52 = het bruto bedrag, dus "volledig terug".
+     Gevolg: de bestelling op 'refunded', een VOLLEDIGE creditnota tegenover de
+     factuur van de betaling die gewoon staat, gemaild aan de klant, terwijl die
+     net las dat zijn bestelling doorloopt. Wat teveel betaald is (alle geslaagde
+     betalingen plus het verrekende tegoed, min het bruto bedrag) gaat er eerst
+     af; alleen de rest ging terug op de bestelling zelf. Zonder rijen in
+     `payments` (oude bestellingen) is het teveel nul en verandert er niets. */
+  const orderRefunded = terugOpBetalingen > known
+    ? Math.max(0, terugOpBetalingen - await teveelBetaald(env, order))
+    : terugOpBetalingen;
 
   if (orderRefunded > known) {
     /*

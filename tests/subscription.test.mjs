@@ -16,22 +16,22 @@
  *   · verbruikBoeken() kan niet over het toegekende heen. Dat is een WHERE en
  *     geen if, en het verschil is precies zichtbaar als twee bestellingen elkaar
  *     kruisen.
- *   · de wachtrij is van de KLANT. Een id van iemand anders mag er niet in, niet
- *     bij verwijderen en niet bij herschikken.
- *   · queueTakeIds() pakt niets twee keer, en een concept nooit.
+ *
+ * Hier stonden nog twee punten over de wachtrij (plan_queue): dat hij van de
+ * KLANT is, en dat queueTakeIds() niets twee keer oppakt. Die functies zijn weg
+ * sinds 5 november 2026 (levering 69, §17 punt 14): het weeksysteem bestaat sinds
+ * 8 oktober niet meer en niets riep ze nog aan.
  */
 import { readFileSync } from 'node:fs';
-import { d1, verseDb, zetLook } from './lib/d1sqlite.mjs';
+import { d1, verseDb } from './lib/d1sqlite.mjs';
 import {
   monthKey, makeSubRef, verbruikToestaan, verbruikBoeken,
   createSubscriptionRow, loadSubscription, subscriptionByRef,
   setMollieIds, activateSubscription, pauseSubscription, cancelSubscription,
-  loadMonths, loadQueue, loadTaken, planState, planSaldo,
-  queueAdd, queueRemove, queueReorder, queueTakeIds, queueLock, queueLinkOrder,
+  loadMonths, planState, planSaldo,
   bezetting, subscriptionShape,
 } from '../src/lib/subscription.js';
 import { productsFor, addMonths } from '../src/data/plans.js';
-import { grantSlots } from '../src/lib/slots.js';
 
 let ok_ = 0; let totaal = 0;
 function ok(naam, kreeg, verwacht) {
@@ -49,7 +49,8 @@ const env = { DB: d1(db) };
 /* Twee klanten, want de helft van wat hier bewezen wordt, gaat over het verschil
    tussen "van mij" en "van iemand anders". */
 db.exec("INSERT INTO customers (id, email) VALUES (1, 'een@voorbeeld.test'), (2, 'twee@voorbeeld.test')");
-zetLook(db, 1); zetLook(db, 2);
+/* Hier stond zetLook() voor beide klanten: queueLock() weigerde zonder vaste
+   look. Die is weg (levering 69), en niets anders in dit bestand leest de look. */
 
 console.log('\neen aanvraag wordt een rij, en maar één');
 const gemaakt = await createSubscriptionRow(env, { customerId: 1, planId: 'studio', termId: 'yearly', windowDay: 8 });
@@ -197,64 +198,12 @@ console.log('\nwat doorschuift, vervalt op een zichtbare maand');
   ok('het doorgeschoven aantal is de som van de regels', st4.doorgeschoven, 5);
 }
 
-console.log('\nde wachtrij is van de klant');
-const a = await queueAdd(env, 1, { name: 'Wintertrui zwart', note: 'op straat' });
-const b = await queueAdd(env, 1, { name: 'Sjaal' });
-const c = await queueAdd(env, 1, { name: 'Handschoenen' });
-ok('drie items', (await loadQueue(env, 1)).length, 3);
-ok('en ze staan achter elkaar', (await loadQueue(env, 1)).map((q) => q.name), ['Wintertrui zwart', 'Sjaal', 'Handschoenen']);
-ok('een leeg item wordt niet toegevoegd', await queueAdd(env, 1, { name: '   ' }), null);
-
-await queueAdd(env, 2, { name: 'Van iemand anders' });
-ok('de rij van de andere klant staat los', (await loadQueue(env, 2)).map((q) => q.name), ['Van iemand anders']);
-
-ok('herschikken werkt', await queueReorder(env, 1, [c.id, a.id, b.id]), 3);
-ok('en de volgorde klopt', (await loadQueue(env, 1)).map((q) => q.name), ['Handschoenen', 'Wintertrui zwart', 'Sjaal']);
-
-/* WAT NIET MEEGESTUURD IS, VERDWIJNT NIET. Een half gepost formulier mag geen
-   item opeten; het belandt achteraan en dat is te zien. */
-ok('een onvolledige volgorde laat de rest staan', await queueReorder(env, 1, [b.id]), 3);
-ok('en zet hem vooraan', (await loadQueue(env, 1)).map((q) => q.name), ['Sjaal', 'Handschoenen', 'Wintertrui zwart']);
-
-const vreemd = (await loadQueue(env, 2))[0];
-ok('een id van een andere klant raakt de volgorde niet', await queueReorder(env, 1, [vreemd.id]), 3);
-ok('en die klant houdt zijn eigen item', (await loadQueue(env, 2)).length, 1);
-ok('verwijderen van een vreemd item lukt niet', await queueRemove(env, 1, vreemd.id), false);
-ok('verwijderen van een eigen item wel', await queueRemove(env, 1, b.id), true);
-ok('en dan zijn er twee over', (await loadQueue(env, 1)).length, 2);
-
-console.log('\nophalen gebeurt één keer, en alleen wat vastgezet is');
-/* ── DIT BLOK LIEP OVER queueTake() — omgezet 30 augustus 2026 ──────────────
-   Die functie pakte "de bovenste N", en dat was het model tot migratie 0035.
-   Sindsdien bepaalt de klant wat er meegaat door het vast te zetten, en pakt
-   queueTakeIds() alleen op wat op dát moment nog vastgezet is.
-
-   Wat deze toets nu bewijst is daarmee scherper dan eerst: een CONCEPT wordt
-   niet opgepakt. Zou dat wel gebeuren, dan maken we een product waar geen slot
-   voor is afgeschreven — de fout in de andere richting, en even duur. */
-const boven = (await loadQueue(env, 1))[0];
-ok('een concept wordt niet opgepakt', await queueTakeIds(env, 1, [boven.id]), []);
-ok('en staat dus nog gewoon op de lijst', (await loadQueue(env, 1))[0].id, boven.id);
-
-await grantSlots(env, gemaakt.row.id, maand, 'studio');
-/* ZONDER FOTO'S GAAT HET NIET, en dat is geen opzetdetail maar de tweede
-   voorwaarde van het model: vastzetten is de opdracht geven, en een opdracht
-   zonder beeld kan niet gemaakt worden. Deze items zijn hierboven toegevoegd
-   zonder upload, dus eerst de weigering en dan pas de foto's erbij. */
-ok('vastzetten zonder foto’s weigert', (await queueLock(env, 1, boven.id)).reden, 'geen-fotos');
-db.prepare("UPDATE plan_queue SET upload_batch = 'b-toets' WHERE id = ?").run(boven.id);
-ok('vastzetten lukt met foto’s wel', (await queueLock(env, 1, boven.id)).ok, true);
-const gepakt = await queueTakeIds(env, 1, [boven.id]);
-ok('en dan wordt hij wél opgepakt', gepakt, [boven.id]);
-ok('en staat hij niet meer in de open rij', (await loadQueue(env, 1)).map((q) => q.name), ['Wintertrui zwart']);
-/* Een taak die twee keer draait — een herstart, een handmatige aanroep — mag
-   niet twee keer dezelfde bestelling opleveren. */
-ok('een tweede keer pakt hem niet nog eens', await queueTakeIds(env, 1, [boven.id]), []);
-
-db.exec("INSERT INTO orders (id, ref, service, email, status) VALUES (900, 'VIS-TEST-001', 'complete', 'een@voorbeeld.test', 'received')");
-ok('de bestelling wordt aan het item gehangen', await queueLinkOrder(env, [boven.id], 900), 1);
-const opgehaald = await loadTaken(env, 1);
-ok('en verschijnt in wat is opgebouwd', opgehaald.find((t) => t.id === boven.id).order_ref, 'VIS-TEST-001');
+/* ── "DE WACHTRIJ IS VAN DE KLANT" EN "OPHALEN GEBEURT ÉÉN KEER" STONDEN HIER ─
+   Toevoegen, herschikken, weghalen en het id van een andere klant (queueAdd,
+   queueReorder, queueRemove, loadQueue), en daarna vastzetten en oppakken
+   (queueLock, queueTakeIds, queueLinkOrder, loadTaken). Die functies zijn weg
+   sinds 5 november 2026 (levering 69, §17 punt 14): het weeksysteem bestaat
+   sinds 8 oktober niet meer en niets riep ze nog aan. */
 
 console.log('\nde bezetting wordt geteld en niet aangenomen');
 const bez = await bezetting(env);
@@ -471,24 +420,29 @@ console.log('\nplanSaldo geeft hetzelfde als planState, met minder queries');
     const kort = await planSaldo(env, klant);
 
     /* Elke sleutel die planSaldo teruggeeft, moet in planState dezelfde waarde
-       hebben. Andersom niet: wachtrij en opgehaald horen er juist niet in. */
+       hebben. Andersom niet: slots, credits, creditsPerMaand en diensten komen
+       alleen uit planAanvullen(). */
     const anders = Object.keys(kort).filter((k) => JSON.stringify(kort[k]) !== JSON.stringify(vol[k]));
     ok(`${wie} — elke gedeelde sleutel is gelijk`, anders, []);
 
-    /* En planState houdt de twee lijsten die hij altijd had, ook als er niets in
-       zit: een pagina die op .length rekent, mag niet op undefined stuiten. */
-    ok(`${wie} — planState houdt wachtrij en opgehaald`,
-      [Array.isArray(vol.wachtrij), Array.isArray(vol.opgehaald)], [true, true]);
-    ok(`${wie} — en planSaldo draagt ze niet`,
+    /* ── OMGEDRAAID OP 5 NOVEMBER 2026 (levering 69, §17 punt 14) ─────────────
+       Hier stond "planState houdt wachtrij en opgehaald": de twee lijsten uit
+       plan_queue, altijd als array, zodat een pagina niet op undefined stuitte.
+       Het weeksysteem bestaat sinds 8 oktober niet meer en geen scherm las ze;
+       ze zijn weg met loadQueue() en loadTaken(). De toets bewaakt nu dat ze
+       ook niet stilletjes terugkomen, in geen van beide helften. */
+    ok(`${wie} — planState draagt wachtrij en opgehaald niet meer`,
+      ['wachtrij' in vol, 'opgehaald' in vol], [false, false]);
+    ok(`${wie} — en planSaldo ook niet`,
       ['wachtrij' in kort, 'opgehaald' in kort], [false, false]);
 
     /* DE AANTALLEN STAAN ER UITGESCHREVEN EN NIET ALS "MINDER DAN". Zonder
        abonnement doen ze allebei één query — planState stopt na loadSubscription
        omdat er niets te laden valt — dus "minder" zou daar terecht rood worden
-       voor iets wat goed is. Met een abonnement is het 2 tegen 4, en dat is de
+       voor iets wat goed is. Met een abonnement is het 2 tegen 3, en dat is de
        hele reden dat deze splitsing bestaat. Een getal dat je opschrijft, kan
-       niet stilletjes oplopen: zet iemand loadQueue terug in planSaldo, dan is
-       dit rood en niet pas de rekening van Cloudflare. */
+       niet stilletjes oplopen: zet iemand een query van planAanvullen() in
+       planSaldo, dan is dit rood en niet pas de rekening van Cloudflare. */
     const a = tellend(); await planState(a.env, klant);
     const b = tellend(); await planSaldo(b.env, klant);
     /* VIER WERD VIJF OP 29 AUGUSTUS 2026, EN DAT IS EEN BESLISSING EN GEEN
@@ -499,8 +453,13 @@ console.log('\nplanSaldo geeft hetzelfde als planState, met minder queries');
        Deze toets deed precies wat hij moest doen — hij werd rood — en het
        antwoord daarop hoort een geteld getal te zijn en geen "minder dan".
        planSaldo() blijft op twee: dat is de goedkope die op ELKE route meeloopt,
-       en die mag deze query juist niet erbij krijgen. */
-    ok(`${wie} — planState doet ${klant === 1 ? 5 : 1} queries`, a.tel(), klant === 1 ? 5 : 1);
+       en die mag deze query juist niet erbij krijgen.
+
+       VIJF WERD DRIE OP 5 NOVEMBER 2026 (levering 69, §17 punt 14). loadQueue()
+       en loadTaken() zijn uit planAanvullen() gehaald met de rest van de
+       wachtrij: dat waren twee queries op plan_queue die geen scherm las. Wat
+       overblijft is loadSubscription en loadMonths (planSaldo) plus slotBalans. */
+    ok(`${wie} — planState doet ${klant === 1 ? 3 : 1} queries`, a.tel(), klant === 1 ? 3 : 1);
     ok(`${wie} — planSaldo doet er ${klant === 1 ? 2 : 1}`, b.tel(), klant === 1 ? 2 : 1);
     ok(`${wie} — en dus nooit meer dan planState`, b.tel() <= a.tel(), true);
   }

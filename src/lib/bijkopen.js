@@ -180,13 +180,29 @@ export async function maakAankoop(env, { customerId, sub, pakket, lang = 'nl', o
   const netCents = euros * 100;
   const grossCents = subBrutoCents(sub, netCents);
   const vatCents = grossCents - netCents;
+  /* ── DE GRENS IN DE INSERT ZELF — 5 november 2026 (levering 69) ─────────────
+     Hier stond eerst bijkoopRuimte() lezen en daarna een losse INSERT. Drie
+     aankopen van 50 tegelijk (twee tabbladen, of een script) lazen allemaal
+     "ruimte 100" en schreven alle drie: 150 credits open, en na betalen
+     bijgeschreven. Het maximum per maand is de enige rem op bijkopen (het valt
+     buiten ABO_CREDITS_PLAFOND). Nu draagt de INSERT dezelfde som als
+     bijkoopRuimte() in zijn WHERE, zoals verbruikBoeken() in subscription.js:
+     D1 voert één statement in één keer uit, dus twee tegelijk kunnen samen niet
+     boven de grens. Geen rij terug = te veel. De controle hierboven blijft voor
+     het gewone geval (dan hoeft er niets geschreven te worden). */
+  const grens = new Date(nu.getTime() - OPEN_TELT_UUR * 3600e3).toISOString().replace('T', ' ').slice(0, 19);
   const rij = await D.prepare(
     `INSERT INTO credit_aankopen (customer_id, subscription_id, pakket, net_cents, vat_cents, gross_cents, vat_treatment, plan_label, maand, status, created_at)
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'open', ?10)
+     SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'open', ?10
+      WHERE (SELECT COALESCE(SUM(pakket), 0) FROM credit_aankopen
+              WHERE customer_id = ?1 AND maand = ?9 AND (status = 'paid' OR (status = 'open' AND created_at >= ?11))) + ?3 <= ?12
      RETURNING id`
   ).bind(customerId, sub.id, x, netCents, vatCents, grossCents, sub.vat_treatment || VAT_TREATMENT.standard,
-    planTarief(sub, 'nl')?.naam || '', maandVan(nu), nu.toISOString().replace('T', ' ').slice(0, 19)).first();
-  if (!rij?.id) return { ok: false, reden: 'mollie' };
+    planTarief(sub, 'nl')?.naam || '', maandVan(nu), nu.toISOString().replace('T', ' ').slice(0, 19), grens, BIJKOOP_MAX_PER_MAAND).first();
+  if (!rij?.id) {
+    const nog = await bijkoopRuimte(D, customerId, nu);
+    return nog.ruimte < x ? { ok: false, reden: 'te-veel', ruimte: nog.ruimte } : { ok: false, reden: 'mollie' };
+  }
 
   const terug = /^\/(nl\/)?start(\/[a-z0-9-]*)*\/?$/.test(String(verder || '')) ? `&verder=${encodeURIComponent(verder)}` : '';
   try {

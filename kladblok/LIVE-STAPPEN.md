@@ -89,7 +89,8 @@ Hoe je in een noodgeval terugzet: `LEESMIJ-TERUGZETTEN.txt` naast de back-ups (e
 
 ## 4 · Het eerste nachtrapport lezen
 
-De ochtend na stap 2 komt er een mail **"Nachtelijke taken"** in hello@. Het wissen
+De ochtend na stap 2 komt er een mail **"Vandaag · ‹dag› — …"** in hello@ (het nachtrapport; tot oktober
+heette hij "Nachtelijke taken"). Het wissen
 staat nog in *verslagmodus*: het noemt wat het **zou** wissen, en wist niets.
 
 **Zo zie je dat het gelukt is:** in de regel "VERSLAGMODUS: …" staan alleen
@@ -189,7 +190,9 @@ betekent dat het geheim in stap 6 niet klopt; plak het opnieuw.
 
 ## 8 · De drukteproef (±1 uur, samen met Claude, Mollie nog op test)
 
-Workers en Resend staan allebei op het **gratis** plan (je koos V3 = a). De proef meet
+Workers en Resend staan nu allebei op het **gratis** plan (V3 = a, 8 okt). Bij de launch ga je naar
+**Workers Paid** ($5 per maand, 11 okt; stap 9); daarna zet Claude `WORKERS_PLAN` in `cron/wrangler.toml` op
+"betaald". De proef meet
 met één echte, zware bestelling waar de grenzen zitten — vóór de eerste grote klant dat
 doet. Doe hem **vóór stap 9**: Mollie moet nog op de testsleutel staan.
 
@@ -251,7 +254,7 @@ kleurt elke regel vanzelf (behalve *Vooraf*).
 
 **9a · Proefwerk opruimen — terwijl de testsleutel er nog op staat.**
 - *Proefabonnementen:* op /admin/diagnose staat een link per proefabonnement. Klik →
-  **Inloglink** → in Studio bij **Facturering** het abonnement opzeggen.
+  **Inloglink** → in Studio bij **Abonnement › Je plan › Opzeggen** het abonnement opzeggen.
 - *Open proefbestellingen:* klik op /admin/diagnose op **"Annuleer de .. open
   proefbestellingen"**. Er gaat geen mail uit en er wordt niets betaald.
 - **Zo zie je dat het gelukt is:** stap 1 in het blok staat twee keer op **klaar**.

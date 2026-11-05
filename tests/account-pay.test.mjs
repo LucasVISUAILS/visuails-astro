@@ -166,6 +166,17 @@ console.log('\n── de betaling ──');
    * query vertelt de server welke kaart open moet. Zie de noot bij openOrderId in
    * src/lib/account.js — daar staat ook waarom CSS dit niet kan oplossen.
    */
+  /* ── HET VERREKENDE TEGOED — levering 69, 5 november 2026 ─────────────────
+     Een bestelling waarop €210 tegoed verrekend is (details_json.tegoed_cents),
+     onbetaald achtergelaten. Deze knop vroeg het HELE bruto bedrag, en de webhook
+     boekte daarna ook het tegoed af: de klant betaalde het tegoed dubbel. Nu
+     bruto min tegoed, zoals /api/order-pay en de betaallinkmail. */
+  {
+    const metTegoed = await pay({ ...base, details_json: JSON.stringify({ tegoed_cents: 21000 }) });
+    check('with credit applied: Mollie is asked gross MINUS the credit (762.30 − 210 = 552.30)', metTegoed.calls[0]?.body?.amount?.value === '552.30', metTegoed.calls[0]?.body?.amount?.value);
+    const alles = await pay({ ...base, details_json: JSON.stringify({ tegoed_cents: 76230 }) });
+    check('  and when the credit covers it all, no payment is created', alles.calls.length === 0, alles.calls.length);
+  }
   check('and Mollie sends them back to the order they came from',
     /* Sinds ronde 9 (O40) met &terug=1: de kaart zegt dan dat de betaling verwerkt wordt. */
     /\/account\/orders\?order=91&terug=1#order-91$/.test(r.calls[0]?.body?.redirectUrl || ''),

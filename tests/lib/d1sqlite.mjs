@@ -147,6 +147,10 @@ export function telling(db, sql, ...binds) {
  * Elke test die iets vastzet, zet eerst de look: catalog met een achtergrond,
  * lifestyle met een huisstijl, video met een lege rij. Eén plek, zodat de
  * tests niet elk hun eigen INSERT dragen.
+ *
+ * queueLock() is weg sinds 5 november 2026 (levering 69, §17 punt 14), met de
+ * rest van de wachtrij. Deze helper blijft voor de toetsen die nog een klant met
+ * een vaste look neerzetten (abo-keten, abo-qa-51, abonnement-credits, overstap).
  */
 export function zetLook(db, customerId, { catalog = true, lifestyle = true, video = true } = {}) {
   const rijen = [];

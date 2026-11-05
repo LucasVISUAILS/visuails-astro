@@ -122,7 +122,7 @@ export const catalogStyles = [
     cardIcon: 'bag',
     cardWidth: '46%',
     cardPrice: 'Prijs op maat',
-    cardDesc: 'Een catalog-look ontworpen rond jouw merk — daarna elk product als set van vier foto’s, tegen het gewone tarief.',
+    cardDesc: 'Een catalog-look ontworpen rond jouw merk — daarna elk product als set van vier foto’s, vanaf het gewone tarief.',
     moodTitle: 'Hoe een eigen look eruitziet.',
     moodParagraphs: [
       'Een kenmerkende achtergrond, schaduw en propstijl die zeggen: dit zijn wij — nog voordat het logo dat doet.',

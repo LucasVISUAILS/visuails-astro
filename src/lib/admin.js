@@ -138,7 +138,7 @@ import { saldoWeergave, boekWeergave, boekKoppen, terugZin } from './creditWeerg
 import { aankopenVanKlant } from './bijkopen.js';
 import { redenLabel } from './stopReden.js';
 import { CREDITS_GELDIG_MAANDEN, BIJKOOP_MAX_PER_MAAND } from '../data/pricing.js';
-import { planState, queueTerugNaAnnulering, loadSubscription, termijnMaand, activateSubscription } from './subscription.js';
+import { planState, loadSubscription, termijnMaand, activateSubscription } from './subscription.js';
 import { hervatIncasso, volgendeTermijn } from './subscribe.js';
 import { aboStand as aboStandVan, abonneesOverzicht, termijnenVanKlant } from './abonnees.js';
 /* De beeldverhouding, voor de werkmap. `ratioById` met de dienst erbij, zodat een
@@ -1138,6 +1138,25 @@ async function handleSecurityPost(context, admin) {
     'SELECT totp_secret, totp_confirmed_at FROM admin_users WHERE id = ?1'
   ).bind(admin.admin_id).first().catch(() => null);
 
+  /* ── EEN GRENS OP HET RADEN VAN DE CODE — 5 november 2026 (levering 69) ───
+     Hieronder controleren `uit`, `codes`, `start` en `afbreken` een code tegen
+     de tweede stap, maar zonder snelheidsgrens: wie een adminsessie overnam,
+     kon code na code posten (3 geldige op een miljoen, met tientallen per
+     seconde een kwestie van uren) en daarna de tweede stap uitzetten of eigen
+     herstelcodes maken, precies wat die controle moet voorkomen. Nu dezelfde
+     twee emmers als /admin/code (per IP en per account, 10 per kwartier): wie
+     hier raadt, raakt ook zijn inlogpogingen kwijt. */
+  if (rij?.totp_secret && rij?.totp_confirmed_at && doen !== 'bevestig') {
+    const perIp = await checkRate(env, { ip: clientIp(request), action: 'admin-code', limit: 20 });
+    const perAccount = await checkRate(env, {
+      key: `admin-code|${admin.admin_id}`, action: 'admin-code-id', limit: 10, windowSeconds: 900,
+    });
+    if (!perIp.allowed || !perAccount.allowed) {
+      const res = await renderSecurity(context, admin, { melding: 'Te veel pogingen. Wacht een kwartier en probeer het dan opnieuw.' });
+      return new Response(res.body, { status: 429, headers: res.headers });
+    }
+  }
+
   /* ── OPNIEUW BEGINNEN OF AFBREKEN TERWIJL HIJ AAN STAAT — 8 oktober 2026 ──
      `start` en `afbreken` liepen vóór de codecontrole verderop. Wie een sessie
      overnam, kon daarmee de tweede stap uitzetten (afbreken) of een eigen
@@ -1713,41 +1732,10 @@ async function handleOrderCancel(context, orderId) {
     }
   }
 
-  /* ── DE SLOTS TERUG, EN DE PRODUCTEN OOK ───────────────────────────────────
-     Zie de kop van queueTerugNaAnnulering(). Dit staat NA de annulering en met
-     een eigen uitkomst, om dezelfde reden als de restitutie verderop: gaat het
-     terugboeken mis, dan is de annulering nog steeds gedaan en vastgelegd, en
-     hoort er een luide regel te staan in plaats van een omgevallen handeling.
-
-     De klant leest de tijdlijnregel. Daarom staat er wat hij terugkrijgt en niet
-     wat wij intern hebben bijgewerkt. */
-  if (uitAbonnement) {
-    const terug = await queueTerugNaAnnulering(env, orderId).catch((e) => {
-      console.error('[admin] slots na annulering niet teruggeboekt —', e?.message || e);
-      return null;
-    });
-    if (terug?.items) {
-      const nProduct = `${terug.items} product${terug.items === 1 ? '' : 'en'}`;
-      await env.DB.prepare(
-        "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, 'cancelled', ?2, 'system')"
-      ).bind(orderId, terug.abonnement
-        ? tijdlijn(order.lang, `${nProduct} staan weer op je lijst en de credits staan weer op je saldo. Je kunt ze opnieuw vastzetten wanneer je wilt.`,
-          `${terug.items} product${terug.items === 1 ? ' is' : 's are'} back on your list and the credits are back on your balance. Lock them again whenever you like.`)
-        : tijdlijn(order.lang, `${nProduct} staan weer op je lijst. Je abonnement liep al af, dus er zijn geen credits teruggezet.`,
-          `${terug.items} product${terug.items === 1 ? ' is' : 's are'} back on your list. Your plan had already ended, so no credits were returned.`)
-      ).run().catch(() => {});
-      await logAdmin(env, admin, terug.abonnement && terug.credits === terug.wil
-        ? 'plan-slots-terug' : 'plan-slots-terug.deels', {
-        orderId,
-        detail: `${order.ref}: ${terug.items} item(s) terug op de lijst, ${terug.slots} slot(s) teruggeboekt`
-          + `${terug.abonnement ? '' : ' — GEEN abonnement meer, slots niet terug te boeken'}`,
-      }).catch(() => {});
-    } else if (terug === null) {
-      await logAdmin(env, admin, 'plan-slots-terug.mislukt', {
-        orderId, detail: `${order.ref}: terugboeken mislukt — doe het met de hand via het abonnementspaneel`,
-      }).catch(() => {});
-    }
-  }
+  /* ── DE SLOTS TERUG (queueTerugNaAnnulering) STOND HIER — weg op 5 november
+     2026, levering 69 (§17 punt 14). Hij hing aan payment_status = 'plan', dat
+     sinds migratie 0061 niets meer schrijft, en zette wachtrij-items terug die
+     niet meer bestaan. Credits terug bij een annulering: het blok hieronder. */
 
   /* ── DE CREDITS TERUG (6.08) ────────────────────────────────────────────────
      Een nieuwe partij met alles wat er voor deze bestelling is afgeboekt,
@@ -2418,6 +2406,11 @@ async function handleCustomerWipe(context, customerId) {
       `DELETE FROM subscription_months
         WHERE subscription_id IN (SELECT id FROM subscriptions WHERE customer_id = ?1)`
     ).bind(customerId),
+    /* plan_queue (de wachtrij van het weeksysteem) vult niets meer sinds 8 oktober,
+       maar zolang de tabel bestaat kunnen er oude rijen van deze klant in staan:
+       productnamen en notities. Daarom blijft het wissen hier staan tot de
+       migratie die de tabel laat vallen, en gaat het met die migratie mee weg
+       (kladblok/PLAN-WEEKSYSTEEM-OPRUIMEN.md; levering 69, bewust niet nu). */
     env.DB.prepare('DELETE FROM plan_queue WHERE customer_id = ?1').bind(customerId),
     env.DB.prepare('DELETE FROM subscriptions WHERE customer_id = ?1').bind(customerId),
     /* HET GROOTBOEK VAN DE KLANT. Ontbrak hier, en dat is dezelfde soort omissie
@@ -2581,12 +2574,18 @@ async function handleDeliveryMailRetry(context, orderId) {
 /* ── BETAALLINK OPNIEUW MAILEN — 1 oktober 2026 (ronde 8, A-B5) ────────────
    "Ik kan niet betalen" / "ik ben de mail kwijt": er was geen knop, alleen
    zelf een link maken in Mollie. stuurBetaallink() weigert zelf al bij betaald
-   of niets te betalen; geannuleerd weigert hij nu ook. */
+   of niets te betalen; geannuleerd weigert hij nu ook.
+   Levering 69 (5 november 2026, §17 punt 3): met `opnieuw` een eigen mail,
+   "hier is je betaallink opnieuw", en niet meer de btw-mail met "Alles klopt".
+   Een offerte (er staat een quote_kind op de bestelling) houdt de zin over wat
+   het bedrag is: de volledige prijs, een aanbetaling of het restant. */
 async function handlePayLinkResend(context, orderId, admin) {
   const { env } = context;
-  const o = await env.DB.prepare('SELECT id, ref FROM orders WHERE id = ?1').bind(orderId).first().catch(() => null);
+  const o = await env.DB.prepare('SELECT id, ref, details_json FROM orders WHERE id = ?1').bind(orderId).first().catch(() => null);
   if (!o) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.') }), 404);
-  const url = await stuurBetaallink(context, orderId).catch((e) => {
+  let d = {};
+  try { d = JSON.parse(o.details_json || '{}') || {}; } catch { d = {}; }
+  const url = await stuurBetaallink(context, orderId, { opnieuw: true, offerte: !!d.quote_kind }).catch((e) => {
     console.error('[admin] betaallink opnieuw mislukt —', e?.message || e);
     return null;
   });
@@ -7844,7 +7843,7 @@ async function renderCustomer(context, customerId) {
          <td><a href="/admin/orders/${o.id}/files">${esc(o.ref)}</a></td>
          <td>${esc(({ drop: 'compleet', custom: 'eigen look', 'brand-model': 'merkmodel', 'test-sample': 'proefbeeld' })[o.service] || o.service)}${o.product_count ? ` · ${o.product_count}` : ''}</td>
          <td>${statPil(o.status, STATUS_LABEL[o.status] || o.status)}</td>
-         <td>${statPil(o.payment_status, ({ paid: 'betaald', unpaid: 'onbetaald', plan: 'abonnement', failed: 'mislukt', refunded: 'terugbetaald' })[o.payment_status] || o.payment_status)}</td>
+         <td>${statPil(o.payment_status, ({ paid: 'betaald', unpaid: 'onbetaald', plan: 'abonnement', credits: 'betaald met credits', failed: 'mislukt', refunded: 'terugbetaald' })[o.payment_status] || o.payment_status)}</td>
          <td class="num">${o.total_cents ? mailBedrag(o.total_cents, 'nl') : '—'}</td>
          <td>${esc((o.created_at || '').slice(0, 10))}</td>
        </tr>`).join('')}</tbody></table>`
@@ -13228,10 +13227,10 @@ async function handleOrderForCustomer({ request, env, waitUntil }, customerId, a
  * die `payment_status` aanraakt (zie de noot daar), en een tweede plek die dat
  * doet is precies hoe een betaalde bestelling onbetaald blijft staan.
  */
-async function stuurBetaallink({ request, env }, orderId, { offerte = false, btwErbij = false } = {}) {
+async function stuurBetaallink({ request, env }, orderId, { offerte = false, btwErbij = false, opnieuw = false } = {}) {
   /* Verhuisd naar src/lib/betaallink.js op 4 september 2026 — de nachtelijke
      herinnering gebruikt dezelfde mail. Zie de kop van dat bestand. */
-  return stuurBetaallinkMail(env, orderId, { origin: new URL(request.url).origin, offerte, btwErbij });
+  return stuurBetaallinkMail(env, orderId, { origin: new URL(request.url).origin, offerte, btwErbij, opnieuw });
 }
 
 /**

@@ -139,7 +139,7 @@ export const catalogStyles = [
     cardIcon: 'bag',
     cardWidth: '46%',
     cardPrice: 'Custom pricing',
-    cardDesc: 'A catalog look designed around your brand — then every product as a four-photo set, at the regular rate.',
+    cardDesc: 'A catalog look designed around your brand — then every product as a four-photo set, from the regular rate.',
     moodTitle: 'What Custom Brand feels like.',
     moodParagraphs: [
       'A signature backdrop, shadow and prop language that says this is us — before the logo does.',

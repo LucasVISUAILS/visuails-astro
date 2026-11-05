@@ -126,6 +126,12 @@ export const TERMS = {
     months: PLAN_COMPARE_MONTHS,      // 3 — het rekenvenster, geen looptijd en geen minimum
     fixed: false,
     discountMonths: {},               // geen enkel plan krijgt korting
+    /* `rollover` voedt alleen nog de oude rekensom van subscription_months en
+       subscription_slots (planState, rolloverDetail). Geen scherm, mail of tekst
+       toont hem nog: de geldigheid die de klant leest, is 3 maanden voor iedereen
+       plus het spaarplafond (CREDITS_GELDIG_MAANDEN, creditboek.js). Nagekeken
+       op 5 november 2026, levering 69 (§17 punt 15); opruimen hoort bij het
+       plan voor het weeksysteem (kladblok/PLAN-WEEKSYSTEEM-OPRUIMEN.md). */
     rollover: PLAN_ROLLOVER_MONTHS,   // 1
     perks: [],
     name: { en: 'Monthly', nl: 'Maandelijks' },

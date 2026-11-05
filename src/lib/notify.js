@@ -325,61 +325,18 @@ export async function notifySampleBlocked(env, { orderId, earlierRef, earlierAt,
 }
 
 
-/**
- * Een klant heeft een revisie aangevraagd.
- *
- * DE NOTITIE VAN DE KLANT STAAT ER LETTERLIJK IN, als citaat. Dat is de hele reden dat
- * dit bericht bestaat: /studio belooft dat een revisieverzoek binnenkomt "met de
- * notitie die de klant schreef, in diens eigen woorden". Een mail die alleen zegt "er
- * is een revisie" dwingt je alsnog het dashboard te openen om te weten of het dringend
- * is, en dan had de mail niets opgelost.
+/*
+ * notifyRevision() STOND HIER, EN IS WEG — 5 november 2026 (levering 69, §17
+ * punt 17). Eén studiomail per aangemerkt beeld ("Revisie gevraagd · …"). Hij
+ * werd sinds ronde 8 (M-B1) nergens meer aangeroepen: de studio krijgt één mail
+ * per ronde, notifyRevisionRound() hieronder, met de notitie per beeld als
+ * citaat. portal.js importeerde hem nog; die import is ook weg.
  */
-export async function notifyRevision(env, { orderId, fileId, note }) {
-  try {
-    const o = await orderFor(env, orderId);
-    const ref = o?.ref || `#${orderId}`;
-
-    /*
-     * Welk beeld het was, hier opgezocht en niet door de aanroeper meegegeven.
-     *
-     * Beide routes hebben alleen `fileId` bij de hand, en de eerste versie hiervan
-     * liet de aanroeper de naam aanleveren — waarop ik in portal.js `f?.filename`
-     * schreef terwijl er in die scope geen `f` bestaat. Optional chaining vangt een
-     * niet-bestaande variabele niet: dat is een ReferenceError, en die zou het
-     * revisieverzoek van de klant hebben laten mislukken op de mail erover.
-     *
-     * Eén query hier is dus niet alleen korter maar ook de veilige kant: het opzoeken
-     * zit binnen de try van deze functie, waar een fout niets kan raken.
-     */
-    let f = null;
-    try {
-      f = await env.DB.prepare(
-        'SELECT filename, product_key, shot FROM files WHERE id = ?1'
-      ).bind(fileId).first();
-    } catch { /* dan zonder — het bestandsnummer is genoeg om het terug te vinden */ }
-
-    const what = [f?.product_key, f?.shot].filter(Boolean).join(' · ')
-      || f?.filename
-      || `bestand ${fileId}`;
-    await toStudio(env, `Revisie gevraagd · ${ref} · ${what}`, [
-      h1('Een klant vraagt een revisie', kenmerk('bestelling', ref)),
-      mailRows([
-        ['Bestelling', ref],
-        ['Klant', who(o)],
-        ['Beeld', what],
-      ]),
-      note ? mailQuote(note) : mailP('De klant heeft er geen toelichting bij gezet.'),
-      mailP('Het verzoek staat bovenaan in het adminportaal, bij de bestelling.'),
-    ].join(''), o?.email || '');
-  } catch (err) {
-    console.error('[notify] revisiebericht niet verstuurd voor', orderId, '—', err?.message || err);
-  }
-}
 
 /*
  * ── DE HELE RONDE IN ÉÉN BERICHT — 25 AUGUSTUS 2026 ─────────────────────────
  *
- * notifyRevision() hierboven gaat over ÉÉN beeld, want zo werkte het scherm: elk
+ * notifyRevision() (weg sinds 5 november 2026) ging over ÉÉN beeld, want zo werkte het scherm: elk
  * beeld was een eigen formulier dat meteen verzond. Sinds vandaag dient de klant
  * zijn revisieronde in één keer in — aanvinken wat er mis is, per beeld
  * opschrijven wat, en dan één knop.
@@ -396,7 +353,7 @@ export async function notifyRevision(env, { orderId, fileId, note }) {
  * de notitie die de klant schreef, in diens eigen woorden"; bij vijf beelden
  * geldt dat vijf keer.
  *
- * FOUTEN BLIJVEN BINNEN, net als bij notifyRevision(): de ronde van de klant is
+ * FOUTEN BLIJVEN BINNEN, zoals bij elke melding hier: de ronde van de klant is
  * al weggeschreven als dit draait, en die mag niet omvallen omdat de mail eruit
  * ligt.
  */

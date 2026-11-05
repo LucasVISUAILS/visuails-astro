@@ -19,3 +19,9 @@
 # whole class of risk taken on to solve a problem that only exists in two
 # files.
 *.bat text eol=crlf
+
+# The restore guide is read in Notepad on Lucas' pc (scripts/TERUGZETTEN.txt,
+# tests/backup-terugzet.test.mjs wants CRLF). It was CRLF only because git on
+# Windows converts on checkout (core.autocrlf); on any other machine the test
+# went red. 5 November 2026, delivery 69: pinned here, like the .bat files.
+scripts/TERUGZETTEN.txt text eol=crlf

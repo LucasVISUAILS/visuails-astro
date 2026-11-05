@@ -59,6 +59,13 @@ async function kop(args, html) {
   const p = await (await b.newContext({ viewport: { width: 412, height: 700 }, deviceScaleFactor: 1 })).newPage();
   await p.route(/^https?:/, (r) => r.abort());
   await p.setContent(lokaal(html), { waitUntil: 'load' });
+  /* Wachten op een voorwaarde, niet op de klok (levering 69, 5 november 2026):
+     het woordmerk is gedecodeerd en de pagina heeft twee keer getekend, zodat de
+     donkere stand er ook op staat voordat de schermafdruk gemaakt wordt. Onder
+     drukte (vier tests tegelijk tijdens een uitrol) kon de meting anders een
+     beeld eerder vallen. */
+  await p.waitForFunction(() => { const i = document.querySelector('img[alt="VISUAILS"]'); return !!i && i.complete && i.naturalWidth > 0; }, null, { timeout: 15000 });
+  await p.evaluate(async () => { await document.querySelector('img[alt="VISUAILS"]').decode().catch(() => {}); await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))); });
   const box = await p.evaluate(() => { const i = document.querySelector('img[alt="VISUAILS"]'); const r = i.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
   const png = await p.screenshot({ clip: { x: Math.floor(box.x) - 6, y: Math.floor(box.y) - 6, width: Math.ceil(box.w) + 12, height: Math.ceil(box.h) + 12 } });
   /* Pixels lezen in de pagina zelf: een canvas met de schermafdruk. */
@@ -86,6 +93,7 @@ const proef = await (async () => {
   const b = await start(['--enable-features=WebContentsForceDark']);
   const p = await (await b.newContext({ viewport: { width: 100, height: 100 } })).newPage();
   await p.setContent('<body style="margin:0;background:#fff"><p style="color:#000">a</p></body>');
+  await p.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
   const png = await p.screenshot({ clip: { x: 60, y: 60, width: 4, height: 4 } });
   const l = await p.evaluate(async (d) => { const i = new Image(); i.src = `data:image/png;base64,${d}`; await i.decode(); const c = document.createElement('canvas'); c.width = 4; c.height = 4; const g = c.getContext('2d'); g.drawImage(i, 0, 0); const [r, gg, bb] = g.getImageData(1, 1, 1, 1).data; return 0.2126 * r + 0.7152 * gg + 0.0722 * bb; }, png.toString('base64'));
   await b.close();

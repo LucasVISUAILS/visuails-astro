@@ -172,9 +172,10 @@ import { creditsVoor, creditsPerSoort, dienstenVoorAbo } from './slots.js';
  */
 import { handleSubscribeStart, handleSubscribeReturn, stopIncasso, hervatIncasso, koppelSubscription, pakSlot } from './subscribe.js';
 import { vraagOverstapAan, annuleerOverstap, overstapVan, overstapToepassen, magOverstappen, overstapDoel, overstapBedragen, OVERSTAP_PLANNEN, OVERSTAP_MAAT } from './overstap.js';
+/* De queue*-functies van het weeksysteem stonden hier in de import en werden niet
+   gebruikt; ze zijn weg uit subscription.js (5 november 2026, levering 69). */
 import {
-  planState, loadQueue, queueAdd, queueRemove, queueReorder, queueMax,
-  queueLock, queueUnlock, queueWindow, queueAsap, queueVerzet,
+  planState,
   pauseSubscription, activateSubscription, cancelSubscription, subscriptionShape,
   clearMollieSubscriptionId, markeerJaarOpgezegd,
 } from './subscription.js';
@@ -184,11 +185,13 @@ import {
 } from '../data/capacity.js';
 import { puntenVoor, PRODUCT_SLOT_KINDS, SERVICE_CREDITS, CREDITS_GELDIG_MAANDEN, BIJKOOP_PAKKETTEN, BIJKOOP_KORTING_PCT, BIJKOOP_MAX_PER_MAAND, spaarPlafond } from '../data/pricing.js';
 import { PAUZE_MAX_MAANDEN } from '../data/termijnen.js';
-import { PLAN_SERVICE, rolloverMonths } from '../data/plans.js';
+/* rolloverMonths stond hier en werd niet gebruikt; de geldigheid van credits op
+   elk scherm komt uit het creditboek (CREDITS_GELDIG_MAANDEN). Levering 69, §17 punt 15. */
+import { PLAN_SERVICE } from '../data/plans.js';
 import { readCalendar } from './agenda.js';
 import { planName } from '../data/planNames.js';
 import { onRequestPost as orderPost } from '../../functions/api/order.js';
-import { tegoedBeschikbaar } from './tegoedVerrekening.js';
+import { tegoedBeschikbaar, tegoedOpBestelling } from './tegoedVerrekening.js';
 /* Het creditsaldo voor stap 5 van het bestelformulier (ronde B, 8 oktober 2026). */
 import { creditsVoorFormulier, creditSaldo, creditboek, vervaldatum as vervaldatumVan } from './creditboek.js';
 /* De abonnementspagina (2.07): saldo en creditboek als woorden, dezelfde als in
@@ -1105,7 +1108,6 @@ const COPY = {
     planSlotsH: 'What you have this month',
     planSlotsLede: 'You lock a product by filling it in and confirming it; the credits for that service come off then. What you do not use this month stays usable until the end of next month.',
     planSlotThis: 'this month',
-    planSlotCarried: 'carried over',
     planSlotLocked: 'locked',
     planSlotFull: 'full',
     planSlotFill: 'Order',
@@ -1640,7 +1642,6 @@ const COPY = {
     planSlotsH: 'Wat je deze maand hebt',
     planSlotsLede: 'Je zet een product vast door het in te vullen en te bevestigen; dan gaan de credits van die dienst eraf. Wat je deze maand niet gebruikt, blijft bruikbaar tot het eind van volgende maand.',
     planSlotThis: 'deze maand',
-    planSlotCarried: 'doorgeschoven',
     planSlotLocked: 'vastgezet',
     planSlotFull: 'vol',
     planSlotFill: 'Bestellen',
@@ -5412,7 +5413,10 @@ async function handleOrderPay({ request, env }, customer, orderId) {
    * geen betaling. De terugval rekent met het standaardtarief, precies zoals
    * orderMoney() en om dezelfde reden.
    */
-  const COLS = 'id, ref, service, lang, product_count, total_cents, payment_status, status';
+  /* `details_json` erbij sinds 5 november 2026 (levering 69): daar staat het
+     verrekende tegoed (tegoed_cents), en zonder dat vroeg deze knop het hele
+     brutobedrag. Zie de noot bij `teBetalen` hieronder. */
+  const COLS = 'id, ref, service, lang, product_count, total_cents, payment_status, status, details_json';
   const byId = (cols) => env.DB.prepare(
     `SELECT ${cols} FROM orders WHERE id = ?1 AND customer_id = ?2`
   ).bind(orderId, customer.customer_id).first();
@@ -5502,6 +5506,15 @@ async function handleOrderPay({ request, env }, customer, orderId) {
 
   const m = orderMoney(order);
   if (!m || m.gross < 1) return seeOther(anchor);
+  /* ── HET VERREKENDE TEGOED GAAT ERAF — 5 november 2026 (levering 69) ──────
+     Een ingelogde klant die bij het bestellen tegoed liet verrekenen, en Mollie
+     afbrak, kreeg hier een betaling voor het HELE bruto bedrag. De webhook ziet
+     dan "betaald + tegoed dekt het" en boekt daarna óók het tegoed af: de klant
+     betaalde het tegoed dubbel. /api/order-pay en de betaallinkmail vragen al
+     bruto min tegoed (teBetalenCents in src/lib/tegoedVerrekening.js); deze knop
+     nu ook. Dekt het tegoed alles, dan valt er niets te betalen. */
+  const teBetalen = Math.max(0, m.gross - tegoedOpBestelling(order));
+  if (teBetalen < 1) return seeOther(anchor);
 
   const lang = order.lang === 'nl' ? 'nl' : 'en';
   const origin = (() => { try { return new URL(request.url).origin; } catch { return 'https://visuails.com'; } })();
@@ -5511,8 +5524,8 @@ async function handleOrderPay({ request, env }, customer, orderId) {
     const payment = await createOrderMolliePayment(env, {
       ref: order.ref,
       lang,
-      valueEuros: centsToMollieValue(m.gross),
-      grossCents: m.gross,
+      valueEuros: centsToMollieValue(teBetalen),
+      grossCents: teBetalen,
       // ladderKey(), want paymentDescription() kent alleen de laddernamen —
       // 'drop' zou daar "VISUAILS — 30 producten, undefined" van maken, en dat
       // is de omschrijving die de klant op zijn bankafschrift terugziet.

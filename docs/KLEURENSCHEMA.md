@@ -142,7 +142,8 @@ Waarom 72 %: de inkt haalt op het glas ook boven het zwartste beeld 4,5:1 (boven
 maar 4,48:1). Dit is het enige glas; de regel "geen glas" uit de ontwerptaal geldt verder.
 
 **Wat niet meegaat:** de foto's (inhoud), de kleuren die een keuze zijn (achtergronden, kledingkleuren),
-Studio donker en /admin donker (eigen schema; de inkt is wel `#0F1217`). De mails gebruiken de nieuwe inkt
+/admin donker (eigen schema; de inkt is wel `#0F1217`; Studio is sinds 14 oktober alleen licht, er is geen
+Studio donker). De mails gebruiken de nieuwe inkt
 (`npm run mail:assets` opnieuw gedraaid).
 
 ---
@@ -559,9 +560,10 @@ ink). Buiten CSS: `STAND_KLEUR` in `src/data/status.js` en `C.st*` in `src/lib/m
 
 ---
 
-## Donker (Studio donker, /admin donker)
+## Donker (/admin donker)
 
-Dezelfde rollen, omgekeerd, in de koele grijzen van inkt:
+Alleen /admin heeft een donkere stand. Studio is sinds 14 oktober 2026 alleen licht (`StudioLayout.astro`;
+bijgewerkt op 5 november 2026, levering 69). Dezelfde rollen, omgekeerd, in de koele grijzen van inkt:
 
 | Rol | Waarde | Gemeten |
 |---|---|---|

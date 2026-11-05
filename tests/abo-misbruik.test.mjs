@@ -18,7 +18,8 @@
  *   grantSlots()               alleen de Mollie-webhook, op een betaling die
  *                              wij bij Mollie zelf ophalen
  *   geefSlotTerug()            losmaken, weghalen, en het annuleren van een
- *                              bestelling door de studio
+ *                              bestelling door de studio (die drie liepen over
+ *                              de wachtrij; zie de noot hieronder)
  *   handleSlotCorrectie()      alleen /admin, achter sessie én Origin
  *   verbruikSlot() met -n      bestaat niet; het aantal wordt afgekapt op 0
  *
@@ -43,13 +44,18 @@
  * Beide voorwaarden staan sinds vandaag IN de UPDATE, en queueTakeIds() pakt
  * alleen nog op wat op dát moment nog vastgezet is. De database beslist, niet
  * de peiling ervoor.
+ *
+ * ── EN DAT GAT BESTAAT NIET MEER — 5 november 2026 ──────────────────────────
+ *
+ * De wachtrij zelf is weg (levering 69, §17 punt 14): queueAdd, queueLock,
+ * queueUnlock, queueRemove, queueTakeIds, queueUntakeIds en loadQueue. Het
+ * weeksysteem bestaat sinds 8 oktober niet meer en niets riep ze nog aan. De
+ * toetsen op losmaken, weghalen, oppakken en "de lijst van een ander" zijn
+ * daarmee vervallen; wat hieronder blijft zijn de wegen die nog bestaan.
  */
-import { d1, verseDb, zetLook } from './lib/d1sqlite.mjs';
-import {
-  createSubscriptionRow, activateSubscription,
-  queueAdd, queueLock, queueUnlock, queueRemove, queueTakeIds, queueUntakeIds, loadQueue,
-} from '../src/lib/subscription.js';
-import { grantSlots, slotBalans, verbruikSlot, geefSlotTerug, creditsPerSoort } from '../src/lib/slots.js';
+import { d1, verseDb } from './lib/d1sqlite.mjs';
+import { createSubscriptionRow, activateSubscription } from '../src/lib/subscription.js';
+import { grantSlots, slotBalans, verbruikSlot, geefSlotTerug } from '../src/lib/slots.js';
 import { PLAN_PRODUCTS, PLAN_CREDITS } from '../src/data/pricing.js';
 import { onRequestPost } from '../functions/api/webhook/mollie.js';
 
@@ -67,7 +73,8 @@ const env = { DB: d1(db) };
 
 db.exec("INSERT INTO customers (id, email, brand) VALUES (1, 'mara@volt.test', 'VOLT')");
 db.exec("INSERT INTO customers (id, email, brand) VALUES (2, 'dief@ander.test', 'ANDER')");
-zetLook(db, 1); zetLook(db, 2);
+/* Hier stond zetLook() voor beide klanten: queueLock() weigerde zonder vaste
+   look. Die is weg (levering 69), en niets hieronder leest de look. */
 const { row: sub } = await createSubscriptionRow(env, { customerId: 1, planId: 'starter', termId: 'monthly', windowDay: 8 });
 await activateSubscription(env, sub.id);
 const maand = new Date().toISOString().slice(0, 7);
@@ -77,7 +84,6 @@ await grantSlots(env, sub.id, maand, 'starter');
    — zie de kop bij CREDIT_KIND in slots.js. De misbruikvragen die deze toets
    stelt zijn woordelijk dezelfde gebleven; alleen de eenheid is fijner. */
 const saldo = async () => (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'credits');
-const CAT = creditsPerSoort('catalog');
 
 console.log('de klant kan het aantal niet zelf opdrijven');
 {
@@ -101,75 +107,16 @@ console.log('de klant kan het aantal niet zelf opdrijven');
   await geefSlotTerug(env, sub.id, 1, 'credits', PLAN_CREDITS.starter);
 }
 
-console.log('\nlosmaken kan niet twee keer worden verzilverd');
-{
-  const q = await queueAdd(env, 1, { name: 'Jas', uploadBatch: 'b-1' });
-  await queueLock(env, 1, q.id);
-  ok('één catalogset verbruikt', (await saldo()).verbruikt, CAT);
+/* ── LOSMAKEN, WEGHALEN, OPPAKKEN EN "DE LIJST VAN EEN ANDER" STONDEN HIER ──
+   Dat losmaken en weghalen maar één keer credits teruggeven, dat een concept
+   niet opgepakt wordt, en dat klant 2 niet bij de lijst van klant 1 kan
+   (queueUnlock, queueRemove, queueTakeIds, queueUntakeIds, queueLock, loadQueue).
+   Weg sinds 5 november 2026 (levering 69, §17 punt 14), met de functies zelf:
+   het weeksysteem bestaat sinds 8 oktober niet meer en niets riep ze nog aan.
+   Dat teruggeven niet onder nul kan, staat hierboven op geefSlotTerug() zelf.
 
-  ok('losmaken lukt', (await queueUnlock(env, 1, q.id)).ok, true);
-  ok('en de credits zijn terug', (await saldo()).verbruikt, 0);
-  /* Twee tabbladen die allebei op losmaken drukken. De UPDATE draagt
-     `locked_at IS NOT NULL`, dus de tweede raakt niets en boekt niets terug. */
-  ok('nog een keer losmaken meldt dat het al los stond', (await queueUnlock(env, 1, q.id)).reden, 'stond-al-los');
-  ok('en geeft geen tweede slot terug', (await saldo()).verbruikt, 0);
-  await queueRemove(env, 1, q.id);
-}
-
-console.log('\nweghalen geeft precies één slot terug, en alleen wat echt weg is');
-{
-  const q = await queueAdd(env, 1, { name: 'Broek', uploadBatch: 'b-2' });
-  await queueLock(env, 1, q.id);
-  ok('weghalen lukt', await queueRemove(env, 1, q.id), true);
-  ok('en de credits zijn terug', (await saldo()).verbruikt, 0);
-  ok('nog een keer weghalen lukt niet', await queueRemove(env, 1, q.id), false);
-  ok('en geeft dus ook geen slot terug', (await saldo()).verbruikt, 0);
-
-  /* Een concept weghalen mag nooit een slot opleveren: er is er nooit één voor
-     afgeschreven. Dit is de kant waar de klant er ééntje BIJ zou krijgen. */
-  const c = await queueAdd(env, 1, { name: 'Concept', uploadBatch: 'b-3' });
-  await verbruikSlot(env, sub.id, 1, 'complete', 2);
-  const voor = (await saldo()).verbruikt;
-  await queueRemove(env, 1, c.id);
-  ok('een concept weghalen levert niets op', (await saldo()).verbruikt, voor);
-  await geefSlotTerug(env, sub.id, 1, 'complete', 2);
-}
-
-/* "De race tussen losmaken en de week starten" is weg met het weeksysteem
+   "De race tussen losmaken en de week starten" was al weg met het weeksysteem
    (ronde 10, 8 oktober 2026): er is geen week meer om te starten. */
-
-console.log('\noppakken pakt alleen op wat op dat moment nog vastgezet is');
-{
-  const b = await queueAdd(env, 1, { name: 'Muts', uploadBatch: 'b-5' });
-  /* NIET vastgezet. Zou queueTakeIds() hem toch oppakken, dan maken we een
-     product waar geen slot voor is afgeschreven — de fout in de andere richting,
-     en even duur. */
-  ok('een concept wordt niet opgepakt', await queueTakeIds(env, 1, [b.id]), []);
-  await queueLock(env, 1, b.id);
-  ok('een vastgezet item wel', (await queueTakeIds(env, 1, [b.id])).length, 1);
-  ok('en een tweede keer niet nog eens', await queueTakeIds(env, 1, [b.id]), []);
-  /* Terugdraaien hoort te kunnen zolang er geen bestelling aan hangt — dat is
-     wat startPlanWindow() doet als de INSERT mislukt. */
-  ok('terugdraaien lukt zolang er geen bestelling aan hangt', await queueUntakeIds(env, [b.id]), 1);
-  await queueRemove(env, 1, b.id);
-}
-
-console.log('\nde lijst van een ander is niet te bereiken');
-{
-  const mijn = await queueAdd(env, 1, { name: 'Van Mara', uploadBatch: 'b-6' });
-  await queueLock(env, 1, mijn.id);
-  const voor = (await saldo()).verbruikt;
-
-  /* Klant 2 typt het id van klant 1 in het formulier. Elke query draagt
-     `customer_id = ?`, dus er is niets te vinden en niets te veranderen. */
-  ok('een ander kan het niet losmaken', (await queueUnlock(env, 2, mijn.id)).reden, 'niet-gevonden');
-  ok('een ander kan het niet weghalen', await queueRemove(env, 2, mijn.id), false);
-  ok('een ander kan het niet vastzetten', (await queueLock(env, 2, mijn.id)).reden, 'niet-gevonden');
-  ok('een ander kan het niet laten oppakken', await queueTakeIds(env, 2, [mijn.id]), []);
-  ok('en het saldo van de eigenaar is onaangeroerd', (await saldo()).verbruikt, voor);
-  ok('zijn item staat er nog', (await loadQueue(env, 1)).some((q) => q.id === mijn.id), true);
-  await queueRemove(env, 1, mijn.id);
-}
 
 console.log('\neen verzonnen betaling levert geen slots op');
 {
@@ -248,16 +195,14 @@ console.log('\nde voorwaarden staan in de UPDATE zelf, niet alleen in de peiling
     .replace(/(^|[^:])\/\/.*$/gm, '$1');
   const { readFileSync } = await import('node:fs');
   const lees = (r) => zonderUitleg(readFileSync(new URL(r, import.meta.url), 'utf8'));
-  const abo = lees('../src/lib/subscription.js');
   const slt = lees('../src/lib/slots.js');
   const adm = lees('../src/lib/admin.js');
 
-  ok('losmaken toetst taken_at in de UPDATE',
-    /UPDATE plan_queue SET locked_at = NULL[\s\S]{0,200}?taken_at IS NULL/.test(abo), true);
-  ok('oppakken eist dat het item vastgezet is',
-    /UPDATE plan_queue[\s\S]{0,300}?taken_at IS NULL AND locked_at IS NOT NULL/.test(abo), true);
-  ok('weghalen is een DELETE die teruggeeft wat hij echt weghaalde',
-    /DELETE FROM plan_queue[\s\S]{0,200}?taken_at IS NULL[\s\S]{0,80}?RETURNING/.test(abo), true);
+  /* De drie voorwaarden uit de mutatieronde (losmaken toetst taken_at in de
+     UPDATE, oppakken eist locked_at, weghalen is een DELETE … RETURNING) stonden
+     op plan_queue in subscription.js. Die SQL is weg met de wachtrij (levering 69,
+     5 november 2026, §17 punt 14): het weeksysteem bestaat sinds 8 oktober niet
+     meer en niets riep hem aan. Wat blijft zijn de voorwaarden op het saldo. */
   ok('verbruiken kan in de database niet over het toegekende heen',
     /UPDATE subscription_slots SET used = used \+ \?4[\s\S]{0,200}?used \+ \?4 <= granted/.test(slt), true);
   ok('teruggeven kan niet onder nul',

@@ -67,7 +67,7 @@ import { statPil } from '../data/status.js';
 import {
   PORTAL_MAX_LIFE_DAYS, PORTAL_TTL_DAYS, hashToken, isExpired, isWellFormedToken, pastMaxLife,
 } from './token.js';
-import { notifyRevision, notifyRevisionRound } from './notify.js';
+import { notifyRevisionRound } from './notify.js';
 import { mailRondeOntvangen } from './cancelMail.js';
 import { clearUploadRetention } from './retention.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from './ratelimit.js';

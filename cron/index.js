@@ -55,10 +55,11 @@ import { planState, termijnMaand, termijnEinde, termijnDag, loadSubscription } f
 import { koppelSubscription } from '../src/lib/subscribe.js';
 /* Voor grantPrepaidMonths(): de bundel van een abonnement en hoeveel producten
    er per maand bij horen. Zie de kop van die taak. */
-import { grantSlots, subProducten, loadSlots, vensterVoor, kindLabel, CREDIT_KIND } from '../src/lib/slots.js';
+import { grantSlots, subProducten, loadSlots, kindLabel, CREDIT_KIND } from '../src/lib/slots.js';
 import { TERMS } from '../src/data/plans.js';
 import { planName } from '../src/data/planNames.js';
 import { SERVICE_CREDITS, CREDITS_GELDIG_MAANDEN } from '../src/data/pricing.js';
+import { CREDIT_DIENSTEN } from '../src/data/creditKosten.js';
 /* Het creditboek (ronde B, migratie 0061): de credits van een vooruitbetaalde
    maand, en de herinnering zeven dagen voordat credits vervallen. */
 import { boekTermijnBij, creditsDieVervallen, plafondInZicht } from '../src/lib/creditboek.js';
@@ -913,7 +914,7 @@ function describe(kinds, lang = 'nl', status = '') {
  * was daarmee "de laatste keer dat ik eraan dacht", en de manier waarop je merkt dat je
  * er niet meer aan dacht, is de dag dat je de back-up nodig hebt.
  *
- * De taak in de Taakplanner (scripts/backup-weekly.cmd) lost het draaien op. Wat hij
+ * De taak in de Taakplanner (scripts/backup-weekly.bat) lost het draaien op. Wat hij
  * NIET kan oplossen is het merken: als die taak stilvalt — laptop uit, wachtwoord
  * verlopen, `wrangler`-login weg, schijf vol — gebeurt er precies niets, en niets is
  * onzichtbaar. Vandaar dat de back-up bij elke geslaagde ronde een datum in
@@ -1630,11 +1631,19 @@ function dagenTot(vanIso, totIso) {
  * grootste eenheid die past, maar dan blijven er vier liggen; twee catalogsets
  * (8) laten er één over. Een tip die je credits laat verdampen, is precies de
  * verkeerde tip in een mail die daarover gaat.
+ *
+ * ALLEEN WAT MET CREDITS KAN (levering 69, 5 november 2026, §17 punt 8): de
+ * tips rekenden met alle diensten uit SERVICE_CREDITS, dus ook motion, de
+ * lifestyle-clip en de hook. Die staan op aanvraag en zijn in het formulier
+ * niet met credits te betalen; een tip "2 × motion" kan de klant niet volgen.
+ * Nu alleen CREDIT_DIENSTEN (catalog en lifestyle), dezelfde lijst als het
+ * formulier en de server.
  */
 function creditTips(n, lang = 'nl') {
   const nl = lang !== 'en';
   const uit = [];
   const diensten = Object.entries(SERVICE_CREDITS)
+    .filter(([kind]) => CREDIT_DIENSTEN.includes(kind))
     .map(([kind, prijs]) => ({ kind, prijs, aantal: Math.floor(n / prijs), rest: n % prijs }))
     .filter((d) => d.aantal > 0)
     .sort((a, b) => a.rest - b.rest || b.prijs - a.prijs);
@@ -2185,18 +2194,17 @@ async function sweepAbandonedIntake(env) {
   const oud = [...batches.entries()].filter(([naam, b]) => b.jongste && b.jongste < grens && naam !== laatsteBatch);
   if (!oud.length) return null;
 
-  /* Wie er nog naar wijst. Twee query's per batch en niet één grote IN-lijst:
-     het aantal oude batches is klein, en een LIKE per stuk is leesbaarder dan een
-     samengestelde zoekopdracht die niemand meer naleest. Wel met de meetlat: twee
-     databaseverzoeken per batch lopen op het gratis plan snel op (9.05). */
+  /* Wie er nog naar wijst. Eén query per batch en niet één grote IN-lijst: het
+     aantal oude batches is klein, en een LIKE per stuk is leesbaarder dan een
+     samengestelde zoekopdracht die niemand meer naleest. Wel met de meetlat (9.05).
+     Tot 5 november 2026 keek hij ook in plan_queue (de wachtrij van het
+     weeksysteem); die vult niets meer sinds 8 oktober, dus een batch die alleen
+     daar nog genoemd wordt, is ook verlaten (levering 69, §17 punt 14). */
   const verlaten = [];
   for (const [batch, b] of oud) {
-    if (!ruimte(env, { d1: 2, intern: 2 })) { noteerStop(env, 'de wachtruimte'); break; }
-    const [inOrder, inWachtrij] = await Promise.all([
-      env.DB.prepare("SELECT 1 FROM orders WHERE details_json LIKE '%' || ?1 || '%' LIMIT 1").bind(batch).first(),
-      env.DB.prepare('SELECT 1 FROM plan_queue WHERE upload_batch = ?1 LIMIT 1').bind(batch).first(),
-    ]);
-    if (!inOrder && !inWachtrij) verlaten.push([batch, b]);
+    if (!ruimte(env, { d1: 1, intern: 1 })) { noteerStop(env, 'de wachtruimte'); break; }
+    const inOrder = await env.DB.prepare("SELECT 1 FROM orders WHERE details_json LIKE '%' || ?1 || '%' LIMIT 1").bind(batch).first();
+    if (!inOrder) verlaten.push([batch, b]);
   }
   if (!verlaten.length) return null;
 

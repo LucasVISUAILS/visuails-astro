@@ -80,7 +80,12 @@ const sec = (ms) => `${(ms / 1000).toFixed(1).replace('.', ',')} s`;
 /**
  * @returns {Promise<{goed: boolean, rood: string[], wiebel: string[], ms: number}>}
  */
-export async function testreeks({ wortel = WORTEL, tegelijk = hoeveelTegelijk(), zeg = (s) => console.log(s), run = draai } = {}) {
+/* `nogEens` (5 november 2026, levering 69, vraag 3 = ja): ook bij één tegelijk
+   krijgt een rode test nog één losse kans. UITROLLEN.bat zet hem aan
+   (`--nog-eens`): een uitrol die stopt op een toevalstreffer kost Lucas een
+   kwartier, en na de launch is dat op een slecht moment. Zonder de vlag blijft
+   `TESTREEKS_TEGELIJK=1 node scripts/testreeks.mjs` streng, zoals npm test. */
+export async function testreeks({ wortel = WORTEL, tegelijk = hoeveelTegelijk(), zeg = (s) => console.log(s), run = draai, nogEens = false } = {}) {
   const pkg = JSON.parse(fs.readFileSync(path.join(wortel, 'package.json'), 'utf8'));
   const stappen = keten(pkg);
   const t0 = Date.now();
@@ -114,8 +119,8 @@ export async function testreeks({ wortel = WORTEL, tegelijk = hoeveelTegelijk(),
   const rood = [];
   const wiebel = [];
   for (const { s, r } of mis) {
-    const r2 = tegelijk > 1 ? await run(s.opdracht, wortel) : r;
-    if (r2.code === 0) { wiebel.push(s.naam); zeg(`        ${s.naam}: los nog een keer → goed (lag aan de drukte)`); continue; }
+    const r2 = tegelijk > 1 || nogEens ? await run(s.opdracht, wortel) : r;
+    if (r2.code === 0) { wiebel.push(s.naam); zeg(`        ${s.naam}: los nog een keer → goed (${tegelijk > 1 ? 'lag aan de drukte' : 'een toevalstreffer'})`); continue; }
     rood.push(s.naam);
     /* Eerst de rode regels, dan het einde (14 oktober 2026). Alleen de laatste
        40 regels liet bij test:stap2-kaart-browser zien dát er 6 van de 333
@@ -131,6 +136,6 @@ export async function testreeks({ wortel = WORTEL, tegelijk = hoeveelTegelijk(),
 
 const hierAangeroepen = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (hierAangeroepen) {
-  const r = await testreeks();
+  const r = await testreeks({ nogEens: process.argv.includes('--nog-eens') });
   process.exitCode = r.goed ? 0 : 1;
 }

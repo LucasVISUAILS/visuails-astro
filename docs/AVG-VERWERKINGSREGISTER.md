@@ -213,6 +213,7 @@ partij daaruit hieronder staat:
 | Plus Five Five, Inc. (Resend) | transactionele e-mail |
 | Google Ireland Ltd. (Google Workspace) | de mailbox hello@visuails.com, en Google Drive voor de wekelijkse back-up |
 | WhatsApp Ireland Ltd. (Meta) | klantcontact via WhatsApp Business, en bestellingen die Lucas namens een WhatsApp-klant in /admin zet |
+| e-Boekhouden.nl (Nederland) | de boekhouding: per klant een relatie (bedrijfsnaam, contactnaam, adres, e-mailadres, btw- en KVK-nummer) en elke factuur (`src/lib/eboekhouden.js`). Staat in de lijst van ontvangers sinds 5 november 2026 (levering 69); de koppeling gaat pas aan na de meldtermijn (`MELDTERMIJN_DAGEN`). Geen beeldmateriaal |
 | Google (Business Profile) en Trustpilot | uitsluitend wanneer de klant zelf op een reviewknop klikt; wij sturen daar geen gegevens naartoe |
 
 **Welk AI-model er binnen het platform van de subverwerker wordt gebruikt, staat

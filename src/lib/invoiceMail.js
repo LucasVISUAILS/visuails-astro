@@ -294,6 +294,22 @@ export async function mailInvoice(env, { order, invoice, uitgesteld = null, dire
     const { subject, html } = invoiceEmail({ lang, order, invoice, snap, attached: !!attachment, ...ctx, uitgesteld, nu: direct ? new Date() : null });
     await sendMail(env, {
       to: order.email,
+      subject,
+      html,
+      attachments: attachment ? [attachment] : undefined,
+    });
+    /* ── DE KOPIE VOOR DE ADMINISTRATIE, ZONDER PRIVÉLINK — 5 november 2026 ──
+       Levering 69 (beveiligingsnaloop): de kopie ging als bcc van DEZE mail mee,
+       met de knop naar de privélink (/o/<token>) erin. Wie die postbus leest (of
+       straks een boekhouder) kon zo van elke betaalde bestelling de beelden
+       downloaden, goedkeuren of een revisie aanvragen, tot 90 dagen na het
+       afronden. Nu een eigen bericht aan INVOICE_BCC, met dezelfde factuur en
+       dezelfde tekst, maar zonder link (de mail kent die vorm al: zo ziet hij
+       eruit als er geen privélink gemaakt kon worden). */
+    if (env.INVOICE_BCC) {
+      const kopie = invoiceEmail({ lang, order, invoice, snap, attached: !!attachment, ...ctx, link: '', uitgesteld, nu: null });
+      await sendMail(env, {
+        to: env.INVOICE_BCC,
       /* ── EN EEN KOPIE VOOR DE EIGEN ADMINISTRATIE — 20 augustus 2026 ───────
          De factuur ging alleen naar de klant. De bron blijft `invoices` plus de
          pdf in R2 — dat is de administratie en dat verandert niet — maar een
@@ -305,11 +321,11 @@ export async function mailInvoice(env, { order, invoice, uitgesteld = null, dire
          morgen een boekhouder zijn en dat is een instelling, geen code. Staat de
          variabele niet, dan gaat de mail gewoon alleen naar de klant — een
          ontbrekende kopie mag een factuur nooit tegenhouden. */
-      bcc: env.INVOICE_BCC || undefined,
-      subject,
-      html,
-      attachments: attachment ? [attachment] : undefined,
-    });
+        subject: kopie.subject,
+        html: kopie.html,
+        attachments: attachment ? [attachment] : undefined,
+      }).catch((err) => console.warn('[invoice-mail] kopie voor de administratie niet verstuurd voor', order?.ref, '—', err && err.message));
+    }
     return true;
   } catch (err) {
     console.error('[invoice-mail] versturen mislukt voor bestelling', order?.ref, '—', err && err.message ? err.message : err);
@@ -331,15 +347,21 @@ export async function mailInvoice(env, { order, invoice, uitgesteld = null, dire
  * zegt hij dat het abonnement loopt en wat de klant elke maand krijgt, elke
  * volgende keer dat de credits voor die maand klaarstaan. Dezelfde vorm als
  * de factuurmail bij een bestelling, met dezelfde bcc naar de administratie.
+ *
+ * WAAR DE CREDITS VOOR ZIJN (levering 69, 5 november 2026, §17 punt 8): de
+ * eerste mail zei "catalog, lifestyle en video", maar het formulier neemt
+ * credits alleen voor CREDIT_DIENSTEN (src/data/creditKosten.js): catalog en
+ * lifestyle. Video staat op aanvraag. tests/creditherinnering.test.mjs legt
+ * deze zinnen naast CREDIT_DIENSTEN.
  */
 const SUB_COPY = {
   nl: {
     subjectNext: (ref, maand) => `Je credits voor ${maand} staan klaar — ${ref}`,
     headNext: 'Je maandtermijn is betaald',
-    ledeFirst: (plan, credits, dag) => `Bedankt. Je eerste maand is betaald en ${abo(plan)} loopt: ${credits} credits per maand, die je besteedt aan catalog, lifestyle en video. Je bestelt wanneer je wilt, via het gewone formulier.`,
+    ledeFirst: (plan, credits) => `Bedankt. Je eerste maand is betaald en ${abo(plan)} loopt: ${credits} credits per maand, die je besteedt aan catalog en lifestyle. Je bestelt wanneer je wilt, via het gewone formulier.`,
     /* Vooruitbetaald (24 september 2026): de mail zei "je eerste maand is betaald"
        boven een afschrijving van een heel jaar. */
-    ledeFirstPrepaid: (plan, credits, dag) => `Bedankt. Je jaar is vooruitbetaald en ${abo(plan)} loopt: twaalf maanden lang ${credits} credits per maand, die je in VISUAILS Studio besteedt aan catalog, lifestyle en video. Er wordt dit jaar niets meer afgeschreven. Je bestelt wanneer je wilt, via het gewone formulier.`,
+    ledeFirstPrepaid: (plan, credits) => `Bedankt. Je jaar is vooruitbetaald en ${abo(plan)} loopt: twaalf maanden lang ${credits} credits per maand, die je in VISUAILS Studio besteedt aan catalog en lifestyle. Er wordt dit jaar niets meer afgeschreven. Je bestelt wanneer je wilt, via het gewone formulier.`,
     ledeNext: (maand, credits) => `De termijn voor ${maand} is binnen. Je ${credits} credits voor deze maand staan klaar in VISUAILS Studio. Zolang je abonnement loopt, vervallen je credits niet; in Studio zie je hoeveel je er kunt sparen.`,
     /* Viel er bij deze termijn iets boven het spaarplafond weg (15 oktober 2026)?
        Dan zei de mail "je credits vervallen niet" op de dag dat er vervielen. */
@@ -358,7 +380,7 @@ const SUB_COPY = {
     subjectWelcome: (ref) => `Welkom bij VISUAILS: je abonnement loopt — ${ref}`,
     headWelcome: 'Welkom — je abonnement loopt',
     stepsH: 'Zo begin je',
-    steps: (dag) => [
+    steps: () => [
       ['Log in op VISUAILS Studio', 'Met de knop hieronder ben je direct binnen. Daarna log je in met je e-mailadres: je krijgt een code per mail, een wachtwoord is er niet.'],
       ['Zet je vaste look', 'Onder <b>Je vaste look</b> kies je per dienst één keer je stijl, achtergrond en model. Die look gaat vanzelf mee met alles wat je laat maken, zodat elke maand bij elkaar past.'],
       /* Ronde 10 (8 oktober 2026): geen lijst en geen vaste week meer. */
@@ -372,8 +394,8 @@ const SUB_COPY = {
   en: {
     subjectNext: (ref, maand) => `Your credits for ${maand} are ready — ${ref}`,
     headNext: 'This month is paid',
-    ledeFirst: (plan, credits, dag) => `Thank you. Your first month is paid and ${planEn(plan)} is running: ${credits} credits a month, which you spend on catalog, lifestyle and video. You order whenever you like, through the regular form.`,
-    ledeFirstPrepaid: (plan, credits, dag) => `Thank you. Your year is paid in advance and ${planEn(plan)} is running: twelve months of ${credits} credits a month, which you spend in VISUAILS Studio on catalog, lifestyle and video. Nothing else is charged this year. You order whenever you like, through the regular form.`,
+    ledeFirst: (plan, credits) => `Thank you. Your first month is paid and ${planEn(plan)} is running: ${credits} credits a month, which you spend on catalog and lifestyle. You order whenever you like, through the regular form.`,
+    ledeFirstPrepaid: (plan, credits) => `Thank you. Your year is paid in advance and ${planEn(plan)} is running: twelve months of ${credits} credits a month, which you spend in VISUAILS Studio on catalog and lifestyle. Nothing else is charged this year. You order whenever you like, through the regular form.`,
     ledeNext: (maand, credits) => `The payment for ${maand} came through. Your ${credits} credits for this month are ready in VISUAILS Studio. While your plan runs, your credits do not expire; Studio shows how many you can save.`,
     ledeBoven: (n, p) => `That took your balance above your savings limit of ${p}: ${n === 1 ? '1 credit' : `${n} credits`} lapsed today.`,
     rPlan: 'Plan',
@@ -388,7 +410,7 @@ const SUB_COPY = {
     subjectWelcome: (ref) => `Welcome to VISUAILS: your plan is running — ${ref}`,
     headWelcome: 'Welcome — your plan is running',
     stepsH: 'How to start',
-    steps: (dag) => [
+    steps: () => [
       ['Sign in to VISUAILS Studio', 'The button below takes you straight in. After that you sign in with your email address: you get a code by email, there is no password.'],
       ['Set your look', 'Under <b>Your look</b> you choose your style, background and model once per service. That look goes with everything you order, so every month fits together.'],
       ['Order whenever you like', 'Pick a look on visuails.com and order through the regular form, like everyone else. When you are signed in, you pay with your credits.'],
@@ -409,7 +431,7 @@ function maandNaam(month, lang) {
 
 /**
  * @param {object} o
- * @param {object} o.sub        de rij uit subscriptions (ref, plan, window_day)
+ * @param {object} o.sub        de rij uit subscriptions (ref, plan, term)
  * @param {object} o.customer   { email, lang }
  * @param {object} o.invoice    de rij uit subscription_invoices
  * @param {string} o.planNaam   de naam van het plan in de taal van de klant
@@ -443,7 +465,8 @@ export async function mailSubscriptionInvoice(env, { sub, customer, invoice, pla
     const vatLine = treatment === VAT_TREATMENT.reverseCharge ? COPY[lang].reverse
       : treatment === VAT_TREATMENT.outsideScope ? COPY[lang].outside
         : '';
-    const dag = Number(sub.window_day) || 1;
+    /* `window_day` (de dag van de vaste week) werd hier gelezen en nergens gebruikt;
+       weg sinds 5 november 2026 (levering 69, §17 punt 14). */
     const ref = sub.ref || invoice?.number || '';
     const studio = `${SITE}${lang === 'nl' ? '/nl' : ''}/account/plan`;
     const factuurRijen = invoice ? rows([
@@ -461,10 +484,15 @@ export async function mailSubscriptionInvoice(env, { sub, customer, invoice, pla
        storing. Dus: welkom, de drie stappen om te beginnen, een knop die direct
        inlogt (een gewone inloglink, een uur geldig — zie welkomLink() in
        account.js), en daaronder de factuur. */
+    /* De mail wordt twee keer opgebouwd: voor de klant met de inlogknop, en voor
+       de kopie aan de administratie zonder (5 november 2026, levering 69: de
+       inlogknop werkt twee dagen en logde iedereen die de kopie las in als deze
+       klant). */
+    const maakBody = (loginLink) => {
     const welkom = eerste ? [
       p(`<b>${esc(t.stepsH)}</b>`, { top: 8, bottom: 8 }),
       /* De nummers in violet, zoals in "Zo gaat het verder" (17 oktober 2026). */
-      ...t.steps(dag).map(([kop, tekst], i) => p(`<b><span style="color:${MAILKLEUR.accentText}">${i + 1}.</span> ${esc(kop)}</b><br>${tekst}`, { bottom: 12 })),
+      ...t.steps().map(([kop, tekst], i) => p(`<b><span style="color:${MAILKLEUR.accentText}">${i + 1}.</span> ${esc(kop)}</b><br>${tekst}`, { bottom: 12 })),
       p(esc(t.rollover(CREDITS_GELDIG_MAANDEN)), { muted: true }),
       loginLink ? button(loginLink, t.loginBtn) : button(studio, t.portal),
       loginLink ? note(esc(t.loginNote)) : '',
@@ -476,7 +504,7 @@ export async function mailSubscriptionInvoice(env, { sub, customer, invoice, pla
       /* Aanhef en vragenregel zoals in de andere klantmails (17 oktober 2026). */
       /* Het welkom leest de klant nu (hij betaalde net); een maandfactuur later. */
       p(greeting(customer.name, lang, eerste ? { nu: new Date(), land: customer.country || '' } : {})),
-      p(esc(eerste ? (sub.term === 'prepaid' ? t.ledeFirstPrepaid : t.ledeFirst)(planNaam, credits, dag) : t.ledeNext(maand, credits))),
+      p(esc(eerste ? (sub.term === 'prepaid' ? t.ledeFirstPrepaid : t.ledeFirst)(planNaam, credits) : t.ledeNext(maand, credits))),
       !eerste && vervallen > 0 && plafond > 0 ? p(esc(t.ledeBoven(vervallen, plafond))) : '',
       ...welkom,
       factuurRijen,
@@ -489,14 +517,26 @@ export async function mailSubscriptionInvoice(env, { sub, customer, invoice, pla
       invoice ? note(esc(COPY[lang].keep)) : '',
       vragen(lang, '', { over: lang === 'en' ? `my plan ${ref}` : `mijn abonnement ${ref}` }),
     ].join('');
+    return body;
+    };
 
+    const onderwerp = eerste ? t.subjectWelcome(ref) : t.subjectNext(ref, maand);
+    const voorregel = invoice ? COPY[lang].pre(invoice.number, !!attachment) : t.headWelcome;
     await sendMail(env, {
       to: customer.email,
-      bcc: invoice ? (env.INVOICE_BCC || undefined) : undefined,
-      subject: eerste ? t.subjectWelcome(ref) : t.subjectNext(ref, maand),
-      html: shell({ lang, preheader: invoice ? COPY[lang].pre(invoice.number, !!attachment) : t.headWelcome, body }),
+      subject: onderwerp,
+      html: shell({ lang, preheader: voorregel, body: maakBody(loginLink) }),
       attachments: attachment ? [attachment] : undefined,
     });
+    /* De kopie voor de administratie, alleen met een factuur, en zonder inlogknop. */
+    if (invoice && env.INVOICE_BCC) {
+      await sendMail(env, {
+        to: env.INVOICE_BCC,
+        subject: onderwerp,
+        html: shell({ lang, preheader: voorregel, body: maakBody('') }),
+        attachments: attachment ? [attachment] : undefined,
+      }).catch((err) => console.warn('[invoice-mail] kopie voor de administratie niet verstuurd voor', sub?.ref, '—', err && err.message));
+    }
     return true;
   } catch (err) {
     console.error('[invoice-mail] abonnementsmail mislukt voor', sub?.ref, '—', err && err.message ? err.message : err);

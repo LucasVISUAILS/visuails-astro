@@ -37,6 +37,7 @@ import { composeAddress } from '../data/address.js';
 import { VAT_TREATMENT } from '../data/vat.js';
 import { VAT_RATE } from './quote.js';
 import { planName } from '../data/planNames.js';
+import { TERMS } from '../data/plans.js';
 import { serviceLabel } from '../data/services.js';
 import { getStyle } from '../data/styles.js';
 
@@ -703,8 +704,25 @@ export function snapshotFromSubscription({ sub, customer, payment, month, lang: 
   const periode = maandLabel(month, lang);
   /* Extra credits bijkopen (12 oktober 2026, ab-v3 = c): "Extra credits · 25 ·
      Pro", met het plan zoals het heette op het moment van kopen. */
+  /* ── EEN VOORUITBETAALD JAAR IS GEEN MAAND — 5 november 2026 (levering 69) ──
+     De naloop van de geldstromen: de factuur van twaalf maanden vooruit
+     (één betaling) zei "Pro — abonnement oktober 2026", alsof het één maand was.
+     Nu de hele periode, van de eerste tot de laatste maand. Het aantal maanden
+     komt uit TERMS.prepaid in plans.js. */
+  const vooruitMaanden = Number(TERMS?.prepaid?.months) || 12;
+  const totMaand = (() => {
+    const m = /^(\d{4})-(\d{2})$/.exec(String(month || ''));
+    if (!m) return '';
+    const n = Number(m[1]) * 12 + (Number(m[2]) - 1) + (vooruitMaanden - 1);
+    return `${Math.floor(n / 12)}-${String((n % 12) + 1).padStart(2, '0')}`;
+  })();
+  const vooruit = !bijkoop && sub && sub.term === 'prepaid' && periode && totMaand;
   const label = bijkoop
     ? `Extra credits · ${Math.max(0, Math.floor(Number(bijkoop.pakket) || 0))} · ${bijkoop.planLabel || naam}`
+    : vooruit
+      ? (lang === 'nl'
+        ? `${naam} — abonnement, ${vooruitMaanden} maanden vooruit (${periode} t/m ${maandLabel(totMaand, lang)})`
+        : `${naam} — subscription, ${vooruitMaanden} months in advance (${periode} to ${maandLabel(totMaand, lang)})`)
     : lang === 'nl'
       ? `${naam} — abonnement${periode ? ` ${periode}` : ''}`
       : `${naam} — subscription${periode ? ` ${periode}` : ''}`;
