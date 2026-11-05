@@ -86,6 +86,8 @@ import {
   uploadFormatsSentence,
 } from './uploads.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from './ratelimit.js';
+/* Lange lijsten in groepen: D1 neemt hoogstens 100 gebonden waarden per query (5 november 2026). */
+import { rijenPerGroep, plaatsen } from './d1Lijst.js';
 /* Foto's nasturen per vak (punt 2.05, 8 oktober 2026): dezelfde keuring en
    daggrens als /api/upload, en de ene lijst "wat ontbreekt". Zie fotosView(). */
 import { isBeeldHandtekening, UPLOAD_DAG } from '../../functions/api/upload.js';
@@ -4273,10 +4275,12 @@ async function loadFeedbackFor(env, orderIds) {
   const ids = orderIds.map((n) => Number(n)).filter(Number.isInteger);
   if (!ids.length) return new Map();
   try {
-    const res = await env.DB.prepare(
-      `SELECT * FROM order_feedback WHERE order_id IN (${ids.map(() => '?').join(',')})`
-    ).bind(...ids).all();
-    return new Map((res?.results || []).map((r) => [r.order_id, r]));
+    /* In groepen (d1Lijst.js, 5 november 2026): bij een klant met meer dan 100
+       afgeronde bestellingen viel de tevredenheid hier stil weg. */
+    const rijen = await rijenPerGroep(ids, (deel) => env.DB.prepare(
+      `SELECT * FROM order_feedback WHERE order_id IN (${plaatsen(deel.length)})`
+    ).bind(...deel).all());
+    return new Map(rijen.map((r) => [r.order_id, r]));
   } catch (err) {
     console.warn('[account] feedback niet te lezen —', err && err.message, '— migratie 0020 gedraaid?');
     return new Map();
@@ -4566,8 +4570,9 @@ async function handleRevisionRound({ form, env }, customer, home) {
      zichtbaar en mag geen ronde kosten. */
   let rijen = [];
   try {
-    const gaten = uniek.map((_, i) => `?${i + 3}`).join(', ');
-    const res = await env.DB.prepare(
+    /* In groepen (d1Lijst.js, 5 november 2026): een grote levering heeft rond de
+       honderd beelden, en D1 neemt hoogstens 100 waarden per query. */
+    rijen = await rijenPerGroep(uniek, (deel) => env.DB.prepare(
       `SELECT f.id, f.order_id, o.closed_at, o.service, o.revision_round_at,
               o.lang, o.ref, o.email, o.name, c.revisions_revoked_at
          FROM files f
@@ -4579,9 +4584,8 @@ async function handleRevisionRound({ form, env }, customer, home) {
           AND f.review_state = 'pending'
           AND f.superseded_at IS NULL
           AND (f.expires_at IS NULL OR f.expires_at > datetime('now'))
-          AND f.id IN (${gaten})`
-    ).bind(customer.customer_id, SAMPLE_SERVICE, ...uniek).all();
-    rijen = res.results || [];
+          AND f.id IN (${plaatsen(deel.length, 3)})`
+    ).bind(customer.customer_id, SAMPLE_SERVICE, ...deel).all());
   } catch (err) {
     /* Draait de database op een versie zonder migratie 0034, dan valt deze query
        om op `revision_round_at`. Stil terug naar het overzicht: de ronde is dan
@@ -4982,8 +4986,9 @@ async function handleRondeNakijken({ request, env }, customer, orderId) {
 
   let rijen = [];
   try {
-    const gaten = uniek.map((_, i) => `?${i + 4}`).join(', ');
-    const res = await env.DB.prepare(
+    /* In groepen (d1Lijst.js, 5 november 2026), zoals in handleRevisionRound(). De
+       ORDER BY geldt per groep, dus daarna nog één keer op nummer. */
+    rijen = (await rijenPerGroep(uniek, (deel) => env.DB.prepare(
       `SELECT f.id, f.filename, f.product_key, f.shot,
               o.closed_at, o.service, o.details_json, o.revision_round_at, o.lang, c.revisions_revoked_at
          FROM files f
@@ -4996,10 +5001,9 @@ async function handleRondeNakijken({ request, env }, customer, orderId) {
           AND f.review_state = 'pending'
           AND f.superseded_at IS NULL
           AND (f.expires_at IS NULL OR f.expires_at > datetime('now'))
-          AND f.id IN (${gaten})
+          AND f.id IN (${plaatsen(deel.length, 4)})
         ORDER BY f.id`
-    ).bind(customer.customer_id, orderId, SAMPLE_SERVICE, ...uniek).all();
-    rijen = res.results || [];
+    ).bind(customer.customer_id, orderId, SAMPLE_SERVICE, ...deel).all())).sort((a, b) => a.id - b.id);
   } catch {
     /* Zonder migratie 0034 valt deze query om op `revision_round_at`. Stil terug
        naar de kaart: er is niets ingediend en niets verbruikt. Zelfde afspraak

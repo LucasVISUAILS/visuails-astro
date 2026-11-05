@@ -34,6 +34,8 @@
  * niet: daar is geen account om het verzoek aan te hangen.
  */
 
+import { rijenPerGroep, plaatsen } from './d1Lijst.js';
+
 export const FORMATEN = ['png', 'webp'];
 
 const NAAM = { png: 'PNG', webp: 'WebP' };
@@ -94,11 +96,14 @@ export async function formatenVoorOrders(env, orderIds = []) {
   const ids = [...new Set(orderIds.map(Number).filter((n) => Number.isInteger(n) && n > 0))].slice(0, 500);
   if (!ids.length || !env?.DB) return uit;
   try {
-    const r = await env.DB.prepare(
+    /* In groepen (d1Lijst.js, 5 november 2026): tot 500 bestellingen in één IN-lijst
+       is boven de grens van D1 (100 waarden per query). Per bestelling blijft de
+       volgorde op id: alle verzoeken van één bestelling zitten in dezelfde groep. */
+    const rijen = await rijenPerGroep(ids, (deel) => env.DB.prepare(
       `SELECT id, order_id, formaat, aangevraagd_at, klaar_at FROM formaat_verzoeken
-        WHERE order_id IN (${ids.map(() => '?').join(',')}) ORDER BY id`
-    ).bind(...ids).all();
-    for (const rij of r.results || []) {
+        WHERE order_id IN (${plaatsen(deel.length)}) ORDER BY id`
+    ).bind(...deel).all());
+    for (const rij of rijen) {
       const k = Number(rij.order_id);
       if (!uit.has(k)) uit.set(k, []);
       uit.get(k).push(rij);

@@ -91,6 +91,8 @@ import { STIL_AFRONDEN_SQL, STIL_AFRONDEN_DAGEN, rondStilAf } from '../src/lib/c
 import { waLink, contactRegels, REVIEW_GEVRAAGD } from '../src/lib/waLink.js';
 /* De Nu-doen-lijst (punt 4.05, 8 oktober 2026): dezelfde functie als bovenaan /admin. */
 import { nuDoen, nuDoenTekst, rapportOnderwerp, reviewTeVragen, sqlStempel } from '../src/lib/nudoen.js';
+/* Lange lijsten in groepen: D1 neemt hoogstens 100 gebonden waarden per query (5 november 2026). */
+import { rijenPerGroep, plaatsen } from '../src/lib/d1Lijst.js';
 
 /* De taal van een abonnee — 24 september 2026. Er is geen taalkolom op
    `customers`; wat er wél is, is de taal van zijn laatste abonnementsfactuur
@@ -1110,11 +1112,13 @@ async function variantKeys(env, ids) {
   const map = new Map();
   if (!ids.length) return map;
   try {
-    const marks = ids.map((_, i) => `?${i + 1}`).join(',');
-    const { results } = await env.DB.prepare(
-      `SELECT file_id, r2_key FROM file_assets WHERE file_id IN (${marks})`
-    ).bind(...ids).all();
-    for (const a of results || []) {
+    /* In groepen (d1Lijst.js, 5 november 2026): PURGE_LIMIT is 400, en met één
+       IN-lijst viel deze taak vanaf 101 verlopen bestanden elke nacht om — zodra de
+       rem PURGE_ENABLED los gaat. Alle varianten van één bestand zitten in dezelfde groep. */
+    const results = await rijenPerGroep(ids, (deel) => env.DB.prepare(
+      `SELECT file_id, r2_key FROM file_assets WHERE file_id IN (${plaatsen(deel.length)})`
+    ).bind(...deel).all());
+    for (const a of results) {
       if (!map.has(a.file_id)) map.set(a.file_id, []);
       map.get(a.file_id).push(a.r2_key);
     }

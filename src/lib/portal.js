@@ -71,6 +71,8 @@ import { notifyRevisionRound } from './notify.js';
 import { mailRondeOntvangen } from './cancelMail.js';
 import { clearUploadRetention } from './retention.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from './ratelimit.js';
+/* Lange lijsten in groepen: D1 neemt hoogstens 100 gebonden waarden per query (5 november 2026). */
+import { rijenPerGroep, plaatsen } from './d1Lijst.js';
 import { mailNote } from '../data/mailNote.js';
 // Niet uit account.js: zie de kop van close.js voor waarom afronden een eigen
 // bestand kreeg in plaats van dat dit bestand de dashboardmodule importeert.
@@ -820,7 +822,8 @@ async function handleRevisionRound(env, context, { order, form, home, lang, requ
    */
   let eigen = [];
   try {
-    const plaatsen = gekozen.map((_, i) => `?${i + 2}`).join(', ');
+    /* In groepen (d1Lijst.js, 5 november 2026): een grote levering heeft rond de
+       honderd beelden, en D1 neemt hoogstens 100 waarden per query. */
     /* DE NUMMERS LEIDEN, EN DAT IS NIET ALLEEN VOLGORDE. Dit is geen tweede
        lijst van de levering — die komt uit loadDeliveryFiles() en nergens anders,
        zie de kop van delivery.js. Dit is een CONTROLE op een verzameling nummers
@@ -828,15 +831,15 @@ async function handleRevisionRound(env, context, { order, form, home, lang, requ
        en staan nog open. `id IN (...)` vooraan zegt dat; `order_id = ?1` vooraan
        zou het laten lezen als "geef mij de bestanden van deze bestelling", en dat
        is precies de query die hier niet meer hoort te staan. */
-    const res = await env.DB.prepare(
+    const rijen = await rijenPerGroep(gekozen, (deel) => env.DB.prepare(
       `SELECT id FROM files
-        WHERE id IN (${plaatsen})
+        WHERE id IN (${plaatsen(deel.length, 2)})
           AND order_id = ?1
           AND kind = 'delivery'
           AND review_state = 'pending'
           AND superseded_at IS NULL`
-    ).bind(order.order_id, ...gekozen).all();
-    eigen = (res.results || []).map((r) => r.id);
+    ).bind(order.order_id, ...deel).all());
+    eigen = rijen.map((r) => r.id);
   } catch {
     return plainPage(env, request, 'down', 503, lang);
   }

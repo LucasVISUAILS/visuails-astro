@@ -45,6 +45,7 @@
 
 import { serviceLabel } from '../data/services.js';
 import { sendMail } from './mail.js';
+import { rijenPerGroep, plaatsen } from './d1Lijst.js';
 import { shell, h1, p as mailP, rows as rijenHtml, quote as quoteHtml, statusPil, bedrag as mailBedrag, datum, esc, kenmerk, C as MAILC } from './mailTemplate.js';
 /* De klant bereiken bij een open betaling of een mislukte incasso (punt 7.05,
    8 oktober 2026): de knop met de vaste tekst, Bellen voorop bij een
@@ -369,10 +370,11 @@ export async function notifyRevisionRound(env, { orderId, items = [] }) {
     try {
       const ids = items.map((x) => Number(x.fileId)).filter(Number.isInteger);
       if (ids.length) {
-        const gaten = ids.map((_, i) => `?${i + 1}`).join(', ');
-        const res = await env.DB
-          .prepare(`SELECT id, filename, product_key, shot FROM files WHERE id IN (${gaten})`)
-          .bind(...ids).all();
+        /* In groepen (d1Lijst.js, 5 november 2026): een grote levering heeft rond de
+           honderd beelden, en D1 neemt hoogstens 100 waarden per query. */
+        const res = { results: await rijenPerGroep(ids, (deel) => env.DB
+          .prepare(`SELECT id, filename, product_key, shot FROM files WHERE id IN (${plaatsen(deel.length)})`)
+          .bind(...deel).all()) };
         /* ── ZOALS OP HET WERKBORD — 14 oktober 2026 (doorloop 27, B08) ────────
            Hier stond "p2 · worn": de sleutels uit de database. Nu "Product 2 ·
            Op een model", de woorden van het werkbord (src/data/levervakken.js),

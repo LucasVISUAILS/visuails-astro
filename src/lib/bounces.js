@@ -31,6 +31,7 @@
  * niet een opnieuw geserialiseerde JSON, en een dubbele aflevering (hetzelfde
  * `svix-id`) is geen fout — de UNIQUE op event_id vangt hem.
  */
+import { rijenPerGroep, plaatsen } from './d1Lijst.js';
 
 const MAX_AGE_SECONDS = 300;
 const EVENTS = Object.freeze({
@@ -142,15 +143,17 @@ export async function bouncesFor(env, emails) {
   const uniek = [...new Set((emails || []).map((e) => String(e || '').trim().toLowerCase()).filter(Boolean))];
   const out = new Map();
   if (!uniek.length || !env?.DB) return out;
-  const marks = uniek.map((_, i) => `?${i + 1}`).join(', ');
   try {
-    const res = await env.DB.prepare(
+    /* In groepen (d1Lijst.js, 5 november 2026): met één lijst van alle adressen op het
+       dashboard viel deze markering vanaf 101 adressen stil weg. GROUP BY email blijft
+       kloppen: elk adres zit in precies één groep. */
+    const rijen = await rijenPerGroep(uniek, (deel) => env.DB.prepare(
       `SELECT email, kind, bounce_type, message, subject, MAX(occurred_at) AS occurred_at
          FROM mail_bounces
-        WHERE email IN (${marks}) AND resolved_at IS NULL
+        WHERE email IN (${plaatsen(deel.length)}) AND resolved_at IS NULL
         GROUP BY email`
-    ).bind(...uniek).all();
-    for (const r of res?.results || []) out.set(r.email, r);
+    ).bind(...deel).all());
+    for (const r of rijen) out.set(r.email, r);
   } catch (err) {
     if (!/no such table|no such column/i.test(String(err?.message || err))) {
       console.error('[bounces] lezen mislukt —', err?.message || err);

@@ -54,7 +54,18 @@ import { DatabaseSync } from 'node:sqlite';
  * `batch` krijgt een echte transactie, want dat is wat D1 belooft en het is precies de
  * eigenschap waar deze tests op leunen: faalt één statement, dan is er niets veranderd.
  */
-export function d1(db) {
+/* ── DE GRENS VAN D1: HOOGSTENS 100 GEBONDEN WAARDEN PER QUERY — 5 november 2026 ──
+   node:sqlite neemt er tienduizenden, D1 live honderd ("too many SQL variables").
+   Een toets die een lange lijst bindt, bleef hier dus groen terwijl dezelfde code
+   live een 500 gaf (het dashboard van /admin vanaf 101 klanten in de lijst). Met
+   `d1(db, { maxWaarden: 100 })`, of D1_MAX_WAARDEN=100 voor een hele testreeks,
+   weigert deze nep-D1 net als de echte. Zonder die keuze verandert er niets. */
+export function d1(db, { maxWaarden = Number(globalThis.process?.env?.D1_MAX_WAARDEN) || 0 } = {}) {
+  const grens = (st) => {
+    if (maxWaarden && st._b.length > maxWaarden) {
+      throw new Error(`D1_ERROR: too many SQL variables (${st._b.length} gebonden waarden, D1 neemt er hoogstens ${maxWaarden}): ${String(st.sql).replace(/\s+/g, ' ').slice(0, 80)}`);
+    }
+  };
   const mk = (sql) => {
     const st = {
       sql,
@@ -68,9 +79,10 @@ export function d1(db) {
          wordt ook gezet, voor code die bindt en daarna het oude object
          gebruikt. */
       bind(...a) { const nieuw = mk(sql); nieuw._b = a.map((v) => (v === undefined ? null : v)); st._b = nieuw._b; return nieuw; },
-      async first() { return db.prepare(sql).get(...st._b) ?? null; },
-      async all() { return { results: db.prepare(sql).all(...st._b) }; },
+      async first() { grens(st); return db.prepare(sql).get(...st._b) ?? null; },
+      async all() { grens(st); return { results: db.prepare(sql).all(...st._b) }; },
       async run() {
+        grens(st);
         const r = db.prepare(sql).run(...st._b);
         return { success: true, meta: { changes: r.changes } };
       },

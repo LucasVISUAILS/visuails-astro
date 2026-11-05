@@ -220,6 +220,8 @@ import { REVISIE_REDENEN, revisieReden } from '../data/revisieRedenen.js';
 /* De kleur van een product: naam, hex, Pantone (5.03). */
 import { kleurInfo } from './kleurcode.js';
 import { botcheckUitleg } from './turnstile.js';
+/* Lange lijsten in groepen: D1 neemt hoogstens 100 gebonden waarden per query (5 november 2026). */
+import { rijenPerGroep, plaatsen } from './d1Lijst.js';
 import { composeAddress } from '../data/address.js';
 import { puntenVoor, heeftVoorrang, voorrangDeadline, SAMPLE_SERVICE, REVISIE_DAGEN, ladderRate, SERVICE_CREDITS } from '../data/pricing.js';
 /* rowPunten() weegt een opgeslagen rij, video inbegrepen; videoVelden() haalt de
@@ -2201,14 +2203,17 @@ async function handleCustomerWipe(context, customerId) {
    */
   const billed = new Set();
   if (ids.length) {
-    const plaats = ids.map((_, i) => `?${i + 1}`).join(',');
+    /* In groepen (d1Lijst.js, 5 november 2026): een klant met meer dan 100
+       bestellingen was met één IN-lijst niet te wissen (D1 neemt hoogstens 100
+       waarden per query). Het faalde wel veilig, vóór er iets weg was; dat blijft:
+       een fout in één groep breekt de hele wipe af. */
     for (const tabel of ['invoices', 'credit_notes']) {
-      const res = await env.DB.prepare(
-        `SELECT DISTINCT order_id FROM ${tabel} WHERE order_id IN (${plaats})`
-      ).bind(...ids).all().catch((err) => {
+      const rijen = await rijenPerGroep(ids, (deel) => env.DB.prepare(
+        `SELECT DISTINCT order_id FROM ${tabel} WHERE order_id IN (${plaatsen(deel.length)})`
+      ).bind(...deel).all()).catch((err) => {
         throw new Error(`kon ${tabel} niet lezen, dus er is niets verwijderd: ${err?.message || err}`);
       });
-      for (const r of res.results || []) billed.add(Number(r.order_id));
+      for (const r of rijen) billed.add(Number(r.order_id));
     }
   }
   const wipeIds = ids.filter((id) => !billed.has(id));
@@ -9536,14 +9541,16 @@ async function loadCustomModelsByCustomer(env, customerIds) {
   const byCustomer = new Map();
   if (!ids.length) return byCustomer;
 
-  const placeholders = ids.map((_, i) => `?${i + 1}`).join(',');
-  const res = await env.DB.prepare(
+  /* In groepen (d1Lijst.js): met één IN-lijst gaf /admin een 500 zodra er meer dan
+     100 verschillende klanten in de lijst stonden. De ORDER BY geldt per groep; alle
+     modellen van één klant zitten in dezelfde groep, dus per klant blijft de volgorde. */
+  const rijen = await rijenPerGroep(ids, (deel) => env.DB.prepare(
     `SELECT customer_id, id, label, status FROM custom_models
-      WHERE customer_id IN (${placeholders})
+      WHERE customer_id IN (${plaatsen(deel.length)})
       ORDER BY created_at DESC`
-  ).bind(...ids).all();
+  ).bind(...deel).all());
 
-  for (const row of res.results || []) {
+  for (const row of rijen) {
     if (!byCustomer.has(row.customer_id)) byCustomer.set(row.customer_id, []);
     byCustomer.get(row.customer_id).push(row);
   }
@@ -13743,10 +13750,12 @@ async function teruggeboekteOrders(env, ids) {
   const uit = new Map();
   const lijst = [...new Set((ids || []).map(Number).filter((n) => n > 0))];
   if (!lijst.length) return uit;
-  const r = await env.DB.prepare(
-    `SELECT id, teruggeboekt_at FROM orders WHERE teruggeboekt_at IS NOT NULL AND id IN (${lijst.map(() => '?').join(', ')})`
-  ).bind(...lijst).all().catch(() => ({ results: [] }));
-  for (const x of r.results || []) uit.set(Number(x.id), x.teruggeboekt_at);
+  /* In groepen (d1Lijst.js): met één lijst van tot 200 bestellingen viel de rode pil
+     vanaf 101 bestellingen stil weg (de fout werd hieronder opgevangen). */
+  const rijen = await rijenPerGroep(lijst, (deel) => env.DB.prepare(
+    `SELECT id, teruggeboekt_at FROM orders WHERE teruggeboekt_at IS NOT NULL AND id IN (${plaatsen(deel.length)})`
+  ).bind(...deel).all()).catch(() => []);
+  for (const x of rijen) uit.set(Number(x.id), x.teruggeboekt_at);
   return uit;
 }
 

@@ -68,8 +68,8 @@ Bij elke stap lees ik deze lijst opnieuw en schrijf ik op welke punten de stap k
 ## 4 · De stappen (uit de naloop; elke bevinding eerst zelf nagekeken in de code)
 
 De naloop liep in vier delen tegelijk (/admin; Studio en de privélink; de openbare API, de webhooks en de cron; wat
-overal geldt). Het derde deel werd halverwege gestopt door de veiligheidscontrole van het model en is opnieuw
-gestart met een smallere opdracht. Elke bevinding hieronder heb ik zelf in de code nagelezen voordat ik hem opnam.
+overal geldt). Het derde deel werd halverwege gestopt en is opnieuw gestart met een smallere opdracht (alleen lezen:
+bestellen, uploaden, de betaalwebhook, de mailwebhook, de nachtelijke taak); dat deel leverde stap 14 tot en met 19. Elke bevinding hieronder heb ik zelf in de code nagelezen voordat ik hem opnam.
 "Raakt" verwijst naar de punten in §1.
 
 | Stap | Wat | Ernst | Raakt | Bewijs eerst |
@@ -87,10 +87,21 @@ gestart met een smallere opdracht. Elke bevinding hieronder heb ik zelf in de co
 | 11 | **Opruimen:** verlopen sessies en inlogcodes blijven in de database staan | laag (groei) | 1, 4, 10 | toets |
 | 12 | **De back-up:** de controle op geheimen gebeurt pas nadat het bestand in Google Drive staat | laag | 11 | toets |
 | 13 | **Een klant wissen:** eerst de bestanden, dan de database; mislukt de database, dan zijn de bestanden weg en de gegevens niet | laag-middel | 1 | toets |
+| 14 | **De betaalwebhook: een betaalde bestelling kan voorgoed onbetaald blijven.** De rij in `payments` staat vóór `UPDATE orders SET payment_status = 'paid'`. Hapert D1 op die UPDATE, dan 500 en Mollie komt terug, maar de herhaling stuit op de UNIQUE van `payments`, leest dat als "al gedaan" en stopt. De nacht stuurt dan een betaalherinnering en annuleert later een bestelling die betaald is. Ook: mislukt de tijdlijnregel "Betaling ontvangen" (geen `.catch`), dan gaan factuur en melding nooit uit | **hoog** | 6, 8 | nagespeeld: eerste aflevering faalt op de UPDATE, de tweede moet hem alsnog op betaald zetten |
+| 15 | **Mislukte incasso: bij elke herhaalde aflevering opnieuw een mail** aan de klant en de studio (`ON CONFLICT DO NOTHING` zonder naar het resultaat te kijken) | laag-middel | 6, 8 | toets met twee afleveringen |
+| 16 | **De betaalwebhook: een 429 of 401 van Mollie telt als blijvend** (200, Mollie stopt met proberen), dus een echte `paid` kan wegvallen bij drukte of tijdens een sleutelwissel | laag-middel | 6 | toets |
+| 17 | **De betaalherinnering van de nacht: eerst versturen, dan stempelen.** Lukt het stempelen niet, dan de volgende nacht nog een herinnering met een tweede Mollie-betaling; twee runs tegelijk sturen er twee. Eerst claimen, en bij een fout de claim terug | laag | 6, 10 | toets |
+| 18 | **Upload:** de hele body wordt gelezen vóór de groottecontrole (eerst `Content-Length`); en DELETE kan een foto weghalen die al aan een geplaatste bestelling hangt | laag | 7 | toets |
+| 19 | **`/api/plan`: mislukt het opzoeken van een bestaand adres, dan telt het als nieuw** (`.catch(() => null)`); dat heropent het pad dat op 19 oktober dicht ging. Weigeren in plaats van doorlaten | laag | 6, 7 | toets |
 
 **Niet in deze ronde, met advies (in de notitie):** /admin op een eigen subdomein (de sterkste stap, maar dat vraagt
 DNS en Cloudflare van Lucas); inloggen via de link uit de mail zonder vooraf geopend tabblad (een bewuste keuze in de
 code); het verschil in antwoordtijd bij een bekend of onbekend adres; de bevestiging van een nieuw e-mailadres op een
 GET (een mailscanner kan hem openen); teksten uit de adresbalk in meldingen van /admin (onschadelijk gemaakt, maar te
 kiezen); de zouten in `app_settings` die in de back-up meegaan; de lokale Miniflare-bestanden die nog in git staan
-(onder "Mag weg").
+(onder "Mag weg"). Uit het vierde deel van de naloop, nagekeken maar bewust niet nu: Turnstile op `/api/plan` (een
+nieuwe stap in het abonnementsformulier); de landcode bij bestellen en abonneren tegen de lijst houden (raakt de btw,
+en een land dat in het formulier staat maar niet in de lijst zou een echte klant weigeren); lengtegrenzen op de velden
+van `/api/order`; de oude checklist-tak in `/api/order` (stuurt niet meer mail dan het contactformulier); de
+studiobrief en de uploadgrenzen als D1 helemaal plat ligt (dan ligt alles plat); een merkteken op de creditherinnering
+zodat een tweede run op dezelfde dag niet opnieuw mailt.
