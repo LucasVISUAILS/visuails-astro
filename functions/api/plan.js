@@ -219,9 +219,18 @@ export async function onRequestPost(context) {
        ingelogde klant naar /account/plan/start, achter de sessie). Een nieuw adres
        gaat zoals altijd door naar Mollie. Op kleine letters vergeleken: een rij die
        ooit met hoofdletters is opgeslagen, is hetzelfde postvak. */
-    const bestaand = env.DB
-      ? await env.DB.prepare('SELECT id FROM customers WHERE lower(email) = ?1').bind(email).first().catch(() => null)
-      : null;
+    /* Mislukt dit opzoeken, dan weigeren in plaats van doorlaten (5 november 2026): met
+       `.catch(() => null)` telde een haperende database elk bestaand adres als nieuw, en
+       stond precies het pad van 19 oktober weer open. */
+    let bestaand = null;
+    if (env.DB) {
+      try {
+        bestaand = await env.DB.prepare('SELECT id FROM customers WHERE lower(email) = ?1').bind(email).first();
+      } catch (err) {
+        console.error('[abonnement] bestaand adres niet op te zoeken —', err?.message || err);
+        return terug('opslaan', lang);
+      }
+    }
     if (bestaand) return terug('account', lang);
 
     let id = null;

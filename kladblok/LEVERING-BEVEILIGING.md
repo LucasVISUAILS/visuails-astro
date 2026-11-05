@@ -1,10 +1,8 @@
 # Levering: de beveiliging en de back-end sterker (5 november 2026)
 
 > **NOG NIET AF** (deze notitie wordt bij elke push bijgewerkt):
-> - De reparaties: stap 1 tot en met 18 zijn af. Stap 19 in
->   `kladblok/PLAN-BEVEILIGING.md` §4 nog niet (stap 14 tot en met 19 kwamen uit het vierde deel van de naloop, de
->   betaal- en bestelroutes; 14 ging voor omdat hij het zwaarst is).
-> - De eindcontrole.
+> - De reparaties zijn af (stap 1 tot en met 19 in `kladblok/PLAN-BEVEILIGING.md` §4).
+> - De eindcontrole: de hele testreeks, kruip, check:csp, audit, visueel, npm audit, en de echte Worker lokaal.
 
 Cloudsessie, branch `claude/voor-de-launch`. Het plan, met wat niet kapot mag en de nacontrole per stap, staat in
 `kladblok/PLAN-BEVEILIGING.md`. Het nummer van deze levering laat ik aan de chat met de brug.
@@ -311,3 +309,14 @@ naar live), het vangnet, de tweede stap: groen.
 **Het bewijs.** `tests/backend-sterker.test.mjs` §18 (met een body die faalt zodra hij gelezen wordt): op de oude code
 rood, nu groen; een losse foto gaat nog gewoon weg. **Nacontrole:** de zeven toetsbestanden rond uploaden (ook de
 daggrens en de botcheck), het vangnet, de tweede stap, de klantscheiding: groen.
+
+## Stap 19 · /api/plan als het opzoeken van een adres mislukt (af)
+
+Sinds 19 oktober moet een adres dat al bij een klant hoort eerst inloggen voordat het een abonnement kan afsluiten. Het
+opzoeken daarvan had `.catch(() => null)`: haperde de database precies op die vraag, dan telde een bestaand adres als
+nieuw en stond dat pad weer open (nagespeeld: er werd een abonnement aangemaakt en Mollie aangeroepen voor het adres van
+een bestaande klant). Nu gaat het formulier dan terug met de bestaande melding "opslaan" en gebeurt er niets.
+
+**Het bewijs.** `tests/backend-sterker.test.mjs` §19, met een D1 die precies op die vraag hapert: op de oude code rood,
+nu groen. **Nacontrole:** de 19 toetsbestanden rond abonneren, het vangnet, de tweede stap, de klantscheiding,
+inloggen: groen.

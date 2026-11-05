@@ -35,6 +35,7 @@
  *       (Stap 16, de 429 en 401 van Mollie, staat in tests/mollie-webhook.test.mjs.)
  *  17 · de betaalherinnering van de nacht gaat één keer uit, ook met twee runs tegelijk of
  *       een stempel die een nacht niet lukt.
+ *  19 · /api/plan: mislukt het opzoeken van een bestaand adres, dan geen doorgang als nieuw.
  *  18 · uploaden: een verzoek dat te groot is, wordt geweigerd vóór de body gelezen wordt;
  *       en wissen raakt geen foto die al aan een geplaatste bestelling hangt.
  */
@@ -697,6 +698,35 @@ console.log('\n18 · uploaden: een te groot verzoek vooraf, en wissen uit een ge
     const r2 = await wis(los);
     ok('  een foto die nog nergens aan hangt, gaat gewoon weg', r2.status === 200 && weg18.includes(los), `${r2.status}`);
   } catch (e) { ok('uploaden zonder fout', false, e.stack || e.message); }
+}
+
+/* ══ 19 · /api/plan: EEN MISLUKTE OPZOEKING IS GEEN NIEUW ADRES ══════════════════ */
+console.log('\n19 · /api/plan: als het opzoeken van een bestaand adres mislukt');
+{
+  const { onRequestPost: planPost } = await import('../functions/api/plan.js');
+  const { db } = verseDb(schema);
+  db.prepare("INSERT INTO customers (id, email, brand, country) VALUES (8, 'bestaat@merk.test', 'BESTAAT', 'NL')").run();
+  const D = d1(db);
+  /* Een D1 die precies op het opzoeken van het adres hapert. */
+  const DB = { ...D, prepare: (sql) => (/SELECT id FROM customers WHERE lower\(email\) = \?1$/.test(sql.trim())
+    ? { bind() { return this; }, async first() { throw new Error('D1_ERROR: storing (toets)'); } } : D.prepare(sql)) };
+  let mollie = 0;
+  const echteFetch19 = globalThis.fetch;
+  globalThis.fetch = async (url) => { if (String(url).includes('mollie')) mollie++; return new Response('{}', { status: 500 }); };
+  const velden = {
+    plan: 'studio', term: 'monthly', window_day: '8', lang: 'nl', email: 'bestaat@merk.test', first_name: 'Iemand', last_name: 'Anders',
+    phone: '+31 6 12345678', brand: 'BESTAAT', country: 'NL', address_line1: 'Straat 1', postal_code: '1234 AB', city: 'Plaats',
+    reg_number: '12345678', business_declaration: 'yes', business_version: 'business-v2-2026-09', vat_confirmed: 'yes',
+  };
+  const stilErr19 = console.error; console.error = () => {};
+  try {
+    const r = await planPost({ request: new Request('https://visuails.com/api/plan', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded', 'cf-connecting-ip': nieuwIp() }, body: new URLSearchParams(velden).toString() }), env: { DB, MOLLIE_API_KEY: 'test_abcdefghijklmnopqrstuvwxyz0123' }, waitUntil() {} });
+    const loc = r.headers.get('location') || '';
+    const subs = db.prepare('SELECT COUNT(*) AS n FROM subscriptions').get().n;
+    ok('het formulier gaat terug met "opslaan", en er is niets aangemaakt en niets naar Mollie', /fout=opslaan/.test(loc) && subs === 0 && mollie === 0, `${r.status} ${loc}, ${subs} abonnementen, ${mollie}× Mollie`);
+  } catch (e) { ok('/api/plan zonder fout', false, e.stack || e.message); }
+  console.error = stilErr19;
+  globalThis.fetch = echteFetch19;
 }
 
 console.log(`\n${pass} goed, ${fail} fout`);
