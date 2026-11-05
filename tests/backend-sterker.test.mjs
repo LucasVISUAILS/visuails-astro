@@ -19,6 +19,7 @@
  *       venster, zoals in Studio (ook met een link die /admin opnieuw uitgaf).
  *   6 · een oud bestand met een onbekende extensie gaat niet met een willekeurig
  *       opgeslagen type (text/html) de deur uit, in de privélink en in Studio.
+ *   7 · (de open doorverwijzing na het bestellen: tests/order-api.test.mjs)
  *   8 · /admin: twee foutmeldingen geëscaped, de themaknop, een offerte of restant van
  *       0 cent, en een restant dat bij een dubbelklik niet twee keer ontstaat.
  *   9 · mail: geen regeleinden of stuurtekens in het onderwerp (een merknaam met een
@@ -27,6 +28,7 @@
  *       Mollie, de Nederlandse 404); `_headers` geldt daar niet.
  *  11 · de nacht ruimt verlopen sessies en inloglinks op (admin, Studio), en niets wat
  *       nog geldt.
+ *  12 · (de back-up gaat pas na de controle naar Drive: tests/backup-terugzet.test.mjs)
  *  13 · een klant wissen: mislukt een bestand in de opslag, dan blijft de database staan (en
  *       opnieuw proberen schrijft het archief niet dubbel).
  *  14 · de betaalwebhook: een aflevering die halverwege stopt (D1 hapert tussen de
@@ -35,9 +37,9 @@
  *       (Stap 16, de 429 en 401 van Mollie, staat in tests/mollie-webhook.test.mjs.)
  *  17 · de betaalherinnering van de nacht gaat één keer uit, ook met twee runs tegelijk of
  *       een stempel die een nacht niet lukt.
- *  19 · /api/plan: mislukt het opzoeken van een bestaand adres, dan geen doorgang als nieuw.
  *  18 · uploaden: een verzoek dat te groot is, wordt geweigerd vóór de body gelezen wordt;
  *       en wissen raakt geen foto die al aan een geplaatste bestelling hangt.
+ *  19 · /api/plan: mislukt het opzoeken van een bestaand adres, dan geen doorgang als nieuw.
  */
 import { verseDb, d1 } from './lib/d1sqlite.mjs';
 import { adminGet, adminPost } from '../src/lib/admin.js';

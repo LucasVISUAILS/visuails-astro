@@ -7,6 +7,40 @@
 Cloudsessie, branch `claude/voor-de-launch`. Het plan, met wat niet kapot mag en de nacontrole per stap, staat in
 `kladblok/PLAN-BEVEILIGING.md`. Het nummer van deze levering laat ik aan de chat met de brug.
 
+## In het kort
+
+Negentien gaten gedicht, elk eerst nagespeeld in een toets die op de oude code rood was, en na elke stap de 2FA-set
+(inloggen in /admin met de tweede stap, de Origin-controle, de koekjes) opnieuw. **Aan de inlog van /admin zelf
+(`handleLogin`, de halve sessie, de code, `currentAdmin`, `originIsSelf`, de koekjes) is niets veranderd.** Geen nieuw
+geheim, geen migratie, geen nieuwe tekst voor klanten.
+
+| Stap | Wat er mis kon gaan | Ernst |
+|---|---|---|
+| 14 | **Een betaalde bestelling kon voorgoed onbetaald blijven** (D1 hapert tussen de betaalrij en de UPDATE; de herhaling van Mollie stopte op de UNIQUE). De nacht annuleert haar dan | **hoog** |
+| 3 | **Wie een Studio-sessie stal, kon het terugzetten van het e-mailadres omzeilen** (twee manieren) en het account houden | middel |
+| 1 | /admin gaf een 500 vanaf 101 klanten in de lijst (D1: hoogstens 100 waarden per query); ook Studio, de privélink, wissen en de nachtelijke opruiming | middel |
+| 2 | Studio: "Gegevens opslaan" met een leeg KvK-veld gaf een fout; `?ok=constructor` liet Je plan vastlopen | middel / laag |
+| 4 | Studio: geen daggrens op het raden naar de inlogcode (1440 per dag) | laag |
+| 15 | Een mislukte incasso gaf bij elke herhaalde aflevering opnieuw een mail | laag-middel |
+| 16 | Een 429 of 401 van Mollie telde als blijvend: een echte `paid` kon wegvallen | laag-middel |
+| 7 | Een open doorverwijzing na het bestellen (`//kwaad.example/thank-you`) | laag-middel |
+| 13 | Een klant wissen kon foto's achterlaten waar niemand meer van wist (het plan zei de verkeerde volgorde; bijgesteld) | laag-middel |
+| 5 | De privélink kon een bestelling na het venster heropenen (met een opnieuw uitgegeven link) | laag |
+| 6 | Een oud bestand met een opgeslagen `text/html` werd een pagina op ons domein | laag |
+| 8 | /admin: twee meldingen zonder escapen, de themaknop, offerte en restant van 0 cent, een restant dat bij een dubbelklik twee keer ontstond | laag |
+| 9 | Een regeleinde in een onderwerp kon Resend de mail laten weigeren | laag |
+| 10 | De tussenpagina naar Mollie en de NL 404 zonder nosniff en frame-ancestors | laag |
+| 11 | Verlopen sessies en inloglinks bleven voor altijd staan | laag (groei) |
+| 12 | De back-up stond al in Drive voordat hij op geheimen gecontroleerd was | laag |
+| 17 | De betaalherinnering van de nacht kon twee keer uitgaan | laag |
+| 18 | Uploaden: een te groot verzoek werd eerst gelezen; een foto uit een geplaatste bestelling kon weg | laag |
+| 19 | `/api/plan` liet een bestaand adres door als het opzoeken mislukte | laag |
+
+De toetsen: `tests/backend-sterker.test.mjs` (`npm run test:backend`, 72 controles, per stap een blok) en
+`tests/vangnet-beveiliging.test.mjs` (`npm run test:vangnet`, 40), allebei in de keten; daarnaast nieuwe gevallen in
+`tests/order-api.test.mjs`, `tests/mollie-webhook.test.mjs` en `tests/backup-terugzet.test.mjs`. De nep-D1 van de
+toetsen kan nu de echte grens van 100 waarden afdwingen (`d1(db, { maxWaarden: 100 })`).
+
 ## Stap 0 · Het vangnet (af)
 
 Eerst vastgelegd wat er nu goed werkt, zodat elke wijziging die het breekt meteen rood wordt:
@@ -320,3 +354,43 @@ een bestaande klant). Nu gaat het formulier dan terug met de bestaande melding "
 **Het bewijs.** `tests/backend-sterker.test.mjs` §19, met een D1 die precies op die vraag hapert: op de oude code rood,
 nu groen. **Nacontrole:** de 19 toetsbestanden rond abonneren, het vangnet, de tweede stap, de klantscheiding,
 inloggen: groen.
+
+## Niet in deze ronde, met advies
+
+Nagekeken, en bewust niet nu: elk is een keuze die bij Lucas hoort, iets wat buiten de code ligt, of een wijziging die
+meer kan breken dan ze oplevert.
+
+- **/admin op een eigen subdomein** (bijvoorbeeld `beheer.visuails.com`). De sterkste stap die er nog is: een fout in
+  de site kan dan nooit meer bij het koekje van /admin. Vraagt DNS en een route in Cloudflare, dus Lucas.
+- **Inloggen in Studio via de link uit de mail** opent de sessie in de browser waarin je klikt, ook als je daar nog
+  niets geopend had. Een bewuste keuze in de code (zie "NIET STIL VAN ACCOUNT WISSELEN" in account.js); een strengere
+  regel kost klanten die op een ander apparaat klikken.
+- **Het verschil in antwoordtijd** bij een bekend of onbekend adres op de inlogpagina van Studio: klein, en dichtmaken
+  vraagt een vaste wachttijd op elk verzoek.
+- **Het bevestigen van een nieuw e-mailadres gebeurt op een GET**: een mailscanner die de link vooraf opent, bevestigt
+  hem. Het terugzetten heeft al een knop (sinds 8 oktober); hetzelfde voor bevestigen kost een tekst (NL en EN).
+- **Tekst uit de adresbalk in meldingen van /admin**: overal geëscaped, maar een vaste lijst met meldingen is netter.
+- **De zouten in `app_settings` gaan mee in de back-up.** Nodig om na een herstel privélinks en grenzen te laten werken;
+  wie de back-up heeft, kan daarmee gehashte IP-adressen terugrekenen.
+- **`hash-admin-password` krijgt het wachtwoord op de opdrachtregel** (dan staat het in de geschiedenis van de shell).
+  Beter: vragen zonder echo.
+- **Bestanden in de privélink hebben `max-age=3600`**: na het intrekken van een link blijft een beeld tot een uur in de
+  browser van de klant. Kleiner maken kost laadtijd bij elk bezoek.
+- **Een adres voor CSP-meldingen** (`report-to`): dan zie je het als een script of beeld ergens geblokkeerd wordt.
+- **Uit het vierde deel van de naloop:** Turnstile op `/api/plan` (een nieuwe stap in het abonnementsformulier); de
+  landcode bij bestellen en abonneren tegen de lijst houden (raakt de btw, en een land dat wel in het formulier maar
+  niet in de lijst staat, zou een echte klant weigeren); lengtegrenzen op de velden van `/api/order`; de oude
+  checklist-tak in `/api/order` (stuurt niet meer mail dan het contactformulier); de studiobrief en de uploadgrenzen als
+  D1 helemaal plat ligt (dan ligt alles plat); een merkteken op de creditherinnering, zodat een tweede run op dezelfde
+  dag niet opnieuw mailt; een index op `files.r2_key` (een migratie; nu één zoekslag per DELETE van een upload).
+- **Het tellen van pogingen per inlogcode atomair maken**: begrensd door de atomaire grens per account (zie stap 4).
+
+## Mag weg
+
+- **`.wrangler/state/` en `cron/.wrangler/state/` staan in git** (25 bestanden: de lokale Miniflare-database, cache,
+  R2 en traces van `npm run worker` en `cron:run`). Daar hoort niets van in de repo, en een lokale database met
+  proefgegevens in een openbare repo is een slecht idee. Weghalen uit git zonder ze van schijf te gooien:
+  `git rm -r --cached .wrangler/state cron/.wrangler/state`. `.wrangler/` staat al in `.gitignore`; deze bestanden
+  kwamen er alleen eerder in. Niet zelf gedaan: verwijderen is aan Lucas.
+- `kladblok/_e2e-beveiliging.mjs` en `kladblok/_doorloop-worker.mjs` zijn gereedschap voor deze en de volgende
+  controle; ze kunnen blijven of weg.

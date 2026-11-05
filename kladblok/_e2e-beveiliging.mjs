@@ -54,5 +54,22 @@ ok('de voorpagina: 200, met nosniff en frame-ancestors', thuis.status === 200, S
 const nl404 = await get('/nl/bestaat-niet');
 ok('de Nederlandse 404 (maakt de Worker zelf): nosniff en frame-ancestors', nl404.status === 404 && nl404.headers.get('x-content-type-options') === 'nosniff' && /frame-ancestors 'none'/.test(nl404.headers.get('content-security-policy') || ''), `${nl404.status} ${nl404.headers.get('x-content-type-options')} ${nl404.headers.get('content-security-policy')}`);
 
+console.log('\nEen bestelling met een nep-betaling, door de echte Worker');
+{
+  const fd = new URLSearchParams({ service: 'catalog', email: 'e2e@merk.test', name: 'Eva Eind', brand: 'EINDMERK', products: '5', country: 'NL', back: '/thank-you', phone: '+31 6 12345678', business_declaration: 'yes', business_version: 'business-v2-2026-09', no_vat: '1', reg_number: '99742993', lang: 'nl' });
+  const r = await fetch(`${W}/api/order`, { method: 'POST', redirect: 'manual', headers: { 'content-type': 'application/x-www-form-urlencoded', origin: W, 'sec-fetch-site': 'same-origin' }, body: fd });
+  const tekst = r.status === 200 ? await r.text() : '';
+  const naar = (/content="0; url=([^"]+)"/.exec(tekst) || [])[1] || r.headers.get('location') || '';
+  const tr = (/(tr_[A-Za-z0-9]+)/.exec(naar) || [])[1] || '';
+  ok('de bestelling gaat naar de (nep-)checkout', !!tr, `${r.status} ${naar}`);
+  if (r.status === 200) ok('  via de tussenpagina, met nosniff en frame-ancestors', r.headers.get('x-content-type-options') === 'nosniff' && /frame-ancestors 'none'/.test(r.headers.get('content-security-policy') || ''), `${r.headers.get('x-content-type-options')} ${r.headers.get('content-security-policy')}`);
+  if (tr) {
+    const betaal = await fetch(`${P}/pay/${tr}/paid`, { method: 'POST', redirect: 'manual' });
+    await new Promise((res) => setTimeout(res, 800));
+    const rij = await sql("SELECT payment_status FROM orders WHERE email = 'e2e@merk.test' ORDER BY id DESC LIMIT 1");
+    ok('betaald bij nep-Mollie: de webhook zet de bestelling op betaald', JSON.stringify(rij).includes('"paid"'), `${betaal.status} ${JSON.stringify(rij)}`);
+  }
+}
+
 console.log(`\n${pass} goed, ${fail} fout`);
 process.exit(fail ? 1 : 0);
