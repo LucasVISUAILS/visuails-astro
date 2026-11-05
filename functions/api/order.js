@@ -397,7 +397,7 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
       const ref = request.headers.get('Referer');
       if (ref) {
         const u = new URL(ref);
-        if (u.origin === new URL(request.url).origin) dest = u.pathname + u.search;
+        if (u.origin === new URL(request.url).origin && !u.pathname.startsWith('//')) dest = u.pathname + u.search; // niet `//…`: zie safeRedirect
       }
     } catch {}
     return redirect(dest + (dest.includes('?') ? '&' : '?') + 'error=email');
@@ -448,7 +448,7 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
       const ref = request.headers.get('Referer');
       if (ref) {
         const u = new URL(ref);
-        if (u.origin === new URL(request.url).origin) dest = u.pathname + u.search;
+        if (u.origin === new URL(request.url).origin && !u.pathname.startsWith('//')) dest = u.pathname + u.search; // niet `//…`: zie safeRedirect
       }
     } catch {}
     return redirect(dest + (dest.includes('?') ? '&' : '?') + 'error=' + code);
@@ -1005,7 +1005,7 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
         const from = request.headers.get('Referer');
         if (from) {
           const u = new URL(from);
-          if (u.origin === new URL(request.url).origin) waarheen = u.pathname + u.search;
+          if (u.origin === new URL(request.url).origin && !u.pathname.startsWith('//')) waarheen = u.pathname + u.search; // niet `//…`: zie safeRedirect
         }
       } catch {}
       return redirect(waarheen + (waarheen.includes('?') ? '&' : '?') + 'error=sample-soort');
@@ -1038,7 +1038,7 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
         const from = request.headers.get('Referer');
         if (from) {
           const u = new URL(from);
-          if (u.origin === new URL(request.url).origin) dest = u.pathname + u.search;
+          if (u.origin === new URL(request.url).origin && !u.pathname.startsWith('//')) dest = u.pathname + u.search; // niet `//…`: zie safeRedirect
         }
       } catch {}
       return redirect(dest + (dest.includes('?') ? '&' : '?') + 'error=sample-used');
@@ -3385,6 +3385,11 @@ export function safeRedirect(raw, lang) {
     return fallback;
   }
   if (url.origin !== 'https://visuails.com') return fallback;
+  /* Een pad dat met twee schuine strepen begint, is als Location een adres op een andere
+     site (5 november 2026): `https://visuails.com//kwaad.example/thank-you` heeft onze
+     origin, maar het pad `//kwaad.example/thank-you` stuurt de browser naar kwaad.example.
+     Ook `/.//` en een backslash na onze naam komen hier zo uit. */
+  if (url.pathname.startsWith('//')) return fallback;
   if (!url.pathname.includes('thank-you')) return fallback;
   return `${url.pathname}${url.search}${url.hash}`;
 }

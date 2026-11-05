@@ -1,7 +1,7 @@
 # Levering: de beveiliging en de back-end sterker (5 november 2026)
 
 > **NOG NIET AF** (deze notitie wordt bij elke push bijgewerkt):
-> - De reparaties: stap 1 tot en met 6, en 14, 15 en 16 zijn af. Stap 7 tot en met 13 en 17 tot en met 19 in
+> - De reparaties: stap 1 tot en met 7, en 14, 15 en 16 zijn af. Stap 8 tot en met 13 en 17 tot en met 19 in
 >   `kladblok/PLAN-BEVEILIGING.md` §4 nog niet (stap 14 tot en met 19 kwamen uit het vierde deel van de naloop, de
 >   betaal- en bestelroutes; 14 ging voor omdat hij het zwaarst is).
 > - De eindcontrole.
@@ -170,3 +170,18 @@ browser breken. De previews in /admin worden sinds 31 augustus bij het uploaden 
 **Het bewijs.** `tests/backend-sterker.test.mjs` §5 en §6: op de oude code rood (de controles met een geldig geval
 groen), op de nieuwe groen. **Nacontrole:** de bouw, de 30 toetsbestanden rond de privélink en de bestanden van
 Studio, de 2FA-set: groen.
+
+## Stap 7 · De open doorverwijzing in /api/order (af)
+
+**Het gat.** Na het bestellen stuurt `/api/order` de klant naar het adres uit het formulierveld `redirect`, als dat op
+visuails.com ligt en "thank-you" bevat. Maar `https://visuails.com//kwaad.example/thank-you` heeft onze origin met het
+pad `//kwaad.example/thank-you`, en een Location die met `//` begint, is een adres op een andere site (nagespeeld,
+ook met `/.//` en met een backslash na onze naam). Een nagemaakt formulier kon een klant zo na een echte bestelling
+naar een nagemaakte "betaal nu"-pagina sturen.
+
+**De reparatie.** Een pad dat met `//` begint, valt terug op de gewone bedankpagina. Hetzelfde op de vier plekken waar
+`/api/order` terugstuurt naar de Referer (`studiobrief.js` had deze controle al; Studio houdt zijn terugweg tegen een
+vaste lijst).
+
+**Het bewijs.** Drie nieuwe gevallen in `tests/order-api.test.mjs`: op de oude code rood, nu 132 van 132.
+**Nacontrole:** de 49 toetsbestanden die `/api/order` aanroepen, mail, de 2FA-set, de bouw: groen.

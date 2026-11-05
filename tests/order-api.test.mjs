@@ -91,6 +91,12 @@ ok('en ../ brengt je niet ergens anders', safeRedirect('/thank-you/../admin', 'n
 ok('leeg valt terug op de taal', safeRedirect('', 'en'), '/thank-you');
 ok('null valt terug', safeRedirect(null, 'nl'), '/nl/thank-you');
 ok('een getal valt terug', safeRedirect(42, 'nl'), '/nl/thank-you');
+/* 5 november 2026: met onze eigen naam ervoor kwam een tweede schuine streep erdoor. De URL
+   is dan van visuails.com, maar het pad begint met `//`, en een Location die met `//`
+   begint, is een adres op een andere site. */
+ok('onze eigen naam met // erachter niet', safeRedirect('https://visuails.com//evil.com/thank-you', 'nl'), '/nl/thank-you');
+ok('/.// ook niet', safeRedirect('/.//evil.com/thank-you', 'nl'), '/nl/thank-you');
+ok('een backslash na onze eigen naam ook niet', safeRedirect('https://visuails.com/\\evil.com/thank-you', 'en'), '/thank-you');
 
 /*
  * DE BEWAKER OP HET AANROEPPUNT. De twee checks hierboven op isPayableService() stonden
