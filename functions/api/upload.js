@@ -111,6 +111,16 @@ export async function onRequestPost(context) {
     });
   }
 
+  /* EEN TE GROOT VERZOEK WORDT NIET EERST GELEZEN (5 november 2026). formData() leest de
+     hele body in het geheugen voordat de controle op 25 MB hieronder aan de beurt is.
+     Zegt de Content-Length al dat het meer is dan één bestand met wat velden, dan meteen
+     hetzelfde antwoord als die controle. Zonder Content-Length (gestreamd) blijft alles
+     zoals het was. */
+  const lengte = Number(request.headers.get('content-length'));
+  if (Number.isFinite(lengte) && lengte > MAX_FILE_BYTES + 256 * 1024) {
+    return json({ ok: false, error: 'too-large', max: MAX_FILE_BYTES }, 400);
+  }
+
   let form;
   try {
     form = await request.formData();
@@ -285,6 +295,19 @@ export async function onRequestDelete(context) {
   const key = (url.searchParams.get('key') || '').toString();
   if (!isWellFormedBatch(batch)) return json({ ok: false, error: 'bad-batch' }, 400);
   if (!keyBelongsTo(key, batch)) return json({ ok: false, error: 'bad-key' }, 400);
+
+  /* NIET UIT EEN GEPLAATSTE BESTELLING (5 november 2026). Het formulier onthoudt de
+     geüploade foto's op het apparaat (zie hieronder), dus een tweede bestelling kan een foto
+     van de eerste hergebruiken; haalde de klant hem daar weg, dan ging hij ook uit de
+     geplaatste bestelling. Hangt er een rij in `files` aan deze sleutel, dan blijft het
+     object staan. De pagina haalt de foto al uit het formulier voordat ze dit vraagt en
+     kijkt niet naar het antwoord, dus voor de klant verandert er niets. Geen index op
+     files.r2_key (dat vraagt een migratie); een DELETE is zeldzaam genoeg voor één zoekslag. */
+  if (env.DB) {
+    const inBestelling = await env.DB.prepare('SELECT 1 AS x FROM files WHERE r2_key = ?1 LIMIT 1')
+      .bind(key).first().catch(() => null);
+    if (inBestelling) return json({ ok: false, error: 'in-order' }, 409);
+  }
 
   try {
     await env.UPLOADS.delete(key);

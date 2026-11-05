@@ -35,6 +35,8 @@
  *       (Stap 16, de 429 en 401 van Mollie, staat in tests/mollie-webhook.test.mjs.)
  *  17 · de betaalherinnering van de nacht gaat één keer uit, ook met twee runs tegelijk of
  *       een stempel die een nacht niet lukt.
+ *  18 · uploaden: een verzoek dat te groot is, wordt geweigerd vóór de body gelezen wordt;
+ *       en wissen raakt geen foto die al aan een geplaatste bestelling hangt.
  */
 import { verseDb, d1 } from './lib/d1sqlite.mjs';
 import { adminGet, adminPost } from '../src/lib/admin.js';
@@ -668,6 +670,33 @@ console.log('\n17 · de betaalherinnering: eerst claimen, dan sturen');
     ok('de herinnering zonder fout', false, e.stack || e.message);
   }
   globalThis.fetch = echteFetch17;
+}
+
+/* ══ 18 · UPLOADEN: TE GROOT VOORAF, EN NIET UIT EEN GEPLAATSTE BESTELLING ═════ */
+console.log('\n18 · uploaden: een te groot verzoek vooraf, en wissen uit een geplaatste bestelling');
+{
+  const upload = await import('../functions/api/upload.js');
+  const { batchPrefix } = await import('../src/lib/uploads.js');
+  const { db } = verseDb(schema);
+  const weg18 = [];
+  const env = { DB: d1(db), UPLOADS: { async delete(k) { weg18.push(k); }, async put() {}, async list() { return { objects: [], truncated: false }; } } };
+  try {
+    /* Een body die faalt zodra iemand hem leest: dan bewijst een nette weigering dat hij niet gelezen is. */
+    const nooitLezen = new ReadableStream({ pull() { throw new Error('de body is gelezen'); } });
+    const groot = await upload.onRequestPost({ request: new Request('https://visuails.com/api/upload', { method: 'POST', body: nooitLezen, duplex: 'half', headers: { 'content-length': String(40 * 1024 * 1024), 'content-type': 'multipart/form-data; boundary=x', 'cf-connecting-ip': nieuwIp() } }), env, waitUntil() {} });
+    const gb = await groot.json().catch(() => ({}));
+    ok('een verzoek van 40 MB wordt geweigerd vóór de body gelezen wordt (zelfde antwoord: too-large)', groot.status === 400 && gb.error === 'too-large', `${groot.status} ${JSON.stringify(gb)}`);
+    const batch = await mintToken();
+    const sleutel = `${batchPrefix(batch)}p1/front/foto.jpg`;
+    db.prepare("INSERT INTO orders (id, ref, email, service, status, lang) VALUES (1, 'VIS-UP-18', 'up@merk.test', 'catalog', 'received', 'nl')").run();
+    db.prepare("INSERT INTO files (id, order_id, kind, r2_key, filename, bytes) VALUES (1, 1, 'upload', ?, 'foto.jpg', 10)").run(sleutel);
+    const wis = (k) => upload.onRequestDelete({ request: new Request(`https://visuails.com/api/upload?batch=${encodeURIComponent(batch)}&key=${encodeURIComponent(k)}`, { method: 'DELETE', headers: { 'cf-connecting-ip': nieuwIp() } }), env, waitUntil() {} });
+    const r1 = await wis(sleutel);
+    ok('een foto die al aan een geplaatste bestelling hangt, blijft staan', r1.status === 409 && !weg18.includes(sleutel), `${r1.status}, weg: ${weg18.join(', ')}`);
+    const los = `${batchPrefix(batch)}p2/front/los.jpg`;
+    const r2 = await wis(los);
+    ok('  een foto die nog nergens aan hangt, gaat gewoon weg', r2.status === 200 && weg18.includes(los), `${r2.status}`);
+  } catch (e) { ok('uploaden zonder fout', false, e.stack || e.message); }
 }
 
 console.log(`\n${pass} goed, ${fail} fout`);

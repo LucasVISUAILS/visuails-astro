@@ -1,7 +1,7 @@
 # Levering: de beveiliging en de back-end sterker (5 november 2026)
 
 > **NOG NIET AF** (deze notitie wordt bij elke push bijgewerkt):
-> - De reparaties: stap 1 tot en met 17 zijn af. Stap 18 en 19 in
+> - De reparaties: stap 1 tot en met 18 zijn af. Stap 19 in
 >   `kladblok/PLAN-BEVEILIGING.md` §4 nog niet (stap 14 tot en met 19 kwamen uit het vierde deel van de naloop, de
 >   betaal- en bestelroutes; 14 ging voor omdat hij het zwaarst is).
 > - De eindcontrole.
@@ -294,3 +294,20 @@ Hetzelfde patroon als `cancelStaleApprovals()` in hetzelfde bestand.
 **Het bewijs.** `tests/backend-sterker.test.mjs` §17: op de oude code twee herinneringen in beide gevallen, nu één.
 **Nacontrole:** de 47 toetsbestanden rond de nacht en de betaallink (waaronder `test:betaalherinnering` en de overgang
 naar live), het vangnet, de tweede stap: groen.
+
+## Stap 18 · Uploaden (af)
+
+- **Een te groot verzoek werd eerst helemaal gelezen.** `formData()` leest de hele body in het geheugen, en pas daarna
+  kwam de controle op 25 MB. Zegt de Content-Length al dat het verzoek groter is dan één bestand met wat velden (25 MB
+  plus 256 kB), dan komt nu meteen hetzelfde antwoord (`too-large`), zodat de pagina dezelfde zin toont. Zonder
+  Content-Length blijft alles zoals het was.
+- **Een foto uit een geplaatste bestelling kon weg.** Het formulier onthoudt geüploade foto's op het apparaat, dus een
+  tweede bestelling kan een foto van de eerste hergebruiken (de nachtelijke opruiming houdt daar al rekening mee).
+  Haalde de klant hem in het nieuwe formulier weg, dan ging hij ook uit de geplaatste bestelling. Nu blijft een object
+  staan zodra er een rij in `files` aan hangt. De pagina haalt de foto al uit het formulier voordat ze het vraagt en
+  kijkt niet naar het antwoord, dus voor de klant verandert er niets. Geen index op `files.r2_key` (dat vraagt een
+  migratie); een DELETE is zeldzaam genoeg voor één zoekslag.
+
+**Het bewijs.** `tests/backend-sterker.test.mjs` §18 (met een body die faalt zodra hij gelezen wordt): op de oude code
+rood, nu groen; een losse foto gaat nog gewoon weg. **Nacontrole:** de zeven toetsbestanden rond uploaden (ook de
+daggrens en de botcheck), het vangnet, de tweede stap, de klantscheiding: groen.
