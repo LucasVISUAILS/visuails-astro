@@ -1,7 +1,7 @@
 # Levering: de beveiliging en de back-end sterker (5 november 2026)
 
 > **NOG NIET AF** (deze notitie wordt bij elke push bijgewerkt):
-> - De reparaties: stap 1, 2, 14, 15 en 16 zijn af. Stap 3 tot en met 13 en 17 tot en met 19 in
+> - De reparaties: stap 1, 2, 3, 14, 15 en 16 zijn af. Stap 4 tot en met 13 en 17 tot en met 19 in
 >   `kladblok/PLAN-BEVEILIGING.md` §4 nog niet (stap 14 tot en met 19 kwamen uit het vierde deel van de naloop, de
 >   betaal- en bestelroutes; 14 ging voor omdat hij het zwaarst is).
 > - De eindcontrole.
@@ -107,3 +107,29 @@ geen Origin-controle; in de betaalroute alleen de drie plekken hierboven.
 **Het bewijs.** `tests/backend-sterker.test.mjs` §2: op de oude code 7 rood, de twee controles met echte woorden
 groen; op de nieuwe alles groen. **Nacontrole:** de 31 toetsbestanden die Je plan, Gegevens of de rondes aanroepen, de
 2FA-set (ook `test:code`), `npx astro build`: groen. De diff raakt geen inlog en geen koekje.
+
+## Stap 3 · Studio: het e-mailadres wijzigen en terugzetten (af)
+
+**Het gat.** Het e-mailadres is de inlog van Studio. Wie een sessiekoekje steelt, kan het adres op zijn eigen postvak
+zetten en dat zelf bevestigen; het slot is de terugzetlink die naar het OUDE adres gaat. Dat slot was te omzeilen, op
+twee manieren (allebei nagespeeld in een toets, allebei een overname op de oude code):
+- **A:** de aanvaller zet vóór het terugzetten een tweede wijziging klaar en bevestigt die pas daarna. Die bevestiging
+  werkte nog, en de terugzetlink ervan ging naar het adres van de eerste wijziging: het zijne.
+- **B:** de aanvaller bevestigt twee wijzigingen achter elkaar. De eigenaar zet terug; daarna gebruikt de aanvaller de
+  terugzetlink van de tweede wijziging (die in zijn eigen postvak staat) en zet het adres weer op het zijne.
+
+**De reparatie.**
+- Terugzetten laat alle andere openstaande links van die klant vervallen: bevestigingen én terugzetlinks.
+- Bevestigen kan alleen nog als het account nog op het adres staat waar de wijziging van uitging; anders de bekende
+  pagina "Deze link is verlopen" (geen nieuwe tekst).
+- Terugzetten zet de lopende bestellingen terug van elk adres uit die wijziging en de wijzigingen erna (na B stonden
+  ze op het tweede adres van de aanvaller, en daar gaan levering, factuur en betaallink heen).
+- Een grens per klant op wijzigingsmails: 5 per uur, naast de bestaande grens per IP (wie een sessie stal, kiest zijn
+  IP).
+- `email_changes.request_ip_hash` is nu gezouten, met hetzelfde zout als de grenzen (geen nieuw geheim). Een kale hash
+  van een IP-adres is in minuten terug te rekenen. Oude rijen blijven zoals ze zijn.
+
+**Het bewijs.** `tests/backend-sterker.test.mjs` §3: A, B, de bestelling, de grens per klant en het zout. Op de oude
+code 5 rood (beide overnames gelukt), op de nieuwe alles groen. **Nacontrole:** `tests/email-change.test.mjs` en de
+andere toetsen rond grenzen en registreren, de 2FA-set met `test:code`, de bouw, en `test:afvink8okt` (136): groen.
+De inlog zelf (code, link, sessie) is niet aangeraakt.

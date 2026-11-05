@@ -10,6 +10,9 @@
  *       hem hier af (`d1(db, { maxWaarden: 100 })`), zoals D1 live doet.
  *   2 · Studio: "Gegevens opslaan" met een leeg KvK-veld, en `?ok=`, `?fout=` en `?ronde=`
  *       met een woord als `constructor` (Je plan liep daarop vast).
+ *   3 · Studio: het e-mailadres wijzigen. Wie een sessie stal, mag het terugzetten door de
+ *       eigenaar niet kunnen omzeilen (een tweede wijziging die klaarstaat, of de
+ *       terugzetlink van die tweede wijziging in zijn eigen postvak).
  *  14 · de betaalwebhook: een aflevering die halverwege stopt (D1 hapert tussen de
  *       betaalrij en de UPDATE naar betaald) mag een bestelling niet onbetaald laten.
  *  15 · een mislukte incasso die twee keer wordt afgeleverd, geeft één mail.
@@ -199,6 +202,73 @@ console.log('\n2 · Studio: een leeg KvK-veld, en woorden uit de adresbalk');
   ok('Bestellingen met ?ronde=valueOf: geen functie als melding', !ronde.fout && ronde.rondeTekst === '', ronde.fout || typeof ronde.rondeTekst);
   const verstuurd = await scherm('orders', 'ronde=verstuurd');
   ok('  en ?ronde=verstuurd geeft nog de bevestiging', !verstuurd.fout && typeof verstuurd.rondeTekst === 'string' && verstuurd.rondeTekst.length > 0, verstuurd.fout || JSON.stringify(verstuurd.rondeTekst));
+  console.error = stilErr;
+}
+
+/* ══ 3 · STUDIO: HET E-MAILADRES WIJZIGEN EN TERUGZETTEN ════════════════════ */
+console.log('\n3 · Studio: het e-mailadres wijzigen, en het terugzetten dat niet te omzeilen is');
+{
+  const { accountGet, accountPost } = await import('../src/lib/account.js');
+  const O = 'https://visuails.com';
+  const opzet = async () => {
+    const { db } = verseDb(schema);
+    db.prepare("INSERT INTO customers (id, email, brand, country) VALUES (7, 'eigenaar@merk.test', 'MERK', 'NL')").run();
+    db.prepare("INSERT INTO orders (id, ref, customer_id, email, service, status, lang) VALUES (1, 'VIS-LOOP-1', 7, 'eigenaar@merk.test', 'catalog', 'received', 'nl')").run();
+    const sessie = 'een-gestolen-sessie-van-klant-7-backend-sterker-0003';
+    db.prepare("INSERT INTO account_sessions (customer_id, token_hash, expires_at) VALUES (7, ?, datetime('now', '+30 days'))").run(await hashToken(sessie));
+    return { db, env: { DB: d1(db) }, ck: `vis_account=${sessie}; vis_lang=nl` };
+  };
+  const kop = (extra = {}) => ({ origin: O, 'sec-fetch-site': 'same-origin', 'content-type': 'application/x-www-form-urlencoded', 'cf-connecting-ip': nieuwIp(), ...extra });
+  const vraag = ({ env, ck }, nieuw) => accountPost({ request: new Request(`${O}/account/email`, { method: 'POST', headers: kop({ cookie: ck }), body: new URLSearchParams({ new_email: nieuw }).toString() }), env, waitUntil() {} });
+  /* Het kenmerk uit de mail: de database bewaart alleen de hash, dus de toets zet een bekend kenmerk in de rij. */
+  const kenmerk = async (db, nieuw, kolom) => {
+    const k = await mintToken();
+    const rij = db.prepare('SELECT id FROM email_changes WHERE new_email = ? ORDER BY id DESC LIMIT 1').get(nieuw);
+    if (kolom === 'confirm') db.prepare("UPDATE email_changes SET confirm_hash = ?, confirm_expires = ? WHERE id = ?").run(await hashToken(k), new Date(Date.now() + 3600e3).toISOString(), rij.id);
+    else db.prepare("UPDATE email_changes SET undo_hash = ?, undo_expires = ? WHERE id = ?").run(await hashToken(k), new Date(Date.now() + 14 * 864e5).toISOString(), rij.id);
+    return k;
+  };
+  const klik = ({ env }, k) => accountGet({ request: new Request(`${O}/account/email/${k}`, { headers: { cookie: 'vis_lang=nl' } }), env, waitUntil() {} });
+  const terug = ({ env }, k) => accountPost({ request: new Request(`${O}/account/email/undo/${k}`, { method: 'POST', headers: kop({ cookie: 'vis_lang=nl' }), body: '' }), env, waitUntil() {} });
+  const adres = ({ db }) => db.prepare('SELECT email FROM customers WHERE id = 7').get().email;
+  const stilErr = console.error; console.error = () => {};
+  try {
+    /* A · de aanvaller zet een tweede wijziging klaar, en bevestigt die pas nadat de eigenaar heeft teruggezet. */
+    let w = await opzet();
+    await vraag(w, 'x@aanvaller.test'); await klik(w, await kenmerk(w.db, 'x@aanvaller.test', 'confirm'));
+    const u1 = await kenmerk(w.db, 'x@aanvaller.test', 'undo');
+    await vraag(w, 'y@aanvaller.test'); const c2 = await kenmerk(w.db, 'y@aanvaller.test', 'confirm');
+    ok('A · de eerste wijziging gaat door (x@aanvaller)', adres(w) === 'x@aanvaller.test', adres(w));
+    await terug(w, u1);
+    ok('  de eigenaar zet terug', adres(w) === 'eigenaar@merk.test', adres(w));
+    await klik(w, c2);
+    ok('  de klaargezette tweede wijziging werkt daarna niet meer', adres(w) === 'eigenaar@merk.test', `het adres is nu ${adres(w)}`);
+
+    /* B · de aanvaller bevestigt de tweede wijziging eerst; de terugzetlink daarvan gaat naar zijn eigen x@. */
+    w = await opzet();
+    await vraag(w, 'x@aanvaller.test'); await klik(w, await kenmerk(w.db, 'x@aanvaller.test', 'confirm'));
+    const b1 = await kenmerk(w.db, 'x@aanvaller.test', 'undo');
+    await vraag(w, 'y@aanvaller.test'); await klik(w, await kenmerk(w.db, 'y@aanvaller.test', 'confirm'));
+    const b2 = await kenmerk(w.db, 'y@aanvaller.test', 'undo');
+    ok('B · twee wijzigingen achter elkaar (nu y@aanvaller)', adres(w) === 'y@aanvaller.test', adres(w));
+    await terug(w, b1);
+    const orderNa = w.db.prepare('SELECT email FROM orders WHERE id = 1').get().email;
+    ok('  de eigenaar zet terug met de link uit zijn eigen postvak', adres(w) === 'eigenaar@merk.test', adres(w));
+    ok('  en de lopende bestelling gaat ook terug naar zijn adres', orderNa === 'eigenaar@merk.test', `de bestelling staat op ${orderNa}`);
+    await terug(w, b2);
+    ok('  de terugzetlink in het postvak van de aanvaller zet het daarna niet meer om', adres(w) === 'eigenaar@merk.test', `het adres is nu ${adres(w)}`);
+
+    /* C · een grens per klant op het aantal wijzigingsmails, ook vanaf steeds een ander IP. */
+    w = await opzet();
+    for (let i = 1; i <= 7; i++) await vraag(w, `adres${i}@ergens.test`);
+    const n = w.db.prepare('SELECT COUNT(*) AS n FROM email_changes WHERE customer_id = 7').get().n;
+    ok('C · zeven verzoeken in een uur vanaf zeven IP-adressen: hoogstens vijf mails', n <= 5, `${n} verzoeken vastgelegd`);
+    const ipHash = w.db.prepare('SELECT request_ip_hash FROM email_changes ORDER BY id LIMIT 1').get()?.request_ip_hash;
+    /* Kaal (zonder zout) is een hash van een IPv4-adres in minuten terug te rekenen: hier
+       gewoon alle adressen die deze toets gebruikte. Gezouten mag hij daar niet tussen staan. */
+    const kaal = await Promise.all(Array.from({ length: ip + 1 }, (_, i) => hashToken(`ip:10.7.${Math.floor(i / 250)}.${i % 250}`)));
+    ok('  en het IP-adres is gezouten opgeslagen, niet als kale hash', !!ipHash && !kaal.includes(ipHash), String(ipHash));
+  } catch (e) { ok('het e-mailadres wijzigen zonder fout', false, e.stack || e.message); }
   console.error = stilErr;
 }
 

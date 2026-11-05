@@ -85,7 +85,7 @@ import {
   MAX_BATCH_FILES, MAX_FILE_BYTES, batchPrefix, mintBatch, safeName, typeFor,
   uploadFormatsSentence,
 } from './uploads.js';
-import { checkRate, clientIp, shouldSweep, sweepRateLimits } from './ratelimit.js';
+import { checkRate, clientIp, shouldSweep, sweepRateLimits, gezoutenHash } from './ratelimit.js';
 /* Lange lijsten in groepen: D1 neemt hoogstens 100 gebonden waarden per query (5 november 2026). */
 import { rijenPerGroep, plaatsen } from './d1Lijst.js';
 /* Foto's nasturen per vak (punt 2.05, 8 oktober 2026): dezelfde keuring en
@@ -8709,6 +8709,13 @@ async function handleEmailChangeRequest(context, customer) {
     ip: clientIp(request), action: 'account-email-change', limit: 5,
   });
   if (!gate.allowed) return seeOther(home);
+  /* EN EEN GRENS PER KLANT (5 november 2026). De grens hierboven telt per IP, en wie een
+     sessie heeft gestolen, kiest zijn IP. Vijf wijzigingsmails per uur per account is ruim
+     voor iemand die zich vertypt en te weinig om er andermans postvak mee te vullen. */
+  const perKlant = await checkRate(env, {
+    key: `account-email-change|${customer.customer_id}`, action: 'account-email-change-id', limit: 5, windowSeconds: 3600,
+  });
+  if (!perKlant.allowed) return seeOther(home);
 
   /* Is het adres vrij? Case-ongevoelig, want zo zoekt de inlogpagina hem ook op
      (`lower(email) = ?1`) en `customers.email UNIQUE` is dat in SQLite níet. Zonder
@@ -8735,8 +8742,11 @@ async function handleEmailChangeRequest(context, customer) {
         `INSERT INTO email_changes
            (customer_id, previous_email, new_email, confirm_hash, confirm_expires, request_ip_hash)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6)`
+      /* Gezouten sinds 5 november 2026 (zie gezoutenHash in ratelimit.js): een kale hash
+         van een IP-adres is in minuten terug te rekenen. Lukt het zouten niet, dan leeg:
+         dit veld is voor later nakijken, niet om de wijziging op te laten wachten. */
       ).bind(customer.customer_id, customer.email, nieuw, tokenHash, emailChangeExpiry(),
-        await hashToken(`ip:${clientIp(request) || ''}`)),
+        await gezoutenHash(env, `ip:${clientIp(request) || ''}`).catch(() => null)),
     ]);
   } catch (err) {
     console.error('[account] adreswijziging niet vastgelegd —', err?.message || err);
@@ -8794,6 +8804,24 @@ async function handleEmailConfirm(context, token) {
     'SELECT id FROM customers WHERE lower(email) = ?1 AND id <> ?2'
   ).bind(String(row.new_email).toLowerCase(), row.customer_id).first().catch(() => null);
   if (bezet) return emailChangePage(t, lang, 'bezet', '', themaCookie(context.request));
+
+  /* ── ALLEEN VANAF HET ADRES WAAR DE WIJZIGING VAN UITGING — 5 november 2026 ──
+     Wie een sessie heeft gestolen, kon een tweede wijziging klaarzetten en die pas
+     bevestigen nadat de eigenaar had teruggezet; dan ging de terugzetlink van die tweede
+     wijziging naar het adres van de aanvaller en was de overname definitief. Het
+     terugzetten laat openstaande links nu vervallen (handleEmailUndo), en hier geldt
+     bovendien: staat het account niet meer op het adres waar deze wijziging van uitging,
+     dan is ze achterhaald. Zelfde pagina als een verlopen link, want dat is ze. */
+  let nu;
+  try {
+    nu = await env.DB.prepare('SELECT email FROM customers WHERE id = ?1').bind(row.customer_id).first();
+  } catch {
+    return emailChangePage(t, lang, 'mislukt', '', themaCookie(context.request));
+  }
+  if (!nu || String(nu.email || '').trim().toLowerCase() !== String(row.previous_email || '').trim().toLowerCase()) {
+    await env.DB.prepare("UPDATE email_changes SET confirm_expires = datetime('now') WHERE id = ?1").bind(row.id).run().catch(() => {});
+    return emailChangePage(t, lang, 'verlopen', '', themaCookie(context.request));
+  }
 
   const undoToken = await mintToken();
 
@@ -8925,10 +8953,27 @@ async function handleEmailUndo(context, token) {
     await env.DB.batch([
       env.DB.prepare('UPDATE customers SET email = ?2 WHERE id = ?1')
         .bind(row.customer_id, row.previous_email),
+      /* Elk adres uit deze wijziging EN de wijzigingen erna (5 november 2026): na twee
+         wijzigingen achter elkaar stond de bestelling op het tweede adres, en zocht deze
+         regel alleen naar het eerste. */
       env.DB.prepare(
-        `UPDATE orders SET email = ?2 WHERE customer_id = ?1 AND closed_at IS NULL AND status <> 'cancelled' AND lower(email) = lower(?3)`
-      ).bind(row.customer_id, row.previous_email, row.new_email),
+        `UPDATE orders SET email = ?2 WHERE customer_id = ?1 AND closed_at IS NULL AND status <> 'cancelled'
+            AND lower(email) IN (SELECT lower(new_email) FROM email_changes
+                                  WHERE customer_id = ?1 AND id >= ?3 AND confirmed_at IS NOT NULL)`
+      ).bind(row.customer_id, row.previous_email, row.id),
       env.DB.prepare("UPDATE email_changes SET undone_at = datetime('now') WHERE id = ?1").bind(row.id),
+      /* ALLE ANDERE OPENSTAANDE LINKS VAN DEZE KLANT VERVALLEN (5 november 2026). Zonder
+         dit kon wie een sessie had gestolen het terugzetten omzeilen: met een tweede
+         wijziging die nog op bevestiging wachtte, of met de terugzetlink van een tweede
+         wijziging — die gaat naar het adres van de eerste, en dat was het zijne. */
+      env.DB.prepare(
+        `UPDATE email_changes SET confirm_expires = datetime('now')
+          WHERE customer_id = ?1 AND id <> ?2 AND confirmed_at IS NULL`
+      ).bind(row.customer_id, row.id),
+      env.DB.prepare(
+        `UPDATE email_changes SET undo_expires = datetime('now')
+          WHERE customer_id = ?1 AND id <> ?2 AND undo_hash IS NOT NULL AND undone_at IS NULL`
+      ).bind(row.customer_id, row.id),
       env.DB.prepare('DELETE FROM account_sessions WHERE customer_id = ?1').bind(row.customer_id),
       env.DB.prepare('DELETE FROM account_tokens WHERE customer_id = ?1').bind(row.customer_id),
     ]);

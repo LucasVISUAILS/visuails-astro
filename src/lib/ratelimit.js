@@ -224,6 +224,17 @@ async function getSalt(env) {
   return saltCache;
 }
 
+/**
+ * Een gezouten hash, met hetzelfde zout als de emmers hierboven (5 november 2026).
+ * Voor een IP-adres dat ergens bewaard wordt om twee verzoeken met elkaar te kunnen
+ * vergelijken (email_changes.request_ip_hash), zonder dat het adres zelf terug te
+ * rekenen is. Een kale SHA-256 van een IPv4-adres is dat wel: er zijn er maar vier
+ * miljard, en die zijn in minuten allemaal na te rekenen.
+ */
+export async function gezoutenHash(env, tekst) {
+  return digest(`${await getSalt(env)}|${tekst}`);
+}
+
 function randomHex(bytes) {
   const b = new Uint8Array(bytes);
   crypto.getRandomValues(b);
