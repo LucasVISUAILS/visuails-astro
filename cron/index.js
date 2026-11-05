@@ -155,7 +155,7 @@ export default {
     /* afgerondGisteren staat niet meer in deze rij (4.05): zijn bestellingen staan
        als "Review vragen" in de Nu-doen-lijst bovenaan het rapport, met dezelfde
        voorwaarde (REVIEW_VRAGEN_WAAR in src/lib/nudoen.js). */
-    for (const task of [remindUnpaid, releaseExpiredWindows, cancelStaleApprovals, purgeExpiredFiles, sweepAbandonedIntake, issuePendingInvoices, boekhoudingNacht, grantPrepaidMonths, incassoSignalen, herinnerCredits, pauzeVraag, levermailBewaker, mailNietAan, stilAfronden, bewaartermijnAccounts, checkBackupAge]) {
+    for (const task of [remindUnpaid, releaseExpiredWindows, cancelStaleApprovals, purgeExpiredFiles, sweepAbandonedIntake, issuePendingInvoices, boekhoudingNacht, grantPrepaidMonths, incassoSignalen, herinnerCredits, pauzeVraag, levermailBewaker, mailNietAan, stilAfronden, bewaartermijnAccounts, sessiesOpruimen, checkBackupAge]) {
       try {
         const line = await task(gemeten);
         if (line) report.push(line);
@@ -1106,6 +1106,28 @@ function mollieModus(env) {
   if (/^live_/.test(k)) return 'live';
   if (/^test_/.test(k)) return 'test';
   return 'onleesbaar';
+}
+
+/* ══ VERLOPEN SESSIES EN INLOGLINKS — 5 november 2026 ══════════════════════════
+ *
+ * Uitloggen en terugzetten halen hun rij weg, maar een sessie of inloglink die gewoon
+ * verliep, bleef voor altijd in admin_sessions, account_sessions en account_tokens staan:
+ * dood (de inlog kijkt naar expires_at), maar wel een tabel die blijft groeien en een
+ * back-up vol gehashte kenmerken die niets meer openen.
+ *
+ * ALLEEN WAT AL TWEE DAGEN VERLOPEN IS. Ruim genoeg dat er niets weggaat waar de inlog nog
+ * naar kijkt (een halve sessie leeft een kwartier, een inloglink minuten, een sessie wordt
+ * bij gebruik verlengd). Met julianday() en niet met tekst vergelijken: expires_at staat
+ * soms als ISO-tijd (`…T…Z`) en soms als SQLite-tijd, en als tekst zijn die twee op
+ * dezelfde dag niet te vergelijken. Een datum die julianday() niet kan lezen, geeft NULL
+ * en blijft dus staan. Stil in het nachtrapport: dit is onderhoud, geen nieuws.
+ */
+async function sessiesOpruimen(env) {
+  if (!env?.DB) return null;
+  for (const tabel of ['admin_sessions', 'account_sessions', 'account_tokens']) {
+    await env.DB.prepare(`DELETE FROM ${tabel} WHERE julianday(expires_at) < julianday('now', '-2 days')`).run();
+  }
+  return null;
 }
 
 async function variantKeys(env, ids) {
@@ -2235,7 +2257,7 @@ async function sweepAbandonedIntake(env) {
     + ` (${verlaten.length} batch${verlaten.length === 1 ? '' : 'es'}, ongeveer ${mb} MB).`;
 }
 
-export const tasks = { pauzeVraag, herinnerCredits, remindUnpaid, releaseExpiredWindows, cancelStaleApprovals, purgeExpiredFiles, sweepAbandonedIntake, issuePendingInvoices, grantPrepaidMonths, incassoSignalen, checkBackupAge, bewaartermijnAccounts, heartbeat, stilAfronden, mailNietAan, afgerondGisteren };
+export const tasks = { pauzeVraag, herinnerCredits, remindUnpaid, releaseExpiredWindows, cancelStaleApprovals, purgeExpiredFiles, sweepAbandonedIntake, issuePendingInvoices, grantPrepaidMonths, incassoSignalen, checkBackupAge, bewaartermijnAccounts, heartbeat, stilAfronden, mailNietAan, afgerondGisteren, sessiesOpruimen };
 /* De grenzen van de wachtruimte, voor tests/nachtgrenzen.test.mjs. */
 export const INTAKE = { INTAKE_SCAN_LIMIT, INTAKE_MAX_PAGINAS, INTAKE_TTL_DAYS };
 export const BACKUP_WATCH = { BACKUP_STALE_DAYS, BACKUP_WARN_EVERY_DAYS };

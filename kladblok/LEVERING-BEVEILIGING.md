@@ -1,7 +1,7 @@
 # Levering: de beveiliging en de back-end sterker (5 november 2026)
 
 > **NOG NIET AF** (deze notitie wordt bij elke push bijgewerkt):
-> - De reparaties: stap 1 tot en met 10, en 14, 15 en 16 zijn af. Stap 11, 12, 13 en 17 tot en met 19 in
+> - De reparaties: stap 1 tot en met 11, en 14, 15 en 16 zijn af. Stap 12, 13 en 17 tot en met 19 in
 >   `kladblok/PLAN-BEVEILIGING.md` §4 nog niet (stap 14 tot en met 19 kwamen uit het vierde deel van de naloop, de
 >   betaal- en bestelroutes; 14 ging voor omdat hij het zwaarst is).
 > - De eindcontrole.
@@ -231,3 +231,16 @@ waarvan de hashes alleen in `_headers` staan. De koppen van de tussenpagina staa
 `tests/backend-sterker.test.mjs` §10 (`/api/plan` en de 404); de 404 ook in de eindcontrole tegen de echte Worker.
 **Nacontrole:** de bouw, `check:csp` (3 van 3), `test:cspscripts`, de 54 toetsbestanden rond bestellen, abonneren en de
 tussenpagina, de 2FA-set: groen.
+
+## Stap 11 · Verlopen sessies en inloglinks opruimen (af)
+
+Uitloggen en terugzetten halen hun rij weg, maar een sessie of inloglink die gewoon verliep, bleef voor altijd in
+`admin_sessions`, `account_sessions` en `account_tokens` staan: dood, maar een tabel die blijft groeien en een
+back-up vol kenmerken die niets meer openen. Een nieuwe stille taak in de nacht (`sessiesOpruimen`) haalt weg wat al
+**meer dan twee dagen** verlopen is, en niets anders: een halve sessie leeft een kwartier, een inloglink minuten, en
+een sessie die gebruikt wordt, schuift zelf op. Vergeleken met `julianday()`, omdat `expires_at` in twee notaties
+voorkomt; een datum die niet te lezen is, blijft staan.
+
+**Het bewijs.** `tests/backend-sterker.test.mjs` §11: weg wat al dagen verlopen is (in beide notaties), blijft wat nog
+geldt of pas net verliep, stil in het rapport, en een geldige /admin-sessie opent daarna nog het dashboard. **Nacontrole:**
+de 33 toetsbestanden die de nachtelijke taak aanroepen (ook het tellen van verzoeken per nacht), de 2FA-set: groen.

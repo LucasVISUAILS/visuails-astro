@@ -25,6 +25,8 @@
  *       regeleinde kon Resend de hele mail laten weigeren).
  *  10 · nosniff en frame-ancestors op HTML die de Worker zelf maakt (de tussenpagina naar
  *       Mollie, de Nederlandse 404); `_headers` geldt daar niet.
+ *  11 · de nacht ruimt verlopen sessies en inloglinks op (admin, Studio), en niets wat
+ *       nog geldt.
  *  14 · de betaalwebhook: een aflevering die halverwege stopt (D1 hapert tussen de
  *       betaalrij en de UPDATE naar betaald) mag een bestelling niet onbetaald laten.
  *  15 · een mislukte incasso die twee keer wordt afgeleverd, geeft één mail.
@@ -453,6 +455,34 @@ console.log('\n10 · de koppen op HTML die de Worker zelf maakt');
   const nl404 = readFileSync(new URL('../src/pages/nl/[...pad].astro', import.meta.url), 'utf8');
   const voorAwait = nl404.split('---')[1] || '';
   ok('de Nederlandse 404 zet nosniff en frame-ancestors, in de kop van de pagina', /headers\.set\('x-content-type-options', 'nosniff'\)/.test(voorAwait) && /frame-ancestors 'none'/.test(voorAwait) && !/await/.test(voorAwait));
+}
+
+/* ══ 11 · VERLOPEN SESSIES EN INLOGLINKS ═══════════════════════════════════════ */
+console.log('\n11 · de nacht ruimt verlopen sessies en inloglinks op, en niets anders');
+{
+  const { tasks } = await import('../cron/index.js');
+  const { db } = verseDb(schema);
+  const token = await adminSessie(db); // geldig, nog een dag
+  db.prepare("INSERT INTO customers (id, email, brand, country) VALUES (2, 'sessie@merk.test', 'S', 'NL')").run();
+  const iso = (ms) => new Date(Date.now() + ms).toISOString();
+  const dag = 864e5;
+  const rij = (tabel, kolommen, waarden) => db.prepare(`INSERT INTO ${tabel} (${kolommen}) VALUES (${waarden.map(() => '?').join(', ')})`).run(...waarden);
+  rij('admin_sessions', 'admin_id, token_hash, expires_at', [1, 'a-oud', iso(-3 * dag)]);
+  rij('admin_sessions', 'admin_id, token_hash, expires_at, totp_pending', [1, 'a-half-net-verlopen', iso(-3600e3), 1]);
+  rij('account_sessions', 'customer_id, token_hash, expires_at', [2, 's-oud', iso(-5 * dag)]);
+  rij('account_sessions', 'customer_id, token_hash, expires_at', [2, 's-oud-sqlite', new Date(Date.now() - 4 * dag).toISOString().slice(0, 19).replace('T', ' ')]);
+  rij('account_sessions', 'customer_id, token_hash, expires_at', [2, 's-geldig', iso(20 * dag)]);
+  rij('account_tokens', 'customer_id, token_hash, expires_at', [2, 't-oud', iso(-3 * dag)]);
+  rij('account_tokens', 'customer_id, token_hash, expires_at', [2, 't-geldig', iso(10 * 60e3)]);
+  try {
+    const regel = await tasks.sessiesOpruimen({ DB: d1(db) });
+    const over = (t) => db.prepare(`SELECT token_hash FROM ${t} ORDER BY id`).all().map((r) => r.token_hash);
+    ok('weg: wat al meer dan twee dagen verlopen is (in beide datumnotaties)', !over('admin_sessions').includes('a-oud') && !over('account_sessions').includes('s-oud') && !over('account_sessions').includes('s-oud-sqlite') && !over('account_tokens').includes('t-oud'), JSON.stringify({ a: over('admin_sessions'), s: over('account_sessions'), t: over('account_tokens') }));
+    ok('  blijft: wat nog geldt of pas net verliep', over('admin_sessions').includes('a-half-net-verlopen') && over('account_sessions').includes('s-geldig') && over('account_tokens').includes('t-geldig') && over('admin_sessions').length === 2, JSON.stringify(over('admin_sessions')));
+    ok('  stil in het nachtrapport', regel === null, String(regel));
+    const dash = await adminGet({ request: new Request('https://visuails.com/admin', { headers: { cookie: `vis_admin=${token}` } }), env: { DB: d1(db) }, waitUntil() {} });
+    ok('  en de geldige /admin-sessie opent daarna het dashboard nog', dash.status === 200, String(dash.status));
+  } catch (e) { ok('opruimen zonder fout', false, e.stack || e.message); }
 }
 
 /* ══ 14 · DE BETAALWEBHOOK: EEN BETAALDE BESTELLING MAG NIET ONBETAALD BLIJVEN ══ */
