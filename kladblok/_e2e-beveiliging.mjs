@@ -51,6 +51,8 @@ const vreemd = await fetch(`${W}/account/bestaat-niet`, { method: 'POST', redire
 ok('een POST van een andere site in Studio: 403', vreemd.status === 403, String(vreemd.status));
 const thuis = await get('/');
 ok('de voorpagina: 200, met nosniff en frame-ancestors', thuis.status === 200, String(thuis.status));
+const nl404 = await get('/nl/bestaat-niet');
+ok('de Nederlandse 404 (maakt de Worker zelf): nosniff en frame-ancestors', nl404.status === 404 && nl404.headers.get('x-content-type-options') === 'nosniff' && /frame-ancestors 'none'/.test(nl404.headers.get('content-security-policy') || ''), `${nl404.status} ${nl404.headers.get('x-content-type-options')} ${nl404.headers.get('content-security-policy')}`);
 
 console.log(`\n${pass} goed, ${fail} fout`);
 process.exit(fail ? 1 : 0);

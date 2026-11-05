@@ -23,6 +23,8 @@
  *       0 cent, en een restant dat bij een dubbelklik niet twee keer ontstaat.
  *   9 · mail: geen regeleinden of stuurtekens in het onderwerp (een merknaam met een
  *       regeleinde kon Resend de hele mail laten weigeren).
+ *  10 · nosniff en frame-ancestors op HTML die de Worker zelf maakt (de tussenpagina naar
+ *       Mollie, de Nederlandse 404); `_headers` geldt daar niet.
  *  14 · de betaalwebhook: een aflevering die halverwege stopt (D1 hapert tussen de
  *       betaalrij en de UPDATE naar betaald) mag een bestelling niet onbetaald laten.
  *  15 · een mislukte incasso die twee keer wordt afgeleverd, geeft één mail.
@@ -437,6 +439,20 @@ console.log('\n9 · mail: geen regeleinden of stuurtekens in het onderwerp');
     ok('  een gewoon onderwerp blijft precies zoals het was', laatste?.subject === 'Je bestelling VIS-ABCD-EF1 is geleverd — bekijk je beelden', JSON.stringify(laatste?.subject));
   } catch (e) { ok('mail zonder fout', false, e.message); }
   globalThis.fetch = echteFetch9;
+}
+
+/* ══ 10 · DE KOPPEN OP HTML DIE DE WORKER ZELF MAAKT ═════════════════════════ */
+console.log('\n10 · de koppen op HTML die de Worker zelf maakt');
+{
+  const { offsiteKoppen } = await import('../src/lib/offsite.js');
+  const { readFileSync } = await import('node:fs');
+  const k = offsiteKoppen();
+  ok('de tussenpagina naar Mollie: nosniff en frame-ancestors, en geen volledige CSP', k['x-content-type-options'] === 'nosniff' && k['content-security-policy'] === "frame-ancestors 'none'", JSON.stringify(k));
+  const plan = readFileSync(new URL('../functions/api/plan.js', import.meta.url), 'utf8');
+  ok('  /api/plan geeft hem met die koppen (en /api/order: tests/order-api.test.mjs)', /new Response\(p, \{ status: 200, headers: offsiteKoppen\(\) \}\)/.test(plan));
+  const nl404 = readFileSync(new URL('../src/pages/nl/[...pad].astro', import.meta.url), 'utf8');
+  const voorAwait = nl404.split('---')[1] || '';
+  ok('de Nederlandse 404 zet nosniff en frame-ancestors, in de kop van de pagina', /headers\.set\('x-content-type-options', 'nosniff'\)/.test(voorAwait) && /frame-ancestors 'none'/.test(voorAwait) && !/await/.test(voorAwait));
 }
 
 /* ══ 14 · DE BETAALWEBHOOK: EEN BETAALDE BESTELLING MAG NIET ONBETAALD BLIJVEN ══ */

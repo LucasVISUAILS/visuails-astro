@@ -20,6 +20,11 @@ import Layout from '../../layouts/Layout.astro';
 import NotFoundHal from '../../components/NotFoundHal.astro';
 
 Astro.response.status = 404;
+/* Deze pagina maakt de Worker zelf, dus de `_headers` van de statische site gelden er niet
+   (5 november 2026): nosniff en frame-ancestors hier, bovenaan, voordat er iets wacht. Geen volledige
+   CSP: de opmaak heeft inline scripts waarvan de hashes alleen in `_headers` staan. */
+Astro.response.headers.set('x-content-type-options', 'nosniff');
+Astro.response.headers.set('content-security-policy', "frame-ancestors 'none'");
 const description =
   'Deze pagina bestaat niet. De link is verouderd of het adres verkeerd getypt — ga terug naar de homepage of bekijk Catalog, Lifestyle en Video.';
 ---

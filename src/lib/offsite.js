@@ -128,6 +128,23 @@ export function isOffsiteUrl(value) {
  * @param {string} o.css    de stylesheet van de aanroepende pagina
  * @returns {string|null} html, of null als de url niet door de toets komt
  */
+/**
+ * De koppen voor de tussenpagina als een route hem zelf als antwoord geeft
+ * (`/api/order` en `/api/plan`), 5 november 2026. Studio, de privélink en /admin
+ * geven hem via hun eigen html()-schil, met hun eigen CSP; deze twee routes deden
+ * dat met alleen een content-type, en de `_headers` van de statische site geldt
+ * niet voor wat de Worker zelf maakt. Bewust alleen nosniff en frame-ancestors en
+ * geen volledige CSP: een strengere regel kan de stap naar Mollie breken.
+ */
+export function offsiteKoppen() {
+  return {
+    'content-type': 'text/html; charset=utf-8',
+    'cache-control': 'no-store',
+    'x-content-type-options': 'nosniff',
+    'content-security-policy': "frame-ancestors 'none'",
+  };
+}
+
 export function offsitePage({ url, name, lang = 'nl', css = '/account.css' }) {
   if (!isOffsiteUrl(url)) return null;
   const t = COPY[lang === 'en' ? 'en' : 'nl'];

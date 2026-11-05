@@ -1,7 +1,7 @@
 # Levering: de beveiliging en de back-end sterker (5 november 2026)
 
 > **NOG NIET AF** (deze notitie wordt bij elke push bijgewerkt):
-> - De reparaties: stap 1 tot en met 9, en 14, 15 en 16 zijn af. Stap 10 tot en met 13 en 17 tot en met 19 in
+> - De reparaties: stap 1 tot en met 10, en 14, 15 en 16 zijn af. Stap 11, 12, 13 en 17 tot en met 19 in
 >   `kladblok/PLAN-BEVEILIGING.md` §4 nog niet (stap 14 tot en met 19 kwamen uit het vierde deel van de naloop, de
 >   betaal- en bestelroutes; 14 ging voor omdat hij het zwaarst is).
 > - De eindcontrole.
@@ -216,3 +216,18 @@ lang maar echt onderwerp afknippen.
 **Het bewijs.** `tests/backend-sterker.test.mjs` §9: rood op de oude code, groen nu. **Nacontrole:** de 34
 toetsbestanden die naar onderwerpen kijken (waaronder alle mails in `test:mailsmerk`), en inloggen met de code en de
 link: groen.
+
+## Stap 10 · De koppen op HTML die de Worker zelf maakt (af)
+
+De statische site krijgt haar beveiligingskoppen uit `_headers`, Studio, de privélink en /admin uit hun eigen
+html()-schil. Twee soorten pagina's vielen daartussen: **de tussenpagina naar Mollie** zoals `/api/order` en `/api/plan`
+hem zelf geven (alleen een content-type), en **de Nederlandse 404** (een pagina die de Worker rendert). Die hebben nu
+`X-Content-Type-Options: nosniff` en `Content-Security-Policy: frame-ancestors 'none'` (niet in een frame te laden).
+Bewust geen volledige CSP: op de tussenpagina kan die de stap naar Mollie breken, en de 404 heeft inline scripts
+waarvan de hashes alleen in `_headers` staan. De koppen van de tussenpagina staan op één plek (`offsiteKoppen()` in
+`src/lib/offsite.js`).
+
+**Het bewijs.** `tests/order-api.test.mjs` (de tussenpagina van een echte bestelling: op de oude code rood) en
+`tests/backend-sterker.test.mjs` §10 (`/api/plan` en de 404); de 404 ook in de eindcontrole tegen de echte Worker.
+**Nacontrole:** de bouw, `check:csp` (3 van 3), `test:cspscripts`, de 54 toetsbestanden rond bestellen, abonneren en de
+tussenpagina, de 2FA-set: groen.

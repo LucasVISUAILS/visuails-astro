@@ -52,7 +52,7 @@
 //     order to protect a calendar would be the wrong thing to protect.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { offsitePage } from '../../src/lib/offsite.js';
+import { offsitePage, offsiteKoppen } from '../../src/lib/offsite.js';
 import { aanhefTekst } from '../../src/lib/aanhef.js';
 import { readCalendar } from '../../src/lib/agenda.js';
 import { aftercare, turnaround, tierRow, clause, shouldPromptUpgrade, upgradePrompt, vatPercent, tierFor, FORM_MAX_PRODUCTS, voorrangZin, VOORRANG, VIDEO_OP_AANVRAAG, SAMPLE_SERVICE, LIFESTYLE_IMAGES, LIFESTYLE_BEELDEN_VELD } from '../../src/data/pricing.js';
@@ -3338,7 +3338,7 @@ function redirect(location, status = 303) { return new Response(null, { status, 
 function naarKassa(url, lang) {
   const p = offsitePage({ url, name: 'Mollie', lang, css: '/account.css' });
   return p
-    ? new Response(p, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } })
+    ? new Response(p, { status: 200, headers: offsiteKoppen() })
     : redirect(url);
 }
 

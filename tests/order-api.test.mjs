@@ -290,6 +290,9 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
       })(),
       subjects: seen.filter((c) => c.url.includes('resend'))
         .map((c) => { try { return JSON.parse(c.body).subject; } catch { return ''; } }),
+      /* De koppen van de tussenpagina (5 november 2026): de Worker maakt die zelf, dus
+         `_headers` van de statische site geldt er niet. */
+      kassaKoppen: pagina ? `${res.headers.get('x-content-type-options')} | ${res.headers.get('content-security-policy')}` : null,
     };
   };
 
@@ -340,6 +343,7 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
   ok('  een gedateerde bestelling zónder datum landt op de bedankpagina, met de link', /thank-you\?ref=VIS-.*&pay=/.test(healthy.location), true, healthy.location);
   const klein = await post({ ...base, products: '5' });
   ok('  een bestelling onder de datumdrempel gaat direct naar de Mollie-checkout', klein.location, 'https://pay.mollie.test/tr_TEST');
+  ok('  via een tussenpagina met nosniff, en die niet in een frame te laden is', klein.kassaKoppen, "nosniff | frame-ancestors 'none'");
   /* ── WAT DE SERVER INVULT, KAN NIET UIT HET FORMULIER KOMEN — 8 oktober 2026 ──
      `tegoed_cents` met de hand meegepost viel tot vandaag in details_json, en
      /api/order-pay trok dat bedrag van de rekening af. Elk veld in

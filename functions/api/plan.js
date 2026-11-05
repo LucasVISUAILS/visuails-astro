@@ -61,7 +61,7 @@ import { withdrawalRecord } from '../../src/data/consent.js';
 import { upsertCustomer } from './order.js';
 import { currentCustomer, setPlanMailCookie } from '../../src/lib/account.js';
 import { handleSubscribeStart } from '../../src/lib/subscribe.js';
-import { offsitePage } from '../../src/lib/offsite.js';
+import { offsitePage, offsiteKoppen } from '../../src/lib/offsite.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from '../../src/lib/ratelimit.js';
 import { normalizePhone } from '../../src/lib/payer.js';
 import { composeName } from '../../src/data/address.js';
@@ -273,7 +273,7 @@ export async function onRequestPost(context) {
   const antwoord = await handleSubscribeStart(context, klant, (url, taal) => {
     const p = offsitePage({ url, name: 'Mollie', lang: taal, css: '/account.css' });
     return p
-      ? new Response(p, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } })
+      ? new Response(p, { status: 200, headers: offsiteKoppen() })
       : terug('mollie', taal);
   }, form);
   /* ── AL EEN ABONNEMENT OP DIT ADRES — ronde 9, F50 ──────────────────────
