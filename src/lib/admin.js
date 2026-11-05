@@ -2230,9 +2230,11 @@ async function handleCustomerWipe(context, customerId) {
     && Number(o.total_cents || 0) > 0
     && !billed.has(o.id));
   if (paid.length) {
+    /* Eén keer per ref (5 november 2026): wissen mag opnieuw geprobeerd worden (zie
+       hieronder bij de opslag), en dan schreef deze regel het archief een tweede keer. */
     await env.DB.batch(paid.map((o) => env.DB.prepare(
       `INSERT INTO invoice_archive (ref, service, total_cents, vat_cents, paid_at, created_at)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6)`
+       SELECT ?1, ?2, ?3, ?4, ?5, ?6 WHERE NOT EXISTS (SELECT 1 FROM invoice_archive WHERE ref = ?1)`
     ).bind(o.ref, o.service || null, Number(o.total_cents || 0), Number(o.vat_cents || 0), o.paid_at || null, o.created_at || null)))
       .catch((err) => { throw new Error(`archief niet weggeschreven: ${err?.message || err}`); });
   }
@@ -2286,6 +2288,21 @@ async function handleCustomerWipe(context, customerId) {
     for (const key of [row.r2_key, row.preview_key].filter(Boolean)) {
       try { await env.UPLOADS?.delete(key); removed++; } catch { failed++; }
     }
+  }
+
+  /* ── EEN BESTAND DAT NIET WEG KON: DE DATABASE BLIJFT STAAN — 5 november 2026 ──
+     Hier liep de batch hieronder ook door als een deel van de bestanden niet uit de
+     opslag kon. Dan waren de rijen weg en bleven juist die bestanden staan, zonder dat
+     er nog ergens iets van wist: foto's van een gewiste klant, voor altijd. Dezelfde
+     regel als de nachtelijke opruiming (purgeExpiredFiles in cron/index.js): eerst de
+     bytes, dan de rij. Opnieuw proberen is veilig: wat al weg is, gaat nog eens "weg"
+     zonder fout, en het archief hierboven schrijft elke ref maar één keer. */
+  if (failed) {
+    console.error('[admin] wissen van klant', customerId, 'gestopt —', failed, 'bestand(en) niet uit R2');
+    return html(page({ title: 'Admin', body: errorBody(
+      `${failed} bestand${failed === 1 ? '' : 'en'} kon${failed === 1 ? '' : 'den'} niet uit de opslag worden verwijderd (${removed} wel). `
+      + 'Er is nog niets uit de database gewist, zodat er geen bestand achterblijft waar niemand meer van weet. Probeer het zo opnieuw.'
+    ) }), 503);
   }
 
   /*

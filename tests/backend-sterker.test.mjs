@@ -27,6 +27,8 @@
  *       Mollie, de Nederlandse 404); `_headers` geldt daar niet.
  *  11 · de nacht ruimt verlopen sessies en inloglinks op (admin, Studio), en niets wat
  *       nog geldt.
+ *  13 · een klant wissen: mislukt een bestand in de opslag, dan blijft de database staan (en
+ *       opnieuw proberen schrijft het archief niet dubbel).
  *  14 · de betaalwebhook: een aflevering die halverwege stopt (D1 hapert tussen de
  *       betaalrij en de UPDATE naar betaald) mag een bestelling niet onbetaald laten.
  *  15 · een mislukte incasso die twee keer wordt afgeleverd, geeft één mail.
@@ -483,6 +485,34 @@ console.log('\n11 · de nacht ruimt verlopen sessies en inloglinks op, en niets 
     const dash = await adminGet({ request: new Request('https://visuails.com/admin', { headers: { cookie: `vis_admin=${token}` } }), env: { DB: d1(db) }, waitUntil() {} });
     ok('  en de geldige /admin-sessie opent daarna het dashboard nog', dash.status === 200, String(dash.status));
   } catch (e) { ok('opruimen zonder fout', false, e.stack || e.message); }
+}
+
+/* ══ 13 · EEN KLANT WISSEN ALS DE OPSLAG HAPERT ══════════════════════════════ */
+console.log('\n13 · een klant wissen als de opslag even hapert');
+{
+  const { db } = verseDb(schema);
+  const token = await adminSessie(db);
+  db.prepare("INSERT INTO customers (id, email, name, brand, country) VALUES (6, 'weg6@merk.test', 'Weg', 'WEGZES', 'NL')").run();
+  for (const i of [1, 2]) {
+    db.prepare("INSERT INTO orders (id, ref, customer_id, service, status, email, total_cents, vat_cents, lang, payment_status, paid_at) VALUES (?, ?, 6, 'catalog', 'delivered', 'weg6@merk.test', 10000, 2100, 'nl', 'paid', '2026-10-01')").run(i, `VIS-ZES-${i}`);
+    db.prepare("INSERT INTO files (id, order_id, kind, r2_key, filename, bytes) VALUES (?, ?, 'upload', ?, 'foto.jpg', 10)").run(i, i, `intake/zes/${i}.jpg`);
+  }
+  let hapert = true;
+  const weg = [];
+  const UPLOADS = { async delete(k) { if (hapert && k === 'intake/zes/2.jpg') throw new Error('R2 even niet bereikbaar'); weg.push(k); }, async list() { return { objects: [], truncated: false }; } };
+  const wis = () => adminPost({ request: new Request('https://visuails.com/admin/customers/6/wipe', { method: 'POST', headers: { cookie: `vis_admin=${token}`, 'sec-fetch-site': 'same-origin', origin: 'https://visuails.com', 'cf-connecting-ip': nieuwIp() }, body: new URLSearchParams({ confirm: 'WEGZES' }) }), env: { DB: d1(db), UPLOADS }, waitUntil() {} });
+  const stilErr13 = console.error; console.error = () => {};
+  try {
+    const eerste = await wis();
+    const nogDaar = db.prepare('SELECT COUNT(*) AS n FROM files WHERE order_id IN (1, 2)').get().n;
+    ok('mislukt één bestand in de opslag: er gaat nog niets uit de database', eerste.status >= 500 && nogDaar === 2 && !!db.prepare('SELECT id FROM customers WHERE id = 6').get(), `status ${eerste.status}, ${nogDaar} bestandsrijen`);
+    hapert = false;
+    const tweede = await wis();
+    const archief = db.prepare("SELECT COUNT(*) AS n FROM invoice_archive WHERE ref LIKE 'VIS-ZES-%'").get().n;
+    ok('  opnieuw proberen wist de klant helemaal', tweede.status < 400 && !db.prepare('SELECT id FROM customers WHERE id = 6').get(), `status ${tweede.status}`);
+    ok('  met het archief één keer en niet twee keer', archief === 2, `${archief} archiefregels`);
+  } catch (e) { ok('wissen zonder fout', false, e.stack || e.message); }
+  console.error = stilErr13;
 }
 
 /* ══ 14 · DE BETAALWEBHOOK: EEN BETAALDE BESTELLING MAG NIET ONBETAALD BLIJVEN ══ */

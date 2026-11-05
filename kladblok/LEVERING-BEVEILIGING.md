@@ -1,7 +1,7 @@
 # Levering: de beveiliging en de back-end sterker (5 november 2026)
 
 > **NOG NIET AF** (deze notitie wordt bij elke push bijgewerkt):
-> - De reparaties: stap 1 tot en met 12, en 14, 15 en 16 zijn af. Stap 13 en 17 tot en met 19 in
+> - De reparaties: stap 1 tot en met 16 zijn af. Stap 17 tot en met 19 in
 >   `kladblok/PLAN-BEVEILIGING.md` §4 nog niet (stap 14 tot en met 19 kwamen uit het vierde deel van de naloop, de
 >   betaal- en bestelroutes; 14 ging voor omdat hij het zwaarst is).
 > - De eindcontrole.
@@ -260,3 +260,25 @@ de controle vóór de kopie naar de back-upmap. Op de oude code 4 rood, nu 62 va
 gedraaid (het spreekt de echte database aan); wel `node --check` op de syntaxis. **Eerste echte draai:** Lucas'
 eerstvolgende wekelijkse back-up. Die hoort er hetzelfde uit te zien als altijd. **Nacontrole:** `test:backup`,
 `test:uitrol`, `test:testreeks`, het vangnet, de tweede stap: groen.
+
+## Stap 13 · Een klant wissen als de opslag hapert (af, en bijgesteld)
+
+**Het plan zei: eerst de database, dan de bestanden.** Bij het uitvoeren bleek dat verkeerd. De nachtelijke opruiming
+noemt die volgorde zelf de slechte: een rij die weg is terwijl de bytes blijven staan, is een bestand waar geen enkele
+administratie meer van weet. Eerst de bestanden is juist goed; mislukt daarna de database, dan kun je het gewoon opnieuw
+proberen.
+
+**Het echte gat (nagespeeld):** mislukte het verwijderen van een deel van de bestanden, dan telde het wissen dat wel,
+maar wiste het de rijen tóch. Juist die bestanden bleven dan in de opslag staan, zonder dat er nog ergens iets van wist:
+foto's van een gewiste klant, voor altijd. Nu stopt het wissen dan vóór de database, met een melding in /admin ("… kon
+niet uit de opslag worden verwijderd. Er is nog niets uit de database gewist … Probeer het zo opnieuw."). Opnieuw
+proberen is veilig: wat al weg is, gaat nog eens "weg" zonder fout, en het archief van betaalde bestellingen schrijft
+elke ref nu maar één keer (dat ging bij opnieuw proberen dubbel; ook na een mislukte batch, al vóór deze ronde).
+
+Niet veranderd, bewust: het verwijderen van een onbetaalde bestelling (eerst de database, dan de bestanden, met de
+reden erbij in de code) en het opruimen van de wachtruimte (die heeft geen rijen; wat blijft staan, vindt de volgende
+nacht weer).
+
+**Het bewijs.** `tests/backend-sterker.test.mjs` §13: op de oude code rood (de eerste poging wiste alles, het bestand
+bleef staan), nu groen, ook de tweede poging en het archief. **Nacontrole:** de zes toetsbestanden rond wissen en het
+archief, de 2FA-set, de bouw: groen.
