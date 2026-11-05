@@ -1,7 +1,7 @@
 # Levering: de beveiliging en de back-end sterker (5 november 2026)
 
 > **NOG NIET AF** (deze notitie wordt bij elke push bijgewerkt):
-> - De reparaties: stap 1, 2, 3, 14, 15 en 16 zijn af. Stap 4 tot en met 13 en 17 tot en met 19 in
+> - De reparaties: stap 1 tot en met 4, en 14, 15 en 16 zijn af. Stap 5 tot en met 13 en 17 tot en met 19 in
 >   `kladblok/PLAN-BEVEILIGING.md` §4 nog niet (stap 14 tot en met 19 kwamen uit het vierde deel van de naloop, de
 >   betaal- en bestelroutes; 14 ging voor omdat hij het zwaarst is).
 > - De eindcontrole.
@@ -133,3 +133,21 @@ twee manieren (allebei nagespeeld in een toets, allebei een overname op de oude 
 code 5 rood (beide overnames gelukt), op de nieuwe alles groen. **Nacontrole:** `tests/email-change.test.mjs` en de
 andere toetsen rond grenzen en registreren, de 2FA-set met `test:code`, de bouw, en `test:afvink8okt` (136): groen.
 De inlog zelf (code, link, sessie) is niet aangeraakt.
+
+## Stap 4 · Studio: raden naar de inlogcode (af)
+
+**Het gat.** Een inlogcode is zes cijfers. Per account golden vijftien pogingen per kwartier, maar geen grens per dag:
+1440 gokken per etmaal, elke dag opnieuw (nagespeeld: zestig foute codes in een uur, geen enkele geweigerd, en de goede
+code logde daarna in).
+
+**De reparatie.** Een tweede grens op hetzelfde account: vijftig per etmaal. Wie zich vertypt, komt daar niet in de
+buurt; en de link in dezelfde mail werkt gewoon door, want deze grens telt alleen het intypen van de code. De melding
+is de bestaande ("Te veel pogingen vanaf hier. Wacht even, of gebruik de link in de mail."), dus geen nieuwe tekst.
+
+**Bewust niet:** het tellen van pogingen per code "eerst lezen, dan schrijven" atomair maken. Bij gelijktijdige
+pogingen telt die teller te weinig, maar de grens per account telt wél atomair (één statement met `RETURNING`) en
+begrenst het totaal al; een atomaire teller zou het succespad van het inloggen herschrijven voor vrijwel geen winst.
+
+**Het bewijs.** `tests/backend-sterker.test.mjs` §4, met een verzette klok: op de oude code rood, op de nieuwe groen
+(ook: de volgende dag werkt de goede code weer). **Nacontrole:** de elf toetsbestanden rond inloggen in Studio, de
+2FA-set met `test:code`, de bouw, `test:afvink8okt`: groen.

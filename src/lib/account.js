@@ -347,6 +347,11 @@ const CODE_LIMIT = 30;
  * andere gedrag dat het onbekend is. */
 const CODE_ACCOUNT_LIMIT = 15;
 const CODE_ACCOUNT_WINDOW = 900;
+/* EN PER ETMAAL (5 november 2026). Vijftien per kwartier is per dag nog 1440 gokken op een
+   miljoen codes, elke dag opnieuw; met wat geduld is dat een echte kans. Vijftig per etmaal
+   is voor wie zich vertypt nog altijd ruim, en de link in dezelfde mail werkt gewoon door:
+   deze grens telt alleen het intypen van de code. */
+const CODE_ACCOUNT_DAG = 50;
 const LOGIN_ACCOUNT_LIMIT = 5;
 const LOGIN_ACCOUNT_WINDOW = 900;
 
@@ -2557,6 +2562,13 @@ async function handleCodePost(context) {
     windowSeconds: CODE_ACCOUNT_WINDOW,
   });
   if (!perAccount.allowed) return again(t.codeTooMany, 429);
+  const perDag = await checkRate(env, {
+    key: `account-code|${email}`,
+    action: 'account-code-dag',
+    limit: CODE_ACCOUNT_DAG,
+    windowSeconds: 86400,
+  });
+  if (!perDag.allowed) return again(t.codeTooMany, 429);
 
   let row;
   try {

@@ -13,6 +13,8 @@
  *   3 · Studio: het e-mailadres wijzigen. Wie een sessie stal, mag het terugzetten door de
  *       eigenaar niet kunnen omzeilen (een tweede wijziging die klaarstaat, of de
  *       terugzetlink van die tweede wijziging in zijn eigen postvak).
+ *   4 · Studio: de inlogcode. Naast de grens per kwartier een grens per dag op hetzelfde
+ *       account, zodat raden niet de hele dag door kan.
  *  14 · de betaalwebhook: een aflevering die halverwege stopt (D1 hapert tussen de
  *       betaalrij en de UPDATE naar betaald) mag een bestelling niet onbetaald laten.
  *  15 · een mislukte incasso die twee keer wordt afgeleverd, geeft één mail.
@@ -270,6 +272,50 @@ console.log('\n3 · Studio: het e-mailadres wijzigen, en het terugzetten dat nie
     ok('  en het IP-adres is gezouten opgeslagen, niet als kale hash', !!ipHash && !kaal.includes(ipHash), String(ipHash));
   } catch (e) { ok('het e-mailadres wijzigen zonder fout', false, e.stack || e.message); }
   console.error = stilErr;
+}
+
+/* ══ 4 · STUDIO: RADEN NAAR DE INLOGCODE, DE HELE DAG ═══════════════════════ */
+console.log('\n4 · Studio: raden naar de inlogcode, de hele dag door');
+{
+  const { accountPost } = await import('../src/lib/account.js');
+  const { db } = verseDb(schema);
+  db.prepare("INSERT INTO customers (id, email, brand, country) VALUES (5, 'doel@merk.test', 'DOEL', 'NL')").run();
+  const env = { DB: d1(db) };
+  /* Een klok die we kunnen verzetten, vanaf 01:00 UTC zodat de toets nooit over middernacht loopt. */
+  const EchteDate = Date;
+  let verschuiving = EchteDate.UTC(2026, 10, 5, 1, 0, 0) - EchteDate.now();
+  globalThis.Date = class extends EchteDate {
+    constructor(...a) { super(...(a.length ? a : [EchteDate.now() + verschuiving])); }
+    static now() { return EchteDate.now() + verschuiving; }
+  };
+  /* Een nieuwe code, zoals de aanvaller er een opvraagt (de mail gaat naar het slachtoffer). */
+  const nieuweCode = async () => {
+    db.prepare('DELETE FROM account_tokens WHERE customer_id = 5').run();
+    db.prepare('INSERT INTO account_tokens (customer_id, token_hash, expires_at, code_hash, code_expires_at, code_attempts) VALUES (5, ?, ?, ?, ?, 0)')
+      .run(await hashToken(await mintToken()), new Date(Date.now() + 15 * 60e3).toISOString(), await hashToken('5:482913'), new Date(Date.now() + 10 * 60e3).toISOString());
+  };
+  const gok = (code) => accountPost({ request: new Request('https://visuails.com/account/code', { method: 'POST', headers: { origin: 'https://visuails.com', 'sec-fetch-site': 'same-origin', 'content-type': 'application/x-www-form-urlencoded', 'cf-connecting-ip': nieuwIp() }, body: new URLSearchParams({ lang: 'nl', email: 'doel@merk.test', code }).toString() }), env, waitUntil() {} });
+  try {
+    let geweigerd = 0; let geprobeerd = 0;
+    for (let kwartier = 0; kwartier < 4; kwartier++) {
+      for (let blok = 0; blok < 3; blok++) {
+        await nieuweCode();
+        for (let i = 0; i < 5; i++) { geprobeerd++; const r = await gok(String(100000 + geprobeerd)); if (r.status === 429) geweigerd++; }
+      }
+      verschuiving += 16 * 60e3;
+    }
+    /* Nu een vers kwartier: de grens per kwartier is leeg. */
+    await nieuweCode();
+    const daarna = await gok('111111');
+    ok(`na ${geprobeerd} foute codes in vier kwartier: een vers kwartier geeft geen nieuwe pogingen`, daarna.status === 429, `status ${daarna.status} (eerder ${geweigerd} geweigerd)`);
+    const goed = await gok('482913');
+    ok('  ook de goede code niet, zolang de daggrens vol is', goed.status === 429 && !/vis_account=[^;]+;/.test(goed.headers.get('set-cookie') || ''), `status ${goed.status}`);
+    verschuiving += 24 * 3600e3;
+    await nieuweCode();
+    const morgen = await gok('482913');
+    ok('  de volgende dag werkt de goede code weer', morgen.status === 303 && /vis_account=/.test(morgen.headers.get('set-cookie') || ''), `status ${morgen.status}`);
+  } catch (e) { ok('raden naar de inlogcode zonder fout', false, e.stack || e.message); }
+  globalThis.Date = EchteDate;
 }
 
 /* ══ 14 · DE BETAALWEBHOOK: EEN BETAALDE BESTELLING MAG NIET ONBETAALD BLIJVEN ══ */
