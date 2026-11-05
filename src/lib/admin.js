@@ -359,7 +359,9 @@ function themaOmleiding(url) {
   const kleur = url.searchParams.get('thema');
   if (kleur !== 'licht' && kleur !== 'donker') return null;
   url.searchParams.delete('thema');
-  const terug = `${url.pathname}${url.search}${url.hash}`;
+  /* Eén schuine streep vooraan (5 november 2026): `//admin?thema=licht` gaf anders een
+     Location `//admin`, en dat is voor de browser een andere site. */
+  const terug = `/${url.pathname.replace(/^\/+/, '')}${url.search}${url.hash}`;
   return seeOther(terug, [
     `vis_thema=${kleur}; Path=/admin; Max-Age=${THEMA_COOKIE_DAGEN * 86400}; Secure; SameSite=Lax`,
   ]);
@@ -595,7 +597,7 @@ async function adminPostInner(context) {
     // was. Only Lucas, already authenticated, ever sees this page, so the
     // raw values are safe to print — see originMismatchDetail()'s header.
     return html(page({ title: 'Admin', body: errorBody(
-      `Het verzoek kwam niet van dit paneel. Probeer het opnieuw vanuit het dashboard zelf. ${originMismatchDetail(request)}`
+      `Het verzoek kwam niet van dit paneel. Probeer het opnieuw vanuit het dashboard zelf. ${esc(originMismatchDetail(request))}`
     ) }), 403);
   }
   /* De tweede factor. Elke handeling hier vraagt bovendien een KLOPPENDE CODE,
@@ -12680,6 +12682,9 @@ async function handleQuote({ request, env }, orderId, admin) {
   const eur = Number(raw);
   if (!Number.isFinite(eur) || eur <= 0 || eur > 25000) return seeOther(back);
   const net = Math.round(eur * 100);
+  /* Hoogstens afgerond op nul is geen offerte (5 november 2026): 0,001 kwam hierboven door,
+     werd 0 cent, en zette de bestelling op goedgekeurd zonder bedrag. */
+  if (net < 1) return seeOther(back);
   const rate = Number.isFinite(Number(order.vat_rate)) && order.vat_rate !== null ? Number(order.vat_rate) : VAT_RATE;
   const vat = Math.round(net * rate);
   /* Volledig of aanbetaling (24 september 2026). Lucas: de offertemail zegt
@@ -12731,6 +12736,16 @@ async function handleRestant({ request, env }, orderId, admin) {
   const eur = Number(String(form?.get('amount') || '').trim().replace(',', '.'));
   if (!Number.isFinite(eur) || eur <= 0 || eur > 25000) return seeOther(back);
   const net = Math.round(eur * 100);
+  if (net < 1) return seeOther(back); // zie handleQuote: 0 cent is geen restant (5 november 2026)
+  /* EEN DUBBELKLIK IS GEEN TWEEDE RESTANT (5 november 2026). Twee keer op de knop gaf twee
+     bestellingen (-R1 en -R2) en twee betaalmails aan de klant. Een tweede restant blijft
+     mogelijk; alleen hetzelfde bedrag, nog onbetaald, binnen tien minuten, telt als
+     dezelfde klik — dan naar dat restant in plaats van een nieuw. */
+  const zelfde = await env.DB.prepare(
+    `SELECT id FROM orders WHERE ref LIKE ?1 AND total_cents = ?2 AND payment_status != 'paid' AND status != 'cancelled'
+        AND created_at > datetime('now', '-10 minutes') ORDER BY id DESC LIMIT 1`
+  ).bind(`${o.ref}-R%`, net).first().catch(() => null);
+  if (zelfde) return seeOther(`/admin/orders/${zelfde.id}/files`);
   const rate = Number.isFinite(Number(o.vat_rate)) && o.vat_rate !== null ? Number(o.vat_rate) : VAT_RATE;
   const vat = Math.round(net * rate);
   const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM orders WHERE ref LIKE ?1").bind(`${o.ref}-R%`).first().catch(() => null);
@@ -13054,7 +13069,7 @@ async function handleNewCustomer({ request, env }, admin) {
   /* Ronde 9, F54: alleen een land uit de lijst. Een tikfout als "NE" (Niger)
      maakt van een Nederlandse klant een klant buiten de EU, zonder btw. */
   if (!LANDEN_ADMIN.some((c) => c.id === country)) {
-    return html(page({ title: 'Admin', body: errorBody(`"${country}" staat niet in de landenlijst. Ga terug en kies het land uit de lijst — bij een land dat er niet in staat: "Ergens anders".`) }), 400);
+    return html(page({ title: 'Admin', body: errorBody(`"${esc(country)}" staat niet in de landenlijst. Ga terug en kies het land uit de lijst — bij een land dat er niet in staat: "Ergens anders".`) }), 400);
   }
   const line1 = get('address_line1');
   const postal = get('postal_code', 24);

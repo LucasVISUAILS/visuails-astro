@@ -1,7 +1,7 @@
 # Levering: de beveiliging en de back-end sterker (5 november 2026)
 
 > **NOG NIET AF** (deze notitie wordt bij elke push bijgewerkt):
-> - De reparaties: stap 1 tot en met 7, en 14, 15 en 16 zijn af. Stap 8 tot en met 13 en 17 tot en met 19 in
+> - De reparaties: stap 1 tot en met 8, en 14, 15 en 16 zijn af. Stap 9 tot en met 13 en 17 tot en met 19 in
 >   `kladblok/PLAN-BEVEILIGING.md` §4 nog niet (stap 14 tot en met 19 kwamen uit het vierde deel van de naloop, de
 >   betaal- en bestelroutes; 14 ging voor omdat hij het zwaarst is).
 > - De eindcontrole.
@@ -185,3 +185,22 @@ vaste lijst).
 
 **Het bewijs.** Drie nieuwe gevallen in `tests/order-api.test.mjs`: op de oude code rood, nu 132 van 132.
 **Nacontrole:** de 49 toetsbestanden die `/api/order` aanroepen, mail, de 2FA-set, de bouw: groen.
+
+## Stap 8 · /admin: vier kleine dingen (af)
+
+- **Twee foutmeldingen zonder escapen**: de 403 van de Origin-controle toonde de meegestuurde Origin letterlijk, en
+  "staat niet in de landenlijst" het landveld. Geen echt gat (een browser vult Origin niet met HTML, het landveld is
+  twee tekens, en de CSP van /admin houdt scripts tegen), maar nu wel geëscaped. Aan de Origin-controle zelf is
+  niets veranderd, alleen aan de tekst van de 403.
+- **De themaknop** (`?thema=licht`) stuurde terug naar het ruwe pad; `//admin?thema=licht` gaf een Location `//admin`,
+  en dat is voor de browser een andere site. Nu altijd één schuine streep vooraan.
+- **Een offerte of restant van 0 cent**: `0,001` kwam door de controle (groter dan nul), werd afgerond 0 cent, en zette
+  een offerte op goedgekeurd zonder bedrag. Nu minimaal 1 cent.
+- **Een dubbelklik op "restant"** gaf twee restantbestellingen en twee betaalmails aan de klant. Nu telt hetzelfde
+  bedrag, nog onbetaald, binnen tien minuten als dezelfde klik (je komt bij dat restant uit). Een tweede restant met een
+  ander bedrag, of later, blijft gewoon mogelijk.
+
+**Het bewijs.** `tests/backend-sterker.test.mjs` §8: op de oude code alle zes rood, op de nieuwe groen. **Nacontrole:**
+de 2FA-set (vangnet 40, tweede stap 51, beveiliging 40, 8 oktober 17, 69 24, klantscheiding 161, inloggen, /admin,
+code), de 86 toetsbestanden die admin.js aanroepen (de taaltoets van /admin las een stuk SQL als Engelse zin; de SQL is
+herschreven met `!=`), de bouw: groen.

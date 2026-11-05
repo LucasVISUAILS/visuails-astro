@@ -19,6 +19,8 @@
  *       venster, zoals in Studio (ook met een link die /admin opnieuw uitgaf).
  *   6 · een oud bestand met een onbekende extensie gaat niet met een willekeurig
  *       opgeslagen type (text/html) de deur uit, in de privélink en in Studio.
+ *   8 · /admin: twee foutmeldingen geëscaped, de themaknop, een offerte of restant van
+ *       0 cent, en een restant dat bij een dubbelklik niet twee keer ontstaat.
  *  14 · de betaalwebhook: een aflevering die halverwege stopt (D1 hapert tussen de
  *       betaalrij en de UPDATE naar betaald) mag een bestelling niet onbetaald laten.
  *  15 · een mislukte incasso die twee keer wordt afgeleverd, geeft één mail.
@@ -35,10 +37,12 @@ import { hashPassword } from '../src/lib/adminAuth.js';
 import { rijenPerGroep, inGroepen, plaatsen, GROEP, D1_MAX_WAARDEN } from '../src/lib/d1Lijst.js';
 
 let pass = 0; let fail = 0;
+/* Een vaste verwijzing: sommige blokken zetten console.log even stil voor de code die ze aanroepen. */
+const schrijf = console.log.bind(console);
 const ok = (naam, goed, uitleg = '') => {
   if (typeof goed !== 'boolean') throw new Error(`ok("${naam}") kreeg geen boolean`);
   if (goed) pass++; else fail++;
-  console.log(`${goed ? ' ok  ' : ' FAIL'} ${String(naam).padEnd(86)} ${goed ? '' : uitleg}`);
+  schrijf(`${goed ? ' ok  ' : ' FAIL'} ${String(naam).padEnd(86)} ${goed ? '' : uitleg}`);
 };
 let ip = 0;
 const nieuwIp = () => `10.7.${Math.floor(++ip / 250)}.${ip % 250}`;
@@ -381,6 +385,40 @@ console.log('\n6 · een oud bestand met een onbekende extensie en een opgeslagen
     const s1 = await accountGet({ request: new Request('https://visuails.com/account/files/1/f', { headers: { cookie: `vis_account=${sessie}` } }), env, waitUntil() {} });
     ok('Studio: hetzelfde bestand ook daar niet als pagina', s1.status === 200 && s1.headers.get('content-type') === 'application/octet-stream', `${s1.status} ${s1.headers.get('content-type')}`);
   } catch (e) { ok('bestanden serveren zonder fout', false, e.stack || e.message); }
+}
+
+/* ══ 8 · /ADMIN: ESCAPEN, DE THEMAKNOP, OFFERTE EN RESTANT ══════════════════ */
+console.log('\n8 · /admin: twee foutmeldingen, de themaknop, offerte en restant');
+{
+  const { db } = verseDb(schema);
+  const token = await adminSessie(db);
+  db.prepare("INSERT INTO customers (id, email, name, brand, country) VALUES (4, 'offerte@merk.test', 'Offerte', 'OFFERTE', 'NL')").run();
+  db.prepare("INSERT INTO orders (id, ref, customer_id, service, status, email, total_cents, lang, payment_status) VALUES (1, 'VIS-OFF-1', 4, 'custom', 'received', 'offerte@merk.test', 0, 'nl', 'unpaid')").run();
+  db.prepare(`INSERT INTO orders (id, ref, customer_id, service, status, email, total_cents, vat_cents, vat_rate, lang, payment_status, details_json)
+    VALUES (2, 'VIS-AAN-2', 4, 'custom', 'in_production', 'offerte@merk.test', 50000, 10500, 0.21, 'nl', 'paid', '{"quote_kind":"aanbetaling"}')`).run();
+  const env = { DB: d1(db) };
+  const post = (pad, velden, kop = { 'sec-fetch-site': 'same-origin', origin: 'https://visuails.com' }) => adminPost({ request: new Request(`https://visuails.com${pad}`, { method: 'POST', headers: { cookie: `vis_admin=${token}`, 'cf-connecting-ip': nieuwIp(), 'content-type': 'application/x-www-form-urlencoded', ...kop }, body: new URLSearchParams(velden) }), env, waitUntil() {} });
+  const stil8 = [console.log, console.warn, console.error]; console.log = console.warn = console.error = () => {};
+  try {
+    const r403 = await post('/admin/bestaat-niet', {}, { origin: '"><b>kwaad</b>' });
+    const t403 = await r403.text();
+    ok('de 403 van de Origin-controle toont de Origin geëscaped', r403.status === 403 && !t403.includes('<b>kwaad</b>') && t403.includes('&lt;b&gt;kwaad'), `${r403.status}`);
+    const rLand = await post('/admin/customers/new', { email: 'nieuw@merk.test', country: '<b' });
+    const tLand = await rLand.text();
+    ok('een land dat niet in de lijst staat: de melding toont het geëscaped', rLand.status === 400 && !tLand.includes('"<B"') && tLand.includes('&lt;B'), `${rLand.status}`);
+    const thema = await adminGet({ request: new Request('https://visuails.com//admin?thema=licht', { headers: { cookie: `vis_admin=${token}` } }), env, waitUntil() {} });
+    ok('de themaknop stuurt nooit naar een adres dat met // begint', !String(thema.headers.get('location') || '').startsWith('//'), String(thema.headers.get('location')));
+    await post('/admin/orders/1/quote', { amount: '0,001' });
+    const off = db.prepare('SELECT total_cents, review_state FROM orders WHERE id = 1').get();
+    ok('een offerte van 0,001 euro (0 cent) wordt niet vastgelegd', Number(off.total_cents) === 0 && off.review_state !== 'approved', JSON.stringify(off));
+    await post('/admin/orders/2/restant', { amount: '0,004' });
+    ok('een restant van 0 cent wordt niet aangemaakt', db.prepare("SELECT COUNT(*) AS n FROM orders WHERE ref LIKE 'VIS-AAN-2-R%'").get().n === 0);
+    await post('/admin/orders/2/restant', { amount: '250' });
+    await post('/admin/orders/2/restant', { amount: '250' });
+    const rest = db.prepare("SELECT ref FROM orders WHERE ref LIKE 'VIS-AAN-2-R%'").all().map((r) => r.ref);
+    ok('twee keer op "restant" drukken (dubbelklik) geeft één restant', rest.length === 1, rest.join(', '));
+  } catch (e) { ok('/admin zonder fout', false, e.stack || e.message); }
+  [console.log, console.warn, console.error] = stil8;
 }
 
 /* ══ 14 · DE BETAALWEBHOOK: EEN BETAALDE BESTELLING MAG NIET ONBETAALD BLIJVEN ══ */
