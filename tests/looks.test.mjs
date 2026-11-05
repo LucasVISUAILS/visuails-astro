@@ -215,5 +215,14 @@ ok('de FAQ vraagt niet meer om iets "aan te vinken"', /vink het aan in het beste
 ok('de keuzelijst "Zitten er outfits bij?" is weg', /name="outfit_count"/.test(lees('src/components/order/OrderFlow.astro')), false);
 ok('  en de regel onder het aantal staat er (c-stap1)', /class="wk-lookzin" data-pl-lookzin/.test(lees('src/components/order/OrderFlow.astro')), true);
 
+/* Naloop van levering 73 (5 november 2026): in het uitklapvak bij "Stukken die samen gedragen
+   worden?" stonden de twee zinnen zonder spatie aan elkaar ("…achter de prijs.Verkoop je een set…").
+   `{LC.waarom} {LC.set}` binnen <Note> verloor bij de build de spatie ertussen; als één tekst niet. */
+{
+  const flow = lees('src/components/order/OrderFlow.astro');
+  ok('het uitklapvak van de complete look: de twee zinnen in één tekst, met een spatie', flow.includes('{`${LC.waarom} ${LC.set}`}'), true);
+  ok('  en niet meer als twee losse stukken waar de build de spatie verliest', flow.includes('{LC.waarom} {LC.set}'), false);
+}
+
 console.log(`\n${pass}/${pass + fail} geslaagd`);
 process.exit(fail ? 1 : 0);

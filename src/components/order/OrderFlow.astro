@@ -2926,7 +2926,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
       {!isCatalog && !isSample && (
       <p class="wk-lookzin" data-pl-lookzin>
         <span class="wk-paartje" aria-hidden="true"><i></i><i></i></span>
-        <span><b>{LC.stap1Kop}</b> <span data-pl-alleen-euro>{LC.stap1(euro(LOOK_PRIJS, lang))}</span><span data-pl-alleen-credits hidden>{LC.stap1(`${LOOK_CREDITS} credits`)}</span> <Note lang={lang} term={LC.kort}>{LC.waarom} {LC.set}</Note></span>
+        <span><b>{LC.stap1Kop}</b> <span data-pl-alleen-euro>{LC.stap1(euro(LOOK_PRIJS, lang))}</span><span data-pl-alleen-credits hidden>{LC.stap1(`${LOOK_CREDITS} credits`)}</span> <Note lang={lang} term={LC.kort}>{`${LC.waarom} ${LC.set}`}</Note></span>
       </p>
       )}
 

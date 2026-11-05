@@ -1,7 +1,9 @@
 # Naloop van leveringen 69 en 73 (5 november 2026)
 
-> **Af.** De testreeks (`TESTREEKS_TEGELIJK=4 node scripts/testreeks.mjs`): 284 van 284 groen (9 min 33 s), geen
-> enkele herkansing.
+> **NOG NIET AF** (deze notitie wordt bij elke push bijgewerkt):
+> - Deel 9: de spatie op /start/lifestyle is gerepareerd en getoetst; de hele testreeks moet nog.
+>
+> Deel 1, 7 en 8: af; de testreeks daarvan was 284 van 284 groen (9 min 33 s).
 
 Lucas vroeg of alles van `kladblok/PROMPT-CLOUD-CODE.md` af was. Drie punten waren half gedaan en konden zonder hem
 of zijn beelden af; die staan hier. De rest (Windows, de beelden, de opening) staat open in de notities van 69 tot en
@@ -46,6 +48,15 @@ meldingen "punt zonder spatie" regels onder elkaar waren, is nagekeken in een br
   (`account.js`) even verzwakt: blok 6 werd rood (2) en blok 7 (4); daarna teruggezet. Aan de site zelf is niets
   veranderd.
 
+## Deel 9 · De spatie in het uitklapvak van de complete look (gevonden in deel 8)
+
+Lucas: "Ja" op de vraag of ik hem repareer. In `src/components/order/OrderFlow.astro` r. 2929 stond
+`{LC.waarom} {LC.set}` binnen `<Note>`; de build verloor de spatie tussen de twee, zodat op /start/lifestyle (NL en EN)
+stond "…achter de prijs.Verkoop je een set…". Nu één tekst: `{`${LC.waarom} ${LC.set}`}`. Geen woord veranderd,
+alleen de spatie. Nagekeken in de gebouwde pagina's (NL en EN: nul keer zonder, één keer met spatie) en in het geopende
+uitklapvak op 1440 en 390. Elders staat dit patroon in een `<Note>` niet. Toets: twee regels in `tests/looks.test.mjs`
+(76 van 76). Zie ook `kladblok/TEKSTEN-NALOOP-69-73.md`.
+
 ## Mag weg
 
 Niets.
@@ -54,12 +65,13 @@ Niets.
 
 - **§16.2, het weeksysteem:** het plan noemt nu ook dat de aanmaakregels in migratie 0030 en 0036 mee uit moeten en dat
   `migrate.mjs` `DROP COLUMN` moet leren overslaan.
-- **§17:** nieuw punt: op /start/lifestyle staan in het uitklapvak van de complete look twee zinnen zonder spatie aan
-  elkaar (NL en EN, `OrderFlow.astro` r. 2929); de reparatie is één regel.
+- **§17:** gevonden en gerepareerd (deel 9): op /start/lifestyle stonden in het uitklapvak van de complete look twee
+  zinnen zonder spatie aan elkaar (NL en EN).
 
 ## Bestanden
 
-- **Toetsen:** `tests/klant-scheiding.test.mjs`.
+- **Bron:** `src/components/order/OrderFlow.astro` (deel 9, één regel).
+- **Toetsen:** `tests/klant-scheiding.test.mjs`, `tests/looks.test.mjs`.
 - **Kladblok:** `kladblok/NALOOP-69-73.md` (dit bestand), `kladblok/PLAN-WEEKSYSTEEM-OPRUIMEN.md`,
   `kladblok/TEKSTRONDE-SPELLING.md`, `kladblok/TEKSTRONDE-SPELLING-PER-PAGINA.md`, `kladblok/LEVERING-69.md`,
-  `kladblok/LEVERING-73.md`, `kladblok/COMMIT-BERICHT.txt`.
+  `kladblok/LEVERING-73.md`, `kladblok/TEKSTEN-NALOOP-69-73.md`, `kladblok/COMMIT-BERICHT.txt`.

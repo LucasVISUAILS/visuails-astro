@@ -13,7 +13,7 @@ Gemaakt met dezelfde regels als `npm run spelling` (hunspell nl en en_GB, de zic
 
 ## De twee echte fouten
 
-- **/start/lifestyle en /nl/start/lifestyle:** in het uitklapvak bij "Stukken die samen gedragen worden?" staan twee zinnen zonder spatie aan elkaar: "…achter de prijs.Verkoop je een set…" / "…behind the price.Selling a set…". In `src/components/order/OrderFlow.astro` r. 2929 staat `{LC.waarom} {LC.set}`; de build slikt de spatie tussen de twee in. De reparatie is één regel (`{`${LC.waarom} ${LC.set}`}`); niet gedaan, want deze naloop verandert niets aan de site.
+- **/start/lifestyle en /nl/start/lifestyle:** in het uitklapvak bij "Stukken die samen gedragen worden?" staan twee zinnen zonder spatie aan elkaar: "…achter de prijs.Verkoop je een set…" / "…behind the price.Selling a set…". In `src/components/order/OrderFlow.astro` r. 2929 staat `{LC.waarom} {LC.set}`; de build slikt de spatie tussen de twee in. **Gerepareerd** op 5 november (naloop deel 9): nu `{`${LC.waarom} ${LC.set}`}`.
 - **/studio:** "or a whole product at **once once** you have looked at its images" (`StudioHal.astro` › `galleryLede`).
 
 ## Op (bijna) elke Nederlandse pagina
