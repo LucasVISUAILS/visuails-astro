@@ -1,0 +1,70 @@
+{
+ "uitleg": "axe-core 4.10.2, wcag2a/aa, 21a/aa, 22aa, best-practice; 85 paginas uit dist/ op 1440 en 390, reducedMotion. voor = de build van levering 71, na = levering 72.",
+ "voor": {
+  "regels": [
+   {
+    "id": "aria-allowed-role",
+    "impact": "minor",
+    "help": "ARIA role should be appropriate for the element",
+    "aantal": 168,
+    "paginas": [
+     "/",
+     "/nl/",
+     "/nl/voorbeeld/voorpagina/",
+     "/voorbeeld/voorpagina/"
+    ]
+   },
+   {
+    "id": "landmark-complementary-is-top-level",
+    "impact": "moderate",
+    "help": "Aside should not be contained in another landmark",
+    "aantal": 24,
+    "paginas": [
+     "/custom-models/",
+     "/nl/custom-models/",
+     "/nl/pricing/",
+     "/nl/start/plan/",
+     "/nl/test-sample/",
+     "/nl/thank-you/",
+     "/pricing/",
+     "/start/plan/",
+     "/test-sample/",
+     "/thank-you/"
+    ]
+   },
+   {
+    "id": "scrollable-region-focusable",
+    "impact": "serious",
+    "help": "Scrollable region must have keyboard access",
+    "aantal": 14,
+    "paginas": [
+     "/about/",
+     "/lifestyle/",
+     "/nl/about/",
+     "/nl/lifestyle/",
+     "/custom-models/",
+     "/lifestyle/dunes/",
+     "/lifestyle/flash/",
+     "/nl/custom-models/",
+     "/nl/lifestyle/dunes/",
+     "/nl/lifestyle/flash/"
+    ]
+   },
+   {
+    "id": "summary-name",
+    "impact": "serious",
+    "help": "Summary elements must have discernible text",
+    "aantal": 4,
+    "paginas": [
+     "/nl/start/catalog/",
+     "/nl/start/lifestyle/",
+     "/start/catalog/",
+     "/start/lifestyle/"
+    ]
+   }
+  ]
+ },
+ "na": {
+  "regels": []
+ }
+}

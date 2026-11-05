@@ -125,7 +125,10 @@ for (const [breedte, naam] of [[1280, 'breed'], [390, 'telefoon']]) {
       const de = document.documentElement;
       /* `hidden`, of een voorouder die het is: dan staat het niet in de
          toegankelijkheidsboom en telt het hier niet mee. */
-      const verborgen = (el) => !!el.closest('[hidden]') || el.getAttribute('aria-hidden') === 'true';
+      /* Levering 72: ook een VOOROUDER met aria-hidden of inert. De schakelaars van levering 83
+         (src/scripts/schakel.js) leggen een kopie van de rij over de knoppen, aria-hidden en inert,
+         zonder href; die links meldde deze ronde als "link zonder doel" (20× op /faq). */
+      const verborgen = (el) => !!el.closest('[hidden], [aria-hidden="true"], [inert]');
 
       if (de.scrollWidth > de.clientWidth + 1) {
         /* Verst naar buiten eerst. Zonder die sortering staat bovenaan wat

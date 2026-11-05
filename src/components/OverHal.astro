@@ -255,7 +255,7 @@ const VINK = ikoon('vink');
         <a class="h-link" href={lp('/gallery')}>{c.naarGalerij}<span class="h-cirkel h-cirkel-klein" aria-hidden="true" set:html={PIJL} /></a>
       </div>
     </header>
-    <div class="h-ab-band h-in" data-ab-band>
+    <div class="h-ab-band h-in" data-ab-band role="group" aria-labelledby="ov-werk" tabindex="0">
       {[0, 1].map((kopie) => (
         <ul class="h-ab-band-rij" role={kopie ? undefined : 'list'} aria-hidden={kopie ? 'true' : undefined}>
           {strip.map((f) => (

@@ -175,7 +175,7 @@ const eigenVorm = (stand: string) => `<svg class="ik" viewBox="0 0 24 24" aria-h
     </header>
     <div class="h-bewijs-raster">
       <div class="h-bewijs-cmp h-in">
-        <Compare before="/img/catalog-before-1x1.webp" after="/img/catalog-after.webp" ratio="1/1" beforeLabel={c.voorLabel} afterLabel="VISUAILS" beforeAlt={c.voorAlt} afterAlt={c.naAlt} />
+        <Compare before="/img/catalog-before-1x1.webp" after="/img/catalog-after.webp" ratio="1/1" sizes="(min-width: 600px) 558px, calc(100vw - 42px)" beforeLabel={c.voorLabel} afterLabel="VISUAILS" beforeAlt={c.voorAlt} afterAlt={c.naAlt} />
       </div>
       <div class="h-bewijs-kaart h-in" style="--d:1">
         <h3 class="h-bewijs-kop">{c.reviewKop}</h3>
@@ -203,7 +203,7 @@ const eigenVorm = (stand: string) => `<svg class="ik" viewBox="0 0 24 24" aria-h
         {looks.map((l, i) => (
           <li class="h-st-look h-in" style={`--d:${i}`} data-st-look={l.slug}>
             <a class="h-st-beeld" href={l.kies} aria-hidden="true" tabindex="-1">
-              <img src={l.beeld} alt="" width={l.w} height={l.h} loading="lazy" decoding="async" />
+              <img src={l.beeld} alt="" width={l.w} height={l.h} sizes="(min-width: 700px) 300px, calc(100vw - 40px)" loading="lazy" decoding="async" />
             </a>
             <div class="h-st-tekst">
               <h3 class="h-st-naam">{l.naam}</h3>

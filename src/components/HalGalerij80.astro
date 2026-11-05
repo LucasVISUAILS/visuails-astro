@@ -69,16 +69,16 @@ const rijen = (GALERIJ.rijen as any[][]).map((rij) => rij.filter(opSite).map((it
   <div class="g8-rijen">
     {rijen.map((rij, r) => (
       <div class="g8-rij" data-g8-rij={r}>
-        <div class="g8-baan" data-g8-baan role="list" aria-label={r === 0 ? 'Lifestyle' : 'Catalog'}>
+        <div class="g8-baan" data-g8-baan role="group" aria-label={r === 0 ? 'Lifestyle' : 'Catalog'}>
           {[0, 1].map((kopie) => rij.map((t, i) => (
-            <a class="g8-tegel" href={t.href} role="listitem" style={`--a:${t.a.toFixed(4)}`}
+            <a class="g8-tegel" href={t.href} style={`--a:${t.a.toFixed(4)}`}
                data-g8-kopie={kopie ? '' : undefined} aria-hidden={kopie ? 'true' : undefined} tabindex={kopie ? -1 : undefined}
                aria-label={kopie ? undefined : `${t.naam} · ${t.soort}. ${bekijk}`} draggable="false">
               <picture>
                 <source type="image/avif" srcset={t.avif} sizes={t.sizes} />
                 <img src={t.src} srcset={t.webp} sizes={t.sizes} alt={kopie ? '' : t.alt} width={t.b} height={t.h} loading="lazy" decoding="async" draggable="false" />
               </picture>
-              <img class="g8-veeg" src={t.veeg} alt="" aria-hidden="true" loading="lazy" decoding="async" draggable="false" />
+              <img class="g8-veeg" src={t.veeg} alt="" aria-hidden="true" width={t.b} height={t.h} loading="lazy" decoding="async" draggable="false" />
               <span class="g8-naam" aria-hidden="true"><b>{t.naam}</b><span>{t.soort}</span></span>
             </a>
           )))}

@@ -87,6 +87,21 @@
   Cache-Control: public, max-age=86400
 
 # ══════════════════════════════════════════════════════════════════════════════
+# DE LETTERS — 5 NOVEMBER 2026, LEVERING 72
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Elke pagina laadt drie tot vier lettertypen uit /fonts (DM Sans, VISUAILS
+# Display, IBM Plex Mono 500 en 600), samen ± 110 kB. Ook die hebben een vaste
+# naam en vielen dus onder "max-age=0, must-revalidate": wie terugkomt (en dat doet
+# iemand die op een advertentie klikte en de volgende dag weer), vraagt bij elke
+# pagina vier keer na of de letter nog klopt, en de tekst wacht op dat antwoord.
+# Gemeten met Lighthouse op de telefoon (uses-long-cache-ttl): de letters zijn de
+# grootste bestanden zonder cache. Zeven dagen, met dezelfde afweging en dezelfde
+# regel als de foto's hierboven: een ANDERE letter krijgt een andere bestandsnaam.
+/fonts/*
+  Cache-Control: public, max-age=604800
+
+# ══════════════════════════════════════════════════════════════════════════════
 # BEVEILIGINGSHEADERS — 9 AUGUSTUS 2026
 # ══════════════════════════════════════════════════════════════════════════════
 #

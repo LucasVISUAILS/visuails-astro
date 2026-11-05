@@ -132,7 +132,9 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
   {/* ── HET EERSTE BEELD ─────────────────────────────────────────────────── */}
   {hero && (
     <section class="h-sec h-lk-held-sec" aria-label={style.name}>
-      <figure class:list={['h-lk-held', 'h-op', paar ? `is-paar paar-${vorm(helden[0])}-${vorm(helden[1])}` : staand(hero) ? 'is-staand' : 'is-liggend']}>
+      {/* Een paar staat op een telefoon in een schuifrij (hal.css): dan met de toets te bereiken (axe,
+          scrollable-region-focusable; levering 72), met de naam van de look. */}
+      <figure class:list={['h-lk-held', 'h-op', paar ? `is-paar paar-${vorm(helden[0])}-${vorm(helden[1])}` : staand(hero) ? 'is-staand' : 'is-liggend']} tabindex={paar ? 0 : undefined} aria-label={paar ? style.name : undefined}>
         {/* sizes voor een paar, gemeten (levering 66): tot 900 px staan ze in een
             schuifrij, elk 82 % breed (78 tot 79vw gemeten; hal.css, max-width 900px);
             daarboven naast elkaar, de eerste 55vw en vanaf 1440 px 789 px. De oude

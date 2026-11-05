@@ -196,7 +196,7 @@ const DRIE = (n: number) => String(n).padStart(2, '0');
         <button type="button" class="h-cirkel" data-h-strook-stap="1" aria-label={c.volgende} set:html={ik('rechts')} /></span>
       </p>
     </header>
-    <ul class="h-strook" role="list" data-h-strook-rij>
+    <ul class="h-strook" role="list" data-h-strook-rij aria-labelledby="ls-rij" tabindex="0">
       {RIJ.map((b, i) => (
         <li class="h-ls-beeld h-in" style={`--d:${Math.min(i, 4)}`}>
           <img src={kleiner(b.src)} alt={c.alt(b.label)} width={b.w} height={b.h} loading="lazy" decoding="async" />

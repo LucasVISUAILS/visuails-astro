@@ -34,7 +34,7 @@ const lp = (p: string) => localizedPath(lang, p);
     <slot />
     <div class="wk-rechts">
       <details class="wk-hulp" data-wk-hulp>
-        <summary class="wk-hulp-knop"><span class="wk-hulp-i" set:html={ikoon('bericht')} /><span class="wk-hulp-t">{wk.hulp}</span></summary>
+        <summary class="wk-hulp-knop" aria-label={wk.hulp}><span class="wk-hulp-i" set:html={ikoon('bericht')} /><span class="wk-hulp-t">{wk.hulp}</span></summary>
         <div class="wk-hulp-paneel">
           <p class="wk-hulp-kop">{wk.hulpKop}</p>
           <p class="wk-hulp-zin">{wk.hulpZin}</p>

@@ -504,7 +504,7 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
         <h2 id="bm-uit-h" class="h-kop h-h2"><span class="l">{KOP.uit[0]}</span> {KOP.uit[1]}</h2>
       </div>
     </header>
-    <ul class="h-bm-uit" role="list">
+    <ul class="h-bm-uit" role="list" aria-labelledby="bm-uit-h" tabindex="0">
       {EXAMPLES.map((photo, i) => (
         <li class="h-well h-in" style={`--d:${i}`}>
           <img src={photo.src} alt={`${c.outAlt} ${i + 1}`} loading="lazy" decoding="async" width={photo.w} height={photo.h} />
@@ -525,7 +525,7 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
         <p class="h-bm-regel"><b>{c.fitWhereH}</b> {c.fitWhere.map((w) => w[0]).join(' · ')}</p>
         <p class="h-bm-regel">{c.genKort} <a class="h-link" href={lp('/compare#ai-tools')}>{c.genCta}<span class="h-cirkel h-cirkel-mini" set:html={ik('pijl')} /></a></p>
       </div>
-      <aside class="h-bm-kost h-in" style="--d:1" aria-labelledby="bm-kost">
+      <aside class="h-bm-kost h-in" role="region" style="--d:1" aria-labelledby="bm-kost">
         <h2 id="bm-kost" class="h-kop h-h3">{c.costH}</h2>
         <p class="h-bm-bedrag">
           <span class="h-pil h-pil-wit"><span>{KOP.kostPil}</span></span>

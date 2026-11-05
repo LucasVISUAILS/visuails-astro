@@ -24,6 +24,10 @@ interface Props {
   beforeLabel?: string;
   afterLabel?: string;
   objectPosition?: string;
+  /** Levering 72: hoe breed de vergelijker op het scherm staat (gemeten per aanroeper). Zonder deze
+      zet de bouwstap sizes="100vw" op een foto met een telefoonversie, en dan laadt een laptop de
+      volle 1800 px voor een vak van 558 px. Leeg laten als je het niet gemeten hebt. */
+  sizes?: string;
 }
 // Locale-aware default labels (the visible BEFORE/AFTER tags). Two locales,
 // not three: src/i18n/ui.js's own header is explicit that the site has never
@@ -55,6 +59,7 @@ const {
   beforeLabel = _lbl[0],
   afterLabel = _lbl[1],
   objectPosition,
+  sizes,
 } = Astro.props;
 // When before/after have different aspect ratios (e.g. a 3:4 raw phone photo
 // vs a 1:1 finished shot in a square frame), object-position lets the caller
@@ -98,8 +103,8 @@ const [afterW, afterH] = size(after);
 ---
 
 <div class:list={['cmp', grade && 'cmp-grade']} style={ratio ? `aspect-ratio:${ratio}` : undefined}>
-  <img class="cmp-before" src={before} alt={beforeAlt} loading="lazy" decoding="async" width={beforeW} height={beforeH} style={posStyle} />
-  <img class="cmp-after" src={after} alt={afterAlt} loading="lazy" decoding="async" width={afterW} height={afterH} style={posStyle} />
+  <img class="cmp-before" src={before} alt={beforeAlt} loading="lazy" decoding="async" width={beforeW} height={beforeH} style={posStyle} sizes={sizes} />
+  <img class="cmp-after" src={after} alt={afterAlt} loading="lazy" decoding="async" width={afterW} height={afterH} style={posStyle} sizes={sizes} />
   <span class="cmp-tag before">{beforeLabel}</span>
   <span class="cmp-tag after">{afterLabel}</span>
   <span class="cmp-divider">

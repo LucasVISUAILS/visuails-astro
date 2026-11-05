@@ -2619,7 +2619,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
         customer usually never sees this at all rather than watching it vanish.
         The static HTML ships the signed-out state, which is correct for a
         crawler, for a browser with no JavaScript, and for most visitors. */}
-    <aside class="pl-signin" data-acct="out">
+    <aside class="pl-signin" data-acct="out" role="none">
       <div>
         <p class="pl-signin-h">{f.signInH}</p>
         <p class="pl-signin-body">{f.signInBody}</p>

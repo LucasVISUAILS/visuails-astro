@@ -1,0 +1,1338 @@
+[
+ {
+  "pad": "/",
+  "breedte": 390,
+  "lcp": 2004,
+  "fcp": 1728,
+  "lcpEl": "IMG laptop-1920.avif?v=29964382c7 .o8-beeld",
+  "cls": 0.017,
+  "kB": {
+   "totaal": 1383,
+   "img": 1111,
+   "font": 112,
+   "script": 52,
+   "css": 84,
+   "video": 0,
+   "html": 24,
+   "anders": 0
+  },
+  "verzoeken": 59,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 11253
+ },
+ {
+  "pad": "/catalog/",
+  "breedte": 390,
+  "lcp": 4384,
+  "fcp": 1716,
+  "lcpEl": "IMG en-catalog-0-1600.avif .hl-stand",
+  "cls": 0.017,
+  "kB": {
+   "totaal": 824,
+   "img": 566,
+   "font": 112,
+   "script": 41,
+   "css": 83,
+   "video": 0,
+   "html": 22,
+   "anders": 0
+  },
+  "verzoeken": 37,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 8041
+ },
+ {
+  "pad": "/lifestyle/",
+  "breedte": 390,
+  "lcp": 2504,
+  "fcp": 1712,
+  "lcpEl": "IMG en-lifestyle-0-1600.avif .hl-stand",
+  "cls": 0.017,
+  "kB": {
+   "totaal": 646,
+   "img": 388,
+   "font": 112,
+   "script": 41,
+   "css": 83,
+   "video": 0,
+   "html": 22,
+   "anders": 0
+  },
+  "verzoeken": 38,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 7273
+ },
+ {
+  "pad": "/video/",
+  "breedte": 390,
+  "lcp": 2504,
+  "fcp": 1700,
+  "lcpEl": "A .h-knop",
+  "cls": 0.017,
+  "kB": {
+   "totaal": 317,
+   "img": 62,
+   "font": 112,
+   "script": 41,
+   "css": 83,
+   "video": 0,
+   "html": 19,
+   "anders": 0
+  },
+  "verzoeken": 32,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 6406
+ },
+ {
+  "pad": "/hooks/",
+  "breedte": 390,
+  "lcp": 1908,
+  "fcp": 1364,
+  "lcpEl": "P .h-lede",
+  "cls": 0.017,
+  "kB": {
+   "totaal": 242,
+   "img": 2,
+   "font": 112,
+   "script": 37,
+   "css": 76,
+   "video": 0,
+   "html": 16,
+   "anders": 0
+  },
+  "verzoeken": 26,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 6040
+ },
+ {
+  "pad": "/lifestyle/flash/",
+  "breedte": 390,
+  "lcp": 2232,
+  "fcp": 1660,
+  "lcpEl": "IMG lifestyle-flash-01.avif",
+  "cls": 0.017,
+  "kB": {
+   "totaal": 673,
+   "img": 433,
+   "font": 112,
+   "script": 37,
+   "css": 76,
+   "video": 0,
+   "html": 15,
+   "anders": 0
+  },
+  "verzoeken": 30,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 7967
+ },
+ {
+  "pad": "/lifestyle/phone-made/",
+  "breedte": 390,
+  "lcp": 2248,
+  "fcp": 1676,
+  "lcpEl": "IMG lifestyle-phone-made-03-w1200.avif",
+  "cls": 0.017,
+  "kB": {
+   "totaal": 669,
+   "img": 429,
+   "font": 112,
+   "script": 37,
+   "css": 76,
+   "video": 0,
+   "html": 15,
+   "anders": 0
+  },
+  "verzoeken": 30,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 7839
+ },
+ {
+  "pad": "/catalog/classic/",
+  "breedte": 390,
+  "lcp": 2260,
+  "fcp": 1660,
+  "lcpEl": "IMG catalog-raster-w1200.avif",
+  "cls": 0.017,
+  "kB": {
+   "totaal": 593,
+   "img": 353,
+   "font": 112,
+   "script": 37,
+   "css": 76,
+   "video": 0,
+   "html": 15,
+   "anders": 0
+  },
+  "verzoeken": 30,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 7647
+ },
+ {
+  "pad": "/video/motion/",
+  "breedte": 390,
+  "lcp": 1916,
+  "fcp": 1364,
+  "lcpEl": "P .h-dienst-wacht",
+  "cls": 0.017,
+  "kB": {
+   "totaal": 241,
+   "img": 2,
+   "font": 112,
+   "script": 37,
+   "css": 75,
+   "video": 0,
+   "html": 15,
+   "anders": 0
+  },
+  "verzoeken": 25,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 6055
+ },
+ {
+  "pad": "/pricing/",
+  "breedte": 390,
+  "lcp": 1568,
+  "fcp": 1384,
+  "lcpEl": "SPAN .h-getal",
+  "cls": 0.017,
+  "kB": {
+   "totaal": 232,
+   "img": 2,
+   "font": 97,
+   "script": 38,
+   "css": 77,
+   "video": 0,
+   "html": 18,
+   "anders": 0
+  },
+  "verzoeken": 27,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2"
+  ],
+  "tijd": 6056
+ },
+ {
+  "pad": "/plans/",
+  "breedte": 390,
+  "lcp": 1852,
+  "fcp": 1348,
+  "lcpEl": "P .h-lede",
+  "cls": 0.017,
+  "kB": {
+   "totaal": 228,
+   "img": 2,
+   "font": 97,
+   "script": 37,
+   "css": 76,
+   "video": 0,
+   "html": 16,
+   "anders": 0
+  },
+  "verzoeken": 25,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2"
+  ],
+  "tijd": 5961
+ },
+ {
+  "pad": "/start/",
+  "breedte": 390,
+  "lcp": 2232,
+  "fcp": 1688,
+  "lcpEl": "IMG lifestyle-phone-made-06-w1200.avif .vs-c540f83f",
+  "cls": 0,
+  "kB": {
+   "totaal": 567,
+   "img": 340,
+   "font": 97,
+   "script": 39,
+   "css": 76,
+   "video": 0,
+   "html": 15,
+   "anders": 0
+  },
+  "verzoeken": 32,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2"
+  ],
+  "tijd": 7209
+ },
+ {
+  "pad": "/test-sample/",
+  "breedte": 390,
+  "lcp": 1840,
+  "fcp": 1700,
+  "lcpEl": "P .h-proef-zin",
+  "cls": 0.017,
+  "kB": {
+   "totaal": 624,
+   "img": 291,
+   "font": 97,
+   "script": 92,
+   "css": 109,
+   "video": 0,
+   "html": 35,
+   "anders": 0
+  },
+  "verzoeken": 49,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2"
+  ],
+  "tijd": 7796
+ },
+ {
+  "pad": "/nl/",
+  "breedte": 390,
+  "lcp": 2012,
+  "fcp": 1748,
+  "lcpEl": "IMG laptop-1920.avif?v=29964382c7 .o8-beeld",
+  "cls": 0.017,
+  "kB": {
+   "totaal": 1386,
+   "img": 1114,
+   "font": 112,
+   "script": 52,
+   "css": 84,
+   "video": 0,
+   "html": 24,
+   "anders": 0
+  },
+  "verzoeken": 59,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2"
+  ],
+  "tijd": 11319
+ },
+ {
+  "pad": "/nl/catalog/",
+  "breedte": 390,
+  "lcp": 4400,
+  "fcp": 1684,
+  "lcpEl": "IMG nl-catalog-0-1600.avif .hl-stand",
+  "cls": 0.017,
+  "kB": {
+   "totaal": 824,
+   "img": 566,
+   "font": 112,
+   "script": 41,
+   "css": 83,
+   "video": 0,
+   "html": 22,
+   "anders": 0
+  },
+  "verzoeken": 37,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 8018
+ },
+ {
+  "pad": "/nl/lifestyle/",
+  "breedte": 390,
+  "lcp": 2536,
+  "fcp": 1720,
+  "lcpEl": "IMG nl-lifestyle-0-1600.avif .hl-stand",
+  "cls": 0.017,
+  "kB": {
+   "totaal": 649,
+   "img": 391,
+   "font": 112,
+   "script": 41,
+   "css": 83,
+   "video": 0,
+   "html": 22,
+   "anders": 0
+  },
+  "verzoeken": 38,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 7264
+ },
+ {
+  "pad": "/nl/video/",
+  "breedte": 390,
+  "lcp": 2300,
+  "fcp": 1696,
+  "lcpEl": "A .h-knop",
+  "cls": 0.017,
+  "kB": {
+   "totaal": 318,
+   "img": 62,
+   "font": 112,
+   "script": 41,
+   "css": 83,
+   "video": 0,
+   "html": 20,
+   "anders": 0
+  },
+  "verzoeken": 32,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2"
+  ],
+  "tijd": 6414
+ },
+ {
+  "pad": "/nl/hooks/",
+  "breedte": 390,
+  "lcp": 1904,
+  "fcp": 1372,
+  "lcpEl": "P .h-lede",
+  "cls": 0.017,
+  "kB": {
+   "totaal": 243,
+   "img": 2,
+   "font": 112,
+   "script": 37,
+   "css": 76,
+   "video": 0,
+   "html": 16,
+   "anders": 0
+  },
+  "verzoeken": 26,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 6047
+ },
+ {
+  "pad": "/nl/lifestyle/flash/",
+  "breedte": 390,
+  "lcp": 2260,
+  "fcp": 1668,
+  "lcpEl": "IMG lifestyle-flash-01.avif",
+  "cls": 0.017,
+  "kB": {
+   "totaal": 673,
+   "img": 433,
+   "font": 112,
+   "script": 37,
+   "css": 76,
+   "video": 0,
+   "html": 15,
+   "anders": 0
+  },
+  "verzoeken": 30,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 7981
+ },
+ {
+  "pad": "/nl/lifestyle/phone-made/",
+  "breedte": 390,
+  "lcp": 2204,
+  "fcp": 1648,
+  "lcpEl": "IMG lifestyle-phone-made-03-w1200.avif",
+  "cls": 0.017,
+  "kB": {
+   "totaal": 669,
+   "img": 429,
+   "font": 112,
+   "script": 37,
+   "css": 76,
+   "video": 0,
+   "html": 15,
+   "anders": 0
+  },
+  "verzoeken": 30,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 7816
+ },
+ {
+  "pad": "/nl/catalog/classic/",
+  "breedte": 390,
+  "lcp": 2256,
+  "fcp": 1664,
+  "lcpEl": "IMG catalog-raster-w1200.avif",
+  "cls": 0.017,
+  "kB": {
+   "totaal": 594,
+   "img": 353,
+   "font": 112,
+   "script": 37,
+   "css": 76,
+   "video": 0,
+   "html": 16,
+   "anders": 0
+  },
+  "verzoeken": 30,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 7637
+ },
+ {
+  "pad": "/nl/video/motion/",
+  "breedte": 390,
+  "lcp": 1916,
+  "fcp": 1348,
+  "lcpEl": "P .h-dienst-wacht",
+  "cls": 0.017,
+  "kB": {
+   "totaal": 241,
+   "img": 2,
+   "font": 112,
+   "script": 37,
+   "css": 75,
+   "video": 0,
+   "html": 16,
+   "anders": 0
+  },
+  "verzoeken": 25,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2"
+  ],
+  "tijd": 6063
+ },
+ {
+  "pad": "/nl/pricing/",
+  "breedte": 390,
+  "lcp": 1580,
+  "fcp": 1396,
+  "lcpEl": "SPAN .h-getal",
+  "cls": 0.017,
+  "kB": {
+   "totaal": 233,
+   "img": 2,
+   "font": 97,
+   "script": 38,
+   "css": 77,
+   "video": 0,
+   "html": 19,
+   "anders": 0
+  },
+  "verzoeken": 27,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2"
+  ],
+  "tijd": 6088
+ },
+ {
+  "pad": "/nl/plans/",
+  "breedte": 390,
+  "lcp": 1936,
+  "fcp": 1396,
+  "lcpEl": "P .h-lede",
+  "cls": 0.017,
+  "kB": {
+   "totaal": 228,
+   "img": 2,
+   "font": 97,
+   "script": 37,
+   "css": 76,
+   "video": 0,
+   "html": 16,
+   "anders": 0
+  },
+  "verzoeken": 25,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2"
+  ],
+  "tijd": 6055
+ },
+ {
+  "pad": "/nl/start/",
+  "breedte": 390,
+  "lcp": 2248,
+  "fcp": 1692,
+  "lcpEl": "IMG lifestyle-phone-made-06-w1200.avif .vs-c540f83f",
+  "cls": 0,
+  "kB": {
+   "totaal": 567,
+   "img": 340,
+   "font": 97,
+   "script": 39,
+   "css": 76,
+   "video": 0,
+   "html": 15,
+   "anders": 0
+  },
+  "verzoeken": 32,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2"
+  ],
+  "tijd": 7233
+ },
+ {
+  "pad": "/nl/test-sample/",
+  "breedte": 390,
+  "lcp": 1832,
+  "fcp": 1716,
+  "lcpEl": "P .h-proef-zin",
+  "cls": 0.017,
+  "kB": {
+   "totaal": 626,
+   "img": 291,
+   "font": 97,
+   "script": 92,
+   "css": 109,
+   "video": 0,
+   "html": 36,
+   "anders": 0
+  },
+  "verzoeken": 49,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2"
+  ],
+  "tijd": 7658
+ },
+ {
+  "pad": "/",
+  "breedte": 1440,
+  "lcp": 140,
+  "fcp": 104,
+  "lcpEl": "IMG laptop-1920.avif?v=29964382c7 .o8-beeld",
+  "cls": 0.107,
+  "kB": {
+   "totaal": 4291,
+   "img": 1058,
+   "font": 112,
+   "script": 52,
+   "css": 84,
+   "video": 0,
+   "html": 24,
+   "anders": 2961
+  },
+  "verzoeken": 78,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 2340
+ },
+ {
+  "pad": "/catalog/",
+  "breedte": 1440,
+  "lcp": 196,
+  "fcp": 196,
+  "lcpEl": "SPAN .h-regel-in",
+  "cls": 0.001,
+  "kB": {
+   "totaal": 1323,
+   "img": 1065,
+   "font": 112,
+   "script": 41,
+   "css": 83,
+   "video": 0,
+   "html": 22,
+   "anders": 0
+  },
+  "verzoeken": 50,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 2293
+ },
+ {
+  "pad": "/lifestyle/",
+  "breedte": 1440,
+  "lcp": 188,
+  "fcp": 188,
+  "lcpEl": "SPAN .h-regel-in",
+  "cls": 0.001,
+  "kB": {
+   "totaal": 887,
+   "img": 629,
+   "font": 112,
+   "script": 41,
+   "css": 83,
+   "video": 0,
+   "html": 22,
+   "anders": 0
+  },
+  "verzoeken": 47,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 2254
+ },
+ {
+  "pad": "/video/",
+  "breedte": 1440,
+  "lcp": 164,
+  "fcp": 164,
+  "lcpEl": "SPAN .h-regel-in",
+  "cls": 0.001,
+  "kB": {
+   "totaal": 418,
+   "img": 162,
+   "font": 112,
+   "script": 41,
+   "css": 83,
+   "video": 0,
+   "html": 19,
+   "anders": 0
+  },
+  "verzoeken": 37,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2"
+  ],
+  "tijd": 2220
+ },
+ {
+  "pad": "/hooks/",
+  "breedte": 1440,
+  "lcp": 452,
+  "fcp": 68,
+  "lcpEl": "::after",
+  "cls": 0.001,
+  "kB": {
+   "totaal": 343,
+   "img": 102,
+   "font": 112,
+   "script": 37,
+   "css": 76,
+   "video": 0,
+   "html": 16,
+   "anders": 0
+  },
+  "verzoeken": 31,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 2164
+ },
+ {
+  "pad": "/lifestyle/flash/",
+  "breedte": 1440,
+  "lcp": 124,
+  "fcp": 124,
+  "lcpEl": "BUTTON .nav-trigger",
+  "cls": 0.001,
+  "kB": {
+   "totaal": 974,
+   "img": 734,
+   "font": 112,
+   "script": 37,
+   "css": 76,
+   "video": 0,
+   "html": 15,
+   "anders": 0
+  },
+  "verzoeken": 38,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 2183
+ },
+ {
+  "pad": "/lifestyle/phone-made/",
+  "breedte": 1440,
+  "lcp": 140,
+  "fcp": 140,
+  "lcpEl": "BUTTON .nav-trigger",
+  "cls": 0.001,
+  "kB": {
+   "totaal": 920,
+   "img": 680,
+   "font": 112,
+   "script": 37,
+   "css": 76,
+   "video": 0,
+   "html": 15,
+   "anders": 0
+  },
+  "verzoeken": 39,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 2190
+ },
+ {
+  "pad": "/catalog/classic/",
+  "breedte": 1440,
+  "lcp": 140,
+  "fcp": 140,
+  "lcpEl": "BUTTON .nav-trigger",
+  "cls": 0.001,
+  "kB": {
+   "totaal": 891,
+   "img": 650,
+   "font": 112,
+   "script": 37,
+   "css": 76,
+   "video": 0,
+   "html": 15,
+   "anders": 0
+  },
+  "verzoeken": 36,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 2176
+ },
+ {
+  "pad": "/video/motion/",
+  "breedte": 1440,
+  "lcp": 144,
+  "fcp": 144,
+  "lcpEl": "H2 .h-kop",
+  "cls": 0.001,
+  "kB": {
+   "totaal": 584,
+   "img": 345,
+   "font": 112,
+   "script": 37,
+   "css": 75,
+   "video": 0,
+   "html": 15,
+   "anders": 0
+  },
+  "verzoeken": 34,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 2179
+ },
+ {
+  "pad": "/pricing/",
+  "breedte": 1440,
+  "lcp": 460,
+  "fcp": 128,
+  "lcpEl": "::after",
+  "cls": 0.001,
+  "kB": {
+   "totaal": 360,
+   "img": 130,
+   "font": 97,
+   "script": 38,
+   "css": 77,
+   "video": 0,
+   "html": 18,
+   "anders": 0
+  },
+  "verzoeken": 35,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2"
+  ],
+  "tijd": 2169
+ },
+ {
+  "pad": "/plans/",
+  "breedte": 1440,
+  "lcp": 580,
+  "fcp": 136,
+  "lcpEl": "::after",
+  "cls": 0.001,
+  "kB": {
+   "totaal": 328,
+   "img": 102,
+   "font": 97,
+   "script": 37,
+   "css": 76,
+   "video": 0,
+   "html": 16,
+   "anders": 0
+  },
+  "verzoeken": 30,
+  "letters": [
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2"
+  ],
+  "tijd": 2165
+ },
+ {
+  "pad": "/start/",
+  "breedte": 1440,
+  "lcp": 132,
+  "fcp": 132,
+  "lcpEl": "SPAN",
+  "cls": 0,
+  "kB": {
+   "totaal": 954,
+   "img": 728,
+   "font": 97,
+   "script": 39,
+   "css": 76,
+   "video": 0,
+   "html": 15,
+   "anders": 0
+  },
+  "verzoeken": 41,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2"
+  ],
+  "tijd": 2174
+ },
+ {
+  "pad": "/test-sample/",
+  "breedte": 1440,
+  "lcp": 148,
+  "fcp": 148,
+  "lcpEl": "IMG ba2-na-front-grijs.avif",
+  "cls": 0.001,
+  "kB": {
+   "totaal": 763,
+   "img": 430,
+   "font": 97,
+   "script": 92,
+   "css": 109,
+   "video": 0,
+   "html": 35,
+   "anders": 0
+  },
+  "verzoeken": 65,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2"
+  ],
+  "tijd": 2259
+ },
+ {
+  "pad": "/nl/",
+  "breedte": 1440,
+  "lcp": 132,
+  "fcp": 92,
+  "lcpEl": "IMG laptop-1920.avif?v=29964382c7 .o8-beeld",
+  "cls": 0.107,
+  "kB": {
+   "totaal": 4294,
+   "img": 1061,
+   "font": 112,
+   "script": 52,
+   "css": 84,
+   "video": 0,
+   "html": 24,
+   "anders": 2961
+  },
+  "verzoeken": 78,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 2280
+ },
+ {
+  "pad": "/nl/catalog/",
+  "breedte": 1440,
+  "lcp": 172,
+  "fcp": 172,
+  "lcpEl": "SPAN .h-regel-in",
+  "cls": 0.001,
+  "kB": {
+   "totaal": 1324,
+   "img": 1066,
+   "font": 112,
+   "script": 41,
+   "css": 83,
+   "video": 0,
+   "html": 22,
+   "anders": 0
+  },
+  "verzoeken": 50,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2"
+  ],
+  "tijd": 2283
+ },
+ {
+  "pad": "/nl/lifestyle/",
+  "breedte": 1440,
+  "lcp": 188,
+  "fcp": 188,
+  "lcpEl": "SPAN .h-regel-in",
+  "cls": 0.001,
+  "kB": {
+   "totaal": 891,
+   "img": 633,
+   "font": 112,
+   "script": 41,
+   "css": 83,
+   "video": 0,
+   "html": 22,
+   "anders": 0
+  },
+  "verzoeken": 47,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 2255
+ },
+ {
+  "pad": "/nl/video/",
+  "breedte": 1440,
+  "lcp": 172,
+  "fcp": 172,
+  "lcpEl": "SPAN .h-regel-in",
+  "cls": 0.001,
+  "kB": {
+   "totaal": 418,
+   "img": 162,
+   "font": 112,
+   "script": 41,
+   "css": 83,
+   "video": 0,
+   "html": 20,
+   "anders": 0
+  },
+  "verzoeken": 37,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 2193
+ },
+ {
+  "pad": "/nl/hooks/",
+  "breedte": 1440,
+  "lcp": 476,
+  "fcp": 112,
+  "lcpEl": "::after",
+  "cls": 0.001,
+  "kB": {
+   "totaal": 343,
+   "img": 102,
+   "font": 112,
+   "script": 37,
+   "css": 76,
+   "video": 0,
+   "html": 16,
+   "anders": 0
+  },
+  "verzoeken": 31,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2"
+  ],
+  "tijd": 2134
+ },
+ {
+  "pad": "/nl/lifestyle/flash/",
+  "breedte": 1440,
+  "lcp": 96,
+  "fcp": 96,
+  "lcpEl": "BUTTON .nav-trigger",
+  "cls": 0.001,
+  "kB": {
+   "totaal": 974,
+   "img": 734,
+   "font": 112,
+   "script": 37,
+   "css": 76,
+   "video": 0,
+   "html": 15,
+   "anders": 0
+  },
+  "verzoeken": 38,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 2145
+ },
+ {
+  "pad": "/nl/lifestyle/phone-made/",
+  "breedte": 1440,
+  "lcp": 108,
+  "fcp": 108,
+  "lcpEl": "BUTTON .nav-trigger",
+  "cls": 0.001,
+  "kB": {
+   "totaal": 920,
+   "img": 680,
+   "font": 112,
+   "script": 37,
+   "css": 76,
+   "video": 0,
+   "html": 15,
+   "anders": 0
+  },
+  "verzoeken": 39,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 2144
+ },
+ {
+  "pad": "/nl/catalog/classic/",
+  "breedte": 1440,
+  "lcp": 112,
+  "fcp": 112,
+  "lcpEl": "BUTTON .nav-trigger",
+  "cls": 0.001,
+  "kB": {
+   "totaal": 891,
+   "img": 650,
+   "font": 112,
+   "script": 37,
+   "css": 76,
+   "video": 0,
+   "html": 16,
+   "anders": 0
+  },
+  "verzoeken": 36,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 2137
+ },
+ {
+  "pad": "/nl/video/motion/",
+  "breedte": 1440,
+  "lcp": 108,
+  "fcp": 108,
+  "lcpEl": "H2 .h-kop",
+  "cls": 0.001,
+  "kB": {
+   "totaal": 584,
+   "img": 345,
+   "font": 112,
+   "script": 37,
+   "css": 75,
+   "video": 0,
+   "html": 16,
+   "anders": 0
+  },
+  "verzoeken": 34,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-500.woff2"
+  ],
+  "tijd": 2144
+ },
+ {
+  "pad": "/nl/pricing/",
+  "breedte": 1440,
+  "lcp": 792,
+  "fcp": 116,
+  "lcpEl": "::after",
+  "cls": 0.001,
+  "kB": {
+   "totaal": 361,
+   "img": 130,
+   "font": 97,
+   "script": 38,
+   "css": 77,
+   "video": 0,
+   "html": 19,
+   "anders": 0
+  },
+  "verzoeken": 35,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2"
+  ],
+  "tijd": 2161
+ },
+ {
+  "pad": "/nl/plans/",
+  "breedte": 1440,
+  "lcp": 476,
+  "fcp": 112,
+  "lcpEl": "::after",
+  "cls": 0.001,
+  "kB": {
+   "totaal": 328,
+   "img": 102,
+   "font": 97,
+   "script": 37,
+   "css": 76,
+   "video": 0,
+   "html": 16,
+   "anders": 0
+  },
+  "verzoeken": 30,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2"
+  ],
+  "tijd": 2138
+ },
+ {
+  "pad": "/nl/start/",
+  "breedte": 1440,
+  "lcp": 124,
+  "fcp": 124,
+  "lcpEl": "SPAN",
+  "cls": 0,
+  "kB": {
+   "totaal": 955,
+   "img": 728,
+   "font": 97,
+   "script": 39,
+   "css": 76,
+   "video": 0,
+   "html": 15,
+   "anders": 0
+  },
+  "verzoeken": 41,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2"
+  ],
+  "tijd": 2173
+ },
+ {
+  "pad": "/nl/test-sample/",
+  "breedte": 1440,
+  "lcp": 164,
+  "fcp": 164,
+  "lcpEl": "IMG ba2-na-front-grijs.avif",
+  "cls": 0.001,
+  "kB": {
+   "totaal": 764,
+   "img": 430,
+   "font": 97,
+   "script": 92,
+   "css": 109,
+   "video": 0,
+   "html": 36,
+   "anders": 0
+  },
+  "verzoeken": 65,
+  "letters": [
+   "/fonts/dm-sans/dm-sans-latin.woff2",
+   "/fonts/visuails-display/VISUAILSDisplay-Bold.woff2",
+   "/fonts/ibm-plex-mono/IBMPlexMono-600.woff2"
+  ],
+  "tijd": 2267
+ }
+]

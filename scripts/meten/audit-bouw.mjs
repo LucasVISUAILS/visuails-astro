@@ -106,7 +106,9 @@ for (const f of bestanden) {
          .content, en daar loopt walk sowieso niet doorheen. */
       const t = tekstVan(n).replace(/\s+/g, ' ').trim();
       rij.push({ n: +n.nodeName[1], t, verborgen: attr(n, 'aria-hidden') === 'true' || heeft(n, 'hidden') });
-      if (!t && attr(n, 'aria-hidden') !== 'true') bev.legeKop.push(`${pagina}  lege <${n.nodeName}>`);
+      /* Levering 72: een kop met aria-label is niet leeg. De kop van de opening (HalOpening80) zet zijn
+         zin in aria-label en de twee zichtbare regels aria-hidden, zodat een schermlezer één zin hoort. */
+      if (!t && attr(n, 'aria-hidden') !== 'true' && !(attr(n, 'aria-label') || '').trim()) bev.legeKop.push(`${pagina}  lege <${n.nodeName}>`);
     }
     if (n.nodeName === 'main') mainTeller.push(pagina);
   });
@@ -128,7 +130,12 @@ for (const f of bestanden) {
       if ((!w || !h) && !/aspect-ratio/.test(stijl)) bev.geenMaat.push(`${pagina}  <img src="${attr(n, 'src')}"> zonder width/height`);
     }
     if (n.nodeName === 'a' || n.nodeName === 'button') {
-      const verborgen = attr(n, 'aria-hidden') === 'true' || heeft(n, 'hidden') || attr(n, 'tabindex') === '-1';
+      /* Levering 72: ook een VOOROUDER met hidden of aria-hidden. Het formulier heeft sjablonen die
+         verborgen staan tot het script ze vult (de rail van het abonnement, de combiknop, de links om
+         credits bij te kopen); die meldde deze controle als "zonder naam", terwijl axe op de echte
+         pagina niets vond. parse5 geeft elke knoop zijn parentNode. */
+      const verborgenVoorouder = (k) => { for (let o = k.parentNode; o && o.nodeName !== '#document'; o = o.parentNode) if (heeft(o, 'hidden') || attr(o, 'aria-hidden') === 'true') return true; return false; };
+      const verborgen = attr(n, 'aria-hidden') === 'true' || heeft(n, 'hidden') || attr(n, 'tabindex') === '-1' || verborgenVoorouder(n);
       if (!verborgen && !naamVan(n, ids)) {
         bev.geenNaam.push(`${pagina}  <${n.nodeName}${n.nodeName === 'a' ? ` href="${attr(n, 'href')}"` : ` class="${attr(n, 'class') || ''}"`}> zonder toegankelijke naam`);
       }
