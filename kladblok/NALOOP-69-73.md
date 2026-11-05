@@ -1,9 +1,7 @@
 # Naloop van leveringen 69 en 73 (5 november 2026)
 
-> **NOG NIET AF** (deze notitie wordt bij elke push bijgewerkt):
-> - Deel 9: de spatie op /start/lifestyle is gerepareerd en getoetst; de hele testreeks moet nog.
->
-> Deel 1, 7 en 8: af; de testreeks daarvan was 284 van 284 groen (9 min 33 s).
+> **Af.** Deel 1, 7 en 8: testreeks 284 van 284 groen (9 min 33 s). Deel 9 (de spatie): testreeks 284 van 284 groen
+> (9 min 9 s). Geen enkele herkansing.
 
 Lucas vroeg of alles van `kladblok/PROMPT-CLOUD-CODE.md` af was. Drie punten waren half gedaan en konden zonder hem
 of zijn beelden af; die staan hier. De rest (Windows, de beelden, de opening) staat open in de notities van 69 tot en
