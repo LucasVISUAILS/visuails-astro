@@ -33,6 +33,8 @@
  *       betaalrij en de UPDATE naar betaald) mag een bestelling niet onbetaald laten.
  *  15 · een mislukte incasso die twee keer wordt afgeleverd, geeft één mail.
  *       (Stap 16, de 429 en 401 van Mollie, staat in tests/mollie-webhook.test.mjs.)
+ *  17 · de betaalherinnering van de nacht gaat één keer uit, ook met twee runs tegelijk of
+ *       een stempel die een nacht niet lukt.
  */
 import { verseDb, d1 } from './lib/d1sqlite.mjs';
 import { adminGet, adminPost } from '../src/lib/admin.js';
@@ -628,6 +630,44 @@ console.log('\n15 · een mislukte incasso die Mollie twee keer aflevert');
   ok('de eerste aflevering meldt de mislukte incasso', r1.status === 200 && na1 >= 1, `status ${r1.status}, ${na1} mails`);
   ok('  de tweede aflevering van dezelfde melding stuurt geen tweede mail', r2.status === 200 && na2 === na1, `status ${r2.status}, ${na2 - na1} extra mails`);
   globalThis.fetch = echteFetch3;
+}
+
+/* ══ 17 · DE BETAALHERINNERING VAN DE NACHT: EERST CLAIMEN, DAN STUREN ══════════ */
+console.log('\n17 · de betaalherinnering: eerst claimen, dan sturen');
+{
+  const { tasks } = await import('../cron/index.js');
+  const mails17 = [];
+  const echteFetch17 = globalThis.fetch;
+  globalThis.fetch = async (url, init = {}) => { if (String(url).includes('resend')) mails17.push(JSON.parse(String(init.body || '{}'))); return new Response('{"id":"m"}', { status: 200, headers: { 'content-type': 'application/json' } }); };
+  const opzet = () => {
+    const { db } = verseDb(schema);
+    db.prepare("INSERT INTO customers (id, email, brand, name, country) VALUES (1, 'herin@merk.test', 'HERIN', 'Herin', 'NL')").run();
+    db.prepare(`INSERT INTO orders (id, ref, customer_id, service, status, tier, product_count, email, lang, name, brand, total_cents, vat_cents, vat_rate, payment_status, created_at)
+      VALUES (1, 'VIS-HERIN-17', 1, 'catalog', 'received', 'unattended', 3, 'herin@merk.test', 'nl', 'Herin', 'HERIN', 26700, 5607, 0.21, 'unpaid', datetime('now', '-4 days'))`).run();
+    return db;
+  };
+  const metStoring17 = (D, patroon) => { let over = 1; const wrap = (st) => ({ ...st, bind: (...a) => wrap(st.bind(...a)), async run() { if (over > 0) { over--; throw new Error('D1_ERROR: storing (toets)'); } return st.run(); } }); return { ...D, prepare: (sql) => (patroon.test(sql) ? wrap(D.prepare(sql)) : D.prepare(sql)) }; };
+  const basis17 = { MOLLIE_API_KEY: 'test_abcdefghijklmnopqrstuvwxyz0123', RESEND_API_KEY: 're_test', FROM_EMAIL: 'VISUAILS <orders@visuails.test>', PUBLIC_ORIGIN: 'https://visuails.com' };
+  const herinneringen = () => mails17.filter((m) => /VIS-HERIN-17/.test(`${m.subject} ${m.html}`)).length;
+  const stil = [console.log, console.warn, console.error];
+  try {
+    console.log = console.warn = console.error = () => {};
+    let db = opzet();
+    await Promise.all([tasks.remindUnpaid({ ...basis17, DB: d1(db) }), tasks.remindUnpaid({ ...basis17, DB: d1(db) })]);
+    const tegelijk = herinneringen();
+    mails17.length = 0;
+    db = opzet();
+    await tasks.remindUnpaid({ ...basis17, DB: metStoring17(d1(db), /payment_reminder_at = datetime/) });
+    await tasks.remindUnpaid({ ...basis17, DB: d1(db) });
+    const tweeNachten = herinneringen();
+    Object.assign(console, { log: stil[0], warn: stil[1], error: stil[2] });
+    ok('twee runs tegelijk (de nacht en een run met de hand): één herinnering', tegelijk === 1, `${tegelijk} herinneringen`);
+    ok('  lukt het stempelen een nacht niet: over twee nachten nog steeds één', tweeNachten === 1, `${tweeNachten} herinneringen`);
+  } catch (e) {
+    Object.assign(console, { log: stil[0], warn: stil[1], error: stil[2] });
+    ok('de herinnering zonder fout', false, e.stack || e.message);
+  }
+  globalThis.fetch = echteFetch17;
 }
 
 console.log(`\n${pass} goed, ${fail} fout`);

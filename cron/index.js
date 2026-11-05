@@ -386,14 +386,31 @@ async function remindUnpaid(env) {
   const origin = env.PUBLIC_ORIGIN || 'https://visuails.com';
   const gedaan = [];
   for (const o of rows) {
+    /* ── EERST CLAIMEN, DAN STUREN — 5 november 2026 ──────────────────────────
+       Hier werd eerst verstuurd en daarna gestempeld. Twee runs tegelijk (de nacht en
+       een run met de hand) stuurden dan allebei, en lukte het stempelen niet, dan ging
+       de volgende nacht dezelfde herinnering nog eens. Nu zet de stempel eerst, alleen
+       als hij er nog niet stond, en stuurt alleen wie hem zette. Mislukt het versturen,
+       dan gaat de stempel terug, zodat de volgende nacht het opnieuw probeert — zoals
+       voorheen. Zelfde patroon als cancelStaleApprovals() verderop. */
+    let geclaimd;
     try {
-      const url = await stuurBetaallink(env, o.id, { origin, herinnering: true });
-      /* Ook zonder link stempelen: de vier stille uitgangen (al betaald, geen
-         adres, niets te betalen) veranderen morgen niet, en een taak die elke
+      geclaimd = await env.DB.prepare(
+        "UPDATE orders SET payment_reminder_at = datetime('now') WHERE id = ?1 AND payment_reminder_at IS NULL"
+      ).bind(o.id).run();
+    } catch (err) {
+      console.error('[cron] betaalherinnering voor', o.ref, 'niet geclaimd, morgen opnieuw —', err?.message || err);
+      continue;
+    }
+    if (geclaimd?.meta && Number(geclaimd.meta.changes) === 0) continue; // een andere run was eerder
+    try {
+      /* Ook zonder link blijft de stempel staan: de vier stille uitgangen (al betaald,
+         geen adres, niets te betalen) veranderen morgen niet, en een taak die elke
          nacht dezelfde rij opnieuw probeert is een logboek vol herhaling. */
-      await env.DB.prepare("UPDATE orders SET payment_reminder_at = datetime('now') WHERE id = ?1").bind(o.id).run();
+      const url = await stuurBetaallink(env, o.id, { origin, herinnering: true });
       if (url) gedaan.push(o.ref);
     } catch (err) {
+      await env.DB.prepare('UPDATE orders SET payment_reminder_at = NULL WHERE id = ?1').bind(o.id).run().catch(() => {});
       console.error('[cron] betaalherinnering voor', o.ref, 'niet verstuurd —', err?.message || err);
     }
   }

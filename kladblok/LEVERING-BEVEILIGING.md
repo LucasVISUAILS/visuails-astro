@@ -1,7 +1,7 @@
 # Levering: de beveiliging en de back-end sterker (5 november 2026)
 
 > **NOG NIET AF** (deze notitie wordt bij elke push bijgewerkt):
-> - De reparaties: stap 1 tot en met 16 zijn af. Stap 17 tot en met 19 in
+> - De reparaties: stap 1 tot en met 17 zijn af. Stap 18 en 19 in
 >   `kladblok/PLAN-BEVEILIGING.md` §4 nog niet (stap 14 tot en met 19 kwamen uit het vierde deel van de naloop, de
 >   betaal- en bestelroutes; 14 ging voor omdat hij het zwaarst is).
 > - De eindcontrole.
@@ -282,3 +282,15 @@ nacht weer).
 **Het bewijs.** `tests/backend-sterker.test.mjs` §13: op de oude code rood (de eerste poging wiste alles, het bestand
 bleef staan), nu groen, ook de tweede poging en het archief. **Nacontrole:** de zes toetsbestanden rond wissen en het
 archief, de 2FA-set, de bouw: groen.
+
+## Stap 17 · De betaalherinnering van de nacht: eerst claimen, dan sturen (af)
+
+De herinnering werd eerst verstuurd en daarna gestempeld. Twee runs tegelijk (de nacht en een run met de hand) stuurden
+dan allebei; en lukte het stempelen een nacht niet, dan ging de volgende nacht dezelfde herinnering nog eens (beide
+nagespeeld: twee herinneringen). Nu zet de taak de stempel eerst, alleen als hij er nog niet stond, en stuurt alleen wie
+hem zette; mislukt het versturen, dan gaat de stempel terug en probeert de volgende nacht het opnieuw, zoals voorheen.
+Hetzelfde patroon als `cancelStaleApprovals()` in hetzelfde bestand.
+
+**Het bewijs.** `tests/backend-sterker.test.mjs` §17: op de oude code twee herinneringen in beide gevallen, nu één.
+**Nacontrole:** de 47 toetsbestanden rond de nacht en de betaallink (waaronder `test:betaalherinnering` en de overgang
+naar live), het vangnet, de tweede stap: groen.
