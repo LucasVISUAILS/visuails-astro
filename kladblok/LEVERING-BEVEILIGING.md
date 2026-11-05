@@ -1,9 +1,10 @@
 # Levering: de beveiliging en de back-end sterker (5 november 2026)
 
 > **NOG NIET AF** (deze notitie wordt bij elke push bijgewerkt):
-> - Stap 1, de naloop van de hele site: loopt (/admin, Studio en de privélink, de openbare API met de webhooks en de
->   cron, en wat overal geldt: headers, koekjes, geheimen, afhankelijkheden).
-> - Stap 2 en verder: de reparaties, elk met een toets, en de eindcontrole.
+> - De naloop: drie van de vier delen zijn binnen en nagekeken; het deel over de openbare API, de webhooks en de cron
+>   loopt nog (opnieuw gestart, zie het plan).
+> - De reparaties, stap 1 tot en met 13 in `kladblok/PLAN-BEVEILIGING.md` §4: nog geen enkele gedaan.
+> - De eindcontrole.
 
 Cloudsessie, branch `claude/voor-de-launch`. Het plan, met wat niet kapot mag en de nacontrole per stap, staat in
 `kladblok/PLAN-BEVEILIGING.md`. Het nummer van deze levering laat ik aan de chat met de brug.

@@ -65,7 +65,32 @@ Bij elke stap lees ik deze lijst opnieuw en schrijf ik op welke punten de stap k
   een nep-betaling.
 - `npm audit`.
 
-## 4 · De stappen
+## 4 · De stappen (uit de naloop; elke bevinding eerst zelf nagekeken in de code)
 
-Komen hierna, uit de naloop (stap 1 van de taken): per bevinding de ernst, het bewijs in de code, de reparatie en de
-toets. Wat ik niet repareer, staat er met de reden.
+De naloop liep in vier delen tegelijk (/admin; Studio en de privélink; de openbare API, de webhooks en de cron; wat
+overal geldt). Het derde deel werd halverwege gestopt door de veiligheidscontrole van het model en is opnieuw
+gestart met een smallere opdracht. Elke bevinding hieronder heb ik zelf in de code nagelezen voordat ik hem opnam.
+"Raakt" verwijst naar de punten in §1.
+
+| Stap | Wat | Ernst | Raakt | Bewijs eerst |
+|---|---|---|---|---|
+| 1 | **De grens van 100 waarden per query** (D1). Het dashboard van /admin geeft een 500 zodra de lijst meer dan 100 verschillende klanten heeft; de rode pil "teruggeboekt" en de markering "mail kwam niet aan" vallen dan stil weg; ook Studio (feedback bij >100 bestellingen), het kiezen van veel beelden, Formaten en het wissen van een grote klant. Eén hulpfunctie die in groepen van 80 vraagt | middel (zeker, groeit mee met de zaak) | 1, 6 | de nep-D1 dwingt de echte grens af; /admin met 150 klanten |
+| 2 | **Studio: "Gegevens opslaan" met een leeg KvK-veld** gooit een fout (nagespeeld); en `?fout=__proto__` of `?ronde=valueOf` laat een pagina vastlopen | middel / laag | 4 | nagespeeld |
+| 3 | **Studio: het e-mailadres wijzigen en terugzetten.** Wie een sessie heeft gestolen, kan met een tweede wijziging en een openstaande bevestiging het terugzetten van de eigenaar omzeilen. Erbij: een grens per klant op wijzigingsmails, en het IP-adres in `email_changes` gezouten in plaats van kaal | middel | 3, 4, 8 | de keten nagespeeld in een toets |
+| 4 | **Studio: de inlogcode.** Het tellen van pogingen is "eerst lezen, dan schrijven" (gelijktijdige pogingen tellen niet mee); per account geen grens per dag | laag | 4 | gelijktijdige pogingen in een toets |
+| 5 | **De privélink kan een bestelling buiten het venster heropenen** (Studio controleert dat wel) | laag | 5 | nagespeeld in een toets |
+| 6 | **Bestanden met een oud, onbekend type** worden met dat type getoond (alleen gegevens van vóór 31 augustus) | laag | 5 | toets |
+| 7 | **De open doorverwijzing in `/api/order`** (`https://visuails.com//kwaad/thank-you` → `//kwaad/thank-you`) | laag-middel | 7 | nagespeeld |
+| 8 | **/admin:** twee foutmeldingen zonder `esc()`, de omleiding van `?thema=` met het ruwe pad, een restant dat twee keer kan, en een offerte van 0 cent | laag | 1, 2 | toetsen |
+| 9 | **Mail:** geen regeleinden of stuurtekens in het onderwerp | laag | 8 | toets |
+| 10 | **Headers op HTML die de Worker zelf maakt** buiten de drie helpers (de tussenpagina naar Mollie, de Nederlandse 404): nosniff en frame-ancestors erbij. Alleen deze twee: een strengere CSP kan de stap naar Mollie breken | laag | 2, 6, 9 | toets |
+| 11 | **Opruimen:** verlopen sessies en inlogcodes blijven in de database staan | laag (groei) | 1, 4, 10 | toets |
+| 12 | **De back-up:** de controle op geheimen gebeurt pas nadat het bestand in Google Drive staat | laag | 11 | toets |
+| 13 | **Een klant wissen:** eerst de bestanden, dan de database; mislukt de database, dan zijn de bestanden weg en de gegevens niet | laag-middel | 1 | toets |
+
+**Niet in deze ronde, met advies (in de notitie):** /admin op een eigen subdomein (de sterkste stap, maar dat vraagt
+DNS en Cloudflare van Lucas); inloggen via de link uit de mail zonder vooraf geopend tabblad (een bewuste keuze in de
+code); het verschil in antwoordtijd bij een bekend of onbekend adres; de bevestiging van een nieuw e-mailadres op een
+GET (een mailscanner kan hem openen); teksten uit de adresbalk in meldingen van /admin (onschadelijk gemaakt, maar te
+kiezen); de zouten in `app_settings` die in de back-up meegaan; de lokale Miniflare-bestanden die nog in git staan
+(onder "Mag weg").
