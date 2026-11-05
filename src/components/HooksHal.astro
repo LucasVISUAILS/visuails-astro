@@ -97,6 +97,7 @@ import { localizedPath } from '../i18n/ui.js';
    beeld `hooks-kop` als het er is, en anders niets — zie src/data/beeldenNodig.js. */
 import { isEcht, beeldMaat } from '../lib/beeldAanwezig.js';
 import { komendeStijlen } from '../data/komendeStijlen.js';
+import { LAUNCHSET } from '../data/launchset.js';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -397,7 +398,24 @@ const COPY = {
     beloofte: 'Wij beloven geen views, likes of volgers. Wij beloven het format, de uitvoering en de controle vóór levering. Of een post ergens terechtkomt, hangt af van het platform en van timing, en die twee zijn niet aan ons om te beloven.',
   },
 };
-const c = COPY[lang];
+/* ── IG SPLIT, MET DE LAUNCHSET — levering 70, 5 november 2026 ─────────────
+   Vraag 8 = ja en ja: de doorloper heet IG SPLIT (een deel van het product komt uit
+   de bovenste post en zweeft over de zwarte balk), als foto of als video, met de
+   bedragen die er staan; de verdeling foto/video beslist Lucas later. Er komt
+   geen ander format bij, dus "de rest wordt gebouwd" valt weg. */
+const IG_SPLIT = {
+  en: {
+    formatNuNaam: 'IG Split',
+    formatNuRegel: 'Part of your product comes out of the top post and floats over the black bar between two posts. As a photo, or as a video.',
+    formatsSub: 'One format for now: IG Split, as a photo or as a video.',
+  },
+  nl: {
+    formatNuNaam: 'IG Split',
+    formatNuRegel: 'Een deel van je product komt uit de bovenste post en zweeft over de zwarte balk tussen twee posts. Als foto, of als video.',
+    formatsSub: 'Eén format voor nu: IG Split, als foto of als video.',
+  },
+};
+const c = LAUNCHSET ? { ...COPY[lang], ...IG_SPLIT[lang] } : COPY[lang];
 
 /* ── DE HAL ────────────────────────────────────────────────────────────── */
 /* Een kop met een <br> wordt de kop in twee tonen: eerst het lichte deel. */
@@ -422,7 +440,9 @@ const BEELD = {
   soort: 'getal' as const,
   label: 'Hook · 9:16',
   voor: lang === 'nl' ? 'vanaf' : 'from', getal: euro(AMOUNT.hooks, lang), eenheid: 'per hook',
-  voet: lang === 'nl' ? `${vatLabel('excl', 'nl')}. Op aanvraag: je krijgt eerst schriftelijk een prijs.` : `${vatLabel('excl', 'en')}. On request: you get a written price first.`,
+  voet: LAUNCHSET
+    ? (lang === 'nl' ? `${vatLabel('excl', 'nl')}. Als foto of als video. Op aanvraag: je krijgt eerst schriftelijk een prijs.` : `${vatLabel('excl', 'en')}. As a photo or as a video. On request: you get a written price first.`)
+    : (lang === 'nl' ? `${vatLabel('excl', 'nl')}. Op aanvraag: je krijgt eerst schriftelijk een prijs.` : `${vatLabel('excl', 'en')}. On request: you get a written price first.`),
 };
 ---
 <div class="h-pagina h-hk">

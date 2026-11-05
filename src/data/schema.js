@@ -807,6 +807,8 @@ const CRUMBS = {
   '/ai-act': { en: 'AI Act', nl: 'AI-verordening' },
   '/catalog': { en: 'Catalog', nl: 'Catalog' },
   '/catalog/classic': { en: 'Classic', nl: 'Classic' },
+  /* Casual, August en Shift: de launchset (levering 70); hun pagina bestaat alleen met de schakelaar aan. */
+  '/catalog/casual': { en: 'Casual', nl: 'Casual' },
   '/catalog/custom': { en: 'Custom Brand', nl: 'Custom Brand' },
   '/compare': { en: 'Compare', nl: 'Vergelijken' },
   '/contact': { en: 'Contact', nl: 'Contact' },
@@ -820,6 +822,7 @@ const CRUMBS = {
   '/hooks': { en: 'Hooks', nl: 'Hooks' },
   '/how-it-works': { en: 'How it works', nl: 'Hoe het werkt' },
   '/lifestyle': { en: 'Lifestyle', nl: 'Lifestyle' },
+  '/lifestyle/august': { en: 'August', nl: 'August' },
   '/lifestyle/custom': { en: 'Custom', nl: 'Custom' },
   '/lifestyle/dunes': { en: 'Dunes', nl: 'Dunes' },
   '/lifestyle/flash': { en: 'Flash', nl: 'Flash' },
@@ -855,6 +858,7 @@ const CRUMBS = {
   '/video/custom': { en: 'Custom', nl: 'Custom' },
   '/video/lifestyle': { en: 'Lifestyle', nl: 'Lifestyle' },
   '/video/motion': { en: 'Motion', nl: 'Motion' },
+  '/video/shift': { en: 'Shift', nl: 'Shift' },
 };
 
 /*

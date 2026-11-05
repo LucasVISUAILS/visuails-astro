@@ -177,7 +177,10 @@ console.log('\nA · "custom" kan niet als vaste lifestyle-look worden vastgezet'
   ok("  een eigen look van de klant ook", lookGeldig('cs-12'), true);
   const acc = lees('src/lib/account.js');
   ok('account.js: LOOK_IDS komt uit de vaste looks', /const LOOK_IDS = VASTE_LOOKS\.map/.test(acc), true);
-  ok('  en de keuzelijst in Studio ook', /\.\.\.VASTE_LOOKS\.map\(\(lk\)/.test(acc), true);
+  /* Sinds levering 70 (5 november 2026) staat er ook de huidige vaste look bij als die
+     stijl even van de site is (de launchset), en nooit een look op aanvraag
+     (`!lk.priceTrust`). De tegels blijven uit VASTE_LOOKS komen. */
+  ok('  en de keuzelijst in Studio ook', /\.\.\.\[\.\.\.VASTE_LOOKS, /.test(acc) && /ALLE_LOOKS_EN\.some\(\(lk\) => lk\.slug === lookNow && !lk\.priceTrust\)/.test(acc), true);
   ok('  en nergens meer de hele lijst als keuze', /\.\.\.LOOKS_EN\.map\(/.test(acc), false);
 }
 

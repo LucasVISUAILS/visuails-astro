@@ -9,6 +9,7 @@ import { waHref } from './whatsapp.js';
 // directly in the [slug] page template.
 
 import { perProduct, vatLabel, euro, AMOUNT, VIDEO_OP_AANVRAAG } from './pricing.js';
+import { siteStijlen, inLaunch, vulVasteLooks } from './launchset.js';
 
 // No euro figure and no delivery time may be typed into this file.
 // Both used to live here as literals, which is how the hub cards and the
@@ -42,9 +43,31 @@ function grid(photos, icons) {
   return icons.map((icon, i) => ({ photo: photos[i] ?? null, icon, width: widths[icon] }));
 }
 
-export const videoStyles = [
+/* De volledige lijst en wat er op de site staat (levering 70, 5 november 2026):
+   zie de noot bij `alleStyles` in styles.js. */
+export const alleVideoStyles = [
   {
     slug: 'motion',
+    /* Bij de launch (launchschema 22 oktober): MOTION · 8 s, één doorlopend shot;
+       het model doet één handeling, de camera reageert. Tot de schakelaar aan gaat,
+       blijft de tekst hieronder. */
+    bijLaunch: {
+      tagline: 'Eight seconds, one shot, one action.',
+      cardDesc: `An 8-second clip in one continuous shot: the model does one thing, the camera follows.${VASTE_PRIJS}`,
+      moodParagraphs: [
+        'One continuous shot of eight seconds. The model does one thing (turns, picks something up, walks away) and the camera responds to it.',
+      ],
+      steps: [
+        { title: 'One shot', body: 'No cuts: the clip runs from the first frame to the last in one take.' },
+        { title: 'One action', body: 'The model does one thing, chosen with you, that shows how the product moves.' },
+        { title: 'The camera responds', body: 'The camera follows the action: a step back, a slow turn, a small push in.' },
+      ],
+      whatYouGet: [
+        '8-second clip in one continuous shot',
+        'One action by the model, the camera following',
+        'Vertical 9:16; other ratios on request',
+      ],
+    },
     /* Naar het aanvraagformulier van Video en niet naar de keuzepagina.
        Video staat nog op 'in aanbouw' — er is dus geen bestelformulier maar
        een aanvraag, en dát is waar deze knop hoort te landen. Zie
@@ -102,8 +125,67 @@ export const videoStyles = [
       'Vertical 9:16; other ratios on request',
     ],
   },
+  /* ── SHIFT · 8 s — levering 70, 5 november 2026 ───────────────────────────
+     Uit het launchschema (overzicht §30.2): bewerkte look, meerdere shots,
+     close-ups. Op aanvraag, zoals alle video (VIDEO_OP_AANVRAAG); er is nog geen
+     prijs, dus ook als de vlag ooit uit gaat staat hier "On request". Staat pas op
+     de site met de launchset. */
+  {
+    slug: 'shift',
+    opSite: 'launch',   // pas op de site met de launchset; na de launch mag deze regel weg
+    name: 'Shift',
+    tagline: 'Eight seconds, several shots, edited.',
+    priceTrust: OP_AANVRAAG,
+    priceUnit: '',
+    ctaLabel: 'Ask about Shift',
+    ctaHref: '/start/video/?style=shift',
+    ctaExternal: false,
+    heroIcon: 'sneaker',
+    heroWidth: '26%',
+    cardIcon: 'sneaker',
+    cardWidth: '42%',
+    cardPrice: OP_AANVRAAG,
+    cardDesc: 'An 8-second edit of several shots: wide, close-up and detail, in an edited look.',
+    moodTitle: 'What Shift feels like.',
+    moodParagraphs: [
+      'Eight seconds, cut from several shots: the outfit in full, a close-up of the fabric, a detail that tells the story. Edited to one look.',
+    ],
+    steps: [
+      { title: 'Plan the shots', body: 'Wide, close-up and detail, chosen with you per product.' },
+      { title: 'Cut to eight seconds', body: 'The shots edited into one clip of eight seconds, on the rhythm of the movement.' },
+      { title: 'One look', body: 'Colour and light edited so every shot belongs to the same clip.' },
+    ],
+    grid: grid(
+      [],
+      ['sneaker', 'bag', 'bottle', 'jar', 'sneaker', 'bag', 'bottle', 'jar', 'sneaker']
+    ),
+    craft: [
+      { title: 'Close-ups that show the material', body: 'Fabric, stitching and hardware up close, in focus.' },
+      { title: 'Cuts on the movement', body: 'Each cut falls where the model moves, so the edit runs smoothly.' },
+      { title: 'An edited look', body: 'Colour and contrast set per clip, the same across every shot.' },
+      { title: 'Vertical as standard', body: '9:16 as standard; another ratio on request, agreed in the quote.' },
+    ],
+    why: [
+      { title: 'More than one angle', body: 'Wide and close in eight seconds: the whole product and its detail.' },
+      { title: 'Made for ads', body: 'A short edit with rhythm holds attention in a paid feed.' },
+      { title: 'The right length for a feed', body: '8 seconds, in the aspect ratio Instagram and TikTok use.' },
+    ],
+    bestFor: [
+      'Social ads and launches',
+      'Products with a detail worth showing',
+      'Brands with a strong visual style',
+      'Reels and TikTok',
+    ],
+    whatYouGet: [
+      '8-second edit of several shots',
+      'Wide, close-up and detail',
+      'An edited look across every shot',
+      'Vertical 9:16; other ratios on request',
+    ],
+  },
   {
     slug: 'lifestyle',
+    opSite: 'tot-launch',   // van de site bij de launch (22 oktober); terug: deze regel weg
     name: 'Lifestyle Video',
     tagline: 'The scene, set in motion.',
     priceTrust: LIFESTYLE_PRIJS,
@@ -157,6 +239,7 @@ export const videoStyles = [
   },
   {
     slug: 'campaign',
+    opSite: 'tot-launch',   // van de site bij de launch (22 oktober); terug: deze regel weg
     name: 'Campaign',
     tagline: 'Your biggest moment, produced properly.',
     priceTrust: 'Quoted per project',
@@ -230,7 +313,7 @@ export const videoStyles = [
     cardDesc: 'Your own concept, pace and look — a video built entirely around what you tell us.',
     moodTitle: 'What Custom feels like.',
     moodParagraphs: [
-      'Beyond the three formats — a video concept built around your story, your pace, your look.',
+      'Beyond the {vaste} formats — a video concept built around your story, your pace, your look.',
     ],
     steps: [
       { title: 'You tell us', body: 'Tell us the idea and where it needs to run.' },
@@ -249,7 +332,7 @@ export const videoStyles = [
       { title: 'Priced before you commit', body: 'A clear quote, agreed before any work starts.' },
     ],
     bestFor: [
-      'Ideas the three formats don’t cover',
+      'Ideas the {vaste} formats don’t cover',
       'Launches with a specific story to tell',
       'Brands that want a signature motion style',
       'Anything agreed and quoted per project',
@@ -263,6 +346,13 @@ export const videoStyles = [
   },
 ];
 
+vulVasteLooks(alleVideoStyles, 'en');
+
+/** Wat een bezoeker ziet: de lijst door de schakelaar (src/data/launchset.js). */
+export const videoStyles = siteStijlen(alleVideoStyles);
+
+/* Uit de volledige lijst: een factuur of aanvraag van een stijl die even van de site is. */
 export function getVideoStyle(slug) {
-  return videoStyles.find((s) => s.slug === slug);
+  const s = alleVideoStyles.find((x) => x.slug === slug);
+  return s ? inLaunch(s) : s;
 }

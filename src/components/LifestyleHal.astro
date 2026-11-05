@@ -30,6 +30,7 @@ import { serviceFaqs } from '../data/faq.js';
 import { localizedPath } from '../i18n/ui.js';
 import { styles as stylesEn } from '../data/styles.js';
 import { styles as stylesNl } from '../data/styles.nl.js';
+import { aantalInWoorden } from '../data/launchset.js';
 import { komendeStijlen } from '../data/komendeStijlen.js';
 import { productStand, PRODUCT_COPY } from '../data/eigenproduct.js';
 import { kleiner, beeldMaat, isEcht } from '../lib/beeldAanwezig.js';
@@ -51,6 +52,10 @@ const sample = TEST_SAMPLE[lang];
 const floor = ladderFloor('lifestyle');
 const t0 = TIERS.unattended;
 const moods = nl ? stylesNl : stylesEn;
+/* Het aantal vaste looks in woorden (levering 70): "vier sferen" volgt wat er op de
+   site staat (drie met de launchset, en weer meer als er één terugkomt). */
+const VASTE = aantalInWoorden(moods.filter((s: any) => s.slug !== 'custom').length, lang);
+const hoofd = (w: string) => w.charAt(0).toUpperCase() + w.slice(1);
 
 const looks = await Promise.all(moods.filter((s: any) => s.slug !== 'custom' && s.orderHref && !s.orderLabel).map(async (s: any) => {
   const bron = s.cardPhoto || s.heroPhoto;
@@ -67,13 +72,15 @@ const eigen = moods.find((s: any) => s.slug === 'custom');
 const komend = komendeStijlen('lifestyle', lang);
 
 /* Het assortiment: dezelfde vijf beelden als nu op /lifestyle. */
+/* `stijl` erbij (levering 70): een beeld van een stijl die even niet op de site staat
+   (de launchset, src/data/launchset.js), valt uit de rij, net als een beeld dat ontbreekt. */
 const RIJ = [
-  { src: '/img/lifestyle-phone-made-06.webp', label: 'Phone-made', w: 2400, h: 1792 },
-  { src: '/img/lifestyle-glow-03.webp', label: 'Glow', w: 768, h: 1376 },
-  { src: '/img/lifestyle-flash-05.webp', label: 'Flash', w: 2400, h: 1792 },
-  { src: '/img/lifestyle-dunes-02.webp', label: 'Dunes', w: 928, h: 1152 },
-  { src: '/img/lifestyle-phone-made-11.webp', label: 'Phone-made', w: 2400, h: 1792 },
-].filter((b) => isEcht(b.src));
+  { src: '/img/lifestyle-phone-made-06.webp', label: 'Phone-made', stijl: 'phone-made', w: 2400, h: 1792 },
+  { src: '/img/lifestyle-glow-03.webp', label: 'Glow', stijl: 'glow', w: 768, h: 1376 },
+  { src: '/img/lifestyle-flash-05.webp', label: 'Flash', stijl: 'flash', w: 2400, h: 1792 },
+  { src: '/img/lifestyle-dunes-02.webp', label: 'Dunes', stijl: 'dunes', w: 928, h: 1152 },
+  { src: '/img/lifestyle-phone-made-11.webp', label: 'Phone-made', stijl: 'phone-made', w: 2400, h: 1792 },
+].filter((b) => isEcht(b.src) && moods.some((s: any) => s.slug === b.stijl));
 /* "Een carrousel" staat als drie genummerde kaarten zonder beeld, zoals op de
    huidige pagina: de enige complete carrousel in de beeldbank (laptopSlides.js)
    mist nog één beeld ("Alleen het product" staat er als plaat, zie beeldenNodig.js), en drie
@@ -87,10 +94,10 @@ const COPY = {
     feiten: [`<b>From ${e(floor)}</b> per product · ${ex}`, `<b>${LIFESTYLE_IMAGES} photos</b> per product`],
     wacht: `Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}: a fixed delivery date.`,
     kiesCta: 'Pick your look', prijsCta: 'See the price per product',
-    rijPil: 'The range', rijKop: ['The range,', 'in four moods.'], rijCta: 'See the full gallery',
+    rijPil: 'The range', rijKop: ['The range,', `in ${VASTE} moods.`], rijCta: 'See the full gallery',
     vorige: 'Previous images', volgende: 'Next images',
     alt: (n: string) => `${n} lifestyle example`,
-    looksPil: 'Looks', looksKop: ['Four moods,', 'or your own.'],
+    looksPil: 'Looks', looksKop: [`${hoofd(VASTE)} moods,`, 'or your own.'],
     vanaf: 'From', per: `per product, ${ex}`,
     kies: 'Pick this look', meer: 'More about this look',
     eigenKop: 'Not in there?', eigenCta: 'Request your own look', eigenMeer: 'More about your own look',
@@ -118,10 +125,10 @@ const COPY = {
     feiten: [`<b>Vanaf ${e(floor)}</b> per product · ${ex}`, `<b>${LIFESTYLE_IMAGES} foto’s</b> per product`],
     wacht: `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD}: een vaste leverdatum.`,
     kiesCta: 'Kies je look', prijsCta: 'Bekijk de prijs per product',
-    rijPil: 'Het assortiment', rijKop: ['Het assortiment,', 'in vier sferen.'], rijCta: 'Bekijk de volledige galerij',
+    rijPil: 'Het assortiment', rijKop: ['Het assortiment,', `in ${VASTE} sferen.`], rijCta: 'Bekijk de volledige galerij',
     vorige: 'Vorige beelden', volgende: 'Volgende beelden',
     alt: (n: string) => `${n} lifestyle-voorbeeld`,
-    looksPil: 'Looks', looksKop: ['Vier sferen,', 'of je eigen.'],
+    looksPil: 'Looks', looksKop: [`${hoofd(VASTE)} sferen,`, 'of je eigen.'],
     vanaf: 'Vanaf', per: `per product, ${ex}`,
     kies: 'Kies deze look', meer: 'Meer over deze look',
     eigenKop: 'Zit het er niet bij?', eigenCta: 'Vraag een eigen look aan', eigenMeer: 'Meer over een eigen look',

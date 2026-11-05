@@ -40,8 +40,12 @@ import {
   videoExamples, examplesFor, isReady,
   VIDEO_RATIOS, VIDEO_FORMAT, videoFilename,
 } from '../src/data/videoExamples.js';
-import { videoStyles } from '../src/data/videoStyles.js';
-import { videoStyles as videoStylesNl } from '../src/data/videoStyles.nl.js';
+/* De VOLLEDIGE lijsten (levering 70): ook een stijl die alleen met de launchset op de
+   site staat (Shift) of er even niet staat (Lifestyle Video, Campaign), heeft zijn
+   twee voorbeelden. Welke er op een pagina komen, beslist de site-lijst. */
+import { alleVideoStyles as videoStyles } from '../src/data/videoStyles.js';
+import { alleVideoStyles as videoStylesNl } from '../src/data/videoStyles.nl.js';
+import { videoStyles as siteVideoStyles } from '../src/data/videoStyles.js';
 
 let pass = 0;
 let fail = 0;
@@ -201,7 +205,8 @@ console.log('\nen het staat op alle acht de stijlpagina\'s');
   if (!staat.er || staat.oud) {
     console.log(`      (overgeslagen — ${staat.uitleg})`);
   } else {
-    for (const slug of videoStyles.map((s) => s.slug)) {
+    /* Alleen de stijlen die een pagina hebben: de site-lijst (levering 70). */
+    for (const slug of siteVideoStyles.map((s) => s.slug)) {
       for (const pre of ['', 'nl/']) {
         const html = alleenMarkup(read(`dist/${pre}video/${slug}/index.html`));
         const leeg = (html.match(/vx-soon-label/g) || []).length;

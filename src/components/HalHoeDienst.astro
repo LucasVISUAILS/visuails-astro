@@ -28,6 +28,7 @@ import { videoStyles as videoEn } from '../data/videoStyles.js';
 import { CATALOG_RATIOS, LIFESTYLE_RATIOS } from '../data/ratios.js';
 import { startKnop } from '../data/klant.js';
 import { hoeHetWerkt, flashLook } from '../data/hoeHetWerkt.js';
+import { LAUNCHSET } from '../data/launchset.js';
 
 type Dienst = 'catalog' | 'lifestyle' | 'video';
 interface Props { lang: 'en' | 'nl'; dienst: Dienst; uitleg?: boolean }
@@ -65,8 +66,14 @@ const fmtStijl = (d: 'catalog' | 'lifestyle') => `--o-r0:${getal(FMT[d].lijst[FM
 /* Catalog, stap 2: de drie lagen van het geleverde beeld, voorop eerst (het product, de schaduw, de grond). */
 const ONT_LAGEN = (['los', 'schaduw', 'vlak'] as const).map((soort, k) => ({ soort, src: k < 2 ? '/img/ba2-na-front-uitgeknipt.webp' : '' }));
 /* Lifestyle, stap 1: drie looks uit de collectie en de eigen look; Flash gekozen, en Flash komt in stap 3 terug. */
+/* Met de launchset (levering 70): de eerste drie vaste looks die op de site staan
+   (Flash, Phone-made, August), uit dezelfde data; Flash blijft gekozen. Zonder de
+   launchset blijft het zoals het was. */
+const KIES_SLUGS = LAUNCHSET
+  ? lifestyle.filter((s: any) => s.slug !== 'custom' && !s.priceTrust).slice(0, 3).map((s: any) => s.slug)
+  : ['dunes', 'flash', 'glow'];
 const KIES_LOOKS = [
-  ...['dunes', 'flash', 'glow'].map((slug) => lifestyle.find((s: any) => s.slug === slug)).filter(Boolean)
+  ...KIES_SLUGS.map((slug: string) => lifestyle.find((s: any) => s.slug === slug)).filter(Boolean)
     .map((s: any) => ({ naam: s.name, beeld: String(s.cardPhoto).replace(/\.webp$/, '-w380.webp'), gekozen: s.slug === FLASH.slug })),
   { naam: (lifestyle.find((s: any) => s.slug === 'custom') as any)?.name ?? (nl ? 'Eigen look' : 'Your own look'), beeld: '', gekozen: false },
 ];

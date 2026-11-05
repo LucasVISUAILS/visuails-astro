@@ -10,6 +10,7 @@
 // Icon fields drive ProductScene's placeholder rendering directly.
 
 import { perProduct, ladderFloor, euro, vatLabel, RESOLUTIE } from './pricing.js';
+import { siteStijlen, inLaunch } from './launchset.js';
 
 // No euro figure and no delivery time may be typed into this file.
 // Both used to live here as literals, which is how the hub cards and the
@@ -42,9 +43,32 @@ function grid(photos, icons) {
   return icons.map((icon, i) => ({ photo: photos[i] ?? null, icon, width: widths[icon] }));
 }
 
-export const catalogStyles = [
+/* De volledige lijst en wat er op de site staat (levering 70, 5 november 2026):
+   zie de noot bij `alleStyles` in styles.js. */
+export const alleCatalogStyles = [
   {
     slug: 'classic',
+    /* Bij de launch (launchschema 22 oktober, vraag 7 = ja): ghost mannequin, en
+       on-model stil en in de lens. Tot de schakelaar aan gaat, blijft de tekst
+       hieronder. Na de launch: deze velden in de stijl zelf zetten. */
+    bijLaunch: {
+      tagline: 'Ghost mannequin, and one shot on a model looking into the lens.',
+      kort: {
+        kleding: 'Your whole range in one go, from T-shirts to jackets, bags and caps.',
+        gevoel: 'Clean and consistent: a ghost mannequin, the same light and angle for every product.',
+        kanalen: 'Your webshop, and marketplaces such as Amazon and bol.com.',
+      },
+      fotos: ['/img/catalog-classic-01.webp', '/img/catalog-classic-02.webp'],
+      cardDesc: 'A full set per product: front, back and detail on a ghost mannequin, and one shot on a model who stands still and looks into the lens.',
+      moodParagraphs: [
+        'The product on an invisible mannequin, so you see its shape without a body. Then once on a model who stands still and looks straight into the lens.',
+      ],
+      whatYouGet: [
+        'From four photos per product: front, back and detail on a ghost mannequin & on-model',
+        'Consistent lighting, angle and background',
+        `${RESOLUTIE.standaard} px, marketplace-ready files`,
+      ],
+    },
     name: 'Classic',
     tagline: 'Every product in the same clean style.',
     /* De lookpagina, kort (k101, 11 oktober 2026): drie korte regels onder
@@ -105,6 +129,68 @@ export const catalogStyles = [
     whatYouGet: [
       'From four photos per product: front, back, detail & on-model',
       'Consistent lighting, angle and background',
+      `${RESOLUTIE.standaard} px, marketplace-ready files`,
+    ],
+  },
+  /* ── CASUAL — levering 70, 5 november 2026 ─────────────────────────────────
+     Uit het launchschema (overzicht §30.2) en vraag 6 = a: voorkant, achterkant en
+     detail als flat lay, plus één stilstaand beeld op model met een losse houding.
+     Zelfde prijs als Classic (de ladder van catalog). Staat pas op de site met de
+     launchset; de beelden komen van Lucas (kladblok/PLAN-70-LAUNCHSET.md). */
+  {
+    slug: 'casual',
+    opSite: 'launch',   // pas op de site met de launchset; na de launch mag deze regel weg
+    name: 'Casual',
+    tagline: 'Flat lay, and one relaxed shot on a model.',
+    kort: {
+      kleding: 'T-shirts, hoodies, denim and everything worn every day.',
+      gevoel: 'Laid flat from above, then once on a model in a relaxed pose.',
+      kanalen: 'Your webshop, Instagram and marketplaces such as bol.com.',
+    },
+    fotos: ['/img/catalog-casual-01.webp', '/img/catalog-casual-02.webp'],
+    priceTrust: CAT_FROM,
+    priceUnit: ' / product',
+    metaPrice: `${CAT_FROM} / product ${CAT_VAT} — from 4 photos`,
+    orderHref: '/start/catalog/',
+    heroIcon: 'jar',
+    heroWidth: '26%',
+    cardIcon: 'jar',
+    cardWidth: '42%',
+    cardPrice: CAT_KAART,
+    cardDesc: 'A full set per product: front, back and detail as a flat lay, and one relaxed shot on a model.',
+    moodTitle: 'What Casual feels like.',
+    moodParagraphs: [
+      'The product laid flat and seen from above, the way you would lay it out yourself. Then once on a model who stands at ease.',
+    ],
+    steps: [
+      { title: 'Lay it out', body: 'Front, back and detail laid flat, seen from straight above.' },
+      { title: 'Keep it real', body: 'Folds and fabric stay as they are, without a stiff, ironed look.' },
+      { title: 'Wear it once', body: 'One shot on a model in a relaxed pose, standing still.' },
+    ],
+    grid: grid(
+      [],
+      ['jar', 'bag', 'bottle', 'sneaker', 'jar', 'bag', 'bottle', 'sneaker', 'jar']
+    ),
+    craft: [
+      { title: 'Straight from above', body: 'One fixed camera height and angle, so every flat lay lines up in your grid.' },
+      { title: 'Soft, even light', body: 'No hard shadows under the product, only a faint one that gives it depth.' },
+      { title: 'A relaxed pose', body: 'Hands in pockets, weight on one leg: the model stands still, but not stiff.' },
+      { title: 'One ratio per order', body: 'You pick one aspect ratio per order. Every image comes as JPG; need PNG or WebP as well, request it on the order in VISUAILS Studio.' },
+    ],
+    why: [
+      { title: 'Made for everyday clothing', body: 'A flat lay shows the cut and the print of a T-shirt or a hoodie at a glance.' },
+      { title: 'Restock-ready', body: 'New products slot into the set in the same light and from the same height.' },
+      { title: 'The same price as Classic', body: 'You pick the style that suits your product; the price per product is the same.' },
+    ],
+    bestFor: [
+      'Streetwear and basics',
+      'Webshops with a lot of everyday pieces',
+      'Brands that sell on Instagram',
+      'Restocks of the same range',
+    ],
+    whatYouGet: [
+      'From four photos per product: front, back and detail as a flat lay & on-model',
+      'Consistent light, height and background',
       `${RESOLUTIE.standaard} px, marketplace-ready files`,
     ],
   },
@@ -179,6 +265,11 @@ export const catalogStyles = [
   },
 ];
 
+/** Wat een bezoeker ziet: de lijst door de schakelaar (src/data/launchset.js). */
+export const catalogStyles = siteStijlen(alleCatalogStyles);
+
+/* Uit de volledige lijst: een herbestelling van een stijl die even van de site is. */
 export function getCatalogStyle(slug) {
-  return catalogStyles.find((s) => s.slug === slug);
+  const s = alleCatalogStyles.find((x) => x.slug === slug);
+  return s ? inLaunch(s) : s;
 }

@@ -43,7 +43,11 @@ const doel = (it: any) => {
   return { href: lp(`/catalog/${it.stijl}`), naam: s?.name ?? it.stijl, soort: 'Catalog' };
 };
 const bekijk = nl ? 'Bekijk de look' : 'See the look';
-const rijen = (GALERIJ.rijen as any[][]).map((rij) => rij.map((it) => {
+/* Alleen tegels van looks die op de site staan (levering 70): met de launchset zijn
+   Dunes en Glow even weg, en een tegel naar hun pagina zou nergens heen gaan. Zonder
+   de launchset staan alle 21 tegels er, zoals ze stonden. */
+const opSite = (it: any) => (it.soort === 'lifestyle' ? lifestyle : catalog).some((x: any) => x.slug === it.stijl);
+const rijen = (GALERIJ.rijen as any[][]).map((rij) => rij.filter(opSite).map((it) => {
   const a = it.b / it.h;
   const d = doel(it);
   const srcset = (ext: string) => it.bronnen.map(([w, p]: [number, string]) => `${p}.${ext} ${w}w`).join(', ');

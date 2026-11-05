@@ -74,7 +74,12 @@ const strip = [
   { src: '/img/lifestyle-phone-made-08-w760.webp', w: 760, h: 567, alt: { en: 'Lifestyle photo in the Phone-made style', nl: 'Lifestylefoto in de Phone-made-stijl' } },
   { src: '/img/lifestyle-glow-03.webp', w: 768, h: 1376, alt: { en: 'Lifestyle photo in the Glow style', nl: 'Lifestylefoto in de Glow-stijl' } },
   { src: '/img/lifestyle-flash-07-w760.webp', w: 760, h: 567, alt: { en: 'Lifestyle photo in the Flash style', nl: 'Lifestylefoto in de Flash-stijl' } },
-];
+].filter((b) => {
+  /* Een foto van een look die even niet op de site staat (de launchset, levering 70),
+     valt uit de band; zijn alt-tekst zou een stijl noemen die je niet kunt kiezen. */
+  const stijl = /\/img\/lifestyle-([a-z-]+?)-\d/.exec(b.src)?.[1];
+  return !stijl || lifestyleLooks.some((s: any) => s.slug === stijl);
+});
 
 const c = nl ? {
   etiket: `${MERK} · Enschede, NL`,

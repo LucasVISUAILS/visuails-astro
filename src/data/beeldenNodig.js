@@ -19,6 +19,7 @@
  * verschijnt.
  */
 import { STOCK_ON_BRAND } from './pricing.js';
+import { LAUNCHSET } from './launchset.js';
 
 /* 12 oktober 2026: de hal is de voorpagina. Twee beelden zijn van de lijst,
    omdat hun plek niet meer bestaat: editions-breed (het blok Editions) en
@@ -72,6 +73,21 @@ export const BEELDEN_NODIG = [
     wat: 'Een lifestylebeeld in een tweede look (een andere dan lifestyle-band-01).',
     betaalpad: true,
   },
+  /* ── DE LAUNCHSET — levering 70, 5 november 2026 ────────────────────────────
+     Alleen met de schakelaar aan (src/data/launchset.js): de kaart van August op de
+     hub, in het bestelformulier en bij de proef. Tot Lucas hem levert, staat er een
+     plaatshouder met de naam en de maat. (De kaarten van catalog tonen geen eigen
+     foto per look, en de lookpagina's slaan een ontbrekend beeld over.) */
+  ...(LAUNCHSET ? [
+    {
+      naam: 'lifestyle-august-02',
+      bestand: '/img/lifestyle-august-02.webp',
+      maat: '1340 × 2400 px (9:16), staand (zoals lifestyle-flash-02)',
+      plek: '/lifestyle, /start/lifestyle en /test-sample — de kaart van August; /lifestyle — de lookkiezer in Hoe het werkt',
+      wat: 'Een lifestylebeeld in de look August: zacht daglicht, een rustige ruimte, het product op een model.',
+      betaalpad: true,
+    },
+  ] : []),
 ];
 
 /** Eén regel uit de lijst, of null. */

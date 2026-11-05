@@ -113,6 +113,16 @@ import { CATALOG_RATIOS, LIFESTYLE_RATIOS } from './ratios.js';
    /terms §7 en de nachtelijke opruimtaak. Hier niet overgetypt. */
 import { UPLOAD_DAYS, DELIVERY_DAYS } from '../lib/retention.js';
 import { localizedPath } from '../i18n/ui.js';
+/* Het aantal vaste lifestyle-looks in woorden (levering 70): "de vier vaste looks"
+   volgt wat er op de site staat (src/data/launchset.js). */
+import { alleStyles as ALLE_LIFESTYLE_EN } from './styles.js';
+import { aantalInWoorden, vasteOpSite, LAUNCHSET } from './launchset.js';
+/* "Met een abonnement kost een Motion-clip 5 credits" is weg uit het antwoord over
+   wat een clip kost (levering 70, nagekomen bij levering 69, vraag 2 = a): credits
+   zijn in het formulier alleen voor catalog en lifestyle te besteden
+   (CREDIT_DIENSTEN), en een offerte met credits betalen bestaat niet. */
+const VASTE_LOOKS_EN = aantalInWoorden(vasteOpSite(ALLE_LIFESTYLE_EN), 'en');
+const VASTE_LOOKS_NL = aantalInWoorden(vasteOpSite(ALLE_LIFESTYLE_EN), 'nl');
 
 const norm = (lang) => (lang === 'nl' ? 'nl' : 'en');
 
@@ -1062,7 +1072,7 @@ const CATALOG_LIFESTYLE_FAQ = {
       },
       {
         q: 'Can I get a mood that is not one of the set looks?',
-        a: 'Yes. Most brands pick one of the four because they are ready to run today. For anything else, tell us what you have in mind: a look of your own is one design fee, with one correction round on the design before it is locked, and after that every product runs from the normal rate. You get the price in writing before we start.',
+        a: `Yes. Most brands pick one of the ${VASTE_LOOKS_EN} because they are ready to run today. For anything else, tell us what you have in mind: a look of your own is one design fee, with one correction round on the design before it is locked, and after that every product runs from the normal rate. You get the price in writing before we start.`,
       },
       {
         q: 'Can the same model appear across my whole collection?',
@@ -1113,7 +1123,7 @@ const CATALOG_LIFESTYLE_FAQ = {
       },
       {
         q: 'Kan ik een sfeer krijgen die niet bij de vaste looks hoort?',
-        a: 'Ja. De vier vaste looks zijn wat de meeste merken kiezen omdat ze al afgesteld zijn. Voor iets anders laat je weten wat je in gedachten hebt: een eigen look is één ontwerpbedrag, met één correctieronde op het ontwerp voordat het vastligt, en daarna gaat elk product vanaf het gewone tarief. De prijs krijg je op schrift voordat we beginnen.',
+        a: `Ja. De ${VASTE_LOOKS_NL} vaste looks zijn wat de meeste merken kiezen omdat ze al afgesteld zijn. Voor iets anders laat je weten wat je in gedachten hebt: een eigen look is één ontwerpbedrag, met één correctieronde op het ontwerp voordat het vastligt, en daarna gaat elk product vanaf het gewone tarief. De prijs krijg je op schrift voordat we beginnen.`,
       },
       {
         q: 'Kan hetzelfde model in mijn hele collectie terugkomen?',
@@ -1321,7 +1331,7 @@ const VIDEO_FAQ = {
       {
         q: 'What does a clip cost?',
         a: VIDEO_OP_AANVRAAG
-          ? `On request for now: tell us what you sell and which photos you have, and we reply in writing with a price before anything starts — Motion and Lifestyle Video per clip, Campaign per project.${studioPlan ? ` With a plan, a Motion clip costs ${SERVICE_CREDITS['video-motion']} credits.` : ''}`
+          ? `On request for now: tell us what you sell and which photos you have, and we reply in writing with a price before anything starts ${LAUNCHSET ? '— Motion and Shift per clip, a custom video per second (from 8 seconds).' : '— Motion and Lifestyle Video per clip, Campaign per project.'}`
           : `${clip} ${vatLabel('excl', 'en')} per clip for Motion and Lifestyle Video, whether you order one or twenty. Campaign is bigger and multi-shot, so it is quoted per project.${studioPlan ? ` With a plan, a Motion clip costs ${SERVICE_CREDITS['video-motion']} credits.` : ''}`,
       },
       {
@@ -1350,7 +1360,7 @@ const VIDEO_FAQ = {
       {
         q: 'Wat kost een clip?',
         a: VIDEO_OP_AANVRAAG
-          ? `Voorlopig op aanvraag: je vertelt wat je verkoopt en welke foto’s je hebt, en we antwoorden schriftelijk met een prijs voordat er iets begint — Motion en Lifestyle Video per clip, Campaign per project.${studioPlan ? ` Met een abonnement kost een Motion-clip ${SERVICE_CREDITS['video-motion']} credits.` : ''}`
+          ? `Voorlopig op aanvraag: je vertelt wat je verkoopt en welke foto’s je hebt, en we antwoorden schriftelijk met een prijs voordat er iets begint ${LAUNCHSET ? '— Motion en Shift per clip, een eigen video per seconde (vanaf 8 seconden).' : '— Motion en Lifestyle Video per clip, Campaign per project.'}`
           : `${clip} ${vatLabel('excl', 'nl')} per clip voor Motion en Lifestyle Video, of je er nu één bestelt of twintig. Campaign is groter en bestaat uit meerdere shots, dus die gaat op offerte per project.${studioPlan ? ` Met een abonnement kost een Motion-clip ${SERVICE_CREDITS['video-motion']} credits.` : ''}`,
       },
       {

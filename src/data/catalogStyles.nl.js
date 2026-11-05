@@ -3,6 +3,7 @@
 // human-readable strings are translated. Order paths are prefixed with /nl.
 
 import { perProduct, ladderFloor, euro, vatLabel, RESOLUTIE } from './pricing.js';
+import { siteStijlen, inLaunch } from './launchset.js';
 
 // No euro figure and no delivery time may be typed into this file.
 // Both used to live here as literals, which is how the hub cards and the
@@ -30,9 +31,31 @@ function grid(photos, icons) {
   return icons.map((icon, i) => ({ photo: photos[i] ?? null, icon, width: widths[icon] }));
 }
 
-export const catalogStyles = [
+/* De volledige lijst en wat er op de site staat (levering 70, 5 november 2026):
+   zie de noot bij `alleStyles` in styles.js. */
+export const alleCatalogStyles = [
   {
     slug: 'classic',
+    /* Bij de launch (vraag 7 = ja): ghost mannequin, en on-model stil en in de
+       lens. Zie de noot in catalogStyles.js. */
+    bijLaunch: {
+      tagline: 'Ghost mannequin, en één foto op een model dat in de lens kijkt.',
+      kort: {
+        kleding: 'Je hele assortiment in één keer, van T-shirts tot jassen, tassen en petten.',
+        gevoel: 'Strak en gelijk: een ghost mannequin, hetzelfde licht en dezelfde hoek voor elk product.',
+        kanalen: 'Je webshop, en marktplaatsen zoals Amazon en bol.com.',
+      },
+      fotos: ['/img/catalog-classic-01.webp', '/img/catalog-classic-02.webp'],
+      cardDesc: 'Een complete set per product: voorkant, achterkant en detail op een ghost mannequin, en één foto op een model dat stilstaat en in de lens kijkt.',
+      moodParagraphs: [
+        'Het product op een onzichtbare paspop, zodat je de vorm ziet zonder lichaam. Daarna één keer op een model dat stilstaat en recht in de lens kijkt.',
+      ],
+      whatYouGet: [
+        'Vanaf vier foto’s per product: voorkant, achterkant en detail op een ghost mannequin & on-model',
+        'Consistente belichting, hoek en achtergrond',
+        `Bestanden op ${RESOLUTIE.standaard} px, klaar voor de marktplaatsen`,
+      ],
+    },
     name: 'Classic',
     tagline: 'Elk product in dezelfde strakke stijl.',
     /* De lookpagina, kort (k101, 11 oktober 2026): drie korte regels onder
@@ -93,6 +116,64 @@ export const catalogStyles = [
     whatYouGet: [
       'Vanaf vier foto’s per product: voorkant, achterkant, detail & on-model',
       'Consistente belichting, hoek en achtergrond',
+      `Bestanden op ${RESOLUTIE.standaard} px, klaar voor de marktplaatsen`,
+    ],
+  },
+  /* CASUAL — levering 70, 5 november 2026. Zie de noot in catalogStyles.js. */
+  {
+    slug: 'casual',
+    opSite: 'launch',   // pas op de site met de launchset; na de launch mag deze regel weg
+    name: 'Casual',
+    tagline: 'Flat lay, en één losse foto op een model.',
+    kort: {
+      kleding: 'T-shirts, hoodies, denim en alles wat je elke dag draagt.',
+      gevoel: 'Plat van bovenaf, en één keer op een model in een losse houding.',
+      kanalen: 'Je webshop, Instagram en marktplaatsen zoals bol.com.',
+    },
+    fotos: ['/img/catalog-casual-01.webp', '/img/catalog-casual-02.webp'],
+    priceTrust: CAT_FROM,
+    priceUnit: ' / product',
+    metaPrice: `${CAT_FROM} / product — vanaf 4 foto’s`,
+    orderHref: '/nl/start/catalog/',
+    heroIcon: 'jar',
+    heroWidth: '26%',
+    cardIcon: 'jar',
+    cardWidth: '42%',
+    cardPrice: CAT_KAART,
+    cardDesc: 'Een complete set per product: voorkant, achterkant en detail als flat lay, en één losse foto op een model.',
+    moodTitle: 'Hoe Casual eruitziet.',
+    moodParagraphs: [
+      'Het product plat neergelegd en van bovenaf gezien, zoals je het zelf zou uitleggen. Daarna één keer op een model dat ontspannen staat.',
+    ],
+    steps: [
+      { title: 'Leg het neer', body: 'Voorkant, achterkant en detail plat neergelegd, recht van bovenaf.' },
+      { title: 'Houd het echt', body: 'Plooien en stof blijven zoals ze zijn, zonder stijve, gestreken look.' },
+      { title: 'Eén keer gedragen', body: 'Eén foto op een model in een losse houding, stilstaand.' },
+    ],
+    grid: grid(
+      [],
+      ['jar', 'bag', 'bottle', 'sneaker', 'jar', 'bag', 'bottle', 'sneaker', 'jar']
+    ),
+    craft: [
+      { title: 'Recht van bovenaf', body: 'Eén vaste camerahoogte en hoek, zodat elke flat lay in je grid op één lijn ligt.' },
+      { title: 'Zacht, gelijkmatig licht', body: 'Geen harde schaduw onder het product, alleen een lichte die diepte geeft.' },
+      { title: 'Een losse houding', body: 'Handen in de zakken, gewicht op één been: het model staat stil, maar niet stijf.' },
+      { title: 'Eén verhouding per bestelling', body: 'Je kiest één beeldverhouding per bestelling. Je krijgt elk beeld als JPG; PNG of WebP erbij vraag je aan bij je bestelling in VISUAILS Studio.' },
+    ],
+    why: [
+      { title: 'Gemaakt voor kleding van elke dag', body: 'Een flat lay laat de snit en de print van een T-shirt of hoodie in één blik zien.' },
+      { title: 'Klaar voor bijbestellen', body: 'Nieuwe producten passen in de set, in hetzelfde licht en vanaf dezelfde hoogte.' },
+      { title: 'Dezelfde prijs als Classic', body: 'Je kiest de stijl die bij je product past; de prijs per product is gelijk.' },
+    ],
+    bestFor: [
+      'Streetwear en basics',
+      'Webshops met veel kleding voor elke dag',
+      'Merken die verkopen via Instagram',
+      'Bijbestellingen van hetzelfde assortiment',
+    ],
+    whatYouGet: [
+      'Vanaf vier foto’s per product: voorkant, achterkant en detail als flat lay & on-model',
+      'Consistent licht, hoogte en achtergrond',
       `Bestanden op ${RESOLUTIE.standaard} px, klaar voor de marktplaatsen`,
     ],
   },
@@ -162,6 +243,11 @@ export const catalogStyles = [
   },
 ];
 
+/** Wat een bezoeker ziet: de lijst door de schakelaar (src/data/launchset.js). */
+export const catalogStyles = siteStijlen(alleCatalogStyles);
+
+/* Uit de volledige lijst: een herbestelling van een stijl die even van de site is. */
 export function getCatalogStyle(slug) {
-  return catalogStyles.find((s) => s.slug === slug);
+  const s = alleCatalogStyles.find((x) => x.slug === slug);
+  return s ? inLaunch(s) : s;
 }

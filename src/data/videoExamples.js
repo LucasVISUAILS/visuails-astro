@@ -209,6 +209,32 @@ export const videoExamples = {
       },
     },
   ],
+  /* Shift (levering 70, de launchset): twee voorbeelden, zoals elke stijl. Leeg tot
+     Lucas de clips levert, net als de rest. */
+  shift: [
+    {
+      id: 'shift-1',
+      ...leeg,
+      ratio: 'vertical',
+      seconds: 8,
+      title: { en: 'A jacket, wide and close', nl: 'Een jas, totaal en dichtbij' },
+      alt: {
+        en: 'Several short shots cut together: the jacket worn in full, a close-up of the fabric, the zip up close.',
+        nl: 'Een paar korte shots achter elkaar: de jas helemaal gedragen, een close-up van de stof, de rits van dichtbij.',
+      },
+    },
+    {
+      id: 'shift-2',
+      ...leeg,
+      ratio: 'vertical',
+      seconds: 8,
+      title: { en: 'A sneaker, three angles', nl: 'Een sneaker, drie hoeken' },
+      alt: {
+        en: 'A sneaker in three shots: from the side while walking, the sole up close, the laces from above.',
+        nl: 'Een sneaker in drie shots: van opzij tijdens het lopen, de zool van dichtbij, de veters van bovenaf.',
+      },
+    },
+  ],
   custom: [
     {
       id: 'custom-1',

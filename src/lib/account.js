@@ -124,8 +124,8 @@ import { CHANNELS, CHANNEL_IDS, channelName } from '../data/channels.js';
 import { ratiosFor, ratioById, ratioViewBox } from '../data/ratios.js';
 /* De vaste stijl bij lifestyle (migratie 0039). De EN-lijst draagt de slugs en
    de kaartfoto's; de NL-lijst dezelfde slugs met Nederlandse namen. */
-import { styles as LOOKS_EN } from '../data/styles.js';
-import { styles as LOOKS_NL } from '../data/styles.nl.js';
+import { styles as LOOKS_EN, alleStyles as ALLE_LOOKS_EN } from '../data/styles.js';
+import { styles as LOOKS_NL, alleStyles as ALLE_LOOKS_NL } from '../data/styles.nl.js';
 /* ── ALLEEN DE VASTE HUISSTIJLEN — 8 oktober 2026 (punt 9.01, §17.18) ──────
    styles.js bevat ook `custom` ("On request"): dat is geen look maar de deur naar
    een aanvraag. Hij stond in deze lijst, en daardoor kon een abonnee in Studio
@@ -135,7 +135,10 @@ import { styles as LOOKS_NL } from '../data/styles.nl.js';
    eigen look van de klant komt er via `cs-<id>` bij, niet via deze lijst. */
 const VASTE_LOOKS = LOOKS_EN.filter((x) => !x.priceTrust);
 const LOOK_IDS = VASTE_LOOKS.map((x) => x.slug);
-const lookById = (slug, lang) => (lang === 'nl' ? LOOKS_NL : LOOKS_EN).find((x) => x.slug === slug) || LOOKS_EN.find((x) => x.slug === slug) || null;
+/* lookById zoekt in de VOLLEDIGE lijst (levering 70): een vaste look in een stijl die
+   even van de site is, blijft zichtbaar met zijn naam en foto. Kiezen (VASTE_LOOKS)
+   kan alleen uit wat er op de site staat. */
+const lookById = (slug, lang) => (lang === 'nl' ? ALLE_LOOKS_NL : ALLE_LOOKS_EN).find((x) => x.slug === slug) || ALLE_LOOKS_EN.find((x) => x.slug === slug) || null;
 import { mailNote } from '../data/mailNote.js';
 // Afronden staat sinds 8 augustus 2026 in zijn eigen bestand omdat portal.js
 // hem óók nodig heeft — zie de kop van close.js. Hier stond dezelfde functie
@@ -4381,7 +4384,10 @@ async function handleLockUpdate({ request, env }, customer) {
   /* Een eigen look (cs-<id>) telt alleen als hij van déze klant is, ACTIEF is
      en bij lifestyle hoort — een voorgestelde look is nog niet gemaakt en kan
      dus nog niet de vaste look zijn (Lucas, 23 september 2026). */
-  let look = style === 'lifestyle' && LOOK_IDS.includes(lookRaw) ? lookRaw : null;
+  /* Uit de VOLLEDIGE lijst (levering 70): een abonnee die Glow als vaste look heeft en
+     iets anders opslaat terwijl Glow even van de site is, houdt Glow. Welke tegels er
+     te kiezen zijn, bepaalt de site-lijst (VASTE_LOOKS). */
+  let look = style === 'lifestyle' && (LOOK_IDS.includes(lookRaw) || ALLE_LOOKS_EN.some((lk) => lk.slug === lookRaw && !lk.priceTrust)) ? lookRaw : null;
   if (style === 'lifestyle' && isEigenLook(lookRaw)) {
     const eigen = await env.DB.prepare(
       `SELECT id FROM customer_styles WHERE id = ?1 AND customer_id = ?2 AND status = 'active' AND service IN ('lifestyle', 'both')`
@@ -9900,7 +9906,12 @@ export async function brandKitView(env, t, lang, customer, models, lockByStyle, 
         what: st.status === 'proposed' ? t.bkOwnPending : t.bkOwnTag, checked: lookNow === `cs-${st.id}`,
         uit: st.status !== 'active',
       })),
-      ...VASTE_LOOKS.map((lk) => { const loc = lookById(lk.slug, lang) || lk; return { slug: lk.slug, img: lk.cardPhoto || lk.heroPhoto || '', name: loc.name || lk.name, what: loc.tagline || lk.tagline || '', checked: lookNow === lk.slug }; }),
+      /* Een vaste look in een stijl die even van de site is (de launchset, levering 70):
+         die blijft als tegel staan, aangevinkt, zodat de abonnee ziet wat hij heeft.
+         Een andere kiezen kan alleen uit wat er op de site staat. */
+      ...[...VASTE_LOOKS, ...(lookNow && !VASTE_LOOKS.some((lk) => lk.slug === lookNow) && ALLE_LOOKS_EN.some((lk) => lk.slug === lookNow && !lk.priceTrust)
+        ? [ALLE_LOOKS_EN.find((lk) => lk.slug === lookNow)] : [])]
+        .map((lk) => { const loc = lookById(lk.slug, lang) || lk; return { slug: lk.slug, img: lk.cardPhoto || lk.heroPhoto || '', name: loc.name || lk.name, what: loc.tagline || lk.tagline || '', checked: lookNow === lk.slug }; }),
     ];
     const ratios = !ratioApplies ? null : [
       { id: '', viewBox: '0 0 1 1', name: t.bkNoPref, what: t.bkRatioNone, checked: !ratioNow, none: true },

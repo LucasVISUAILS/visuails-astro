@@ -20,6 +20,10 @@
 // de site komen hier in productie niet langs (bij het bouwen wel, en daar doet
 // dit niets, want die staan niet onder /account).
 import { studioHeaders, heeftKlap, klapWis } from './lib/studioKoppen.js';
+import { verborgenAdressen } from './data/launchset.js';
+import { alleStyles } from './data/styles.js';
+import { alleCatalogStyles } from './data/catalogStyles.js';
+import { alleVideoStyles } from './data/videoStyles.js';
 
 export function isStudioPad(pad) {
   return pad === '/account' || pad.startsWith('/account/');
@@ -41,7 +45,25 @@ export function wisKlap(pad, request, res) {
   return (res.headers.get('content-type') || '').includes('text/html') && res.status === 200;
 }
 
+/* ── DE STIJLEN DIE EVEN NIET OP DE SITE STAAN — levering 70, 5 november 2026 ──
+   Met de launchset (src/data/launchset.js) worden de pagina's van Dunes, Glow,
+   Lifestyle Video en Campaign niet gebouwd. Vraag 11 = a: hun adres stuurt met een
+   tijdelijke doorverwijzing (302, want ze komen terug) naar het overzicht van de
+   dienst, ook onder /nl/. Hier en niet in public/_redirects: daar zouden de regels
+   bij een uitgeschakelde launchset de echte pagina's overschaduwen, en op 14
+   oktober stopte een uitrol al op te veel regels daar. Zonder de launchset is de
+   lijst leeg en doet dit niets. */
+const VERBORGEN = verborgenAdressen({ lifestyle: alleStyles, catalog: alleCatalogStyles, video: alleVideoStyles });
+
+/** Waar een adres van een verborgen stijl heen gaat, of null. */
+export function doorverwijzing(pad, lijst = VERBORGEN) {
+  const kaal = String(pad || '').replace(/\/+$/, '');
+  return Object.prototype.hasOwnProperty.call(lijst, kaal) ? lijst[kaal] : null;
+}
+
 export async function onRequest(context, next) {
+  const naar = doorverwijzing(context.url.pathname);
+  if (naar) return new Response(null, { status: 302, headers: { location: naar, 'cache-control': 'no-store' } });
   const res = await next();
   const erbij = ontbrekendeKoppen(context.url.pathname, res);
   const wis = wisKlap(context.url.pathname, context.request, res);

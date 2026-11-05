@@ -40,7 +40,10 @@
  */
 import { RECOMMENDED as BACKGROUNDS } from '../data/backgrounds.js';
 import { ratioById } from '../data/ratios.js';
-import { styles as LOOKS } from '../data/styles.js';
+/* De VOLLEDIGE lijst (levering 70): een vaste look in Dunes of Glow die een abonnee
+   al had, blijft geldig als die stijl even van de site is. Kiezen kan alleen uit
+   wat er op de site staat (VASTE_LOOKS in account.js). */
+import { alleStyles as LOOKS } from '../data/styles.js';
 
 /* Alleen de vaste huisstijlen: `custom` in styles.js is een aanvraag en geen look
    (8 oktober 2026, punt 9.01, §17.18 — zie dezelfde regel in account.js). */

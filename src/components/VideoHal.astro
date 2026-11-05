@@ -92,6 +92,7 @@ import {
    een component niet lezen — zie de kop boven serviceFaqs(). */
 import { serviceFaqs } from '../data/faq.js';
 import { localizedPath } from '../i18n/ui.js';
+import { LAUNCHSET } from '../data/launchset.js';
 import { videoStyles as videoStylesEn } from '../data/videoStyles.js';
 import { videoStyles as videoStylesNl } from '../data/videoStyles.nl.js';
 
@@ -159,6 +160,9 @@ const posters: Record<string, { src: string; w: number; h: number }> = {
   lifestyle: { src: '/img/lifestyle-glow-03.webp', w: 768, h: 1376 },
   campaign: { src: '/img/banners-08.webp', w: 928, h: 1152 },
   custom: { src: '/img/banners-13.webp', w: 2400, h: 1792 },
+  /* Shift (levering 70, alleen met de launchset): de poster komt van Lucas; zolang
+     video op aanvraag is, tekent de kaart toch een "clip volgt"-plaat. */
+  shift: { src: '/img/video-shift-poster.webp', w: 1080, h: 1920 },
 };
 
 const strip = [
@@ -197,9 +201,11 @@ const COPY = {
     // down names the tier from TIERS.unattended.label instead.
     ctaPrimary: 'Ask about a video clip',
     wa: waHref("Hello VISUAILS, I'd like to talk about a product video."),
-    waQuote: waHref("Hello VISUAILS, I'd like a quote for a campaign video."),
+    /* Met de launchset is Campaign even van de site (levering 70): de tweede knop
+       vraagt dan een offerte voor een eigen video. */
+    waQuote: LAUNCHSET ? waHref("Hello VISUAILS, I'd like a quote for a custom video.") : waHref("Hello VISUAILS, I'd like a quote for a campaign video."),
     waLabel: 'WhatsApp',
-    waQuoteLabel: 'Quote a campaign',
+    waQuoteLabel: LAUNCHSET ? 'Quote a custom video' : 'Quote a campaign',
     // The third hero button. /catalog and /lifestyle both offer it and this
     // page did not, so the one service page whose price is a single flat
     // figure was also the one that gave a visitor no way to see the figure in
@@ -277,9 +283,13 @@ const COPY = {
     // on a falling ladder; a clip is priced per clip and stays put, which is
     // the difference this block now has to state out loud rather than imply.
     buyFixed: opAanvraag
-      ? '<strong>Motion &amp; Lifestyle</strong> — on request for now. We reply in writing with a price and a date; nothing is charged until you say yes.'
-      : `<strong>Motion &amp; Lifestyle</strong> — a fixed ${clip} per clip, ${vatLabel('excl', 'en')}. There is no checkout for video yet: you request it through the form, on its own or on top of an order, and we will confirm what and when in writing before anything runs.`,
-    buyQuote: '<strong>Campaign</strong> — bigger, multi-shot, quoted per project.',
+      ? `<strong>${LAUNCHSET ? 'Motion &amp; Shift' : 'Motion &amp; Lifestyle'}</strong> — on request for now. We reply in writing with a price and a date; nothing is charged until you say yes.`
+      : `<strong>${LAUNCHSET ? 'Motion &amp; Shift' : 'Motion &amp; Lifestyle'}</strong> — a fixed ${clip} per clip, ${vatLabel('excl', 'en')}. There is no checkout for video yet: you request it through the form, on its own or on top of an order, and we will confirm what and when in writing before anything runs.`,
+    /* Met de launchset (levering 70): Campaign is even van de site en de eigen video
+       gaat per seconde (launchschema: CUSTOM, per seconde, minimaal 8 s). */
+    buyQuote: LAUNCHSET
+      ? '<strong>Custom</strong> — your own concept, priced per second from 8 seconds, in a written quote.'
+      : '<strong>Campaign</strong> — bigger, multi-shot, quoted per project.',
     buyFlat: `One rate per clip, whatever else is in the order.`,
     /* Deze knop wijst naar /start/video en heette "Start an order". Dat is
        precies de mismatch die op elke dienstpagina is rechtgezet: het label
@@ -309,9 +319,9 @@ const COPY = {
     lead: `8 seconden beweging, verticaal voor Reels en TikTok — van je productfoto’s.`,
     ctaPrimary: 'Vraag een videoclip aan',
     wa: waHref("Hallo VISUAILS, ik wil graag praten over een productvideo."),
-    waQuote: waHref("Hallo VISUAILS, ik wil graag een offerte voor een campagnevideo."),
+    waQuote: LAUNCHSET ? waHref("Hallo VISUAILS, ik wil graag een offerte voor een eigen video.") : waHref("Hallo VISUAILS, ik wil graag een offerte voor een campagnevideo."),
     waLabel: 'WhatsApp',
-    waQuoteLabel: 'Offerte voor een campagne',
+    waQuoteLabel: LAUNCHSET ? 'Offerte voor een eigen video' : 'Offerte voor een campagne',
     ctaPrices: 'Bekijk de prijzen',
     trust: [
       opAanvraag ? [opAanvraagWoord, 'we antwoorden schriftelijk met een prijs'] : [clip, `per clip · ${vatLabel('excl', 'nl')}`],
@@ -364,9 +374,11 @@ const COPY = {
     ],
     buyH: 'Twee manieren om video te kopen',
     buyFixed: opAanvraag
-      ? '<strong>Motion &amp; Lifestyle</strong> — voorlopig op aanvraag. We antwoorden schriftelijk met een prijs en een datum; er wordt niets afgeschreven voordat jij ja zegt.'
-      : `<strong>Motion &amp; Lifestyle</strong> — een vaste ${clip} per clip, ${vatLabel('excl', 'nl')}. Video heeft nog geen afrekenstap: je vraagt het aan via het formulier, los of bovenop een bestelling, en we bevestigen op schrift wat en wanneer voordat er iets draait.`,
-    buyQuote: '<strong>Campaign</strong> — groter, meerdere scènes, offerte per project.',
+      ? `<strong>${LAUNCHSET ? 'Motion &amp; Shift' : 'Motion &amp; Lifestyle'}</strong> — voorlopig op aanvraag. We antwoorden schriftelijk met een prijs en een datum; er wordt niets afgeschreven voordat jij ja zegt.`
+      : `<strong>${LAUNCHSET ? 'Motion &amp; Shift' : 'Motion &amp; Lifestyle'}</strong> — een vaste ${clip} per clip, ${vatLabel('excl', 'nl')}. Video heeft nog geen afrekenstap: je vraagt het aan via het formulier, los of bovenop een bestelling, en we bevestigen op schrift wat en wanneer voordat er iets draait.`,
+    buyQuote: LAUNCHSET
+      ? '<strong>Custom</strong> — je eigen concept, geprijsd per seconde vanaf 8 seconden, in een schriftelijke offerte.'
+      : '<strong>Campaign</strong> — groter, meerdere scènes, offerte per project.',
     buyFlat: `Eén tarief per clip, wat er verder ook in de bestelling zit.`,
     buyCta: 'Vraag een videoclip aan',
     stripAlt: {
@@ -408,8 +420,10 @@ const WAAIER: Record<string, string[]> = {
   lifestyle: ['/img/lifestyle-glow-03.webp'],
   campaign: ['/img/banners-08.webp', '/img/banners-01.webp'],
   custom: ['/img/banners-13.webp'],
+  /* Shift is meerdere shots in één clip: twee kaarten, zoals Campaign. */
+  shift: ['/img/video-shift-poster.webp', '/img/video-shift-poster.webp'],
 };
-const TINT: Record<string, string> = { motion: '#8fa3b8', lifestyle: '#a86bd6', campaign: '#c9a06a', custom: '#c8c9cd' };
+const TINT: Record<string, string> = { motion: '#8fa3b8', lifestyle: '#a86bd6', campaign: '#c9a06a', custom: '#c8c9cd', shift: '#8fa3b8' };
 const naarRij = (s: (typeof kinds)[number]) => ({
   slug: s.slug,
   name: s.name,
@@ -439,7 +453,7 @@ const naarRij = (s: (typeof kinds)[number]) => ({
   /* Geen bestelknop op de vaste kinds zolang video op aanvraag is: de kaart
      linkt naar de detailpagina, en aanvragen gaat via de knop bovenaan en bij
      de eigen look. Campaign en custom blijven een offerte-aanvraag. */
-  orderHref: opAanvraag && (s.slug === 'motion' || s.slug === 'lifestyle') ? undefined : s.ctaHref,
+  orderHref: opAanvraag && !QUOTED.has(s.slug) ? undefined : s.ctaHref,
   orderLabel: s.ctaLabel,
 });
 const eigenLook = naarRij(kinds.find((s) => s.slug === 'custom')!);
@@ -528,13 +542,13 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
             <p class="h-vd-desc">{s.cardDesc}</p>
             <p class="h-st-tarief"><b>{kindPrice(s.slug)}</b></p>
             <p class="h-st-wegen">
-              {opAanvraag && (s.slug === 'motion' || s.slug === 'lifestyle')
+              {opAanvraag && !QUOTED.has(s.slug)
                 ? <a class="h-knop h-knop-lijn h-knop-klein" href={lp(`${basis}/video/${s.slug}`)}>{nl ? `Ontdek ${s.name}` : `Explore ${s.name}`}</a>
                 : s.ctaExternal
                   ? <a class="h-knop h-knop-inkt h-knop-klein" href={s.ctaHref} target="_blank" rel="noopener">{s.ctaLabel}<span class="o" set:html={ik('rechts')} /><NieuwTabblad lang={lang} /></a>
                   : <a class="h-knop h-knop-inkt h-knop-klein" href={s.ctaHref}>{s.ctaLabel}<span class="o" set:html={ik('rechts')} /></a>}
             </p>
-            {!(opAanvraag && (s.slug === 'motion' || s.slug === 'lifestyle')) && (
+            {!(opAanvraag && !QUOTED.has(s.slug)) && (
               <p class="h-st-ook-links"><a class="h-st-meer" href={lp(`${basis}/video/${s.slug}`)}>{nl ? `Ontdek ${s.name}` : `Explore ${s.name}`}<span set:html={ik('pijl')} /></a></p>
             )}
           </div>

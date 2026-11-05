@@ -56,7 +56,10 @@ import { offsitePage } from '../../src/lib/offsite.js';
 import { aanhefTekst } from '../../src/lib/aanhef.js';
 import { readCalendar } from '../../src/lib/agenda.js';
 import { aftercare, turnaround, tierRow, clause, shouldPromptUpgrade, upgradePrompt, vatPercent, tierFor, FORM_MAX_PRODUCTS, voorrangZin, VOORRANG, VIDEO_OP_AANVRAAG, SAMPLE_SERVICE, LIFESTYLE_IMAGES, LIFESTYLE_BEELDEN_VELD } from '../../src/data/pricing.js';
-import { videoStyles as VIDEO_STYLES } from '../../src/data/videoStyles.js';
+/* De VOLLEDIGE lijsten (levering 70): een stijl die even van de site is, blijft voor
+   de server geldig, zodat een oude link of een herbestelling niet stukloopt. Wat een
+   bezoeker kan kiezen, bepaalt de site-lijst in het formulier. */
+import { alleVideoStyles as VIDEO_STYLES } from '../../src/data/videoStyles.js';
 /* Dezelfde bron als de swatches op /test-sample — zie de opschoning van de
    proefvisual verderop voor waarom de hexwaarde hier wordt afgeleid en niet in de
    browser. `background` heet hier backgroundById, want `background` is in dit
@@ -69,7 +72,7 @@ import { background as backgroundById, CUSTOM_ID } from '../../src/data/backgrou
 import { LIFESTYLE_RATIOS, CHANNEL_RATIOS, parseRatioField, ratioById, lockedRatio } from '../../src/data/ratios.js';
 import { extraVakken } from '../../src/data/levervakken.js';
 /* De stijlen, om te controleren welke er BESTELD mag worden. Zie vetAnswer(). */
-import { styles as STYLES } from '../../src/data/styles.js';
+import { alleStyles as STYLES } from '../../src/data/styles.js';
 /* De acht hoeken die bij een catalogset bijbesteld kunnen worden. De LIJST staat
    hier en niet een reguliere expressie op de veldnaam: `angle_` is een naam die
    iedereen kan verzinnen, en een verzonnen hoek hoort niet mee te tellen. */

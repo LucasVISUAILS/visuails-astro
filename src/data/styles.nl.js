@@ -3,6 +3,7 @@
 // strings are translated. Order paths are prefixed with /nl.
 
 import { LIFESTYLE_IMAGES } from './pricing.js';
+import { siteStijlen, inLaunch, vulVasteLooks } from './launchset.js';
 
 // No euro figure and no delivery time may be typed into this file.
 // Both used to live here as literals, which is how the hub cards and the
@@ -20,9 +21,12 @@ function grid(photos, icons) {
   return icons.map((icon, i) => ({ photo: photos[i] ?? null, icon, width: widths[icon] }));
 }
 
-export const styles = [
+/* De volledige lijst en wat er op de site staat: zie de noot bij `alleStyles` in
+   styles.js (levering 70, 5 november 2026). */
+export const alleStyles = [
   {
     slug: 'dunes',
+    opSite: 'tot-launch',   // van de site bij de launch (22 oktober); terug: deze regel weg
     /* ── DE STIJL REIST MEE — 21 augustus 2026 ────────────────────────────
        Deze knop ging naar `/start`, de keuzepagina. Wie op /lifestyle/dunes op
        "Bestel Dunes" klikte, moest daar Lifestyle aanwijzen en vervolgens in het
@@ -122,6 +126,7 @@ export const styles = [
   },
   {
     slug: 'glow',
+    opSite: 'tot-launch',   // van de site bij de launch (22 oktober); terug: deze regel weg
     orderHref: '/nl/start/lifestyle/?style=glow',
     name: 'Glow',
     tagline: 'Golden hour, op afroep.',
@@ -220,6 +225,50 @@ export const styles = [
     bestFor: ['Social-first merken en UGC-achtige advertenties', 'Producten die verkopen op herkenbaarheid', 'Ondernemers die eerst vertrouwen willen opbouwen, en pas daarna glans', 'Organische content die er niet als advertentie uit mag zien'],
     whatYouGet: [SET, 'Authentieke, telefoon-echte lifestyle-scènes', 'Natuurlijke belichting met één lichtbron', 'Feed-klare uitsnedes vanaf dag één'],
   },
+  /* AUGUST — levering 70, 5 november 2026. Zie de noot in styles.js. */
+  {
+    slug: 'august',
+    opSite: 'launch',   // pas op de site met de launchset; na de launch mag deze regel weg
+    orderHref: '/nl/start/lifestyle/?style=august',
+    name: 'August',
+    tagline: 'Zacht daglicht, de rust van luxe.',
+    kort: {
+      kleding: 'Breiwerk, maatwerk, leer en stukken met een hogere prijs.',
+      gevoel: 'Zacht daglicht, rustige ruimtes en ruimte rond het product.',
+      kanalen: 'Je webshop, lookbooks en de campagne van een collectie.',
+    },
+    heroPhoto: '/img/lifestyle-august-01.webp',
+    cardPhoto: '/img/lifestyle-august-02.webp',
+    cardIcon: 'bag',
+    cardDesc: 'Rustige, lichte lifestylebeelden met een luxe gevoel: zacht daglicht, ruimte en aandacht voor stof.',
+    moodTitle: 'Hoe August eruitziet.',
+    moodParagraphs: [
+      'Zacht daglicht, een stille ruimte, een model dat de tijd neemt. Niets in het beeld concurreert met het product.',
+      'De luxe zit in wat er niet staat: geen rommel, geen hard licht, en elke plooi en naad zoals hij echt is.',
+    ],
+    steps: [
+      { title: 'Zoek het licht', body: 'Zacht daglicht van één kant dat de stof laat zien en de huid echt houdt.' },
+      { title: 'Maak ruimte', body: 'Een rustige setting met ruimte rond het product, zodat je dat als eerste ziet.' },
+      { title: 'Houd het detail', body: 'Plooien, naden en structuur blijven precies zoals ze op je product zijn.' },
+    ],
+    grid: grid(
+      ['/img/lifestyle-august-03.webp', '/img/lifestyle-august-04.webp', '/img/lifestyle-august-05.webp', '/img/lifestyle-august-06.webp', '/img/lifestyle-august-07.webp', '/img/lifestyle-august-08.webp'],
+      ['bag', 'bottle', 'jar', 'sneaker', 'bag', 'bottle', 'jar', 'sneaker', 'bag']
+    ),
+    craft: [
+      { title: 'Daglicht, geen flits', body: 'Eén zachte lichtbron van opzij, zodat brei, wol en leer hun structuur laten zien.' },
+      { title: 'Rustige ruimtes', body: 'Gedempte muren, hout en steen: een setting die duur is zonder te schreeuwen.' },
+      { title: 'Tijd in de pose', body: 'Het model staat, zit of draait langzaam; niets ziet er gehaast uit.' },
+      { title: 'Elke keer hetzelfde licht', body: 'Je tiende August-beeld heeft hetzelfde licht als je eerste.' },
+    ],
+    why: [
+      { title: 'Gemaakt voor een hogere prijs', body: 'Rust en ruimte vertellen een klant dat het product zijn prijs waard is.' },
+      { title: 'Stof die je kunt lezen', body: 'Zacht licht van opzij laat zien waar een product van gemaakt is, ook op een telefoon.' },
+      { title: 'Een collectie in één toon', body: 'Elk product van een seizoen in hetzelfde licht en dezelfde ruimtes.' },
+    ],
+    bestFor: ['Breiwerk, maatwerk en leer', 'Collecties met een hogere prijs', 'Merken met een rustige, doordachte stijl', 'Lookbooks en seizoenscampagnes'],
+    whatYouGet: [SET, 'Scènes in zacht daglicht met ruimte rond het product', 'Stof en afwerking zoals ze zijn', 'Hetzelfde model door je hele set'],
+  },
   {
     slug: 'custom',
     name: 'Eigen look',
@@ -236,7 +285,7 @@ export const styles = [
     heroPhoto: '/img/banners-13.webp',
     cardPhoto: '/img/banners-13.webp',
     cardIcon: 'bag',
-    cardDesc: 'Geen van onze vier vaste sferen — een lifestyle-scène op maat, ontworpen vanuit jouw referenties.',
+    cardDesc: 'Geen van onze {vaste} vaste sferen — een lifestyle-scène op maat, ontworpen vanuit jouw referenties.',
     /* ── NIET MEER NAAR HET BESTELFORMULIER, 18 augustus 2026 ──────────────
        Lucas: een stijl op maat heeft geen standaardtarief; die prijs volgt pas
        als de klant heeft gezegd wat hij wil. Deze knop wees naar het formulier
@@ -246,7 +295,7 @@ export const styles = [
     orderHref: '/nl/start/custom-look/',
     orderLabel: 'Vraag een eigen look aan',
     moodParagraphs: [
-      'Geen van onze vier vaste sferen — een scène ontworpen vanuit jouw referenties. De setting, de styling en het licht die alleen bij jouw merk passen.',
+      'Geen van onze {vaste} vaste sferen — een scène ontworpen vanuit jouw referenties. De setting, de styling en het licht die alleen bij jouw merk passen.',
       'We bouwen de wereld één keer, samen met jou, en houden daarna elke toekomstige lifestylefoto daaraan trouw.',
     ],
     steps: [
@@ -260,7 +309,7 @@ export const styles = [
     ),
     bestFor: [
       'Merken met een specifieke wereld voor ogen',
-      'Concepten die onze vier sferen niet dekken',
+      'Concepten die onze {vaste} sferen niet dekken',
       'Campagnes die hun eigen handtekening nodig hebben',
       'Assortimenten waar de scène het verhaal is',
     ],
@@ -276,6 +325,13 @@ export const styles = [
   },
 ];
 
+vulVasteLooks(alleStyles, 'nl');
+
+/** Wat een bezoeker ziet: de lijst door de schakelaar (src/data/launchset.js). */
+export const styles = siteStijlen(alleStyles);
+
+/* Uit de volledige lijst, zie styles.js. */
 export function getStyle(slug) {
-  return styles.find((s) => s.slug === slug);
+  const s = alleStyles.find((x) => x.slug === slug);
+  return s ? inLaunch(s) : s;
 }

@@ -6,11 +6,15 @@
 import HalFormulier from '../../../components/HalFormulier.astro';
 import Layout from '../../../layouts/Layout.astro';
 import HoldingPage from '../../../components/order/HoldingPage.astro';
+import { alleStyles } from '../../../data/styles.js';
+import { aantalInWoorden, vasteOpSite } from '../../../data/launchset.js';
+/* Het aantal vaste looks volgt de site (levering 70, src/data/launchset.js). */
+const VASTE = aantalInWoorden(vasteOpSite(alleStyles), 'nl');
 ---
 
 <Layout huid="hal"
   title="Een look op maat — VISUAILS"
-  description="Een lifestyle-wereld die om jouw product heen ontworpen is in plaats van één van de vier vaste looks. Prijs op aanvraag, op schrift, voordat er iets draait."
+  description={`Een lifestyle-wereld die om jouw product heen ontworpen is in plaats van één van de ${VASTE} vaste looks. Prijs op aanvraag, op schrift, voordat er iets draait.`}
 >
   <HalFormulier soort="aanvraag">
   <HoldingPage lang="nl" kind="custom-look" />

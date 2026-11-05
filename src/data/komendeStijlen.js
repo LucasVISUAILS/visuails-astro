@@ -41,6 +41,8 @@
  * Per dienst, per taal: de looks die in de maak zijn.
  * `naam` is kort en staat vet; `regel` is één zin over voor wie hij is.
  */
+import { LAUNCHSET } from './launchset.js';
+
 export const KOMEND = {
   catalog: {
     nl: [
@@ -136,9 +138,20 @@ export const KOMEND = {
   },
 };
 
+/* ── MET DE LAUNCHSET: ALLEEN DUSK, ZONDER DATUM — levering 70, 5 november 2026 ──
+   Vraag 10 = a. Na de launch komt er één stijl per maand terug of bij, met DUSK als
+   eerste (overzicht §30.1 en §30.2: blauw uur met een harde rode flits bij een
+   tankstation). Zolang de schakelaar uit staat, blijft KOMEND hierboven staan. */
+export const KOMEND_LAUNCH = {
+  lifestyle: {
+    nl: [{ naam: 'Dusk', regel: 'Het blauwe uur bij een tankstation, met een harde rode flits.' }],
+    en: [{ naam: 'Dusk', regel: 'Blue hour at a petrol station, with a hard red flash.' }],
+  },
+};
+
 /** De looks die in de maak zijn voor één dienst, of een lege lijst. */
-export function komendeStijlen(dienst, lang = 'nl') {
-  const per = KOMEND[dienst];
+export function komendeStijlen(dienst, lang = 'nl', stand = LAUNCHSET) {
+  const per = (stand ? KOMEND_LAUNCH : KOMEND)[dienst];
   if (!per) return [];
   return per[lang === 'nl' ? 'nl' : 'en'] || [];
 }

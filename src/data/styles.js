@@ -4,6 +4,7 @@
 // every style page is one shared data source.
 
 import { LIFESTYLE_IMAGES } from './pricing.js';
+import { siteStijlen, inLaunch, vulVasteLooks } from './launchset.js';
 
 // No euro figure and no delivery time may be typed into this file.
 // Both used to live here as literals, which is how the hub cards and the
@@ -24,9 +25,16 @@ function grid(photos, icons) {
   return icons.map((icon, i) => ({ photo: photos[i] ?? null, icon, width: widths[icon] }));
 }
 
-export const styles = [
+/* ── DE VOLLEDIGE LIJST, EN WAT ER OP DE SITE STAAT — levering 70, 5 november 2026 ──
+   `alleStyles` is elke huisstijl die er is of was: de server, Studio, /admin, de
+   factuur en herbestellen lezen die, zodat een oude bestelling in Dunes geldig en
+   leesbaar blijft. `styles` (onderaan) is wat een bezoeker ziet: dezelfde lijst
+   door de schakelaar van src/data/launchset.js. Een stijl gaat met één regel weg
+   (`opSite: 'tot-launch'`) en komt terug door die regel weg te halen. */
+export const alleStyles = [
   {
     slug: 'dunes',
+    opSite: 'tot-launch',   // van de site bij de launch (22 oktober); terug: deze regel weg
     /* ── DE STIJL REIST MEE — 21 augustus 2026 ────────────────────────────
        Deze knop ging naar `/start`, de keuzepagina. Wie op /lifestyle/dunes op
        "Bestel Dunes" klikte, moest daar Lifestyle aanwijzen en vervolgens in het
@@ -126,6 +134,7 @@ export const styles = [
   },
   {
     slug: 'glow',
+    opSite: 'tot-launch',   // van de site bij de launch (22 oktober); terug: deze regel weg
     orderHref: '/start/lifestyle/?style=glow',
     name: 'Glow',
     tagline: 'Golden hour, on demand.',
@@ -218,6 +227,54 @@ export const styles = [
     bestFor: ['Social-first brands and UGC-style ads', 'Products that sell on relatability', 'Founders building trust before polish', "Organic content that shouldn’t look like ads"],
     whatYouGet: [SET, 'Authentic, phone-real lifestyle scenes', 'Natural, single-source lighting', 'Feed-ready crops from day one'],
   },
+  /* ── AUGUST — levering 70, 5 november 2026 ─────────────────────────────────
+     Uit het launchschema van 22 oktober (overzicht §30.2): AUGUST, luxe. Staat pas
+     op de site als de launchset aan staat. De beelden komen van Lucas; tot ze er
+     zijn, staat er op de hubs een plaatshouder met de naam en de maat
+     (src/data/beeldenNodig.js) en slaat de lookpagina een ontbrekend beeld over. */
+  {
+    slug: 'august',
+    opSite: 'launch',   // pas op de site met de launchset; na de launch mag deze regel weg
+    orderHref: '/start/lifestyle/?style=august',
+    name: 'August',
+    tagline: 'Soft daylight, the calm of luxury.',
+    kort: {
+      kleding: 'Knitwear, tailoring, leather and pieces at a higher price.',
+      gevoel: 'Soft daylight, calm rooms and space around the product.',
+      kanalen: 'Your webshop, lookbooks and the campaign of a collection.',
+    },
+    heroPhoto: '/img/lifestyle-august-01.webp',
+    cardPhoto: '/img/lifestyle-august-02.webp',
+    cardIcon: 'bag',
+    cardDesc: 'Calm, light-filled lifestyle images with a luxury feel: soft daylight, space and attention to fabric.',
+    moodTitle: 'What August feels like.',
+    moodParagraphs: [
+      'Soft daylight, a quiet room, a model who takes their time. Nothing in the frame competes with the product.',
+      'The luxury is in what is left out: no clutter, no hard light, and every fold and seam as it really is.',
+    ],
+    steps: [
+      { title: 'Find the light', body: 'Soft daylight from one side that shows the fabric and keeps the skin real.' },
+      { title: 'Make room', body: 'A calm setting with space around the product, so it is the first thing you see.' },
+      { title: 'Keep the detail', body: 'Folds, seams and texture stay exactly as they are on your product.' },
+    ],
+    grid: grid(
+      ['/img/lifestyle-august-03.webp', '/img/lifestyle-august-04.webp', '/img/lifestyle-august-05.webp', '/img/lifestyle-august-06.webp', '/img/lifestyle-august-07.webp', '/img/lifestyle-august-08.webp'],
+      ['bag', 'bottle', 'jar', 'sneaker', 'bag', 'bottle', 'jar', 'sneaker', 'bag']
+    ),
+    craft: [
+      { title: 'Daylight, not a flash', body: 'One soft light source from the side, so knit, wool and leather show their structure.' },
+      { title: 'Calm rooms', body: 'Muted walls, wood and stone: a setting that is expensive without shouting.' },
+      { title: 'Time in the pose', body: 'The model stands, sits or turns slowly; nothing looks rushed.' },
+      { title: 'The same light every time', body: 'Your tenth August image has the same light as your first.' },
+    ],
+    why: [
+      { title: 'Made for a higher price', body: 'Calm and space tell a customer the product is worth what it costs.' },
+      { title: 'Fabric you can read', body: 'Soft side light shows what a product is made of, even on a phone.' },
+      { title: 'A collection in one tone', body: 'Every product of a season in the same light and the same rooms.' },
+    ],
+    bestFor: ['Knitwear, tailoring and leather', 'Collections at a higher price', 'Brands with a quiet, considered style', 'Lookbooks and seasonal campaigns'],
+    whatYouGet: [SET, 'Soft daylight scenes with space around the product', 'Fabric and finish shown as they are', 'The same model through your whole set'],
+  },
   {
     slug: 'custom',
     name: 'Custom',
@@ -234,7 +291,7 @@ export const styles = [
     heroPhoto: '/img/banners-13.webp',
     cardPhoto: '/img/banners-13.webp',
     cardIcon: 'bag',
-    cardDesc: 'Not one of our four moods — a bespoke lifestyle scene designed from your references.',
+    cardDesc: 'Not one of our {vaste} moods — a bespoke lifestyle scene designed from your references.',
     /* ── NIET MEER NAAR HET BESTELFORMULIER, 18 augustus 2026 ──────────────
        Lucas: een stijl op maat heeft geen standaardtarief; die prijs volgt pas
        als de klant heeft gezegd wat hij wil. Deze knop wees naar het formulier
@@ -244,7 +301,7 @@ export const styles = [
     orderHref: '/start/custom-look/',
     orderLabel: 'Ask for a custom look',
     moodParagraphs: [
-      'Not one of our four moods — a scene designed from your references: the setting, styling and light that only your brand would use.',
+      'Not one of our {vaste} moods — a scene designed from your references: the setting, styling and light that only your brand would use.',
       'We build the world once, with you, then keep every future lifestyle image true to it.',
     ],
     steps: [
@@ -258,7 +315,7 @@ export const styles = [
     ),
     bestFor: [
       'Brands with a specific world in mind',
-      "Concepts our four moods don’t cover",
+      "Concepts our {vaste} moods don’t cover",
       'Campaigns that need their own signature',
       'Ranges where the scene is the story',
     ],
@@ -274,6 +331,14 @@ export const styles = [
   },
 ];
 
+vulVasteLooks(alleStyles, 'en');
+
+/** Wat een bezoeker ziet: de lijst door de schakelaar (src/data/launchset.js). */
+export const styles = siteStijlen(alleStyles);
+
+/* Uit de VOLLEDIGE lijst: een factuur of herbestelling van een stijl die even van
+   de site is, moet hem nog vinden. */
 export function getStyle(slug) {
-  return styles.find((s) => s.slug === slug);
+  const s = alleStyles.find((x) => x.slug === slug);
+  return s ? inLaunch(s) : s;
 }

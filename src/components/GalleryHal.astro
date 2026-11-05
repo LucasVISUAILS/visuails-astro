@@ -53,6 +53,7 @@ import { LEVERINGEN, DIENSTEN, SOORTEN, gebruikteDiensten, gebruikteSoorten } fr
 import { ingestuurd, geleverd } from '../data/voorbeeldset.js';
 /* 1.02 (8 oktober 2026, V13 = a) — zie de noot bij CLIP_STILL. */
 import { isEcht } from '../lib/beeldAanwezig.js';
+import { alleStyles, styles as siteStyles } from '../data/styles.js';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -116,6 +117,10 @@ const A = nl ? {
   rest: 'A quiet moment in a car, single light source',
 };
 
+/* De looks die even niet op de site staan (de launchset, levering 70): hun filter en
+   hun foto's vallen weg. Zonder de launchset is deze lijst leeg voor alles met foto's. */
+const VERBORGEN = new Set(alleStyles.filter((s: any) => !siteStyles.some((x: any) => x.slug === s.slug)).map((s: any) => s.slug));
+
 const photos = [
   ...Array.from({ length: 8 }, (_, i) => ({ src: `/img/banners-0${i + 1}.webp`, tag: 'campaign', alt: A.campagne(i + 1) })),
   { src: '/img/lifestyle-dunes-01.webp', tag: 'dunes', alt: A.dunes },
@@ -162,7 +167,7 @@ const photos = [
   { src: '/img/brand-knit.webp', tag: 'beam', alt: A.knit },
   { src: '/img/brand-stair.webp', tag: 'beam', alt: A.stair },
   { src: '/img/brand-rest.webp', tag: 'beam', alt: A.rest },
-].map((p, i) => ({ ...p, wide: i % 7 === 0, w: INTRINSIC[p.src][0], h: INTRINSIC[p.src][1] }));
+].filter((p) => !VERBORGEN.has(p.tag)).map((p, i) => ({ ...p, wide: i % 7 === 0, w: INTRINSIC[p.src][0], h: INTRINSIC[p.src][1] }));
 
 /*
  * ── SRCSET, EN WAAROM DE MAAT GEMETEN IS ───────────────────────────────────
@@ -194,6 +199,7 @@ const photos = [
    dist/public/img — dat bestaat niet en de build viel erop om. De werkmap is de
    projectmap, bij `astro build` en bij `astro dev` allebei. */
 const OP_SCHIJF = new Set(readdirSync(path.join(process.cwd(), 'public', 'img')));
+
 
 /** De srcset voor deze foto, of '' als er geen enkele kleinere maat bestaat. */
 function srcset(src: string, breed: boolean, echteBreedte: number) {
@@ -227,7 +233,7 @@ const filters = [
   { key: 'glow', label: 'Glow' },
   { key: 'phone-made', label: 'Phone-made' },
   { key: 'beam', label: 'Beam' },
-];
+].filter((f) => !VERBORGEN.has(f.key));
 
 const c = nl ? {
   eyebrow: 'Galerij',

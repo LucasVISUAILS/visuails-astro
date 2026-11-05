@@ -7,11 +7,15 @@
 import HalFormulier from '../../components/HalFormulier.astro';
 import Layout from '../../layouts/Layout.astro';
 import HoldingPage from '../../components/order/HoldingPage.astro';
+import { alleStyles } from '../../data/styles.js';
+import { aantalInWoorden, vasteOpSite } from '../../data/launchset.js';
+/* Het aantal huisstijlen volgt de site (levering 70, src/data/launchset.js). */
+const VASTE = aantalInWoorden(vasteOpSite(alleStyles), 'en');
 ---
 
 <Layout huid="hal"
   title="A custom look — VISUAILS"
-  description="A lifestyle world designed around your product rather than one of the four house styles. Priced per request, in writing, before anything runs."
+  description={`A lifestyle world designed around your product rather than one of the ${VASTE} house styles. Priced per request, in writing, before anything runs.`}
 >
   <HalFormulier soort="aanvraag">
   <HoldingPage lang="en" kind="custom-look" />

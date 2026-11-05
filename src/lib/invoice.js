@@ -288,7 +288,7 @@ export function snapshotFromOrder(order, env, { number, date, dueDate = null } =
      Een video- of eigen-lookofferte heeft geen product_count; de factuur zei
      "Video — 1 product" bij twee Motion-clips. Wat er gefactureerd wordt, is de
      offerte: dat staat er nu, met de soort clip als die bekend is. */
-  const videoSoort = { motion: 'Motion', lifestyle: 'Lifestyle Video', campaign: 'Campaign' }[String(d.style || '')] || '';
+  const videoSoort = { motion: 'Motion', shift: 'Shift', lifestyle: 'Lifestyle Video', campaign: 'Campaign' }[String(d.style || '')] || '';
   const basis = order.service === 'video'
     ? (lang === 'nl'
       ? `Video${videoSoort ? ` (${videoSoort})` : ''} — volgens offerte`

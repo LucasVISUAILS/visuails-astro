@@ -7,11 +7,16 @@
 // srcset en sizes stonden vier weken lang alleen op deze kant.
 import Layout from '../layouts/Layout.astro';
 import GalleryHal from '../components/GalleryHal.astro';
+import { styles } from '../data/styles.js';
+/* De looks in de galerij volgen de site (levering 70): met de launchset zijn Dunes en
+   Glow even weg. Een nieuwe look (`opSite: 'launch'`) heeft hier nog geen foto's. */
+const namen = styles.filter((s: any) => s.slug !== 'custom' && s.opSite !== 'launch').map((s: any) => s.name);
+const LOOKS = namen.length > 1 ? `${namen.slice(0, -1).join(', ')} and ${namen[namen.length - 1]}` : namen.join('');
 ---
 
 <Layout huid="hal"
   title="VISUAILS — A look at the styles we produce"
-  description="The real VISUAILS photo library — campaign, Dunes, Flash, Glow and Phone-made lifestyle visuals. See the range, then start with a test sample."
+  description={`The real VISUAILS photo library — campaign, ${LOOKS} lifestyle visuals. See the range, then start with a test sample.`}
 >
   <GalleryHal lang="en" />
 </Layout>

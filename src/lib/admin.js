@@ -100,7 +100,9 @@ const SHOT_LABEL = Object.fromEntries(SHOTS_DATA.map((s) => [s.id, s.name.nl]));
 
 /* De vier huisstijlen, voor de keuzelijst bij een bestelling namens de klant.
    Alleen wat een tarief heeft (geen priceTrust) is via het formulier te kiezen. */
-import { styles as ALLE_LOOKS } from '../data/styles.js';
+/* De VOLLEDIGE lijsten (levering 70): /admin moet ook een bestelling in een stijl
+   die even van de site is (Dunes, Glow, Lifestyle Video, Campaign) bij naam kennen. */
+import { alleStyles as ALLE_LOOKS } from '../data/styles.js';
 /* ── DE KEUZES VAN DE KLANT, MET HUN ECHTE NAAM ─────────────────────────────
    7 september 2026. Lucas: *"zorg er trouwens wel voor dat als iemand een order
    op een specifieke style invoert dat ik dan kan zien welke style het is."*
@@ -114,8 +116,8 @@ import { styles as ALLE_LOOKS } from '../data/styles.js';
 
    Deze drie lijsten zijn dezelfde die de formulieren tekenen, dus een stijl die
    daar hernoemd wordt, heet hier meteen ook zo. */
-import { catalogStyles as ALLE_CATALOG_LOOKS } from '../data/catalogStyles.js';
-import { videoStyles as ALLE_VIDEO_LOOKS } from '../data/videoStyles.js';
+import { alleCatalogStyles as ALLE_CATALOG_LOOKS } from '../data/catalogStyles.js';
+import { alleVideoStyles as ALLE_VIDEO_LOOKS } from '../data/videoStyles.js';
 import { background as achtergrondVan, achtergrondNaam } from '../data/backgrounds.js';
 /* De hoeken die bij de bestelling zijn bijgekozen. Zie de kop van
    src/data/angles.js; ze staan in details_json als `angle_<id>` met een optionele
@@ -230,7 +232,7 @@ import {
   addDays, addOpenDays, daysInRange, firstOfferableDay, windowFor,
 } from '../data/capacity.js';
 import { readCalendar, videoVelden } from './agenda.js';
-import { videoStyles as VIDEO_STIJLEN_NL } from '../data/videoStyles.nl.js';
+import { alleVideoStyles as VIDEO_STIJLEN_NL } from '../data/videoStyles.nl.js';
 /* Zodat het annuleerregeltje kan zeggen of de klant de bestanden nog heeft. Eén
    waarheid over die vraag; zie de kop van delivery.js. */
 import { leverVakken, vakIds, vakWoord, vakNaam, extraVakken, LOOK_VAKKEN, LOOK_VAK_IDS, isLookSleutel, lookSleutels, vakIdsVoor } from '../data/levervakken.js';
