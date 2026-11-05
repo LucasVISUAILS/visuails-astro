@@ -1,7 +1,6 @@
 # Naloop van leveringen 69 en 73 (5 november 2026)
 
 > **NOG NIET AF** (deze notitie wordt bij elke push bijgewerkt):
-> - Deel 1: `test:scheiding` uitbreiden met bijkopen en de maandset.
 > - De hele testreeks aan het eind.
 
 Lucas vroeg of alles van `kladblok/PROMPT-CLOUD-CODE.md` af was. Drie punten waren half gedaan en konden zonder hem
@@ -32,3 +31,17 @@ staan twee zinnen zonder spatie aan elkaar ("…achter de prijs.Verkoop je een s
 `{LC.waarom} {LC.set}` neer en de build slikt de spatie in. Niet gerepareerd (deze naloop verandert niets aan de site);
 staat bovenaan A in `TEKSTRONDE-SPELLING.md`, met de reparatie van één regel. Mijn eerdere zin dat "bijna alle" 16
 meldingen "punt zonder spatie" regels onder elkaar waren, is nagekeken in een browser: 14 van de 16, en deze 2 niet.
+
+## Deel 1 · `test:scheiding` uitgebreid (69 C)
+
+`tests/klant-scheiding.test.mjs` kreeg twee blokken, van 144 naar 161 controles:
+- **6 · bijkopen:** `/account/plan?bijkoop=<nummer>` met het nummer van een open aankoop van A. Als B: geen verzoek naar
+  Mollie, niets veranderd in de database (de aankoop van A blijft open), niets van A te zien (de betaling, het bedrag,
+  het merk). Zonder sessie: niets. De controle is A zelf: met hetzelfde nummer gaat er wél een verzoek naar Mollie,
+  voor precies die betaling.
+- **7 · de gedeelde maandset:** één beeld en de zip. A met een lopend abonnement krijgt ze (de controle); B zonder
+  abonnement niet, en voor B wordt niets uit R2 gelezen; zonder sessie niets; een set die nog niet gepubliceerd is,
+  krijgt ook A niet; een abonnement dat nog op de eerste incasso wacht, geeft nog geen set.
+- **Nagekeken dat ze iets bewaken:** de eigendomscontrole in `aankoopVanKlant` (`bijkopen.js`) en `maandsetToegang`
+  (`account.js`) even verzwakt: blok 6 werd rood (2) en blok 7 (4); daarna teruggezet. Aan de site zelf is niets
+  veranderd.

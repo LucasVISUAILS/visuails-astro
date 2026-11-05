@@ -28,6 +28,8 @@
  * Blok 5 doet hetzelfde op de open routes zonder inlog (/api/order en /api/plan), waar een
  * klant zijn e-mailadres is: sinds 19 oktober 2026 kan een buitenstaander daar met het
  * adres van A niets meer aan A veranderen, en niets van A gebruiken.
+ * Blok 6 en 7 (5 november 2026, naloop van levering 69): terug van Mollie na een bijkoop
+ * met het nummer van A's aankoop, en de gedeelde maandset (alleen met een lopend abonnement).
  *
  * Bewust niet hier: /admin (één beheerder, wachtwoord en TOTP, eigen toetsen), en de
  * routes op bestelkenmerk die geen geheim nodig hebben (zie
@@ -358,6 +360,83 @@ const laatste = (db) => db.prepare('SELECT * FROM orders ORDER BY id DESC LIMIT 
   const res = await abonneer(env, { ...PLAN, email: 'nieuw@nog-geen-klant.test' });
   const nieuweKlant = db.prepare("SELECT id FROM customers WHERE email = 'nieuw@nog-geen-klant.test'").get();
   ok('controle: een nieuw adres wordt een klant en gaat door naar de betaling', !!nieuweKlant && (mollie.length > 0 || res.status === 200), `status ${res.status} ${res.headers.get('location') || ''} · Mollie ${mollie.length}`);
+}
+
+/* ── 6. bijkopen: terug van Mollie met een aankoop van A (naloop 69, 5 november 2026) ──
+   /account/plan?bijkoop=<id> zoekt de aankoop op en vraagt een open betaling bij Mollie op
+   (verwerkBijkoop, idempotent), vóór het saldo wordt gelezen. Met A's nummer mag B daar niets
+   aan doen: geen verzoek naar Mollie, niets verwerkt, niets van A te zien. De controle is A
+   zelf: met hetzelfde nummer gaat er wél een verzoek naar Mollie, voor precies die betaling. */
+console.log('\n6 · bijkopen: terug van Mollie met een aankoop van A');
+{
+  const zaaiAankoop = async () => {
+    const db = await zaai();
+    db.prepare("INSERT INTO credit_aankopen (id, customer_id, subscription_id, pakket, net_cents, vat_cents, gross_cents, vat_treatment, plan_label, maand, status, mollie_payment_id) VALUES (901, ?, ?, 25, 51000, 10710, 61710, 'nl_standard', 'Studio', '2026-11', 'open', 'tr_BijkoopVanA901')").run(A.id, ID.aboA);
+    return db;
+  };
+  const veilig = (x) => { const gezien = new WeakSet(); try { return JSON.stringify(x, (k, v) => { if (typeof v === 'object' && v !== null) { if (gezien.has(v)) return undefined; gezien.add(v); } if (typeof v === 'function') return undefined; return v; }); } catch { return ''; } };
+  const plan = async (env, sessie) => { const r = await studioScreen(ctx(new Request('https://visuails.com/account/plan?bijkoop=901', { headers: kop(sessie) }), env), 'plan'); return r instanceof Response ? await tekst(r) : veilig(r); };
+  {
+    const db = await zaaiAankoop(); const env = omgeving(db, emmer()); mollie = [];
+    await plan(env, sessieA);
+    ok('?bijkoop= met A\'s aankoop, als A: de betaling wordt bij Mollie opgevraagd (controle)', mollie.some((u) => u.includes('tr_BijkoopVanA901')), mollie.join(', ') || 'geen verzoek');
+  }
+  {
+    const db = await zaaiAankoop(); const env = omgeving(db, emmer()); mollie = [];
+    const voor = foto(db);
+    const s = await plan(env, sessieB);
+    ok('?bijkoop= met A\'s aankoop, als B: geen verzoek naar Mollie', mollie.length === 0, mollie.join(', '));
+    ok('  en niets veranderd (de aankoop van A staat nog open)', verschil(voor, foto(db)).length === 0, verschil(voor, foto(db)).join(', '));
+    ok('  en niets van A (de betaling, het bedrag, het merk) in wat B ziet', !s.includes('tr_BijkoopVanA901') && !s.includes('61710') && !/617[,.]10/.test(s) && spoorIn(s).length === 0, spoorIn(s).join(', '));
+    mollie = [];
+    const niemand = await accountGet(ctx(new Request('https://visuails.com/account/plan?bijkoop=901', { headers: kop(null) }), env));
+    ok('  zonder sessie: niets', niemand.status !== 200 && mollie.length === 0, `status ${niemand.status}`);
+  }
+}
+
+/* ── 7. de gedeelde maandset (naloop 69, 5 november 2026) ─────────────────────
+   De set is van niemand (geen customer_id): de vraag is hier "heb je een lopend abonnement"
+   (maandsetToegang in account.js). A heeft er een, B niet. Een set die nog niet gepubliceerd
+   is, krijgt ook A niet. */
+console.log('\n7 · de gedeelde maandset (/account/set/)');
+{
+  const zaaiSet = async () => {
+    const db = await zaai();
+    db.prepare("INSERT INTO shared_sets (id, month, title, published_at) VALUES (71, '2026-10', 'Oktober', '2026-10-01 09:00')").run();
+    db.prepare("INSERT INTO shared_sets (id, month, title, published_at) VALUES (72, '2026-11', 'November', NULL)").run();
+    db.prepare("INSERT INTO shared_files (id, set_id, r2_key, filename, bytes, content_type) VALUES (7101, 71, 'gedeeld/2026-10/01.jpg', '01.jpg', 1200, 'image/jpeg')").run();
+    db.prepare("INSERT INTO shared_files (id, set_id, r2_key, filename, bytes, content_type) VALUES (7201, 72, 'gedeeld/2026-11/01.jpg', '01.jpg', 1200, 'image/jpeg')").run();
+    return db;
+  };
+  for (const [pad, wat] of [['/account/set/7101/f', 'een beeld'], ['/account/set/71/zip', 'de zip']]) {
+    const db = await zaaiSet(); const bucket = emmer(); const env = omgeving(db, bucket);
+    const vraag = (s) => accountGet(ctx(new Request(`https://visuails.com${pad}`, { headers: kop(s) }), env));
+    const eigen = await vraag(sessieA);
+    if (eigen.body) await eigen.arrayBuffer().catch(() => {});
+    ok(`${pad} (${wat}): A met een lopend abonnement krijgt het (controle)`, eigen.status === 200, `status ${eigen.status}`);
+    const r2Na = bucket.log.gelezen.length;
+    const ander = await vraag(sessieB);
+    ok(`${pad}: B zonder abonnement krijgt het niet`, ander.status !== 200 && ander.status < 500, `status ${ander.status}`);
+    ok(`${pad}: voor B geen bestand uit R2 gelezen`, bucket.log.gelezen.length === r2Na, bucket.log.gelezen.slice(r2Na).join(', '));
+    const niemand = await vraag(null);
+    ok(`${pad}: zonder sessie niets`, niemand.status !== 200, `status ${niemand.status}`);
+  }
+  {
+    const db = await zaaiSet(); const bucket = emmer(); const env = omgeving(db, bucket);
+    for (const pad of ['/account/set/7201/f', '/account/set/72/zip']) {
+      const r = await accountGet(ctx(new Request(`https://visuails.com${pad}`, { headers: kop(sessieA) }), env));
+      ok(`${pad}: een set die nog niet gepubliceerd is, krijgt ook A niet`, r.status !== 200, `status ${r.status}`);
+    }
+    ok('  en daarvoor niets uit R2 gelezen', !bucket.log.gelezen.some((k) => k.startsWith('gedeeld/2026-11/')), bucket.log.gelezen.join(', '));
+  }
+  {
+    /* 'pending' (de eerste incasso is nog niet binnen) geeft nog geen set: die is onderdeel van wat je
+       betaalt (de kop van maandsetToegang). */
+    const db = await zaaiSet(); const env = omgeving(db, emmer());
+    db.prepare("UPDATE subscriptions SET status = 'pending' WHERE id = ?").run(ID.aboA);
+    const r = await accountGet(ctx(new Request('https://visuails.com/account/set/7101/f', { headers: kop(sessieA) }), env));
+    ok('/account/set/7101/f: A met een abonnement dat nog op de eerste incasso wacht, krijgt het nog niet', r.status !== 200, `status ${r.status}`);
+  }
 }
 
 globalThis.fetch = echteFetch;

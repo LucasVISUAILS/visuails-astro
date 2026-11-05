@@ -184,7 +184,8 @@ tijdvenster. Geen sleutels in logs; e-Boekhouden zet het token alleen in de body
   krijgt "te veel".
 - `test:scheiding` (klant tegen klant) bleef groen (144); de naloop vond geen weg naar andermans bestelling,
   abonnement of factuur. Twee routes zonder toets in `test:scheiding` (de bijkoop op `/account/plan?bijkoop=` en
-  de maandset onder `/account/set/`) zijn wel goed afgeschermd in de code; uitbreiden staat open.
+  de maandset onder `/account/set/`) zijn wel goed afgeschermd in de code. **Naloop, 5 november:** nu getoetst
+  (blok 6 en 7, 144 → 161 controles); zie `kladblok/NALOOP-69-73.md`.
 
 **Twijfels (geen bewezen gat), met advies:**
 - **De tweede stap is optioneel** in /admin. Staat hij live niet aan, dan is /admin alleen een wachtwoord, en kan
