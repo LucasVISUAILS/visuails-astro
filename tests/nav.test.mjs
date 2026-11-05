@@ -1389,7 +1389,7 @@ console.log('\nhet menu van 1.11');
     check(`${pagina}: onder Prijzen staan /pricing en /plans`, prijsLinks, PRIJZEN);
     const html = readFileSync(u, 'utf8');
     const lade = (html.match(/<div class="mobile-nav"[\s\S]*?<div class="mobile-cta"/) || [''])[0];
-    check(`${pagina}: de telefoonlade heeft drie groepen`, (lade.match(/class="mobile-group"/g) || []).length, 3);
+    check(`${pagina}: de telefoonlade heeft drie groepen`, (lade.match(/class="mobile-group(?: h-1[rk])?"/g) || []).length, 3);  // levering 87: een korte kop krijgt h-1r
     check(`${pagina}: en het abonnement staat erin`, /href="(\/nl)?\/plans\/?"/.test(lade), true);
     const voet = (html.match(/<footer class="site-footer"[^>]*>[\s\S]*?<\/footer>/) || [''])[0];
     check(`${pagina}: de voettekst linkt /plans en /studio`, /href="(\/nl)?\/plans\/?"/.test(voet) && /href="(\/nl)?\/studio\/?"/.test(voet), true);

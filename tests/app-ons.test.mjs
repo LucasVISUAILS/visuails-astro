@@ -83,7 +83,7 @@ if (!existsSync(new URL('../dist/start/catalog/index.html', import.meta.url))) {
     ok(`${pad}: geen persoonsgegevens in het bericht`, privé);
     /* Stap 2: alleen deze ene regel erbij. */
     const stap2 = (html.split('data-pl-step="2"')[1] || '').split('data-pl-step="3"')[0];
-    ok(`${pad}: in stap 2 precies één App-ons-regel`, (stap2.match(/class="pl-appons"/g) || []).length, 1);
+    ok(`${pad}: in stap 2 precies één App-ons-regel`, (stap2.match(/class="pl-appons(?: h-1[rk])?"/g) || []).length, 1);  // levering 87: een korte zin krijgt h-1r
   }
 }
 

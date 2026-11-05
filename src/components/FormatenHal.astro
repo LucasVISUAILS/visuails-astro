@@ -250,7 +250,7 @@ const BEELD_MINI = { src: '/img/lifestyle-phone-made-07.webp', w: 2400, h: 1792,
     .h-fmt-kaal :global(.u-balk) { position: relative !important; bottom: auto !important; }
     /* het podium is hier kleiner: het label over de hele onderkant, zodat het altijd in beide
        onderhoeken ligt (concentrisch, 24 - 12), net als op de telefoon */
-    .h-fmt-kaal .h-fmt-waar { width: auto; border-radius: 3px 3px calc(var(--r-kaart) - 12px) calc(var(--r-kaart) - 12px); }
+    .h-fmt-kaal .h-fmt-waar { width: auto; border-radius: 999px; }
   }
   .h-fmt-alleen { margin-left: 10px; font: 600 11.5px/1 var(--h-mono, 'IBM Plex Mono', monospace); letter-spacing: .08em; text-transform: uppercase; color: var(--h-inkt); }
 
@@ -317,10 +317,10 @@ const BEELD_MINI = { src: '/img/lifestyle-phone-made-07.webp', w: 2400, h: 1792,
      kader (25 oktober 2026: het kader is rond, 24): 12 px van de rand, dus 24 - 12. Het
      label onderaan in het kleine vak en op de telefoon over de hele breedte, zodat het
      altijd in beide onderhoeken ligt en niet van de lengte van de tekst afhangt. */
-  .h-fmt-maat { position: absolute; left: 12px; top: 12px; height: 34px; padding: 0 14px; border-radius: calc(var(--r-kaart) - 12px) 3px 3px 3px; display: inline-flex; align-items: center; font: 600 17px/1 var(--h-letter); color: var(--h-inkt); font-variant-numeric: tabular-nums; }
-  .h-fmt-waar { position: absolute; left: 12px; right: 12px; bottom: 12px; width: max-content; max-width: calc(100% - 24px); min-height: 32px; padding: 7px 14px; border-radius: 3px 3px 3px calc(var(--r-kaart) - 12px); display: inline-flex; align-items: center; font: 500 14px/1.3 var(--h-letter); color: var(--h-inkt); }
+  .h-fmt-maat { position: absolute; left: 12px; top: 12px; height: 34px; padding: 0 14px; border-radius: 999px; display: inline-flex; align-items: center; font: 600 17px/1 var(--h-letter); color: var(--h-inkt); font-variant-numeric: tabular-nums; }
+  .h-fmt-waar { position: absolute; left: 12px; right: 12px; bottom: 12px; width: max-content; max-width: calc(100% - 24px); min-height: 32px; padding: 7px 14px; border-radius: 999px; display: inline-flex; align-items: center; font: 500 14px/1.3 var(--h-letter); color: var(--h-inkt); }
 
-  .h-fmt-mini .h-fmt-waar { width: auto; border-radius: 3px 3px calc(var(--r-kaart) - 12px) calc(var(--r-kaart) - 12px); }
+  .h-fmt-mini .h-fmt-waar { width: auto; border-radius: 999px; }
 
   /* De rij onder het podium: alleen bij "En meer". */
   .h-fmt-rij { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
@@ -342,8 +342,8 @@ const BEELD_MINI = { src: '/img/lifestyle-phone-made-07.webp', w: 2400, h: 1792,
   @media (max-width: 640px) {
     .h-fmt-vlak { border-radius: var(--r-kaart); padding: 16px; gap: 16px; }
     .h-fmt-knop { height: 38px; padding: 0 14px; font-size: 13.5px; }
-    .h-fmt-waar, .h-fmt-mini .h-fmt-waar { width: auto; font-size: 13px; left: 8px; right: 8px; bottom: 8px; max-width: calc(100% - 16px); padding: 6px 10px; border-radius: 3px 3px calc(var(--r-kaart) - 8px) calc(var(--r-kaart) - 8px); }
-    .h-fmt-maat { font-size: 15px; height: 30px; left: 8px; top: 8px; border-radius: calc(var(--r-kaart) - 8px) 3px 3px 3px; }
+    .h-fmt-waar, .h-fmt-mini .h-fmt-waar { width: auto; font-size: 13px; left: 8px; right: 8px; bottom: 8px; max-width: calc(100% - 16px); padding: 6px 10px; border-radius: 999px; }
+    .h-fmt-maat { font-size: 15px; height: 30px; left: 8px; top: 8px; border-radius: 999px; }
     .h-fmt-kader, .h-fmt-mini { border-radius: var(--r-kaart); }
   }
   /* Op de smalste telefoons loopt de rij knoppen tot in de hoek van het vlak. Dan
@@ -352,7 +352,7 @@ const BEELD_MINI = { src: '/img/lifestyle-phone-made-07.webp', w: 2400, h: 1792,
      2026 is het vlak 24 rond, dus 24 - 16 = 8. */
   @media (max-width: 380px) {
     .h-fmt-knoppen { justify-content: flex-start; }
-    .h-fmt-knop:first-child { border-radius: 8px 3px 3px 3px; }
+    .h-fmt-knop:first-child { border-radius: 999px; }
   }
   @media (prefers-reduced-motion: reduce) {
     .h-fmt-kader, .h-fmt-mini, .h-fmt-rij li, .h-fmt-label, .h-fmt-knop { transition: none !important; }

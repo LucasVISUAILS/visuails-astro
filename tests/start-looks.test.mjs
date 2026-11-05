@@ -78,7 +78,7 @@ for (const [taal, pre, ls, cat] of [['en', '', lsEn, catEn], ['nl', '/nl', lsNl,
   const rij = html.slice(html.indexOf('st-ook-rij'), html.indexOf('</nav>', html.indexOf('st-ook-rij')));
   ok(`${taal}: de rij linkt naar ${pre}/test-sample/ (niet voor wie al klant is)`, rij.includes(`href="${pre}/test-sample/"`) && /<li data-vis-uit[^>]*><a[^>]*href="[^"]*\/test-sample\/"/.test(rij));
   ok(`${taal}: de rij heeft App ons (wa.me)`, /href="https:\/\/wa\.me\//.test(rij));
-  ok(`${taal}: bovenaan de strook in drie stappen`, (html.slice(html.indexOf('h-st-kort-rij'), html.indexOf('</ol>', html.indexOf('h-st-kort-rij'))).match(/<li>/g) || []).length === 3);
+  ok(`${taal}: bovenaan de strook in drie stappen`, (html.slice(html.indexOf('h-st-kort-rij'), html.indexOf('</ol>', html.indexOf('h-st-kort-rij'))).match(/<li(?: class="h-1[rk]")?>/g) || []).length === 3);  // levering 87: h-1r
   ok(`${taal}: geen grijs vlak op /start`, !html.includes('/img/plaatshouder/') && !html.includes('data-placeholder='));
 }
 

@@ -108,7 +108,7 @@ for (const [dienst, pad, taal] of PAGINAS) {
     ok(`${pad} — de set staat er (${dienst === 'catalog' ? '.h-st-set' : '.h-ls-drie'})`, blok.length > 0, 'blok', 'geen');
     const gevonden = dienst === 'catalog'
       ? [...blok.matchAll(/<span class="h-st-set-naam">([^<]*)<\/span>/g)].map((m) => m[1])
-      : [...blok.matchAll(/<p class="h-pp-naam">([^<]*)<\/p>/g)].map((m) => m[1]);
+      : [...blok.matchAll(/<p class="h-pp-naam(?: h-1[rk])?">([^<]*)<\/p>/g)]  /* levering 87: een korte naam krijgt h-1r */.map((m) => m[1]);
     ok(`${pad} — de set noemt ${namen.join(', ')}, in die volgorde`, JSON.stringify(gevonden) === JSON.stringify(namen), namen, gevonden);
     if (dienst === 'catalog') {
       /* de build zet style="--d:N" om in een klasse, dus niet op de sluitquote matchen */

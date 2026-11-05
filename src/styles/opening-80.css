@@ -1,35 +1,42 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   DE OPENING IN RUST — levering 80, 1 november 2026 (HalOpening80.astro)
+   DE OPENING — levering 80, 1 november 2026; opnieuw in levering 87, 4 november 2026 (HalOpening80.astro)
    ═══════════════════════════════════════════════════════════════════════════════
-   Lucas, 17:05: "eerst groot tekst van wat VISUAILS is en daaronder al licht de laptop in beeld,
-   misschien met een uitgeknipt model bij de tekst-only sectie." Alle maten uit docs/RUST-80.md.
+   Lucas, 17:05 (1 nov): "eerst groot tekst van wat VISUAILS is en daaronder al licht de laptop in beeld".
+   Lijst 74 (4 nov): de fade van wit naar blauw uur (F2) over het hele scherm, zonder ronde hoek; de kop iets lager
+   met genoeg ruimte eromheen; de arm van de telefoon aan de zijkant; drie strepen onder de laptop (K1); en het
+   podium blijft staan terwijl het scrollen de animatie speelt. Alle maten: docs/RUST-80.md §14.
 
    DE MATEN (computer, ≥ 1100 px; de css rekent ze uit, geen script):
    - de balk 56 px; de marge m = max(20, min(8,333 vw, 160), (100vw − 1280) / 2)
-   - het vlak van de laptop steekt P het eerste scherm in: P = 28 + 7,576 vw + clamp(56, 14 svh, 150).
-     28 px boven de foto, 7,576 vw is de strook boven de klep (.1786 van de foto, die 42,42 vw hoog is),
-     en de rest is hoeveel klep je ziet (op 1440 × 900: 126 px, op 1366 × 657: 92 px)
-   - geen model (lijst 64, Lucas: "Voor nu nog geen model op deze sectie … waarbij alles mooi gecentreerd
-     staat"): de tekst staat in het midden, zoals zijn voorbeeld.
-   - de titel: f = min(104, 7,22 vw, wat in de hoogte past (100svh − P − 340) / 1,84, de breedte tussen de
-     marges / w), met w de breedste regel in em (NL "ZOALS JIJ HEM ZIET." 8,94; EN "AS YOU SEE IT." 6,52).
-     Op 1440 × 900: 104 px. Nooit kleiner dan 40.
-   - het vlak: de Nevel-fade (#D0D8E9 → #E6EAF4 → de grond), de zachte hoek linksboven 40 px.
+   - de foto staat op 120,5 % (--o8-fw): dan valt de arm van de telefoon rechts buiten het scherm (hij kruist de
+     onderrand van de foto vanaf 0,918 van de breedte). Op een heel breed en laag scherm hoogstens zo groot dat hij in
+     het podium past. De bovenste 16,5 % van de foto is leeg (zoals de video, scripts/laptop-video.mjs): die valt weg.
+     Zichtbaar is hij dan C = 0,35396 × fw hoog; de klep begint 0,005511 × fw onder de bovenkant daarvan.
+   - het podium is zo hoog als het scherm onder de balk (Hp = 100svh − 56) met de foto in het midden; de klep staat
+     dan Lo = (Hp − C) / 2 + 0,005511 fw onder de bovenkant van het podium.
+   - bij het laden steekt de klep V = clamp(150, 24 svh, 260) het scherm in (1440 × 900: 216 px); het eerste scherm
+     (de tekst) is dus 100svh − V − Lo hoog.
+   - de tekst staat in het midden tussen de balk en de klep, 28 px lager (Lucas: "Tekst mag iets naar onder geplaatst
+     worden … maar wel genoeg ruimte om alles heen"): op 1440 × 900 115 px onder de balk en 87 px boven de klep.
+   - de titel: f = min(104, 7,22 vw, wat in de hoogte past, de breedte tussen de marges / w), met w de breedste regel
+     in em (NL "ZOALS JIJ HEM ZIET." 8,94; EN "AS YOU SEE IT." 6,52). Nooit kleiner dan 40.
+   - het vlak: F2, wit → nevel → blauw uur, over de hele breedte en zonder ronde hoek (een vlak dat het hele scherm
+     bedekt is recht, Lucas 4 nov 03:02).
+   - de baan: het podium blijft --o8-R (160 svh) staan; de laatste --o8-O (55 svh) daarvan schuift Wat we maken er al
+     overheen. Zie HalOpening80.astro voor wat er in de baan gebeurt.
    ═══════════════════════════════════════════════════════════════════════════════ */
 .o8 {
   --o8-balk: 56px;
   --o8-m: max(20px, min(8.333vw, 160px), calc((100vw - 1280px) / 2));
-  --o8-P: calc(28px + 7.576vw + clamp(56px, 14svh, 150px));
   --o8-w: 8.94;
-  --o8-f: clamp(40px, min(7.22vw, calc((100svh - var(--o8-P) - 340px) / 1.84), calc((100vw - 2 * var(--o8-m)) / var(--o8-w))), 104px);
   position: relative;
 }
 html[lang="en"] .o8 { --o8-w: 6.52; }
+:root { --o8-R: 160svh; --o8-O: 55svh; }
 
-/* ── het eerste scherm: de titel, de zin, de knoppen en het model ───────── */
-.o8-held { position: relative; z-index: 1; height: calc(100svh - var(--o8-P)); min-height: 360px; }
-.o8-tekst { position: absolute; z-index: 2; left: var(--o8-m); right: var(--o8-m); top: var(--o8-balk); bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 0; padding-bottom: 20px; }
-.o8 .o8-kop.h-kop { margin: 0; font: 700 var(--o8-f)/.92 var(--h-kopletter); letter-spacing: -.01em; text-transform: uppercase; white-space: nowrap; text-wrap: nowrap; color: var(--h-inkt); }
+/* ── het eerste scherm: de titel, de zin, de knoppen ─────────────────────── */
+.o8-held { position: relative; z-index: 3; }
+.o8 .o8-kop.h-kop { margin: 0; font: 700 var(--o8-f, 64px)/.92 var(--h-kopletter); letter-spacing: -.01em; text-transform: uppercase; white-space: nowrap; text-wrap: nowrap; color: var(--h-inkt); }
 .o8-kop .o8-r { display: block; }
 .o8 .o8-zin { --h-maat: 20em; margin: 26px 0 0; max-width: 20em; font: 370 clamp(17px, 1.32vw, 19px)/1.5 var(--h-letter); color: var(--h-inkt); text-wrap: pretty; }
 /* de feiten onder de knoppen: klein, grijs (5,15 : 1 op de grond), met een schuine streep ertussen */
@@ -39,11 +46,17 @@ html[lang="en"] .o8 { --o8-w: 6.52; }
 .o8 .o8-feiten b { font-weight: 600; color: var(--h-inkt); }
 .o8 .o8-acties { margin: 34px 0 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px 26px; }
 .o8 .o8-acties .h-link { font: 500 16px/1.3 var(--h-letter); }
+.o8-tekst { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
 
-/* ── het vlak met de laptop ─────────────────────────────────────────────── */
-.o8-podium { position: relative; z-index: 2; padding: 28px 0 40px; }
-.o8-vlak { position: absolute; inset: 0; z-index: 0; border-radius: 40px 0 0 0; background: linear-gradient(180deg, #D0D8E9 0%, #E6EAF4 38%, var(--h-grond, #FBFCFF) 100%); }
-.o8-foto { position: relative; z-index: 1; width: 100%; aspect-ratio: 2944 / 1248; }
+/* ── het podium met de laptop ───────────────────────────────────────────── */
+.o8-baan { position: relative; }
+.o8-podium { position: relative; z-index: 2; overflow-x: clip; }
+/* F2 (lijst 74): wit → nevel → blauw uur, schermvullend en recht */
+.o8-vlak { position: absolute; inset: 0; z-index: 0; background: linear-gradient(180deg, #FBFCFF 0%, #FBFCFF 20%, #A2B7D2 52%, #6283AF 76%, #25508B 100%); }
+/* het wit dat aan het eind langs de snede (126,87°: de lijnen van gelijke kleur lopen op 53,13°) het blauw wegveegt;
+   --o8-e is waar het wit vol is, --o8-z hoe zacht de rand is (HalOpening80.astro) */
+.o8-veeg { position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(126.87deg, rgba(251, 252, 255, 0) calc(var(--o8-e, 140%) - var(--o8-z, 56px)), var(--h-grond, #FBFCFF) var(--o8-e, 140%)); }
+.o8-foto { position: relative; z-index: 2; width: 100%; aspect-ratio: 2944 / 1248; }
 .o8-foto > picture { display: contents; }
 .o8-beeld { position: absolute; inset: 0; z-index: 2; display: block; width: 100%; height: 100%; max-width: none; pointer-events: none; }
 /* de schermen in beeld 0: ónder de foto, in perspectief op de hoeken uit de video (matrix3d) */
@@ -56,43 +69,95 @@ html[lang="en"] .o8 { --o8-w: 6.52; }
 .o8-doek[hidden] { display: none; }
 /* de video speelt: de stilstaande foto en de schermen zijn weg, het doek tekent alles */
 .o8.o8-speelt .o8-beeld, .o8.o8-speelt .o8-sc { visibility: hidden; }
-/* terug naar boven na de video: de laptop komt weer (in één keer, zacht) */
-.o8.o8-terug .o8-foto { animation: o8-terug .6s cubic-bezier(.16, 1, .3, 1) both; }
-@keyframes o8-terug { from { opacity: 0; transform: translateY(14px); } }
-.o8.o8-weg .o8-beeld, .o8.o8-weg .o8-sc { visibility: hidden; }
+/* alles wit: het doek en het vlak weg (het wit ligt er al overheen) */
+.o8.o8-wit .o8-doek, .o8.o8-wit .o8-vlak { visibility: hidden; }
+/* lijst 76, de metro (src/scripts/metro.js): het doek tekent het blauwe uur zelf zolang het rijdt; de veeg doet niet mee */
+.o8-metro { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; display: block; pointer-events: none; }
+.o8-metro[hidden] { display: none; }
+.o8.o8-rijdt .o8-vlak, .o8.o8-metro-aan .o8-veeg { visibility: hidden; }
 
-/* de stand onder de laptop: de naam, de streep en de pauzeknop */
-.o8-stand { position: relative; z-index: 2; margin: 18px var(--o8-m) 0; display: flex; align-items: center; gap: 14px; }
-.o8-stand-naam { display: grid; grid-template-columns: auto; gap: 6px; margin: 0; font: 500 14px/1.2 var(--h-letter); color: var(--h-inkt); }
-.o8-stand-streep { position: relative; display: block; width: 96px; height: 2px; background: var(--h-lijn, #E6E8EC); overflow: hidden; }
-.o8-stand-streep i { position: absolute; inset: 0; background: var(--h-inkt); transform-origin: 0 50%; transform: scaleX(0); }
-.o8-stand-streep i.is-aan { animation: o8-klok linear forwards; animation-play-state: paused; }
-.o8.o8-loopt .o8-stand-streep i.is-aan { animation-play-state: running; }
+/* ── de strepen onder de laptop (K1, lijst 74): drie strepen, de naam in mono, de pauzeknop; geen blok ─────
+   Wit op het blauwe uur (de lichtste plek eronder: wit 5,69 : 1). De streep van de stand die staat is 44 px en
+   loopt vol in de tijd van de stand; de andere zijn 16 × 3, met de schuine uiteinden van het sectielabel (53°). */
+.o8-stand { --o8-c: #FFFFFF; --o8-c2: rgba(255, 255, 255, .62); position: relative; z-index: 4; margin: 20px var(--o8-m) 0; display: flex; align-items: center; justify-content: center; gap: 18px; color: var(--o8-c); transition: opacity .24s cubic-bezier(.4, 0, .2, 1); }
+.o8-strepen { display: flex; align-items: center; gap: 10px; }
+html body.hal .o8-kies { appearance: none; -webkit-appearance: none; margin: 0; padding: 10px 0; border: 0; border-radius: 3px; background: none; box-shadow: none; min-height: 0; cursor: pointer; display: inline-flex; align-items: center; color: var(--o8-c2); }
+html body.hal .o8-kies:hover { color: var(--o8-c); }
+html body.hal .o8-kies[aria-pressed="true"] { color: var(--o8-c); }
+html body.hal .o8-kies:focus-visible { outline: 2px solid var(--o8-c); outline-offset: 3px; }
+.o8-k-streep { position: relative; display: block; width: 16px; height: 3px; background: currentColor; clip-path: polygon(2.25px 0, 100% 0, calc(100% - 2.25px) 100%, 0 100%); transition: width .3s cubic-bezier(.16, 1, .3, 1); }
+.o8-kies[aria-pressed="true"] .o8-k-streep { width: 44px; background: rgba(255, 255, 255, .4); }
+.o8-k-streep i { position: absolute; inset: 0; background: var(--o8-c); transform-origin: 0 50%; transform: scaleX(0); }
+.o8-kies[aria-pressed="true"] .o8-k-streep i.is-aan { animation: o8-klok linear forwards; animation-play-state: paused; }
+.o8.o8-loopt .o8-kies[aria-pressed="true"] .o8-k-streep i.is-aan { animation-play-state: running; }
 @keyframes o8-klok { to { transform: scaleX(1); } }
+.o8 .o8-stand-naam { margin: 0; font: 600 12px/1.3 var(--h-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--o8-c); white-space: nowrap; max-width: none !important; }
+html body.hal .o8-pauze { appearance: none; -webkit-appearance: none; margin: 0; padding: 0; border: 0; background: none; box-shadow: none; min-height: 0; cursor: pointer; display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 999px; color: var(--o8-c); }
+html body.hal .o8-pauze:focus-visible { outline: 2px solid var(--o8-c); outline-offset: 2px; }
+.o8-pauze svg { width: 14px; height: 14px; fill: currentColor; }
 .o8-pauze .o8-p-aan { display: none; }
 .o8-pauze[aria-pressed="true"] .o8-p-aan { display: block; }
 .o8-pauze[aria-pressed="true"] .o8-p-uit { display: none; }
+/* zodra je door de animatie scrolt, gaan de strepen weg */
+.o8.o8-onderweg .o8-stand { opacity: 0; pointer-events: none; }
 
 /* het vlagje dat vult terwijl de video laadt (alleen als je sneller scrolt dan hij binnenkomt) */
 .o8-laden { position: absolute; z-index: 4; left: 50%; top: 46%; width: 44px; height: 51px; transform: translate(-50%, -50%); pointer-events: none; }
 .o8-laden[hidden] { display: none; }
 .o8-laden svg { width: 100%; height: 100%; overflow: visible; }
 
+/* ── vanaf 901 px: de foto op 120,5 %, de arm aan de zijkant ──────────────── */
+@media (min-width: 901px) {
+  .o8 { --o8-fw: min(120.5vw, calc((100svh - 72px) * 2.8252)); }
+  .o8-foto { width: var(--o8-fw); margin-left: calc((100% - var(--o8-fw)) / 2); margin-top: calc(-.165 * .42391 * var(--o8-fw)); }
+  .o8-podium { padding: 28px 0 32px; }
+}
+
+/* ── vanaf 1100 px: het eerste scherm en het podium elk een scherm ────────── */
+@media (min-width: 1100px) {
+  .o8 {
+    --o8-Hp: calc(100svh - var(--o8-balk));
+    --o8-C: calc(.35396 * var(--o8-fw));
+    --o8-Lo: calc((var(--o8-Hp) - var(--o8-C)) / 2 + .005511 * var(--o8-fw));
+    --o8-V: clamp(150px, 24svh, 260px);
+    --o8-g: clamp(32px, 7svh, 64px);
+    --o8-f: clamp(40px, min(7.22vw, calc((100svh - var(--o8-V) - var(--o8-balk) - 28px - 2 * var(--o8-g) - 235px) / 1.84), calc((100vw - 2 * var(--o8-m)) / var(--o8-w))), 104px);
+  }
+  .o8-held { height: calc(100svh - var(--o8-V) - var(--o8-Lo)); min-height: 360px; }
+  /* de tekst staat tussen de balk en de klep (die in het podium ligt), 28 px lager dan het midden */
+  .o8-tekst { position: absolute; z-index: 2; left: var(--o8-m); right: var(--o8-m); top: var(--o8-balk); bottom: calc(-1 * var(--o8-Lo)); padding-top: 28px; }
+  .o8-podium { height: var(--o8-Hp); padding: 0; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; }
+  /* de strepen in de lucht onder de laptop: op 0,509 van de breedte en 0,935 van de hoogte van de foto */
+  .o8-stand { position: absolute; margin: 0; left: calc(50% + .009 * var(--o8-fw)); top: calc((100% - var(--o8-C)) / 2 + .77 * .42391 * var(--o8-fw)); transform: translate(-50%, -50%); }
+  .o8-laden { top: 50%; }
+  /* met het effect: de baan, en het podium blijft staan */
+  html.o8-aan .o8-baan { height: calc(var(--o8-Hp) + var(--o8-R)); }
+  html.o8-aan .o8-podium { position: sticky; top: var(--o8-balk); }
+  /* Wat we maken schuift het laatste stuk van de baan al over het witte podium */
+  html.o8-aan .o8 ~ .m8 { position: relative; z-index: 3; margin-top: calc(-1 * var(--o8-O)); }
+  /* lijst 76, de metro: Wat we maken ligt al over het podium (onzichtbaar tot het blauw weg is), zodat hij omhoog komt op het
+     scherm waar je bent: zijn kop op ruim een vijfde van de hoogte als je na het vertrek nog 250 px doorscrolt, en de hele sectie
+     in beeld (op 1440 × 900) */
+  html.o8-aan .o8.o8-metro-aan ~ .m8 { margin-top: calc(-1 * (80svh + .4 * var(--o8-R) + 8px)); }
+  html.o8-aan .o8.o8-metro-aan ~ .m8.m8-dicht { pointer-events: none; }
+  /* omdat Wat we maken zo ver over het podium ligt, begint de sectie erna nog in de baan: die (en alles erna) ligt boven
+     het podium, en het witte podium (dan zonder vlak, doek of foto) vangt geen klik */
+  html.o8-aan .o8.o8-metro-aan ~ .m8 ~ * { position: relative; z-index: 3; }
+  html.o8-aan .o8.o8-metro-aan.o8-wit .o8-podium { pointer-events: none; }
+  html.o8-aan .o8.o8-metro-aan ~ .m8.m8-dicht :is(.m8-kopgroep, .m8-dienst, .m8-ook, .m8-regel) { transition: opacity .18s cubic-bezier(.4, 0, .2, 1); }
+}
+
 /* ── tot 1100 px: alles onder elkaar, geen scrolleffect ──────────────────── */
 @media (max-width: 1099.98px) {
   .o8 { --o8-balk: 52px; --o8-m: 20px; }
-  .o8-held { height: auto; min-height: 0; padding: calc(var(--o8-balk) + 32px) var(--o8-m) 0; display: grid; }
-  .o8-tekst { position: relative; left: auto; right: auto; top: auto; bottom: auto; padding: 0; }
+  .o8-held { padding: calc(var(--o8-balk) + 32px) var(--o8-m) 40px; display: grid; }
   .o8 .o8-kop.h-kop { --o8-f: clamp(30px, calc((100vw - 40px) / var(--o8-w)), 76px); }
-  .o8-held { padding-bottom: 40px; }
   .o8 .o8-zin { font-size: 17px; }
-  .o8-podium { padding-top: 24px; }
 }
 @media (max-width: 900px) {
   .o8-foto { width: 160%; margin-left: -40.4%; }
-  .o8-podium { overflow-x: clip; }
+  .o8-podium { padding: 24px 0 28px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .o8-sc picture.o8-st { transition: none; }
-  .o8.o8-terug .o8-foto { animation: none; }
+  .o8-sc picture.o8-st, .o8-stand, .o8-k-streep { transition: none; }
 }

@@ -51,7 +51,7 @@ for (const p of ['nl/start/catalog/index.html', 'start/catalog/index.html', 'nl/
   const blokken = [...h.matchAll(/data-wk-blok="([a-z]+)"/g)].map((m) => m[1]);
   ok('  vier blokken in de goede volgorde', JSON.stringify(blokken) === JSON.stringify(['stijl', 'aantal', 'gezicht', 'levering']), blokken.join(','));
   ok('  geen "Meer opties", geen doorlooptijden, geen blokken onder het formulier', !/data-pl-meeropties/.test(h) && !/class="pl-levels/.test(h) && !/of-gelijk/.test(h) && !/of-slot/.test(h));
-  ok('  het inlogblok bovenaan is een regel onder Verder', /class="wk-inloggen" data-acct="out"/.test(h));
+  ok('  het inlogblok bovenaan is een regel onder Verder', /class="wk-inloggen(?: h-1[rk])?" data-acct="out"/.test(h));  // levering 87: een korte zin krijgt h-1r
 }
 {
   const h = lees('nl/start/catalog/index.html');

@@ -436,7 +436,7 @@ a.st-cijfer:hover { border-color: var(--line-strong); }
 .st-filters { display: flex; flex-wrap: wrap; gap: .4rem; }
 .st-filter {
   display: inline-flex; align-items: center; gap: .4rem; min-height: 30px; padding: 0 .75rem;
-  border-radius: 8px 3px 3px 3px; border: 1px solid var(--line); background: var(--surface); font-size: .8125rem; font-weight: 450; color: var(--ink-2);
+  border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: .8125rem; font-weight: 450; color: var(--ink-2);
   transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
 }
 a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
@@ -456,7 +456,7 @@ a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
    is, niet waar de bestelling staat. */
 .credits-pil {
   display: inline-flex; align-items: center; min-height: 22px; padding: 0 .55rem;
-  border-radius: 8px 3px 3px 3px; box-shadow: inset 0 0 0 1px currentColor;
+  border-radius: 999px; box-shadow: inset 0 0 0 1px currentColor;
   color: var(--st-accent-tekst); font-size: .75rem; font-weight: 600; letter-spacing: .02em;
   line-height: 1; white-space: nowrap;
 }
@@ -630,7 +630,7 @@ a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
 .st-vakken { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .6rem; }
 .st-vak { display: flex; flex-direction: column; gap: .3rem; min-width: 0; padding: .55rem .6rem; border: 1px solid var(--line); border-radius: var(--r-klein); background: var(--surface); }
 .st-vak.is-mist { border-style: dashed; border-color: var(--st-clay-tekst); }
-.st-vak-beeld { display: block; width: 56px; aspect-ratio: 4 / 5; border-radius: 4px; overflow: hidden; border: 1px solid var(--line); }
+.st-vak-beeld { display: block; width: 56px; aspect-ratio: 4 / 5; border-radius: var(--r-klein); overflow: hidden; border: 1px solid var(--line); }
 .st-vak-beeld img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .st-vak-ext { display: grid; place-items: center; height: 100%; font-size: .75rem; font-weight: 600; color: var(--ink-2); }
 .st-vak-naam { font-size: .8125rem; font-weight: 600; color: var(--ink-1); }
@@ -786,7 +786,7 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 .st-tegel.is-own .st-tegel-sub { color: var(--st-accent-tekst); }
 
 .st-stalen { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: .6rem; }
-.st-staal { position: relative; display: flex; align-items: center; gap: .6rem; padding: .5rem .65rem; border-radius: var(--r-md) 3px 3px 3px; border: 1px solid var(--line); cursor: pointer; }
+.st-staal { position: relative; display: flex; align-items: center; gap: .6rem; padding: .5rem .65rem; border-radius: 999px; border: 1px solid var(--line); cursor: pointer; }
 .st-staal input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
 .st-staal:has(input:checked) { border-color: var(--ink-1); box-shadow: inset 0 0 0 1px var(--ink-1); }
 .st-staal:has(input:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
@@ -819,7 +819,7 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 .st-ratio-wat { font-size: .75rem; color: var(--ink-3); }
 
 .st-kanalen { display: flex; flex-wrap: wrap; gap: .5rem; }
-.st-kanaal { display: inline-flex; align-items: center; gap: .5rem; min-height: 36px; padding: 0 .85rem; border-radius: 11px 3px 3px 3px; border: 1px solid var(--line-strong); font-size: .8125rem; color: var(--ink-2); cursor: pointer; }
+.st-kanaal { display: inline-flex; align-items: center; gap: .5rem; min-height: 36px; padding: 0 .85rem; border-radius: 999px; border: 1px solid var(--line-strong); font-size: .8125rem; color: var(--ink-2); cursor: pointer; }
 .st-kanaal input { width: 15px; height: 15px; margin: 0; accent-color: var(--ink-1); }
 .st-kanaal:has(input:checked) { border-color: var(--ink-1); color: var(--ink-1); }
 .st-kanaal-vlag { font-size: .75rem; color: var(--ink-3); }
@@ -924,7 +924,7 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 .st-pips { display: inline-flex; gap: 4px; }
 .st-pips i { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--line-strong); background: var(--surface); }
 .st-pips i.is-vast { background: var(--st-accent-lijn); border-color: var(--st-accent-lijn); }
-.st-slotbalk { width: 140px; height: 8px; appearance: none; border: 0; border-radius: 8px 3px 3px 3px; overflow: hidden; background: var(--surface-2); }
+.st-slotbalk { width: 140px; height: 8px; appearance: none; border: 0; border-radius: 999px; overflow: hidden; background: var(--surface-2); }
 .st-slotbalk::-webkit-progress-bar { background: var(--surface-2); }
 .st-slotbalk::-webkit-progress-value { background: var(--st-accent-lijn); }
 .st-slotbalk::-moz-progress-bar { background: var(--st-accent-lijn); }
@@ -965,7 +965,7 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 .st-kal-asap { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
 .st-kal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
 .st-kal-kop { font-size: .75rem; font-weight: 450; color: var(--ink-3); padding: .3rem .4rem; }
-.st-kal-dag { position: relative; display: flex; flex-direction: column; gap: .15rem; min-height: 64px; padding: .45rem .5rem; border: 1px solid var(--line); border-radius: var(--r-sm) 3px 3px 3px; background: var(--surface); font: inherit; color: var(--ink-2); text-align: left; }
+.st-kal-dag { position: relative; display: flex; flex-direction: column; gap: .15rem; min-height: 64px; padding: .45rem .5rem; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font: inherit; color: var(--ink-2); text-align: left; }
 button.st-kal-dag { cursor: pointer; }
 button.st-kal-dag:hover { border-color: var(--ink-1); }
 .st-kal-dag.is-dicht, .st-kal-dag.is-vroeg, .st-kal-dag.is-vol { color: var(--ink-3); background: var(--surface-2); }
@@ -973,7 +973,7 @@ button.st-kal-dag:hover { border-color: var(--ink-1); }
 .st-kal-dag.is-mijn { border-color: var(--st-accent-lijn); background: var(--st-accent-tint); color: var(--ink-1); }
 .st-kal-n { font-weight: 600; font-variant-numeric: tabular-nums; }
 .st-kal-l { font-size: .75rem; line-height: 1.2; }
-.st-kal-vul { position: absolute; left: .5rem; right: .5rem; bottom: .4rem; height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.st-kal-vul { position: absolute; left: .5rem; right: .5rem; bottom: .4rem; height: 3px; background: var(--line); border-radius: 999px; overflow: hidden; }
 .st-kal-vul i { display: block; height: 100%; background: var(--ink-3); }
 /* ── DE DAGBALK IN PROCENTEN — 20 september 2026 ───────────────────────────
    Tien stappen van tien procent werden twintig van vijf: de schaal is nu de
@@ -1036,7 +1036,7 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
 .st-slot-oud { margin-left: auto; text-transform: none; letter-spacing: 0; font-family: var(--font-body); font-size: .75rem; }
 
 .st-weekstrip { display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 3px; max-width: 34rem; }
-.st-dag { display: grid; place-items: center; aspect-ratio: 1; border-radius: 3px; font-size: .75rem; color: var(--ink-2); background: var(--surface-2); }
+.st-dag { display: grid; place-items: center; aspect-ratio: 1; border-radius: 999px; font-size: .75rem; color: var(--ink-2); background: var(--surface-2); }
 /* De eigen week van de klant: een toestand, dus uit de statusset en niet uit
    het accent — regel "Altijd 2". Het is de stand "in productie": getint. */
 .st-dag.is-week { background: var(--st-work-fill); color: var(--st-work-ink); }
@@ -1179,7 +1179,7 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
     grid-area: nav;
     flex-direction: row; flex-wrap: wrap; gap: .3rem; overflow-x: visible;
   }
-  .st-navlink { flex: 0 0 auto; min-height: 34px; padding: 0 .75rem; border-radius: 11px 3px 3px 3px; gap: .45rem; font-size: .8125rem; }
+  .st-navlink { flex: 0 0 auto; min-height: 34px; padding: 0 .75rem; border-radius: 999px; gap: .45rem; font-size: .8125rem; }
   .st-navlink .i { width: 15px; height: 15px; }
   .is-dicht .st-navlink span { display: inline; }
   .is-dicht .st-navlink { padding: 0 .75rem; }
@@ -1300,7 +1300,7 @@ body.studio {
 .st-credit-tel { margin: .15rem 0 0; display: flex; align-items: baseline; gap: .45rem; }
 .st-credit-tel b { font-family: var(--font-body); font-size: 1.75rem; line-height: 1.1; font-weight: 600; letter-spacing: -.02em; color: var(--ink-1); font-variant-numeric: tabular-nums; }
 .st-credit-tel span { font-size: .875rem; color: var(--ink-3); }
-.st-credit-balk { height: 10px; border-radius: 8px 3px 3px 3px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.st-credit-balk { height: 10px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
 .st-credit-vul { display: block; height: 100%; background: var(--ink-2); border-radius: var(--hoek-knop); transition: width .35s ease; }
 @media (prefers-reduced-motion: reduce) { .st-credit-vul { transition: none; } }
 .st-credit-regel { margin: 0; }

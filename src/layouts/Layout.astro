@@ -637,6 +637,24 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
            have nothing to do with the wordmark. If a chrome logotype is ever
            reinstated, chrome_ramp.py still emits all four; it was the ramp's
            single source and was never deleted. */}
+      {/* LEVERING 86 · HET LOGO VANGT HET LICHT (3 november 2026, lijst 72: logo a, schommel a,
+           D7). Lucas: *"Ook het logo wil ik witte achtergrond met fade blue hour VISUAILS logo
+           maken, om met het blauw door het wit te snijden."* Alleen herkleurd: dezelfde paden.
+           De fade loopt langs de snede (126,87°: de lijnen van gelijke kleur lopen evenwijdig aan
+           de snede van het vlagje, 53,13°), van blauw diep linksboven naar #2D61A8 rechtsonder.
+           userSpaceOnUse, in de maten van het symbool zelf (de V 702 × 813,25; het woordmerk
+           viewBox 0 -797,25 4651,24 813,83), zodat de fade op elk formaat dezelfde is. De lengte
+           is 0,8 × breed + 0,6 × hoog. `-licht` is dezelfde fade een stap lichter: daar schommelt
+           de tweede laag (.mk-kleur) onder de muis naartoe. `-uitloop` is het grote woordmerk in
+           de voet: van blauw uur bovenaan naar nevel, waar de onderrand hem afsnijdt.
+           Alle kleuren uit docs/KLEURENSCHEMA.md; wit erop of het logo op wit: elke stop 6,2 : 1
+           of meer (de uitloop is versiering, geen tekst). */}
+      <linearGradient id="vs-v-snede" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="839.64" y2="629.73"><stop offset="0" stop-color="#1A4279"/><stop offset=".55" stop-color="#25508B"/><stop offset="1" stop-color="#2D61A8"/></linearGradient>
+      <linearGradient id="vs-v-licht" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="839.64" y2="629.73"><stop offset="0" stop-color="#25508B"/><stop offset=".55" stop-color="#2D61A8"/><stop offset="1" stop-color="#44699D"/></linearGradient>
+      <linearGradient id="vs-w-snede" gradientUnits="userSpaceOnUse" x1="0" y1="-797.25" x2="3367.43" y2="1728.32"><stop offset="0" stop-color="#1A4279"/><stop offset=".55" stop-color="#25508B"/><stop offset="1" stop-color="#2D61A8"/></linearGradient>
+      <linearGradient id="vs-w-licht" gradientUnits="userSpaceOnUse" x1="0" y1="-797.25" x2="3367.43" y2="1728.32"><stop offset="0" stop-color="#25508B"/><stop offset=".55" stop-color="#2D61A8"/><stop offset="1" stop-color="#44699D"/></linearGradient>
+      <linearGradient id="vs-w-uitloop" gradientUnits="userSpaceOnUse" x1="0" y1="-797.25" x2="0" y2="16.58"><stop offset="0" stop-color="#25508B"/><stop offset=".55" stop-color="#6283AF"/><stop offset="1" stop-color="#A2B7D2"/></linearGradient>
+      <linearGradient id="vs-w-uitloop-licht" gradientUnits="userSpaceOnUse" x1="0" y1="-797.25" x2="0" y2="16.58"><stop offset="0" stop-color="#2D61A8"/><stop offset=".55" stop-color="#829DC0"/><stop offset="1" stop-color="#B9C7DE"/></linearGradient>
     </defs>
     <symbol id="p-bottle" viewBox="0 0 120 150">
       <rect x="50" y="8" width="20" height="16" rx="3" fill="url(#gObj)"/>
@@ -1807,7 +1825,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   body:has(.hero-cover, .hero-editorial, .hv-hero) .site-header:not(.scrolled) .nav-links > li > a,
   body:has(.hero-cover, .hero-editorial, .hv-hero) .site-header:not(.scrolled) .nav-trigger,
   body:has(.hero-cover, .hero-editorial, .hv-hero) .site-header:not(.scrolled) .nav-account-link,
-  body:has(.hero-cover, .hero-editorial, .hv-hero) .site-header:not(.scrolled) .lang-switch .ls { transition: none; border-radius: 14px 3px 3px 3px; }
+  body:has(.hero-cover, .hero-editorial, .hv-hero) .site-header:not(.scrolled) .lang-switch .ls { transition: none; border-radius: 999px; }
   /* --r-pill, not --r-sm. This selector is longer than the base `.nav-trigger`
      rule and therefore wins, which is how the header's dropdown trigger stayed
      at 8px while every button beside it went round — found by walking the
@@ -2085,7 +2103,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   /* Sectie 21 (5 september 2026): de navigatie in kleine mono-kapitalen, zoals
      op Komma en Lue — de tweede stem van de site, naast de koppen in Hanken. De
      hoeken zijn recht; de pil is met de rest van sectie 20 verdwenen. */
-  .nav-links > li > a, .nav-trigger { border-radius: 3px; display: inline-flex; align-items: center; gap: .35rem; padding: .55rem .7rem; font-family: var(--font-mono); font-stretch: 82%; font-size: .72rem; font-weight: 400; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); background: none; border: none; cursor: pointer; transition: color var(--dur-1) var(--ease); }
+  .nav-links > li > a, .nav-trigger { border-radius: 999px; display: inline-flex; align-items: center; gap: .35rem; padding: .55rem .7rem; font-family: var(--font-mono); font-stretch: 82%; font-size: .72rem; font-weight: 400; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); background: none; border: none; cursor: pointer; transition: color var(--dur-1) var(--ease); }
   .nav-links > li > a:hover, .nav-trigger:hover { color: var(--ink); }
   .nav-links > li > a[aria-current="page"] { color: var(--ink); }
   .nav-actions { display: flex; align-items: center; gap: .6rem; }
@@ -2118,7 +2136,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .nav-signout-btn {
     font: inherit; font-size: .78rem; font-weight: 500; letter-spacing: .02em;
     color: var(--ink-3); background: none; border: 0; cursor: pointer;
-    padding: .5rem .45rem; border-radius: 14px 3px 3px 3px;
+    padding: .5rem .45rem; border-radius: 999px;
     text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px;
     transition: color var(--dur-1) var(--ease);
   }
@@ -2129,7 +2147,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .mobile-signout { margin: 0; }
   .mobile-signout .nav-signout-btn { font-size: .9rem; }
   .has-menu { position: relative; }
-  .nav-menu { position: absolute; top: calc(100% + 10px); left: 0; min-width: 470px; background: var(--menu-surface); border: 1px solid var(--line); padding: .6rem; display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease), visibility var(--dur-2) var(--ease); box-shadow: 6px 6px 0 0 rgb(var(--scrim) / 0.16); border-radius: var(--r-lg) 3px 3px 3px; }
+  .nav-menu { position: absolute; top: calc(100% + 10px); left: 0; min-width: 470px; background: var(--menu-surface); border: 1px solid var(--line); padding: .6rem; display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease), visibility var(--dur-2) var(--ease); box-shadow: 6px 6px 0 0 rgb(var(--scrim) / 0.16); border-radius: var(--r-kaart); }
   .has-menu:hover .nav-menu, .has-menu:focus-within .nav-menu, .has-menu.menu-open .nav-menu { opacity: 1; visibility: visible; transform: translateY(0); }
   /* ── ESCAPE MOET HET PANEEL OOK ECHT DICHT DOEN ─────────────────────────────
      9 augustus 2026, gemeten: na Escape stond `aria-expanded` op false en het paneel
@@ -2223,7 +2241,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     font-size: .72rem; letter-spacing: .08em; text-transform: uppercase;
     color: var(--ink-3);
     padding: .1rem .35rem;
-    border: 1px solid var(--line-strong); border-radius: 8px 3px 3px 3px;
+    border: 1px solid var(--line-strong); border-radius: 999px;
     vertical-align: middle;
   }
   .menu-toggle { display: none; width: 44px; height: 44px; align-items: center; justify-content: center; border: 1px solid var(--line-strong); background: none; cursor: pointer; }
@@ -2375,7 +2393,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   /* Prijzen · Galerij · Contact — één rij chips, niet drie volle regels. */
   .mobile-rij { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.2rem; }
   .mobile-rij a {
-    padding: .5rem .9rem; border: 1px solid var(--line-strong); border-radius: 14px 3px 3px 3px;
+    padding: .5rem .9rem; border: 1px solid var(--line-strong); border-radius: 999px;
     font-family: var(--font-mono); font-size: .74rem; letter-spacing: .06em; text-transform: uppercase;
     color: var(--ink-2);
   }

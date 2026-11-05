@@ -316,7 +316,7 @@
   --r-kaart: 24px;
   --r-vlak: 32px;
   --r-klein: 12px;
-  --hoek-knop: 14px 3px 3px 3px;
+  --hoek-knop: 999px; /* levering 87: een pil, zie global.css */
 
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   /* The four-step duration scale, copied from global.css for the same reason
@@ -910,7 +910,7 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 .rev-body { display: flex; gap: .9rem; align-items: flex-start; margin-top: .6rem; }
 .rev-shot {
   flex: 0 0 92px; display: block; width: 92px; aspect-ratio: 4 / 5; overflow: hidden;
-  border: 1px solid var(--line); border-radius: 4px; background: var(--paper-lift);
+  border: 1px solid var(--line); border-radius: var(--r-klein); background: var(--paper-lift);
 }
 .rev-shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .rev-text { min-width: 0; flex: 1; }
@@ -1237,7 +1237,7 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 }
 .slotfix select, .slotfix input {
   font: inherit; font-size: .9rem; padding: .4rem .5rem;
-  background: var(--paper-2); color: var(--ink); border: 1px solid var(--line); border-radius: 4px;
+  background: var(--paper-2); color: var(--ink); border: 1px solid var(--line); border-radius: 999px;
 }
 /* ZONDER `appearance: none` WINT DE BROWSER. Chromium tekent een dichtgeklapte
    <select> met zijn eigen witte vlak, en dan staat er één lichtvlak in een
@@ -1532,7 +1532,7 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 .pl-dag-nr { font-size: 1.1rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
 .pl-dag-mnd { font-size: .72rem; color: var(--ink-3); }
 .pl-dag-nu { margin-left: auto; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--teal-text); }
-.pl-last { height: 4px; background: var(--ink-200); border-radius: 2px; overflow: hidden; }
+.pl-last { height: 4px; background: var(--ink-200); border-radius: 999px; overflow: hidden; }
 .pl-last span { display: block; height: 100%; background: var(--teal); width: 0; }
 /* GEEN INLINE style="width:…": de CSP van het paneel is style-src 'self', en
    die laat een style-attribuut niet toe — de balk stond dus altijd op nul
@@ -1998,7 +1998,7 @@ input, select, textarea { max-width: 100%; }
 .pl-pak {
   flex: 0 0 auto; display: inline-grid; place-items: center;
   min-width: 24px; padding: 0 .2rem;
-  border: 1px solid var(--line); border-radius: 4px;
+  border: 1px solid var(--line); border-radius: 999px;
   font-size: .8rem; line-height: 1; color: var(--ink-3); text-decoration: none;
 }
 .pl-pak:hover, .pl-pak:focus-visible { border-color: var(--ink-700); color: var(--ink); }
@@ -2023,7 +2023,7 @@ input, select, textarea { max-width: 100%; }
 .pl-zet { margin: .45rem 0 0; }
 .pl-zet-knop {
   width: 100%; min-height: 28px; padding: .2rem .4rem;
-  border: 1px solid var(--ink-900); border-radius: 4px;
+  border: 1px solid var(--ink-900); border-radius: 999px;
   background: var(--ink-900); color: var(--paper);
   font-family: inherit; font-size: .72rem; font-weight: 700; letter-spacing: .03em;
   cursor: pointer;
@@ -2033,7 +2033,7 @@ input, select, textarea { max-width: 100%; }
    zonder uitleg is een deur zonder bordje. */
 .pl-zet.is-nee {
   min-height: 28px; display: grid; place-items: center;
-  border: 1px dashed var(--line); border-radius: 4px;
+  border: 1px dashed var(--line); border-radius: 999px;
   font-size: .72rem; color: var(--ink-3); text-align: center;
 }
 .pl-pak-link { font-size: .8rem; color: var(--ink-2); }
@@ -2814,13 +2814,13 @@ form.login {
 /* De knop en de statuspil zoals op de site en in Studio (levering 57): de knop met één
    zachte hoek linksboven, de pil als plaatje in de vaste breedte-letter zonder bolletje. */
 @font-face { font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 600; font-display: swap; src: url(/fonts/ibm-plex-mono/IBMPlexMono-600.woff2) format('woff2'); }
-.btn { border-radius: 12px 3px 3px 3px; }
-.btn-sm { border-radius: 10px 3px 3px 3px; }
+.btn { border-radius: 999px; }
+.btn-sm { border-radius: 999px; }
 .btn-quiet { border-radius: 0; }
-.stand { border-radius: 8px 3px 3px 3px; font-family: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.stand { border-radius: 999px; font-family: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
 .stand::before { display: none; }
-.adm-side .bar-link { border-radius: 12px 3px 3px 3px; }
-.bar-thema { border-radius: 11px 3px 3px 3px; }
+.adm-side .bar-link { border-radius: 999px; }
+.bar-thema { border-radius: 999px; }
 /* De hoekregel in /admin (levering 57, gemeten): de knop in "Nu doen" staat rechts in zijn
    regel. Alleen in de bovenste en de onderste regel raakt hij een hoek van de lijst:
    daar loopt die hoek mee, in het midden is hij recht, zoals de vinkjes in de animatie op
@@ -2828,18 +2828,18 @@ form.login {
    een kaart van 24 rond (was 22), dus 24 - 12 = 12; en een knop die in een hoek van zijn
    vlak ligt, loopt mee met minstens 8 (de knop onder een notitie, 16 en 14 van de hoek in
    een vlak van 16; de knop in de dagkeuze van de planning, 20 en 18 van de hoeken). */
-.nd-regel .btn { border-radius: 3px; }
+.nd-regel .btn { border-radius: 999px; }
 .nd-regel:first-child .btn { border-top-right-radius: 12px; }
 .nd-regel:last-child .btn { border-bottom-right-radius: 12px; }
 @media (max-width: 600px) {
   .nd-regel:first-child .btn { border-top-right-radius: 3px; }
   .nd-regel:last-child .btn { border-bottom-right-radius: 3px; border-bottom-left-radius: 12px; }
 }
-.notepanel .controls .btn { border-radius: 3px; }
+.notepanel .controls .btn { border-radius: 999px; }
 .notepanel .controls.is-under > .btn:first-child { border-bottom-left-radius: 8px; }
-.card .ag-dagform > .btn { border-radius: 3px 8px 8px 3px; }
+.card .ag-dagform > .btn { border-radius: 999px; }
 @media (max-width: 600px) {
-  .card .ag-dagform > .btn { border-radius: 3px 3px 8px 8px; }
+  .card .ag-dagform > .btn { border-radius: 999px; }
 }
 
 /* ══ LEVERING 62 · SCHEMA A (19 oktober 2026, afvinklijst 41) ═══════════════════
@@ -2863,3 +2863,18 @@ html body ::selection { background: #25508B; color: #FFFFFF; }
    500 was 450, in de regels zelf aangepast), de koppen blijven DM Sans en de lucht blijft dicht: /admin is
    zijn werkplaats, met tabellen. */
 body { font-weight: 370; }
+
+
+/* ══ LEVERING 86 · HET WOORDMERK IN DE SNEDE (3 november 2026, lijst 72, logo a en schommel a) ══
+   Zoals op de site en in Studio: het woordmerk in de fade van blauw diep naar #2D61A8 langs de snede
+   (alleen herkleurd), de schommel naar dezelfde fade een stap lichter. De fades staan in het woordmerk
+   zelf (woordmerkSvg, src/data/wordmarkPath.js).
+   Op /admin alleen in het lichte thema; donker blijft het woordmerk licht, met de schommel in blauw licht. */
+:root:not([data-thema="donker"]) .mark .mk .mk-fill { fill: url(#vs-wi-snede); }
+:root:not([data-thema="donker"]) .mark { --mk-kleur: url(#vs-wi-licht); }
+
+/* LEVERING 87 · DE HOEKEN — 4 november 2026: knoppen en invulvelden zijn een pil (zie src/styles/global.css);
+   een tekstvak van meer regels en een vinkje worden het niet. */
+textarea { border-radius: 18px !important; }
+input[type="checkbox"] { border-radius: 5px !important; }
+input[type="radio"] { border-radius: 50% !important; }

@@ -117,8 +117,8 @@ html.h-js .o-stand { visibility: visible; }
 .o-stand-naam { display: grid; grid-template-columns: minmax(0, auto) auto; align-items: baseline; column-gap: 12px; row-gap: 8px; min-width: 0; margin: 0 8px 0 0; }
 .o-stand-naam b { min-width: 0; overflow: hidden; text-overflow: ellipsis; font: 600 13.5px/1.15 var(--h-letter); color: var(--h-inkt); white-space: nowrap; }
 .o-stand-teller { justify-self: end; font: 600 12.5px/1 var(--h-letter); color: var(--h-grijs, #636974); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.o-stand-streep { grid-column: 1 / -1; position: relative; height: 2px; border-radius: 2px; background: rgba(15, 18, 23, .12); overflow: hidden; }
-.o-stand-streep i { position: absolute; inset: 0; border-radius: 2px; background: var(--h-inkt); transform-origin: 0 50%; transform: scaleX(0); }
+.o-stand-streep { grid-column: 1 / -1; position: relative; height: 2px; border-radius: 999px; background: rgba(15, 18, 23, .12); overflow: hidden; }
+.o-stand-streep i { position: absolute; inset: 0; border-radius: 999px; background: var(--h-inkt); transform-origin: 0 50%; transform: scaleX(0); }
 .o-stand-streep i.is-aan { animation: h-streep linear both; animation-play-state: paused; }
 .o-loopt .o-stand-streep i.is-aan { animation-play-state: running; }
 .o-pauze .o-p-aan { display: none; }
@@ -198,7 +198,7 @@ html.h-js .o-stand { visibility: visible; }
 .o-tabs button { height: var(--h); border: 0; background: var(--h-vlak, #F4F5F7); color: var(--h-inkt); font: 600 14.5px/1 var(--h-letter); cursor: pointer; padding: 0 calc(var(--loop) * .55 + 16px); white-space: nowrap; transition: background-color .16s steps(2, end); }
 .o-tabs button:first-child { border-radius: var(--o-hoek-knop); padding-left: 20px; clip-path: polygon(0 0, 100% 0, calc(100% - var(--loop)) 100%, 0 100%); }
 .o-tabs button:not(:first-child) { margin-left: calc(var(--kier) - var(--loop)); clip-path: polygon(var(--loop) 0, 100% 0, calc(100% - var(--loop)) 100%, 0 100%); }
-.o-tabs button:last-child { padding-right: 20px; border-radius: 3px; clip-path: polygon(var(--loop) 0, 100% 0, 100% 100%, 0 100%); }
+.o-tabs button:last-child { padding-right: 20px; border-radius: 999px; clip-path: polygon(var(--loop) 0, 100% 0, 100% 100%, 0 100%); }
 .o-tabs button:hover { background: var(--h-lijn, #E6E8EC); }
 .o-tabs button[aria-selected="true"] { background: var(--h-inkt); color: #FFFFFF; }
 .o-tabs button:focus-visible { clip-path: none; z-index: 1; outline: 2px solid var(--h-blauw, #25508B); outline-offset: 2px; }
@@ -239,7 +239,7 @@ html.h-js body.hal.o-aan .o-hoe .h-in { opacity: 1; animation: none; }
    blokje in inkt dat oversteekt als de volgende stap begint */
 html body.hal.hal .o-hoe .h-brug { right: calc(-1 * var(--o-gat)); left: auto; top: auto; bottom: calc(26px + (var(--o-beeld, 280px) - 8px) / 2); width: var(--o-gat); height: 1px; padding: 0; border-radius: 0; background: var(--h-lijn-sterk, #C5C8CF); box-shadow: none; transform: none; animation: none !important; display: block; z-index: 0; }
 html body.hal.hal .o-hoe .h-brug svg { display: none; }
-html body.hal.hal .o-hoe .h-brug::after { content: ""; position: absolute; left: 0; top: -3px; width: 7px; height: 7px; border-radius: 2px; background: var(--h-inkt); opacity: 0; }
+html body.hal.hal .o-hoe .h-brug::after { content: ""; position: absolute; left: 0; top: -3px; width: 7px; height: 7px; border-radius: 999px; background: var(--h-inkt); opacity: 0; }
 html body.hal.hal .o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .h-stap:nth-child(1) .h-brug::after,
 html body.hal.hal .o-hoe.u-s3:not([data-uitleg-staat="klaar"]) .h-stap:nth-child(2) .h-brug::after { animation: o-oversteek .62s cubic-bezier(.16, 1, .3, 1) both; }
 @keyframes o-oversteek { 0% { opacity: 1; transform: translateX(-3px); } 85% { opacity: 1; } 100% { opacity: 0; transform: translateX(calc(var(--o-gat) - 4px)); } }
@@ -353,7 +353,7 @@ html body.hal.hal .o-hoe[data-uitleg-staat] .o-ontleed { opacity: 1; visibility:
 /* ── lifestyle, stap 1: kies je look ────────────────────────────────────────────── */
 .o-kies-rij { list-style: none; margin: 0; padding: 0; position: absolute; inset: 14px 14px 60px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 10px 10px; }
 html body.hal.hal .o-kies-rij li { position: relative; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 6px; min-height: 0; max-width: none; }
-.o-kies-beeld { position: relative; display: grid; place-items: center; min-height: 0; border-radius: 4px; overflow: hidden; background: var(--h-vlak, #F4F5F7); box-shadow: inset 0 0 0 1px var(--h-lijn, #E6E8EC); transition: opacity .3s; }
+.o-kies-beeld { position: relative; display: grid; place-items: center; min-height: 0; border-radius: var(--r-klein); overflow: hidden; background: var(--h-vlak, #F4F5F7); box-shadow: inset 0 0 0 1px var(--h-lijn, #E6E8EC); transition: opacity .3s; }
 .o-kies-beeld img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 .o-kies-beeld i { font: 300 26px/1 var(--h-letter); font-style: normal; color: var(--h-inkt); }
 .o-kies-rij b { font: 600 12.5px/1.2 var(--h-letter); color: var(--h-inkt); transition: color .3s; }
@@ -390,7 +390,7 @@ html body.hal.hal .o-upload-rij { list-style: none; margin: 0; position: absolut
 html body.hal.hal .o-upload-rij li { display: grid; grid-template-columns: 26px auto minmax(40px, 1fr) 20px; align-items: center; gap: 10px; min-height: 38px; padding: 0 8px 0 6px; border-radius: 6px; max-width: none; font: 600 13.5px/1.2 var(--h-letter); color: var(--h-inkt); }
 .o-upload-ik { width: 26px; height: 26px; display: grid; place-items: center; color: var(--h-inkt); }
 .o-upload-ik svg { width: 15px; height: 15px; }
-.o-upload-balk { height: 4px; border-radius: 2px; background: var(--h-lijn, #E6E8EC); overflow: hidden; }
+.o-upload-balk { height: 4px; border-radius: 999px; background: var(--h-lijn, #E6E8EC); overflow: hidden; }
 .o-upload-balk s { display: block; height: 100%; background: var(--h-inkt); transform-origin: 0 50%; transform: scaleX(1); }
 .o-upload-vink { width: 20px; height: 20px; display: grid; place-items: center; color: var(--h-inkt); transition: transform .38s var(--h-veer, ease); }
 .o-upload-vink svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
@@ -409,7 +409,7 @@ html body.hal.hal .o-upload-rij li.o-upload-klaar { display: block; min-height: 
 .o-hoe[data-uitleg-staat="klaar"] .o-stijl-rij li { transition-delay: 0s !important; }
 
 /* ── video, stap 3: de plek voor de clip ────────────────────────────────────────── */
-.o-klip-plek { position: absolute; left: 50%; top: 14px; bottom: 52px; aspect-ratio: 9 / 16; transform: translateX(-50%); border-radius: 4px; display: grid; place-items: center; background: var(--h-vlak, #F4F5F7); box-shadow: inset 0 0 0 1px var(--h-lijn, #E6E8EC); color: var(--h-inkt); }
+.o-klip-plek { position: absolute; left: 50%; top: 14px; bottom: 52px; aspect-ratio: 9 / 16; transform: translateX(-50%); border-radius: var(--r-klein); display: grid; place-items: center; background: var(--h-vlak, #F4F5F7); box-shadow: inset 0 0 0 1px var(--h-lijn, #E6E8EC); color: var(--h-inkt); }
 .o-klip-plek i { width: 22px; height: 22px; display: grid; place-items: center; }
 .o-klip-plek svg { width: 22px; height: 22px; }
 
@@ -567,7 +567,7 @@ html body.hal.hal .o-hoe .o-fmt-vak .h-keur-rij > li img {
 html body.hal.hal .o-hoe .o-fmt-vak .h-keur-rij > li:nth-child(n) .h-vink { top: calc(max(0px, (100cqh - 100cqw / var(--o-r)) / 2) + 6px); right: calc(max(0px, (100cqw - 100cqh * var(--o-r)) / 2) + 6px); }
 /* rechtsonder klein welk formaat: mono, de gekozen in inkt; concentrisch in de hoek (24 − 12) */
 .o-fmt { position: absolute; right: 12px; bottom: 12px; z-index: 2; display: inline-flex; align-items: center; gap: 10px; height: 30px; padding: 0 11px;
-  border-radius: 3px 3px calc(var(--r-kaart, 24px) - 12px) 3px; font: 600 11.5px/1 var(--h-mono, 'IBM Plex Mono', monospace); letter-spacing: .04em; font-variant-numeric: tabular-nums; pointer-events: none; }
+  border-radius: 999px; font: 600 11.5px/1 var(--h-mono, 'IBM Plex Mono', monospace); letter-spacing: .04em; font-variant-numeric: tabular-nums; pointer-events: none; }
 .o-fmt b { font-weight: 600; color: var(--h-grijs, #636974); }
 .o-fmt b.is-eind { color: var(--h-inkt); }
 html.h-js body.hal .o-hoe[data-uitleg-staat]:not(.u-s3) .o-fmt b.is-eind { color: var(--h-grijs, #636974); }

@@ -1,6 +1,6 @@
 # Design
 
-> **Stand: 27 oktober 2026 (de voorpagina opnieuw ingedeeld, de balk rechthoekig, de gloed op de tweede toon: levering 78; het systeem staat in `docs/RUIMTE-EN-RUST.md`), 24 oktober 2026 (palet), 25 oktober 2026 (hoeken; de opening, de stroom, Hoe het werkt, de lagen, de knoppen en de iconen, levering 74; de opening opnieuw ingedeeld, de standen, Hoe het werkt compacter, verschijnen zonder snede en de balk als pil, levering 75 op 26 oktober); de rest 22 september 2026.** `KLEURENSCHEMA.md` draagt de
+> **Stand: 3 november 2026 (levering 86: het blauwe uur in de details; het logo in de snede, de inktknop vult zich met blauw, geen gloed meer onder een knop; zie "Het blauwe uur in de details" hieronder en `docs/KLEURENSCHEMA.md`), 27 oktober 2026 (de voorpagina opnieuw ingedeeld, de balk rechthoekig, de gloed op de tweede toon: levering 78; het systeem staat in `docs/RUIMTE-EN-RUST.md`), 24 oktober 2026 (palet), 25 oktober 2026 (hoeken; de opening, de stroom, Hoe het werkt, de lagen, de knoppen en de iconen, levering 74; de opening opnieuw ingedeeld, de standen, Hoe het werkt compacter, verschijnen zonder snede en de balk als pil, levering 75 op 26 oktober); de rest 22 september 2026.** `KLEURENSCHEMA.md` draagt de
 > kleuren; dit bestand draagt de rest van het systeem (elevatie, focus, motion,
 > layout, z-index, toegankelijkheid, en de lijst met wat we niet doen). Wijkt
 > de code van KLEURENSCHEMA.md af, dan volgt de code dat document.
@@ -17,12 +17,84 @@
 > Wat historie is, is als historie gemarkeerd: "Twee ingetrokken paletten" en
 > "Section 21" staan er om de REDENERING, niet om de waarden.
 >
-> **Hoeken: 25 oktober 2026.** De paragraaf "Hoeken" onder Foundations is de
-> regel van nu: kaarten 24 px rond aan alle vier de hoeken, grote vlakken 32, kleine
-> tegels 12, en de zachte hoek linksboven alleen nog op wat je bedient. De oude
-> regel ("zero, one token, no exceptions") is daar vervangen, niet doorgestreept.
+> **Hoeken: 4 november 2026 (levering 87).** De paragraaf "Hoeken" onder Foundations
+> is de regel van nu: wat je bedient is een pil, twee knoppen naast elkaar zijn één pil
+> met de snede ertussen, kaarten 24, grote vlakken 32, tegels 12, het inktblok houdt
+> zijn snede. De zachte hoek (25 oktober) is weg; wat daarover staat is geschiedenis.
+
+> **De metro en de lat: 4 november 2026 (levering 88).** Zie "De metro en de lat" hieronder.
 
 ---
+
+## De metro en de lat — 4 november 2026 (levering 88)
+
+Lijst 76 en 77. **De metro**: na de laptop valt het blauwe uur in tien schuine banen op de snede (53,13°) naar beneden
+weg, van rechts naar links als één golf die met de laptop meeloopt, met een sluiter van 0,07 s; dan is het wit en komt Wat
+we maken omhoog. Eén rit van 0,8 s die vanzelf loopt (de scroll start hem); terug scrollen laat hem terugrijden. Alles in `docs/RUST-80.md` §15 en
+`src/scripts/metro.js`. Dit is de enige beweging op de site die langer is dan ongeveer 0,6 s, op Lucas' uitdrukkelijke
+wens (*"een gemaakte animatie … metro gevoel met de motion blur"*).
+
+**De laptop in de rit (levering 88b).** Lucas: *"In de video lagged de laptop een beetje."* Tijdens de rit speelt de
+video niet meer: hij houdt beeld 86 vast en het doek schuift de laptop zelf naar links, elk schermbeeld, op de klok van de
+rit en met dezelfde sluiter als de banen. Zo bewegen het blauw en de laptop op één klok (lijst 77: *"smoother met
+elkaar"*). Gemeten in de video: vanaf beeld 76 schuift de laptop alleen, 38 beeldpunten per beeld op 1920.
+
+**De lat** (het aantal in het bestelformulier, stap 1 blok 02). Lucas: *"veel subtieler … het is nu 1 groot blok en kan
+veel simpeler en mooier dan dit."* Eén keuze is één ding: het getal (een getalveld zonder vak, in de kopletter, je kunt het
+typen) met het woord en het tarief, daaronder een schuif van 1 tot 20, daaronder de treden van de prijs. De treden zijn de
+snelknoppen en de prijslijst tegelijk; wat geldt is inkt en vet, de rest grijs (5,3 : 1), onder de muis een vlak. De lijn
+is 3 px (inkt tot het aantal, lijn sterk daarna), het knopje rond, 22 px, met de grond eromheen; de focus is blauw. Was:
+een blok met − 1 +, de knopjes 1 · 5 · 10 · 20 en rechts de prijslijst.
+
+## Het blauwe uur in de details — 3 november 2026 (levering 86)
+
+`docs/KLEURENSCHEMA.md`, "Levering 86", is leidend. Lijst 72: het logo **in de snede** (een fade van blauw
+diep `#1A4279` via blauw uur `#25508B` naar `#2D61A8`, langs de snede van het vlagje, 126,87°), alleen
+herkleurd, en onder de muis schommelt het licht. Het favicon wit op de snede. Kleine details krijgen een fade:
+de streep van het sectielabel, de streep onder een link (van blauw uur het wit in), de focusrand van een knop,
+de voortgang, de rand van een kaart onder de muis, de kier tussen twee knoppen, het inktblok (de nacht), het
+grote woordmerk onderin (de uitloop) en het vlagje dat vult.
+
+**De knoppen.** De gloed van onder is weg, bij alle knoppen (Lucas: *"dit voelt generiek en ai achtig"*). De
+inktknop staat in de nacht en vult zich onder de muis helemaal met de snede, vanuit de hoek rechtsonder;
+Bestellen staat in de snede en onder de muis schuift het licht erdoor; de lijnknop krijgt onder de muis een
+rand in de snede; de witte knop op inkt vult zich met blauw licht. Hoe: één verloop van twee (wit: drie) keer de
+knop, en alleen `background-position` schuift, 0,36 s (Bestellen 0,5 s). Minder beweging: zonder overgang.
+
+**De regel.** Alleen kleuren uit het schema. Een fade langs de snede (of recht in een streep), alleen op een
+detail, nooit als vlak van een sectie of kaart, nooit in een kop of woord, nooit op een icoon. Wit op elke stop
+van de snede 6,2 : 1 of meer. Bewaakt door `tests/blauw-uur-86.test.mjs`.
+
+Wat hieronder over het logo "in inkt, onder de muis naar blauw uur" staat, is daarmee vervangen; de tabel van
+de vijf kleuren blijft.
+
+## De posters en de ruimte — 4 november 2026 (levering 86)
+
+Lucas, 01:22: *"Posters moeten ook gebruik maken van de nieuwe lettertypes en ontwerp rules. Controleer de gehele
+website om te kijken of er nog meer ontwerp rules niet correct zijn toegepast en zorg dat er nooit
+elementen/texten te dicht tegen elkaar aan staan en consistentie is altijd belangrijk om na te gaan."*
+
+**Het deelplaatje** (`scripts/make-og.mjs` → `public/img/og-nl.png`, `og-en.png`, `npm run og`) staat nu in de
+letters van de site: de kop in VISUAILS Display Bold in hoofdletters (-0,01 em, regelhoogte 0,92, zoals elke
+kop in hoofdletters op de site), de eerste regel grijs `#636974`, de rest inkt; zo groot dat de langste regel in
+560 px past (hoogstens 64 px). Het woordmerk in de snede, de grond `#FBFCFF`. Onderaan het sectielabel: de
+schuine streep in de snede en IBM Plex Mono in hoofdletters (`VISUAILS.COM`). De foto staat 40 px rechts van
+de kop en is links helemaal vervloeid voordat hij de kop bereikt. De letters komen uit `public/fonts`.
+
+**De fotogids** (`scripts/lib/fotogids-html.mjs`, `scripts/handleiding.mjs` → `public/downloads`,
+`npm run handleiding`) volgt de pagina `/upload-guidelines` onderdeel voor onderdeel: het etiket als
+sectielabel 20 px boven de kop, de koppen in VISUAILS Display in hoofdletters, de tekst in DM Sans, de namen van
+de vier blokken in DM Sans met de rij `01 —— / 04` erboven, Nodig en Optioneel als statusplaatje (8 · 3 · 3 · 3,
+inkt of wit met een haarlijn), een vinkje uit de iconenkit, kaarten 24 rondom, de twee brede vlakken 32, en de
+vijf vragen in het ene inktblok uit de nacht met zijn snede rechtsonder. Geen pil met een stip en geen bolletjes
+meer. De contactregel staat onder de haarlijn van de voet (hij stond er 2 px boven).
+
+**De ruimte in het klein** (`docs/RUIMTE-EN-RUST.md` §2): tussen twee buren die allebei iets dragen minstens
+8 px, en cellen van één rij op dezelfde bovenlijn. Binnen een kaart of rij: een kleine kop (de naam van iets) en
+zijn zin 8 px, twee alinea's 12 px, een noot onder een rij, lijst of tegels 16 px, een etiket boven een
+paginakop 20 px. In `hal.css`: "LEVERING 86 · RUIMTE EN EENHEID". Gemeten met `kladblok/te-dicht.mjs` op elke
+pagina, NL en EN, op 1440 en 390. Het oude etiket met een stip boven de kop van een bestelpagina (`.s22 .etiket`)
+is nu het sectielabel.
 
 ## Het palet van nu: Blauw uur — 24 oktober 2026 (levering 68)
 
@@ -32,7 +104,7 @@ snijden, zoals het logo (lijst 55). Vijf kleuren:
 | Token | Waarde | Rol |
 |---|---|---|
 | `--h-wit` | `#FFFFFF` | de grond, de kaarten, de grond van elke foto |
-| `--h-inkt` | `#0F1217` | alle tekst, het logo, de knoppen, het ene inktblok per pagina (19,18:1) |
+| `--h-inkt` | `#0F1217` | alle tekst, de knoppen, het ene inktblok per pagina (19,18:1); het logo in één kleur |
 | `--h-blauw` | `#25508B` | blauw uur: één plek per scherm (Bestellen bovenin), het logo onder de muis, links, de focusrand (8,08:1) |
 | `--h-grijs` | `#636974` | alleen kleine tekst (5,52:1) |
 | `--h-lijn` | `#E6E8EC` | alleen scheiding: haarlijn, de rand van een kaart |
@@ -44,8 +116,8 @@ muis) en blauw licht `#80A7DD` (alleen op inkt). In global.css is `--accent` ink
 
 Een kaart is wit met een haarlijn. Eén inktblok per pagina, afgesneden op 53° (het €1-blok,
 of het slot onderaan). Geen verloop als vlak, geen glas, geen bewogen achtergrond, geen
-warme kleur. Het logo staat stil; onder de muis schommelt zijn kleur van inkt naar blauw uur
-en terug (3,6 s). Het palet van schema A (19 – 23 oktober, violet `#4400FF`) en de tabel
+warme kleur. Het logo staat stil; sinds levering 86 staat het in de snede en schommelt onder de
+muis het licht (3,6 s). Het palet van schema A (19 – 23 oktober, violet `#4400FF`) en de tabel
 hieronder (20 september) zijn daarmee afgeschreven en blijven staan als verantwoording.
 
 ## Het palet (sectie 22 — licht en donker, violet) — 20 september 2026 · INGETROKKEN 19 oktober 2026 (schema A)
@@ -140,7 +212,41 @@ samenvatting daarvan.
 
 ## Foundations
 
-### Hoeken — 25 oktober 2026
+### Hoeken — 4 november 2026 (levering 87)
+
+Lucas, 4 november 2026, 03:02: *"overal waar van toepassing super ronde hoeken … Bij sectie
+gedeeltes zoals de achtergrond van de laptop niet."* Zijn keuzes in lijst 74: **knop pil**,
+**paar snede**, **blok snede**, **kaart 24**.
+
+```css
+:root {
+  --r-kaart: 24px;   /* kaart, paneel, foto, beeldkader, modal, blok, tabel in een kader */
+  --r-vlak: 32px;    /* groot vlak, het inktblok, de drie abonnementen als één vorm */
+  --r-klein: 12px;   /* tegel, duimnagel, een rij in een paneel */
+  --hoek-knop: 999px;/* wat je bedient: een pil */
+}
+```
+
+- **Een pil**: elke knop (ook een link-knop), chip, pil, tab, segment, invulveld van één regel,
+  keuzelijst, status- en icoonplaatje, schakelaar, de balk met de bediening. Een icoonplaatje dat
+  vierkant is, wordt zo een rondje.
+- **Een paar** (en een rij gelijke knoppen) is één pil met de snede van 53° ertussen: de buitenkant
+  rond, de kant van de snede 0. Met de toets erop heft de focusrand de snede op.
+- **Het inktblok** houdt zijn snede rechtsonder; de andere drie hoeken zijn 32. De drie abonnementen op
+  /plans zijn één vorm: rond aan de buitenkant (32), de snede rechtsonder.
+- **Geen pil**: een tekstvak van meer regels (18), een vinkje (5), een keuzerondje (rond), een menu
+  (24), een rij in een menu (14). Tegels in een raster zijn rond aan alle vier de hoeken.
+- **Recht**: wat het hele scherm bedekt (banden, de voet, de achtergrond van de laptop).
+- **Concentrisch** blijft gelden voor wat geen pil is (een foto of tegel in de hoek van zijn kaart).
+
+Waar het staat: `--hoek-knop` in `global.css`, `public/account.css`, `public/admin.css` en
+`public/portal.css`; de waarden in de stijlbladen zelf (287 met de ene zachte hoek en 103 met harde
+hoeken van 2 tot 4 px zijn omgezet, zie `kladblok/LEVERING-87.md`); "LEVERING 87 · DE HOEKEN" onderaan
+`global.css` en `hal.css` voor de uitzonderingen; de mails (`src/lib/mailTemplate.js`) en de fotogids
+(`scripts/lib/fotogids-html.mjs`) als getal. `tests/hoekregel-browser` bewaakt het: nergens nog de
+oude zachte hoek, en elk bedieningsdeel van hoogstens 64 px is een pil (ook in het bestelformulier).
+
+### Hoeken — 25 oktober 2026 (geschiedenis sinds levering 87)
 
 Lucas, 25 oktober 2026: *"Wat ik overigens wel aan de style wil aanpassen is het 1 zachte
 hoek en de rest harde hoeken systeem voor alles. Ik wil dit alleen op hele specifieke
@@ -983,6 +1089,8 @@ rest van de homepagina."* Alles in `src/styles/voorpagina-rust.css`, alleen op d
 
 ## De knoppen — 25 oktober 2026 (levering 74)
 
+> Sinds levering 87 (4 november 2026) is de knop een pil; de rest van deze paragraaf geldt nog.
+
 48 px hoog (klein 40), letter 15 px, pijl 17 px, de ene zachte hoek (14 · 3 · 3 · 3). De
 inktknop heeft een dunne lichtrand bovenaan; de lijnknop een haarlijn in lijn sterk. Onder
 de muis komt een gloed in blauw uur van de onderrand op, in 0,32 s (`.h-knop::before`), in
@@ -1043,6 +1151,14 @@ overshoot is playfulness, and this brand's argument is control.
   gekozen knop; knoppen met de snede: `polygon()`. Studio wisselt zonder animatie. De pauzeknop gaat over in de
   driehoek (CSS `d`), het vinkje tekent zich in twee stappen (ook op het eigen vakje van de fotogids), en op de
   voorpagina kleurt één zin per woord van grijs naar inkt. Minder beweging: overal de eindstand meteen.
+- **De laptop van de opening** (levering 84, `docs/RUST-80.md` §12): een gestapelde video met twee banden (kleur en
+  dekking, zonder de lege bovenkant), hoogstens 2400 × 1700 zodat de videochip hem zelf uitpakt; het scherm staat
+  waar de video niet dekt, binnen per beeld gemeten hoeken; de beelden op het scherm met mipmaps. Glijden 700 ms.
+- **De golf in de video** (levering 85, `docs/RUST-80.md` §13): wat je voelt is de beweging in de video maal de
+  snelheid; de video zwelt zelf al aan, dus 4 × terwijl de klep dichtklapt, dan zacht naar 2,5 × terwijl de laptop het
+  beeld uit versnelt. Daarna wordt het podium wit, springt de pagina naar Wat we maken en komen de diensten omhoog
+  (0,4 s, 20 – 36 px, 40 ms na elkaar) alsof je in dezelfde sectie bent; zonder video zodra de sectie in beeld komt.
+  Alles bij elkaar ± 1,8 s.
 
 ---
 

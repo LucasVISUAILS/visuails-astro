@@ -20,7 +20,8 @@
 .m8 .m8-kop.h-kop { margin: 0; font: 700 clamp(32px, 4.44vw, 64px)/.92 var(--h-kopletter); letter-spacing: -.01em; text-transform: uppercase; color: var(--h-inkt); text-wrap: balance; }
 .m8 .m8-zin { --h-maat: 26em; margin: 18px 0 0; max-width: 26em; font: 370 clamp(16px, 1.25vw, 18px)/1.5 var(--h-letter); color: var(--h-grijs, #636974); text-wrap: pretty; }
 
-.m8-rij { margin: 64px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+/* .m8 ervoor (levering 88): .h-pagina ul zette de 64 px op 0, en dan raakte de broek de zin erboven */
+.m8 .m8-rij { margin: 64px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
 .m8-dienst { margin: 0; padding: 0; min-width: 0; }
 .m8 .m8-link { display: flex; flex-direction: column; align-items: center; text-align: center; color: var(--h-inkt); text-decoration: none; border-radius: 3px; }
 /* het product: onderaan op de lijn, zo hoog als de rij × zijn schaal */
@@ -48,7 +49,7 @@
 
 @media (max-width: 700px) {
   .m8.m8 { --m8-h: clamp(110px, 30vw, 160px); }
-  .m8-rij { gap: 12px; margin-top: 36px; }
+  .m8 .m8-rij { gap: 12px; margin-top: 36px; }
   .m8 .m8-naam { margin-top: 16px; font-size: 15px; gap: 5px; }
   .m8-pijl { font-size: 13px; }
   .m8 .m8-prijs { font-size: 12.5px; }
@@ -56,6 +57,29 @@
   .m8 .m8-regel.h-onderregel { max-width: 30ch; font-size: 12.5px; text-wrap: balance; }
   .m8-ook-kop { flex-basis: 100%; margin: 0 0 6px; text-align: center; }
 }
+
+/* ── DE SECTIE OPENT (levering 85, 3 november 2026; lijst 71) ────────────────────────────────────────────────
+   Lucas: "Daarna met de zelfde snappy feeling de volgende sectie openen met een animatie", in lijst 71 "zacht" (D), en
+   daarna: "eerst de pagina wit [...] en dat dan de services omhoog komen alsof je nog op dezelfde sectie zit". Na de
+   video springt de pagina hierheen terwijl alles in beeld wit is, en de sectie komt omhoog op de plek waar de laptop
+   stond: eerst de kop, dan de drie producten na elkaar (40 ms), dan de regels eronder; elk 0,4 s, 20 – 36 px omhoog
+   (2,2 vw), de dekking vol na 60 %, zacht uitlopend. Omhoog schuiven is hier zijn uitdrukkelijke wens; de rest van de
+   site komt zacht in beeld zonder te schuiven (levering 75).
+   - .m8-dicht zet het script (HalOpening80.astro) alleen als de inhoud van de sectie onder het scherm staat: zonder
+     script, bij minder beweging en als de sectie al in beeld staat, staat alles er gewoon;
+   - .m8-open met --m8-begin: na de video 60 ms (een witte tel), anders 0 (de sectie voor een vijfde in beeld: de
+     telefoon, de schuifbalk, een toets). --i is de plek in de rij (HalMaken80.astro). */
+.m8.m8-dicht :is(.m8-kopgroep, .m8-dienst, .m8-ook, .m8-regel) { opacity: 0; }
+.m8.m8-open :is(.m8-kopgroep, .m8-dienst, .m8-ook, .m8-regel) {
+  animation: m8-op .4s cubic-bezier(.22, .8, .2, 1) backwards;
+  animation-delay: calc(var(--m8-begin, 0ms) + var(--m8-na, 0ms));
+}
+.m8.m8-open .m8-dienst { --m8-na: calc(40ms + var(--i, 0) * 40ms); }
+.m8.m8-open :is(.m8-ook, .m8-regel) { --m8-na: 160ms; }
+@keyframes m8-op { from { opacity: 0; transform: translateY(clamp(20px, 2.2vw, 36px)); } 60% { opacity: 1; } to { opacity: 1; transform: none; } }
+
 @media (prefers-reduced-motion: reduce) {
   .m8 .m8-pijl .ik-schacht, .m8 .m8-pijl .ik-kop { transition: none; }
+  .m8.m8-dicht :is(.m8-kopgroep, .m8-dienst, .m8-ook, .m8-regel) { opacity: 1; }
+  .m8.m8-open :is(.m8-kopgroep, .m8-dienst, .m8-ook, .m8-regel) { animation: none; }
 }

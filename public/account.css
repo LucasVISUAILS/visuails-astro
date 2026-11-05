@@ -353,7 +353,7 @@
   --r-kaart: 24px;
   --r-vlak: 32px;
   --r-klein: 12px;
-  --hoek-knop: 14px 3px 3px 3px;
+  --hoek-knop: 999px; /* levering 87: een pil, zie global.css */
 
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   /* The four-step duration scale, copied from global.css for the same reason
@@ -1318,7 +1318,7 @@ input[type="search"], input[type="number"], input[type="password"], textarea, se
   color: var(--ink);
   background: var(--surface);
   border: 1px solid var(--line-strong);
-  border-radius: var(--r-md) 3px 3px 3px;
+  border-radius: 999px;
 }
 input[type="text"], input[type="email"], input[type="tel"], input[type="url"],
 input[type="search"], input[type="number"], input[type="password"] {
@@ -1557,7 +1557,7 @@ select { min-height: 38px; padding: 0 2.2rem 0 .65rem; }
 .bk-ch {
   position: relative; display: inline-flex; align-items: center; gap: .45rem;
   cursor: pointer; padding: .5rem .75rem;
-  border: 1px solid var(--line); border-radius: var(--r-md) 3px 3px 3px;
+  border: 1px solid var(--line); border-radius: 999px;
   background: var(--paper-2);
   transition: border-color .12s ease;
 }
@@ -1570,7 +1570,7 @@ select { min-height: 38px; padding: 0 2.2rem 0 .65rem; }
 .bk-ch-name { font-size: .92rem; }
 .bk-ch-flag {
   font-size: .72rem; letter-spacing: .02em; padding: .1rem .3rem;
-  border: 1px solid var(--line-strong); border-radius: var(--r-sm) 3px 3px 3px;
+  border: 1px solid var(--line-strong); border-radius: 999px;
   color: var(--ink-3);
 }
 /* ── DE VASTE BEELDVERHOUDING — 13 augustus 2026 ────────────────────────────
@@ -1662,7 +1662,7 @@ select { min-height: 38px; padding: 0 2.2rem 0 .65rem; }
 .bk-sw:hover { border-color: var(--line-strong); }
 .bk-sw:has(input:checked) { border-color: var(--teal); box-shadow: inset 0 0 0 1px var(--teal); }
 .bk-sw-chip {
-  height: 40px; border-radius: var(--r-sm) 3px 3px 3px; overflow: hidden;
+  height: 40px; border-radius: 999px; overflow: hidden;
   border: 1px solid var(--line-strong);
 }
 /* "No preference" is a real answer and needs to look like one rather than like
@@ -1700,7 +1700,7 @@ select { min-height: 38px; padding: 0 2.2rem 0 .65rem; }
 .fl-chip {
   display: inline-flex; align-items: center; gap: .4rem;
   padding: .38rem .7rem; border: 1px solid var(--line-strong);
-  border-radius: var(--r-md) 3px 3px 3px; background: transparent;
+  border-radius: 999px; background: transparent;
   font-size: .82rem; color: var(--ink-2); text-decoration: none;
   white-space: nowrap;
 }
@@ -1823,7 +1823,7 @@ form.login input[type="email"] {
    kaart die verder geen kader meer had — een boogje zonder doos eromheen. Een
    radius hoort bij een RAND of een VLAK; een cel heeft geen van beide. */
 .facts, .note, .panel, .sheet, .shot img, .thumb img, .box, .revision-note { border-radius: var(--r-kaart); }
-input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r-md) 3px 3px 3px; }
+input, textarea, select, .pill, .navlink, .field, .chip { border-radius: 999px; }
 /* Buttons are fully round since August 2026, at Lucas's direction — see the
    --r-pill note in src/styles/global.css for why buttons and nothing else.
    Hand-copied with the rest of the scale so the dashboard keeps matching the
@@ -2063,7 +2063,7 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
   align-self: center;
   display: inline-flex; align-items: center; gap: .45rem;
   padding: .34rem .7rem;
-  border: 1px solid var(--line-strong); border-radius: 11px 3px 3px 3px;
+  border: 1px solid var(--line-strong); border-radius: 999px;
   font-size: .74rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
   color: var(--ink-2); white-space: nowrap;
 }
@@ -2351,7 +2351,7 @@ details.ask { margin-top: 0; }
 .shot-actions .review-form .btn,
 .shot-actions details.ask > summary.btn {
   width: 100%; min-height: 32px; padding: .32rem .5rem;
-  font-size: .72rem; letter-spacing: .04em; border-radius: var(--r-sm, 6px) 3px 3px 3px;
+  font-size: .72rem; letter-spacing: .04em; border-radius: 999px;
   text-decoration: none; white-space: normal; line-height: 1.2;
 }
 @media (pointer: coarse) {
@@ -2386,7 +2386,7 @@ details.ask { margin-top: 0; }
    mag missen. */
 .shot-badge {
   position: absolute; left: .4rem; top: .4rem; z-index: 1;
-  padding: .18rem .42rem; border-radius: var(--r-sm, 5px) 3px 3px 3px;
+  padding: .18rem .42rem; border-radius: 999px;
   font-size: .72rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase;
   background: rgb(8 9 11 / .78);
 }
@@ -3208,7 +3208,7 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
   color: var(--ink);
   background: var(--btn-ghost-fill, rgb(255 255 255 / 0.08));
   border: 1px solid var(--line-strong);
-  border-radius: var(--r-md) 3px 3px 3px;
+  border-radius: 999px;
   cursor: pointer;
   transition: background .16s ease, border-color .16s ease;
 }
@@ -3307,7 +3307,7 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
   }
   .navlink {
     padding: .5rem .6rem; border-left: none; border-bottom: none;
-    border-radius: var(--r-md) 3px 3px 3px; font-size: .86rem;
+    border-radius: 999px; font-size: .86rem;
     display: flex; align-items: center; gap: .5rem; min-height: 38px;
   }
   .navlink.is-active {
@@ -3971,7 +3971,7 @@ main .lede, .main .lede { margin-bottom: 1.4rem; }
 .stand {
   display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
   min-height: 28px; padding: 0 .7rem;
-  border: 0; border-radius: 8px 3px 3px 3px;
+  border: 0; border-radius: 999px;
   font-family: var(--font-mono); font-stretch: var(--stretch-mono);
   font-size: 11.5px; line-height: 1; font-weight: 600; letter-spacing: .06em;
   text-transform: uppercase; text-decoration: none; white-space: nowrap;
@@ -4177,3 +4177,18 @@ html[data-thema="licht"] body ::selection { background: #25508B; color: #FFFFFF;
 /* De knop en de statuspil zoals op de site en in Studio (levering 57): de knop met één
    zachte hoek linksboven, de pil als plaatje in de vaste breedte-letter zonder bolletje. */
 html[data-thema="licht"] body .btn, html[data-thema="licht"] body:not(.has-shell) .authcard .btn { border-radius: var(--hoek-knop); }
+
+
+/* ══ LEVERING 86 · HET WOORDMERK IN DE SNEDE (3 november 2026, lijst 72, logo a en schommel a) ══
+   Zoals op de site en in Studio: het woordmerk in de fade van blauw diep naar #2D61A8 langs de snede
+   (alleen herkleurd), de schommel naar dezelfde fade een stap lichter. De fades staan in het woordmerk
+   zelf (woordmerkSvg, src/data/wordmarkPath.js).
+   Op de kaarten van het account alleen in het lichte thema (donker is hier de standaard); donker blijft het woordmerk licht. */
+html[data-thema="licht"] .mark .mk .mk-fill { fill: url(#vs-wi-snede); }
+html[data-thema="licht"] .mark { --mk-kleur: url(#vs-wi-licht); }
+
+/* LEVERING 87 · DE HOEKEN — 4 november 2026: knoppen en invulvelden zijn een pil (zie src/styles/global.css);
+   een tekstvak van meer regels en een vinkje worden het niet. */
+textarea { border-radius: 18px !important; }
+input[type="checkbox"] { border-radius: 5px !important; }
+input[type="radio"] { border-radius: 50% !important; }

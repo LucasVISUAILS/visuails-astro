@@ -11,8 +11,10 @@
    (scripts/uitknippen.py, scripts/rust-beelden.mjs): de hoodie voor productfoto's, de jeans voor
    lifestyle, de sokken voor video. Ze staan op één lijn, elk zo hoog dat ze even zwaar ogen.
 
-   De opening glijdt na de video naar deze sectie en zet hem in het midden van het scherm (doel2 in
-   HalOpening80.astro): daarom past hij op 1440 × 900 helemaal onder de balk.
+   De opening springt na de video naar deze sectie en zet hem in het midden van het scherm (doel2 in
+   HalOpening80.astro): daarom past hij op 1440 × 900 helemaal onder de balk. Dan komt de sectie omhoog op de plek
+   waar de laptop stond (levering 85, lijst 71; de beweging in maken-80.css, het moment in HalOpening80.astro); --i is
+   de plek in de rij.
    ═══════════════════════════════════════════════════════════════════════════════ */
 import '../styles/maken-80.css';
 import { localizedPath } from '../i18n/ui.js';
@@ -52,7 +54,7 @@ const srcset = (n: string, maten: number[], ext: string) => maten.map((b) => `/i
       const B = BEELD[i];
       const sizes = `(max-width: 700px) 30vw, ${Math.round(340 * B.schaal * B.b / B.h)}px`;
       return (
-        <li class="m8-dienst">
+        <li class="m8-dienst" style={`--i:${i}`}>
           <a href={lp(href)} class="m8-link">
             <span class="m8-beeld" style={`--s:${B.schaal}`}>
               <picture>

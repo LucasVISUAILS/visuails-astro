@@ -310,7 +310,7 @@ const C = nl
     font-size: .72rem; letter-spacing: .04em;
     color: var(--ink-3);
     padding: .18rem .5rem;
-    border: 1px solid var(--line); border-radius: 3px 11px 3px 3px;  /* rechtsboven in het scherm (24), 14 en 11 van de rand */
+    border: 1px solid var(--line); border-radius: 999px;  /* rechtsboven in het scherm (24), 14 en 11 van de rand */
   }
 
   .fg-body { padding: .9rem; display: grid; gap: .8rem; }
@@ -344,7 +344,7 @@ const C = nl
      Lucas: "De Goedkeuren knoppen zijn niet consistent." */
   .fg-state.is-ok {
     display: inline-flex; align-items: center; justify-content: center; gap: .3rem; justify-self: stretch;
-    padding: .26rem .5rem; border-radius: 8px 3px 3px 3px;
+    padding: .26rem .5rem; border-radius: 999px;
     background: color-mix(in srgb, var(--accent) 10%, var(--surface)); color: var(--accent-text); white-space: nowrap;
   }
   .fg-state.is-ok svg { width: 11px; height: 11px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -389,11 +389,11 @@ const C = nl
     padding: .45rem .55rem;
     font-size: .74rem; line-height: 1.55; color: var(--ink-2);
     background: var(--surface);
-    border: 1px solid var(--line-strong); border-radius: 3px;
+    border: 1px solid var(--line-strong); border-radius: 999px;
   }
   /* De knop ligt linksonder in het vak (24), 11 en 10 px van de rand: die hoek loopt
      mee, 24 - 10,5 (25 oktober 2026; was lichte hoeken langs een rechte rand). */
-  .fg-ask .fg-btn { border-radius: 3px 3px 3px 13px; }
+  .fg-ask .fg-btn { border-radius: 999px; }
 
   .fg-fine { margin: 0; font-size: .74rem; line-height: 1.55; color: var(--ink-3); }
 

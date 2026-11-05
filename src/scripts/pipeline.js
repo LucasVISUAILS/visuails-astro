@@ -1828,9 +1828,20 @@ function bindQty() {
     select.value = v;
     select.dispatchEvent(new Event('change', { bubbles: true }));
   };
+  /* De lat (levering 88, lijst 76): de schuif en het getalveld volgen elkaar; het woord erachter telt mee. */
+  const lat = q('[data-pl-qty-lat]', box);
+  const woord = q('[data-pl-qty-woord]', box);
   const paint = () => {
     const n = Number.parseInt(select.value, 10);
     qa('[data-pl-qty-set]', box).forEach((b) => b.classList.toggle('is-on', Number(b.dataset.plQtySet) === n));
+    if (lat) {
+      const v = Number.isInteger(n) ? clamp(n) : 1;
+      if (lat.value !== String(v)) lat.value = String(v);
+      lat.style.setProperty('--p', `${((v - 1) / Math.max(1, max - 1)) * 100}%`);
+      lat.classList.toggle('is-leeg', !Number.isInteger(n));
+      lat.setAttribute('aria-valuetext', Number.isInteger(n) ? `${v} ${v === 1 ? (woord?.dataset.een || '') : (woord?.dataset.meer || '')}`.trim() : '—');
+    }
+    if (woord) woord.textContent = n === 1 ? (woord.dataset.een || '') : (woord.dataset.meer || '');
     const dec = q('[data-pl-qty-dec]', box);
     const inc = q('[data-pl-qty-inc]', box);
     if (dec) dec.disabled = Number.isInteger(n) && n <= 1;
@@ -1858,6 +1869,7 @@ function bindQty() {
   if (dec) dec.addEventListener('click', () => apply((Number.parseInt(select.value, 10) || 2) - 1));
   if (inc) inc.addEventListener('click', () => apply((Number.parseInt(select.value, 10) || 0) + 1));
   qa('[data-pl-qty-set]', box).forEach((b) => b.addEventListener('click', () => apply(Number(b.dataset.plQtySet))));
+  if (lat) lat.addEventListener('input', () => apply(Number.parseInt(lat.value, 10) || 1));
   const more = q('[data-pl-qty-more]');
   if (more && moreVal) {
     more.addEventListener('click', () => {
@@ -2236,6 +2248,15 @@ function wkOverzicht(kind, n, quote, voorrang) {
     if (t) t.textContent = (boven ? lever.dataset.wkBoven : lever.dataset.wkOnder) || t.textContent;
   }
   const rate = kind && geldig ? rateFor(kind, n) : null;
+  /* levering 88: het tarief naast het getal, boven de lat */
+  qa('[data-pl-qty-tarief]').forEach((el) => {
+    el.textContent = '';
+    if (rate === null || rate === undefined) return;
+    const [voor, na] = String(cfg.werk.hoekPer || '{prijs} per product').split('{prijs}');
+    const b = document.createElement('b');
+    b.textContent = euro(rate);
+    el.append(voor || '', b, na || '');
+  });
   qa('[data-wk-sum-producten]').forEach((el) => {
     el.textContent = rate !== null && rate !== undefined ? `${n} × ${euro(rate)}` : '—';
   });

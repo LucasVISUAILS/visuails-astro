@@ -319,7 +319,7 @@ export const statusPil = (status, label) => {
     can: [C.stCanFill, C.stCanEdge, C.stCanInk],
   }[stand(status)];
   const [vul, rand, inkt] = k;
-  return `<span style="display:inline-block;padding:5px 11px;border:1px solid ${rand};border-radius:8px 3px 3px 3px;`
+  return `<span style="display:inline-block;padding:5px 11px;border:1px solid ${rand};border-radius:999px;`
     + `background:${vul === 'transparent' ? 'none' : vul};font-family:${FONT};font-size:12px;line-height:16px;`
     + `font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${inkt};white-space:nowrap">`
     + `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${inkt};margin-right:6px;vertical-align:1px"></span>`
@@ -327,12 +327,11 @@ export const statusPil = (status, label) => {
 };
 
 /** The green call-to-action. A table cell with bgcolor, which Outlook honours. */
-/* De hoek is een argument sinds 25 oktober 2026: in het betaalvak ligt de knop in de
-   ronde hoek linksonder van het vak en loopt die hoek concentrisch mee (zie payPanel). */
-const knop = (href, label, hoek = '14px 3px 3px 3px') =>
+/* Levering 87 (4 november 2026, lijst 74): de knop is een pil, zoals op de site (--hoek-knop: 999px). Lucas
+   koos "super ronde hoeken" in plaats van de ene zachte hoek. De hoek blijft een argument. */
+const knop = (href, label, hoek = '999px') =>
   `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-    <!-- Levering 55 (m-knop): één zachte hoek linksboven, zoals de knop op de site.
-         Sinds 25 oktober 2026 houdt alleen wat je bedient die zachte hoek; de knop dus wel.
+    <!-- Levering 87: een pil, zoals de knop op de site (tot levering 86: één zachte hoek linksboven).
          Outlook op Windows kent border-radius niet en toont hem recht; dat is goed zo. -->
     <td bgcolor="${C.green}" align="center" style="background:${C.green};padding:15px 24px;border-radius:${hoek}">
       <!-- De letter op het accent is WIT sinds 20 september: zwart op violet
@@ -353,8 +352,7 @@ export const button = (href, label) =>
     oktober 2026 zonder de violette rand links (violet is voor de knop).
     25 oktober 2026 (Lucas: "De hoeken van kaarten worden gewoon heel rond"): het vak
     is een kaart, 24 px rond aan alle vier de hoeken, zoals --r-kaart op de site. De
-    knop ligt linksonder, 24 px van de linkerrand en 22 px van de onderrand, dus in de
-    ronde hoek: die hoek loopt mee (24 - 23 = 1, het minimum is 8), de andere drie licht. */
+    knop ligt linksonder; sinds levering 87 is hij een pil, net als elke andere knop. */
 export const payPanel = ({ label, amount, sub, href, cta }) =>
   `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.tintBg}" style="background:${C.tintBg};margin:8px 0 0;border-radius:24px">
     <tr>
@@ -362,7 +360,7 @@ export const payPanel = ({ label, amount, sub, href, cta }) =>
         <p style="margin:0 0 2px;font-family:${MONO};font-size:12px;letter-spacing:.1em;color:${C.tintInk};text-transform:uppercase">${esc(label)}</p>
         <p style="margin:0 0 4px;font-size:26px;font-weight:700;color:${C.head}">${esc(amount)}</p>
         ${sub ? `<p style="margin:0 0 16px;font-size:12px;line-height:1.5;color:${C.muted}">${sub}</p>` : ''}
-        ${href ? knop(href, cta, '3px 3px 3px 8px') : ''}
+        ${href ? knop(href, cta) : ''}
       </td>
     </tr>
   </table>`;

@@ -132,7 +132,10 @@ for (const [breed, hoog] of [[1440, 900], [390, 844]]) {
   };
   const exact = (px) => px.every((p) => p && p[0] === GROND[0] && p[1] === GROND[1] && p[2] === GROND[2]);
   /* de opening (levering 80): de laptop staat op de Nevel-fade; daarboven, naast de titel, is het de grond */
-  const op = await meet('/nl/', [['.o8-held', 0.03, 0.40], ['.o8-held', 0.97, 0.60], ['.o8-held', 0.50, 0.04]]);
+  /* levering 87 (fade f2): de fade loopt van wit naar blauw uur over het hele scherm en begint halverwege de titel
+     al een tikje; naast de titel meten we daarom op 40 %. De titel staat lager, dus het vak begint achter de balk:
+     boven de titel meten we onder de balk (12 %) */
+  const op = await meet('/nl/', [['.o8-held', 0.03, 0.40], ['.o8-held', 0.97, 0.40], ['.o8-held', 0.50, 0.12]]);
   ok('  de opening: naast en boven de titel is het exact de grond (#FBFCFF)', exact(op), JSON.stringify(op));
   /* de laptop op /catalog: linksboven in de foto en onder de hand links (niet onder een ballon: op de
      telefoon staat "Wat jij stuurt" onderaan in het midden) */

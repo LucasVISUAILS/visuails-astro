@@ -1,5 +1,18 @@
 /**
- * VISUAILS — de hoekregel (levering 56, 17 oktober 2026; nieuwe vorm 25 oktober 2026).
+ * VISUAILS — de hoekregel (levering 56, 17 oktober 2026; nieuwe vorm 25 oktober 2026; de pil 4 november 2026).
+ *
+ * LEVERING 87 (4 november 2026, lijst 74). Lucas, 03:02: "overal waar van toepassing super ronde hoeken
+ * … Bij sectie gedeeltes zoals de achtergrond van de laptop niet." Zijn keuzes: knop PIL, paar SNEDE,
+ * blok SNEDE, kaart 24. De zachte hoek is weg; wat hieronder over de zachte hoek op knoppen staat (A en
+ * C) is geschiedenis. Nu bewaakt deze toets:
+ *   A. Nergens nog de oude vorm: een zware hoek (≥ 5 px, minstens twee keer de kleinste) naast lichte
+ *      hoeken (meer dan 0 en hoogstens 4 px), ook niet op knoppen, tenzij die zware hoeken precies
+ *      concentrisch met hun vlak meelopen. Een 0 is geen lichte hoek: dat is de kant van de snede in
+ *      een paar, of een rand.
+ *   B. Concentrisch, zoals hieronder (niet voor een pil of rondje).
+ *   D. Wat je bedient (een knop, link-knop, invulveld van één regel, keuzelijst, chip of pil) en
+ *      hoogstens 64 px hoog is, is een pil: elke hoek die niet 0 is, is minstens de halve hoogte.
+ *      Een vinkje, een keuzerondje en een tekstvak van meer regels zijn geen pil.
  *
  *   node tests/hoekregel-browser.test.mjs        (npm run test:hoekregel; draai eerst de build)
  *
@@ -111,18 +124,29 @@ function meet(buiten) {
      keuzekaart (een label om een rondje), is een object en geen knop. */
   const bediening = (el) => el.matches('button, input, select, textarea, [role="button"], [role="tab"], [role="switch"]')
     || (el.tagName === 'A' && /(^|[\s-])(knop|btn|cta)/.test(el.className || ''));
-  const uit = { gezien: 0, groot: 0, fout: [], zacht: [] };
+  const uit = { gezien: 0, groot: 0, fout: [], zacht: [], knoppen: 0, geenPil: [] };
+  const pilDeel = (el) => (el.matches('button, select, [role="button"], [role="tab"], input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="range"]):not([type="color"]):not([type="file"])')
+    || (el.tagName === 'A' && /(^|[\s-])(knop|btn|cta)/.test(el.className || ''))
+    || /(^|\s)(h-chip|h-pil|h-knop|knop|btn|chip|pill|stand)(\s|$)/.test(el.className || ''))
+    && !el.matches('.o8-kies, .h-lv-box, [aria-hidden="true"] *');
   for (const el of document.querySelectorAll('body *')) {
     if (el.closest('svg') && el.tagName.toLowerCase() !== 'svg') continue;
     const r = el.getBoundingClientRect(); if (r.width < 10 || r.height < 10) continue;
     const cs = getComputedStyle(el); if (cs.visibility === 'hidden' || cs.display === 'none' || cs.opacity === '0') continue;
     const gedraaid = (cs.rotate && cs.rotate !== 'none' && parseFloat(cs.rotate) !== 0) || (/^matrix\(/.test(cs.transform) && Math.abs(parseFloat(cs.transform.split(',')[1])) > 0.001);
     const rr = radii(cs, r.width); const nz = rr.filter((v) => v > 0.5);
+    /* D: een bedieningsdeel van hoogstens 64 px is een pil (wat zichtbaar een vorm heeft) */
+    if (r.height <= 64 && pilDeel(el) && dekt(cs) && !el.closest('.h-vx-speel')) {   // D geldt ook in het bestelformulier
+      uit.knoppen++;
+      const half = Math.min(r.width, r.height) / 2 - 0.75;
+      const gesneden = cs.clipPath && cs.clipPath !== 'none';   // in een rij met de snede: de kanten van de snede zijn 0
+      if ((!nz.length && !gesneden) || nz.some((v) => v < half)) uit.geenPil.push(`${naam(el)} ${Math.round(r.width)}x${Math.round(r.height)}: ${rr.map((v) => Math.round(v * 10) / 10).join('/')}`);
+    }
     if (!nz.length) continue;
     const lo = Math.min(...nz); const hi = Math.max(...rr);
     if (hi >= Math.min(r.width, r.height) / 2 - 0.5 || hi >= 400) continue;   // een pil of rondje
     const zachtVorm = hi >= Math.max(lo * 2, lo + 3) && hi >= 5;
-    const groot = r.width > 160 && r.height > 100 && !bediening(el);
+    const groot = (r.width > 160 && r.height > 100 && !bediening(el)) || zachtVorm;   // levering 87: ook knoppen
     const binnen = !el.closest(buiten) && !gedraaid;
     if (!binnen && !(zachtVorm && groot)) continue;
     /* het vlak eromheen */
@@ -178,7 +202,7 @@ function meet(buiten) {
 
 const EXECUTABLE = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 const browser = await chromium.launch(existsSync(EXECUTABLE) ? { executablePath: EXECUTABLE } : {});
-let totaal = 0, grootTotaal = 0;
+let totaal = 0, grootTotaal = 0, knopTotaal = 0;
 try {
   for (const w of BREEDTES) {
     const ctx = await browser.newContext({ viewport: { width: w, height: 900 }, reducedMotion: 'reduce' });
@@ -186,16 +210,18 @@ try {
     for (const p of PAGINAS) {
       await page.goto(BASIS + p, { waitUntil: 'load' });
       await page.waitForTimeout(150);
-      const { gezien, groot, fout, zacht } = await page.evaluate(meet, BUITEN);
-      totaal += gezien; grootTotaal += groot;
-      check(`${p} op ${w}: ${groot} grote objecten, geen zachte hoek`, zacht.length === 0, zacht.slice(0, VEEL).join(' · '));
+      const { gezien, groot, fout, zacht, knoppen, geenPil } = await page.evaluate(meet, BUITEN);
+      totaal += gezien; grootTotaal += groot; knopTotaal += knoppen;
+      check(`${p} op ${w}: ${groot} objecten, nergens de oude zachte hoek`, zacht.length === 0, zacht.slice(0, VEEL).join(' · '));
+      check(`${p} op ${w}: ${knoppen} knoppen en velden, elk een pil`, geenPil.length === 0, geenPil.slice(0, VEEL).join(' · '));
       check(`${p} op ${w}: ${gezien} in een vlak, de hoek volgt het vlak`, fout.length === 0, fout.slice(0, VEEL).join(' · '));
     }
     await ctx.close();
   }
   /* Zonder elementen in een vlak zou alles hierboven vanzelf slagen. */
   check(`er is iets om te meten (${totaal} keer een element in een vlak)`, totaal > 300);
-  check(`er zijn grote objecten om na te kijken (${grootTotaal})`, grootTotaal > 1000);
+  check(`er zijn objecten om na te kijken (${grootTotaal})`, grootTotaal > 1000);
+  check(`er zijn knoppen en velden om na te kijken (${knopTotaal})`, knopTotaal > 600);
 } finally {
   await browser.close();
   server.close();

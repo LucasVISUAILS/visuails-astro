@@ -1769,7 +1769,7 @@ const kaarten = planList.map((p) => {
   .ps-plan-jaar { font-size: .84rem; color: var(--accent-bright, var(--accent)); }
   /* De beschikbaarheid (24 september 2026). Geen violet: dit is informatie,
      geen actie. Een vol plan blijft leesbaar maar is zichtbaar niet te kiezen. */
-  .ps-plek { margin: 1.5rem 0 1.25rem; padding: .75rem 1rem; border: 1px solid var(--line); border-radius: 10px 3px 3px 3px; font-size: .95rem; color: var(--ink-2); }
+  .ps-plek { margin: 1.5rem 0 1.25rem; padding: .75rem 1rem; border: 1px solid var(--line); border-radius: 999px; font-size: .95rem; color: var(--ink-2); }
   .ps-plek.is-deels, .ps-plek.is-niets { color: var(--ink); border-color: currentColor; }
   .ps-plan-vol { display: inline-block; align-self: flex-start; justify-self: start; width: fit-content; margin-top: .45rem; padding: .15rem .55rem; border: 1px solid currentColor; border-radius: var(--hoek-knop); font-size: .8rem; font-weight: 600; color: var(--ink); }
   .ps-plan-vol[hidden] { display: none; }
@@ -1804,7 +1804,7 @@ const kaarten = planList.map((p) => {
   .maat-veld label { font-size: .74rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
   .maat-veld input[type="number"] {
     width: 100%; padding: .6rem .9rem;
-    border-radius: var(--r-md) 3px 3px 3px; border: 1px solid var(--line-strong);
+    border-radius: 999px; border: 1px solid var(--line-strong);
     background: var(--paper); color: inherit; font: inherit;
   }
   .maat-veld input[type="number"]::placeholder { color: var(--ink-4); }
@@ -1851,7 +1851,7 @@ const kaarten = planList.map((p) => {
      lichte kleur en draagt geen kleine letters — zie de noot bij het YOURS-etiket
      in ModelPicker.astro, waar dezelfde fout stond. */
   .ps-term-label {
-    padding: .12rem .5rem; border-radius: 11px 3px 3px 3px; background: var(--accent); color: var(--on-accent, #FFFFFF);
+    padding: .12rem .5rem; border-radius: 999px; background: var(--accent); color: var(--on-accent, #FFFFFF);
     font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap;
   }
   .ps-term-sub { font-size: .88rem; line-height: 1.5; color: var(--ink-2); }
@@ -1970,7 +1970,7 @@ const kaarten = planList.map((p) => {
   .ps-veld input, .ps-veld select {
     font: inherit; font-size: .95rem; color: var(--ink);
     background: var(--surface, #fff);
-    border: 1px solid var(--line-strong); border-radius: var(--r-sm, 8px) 3px 3px 3px;
+    border: 1px solid var(--line-strong); border-radius: 999px;
     padding: .55rem .7rem; min-height: 44px; width: 100%;
   }
   .ps-veld input:focus-visible, .ps-veld select:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }

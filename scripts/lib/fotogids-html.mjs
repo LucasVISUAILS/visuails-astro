@@ -40,11 +40,24 @@
  * kiest), dus in de gids nergens: de stip, de pil "nodig", de aanwijzers in de
  * tekening en het vlak met de vijf vragen zijn zwart (--violet heet nog zo, zodat de
  * regels hieronder niet veranderen). Het lichte deel van de kop blijft inkt 3, #616161.
+ *
+ * LEVERING 86 · DE LETTERS EN REGELS VAN DE SITE (4 november 2026). Lucas, 01:22: *"Posters moeten ook
+ * gebruik maken van de nieuwe lettertypes en ontwerp rules."* Dus het vel volgt nu de pagina
+ * /upload-guidelines, onderdeel voor onderdeel: de koppen in VISUAILS Display Bold in hoofdletters (-0,01 em,
+ * regelhoogte 0,92), de tekst in DM Sans, het etiket als sectielabel (de schuine streep in de snede en IBM Plex
+ * Mono in hoofdletters, 20 px boven de kop); de namen van de vier blokken in DM Sans (zoals de h3 op de pagina)
+ * met de rij "01 —— / 04" erboven; Nodig en Optioneel als statusplaatje (sinds levering 87 een pil, zoals op de site) en
+ * geen pil met een stip meer; een vinkje uit de iconenkit in plaats van een bolletje. De hoekregel van
+ * 25 oktober: kaarten 24 rondom, de twee brede vlakken 32, de foto in de hoek van zijn kaart concentrisch (8).
+ * Het vlak met de vijf vragen is het ene inktblok: de Inkt-fade uit de nacht (#0F1217 tot 38 %, #172945,
+ * #1A4279) langs de snede, rechtsonder zijn eigen snede op 53° (30 × 40). Ruimte: een kop en zijn zin 8 px,
+ * twee alinea's 12 px, regels in een lijst 8 px uit elkaar; niets staat tegen elkaar aan.
  */
 import { createHash } from 'node:crypto';
 import { fotogids } from '../../src/data/fotogids.js';
 import { WHATSAPP_DISPLAY } from '../../src/data/whatsapp.js';
 import { WOORDMERK } from '../../src/data/woordmerk.js';
+import { IKOON } from '../../src/data/iconen.js';
 
 export const BESTAND = { nl: 'visuails-fotogids-nl.pdf', en: 'visuails-fotogids-en.pdf' };
 
@@ -71,10 +84,18 @@ const VEL = {
 
 /* Het woordmerk, letterlijk uit src/data/woordmerk.js. Nooit natekenen — alleen de
    kleur mag anders zijn. De verschuiving staat in een <g> en niet in de viewBox:
-   zie de kop van woordmerk.js. */
+   zie de kop van woordmerk.js. Sinds levering 86 (3 november 2026, lijst 72, logo a) in de snede: de
+   fade van blauw diep via blauw uur naar #2D61A8 langs de snede, in de maten van de tekening (de
+   <g> zet het pad terug op zijn eigen maten, dus dezelfde coördinaten als #vs-w-snede op de site). */
 const MERK = `<svg class="woordmerk" viewBox="0 0 ${WOORDMERK.breed} ${WOORDMERK.hoog}" role="img" aria-label="VISUAILS">
-  <g transform="translate(0 ${(WOORDMERK.hoog * (1 - WOORDMERK.onder)).toFixed(2)})"><path fill-rule="evenodd" d="${WOORDMERK.d}" /></g>
+  <defs><linearGradient id="vs-fg-snede" gradientUnits="userSpaceOnUse" x1="0" y1="-797.25" x2="3367.43" y2="1728.32"><stop offset="0" stop-color="#1A4279"/><stop offset=".55" stop-color="#25508B"/><stop offset="1" stop-color="#2D61A8"/></linearGradient></defs>
+  <g transform="translate(0 ${(WOORDMERK.hoog * (1 - WOORDMERK.onder)).toFixed(2)})"><path fill="url(#vs-fg-snede)" fill-rule="evenodd" d="${WOORDMERK.d}" /></g>
 </svg>`;
+
+/* De streep van het sectielabel (D1, levering 86): het vlagje van de V in de snede, zoals op de site. */
+const STREEP = `<svg class="streep" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="vs-fg-streep" gradientUnits="userSpaceOnUse" x1="5.98" y1="11.5" x2="14.17" y2="17.64"><stop offset="0" stop-color="#1A4279"/><stop offset=".55" stop-color="#25508B"/><stop offset="1" stop-color="#2D61A8"/></linearGradient></defs><path fill="url(#vs-fg-streep)" d="M19.75 10.2L17.05 13.8L4.25 13.8L6.95 10.2Z"/></svg>`;
+/* Het vinkje uit de iconenkit (src/data/iconen.js), in de kleur van de tekst. */
+const VINK = `<svg class="vink" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="${IKOON.vink}"/></svg>`;
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -115,73 +136,81 @@ function css(fonts) {
   return `
 ${fonts}
 :root {
-  --inkt: #0F1217; --inkt-2: #0F1217; --inkt-3: #636974; --violet: #0F1217; --violet-diep: #0F1217; /* schema A: zie de kop */
-  --mist: #F4F5F7; --nevel: #F4F5F7; --lijn: #E6E8EC; --wit: #FFFFFF;
-  --letter: "Urbanist Variable", system-ui, sans-serif;
+  --inkt: #0F1217; --inkt-3: #636974; --lijn: #E6E8EC; --wit: #FFFFFF;
+  --kop: "VISUAILS Display", "DM Sans", system-ui, sans-serif;
+  --letter: "DM Sans", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+  --r-kaart: 24px; --r-vlak: 32px;
+  --nacht: #0F1217 linear-gradient(126.87deg, #0F1217 0%, #0F1217 38%, #172945 72%, #1A4279 100%);
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
 body {
-  font-family: var(--letter); color: var(--inkt); background: var(--wit);
+  font-family: var(--letter); font-weight: 370; color: var(--inkt); background: var(--wit);
   font-size: 9.6pt; line-height: 1.45; -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
 .blad { width: 210mm; height: 297mm; position: relative; overflow: hidden; }
-.binnen { padding: 0 14mm; }
-
-/* ── DE KOP: woordmerk links, de pil rechts ───────────────────────────────── */
-.balk { display: flex; align-items: center; justify-content: space-between; padding: 9mm 14mm 0; }
-.woordmerk { display: block; height: 4.6mm; width: auto; fill: var(--inkt); }
-.pil-kop { display: inline-flex; align-items: center; gap: 2.2mm; height: 7mm; padding: 0 3.6mm 0 2.6mm; border-radius: 99mm; background: var(--mist); font-size: 9.2pt; font-weight: 600; color: var(--inkt); }
-.pil-kop::before { content: ""; width: 1.7mm; height: 1.7mm; border-radius: 50%; background: var(--violet); box-shadow: 0 0 0 .9mm var(--wit); }
-
-h1 { font-weight: 500; font-size: 25pt; line-height: 1.04; letter-spacing: -.025em; margin: 7mm 0 0; text-wrap: balance; }
-h1 .l { color: var(--inkt-3); font-weight: 400; }
-h2 { font-weight: 600; font-size: 12.5pt; line-height: 1.15; letter-spacing: -.01em; margin: 0; }
+.binnen { padding: 0 12mm; }
 p { margin: 0; }
-.lead { color: var(--inkt-2); max-width: 165mm; margin-top: 3mm; font-size: 10.6pt; line-height: 1.45; }
 
-/* ── PER PRODUCT: de vier vakken uit shots.js, op een nevelvlak ────────────── */
-.vakken { margin: 5.5mm 0 0; padding: 4.4mm 5.2mm 4.8mm; background: var(--nevel); border-radius: 5mm; }
-.vakken-kop { margin-bottom: 3.2mm; }
-.vak-rij { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5mm; list-style: none; margin: 0; padding: 0; }
-.vak b { font-weight: 600; font-size: 10.6pt; letter-spacing: -.01em; }
-.vak-kop { display: flex; align-items: center; justify-content: space-between; gap: 2mm; margin-bottom: 1.8mm; }
-.pil { display: inline-flex; align-items: center; height: 5.4mm; font-size: 8.8pt; font-weight: 600; letter-spacing: .01em; padding: 0 2.4mm; border-radius: 99mm; white-space: nowrap; }
-.pil-nodig { background: var(--violet); color: var(--wit); }
-.pil-los { background: var(--wit); color: var(--inkt-2); box-shadow: inset 0 0 0 .3mm var(--lijn); }
-.vak p { font-size: 9.2pt; line-height: 1.42; color: var(--inkt-2); }
-.vak p + p { margin-top: 1.2mm; color: var(--inkt); }
+/* ── DE KOP: het woordmerk, dan het sectielabel en de kop, zoals de opening van de pagina ── */
+.balk { padding: 8mm 12mm 0; }
+.woordmerk { display: block; height: 4.6mm; width: auto; }
+.etiket { display: inline-flex; align-items: center; gap: 10px; margin-top: 6mm; font-family: var(--mono); font-weight: 600; font-size: 9pt; line-height: 1.3; letter-spacing: .1em; text-transform: uppercase; color: var(--inkt); }
+.streep { width: 16px; height: 16px; flex: none; }
+h1, h2 { font-family: var(--kop); font-weight: 700; text-transform: uppercase; letter-spacing: -.01em; line-height: .92; margin: 0; text-wrap: balance; }
+h1 { font-size: 22pt; margin-top: 20px; }
+h1 .l { color: var(--inkt-3); }
+h2 { font-size: 13.5pt; }
+h3 { font-family: var(--letter); margin: 0; }
+.lead { max-width: 170mm; margin-top: 14px; font-size: 10.4pt; line-height: 1.45; }
 
-/* ── DE VIER BLOKKEN: witte kaarten met een zachte rand ────────────────────── */
-.blokken { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin-top: 4.5mm; }
-.blok { border-radius: 5mm; box-shadow: inset 0 0 0 .3mm var(--lijn); padding: 4.2mm 4.6mm 4.4mm; display: grid; grid-template-columns: 25mm minmax(0, 1fr); gap: 4.2mm; align-items: start; }
-.blok-beeld { margin: 0; display: grid; gap: 1.6mm; }
-.blok-beeld img { display: block; width: 25mm; height: 33mm; object-fit: cover; border-radius: 3mm; }
+/* ── PER PRODUCT: de vier vakken uit shots.js, op een breed wit vlak met een haarlijn ── */
+.vakken { margin: 20px 0 0; padding: 16px 20px; border-radius: var(--r-vlak); box-shadow: inset 0 0 0 1px var(--lijn); }
+.vakken h2 { margin-bottom: 10px; }
+.vak-rij { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; list-style: none; margin: 0; padding: 0; }
+.vak-kop { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.vak h3 { font-weight: 600; font-size: 10.6pt; line-height: 1.2; letter-spacing: -.012em; }
+.label { display: inline-flex; flex: none; align-items: center; height: 21px; padding: 0 8px; border-radius: 999px; font-weight: 600; font-size: 8.8pt; line-height: 1; white-space: nowrap; }
+.label.is-nodig { background: var(--inkt); color: var(--wit); }
+.label.is-los { background: var(--wit); color: var(--inkt); box-shadow: inset 0 0 0 1px var(--lijn); }
+.vak p { font-size: 9pt; line-height: 1.4; }
+.vak p + p { margin-top: 12px; font-weight: 600; }
+
+/* ── DE VIER BLOKKEN: witte kaarten, 24 rondom ── */
+.blokken { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.blok { border-radius: var(--r-kaart); box-shadow: inset 0 0 0 1px var(--lijn); padding: 14px 16px; display: grid; grid-template-columns: 22mm minmax(0, 1fr); gap: 14px; align-items: start; }
+.blok-beeld { margin: 0; display: grid; gap: 8px; }
+.blok-beeld img { display: block; width: 22mm; height: 28mm; object-fit: cover; border-radius: 10px; }  /* 14 en 16 van de rand: concentrisch, 24 − 14 */
 .blok-beeld figcaption { font-size: 8.8pt; color: var(--inkt-3); line-height: 1.25; }
-.tek { display: block; width: 25mm; height: auto; margin-top: 1mm; }
+.tek { display: block; width: 22mm; height: auto; margin-top: 2px; }
 .tek path, .tek circle, .tek rect { fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .tek .stuk { stroke: var(--inkt); stroke-width: 2.2; }
 .tek .fijn, .tek .fijn path, .tek .fijn rect { stroke: var(--lijn); stroke-width: 1.6; }
-.tek .aanwijs, .tek .aanwijs path, .tek .aanwijs circle { stroke: var(--violet); stroke-width: 2.2; }
+.tek .aanwijs, .tek .aanwijs path, .tek .aanwijs circle { stroke: var(--inkt); stroke-width: 2.2; }
 .tek .schaduw { fill: var(--lijn); stroke: none; }
-.blok-kop { display: flex; align-items: center; gap: 2.6mm; margin-bottom: 2.4mm; }
-.blok-nr { display: inline-grid; place-items: center; min-width: 7.4mm; height: 5.6mm; padding: 0 1.6mm; border-radius: 99mm; background: var(--mist); font-size: 9pt; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--violet-diep); }
-.blok ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.4mm; }
-.blok li { display: grid; grid-template-columns: 3mm minmax(0, 1fr); gap: 1.4mm; font-size: 9.6pt; line-height: 1.42; color: var(--inkt-2); }
-.blok li::before { content: ""; width: 1.5mm; height: 1.5mm; border-radius: 50%; background: var(--violet); margin-top: 1.65mm; }
+.nr { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 9pt; line-height: 1; font-variant-numeric: tabular-nums; }
+.nr i { width: 28px; height: 1.5px; background: var(--inkt); }
+.nr span { color: var(--inkt-3); font-weight: 450; }
+.blok h3 { margin-top: 8px; font-weight: 450; font-size: 12.5pt; line-height: 1.15; letter-spacing: -.015em; }
+.blok ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+.blok li { display: grid; grid-template-columns: 11px minmax(0, 1fr); gap: 8px; font-size: 9.2pt; line-height: 1.38; }
+.vink { width: 11px; height: 11px; margin-top: 3px; color: var(--inkt); }
 
-/* ── DE VIJF VRAGEN: het violette vlak, zoals de oproep op de site ─────────── */
-.vragen { margin-top: 4.5mm; background: var(--violet); color: var(--wit); border-radius: 5mm; padding: 4.4mm 5.2mm 4.8mm; }
-.vragen h2 { color: var(--wit); margin-bottom: 3mm; }
-.vragen ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3.4mm; }
-.vragen li { display: grid; grid-template-columns: 4.4mm minmax(0, 1fr); gap: 2mm; align-items: start; font-size: 10pt; line-height: 1.32; font-weight: 600; }
-.vakje { width: 4.4mm; height: 4.4mm; border: .45mm solid var(--wit); border-radius: 1.2mm; margin-top: .2mm; }
+/* ── DE VIJF VRAGEN: het ene inktblok, uit de nacht, met zijn snede rechtsonder ── */
+.vragen { margin-top: 12px; background: var(--nacht); color: var(--wit); border-radius: var(--r-vlak) var(--r-vlak) 0 var(--r-vlak); padding: 16px 34px 20px 20px;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 40px), calc(100% - 30px) 100%, 0 100%); }
+.vragen h2 { color: var(--wit); margin-bottom: 12px; }
+.vragen ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.vragen li { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; align-items: start; font-size: 9.8pt; line-height: 1.3; font-weight: 600; }
+.vakje { width: 16px; height: 16px; border: 1.5px solid var(--wit); border-radius: 5px; margin-top: 1px; }
 
-/* ── DE VOET ───────────────────────────────────────────────────────────────── */
-.contact { position: absolute; left: 14mm; right: 14mm; bottom: 15mm; display: flex; flex-wrap: wrap; gap: 1mm 4mm; align-items: baseline; font-size: 9.6pt; color: var(--inkt-2); }
-.contact span { font-weight: 600; color: var(--inkt); }
-.voet { position: absolute; left: 14mm; right: 14mm; bottom: 7mm; display: flex; justify-content: space-between; align-items: baseline; padding-top: 2.6mm; border-top: .3mm solid var(--lijn); }
-.voet span { font-size: 8.8pt; letter-spacing: .02em; color: var(--inkt-3); }
+/* ── DE VOET: de haarlijn, dan de contactregel en het adres als één blok (de regel stond 2 px boven de lijn) ── */
+.voet { position: absolute; left: 12mm; right: 12mm; bottom: 7mm; padding-top: 10px; border-top: 1px solid var(--lijn); display: grid; gap: 4px; }
+.contact { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; font-size: 9.6pt; }
+.contact span { font-weight: 600; }
+.voet-rij { display: flex; justify-content: space-between; align-items: baseline; }
+.voet-rij span { font-size: 8.8pt; color: var(--inkt-3); }
 `;
 }
 
@@ -200,7 +229,7 @@ export function gidsHtml(lang, { fonts = '', beelden = {} } = {}) {
 
   const vak = (x) => `
       <li class="vak">
-        <div class="vak-kop"><b>${esc(x.naam)}</b><span class="pil ${x.nodig ? 'pil-nodig' : 'pil-los'}">${esc(x.label)}</span></div>
+        <div class="vak-kop"><h3>${esc(x.naam)}</h3><span class="label ${x.nodig ? 'is-nodig' : 'is-los'}">${esc(x.label)}</span></div>
         <p>${esc(x.regel)}</p>${x.zonder ? `
         <p>${esc(x.zonder)}</p>` : ''}
       </li>`;
@@ -213,12 +242,14 @@ export function gidsHtml(lang, { fonts = '', beelden = {} } = {}) {
     return '<div></div>';
   };
 
+  const n = g.blokken.length;
   const blok = (b, i) => `
       <section class="blok">
         ${beeldVan(b.id)}
         <div>
-          <div class="blok-kop"><span class="blok-nr">${String(i + 1).padStart(2, '0')}</span><h2>${esc(b.kop)}</h2></div>
-          <ul>${b.regels.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>
+          <p class="nr">${String(i + 1).padStart(2, '0')}<i></i><span>/ ${String(n).padStart(2, '0')}</span></p>
+          <h3>${esc(b.kop)}</h3>
+          <ul>${b.regels.map((r) => `<li>${VINK}<span>${esc(r)}</span></li>`).join('')}</ul>
         </div>
       </section>`;
 
@@ -228,14 +259,14 @@ export function gidsHtml(lang, { fonts = '', beelden = {} } = {}) {
   <section class="blad">
     <header class="balk">
       ${MERK}
-      <span class="pil-kop">${esc(g.etiket)}</span>
     </header>
     <div class="binnen">
+      <p class="etiket">${STREEP}${esc(g.etiket)}</p>
       <h1><span class="l">${esc(g.titel[0])}</span>${esc(g.titel[1])}</h1>
       <p class="lead">${esc(g.intro)}</p>
 
       <section class="vakken">
-        <div class="vakken-kop"><h2>${esc(g.vakkenKop)}</h2></div>
+        <h2>${esc(g.vakkenKop)}</h2>
         <ul class="vak-rij">${g.vakken.map(vak).join('')}</ul>
       </section>
 
@@ -246,8 +277,10 @@ export function gidsHtml(lang, { fonts = '', beelden = {} } = {}) {
         <ol>${g.vragen.map((q) => `<li><span class="vakje" aria-hidden="true"></span>${esc(q)}</li>`).join('')}</ol>
       </section>
     </div>
-    <p class="contact">${esc(v.contact)} <span>${esc(v.wa)}</span><span>${esc(v.mail)}</span></p>
-    <div class="voet"><span>${esc(v.voet)}</span><span>${esc(v.web)}</span></div>
+    <footer class="voet">
+      <p class="contact">${esc(v.contact)} <span>${esc(v.wa)}</span><span>${esc(v.mail)}</span></p>
+      <div class="voet-rij"><span>${esc(v.voet)}</span><span>${esc(v.web)}</span></div>
+    </footer>
   </section>
 </body></html>`;
 }

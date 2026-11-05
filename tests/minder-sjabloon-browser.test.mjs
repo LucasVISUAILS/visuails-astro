@@ -17,7 +17,11 @@
  *   - schaduw: geen schaduw met vervaging (een rand als inset of zonder blur mag), behalve
  *     onder wat zweeft (een glazen laag ligt ergens op) en de gloed in blauw uur onder
  *     Bestellen bovenin ("Gloed mag in accentkleur", dezelfde dag);
- *   - hoeken: geen knop, veld, chip of pil met vier gelijke ronde hoeken van 10 px of meer
+ *   - hoeken (sinds levering 87, 4 november 2026, lijst 74 "knop pil"): een knop, veld, chip of pil is een
+ *     pil; wat hier faalt is een bedieningsdeel dat rond is als een kaart (vier gelijke hoeken van 10 px of
+ *     meer, maar minder dan de halve hoogte). Een tekstvak van meer regels mag 18 zijn. Wat volgt is de regel
+ *     van daarvoor, als geschiedenis:
+ *     geen knop, veld, chip of pil met vier gelijke ronde hoeken van 10 px of meer
  *     (cirkels en pillen die een cirkel zijn tellen niet): wat je bedient heeft één zachte
  *     hoek, linksboven. Tot 25 oktober 2026 gold dit voor elk vlak ("een vlak heeft één
  *     zachte hoek, linksboven"). Die dag veranderde Lucas het: "Wat ik overigens wel aan de
@@ -145,7 +149,8 @@ function meet() {
         const v = parseFloat(rs[0]);
         const rond = Math.abs(rc.width - rc.height) <= 1.5 && v >= rc.width / 2 - 1;
         const zichtbaar = cs.backgroundColor !== 'rgba(0, 0, 0, 0)' || cs.borderTopWidth !== '0px' || cs.boxShadow !== 'none' || el.tagName === 'IMG' || cs.overflow === 'hidden';
-        if (v >= 10 && !rond && zichtbaar && rc.width >= 24 && rc.height >= 16 && cs.visibility !== 'hidden') uit.hoek.push(`${naam(el)} ${rs[0]} ${Math.round(rc.width)}x${Math.round(rc.height)}`);
+        const pil = v >= Math.min(rc.width, rc.height) / 2 - 1;   // levering 87: een pil is goed
+        if (v >= 10 && !rond && !pil && el.tagName !== 'TEXTAREA' && zichtbaar && rc.width >= 24 && rc.height >= 16 && cs.visibility !== 'hidden') uit.hoek.push(`${naam(el)} ${rs[0]} ${Math.round(rc.width)}x${Math.round(rc.height)}`);
       }
     }
   }
@@ -209,7 +214,7 @@ try {
       const r = await page.evaluate(meet);
       check(`${p} op ${w}: geen glas`, r.glas.length === 0, r.glas.slice(0, 3).join(' · '));
       check(`${p} op ${w}: geen zachte schaduw`, r.schaduw.length === 0, r.schaduw.slice(0, 3).join(' · '));
-      check(`${p} op ${w}: geen knop of chip met vier gelijke ronde hoeken`, r.hoek.length === 0, r.hoek.slice(0, 3).join(' · '));
+      check(`${p} op ${w}: geen knop of chip die rond is als een kaart (een knop is een pil)`, r.hoek.length === 0, r.hoek.slice(0, 3).join(' · '));
       check(`${p} op ${w}: geen ✦ of emoji`, r.teken.length === 0, r.teken.slice(0, 5).join(' '));
       check(`${p} op ${w}: niet meer gedachtestreepjes (${r.streepjes} van ${STREEPJES[p]})`, r.streepjes <= STREEPJES[p], `nieuw: ${r.streepjes - STREEPJES[p]}`);
       if (w === 1440 && r.streepjes < STREEPJES[p]) zakken.push(`${p}: ${r.streepjes}`);

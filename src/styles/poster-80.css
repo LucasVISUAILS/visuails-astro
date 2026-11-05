@@ -26,7 +26,7 @@
 .p8-hoek-l { left: var(--p8-m); }
 .p8-hoek-r { right: var(--p8-m); }
 /* de look van de foto, als die het scherm vult: hetzelfde plaatje als in de galerij */
-.p8 .p8-look { position: absolute; left: var(--p8-m); bottom: 24px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 11px 8px 12px; border-radius: 8px 3px 3px 3px; background: #FBFCFF; font: 600 11.5px/1 var(--h-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--h-inkt); text-decoration: none; opacity: 0; pointer-events: none; transform: translate3d(0, 6px, 0); transition: opacity .3s cubic-bezier(.2, .8, .2, 1), transform .3s cubic-bezier(.2, .8, .2, 1); }
+.p8 .p8-look { position: absolute; left: var(--p8-m); bottom: 24px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 11px 8px 12px; border-radius: 999px; background: #FBFCFF; font: 600 11.5px/1 var(--h-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--h-inkt); text-decoration: none; opacity: 0; pointer-events: none; transform: translate3d(0, 6px, 0); transition: opacity .3s cubic-bezier(.2, .8, .2, 1), transform .3s cubic-bezier(.2, .8, .2, 1); }
 .p8 .p8-look b { color: var(--h-inkt); font-weight: 600; }
 .p8 .p8-look span { color: var(--h-grijs, #636974); font-weight: 500; }
 .p8 .p8-look:focus-visible { opacity: 1; pointer-events: auto; transform: none; outline: 2px solid #80A7DD; outline-offset: 3px; }

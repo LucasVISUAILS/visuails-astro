@@ -11,8 +11,8 @@
      zachte navigatie, niet als de pagina al geladen is) en alleen met script;
    - de eerste 350 ms is het scherm gewoon de grond (wat je anders ook zou zien terwijl de pagina laadt);
      is alles er binnen 350 ms, dan verdwijnt het in één keer en heb je het nooit gezien;
-   - pas daarna staat het V-merk in het midden, in inkt op 18 %, en het vlagje vult zich in inkt met de
-     echte voortgang: de letters (document.fonts), het eerste beeld van de opening en de pagina zelf;
+   - pas daarna staat het V-merk in het midden, in inkt op 18 %, en het vlagje vult zich met de echte
+     voortgang (sinds levering 86 in de snede, het blauwe uur van het logo): de letters (document.fonts), het eerste beeld van de opening en de pagina zelf;
    - klaar: de V wordt een venster en groeit om zijn dikste punt tot de pagina helemaal te zien is
      (900 ms, de golf: cubic-bezier(.7, 0, .2, 1)). Minder beweging: 200 ms vervagen.
    - Noodrem: na 8 s gaat het scherm hoe dan ook weg (ook als het script ergens vastloopt: de css doet het).
@@ -36,7 +36,11 @@ const VLAG = 'M 701.75 0.0 L 543.25 366.25 L 507.25 453.75 L 652.0 259.25 L 702.
   <svg class="vl8-v" viewBox="0 0 702 813.25" focusable="false">
     <path d={LIJF} fill="#0F1217" opacity=".18" /><path d={VLAG} fill="#0F1217" opacity=".18" />
     <clipPath id="vl8-vlag"><rect data-vl8-vul x="0" y="813.25" width="702" height="0" /></clipPath>
-    <path d={VLAG} fill="#0F1217" clip-path="url(#vl8-vlag)" />
+    {/* Levering 86 (lijst 72, D8: goed): het vlagje vult zich met het blauwe uur, de snede van het
+        logo (blauw diep → blauw uur → #2D61A8, langs de snede: dezelfde fade als #vs-v-snede in
+        Layout.astro, hier eigen, want het scherm staat vóór de sprite). */}
+    <linearGradient id="vl8-snede" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="839.64" y2="629.73"><stop offset="0" stop-color="#1A4279" /><stop offset=".55" stop-color="#25508B" /><stop offset="1" stop-color="#2D61A8" /></linearGradient>
+    <path d={VLAG} fill="url(#vl8-snede)" clip-path="url(#vl8-vlag)" />
   </svg>
 </div>
 <script is:inline>

@@ -97,7 +97,9 @@ for (const id of (proef ? PROEF : [])) {
   if (!m) { ok(`${id}: gevangen`, false); continue; }
   const donker = await kop(['--enable-features=WebContentsForceDark'], m.html);
   ok(`${id}: donker — de achtergrond is donker gemaakt (${donker.buiten})`, donker.buiten < 80, true);
-  ok(`${id}: donker — de pil is wit (${donker.pil}) en het woordmerk erin donker (${donker.donkerst})`, donker.pil > 235 && donker.donkerst < 60, true);
+  /* levering 86: het woordmerk staat in de snede; zijn donkerste toon is blauw diep #1A4279 (luma 62, 10 : 1 op
+     wit). Inkt was 18. Donker genoeg is dus onder de 70, nog steeds ver van de witte pil. */
+  ok(`${id}: donker — de pil is wit (${donker.pil}) en het woordmerk erin donker (${donker.donkerst})`, donker.pil > 235 && donker.donkerst < 70, true);
   const licht = await kop([], m.html);
   ok(`${id}: licht — de pil valt weg tegen het wit (${licht.buiten} / ${licht.pil})`, Math.abs(licht.buiten - licht.pil) <= 2 && licht.pil > 245, true);
 }

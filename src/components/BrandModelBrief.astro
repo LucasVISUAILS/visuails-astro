@@ -534,7 +534,7 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
   }
   .bm-bewijs-rij img {
     width: 100%; height: auto; aspect-ratio: 3 / 4; object-fit: cover;
-    display: block; border: 1px solid var(--line); border-radius: 2px;
+    display: block; border: 1px solid var(--line); border-radius: var(--r-klein);
     background: var(--ghost);
   }
   .bm-bewijs-noot { margin: 0; max-width: 30rem; font-size: .84rem; line-height: 1.5; color: var(--ink-2); }
@@ -605,7 +605,7 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
     display: inline-flex; align-items: center; gap: .45rem;
     padding: .5rem .8rem;
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: 999px;
     background: var(--surface);
     font-size: .88rem; color: var(--ink);
     cursor: pointer;

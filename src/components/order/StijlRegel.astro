@@ -230,7 +230,7 @@ const leespagina = categorie === 'catalog' ? '/catalog' : '/lifestyle';
     appearance: none;
     font: inherit; font-weight: 600; color: var(--ink);
     background: transparent;
-    border: 1px solid var(--line-strong); border-radius: 11px 3px 3px 3px;
+    border: 1px solid var(--line-strong); border-radius: 999px;
     padding: .3rem 2rem .3rem .8rem;
     min-height: 34px;
     cursor: pointer;
@@ -267,7 +267,7 @@ const leespagina = categorie === 'catalog' ? '/catalog' : '/lifestyle';
   .sr1-vb-item[hidden] { display: none; }
   .sr1-vb img, .sr1-vb-plaat {
     width: 5.25rem; height: 3.5rem; flex: 0 0 auto;
-    object-fit: cover; display: block; border-radius: 2px;
+    object-fit: cover; display: block; border-radius: var(--r-klein);
     background: var(--paper-2); box-shadow: 0 0 0 1px var(--line) inset;
   }
   /* 13px in --ink-2 en niet --ink-3: deze zin staat naast een foto en moet

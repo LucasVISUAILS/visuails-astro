@@ -871,7 +871,7 @@
      product" op één regel: dan mag de prijsregel breken in plaats van "per p…". */
   @media (min-width: 761px) and (max-width: 1100px) {
     .s22.thuis .kiezer .kaart-tekst .mono { white-space: normal; overflow: visible; }
-    .s22.thuis .kiezer .kaart-pil { border-radius: 1.25rem 3px 3px 3px; }
+    .s22.thuis .kiezer .kaart-pil { border-radius: 999px; }
     /* Drie pillen even hoog, ook als er één op één regel past (video). */
     .s22.thuis .kiezer .kaart-tekst { min-height: 3.45rem; align-content: center; }
   }
@@ -1629,7 +1629,7 @@
      vorm waarin dit over drie maanden terugkomt — dezelfde reden als bij
      `.spook` eerder vandaag. Alleen /concept/zweef.astro houdt zijn eigen
      kopie, want dat is een vastgelegd concept en geen levende pagina. */
-  .s22 .kaart-pil { position: absolute; z-index: 1; inset-inline: .6rem; bottom: .6rem; display: flex; align-items: center; justify-content: space-between; gap: .6rem; background: var(--wit); color: var(--inkt); border-radius: 11px 3px 3px 3px; padding: .45rem .45rem .45rem 1rem; }
+  .s22 .kaart-pil { position: absolute; z-index: 1; inset-inline: .6rem; bottom: .6rem; display: flex; align-items: center; justify-content: space-between; gap: .6rem; background: var(--wit); color: var(--inkt); border-radius: 999px; padding: .45rem .45rem .45rem 1rem; }
   .s22 .kaart-tekst { display: grid; min-width: 0; }
   .s22 .kaart-tekst b { font-weight: 500; font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .s22 .kaart-tekst .mono { font-size: .72rem; color: var(--inkt-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1686,7 +1686,7 @@
   .s22 .foto-pil {
     position: absolute; z-index: 1; left: .7rem; bottom: .7rem;
     background: rgb(11 15 23 / .82); color: var(--vel);
-    padding: .35rem .75rem; border-radius: 11px 3px 3px 3px;
+    padding: .35rem .75rem; border-radius: 999px;
   }
 
   /* ── DE DIMMING VAN DRIE VAN DE VIER KAARTEN IS WEG — 8 september 2026 ────
@@ -1932,7 +1932,7 @@
      zit — dezelfde val die global.css twee keer eerder heeft opgelopen en
      waarvan de noot daar zegt dat de lege 2,4rem eruitzag als opzet. */
   .s22.s22 :where(.input, .textarea, .select) {
-    background-color: var(--wit); border: 1px solid var(--lijn-sterk); border-radius: 10px 3px 3px 3px;
+    background-color: var(--wit); border: 1px solid var(--lijn-sterk); border-radius: 999px;
     color: var(--inkt); font-family: var(--tekst2); font-size: .95rem; padding: .8rem 1rem;
   }
   .s22.s22 .select { padding-right: 2.4rem; }
@@ -1954,7 +1954,7 @@
   .s22.s22 :where(.input, .textarea, .select):focus {
     outline: 2px solid var(--accent); outline-offset: 2px; border-color: var(--inkt); box-shadow: none;
   }
-  .s22.s22 .opt { border: 1px solid var(--lijn-sterk); border-radius: 10px 3px 3px 3px; background: var(--wit); }
+  .s22.s22 .opt { border: 1px solid var(--lijn-sterk); border-radius: 16px; background: var(--wit); }
   /* De gekozen optie krijgt een INKTRAND en geen lavendel vlak — regel
      "Nooit 3": de tint is voor een statuslabel, niet voor een oppervlak. */
   .s22.s22 .opt:has(input:checked) { border-color: var(--kies, var(--inkt)); background: var(--surface); box-shadow: inset 0 0 0 1px var(--kies, var(--inkt)); }
@@ -2350,7 +2350,7 @@ body:has(.s22) .site-header .brand-glyph { --mk-line-ink: currentColor; }
 
 /* De schuifvergelijking: ronde hoeken en de greep in het accent. */
 .s22.s22 .cmp { border-radius: calc(var(--ronding) - 8px); overflow: hidden; }
-.s22.s22 .cmp-tag { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; border-radius: 8px 3px 3px 3px; }
+.s22.s22 .cmp-tag { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; border-radius: 999px; }
 /* VOOR / NA: licht op donker, altijd — 23 september 2026. De pil nam `--scrim` (donker) met
    `--ink` (ook donker) over en was onleesbaar (Lucas' schermafdruk). Het label ligt op een
    foto, dus hangt het niet aan het thema maar aan zichzelf: bijna zwart, met vel erop. */

@@ -15,6 +15,7 @@ import avifNaastWebp from './scripts/avif-naast-webp.mjs';
 import stijlUitDePagina from './scripts/stijl-uit-de-pagina.mjs';
 import cspScripts from './scripts/csp-scripts.mjs';
 import commentaarUitDePagina from './scripts/commentaar-uit-de-pagina.mjs';
+import korteZinnen from './scripts/korte-zinnen.mjs';
 import plaatshouders from './scripts/plaatshouders.mjs';
 // De woff2's voor Studio, portaal en /admin — die laden de sitebundel niet.
 import fontsVoorWorker from './scripts/fonts-voor-worker.mjs';
@@ -176,5 +177,5 @@ export default defineConfig({
       assetsInlineLimit: (bestand) => (/\.js$/.test(bestand) ? false : undefined),
     },
   },
-  integrations: [brandLockupGuard(), gewijzigdOp(), sitemapAnd404(), llmsTxt(), plaatshouders(), avifNaastWebp(), fontsVoorWorker(), commentaarUitDePagina(), stijlUitDePagina(), cspScripts()],
+  integrations: [brandLockupGuard(), gewijzigdOp(), sitemapAnd404(), llmsTxt(), plaatshouders(), avifNaastWebp(), fontsVoorWorker(), commentaarUitDePagina(), korteZinnen(), stijlUitDePagina(), cspScripts()],
 });

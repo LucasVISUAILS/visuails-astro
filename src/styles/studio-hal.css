@@ -104,7 +104,7 @@ body.studio.st-hal .btn-sm { min-height: 36px; padding: 0 .95rem; font-size: .84
 @media (pointer: coarse) { body.studio.st-hal .btn { min-height: 46px; } body.studio.st-hal .btn-sm { min-height: 42px; } }
 
 /* De statuspil: het label van de hal, met de stip. */
-body.studio.st-hal .stand { min-height: 26px; padding: 0 .7rem 0 .6rem; border-radius: 8px 3px 3px 3px; font-family: var(--h-letter); font-size: .8125rem; font-weight: 600; }
+body.studio.st-hal .stand { min-height: 26px; padding: 0 .7rem 0 .6rem; border-radius: 999px; font-family: var(--h-letter); font-size: .8125rem; font-weight: 600; }
 body.studio.st-hal .credits-pil { min-height: 26px; padding: 0 .7rem; font-size: .8125rem; }
 
 /* ── DE ZIJBALK: LICHT ─────────────────────────────────────────────────────
@@ -146,8 +146,8 @@ body.studio.st-hal .st-klap:hover { background: #F4F5F7; color: #0F1217; }
 body.studio.st-hal .st-kruim { font-size: .875rem; color: #636974; }
 body.studio.st-hal .st-kruim b { font-weight: 600; color: #0F1217; }
 body.studio.st-hal .st-kruim i, body.studio.st-hal .st-vl-punt { color: #636974; } /* scheidingstekens ook 5,3:1, niet --ink-4 */
-body.studio.st-hal .st-taal { padding: 3px; border-radius: 8px 3px 3px 3px; background: #F4F5F7; box-shadow: none; }
-body.studio.st-hal .st-taal > * { min-width: 40px; height: 34px; border-radius: 11px 3px 3px 3px; font-size: .8125rem; font-weight: 600; color: #0F1217; }
+body.studio.st-hal .st-taal { padding: 3px; border-radius: 999px; background: #F4F5F7; box-shadow: none; }
+body.studio.st-hal .st-taal > * { min-width: 40px; height: 34px; border-radius: 999px; font-size: .8125rem; font-weight: 600; color: #0F1217; }
 body.studio.st-hal .st-taal > [aria-current] { background: #FFFFFF; color: #0F1217; box-shadow: none; }
 body.studio.st-hal .st-stand { width: 40px; height: 40px; border-radius: 999px; color: #0F1217; box-shadow: inset 0 0 0 1px #E6E8EC; }
 body.studio.st-hal .st-stand:hover { background: #F4F5F7; color: #0F1217; }
@@ -257,9 +257,9 @@ body.studio.st-hal :is(.st-vast, .st-nota, .st-gezegd) { border-radius: var(--r-
 
 /* Velden: rond voor één regel, een zachte hoek voor een tekstvak. */
 body.studio.st-hal .st-veld { min-height: 44px; padding: 0 1.05rem; border-radius: var(--hoek-knop); border-color: #858A94; font-size: .9375rem; }
-body.studio.st-hal textarea.st-veld, body.studio.st-hal .studio textarea { border-radius: 18px 3px 3px 3px; padding: .75rem 1rem; }
-body.studio.st-hal textarea { border-radius: 18px 3px 3px 3px; }
-body.studio.st-hal input[type="file"]::file-selector-button { border-radius: 11px 3px 3px 3px; min-height: 36px; padding: 0 1rem; }
+body.studio.st-hal textarea.st-veld, body.studio.st-hal .studio textarea { border-radius: 18px; padding: .75rem 1rem; }
+body.studio.st-hal textarea { border-radius: 18px; }
+body.studio.st-hal input[type="file"]::file-selector-button { border-radius: 999px; min-height: 36px; padding: 0 1rem; }
 
 /* De melding bovenaan (/admin/melding): een pil, geen balk. */
 body.studio.st-hal .st-banner { border-radius: var(--r-kaart); padding: .7rem 1.1rem; }
@@ -299,15 +299,15 @@ body.studio.on-ink .st-merk { --mk-line-ink: #80A7DD; --mk-kleur: #80A7DD; }
 /* De knop: één zachte hoek linksboven (zoals body.hal .btn op de site), geen
    optillen of gloed onder de muis; hij springt in twee stappen. */
 body.studio.st-hal .btn { border-radius: var(--hoek-knop); transition: background-color .16s steps(2, end), color .16s steps(2, end), box-shadow .16s steps(2, end); }
-body.studio.st-hal .btn-sm { border-radius: 11px 3px 3px 3px; }
+body.studio.st-hal .btn-sm { border-radius: 999px; }
 body.studio.st-hal .btn-primary:hover, body.studio.st-hal .btn-primary:focus-visible { transform: none; box-shadow: none; }
-body.studio.st-hal .st-navlink, body.studio.st-hal .st-uit { border-radius: 12px 3px 3px 3px; }
-body.studio.st-hal .st-klap { border-radius: 11px 3px 3px 3px; }
+body.studio.st-hal .st-navlink, body.studio.st-hal .st-uit { border-radius: 999px; }
+body.studio.st-hal .st-klap { border-radius: 999px; }
 body.studio.st-hal .st-uit-ik { width: 16px; height: 16px; flex: none; }
 
 /* De statuspil: een plaatje met één zachte hoek, de naam in de vaste
    breedte-letter, in hoofdletters, zonder bolletje (v35-pillen a op de site). */
-body.studio.st-hal .stand, body.studio.st-hal .credits-pil { gap: .35rem; min-height: 26px; padding: 0 .6rem; border-radius: 8px 3px 3px 3px; font: 600 11.5px/1.2 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; letter-spacing: .06em; text-transform: uppercase; }
+body.studio.st-hal .stand, body.studio.st-hal .credits-pil { gap: .35rem; min-height: 26px; padding: 0 .6rem; border-radius: 999px; font: 600 11.5px/1.2 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; letter-spacing: .06em; text-transform: uppercase; }
 body.studio.st-hal .stand::before { display: none; }
 body.studio .stand:has(.st-vink3)::before { display: none; }
 
@@ -327,9 +327,9 @@ body.studio .st-beeld:target .st-vink3 .vlag { animation: st-vlag .5s steps(1, e
 /* Het merkje op een beeld staat linksonder in de tegel, 6 px van de rand. Sinds 25 oktober
    2026 is de tegel een kleine tegel (12 rond, --r-klein): die hoek loopt mee, 12 - 6 = 6;
    de andere zijn licht (de hoekregel, levering 56). */
-body.studio.st-hal .st-badge.stand { border-radius: 3px 3px 3px 6px; }
+body.studio.st-hal .st-badge.stand { border-radius: 999px; }
 /* Uitloggen op de telefoon is een knop: dezelfde zachte hoek (de taal blijft rond, zoals op de site). */
-body.studio.st-hal .st-mob button { border-radius: 11px 3px 3px 3px; }
+body.studio.st-hal .st-mob button { border-radius: 999px; }
 
 /* ── DE HOEKREGEL IN STUDIO (levering 57; 25 oktober 2026) ─────────────────
    Gemeten in de Worker (Studio, /admin, de privélink), op 1280, 900 en 390 breed, met de
@@ -340,25 +340,25 @@ body.studio.st-hal .st-mob button { border-radius: 11px 3px 3px 3px; }
    25 oktober 2026: kaarten zijn 24 rond aan alle vier de hoeken (was 28 met één zachte
    hoek linksboven), de vulling in een kaart ook 24, een beeld of tegel 12. Lucas: "De
    hoeken van kaarten worden gewoon heel rond, iets ronder dan in het voorbeeld." */
-body.studio.st-hal .st-tip .st-tip-tekst .btn { border-radius: 3px 3px 3px 8px; }          /* 18 en 16 van de rand: 24 - 17, dus het minimum */
-body.studio.st-hal .st-nudge > .btn { border-radius: 3px 3px 3px 8px; }                   /* 20 en 16: 24 - 18 */
-body.studio.st-hal .st-bijkoop .st-knoppen > .btn:first-child { border-radius: 3px 3px 3px 8px; } /* 24 - 20 */
-body.studio.st-hal .st-rij.is-acties > .btn:first-child { border-radius: 3px 3px 3px 8px; }       /* 24 - 20 */
-body.studio.st-hal .st-vl .st-rij.is-acties > .btn:first-child { border-radius: 3px 3px 3px 8px; } /* 16 van de rand: 24 - 16 */
-body.studio.st-hal .st-betaal form > .btn-primary { border-radius: 3px 8px 8px 3px; }      /* rechts in het betaalvak, 18 en 23: het minimum */
-body.studio.st-hal .st-map > .btn { border-radius: 3px 3px 3px 8px; }                      /* linksonder in de map, 24 en 22 */
+body.studio.st-hal .st-tip .st-tip-tekst .btn { border-radius: 999px; }          /* 18 en 16 van de rand: 24 - 17, dus het minimum */
+body.studio.st-hal .st-nudge > .btn { border-radius: 999px; }                   /* 20 en 16: 24 - 18 */
+body.studio.st-hal .st-bijkoop .st-knoppen > .btn:first-child { border-radius: 999px; } /* 24 - 20 */
+body.studio.st-hal .st-rij.is-acties > .btn:first-child { border-radius: 999px; }       /* 24 - 20 */
+body.studio.st-hal .st-vl .st-rij.is-acties > .btn:first-child { border-radius: 999px; } /* 16 van de rand: 24 - 16 */
+body.studio.st-hal .st-betaal form > .btn-primary { border-radius: 999px; }      /* rechts in het betaalvak, 18 en 23: het minimum */
+body.studio.st-hal .st-map > .btn { border-radius: 999px; }                      /* linksonder in de map, 24 en 22 */
 /* De beelden in een keuzetegel van de vaste look: 7 px van de rand van de tegel (12): de helft, 6. */
 body.studio.st-hal :is(.st-tegel-img, .st-look-img) { border-radius: 6px; }
 /* De taal (EN | NL) is een klein vak van 8: het eerste knopje loopt linksboven mee (8 - 3). */
-body.studio.st-hal .st-taal > :first-child { border-radius: 5px 3px 3px 3px; }
-body.studio.st-hal .st-taal > :last-child { border-radius: 3px; }
+body.studio.st-hal .st-taal > :first-child { border-radius: 999px; }
+body.studio.st-hal .st-taal > :last-child { border-radius: 999px; }
 @media (max-width: 900px) {
-  body.studio.st-hal .st-betaal form > .btn-primary { border-radius: 3px 3px 3px 8px; }   /* linksonder, 18 en 15: het minimum */
+  body.studio.st-hal .st-betaal form > .btn-primary { border-radius: 999px; }   /* linksonder, 18 en 15: het minimum */
 }
 @media (max-width: 720px) {
-  body.studio.st-hal .st-leegvlak > .btn { border-radius: 3px 3px 3px 8px; }
+  body.studio.st-hal .st-leegvlak > .btn { border-radius: 999px; }
   /* op de telefoon is het merkje bijna zo breed als de tegel: beide onderhoeken mee */
-  body.studio.st-hal .st-badge.stand { border-radius: 3px 3px 6px 6px; }
+  body.studio.st-hal .st-badge.stand { border-radius: 999px; }
   /* de kop van een opengeklapte bestelling volgt de kaart */
   body.studio.st-hal article.st-bestelling.st-kaart-vlak { border-radius: var(--r-kaart); } /* zwaarder dan .st-kaart-vlak:not(.st-cijfers) */
   /* een melding onderaan de kaart met je gegevens, 20 van de onderhoeken: het minimum,
@@ -401,3 +401,25 @@ body.studio.st-hal .st-bestellingen { gap: 28px; }
 @media (max-width: 720px) { body.studio.st-hal { --st-pad: 21px; } }
 /* De grote getallen in "Wat een credit oplevert" (CreditKaart.astro, ook op /plans): 500 → 450, zoals de rest. */
 body.studio.st-hal .ck-c b { font-weight: 450; }
+
+/* ══ LEVERING 86 · BLAUW UUR IN DE DETAILS, OOK IN STUDIO (3 november 2026, lijst 72) ══════════
+   Zoals op de site (hal.css, "LEVERING 86"). Het woordmerk in de snede (de fade van blauw diep naar
+   #2D61A8 langs de snede, alleen herkleurd); de schommel loopt naar dezelfde fade een stap lichter.
+   De fades staan in het woordmerk zelf (woordmerkSvg in src/data/wordmarkPath.js). Op inkt blijft
+   het woordmerk licht, met de schommel in blauw licht. */
+body.studio:not(.on-ink) .st-merk .mk-fill { fill: url(#vs-wi-snede); }
+body.studio:not(.on-ink) .st-merk { --mk-kleur: url(#vs-wi-licht); }
+/* De inktknop uit de nacht; onder de muis vult hij zich met de snede (K2). Eén verloop van twee keer
+   de knop, alleen de plek schuift, langs de snede. Wit erop 6,2 : 1 of meer. */
+body.studio.st-hal .btn-primary {
+  background: #0F1217 linear-gradient(126.87deg, #0F1217 0%, #172945 17.5%, #1A4279 50%, #25508B 77.5%, #2D61A8 100%) -2px -2px / calc(200% + 4px) calc(200% + 4px) no-repeat;
+  transition: background-position .36s cubic-bezier(.22, .8, .2, 1), color .2s, box-shadow .2s;
+}
+body.studio.st-hal .btn-primary:hover, body.studio.st-hal .btn-primary:focus-visible {
+  background: #0F1217 linear-gradient(126.87deg, #0F1217 0%, #172945 17.5%, #1A4279 50%, #25508B 77.5%, #2D61A8 100%) calc(100% + 2px) calc(100% + 2px) / calc(200% + 4px) calc(200% + 4px) no-repeat;
+}
+/* De link: de streep loopt het wit in (D2); onder de muis vol. Hoog contrast: de gewone streep. */
+body.studio.st-hal .st-link { text-decoration: none; background: linear-gradient(90deg, #25508B, rgb(37 80 139 / .5) 45%, rgb(37 80 139 / 0)) 0 100% / 100% 1.5px no-repeat; }
+body.studio.st-hal .st-link:hover { background-image: linear-gradient(90deg, #25508B, #25508B); }
+@media (forced-colors: active) { body.studio.st-hal .st-link { text-decoration: underline; } }
+@media (prefers-reduced-motion: reduce) { body.studio.st-hal .btn-primary { transition: none; } }

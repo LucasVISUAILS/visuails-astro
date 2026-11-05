@@ -1263,9 +1263,9 @@ const FORM = {
       countLabel: 'How many products?',
       countPick: 'Choose a number',
       countHint: `Up to ${maxProducts} products in one order. The rate per product drops at 5, 10 and ${maxProducts}.`,
-      qtyDec: 'One fewer',
-      qtyInc: 'One more',
-      qtyQuick: 'Quick pick',
+      qtyEen: 'product',
+      qtyMeer: 'products',
+      qtyLat: 'Number of products (slider)',
       moreBtn: `More than ${maxProducts} products?`,
       moreH: `More than ${maxProducts} products — we plan that with you`,
       moreBody: ladderVloer
@@ -1632,9 +1632,9 @@ const FORM = {
       countLabel: 'Hoeveel producten?',
       countPick: 'Kies een aantal',
       countHint: `Tot ${maxProducts} producten in één bestelling. Het tarief per product zakt bij 5, 10 en ${maxProducts}.`,
-      qtyDec: 'Eén minder',
-      qtyInc: 'Eén meer',
-      qtyQuick: 'Snel kiezen',
+      qtyEen: 'product',
+      qtyMeer: 'producten',
+      qtyLat: 'Aantal producten (schuif)',
       moreBtn: `Meer dan ${maxProducts} producten?`,
       moreH: `Meer dan ${maxProducts} producten — dat plannen we samen`,
       moreBody: ladderVloer
@@ -1941,6 +1941,7 @@ const WK = lang === 'nl' ? {
   stijl: isCatalog ? { label: 'Stijl', kop: 'Welke stijl?' } : { label: 'Look', kop: 'Welke look?' },
   aantal: { label: 'Aantal', kop: 'Hoeveel producten?' },
   trapKop: 'Prijs per product',
+  trapKnop: (rij: string, prijs: string) => `${rij}: ${prijs} per product`,
   trapRij: (van: number, tot: number) => (van === tot ? `${van} producten` : `${van}–${tot} producten`),
   gezicht: { label: 'Gezicht', kop: 'Wie draagt het?', zin: 'Voor de foto’s op een model. Kies een gezicht, of de eerste tegel: dan kiezen wij er een dat bij je merk past. Per product aan te passen bij je foto’s.' },
   levering: { label: 'Levering', kop: 'Wanneer?' },
@@ -2012,6 +2013,7 @@ const WK = lang === 'nl' ? {
   stijl: isCatalog ? { label: 'Style', kop: 'Which style?' } : { label: 'Look', kop: 'Which look?' },
   aantal: { label: 'Count', kop: 'How many products?' },
   trapKop: 'Price per product',
+  trapKnop: (rij: string, prijs: string) => `${rij}: ${prijs} per product`,
   trapRij: (van: number, tot: number) => (van === tot ? `${van} products` : `${van}–${tot} products`),
   gezicht: { label: 'Face', kop: 'Who wears it?', zin: 'For the photos on a model. Pick a face, or the first tile: then we choose one that suits your brand. You can change it per product with your photos.' },
   levering: { label: 'Delivery', kop: 'When?' },
@@ -2805,8 +2807,13 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
       {!isSample && (
       <div class="field pl-qty" data-pl-qty>
         <label for="pl-qty-n">{f.s1.countLabel} <span class="req">*</span></label>
+        {/* ── DE LAT — levering 88, 4 november 2026 (lijst 76, B1: a2) ─────────────────
+            Lucas: "Ik wil dat de product hoeveelheid keuze in het bestelformulier veel subtieler word het is nu 1
+            groot blok en kan veel simpeler en mooier dan dit." Was: een blok met − 1 +, de knopjes 1 · 5 · 10 · 20 en
+            rechts de prijslijst, drie dingen voor één keuze. Nu één schuif van 1 tot het maximum, met de treden van de
+            prijs eronder: die zijn de snelknoppen en de prijslijst tegelijk. Het getal erboven blijft een getalveld
+            (je kunt het typen) en draagt de eis; de schuif en het veld volgen elkaar (bindQty in pipeline.js). */}
         <div class="pl-qty-row">
-          <button type="button" class="pl-qty-btn" data-pl-qty-dec aria-label={f.s1.qtyDec}>−</button>
           <input
             id="pl-qty-n"
             class="input pl-qty-n"
@@ -2815,19 +2822,35 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
             min="1"
             max={maxProducts}
             step="1"
-                        autocomplete="off"
+            autocomplete="off"
             data-pl-qty-input
             data-pl-req="1"
             data-pl-err-msg={f.s1.countErr}
             required
           />
-          <button type="button" class="pl-qty-btn" data-pl-qty-inc aria-label={f.s1.qtyInc}>+</button>
-          <span class="pl-qty-chips" role="group" aria-label={f.s1.qtyQuick}>
-            {[1, 5, 10, maxProducts].filter((n, i, a) => n <= maxProducts && a.indexOf(n) === i).map((n) => (
-              <button type="button" class="pl-qty-chip" data-pl-qty-set={String(n)}>{n}</button>
-            ))}
-          </span>
+          <span class="pl-qty-woord" data-pl-qty-woord data-een={f.s1.qtyEen} data-meer={f.s1.qtyMeer} aria-hidden="true">{f.s1.qtyEen}</span>
+          <span class="pl-qty-tarief" data-pl-qty-tarief aria-hidden="true"></span>
         </div>
+        {werk && (
+          <div class="pl-qty-lat">
+            <input type="range" class="pl-qty-schuif" min="1" max={maxProducts} step="1" value="1" aria-label={f.s1.qtyLat} data-pl-qty-lat />
+            {/* De prijstrap (b-keuzes) onder de schuif: de trede die geldt, staat aan (wkOverzicht in pipeline.js zet
+                .is-nu); een trede aanklikken zet het aantal op het begin ervan. Elke trede staat midden boven zijn stuk
+                van de schuif; de eerste links, de laatste rechts. */}
+            <ul class="wk-trap" aria-label={WK.trapKop} data-wk-trap>
+              {wkTrap.map((tr, i) => {
+                const laatste = i === wkTrap.length - 1;
+                const midden = ((tr.van - 1 + tr.tot - 1) / 2) / Math.max(1, maxProducts - 1) * 100;
+                const x = i === 0 ? 0 : laatste ? 100 : midden;
+                return (
+                  <li data-wk-van={String(tr.van)} data-wk-tot={String(tr.tot)} class={i === 0 ? 'is-l' : laatste ? 'is-r' : undefined} style={`--x:${x.toFixed(2)}%`}>
+                    <button type="button" data-pl-qty-set={String(tr.van)} aria-label={WK.trapKnop(WK.trapRij(tr.van, tr.tot), euro(tr.prijs, lang))}><span>{tr.van === tr.tot ? String(tr.van) : `${tr.van}–${tr.tot}`}</span><b>{euro(tr.prijs, lang)}</b></button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
         <select id="pl-products" class="select" name="products" hidden tabindex="-1" aria-hidden="true" data-pl-err-msg={f.s1.countErr}>
           <option value="" disabled selected>{f.s1.countPick}</option>
           {counts.map((n) => <option value={String(n)}>{countLabel(n)}</option>)}
@@ -2858,16 +2881,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
       </div>
       )}
 
-      {/* De prijstrap naast het aantal (b-keuzes): de trede die geldt, staat aan.
-          pipeline.js (paintWkTrap) zet .is-nu; zonder script staat er alleen de lijst. */}
-      {werk && (
-        <ul class="wk-trap" aria-label={WK.trapKop} data-wk-trap>
-          <li class="wk-trap-kop" aria-hidden="true">{WK.trapKop}</li>
-          {wkTrap.map((t) => (
-            <li data-wk-van={String(t.van)} data-wk-tot={String(t.tot)}><span>{WK.trapRij(t.van, t.tot)}</span><b>{euro(t.prijs, lang)}</b></li>
-          ))}
-        </ul>
-      )}
+      {/* De prijstrap stond hier naast het aantal (b-keuzes); sinds levering 88 staat hij onder de schuif. */}
 
       {/* HET CONTACTPANEEL. Verschijnt zodra de keuze "meer dan" is; pipeline.js
           verbergt dan de rest van deze stap én de knop Verder, want een
@@ -4236,7 +4250,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
     background: none; border: 0; color: inherit; font: inherit;
     text-align: left; cursor: pointer;
   }
-  .pl-combi-knop:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; border-radius: var(--r-sm) 3px 3px 3px; }
+  .pl-combi-knop:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; border-radius: 999px; }
   .pl-combi-woord { font-weight: 600; font-size: .95rem; }
   .pl-combi-prijs {
     flex: 1; min-width: 0;
@@ -4579,7 +4593,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
     color: var(--accent-bright);
     text-decoration: underline;
     text-underline-offset: 3px;
-    border-radius: var(--r-sm) 3px 3px 3px;
+    border-radius: 999px;
   }
   .pl-why > summary:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
   .pl-why > p { margin-top: .5rem; font-size: .82rem; color: var(--ink-3); line-height: 1.55; max-width: 70ch; }
@@ -4828,7 +4842,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
     height: 6.4rem;
     padding: .7rem .3rem .5rem;
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-sm) 3px 3px 3px;
+    border-radius: 999px;
     background: var(--surface);
     color: var(--ink);
     cursor: pointer;
@@ -5209,49 +5223,8 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
     -moz-appearance: textfield;
   }
   .pl-qty-n::-webkit-outer-spin-button, .pl-qty-n::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  .pl-qty-btn, .pl-qty-chip {
-    min-width: 2.6rem;
-    height: 2.6rem;
-    padding: 0 .7rem;
-    border: 1px solid var(--line-strong);
-    border-radius: var(--r-md) 3px 3px 3px;
-    background: var(--surface);
-    color: var(--ink);
-    font: inherit;
-    font-weight: 600;
-    cursor: pointer;
-    transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
-  }
-  .pl-qty-btn { font-size: 1.25rem; line-height: 1; }
-  .pl-qty-btn:hover, .pl-qty-chip:hover { border-color: var(--accent-line); }
-  .pl-qty-btn:focus-visible, .pl-qty-chip:focus-visible, .pl-qty-more:focus-visible, .pl-qty-back:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-  .pl-qty-btn:disabled { opacity: .45; cursor: default; }
-  /* ── ÉÉN BEDIENING, EN EEN STILLE SNELKEUZE — 19 september 2026 ──────
-     Lucas: *"Sommige elementen van het bestelformulier mogen ook wel een iets
-     betere en rustiger design krijgen."* De vier snelknoppen hadden precies
-     dezelfde doos als − en +, dus de regel las als zes knoppen voor één getal.
-     Nu is het getalveld met − en + de enige bediening die eruitziet als een
-     bediening; 1 · 5 · 10 · 20 staan ernaast als tekst, met het woord dat de
-     groep al als aria-label droeg. Gekozen = inkt en een streep, niet een
-     tweede gekleurde doos. */
-  .pl-qty-chips { display: inline-flex; align-items: center; gap: .15rem; margin-left: .6rem; font-size: .84rem; color: var(--ink-3); }
-  .pl-qty-chips::before { content: attr(aria-label) ':'; margin-right: .35rem; font-family: var(--mono2, var(--font-mono)); font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; }
-  .pl-qty-chip {
-    min-width: 0; height: auto; padding: .15rem .35rem;
-    border: 0; border-radius: 0; background: none;
-    font-size: .9rem; font-weight: 500; color: var(--ink-2);
-    text-decoration: underline; text-decoration-color: transparent; text-underline-offset: .28em;
-    font-variant-numeric: tabular-nums;
-  }
-  .pl-qty-chip:hover { border-color: transparent; color: var(--ink); text-decoration-color: var(--line-strong); }
-  .pl-qty-chip.is-on { color: var(--ink); font-weight: 700; text-decoration-color: var(--kies, var(--accent)); text-decoration-thickness: 2px; }
-  /* Tikvlak (1 oktober 2026, Web Interface Guidelines): "1" was 20 × 27 px.
-     Minstens 24 breed overal, en op een aanraakscherm 44 hoog en 40 breed. De
-     tekst blijft even klein; alleen het vlak eromheen groeit. */
-  .pl-qty-chip { min-width: 24px; min-height: 28px; }
-  @media (pointer: coarse) {
-    .pl-qty-chip { min-width: 40px; min-height: 44px; }
-  }
+  /* − / + en de knopjes 1 · 5 · 10 · 20 zijn weg sinds levering 88 (de lat, werkplaats.css). */
+  .pl-qty-more:focus-visible, .pl-qty-back:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
   .pl-qty-more, .pl-qty-back {
     display: block;
     width: max-content;

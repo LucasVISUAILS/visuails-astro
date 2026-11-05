@@ -1,6 +1,8 @@
 # VISUAILS — kleurenschema
 
-**Stand: 1 november 2026 (levering 80): de vijf kleuren uit Lucas' voorbeeld, in Blauw uur gezet: Inkt `#0F1217`, Wit `#FBFCFF`, Mist `#E4E7ED`, Nevel `#A2B7D2` en Blauw uur `#25508B`, elk met een eigen fade (zie "Levering 80: de vijf kleuren"). De grond is Wit `#FBFCFF` (lijst 64, grond b); wat als vlak op de grond stond is `#F0F1F6` (halverwege de Wit-fade). De balk is van vloeibaar glas (zie daar). Het logopakket is herkleurd (images/Logo/visuails-logo-80).**
+**Stand: 3 november 2026 (levering 86): het blauwe uur in de details. Het logo staat in de snede, een fade van blauw diep `#1A4279` via blauw uur `#25508B` naar `#2D61A8`, langs de snede van het vlagje (126,87°); onder de muis schommelt het licht. De gloed onder de knoppen is weg; de inktknop staat in de nacht en vult zich onder de muis met de snede; Bestellen staat in de snede. Kleine details (de streep van het sectielabel, de streep onder een link, de focusrand van een knop, de voortgang, de rand van een kaart onder de muis, het inktblok, het grote woordmerk onderin, het vlagje dat vult) krijgen een fade. Het favicon is wit op de snede. Zie "Levering 86: het blauwe uur in de details". Het logopakket: images/Logo/visuails-logo-86.**
+
+**Levering 80 (1 november 2026): de vijf kleuren uit Lucas' voorbeeld, in Blauw uur gezet: Inkt `#0F1217`, Wit `#FBFCFF`, Mist `#E4E7ED`, Nevel `#A2B7D2` en Blauw uur `#25508B`, elk met een eigen fade (zie "Levering 80: de vijf kleuren"). De grond is Wit `#FBFCFF` (lijst 64, grond b); wat als vlak op de grond stond is `#F0F1F6` (halverwege de Wit-fade). De balk is van vloeibaar glas (zie daar). Het logopakket is herkleurd (images/Logo/visuails-logo-80).**
 
 **Daarvoor, levering 79 (1 november 2026): de grond is #F4F7FD, een heel licht grijs in de toon van de inkt met een vleugje blauw uur (zie "De grond"); wit is de kaart. Wat als vlak op de grond stond, is wit. De opening is de laptop van Lucas over de hele breedte, met een doorzichtige achtergrond. Levering 78 (27 oktober 2026): de balk rechthoekig over de hele breedte, wit met een haarlijn, zonder glas; de tweede toon van een kop in inkt, met af en toe een gloed in blauw uur (zie "De gloed op de tweede toon"). Schema Blauw uur, overal (levering 68). Levering 75 (26 oktober): de balk als zwevende pil van licht glas, en E1 (de snede) vervallen. Levering 76 (26 oktober): de pil doorzichtiger, zonder rand, licht getint. De hoeken, glas en gloed,
 de knoppen, Hoe het werkt in witte kaarten, de gloed van "Gemaakt met AI" en de iconen zonder
@@ -33,6 +35,61 @@ Op 1 november 2026 (levering 79) koos Lucas een grijze grond. Zijn woorden:
 Het schema daarvoor (schema A, violet, 19 tot 23 oktober) staat verderop als geschiedenis,
 en daaronder de hal (14 tot 18 oktober) en het schema van 20 september. Kelvin (lijst 50) en
 Blauw uur als palet (lijst 54) zijn alleen schetsen geweest; ze stonden nooit op de site.
+
+---
+
+## Levering 86: het blauwe uur in de details (3 november 2026)
+
+Lucas, 3 november, 12:54: *"Wellicht kan je wel een plan maken om deze blue hour style meer in details zoals
+knoppen te verwerken en ik wil meer fade kleuren gebruiken voor kleine details waar mogelijk. Ook het logo wil
+ik witte achtergrond met fade blue hour VISUAILS logo maken, om met het blauw door het wit te snijden."* In
+lijst 72 koos hij logo **a** (langs de snede), schommel **a** (het licht schommelt), favicon **b** (wit op de
+snede), de knoppen K1 – K4 en de details D1 – D8 goed. Bij K2: *"De gloed van onder mag bij alle knoppen weg,
+dit voelt generiek en ai achtig. Ik zou het beter vinden bij deze specifieke knop om de gehele knop te vullen
+met blauw on hover."* K5 (de pijl vangt het licht) is niet gedaan.
+
+**De regel.** Alleen kleuren uit dit schema; er komt geen kleur bij. Een fade loopt **langs de snede**: de lijnen
+van gelijke kleur lopen evenwijdig aan de snede van het vlagje (53,13°), het verloop zelf loopt loodrecht daarop
+naar rechtsonder (126,87° in css), donker linksboven en het licht rechtsonder. Recht (90° of 180°) alleen in een
+streep of strook. **Alleen op details**: een logo, een knop, een streep, een rand en het ene inktblok. Nooit als
+vlak van een sectie of een witte kaart, nooit in een kop of woord, nooit op een icoon of vinkje (wat je kiest
+blijft inkt). Wit op elke stop van de snede haalt 6,2 : 1 of meer. Niets beweegt bij het laden.
+
+| Fade | Stops | Contrast | Waar |
+|---|---|---|---|
+| **De snede** | `#1A4279` 0 % · `#25508B` 55 % · `#2D61A8` 100 % | op wit en wit erop 10,0 · 8,08 · 6,20 | het logo, Bestellen, de inktknop onder de muis, de focusrand van een knop, de lijnknop onder de muis, de streep van het sectielabel, het vlagje dat vult, het favicon |
+| **Het licht** | `#25508B` · `#2D61A8` · `#44699D` | op wit 8,08 · 6,20 · 5,60 | waar de schommel van het logo naartoe gaat |
+| **De nacht** | `#0F1217` 0 % · `#172945` 17,5 % · `#1A4279` 50 % (knop); `#0F1217` 0 – 38 % · `#172945` 72 % · `#1A4279` 100 % (blok, de Inkt-fade) | wit erop 18,1 tot 10,0 | de inktknop in rust, het ene inktblok |
+| **De lucht** (recht, van boven naar onder) | `#25508B` → `#2D61A8` | — | de kier tussen twee knoppen |
+| **De uitloop** (recht) | `#25508B` · `#6283AF` · `#A2B7D2`; een stap lichter `#2D61A8` · `#829DC0` · `#B9C7DE` | versiering, geen tekst | het grote woordmerk onderin (en de schommel daarvan) |
+| **De streep** (recht) | `#25508B` → `rgb(37 80 139 / 0)` | de link zelf 8,08 | de streep onder een link in de tekst |
+
+**Wat er staat:**
+
+| | Wat | Waar |
+|---|---|---|
+| Logo a | Het V-merk en het woordmerk in de snede, alleen herkleurd: dezelfde paden. De fade in de maten van de tekening (userSpaceOnUse; de V 702 × 813,25, het woordmerk vanaf 0, −797,25; lengte 0,8 × breed + 0,6 × hoog), dus op elk formaat dezelfde | `#vs-v-snede`, `#vs-w-snede` in de sprite van `Layout.astro`; `woordmerkSvg()` met `#vs-wi-snede` voor Studio, het portaal, /admin en het account |
+| Schommel a | Onder de muis schommelt de tweede laag (`.mk-kleur`) naar het licht, in hetzelfde tempo (3,6 s, (1 − cos)/2) | `--mk-kleur: url(#vs-v-licht)` en dergelijke |
+| Op inkt | Het logo blijft licht (wit of `#F4F5F7`), de schommel blauw licht: Studio `on-ink`, /admin donker, het account donker | studio-hal.css, admin.css, account.css |
+| Favicon b | Wit V-merk op een tegel in de snede (16 – 512, apple-touch-icon, favicon.ico, favicon.svg) | `public/`, een kopie uit `images/Logo/visuails-logo-86/favicon` |
+| De gloed weg | `.h-knop::before` bestaat niet meer; Bestellen heeft geen schaduw eronder | hal.css, "LEVERING 86" |
+| K1 | Bestellen (en onderaan de lade) in de snede; onder de muis schuift het licht door de knop (0,5 s) | |
+| K2 | De inktknop in de nacht; onder de muis en met de toets vult hij zich met de snede, vanuit de hoek rechtsonder (0,36 s). Eén verloop van twee keer de knop, alleen de plek schuift. Ook in Studio (`.btn-primary`) | |
+| De witte knop | Op het inktblok en op een beeld: vult zich zo met blauw licht `#80A7DD` naar nevel `#A2B7D2`, de letters blijven inkt (7,59 en 9,15 : 1). Blauw uur op inkt mag niet | |
+| K3 | De lijnknop: in rust de haarlijn; onder de muis een ring van 1 px in de snede, de schuine kant van een paar in blauw uur. Op het inktblok blijft hij wit | |
+| K4 | In de kier tussen twee knoppen die één vorm zijn valt de lucht. `src/scripts/knoppaar.js` meet de kier en zet de lucht alleen in die strook. Niet op het inktblok, niet bij een witte of doorzichtige knop. De lucht begint bij blauw uur (niet diep): de inktknop links ervan loopt zelf naar blauw diep, en dan viel de kier bovenaan weg | |
+| D1 | De streep van het sectielabel in de snede; op het inktblok en een donkere band (`h-pil-donker`) wit. Ook het streepje in de werkplaats | |
+| D2 | De streep onder een link in de tekst: 2 px van blauw uur naar niets, onder de muis vol. Hoog contrast: de gewone onderstreping. Ook in Studio (`.st-link`, 1,5 px). Op het inktblok wit naar niets | |
+| D3 | De focusrand van een knop: 2 px in de snede, 2 px buiten de knop. Links, velden en vakjes houden de gewone rand; op het inktblok blauw licht; hoog contrast de systeemkleur | |
+| D4 | Het balkje met de schuine kop en de streep onder de laptop: van blauw diep naar het licht | |
+| D5 | De haarlijn van een kaart die je kunt aanklikken wordt onder de muis een fade vanuit de hoek linksboven (`#25508B` → `#6283AF` → de lijn). Een gekozen kaart blijft inkt | |
+| D6 | Het ene inktblok (het slot onderaan, het €1-blok): de Inkt-fade, naar zijn eigen snede rechtsonder | |
+| D7 | Het grote woordmerk onderin loopt het wit in (de uitloop) | |
+| D8 | Het vlagje dat vult (het laadscherm, de laptopvideo) vult zich met de snede | |
+| Elk ander logo | Het deelplaatje (`public/img/og-nl.png`, `og-en.png`: het woordmerk in de snede; sinds 4 november ook in de letters van de site, zie `DESIGN.md`, "De posters en de ruimte"), de V-tegel (`merk-tegel.webp/avif`: wit op de snede, de avatar in de laptopschermen en de modelkiezer), de factuur en de creditnota (`invoicePdf.js`: het woordmerk als knipvlak met één axiaal verloop erin, gewoon vector), de fotogids (`scripts/lib/fotogids-html.mjs`, `npm run handleiding`; sinds 4 november ook in de letters en de onderdelen van de site, het inktblok in de nacht), en de oude ongebruikte beelden `logo-mark`, `logo-wordmark` en `logo-wordmark-light` (nu het huidige logo, in de snede en in wit). Lucas, 15:04: *"Fix ook alle logo's in de map met de nieuwe looks"*. De vier oude logopakketten in `images/Logo` gooit hij weg; pakket 86 blijft | `npm run og` (het script), `npm run handleiding` |
+| De mail | Het woordmerk op het witte plaatje in de snede; het streepje onder de kop in de snede; het woordmerk in de voet loopt uit van nevel `#A2B7D2` via `#C4CEE0` naar mist `#E4E7ED` (een stap lichter dan op de site: de voet van de mail blijft even rustig als in lichtgrijs en staat in de donkere stand van de Gmail-app nog) | `npm run mail:assets` |
+
+Bewaakt door `tests/blauw-uur-86.test.mjs` (`npm run test:blauwuur86`).
 
 ---
 
@@ -96,8 +153,10 @@ Wit (`#FBFCFF`, levering 80; was het lichte grijs #F4F7FD) als grond, met witte 
 scherm (Bestellen bovenin), bij het logo onder de muis, in het accentwoord van de opening
 dat ademt, in een link in de tekst, in de focusrand en in geselecteerde tekst. Verder
 nergens.** Eén inktblok per pagina, afgesneden op 53°. Geen verloop als vlak, geen bewogen
-achtergrond, geen warme kleur. Glas op wat boven de pagina zweeft; een gloed in blauw uur op een
-knop onder de muis en, even, om het product dat met AI gemaakt is (levering 74).
+achtergrond, geen warme kleur. Glas op wat boven de pagina zweeft; een gloed in blauw uur alleen even
+om het product dat met AI gemaakt is (levering 74). **Sinds levering 86** staat het logo in de snede (een
+fade van blauw diep naar het licht, langs de snede van het vlagje), krijgen kleine details een fade, en
+vult een inktknop zich onder de muis met blauw; de gloed onder de knoppen is weg.
 
 ---
 
@@ -169,7 +228,7 @@ zodat een vergeten verwijzing niet breekt. Schrijf in nieuwe regels de nieuwe na
 |---|---|---|
 | 60 | grond en wit | de grond (#F4F7FD, ook achter de foto's), de witte kaarten erop |
 | 30 | inkt en beeld | de tekst, de knoppen, het logo, de foto's zelf, het ene inktblok |
-| 10 | blauw | Bestellen bovenin, een link, de focusrand; onder de muis het logo en een inktknop |
+| 10 | blauw | Bestellen bovenin, het logo (de snede), een link, de focusrand, de details in een fade (levering 86); onder de muis een inktknop |
 
 De producten zijn het warme. Een vierde kleur (amber, lamplicht) maakt er weer een palet van
 (lijst 55, warm a).
@@ -180,13 +239,14 @@ De producten zijn het warme. Een vierde kleur (amber, lamplicht) maakt er weer e
 
 | Plek | Hoe |
 |---|---|
-| **Bestellen bovenin** (`.nav-cta`, in de lade `.mobile-cta`) | Blauw met wit, met een zachte gloed in blauw uur eronder. Onder de muis blauw diep, de gloed iets sterker (levering 74). Dit is de ene plek per scherm |
-| **Het logo onder de muis** | De schommel, zie hieronder. Op de balk, in de lade, in de voet en het grote woordmerk onderaan, in Studio, op de privélink en in /admin |
+| **Bestellen bovenin** (`.nav-cta`, in de lade `.mobile-cta`) | In de snede met wit (levering 86); onder de muis schuift het licht door de knop. Geen gloed eronder. Dit is de ene plek per scherm |
+| **Het logo** | In de snede (levering 86); onder de muis schommelt het licht, zie hieronder. Op de balk, in de lade, in de voet en het grote woordmerk onderaan (de uitloop), in Studio, op de privélink en in /admin |
 | **De tweede toon van een kop** (`.h-kop .l`, levering 78) | Inkt, en af en toe één keer een gloed als een golf: blauw uur rolt in 1,9 s van links het woord in, staat 0,5 s en trekt in 2,4 s naar rechts weg (4,8 s). Alleen de kleur, zoals het logo; geen lichtrand. In het blauw een omgekleurde lucht uit hero-dunes en een fijne korrel. Nooit twee tegelijk, elke kop één keer per bezoek. Op inkt van wit naar blauw licht. Zie "De gloed op de tweede toon" hieronder. Vervangt het accentwoord van de opening (`.o-acc`, levering 74) |
-| **Een link in de tekst** | Blauw, met een streep in blauw op 38 %. In de voet: inkt, onder de muis blauw |
-| **De focusrand** | 2 px blauw (`--focus-ring`). Op het inktblok blauw licht |
+| **Een link in de tekst** | Blauw, met een streep van 2 px die van blauw uur het wit in loopt (levering 86; tot dan blauw op 38 %). In de voet: inkt, onder de muis blauw |
+| **De focusrand** | 2 px blauw (`--focus-ring`); op een knop 2 px in de snede (levering 86). Op het inktblok blauw licht |
 | **Geselecteerde tekst** | Blauw met witte letters |
-| **Een knop onder de muis** | Blauw uur komt als gloed van de onderrand op (`.h-knop::before`, levering 74); tot 25 oktober werd een inktknop vol blauw. Het merk reageert op de hand |
+| **Een knop onder de muis** | De inktknop vult zich met de snede, vanuit de hoek rechtsonder; de lijnknop krijgt een rand in de snede (levering 86). De gloed van de onderrand (levering 74) is weg: *"dit voelt generiek en ai achtig"*. Het merk reageert op de hand |
+| **De details in een fade** (levering 86) | De streep van het sectielabel, de voortgang, de rand van een kaart onder de muis, de kier tussen twee knoppen, het vlagje dat vult. Zie "Levering 86" |
 | **"Gemaakt met AI" in de lagen** (Hoe het werkt, catalog, stap 02; `.o-ont-ai`) | Op het hoogtepunt van de lagen (ruim een seconde, met in- en uitlopen anderhalf, van de 12,9 s): een zachte gloed in blauw uur om het product en eronder "Gemaakt met AI" in mono, blauw uur op wit (8,08 : 1, 12 px). Daarna weg. Lucas, 16:57: *"laat alleen kort tijdens de lagen animatie zien met een soort subtiele gloed om het product heen dat het met ai gemaakt is"* |
 | **Aandacht** (revisie, jij bent aan zet) | Blauw op vlak, zie de statusset. Blauw betekent: actie |
 
@@ -243,7 +303,22 @@ witte rand. De focusrand en het logo zijn daar blauw licht.
 
 ---
 
-## De hoeken (25 oktober 2026)
+## De hoeken (4 november 2026, levering 87)
+
+Lucas, 03:02: *"overal waar van toepassing super ronde hoeken … Bij sectie gedeeltes zoals de achtergrond van de
+laptop niet."* Lijst 74: knop **pil**, paar **snede**, blok **snede**, kaart **24**. De regel en de uitzonderingen
+staan in `DESIGN.md`, "Hoeken — 4 november 2026"; de tabel hieronder geldt nog, behalve de rij van de knop:
+
+| Wat | Hoek | Token |
+|---|---|---|
+| Knop (ook een link-knop), chip, pil, tab, segment, invulveld van één regel, keuzelijst, statusplaatje, schakelaar | een pil | `--hoek-knop` (999px) |
+| Twee knoppen naast elkaar (en een rij gelijke knoppen) | één pil, de snede van 53° ertussen (de kant van de snede 0) | — |
+| Een tekstvak van meer regels · een vinkje · een menu · een rij in een menu | 18 · 5 · 24 · 14 | — |
+| Wat het hele scherm bedekt (banden, de voet, de achtergrond van de laptop) | recht | — |
+
+De mails: de knop en de statuspil zijn een pil. De fotogids: Nodig en Optioneel als pil, het vakje 5.
+
+## De hoeken (25 oktober 2026; sinds levering 87 geschiedenis voor knoppen)
 
 Lucas: *"Wat ik overigens wel aan de style wil aanpassen is het 1 zachte hoek en de rest harde
 hoeken systeem voor alles. Ik wil dit alleen op hele specifieke plekken behouden en niet voor
@@ -307,12 +382,10 @@ Zonder `backdrop-filter` (oude browsers) zijn ze vol wit of vol vlak.
 
 **Gloed** is licht in blauw uur, en hoort bij de hand of bij de ene blauwe knop:
 
-- **Een knop onder de muis** (`.h-knop::before` in `hal.css`, "LEVERING 74 · KNOPPEN"): blauw
-  uur komt als een radiaal verloop van de onderrand op, in 0,32 s, zoals het blauwe uur aan de
-  horizon. Binnen de knop, dus ook binnen de snede van een knoppenpaar. Wit op inkt (19,18 : 1)
-  en wit op blauw uur (8,08 : 1): elke tussenstand haalt het. Op een witte knop is hij zwak (16 tot
-  20 %); op het inktblok in blauw licht.
-- **Bestellen bovenin**: een zachte gloed in blauw uur eronder, iets sterker onder de muis.
+- ~~**Een knop onder de muis**~~ (`.h-knop::before`, levering 74): **weg sinds levering 86**, bij alle
+  knoppen. Lucas: *"De gloed van onder mag bij alle knoppen weg, dit voelt generiek en ai achtig."* De
+  inktknop vult zich nu met de snede (zie "Levering 86").
+- ~~**Bestellen bovenin**: een zachte gloed eronder~~: weg sinds levering 78 (de schaduw) en 86 (de regel).
 - **Het accentwoord van de opening**: een zachte gloed die met de adem meekomt (zie hieronder).
 - **Het product in de lagen** (Hoe het werkt, catalog, stap 02): een zachte gloed in blauw uur
   (`drop-shadow` 12 px op 50 %, met een smalle zoom van 2 px in blauw licht: licht, geen vlak), ruim
@@ -337,8 +410,8 @@ subtieler."* Wat er veranderde, in `hal.css` onderaan:
 | Hoogte (klein) | 56 px (46) | 48 px (40) |
 | Letter | 16 px | 15 px (klein 14) |
 | De pijl | 20 px | 17 px |
-| De inktknop | inkt, onder de muis vol blauw | inkt met een dunne lichtrand bovenaan; onder de muis de gloed |
-| De lijnknop | 1,5 px inkt, onder de muis vol inkt | 1 px lijn sterk; onder de muis een lijn in inkt en een zweem blauw uur |
+| De inktknop | inkt, onder de muis vol blauw | inkt met een dunne lichtrand bovenaan; onder de muis de gloed. **Sinds levering 86**: de nacht, onder de muis vol de snede |
+| De lijnknop | 1,5 px inkt, onder de muis vol inkt | 1 px lijn sterk; onder de muis een lijn in inkt en een zweem blauw uur. **Sinds levering 86**: onder de muis een ring in de snede |
 | De snede tussen twee knoppen | 42 px, kier 5,3 | 0,75 × de hoogte: 36 px, kier 4,5 (klein 30 en 3,8) |
 
 De ene zachte hoek blijft (14 px, klein 12). Bestellen bovenin houdt zijn maat (38 px).
@@ -364,6 +437,11 @@ achtergrond nog wel word toegepast."* In `hal.css` onderaan ("ICOONTJES ZONDER P
 
 ## Het logo: staat stil, de kleur schommelt
 
+**Sinds levering 86 (lijst 72, logo a en schommel a)** staat het logo in de snede en schommelt het
+naar dezelfde fade een stap lichter (het licht: blauw uur → `#2D61A8` → `#44699D`), in hetzelfde
+tempo en op dezelfde manier. Wat hieronder over inkt en blauw uur staat, geldt nu voor de snede en
+het licht; op inkt blijft het logo licht met de schommel in blauw licht.
+
 Lijst 55, logo a en tempo b. Het logo beweegt niet. Onder de muis (en bij focus op de link)
 kleurt het **hele** logo van inkt naar blauw uur en terug, als één vlak, in **3,6 s** heen
 en terug. De snelheid is die van een schommel: de dekking van de blauwe laag is
@@ -376,10 +454,11 @@ midden gaat hij het snelst.
 - Waar: `src/styles/global.css` (de site en Studio) en een kopie in `public/account.css`,
   `public/admin.css` en `public/portal.css`. De vorm komt uit `VMerk.astro`, `Woordmerk.astro`
   en `woordmerkSvg()` in `src/data/wordmarkPath.js`.
-- `--mk-kleur` zet per plek de kleur: blauw uur op wit, blauw licht op inkt.
+- `--mk-kleur` zet per plek de kleur: het licht op wit (`url(#vs-v-licht)`, sinds 86; daarvoor blauw uur), blauw licht op inkt.
 - Minder beweging: onder de muis meteen blauw, zonder schommel.
 - Niets beweegt bij het laden. De elektrische lijn (mk-line) en de echo's zijn weg.
-- Het logo zelf is altijd één kleur: inkt (de standaard), blauw of wit.
+- Het logo zelf is één vorm in de snede (de standaard, sinds 86), of in één kleur: inkt, blauw of wit.
+  Geen tweede kleur ernaast en geen fade in een andere richting.
 
 ---
 
@@ -506,16 +585,19 @@ Dezelfde rollen, omgekeerd, in de koele grijzen van inkt:
 | De privélink (`/o/…`) | `public/portal.css` | blok "DE HAL" onderaan |
 | De losse kaarten van account.js | `public/account.css` | blok "DE HAL" onderaan |
 | /admin | `public/admin.css` | licht en donker; de focusrand blauw, donker blauw licht |
-| De mails | `src/lib/mailTemplate.js` (`C`) en de beelden in `public/img/mail/` | `npm run mail:assets`: het woordmerk inkt, het streepje inkt, het woordmerk in de voet in lijn sterk |
-| De factuur | `src/lib/invoicePdf.js` | `INK`, `MUTED`, `RULE`, `NADRUK`, `VLAK` |
-| De fotogids (pdf) | `scripts/lib/fotogids-html.mjs` | `npm run handleiding` |
+| De mails | `src/lib/mailTemplate.js` (`C`) en de beelden in `public/img/mail/` | `npm run mail:assets`: het woordmerk op het witte plaatje in de snede, het streepje in de snede, het woordmerk in de voet van nevel naar mist (levering 86) |
+| De factuur | `src/lib/invoicePdf.js` | `INK`, `MUTED`, `RULE`, `NADRUK`, `VLAK`; het woordmerk in de snede (`SNEDE`, `svgSnede()`, levering 86) |
+| De fotogids (pdf) | `scripts/lib/fotogids-html.mjs` | `npm run handleiding`; het woordmerk in de snede (levering 86) |
 | De statuspil buiten CSS | `src/data/status.js` | `STAND_KLEUR` |
-| Het deelplaatje | `scripts/make-og.mjs` | `npm run og` |
+| Het deelplaatje | `scripts/make-og.mjs` | `npm run og`; het woordmerk in de snede (levering 86) |
+| De V-tegel (avatar) | `public/img/merk-tegel.webp/avif` | wit op de snede (levering 86), uit `maak-logopakket.py` (v_tegel, 49,5 % breed) |
 | De schetsen in het formulier | `scripts/schetsen-zijpaneel.py` | → `public/img/schets/` |
 | De pijl in een keuzelijst | `public/img/ui/keuzepijl-0f1217.svg` (was `-0b0f17`), `-f4f5f7.svg` | een `data:`-adres kan geen variabele lezen |
 | De adresbalk | `src/layouts/Layout.astro` | `theme-color` de grond (#F4F7FD) op een hal-pagina |
-| Favicon | `public/favicon*.png`, `favicon.ico`, `favicon.svg`, `apple-touch-icon.png` | een kopie uit het logopakket (`images/Logo/visuails-logo-blauw-uur/favicon`): wit V-merk op vlak blauw uur |
-| Het logopakket | `E:\Claude (VISUAILS)\images\Logo\visuails-logo-blauw-uur` | `python3 maak-logopakket.py --site <map van de site>`, met een eigen KLEURENSCHEMA.md |
+| Favicon | `public/favicon*.png`, `favicon.ico`, `favicon.svg`, `apple-touch-icon.png` | een kopie uit het logopakket (`images/Logo/visuails-logo-86/favicon`): wit V-merk op de snede (levering 86) |
+| Het logopakket | `E:\Claude (VISUAILS)\images\Logo\visuails-logo-86` (daarvoor `visuails-logo-80`) | `python3 maak-logopakket.py --site <map van de site>`, met een eigen KLEURENSCHEMA.md |
+| De fades van het logo | `src/layouts/Layout.astro` (de sprite), `src/data/wordmarkPath.js`, `src/components/Voorlader80.astro` | userSpaceOnUse in de maten van de tekening |
+| De kier tussen twee knoppen | `src/scripts/knoppaar.js` | `LUCHT` |
 | De laptop in de opening (levering 79) | `public/img/hal/breed/laptop-*.avif/webp`, uit `kladblok/levering-79/laptop-21x9-gaten.png` | `node scripts/laptop-breed.mjs`. Doorzichtig waar de grond is en waar de schermen zijn: de grond van de pagina schijnt er exact doorheen |
 | De laptop op /catalog, /lifestyle en /video | `public/img/hal/pov-2304.webp`, de doorzichtige versie `pov-2304-doorzichtig.webp`, en de standen in `public/img/hal/stand/` | `python3 scripts/laptop-foto.py <de witte foto>`, `python3 scripts/wit-naar-doorzichtig.py public/img/hal/pov-2304.webp public/img/hal/pov-2304-doorzichtig.webp` en `node scripts/laptop-standen.mjs` (sinds 79 zonder achtergrond) |
 
@@ -563,20 +645,23 @@ het beeld naadloos doorloopt), het blauw van Instagram in het voorbeeldscherm, d
    vlak.
 4. **Eén inktblok per pagina**, afgesneden op 53°, de andere hoeken rond.
 5. Blauw en inkt nooit op elkaar (2,37:1). Op inkt alleen wit en blauw licht.
-6. Geen verloop als vulling, geen bewogen achtergrond, geen korrel; de ene uitzondering is de golf op de
-   tweede toon (levering 78, Lucas' vraag): 4,8 s, daarna weer gewoon inkt. Glas alleen op wat zweeft (de
-   WhatsApp-knop, de plakkende uitlegbalk; de balk en zijn menu's sinds 78 niet meer). Een gloed
-   alleen in blauw uur (op inkt blauw licht): een knop onder de muis, Bestellen bovenin, de gloed van
-   de tweede toon, en
-   kort het product dat met AI gemaakt is (de lagen van Hoe het werkt).
+6. Een fade alleen op een detail (levering 86): een logo, een knop, een streep, een rand en het ene
+   inktblok; alleen kleuren uit het schema, langs de snede (126,87°) of recht in een streep. Nooit als
+   vlak van een sectie of kaart, nooit in een kop of woord (op de golf van de tweede toon na, levering
+   78: 4,8 s, daarna weer gewoon inkt), nooit op een icoon. Geen bewogen achtergrond, geen korrel. Glas
+   alleen op wat zweeft (de WhatsApp-knop, de plakkende uitlegbalk; de balk en zijn menu's sinds 78 niet
+   meer). Geen gloed onder een knop (sinds 86); een gloed alleen in blauw uur bij de tweede toon en kort
+   om het product dat met AI gemaakt is (de lagen van Hoe het werkt).
 12. Een vinkje of icoon in een lijst, zin of beeld heeft geen plaatje: het icoon zelf, in inkt
    (wit alleen op een gemeten donker beeld). Een plaatje dat blijft heeft vier gelijke hoeken.
 7. Een kaart is wit met een haarlijn, 24 rond aan alle vier de hoeken. Vlak alleen onder iets
    kleins in een kaart; op de grond is dat vlakje wit. De zachte hoek linksboven alleen op wat je
    bedient.
 8. Een stand is pil plus woord; massief alleen voor "geleverd"; aandacht blauw.
-9. Het logo is één kleur: inkt, blauw of wit. Onder de muis de schommel. Woordmerk en los
-   V-merk nooit naast elkaar (`scripts/brand-lockup-guard.mjs`).
+9. Het logo staat in de snede (de fade van blauw diep naar het licht, langs de snede; levering 86), of
+   in één kleur: inkt, blauw of wit. Op inkt licht. Onder de muis schommelt het licht. Alleen
+   herkleurd, nooit nagetekend. Woordmerk en los V-merk nooit naast elkaar
+   (`scripts/brand-lockup-guard.mjs`).
 10. Niets beweegt bij het laden; beweging stopt helemaal bij "minder beweging".
 11. Een nieuw grijs heeft de toon van de inkt (263°) en de helderheid van wat het vervangt.
 

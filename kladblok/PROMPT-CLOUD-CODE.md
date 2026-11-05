@@ -1,20 +1,22 @@
-# Opdracht voor Claude Code in de cloud: VISUAILS klaar voor de launch (25 oktober 2026)
+# Opdracht voor Claude Code in de cloud: VISUAILS klaar voor de launch (25 oktober 2026, bijgewerkt 5 november)
 
-> Bijgewerkt op 25 oktober, 19:30, met Lucas' ja, voor levering 74 (de nieuwe voorpagina): de startcontrole, het nummer van de levering, glas en gloed, geen verdedigende zinnen over AI, de lookkiezer op de voorpagina (levering 70) en het meten van de opening (levering 72). Rol levering 74 eerst uit, start daarna deze sessie.
+> Bijgewerkt op 5 november, 01:50. Sinds 25 oktober bouwde de chat met de brug leveringen 74 tot en met 88b. Daarin kwamen de voorpagina met de scrollvideo, de laptop en de metro, nieuwe letters, de grond en de kleuren, het blauwe uur in de details, pillen als knoppen en het aantal als lat in het formulier. Lucas rolde ze op 5 november 01:44 uit. Geen van de taken hieronder is daarin al gedaan. Waar deze opdracht en `docs/` of een nieuwere leveringsnotitie elkaar tegenspreken over vormgeving, gaan `docs/` en de nieuwste notitie voor.
 
-**Startzin voor Lucas** (in claude.ai/code of de Code-app, repo `LucasVISUAILS/visuails-astro`):
-> Lees `kladblok/PROMPT-CLOUD-CODE.md` en voer hem uit. Stel al je vragen aan het begin in één keer. Kom je daarna iets tegen waarover je twijfelt, verander het dan niet: zet het als open punt in de leveringsnotitie en ga door met de rest.
+**Startzin voor Lucas** (in claude.ai/code of de Code-app, repo `LucasVISUAILS/visuails-astro`). Plak deze hele opdracht in je eerste bericht, met deze zin erboven:
+> Voer de opdracht hieronder uit. Stel al je vragen aan het begin in één keer. Kom je daarna iets tegen waarover je twijfelt, verander het dan niet: zet het als open punt in de leveringsnotitie en ga door met de rest.
+
+Staat deze versie (bijgewerkt 5 november) al op GitHub, dan volstaat: "Lees `kladblok/PROMPT-CLOUD-CODE.md` en voer hem uit", met de rest van de zin hierboven.
 
 ---
 
 Je werkt voor Lucas, de enige persoon achter VISUAILS (visuails.com). VISUAILS maakt met AI catalog- en lifestylebeelden en korte video's van foto's van kleding. De site is een Astro-site op een Cloudflare Worker, met een bestelformulier, een klantportaal (VISUAILS Studio), een privélink per bestelling, een adminportaal (/admin), een abonnement met credits, mails en een nachtelijke cron. Lucas maakt de beelden zelf; Claude bouwt en onderhoudt de site.
 
-Deze sessie draait in de cloud op Lucas' tegoed voor Claude Code-cloudsessies: $250, geldig tot woensdag 5 november 2026, 08:59 Nederlandse tijd. **Deze opdracht mag uren duren.** Lucas zit overdag niet achter zijn computer en kijkt af en toe op zijn telefoon. Daarom werkt deze sessie zo:
+Deze sessie draait in de cloud op Lucas' tegoed voor Claude Code-cloudsessies: $250, geldig tot donderdag 5 november 2026, 08:59 Nederlandse tijd. Daarna rekent de sessie verder op zijn gewone limieten; vraag 16 zegt wat je dan doet. **Deze opdracht mag uren duren.** Lucas zit overdag niet achter zijn computer en kijkt af en toe op zijn telefoon. Daarom werkt deze sessie zo:
 
 1. **Eerst alle vragen, in één bericht** (§5). Lucas antwoordt met bijvoorbeeld "alles advies" of "1 ja, 6 b, 12 a".
 2. **Wacht niet stil op zijn antwoord.** Begin intussen met wat er niet van afhangt: de startcontrole, de werkomgeving, het lezen, en levering 69 deel B en C.
    Heeft hij nog niet geantwoord als B en C af zijn, ga dan uit van "alles advies", en zet bovenaan elke notitie dat je dat deed.
-3. **Daarna zelfstandig door**, levering na levering (69 tot en met 73), elk helemaal af en gepusht voordat je aan de volgende begint. Kom je iets tegen waarover je twijfelt, verander het dan niet: zet het als open punt in de leveringsnotitie en ga door met de rest. Vraag Lucas alleen iets als werkelijk niets anders verder kan.
+3. **Daarna zelfstandig door**, levering na levering (69 tot en met 73), en na 08:59 zoals vraag 16 zegt, elk helemaal af en gepusht voordat je aan de volgende begint. Kom je iets tegen waarover je twijfelt, verander het dan niet: zet het als open punt in de leveringsnotitie en ga door met de rest. Vraag Lucas alleen iets als werkelijk niets anders verder kan.
 4. Stopt de sessie halverwege, dan gaat een nieuwe sessie verder vanaf de notities op de branch (§2).
 
 ---
@@ -24,19 +26,19 @@ Deze sessie draait in de cloud op Lucas' tegoed voor Claude Code-cloudsessies: $
 In de repo, in deze volgorde:
 
 1. `kladblok/VISUAILS-OVERZICHT-24-OKT.md`: dat is de enige bron van waarheid over VISUAILS. Lees eerst §0 (vaste werkafspraken), §16 (wat nog moet), §17 (waar code en bedoeling uiteenlopen), §21 (wat bewust níet bestaat), §23 (beslissingenlog), §29 (huisstijl Blauw uur), §30 (waar Lucas naartoe wil) en §31 (hoe Claude met Lucas werkt). De rest lees je als naslag bij het onderdeel waar je aan werkt.
-2. `kladblok/LEVERING-68.md`: zo ziet een leveringsnotitie eruit. Neem die opbouw over. Lees ook `kladblok/LEVERING-74.md`: de voorpagina van nu (de opening met de scrollvideo, Hoe het werkt met de lagen, de stroom), de hoeken, glas en gloed, en de iconen zonder plaatje.
-3. `docs/KLEURENSCHEMA.md` (bovenaan, Blauw uur) en `docs/DESIGN.md`.
+2. `kladblok/LEVERING-68.md`: zo ziet een leveringsnotitie eruit. Neem die opbouw over. Lees daarna de koppen en "Wat je vroeg" van `kladblok/LEVERING-74.md` tot en met `LEVERING-88b.md`: daarin staat hoe de site er sinds 25 oktober uitziet en beweegt. De maten staan in `docs/RUST-80.md` (§9 tot en met §15) en `docs/RUIMTE-EN-RUST.md`, de kleuren in `docs/KLEURENSCHEMA.md` (de hoofdstukken "Levering 80" en "Levering 86"), de hoeken en de lat in `docs/DESIGN.md`. In het overzicht lopen §29 en §23 daar deels op achter; volg dan `docs/` en de notities.
+3. `docs/KLEURENSCHEMA.md`, `docs/DESIGN.md` en `docs/RUST-80.md`, de nieuwste hoofdstukken eerst.
 4. De leveringsnotities die al op de branch staan (§2). Daaruit lees je waar een vorige sessie stopte.
 
 Het overzicht schrijft vanuit een chat die via een brug bij Lucas' pc kan. Jij kunt dat niet. Voor jou geldt: **GitHub na Lucas' laatste uitrol is zijn map.** Waar het overzicht "lees eerst zijn map" zegt, lees jij de repo.
 
 ## 2. Startcontrole: stop als iets niet klopt
 
-1. **Staat levering 68 op GitHub?** Op `main` moeten `kladblok/LEVERING-68.md` en `kladblok/VISUAILS-OVERZICHT-24-OKT.md` staan, `docs/KLEURENSCHEMA.md` moet met Blauw uur beginnen, en `src/styles/hal.css` moet `#25508B` bevatten. Ook levering 74 moet er staan: `kladblok/LEVERING-74.md` en `src/components/HalOpening.astro`. Klopt dat niet, stop dan en zeg tegen Lucas: "Rol eerst uit met UITROLLEN.bat; daarna staat alles op GitHub." Zonder die uitrol werk je op een oude voorpagina.
+1. **Staat alles op GitHub?** Op `main` moeten `kladblok/LEVERING-88b.md`, `kladblok/VISUAILS-OVERZICHT-24-OKT.md` en `src/scripts/metro.js` staan. Klopt dat niet, stop dan en zeg tegen Lucas: "Rol eerst uit met UITROLLEN.bat; daarna staat alles op GitHub." Zonder die uitrol werk je op een oude voorpagina.
 2. **De branch heet `claude/voor-de-launch`.** Bestaat hij al op `origin`, haal hem dan op en ga daarop verder. Doe eerst `git merge origin/main` in de branch, nooit andersom, zodat wat Lucas sindsdien in zijn map deed er ook in zit. Krijg je een conflict, dan wint `main`, tenzij het om je eigen werk van een vorige levering gaat; noem elk conflict in de notitie. Bestaat de branch niet, maak hem dan vanaf `main`.
-3. **Het nummer van de levering:** 69 tot en met 73 liggen vast voor deze sessie. `LEVERING-74.md` (25 okt, de opening) kwam uit de chat met de brug en telt hier niet mee. Begin bij 69, of bij het eerste nummer van 69 tot en met 73 dat nog niet op de branch staat. Een levering die al op de branch staat, doe je niet opnieuw.
+3. **Het nummer van de levering:** 69 tot en met 73 liggen vast voor deze sessie. `LEVERING-74.md` tot en met `LEVERING-88b.md` kwamen uit de chat met de brug en tellen hier niet mee; die chat gaat verder bij 89. Begin bij 69, of bij het eerste nummer van 69 tot en met 73 dat nog niet op de branch staat. Een levering die al op de branch staat, doe je niet opnieuw.
 4. **De werkomgeving:** `npm ci`, dan `npm run build`. Kijk of Playwright een Chromium kan starten: ongeveer 50 toetsen en alle schermafdrukken hebben een browser nodig. Lukt dat niet, zeg het dan meteen in je eerste bericht. Draai in dat geval de toetsen die zonder browser kunnen, en zet in elke notitie welke niet gedraaid zijn en waarom. Wat je niet op het oog kunt nakijken, bouw je dan alleen achter een schakelaar of laat je liggen.
-5. **De testreeks:** `TESTREEKS_TEGELIJK=4 node scripts/testreeks.mjs` (269 stappen; dezelfde keten als `npm test`, maar vier tegelijk). Op Lucas' pc duurt hij 7,5 minuten; hier kan het langer duren, dus draai hem op de achtergrond. Draai tussendoor alleen de toetsen die je raakt, en de hele reeks aan het eind van elke levering.
+5. **De testreeks:** `TESTREEKS_TEGELIJK=4 node scripts/testreeks.mjs` (279 stappen; dezelfde keten als `npm test`, maar vier tegelijk). Op Lucas' pc duurt hij 7,5 minuten; hier kan het langer duren, dus draai hem op de achtergrond. Draai tussendoor alleen de toetsen die je raakt, en de hele reeks aan het eind van elke levering.
 
 ## 3. Wat je mag en wat nooit
 
@@ -53,7 +55,7 @@ Het overzicht schrijft vanuit een chat die via een brug bij Lucas' pc kan. Jij k
 
 **De huisregels** (uit §0, §26 en §29 van het overzicht):
 - Bedragen alleen uit `src/data/pricing.js` en `src/data/plans.js`, nooit overgetypt. Een nieuw bedrag verzin je niet; dat vraag je.
-- Kleuren alleen uit `docs/KLEURENSCHEMA.md` (Blauw uur). Geen verloop, korrel of bewogen achtergrond. Glas en gloed alleen waar het schema ze toelaat ("Glas en gloed": glas op wat boven de pagina zweeft, gloed in blauw uur op een knop onder de muis, onder Bestellen, op het accentwoord en kort om het product in de lagen); haal die niet weg. Niets beweegt bij het laden.
+- Kleuren, letters, hoeken, fades, glas en gloed alleen zoals `docs/KLEURENSCHEMA.md`, `docs/DESIGN.md` en `docs/RUST-80.md` ze nu beschrijven: de nieuwste hoofdstukken gaan voor. Sinds 24 oktober veranderde daar veel: eigen kopletter VISUAILS Display met DM Sans (levering 77), de grond en de vijf kleuren (79 en 80), het blauwe uur in de details met fades (86), en knoppen als pil (87). Neem over wat er staat, verzin geen nieuwe kleur of letter, en haal niets weg wat daar mag. Verander niets aan hoe iets beweegt.
 - Geen verdedigende zinnen over AI, zoals "met de hand" naast iets wat met AI gemaakt is. Lucas, 25 okt: "Voelt veel te verdedigend, wees hier voortaan streng op." Zeg wat waar is: gemaakt met AI, nagekeken.
 - Meten, nooit gokken: contrast ≥ 4,5:1, tekst ≥ 11,5 px, koppen hoogstens twee regels, maten uitgerekend.
 - Tekst in het Nederlands én het Engels. "Carrousel" met dubbele r. Levertijd altijd "vaak binnen een dag, soms een paar dagen". Over wie het werk doet: "VISUAILS", "we" of de lijdende vorm; nooit "onze beeldredactie" en nooit de ik-vorm. Geen beeldspraak ("magie", "naadloos").
@@ -102,10 +104,13 @@ Stel ze letterlijk zo, genummerd en elk met het advies erbij, zodat Lucas op zij
 13. Wat moet je zelf kunnen vervangen: a) beelden, iconen en teksten; b) alleen beelden. *Advies: a.*
 
 **Levering 72: snel en goed te lezen voor je advertenties**
-14. Mag ik veranderen hoe pagina's laden (beelden, letters, volgorde) zolang je er niets van ziet, bewaakt met `npm run visueel`? *Advies: ja.*
+14. Mag ik veranderen hoe pagina's laden (beelden, letters, volgorde) zolang je er niets van ziet, bewaakt met `npm run visueel`? De opening en hoe die beweegt blijven precies zoals ze zijn. *Advies: ja.*
 
 **Levering 73: plannen voor later (alleen opschrijven, niets bouwen)**
 15. Drie plannen: advertenties meten zonder scripts op de site, het weeksysteem echt opruimen met een migratie, en een spellinglijst voor je tekstronde. *Advies: alle drie.*
+
+**Na 08:59 (het tegoed is dan op)**
+16. a) de levering waar je dan mee bezig bent afmaken, pushen en stoppen; b) doorgaan op je gewone limieten tot alles af is; c) meteen stoppen. *Advies: a.* Kijk voor de tijd naar de klok in Nederland (UTC+1).
 
 ---
 
@@ -192,8 +197,8 @@ Twee uitrollen stopten op een toets die daarna toch slaagde: `test:doorloop27b` 
 - **De toetsen die erover gaan:** `looks`, `looks-browser`, `lookpagina`, `lookpagina-browser`, `start-looks`, `stijlkeuze`, `stijlvel`, `eigen-stijl`, `vaste-look-zelf` en `proef-look`. Toets beide standen van de schakelaar.
 - Alles volgt uit de data. Geen tweede lijst met stijlnamen ergens anders: daar is het eerder misgegaan.
 - **Beelden:** plaatshouders via het bestaande mechanisme in `beeld.js`. Geen stockbeelden, geen beelden van anderen. **Teksten:** schrijf ze vanuit Lucas' eigen woorden in de tabel hierboven en in §30 van het overzicht, NL en EN, en zet ze allemaal in `TEKSTEN-70.md` met een ●.
-- Blauw uur en de ontwerptaal van §29. Het sjabloon van een lookpagina blijft zoals het is: dit is geen nieuwe vormgeving.
-- **De voorpagina (levering 74):** in Hoe het werkt, tab Lifestyle, staat een lookkiezer met Dunes, Flash, Glow en de eigen look (`KIES_LOOKS` in `VoorpaginaHal.astro`). Zet daar de launchset in (Flash, Phone-made, August, eigen look), uit dezelfde data, en laat Flash de gekozen look. Op de voorpagina staat Formaten zonder tekst (`FormatenHal` met `kaal`); dat blijft zo.
+- De vormgeving zoals `docs/` die nu beschrijft. Het sjabloon van een lookpagina blijft zoals het is: dit is geen nieuwe vormgeving.
+- **De voorpagina** (leveringen 74 tot en met 88b): zoek waar daar looks staan, zoals een lookkiezer in Hoe het werkt (eerder `KIES_LOOKS` in `VoorpaginaHal.astro`) of de producten in Wat we maken. Zet daar de launchset in (Flash, Phone-made, August, eigen look), uit dezelfde data, met Flash als de gekozen look. Aan de opening (de scrollvideo, de laptop, de metro) en aan de vormgeving van de voorpagina verander je niets.
 - In de notitie: in welk bestand en op welke regel hij de schakelaar omzet, en per look welke beelden hij nog moet maken.
 
 ---
@@ -205,7 +210,7 @@ Twee uitrollen stopten op een toets die daarna toch slaagde: `test:doorloop27b` 
 **Wat er al is:**
 - **Beelden:** `src/data/beeld.js` met `PLAATSHOUDERS = true` en `scripts/plaatshouders.mjs`. Een nieuw bestand onder de verwachte naam in `public/img/` staat er bij de volgende build; een bestaande naam overschrijf je en zet je in `KLAAR`. Daarnaast `oude-beelden.json`, de beeldscripts (`make-avif.mjs`, `beeldtelling`, de telefoonversies in `telefoonbeelden.js`) en `sharp` in de devDependencies.
 - **Teksten:** `npm run tekstronde` (markdown om te lezen), `npm run tekstblad` (één tabel als xlsx) en `scripts/tekst-toepassen.mjs` (een ingevulde ronde terug in de bron, met de reparaties voor apostrofs en dubbele zinnen).
-- **Iconen:** het iconenkit in `src/data/iconen.js` (raster 24, gevuld, één snede, één zachte hoek, §29.4).
+- **Iconen:** het iconenkit in `src/data/iconen.js` (raster 24, gevuld; de regels in `docs/DESIGN.md`).
 - **Een gereedschap dat al werkt zoals hij het wil:** `FORMATEN.bat`, een dubbelklik met een duidelijk resultaat. Hij wil geen opdrachtregel waarbij hij "hoopt dat het gelukt is".
 
 **Stap 1: een telling en een plan.** Tel eerst: hoeveel beeldvakken heeft de site, welke zijn plaatshouder, welke zijn oud, op welke pagina staan ze, en welke verhouding, minimale maat en formaten vraagt elk vak? Schrijf dat met de gekozen opzet (vraag 12 en 13) in `kladblok/PLAN-71-ZELF-VERVANGEN.md`.
@@ -222,13 +227,12 @@ Bij vraag 12 = b schrijf je in het plan hoe de upload in /admin zou werken (R2, 
 
 **Waarom:** in Q4 begint Lucas met advertenties op Meta, TikTok en Google. Elke klik gaat naar een landingspagina, meestal op een telefoon. Een pagina die traag laadt of verspringt, kost dan echt geld. De landingspagina's zijn de voorpagina, /catalog, /lifestyle, /video, /hooks, de lookpagina's, /pricing, /plans, /start en /test-sample, NL en EN.
 
-1. **Meten, op 390 en 1440 px:** wanneer het grootste beeld staat (op de voorpagina de still van de opening, `public/img/hal/opening/still-*.avif|webp`; de 117 videobeelden in `opening/f/` laden pas daarna; op /catalog, /lifestyle en /video nog de laptopstanden in `public/img/hal/stand/`), verspringingen tijdens het laden, de letters (Urbanist en IBM Plex Mono, zelf gehost), het gewicht per pagina, en wat de Worker meegeeft aan cache. Gebruik Playwright; is Lighthouse via npm te draaien, dan dat ook.
-   Al gemeten op 25 okt (lokaal, zonder compressie): voorpagina op 390 px 2,0 MB in het eerste scherm, ook de beelden van Hoe het werkt en Formaten die pas verder naar beneden staan; op 1440 px laadt de reeks van de opening (117 beelden) direct na de still. LCP 0,8 s, CLS 0,002 tot 0,016, axe zonder fouten.
+1. **Meten, op 390 en 1440 px:** wanneer het grootste beeld staat, verspringingen tijdens het laden, de letters (VISUAILS Display en DM Sans, zelf gehost), het gewicht per pagina, en wat de Worker meegeeft aan cache. Gebruik Playwright; is Lighthouse via npm te draaien, dan dat ook. Op de voorpagina is de opening sinds leveringen 80 tot en met 88b een vastgezet podium met een video, een WebGL-doek (`src/scripts/metro.js`, `laptopdoek.js`) en de metro. Wat daar al gemeten en versneld is, staat in `kladblok/levering-84/meting.json` en `docs/RUST-80.md` §12 tot en met §15. Begin daar en meet niet opnieuw wat er al ligt.
 2. **Verbeteren, zonder dat iemand iets anders ziet:** de volgorde en voorrang van het laden, de maten in `srcset`, voorladen wat boven de vouw staat, verspringingen weg, cache. Bij vraag 14 = nee alleen meten en een plan schrijven.
 3. **Toegankelijkheid:** draai axe over alle openbare pagina's. In `kladblok/` staan al `axe-admin.mjs` en `axe-dashboard.mjs` als voorbeeld. Repareer wat je niet ziet: labels, alt-teksten, volgorde voor de tab-toets, namen van knoppen. Nieuwe alt-teksten gaan in `TEKSTEN-72.md`.
 4. **De bestaande controles:** `npm run kruip`, `npm run audit` en `npm run check:csp`. Repareer wat ze vinden, of zet het met reden in de notitie.
 5. `npm run visueel` moet daarna precies gelijk zijn. Lever een tabel per pagina: **voor · na · wat je deed**.
-6. **Laat de opening heel.** De voorpagina is sinds levering 74 een vastgezet podium met een scrollvideo op een canvas, Hoe het werkt in hetzelfde scherm, en op de computer de stroom (één wieltik of toets naar de volgende sectie, `STROOM` in `HalOpening.astro`). Verander niets aan hoe dat beweegt of wanneer het afspeelt; `tests/opening-74.test.mjs` moet groen blijven. De beelden die Claude aflevert, dragen content credentials (C2PA, een uuid-blok van ongeveer 6 kB per beeld); dat blok blijft erin. De toets meet daarom de beelddata apart.
+6. **Laat de opening heel.** Verander niets aan hoe de opening beweegt of wanneer hij afspeelt: de scrollvideo, de laptop die meerijdt, de metro en Wat we maken dat omhoog komt (leveringen 80 tot en met 88b). Ook de toetsen daarvan moeten groen blijven, onder meer `opening-88-browser`, `laptop-84`, `voorpagina-80` en `aantal-lat-browser`. Wil je daar iets versnellen, schrijf het dan als voorstel in de notitie en bouw het niet. De beelden die Claude aflevert, dragen content credentials (C2PA, een uuid-blok van ongeveer 6 kB per beeld); dat blok blijft erin. De toets meet daarom de beelddata apart.
 
 ## 10. Levering 73 · Plannen voor later (alleen opschrijven, niets bouwen)
 
@@ -255,7 +259,7 @@ Rol tussen twee cloudsessies altijd eerst uit. Dan begint de volgende sessie met
 
 ## 12. Wat bewust níet in deze sessie zit
 
-- **De voorpagina:** die is net omgebouwd (levering 74, 25 okt). Alleen levering 70 (de looks in de data) en levering 72 (laden, zonder dat iemand iets ziet) raken hem.
+- **De voorpagina:** die is in leveringen 74 tot en met 88b helemaal omgebouwd. Alleen levering 70 (de looks in de data) en levering 72 (laden, zonder dat iemand iets ziet) raken hem.
 - **De beelden van 1560 px (lijst 45):** de bronbestanden staan op zijn pc, niet in de repo.
 - **Het merkboek naar Blauw uur:** dat is een artifact, geen code.
 - **Een productanalyse per bestelling:** die zit al in zijn Magnific-borden.

@@ -76,7 +76,7 @@ const W = nl
 
 <style>
   .h-uv-waar { padding-bottom: 0; margin-bottom: -70px; font: 500 14px/1.4 var(--h-letter); color: var(--h-inkt-3); }
-  .h-uv-waar span { display: inline-flex; height: 26px; padding: 0 10px; margin-right: 8px; align-items: center; border-radius: 8px 3px 3px 3px; background: var(--h-nevel); color: var(--h-inkt); font-weight: 600; }
+  .h-uv-waar span { display: inline-flex; height: 26px; padding: 0 10px; margin-right: 8px; align-items: center; border-radius: 999px; background: var(--h-nevel); color: var(--h-inkt); font-weight: 600; }
   /* Dezelfde omhulling als op hun eigen pagina (.h-hw-agenda op /how-it-works, .h-sd-fig op
      /studio): die zet de kleuren van de hal. Zonder stonden de kleine grijze teksten hier
      onder 4,5:1, terwijl ze op hun eigen pagina wel haalden. */
@@ -85,4 +85,11 @@ const W = nl
   .h-uv-noot { padding-top: 40px; font: 500 16px/1.5 var(--h-letter); color: var(--h-inkt-2); }
   .h-uv-noot a { color: var(--h-inkt); font-weight: 600; text-decoration: underline; text-decoration-color: var(--h-veldlijn); text-underline-offset: 3px; }
   @media (max-width: 900px) { .h-uv-waar { margin-bottom: -50px; } }
+  /* Levering 86 (4 november 2026): de noot en de etiketten zijn een <p> met .h-sec, dus ze kregen de
+     zijmarge van een sectie (120 px aan elke kant) én de leesmaat van een alinea (max-width op de hele
+     doos) tegelijk: er bleef 24 px over en de noot brak per lettergreep af. Met content-box geldt de
+     leesmaat voor de tekst en staat de marge eromheen; de noot krijgt weer de 40 px die hierboven staat
+     (.hal .h-sec won met 213). */
+  .h-uv-noot.h-sec, .h-uv-waar.h-sec { box-sizing: content-box; }
+  .h-uv .h-uv-noot.h-sec { padding-top: 40px; }
 </style>

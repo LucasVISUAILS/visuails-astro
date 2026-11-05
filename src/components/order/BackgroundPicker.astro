@@ -283,7 +283,7 @@ const fl = FIELD[lang];
   .bg-perfoto-rij { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr)); gap: .6rem; }
   .bg-perfoto-veld { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; column-gap: .55rem; row-gap: .3rem; align-items: center; padding: .55rem .6rem; border: 1px solid var(--line); border-radius: var(--r-kaart); background: var(--surface); }
   /* De schets van het beeld op zijn kleur, zoals de tegels in "Wat je krijgt". */
-  .bg-perfoto-staal { grid-row: 1; width: 44px; height: 44px; border-radius: 10px 3px 3px 3px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--line-strong); background: var(--bgfoto, #FFFFFF); }
+  .bg-perfoto-staal { grid-row: 1; width: 44px; height: 44px; border-radius: 999px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--line-strong); background: var(--bgfoto, #FFFFFF); }
   .bg-perfoto-staal img { display: block; width: 100%; height: 100%; object-fit: contain; }
   .bg-perfoto-naam { font-size: .875rem; font-weight: 600; color: var(--ink); }
   .bg-perfoto-kies { grid-column: 1 / -1; width: 100%; }
@@ -292,7 +292,7 @@ const fl = FIELD[lang];
      veld met de code ernaast. Zonder script staan ze er gewoon; pipeline.js
      verbergt ze tot "Eigen kleur…" gekozen is. */
   .bg-perfoto-eigen { grid-column: 1 / -1; display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: .45rem; align-items: center; }
-  .bg-perfoto-kleur { width: 44px; height: 44px; padding: 0; border: 1px solid var(--line-strong); border-radius: 10px 3px 3px 3px; background: none; cursor: pointer; }
+  .bg-perfoto-kleur { width: 44px; height: 44px; padding: 0; border: 1px solid var(--line-strong); border-radius: 999px; background: none; cursor: pointer; }
   .bg-perfoto-hex { width: 100%; min-width: 0; font-variant-numeric: tabular-nums; }
   .bg-perfoto-donker { grid-column: 1 / -1; font-size: .8rem; line-height: 1.45; color: var(--ink-2); }
   .bg-opt:has(input:checked) { border-color: var(--kies, var(--accent)); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--kies, var(--accent)); }
@@ -400,15 +400,15 @@ const fl = FIELD[lang];
     width: 3.6rem; height: 3.15rem;
     padding: .25rem;
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: 999px;
     background: var(--surface);
     cursor: pointer;
   }
   /* The native swatch inside the control keeps its own square corners unless
      both engines' pseudo-elements are told otherwise. */
   .bg-color::-webkit-color-swatch-wrapper { padding: 0; }
-  .bg-color::-webkit-color-swatch { border: 0; border-radius: var(--r-sm) 3px 3px 3px; }
-  .bg-color::-moz-color-swatch { border: 0; border-radius: var(--r-sm) 3px 3px 3px; }
+  .bg-color::-webkit-color-swatch { border: 0; border-radius: 999px; }
+  .bg-color::-moz-color-swatch { border: 0; border-radius: 999px; }
   .bg-hexinput { text-transform: uppercase; font-variant-numeric: tabular-nums; }
   /* A consequence, not a refusal — so it is the warn colour and not an error
      box, and nothing about it blocks the form. */
@@ -450,7 +450,7 @@ const fl = FIELD[lang];
     color: var(--accent-bright);
     text-decoration: underline;
     text-underline-offset: 3px;
-    border-radius: var(--r-sm) 3px 3px 3px;
+    border-radius: 999px;
   }
   .pl-why > summary:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
   .pl-why > p { margin-top: .5rem; font-size: .82rem; color: var(--ink-3); line-height: 1.55; max-width: 70ch; }

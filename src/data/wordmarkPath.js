@@ -35,7 +35,19 @@ export const V_TOT = 740;
    LEVERING 68 (24 oktober 2026, lijst 55 logo a): geen elektrische lijn meer. Het woordmerk
    staat stil en zijn kleur schommelt van inkt naar blauw uur en terug: een tweede pad in
    blauw (.mk-kleur) op de vulling, en alleen de dekking beweegt (global.css en de kopie
-   in account.css, admin.css en portal.css). */
+   in account.css, admin.css en portal.css).
+
+   LEVERING 86 (3 november 2026, lijst 72 logo a en schommel a): op een lichte grond staat het
+   woordmerk in de snede, de fade van blauw diep naar #2D61A8 langs de snede (126,87°), en de
+   schommel loopt naar dezelfde fade een stap lichter. Dezelfde twee fades als #vs-w-snede en
+   #vs-w-licht in Layout.astro, maar met een eigen naam (vs-wi-), want deze pagina's hebben de
+   symbolen van Layout.astro niet. Per pagina staat het woordmerk één keer. Welke plek de fade
+   krijgt, zet de css (studio-hal.css, admin.css, account.css, portal.css); op een donkere grond
+   blijft het woordmerk licht, met de schommel in blauw licht. */
+const WM_FADES = '<defs>'
+  + '<linearGradient id="vs-wi-snede" gradientUnits="userSpaceOnUse" x1="0" y1="-797.25" x2="3367.43" y2="1728.32"><stop offset="0" stop-color="#1A4279"/><stop offset=".55" stop-color="#25508B"/><stop offset="1" stop-color="#2D61A8"/></linearGradient>'
+  + '<linearGradient id="vs-wi-licht" gradientUnits="userSpaceOnUse" x1="0" y1="-797.25" x2="3367.43" y2="1728.32"><stop offset="0" stop-color="#25508B"/><stop offset=".55" stop-color="#2D61A8"/><stop offset="1" stop-color="#44699D"/></linearGradient>'
+  + '</defs>';
 export function woordmerkSvg(klasse = 'woordmerk') {
-  return `<svg class="${klasse} mk" viewBox="${WORDMARK_VIEWBOX}" aria-hidden="true" focusable="false"><path class="mk-fill" fill-rule="evenodd" d="${WOORDMERK.d}"/><path class="mk-kleur" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg>`;
+  return `<svg class="${klasse} mk" viewBox="${WORDMARK_VIEWBOX}" aria-hidden="true" focusable="false">${WM_FADES}<path class="mk-fill" fill-rule="evenodd" d="${WOORDMERK.d}"/><path class="mk-kleur" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg>`;
 }

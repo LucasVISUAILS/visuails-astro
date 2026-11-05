@@ -170,7 +170,7 @@ for (const p of HAL) {
   if (i3 >= 0) {
     check(`${p}: stap 3 toont vier beelden met elk een vinkje, en het formaat als één keuze`, [(stap3.match(/class="h-vink"/g) || []).length, (fmt.match(/is-eind/g) || []).length, /9:16/.test(fmt)], [4, 1, false]);
     check(`${p}: met "4 van 4 goedgekeurd" / "4 of 4 approved"`, /4 (van|of) 4 (goedgekeurd|approved)/.test(stap3), true);
-  } else check(`${p}: Hoe het werkt kort, met drie stappen (levering 80)`, (h.match(/class="w8-stap"/g) || []).length, 3);
+  } else check(`${p}: Hoe het werkt kort, met drie stappen (levering 80)`, (h.match(/class="w8-stap(?: h-1[rk])?"/g) || []).length, 3);
 }
 const metHal = globSync('dist/**/index.html').map((f) => f.replace(/\\/g, '/'))
   .filter((f) => /<body[^>]*class="[^"]*\bhal\b/.test(readFileSync(f, 'utf8')))

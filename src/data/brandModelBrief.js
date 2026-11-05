@@ -216,7 +216,7 @@ export const COPY = {
 
   nl: {
     eyebrow: 'Merkmodel',
-    h1: 'Eén gezicht, alleen voor jou gemaakt.',
+    h1: 'Één gezicht, alleen voor jou gemaakt.',
     lead: 'Eén keer ontworpen, voor jouw merk, en nergens anders gebruikt.',
 
     bewijsH: 'Merkmodellen die we maakten',

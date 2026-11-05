@@ -392,7 +392,7 @@ const hint = lang === 'nl'
     background: none; border: 0; padding: 0;
     font: inherit; font-size: .86rem;
     color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px;
-    cursor: pointer; border-radius: var(--r-sm) 3px 3px 3px;
+    cursor: pointer; border-radius: 999px;
   }
   .pu-link:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
 
@@ -505,7 +505,7 @@ const hint = lang === 'nl'
      project aanhoudt voor een doel dat naast zijn buren staat. */
   .pu-rail-knop {
     display: block; width: 22px; height: 22px; padding: 0;
-    border: 1px solid var(--line-strong); border-radius: 4px;
+    border: 1px solid var(--line-strong); border-radius: 999px;
     background: var(--paper); cursor: pointer;
     transition: background .15s, border-color .15s, transform .15s;
   }
@@ -645,7 +645,7 @@ const hint = lang === 'nl'
   .pu-cards :global(.pu-meer-pijl svg) { width: 100%; height: 100%; display: block; }
   .pu-cards :global(.pu-meer-knop.is-open .pu-meer-pijl) { rotate: 180deg; }
   .pu-cards :global(.pu-meer-knop:hover .pu-meer-t) { color: var(--ink); }
-  .pu-cards :global(.pu-meer-knop:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: var(--r-sm, 6px) 3px 3px 3px; }
+  .pu-cards :global(.pu-meer-knop:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 999px; }
   /* De inhoud krijgt de ruimte die de kaart erbuiten juist inlevert: dit is de
      plek waar iemand oplet, dus hier mag het ademen. */
   .pu-cards :global(.pu-meer-in) { display: grid; gap: 1.4rem; padding: 1rem 0 .4rem; }
@@ -688,7 +688,7 @@ const hint = lang === 'nl'
   }
   .pu-cards :global(.pu-ratio-q) { display: grid; gap: .2rem; }
   .pu-cards :global(.pu-ratio-label) { font-size: .76rem; color: var(--ink-3); }
-  .pu-cards :global(.pu-ratio-field) { padding: .45rem .6rem; font-size: .86rem; border-radius: var(--r-md) 3px 3px 3px; }
+  .pu-cards :global(.pu-ratio-field) { padding: .45rem .6rem; font-size: .86rem; border-radius: 999px; }
   /* iOS zoomt in op velden onder 16 px (1 oktober 2026); zie stijl22.css. */
   @media (max-width: 760px), (pointer: coarse) { .pu-cards :global(.pu-ratio-field) { font-size: 16px; } }
   .pu-cards :global(.pu-card.is-ready) { border-color: var(--signal); }
@@ -747,7 +747,7 @@ const hint = lang === 'nl'
     min-width: 44px; min-height: 44px;
     display: inline-flex; align-items: center; justify-content: center;
     background: none; border: 1px solid var(--line);
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: 999px;
     color: var(--ink-2); cursor: pointer;
     font: inherit; font-size: .8rem;
     transition: border-color var(--dur-1) var(--ease);
@@ -908,12 +908,12 @@ const hint = lang === 'nl'
     display: grid; place-items: center;
     width: 100%; aspect-ratio: 1;
     border: 1px dashed var(--line);
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: 999px;
     font-size: 1.2rem; line-height: 1; font-weight: 400;
     transition: border-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
   }
   .pu-cards :global(.pu-ref-add:hover .pu-ref-plus) { border-color: var(--ink); color: var(--ink-2); }
-  .pu-cards :global(.pu-ref-add:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 3px; border-radius: var(--r-sm) 3px 3px 3px; }
+  .pu-cards :global(.pu-ref-add:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 3px; border-radius: 999px; }
   .pu-cards :global(.pu-ref-add-label) {
     font-family: var(--font-mono); font-size: .72rem;
     letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3);
@@ -962,7 +962,7 @@ const hint = lang === 'nl'
     width: 100%; aspect-ratio: 3 / 4;
     padding: .6rem .4rem;
     border: 1px dashed var(--line-strong);
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: 999px;
     background: none;
     color: var(--ink-3);
     font: inherit;
@@ -1085,7 +1085,7 @@ const hint = lang === 'nl'
     cursor: pointer;
   }
   .pu-cards :global(.pu-weg:hover) { color: var(--warn-ink, var(--ink)); }
-  .pu-cards :global(.pu-weg:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: var(--r-sm) 3px 3px 3px; }
+  .pu-cards :global(.pu-weg:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: 999px; }
 
   /* GEVULD, MAAR ZONDER VOORBEELD. De tekening blijft (er is niets anders te
      tonen) maar zakt weg, de uitleg verdwijnt — die is gevolgd — en er komt een
@@ -1113,7 +1113,7 @@ const hint = lang === 'nl'
   .pu-cards :global(.pu-slot[data-state="skipped"] .pu-slot-btn) { opacity: .5; border-style: dotted; }
   .pu-cards :global(.pu-slot[data-state="failed"] .pu-slot-btn) { border-color: var(--warn); border-style: solid; }
 
-  .pu-cards :global(.pu-slot-bar) { display: block; height: 2px; background: var(--line); border-radius: var(--r-sm) 3px 3px 3px; overflow: hidden; }
+  .pu-cards :global(.pu-slot-bar) { display: block; height: 2px; background: var(--line); border-radius: 999px; overflow: hidden; }
   .pu-cards :global(.pu-slot-bar > i) {
     display: block; height: 100%; width: 100%;
     transform: scaleX(0); transform-origin: left;
@@ -1143,7 +1143,7 @@ const hint = lang === 'nl'
     font: inherit; font-size: .72rem;
     color: var(--accent-bright);
     text-decoration: underline; text-underline-offset: 3px;
-    cursor: pointer; border-radius: var(--r-sm) 3px 3px 3px;
+    cursor: pointer; border-radius: 999px;
   }
   .pu-cards :global(.pu-act:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
@@ -1186,7 +1186,7 @@ const hint = lang === 'nl'
     padding: .5rem .7rem;
     font-size: .88rem;
     min-height: 40px;
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: 999px;
   }
   /* The gap global.css leaves for the caret. The shorthand above would drop it,
      which is the same trap .select itself has to re-state its way out of. */
@@ -1338,7 +1338,7 @@ const hint = lang === 'nl'
     min-height: 40px;
     padding: .45rem .85rem;
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: 999px;
     background: var(--surface);
     color: var(--ink);
     font: inherit; font-size: .82rem;
@@ -1396,13 +1396,13 @@ const hint = lang === 'nl'
   .pu-tray-list :global(.pu-tray-pick) {
     flex: 1 1 11rem; min-width: 0;
     padding: .45rem .6rem; font-size: .82rem;
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: 999px;
   }
   .pu-tray-list :global(.pu-tray-go) {
     flex: 0 0 auto;
     padding: .45rem .8rem;
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-md) 3px 3px 3px;
+    border-radius: 999px;
     background: var(--surface);
     color: var(--ink);
     font: inherit; font-size: .82rem;
@@ -1416,7 +1416,7 @@ const hint = lang === 'nl'
     font: inherit; font-size: .74rem;
     color: var(--accent-bright);
     text-decoration: underline; text-underline-offset: 3px;
-    cursor: pointer; border-radius: var(--r-sm) 3px 3px 3px;
+    cursor: pointer; border-radius: 999px;
   }
 
   /* ── Breakpoints ──────────────────────────────────────────────────────────*/
@@ -1452,7 +1452,7 @@ const hint = lang === 'nl'
   .pu-cards :global(.pu-soort-sel) {
     min-height: 40px; max-width: 14rem;
     padding: .4rem 2.3rem .4rem .75rem;
-    font-size: .86rem; border-radius: var(--r-md) 3px 3px 3px;
+    font-size: .86rem; border-radius: 999px;
   }
   .pu-cards :global(.pu-state) { grid-column: 2 / -1; }
 
@@ -1501,7 +1501,7 @@ const hint = lang === 'nl'
     justify-self: start; max-width: 100%;
     min-height: 32px; padding: .25rem 1.9rem .25rem .55rem;
     font: inherit; font-size: .78rem; color: var(--ink);
-    border: 1px solid var(--line-strong); border-radius: var(--r-md) 3px 3px 3px;
+    border: 1px solid var(--line-strong); border-radius: 999px;
     background-color: var(--surface);
     cursor: pointer;
   }

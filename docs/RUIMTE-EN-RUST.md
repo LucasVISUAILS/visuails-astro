@@ -78,6 +78,13 @@ vanaf 16:
 onder de balk (daar landt de foto uit de opening), Hoe het werkt 160, de looks 213, Meer weten 120, het
 €1-blok 213.
 
+**In het klein** (levering 86, 4 november 2026). De maten hierboven gelden vanaf de kop van een sectie. Binnen
+een kaart, een rij of een vlak: een kleine kop (de naam van iets, hoogstens 18 px) en zijn zin **8 px**, twee
+alinea's na elkaar **12 px**, een noot onder een rij, lijst of tegels **16 px**, een etiket boven een paginakop
+**20 px**. En altijd: tussen twee buren die allebei iets dragen (tekst, een knop, een beeld) minstens **8 px**;
+cellen van dezelfde rij beginnen op dezelfde bovenlijn (hoogstens 2 px verschil). Lucas: *"zorg dat er nooit
+elementen/texten te dicht tegen elkaar aan staan en consistentie is altijd belangrijk om na te gaan."*
+
 ## 3 · De verschuiving: de stap (S)
 
 Lucas: *"de teksten mogen express (maar wel consistent uitgerekend) een beetje off staan … volgens een
@@ -132,6 +139,16 @@ direct na elkaar.
 - **Kaarten alleen voor een groep** die bij elkaar hoort. Nooit drie gelijke kaarten: verschillen ze
   in gewicht, dan verschillen ze in maat.
 
+## 5b · Korte zinnen op één regel (levering 87, 4 november 2026)
+
+Elke tekst heeft een maat (`--h-maat`): kleine tekst ongeveer 9 woorden per regel, lopende tekst 5 tot 7. Lucas,
+03:23: *"Zinnen als deze kunnen gewoon als 1 zin om ruimte te besparen."* Dus houdt een korte zin geen maat: na de build
+zet `scripts/korte-zinnen.mjs` **h-1r** op een tekstblok van hoogstens 9 woorden (geen maat) en **h-1k** op een blok van
+10 tot 12 woorden (geen maat als de letter 15,5 px of kleiner is). Een icoon in de zin houdt dat niet tegen; een rij die
+alleen uit links bestaat (knoppen) en een blok met blokken erin wel. Past de zin niet in zijn vak (een telefoon), dan
+breekt hij gewoon. Bewaakt door `tests/korte-zinnen.test.mjs`. Over de hele site in twee talen gemeten: van 190 (NL) en
+326 (EN) korte zinnen op twee regels naar 0; wat overblijft (77 per taal) is lopende tekst van 10 tot 14 woorden.
+
 ## 6 · De gloed op de tweede toon
 
 Lucas: *"de geciteerde woorden … de blue hour kleur … een hele subtiele ademende gloed die komt en
@@ -173,7 +190,7 @@ rechthoekig is."*
 - Links het V-merk, de menu's direct ernaast (op de lijn van het raster), rechts Inloggen, de taal en
   Bestellen (de enige blauwe knop).
 - Hij blijft bovenaan staan. Niets beweegt eraan bij het scrollen.
-- Een uitklapmenu hangt **8 px onder de haarlijn**, wit met een haarlijn, de zachte hoek linksboven.
+- Een uitklapmenu hangt **8 px onder de haarlijn**, wit met een haarlijn, 24 rond (sinds levering 87; daarvoor de zachte hoek linksboven).
 - De balk staat op alle pagina's op dit raster. Tot de andere pagina's het systeem krijgen, staat hun
   inhoud nog op de oude marge (40 px op 1440); dat trekt recht zodra ze meegaan.
 
@@ -190,7 +207,8 @@ rechthoekig is."*
 
 Elke pagina wordt gemeten op 320 – 1920 px: koppen hoogstens twee regels (drie tot 340 px),
 5 – 7 woorden per regel lopende tekst, tekst minstens 11,5 px, contrast 4,5 : 1, CLS 0 bij het laden,
-de stap S en het optische midden tot op 1 px zoals hierboven.
+de stap S en het optische midden tot op 1 px zoals hierboven. Te dicht en scheef: `kladblok/te-dicht.mjs` (8 px tussen buren, 2 px
+in een rij), op elke pagina, NL en EN.
 
 ---
 

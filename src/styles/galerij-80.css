@@ -44,7 +44,7 @@
 
 /* de naam van de look: een wit plaatje linksonder, onder de muis of met de toets. 14 px van de rand, dus los van de
    ronde hoek van de tegel: het houdt zijn eigen zachte hoek. Het springt aan (twee stappen), het glijdt niet. */
-.g8-naam { position: absolute; left: 14px; bottom: 14px; z-index: 2; display: inline-flex; align-items: center; gap: 8px; padding: 7px 10px 7px 11px; border-radius: 8px 3px 3px 3px; background: #FBFCFF; font: 600 11.5px/1 var(--h-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--h-inkt); opacity: 0; transition: opacity .16s steps(2, end); pointer-events: none; white-space: nowrap; }
+.g8-naam { position: absolute; left: 14px; bottom: 14px; z-index: 2; display: inline-flex; align-items: center; gap: 8px; padding: 7px 10px 7px 11px; border-radius: 999px; background: #FBFCFF; font: 600 11.5px/1 var(--h-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--h-inkt); opacity: 0; transition: opacity .16s steps(2, end); pointer-events: none; white-space: nowrap; }
 .g8-naam span { color: var(--h-grijs, #636974); font-weight: 500; }
 .g8-tegel:hover .g8-naam, .g8-tegel:focus-visible .g8-naam { opacity: 1; }
 /* in de vaart geen naam: hij zou meeveegen */

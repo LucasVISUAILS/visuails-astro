@@ -13,7 +13,7 @@
  *       de levertijd uit de code, de klant ziet geen €1-link maar Studio, het laadscherm alleen op de voorpagina;
  *   2 · de balk: 56 px, glas (de grond op 72 %, vervaging), het uitklapmenu eronder;
  *   3 · in de browser (1440 × 900, 1920 × 1080, 390 × 844): niets zijwaarts, de titel op zijn maat, koppen
- *       hoogstens twee regels, geen tekst onder 11,5 px; de eerste scroll zet de laptop in het midden;
+ *       hoogstens twee regels, geen tekst onder 11,5 px; de eerste scroll is gewoon scrollen (levering 87);
  *   4 · de galerij en de poster bewegen alleen met het scrollen en staan daarna weer stil; bij minder beweging
  *       niets van dat alles; het laadscherm is weg zodra de pagina er is; geen scriptfouten.
  */
@@ -51,7 +51,7 @@ for (const [pad, taal] of [['index.html', 'en'], ['nl/index.html', 'nl']]) {
   const m8 = h.slice(plek(/<section class="m8"/), plek(/<section class="g8"/));
   const vanaf = taal === 'nl' ? 'vanaf' : 'from';
   ok(`${taal}: Wat we maken: drie diensten met hun vanafprijs uit de code (${euro(ladderFloor('catalog'), taal)}, ${euro(ladderFloor('lifestyle'), taal)})`,
-    (m8.match(/class="m8-dienst"/g) || []).length === 3 && m8.includes(`${vanaf} ${euro(ladderFloor('catalog'), taal)}`) && m8.includes(`${vanaf} ${euro(ladderFloor('lifestyle'), taal)}`));
+    (m8.match(/class="m8-dienst[" ]/g) || []).length === 3 && m8.includes(`${vanaf} ${euro(ladderFloor('catalog'), taal)}`) && m8.includes(`${vanaf} ${euro(ladderFloor('lifestyle'), taal)}`));
   const m8links = [...m8.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
   ok(`${taal}:   alle links in Wat we maken bestaan (${m8links.length})`, m8links.length >= 7 && m8links.every(bestaat), m8links.filter((l) => !bestaat(l)).join(' '));
   /* de galerij */
@@ -70,7 +70,7 @@ for (const [pad, taal] of [['index.html', 'en'], ['nl/index.html', 'nl']]) {
   /* Hoe het werkt, kort: de levertijd uit de code */
   const [snel, traag] = levertijdDelen('unattended', taal);
   const w8 = h.slice(plek(/<section class="w8"/), plek(/class="h-sec h-weten/));
-  ok(`${taal}: Hoe het werkt: drie stappen in één regel, de levertijd uit de code`, (w8.match(/class="w8-stap"/g) || []).length === 3 && tekst(w8).includes(traag ? `${snel}, ${traag}.` : `${snel}.`) && bestaat((/class="w8-link" href="([^"]+)"/.exec(w8) || [, '/x'])[1]), tekst(w8).slice(0, 160));
+  ok(`${taal}: Hoe het werkt: drie stappen in één regel, de levertijd uit de code`, (w8.match(/class="w8-stap(?: h-1[rk])?"/g) || []).length === 3 && tekst(w8).includes(traag ? `${snel}, ${traag}.` : `${snel}.`) && bestaat((/class="w8-link" href="([^"]+)"/.exec(w8) || [, '/x'])[1]), tekst(w8).slice(0, 160));
   /* lijst 64, knoppen: de klant ziet andere knoppen */
   const acties = (/<p class="o8-acties">[\s\S]*?<\/p>/.exec(h) || [''])[0];
   ok(`${taal}: de €1-link alleen voor wie nog niet bestelde; een klant ziet de link naar Studio`, /href="[^"]*test-sample[^"]*" data-vis-uit/.test(acties) && /href="\/account" data-vis-klant-in hidden/.test(acties), acties.slice(0, 400));
@@ -83,14 +83,17 @@ for (const [pad, taal] of [['index.html', 'en'], ['nl/index.html', 'nl']]) {
   ok('het laadscherm staat op geen andere pagina (/pricing)', !/vl8/.test(h));
 }
 const bron = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
-ok('de opening vangt het wiel vóór het zachte scrollen (capture)', /addEventListener\('wheel', opWiel, \{ passive: false, capture: true \}\)/.test(bron('src/components/HalOpening80.astro')));
+/* levering 87 (lijst 74): de opening vangt het wiel niet meer; de laptop staat stil en het scrollen speelt hem af
+   (tests/opening-88-browser.test.mjs) */
+ok('de opening vangt het wiel niet meer af (levering 87: gewoon scrollen)', !/addEventListener\('wheel'/.test(bron('src/components/HalOpening80.astro')));
 ok('zacht scrollen staat in Layout en alleen voor een muiswiel', /import '\.\.\/scripts\/zachtscrollen\.js'/.test(bron('src/layouts/Layout.astro')) && /function isMuiswiel/.test(bron('src/scripts/zachtscrollen.js')));
 ok('de letter heeft de gewichten 300 – 700 (lopende tekst 370)', /font-family: 'DM Sans'; font-style: normal; font-weight: 300 700;/.test(bron('src/styles/hal.css')) && /\.h-voor \{ font-weight: 370; \}/.test(bron('src/styles/voorpagina-80.css')));
 ok('docs/RUST-80.md beschrijft de secties, het scrollen en het laadscherm', ['## 7 · De secties na de opening', '## 8 · Zacht scrollen en het laadscherm'].every((k) => bron('docs/RUST-80.md').includes(k)));
 {
   const v = JSON.parse(bron('src/data/laptopVideo.json'));
+  /* sinds levering 84 twee banden en hoogstens 2400 breed (tests/laptop-84.test.mjs) */
   ok('de laptopvideo: 111 beelden met de hoeken van de schermen, en de bestanden staan er', v.beelden === 111 && v.schermen.length === 111
-    && [1280, 1920, 2560].every((b) => fs.existsSync(path.join(ROOT, `public/img/hal/laptop-video/laptop-80-${b}.mp4`))));
+    && [1280, 1920, 2400].every((b) => fs.existsSync(path.join(ROOT, `public/img/hal/laptop-video/laptop-84-${b}.mp4`))));
 }
 
 /* ── de browser ──────────────────────────────────────────────────────────── */
@@ -159,12 +162,13 @@ for (const [breed, hoog] of [[1440, 900], [1920, 1080], [390, 844]]) {
   ok('elke kop hoogstens twee regels', m.koppen.every(([, r]) => r <= 2), JSON.stringify(m.koppen.filter(([, r]) => r > 2)));
   ok('geen tekst kleiner dan 11,5 px', m.klein.length === 0, m.klein.slice(0, 4).join(' | '));
   if (breed >= 1100) {
-    /* de eerste scroll: de laptop helemaal in beeld, de foto in het midden onder de balk */
+    /* de eerste scroll: sinds levering 87 gewoon scrollen, geen sprong naar de laptop (Lucas, lijst 74: "op de
+       eerste sectie geen scroll effect … je scrollt dus normaal naar de laptop") */
     await page.mouse.move(breed / 2, hoog / 2);
     await page.mouse.wheel(0, 120);
     await page.waitForTimeout(1500);
-    const s1 = await page.evaluate(() => { const f = document.querySelector('.o8-foto').getBoundingClientRect(); return { y: scrollY, midden: (f.top + f.bottom) / 2, gewenst: 56 + (innerHeight - 56) / 2 }; });
-    ok('de eerste scroll zet de laptop in het midden onder de balk', s1.y > 100 && dicht(s1.midden, s1.gewenst, 3), JSON.stringify(s1));
+    const s1 = await page.evaluate(() => ({ y: scrollY }));
+    ok('de eerste scroll is gewoon scrollen, geen sprong naar de laptop', s1.y >= 60 && s1.y <= 240, JSON.stringify(s1));
   }
   /* de galerij: stil, dan beweegt hij met het scrollen, en daarna staat hij weer stil */
   const g = await page.evaluate(() => Math.round(scrollY + document.querySelector('[data-g8]').getBoundingClientRect().top));

@@ -1,0 +1,1150 @@
+{
+ "uitleg": "Levering 84 (2 november 2026). Gemeten in de werkmap van de video (2944 × 1248): het echte scherm is wat het toestel omsluit (doorzichtig, niet aan de rand), de grond is wat buiten het toestel doorzichtig is. \"gat zonder beeld\": beeldpunten van het scherm waar geen winkel of telefoonfoto kwam (daar schijnt de grond door); \"beeld op de grond\": beeldpunten waar het scherm buiten het toestel kwam. Met 1,5 beeldpunt ruimer. De ± 500 per beeld die bij \"nieuw\" overblijven zijn het gaatje tussen de hand en de telefoon: dat is grond en hoort open.",
+ "schermen_totaal": {
+  "oud": {
+   "gat_zonder_beeld": 890187,
+   "beeld_op_de_grond": 517
+  },
+  "nieuw": {
+   "gat_zonder_beeld": 43519,
+   "beeld_op_de_grond": 21
+  }
+ },
+ "schermen_per_beeld": [
+  {
+   "beeld": 0,
+   "oud": {
+    "gat_zonder_beeld": 10425,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 503,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 1,
+   "oud": {
+    "gat_zonder_beeld": 9588,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 492,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 2,
+   "oud": {
+    "gat_zonder_beeld": 9160,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 494,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 3,
+   "oud": {
+    "gat_zonder_beeld": 9154,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 494,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 4,
+   "oud": {
+    "gat_zonder_beeld": 8846,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 494,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 5,
+   "oud": {
+    "gat_zonder_beeld": 9689,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 503,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 6,
+   "oud": {
+    "gat_zonder_beeld": 9379,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 501,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 7,
+   "oud": {
+    "gat_zonder_beeld": 9872,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 499,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 8,
+   "oud": {
+    "gat_zonder_beeld": 9334,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 496,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 9,
+   "oud": {
+    "gat_zonder_beeld": 8897,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 520,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 10,
+   "oud": {
+    "gat_zonder_beeld": 8509,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 518,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 11,
+   "oud": {
+    "gat_zonder_beeld": 9624,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 521,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 12,
+   "oud": {
+    "gat_zonder_beeld": 10607,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 521,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 13,
+   "oud": {
+    "gat_zonder_beeld": 9485,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 561,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 14,
+   "oud": {
+    "gat_zonder_beeld": 10249,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 553,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 15,
+   "oud": {
+    "gat_zonder_beeld": 8518,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 561,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 16,
+   "oud": {
+    "gat_zonder_beeld": 8279,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 558,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 17,
+   "oud": {
+    "gat_zonder_beeld": 7483,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 580,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 18,
+   "oud": {
+    "gat_zonder_beeld": 8139,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 563,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 19,
+   "oud": {
+    "gat_zonder_beeld": 7422,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 577,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 20,
+   "oud": {
+    "gat_zonder_beeld": 8501,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 571,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 21,
+   "oud": {
+    "gat_zonder_beeld": 6916,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 581,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 22,
+   "oud": {
+    "gat_zonder_beeld": 8290,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 559,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 23,
+   "oud": {
+    "gat_zonder_beeld": 6794,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 559,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 24,
+   "oud": {
+    "gat_zonder_beeld": 8439,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 561,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 25,
+   "oud": {
+    "gat_zonder_beeld": 6618,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 571,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 26,
+   "oud": {
+    "gat_zonder_beeld": 6534,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 570,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 27,
+   "oud": {
+    "gat_zonder_beeld": 7724,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 567,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 28,
+   "oud": {
+    "gat_zonder_beeld": 6859,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 566,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 29,
+   "oud": {
+    "gat_zonder_beeld": 7513,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 558,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 30,
+   "oud": {
+    "gat_zonder_beeld": 6858,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 596,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 31,
+   "oud": {
+    "gat_zonder_beeld": 6488,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 561,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 32,
+   "oud": {
+    "gat_zonder_beeld": 7859,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 554,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 33,
+   "oud": {
+    "gat_zonder_beeld": 7132,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 585,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 34,
+   "oud": {
+    "gat_zonder_beeld": 6529,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 552,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 35,
+   "oud": {
+    "gat_zonder_beeld": 8586,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 561,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 36,
+   "oud": {
+    "gat_zonder_beeld": 8447,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 557,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 37,
+   "oud": {
+    "gat_zonder_beeld": 6188,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 471,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 38,
+   "oud": {
+    "gat_zonder_beeld": 5724,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 481,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 39,
+   "oud": {
+    "gat_zonder_beeld": 8650,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 508,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 40,
+   "oud": {
+    "gat_zonder_beeld": 22280,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 474,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 41,
+   "oud": {
+    "gat_zonder_beeld": 39248,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 466,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 42,
+   "oud": {
+    "gat_zonder_beeld": 57137,
+    "beeld_op_de_grond": 291
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 525,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 43,
+   "oud": {
+    "gat_zonder_beeld": 76050,
+    "beeld_op_de_grond": 226
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 440,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 44,
+   "oud": {
+    "gat_zonder_beeld": 68119,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 437,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 45,
+   "oud": {
+    "gat_zonder_beeld": 48144,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 479,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 46,
+   "oud": {
+    "gat_zonder_beeld": 29365,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 475,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 47,
+   "oud": {
+    "gat_zonder_beeld": 5299,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 424,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 48,
+   "oud": {
+    "gat_zonder_beeld": 5397,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 437,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 49,
+   "oud": {
+    "gat_zonder_beeld": 5347,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 444,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 50,
+   "oud": {
+    "gat_zonder_beeld": 5432,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 465,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 51,
+   "oud": {
+    "gat_zonder_beeld": 5502,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 444,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 52,
+   "oud": {
+    "gat_zonder_beeld": 5588,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 427,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 53,
+   "oud": {
+    "gat_zonder_beeld": 5262,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 432,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 54,
+   "oud": {
+    "gat_zonder_beeld": 5624,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 445,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 55,
+   "oud": {
+    "gat_zonder_beeld": 5686,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 475,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 56,
+   "oud": {
+    "gat_zonder_beeld": 5935,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 569,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 57,
+   "oud": {
+    "gat_zonder_beeld": 6114,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 528,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 58,
+   "oud": {
+    "gat_zonder_beeld": 5709,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 245,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 59,
+   "oud": {
+    "gat_zonder_beeld": 6221,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 535,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 60,
+   "oud": {
+    "gat_zonder_beeld": 8500,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 586,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 61,
+   "oud": {
+    "gat_zonder_beeld": 6435,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 566,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 62,
+   "oud": {
+    "gat_zonder_beeld": 6531,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 588,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 63,
+   "oud": {
+    "gat_zonder_beeld": 6730,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 564,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 64,
+   "oud": {
+    "gat_zonder_beeld": 6589,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 616,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 65,
+   "oud": {
+    "gat_zonder_beeld": 6649,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 574,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 66,
+   "oud": {
+    "gat_zonder_beeld": 6407,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 532,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 67,
+   "oud": {
+    "gat_zonder_beeld": 6589,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 649,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 68,
+   "oud": {
+    "gat_zonder_beeld": 6721,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 701,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 69,
+   "oud": {
+    "gat_zonder_beeld": 6787,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 798,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 70,
+   "oud": {
+    "gat_zonder_beeld": 6324,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 751,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 71,
+   "oud": {
+    "gat_zonder_beeld": 6314,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 737,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 72,
+   "oud": {
+    "gat_zonder_beeld": 6417,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 631,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 73,
+   "oud": {
+    "gat_zonder_beeld": 6604,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 678,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 74,
+   "oud": {
+    "gat_zonder_beeld": 5888,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 704,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 75,
+   "oud": {
+    "gat_zonder_beeld": 5802,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 680,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 76,
+   "oud": {
+    "gat_zonder_beeld": 5413,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 160,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 77,
+   "oud": {
+    "gat_zonder_beeld": 3587,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 411,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 78,
+   "oud": {
+    "gat_zonder_beeld": 3039,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 190,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 79,
+   "oud": {
+    "gat_zonder_beeld": 3034,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 219,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 80,
+   "oud": {
+    "gat_zonder_beeld": 3034,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 272,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 81,
+   "oud": {
+    "gat_zonder_beeld": 3239,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 130,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 82,
+   "oud": {
+    "gat_zonder_beeld": 3214,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 174,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 83,
+   "oud": {
+    "gat_zonder_beeld": 3386,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 60,
+    "beeld_op_de_grond": 1
+   }
+  },
+  {
+   "beeld": 84,
+   "oud": {
+    "gat_zonder_beeld": 3711,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 144,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 85,
+   "oud": {
+    "gat_zonder_beeld": 4146,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 18,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 86,
+   "oud": {
+    "gat_zonder_beeld": 4624,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 133,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 87,
+   "oud": {
+    "gat_zonder_beeld": 1705,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 489,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 90,
+   "oud": {
+    "gat_zonder_beeld": 0,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 0,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 93,
+   "oud": {
+    "gat_zonder_beeld": 0,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 0,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 96,
+   "oud": {
+    "gat_zonder_beeld": 0,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 0,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 99,
+   "oud": {
+    "gat_zonder_beeld": 0,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 0,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 102,
+   "oud": {
+    "gat_zonder_beeld": 0,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 0,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 105,
+   "oud": {
+    "gat_zonder_beeld": 0,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 0,
+    "beeld_op_de_grond": 0
+   }
+  },
+  {
+   "beeld": 108,
+   "oud": {
+    "gat_zonder_beeld": 0,
+    "beeld_op_de_grond": 0
+   },
+   "nieuw": {
+    "gat_zonder_beeld": 0,
+    "beeld_op_de_grond": 0
+   }
+  }
+ ],
+ "telefoon": {
+  "oud": {
+   "breed": 225.6,
+   "hoog": 510.33
+  },
+  "nieuw": {
+   "breed": 235.9,
+   "hoog": 525.0
+  },
+  "uitleg": "in beeldpunten van 2944 breed; het telefoonscherm was 11 × 15 beeldpunten te klein"
+ },
+ "video": {
+  "oud": [
+   {
+    "b": 1280,
+    "h": 1626,
+    "mp": 2.08
+   },
+   {
+    "b": 1920,
+    "h": 2442,
+    "mp": 4.69
+   },
+   {
+    "b": 2560,
+    "h": 3258,
+    "mp": 8.34
+   }
+  ],
+  "nieuw": [
+   {
+    "b": 1280,
+    "h": 908,
+    "mp": 1.16
+   },
+   {
+    "b": 1920,
+    "h": 1360,
+    "mp": 2.61
+   },
+   {
+    "b": 2400,
+    "h": 1700,
+    "mp": 4.08
+   }
+  ],
+  "uitleg": "mp = miljoen beeldpunten per beeld. Uitpakken per seconde (24 beelden × de snelheid): oud 1920 op 1,3 × = 146 mp/s, nieuw 1920 op 1,8 × = 113 mp/s; oud 2560 = 262 mp/s, nieuw 2400 = 176 mp/s."
+ },
+ "browser_zonder_grafische_kaart": {
+  "uitleg": "Chromium met SwiftShader (alles in software), 1440 × 900, de voorpagina, van het eerste beeld op het doek tot de video klaar is. Werk per getekend beeld op de hoofddraad (ms) en de tijd tussen twee getekende beelden (mediaan). Hier is het opladen van het videobeeld naar de grafische laag het meeste werk; op een computer met een grafische kaart is dat veel lichter, dus tel het verschil, niet de getallen.",
+  "oud": [
+   {
+    "werkPerBeeld": 246.7,
+    "tussenMediaan": 207.9,
+    "getekend": 17
+   },
+   {
+    "werkPerBeeld": 239,
+    "tussenMediaan": 204.2,
+    "getekend": 17
+   },
+   {
+    "werkPerBeeld": 230.8,
+    "tussenMediaan": 200.7,
+    "getekend": 18
+   },
+   {
+    "werkPerBeeld": 236.3,
+    "tussenMediaan": 194.8,
+    "getekend": 18
+   }
+  ],
+  "nieuw": [
+   {
+    "werkPerBeeld": 182.4,
+    "tussenMediaan": 162.9,
+    "getekend": 16
+   },
+   {
+    "werkPerBeeld": 164,
+    "tussenMediaan": 145.2,
+    "getekend": 18
+   },
+   {
+    "werkPerBeeld": 153.5,
+    "tussenMediaan": 134.5,
+    "getekend": 19
+   }
+  ]
+ }
+}

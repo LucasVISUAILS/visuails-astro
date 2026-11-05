@@ -56,21 +56,23 @@ const require = createRequire(import.meta.url);
 const wortel = join(dirname(fileURLToPath(import.meta.url)), '..');
 const UIT = join(wortel, 'public', 'downloads');
 
-/* Dezelfde letter als de site. Uit node_modules en niet uit public/, om
-   dezelfde reden die scripts/fonts-voor-worker.mjs noemt: @fontsource is de bron
-   en een kopie in de repo veroudert stil bij een npm update. */
-/* Sinds 15 oktober 2026 de hal-stijl: alleen Urbanist, zoals de site. */
+/* De letters van de site, uit public/fonts: dezelfde bestanden die hal.css laadt (levering 86, 4 november 2026:
+   VISUAILS Display Bold voor de koppen, DM Sans voor de tekst, IBM Plex Mono voor het etiket). Ze staan in de
+   repo, dus er is geen npm-pakket dat stil kan verouderen. */
 const LETTERS = [
-  ['Urbanist Variable', '@fontsource-variable/urbanist/files/urbanist-latin-wght-normal.woff2'],
+  ['VISUAILS Display', 'public/fonts/visuails-display/VISUAILSDisplay-Bold.woff2', '700'],
+  ['DM Sans', 'public/fonts/dm-sans/dm-sans-latin.woff2', '300 700', 'U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD'],
+  ['DM Sans', 'public/fonts/dm-sans/dm-sans-latin-ext.woff2', '300 700', 'U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF'],
+  ['IBM Plex Mono', 'public/fonts/ibm-plex-mono/IBMPlexMono-600.woff2', '600'],
 ];
 
 async function fontRegels() {
   const stukken = [];
-  for (const [naam, pad] of LETTERS) {
-    const bin = await readFile(require.resolve(pad));
+  for (const [naam, pad, gewicht, bereik] of LETTERS) {
+    const bin = await readFile(join(wortel, pad));
     stukken.push(
-      `@font-face { font-family: "${naam}"; font-style: normal; font-weight: 100 900; `
-      + `src: url(data:font/woff2;base64,${bin.toString('base64')}) format("woff2"); }`
+      `@font-face { font-family: "${naam}"; font-style: normal; font-weight: ${gewicht}; `
+      + `src: url(data:font/woff2;base64,${bin.toString('base64')}) format("woff2");${bereik ? ` unicode-range: ${bereik};` : ''} }`
     );
   }
   return stukken.join('\n');
@@ -114,11 +116,11 @@ async function maak(browser, lang, fonts, beelden) {
   const maat = await page.evaluate(() => {
     const blad = document.querySelector('.blad').getBoundingClientRect();
     const vragen = document.querySelector('.vragen').getBoundingClientRect();
-    const contact = document.querySelector('.contact').getBoundingClientRect();
+    const contact = document.querySelector('.voet').getBoundingClientRect();  /* de haarlijn boven de contactregel */
     return { blad: blad.height, scroll: document.querySelector('.blad').scrollHeight, onder: vragen.bottom, contact: contact.top };
   });
   if (process.env.METEN) console.log(`  ${lang}: blad ${Math.round(maat.blad)} · vragen tot ${Math.round(maat.onder)} · contact vanaf ${Math.round(maat.contact)} (A4 ${Math.round(A4_PX)})`);
-  if (maat.scroll > A4_PX + 1 || maat.onder > maat.contact - 8) {
+  if (maat.scroll > A4_PX + 1 || maat.onder > maat.contact - 12) {
     throw new Error(`handleiding: het vel van ${lang} past niet op één A4 (inhoud tot ${Math.round(maat.onder)}px, contactregel op ${Math.round(maat.contact)}px). Kort de tekst in src/data/fotogids.js in of verklein de marges.`);
   }
 

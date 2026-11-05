@@ -84,9 +84,9 @@ html body.hal.hal .h-voor .h-pv-klip .h-speel::after { content: none; }
 html body.hal.hal .h-voor .h-pv-keus { display: flex; flex: none; --h: 40px; --loop: 30px; --kier: 3.6px; }
 html body.hal.hal .h-voor .h-pv-keus button { height: var(--h); border: 0; background: var(--h-vlak, #F4F5F7); color: var(--h-inkt); font: 600 14.5px/1 var(--h-letter); cursor: pointer;
   padding: 0 calc(var(--loop) * .55 + 14px); white-space: nowrap; transition: background-color .16s steps(2, end); }
-html body.hal.hal .h-voor .h-pv-keus button:first-child { border-radius: 14px 3px 3px 3px; padding-left: 18px; clip-path: polygon(0 0, 100% 0, calc(100% - var(--loop)) 100%, 0 100%); }
+html body.hal.hal .h-voor .h-pv-keus button:first-child { border-radius: 999px; padding-left: 18px; clip-path: polygon(0 0, 100% 0, calc(100% - var(--loop)) 100%, 0 100%); }
 html body.hal.hal .h-voor .h-pv-keus button:not(:first-child) { margin-left: calc(var(--kier) - var(--loop)); clip-path: polygon(var(--loop) 0, 100% 0, calc(100% - var(--loop)) 100%, 0 100%); }
-html body.hal.hal .h-voor .h-pv-keus button:last-child { padding-right: 18px; border-radius: 3px; clip-path: polygon(var(--loop) 0, 100% 0, 100% 100%, 0 100%); }
+html body.hal.hal .h-voor .h-pv-keus button:last-child { padding-right: 18px; border-radius: 999px; clip-path: polygon(var(--loop) 0, 100% 0, 100% 100%, 0 100%); }
 html body.hal.hal .h-voor .h-pv-keus button:hover { background: var(--h-lijn, #E6E8EC); }
 /* wat je kiest is inkt (de ontwerptaal) */
 html body.hal.hal .h-voor .h-pv-keus button[aria-pressed="true"] { background: var(--h-inkt); color: #FFFFFF; }
@@ -142,7 +142,7 @@ html body.hal.hal .h-voor .h-wt-rijen a { display: grid; grid-template-columns: 
 html body.hal.hal .h-voor .h-wt-rijen b { font: 500 var(--v-naam)/1.1 var(--h-letter); font-stretch: var(--h-smal, 80%); letter-spacing: -.01em; }
 html body.hal.hal .h-voor .h-wt-detail { font: 500 var(--v-klein)/1.5 var(--h-letter); color: var(--h-grijs, #636974); }
 html body.hal.hal .h-voor .h-wt-getal { font-weight: 600; color: var(--h-inkt); white-space: nowrap; }
-html body.hal.hal .h-voor .h-wt-detail i { display: inline-block; margin-right: 8px; padding: 4px 6px; border-radius: 6px 3px 3px 3px; background: var(--h-vlak, #F4F5F7); font: 600 11.5px/1 var(--h-mono, 'IBM Plex Mono', monospace); font-style: normal; letter-spacing: .04em; color: var(--h-inkt); vertical-align: 1px; }
+html body.hal.hal .h-voor .h-wt-detail i { display: inline-block; margin-right: 8px; padding: 4px 6px; border-radius: 999px; background: var(--h-vlak, #F4F5F7); font: 600 11.5px/1 var(--h-mono, 'IBM Plex Mono', monospace); font-style: normal; letter-spacing: .04em; color: var(--h-inkt); vertical-align: 1px; }
 html body.hal.hal .h-voor .h-wt-rijen .h-cirkel { flex: none; background: var(--h-vlak, #F4F5F7); transition: transform .24s steps(2, end); }
 /* onder de muis: de regel erboven wordt sterker en het pijltje springt (het merk springt, het glijdt niet) */
 html body.hal.hal .h-voor .h-wt-rijen > li:hover { box-shadow: inset 0 1px 0 var(--h-lijn-sterk, #C5C8CF); }

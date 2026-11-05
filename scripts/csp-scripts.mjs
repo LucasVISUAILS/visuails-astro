@@ -198,9 +198,13 @@ export function cspWaarde(hashes, stijlHashes = []) {
      *             dat is de bedoeling.
      *   connect-src — elke fetch en XHR in src/scripts/ gaat naar /api/… of
      *             /account/… op de eigen origin. Daarbuiten alleen de beacon.
-     *   media-src 'self' — VideoExamples.astro zet <source src> op eigen
-     *             bestanden. Vandaag staat er nog geen clip in de build; de
-     *             regel staat er wél, zodat de eerste clip niet stilvalt.
+     *   media-src 'self' blob: — VideoExamples.astro zet <source src> op eigen
+     *             bestanden. blob: sinds levering 87 (4 november 2026): de
+     *             laptopvideo van de opening wordt in één keer binnengehaald en
+     *             vanuit het geheugen gespeeld, zodat terugscrollen kan zoeken
+     *             (HalOpening80.astro); de statische bestanden van de Worker
+     *             geven geen bytebereiken, en zonder die kan een video niet
+     *             betrouwbaar zoeken.
      *   form-action 'self' — de 204 formulieren in de build posten naar
      *             /account/logout, /api/order en /account/plan/start. Mollie
      *             hoort hier niet, maar let op: Chrome past form-action ook toe
@@ -222,7 +226,7 @@ export function cspWaarde(hashes, stijlHashes = []) {
     "img-src 'self' data: blob:",
     "font-src 'self'",
     ['connect-src', "'self'", ...CONNECT_HOSTS].join(' '),
-    "media-src 'self'",
+    "media-src 'self' blob:",
     "form-action 'self'",
     ['frame-src', ...FRAME_HOSTS].join(' '),
     "worker-src 'none'",

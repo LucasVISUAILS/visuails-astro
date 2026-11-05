@@ -114,7 +114,7 @@ const T = nl
 
   .u-rechts { flex: 1; min-width: 0; display: grid; gap: 7px; }
   .u-tijd { list-style: none; margin: 0; padding: 0; display: flex; gap: 4px; }
-  .u-tijd li { flex: 1; height: 3px; border-radius: 8px 3px 3px 3px; background: #E6E8EC; overflow: hidden; }
+  .u-tijd li { flex: 1; height: 3px; border-radius: 999px; background: #E6E8EC; overflow: hidden; }
   .u-tijd i { display: block; height: 100%; width: 100%; background: #0F1217; transform-origin: left; transform: scaleX(0); }
   .u-tijd li.is-af i { transform: scaleX(1); }
   .u-tijd li.is-nu i { animation: u-vul var(--u-duur, 2s) linear forwards; }
@@ -129,7 +129,7 @@ const T = nl
   .u-zin b { font-weight: 600; color: #0F1217; margin-right: .35em; font-variant-numeric: tabular-nums; }
 
   @media (max-width: 640px) {
-    .u-balk { border-radius: 22px 3px 3px 3px; padding: 10px 14px 10px 10px; align-items: flex-start; }
+    .u-balk { border-radius: 22px; padding: 10px 14px 10px 10px; align-items: flex-start; }
     .u-zin { font-size: 13.5px; }
   }
   @media (prefers-reduced-motion: reduce) {

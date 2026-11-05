@@ -166,7 +166,7 @@ body.hal main { padding-top: 0; }
 .h-pagina :focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; } /* 17 okt: zelfde dunne lijn als de knoppen; de border-radius van 12 px is weg, die veranderde de vorm van een veld zodra het focus kreeg */
 
 /* label-pil met het dubbele rondje */
-.hal .h-pil { display: inline-flex; align-items: center; gap: 9px; height: 32px; padding: 0 14px 0 6px; border-radius: 11px 3px 3px 3px; background: var(--h-nevel); color: var(--h-inkt); font: 600 13.5px/1 var(--h-letter); white-space: nowrap; }
+.hal .h-pil { display: inline-flex; align-items: center; gap: 9px; height: 32px; padding: 0 14px 0 6px; border-radius: 999px; background: var(--h-nevel); color: var(--h-inkt); font: 600 13.5px/1 var(--h-letter); white-space: nowrap; }
 .hal .h-pil::before { content: ""; width: 20px; height: 20px; border-radius: 50%; flex: none; background: radial-gradient(circle, var(--h-inkt) 0 3.5px, transparent 4px), #fff; box-shadow: inset 0 0 0 1px rgba(15, 18, 23, .2); }
 .hal .h-pil-glas { background: #FFFFFF; box-shadow: none; color: var(--h-inkt); }
 .hal .h-pil-wit { background: #fff; }
@@ -235,7 +235,7 @@ body.hal main { padding-top: 0; }
   .hal .h-kop > .d { display: inline-block; }
 }
 .hal .h-getal { font-weight: 300; letter-spacing: -.04em; line-height: .9; color: var(--h-inkt); }
-.hal .h-chip { display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: 11px 3px 3px 3px; font: 600 13.5px/1 var(--h-letter); color: var(--h-inkt); }
+.hal .h-chip { display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: 999px; font: 600 13.5px/1 var(--h-letter); color: var(--h-inkt); }
 .hal .h-mini { font: 600 12px/1.2 var(--h-letter); color: var(--h-inkt-3); }
 .hal .h-link { display: inline-flex; align-items: center; gap: 10px; font: 600 15px/1 var(--h-letter); color: var(--h-inkt); }
 /* v28-hlink = a (15 oktober 2026): een dunne rand in de lijnkleur van de site. Het
@@ -282,23 +282,23 @@ body.hal .site-header .nav::before { content: ""; position: absolute; inset: 0; 
 body.hal .site-header .brand { display: inline-flex; align-items: center; height: 38px; color: var(--h-inkt); }
 body.hal .site-header .primary-nav { margin: 0 auto; }
 body.hal .site-header .nav-links > li > a,
-body.hal .site-header .nav-trigger { white-space: nowrap; font: 500 14.5px/1 var(--h-letter) !important; letter-spacing: 0 !important; text-transform: none !important; color: var(--h-inkt) !important; height: 36px; padding: 0 12px; border-radius: 3px; display: inline-flex; align-items: center; gap: 6px; background: none; transition: background-color .2s; }
+body.hal .site-header .nav-trigger { white-space: nowrap; font: 500 14.5px/1 var(--h-letter) !important; letter-spacing: 0 !important; text-transform: none !important; color: var(--h-inkt) !important; height: 36px; padding: 0 12px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; background: none; transition: background-color .2s; }
 body.hal .site-header .nav-links > li > a:hover,
 body.hal .site-header .nav-trigger:hover,
 body.hal .site-header .nav-trigger[aria-expanded="true"] { background: var(--h-vak) !important; color: var(--h-inkt) !important; }
 body.hal .site-header .nav-trigger svg { width: 12px !important; height: 12px !important; color: var(--h-inkt-3); transition: transform .3s var(--h-zacht); }
 body.hal .site-header .nav-trigger[aria-expanded="true"] svg { transform: rotate(180deg); }
 body.hal .site-header .nav-account-link { font: 500 14.5px/1 var(--h-letter) !important; text-transform: none !important; letter-spacing: 0 !important; color: var(--h-inkt-2) !important; padding: 0 6px; }
-body.hal .site-header .lang-switch { display: inline-flex; background: var(--h-nevel); border-radius: 3px; padding: 3px; border: 0; gap: 0; }
-body.hal .site-header .lang-switch .ls { font: 600 13px/1 var(--h-letter) !important; letter-spacing: 0 !important; text-transform: none !important; padding: 9px 11px; border-radius: 3px; color: var(--h-inkt-3) !important; background: none; }
+body.hal .site-header .lang-switch { display: inline-flex; background: var(--h-nevel); border-radius: 999px; padding: 3px; border: 0; gap: 0; }
+body.hal .site-header .lang-switch .ls { font: 600 13px/1 var(--h-letter) !important; letter-spacing: 0 !important; text-transform: none !important; padding: 9px 11px; border-radius: 999px; color: var(--h-inkt-3) !important; background: none; }
 body.hal .site-header .lang-switch .ls.on { background: var(--h-wit); color: var(--h-inkt) !important; box-shadow: none; }
-body.hal .site-header .nav-cta { display: inline-flex; align-items: center; gap: 9px; height: 38px; padding: 0 5px 0 17px !important; border-radius: 3px !important; border: 0 !important; background: var(--h-blauw) !important; color: #fff !important; font: 600 14.5px/1 var(--h-letter) !important; letter-spacing: 0 !important; text-transform: none !important; box-shadow: none !important; transition: transform .35s var(--h-zacht), background-color .2s; }
+body.hal .site-header .nav-cta { display: inline-flex; align-items: center; gap: 9px; height: 38px; padding: 0 5px 0 17px !important; border-radius: 999px !important; border: 0 !important; background: var(--h-blauw) !important; color: #fff !important; font: 600 14.5px/1 var(--h-letter) !important; letter-spacing: 0 !important; text-transform: none !important; box-shadow: none !important; transition: transform .35s var(--h-zacht), background-color .2s; }
 body.hal .site-header .nav-cta::after { content: ""; width: 28px; height: 28px; border-radius: 50%; flex: none; background: #fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%2325508B' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M4.5 11.5l7-7M5.5 4.5h6v6'/></svg>") center / 14px no-repeat; transition: transform .45s var(--h-veer); }
 body.hal .site-header .nav-cta:hover { background: var(--h-blauw-diep) !important; }
 body.hal .site-header .nav-cta:hover::after { transform: rotate(45deg); }
 /* Uitgelogd: één kleine knop naar de andere taal (15 oktober 2026). */
 body.hal .site-header .nav-taal-klein { padding: 0; background: none; }
-body.hal .site-header .nav-taal-klein .ls { display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border-radius: 3px; background: var(--h-nevel); color: var(--h-inkt) !important; }
+body.hal .site-header .nav-taal-klein .ls { display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border-radius: 999px; background: var(--h-nevel); color: var(--h-inkt) !important; }
 body.hal .site-header .nav-taal-klein .ls:hover { background: var(--h-vak); color: var(--h-inkt) !important; }
 /* Ingelogd: het rondje met je initiaal, en het menu erachter. */
 body.hal .site-header .nav-ik-knop { width: 36px; height: 36px; background: var(--h-nevel); color: var(--h-inkt); font: 600 15px/1 var(--h-letter); transition: background-color .2s, box-shadow .2s; }
@@ -306,13 +306,13 @@ body.hal .site-header .nav-ik-knop:hover, body.hal .site-header .nav-ik-knop[ari
 body.hal .site-header .nav-ik .nav-menu { min-width: 260px; padding: 10px !important; gap: 2px !important; display: flex; flex-direction: column; }
 body.hal .site-header .nav-ik-wie { margin: 0; padding: 8px 12px 10px; border-bottom: 1px solid var(--h-lijn); font: 500 12.5px/1.3 var(--h-letter); color: var(--h-inkt-3); }
 body.hal .site-header .nav-ik-wie b { display: block; margin-top: 2px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 15px/1.3 var(--h-letter); color: var(--h-inkt); }
-body.hal .site-header .nav-ik-menu .nav-ik-item { display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: flex-start !important; text-decoration: none !important; width: 100%; min-height: 44px; padding: 0 12px !important; border: 0; border-radius: 3px !important; background: none; font: 500 15px/1 var(--h-letter) !important; letter-spacing: 0 !important; text-transform: none !important; color: var(--h-inkt) !important; text-align: left; cursor: pointer; }
+body.hal .site-header .nav-ik-menu .nav-ik-item { display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: flex-start !important; text-decoration: none !important; width: 100%; min-height: 44px; padding: 0 12px !important; border: 0; border-radius: 999px !important; background: none; font: 500 15px/1 var(--h-letter) !important; letter-spacing: 0 !important; text-transform: none !important; color: var(--h-inkt) !important; text-align: left; cursor: pointer; }
 body.hal .site-header .nav-ik-menu .nav-ik-item::before { display: none !important; }
 body.hal .site-header .nav-ik-menu .nav-ik-item:hover { background: rgba(244, 245, 247, .9) !important; }
 body.hal .site-header .nav-ik-menu .nav-signout { display: block; width: 100%; margin: 0; }
-body.hal .site-header .nav-ik-taal { display: flex; align-items: center; gap: 4px; padding: 6px 6px 6px 12px; background: none; border-radius: 14px 3px 3px 3px; }
+body.hal .site-header .nav-ik-taal { display: flex; align-items: center; gap: 4px; padding: 6px 6px 6px 12px; background: none; border-radius: 999px; }
 body.hal .site-header .nav-ik-taal-l { margin-right: auto; font: 500 15px/1 var(--h-letter); color: var(--h-inkt); }
-body.hal .site-header .nav-ik-menu .nav-ik-taal .ls { display: inline-grid !important; place-items: center; grid-template-columns: none; width: 40px; height: 32px; padding: 0 !important; border-radius: 11px 3px 3px 3px !important; background: var(--h-nevel); }
+body.hal .site-header .nav-ik-menu .nav-ik-taal .ls { display: inline-grid !important; place-items: center; grid-template-columns: none; width: 40px; height: 32px; padding: 0 !important; border-radius: 999px !important; background: var(--h-nevel); }
 body.hal .site-header .nav-ik-menu .nav-ik-taal .ls::before { display: none !important; }
 body.hal .site-header .nav-ik-menu .nav-ik-taal .ls.on { background: var(--h-inkt) !important; color: #fff !important; }
 
@@ -325,9 +325,9 @@ body.hal .site-header .nav-menu-1kol { min-width: 340px; }
    twee stappen, op zijn plek (levering 61, c-hover). */
 body.hal .site-header .nav-menu { transform: none; transition: opacity .16s steps(2, end), visibility .16s steps(2, end); }
 body.hal .site-header .nav-menu .mi-groep-kop { font: 600 12.5px/1 var(--h-letter) !important; letter-spacing: 0 !important; text-transform: none !important; color: var(--h-inkt-3) !important; padding: 10px 12px 4px; }
-body.hal .site-header .nav-menu a { display: grid !important; grid-template-columns: auto 1fr; column-gap: 14px; align-items: center; padding: 12px !important; border-radius: 14px 3px 3px 3px !important; transition: background-color .2s; }
+body.hal .site-header .nav-menu a { display: grid !important; grid-template-columns: auto 1fr; column-gap: 14px; align-items: center; padding: 12px !important; border-radius: 14px !important; transition: background-color .2s; }
 body.hal .site-header .nav-menu a:hover, body.hal .site-header .nav-menu a[aria-current="page"] { background: rgba(244, 245, 247, .9) !important; }
-body.hal .site-header .nav-menu a::before { content: ""; grid-row: span 2; width: 56px; height: 56px; border-radius: 14px 3px 3px 3px; background: var(--h-vak) center / cover no-repeat; }
+body.hal .site-header .nav-menu a::before { content: ""; grid-row: span 2; width: 56px; height: 56px; border-radius: 14px; background: var(--h-vak) center / cover no-repeat; }
 body.hal .site-header .nav-menu-1kol a::before { display: none; }
 body.hal .site-header .nav-menu-1kol a { grid-template-columns: 1fr; }
 body.hal .site-header .nav-menu a[href$="/catalog/"]::before { background-image: url(/img/catalog-after-w420.webp); }
@@ -336,7 +336,7 @@ body.hal .site-header .nav-menu a[href$="/video/"]::before { background-image: u
 body.hal .site-header .nav-menu a[href$="/custom-models/"]::before { background-image: url(/img/model-ava-w160.webp); background-position: 50% 22%; }
 body.hal .site-header .nav-menu .mi-title { font: 500 18px/1.2 var(--h-letter) !important; letter-spacing: -.01em !important; text-transform: none !important; color: var(--h-inkt) !important; }
 body.hal .site-header .nav-menu .mi-desc { font: 400 14px/1.4 var(--h-letter) !important; color: var(--h-inkt-2) !important; text-transform: none !important; letter-spacing: 0 !important; margin-top: 3px; }
-body.hal .site-header .nav-menu .mi-soon { font: 600 11.5px/1 var(--h-letter) !important; color: var(--h-inkt) !important; background: var(--h-nevel) !important; border-radius: 8px 3px 3px 3px; padding: 3px 7px !important; letter-spacing: 0 !important; text-transform: none !important; }
+body.hal .site-header .nav-menu .mi-soon { font: 600 11.5px/1 var(--h-letter) !important; color: var(--h-inkt) !important; background: var(--h-nevel) !important; border-radius: 999px; padding: 3px 7px !important; letter-spacing: 0 !important; text-transform: none !important; }
 
 /* het woordmerk en zijn glitch */
 .hal .wm { display: block; fill: currentColor; overflow: visible; }
@@ -434,7 +434,7 @@ body.hal .site-footer > .container { padding-top: 72px; }
 @media (min-width: 1181px) { body.hal .site-footer > .container { max-width: calc(var(--h-kolom) - 24px); padding-inline: calc(var(--h-rand) - 12px); } }
 body.hal .site-footer .footer-col li { font: 450 15px/1.3 var(--h-letter); }
 body.hal .site-footer .footer-brand p { font-size: 15px; line-height: 1.5; color: rgba(255, 255, 255, .9); }
-body.hal .site-footer .mi-soon { font: 600 11.5px/1 var(--h-letter); text-transform: none; letter-spacing: 0; color: #FFFFFF; background: rgba(255, 255, 255, .16); border: 0; border-radius: 8px 3px 3px 3px; padding: 4px 8px; }
+body.hal .site-footer .mi-soon { font: 600 11.5px/1 var(--h-letter); text-transform: none; letter-spacing: 0; color: #FFFFFF; background: rgba(255, 255, 255, .16); border: 0; border-radius: 999px; padding: 4px 8px; }
 body.hal .site-footer .footer-col .footer-h { font: 600 13.5px/1 var(--h-letter); text-transform: none; letter-spacing: 0; color: rgba(255, 255, 255, .82); }
 /* een link in de voet: wit, onder de muis een witte streep (de kleur kan nergens heen) */
 body.hal .site-footer .footer-col a { font: 450 15px/1.3 var(--h-letter); color: #FFFFFF; text-decoration: underline; text-decoration-color: transparent; text-decoration-thickness: 1.5px; text-underline-offset: 4px; transition: text-decoration-color .2s steps(2, end); }
@@ -474,7 +474,7 @@ body.hal .wa-launcher { width: 52px; height: 52px; border: 0; border-radius: 999
   background: #FFFFFF;
   box-shadow: inset 0 0 0 1px var(--h-lijn); }
 body.hal .wa-launcher:hover { background: #fff; }
-body.hal .wa-launcher-label { top: 0; bottom: 0; right: calc(100% - 26px); z-index: 0; padding: 0 36px 0 18px; border: 0; border-radius: 14px 0 0 3px; font: 600 14px/1 var(--h-letter); color: var(--h-inkt);
+body.hal .wa-launcher-label { top: 0; bottom: 0; right: calc(100% - 26px); z-index: 0; padding: 0 36px 0 18px; border: 0; border-radius: 999px 0 0 999px; font: 600 14px/1 var(--h-letter); color: var(--h-inkt);
   background: #FFFFFF; box-shadow: 0 0 0 1px rgba(15, 18, 23, .06); }
 
 /* ── de cookiebalk: een glaskaart linksonder in plaats van een balk ─────── */
@@ -516,7 +516,7 @@ body.hal .hal-wm-reus { display: block; width: calc(100% - 48px); height: auto; 
 .hal .h-lede { font-size: 19px; line-height: 1.45; color: var(--h-inkt-2); max-width: 460px; }
 .hal .h-acties { display: flex; gap: 12px; flex-wrap: wrap; }
 .hal .h-feiten { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
-.hal .h-feiten li { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px 0 8px; border-radius: 11px 3px 3px 3px; background: var(--h-nevel); font: 450 14px/1 var(--h-letter); color: var(--h-inkt-2); }
+.hal .h-feiten li { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px 0 8px; border-radius: 999px; background: var(--h-nevel); font: 450 14px/1 var(--h-letter); color: var(--h-inkt-2); }
 .hal .h-feiten i { width: 24px; height: 24px; border-radius: 50%; background: #fff; color: var(--h-inkt); display: grid; place-items: center; font-style: normal; font-size: 12px; }
 .hal .h-feiten b { color: var(--h-inkt); font-weight: 600; }
 
@@ -736,7 +736,7 @@ body.hal .hal-wm-reus { display: block; width: calc(100% - 48px); height: auto; 
 .hal .hl-naam { min-width: 0; }
 .hal .hl-naam b { font: 600 14px/1.15 var(--h-letter); color: var(--h-inkt); white-space: nowrap; display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
 .hal .hl-teller { font: 600 12.5px/1 var(--h-letter); color: var(--h-inkt-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.hal .hl-streep { position: relative; width: 110px; height: 3px; border-radius: 3px; background: rgba(15, 18, 23, .14); overflow: hidden; }
+.hal .hl-streep { position: relative; width: 110px; height: 3px; border-radius: 999px; background: rgba(15, 18, 23, .14); overflow: hidden; }
 .hal .hl-streep i { position: absolute; inset: 0; border-radius: 3px; background: var(--h-inkt); transform-origin: 0 50%; transform: scaleX(0); }
 .hal .hl-streep i.is-aan { animation: h-streep linear both; animation-play-state: paused; }
 .hal .hl-loopt .hl-streep i.is-aan { animation-play-state: running; }
@@ -774,7 +774,7 @@ body.hal .hal-wm-reus { display: block; width: calc(100% - 48px); height: auto; 
    het beeld, anders verdwijnt hij onder een beeld dat het hele vak vult. */
 .hal .h-keur { height: 100%; padding: 8px; }
 .hal .h-keur-rij { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 8px; height: 100%; }
-.hal .h-keur-rij li { position: relative; min-width: 0; min-height: 0; border-radius: 3px; overflow: hidden; background: var(--h-wit); }
+.hal .h-keur-rij li { position: relative; min-width: 0; min-height: 0; border-radius: var(--r-klein); overflow: hidden; background: var(--h-wit); }
 .hal .h-keur-rij li::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px var(--h-lijn); pointer-events: none; }
 .hal .h-keur-rij li > :first-child { display: block; width: 100%; height: 100%; }
 .hal .h-keur-rij img { width: 100%; height: 100%; object-fit: cover; }
@@ -793,7 +793,7 @@ body.hal .hal-wm-reus { display: block; width: calc(100% - 48px); height: auto; 
 /* `> *` en niet `img`: de bouw zet elk beeld met een AVIF ernaast in een
    <picture> (avif-naast-webp), en dan is elke <img> het tweede kind van zijn
    eigen <picture> — `img:nth-child(1)` raakte er zo geen enkele. */
-.hal .h-rest-fotos > * { position: absolute; left: 0; top: 4px; display: block; width: 78px; height: 104px; border-radius: 3px; overflow: hidden; box-shadow: 0 0 0 3px #fff; transform-origin: 50% 100%; transition: transform .9s var(--h-veer); }
+.hal .h-rest-fotos > * { position: absolute; left: 0; top: 4px; display: block; width: 78px; height: 104px; border-radius: var(--r-klein); overflow: hidden; box-shadow: 0 0 0 3px #fff; transform-origin: 50% 100%; transition: transform .9s var(--h-veer); }
 .hal .h-rest-fotos img { width: 100%; height: 100%; object-fit: cover; }
 .hal .h-rest-fotos > :nth-child(1) { transform: translateX(0) rotate(-8deg); z-index: 1; }
 .hal .h-rest-fotos > :nth-child(2) { transform: translateX(56px) rotate(-1deg); z-index: 2; transition-delay: .05s; }
@@ -847,11 +847,11 @@ body.hal .hal-wm-reus { display: block; width: calc(100% - 48px); height: auto; 
 .hal .h-look .h-pil { position: absolute; left: 14px; top: 14px; }
 .hal .h-look-pijl { position: absolute; right: 14px; top: 14px; width: 42px; height: 42px; transition: transform .18s steps(2, end); }
 .hal .h-look:hover .h-look-pijl { transform: translate(1.2px, -1.6px); }  /* een plaatje draait niet: de pijl springt (levering 61) */
-.hal .h-look-paneel { position: absolute; left: 12px; right: 12px; bottom: 12px; border-radius: 3px; padding: 8px 8px 8px 22px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.hal .h-look-paneel { position: absolute; left: 12px; right: 12px; bottom: 12px; border-radius: var(--r-klein); padding: 8px 8px 8px 22px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .hal .h-look-paneel b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 450 22px/1.1 var(--h-letter); letter-spacing: -.015em; color: var(--h-inkt); }
-.hal .h-mini-knop { display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: 11px 3px 3px 3px; background: var(--h-inkt); color: #fff; font: 600 13px/1 var(--h-letter); white-space: nowrap; transition: background-color .2s, transform .3s var(--h-zacht); }
+.hal .h-mini-knop { display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: 999px; background: var(--h-inkt); color: #fff; font: 600 13px/1 var(--h-letter); white-space: nowrap; transition: background-color .2s, transform .3s var(--h-zacht); }
 .hal .h-mini-knop:hover { background: var(--h-blauw); }
-.hal .h-lijntje { width: 180px; height: 2px; border-radius: 2px; background: var(--h-lijn); position: relative; overflow: hidden; }
+.hal .h-lijntje { width: 180px; height: 2px; border-radius: 999px; background: var(--h-lijn); position: relative; overflow: hidden; }
 .hal .h-lijntje i { position: absolute; top: 0; bottom: 0; left: 0; width: calc(var(--w, .38) * 100%); background: var(--h-inkt); border-radius: 2px; transform: translateX(calc(var(--x, 0) * (1 / var(--w, .38) - 1) * 100%)); transition: transform .2s linear; }
 .hal .h-gezicht { margin-top: 16px; display: grid; grid-template-columns: 1fr auto; gap: 30px; align-items: center; background: var(--h-kaart); border-radius: var(--r-vlak); padding: 36px 40px; box-shadow: var(--h-kaart-rand); }
 .hal .h-gezicht-rechts { display: flex; align-items: center; gap: 22px; }
@@ -999,7 +999,7 @@ html.h-js body.hal .h-stap.is-in .h-keur figcaption { opacity: 1; transform: non
 .hal .h-stuur, .hal .h-maak { position: relative; }
 .hal .h-stuur { container-type: inline-size; }
 .hal .h-stuur-rij { list-style: none; margin: 0; padding: 0; position: absolute; inset: 0; }
-.hal .h-stuur-rij li { position: absolute; top: 45%; left: 50%; width: 38%; aspect-ratio: 3 / 4; border-radius: 3px; overflow: hidden; background: var(--h-vak);
+.hal .h-stuur-rij li { position: absolute; top: 45%; left: 50%; width: 38%; aspect-ratio: 3 / 4; border-radius: var(--r-klein); overflow: hidden; background: var(--h-vak);
   box-shadow: 0 0 0 3px var(--h-wit); transform: translate(calc(-50% + var(--x)), -50%) rotate(var(--r)); }
 .hal .h-stuur-rij li:nth-child(1) { --x: 0%; --r: 0deg; z-index: 3; }
 .hal .h-stuur-rij li:nth-child(2) { --x: -64%; --r: -7deg; z-index: 1; }
@@ -1036,7 +1036,7 @@ html.h-js body.hal .h-stap.is-in .h-keur figcaption { opacity: 1; transform: non
    De foto staat in een vierkant vak met container-type: size, zodat de transform
    (in % en cqw) op elke breedte hetzelfde doet. Hij ligt BOVEN de uitsnede: in de
    wachtstand stak de rechte uitsnede anders over de schuine foto heen. */
-.hal .h-maak-doos { position: absolute; left: 0; right: 0; top: 50%; aspect-ratio: 1; transform: translateY(-50%); container-type: size; overflow: hidden; border-radius: 3px; pointer-events: none; }
+.hal .h-maak-doos { position: absolute; left: 0; right: 0; top: 50%; aspect-ratio: 1; transform: translateY(-50%); container-type: size; overflow: hidden; border-radius: var(--r-klein); pointer-events: none; }
 .hal .h-maak-laag { position: absolute; left: 12.5%; top: 0; width: 75%; height: 100%; transform-origin: 0 0; opacity: 0; }
 .hal .h-well .h-maak-laag img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; }
 .hal .h-maak-bouwbeeld { opacity: 0; }
@@ -1093,7 +1093,7 @@ html.h-js body.hal .h-stap.is-in .h-keur figcaption { opacity: 1; transform: non
 .hal .h-dek::after { content: counter(dek) '%'; }
 .hal .h-well .h-maak-schaduw { opacity: .2; transform: translateY(.5%); filter: brightness(0) blur(2.5px); }
 /* max-content en een plafond in plaats van 37 %: op een telefoon brak "Achtergrond" anders midden in het woord. */
-.hal .h-lagen { position: absolute; right: 3%; top: 50%; transform: translateY(-58%); width: max-content; max-width: 54%; margin: 0; padding: 10px 10px 10px 8px; list-style: none; border-radius: 3px; display: grid; gap: 8px; }
+.hal .h-lagen { position: absolute; right: 3%; top: 50%; transform: translateY(-58%); width: max-content; max-width: 54%; margin: 0; padding: 10px 10px 10px 8px; list-style: none; border-radius: var(--r-klein); display: grid; gap: 8px; }
 .hal .h-lagen li { display: grid; grid-template-columns: 20px minmax(0, 1fr); align-items: center; column-gap: 7px; row-gap: 3px; max-width: none; font: 600 12.5px/1.2 var(--h-letter); color: var(--h-inkt); }
 .hal .h-lagen li > span { overflow-wrap: normal; word-break: normal; }
 .hal .h-lagen i { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--h-inkt); color: #fff; }
@@ -1237,7 +1237,7 @@ html.h-js body.hal .h-hoe.u-s3 .h-keur figcaption { transition-delay: 1.725s; }
              2,2 Compleet
      stap 3  0,45 / 0,9 / 1,25 / 1,75 de tikken en de vinkjes · 2,3 "4 van 4 goedgekeurd"
    Zonder uitleg staat alles er af: de vinkjes en Compleet. */
-.hal .h-stuur-lijst { position: absolute; top: 12px; right: 12px; z-index: 4; display: grid; gap: 7px; padding: 10px 12px 10px 9px; border-radius: 3px; }
+.hal .h-stuur-lijst { position: absolute; top: 12px; right: 12px; z-index: 4; display: grid; gap: 7px; padding: 10px 12px 10px 9px; border-radius: calc(var(--r-kaart) - 12px); }
 .hal .h-stuur-v { display: grid; grid-template-columns: 20px auto; align-items: center; column-gap: 7px; font: 600 12.5px/1.2 var(--h-letter); color: var(--h-inkt); white-space: nowrap; }
 .hal .h-stuur-v i { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--h-inkt); color: #fff; }
 .hal .h-stuur-v i svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -1361,8 +1361,8 @@ html.h-js body.hal .h-vertrouwen.is-in li { opacity: 1; transform: none; }
      bovenkant van het paneel; het belletje is 43 px hoog en staat 8 px van de rand, dus
      2 px erboven (op 390: 7 px). De onderkant van de telefoon (0,801) ligt op 238 px, het
      belletje rechtsonder begint op 246, 8 px lager (op 390: 13 px). */
-  .hal .hl-bel-lap { left: auto; right: 8px; top: 8px; bottom: auto; border-radius: 3px; }
-  .hal .hl-bel-fon { left: auto; right: 8px; bottom: 8px; top: auto; border-radius: 3px; }
+  .hal .hl-bel-lap { left: auto; right: 8px; top: 8px; bottom: auto; border-radius: 999px; }
+  .hal .hl-bel-fon { left: auto; right: 8px; bottom: 8px; top: auto; border-radius: 999px; }
   .hal .hl-bediening { position: relative; right: auto; bottom: auto; top: auto; margin: 10px 12px 0; height: 48px; padding: 0 6px 0 16px; gap: 8px; }
   /* de streep als dunne lijn onderin de pil: zo houdt de naam zijn ruimte */
   .hal .hl-bediening { justify-content: flex-end; }
@@ -1422,7 +1422,7 @@ html.h-js body.hal .h-vertrouwen.is-in li { opacity: 1; transform: none; }
   .hal .h-rest { padding: 12px; border-radius: var(--r-vlak); }
   .hal .h-rest-jij { padding: 16px; gap: 16px; border-radius: var(--r-kaart); }
   .hal .h-rest-fotos { width: 150px; height: 96px; }
-  .hal .h-rest-fotos > * { width: 62px; height: 83px; border-radius: 3px; }
+  .hal .h-rest-fotos > * { width: 62px; height: 83px; border-radius: var(--r-klein); }
   .hal .h-rest-fotos > :nth-child(2) { transform: translateX(42px) rotate(-1deg); }
   .hal .h-rest-fotos > :nth-child(3) { transform: translateX(84px) rotate(7deg); }
   html.h-js body.hal .h-rest:not(.is-in) .h-rest-fotos > * { transform: translateX(42px) rotate(0deg); }
@@ -1517,7 +1517,7 @@ body.hal .mobile-nav .mobile-wa { background: var(--h-nevel); color: var(--h-ink
 body.hal .mobile-nav .mobile-close { border: 0; border-radius: 999px; background: var(--h-nevel); color: var(--h-inkt); }
 body.hal .mobile-nav .mobile-cta { border-top-color: var(--h-lijn); }
 body.hal .mobile-nav .mobile-cta .btn-primary { background: var(--h-blauw); color: #fff; }
-body.hal .mobile-nav .mi-soon { font: 600 11.5px/1 var(--h-letter); text-transform: none; letter-spacing: 0; color: var(--h-inkt); background: var(--h-nevel); border: 0; border-radius: 8px 3px 3px 3px; padding: 4px 8px; }
+body.hal .mobile-nav .mi-soon { font: 600 11.5px/1 var(--h-letter); text-transform: none; letter-spacing: 0; color: var(--h-inkt); background: var(--h-nevel); border: 0; border-radius: 999px; padding: 4px 8px; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    PAGINA'S IN DE HAL — 12 oktober 2026 (afvinklijst 7, groep 1)
@@ -1698,7 +1698,7 @@ html.h-js body.hal .h-st-set.is-in .h-st-set-beeld { opacity: 1; transform: none
    .h-st-kies: /catalog, /lifestyle en /video gebruiken dezelfde kaarten. */
 .hal .h-st-groep-prijs, .hal .h-st-groep-proef { display: none; }
 @media (max-width: 620px) {
-  .hal .h-st-kies .h-st-groep-prijs { display: grid; gap: 6px; margin: -12px 0 20px; }
+  .hal .h-st-kies .h-st-groep-prijs { display: grid; gap: 8px; margin: -12px 0 20px; }  /* levering 86: 8 px tussen het tarief en de regel met het abonnement (was 6) */
   .hal .h-st-kies .h-st-groep-prijs .h-st-tarief { margin: 0; padding: 0; border-top: 0; }
   .hal .h-st-kies .h-st-groep-prijs .h-st-abo { margin: 0; }
   .hal .h-st-kies .h-st-groep-proef { display: block; margin-top: 18px; font: 600 15px/1.3 var(--h-letter); }
@@ -1813,7 +1813,7 @@ body.hal .h-pl-kaart .ck-per { font: 450 14px/1.4 var(--h-letter); color: var(--
 .hal .h-pk { display: flex; flex-direction: column; gap: 10px; min-width: 0; padding: 30px; border-radius: var(--r-kaart); background: var(--h-kaart); box-shadow: var(--h-kaart-rand); }
 .hal .h-pk-kop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
 .hal .h-pk-naam { font: 450 30px/1.1 var(--h-letter); letter-spacing: -.02em; color: var(--h-inkt); }
-.hal .h-pk-merk { display: inline-flex; align-items: center; height: 30px; padding: 0 12px; border-radius: 8px 3px 3px 3px; background: var(--h-nevel); font: 600 12.5px/1 var(--h-letter); color: var(--h-inkt); }
+.hal .h-pk-merk { display: inline-flex; align-items: center; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--h-nevel); font: 600 12.5px/1 var(--h-letter); color: var(--h-inkt); }
 .hal .h-pk-regel { min-height: 3em; font-size: 15px; line-height: 1.5; color: var(--h-inkt-2); }
 .hal .h-pk-credits { display: flex; align-items: baseline; gap: 10px; margin-top: 8px; }
 .hal .h-pk-credits .h-getal { font-size: 76px; }
@@ -1970,7 +1970,7 @@ body.hal .h-pagina .dc-plain + .dc-plain, body.hal .h-pagina .dc-plain:last-of-t
 .hal .h-bewijs-raster { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 16px; align-items: stretch; }
 .hal .h-bewijs-cmp { min-width: 0; }
 body.hal .h-bewijs-cmp .cmp { border-radius: var(--r-kaart); overflow: hidden; background: var(--h-vak); }
-body.hal .h-pagina .cmp-tag { font: 600 13px/1 var(--h-letter); text-transform: none; letter-spacing: 0; color: var(--h-inkt); background: #FFFFFF; border: 0; border-radius: 8px 3px 3px 3px; padding: 9px 13px; }
+body.hal .h-pagina .cmp-tag { font: 600 13px/1 var(--h-letter); text-transform: none; letter-spacing: 0; color: var(--h-inkt); background: #FFFFFF; border: 0; border-radius: 999px; padding: 9px 13px; }
 body.hal .h-pagina .cmp-knob { background: var(--h-wit); color: var(--h-inkt); box-shadow: none; border: 0; }
 body.hal .h-pagina .cmp-knob:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .hal .h-bewijs-kaart { display: flex; flex-direction: column; gap: 14px; padding: 32px; border-radius: var(--r-kaart); background: var(--h-kaart); box-shadow: var(--h-kaart-rand); }
@@ -1996,8 +1996,8 @@ body.hal .h-pagina .cmp-knob:focus-visible { outline: 2px solid var(--focus-ring
 /* de vragen: nevelkaarten die openklappen (Disclose) */
 .hal .h-vragen-lijst { display: grid; gap: 10px; }
 body.hal .h-vragen-lijst .dc { background: var(--h-kaart); border-radius: var(--r-kaart); padding: 6px 24px; border: 0; box-shadow: var(--h-kaart-rand); }
-body.hal .h-vragen-lijst .dc-sum, body.hal .h-lk-meer .dc-sum { padding-block: 16px; border-radius: 9px 3px 3px 3px; }  /* 24 - 15 en 20 - 11 */
-body.hal .h-lk-meer .dc-sum { border-radius: 6px 3px 3px 3px; }  /* in het vak "Meer over deze stijl": 32 - 26 en 26 - 20 */
+body.hal .h-vragen-lijst .dc-sum, body.hal .h-lk-meer .dc-sum { padding-block: 16px; border-radius: 999px; }  /* 24 - 15 en 20 - 11 */
+body.hal .h-lk-meer .dc-sum { border-radius: 999px; }  /* in het vak "Meer over deze stijl": 32 - 26 en 26 - 20 */
 body.hal .h-vragen-lijst .dc-label { font: 600 17px/1.35 var(--h-letter); color: var(--h-inkt); }
 body.hal .h-vragen-lijst .dc-body { padding: 0 0 18px; max-width: 780px; font-size: 15.5px; line-height: 1.6; color: var(--h-inkt-2); }
 body.hal .h-vragen-lijst .dc-body p { margin: 0; }
@@ -2165,7 +2165,7 @@ body.hal .h-lk-diensten .svcsw-a { font: 600 14.5px/1.5 var(--h-letter); color: 
 .hal .h-ts-open .h-een { font-size: 180px; margin: 12px 0 18px -6px; }
 .hal .h-ts-open .h-proef-zin { max-width: 560px; margin: 0 0 22px; }
 .hal .h-ts-feiten { display: flex; flex-wrap: wrap; gap: 8px; }
-.hal .h-ts-feiten li { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px 0 8px; border-radius: 11px 3px 3px 3px; background: rgba(15, 18, 23, .3); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22); font: 450 14px/1 var(--h-letter); color: #fff; }
+.hal .h-ts-feiten li { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px 0 8px; border-radius: 999px; background: rgba(15, 18, 23, .3); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22); font: 450 14px/1 var(--h-letter); color: #fff; }
 .hal .h-ts-feiten i { width: 24px; height: 24px; border-radius: 50%; background: #fff; color: var(--h-inkt); display: grid; place-items: center; font-style: normal; font-size: 12px; }
 .hal .h-ts-beelden { margin: 0; justify-self: end; width: 100%; max-width: 440px; display: grid; gap: 18px; }
 .hal .h-ts-bij { font: 450 14px/1.4 var(--h-letter); color: #fff; }
@@ -2218,7 +2218,7 @@ html body.hal .h-form .of .pl-sub-h { font: 600 19px/1.3 var(--h-letter); color:
 html body.hal .h-form .s22 .field > label, html body.hal .h-form .s22 .veldkop, html body.hal .h-form .s22 .etiket, html body.hal .h-form .s22 .mono { font: 600 14px/1.35 var(--h-letter); color: var(--h-inkt); }
 body.hal .h-form .pl-form.is-live .pl-rail { gap: 6px; border: 0; }
 html body.hal .h-form .of .pl-rail > li + li { border-left: 0; }
-body.hal .h-form .pl-rail-item { gap: 4px; padding: 12px 16px; border-radius: 18px 3px 3px 3px; background: #fff; }
+body.hal .h-form .pl-rail-item { gap: 4px; padding: 12px 16px; border-radius: 999px; background: #fff; }
 body.hal .h-form .pl-rail-item.is-current { background: var(--h-inkt); color: #fff; }
 html body.hal .h-form .of .pl-rail-n { font: 600 13px/1 var(--h-letter); }
 html body.hal .h-form .of .pl-rail-t { font: 600 14.5px/1.2 var(--h-letter); }
@@ -2332,7 +2332,7 @@ html body.hal .h-form:not(.h-ts-form) .s22 .hoog { font: 700 64px/1.02 var(--h-k
 html body.hal .h-form:not(.h-ts-form) .s22 .hoog.hoog-2 { font-size: 44px; line-height: 1.05; }
 html body.hal .h-form:not(.h-ts-form) .s22 .hoog.hoog-3 { font-size: 28px; line-height: 1.12; letter-spacing: -.015em; }
 html body.hal .h-form:not(.h-ts-form) .s22 .lopend { font-size: 17px; line-height: 1.5; color: var(--h-inkt-2); }
-html body.hal .h-form:not(.h-ts-form) .s22 > .paneel:first-child .etiket { display: inline-flex; align-items: center; gap: 9px; width: max-content; height: 32px; padding: 0 14px 0 6px; border-radius: 11px 3px 3px 3px; background: var(--h-nevel); color: var(--h-inkt); font: 600 13.5px/1 var(--h-letter); }
+html body.hal .h-form:not(.h-ts-form) .s22 > .paneel:first-child .etiket { display: inline-flex; align-items: center; gap: 9px; width: max-content; height: 32px; padding: 0 14px 0 6px; border-radius: 999px; background: var(--h-nevel); color: var(--h-inkt); font: 600 13.5px/1 var(--h-letter); }
 html body.hal .h-form:not(.h-ts-form) .s22 > .paneel:first-child .etiket::before { content: ""; width: 20px; height: 20px; border-radius: 50%; flex: none; background: radial-gradient(circle, var(--h-inkt) 0 3.5px, transparent 4px), #fff; box-shadow: inset 0 0 0 1px rgba(15, 18, 23, .2); }
 html body.hal .h-form:not(.h-ts-form) .s22 .knop-wit { background: var(--h-inkt); border-color: var(--h-inkt); color: #fff; }
 html body.hal .h-form:not(.h-ts-form) .s22 .knop-lijn { background: transparent; border-color: var(--h-inkt); color: var(--h-inkt); }
@@ -2397,7 +2397,7 @@ html body.hal .h-form .of .pl-tip-ok:focus-visible, html body.hal .h-form .of .p
    inkt), de twee keuzes met de hoek van de keuzes op de proef, de drie gezichten met de
    hoek van de hal */
 html body.hal .h-form-merkmodel .bm-rail { gap: 6px; }
-html body.hal .h-form-merkmodel .bm-rail-item { padding: 7px 14px 7px 7px; border-radius: 11px 3px 3px 3px; background: #fff; font: 600 14px/1.2 var(--h-letter); color: var(--h-inkt-2); }
+html body.hal .h-form-merkmodel .bm-rail-item { padding: 7px 14px 7px 7px; border-radius: 999px; background: #fff; font: 600 14px/1.2 var(--h-letter); color: var(--h-inkt-2); }
 html body.hal .h-form-merkmodel .bm-rail-item[aria-current='step'] { background: var(--h-inkt); color: #fff; }
 html body.hal .h-form-merkmodel .bm-rail-item[aria-current='step'] .bm-rail-n { border-color: rgba(255, 255, 255, .45); background: transparent; color: #fff; }
 html body.hal .h-form-merkmodel .bm-track { border-radius: var(--r-kaart); }
@@ -2449,7 +2449,7 @@ html body.hal .h-form-aanvraag .hold-fact dt { font: 600 13.5px/1.45 var(--h-let
 /* stap 1: de drie verplichte telefoonfoto's als een kleine waaier, zoals bij "wij doen de rest" op de voorpagina */
 .hal .h-hw-in { position: relative; height: 100%; }
 .hal .h-hw-in-rij { position: absolute; inset: 0; }
-.hal .h-hw-in-rij li { position: absolute; left: 50%; top: 46%; width: 40%; aspect-ratio: 3 / 4; border-radius: 3px; overflow: hidden; background: var(--h-vak); box-shadow: 0 0 0 3px #fff; transition: transform .9s var(--h-veer); }
+.hal .h-hw-in-rij li { position: absolute; left: 50%; top: 46%; width: 40%; aspect-ratio: 3 / 4; border-radius: var(--r-klein); overflow: hidden; background: var(--h-vak); box-shadow: 0 0 0 3px #fff; transition: transform .9s var(--h-veer); }
 .hal .h-hw-in-rij li > :first-child { display: block; width: 100%; height: 100%; }
 .hal .h-hw-in-rij img { width: 100%; height: 100%; object-fit: cover; }
 .hal .h-hw-in-rij li:nth-child(1) { transform: translate(-112%, -50%) rotate(-8deg); z-index: 1; }
@@ -2582,11 +2582,11 @@ html.h-js body.hal .h-hw-plan.is-in .h-st-stappen .h-nr i::after { transform: sc
 /* /custom-models: zes gedeelde gezichten (grijs) en één dat van jou is */
 .hal .h-bm-cast { margin: 0; display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1fr); align-items: stretch; gap: 10px; padding: 12px; border-radius: var(--r-kaart); background: var(--h-kaart); box-shadow: var(--h-kaart-rand); }
 .hal .h-bm-muur { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-content: start; }
-.hal .h-bm-muur-vak { display: block; aspect-ratio: 3 / 4; border-radius: 3px; overflow: hidden; background: var(--h-vak); }
+.hal .h-bm-muur-vak { display: block; aspect-ratio: 3 / 4; border-radius: var(--r-klein); overflow: hidden; background: var(--h-vak); }
 .hal .h-bm-muur-vak > :first-child { display: block; width: 100%; height: 100%; }
 .hal .h-bm-muur-vak img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1); opacity: .72; }
 .hal .h-bm-muur-naam { grid-column: 1 / -1; padding: 4px 4px 0; font: 600 13.5px/1.3 var(--h-letter); color: var(--h-inkt-2); }
-.hal .h-bm-een { position: relative; min-height: 100%; border-radius: 3px; overflow: hidden; background: var(--h-vak); }
+.hal .h-bm-een { position: relative; min-height: 100%; border-radius: calc(var(--r-kaart) - 12px); overflow: hidden; background: var(--h-vak); }
 .hal .h-bm-een > :first-child:not(.h-pil) { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 .hal .h-bm-een img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; }
 .hal .h-bm-een-pil { position: absolute; left: 12px; bottom: 12px; z-index: 1; }
@@ -2722,7 +2722,7 @@ html body.hal .h-cmp-fig .cv * { text-transform: none; letter-spacing: normal; f
   /* de tabel als kaarten: de kopregel weg, elke cel noemt zijn kolom */
   .hal .h-cmp-tabel { padding: 8px; border-radius: var(--r-vlak); }
   .hal .h-cmp-kopregel { display: none; }
-  .hal .h-cmp-rij { grid-template-columns: minmax(0, 1fr); padding: 16px; border-radius: 3px; }
+  .hal .h-cmp-rij { grid-template-columns: minmax(0, 1fr); padding: 16px; border-radius: var(--r-klein); }
   .hal .h-cmp-kopregel + .h-cmp-rij { border-radius: var(--r-kaart); }  /* de eerste kaart, linksboven in de tabel: 32 - 12 */
   .hal .h-cmp-rij + .h-cmp-rij { margin-top: 8px; }
   .hal .h-cmp-rij > * { padding: 8px 4px; border-top: 0; }
@@ -2838,7 +2838,7 @@ html.h-js body.hal .h-ug-blok .h-nr i::after { transform: scaleX(0); transition:
 html.h-js body.hal .h-ug-blok.is-in .h-nr i::after { transform: scaleX(1); }
 /* per product: vier vakken in de band, het etiket als pil */
 .hal .h-st-stappen.h-ug-vakken { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.hal .h-ug-label { justify-self: start; display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 8px 3px 3px 3px; font: 600 13px/1 var(--h-letter); }
+.hal .h-ug-label { justify-self: start; display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 999px; font: 600 13px/1 var(--h-letter); }
 .hal .h-ug-label.is-nodig { background: var(--h-inkt); color: #fff; }
 .hal .h-ug-label.is-los { background: #fff; color: var(--h-inkt); box-shadow: inset 0 0 0 1px var(--h-lijn); }
 .hal .h-ug-vak-zin { display: grid; gap: 8px; font-size: 14.5px; line-height: 1.5; color: var(--h-inkt-2); }
@@ -2959,13 +2959,13 @@ html.h-js body.hal .h-ab-drie li.is-in .h-nr i::after { transform: scaleX(1); }
 .hal .h-ct-vorm .req { color: var(--h-inkt); font-weight: 700; }
 .hal .h-ct-vorm .ct-opt { margin-left: 6px; font: 450 13px/1 var(--h-letter); color: var(--h-inkt-2); }
 .hal .h-ct-vorm .hint { font-size: 13.5px; line-height: 1.5; color: var(--h-inkt-2); }
-.hal .h-ct-vorm .input, .hal .h-ct-vorm .textarea, .hal .h-ct-vorm .select { background-color: #fff; border: 1px solid var(--h-veldlijn); border-radius: 16px 3px 3px 3px; padding: 14px 16px; font: 450 16px/1.4 var(--h-letter); color: var(--h-inkt); }
+.hal .h-ct-vorm .input, .hal .h-ct-vorm .textarea, .hal .h-ct-vorm .select { background-color: #fff; border: 1px solid var(--h-veldlijn); border-radius: 999px; padding: 14px 16px; font: 450 16px/1.4 var(--h-letter); color: var(--h-inkt); }
 .hal .h-ct-vorm .select { padding-right: 44px; }
 .hal .h-ct-vorm .textarea { min-height: 140px; }
 .hal .h-ct-vorm .input::placeholder, .hal .h-ct-vorm .textarea::placeholder { color: var(--h-inkt-3); }
 .hal .h-ct-vorm .input:focus, .hal .h-ct-vorm .textarea:focus, .hal .h-ct-vorm .select:focus { border-color: var(--h-inkt); box-shadow: 0 0 0 4px var(--h-lijn); outline: none; }
 .hal .h-ct-vorm .opt-stack { gap: 8px; }
-.hal .h-ct-vorm .opt { padding: 14px 18px; border: 1px solid var(--h-veldlijn); border-radius: 18px 3px 3px 3px; background: #fff; }
+.hal .h-ct-vorm .opt { padding: 14px 18px; border: 1px solid var(--h-veldlijn); border-radius: 18px; background: #fff; }
 .hal .h-ct-vorm .opt:has(input:checked) { border-color: var(--kies); background: #fff; box-shadow: inset 0 0 0 1px var(--kies); } /* wat je kiest: inkt (blauw uur) */
 .hal .h-ct-vorm .opt input { accent-color: var(--kies); }
 .hal .h-ct-vorm .opt-title { font: 600 15.5px/1.3 var(--h-letter); color: var(--h-inkt); }
@@ -3084,7 +3084,7 @@ body.hal .h-vd-kopen .dc-body { padding-bottom: 8px; font-size: 15px; line-heigh
 .hal .h-vx-speel { width: 56px; height: 56px; background: var(--h-nevel); color: var(--h-inkt); cursor: default; }
 .hal .h-vx-speel:hover { transform: none; background: var(--h-nevel); }
 .hal .h-vx-speel svg { width: 18px; height: 18px; fill: currentColor; stroke: none; transform: translateX(1px); }
-.hal .vx-soon-label { display: inline-flex; align-items: center; height: 30px; padding: 0 12px; border-radius: 3px; background: var(--h-nevel); color: var(--h-inkt); font: 600 12.5px/1 var(--h-letter); text-align: center; }
+.hal .vx-soon-label { display: inline-flex; align-items: center; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--h-nevel); color: var(--h-inkt); font: 600 12.5px/1 var(--h-letter); text-align: center; }
 .hal .vx-cap { display: grid; gap: 4px; padding: 0 6px; }
 .hal .vx-cap strong { font: 600 18px/1.3 var(--h-letter); color: var(--h-inkt); }
 .hal .vx-meta { font: 450 14px/1.4 var(--h-letter); color: var(--h-inkt-2); font-variant-numeric: tabular-nums; }
@@ -3097,7 +3097,7 @@ body.hal .h-vd-kopen .dc-body { padding-bottom: 8px; font-size: 15px; line-heigh
 .hal .h-vx-lever .vx-table th, .hal .h-vx-lever .vx-table td { padding: 14px 16px 14px 0; border-bottom: 1px solid var(--h-lijn); text-align: left; vertical-align: top; line-height: 1.45; color: var(--h-inkt-2); }
 .hal .h-vx-lever .vx-table th { padding-top: 0; font: 600 13px/1.3 var(--h-letter); color: var(--h-inkt-2); }
 .hal .h-vx-lever .vx-table td:first-child { white-space: nowrap; }
-.hal .h-vx-lever .vx-table code { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: 8px 3px 3px 3px; background: #fff; font: 600 13px/1 var(--h-letter); color: var(--h-inkt); }
+.hal .h-vx-lever .vx-table code { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: 999px; background: #fff; font: 600 13px/1 var(--h-letter); color: var(--h-inkt); }
 .hal .h-vx-lever .vx-note { grid-column: 2; margin: 0; font-size: 14px; line-height: 1.5; color: var(--h-inkt-2); }
 .hal .h-vs-twee { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 40px; align-items: start; }
 .hal .h-vs-twee > div:first-child { display: grid; gap: 18px; }
@@ -3153,9 +3153,9 @@ body.hal .h-vd-kopen .dc-body { padding-bottom: 8px; font-size: 15px; line-heigh
    de leveringen die nog volgen als een vlak "Beelden volgen"; het raster met ronde
    hoeken (22). Maten uitgerekend op 1440 / 1024 / 390. */
 .hal .h-gl { padding-top: 72px; }
-.hal .h-gl-wissel { display: inline-flex; gap: 0; padding: 5px; border-radius: 8px 3px 3px 3px; background: var(--h-nevel); margin-bottom: 40px; }
+.hal .h-gl-wissel { display: inline-flex; gap: 0; padding: 5px; border-radius: 999px; background: var(--h-nevel); margin-bottom: 40px; }
 .hal .h-gl-radio { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-.hal .h-gl-seg { display: inline-flex; align-items: center; gap: 8px; height: 46px; padding: 0 22px; border-radius: 3px; font: 600 15px/1 var(--h-letter); color: var(--h-inkt-2); cursor: pointer; transition: background-color .25s, color .25s, box-shadow .25s; }
+.hal .h-gl-seg { display: inline-flex; align-items: center; gap: 8px; height: 46px; padding: 0 22px; border-radius: 999px; font: 600 15px/1 var(--h-letter); color: var(--h-inkt-2); cursor: pointer; transition: background-color .25s, color .25s, box-shadow .25s; }
 .hal .h-gl-seg:hover { color: var(--h-inkt); }
 .hal .h-gl-radio:checked + .h-gl-seg { background: var(--h-wit); color: var(--h-inkt); box-shadow: none; }
 .hal .h-gl-radio:focus-visible + .h-gl-seg { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
@@ -3226,7 +3226,7 @@ body.hal .h-vd-kopen .dc-body { padding-bottom: 8px; font-size: 15px; line-heigh
 .hal .h-lv-woord { margin: 6px 0 0; font: 450 26px/1.1 var(--h-letter); letter-spacing: -.015em; color: var(--h-inkt); }
 .hal .h-lv-zin { margin: 0; font-size: 15px; line-height: 1.55; color: var(--h-inkt-2); }
 .hal .h-lv-knoppen { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 0; }
-.hal .h-lv-knop { display: inline-flex; align-items: center; height: 38px; padding: 0 16px; border-radius: 11px 3px 3px 3px; border: 1.5px solid var(--h-inkt); font: 600 13.5px/1 var(--h-letter); color: var(--h-inkt); }
+.hal .h-lv-knop { display: inline-flex; align-items: center; height: 38px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--h-inkt); font: 600 13.5px/1 var(--h-letter); color: var(--h-inkt); }
 /* Goedkeuren is een handeling, dus violet — zoals in FigDash, FigGallery en het echte scherm
    (14 oktober 2026, Lucas: "De Goedkeuren knoppen zijn niet consistent"). Ernaast het vinkje
    "Deze aanmerken" in plaats van een tweede knop. */
@@ -3254,7 +3254,7 @@ body.hal .h-vd-kopen .dc-body { padding-bottom: 8px; font-size: 15px; line-heigh
 .hal .h-lv-uit img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: var(--r-kaart); background: var(--h-nevel); }
 .hal .h-lv-uit figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 8px; font: 600 13px/1.3 var(--h-letter); color: var(--h-inkt); }
 /* "Goedgekeurd" als dezelfde violette pil als in de Studio-figuren. */
-.hal .h-lv-vink { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 8px 3px 3px 3px; background: var(--h-nevel); font-weight: 600; color: var(--h-inkt); white-space: nowrap; }
+.hal .h-lv-vink { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: var(--h-nevel); font-weight: 600; color: var(--h-inkt); white-space: nowrap; }
 .hal .h-lv-uitkomst { display: grid; grid-template-columns: minmax(0, 520px); gap: 18px; align-items: start; }
 .hal .h-lv-map { padding: 16px 18px; border-radius: var(--r-kaart); background: var(--h-kaart); box-shadow: var(--h-kaart-rand); }
 .hal .h-lv-map-kop { margin: 0 0 10px; font: 600 13px/1.2 var(--h-letter); color: var(--h-inkt-3); }
@@ -3455,7 +3455,7 @@ html.h-js body.hal .h-sd-staat.is-in .h-st-stappen .h-nr i::after { transform: s
 .hal .h-sd-logboek { display: grid; gap: 6px; padding: 22px 24px 10px; border-radius: var(--r-kaart); background: #fff; box-shadow: none; }
 .hal .h-sd-logboek-kop { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding-bottom: 12px; font: 450 14px/1.3 var(--h-letter); color: var(--h-inkt-2); }
 .hal .h-sd-logboek-kop b { font-weight: 600; color: var(--h-inkt); }
-.hal .h-sd-logboek-kop i { margin-left: auto; padding: 5px 10px; border-radius: 8px 3px 3px 3px; box-shadow: inset 0 0 0 1px var(--h-lijn); font: 450 12px/1.2 var(--h-letter); color: var(--h-inkt-3); }
+.hal .h-sd-logboek-kop i { margin-left: auto; padding: 5px 10px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--h-lijn); font: 450 12px/1.2 var(--h-letter); color: var(--h-inkt-3); }
 .hal .h-sd-logboek-lijst { display: grid; }
 .hal .h-sd-logboek-r { display: grid; grid-template-columns: 44px 26px minmax(0, 1fr); gap: 12px; align-items: start; padding: 14px 0; border-top: 1px solid var(--h-lijn); }
 .hal .h-sd-logboek-t { padding-top: 3px; font: 600 13.5px/1.2 var(--h-letter); font-variant-numeric: tabular-nums; color: var(--h-inkt-3); }
@@ -3534,13 +3534,13 @@ html.h-js body.hal .h-sd-staat.is-in .h-st-stappen .h-nr i::after { transform: s
 .hal .h-jur-kop-extra .legal-note { margin: 0; padding: 16px 20px; border: 0; border-radius: var(--r-kaart); background: var(--h-kaart); font-size: 14.5px; line-height: 1.55; color: var(--h-inkt-2); box-shadow: var(--h-kaart-rand); }
 /* De datum mag op een telefoon over twee regels: bij de verwerkersovereenkomst staat er
    "· artikel 28 AVG" achter, en dat is op 320 px breder dan het scherm. */
-.hal .h-jur-datum { display: inline-flex; align-items: center; gap: 8px; min-height: 34px; padding: 8px 14px; border-radius: 11px 3px 3px 3px; background: var(--h-nevel); font: 450 13.5px/1.3 var(--h-letter); color: var(--h-inkt-2); }
+.hal .h-jur-datum { display: inline-flex; align-items: center; gap: 8px; min-height: 34px; padding: 8px 14px; border-radius: 999px; background: var(--h-nevel); font: 450 13.5px/1.3 var(--h-letter); color: var(--h-inkt-2); }
 .hal .h-jur-datum svg { flex: none; width: 15px; height: 15px; }
 /* En de titel: "Verwerkersovereenkomst" is op 44 px 424 px breed. Het zachte afbreekstreepje
    in de titel breekt hem als "Verwerkers-/overeenkomst"; dit is de vloer eronder. */
 @media (max-width: 480px) { .hal .h-jur-kop .h-h1 { overflow-wrap: anywhere; } }
 .hal .h-jur-docs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
-.hal .h-jur-doc { display: inline-flex; align-items: center; height: 38px; padding: 0 16px; border-radius: 11px 3px 3px 3px; box-shadow: inset 0 0 0 1px var(--h-lijn); font: 450 14px/1 var(--h-letter); color: var(--h-inkt-2); white-space: nowrap; transition: background-color .25s, color .25s; }
+.hal .h-jur-doc { display: inline-flex; align-items: center; height: 38px; padding: 0 16px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--h-lijn); font: 450 14px/1 var(--h-letter); color: var(--h-inkt-2); white-space: nowrap; transition: background-color .25s, color .25s; }
 .hal .h-jur-doc:hover { background: var(--h-nevel); color: var(--h-inkt); }
 .hal .h-jur-doc[aria-current="page"] { background: var(--h-inkt); box-shadow: none; color: #fff; }
 .hal .h-sec.h-jur { padding-top: 64px; }
@@ -3557,7 +3557,7 @@ html.h-js body.hal .h-sd-staat.is-in .h-st-stappen .h-nr i::after { transform: s
 .hal .h-jur-inhoud-lijst a > span:last-child { grid-column: 2; }
 .hal .h-jur-inhoud-lijst a:hover, .hal .h-jur-inhoud-lijst a[aria-current] { color: var(--h-inkt); }
 .hal .h-jur-inhoud-lijst a[aria-current] .h-jur-nr { background: var(--h-inkt); color: #fff; }
-.hal .h-jur-nr { display: inline-grid; place-items: center; min-width: 28px; height: 24px; padding: 0 7px; border-radius: 8px 3px 3px 3px; background: #fff; font: 600 12.5px/1 var(--h-letter); font-variant-numeric: tabular-nums; color: var(--h-inkt); }
+.hal .h-jur-nr { display: inline-grid; place-items: center; min-width: 28px; height: 24px; padding: 0 7px; border-radius: 999px; background: #fff; font: 600 12.5px/1 var(--h-letter); font-variant-numeric: tabular-nums; color: var(--h-inkt); }
 /* het document in rijen */
 .hal .h-jur-tekst { color: var(--h-inkt-2); }
 /* v19-lang = b (afvinklijst 19): de vijf documenten lees je door of zoek je in; daar 9 tot 10 woorden per
@@ -3584,7 +3584,7 @@ html body.hal .h-jur-tekst ul li::marker { color: var(--h-inkt); }
 html body.hal .h-jur-tekst h3 { margin-top: 26px; font: 600 18px/1.3 var(--h-letter); color: var(--h-inkt); }
 html body.hal .h-jur-tekst .legal-meta { font-size: 13.5px; color: var(--h-inkt-3); }
 html body.hal .h-jur-tekst .legal-note { margin-top: 22px; padding: 16px 20px; border: 0; border-radius: var(--r-kaart); background: var(--h-kaart); font-size: 14.5px; line-height: 1.55; color: var(--h-inkt-2); box-shadow: var(--h-kaart-rand); }
-html body.hal .h-jur-tekst code { padding: 3px 9px; border-radius: 8px 3px 3px 3px; background: var(--h-nevel); font: 600 .9em/1.4 var(--h-letter); color: var(--h-inkt); }
+html body.hal .h-jur-tekst code { padding: 3px 9px; border-radius: 999px; background: var(--h-nevel); font: 600 .9em/1.4 var(--h-letter); color: var(--h-inkt); }
 html body.hal .h-jur-tekst .checklist { margin-top: 16px; gap: 12px; padding: 0; }
 html body.hal .h-jur-tekst .checklist li { gap: 12px; }
 html body.hal .h-jur-tekst .checklist svg { width: 18px; height: 18px; margin-top: 4px; color: var(--h-inkt); fill: none; stroke: currentColor; stroke-width: 2; }
@@ -3603,7 +3603,7 @@ html body.hal .h-jur-tekst .legal-fig { margin: 28px 0 8px;
 html body.hal .h-jur-tekst .legal-fig * { font-family: var(--h-letter); text-transform: none; letter-spacing: normal; }
 html body.hal .h-jur-tekst .legal-folds { display: grid; gap: 10px; margin-top: 28px; }
 html body.hal .h-jur-tekst .legal-folds .dc { background: var(--h-kaart); border-radius: var(--r-kaart); padding: 6px 24px; border: 0; box-shadow: var(--h-kaart-rand); }
-html body.hal .h-jur-tekst .legal-folds .dc-sum { padding-block: 16px; border-radius: 9px 3px 3px 3px; }
+html body.hal .h-jur-tekst .legal-folds .dc-sum { padding-block: 16px; border-radius: 999px; }
 html body.hal .h-jur-tekst .legal-folds .dc-label { font: 600 17px/1.35 var(--h-letter); color: var(--h-inkt); }
 html body.hal .h-jur-tekst .legal-folds .dc-body { padding: 0 0 18px; }
 /* het slot van het document: een adres, geen aanbieding — het enige lichte violette vlak */
@@ -3887,7 +3887,7 @@ html[lang="nl"] body.hal .h-ov-lucas-zin, html[lang="nl"] body.hal .h-ov .h-vd-s
 .hal .h-ov-ctrl { position: relative; overflow: hidden; isolation: isolate; display: grid; gap: 14px; align-content: start; padding: 22px; border-radius: var(--r-kaart); background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E6E8EC; }
 .hal .h-ov-ctrl > :not(.h-korrel) { position: relative; z-index: 2; }
 .hal .h-ov-ctrl-balk { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.hal .h-ov-ctrl-stand { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 14px 0 6px; border-radius: 11px 3px 3px 3px; background: #fff; font: 600 13.5px/1 var(--h-letter); color: var(--h-inkt); white-space: nowrap; }
+.hal .h-ov-ctrl-stand { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 14px 0 6px; border-radius: 999px; background: #fff; font: 600 13.5px/1 var(--h-letter); color: var(--h-inkt); white-space: nowrap; }
 .hal .h-ov-ctrl-stand i, .hal .h-ov-ctrl-voet i { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--h-nevel); color: var(--h-inkt); }
 .hal .h-ov-ctrl svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .hal .h-ov-ctrl-paar { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
@@ -4069,8 +4069,8 @@ body.hal:has(.h-melding.is-open) .u-balk { bottom: calc(var(--h-melding-h, 80px)
 .hal .h-melding-stap[hidden] { display: none; }
 .hal .h-melding-stap li { display: grid; gap: 7px; min-width: 0; }
 .hal .h-melding-stap i { display: block; height: 6px; background: var(--h-vak); }
-.hal .h-melding-stap li:first-child i { border-radius: 3px 0 0 3px; }
-.hal .h-melding-stap li:last-child i { border-radius: 0 3px 3px 0; }
+.hal .h-melding-stap li:first-child i { border-radius: 999px 0 0 999px; }
+.hal .h-melding-stap li:last-child i { border-radius: 0 999px 999px 0; }
 .hal .h-melding-stap li.is-af i { background: var(--h-inkt); }
 .hal .h-melding-stap li.is-nu i { background: var(--h-inkt); clip-path: polygon(0 0, 100% 0, calc(100% - 4.5px) 100%, 0 100%); }
 .hal .h-melding-stap li:last-child.is-nu i { clip-path: none; }
@@ -4197,7 +4197,7 @@ html body.hal .h-form .s22 .ps-abonnee .lopend { margin: 0; color: var(--h-inkt)
      het merk springt, het glijdt niet. Een plusje dat een kruisje wordt, draait
      binnen het plaatje (het icoon, niet het vlak). */
 .hal .h-cirkel { border-radius: var(--hoek-knop); transition: transform .18s steps(2, end), background-color .25s; }
-.hal .h-cirkel-klein { border-radius: 12px 3px 3px 3px; }
+.hal .h-cirkel-klein { border-radius: 999px; }
 .hal .h-cirkel-mini, .hal .h-link .h-cirkel, .hal .h-link .h-cirkel-klein { width: auto; height: auto; background: none; box-shadow: none; border-radius: 0; color: inherit; font-size: 15px; }
 .hal .h-cirkel-mini:hover, .hal .h-link .h-cirkel:hover { background: none; }
 .hal .h-link .h-cirkel, .hal .h-dk-knop .h-cirkel, .hal .h-weten-rij .h-cirkel, .hal .h-gl-open .h-cirkel, .hal .h-nf-verder .h-cirkel { transition: transform .18s steps(2, end); }
@@ -4214,20 +4214,20 @@ html body.hal .h-form .s22 .ps-abonnee .lopend { margin: 0; color: var(--h-inkt)
 .hal i:has(> svg.ik), .hal .h-label-zegt span:has(> svg.ik) { width: auto; height: auto; background: none; box-shadow: none; border-radius: 0; color: var(--h-inkt); }
 /* Waar het rondje wél moet blijven, als plaatje met één zachte hoek: een vinkje of
    plusje óp een foto (zonder vlak verdwijnt het in het beeld) en de grote tegels. */
-.hal .h-vink, .hal .h-pp-plus { border-radius: 8px 2px 2px 2px; }
-.hal .h-rest-rij i:has(> svg.ik) { width: 34px; height: 34px; background: var(--h-nevel); border-radius: 11px 3px 3px 3px; }
+.hal .h-vink, .hal .h-pp-plus { border-radius: 999px; }
+.hal .h-rest-rij i:has(> svg.ik) { width: 34px; height: 34px; background: var(--h-nevel); border-radius: 999px; }
 .hal .h-rest-pijl { border-radius: var(--hoek-knop); }
-.hal .h-bm-check-i { border-radius: 13px 3px 3px 3px; }
-.hal .h-brug { border-radius: 11px 3px 3px 3px; }
-.hal .h-maak-pipet { border-radius: 7px 2px 2px 2px; }
-.hal .h-ug-vakje { border-radius: 10px 2px 2px 2px; }
+.hal .h-bm-check-i { border-radius: 999px; }
+.hal .h-brug { border-radius: 999px; }
+.hal .h-maak-pipet { border-radius: 999px; }
+.hal .h-ug-vakje { border-radius: 999px; }
 /* Uitzondering: de vinkjes in de getekende schermen (de lijst die zich afvinkt in
    "wij maken", de lagen, de leverlijst, de pipet). Daar IS het vlak de betekenis:
    grijs = nog niet, violet = klaar. Ze blijven dus een vakje, met één zachte hoek. */
-.hal .h-stuur-v i:has(> svg.ik), .hal .h-lagen i:has(> svg.ik), .hal .h-ctrl-pipet i:has(> svg.ik) { width: 20px; height: 20px; background: var(--h-inkt); color: #fff; border-radius: 6px 2px 2px 2px; }
-.hal .h-lv-checks i:has(> svg.ik) { width: 24px; height: 24px; background: var(--h-inkt); color: #fff; border-radius: 7px 2px 2px 2px; }
-.hal .h-pl-feiten i:has(> svg.ik) { width: 34px; height: 34px; background: var(--h-wit); border-radius: 11px 3px 3px 3px; }
-.hal .h-sd-manifest-i, .hal .h-sd-logboek-i { border-radius: 10px 2px 2px 2px; }
+.hal .h-stuur-v i:has(> svg.ik), .hal .h-lagen i:has(> svg.ik), .hal .h-ctrl-pipet i:has(> svg.ik) { width: 20px; height: 20px; background: var(--h-inkt); color: #fff; border-radius: 999px; }
+.hal .h-lv-checks i:has(> svg.ik) { width: 24px; height: 24px; background: var(--h-inkt); color: #fff; border-radius: 999px; }
+.hal .h-pl-feiten i:has(> svg.ik) { width: 34px; height: 34px; background: var(--h-wit); border-radius: 999px; }
+.hal .h-sd-manifest-i, .hal .h-sd-logboek-i { border-radius: 999px; }
 /* Een icoon in een zin is violet, zoals de vinkjes in de lijsten; een pijl achter
    een tekstlink houdt de kleur van de link. */
 .hal .h-cirkel-mini { color: var(--h-inkt); }
@@ -4241,15 +4241,15 @@ html body.hal .h-form .s22 .ps-abonnee .lopend { margin: 0; color: var(--h-inkt)
    ~100 px), dan krijgt het daar zijn zachte hoek; staat het midden in een vlak,
    dan linksboven, zoals het V-merk. De maat van de zachte hoek is die van het merk:
    24,7% van de hoogte (bij 48 px 12 px, bij 24 px 6 px), de andere drie 3 px. */
-.hal .h-cirkel, .hal .h-rest-pijl, .hal .h-bm-check-i, .hal .h-maak-pipet, .hal .h-ug-vakje, .hal .h-sd-manifest-i, .hal .h-sd-logboek-i { border-radius: 24.7% 3px 3px 3px; }
-.hal .h-rest-rij i:has(> svg.ik), .hal .h-pl-feiten i:has(> svg.ik) { border-radius: 24.7% 3px 3px 3px; }
-.hal .h-stuur-v i:has(> svg.ik), .hal .h-lagen i:has(> svg.ik), .hal .h-lv-checks i:has(> svg.ik) { border-radius: 24.7% 2px 2px 2px; }
+.hal .h-cirkel, .hal .h-rest-pijl, .hal .h-bm-check-i, .hal .h-maak-pipet, .hal .h-ug-vakje, .hal .h-sd-manifest-i, .hal .h-sd-logboek-i { border-radius: 999px; }
+.hal .h-rest-rij i:has(> svg.ik), .hal .h-pl-feiten i:has(> svg.ik) { border-radius: 999px; }
+.hal .h-stuur-v i:has(> svg.ik), .hal .h-lagen i:has(> svg.ik), .hal .h-lv-checks i:has(> svg.ik) { border-radius: 999px; }
 html body.hal .h-form-bedankt .ty-check { border-radius: 24.7% 4px 4px 4px; }
 /* rechtsboven: het plaatje staat in de rechterbovenhoek van zijn kaart of foto */
-.hal .h-look-pijl, .hal .h-weten-boven .h-cirkel, .hal .h-kopbeeld-boven .h-cirkel, .hal .h-hw-dienst .h-cirkel, .hal .h-gl-open .h-cirkel, .hal .h-ov-cijfer-boven .h-cirkel, .hal .h-brug { border-radius: 3px 24.7% 3px 3px; }
-.hal .h-vink, .hal .h-pp-plus, .hal .h-ctrl-pipet i:has(> svg.ik) { border-radius: 2px 24.7% 2px 2px; }
+.hal .h-look-pijl, .hal .h-weten-boven .h-cirkel, .hal .h-kopbeeld-boven .h-cirkel, .hal .h-hw-dienst .h-cirkel, .hal .h-gl-open .h-cirkel, .hal .h-ov-cijfer-boven .h-cirkel, .hal .h-brug { border-radius: 999px; }
+.hal .h-vink, .hal .h-pp-plus, .hal .h-ctrl-pipet i:has(> svg.ik) { border-radius: 999px; }
 /* rechtsonder: de knop onderaan rechts in een kaart */
-.hal .h-dk-knop .h-cirkel, .hal .h-st-vk-meer .h-cirkel { border-radius: 3px 3px 24.7% 3px; }
+.hal .h-dk-knop .h-cirkel, .hal .h-st-vk-meer .h-cirkel { border-radius: 999px; }
 /* De bedieningsbalk van de laptop was een pil met twee rondjes; met plaatjes erin
    zou een scherpe hoek naar een ronde balk wijzen. De balk krijgt dus zelf één
    zachte hoek (linksboven), de plaatjes erin houden de hunne linksboven. */
@@ -4263,7 +4263,7 @@ html body.hal .h-form-bedankt .ty-check { border-radius: 24.7% 4px 4px 4px; }
    violet, in twee stappen." Het rondje om de pijl is weg; de pijl staat los in
    de kleur van de knoptekst. De zachte hoek: 16 px op 56 hoog (als in de proef:
    16 op 48), 14 px op de kleine knop. Het springt (steps), het glijdt niet. */
-.hal .h-knop { border-radius: 16px 3px 3px 3px; padding: 0 20px 0 24px; transition: background-color .16s steps(2, end), color .16s steps(2, end), box-shadow .16s steps(2, end); }
+.hal .h-knop { border-radius: 999px; padding: 0 20px 0 24px; transition: background-color .16s steps(2, end), color .16s steps(2, end), box-shadow .16s steps(2, end); }
 .hal .h-knop-klein { border-radius: var(--hoek-knop); padding: 0 16px 0 20px; }
 .hal .h-knop-lijn, .hal .h-knop-lijnwit { padding: 0 24px; }
 .hal .h-knop .o, .hal .h-knop-klein .o, .hal .h-knop-inkt .o, .hal .h-knop-wit .o { width: auto; height: auto; background: none; border-radius: 0; color: inherit; font-size: 20px; transition: none; }
@@ -4288,13 +4288,13 @@ html body.hal .h-form-bedankt .ty-check { border-radius: 24.7% 4px 4px 4px; }
 .hal .h-knop:hover .ik-pijl-omlaag .ik-schacht { translate: 0 -2.4px; }
 .hal .h-knop:hover .ik-pijl-omlaag .ik-kop { translate: 0 3.6px; }
 /* de knop in de balk: violet, één zachte hoek, de pijl wit en los */
-body.hal .site-header .nav-cta { border-radius: 3px 11px 11px 3px !important; padding: 0 12px 0 16px !important; transition: background-color .16s steps(2, end) !important; } /* 25 okt: concentrisch met de ronde balk (18 − 7) */
+body.hal .site-header .nav-cta { border-radius: 999px !important; padding: 0 12px 0 16px !important; transition: background-color .16s steps(2, end) !important; } /* 25 okt: concentrisch met de ronde balk (18 − 7) */
 body.hal .site-header .nav-cta::after { width: 16px; height: 16px; border-radius: 0; background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23fff' d='M13 13.39L10.38 11.43L7.39 15.42L8.46 19.45ZM16.82 14.75L16.85 5.53L8.01 8.15Z'/></svg>") center / 16px no-repeat; transition: transform .16s steps(2, end); }
 body.hal .site-header .nav-cta:hover { background: var(--h-inkt) !important; transform: none; }
 body.hal .site-header .nav-cta:hover::after { transform: translate(1.2px, -1.6px); }
 /* de knoppen van de formulieren en de kleine knop in de lookkaart */
 body.hal .btn { border-radius: var(--hoek-knop); }
-.hal .h-mini-knop { border-radius: 11px 3px 3px 3px; }
+.hal .h-mini-knop { border-radius: 999px; }
 
 /* ══ LEVERING 54 · LABELS, STAPPEN, FOCUS, SELECTIE, VOET (afvinklijst 34) ══════ */
 /* De letters van de hal (levering 77, 27 oktober 2026, lijst 60). Was Instrument Sans (levering 76).
@@ -4353,7 +4353,7 @@ body.hal .hal-wm-reus { color: var(--h-inkt); }
    mee; als de rand recht is is er geen ronde hoek") staat de hele regel in "DE
    HOEKREGEL" onderaan dit bestand, en vervalt daar ook de zware hoek linksboven; de
    losse regels die hier stonden (een tweede ronde hoek erbij, de zware bleef) zijn weg. */
-.hal .h-look-paneel .h-mini-knop { border-radius: 3px 3px 6px 3px; }  /* 25 oktober 2026: het paneel is rechtsonder 12 rond, de knop 8 px van die hoek: 12 - 8 = 4, het minimum is de helft van 12 */
+.hal .h-look-paneel .h-mini-knop { border-radius: 999px; }  /* 25 oktober 2026: het paneel is rechtsonder 12 rond, de knop 8 px van die hoek: 12 - 8 = 4, het minimum is de helft van 12 */
 /* De Order-knop in de balk (Lucas: "De order knop hoeken zien er niet mooi uit in de
    topbar"): de balk is 52 px hoog, de knop 46 px, en met 3 px ruimte aan de rechterkant
    staat hij er overal 3 px vanaf. Sinds levering 61 heeft de balk één zachte hoek
@@ -4363,7 +4363,7 @@ body.hal .hal-wm-reus { color: var(--h-inkt); }
   body.hal .site-header .container.nav { padding-right: 3px; }
   /* 25 oktober 2026: de balk is nu 18 px rond (de balk van glas), de knop ligt 3 px van
      de rand en is daar concentrisch: 18 − 3 = 15 px rechts, links licht. */
-  body.hal .site-header .nav-cta { border-radius: 3px 15px 15px 3px !important; }
+  body.hal .site-header .nav-cta { border-radius: 999px !important; }
 }
 
 /* ══ TWEE KNOPPEN WORDEN ÉÉN VORM, MET DE SNEDE ERTUSSEN ══════════════════════
@@ -4457,7 +4457,7 @@ body.hal .hal-wm-reus { color: var(--h-inkt); }
 body.hal .site-footer ul.foot-social { gap: 0; }
 body.hal .site-footer .foot-social a { --h-rand: var(--h-lijn); width: 60px; background-repeat: no-repeat; background-size: 33px 100%; }
 body.hal .site-footer .foot-social li:first-child a { border-radius: var(--r-klein); }
-body.hal .site-footer .foot-social li:last-child a { border-radius: 0 3px 3px 0; }
+body.hal .site-footer .foot-social li:last-child a { border-radius: 0 999px 999px 0; }
 body.hal .site-footer .foot-social li:has(~ li) a { clip-path: polygon(0 0, 100% 0, calc(100% - 33px) 100%, 0 100%); justify-content: flex-start; padding-left: 14px; background-image: linear-gradient(to bottom right, transparent calc(50% - .6px), var(--h-rand) calc(50% - .6px), var(--h-rand) calc(50% + .6px), transparent calc(50% + .6px)); background-position: 100% 0; }
 body.hal .site-footer .foot-social li ~ li { margin-left: -28.8px; }
 body.hal .site-footer .foot-social li ~ li a { clip-path: polygon(33px 0, 100% 0, 100% 100%, 0 100%); justify-content: flex-end; padding-right: 14px; background-image: linear-gradient(to bottom right, transparent calc(50% - .6px), var(--h-rand) calc(50% - .6px), var(--h-rand) calc(50% + .6px), transparent calc(50% + .6px)); background-position: 0 0; }
@@ -4511,7 +4511,7 @@ body.hal .sb .sb-veld button:disabled { display: inline-flex; align-items: cente
       ::after, daarom zag mijn meting van de iconen hem niet). Nu zoals elke knop: één
       zachte hoek linksboven, de pijl uit het kit in twee delen, wit; onder de muis
       schuiven kop en schacht uit elkaar en wordt de knop violet, in twee stappen. */
-html body.hal .h-form .s22 .knop-inkt { padding: 0 18px 0 26px; border-radius: 16px 3px 3px 3px; transition: background-color .16s steps(2, end); }
+html body.hal .h-form .s22 .knop-inkt { padding: 0 18px 0 26px; border-radius: 999px; transition: background-color .16s steps(2, end); }
 html body.hal .h-form .s22 .knop-inkt::after {
   width: 28px; height: 22px; border-radius: 0;
   background:
@@ -4545,13 +4545,13 @@ html body.hal .h-form .s22 .knop-inkt:hover::after { transform: none; background
 /* v35-chips b: de feiten in de opening ("Vanaf €39 per product", "Vaak binnen een dag",
    "Geen minimum") blijven los, maar als plaatje met één zachte hoek (24,7% van 38 px)
    en in de vaste breedte-letter, in hoofdletters, zoals kenmerken op een doos. */
-.hal .h-feiten li { border-radius: 9px 3px 3px 3px; font: 500 12.5px/1.2 var(--h-mono); letter-spacing: .04em; text-transform: uppercase; }
+.hal .h-feiten li { border-radius: 999px; font: 500 12.5px/1.2 var(--h-mono); letter-spacing: .04em; text-transform: uppercase; }
 .hal .h-feiten b { font-weight: 600; }
 
 /* v35-pillen a: de pilletjes op foto's en in kaarten ("Phone-made · lifestyle", "Per
    product") zonder bolletje; de naam in de vaste breedte-letter, in hoofdletters, op
    een plaatje met één zachte hoek linksboven (ze staan linksboven in hun foto of kaart). */
-.hal span.h-pil, .hal figcaption.h-pil, .hal h2.h-pil { gap: 0; height: auto; min-height: 30px; padding: 7px 11px; border-radius: 8px 3px 3px 3px; font: 600 12px/1 var(--h-mono); line-height: 1.3; letter-spacing: .08em; text-transform: uppercase; white-space: normal; min-width: 0; max-width: 100%; }
+.hal span.h-pil, .hal figcaption.h-pil, .hal h2.h-pil { gap: 0; height: auto; min-height: 30px; padding: 7px 11px; border-radius: 999px; font: 600 12px/1 var(--h-mono); line-height: 1.3; letter-spacing: .08em; text-transform: uppercase; white-space: normal; min-width: 0; max-width: 100%; }
 .hal span.h-pil::before, .hal figcaption.h-pil::before, .hal h2.h-pil::before { display: none; }
 
 @media (max-width: 900px) {
@@ -4619,26 +4619,26 @@ html body.hal .site-header .brand .hal-vm.mk, html body.hal .nav-drawer .brand .
    hoeken met het nieuwe ontwerp. De Order-knop in de balk staat hierboven, bij de
    regel van levering 54. body.hal.hal is bewust: één klasse zwaarder dan de plaatjes
    met een icoon (i:has(> svg.ik)), die anders zouden winnen. */
-html body.hal.hal .h-look .h-pil-nr { border-radius: 18px 3px 3px 3px; }  /* pil linksboven op de foto in de lookkaart (de foto is zijn vlak) */
-html body.hal.hal .h-bm-een .h-bm-een-pil { border-radius: 3px; }  /* pil linksonder op de foto: de foto is daar recht */
-html body.hal.hal .hl-bediening .h-paar > .h-cirkel:first-child { border-radius: 3px 0 0 3px; }  /* de bediening is een balk: langs zijn rechte randen geen zware hoek */
-html body.hal.hal .h-dienst-eigen .h-cirkel { border-radius: 8px 3px 3px 3px; }
-html body.hal.hal .h-lagen li > i { border-radius: 2px 2px 2px 2px; }  /* de vinkjes in de animatie: de middelste recht */
+html body.hal.hal .h-look .h-pil-nr { border-radius: 999px; }  /* pil linksboven op de foto in de lookkaart (de foto is zijn vlak) */
+html body.hal.hal .h-bm-een .h-bm-een-pil { border-radius: 999px; }  /* pil linksonder op de foto: de foto is daar recht */
+html body.hal.hal .hl-bediening .h-paar > .h-cirkel:first-child { border-radius: 999px 0 0 999px; }  /* de bediening is een balk: langs zijn rechte randen geen zware hoek */
+html body.hal.hal .h-dienst-eigen .h-cirkel { border-radius: 999px; }
+html body.hal.hal .h-lagen li > i { border-radius: 999px; }  /* de vinkjes in de animatie: de middelste recht */
 /* De vragen en het label in de twee kaarten met een klein beeld (voorpagina, /studio):
    op de telefoon en de tablet 22 px van de hoek: 24 - 22 = 2, dus het minimum, 8. */
-html body.hal.hal .h-weten-boven .h-label, html body.hal.hal .h-weten-boven .h-vragen span { border-radius: 8px 3px 3px 3px; }
+html body.hal.hal .h-weten-boven .h-label, html body.hal.hal .h-weten-boven .h-vragen span { border-radius: 999px; }
 /* Een kenmerk linksboven in een kaart, 22 px van de rand (/plans): het minimum, 8. */
-html body.hal.hal .h-pl-soon-rij .h-pl-tag { border-radius: 8px 3px 3px 3px; }
+html body.hal.hal .h-pl-soon-rij .h-pl-tag { border-radius: 999px; }
 /* De voor- en na-labels op de vergelijkfoto: linksonder en rechtsonder, 14 px van de rand. */
-html body.hal.hal .cmp .cmp-tag.before { border-radius: 3px 3px 3px calc(var(--r-kaart) - 14px); }
-html body.hal.hal .cmp .cmp-tag.after { border-radius: 3px 3px calc(var(--r-kaart) - 14px) 3px; }
+html body.hal.hal .cmp .cmp-tag.before { border-radius: 999px; }
+html body.hal.hal .cmp .cmp-tag.after { border-radius: 999px; }
 /* De kop van een uitklapper (FAQ, look, juridisch) vult zijn kaart op 24 px opzij en 6 px
    boven en onder: 24 - 15 = 9, rondom. Op de telefoon 18 en 4: 24 - 11 = 13. */
 html body.hal.hal .h-vragen-lijst .dc-sum, html body.hal.hal .h-jur-tekst .legal-folds .dc-sum { border-radius: 9px; }
 /* De vergelijkfoto in het vak "met de hand" (how-it-works): op de telefoon 16 en 24 van
    de bovenhoeken van het vlak: 32 - 20 = 12. */
 /* De kenmerken onderaan een illustratie: linksonder, 12 px van de rand van het vak. */
-html body.hal.hal .h-well .h-chip { border-radius: 3px 3px 3px calc(var(--r-kaart) - 12px); }
+html body.hal.hal .h-well .h-chip { border-radius: 999px; }
 /* Het lijstje in "jij stuurt" (de voorpagina): rechtsboven, 12 px van de rand. */
 html body.hal.hal .h-well .h-stuur-lijst { border-top-right-radius: calc(var(--r-kaart) - 12px); }
 /* De vier vakjes van "wij keuren": een raster van twee bij twee, 8 px van de rand; elk
@@ -4647,16 +4647,15 @@ html body.hal.hal .h-keur-rij > li:nth-child(1) { border-top-left-radius: calc(v
 html body.hal.hal .h-keur-rij > li:nth-child(2) { border-top-right-radius: calc(var(--r-kaart) - 8px); }
 html body.hal.hal .h-keur-rij > li:nth-child(3) { border-bottom-left-radius: calc(var(--r-kaart) - 8px); }
 html body.hal.hal .h-keur-rij > li:nth-child(4) { border-bottom-right-radius: calc(var(--r-kaart) - 8px); }
-html body.hal.hal .h-keur-rij > li:nth-child(2) .h-vink { border-top-right-radius: calc(var(--r-kaart) - 8px - 7px); }  /* het vinkje rechtsboven, 7 px van de rand van dat vakje */
 /* Het paneel onder in de lookkaart: links en rechts 12 px van de onderhoeken. */
-html body.hal.hal .h-look .h-look-paneel { border-radius: 3px 3px calc(var(--r-kaart) - 12px) calc(var(--r-kaart) - 12px); }
+html body.hal.hal .h-look .h-look-paneel { border-radius: calc(var(--r-kaart) - 12px); }
 /* De foto in de dienstkaart (voorpagina) en de schuif in de prijstabel: 10 px van de
    rand, rondom 24 - 10 = 14; op de telefoon ligt de foto 8 px van de rand: 16. */
 html body.hal.hal .h-dk-a .h-dk-beeld, html body.hal.hal .h-pr-tabel .h-pr-schuif { border-radius: calc(var(--r-kaart) - 10px); }
 /* De stand rechtsboven in het lijstje van de galerij (16 en 22 van de rand) en die van de
    bediening op /about (22): het minimum. */
-html body.hal.hal .h-lv-balk .h-lv-status { border-radius: 3px 8px 3px 3px; }
-html body.hal.hal .h-ov-ctrl-balk > .h-ov-ctrl-stand { border-radius: 3px 8px 3px 3px; }
+html body.hal.hal .h-lv-balk .h-lv-status { border-radius: 999px; }
+html body.hal.hal .h-ov-ctrl-balk > .h-ov-ctrl-stand { border-radius: 999px; }
 /* De kaart met de beelden in het vlak "jij levert" (de voorpagina): 18 px van de rand van
    het grote vlak; op de laptop linksboven en linksonder (32 - 18 = 14), tot 1180 breed
    staat hij bovenaan, op de telefoon 12 px van de rand (32 - 12 = 20). De drie foto's
@@ -4670,7 +4669,7 @@ html body.hal.hal .h-rest-rij > li { border-radius: var(--r-klein); }
 html body.hal.hal .h-rest-rij > li:last-child { border-bottom-right-radius: 10px; }
 /* Het vinkje linksboven in het blok "zo werkt het" (/custom-models, /upload-guidelines):
    24 en 22 van de rand, het minimum. */
-html body.hal.hal .h-bm-check .h-bm-check-i { border-radius: 8px 3px 3px 3px; }
+html body.hal.hal .h-bm-check .h-bm-check-i { border-radius: 999px; }
 /* Het eerste merkgezicht linksboven in de figuur: 12 px van de rand, net als de kaart
    "eentje" rechtsboven. */
 html body.hal.hal .h-bm-cast .h-bm-een { border-top-right-radius: calc(var(--r-kaart) - 12px); }
@@ -4681,10 +4680,10 @@ html body.hal.hal .h-ls-model .h-ls-model-beeld { border-radius: calc(var(--r-vl
    Bovenaan loopt hij mee in de hoek rechtsboven (32 - 16), onderaan in de hoek
    rechtsonder (16 en 8: 32 - 12). */
 @media (min-width: 901px) {
-  html body.hal.hal .h-cmp-kopregel > .is-ons { border-radius: 3px calc(var(--r-vlak) - 16px) 0 0; }
-  html body.hal.hal .h-cmp-rij.is-laatst > .is-ons { border-radius: 0 0 calc(var(--r-vlak) - 12px) 3px; }
-  html body.hal.hal .h-ct-wa .h-knop { border-radius: 3px; }  /* WhatsApp-knop onderaan het vak, los van de hoeken */
-  html body.hal.hal .h-ls-beeld .h-pil-nr { border-radius: 18px 3px 3px 3px; }
+  html body.hal.hal .h-cmp-kopregel > .is-ons { border-radius: calc(var(--r-vlak) - 16px) calc(var(--r-vlak) - 16px) 0 0; }
+  html body.hal.hal .h-cmp-rij.is-laatst > .is-ons { border-radius: 0 0 calc(var(--r-vlak) - 12px) calc(var(--r-vlak) - 12px); }
+  html body.hal.hal .h-ct-wa .h-knop { border-radius: 999px; }  /* WhatsApp-knop onderaan het vak, los van de hoeken */
+  html body.hal.hal .h-ls-beeld .h-pil-nr { border-radius: 999px; }
   /* het lijstje statussen in de open galerijkaart: 18 px van de rand van de kaart (24 - 18 = 6, dus 8) */
   html body.hal.hal .h-gl-echt .h-lv { border-radius: var(--r-kaart) var(--r-kaart) 8px 8px; }
   /* het volgende stuk in een galerijkaart: 22 px van de bovenhoeken */
@@ -4698,11 +4697,11 @@ html body.hal.hal .h-ls-model .h-ls-model-beeld { border-radius: calc(var(--r-vl
   html body.hal.hal .h-rest-rij > li:nth-child(3) { border-bottom-left-radius: 11px; }  /* twee kolommen: 22 en 20 van de rand */
 }
 @media (max-width: 900px) {
-  html body.hal.hal .h-ls-beeld .h-pil-nr { border-radius: calc(var(--r-kaart) - 14px) 3px 3px 3px; }  /* 14 px van de rand */
-  html body.hal.hal .h-pr-band .h-knop-lijn { border-radius: 3px; }  /* op de telefoon onderaan over de hele breedte */
-  html body.hal.hal .h-sd-onderweg-boven .h-cirkel, html body.hal.hal .h-sd-sl .h-cirkel { border-radius: 8px 3px 3px 3px; }  /* 18 tot 22 px van de rand: het minimum */
+  html body.hal.hal .h-ls-beeld .h-pil-nr { border-radius: 999px; }  /* 14 px van de rand */
+  html body.hal.hal .h-pr-band .h-knop-lijn { border-radius: 999px; }  /* op de telefoon onderaan over de hele breedte */
+  html body.hal.hal .h-sd-onderweg-boven .h-cirkel, html body.hal.hal .h-sd-sl .h-cirkel { border-radius: 999px; }  /* 18 tot 22 px van de rand: het minimum */
   /* de pijl rechtsboven in een kaart, 20 tot 24 px van de rand: het minimum */
-  html body.hal.hal .h-weten-boven .h-cirkel, html body.hal.hal .h-kopbeeld-boven .h-cirkel { border-radius: 3px 8px 3px 3px; }
+  html body.hal.hal .h-weten-boven .h-cirkel, html body.hal.hal .h-kopbeeld-boven .h-cirkel { border-radius: 999px; }
   html body.hal.hal .h-rest > .h-rest-jij { border-radius: calc(var(--r-vlak) - 12px) calc(var(--r-vlak) - 12px) var(--r-kaart) var(--r-kaart); }
   html body.hal.hal .h-rest-rij > li:nth-child(3) { border-bottom-left-radius: var(--r-klein); }
   html body.hal.hal .h-rest-rij > li:last-child { border-bottom-left-radius: 15px; }  /* één kolom: 18 en 16 van de rand */
@@ -4722,53 +4721,53 @@ html body.hal.hal .h-ls-model .h-ls-model-beeld { border-radius: calc(var(--r-vl
   html body.hal.hal .h-cmp-rij > .is-ons { border-radius: var(--r-klein); }
   html body.hal.hal .h-cmp-rij.is-laatst > .is-ons { border-radius: var(--r-klein) var(--r-klein) 8px 8px; }  /* 24 van de onderhoeken */
   html body.hal.hal .h-pr-som-rij > li:last-child { border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; }  /* 20 en 24 van de rand */
-  html body.hal.hal .h-bewijs-regels > div:last-child dd > .h-chip:last-child { border-radius: 3px 3px 3px 8px; }  /* het laatste kenmerk staat linksonder op een eigen regel, 24 van de rand */
+  html body.hal.hal .h-bewijs-regels > div:last-child dd > .h-chip:last-child { border-radius: 999px; }  /* het laatste kenmerk staat linksonder op een eigen regel, 24 van de rand */
   /* een blok onderaan een band, 20 en 28 px van de onderhoeken: het minimum */
   html body.hal.hal .h-st-band > .h-bm-check, html body.hal.hal .h-ed-slot > .h-ed-brief { border-radius: var(--r-kaart) var(--r-kaart) 8px 8px; }
 }
 @media (max-width: 640px) {
-  html body.hal.hal .h-gd-kaart .h-pil { border-radius: 8px 3px 3px 3px; }  /* gidskaart linksboven, alleen op de telefoon in de hoek: 20 en 24, het minimum */
+  html body.hal.hal .h-gd-kaart .h-pil { border-radius: 999px; }  /* gidskaart linksboven, alleen op de telefoon in de hoek: 20 en 24, het minimum */
   html body.hal.hal .h-lk-bewijs .h-bewijs-cmp .cmp { border-bottom-right-radius: 9px; }  /* (/catalog/classic) ook rechts tegen de rand */
   html body.hal.hal .h-md-inc > .h-md-deur { border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; }  /* onderaan het vlak (/models), 16 en 28: 32 - 22 */
-  html body.hal.hal .h-ct-wa .h-knop { border-radius: 3px 3px 8px 8px; }  /* over de hele breedte onderaan het vak, 20 en 22 van de hoeken */
-  html body.hal.hal .h-faq-nog .h-faq-nog-ik { border-radius: 10px 3px 3px 3px; }  /* 20 en 24 van de rand: 32 - 22 */
-  html body.hal.hal .h-bm-bieb .h-knop-lijn { border-radius: 3px 3px 3px 10px; }  /* knop linksonder in het vak, 20 en 24: 32 - 22 */
-  html body.hal.hal .h-ov-ctrl-balk > .h-pil { border-radius: 9.5px 3px 3px 3px; }  /* 14 en 15 van de rand */
-  html body.hal.hal .h-ov-ctrl-balk > .h-ov-ctrl-stand { border-radius: 3px 10px 3px 3px; }  /* 14 van de rand */
-  html body.hal.hal .h-vd-kopen .h-knop-inkt { border-radius: 3px 3px 8px 8px; }  /* alleen, over de hele breedte onderaan */
-  html body.hal.hal .h-ug-vraag .h-ug-vakje { border-radius: 8.5px 3px 3px 8.5px; }  /* de vraag is een rij: links beide hoeken, 16 en 14 tot 20 */
-  html body.hal.hal .h-ov-cijfer .h-pil { border-radius: 7px 3px 3px 3px; }
-  html body.hal.hal .h-ov-cijfer-boven .h-cirkel { border-radius: 3px 8px 3px 3px; }  /* 20 en 22 van de rand */
-  html body.hal.hal .h-hw-chips > li:last-child { border-radius: 3px 3px 3px 10px; }  /* linksonder, 16 en 28 van de rand; rechts reikt hij pas tot de hoek als het vlak smaller is dan zijn breedte (zie onder) */
+  html body.hal.hal .h-ct-wa .h-knop { border-radius: 999px; }  /* over de hele breedte onderaan het vak, 20 en 22 van de hoeken */
+  html body.hal.hal .h-faq-nog .h-faq-nog-ik { border-radius: 999px; }  /* 20 en 24 van de rand: 32 - 22 */
+  html body.hal.hal .h-bm-bieb .h-knop-lijn { border-radius: 999px; }  /* knop linksonder in het vak, 20 en 24: 32 - 22 */
+  html body.hal.hal .h-ov-ctrl-balk > .h-pil { border-radius: 999px; }  /* 14 en 15 van de rand */
+  html body.hal.hal .h-ov-ctrl-balk > .h-ov-ctrl-stand { border-radius: 999px; }  /* 14 van de rand */
+  html body.hal.hal .h-vd-kopen .h-knop-inkt { border-radius: 999px; }  /* alleen, over de hele breedte onderaan */
+  html body.hal.hal .h-ug-vraag .h-ug-vakje { border-radius: 999px; }  /* de vraag is een rij: links beide hoeken, 16 en 14 tot 20 */
+  html body.hal.hal .h-ov-cijfer .h-pil { border-radius: 999px; }
+  html body.hal.hal .h-ov-cijfer-boven .h-cirkel { border-radius: 999px; }  /* 20 en 22 van de rand */
+  html body.hal.hal .h-hw-chips > li:last-child { border-radius: 999px; }  /* linksonder, 16 en 28 van de rand; rechts reikt hij pas tot de hoek als het vlak smaller is dan zijn breedte (zie onder) */
   html body.hal.hal .h-bm-cast .h-bm-een { border-top-right-radius: calc(var(--r-kaart) - 10px); }
   html body.hal.hal .h-maak .h-lagen { border-top-right-radius: 10px; }  /* 17 en 12 (640), 9 en 20 (390) */
   html body.hal.hal .h-hw-hand .cmp { border-radius: calc(var(--r-vlak) - 20px) calc(var(--r-vlak) - 20px) var(--r-kaart) var(--r-kaart); }  /* 16 en 24 van de bovenhoeken */
 }
 @media (min-width: 641px) {
-  html body.hal.hal .h-ov-ctrl-balk > .h-pil { border-radius: 17.5px 3px 3px 3px; }
-  html body.hal.hal .h-ug-vraag .h-ug-vakje { border-radius: 8px 3px 3px 3px; }  /* 22 van de rand: het minimum */
-  html body.hal.hal .h-ov-cijfer .h-pil { border-radius: 6px 3px 3px 3px; }
-  html body.hal.hal .cc .cc-btn { border-radius: 3px 3px 3px 3px; }  /* de cookieknoppen: allebei dezelfde lichte hoeken. Weigeren moet er precies zo uitzien als toestaan (AVG, tests/cookie-consent), dus de eerste volgt de hoek van de balk hier niet */
+  html body.hal.hal .h-ov-ctrl-balk > .h-pil { border-radius: 999px; }
+  html body.hal.hal .h-ug-vraag .h-ug-vakje { border-radius: 999px; }  /* 22 van de rand: het minimum */
+  html body.hal.hal .h-ov-cijfer .h-pil { border-radius: 999px; }
+  html body.hal.hal .cc .cc-btn { border-radius: 999px; }  /* de cookieknoppen: allebei dezelfde lichte hoeken. Weigeren moet er precies zo uitzien als toestaan (AVG, tests/cookie-consent), dus de eerste volgt de hoek van de balk hier niet */
 }
 /* De knop in de band met de gezichten (de voorpagina): tot 900 breed rechtsonder, 24 en
    31 px van de rand: het minimum. Valt hij op een smalle telefoon onder de gezichten (bij
    ongeveer 450 px, in het Nederlands iets eerder dan in het Engels), dan blijft hij
    rechts staan, zodat hij altijd in dezelfde hoek ligt. */
 @media (max-width: 900px) {
-  html body.hal.hal .h-gezicht-rechts > .h-knop { margin-left: auto; border-radius: 3px 3px 8px 3px; }
+  html body.hal.hal .h-gezicht-rechts > .h-knop { margin-left: auto; border-radius: 999px; }
 }
 @media (min-width: 641px) and (max-width: 900px) {
-  html body.hal.hal .h-ct-wa .h-knop { border-radius: 3px; }
-  html body.hal.hal .h-dienst-eigen .h-knop { border-radius: 3px 3px 3px 8px; }  /* linksonder, 20 van de rand */
-  html body.hal.hal .h-pr-tarief .h-knop { border-radius: 3px 3px 3px 11px; }  /* linksonder, 22 en 20: 32 - 21 */
+  html body.hal.hal .h-ct-wa .h-knop { border-radius: 999px; }
+  html body.hal.hal .h-dienst-eigen .h-knop { border-radius: 999px; }  /* linksonder, 20 van de rand */
+  html body.hal.hal .h-pr-tarief .h-knop { border-radius: 999px; }  /* linksonder, 22 en 20: 32 - 21 */
 }
 @media (max-width: 380px) {
-  html body.hal.hal .h-faq-nog .h-knop-lijn { border-radius: 3px; }
-  html body.hal.hal .h-vd-kopen .h-knop-lijn { border-radius: 3px; }
+  html body.hal.hal .h-faq-nog .h-knop-lijn { border-radius: 999px; }
+  html body.hal.hal .h-vd-kopen .h-knop-lijn { border-radius: 999px; }
 }
 @media (min-width: 381px) and (max-width: 640px) {
-  html body.hal.hal .h-pr-tarief .h-knop { border-radius: 3px; }
-  html body.hal.hal .h-dienst-eigen .h-knop { border-radius: 3px; }
+  html body.hal.hal .h-pr-tarief .h-knop { border-radius: 999px; }
+  html body.hal.hal .h-dienst-eigen .h-knop { border-radius: 999px; }
 }
 /* Twee knoppen naast elkaar onderaan een vlak (src/scripts/knoppaar.js zet .h-passen als
    ze passen): de eerste loopt mee in de hoek linksonder, de tweede in de hoek
@@ -4780,28 +4779,28 @@ html body.hal.hal .h-ls-model .h-ls-model-beeld { border-radius: calc(var(--r-vl
 @media (max-width: 900px) {
   html body.hal.hal .h-lk-slot .h-acties.h-passen > .h-knop:not([hidden]):has(~ .h-knop:not([hidden])), html body.hal.hal .h-faq-nog .h-acties.h-passen > .h-knop:not([hidden]):has(~ .h-knop:not([hidden])), html body.hal.hal .h-ts-slot-in .h-acties.h-passen > .h-knop:not([hidden]):has(~ .h-knop:not([hidden])), html body.hal.hal .h-vd-kopen .h-acties.h-passen > .h-knop:not([hidden]):has(~ .h-knop:not([hidden])) { border-top-left-radius: 3px; border-bottom-left-radius: 8px; }
   html body.hal.hal .h-lk-slot .h-acties.h-passen > .h-knop:not([hidden]) ~ .h-knop:not([hidden]):not(:has(~ .h-knop:not([hidden]))), html body.hal.hal .h-faq-nog .h-acties.h-passen > .h-knop:not([hidden]) ~ .h-knop:not([hidden]):not(:has(~ .h-knop:not([hidden]))), html body.hal.hal .h-ts-slot-in .h-acties.h-passen > .h-knop:not([hidden]) ~ .h-knop:not([hidden]):not(:has(~ .h-knop:not([hidden]))), html body.hal.hal .h-vd-kopen .h-acties.h-passen > .h-knop:not([hidden]) ~ .h-knop:not([hidden]):not(:has(~ .h-knop:not([hidden]))) { border-bottom-right-radius: 8px; }
-  html body.hal.hal .jur-uit .h-knop-inkt { border-radius: 3px 0 0 10px; }
+  html body.hal.hal .jur-uit .h-knop-inkt { border-radius: 999px 0 0 999px; }
   html body.hal.hal .jur-uit .h-acties.h-passen > .h-knop:not([hidden]) ~ .h-knop:not([hidden]):not(:has(~ .h-knop:not([hidden]))) { border-bottom-right-radius: 10px; }
 }
 @media (max-width: 640px) {
   html body.hal.hal .h-faq-nog .h-acties.h-passen > .h-knop:not([hidden]):has(~ .h-knop:not([hidden])) { border-bottom-left-radius: 10px; }
   html body.hal.hal .h-faq-nog .h-acties.h-passen > .h-knop:not([hidden]) ~ .h-knop:not([hidden]):not(:has(~ .h-knop:not([hidden]))) { border-bottom-right-radius: 10px; }
-  html body.hal.hal .h-lk-slot .h-acties:not(.h-passen) > .h-knop:not([hidden]):not(:has(~ .h-knop:not([hidden]))), html body.hal.hal .h-ts-slot-in .h-acties:not(.h-passen) > .h-knop:not([hidden]):not(:has(~ .h-knop:not([hidden]))), html body.hal.hal .h-vd-kopen .h-acties:not(.h-passen) > .h-knop:not([hidden]):not(:has(~ .h-knop:not([hidden]))) { border-radius: 3px 3px 8px 8px; }
-  html body.hal.hal .h-faq-nog .h-acties:not(.h-passen) > .h-knop:not([hidden]):not(:has(~ .h-knop:not([hidden]))) { border-radius: 3px 3px 10px 10px; }
+  html body.hal.hal .h-lk-slot .h-acties:not(.h-passen) > .h-knop:not([hidden]):not(:has(~ .h-knop:not([hidden]))), html body.hal.hal .h-ts-slot-in .h-acties:not(.h-passen) > .h-knop:not([hidden]):not(:has(~ .h-knop:not([hidden]))), html body.hal.hal .h-vd-kopen .h-acties:not(.h-passen) > .h-knop:not([hidden]):not(:has(~ .h-knop:not([hidden]))) { border-radius: 999px; }
+  html body.hal.hal .h-faq-nog .h-acties:not(.h-passen) > .h-knop:not([hidden]):not(:has(~ .h-knop:not([hidden]))) { border-radius: 999px; }
   /* de laatste stap onderaan het vlak "jouw plan" en het onderste kenmerk in "met de hand"
      (how-it-works): 16 en 28 px van de onderhoeken, 32 - 22 */
   html body.hal.hal .h-hw-plan .h-hw-terug-rij > .h-st-stap:last-child { border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; }
 }
 @media (min-width: 381px) and (max-width: 900px) {
-  html body.hal.hal .h-lk-slot .h-knop-inkt { border-radius: 3px 0 0 3px; }
+  html body.hal.hal .h-lk-slot .h-knop-inkt { border-radius: 999px 0 0 999px; }
 }
 @media (max-width: 620px) {
-  html body.hal.hal .h-lk-slot .h-knop-lijn { border-radius: 3px 3px 8px 8px; }  /* alleen, over de hele breedte onderaan */
-  html body.hal.hal .jur-uit .h-knop-lijn { border-radius: 3px; }
-  html body.hal.hal .h-st-set .h-pil { border-radius: 8px 3px 3px 3px; }  /* 20 van de rand: het minimum */
+  html body.hal.hal .h-lk-slot .h-knop-lijn { border-radius: 999px; }  /* alleen, over de hele breedte onderaan */
+  html body.hal.hal .jur-uit .h-knop-lijn { border-radius: 999px; }
+  html body.hal.hal .h-st-set .h-pil { border-radius: 999px; }  /* 20 van de rand: het minimum */
 }
 @media (min-width: 621px) {
-  html body.hal.hal .h-st-set .h-pil { border-radius: 6px 3px 3px 3px; }
+  html body.hal.hal .h-st-set .h-pil { border-radius: 999px; }
 }
 /* De kenmerken in het vak "met de hand" (how-it-works): op de telefoon allemaal even
    breed. Ze waren zo breed als hun tekst, en dan hing het van de tekst af of het
@@ -4810,7 +4809,7 @@ html body.hal.hal .h-ls-model .h-ls-model-beeld { border-radius: calc(var(--r-vl
   html body.hal.hal .h-hw-chips { align-items: stretch; }
 }
 @media (max-width: 470px) {
-  html body.hal.hal .h-hw-chips > li:last-child { border-radius: 3px 3px 10px 10px; }  /* nu over de hele breedte: ook rechtsonder */
+  html body.hal.hal .h-hw-chips > li:last-child { border-radius: 999px; }  /* nu over de hele breedte: ook rechtsonder */
 }
 
 /* ══ LEVERING 61 · AFVINKLIJST 39: MINDER SJABLOON (18 oktober 2026) ══════════════════
@@ -4829,9 +4828,9 @@ html body.hal.hal .h-ls-model .h-ls-model-beeld { border-radius: calc(var(--r-vl
 .hal .h-pl-kaarten > .h-pk:last-child { clip-path: polygon(0 0, 100% 0, 100% calc(100% - 32px), calc(100% - 24px) 100%, 0 100%); }
 .hal .h-pk-lijst li { display: block; }
 /* het label bij Merk: een kenmerk, dus een plaatje in de vaste breedte-letter */
-.hal .h-pk-merk { height: 28px; padding: 0 10px; border-radius: 8px 3px 3px 3px; background: var(--h-wit); font: 600 11.5px/1 var(--h-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--h-inkt); }
+.hal .h-pk-merk { height: 28px; padding: 0 10px; border-radius: 999px; background: var(--h-wit); font: 600 11.5px/1 var(--h-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--h-inkt); }
 /* de knop onderaan het plan: de gewone knop (de kaart heeft daar geen ronde hoek meer) */
-html body.hal.hal .h-pl-kaarten .h-pk .h-knop { border-radius: 16px 3px 3px 3px; }
+html body.hal.hal .h-pl-kaarten .h-pk .h-knop { border-radius: 999px; }
 @media (max-width: 900px) {
   .hal .h-pl-kaarten > .h-pk + .h-pk { box-shadow: inset 0 1px 0 var(--h-lijn); }
 }
@@ -4860,30 +4859,30 @@ html body.hal.hal .h-well > picture, html body.hal.hal .h-well > picture > img {
 
 /* Bijschriften linksonder op een foto: die hoek loopt mee. Op /about 12 px van de rand
    (op de telefoon 8), op de foto's bovenaan een pagina 16 (op de telefoon 10). */
-html body.hal.hal .h-ov-ctrl-paar figcaption.h-pil { border-radius: 3px 3px 3px calc(var(--r-kaart) - 12px); }
-html body.hal.hal .h-kopbeeld-paar figure figcaption.h-pil, html body.hal.hal .h-kopbeeld-foto figcaption.h-pil { border-radius: 3px 3px 3px 8px; }
+html body.hal.hal .h-ov-ctrl-paar figcaption.h-pil { border-radius: 999px; }
+html body.hal.hal .h-kopbeeld-paar figure figcaption.h-pil, html body.hal.hal .h-kopbeeld-foto figcaption.h-pil { border-radius: 999px; }
 @media (max-width: 640px) {
-  html body.hal.hal .h-ov-ctrl-paar figcaption.h-pil { border-radius: 3px 3px 3px calc(var(--r-kaart) - 8px); }
-  html body.hal.hal .h-kopbeeld-paar figure figcaption.h-pil, html body.hal.hal .h-kopbeeld-foto figcaption.h-pil { border-radius: 3px 3px 3px calc(var(--r-kaart) - 10px); }
+  html body.hal.hal .h-ov-ctrl-paar figcaption.h-pil { border-radius: 999px; }
+  html body.hal.hal .h-kopbeeld-paar figure figcaption.h-pil, html body.hal.hal .h-kopbeeld-foto figcaption.h-pil { border-radius: 999px; }
 }
 /* De vinkjes en plusjes rechtsboven in een vak of op een tegel: die hoek loopt mee.
    Op de schets (een kleine tegel van 12) 10 px van de rand: de helft van 12, 6. */
-html body.hal.hal .h-keur-rij .h-vink { border-radius: 2px; }
-html body.hal.hal .h-pp-schets .h-pp-plus { border-radius: 2px 6px 2px 2px; }
-html body.hal.hal .h-pp-beeld .h-vink { border-radius: 2px calc(var(--r-kaart) - 14px) 2px 2px; }  /* 14 van de rand */
+html body.hal.hal .h-keur-rij .h-vink { border-radius: 0; }
+html body.hal.hal .h-pp-schets .h-pp-plus { border-radius: 999px; }
+html body.hal.hal .h-pp-beeld .h-vink { border-radius: 999px; }  /* 14 van de rand */
 html body.hal.hal .h-lagen li > i { border-radius: 2px; }
 /* Muur met merkgezichten: alleen het eerste vak zit linksboven in de figuur, 12 px van
    de rand (op de telefoon 10). Het is een kleine tegel. */
 html body.hal.hal .h-bm-muur > .h-bm-muur-vak:first-child { border-radius: calc(var(--r-kaart) - 12px) var(--r-klein) var(--r-klein) var(--r-klein); }
 /* Het kaartje "Binnenkort": linksboven in zijn vlak. */
-html body.hal.hal .h-dienst-komend .h-pl-tag { border-radius: 8px 3px 3px 3px; }  /* 24 en 20 tot 28 van de rand: het minimum */
+html body.hal.hal .h-dienst-komend .h-pl-tag { border-radius: 999px; }  /* 24 en 20 tot 28 van de rand: het minimum */
 /* Kleine beelden in een rij van /about: 8 px van de rand van hun tegel (12): de helft, 6. */
 html body.hal.hal .h-ov-ctrl-rij img { border-radius: 6px; }
 /* Studio (/studio): het scherm in zijn vlak, de kaart en het label. */
 html body.hal.hal .h-sd-vlak .fg-frame { border-radius: var(--r-kaart); }  /* 28 van de rand: los */
 html body.hal.hal .h-sd-map-label { border-radius: var(--r-klein) 8px var(--r-klein) var(--r-klein); }  /* rechtsboven, 20 van de rand: het minimum */
 html body.hal.hal .h-sd-map .h-sd-boom { border-bottom-left-radius: 8px; }  /* linksonder, 20 van de rand */
-html body.hal.hal .h-sd-logboek-kop i { border-radius: 3px 8px 3px 3px; }  /* rechtsboven in het logboek, 22 tot 24 van de rand */
+html body.hal.hal .h-sd-logboek-kop i { border-radius: 999px; }  /* rechtsboven in het logboek, 22 tot 24 van de rand */
 @media (min-width: 901px) {
   html body.hal.hal .h-sd-map > picture, html body.hal.hal .h-sd-map > picture > img { border-radius: inherit; }
 }
@@ -4892,14 +4891,14 @@ html body.hal.hal .h-sd-logboek-kop i { border-radius: 3px 8px 3px 3px; }  /* re
   html body.hal.hal .h-sd-scherm .fd { border-radius: calc(var(--r-vlak) - 12px); }  /* 12 van de rand, rondom */
   html body.hal.hal .h-sd-scherm .fd-badge { border-top-right-radius: 8px; }  /* in het scherm van 20: 20 - 13,6, dus het minimum */
   html body.hal.hal .h-sd-vlak .fg-badge { border-top-right-radius: 3px; }  /* in het scherm van 12 ligt hij 14 px van de rand: buiten de hoek, dus licht */
-  html body.hal.hal .h-sd-map > picture > img { border-radius: 3px 3px var(--r-kaart) var(--r-kaart); }  /* het label staat erboven; onderaan vult hij de kaart */
+  html body.hal.hal .h-sd-map > picture > img { border-radius: var(--r-kaart); }  /* het label staat erboven; onderaan vult hij de kaart */
   html body.hal.hal .h-sd-map-label { border-radius: var(--r-klein); }
-  html body.hal.hal .h-sd-map .h-sd-boom { border-radius: 3px 3px 3px calc(var(--r-kaart) - 12px); }  /* linksonder, 12 van de rand */
+  html body.hal.hal .h-sd-map .h-sd-boom { border-radius: 12px; }  /* linksonder, 12 van de rand */
   html body.hal.hal .h-sd-log > .h-sd-logboek { border-radius: var(--r-kaart) var(--r-kaart) calc(var(--r-vlak) - 16px) calc(var(--r-vlak) - 16px); }  /* 16 van de onderhoeken */
   html body.hal.hal .h-ls-model-beeld { align-self: start; }  /* bovenaan, zodat de afstand niet van de lengte van de tekst afhangt */
 }
 @media (max-width: 620px) {
-  html body.hal.hal .h-pp-beeld .h-vink { border-radius: 2px calc(var(--r-kaart) - 8px) 2px 2px; }  /* 8 van de rand */
+  html body.hal.hal .h-pp-beeld .h-vink { border-radius: 999px; }  /* 8 van de rand */
 }
 @media (max-width: 640px) {
   html body.hal.hal .h-bm-muur > .h-bm-muur-vak:first-child { border-radius: calc(var(--r-kaart) - 10px) var(--r-klein) var(--r-klein) var(--r-klein); }
@@ -5004,7 +5003,7 @@ html body.hal .h-proef > .h-proef-woord {
 }
 html body.hal .h-proef > .h-proef-woord > * { position: relative; z-index: 1; }
 html body.hal .h-proef :focus-visible { outline-color: var(--h-blauw-licht); }
-html body.hal .h-proef .h-ts-bij { display: inline-block; padding: 6px 10px; border-radius: 10px 3px 3px 3px; background: var(--h-wit); color: var(--h-inkt); box-shadow: var(--h-kaart-rand); }
+html body.hal .h-proef .h-ts-bij { display: inline-block; padding: 6px 10px; border-radius: 999px; background: var(--h-wit); color: var(--h-inkt); box-shadow: var(--h-kaart-rand); }
 @media (max-width: 1520px) { html body.hal .h-proef { padding-inline: 0; } }
 @media (max-width: 560px) {
   html body.hal .h-proef { padding: 0 0 22px; }
@@ -5072,9 +5071,9 @@ html.h-js body.hal .h-sec-kop.is-in p.h-pil::before { animation: h-tl .46s steps
    56 → 48 px hoog (klein 46 → 40), de letter 16 → 15 px, de pijl 20 → 17 px. De snede
    tussen twee knoppen schaalt mee: 0,75 × de hoogte, de kier 7,6 % van de hoogte (de
    maten van het merk). De ene zachte hoek blijft (14 px, klein 12 px). */
-html body.hal .h-knop { position: relative; isolation: isolate; height: 48px; gap: 12px; padding: 0 18px 0 22px; border-radius: 14px 3px 3px 3px; font-size: 15px; letter-spacing: -.005em; --h-snede: 36px; --h-kier: 4.5px;
+html body.hal .h-knop { position: relative; isolation: isolate; height: 48px; gap: 12px; padding: 0 18px 0 22px; border-radius: 999px; font-size: 15px; letter-spacing: -.005em; --h-snede: 36px; --h-kier: 4.5px;
   transition: background-color .22s cubic-bezier(.22, .8, .2, 1), color .22s cubic-bezier(.22, .8, .2, 1), box-shadow .22s cubic-bezier(.22, .8, .2, 1); }
-html body.hal .h-knop-klein { height: 40px; gap: 10px; padding: 0 14px 0 18px; border-radius: 12px 3px 3px 3px; font-size: 14px; --h-snede: 30px; --h-kier: 3.8px; }
+html body.hal .h-knop-klein { height: 40px; gap: 10px; padding: 0 14px 0 18px; border-radius: 999px; font-size: 14px; --h-snede: 30px; --h-kier: 3.8px; }
 html body.hal .h-knop-lijn, html body.hal .h-knop-lijnwit { padding: 0 22px; }
 html body.hal .h-knop-lijn.h-knop-klein { padding: 0 18px; }
 html body.hal .h-knop .o { font-size: 17px; }
@@ -5419,19 +5418,19 @@ html body.hal .site-header .nav, html body.hal .site-header .container.nav {
 html body.hal .site-header .nav::before { display: none !important; }
 html body.hal .site-header .brand { height: 40px; margin-right: 40px; }
 html body.hal .site-header .primary-nav { margin: 0 auto 0 0; }
-html body.hal .site-header .nav-links > li > a, html body.hal .site-header .nav-trigger { height: 40px; border-radius: 10px 3px 3px 3px !important; }
+html body.hal .site-header .nav-links > li > a, html body.hal .site-header .nav-trigger { height: 40px; border-radius: 999px !important; }
 html body.hal .site-header .nav-links > li > a:hover, html body.hal .site-header .nav-trigger:hover,
 html body.hal .site-header .nav-trigger[aria-expanded="true"] { background: var(--h-wit, #FFFFFF) !important; }   /* levering 79: op de grond licht wat onder de muis komt wit op (was vlak) */
 html body.hal .site-header .lang-switch, html body.hal .site-header .lang-switch .ls,
-html body.hal .site-header .nav-taal-klein .ls { border-radius: 10px 3px 3px 3px !important; }
+html body.hal .site-header .nav-taal-klein .ls { border-radius: 999px !important; }
 html body.hal .site-header .nav-taal-klein .ls { width: 40px; height: 40px; }
 html body.hal .site-header .nav-ik-knop { width: 40px; height: 40px; }
 html body.hal .site-header .nav-cta, html body.hal .site-header .container.nav .nav-cta {
-  height: 40px; padding: 0 16px 0 18px !important; border-radius: 12px 3px 3px 3px !important; box-shadow: none !important; }
+  height: 40px; padding: 0 16px 0 18px !important; border-radius: 999px !important; box-shadow: none !important; }
 html body.hal .site-header .nav-cta:hover { box-shadow: none !important; }
 /* de uitklapmenu's: wit met een haarlijn, de ene zachte hoek linksboven, net onder de balk */
 html body.hal .site-header .nav-menu { background: #FFFFFF !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
-  border-radius: 20px 3px 3px 3px !important; box-shadow: 0 0 0 1px #E6E8EC !important; }
+  border-radius: var(--r-kaart) !important; box-shadow: 0 0 0 1px #E6E8EC !important; }
 /* 8 px onder de haarlijn (niet erdoorheen), met een onzichtbare brug zodat de muis erheen kan */
 @media (min-width: 901px) {
   html body.hal .site-header .has-menu > .nav-menu { top: calc(100% + 24px) !important; }   /* !important: de basisregel staat buiten de laag (Layout.astro) */
@@ -5441,7 +5440,7 @@ html body.hal .site-header .nav-menu { background: #FFFFFF !important; -webkit-b
   html body.hal .site-header { top: 0; left: 0; right: 0; }
   html body.hal .site-header .nav, html body.hal .site-header .container.nav { height: 60px; padding: 0 12px 0 16px !important; }
   html body.hal .site-header .brand { margin-right: 0; }
-  html body.hal .menu-toggle { border-radius: 10px 3px 3px 3px; }
+  html body.hal .menu-toggle { border-radius: 999px; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
@@ -5573,8 +5572,6 @@ html body.hal main li > code,
 html body.hal main strong > code,
 html body.hal main span > code,
 html body.hal main td > code,
-html body.hal .pl-qty-btn,
-html body.hal .pl-qty-chip,
 html body.hal .wk-trap > li.is-nu {
   --h-vlak: #F0F1F6; --h-nevel: #F0F1F6; --h-mist: #F0F1F6; --surface: #F0F1F6; --paper-2: #F0F1F6; --accent-soft: #F0F1F6; --accent-tint: #F0F1F6;
   /* levering 80: op de grond Wit #FBFCFF zou een wit vlak verdwijnen; het vlak is daar de Wit-fade
@@ -5930,3 +5927,357 @@ html body.hal .h-ug-vraag input:checked ~ .h-ug-vakje { transition: transform .3
 html body.hal .h-ug-vraag input:checked ~ .h-ug-vakje svg { animation: h-vink-kort 110ms linear; }
 @keyframes h-vink-kort { from, to { clip-path: inset(0 56% 0 0); } }
 @media (prefers-reduced-motion: reduce) { html body.hal .h-ug-vraag input:checked ~ .h-ug-vakje svg { animation: none; } }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   LEVERING 86 · BLAUW UUR IN DE DETAILS (3 november 2026, lijst 72)
+   Lucas, 12:54: "Wellicht kan je wel een plan maken om deze blue hour style meer in details zoals
+   knoppen te verwerken en ik wil meer fade kleuren gebruiken voor kleine details waar mogelijk."
+   Bij de knoppen (lijst 72, K2): "De gloed van onder mag bij alle knoppen weg, dit voelt generiek
+   en ai achtig. Ik zou het beter vinden bij deze specifieke knop om de gehele knop te vullen met
+   blauw on hover." Staat onderaan, zodat het de oudere regels hierboven overschrijft.
+
+   DE REGEL (docs/KLEURENSCHEMA.md, "Levering 86"): alleen kleuren uit het schema; een fade loopt
+   langs de snede (126,87°: de lijnen van gelijke kleur evenwijdig aan de snede van het vlagje,
+   53,13°), donker linksboven, licht rechtsonder; alleen op details (logo, knop, streep, rand, het
+   ene inktblok), nooit als vlak van een sectie of kaart en nooit in een kop of woord. Wit op elke
+   stop van de snede haalt 6,2 : 1 of meer. Niets beweegt bij het laden.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── het logo in de snede (logo a), de schommel naar het licht (schommel a) ──────────────
+   Alleen herkleurd: dezelfde paden, de fades staan in de sprite van Layout.astro. De tweede laag
+   (.mk-kleur, global.css) schommelt nu van de snede naar dezelfde fade een stap lichter, in
+   hetzelfde tempo (3,6 s, (1 − cos) / 2). Het grote woordmerk onderin loopt het wit in (D7). */
+html body.hal .hal-vm-balk .mk-fill, html body.hal .hal-vm-lade .mk-fill { fill: url(#vs-v-snede); }
+html body.hal .hal-vm-balk, html body.hal .hal-vm-lade { --mk-kleur: url(#vs-v-licht); }
+html body.hal .site-footer .hal-wm-voet .mk-fill, html body.hal .hal-wm-voet .mk-fill { fill: url(#vs-w-snede); }
+html body.hal .site-footer .hal-wm-voet, html body.hal .hal-wm-voet { --mk-kleur: url(#vs-w-licht); }
+html body.hal .site-footer .hal-wm-reus .mk-fill, html body.hal .hal-wm-reus .mk-fill { fill: url(#vs-w-uitloop); }
+html body.hal .site-footer .hal-wm-reus, html body.hal .hal-wm-reus { --mk-kleur: url(#vs-w-uitloop-licht); }
+/* het woordmerk in de kleine schermen van het portaal (FigGate, FigGallery, FigDash): zoals het echte */
+html body.hal .fd-wm .wm-vorm, html body.hal .fg-wm .wm-vorm, html body.hal .fgt-wm .wm-vorm { fill: url(#vs-w-snede); }
+
+/* ── de gloed weg, bij alle knoppen ─────────────────────────────────────────────────── */
+html body.hal .h-knop::before { content: none; display: none; }
+
+/* ── K2 · de inktknop uit de nacht, onder de muis vol blauw ────────────────────────────
+   In rust de nacht: inkt linksboven, het blauwe uur komt op naar de hoek rechtsonder. Onder de
+   muis (en met de toets) vult de knop zich met de snede. Eén verloop van twee keer de knop: de
+   eerste helft is de nacht, de tweede de snede (ze sluiten op blauw diep aan), en alleen de plek
+   schuift, langs de snede, zodat het blauw vanuit de hoek rechtsonder de knop in loopt.
+   0,36 s, zacht uitlopend. Wit erop haalt op elke stop 6,2 : 1 of meer (op inkt 18,1).
+   Het verloop is 4 px groter dan twee keer de knop en staat 2 px over de rand: een knop is zelden
+   een heel aantal pixels breed, en dan bleef onder de muis rechts een haarlijn van de grondkleur
+   (inkt) staan (gemeten op 208,27 px breed). */
+html body.hal .h-knop-inkt {
+  background: #0F1217 linear-gradient(126.87deg, #0F1217 0%, #172945 17.5%, #1A4279 50%, #25508B 77.5%, #2D61A8 100%) -2px -2px / calc(200% + 4px) calc(200% + 4px) no-repeat;
+  transition: background-position .36s cubic-bezier(.22, .8, .2, 1), color .22s cubic-bezier(.22, .8, .2, 1), box-shadow .22s cubic-bezier(.22, .8, .2, 1);
+}
+html body.hal .h-knop-inkt:hover, html body.hal .h-knop-inkt:focus-visible {
+  background: #0F1217 linear-gradient(126.87deg, #0F1217 0%, #172945 17.5%, #1A4279 50%, #25508B 77.5%, #2D61A8 100%) calc(100% + 2px) calc(100% + 2px) / calc(200% + 4px) calc(200% + 4px) no-repeat;
+  color: #FFFFFF;
+}
+
+/* de witte knop (op het inktblok en op een beeld): vult zich op dezelfde manier, met blauw licht
+   naar nevel, en de letters blijven inkt (7,59 en 9,15 : 1). Blauw uur op inkt mag niet (2,37 : 1),
+   blauw licht wel. Hier drie keer de knop: het eerste derde is wit (rust), het laatste derde de
+   fade (onder de muis), het middelste derde de overgang die voorbij schuift. */
+html body.hal .h-knop-wit {
+  background: #FFFFFF linear-gradient(126.87deg, #FFFFFF 0%, #FFFFFF 33.34%, #80A7DD 66.66%, #A2B7D2 100%) -2px -2px / calc(300% + 4px) calc(300% + 4px) no-repeat;
+  transition: background-position .36s cubic-bezier(.22, .8, .2, 1), color .22s cubic-bezier(.22, .8, .2, 1);
+}
+html body.hal .h-knop-wit:hover, html body.hal .h-knop-wit:focus-visible {
+  background: #FFFFFF linear-gradient(126.87deg, #FFFFFF 0%, #FFFFFF 33.34%, #80A7DD 66.66%, #A2B7D2 100%) calc(100% + 2px) calc(100% + 2px) / calc(300% + 4px) calc(300% + 4px) no-repeat;
+  color: var(--h-inkt);
+}
+html body.hal .h-knop-wit:hover .o, html body.hal .h-knop-wit:focus-visible .o { color: var(--h-inkt); }
+/* de inktknop op het inktblok is wit (levering 68): hij vult zich als de witte knop */
+html body.hal .h-lk-slot .h-knop-inkt, html body.hal .h-proef-woord .h-knop-inkt {
+  background: #FFFFFF linear-gradient(126.87deg, #FFFFFF 0%, #FFFFFF 33.34%, #80A7DD 66.66%, #A2B7D2 100%) -2px -2px / calc(300% + 4px) calc(300% + 4px) no-repeat; color: var(--h-inkt);
+  transition: background-position .36s cubic-bezier(.22, .8, .2, 1), color .22s cubic-bezier(.22, .8, .2, 1);
+}
+html body.hal .h-lk-slot .h-knop-inkt:hover, html body.hal .h-lk-slot .h-knop-inkt:focus-visible, html body.hal .h-proef-woord .h-knop-inkt:hover, html body.hal .h-proef-woord .h-knop-inkt:focus-visible {
+  background: #FFFFFF linear-gradient(126.87deg, #FFFFFF 0%, #FFFFFF 33.34%, #80A7DD 66.66%, #A2B7D2 100%) calc(100% + 2px) calc(100% + 2px) / calc(300% + 4px) calc(300% + 4px) no-repeat; color: var(--h-inkt);
+}
+html body.hal .h-lk-slot .h-knop-inkt:hover .o, html body.hal .h-lk-slot .h-knop-inkt:focus-visible .o, html body.hal .h-proef-woord .h-knop-inkt:hover .o, html body.hal .h-proef-woord .h-knop-inkt:focus-visible .o { color: var(--h-inkt); }
+
+/* ── K3 · de lijnknop: onder de muis wordt de haarlijn de snede ─────────────────────────
+   In rust zoals nu (een haarlijn in lijn sterk). Onder de muis een rand van 1 px in de snede, als
+   ring (een masker laat alleen de rand staan), en de schuine kant van een knoppenpaar in blauw uur. */
+html body.hal .h-knop-lijn::after { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; opacity: 0;
+  background: linear-gradient(126.87deg, #1A4279 0%, #25508B 55%, #2D61A8 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  transition: opacity .32s cubic-bezier(.22, .8, .2, 1); }
+html body.hal .h-knop-lijn:hover::after { opacity: 1; }
+html body.hal .h-knop-lijn:hover { --h-rand: #25508B; box-shadow: inset 0 0 0 1px var(--h-lijn-sterk); }
+/* op het inktblok blijft de lijnknop wit */
+html body.hal .h-lk-slot .h-knop-lijn::after, html body.hal .h-proef .h-knop-lijn::after { content: none; }
+
+/* ── K1 · Bestellen in de snede ─────────────────────────────────────────────────────────
+   De ene blauwe knop bovenin (en onderaan het menu op de telefoon). In rust de snede; onder de
+   muis schuift het licht door de knop: een verloop van twee keer de knop (diep, uur, het licht,
+   uur, diep) waarvan alleen de plek schuift. Geen schaduw eronder. Wit erop 6,2 : 1 of meer. */
+html body.hal .site-header .nav-cta, html body.hal .site-header .container.nav .nav-cta, html body.hal .mobile-nav .mobile-cta .btn-primary {
+  background: #1A4279 linear-gradient(126.87deg, #1A4279 0%, #25508B 27.5%, #2D61A8 50%, #25508B 72.5%, #1A4279 100%) -2px -2px / calc(200% + 4px) calc(200% + 4px) no-repeat !important;
+  color: #FFFFFF !important; box-shadow: none !important;
+  transition: background-position .5s cubic-bezier(.22, .8, .2, 1) !important;
+}
+html body.hal .site-header .nav-cta:hover, html body.hal .site-header .nav-cta:focus-visible, html body.hal .site-header .container.nav .nav-cta:hover,
+html body.hal .site-header .container.nav .nav-cta:focus-visible,
+html body.hal .mobile-nav .mobile-cta .btn-primary:hover, html body.hal .mobile-nav .mobile-cta .btn-primary:focus-visible {
+  background: #1A4279 linear-gradient(126.87deg, #1A4279 0%, #25508B 27.5%, #2D61A8 50%, #25508B 72.5%, #1A4279 100%) calc(100% + 2px) calc(100% + 2px) / calc(200% + 4px) calc(200% + 4px) no-repeat !important;
+  color: #FFFFFF !important; box-shadow: none !important;
+}
+
+/* ── D3 · de focusrand van een knop in de snede ─────────────────────────────────────────
+   Met de tab-toets op een knop: dezelfde rand van 2 px, 2 px buiten de knop, maar in de snede.
+   Elke stop haalt ruim 3 : 1 op wit. Op het inktblok blijft hij blauw licht; een link, een veld en
+   een vakje houden de gewone rand. Hoog contrast: de gewone rand (outline-color wordt daar een
+   systeemkleur, het verloop valt weg). */
+html body.hal .h-knop:focus-visible { outline: 2px solid transparent; outline-offset: 2px; }
+html body.hal .h-knop:focus-visible::after { content: ""; position: absolute; inset: -4px; border-radius: inherit; padding: 2px; pointer-events: none; opacity: 1;
+  background: linear-gradient(126.87deg, #1A4279 0%, #25508B 55%, #2D61A8 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); transition: none; }
+html body.hal .h-lk-slot .h-knop:focus-visible, html body.hal .h-proef .h-knop:focus-visible { outline: 2px solid var(--h-blauw-licht); }
+html body.hal .h-lk-slot .h-knop:focus-visible::after, html body.hal .h-proef .h-knop:focus-visible::after { content: none; }
+@media (forced-colors: active) {
+  html body.hal .h-knop:focus-visible { outline: 2px solid CanvasText; }
+  html body.hal .h-knop:focus-visible::after, html body.hal .h-knop-lijn::after { content: none; }
+}
+
+/* ── K4 · licht door de kier ────────────────────────────────────────────────────────────
+   Twee knoppen met de snede ertussen: in de kier valt nu de lucht (diep boven, licht onder).
+   src/scripts/knoppaar.js meet per paar waar de kier staat en zet de lucht daar als achtergrond
+   van de rij (alleen die strook, niet erbuiten); hier de kleuren. */
+html body.hal .h-acties[data-h-kier] { background-repeat: no-repeat; }
+
+/* ── D1 · de streep van het sectielabel in de snede ─────────────────────────────────────
+   De schuine streep (de vlag) voor een sectienummer: van blauw diep naar het licht, langs de
+   snede, zodat de schuine uiteinden de lijnen van gelijke kleur zijn. Op het inktblok en op een
+   donkere band (h-pil-donker) blijft hij wit. Het streepje in de werkplaats (bestellen) krijgt dezelfde fade. */
+html body.hal p.h-pil:not(.h-pil-donker)::before {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><linearGradient id='s' gradientUnits='userSpaceOnUse' x1='5.98' y1='11.5' x2='14.17' y2='17.64'><stop offset='0' stop-color='%231A4279'/><stop offset='.55' stop-color='%2325508B'/><stop offset='1' stop-color='%232D61A8'/></linearGradient><path fill='url(%23s)' d='M19.75 10.2L17.05 13.8L4.25 13.8L6.95 10.2Z'/></svg>");
+}
+html body.hal .h-lk-slot p.h-pil::before { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23FFFFFF' d='M19.75 10.2L17.05 13.8L4.25 13.8L6.95 10.2Z'/></svg>"); }
+html body.hal.hal.werkplaats .of-werk .wk-label i { background: linear-gradient(126.87deg, #1A4279 0%, #25508B 55%, #2D61A8 100%); }
+
+/* ── D2 · de streep onder een link loopt het wit in ─────────────────────────────────────
+   Een link in de tekst blijft blauw uur (8,08 : 1); alleen de streep krijgt licht: 2 px, van
+   blauw uur naar niets. Onder de muis wordt hij vol. Hoog contrast: de gewone onderstreping. */
+.hal .h-vertrouwen a,
+.hal .h-st-proef,
+.hal .h-st-link,
+body.hal .h-lk-meer .lm-noot a,
+body.hal .h-lk-diensten .svcsw-a,
+.hal .h-ts-wacht-noot a,
+.hal .h-ts-anders a,
+.hal .h-ts-gids a,
+.hal .h-hw-verder a,
+.hal .h-hw-details a,
+.hal .h-hw-meer a:not(.h-link),
+.hal .h-bm-a,
+body.hal .h-faq-lijst .dc-body a:not(.h-link),
+.hal .h-ug-hub a,
+.hal .h-ct-vak a:not(.h-knop),
+.hal .h-ct-vorm .ct-privacy a,
+.hal .h-ct-vorm .ct-faq a,
+.hal .h-ct-vorm .ct-weigering a,
+.hal .h-vd-noot a,
+.hal .h-vs-model a,
+.hal .h-pr-tarief-zin a,
+html body.hal .h-form.h-form-bedankt:not(.h-ts-form) .s22 .ty-row dd a,
+html body.hal.hal .h-voor .h-gezicht-zin a {
+  text-decoration: none;
+  background-image: linear-gradient(90deg, #25508B, rgb(37 80 139 / .5) 45%, rgb(37 80 139 / 0));
+  background-position: 0 100%; background-size: 100% 2px; background-repeat: no-repeat;
+}
+.hal .h-vertrouwen a:hover,
+.hal .h-st-proef:hover,
+.hal .h-st-link:hover,
+body.hal .h-lk-meer .lm-noot a:hover,
+body.hal .h-lk-diensten .svcsw-a:hover,
+.hal .h-ts-wacht-noot a:hover,
+.hal .h-ts-anders a:hover,
+.hal .h-ts-gids a:hover,
+.hal .h-hw-verder a:hover,
+.hal .h-hw-details a:hover,
+.hal .h-hw-meer a:not(.h-link):hover,
+.hal .h-bm-a:hover,
+body.hal .h-faq-lijst .dc-body a:not(.h-link):hover,
+.hal .h-ug-hub a:hover,
+.hal .h-ct-vak a:not(.h-knop):hover,
+.hal .h-ct-vorm .ct-privacy a:hover,
+.hal .h-ct-vorm .ct-faq a:hover,
+.hal .h-ct-vorm .ct-weigering a:hover,
+.hal .h-vd-noot a:hover,
+.hal .h-vs-model a:hover,
+.hal .h-pr-tarief-zin a:hover,
+html body.hal .h-form.h-form-bedankt:not(.h-ts-form) .s22 .ty-row dd a:hover,
+html body.hal.hal .h-voor .h-gezicht-zin a:hover {
+  background-image: linear-gradient(90deg, #25508B, #25508B);
+}
+/* op het inktblok: wit, van 60 % naar niets (zwaar genoeg voor elke kiezer in de lijst hierboven).
+   Geen :is() in dit bestand: tests/hal-voorbeeld leest de kiezers per komma en tests/live-qa-51
+   houdt hal.css er helemaal vrij van. */
+html body.hal.hal.hal.hal .h-lk-slot .h-lk-diensten a.svcsw-a { background-image: linear-gradient(90deg, rgb(255 255 255 / .6), rgb(255 255 255 / 0)); }
+html body.hal.hal.hal.hal .h-lk-slot .h-lk-diensten a.svcsw-a:hover { background-image: linear-gradient(90deg, #FFFFFF, #FFFFFF); }
+@media (forced-colors: active) {
+  .hal .h-vertrouwen a,
+.hal .h-st-proef,
+.hal .h-st-link,
+body.hal .h-lk-meer .lm-noot a,
+body.hal .h-lk-diensten .svcsw-a,
+.hal .h-ts-wacht-noot a,
+.hal .h-ts-anders a,
+.hal .h-ts-gids a,
+.hal .h-hw-verder a,
+.hal .h-hw-details a,
+.hal .h-hw-meer a:not(.h-link),
+.hal .h-bm-a,
+body.hal .h-faq-lijst .dc-body a:not(.h-link),
+.hal .h-ug-hub a,
+.hal .h-ct-vak a:not(.h-knop),
+.hal .h-ct-vorm .ct-privacy a,
+.hal .h-ct-vorm .ct-faq a,
+.hal .h-ct-vorm .ct-weigering a,
+.hal .h-vd-noot a,
+.hal .h-vs-model a,
+.hal .h-pr-tarief-zin a,
+html body.hal .h-form.h-form-bedankt:not(.h-ts-form) .s22 .ty-row dd a,
+html body.hal.hal .h-voor .h-gezicht-zin a { text-decoration: underline; }
+}
+
+/* ── D4 · voortgang en de stand-streep ──────────────────────────────────────────────────
+   Het balkje met de schuine kop en de streep onder de laptop die de stand telt: van blauw diep
+   naar het licht, de kop is het lichtst. */
+html body.hal .h-lijntje i { background: linear-gradient(90deg, #1A4279 0%, #25508B 60%, #2D61A8 100%); }
+
+/* ── D5 · een kaart onder de muis: de haarlijn vangt het licht ─────────────────────────
+   De haarlijn van een kaart die je kunt aanklikken wordt onder de muis een fade vanuit de hoek
+   linksboven (blauw uur, naar de gewone lijn), als licht langs de rand. De kaart zelf blijft wat
+   hij was. Een kaart die je kiest (een stijl, een vakje) blijft inkt: dat is een keuze. */
+html body.hal .h-dk-a, html body.hal .h-st-vk-a, html body.hal .h-hw-dienst, html body.hal .h-gd-kaart, html body.hal .h-weten-rij > li > a { position: relative; }
+html body.hal .h-dk-a::after, html body.hal .h-st-vk-a::after, html body.hal .h-hw-dienst::after, html body.hal .h-gd-kaart::after, html body.hal .h-weten-rij > li > a::after,
+html body.hal.hal.werkplaats .of-werk .wk-stijl:not(.is-gekozen)::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; opacity: 0; z-index: 2;
+  background: linear-gradient(126.87deg, #25508B 0%, #6283AF 30%, #E6E8EC 62%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  transition: opacity .35s cubic-bezier(.22, .8, .2, 1);
+}
+html body.hal .h-dk-a:hover::after, html body.hal .h-st-vk-a:hover::after, html body.hal .h-hw-dienst:hover::after, html body.hal .h-gd-kaart:hover::after, html body.hal .h-weten-rij > li > a:hover::after,
+html body.hal .h-dk-a:focus-visible::after, html body.hal .h-st-vk-a:focus-visible::after, html body.hal .h-hw-dienst:focus-visible::after, html body.hal .h-gd-kaart:focus-visible::after, html body.hal .h-weten-rij > li > a:focus-visible::after,
+html body.hal.hal.werkplaats .of-werk .wk-stijl:not(.is-gekozen):hover::after, html body.hal.hal.werkplaats .of-werk .wk-stijl:not(.is-gekozen):focus-visible::after { opacity: 1; }
+@media (forced-colors: active) {
+  html body.hal .h-dk-a::after, html body.hal .h-st-vk-a::after, html body.hal .h-hw-dienst::after, html body.hal .h-gd-kaart::after, html body.hal .h-weten-rij > li > a::after,
+  html body.hal.hal.werkplaats .of-werk .wk-stijl::after { content: none; }
+}
+
+/* ── D6 · het ene inktblok uit de nacht ─────────────────────────────────────────────────
+   Het inktblok (het slot onderaan, het €1-blok): inkt, en naar zijn eigen snede van 53°
+   rechtsonder komt het blauwe uur op (de Inkt-fade uit levering 80: inkt → blauw diep). De tekst
+   staat linksboven, waar het inkt is; wit erop haalt overal 10 : 1 of meer. */
+html body.hal .h-lk-slot, html body.hal .h-proef > .h-proef-woord { background: #0F1217 linear-gradient(126.87deg, #0F1217 0%, #0F1217 38%, #172945 72%, #1A4279 100%); }
+
+@media (prefers-reduced-motion: reduce) {
+  html body.hal .h-knop-inkt, html body.hal .h-knop-wit, html body.hal .h-knop-lijn::after,
+  html body.hal .site-header .nav-cta, html body.hal .site-header .container.nav .nav-cta, html body.hal .mobile-nav .mobile-cta .btn-primary,
+  html body.hal .h-dk-a::after, html body.hal .h-st-vk-a::after, html body.hal .h-hw-dienst::after, html body.hal .h-gd-kaart::after, html body.hal .h-weten-rij > li > a::after { transition: none !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   LEVERING 86 · RUIMTE EN EENHEID (4 november 2026)
+   Lucas, 01:22: "Controleer de gehele website om te kijken of er nog meer ontwerp rules niet correct zijn
+   toegepast en zorg dat er nooit elementen/texten te dicht tegen elkaar aan staan en consistentie is altijd
+   belangrijk om na te gaan." Gemeten met kladblok/te-dicht.mjs op elke pagina (1440 en 390 px): wat onder
+   de 8 px uitkwam, staat hieronder. Eén maat per soort, overal dezelfde:
+   - een kop en zijn zin (die bij elkaar horen): 8 px, een grote kop en zijn zin 12 px;
+   - twee alinea's na elkaar: 12 px;
+   - een noot onder een rij, lijst of tegels: 16 px;
+   - een etiket boven een paginakop: 20 px.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+/* De gekozen kaart bij een abonnement (/start/plan): geen stip meer rechtsboven, vlak boven de prijs (een
+   bolletje als teken staat nergens anders op de site), maar dezelfde inktrand als de andere keuzes
+   (.h-ct-vorm .opt): de rand in inkt en 1 px inkt erbinnen. Wat je kiest is inkt. */
+html body.hal .h-form-plan .ps-plan::after { content: none; display: none; }
+html body.hal .h-form-plan .ps-plan:has(input:checked) { box-shadow: inset 0 0 0 1px var(--h-inkt); }
+html body.hal .h-dienst-extra-kop + .h-dienst-extra-zin { margin-top: 8px; }
+html body.hal .h-bm-ruil-kop + .h-bm-zin { margin-top: 8px; }
+html body.hal .sb-kop { margin-bottom: 8px; }
+html body.hal .h-gl-kaart.h-gl-volgt { row-gap: 8px; }
+html body.hal .h-st-tarief + .h-st-abo { margin-top: 8px; }
+html body.hal .bo-geld { row-gap: 8px; }
+html body.hal .hold-status-label + .hold-status-word { margin-top: 8px; }
+html body.hal .mdl-kop { row-gap: 8px; }
+html body.hal .u-rechts { row-gap: 10px; }
+html body.hal .h-faq-nog-tekst { row-gap: 12px; }
+html body.hal .h-pr-band-zin + .h-pr-band-zin { margin-top: 12px; }
+html body.hal .dc-body > .h-faq-meer { margin-top: 12px; }
+html body.hal .h-lv-stappen + .h-lv-noot { margin-top: 16px; }
+html body.hal .ps-tegels + .ps-tegels-noot { margin-top: 16px; }
+/* Nog vragen? op de voorpagina: de kop en de lijst ernaast beginnen op dezelfde lijn (de lijst stond 16 px lager) */
+@media (min-width: 901px) { html body.hal .h-weten.v-weten > ul.h-wt-rijen { margin-top: 0; } }
+
+/* Het etiket boven een paginakop in de bestelstroom (/start/plan, /start/brand-model, /start/custom-look,
+   /start/video, /thank-you) was nog een pil met een bolletje, en stond 1 px boven de kop. Nu het sectielabel
+   van de hele site: de schuine streep in de snede, IBM Plex Mono, hoofdletters (zonder nummer: het zijn geen
+   secties), 20 px boven de kop. "Een bolletje voor elk etiket" hoort niet bij het merk. */
+html body.hal .h-form:not(.h-ts-form) .s22 > .paneel:first-child .etiket {
+  display: inline-flex; align-items: center; gap: 10px; width: max-content; height: auto; padding: 0; margin: 0 0 20px;
+  border-radius: 0; background: none; box-shadow: none; color: var(--h-inkt);
+  font: 600 12px/1.3 var(--h-mono); letter-spacing: .1em; text-transform: uppercase;
+}
+html body.hal .h-form:not(.h-ts-form) .s22 > .paneel:first-child .etiket::before {
+  width: 16px; height: 16px; border-radius: 0; box-shadow: none;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><linearGradient id='s' gradientUnits='userSpaceOnUse' x1='5.98' y1='11.5' x2='14.17' y2='17.64'><stop offset='0' stop-color='%231A4279'/><stop offset='.55' stop-color='%2325508B'/><stop offset='1' stop-color='%232D61A8'/></linearGradient><path fill='url(%23s)' d='M19.75 10.2L17.05 13.8L4.25 13.8L6.95 10.2Z'/></svg>") center / 16px no-repeat;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   LEVERING 87 · KORTE ZINNEN OP ÉÉN REGEL — 4 november 2026 (lijst 74, D1)
+   ═══════════════════════════════════════════════════════════════════════════════
+   Lucas, 03:23: "Zinnen als deze kunnen gewoon als 1 zin om ruimte te besparen." De maat (--h-maat, hierboven) brak
+   korte zinnen die naast zich ruimte genoeg hadden. scripts/korte-zinnen.mjs telt na de build de woorden van elk
+   tekstblok: h-1r tot 9 woorden (geen maat), h-1k tot 12 (geen maat als de letter klein is, 15,5 px en kleiner;
+   anders de gewone maat, met dezelfde drempel als hierboven). Past de zin niet in zijn vak, dan breekt hij gewoon.
+   Een custom property op het element zelf: die wint van de maat van de pagina en van een onderdeel dat de maat
+   zelf zet (--h-maat op een klasse), en elke regel die var(--h-maat) gebruikt volgt hem. */
+html body.hal .h-1r { --h-maat: none !important; }
+html body.hal .h-1k { --h-maat: max(min(max(15em, calc((15.75px - 1em) * 10000)), 23em), calc((15.75px - 1em) * 10000)) !important; }
+html[lang="nl"] body.hal .h-1k { --h-maat: max(min(max(16.5em, calc((15.75px - 1em) * 10000)), 26em), calc((15.75px - 1em) * 10000)) !important; }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   LEVERING 87 · DE HOEKEN — 4 november 2026 (lijst 74: knop pil, paar snede, blok snede, kaart 24)
+   Lucas, 03:02: "overal waar van toepassing super ronde hoeken … Bij sectie gedeeltes zoals de
+   achtergrond van de laptop niet." Wat je bedient is sinds deze levering een pil (999px, zie
+   global.css); in een paar blijft de kant van de snede 0. De regels hierboven die één hoek van een
+   knop concentrisch met zijn kaart lieten meelopen (de hoekregel van 25 oktober) gelden daarom niet
+   meer voor knoppen: hier worden ze weer een pil.
+   Tegels in een raster (de vier vakjes van "wij keuren", de rij in "wij doen de rest") hielden één
+   ronde hoek naar hun kaart en drie lichte naar binnen. Nu zijn ze rond aan alle vier de hoeken, op
+   de maat van die ene hoek. Een tegel die alleen met één hoek in de hoek van zijn kaart ligt (het
+   lijstje in "jij stuurt", de cast op /custom-models, de map op /studio) is 12 rond en houdt in die
+   ene hoek de concentrische maat van de hoekregel.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+/* knoppen in een paar in de hoek van een kaart (de proef, het €1-blok, de vragen, de video): de buitenkant
+   een pil, de snede in het midden blijft 0. Met !important: de hoekregel van 25 oktober gaf hier per plek en per
+   breedte een eigen hoek (tot 8 selectors per regel), en die gelden allemaal niet meer. */
+html body.hal.hal .h-acties > .h-knop:not([hidden]):has(~ .h-knop:not([hidden])) { border-top-left-radius: 999px !important; border-bottom-left-radius: 999px !important; }
+html body.hal.hal .h-acties > .h-knop:not([hidden]) ~ .h-knop:not([hidden]):not(:has(~ .h-knop:not([hidden]))) { border-top-right-radius: 999px !important; border-bottom-right-radius: 999px !important; }
+/* de bediening op /catalog en /lifestyle is een balk met een paar erin: ook een pil */
+html body.hal.hal .hl-bediening { border-radius: 999px; }
+/* kenmerken op een schermpje (Studio op /studio): een pil */
+html body.hal.hal .h-sd-scherm .fd-badge, html body.hal.hal .h-sd-vlak .fg-badge { border-radius: 999px; }
+/* tegels: rond aan alle vier de hoeken, op de maat van hun ene ronde hoek */
+html body.hal.hal .h-keur-rij > li { border-radius: calc(var(--r-kaart) - 8px); }
+html body.hal.hal .h-rest-rij > li, html body.hal.hal .h-hw-in-rij > li, html body.hal.hal .h-maak-vlak .h-maak-doos,
+html body.hal.hal .h-lk-bewijs .h-bewijs-cmp .cmp, html body.hal.hal .h-pr-som-rij > li, html body.hal.hal .h-md-inc > .h-md-deur,
+html body.hal.hal .h-maak .h-lagen { border-radius: var(--r-klein); }
+/* de drie abonnementen (/plans) zijn één vorm: rond aan de buitenkant (32, een vlak), de snede van
+   53° rechtsonder blijft (zoals het inktblok). Naast elkaar op de computer, onder elkaar op de telefoon. */
+html body.hal.hal .h-pl-kaarten > .h-pk:first-child { border-top-left-radius: var(--r-vlak); border-bottom-left-radius: var(--r-vlak); }
+html body.hal.hal .h-pl-kaarten > .h-pk:last-child { border-top-right-radius: var(--r-vlak); }
+@media (max-width: 900px) {
+  html body.hal.hal .h-pl-kaarten > .h-pk:first-child { border-radius: var(--r-vlak) var(--r-vlak) 0 0; }
+  html body.hal.hal .h-pl-kaarten > .h-pk:last-child { border-radius: 0 0 0 var(--r-vlak); }
+}

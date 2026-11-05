@@ -40,10 +40,55 @@ function meet(rij) {
   rij.classList.toggle('h-passen', past);
 }
 
+/* LEVERING 86 · LICHT DOOR DE KIER (3 november 2026, lijst 72, K4: goed). Lucas wil het blauwe uur
+   vaker in de details. Tussen twee knoppen die één vorm zijn, staat de snede van het logo: een kier
+   van 7,6 % van de hoogte. Daar viel de grond door; nu valt de lucht erdoor (blauw uur boven, het licht
+   onder). De kier is geen element (hij is wat de twee clip-paths openlaten), dus meet dit script
+   per paar waar hij staat en zet de lucht als achtergrond van de rij, alleen in die strook: van de
+   snede van de eerste knop tot net voorbij de kier, zo hoog als de knop. Wat in die strook buiten de
+   kier valt, ligt onder de twee knoppen. Niet op het inktblok en niet bij een witte of doorzichtige
+   knop (blauw op inkt mag niet, en door een doorzichtige knop zou je de strook zien). Opnieuw gemeten
+   als een knop of de rij van maat verandert (de letter, een knop die verschijnt of verdwijnt). */
+/* De lucht in de kier begint bij blauw uur en niet bij blauw diep: de inktknop links ervan loopt sinds
+   levering 86 zelf naar blauw diep (K2), en dan viel de kier bovenaan weg (gemeten: de rechterrand van
+   de knop #193D70, blauw diep #1A4279). Van blauw uur naar #2D61A8 blijft hij van boven tot onder zichtbaar. */
+const LUCHT = 'linear-gradient(180deg, #25508B 0%, #2D61A8 100%)';
+function kier(rij) {
+  const knoppen = [...rij.children].filter((k) => k.classList.contains('h-knop') && !k.hidden && k.getClientRects().length);
+  const lagen = [];
+  const opInkt = rij.closest('.h-lk-slot, .h-proef-woord');
+  if (!opInkt) {
+    const rr = rij.getBoundingClientRect();
+    for (let i = 0; i < knoppen.length - 1; i++) {
+      const a = knoppen[i], b = knoppen[i + 1];
+      if ([a, b].some((k) => k.classList.contains('h-knop-wit') || k.classList.contains('h-knop-lijnwit'))) continue;
+      const cs = getComputedStyle(a);
+      if (!cs.clipPath || cs.clipPath === 'none' || getComputedStyle(b).clipPath === 'none') continue;
+      const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+      if (Math.abs(ra.top - rb.top) > 1 || rb.left > ra.right) continue;
+      const snede = parseFloat(cs.getPropertyValue('--h-snede')) || 36;
+      const k = parseFloat(cs.getPropertyValue('--h-kier')) || 4.5;
+      /* boven en onder 0,5 px binnen de knop: een achtergrond valt op hele beeldpunten, de rand van een knop
+         niet, en dan stak de lucht bovenaan een haarlijn boven het paar uit (gemeten op 4 × zoom) */
+      lagen.push([ra.right - rr.left - rij.clientLeft - snede - 1, ra.top - rr.top - rij.clientTop + 0.5, snede + k + 2, ra.height - 1]);
+    }
+  }
+  if (!lagen.length) {
+    if (!('hKier' in rij.dataset)) return;
+    delete rij.dataset.hKier;
+    for (const e of ['background-image', 'background-position', 'background-size']) rij.style.removeProperty(e);
+    return;
+  }
+  rij.dataset.hKier = '';
+  rij.style.backgroundImage = lagen.map(() => LUCHT).join(', ');
+  rij.style.backgroundPosition = lagen.map(([x, y]) => `${x.toFixed(2)}px ${y.toFixed(2)}px`).join(', ');
+  rij.style.backgroundSize = lagen.map(([, , w, h]) => `${w.toFixed(2)}px ${h.toFixed(2)}px`).join(', ');
+}
+
 export function knoppenNaastElkaar() {
   const rijen = [...document.querySelectorAll('.hal .h-acties')];
   /* de letter kan later binnenkomen dan de eerste meting: dan nog een keer */
-  document.fonts?.ready.then(() => rijen.forEach(meet));
+  document.fonts?.ready.then(() => rijen.forEach((rij) => { meet(rij); kier(rij); }));
   for (const rij of rijen) {
     if (rij.dataset.hPaar) continue;
     rij.dataset.hPaar = '1';
@@ -54,5 +99,13 @@ export function knoppenNaastElkaar() {
       breed = w;
       meet(rij);
     }).observe(rij);
+    /* de kier: na elke maatverandering van de rij of een knop, één keer per beeld */
+    let wacht = 0;
+    const ro = new ResizeObserver(() => {
+      if (wacht) return;
+      wacht = requestAnimationFrame(() => { wacht = 0; kier(rij); });
+    });
+    ro.observe(rij);
+    for (const k of rij.children) if (k.classList.contains('h-knop')) ro.observe(k);
   }
 }

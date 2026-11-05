@@ -93,12 +93,18 @@ console.log(`  ${path.relative(ROOT, wfile)}  ${wmeta.width}×${wmeta.height}  $
    in de mail, 3× in het bestand. Op wit is de pil onzichtbaar. De hoeken zijn
    doorzichtig, zodat de pil in de donkere stand rond is.
    woordmerk-inkt.png blijft bestaan: mails die al verstuurd zijn, wijzen ernaar. */
+/* LEVERING 86 (3 november 2026, lijst 72, logo a): het woordmerk staat in de snede, de fade van
+   blauw diep #1A4279 via blauw uur #25508B naar #2D61A8 langs de snede (126,87°), zoals op de site
+   (#vs-w-snede in Layout.astro). In de maten van de tekening, dus dezelfde fade op elk formaat.
+   Op wit haalt elke stop 6,2 : 1 of meer. */
+const SNEDE = '<stop offset="0" stop-color="#1A4279"/><stop offset=".55" stop-color="#25508B"/><stop offset="1" stop-color="#2D61A8"/>';
+const WM_SNEDE = `<defs><linearGradient id="s" gradientUnits="userSpaceOnUse" x1="0" y1="-797.25" x2="3367.43" y2="1728.32">${SNEDE}</linearGradient></defs>`;
 const PX = 16, PY = 12;
 const PW = (124 + 2 * PX) * 3, PH = (22 + 2 * PY) * 3;
 const psvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${PW}" height="${PH}" viewBox="0 0 ${PW} ${PH}">`
   + `<rect width="${PW}" height="${PH}" rx="${PH / 2}" fill="#FFFFFF"/>`
   + `<svg x="${PX * 3}" y="${PY * 3}" width="${124 * 3}" height="${22 * 3}" viewBox="${WOORDMERK.symbool}" preserveAspectRatio="xMidYMid meet">`
-  + `<path fill="#0F1217" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg></svg>`;
+  + `${WM_SNEDE}<path fill="url(#s)" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg></svg>`;
 const pfile = path.join(OUT, 'woordmerk-plaat.png');
 await sharp(Buffer.from(psvg), { density: 72 }).png({ compressionLevel: 9 }).toFile(pfile);
 const pmeta = await sharp(pfile).metadata();
@@ -115,7 +121,9 @@ console.log(`  ${path.relative(ROOT, pfile)}  ${pmeta.width}×${pmeta.height}  $
      valt weg onder de rand, zoals het grote woordmerk onder de site. 3×. */
 {
   const SW = 28 * 3, SH = 3 * 3, schuin = SH * 0.75;
-  const ssvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${SW}" height="${SH}" viewBox="0 0 ${SW} ${SH}"><path fill="#0F1217" d="M0 0H${SW}L${SW - schuin} ${SH}H0Z"/></svg>`;
+  /* levering 86 (D1): het streepje in de snede, van blauw diep naar het licht, zoals de streep van het
+     sectielabel op de site */
+  const ssvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${SW}" height="${SH}" viewBox="0 0 ${SW} ${SH}"><defs><linearGradient id="s" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="${SW * .8 + SH * .6 * .8}" y2="${(SW * .8 + SH * .6) * .6}">${SNEDE}</linearGradient></defs><path fill="url(#s)" d="M0 0H${SW}L${SW - schuin} ${SH}H0Z"/></svg>`;
   const sfile = path.join(OUT, 'snede.png');
   await sharp(Buffer.from(ssvg), { density: 72 }).png({ compressionLevel: 9 }).toFile(sfile);
   const smeta = await sharp(sfile).metadata();
@@ -123,7 +131,11 @@ console.log(`  ${path.relative(ROOT, pfile)}  ${pmeta.width}×${pmeta.height}  $
 
   const VW = 376 * 3, VH = 38 * 3;
   const volle = Math.round(VW * (WOORDMERK.hoog / WOORDMERK.breed));
-  const vsvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${VW}" height="${volle}" viewBox="${WOORDMERK.symbool}"><path fill="#C5C8CF" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg>`;
+  /* levering 86 (D7): het woordmerk in de voet loopt het wit in, zoals het grote woordmerk onder de
+     site (#vs-w-uitloop), maar een stap lichter: van nevel #A2B7D2 bovenaan via #C4CEE0 naar mist
+     #E4E7ED (de Mist-fade uit het schema). Zo blijft de voet van de mail even rustig als in lichtgrijs
+     en staat hij ook in de donkere stand van de Gmail-app er nog (nevel op #1F1F1F ruim 7 : 1). */
+  const vsvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${VW}" height="${volle}" viewBox="${WOORDMERK.symbool}"><defs><linearGradient id="u" gradientUnits="userSpaceOnUse" x1="0" y1="-797.25" x2="0" y2="16.58"><stop offset="0" stop-color="#A2B7D2"/><stop offset=".55" stop-color="#C4CEE0"/><stop offset="1" stop-color="#E4E7ED"/></linearGradient></defs><path fill="url(#u)" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg>`;
   const vfile = path.join(OUT, 'voet-woordmerk.png');
   await sharp(Buffer.from(vsvg), { density: 384 })
     .resize({ width: VW, height: volle, fit: 'fill' })

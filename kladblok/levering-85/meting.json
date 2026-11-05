@@ -1,0 +1,302 @@
+{
+ "wat": "Levering 85: beeld voor beeld nagemeten op de echte voorpagina (/nl/, 1440 × 900), 60 beelden per seconde, met een nepvideo (de beelden van laptop-84-1920) en een klok die het harnas laat tikken. Tijden in seconden na de tweede scroll. Bij levering 85 springt de pagina (geen glijden): pagina_beweegt_s is de sprong.",
+ "levering_85": {
+  "klep_dicht_s": 0.467,
+  "pagina_beweegt_s": 1.183,
+  "wat_we_maken_op_zijn_plek_s": 1.183,
+  "alles_klaar_s": 1.833,
+  "top_snelheid": 4,
+  "snelheden": [
+   {
+    "echt_s": -0.016,
+    "snelheid": 4,
+    "videotijd_s": 0
+   },
+   {
+    "echt_s": 0.717,
+    "snelheid": 3.974,
+    "videotijd_s": 2.933
+   },
+   {
+    "echt_s": 0.734,
+    "snelheid": 3.953,
+    "videotijd_s": 3
+   },
+   {
+    "echt_s": 0.75,
+    "snelheid": 3.892,
+    "videotijd_s": 3.065
+   },
+   {
+    "echt_s": 0.767,
+    "snelheid": 3.809,
+    "videotijd_s": 3.13
+   },
+   {
+    "echt_s": 0.784,
+    "snelheid": 3.76,
+    "videotijd_s": 3.194
+   },
+   {
+    "echt_s": 0.8,
+    "snelheid": 3.649,
+    "videotijd_s": 3.256
+   },
+   {
+    "echt_s": 0.817,
+    "snelheid": 3.588,
+    "videotijd_s": 3.317
+   },
+   {
+    "echt_s": 0.834,
+    "snelheid": 3.457,
+    "videotijd_s": 3.377
+   },
+   {
+    "echt_s": 0.85,
+    "snelheid": 3.389,
+    "videotijd_s": 3.435
+   },
+   {
+    "echt_s": 0.867,
+    "snelheid": 3.32,
+    "videotijd_s": 3.491
+   },
+   {
+    "echt_s": 0.884,
+    "snelheid": 3.18,
+    "videotijd_s": 3.547
+   },
+   {
+    "echt_s": 0.9,
+    "snelheid": 3.11,
+    "videotijd_s": 3.6
+   },
+   {
+    "echt_s": 0.917,
+    "snelheid": 3.042,
+    "videotijd_s": 3.651
+   },
+   {
+    "echt_s": 0.934,
+    "snelheid": 2.976,
+    "videotijd_s": 3.702
+   },
+   {
+    "echt_s": 0.95,
+    "snelheid": 2.851,
+    "videotijd_s": 3.752
+   },
+   {
+    "echt_s": 0.967,
+    "snelheid": 2.793,
+    "videotijd_s": 3.799
+   },
+   {
+    "echt_s": 0.984,
+    "snelheid": 2.74,
+    "videotijd_s": 3.846
+   },
+   {
+    "echt_s": 1.0,
+    "snelheid": 2.691,
+    "videotijd_s": 3.891
+   },
+   {
+    "echt_s": 1.017,
+    "snelheid": 2.646,
+    "videotijd_s": 3.936
+   },
+   {
+    "echt_s": 1.034,
+    "snelheid": 2.608,
+    "videotijd_s": 3.98
+   },
+   {
+    "echt_s": 1.05,
+    "snelheid": 2.574,
+    "videotijd_s": 4.024
+   },
+   {
+    "echt_s": 1.067,
+    "snelheid": 2.547,
+    "videotijd_s": 4.067
+   },
+   {
+    "echt_s": 1.084,
+    "snelheid": 2.526,
+    "videotijd_s": 4.109
+   },
+   {
+    "echt_s": 1.117,
+    "snelheid": 2.502,
+    "videotijd_s": 4.193
+   }
+  ]
+ },
+ "levering_84_ter_vergelijking": {
+  "klep_dicht_s": 1.05,
+  "pagina_beweegt_s": 2.317,
+  "wat_we_maken_op_zijn_plek_s": 2.967,
+  "alles_klaar_s": 3.0,
+  "top_snelheid": 1.8
+ },
+ "eerdere_stappen": {
+  "lijst_71_golf_a": {
+   "klep_dicht_s": 1.183,
+   "pagina_beweegt_s": 2.117,
+   "wat_we_maken_op_zijn_plek_s": 2.767,
+   "alles_klaar_s": 3.083,
+   "top_snelheid": 2.188
+  },
+  "lijst_71_golf_b": {
+   "klep_dicht_s": 1.25,
+   "pagina_beweegt_s": 2.1,
+   "wat_we_maken_op_zijn_plek_s": 2.75,
+   "alles_klaar_s": 3.067,
+   "top_snelheid": 2.5
+  },
+  "lijst_71_golf_c": {
+   "klep_dicht_s": 1.333,
+   "pagina_beweegt_s": 2.067,
+   "wat_we_maken_op_zijn_plek_s": 2.717,
+   "alles_klaar_s": 3.033,
+   "top_snelheid": 2.99
+  },
+  "sneller_en_eerder_1_6_2_8_2_3": {
+   "klep_dicht_s": 1.05,
+   "pagina_beweegt_s": 1.767,
+   "wat_we_maken_op_zijn_plek_s": 2.417,
+   "alles_klaar_s": 2.6,
+   "top_snelheid": 2.787
+  },
+  "nog_sneller_2_2_3_4_3_0": {
+   "klep_dicht_s": 0.7,
+   "pagina_beweegt_s": 1.167,
+   "wat_we_maken_op_zijn_plek_s": 1.683,
+   "alles_klaar_s": 1.783,
+   "top_snelheid": 3.384
+  }
+ },
+ "beweging_in_de_video_bronpixels_per_beeld": {
+  "uitleg": "de bovenrand van de klep (uit de hoeken, beeld 0 – 46), het midden van de telefoon (uit de hoeken), de rechterkant van de laptop (uit de dekking, vanaf beeld 63); per beeld de grootste",
+  "v": [
+   2.0,
+   3.0,
+   2.1,
+   2.0,
+   2.7,
+   0.6,
+   0.4,
+   0.8,
+   1.3,
+   2.9,
+   4.0,
+   4.2,
+   8.5,
+   6.2,
+   12.0,
+   8.7,
+   15.5,
+   12.8,
+   18.1,
+   14.9,
+   21.3,
+   13.9,
+   21.8,
+   18.0,
+   25.6,
+   19.3,
+   18.5,
+   21.6,
+   20.0,
+   22.2,
+   22.6,
+   21.2,
+   26.0,
+   26.1,
+   26.4,
+   31.1,
+   35.4,
+   28.0,
+   25.9,
+   23.5,
+   21.1,
+   44.5,
+   33.7,
+   17.9,
+   19.1,
+   17.2,
+   4.1,
+   4.0,
+   4.8,
+   6.1,
+   5.6,
+   6.2,
+   6.8,
+   9.2,
+   5.6,
+   12.3,
+   12.3,
+   14.3,
+   15.5,
+   33.9,
+   211.6,
+   19.3,
+   19.9,
+   20.7,
+   20.8,
+   21.4,
+   23.0,
+   29.1,
+   30.7,
+   38.3,
+   39.9,
+   39.9,
+   42.9,
+   44.5,
+   47.5,
+   46.0,
+   49.1,
+   49.1,
+   52.1,
+   49.1,
+   53.7,
+   52.1,
+   53.7,
+   55.2,
+   55.2,
+   58.3,
+   58.3,
+   55.2,
+   56.7,
+   56.7,
+   58.3,
+   55.2,
+   58.3,
+   56.7,
+   58.3,
+   58.3,
+   58.3,
+   61.3,
+   59.8,
+   58.3,
+   58.3,
+   61.3,
+   58.3,
+   61.3,
+   52.1,
+   0,
+   0,
+   0,
+   0,
+   0
+  ]
+ },
+ "uitpakken_1920_breed_miljoen_beeldpunten_per_s": {
+  "levering_83_1_3x": 146.3,
+  "levering_84_1_8x": 112.8,
+  "levering_85_4x": 250.7,
+  "4K_60": 497.7
+ }
+}

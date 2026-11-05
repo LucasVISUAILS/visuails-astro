@@ -574,7 +574,11 @@ const markStreams = streamsOf(markPdf).join('\n');
    niet terugkomt: precies vier vullingen op een factuur van één blad, het watermerk
    uit (WM_OPACITY 0), en het woordmerk is het pad uit src/data/woordmerk.js. */
 const vullingen = (markStreams.match(/(^|\s)f\*?(?=\s|$)/gm) || []).length;
-check('vier vullingen: het woordmerk en drie vlakken, geen watermerk', vullingen, 4);
+/* Levering 86 (3 november 2026): het woordmerk staat in de snede. Het is nu een knipvlak (W n) met één
+   axiaal verloop erin (sh), dus geen vulling meer: drie vullingen (de vlakken) en één verloop. */
+const verlopen = (markStreams.match(/\/VsSnede sh/g) || []).length;
+check('drie vullingen en één verloop: drie vlakken en het woordmerk, geen watermerk', [vullingen, verlopen], [3, 1]);
+check('  het woordmerk in de snede: blauw diep, blauw uur, #2D61A8 langs de snede', /ShadingType 2/.test(Buffer.from(markPdf).toString('latin1')) || /SNEDE = \[\[0, \[26 \/ 255, 66 \/ 255, 121 \/ 255\]\], \[0\.55, \[37 \/ 255, 80 \/ 255, 139 \/ 255\]\], \[1, \[45 \/ 255, 97 \/ 255, 168 \/ 255\]\]\];/.test(source), true);
 check('  het watermerk staat uit', /const WM_OPACITY = 0;/.test(source), true);
 {
   const { WOORDMERK } = await import('../src/data/woordmerk.js');
@@ -705,7 +709,7 @@ check('renders with the Node globals removed', workerishError, null);
 check('and produces the very same bytes',
   workerish ? Buffer.compare(Buffer.from(workerish), Buffer.from(rcNl)) === 0 : false, true);
 check('the module imports nothing but pdf-lib',
-  source.match(/^import .*$/gm), ["import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';"]);
+  source.match(/^import .*$/gm), ["import { PDFDocument, StandardFonts, rgb, drawSvgPath, clip, endPath, PDFOperator, PDFName, PDFDict } from 'pdf-lib';"]);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DE CREDITNOTA — 12 augustus 2026
