@@ -275,3 +275,26 @@ Aesthetic, visible, and already built. `REPORT-SECTION-11.md` §8.
 
 **This document.** It is the only part of the brief I am working from that you
 have not read back.
+
+---
+
+## 13 · The save-as-you-go rule
+
+> Lucas, 5 November 2026: **"Commit en push ook tussendoor naar claude/voor-de-launch, na elk afgerond deel
+> (bijvoorbeeld 69 A, B, C en D), met een commitbericht dat begint met "Onaf:" zolang de levering niet af is. Zet
+> bovenaan de leveringsnotitie wat nog niet af is. Zo raakt er niets kwijt als mijn limiet halverwege opraakt."**
+
+Why: a cloud session can stop halfway (a usage limit, a container that is reclaimed), and work that only exists in
+the container is gone. How it is applied:
+
+- **After every finished part of a delivery**, commit and push to the branch the task names (on 5 November 2026:
+  `claude/voor-de-launch`). The message starts with `Onaf:` and names the delivery and the part, e.g.
+  `Onaf: levering 69 B, de beveiligingsnaloop`.
+- **A part is finished when it stands on its own:** the build works and the tests for that part are green. Never push
+  a half edit that breaks the build for the next session.
+- **The delivery note** (`kladblok/LEVERING-<nr>.md`) exists from the first push. Its top says what is not done yet;
+  every push updates that list.
+- **The last commit of a delivery** is the normal one, without `Onaf:`, after the full test suite is green; the "not
+  done yet" block at the top of the note is then removed.
+- The other rules still hold: commit and push only to that branch, never to `main`, no merge, no pull request, no
+  force-push, no tags; and nothing is written into `src/` while the test suite runs.
