@@ -1,8 +1,6 @@
 # Levering: de beveiliging en de back-end sterker (5 november 2026)
 
-> **NOG NIET AF** (deze notitie wordt bij elke push bijgewerkt):
-> - De reparaties zijn af (stap 1 tot en met 19 in `kladblok/PLAN-BEVEILIGING.md` §4).
-> - De eindcontrole: de hele testreeks, kruip, check:csp, audit, visueel, npm audit, en de echte Worker lokaal.
+> **Af.** Alle negentien stappen uit `kladblok/PLAN-BEVEILIGING.md` §4, en de eindcontrole (onderaan) groen.
 
 Cloudsessie, branch `claude/voor-de-launch`. Het plan, met wat niet kapot mag en de nacontrole per stap, staat in
 `kladblok/PLAN-BEVEILIGING.md`. Het nummer van deze levering laat ik aan de chat met de brug.
@@ -354,6 +352,27 @@ een bestaande klant). Nu gaat het formulier dan terug met de bestaande melding "
 **Het bewijs.** `tests/backend-sterker.test.mjs` §19, met een D1 die precies op die vraag hapert: op de oude code rood,
 nu groen. **Nacontrole:** de 19 toetsbestanden rond abonneren, het vangnet, de tweede stap, de klantscheiding,
 inloggen: groen.
+
+## De eindcontrole (af)
+
+- **De hele testreeks:** 286 van 286 groen (`TESTREEKS_TEGELIJK=4 node scripts/testreeks.mjs`, 9 min 30 s). Eén
+  browsertoets met een animatie (`test:beweging83`) was eerst rood door de drukte van vier tegelijk en daarna los
+  groen; hij raakt niets van deze levering.
+- **`npm run kruip`:** geen bevindingen. **`npm run check:csp`:** 3 van 3 zoals verwacht. **`npm run audit`:** geen
+  fouten. **`npm audit`:** 0 kwetsbaarheden (ook zonder de dev-afhankelijkheden).
+- **`npm run visueel`:** 8 à 9 kleurvlekken, allemaal op de voorpagina (en haar voorbeeld), allemaal in de doorlopende
+  rij met beelden (rij 4 op de telefoon, rij 6 op 1440 en 1920), en bij een tweede run op andere plekken. Geen enkel
+  vormverschil. Dat is de rij die schuift, zoals levering 72 al beschreef; de referentie niet bijgezet.
+- **De echte Worker, lokaal** (`node kladblok/_doorloop-worker.mjs`, dan `node kladblok/_e2e-beveiliging.mjs`):
+  **26 van 26**. Van buitenaf inloggen in /admin met de tweede stap aan en de headers van Chrome (verkeerde code 401,
+  de goede code, het dashboard, de CSP, een POST zoals Chrome onder `no-referrer`, een POST van een andere site 403,
+  Beveiliging "aan", uitloggen, het oude koekje opent niets meer, de tweede stap staat daarna nog aan); Studio met een
+  sessie, en een klant die echt inlogt met de code uit de mail (koekje met `Path=/account` en `SameSite=Lax`); de
+  voorpagina en de Nederlandse 404 met hun koppen; en een bestelling die via de tussenpagina naar nep-Mollie gaat,
+  daar betaald wordt, en door de webhook op betaald komt.
+- **Niet gedraaid, bewust:** `npm run backup` en elke opdracht tegen de echte database of Cloudflare (zie stap 12);
+  `cron:run` (die schrijft in de lokale staat die nog in git staat, zie "Mag weg"); de nachtelijke taken zijn wel in
+  33 toetsbestanden aangeroepen.
 
 ## Niet in deze ronde, met advies
 

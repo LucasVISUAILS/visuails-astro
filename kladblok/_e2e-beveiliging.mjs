@@ -49,6 +49,19 @@ ok('Studio opent voor een ingelogde klant', studio.status === 200, String(studio
 ok('met frame-ancestors none en referrer-policy same-origin', /frame-ancestors 'none'/.test(studio.headers.get('content-security-policy') || '') && studio.headers.get('referrer-policy') === 'same-origin');
 const vreemd = await fetch(`${W}/account/bestaat-niet`, { method: 'POST', redirect: 'manual', headers: { cookie: `vis_account=${VOLT.token}`, 'sec-fetch-site': 'cross-site', origin: 'https://kwaad.example' } });
 ok('een POST van een andere site in Studio: 403', vreemd.status === 403, String(vreemd.status));
+/* Echt inloggen met de code uit de mail (stap 4 raakte dit pad): de mail komt bij de nep-Resend. */
+await fetch(`${P}/mails/clear`, { method: 'POST' });
+const vraag = await fetch(`${W}/account/login`, { method: 'POST', redirect: 'manual', headers: { 'content-type': 'application/x-www-form-urlencoded', origin: W, 'sec-fetch-site': 'same-origin' }, body: new URLSearchParams({ email: 'studio@voltbrand.nl', lang: 'nl' }) });
+await new Promise((r) => setTimeout(r, 500));
+const lijst = await (await fetch(`${P}/mails`)).json();
+const inlogmail = [...lijst].reverse().find((m) => m.to === 'studio@voltbrand.nl');
+const html = inlogmail ? await (await fetch(`${P}/mail/${inlogmail.n}`)).text() : '';
+const code = (/\b(\d{3})\s?(\d{3})\b/.exec(html.replace(/<[^>]+>/g, ' ')) || []).slice(1).join('');
+ok('de inlogmail met een code komt aan', vraag.status < 400 && code.length === 6, `${vraag.status} ${inlogmail ? inlogmail.subject : 'geen mail'}`);
+const metCode = await fetch(`${W}/account/code`, { method: 'POST', redirect: 'manual', headers: { 'content-type': 'application/x-www-form-urlencoded', origin: W, 'sec-fetch-site': 'same-origin' }, body: new URLSearchParams({ email: 'studio@voltbrand.nl', code, lang: 'nl' }) });
+const sessie = koekje(metCode, 'vis_account');
+ok('  met die code inloggen geeft een sessie (Path=/account, SameSite=Lax)', metCode.status === 303 && !!sessie && /Path=\/account/.test(metCode.headers.get('set-cookie') || '') && /SameSite=Lax/.test(metCode.headers.get('set-cookie') || ''), `${metCode.status} ${metCode.headers.get('location')}`);
+ok('  en die sessie opent Studio', (await get('/account/', sessie, 'vis_account')).status === 200);
 const thuis = await get('/');
 ok('de voorpagina: 200, met nosniff en frame-ancestors', thuis.status === 200, String(thuis.status));
 const nl404 = await get('/nl/bestaat-niet');
