@@ -1,7 +1,7 @@
 # Levering: de beveiliging en de back-end sterker (5 november 2026)
 
 > **NOG NIET AF** (deze notitie wordt bij elke push bijgewerkt):
-> - De reparaties: stap 1, 14, 15 en 16 zijn af. Stap 2 tot en met 13 en 17 tot en met 19 in
+> - De reparaties: stap 1, 2, 14, 15 en 16 zijn af. Stap 3 tot en met 13 en 17 tot en met 19 in
 >   `kladblok/PLAN-BEVEILIGING.md` §4 nog niet (stap 14 tot en met 19 kwamen uit het vierde deel van de naloop, de
 >   betaal- en bestelroutes; 14 ging voor omdat hij het zwaarst is).
 > - De eindcontrole.
@@ -92,3 +92,18 @@ aflevering is er een op een betaalde bestelling; het geval ernaast staat nu als 
 creditnota's, de geldroute, de proefvisual, e-Boekhouden en meer), mail (`test:email`, `test:mailsmerk`,
 `test:bounces`), de 2FA-set, en `npx astro build`: groen. De diff teruggelezen: hij raakt geen inlog, geen koekje en
 geen Origin-controle; in de betaalroute alleen de drie plekken hierboven.
+
+## Stap 2 · Studio: een leeg KvK-veld, en woorden uit de adresbalk (af)
+
+- **"Gegevens opslaan" met een leeg KvK-veld gaf een fout** (nagespeeld: "Cannot read properties of null"). Een
+  klant zonder KvK-nummer die zijn telefoonnummer wilde wijzigen, kwam er niet doorheen. Nu wordt het veld gewoon leeg
+  opgeslagen.
+- **`?ok=`, `?fout=` en `?ronde=` werden opgezocht met `{…}[woord]`.** Een woord als `constructor` of `__proto__`
+  vond dan geen melding maar iets van JavaScript zelf: `?ok=constructor` liet Je plan van een abonnee vastlopen (een
+  500), en `?fout=__proto__` zette een object op de plek van de melding. Onschuldig voor de veiligheid (het raakt
+  alleen de eigen pagina van wie de link opent), maar een link die een klant toegestuurd krijgt, hoort niet te
+  breken. Nu telt alleen wat echt in het lijstje staat (`uitLijst()`).
+
+**Het bewijs.** `tests/backend-sterker.test.mjs` §2: op de oude code 7 rood, de twee controles met echte woorden
+groen; op de nieuwe alles groen. **Nacontrole:** de 31 toetsbestanden die Je plan, Gegevens of de rondes aanroepen, de
+2FA-set (ook `test:code`), `npx astro build`: groen. De diff raakt geen inlog en geen koekje.

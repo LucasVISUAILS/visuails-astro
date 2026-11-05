@@ -8,6 +8,8 @@
  *
  *   1 · de grens van D1: hoogstens 100 gebonden waarden per query. De nep-D1 dwingt
  *       hem hier af (`d1(db, { maxWaarden: 100 })`), zoals D1 live doet.
+ *   2 · Studio: "Gegevens opslaan" met een leeg KvK-veld, en `?ok=`, `?fout=` en `?ronde=`
+ *       met een woord als `constructor` (Je plan liep daarop vast).
  *  14 · de betaalwebhook: een aflevering die halverwege stopt (D1 hapert tussen de
  *       betaalrij en de UPDATE naar betaald) mag een bestelling niet onbetaald laten.
  *  15 · een mislukte incasso die twee keer wordt afgeleverd, geeft één mail.
@@ -162,6 +164,42 @@ console.log('\n1b · de andere plekken met een lange lijst');
     ok('de nachtelijke opruiming: 150 verlopen bestanden gaan weg', over === 0, `nog ${over} rijen; ${String(regel).slice(0, 120)}`);
     ok('  met hun webp-variant uit R2', weg.includes('intake/oud/150.webp') && weg.includes('intake/oud/1.webp'), `${weg.length} objecten weg`);
   } catch (e) { ok('de opruiming zonder fout', false, e.message); }
+}
+
+/* ══ 2 · STUDIO: EEN LEEG KVK-VELD, EN WOORDEN UIT DE ADRESBALK ══════════════ */
+console.log('\n2 · Studio: een leeg KvK-veld, en woorden uit de adresbalk');
+{
+  const { studioScreen, accountPost } = await import('../src/lib/account.js');
+  const { db } = verseDb(schema);
+  db.prepare("INSERT INTO customers (id, email, brand, country, reg_number) VALUES (7, 'mara@voltbrand.test', 'VOLT', 'NL', '12345678')").run();
+  db.prepare("INSERT INTO subscriptions (id, customer_id, ref, plan, status, term, started_at) VALUES (1, 7, 'VIS-ABO-1', 'studio', 'active', 'monthly', datetime('now', '-40 days'))").run();
+  const sessie = 'sessie-van-mara-backend-sterker-stap-2-abcdefgh';
+  db.prepare("INSERT INTO account_sessions (customer_id, token_hash, expires_at) VALUES (7, ?, datetime('now', '+30 days'))").run(await hashToken(sessie));
+  const env = { DB: d1(db) };
+  const ck = `vis_account=${sessie}; vis_lang=nl`;
+  const stilErr = console.error; console.error = () => {};
+  try {
+    const r = await accountPost({ request: new Request('https://visuails.com/account/details', { method: 'POST', headers: { cookie: ck, origin: 'https://visuails.com', 'sec-fetch-site': 'same-origin', 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ brand: 'VOLT', reg_number: '' }).toString() }), env, waitUntil() {} });
+    const kvk = db.prepare('SELECT reg_number FROM customers WHERE id = 7').get().reg_number;
+    ok('Gegevens opslaan met een leeg KvK-veld: opgeslagen, het veld leeg', r.status === 303 && kvk === null, `status ${r.status}, reg_number ${JSON.stringify(kvk)}`);
+  } catch (e) { ok('Gegevens opslaan met een leeg KvK-veld zonder fout', false, e.message); }
+  const scherm = async (sectie, q) => {
+    try {
+      const r = await studioScreen({ request: new Request(`https://visuails.com/account/${sectie}?${q}`, { headers: { cookie: ck } }), env, waitUntil() {} }, sectie);
+      return r instanceof Response ? { fout: `Response ${r.status}` } : r.v;
+    } catch (e) { return { fout: e.message }; }
+  };
+  for (const q of ['ok=constructor', 'ok=hasOwnProperty', 'fout=__proto__', 'fout=overstap-constructor', 'fout=bijkoop-constructor']) {
+    const v = await scherm('plan', q);
+    ok(`Je plan met ?${q}: opent, met tekst en niets van JavaScript zelf`, !v.fout && typeof v.melding === 'string' && typeof v.bevestiging === 'string', v.fout || `melding ${typeof v.melding}, bevestiging ${typeof v.bevestiging}`);
+  }
+  const goed = await scherm('plan', 'ok=opgezegd');
+  ok('  en een echt woord (?ok=opgezegd) werkt nog', !goed.fout, goed.fout || '');
+  const ronde = await scherm('orders', 'ronde=valueOf');
+  ok('Bestellingen met ?ronde=valueOf: geen functie als melding', !ronde.fout && ronde.rondeTekst === '', ronde.fout || typeof ronde.rondeTekst);
+  const verstuurd = await scherm('orders', 'ronde=verstuurd');
+  ok('  en ?ronde=verstuurd geeft nog de bevestiging', !verstuurd.fout && typeof verstuurd.rondeTekst === 'string' && verstuurd.rondeTekst.length > 0, verstuurd.fout || JSON.stringify(verstuurd.rondeTekst));
+  console.error = stilErr;
 }
 
 /* ══ 14 · DE BETAALWEBHOOK: EEN BETAALDE BESTELLING MAG NIET ONBETAALD BLIJVEN ══ */

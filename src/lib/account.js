@@ -3820,7 +3820,9 @@ async function handleDetails({ request, env }, customer, asJson) {
   if (form.has('contact_preference')) add('contact_preference', normaliseerVoorkeur(one('contact_preference')));
   if (form.has('website')) add('website', one('website'));
   if (hasVat && !btwGeweigerd) { add('vat_number', vatNumber); add('no_vat_number', noVat ? 1 : 0); }
-  if (form.has('reg_number')) add('reg_number', one('reg_number').slice(0, 40) || null);
+  /* `one()` geeft null bij een leeg vakje; hier stond `.slice()` er direct achter, en dan
+     gaf "Gegevens opslaan" met een leeg KvK-veld een fout (5 november 2026). */
+  if (form.has('reg_number')) add('reg_number', (one('reg_number') || '').slice(0, 40) || null);
   if (hasBg) { add('default_background', background); add('default_background_hex', hex); }
   if (hasCountry) add('country', country);
 
@@ -10249,6 +10251,15 @@ function bestelKnopVoor(dienst, lock, lang) {
   };
 }
 
+/* ── EEN WOORD UIT DE ADRESBALK, OPGEZOCHT IN EEN LIJSTJE — 5 november 2026 ──
+   `?fout=`, `?ok=` en `?ronde=` werden opgezocht met `{…}[woord]`. Een woord als
+   `constructor` of `__proto__` vindt dan geen melding maar iets van JavaScript zelf (een
+   functie, een object), en `?ok=constructor` liet Je plan van een abonnee zelfs vastlopen.
+   Alleen wat echt in het lijstje staat, telt. */
+function uitLijst(lijst, woord) {
+  return Object.prototype.hasOwnProperty.call(lijst, woord) ? lijst[woord] : undefined;
+}
+
 export async function planView(env, request, t, lang, customer, models = [], lockByStyle = {}, orders = [], files = []) {
   const L = lang === 'en' ? 'en' : 'nl';
   const A = ABO[L];
@@ -10341,16 +10352,16 @@ export async function planView(env, request, t, lang, customer, models = [], loc
   })();
   const bijFout = /^bijkoop-(.+)$/.exec(fout);
   const ovFout = /^overstap-([a-z]+)$/.exec(fout);
-  const melding = { stoppen: t.planStopFail, hervatten: t.planResumeFail, reden: A.redenNodig, ...extraFout }[fout]
-    || (ovFout && A.overstapFout[ovFout[1]] ? A.overstapFout[ovFout[1]] : '')
-    || (bijFout && A.bijFout[bijFout[1]] ? A.bijFout[bijFout[1]](BIJKOOP_MAX_PER_MAAND, pakketZin) : '')
+  const melding = uitLijst({ stoppen: t.planStopFail, hervatten: t.planResumeFail, reden: A.redenNodig, ...extraFout }, fout)
+    || (ovFout && uitLijst(A.overstapFout, ovFout[1]) ? uitLijst(A.overstapFout, ovFout[1]) : '')
+    || (bijFout && typeof uitLijst(A.bijFout, bijFout[1]) === 'function' ? uitLijst(A.bijFout, bijFout[1])(BIJKOOP_MAX_PER_MAAND, pakketZin) : '')
     || (bijkoopUit && ['failed', 'canceled', 'expired'].includes(bijkoopUit.status) ? A.bijMislukt : '');
   const jaar = sub?.term === 'prepaid';
   /* De pauze gaat in op de dag van de volgende afschrijving (Lucas bij 2.07):
      `paused_at` staat dan in de toekomst. */
   const pauzeDag = sub?.status === 'paused' && sub.paused_at ? String(sub.paused_at).slice(0, 10) : '';
   const pauzeStraks = !!(pauzeDag && pauzeDag > nu.toISOString().slice(0, 10) && sub.pause_reason === 'customer');
-  let bevestiging = {
+  let bevestiging = uitLijst({
     pauze: pauzeStraks ? A.pauzeOkStraks(datumLang(pauzeDag, L, nu)) : (jaar ? t.planPauseOkPrepaid : t.planPauseOk),
     hervat: jaar ? t.planResumeOkPrepaid : t.planResumeOk,
     opgezegd: t.planCancelOk,
@@ -10359,7 +10370,7 @@ export async function planView(env, request, t, lang, customer, models = [], loc
     bespreekal: A.bespreekTeVaak,
     overstap: klaar ? A.overstapOk(planName(klaar.plan, L), state?.termijnTot ? datumLang(state.termijnTot, L, nu) : '') : '',
     'overstap-terug': A.overstapTerugOk,
-  }[ok] || (bijkoopUit?.status === 'paid'
+  }, ok) || (bijkoopUit?.status === 'paid'
     ? A.bijBetaald(bijkoopUit.pakket, (() => {
       const d = /^(\d{4}-\d{2}-\d{2})/.exec(String(bijkoopUit.paid_at || ''));
       return d ? datumLang(dagErvoor(vervaldatumVan(d[1])), L, nu) : '';
@@ -10406,7 +10417,7 @@ export async function planView(env, request, t, lang, customer, models = [], loc
      standzin met de datum, plus "je krijgt een bevestiging per mail". Het
      standblok blijft, want daar staat ook de knop Hervatten. */
   let standNet = false;
-  const hoortBij = { opgezegd: ['opgezegd'], jaaropgezegd: ['jaaropgezegd'], pauze: ['pauze', 'pauze-straks'] }[ok];
+  const hoortBij = uitLijst({ opgezegd: ['opgezegd'], jaaropgezegd: ['jaaropgezegd'], pauze: ['pauze', 'pauze-straks'] }, ok);
   if (hoortBij && hoortBij.includes(stand) && standZin) {
     standZin = `${standZin} ${A.perMail}`;
     bevestiging = '';
@@ -10912,7 +10923,7 @@ export async function studioScreen(context, section) {
       files: st.filesByOrder.get(o.id) || [],
       view: orderView(t, lang, o, st.filesByOrder.get(o.id) || [], st.eventsByOrder.get(o.id) || [], feedbackByOrder.get(o.id) || null, i, st.openOrderId, st.openProduct, { abonnee }),
     }));
-    v.rondeTekst = { verstuurd: t.rdSentOk, leeg: t.rdEmptyErr, notitie: t.rdNoteErr, mislukt: t.rdFailErr, dicht: t.rdClosedErr }[st.rondeFlag] || '';
+    v.rondeTekst = uitLijst({ verstuurd: t.rdSentOk, leeg: t.rdEmptyErr, notitie: t.rdNoteErr, mislukt: t.rdFailErr, dicht: t.rdClosedErr }, st.rondeFlag) || '';
     /* Tip 5: bij de eerste levering — er staan beelden klaar om goed te keuren. */
     const teKeuren = (st.files || []).some((f) => f.kind !== 'upload' && f.review_state === 'pending' && !f.superseded_at);
     st.tip = teKeuren ? studioTip(request, lang, 'levering', st.tipsWeg) : null;
