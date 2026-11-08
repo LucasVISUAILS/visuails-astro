@@ -377,7 +377,7 @@ wit. Ook wil ik dat op de eerste sectie geen scroll effect zit met de snappy scr
 effect, dus je scrollt dus normaal naar de laptop waarna de laptop sectie sticky is en als je door scrollt je de
 animatie van de laptop krijgt en je het motion blur effect krijgt tot de sectie wit is en de services komen. Het motion
 blur effect moet overigens kort en subtiel zijn en niet te heftig."* Klik **k1**; compositie: *"Tekst mag iets naar onder
-geplaatst worden … maar wel genoeg ruimte om alles heen."* De toets: `tests/opening-88-browser.test.mjs` (sinds levering 88; zie §15).
+geplaatst worden … maar wel genoeg ruimte om alles heen."* De toets: `tests/opening-89-browser.test.mjs` (sinds levering 88c; zie §15b).
 
 **Zo werkt het** (computer met een muis of trackpad, vanaf 1100 px, met beweging; `html.o8-aan`):
 
@@ -461,4 +461,41 @@ blijft.
 
 Telefoon, tablet, minder beweging, zonder WebGL of zonder video: zoals §14, alles staat stil. De metro is langer dan de
 gewone 0,6 s van het merk; dat is zijn uitdrukkelijke wens.
+
+### 15b · Eén scroll speelt alles, en geen harde randen (levering 88c, 5 november 2026)
+
+Lucas, 07:08: *"De laptop op de website lagged nu nog meer dan eerst en hij speelt niet zelf af, je moet nu zelf scrollen om
+er langs te gaan terwijl ik wil dat hij afspeelt bij 1 scroll omlaag."* Om 08:00: *"Nooit harde randen bij dit soort grote
+achtergrond secties. De kleuren moeten verwerkt worden in de pagina net als bij de nieuwe laptop achtergrond en kijk of daar
+ook nog harde randen zijn die daar niet horen."* De toets: `tests/opening-89-browser.test.mjs` (vervangt opening-88). Dit
+vervangt punt 1 en 4 hierboven; de metro, de schuif van 88b en Wat we maken blijven.
+
+1. **Je scrolt gewoon naar de laptop.** Staat het podium onder de balk (sticky; meer dan 8 px in de baan, of een wieltik omlaag
+   op 2 px ervan), dan speelt **één scroll omlaag alles op zijn eigen klok**: de video van beeld 0 tot 86, dan de metro die de
+   laptop meeneemt, dan wit, dan Wat we maken omhoog met zijn bovenkant onder de balk (de pagina springt daarheen terwijl alles
+   wit is, dus je ziet het niet).
+2. **De video speelt, hij wordt niet meer gezocht.** De snelheid per beeld (`TEMPO`): 1,4 × de gemiddelde beweging per beeld
+   (de tabel `loop`), tussen 1,4 en 3,0 × de eigen snelheid, gladgestreken over ± 4 beelden. Van 0 tot 86 in ± 2,2 s. Daarna de
+   rit (0,8 s). Liep de video op een trage computer een paar beelden door, dan rijdt de laptop vanaf dat beeld (`rit.van`):
+   hij gaat nooit terug.
+3. **Zolang hij speelt, staat de pagina vast.** Het wiel (op `window` met capture, vóór zacht scrollen), de scrolltoetsen en
+   een vinger scrollen niet; een stukje met de schuifbalk wordt teruggezet. Nog een scroll in dezelfde richting (een nieuw
+   gebaar: meer dan 160 ms na het vorige) laat hem inhalen (1,6 ×). Een scroll de andere kant op laat hem terugspelen. Een sleep
+   van meer dan 400 px met de schuifbalk maakt hem meteen af.
+4. **Terug.** Eén scroll omhoog bij Wat we maken speelt alles terug: Wat we maken gaat weg (0,18 s), de rit rijdt terug, en dan
+   speelt de **omgekeerde video** (`laptop-84-<b>-terug`, `scripts/laptop-video-terug.mjs`; beeld j is beeld 110 − j) van 86
+   naar 0. Dan staat de laptop weer open onder de balk en scrol je gewoon verder omhoog. De omgekeerde video komt pas binnen
+   als de animatie één keer heeft gespeeld; is hij er nog niet, dan vervaagt de laptop in 0,35 s naar de foto.
+5. **Sprongen.** Spring je voorbij de helft van de baan (een link naar Wat we maken, End, de schuifbalk), dan staat meteen de
+   eindstand. Spring je boven het podium, dan meteen de beginstand. Bij het laden midden in de baan: de eindstand.
+6. **Waarom het niet meer hapert.** Het scrollen stuurde de video (zoeken en versnellen tot 8 × bij elke tik), en sinds 88b
+   tekende het doek in de rit elk schermbeeld op volle maat met negen punten onscherpte. Nu speelt de video gewoon, en tekent
+   het doek in de rit op 0,6 van de punten (`RIT_SCHAAL`): gemeten zonder grafische kaart 186 tegen 579 ms per tekening (een
+   derde), en geen enkele keer zoeken (was: bij elke scrollstap).
+7. **Geen harde randen.** Gemeten met een randendetector over alleen de achtergrond (sprong van meer dan 6 op 255 tussen twee
+   buurpunten): in de rit had de metro 218 – 3858 van zulke punten (de grenzen tussen de banen, tot 16 per punt), nu 0 (hoogstens
+   3). De banen lopen over 32 css-pixels (dwars op de snede) in elkaar over (`ZACHT` in `metro.js`); het ritme blijft. En zonder
+   het effect (telefoon, tablet, minder beweging) liep het blauwe uur onder het podium recht tegen het wit van Wat we maken (een
+   sprong van 177); nu loopt het in `--o8-uit` (clamp(96 px, 16 svh, 180 px)) weer uit in de grond, eerst nog even blauw, dan de
+   stops van de fade omgekeerd. Rust, wit, de bovenkant van het podium en het doek van de laptop hadden geen harde randen.
 

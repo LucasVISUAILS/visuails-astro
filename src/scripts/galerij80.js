@@ -13,11 +13,18 @@
 
    Nooit vanzelf: zonder scrollen of slepen staan de rijen stil. Minder beweging: geen script (de rijen
    zijn dan om zelf opzij te scrollen, galerij-80.css).
+
+   ANTI-GRAVITY (levering 89, lijst 81 D2: goed). De foto's hangen in de lucht: scrol je snel, dan blijven ze
+   heel even achter en kantelen ze iets, elk naar zijn eigen gewicht (ZWAAR, om de vier), hoogstens 8 px en
+   1,2°. Elke foto volgt een doel dat de vaart van het scrollen is (KRACHT px per px per beeld), met zijn eigen
+   traagheid (TRAAG × √gewicht); stop je, dan is het doel 0 en komt hij vloeiend terug, zonder na te veren.
+   Rustig scrollen (onder 2 px per beeld) doet bijna niets.
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 const K = 0.6, B = 30, MAX = 140, NAIJL = 0.12;
 const VEEG_VAN = 10, VEEG_TOT = 40, VEEG_MAX = 0.92;
 const golfUit = (t) => 1 - Math.pow(1 - t, 4);   /* zo goed als cubic-bezier(.16, 1, .3, 1) */
+const ZWAAR = [1.0, 0.7, 1.25, 0.85], KRACHT = 0.16, HOOGST = 8, TRAAG = 7, KANTEL = 0.15;
 
 export function galerij(root) {
   if (!root || matchMedia('(prefers-reduced-motion: reduce)').matches) return () => {};
@@ -30,6 +37,9 @@ export function galerij(root) {
   let off = 0, v = 0, y = scrollY, raf = 0, t0 = 0, dichtbij = false, vaart = false;
 
   let veegNu = '';
+  /* de foto's die hangen: per tegel zijn stand (px) en zijn gewicht */
+  let hangers = [];
+  function zetHangers() { hangers = rijen.flatMap((rij) => [...rij.baan.children].map((el, i) => ({ el, y: 0, m: ZWAAR[i % ZWAAR.length], nu: '' }))); }
   let sleep = null, tween = null, klikWeg = false;
 
   /* de breedte van één set, en genoeg kopieën om de rij altijd te vullen */
@@ -52,6 +62,7 @@ export function galerij(root) {
       /* rij 2 begint een eind verder, zodat de beelden niet boven elkaar beginnen */
       rij.x0 = rij.r % 2 ? rij.S * 0.37 : rij.S * 0.08;
     }
+    zetHangers();
     zet();
   }
 
@@ -91,7 +102,18 @@ export function galerij(root) {
       off += v * dt;
     }
     zet();
-    if (tween || sleep || dy !== 0 || Math.abs(v) > 0.02) raf = requestAnimationFrame(tik);
+    /* de foto's blijven achter en kantelen (alleen met de scroll van de pagina, niet bij slepen) */
+    const s0 = sleep || tween ? 0 : dy / dt;
+    let hangt = false;
+    for (const h of hangers) {
+      const doel = Math.max(-HOOGST, Math.min(HOOGST, s0 * KRACHT * h.m));
+      h.y += (doel - h.y) * (1 - Math.exp(-dt / (TRAAG * Math.sqrt(h.m))));
+      if (Math.abs(h.y) < 0.04 && doel === 0) h.y = 0;
+      if (h.y !== 0) hangt = true;
+      const w = `${h.y.toFixed(2)}px ${(h.y * KANTEL * (h.m > 0.9 ? 1 : -1)).toFixed(3)}deg`;
+      if (w !== h.nu) { h.nu = w; h.el.style.setProperty('--g8-hang', `${h.y.toFixed(2)}px`); h.el.style.setProperty('--g8-kantel', `${(h.y * KANTEL * (h.m > 0.9 ? 1 : -1)).toFixed(3)}deg`); }
+    }
+    if (tween || sleep || dy !== 0 || Math.abs(v) > 0.02 || hangt) raf = requestAnimationFrame(tik);
     else { t0 = 0; v = 0; zet(); }
   }
   const wek = () => { if (!raf) raf = requestAnimationFrame(tik); };

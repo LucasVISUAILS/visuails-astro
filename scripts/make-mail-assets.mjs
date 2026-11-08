@@ -73,10 +73,13 @@ console.log(`\n▶ mark drawn from <symbol id="markglyph"> (${VW}×${VH}) at ${H
    De mail kreeg de kop van de hal: wit, met het woordmerk (src/data/woordmerk.js)
    in inkt, 22 px hoog en dus 3× = 66 px in het bestand. Uit hetzelfde pad als de
    site, zodat een nieuwe letter ook de mail bereikt met `npm run mail:assets`. */
-const { WOORDMERK } = await import('../src/data/woordmerk.js');
+const { WOORDMERK, WOORDMERK_SNEDE, WOORDMERK_UITLOOP, snedeAttr, LOCKUP } = await import('../src/data/woordmerk.js');
+/* Levering 89: het tekstlogo K5 (smaller dan het woordmerk van 14 oktober: 3763,74 × 724). Het vak blijft 124 × 22
+   (3×: 372 × 66), want mails die al verstuurd zijn wijzen naar dit bestand met die maat; K5 staat er 22 hoog in het
+   midden in. */
 const WH = 66;
-const WW = Math.round(WH * (WOORDMERK.breed / WOORDMERK.hoog));
-const wsvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${WW}" height="${WH}" viewBox="${WOORDMERK.symbool}"><path fill="#0F1217" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg>`;
+const WW = 372;
+const wsvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${WW}" height="${WH}" viewBox="${WOORDMERK.symbool}" preserveAspectRatio="xMidYMid meet"><path fill="#0F1217" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg>`;
 const wfile = path.join(OUT, 'woordmerk-inkt.png');
 await sharp(Buffer.from(wsvg), { density: 384 })
   .resize({ width: WW, height: WH, fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
@@ -98,7 +101,7 @@ console.log(`  ${path.relative(ROOT, wfile)}  ${wmeta.width}×${wmeta.height}  $
    (#vs-w-snede in Layout.astro). In de maten van de tekening, dus dezelfde fade op elk formaat.
    Op wit haalt elke stop 6,2 : 1 of meer. */
 const SNEDE = '<stop offset="0" stop-color="#1A4279"/><stop offset=".55" stop-color="#25508B"/><stop offset="1" stop-color="#2D61A8"/>';
-const WM_SNEDE = `<defs><linearGradient id="s" gradientUnits="userSpaceOnUse" x1="0" y1="-797.25" x2="3367.43" y2="1728.32">${SNEDE}</linearGradient></defs>`;
+const WM_SNEDE = `<defs><linearGradient id="s" ${snedeAttr()}>${SNEDE}</linearGradient></defs>`;
 const PX = 16, PY = 12;
 const PW = (124 + 2 * PX) * 3, PH = (22 + 2 * PY) * 3;
 const psvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${PW}" height="${PH}" viewBox="0 0 ${PW} ${PH}">`
@@ -109,6 +112,34 @@ const pfile = path.join(OUT, 'woordmerk-plaat.png');
 await sharp(Buffer.from(psvg), { density: 72 }).png({ compressionLevel: 9 }).toFile(pfile);
 const pmeta = await sharp(pfile).metadata();
 console.log(`  ${path.relative(ROOT, pfile)}  ${pmeta.width}×${pmeta.height}  ${(fs.statSync(pfile).size / 1024).toFixed(1)} kB  (156 × 46 in de mail)`);
+
+/* ── DE LOCKUP OP HET WITTE PLAATJE — levering 89, 5 november 2026 ─────────────
+   Lucas koos in lijst 82 de lockup (B2: het V-merk naast het tekstlogo) voor beelden en documenten, en de mail
+   is er een. De maten komen uit LOCKUP.L2 (src/data/woordmerk.js, uitgerekend in kladblok/levering-89/lockup.py):
+   de V 2 kaphoogtes hoog, het midden van de kaphoogte op zijn zwaartepunt, één arm ertussen. De kaphoogte is de
+   kleinste die Lucas toestaat, 16 px; de vrije ruimte rondom is één kaphoogte, dus de pil is
+   (7,542 + 2) × 16 = 153 bij 4 × 16 = 64, 3× in het bestand. Op wit is de pil onzichtbaar; in de donkere stand
+   van de Gmail-app staat er een witte pil met het merk erin. De V en de letters in de snede, elk in de maten van
+   zijn eigen tekening (#vs-v-snede en #vs-w-snede op de site). */
+{
+  const C3 = 16 * 3;                                     /* de kaphoogte, 3× */
+  const k = C3 / 700;                                    /* van maten van K5 naar beeldpunten */
+  const [x0, y0, x1, y1] = LOCKUP.L2.kader;
+  /* op hele css-pixels (een veelvoud van 3), het restje links en rechts gelijk verdeeld */
+  const bw = (x1 - x0) * k + 2 * C3, LW = 3 * Math.ceil(bw / 3), LH = 3 * Math.round(((y1 - y0) * k + 2 * C3) / 3);
+  const V_D = ['M 0.0 16.0 L 144.25 266.75 L 463.25 813.25 L 662.75 354.75 L 619.25 408.25 L 515.5 546.25 L 264.5 119.0 A 201.21 201.21 0 0 0 101.0 15.75 L 0.0 16.0 Z',
+    'M 701.75 0.0 L 543.25 366.25 L 507.25 453.75 L 652.0 259.25 L 702.0 338.25 L 701.75 0.0 Z'];
+  const L = LOCKUP.L2, ox = C3 - x0 * k + (LW - bw) / 2, oy = C3 - y0 * k;
+  const lsvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${LW}" height="${LH}" viewBox="0 0 ${LW} ${LH}">`
+    + `<defs><linearGradient id="v" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="839.64" y2="629.73">${SNEDE}</linearGradient><linearGradient id="s" ${snedeAttr()}>${SNEDE}</linearGradient></defs>`
+    + `<rect width="${LW}" height="${LH}" rx="${LH / 2}" fill="#FFFFFF"/>`
+    + `<g transform="translate(${(ox + L.vx * k).toFixed(2)} ${(oy + L.vy * k).toFixed(2)}) scale(${(L.s * k).toFixed(5)})" fill="url(#v)">${V_D.map((d) => `<path d="${d}"/>`).join('')}</g>`
+    + `<g transform="translate(${(ox + L.tx * k).toFixed(2)} ${(oy + L.ty * k).toFixed(2)}) scale(${k.toFixed(5)})"><path fill="url(#s)" fill-rule="evenodd" d="${WOORDMERK.d}"/></g></svg>`;
+  const lfile = path.join(OUT, 'lockup-plaat.png');
+  await sharp(Buffer.from(lsvg), { density: 72 }).png({ compressionLevel: 9 }).toFile(lfile);
+  const lmeta = await sharp(lfile).metadata();
+  console.log(`  ${path.relative(ROOT, lfile)}  ${lmeta.width}×${lmeta.height}  ${(fs.statSync(lfile).size / 1024).toFixed(1)} kB  (${lmeta.width / 3} × ${lmeta.height / 3} in de mail)`);
+}
 
 /* ── DE SNEDE EN HET WOORDMERK IN DE VOET — levering 55, 17 oktober 2026 ──────
    Afvinklijst 34, E (m-kop en m-stap, "doen"):
@@ -135,7 +166,7 @@ console.log(`  ${path.relative(ROOT, pfile)}  ${pmeta.width}×${pmeta.height}  $
      site (#vs-w-uitloop), maar een stap lichter: van nevel #A2B7D2 bovenaan via #C4CEE0 naar mist
      #E4E7ED (de Mist-fade uit het schema). Zo blijft de voet van de mail even rustig als in lichtgrijs
      en staat hij ook in de donkere stand van de Gmail-app er nog (nevel op #1F1F1F ruim 7 : 1). */
-  const vsvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${VW}" height="${volle}" viewBox="${WOORDMERK.symbool}"><defs><linearGradient id="u" gradientUnits="userSpaceOnUse" x1="0" y1="-797.25" x2="0" y2="16.58"><stop offset="0" stop-color="#A2B7D2"/><stop offset=".55" stop-color="#C4CEE0"/><stop offset="1" stop-color="#E4E7ED"/></linearGradient></defs><path fill="url(#u)" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg>`;
+  const vsvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${VW}" height="${volle}" viewBox="${WOORDMERK.symbool}"><defs><linearGradient id="u" gradientUnits="userSpaceOnUse" x1="${WOORDMERK_UITLOOP.x1}" y1="${WOORDMERK_UITLOOP.y1}" x2="${WOORDMERK_UITLOOP.x2}" y2="${WOORDMERK_UITLOOP.y2}"><stop offset="0" stop-color="#A2B7D2"/><stop offset=".55" stop-color="#C4CEE0"/><stop offset="1" stop-color="#E4E7ED"/></linearGradient></defs><path fill="url(#u)" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg>`;
   const vfile = path.join(OUT, 'voet-woordmerk.png');
   await sharp(Buffer.from(vsvg), { density: 384 })
     .resize({ width: VW, height: volle, fit: 'fill' })

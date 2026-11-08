@@ -289,9 +289,9 @@ body.studio.st-hal .st-banner { border-radius: var(--r-kaart); padding: .7rem 1.
 @font-face { font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 600; font-display: swap; src: url(/fonts/ibm-plex-mono/IBMPlexMono-600.woff2) format('woff2'); }
 
 /* Het woordmerk. De lijn springt 6% naar linksboven en moet daar buiten zijn vak
-   mogen; rechts blijft het vak afknippen (dichtgeklapt staat alleen de V). Daarom
+   mogen; rechts blijft het vak afknippen (dichtgeklapt staat sinds levering 89 het V-merk zelf). Daarom
    een clip-path met ruimte links, boven en onder in plaats van overflow: hidden.
-   De maten in eenheden van het tekenvlak (4651 breed): op 112 px is 56 ongeveer
+   De maten in eenheden van het tekenvlak (3764 breed, het tekstlogo K5): op 112 px is 56 ongeveer
    1,4 px, zoals de V in de balk van de site. */
 body.studio .st-merk { overflow: visible; clip-path: inset(-10px 0 -10px -10px); --mk-line-ink: #25508B; --mk-kleur: #25508B; --mk-sw: .55; --mk-off: 56px; --mk-j: 8px; --mk-r: .35deg; }
 body.studio.on-ink .st-merk { --mk-line-ink: #80A7DD; --mk-kleur: #80A7DD; }

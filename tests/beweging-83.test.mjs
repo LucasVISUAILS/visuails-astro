@@ -275,11 +275,14 @@ try {
   console.log('\n6 · de poster');
   {
     const { ctx, page, fouten } = await open('/nl/');
-    const baan = await page.evaluate(() => { const r = document.querySelector('[data-p8]').getBoundingClientRect(); return { top: r.top + scrollY, h: r.height }; });
+    /* levering 89: de logoposter (p9); hij begint als hij in de buurt komt, pas dan heeft de baan zijn lengte */
+    await page.evaluate(() => window.scrollTo(0, document.querySelector('[data-p9]').getBoundingClientRect().top + scrollY - 200));
+    await page.waitForFunction(() => document.querySelector('[data-p9]').classList.contains('p9-aan'), null, { timeout: 60000 }).catch(() => {});
+    const baan = await page.evaluate(() => { const r = document.querySelector('[data-p9]').getBoundingClientRect(); return { top: r.top + scrollY, h: r.height }; });
     await page.evaluate((b) => scrollTo(0, b.top + (b.h - innerHeight) * 0.6), baan);
     await page.waitForTimeout(800);
     const n = await page.evaluate(async (b) => {
-      const p8 = document.querySelector('[data-p8]');
+      const p8 = document.querySelector('[data-p9]');
       let tel = 0; const mo = new MutationObserver((m) => { tel += m.length; }); mo.observe(p8, { attributes: true, attributeFilter: ['style'] });
       for (let i = 0; i < 12; i++) { scrollBy(0, 24); await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))); }
       await new Promise((r) => setTimeout(r, 500)); mo.disconnect(); return tel;

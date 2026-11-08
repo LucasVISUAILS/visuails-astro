@@ -1240,7 +1240,7 @@ html body ::selection { background: #25508B; color: #FFFFFF; }
 html body input[type="checkbox"], html body input[type="radio"] { accent-color: #25508B; }
 html body .bar { min-height: 68px; background: rgb(255 255 255 / .94); box-shadow: inset 0 -1px 0 #E6E8EC; }
 html body .mark { display: block; color: #0F1217; line-height: 0; }
-html body .mark .woordmerk { display: block; height: 22px; width: auto; aspect-ratio: 4651.24 / 813.83; fill: currentColor; }
+html body .mark .woordmerk { display: block; height: 22px; width: auto; aspect-ratio: 3763.74 / 724; fill: currentColor; }
 html body .ref { font-size: .875rem; color: #636974; }
 html body h1 { font-weight: 450; font-size: 2.25rem; letter-spacing: -.025em; color: #0F1217; }
 html body .lede { font-size: 1rem; color: #636974; }
@@ -1348,7 +1348,7 @@ html body .foot { color: #636974; }
   .mk .mk-line { transition-duration: 1ms; transition-delay: 0s; }
   .mk .mk-line-a { animation: none !important; }
 }
-/* de maten in eenheden van het tekenvlak (4651 breed): op 112 tot 124 px is 56
+/* de maten in eenheden van het tekenvlak (3764 breed, het tekstlogo K5): op 112 tot 124 px is 56
    ongeveer anderhalve pixel, zoals de V in de balk van de site */
 .mark { --mk-line-ink: #25508B; --mk-kleur: #25508B; --mk-sw: .55; --mk-off: 56px; --mk-j: 8px; --mk-r: .35deg; }
 
@@ -1375,6 +1375,26 @@ html body .foot { color: #636974; }
   .mk .mk-kleur { opacity: var(--vs-amp); }
 }
 @media (forced-colors: active) { .mk .mk-kleur { display: none; } }
+
+/* ══ HET LOGO WORDT EEN VENSTER — levering 89 (5 november 2026, lijst 82 E7) ════════════════════════
+   In plaats van de schommel van inkt naar blauw wordt het logo onder de muis (en met de toets erop) een venster
+   op een stukje snede, zoals kleur 7 van de animatie: zonder roze (roze komt nooit in een logo), met korrel, elk
+   punt minstens 3,6 : 1 op de grond (de eis voor een logo is 3 : 1). Het stukje (.mk-raam) is een <image> in een
+   knipvorm met het logo zelf; alleen zijn dekking beweegt, 0,6 s erheen en 0,7 s terug. Minder beweging: meteen.
+   Hier: het tekstlogo in de balk, op een lichte grond. Op een donkere grond blijft de schommel naar blauw licht. Kopie van global.css. */
+.mk .mk-raam { opacity: 0; transition: opacity .7s cubic-bezier(.2, .8, .2, 1); pointer-events: none; }
+:is(.mk:hover, a:hover > .mk, a:focus-visible > .mk, button:hover > .mk, button:focus-visible > .mk) .mk-raam { opacity: 1; transition-duration: .6s; }
+.mk.mk-venster .mk-kleur { display: none; }
+@media (prefers-reduced-motion: reduce) { .mk .mk-raam { transition: none; } }
+@media (forced-colors: active) { .mk .mk-raam { display: none; } }
+
+/* ── "geleverd" in een stukje nacht met korrel — levering 89 (lijst 82, E5). Zie src/styles/posterkleur.css. ── */
+.stand.is-geleverd { --pk-korrel: url(/img/stuk/korrel-128.webp); }
+@supports (background-image: image-set(url("/img/stuk/korrel-128.webp") 1x)) {
+  .stand.is-geleverd { --pk-korrel: image-set(url("/img/stuk/korrel-128.webp") 1x, url("/img/stuk/korrel-256.webp") 2x); }
+}
+.stand.is-geleverd { background: var(--pk-korrel) 0 0 / 128px 128px, url(/img/stuk/n-knop-1.webp) 50% 50% / cover no-repeat, #0F1217 !important; color: #FFFFFF !important; box-shadow: none !important; }
+@media (forced-colors: active) { .stand.is-geleverd { background: Canvas !important; color: CanvasText !important; border: 1px solid CanvasText !important; } }
 
 /* De knop en de statuspil zoals op de site en in Studio (levering 57): de knop met één
    zachte hoek linksboven, de pil als plaatje in de vaste breedte-letter zonder bolletje. */

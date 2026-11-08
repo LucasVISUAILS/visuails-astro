@@ -15,6 +15,7 @@ import NieuwTabblad from './NieuwTabblad.astro';
 import HalBeweging from './HalBeweging.astro';
 import { waKlant } from '../data/klant.js';
 import { localizedPath } from '../i18n/ui.js';
+import { kies, pkKlasse } from '../data/stukken.js';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -70,9 +71,10 @@ const PIJL_R = ikoon('pijl');
         <a class="h-knop h-knop-lijn" href={waHref(c.waTekst)} target="_blank" rel="noopener" {...waKlant(lang)}>{c.wa}<NieuwTabblad lang={lang} /></a>
       </p>
     </div>
-    <div class="h-nf-getal h-groot h-in" aria-hidden="true">
-      <span class="h-korrel"></span>
-      <span class="h-getal">404</span>
+    {/* Levering 89 (lijst 78 C4): het vlak naast de kop is het veld Nacht met de witte V; het getal staat in het
+        label boven de kop. Een stukje nacht met korrel (posterkleur.css), zonder harde rand. */}
+    <div class:list={['h-nf-getal h-groot h-in', pkKlasse(kies('nacht', `404:${lang}`))]} aria-hidden="true">
+      <svg class="h-nf-v" viewBox="0 0 702 813.25" focusable="false"><use href="#markglyph" width="702" height="813.25" /></svg>
     </div>
   </header>
 

@@ -22,8 +22,9 @@
      in em (NL "ZOALS JIJ HEM ZIET." 8,94; EN "AS YOU SEE IT." 6,52). Nooit kleiner dan 40.
    - het vlak: F2, wit → nevel → blauw uur, over de hele breedte en zonder ronde hoek (een vlak dat het hele scherm
      bedekt is recht, Lucas 4 nov 03:02).
-   - de baan: het podium blijft --o8-R (160 svh) staan; de laatste --o8-O (55 svh) daarvan schuift Wat we maken er al
-     overheen. Zie HalOpening80.astro voor wat er in de baan gebeurt.
+   - de baan: het podium blijft --o8-R (160 svh) staan; Wat we maken ligt er al overheen. Sinds levering 88c speelt één
+     scroll de hele animatie op zijn eigen klok en staat de pagina zolang vast; de baan houdt alleen de plek waar Wat we
+     maken ligt. Zie HalOpening80.astro.
    ═══════════════════════════════════════════════════════════════════════════════ */
 .o8 {
   --o8-balk: 56px;
@@ -53,9 +54,25 @@ html[lang="en"] .o8 { --o8-w: 6.52; }
 .o8-podium { position: relative; z-index: 2; overflow-x: clip; }
 /* F2 (lijst 74): wit → nevel → blauw uur, schermvullend en recht */
 .o8-vlak { position: absolute; inset: 0; z-index: 0; background: linear-gradient(180deg, #FBFCFF 0%, #FBFCFF 20%, #A2B7D2 52%, #6283AF 76%, #25508B 100%); }
-/* het wit dat aan het eind langs de snede (126,87°: de lijnen van gelijke kleur lopen op 53,13°) het blauw wegveegt;
-   --o8-e is waar het wit vol is, --o8-z hoe zacht de rand is (HalOpening80.astro) */
-.o8-veeg { position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(126.87deg, rgba(251, 252, 255, 0) calc(var(--o8-e, 140%) - var(--o8-z, 56px)), var(--h-grond, #FBFCFF) var(--o8-e, 140%)); }
+/* LEVERING 89 (lijst 78 C1, lijst 81 V3): het veld B1 Horizon in plaats van de fade: de lucht na zonsondergang, wit boven,
+   het blauwe uur onder, de laatste roze streep op de horizon, met korrel. Een vast beeld uit src/scripts/veld.js (zaad
+   0,37, kladblok/levering-89/b1.mjs), liggend en staand; vanaf 70 % van de hoogte gaat het voor 80 % naar blauw uur
+   #25508B (de naam van de stand onder de laptop haalt dan wit op 4,9 : 1), en de onderste 12 % helemaal, zodat het
+   podium zonder rand overgaat in de uitloop eronder. De metro (src/scripts/metro.js) tekent hetzelfde beeld in zijn
+   banen: het veld valt mee. De fade hierboven blijft staan voor als het beeld er (nog) niet is. */
+.o8-vlak { background: url(/img/hal/veld-b1.webp) 50% 50% / 100% 100% no-repeat, linear-gradient(180deg, #FBFCFF 0%, #FBFCFF 20%, #A2B7D2 52%, #6283AF 76%, #25508B 100%); }
+@media (orientation: portrait) { .o8-vlak { background-image: url(/img/hal/veld-b1-staand.webp), linear-gradient(180deg, #FBFCFF 0%, #FBFCFF 20%, #A2B7D2 52%, #6283AF 76%, #25508B 100%); } }
+.o8-vlak::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .9;
+  background: url(/img/stuk/korrel-128.webp) 0 0 / 128px 128px;
+  background: image-set(url("/img/stuk/korrel-128.webp") 1x, url("/img/stuk/korrel-256.webp") 2x) 0 0 / 128px 128px; }
+/* LEVERING 88c (Lucas, 5 november 08:00: "Nooit harde randen bij dit soort grote achtergrond secties. De kleuren moeten
+   verwerkt worden in de pagina net als bij de nieuwe laptop achtergrond"). Zonder het effect (telefoon, tablet, minder
+   beweging, zonder WebGL) volgt Wat we maken direct op het podium, en daar liep het blauwe uur recht tegen het wit. Nu loopt
+   het onder het podium in --o8-uit weer uit in de grond, eerst nog even blauw (geen knik), dan met de stops van de fade in omgekeerde volgorde (zoals bovenaan).
+   Met het effect staat de onderkant van het podium altijd op de onderkant van het scherm en is alles wit voor je verder
+   scrolt: daar hoeft het niet. */
+.o8 { --o8-uit: clamp(96px, 16svh, 180px); }
+html:not(.o8-aan) .o8-baan::after { content: ""; display: block; height: var(--o8-uit); background: linear-gradient(180deg, #25508B 0%, #25508B 14%, #6283AF 36%, #A2B7D2 58%, var(--h-grond, #FBFCFF) 86%, var(--h-grond, #FBFCFF) 100%); }
 .o8-foto { position: relative; z-index: 2; width: 100%; aspect-ratio: 2944 / 1248; }
 .o8-foto > picture { display: contents; }
 .o8-beeld { position: absolute; inset: 0; z-index: 2; display: block; width: 100%; height: 100%; max-width: none; pointer-events: none; }
@@ -74,7 +91,7 @@ html[lang="en"] .o8 { --o8-w: 6.52; }
 /* lijst 76, de metro (src/scripts/metro.js): het doek tekent het blauwe uur zelf zolang het rijdt; de veeg doet niet mee */
 .o8-metro { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; display: block; pointer-events: none; }
 .o8-metro[hidden] { display: none; }
-.o8.o8-rijdt .o8-vlak, .o8.o8-metro-aan .o8-veeg { visibility: hidden; }
+.o8.o8-rijdt .o8-vlak { visibility: hidden; }
 
 /* ── de strepen onder de laptop (K1, lijst 74): drie strepen, de naam in mono, de pauzeknop; geen blok ─────
    Wit op het blauwe uur (de lichtste plek eronder: wit 5,69 : 1). De streep van de stand die staat is 44 px en

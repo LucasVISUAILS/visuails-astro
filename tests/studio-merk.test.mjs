@@ -30,7 +30,7 @@ const lees = (p) => fs.readFileSync(new URL(`../${p}`, import.meta.url), 'utf8')
 console.log('het woordmerk met de schommel');
 {
   const s = woordmerkSvg('st-woordmerk');
-  ok('klasse mk erbij, eerst de vulling en de blauwe laag erop', /^<svg class="st-woordmerk mk"/.test(s) && s.indexOf('mk-fill') < s.indexOf('mk-kleur'));
+  ok('klasse mk erbij, eerst de vulling en de blauwe laag erop', /^<svg class="st-woordmerk mk mk-venster"/.test(s) && s.indexOf('mk-fill') < s.indexOf('mk-kleur'));
   ok('  geen elektrische lijn meer', !s.includes('mk-line') && !/pathLength/.test(s));
   ok('  de vulling is het ene even-oneven pad', s.includes(`<path class="mk-fill" fill-rule="evenodd" d="${WOORDMERK.d}"/>`));
   ok('  de blauwe laag is hetzelfde pad', s.includes(`<path class="mk-kleur" fill-rule="evenodd" d="${WOORDMERK.d}"/>`));

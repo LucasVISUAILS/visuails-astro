@@ -32,7 +32,8 @@ const lp = (p: string) => localizedPath(lang, p);
      hij woord voor woord van grijs (#636974, 5,4 : 1, dus ook vóór het kleuren te lezen) naar inkt, in de
      volgorde van het werk. De regel begint te kleuren als hij op 80 % van het scherm staat en is helemaal inkt
      op 45 %; woord k (van n) is inkt vanaf (k + ½) / n. De snede tussen twee stappen kleurt mee met het eerste
-     woord erna. Zonder script of bij minder beweging: meteen inkt. */
+     woord erna. Zonder script of bij minder beweging: meteen inkt.
+     ANTI-GRAVITY (levering 89, lijst 81 D3): op hetzelfde moment trekken de stappen één keer naar elkaar toe (hoe-80.css). */
   let stop: (() => void) | null = null;
   function start() {
     stop?.(); stop = null;
@@ -42,11 +43,15 @@ const lp = (p: string) => localizedPath(lang, p);
     const woorden = [...w8.querySelectorAll<HTMLElement>('.w8-w')];
     if (!regel || !woorden.length) return;
     w8.classList.add('w8-grijs');
+    /* levering 89 (lijst 81 D3): de stappen trekken één keer naar elkaar toe als de regel op 80 % staat */
+    w8.classList.add('w8-ag');
+    let getrokken = false;
     let raf = 0, dichtbij = false;
     const kijk = () => {
       raf = 0;
       const top = regel.getBoundingClientRect().top, h = innerHeight;
       const p = Math.max(0, Math.min(1, (h * 0.8 - top) / (h * 0.35)));
+      if (!getrokken && top < h * 0.8) { getrokken = true; w8.classList.add('w8-trek'); }
       woorden.forEach((w, k) => w.classList.toggle('aan', p >= (k + 0.5) / woorden.length));
       for (const st of w8.querySelectorAll<HTMLElement>('.w8-stap')) st.classList.toggle('aan', !!st.querySelector('.w8-w.aan'));
     };
@@ -55,7 +60,7 @@ const lp = (p: string) => localizedPath(lang, p);
     io.observe(w8);
     addEventListener('scroll', opScroll, { passive: true });
     kijk();
-    stop = () => { io.disconnect(); removeEventListener('scroll', opScroll); cancelAnimationFrame(raf); w8.classList.remove('w8-grijs'); };
+    stop = () => { io.disconnect(); removeEventListener('scroll', opScroll); cancelAnimationFrame(raf); w8.classList.remove('w8-grijs', 'w8-ag', 'w8-trek'); };
   }
   start();
   document.addEventListener('astro:page-load', start);

@@ -61,3 +61,11 @@
 @media (prefers-reduced-motion: reduce) {
   .g8-naam { transition: none; }
 }
+
+/* ── ANTI-GRAVITY (levering 89, lijst 81 D2) ─────────────────────────────────────────────────────────────
+   galerij80.js zet per tegel --g8-hang (px) en --g8-kantel (graden) als je snel scrolt; de rij krijgt 12 px lucht
+   boven en onder (met een negatieve marge, dus de opmaak verschuift niet), zodat een foto die achterblijft niet
+   wordt afgesneden. */
+.g8.g8-aan .g8-rij { padding-block: 12px; margin-block: -12px; }
+.g8.g8-aan .g8-tegel { transform: translate3d(0, var(--g8-hang, 0px), 0) rotate(var(--g8-kantel, 0deg)); }
+@media (prefers-reduced-motion: reduce) { .g8 .g8-tegel { transform: none; } }

@@ -17,6 +17,12 @@
      n3  lamellen   het blauw in tien schuine banen op de snede (53,13°) die na elkaar wegvallen, van rechts naar links,
                     als één golf (Lucas koos deze in lijst 76; lijst 77: sneller, meer onscherpte, in een golf)
 
+   LEVERING 88c (Lucas, 5 november 08:00: "Nooit harde randen bij dit soort grote achtergrond secties. De kleuren moeten
+   verwerkt worden in de pagina net als bij de nieuwe laptop achtergrond"): de banen van n3 vielen elk op hun eigen hoogte,
+   en waar twee banen naast elkaar lagen sprong de kleur langs de snede (een harde schuine rand). Nu lopen de hoogtes van twee
+   buren over ZACHT css-pixels (32, dwars op de snede gemeten) zacht in elkaar over: het ritme van de lamellen blijft, de
+   randen zijn zacht. De sluiter blijft.
+
    maakMetro(canvas, soort) → { teken(u, richting, tempo), duur, weg() } of null (geen WebGL)
      u        0 → 1, hoe ver de rit is (0 = het podium zoals het stilstaat, 1 = alles wit)
      richting 1 vooruit, −1 terug
@@ -27,6 +33,8 @@
 export const SLUIT = 0.03;
 /** De snede: horizontaal 0,75 × de hoogte (de 3-4-5-driehoek van 53,13°). */
 const SNEDE = 0.75;
+/** Levering 88c: hoe breed twee buurbanen in elkaar overlopen, in css-pixels dwars op de snede (horizontaal is dat 1 / 0,8 ×). */
+export const ZACHT = 32;
 
 export const SOORTEN = {
   n1: { naam: 'Zakken', duur: 850, banen: 1, wacht: 0, macht: 2.3, strepen: false },
@@ -42,10 +50,11 @@ const N = 28;
 
 const VS = 'attribute vec2 p; void main(){ gl_Position = vec4(p, 0., 1.); }';
 const FS = `precision highp float;
-uniform vec2 uRes; uniform float uDpr, uBanen, uN, uBreed;
+uniform vec2 uRes; uniform float uDpr, uBanen, uN, uBreed, uZacht;
 uniform vec4 uBaan[12];  /* per baan: hoe ver het blauw zakte aan het begin en het eind van de sluiter (px), - , - */
 uniform vec4 uA[${N}];   /* per streep: x, y (bovenkant, in het blauw), lengte, breedte */
 uniform vec4 uB[${N}];   /* per streep: dekking, baan */
+uniform sampler2D uVeld; uniform float uVeldAan;  /* levering 89: het veld B1 Horizon (hetzelfde beeld als .o8-vlak) */
 vec3 hex(float r, float g, float b) { return vec3(r, g, b) / 255.; }
 vec3 fade(float t) {
   vec3 a = hex(251., 252., 255.), b = hex(162., 183., 210.), c = hex(98., 131., 175.), d = hex(37., 80., 139.);
@@ -55,20 +64,25 @@ vec3 fade(float t) {
   return mix(c, d, clamp((t - .76) / .24, 0., 1.));
 }
 float ruis(vec2 q) { return fract(sin(dot(q, vec2(12.9898, 78.233))) * 43758.5453); }
+vec4 baan(float k) { vec4 b = uBaan[0]; for (int i = 1; i < 12; i++) { if (float(i) == k) b = uBaan[i]; } return b; }
 void main() {
   vec2 q = vec2(gl_FragCoord.x, uRes.y * uDpr - gl_FragCoord.y) / uDpr;
   float H = uRes.y;
   /* welke baan: schuine banen langs de snede (bij één baan altijd 0) */
-  float k = 0.;
-  if (uBanen > 1.5) k = clamp(floor((q.x - (H - q.y) * ${SNEDE.toFixed(2)} + H * ${SNEDE.toFixed(2)}) / uBreed), 0., uBanen - 1.);
-  vec4 b = uBaan[0];
-  for (int i = 1; i < 12; i++) { if (float(i) == k) b = uBaan[i]; }
+  float k = 0., f = .5;
+  if (uBanen > 1.5) { float c = (q.x - (H - q.y) * ${SNEDE.toFixed(2)} + H * ${SNEDE.toFixed(2)}) / uBreed; k = clamp(floor(c), 0., uBanen - 1.); f = c - k; }
+  vec4 b = baan(k);
+  /* levering 88c: bij de grens met een buur lopen de twee hoogtes zacht in elkaar over (uZacht: de halve breedte, in banen) */
+  if (uBanen > 1.5 && uZacht > 0.) {
+    if (f < uZacht && k > .5) b.xy = mix(baan(k - 1.).xy, b.xy, smoothstep(-uZacht, uZacht, f));
+    else if (f > 1. - uZacht && k < uBanen - 1.5) b.xy = mix(b.xy, baan(k + 1.).xy, smoothstep(-uZacht, uZacht, f - 1.));
+  }
   /* de sluiter: acht punten tussen waar het blauw was en waar het nu is */
   vec3 som = vec3(0.);
   for (int j = 0; j < 8; j++) {
     float o = mix(b.x, b.y, (float(j) + .5) / 8.);
     float t = (q.y - o) / H;
-    som += t < 0. ? hex(251., 252., 255.) : fade(t);
+    som += t < 0. ? hex(251., 252., 255.) : (uVeldAan > .5 ? texture2D(uVeld, vec2(clamp(q.x / uRes.x, 0., 1.), clamp(t, 0., 1.))).rgb : fade(t));
   }
   vec3 kleur = som / 8.;
   /* de lichtstrepen: dun en verticaal, ze vallen mee met het blauw */
@@ -114,7 +128,32 @@ export function maakMetro(canvas, soort = 'n1') {
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
   const pa = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(pa); gl.vertexAttribPointer(pa, 2, gl.FLOAT, false, 0, 0);
   const U = (n) => gl.getUniformLocation(prog, n);
-  const uRes = U('uRes'), uDpr = U('uDpr'), uBanen = U('uBanen'), uN = U('uN'), uBreed = U('uBreed'), uBaan = U('uBaan'), uA = U('uA'), uB = U('uB');
+  const uRes = U('uRes'), uDpr = U('uDpr'), uBanen = U('uBanen'), uN = U('uN'), uBreed = U('uBreed'), uZacht = U('uZacht'), uBaan = U('uBaan'), uA = U('uA'), uB = U('uB');
+  /* LEVERING 89 (lijst 78 C1, lijst 81 V3: "met de metro die het veld meeneemt"): de banen tekenen het veld B1 Horizon in
+     plaats van de fade, hetzelfde beeld als .o8-vlak (opening-80.css), liggend of staand zoals het podium. Tot het beeld
+     er is, tekent hij de fade (uVeldAan 0). */
+  const uVeld = U('uVeld'), uVeldAan = U('uVeldAan');
+  gl.uniform1i(uVeld, 0); gl.uniform1f(uVeldAan, 0);
+  let veldVorm = '';
+  function laadVeld(staand) {
+    const vorm = staand ? 'staand' : 'liggend';
+    if (vorm === veldVorm) return;
+    veldVorm = vorm;
+    const img = new Image();
+    img.onload = () => {
+      if (veldVorm !== vorm || gl.isContextLost()) return;
+      const tex = gl.createTexture(); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img);
+      for (const [k, v] of [[gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE], [gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR]]) gl.texParameteri(gl.TEXTURE_2D, k, v);
+      gl.useProgram(prog); gl.uniform1f(uVeldAan, 1);
+    };
+    img.src = staand ? '/img/hal/veld-b1-staand.webp' : '/img/hal/veld-b1.webp';
+  }
+  /* dezelfde keuze als de css (@media (orientation: portrait) in opening-80.css), en meteen laden: het beeld staat dan al
+     in de cache, want .o8-vlak toont het */
+  const staandScherm = () => typeof matchMedia === 'function' && matchMedia('(orientation: portrait)').matches;
+  laadVeld(staandScherm());
 
   /* de strepen: x over de breedte, y in het blauw (breukdeel van de hoogte van de fade), een lengte, een breedte en een
      dekking; dichtbij is langer, breder en lichter */
@@ -178,7 +217,10 @@ export function maakMetro(canvas, soort = 'n1') {
       }
     }
     gl.uniform2f(uRes, W, H); gl.uniform1f(uDpr, dpr);
-    gl.uniform1f(uBanen, S.banen); gl.uniform1f(uBreed, (W + SNEDE * H) / S.banen); gl.uniform4fv(uBaan, baan);
+    laadVeld(staandScherm());
+    const breed = (W + SNEDE * H) / S.banen;
+    /* de halve overloop in banen: ZACHT dwars op de snede is ZACHT / 0,8 horizontaal */
+    gl.uniform1f(uBanen, S.banen); gl.uniform1f(uBreed, breed); gl.uniform1f(uZacht, S.banen > 1 ? Math.min(0.5, (ZACHT / 0.8) / 2 / breed) : 0); gl.uniform4fv(uBaan, baan);
     gl.uniform1f(uN, n); if (n) { gl.uniform4fv(uA, A); gl.uniform4fv(uB, B); }
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }

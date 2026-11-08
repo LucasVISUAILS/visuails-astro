@@ -9,7 +9,7 @@
  * en kloppen."* Deze toets roept 83 mails op met hun echte bouwers
  * (tests/lib/alle-mails.mjs) en houdt per mail dezelfde regels vast:
  *
- *   K · de kop: het woordmerk op het witte plaatje (woordmerk-plaat.png, 156 × 46),
+ *   K · de kop: de lockup op het witte plaatje (lockup-plaat.png, 153 × 64; levering 89, was het woordmerk op woordmerk-plaat.png, 156 × 46),
  *       en de brief 440 breed (ook voor Outlook; afvinklijst 33, v33-maat = c).
  *   P · alleen kleuren uit het palet van de mail (C in src/lib/mailTemplate.js),
  *       en geen link in het blauw van de mailapp.
@@ -54,7 +54,7 @@ const zichtbaar = (h) => h.replace(/<!--tekst:uit-->[\s\S]*?<!--\/tekst:uit-->/g
 
 /* ── K · de kop ─────────────────────────────────────────────────────────── */
 console.log('K · het woordmerk op het witte plaatje');
-ok('elke mail: woordmerk-plaat.png, 156 × 46, alt VISUAILS', zonder(mails.filter((m) => !/<img src="https:\/\/visuails\.com\/img\/mail\/woordmerk-plaat\.png" width="156" height="46" alt="VISUAILS"/.test(m.html))), []);
+ok('elke mail: lockup-plaat.png, 153 × 64, alt VISUAILS (levering 89)', zonder(mails.filter((m) => !/<img src="https:\/\/visuails\.com\/img\/mail\/lockup-plaat\.png" width="153" height="64" alt="VISUAILS"/.test(m.html))), []);
 ok('geen mail wijst nog naar het doorzichtige woordmerk', zonder(mails.filter((m) => /woordmerk-inkt\.png/.test(m.html))), []);
 ok('de brief is 440 breed, ook in Outlook', zonder(mails.filter((m) => !/max-width:440px/.test(m.html) || !/<table role="presentation" width="440"/.test(m.html))), []);
 

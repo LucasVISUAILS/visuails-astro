@@ -28,7 +28,14 @@
    staat de laptop, rechts de rand van de telefoon. Zo beweegt de laptop elk schermbeeld op de klok van de rit, en niet
    24 keer per seconde. Tijdens de rit mag de onscherpte tot MAX_VEEG_RIT (de sluiter van de banen, metro.js).
 
-   maakDoek(canvas, video, schermen) → { teken(beeld, veeg, schuif), zetBeelden(lapImg, fonImg), weg() } of null
+   LEVERING 89 (Lucas, 5 november: "De laptop op de website lagged nu nog meer dan eerst"). Sinds 88b tekent het doek in
+   de rit elk schermbeeld (60 per seconde, op een snel scherm 120 of 144), met de onscherpte van negen punten, elk met
+   twee videolezingen en het perspectief van de schermen: op 1440 breed ruim 2 miljoen punten per beeld. Dat is wat er
+   bij kwam. Nu tekent het in de rit op RIT_SCHAAL (0,6) van de punten: alles beweegt dan en is onscherp, dus je ziet het
+   niet, en het kost ruim een derde. bron(video) wisselt de video waaruit het doek leest: voor het terugspelen is er een
+   omgekeerde video (scripts/laptop-video-terug.mjs), zodat de browser ook terug gewoon speelt en nooit zoekt.
+
+   maakDoek(canvas, video, schermen) → { teken(beeld, veeg, schuif), zetBeelden(lapImg, fonImg), bron(video), weg() } of null
    (geen WebGL: dan blijft de stilstaande foto staan en speelt er niets).
    ═══════════════════════════════════════════════════════════════════════════════ */
 
@@ -39,6 +46,8 @@ export const RUIMER = 1.5;
 export const SCHUIF_GRENS = 0.75;
 /** De bewegingsonscherpte: hoogstens 3 % van de breedte als de video speelt (levering 87), 5 % tijdens de rit. */
 export const MAX_VEEG = 0.03, MAX_VEEG_RIT = 0.05;
+/** Levering 89: hoeveel van de punten het doek tekent tijdens de rit (alles beweegt dan en is onscherp). */
+export const RIT_SCHAAL = 0.6;
 
 const VS = `attribute vec2 p; varying vec2 v; void main(){ v = vec2(p.x * .5 + .5, .5 - p.y * .5); gl_Position = vec4(p, 0., 1.); }`;
 const FS = `precision highp float;
@@ -178,15 +187,16 @@ export function maakDoek(canvas, video, data) {
   const eerste = data.schermen[0];
 
   /* de maat van het canvas: alleen opnieuw lezen als die verandert */
-  let maatOud = true;
+  let maatOud = true, schaalNu = 1;
   const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(() => { maatOud = true; }) : null;
   ro?.observe(canvas);
-  function maat() {
+  function maat(schaal = 1) {
+    if (schaal !== schaalNu) { schaalNu = schaal; maatOud = true; }
     if (!maatOud && ro) return;
     maatOud = false;
     /* niet scherper dan de video zelf: een canvas breder dan de video tekent alleen opgeblazen beeldpunten */
     const r = canvas.getBoundingClientRect(), vb = video.videoWidth || video.width || 0;
-    const d = Math.min(window.devicePixelRatio || 1, 2, vb && r.width ? vb / r.width : 2);
+    const d = Math.min(window.devicePixelRatio || 1, 2, vb && r.width ? vb / r.width : 2) * schaal;
     const b = Math.max(1, Math.round(r.width * d)), h = Math.max(1, Math.round(r.height * d));
     if (canvas.width !== b || canvas.height !== h) { canvas.width = b; canvas.height = h; }
     gl.viewport(0, 0, canvas.width, canvas.height);
@@ -213,7 +223,8 @@ export function maakDoek(canvas, video, data) {
   /* veeg: de bewegingsonscherpte als breukdeel van de breedte (levering 87); 0 of weg = scherp.
      schuif (levering 88b): [laptop naar links, telefoon naar rechts] in breukdelen van de breedte, of null */
   function teken(beeld, veeg = 0, schuif = null) {
-    maat();
+    /* levering 89: in de rit op RIT_SCHAAL van de punten */
+    maat(schuif ? RIT_SCHAAL : 1);
     const i = Math.max(0, Math.min(per.length - 1, beeld));
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tVid);
     const sleutel = video.paused && !video.seeking ? `${i}|${video.currentTime}|${video.currentSrc}|${video.videoWidth}` : '';
@@ -232,6 +243,8 @@ export function maakDoek(canvas, video, data) {
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
+  /* levering 89: lees voortaan uit deze video (heen of terug); hetzelfde beeld moet dan opnieuw naar de kaart */
+  function bron(v) { if (v && v !== video) { video = v; opKaart = ''; maatOud = true; } }
   function weg() { ro?.disconnect(); const e = gl.getExtension('WEBGL_lose_context'); if (e) e.loseContext(); }
-  return { teken, zetBeelden, weg };
+  return { teken, zetBeelden, bron, weg };
 }

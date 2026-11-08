@@ -33,3 +33,14 @@
 .w8.w8-grijs .w8-stap + .w8-stap:not(.aan)::before { background: var(--h-grijs, #636974); }
 .w8.w8-grijs .w8-stap + .w8-stap::before { transition: background-color 160ms steps(2, end); }
 @media (prefers-reduced-motion: reduce) { .w8.w8-grijs .w8-w { color: var(--h-inkt); transition: none; } }
+
+/* ── ANTI-GRAVITY (levering 89, lijst 81 D3: goed) ─────────────────────────────────────────────────────────
+   Komen de drie stappen in beeld, dan staan ze eerst iets uit elkaar (de buitenste ±46 px) en worden ze naar elkaar
+   toe getrokken zoals de letters in de animatie: rustig en dan snel (ease-in, t³), strak op hun plek, één keer, 0,8 s.
+   HalHoeKort80.astro zet .w8-trek als de regel voor het eerst op 80 % van het scherm staat. Alleen naast elkaar
+   (vanaf 701 px); onder elkaar en bij minder beweging staan ze meteen goed. */
+@media (min-width: 701px) and (prefers-reduced-motion: no-preference) {
+  .w8.w8-ag .w8-stap:first-child { translate: -46px 0; }
+  .w8.w8-ag .w8-stap:last-child { translate: 46px 0; }
+  .w8.w8-ag.w8-trek .w8-stap { translate: 0 0; transition: translate .8s cubic-bezier(.55, .06, .68, .19); }
+}

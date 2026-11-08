@@ -1,0 +1,71 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════════
+   DE LOGOPOSTER — levering 89, 5 november 2026 (lijst 81, C1; vervangt HalPoster80.astro)
+   ═══════════════════════════════════════════════════════════════════════════════
+   Lucas vroeg om 07:08 "een variant van de animatie" bij "Build the world of your brand.", koos in lijst 81 C1 ("Het
+   logo maakt zichzelf, en wordt het venster") met de notitie: "Dit mag een scroll animatie worden zodat de klant zelf kan
+   beslissen hoelang hij ernaar kijkt." Om 07:58: "ik hanteer deze blue fade look niet meer maar [ben] echt volledig op de
+   posters overgegaan", en om 08:00: "Nooit harde randen bij dit soort grote achtergrond secties."
+
+   - De grond is het veld p2 (de Snede, met het licht en het roze rechts; src/scripts/veld.js), dat boven en onder in het
+     wit van de pagina uitloopt. De blauwe fade boven de poster (p8-fade) is weg.
+   - Het podium blijft staan (sticky) en het scrollen speelt de animatie van het tekstlogo (src/scripts/poster89.js): de
+     letters gaan de V in, het vlaggetje gaat recht omhoog en strak naar zijn plek, bij de klap wordt de V het venster op de
+     foto (Phone-made), de kop komt eronder, en daarna groeit de V tot de foto het scherm vult.
+   - Het V-merk en het tekstlogo zijn de paden uit het merk (public/data/kopletter-89.json), niet nagetekend. Ze staan
+     nooit naast elkaar: de V ontstaat uit het woord.
+   - Zonder script, zonder WebGL en bij minder beweging: het veld als stil beeld, de V in wit en de kop.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+import '../styles/poster-89.css';
+import { localizedPath } from '../i18n/ui.js';
+import { styles as lifestyleEn } from '../data/styles.js';
+import { styles as lifestyleNl } from '../data/styles.nl.js';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
+interface Props { lang: 'nl' | 'en'; kop: string; }
+const { lang, kop } = Astro.props;
+const nl = lang === 'nl';
+const STIJL = 'phone-made';
+const look = (nl ? lifestyleNl : lifestyleEn).find((s: any) => s.slug === STIJL);
+const FOTO = '/img/lifestyle-phone-made-04';
+const FOTO_ALT = nl ? 'Model in een witte pufferjas tegen beton, onder een blauwe avondlucht' : 'Model in a white puffer jacket against concrete, under a blue evening sky';
+const bekijk = nl ? 'Bekijk de look' : 'See the look';
+const B = 702, H = 813.25;
+const V = createHash('sha1').update(readFileSync(path.join(process.cwd(), 'public', 'data', 'kopletter-89.json'))).digest('hex').slice(0, 10);
+const DATA = `/data/kopletter-89.json?v=${V}`;
+---
+<section class="p9" aria-labelledby="p9-kop" data-p9 data-data={DATA}>
+  <div class="p9-baan" data-p9-baan>
+    <div class="p9-podium" data-p9-podium>
+      <div class="p9-zacht" aria-hidden="true">
+        <span class="p9-stil"></span>
+        <canvas class="p9-veld" data-p9-veld></canvas>
+        <svg class="p9-logo" data-p9-logo></svg>
+      </div>
+      <svg class="p9-v" viewBox={`0 0 ${B} ${H}`} aria-hidden="true" focusable="false"><use href="#markglyph" width={B} height={H} /></svg>
+      <h2 id="p9-kop" class="h-kop p9-kop" data-p9-kop>{kop}</h2>
+      <a class="p9-look" href={localizedPath(lang, `/lifestyle/${STIJL}`)} data-p9-look
+         aria-label={`${look?.name ?? 'Phone-made'} · Lifestyle. ${bekijk}`} data-foto={FOTO} data-alt={FOTO_ALT}>
+        <b>{look?.name ?? 'Phone-made'}</b><span>Lifestyle</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { poster } from '../scripts/poster89.js';
+  let stop: (() => void) | null = null, nu: HTMLElement | null = null;
+  /* astro:page-load komt ook bij de eerste keer laden: dezelfde poster niet twee keer starten (dan zou de
+     eerste zijn WebGL-veld opruimen terwijl de tweede het nog wil gebruiken) */
+  function start() {
+    const el = document.querySelector<HTMLElement>('[data-p9]');
+    if (el && el === nu) return;
+    stop?.(); stop = null; nu = el;
+    if (el) stop = poster(el);
+  }
+  start();
+  document.addEventListener('astro:page-load', start);
+  document.addEventListener('astro:before-swap', () => { stop?.(); stop = null; nu = null; });
+</script>

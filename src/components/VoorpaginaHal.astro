@@ -56,7 +56,7 @@ import { catalogStyles as catalogNl } from '../data/catalogStyles.nl.js';
 import { LEVERTAG, TAG_WOORD, tagNaam } from '../lib/iptc.js';
 import HalOpening80 from './HalOpening80.astro';
 import HalGalerij80 from './HalGalerij80.astro';
-import HalPoster80 from './HalPoster80.astro';
+import HalPoster89 from './HalPoster89.astro';
 import HalMaken80 from './HalMaken80.astro';
 import HalHoeKort80 from './HalHoeKort80.astro';
 import Aanbevelingen from './Aanbevelingen.astro';
@@ -296,10 +296,11 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
       look groot, de proef, de gezichten). HalGalerij80.astro. */}
   <HalGalerij80 lang={lang} kop={c.galerijKop} zin={c.galerijZin} />
 
-  {/* ── 04b · DE LOGOPOSTER — levering 80 (lijst 64, posters a) ─────────────────
-      De galerij loopt via de Nevel-fade over in de poster: het V-merk groot in Wit op Blauw uur, dat bij het
-      scrollen een venster wordt op een foto (HalPoster80.astro). */}
-  <HalPoster80 lang={lang} kop={c.posterKop} />
+  {/* ── 04b · DE LOGOPOSTER — levering 89 (lijst 81, C1; was levering 80) ──────────
+      Het veld p2 (de Snede, met korrel) loopt boven en onder in het wit van de pagina uit; het scrollen speelt
+      de animatie van het tekstlogo: de letters gaan de V in, en de V wordt het venster op de foto
+      (HalPoster89.astro, src/scripts/poster89.js). De blauwe fade van levering 80 is weg. */}
+  <HalPoster89 lang={lang} kop={c.posterKop} />
 
   {/* ── 04c · HOE HET WERKT, KORT — levering 80 (lijst 64, s-hoe) ─────────────────
       Drie stappen in één regel, de levertijd uit de code en de link naar de hele uitleg (HalHoeKort80.astro). */}

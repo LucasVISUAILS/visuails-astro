@@ -34,14 +34,26 @@
            bewegen."* Lijst 55, logo a: het hele logo kleurt, inkt → blauw uur en
            terug, in 3,6 s. De elektrische lijn is weg. Een tweede <use> in blauw ligt
            op de vorm (.mk-kleur) en alleen zijn dekking schommelt (global.css). De
-           prop heet nog `electro`, zodat elke aanroep blijft werken. */
-interface Props { klasse?: string; glitch?: boolean; electro?: boolean }
-const { klasse = '', glitch = false, electro = false } = Astro.props as Props;
+           prop heet nog `electro`, zodat elke aanroep blijft werken.
+
+   venster Levering 89 (5 november 2026, lijst 82 E7). In plaats van de schommel wordt het logo onder de muis
+           (en met de toets erop) een venster op een stukje snede zonder roze (public/img/stuk/raam-*.webp, met
+           korrel; elk punt minstens 3,6 : 1 op de grond, de eis voor een logo is 3 : 1). Het stukje is een <image>
+           in de knipvorm #vs-raam-v (Layout.astro); welk stukje volgt uit de pagina (src/data/stukken.js). De
+           overgang staat in global.css (.mk-raam): 0,6 s, bij "minder beweging" meteen. */
+import { kies, stukUrl } from '../data/stukken.js';
+interface Props { klasse?: string; glitch?: boolean; electro?: boolean; venster?: boolean }
+const { klasse = '', glitch = false, electro = false, venster = false } = Astro.props as Props;
 const B = 702, H = 813.25;
+/* het stukje (1920 breed in verhouding 5,2 : 1) op de hoogte van de V, zo gelegd dat de lichtbaan door de V loopt */
+const RAAM = kies('raam', `${Astro.url.pathname}:${klasse}`);
+const RAAM_BAAN = { 'raam-0': 0.72, 'raam-3': 0.6, 'raam-6': 0.74 }[RAAM] ?? 0.7;
+const RW = H * 640 / 123, RX = B * 0.62 - RAAM_BAAN * RW;
 ---
-<svg class:list={['wm', 'vm', klasse, glitch && 'wm-glitch', electro && 'mk']} viewBox={`0 0 ${B} ${H}`} aria-hidden="true" focusable="false">
+<svg class:list={['wm', 'vm', klasse, glitch && 'wm-glitch', electro && 'mk', venster && 'mk-venster']} viewBox={`0 0 ${B} ${H}`} aria-hidden="true" focusable="false">
   {glitch && <use class="wm-echo wm-echo-1" href="#markglyph" width={B} height={H} />}
   {glitch && <use class="wm-echo wm-echo-2" href="#markglyph" width={B} height={H} />}
   <use class:list={['wm-vorm', electro && 'mk-fill']} href="#markglyph" width={B} height={H} />
   {electro && <use class="mk-kleur" href="#markglyph" width={B} height={H} />}
+  {venster && <image class="mk-raam" href={stukUrl(RAAM)} x={RX.toFixed(1)} y="0" width={RW.toFixed(1)} height={H} preserveAspectRatio="none" clip-path="url(#vs-raam-v)" />}
 </svg>

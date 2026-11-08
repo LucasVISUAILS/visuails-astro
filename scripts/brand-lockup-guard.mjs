@@ -25,9 +25,11 @@ import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'parse5';
 
-/* #woordmerk (12 oktober 2026) is het woordmerk van de hal: de merkletter, waarin
-   het V-merk de eerste letter IS. Het telt als woordmerk, dus het losse V-teken
-   mag er net zo min naast staan als naast het oude #wordmark. */
+/* #woordmerk (12 oktober 2026) is het woordmerk van de hal: tot levering 88 de merkletter, waarin
+   het V-merk de eerste letter WAS; sinds levering 89 (5 november 2026) het tekstlogo K5, met een eigen V.
+   Het telt als woordmerk, dus het losse V-teken mag er op de site net zo min naast staan als naast het
+   oude #wordmark. De lockup (het V-merk naast of boven K5, lijst 82 B2 en B3) is alleen voor beelden en
+   documenten (deelplaatjes, posters, mails, de factuur), niet voor de pagina's: die controleert dit niet. */
 /* #woordmerk-lijn (17 oktober 2026) is de omtrek van hetzelfde woordmerk, voor de
    elektrische lijn onder de muis: ook een woordmerk. */
 const MARKS = { '#wordmark': 'wordmark', '#woordmerk': 'wordmark', '#woordmerk-lijn': 'wordmark', '#markglyph': 'V glyph' };

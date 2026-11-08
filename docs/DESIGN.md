@@ -1,6 +1,6 @@
 # Design
 
-> **Stand: 3 november 2026 (levering 86: het blauwe uur in de details; het logo in de snede, de inktknop vult zich met blauw, geen gloed meer onder een knop; zie "Het blauwe uur in de details" hieronder en `docs/KLEURENSCHEMA.md`), 27 oktober 2026 (de voorpagina opnieuw ingedeeld, de balk rechthoekig, de gloed op de tweede toon: levering 78; het systeem staat in `docs/RUIMTE-EN-RUST.md`), 24 oktober 2026 (palet), 25 oktober 2026 (hoeken; de opening, de stroom, Hoe het werkt, de lagen, de knoppen en de iconen, levering 74; de opening opnieuw ingedeeld, de standen, Hoe het werkt compacter, verschijnen zonder snede en de balk als pil, levering 75 op 26 oktober); de rest 22 september 2026.** `KLEURENSCHEMA.md` draagt de
+> **Stand: 5 november 2026 (levering 89: posterkleuren met korrel, de velden op de grote plekken zonder harde randen, posterkleur in het klein, het tekstlogo K5, de lockup en het raster voor beelden; zie "Posterkleur, velden en het logo" hieronder en `docs/KLEURENSCHEMA.md`), 3 november 2026 (levering 86: het blauwe uur in de details; het logo in de snede, de inktknop vult zich met blauw, geen gloed meer onder een knop; zie "Het blauwe uur in de details" hieronder en `docs/KLEURENSCHEMA.md`), 27 oktober 2026 (de voorpagina opnieuw ingedeeld, de balk rechthoekig, de gloed op de tweede toon: levering 78; het systeem staat in `docs/RUIMTE-EN-RUST.md`), 24 oktober 2026 (palet), 25 oktober 2026 (hoeken; de opening, de stroom, Hoe het werkt, de lagen, de knoppen en de iconen, levering 74; de opening opnieuw ingedeeld, de standen, Hoe het werkt compacter, verschijnen zonder snede en de balk als pil, levering 75 op 26 oktober); de rest 22 september 2026.** `KLEURENSCHEMA.md` draagt de
 > kleuren; dit bestand draagt de rest van het systeem (elevatie, focus, motion,
 > layout, z-index, toegankelijkheid, en de lijst met wat we niet doen). Wijkt
 > de code van KLEURENSCHEMA.md af, dan volgt de code dat document.
@@ -24,7 +24,46 @@
 
 > **De metro en de lat: 4 november 2026 (levering 88).** Zie "De metro en de lat" hieronder.
 
+> **Posterkleur, velden en het logo: 5 november 2026 (levering 89).** Zie de paragraaf hieronder.
+
 ---
+
+## Posterkleur, velden en het logo — 5 november 2026 (levering 89)
+
+`docs/KLEURENSCHEMA.md`, "Levering 89", is leidend voor de kleuren, de metingen en de tabellen. Lucas: *"Geen blauwe
+fade meer, volledig op posters"* (07:58), *"Nooit harde randen bij dit soort grote achtergrond secties"* (08:00),
+*"ik wil altijd een poster achtige kleuren … het mag juist wat random zijn zoals in de posters en korrel bevatten"*
+(08:41). Zijn keuzes in lijst 78, 81, 82 en 83.
+
+**Velden op de grote plekken.** Een veld (`src/scripts/veld.js`) is een kleine poster met korrel: achter de laptop B1
+Horizon (en de metro tekent hetzelfde beeld in zijn banen), de logoposter P2 (scroll-gedreven: de baan speelt de
+animatie, `HalPoster89.astro`, `src/scripts/poster89.js`), het €1-blok B4 Nacht en de 404 B4 Nacht met de witte V. Een
+groot veld heeft **nooit een harde rand**: het loopt uit in de grond of eindigt in Blauw uur waar de uitloop van 88c het
+wit in brengt. Geen blauwe fade meer als achtergrond van een sectie.
+
+**Posterkleur in het klein** (`src/styles/posterkleur.css`, `src/scripts/posterkleur.js`, `src/data/stukken.js`). Een
+stukje poster op een kleine plek: de lege fotoplek (E1), het ene inktblok (E2), Bestellen (E3), het gezicht met
+initialen (E4), "geleverd" (E5), het balkje (E6) en het logo onder de muis (E7, het venster, zonder roze). Alleen op
+vlakken, nooit op tekst of iconen; korrel op het vlak, nooit op de letters. Vast per plek (hash van een sleutel), twee
+buren nooit hetzelfde, hoogstens drie per pagina buiten de grote plekken. De vorm volgt "Hoeken": Bestellen blijft een
+pil, het inktblok houdt zijn snede. Tekst erop haalt op het slechtste beeldpunt met de korrel 4,5 : 1, het venster 3 : 1
+(`tests/posterkleur-89-browser.test.mjs`).
+
+**Het logo.** Het tekstlogo is K5 (`src/data/woordmerk.js`), de V blijft V_D. Op de site nooit naast elkaar: de V in de
+balk, het tekstlogo in de voet en in Studio. De **lockup** (L2 naast elkaar, L3 onder elkaar) alleen in beelden en
+documenten (het deelplaatje, de mailkop, de factuur): de V 2 kaphoogtes, het tekstlogo op het zwaartepunt van de V, één
+arm van de V ertussen, 1 kaphoogte vrije ruimte, de kaphoogte nooit onder 16 px.
+
+**Het raster voor beelden.** u = de korte zijde / 12: marge 1 u, L2 1 u hoog, L3 6 u, de kop 1 u kap (of ¾, ⅔, ½ als NL
+en EN anders niet in twee regels passen), regelafstand 1,5 × kap, de laatste basislijn op 11 u. De tabel per formaat
+staat in `docs/KLEURENSCHEMA.md` en `kladblok/levering-89/raster.json`. Het deelplaatje: C1 voor elke pagina, C2 b
+"Venster" voor de voorpagina, C3 voor een pagina zonder kop.
+
+**Het favicon** is vorm c: een vierkante tegel met een veld, de V wit, zonder korrel op de V.
+
+**De anti-gravity** (lijst 81, ag1 – ag4): de foto's van de galerij hangen even achter en kantelen iets als je snel
+scrolt (hoogstens 8 px en 1,2°), de kaarten van Wat we maken en de stappen van Hoe het werkt komen zacht omhoog, en de
+pijl van een knop beweegt met een zachte versnelling in plaats van in stappen. Minder beweging: niets.
 
 ## De metro en de lat — 4 november 2026 (levering 88)
 
@@ -38,6 +77,12 @@ wens (*"een gemaakte animatie … metro gevoel met de motion blur"*).
 video niet meer: hij houdt beeld 86 vast en het doek schuift de laptop zelf naar links, elk schermbeeld, op de klok van de
 rit en met dezelfde sluiter als de banen. Zo bewegen het blauw en de laptop op één klok (lijst 77: *"smoother met
 elkaar"*). Gemeten in de video: vanaf beeld 76 schuift de laptop alleen, 38 beeldpunten per beeld op 1920.
+
+**Eén scroll (levering 88c, 5 november).** Lucas: *"ik wil dat hij afspeelt bij 1 scroll omlaag."* Je scrolt gewoon naar
+de laptop; op het podium speelt één scroll alles op zijn eigen klok (de video speelt, wordt nooit meer gezocht), en zolang
+staat de pagina vast. Eén scroll omhoog bij Wat we maken speelt het terug, met een omgekeerde video. En (08:00): *"Nooit
+harde randen bij dit soort grote achtergrond secties."* De banen van de metro lopen zacht in elkaar over (32 px), en waar
+het blauwe uur zonder het effect tegen de pagina komt, loopt het uit in de grond. Alles in `docs/RUST-80.md` §15b.
 
 **De lat** (het aantal in het bestelformulier, stap 1 blok 02). Lucas: *"veel subtieler … het is nu 1 groot blok en kan
 veel simpeler en mooier dan dit."* Eén keuze is één ding: het getal (een getalveld zonder vak, in de kopletter, je kunt het
@@ -74,7 +119,8 @@ Lucas, 01:22: *"Posters moeten ook gebruik maken van de nieuwe lettertypes en on
 website om te kijken of er nog meer ontwerp rules niet correct zijn toegepast en zorg dat er nooit
 elementen/texten te dicht tegen elkaar aan staan en consistentie is altijd belangrijk om na te gaan."*
 
-**Het deelplaatje** (`scripts/make-og.mjs` → `public/img/og-nl.png`, `og-en.png`, `npm run og`) staat nu in de
+**Het deelplaatje** (levering 86; sinds levering 89 vervangen door het raster: `public/img/og-*.jpg`, zie hierboven)
+(`scripts/make-og.mjs` → toen `public/img/og-nl.png`, `og-en.png`, `npm run og`) stond in de
 letters van de site: de kop in VISUAILS Display Bold in hoofdletters (-0,01 em, regelhoogte 0,92, zoals elke
 kop in hoofdletters op de site), de eerste regel grijs `#636974`, de rest inkt; zo groot dat de langste regel in
 560 px past (hoogstens 64 px). Het woordmerk in de snede, de grond `#FBFCFF`. Onderaan het sectielabel: de

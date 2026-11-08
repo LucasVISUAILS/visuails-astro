@@ -28,14 +28,19 @@
            maar per deel een eigen pad, zodat elke letter intekent.
            Levering 68 (24 oktober 2026, lijst 55 logo a): geen lijn meer. Het hele
            woordmerk kleurt van inkt naar blauw uur en terug, met de snelheid van een
-           schommel; de vorm staat stil (.mk-kleur, global.css). */
+           schommel; de vorm staat stil (.mk-kleur, global.css).
+   venster Levering 89 (lijst 82 E7): onder de muis een venster op een stukje snede zonder roze in plaats van
+           de schommel (zie VMerk.astro; de knipvorm #vs-raam-wm in Layout.astro, de overgang in global.css).
+           Niet op het grote woordmerk in de voet: daar blijft de uitloop (lijst 78 C4). */
 import { WOORDMERK } from '../data/woordmerk.js';
+import { kies, stukUrl } from '../data/stukken.js';
 
-interface Props { klasse?: string; glitch?: boolean; verloop?: boolean; electro?: boolean }
-const { klasse = '', glitch = false, verloop = false, electro = false } = Astro.props as Props;
+interface Props { klasse?: string; glitch?: boolean; verloop?: boolean; electro?: boolean; venster?: boolean }
+const { klasse = '', glitch = false, verloop = false, electro = false, venster = false } = Astro.props as Props;
+const RAAM = kies('raam', `${Astro.url.pathname}:${klasse}`);
 const B = WOORDMERK.breed, H = WOORDMERK.hoog;
 ---
-<svg class:list={['wm', klasse, glitch && 'wm-glitch', electro && 'mk']} viewBox={`0 0 ${B} ${H}`} aria-hidden="true" focusable="false">
+<svg class:list={['wm', klasse, glitch && 'wm-glitch', electro && 'mk', venster && 'mk-venster']} viewBox={`0 0 ${B} ${H}`} aria-hidden="true" focusable="false">
   {verloop && (
     <defs>
       <linearGradient id="hal-wm-verloop" x1="0" y1="0" x2="0" y2="1">
@@ -48,4 +53,5 @@ const B = WOORDMERK.breed, H = WOORDMERK.hoog;
   {glitch && <use class="wm-echo wm-echo-2" href="#woordmerk" width={B} height={H} />}
   <use class:list={['wm-vorm', electro && 'mk-fill']} href="#woordmerk" width={B} height={H} fill={verloop ? 'url(#hal-wm-verloop)' : undefined} />
   {electro && <use class="mk-kleur" href="#woordmerk" width={B} height={H} />}
+  {venster && <image class="mk-raam" href={stukUrl(RAAM)} x="0" y="0" width={B} height={H} preserveAspectRatio="xMidYMid slice" clip-path="url(#vs-raam-wm)" />}
 </svg>

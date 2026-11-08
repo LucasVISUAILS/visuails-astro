@@ -56,7 +56,7 @@
 import { createHash } from 'node:crypto';
 import { fotogids } from '../../src/data/fotogids.js';
 import { WHATSAPP_DISPLAY } from '../../src/data/whatsapp.js';
-import { WOORDMERK } from '../../src/data/woordmerk.js';
+import { WOORDMERK, snedeAttr } from '../../src/data/woordmerk.js';
 import { IKOON } from '../../src/data/iconen.js';
 
 export const BESTAND = { nl: 'visuails-fotogids-nl.pdf', en: 'visuails-fotogids-en.pdf' };
@@ -88,7 +88,7 @@ const VEL = {
    fade van blauw diep via blauw uur naar #2D61A8 langs de snede, in de maten van de tekening (de
    <g> zet het pad terug op zijn eigen maten, dus dezelfde coördinaten als #vs-w-snede op de site). */
 const MERK = `<svg class="woordmerk" viewBox="0 0 ${WOORDMERK.breed} ${WOORDMERK.hoog}" role="img" aria-label="VISUAILS">
-  <defs><linearGradient id="vs-fg-snede" gradientUnits="userSpaceOnUse" x1="0" y1="-797.25" x2="3367.43" y2="1728.32"><stop offset="0" stop-color="#1A4279"/><stop offset=".55" stop-color="#25508B"/><stop offset="1" stop-color="#2D61A8"/></linearGradient></defs>
+  <defs><linearGradient id="vs-fg-snede" ${snedeAttr()}><stop offset="0" stop-color="#1A4279"/><stop offset=".55" stop-color="#25508B"/><stop offset="1" stop-color="#2D61A8"/></linearGradient></defs>
   <g transform="translate(0 ${(WOORDMERK.hoog * (1 - WOORDMERK.onder)).toFixed(2)})"><path fill="url(#vs-fg-snede)" fill-rule="evenodd" d="${WOORDMERK.d}" /></g>
 </svg>`;
 

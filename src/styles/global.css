@@ -5604,6 +5604,20 @@ body { position: relative; }
 }
 @media (forced-colors: active) { .mk .mk-kleur { display: none; } }
 
+/* ══ HET LOGO WORDT EEN VENSTER — levering 89 (5 november 2026, lijst 82 E7) ════════════════════════
+   In plaats van de schommel van inkt naar blauw wordt het logo onder de muis (en met de toets erop) een venster
+   op een stukje snede, zoals kleur 7 van de animatie: zonder roze (roze komt nooit in een logo), met korrel, elk
+   punt minstens 3,6 : 1 op de grond (de eis voor een logo is 3 : 1). Het stukje (.mk-raam) is een <image> in een
+   knipvorm met het logo zelf; alleen zijn dekking beweegt, 0,6 s erheen en 0,7 s terug. Minder beweging: meteen.
+   Waar: de V in de balk en de lade, het tekstlogo in de voet en in Studio, /admin, het portaal en /account (op
+   een lichte grond). Niet: het grote woordmerk in de voet (de uitloop blijft, lijst 78 C4) en op een donkere
+   grond (daar blijft de schommel naar blauw licht). */
+.mk .mk-raam { opacity: 0; transition: opacity .7s cubic-bezier(.2, .8, .2, 1); pointer-events: none; }
+:is(.mk:hover, a:hover > .mk, a:focus-visible > .mk, button:hover > .mk, button:focus-visible > .mk) .mk-raam { opacity: 1; transition-duration: .6s; }
+.mk.mk-venster .mk-kleur { display: none; }
+@media (prefers-reduced-motion: reduce) { .mk .mk-raam { transition: none; } }
+@media (forced-colors: active) { .mk .mk-raam { display: none; } }
+
 /* ══ HET MERK ALS DIEPTE, ACHTER EEN BLOK ══════════════════════════════════
    Lucas, 20 augustus 2026: *"Ik wil dus voor de andere blokken een soort
    gelijke oulining hebben om een subtiel 3d effect te creëren."* — na de lijn-V

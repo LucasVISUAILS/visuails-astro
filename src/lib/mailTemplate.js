@@ -445,11 +445,17 @@ export const linkLine = (href, label) =>
    erin: op wit is de pil onzichtbaar en staat alles op de pixel waar het stond;
    in de donkere stand staat er een witte pil met VISUAILS erin, zoals de pillen
    op de site. De marges om het beeld zijn met de pil verminderd (16 en 12 px),
-   zodat de letters op dezelfde plek blijven. */
+   zodat de letters op dezelfde plek blijven.
+
+   DE LOCKUP — levering 89 (5 november 2026). Lucas koos in lijst 82 het V-merk naast het tekstlogo K5 voor
+   beelden en documenten (B2, waar: a). De kop toont nu lockup-plaat.png (153 × 64): dezelfde witte pil, met de
+   lockup op een kaphoogte van 16 px en één kaphoogte vrije ruimte rondom; de V begint daardoor nog steeds op de
+   kantlijn (16 px na de rand van het beeld). woordmerk-plaat.png blijft bestaan (met K5 erin) voor mails die al
+   verstuurd zijn. */
 const letterhead = () => `
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.paper}" style="background:${C.paper}">
   <tr><td style="padding:14px ${MARGE - 16}px 10px">
-    <a href="${SITE}" style="font-family:${FONT};font-size:15px;font-weight:700;letter-spacing:.12em;color:${C.ink};text-decoration:none"><img src="${SITE}/img/mail/woordmerk-plaat.png" width="156" height="46" alt="VISUAILS" style="display:block;border:0;outline:none;text-decoration:none;color:${C.ink}"></a>
+    <a href="${SITE}" style="font-family:${FONT};font-size:15px;font-weight:700;letter-spacing:.12em;color:${C.ink};text-decoration:none"><img src="${SITE}/img/mail/lockup-plaat.png" width="153" height="64" alt="VISUAILS" style="display:block;border:0;outline:none;text-decoration:none;color:${C.ink}"></a>
   </td></tr>
   <!-- Levering 55 (m-kop): de lijn onder de kop begint met een violet streepje met
        een schuin eind op 53°, de snede van het merk (snede.png, 28 × 3). -->

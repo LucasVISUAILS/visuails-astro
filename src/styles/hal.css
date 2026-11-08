@@ -40,6 +40,8 @@ body.hal {
      De oude namen (nevel, vak, violet, lila, mist, waas, nacht, inkt-2/3) blijven als
      verwijzing bestaan, zodat een vergeten regel niet breekt. Zie docs/KLEURENSCHEMA.md. */
   --h-wit: #FFFFFF; --h-inkt: #0F1217; --h-blauw: #25508B; --h-grijs: #636974; --h-lijn: #E6E8EC;
+  /* levering 89: roze, alleen als veldkleur (nooit in een logo, nooit tekst; docs/KLEURENSCHEMA.md, src/scripts/veld.js) */
+  --h-roze: #F1B7AC;
   /* DE GROND — levering 79 (1 november 2026). Lucas: "Website achtergrond wil ik heel uniek licht grijs
      hebben die bij het kleurenschema past". #F4F7FD: de toon van de inkt (264,5°) met een vleugje
      blauw uur, OKLCH .976 / .0086. Wit is sindsdien de kaart, niet meer de grond; het vlak blijft
@@ -340,7 +342,7 @@ body.hal .site-header .nav-menu .mi-soon { font: 600 11.5px/1 var(--h-letter) !i
 
 /* het woordmerk en zijn glitch */
 .hal .wm { display: block; fill: currentColor; overflow: visible; }
-.hal .hal-wm-balk { width: 128px; height: auto; aspect-ratio: 4651.24 / 813.83; }
+.hal .hal-wm-balk { width: 128px; height: auto; aspect-ratio: 3763.74 / 724; }
 /* Het V-merk in de balk en in de lade (14 oktober 2026): 32 px hoog, de maat van
    de oude .brand-glyph (30) plus de 2 px die het blaadje boven de kaplijn steekt. */
 .hal .hal-vm { display: block; height: 32px; width: auto; aspect-ratio: 702 / 813.25; color: var(--h-inkt); }
@@ -362,11 +364,11 @@ body.hal .site-header .nav-menu .mi-soon { font: 600 11.5px/1 var(--h-letter) !i
 body.hal .hal-wm-reus { --mk-line-ink: var(--h-violet); --mk-sw: 0.6; --mk-off: 22px; --mk-j: 2.5px; --mk-r: .12deg; }
 body.hal .foot-mark .hal-wm-reus { pointer-events: auto; }
 /* het woordmerk in de balk van de voorbeeldschermen (FigDash, FigGallery, FigGate): 14 px hoog */
-.hal .fd-wm, .hal .fg-wm, .hal .fgt-wm { display: block; height: 14px; width: auto; aspect-ratio: 4651.24 / 813.83; color: var(--h-inkt); }
+.hal .fd-wm, .hal .fg-wm, .hal .fgt-wm { display: block; height: 14px; width: auto; aspect-ratio: 3763.74 / 724; color: var(--h-inkt); }
 .hal .fd-mark, .hal .fg-mark, .hal .fgt-mark { display: inline-flex; align-items: center; }
 .hal .fd-sr, .hal .fg-sr, .hal .fgt-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.hal .hal-wm-lade { width: 112px; height: auto; aspect-ratio: 4651.24 / 813.83; color: var(--h-inkt); }
-.hal .hal-wm-voet { width: 150px; height: auto; aspect-ratio: 4651.24 / 813.83; color: var(--h-inkt); }
+.hal .hal-wm-lade { width: 112px; height: auto; aspect-ratio: 3763.74 / 724; color: var(--h-inkt); }
+.hal .hal-wm-voet { width: 150px; height: auto; aspect-ratio: 3763.74 / 724; color: var(--h-inkt); }
 .hal .wm-echo { opacity: 0; }
 .hal .wm-echo-1 { fill: var(--h-violet); }
 .hal .wm-echo-2 { fill: var(--h-lila); }
@@ -378,7 +380,7 @@ body.hal .foot-mark .hal-wm-reus { pointer-events: auto; }
 .hal .brand:hover .wm-glitch .wm-vorm, .hal .brand:focus-visible .wm-glitch .wm-vorm { animation: h-glitch-c .48s steps(1, end) 0s 1 both; }
 /* In banden: een echo schiet even opzij binnen een strook van het woord. De
    stappen zijn hard (steps), want een glitch die glijdt is een vervaging.
-   DE VERSCHUIVING IS IN EENHEDEN VAN HET WOORDMERK (viewBox 4651 breed), niet in
+   DE VERSCHUIVING IS IN EENHEDEN VAN HET WOORDMERK (viewBox 3764 breed sinds K5; was 4651), niet in
    schermpixels: 300 eenheden is op 128 px breed ruim 8 px. De eerste versie
    schoof 60–130 eenheden, en dat was op het scherm 2–3 px: niet te zien. */
 @keyframes h-glitch-a {
@@ -491,7 +493,7 @@ body.hal .cc .cc-btn:hover, body.hal .cc .cc-btn:focus-visible { background: var
 body.hal .cc .cc-link { font: 600 14px/1 var(--h-letter); color: var(--h-inkt-2); margin-left: 4px; }
 body.hal .foot-mark { pointer-events: none; }
 body.hal .foot-mark .foot-mark-light { display: none; }
-body.hal .hal-wm-reus { display: block; width: calc(100% - 48px); height: auto; aspect-ratio: 4651.24 / 813.83; margin: 10px auto -6%; }
+body.hal .hal-wm-reus { display: block; width: calc(100% - 48px); height: auto; aspect-ratio: 3763.74 / 724; margin: 10px auto -6%; }
 
 /* ── 01 · de opening ────────────────────────────────────────────────────── */
 .hal .h-opening { position: relative; isolation: isolate; padding: 0; min-height: max(760px, min(62vw, 900px)); overflow: hidden;
@@ -4278,7 +4280,11 @@ html body.hal .h-form-bedankt .ty-check { border-radius: 24.7% 4px 4px 4px; }
 .hal .h-knop-lijnwit:hover { background: #fff; color: var(--h-inkt); }
 /* de pijl in twee delen: de schacht wijkt terug, de kop schiet door (in eenheden
    van het raster van 24; op 20 px is 1 eenheid 0,83 px) */
-.hal .h-knop .ik-schacht, .hal .h-knop .ik-kop { transition: translate .16s steps(2, end); }
+/* levering 89 (lijst 81 D4: goed): de magneet trekt de kop weg, rustig en dan snel (ease-in, t³), de schacht volgt 40 ms
+   later; terug loopt het zacht uit. Was: in twee stappen (steps). */
+.hal .h-knop .ik-schacht, .hal .h-knop .ik-kop { transition: translate .18s cubic-bezier(.25, 1, .5, 1); }
+.hal .h-knop:hover .ik-kop { transition: translate .22s cubic-bezier(.55, .06, .68, .19); }
+.hal .h-knop:hover .ik-schacht { transition: translate .22s cubic-bezier(.55, .06, .68, .19) 40ms; }
 .hal .h-knop:hover .ik-pijl .ik-schacht { translate: -2.4px 0; }
 .hal .h-knop:hover .ik-pijl .ik-kop { translate: 3.6px 0; }
 /* De schuine pijl valt niet uit elkaar (Lucas, 17 oktober 08:03: "Hover effect van pijl schuin

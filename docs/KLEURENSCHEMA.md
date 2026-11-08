@@ -1,6 +1,8 @@
 # VISUAILS — kleurenschema
 
-**Stand: 3 november 2026 (levering 86): het blauwe uur in de details. Het logo staat in de snede, een fade van blauw diep `#1A4279` via blauw uur `#25508B` naar `#2D61A8`, langs de snede van het vlagje (126,87°); onder de muis schommelt het licht. De gloed onder de knoppen is weg; de inktknop staat in de nacht en vult zich onder de muis met de snede; Bestellen staat in de snede. Kleine details (de streep van het sectielabel, de streep onder een link, de focusrand van een knop, de voortgang, de rand van een kaart onder de muis, het inktblok, het grote woordmerk onderin, het vlagje dat vult) krijgen een fade. Het favicon is wit op de snede. Zie "Levering 86: het blauwe uur in de details". Het logopakket: images/Logo/visuails-logo-86.**
+**Stand: 5 november 2026 (levering 89): posterkleuren met korrel, de velden op de grote plekken zonder harde randen en zonder blauwe fade, posterkleur in het klein (E1 – E7), roze `#F1B7AC` als veldkleur, het tekstlogo K5 overal, de lockup alleen in beelden en documenten, het raster voor beelden en favicon c. Zie "Levering 89" hieronder.**
+
+**Levering 86 (3 november 2026): het blauwe uur in de details. Het logo staat in de snede, een fade van blauw diep `#1A4279` via blauw uur `#25508B` naar `#2D61A8`, langs de snede van het vlagje (126,87°); onder de muis schommelt het licht. De gloed onder de knoppen is weg; de inktknop staat in de nacht en vult zich onder de muis met de snede; Bestellen staat in de snede. Kleine details (de streep van het sectielabel, de streep onder een link, de focusrand van een knop, de voortgang, de rand van een kaart onder de muis, het inktblok, het grote woordmerk onderin, het vlagje dat vult) krijgen een fade. Het favicon is wit op de snede. Zie "Levering 86: het blauwe uur in de details". Het logopakket: images/Logo/visuails-logo-86.**
 
 **Levering 80 (1 november 2026): de vijf kleuren uit Lucas' voorbeeld, in Blauw uur gezet: Inkt `#0F1217`, Wit `#FBFCFF`, Mist `#E4E7ED`, Nevel `#A2B7D2` en Blauw uur `#25508B`, elk met een eigen fade (zie "Levering 80: de vijf kleuren"). De grond is Wit `#FBFCFF` (lijst 64, grond b); wat als vlak op de grond stond is `#F0F1F6` (halverwege de Wit-fade). De balk is van vloeibaar glas (zie daar). Het logopakket is herkleurd (images/Logo/visuails-logo-80).**
 
@@ -35,6 +37,115 @@ Op 1 november 2026 (levering 79) koos Lucas een grijze grond. Zijn woorden:
 Het schema daarvoor (schema A, violet, 19 tot 23 oktober) staat verderop als geschiedenis,
 en daaronder de hal (14 tot 18 oktober) en het schema van 20 september. Kelvin (lijst 50) en
 Blauw uur als palet (lijst 54) zijn alleen schetsen geweest; ze stonden nooit op de site.
+
+---
+
+## Levering 89: posterkleuren, velden met korrel, en het logo (5 november 2026)
+
+Lucas, 4 – 5 november: *"Ik wil altijd een poster achtige kleuren dus nooit clean alle kleuren achter elkaar, het mag
+juist wat random zijn zoals in de posters en korrel bevatten"* (08:41), *"Geen blauwe fade meer, volledig op posters"*
+(07:58) en *"Nooit harde randen bij dit soort grote achtergrond secties"* (08:00). Zijn keuzes: lijst 78 (de velden en
+waar ze komen), lijst 81 (kleur k7, de poster C1, favicon c), lijst 82 (de lockups, het raster, posterkleur in het klein
+E1 – E7) en lijst 83 (het deelplaatje van de voorpagina: C2 b, "Venster").
+
+**Roze** `#F1B7AC` (token `--h-roze`) is de zesde kleur, en alleen een **veldkleur**: de laatste streep op de horizon,
+de gloed in een hoek van een veld. **Nooit in een logo** (ook niet in het venster van E7), **nooit tekst**, nooit een
+vlak op zichzelf. Inkt erop zou 10,82 : 1 halen (wit maar 1,73 : 1), maar er staat nooit tekst op roze alleen: tekst staat op een veld en
+wordt daar op het slechtste beeldpunt gemeten.
+
+### De velden (posterkleuren met korrel)
+
+Een veld is een kleine poster: een grond en een paar lagen licht (een baan op de snede van 53,13°, een gloed, een
+horizon), zacht in elkaar, met korrel. Ze komen uit één tekening, `src/scripts/veld.js` (WebGL; zonder WebGL een vast
+beeld). Alleen kleuren uit dit schema: Inkt, Wit, Nevel `#A2B7D2`, de Nevel-fade, Blauw uur, blauw diep `#1A4279`, de
+stappen van de Blauw-uur-fade (`#6283AF`) en roze.
+
+| Veld | Grond | Wat | Waar op de site |
+|---|---|---|---|
+| B1 Horizon | Wit | wit boven, het blauwe uur onder, de laatste roze streep op de horizon | achter de laptop (de opening); de metro tekent hetzelfde beeld in zijn banen |
+| P2 / B2 Snede | Blauw uur | het licht langs de snede, roze waar het licht eindigt | de logoposter (HalPoster89) |
+| B4 Nacht | Inkt | een plooi van blauw uur met licht op de rand, roze rechtsonder | het €1-blok (het licht rechtsonder, weg van de tekst) en de 404 (met de witte V) |
+| B3 Golf, B5 Adem, B6 Insnede | Wit | — | (nog) niet op de site; zie `kladblok/LEVERING-89.md` |
+
+**Geen harde randen.** Een groot veld loopt boven en onder zacht uit in de grond (de poster), of eindigt in Blauw uur
+`#25508B`, waar de uitloop van levering 88c het verder het wit in brengt (de opening: de onderste 12 % van B1 loopt naar
+`#25508B`; vanaf 70 % van de hoogte gaat het veld al voor 80 % naar blauw uur, zodat de naam van de stand onder de laptop wit
+op 4,91 : 1 of meer haalt; op de fade van 88c was dat 3,91 : 1). Het beeld maakt `kladblok/levering-89/b1.mjs`. Er is geen blauwe fade meer als achtergrond van een sectie: de fade achter de laptop is B1 geworden en de
+fade boven de poster (`p8-fade`) is weg. Gemeten in `tests/posterkleur-89-browser.test.mjs` (de grootste sprong van
+rij tot rij hoogstens 6) en `tests/opening-89-browser.test.mjs`.
+
+**De korrel** zit op het vlak, nooit op de letters: in een WebGL-veld in de tekening zelf, op een stukje als tegel
+erover (`public/img/stuk/korrel-128.webp`, op een scherm met dubbele dichtheid `korrel-256.webp`, getoond op 128 px:
+één beeldpunt per korrel op elk scherm). Tekst op een veld haalt **op het slechtste beeldpunt, met de korrel**, minstens
+4,5 : 1; een logo minstens 3 : 1. Gemeten, nooit geschat.
+
+### Posterkleur in het klein (lijst 82, E1 – E7)
+
+Kleine plekken krijgen een **stukje poster** (`public/img/stuk/`, de keuze en de metingen in `src/data/stukken.js`, de
+regels in `src/styles/posterkleur.css`):
+
+| | Plek | Stukje | Gemeten |
+|---|---|---|---|
+| E1 | de lege fotoplek zolang een beeld laadt (galerij, looks, je beelden in Studio) | licht en donker door elkaar | weg zodra het beeld er is |
+| E2 | het ene inktblok op een pagina zonder €1-blok (het slot onderaan) | nacht of snede | wit erop 15,99 : 1 |
+| E3 | Bestellen bovenin (een pil) | snede, de gloed rechts achter de pijl; onder de muis alleen de grond donkerder | wit erop 6,89 : 1, onder de muis 8,86 : 1 |
+| E4 | het gezicht met initialen (Studio) | nacht of snede | wit erop 4,89 : 1 of meer, op elk van de acht |
+| E5 | de status "geleverd" (één stukje voor de hele lijst) | nacht | wit erop 15,99 : 1 |
+| E6 | het balkje met de schuine kop (de strook op /lifestyle) | snede, een vaste poster die het balkje blootlegt | geen tekst |
+| E7 | het logo onder de muis en met de toets erop | een venster op de snede, **zonder roze** | elk punt 3,64 : 1 of meer op de grond |
+
+Toeval, maar vast: welk stukje een plek krijgt, volgt uit een hash van een sleutel (de pagina, de plek, het nummer),
+dus bij opnieuw laden blijft het hetzelfde, en **twee buren krijgen nooit hetzelfde stukje**. Nooit een rij kleuren op
+volgorde, nooit een staalkaart, en niet op het streepje van een sectielabel (E8: niet doen). **Niet overheersend**:
+buiten de grote postervlakken (de opening, de poster, het €1-blok, de voet) hoogstens drie stukjes op een pagina; de
+lege fotoplek en het venster tellen niet mee (die zie je maar even).
+
+Het venster (E7) vervangt de schommel van inkt naar blauw op de V in de balk en de lade, het tekstlogo in de voet, in
+Studio, /admin, het portaal en /account. Niet op het grote woordmerk onderaan (daar blijft de uitloop) en niet op een
+donkere grond (daar blijft de schommel naar blauw licht). Minder beweging: meteen het venster, zonder overgang.
+
+### Het logo: het tekstlogo K5, de V, en de lockup
+
+- **Het tekstlogo** is K5 (`src/data/woordmerk.js`, viewBox `0 −712 3763,74 724`, de kaplijn op −700). De fade in de
+  snede loopt langs (0,8, 0,6) over 0,8 × breed + 0,6 × hoog: van (0, −712) naar (2756,31, 1355,24)
+  (`WOORDMERK_SNEDE`); de uitloop van boven naar onder, −712 → 12 (`WOORDMERK_UITLOOP`).
+- **De V** blijft precies V_D (702 × 813,25), in de snede van (0, 0) naar (839,64, 629,73).
+- **Op de site** staan ze nooit naast elkaar: de balk draagt de V (Lucas, 14 oktober: *"ik wil niet het woordlogo in de
+  topbar links maar het V logo"*), het tekstlogo staat in de voet, in Studio en in de balk van /admin, het portaal en
+  /account. Een zijbalk van Studio die dichtgeklapt is, toont de V (K5 is niet tot zijn V af te knippen).
+- **De lockup** (V en tekstlogo als één teken) alleen in **beelden en documenten**: het deelplaatje, de kop van de
+  mails, de factuur. L2 naast elkaar, L3 onder elkaar (lijst 82: L2 goed, L3 goed). De V is **2 kaphoogtes** hoog, het
+  tekstlogo staat met zijn midden op het **zwaartepunt van de V**, de ruimte ertussen is **één arm van de V**, de vrije
+  ruimte eromheen **1 kaphoogte**, en de kaphoogte is **nooit kleiner dan 16 px**. De maten in K5-eenheden: `LOCKUP` in
+  `src/data/woordmerk.js` (L2: V × 1,72149, tekst vanaf x 1515,49; L3: de V op (1260,09, −2407,01)).
+  `scripts/brand-lockup-guard.mjs` laat op de site nog steeds geen andere combinatie toe.
+
+### Het raster voor beelden
+
+Voor elk beeld dat we maken (deelplaatjes, posters, posts, de mailkop): **u = de korte zijde / 12**. Marge 1 u, de L2
+1 u hoog, de L3 6 u hoog; de kop heeft een kaphoogte van 1 u, of de grootste stap (¾, ⅔, ½ u) waarop NL en EN allebei in
+twee regels passen; regelafstand 1,5 × kap; de laatste basislijn op 11 u. (VISUAILS Display: kap 0,700, de basislijn
+0,841 em onder de bovenkant van een regel van 1 em.) De tabel staat ook in `kladblok/levering-89/raster.json`:
+
+| Beeld | Maat | u | L2 (b × h) | L3 (b × h) | Kop |
+|---|---|---|---|---|---|
+| Deelplaatje (og) | 1200 × 630 | 52,5 | 198 × 52,5 | 490,1 × 315 | 1 u (52,5 px, letter 75 px) |
+| Vierkant (Instagram, LinkedIn-post) | 1080 × 1080 | 90 | 339,4 × 90 | 840,2 × 540 | ½ u (45 px, letter 64,3 px) |
+| Poster 4:5 | 1200 × 1500 | 100 | 377,1 × 100 | 933,5 × 600 | ½ u (50 px, letter 71,4 px) |
+| Story / Reel | 1080 × 1920 | 90 | 339,4 × 90 | 840,2 × 540 | ½ u (45 px, letter 64,3 px) |
+| LinkedIn-banner | 1584 × 396 | 33 | 124,4 × 33 | 308,1 × 198 | 1 u (33 px, letter 47,1 px) |
+| X-kop | 1500 × 500 | 41,7 | 157,1 × 41,7 | 389 × 250 | 1 u (41,7 px, letter 59,5 px) |
+| Mailkop (2×) | 1200 × 400 | 33,3 | 125,7 × 33,3 | 311,2 × 200 | 1 u (33,3 px, letter 47,6 px) |
+
+Het deelplaatje (`scripts/make-og.mjs`, `npm run og`, jpeg tot 300 kB): **C1** (het veld o1, de L2 en de kop) voor elke
+pagina, **C2 b "Venster"** (de V als venster op Lucas' foto, op de nacht) voor de voorpagina, **C3** (de L3 op de nacht)
+voor een pagina zonder kop, zoals de 404. Het slechtste beeldpunt onder de kop: C1 7,31 : 1, C2 b 16,77 : 1 of meer, C3
+14,24 : 1. Geen fade over een foto.
+
+### Het favicon
+
+Vorm c uit `images/Logo/visuails-logo-89/favicon` (lijst 81): een vierkante tegel met een veld (het omhulsel heeft
+korrel), de V erop in Wit, zonder korrel (Lucas, 08:20: *"Favicon logo krijgt geen korrel alleen het omhulsel"*).
 
 ---
 

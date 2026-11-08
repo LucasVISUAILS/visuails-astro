@@ -193,6 +193,10 @@ function meet() {
         if (k < 0) k = props.indexOf('all');
         if (k < 0) continue;
         const t = tf[k % tf.length], d = parseFloat(du[k % du.length]);
+        /* Levering 89 (lijst 81, ag4 / D4: goed): de schacht en de kop van de pijl in een knop bewegen met een zachte
+           versnelling in plaats van in stappen, kort (hoogstens 0,25 s). Alleen die twee delen; de rest blijft springen. */
+        const pijlDeel = el.classList && (el.classList.contains('ik-schacht') || el.classList.contains('ik-kop'));
+        if (pijlDeel && d <= 0.25 && /cubic-bezier|ease/.test(t)) continue;
         if (d > 0 && !/steps|step-/.test(t)) { uit.hover.push(`${naamRegel} glijdt (${d}s ${t.slice(0, 30)})`); break; }
       }
     }

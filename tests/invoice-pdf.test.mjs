@@ -577,7 +577,10 @@ const vullingen = (markStreams.match(/(^|\s)f\*?(?=\s|$)/gm) || []).length;
 /* Levering 86 (3 november 2026): het woordmerk staat in de snede. Het is nu een knipvlak (W n) met één
    axiaal verloop erin (sh), dus geen vulling meer: drie vullingen (de vlakken) en één verloop. */
 const verlopen = (markStreams.match(/\/VsSnede sh/g) || []).length;
-check('drie vullingen en één verloop: drie vlakken en het woordmerk, geen watermerk', [vullingen, verlopen], [3, 1]);
+/* Levering 89 (5 november 2026): de kop draagt de lockup L2 (lijst 82 B2, alleen in beelden en documenten): het
+   V-merk (twee paden, elk een knipvlak met het verloop van de V: VsSnedeV0 en VsSnedeV1) naast het tekstlogo K5. */
+const verlopenV = (markStreams.match(/\/VsSnedeV[01] sh/g) || []).length;
+check('drie vullingen en drie verlopen: drie vlakken, het tekstlogo en de twee paden van het V-merk (de lockup), geen watermerk', [vullingen, verlopen, verlopenV], [3, 1, 2]);
 check('  het woordmerk in de snede: blauw diep, blauw uur, #2D61A8 langs de snede', /ShadingType 2/.test(Buffer.from(markPdf).toString('latin1')) || /SNEDE = \[\[0, \[26 \/ 255, 66 \/ 255, 121 \/ 255\]\], \[0\.55, \[37 \/ 255, 80 \/ 255, 139 \/ 255\]\], \[1, \[45 \/ 255, 97 \/ 255, 168 \/ 255\]\]\];/.test(source), true);
 check('  het watermerk staat uit', /const WM_OPACITY = 0;/.test(source), true);
 {
@@ -586,7 +589,9 @@ check('  het watermerk staat uit', /const WM_OPACITY = 0;/.test(source), true);
 }
 check('het blijft vector: geen ingesloten afbeelding',
   Buffer.from(markPdf).toString('latin1').includes('/Image'), false);
-check('en het teken kost bijna niets', markPdf.length < 6000, true);
+/* Levering 89: het tekstlogo K5 is fijner getekend (zijn bochten in veel meer punten) en de V staat erbij, dus de
+   grens ging van 6000 naar 14 000 bytes (gemeten: 11 885 voor de hele factuur; was 5219). Nog steeds bijna niets. */
+check('en het teken kost bijna niets', markPdf.length < 14000, true);
 
 // ── 10a · EEN FACTUUR DIE NIET OPTELT WORDT NIET GEDRUKT ─────────────────────
 //

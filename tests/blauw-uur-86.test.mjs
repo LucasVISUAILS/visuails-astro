@@ -22,6 +22,8 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import sharp from 'sharp';
 import { browserPad } from '../scripts/lib/browserpad.mjs';
+import { WOORDMERK, WOORDMERK_SNEDE as WS, WOORDMERK_UITLOOP as WU } from '../src/data/woordmerk.js';
+import { woordmerkSvg } from '../src/data/wordmarkPath.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const lees = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
@@ -58,12 +60,21 @@ const lay = lees('src/layouts/Layout.astro');
 const grad = (id) => (lay.match(new RegExp(`<linearGradient id="${id}"[^>]*>[\\s\\S]*?</linearGradient>`)) || [''])[0];
 const stops = (g) => [...g.matchAll(/stop-color="(#[0-9A-F]{6})"/g)].map((m) => m[1]);
 ok('de V in de snede en in het licht: in de maten van #markglyph, langs de snede (0,8 · 0,6 × 1049,55)', /x1="0" y1="0" x2="839\.64" y2="629\.73"/.test(grad('vs-v-snede')) && stops(grad('vs-v-snede')).join() === SNEDE.join() && stops(grad('vs-v-licht')).join() === LICHT.join());
-ok('het woordmerk in de snede en in het licht: in de maten van #woordmerk (0 -797,25, 0,8 · 0,6 × 4209,29)', /x1="0" y1="-797\.25" x2="3367\.43" y2="1728\.32"/.test(grad('vs-w-snede')) && stops(grad('vs-w-snede')).join() === SNEDE.join() && stops(grad('vs-w-licht')).join() === LICHT.join());
-ok('het grote woordmerk loopt het wit in (blauw uur → nevel), en schommelt een stap lichter', stops(grad('vs-w-uitloop')).join() === '#25508B,#6283AF,#A2B7D2' && stops(grad('vs-w-uitloop-licht')).join() === '#2D61A8,#829DC0,#B9C7DE' && /y1="-797\.25" x2="0" y2="16\.58"/.test(grad('vs-w-uitloop')));
+/* levering 89: het tekstlogo K5 (viewBox 0 −712 3763,74 724); de getallen komen uit src/data/woordmerk.js, en in de pagina
+   staan ze zo (gemeten in dist) */
+const L_SN = 0.8 * WOORDMERK.breed + 0.6 * WOORDMERK.hoog;
+const dist = fs.existsSync(path.join(ROOT, 'dist/nl/index.html')) ? fs.readFileSync(path.join(ROOT, 'dist/nl/index.html'), 'utf8') : '';
+ok('het tekstlogo (K5) in de snede en in het licht: in de maten van #woordmerk (0 −712, 0,8 · 0,6 × 3445,39), uit woordmerk.js',
+  WS.x1 === 0 && WS.y1 === -712 && Math.abs(WS.x2 - 0.8 * L_SN) < 0.01 && Math.abs(WS.y2 - (-712 + 0.6 * L_SN)) < 0.01
+  && /<linearGradient id="vs-w-snede" gradientUnits="userSpaceOnUse" x1=\{WS\.x1\} y1=\{WS\.y1\} x2=\{WS\.x2\} y2=\{WS\.y2\}>/.test(lay)
+  && dist.includes(`id="vs-w-snede" gradientUnits="userSpaceOnUse" x1="0" y1="-712" x2="${WS.x2}" y2="${WS.y2}"`)
+  && stops(grad('vs-w-snede')).join() === SNEDE.join() && stops(grad('vs-w-licht')).join() === LICHT.join());
+ok('het grote woordmerk loopt het wit in (blauw uur → nevel), en schommelt een stap lichter', stops(grad('vs-w-uitloop')).join() === '#25508B,#6283AF,#A2B7D2' && stops(grad('vs-w-uitloop-licht')).join() === '#2D61A8,#829DC0,#B9C7DE'
+  && WU.y1 === -712 && WU.y2 === 12 && dist.includes('id="vs-w-uitloop" gradientUnits="userSpaceOnUse" x1="0" y1="-712" x2="0" y2="12"'));
 const sym = (lay.match(/<symbol id="markglyph" viewBox=[\s\S]*?<\/symbol>/) || [''])[0];
 ok('de paden van het V-merk zijn niet aangeraakt (geen fill in het symbool)', sym.includes('M 0.0 16.0 L 144.25 266.75 L 463.25 813.25') && !/fill=/.test(sym.replace(/\{\/\*[\s\S]*?\*\/\}/g, '')));
 const wmp = lees('src/data/wordmarkPath.js');
-ok('Studio, het portaal, /admin en het account: het woordmerk draagt zijn eigen fades (vs-wi-)', /id="vs-wi-snede" gradientUnits="userSpaceOnUse" x1="0" y1="-797\.25" x2="3367\.43" y2="1728\.32"/.test(wmp) && /id="vs-wi-licht"/.test(wmp) && /\$\{WM_FADES\}<path class="mk-fill"/.test(wmp));
+ok('Studio, het portaal, /admin en het account: het woordmerk draagt zijn eigen fades (vs-wi-), in de maten van K5', woordmerkSvg('x').includes(`id="vs-wi-snede" gradientUnits="userSpaceOnUse" x1="0" y1="-712" x2="${WS.x2}" y2="${WS.y2}"`) && /id="vs-wi-licht"/.test(wmp) && /\$\{WM_FADES\}<path class="mk-fill"/.test(wmp));
 const studio = lees('src/styles/studio-hal.css'), admin = lees('public/admin.css'), account = lees('public/account.css'), portal = lees('public/portal.css');
 ok('… licht in de snede, op inkt blijft het licht (Studio on-ink, /admin donker, het account donker)',
   studio.includes('body.studio:not(.on-ink) .st-merk .mk-fill { fill: url(#vs-wi-snede); }') && admin.includes(':root:not([data-thema="donker"]) .mark .mk .mk-fill { fill: url(#vs-wi-snede); }')
@@ -74,12 +85,18 @@ ok('D8 · het vlagje vult zich met de snede (laadscherm en de laptopvideo)', /<p
 /* ── 3 · de favicons en de mail ── */
 console.log('\n3 · de favicons en de mail');
 const fav = lees('public/favicon.svg');
-ok('favicon.svg: wit op de snede (lijst 72, favicon b), van hoek tot hoek over de tegel', /<linearGradient id="snede" gradientUnits="userSpaceOnUse" x1="-3\.84" y1="5\.12" x2="67\.84" y2="58\.88">/.test(fav) && /<rect width="64" height="64" rx="16" ry="16" fill="url\(#snede\)"\/>/.test(fav) && /<path fill="#FBFCFF"/.test(fav));
+/* levering 89 (lijst 81, favicon c): een vierkante tegel met een veld (het omhulsel heeft korrel, de V niet; Lucas, 08:20:
+   "Favicon logo krijgt geen korrel alleen het omhulsel"), de V wit en precies V_D */
+ok('favicon.svg: vorm c, een vierkant met het veld (grof en fijn) en de witte V erop, zonder korrel op de V', /<rect width="64" height="64" fill="#25508B"\/>/.test(fav) && !/rx=/.test(fav)
+  && /<image class="grof"[^>]*href="data:image\/png;base64,/.test(fav) && /<image class="fijn"[^>]*href="data:image\/webp;base64,/.test(fav)
+  && /<path fill="#FBFCFF" transform="translate\(11\.4198 11\.5585\) scale\(0\.05698006\)" d="M 0\.0 16\.0 L 144\.25 266\.75 L 463\.25 813\.25/.test(fav) && fav.lastIndexOf('<path') > fav.lastIndexOf('<image'));
 const pix = async (f, x, y) => { const { data, info } = await sharp(path.join(ROOT, f)).ensureAlpha().raw().toBuffer({ resolveWithObject: true }); const i = (Math.round(y * (info.height - 1)) * info.width + Math.round(x * (info.width - 1))) * 4; return [data[i], data[i + 1], data[i + 2], data[i + 3]]; };
 const dichtbij = (a, h, d = 14) => rgb(h).every((v, i) => Math.abs(v - a[i]) <= d);
 {
-  const lb = await pix('public/favicon-512.png', 0.22, 0.12), rb = await pix('public/favicon-512.png', 0.88, 0.8), ap = await pix('public/apple-touch-icon.png', 0.03, 0.03), ar = await pix('public/apple-touch-icon.png', 0.97, 0.97);
-  ok('de favicons (16 – 512, apple-touch-icon): donker linksboven, het licht rechtsonder', dichtbij(lb, '#1E487F', 20) && dichtbij(rb, '#2B5CA0', 20) && dichtbij(ap, '#1A4279') && dichtbij(ar, '#2D61A8'), [lb, rb, ap, ar].map((p) => p.slice(0, 3).join(',')).join(' · '));
+  const hoek = await pix('public/favicon-512.png', 0, 0), lb = await pix('public/favicon-512.png', 0.22, 0.12), v = await pix('public/favicon-512.png', 0.5, 0.5), ap = await pix('public/apple-touch-icon.png', 0.03, 0.03), ar = await pix('public/apple-touch-icon.png', 0.97, 0.97);
+  ok('de favicons (16 – 512, apple-touch-icon): vierkant (de hoek is dicht), donker linksboven, de V wit', hoek[3] === 255 && lb[2] > lb[0] + 60 && lb[0] < 60 && dichtbij(v, '#FBFCFF', 8) && ap[2] > ap[0] + 60 && ar[3] === 255,
+    [hoek, lb, v, ap, ar].map((p) => p.join(',')).join(' · '));
+  ok('… alle maten van het pakket (16, 32, 48, 192, 512, ico, apple-touch-icon)', ['favicon-16.png', 'favicon-32.png', 'favicon-48.png', 'favicon-192.png', 'favicon-512.png', 'favicon.ico', 'apple-touch-icon.png'].every((f) => fs.existsSync(path.join(ROOT, 'public', f))));
 }
 const mail = lees('scripts/make-mail-assets.mjs');
 ok('de mail: het woordmerk op het witte plaatje in de snede, het streepje in de snede, het woordmerk in de voet loopt uit (nevel → mist)',
@@ -97,13 +114,16 @@ ok('de mail: het woordmerk op het witte plaatje in de snede, het streepje in de 
 /* ── 3b · elk ander logo (Lucas, 15:04: "Fix ook alle logo's in de map met de nieuwe looks") ── */
 console.log('\n3b · elk ander logo');
 {
-  const og = await pix('public/img/og-nl.png', 0.06, 0.115), ogR = await pix('public/img/og-nl.png', 0.165, 0.115);
+  const ogs = ['og-nl', 'og-en', 'og-voorpagina-nl', 'og-voorpagina-en', 'og-logo'];
+  const maten = await Promise.all(ogs.map(async (n) => { const f = path.join(ROOT, 'public/img', `${n}.jpg`); if (!fs.existsSync(f)) return null; const m = await sharp(f).metadata(); return [m.format, m.width, m.height, fs.statSync(f).size]; }));
   const tegel = [await pix('public/img/merk-tegel.webp', 0.02, 0.02), await pix('public/img/merk-tegel.webp', 0.98, 0.98)];
   const mark = await pix('public/img/logo-mark.webp', 0.5, 0.5);
-  ok('het deelplaatje: het woordmerk linksboven in de snede', [og, ogR].some((p) => p[2] > p[0] + 40) && !rgb('#0F1217').every((v, i) => Math.abs(v - og[i]) < 10), `${og} · ${ogR}`);
+  ok('de deelplaatjes (levering 89, op het raster): C1 voor elke pagina, C2b "Venster" voor de voorpagina, C3 voor de pagina\'s zonder kop; jpeg, 1200 × 630, hoogstens 300 kB',
+    maten.every((m) => m && m[0] === 'jpeg' && m[1] === 1200 && m[2] === 630 && m[3] <= 300 * 1024) && !fs.existsSync(path.join(ROOT, 'public/img/og-nl.png')) && !fs.existsSync(path.join(ROOT, 'public/img/og-en.png')), JSON.stringify(maten));
+  ok('… de pagina\'s wijzen ernaar: standaard og-<taal>.jpg, de voorpagina het venster, de 404 het logo', /const ogImage = ogEigen \?\? `\/img\/og-\$\{lang === 'nl' \? 'nl' : 'en'\}\.jpg`;/.test(lay) && /ogImage="\/img\/og-voorpagina-nl\.jpg"/.test(lees('src/pages/nl/index.astro')) && /ogImage="\/img\/og-voorpagina-en\.jpg"/.test(lees('src/pages/index.astro')) && /ogImage="\/img\/og-logo\.jpg"/.test(lees('src/pages/404.astro')));
   ok('de V-tegel (avatar): wit op de snede, donker linksboven en licht rechtsonder', dichtbij(tegel[0], '#1A4279', 16) && dichtbij(tegel[1], '#2D61A8', 16), tegel.join(' · '));
   ok('de oude ongebruikte logobeelden zijn het huidige logo geworden (logo-mark: wit met de V in de snede)', mark[2] > mark[0] + 40 || dichtbij(mark, '#FBFCFF', 6), String(mark));
-  ok('de fotogids en het deelplaatje: het woordmerk in de snede in hun script', /id="vs-fg-snede" gradientUnits="userSpaceOnUse" x1="0" y1="-797\.25" x2="3367\.43" y2="1728\.32"/.test(lees('scripts/lib/fotogids-html.mjs')) && /x1="0" y1="-797\.25" x2="3367\.43" y2="1728\.32"/.test(lees('scripts/make-og.mjs')));
+  ok('de fotogids: het tekstlogo K5 in de snede (snedeAttr uit woordmerk.js); het deelplaatje: K5 en de lockup uit woordmerk.js', /<linearGradient id="vs-fg-snede" \$\{snedeAttr\(\)\}>/.test(lees('scripts/lib/fotogids-html.mjs')) && /const \{ WOORDMERK, LOCKUP \} = await import\('\.\.\/src\/data\/woordmerk\.js'\);/.test(lees('scripts/make-og.mjs')));
   const fac = lees('src/lib/invoicePdf.js');
   ok('de factuur: het woordmerk als knipvlak met één axiaal verloop (ShadingType 2), langs de snede', /function svgSnede\(/.test(fac) && /ShadingType: 2/.test(fac) && (fac.match(/sheet\.svgSnede\(WOORDMERK_D/g) || []).length === 2 && !/sheet\.svg\(WOORDMERK_D/.test(fac));
 }
@@ -113,10 +133,11 @@ console.log('\n3b · elk ander logo');
 console.log('\n3c · het deelplaatje en de fotogids in de letters van de site');
 {
   const og = lees('scripts/make-og.mjs').replace(/\/\*[\s\S]*?\*\//g, '');
-  ok('het deelplaatje: VISUAILS Display, DM Sans en IBM Plex Mono uit public/fonts, geen Urbanist meer',
-    /public\/fonts\/visuails-display\/VISUAILSDisplay-Bold\.woff2/.test(og) && /public\/fonts\/dm-sans\/dm-sans-latin\.woff2/.test(og) && /public\/fonts\/ibm-plex-mono\/IBMPlexMono-600\.woff2/.test(og) && !/urbanist/i.test(og));
-  ok('  de kop zoals elke kop in hoofdletters op de site (-0,01 em, 0,92), het etiket als sectielabel, 40 px tussen kop en foto',
-    /text-transform: uppercase; letter-spacing: -\.01em;/.test(og) && /\/\.92 'VISUAILS Display'/.test(og) && /\.foot \{[^\n]*IBM Plex Mono[^\n]*letter-spacing: \.1em; text-transform: uppercase;/.test(og) && /NAAST = 40/.test(og));
+  /* levering 89: het deelplaatje op het raster (u = korte zijde / 12; kladblok/levering-89, 89/l82/raster.json) */
+  ok('het deelplaatje: de kop in VISUAILS Display uit public/fonts, geen Urbanist meer',
+    /letter\('visuails-display\/VISUAILSDisplay-Bold\.woff2'\)/.test(og) && !/urbanist/i.test(og));
+  ok('  op het raster: u = 630 / 12, de kop in hoofdletters (-0,01 em), regelafstand 1,5 × kap, de laatste basislijn op 11 u, geen fade',
+    /const W = 1200, H = 630, U = H \/ 12;/.test(og) && /letter-spacing: -\.01em;/.test(og) && /toUpperCase\(\)/.test(og) && /lh = 1\.5 \* cap/.test(og) && /11 \* U/.test(og) && !/mask-image|transparent\)/.test(og));
   const hl = lees('scripts/handleiding.mjs').replace(/\/\*[\s\S]*?\*\//g, '');
   ok('de fotogids: dezelfde drie letters uit public/fonts, geen Urbanist meer',
     ['VISUAILS Display', 'DM Sans', 'IBM Plex Mono'].every((f) => hl.includes(`['${f}', 'public/fonts/`)) && !/urbanist/i.test(hl));
@@ -219,9 +240,11 @@ try {
     const c1 = [await pixel(page, C, 0.14, 0.5), await pixel(page, C, 0.86, 0.5)];
     await page.hover(C); await page.waitForTimeout(800);
     const c2 = [await pixel(page, C, 0.14, 0.5), await pixel(page, C, 0.86, 0.5)];
-    ok('K1 · Bestellen: in rust diep links, het licht rechts; onder de muis schuift het licht naar links', c1.every(isBlauw) && c2.every(isBlauw) && lum(c1[1]) > lum(c1[0]) && lum(c2[0]) > lum(c2[1]), `${c1.join(' · ')} → ${c2.join(' · ')}`);
+    /* levering 89 (lijst 82, E3): een stukje snede met korrel, de gloed rechts achter de pijl; onder de muis wordt alleen
+       de grond donkerder (de tekst gemeten in tests/posterkleur-89-browser.test.mjs) */
+    ok('K1 · Bestellen (levering 89, E3): een stukje snede, de gloed rechts; onder de muis donkerder', c1.every(isBlauw) && c2.every(isBlauw) && lum(c1[1]) > lum(c1[0]) && lum(c2[0]) < lum(c1[0]) && lum(c2[1]) < lum(c1[1]), `${c1.join(' · ')} → ${c2.join(' · ')}`);
     const schaduw = await page.evaluate((c) => getComputedStyle(document.querySelector(c)).boxShadow, C);
-    ok('… zonder gloed eronder', schaduw === 'none', schaduw);
+    ok('… zonder gloed eronder (alleen een laag binnen de knop)', schaduw === 'none' || schaduw.split(/,(?![^(]*\))/).every((d) => d.includes('inset')), schaduw);
 
     /* D3: de focusrand */
     await page.mouse.move(5, 600);
@@ -240,7 +263,8 @@ try {
 
     /* D6: het inktblok */
     const proef = await page.evaluate(() => getComputedStyle(document.querySelector('.h-proef > .h-proef-woord')).backgroundImage);
-    ok('D6 · het inktblok uit de nacht: inkt, en naar de snede rechtsonder blauw diep', /linear-gradient\(126\.87deg, rgb\(15, 18, 23\) 0%, rgb\(15, 18, 23\) 38%, rgb\(23, 41, 69\) 72%, rgb\(26, 66, 121\) 100%\)/.test(proef), proef.slice(0, 120));
+    /* levering 89 (lijst 78 C2): het €1-blok is het veld B4 Nacht, een stukje nacht met korrel, het licht rechtsonder */
+    ok('D6 · het €1-blok (levering 89): het veld Nacht met korrel, het licht rechtsonder', /\/img\/stuk\/korrel-128\.webp/.test(proef) && /\/img\/stuk\/n-blok-\d\.webp/.test(proef), proef.slice(0, 160));
     const tekst = await page.evaluate(() => { const blok = document.querySelector('.h-proef > .h-proef-woord'); const br = blok.getBoundingClientRect(); return [...blok.querySelectorAll('p, h1, h2, span, a')].filter((e) => e.textContent.trim() && e.getBoundingClientRect().width).map((e) => { const g = document.createRange(); g.selectNodeContents(e); const r = g.getBoundingClientRect(); return { x: (r.right - br.left) / br.width, y: (r.bottom - br.top) / br.height, kleur: getComputedStyle(e).color }; }); });  /* de tekst zelf, niet zijn vak: sinds levering 87 loopt het vak van een korte zin tot de rand (h-1r) */
     /* het lichtste punt onder tekst: de rechteronderhoek van het verste tekstvak, op de fade */
     const t = Math.max(...tekst.filter((e) => /255, 255, 255/.test(e.kleur)).map((e) => { const b = 0.8 * e.x + 0.6 * e.y; return b / 1.4; }));
@@ -249,7 +273,9 @@ try {
     const wit86 = meng(kleurOp(t), [255, 255, 255], 0.86);
     /* levering 87: een korte zin staat nu op één regel (Lucas, 03:23) en loopt in het inktblok verder de fade in;
        de eis gaat van 10 : 1 naar AAA (7 : 1), ruim boven de huisregel van 4,5 */
-    ok('… de tekst staat waar het donker is: wit op 86 % haalt daar 7 : 1 of meer (AAA)', contrast(wit86, kleurOp(t)) >= 7, `${(t * 100).toFixed(0)} % van de fade · ${contrast(wit86, kleurOp(t)).toFixed(2)}`);
+    /* de tekst op het veld meet tests/posterkleur-89-browser.test.mjs op het slechtste beeldpunt (met de korrel); hier
+       blijft de rekensom op de fade als ondergrens, voor als het beeld er niet is */
+    ok('… de tekst staat waar het donker is: wit op 86 % haalt op de fade eronder 7 : 1 of meer (AAA)', contrast(wit86, kleurOp(t)) >= 7, `${(t * 100).toFixed(0)} % van de fade · ${contrast(wit86, kleurOp(t)).toFixed(2)}`);
     ok('… zonder fouten op de voorpagina', fouten.length === 0, fouten.join(' | '));
     await ctx.close();
   }
@@ -283,8 +309,10 @@ try {
   }
   {
     const { ctx, page } = await open('/nl/catalog/classic/');
-    const slot = await page.evaluate(() => { const s = document.querySelector('.h-lk-slot'); const r = s.querySelector('.h-acties'); return { bg: getComputedStyle(s).backgroundImage.slice(0, 30), kier: 'hKier' in r.dataset, svc: getComputedStyle(s.querySelector('.svcsw-a')).backgroundImage }; });
-    ok('D6 · het slot onderaan uit de nacht; K4 niet op het inktblok; de links daar wit', slot.bg.startsWith('linear-gradient(126.87deg') && !slot.kier && /255, 255, 255/.test(slot.svc), JSON.stringify(slot).slice(0, 220));
+    await page.evaluate(() => document.querySelector('.h-lk-slot').scrollIntoView()); await page.waitForTimeout(300);
+    const slot = await page.evaluate(() => { const s = document.querySelector('.h-lk-slot'); const r = s.querySelector('.h-acties'); return { bg: getComputedStyle(s).backgroundImage, kier: 'hKier' in r.dataset, svc: getComputedStyle(s.querySelector('.svcsw-a')).backgroundImage }; });
+    /* levering 89 (lijst 82, E2): het ene inktblok is een stukje nacht of snede met korrel (posterkleur.js) */
+    ok('D6 · het slot onderaan (levering 89, E2): een stukje nacht of snede met korrel; K4 niet op het inktblok; de links daar wit', /korrel-128\.webp/.test(slot.bg) && /\/img\/stuk\/[nt]-blok-\d\.webp/.test(slot.bg) && !slot.kier && /255, 255, 255/.test(slot.svc), JSON.stringify(slot).slice(0, 260));
     const K = '.h-lk-slot .h-knop-inkt';
     await page.locator(K).scrollIntoViewIfNeeded(); await page.mouse.move(5, 5); await page.waitForTimeout(400);
     const a = await pixel(page, K, 0.15, 0.2);
@@ -317,7 +345,8 @@ try {
   {
     const { ctx, page } = await open('/nl/lifestyle/');
     const d4 = await page.evaluate(() => { const i = document.querySelector('.h-lijntje i'); return i ? getComputedStyle(i).backgroundImage : 'geen'; });
-    ok('D4 · het balkje met de schuine kop: van blauw diep naar het licht', /linear-gradient\(90deg, rgb\(26, 66, 121\) 0%, rgb\(37, 80, 139\) 60%, rgb\(45, 97, 168\) 100%\)/.test(d4), d4.slice(0, 100));
+    /* levering 89 (lijst 82, E6): het balkje legt een vaste poster bloot, een stukje snede */
+    ok('D4 · het balkje met de schuine kop (levering 89, E6): een stukje snede dat vast ligt', /\/img\/stuk\/t-knop-\d\.webp/.test(d4), d4.slice(0, 100));
     await ctx.close();
   }
   {

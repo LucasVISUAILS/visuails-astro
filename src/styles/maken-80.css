@@ -30,7 +30,10 @@
 .m8-beeld img { display: block; height: calc(var(--m8-h) * var(--s, 1)); width: auto; max-width: 100%; object-fit: contain; object-position: 50% 100%; }
 .m8 .m8-naam { margin-top: 26px; display: inline-flex; align-items: center; gap: 8px; font: 450 20px/1.2 var(--h-letter); color: var(--h-inkt); }
 .m8-pijl { display: inline-flex; font-size: 16px; }
-.m8 .m8-pijl .ik-schacht, .m8 .m8-pijl .ik-kop { transition: translate .16s steps(2, end); }
+.m8 .m8-pijl .ik-schacht, .m8 .m8-pijl .ik-kop { transition: translate .18s cubic-bezier(.25, 1, .5, 1); }
+/* levering 89 (lijst 81 D4: goed): de magneet trekt de kop weg, rustig en dan snel (ease-in, t³), de schacht 40 ms later */
+.m8 .m8-link:hover .m8-pijl .ik-kop { transition: translate .22s cubic-bezier(.55, .06, .68, .19); }
+.m8 .m8-link:hover .m8-pijl .ik-schacht { transition: translate .22s cubic-bezier(.55, .06, .68, .19) 40ms; }
 .m8-pijl svg { width: 1em; height: 1em; }
 .m8 .m8-prijs { margin-top: 6px; font: 370 15px/1.4 var(--h-letter); color: var(--h-grijs, #636974); }
 .m8 .m8-link:hover .m8-naam { color: var(--h-blauw, #25508B); }
@@ -75,11 +78,21 @@
   animation-delay: calc(var(--m8-begin, 0ms) + var(--m8-na, 0ms));
 }
 .m8.m8-open .m8-dienst { --m8-na: calc(40ms + var(--i, 0) * 40ms); }
+/* ANTI-GRAVITY (levering 89, lijst 81 D1: goed). De producten komen gewichtloos aan, elk op zijn eigen manier: het
+   lichtste eerst (de sokken), het zwaarste het laatst (de jeans), elk met een kleine helling die het naar zijn
+   zwaartepunt rechttrekt (de hoodie −1,4°, de jeans 0,9°, de sokken −1,9°), om zijn voet (50 % 100 %). Ze komen tot
+   stilstand zonder na te veren (ease-out-quart, 0,9 s). De naam en de prijs komen mee met de rij, zonder helling. */
+.m8.m8-open .m8-dienst { animation-duration: .9s; animation-timing-function: cubic-bezier(.25, 1, .5, 1); }
+.m8.m8-open .m8-dienst:nth-child(1) { --m8-na: 90ms; --ag-r: -1.4deg; }
+.m8.m8-open .m8-dienst:nth-child(2) { --m8-na: 150ms; --ag-r: .9deg; }
+.m8.m8-open .m8-dienst:nth-child(3) { --m8-na: 40ms; --ag-r: -1.9deg; }
+.m8.m8-open .m8-beeld img { transform-origin: 50% 100%; animation: m8-hel .9s cubic-bezier(.25, 1, .5, 1) backwards; animation-delay: calc(var(--m8-begin, 0ms) + var(--m8-na, 0ms)); }
+@keyframes m8-hel { from { transform: rotate(var(--ag-r, 0deg)); } to { transform: none; } }
 .m8.m8-open :is(.m8-ook, .m8-regel) { --m8-na: 160ms; }
 @keyframes m8-op { from { opacity: 0; transform: translateY(clamp(20px, 2.2vw, 36px)); } 60% { opacity: 1; } to { opacity: 1; transform: none; } }
 
 @media (prefers-reduced-motion: reduce) {
   .m8 .m8-pijl .ik-schacht, .m8 .m8-pijl .ik-kop { transition: none; }
   .m8.m8-dicht :is(.m8-kopgroep, .m8-dienst, .m8-ook, .m8-regel) { opacity: 1; }
-  .m8.m8-open :is(.m8-kopgroep, .m8-dienst, .m8-ook, .m8-regel) { animation: none; }
+  .m8.m8-open :is(.m8-kopgroep, .m8-dienst, .m8-ook, .m8-regel), .m8.m8-open .m8-beeld img { animation: none; }
 }

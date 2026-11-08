@@ -9,9 +9,15 @@
    horen bij het formulier onderaan de bestelling (Bestelling.astro). */
 import { standKlasse } from '../../data/status.js';
 import NieuwTabblad from '../NieuwTabblad.astro';
+import { rijUniek, pkKlasse } from '../../data/stukken.js';
 /* `lang` (8 oktober 2026, o26): alleen voor de zin "opent in een nieuw tabblad". */
 /* `proefEenKeer`: Product.astro zet de proefzin dan één keer onder de beelden. */
-const { v, orderId, lang = 'en', proefEenKeer = false } = Astro.props;
+const { v, orderId, lang = 'en', proefEenKeer = false, nr = 0 } = Astro.props;
+/* DE LEGE FOTOPLEK (levering 89, lijst 82 E1): zolang het beeld laadt, een stukje poster eronder in plaats van
+   grijs (posterkleur.css; zonder script, dus het ligt er altijd onder, 1 px binnen de rand zodat er aan de ronde
+   hoek niets doorschijnt). Alleen onder een jpg: die kan niet doorzichtig zijn, een png of webp wel. `nr` is de
+   plek in de rij (Product.astro en Bestelling.astro): buren krijgen nooit hetzelfde stukje. */
+const fpNaam = v.viewable && /\.(jpe?g)(\?|$)/i.test(String(v.file || v.href || '')) ? rijUniek('fp', String(orderId), nr + 1)[nr] : '';
 /* HET VINKJE DAT GOEDKEURT (levering 57; afvinklijst 34, b-vink = doen). Het vinkje uit
    het kit in drie delen: het korte been, het lange been en het vlagje. Na "Goedkeuren"
    komt de klant terug op #f<id> (account.js); alleen dat beeld is dan :target, en daar
@@ -22,7 +28,7 @@ const VINK3 = '<svg class="st-vink3" viewBox="0 0 24 24" aria-hidden="true" focu
 <li class="st-beeld" id={`f${v.id}`}>
   {v.gone
     ? <div class="st-beeld-media is-weg"><span>{v.expiredText}</span></div>
-    : <a class={`st-beeld-media${v.viewable ? '' : ' is-bestand'}`} href={v.href} target="_blank" rel="noopener">
+    : <a class:list={['st-beeld-media', !v.viewable && 'is-bestand', pkKlasse(fpNaam), fpNaam && 'pk-fp-onder']} href={v.href} target="_blank" rel="noopener">
         {v.viewable
           ? <img src={v.href} alt={v.caption} loading="lazy" decoding="async" />
           : <span class="st-beeld-ext">{v.ext}</span>}

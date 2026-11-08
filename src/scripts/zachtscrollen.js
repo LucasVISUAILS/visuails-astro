@@ -13,9 +13,9 @@
    - niet in iets dat zelf scrolt (een lade, een lijst), niet met Ctrl (zoomen), niet bij minder beweging.
    Uitzetten: <html data-geen-zacht> of deze import weghalen (Layout.astro).
 
-   De opening (HalOpening80.astro) vangt het wiel sinds levering 87 niet meer af: de laptop staat stil (sticky)
-   en het scrollen zelf speelt de video af, dus ook daar scrollt dit script gewoon zacht mee. Vangt een ander
-   script een wielgebeurtenis af ("defaultPrevented"), dan doet dit script niets.
+   De opening (HalOpening80.astro) vangt het wiel sinds levering 88c weer af zolang de laptop speelt (één scroll
+   speelt alles): hij luistert vóór dit script (capture) en zet "defaultPrevented"; dan doet dit script niets. Bij het
+   starten stopt hij een zachte scroll die nog loopt met window.__visZachtStop().
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 const NAIJL = 0.18;
@@ -87,6 +87,8 @@ function opWiel(e) {
 
 if (typeof window !== 'undefined' && !window.__visZacht) {
   window.__visZacht = true;
+  /* levering 88c: de opening zet de pagina vast als de laptop speelt; een zachte scroll die dan nog loopt, stopt hier */
+  window.__visZachtStop = stop;
   const minder = matchMedia('(prefers-reduced-motion: reduce)');
   const aan = () => !minder.matches;
   if (aan()) addEventListener('wheel', opWiel, { passive: false });

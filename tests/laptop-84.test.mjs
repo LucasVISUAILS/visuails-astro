@@ -48,7 +48,8 @@ ok('drie mp4-video\'s (1280, 1920, 2400) met twee banden (de kleur en de dekking
 ok('  nergens hoger dan 2160 en breder dan 4096 (wat videochips zelf uitpakken)', maten.every(({ maat }) => maat && maat[1] <= 2160 && maat[0] <= 4096));
 ok('  en de webm als reserve (1280 en 1920)', [1280, 1920].every((b) => fs.existsSync(path.join(ROOT, MAP, `laptop-84-${b}.webm`))));
 const opening = lees('src/components/HalOpening80.astro');
-ok('de opening gebruikt de nieuwe video (laptop-84) en niet meer de oude met drie banden', /laptop-84-\$\{b\}\.\$\{ext\}/.test(opening) && !/laptop-80-/.test(opening) && /const VIDEO_MATEN = \[1280, 1920, 2400\];/.test(opening));
+/* levering 88c: met de omgekeerde video ernaast (laptop-84-<b>-terug) */
+ok('de opening gebruikt de nieuwe video (laptop-84) en niet meer de oude met drie banden', /laptop-84-\$\{b\}(\$\{isTerug \? '-terug' : ''\})?\.\$\{ext\}/.test(opening) && !/laptop-80-/.test(opening) && /const VIDEO_MATEN = \[1280, 1920, 2400\];/.test(opening));
 ok('scripts/laptop-video.mjs maakt twee banden', /vstack=inputs=2/.test(lees('scripts/laptop-video.mjs')) && !/vstack=inputs=3/.test(lees('scripts/laptop-video.mjs')));
 
 /* ── 2 · de hoeken ── */
@@ -101,10 +102,10 @@ ok('  het scherm waar de video niet dekt, binnen de vierhoek', /float sa = s\.a 
 ok('  de winkel en de telefoonfoto met kleinere versies (mipmaps, een niveau fijner) en anisotroop filteren', /generateMipmap/.test(doek) && /LINEAR_MIPMAP_LINEAR/.test(doek) && /EXT_texture_filter_anisotropic/.test(doek) && /c\.zw, -1\.\)/.test(doek));
 ok('  de maat van het canvas pas lezen als die verandert (ResizeObserver)', /new ResizeObserver/.test(doek));
 /* levering 85: de video speelt sindsdien in een golf in plaats van overal 1,8 × (tests/opening-85.test.mjs) */
-/* levering 87: geen glijden meer; het scrollen speelt de video af (sinds levering 88: tests/opening-88-browser.test.mjs) */
-ok('de opening: het scrollen speelt de video af, geen glijden meer', /const DEEL = \{ video: 0\.625/.test(opening) && !/const GLIJ =/.test(opening));
+/* levering 87: geen glijden meer; levering 88c: één scroll speelt de video op zijn eigen klok (tests/opening-89-browser.test.mjs) */
+ok('de opening: één scroll speelt de video op een snelheid per beeld, geen glijden', /const TEMPO = \{ k: 1\.4, min: 1\.4, max: 3\.0, glad: 4 \};/.test(opening) && !/const GLIJ =/.test(opening));
 ok('het canvas begint onder de lege bovenkant, en het doek rekent de hoeken in het hele beeld', /const DOEK = `top:/.test(opening) && /style=\{DOEK\}/.test(opening) && /uBoven \+ w\.y \* \(1\. - uBoven\)/.test(doek));
-ok('het doek en de beelden staan klaar vóór de tweede scroll, en het getekende beeld is het getoonde (mediaTime)', /function doekKlaar\(\)/.test(opening) && /m \? m\.mediaTime : video\.currentTime/.test(opening));
+ok('het doek en de beelden staan klaar vóór de tweede scroll, en het getekende beeld is het getoonde (mediaTime)', /function doekKlaar\(\)/.test(opening) && /opBeeld\(sp, m\.mediaTime\)/.test(opening));
 
 /* ── 4 · in de browser ── */
 console.log('\n4 · in de browser');

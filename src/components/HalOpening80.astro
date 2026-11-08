@@ -16,15 +16,18 @@
  * laptop sectie sticky is en als je door scrollt je de animatie van de laptop krijgt en je het motion blur effect krijgt
  * tot de sectie wit is en de services komen. Het motion blur effect moet overigens kort en subtiel zijn."
  *
+ * LEVERING 88c (5 november 2026). Lucas: "De laptop op de website lagged nu nog meer dan eerst en hij speelt niet zelf af,
+ * je moet nu zelf scrollen om er langs te gaan terwijl ik wil dat hij afspeelt bij 1 scroll omlaag."
+ *
  * WAT ER GEBEURT (computer met een muis of trackpad, ≥ 1100 px, met beweging; html.o8-aan)
  *   laden     de titel, de zin, de knoppen en de feiten in het midden tussen de balk en de klep, iets lager dan het
  *             midden; onderaan steekt de klep het beeld in. Niets beweegt.
- *   scrollen  gewoon, tot het podium onder de balk staat. Dan blijft het staan (sticky) en speelt het scrollen de video:
- *             elke centimeter evenveel beweging (loop in laptopVideo.json), terug scrollen speelt hem terug. Als de
- *             laptop links en de telefoon rechts het beeld uit gaan, trekken ze een kort spoor (de bewegingsonscherpte
- *             in laptopdoek.js, naar hoe snel ze schuiven en hoe snel je scrolt). Tegelijk veegt het wit langs de snede
- *             (53°) het blauwe uur weg, met een zachte rand die breder wordt als je sneller scrolt. Als alles wit is,
- *             schuift Wat we maken over het witte podium omhoog (maken-80.css) en scrolt de pagina daarna gewoon.
+ *   scrollen  gewoon, tot het podium onder de balk staat (sticky). Dan speelt één scroll omlaag alles op zijn eigen klok:
+ *             de video van beeld 0 tot 86 (± 2,2 s, met een snelheid per beeld), de metro die het blauwe uur in banen
+ *             naar beneden laat wegvallen en de laptop meeneemt (0,8 s), dan wit, en dan komt Wat we maken omhoog. Zolang
+ *             hij speelt staat de pagina vast; nog een scroll omlaag laat hem inhalen, omhoog laat hem terugspelen.
+ *   terug     één scroll omhoog bij Wat we maken speelt alles terug (een omgekeerde video), tot de laptop weer open staat
+ *             onder de balk. Daarna scrol je gewoon verder omhoog.
  *   de strepen onder de laptop: de winkel, het bericht, de clip. De streep die loopt is de tijd; klikken of de pijltjes
  *             wisselen. Pas na de eerste beweging van de bezoeker lopen ze.
  *
@@ -50,7 +53,7 @@ interface Props {
   /* lijst 64, knoppen: "een ingelogde klant [ziet] andere knoppen en soms ook tekst". Wie al bestelde
      krijgt in plaats van de proef de link naar Studio (data-vis-uit / data-vis-klant-in, interactions.js). */
   klantLink?: { label: string; href: string };
-  /* lijst 76: welke metro (n1 zakken, n2 strepen, n3 lamellen; leeg = de veeg van levering 87). Lucas koos n3. */
+  /* lijst 76: welke metro (n1 zakken, n2 strepen, n3 lamellen). Lucas koos n3. Sinds 88c is er geen veeg meer zonder metro. */
   metro?: string;
 }
 const { lang, kop, zin, feiten = [], knop, link, klantLink, metro = 'n3' } = Astro.props as Props;
@@ -93,8 +96,9 @@ const VIDEO_MATEN = [1280, 1920, 2400];
 /* het teken achter de video: verandert de video, dan haalt elke browser hem opnieuw (public/_headers laat
    /img/* zeven dagen staan; zoals openingVersie voor de beelden) */
 const vh = createHash('sha1');
-for (const b of VIDEO_MATEN) for (const ext of ['mp4', 'webm']) {
-  const f = path.join(process.cwd(), 'public', 'img', 'hal', 'laptop-video', `laptop-84-${b}.${ext}`);
+/* levering 88c: ook de omgekeerde video's (laptop-84-<b>-terug, scripts/laptop-video-terug.mjs) */
+for (const b of VIDEO_MATEN) for (const ext of ['mp4', 'webm']) for (const k of ['', '-terug']) {
+  const f = path.join(process.cwd(), 'public', 'img', 'hal', 'laptop-video', `laptop-84-${b}${k}.${ext}`);
   if (existsSync(f)) vh.update(readFileSync(f));
 }
 const VIDEO_V = vh.digest('hex').slice(0, 10);
@@ -124,8 +128,6 @@ const VIDEO_V = vh.digest('hex').slice(0, 10);
   <div class="o8-baan" data-o8-baan>
   <div class="o8-podium" data-o8-podium>
     <span class="o8-vlak" aria-hidden="true"></span>
-    {/* het wit dat langs de snede (53°) het blauwe uur wegveegt aan het eind van de animatie */}
-    <span class="o8-veeg" data-o8-veeg aria-hidden="true"></span>
     {/* lijst 76: het blauwe uur dat naar beneden wegrijdt, de metro (src/scripts/metro.js); alleen tijdens de rit zichtbaar */}
     <canvas class="o8-metro" data-o8-metro aria-hidden="true" hidden></canvas>
     <div class="o8-foto" data-o8-foto>
@@ -179,52 +181,45 @@ const VIDEO_V = vh.digest('hex').slice(0, 10);
   type Stand = { set: string; duur: number; lap: string; tel: string };
   type Q = number[][] | null;
   type Data = { standen: Stand[]; sets: Record<string, string>; video: { maten: number[]; fps: number; beelden: number; b: number; h: number; boven: number; stil: [Q, Q]; schermen: [Q, Q][]; vaart: number[]; loop: number[] } };
+  type Speler = { v: HTMLVideoElement; kan: boolean; blob: string; terug: boolean };
 
-  /* ── DE BAAN (levering 87) ──────────────────────────────────────────────────────────────────────────────────────
-     Het podium staat stil (sticky) zolang je door de baan scrolt; s is hoe ver, R de lengte (opening-80.css, --o8-R).
-     In breukdelen van R:
-       0     – .625  de video, beeld voor beeld (de loop: elke centimeter evenveel beweging)
-       .44   – .66   het wit veegt langs de snede het blauwe uur weg, terwijl de laptop en de telefoon het beeld uit gaan
-       .66   – 1     alles wit; vanaf .656 schuift Wat we maken over het podium omhoog (--o8-O in opening-80.css)
-     Terug scrollen doet alles terug. */
-  const DEEL = { video: 0.625, veegVan: 0.44, veegTot: 0.66 };
-  /* de video loopt naar het beeld dat bij de scroll hoort: vooruit speelt hij (zo snel dat hij in ± 0,16 s bij is),
-     achteruit of een grote sprong zoekt hij (de video heeft elke 6 beelden een sleutelbeeld, scripts/laptop-video.mjs) */
-  const BIJ = 0.16, SPRONG = 14, MAX_SNEL = 8;
-  /* levering 87, na de controle: een paar beelden vooruit zoeken in plaats van spelen (spelen op hoge snelheid schiet
-     voorbij het doel, want het beeld dat hem moet stoppen komt pas een tik later) */
-  const DICHTBIJ = 3;
-  /* de bewegingsonscherpte: de helft van de afstand die het beeld aflegt sinds het vorige getekende beeld, hoogstens 3 %
-     van de breedte (Lucas: "kort en subtiel ... niet te heftig") */
+  /* ── ÉÉN SCROLL (levering 88c, 5 november 2026) ─────────────────────────────────────────────────────────────────
+     Lucas, 07:08: "De laptop op de website lagged nu nog meer dan eerst en hij speelt niet zelf af, je moet nu zelf scrollen
+     om er langs te gaan terwijl ik wil dat hij afspeelt bij 1 scroll omlaag."
+     Je scrolt gewoon naar de laptop. Staat het podium onder de balk (sticky), dan speelt één scroll omlaag alles op zijn eigen
+     klok: de video van beeld 0 tot 86, dan de metro die de laptop meeneemt, dan wit, dan komt Wat we maken omhoog. Zolang hij
+     speelt, staat de pagina vast: het wiel, de toetsen en een vinger scrollen dan niet. Nog een scroll omlaag laat hem inhalen
+     (INHAAL); een scroll omhoog laat hem terugspelen. Eén scroll omhoog bij Wat we maken speelt alles terug, tot de laptop
+     weer open staat.
+     WAAROM HET NIET MEER HAPERT. Het scrollen stuurde de video: elke wieltik zocht hij of versnelde hij (tot 8 ×), en een
+     browser kan alleen vanaf een sleutelbeeld uitpakken. Nu speelt de video gewoon, met een snelheid per beeld (TEMPO), en
+     zoekt hij nooit. Terug speelt een omgekeerde video (laptop-84-<b>-terug, scripts/laptop-video-terug.mjs), ook gewoon
+     vooruit. En in de rit tekent het doek op 0,6 van de punten (RIT_SCHAAL in laptopdoek.js): sinds 88b tekende het daar elk
+     schermbeeld op volle maat met negen punten onscherpte.
+     In de baan (opening-80.css, --o8-R) staat het podium stil; de baan houdt de plek waar Wat we maken ligt. */
+  const METRO_BEELD = 86, METRO_MEE = 1.125;
+  /* de video op de klok: van beeld i naar i + 1 met k × de gemiddelde beweging per beeld (de tabel loop: elke beeldstap
+     evenveel beweging), tussen min en max × de eigen snelheid, gladgestreken over ± glad beelden. Van 0 tot 86 in ± 2,2 s. */
+  const TEMPO = { k: 1.4, min: 1.4, max: 3.0, glad: 4 };
+  /* nog een scroll in dezelfde richting terwijl hij speelt: zo veel sneller */
+  const INHAAL = 1.6;
+  /* zo ver (px) moet je in de baan zijn voor hij start; wat de schuifbalk verder sleept dan SLEEP, maakt hem meteen af */
+  const DREMPEL = 8, SLEEP = 400;
+  /* terug: Wat we maken gaat eerst weg (ms), en zonder omgekeerde video vervaagt de laptop in VERVAAG ms naar de foto */
+  const MAKEN_WEG = 180, VERVAAG = 350;
+  /* een nieuw gebaar: wielgebeurtenissen die verder uit elkaar liggen dan dit (ms); de rest is de naloop van hetzelfde gebaar */
+  const GEBAAR = 160;
+  /* de bewegingsonscherpte terwijl de video speelt: de helft van de afstand die het beeld aflegt sinds het vorige getekende
+     beeld, hoogstens 3 % van de breedte (Lucas: "kort en subtiel ... niet te heftig") */
   const VEEG_DEEL = 0.5;
-  /* de rand van het wit: 56 px, en breder als je sneller scrolt (hoogstens 56 + 200 px) */
-  const RAND = 56, RAND_EXTRA = 200;
-  /* ── DE METRO (lijst 76) ────────────────────────────────────────────────────────────────────────────────────────
-     Lucas: "een soort metro gevoel met de motion blur … alsof het blauwe weg racet smooth naar het witte waarna de service
-     omhoog komen." En om 12:13: "naar beneden … niet van de zijkant." Lijst 76: N3 (lamellen), vanzelf. Om 16:05: "De metro
-     animatie mag ongeveer tegelijkertijd met de laptop verdwijnen. Misschien iets later als dat beter oogt."
-     Met de metro aan speelt de scroll de video tot beeld METRO_BEELD; daar vertrekt het blauw (metro.js) en neemt het de
-     laptop mee. De rit loopt op zijn eigen klok (een metro trekt op zoals hij optrekt, niet zoals jij scrolt) en terug
-     scrollen laat hem terugrijden. Pas als alles wit is komt Wat we maken omhoog. Scrol je ver voor de rit uit, dan haalt
-     hij in. */
-  /* de video loopt over METRO_VIDEO van de baan. Het blauw vertrekt bij beeld METRO_BEELD: de telefoon is weg, van de laptop
-     staat nog een derde in beeld (tot 522 px op 1440, gemeten in de video). De laptop gaat dan verder op de klok van de rit,
-     alsof beeld 86 → 110 over METRO_MEE van de rit speelt (0,9 s, iets sneller dan het tempo van de video). De golf van de
-     banen (metro.js, n3: 0,8 s, de laatste baan begint halverwege) loopt zo met de laptop mee: de laptop gaat links het beeld
-     uit (beeld 102, driekwart van de rit) terwijl de laatste baan valt (lijst 77: "in een golf mee … smoother met elkaar"). */
-  const METRO_VIDEO = 0.6, METRO_BEELD = 86, METRO_MEE = 1.125, METRO_TERUG = 24, METRO_INHALEN = 0.25;
-  /* LEVERING 88b (Lucas, 4 november: "In de video lagged de laptop een beetje"). Twee oorzaken, allebei gemeten:
-     1 · de scroll en de rit gaven de video elk een eigen doel (4 beelden verschil), dus stopte, zocht en speelde hij om
-         beurten, en aan het eind sloeg hij beeld 100 – 103 over (de laptop sprong het beeld uit);
-     2 · de video heeft 24 beelden per seconde en het blauw elk schermbeeld: naast elkaar schokt de laptop.
-     Nu houdt de video tijdens de rit beeld 86 vast en schuift het doek de laptop zelf (laptopdoek.js), elk schermbeeld, op
-     de klok van de rit, met de sluiter van de banen. Vanaf beeld 76 schuift de laptop in de video alleen nog naar links,
-     zonder van vorm te veranderen: 38,0 beeldpunten per beeld op 1920 (rechte lijn door beeld 86 – 104, hoogstens 5
-     beeldpunten ernaast); de rand van de telefoon rechts 12,5 per beeld naar rechts (op elke breedte buiten beeld). */
+  /* LEVERING 88b: tijdens de rit houdt de video beeld 86 vast en schuift het doek de laptop zelf, elk schermbeeld. Vanaf beeld
+     76 schuift de laptop in de video alleen nog naar links: 38,0 beeldpunten per beeld op 1920 (rechte lijn door beeld 86 – 104,
+     hoogstens 5 ernaast); de rand van de telefoon 12,5 per beeld naar rechts. */
   const SCHUIF_LAPTOP = 38.0 / 1920, SCHUIF_TELEFOON = 12.5 / 1920;
-  /* liep de video bij het vertrek nog achter (hij haalt de scroll in ± 0,16 s in), dan begint de laptop waar hij stond en
-     loopt dat verschil in ± 0,4 s weg: geen sprong vooruit bij het vertrek, en geen sprong terug als de rit terug is */
+  /* stond de video bij het vertrek een paar beelden voor of achter op 86, dan begint de laptop waar hij stond en loopt dat
+     verschil in ± 0,4 s weg: geen sprong bij het vertrek */
   const SCHUIF_INLOOP = 400;
+  const TOETS_OMLAAG = new Set(['ArrowDown', 'PageDown', 'End', ' ', 'Spacebar']), TOETS_OMHOOG = new Set(['ArrowUp', 'PageUp', 'Home']);
 
   let ruim: (() => void) | null = null;
 
@@ -237,17 +232,18 @@ const VIDEO_V = vh.digest('hex').slice(0, 10);
     const $ = <T extends Element = HTMLElement>(s: string) => o8.querySelector<T>(s)!;
     const html = document.documentElement;
     const data = JSON.parse($('[data-o8-data]').textContent || '{}') as Data;
-    const baan = $('[data-o8-baan]'), podium = $('[data-o8-podium]'), foto = $('[data-o8-foto]'), veeg = $('[data-o8-veeg]');
+    const baan = $('[data-o8-baan]'), podium = $('[data-o8-podium]'), foto = $('[data-o8-foto]');
     const lap = $('[data-o8-lap]'), fon = $('[data-o8-fon]');
     const doek = $<HTMLCanvasElement>('[data-o8-doek]'), laden = $('[data-o8-laden]'), vul = $<SVGRectElement>('[data-o8-vul]');
     const metroDoek = $<HTMLCanvasElement>('[data-o8-metro]');
-    const soort = (o8.dataset.metro || '').toLowerCase();
-    let metroAan = /^n[123]$/.test(soort);
-    o8.classList.toggle('o8-metro-aan', metroAan);
-    /* inloop (levering 88b): hoeveel beelden de laptop bij het vertrek achter liep (≤ 0), loopt weg in SCHUIF_INLOOP */
-    const rit = { u: 0, doel: 0, vorig: 0, raf: 0, tempo: 1, inloop: 0 };
+    const soort = /^n[123]$/.test((o8.dataset.metro || '').toLowerCase()) ? (o8.dataset.metro || '').toLowerCase() : 'n3';
+    o8.classList.add('o8-metro-aan');
+    /* van: het beeld waar de laptop bij het vertrek stond (≥ 86; liep de video door, dan rijdt hij vanaf daar) */
+    const rit = { u: 0, doel: 0, vorig: 0, raf: 0, tempo: 1, inloop: 0, van: METRO_BEELD };
     let metro: ReturnType<typeof maakMetro> = null;
     const klok = () => ((window as any).__o8Klok ? (window as any).__o8Klok() : performance.now());
+    /* de film (kladblok/levering-88/film89.cjs) zet een eigen klok: dan zoekt de video per filmbeeld in plaats van te spelen */
+    const film = () => !!(window as any).__o8Klok;
     const mq = matchMedia('(prefers-reduced-motion: reduce)');
     let stil = mq.matches;
 
@@ -343,34 +339,34 @@ const VIDEO_V = vh.digest('hex').slice(0, 10);
     const huidigeBeelden = (): { lap?: HTMLImageElement; fon?: HTMLImageElement } =>
       (window as any).__o8Beelden ? (window as any).__o8Beelden() : { lap: lap.querySelector('img') || undefined, fon: fon.querySelector('img') || undefined };
 
-    /* ── de video en het doek ── */
-    let aan = false, video: HTMLVideoElement | null = null, tekenaar: ReturnType<typeof maakDoek> = null, kanSpelen = false, rvfc = false, zoekt = false, blobUrl = '';
+    /* ── de video's (heen en terug) en het doek ── */
+    let aan = false, heen: Speler | null = null, terug: Speler | null = null, tekenaar: ReturnType<typeof maakDoek> = null;
     /* kapot: geen WebGL of de video laadt niet. Dan geen baan en geen effect (de opening staat stil, zoals op de
        telefoon), en het vlagje gaat weg. */
-    let kapot = false, opgeruimd = false;
+    let kapot = false, opgeruimd = false, zoekTel = 0;
     const binnenhalen = new AbortController();
     const kanHet = () => window.innerWidth >= 1100 && matchMedia('(pointer: fine)').matches && !stil && !kapot;
     function opgeven() { if (kapot) return; kapot = true; laden.hidden = true; meet(); }
-    function maakVideo() {
-      if (video) return video;
+    function maakSpeler(isTerug: boolean): Speler {
       /* zo breed als de foto echt staat (120,5 % van het scherm), hoogstens 2400 */
       const d = Math.min(window.devicePixelRatio || 1, 2), nodig = (foto.getBoundingClientRect().width || window.innerWidth * 1.205) * d;
       let b = data.video.maten.find((m) => m >= nodig * 0.9) ?? data.video.maten[data.video.maten.length - 1];
-      video = document.createElement('video');
+      const v = document.createElement('video');
       /* H.264 (mp4) speelt in Chrome, Edge, Firefox en Safari; alleen een browser zonder H.264 (Chromium
          zonder de gepatenteerde codecs) krijgt de VP9-reserve (webm, tot 1920 breed) */
-      const mp4 = !!video.canPlayType('video/mp4; codecs="avc1.640028"');
+      const mp4 = !!v.canPlayType('video/mp4; codecs="avc1.640028"');
       const ext = mp4 ? 'mp4' : 'webm';
       if (!mp4) b = Math.min(b, 1920);
-      video.muted = true; video.playsInline = true; video.preload = 'auto'; video.crossOrigin = 'anonymous';
-      video.setAttribute('muted', ''); video.setAttribute('playsinline', '');
-      const url = `/img/hal/laptop-video/laptop-84-${b}.${ext}?v=${o8.dataset.videoV || ''}`;
-      video.addEventListener('canplaythrough', () => { kanSpelen = true; laden.hidden = true; stuur(); }, { once: true });
-      video.addEventListener('loadeddata', () => { if (video!.readyState >= 2) { kanSpelen = true; laden.hidden = true; stuur(); } }, { once: true });
-      /* in één keer binnenhalen en vanuit het geheugen spelen (een blob): zo kan de browser altijd terug zoeken, ook als
-         de server geen bytebereiken geeft (de statische bestanden van een Cloudflare Worker geven die niet). Het vlagje
-         vult met wat er binnen is. Lukt dat niet, dan gewoon het adres. */
-      const v = video;
+      v.muted = true; v.playsInline = true; v.preload = 'auto'; v.crossOrigin = 'anonymous';
+      v.setAttribute('muted', ''); v.setAttribute('playsinline', '');
+      const sp: Speler = { v, kan: false, blob: '', terug: isTerug };
+      const url = `/img/hal/laptop-video/laptop-84-${b}${isTerug ? '-terug' : ''}.${ext}?v=${o8.dataset.videoV || ''}`;
+      const kan = () => { if (sp.kan) return; sp.kan = true; if (!isTerug) laden.hidden = true; verder(); };
+      v.addEventListener('canplaythrough', kan, { once: true });
+      v.addEventListener('loadeddata', () => { if (v.readyState >= 2) kan(); }, { once: true });
+      /* in één keer binnenhalen en vanuit het geheugen spelen (een blob): de statische bestanden van een Cloudflare Worker
+         geven geen bytebereiken, en zonder die kan een browser niet terugzoeken. Het vlagje vult met wat er binnen is (alleen
+         bij de heenweg). Lukt dat niet, dan gewoon het adres. */
       fetch(url, { signal: binnenhalen.signal }).then(async (r) => {
         if (!r.ok || !r.body) throw new Error(String(r.status));
         const totaal = Number(r.headers.get('content-length')) || 0, lezer = r.body.getReader(), delen: Uint8Array[] = [];
@@ -378,30 +374,32 @@ const VIDEO_V = vh.digest('hex').slice(0, 10);
         for (;;) {
           const { done, value } = await lezer.read(); if (done) break;
           delen.push(value); binnen += value.length;
-          if (totaal) { const q = Math.min(1, binnen / totaal); vul.setAttribute('y', String(813.25 * (1 - q))); vul.setAttribute('height', String(813.25 * q)); }
+          if (totaal && !isTerug) { const q = Math.min(1, binnen / totaal); vul.setAttribute('y', String(813.25 * (1 - q))); vul.setAttribute('height', String(813.25 * q)); }
         }
-        if (video !== v || opgeruimd) return;
-        blobUrl = URL.createObjectURL(new Blob(delen, { type: mp4 ? 'video/mp4' : 'video/webm' }));
-        v.src = blobUrl; v.load();
-      }).catch(() => { if (video === v && !opgeruimd) { v.src = url; v.load(); } });
-      /* speelt de blob niet, dan het adres; speelt dat ook niet, dan opgeven */
-      video.addEventListener('error', () => {
-        if (video !== v || opgeruimd) return;
-        if (blobUrl && v.currentSrc === blobUrl) { URL.revokeObjectURL(blobUrl); blobUrl = ''; v.src = url; v.load(); }
+        if (opgeruimd) return;
+        sp.blob = URL.createObjectURL(new Blob(delen, { type: mp4 ? 'video/mp4' : 'video/webm' }));
+        v.src = sp.blob; v.load();
+      }).catch(() => { if (!opgeruimd) { v.src = url; v.load(); } });
+      /* speelt de blob niet, dan het adres; speelt dat ook niet: heen geeft het op (de opening staat stil), terug vervaagt */
+      v.addEventListener('error', () => {
+        if (opgeruimd) return;
+        if (sp.blob && v.currentSrc === sp.blob) { URL.revokeObjectURL(sp.blob); sp.blob = ''; v.src = url; v.load(); }
+        else if (isTerug) { sp.kan = false; if (terug === sp) terug = null; }
         else opgeven();
       });
-      /* aan het eind blijft hij staan; spelen begint dan niet opnieuw bij 0 (stuur zoekt) */
-      video.addEventListener('ended', () => { if (video === v) stuur(); });
-      video.addEventListener('seeked', () => { zoekt = false; if (!rvfc) tekenNu(); stuur(); });
-      rvfc = 'requestVideoFrameCallback' in video;
-      return video;
+      v.addEventListener('seeking', () => { zoekTel++; });
+      v.addEventListener('seeked', () => { if (film() && stap === 'video') filmBeeld(); });
+      v.addEventListener('ended', () => { if (stap === 'video' && speler() === sp) opBeeld(sp, v.duration || 99); });
+      return sp;
     }
-    /* Het doek en de beelden staan klaar vóór de animatie (levering 84): een WebGL-doek maken en de winkel erop
-       zetten kost een paar tientallen milliseconden; dat gebeurt als de pagina rustig is, en opnieuw als de stand wisselt. */
+    const maakHeen = () => { if (!heen) heen = maakSpeler(false); return heen; };
+    const maakTerug = () => { if (!terug && aan && !kapot && heen) terug = maakSpeler(true); return terug; };
+    /* Het doek en de beelden staan klaar vóór de animatie (levering 84): een WebGL-doek maken en de winkel erop zetten kost
+       een paar tientallen milliseconden; dat gebeurt als de pagina rustig is, en opnieuw als de stand wisselt. */
     let geladen = '';
     function doekKlaar() {
-      if (!video) return null;
-      if (!tekenaar) { try { tekenaar = maakDoek(doek, video, data.video); } catch { tekenaar = null; } }
+      if (!heen) return null;
+      if (!tekenaar) { try { tekenaar = maakDoek(doek, heen.v, data.video); } catch { tekenaar = null; } }
       if (!tekenaar) { opgeven(); return null; }
       const b = huidigeBeelden();
       const sleutel = `${b.lap?.currentSrc || ''}|${b.fon?.currentSrc || ''}`;
@@ -409,97 +407,145 @@ const VIDEO_V = vh.digest('hex').slice(0, 10);
       return tekenaar;
     }
     const rustig = (f: () => void) => ((window as any).requestIdleCallback ? (window as any).requestIdleCallback(f, { timeout: 600 }) : window.setTimeout(f, 60));
-    naToon = () => { if (aan && video && !onderweg) rustig(() => { if (!onderweg) doekKlaar(); }); };
+    naToon = () => { if (aan && heen && fase === 'rust') rustig(() => { if (fase === 'rust') doekKlaar(); }); };
 
-    /* ── Wat we maken opent (levering 85): zodra de sectie voor een vijfde in beeld is ── */
+    /* ── Wat we maken opent (levering 85) ── */
     const na = (): HTMLElement | null => { let n = o8.nextElementSibling as HTMLElement | null; while (n && n.tagName === 'SCRIPT') n = n.nextElementSibling as HTMLElement | null; return n; };
     const maken = na();
     const isMaken = !!maken && maken.classList.contains('m8');
     /* de inhoud telt, niet de lucht erboven */
     const onderHetScherm = () => !!maken && (maken.querySelector('.m8-kopgroep') || maken).getBoundingClientRect().top > window.innerHeight;
     function sluitMaken() { if (isMaken && !stil && !maken!.classList.contains('m8-dicht') && onderHetScherm()) { maken!.classList.remove('m8-open'); maken!.classList.add('m8-dicht'); } }
-    let makenWacht = false, makenZicht = false;
-    function opMaken() {
+    function openMaken(wacht: boolean) {
       if (!isMaken || !maken!.classList.contains('m8-dicht')) return;
-      /* met de metro: pas als het blauw weg is */
-      if (metroAan && aan && rit.u < 1) { makenWacht = true; return; }
-      makenWacht = false;
-      maken!.style.setProperty('--m8-begin', metroAan && aan ? '90ms' : '0ms');
+      maken!.style.setProperty('--m8-begin', wacht ? '90ms' : '0ms');
       maken!.classList.remove('m8-dicht'); maken!.classList.add('m8-open');
     }
+    function dichtMaken() { if (isMaken && maken!.classList.contains('m8-open')) { maken!.classList.remove('m8-open'); maken!.classList.add('m8-dicht'); return true; } return false; }
     sluitMaken();
-    const makenIo = isMaken ? new IntersectionObserver(([e]) => { makenZicht = e.isIntersecting; if (e.isIntersecting) opMaken(); }, { threshold: 0.2 }) : null;
+    /* zonder het effect (telefoon, minder beweging, kapot): open zodra hij voor een vijfde in beeld is */
+    const makenIo = isMaken ? new IntersectionObserver(([e]) => { if (e.isIntersecting && !aan) openMaken(false); }, { threshold: 0.2 }) : null;
     if (maken && makenIo) makenIo.observe(maken);
 
-    /* ── de scroll stuurt de video ── */
-    let doelScroll = 0, doelBeeld = 0, getekend = -1, onderweg = false, tekenId = 0, rustTimer = 0, veegNu = 0;
+    /* ── de toestand ── */
+    let fase: 'rust' | 'speelt' | 'klaar' = 'rust';
+    let richting: 1 | -1 = 1;
+    let stap: '' | 'wacht' | 'video' | 'rit' | 'maken' = '';
+    let snel = 1, pos = 0, vastY = -1, sKlaar = 0, getekend = -1, veegNu = 0, eerste = true, wachtTimer = 0, makenTimer = 0, vervaagTimer = 0;
     const fps = data.video.fps, laatste = data.video.beelden - 1, loop = data.video.loop || [], vaart = data.video.vaart || [];
-    /* q (0 → 1, de scroll door het videostuk) → het beeld, via de opgetelde beweging */
-    function beeldBij(q: number) {
-      if (q <= 0 || loop.length < 2) return Math.max(0, Math.min(laatste, q * laatste));
-      if (q >= 1) return laatste;
-      let lo = 0, hi = loop.length - 1;
-      while (hi - lo > 1) { const m = (lo + hi) >> 1; if (loop[m] <= q) lo = m; else hi = m; }
-      return lo + (q - loop[lo]) / Math.max(1e-6, loop[hi] - loop[lo]);
-    }
-    const videoBeeld = () => (video ? Math.min(laatste, Math.floor(video.currentTime * fps + 0.01)) : 0);
-    function tekenNu(m?: { mediaTime: number }) {
-      if (!tekenaar || !video) return;
-      const t = m ? m.mediaTime : video.currentTime;
-      const beeld = Math.min(laatste, Math.max(0, Math.floor(t * fps + 0.01)));
-      /* de bewegingsonscherpte: hoe ver het beeld schoof sinds het vorige getekende beeld */
+    /* de snelheid van beeld i naar i + 1 (TEMPO) */
+    const tempo: number[] = (() => {
+      const n = METRO_BEELD, ruw: number[] = [];
+      const gem = loop.length > n ? (loop[n] - loop[0]) / n : 0;
+      for (let i = 0; i < laatste; i++) {
+        const s = loop.length > i + 1 ? loop[i + 1] - loop[i] : 0;
+        ruw.push(gem > 0 && s > 0 ? Math.min(TEMPO.max, Math.max(TEMPO.min, (TEMPO.k * gem) / s)) : gem > 0 ? TEMPO.max : 1.6);
+      }
+      return ruw.map((_, i) => { let s = 0, m = 0; for (let j = i - TEMPO.glad; j <= i + TEMPO.glad; j++) if (j >= 0 && j < ruw.length) { s += ruw[j]; m++; } return s / m; });
+    })();
+    const speler = () => (richting === 1 ? heen : terug);
+    const videoBeeld = (sp: Speler | null) => (sp ? Math.min(laatste, Math.floor(sp.v.currentTime * fps + 0.01)) : 0);
+    /* het beeld van het origineel dat bij deze video en dit beeld hoort (terug: beeld j is 110 − j) */
+    const orig = (sp: Speler, j: number) => (sp.terug ? laatste - j : j);
+
+    /* tekenen: het beeld, met de onscherpte van hoe ver het schoof; in de rit verschoven */
+    function teken(beeld: number) {
+      if (!tekenaar) return;
       const stappen = getekend < 0 ? 0 : Math.abs(beeld - getekend);
       const doelVeeg = Math.min(0.03, (vaart[beeld] || 0) * stappen * VEEG_DEEL * 2);
       veegNu = veegNu * 0.4 + doelVeeg * 0.6;
-      /* tijdens de rit (levering 88b): verschoven tot waar de rit de laptop wil, met de onscherpte van de rit */
       const sch = schuifBij(beeld);
       tekenaar.teken(beeld, sch ? ritVeeg : veegNu, sch);
       getekend = beeld;
-      if (doek.hidden && beeld > 0) { doek.hidden = false; o8.classList.add('o8-speelt'); }
-      /* stilgestaan: nog één keer scherp tekenen (tijdens de rit tekent de rit) */
-      clearTimeout(rustTimer);
-      if (veegNu > 0.0004) rustTimer = window.setTimeout(() => { veegNu = 0; if (tekenaar && video && !rit.raf) tekenaar.teken(getekend, 0, schuifBij(getekend)); }, (window as any).__o8Rust ?? 140);
+      if (doek.hidden) { doek.hidden = false; o8.classList.add('o8-speelt'); }
     }
-    function opBeeld(_nu: number, m: { mediaTime: number }) {
-      tekenId = 0;
-      /* voorbij het doel (het stopbeeld kwam te laat, of je scrolde terug): dat beeld niet tekenen, meteen terug */
-      if (video && !zoekt && Math.floor(m.mediaTime * fps + 0.01) > Math.round(doelBeeld) + 1) { if (!video.paused) video.pause(); stuur(); return; }
-      tekenNu(m);
-      if (video && !video.paused && videoBeeld() >= Math.round(doelBeeld)) video.pause();
-      if (video && (!video.paused || zoekt)) volg();
-      else stuur();
+    function naarStil() {
+      clearTimeout(vervaagTimer); doek.style.transition = ''; doek.style.opacity = '';
+      if (!doek.hidden) { doek.hidden = true; o8.classList.remove('o8-speelt'); }
+      getekend = -1; veegNu = 0;
     }
-    function volg() { if (video && rvfc && !tekenId) tekenId = (video as any).requestVideoFrameCallback(opBeeld); }
-    function stuur() {
-      if (!aan || !video || !kanSpelen || !doekKlaar()) return;
-      const doel = Math.round(doelBeeld), nu = videoBeeld();
-      if (doel <= 0 && !onderweg) { if (!video.paused) video.pause(); if (nu !== 0 && !zoekt) { zoekt = true; video.currentTime = 0; } naarStil(); return; }
-      if (doel > nu && doel - nu > DICHTBIJ && doel - nu <= SPRONG && !zoekt && !video.ended && doel < laatste) {
-        /* vooruit: spelen, zo snel dat hij in BIJ seconden bij is */
-        const r = Math.max(0.6, Math.min(MAX_SNEL, (doel - nu) / fps / BIJ));
-        if (Math.abs(video.playbackRate - r) > 0.05) video.playbackRate = r;
-        if (video.paused) video.play().catch(() => {});
-        volg(); if (!rvfc) requestAnimationFrame(() => { tekenNu(); stuur(); });
-      } else if (doel !== nu && !zoekt) {
-        /* terug, of een grote sprong: zoeken */
-        if (!video.paused) video.pause();
-        zoekt = true; video.currentTime = (doel + 0.5) / fps; volg();
-      } else if (doel === nu) {
-        if (!video.paused) video.pause();
-        if (getekend !== nu) { tekenNu(); }
+
+    /* ── de video speelt (heen of terug), op de snelheid van TEMPO ── */
+    function zetSnelheid(sp: Speler) {
+      const b = orig(sp, videoBeeld(sp)), i = richting === 1 ? b : b - 1;
+      const r = (tempo[Math.max(0, Math.min(tempo.length - 1, i))] || 1.6) * snel;
+      if (Math.abs(sp.v.playbackRate - r) > 0.02) sp.v.playbackRate = r;
+    }
+    let rvfcId = 0, rvfcVan: HTMLVideoElement | null = null, rafId = 0;
+    function volg(sp: Speler) {
+      if ('requestVideoFrameCallback' in sp.v) { rvfcVan = sp.v; rvfcId = (sp.v as any).requestVideoFrameCallback((_n: number, m: { mediaTime: number }) => opBeeld(sp, m.mediaTime)); }
+      else rafId = requestAnimationFrame(() => opBeeld(sp, sp.v.currentTime));
+    }
+    function stopVolgen() {
+      if (rvfcId && rvfcVan) (rvfcVan as any).cancelVideoFrameCallback?.(rvfcId);
+      cancelAnimationFrame(rafId); rvfcId = 0; rvfcVan = null; rafId = 0;
+    }
+    function pauzeer() { stopVolgen(); heen?.v.pause(); terug?.v.pause(); }
+    function opBeeld(sp: Speler, t: number) {
+      rvfcId = 0; rafId = 0;
+      if (fase !== 'speelt' || stap !== 'video' || speler() !== sp) return;
+      const j = Math.min(laatste, Math.max(0, Math.floor(t * fps + 0.01))), b = orig(sp, j);
+      if (b !== getekend) teken(b);
+      pos = b;
+      if (richting === 1 && b >= METRO_BEELD) { sp.v.pause(); naarRit(); return; }
+      if (richting === -1 && b <= 0) { sp.v.pause(); naarRust(); return; }
+      zetSnelheid(sp); volg(sp);
+    }
+    function speelVideo() {
+      const sp = richting === 1 ? maakHeen() : terug;
+      clearTimeout(wachtTimer);
+      if (!sp || !sp.kan || !doekKlaar()) {
+        if (richting === -1 && !sp) { vervaag(); return; }
+        stap = 'wacht'; laden.hidden = richting !== 1;
+        /* laadt de video niet binnen 8 s, dan staat de opening stil en mag je weer scrollen */
+        wachtTimer = window.setTimeout(() => { if (stap === 'wacht') { if (richting === 1) opgeven(); else vervaag(); } }, 8000);
+        return;
       }
+      stap = 'video'; laden.hidden = true;
+      tekenaar!.bron(sp.v);
+      const j = sp.terug ? laatste - pos : pos;
+      /* zoeken alleen als hij er niet al staat (bij een eerste keer heen staat hij op 0; terug zet hem in de rit klaar) */
+      if (videoBeeld(sp) !== j) sp.v.currentTime = (j + 0.5) / fps;
+      if (film()) { filmStart = klok(); filmVan = pos; filmBeeld(); return; }
+      if (!sp.v.seeking && videoBeeld(sp) === j) teken(orig(sp, j));
+      zetSnelheid(sp);
+      sp.v.play().catch(() => {});
+      volg(sp);
     }
-    function naarStil() { if (!doek.hidden) { doek.hidden = true; o8.classList.remove('o8-speelt'); getekend = -1; veegNu = 0; } }
+    /* de video is er (canplaythrough of loadeddata) */
+    function verder() { if (fase === 'speelt' && stap === 'wacht') speelVideo(); }
+
+    /* de film: op zijn eigen klok zoekt de video per filmbeeld het beeld dat de klok wil (TEMPO, net als in het echt) */
+    let filmStart = 0, filmVan = 0;
+    function filmDoel() {
+      let ms = klok() - filmStart, b = filmVan;
+      while (ms > 0) {
+        const i = richting === 1 ? b : b - 1; if (i < 0 || i >= tempo.length) break;
+        const duur = 1000 / (fps * (tempo[i] || 1.6) * snel); if (ms < duur) break;
+        ms -= duur; b += richting;
+        if ((richting === 1 && b >= METRO_BEELD) || (richting === -1 && b <= 0)) break;
+      }
+      return b;
+    }
+    function filmBeeld() {
+      const sp = speler(); if (!sp || fase !== 'speelt' || stap !== 'video' || sp.v.seeking) return;
+      const nu = orig(sp, videoBeeld(sp));
+      if (nu !== getekend) teken(nu);
+      pos = nu;
+      if (richting === 1 && nu >= METRO_BEELD) { naarRit(); return; }
+      if (richting === -1 && nu <= 0) { naarRust(); return; }
+      const b = filmDoel();
+      if (b !== nu) sp.v.currentTime = ((sp.terug ? laatste - b : b) + 0.5) / fps;
+      else rafId = requestAnimationFrame(filmBeeld);
+    }
 
     /* ── de rit van de metro ── */
-    /* het beeld van de video dat bij de rit hoort: van METRO_BEELD naar het laatste, gelijk op met de rit (plus de inloop) */
-    function ritBeeld() { if (!metroAan || rit.u <= 0) return 0; return METRO_BEELD + rit.inloop + (laatste - METRO_BEELD) * Math.min(1, rit.u / METRO_MEE); }
-    /* levering 88b: het doel van de video. Eén bron voor de scroll en de rit: tijdens de rit blijft de video op beeld 86
-       (of verder, als je terug scrolt terwijl de rit nog terugrijdt, wacht hij tot de rit terug is) */
-    const videoDoel = () => (metroAan && rit.u > 0 ? Math.max(doelScroll, METRO_BEELD) : doelScroll);
+    /* het beeld van de video dat bij de rit hoort: van waar hij vertrok (86, of verder als de video doorliep) naar het
+       laatste, gelijk op met de rit (plus de inloop als hij achter liep) */
+    function ritBeeld() { if (rit.u <= 0) return 0; return rit.van + rit.inloop + (laatste - rit.van) * Math.min(1, rit.u / METRO_MEE); }
     /* hoe ver het doek het vastgehouden beeld schuift: tot waar de rit de laptop wil (breukdelen van de breedte) */
     function schuifBij(beeld: number): [number, number] | null {
-      if (!metroAan || rit.u <= 0) return null;
+      if (rit.u <= 0) return null;
       const d = ritBeeld() - beeld;
       return [d * SCHUIF_LAPTOP, d * SCHUIF_TELEFOON];
     }
@@ -507,21 +553,20 @@ const VIDEO_V = vh.digest('hex').slice(0, 10);
        in het eerste achtste van de rit groeit hij aan (geen sprong van scherp naar onscherp bij het vertrek) */
     const ritSluit = (SOORTEN as Record<string, { sluit?: number }>)[soort]?.sluit ?? SLUIT;
     let ritVeeg = 0;
-    function zetRitVeeg(tempo: number) {
-      const perSeconde = ((laatste - METRO_BEELD) / METRO_MEE) * (tempo / ((metro?.duur || 800) / 1000)) * SCHUIF_LAPTOP;
+    function zetRitVeeg(t: number) {
+      const perSeconde = ((laatste - METRO_BEELD) / METRO_MEE) * (t / ((metro?.duur || 800) / 1000)) * SCHUIF_LAPTOP;
       ritVeeg = rit.u > 0 && rit.u < 1 ? perSeconde * ritSluit * Math.min(1, rit.u / 0.125) : 0;
     }
-    /* de laptop op het doek, verschoven (elk beeld van de rit) */
     function tekenLaptop() {
-      if (!tekenaar || !video || getekend < 0 || doek.hidden) return;
+      if (!tekenaar || getekend < 0 || doek.hidden) return;
       tekenaar.teken(getekend, ritVeeg, schuifBij(getekend));
     }
-    function tekenRit(richting: number) {
+    function tekenRit(r: number) {
       if (rit.u <= 0) { metroDoek.hidden = true; o8.classList.remove('o8-rijdt', 'o8-wit'); return; }
       if (rit.u >= 1) { metroDoek.hidden = true; o8.classList.remove('o8-rijdt'); o8.classList.add('o8-wit'); return; }
       o8.classList.remove('o8-wit');
       metroDoek.hidden = false; o8.classList.add('o8-rijdt');
-      metro!.teken(rit.u, richting, rit.tempo);
+      metro!.teken(rit.u, r, rit.tempo);
     }
     function ritStap() {
       rit.raf = 0;
@@ -529,118 +574,231 @@ const VIDEO_V = vh.digest('hex').slice(0, 10);
       /* hoogstens 0,1 s per beeld: een trage computer krijgt een rit met grotere stappen, niet een rit van tien seconden */
       const nu = klok(), dt = Math.min(100, Math.max(0, nu - rit.vorig)); rit.vorig = nu;
       const vooruit = rit.doel > rit.u;
-      const tempo = vooruit ? rit.tempo : 1.5;
-      const stap = (dt / metro.duur) * tempo;
+      const t = (vooruit ? 1 : 1.5) * snel;
       const was = rit.u;
-      rit.u = vooruit ? Math.min(rit.doel, rit.u + stap) : Math.max(rit.doel, rit.u - stap);
-      /* vertrek: liep de video nog achter, dan begint de laptop daar (levering 88b); dat verschil loopt weg */
-      if (was <= 0 && rit.u > 0) rit.inloop = getekend >= 0 ? Math.min(0, getekend - METRO_BEELD) : 0;
+      rit.u = vooruit ? Math.min(rit.doel, rit.u + (dt / metro.duur) * t) : Math.max(rit.doel, rit.u - (dt / metro.duur) * t);
+      /* vertrek: liep de video door (een trage computer ziet niet elk beeld), dan rijdt de laptop vanaf dat beeld; liep hij
+         achter, dan begint de laptop waar hij stond en loopt dat verschil weg. Zo gaat hij nooit terug. */
+      if (was <= 0 && rit.u > 0) { rit.van = Math.max(METRO_BEELD, getekend); rit.inloop = getekend >= 0 ? Math.min(0, getekend - METRO_BEELD) : 0; }
       else rit.inloop = rit.u > 0 ? rit.inloop * Math.exp(-dt / SCHUIF_INLOOP) : 0;
-      const oud = rit.tempo; rit.tempo = tempo; tekenRit(vooruit ? 1 : -1); rit.tempo = oud;
-      /* de laptop gaat mee: het doek schuift hem (levering 88b), de video blijft op beeld 86 */
-      zetRitVeeg(tempo);
+      rit.tempo = t;
+      tekenRit(vooruit ? 1 : -1);
+      /* terug aangekomen: meteen de omgekeerde video op beeld 86 (niet eerst het onverschoven beeld) */
+      if (!vooruit && rit.u <= 0) { ritVeeg = 0; if (fase === 'speelt' && richting === -1) naTerugRit(); return; }
+      zetRitVeeg(t);
       tekenLaptop();
-      const vd = videoDoel();
-      if (Math.round(vd) !== Math.round(doelBeeld)) { doelBeeld = vd; stuur(); }
       if (rit.u !== rit.doel) { rit.raf = requestAnimationFrame(ritStap); return; }
-      /* aangekomen: wit, dan Wat we maken omhoog (als hij in beeld staat of erop wachtte) */
-      if (rit.u >= 1 && (makenWacht || makenZicht)) opMaken();
+      if (fase === 'speelt' && richting === 1 && rit.u >= 1) naarKlaar();
     }
     function zetRit(doel: number) {
-      if (rit.doel === doel) return;
       if (!metro) { try { metro = maakMetro(metroDoek, soort); } catch { metro = null; } }
-      if (!metro) { metroAan = false; o8.classList.remove('o8-metro-aan'); return; }
-      rit.doel = doel;
-      /* terug: Wat we maken gaat eerst weg (in 0,18 s), dan rijdt het blauw terug; vooruit komt hij weer omhoog */
-      if (doel === 0 && isMaken && !stil && maken!.classList.contains('m8-open')) { maken!.classList.remove('m8-open'); maken!.classList.add('m8-dicht'); }
-      rit.vorig = klok();
+      if (!metro) { opgeven(); return; }
+      rit.doel = doel; rit.vorig = klok();
       if (!rit.raf) rit.raf = requestAnimationFrame(ritStap);
     }
     function stopRit() {
-      cancelAnimationFrame(rit.raf); rit.raf = 0; rit.u = 0; rit.doel = 0; rit.inloop = 0; ritVeeg = 0;
+      cancelAnimationFrame(rit.raf); rit.raf = 0; rit.u = 0; rit.doel = 0; rit.inloop = 0; rit.van = METRO_BEELD; ritVeeg = 0;
       metroDoek.hidden = true; o8.classList.remove('o8-rijdt');
     }
 
-    /* de baan: waar sta je, en wat hoort daarbij */
-    let raf = 0, vorigY = window.scrollY, vorigT = performance.now(), snel = 0, rand = RAND;
-    const top = (el: Element) => el.getBoundingClientRect().top + window.scrollY;
+    /* ── de pagina vast zolang hij speelt ── */
     const balk = () => (window.innerWidth >= 1100 ? 56 : 52);
+    const top = (el: Element) => el.getBoundingClientRect().top + window.scrollY;
+    const lengte = () => Math.max(1, baan.offsetHeight - podium.offsetHeight);
+    const sNu = () => window.scrollY - (top(baan) - balk());
+    const scrollNaar = (y: number) => window.scrollTo({ top: Math.max(0, Math.round(y)), behavior: 'instant' as ScrollBehavior });
+    /* een vinger vangen we alleen zolang hij speelt (een touchmove die kan tegenhouden maakt scrollen anders trager) */
+    function vast() { vastY = window.scrollY; (window as any).__visZachtStop?.(); window.addEventListener('touchmove', opVinger, { passive: false }); }
+    function los() { vastY = -1; window.removeEventListener('touchmove', opVinger); }
+
+    /* ── heen en terug ── */
+    function speel(r: 1 | -1) {
+      if (!aan || kapot) return;
+      if (fase === 'speelt') {
+        if (r === richting) { snel = INHAAL; const sp = speler(); if (stap === 'video' && sp && !film()) zetSnelheid(sp); }
+        else keer();
+        return;
+      }
+      if ((r === 1 && fase !== 'rust') || (r === -1 && fase !== 'klaar')) return;
+      fase = 'speelt'; richting = r; snel = 1;
+      vast();
+      o8.classList.add('o8-onderweg'); standVast(true);
+      if (r === 1) { pos = 0; speelVideo(); }
+      else terugBegin();
+    }
+    function keer() {
+      if (stap === 'rit') {
+        richting = richting === 1 ? -1 : 1; snel = 1;
+        if (richting === -1) { dichtMaken(); bereidTerug(); }
+        zetRit(richting === 1 ? 1 : 0);
+        return;
+      }
+      if (stap === 'maken') { clearTimeout(makenTimer); richting = 1; snel = 1; naarKlaar(); return; }
+      /* heen wachtte nog op de video: terug naar rust, de pagina los */
+      if (stap === 'wacht' && richting === 1) { rustDirect(); return; }
+      if (stap === 'video' || stap === 'wacht') {
+        /* van richting wisselen in de video kan alleen als de andere video er is (anders speelt hij door) */
+        const ander = richting === 1 ? terug : heen;
+        if (!ander || !ander.kan) return;
+        pauzeer(); richting = richting === 1 ? -1 : 1; snel = 1;
+        speelVideo();
+      }
+    }
+    /* de video's klaarzetten voor terug: heen op het beeld van het vertrek (de rit leest eruit), terug op 110 − dat beeld */
+    function bereidTerug() {
+      const h = maakHeen();
+      if (h.kan && videoBeeld(h) < METRO_BEELD) { h.v.currentTime = (METRO_BEELD + 0.5) / fps; rit.van = METRO_BEELD; }
+      if (getekend < 0 && h.kan && doekKlaar()) {
+        const zet = () => { if (fase === 'speelt' && richting === -1) { tekenaar!.bron(h.v); teken(videoBeeld(h)); } };
+        if (h.v.seeking) h.v.addEventListener('seeked', zet, { once: true }); else zet();
+      }
+      const t = maakTerug(), j = laatste - Math.round(rit.van);
+      if (t && t.kan && videoBeeld(t) !== j) t.v.currentTime = (j + 0.5) / fps;
+    }
+    function terugBegin() {
+      bereidTerug();
+      stap = 'maken';
+      const rijden = () => { if (fase === 'speelt' && richting === -1 && stap === 'maken') { stap = 'rit'; zetRit(0); } };
+      if (dichtMaken()) makenTimer = window.setTimeout(rijden, MAKEN_WEG); else rijden();
+    }
+    function naarRit() {
+      stap = 'rit'; pauzeer();
+      zetRit(1);
+    }
+    function naTerugRit() {
+      pos = Math.round(rit.van);
+      if (terug && terug.kan) speelVideo(); else vervaag();
+    }
+    /* zonder omgekeerde video: de laptop vervaagt naar de foto (die eronder al klaar staat) */
+    function vervaag() {
+      stap = 'video';
+      o8.classList.remove('o8-speelt');
+      doek.style.transition = `opacity ${VERVAAG}ms cubic-bezier(.4, 0, .2, 1)`;
+      requestAnimationFrame(() => { doek.style.opacity = '0'; });
+      vervaagTimer = window.setTimeout(() => { if (fase === 'speelt' && richting === -1) naarRust(); }, VERVAAG + 20);
+    }
+    /* aangekomen: alles wit. Wat we maken met zijn bovenkant onder de balk (alles is wit, dus de sprong zie je niet) */
+    function naarKlaar() {
+      fase = 'klaar'; stap = ''; snel = 1; pauzeer();
+      sKlaar = isMaken ? Math.round(window.scrollY + maken!.getBoundingClientRect().top - balk()) : window.scrollY;
+      los(); scrollNaar(sKlaar);
+      openMaken(true);
+      /* de omgekeerde video pas nu, als de pagina rustig is */
+      rustig(() => { if (aan) maakTerug(); });
+    }
+    /* terug aangekomen: de foto, de pagina los, het podium onder de balk */
+    function naarRust() {
+      fase = 'rust'; stap = ''; snel = 1; pos = 0; pauzeer(); stopRit();
+      naarStil();
+      o8.classList.remove('o8-onderweg', 'o8-wit'); standVast(false);
+      los(); scrollNaar(top(baan) - balk());
+      /* de heen-video alvast terug op 0, nu het rustig is: dan zoekt hij niet als hij weer speelt */
+      rustig(() => { if (fase === 'rust' && heen && heen.kan && videoBeeld(heen) !== 0) heen.v.currentTime = 0; });
+    }
+    /* een sprong (een link naar #maken, de schuifbalk, End): meteen de eindstand, zonder animatie */
+    function klaarDirect() {
+      clearTimeout(makenTimer); clearTimeout(wachtTimer); pauzeer(); stopRit();
+      rit.u = 1; rit.doel = 1; tekenRit(1);
+      fase = 'klaar'; stap = ''; snel = 1; los();
+      o8.classList.add('o8-onderweg'); standVast(true);
+      const ideaal = isMaken ? Math.round(window.scrollY + maken!.getBoundingClientRect().top - balk()) : window.scrollY;
+      sKlaar = Math.min(ideaal, window.scrollY);
+      openMaken(false);
+    }
+    function rustDirect() {
+      clearTimeout(makenTimer); clearTimeout(wachtTimer); pauzeer(); stopRit();
+      naarStil();
+      fase = 'rust'; stap = ''; snel = 1; pos = 0; los();
+      o8.classList.remove('o8-onderweg', 'o8-wit', 'o8-rijdt'); standVast(false);
+      sluitMaken();
+    }
+    function afmaken() { if (richting === 1) klaarDirect(); else rustDirect(); }
+
+    /* ── het wiel, de toetsen en een vinger ── */
+    let laatsteWiel = -1e9;
+    function opWiel(e: WheelEvent) {
+      if (!aan || e.ctrlKey || e.metaKey) return;
+      const dy = e.deltaY * (e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? window.innerHeight : 1);
+      const nieuw = e.timeStamp - laatsteWiel > GEBAAR; laatsteWiel = e.timeStamp;
+      if (fase === 'speelt') { e.preventDefault(); if (nieuw && Math.abs(dy) >= 1 && Math.abs(dy) >= Math.abs(e.deltaX)) speel(dy > 0 ? 1 : -1); return; }
+      if (Math.abs(dy) < 1 || Math.abs(e.deltaX) > Math.abs(dy)) return;
+      /* in rust, met het podium al (bijna) onder de balk: deze scroll start hem */
+      if (fase === 'rust' && dy > 0) { const s = sNu(); if (s >= -2 && s <= lengte() * 0.5) { e.preventDefault(); speel(1); } return; }
+      /* klaar, op de plek van Wat we maken: deze scroll omhoog speelt hem terug */
+      if (fase === 'klaar' && dy < 0 && window.scrollY <= sKlaar + 2 && sNu() >= -2) { e.preventDefault(); speel(-1); }
+    }
+    function opToets(e: KeyboardEvent) {
+      if (!aan || fase !== 'speelt' || e.altKey || e.ctrlKey || e.metaKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+      const omhoog = TOETS_OMHOOG.has(e.key) || (e.key === ' ' && e.shiftKey), omlaag = !omhoog && TOETS_OMLAAG.has(e.key);
+      if (!omhoog && !omlaag) return;
+      e.preventDefault(); if (!e.repeat) speel(omlaag ? 1 : -1);
+    }
+    function opVinger(e: TouchEvent) { if (aan && fase === 'speelt' && e.cancelable) e.preventDefault(); }
+
+    /* de baan: waar sta je, en wat hoort daarbij */
+    let raf = 0;
     function bij() {
       raf = 0;
       if (!aan) return;
-      const R = Math.max(1, baan.offsetHeight - podium.offsetHeight);
-      const s = Math.max(0, Math.min(R, window.scrollY - (top(baan) - balk())));
-      /* hoe snel je scrolt, zacht gemiddeld (voor de rand van het wit) */
-      const nuT = performance.now(), dt = Math.max(1, nuT - vorigT);
-      snel = snel * 0.7 + (Math.abs(window.scrollY - vorigY) / dt) * 1000 * 0.3;
-      vorigY = window.scrollY; vorigT = nuT;
-      const weg = s > 8;
-      if (weg !== onderweg) { onderweg = weg; o8.classList.toggle('o8-onderweg', weg); standVast(weg); if (weg) { maakVideo(); doekKlaar(); } }
-      /* de video */
-      const q = Math.max(0, Math.min(1, s / (R * (metroAan ? METRO_VIDEO : DEEL.video))));
-      /* met de metro speelt de scroll de video tot het vertrek; daarna houdt de video beeld 86 vast en schuift het doek de
-         laptop weg op de klok van de rit (levering 88b: één doel, videoDoel) */
-      doelScroll = s <= 8 ? 0 : metroAan ? Math.min(METRO_BEELD, beeldBij(q)) : beeldBij(q);
-      doelBeeld = videoDoel();
-      laden.hidden = !(onderweg && video && !kanSpelen);
-      stuur();
-      /* de metro: vertrekt waar de video ophoudt, rijdt terug als je terug scrolt; scrol je ver voor hem uit, dan haalt hij in */
-      if (metroAan) {
-        const van = R * METRO_VIDEO * (loop[METRO_BEELD] ?? 0.88);
-        if (s >= van - 1) zetRit(1); else if (s < van - METRO_TERUG) zetRit(0);
-        rit.tempo = 1 + 1.5 * Math.max(0, Math.min(1, (s - van - R * METRO_INHALEN) / (R * 0.1)));
-        if (metroAan) return;
+      const s = sNu();
+      if (eerste) { eerste = false; if (s > DREMPEL) { klaarDirect(); return; } }
+      if (fase === 'speelt') {
+        /* vast: alleen de schuifbalk kan nog scrollen; een klein stukje zetten we terug, een grote sleep maakt hem af */
+        if (vastY >= 0) { const d = window.scrollY - vastY; if (Math.abs(d) > SLEEP) afmaken(); else if (Math.abs(d) > 1) scrollNaar(vastY); }
+        return;
       }
-      /* het wit langs de snede */
-      const t = Math.max(0, Math.min(1, (s - R * DEEL.veegVan) / (R * (DEEL.veegTot - DEEL.veegVan))));
-      rand = rand * 0.8 + (RAND + Math.min(RAND_EXTRA, snel * 0.12)) * 0.2;
-      veeg.style.setProperty('--o8-e', `calc(${((1 - t) * 100).toFixed(3)}% + ${((1 - t) * (rand + 4) - t * 4).toFixed(1)}px)`);
-      veeg.style.setProperty('--o8-z', `${rand.toFixed(1)}px`);
-      o8.classList.toggle('o8-veegt', t > 0 && t < 1);
-      o8.classList.toggle('o8-wit', t >= 1);
-      /* de rand loopt nog even uit als je stopt met scrollen */
-      if (snel > 2 && t > 0 && t < 1 && !raf) raf = requestAnimationFrame(bij);
+      if (fase === 'rust') { if (s > lengte() * 0.5) klaarDirect(); else if (s > DREMPEL) speel(1); return; }
+      if (fase === 'klaar') { if (s < -2) rustDirect(); else if (window.scrollY < sKlaar - DREMPEL) speel(-1); }
     }
     const opScroll = () => { if (!raf) raf = requestAnimationFrame(bij); };
-    /* voor de toetsen (tests/opening-88-browser.test.mjs): waar de animatie staat */
-    (window as any).__o8Stand = () => ({ rit: rit.u, metro: metroAan ? soort : '', doel: doelBeeld, getekend,
-      /* levering 88b: hoe ver het doek de laptop nu schuift (breukdeel van de breedte), en het beeld waar de rit hem wil */
-      schuif: (schuifBij(getekend) || [0])[0], ritBeeld: ritBeeld(), ritVeeg, beeld: videoBeeld(), zoekt, kanSpelen, gepauzeerd: video ? video.paused : null, snelheid: video ? video.playbackRate : null, klaar: video ? video.readyState : null, src: video ? video.currentSrc : '' });
+    /* voor de toetsen (tests/opening-89-browser.test.mjs): waar de animatie staat */
+    (window as any).__o8Stand = () => ({ fase, richting, stap, pos, snel, rit: rit.u, getekend, metro: soort, sKlaar, vast: vastY,
+      schuif: (schuifBij(getekend) || [0])[0], ritBeeld: ritBeeld(), ritVeeg, beeld: videoBeeld(heen), zoekTel,
+      zoekt: !!(speler()?.v.seeking), kanSpelen: !!heen?.kan, terugKlaar: !!terug?.kan, gepauzeerd: heen ? heen.v.paused : null, snelheid: heen ? heen.v.playbackRate : null,
+      klaar: heen ? heen.v.readyState : null, src: heen ? heen.v.currentSrc : '', tempo: tempo.slice(0, METRO_BEELD) });
 
     function meet() {
       aan = kanHet();
       html.classList.toggle('o8-aan', aan);
       zetSchermen();
       if (aan) { opScroll(); return; }
-      video?.pause(); naarStil(); laden.hidden = true;
-      onderweg = false;
-      o8.classList.remove('o8-onderweg', 'o8-veegt', 'o8-wit'); standVast(false); stopRit();
+      clearTimeout(makenTimer); clearTimeout(wachtTimer); pauzeer(); stopRit(); naarStil(); laden.hidden = true; los();
+      fase = 'rust'; stap = '';
+      o8.classList.remove('o8-onderweg', 'o8-wit', 'o8-rijdt'); standVast(false);
+      if (isMaken && maken!.classList.contains('m8-dicht') && !onderHetScherm()) openMaken(false);
     }
     let rt = 0;
     const opResize = () => { clearTimeout(rt); rt = window.setTimeout(meet, 120); };
     const opMq = () => { stil = mq.matches; if (stil) standStil(); meet(); };
     window.addEventListener('scroll', opScroll, { passive: true });
+    /* vóór zacht scrollen (src/scripts/zachtscrollen.js, op window zonder capture): wat hier wordt afgevangen, scrolt daar niet */
+    window.addEventListener('wheel', opWiel, { passive: false, capture: true });
+    window.addEventListener('keydown', opToets, { capture: true });
     window.addEventListener('resize', opResize);
     mq.addEventListener?.('change', opMq);
     meet();
     const beeld = $<HTMLImageElement>('[data-o8-beeld]');
     if (!beeld.complete) beeld.addEventListener('load', () => { if (o8.isConnected) zetSchermen(); }, { once: true });
     /* de video vast laden zodra de pagina rustig is (alleen als het effect kan) */
-    const vooruit = () => { if (aan && o8.isConnected) { maakVideo(); doekKlaar(); } };
+    const vooruit = () => { if (aan && o8.isConnected) { maakHeen(); doekKlaar(); } };
     const rustF = (window as any).requestIdleCallback as undefined | ((f: () => void, o?: { timeout: number }) => number);
     const begin = () => (rustF ? rustF(vooruit, { timeout: 3000 }) : window.setTimeout(vooruit, 1200));
     if (document.readyState === 'complete') begin(); else window.addEventListener('load', begin, { once: true });
 
     ruim = () => {
       window.removeEventListener('scroll', opScroll);
+      window.removeEventListener('wheel', opWiel, { capture: true } as EventListenerOptions);
+      window.removeEventListener('keydown', opToets, { capture: true } as EventListenerOptions);
+      window.removeEventListener('touchmove', opVinger);
       window.removeEventListener('resize', opResize);
       mq.removeEventListener?.('change', opMq);
       opgeruimd = true; aan = false; binnenhalen.abort();
-      cancelAnimationFrame(raf); clearTimeout(rustTimer); clearTimeout(rt);
-      if (video && tekenId) (video as any).cancelVideoFrameCallback?.(tekenId);
-      standOpruim(); tekenaar?.weg(); video?.pause(); makenIo?.disconnect(); stopRit(); metro?.weg(); metro = null;
-      if (blobUrl) URL.revokeObjectURL(blobUrl);
-      if (video) { video.removeAttribute('src'); video.load(); video = null; }
+      cancelAnimationFrame(raf); clearTimeout(rt); clearTimeout(makenTimer); clearTimeout(wachtTimer); clearTimeout(vervaagTimer);
+      pauzeer(); standOpruim(); tekenaar?.weg(); makenIo?.disconnect(); stopRit(); metro?.weg(); metro = null;
+      for (const sp of [heen, terug]) { if (!sp) continue; if (sp.blob) URL.revokeObjectURL(sp.blob); sp.v.removeAttribute('src'); sp.v.load(); }
+      heen = null; terug = null;
       html.classList.remove('o8-aan');
       delete o8.dataset.o8Klaar; delete (window as any).__o8Beelden; delete (window as any).__o8Stand;
       ruim = null;

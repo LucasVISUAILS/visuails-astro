@@ -247,7 +247,7 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
           {[v.sides.delivered, v.sides.uploaded].map((k) => (
             <section class="st-kant">
               <h3>{k.h}</h3>
-              {k.shots.length ? <ul class="st-beelden">{k.shots.map((b) => <Beeld v={b} orderId={v.id} lang={lang} />)}</ul> : <p class="st-meta">{k.empty}</p>}
+              {k.shots.length ? <ul class="st-beelden">{k.shots.map((b, i) => <Beeld v={b} orderId={v.id} lang={lang} nr={i} />)}</ul> : <p class="st-meta">{k.empty}</p>}
             </section>
           ))}
         </div>

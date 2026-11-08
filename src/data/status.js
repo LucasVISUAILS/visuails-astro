@@ -107,9 +107,13 @@ export function stand(status) {
   return STAND_VAN[s] || 'wait';
 }
 
-/** De klassenaam voor het pilcomponent: `stand is-work`. */
+/** De klassenaam voor het pilcomponent: `stand is-work`.
+ *  Levering 89 (lijst 82, E5): "geleverd" (delivered) was massief inkt en wordt een stukje nacht met korrel,
+ *  één stukje voor de hele lijst; `is-geleverd` draagt dat (posterkleur.css, en dezelfde regel in
+ *  public/account.css, admin.css en portal.css). De stand blijft `done`; de andere vier veranderen niet. */
 export function standKlasse(status) {
-  return `stand is-${stand(status)}`;
+  const geleverd = String(status || '').trim().toLowerCase() === 'delivered';
+  return `stand is-${stand(status)}${geleverd ? ' is-geleverd' : ''}`;
 }
 
 /**

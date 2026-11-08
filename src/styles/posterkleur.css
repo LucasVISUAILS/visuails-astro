@@ -1,0 +1,114 @@
+/* VISUAILS — posterkleur in het klein, en de velden op de grote plekken (levering 89, 5 november 2026).
+   ═══════════════════════════════════════════════════════════════════════════════════════════════════════
+   Lucas, 08:41: *"Nieuwe kleuren ook aan kleine dingen op de website toepassen waar mogelijk en het niet
+   overheersend word. Ik wil altijd een poster achtige kleuren dus nooit clean alle kleuren achter elkaar, het
+   mag juist wat random zijn zoals in de posters en korrel bevatten."* Lijst 82, E1 – E7 goed, E8 niet, E9 a.
+
+   EEN STUKJE is een kleine poster uit public/img/stuk/ (welke, en hoe gemeten: src/data/stukken.js). Een plek
+   krijgt twee klassen: `pk` (de korrel en het stukje als achtergrond) en `pk-<naam>` (welk stukje). De naam
+   volgt uit een hash van een sleutel (kies() in stukken.js; op de site zet src/scripts/posterkleur.js hem waar
+   de pagina hem niet al bij het bouwen kreeg). Korrel altijd op het vlak, nooit op de letters: een tegel van
+   128 px, één beeldpunt per korrel op elk scherm (korrel-256 op een scherm met dubbele dichtheid).
+
+   WAAR (en waar niet):
+     E1  de lege fotoplek, zolang een beeld laadt (de galerij, de looks, je beelden in Studio)    .pk-fp
+     E2  het ene inktblok op een pagina zonder €1-blok (het slot onderaan, .h-lk-slot)            .h-lk-slot.pk
+     E3  Bestellen bovenin (een pil, zoals alles wat je bedient; DESIGN.md "Hoeken")             .nav-cta.pk
+     E4  het gezicht met initialen (Studio; het portaal, /admin en de aanbevelingen hebben er geen) .st-wie-letter.pk
+     E5  de status "geleverd", één stukje voor de hele lijst                                     .stand.is-geleverd
+     E6  het balkje met de schuine kop: het legt een vaste poster bloot (de strook op /lifestyle) .h-lijntje i.pk
+     E7  het tekstlogo (en de V in de balk) onder de muis: een venster op de snede               global.css, .mk-raam
+   Op de grote plekken (lijst 78 C1 – C4, lijst 81 V3) een veld, zonder harde randen:
+     het €1-blok (B4 Nacht, het licht rechtsonder) en de 404 (B4 Nacht met de witte V).
+   Hoogstens drie stukjes tegelijk op een pagina buiten de grote plekken; de lege fotoplek en het venster
+   tellen niet (die zie je maar even). tests/posterkleur-89-browser.test.mjs meet het: tekst op een stukje
+   minstens 4,5 : 1 op het slechtste beeldpunt, met de korrel; het venster minstens 3 : 1; nooit twee buren
+   met hetzelfde stukje. */
+
+.pk, .stand.is-geleverd { --pk-korrel: url(/img/stuk/korrel-128.webp); }
+@supports (background-image: image-set(url("/img/stuk/korrel-128.webp") 1x)) {
+  .pk, .stand.is-geleverd { --pk-korrel: image-set(url("/img/stuk/korrel-128.webp") 1x, url("/img/stuk/korrel-256.webp") 2x); }
+}
+.pk-h1-fp-1 { --pk: url(/img/stuk/h1-fp-1.webp); } .pk-h1-fp-6 { --pk: url(/img/stuk/h1-fp-6.webp); }
+.pk-N-fp-1 { --pk: url(/img/stuk/N-fp-1.webp); } .pk-N-fp-6 { --pk: url(/img/stuk/N-fp-6.webp); }
+.pk-S-fp-1 { --pk: url(/img/stuk/S-fp-1.webp); } .pk-S-fp-6 { --pk: url(/img/stuk/S-fp-6.webp); }
+.pk-g-fp-1 { --pk: url(/img/stuk/g-fp-1.webp); } .pk-g-fp-6 { --pk: url(/img/stuk/g-fp-6.webp); }
+.pk-h-fp-1 { --pk: url(/img/stuk/h-fp-1.webp); } .pk-h-fp-6 { --pk: url(/img/stuk/h-fp-6.webp); }
+.pk-n-blok-0 { --pk: url(/img/stuk/n-blok-0.webp); } .pk-n-blok-1 { --pk: url(/img/stuk/n-blok-1.webp); } .pk-n-blok-2 { --pk: url(/img/stuk/n-blok-2.webp); }
+.pk-t-blok-0 { --pk: url(/img/stuk/t-blok-0.webp); } .pk-t-blok-1 { --pk: url(/img/stuk/t-blok-1.webp); } .pk-t-blok-2 { --pk: url(/img/stuk/t-blok-2.webp); }
+.pk-n-knop-1 { --pk: url(/img/stuk/n-knop-1.webp); } .pk-n-knop-2 { --pk: url(/img/stuk/n-knop-2.webp); }
+.pk-n-knop-6 { --pk: url(/img/stuk/n-knop-6.webp); } .pk-n-knop-8 { --pk: url(/img/stuk/n-knop-8.webp); }
+.pk-t-knop-0 { --pk: url(/img/stuk/t-knop-0.webp); } .pk-t-knop-5 { --pk: url(/img/stuk/t-knop-5.webp); } .pk-t-knop-6 { --pk: url(/img/stuk/t-knop-6.webp); }
+.pk-n-vk-0 { --pk: url(/img/stuk/n-vk-0.webp); } .pk-n-vk-1 { --pk: url(/img/stuk/n-vk-1.webp); }
+.pk-n-vk-2 { --pk: url(/img/stuk/n-vk-2.webp); } .pk-n-vk-3 { --pk: url(/img/stuk/n-vk-3.webp); }
+.pk-t-vk-0 { --pk: url(/img/stuk/t-vk-0.webp); } .pk-t-vk-1 { --pk: url(/img/stuk/t-vk-1.webp); }
+.pk-t-vk-2 { --pk: url(/img/stuk/t-vk-2.webp); } .pk-t-vk-3 { --pk: url(/img/stuk/t-vk-3.webp); }
+
+/* ── E1 · de lege fotoplek ────────────────────────────────────────────────────────────────────────────
+   Op het beeld zelf, zolang het laadt; posterkleur.js haalt het weg zodra het beeld er is (dan schijnt er aan
+   de ronde rand niets door). Licht en donker door elkaar, zoals de posters. */
+img.pk-fp, .pk-fp { background: var(--pk-korrel) 0 0 / 128px 128px, var(--pk) 50% 50% / cover no-repeat, #E6EAF4 !important; }
+/* in Studio (geen script): onder het beeld, 1 px binnen de rand, zodat er aan de ronde hoek niets doorschijnt */
+body.studio .st-beeld-media.pk-fp-onder::before { content: ""; position: absolute; inset: 1px; border-radius: inherit; pointer-events: none;
+  background: var(--pk-korrel) 0 0 / 128px 128px, var(--pk) 50% 50% / cover no-repeat, #E6EAF4; }
+body.studio .st-beeld-media.pk-fp-onder > img { position: relative; }
+
+/* ── E2 · het ene inktblok (het slot onderaan, op een pagina zonder €1-blok) ─────────────────────────────
+   Een stukje nacht of snede onder de witte tekst; de snede van 53° rechtsonder en de vorm blijven (hal.css). */
+html body.hal .h-lk-slot.pk { background: var(--pk-korrel) 0 0 / 128px 128px, var(--pk) 50% 50% / cover no-repeat, #0F1217; }
+
+/* ── B4 · het €1-blok: het veld Nacht, het licht rechtsonder, weg van de tekst (lijst 78 C2) ──────────────
+   Een groot postervlak (telt niet mee bij de drie). Het blok houdt zijn ronde hoeken en zijn snede. */
+html body.hal .h-proef > .h-proef-woord.pk { background: var(--pk-korrel) 0 0 / 128px 128px, var(--pk) 50% 50% / cover no-repeat, #0F1217; }
+
+/* ── E3 · Bestellen bovenin ───────────────────────────────────────────────────────────────────────────────
+   Een pil (DESIGN.md "Hoeken": wat je bedient is een pil; de oude zachte hoek komt niet terug). Een stukje snede
+   met de gloed rechts, achter de pijl. Onder de muis en met de toets erop wordt alleen de grond donkerder (een
+   laag inkt erover), dus de witte letters worden nooit slechter leesbaar. Minder beweging: zonder overgang. */
+html body.hal .site-header .nav-cta.pk, html body.hal .site-header .container.nav .nav-cta.pk {
+  background: var(--pk-korrel) 0 0 / 128px 128px, var(--pk) 100% 50% / cover no-repeat, #25508B !important;
+  border-radius: 999px !important; box-shadow: inset 0 0 0 40px rgba(15, 18, 23, 0) !important;
+  transition: box-shadow .3s cubic-bezier(.2, .8, .2, 1) !important;
+}
+html body.hal .site-header .nav-cta.pk:hover, html body.hal .site-header .nav-cta.pk:focus-visible,
+html body.hal .site-header .container.nav .nav-cta.pk:hover, html body.hal .site-header .container.nav .nav-cta.pk:focus-visible {
+  background: var(--pk-korrel) 0 0 / 128px 128px, var(--pk) 100% 50% / cover no-repeat, #25508B !important;
+  box-shadow: inset 0 0 0 40px rgba(15, 18, 23, .22) !important;
+}
+@media (prefers-reduced-motion: reduce) { html body.hal .site-header .nav-cta.pk, html body.hal .site-header .container.nav .nav-cta.pk { transition: none !important; } }
+
+/* ── E4 · het gezicht met initialen (Studio, de zijbalk) ───────────────────────────────────────────────── */
+body.studio .st-wie-letter.pk, body.studio.st-hal .st-wie-letter.pk {
+  background: var(--pk-korrel) 0 0 / 128px 128px, var(--pk) 50% 50% / cover no-repeat, #25508B; color: #FFFFFF; box-shadow: none;
+}
+
+/* ── E5 · de status "geleverd" ────────────────────────────────────────────────────────────────────────────
+   Alleen deze ene stand (hij was massief inkt); de andere vier blijven zoals ze zijn (KLEURENSCHEMA.md). Eén
+   stukje voor de hele lijst (GELEVERD in stukken.js). public/account.css, admin.css en portal.css hebben dezelfde regel. */
+.stand.is-geleverd { background: var(--pk-korrel) 0 0 / 128px 128px, url(/img/stuk/n-knop-1.webp) 50% 50% / cover no-repeat, #0F1217 !important; color: #FFFFFF !important; box-shadow: none !important; }
+
+/* ── E6 · het balkje met de schuine kop ───────────────────────────────────────────────────────────────────
+   De strook op /lifestyle: het balkje laat zien welk deel van de strook je ziet en verspringt in vier stappen.
+   Het legt een vaste poster bloot: het stukje ligt over de hele baan en schuift met dezelfde vier stappen terug,
+   zodat de poster stilstaat en het balkje eroverheen gaat. Geen korrel: op 5 px zie je die niet. */
+html body.hal .h-lijntje:has(> i.pk) { container-type: inline-size; }
+html body.hal .h-lijntje i.pk {
+  background: var(--pk) calc(var(--x, 0) * (var(--w, .38) - 1) * 100cqw) 50% / 100cqw 100% no-repeat, #25508B;
+  transition: transform .4s steps(4, end), background-position .4s steps(4, end);
+}
+@media (prefers-reduced-motion: reduce) { html body.hal .h-lijntje i.pk { transition: none; } }
+
+/* ── B4 · de 404: het veld Nacht met de witte V (lijst 78 C4) ─────────────────────────────────────────────
+   Het grote vlak naast de kop. Het getal staat al in het label boven de kop; in het vlak staat de V. */
+html body.hal .h-nf-getal.pk { background: var(--pk-korrel) 0 0 / 128px 128px, var(--pk) 50% 50% / cover no-repeat, #0F1217; box-shadow: none; }
+html body.hal .h-nf-getal .h-nf-v { position: relative; z-index: 2; display: block; width: auto; height: 46%; max-height: 220px; aspect-ratio: 702 / 813.25; fill: #FFFFFF; stroke: none; }
+
+@media (forced-colors: active) {
+  .pk, img.pk-fp, .pk-fp { background: Canvas !important; }
+  html body.hal .site-header .nav-cta.pk { background: ButtonFace !important; color: ButtonText !important; }
+  .stand.is-geleverd { background: Canvas !important; color: CanvasText !important; border: 1px solid CanvasText !important; }
+}
+
+/* het venster (E7, global.css) niet op een donkere grond in Studio: daar blijft de schommel naar blauw licht */
+body.studio.on-ink .mk.mk-venster .mk-raam { display: none; }
+body.studio.on-ink .mk.mk-venster .mk-kleur { display: inline; }

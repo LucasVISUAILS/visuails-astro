@@ -27,7 +27,7 @@ const proefNoot = v.delivered.length > 0 && v.delivered.every((b) => b.review.ki
       <div class="st-product-kolom">
         <h3>{t.prodWeMade}</h3>
         {v.delivered.length
-          ? <ul class="st-beelden">{v.delivered.map((b) => <Beeld v={b} orderId={orderId} lang={lang} proefEenKeer={!!proefNoot} />)}</ul>
+          ? <ul class="st-beelden">{v.delivered.map((b, i) => <Beeld v={b} orderId={orderId} lang={lang} proefEenKeer={!!proefNoot} nr={i} />)}</ul>
           : <p class="st-meta">{t.prodNothingYet}</p>}
         {proefNoot && <p class="st-meta st-proef-noot">{proefNoot}</p>}
         {v.allesGoed && (
@@ -41,7 +41,7 @@ const proefNoot = v.delivered.length > 0 && v.delivered.every((b) => b.review.ki
       {(v.uploaded.length > 0 || v.fotosBeheer) && (
         <div class="st-product-kolom is-ref">
           <h3>{t.prodYouSent}</h3>
-          {v.uploaded.length > 0 && <ul class="st-beelden is-ref">{v.uploaded.map((b) => <Beeld v={b} orderId={orderId} lang={lang} />)}</ul>}
+          {v.uploaded.length > 0 && <ul class="st-beelden is-ref">{v.uploaded.map((b, i) => <Beeld v={b} orderId={`${orderId}:ref`} lang={lang} nr={i} />)}</ul>}
           {/* Werklijst 14 (15 oktober 2026): de knop onder "Wat jij stuurde",
               naar dit product in "Je foto's" (toevoegen, extra foto vervangen of
               verwijderen). Alleen zolang er nog foto's bij kunnen. */}

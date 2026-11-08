@@ -2616,7 +2616,7 @@ html[data-thema="donker"] .card { border-color: rgb(244 245 247 / .12); }
    19,6 px hoog en dus 112 px breed, zoals in de zijbalk van Studio. Op de losse
    schermen (inloggen, een fout, een uploadverslag) 22 px, zoals het portaal. */
 .mark { display: inline-block; line-height: 0; letter-spacing: 0; color: var(--ink); }
-.mark .woordmerk { display: block; height: 22px; width: auto; aspect-ratio: 4651.24 / 813.83; fill: currentColor; }
+.mark .woordmerk { display: block; height: 22px; width: auto; aspect-ratio: 3763.74 / 724; fill: currentColor; }
 .adm-side .mark { display: block; width: max-content; padding: .55rem .9rem .35rem; color: var(--adm-side-ink-1); }
 .adm-side .mark .woordmerk { height: 19.6px; }
 .adm-sub { padding: 0 .9rem 1.1rem; font-size: .8125rem; }
@@ -2782,7 +2782,7 @@ form.login {
   .mk .mk-line { transition-duration: 1ms; transition-delay: 0s; }
   .mk .mk-line-a { animation: none !important; }
 }
-/* de maten in eenheden van het tekenvlak (4651 breed): op 112 tot 124 px is 56
+/* de maten in eenheden van het tekenvlak (3764 breed, het tekstlogo K5): op 112 tot 124 px is 56
    ongeveer anderhalve pixel, zoals de V in de balk van de site */
 /* ══ HET LOGO SCHOMMELT IN KLEUR — levering 68 (24 oktober 2026) ════════════════════
    Lucas: *"Ik wil dat het logo niet zelf beweegt maar dat de kleuren op als een soort
@@ -2807,6 +2807,28 @@ form.login {
   .mk .mk-kleur { opacity: var(--vs-amp); }
 }
 @media (forced-colors: active) { .mk .mk-kleur { display: none; } }
+
+/* ══ HET LOGO WORDT EEN VENSTER — levering 89 (5 november 2026, lijst 82 E7) ════════════════════════
+   In plaats van de schommel van inkt naar blauw wordt het logo onder de muis (en met de toets erop) een venster
+   op een stukje snede, zoals kleur 7 van de animatie: zonder roze (roze komt nooit in een logo), met korrel, elk
+   punt minstens 3,6 : 1 op de grond (de eis voor een logo is 3 : 1). Het stukje (.mk-raam) is een <image> in een
+   knipvorm met het logo zelf; alleen zijn dekking beweegt, 0,6 s erheen en 0,7 s terug. Minder beweging: meteen.
+   Hier: het tekstlogo in de balk, op een lichte grond. Op een donkere grond blijft de schommel naar blauw licht. Kopie van global.css. */
+.mk .mk-raam { opacity: 0; transition: opacity .7s cubic-bezier(.2, .8, .2, 1); pointer-events: none; }
+:is(.mk:hover, a:hover > .mk, a:focus-visible > .mk, button:hover > .mk, button:focus-visible > .mk) .mk-raam { opacity: 1; transition-duration: .6s; }
+.mk.mk-venster .mk-kleur { display: none; }
+@media (prefers-reduced-motion: reduce) { .mk .mk-raam { transition: none; } }
+@media (forced-colors: active) { .mk .mk-raam { display: none; } }
+:root[data-thema="donker"] .mk.mk-venster .mk-raam { display: none; }
+:root[data-thema="donker"] .mk.mk-venster .mk-kleur { display: inline; }
+
+/* ── "geleverd" in een stukje nacht met korrel — levering 89 (lijst 82, E5). Zie src/styles/posterkleur.css. ── */
+.stand.is-geleverd { --pk-korrel: url(/img/stuk/korrel-128.webp); }
+@supports (background-image: image-set(url("/img/stuk/korrel-128.webp") 1x)) {
+  .stand.is-geleverd { --pk-korrel: image-set(url("/img/stuk/korrel-128.webp") 1x, url("/img/stuk/korrel-256.webp") 2x); }
+}
+.stand.is-geleverd { background: var(--pk-korrel) 0 0 / 128px 128px, url(/img/stuk/n-knop-1.webp) 50% 50% / cover no-repeat, #0F1217 !important; color: #FFFFFF !important; box-shadow: none !important; }
+@media (forced-colors: active) { .stand.is-geleverd { background: Canvas !important; color: CanvasText !important; border: 1px solid CanvasText !important; } }
 
 .mark { --mk-line-ink: #25508B; --mk-kleur: #25508B; --mk-sw: .55; --mk-off: 56px; --mk-j: 8px; --mk-r: .35deg; }
 :root[data-thema="donker"] .mark { --mk-line-ink: #80A7DD; --mk-kleur: #80A7DD; }

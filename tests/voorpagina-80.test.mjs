@@ -44,7 +44,7 @@ for (const [pad, taal] of [['index.html', 'en'], ['nl/index.html', 'nl']]) {
   ok(`${taal}: één h1, de titel in twee regels (lijst 64: "Zoals jij hem ziet")`, (h.match(/<h1\b/g) || []).length === 1 && /<h1\b[^>]*class="[^"]*\bo8-kop\b/.test(h1)
     && tekst(h1) === (taal === 'nl' ? 'Jouw merk, zoals jij hem ziet.' : 'Your brand, as you see it.'), tekst(h1));
   const plek = (re) => { const m = re.exec(h); return m ? m.index : -1; };
-  const volg = [plek(/class="o8"|class="o8 /), plek(/<section class="m8" id="maken"/), plek(/<section class="g8" id="looks"/), plek(/<section class="p8"/), plek(/<section class="w8"/), plek(/class="h-sec h-weten v-weten/), plek(/<section class="h-proef/)];
+  const volg = [plek(/class="o8"|class="o8 /), plek(/<section class="m8" id="maken"/), plek(/<section class="g8" id="looks"/), plek(/<section class="p9"/), plek(/<section class="w8"/), plek(/class="h-sec h-weten v-weten/), plek(/<section class="h-proef/)];
   ok(`${taal}: de volgorde: opening, Wat we maken, galerij, poster, Hoe het werkt, Meer weten, €1-blok`, volg.every((x, i) => x > 0 && (i === 0 || x > volg[i - 1])), volg.join(' '));
   ok(`${taal}:   de oude opening, de looks en de lange Hoe het werkt zijn weg`, !/data-lb-podium|class="h-sec h-looks|class="h-sec o-hoe/.test(h));
   /* Wat we maken: de vanafprijzen uit de code, de links bestaan */
@@ -55,7 +55,7 @@ for (const [pad, taal] of [['index.html', 'en'], ['nl/index.html', 'nl']]) {
   const m8links = [...m8.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
   ok(`${taal}:   alle links in Wat we maken bestaan (${m8links.length})`, m8links.length >= 7 && m8links.every(bestaat), m8links.filter((l) => !bestaat(l)).join(' '));
   /* de galerij */
-  const g8 = h.slice(plek(/<section class="g8"/), plek(/<section class="p8"/));
+  const g8 = h.slice(plek(/<section class="g8"/), plek(/<section class="p9"/));
   /* de build zet een style-attribuut om in een klasse (vs-…): daarom [^"]* na g8-tegel */
   const tegels = [...g8.matchAll(/<a class="g8-tegel[^"]*" href="([^"]+)"[^>]*>/g)];
   const echt = tegels.filter((m) => !/data-g8-kopie/.test(m[0]));
@@ -64,9 +64,10 @@ for (const [pad, taal] of [['index.html', 'en'], ['nl/index.html', 'nl']]) {
   const bronnen = [...g8.matchAll(/<(?:img|source)\b[^>]*>/g)].flatMap((m) => [...m[0].matchAll(/\s(?:src|srcset)="([^"]+)"/g)]).flatMap((m) => m[1].split(',').map((s) => s.trim().split(' ')[0]));
   ok(`${taal}:   elk beeld en elke veeg staat in public (${new Set(bronnen).size})`, bronnen.length > 40 && bronnen.every((b) => fs.existsSync(path.join(ROOT, 'public', b))), bronnen.filter((b) => !fs.existsSync(path.join(ROOT, 'public', b))).slice(0, 3).join(' '));
   /* de poster */
-  const p8 = h.slice(plek(/<section class="p8"/), plek(/<section class="w8"/));
-  ok(`${taal}: de poster: het V-merk uit de sprite (#markglyph), de regel als h2, de foto en de look bestaan`, /<use href="#markglyph"/.test(p8) && /<h2 id="p8-kop"/.test(p8)
-    && ['', '-w1200', '-w1560'].every((s) => fs.existsSync(path.join(ROOT, 'public', `img/lifestyle-phone-made-04${s}.webp`))) && bestaat((/class="p8-look" href="([^"]+)"/.exec(p8) || [, '/x'])[1]));
+  /* levering 89: de logoposter (HalPoster89, lijst 81 C1) in plaats van HalPoster80 */
+  const p8 = h.slice(plek(/<section class="p9"/), plek(/<section class="w8"/));
+  ok(`${taal}: de poster: het V-merk uit de sprite (#markglyph), de regel als h2, de foto en de look bestaan`, /<use href="#markglyph"/.test(p8) && /<h2 id="p9-kop"/.test(p8)
+    && ['', '-w1200', '-w1560'].every((s) => fs.existsSync(path.join(ROOT, 'public', `img/lifestyle-phone-made-04${s}.webp`))) && bestaat((/class="p9-look" href="([^"]+)"/.exec(p8) || [, '/x'])[1]));
   /* Hoe het werkt, kort: de levertijd uit de code */
   const [snel, traag] = levertijdDelen('unattended', taal);
   const w8 = h.slice(plek(/<section class="w8"/), plek(/class="h-sec h-weten/));
@@ -76,16 +77,16 @@ for (const [pad, taal] of [['index.html', 'en'], ['nl/index.html', 'nl']]) {
   ok(`${taal}: de €1-link alleen voor wie nog niet bestelde; een klant ziet de link naar Studio`, /href="[^"]*test-sample[^"]*" data-vis-uit/.test(acties) && /href="\/account" data-vis-klant-in hidden/.test(acties), acties.slice(0, 400));
   /* het laadscherm alleen hier */
   ok(`${taal}: het laadscherm: de klasse vóór de eerste verf, het V-merk, de noodrem`, h.indexOf("classList.add('vl8-aan')") > 0 && h.indexOf("classList.add('vl8-aan')") < h.indexOf('<body') && /<div class="vl8" id="vl8"/.test(h) && /getoond\?open\(\):ruim\(\)|getoond \? open\(\) : ruim\(\)/.test(h));
-  ok(`${taal}:   koppen in de nieuwe secties hebben de kopletter-klasse`, ['m8-kop', 'g8-kop', 'p8-kop'].every((k) => new RegExp(`class="h-kop ${k}"`).test(h)));
+  ok(`${taal}:   koppen in de nieuwe secties hebben de kopletter-klasse`, ['m8-kop', 'g8-kop', 'p9-kop'].every((k) => new RegExp(`class="h-kop ${k}"`).test(h)));
 }
 {
   const h = fs.readFileSync(path.join(DIST, 'pricing/index.html'), 'utf8');
   ok('het laadscherm staat op geen andere pagina (/pricing)', !/vl8/.test(h));
 }
 const bron = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
-/* levering 87 (lijst 74): de opening vangt het wiel niet meer; de laptop staat stil en het scrollen speelt hem af
-   (tests/opening-88-browser.test.mjs) */
-ok('de opening vangt het wiel niet meer af (levering 87: gewoon scrollen)', !/addEventListener\('wheel'/.test(bron('src/components/HalOpening80.astro')));
+/* levering 87 (lijst 74): gewoon scrollen naar de laptop. Levering 88c: op het podium speelt één scroll alles, en alleen dan
+   vangt de opening het wiel (tests/opening-89-browser.test.mjs) */
+ok('de opening vangt het wiel alleen op het podium en zolang hij speelt (levering 88c)', /if \(fase === 'rust' && dy > 0\) \{ const s = sNu\(\); if \(s >= -2 && s <= lengte\(\) \* 0\.5\)/.test(bron('src/components/HalOpening80.astro')));
 ok('zacht scrollen staat in Layout en alleen voor een muiswiel', /import '\.\.\/scripts\/zachtscrollen\.js'/.test(bron('src/layouts/Layout.astro')) && /function isMuiswiel/.test(bron('src/scripts/zachtscrollen.js')));
 ok('de letter heeft de gewichten 300 – 700 (lopende tekst 370)', /font-family: 'DM Sans'; font-style: normal; font-weight: 300 700;/.test(bron('src/styles/hal.css')) && /\.h-voor \{ font-weight: 370; \}/.test(bron('src/styles/voorpagina-80.css')));
 ok('docs/RUST-80.md beschrijft de secties, het scrollen en het laadscherm', ['## 7 · De secties na de opening', '## 8 · Zacht scrollen en het laadscherm'].every((k) => bron('docs/RUST-80.md').includes(k)));
@@ -177,18 +178,25 @@ for (const [breed, hoog] of [[1440, 900], [1920, 1080], [390, 844]]) {
   const t0 = await page.evaluate(() => [...document.querySelectorAll('[data-g8-baan]')].map((b) => getComputedStyle(b).transform));
   await page.evaluate(async () => { for (let i = 0; i < 12; i++) { window.scrollBy(0, 40); await new Promise((r) => requestAnimationFrame(r)); } });
   await page.waitForTimeout(1500);
-  const t1 = await page.evaluate(() => [...document.querySelectorAll('[data-g8-baan]')].map((b) => getComputedStyle(b).transform));
+  /* zonder grafische kaart lopen de beelden trager (en sinds levering 89 hangen de foto's, anti-gravity D2): wacht tot
+     de rijen uitgelopen zijn, hoogstens 6 s; daarna moeten ze stil blijven staan */
+  const rijen = () => page.evaluate(() => [...document.querySelectorAll('[data-g8-baan]')].map((b) => getComputedStyle(b).transform));
+  let t1 = await rijen(), t2 = t1;
+  for (let i = 0; i < 15; i++) { await page.waitForTimeout(400); t2 = await rijen(); if (JSON.stringify(t1) === JSON.stringify(t2)) break; t1 = t2; }
   await page.waitForTimeout(400);
-  const t2 = await page.evaluate(() => [...document.querySelectorAll('[data-g8-baan]')].map((b) => getComputedStyle(b).transform));
+  t2 = await rijen();
   const x = (t) => t.map((s) => Number((/matrix\([^,]+,[^,]+,[^,]+,[^,]+,\s*([-\d.]+)/.exec(s) || [, 0])[1]));
   const [a0, b0] = x(t0), [a1, b1] = x(t1);
   ok('de galerij: rij 1 schuift naar links en rij 2 naar rechts als je naar beneden scrolt', a1 < a0 || a1 - a0 > 1000, JSON.stringify([a0, a1, b0, b1]));
   ok('  en staat daarna weer stil (geen lus)', JSON.stringify(t1) === JSON.stringify(t2), JSON.stringify([t1, t2]));
   /* de poster: aan het eind van de baan vult de foto het scherm en staat de look erbij */
-  const p = await page.evaluate(() => { const b = document.querySelector('[data-p8-baan]').getBoundingClientRect(); return { top: Math.round(scrollY + b.top), h: Math.round(b.height) }; });
+  /* levering 89: de poster begint als hij in de buurt komt (p9-aan), pas dan heeft de baan zijn lengte */
+  await page.evaluate(() => window.scrollTo(0, document.querySelector('[data-p9]').getBoundingClientRect().top + scrollY - 200));
+  await page.waitForFunction(() => document.querySelector('[data-p9]').classList.contains('p9-aan'), null, { timeout: 60000 }).catch(() => {});
+  const p = await page.evaluate(() => { const b = document.querySelector('[data-p9-baan]').getBoundingClientRect(); return { top: Math.round(scrollY + b.top), h: Math.round(b.height) }; });
   await page.evaluate(([t, hh]) => window.scrollTo(0, t + hh - innerHeight), [p.top, p.h]);
-  await page.waitForTimeout(1600);
-  const pe = await page.evaluate(() => ({ eind: document.querySelector('[data-p8]').classList.contains('is-eind'), sticky: getComputedStyle(document.querySelector('[data-p8-podium]')).position, top: document.querySelector('[data-p8-podium]').getBoundingClientRect().top }));
+  await page.waitForFunction(() => document.querySelector('[data-p9]').classList.contains('is-eind'), null, { timeout: 20000 }).catch(() => {});
+  const pe = await page.evaluate(() => ({ eind: document.querySelector('[data-p9]').classList.contains('is-eind'), sticky: getComputedStyle(document.querySelector('[data-p9-podium]')).position, top: document.querySelector('[data-p9-podium]').getBoundingClientRect().top }));
   ok('de poster: het podium blijft staan, en aan het eind staat de look van de foto erbij', pe.eind && pe.sticky === 'sticky' && dicht(pe.top, 0, 1), JSON.stringify(pe));
   ok('  geen scriptfout', fouten.length === 0, fouten.join(' | '));
   await ctx.close();
@@ -198,7 +206,7 @@ for (const [breed, hoog] of [[1440, 900], [1920, 1080], [390, 844]]) {
 console.log('\n4 · minder beweging');
 {
   const { ctx, page, fouten } = await open('/nl/', { stil: true });
-  const m = await page.evaluate(() => ({ g8: document.querySelector('[data-g8]').classList.contains('g8-aan'), p8: document.querySelector('[data-p8]').classList.contains('p8-aan'), rij: getComputedStyle(document.querySelector('.g8-rij')).overflowX, kopie: getComputedStyle(document.querySelector('.g8-tegel[data-g8-kopie]')).display, o8: document.documentElement.classList.contains('o8-aan') }));
+  const m = await page.evaluate(() => ({ g8: document.querySelector('[data-g8]').classList.contains('g8-aan'), p8: document.querySelector('[data-p9]').classList.contains('p9-aan'), rij: getComputedStyle(document.querySelector('.g8-rij')).overflowX, kopie: getComputedStyle(document.querySelector('.g8-tegel[data-g8-kopie]')).display, o8: document.documentElement.classList.contains('o8-aan') }));
   ok('geen scrolleffecten: de rijen scrollen zelf, zonder kopieën; de poster staat stil; de opening glijdt niet', !m.g8 && !m.p8 && m.rij === 'auto' && m.kopie === 'none' && !m.o8, JSON.stringify(m));
   ok('  geen scriptfout', fouten.length === 0, fouten.join(' | '));
   await ctx.close();

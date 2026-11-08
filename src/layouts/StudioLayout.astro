@@ -27,12 +27,15 @@
  * ze krijgt zonder er zelf aan te denken. no-store, noindex, en de CSP.
  */
 import '../styles/global.css';
-import { woordmerkSvg } from '../data/wordmarkPath.js';
+import { woordmerkSvg, vMerkSvg } from '../data/wordmarkPath.js';
 import { ikoon } from '../data/iconen.js';
 /* Levering 57 (17 oktober 2026, v35-studio a): het woordmerk met de elektrische lijn
    onder de muis, zoals op de site (woordmerkSvg; de beweging in global.css, de maten in
    studio-hal.css), en het uitlog-icoon uit het kit. */
 const MERK_SVG = woordmerkSvg('st-woordmerk');
+/* Levering 89: dicht toont de zijbalk het V-merk zelf (het tekstlogo K5 kan niet tot zijn V afgeknipt worden);
+   studio.css toont het een of het ander, nooit allebei. */
+const V_SVG = vMerkSvg('st-merk-v');
 const UIT_IK = ikoon('pijl', 'st-uit-ik');
 import { standKlasse } from '../data/status.js';
 import '../styles/studio.css';
@@ -41,6 +44,9 @@ import '../styles/studio.css';
    is dat de enige stand: geen donker scherm en geen weg terug naar de vorige. */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/studio-hal.css';
+/* levering 89 (lijst 82, E4 en E5): het gezicht en de status "geleverd" in een stukje poster, zonder script */
+import '../styles/posterkleur.css';
+import { kies, pkKlasse } from '../data/stukken.js';
 /* Sectie 22: Anybody voor de koppen, Figtree voor de tekst, Martian
    Mono voor de labels — alle drie variabel, open source en zelf gehost. Zie de
    noot bij --font-heading in global.css voor waarom deze drie. */
@@ -158,6 +164,7 @@ const metParam = (k, v) => {
         <div class="st-side-kop">
           <a class="st-merk" href="/" aria-label="VISUAILS">
             <Fragment set:html={MERK_SVG} />
+            <Fragment set:html={V_SVG} />
           </a>
           <span class="st-sub">{t.dashSub}</span>
         </div>
@@ -176,7 +183,7 @@ const metParam = (k, v) => {
         <div class="st-side-voet">
           {customer && (
             <div class="st-wie" title={navDicht ? `${naam} · ${customer.email}` : undefined}>
-              <span class="st-wie-letter" aria-hidden="true">{letter}</span>
+              <span class:list={['st-wie-letter', pkKlasse(kies('vk', String(customer.email || naam)))]} aria-hidden="true">{letter}</span>
               <span class="st-wie-tekst">
                 <span class="st-wie-naam">{naam}</span>
                 <span class="st-wie-mail">{customer.email}</span>

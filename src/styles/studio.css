@@ -187,17 +187,19 @@ body.studio a:not(.btn) { color: inherit; }
 /* ── HET MERK KLAPT MEE, 14 OKTOBER 2026 ────────────────────────────────────
    Lucas: *"als je de zijbalk in studio dichtklapt dat het logo van het
    woordlogo naar het V logo met een animatie smooth verandert."* De V ÍS de
-   eerste letter van het woordmerk (src/data/wordmarkPath.js), dus er wordt niets
-   verwisseld: het woordmerk staat in een venster dat dichtschuift tot alleen de
-   V erin past (x 0–740 van 4651,24, de I begint op 826,7), en tegelijk groter
-   wordt, van 18 naar 26 px hoog. De maat is één getal, --merk-h; de breedte van
-   het venster volgt eruit.
+   eerste letter van het woordmerk (tot levering 88). Sinds levering 89 is het logo het tekstlogo
+   K5, waarvan de V een letter is en de I er met een schuine naad uit komt: afknippen zou een stukje
+   I laten zien. Dicht staat daarom het V-merk zelf (.st-merk-v, vMerkSvg in src/data/wordmarkPath.js),
+   26 px hoog; open het tekstlogo, 18 px hoog. Nooit allebei tegelijk. De maat is één getal, --merk-h;
+   de breedte volgt eruit.
    De beweging zelf staat onderaan dit bestand (DE OVERGANG): Studio heeft geen
    script, dus het is een view transition tussen de twee pagina's. */
-.st-merk { --merk-h: 18px; display: block; flex: none; overflow: hidden; height: var(--merk-h); width: calc(var(--merk-h) * 4651.24 / 813.83); view-transition-name: st-merk; }
+.st-merk { --merk-h: 18px; display: block; flex: none; overflow: hidden; height: var(--merk-h); width: calc(var(--merk-h) * 3763.74 / 724); view-transition-name: st-merk; }
 /* De breedte uitgeschreven en max-width uit: global.css zet svg op max-width 100%,
    en dan perste het venster het hele woord in de breedte van de V. */
-.st-merk .st-woordmerk { display: block; flex: none; height: var(--merk-h); width: calc(var(--merk-h) * 4651.24 / 813.83); max-width: none; }
+.st-merk .st-woordmerk { display: block; flex: none; height: var(--merk-h); width: calc(var(--merk-h) * 3763.74 / 724); max-width: none; }
+.st-merk .st-merk-v { display: none; height: var(--merk-h); width: calc(var(--merk-h) * 702 / 813.25); max-width: none; fill: currentColor; }
+body.studio:not(.on-ink) .st-merk .st-merk-v { fill: url(#vs-vi-snede); }
 .st-glyph, .st-woordmerk { width: 100%; height: 100%; fill: currentColor; }
 .st-sub { font-size: .75rem; color: var(--sd-side-ink-3); letter-spacing: 0; }
 .st-mob { display: none; }
@@ -241,7 +243,9 @@ body.studio .st-navlink.is-actief { background: var(--sd-side-actief); color: va
 .is-dicht .st-side { padding-inline: .6rem; }
 .is-dicht .st-side-kop { padding-inline: 0; align-items: center; }
 .is-dicht .st-sub { display: none; }
-.is-dicht .st-merk { --merk-h: 26px; width: calc(var(--merk-h) * 740 / 813.83); }
+.is-dicht .st-merk { --merk-h: 26px; width: calc(var(--merk-h) * 702 / 813.25); }
+.is-dicht .st-merk .st-woordmerk { display: none; }
+.is-dicht .st-merk .st-merk-v { display: block; }
 .is-dicht .st-navlink span, .is-dicht .st-wie-tekst, .is-dicht .st-uit span { display: none; }
 .is-dicht .st-navlink, .is-dicht .st-uit, .is-dicht .st-wie { justify-content: center; padding: 0; }
 
@@ -1163,7 +1167,9 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
     padding: .6rem .75rem .75rem;
   }
   .st-side-kop { grid-area: kop; min-height: 40px; padding: 0 .25rem; flex-direction: row; align-items: center; justify-content: flex-start; visibility: visible; }
-  .st-merk, .is-dicht .st-merk { --merk-h: 16.8px; width: calc(var(--merk-h) * 4651.24 / 813.83); }
+  .st-merk, .is-dicht .st-merk { --merk-h: 16.8px; width: calc(var(--merk-h) * 3763.74 / 724); }
+  .is-dicht .st-merk .st-woordmerk { display: block; }
+  .is-dicht .st-merk .st-merk-v { display: none; }
   .st-sub { display: none; }
   .st-mob { grid-area: mob; display: flex; align-items: center; gap: .35rem; }
   .st-mob form { margin: 0; }
