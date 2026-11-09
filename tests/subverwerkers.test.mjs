@@ -21,7 +21,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
-  ONTVANGERS, LIJST_GEWIJZIGD, MELDTERMIJN_DAGEN, subverwerkers, ontvangers, lijstGewijzigdOp, lijstRegel,
+  ONTVANGERS, LIJST_GEWIJZIGD, SUBVERWERKERS_GEWIJZIGD, MELDTERMIJN_DAGEN, subverwerkers, ontvangers, lijstGewijzigdOp, lijstRegel,
 } from '../src/data/subverwerkers.js';
 import { LAATST_BIJGEWERKT } from '../src/data/juridischeDatums.js';
 import { buildStaat } from './lib/build.mjs';
@@ -72,16 +72,25 @@ console.log('\nde datum "laatst gewijzigd"');
   ok('LIJST_GEWIJZIGD is een datum', /^\d{4}-\d{2}-\d{2}$/.test(LIJST_GEWIJZIGD), true, LIJST_GEWIJZIGD);
   const d = new Date(`${LIJST_GEWIJZIGD}T00:00:00Z`);
   ok('en geen datum in de toekomst', d.getTime() <= Date.now() + 864e5, true, LIJST_GEWIJZIGD);
-  /* 11 oktober 2026: ByteDance erbij (ko08 = a). */
-  ok('als tekst, Nederlands', lijstGewijzigdOp('nl'), '11 oktober 2026');
-  ok('als tekst, Engels', lijstGewijzigdOp('en'), '11 October 2026');
+  /* 11 oktober 2026: ByteDance erbij (ko08 = a). 9 november 2026 (ronde 91, E17):
+     e-Boekhouden en VIES erbij, zonder beeld — dus de lijst van de
+     verwerkersovereenkomst houdt 11 oktober. */
+  ok('als tekst, Nederlands', lijstGewijzigdOp('nl'), '9 november 2026');
+  ok('als tekst, Engels', lijstGewijzigdOp('en'), '9 November 2026');
+  ok('de subverwerkers (met beeld) houden hun eigen datum', lijstGewijzigdOp('nl', 'subverwerkers'), '11 oktober 2026');
+  ok('… en dat is ook de datum op de verwerkersovereenkomst', lijstRegel('en', 'subverwerkers').includes('11 October 2026'), true);
   ok('de regel boven de lijst noemt hem', lijstRegel('nl').includes(lijstGewijzigdOp('nl')), true);
   /* Een gewijzigde lijst is een gewijzigd document: de datum bovenaan de twee
      pagina's mag niet ouder zijn dan de lijst die ze afdrukken. */
-  for (const doc of ['privacy', 'data-processing-agreement']) {
+  for (const [doc, datum] of [['privacy', LIJST_GEWIJZIGD], ['data-processing-agreement', SUBVERWERKERS_GEWIJZIGD]]) {
     ok(`${doc}: "laatst bijgewerkt" is niet ouder dan de lijst`,
-      LAATST_BIJGEWERKT[doc] >= LIJST_GEWIJZIGD.slice(0, 7), true, `${LAATST_BIJGEWERKT[doc]} < ${LIJST_GEWIJZIGD}`);
+      LAATST_BIJGEWERKT[doc] >= datum.slice(0, 7), true, `${LAATST_BIJGEWERKT[doc]} < ${datum}`);
   }
+  /* De beeldlijst kan niet later gewijzigd zijn dan de hele lijst. */
+  ok('SUBVERWERKERS_GEWIJZIGD ≤ LIJST_GEWIJZIGD', SUBVERWERKERS_GEWIJZIGD <= LIJST_GEWIJZIGD, true);
+  /* Ronde 91 (E17): de ontvangers zonder beeld staan op de privacypagina, niet in de verwerkersovereenkomst. */
+  ok('e-Boekhouden en VIES staan in het privacybeleid', ['e-boekhouden', 'vies'].every((id) => ontvangers('nl').some((o) => o.id === id)), true);
+  ok('… en niet in de lijst van de verwerkersovereenkomst', ['e-boekhouden', 'vies'].every((id) => !subverwerkers('nl').some((o) => o.id === id)), true);
   /* En git mag niet nieuwer zijn dan de datum, op maandniveau — dezelfde regel als
      tests/juridische-datums.test.mjs. Zonder git (een kopie zonder .git) slaat
      hij over in plaats van rood te gaan. */
@@ -128,7 +137,8 @@ console.log('\nde gebouwde pagina\'s tonen de lijst en de datum');
     const vwo = { en: readFileSync(pad('data-processing-agreement'), 'utf8'), nl: readFileSync(pad('nl/data-processing-agreement'), 'utf8') };
     const priv = { en: readFileSync(pad('privacy'), 'utf8'), nl: readFileSync(pad('nl/privacy'), 'utf8') };
     for (const lang of ['en', 'nl']) {
-      ok(`${lang}: de overeenkomst toont de datum`, vwo[lang].includes(lijstGewijzigdOp(lang)), true);
+      /* ronde 91 (E17): de overeenkomst noemt de datum van de SUBverwerkers (e-Boekhouden en VIES zijn ontvangers, geen subverwerkers) */
+      ok(`${lang}: de overeenkomst toont de datum`, vwo[lang].includes(lijstGewijzigdOp(lang, 'subverwerkers')), true);
       ok(`${lang}: het privacybeleid ook`, priv[lang].includes(lijstGewijzigdOp(lang)), true);
       for (const s of subverwerkers(lang)) {
         const naam = s.naam.replace(/&/g, '&amp;');

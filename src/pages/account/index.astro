@@ -1,4 +1,5 @@
 ---
+import { knopInhoud } from '../../data/iconen.js';
 /**
  * /account — het overzicht van Studio, als Astro-pagina. 5 september 2026.
  *
@@ -63,7 +64,7 @@ const restZonderBoven = v.rest.filter((o) => !(w && w.boven && o.id === w.boven.
               <li>
                 <span class="st-ref">{n.ref}</span>
                 <span class="st-meta">{n.zin}</span>
-                <a class="st-link" href={n.href}>{t.ovOpenOrder}</a>
+                <a class="st-link k k-tekst k-klein" data-rol="navigeren" href={n.href} set:html={knopInhoud('navigeren', t.ovOpenOrder)} />
               </li>
             ))}
           </ul>
@@ -85,14 +86,14 @@ const restZonderBoven = v.rest.filter((o) => !(w && w.boven && o.id === w.boven.
           <div class="st-kaart-vlak st-vlak st-saldovak is-tegoed" data-saldo="tegoed">
             <p class="st-saldovak-getal">{v.saldoStrook.tegoed.getal}</p>
             <p class="st-meta">{v.saldoStrook.tegoed.uitleg}</p>
-            <a class="st-link" href={v.saldoStrook.tegoed.link.href}>{v.saldoStrook.tegoed.link.label} →</a>
+            <a class="st-link k k-tekst k-klein" data-rol="navigeren" href={v.saldoStrook.tegoed.link.href} set:html={knopInhoud('navigeren', v.saldoStrook.tegoed.link.label)} />
           </div>
         )}
         {v.saldoStrook.credits && (
           <div class="st-kaart-vlak st-vlak st-saldovak is-credits" data-saldo="credits">
             <p class="st-saldovak-getal">{v.saldoStrook.credits.getal}</p>
             <p class="st-meta">{v.saldoStrook.credits.uitleg}</p>
-            <a class="st-link" href={v.saldoStrook.credits.link.href}>{v.saldoStrook.credits.link.label} →</a>
+            <a class="st-link k k-tekst k-klein" data-rol="navigeren" href={v.saldoStrook.credits.link.href} set:html={knopInhoud('navigeren', v.saldoStrook.credits.link.label)} />
           </div>
         )}
       </div>
@@ -129,7 +130,7 @@ const restZonderBoven = v.rest.filter((o) => !(w && w.boven && o.id === w.boven.
   <section class="st-blok">
     <div class="st-blok-kop">
       <h2>{t.ovLatest}</h2>
-      {orders.length > 0 && <a class="st-link" href="/account/orders">{t.ovViewAll}</a>}
+      {orders.length > 0 && <a class="st-link k k-tekst k-klein" data-rol="navigeren" href="/account/orders" set:html={knopInhoud('navigeren', t.ovViewAll)} />}
     </div>
     {v.latest.length > 0 ? (
       <ul class="st-strook">
@@ -151,7 +152,7 @@ const restZonderBoven = v.rest.filter((o) => !(w && w.boven && o.id === w.boven.
   <section class="st-blok">
     <div class="st-blok-kop">
       <h2>{t.ovRecent}</h2>
-      {orders.length > 0 && <a class="st-link" href="/account/orders">{t.ovViewAll}</a>}
+      {orders.length > 0 && <a class="st-link k k-tekst k-klein" data-rol="navigeren" href="/account/orders" set:html={knopInhoud('navigeren', t.ovViewAll)} />}
     </div>
     {v.recent.length > 0 ? (
       <div class="st-kaart-vlak">

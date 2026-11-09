@@ -89,7 +89,7 @@ for (const closed of [true, false]) {
   const naam = closed ? 'afgerond bij levering' : 'een oude proef zonder closed_at';
   ok(`${naam}: meteen het afrondblok`, html.includes('id="afgerond"') && html.indexOf('id="afgerond"') < html.indexOf('class="facts"'));
   ok(`  de downloads bovenaan`, html.indexOf('class="folder"', html.indexOf('id="afgerond"')) > -1 && html.indexOf('class="folder"') < html.indexOf('class="herbestel"'));
-  ok(`  "Bestel in deze look" vóór de tevredenheidsvraag`, html.indexOf('class="herbestel"') < html.indexOf('class="fb"') && />Bestel in deze look<\/a>/.test(html));
+  ok(`  "Bestel in deze look" vóór de tevredenheidsvraag`, html.indexOf('class="herbestel"') < html.indexOf('class="fb"') && />Bestel in deze look(<svg[^]*?<\/svg>)?<\/a>/.test(html));  // knoppensysteem lijst 88/89: met de pijl van Doorgaan erachter
   ok(`  met de echte keuzes in de link`, html.includes('href="/nl/start/catalog/?bg=F5F5F5&amp;ratio=portrait45&amp;face=ava"'));
   ok(`  "catalogfoto’s vanaf ${euro(ladderFloor('catalog'), 'nl')} per product" uit de staffel`, html.includes(`catalogfoto’s vanaf ${euro(ladderFloor('catalog'), 'nl')} per product`));
   ok(`  de tevredenheidsvraag staat er`, html.includes('Ben je tevreden met wat je hebt gekregen?'));

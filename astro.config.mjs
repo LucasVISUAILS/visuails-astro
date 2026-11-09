@@ -19,6 +19,8 @@ import korteZinnen from './scripts/korte-zinnen.mjs';
 import plaatshouders from './scripts/plaatshouders.mjs';
 // De woff2's voor Studio, portaal en /admin — die laden de sitebundel niet.
 import fontsVoorWorker from './scripts/fonts-voor-worker.mjs';
+/* ?v= achter elke url(/img/hal/…) in de stylesheets (lijst 87, C16). Zie src/data/beeldVersie.js. */
+import { metHalVersie } from './src/data/beeldVersie.js';
 
 // VISUAILS — Astro v2 rebuild. Fully static output (Cloudflare Pages serves
 // the build/ output directly, same deploy shape as the previous SvelteKit
@@ -176,6 +178,18 @@ export default defineConfig({
     build: {
       assetsInlineLimit: (bestand) => (/\.js$/.test(bestand) ? false : undefined),
     },
+    /* Lijst 87 (C16): /img/* staat zeven dagen in de cache (public/_headers). Elke
+       url(/img/hal/…) in een stylesheet (ook de <style> van een component) krijgt
+       ?v=<teken uit de inhoud>, zodat een nieuw masker of veld onder een oude naam
+       niet uit de cache van vorige week komt. Een url met al een ?v= blijft staan. */
+    plugins: [{
+      name: 'visuails-hal-versie',
+      enforce: 'pre',
+      transform(code, id) {
+        if (!/\.css(\?|$)|[?&]lang\.css/.test(id) || !code.includes('/img/hal/')) return null;
+        return { code: metHalVersie(code), map: null };
+      },
+    }],
   },
   integrations: [brandLockupGuard(), gewijzigdOp(), sitemapAnd404(), llmsTxt(), plaatshouders(), avifNaastWebp(), fontsVoorWorker(), commentaarUitDePagina(), korteZinnen(), stijlUitDePagina(), cspScripts()],
 });

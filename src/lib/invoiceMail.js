@@ -40,12 +40,15 @@ import { shell, h1, p, rows, note, linkLine, esc, button, greeting, vragen, spam
    bedankpagina en de bestelmail, de privélink bovenaan, en wat er ontbreekt. */
 import { verderBlokHtml, leveringVan } from './verder.js';
 import { ontbrekendVoorOrder, ontbrekendRegels } from './ontbreekt.js';
+import { nasturenOpen } from './nasturen.js';
 import { mintToken, hashToken, portalUrl } from './token.js';
 /* 6.03 (8 oktober 2026): credits blijven voor iedereen even lang geldig; de
    doorschuifregel per termijn (rolloverMonths) staat niet meer in deze mail. */
 import { CREDITS_GELDIG_MAANDEN } from '../data/pricing.js';
 import { VAT_TREATMENT } from '../data/vat.js';
 import { formatDate } from './invoicePdf.js';
+/* E05 (9 november 2026, ronde 91): Studio-links met de taal van de mail. */
+import { studioUrl } from './studioLink.js';
 
 const SITE = 'https://visuails.com';
 
@@ -145,7 +148,7 @@ const dateLine = (iso, lang) => formatDate(String(iso || ''), lang);
  * @param {object} o.snap  de bewaarde momentopname
  * @param {boolean} o.attached  zit de pdf er echt bij? Bepaalt één alinea.
  */
-export function invoiceEmail({ lang = 'nl', order = {}, invoice, snap = {}, attached = true, link = '', levering = null, ontbreekt = null, uitgesteld = null, nu = null }) {
+export function invoiceEmail({ lang = 'nl', order = {}, invoice, snap = {}, attached = true, link = '', levering = null, ontbreekt = null, fotosLink = '', uitgesteld = null, nu = null }) {
   const t = COPY[lang === 'en' ? 'en' : 'nl'];
   const gross = Number(snap.netCents || 0) + Number(snap.vatCents || 0);
   // Dezelfde drie waarden als vat.js en invoicePdf.js, uit de constante en niet
@@ -170,8 +173,10 @@ export function invoiceEmail({ lang = 'nl', order = {}, invoice, snap = {}, atta
   const eigenZin = order.service === 'brand-model' ? t.nextModel : offerte ? t.nextOfferte : '';
   const watNu = !order.ref ? ''
     : eigenZin ? p(`<b>${esc(t.nextH)}.</b> ${esc(eigenZin)}`, { top: 4 })
-      : verderBlokHtml({ lang, levering: levering || leveringVan(order), factuur: 'bijgevoegd', ontbreekt });
-  const portaal = `${SITE}${lang === 'nl' ? '/nl' : ''}/account`;
+      /* K-02 (9 november 2026): bij wat ontbreekt de knop "Foto's toevoegen" naar de bestelpagina. */
+      : verderBlokHtml({ lang, levering: levering || leveringVan(order), factuur: 'bijgevoegd', ontbreekt, fotosLink });
+  /* Rechtstreeks naar /account met ?lang= (ronde 91, E05): /nl/account/… liet de taal vallen. */
+  const portaal = studioUrl(SITE, '', lang);
   const body = [
     h1(t.head, kenmerk('factuur', invoice.number, lang)),
     /* De aanhef, zoals in elke andere klantmail (ronde 9, O21), ook zonder naam.
@@ -181,7 +186,7 @@ export function invoiceEmail({ lang = 'nl', order = {}, invoice, snap = {}, atta
     /* De knop bovenaan (7.01): de privélink van deze bestelling. Zonder link
        (een oude bestelling, of het maken van de link lukte niet) gaat hij naar
        VISUAILS Studio, waar dezelfde bestelling staat. */
-    order.ref ? button(link || `${portaal}/orders`, t.knop) : '',
+    order.ref ? button(link || studioUrl(SITE, '/orders', lang), t.knop) : '',
     watNu,
     /* B04 (doorloop 27): wachtte de bevestiging op deze betaling, dan is dit de
        enige mail, en staat hier wat de klant bestelde (de rijen uit de
@@ -228,15 +233,18 @@ export function invoiceEmail({ lang = 'nl', order = {}, invoice, snap = {}, atta
  * Alles best effort: lukt een stap niet, dan gaat de mail zonder dat stuk.
  * Ook gebruikt door mailBetalingOntvangen() in cancelMail.js.
  *
- * @returns {Promise<{ link: string, levering: object|null, ontbreekt: string[] }>}
+ * K-02 (9 november 2026): `fotosLink` is de bestelpagina met #fotos, alleen als er
+ * iets ontbreekt en er bij deze bestelling nog foto's bij kunnen (nasturenOpen()).
+ *
+ * @returns {Promise<{ link: string, levering: object|null, ontbreekt: string[], fotosLink: string }>}
  */
 export async function betaalMailContext(env, ref, lang = 'nl') {
-  const uit = { link: '', levering: null, ontbreekt: [] };
+  const uit = { link: '', levering: null, ontbreekt: [], fotosLink: '' };
   if (!env?.DB || !ref) return uit;
   let o = null;
   try {
     o = await env.DB.prepare(
-      'SELECT id, tier, window_start, window_end, details_json FROM orders WHERE ref = ?1'
+      'SELECT id, service, status, closed_at, tier, window_start, window_end, details_json, paid_at FROM orders WHERE ref = ?1'
     ).bind(ref).first();
   } catch { return uit; }
   if (!o) return uit;
@@ -252,6 +260,7 @@ export async function betaalMailContext(env, ref, lang = 'nl') {
   try {
     uit.ontbreekt = ontbrekendRegels(await ontbrekendVoorOrder(env.DB, o.id), lang);
   } catch { /* onbekend: dan niets tonen */ }
+  if (uit.link && uit.ontbreekt.length && nasturenOpen(o)) uit.fotosLink = `${uit.link}#fotos`;
   return uit;
 }
 
@@ -350,9 +359,9 @@ const SUB_COPY = {
     rDate: 'Factuurdatum',
     rAmount: 'Afgeschreven',
     attached: 'De factuur zit als pdf bij deze mail. Je vindt hem ook terug in VISUAILS Studio, onder <b>Facturen</b>.',
-    noAttach: 'Je factuur staat klaar in VISUAILS Studio, onder <b>Abonnement &amp; facturering</b>.',
+    noAttach: 'Je factuur staat klaar in VISUAILS Studio, onder <b>Abonnement → Facturen</b>.',
     portal: 'Naar je abonnement in VISUAILS Studio',
-    stop: 'Pauzeren of opzeggen doe je zelf in Studio, onder Abonnement — zonder mailtje, zonder wachttijd.',
+    stop: 'Pauzeren of opzeggen doe je zelf in VISUAILS Studio, onder Abonnement — zonder mailtje, zonder wachttijd.',
     /* De welkomstmail (24 september 2026) — zie de kop van mailSubscriptionInvoice(). */
     /* Het nummer achteraan na een streep, zoals in elk ander onderwerp (17 oktober 2026). */
     subjectWelcome: (ref) => `Welkom bij VISUAILS: je abonnement loopt — ${ref}`,
@@ -382,9 +391,9 @@ const SUB_COPY = {
     rDate: 'Invoice date',
     rAmount: 'Charged',
     attached: 'The invoice is attached as a PDF. You can also find it in VISUAILS Studio, under <b>Invoices</b>.',
-    noAttach: 'Your invoice is waiting in VISUAILS Studio, under <b>Plan &amp; billing</b>.',
+    noAttach: 'Your invoice is waiting in VISUAILS Studio, under <b>Plan → Invoices</b>.',
     portal: 'Go to your plan in VISUAILS Studio',
-    stop: 'Pausing or cancelling is something you do yourself in Studio, under Plan — no email, no waiting.',
+    stop: 'Pausing or cancelling is something you do yourself in VISUAILS Studio, under Plan — no email, no waiting.',
     subjectWelcome: (ref) => `Welcome to VISUAILS: your plan is running — ${ref}`,
     headWelcome: 'Welcome — your plan is running',
     stepsH: 'How to start',
@@ -445,7 +454,7 @@ export async function mailSubscriptionInvoice(env, { sub, customer, invoice, pla
         : '';
     const dag = Number(sub.window_day) || 1;
     const ref = sub.ref || invoice?.number || '';
-    const studio = `${SITE}${lang === 'nl' ? '/nl' : ''}/account/plan`;
+    const studio = studioUrl(SITE, '/plan', lang); // ronde 91, E05
     const factuurRijen = invoice ? rows([
       [t.rPlan, esc(planNaam)],
       [t.rCredits, String(credits)],
@@ -568,7 +577,7 @@ export async function mailBijkoopFactuur(env, { customer, invoice = null, pakket
     const vatLine = treatment === VAT_TREATMENT.reverseCharge ? COPY[L].reverse
       : treatment === VAT_TREATMENT.outsideScope ? COPY[L].outside
         : '';
-    const studio = `${SITE}${L === 'nl' ? '/nl' : ''}/account/plan`;
+    const studio = studioUrl(SITE, '/plan', L); // ronde 91, E05
     const totTekst = tot ? formatDate(String(tot), L) : '';
     const body = [
       h1(t.head, invoice ? kenmerk('factuur', invoice.number, L) : ''),

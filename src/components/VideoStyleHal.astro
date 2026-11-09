@@ -24,7 +24,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import VideoExamples from './VideoExamples.astro';
 import HalBeweging from './HalBeweging.astro';
 /*
@@ -122,7 +122,7 @@ const c = nl ? {
   /* Doorloop 27 (B14b): campaign en eigen look gaan naar het formulier; wie liever
      eerst overlegt, appt. Een zin met een link, geen derde knop. */
   wa: ['Liever eerst even overleggen? ', 'App ons', '.'],
-  slotH: ['Bestel in ', '.'],
+  slotH: ['Vraag ', ' aan.'],
   /* Video is op aanvraag, en de proef is een beeld en geen clip
      (24 september 2026): hier stond "plaats vandaag je bestelling".
      Het bedrag van de proef uit TEST_SAMPLE en niet getypt (8 oktober 2026, §17.17). */
@@ -144,7 +144,7 @@ const c = nl ? {
   krijgH: ['What you ', 'get'],
   modelNoot: ['Someone in a ', ' clip can be ', 'your own Brand Model', '.'],
   wa: ['Rather talk it through first? ', 'Message us on WhatsApp', '.'],
-  slotH: ['Order in ', '.'],
+  slotH: ['Request ', '.'],
   slotP: 'On request: you get a written price first.',
   slotProef: ` Want to see how we work before that? Try one product in images, for ${TEST_SAMPLE.en.price}.`,
   proef: 'Test sample',
@@ -191,9 +191,9 @@ const moodTonen = (() => { const m = style.moodTitle || ''; const i = m.toLowerC
     )}
     <p class="h-acties h-op">
       {style.ctaExternal
-        ? <a class="h-knop h-knop-inkt" href={style.ctaHref} target="_blank" rel="noopener">{style.ctaLabel}<span class="o" set:html={ik('rechts')} /><NieuwTabblad lang={lang} /></a>
-        : <a class="h-knop h-knop-inkt" href={style.ctaHref}>{style.ctaLabel}<span class="o" set:html={ik('rechts')} /></a>}
-      <a class="h-knop h-knop-lijn" href={lp('/test-sample')} data-vis-uit>{TEST_SAMPLE[lang].ctaFotos}</a>
+        ? <a class="h-knop k k-lijn" data-rol="contact" href={style.ctaHref} target="_blank" rel="noopener">{style.ctaLabel}<NieuwTabblad lang={lang} /></a>
+        : <a class="h-knop k k-vol" data-rol="doorgaan" href={style.ctaHref}>{style.ctaLabel}<Fragment set:html={rolIkoon('doorgaan')} /></a>}
+      <a class="h-knop k k-lijn" data-rol="doorgaan" href={lp('/test-sample')} data-vis-uit>{TEST_SAMPLE[lang].ctaFotos}<Fragment set:html={rolIkoon('doorgaan')} /></a>
     </p>
     {style.waHref && <p class="h-vs-model h-vs-wa h-op">{c.wa[0]}<a href={style.waHref} target="_blank" rel="noopener">{c.wa[1]}<NieuwTabblad lang={lang} /></a>{c.wa[2]}</p>}
     <ul class="h-feiten h-vs-feiten h-op" role="list">
@@ -282,22 +282,25 @@ const moodTonen = (() => { const m = style.moodTitle || ''; const i = m.toLowerC
   <section class="h-sec h-lk-slot-sec" aria-labelledby="vs-slot">
     <div class="h-lk-slot h-vs-slot h-in">
       <span class="h-korrel" aria-hidden="true"></span>
-      <p class="h-pil h-pil-wit"><span>{H.krijgPil}</span></p>
-      <h2 id="vs-slot" class="h-kop h-h2">{style.slug === 'custom'
-        ? (nl ? <><span class="l">Vraag</span> je eigen look aan.</> : <><span class="l">Request</span> your own look.</>)
-        : <><span class="l">{c.slotH[0].trim()}</span> {style.name}{c.slotH[1]}</>}</h2>
-      <ul class="h-bm-vink" role="list">
-        {style.whatYouGet.map((item: string) => <li><i set:html={ik('check')} /><span>{item}</span></li>)}
-      </ul>
-      <p class="h-vs-slot-zin">{c.slotP}<span data-vis-uit>{c.slotProef}</span></p>
-      <p class="h-acties">
-        {style.ctaExternal
-          ? <a class="h-knop h-knop-inkt" href={style.ctaHref} target="_blank" rel="noopener">{style.ctaLabel}<span class="o" set:html={ik('rechts')} /><NieuwTabblad lang={lang} /></a>
-          : <a class="h-knop h-knop-inkt" href={style.ctaHref}>{style.ctaLabel}<span class="o" set:html={ik('rechts')} /></a>}
-        <a class="h-knop h-knop-lijn" href={lp('/test-sample')} data-vis-uit>{TEST_SAMPLE[lang].ctaFotos}</a>
-      </p>
-      {style.waHref && <p class="h-vs-model h-vs-wa">{c.wa[0]}<a href={style.waHref} target="_blank" rel="noopener">{c.wa[1]}<NieuwTabblad lang={lang} /></a>{c.wa[2]}</p>}
-      <p class="h-vs-model">{c.modelNoot[0]}{style.name}{c.modelNoot[1]}<a href={lp('/custom-models')}>{c.modelNoot[2]}</a>{c.modelNoot[3]}</p>
+      {/* lijst 86 (9 november 2026): de glazen plaat om de tekst, op de foto van het slot (src/styles/fotoblok.css) */}
+      <div class="fb-glas">
+        <p class="h-pil h-pil-wit"><span>{H.krijgPil}</span></p>
+        <h2 id="vs-slot" class="h-kop h-h2">{style.slug === 'custom'
+          ? (nl ? <><span class="l">Vraag</span> je eigen look aan.</> : <><span class="l">Request</span> your own look.</>)
+          : <><span class="l">{c.slotH[0].trim()}</span> {style.name}{c.slotH[1]}</>}</h2>
+        <ul class="h-bm-vink" role="list">
+          {style.whatYouGet.map((item: string) => <li><i set:html={ik('check')} /><span>{item}</span></li>)}
+        </ul>
+        <p class="h-vs-slot-zin">{c.slotP}<span data-vis-uit>{c.slotProef}</span></p>
+        <p class="h-acties">
+          {style.ctaExternal
+            ? <a class="h-knop k k-lijn" data-rol="contact" href={style.ctaHref} target="_blank" rel="noopener">{style.ctaLabel}<NieuwTabblad lang={lang} /></a>
+            : <a class="h-knop k k-vol" data-rol="doorgaan" href={style.ctaHref}>{style.ctaLabel}<Fragment set:html={rolIkoon('doorgaan')} /></a>}
+          <a class="h-knop k k-lijn" data-rol="doorgaan" href={lp('/test-sample')} data-vis-uit>{TEST_SAMPLE[lang].ctaFotos}<Fragment set:html={rolIkoon('doorgaan')} /></a>
+        </p>
+        {style.waHref && <p class="h-vs-model h-vs-wa">{c.wa[0]}<a href={style.waHref} target="_blank" rel="noopener">{c.wa[1]}<NieuwTabblad lang={lang} /></a>{c.wa[2]}</p>}
+        <p class="h-vs-model">{c.modelNoot[0]}{style.name}{c.modelNoot[1]}<a href={lp('/custom-models')}>{c.modelNoot[2]}</a>{c.modelNoot[3]}</p>
+      </div>
     </div>
   </section>
 </div>

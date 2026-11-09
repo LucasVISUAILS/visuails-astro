@@ -82,22 +82,24 @@ const BASIS = `http://127.0.0.1:${poort}`;
 
 /* Het aantal gedachtestreepjes (—) in de zichtbare tekst, per pagina, zoals het op
    18 oktober 2026 stond. Minder mag (dan zegt de toets dat het getal omlaag kan); meer
-   niet. Lucas kiest per zin in de tekstronde (lijst 39, v39-streep b). */
+   niet. Lucas kiest per zin in de tekstronde (lijst 39, v39-streep b).
+   9 november 2026 (ronde 91, E17): /privacy en /nl/privacy +2 — e-Boekhouden en VIES kwamen in de lijst van
+   ontvangers, en elke regel daar is "waar — wat" (src/data/subverwerkers.js), zoals de andere. */
 const STREEPJES = {
   '/': 1, '/about/': 1, '/ai-act/': 9, '/catalog/': 6, '/catalog/classic/': 2, '/catalog/custom/': 1, '/compare/': 4,
   '/contact/': 2, '/cookie-policy/': 15, '/custom-models/': 2, '/data-processing-agreement/': 28, '/editions/': 2,
   '/faq/': 1, '/gallery/': 1, '/guides/': 3, '/how-it-works/': 3, '/lifestyle/': 3, '/lifestyle/custom/': 1,
   '/lifestyle/dunes/': 2, '/lifestyle/flash/': 2, '/lifestyle/glow/': 2, '/lifestyle/phone-made/': 2, '/models/': 1,
-  '/nl/': 1, '/nl/404/': 1, '/nl/about/': 1, '/nl/ai-act/': 9, '/nl/catalog/': 5, '/nl/catalog/classic/': 1,
+  '/nl/': 1, '/nl/about/': 1, '/nl/ai-act/': 9, '/nl/catalog/': 5, '/nl/catalog/classic/': 1,
   '/nl/catalog/custom/': 1, '/nl/compare/': 4, '/nl/contact/': 2, '/nl/cookie-policy/': 15, '/nl/custom-models/': 2,
   '/nl/data-processing-agreement/': 28, '/nl/editions/': 2, '/nl/faq/': 1, '/nl/gallery/': 1, '/nl/guides/': 3,
   '/nl/how-it-works/': 2, '/nl/lifestyle/': 2, '/nl/lifestyle/custom/': 1, '/nl/lifestyle/dunes/': 1, '/nl/lifestyle/flash/': 1,
   '/nl/lifestyle/glow/': 1, '/nl/lifestyle/phone-made/': 1, '/nl/models/': 1, '/nl/per-product/': 4, '/nl/plans/': 1,
-  '/nl/pricing/': 3, '/nl/privacy/': 51, '/nl/start/': 1, '/nl/start/brand-model/': 1, '/nl/start/catalog/': 1,
+  '/nl/pricing/': 3, '/nl/privacy/': 53, '/nl/start/': 1, '/nl/start/brand-model/': 1, '/nl/start/catalog/': 1,
   '/nl/start/custom-look/': 4, '/nl/start/lifestyle/': 1, '/nl/start/plan/': 6, '/nl/start/video/': 3, '/nl/studio/': 8,
   '/nl/terms/': 59, '/nl/test-sample/': 3, '/nl/thank-you/': 4, '/nl/upload-guidelines/': 4, '/nl/video/': 6,
   '/nl/video/campaign/': 4, '/nl/video/custom/': 6, '/nl/video/lifestyle/': 6, '/nl/video/motion/': 4, '/per-product/': 4,
-  '/plans/': 1, '/pricing/': 3, '/privacy/': 50, '/start/': 1, '/start/brand-model/': 1, '/start/catalog/': 1,
+  '/plans/': 1, '/pricing/': 3, '/privacy/': 52, '/start/': 1, '/start/brand-model/': 1, '/start/catalog/': 1,
   '/start/custom-look/': 4, '/start/lifestyle/': 1, '/start/plan/': 6, '/start/video/': 3, '/studio/': 7,
   '/terms/': 57, '/test-sample/': 3, '/thank-you/': 4, '/upload-guidelines/': 4, '/video/': 6, '/video/campaign/': 4,
   '/video/custom/': 6, '/video/lifestyle/': 6, '/video/motion/': 4,
@@ -113,7 +115,8 @@ function meet() {
      V-merk met zijn echo, .mk): die blijft zoals hij is (lijst 39, c-hover). Alleen de
      pijlen en plaatjes mogen bewegen; een kaart, foto of knop zelf niet. */
   const LOGO = /\.mk\b|mk-line/;
-  const PIJL = /ik-kop|ik-schacht|ik-pijl|\.h-cirkel|h-look-pijl|h-ug-pijl|nav-cta[^,{]*::after|svg|path/;
+  /* knoppensysteem lijst 88/89: het bewegende deel van elk knopicoon heet .ik-a en mag kort en zacht bewegen */
+  const PIJL = /ik-a\b|ik-kop|ik-schacht|ik-pijl|\.h-cirkel|h-look-pijl|h-ug-pijl|nav-cta[^,{]*::after|svg|path/;
   const naam = (el, ps = '') => (el.tagName.toLowerCase() + [...el.classList].filter((c) => !/^(vs-|astro-)/.test(c)).slice(0, 3).map((c) => '.' + c).join('') + ps);
   const zacht = (s) => {
     if (!s || s === 'none') return false;
@@ -133,9 +136,12 @@ function meet() {
       // het €1-blok mag glas dragen (lijst 42), en wat boven de pagina zweeft (levering 74); sinds levering 80
       // (1 november 2026, 17:05, Lucas: "de top bar een soort liquid glass gevoel") is de hele balk het glas
       const zweeft = el.matches('.site-header, .site-header .nav, .site-header .nav-menu, .wa-launcher, .u-balk');
-      const glasMag = (!ps && el.matches('.h-proef > .h-proef-woord')) || zweeft;
+      /* lijst 86 (9 november 2026): de glazen plaat op de fotoblokken (de plaat als ::before van het €1-blok en de
+         Studiobrief, en .fb-glas in het slot) mag glas zijn: fotoblok.css */
+      const fotoglas = (ps === '::before' && el.matches('.h-proef > .h-proef-woord, .site-footer .sb, .h-gd-brief, .h-ed-brief')) || (!ps && el.matches('.h-lk-slot > .fb-glas'));
+      const glasMag = (!ps && el.matches('.h-proef > .h-proef-woord')) || zweeft || fotoglas;
       if (bd && bd !== 'none' && !glasMag) uit.glas.push(naam(el, ps));
-      if (zacht(cs.boxShadow) && !zweeft && !el.matches('.site-header .nav-cta')) uit.schaduw.push(`${naam(el, ps)} ${cs.boxShadow.slice(0, 60)}`);
+      if (zacht(cs.boxShadow) && !zweeft && !fotoglas && !el.matches('.site-header .nav-cta')) uit.schaduw.push(`${naam(el, ps)} ${cs.boxShadow.slice(0, 60)}`);
       if (ps && /[✦✧✨★☆]/u.test(cs.content)) uit.teken.push(`${naam(el, ps)} ${cs.content}`);
       if (ps) continue;
       const rs = [cs.borderTopLeftRadius, cs.borderTopRightRadius, cs.borderBottomRightRadius, cs.borderBottomLeftRadius];
@@ -197,6 +203,8 @@ function meet() {
            versnelling in plaats van in stappen, kort (hoogstens 0,25 s). Alleen die twee delen; de rest blijft springen. */
         const pijlDeel = el.classList && (el.classList.contains('ik-schacht') || el.classList.contains('ik-kop'));
         if (pijlDeel && d <= 0.25 && /cubic-bezier|ease/.test(t)) continue;
+        /* knoppensysteem lijst 89 (goed): alleen het bewegende deel van het icoon (.ik-a), 0,26 s cubic-bezier(.22,.8,.2,1) */
+        if (el.classList && el.classList.contains('ik-a') && d <= 0.26 && /cubic-bezier/.test(t)) continue;
         if (d > 0 && !/steps|step-/.test(t)) { uit.hover.push(`${naamRegel} glijdt (${d}s ${t.slice(0, 30)})`); break; }
       }
     }

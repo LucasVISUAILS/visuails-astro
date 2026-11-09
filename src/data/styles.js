@@ -269,7 +269,7 @@ export const styles = [
       'A clear price, agreed before we start',
       'One design fee in writing; every carousel after it from the ordinary lifestyle rate for the count',
       'Yours: we do not use the look for another brand',
-      'Then a tile of its own in your account and in the order form',
+      'Then a tile of its own in VISUAILS Studio and in the order form',
     ],
   },
 ];

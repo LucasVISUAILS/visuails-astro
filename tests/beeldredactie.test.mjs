@@ -99,8 +99,9 @@ console.log('\nde vervangers staan op de plekken die de klant leest');
 {
   const lees = (p) => readFileSync(join(ROOT, p), 'utf8');
   const account = lees('src/lib/account.js');
-  ok('Studio: de statusstap heet "Being checked"', /human_check: 'Being checked'/.test(account), true);
-  ok('Studio: en "Wordt nagekeken"', /human_check: 'Wordt nagekeken'/.test(account), true);
+  /* Ronde 91 (w4, 9 november 2026): "Wordt nagekeken" is geen stap meer; een oude rij heet In productie. */
+  ok('Studio: een oude stand human_check heet "In production"', /human_check: 'In production'/.test(account), true);
+  ok('Studio: en "In productie"', /human_check: 'In productie'/.test(account), true);
   const order = lees('functions/api/order.js');
   /* Sinds 8 oktober 2026 (7.02) staat de belofte in het blok "Zo gaat het
      verder" (src/lib/verder.js), dat de bestelbevestiging, de betaalmail en de

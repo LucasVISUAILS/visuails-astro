@@ -499,3 +499,54 @@ vervangt punt 1 en 4 hierboven; de metro, de schuif van 88b en Wat we maken blij
    sprong van 177); nu loopt het in `--o8-uit` (clamp(96 px, 16 svh, 180 px)) weer uit in de grond, eerst nog even blauw, dan de
    stops van de fade omgekeerd. Rust, wit, de bovenkant van het podium en het doek van de laptop hadden geen harde randen.
 
+## 16 · Gewoon de video (levering 90, 8 november 2026)
+
+Lucas, 15:59: *"Ik heb 21 9 laptop.mp4 verbeterd en de nieuwe video staat in de map. Ik wil dat je deze gebruikt voor de home
+page. Gewoon de video gebruiken niet zelf animeren omdat de lag dan alleen maar erger word. Zorg dat hij er strak uit komt te
+zien en perfect van foto naar video overgaat."* Zijn keuzes: de winkel gaat uit, dan de video; de fade (het veld) zit in de
+video; Wat we maken schuift erover; 1,5 ×; de laptop 19 % groter (B). De toetsen: `tests/laptop-90.test.mjs` en
+`tests/opening-90-browser.test.mjs` (vervangen laptop-84 en opening-89). **Dit vervangt §12 – 15b**: geen WebGL-doek, geen
+metro, geen rit, geen tempo per beeld. Telefoon, tablet en minder beweging: zoals altijd de stilstaande foto van levering 79.
+
+**Bijgesteld op 8 november, 21:44.** Lucas: *"De grain op de achtergrond achter de laptop maakt de overloop tussen secties niet
+smooth. Los dit op door het smooth te laten faden of te verwijderen. De animatie van de laptop kan toch wel sneller (tussen de 1.5
+en 2.5 seconden of zoiets, kijk wat het beste is)."* De korrel is eruit (het veld is nu glad, zoals de sectie eronder), en de video
+speelt op 60 beelden per seconde: 112 beelden in 1,87 s (was ± 3 s). De punten hieronder zijn daarop bijgewerkt.
+
+1. **De video.** Zijn video (2944 × 1248) wordt in `scripts/laptop-video-90.py` uitgeknipt en op het veld B1 Horizon gezet,
+   zoals dat op 1440 × 900 achter de laptop stond, **zonder korrel** (wie hem toch wil: `KORREL=1`). Beeld 0 – 111 (daarna is
+   alles uit beeld), afgespeeld op 60 per seconde: 1,87 s. `scripts/laptop-video-90.mjs` maakt er per breedte twee
+   H.264-video's van (preset veryfast, CRF 17 met `aq-mode=3`, zodat het gladde verloop geen banden krijgt, BT.709, zonder
+   geluid): heen (`laptop-90-<b>.mp4`) en terug (`-terug`, dezelfde beelden achterstevoren, die de browser ook gewoon vooruit
+   speelt). Breedtes 1288, 1840, 2392 en 2944: veelvouden van 92, dan is de hoogte een heel getal (92 : 39). De browser kiest
+   de breedte van de foto die hij nam (`sizes` 140vw).
+2. **De foto is beeld 0.** `laptop-90-<b>.webp` is beeld 0 zoals de browser het uit die video haalt (BT.709, beperkt bereik),
+   met gaten in de schermen; daaronder liggen de standen van de winkel (K1). Geen avif: die codeert het verloop anders dan de
+   video, en dan zie je de wissel. Groottes heen · terug · foto (1288 / 1840 / 2392 / 2944): 207 / 364 / 562 / 755 kB ·
+   220 / 374 / 581 / 817 kB · 23 / 39 / 57 / 69 kB (met de korrel was dat 0,47 / 1,15 / 2,16 / 3,72 MB heen).
+3. **Strak in de schermen.** De vier hoeken van elk scherm zijn gemeten in beeld 0 en daarna zo ver naar buiten geschoven dat
+   het hele gat erbinnen valt (`ruimOm`: de laptop tot 6,6 beeldpunten aan de bovenkant, de telefoon 6 – 7,5 rondom; een rechte
+   lijn door het midden van een licht gebogen rand lag er binnen). In het gat blijft alleen de rand van het toestel: de kleur
+   van de dichtstbijzijnde echt donkere pixel, met de dekking (255 − L) / (255 − L_rand), tot 6 beeldpunten buiten het witte
+   vlak. Zo ligt de winkel tegen de rand van het toestel: geen witte streep meer (gemeten op 1440: eerst 2 – 3 lichte
+   beeldpunten van 221 – 253 tussen de rand en de winkel, nu geen).
+4. **Het vak op hele pixels.** `--o8-fw` (de breedte van de foto, B): 1,4361 × Hp + 0,492491 × de breedte tot 89, hoogstens
+   zo groot dat de klep 24 px onder de balk blijft en de telefoon 16 px van de rechterrand; op 1440 × 900 2066 px. Het vak staat
+   met zijn onderkant op het podium. Met `round()` (in `@supports`) zijn de breedte (2 px), de linkerkant en de hoogte hele
+   pixels: op een halve pixel zette Chrome de video tot 0,8 px anders neer dan de foto.
+5. **De overgang.** In rust ligt de foto op de video (die staat op beeld 0, even breed). Bij de start (één scroll omlaag in de
+   rustzone) vervagen de winkel én de foto samen in de video, in 120 ms (de foto lineair), terwijl de klep nog stilstaat
+   (beeld 0 – 7, 117 ms op 60 per seconde). Daarna is de foto echt weg (`o8-speelt`). Loopt de video op een trage computer voor, dan
+   gaat de foto meteen weg zodra hij beeld 7 toont. Een harde wissel zou op 125 % of 150 % zoom de randen nog even laten
+   verspringen (Chrome zet een video en een foto daar niet op dezelfde subpixel); vervagend zie je dat niet.
+6. **Terug.** Omhoog tot het podium weer helemaal in beeld is (de rustzone): de omgekeerde video speelt van waar heen stond.
+   Aan het eind komen de foto en de winkel samen weer op (300 ms), en pas als de foto echt helemaal op is (elk schermbeeld
+   nagekeken, minstens 420 ms) wisselt eronder de omgekeerde video voor heen op beeld 0. Nooit komt een video bovenop die nog
+   een ander beeld toont: eerst zoeken, dan tonen (`opBeeld`).
+7. **De pagina.** De baan is Hp + Z (48 px rustzone) + R (een scherm). Zolang hij speelt staat de pagina vast (wiel, toetsen,
+   vinger); nog een scroll haalt in (1,6 ×), een sleep van meer dan 400 px maakt hem af. Daarna scrol je gewoon verder en
+   schuift Wat we maken over het stilstaande veld, met een zachte bovenrand (`--o8-mist`). Spring je ver weg, dan meteen de
+   eind- of beginstand. Zonder H.264 (een Chromium zonder de gepatenteerde codecs) geen effect, ook niet in het eerste beeld.
+   Laadt de video niet binnen 8 s, dan blijft de laptop in rust staan en scrol je gewoon door. Na een sprong wordt het
+   eindbeeld pas gezocht als de opening binnen een scherm komt: wie verderop leest, laat de video met rust (zonder grafische
+   kaart kostte dat zoeken bij de logoposter de schermbeelden die de regel van Hoe het werkt inkleuren).

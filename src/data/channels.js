@@ -119,7 +119,7 @@ export const CHANNELS = [
     short: { en: 'On white and in 1:1.44, JPG only. Read the note about the on-model shot.', nl: 'Op wit en in 1:1,44, alleen JPG. Lees de notitie over de on-model shot.' },
     note: {
       en: 'Packshots on #FFFFFF, model views on light grey (#F1F1F1), JPG only, 1:1.44, three compliant images per apparel article. Read the warning below before you pick this one.',
-      nl: 'Packshots op #FFFFFF, modelbeelden op lichtgrijs (#F1F1F1), alleen JPG, 1:1.44, drie geldige beelden per kledingartikel. Lees de waarschuwing hieronder voor je dit kiest.',
+      nl: 'Packshots op #FFFFFF, modelbeelden op lichtgrijs (#F1F1F1), alleen JPG, 1:1,44, drie geldige beelden per kledingartikel. Lees de waarschuwing hieronder voor je dit kiest.',
     },
   },
   {
@@ -133,7 +133,7 @@ export const CHANNELS = [
     short: { en: 'Your shop, your rules — any colour, any crop.', nl: 'Jouw shop, jouw regels — elke kleur, elke uitsnede.' },
     note: {
       en: 'Your shop, your rules. Any background colour, any crop, and webp is fine here — it is the one place it is.',
-      nl: 'Jouw shop, jouw regels. Elke achtergrondkleur, elke uitsnede, en webp mag hier — het is de enige plek waar dat kan.',
+      nl: 'Jouw shop, jouw regels. Elke achtergrondkleur, elke uitsnede, en WebP mag hier — het is de enige plek waar dat kan.',
     },
   },
   {
@@ -217,7 +217,7 @@ export const COPY = {
     formatH: 'Je krijgt wat de marktplaats aanneemt',
     format: 'We leveren als JPG, en dat nemen Amazon, bol en Zalando alle drie aan. Wil je voor Amazon of bol ook PNG? Vraag het aan bij je bestelling in VISUAILS Studio; Zalando neemt alleen JPG. De AI-vermelding zit in elk formaat dat wij leveren.',
     orderH: 'Welk beeld vooraan hoort',
-    orderShort: 'Zet de voorkant-packshot vooraan; de on-model shot hoort bij de extra afbeeldingen.',
+    orderShort: 'Zet de packshot van de voorkant vooraan; de on-model shot hoort bij de extra afbeeldingen.',
     order: 'bol staat geen model op de hoofdafbeelding toe, en Amazon alleen bij kleding. Dat kost je niets: de on-model shot blijft gewoon in je set, hij hoort alleen bij de extra afbeeldingen. Zet de voorkant-packshot vooraan, en daarachter de achterkant, de close-up en de on-model shot.',
   },
 };

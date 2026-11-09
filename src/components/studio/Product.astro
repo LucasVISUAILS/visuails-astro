@@ -1,4 +1,5 @@
 ---
+import { knopInhoud } from '../../data/iconen.js';
 /* Eén product in een bestelling: wat de klant stuurde en wat wij leverden bij
    elkaar, ingeklapt tot een kop met omslagbeeld, naam en feiten. Uitklappen
    laat de losse beelden zien en pas dáár staan de beoordeelknoppen — een
@@ -34,7 +35,7 @@ const proefNoot = v.delivered.length > 0 && v.delivered.every((b) => b.review.ki
           <form class="st-keur st-keur-alles" method="post" action="/account/review">
             <input type="hidden" name="order" value={orderId} />
             <input type="hidden" name="product" value={v.allesGoed.product} />
-            <button class="btn btn-2nd btn-sm" type="submit" name="action" value="approve-product" formnovalidate>{v.allesGoed.label}</button>
+            <button class="btn btn-2nd btn-sm" data-rol="bevestigen" type="submit" name="action" value="approve-product" formnovalidate set:html={knopInhoud('bevestigen', v.allesGoed.label)} />
           </form>
         )}
       </div>
@@ -45,10 +46,10 @@ const proefNoot = v.delivered.length > 0 && v.delivered.every((b) => b.review.ki
           {/* Werklijst 14 (15 oktober 2026): de knop onder "Wat jij stuurde",
               naar dit product in "Je foto's" (toevoegen, extra foto vervangen of
               verwijderen). Alleen zolang er nog foto's bij kunnen. */}
-          {v.fotosBeheer && <a class="btn btn-2nd btn-sm st-fotos-beheer" href={v.fotosBeheer.href}>{v.fotosBeheer.label}</a>}
+          {v.fotosBeheer && <a class="btn btn-2nd btn-sm st-fotos-beheer" data-rol="wijzigen" href={v.fotosBeheer.href} set:html={knopInhoud('wijzigen', v.fotosBeheer.label)} />}
         </div>
       )}
     </div>
-    <p class="st-product-hulp">{t.prodHelp} <a class="st-link" href={v.waHref} target="_blank" rel="noopener">{t.prodHelpCta}<NieuwTabblad lang={lang} /></a></p>
+    <p class="st-product-hulp">{t.prodHelp} <a class="st-link k k-tekst k-klein" data-rol="contact" href={v.waHref} target="_blank" rel="noopener">{t.prodHelpCta}<NieuwTabblad lang={lang} /></a></p>
   </div>
 </details>

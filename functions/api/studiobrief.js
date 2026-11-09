@@ -142,12 +142,21 @@ export async function onRequestPost(context) {
 
   const bronLabel = `studiobrief-${bron}-${lang}`;
   let nieuw = true;
+  let heraangemeld = false;
   await safe(async () => {
     if (!env.DB) return;
     const r = await env.DB
       .prepare('INSERT INTO subscribers (email, source) VALUES (?1, ?2) ON CONFLICT(email) DO NOTHING')
       .bind(email, bronLabel).run();
     nieuw = Boolean(r?.meta?.changes);
+    /* Ronde 92 (9 november 2026): wie zich eerder afmeldde en zich nu opnieuw aanmeldt, geeft opnieuw toestemming.
+       Dan gaat de afmelding eraf, met de nieuwe bron en het nieuwe moment als bewijs, en in Resend hieronder ook. */
+    if (!nieuw) {
+      const terug = await env.DB
+        .prepare("UPDATE subscribers SET unsubscribed_at = NULL, source = ?2, created_at = datetime('now') WHERE email = ?1 AND unsubscribed_at IS NOT NULL")
+        .bind(email, bronLabel).run();
+      if (terug?.meta?.changes) { nieuw = true; heraangemeld = true; }
+    }
   });
 
   await safe(async () => {
@@ -160,7 +169,15 @@ export async function onRequestPost(context) {
       headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    // Bestaat het contact al, dan is dat geen fout: hij stond er al op.
+    // Bestaat het contact al, dan is dat geen fout: hij stond er al op. Meldt hij zich opnieuw aan na een
+    // afmelding, dan zetten we hem in Resend ook weer aan (ronde 92).
+    if (heraangemeld && !res.ok) {
+      await fetch(`https://api.resend.com/contacts/${encodeURIComponent(email)}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ unsubscribed: false }),
+      });
+    }
     if (!res.ok && res.status !== 409 && res.status !== 422) {
       console.error(`[studiobrief] Resend-contact niet aangemaakt (${res.status}) voor ${bronLabel}`);
     }

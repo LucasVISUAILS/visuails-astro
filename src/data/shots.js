@@ -743,7 +743,7 @@ export const COPY = {
     toFolder: 'Liever één hele map sturen?',
     toFolderWhy: 'Sneller, minder precies: we lezen de mapnaam als het product, en meestal moeten we daarna bij je terugkomen om te vragen welke foto bij welk product hoort.',
     toCards: 'Toch per product invullen',
-    toCardsWhy: 'Kost meer tijd en daarna niets meer van ons — elke foto staat dan al bij het juiste product en de juiste hoek.',
+    toCardsWhy: 'Kost jou nu meer tijd, maar daarna hoeven we niets meer te vragen — elke foto staat dan al bij het juiste product en de juiste hoek.',
     /* Zie de noot bij de Engelse tegenhanger: 'Nodig' past naast een lange
        vaknaam waar 'Verplicht' wikkelt, en het is het woord uit het concept. */
     required: 'Nodig',
@@ -902,6 +902,31 @@ export const DUN_ONDER_BPP = 0.15;
 /** De formaten waarvoor de bits-per-pixel-maat betekenis heeft. */
 export const BPP_FORMATEN = ['jpg', 'jpeg'];
 
+/*
+ * ── EEN HALVE JPEG — lijst 87 (D08), 9 november 2026 ─────────────────────────
+ *
+ * Een JPEG die halverwege afbrak (een overdracht die stopte, een kaart die te vroeg
+ * werd uitgetrokken), krijgt in de browser gewoon een miniatuur: de bovenkant, de
+ * rest grijs. Hij ging als "Verstuurd" door en de studio kreeg een halve foto.
+ *
+ * Een complete JPEG eindigt met de eindmarkering FF D9. We kijken in de laatste
+ * JPEG_STAART bytes en niet alleen naar de laatste twee: sommige telefoons
+ * (Samsung) zetten na de markering nog wat gegevens. Daarom ook een MELDING en geen
+ * weigering: als we ons vergissen, gaat de foto gewoon mee.
+ */
+export const JPEG_STAART = 64;
+
+/**
+ * Eindigt deze JPEG netjes? `staart` zijn de laatste bytes van het bestand
+ * (Uint8Array, liefst JPEG_STAART lang). Leeg of geen bytes: true (niets te melden).
+ */
+export function jpegEindigtNetjes(staart) {
+  const b = staart instanceof Uint8Array ? staart : new Uint8Array(staart || []);
+  if (b.length < 2) return true;
+  for (let i = b.length - 2; i >= 0; i--) if (b[i] === 0xFF && b[i + 1] === 0xD9) return true;
+  return false;
+}
+
 /**
  * Wat een meting betekent: één code, of niets.
  *
@@ -929,6 +954,10 @@ export function keurBeeld(maat, ext, bytes) {
   if (lang > 0 && lang < MIN_LANGE_ZIJDE) {
     return { code: 'te-klein', hard: true, min: MIN_LANGE_ZIJDE, lang };
   }
+
+  /* Lijst 87 (D08): een JPEG zonder eindmarkering is waarschijnlijk afgebroken. Dat gaat vóór
+     donker en dun: van een halve foto zeggen die twee niets. Wel na te klein, want dat weigert. */
+  if (maat.onvolledig === true) return { code: 'onvolledig', hard: false };
 
   /* VOLGORDE IS BETEKENIS. Te klein wint van de andere twee: een screenshot van
      300 pixels is meestal óók donker en óók dun, en drie meldingen over hetzelfde

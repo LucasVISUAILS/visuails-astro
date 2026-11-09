@@ -1,4 +1,6 @@
-# VISUAILS — cache-headers. Cloudflare Pages leest dit bestand.
+# VISUAILS — cache-headers. Cloudflare leest dit bestand voor de statische bestanden
+# (Workers static assets; vroeger Pages). Voor antwoorden van de Worker-code zelf
+# (/admin, /account, /o, /api) geldt het niet: die zetten hun koppen in src/lib/.
 #
 # WAAROM DIT ER KOMT — 7 augustus 2026, 00:11.
 #
@@ -23,8 +25,17 @@
 # zichtbaar is. Voor drie stylesheets op een dashboard dat een handjevol mensen
 # per dag opent, is dat de goede kant van de ruil.
 #
-# De rest van de site staat hier niet in en houdt de standaard van Cloudflare
-# Pages: gehashte bestandsnamen mogen en moeten juist lang gecachet worden.
+# ── EN DE GEHASHTE BESTANDEN: WÉL LANG — 9 november 2026 (ronde 91, C16) ──────
+# Hier stond dat de rest "de standaard van Cloudflare Pages" houdt en dat gehashte
+# bestandsnamen daarmee vanzelf lang gecachet worden. Dat klopte niet: de standaard
+# van Cloudflare (Pages en Workers static assets) is voor ELK bestand
+# "public, max-age=0, must-revalidate", ook voor /_astro/index.CJk3d9.css. Elke
+# pagina vroeg dus al zijn css en scripts opnieuw na. Een gehashte naam verandert
+# met zijn inhoud, dus die mag een jaar en `immutable`: zie de regel /_astro/*
+# hieronder. De rest (html, /fonts, /data) houdt de standaard: altijd navragen.
+
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
 
 /account.css
   Cache-Control: no-cache
@@ -38,13 +49,18 @@
 /admin-voorvertoning.css
   Cache-Control: no-cache
 
+# de knoppen van /admin en de privélink (kopie van src/styles/knoppen.css, knoppensysteem lijst 88/89)
+/knoppen.css
+  Cache-Control: no-cache
+
 # ══════════════════════════════════════════════════════════════════════════════
 # DE FOTO'S — 20 AUGUSTUS 2026
 # ══════════════════════════════════════════════════════════════════════════════
 #
-# Alles wat Astro bouwt heeft een hash in de naam en wordt door Cloudflare Pages
-# vanzelf lang gecachet. public/img valt daarbuiten: die namen zijn vast
-# (banners-11.webp), en voor een vaste naam is de standaard van Pages
+# Alles wat Astro bouwt heeft een hash in de naam en staat sinds 9 november 2026 een
+# jaar in de cache (de regel /_astro/* hierboven; daarvóór gold ook daar de standaard,
+# zie de noot bij die regel). public/img valt daarbuiten: die namen zijn vast
+# (banners-11.webp), en de standaard van Cloudflare is
 # "max-age=0, must-revalidate" — de browser bewaart het bestand wel, maar vraagt
 # bij ELK paginabezoek na of het nog klopt. Op de homepage zijn dat 23 extra
 # verzoeken, op /gallery 38, elk goed voor een compleet heen-en-weer naar het

@@ -9,6 +9,7 @@
  *     een look zijn); het bericht gaat
  *     NIET vanzelf mee, maar staat klaar achter een knop die het met één klik invult;
  *   · catalog: de vorm per foto die bij alle producten gelijk was, staat op elke kaart;
+ *     sinds ronde 91 (K-C2) ook het bericht achter dezelfde knop;
  *   · het blok bovenaan noemt wat er overgenomen is.
  * Vraagt een verse build (npm run build).
  */
@@ -31,7 +32,9 @@ const rij = (id, ref, dienst, aantal, det) => `INSERT INTO orders (id, ref, cust
 const extraSql = [
   /* De vorm per foto bestaat alleen bij lifestyle (buildRatios in pipeline.js). */
   rij(LS, 'VIS-2610-1111', 'lifestyle', 3, { style: 'glow', model: 'ava', ratio: 'square', look_p1: 'A', look_p2: 'A', message: 'Voor de zomercollectie', ratio_p1_4: 'portrait45', ratio_p2_4: 'portrait45', ratio_p3_4: 'portrait45', ratio_p1_2: 'story' }),
-  rij(CAT, 'VIS-2610-1112', 'catalog', 2, { background: 'light-grey', background_hex: '#F5F5F5', ratio: 'square', model: 'ava' }),
+  /* 9 november 2026 (ronde 92): sinds ronde 91 (K-C2, Lucas lijst 85 C2 = a) heeft ook
+     Catalog het notitieveld; een catalogbestelling kan dus een bericht hebben. */
+  rij(CAT, 'VIS-2610-1112', 'catalog', 2, { background: 'light-grey', background_hex: '#F5F5F5', ratio: 'square', model: 'ava', message: 'Mouwen graag recht' }),
 ];
 
 const studio = await startStudio({ extraSql });
@@ -89,7 +92,16 @@ try {
     const blok = (await page.locator('[data-pl-van-wat]').textContent().catch(() => '')) || '';
     ok('  het aantal: 2 producten', (await page.locator('select[name="products"]').inputValue()) === '2' && /2 producten/.test(blok), blok);
     ok('  de achtergrond lichtgrijs', await page.locator('input[name="background"][value="light-grey"]').isChecked().catch(() => false));
-    ok('  catalog heeft geen berichtveld, dus ook geen knop', (await page.locator('[data-pl-van-bericht]').count()) === 0);
+    /* Tot ronde 91 stond hier "catalog heeft geen berichtveld, dus ook geen knop".
+       Sinds K-C2 (9 november 2026) staat het veld er wel, met dezelfde knop: het bericht
+       gaat ook hier niet vanzelf mee (v36-bericht a), maar staat klaar achter de knop. */
+    const noot = page.locator('textarea[name="message"]');
+    ok('  catalog heeft nu ook het berichtveld (K-C2), en het staat er NIET vanzelf', (await noot.count()) === 1 && (await noot.inputValue()) === '');
+    const knop = page.locator('[data-pl-van-bericht]');
+    const tekst = ((await knop.textContent()) || '').trim();
+    ok('  de knop staat klaar, met het kenmerk', (await knop.getAttribute('hidden')) === null && tekst === 'Neem je bericht van VIS-2610-1112 over', tekst);
+    await knop.evaluate((b) => b.click());
+    ok('  één klik zet het bericht erin, en de knop gaat weg', (await noot.inputValue()) === 'Mouwen graag recht' && (await knop.getAttribute('hidden')) !== null, await noot.inputValue());
     ok('  geen scriptfouten', fouten.length === 0, fouten.join(' | '));
     await ctx.close();
   }

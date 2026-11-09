@@ -14,6 +14,7 @@
  */
 import { tegoedOpBestelling, teBetalenCents } from './tegoedVerrekening.js';
 import { sendMail } from './mail.js';
+import { studioUrl } from './studioLink.js'; // ronde 91, E05
 import { serviceLabel } from '../data/services.js';
 import {
   shell as mailShell,
@@ -135,8 +136,8 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
      factuur alleen een naam; Studio (Je gegevens) is waar hij het kwijt kan. */
   const adresVraag = offerte && !String(o.address_line1 || '').trim()
     ? (lang === 'nl'
-      ? `Wil je je factuuradres op de factuur? Vul het in bij <a href="${origin}/nl/account/details" style="color:${MAILKLEUR.head};font-weight:700">VISUAILS Studio → Je gegevens</a> vóór je betaalt.`
-      : `Want your billing address on the invoice? Fill it in at <a href="${origin}/account/details" style="color:${MAILKLEUR.head};font-weight:700">VISUAILS Studio → Your details</a> before you pay.`)
+      ? `Wil je je factuuradres op de factuur? Vul het in bij <a href="${studioUrl(origin, '/details', 'nl')}" style="color:${MAILKLEUR.head};font-weight:700">VISUAILS Studio → Je gegevens</a> vóór je betaalt.`
+      : `Want your billing address on the invoice? Fill it in at <a href="${studioUrl(origin, '/details', 'en')}" style="color:${MAILKLEUR.head};font-weight:700">VISUAILS Studio → Your details</a> before you pay.`)
     : '';
   const verklaring = !verklaringOntbreekt ? '' : (lang === 'nl'
     ? `VISUAILS levert uitsluitend aan bedrijven. Met je betaling bevestig je dat je deze opdracht als bedrijf geeft, en dat we meteen mogen beginnen. Bestel je vanuit een ander EU-land met een btw-nummer? Stuur het ons vóór je betaalt; dan passen we de btw aan.`

@@ -1,4 +1,5 @@
 ---
+import { knopInhoud } from '../../data/iconen.js';
 /**
  * /account/details — Je gegevens, als Astro-pagina. Studio fase 2, 5 september 2026.
  * Gegevens en volgorde: detailsView() in account.js (dezelfde velden, dezelfde
@@ -41,7 +42,7 @@ const opt = t.detOptional;
   {v.nudge && (
     <aside class="st-kaart-vlak st-nudge">
       <div><h2>{v.nudge.h}</h2><p>{v.nudge.p}</p></div>
-      <a class="btn btn-2nd btn-sm" href="#det-phone">{v.nudge.cta}</a>
+      <a class="btn btn-2nd btn-sm" data-rol="wijzigen" href="#det-phone" set:html={knopInhoud('wijzigen', v.nudge.cta)} />
     </aside>
   )}
 
@@ -55,7 +56,7 @@ const opt = t.detOptional;
       {v.kort.mist && <p class="st-melding is-warn">{v.kort.mist}</p>}
     </div>
     <details class="st-gegevens" open={v.open}>
-      <summary class="btn btn-2nd btn-sm">{v.kort.wijzig}</summary>
+      <summary class="btn btn-2nd btn-sm" data-rol="wijzigen" set:html={knopInhoud('wijzigen', v.kort.wijzig)} />
     <form class="st-kaart-vlak st-formulier" method="post" action="/account/details">
       {v.rijen.map((rij) => <div class="st-rij">{rij.map((f) => <Veld v={f} optioneel={opt} melding={v.warn || t.detMissing} />)}</div>)}
       <div class="st-rij">
@@ -93,7 +94,7 @@ const opt = t.detOptional;
           <span class="st-hint">{v.reg.hint}</span>
         </div>
       </div>
-      <div class="st-rij is-acties"><button class="btn btn-primary" type="submit">{v.save}</button></div>
+      <div class="st-rij is-acties"><button class="btn btn-primary" data-rol="bevestigen" type="submit" set:html={knopInhoud('bevestigen', v.save)} /></div>
     </form>
     </details>
   </section>
@@ -111,7 +112,7 @@ const opt = t.detOptional;
           <label for="new-email">{v.mail.label}</label>
           <input id="new-email" class="st-veld" name="new_email" type="email" autocomplete="email" maxlength="254" required data-melding={v.mail.label} placeholder={v.mail.placeholder} />
         </div>
-        <div class="st-veldgroep is-knop"><button class="btn btn-2nd" type="submit">{v.mail.submit}</button></div>
+        <div class="st-veldgroep is-knop"><button class="btn btn-primary" data-rol="doorgaan" type="submit" set:html={knopInhoud('doorgaan', v.mail.submit)} /></div>
       </form>
       <p class="st-meta">{v.mail.safety}</p>
     </div>

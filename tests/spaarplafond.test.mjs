@@ -100,7 +100,7 @@ ok('op 31 januari en 2 februari niet', [(await plafondInZicht(env, { dagen: 7, n
 mails.length = 0;
 const nacht = await tasks.herinnerCredits(env, dag('2027-02-01', '03:00:00'));
 const pm = mails.find((m) => m.to === 'pro@merk.test' || (Array.isArray(m.to) && m.to.includes('pro@merk.test')));
-ok('de nachttaak mailt de klant op 1 februari', !!pm && /^Op 8 februari( 2027)? komen er 120 credits bij — gebruik er vóór die dag 116$/.test(pm.subject), true);
+ok('de nachttaak mailt de klant op 1 februari', !!pm && /^Gebruik 116 credits vóór 8 februari( 2027)?$/.test(pm.subject), true);
 ok('  met "Je hebt 356 credits (je kunt er 360 sparen)" en de plafondzin', !!pm && /Je hebt <strong>356 credits<\/strong> \(je kunt er 360 sparen\)\. Op <strong>8 februari( 2027)?<\/strong> komen er 120 bij: gebruik er vóór die dag <strong>116<\/strong>, anders vallen ze weg\./.test(pm.html), true);
 ok('  en het nachtrapport noemt het', /Spaarplafond in zicht: 1 klant gemaild/.test(nacht), true);
 mails.length = 0;

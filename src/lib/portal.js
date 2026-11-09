@@ -54,6 +54,7 @@
 // header block above seeOther() and admin.js's originIsSelf().
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { knopInhoud, rolIkoon } from '../data/iconen.js';
 import { woordmerkSvg } from '../data/wordmarkPath.js';
 import {
   TEST_SAMPLE, TIERS, aftercare, turnaround, clause,
@@ -92,7 +93,14 @@ import { looksVan } from '../data/looks.js';
    Studio (nuzin.js) en de bedankpagina (verder.js). */
 import { nuZin, nuKnopLabel, statusPad, eersteMistVan, isAfgerond } from './nuzin.js';
 import { leverregel, leveringVan } from './verder.js';
-import { ontbrekendVoorOrder } from './ontbreekt.js';
+import { ontbrekendVoorOrder, vakNaam as ontbreektVakNaam } from './ontbreekt.js';
+/* 9 november 2026 (ronde 91, K-02): foto's nasturen op de bestelpagina zelf, met
+   dezelfde regel en dezelfde opslag als Studio (src/lib/nasturen.js). */
+import { nasturenOpen, bewaarVakFotos, vakVeld, NASTUUR_PER_KEER } from './nasturen.js';
+import { MAX_FILE_BYTES, uploadFormatsSentence } from './uploads.js';
+/* 9 november 2026 (ronde 91, K-03): de privélink wordt dé bestelpagina, dus ook PNG of
+   WebP aanvragen kan hier, met dezelfde tabel en dezelfde regel als Studio. */
+import { formaatView, formatenVoorOrders, formaatMelding, formaatGeldig, formaatKan, vraagFormaatAan } from './formaten.js';
 /* Punt 3.07: "Bestel met dezelfde look" — alleen lookkeuzes in de link. */
 import { herbestelKnop, herbestelHtml } from './herbestel.js';
 import { TIPS, TIP_IDS, tipsUitCookie } from '../data/tips.js';
@@ -115,6 +123,10 @@ const FILE_LIMIT = 300;
 
 /** Writes are rarer than reads and cheaper to bound. */
 const POST_LIMIT = 20;
+
+/** K-02: foto's nasturen op de bestelpagina, per bestelling per uur (bovenop POST_LIMIT
+    per aansluiting). Wie een paar vakken in een paar keer vult, haalt dit nooit. */
+const FOTOS_POST_LIMIT = 10;
 
 /** Longest revision note we store. Long enough for a paragraph, short enough to bound the row. */
 const NOTE_MAX = 2000;
@@ -218,7 +230,7 @@ const COPY = {
     rrUsedTitle: 'Your revision round is with us',
     rrDoneTitle: 'Your revision round has been handled',
     /* Ronde 9, O44: dit blok staat ONDER de bestanden, dus "below" wees de verkeerde kant op. */
-    rrDoneBody: (day, n) => `On ${day} you flagged ${n === 1 ? '1 image' : `${n} images`}; the new version${n === 1 ? ' is' : 's are'} above, with your files. That was this order's revision round. If something is still not right, send us a message.`,
+    rrDoneBody: (day, n) => `On ${day} you flagged ${n === 1 ? '1 image' : `${n} images`}; the new version${n === 1 ? ' is' : 's are'} above, with your files. That was this order’s revision round. If something is still not right, send us a message.`,
     rrUsedBody: (day, n, open) => `You sent ${n === 1 ? '1 image' : `${n} images`} on ${day}${open && open < n ? ` — ${open} still open, you withdrew the rest` : ''}. That is the round that comes with this order, so the form is closed — but we are not. Anything else about this order, message us and we will sort it out.`,
     rrUsedWa: 'Message us on WhatsApp',
     rrWaText: (ref) => `Hello VISUAILS, about order ${ref} — I have a question after my revision round.`,
@@ -235,7 +247,9 @@ const COPY = {
     footPrivate: (days) => `This link is private to your order. Anyone who has it can see these files, so treat it like a key. It stops working ${days} days after we close the order.`,
     footAsk: 'Anything else,',
 
-    noneTitle: 'Your order lives at a private link',
+    /* K-03 (9 november 2026): de klantpagina heet overal "your order page". */
+    pageTitle: 'Your order page',
+    noneTitle: 'Your order page has its own link',
     noneBody: 'Open the link from the email we sent you — it is the only way in, and it is private to your order.',
     noneAsk: 'Cannot find it? Email us and we will send a new one:',
 
@@ -243,7 +257,7 @@ const COPY = {
     unknownBody: 'It may have been mistyped, or replaced by a newer one. The most recent link we emailed you is the one that works.',
 
     expiredTitle: 'This link has expired',
-    expiredBody: (days) => `Portal links stop working ${days} days after we close an order. If you still need these files, email us and we will look.`,
+    expiredBody: (days) => `The link to your order page stops working ${days} days after we close your order. If you still need these files, email us and we will look.`,
 
     replacedTitle: 'This link has been replaced',
     replacedBody: 'A newer link was issued for this order. Check the most recent email from us — that one works.',
@@ -258,6 +272,19 @@ const COPY = {
 
     downTitle: 'We cannot reach your order right now',
     downBody: 'This is our end, not yours, and it is being looked at. Try again in a few minutes.',
+
+    /* K-02 (9 november 2026): de ontbrekende foto's, hier op de bestelpagina. */
+    fotosH: 'Add your photos',
+    fotosLede: 'Some photos are still missing. Choose them below, per slot, so we start with everything complete. A phone photo is fine.',
+    fotosVak: (vak, product) => `${vak} for ${product}`,
+    fotosKnop: 'Send photos',
+    fotosHint: `Accepted: ${uploadFormatsSentence('en')}, at most ${Math.round(MAX_FILE_BYTES / 1048576)} MB per photo. Up to ${NASTUUR_PER_KEER} at a time.`,
+    fotosOk: (n) => (n === 1 ? 'Thank you, the photo is in. It is in the right slot.' : `Thank you, ${n} photos are in, each in its slot.`),
+    fotosDeels: (n, m) => `${n} photo${n === 1 ? '' : 's'} added. ${m} could not be added: choose ${m === 1 ? 'it' : 'them'} again, as a ${uploadFormatsSentence('en')} file of at most ${Math.round(MAX_FILE_BYTES / 1048576)} MB.`,
+    fotosNul: `Nothing was added. Choose a photo per slot, as a ${uploadFormatsSentence('en')} file of at most ${Math.round(MAX_FILE_BYTES / 1048576)} MB.`,
+    fotosDag: 'You have sent the most photos we take in one day. Send the rest tomorrow, or send them to us on WhatsApp or by email.',
+    fotosTeVaak: 'You have sent photos several times in a short while. Wait a moment and try again.',
+    fotosDicht: 'Photos can no longer be added to this order. Send them to us on WhatsApp or by email.',
   },
 
   nl: {
@@ -295,8 +322,8 @@ const COPY = {
     folderH: 'Jouw bestanden',
     folderBodyKaal: (fmt) => `Al je beelden in één download, zoals we ze leverden (${fmt}). De bestandsnaam zegt welk product en welke opname het is.`,
     folderBody: 'Eén map per product, en daarin hetzelfde beeld als PNG, JPG en WebP — zo krijgen een drukker, een productpagina en een feed elk het bestand dat ze willen, zonder dat iemand nog iets bijschaalt.',
-    folderReview: 'De foto\'s hierboven zijn voorbeeldweergaven op schermformaat. Ze staan er om goed te keuren of om naar te wijzen als er iets niet klopt. De echte bestanden zitten in de map.',
-    folderReviewOnder: 'De foto\'s hieronder zijn voorbeeldweergaven op schermformaat. De echte bestanden zitten in de map.',
+    folderReview: 'De foto’s hierboven zijn voorbeeldweergaven op schermformaat. Ze staan er om goed te keuren of om naar te wijzen als er iets niet klopt. De echte bestanden zitten in de map.',
+    folderReviewOnder: 'De foto’s hieronder zijn voorbeeldweergaven op schermformaat. De echte bestanden zitten in de map.',
     folderMeta: (n, size) => `${n} bestanden · ${size}`,
     bUndo: 'Ongedaan maken',
     bCancel: 'Aanvraag intrekken',
@@ -340,7 +367,9 @@ const COPY = {
     footPrivate: (days) => `Deze link is privé voor jouw bestelling. Iedereen die hem heeft kan deze bestanden zien, dus behandel hem als een sleutel. Hij werkt tot ${days} dagen nadat we de bestelling afsluiten.`,
     footAsk: 'Verder iets,',
 
-    noneTitle: 'Je bestelling staat achter een privélink',
+    /* K-03: de klantpagina heet overal "je bestelpagina". */
+    pageTitle: 'Je bestelpagina',
+    noneTitle: 'Je bestelpagina heeft een eigen link',
     noneBody: 'Open de link uit de mail die we je stuurden — dat is de enige ingang, en hij is privé voor jouw bestelling.',
     noneAsk: 'Kun je hem niet vinden? Mail ons en we sturen een nieuwe:',
 
@@ -348,7 +377,7 @@ const COPY = {
     unknownBody: 'Misschien is er een tikfout gemaakt, of is hij vervangen door een nieuwere. De laatste link die we je mailden is degene die werkt.',
 
     expiredTitle: 'Deze link is verlopen',
-    expiredBody: (days) => `Portaallinks werken tot ${days} dagen nadat we een bestelling afsluiten. Heb je deze bestanden nog nodig? Mail ons, dan kijken we ernaar.`,
+    expiredBody: (days) => `De link naar je bestelpagina werkt tot ${days} dagen nadat we je bestelling afsluiten. Heb je deze bestanden nog nodig? Mail ons, dan kijken we ernaar.`,
 
     replacedTitle: 'Deze link is vervangen',
     replacedBody: 'Voor deze bestelling is een nieuwere link uitgegeven. Kijk in de meest recente mail van ons — die werkt.',
@@ -360,6 +389,19 @@ const COPY = {
 
     downTitle: 'We kunnen je bestelling nu niet bereiken',
     downBody: 'Dit ligt aan ons, niet aan jou, en er wordt naar gekeken. Probeer het over een paar minuten opnieuw.',
+
+    /* K-02: zie de Engelse tegenhangers. */
+    fotosH: 'Voeg je foto\u2019s toe',
+    fotosLede: 'Er ontbreken nog foto\u2019s. Kies ze hieronder per vak, dan beginnen we met alles compleet. Een foto met je telefoon is goed.',
+    fotosVak: (vak, product) => `${vak} voor ${product}`,
+    fotosKnop: 'Foto\u2019s versturen',
+    fotosHint: `Toegestaan: ${uploadFormatsSentence('nl')}, hoogstens ${Math.round(MAX_FILE_BYTES / 1048576)} MB per foto. Tot ${NASTUUR_PER_KEER} per keer.`,
+    fotosOk: (n) => (n === 1 ? 'Dank je, de foto is binnen en staat in het goede vak.' : `Dank je, ${n} foto\u2019s zijn binnen, elk in zijn vak.`),
+    fotosDeels: (n, m) => `${n} foto${n === 1 ? '' : '\u2019s'} toegevoegd. ${m} ${m === 1 ? 'foto kon' : 'foto\u2019s konden'} niet mee: kies ${m === 1 ? 'hem' : 'ze'} opnieuw, als ${uploadFormatsSentence('nl')} van hoogstens ${Math.round(MAX_FILE_BYTES / 1048576)} MB.`,
+    fotosNul: `Er is niets toegevoegd. Kies per vak een foto, als ${uploadFormatsSentence('nl')} van hoogstens ${Math.round(MAX_FILE_BYTES / 1048576)} MB.`,
+    fotosDag: 'Je hebt vandaag het maximum aantal foto\u2019s verstuurd. Stuur de rest morgen, of stuur ze ons via WhatsApp of mail.',
+    fotosTeVaak: 'Je hebt kort na elkaar een paar keer foto\u2019s gestuurd. Wacht even en probeer het opnieuw.',
+    fotosDicht: 'Bij deze bestelling kunnen geen foto\u2019s meer bij. Stuur ze ons via WhatsApp of mail.',
   },
 };
 
@@ -459,7 +501,9 @@ export async function portalGet(context) {
     return new Response(null, {
       status: 303,
       headers: {
-        Location: hier.pathname, 'cache-control': 'no-store', 'referrer-policy': 'same-origin',
+        /* Eén schuine streep vooraan (ronde 91, A10, 9 november 2026): `//o/<token>`
+           gaf anders `Location: //o/…`, een andere host (zie themaOmleiding() in admin.js). */
+        Location: `/${hier.pathname.replace(/^[/\\]+/, '')}`, 'cache-control': 'no-store', 'referrer-policy': 'same-origin',
         'set-cookie': `${TIPS_COOKIE}=${[...weg].join(',')}; Path=/o; Max-Age=${maxAge(PREFERENCE_COOKIE_DAYS)}; HttpOnly; Secure; SameSite=Lax`,
       },
     });
@@ -470,6 +514,14 @@ export async function portalGet(context) {
   /* De melding van een lege revisieronde (ronde 9, F13). Alleen dit ene woord
      wordt gelezen; de rest van de query string doet niets. */
   order.rrMelding = new URL(request.url).searchParams.get('rr') === 'geen';
+  /* K-02: de uitkomst van het nasturen (?fotos=…&mis=…), alleen cijfers of één woord. */
+  {
+    const q = new URL(request.url).searchParams;
+    const f = String(q.get('fotos') || '');
+    if (/^(\d{1,3}|dag|vaak|dicht)$/.test(f)) order.fotosMelding = { fotos: f, mis: Math.min(99, Number.parseInt(q.get('mis') || '0', 10) || 0) };
+    /* K-03: na "Ook als PNG/WebP" (?formaat=png|webp|fout); formaatMelding() kent alleen die drie. */
+    order.formaatMelding = formaatMelding(String(q.get('formaat') || ''), lang);
+  }
   return renderOrder(env, order, route.token, lang);
 }
 
@@ -525,6 +577,49 @@ export async function portalPost(context) {
     form = await request.formData();
   } catch {
     return seeOther(home);
+  }
+
+  /*
+   * ── FOTO'S NASTUREN — 9 november 2026 (ronde 91, K-02) ─────────────────────
+   *
+   * Lucas koos in lijst 85 (A2): de klant vult een leeg vak hier zelf, zonder in te
+   * loggen in Studio. Het token is het bewijs (zie de kop van dit bestand: geen
+   * CSRF-token nodig, de link IS de sleutel). Alleen vóór Geleverd, met dezelfde
+   * regel als Studio (nasturenOpen() in src/lib/nasturen.js), en met een eigen grens
+   * per bestelling bovenop POST_LIMIT en de daggrens van /api/upload. De opslag is
+   * die van Studio: R2 `aangeleverd/<ref>/…` en een rij in `files` met het vak.
+   */
+  if (form.get('action') === 'fotos') {
+    const terug = (q) => seeOther(`${home}?${q}#fotos`);
+    if (!nasturenOpen(order)) return terug('fotos=dicht');
+    const poort = await checkRate(env, { key: `fotos:${order.order_id}`, action: 'portal-fotos', limit: FOTOS_POST_LIMIT, windowSeconds: 3600 });
+    if (!poort.allowed) return terug('fotos=vaak');
+    let r;
+    try {
+      r = await bewaarVakFotos(env, { order, form, ip: clientIp(request), bron: 'privelink' });
+    } catch {
+      return plainPage(env, request, 'down', 503);
+    }
+    later(context, bumpUse(env, order.token_id));
+    if (!r.aantal) return terug(r.dagVol ? 'fotos=dag' : 'fotos=0');
+    return terug(`fotos=${r.aantal}${r.mis ? `&mis=${r.mis}` : ''}`);
+  }
+
+  /*
+   * ── OOK ALS PNG OF WEBP — 9 november 2026 (ronde 91, K-03) ─────────────────
+   *
+   * Lucas koos in lijst 85 (A3): alles over één bestelling kan op de bestelpagina.
+   * De tabel formaat_verzoeken hangt aan de bestelling en niet aan een account
+   * (migratie 0065), dus dit is dezelfde handeling als in Studio
+   * (handleFormaatPost() in formaten.js), met het token in plaats van de sessie.
+   * Dubbel klikken is één verzoek (UNIQUE + INSERT OR IGNORE).
+   */
+  if (form.get('action') === 'formaat') {
+    const f = String(form.get('formaat') || '');
+    if (!formaatGeldig(f) || !formaatKan(order)) return seeOther(home);
+    const uit = await vraagFormaatAan(env, order.order_id, f);
+    later(context, bumpUse(env, order.token_id));
+    return seeOther(`${home}?formaat=${uit.ok ? f : 'fout'}#formaten`);
   }
 
   /*
@@ -1320,7 +1415,14 @@ async function renderOrder(env, order, token, lang, { voorvertoning = false } = 
    * zijn zuivere functies over de rijen die er al zijn: geen tweede query, en per
    * constructie hetzelfde archief als de route straks bouwt.
    */
-  const folder = folderBlock(t, token, deliverySummary(deliveryEntries(files, lang, { service: order.service, details: order.details_json })));
+  /* K-03: "Andere formaten" direct onder de map, zoals op de bestelkaart in Studio. */
+  let formaten = '';
+  try {
+    const levend = files.filter((f) => !f.superseded_at && !(f.expires_at && isExpired(f.expires_at, null)));
+    const verzoeken = (await formatenVoorOrders(env, [order.order_id])).get(Number(order.order_id)) || [];
+    formaten = formatenBlok(formaatView({ id: order.order_id, status: order.status, service: order.service }, verzoeken, { lang, downloadbaar: levend.length > 0 }), order.formaatMelding, { voorvertoning });
+  } catch { formaten = ''; }
+  const folder = folderBlock(t, token, deliverySummary(deliveryEntries(files, lang, { service: order.service, details: order.details_json }))) + formaten;
 
   /* ── "WAT NU" BOVENAAN — 8 oktober 2026 (punt 3.01) ─────────────────────
      Eén zin met hoogstens twee knoppen, uit nuZin() — dezelfde functie als de
@@ -1332,7 +1434,12 @@ async function renderOrder(env, order, token, lang, { voorvertoning = false } = 
     try { eersteMist = eersteMistVan(await ontbrekendVoorOrder(env.DB, order.order_id), lang); } catch { eersteMist = null; }
   }
   const ns = nuZin(order, { files, eersteMist, fb: vraagFeedback ? fb : undefined }, lang);
-  const top = nuBlok(t, lang, order, token, ns, files);
+  /* K-02: het blok om ontbrekende foto's te sturen, direct onder "wat nu". */
+  let fotos = '';
+  if (nasturenOpen(order)) {
+    try { fotos = fotosBlok(t, lang, order, await ontbrekendVoorOrder(env.DB, order.order_id), { voorvertoning }); } catch { fotos = ''; }
+  }
+  const top = nuBlok(t, lang, order, token, ns, files) + fotos;
 
   /* ── HET AFRONDSCHERM — 8 oktober 2026 (punt 3.05) ─────────────────────────
      Na "Alles goed" landt de klant op /o/<token>#afgerond: bovenaan de
@@ -1343,7 +1450,7 @@ async function renderOrder(env, order, token, lang, { voorvertoning = false } = 
   const afgerond = isAfgerond(order);
   const afrond = afgerond
     ? afrondBlok({
-      folder: folderBlock(t, token, deliverySummary(deliveryEntries(files, lang, { service: order.service, details: order.details_json })), { boven: true, datums: ns.datums }),
+      folder: folderBlock(t, token, deliverySummary(deliveryEntries(files, lang, { service: order.service, details: order.details_json })), { boven: true, datums: ns.datums }) + formaten,
       feedback: vraagFeedback ? feedbackBlock({ lang, action: `/o/${token}`, feedback: fb }) : '',
       /* 3.07: "Bestel met dezelfde look", op de privélink na afronden. */
       herbestel: herbestelHtml(herbestelKnop(order, { lang, abonnee: !!order.abonnee }), esc),
@@ -1360,7 +1467,8 @@ async function renderOrder(env, order, token, lang, { voorvertoning = false } = 
   return html(
     page({
       lang,
-      title: attended ? t.orderTitle : t.filesTitle,
+      /* K-03: in de tab heet hij "Je bestelpagina"; de kop op de pagina blijft. */
+      title: t.pageTitle,
       body: masthead(order.ref) + body + foot(t),
     })
   );
@@ -1425,7 +1533,7 @@ function roundBlock(t, lang, order, files) {
       return `<section class="rr rr-used">
   <h2>${esc(t.rrDoneTitle)}</h2>
   <p>${esc(t.rrDoneBody(dag, n))}</p>
-  <p><a class="btn btn-wa" href="${esc(waHref(t.rrWaText(order.ref)))}" target="_blank" rel="noopener">${esc(t.rrUsedWa)}${nieuwTabbladHtml(lang)}</a></p>
+  <p><a class="btn btn-wa" data-rol="contact" href="${esc(waHref(t.rrWaText(order.ref)))}" target="_blank" rel="noopener">${esc(t.rrUsedWa)}${nieuwTabbladHtml(lang)}</a></p>
 </section>`;
     }
     /*
@@ -1441,7 +1549,7 @@ function roundBlock(t, lang, order, files) {
   <h2>${esc(t.rrUsedTitle)}</h2>
   <p>${esc(t.rrUsedBody(dag, n, files.filter((f) => f.review_state === 'revision_requested' && !f.superseded_at).length))}</p>
   ${order.revision_round_note ? `<p class="said">${esc(order.revision_round_note)}</p>` : ''}
-  <p><a class="btn btn-wa" href="${esc(waHref(t.rrWaText(order.ref)))}" target="_blank" rel="noopener">${esc(t.rrUsedWa)}${nieuwTabbladHtml(lang)}</a></p>
+  <p><a class="btn btn-wa" data-rol="contact" href="${esc(waHref(t.rrWaText(order.ref)))}" target="_blank" rel="noopener">${esc(t.rrUsedWa)}${nieuwTabbladHtml(lang)}</a></p>
 </section>`;
   }
 
@@ -1449,7 +1557,7 @@ function roundBlock(t, lang, order, files) {
     return `<section class="rr rr-off">
   <h2>${esc(t.rrRevokedTitle)}</h2>
   <p>${esc(t.rrRevokedBody)}</p>
-  <p><a class="btn btn-wa" href="${esc(waHref(t.rrWaText(order.ref)))}" target="_blank" rel="noopener">${esc(t.rrUsedWa)}${nieuwTabbladHtml(lang)}</a></p>
+  <p><a class="btn btn-wa" data-rol="contact" href="${esc(waHref(t.rrWaText(order.ref)))}" target="_blank" rel="noopener">${esc(t.rrUsedWa)}${nieuwTabbladHtml(lang)}</a></p>
 </section>`;
   }
 
@@ -1472,7 +1580,7 @@ function roundBlock(t, lang, order, files) {
   <form method="post" action="" id="rr">
     <label class="sr-only" for="rrnote">${esc(t.rrLabel)}</label>
     <textarea id="rrnote" name="note" rows="3" maxlength="${NOTE_MAX}" placeholder="${esc(t.rrHint)}">${esc(order.rrNote || '')}</textarea>
-    <div class="acts"><button class="btn btn-primary" type="submit" name="action" value="round">${esc(t.rrSend)}</button></div>
+    <div class="acts"><button class="btn btn-primary" data-rol="aanmerken" type="submit" name="action" value="round">${knopInhoud('aanmerken', t.rrSend)}</button></div>
   </form>
 </section>`;
   /* Hier stond een inline scriptblok met een teller ("2 beelden aangevinkt").
@@ -1496,6 +1604,81 @@ function roundBlock(t, lang, order, files) {
  * V22 = a: de violette knop is "Alles goed — naar je downloads", met
  * "Eerst downloaden" als gewone link ernaast.
  */
+/*
+ * ══════════════════════════════════════════════════════════════════════════════
+ * FOTO'S NASTUREN OP DE BESTELPAGINA — 9 november 2026 (ronde 91, K-02)
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * Per product alleen de vakken die ontbreken (src/lib/ontbreekt.js: voorkant,
+ * achterkant, detail en de bijbestelde hoeken), elk met een eigen bestandsveld, en
+ * één knop voor alles. Een gewoon formulier (multipart), zonder script, zoals alles
+ * op deze pagina. Een vol vak staat hier niet: vervangen blijft iets voor Studio.
+ *
+ * Weten we niet wat er ontbreekt (`null`: geen uploads, of een upload zonder vak),
+ * dan geen blok; dan kijkt Lucas (zie de kop van ontbreekt.js). Na het versturen
+ * staat de uitkomst in het blok, ook als er daarna niets meer ontbreekt.
+ *
+ * In de voorvertoning van /admin staat het blok er ook ("zoals de klant het
+ * ziet"), maar uitgeschakeld: daar is geen token om naar te posten.
+ */
+/*
+ * ── "ANDERE FORMATEN" OP DE BESTELPAGINA — 9 november 2026 (ronde 91, K-03) ──
+ * Dezelfde knoppen en dezelfde woorden als op de bestelkaart in Studio
+ * (formaatView() in formaten.js): "Ook als PNG", "Ook als WebP", en daarna
+ * "PNG aangevraagd · 11 okt" of "PNG geleverd · 12 okt". Een gewoon formulier.
+ * In de voorvertoning van /admin uitgeschakeld (geen token om naar te posten).
+ */
+function formatenBlok(v, melding = '', { voorvertoning = false } = {}) {
+  if (!v) return '';
+  const knoppen = v.knoppen.map((k) => (k.label
+    ? `<button class="btn btn-sm" data-rol="downloaden" type="submit" name="formaat" value="${esc(k.formaat)}"${voorvertoning ? ' disabled' : ''}>${knopInhoud('downloaden', k.label)}</button>`
+    : `<span class="formaat-staat${k.klaar ? ' is-klaar' : ''}">${esc(k.staat)}</span>`)).join('');
+  return `<section class="formaten" id="formaten" aria-labelledby="formaten-h">
+  <h2 id="formaten-h">${esc(v.kop)}</h2>
+  <p>${esc(v.uitleg)}</p>
+  ${melding ? `<p class="fotos-ok" role="status">${esc(melding)}</p>` : ''}
+  <form method="post" action="" class="formaten-knoppen"><input type="hidden" name="action" value="formaat">${knoppen}</form>
+</section>`;
+}
+
+function fotosBlok(t, lang, order, lijst, { voorvertoning = false } = {}) {
+  const m = order.fotosMelding || null;
+  let melding = '';
+  if (m) {
+    const n = Number(m.fotos);
+    const zin = m.fotos === 'dag' ? t.fotosDag
+      : m.fotos === 'vaak' ? t.fotosTeVaak
+        : m.fotos === 'dicht' ? t.fotosDicht
+          : n > 0 ? (m.mis ? t.fotosDeels(n, m.mis) : t.fotosOk(n))
+            : t.fotosNul;
+    const goed = n > 0 && !m.mis;
+    melding = `<p class="${goed ? 'fotos-ok' : 'rr-fout'}" role="${goed ? 'status' : 'alert'}">${esc(zin)}</p>`;
+  }
+  if (!Array.isArray(lijst) || !lijst.length) {
+    return melding ? `<section class="fotos" id="fotos" aria-labelledby="fotos-h"><h2 id="fotos-h">${esc(t.fotosH)}</h2>${melding}</section>` : '';
+  }
+  const producten = lijst.map((p) => {
+    const wie = t.product(p.index, p.naam);
+    const vakken = p.mist.map((id) => {
+      const naam = ontbreektVakNaam(id, lang, p.namen);
+      const Naam = naam.charAt(0).toUpperCase() + naam.slice(1);
+      return `<label class="fotos-vak"><span class="fotos-vak-naam">${esc(Naam)}</span><input type="file" name="${esc(vakVeld(p.key, id))}" aria-label="${esc(t.fotosVak(Naam, wie))}" accept=".jpg,.jpeg,.png,.webp,.avif,.heic,.heif,image/jpeg,image/png,image/webp,image/avif,image/heic"${voorvertoning ? ' disabled' : ''}></label>`;
+    }).join('');
+    return `<fieldset class="fotos-product"><legend>${esc(wie)}</legend><div class="fotos-vakken">${vakken}</div></fieldset>`;
+  }).join('');
+  return `<section class="fotos" id="fotos" aria-labelledby="fotos-h">
+  <h2 id="fotos-h">${esc(t.fotosH)}</h2>
+  <p>${esc(t.fotosLede)}</p>
+  ${melding}
+  <form method="post" action="" enctype="multipart/form-data">
+    <input type="hidden" name="action" value="fotos">
+    ${producten}
+    <p class="fotos-hint">${esc(t.fotosHint)}</p>
+    <div class="acts"><button class="btn btn-primary" data-rol="uploaden" type="submit"${voorvertoning ? ' disabled' : ''}>${knopInhoud('uploaden', t.fotosKnop)}</button></div>
+  </form>
+</section>`;
+}
+
 function nuBlok(t, lang, order, token, ns, files) {
   if (!ns || !ns.zin) return '';
   const levend = files.filter((f) => !f.superseded_at && !(f.expires_at && isExpired(f.expires_at, null)));
@@ -1505,19 +1688,20 @@ function nuBlok(t, lang, order, token, ns, files) {
   for (const doel of ns.knoppen) {
     const eerste = delen.length === 0;
     if (doel === 'betalen') {
-      knop(`<a class="${eerste ? 'btn btn-primary' : 'nu-link'}" href="/api/order-pay?ref=${encodeURIComponent(order.ref || '')}&amp;lang=${lang}">${esc(nuKnopLabel('betalen', lang))}</a>`);
+      knop(`<a class="${eerste ? 'btn btn-primary' : 'nu-link k k-tekst k-klein'}" data-rol="doorgaan" href="/api/order-pay?ref=${encodeURIComponent(order.ref || '')}&amp;lang=${lang}">${knopInhoud('doorgaan', nuKnopLabel('betalen', lang))}</a>`);
     } else if (doel === 'allesGoed') {
-      knop(`<form method="post" action="" class="nu-form"><input type="hidden" name="naar" value="afgerond"><button class="btn${eerste ? ' btn-primary' : ''}" type="submit" name="action" value="approve-all">${esc(nuKnopLabel('allesGoed', lang))}</button></form>`);
-      if (zip) knop(`<a class="nu-link" href="${zip}">${esc(nuKnopLabel('eerstDownloaden', lang))}</a>`);
+      knop(`<form method="post" action="" class="nu-form"><input type="hidden" name="naar" value="afgerond"><button class="btn${eerste ? ' btn-primary' : ''}" data-rol="bevestigen" type="submit" name="action" value="approve-all">${knopInhoud('bevestigen', nuKnopLabel('allesGoed', lang))}</button></form>`);
+      if (zip) knop(`<a class="nu-link k k-tekst k-klein" data-rol="downloaden" href="${zip}">${knopInhoud('downloaden', nuKnopLabel('eerstDownloaden', lang))}</a>`);
     } else if (doel === 'aanmerken') {
-      knop(`<a class="nu-link" href="#werk">${esc(nuKnopLabel('aanmerken', lang))}</a>`);
+      knop(`<a class="nu-link k k-tekst k-klein" data-rol="aanmerken" href="#werk">${knopInhoud('aanmerken', nuKnopLabel('aanmerken', lang))}</a>`);
     } else if (doel === 'downloaden') {
       /* Afgerond: de downloads staan direct hieronder, in het afrondblok. */
-      if (zip && !isAfgerond(order)) knop(`<a class="${eerste ? 'btn btn-primary' : 'nu-link'}" href="${zip}">${esc(nuKnopLabel('downloaden', lang))}</a>`);
+      if (zip && !isAfgerond(order)) knop(`<a class="${eerste ? 'btn btn-primary' : 'nu-link k k-tekst k-klein'}" data-rol="downloaden" href="${zip}">${knopInhoud('downloaden', nuKnopLabel('downloaden', lang))}</a>`);
     } else if (doel === 'tevreden') {
-      knop(`<a class="nu-link" href="#fb-h">${esc(nuKnopLabel('tevreden', lang))}</a>`);
+      knop(`<a class="nu-link k k-tekst k-klein" data-rol="navigeren" href="#fb-h">${knopInhoud('navigeren', nuKnopLabel('tevreden', lang))}</a>`);
     } else if (doel === 'fotos') {
-      knop(`<a class="${eerste ? 'btn btn-primary' : 'nu-link'}" href="/account/orders?order=${Number(order.order_id)}#fotos-${Number(order.order_id)}">${esc(nuKnopLabel('fotos', lang))}</a>`);
+      /* K-02: naar het blok hieronder, op deze pagina; niet meer naar de inlog van Studio. */
+      knop(`<a class="${eerste ? 'btn btn-primary' : 'nu-link k k-tekst k-klein'}" data-rol="uploaden" href="#fotos">${knopInhoud('uploaden', nuKnopLabel('fotos', lang))}</a>`);
     }
   }
   /* Afgerond: de datums staan bij de downloads in het afrondblok eronder. */
@@ -1587,7 +1771,7 @@ function attendedBody(t, lang, order, token, files, events, fb = null, folder = 
      en niet op een afgeronde bestelling of een proef. */
   const nogOpen = files.filter((f) => f.review_state === 'pending' && !f.superseded_at && !(f.expires_at && isExpired(f.expires_at, null))).length;
   const allesKnop = (!readOnly && canReviewOrder(order) && order.service !== SAMPLE_SERVICE && nogOpen >= 2)
-    ? `<form method="post" action="" class="alles"><button class="btn btn-primary" type="submit" name="action" value="approve-all">${esc(t.approveAll(nogOpen))}</button><p class="note">${esc(t.approveAllNote)}</p></form>`
+    ? `<form method="post" action="" class="alles"><button class="btn btn-2nd" data-rol="bevestigen" type="submit" name="action" value="approve-all">${knopInhoud('bevestigen', t.approveAll(nogOpen))}</button><p class="note">${esc(t.approveAllNote)}</p></form>`
     : '';
 
   /*
@@ -1758,7 +1942,7 @@ function folderBlock(t, token, summary, { boven = false, datums = [] } = {}) {
     ${/* Op het afrondscherm (3.05) de bewaardatum erbij, uit nuZin(). */ datums.length ? `<p class="folder-datum">${datums.map((d) => esc(d)).join(' ')}</p>` : ''}
     <p class="note folder-note">${esc(boven ? t.folderReviewOnder : t.folderReview)}</p>
   </div>
-  <a class="btn btn-primary" href="/o/${esc(token)}/zip">${esc(t.bDownload)}</a>
+  <a class="btn btn-primary" data-rol="downloaden" href="/o/${esc(token)}/zip">${knopInhoud('downloaden', t.bDownload)}</a>
 </section>`;
 }
 
@@ -1970,7 +2154,7 @@ function shot(t, lang, f, token, { review, history, round = false, order = null 
       const label = f.review_state === 'approved' ? t.bUndo : t.bCancel;
       controls = `<form method="post" action="">
   <input type="hidden" name="file" value="${f.id}">
-  <div class="acts"><button class="btn btn-quiet" type="submit" name="action" value="undo">${esc(label)}</button></div>
+  <div class="acts"><button class="btn btn-quiet btn-sm" data-rol="terugnemen" type="submit" name="action" value="undo">${knopInhoud('terugnemen', label)}</button></div>
 </form>`;
     } else {
       /*
@@ -2020,7 +2204,7 @@ function shot(t, lang, f, token, { review, history, round = false, order = null 
       const tik = round
         ? `<label class="pick">
     <input type="checkbox" form="rr" name="bad" value="${f.id}"${aan ? ' checked' : ''}>
-    <span>${esc(t.rrPick)}</span>
+    <span>${rolIkoon('aanmerken')}${esc(t.rrPick)}</span>
   </label>`
         : '';
       /* B44: het vak voor dit ene beeld, zichtbaar zodra het is aangevinkt
@@ -2032,7 +2216,7 @@ function shot(t, lang, f, token, { review, history, round = false, order = null 
       controls = `<form method="post" action="">
   <input type="hidden" name="file" value="${f.id}">
   <div class="acts">
-    <button class="btn btn-primary" type="submit" name="action" value="approve">${esc(t.bApprove)}</button>
+    <button class="btn btn-primary btn-sm" data-rol="bevestigen" type="submit" name="action" value="approve">${knopInhoud('bevestigen', t.bApprove)}</button>
     ${tik}
   </div>
 </form>${round ? `<span class="state picked">${esc(t.rrPicked)}</span>${eigenNotitie}` : ''}`;
@@ -2157,6 +2341,7 @@ function page({ lang, title, body }) {
 <link rel="stylesheet" href="/fonts/gedeeld.css">
 <link rel="preload" as="font" type="font/woff2" href="/fonts/visuails-display/VISUAILSDisplay-Bold.woff2" crossorigin="anonymous">
 <link rel="stylesheet" href="/portal.css">
+<link rel="stylesheet" href="/knoppen.css">
 <!-- Het tevredenheidsblok, uit één stylesheet die ook VISUAILS Studio inlaadt.
      Zie de kop van public/feedback.css over waarom dat een derde bestand is en
      niet twee keer dezelfde regels. -->
@@ -2211,7 +2396,7 @@ function privelinkTip(lang, pad) {
   const weg = `${pad}?tipweg=privelink`;
   return `<aside class="tip" role="note" aria-label="${esc(T.label)}">
   <p>${esc(T.privelink)}</p>
-  <p class="tip-acts"><a class="btn btn-ghost" href="${esc(weg)}">${esc(T.begrepen)}</a></p>
+  <p class="tip-acts"><a class="btn btn-ghost btn-sm" data-rol="sluiten" href="${esc(weg)}">${esc(T.begrepen)}</a></p>
   <a class="tip-x" href="${esc(weg)}" aria-label="${esc(T.sluit)}">×</a>
 </aside>`;
 }

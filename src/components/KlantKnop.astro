@@ -22,7 +22,7 @@
  *                       herbestel-of-start.
  * ═══════════════════════════════════════════════════════════════════════════ */
 import { klantTekst } from '../data/klant.js';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { rolIkoon } from '../data/iconen.js';
 import { localizedPath } from '../i18n/ui.js';
 
 interface Props { lang: 'en' | 'nl'; soort: 'herbestel' | 'herbestel-of-start' | 'start-naast'; toon?: 'inkt' | 'lijn'; pijl?: boolean; }
@@ -30,12 +30,14 @@ const { lang, soort, toon = 'lijn', pijl = false } = Astro.props;
 const k = klantTekst(lang);
 const start = localizedPath(lang, '/start');
 const label = soort === 'herbestel' ? k.herbestel : k.start;
-const PIJL = ikoon('pijl');
+/* knoppensysteem (lijst 88): Doorgaan heeft altijd de pijl, vol of als lijn; `pijl` blijft als prop voor oude aanroepen */
+const PIJL = rolIkoon('doorgaan');
 ---
 <a
-  class={`h-knop h-knop-${toon}`}
+  class={`h-knop k ${toon === 'inkt' ? 'k-vol' : 'k-lijn'}`}
+  data-rol="doorgaan"
   href={start}
   data-vis-klant={soort}
   data-vis-herbestel={soort === 'herbestel-of-start' ? k.herbestel : undefined}
   hidden
-><span data-vis-label>{label}</span>{pijl && <span class="o" set:html={PIJL} />}</a>
+><span data-vis-label>{label}</span><Fragment set:html={PIJL} /></a>

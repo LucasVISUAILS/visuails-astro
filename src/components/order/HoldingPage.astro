@@ -50,10 +50,14 @@ import { videoStyles as videoStylesNl } from '../../data/videoStyles.nl.js';
 import { localizedPath } from '../../i18n/ui.js';
 
 import Note from '../Note.astro';
+import NieuwTabblad from '../NieuwTabblad.astro';
+import { waHref } from '../../data/whatsapp.js';
+import { waKlant } from '../../data/klant.js';
 /* Zonder deze regel zijn .paneel, .hoog en .knop lege klassen en staat de pagina
    in ink-op-ink. Dat is precies wat er op /thank-you gebeurde toen die als eerste
    werd omgezet; het is één regel en hij wordt één keer vergeten. */
 import '../../styles/stijl22.css';
+import { rolIkoon } from '../../data/iconen.js';
 interface Props {
   lang: 'en' | 'nl';
   /* 'brand-model' STOND HIER, EN IS WEG — 23 augustus 2026.
@@ -158,8 +162,12 @@ const KIND = {
     video: {
       h1: 'Video clips',
       lead: 'Product clips for feed, story and paid social.',
-      status: 'In build',
-      statusBody: 'Video has no order form yet. Send this request and we will confirm what and when, in writing, before anything runs.',
+      /* Lijst 87 (r90-i2): "Op aanvraag" in plaats van "In aanbouw". Een pagina die zichzelf onaf noemt,
+         maakt een klant onzeker over de rest; dit zegt wat hij wél kan: een offerte vragen. */
+      status: 'On request',
+      statusBody: 'Video has no order form: every clip is quoted. Ask for a quote on WhatsApp, or send the request below, and we confirm what, when and the price in writing, before anything runs.',
+      quoteLabel: 'Ask for a quote on WhatsApp',
+      quoteWa: 'Hello VISUAILS, I’d like a quote for a video clip.',
       facts: [
         ['Price', VIDEO_OP_AANVRAAG ? 'On request: we reply in writing with a price.' : `${euro(AMOUNT.video, 'en')} a clip, ${vatLabel('excl', 'en')}.`],
         ['What you get', 'One product, one look, one vertical clip.'],
@@ -247,9 +255,11 @@ const KIND = {
   nl: {
     video: {
       h1: 'Videoclips',
-      lead: 'Productclips voor feed, story en paid social.',
-      status: 'In aanbouw',
-      statusBody: 'Video heeft nog geen bestelformulier. Stuur deze aanvraag en we bevestigen wat en wanneer op schrift, voordat er iets draait.',
+      lead: 'Productclips voor je feed, stories en advertenties.',
+      status: 'Op aanvraag',
+      statusBody: 'Video heeft geen bestelformulier: elke clip krijgt een offerte. Vraag er een via WhatsApp, of stuur de aanvraag hieronder, en we bevestigen wat, wanneer en de prijs op schrift, voordat er iets draait.',
+      quoteLabel: 'Vraag een offerte via WhatsApp',
+      quoteWa: 'Hallo VISUAILS, ik wil graag een offerte voor een videoclip.',
       facts: [
         ['Prijs', VIDEO_OP_AANVRAAG ? 'Op aanvraag: we antwoorden schriftelijk met een prijs.' : `${euro(AMOUNT.video, 'nl')} per clip, ${vatLabel('excl', 'nl')}.`],
         ['Wat je krijgt', 'Eén product, één look, één verticale clip.'],
@@ -270,7 +280,7 @@ const KIND = {
         ['Prijs', 'Eén ontwerpbedrag, op aanvraag. Daarna loopt elk product vanaf het gewone tarief: vraagt de look per product meer werk, dan staat de toeslag bij de look voordat je bestelt.'],
         ['Wat je krijgt', 'Een setting en licht die alleen jouw merk gebruikt, in elke bestelling erna.'],
         ['Hoe het begint', 'Stuur referenties; wij komen terug met een richting en een prijs.'],
-        ['Twee ingangen', 'Breng je eigen concept, of laat ons het bedenken (extra denkwerk).'],
+        ['Twee ingangen', 'Kom met je eigen concept, of laat ons het bedenken (extra denkwerk).'],
         ['Haalbaarheid eerst', 'We zeggen of het kan voordat je iets betaalt. Heb je al een aanbetaling gedaan en blijkt het toch niet te maken, dan krijg je die terug.'],
         ['Aanbetaling en correctieronde', 'Een aanbetaling, dan één correctieronde op het ontwerp; daarna ligt het vast. Onze fouten lossen we kosteloos op.'],
         ['Van jou', 'We gebruiken hem nooit voor een ander merk.'],
@@ -288,7 +298,7 @@ const KIND = {
         forLabel: 'Waar moet de look te gebruiken zijn?',
         forOptions: [['lifestyle', 'Lifestylescènes'], ['catalog', 'Catalogsets'], ['both', 'Allebei']],
         worldLabel: 'Beschrijf de wereld',
-        worldHint: 'Setting, licht, sfeer, kleur, tijd van de dag. Schrijf het zoals je een fotograaf zou briefen — "een heet betonnen dak om twaalf uur, harde schaduwen, één product per beeld". Laat je ons het bedenken? Beschrijf dan je merk, je klant en waar de beelden komen te staan.',
+        worldHint: 'Setting, licht, sfeer, kleur, tijd van de dag. Schrijf het zoals je een fotograaf zou briefen — “een heet betonnen dak om twaalf uur, harde schaduwen, één product per beeld”. Laat je ons het bedenken? Beschrijf dan je merk, je klant en waar de beelden komen te staan.',
         worldErr: 'Beschrijf de wereld die je in gedachten hebt — daar is de offerte op gebaseerd.',
         refsLabel: 'Twee tot vijf referenties',
         refsHint: 'Links naar beelden, campagnes of accounts die het gevoel hebben dat je zoekt. Eén per regel.',
@@ -346,6 +356,9 @@ const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
       <p class="hold-status-label">{ui.statusLabel}</p>
       <p class="hold-status-word">{k.status}</p>
       <p class="hold-status-body">{k.statusBody}</p>
+      {k.quoteLabel && (
+        <p class="hold-status-actie"><a class="knop knop-lijn" data-rol="contact" href={waHref(k.quoteWa)} target="_blank" rel="noopener" {...waKlant(lang)}>{k.quoteLabel}<NieuwTabblad lang={lang} /></a></p>
+      )}
     </div>
 
     <div class="hold-facts">
@@ -406,7 +419,8 @@ const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
 
         <div class="field">
           <label for="h-web">{ui.website} <span class="hold-opt">{ui.optional}</span></label>
-          <input class="input" type="url" id="h-web" name="website" placeholder="https://" autocomplete="url" />
+          {/* type="text" (8 november 2026, doorloop 90, B28): bij type="url" weigerde de browser "merk.nl" met een eigen melding in de taal van de browser. Zie BrandModelBrief: de link wordt door een mens geopend. */}
+          <input class="input" type="text" inputmode="url" id="h-web" name="website" placeholder={lang === 'nl' ? 'jouwmerk.nl' : 'yourbrand.com'} maxlength="200" autocomplete="url" />
         </div>
 
         {kind === 'video' && (
@@ -526,7 +540,7 @@ const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
           <textarea class="textarea" id="h-msg" name="message"></textarea>
         </div>
 
-        <button type="submit" class="knop knop-inkt hold-submit">{ui.submit}</button>
+        <button type="submit" class="knop knop-inkt k-groot hold-submit" data-rol="doorgaan">{ui.submit}<Fragment set:html={rolIkoon('doorgaan')} /></button>
       </form>
     </div>
 
@@ -574,6 +588,7 @@ const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
     line-height: 1.1;
     color: var(--signal-ink);
   }
+  .hold-status-actie { margin: 1.1rem 0 0; }
   .hold-status-body {
     margin: .8rem 0 0;
     color: var(--ink-2);

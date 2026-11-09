@@ -33,6 +33,7 @@
  * Geen DOM en geen database: de Worker, de cron en de tests laden dit.
  */
 import { REVIEW_PLATFORMS } from '../data/reviews.js';
+import { ikoon } from '../data/iconen.js';
 import { VERVAL_DAG, BETALEN_NA_BTW_AKKOORD, FOTO_WACHT_DAGEN, inWoorden } from '../data/termijnen.js';
 import { SHOTS as SHOTS_DATA } from '../data/shots.js';
 import { aantalOntbrekend, vakNaam } from './ontbreekt.js';
@@ -248,7 +249,7 @@ export function waTekst(moment, o = {}, extra = {}) {
       const n = Math.max(0, Math.floor(Number(extra.saldo) || 0));
       const wanneer = String(extra.vervalt || '');
       return en
-        ? `${hoi} you asked us to think along about your credits${n ? ` (${n} right now${wanneer ? `, the first ones expire on ${wanneer}` : ''})` : ''}. When suits you for a short call or a few messages? We will look at your website and channels and suggest what gets the most out of them. VISUAILS`
+        ? `${hoi} you asked us to help you decide what to do with your credits${n ? ` (${n} right now${wanneer ? `, the first ones expire on ${wanneer}` : ''})` : ''}. When suits you for a short call or a few messages? We will look at your website and channels and suggest what gets the most out of them. VISUAILS`
         : `${hoi} je vroeg ons mee te denken over je credits${n ? ` (nu ${n}${wanneer ? `, de eerste vervallen op ${wanneer}` : ''})` : ''}. Wanneer schikt het om even te bellen of te appen? We kijken naar je website en kanalen en stellen voor waar ze het meest opleveren. VISUAILS`;
     }
     case 'terugboeking':
@@ -299,10 +300,10 @@ const escHtml = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ 
  */
 export function contactKnoppen(link, { wie = 'de klant', email = '', onderwerp = '', mail = true } = {}) {
   const w = escHtml(wie);
-  const bel = link.tel ? `<a class="btn ${link.belEerst ? 'btn-primary' : 'btn-ghost'} btn-sm" href="${escHtml(link.tel)}">Bel ${w}</a>` : '';
-  const app = link.wa ? `<a class="btn ${link.belEerst ? 'btn-ghost' : 'btn-primary'} btn-sm" href="${escHtml(link.wa)}" target="_blank" rel="noopener">App ${w}</a>` : '';
+  const bel = link.tel ? `<a class="btn btn-ghost btn-sm" data-rol="contact" href="${escHtml(link.tel)}">Bel ${w}</a>` : '';
+  const app = link.wa ? `<a class="btn btn-ghost btn-sm" data-rol="contact" href="${escHtml(link.wa)}" target="_blank" rel="noopener">App ${w}</a>` : '';
   const mailKnop = mail && email
-    ? `<a class="btn btn-ghost btn-sm" href="mailto:${escHtml(email)}?subject=${encodeURIComponent(onderwerp)}&body=${encodeURIComponent(link.tekst)}">Mail ${w}</a>`
+    ? `<a class="btn btn-ghost btn-sm" data-rol="contact" href="mailto:${escHtml(email)}?subject=${encodeURIComponent(onderwerp)}&body=${encodeURIComponent(link.tekst)}">${ikoon('mail')}Mail ${w}</a>`
     : '';
   const uitleg = link.wa ? '' : link.tel
     ? ' <span class="meta">Landnummer niet zeker, dus geen WhatsApp-link.</span>'

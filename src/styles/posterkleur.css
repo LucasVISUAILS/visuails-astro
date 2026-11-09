@@ -12,14 +12,14 @@
 
    WAAR (en waar niet):
      E1  de lege fotoplek, zolang een beeld laadt (de galerij, de looks, je beelden in Studio)    .pk-fp
-     E2  het ene inktblok op een pagina zonder €1-blok (het slot onderaan, .h-lk-slot)            .h-lk-slot.pk
-     E3  Bestellen bovenin (een pil, zoals alles wat je bedient; DESIGN.md "Hoeken")             .nav-cta.pk
+     E2  het slot onderaan — VERVALLEN 9 november 2026 (lijst 86: een vaste foto, src/styles/fotoblok.css)
+     E3  Bestellen bovenin — VERVALLEN 9 november 2026 (lijst 84, A1 = c: de snede, schoon; hal.css K1)
      E4  het gezicht met initialen (Studio; het portaal, /admin en de aanbevelingen hebben er geen) .st-wie-letter.pk
      E5  de status "geleverd", één stukje voor de hele lijst                                     .stand.is-geleverd
      E6  het balkje met de schuine kop: het legt een vaste poster bloot (de strook op /lifestyle) .h-lijntje i.pk
      E7  het tekstlogo (en de V in de balk) onder de muis: een venster op de snede               global.css, .mk-raam
-   Op de grote plekken (lijst 78 C1 – C4, lijst 81 V3) een veld, zonder harde randen:
-     het €1-blok (B4 Nacht, het licht rechtsonder) en de 404 (B4 Nacht met de witte V).
+   Op de grote plekken (lijst 78 C1 – C4, lijst 81 V3) stond een veld: het €1-blok (B4 Nacht) en de 404 (B4 Nacht
+   met de witte V). VERVALLEN 9 november 2026: daar staat sinds lijst 86 een vaste, bewogen foto (fotoblok.css).
    Hoogstens drie stukjes tegelijk op een pagina buiten de grote plekken; de lege fotoplek en het venster
    tellen niet (die zie je maar even). tests/posterkleur-89-browser.test.mjs meet het: tekst op een stukje
    minstens 4,5 : 1 op het slechtste beeldpunt, met de korrel; het venster minstens 3 : 1; nooit twee buren
@@ -53,13 +53,9 @@ body.studio .st-beeld-media.pk-fp-onder::before { content: ""; position: absolut
   background: var(--pk-korrel) 0 0 / 128px 128px, var(--pk) 50% 50% / cover no-repeat, #E6EAF4; }
 body.studio .st-beeld-media.pk-fp-onder > img { position: relative; }
 
-/* ── E2 · het ene inktblok (het slot onderaan, op een pagina zonder €1-blok) ─────────────────────────────
-   Een stukje nacht of snede onder de witte tekst; de snede van 53° rechtsonder en de vorm blijven (hal.css). */
-html body.hal .h-lk-slot.pk { background: var(--pk-korrel) 0 0 / 128px 128px, var(--pk) 50% 50% / cover no-repeat, #0F1217; }
-
-/* ── B4 · het €1-blok: het veld Nacht, het licht rechtsonder, weg van de tekst (lijst 78 C2) ──────────────
-   Een groot postervlak (telt niet mee bij de drie). Het blok houdt zijn ronde hoeken en zijn snede. */
-html body.hal .h-proef > .h-proef-woord.pk { background: var(--pk-korrel) 0 0 / 128px 128px, var(--pk) 50% 50% / cover no-repeat, #0F1217; }
+/* ── E2 (het slot) en B4 (het €1-blok en de 404) — VERVALLEN 9 november 2026 ─────────────────────────────
+   Lijst 86: daar staat nu een vaste, bewogen foto in Blauw uur met een glazen plaat (src/styles/fotoblok.css,
+   src/data/fotoblok.js). posterkleur.js zet er geen stukje meer op, en NotFoundHal.astro ook niet. */
 
 /* ── E3 · Bestellen bovenin ───────────────────────────────────────────────────────────────────────────────
    Een pil (DESIGN.md "Hoeken": wat je bedient is een pil; de oude zachte hoek komt niet terug). Een stukje snede

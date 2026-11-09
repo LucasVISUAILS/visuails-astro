@@ -1,4 +1,5 @@
 ---
+import { knopInhoud } from '../../data/iconen.js';
 /* De drie inlogschermen — formulier, "kijk in je mail", dode link — plus de
    503, uit één beschrijving (zie authPage/studioAuth in account.js). Dezelfde
    velden, namen en acties als de oude loginBody/checkEmailBody/badLinkBody,
@@ -29,9 +30,9 @@ const titel = view.view === 'check' ? t.checkTitle : view.view === 'badlink' ? t
       <h1>{w.titel}</h1>
       <p class="st-lede">{w.tekst(view.huidig, view.doel)}</p>
       <form class="st-form" method="post" action={`/account/verify/${view.token}`}>
-        <button class="btn btn-primary" type="submit">{w.knop}</button>
+        <button class="btn btn-primary" data-rol="doorgaan" type="submit" set:html={knopInhoud('doorgaan', w.knop)} />
       </form>
-      <p><a class="btn btn-ghost" href="/account/">{w.blijf(view.huidig)}</a></p>
+      <p><a class="btn btn-ghost" data-rol="navigeren" href="/account/" set:html={knopInhoud('navigeren', w.blijf(view.huidig))} /></p>
       <p class="st-hint">{w.hint}</p>
     </Fragment>
   ) : view.view === 'check' ? (
@@ -45,7 +46,7 @@ const titel = view.view === 'check' ? t.checkTitle : view.view === 'badlink' ? t
         <label for="login-code">{t.codeLabel}</label>
         <input class="st-veld is-code" id="login-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code"
                pattern="[0-9 ]{6,9}" maxlength="9" required autofocus placeholder="000000" aria-describedby="login-code-hint" data-melding={meldCode}>
-        <button class="btn btn-primary" type="submit">{t.codeSubmit}</button>
+        <button class="btn btn-primary" data-rol="doorgaan" type="submit" set:html={knopInhoud('doorgaan', t.codeSubmit)} />
       </form>
       <p class="st-hint" id="login-code-hint">{t.codeHint(LOGIN_CODE_TTL_MINUTES)}</p>
       <p class="st-hint">{mailNote(lang)}</p>
@@ -55,7 +56,7 @@ const titel = view.view === 'check' ? t.checkTitle : view.view === 'badlink' ? t
           <input type="hidden" name="lang" value={lang}>
           <label class="sr-only" for="again-email">{t.loginEmailLabel}</label>
           <input class="st-veld" id="again-email" name="email" type="email" autocomplete="email" required value={view.email || ''} placeholder={t.loginEmailLabel} data-melding={meldEmail}>
-          <button class="btn btn-ghost" type="submit">{t.codeAgainCta}</button>
+          <button class="btn btn-ghost" data-rol="doorgaan" type="submit" set:html={knopInhoud('doorgaan', t.codeAgainCta)} />
         </form>
       </details>
       <p class="st-wie-tekst">{t.loginWho}</p>
@@ -81,7 +82,7 @@ const titel = view.view === 'check' ? t.checkTitle : view.view === 'badlink' ? t
         <input type="hidden" name="lang" value={lang}>
         <label class="sr-only" for="login-email">{t.loginEmailLabel}</label>
         <input class="st-veld" id="login-email" name="email" type="email" placeholder={t.loginEmailLabel} autocomplete="email" required data-melding={meldEmail} value={view.vooraf || undefined}>
-        <button class="btn btn-primary" type="submit">{t.loginSubmit}</button>
+        <button class="btn btn-primary" data-rol="doorgaan" type="submit" set:html={knopInhoud('doorgaan', t.loginSubmit)} />
       </form>
       {/* B18: na een abonnement klopt "je account ontstaat zodra je bestelt" niet. */}
       {view.view !== 'badlink' && !String(view.na || '').startsWith('abonnement') && <p class="st-wie-tekst">{t.loginWho}</p>}

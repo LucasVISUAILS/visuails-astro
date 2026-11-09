@@ -780,6 +780,48 @@ export async function ontdooiTermijn(db, { paymentId, toelichting = null, door =
 }
 
 /** Hoeveel credits van een klant nu bevroren staan (teruggeboekte termijnen). */
+/**
+ * Saldo en bevroren credits voor een hele lijst klanten — 9 november 2026 (ronde 91, C11).
+ *
+ * /admin/abonnees vroeg creditSaldo() per klant: vier à vijf databaseverzoeken per
+ * abonnee, gemeten 763 bij 200 abonnees, terwijl het scherm er alleen `saldo` en
+ * `bevroren` van leest. Dit geeft precies die twee, met dezelfde voorwaarden als
+ * levendePartijen() en bevrorenVoorKlant(), in één batch per 90 klanten (D1 staat 100
+ * parameters per query toe). Map(customerId → { saldo, bevroren }); een klant zonder
+ * partijen krijgt { saldo: 0, bevroren: 0 }, net als creditSaldo().
+ */
+export async function saldiVoorKlanten(db, ids, nu = new Date()) {
+  const D = dbVan(db);
+  const uit = new Map();
+  const lijst = [...new Set((ids || []).map(Number).filter((n) => Number.isInteger(n) && n > 0))];
+  for (const id of lijst) uit.set(id, { saldo: 0, bevroren: 0 });
+  if (!D || !lijst.length) return uit;
+  const dag = dagVan(nu);
+  for (let i = 0; i < lijst.length; i += 90) {
+    const deel = lijst.slice(i, i + 90);
+    const plekken = deel.map((_, j) => `?${j + 2}`).join(', ');
+    const saldo = D.prepare(
+      `SELECT customer_id, rest FROM credit_boek
+        WHERE customer_id IN (${plekken}) AND aantal > 0 AND rest > 0 AND vervalt_op > ?1`
+    ).bind(dag, ...deel);
+    const bevroren = D.prepare(
+      `SELECT customer_id,
+              COALESCE(-SUM(CASE WHEN reden = 'bevroren' THEN aantal END), 0)
+            - COALESCE(SUM(CASE WHEN sleutel LIKE 'vrijgegeven:%' THEN aantal END), 0) AS n
+         FROM credit_boek
+        WHERE customer_id IN (${plekken.replace(/\?(\d+)/g, (_, k) => `?${Number(k) - 1}`)})
+          AND (reden IN ('bevroren', 'vrijgegeven') OR sleutel LIKE 'vrijgegeven:%')
+        GROUP BY customer_id`
+    ).bind(...deel);
+    const [a, b] = typeof D.batch === 'function'
+      ? await D.batch([saldo, bevroren])
+      : [await saldo.all(), await bevroren.all()];
+    for (const r of a?.results || []) uit.get(Number(r.customer_id)).saldo += heel(r.rest);
+    for (const r of b?.results || []) uit.get(Number(r.customer_id)).bevroren = heel(r.n);
+  }
+  return uit;
+}
+
 export async function bevrorenVoorKlant(db, customerId) {
   const D = dbVan(db);
   if (!D || !customerId) return 0;
@@ -1050,11 +1092,27 @@ export async function plafondInZicht(db, { dagen = 7, nu = new Date() } = {}) {
   const d = new Date(`${dagVan(nu)}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + Number(dagen));
   const op = d.toISOString().slice(0, 10);
+  /* ── EERST DE DATUM, DAN PAS HET SALDO — 9 november 2026 (ronde 91, C05) ────
+     Hier werd voor ELKE klant met een lopend abonnement elke nacht creditSaldo()
+     gevraagd: vijf à zes databaseverzoeken per abonnee, terwijl er per nacht
+     hoogstens één op de dertig op precies `op` zijn termijn heeft. Met tien
+     abonnees was dat alleen al de hele gratis grens van de nacht (50,
+     src/lib/meetlat.js). De termijndatum is uit de rij zelf te rekenen
+     (termijnEinde/termijnMaand lezen alleen started_at en created_at), dus
+     vallen de klanten zonder termijn op `op` er vóór het saldo uit. Hetzelfde
+     antwoord: creditSaldo() kiest een lopend abonnement van deze klant, en
+     heeft dat zijn termijn niet op `op`, dan sloeg de lus hieronder hem al over
+     (`s.boven.op !== op`); een gepauzeerd of aangevraagd abonnement heeft geen
+     `boven`. */
   const r = await D.prepare(
-    `SELECT DISTINCT customer_id FROM subscriptions WHERE status = 'active' AND customer_id IS NOT NULL`
+    `SELECT customer_id, started_at, created_at FROM subscriptions WHERE status = 'active' AND customer_id IS NOT NULL ORDER BY customer_id`
   ).all().catch(() => ({ results: [] }));
+  const opDieDag = new Set();
+  for (const s of (r?.results || [])) {
+    if (termijnEinde(s, termijnMaand(s, nu)) === op) opDieDag.add(s.customer_id);
+  }
   const uit = [];
-  for (const { customer_id: customerId } of (r?.results || [])) {
+  for (const customerId of opDieDag) {
     const s = await creditSaldo(D, { customerId }, { nu });
     if (!s.boven || s.boven.op !== op || !s.boven.aantal) continue;
     uit.push({

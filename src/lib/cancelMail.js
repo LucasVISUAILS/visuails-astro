@@ -35,6 +35,7 @@
  * dat hij uit de toon valt.
  */
 
+import { studioUrl } from './studioLink.js';
 import { sendMail, toBase64 } from './mail.js';
 import { shell, h1, p, rows, note, linkLine, greeting, esc, button, spamNote, vragen, kenmerk, bedrag } from './mailTemplate.js';
 import { verderBlokHtml } from './verder.js';
@@ -134,7 +135,7 @@ export function cancelEmail({ order = {}, reason = '', money = 'unpaid', grossCe
       ? `${geld} ${lang === 'nl' ? `Daarnaast staat ${euro(tegoedCents, lang)} weer als tegoed op je account.` : `In addition, ${euro(tegoedCents, lang)} is back on your account as account balance.`}`
       : (lang === 'nl'
         ? `Je betaalde deze bestelling met ${euro(tegoedCents, lang)} tegoed. Dat staat weer op je account.`
-        : `You paid for this order with ${euro(tegoedCents, lang)} of credit. It is back on your account.`);
+        : `You paid for this order with ${euro(tegoedCents, lang)} of account balance. It is back on your account.`);
   }
   const body = [
     h1(t.head, kenmerk('bestelling', order.ref, lang)),
@@ -144,7 +145,7 @@ export function cancelEmail({ order = {}, reason = '', money = 'unpaid', grossCe
        van de studio en niet van de site, en dat mag te zien zijn. */
     note(esc(String(reason || '').trim())),
     p(esc(geld), { top: 4 }),
-    linkLine(`${SITE}${lang === 'nl' ? '/nl' : ''}/account`, t.portal),
+    linkLine(studioUrl(SITE, '', lang), t.portal), /* E05 (9 november 2026): rechtstreeks naar Studio, met de taal */
     p(esc(t.tail), { muted: true }),
   ].join('');
   return {
@@ -231,7 +232,7 @@ export function creditNoteEmail({ lang = 'nl', order = {}, note: nota, snap = {}
       [t.rAmount, esc(euro(gross, lang))],
     ]),
     p(attached ? t.attached : t.noAttach, { top: 4 }),
-    linkLine(`${SITE}${lang === 'nl' ? '/nl' : ''}/account`, t.portal),
+    linkLine(studioUrl(SITE, '', lang), t.portal), /* E05 (9 november 2026): rechtstreeks naar Studio, met de taal */
     note(esc(t.keep)),
     vragen(lang, order.ref || ''),
   ].join('');
@@ -435,8 +436,8 @@ export async function mailBetalingOntvangen(env, orderId, { uitgesteld = null } 
           p(nl
             ? 'Bedankt — je betaling is binnen. Je factuur komt in VISUAILS Studio, onder Facturen.'
             : 'Thank you — your payment is in. Your invoice will be in VISUAILS Studio, under Invoices.'),
-          button(ctx.link || `https://visuails.com${nl ? '/nl' : ''}/account/orders`, nl ? 'Bekijk je bestelling' : 'See your order'),
-          verderBlokHtml({ lang, levering: ctx.levering, factuur: 'bijgevoegd', ontbreekt: ctx.ontbreekt }),
+          button(ctx.link || studioUrl('https://visuails.com', '/orders', nl ? 'nl' : 'en'), nl ? 'Bekijk je bestelling' : 'See your order'),
+          verderBlokHtml({ lang, levering: ctx.levering, factuur: 'bijgevoegd', ontbreekt: ctx.ontbreekt, fotosLink: ctx.fotosLink }),
           /* B04 (doorloop 27): wat de klant bestelde, als de bevestiging op deze
              betaling wachtte. */
           uitgesteld?.samenvatting || '',
@@ -468,9 +469,14 @@ export async function mailRondeOntvangen(env, o, n) {
         body: [
           h1(nl ? 'Je revisieronde is binnen' : 'Your revision round is in', kenmerk('bestelling', o.ref, nl ? 'nl' : 'en')),
           p(greeting(o.name, nl ? 'nl' : 'en', { nu: new Date(), land: o.country || '' })), /* hij stuurde dit net in */
+          /* S14 (9 november 2026, de keten live): bij één beeld enkelvoud — "we passen het aan", "de nieuwe versie". */
           p(nl
-            ? `We hebben ${n} ${n === 1 ? 'beeld' : 'beelden'} genoteerd met je opmerkingen. We passen ze aan; je krijgt een mail zodra de nieuwe versies klaarstaan${wanneer}.`
-            : `We noted ${n} ${n === 1 ? 'image' : 'images'} with your comments. We adjust them; you get an email as soon as the new versions are ready${wanneer}.`),
+            ? (n === 1
+              ? `We hebben 1 beeld genoteerd met je opmerking. We passen het aan; je krijgt een mail zodra de nieuwe versie klaarstaat${wanneer}.`
+              : `We hebben ${n} beelden genoteerd met je opmerkingen. We passen ze aan; je krijgt een mail zodra de nieuwe versies klaarstaan${wanneer}.`)
+            : (n === 1
+              ? `We noted 1 image with your comment. We’ll adjust it; you get an email as soon as the new version is ready${wanneer}.`
+              : `We noted ${n} images with your comments. We’ll adjust them; you get an email as soon as the new versions are ready${wanneer}.`)),
           /* 7.07: de vragenregel in plaats van de contactenregel (V21-1). */
           vragen(nl ? 'nl' : 'en', o.ref),
         ].join(''),

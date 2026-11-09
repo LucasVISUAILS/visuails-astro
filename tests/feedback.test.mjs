@@ -102,7 +102,8 @@ console.log('geen review gating');
       b.includes('value="google"') && b.includes('value="trustpilot"'), true);
     // De verborgen velden van het formulier heten input type="hidden" — die horen
     // er wél te zijn. Dus alleen buiten die tags kijken.
-    const visible = b.replace(/<input[^>]*type="hidden"[^>]*>/g, '');
+    // knoppensysteem lijst 88/89: de knoppen dragen nu een icoon met aria-hidden; dat verbergt niets wat je ziet
+    const visible = b.replace(/<input[^>]*type="hidden"[^>]*>/g, '').replace(/ aria-hidden="true"/g, '');
     check(`score ${score}: niets stopt de knoppen weg`, hiders.test(visible), false);
   }
   // En bij een hoge score staan ze vooraan in plaats van onderaan.

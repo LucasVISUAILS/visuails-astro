@@ -1025,6 +1025,10 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 .brief-vak-l { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
 .brief-duim { display: block; width: 58px; height: 58px; border: 2px solid var(--ink); border-radius: 6px; overflow: hidden; background: var(--paper-2); }
 .brief-duim img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* HEIC of TIFF: het formaat in het vakje in plaats van een gebroken beeld (ronde 91, D03; zie
+   formaatTegel() in src/lib/admin.js). Inkt op papier, dezelfde tokens als de rest: kantelt mee met donker. */
+.duim-formaat { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: var(--paper-2); color: var(--ink); font-size: 12px; font-weight: 700; letter-spacing: .04em; }
+.files .duim-formaat.thumb { display: flex; width: 48px; height: auto; }
 .brief-duim.is-rond { width: 48px; height: 48px; border: 1.5px solid rgb(11 15 23 / .45); border-radius: 999px; }
 .brief-vak.is-erbij .brief-vak-l { color: var(--ink-2); }
 .brief-ons { margin: 0; font-size: .86rem; color: var(--ink-2); padding-top: .25rem; }
@@ -2850,15 +2854,10 @@ form.login {
    een kaart van 24 rond (was 22), dus 24 - 12 = 12; en een knop die in een hoek van zijn
    vlak ligt, loopt mee met minstens 8 (de knop onder een notitie, 16 en 14 van de hoek in
    een vlak van 16; de knop in de dagkeuze van de planning, 20 en 18 van de hoeken). */
-.nd-regel .btn { border-radius: 999px; }
-.nd-regel:first-child .btn { border-top-right-radius: 12px; }
-.nd-regel:last-child .btn { border-bottom-right-radius: 12px; }
-@media (max-width: 600px) {
-  .nd-regel:first-child .btn { border-top-right-radius: 3px; }
-  .nd-regel:last-child .btn { border-bottom-right-radius: 3px; border-bottom-left-radius: 12px; }
-}
-.notepanel .controls .btn { border-radius: 999px; }
-.notepanel .controls.is-under > .btn:first-child { border-bottom-left-radius: 8px; }
+/* 9 november 2026 (ronde 92, Lucas: "de vorm met 1 ronde hoek … moeten echt allemaal weg"): een knop is altijd een
+   hele pil, ook in de hoek van zijn lijst. Concentrisch geldt alleen voor wat geen pil is (DESIGN.md, Hoeken). */
+.nd-regel .btn, .nd-regel:first-child .btn, .nd-regel:last-child .btn { border-radius: 999px; }
+.notepanel .controls .btn, .notepanel .controls.is-under > .btn:first-child { border-radius: 999px; }
 .card .ag-dagform > .btn { border-radius: 999px; }
 @media (max-width: 600px) {
   .card .ag-dagform > .btn { border-radius: 999px; }
@@ -2900,3 +2899,198 @@ body { font-weight: 370; }
 textarea { border-radius: 18px !important; }
 input[type="checkbox"] { border-radius: 5px !important; }
 input[type="radio"] { border-radius: 50% !important; }
+
+/* ── 8 november 2026 (doorloop 90, D20) ─────────────────────────────────────
+   In het donkere thema haalde de knop "Vervangen" (btn-quiet btn-sm, in de tabel met alle geleverde
+   bestanden) 3,21 : 1 op de kaart #16181E: hij kreeg het grijs van het lichte thema. Nu de stille inkt van
+   het donkere thema (72 %, 9,1 : 1 op #1E2128) en dezelfde letter als de andere kleine knoppen. */
+html[data-thema="donker"] .btn.btn-quiet { color: rgb(244 245 247 / .72); }
+html[data-thema="donker"] .btn.btn-quiet:hover, html[data-thema="donker"] .btn.btn-quiet:focus-visible { color: #F4F5F7; }
+.btn.btn-quiet.btn-sm { font-size: .8125rem; }
+
+/* ── 9 november 2026 (ronde 91, w8) · HET MENU VAN 17 NAAR 8 ──────────────────────────────────────────
+   Vijf vaste ingangen, daaronder twee klapjes (<details>, geen script): "Instellingen" en "Cijfers en logboek".
+   Het klapje staat open als de pagina waar je bent erin staat. De kop is een gewone menuregel met een pijltje
+   dat draait; de regels erin springen een stap in. Op de telefoon (≤ 900 px) worden het pillen, zoals de rest. */
+.adm-side .bar-nav { gap: 2px; }
+.adm-klap { margin: 0; }
+.adm-klap:first-of-type { margin-top: .9rem; padding-top: .9rem; border-top: 1px solid var(--adm-side-lijn); }
+.adm-klap > summary { list-style: none; justify-content: space-between; }
+.adm-klap > summary::-webkit-details-marker { display: none; }
+.adm-klap > summary::after {
+  content: ""; width: 7px; height: 7px; margin-left: .5rem; flex: 0 0 auto;
+  border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg) translateY(-2px);
+}
+.adm-klap[open] > summary::after { transform: rotate(-135deg) translateY(-1px); }
+.adm-klap > .adm-groep { padding: 2px 0 .4rem .7rem; }
+.klant-tabs { margin: .4rem 0 1rem; }
+@media (max-width: 56.25em) {
+  .adm-klap:first-of-type { margin-top: 0; padding-top: 0; border-top: 0; }
+  .adm-klap[open] { flex-basis: 100%; }
+  .adm-klap > .adm-groep { padding: .3rem 0 0; }
+  .adm-klap > summary { gap: .4rem; }
+}
+
+/* ── 9 november 2026 (ronde 91, w1) · ÉÉN REGEL PER BESTELLING IN NU DOEN ──────────────────────────────────
+   Wacht er bij dezelfde bestelling nog iets (oppakken én foto's vragen), dan staat dat als stille link achter de
+   regel: "ook: foto's vragen (2 foto's ontbreken)". Op een eigen regel, in inkt 2 (licht 17:1, donker 9:1), de
+   link onderstreept zodat hij niet alleen op kleur leunt; 13 px. */
+.nd-ook { display: block; margin-top: .2rem; font-size: .8125rem; color: var(--ink-2); }
+.nd-ook a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.nd-ook a:hover, .nd-ook a:focus-visible { color: var(--ink); }
+.nd-ook .meta { font-size: .8125rem; }
+.pl-links.is-vol { margin-top: .5rem; }
+
+/* ── 9 november 2026 (ronde 91, w4) · "TERUG NAAR IN PRODUCTIE" ONDER ONOMKEERBAAR ─────────────────────────
+   Het statuslijstje is weg; voor een vergissing staat hier één kleine knop met een regel uitleg ernaast. */
+.danger-klein { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin: 0 0 1rem; }
+.danger-klein .meta { flex: 1 1 22rem; min-width: 0; }
+
+/* ── 9 november 2026 (ronde 91, w6) · HET DASHBOARD OVER DE VOLLE BREEDTE ─────────────────────────────────
+   Geen tegels en geen zijkolom meer: Nu doen, dan de lijst over de volle breedte, dan de bewakers en wat op
+   betaling wacht. De rand staat onder een lijn, met dezelfde koppen als voorheen in de zijkolom. */
+.db-hoofd.is-vol { margin-top: 1.5rem; }
+.db-rand { margin: 2rem 0 0; padding-top: 1.25rem; border-top: 1px solid var(--line); display: grid; gap: .25rem; }
+.db-rand h2 { margin-top: .4rem; }
+.db-rand .db-wacht { max-width: 48rem; }
+
+/* ── 9 november 2026 (ronde 91, w5) · REVISIE IN HET VAKJE OP HET BORD ─────────────────────────────────────
+   Een aangemerkt vakje draagt nu ook "Geen nieuw beeld nodig" met de vaste redenen: het vakje beslaat dan de hele
+   rij van het product, zodat het tekstvak leesbaar breed is. Het blok "Deze revisieronde" bij Leveren zegt per
+   beeld wat er besloten is, vóór de ene knop. */
+/* Het vakje beslaat de rij, met het beeld links (hoogstens 200 px breed) en de rest ernaast: de klant, Vervangen,
+   de reden. Onder 600 px weer één kolom. */
+.slots > .slot.is-revising {
+  grid-column: 1 / -1; display: grid; grid-template-columns: minmax(120px, 200px) minmax(0, 1fr);
+  column-gap: 1.1rem; row-gap: .4rem; align-items: start;
+}
+.slots > .slot.is-revising > * { grid-column: 2; }
+.slots > .slot.is-revising > a:first-of-type { grid-column: 1; grid-row: 1 / span 8; }
+.slot.is-revising .btn { width: auto; }
+.slot.is-revising > form:not(.slot-reden) { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.slot.is-revising > form:not(.slot-reden) input[type=file] { width: auto; flex: 1 1 14rem; }
+@media (max-width: 600px) {
+  .slots > .slot.is-revising { display: flex; }
+  .slots > .slot.is-revising > a:first-of-type { max-width: 200px; }
+}
+.slot-reden { display: grid; gap: .45rem; justify-items: start; margin-top: .5rem; padding-top: .6rem; border-top: 1px solid var(--line); width: 100%; }
+.slot-reden textarea { width: 100%; box-sizing: border-box; }
+.slot-reden .rev-label { font-size: .8125rem; color: var(--ink-2); }
+.rev-ronde { margin: .4rem 0 1rem; padding: .8rem 1rem; border: 1px solid var(--line); border-radius: var(--adm-r-kaart); background: var(--paper-lift); }
+.rev-ronde-kop { margin: 0 0 .4rem; font-size: .8125rem; font-weight: 600; letter-spacing: .02em; color: var(--ink); }
+.rev-ronde .rev-af-lijst { margin: 0; padding-left: 1.1rem; display: grid; gap: .3rem; font-size: .875rem; }
+
+/* ── 9 november 2026 (ronde 91, w9) · ÉÉN SLEEPVAK PER PRODUCT ────────────────────────────────────────────
+   Een gestippeld vak boven de vakjes van een product. Sleep de beelden erin of kies ze; met het script van de
+   pagina staat eronder welk bestand in welk vakje komt (een keuzelijst per bestand) en zegt de knop "Bevestigen
+   en uploaden". Tekst in inkt 2, 13 px; de rand in --line-ui (3:1 op de kaart, licht en donker). */
+.sleepvak { display: grid; gap: .5rem; justify-items: start; margin: .2rem 0 .8rem; }
+.sleepvak-vak { display: grid; gap: .45rem; width: 100%; box-sizing: border-box; padding: .9rem 1rem; border: 1.5px dashed var(--line-ui); border-radius: 14px; background: var(--paper-lift); cursor: pointer; }
+.sleepvak-vak.is-over { border-color: var(--ink); background: var(--ghost); }
+.sleepvak-tekst { font-size: .8125rem; color: var(--ink-2); line-height: 1.45; }
+.sleepvak-tekst strong { color: var(--ink); font-weight: 600; }
+.sleepvak-vak input[type="file"] { max-width: 100%; font-size: .8125rem; }
+.sleepvak-plan { width: 100%; }
+.sleepvak-kop { margin: 0 0 .3rem; font-size: .8125rem; font-weight: 600; color: var(--ink); }
+.sleepvak-lijst { margin: 0; padding-left: 1.2rem; display: grid; gap: .35rem; font-size: .8125rem; color: var(--ink); }
+.sleepvak-lijst li { overflow-wrap: anywhere; }
+.sleepvak-naam { font-family: var(--font-mono); font-size: .8125rem; }
+.sleepvak-lijst select { margin-left: .3rem; max-width: 100%; }
+
+/* 9 november 2026 (ronde 91, nawerk): "voorrang · uiterlijk 10 nov 17:00" mag in de kolom Wanneer afbreken in
+   plaats van over de statuspil heen te lopen (die kolom staat op nowrap). */
+.or-wanneer .or-voorrang { white-space: normal; display: block; }
+
+/* ═══ 9 november 2026 (ronde 92) · DE STUDIOBRIEF (/admin/studiobrief) ═══════════════════════════════════════
+   Een eigen blok onderaan, zodat het niets van hierboven verschuift. Kaarten 24 rond aan alle vier de hoeken
+   (--adm-r-kaart), knoppen en velden van één regel pillen, het tekstvak 18 (zie LEVERING 87 hierboven). Tekst
+   minstens 12 px in --ink-2/--ink-3 (≥ 4,5 : 1 licht en donker). Op een telefoon één kolom en de tabellen als
+   rijen onder elkaar, zonder zijwaarts schuiven. */
+.sb-aan { padding: 1rem 1.25rem; max-width: none; }
+.sb-aan-kop { cursor: pointer; font-weight: 600; font-size: .92rem; color: var(--ink); display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.sb-aan[open] .sb-aan-kop { margin-bottom: .6rem; }
+.sb-stand { list-style: none; margin: 0 0 .9rem; padding: 0; display: grid; gap: .45rem; }
+.sb-stand-rij { display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem .6rem; font-size: .86rem; color: var(--ink-2); line-height: 1.45; }
+.sb-stand-rij strong { color: var(--ink); font-family: var(--font-mono); font-size: .8125rem; font-weight: 600; overflow-wrap: anywhere; }
+.sb-stand-rij > span:last-child { flex: 1 1 18rem; min-width: 0; }
+.sb-stappen { margin: 0; padding-left: 1.25rem; display: grid; gap: .5rem; font-size: .86rem; color: var(--ink-2); line-height: 1.5; max-width: 72ch; }
+.sb-stappen strong, .sb-stappen em { color: var(--ink); }
+.sb-stappen code, .sb-hint code, .sb-aan code { font-size: .8125rem; overflow-wrap: anywhere; }
+
+.sb-tabel { width: 100%; border-collapse: collapse; margin: .4rem 0 1rem; font-size: .86rem; }
+.sb-tabel th, .sb-tabel td { text-align: left; vertical-align: middle; padding: .55rem .6rem; border-bottom: 1px solid var(--line); }
+.sb-tabel th { font-size: .75rem; letter-spacing: .04em; color: var(--ink-3); font-weight: 600; font-family: var(--font-mono); }
+.sb-tabel tr:last-child td { border-bottom: 0; }
+.sb-tabel a:not(.btn) { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+.sb-tabel tr.is-gekozen td { background: var(--ghost); }
+.sb-tabel td:last-child { text-align: right; white-space: nowrap; }
+.sb-mail { overflow-wrap: anywhere; }
+.sb-cel { display: inline-flex; margin: 0; }
+
+.sb-werk { margin-top: 2rem; }
+.sb-werk-kop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; }
+.sb-werk-kop h2 { margin: 0; }
+.sb-raster { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; align-items: start; margin-top: .9rem; }
+.sb-raster > .card, .sb-rechts > .card { margin: 0; border-radius: var(--adm-r-kaart); }
+.sb-rechts { display: grid; gap: 1rem; min-width: 0; }
+.sb-opstellen, .sb-voorbeeld-kaart, .sb-versturen { padding: 1.1rem 1.25rem; }
+.sb-voorbeeld-kaart h3 { margin: 0 0 .7rem; }
+.sb-versturen h3 { margin: 0; } /* de ruimte eronder is de gap van het raster */
+
+.sb-form, .sb-versturen { display: grid; gap: .9rem; }
+.sb-veld { display: grid; gap: .3rem; min-width: 0; }
+.sb-label { font-size: .82rem; font-weight: 600; color: var(--ink); }
+.sb-hint { font-size: .78rem; color: var(--ink-3); line-height: 1.45; }
+.sb-veld input, .sb-veld textarea { width: 100%; box-sizing: border-box; }
+.sb-veld textarea { padding: .7rem .9rem; line-height: 1.5; min-height: 14rem; resize: vertical; }
+.sb-veld input[type="datetime-local"] {
+  min-height: 38px; padding: 0 .9rem; font-size: .92rem; color: var(--ink);
+  background-color: var(--paper-lift); border: 1px solid var(--line-strong); border-radius: var(--hoek-knop, 999px);
+}
+.sb-veld input[readonly], .sb-veld textarea[readonly] { color: var(--ink-2); }
+.sb-taal { border-radius: var(--hoek-knop, 999px); font-size: .86rem; color: var(--ink); }
+.sb-taal legend { color: var(--ink-2); }
+.sb-knopvelden { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: .9rem; }
+.sb-knoppen { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.sb-versturen .vink-rij { font-size: .86rem; color: var(--ink); margin: 0; }
+.sb-versturen .warnline { margin: 0; }
+.sb-weg { margin: -.4rem 0 0; }
+
+.sb-voorbeeld {
+  display: block; width: 100%; height: 860px; border: 1px solid var(--line); border-radius: var(--r-klein, 12px);
+  background: #F4F5F7; margin: 0 0 .6rem;
+}
+.sb-leeg { padding: 1rem 0; }
+
+.sb-tellers { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 36rem; margin: .4rem 0 1rem; }
+.sb-tellers .stat { border-radius: var(--r-klein, 12px); }
+.sb-tellers .stat-l { font-size: .75rem; color: var(--ink-2); }
+.sb-zoek { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .5rem .75rem; margin: 0 0 .6rem; }
+.sb-zoek .sb-veld { flex: 0 1 22rem; }
+
+@media (max-width: 960px) {
+  .sb-raster { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .sb-knopvelden { grid-template-columns: minmax(0, 1fr); }
+  .sb-voorbeeld { height: 760px; }
+  .sb-opstellen, .sb-voorbeeld-kaart, .sb-versturen { padding: 1rem; }
+  .sb-tellers .stat-n { font-size: 1.3rem; }
+  /* De tabellen als rijen onder elkaar: elke cel met zijn kolomnaam ervoor. */
+  .sb-tabel thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .sb-tabel, .sb-tabel tbody, .sb-tabel tr, .sb-tabel td { display: block; width: 100%; box-sizing: border-box; }
+  .sb-tabel tr { padding: .6rem 0; border-bottom: 1px solid var(--line); }
+  .sb-tabel tr:last-child { border-bottom: 0; }
+  .sb-tabel td { border: 0; padding: .15rem 0; text-align: left; white-space: normal; display: flex; gap: .6rem; align-items: baseline; }
+  .sb-tabel td:last-child { text-align: left; }
+  .sb-tabel td[data-l]:not([data-l=""])::before { content: attr(data-l); flex: 0 0 6.5rem; font-size: .75rem; color: var(--ink-3); font-family: var(--font-mono); }
+  .sb-tabel td:empty { display: none; }
+}
+
+/* ── Knoppensysteem (lijst 88 + 89, 9 november 2026) ───────────────────────────────────────────────────────
+   De knoppen zelf komen uit /knoppen.css (een kopie van src/styles/knoppen.css). Hier alleen: de getypte pijlen
+   in de chips zijn iconen geworden (zelfde maat als de letter), en het uitlog-icoon in de balk. */
+.fl-chip .ik { width: 14px; height: 14px; flex: none; fill: currentColor; vertical-align: -2px; }
+.fl-chip:has(.ik) { display: inline-flex; align-items: center; gap: 6px; }
+.bar-link .ik { width: 15px; height: 15px; fill: currentColor; flex: none; }
+.bar-link:has(.ik) { display: inline-flex; align-items: center; gap: 7px; }

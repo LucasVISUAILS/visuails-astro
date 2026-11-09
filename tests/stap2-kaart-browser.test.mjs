@@ -224,14 +224,21 @@ for (const [url, taal] of [['/nl/start/catalog', 'nl'], ['/start/catalog', 'en']
       const { page, fouten } = await open(url, { breed });
       await zetAantal(page, n);
       ok(`${tag}: het gezicht staat in stap 1`, await page.evaluate(() => !!document.querySelector('[data-pl-step="1"] input[name="model"]')), true);
+      let alInStap2 = false;
       if (n === 5 && breed === 1280) {
-        /* Op catalog is de keuze verplicht: zonder gezicht blijft stap 1 staan. */
+        /* 9 november 2026 (ronde 92): hier stond "op catalog is de keuze verplicht:
+           zonder gezicht blijft stap 1 staan". Sinds ronde 91 (K-C1, Lucas lijst 85
+           C1 = a) staat het gezicht op Catalog standaard op "Wij kiezen", zoals bij de
+           €1-proef (tests/blind91-k-gezicht.test.mjs). Zonder zelf een gezicht te
+           kiezen gaat de klant dus door naar stap 2, met "any" als keuze. */
         await page.evaluate(() => { const s = document.querySelector('input[name="style"]'); if (s && !document.querySelector('input[name="style"]:checked')) { s.checked = true; s.dispatchEvent(new Event('change', { bubbles: true })); } });
+        ok(`${tag}: "Wij kiezen" staat al aan`, await page.evaluate(() => document.querySelector('input[name="model"]:checked')?.value || ''), 'any');
         await page.click('.pl-step.is-current [data-pl-next]');
-        await page.waitForTimeout(250);
-        ok(`${tag}: zonder gezicht blijft stap 1 staan`, await huidigeStap(page), 1);
+        await page.waitForTimeout(300);
+        ok(`${tag}: zonder zelf een gezicht te kiezen naar stap 2 (K-C1)`, await huidigeStap(page), 2);
+        alInStap2 = true;
       }
-      ok(`${tag}: naar stap 2`, await naarStap2(page, n), 2);
+      if (!alInStap2) ok(`${tag}: naar stap 2`, await naarStap2(page, n), 2);
       const vorm = await page.evaluate(() => {
         const s = document.querySelector('.pl-step.is-current');
         const zicht = (el) => !!el && !el.hidden && el.getClientRects().length > 0;
@@ -343,7 +350,10 @@ for (const breed of [1280, 390]) {
   await page.waitForTimeout(1200);
   ok(`${tag}: een te kleine foto wordt geweigerd`, await kaart(page, 4).locator('[data-pu-slot="front"]').getAttribute('data-state'), 'failed');
   ok(`${tag}: met de bestaande melding`, /Te klein/.test(await kaart(page, 4).locator('[data-pu-slot="front"] .pu-slot-msg').textContent()), true);
-  ok(`${tag}: en de upload die al onderweg was, gaat er weer uit`, uploads.dels.some((k) => /screenshot\.png$/.test(k || '')), true);
+  /* Lijst 87 (D13): de meting maakt nu ook het duimpje, en wacht de upload soms op de meting; dan gaat een te kleine
+     foto er nooit heen. Wat telt: een upload die wél vertrok, wordt weer weggehaald. */
+  const kleinVerstuurd = uploads.posts.some((p) => p.bestand === 'screenshot.png');
+  ok(`${tag}: en de upload die al onderweg was, gaat er weer uit`, !kleinVerstuurd || uploads.dels.some((k) => /screenshot\.png$/.test(k || '')), true);
 
   /* De soort: product 1 kiest, de rest neemt over; een eigen keuze verderop
      geldt voor de producten daarna. */

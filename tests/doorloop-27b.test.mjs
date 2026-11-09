@@ -155,7 +155,10 @@ console.log('\nB31 · de formatenmail');
   const r = await formaatMail({ ...MAILENV, DB: d1(db) }, 5, { origin: 'https://visuails.com', sendMail, mail });
   ok('verstuurd', r.ok, true);
   const html = String(verstuurd[0]?.html || '');
-  ok('de knop wijst naar /account/orders?order=77 (en niet naar een 404)', html.includes('https://visuails.com/account/orders?order=77#order-77') && !html.includes('/account/orders/77"'));
+  /* 9 november 2026 (ronde 91, K-03): de knop wijst naar de bestelpagina (een eigen
+     privélink), want PNG/WebP hoort bij de bestelling (lijst 85, A3). Hier stond de
+     link naar /account/orders?order=77 in Studio; die blijft de terugval. */
+  ok('de knop wijst naar de bestelpagina (/o/<token>), niet naar een 404', /href="https:\/\/visuails\.com\/o\/[A-Za-z0-9_-]{43}"/.test(html) && /Naar je bestelpagina/.test(html) && !html.includes('/account/orders/77"'));
   ok('onderwerp noemt PNG en het kenmerk', /PNG/.test(verstuurd[0]?.subject || '') && /VIS-FM-0077/.test(verstuurd[0]?.subject || ''));
 }
 
@@ -210,7 +213,7 @@ console.log('\nB41 · al een proef gehad');
   ok('regKey: te kort is geen sleutel', regKey('123'), '');
   ok('zonder database: openvallen', (await proefGebruikt({}, { email: 'x@y.z' })).checked, false);
   const flow = lees('src/components/order/OrderFlow.astro');
-  ok('de weigering is kort (NL)', /proefAl: \['Er is één proef per bedrijf, en op dit e-mailadres of telefoonnummer staat er al een\. Er is niets besteld\. ', 'Bestel gewoon'/.test(flow));
+  ok('de weigering is kort (NL)', /proefAl: \['Er is één proef per bedrijf, en op dit e-mailadres, telefoonnummer of KVK-nummer staat er al een\. Er is niets besteld\. ', 'Bestel gewoon'/.test(flow));
   ok('  en de order-API gebruikt dezelfde functie', /proefGebruikt\(env, \{ email, phone, reg: get\('reg_number'\) \}\)/.test(lees('functions/api/order.js')));
 }
 

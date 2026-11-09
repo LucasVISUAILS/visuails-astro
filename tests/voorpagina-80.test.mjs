@@ -42,7 +42,7 @@ for (const [pad, taal] of [['index.html', 'en'], ['nl/index.html', 'nl']]) {
   const tekst = (s) => s.replace(/<[^>]+>/g, ' ').replace(/&#39;|&rsquo;|’/g, '’').replace(/\s+/g, ' ').trim();
   const h1 = (/<h1\b[\s\S]*?<\/h1>/.exec(h) || [''])[0];
   ok(`${taal}: één h1, de titel in twee regels (lijst 64: "Zoals jij hem ziet")`, (h.match(/<h1\b/g) || []).length === 1 && /<h1\b[^>]*class="[^"]*\bo8-kop\b/.test(h1)
-    && tekst(h1) === (taal === 'nl' ? 'Jouw merk, zoals jij hem ziet.' : 'Your brand, as you see it.'), tekst(h1));
+    && tekst(h1) === (taal === 'nl' ? 'Jouw merk, zoals jij het ziet.' : 'Your brand, as you see it.'), tekst(h1));
   const plek = (re) => { const m = re.exec(h); return m ? m.index : -1; };
   const volg = [plek(/class="o8"|class="o8 /), plek(/<section class="m8" id="maken"/), plek(/<section class="g8" id="looks"/), plek(/<section class="p9"/), plek(/<section class="w8"/), plek(/class="h-sec h-weten v-weten/), plek(/<section class="h-proef/)];
   ok(`${taal}: de volgorde: opening, Wat we maken, galerij, poster, Hoe het werkt, Meer weten, €1-blok`, volg.every((x, i) => x > 0 && (i === 0 || x > volg[i - 1])), volg.join(' '));
@@ -86,15 +86,16 @@ for (const [pad, taal] of [['index.html', 'en'], ['nl/index.html', 'nl']]) {
 const bron = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
 /* levering 87 (lijst 74): gewoon scrollen naar de laptop. Levering 88c: op het podium speelt één scroll alles, en alleen dan
    vangt de opening het wiel (tests/opening-89-browser.test.mjs) */
-ok('de opening vangt het wiel alleen op het podium en zolang hij speelt (levering 88c)', /if \(fase === 'rust' && dy > 0\) \{ const s = sNu\(\); if \(s >= -2 && s <= lengte\(\) \* 0\.5\)/.test(bron('src/components/HalOpening80.astro')));
+/* levering 90: alleen in de rustzone (of de tik die erin komt), daarna scrol je gewoon verder (tests/opening-90-browser.test.mjs) */
+ok('de opening vangt het wiel alleen op het podium en zolang hij speelt (levering 88c, 90)', /if \(fase === 'rust' && dy > 0\) \{ if \(\(s >= -2 && s <= Z\) \|\| \(s < -2 && s \+ dy > 0\)\)/.test(bron('src/components/HalOpening80.astro')));
 ok('zacht scrollen staat in Layout en alleen voor een muiswiel', /import '\.\.\/scripts\/zachtscrollen\.js'/.test(bron('src/layouts/Layout.astro')) && /function isMuiswiel/.test(bron('src/scripts/zachtscrollen.js')));
 ok('de letter heeft de gewichten 300 – 700 (lopende tekst 370)', /font-family: 'DM Sans'; font-style: normal; font-weight: 300 700;/.test(bron('src/styles/hal.css')) && /\.h-voor \{ font-weight: 370; \}/.test(bron('src/styles/voorpagina-80.css')));
 ok('docs/RUST-80.md beschrijft de secties, het scrollen en het laadscherm', ['## 7 · De secties na de opening', '## 8 · Zacht scrollen en het laadscherm'].every((k) => bron('docs/RUST-80.md').includes(k)));
 {
-  const v = JSON.parse(bron('src/data/laptopVideo.json'));
-  /* sinds levering 84 twee banden en hoogstens 2400 breed (tests/laptop-84.test.mjs) */
-  ok('de laptopvideo: 111 beelden met de hoeken van de schermen, en de bestanden staan er', v.beelden === 111 && v.schermen.length === 111
-    && [1280, 1920, 2400].every((b) => fs.existsSync(path.join(ROOT, `public/img/hal/laptop-video/laptop-84-${b}.mp4`))));
+  const v = JSON.parse(bron('src/data/laptopVideo90.json'));
+  /* sinds levering 90 gewoon de video, heen en terug per breedte (tests/laptop-90.test.mjs) */
+  ok('de laptopvideo: 112 beelden met de schermen van beeld 0, en de bestanden staan er', v.beelden === 112 && v.schermen.length === 2
+    && v.maten.every((b) => ['', '-terug'].every((k) => fs.existsSync(path.join(ROOT, `public/img/hal/laptop-video/laptop-90-${b}${k}.mp4`)))));
 }
 
 /* ── de browser ──────────────────────────────────────────────────────────── */

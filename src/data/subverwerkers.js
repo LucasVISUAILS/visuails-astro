@@ -56,7 +56,14 @@
  */
 
 /** De dag waarop deze lijst voor het laatst inhoudelijk veranderde, 'JJJJ-MM-DD'. */
-export const LIJST_GEWIJZIGD = '2026-10-11';
+export const LIJST_GEWIJZIGD = '2026-11-09';
+/** Idem, maar alleen de partijen met `beeld: true` — de lijst van §8 van de
+    verwerkersovereenkomst. Sinds 9 november 2026 (ronde 91, E17) een eigen datum: die
+    dag kwamen er twee ontvangers zonder beeldmateriaal bij (e-Boekhouden, VIES). Het
+    privacybeleid toont ze, de verwerkersovereenkomst niet; daar zou "gewijzigd op
+    9 november" een klant naar een wijziging laten zoeken (en een melding vooraf
+    suggereren) die er niet is. Verander je een partij MET beeld, zet dan allebei. */
+export const SUBVERWERKERS_GEWIJZIGD = '2026-10-11';
 
 /**
  * Zo lang van tevoren melden wij een nieuwe of vervangen subverwerker, en zo lang
@@ -216,6 +223,48 @@ export const ONTVANGERS = [
       en: 'according to WhatsApp’s privacy policy: the EU-U.S. Data Privacy Framework and Standard Contractual Clauses',
     },
   },
+  /* ── DE BOEKHOUDING EN DE BTW-CONTROLE — 9 november 2026 (ronde 91, E17) ──
+     Gevonden door alle hosts te verzamelen die de code aanroept: src/lib/eboekhouden.js
+     stuurt naam, bedrijf, contactpersoon, e-mail, adres en land van elke klant met
+     een factuur naar api.e-boekhouden.nl (sinds oktober), en src/lib/vies.js stuurt
+     het btw-nummer naar VIES van de Europese Commissie. Allebei ontvangers in de zin
+     van art. 13 lid 1 sub e AVG, en ze stonden er niet in. `beeld: false`: ze krijgen
+     geen beeldmateriaal, dus ze horen niet in de lijst van de verwerkersovereenkomst
+     (§8) en vragen geen melding vooraf aan klanten. */
+  {
+    id: 'e-boekhouden',
+    naam: 'e-Boekhouden.nl B.V.',
+    beeld: false,
+    waar: {
+      nl: 'Nederland (EU)',
+      en: 'the Netherlands (EU)',
+    },
+    wat: {
+      nl: 'onze boekhouding: de gegevens op je factuur (naam, bedrijf, adres, e-mail, land, btw-nummer en bedragen)',
+      en: 'our bookkeeping: the details on your invoice (name, company, address, email, country, VAT number and amounts)',
+    },
+    grond: {
+      nl: 'binnen de EU; we bewaren facturen omdat de wet dat vraagt (fiscale bewaarplicht van 7 jaar)',
+      en: 'inside the EU; we keep invoices because the law requires it (the 7-year tax retention duty)',
+    },
+  },
+  {
+    id: 'vies',
+    naam: 'Europese Commissie (VIES)',
+    beeld: false,
+    waar: {
+      nl: 'Brussel, België (EU)',
+      en: 'Brussels, Belgium (EU)',
+    },
+    wat: {
+      nl: 'de controle van een btw-nummer uit een ander EU-land; alleen het land en het nummer gaan erheen',
+      en: 'checking a VAT number from another EU country; only the country and the number are sent',
+    },
+    grond: {
+      nl: 'binnen de EU; de controle is nodig om de btw goed te rekenen (verlegd of niet)',
+      en: 'inside the EU; the check is needed to charge VAT correctly (reverse-charged or not)',
+    },
+  },
 ];
 
 const taal = (lang) => (lang === 'nl' ? 'nl' : 'en');
@@ -253,15 +302,16 @@ const MAANDEN = {
     'juli', 'augustus', 'september', 'oktober', 'november', 'december'],
 };
 
-/** "8 October 2026" / "8 oktober 2026" — de datum van LIJST_GEWIJZIGD als tekst. */
-export function lijstGewijzigdOp(lang = 'en') {
-  const [j, m, d] = LIJST_GEWIJZIGD.split('-').map(Number);
+/** "8 October 2026" / "8 oktober 2026" — de datum van LIJST_GEWIJZIGD als tekst
+    (of, met soort 'subverwerkers', die van SUBVERWERKERS_GEWIJZIGD). */
+export function lijstGewijzigdOp(lang = 'en', soort = 'alles') {
+  const [j, m, d] = (soort === 'subverwerkers' ? SUBVERWERKERS_GEWIJZIGD : LIJST_GEWIJZIGD).split('-').map(Number);
   return `${d} ${MAANDEN[taal(lang)][m - 1]} ${j}`;
 }
 
 /** De regel boven de lijst: "Last changed: 8 October 2026". */
-export function lijstRegel(lang = 'en') {
+export function lijstRegel(lang = 'en', soort = 'alles') {
   return taal(lang) === 'nl'
-    ? `Deze lijst is voor het laatst gewijzigd op ${lijstGewijzigdOp('nl')}.`
-    : `This list was last changed on ${lijstGewijzigdOp('en')}.`;
+    ? `Deze lijst is voor het laatst gewijzigd op ${lijstGewijzigdOp('nl', soort)}.`
+    : `This list was last changed on ${lijstGewijzigdOp('en', soort)}.`;
 }

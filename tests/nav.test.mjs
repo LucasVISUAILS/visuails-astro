@@ -1416,7 +1416,8 @@ console.log('\nhet menu van 1.11');
       const main = (html.match(/<main[\s\S]*?<\/main>/) || [''])[0];
       /* Sinds 13 oktober 2026 (afvinklijst 18) in de hal: de knop heet .h-knop en het
          etiket is de pil boven de kop. Wat getoetst wordt is hetzelfde. */
-      const eerste = (main.match(/<a class="(?:h-)?knop[^"]*" href="([^"]+)"/) || [])[1] || '';
+      // knoppensysteem lijst 88/89: de knop heet nu .h-knop.k en draagt data-rol vóór href
+      const eerste = (main.match(/<a class="(?:h-)?knop[^"]*"(?: data-rol="[a-z]+")? href="([^"]+)"/) || [])[1] || '';
       check(`${pad}: de eerste knop is Inloggen (${taal})`, eerste.replace(/&amp;/g, '&'), `/account?lang=${taal}`);
       check(`${pad}: de kop gaat over VISUAILS Studio`, /<p class="etiket"[^>]*>VISUAILS Studio<\/p>|<p class="h-pil[^"]*"[^>]*><span>VISUAILS Studio<\/span><\/p>/.test(main), true);
     }

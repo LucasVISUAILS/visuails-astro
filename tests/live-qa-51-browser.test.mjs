@@ -13,6 +13,7 @@
 import { chromium } from 'playwright';
 import { startStudio } from './lib/studio-worker.mjs';
 import { browserPad } from '../scripts/lib/browserpad.mjs';
+import { ABO_EXTRA_ZICHTBAAR } from '../src/data/aboZichtbaar.js';
 
 let pass = 0;
 let fail = 0;
@@ -29,9 +30,38 @@ try {
   /* ── L05 · HET VELD CREDITS ─────────────────────────────────────────── */
   console.log('L05 · /start/plan, het veld credits van Op maat');
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  const fouten = [];
+  page.on('pageerror', (e) => fouten.push(String(e.message || e)));
   await page.goto(`${studio.url}/nl/start/plan/?plan=studio&credits=500`, { waitUntil: 'load' });
   await page.waitForTimeout(400);
   const veld = '[data-ps-credits]';
+  /* 9 november 2026 (ronde 92): sinds ronde 91 (K-14, src/data/aboZichtbaar.js,
+     ABO_EXTRA_ZICHTBAAR = false; Lucas, lijst 85 B8 "achter Bespreek met ons")
+     staan de vierde kaart "Op maat" en dit creditsveld niet op /start/plan. Dan
+     valt er niets te klemmen: we kijken dat het veld en de radio weg zijn, dat
+     ?credits=500 uit een oude link niets breekt en dat Merk kiezen niets
+     tegenhoudt. Met de vlag aan loopt L05 zoals op 15 oktober. */
+  if (!ABO_EXTRA_ZICHTBAAR) {
+    const k = await page.evaluate((sel) => {
+      const f = document.querySelector('input[name="plan"]')?.form;
+      return {
+        veld: !!document.querySelector(sel),
+        maat: !!document.querySelector('input[name="plan"][value="maat"]'),
+        knop: !!document.querySelector('[data-k14-bespreek] a[href^="https://wa.me/"]'),
+        credits: f ? [...f.elements].some((e) => e.name === 'credits') : null,
+      };
+    }, veld);
+    ok('K-14 vlag uit: geen creditsveld en geen radio Op maat', [k.veld, k.maat], [false, false]);
+    ok('K-14 vlag uit: op die plek "Bespreek met ons" (WhatsApp)', k.knop, true);
+    ok('?credits=500 uit een oude link: het formulier stuurt geen credits mee', k.credits, false);
+    await page.locator('input[name="plan"][value="brand"]').dispatchEvent('click');
+    /* De klantvelden (naam, adres …) zijn hier nog leeg; het gaat om plan en credits. */
+    ok('Merk gekozen: plan en credits houden het formulier niet tegen', await page.evaluate(() => {
+      const f = document.querySelector('input[name="plan"]').form;
+      return [...f.elements].filter((e) => e.willValidate && !e.checkValidity()).map((e) => e.name).filter((n) => n === 'plan' || n === 'credits');
+    }), []);
+    ok('geen scriptfout op de pagina', fouten, []);
+  } else {
   const stand = () => page.evaluate((sel) => {
     const v = document.querySelector(sel);
     return { waarde: v.value, uit: v.disabled, gekeurd: v.willValidate, max: v.max };
@@ -56,6 +86,7 @@ try {
   s = await stand();
   ok('5000 getypt, dan Merk gekozen: het veld is uit en houdt niets tegen', [s.uit, s.gekeurd], [true, false]);
   ok('en het formulier zelf is geldig wat dit veld betreft', await page.evaluate((sel) => document.querySelector(sel).form.checkValidity() || [...document.querySelector(sel).form.elements].filter((e) => e.willValidate && !e.checkValidity()).every((e) => e.name !== 'credits'), veld), true);
+  }
   await page.close();
 
   /* ── L06 · DE BEDANKPAGINA ─────────────────────────────────────────── */

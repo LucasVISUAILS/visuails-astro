@@ -33,7 +33,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import OrderFlow from './order/OrderFlow.astro';
 import NieuwTabblad from './NieuwTabblad.astro';
 import StylePicker from './order/StylePicker.astro';
@@ -70,13 +70,13 @@ const c = nl ? {
   pil: 'Proef',
   kop: ['Probeer VISUAILS', 'met één product voor'],
   lead: `Stuur een voorkant, een achterkant en één close-up. Je krijgt ${SAMPLE.deliverable} terug, precies wat een betaalde bestelling oplevert.`,
-  feiten: [`${CATALOG_IMAGES} foto’s, of ${LIFESTYLE_IMAGES}`, `${vatLabel('excl', 'nl')} · ${SAMPLE.unit}`, 'Nagekeken vóór levering'],
+  feiten: [CATALOG_IMAGES === LIFESTYLE_IMAGES ? `${CATALOG_IMAGES} beelden, catalog of lifestyle` : `${CATALOG_IMAGES} catalogfoto’s of ${LIFESTYLE_IMAGES} lifestylebeelden`, `${vatLabel('excl', 'nl')} · ${SAMPLE.unit}`, 'Nagekeken vóór levering'],
   bij: `Voorbeeld: een catalogset van ${CATALOG_IMAGES} foto’s, van één product.`,
 
   weigerGebruiktKop: 'Je hebt VISUAILS al geprobeerd.',
   weigerGebruikt: ['Het is er één per bedrijf, dus er is niets besteld en er is niets afgeschreven — je hebt hier niet voor betaald. Klaar voor het echte werk? De ', 'volledige diensten', ' beginnen bij één product, zonder minimumafname — of ', 'stuur ons een bericht', ' als de eerste proef nooit is aangekomen, of als een collega hem heeft aangevraagd zonder het te zeggen.'],
   weigerMailKop: 'Dat e-mailadres kwam niet door.',
-  weigerMail: 'Controleer het even op een typefout en stuur het opnieuw — het is het adres waar de afgeronde visual op binnenkomt.',
+  weigerMail: 'Controleer het even op een typefout en stuur het opnieuw — het is het adres waarop je beelden binnenkomen.',
   weigerSoortKop: 'Kies eerst wat we gaan maken.',
   weigerSoort: 'Een catalogset of een lifestylecarrousel — dat is ander werk, dus we kunnen er niet één van kiezen. Zet het hieronder aan en stuur het opnieuw.',
 
@@ -105,7 +105,7 @@ const c = nl ? {
   stappen: [
     ['Upload je foto’s', 'Een voorkant, een achterkant en één close-up.'],
     ['Kies een look', 'Of laat ons kiezen.'],
-    ['Wij maken het', 'Met onze echte belichting en afwerking, en we kijken het na vóór levering.'],
+    ['Wij maken het', 'Met dezelfde belichting en afwerking als een betaalde bestelling, en we kijken het na vóór levering.'],
     ['Keur goed en download', `${RESOLUTIE.standaard} px, in VISUAILS Studio en met de link in je mail. ${TIMING.charAt(0).toUpperCase()}${TIMING.slice(1)}.`],
   ],
   fijndruk: `Eén proef per bedrijf · ${SAMPLE.feeNote} (${vatLabel('excl', 'nl')}) · meer betaal je niet voor de proef.`,
@@ -124,7 +124,7 @@ const c = nl ? {
   pil: 'Trial',
   kop: ['Try VISUAILS', 'with one product for'],
   lead: `Send a front, a back and one close-up. You get ${SAMPLE.deliverable} back, exactly what a paid order delivers.`,
-  feiten: [`${CATALOG_IMAGES} photos, or ${LIFESTYLE_IMAGES}`, `${vatLabel('excl', 'en')} · ${SAMPLE.unit}`, 'Checked before delivery'],
+  feiten: [CATALOG_IMAGES === LIFESTYLE_IMAGES ? `${CATALOG_IMAGES} images, catalog or lifestyle` : `${CATALOG_IMAGES} catalog photos or ${LIFESTYLE_IMAGES} lifestyle images`, `${vatLabel('excl', 'en')} · ${SAMPLE.unit}`, 'Checked before delivery'],
   bij: `Example: a catalog set of ${CATALOG_IMAGES} photos, of one product.`,
 
   weigerGebruiktKop: 'You’ve already had your test sample.',
@@ -159,7 +159,7 @@ const c = nl ? {
   stappen: [
     ['Upload your photos', 'A front, a back and one close-up.'],
     ['Choose a look', 'Or let us choose.'],
-    ['We make it', 'With our real lighting and finish, and we check it before delivery.'],
+    ['We make it', 'With the same lighting and finish as a paid order, and we check it before delivery.'],
     ['Approve and download', `${RESOLUTIE.standaard} px, in VISUAILS Studio and with the link in your email. ${TIMING.charAt(0).toUpperCase()}${TIMING.slice(1)}.`],
   ],
   fijndruk: `One sample per business · a ${SAMPLE.feeNote} (${vatLabel('excl', 'en')}) · that’s all you pay for the sample.`,
@@ -214,7 +214,7 @@ const DRIE = (n: number) => String(n).padStart(2, '0');
         <label class="h-ts-wacht-l" for="ts-wacht-email">{c.wachtLabel}</label>
         <div class="ts-wacht-rij h-ts-wacht-rij">
           <input id="ts-wacht-email" type="email" name="email" required autocomplete="email" inputmode="email" data-melding={c.wachtMelding} />
-          <button type="submit" class="h-knop h-knop-inkt">{c.wachtKnop}</button>
+          <button type="submit" class="h-knop k k-vol" data-rol="doorgaan">{c.wachtKnop}<Fragment set:html={rolIkoon('doorgaan')} /></button>
         </div>
         <p class="ts-hp h-ts-hp" aria-hidden="true"><label>Website <input type="text" name="website_hp" tabindex="-1" autocomplete="off" /></label></p>
         <div data-botcheck-plek></div>
@@ -321,8 +321,8 @@ const DRIE = (n: number) => String(n).padStart(2, '0');
         <p class="h-ts-slot-zin">{c.slotZin}</p>
       </div>
       <p class="h-acties">
-        <a class="h-knop h-knop-inkt" href={waHref(c.slotWa)} target="_blank" rel="noopener">{c.slotCta}<NieuwTabblad lang={lang} /><span class="o" set:html={ik('rechts')} /></a>
-        <a class="h-knop h-knop-lijn" href={lp('/start')}>{c.slotCta2}</a>
+        <a class="h-knop k k-lijn" data-rol="contact" href={waHref(c.slotWa)} target="_blank" rel="noopener">{c.slotCta}<NieuwTabblad lang={lang} /></a>
+        <a class="h-knop k k-lijn" data-rol="doorgaan" href={lp('/start')}>{c.slotCta2}<Fragment set:html={rolIkoon('doorgaan')} /></a>
       </p>
     </div>
   </section>

@@ -160,7 +160,7 @@ Add-ons to a plan:
 
 ## Delivery
 
-- under ${WINDOW_THRESHOLD} products: ${turnaround('unattended', 'en').replace(/^[^:]*:\s*/, '')}, with no fixed delivery date
+- under ${WINDOW_THRESHOLD} products: ${((z) => z.charAt(0).toLowerCase() + z.slice(1))(turnaround('unattended', 'en').replace(/^[^:]*:\s*/, ''))}, with no fixed delivery date
 - from ${WINDOW_THRESHOLD} products: a reserved window, confirmed before payment
 - Hooks and Editions are not orderable yet and nothing is charged for them
 

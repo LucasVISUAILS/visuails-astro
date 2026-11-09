@@ -25,6 +25,7 @@ import { startStudio } from './lib/studio-worker.mjs';
 import { mintToken, hashToken } from '../src/lib/token.js';
 import { browserPad } from '../scripts/lib/browserpad.mjs';
 import { spaarPlafond, PLAN_CREDITS } from '../src/data/pricing.js';
+import { ABO_EXTRA_ZICHTBAAR } from '../src/data/aboZichtbaar.js';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const OUT = path.join(ROOT, '.render');
@@ -184,6 +185,12 @@ try {
           ok(`${label}: "Je credits blijven geldig tot en met …"`, /Je credits blijven geldig tot en met \d+ [a-z]+( \d{4})?\./.test(tekst), true);
           ok(`${label}: geen plafond meer naast het saldo`, heeftSpaar, false);
           ok(`${label}: geen bijkoopblok zonder lopend abonnement`, await p.evaluate(() => !document.querySelector('#bijkopen')), true);
+        } else if (!ABO_EXTRA_ZICHTBAAR) {
+          /* 9 november 2026 (ronde 91, K-14): bijkopen staat achter "Bespreek met ons". */
+          ok(`${label}: op #bijkopen "Bespreek met ons" (WhatsApp), geen bijkoopformulier`, await p.evaluate(() => {
+            const b = document.querySelector('#bijkopen[data-k14-bespreek]');
+            return !!b && !!b.querySelector('a[href^="https://wa.me/"]') && !document.querySelector('form[action="/account/plan/bijkopen"]');
+          }), true);
         } else {
           ok(`${label}: het bijkoopblok: een formulier zonder script, drie keuzerondjes, één gekozen`, await p.evaluate(() => {
             const f = document.querySelector('#bijkopen form[method="post"][action="/account/plan/bijkopen"]');
@@ -194,9 +201,12 @@ try {
         if (stand === 'bijgekocht') {
           ok(`${label}: "Waarvan 25 bijgekocht: die gaan als eerste op …"`, /Waarvan 25 bijgekocht: die gaan als eerste op en tellen niet mee voor je spaarplafond; ze blijven geldig tot en met/.test(tekst), true);
           ok(`${label}: het saldo is 145, het plafond blijft 360`, tekst.includes(`Je hebt 145 credits (je kunt er ${PLAFOND} sparen)`), true);
-          ok(`${label}: "Eerder bijgekocht" met de aankoop`, await p.evaluate(() => /Eerder bijgekocht \(1\)/.test(document.querySelector('#bijkopen')?.textContent.replace(/\s+/g, ' ') || '')), true);
           ok(`${label}: in het creditboek "Extra credits bijgekocht"`, await p.evaluate(() => [...document.querySelectorAll('.st-boek tr[data-reden="bijgekocht"]')].some((r) => /Extra credits bijgekocht/.test(r.textContent))), true);
-          ok(`${label}: nog 75 bij te kopen deze maand`, await p.evaluate(() => /Deze maand kun je nog 75 credits bijkopen/.test(document.querySelector('#bijkopen')?.textContent || '')), true);
+          /* K-14: het bijkoopblok zelf alleen zolang bijkopen in beeld staat. */
+          if (ABO_EXTRA_ZICHTBAAR) {
+            ok(`${label}: "Eerder bijgekocht" met de aankoop`, await p.evaluate(() => /Eerder bijgekocht \(1\)/.test(document.querySelector('#bijkopen')?.textContent.replace(/\s+/g, ' ') || '')), true);
+            ok(`${label}: nog 75 bij te kopen deze maand`, await p.evaluate(() => /Deze maand kun je nog 75 credits bijkopen/.test(document.querySelector('#bijkopen')?.textContent || '')), true);
+          }
           await p.locator('#bijkopen').screenshot({ path: path.join(OUT, `sp-bijkopen-${breed}-${thema}.png`) });
         }
         await p.screenshot({ path: path.join(OUT, `sp-credits-${stand}-${breed}-${thema}.png`), fullPage: true });

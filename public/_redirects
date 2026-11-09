@@ -375,6 +375,16 @@
 /voorbeeld/404/                         /                           301
 /nl/voorbeeld/404                       /nl/                        301
 /nl/voorbeeld/404/                      /nl/                        301
+# Lijst 87 (r90-i1, 9 november 2026): de laatste twee voorbeeldpagina's (de uitleg in beweging en de
+# voorpagina daarmee) zijn weg; ze droegen werknotities. Wie het oude adres heeft, komt op de voorpagina.
+/voorbeeld/uitleg                       /                           301
+/voorbeeld/uitleg/                      /                           301
+/nl/voorbeeld/uitleg                    /nl/                        301
+/nl/voorbeeld/uitleg/                   /nl/                        301
+/voorbeeld/voorpagina                   /                           301
+/voorbeeld/voorpagina/                  /                           301
+/nl/voorbeeld/voorpagina                /nl/                        301
+/nl/voorbeeld/voorpagina/               /nl/                        301
 # De twaalf openingen met een beeld staan sinds 14 oktober 2026 (afvinklijst 21) op de pagina's zelf; het voorbeeld stuurt door.
 /voorbeeld/opening/pricing                /pricing                      301
 /voorbeeld/opening/pricing/               /pricing                      301

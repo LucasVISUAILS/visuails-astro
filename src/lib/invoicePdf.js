@@ -244,13 +244,20 @@ function encodable(ch) {
  * space because the layout below does its own wrapping and a literal newline
  * inside a PDF text-showing operator means nothing.
  */
+/* Emoji (en wat ze aan elkaar plakt: ZWJ, de variantkiezers, huidskleur, vlaggen)
+   vallen stil weg in plaats van "?" te worden (lijst 87, B08, 9 november 2026): een
+   merknaam met een hartje is geen naam die we verkeerd lezen, en "?" leest wel zo. */
+const EMOJI = /^(?:\p{Extended_Pictographic}|\p{Emoji_Modifier}|\p{Regional_Indicator}|[\u200d\ufe0e\ufe0f\u20e3])$/u;
+
 export function winAnsi(value) {
   if (value === null || value === undefined) return '';
   let s = typeof value === 'string' ? value : String(value);
   s = s.replace(/[\t\r\n\v\f]+/g, ' ');
   let out = '';
+  let weg = false;
   for (const ch of s) {
     if (encodable(ch)) { out += ch; continue; }
+    if (EMOJI.test(ch)) { weg = true; continue; }
     const mapped = TRANSLITERATE[ch];
     if (mapped !== undefined) { out += mapped; continue; }
     const stripped = ch.normalize('NFKD').replace(/\p{M}+/gu, '');
@@ -264,7 +271,8 @@ export function winAnsi(value) {
     const code = ch.codePointAt(0);
     out += piece || (code < 0x20 || code === 0x7f ? '' : '?');
   }
-  return out;
+  /* Waar een emoji wegviel, geen dubbele spatie of een spatie aan de rand. */
+  return weg ? out.replace(/ {2,}/g, ' ').trim() : out;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

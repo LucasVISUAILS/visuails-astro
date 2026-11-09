@@ -1,4 +1,5 @@
 ---
+import { knopInhoud } from '../data/iconen.js';
 /**
  * VISUAILS Studio — de schil van het klantdashboard, als Astro-layout.
  * 5 september 2026, fase 2 van "dashboard en /admin in Astro".
@@ -36,7 +37,8 @@ const MERK_SVG = woordmerkSvg('st-woordmerk');
 /* Levering 89: dicht toont de zijbalk het V-merk zelf (het tekstlogo K5 kan niet tot zijn V afgeknipt worden);
    studio.css toont het een of het ander, nooit allebei. */
 const V_SVG = vMerkSvg('st-merk-v');
-const UIT_IK = ikoon('pijl', 'st-uit-ik');
+/* knoppensysteem (lijst 89): uitloggen heeft een eigen icoon, een open deur met de pijl eruit (was de pijl van Doorgaan) */
+const UIT_IK = ikoon('uitloggen', 'st-uit-ik');
 import { standKlasse } from '../data/status.js';
 import '../styles/studio.css';
 /* De hal (14 oktober 2026): Urbanist en studio-hal.css; alles daarin hangt
@@ -46,6 +48,8 @@ import '@fontsource-variable/urbanist/index.css';
 import '../styles/studio-hal.css';
 /* levering 89 (lijst 82, E4 en E5): het gezicht en de status "geleverd" in een stukje poster, zonder script */
 import '../styles/posterkleur.css';
+/* het knoppensysteem (lijst 88 + 89): dezelfde knoppen als op de site, uit src/styles/knoppen.css */
+import '../styles/knoppen.css';
 import { kies, pkKlasse } from '../data/stukken.js';
 /* Sectie 22: Anybody voor de koppen, Figtree voor de tekst, Martian
    Mono voor de labels — alle drie variabel, open source en zelf gehost. Zie de
@@ -171,7 +175,7 @@ const metParam = (k, v) => {
         {/* Alleen op de telefoon: daar is er geen bovenbalk en geen zijbalkvoet. */}
         <div class="st-mob">
           <a href={metParam('lang', andereTaal)} lang={andereTaal} title={andereTaalLabel}>{andereTaal.toUpperCase()}</a>
-          <form method="post" action="/account/logout"><button type="submit">{t.signOut}</button></form>
+          <form method="post" action="/account/logout"><button type="submit" data-rol="uitloggen"><Fragment set:html={ikoon('uitloggen', 'st-uit-ik')} />{t.signOut}</button></form>
         </div>
         <nav class="st-nav" aria-label="Studio">
           {items.map((n) => (
@@ -191,7 +195,7 @@ const metParam = (k, v) => {
             </div>
           )}
           <form method="post" action="/account/logout">
-            <button class="st-uit" type="submit" title={navDicht ? t.signOut : undefined}>
+            <button class="st-uit" data-rol="uitloggen" type="submit" title={navDicht ? t.signOut : undefined}>
               <Fragment set:html={UIT_IK} />
               <span>{t.signOut}</span>
             </button>
@@ -229,7 +233,7 @@ const metParam = (k, v) => {
               "abonnement gepauzeerd"). Dat is een status, dus hij draagt het
               statuscomponent (20 september 2026). */}
           {chip && chip.tekst && <span class={standKlasse(CHIP_STAND[chip.toon] || 'received')}>{chip.tekst}</span>}
-          {actie && <a class="btn btn-primary st-top-actie" href={actie.href}>{actie.label}</a>}
+          {actie && <a class="btn btn-primary st-top-actie" data-rol="doorgaan" href={actie.href} set:html={knopInhoud('doorgaan', actie.label)} />}
         </header>
         <main class="st-main" id="inhoud">
           {/* De uitleg-tip (afvinklijst 28, v28-tips = a): één per pagina, in de
@@ -242,7 +246,7 @@ const metParam = (k, v) => {
                 {tip.h && <p class="st-tip-h">{tip.h}</p>}
                 {tip.tekst && <p>{tip.tekst}</p>}
                 {tip.punten.length > 0 && <ul>{tip.punten.map((x) => <li>{x}</li>)}</ul>}
-                <a class="btn btn-2nd btn-sm" href={tip.weg}>{tip.begrepen}</a>
+                <a class="btn btn-2nd btn-sm" data-rol="sluiten" href={tip.weg}>{tip.begrepen}</a>
               </div>
               <a class="st-tip-x" href={tip.weg} aria-label={tip.sluit}>×</a>
             </aside>

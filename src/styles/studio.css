@@ -487,6 +487,9 @@ a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
 .st-nu { flex: 1 0 100%; display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
 .st-nu-zin { font-size: .875rem; line-height: 1.45; color: var(--ink-1); }
 .st-nu-datum { font-size: .8125rem; line-height: 1.4; color: var(--ink-2); }
+/* Ronde 91 (S03, S12, 9 november 2026): staan de datums ook in de map van het afrondscherm, dan alleen daar zodra de
+   kaart open is — anders stond "Je beelden staan hier tot en met …" twee keer onder elkaar. Zie Bestelling.astro. */
+.st-bestelling-klap[open] .st-nu-datum.is-ook-in-map { display: none; }
 .st-nu-knop { padding: 0 1.25rem 1rem; margin-top: -.25rem; }
 .st-nu-knop form { margin: 0; }
 .st-bestelling-klap[open] + .st-nu-knop { display: none; }
@@ -1571,6 +1574,8 @@ body.studio .st-merk-los { color: var(--ink-1); }
 .st-boek-eerder > summary { cursor: pointer; margin: .6rem 0 .2rem; }
 .st-bespreek.is-nadruk { border-color: var(--st-accent-lijn); box-shadow: inset 3px 0 0 var(--st-accent-lijn); }
 .st-bespreek form { margin: 0; }
+/* 9 november 2026 (ronde 91, K-14): "Bespreek met ons" onder Overstappen — zin en knop naast elkaar. */
+.st-k14-bespreek { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem; margin: .2rem 0 0; }
 .st-stop { margin-top: .4rem; }
 .st-stop > summary.btn { display: inline-flex; }
 .st-stop-form { display: flex; flex-direction: column; gap: .75rem; margin-top: .6rem; max-width: 40rem; }
@@ -1660,3 +1665,18 @@ body.studio .st-merk-los { color: var(--ink-1); }
 .st-tip-x { flex: 0 0 auto; margin-left: auto; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; font-size: 1.25rem; line-height: 1; color: #0F1217; text-decoration: none; }
 .st-tip-x:hover { background: #FFFFFF; color: #0F1217; }
 .st-tip-x:focus-visible { outline: 2px solid #0F1217; outline-offset: 2px; }
+
+/* ═══ Ronde 92 · op één hoogte — 9 november 2026 ═══════════════════════════════════════════════════════════════
+   Lucas: "hier en daar plekken waar sommige teksten naast elkaar niet dezelfde hoogte hebben, dit oogt wat
+   onprofessioneel." Twee plekken in zijn beelden:
+   1 · de tegels "Wat wij leverden": een bestandsnaam van één regel naast een van twee liet de knoppen Goedkeuren
+       en de vinkjes op en neer springen. De naam houdt nu altijd de ruimte van twee regels vast (een derde regel
+       komt bijna niet voor: VIS-XXXX-XXX-p1-op-model.jpg past in twee bij 150 px);
+   2 · "Stel een vraag · WhatsApp · Mail · Je bestelnummer staat er al in.": de links stonden in een eigen vak van
+       24 px hoog (raakvlak) en zakten zo onder de basislijn van de rest. Alles staat nu op het midden van één regel
+       van 24 px, het raakvlak blijft. */
+.st-beeld-file { min-height: calc(1.35em * 2); }
+.st-contact { align-items: center; }
+.st-contact > *, .st-contact .st-meta { line-height: 24px; }
+.st-contact a { gap: .35rem; line-height: 24px; }
+.st-contact a svg { flex: none; }

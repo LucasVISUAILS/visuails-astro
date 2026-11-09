@@ -40,6 +40,8 @@ import { ikoon, IKOON } from '../data/iconen.js';
 import { FOTO, SCHERMEN, inFoto } from '../data/halLaptop.js';
 import { RESOLUTIE } from '../data/pricing.js';
 import { standenVoor, standPad, standSrcset } from '../data/halStanden.js';
+/* ?v= achter elk beeld (lijst 87, C16): zie src/data/beeldVersie.js. */
+import { halV, halSrcsetV } from '../data/beeldVersie.js';
 
 /* sets (12 oktober 2026, afvinklijst 7): welke reeksen de laptop toont. De
    voorpagina toont ze alle drie; /catalog alleen de webshop met de catalogset,
@@ -113,11 +115,11 @@ const SIZES = '(max-width: 900px) 120vw, (max-width: 1503px) 93vw, 1400px';
         foto's die in elkaar overvloeien. */}
     {standen.length
       ? standen.map((s, k) => (
-          <img class:list={['hl-stand', k === 0 && 'is-nu is-klaar']} src={standPad(lang, s, 1600)} srcset={standSrcset(lang, s)} sizes={SIZES}
+          <img class:list={['hl-stand', k === 0 && 'is-nu is-klaar']} src={halV(standPad(lang, s, 1600))} srcset={halSrcsetV(standSrcset(lang, s))} sizes={SIZES}
                width={FOTO.w} height={FOTO.h} alt={k === 0 ? T.fotoAlt : ''} loading={k === 0 ? 'eager' : 'lazy'} fetchpriority={k === 0 ? 'high' : undefined}
                decoding="async" data-hl-stand={k} />
         ))
-      : <img class="hl-stand is-nu is-klaar" src="/img/hal/laptop-1600.webp" srcset="/img/hal/laptop-1000.webp 1000w, /img/hal/laptop-1600.webp 1600w, /img/hal/laptop-2304.webp 2304w"
+      : <img class="hl-stand is-nu is-klaar" src={halV('/img/hal/laptop-1600.webp')} srcset={halSrcsetV('/img/hal/laptop-1000.webp 1000w, /img/hal/laptop-1600.webp 1600w, /img/hal/laptop-2304.webp 2304w')}
              sizes={SIZES} width={FOTO.w} height={FOTO.h} alt={T.fotoAlt} fetchpriority="high" decoding="async" />}
   </div>
 

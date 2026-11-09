@@ -734,11 +734,11 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
       ] : []),
       ...(andereFormaten ? [
         ...(meerFormaten ? [''] : []),
-        'Ook PNG of WebP nodig? Vraag het aan bij deze bestelling in Studio,',
-        'op visuails.com/account.',
+        'Ook PNG of WebP nodig? Vraag het aan bij deze bestelling in',
+        'VISUAILS Studio, op visuails.com/account.',
       ] : []),
       '',
-      ...kop("3 · ALLE JPG'S IN ÉÉN KEER"),
+      ...kop("3 · ALLE JPG’S IN ÉÉN KEER"),
       '',
       /* Doorloop 27 (B12): een platte map heeft geen dertig mappen. */
       ...(plat ? [
@@ -797,7 +797,7 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
       'te vermelden.',
       '',
       /* kiptc (11 oktober 2026): ook een mp4 krijgt de tag in /admin. */
-      `Ze zijn met AI gemaakt. In de ${order?.service === 'video' ? "video's" : "foto's"} staat dat ook als machineleesbaar`,
+      `Ze zijn met AI gemaakt. In de ${order?.service === 'video' ? 'video’s' : 'foto’s'} staat dat ook als machineleesbaar`,
       'gegeven (het IPTC-veld "Digital Source Type"), zodat het meereist als je',
       'ze doorstuurt; mist het ergens, laat het ons weten. Publiceer je ze, zet',
       'er dan zichtbaar een AI-vermelding bij, zoals de EU AI Act vraagt; zo is',

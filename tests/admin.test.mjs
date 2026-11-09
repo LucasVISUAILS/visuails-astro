@@ -343,8 +343,10 @@ section('§3 · the status filter on the dashboard');
   const env = makeEnv();
   const html = await (await adminReq('GET', '/admin', { env })).text();
   check('unfiltered, both orders are listed', html.includes('VIS-8K2-QQ1') && html.includes('VIS-7F4-M3A'));
-  check('every status gets a chip, zeros included', ['received', 'in_production', 'human_check', 'delivered', 'cancelled']
-    .every((s) => html.includes(`/admin?status=${s}`)));
+  /* Ronde 91 (w4, 9 november 2026): "In controle" (human_check) is geen stand meer en heeft geen chip; zulke
+     rijen tellen bij In productie. */
+  check('every status gets a chip, zeros included', ['received', 'in_production', 'delivered', 'cancelled']
+    .every((s) => html.includes(`/admin?status=${s}`)) && !html.includes('/admin?status=human_check'));
   check('"alles" is active', /fl-chip is-active" aria-current="true">Alles/.test(html));
   check('a delivered order that was never emailed says so', html.includes('geen mail gehad'));
 }
@@ -365,7 +367,8 @@ section('§3 · the status filter on the dashboard');
      Nederlands, zie STATUS_LABEL in admin.js. De SLEUTEL blijft `received` —
      dat is de waarde in de database, en de regel eronder bewaakt dat. */
   check('the active chip is the one asked for', /fl-chip is-active" aria-current="true">Binnen/.test(html));
-  check('the status form carries the filter back', /name="back" value="received"/.test(html));
+  /* Ronde 91 (w4): de rijen hebben geen statuslijstje meer (een stand zet je met de knoppen op de bestelpagina). */
+  check('the rows carry no status form any more', !/<select name="status"/.test(html));
 }
 
 {
@@ -511,12 +514,13 @@ section('§4 · de herlevering — "je revisie staat klaar", los van de eerste m
      was half vertaald (42 zichtbare stukken Engels tegenover 38 Nederlands) en
      dat is wat Lucas als "inconsistent" beschreef. tests/admin-taal.test.mjs
      bewaakt dat nu; deze drie regels lazen nog de oude Engelse tekst. */
+  /* Ronde 91 (w7, 9 november 2026): "sturen" in plaats van "melden" — één woord per handeling. */
   check('the files page offers the button, counted from the files themselves',
-    /2 nieuwe beelden melden/.test(body));
+    /2 nieuwe beelden sturen/.test(body));
   check('it posts to the announce route',
     /action="\/admin\/orders\/90\/announce"/.test(body));
   check('and each delivered file says whether the customer knows about it',
-    /niet gemeld/.test(body));
+    /niet gestuurd/.test(body));
 
   order.delivery_mailed_at = prev;
 }
@@ -529,9 +533,9 @@ section('§4 · de herlevering — "je revisie staat klaar", los van de eerste m
   const res = await adminReq('GET', '/admin/orders/91/files', { env });   // nooit aangekondigd
   const body = await res.text();
   check('an order that was never announced gets no announce button',
-    !/1 nieuw beeld melden/.test(body));
+    !/1 nieuw beeld sturen/.test(body));
   check('it is pointed at the delivered status instead',
-    /nog nooit gemeld/.test(body));
+    /nog nooit geleverd/.test(body));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1057,7 +1061,8 @@ section('§17 · de agenda — wat moet er nu af');
 {
   const oud = await adminReq('GET', '/admin/agenda?soort=datum', { env: makeEnv() });
   check('/admin/agenda stuurt door naar de planning', oud.status === 303 || oud.status === 302, oud.status);
-  check('  met het filter en het anker mee', oud.headers.get('location') === '/admin/planning?soort=datum#dagen', oud.headers.get('location'));
+  /* Ronde 91 (w1): de filters hoorden bij de lijst Aflopend, die weg is; alleen het anker gaat mee. */
+  check('  met het anker mee (de filters bestaan niet meer)', oud.headers.get('location') === '/admin/planning#dagen', oud.headers.get('location'));
 }
 {
   const env = makeEnv();
@@ -1080,14 +1085,11 @@ section('§17 · de agenda — wat moet er nu af');
   check('  inclusief de soort', /service/.test(vensters || ''));
 
   const html = await res.text();
-  check('er staat één aflopende lijst en geen tweede lijstje',
-    (html.match(/<ol class="pl-lijst"/g) || []).length <= 1 && !/<table class="ag-tabel">/.test(html),
+  /* Ronde 91 (w1, 9 november 2026): de aflopende lijst en zijn filters zijn weg; Nu doen is de werklijst. */
+  check('er staat geen aflopende lijst meer, en geen tweede lijstje',
+    (html.match(/<ol class="pl-lijst"/g) || []).length === 0 && !/<table class="ag-tabel">/.test(html),
     (html.match(/<ol class="pl-lijst"/g) || []).length);
-  check('en met de filters erbij',
-    /href="\/admin\/planning"/.test(html)
-    && /href="\/admin\/planning\?soort=datum"/.test(html)
-    && /href="\/admin\/planning\?soort=asap"/.test(html)
-    && /href="\/admin\/planning\?soort=voorrang"/.test(html));
+  check('en geen filters van die lijst', !/href="\/admin\/planning\?soort=/.test(html));
   check('en het blok "Dagen dichtzetten" staat eronder', /<h2 id="dagen">Dagen dichtzetten<\/h2>/.test(html));
   check('een ongewogen dienst zegt dat, in plaats van nul te tellen',
     !/>0 beelden</.test(html) || /nog te wegen/.test(html), 'geen stille nul');
@@ -1097,10 +1099,9 @@ section('§17 · de agenda — wat moet er nu af');
   // Een filter is een filter en geen tweede scherm: dezelfde route, dezelfde
   // lijst, alleen minder rijen.
   const env = makeEnv();
+  /* Ronde 91 (w1): ?soort= bestaat niet meer; een oude link geeft gewoon de planning. */
   const res = await adminReq('GET', '/admin/planning?soort=datum', { env });
-  const html = await res.text();
-  check('het datumfilter markeert zichzelf', /aria-current="true"[^>]*href="\/admin\/planning\?soort=datum"|href="\/admin\/planning\?soort=datum"[^>]*aria-current="true"/.test(html)
-    || /fl-chip is-active[^>]*soort=datum/.test(html), true);
+  check('een oude filterlink geeft gewoon de planning', res.status === 200, res.status);
 
   const env2 = makeEnv();
   const res2 = await adminReq('GET', '/admin/planning?soort=verzonnen', { env: env2 });

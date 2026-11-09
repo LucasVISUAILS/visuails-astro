@@ -22,7 +22,8 @@ const lees = (p) => readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
 console.log('\n5 · StylePicker zegt niet meer "op de lifestyle-pagina"');
 {
   const sp = lees('src/components/order/StylePicker.astro');
-  ok('NL: "Gekozen bij de look."', /vastHint: 'Gekozen bij de look\. Hier veranderen kan met één klik\.'/.test(sp));
+  // taalronde 92: "gekozen bij de look" werd "gekozen op de pagina van de look" (wat er bedoeld is)
+  ok('NL: "Gekozen op de pagina van de look."', /vastHint: 'Gekozen op de pagina van de look\. Hier veranderen kan met één klik\.'/.test(sp));
   ok('EN: "Picked from the looks."', /vastHint: 'Picked from the looks\. Changing it here is one click\.'/.test(sp));
   ok('nergens meer "lifestyle-pagina" / "lifestyle page" in de hint', /vastHint: '[^']*(lifestyle-pagina|lifestyle page)/.test(sp), false);
 }

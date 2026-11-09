@@ -19,7 +19,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import { faqPageGroups, SERVICE_FAQ_NAMES } from '../data/faq.js';
 import { waHref } from '../data/whatsapp.js';
 import { localizedPath } from '../i18n/ui.js';
@@ -108,7 +108,7 @@ const PIJL = ikoon('pijl-schuin');
       <h1 class="h-kop h-h1 h-op h-een-regel" style="--d:1"><span class="l">{c.h1[0]}</span> <span>{c.h1[1]}</span></h1>
       <p class="h-lede h-op" style="--d:2">{c.lead}</p>
       <p class="h-acties h-op" style="--d:3">
-        <a class="h-knop h-knop-inkt" href={c.wa} target="_blank" rel="noopener" data-track="faq-wa-kop" {...waKlant(lang)}>{c.nogWa}<span class="o" set:html={PIJL} /><NieuwTabblad lang={lang} /></a>
+        <a class="h-knop k k-lijn" data-rol="contact" href={c.wa} target="_blank" rel="noopener" data-track="faq-wa-kop" {...waKlant(lang)}>{c.nogWa}<NieuwTabblad lang={lang} /></a>
       </p>
     </div>
     <figure class="h-faq-kop-beeld h-op" style="--d:2">
@@ -159,7 +159,7 @@ const PIJL = ikoon('pijl-schuin');
                     ))}
                   </div>
                 ) : null}
-                {item.linkText ? <p class="h-faq-meer"><a class="h-link" href={lp(item.linkHref)}>{item.linkText}<span class="h-cirkel h-cirkel-mini" aria-hidden="true" set:html={PIJL} /></a></p> : null}
+                {item.linkText ? <p class="h-faq-meer"><a class="h-link k k-tekst" data-rol="navigeren" href={lp(item.linkHref)}>{item.linkText}<Fragment set:html={rolIkoon('navigeren')} /></a></p> : null}
               </Disclose>
             ))}
           </div>
@@ -177,8 +177,8 @@ const PIJL = ikoon('pijl-schuin');
         <p>{c.nogZin}</p>
       </div>
       <p class="h-acties">
-        <a class="h-knop h-knop-inkt" href={c.wa} target="_blank" rel="noopener" data-track="faq-wa" {...waKlant(lang)}>{c.nogWa}<span class="o" set:html={PIJL} /><NieuwTabblad lang={lang} /></a>
-        <a class="h-knop h-knop-lijn" href={lp('/contact')}>{c.nogContact}</a>
+        <a class="h-knop k k-lijn" data-rol="contact" href={c.wa} target="_blank" rel="noopener" data-track="faq-wa" {...waKlant(lang)}>{c.nogWa}<NieuwTabblad lang={lang} /></a>
+        <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/contact')}>{c.nogContact}<Fragment set:html={rolIkoon('navigeren')} /></a>
       </p>
     </div>
   </section>

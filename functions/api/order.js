@@ -55,7 +55,7 @@
 import { offsitePage } from '../../src/lib/offsite.js';
 import { aanhefTekst } from '../../src/lib/aanhef.js';
 import { readCalendar } from '../../src/lib/agenda.js';
-import { aftercare, turnaround, tierRow, clause, shouldPromptUpgrade, upgradePrompt, vatPercent, tierFor, FORM_MAX_PRODUCTS, voorrangZin, VOORRANG, VIDEO_OP_AANVRAAG, SAMPLE_SERVICE, LIFESTYLE_IMAGES, LIFESTYLE_BEELDEN_VELD } from '../../src/data/pricing.js';
+import { aftercare, turnaround, tierRow, clause, shouldPromptUpgrade, upgradePrompt, vatPercent, tierFor, FORM_MAX_PRODUCTS, voorrangZin, VOORRANG, VIDEO_OP_AANVRAAG, SAMPLE_SERVICE, LIFESTYLE_IMAGES, LIFESTYLE_BEELDEN_VELD, voorrangWerkdagen, voorrangAgendaOpen } from '../../src/data/pricing.js';
 import { videoStyles as VIDEO_STYLES } from '../../src/data/videoStyles.js';
 /* Dezelfde bron als de swatches op /test-sample — zie de opschoning van de
    proefvisual verderop voor waarom de hexwaarde hier wordt afgeleid en niet in de
@@ -88,7 +88,7 @@ import { normalizeEmail, normalizePhone } from '../../src/lib/payer.js';
 import { proefGebruikt } from '../../src/lib/proefGebruikt.js';
 import { voorkeurMet } from '../../src/data/contactvoorkeur.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from '../../src/lib/ratelimit.js';
-import { controleerBotcheck, botcheckBesluit, botcheckUitleg, TOKEN_VELD } from '../../src/lib/turnstile.js';
+import { controleerBotcheck, botcheckBesluit, botcheckMarkeren, botcheckUitleg, TOKEN_VELD } from '../../src/lib/turnstile.js';
 import { mintToken, hashToken, portalUrl } from '../../src/lib/token.js';
 import { sendMail, toBase64 } from '../../src/lib/mail.js';
 import { serviceLabel } from '../../src/data/services.js';
@@ -103,6 +103,8 @@ import { shell, h1, p, rows, quote as mailQuote, payPanel, note, spamNote, linkL
 import { vragen as mailVragen, button as mailButton } from '../../src/lib/mailTemplate.js';
 import { verderBlokHtml, leveringVan } from '../../src/lib/verder.js';
 import { ontbrekendeFotos, ontbrekendRegels, vakNaam } from '../../src/lib/ontbreekt.js';
+/* K-02 (9 november 2026): welke diensten foto's per vak hebben (en dus nasturen). */
+import { NASTUUR_DIENSTEN } from '../../src/lib/nasturen.js';
 /* De klant bereiken bij foto's die ontbreken (punt 7.05): dezelfde waLink() als /admin. */
 import { waLink, contactMail, waNummer } from '../../src/lib/waLink.js';
 import { uitgesteldSleutel, stuurUitgesteld } from '../../src/lib/uitgesteld.js';
@@ -118,7 +120,7 @@ import { createTestSampleMolliePayment, createOrderMolliePayment, isTestmodus } 
    noot bij die aanroep over waarom het de wire-waarde moet zijn en niet de
    laddernaam. */
 import {
-  quoteOrder, quoteTestSample, quoteBrandModel, quoteVideo, centsToMollieValue, paymentDescription,
+  quoteOrder, quoteTestSample, quoteBrandModel, quoteVideo, centsToMollieValue, paymentDescription, opbouwVan,
   isPayableService,
 } from '../../src/lib/quote.js';
 import { businessCheck, businessText } from '../../src/data/business.js';
@@ -153,6 +155,8 @@ import {
 /* Levering 60 (afvinklijst 38): de complete look, een koppeling tussen producten. */
 import { schoonLooks, lookAantal, CONTEXT_LOOK, isLookDienst, lookRegels } from '../../src/data/looks.js';
 import { schoonBeeldAchtergronden, beeldAchtergrondRegel } from '../../src/data/beeldachtergrond.js';
+import { vandaagNL } from '../../src/lib/nlDag.js';
+import { studioUrl } from '../../src/lib/studioLink.js'; // ronde 91, E05
 
 /*
  * 'brand-model' STAAT NAAST 'custom' EN VERVANGT HEM NIET — 23 augustus 2026.
@@ -210,7 +214,17 @@ export const SERVER_DETAIL_KEYS = new Set([
   'lifestyle_beelden',
   /* De uitslag van de botcheck (o03, 8 oktober 2026): die zet de server. */
   'botcheck',
+  /* De opbouw van het bedrag voor de factuur (lijst 87, B07): uit quoteOrder(). */
+  'opbouw',
 ]);
+
+/* ── VELDEN DIE OP GELD LIJKEN, KOMEN NIET UIT HET FORMULIER — 9 november 2026 ──
+   (ronde 91, B12) Geen formulier van de site post zo'n veld; een zelfgebouwde POST
+   met `korting=100%`, `vat_treatment=outside_scope` of `total_cents=1` belandde in
+   details_json en stond zo in de studiomail, naast de bedragen die de server zelf
+   uitrekende. Rekenen deed er niets mee, maar het leest als een afspraak. Bedragen,
+   tarieven en btw-soort zijn van de server (quoteOrder(), vatDecision()). */
+const GELDVELD = /^(amount|price|prijs|total|totaal|subtotal|subtotaal|bedrag|bruto|netto|gross|net|korting|discount|currency|valuta|fee|kosten|tarief|rate|vat_rate|vat_treatment|vat_valid|btw|btw_tarief|payment_status|paid_at|refunded|testmodus|review_state|credits_used)$|_cents$/i;
 
 /* ── WELKE FORMULIEREN DE BOTCHECK HEBBEN — 8 oktober 2026 (o03) ─────────────
    Het bestelformulier (/start/catalog, /lifestyle, /complete = `drop`), de
@@ -248,6 +262,9 @@ const TOP_FIELDS = [
   'tier', 'products', 'window_start', 'window_end', 'upload_batch', 'mode',
   /* Het Turnstile-token (o03): wordt nagekeken en hoort niet in de bestelling. */
   TOKEN_VELD,
+  /* De verstuursleutel en de lijst van de browser (ronde 91, D10 en D09): die worden hieronder gelezen en
+     horen niet als regel in de studiomail. */
+  'verstuursleutel', 'upload_keys',
 ];
 
 export async function onRequestPost({ request, env, waitUntil, sessieKlant = null }) {
@@ -361,6 +378,23 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
     console.log('[order] catalog + lifestyle in één bestelling geweigerd: niet meer te koop');
     if (wantsJson) return json({ ok: false, error: 'dienst-gestopt' }, 410);
     return redirect(lang === 'nl' ? '/nl/start/' : '/start/');
+  }
+
+  /* ── DEZELFDE POGING NOG EEN KEER = DEZELFDE BESTELLING — 9 november 2026 (ronde 91, D10) ──────────────
+     Zie de kop bij VERSTUUR_SLEUTEL onderaan. Hier alleen het herkennen: kent de server deze sleutel al,
+     dan krijgt deze POST het antwoord van die bestelling en wordt er niets nieuws aangemaakt. Is de eerste
+     nog bezig, dan wacht hij daar even op. */
+  const verstuurSleutel = VERSTUUR_SLEUTEL.test(get('verstuursleutel')) ? get('verstuursleutel') : '';
+  if (verstuurSleutel && env?.DB) {
+    const al = await bestaandeVoorSleutel(env, verstuurSleutel, { wachtMs: 4000 });
+    if (al && al.orderId) {
+      const antwoord = await antwoordVoorBestaande(env, al.orderId, { back, lang, wantsJson });
+      if (antwoord) return antwoord;
+      /* De bestelling is er niet meer (verwijderd): de sleutel vrijgeven en gewoon verder. */
+      await env.DB.prepare('DELETE FROM rate_limits WHERE bucket = ?1').bind(verstuurEmmer(verstuurSleutel)).run().catch(() => {});
+    } else if (al && al.bezig) {
+      return wantsJson ? json({ ok: false, error: 'bezig' }, 409) : redirect(back);
+    }
   }
 
   // ── LOWERCASED, BECAUSE THIS ADDRESS IS AN IDENTITY AND NOT JUST A FIELD ───
@@ -560,6 +594,7 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
        server bepaalt ze, dus een geposte waarde wordt hier weggegooid in plaats
        van later misschien niet overschreven. */
     if (SERVER_DETAIL_KEYS.has(k)) continue;
+    if (GELDVELD.test(k)) continue;
     // A FILE IS NOT AN ANSWER. Every order form carries <input type="file">, and
     // a browser submits an entry for it whether or not anything was picked. The
     // old line here was `(v || '').toString()`, which on a File yields the
@@ -585,7 +620,8 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
     if (cleaned) details[k] = (k === 'channels' && details[k]) ? `${details[k]},${cleaned}` : cleaned;
   }
   /* De markering voor /admin (o03): doorgelaten zonder geldige botcheck. */
-  if (botcheckBesluit(botcheckStand) === 'streng') details.botcheck = botcheckStand;
+  /* Lijst 87 (A06): zonder sleutels (`uit`) wel streng begrensd, maar niet gemarkeerd. */
+  if (botcheckMarkeren(botcheckStand)) details.botcheck = botcheckStand;
 
   /*
    * ═══════════════════════════════════════════════════════════════════════════
@@ -780,9 +816,25 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
 
   // ---- subscribe (lead magnet) --------------------------------------------
   if (service === 'subscribe') {
-    await safe(() => env.DB && env.DB
-      .prepare('INSERT INTO subscribers (email, source) VALUES (?1, ?2) ON CONFLICT(email) DO NOTHING')
-      .bind(email, get('subscribe') || 'lead-magnet').run());
+    /* ── ALLEEN EEN NIEUW ADRES KRIJGT DE MAIL — 9 november 2026 (lijst 87, A08) ──
+       Een adres dat er al stond, kreeg de checklist (en Lucas een melding) elke keer
+       opnieuw: zo kon iemand een ander adres herhaald laten mailen, tot de grens van
+       10 per 10 minuten. Nu mailen we alleen als de rij echt nieuw is, zoals de
+       Studiobrief. Het antwoord aan de browser blijft hetzelfde, zodat niemand kan
+       aflezen of een adres al op de lijst stond. Lukt het schrijven niet (geen
+       database), dan mailen we wel: een klant zonder checklist is erger. */
+    let nieuw = true;
+    await safe(async () => {
+      if (!env.DB) return;
+      const r = await env.DB
+        .prepare('INSERT INTO subscribers (email, source) VALUES (?1, ?2) ON CONFLICT(email) DO NOTHING')
+        .bind(email, get('subscribe') || 'lead-magnet').run();
+      nieuw = Boolean(r?.meta?.changes);
+    });
+    if (!nieuw) {
+      const okUrl = back + (back.includes('?') ? '&' : '?') + 'ok=1';
+      return wantsJson ? json({ ok: true, redirect: okUrl }) : redirect(okUrl);
+    }
     await safe(() => sendMail(env, {
       to: email,
       subject: fotogids(lang).titelVol,
@@ -1109,7 +1161,18 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
   // insert so the count can go into details_json with everything else; the rows
   // themselves cannot exist until the order does (files.order_id is NOT NULL).
   const batch = get('upload_batch');
-  const staged = isWellFormedBatch(batch) ? await listBatch(env, batch) : [];
+  /* ── ALLEEN WAT DE KLANT NOG IN ZIJN LIJST HEEFT — 9 november 2026 (ronde 91, D09) ─────────────────────
+     Weghalen en vervangen sturen een DELETE die mag mislukken (offline, of een 429: die telt mee in de 40
+     per minuut van /api/upload) — en dan hing deze route de weggehaalde of vervangen foto er alsnog aan,
+     want hij las alleen R2. Het commentaar bij removeStaged() in pipeline.js zei al dat de lijst `staged`
+     van de browser beslist en niet R2; nu ook echt. De browser stuurt de sleutels mee in `upload_keys`
+     (één per regel). De lijst kan alleen INPERKEN: wat er niet in R2 onder deze batch staat, komt er nooit
+     bij. Een oud tabblad dat het veld niet kent, stuurt het niet mee, en dan geldt het oude gedrag: alles
+     uit de batch. Een leeg veld is wél een antwoord: de klant heeft alles weggehaald. */
+  const lijstVeld = form.get('upload_keys');
+  const inLijst = typeof lijstVeld === 'string' ? new Set(lijstVeld.split(/\r?\n/).map((k) => k.trim()).filter(Boolean)) : null;
+  const staged = (isWellFormedBatch(batch) ? await listBatch(env, batch) : [])
+    .filter((f) => !inLijst || inLijst.has(f.key));
   if (staged.length) {
     details.uploads = String(staged.length);
     details.upload_batch = batch;
@@ -1253,6 +1316,20 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
      veld er is, is het antwoord; het BEDRAG rekent quoteOrder() zelf uit, en
      die weigert het als de bestelling buiten de grenzen valt. */
   const voorrangGevraagd = get('voorrang') !== null && get('voorrang') !== '';
+  /* ── EN NIET ALS DE AGENDA DICHT STAAT — 9 november 2026 (ronde 91, C06) ──────
+     Staat een van de twee werkdagen van de belofte dicht in /admin/agenda, dan
+     rekent quoteOrder() geen voorrang (en dus geen toeslag), en zeggen mail, Studio
+     en /admin "geen voorrang" — dezelfde weg als een bestelling buiten de grenzen.
+     Eén query, alleen als er om voorrang gevraagd is. Is de agenda niet te lezen,
+     dan beslist hij niet (de bestelling zelf faalt dan toch op de database). */
+  let voorrangDicht = false;
+  if (voorrangGevraagd && env?.DB) {
+    const w = voorrangWerkdagen(null);
+    try {
+      const { results = [] } = await env.DB.prepare('SELECT day FROM blackout_days WHERE day IN (?1, ?2)').bind(w.start, w.klaar).all();
+      voorrangDicht = !voorrangAgendaOpen((results || []).map((r) => r.day));
+    } catch { voorrangDicht = false; }
+  }
 
   // ── WHICH VAT, AND THE PROOF THAT IT IS THE RIGHT ONE ──────────────────────
   // Three outcomes and one rule: nothing goes to 0% without evidence. The whole
@@ -1360,7 +1437,7 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
   const vatVorm = vatFormatOk(effCountry, vat);
   if (vatVorm === false) return terugMet('vat');
 
-  const vatParts = normaliseVat(vat);
+  const vatParts = normaliseVat(vat, effCountry);
   const vatCc = viesCode(effCountry);
   let vies = null;
   if (vatCc && effCountry !== HOME_COUNTRY && vatParts.number) {
@@ -1432,6 +1509,8 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
     confirmed: vatConfirmed,
     hadNumber: !!vatParts.number,
     ipCountry: ipLand,
+    /* Lijst 87 (B10): gebieden van een EU-land buiten het btw-gebied, op postcode. */
+    postcode: addressParts.postal || get('postal_code'),
   });
 
   /*
@@ -1609,7 +1688,7 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
              en gaat er 0 in, precies zoals bij een bestelling zonder hoeken. */
           service: svc, products, looks: lookCount,
           extras: angles.length * (Number.isInteger(products) ? products : 0),
-          hoogRes: hoogResCount, voorrang: voorrangGevraagd,
+          hoogRes: hoogResCount, voorrang: voorrangGevraagd, agendaDicht: voorrangDicht,
           vatRate: vatCall.rate,
           styleSurchargeCents: ownStyle ? Number(ownStyle.surcharge_cents) || 0 : 0,
         });
@@ -1621,6 +1700,12 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
   if (details && typeof details === 'object') {
     if (quote && quote.voorrang) details.voorrang = '1';
     else delete details.voorrang;
+    /* De opbouw van het bedrag voor de factuur (lijst 87, B07): producten, looks, extra
+       hoeken, 4K, toeslag eigen look en voorrang als eigen regels. Zie opbouwVan() in
+       src/lib/quote.js; telt het niet op, dan geen opbouw en één regel zoals voorheen. */
+    const opbouw = opbouwVan(quote);
+    if (opbouw) details.opbouw = opbouw;
+    else delete details.opbouw;
   }
 
   /* ── BETALEN MET CREDITS — 8 oktober 2026 (ronde B, §28.2, 6.06) ───────────
@@ -1809,6 +1894,17 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
     vies && !vies.ok ? (vies.error || 'onbekend') : null,
   ];
 
+  /* D10: de sleutel claimen, PAS NU — na elke controle die nog met een fout kan terugkomen (e-mail, venster,
+     btw), zodat een klant die een fout herstelt en opnieuw verstuurt niet op zijn eigen sleutel stuit. Een
+     tweede verzoek met dezelfde sleutel dat hier tegelijk aankomt, krijgt de claim niet en wacht op de eerste. */
+  const sleutelClaim = verstuurSleutel ? await claimSleutel(env, verstuurSleutel) : 'geen';
+  if (sleutelClaim === 'bezet') {
+    const al = await bestaandeVoorSleutel(env, verstuurSleutel, { wachtMs: 4000 });
+    const antwoord = al && al.orderId ? await antwoordVoorBestaande(env, al.orderId, { back, lang, wantsJson }) : null;
+    if (antwoord) return antwoord;
+    return wantsJson ? json({ ok: false, error: 'bezig' }, 409) : redirect(back);
+  }
+
   await safe(async () => {
     if (!env.DB) return;
     const widest = [...orderBinds, ...orderBinds0016, ...orderBinds0018];
@@ -1842,6 +1938,13 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
     const row = await env.DB?.prepare('SELECT id FROM orders WHERE ref = ?1').bind(ref).first();
     orderId = row?.id ?? null;
   });
+  /* D10: de claim wijst nu naar deze bestelling; is er geen bestelling gekomen, dan de claim weg, zodat de
+     klant het opnieuw kan proberen. */
+  if (sleutelClaim === 'van-mij') {
+    await safe(() => (orderId
+      ? env.DB.prepare('UPDATE rate_limits SET hits = ?2 WHERE bucket = ?1').bind(verstuurEmmer(verstuurSleutel), orderId).run()
+      : env.DB.prepare('DELETE FROM rate_limits WHERE bucket = ?1').bind(verstuurEmmer(verstuurSleutel)).run()));
+  }
 
   /* ── HET PROEFMERK — 10 september 2026 ─────────────────────────────────────
    *
@@ -2209,13 +2312,16 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
       /* Minus het verrekende tegoed (29 september 2026). */
       valueEuros: centsToMollieValue(quote.grossCents - tegoedCents),
       grossCents: quote.grossCents - tegoedCents,
-      description: paymentDescription(quote, lang),
+      /* Met het kenmerk erin, zodat het op de checkout en het bankafschrift staat (8 november 2026). */
+      description: paymentDescription({ ...quote, ref }, lang),
       successUrl: requestOrigin(request) + back + (back.includes('?') ? '&' : '?') + 'paid=' + encodeURIComponent(ref),
       webhookUrl: requestOrigin(request) + '/api/webhook/mollie',
       // Bij 0% wordt iDEAL niet aangeboden — zie de toelichting in
       // src/lib/mollie.js. Voorkomen dat een Nederlandse bankrekening onder een
       // buitenlandse claim verschijnt, in plaats van het achteraf uitzoeken.
       excludeIdeal: vatCall.rate === 0,
+      /* Buiten de EU ook geen Bancontact/EPS (ronde 91, B13). */
+      buitenEu: vatCall.treatment === VAT_TREATMENT.outsideScope,
     }));
     payUrl = payment?._links?.checkout?.href || null;
   }
@@ -2235,8 +2341,8 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
      kreeg "We hebben je aanvraag" in de onderwerpregel, boven de kop "Je
      bestelling staat genoteerd". */
   const bevestigingOnderwerp = quote
-    ? (lang === 'nl' ? `We hebben je bestelling — ${ref}` : `We've got your order — ${ref}`)
-    : (lang === 'nl' ? `We hebben je aanvraag — ${ref}` : `We've got your request — ${ref}`);
+    ? (lang === 'nl' ? `We hebben je bestelling — ${ref}` : `We’ve got your order — ${ref}`)
+    : (lang === 'nl' ? `We hebben je aanvraag — ${ref}` : `We’ve got your request — ${ref}`);
   const bevestigingOpties = {
         tier, window: finalWindow, upgrade: upgradeLine, portal: portalLink,
         /* Niet de Mollie-link zelf: die verloopt binnen een kwartier tot een
@@ -2255,8 +2361,22 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
         /* Ronde 9, F55: zonder foto's (bestelling namens de klant via /admin)
            zegt de mail waar ze heen kunnen. */
         fotos: (!staged.length && ['catalog', 'lifestyle', 'drop'].includes(svc))
-          ? `${requestOrigin(request)}${lang === 'nl' ? '/nl' : ''}/account/orders`
+          ? studioUrl(requestOrigin(request), '/orders', lang)
           : null,
+        /* K-02 (9 november 2026): wat er ontbreekt, in de taal van de klant, met de
+           knop naar het lege vak op de bestelpagina (src/lib/nasturen.js). Alleen als
+           er foto's zijn meegestuurd: zonder foto's zegt `fotos` hierboven het al, en
+           weet ontbreekt.js niet wat er mist (null). */
+        ...(() => {
+          if (!staged.length || !NASTUUR_DIENSTEN.has(svc)) return {};
+          const lijst = ontbrekendeFotos({
+            productCount: Number(products) || 0,
+            details,
+            files: staged.map((f) => ({ kind: 'upload', product_key: f.product || null, shot: f.shot || null })),
+          });
+          const regels = ontbrekendRegels(lijst, lang);
+          return regels.length ? { ontbreekt: regels, fotosLink: portalLink ? `${portalLink}#fotos` : '' } : {};
+        })(),
         nieuwAdres, land: country };
   const bevestigingHtml = customerEmail(lang, ref, svc, name, bevestigingOpties);
   /* ── ÉÉN MAIL NA HET BETALEN, NIET TWEE — 15 oktober 2026 (doorloop 27, B04) ──
@@ -2425,6 +2545,7 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
       grossCents: quote?.grossCents,
       /* Op 0 % geen iDEAL — dezelfde regel als bij een gewone bestelling. */
       excludeIdeal: vatCall.rate === 0,
+      buitenEu: vatCall.treatment === VAT_TREATMENT.outsideScope,
     }));
     const checkoutUrl = payment?._links?.checkout?.href;
     if (checkoutUrl) {
@@ -2637,9 +2758,11 @@ async function loseRaceIfOversold(env, { orderId, products, service = 'catalog',
   }
 }
 
-/** The day the gate treats as today. UTC, matching every date in capacity.js. */
+/** The day the gate treats as today. Sinds 9 november 2026 (ronde 91, C01) de
+ *  Nederlandse dag: dezelfde als /api/capacity, zodat de poort bij het bestellen
+ *  hetzelfde venster terugvindt dat de kalender aanbood. */
 function todayUTC() {
-  return new Date().toISOString().slice(0, 10);
+  return vandaagNL();
 }
 
 // ---------- section 13 · the upgrade path -------------------------------------
@@ -2733,8 +2856,14 @@ async function claimUpgradePrompt(env, customerId) {
  * — an invented count is capacity the gate would then reserve against.
  */
 function countOf(raw) {
-  const n = Number.parseInt(String(raw || '').trim(), 10);
-  return Number.isInteger(n) && n > 0 && n <= 999 ? n : null;
+  /* Alleen cijfers — 9 november 2026 (ronde 91, B17). parseInt las "12abc" als 12,
+     "1e3" als 1 en "1.5" als 1: een aantal dat het formulier nooit post, stil
+     omgezet in een ander aantal. Nu is zoiets "aantal onbekend", net als
+     "Meer dan 20 producten". */
+  const tekst = String(raw || '').trim();
+  if (!/^\d{1,3}$/.test(tekst)) return null;
+  const n = Number(tekst);
+  return n > 0 && n <= 999 ? n : null;
 }
 
 // ---------- the questions in src/data/attributes.js --------------------------
@@ -3008,9 +3137,11 @@ function capAnswer(value, max) {
  */
 async function attachUploads(env, orderId, staged) {
   if (!env?.DB || !staged.length) return;
-  const sql = `INSERT INTO files (order_id, kind, r2_key, filename, bytes, product_key, shot)
-               VALUES (?1, 'upload', ?2, ?3, ?4, ?5, ?6)`;
-  const rows = staged.map((f) => [orderId, f.key, f.name || null, f.bytes || null, f.product || null, f.shot || null]);
+  /* preview_key (lijst 87, D13): het duimpje dat het bestelformulier meestuurde (listBatch geeft hem als
+     `preview`), voor /admin. Geen duimpje: NULL, en /admin toont het origineel zoals eerst. */
+  const sql = `INSERT INTO files (order_id, kind, r2_key, filename, bytes, product_key, shot, preview_key)
+               VALUES (?1, 'upload', ?2, ?3, ?4, ?5, ?6, ?7)`;
+  const rows = staged.map((f) => [orderId, f.key, f.name || null, f.bytes || null, f.product || null, f.shot || null, f.preview || null]);
 
   if (typeof env.DB.batch === 'function') {
     const stmt = env.DB.prepare(sql);
@@ -3318,6 +3449,69 @@ export function regKey(raw) {
  * ladderdienst een venster kan krijgen, en dat 'drop' via ladderKey() mee moet
  * doen omdat /start/complete die wire-waarde post — staan nu op één plek, bij
  * `tierFor()` in src/data/pricing.js. */
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════════════
+ * DE VERSTUURSLEUTEL — 9 november 2026 (ronde 91, D10)
+ * ═══════════════════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * Valt de verbinding weg nadat deze route de bestelling al had gemaakt, dan ziet de browser alleen een fout.
+ * De klant drukt opnieuw — of de browser herhaalt de POST zelf op een weggevallen verbinding (nagespeeld in
+ * 91/werk/d/d04-netwerk.mjs, S7: één klik, twee bestellingen) — en dan waren er twee bestellingen met
+ * dezelfde foto's, waarvan er één onbetaald bleef staan.
+ *
+ * Het bestelformulier maakt daarom per formulier één willekeurige sleutel en stuurt die bij elke poging
+ * mee (pipeline.js, onSubmit). Hier wordt hij 24 uur onthouden, in de tabel rate_limits — geen migratie:
+ * dezelfde vorm (emmer, getal, verloopt) en dezelfde opruiming (sweepRateLimits). De emmer heet
+ * `verstuur:<sleutel>`; het getal is 0 zolang de eerste poging bezig is en daarna het id van de bestelling.
+ * Komt dezelfde sleutel terug, dan krijgt die poging het antwoord van die bestelling: betaald → de
+ * bedankpagina met `paid=`, anders via /api/order-pay (die maakt een verse betaling of stuurt naar de
+ * bedankpagina als er niets te betalen is), zonder Mollie-sleutel → de bedankpagina met `ref=`.
+ *
+ * Zonder sleutel (een formulier zonder script, een oud tabblad, het contactformulier) verandert er niets. */
+const VERSTUUR_SLEUTEL = /^[A-Za-z0-9_-]{16,64}$/;
+const VERSTUUR_SECONDEN = 86400;
+function verstuurEmmer(sleutel) { return `verstuur:${sleutel}`; }
+
+/** { orderId } als de sleutel bij een bestelling hoort, { bezig } als de eerste poging nog loopt, of null. */
+async function bestaandeVoorSleutel(env, sleutel, { wachtMs = 0 } = {}) {
+  for (let gewacht = 0; ; gewacht += 500) {
+    const rij = await env.DB.prepare('SELECT hits FROM rate_limits WHERE bucket = ?1 AND expires_at > ?2')
+      .bind(verstuurEmmer(sleutel), new Date().toISOString()).first().catch(() => null);
+    if (!rij) return null;
+    if (Number(rij.hits) > 0) return { orderId: Number(rij.hits) };
+    if (gewacht >= wachtMs) return { bezig: true };
+    await new Promise((klaar) => setTimeout(klaar, 500));
+  }
+}
+
+/** 'van-mij' (vastgelegd), 'bezet' (een andere poging was eerst), of 'onbekend' (geen tabel: gewoon door). */
+async function claimSleutel(env, sleutel) {
+  if (!env?.DB) return 'onbekend';
+  try {
+    const rij = await env.DB.prepare(
+      'INSERT INTO rate_limits (bucket, hits, expires_at) VALUES (?1, 0, ?2) ON CONFLICT(bucket) DO NOTHING RETURNING bucket'
+    ).bind(verstuurEmmer(sleutel), new Date(Date.now() + VERSTUUR_SECONDEN * 1000).toISOString()).first();
+    return rij ? 'van-mij' : 'bezet';
+  } catch {
+    return 'onbekend';
+  }
+}
+
+/** Het antwoord voor een poging die bij een bestaande bestelling hoort, of null als die er niet meer is. */
+async function antwoordVoorBestaande(env, orderId, { back, lang, wantsJson }) {
+  const o = await env.DB.prepare('SELECT ref, payment_status FROM orders WHERE id = ?1').bind(orderId).first().catch(() => null);
+  if (!o || !o.ref) return null;
+  const ref = String(o.ref);
+  const teken = back.includes('?') ? '&' : '?';
+  const status = String(o.payment_status || '');
+  const naar = (status === 'paid' || status === 'credits')
+    ? `${back}${teken}paid=${encodeURIComponent(ref)}${status === 'credits' ? '&credits=1' : ''}`
+    : env.MOLLIE_API_KEY
+      ? `/api/order-pay?ref=${encodeURIComponent(ref)}&lang=${lang === 'nl' ? 'nl' : 'en'}`
+      : `${back}${teken}ref=${encodeURIComponent(ref)}`;
+  console.log('[order] dezelfde verstuursleutel nog een keer:', ref, '— geen tweede bestelling');
+  return wantsJson ? json({ ok: true, ref, herhaald: true, windowLost: false, redirect: naar }) : redirect(naar);
+}
 
 function redirect(location, status = 303) { return new Response(null, { status, headers: { Location: location } }); }
 
@@ -3672,7 +3866,7 @@ function notifyEmail(ref, service, top, details, gate = {}) {
   // saying once, here, rather than discovering it the first time it matters.
   const portalNote = portal
     ? regel(`<a href="${esc(portal)}" style="color:${MC.head};font-weight:700">Open de bestelpagina van de klant →</a><br>
-         <span style="color:${MC.muted};font-size:12px">Dezelfde link als de klant kreeg, en de enige kopie — de database bewaart er alleen een hash van.</span>`)
+         <span style="color:${MC.muted};font-size:12px">Een eigen link naar dezelfde bestelpagina (de betaalmail geeft de klant er nog een; ze werken allebei). Bewaar hem: de database kent alleen een hash.</span>`)
     : '';
 
   /* ── PER PRODUCT ÉÉN REGEL, EN WAT ER ONTBREEKT — 8 oktober 2026 (9.07) ──────
@@ -3721,7 +3915,7 @@ function notifyEmail(ref, service, top, details, gate = {}) {
     : `Nieuwe ${serviceLabel(service, 'nl') || service}-bestelling`;
   const meta = [
     tier && !isAanvraag ? `${tier === 'attended' ? 'met leverdatum' : 'wachtrij'}` : null,
-    products ? `${esc(products)} producten` : null,
+    products ? `${esc(products)} ${Number(products) === 1 ? 'product' : 'producten'}` : null,
     uploads ? `${esc(uploads)} ${uploads === 1 ? 'bestand' : 'bestanden'} geüpload` : null,
   ].filter(Boolean).join(' · ');
 
@@ -3768,7 +3962,8 @@ function notifyEmail(ref, service, top, details, gate = {}) {
 export function customerEmail(lang, ref, service, name,
   { tier = 'unattended', window = null, upgrade = null, portal = null, pay = null, quote = null, vat = null,
     inReview = false, voorrang = false, aanvraag = false, tegoed = 0, betaaldMetTegoed = false, details = null, fotos = null,
-    nieuwAdres = false, credits = null, alleenSamenvatting = false, naMislukking = false, land = '' } = {}) {
+    nieuwAdres = false, credits = null, alleenSamenvatting = false, naMislukking = false, land = '',
+    ontbreekt = null, fotosLink = '' } = {}) {
   const nl = lang === 'nl';
   /* De klant bestelde net en leest dit nu: de aanhef met het dagdeel in zijn land
      (17 oktober 2026, src/lib/aanhef.js). */
@@ -3874,6 +4069,11 @@ export function customerEmail(lang, ref, service, name,
       /* Na een mislukte betaling (B04, de uitgestelde bevestiging) zegt de eerste zin
          niets over de factuur; dan de regel die het wel zegt. */
       factuur: credits ? 'credits' : betaaldMetTegoed ? 'volgt' : (pay && !naMislukking) ? 'na-factuur' : 'na-betaling',
+      /* 9 november 2026 (ronde 91, K-02): per product wat er ontbreekt, met de knop
+         "Foto's toevoegen" naar de bestelpagina — zoals de betaalmail al deed, en nu
+         ook hier, zodat Lucas niet hoeft te appen. */
+      ontbreekt,
+      fotosLink,
     })
     : '';
 
@@ -4009,7 +4209,7 @@ export function customerEmail(lang, ref, service, name,
   const tegoedRegel = tegoed > 0 && quote
     ? (nl
       ? `<br>Totaal ${money(quote.grossCents)} &middot; min ${money(tegoed)} tegoed`
-      : `<br>Total ${money(quote.grossCents)} &middot; minus ${money(tegoed)} credit`)
+      : `<br>Total ${money(quote.grossCents)} &middot; minus ${money(tegoed)} account balance`)
     : '';
   const payBlock = (pay && quote)
     ? payPanel({
@@ -4037,7 +4237,7 @@ export function customerEmail(lang, ref, service, name,
   const tegoedBetaald = betaaldMetTegoed && quote
     ? p(nl
       ? `<strong>Betaald met je tegoed.</strong> ${money(quote.grossCents)} is van je tegoed afgeschreven; je hoeft niets meer te betalen.`
-      : `<strong>Paid with your credit.</strong> ${money(quote.grossCents)} was taken from your credit; there is nothing left to pay.`,
+      : `<strong>Paid with your account balance.</strong> ${money(quote.grossCents)} was taken from your balance; there is nothing left to pay.`,
       { top: 4 })
     : '';
 
@@ -4063,15 +4263,18 @@ export function customerEmail(lang, ref, service, name,
     const st = stijl ? STYLES.find((x) => (x.slug || x.id) === stijl || String(x.name || '').toLowerCase() === stijl.toLowerCase()) : null;
     if (st) uit.push([nl ? 'Look' : 'Look', esc(st.name)]);
     const model = String(d.model || '').trim();
-    if (model) uit.push([nl ? 'Gezicht' : 'Face', esc(model === 'any' ? (nl ? 'Wij kiezen er een' : 'We choose one') : /^c\d+$/.test(model) ? (nl ? 'Je eigen merkmodel' : 'Your own brand model') : model.charAt(0).toUpperCase() + model.slice(1))]);
+    if (model) uit.push([nl ? 'Gezicht' : 'Face', esc(model === 'any' ? (nl ? 'Wij kiezen er een' : 'We choose one') : /^c\d+$/.test(model) ? (nl ? 'Je eigen merkmodel' : 'Your own Brand Model') : model.charAt(0).toUpperCase() + model.slice(1))]);
     const bg = String(d.background || '').trim();
+    /* Werklijst 27 (15 oktober 2026): een beeld met een eigen achtergrond. */
+    const perBeeld = beeldAchtergrondRegel(service, d, nl ? 'nl' : 'en');
     if (bg) {
       const b = backgroundById(bg);
       const hex = String(d.background_hex || d.background_custom || '').trim();
-      uit.push([nl ? 'Achtergrond' : 'Background', esc(b ? `${b.name[nl ? 'nl' : 'en']} · ${b.hex}` : (hex || bg))]);
+      /* 8 november 2026 (doorloop 90, B12): met afwijkingen per beeld leek "Achtergrond #D9E4F0" voor de hele
+         bestelling te gelden. Dan heet hij de standaard, en de regel eronder noemt de uitzonderingen. */
+      const kop = perBeeld ? (nl ? 'Standaardachtergrond' : 'Default background') : (nl ? 'Achtergrond' : 'Background');
+      uit.push([kop, esc(b ? `${b.name[nl ? 'nl' : 'en']} · ${b.hex}` : (hex || bg))]);
     }
-    /* Werklijst 27 (15 oktober 2026): een beeld met een eigen achtergrond. */
-    const perBeeld = beeldAchtergrondRegel(service, d, nl ? 'nl' : 'en');
     if (perBeeld) uit.push([nl ? 'Per beeld' : 'Per image', esc(perBeeld)]);
     const r = ratioById(String(d.ratio || ''), service);
     if (r) uit.push([nl ? 'Beeldverhouding' : 'Image shape', esc(r.name[nl ? 'nl' : 'en'])]);
@@ -4168,13 +4371,22 @@ export function customerEmail(lang, ref, service, name,
             : 'There is no payment button in this email yet, and that is on purpose: we check your details first. As soon as that is done — usually within one working day — we send you the payment link. Nothing is needed from you.',
             { top: 4 })
         : '',
+      /* 8 november 2026 (doorloop 90, B23): een EU-klant met een btw-nummer dat de Europese controle niet bevestigde,
+         had in de laatste stap verlegging aangevinkt en las hier alleen "we kijken je gegevens na". Nu staat erbij
+         waarom, en wat er gebeurt als het nummer niet klopt. */
+      (!payBlock && inReview && !aanvraag && !proef && vat && vat.reason === 'eu-unconfirmed')
+        ? p(nl
+            ? `Je btw-nummer konden we bij de Europese controle (VIES) niet bevestigen. Klopt het wel, dan kijken we het met de hand na en wordt de btw verlegd. Klopt het niet, dan rekenen we ${vatPercent()} Nederlandse btw; dat lees je in de mail met de betaallink, vóór je betaalt. Een ander nummer? Beantwoord dan deze mail.`
+            : `We could not confirm your VAT number with the European check (VIES). If it is valid, we check it by hand and the VAT is reverse-charged. If it is not, we charge ${vatPercent()} Dutch VAT; you read that in the email with the payment link, before you pay. A different number? Just reply to this email.`,
+            { top: 4 })
+        : '',
       summary,
       timing ? p(timing, { top: summary ? 8 : 0 }) : '',
       verderBlok,
       fotos ? p(nl
         ? 'We hebben nog geen foto\u2019s van je product. Zet ze bij deze bestelling in VISUAILS Studio \u2014 log in met dit e-mailadres, dan mailen we je een code. Per product een voorkant, een achterkant en een close-up; met je telefoon is goed.'
         : 'We don\u2019t have photos of your product yet. Add them to this order in VISUAILS Studio \u2014 sign in with this email address and we email you a code. Per product a front, a back and a close-up; a phone is fine.',
-        { top: 16 }) + linkLine(fotos, nl ? 'Foto\u2019s toevoegen in Studio' : 'Add photos in Studio') : '',
+        { top: 16 }) + linkLine(fotos, nl ? 'Foto\u2019s toevoegen in VISUAILS Studio' : 'Add photos in VISUAILS Studio') : '',
       portalNote,
       aanvraag || !care ? '' : p(care, { top: 20 }),
       verklaringBlok,
@@ -4242,7 +4454,7 @@ export function subscriberEmail(lang) {
          een klant, en een pdf bij een eerste contact is precies wat een
          spamfilter opmerkt. Een link naar het bestand doet hetzelfde en weegt
          niets. */
-      linkLine(site + g.pdf, nl ? 'Neem hem mee als A4 (pdf)' : 'Take it with you as one A4 (pdf)'),
+      linkLine(site + g.pdf, nl ? 'Neem hem mee als A4 (pdf)' : 'Download it as an A4 PDF'),
       linkLine(site + g.pagina, nl ? 'Met voorbeeldfoto’s op de site' : 'With example photos on the site'),
       spamNote(lang),
     ].join(''),

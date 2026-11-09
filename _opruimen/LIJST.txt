@@ -90,3 +90,7 @@
 # ── 26 oktober 2026 · moet weg (levering 75: de opening gebruikt nu still-1800, -2700 en -3600; tests/opening-74 kijkt na dat de oude maten weg zijn) ──
 #
 # ── 5 november 2026 · moet weg (leveringen 87 en 88: vervangen door tests/opening-88-browser.test.mjs; staan niet meer in de keten, dus test:ketenvolledig en test:testreeks vallen om) ──
+#
+# ── 9 november 2026 · moet weg (levering 90: de opening is nu gewoon de video laptop-90-*; de oude doek-, metro- en videobestanden laadt geen pagina meer, en de twee oude toetsen staan niet meer in de keten, dus test:ketenvolledig valt om zolang ze er zijn) ──
+
+# ── 9 november 2026 · moet weg (levering 91/92, lijst 87: I1 de voorbeeldpagina's weg, met een 301 naar de echte pagina) ──

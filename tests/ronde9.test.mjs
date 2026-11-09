@@ -104,7 +104,8 @@ console.log('\nO1, O3, O4 · mails en kleine teksten');
   ok('O1: één woord voor de ronde', !/correctieronde/.test(lees('src/lib/invoiceMail.js').split('\n').filter((r) => !/nextModel:/.test(r)).join('\n')) && !/correctieronde, tot en met/.test(lees('src/lib/admin.js')));
   /* Sinds 8 oktober 2026 (punt 2.05, V31-3 = a) gaat de knop naar Studio in
      plaats van WhatsApp; de regel van O3 blijft: de knop zegt waar hij heen gaat. */
-  ok('O3: de knop zegt waar hij heen gaat (Studio)', /Foto’s toevoegen in VISUAILS Studio/.test(lees('src/components/ThankYouPage.astro')) && /<a href="\/account\/orders" class="knop knop-lijn" data-track="ty-extra-photos">/.test(lees('src/components/ThankYouPage.astro')));
+  // knoppensysteem lijst 88/89: de knop draagt nu data-rol="toevoegen" en de plus
+  ok('O3: de knop zegt waar hij heen gaat (Studio)', /Foto’s toevoegen in VISUAILS Studio/.test(lees('src/components/ThankYouPage.astro')) && /<a href="\/account\/orders" class="knop knop-lijn" (?:data-rol="toevoegen" )?data-track="ty-extra-photos">/.test(lees('src/components/ThankYouPage.astro')));
   ok('O4: /account/profile gaat naar je gegevens', /'\/account\/profile': '\/account\/details\/'/.test(lees('src/lib/account.js')));
 }
 

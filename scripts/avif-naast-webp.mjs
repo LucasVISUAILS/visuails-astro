@@ -124,7 +124,11 @@ export default function avifNaastWebp() {
         /* Eén cache voor de hele build. Zonder dat doet /gallery 38 keer
            `access` op dezelfde paden, en twee keer (en + nl). */
         const opSchijf = new Map();
-        const heeftAvif = async (webpPad) => {
+        /* Lijst 87 (C16): een pad kan een ?v=<teken> dragen (src/data/beeldVersie.js). Het
+           bestand op schijf is het pad zonder; het teken gaat mee naar de avif. */
+        const zonderVraag = (p) => String(p).split('?')[0];
+        const heeftAvif = async (pad) => {
+          const webpPad = zonderVraag(pad);
           if (!webpPad.startsWith('/img/') || !webpPad.endsWith('.webp')) return false;
           if (opSchijf.has(webpPad)) return opSchijf.get(webpPad);
           const avif = join(distDir, webpPad.slice(1)).replace(/\.webp$/, '.avif');
@@ -144,7 +148,7 @@ export default function avifNaastWebp() {
           for (const stuk of stukken) {
             const [pad, ...staart] = stuk.split(/\s+/);
             if (!(await heeftAvif(pad))) return '';
-            om.push([pad.replace(/\.webp$/, '.avif'), ...staart].join(' '));
+            om.push([pad.replace(/\.webp(?=\?|$)/, '.avif'), ...staart].join(' '));
           }
           return om.join(', ');
         };

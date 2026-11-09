@@ -29,7 +29,7 @@
  *
  * Leest dist/: draai eerst `npm run build` (de rest van de keten doet dat ook).
  */
-import { readFileSync, existsSync, readFile, globSync } from 'node:fs';
+import { readdirSync, readFileSync, existsSync, readFile, globSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { join, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -69,8 +69,9 @@ const LIVE = GROEPEN.flatMap((p) => [`/${p}/`, `/nl/${p}/`]);
    nu in de hal, en er staat geen voorbeeld meer klaar. */
 /* De openingen met een beeld stonden als voorbeeld op /voorbeeld/opening/<pagina>/ (afvinklijst 20) en staan sinds
    afvinklijst 21 op de pagina's zelf; het voorbeeld stuurt door. Sinds 14 oktober 2026 staan er weer twee klaar:
-   de uitleg in beweging (afvinklijst 24), los (/voorbeeld/uitleg/) en op de voorpagina (/voorbeeld/voorpagina/). */
-const VOORBEELD = ['uitleg', 'voorpagina'];
+   de uitleg in beweging (afvinklijst 24), los (/voorbeeld/uitleg/) en op de voorpagina (/voorbeeld/voorpagina/).
+   Lijst 87 (r90-i1, 9 november 2026): die twee zijn weg (ze droegen werknotities) en sturen door naar de voorpagina. */
+const VOORBEELD = [];
 const VOORBEELDEN = VOORBEELD.flatMap((p) => [`/voorbeeld/${p}/`, `/nl/voorbeeld/${p}/`]);
 
 /* ── 1 · de bron ─────────────────────────────────────────────────────────── */
@@ -85,6 +86,14 @@ check('de voorbeeldpagina\'s bestaan niet meer', ['src/pages/voorbeeld.astro', '
   const doel = (bron) => (r.find(([b]) => b === bron) || []).slice(1);
   check('/voorbeeld stuurt met een 301 naar / (met en zonder slash)', [doel('/voorbeeld'), doel('/voorbeeld/')], [['/', '301'], ['/', '301']]);
   check('/nl/voorbeeld stuurt met een 301 naar /nl/', [doel('/nl/voorbeeld'), doel('/nl/voorbeeld/')], [['/nl/', '301'], ['/nl/', '301']]);
+  /* lijst 87 (r90-i1) */
+  check('de uitleg en de voorpagina als voorbeeld: weg, en een 301 naar de voorpagina',
+    ['uitleg', 'voorpagina'].flatMap((p) => [`/voorbeeld/${p}`, `/voorbeeld/${p}/`, `/nl/voorbeeld/${p}`, `/nl/voorbeeld/${p}/`]).map((b) => [b, ...doel(b)]),
+    ['uitleg', 'voorpagina'].flatMap((p) => [[`/voorbeeld/${p}`, '/', '301'], [`/voorbeeld/${p}/`, '/', '301'], [`/nl/voorbeeld/${p}`, '/nl/', '301'], [`/nl/voorbeeld/${p}/`, '/nl/', '301']]));
+  /* Geen bestand meer onder die mappen. Een lege map mag blijven staan: OPRUIMEN/UITROLLEN verplaatst de bestanden uit
+     _opruimen/LIJST.txt, maar laat de (lege) mappen achter (uitrol 9 november 2026). */
+  const bestandenIn = (d) => !existsSync(d) ? [] : readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? bestandenIn(join(d, e.name)) : [join(d, e.name)]);
+  check('  en de bronbestanden bestaan niet meer', ['src/pages/voorbeeld', 'src/pages/nl/voorbeeld'].map((p) => bestandenIn(join(ROOT, p)).length), [0, 0]);
 }
 {
   /* 3 · de belofte: geen "uitsnede per kanaal" en geen rij formaten in stap 3 */
@@ -175,9 +184,9 @@ for (const p of HAL) {
 const metHal = globSync('dist/**/index.html').map((f) => f.replace(/\\/g, '/'))
   .filter((f) => /<body[^>]*class="[^"]*\bhal\b/.test(readFileSync(f, 'utf8')))
   .map((f) => f.replace(/^dist/, '').replace(/index\.html$/, '')).sort();
-/* /nl/404/: Astro bouwt src/pages/nl/404.astro als map (scripts/sitemap-and-404.mjs kopieert hem
-   daarna naar nl/404.html); sinds afvinklijst 19 draagt hij, zoals alles, de hal. */
-check('alleen de voorpagina, de groepen en het voorbeeld dragen body.hal', metHal, [...HAL, ...LIVE, ...VOORBEELDEN, '/nl/404/'].sort());
+/* /nl/404/: Astro bouwt src/pages/nl/404.astro als map; scripts/sitemap-and-404.mjs kopieert hem naar
+   nl/404.html en haalt sinds lijst 87 (r90-s2) de map weg, dus hij staat hier niet meer bij. */
+check('alleen de voorpagina, de groepen en het voorbeeld dragen body.hal', metHal, [...HAL, ...LIVE, ...VOORBEELDEN].sort());
 {
   /* onder /voorbeeld/ staat alleen nog het voorbeeld van de groep die klaarstaat */
   const onder = (d) => (existsSync(join(DIST, d)) ? globSync(`${d}/**/index.html`, { cwd: DIST }).map((f) => `/${f.replace(/\\/g, '/').replace(/index\.html$/, '')}`) : []);

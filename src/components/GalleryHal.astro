@@ -48,7 +48,7 @@ import HalBeweging from './HalBeweging.astro';
 import KopBeeld from './KopBeeld.astro';
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import { LEVERINGEN, DIENSTEN, SOORTEN, gebruikteDiensten, gebruikteSoorten } from '../data/leveringen.js';
 import { ingestuurd, geleverd } from '../data/voorbeeldset.js';
 /* 1.02 (8 oktober 2026, V13 = a) — zie de noot bij CLIP_STILL. */
@@ -117,7 +117,7 @@ const A = nl ? {
 };
 
 const photos = [
-  ...Array.from({ length: 8 }, (_, i) => ({ src: `/img/banners-0${i + 1}.webp`, tag: 'campaign', alt: A.campagne(i + 1) })),
+  ...[1, 2, 3, 4, 5, 6, 7, 8].map((n) => ({ src: `/img/banners-0${n}.webp`, tag: 'campaign', alt: A.campagne(n) })),
   { src: '/img/lifestyle-dunes-01.webp', tag: 'dunes', alt: A.dunes },
   { src: '/img/lifestyle-dunes-02.webp', tag: 'dunes', alt: A.dunes },
   ...Array.from({ length: 8 }, (_, i) => ({ src: `/img/lifestyle-flash-0${i + 1}.webp`, tag: 'flash', alt: A.flash(i + 1) })),
@@ -380,8 +380,8 @@ const BEELD = {
       <h1 class="h-kop h-h1 h-op" style="--d:1"><span class="l">{H.h1[0]}</span> <span>{H.h1[1]}</span></h1>
       <p class="h-lede h-op" style="--d:2">{c.lead}</p>
       <p class="h-acties h-op" style="--d:3">
-        <a class="h-knop h-knop-inkt" href={lp('/start')}>{c.ctaStart}<span class="o" set:html={ik('rechts')} /></a>
-        <a class="h-knop h-knop-lijn" href={lp('/test-sample')} data-vis-uit>{c.ctaSample}</a>
+        <a class="h-knop k k-vol" data-rol="doorgaan" href={lp('/start')}>{c.ctaStart}<Fragment set:html={rolIkoon('doorgaan')} /></a>
+        <a class="h-knop k k-lijn" data-rol="doorgaan" href={lp('/test-sample')} data-vis-uit>{c.ctaSample}<Fragment set:html={rolIkoon('doorgaan')} /></a>
       </p>
     </div>
     <KopBeeld {...BEELD} />

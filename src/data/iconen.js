@@ -61,20 +61,71 @@ export const IKOON = {
   'raster': 'M5.19 3.03L4.8 3.13L4.42 3.28L4.07 3.5L3.76 3.76L3.5 4.07L3.28 4.42L3.13 4.8L3.03 5.19L3 5.6L3 11.25L11.25 11.25L11.25 3L5.6 3ZM12.75 11.25L21 11.25L21 3L12.75 3ZM3 21L11.25 21L11.25 12.75L3 12.75ZM21 21L21 16.75L18 12.75L12.75 12.75L12.75 21Z',
   'persoon': 'M16.2 7.3L16.1 6.48L15.8 5.6L15.43 4.98L14.9 4.36L14.25 3.85L13.51 3.48L12.72 3.26L11.9 3.2L11.08 3.3L10.2 3.6L9.58 3.97L8.96 4.5L8.45 5.15L8.08 5.89L7.86 6.68L7.8 7.5L7.9 8.32L8.2 9.2L8.57 9.82L9.1 10.44L9.75 10.95L10.49 11.32L11.28 11.54L12.1 11.6L12.92 11.5L13.8 11.2L14.42 10.83L15.04 10.3L15.55 9.65L15.92 8.91L16.14 8.12ZM8.33 13.01L7.84 13.12L7.39 13.32L6.98 13.62L6.64 13.99L2.58 21L20.28 21L16.8 13L13.06 13L12.16 13.1L11.6 13.09L10.94 13Z',
   'oog': 'M14.61 11.22L14.53 10.8L14.39 10.45L14.09 10L13.86 9.77L13.41 9.47L13.06 9.33L12.53 9.24L12.1 9.26L11.78 9.33L11.24 9.58L10.86 9.88L10.62 10.17L10.45 10.45L10.27 10.96L10.22 11.33L10.24 11.76L10.31 12.08L10.56 12.62L10.86 13L11.15 13.24L11.43 13.41L11.94 13.59L12.31 13.64L12.74 13.62L13.06 13.55L13.41 13.41L13.86 13.11L14.09 12.88L14.39 12.43L14.53 12.08L14.61 11.66ZM19.6 9.31L18.53 8.49L17.61 7.94L16.88 7.58L15.61 7.11L14.57 6.85L13.5 6.69L12.15 6.64L11.07 6.72L9.75 6.97L8.71 7.28L7.47 7.81L6.76 8.2L5.87 8.8L5.03 9.49L4.27 10.25L3.33 11.44L4.27 12.63L4.84 13.21L5.44 13.74L5.87 14.08L6.76 14.68L7.96 15.3L9.23 15.77L10.27 16.03L11.07 16.16L12.15 16.24L12.96 16.23L13.77 16.16L14.57 16.03L15.88 15.68L20.22 9.89ZM16.38 12.03L16.19 12.79L15.95 13.33L15.75 13.66L15.25 14.27L14.64 14.77L14.13 15.06L13.49 15.3L12.62 15.44L11.83 15.4L11.07 15.21L10.53 14.97L10.2 14.77L9.59 14.27L9.09 13.66L8.8 13.15L8.56 12.51L8.42 11.64L8.46 10.85L8.65 10.09L8.89 9.55L9.09 9.22L9.52 8.68L10.2 8.11L10.71 7.82L11.35 7.58L12.22 7.44L13.01 7.48L13.77 7.67L14.31 7.91L14.64 8.11L15.25 8.61L15.75 9.22L16.04 9.73L16.28 10.37L16.42 11.24ZM18.77 14.47L19.39 13.95L20.15 13.19L21.09 12L20.68 11.44L18 15.02Z',
+  /* erbij in het knoppensysteem (lijst 89, 9 november 2026, alle vijf goed), met dezelfde regels als het kit:
+     uploaden (het spiegelbeeld van downloaden, dezelfde voet), ongedaan (een halve boog terug), mail (een envelop,
+     de klep los), verwijderen (een prullenbak, het deksel los) en uitloggen (een open deur met de pijl eruit).
+     Het bewegende deel staat eerst; DEEL hieronder zegt hoeveel subpaden dat zijn. */
+  'uploaden': 'M13.5 10.6L13.5 15.15L10.5 17.4L10.5 10.6ZM18.8 9.4L5.2 9.4L12 3ZM3.76 18.32L3.76 21.12L14.03 21.12L16.14 18.32ZM20.6 21.6L20.6 18.8L17.53 18.8L15.43 21.6Z',
+  'ongedaan': 'M2.6 9L9 3.6L9 14.4ZM9.9 7.4L14.5 7.4A6.6 6.6 0 0 1 14.5 20.6L10.4 20.6L12.8 17.4L14.5 17.4A3.4 3.4 0 0 0 14.5 10.6L9.9 10.6Z',
+  'mail': 'M3 5L21 5L21 5.3L12 12.3L3 5.3ZM21 7.6L21 19L6.4 19Q3 19 3 15.6L3 7.6L12 14.6Z',
+  'verwijderen': 'M3.6 6.8L3.6 4.4L9 4.4L9.6 2.4L14.4 2.4L15 4.4L20.4 4.4L20.4 6.8ZM4.8 8.4L9.4 8.4L9.4 21.4L6.9 21.4ZM10.6 8.4L13.4 8.4L13.4 21.4L10.6 21.4ZM14.6 8.4L19.2 8.4L17.1 21.4L14.6 21.4Z',
+  'uitloggen': 'M8.6 10.6L15 10.6L15 13.4L10.7 13.4ZM15.8 7.2L21.4 12L15.8 16.8ZM13 3L13 7.4L10.6 7.4L10.6 5.4L5.6 5.4L5.6 18.6L10.6 18.6L10.6 16.6L13 16.6L13 21L6.4 21Q3 21 3 17.6L3 3Z',
+};
+
+/* HET BEWEGENDE DEEL (knoppensysteem, lijst 89, 9 november 2026). Onder de muis beweegt in een knop alleen
+   wat de handeling laat zien: de pijl die in de bak zakt, de klep die opengaat, het deksel op een kier. Dat
+   deel is `.ik-a`, de rest staat stil in `.ik-r` (de beweging zelf staat in src/styles/knoppen.css).
+   DEEL = hoeveel subpaden vooraan het bewegende deel zijn. Een icoon dat hier niet staat, beweegt als geheel
+   (één pad `.ik-a`): de pijlen, het vinkje, het potlood, de plus, ongedaan maken. */
+export const DEEL = { downloaden: 2, uploaden: 2, mail: 1, verwijderen: 1, uitloggen: 2 };
+
+/* EEN ROL, EEN ICOON (lijst 88, A2). Welk icoon bij welke handeling hoort, op één plek; de knoppen pakken
+   het hier, zodat niemand het per knop hoeft te onthouden. `na` = het icoon staat achter het woord (je gaat
+   verder of ergens anders heen); anders ervoor. WhatsApp staat er niet in: dat is het officiële icoon
+   (/img/i-whatsapp.svg, als masker in CSS). */
+export const ROL = {
+  doorgaan: { ik: 'pijl', na: true },
+  bevestigen: { ik: 'vink' },
+  downloaden: { ik: 'downloaden' },
+  aanmerken: { ik: 'potlood' },
+  terugnemen: { ik: 'ongedaan' },
+  wijzigen: { ik: 'potlood' },
+  toevoegen: { ik: 'plus' },
+  uploaden: { ik: 'uploaden' },
+  navigeren: { ik: 'pijl-schuin', na: true },
+  terug: { ik: 'pijl-links' },
+  mail: { ik: 'mail' },
+  gevaarlijk: { ik: 'verwijderen' },
+  uitloggen: { ik: 'uitloggen' },
+};
+/** Het icoon van een rol, als <svg> (of '' voor WhatsApp en een onbekende rol). */
+export const rolIkoon = (rol, klasse = '') => (ROL[rol] ? ikoon(ROL[rol].ik, klasse) : '');
+/** De binnenkant van een knop: het icoon van de rol op zijn plek (ervoor, of erachter bij doorgaan en navigeren)
+    en de tekst, ge-escaped. Voor Studio, /admin en de privélink, waar de knoppen als tekst worden opgebouwd. */
+const knopEsc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+export const knopInhoud = (rol, tekst) => {
+  const r = ROL[rol];
+  const ik = r ? ikoon(r.ik) : '';
+  const t = knopEsc(tekst);
+  return r && r.na ? t + ik : ik + t;
 };
 
 /** De hele <svg> voor één icoon. Gevuld (even-oneven), in currentColor.
-    Een pijl bestaat uit twee losse vlakken, de schacht en de kop (met een kier
-    ertussen, zoals de snede in het merk). Die staan hier als twee paden, zodat ze
-    onder de muis uit elkaar kunnen schuiven (afvinklijst 34, d-knop): .ik-schacht
-    en .ik-kop. De kop is het driehoekje (drie punten). */
+    Het bewegende deel is `<path class="ik-a">`, het staande deel `<path class="ik-r">` (zie DEEL).
+    Een pijl bestaat uit twee losse vlakken, de schacht en de kop (met een kier ertussen, zoals de snede
+    in het merk). Die houden hun oude klassen .ik-schacht en .ik-kop, maar zijn allebei `.ik-a`: de pijl
+    beweegt sinds lijst 89 in één stuk (schacht en kop schoven uit elkaar, en dat zegt niets). */
 export const ikoon = (naam, klasse = '') => {
   const d = IKOON[naam];
   if (!d) throw new Error(`onbekend icoon: ${naam}`);
   const kop = `<svg class="ik ik-${naam}${klasse ? ' ' + klasse : ''}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">`;
+  const delen = d.match(/M[^M]*/g);
   if (naam.startsWith('pijl')) {
-    const delen = d.match(/M[^M]*/g);
-    return kop + delen.map((x) => `<path class="${(x.match(/L/g) || []).length === 2 ? 'ik-kop' : 'ik-schacht'}" d="${x}"/>`).join('') + '</svg>';
+    return kop + delen.map((x) => `<path class="ik-a ${(x.match(/L/g) || []).length === 2 ? 'ik-kop' : 'ik-schacht'}" fill-rule="evenodd" d="${x}"/>`).join('') + '</svg>';
   }
-  return `${kop}<path fill-rule="evenodd" d="${d}"/></svg>`;
+  const n = DEEL[naam] || 0;
+  if (n && delen.length > n) {
+    return `${kop}<path class="ik-a" fill-rule="evenodd" d="${delen.slice(0, n).join('')}"/><path class="ik-r" fill-rule="evenodd" d="${delen.slice(n).join('')}"/></svg>`;
+  }
+  return `${kop}<path class="ik-a" fill-rule="evenodd" d="${d}"/></svg>`;
 };

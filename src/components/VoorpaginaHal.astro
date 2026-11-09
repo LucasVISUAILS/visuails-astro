@@ -112,8 +112,9 @@ const COPY = {
        Zijn keuze om 18:16 ("De fotostudio zonder studio" wordt al veel door AI-tools gebruikt): "Zoals jij
        hem ziet", uit zijn eigen zin "zoals jij hem voor ogen hebt". De feiten (prijs uit de code, de
        levertijd uit levertijdDelen()) staan klein onder de knoppen. */
-    titel80: ['Jouw merk,', 'zoals jij hem ziet.'],
-    zin80: 'Productfoto’s, lifestyle en video voor je fashionmerk, gemaakt van een paar foto’s van je product.',
+    /* lijst 87 (r90-f4): merk is een het-woord, dus "zoals jij het ziet" */
+    titel80: ['Jouw merk,', 'zoals jij het ziet.'],
+    zin80: 'Productfoto’s, lifestyle en video voor je kledingmerk, gemaakt van een paar foto’s van je product.',
     proefLink80: `Of probeer één product voor ${sample.price}`,
     hoeLink80: 'Meer over hoe het werkt',
     restJij: 'Jij stuurt alleen een paar foto’s.', restWij: 'Wij doen de rest:',
@@ -127,12 +128,12 @@ const COPY = {
     makenLabel: 'Wat we maken', makenKop: ['Elk beeld voor je merk.', 'Van productpagina tot feed.'],
     /* levering 78: wat er verder is, zodat niemand denkt dat het hier ophoudt (Lucas, 16:50) */
     ookKop: 'Ook voor jouw merk',
-    ook: [['Een eigen look', '/lifestyle/custom'], ['Je eigen merkmodel', '/custom-models'], ['Hooks voor je ads', '/hooks'], ['Een abonnement', '/plans']],
+    ook: [['Een eigen look', '/lifestyle/custom'], ['Je eigen merkmodel', '/custom-models'], ['Hooks voor je advertenties', '/hooks'], ['Een abonnement', '/plans']],
     ookAnders: ['Iets anders nodig?', 'Vraag het ons', '/contact'],
     diensten: [
       ['Productfoto’s', `vanaf ${e(ladderFloor('catalog'))} per product`, '/catalog', 'Voorkant, achterkant, detail en op model, op de achtergrond die bij je merk past.', 'Bekijk productfoto’s'],
       ['Lifestyle', `vanaf ${e(ladderFloor('lifestyle'))} per product`, '/lifestyle', 'Je product in een sfeer: vier beelden in één look, klaar voor een carrousel.', 'Bekijk lifestyle'],
-      ['Video', videoPrijsLabel('nl'), '/video', 'Een korte, verticale clip van je product, voor reels en je webshop.', 'Bekijk video'],
+      ['Video', videoPrijsLabel('nl'), '/video', 'Een korte, verticale clip van je product, voor Reels en je webshop.', 'Bekijk video'],
     ],
     eenProduct: `Eén product: ${e(ladderRate('catalog', 1))} (catalog) of ${e(ladderRate('lifestyle', 1))} (lifestyle). Meer producten, lager tarief.`,
     vorige: 'Vorige', volgende: 'Volgende', veeg: 'Veeg voor de andere twee',

@@ -41,7 +41,8 @@ export const KLANT = {
     meldingLabel: 'Je bestelling',
     /* Afvinklijst 36, v36-melding = c (17 oktober 2026): de stand als vier stappen. */
     stappenLabel: 'Waar je bestelling is',
-    stappen: ['Ontvangen', 'In productie', 'Nakijken', 'Geleverd'],
+    /* Drie stappen sinds 9 november 2026 (ronde 91, w4): "Nakijken" is geen eigen stap meer. */
+    stappen: ['Ontvangen', 'In productie', 'Geleverd'],
     sluit: 'Sluit deze melding',
     proefLabel: 'Proef',
     proefKop: ['Eerst zien?', 'Eén product voor'],
@@ -72,7 +73,7 @@ export const KLANT = {
     wa: 'Hello VISUAILS, a question about order {ref}:',
     meldingLabel: 'Your order',
     stappenLabel: 'Where your order is',
-    stappen: ['Received', 'In production', 'Checking', 'Delivered'],
+    stappen: ['Received', 'In production', 'Delivered'],
     sluit: 'Close this message',
     proefLabel: 'Test sample',
     proefKop: ['See it first?', 'One product for'],

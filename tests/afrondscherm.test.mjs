@@ -58,7 +58,8 @@ console.log('\nVISUAILS — afrondscherm en toestemming (3.05, 10.05)\n');
   ok('  met de vraag naar de plek die voorop staat en "kopieer hem gerust"', na.includes('<h4>Wil je dit ook op Trustpilot zetten?</h4>') && na.includes('Je tekst staat hieronder; kopieer hem gerust.') && !na.includes('Dank je.'));
   const groot = REVIEW_PLATFORMS.find((p) => p.id === REVIEW_VOORKEUR);
   ok(`  ${groot.name} is de grote knop, de andere een link`, na.indexOf(`value="${REVIEW_VOORKEUR}"`) < na.indexOf(`value="${REVIEW_PLATFORMS.find((p) => p.id !== REVIEW_VOORKEUR).id}"`)
-    && /class="btn btn-primary" type="submit">Review op Trustpilot/.test(na) && /class="btn-quiet fb-link" type="submit">Of op Google/.test(na));
+    /* knoppensysteem lijst 88/89: de grote knop is Doorgaan (vol, de pijl erachter), de andere een tekstlink met de schuine pijl */
+    && /class="btn btn-primary" data-rol="doorgaan" type="submit">Review op Trustpilot<svg/.test(na) && /class="btn-quiet fb-link k k-tekst k-klein" data-rol="navigeren" type="submit">Of op Google<svg/.test(na));
   ok('  wat er gekozen is, en een knop om in te trekken', na.includes('Je tekst: ja, zonder merknaam') && na.includes('Je beelden: ja, met merknaam') && na.includes('value="intrekken"'));
   ok('REVIEW_VOORKEUR staat in reviews.js en is één van de platformen', /export const REVIEW_VOORKEUR = 'trustpilot';/.test(lees('src/data/reviews.js')) && !!groot);
   ok('Trustpilot opent meteen het reviewscherm (/evaluate/)', groot.url === 'https://www.trustpilot.com/evaluate/visuails.com');
@@ -129,7 +130,7 @@ console.log('\nVISUAILS — afrondscherm en toestemming (3.05, 10.05)\n');
   ok('het afrondblok staat bovenaan: na het wat-nu-blok, vóór de feiten en het raster', blok > html.indexOf('class="nu"') && blok < html.indexOf('class="facts"') && blok < html.indexOf('class="work"'));
   ok('  eerst de map, dan het tevredenheidsblok', html.indexOf('class="folder"', blok) < html.indexOf('class="fb"', blok));
   ok('  de map noemt de bewaardatum', /class="folder-datum">Je beelden staan hier tot en met \d+ \w+\./.test(html));
-  ok('  "hieronder" en niet "hierboven" (het raster staat er nu onder)', html.includes('voorbeeldweergaven') && html.includes('De foto&#39;s hieronder'));
+  ok('  "hieronder" en niet "hierboven" (het raster staat er nu onder)', html.includes('voorbeeldweergaven') && html.includes('De foto’s hieronder'));
   ok('  de map en de vraag staan er maar één keer', (html.match(/class="folder"/g) || []).length === 1 && (html.match(/id="fb-h"/g) || []).length === 1);
   const s = await post({ fb: 'score', score: '5' });
   ok('een score geven blijft op het afrondblok (#fb-h)', /#fb-h$/.test(s.headers.get('location')));

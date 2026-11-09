@@ -1,0 +1,201 @@
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════════
+   VISUAILS — DE KNOPPEN (knoppensysteem, lijst 88 + 89, 9 november 2026; Lucas: alles "goed")
+   ═══════════════════════════════════════════════════════════════════════════════════════════════════
+
+   EEN BRON. Dit bestand is de enige plek waar een knop zijn vorm, vulling, maat en beweging krijgt: op de site
+   en in Studio via global.css (Vite), in /admin en op de privélink als kopie in public/knoppen.css (die twee
+   gaan niet door Vite). scripts/knoppen-kopie.mjs schrijft de kopie; tests/knoppen-systeem.test.mjs gaat na
+   dat ze gelijk zijn. Wijzig dus alleen dit bestand en draai daarna `node scripts/knoppen-kopie.mjs`.
+
+   DE TWEE REGELS (lijst 88, A1 en A2).
+   1. De vulling zegt hoe belangrijk een knop is. Per blok hoogstens één VOLLE knop: de stap die nu gezet moet
+      worden. Al het andere is een LIJN-knop. Naar een andere pagina gaan is een TEKSTLINK. Op inkt of een foto:
+      vol = wit met inkt, lijn = wit 6 % met een witte lijn van 45 %, tekstlink wit.
+   2. Het icoon zegt wat hij doet: één vast icoon per rol (ROL in src/data/iconen.js), in elke maat en vulling.
+      De rol staat op de knop als `data-rol`; de beweging onder de muis volgt het icoon (hieronder, F).
+
+   DE KLASSEN. `.k` is de knop, met `.k-vol` / `.k-lijn` / `.k-tekst` en `.k-klein` / `.k-groot`. De oude namen
+   in Studio, /admin, op de privélink en in het bestelformulier zijn hetzelfde (tests en scripts hangen eraan): `.btn` en
+   `.knop` = een lijnknop, `.btn-primary` en `.knop-inkt` = vol, `.btn-2nd` / `.btn-ghost` / `.btn-quiet` / `.knop-lijn` =
+   lijn, `.btn-sm` = klein. Op inkt: de knop
+   zelf `.k-wit`, of een ouder `.k-inkt` (en /admin in het donker).
+
+   WAAROM :not(#k). De oude knoppen kregen per plek hun eigen regels, tot `html body.hal.hal .x .y` en verder.
+   Elke regel hieronder die de vorm zet, heeft daarom de kracht van een id (`:not(#k)`; er is geen element met
+   id "k"): geen regel per plek kan een knop meer verbouwen, alleen dit bestand. Wat de plek wél mag zetten (waar
+   hij staat, hoe breed, of hij zichtbaar is: display, width, margin, position, clip-path van een paar) staat
+   hier bewust niet of zonder die kracht.
+
+   DE MATEN (lijst 88, C1 = a): klein 36 · normaal 44 · groot 52 px. Letter DM Sans 600: 13,5 · 15 · 16 px.
+   Binnenruimte 15 · 20 · 24 (aan de icoonkant 12 · 16 · 20). Icoon 15 · 18 · 20 px. Altijd een pil (999px).
+   Op een aanraakscherm is een kleine knop en een tekstlink minstens 44 hoog om op te tikken, met een
+   onzichtbare rand (::after) en zonder dat het beeld verspringt.
+   ═══════════════════════════════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --k-inkt: #0F1217;
+  --k-wit: #FFFFFF;
+  --k-lijn: #C5C8CF;          /* lijn sterk: de rand van een lijnknop (KLEURENSCHEMA, "een rand die je moet zien") */
+  --k-vlak: #F4F5F7;          /* vlak: een lijnknop onder de muis */
+  --k-mist: #E6E8EC;          /* de witte knop op inkt onder de muis */
+  --k-blauw: #25508B;         /* blauw uur: de focusrand, een tekstlink onder de muis */
+  --k-blauw-licht: #80A7DD;   /* blauw licht: hetzelfde op inkt */
+  /* de inktknop (lijst 84, A2 b): in rust inkt, onder de muis vult hij zich vanuit de hoek rechtsonder met de snede */
+  --knop-inkt: linear-gradient(126.87deg, #0F1217 0%, #0F1217 50%, #1A4279 62%, #25508B 80%, #2D61A8 100%);
+  --k-letter: 'DM Sans', 'Urbanist Variable', 'Urbanist', ui-sans-serif, system-ui, sans-serif;
+  --k-gaan: .26s cubic-bezier(.22, .8, .2, 1);
+}
+
+/* ── A · de vorm (elke knop) ─────────────────────────────────────────────────────────────────────── */
+:where(.k, .btn, .knop) {
+  display: inline-flex;
+  position: relative;
+  vertical-align: middle;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+:is(.k, .btn, .knop):not(#k) {
+  --k-h: 44px; --k-p: 20px; --k-pi: 16px; --k-ik: 18px; --k-gat: 9px; --k-l: 15px;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  gap: var(--k-gat);
+  height: auto;
+  min-height: var(--k-h);
+  /* --k-paar-l / --k-paar-r: wat een knoppaar met de snede ertussen extra vraagt (hal.css, "TWEE KNOPPEN WORDEN ÉÉN VORM") */
+  padding: 0 calc(var(--k-pr, var(--k-p)) + var(--k-paar-r, 0px)) 0 calc(var(--k-pl, var(--k-p)) + var(--k-paar-l, 0px));
+  border: 0;
+  border-radius: 999px;
+  font: 600 var(--k-l) / 1.2 var(--k-letter);
+  font-stretch: normal;
+  letter-spacing: -.005em;
+  text-transform: none;
+  text-decoration: none;
+  text-align: center;
+  transform: none;
+  filter: none;
+  /* lijn: wit met een haarlijn in lijn sterk (de standaard; vol en tekst hieronder) */
+  color: var(--k-inkt);
+  background: var(--k-wit);
+  box-shadow: inset 0 0 0 1.5px var(--k-lijn);
+  transition: background-position .36s cubic-bezier(.22, .8, .2, 1), background-color .2s, box-shadow .2s, color .2s;
+}
+/* het oude pseudo-element (de pijl als plaatje, de ring in de snede) bestaat niet meer; WhatsApp staat op ::before */
+:is(.k, .btn, .knop):not(#k)::after { content: none; }
+/* een icoon voor het woord: de icoonkant krijgt minder ruimte; een pijl die je verder of ergens anders heen brengt, staat erachter */
+:is(.k, .btn, .knop):has(> .ik, > .o > .ik):not([data-rol="doorgaan"], [data-rol="navigeren"]):not(#k),
+:is(.k, .btn, .knop)[href*="wa.me"]:not(#k) { --k-pl: var(--k-pi); }
+:is(.k, .btn, .knop):is([data-rol="doorgaan"], [data-rol="navigeren"]):has(> .ik, > .o > .ik):not(#k) { --k-pr: var(--k-pi); }
+:is(.k, .btn, .knop) > .o { display: contents; }
+:is(.k, .btn, .knop) .ik:not(#k) { width: var(--k-ik); height: var(--k-ik); min-width: 0; flex: none; fill: currentColor; stroke: none; overflow: visible; margin: 0; }
+/* WhatsApp: het officiële icoon (masker uit /img/i-whatsapp.svg), overal 17 px (lijst 88, B8) */
+:is(.k, .btn, .knop)[href*="wa.me"]:not(#k)::before {
+  content: ""; display: block; flex: none; width: 17px; height: 17px; margin: 0; background: currentColor;
+  -webkit-mask: url('/img/i-whatsapp.svg') center / contain no-repeat; mask: url('/img/i-whatsapp.svg') center / contain no-repeat;
+}
+
+/* ── B · de vulling ──────────────────────────────────────────────────────────────────────────────── */
+:is(.k, .btn, .knop):hover:not(#k), :is(.k, .btn, .knop):focus-visible:not(#k) { background: var(--k-vlak); box-shadow: inset 0 0 0 1.5px var(--k-inkt); color: var(--k-inkt); }
+
+:is(.k, .btn, .knop):is(.k-vol, .btn-primary, .knop-inkt):not(#k) {
+  color: var(--k-wit); box-shadow: none;
+  background: var(--k-inkt) var(--knop-inkt) -2px -2px / calc(200% + 4px) calc(200% + 4px) no-repeat;
+}
+:is(.k, .btn, .knop):is(.k-vol, .btn-primary, .knop-inkt):hover:not(#k), :is(.k, .btn, .knop):is(.k-vol, .btn-primary, .knop-inkt):focus-visible:not(#k) {
+  color: var(--k-wit); box-shadow: none;
+  background: var(--k-inkt) var(--knop-inkt) calc(100% + 2px) calc(100% + 2px) / calc(200% + 4px) calc(200% + 4px) no-repeat;
+}
+
+/* de tekstlink: geen vlak, onderstreept, de schuine pijl erachter */
+:is(.k, .btn, .knop).k-tekst:not(#k) {
+  --k-h: 32px; --k-p: 2px; --k-pi: 2px; --k-ik: 16px; --k-gat: 7px;
+  min-height: var(--k-h); padding: 0 2px; border-radius: 999px; justify-content: flex-start; text-align: left;
+  background: none; box-shadow: none; color: var(--k-inkt);
+  text-decoration: underline; text-decoration-color: rgb(15 18 23 / .3); text-decoration-thickness: 1.5px; text-underline-offset: 4px;
+}
+:is(.k, .btn, .knop).k-tekst:hover:not(#k), :is(.k, .btn, .knop).k-tekst:focus-visible:not(#k) { background: none; box-shadow: none; color: var(--k-blauw); text-decoration-color: currentColor; }
+
+/* ── C · de maat ─────────────────────────────────────────────────────────────────────────────────── */
+:is(.k, .btn, .knop):is(.k-klein, .btn-sm):not(.k-tekst):not(#k) { --k-h: 36px; --k-p: 15px; --k-pi: 12px; --k-ik: 15px; --k-gat: 7px; --k-l: 13.5px; }
+:is(.k, .btn, .knop).k-groot:not(.k-tekst):not(#k) { --k-h: 52px; --k-p: 24px; --k-pi: 20px; --k-ik: 20px; --k-gat: 10px; --k-l: 16px; }
+:is(.k, .btn, .knop).k-tekst.k-klein:not(#k) { --k-l: 13.5px; --k-ik: 15px; }
+/* een lange tekst op een smal scherm breekt binnen de pil in plaats van de pagina breder te maken */
+@media (max-width: 600px) {
+  :is(.k, .btn, .knop):not(#k) { white-space: normal; text-wrap: balance; max-width: 100%; }
+  :is(.k, .btn, .knop):not(.k-tekst):not(#k) { padding-block: 6px; }
+}
+/* tikken op een aanraakscherm: minstens 44 hoog, met een onzichtbare rand die het beeld niet verschuift */
+@media (pointer: coarse) {
+  :is(.k, .btn, .knop):is(.k-klein, .btn-sm):not(.k-tekst):not(#k)::after { content: ""; position: absolute; inset: -4px 0; border-radius: inherit; }
+  :is(.k, .btn, .knop).k-tekst:not(#k)::after { content: ""; position: absolute; inset: -6px -4px; border-radius: inherit; }
+}
+
+/* ── D · de focus: 2 px blauw uur, 2 px buiten de knop (op inkt blauw licht) ─────────────────────────── */
+:is(.k, .btn, .knop):focus-visible:not(#k) { outline: 2px solid var(--k-blauw); outline-offset: 2px; }
+
+/* ── E · op inkt of een foto (en /admin in het donker) ───────────────────────────────────────────── */
+:is(.k-inkt, html[data-thema="donker"]) :is(.k, .btn, .knop):not(#k), :is(.k, .btn, .knop).k-wit:not(#k) {
+  color: var(--k-wit); background: rgb(255 255 255 / .06); box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / .45);
+}
+:is(.k-inkt, html[data-thema="donker"]) :is(.k, .btn, .knop):is(:hover, :focus-visible):not(#k), :is(.k, .btn, .knop).k-wit:is(:hover, :focus-visible):not(#k) {
+  color: var(--k-wit); background: rgb(255 255 255 / .14); box-shadow: inset 0 0 0 1.5px var(--k-wit);
+}
+:is(.k-inkt, html[data-thema="donker"]) :is(.k, .btn, .knop):is(.k-vol, .btn-primary, .knop-inkt):not(#k), :is(.k, .btn, .knop).k-wit:is(.k-vol, .btn-primary, .knop-inkt):not(#k) {
+  color: var(--k-inkt); background: var(--k-wit); box-shadow: none;
+}
+:is(.k-inkt, html[data-thema="donker"]) :is(.k, .btn, .knop):is(.k-vol, .btn-primary, .knop-inkt):is(:hover, :focus-visible):not(#k), :is(.k, .btn, .knop).k-wit:is(.k-vol, .btn-primary, .knop-inkt):is(:hover, :focus-visible):not(#k) {
+  color: var(--k-inkt); background: var(--k-mist); box-shadow: none;
+}
+:is(.k-inkt, html[data-thema="donker"]) :is(.k, .btn, .knop).k-tekst:not(#k), :is(.k, .btn, .knop).k-tekst.k-wit:not(#k) {
+  color: var(--k-wit); background: none; box-shadow: none; text-decoration-color: rgb(255 255 255 / .45);
+}
+:is(.k-inkt, html[data-thema="donker"]) :is(.k, .btn, .knop).k-tekst:is(:hover, :focus-visible):not(#k), :is(.k, .btn, .knop).k-tekst.k-wit:is(:hover, :focus-visible):not(#k) {
+  color: var(--k-blauw-licht); background: none; box-shadow: none; text-decoration-color: currentColor;
+}
+:is(.k-inkt, html[data-thema="donker"]) :is(.k, .btn, .knop):focus-visible:not(#k), :is(.k, .btn, .knop).k-wit:focus-visible:not(#k) { outline-color: var(--k-blauw-licht); }
+
+/* niet beschikbaar: dezelfde knop, half zichtbaar */
+:is(.k, .btn, .knop):is(:disabled, [aria-disabled="true"]) { opacity: .5; cursor: not-allowed; }
+
+/* ── F · de beweging (lijst 89): alleen het bewegende deel van het icoon (.ik-a), 0,26 s, zonder stuiteren.
+   Hij blijft staan zolang de muis erop staat (of de toets), en gaat terug als hij eraf gaat. ─────────── */
+[data-rol] .ik .ik-a { transition: transform var(--k-gaan); transform-box: fill-box; transform-origin: center; }
+[data-rol]:is(:hover, :focus-visible) :is(.ik-pijl, .ik-uitloggen) .ik-a { transform: translateX(2.5px); }      /* doorgaan, uitloggen: naar voren / de deur uit */
+[data-rol]:is(:hover, :focus-visible) .ik-pijl-links .ik-a { transform: translateX(-2.5px); }                     /* terug */
+[data-rol]:is(:hover, :focus-visible) .ik-pijl-schuin .ik-a { transform: translate(2px, -2px); }                  /* naar elders: schuin omhoog */
+[data-rol]:is(:hover, :focus-visible) .ik-downloaden .ik-a { transform: translateY(2.5px); }                      /* de pijl zakt in de bak */
+[data-rol]:is(:hover, :focus-visible) .ik-uploaden .ik-a { transform: translateY(-2.5px); }                       /* de pijl stijgt eruit */
+[data-rol] .ik-potlood .ik-a { transform-origin: 20% 90%; }
+[data-rol]:is(:hover, :focus-visible) .ik-potlood .ik-a { transform: rotate(-12deg); }                            /* aanmerken: het potlood schrijft */
+[data-rol]:is(:hover, :focus-visible) .ik-plus .ik-a { transform: rotate(90deg); }                                /* toevoegen: een kwartslag */
+[data-rol]:is(:hover, :focus-visible) .ik-ongedaan .ik-a { transform: rotate(-28deg); }                           /* terugnemen: de boog draait terug */
+[data-rol] .ik-mail .ik-a { transform-origin: 50% 0%; }
+[data-rol]:is(:hover, :focus-visible) .ik-mail .ik-a { transform: translateY(-1.5px) scaleY(.82); }               /* mail: de klep gaat open */
+[data-rol] .ik-verwijderen .ik-a { transform-origin: 0% 100%; }
+[data-rol]:is(:hover, :focus-visible) .ik-verwijderen .ik-a { transform: translateY(-1.5px) rotate(-10deg); }      /* gevaarlijk: het deksel op een kier */
+/* het vinkje beweegt niet onder de muis; bij het klikken zet het zich één keer neer, als een stempel (lijst 89, B12 = a) */
+[data-rol]:active .ik-vink .ik-a { transform: scale(.82); transition-duration: .08s; }
+@media (prefers-reduced-motion: reduce) {
+  [data-rol] .ik .ik-a { transition: none !important; transform: none !important; }
+  :is(.k, .btn, .knop):not(#k) { transition: none; }
+}
+@media (forced-colors: active) {
+  :is(.k, .btn, .knop):not(.k-tekst):not(#k) { border: 1px solid ButtonText; background: ButtonFace; color: ButtonText; }
+}
+
+/* ── G · de tweede stap bij iets wat niet terug kan (/admin, lijst 88, B9 + C2 = a) ─────────────────────
+   <details class="k-zeker"><summary class="btn btn-sm" data-rol="gevaarlijk">…</summary><span class="k-zeker-vraag">
+   <span class="k-zeker-zin">Zeker weten? Dit kan niet terug.</span><button … class="btn btn-primary btn-sm">Ja, …</button>
+   </span></details>, binnen het formulier dat het doet. Zonder script en zonder confirm(): de eerste klik opent
+   alleen de vraag; pas "Ja, …" verstuurt het formulier, met dezelfde naam en waarde als de oude knop. Geen rood. */
+.k-zeker { display: inline-block; vertical-align: middle; }
+.k-zeker > summary { list-style: none; }
+.k-zeker > summary::-webkit-details-marker { display: none; }
+.k-zeker[open] > summary:not(#k) { background: var(--k-vlak); box-shadow: inset 0 0 0 1.5px var(--k-inkt); }
+html[data-thema="donker"] .k-zeker[open] > summary:not(#k) { background: rgb(255 255 255 / .14); box-shadow: inset 0 0 0 1.5px var(--k-wit); }
+.k-zeker-vraag { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 10px; }
+.k-zeker-zin { font: 600 13.5px/1.4 var(--k-letter); }
+
+/* ── H · aanmerken is een vinkvak, geen knop (lijst 88, rollen 4): het krijgt wel hetzelfde potlood ─────── */
+:is(label.st-vink, label.pick) .ik { display: inline-block; width: 15px; height: 15px; flex: none; fill: currentColor; vertical-align: -2px; margin-right: 6px; }

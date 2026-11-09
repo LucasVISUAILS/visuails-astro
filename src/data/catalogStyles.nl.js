@@ -40,14 +40,14 @@ export const catalogStyles = [
     kort: {
       kleding: 'Je hele assortiment in één keer, van T-shirts tot jassen, tassen en petten.',
       gevoel: 'Strak en gelijk: hetzelfde licht en dezelfde hoek voor elk product.',
-      kanalen: 'Je webshop, en marktplaatsen zoals Amazon en bol.com.',
+      kanalen: 'Je webshop, en marktplaatsen zoals Amazon en bol.',
     },
     /* De echte beelden van deze look, het eerste groot bovenaan (k101). Leeg =
        geen beeldblokken; nooit een grijs vlak. */
     fotos: ['/img/catalog-raster.webp', '/img/catalog-after.webp'],
     priceTrust: CAT_FROM,
     priceUnit: ' / product',
-    metaPrice: `${CAT_FROM} / product — vanaf 4 foto’s`,
+    metaPrice: `${CAT_FROM} / product ${CAT_VAT} — vanaf 4 foto’s`,
     /* ── WAAR DEZE KNOP HEEN GAAT — 21 augustus 2026 ──────────────────────
        Hier stond `/start`, de keuzepagina. Een knop die "Order Classic" zegt en
        je vervolgens vraagt WAT we gaan maken, heeft de vraag gesteld die je net
@@ -80,7 +80,7 @@ export const catalogStyles = [
       { title: 'Eén verhouding per bestelling', body: 'Je kiest één beeldverhouding per bestelling. Je krijgt elk beeld als JPG; PNG of WebP erbij vraag je aan bij je bestelling in VISUAILS Studio.' },
     ],
     why: [
-      { title: 'Marktplaats-proof', body: 'Packshots voldoen aan de beeldregels van Amazon, bol en Zalando. Zalando vraagt daarnaast echte modelfoto\u2019s, dus we kunnen niet beloven dat Zalando onze on-model shot accepteert.' },
+      { title: 'Marktplaats-proof', body: 'Packshots voldoen aan de beeldregels van Amazon, bol en Zalando. Zalando vraagt daarnaast echte modelfoto\u2019s, dus we kunnen niet beloven dat Zalando onze foto op model accepteert.' },
       { title: 'Klaar voor bijbestellen', body: 'Een nieuw product schuift zo in de bestaande set, zonder zichtbare naad.' },
       { title: 'Geen art direction nodig', body: 'Stuur een foto, ontvang hetzelfde doordachte kader terug.' },
     ],
@@ -137,10 +137,10 @@ export const catalogStyles = [
       ['bottle', 'sneaker', 'jar', 'bag', 'bottle', 'sneaker', 'jar', 'bag', 'bottle']
     ),
     craft: [
-      { title: 'Een ontwerpsessie, geen template', body: 'Je merk, referenties en concurrenten om te vermijden — één correctieronde op het ontwerp, daarna ligt het vast.' },
+      { title: 'Een ontwerpsessie, geen sjabloon', body: 'Je merk, referenties en concurrenten om te vermijden — één correctieronde op het ontwerp, daarna ligt het vast.' },
       { title: 'Een uitgeschreven stijlsysteem', body: 'Regels voor achtergrond, schaduw en props, gedocumenteerd zodat product 100 bij product 1 past.' },
       { title: 'In eigendom, niet gehuurd', body: 'De stijl die we bouwen is van jou — we verkopen hem niet door.' },
-      { title: 'Daarna voor altijd snel', body: 'Nieuwe producten lopen er doorheen tegen normale catalogus-snelheid en -prijs.' },
+      { title: 'Daarna voor altijd snel', body: 'Nieuwe producten gaan er daarna doorheen met de gewone levertijd en het gewone tarief.' },
     ],
     why: [
       { title: 'Onmiskenbaar van jou', body: 'Props, kleur en kadrering die concurrenten niet kunnen kopiëren.' },

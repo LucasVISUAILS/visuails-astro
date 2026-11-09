@@ -136,7 +136,7 @@ console.log('\nde tips');
   ok('Studio: de tip met een weglink op dezelfde pagina', st && st.weg === '/account/plan?tab=credits&tipweg=abonnement' && /drie maanden/.test(st.tekst), st?.weg);
   ok('Studio: weggeklikt is weg', studioTip(r, 'nl', 'abonnement', new Set(['abonnement'])) === null);
   const lay = lees('src/layouts/StudioLayout.astro');
-  ok('Studio: Begrepen en het kruisje zijn links (geen script)', /<a class="btn btn-2nd btn-sm" href=\{tip\.weg\}>/.test(lay) && /<a class="st-tip-x" href=\{tip\.weg\}/.test(lay));
+  ok('Studio: Begrepen en het kruisje zijn links (geen script)', /<a class="btn btn-2nd btn-sm" data-rol="sluiten" href=\{tip\.weg\}>/.test(lay) /* knoppensysteem lijst 88/89: Begrepen is bediening (data-rol="sluiten") */ && /<a class="st-tip-x" href=\{tip\.weg\}/.test(lay));
   /* De privélink. */
   const { db } = verseDb(new URL('../schema.sql', import.meta.url));
   db.exec("INSERT INTO customers (id, email, brand) VALUES (1, 'studio@voorbeeldmerk.test', 'VOORBEELDMERK')");

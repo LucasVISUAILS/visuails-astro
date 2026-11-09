@@ -45,9 +45,17 @@ export function openingStanden(lang) {
    opnieuw. Verandert er niets, dan blijft het teken gelijk en blijft de cache werken.
    tests/opening-77.test.mjs rekent het na op de gebouwde voorpagina. */
 export const OPENING_MAP = path.join('public', 'img', 'hal', 'opening');
+/* ── EN DE STILSTAANDE FOTO — 9 november 2026 (ronde 91, C09) ─────────────────────────────────────
+   HalOpening80.astro hangt hetzelfde teken ook achter de laptopfoto in public/img/hal/breed/ (en
+   tests/letter-77.test.mjs eist dat sinds levering 79), maar de som las alleen opening/. Kreeg de foto
+   een andere inhoud zonder dat er in opening/ iets veranderde, dan bleef zijn adres gelijk en kreeg een
+   terugkerende bezoeker zeven dagen de oude foto onder de nieuwe video: de mismatch van 27 oktober.
+   Nu telt breed/ mee (met de mapnaam ervoor, zodat twee gelijke namen niet samenvallen). */
+export const BREED_MAP = path.join('public', 'img', 'hal', 'breed');
 let versie = null;
-export function openingVersie(map = path.join(process.cwd(), OPENING_MAP)) {
-  if (versie && map === path.join(process.cwd(), OPENING_MAP)) return versie;
+export function openingVersie(map = path.join(process.cwd(), OPENING_MAP), extra = map === path.join(process.cwd(), OPENING_MAP) ? [path.join(process.cwd(), BREED_MAP)] : []) {
+  const standaard = map === path.join(process.cwd(), OPENING_MAP) && extra.length === 1 && extra[0] === path.join(process.cwd(), BREED_MAP);
+  if (versie && standaard) return versie;
   const h = createHash('sha1');
   const loop = (dir, rel) => {
     for (const naam of readdirSync(dir).sort()) {
@@ -57,7 +65,8 @@ export function openingVersie(map = path.join(process.cwd(), OPENING_MAP)) {
     }
   };
   loop(map, '');
+  for (const dir of extra) if (existsSync(dir)) loop(dir, `${path.basename(dir)}:`);
   const v = h.digest('hex').slice(0, 10);
-  if (map === path.join(process.cwd(), OPENING_MAP)) versie = v;
+  if (standaard) versie = v;
   return v;
 }

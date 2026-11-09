@@ -37,8 +37,9 @@
 // Nothing here is a reservation. The reservation is orders.window_start.
 
 import { readCalendar } from '../../src/lib/agenda.js';
+import { vandaagNL } from '../../src/lib/nlDag.js';
 import { viaRandCache } from '../../src/lib/edgeCache.js';
-import { puntenVoor } from '../../src/data/pricing.js';
+import { puntenVoor, voorrangWerkdagen, voorrangAgendaOpen } from '../../src/data/pricing.js';
 import {
   MAX_PRODUCTS_ANY_SERVICE,
   ATTENDED_PER_WINDOW,
@@ -58,6 +59,17 @@ const QUEUE = { minDays: QUEUE_DAYS_MIN, maxDays: QUEUE_DAYS_MAX, committed: fal
    voor waarom `max-age=60` alleen geen rem was. */
 export async function onRequestGet(context) {
   const url = new URL(context.request.url);
+  /* ── ?voorrang=1: STAAT DE AGENDA OPEN VOOR VOORRANG? — 9 november 2026 (ronde 91, C06) ──
+     Het bestelformulier toonde het vinkje voorrang ook als een van de twee werkdagen
+     van de belofte dicht stond; /api/order rekende dan geen voorrang en geen
+     toeslag, maar het formulier liet de toeslag wel zien. De wachtrij leest hier
+     verder niets uit D1, dus deze vraag is apart: één query op twee dagen, één
+     minuut in de randcache onder alleen die twee dagen. */
+  if (url.searchParams.get('voorrang') === '1') {
+    const w = voorrangWerkdagen(null);
+    return viaRandCache(context, 'voorrang', { start: w?.start, klaar: w?.klaar },
+      () => voorrangStand(context, w));
+  }
   if (url.searchParams.get('tier') !== 'attended') return capaciteit(context);
   const gevraagd = Number.parseInt(url.searchParams.get('products') ?? '', 10);
   const products = Number.isInteger(gevraagd)
@@ -172,7 +184,23 @@ async function capaciteit({ request, env }) {
     earlier: !!gate.earlier,
     more: !!gate.more,
     queue: QUEUE,
+    /* Ronde 91 (C06): of voorrang nu kan, uit dezelfde dichte dagen. */
+    voorrangOpen: voorrangAgendaOpen(blackouts),
   });
+}
+
+/* Het antwoord op ?voorrang=1. `voorrangOpen` is dezelfde som als /api/order
+   (voorrangAgendaOpen in pricing.js). Is de agenda niet te lezen, dan een 503 en
+   geen ja of nee: het formulier laat het vinkje dan staan en /api/order beslist. */
+async function voorrangStand({ env }, w) {
+  if (!w) return json({ ok: true, voorrangOpen: true }, 200);
+  try {
+    const { results = [] } = await env.DB.prepare('SELECT day FROM blackout_days WHERE day IN (?1, ?2)')
+      .bind(w.start, w.klaar).all();
+    return json({ ok: true, voorrangOpen: voorrangAgendaOpen((results || []).map((r) => r.day)), start: w.start, klaar: w.klaar });
+  } catch {
+    return json({ ok: false, reason: 'unavailable', voorrangOpen: null }, 503, { 'cache-control': 'no-store' });
+  }
 }
 
 
@@ -206,8 +234,12 @@ function geldigeVanaf(raw, today) {
   return v;
 }
 
+/* De Nederlandse dag en niet die van UTC (9 november 2026, ronde 91, C01): tussen
+   middernacht en 01:00/02:00 was het in UTC nog gisteren, en dan rekende de poort
+   de drie wachtdagen van LEAD_DAYS vanaf gisteren. De naam blijft, zodat de
+   aanroepen hierboven niet veranderen. */
 function todayUTC() {
-  return new Date().toISOString().slice(0, 10);
+  return vandaagNL();
 }
 
 function json(body, status = 200, headers = {}) {

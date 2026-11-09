@@ -9,6 +9,7 @@
  * "zolang het loopt vervalt er niets, sparen tot 3 maanden".
  */
 import { readFileSync, existsSync } from 'node:fs';
+import { ABO_EXTRA_ZICHTBAAR } from '../src/data/aboZichtbaar.js';
 import { CREDITS_GELDIG_MAANDEN, SERVICE_CREDITS, spaarPlafond, PLAN_CREDITS } from '../src/data/pricing.js';
 
 let goed = 0; let totaal = 0;
@@ -41,7 +42,9 @@ if (!dist('plans/index.html')) {
       ? tekst(html.plans).includes(`kost een catalogset altijd ${SERVICE_CREDITS.catalog} credits`)
       : tekst(html.plans).includes(`a catalog set always costs ${SERVICE_CREDITS.catalog} credits`)), true);
     ok(`${p.plans}: de vertaling per plan`, taal === 'nl' ? /30 catalogsets of 24 carrousels/.test(tekst(html.plans)) : /30 catalog sets or 24 carousels/.test(tekst(html.plans)), true);
-    ok(`${p.plans}: op maat als één regel, met de link naar /start/plan`, /id="op-maat"/.test(html.plans) && /start\/plan\/?\?plan=maat#maat-credits/.test(html.plans) && !/data-pm-credits/.test(html.plans), true);
+    /* K-14 (9 november 2026): met de vlag uit staat op die regel "Bespreek met ons". */
+    if (ABO_EXTRA_ZICHTBAAR) ok(`${p.plans}: op maat als één regel, met de link naar /start/plan`, /id="op-maat"/.test(html.plans) && /start\/plan\/?\?plan=maat#maat-credits/.test(html.plans) && !/data-pm-credits/.test(html.plans), true);
+    else ok(`${p.plans}: op de regel op maat staat "Bespreek met ons" (K-14)`, /id="op-maat" data-k14-bespreek/.test(html.plans) && !/plan=maat#maat-credits/.test(html.plans) && !/data-pm-credits/.test(html.plans), true);
     ok(`${p.plans}: geen tussentermijn`, /12-month term|jaartermijn|termijnen van twaalf maanden|on 12 months\b/i.test(tekst(html.plans)), false);
     /* Sinds /plans in de hal staat (12 oktober 2026, avond; afvinklijst 8,
        k-plans en k-teksten "doen") is "Zo werkt het" vier korte regels in
@@ -59,7 +62,7 @@ if (!dist('plans/index.html')) {
     ok(`${p.start}: alleen maandelijks en jaar vooruit`, [/name="term" value="monthly"/.test(html.start), /name="term" value="prepaid"/.test(html.start), /name="term" value="yearly"/.test(html.start)], [true, true, false]);
     ok(`${p.start}: geen keuze voor de dag van een vaste week`, /name="window_day"/.test(html.start), false);
     ok(`${p.start}: de creditkaart`, /class="ck"/.test(html.start), true);
-    ok(`${p.start}: het veld voor op maat heeft het anker`, /id="maat-credits"/.test(html.start), true);
+    ok(`${p.start}: het veld voor op maat heeft het anker`, /id="maat-credits"/.test(html.start), ABO_EXTRA_ZICHTBAAR);
     ok(`${p.faq}: zolang het loopt vervalt er niets, sparen tot ${CREDITS_GELDIG_MAANDEN} maanden`, taal === 'nl'
       ? tekst(html.faq).includes(`Zolang je abonnement loopt, vervallen ze niet: je spaart tot ${CREDITS_GELDIG_MAANDEN} maanden aan credits`)
       : tekst(html.faq).includes(`While your plan runs, they do not expire: you save up to ${CREDITS_GELDIG_MAANDEN} months of credits`), true);

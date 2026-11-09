@@ -34,6 +34,8 @@
 }
 html[lang="en"] .o8 { --o8-w: 6.52; }
 :root { --o8-R: 160svh; --o8-O: 55svh; }
+/* levering 90: de rustzone, de baan waarover Wat we maken schuift (een scherm onder de balk) en de zachte bovenrand */
+html.o8-aan { --o8-Z: 48px; --o8-R: calc(100svh - 56px); --o8-mist: clamp(96px, 16svh, 180px); }
 
 /* ── het eerste scherm: de titel, de zin, de knoppen ─────────────────────── */
 .o8-held { position: relative; z-index: 3; }
@@ -58,13 +60,14 @@ html[lang="en"] .o8 { --o8-w: 6.52; }
    het blauwe uur onder, de laatste roze streep op de horizon, met korrel. Een vast beeld uit src/scripts/veld.js (zaad
    0,37, kladblok/levering-89/b1.mjs), liggend en staand; vanaf 70 % van de hoogte gaat het voor 80 % naar blauw uur
    #25508B (de naam van de stand onder de laptop haalt dan wit op 4,9 : 1), en de onderste 12 % helemaal, zodat het
-   podium zonder rand overgaat in de uitloop eronder. De metro (src/scripts/metro.js) tekent hetzelfde beeld in zijn
-   banen: het veld valt mee. De fade hierboven blijft staan voor als het beeld er (nog) niet is. */
+   podium zonder rand overgaat in de uitloop eronder. Met het effect (levering 90) zit dit veld in de video zelf
+   (scripts/laptop-video-90.py) en is het vlak het wit van zijn bovenkant. De fade hierboven blijft staan voor als het beeld
+   er (nog) niet is. */
 .o8-vlak { background: url(/img/hal/veld-b1.webp) 50% 50% / 100% 100% no-repeat, linear-gradient(180deg, #FBFCFF 0%, #FBFCFF 20%, #A2B7D2 52%, #6283AF 76%, #25508B 100%); }
 @media (orientation: portrait) { .o8-vlak { background-image: url(/img/hal/veld-b1-staand.webp), linear-gradient(180deg, #FBFCFF 0%, #FBFCFF 20%, #A2B7D2 52%, #6283AF 76%, #25508B 100%); } }
-.o8-vlak::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .9;
-  background: url(/img/stuk/korrel-128.webp) 0 0 / 128px 128px;
-  background: image-set(url("/img/stuk/korrel-128.webp") 1x, url("/img/stuk/korrel-256.webp") 2x) 0 0 / 128px 128px; }
+/* geen korrel meer op het veld (8 november 21:44, Lucas: "De grain op de achtergrond achter de laptop maakt de overloop
+   tussen secties niet smooth. Los dit op door het smooth te laten faden of te verwijderen."): het veld loopt nu glad over in
+   de uitloop eronder en in Wat we maken. Ook de video heeft hem niet meer (scripts/laptop-video-90.py, KORREL=0). */
 /* LEVERING 88c (Lucas, 5 november 08:00: "Nooit harde randen bij dit soort grote achtergrond secties. De kleuren moeten
    verwerkt worden in de pagina net als bij de nieuwe laptop achtergrond"). Zonder het effect (telefoon, tablet, minder
    beweging, zonder WebGL) volgt Wat we maken direct op het podium, en daar liep het blauwe uur recht tegen het wit. Nu loopt
@@ -82,16 +85,21 @@ html:not(.o8-aan) .o8-baan::after { content: ""; display: block; height: var(--o
 .o8-sc picture.o8-st { position: absolute; inset: 0; opacity: 0; transition: opacity .45s cubic-bezier(.16, 1, .3, 1); }
 .o8-sc picture.o8-st.is-nu { opacity: 1; }
 .o8-fon { background: #9A9894; }
-.o8-doek { position: absolute; inset: 0; z-index: 3; width: 100%; height: 100%; display: block; pointer-events: none; }
-.o8-doek[hidden] { display: none; }
-/* de video speelt: de stilstaande foto en de schermen zijn weg, het doek tekent alles */
-.o8.o8-speelt .o8-beeld, .o8.o8-speelt .o8-sc { visibility: hidden; }
-/* alles wit: het doek en het vlak weg (het wit ligt er al overheen) */
-.o8.o8-wit .o8-doek, .o8.o8-wit .o8-vlak { visibility: hidden; }
-/* lijst 76, de metro (src/scripts/metro.js): het doek tekent het blauwe uur zelf zolang het rijdt; de veeg doet niet mee */
-.o8-metro { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; display: block; pointer-events: none; }
-.o8-metro[hidden] { display: none; }
-.o8.o8-rijdt .o8-vlak { visibility: hidden; }
+/* LEVERING 90 (Lucas, 8 november: "Gewoon de video gebruiken niet zelf animeren"): een gewone video onder de foto. De foto
+   (beeld 0 van die video, met gaten in de schermen) ligt erop, de standen van de winkel ertussen. */
+.o8-video { position: absolute; inset: 0; z-index: 0; display: block; width: 100%; height: 100%; max-width: none; object-fit: fill; pointer-events: none; }
+.o8-video[hidden], html:not(.o8-aan) .o8-video { display: none; }
+/* de winkel vervaagt naar wit (de klep staat nog stil), en komt na de terugweg weer terug. Met het effect vervaagt de foto
+   tegelijk in de video eronder (hetzelfde beeld): een browser zet een video op een halve pixel soms net anders neer dan een
+   foto, en met een harde wissel zie je dat aan de randen even verspringen; zo vloeit het in elkaar over (120 ms, lineair:
+   twee bijna gelijke beelden houden zo samen steeds dezelfde helderheid; de klep staat op 60 per seconde 133 ms stil).
+   Terug komen ze samen weer op (300 ms). */
+.o8-sc { transition: opacity .3s cubic-bezier(.4, 0, .2, 1), visibility 0s; }
+.o8.o8-winkel-uit .o8-sc { opacity: 0; visibility: hidden; transition: opacity .12s cubic-bezier(.4, 0, .2, 1), visibility 0s .12s; }
+html.o8-aan .o8-beeld { transition: opacity .3s cubic-bezier(.4, 0, .2, 1), visibility 0s; }
+html.o8-aan .o8.o8-winkel-uit .o8-beeld { opacity: 0; visibility: hidden; transition: opacity .12s linear, visibility 0s .12s; }
+/* de video speelt: de foto en de schermen zijn weg, meteen (ook als de video voor de klok uit loopt) */
+.o8.o8-speelt .o8-sc, html.o8-aan .o8.o8-speelt .o8-beeld { opacity: 0; visibility: hidden; transition: none; }
 
 /* ── de strepen onder de laptop (K1, lijst 74): drie strepen, de naam in mono, de pauzeknop; geen blok ─────
    Wit op het blauwe uur (de lichtste plek eronder: wit 5,69 : 1). De streep van de stand die staat is 44 px en
@@ -99,6 +107,12 @@ html:not(.o8-aan) .o8-baan::after { content: ""; display: block; height: var(--o
 .o8-stand { --o8-c: #FFFFFF; --o8-c2: rgba(255, 255, 255, .62); position: relative; z-index: 4; margin: 20px var(--o8-m) 0; display: flex; align-items: center; justify-content: center; gap: 18px; color: var(--o8-c); transition: opacity .24s cubic-bezier(.4, 0, .2, 1); }
 .o8-strepen { display: flex; align-items: center; gap: 10px; }
 html body.hal .o8-kies { appearance: none; -webkit-appearance: none; margin: 0; padding: 10px 0; border: 0; border-radius: 3px; background: none; box-shadow: none; min-height: 0; cursor: pointer; display: inline-flex; align-items: center; color: var(--o8-c2); }
+/* Lijst 87 (r90-s12): een groter tikvlak dan wat je ziet. Het streepje is 16 (of 44) × 3 px, de knop met zijn
+   binnenruimte 23 px hoog. Een laag erover, 10,5 px boven en onder en 9 px opzij: 44 px hoog en 34 (of 62) px
+   breed. De 9 px is de helft van de 18 px tussen de knoppen, dus de vlakken raken elkaar en overlappen niet.
+   Niets in de opmaak verschuift. */
+html body.hal .o8-kies { position: relative; }
+html body.hal .o8-kies::after { content: ""; position: absolute; inset: -10.5px -9px; }
 html body.hal .o8-kies:hover { color: var(--o8-c); }
 html body.hal .o8-kies[aria-pressed="true"] { color: var(--o8-c); }
 html body.hal .o8-kies:focus-visible { outline: 2px solid var(--o8-c); outline-offset: 3px; }
@@ -147,21 +161,41 @@ html body.hal .o8-pauze:focus-visible { outline: 2px solid var(--o8-c); outline-
   /* de strepen in de lucht onder de laptop: op 0,509 van de breedte en 0,935 van de hoogte van de foto */
   .o8-stand { position: absolute; margin: 0; left: calc(50% + .009 * var(--o8-fw)); top: calc((100% - var(--o8-C)) / 2 + .77 * .42391 * var(--o8-fw)); transform: translate(-50%, -50%); }
   .o8-laden { top: 50%; }
-  /* met het effect: de baan, en het podium blijft staan */
-  html.o8-aan .o8-baan { height: calc(var(--o8-Hp) + var(--o8-R)); }
+  /* ── met het effect (levering 90): de video met het veld erin, onderaan het podium ─────────────────────────────────
+     De video (2944 × 1248) staat met zijn onderkant op de onderkant van het podium: daar gaat de telefoon uit beeld, langs
+     de rand van het scherm. De klep (rij 194 op zijn hoogst, beeld 17) blijft 24 px onder de balk: (1248 − 194) / 2944 =
+     0,35801, 1 / 0,35801 = 2,7932. Nooit smaller dan het scherm (dan zou je de zijkanten van het veld zien).
+     Boven de video is het vlak het wit van het veld (#FBFDFF): de bovenste rijen van de video zijn dat ook.
+     De klep staat in beeld 0 op rij 223: Lo = Hp − (1248 − 223) / 2944 × fw. De strepen op rij 1166 (wit 4,9 : 1). */
+  /* Lucas koos B (8 november): de laptop zo groot dat de klep op dezelfde hoogte staat als tot levering 89 (en boven het podium
+     alleen de regel met de feiten uitpiept, zoals toen). Tot 89 stond de klep op Hp/2 − 0,171469 × fw-oud onder de balk, nu op
+     Hp − 0,348166 × fw: fw = 1,43610 Hp + 0,492491 fw-oud (op 1440 × 900 2067 px, 19 % groter). Hoogstens zo groot dat de klep
+     24 px onder de balk blijft (2,7932) en de telefoon 16 px van de rechterrand (0,824 fw − (fw − 100vw)/2 ≤ 100vw − 16). */
+  html.o8-aan .o8 {
+    --o8-fw-oud: min(120.5vw, calc((100svh - 72px) * 2.8252));
+    --o8-fw: max(100vw, min(calc(1.4361 * var(--o8-Hp) + .492491 * var(--o8-fw-oud)), calc((var(--o8-Hp) - 24px) * 2.7932), calc(154.3vw - 49px)));
+    --o8-Lo: calc(var(--o8-Hp) - .348166 * var(--o8-fw));
+  }
+  html.o8-aan .o8-vlak { background: #FBFDFF; }
+  html.o8-aan .o8-foto { position: absolute; left: calc((100% - var(--o8-fw)) / 2); bottom: 0; width: var(--o8-fw); margin: 0; }
+  /* op hele pixels (gemeten, 8 november): staat het vak op een halve pixel, dan zet Chrome de video tot 1 px anders neer dan
+     de foto (1440 × 900: links 0,1 px, rechts 0,8 px). Op hele pixels vallen ze samen (bij 100 % en 200 % zoom). */
+  @supports (width: round(1px, 1px)) {
+    html.o8-aan .o8-foto { --o8-fwh: round(var(--o8-fw), 2px); width: var(--o8-fwh); left: round(calc((100% - var(--o8-fwh)) / 2), 1px);
+      height: round(calc(var(--o8-fwh) * 1248 / 2944), 1px); aspect-ratio: auto; }
+  }
+  html.o8-aan .o8-stand { top: calc(100% - .027853 * var(--o8-fw)); }
+  /* de baan: het podium blijft staan (sticky). Eerst de rustzone (--o8-Z: daar start en eindigt de video, Wat we maken is nog
+     onder het scherm), dan schuift Wat we maken er een scherm lang (--o8-R) overheen. */
+  html.o8-aan .o8-baan { height: calc(var(--o8-Hp) + var(--o8-Z) + var(--o8-R)); }
   html.o8-aan .o8-podium { position: sticky; top: var(--o8-balk); }
-  /* Wat we maken schuift het laatste stuk van de baan al over het witte podium */
-  html.o8-aan .o8 ~ .m8 { position: relative; z-index: 3; margin-top: calc(-1 * var(--o8-O)); }
-  /* lijst 76, de metro: Wat we maken ligt al over het podium (onzichtbaar tot het blauw weg is), zodat hij omhoog komt op het
-     scherm waar je bent: zijn kop op ruim een vijfde van de hoogte als je na het vertrek nog 250 px doorscrolt, en de hele sectie
-     in beeld (op 1440 × 900) */
-  html.o8-aan .o8.o8-metro-aan ~ .m8 { margin-top: calc(-1 * (80svh + .4 * var(--o8-R) + 8px)); }
-  html.o8-aan .o8.o8-metro-aan ~ .m8.m8-dicht { pointer-events: none; }
-  /* omdat Wat we maken zo ver over het podium ligt, begint de sectie erna nog in de baan: die (en alles erna) ligt boven
-     het podium, en het witte podium (dan zonder vlak, doek of foto) vangt geen klik */
-  html.o8-aan .o8.o8-metro-aan ~ .m8 ~ * { position: relative; z-index: 3; }
-  html.o8-aan .o8.o8-metro-aan.o8-wit .o8-podium { pointer-events: none; }
-  html.o8-aan .o8.o8-metro-aan ~ .m8.m8-dicht :is(.m8-kopgroep, .m8-dienst, .m8-ook, .m8-regel) { transition: opacity .18s cubic-bezier(.4, 0, .2, 1); }
+  /* Wat we maken schuift erover, met een zachte bovenrand (Lucas, 5 november: "Nooit harde randen bij dit soort grote
+     achtergrond secties"): de bovenste --o8-mist van de sectie loopt van doorzichtig naar de grond; de inhoud zakt evenveel */
+  html.o8-aan .o8 ~ .m8 { position: relative; z-index: 3; margin-top: calc(-1 * var(--o8-R));
+    padding-top: calc(var(--o8-mist) + clamp(72px, 8.3vw, 120px));
+    background: linear-gradient(180deg, rgb(251 252 255 / 0) 0, var(--h-grond, #FBFCFF) var(--o8-mist)); }
+  /* de sectie erna ligt ook boven het podium (het podium staat aan het eind nog een stuk achter Wat we maken) */
+  html.o8-aan .o8 ~ .m8 ~ * { position: relative; z-index: 3; }
 }
 
 /* ── tot 1100 px: alles onder elkaar, geen scrolleffect ──────────────────── */
@@ -177,4 +211,19 @@ html body.hal .o8-pauze:focus-visible { outline: 2px solid var(--o8-c); outline-
 }
 @media (prefers-reduced-motion: reduce) {
   .o8-sc picture.o8-st, .o8-stand, .o8-k-streep { transition: none; }
+}
+
+/* ── DOORLOOP 90 · DE FEITENREGEL GAAT MEE MET DE WINKEL — 8 november 2026 (S9) ──────────────────────
+   Tijdens het vaste deel (de video, het veld, terug) bleef "Vanaf €39 per product / … / Geen minimum" als enige
+   van de kop staan, direct onder de balk, en bij terugscrollen half afgesneden: een restje. De regel hoort bij de
+   rust. Hij gaat nu weg met de winkel (o8-winkel-uit, 120 ms) en komt terug met de foto (300 ms). Alleen als het
+   effect aan staat; telefoon, tablet en minder beweging houden hem gewoon. */
+html.o8-aan .o8 .o8-feiten { transition: opacity .3s cubic-bezier(.4, 0, .2, 1); }
+html.o8-aan .o8.o8-winkel-uit .o8-feiten, html.o8-aan .o8.o8-speelt .o8-feiten { opacity: 0; transition: opacity .12s linear; }
+
+/* ── DOORLOOP 90 · DE FEITENREGEL OP EEN TELEFOON (S8) ──────────────────────────────────────────────
+   Bij het afbreken begonnen regel 2 en 3 met de schuine streep. Smal staan de drie onder elkaar, zonder streep. */
+@media (max-width: 599px) {
+  .o8 .o8-feiten { flex-direction: column; align-items: center; gap: 4px; }
+  .o8 .o8-feiten li + li::before { content: none; }
 }

@@ -80,7 +80,7 @@ export function hoeHetWerkt(lang) {
     uitlegVideo: [
       'Je kiest een videostijl, of laat ons er een voor je merk ontwerpen.',
       'Je uploadt de foto’s van je product. We kijken meteen of ze compleet zijn.',
-      'Je ontvangt een korte, verticale clip van je product, voor reels en je webshop. Voorbeelden volgen binnenkort.',
+      'Je ontvangt een korte, verticale clip van je product, voor Reels en je webshop. Voorbeelden volgen binnenkort.',
     ],
     lookGekozen: `Look gekozen: ${FLASH.name}`,
     inDeLook: (n, look) => `${n} beelden in ${look}`,

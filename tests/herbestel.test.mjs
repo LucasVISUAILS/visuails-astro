@@ -82,7 +82,8 @@ ok('geen getypt bedrag of getal in herbestel.js', !/€\s?\d|\d+\s?credits/.test
   const bezig = orderView(COPY.nl, 'nl', { id: 6, ref: 'VIS-6', status: 'in_production', payment_status: 'paid', total_cents: 9800, ...CAT }, [], [], null, 0);
   ok('Studio: nog in productie → geen knop', bezig.herbestel === null);
   const kaart = lees('src/components/studio/Bestelling.astro');
-  ok('Studio: de knop is een gewone link, geen script', /class=\{`btn \$\{v\.herbestel\.proef \? 'btn-primary' : 'btn-2nd'\} btn-sm`\} href=\{v\.herbestel\.href\}/.test(kaart) && !/<script/.test(kaart));
+  // knoppensysteem lijst 88/89: de knop draagt data-rol="doorgaan" en de pijl (knopInhoud)
+  ok('Studio: de knop is een gewone link, geen script', /class=\{`btn \$\{v\.herbestel\.proef \? 'btn-primary' : 'btn-2nd'\} btn-sm`\} data-rol="doorgaan" href=\{v\.herbestel\.href\}/.test(kaart) && !/<script/.test(kaart));
 }
 
 /* De privélink na afronden. */
@@ -97,7 +98,7 @@ ok('geen getypt bedrag of getal in herbestel.js', !/€\s?\d|\d+\s?credits/.test
   db.prepare('INSERT INTO order_tokens (order_id, token_hash) VALUES (1, ?)').run(await hashToken(token));
   const html = await (await portalGet({ request: new Request(`https://visuails.com/o/${token}`), env: { DB: d1(db) }, waitUntil() {} })).text();
   ok('privélink na afronden: de knop in het afrondblok', html.indexOf('class="herbestel"') > html.indexOf('id="afgerond"') && html.indexOf('class="herbestel"') < html.indexOf('class="facts"'));
-  ok('  met de echte keuzes van de bestelling', html.includes('href="/nl/start/catalog/?bg=F5F5F5&amp;ratio=portrait45&amp;face=ava">Catalog bestellen — Classic · lichtgrijs · 4:5</a>'));
+  ok('  met de echte keuzes van de bestelling', html.includes('href="/nl/start/catalog/?bg=F5F5F5&amp;ratio=portrait45&amp;face=ava">Catalog bestellen — Classic · lichtgrijs · 4:5<svg'));  // knoppensysteem lijst 88/89: de pijl van Doorgaan staat erachter
   ok('  en de credits voor een abonnee', html.includes('4 credits per product'));
 }
 
@@ -169,7 +170,7 @@ console.log('\nopnieuw bestellen met alle instellingen (werklijst 33)');
   ok('  v36-bericht a: het bericht staat klaar voor de knop', bestelInstellingen({ ...ls, product_count: 3 }).notitie === 'Voor de zomercollectie');
   ok('formulier: het aantal via het getalveld, alleen als er nog niets gekozen is', /data-pl-qty-input/.test(fn) && /dispatchEvent\(new Event\('input'/.test(fn) && /aantalSel\.value/.test(fn));
   ok('  het bericht gaat niet vanzelf mee: alleen met de knop', !/noot\.value = String\(inst\.notitie\); noot\.dispatchEvent/.test(fn) && /data-pl-van-bericht/.test(fn) && /addEventListener\('click'/.test(fn));
-  ok('  de knop staat bij het bericht, verborgen tot hij gevuld is', /name="message"><\/textarea>[\s\S]{0,600}data-pl-van-bericht hidden/.test(lees('src/components/order/OrderFlow.astro')));
+  ok('  de knop staat bij het bericht, verborgen tot hij gevuld is', /name="message"[^>]*><\/textarea>[\s\S]{0,600}data-pl-van-bericht hidden/.test(lees('src/components/order/OrderFlow.astro')));
   ok('  de looks na het aantal, met zetLookIndeling', fn.indexOf('zetLookIndeling(inst.looks)') > fn.indexOf('data-pl-qty-input'));
   /* Levering 57: bij ?van= geen tweede blok "je was nog bezig" eronder. */
   const cc = pl.slice(pl.indexOf('function checkConcept('), pl.indexOf('function checkConcept(') + 1600);

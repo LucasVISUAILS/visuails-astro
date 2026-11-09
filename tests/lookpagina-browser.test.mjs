@@ -63,7 +63,7 @@ for (const [lang, pre, ls, cat] of [['en', '', lsEn, catEn], ['nl', 'nl/', lsNl,
       const kies = s.orderLabel ?? (lang === 'nl' ? 'Kies deze look' : 'Choose this look');
       const slot = lk.slice(lk.indexOf('class="h-lk-slot'));
       /* De inktknop van de hal draagt na zijn woorden een pijl (<span class="o">). */
-      const knop = (href, label) => new RegExp(`href="${href.replace(/[?.]/g, '\\$&')}"[^>]*>${label.replace(/[.·]/g, '\\$&')}(?:<span class="o"[^>]*>[\\s\\S]*?</span>)?</a>`).test(slot);
+      const knop = (href, label) => new RegExp(`href="${href.replace(/[?.]/g, '\\$&')}"[^>]*>${label.replace(/[.·]/g, '\\$&')}(?:<span class="o"[^>]*>[\\s\\S]*?</span>|<svg[\\s\\S]*?</svg>)?</a>`).test(slot);  /* knoppensysteem lijst 88/89: de pijl staat nu als <svg> uit het kit achter het woord */
       ok(`${tag}: onderaan "${kies}" naar ${s.orderHref}`, knop(s.orderHref, kies), (slot.match(/<a class="h-knop h-knop-inkt"[^>]*>[^<]*/) || [''])[0]);
       const proef = s.slug === 'custom' ? `/${pre}test-sample/` : `/${pre}test-sample/?style=${s.slug}`;
       ok(`${tag}: en "${TEST_SAMPLE[lang].cta}" naar de proef${s.slug === 'custom' ? '' : ' met de look'}`, knop(proef, TEST_SAMPLE[lang].cta));

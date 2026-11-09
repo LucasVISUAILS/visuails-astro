@@ -12,7 +12,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import HalVragen from './HalVragen.astro';
 import Disclose from './Disclose.astro';
 import HalBeweging from './HalBeweging.astro';
@@ -329,7 +329,7 @@ const COPY = {
     waLabel: 'WhatsApp',
     trust: [
       [`${STOCK_OFF_BRAND} + ${STOCK_ON_BRAND}`, 'beelden per maand'],
-      [`${maand} p/m`, `bovenop je abonnement · ${vatLabel('excl', 'nl')}`],
+      [`${maand} per maand`, `bovenop je abonnement · ${vatLabel('excl', 'nl')}`],
     ],
     soonTag: 'Binnenkort',
     queueNote: `Geen van beide sets loopt al, dus er wordt voor allebei nog niets afgeschreven.`,
@@ -340,7 +340,7 @@ const COPY = {
       naam: 'De maandset',
       tag: 'Zit bij je abonnement',
       rijen: [
-        ['Wat het is', `De maandset: ${STOCK_OFF_BRAND} beelden per maand, merkneutraal: sfeer, textuur en licht die bij elk kledingmerk passen.`],
+        ['Wat het is', `De maandset: ${STOCK_OFF_BRAND} merkneutrale beelden per maand, met sfeer, textuur en licht die bij elk kledingmerk passen.`],
         ['Wie hem verder krijgt', 'Elk merk met een abonnement.'],
         ['Wat het kost', `Niets extra. Hij hoort bij elk abonnement, vanaf ${eerstePlan ? eerstePlan.name : 'het eerste'}.`],
         ['Je licentie', 'Niet-exclusief, commercieel te gebruiken, blijft geldig, ook na opzeggen.'],
@@ -350,7 +350,7 @@ const COPY = {
     },
     eigen: {
       naam: 'Editions',
-      tag: 'De betaalde add-on',
+      tag: 'De betaalde uitbreiding',
       rijen: [
         ['Wat het is', `${STOCK_ON_BRAND} beelden per maand in jouw stijl en kleuren.`],
         ['Wie hem verder krijgt', 'Niemand.'],
@@ -461,8 +461,8 @@ const BEELD = {
       <h1 class="h-kop h-h1 h-op" style="--d:1"><span class="l">{tonen(c.h1)[0]}</span> <span>{tonen(c.h1)[1]}</span></h1>
       <p class="h-lede h-op" style="--d:2">{c.lead}</p>
       <p class="h-acties h-op" style="--d:3">
-        <a class="h-knop h-knop-inkt" href={lp('/contact')}>{c.ctaPrimary}<span class="o" set:html={ik('rechts')} /></a>
-        <a class="h-knop h-knop-lijn" href={lp('/plans')}>{c.ctaPlans}</a>
+        <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/contact')}>{c.ctaPrimary}<Fragment set:html={rolIkoon('navigeren')} /></a>
+        <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/plans')}>{c.ctaPlans}<Fragment set:html={rolIkoon('navigeren')} /></a>
       </p>
       <ul class="h-feiten h-vd-feiten h-op" style="--d:4" role="list">
         {feiten.map(([sterk, rest]) => <li><span><b>{sterk}</b> {rest}</span></li>)}
@@ -493,7 +493,7 @@ const BEELD = {
           <dl class="h-ed-rijen">
             {kolom.rijen.map(([label, waarde]) => <div><dt>{label}</dt><dd>{waarde}</dd></div>)}
           </dl>
-          <a class="h-link" href={lp(kolom.href)}>{kolom.cta}<span class="h-cirkel h-cirkel-mini h-cirkel-wit" aria-hidden="true" set:html={ik('pijl')} /></a>
+          <a class="h-link k k-tekst" data-rol="navigeren" href={lp(kolom.href)}>{kolom.cta}<Fragment set:html={rolIkoon('navigeren')} /></a>
         </li>
       ))}
     </ul>
@@ -520,7 +520,7 @@ const BEELD = {
         <p set:html={c.prijsOpzet} />
         <Disclose summary={c.prijsWaaromH} tone="plain"><p>{c.prijsWaarom}</p></Disclose>
         <p class="h-acties">
-          <a class="h-knop h-knop-inkt" href={lp('/contact')}>{c.prijsCta}<span class="o" set:html={ik('rechts')} /></a>
+          <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/contact')}>{c.prijsCta}<Fragment set:html={rolIkoon('navigeren')} /></a>
         </p>
       </div>
     </div>
@@ -533,14 +533,17 @@ const BEELD = {
   <section class="h-sec h-lk-slot-sec" aria-labelledby="ed-slot">
     <div class="h-lk-slot h-ed-slot h-in">
       <span class="h-korrel" aria-hidden="true"></span>
-      <p class="h-pil h-pil-wit"><span>{H.slotPil}</span></p>
-      <h2 id="ed-slot" class="h-kop h-h2"><span class="l">{tonen(c.ctaH)[0]}</span> {tonen(c.ctaH)[1]}</h2>
-      <p class="h-vd-slot-zin">{c.ctaP}</p>
-      <p class="h-acties">
-        <a class="h-knop h-knop-inkt" href={lp('/contact')}>{c.ctaPrimary}<span class="o" set:html={ik('rechts')} /></a>
-        <a class="h-knop h-knop-lijn" href={lp('/plans')}>{c.ctaPlans}</a>
-      </p>
-      <p class="h-vd-belofte">{c.belofte}</p>
+      {/* lijst 86 (9 november 2026): de glazen plaat om de tekst, op de foto van het slot (src/styles/fotoblok.css) */}
+      <div class="fb-glas">
+        <p class="h-pil h-pil-wit"><span>{H.slotPil}</span></p>
+        <h2 id="ed-slot" class="h-kop h-h2"><span class="l">{tonen(c.ctaH)[0]}</span> {tonen(c.ctaH)[1]}</h2>
+        <p class="h-vd-slot-zin">{c.ctaP}</p>
+        <p class="h-acties k-inkt">
+          <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/contact')}>{c.ctaPrimary}<Fragment set:html={rolIkoon('navigeren')} /></a>
+          <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/plans')}>{c.ctaPlans}<Fragment set:html={rolIkoon('navigeren')} /></a>
+        </p>
+        <p class="h-vd-belofte">{c.belofte}</p>
+      </div>
       <div class="h-ed-brief">
         <Studiobrief lang={lang} bron="editions"
           kop={lang === 'nl' ? 'Hoor het als Editions opent' : 'Hear when Editions opens'}

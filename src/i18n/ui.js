@@ -284,7 +284,8 @@ export const ui = {
     // the search intent is not lost — but the footer label names the primary
     // comparison, which is the one a brand is actually weighing.
     foot_compare: 'Shoot day vs VISUAILS',
-    foot_sample: `Test sample · ${TEST_SAMPLE.en.price}`,
+    /* 8 november 2026 (doorloop 90, S4): de oude naam; overal elders heet hij "Try VISUAILS · €1", zoals in NL. */
+    foot_sample: TEST_SAMPLE.en.cta,
     foot_gallery: 'Gallery',
     foot_pricing: 'Pricing',
     foot_faq: 'FAQ',
@@ -390,7 +391,7 @@ export const ui = {
        verkeerde helft haalt hem uit de toegankelijkheidsboom. Zo hoort iedereen
        op elke breedte precies één naam. */
     cb_cta: TEST_SAMPLE.en.cta,
-    cb_cta_kort: `Test sample · ${TEST_SAMPLE.en.price}`,
+    cb_cta_kort: TEST_SAMPLE.en.cta,
     wa_launcher_label: 'WhatsApp',
     wa_launcher_aria: 'Message VISUAILS on WhatsApp — opens in a new tab',
     lang_label: 'Language',
@@ -406,7 +407,7 @@ export const ui = {
     nav_account: 'Inloggen',
     dropGroepen: { photos: 'Foto’s', video: 'Video', maand: 'Elke maand', erbij: 'Bij elke bestelling' },
     drops: [
-      { href: '/catalog', title: 'Catalog', desc: 'Voorkant, achterkant, detail en on-model, voor elk product', groep: 'photos' },
+      { href: '/catalog', title: 'Catalog', desc: 'Voorkant, achterkant, detail en op model, voor elk product', groep: 'photos' },
       { href: '/lifestyle', title: 'Lifestyle', desc: 'Je product in een gestylede scène, klaar om te posten', groep: 'photos' },
       { href: '/video', title: 'Video', desc: VIDEO_OP_AANVRAAG ? 'Korte clips met beweging — voorlopig op aanvraag' : 'Korte clips met beweging, op elk product in de bestelling', groep: 'video' },
       /* Zie de noot bij de Engelse lijst hierboven: alles wat je koopt, staat
@@ -478,7 +479,7 @@ export const ui = {
     cc_prefs_title: 'Cookievoorkeuren',
     cc_prefs_intro: 'Noodzakelijke cookies houden je ingelogd en onthouden deze keuze. Ze kunnen niet uit, en meer plaatst de site vandaag niet.',
     cc_nec_h: 'Noodzakelijk',
-    cc_nec_n: 'Inlogsessies voor VISUAILS Studio en voor het adminportaal, en deze voorkeur zelf. Staat altijd aan.',
+    cc_nec_n: 'Inlogsessies voor VISUAILS Studio en voor ons eigen beheer, en deze voorkeur zelf. Staat altijd aan.',
     cc_ana_h: 'Analytics',
     cc_ana_n: 'Anonieme, cookieloze paginatellingen zodat we zien welke pagina\u2019s gelezen worden. Staat uit tenzij jij hem aanzet, en er laadt niets voordat je dat doet.',
     cc_always: 'Staat altijd aan',

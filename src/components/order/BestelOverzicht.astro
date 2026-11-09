@@ -56,7 +56,7 @@ import { tegelsVoor, ECHTE_BESTELLING } from '../../data/overzichtbeelden.js';
    hij krijgt."*). Alleen bij catalog: daar staat de hoekenkiezer. pipeline.js
    (paintAngles) zet de tegel aan zodra de hoek is aangevinkt. */
 import { ANGLES, ANGLE_GROUPS, EIGEN_ANGLE_PREFIX } from '../../data/angles.js';
-import { ikoon } from '../../data/iconen.js';
+import { ikoon, rolIkoon } from '../../data/iconen.js';
 
 interface Props {
   lang: 'en' | 'nl';
@@ -144,7 +144,7 @@ const c = nl ? {
   )}
 
   {catalog && (
-    <button type="button" class="wk-erbij" data-wk-hoek-open aria-haspopup="dialog"><span class="wk-erbij-i" set:html={ikoon('plus')} />{wk.hoekErbij}<em data-wk-hoek-prijs>{wk.hoekVanaf}</em></button>
+    <button type="button" class="wk-erbij k k-lijn" data-rol="toevoegen" data-wk-hoek-open aria-haspopup="dialog"><Fragment set:html={rolIkoon('toevoegen')} />{wk.hoekErbij}<em data-wk-hoek-prijs>{wk.hoekVanaf}</em></button>
   )}
 
   {vormen.length > 0 && (
@@ -181,7 +181,7 @@ const c = nl ? {
 
   {/* Verder, altijd in beeld. pipeline.js (paintWkVerder) zet de tekst per stap en
       verbergt hem op de laatste stap, waar Bestellen en betalen staat. */}
-  <button type="button" class="wk-verder" data-pl-next data-wk-verder><span data-wk-verder-t>{wk.verder[0]}</span><span class="wk-verder-i" set:html={ikoon('pijl')} /></button>
+  <button type="button" class="wk-verder k k-vol k-groot" data-rol="doorgaan" data-pl-next data-wk-verder><span data-wk-verder-t>{wk.verder[0]}</span><Fragment set:html={rolIkoon('doorgaan')} /></button>
   <p class="wk-inloggen" data-acct="out">{wk.inloggen[0]} <a href={inlogHref}>{wk.inloggen[1]}</a>{wk.inloggen[2]}</p>
 
   {catalog && (

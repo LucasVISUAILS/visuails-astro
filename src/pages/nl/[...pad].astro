@@ -16,14 +16,21 @@
 // NotFoundPage.astro (de vorige opmaak), terwijl die op de opruimlijst staat:
 // na OPRUIMEN.bat zou de build hier breken.
 export const prerender = false;
+import { env } from 'cloudflare:workers';
 import Layout from '../../layouts/Layout.astro';
 import NotFoundHal from '../../components/NotFoundHal.astro';
+import { statischeNl404 } from '../../lib/vaste404.js';
+
+// 9 november 2026 (ronde 91, A16): eerst het gebouwde bestand, met de koppen uit
+// _headers; zie src/lib/vaste404.js. Alleen als dat niet lukt, rendert deze pagina.
+const vast = await statischeNl404(env, Astro.url);
+if (vast) return vast;
 
 Astro.response.status = 404;
 const description =
   'Deze pagina bestaat niet. De link is verouderd of het adres verkeerd getypt — ga terug naar de homepage of bekijk Catalog, Lifestyle en Video.';
 ---
 
-<Layout huid="hal" title="Pagina niet gevonden — VISUAILS" description={description} noindex>
+<Layout huid="hal" title="Pagina niet gevonden — VISUAILS" description={description} noindex foutpagina>
   <NotFoundHal lang="nl" />
 </Layout>

@@ -25,7 +25,9 @@
  * uploads, and an empty array is a new key on every message that doesn’t
  * carry one — a wire-format difference that buys nothing.
  */
-function stripComments(h) {
+/* Geëxporteerd sinds 9 november 2026 (ronde 92): de Studiobrief gaat als broadcast
+   naar Resend en niet door sendMail(), en hoort dezelfde werknotities kwijt te zijn. */
+export function stripComments(h) {
   return String(h || '').replace(/<!--(?!\[if|<!\[endif)[\s\S]*?-->/g, '');
 }
 
@@ -78,7 +80,14 @@ export async function sendMail(env, { to, bcc, subject, html, text, attachments,
   const payload = {
     from,
     to,
-    subject,
+    /* ── GEEN REGELEINDE IN HET ONDERWERP — 9 november 2026 (ronde 91, A09) ──
+       Het onderwerp van de studiomail van het contactformulier is
+       `Contact — ${name} · ${onderwerp}`, en `name` en het vrije `subject` komen
+       ongefilterd uit het formulier. Een naam met CR/LF + "Bcc: …" stond zo
+       letterlijk in het onderwerp. Of Resend daar een kop van maakt of de mail
+       weigert, weten we niet; in beide gevallen hoort het er niet te staan. Hier,
+       op de ene plek waar elke mail langskomt: stuurtekens worden een spatie. */
+    subject: String(subject ?? '').replace(/[\x00-\x1f\x7f]+/g, ' ').trim(),
     /* ── GEEN WERKNOTITIES IN DE MAIL — 2 oktober 2026 (ronde 9, F8) ──────────
        De sjablonen dragen HTML-commentaar met uitleg voor ons ("DE BELOFTE STAAT
        IN DE VOET…", "#CCCCCC is --line…"). Dat kwam gewoon mee naar de klant en

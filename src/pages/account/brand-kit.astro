@@ -1,4 +1,5 @@
 ---
+import { knopInhoud } from '../../data/iconen.js';
 /**
  * /account/brand-kit — Je vaste look, als Astro-pagina. Studio fase 2, 5 september 2026.
  * Drie blokken, dezelfde volgorde als brandKitBody(): je eigen modellen, je
@@ -28,7 +29,7 @@ const { t, lang, customer, thema, navDicht } = st;
         <div class="st-kaart-vlak st-leegvlak">
           <span class="st-leegvlak-fig" aria-hidden="true"><Fragment set:html={STUDIO_ICONS.face} /></span>
           <div><h2>{t.bkOwnEmptyH}</h2><p>{t.bkOwnEmptyBody}</p></div>
-          <a class="btn btn-2nd" href={v.startModel}>{t.bkOwnEmptyCta}</a>
+          <a class="btn btn-2nd" data-rol="doorgaan" href={v.startModel} set:html={knopInhoud('doorgaan', t.bkOwnEmptyCta)} />
         </div>
       ) : (
         <Fragment>
@@ -53,7 +54,7 @@ const { t, lang, customer, thema, navDicht } = st;
       ? (
         <div class="st-kaart-vlak st-leegvlak">
           <div><h2>{t.osEmptyH}</h2><p>{t.osEmptyBody}</p></div>
-          <a class="btn btn-2nd" href={v.startLook}>{t.osEmptyCta}</a>
+          <a class="btn btn-2nd" data-rol="doorgaan" href={v.startLook} set:html={knopInhoud('doorgaan', t.osEmptyCta)} />
         </div>
       ) : (
         <div class="st-eigenlooks">
@@ -64,7 +65,7 @@ const { t, lang, customer, thema, navDicht } = st;
                 <h3>{s.name}</h3>
                 <p class="st-meta">{s.dienst}{s.extra && ` · ${s.extra}`}</p>
                 {s.description && <p class="st-eigenlook-lijn">{s.description}</p>}
-                {s.proposed ? <p class="st-meta">{t.osProposed}</p> : <a class="btn btn-primary btn-sm" href={s.orderHref}>{t.osOrder}</a>}
+                {s.proposed ? <p class="st-meta">{t.osProposed}</p> : <a class="btn btn-primary btn-sm" data-rol="doorgaan" href={s.orderHref} set:html={knopInhoud('doorgaan', t.osOrder)} />}
               </div>
             </article>
           ))}

@@ -57,6 +57,7 @@ import { CONSENT_VERSION_BRAND_MODEL } from '../data/consent.js';
 import { localizedPath } from '../i18n/ui.js';
 /* Zonder deze regel zijn .paneel, .hoog en .knop lege klassen. */
 import '../styles/stijl22.css';
+import { rolIkoon } from '../data/iconen.js';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -115,7 +116,9 @@ const BEWIJS = [
   { src: '/img/custom-models-01.webp', w: 800, h: 1071 },
   { src: '/img/custom-models-04.webp', w: 1200, h: 1200 },
   { src: '/img/custom-models-05.webp', w: 1200, h: 1200 },
-].map((b, i) => ({ ...b, alt: lang === 'nl' ? `Geleverd merkmodel ${i + 1} van 3` : `Delivered brand model ${i + 1} of 3` }));
+].map((b, i) => ({ ...b, alt: lang === 'nl' ? `Voorbeeld merkmodel ${i + 1} van 3` : `Example brand model ${i + 1} of 3` }));
+/* Lijst 87 (e15, 9 november 2026): "voorbeeld" en niet "geleverd". custom-models-01 is hetzelfde
+   bestand als het standaardmodel model-01 op /models; "geleverd" was dan een claim die niet klopt. */
 const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
 ---
 
@@ -400,14 +403,24 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
             attribuut dat door een vinkje aan en uit gaat is een tweede plek waar
             dezelfde regel staat. Zonder script: allebei optioneel, en de
             bestelling komt op de beoordelingslijst in plaats van niet aan. */}
-        <div class="field">
-          <label for="bm-vat">{b.vat} <span class="req">*</span></label>
+        {/* ── PER LAND, ZOALS HET BESTELFORMULIER — 9 november 2026 (ronde 91, K-C3) ──
+            Lucas koos in lijst 85 (C3 = a): het merkmodel vraagt wat de andere
+            formulieren vragen. syncBtw() hieronder zet dit blok per land, met
+            dezelfde regels als syncReg() in pipeline.js:
+              · Nederland: KVK-nummer verplicht (acht cijfers), btw-nummer optioneel,
+                geen vinkje "ik heb er geen";
+              · ander EU-land: btw-nummer, of het vinkje en dan een registratienummer;
+              · buiten de EU: geen btw-veld, registratienummer optioneel.
+            Zonder script staat alles zichtbaar en beslist de server
+            (businessCheck() in src/data/business.js), zoals voorheen. */}
+        <div class="field" data-bm-vatveld>
+          <label for="bm-vat">{b.vat} <span class="req" data-bm-vat-req>*</span><span class="bm-opt" data-bm-vat-opt hidden>{b.optional}</span></label>
           <input class="input" type="text" id="bm-vat" name="vat" autocomplete="off" placeholder="NL000000000B00" data-bm-vat data-melding={b.vatErr} />
-          <label class="bm-check" for="bm-no-vat">
+          <label class="bm-check" for="bm-no-vat" data-bm-novat-rij>
             <input type="checkbox" id="bm-no-vat" name="no_vat" value="1" data-bm-novat />
             <span>{b.noVat}</span>
           </label>
-          <span class="bm-hint">{b.vatHint}</span>
+          <span class="bm-hint" data-bm-vat-hint>{b.vatHint}</span>
         </div>
 
         {/* 8.06 (8 oktober 2026, V19 = a): hier stond een apart vinkje voor 0%
@@ -417,9 +430,9 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
             degraderen naar veilig, niet naar gratis. */}
 
         <div class="field bm-reg" data-bm-reg hidden>
-          <label for="bm-reg">{b.reg} <span class="req">*</span></label>
-          <input class="input" type="text" id="bm-reg" name="reg_number" autocomplete="off" maxlength="40" data-bm-regfield data-melding={b.regErr} />
-          <span class="bm-hint">{b.regHint}</span>
+          <label for="bm-reg"><span data-bm-reg-label data-reg={b.reg} data-kvk={b.regKvk}>{b.reg}</span> <span class="req" data-bm-reg-req>*</span><span class="bm-opt" data-bm-reg-opt hidden>{b.optional}</span></label>
+          <input class="input" type="text" id="bm-reg" name="reg_number" autocomplete="off" maxlength="40" data-bm-regfield data-melding={b.regErr} data-err-reg={b.regErr} data-err-kvk={b.regKvkErr} />
+          <span class="bm-hint" data-bm-reg-hint data-eu={b.regHint} data-nl={b.regHintNl} data-other={b.regHintOther}>{b.regHint}</span>
         </div>
 
         <div class="field">
@@ -477,7 +490,7 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
           <input type="hidden" name="consent_version" value={CONSENT_VERSION_BRAND_MODEL} />
         </div>
 
-        <button type="submit" class="knop knop-inkt bm-submit">{c.submit}</button>
+        <button type="submit" class="knop knop-inkt k-groot bm-submit" data-rol="doorgaan">{c.submit}<Fragment set:html={rolIkoon('doorgaan')} /></button>
         <p class="bm-legal">
           {c.legal[0]}<a href={lp('/terms')}>{c.legalTerms}</a>{c.legal[1]}
           <a href={lp('/privacy')}>{c.legalPrivacy}</a>{c.legal[2]}
@@ -490,8 +503,8 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
           Verborgen tot het script draait: zonder script staat alles onder elkaar
           en is de verzendknop in stap 5 de enige knop die iets moet doen. */}
       <div class="bm-nav" data-bm-nav hidden>
-        <button type="button" class="knop knop-lijn" data-bm-back hidden>{c.back}</button>
-        <button type="button" class="knop knop-inkt" data-bm-next>{c.next}</button>
+        <button type="button" class="knop knop-lijn" data-rol="terug" data-bm-back hidden><Fragment set:html={rolIkoon('terug')} />{c.back}</button>
+        <button type="button" class="knop knop-inkt k-groot" data-rol="doorgaan" data-bm-next>{c.next}<Fragment set:html={rolIkoon('doorgaan')} /></button>
       </div>
     </form>
   </div>
@@ -775,18 +788,54 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
     const merkVeld = form.querySelector('input[name="brand"]');
     const land = form.querySelector('[data-bm-country]');
 
+    /* K-C3 (9 november 2026): de onderdelen die per land wisselen. */
+    const vatVeld = form.querySelector('[data-bm-vatveld]');
+    const vatVerplicht = form.querySelector('[data-bm-vat-req]');
+    const vatOptioneel = form.querySelector('[data-bm-vat-opt]');
+    const noVatRij = form.querySelector('[data-bm-novat-rij]');
+    const regLabel = form.querySelector('[data-bm-reg-label]');
+    const regHint = form.querySelector('[data-bm-reg-hint]');
+    const regVerplicht = form.querySelector('[data-bm-reg-req]');
+    const regOptioneel = form.querySelector('[data-bm-reg-opt]');
+
     const syncBtw = () => {
+      /* ── PER LAND — 9 november 2026 (ronde 91, K-C3) ─────────────────────────
+         Dezelfde vier standen als syncReg() in pipeline.js (het bestelformulier):
+           nl     KVK-nummer verplicht, btw-nummer optioneel, geen vinkje nodig;
+           eu     btw-nummer, of "ik heb er geen" + registratienummer (zoals het was);
+           other  geen btw-veld; registratienummer optioneel;
+           ''     nog geen land: zoals het was, niets verbergen. */
+      const up = String((land && land.value) || '').trim().toUpperCase();
+      const soort = !up ? '' : up === HOME_COUNTRY ? 'nl' : isEu(up) ? 'eu' : 'other';
+      if (noVat && (soort === 'nl' || soort === 'other')) noVat.checked = false;
+      if (noVatRij) noVatRij.hidden = soort === 'nl' || soort === 'other';
+      if (vatVeld) vatVeld.hidden = soort === 'other';
+      if (vat && soort === 'other' && vat.value) vat.value = '';
       const geen = !!(noVat && noVat.checked);
-      if (vat) vat.required = !geen;
-      if (regBlok) regBlok.hidden = !geen;
-      if (regVeld) regVeld.required = geen;
+      const vatEis = (soort === 'eu' || soort === '') && !geen;
+      if (vat) vat.required = vatEis;
+      if (vatVerplicht) vatVerplicht.hidden = !(soort === 'eu' || soort === '');
+      if (vatOptioneel) vatOptioneel.hidden = soort === 'eu' || soort === '';
+      const regToon = soort === 'nl' || soort === 'other' || geen;
+      if (regBlok) regBlok.hidden = !regToon;
+      if (regVeld) {
+        if (!regToon && regVeld.value) regVeld.value = '';
+        regVeld.required = regToon && soort !== 'other';
+        const kvk = soort === 'nl';
+        if (kvk) { regVeld.setAttribute('pattern', '[\\s.]*(\\d[\\s.]*){8}'); regVeld.setAttribute('inputmode', 'numeric'); }
+        else { regVeld.removeAttribute('pattern'); regVeld.removeAttribute('inputmode'); }
+        regVeld.dataset.melding = (kvk ? regVeld.dataset.errKvk : regVeld.dataset.errReg) || regVeld.dataset.melding;
+        if (regLabel) regLabel.textContent = (kvk ? regLabel.dataset.kvk : regLabel.dataset.reg) || regLabel.textContent;
+        if (regHint) regHint.textContent = (kvk ? regHint.dataset.nl : soort === 'other' ? regHint.dataset.other : regHint.dataset.eu) || regHint.textContent;
+        if (regVerplicht) regVerplicht.hidden = soort === 'other';
+        if (regOptioneel) regOptioneel.hidden = soort !== 'other';
+      }
 
       /* De verleggingszin (8.06): een ander EU-land dan Nederland, mét een
          ingevuld btw-nummer en een merk. Precies de voorwaarde van artikel 196,
          en dezelfde die syncVatConfirm() in pipeline.js aanhoudt. Verandert het
          land of het nummer, dan verandert de zin mee — het vinkje hoort altijd
          bij de tekst die er nu staat. */
-      const up = String((land && land.value) || '').trim().toUpperCase();
 
       /* ── DE VORM VAN HET NUMMER, PER LAND — 12 september 2026 ───────────
          Zelfde regel als op het bestelformulier; de uitleg staat bij vatShape()

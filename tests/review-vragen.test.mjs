@@ -59,7 +59,7 @@ console.log('\n1 · de knop op de bestelpagina');
   const { status, html } = await get('/admin/orders/22/files');
   ok('afgerond (DE, score 1): de pagina laadt', status, 200);
   ok('de knop is een gewoon formulier naar /review-wa, in een nieuw tabblad',
-    /<form method="post" action="\/admin\/orders\/22\/review-wa" target="_blank"><button class="btn btn-primary btn-sm" type="submit">Vraag om een review via WhatsApp<\/button><\/form>/.test(html));
+    /<form method="post" action="\/admin\/orders\/22\/review-wa" target="_blank"><button class="btn btn-ghost btn-sm" data-rol="contact" type="submit">Vraag om een review via WhatsApp<\/button><\/form>/.test(html));  // knoppensysteem lijst 88/89: contact is een lijnknop
   ok('nooit gefilterd op score: ook bij score 1', /review-wa/.test(html));
   ok('met de regel "bij elke score"', /vraag om een review, bij elke score/.test(html));
 }

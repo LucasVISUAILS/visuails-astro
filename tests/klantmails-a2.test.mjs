@@ -115,7 +115,9 @@ ok('account.js gebruikt die functie voor het onderwerp', /subject: inlogOnderwer
   for (const lang of ['nl', 'en']) {
     const m = deliveryEmail({ order: { ref: 'VIS-TEST-0020', name: 'Sanne', lang, service: 'catalog' }, link: 'https://visuails.com/o/abc', n: 12, nu });
     const revisie = datum(new Date(nu.getTime() + REVISIE_DAGEN * 86400000).toISOString().slice(0, 10), lang);
-    const bewaar = datum(new Date(nu.getTime() + DELIVERY_DAYS * 86400000).toISOString().slice(0, 10), lang);
+    /* De laatste HELE dag vóór het verdwijnen (9 november 2026, ronde 91, C02): de
+       beelden gaan op 4 januari om 11:00 weg, dus "tot en met 3 januari". */
+    const bewaar = datum(new Date(nu.getTime() + (DELIVERY_DAYS - 1) * 86400000).toISOString().slice(0, 10), lang);
     ok(`levermail ${lang}: de revisiedatum als datum (${revisie})`, tekst(m).includes(revisie));
     ok(`levermail ${lang}: de bewaardatum als datum (${bewaar})`, tekst(m).includes(bewaar));
     ok(`levermail ${lang}: geen "binnen ${DELIVERY_DAYS} dagen"`, /binnen \d+ dagen|within \d+ days/.test(tekst(m)), false);

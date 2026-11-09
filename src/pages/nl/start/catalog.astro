@@ -20,7 +20,10 @@ import ModelKeuze from '../../../components/order/ModelKeuze.astro';
     {/* Stap 2, boven de productkaarten — zie ModelKeuze.astro. De slot
         heet "model" en staat in OrderFlow bij stap 2; waar dit blok in
         deze bron staat maakt dus niet uit voor waar het terechtkomt. */}
-    <ModelKeuze slot="model" lang="nl" soort="catalog" />
+    {/* 9 november 2026 (ronde 91, K-C1): "Wij kiezen" staat standaard aan, zoals bij de
+        €1-proef. Lucas koos in lijst 85 (C1 = a): één lijn op de formulieren, en een klant
+        zonder voorkeur hoeft niets te doen. Terugzetten = `verplicht={false}` weghalen. */}
+    <ModelKeuze slot="model" lang="nl" soort="catalog" verplicht={false} />
     {/* De combi-vraag ("lifestyle erbij?") is weg — ronde 8, 1 oktober 2026.
         Lucas verkoopt catalog + lifestyle niet meer als één dienst: wie
         allebei wil, plaatst twee bestellingen, elk tegen zijn eigen prijs. */}

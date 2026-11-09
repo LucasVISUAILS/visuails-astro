@@ -8,18 +8,17 @@
    E1  de lege fotoplek: een stukje op het beeld zelf zodra het in de buurt van het scherm komt en nog niet
        geladen is; weg zodra het beeld er is (of niet komt). Buren krijgen nooit hetzelfde stukje: wat links
        ernaast of erboven ligt, telt mee.
-   E2  het ene inktblok, alleen op een pagina zonder €1-blok: het slot onderaan (.h-lk-slot).
-   B4  het €1-blok (een groot postervlak): een stukje nacht, het licht rechtsonder.
+   E2 en B4 (het slot onderaan en het €1-blok) VERVALLEN 9 november 2026: daar staat sinds lijst 86 een vaste,
+   bewogen foto (src/styles/fotoblok.css), en geen stukje meer.
    Vast per pagina: de sleutel is het pad, het soort plek en het nummer. Hoogstens drie stukjes tegelijk op een
    pagina buiten de grote plekken (HOOGSTENS): wat al in de HTML staat telt mee, de fotoplek niet. */
-import { kies, pkKlasse, HOOGSTENS } from '../data/stukken.js';
+import { kies, pkKlasse } from '../data/stukken.js';
 
 const FOTOPLEKKEN = [
   '.g8-tegel img:not(.g8-veeg)',          // de galerij op de voorpagina
   '.h-gl-duim img', '.h-gl-raster img',   // /gallery
   '.h-lk-held-beeld img', '.h-lk-beeld img', '.h-lk-raster img', // de looks
 ].join(', ');
-const VASTE = '.pk:not(.pk-fp):not(.h-proef-woord):not(.h-nf-getal)';
 
 let io = null;
 function pad() { return location.pathname.replace(/\/$/, '') || '/'; }
@@ -63,20 +62,11 @@ function fotoplekken() {
   for (const img of plekken) io.observe(img);
 }
 
-function inktblok() {
-  let vast = document.querySelectorAll(VASTE).length;
-  const proef = document.querySelector('.h-proef > .h-proef-woord');
-  if (proef && !proef.classList.contains('pk')) zetStuk(proef, kies('nacht', `${pad()}:proef`));
-  if (proef) return;
-  const slot = document.querySelector('.h-lk-slot');
-  if (slot && !slot.classList.contains('pk') && vast < HOOGSTENS) { zetStuk(slot, kies('blok', `${pad()}:slot`)); vast += 1; }
-}
-
 /* astro:page-load komt ook bij de eerste keer laden: niet twee keer beginnen (zie HalPoster89) */
 function start() {
   if (document.body.dataset.pkKlaar) return;
   document.body.dataset.pkKlaar = '1';
-  inktblok(); fotoplekken();
+  fotoplekken();
 }
 start();
 document.addEventListener('astro:page-load', start);

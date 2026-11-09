@@ -211,6 +211,32 @@ export function safeProduct(raw) {
     .replace(/[-.]+$/, '');
 }
 
+/*
+ * ── HET DUIMPJE NAAST DE FOTO — lijst 87 (D13), 9 november 2026 ──────────────
+ *
+ * /admin laadde voor elk duimpje van 58 px het volle origineel van de klant, tot 25 MB per
+ * foto: een bestelling van twintig producten was honderden MB bij het openen, op een
+ * telefoon niet te doen. Nu stuurt het bestelformulier bij elke foto een kleine webp mee
+ * (veld `duim`, gemaakt in de browser, zoals public/admin-voorvertoning.js al doet bij
+ * leveringen). Hij staat naast het origineel in dezelfde batch, met DUIM_ACHTER erachter,
+ * zodat de nachtelijke opruiming van een verlaten batch hem meeneemt. listBatch() telt hem
+ * niet als foto en geeft hem mee als `preview`; /api/order zet hem in files.preview_key, en
+ * /admin toont hem via /admin/files/<id>/duim. Het origineel blijft voor de download.
+ */
+export const DUIM_ACHTER = '.duim.webp';
+/** Groter dan dit is geen duimpje (een webp van 480 px is zo'n 20 tot 60 kB). */
+export const MAX_DUIM_BYTES = 256 * 1024;
+export const isDuimKey = (key) => String(key || '').endsWith(DUIM_ACHTER);
+export const duimKeyVoor = (key) => `${key}${DUIM_ACHTER}`;
+/** RIFF....WEBP: de eerste twaalf bytes van een webp. */
+export function isWebpKop(b) {
+  if (!b || b.length < 12) return false;
+  const is = (off, ...xs) => xs.every((x, i) => b[off + i] === x);
+  return is(0, 0x52, 0x49, 0x46, 0x46) && is(8, 0x57, 0x45, 0x42, 0x50);
+}
+/** Een batch met elk origineel én zijn duimpje: zoveel objecten kan hij hoogstens tellen (+1). */
+export const MAX_BATCH_OBJECTEN = MAX_BATCH_FILES * 2 + 1;
+
 /**
  * Everything staged under a batch, oldest first.
  *
@@ -232,13 +258,18 @@ export function safeProduct(raw) {
 export async function listBatch(env, batch, limit = MAX_BATCH_FILES + 1) {
   if (!env?.UPLOADS || !isWellFormedBatch(batch)) return [];
   try {
-    const listed = await env.UPLOADS.list({ prefix: batchPrefix(batch), limit, include: ['customMetadata'] });
-    return (listed?.objects || []).map((o) => ({
+    /* Lijst 87 (D13): de duimpjes staan ernaast en tellen niet mee; de lijst haalt er dus ruim
+       genoeg op voor elk origineel met zijn duimpje (R2 geeft er hoogstens 1000 per keer). */
+    const listed = await env.UPLOADS.list({ prefix: batchPrefix(batch), limit: Math.min(1000, limit * 2), include: ['customMetadata'] });
+    const objecten = listed?.objects || [];
+    const duimen = new Set(objecten.filter((o) => isDuimKey(o.key)).map((o) => o.key));
+    return objecten.filter((o) => !isDuimKey(o.key)).slice(0, limit).map((o) => ({
       key: o.key,
       bytes: Number(o.size) || 0,
       name: o.customMetadata?.original || o.key.split('/').pop(),
       product: safeProduct(o.customMetadata?.product),
       shot: isShotId(o.customMetadata?.shot) ? o.customMetadata.shot : '',
+      preview: duimen.has(duimKeyVoor(o.key)) ? duimKeyVoor(o.key) : '',
     }));
   } catch {
     return [];
@@ -254,12 +285,21 @@ export async function listBatch(env, batch, limit = MAX_BATCH_FILES + 1) {
  * the random tail is what makes it unique — so flattening it costs nothing.
  */
 export function safeName(raw) {
-  const flat = (raw || 'file')
+  const plat = (raw || 'file')
     .toString()
     .split(/[\\/]/)
     .pop()
     .normalize('NFKD')
-    .replace(/[^A-Za-z0-9._-]+/g, '-')
+    .replace(/[^A-Za-z0-9._-]+/g, '-');
+  /* ── EEN STAM DIE HELEMAAL WEGVALT — 9 november 2026 (ronde 91, D02) ──────
+     "😀.jpg", "照片.jpg" of "фото.heic" werden "-.jpg", en de regel hieronder
+     die een voorloopstreep of -punt weghaalt, at dan ook de PUNT van de
+     extensie op: de naam werd "jpg", zonder extensie. Het type klopte nog (dat
+     komt uit de originele naam), maar /admin bood Lucas een download "jpg" aan
+     die Windows niet kan openen, en de bestandenlijst toonde "jpg" bij elke
+     foto van een klant die zijn bestanden in het Chinees of Russisch noemt.
+     Nu krijgt zo'n stam de naam "foto" en blijft de extensie staan. */
+  const flat = (/^[.\-]*\.[A-Za-z0-9]{1,5}$/.test(plat) ? `foto${plat.slice(plat.lastIndexOf('.'))}` : plat)
     .replace(/^[.\-]+/, '')
     .replace(/-{2,}/g, '-');
 
@@ -303,6 +343,45 @@ export function extensionOf(name) {
 /** The type we will store for this filename, or null if we will not store it. */
 export function typeFor(name) {
   return UPLOAD_TYPES[extensionOf(name)] || null;
+}
+
+/* ── HET TYPE UIT DE EERSTE BYTES — 9 november 2026 (ronde 91, D06) ──────────────
+ *
+ * typeFor() kijkt alleen naar de extensie. Een echte JPEG zonder extensie (sommige
+ * Android-galerijen en gedeelde bestanden uit chat-apps, of "IMG_1234.jpg_large")
+ * kreeg daarom "Geen beeld dat we kunnen lezen", terwijl de browser er een
+ * miniatuur van maakte. De eerste bytes zeggen wat het is: elk formaat heeft een
+ * vaste handtekening. Dit geeft de extensie die bij die bytes hoort, of null.
+ *
+ * Alleen voor een naam waarvan de extensie niets zegt: een bekende extensie blijft
+ * de bron (een .jpg die eigenlijk een png is, is gewoon een beeld). De aanroeper
+ * kiest het type daarna uit zijn eigen tabel (UPLOAD_TYPES, of LEVERING_MIME in
+ * /admin), dus wat er de R2 in gaat, komt nooit uit de browser.
+ *
+ * `b` zijn de eerste 16 bytes (Uint8Array).
+ */
+const FTYP_MERK = {
+  heic: 'heic', heix: 'heic', hevc: 'heic', hevx: 'heic', heim: 'heic', heis: 'heic', hevm: 'heic', hevs: 'heic',
+  mif1: 'heif', msf1: 'heif',
+  avif: 'avif', avis: 'avif',
+  isom: 'mp4', iso2: 'mp4', iso4: 'mp4', iso5: 'mp4', iso6: 'mp4', mp41: 'mp4', mp42: 'mp4', avc1: 'mp4', mmp4: 'mp4', dash: 'mp4',
+  'qt  ': 'mov',
+};
+
+/** De extensie die bij de eerste bytes hoort ('jpg', 'png', 'heic', 'mp4' …), of null. */
+export function extUitKop(b) {
+  if (!b || b.length < 12) return null;
+  const is = (off, ...xs) => xs.every((x, i) => b[off + i] === x);
+  if (is(0, 0xff, 0xd8, 0xff)) return 'jpg';
+  if (is(0, 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)) return 'png';
+  if (is(0, 0x47, 0x49, 0x46, 0x38)) return 'gif';
+  if (is(0, 0x52, 0x49, 0x46, 0x46) && is(8, 0x57, 0x45, 0x42, 0x50)) return 'webp';
+  if (is(0, 0x49, 0x49, 0x2a, 0x00) || is(0, 0x4d, 0x4d, 0x00, 0x2a)) return 'tif';
+  if (is(4, 0x66, 0x74, 0x79, 0x70)) {
+    const merk = String.fromCharCode(b[8], b[9], b[10], b[11]).toLowerCase();
+    return FTYP_MERK[merk] || null;
+  }
+  return null;
 }
 
 /*

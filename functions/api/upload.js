@@ -47,6 +47,12 @@ import {
   safeName,
   safeProduct,
   typeFor,
+  extUitKop,
+  MAX_BATCH_OBJECTEN,
+  MAX_DUIM_BYTES,
+  duimKeyVoor,
+  isDuimKey,
+  isWebpKop,
 } from '../../src/lib/uploads.js';
 import { isShotId } from '../../src/data/shots.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from '../../src/lib/ratelimit.js';
@@ -138,8 +144,22 @@ export async function onRequestPost(context) {
   // waarover ze het eens moeten zijn. safeName() houdt de extensie nu heel, dus
   // beide zouden hetzelfde antwoord geven — maar dan nog is één bron beter dan
   // twee die toevallig gelijk lopen.
-  const name = safeName(file.name);
-  const type = typeFor(file.name);
+  let name = safeName(file.name);
+  let type = typeFor(file.name);
+  /* ── GEEN (BEKENDE) EXTENSIE: DAN DE EERSTE BYTES — 9 november 2026 (ronde 91, D06) ──
+     Een echte JPEG zonder extensie (Android-galerij, gedeeld uit een chat-app) of met
+     een vreemde ("IMG_1234.jpg_large") werd hier geweigerd. Zegt de naam niets, dan
+     beslissen de bytes (extUitKop in src/lib/uploads.js), het type komt uit onze
+     eigen tabel, en de naam krijgt de extensie erbij, zodat /admin en de download
+     hem kunnen openen. Wat geen beeld is, krijgt dezelfde melding als altijd. */
+  if (!type) {
+    let ext = null;
+    try { ext = extUitKop(new Uint8Array(await file.slice(0, 16).arrayBuffer())); } catch { ext = null; }
+    if (ext && UPLOAD_TYPES[ext]) {
+      type = UPLOAD_TYPES[ext];
+      name = safeName(`${String(file.name || 'foto').replace(/\.+$/, '')}.${ext}`);
+    }
+  }
   if (!type) return json({ ok: false, error: 'bad-type', accepted: Object.keys(UPLOAD_TYPES) }, 400);
 
   // WHERE THIS PHOTOGRAPH GOES, IF THE CLIENT SAID.
@@ -219,8 +239,9 @@ export async function onRequestPost(context) {
   // Making it exact needs a lock this endpoint has no reason to own.
   let existing = 0;
   try {
-    const listed = await env.UPLOADS.list({ prefix: batchPrefix(batch), limit: MAX_BATCH_FILES + 1 });
-    existing = (listed?.objects || []).length;
+    /* Lijst 87 (D13): de duimpjes staan in dezelfde batch en tellen niet mee. */
+    const listed = await env.UPLOADS.list({ prefix: batchPrefix(batch), limit: Math.min(1000, MAX_BATCH_OBJECTEN) });
+    existing = (listed?.objects || []).filter((o) => !isDuimKey(o.key)).length;
   } catch {
     return json({ ok: false, error: 'unavailable' }, 503);
   }
@@ -230,6 +251,8 @@ export async function onRequestPost(context) {
   // a collision impossible rather than unlikely. Two files picked out of the same
   // folder are frequently called the same thing, and an overwrite here loses a
   // photograph silently — the one failure mode this must not have.
+  /* Een foto die toevallig op .duim.webp eindigt, is geen duimpje (lijst 87, D13). */
+  if (isDuimKey(name)) name = name.replace(/\.duim\.webp$/, '-duim.webp');
   const key = `${batchPrefix(batch)}${String(existing + 1).padStart(3, '0')}-${rand(4)}-${name}`;
 
   try {
@@ -253,6 +276,26 @@ export async function onRequestPost(context) {
     return json({ ok: false, error: 'unavailable' }, 503);
   }
 
+  /* ── HET DUIMPJE — lijst 87 (D13) ──────────────────────────────────────────
+     Zie de kop bij DUIM_ACHTER in src/lib/uploads.js. Alleen een echte webp (de eerste
+     bytes), en klein; anders laten we hem weg. Een duimpje dat niet lukt, kost de klant
+     niets: /admin toont dan het origineel, zoals eerst. Dus nooit een fout terug. */
+  const duim = form.get('duim');
+  let metDuim = false;
+  if (duim && typeof duim !== 'string' && typeof duim.arrayBuffer === 'function'
+      && Number(duim.size) > 0 && Number(duim.size) <= MAX_DUIM_BYTES) {
+    try {
+      const buf = new Uint8Array(await duim.arrayBuffer());
+      if (isWebpKop(buf.subarray(0, 12))) {
+        await env.UPLOADS.put(duimKeyVoor(key), buf, {
+          httpMetadata: { contentType: 'image/webp' },
+          customMetadata: { staged: new Date().toISOString(), duim: '1' },
+        });
+        metDuim = true;
+      }
+    } catch { metDuim = false; }
+  }
+
   // product and shot are echoed as STORED, not as sent. The client renders the
   // slot it thinks a file is in from its own state; this is how it can tell
   // that what the server kept is the same thing.
@@ -260,6 +303,7 @@ export async function onRequestPost(context) {
     ok: true,
     batch,
     file: { key, name, bytes, type, product, shot },
+    duim: metDuim,
     count: existing + 1,
     max: MAX_BATCH_FILES,
   });
@@ -291,6 +335,8 @@ export async function onRequestDelete(context) {
   } catch {
     return json({ ok: false, error: 'unavailable' }, 503);
   }
+  /* Het duimpje erbij (lijst 87, D13). Bestaat hij niet, dan is dat geen fout. */
+  if (!isDuimKey(key)) { try { await env.UPLOADS.delete(duimKeyVoor(key)); } catch { /* laat liggen; de opruiming neemt hem mee */ } }
   return json({ ok: true, key });
 }
 

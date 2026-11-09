@@ -34,11 +34,12 @@ import { lookRegels } from '../data/looks.js';
 import { tegoedOpBestelling } from './tegoedVerrekening.js';
 import { renderInvoicePdf } from './invoicePdf.js';
 import { composeAddress } from '../data/address.js';
-import { VAT_TREATMENT } from '../data/vat.js';
+import { VAT_TREATMENT, landOpFactuur } from '../data/vat.js';
 import { VAT_RATE } from './quote.js';
 import { planName } from '../data/planNames.js';
 import { serviceLabel } from '../data/services.js';
 import { getStyle } from '../data/styles.js';
+import { RESOLUTIE } from '../data/pricing.js';
 
 /*
  * ── HOE SELLER_ADDRESS AANGELEVERD MAG WORDEN — 10 AUGUSTUS 2026 ────────────
@@ -235,6 +236,55 @@ export function isProefNummer(number) {
  * prijslijst — dat is het hele punt van een momentopname, en het is ook wat een
  * factuur juridisch onderscheidt van een pagina die een bedrag toont.
  */
+/**
+ * ── WAT ER GEKOCHT IS, ALS EIGEN REGELS — 9 november 2026 (lijst 87, B07) ──────
+ *
+ * De opbouw die quoteOrder() bij het bestellen uitrekende (details.opbouw, zie
+ * opbouwVan() in src/lib/quote.js): producten, complete looks, extra hoeken, 4K,
+ * de toeslag van een eigen look en voorrang, elk met aantal en prijs. Zo vindt
+ * een klant die narekent het bedrag terug in de prijslijst, en staan "omvang en
+ * aard" op de factuur.
+ *
+ * Eén regel zoals voorheen als: er geen opbouw is (een oude bestelling, een
+ * offerte, video, de proef), het een aanbetaling is, of de regels niet optellen
+ * tot het netto bedrag (Lucas paste de prijs in /admin aan). Dan nooit een gok.
+ */
+const REGEL_NAAM = {
+  nl: {
+    producten: (svc) => `${svc}, per product`,
+    looks: () => 'Complete look',
+    hoeken: () => 'Extra hoek',
+    hoog: () => `4K (${RESOLUTIE.hoog} px), per product`,
+    eigenlook: () => 'Toeslag eigen look, per product',
+    voorrang: () => 'Voorrang',
+  },
+  en: {
+    producten: (svc) => `${svc}, per product`,
+    looks: () => 'Complete look',
+    hoeken: () => 'Extra angle',
+    hoog: () => `4K (${RESOLUTIE.hoog} px), per product`,
+    eigenlook: () => 'Own look surcharge, per product',
+    voorrang: () => 'Priority',
+  },
+};
+export function factuurRegels({ d = {}, net = 0, svc = '', basis = '', detail = '', lang = 'nl', aanbetaling = false } = {}) {
+  const een = [{ description: basis, ...(detail ? { detail } : {}), qty: 1, unitCents: net, totalCents: net }];
+  const opbouw = Array.isArray(d?.opbouw) ? d.opbouw : null;
+  if (!opbouw || !opbouw.length || aanbetaling) return een;
+  const namen = REGEL_NAAM[lang === 'nl' ? 'nl' : 'en'];
+  const regels = [];
+  for (const r of opbouw) {
+    const qty = Number(r?.qty);
+    const unit = Number(r?.unitCents);
+    const totaal = Number(r?.totalCents);
+    if (!namen[r?.soort] || !Number.isInteger(qty) || qty < 1 || !Number.isInteger(unit) || unit < 1 || totaal !== qty * unit) return een;
+    regels.push({ description: namen[r.soort](svc), qty, unitCents: unit, totalCents: totaal });
+  }
+  if (regels.reduce((s, r) => s + r.totalCents, 0) !== net) return een;
+  if (detail) regels[0] = { ...regels[0], detail };
+  return regels;
+}
+
 export function snapshotFromOrder(order, env, { number, date, dueDate = null } = {}) {
   const lang = order.lang === 'en' ? 'en' : 'nl';
   const net = Number(order.total_cents) || 0;
@@ -313,6 +363,7 @@ export function snapshotFromOrder(order, env, { number, date, dueDate = null } =
     ? lookRegels(d, lang, Number(order.product_count) || 0).map((r) => `Complete look ${r}`)
     : [];
   const detail = [stijlRegel, ...lookDelen].filter(Boolean).join('\n');
+  const lines = factuurRegels({ d, net, svc, basis: label, detail, lang, aanbetaling });
 
   return {
     number,
@@ -324,10 +375,15 @@ export function snapshotFromOrder(order, env, { number, date, dueDate = null } =
       name: [order.first_name, order.last_name].filter(Boolean).join(' ') || order.name || '',
       company: order.brand || null,
       address,
-      country: order.country || null,
+      /* Nooit "XX" of een verzonnen code op de factuur (ronde 91, B11): dan alleen het adres. */
+      country: landOpFactuur(order.country),
       vat: order.vat_number || null,
     },
-    lines: [{ description: label, ...(detail ? { detail } : {}), qty: 1, unitCents: net, totalCents: net }],
+    lines,
+    /* De omschrijving van de bestelling als geheel ("Catalog — 5 producten"): sinds er
+       meer regels kunnen zijn (B07) is de eerste regel niet meer de hele bestelling.
+       De creditnota en e-Boekhouden lezen deze. */
+    omschrijving: label,
     netCents: net,
     vatRate: Number(order.vat_rate) || 0,
     vatCents: vat,
@@ -336,7 +392,8 @@ export function snapshotFromOrder(order, env, { number, date, dueDate = null } =
     tegoedCents: tegoedOpBestelling(order),
     treatment: order.vat_treatment || VAT_TREATMENT.standard,
     reference: order.ref,
-    paidAt: order.paid_at ? String(order.paid_at).slice(0, 10) : null,
+    /* De dag in Nederland: paid_at komt uit datetime('now') en is UTC (ronde 91, B06). */
+    paidAt: order.paid_at ? amsterdamDatum(order.paid_at) : null,
     viesConsultation: order.vat_consultation || null,
   };
 }
@@ -420,6 +477,31 @@ export function snapshotFromOrder(order, env, { number, date, dueDate = null } =
  * gebeurd. Klopt het bedrag alsnog (bijbetaling, of een betaling die alsnog is
  * binnengekomen), dan geeft de eerstvolgende inhaalslag de factuur vanzelf uit.
  */
+/*
+ * ── DE DATUM IN NEDERLAND, NIET IN UTC — 9 november 2026 (ronde 91, B06) ─────
+ *
+ * De factuurdatum was `new Date().toISOString().slice(0, 10)`: de datum in UTC.
+ * Een factuur die om 00:30 Nederlandse tijd wordt uitgereikt (23:30 UTC, in de
+ * zomer tot 02:00) kreeg daarmee de datum van gisteren — elke nacht, en op
+ * 1 januari ook het nummer uit de reeks van het oude jaar (VIS-2026-… gedateerd
+ * 31 december) en dus het verkeerde btw-tijdvak. Hetzelfde voor de creditnota,
+ * de abonnementsfactuur (created_at uit SQLite is UTC) en de "Betaald op"-regel.
+ *
+ * Neemt een Date, een ISO-tijd met Z of offset, of SQLite's 'YYYY-MM-DD HH:MM:SS'
+ * (dat is UTC). Een kale datum 'YYYY-MM-DD' blijft zoals hij is: die is al een dag.
+ */
+export function amsterdamDatum(moment = new Date()) {
+  let d = moment;
+  if (!(d instanceof Date)) {
+    const s = String(moment || '').trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    const sqlite = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?)$/.exec(s);
+    d = new Date(sqlite ? `${sqlite[1]}T${sqlite[2]}Z` : s);
+  }
+  if (Number.isNaN(d.getTime())) return String(moment || '').slice(0, 10);
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Amsterdam', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+}
+
 const FACTUUR_SPELING_CENT = 2;
 
 export async function betalingGedekt(env, order) {
@@ -534,7 +616,8 @@ export async function issueInvoice(env, orderId, { today } = {}) {
      Studio, waar de studio een factuur met de hand op de juiste dag zet. Die
      uitweg bestond al en blijft. */
   if (!today && !order.paid_at) throw new Error('invoice: geen datum voor bestelling ' + orderId);
-  const date = String(today || '').slice(0, 10) || new Date().toISOString().slice(0, 10);
+  /* De dag in Nederland, niet in UTC — zie amsterdamDatum() (ronde 91, B06). */
+  const date = String(today || '').slice(0, 10) || amsterdamDatum(new Date());
   const year = Number(date.slice(0, 4));
 
   // Bestaat er al een nummer maar geen pdf, dan gebruiken we DAT nummer opnieuw.
@@ -562,7 +645,7 @@ export async function issueInvoice(env, orderId, { today } = {}) {
       const regels = String((klant && klant.billing_address) || '').split('\n').map((l) => l.trim()).filter(Boolean);
       if (regels.length) {
         snap.customer.address = regels;
-        if (!snap.customer.country && klant.country) snap.customer.country = klant.country;
+        if (!snap.customer.country && klant.country) snap.customer.country = landOpFactuur(klant.country);
       }
     }
     try {
@@ -719,7 +802,7 @@ export function snapshotFromSubscription({ sub, customer, payment, month, lang: 
       name: (customer && customer.name) || '',
       company: (customer && customer.brand) || null,
       address,
-      country: (customer && (customer.country || sub?.vat_country)) || null,
+      country: landOpFactuur((customer && (customer.country || sub?.vat_country)) || null),
       vat: (customer && customer.vat_number) || (sub && sub.vat_number) || null,
     },
     lines: [{ description: label, qty: 1, unitCents: net, totalCents: net }],
@@ -807,7 +890,8 @@ export async function issueSubscriptionInvoice(env, subscriptionPaymentId, { tod
     : null;
   const taal = (taalRij && taalRij.lang) === 'en' ? 'en' : 'nl';
 
-  const date = String(today || betaling.created_at || '').slice(0, 10) || null;
+  /* created_at is UTC (datetime('now')); de factuurdag is die in Nederland (ronde 91, B06). */
+  const date = String(today || '').slice(0, 10) || (betaling.created_at ? amsterdamDatum(betaling.created_at) : '') || null;
   if (!date) throw new Error('factuur: geen datum voor abonnementsbetaling ' + subscriptionPaymentId);
   const year = Number(date.slice(0, 4));
 
@@ -945,7 +1029,7 @@ export function creditSnapshotFrom(invoiceSnap, { number, date, netCents, grossC
      leest als een fout. */
   const full = net >= (Number(src.netCents) || 0);
   const first = (src.lines && src.lines[0]) || {};
-  const base = String(first.description || src.reference || '').trim();
+  const base = String(src.omschrijving || first.description || src.reference || '').trim();
   const suffix = lang === 'nl'
     ? (full ? ' — volledig gecrediteerd' : ' — gedeeltelijk gecrediteerd')
     : (full ? ' — credited in full' : ' — partially credited');
@@ -1015,9 +1099,10 @@ export async function issueCreditNote(env, orderId, { refundedGrossCents, reason
      hem hier niet meetellen zou bij een mislukte pdf een tweede nota voor hetzelfde geld
      opleveren. 'void' telt niet mee, want dat is een ingetrokken nota. */
   const done = await env.DB.prepare(
-    "SELECT COALESCE(SUM(gross_cents), 0) AS g FROM credit_notes WHERE invoice_id = ?1 AND status <> 'void'"
+    "SELECT COALESCE(SUM(gross_cents), 0) AS g, COALESCE(SUM(net_cents), 0) AS n FROM credit_notes WHERE invoice_id = ?1 AND status <> 'void'"
   ).bind(invoice.id).first();
   const already = Math.max(0, Math.floor(Number(done?.g) || 0));
+  const alreadyNet = Math.max(0, Math.floor(Number(done?.n) || 0));
 
   /* Nooit meer crediteren dan er op de factuur stond. Mollie kan in theorie niet meer
      terugbetalen dan er betaald is, maar een factuur en een betaling zijn twee
@@ -1030,9 +1115,16 @@ export async function issueCreditNote(env, orderId, { refundedGrossCents, reason
      btw-tarief: bij een verlegde factuur is de btw 0 en zijn netto en bruto gelijk, en
      bij 21% is de verhouding precies wat er op de factuur staat. Zo klopt een volledige
      creditnota tot op de cent met de factuur. */
-  const net = room >= invGross ? invNet : Math.round((room * invNet) / invGross);
+  /* DE LAATSTE NOTA SLUIT OP DE CENT — 9 november 2026 (ronde 91, B07). Elke
+     deelnota rondt haar netto af; drie keer € 100 en dan de rest van € 393,25 gaf
+     samen € 324,99 netto en € 68,26 btw tegenover een factuur van € 325,00 en
+     € 68,25. Maakt deze nota de factuur vol, dan is haar netto wat er nog over is. */
+  const net = room >= invGross ? invNet
+    : already + room >= invGross ? Math.max(0, invNet - alreadyNet)
+      : Math.round((room * invNet) / invGross);
 
-  const date = String(today || '').slice(0, 10) || new Date().toISOString().slice(0, 10);
+  /* De dag in Nederland, niet in UTC — zie amsterdamDatum() (ronde 91, B06). */
+  const date = String(today || '').slice(0, 10) || amsterdamDatum(new Date());
   const year = Number(date.slice(0, 4));
   /* GEËRFD VAN DE FACTUUR, en niet opnieuw vastgesteld. Een creditnota bestaat
      alleen als tegenhanger van één bepaalde factuur; is die uit de proefreeks,

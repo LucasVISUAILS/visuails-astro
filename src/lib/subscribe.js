@@ -81,7 +81,7 @@ import {
 import { aboStand } from './aboPlafond.js';
 import { planName } from '../data/planNames.js';
 import { regKindFor, REG_KIND, looksLikeKvk } from '../data/business.js';
-import { vatDecision, normaliseVat, viesCode, HOME_COUNTRY, vatFormatOk, VAT_TREATMENT, ipLandVraagtNakijken } from '../data/vat.js';
+import { vatDecision, normaliseVat, viesCode, HOME_COUNTRY, vatFormatOk, VAT_TREATMENT, ipLandVraagtNakijken, landVraagtNakijken } from '../data/vat.js';
 import { notifyAboBtwNakijken } from './notify.js';
 import { checkVat } from './vies.js';
 import {
@@ -851,7 +851,7 @@ export async function bepaalBedrijfEnBtw(env, form, customerId, ipLand = '') {
   /* VIES alleen in een ander EU-land en alleen met een nummer. Onbereikbaar is
      21% — de strenge kant, zoals bij een bestelling (functions/api/order.js). */
   let vies = null;
-  const delen = normaliseVat(btw);
+  const delen = normaliseVat(btw, land);
   const cc = viesCode(land);
   if (soort === REG_KIND.euVat && cc && land !== HOME_COUNTRY && delen.number) {
     const eigen = env?.VISUAILS_VAT ? normaliseVat(env.VISUAILS_VAT) : null;
@@ -861,7 +861,10 @@ export async function bepaalBedrijfEnBtw(env, form, customerId, ipLand = '') {
   }
   const besluit = vatDecision({ country: land, vatValid: !!(vies && vies.valid && bevestigd) });
   let nakijken = null;
-  if (besluit.treatment === VAT_TREATMENT.outsideScope && ipLandVraagtNakijken(land, ipLand)) {
+  /* Ook bij "Ergens anders" of een onbekende code (ronde 91, B11, 9 november 2026):
+     dan staat niet vast dat het buiten de EU ligt. Zelfde weg als o16 — Lucas keurt
+     het land goed op de klantpagina (btw_land_akkoord) en de volgende poging gaat door. */
+  if (besluit.treatment === VAT_TREATMENT.outsideScope && (ipLandVraagtNakijken(land, ipLand) || landVraagtNakijken(land))) {
     /* Zonder migratie 0053 is er geen akkoord te lezen: dan wacht het op Lucas. */
     const ok = customerId && env?.DB
       ? await env.DB.prepare('SELECT btw_land_akkoord AS land FROM customers WHERE id = ?1')

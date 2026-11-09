@@ -35,7 +35,8 @@
 // afzwakt: een datum die verzonnen is terwijl de agenda onleesbaar was, is precies
 // de belofte waar de poort tegen bestaat.
 
-import { HORIZON_DAYS, addDays, bookedFromRows } from '../data/capacity.js';
+import { HORIZON_DAYS, addDays, addOpenDays, QUEUE_AIM_DAYS, bookedFromRows } from '../data/capacity.js';
+import { heeftVoorrang, voorrangDeadline } from '../data/pricing.js';
 
 /**
  * Rijen van bestellingen die een venster vasthouden.
@@ -89,6 +90,42 @@ export async function readCalendar(env, today, { beforeId = null, exceptId = nul
   const blackouts = new Set((blackoutRows.results || []).map((r) => r.day));
   const rijen = (orderRows.results || []).map(videoVelden);
   return { blackouts, booked: bookedFromRows(rijen, blackouts) };
+}
+
+/**
+ * De laatste dag waarop deze bestelling af moet zijn.
+ *
+ * Eén functie voor alle soorten, zodat er geen tweede regel kan ontstaan die er stilletjes van afwijkt. Geeft
+ * ook terug WAAROM die dag het is, want een lijst die alleen datums toont, laat je raden waar ze vandaan komen.
+ *
+ * ── VERHUISD UIT ADMIN.JS — 9 november 2026 (ronde 91, lijst 85 w1 = goed) ───────────────────────────────────
+ * De planning, de agenda en het oude "Eerst af" rekenden hiermee in admin.js; nu staat hij hier, zodat Nu doen
+ * (src/lib/nudoen.js) en dus ook het nachtrapport dezelfde dag noemen. Twee dingen zijn daarbij rechtgezet:
+ *   · VOORRANG rekent met voorrangDeadline() uit pricing.js: de betaaldatum, werkdagen, vóór 15:00 de volgende
+ *     werkdag om 17:00 — wat de voorwaarden beloven. Hiervoor was het de dag van binnenkomst plus één open dag
+ *     (kalenderdagen, het weekend erbij), en dan zei /admin "morgen" terwijl de belofte "dinsdag 17:00" was.
+ *     `uur` staat er dan bij (17). Nog niet betaald: de termijn loopt nog niet, dus de gewone streefdag.
+ *   · `vandaag` kan worden meegegeven (een test, of het nachtrapport om 05:10), zonder dat er iets op de klok leunt.
+ *
+ * @param {{ tier?: string, window_start?: string, window_end?: string, created_at?: string, paid_at?: string,
+ *           details_json?: string }} o
+ * @param {Set<string>} [blackouts]  dichtgezette dagen ('YYYY-MM-DD')
+ * @returns {{ dag: string, manier: 'datum'|'voorrang'|'asap', uur?: number }}
+ */
+export function agendaUiterlijk(o, blackouts = new Set(), vandaag = new Date().toISOString().slice(0, 10)) {
+  if (o.tier === 'attended' && o.window_start && o.window_end) {
+    return { dag: o.window_end, manier: 'datum' };
+  }
+  const voorrang = heeftVoorrang(o);
+  if (voorrang && o.paid_at) {
+    const d = voorrangDeadline(o.paid_at);
+    if (d) return { dag: d.datum, manier: 'voorrang', uur: d.uur };
+  }
+  const binnen = String(o.created_at || '').replace('T', ' ').slice(0, 10);
+  const vanaf = /^\d{4}-\d{2}-\d{2}$/.test(binnen) ? binnen : vandaag;
+  /* QUEUE_AIM_DAYS (sinds 3 september 2026): de site belooft geen marge meer, en de lat van de studio zelf is
+     binnen een dag. */
+  return { dag: addOpenDays(vanaf, QUEUE_AIM_DAYS, blackouts), manier: voorrang ? 'voorrang' : 'asap' };
 }
 
 /**

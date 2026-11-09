@@ -15,9 +15,11 @@
  *     week toch al vrij.
  * 2 · OPRUIMEN daarna. Dit is de zwaarste taak en de enige die iets onherroepelijk
  *     verwijdert, dus staat hij niet vóór iets anders dat nog moet gebeuren.
- * 3 · FACTUREN als laatste van de drie die werk doen. Een klant die betaald heeft en
- *     nog geen factuur heeft, wacht al langer dan één nacht; een uur later is hier
- *     geen verschil.
+ * 3 · FACTUREN stonden hier als laatste van de drie die werk doen ("een uur later is
+ *     geen verschil"). Sinds 9 november 2026 (ronde 91, C09) staan de facturen, de
+ *     boekhouding en de maand van een vooruitbetaald jaar VOORAAN: met een rem op elke
+ *     lus (de meetlat) is het verschil niet meer een uur maar een nacht, en wat al
+ *     betaald is gaat voor wat nog betaald moet worden.
  * 4 · DE BACK-UPWACHT kijkt alleen. Hij verandert niets en staat daarom achteraan: als
  *     een van de drie hierboven omvalt, is dat het bericht van vannacht, en dan hoort
  *     daar geen tweede mededeling tussendoor.
@@ -84,6 +86,8 @@ import { nachtrun as boekhoudingNachtrun } from '../src/lib/eboekhouden.js';
 import { shell as mailShell, h1 as mailH1, p as mailP, spamNote as mailSpamNote, datum as mailDatum, button as mailButton, greeting as mailGreeting } from '../src/lib/mailTemplate.js';
 /* De vragenregel onder een klantmail (punt 7.07, 8 oktober 2026). */
 import { vragen as mailVragen, kenmerk as mailKenmerk, C as MAILKLEUR } from '../src/lib/mailTemplate.js';
+/* Ronde 91 (9 november 2026, E05): Studio-links met de taal van de mail; /nl/account/… liet hem vallen. */
+import { studioUrl } from '../src/lib/studioLink.js';
 /* Stil afronden na de revisietermijn (punt 3.03, 8 oktober 2026). */
 import { STIL_AFRONDEN_SQL, STIL_AFRONDEN_DAGEN, rondStilAf } from '../src/lib/close.js';
 /* De klant bereiken met een vaste tekst (punt 7.05, 8 oktober 2026). */
@@ -152,7 +156,15 @@ export default {
     /* afgerondGisteren staat niet meer in deze rij (4.05): zijn bestellingen staan
        als "Review vragen" in de Nu-doen-lijst bovenaan het rapport, met dezelfde
        voorwaarde (REVIEW_VRAGEN_WAAR in src/lib/nudoen.js). */
-    for (const task of [remindUnpaid, releaseExpiredWindows, cancelStaleApprovals, purgeExpiredFiles, sweepAbandonedIntake, issuePendingInvoices, boekhoudingNacht, grantPrepaidMonths, incassoSignalen, herinnerCredits, pauzeVraag, levermailBewaker, mailNietAan, stilAfronden, bewaartermijnAccounts, checkBackupAge]) {
+    /* ── WAT BETAALD IS EERST — 9 november 2026 (ronde 91, C09, optie a) ─────
+       De vastgelopen facturen, de boekhouding en de maand van een vooruitbetaald
+       jaar stonden achter de betaalherinneringen. Sinds de meetlat op elke lus een
+       rem zet (C-01), kon een drukke nacht met herinneringen en vervallen
+       bestellingen de credits die een klant al betaalde een paar nachten laten
+       wachten (gemeten: tot drie). Nu eerst wat geld al heeft opgeleverd, dan de
+       herinneringen. De rest houdt zijn volgorde: vrijgeven vóór opruimen,
+       toekennen vóór de creditherinnering, de bewakers achteraan. */
+    for (const task of [issuePendingInvoices, boekhoudingNacht, grantPrepaidMonths, remindUnpaid, releaseExpiredWindows, cancelStaleApprovals, purgeExpiredFiles, sweepAbandonedIntake, incassoSignalen, herinnerCredits, pauzeVraag, levermailBewaker, mailNietAan, stilAfronden, bewaartermijnAccounts, checkBackupAge]) {
       try {
         const line = await task(gemeten);
         if (line) report.push(line);
@@ -279,8 +291,15 @@ const FIND_EXPIRED_WINDOWS = (
       LIMIT 100`);
 
 async function releaseAll(env, rows) {
+  /* ── ÉÉN BATCH VOOR ALLE RESERVERINGEN — 9 november 2026 (ronde 91, C05) ───
+     Hier stond één batch per bestelling: tot honderd databaseverzoeken in één
+     nacht met een grens van 50 (src/lib/meetlat.js). D1 telt een batch als één
+     verzoek en voert hem als één transactie uit, dus nu gaan alle UPDATE's en
+     tijdlijnregels samen. Elke UPDATE houdt zijn eigen voorwaarde (nog niet
+     betaald); er verandert niets aan wat er per bestelling gebeurt. */
+  const statements = [];
   for (const o of rows) {
-    await env.DB.batch([
+    statements.push(
       env.DB.prepare(
         /* Alleen zolang er nog niet betaald is (ronde 8, B-B10): tussen de
            SELECT en deze UPDATE kan de betaling binnen zijn gekomen, en dan
@@ -289,9 +308,14 @@ async function releaseAll(env, rows) {
             SET window_start = NULL, window_end = NULL, window_expires_at = NULL
           WHERE id = ?1 AND COALESCE(payment_status, 'unpaid') = 'unpaid'`
       ).bind(o.id),
+      /* Alleen als hij nog onbetaald is (9 november 2026, ronde 91, C10): de UPDATE
+         hierboven slaat een bestelling over die tussen de SELECT en nu betaald is,
+         maar de tijdlijnregel "vrijgegeven: de betaaltermijn is verstreken" ging er
+         toch op. Dezelfde voorwaarde als de UPDATE, zoals in cancelStaleApprovals. */
       env.DB.prepare(
         `INSERT INTO order_events (order_id, status, note, actor)
-         VALUES (?1, ?2, ?3, 'system')`
+         SELECT ?1, ?2, ?3, 'system'
+          WHERE EXISTS (SELECT 1 FROM orders WHERE id = ?1 AND COALESCE(payment_status, 'unpaid') = 'unpaid')`
       ).bind(
         o.id,
         /* Zie de noot bij dezelfde reparatie in src/lib/betaallink.js:
@@ -302,8 +326,9 @@ async function releaseAll(env, rows) {
           ? `Reservation ${mailDatum(o.window_start, 'en')}${o.window_end && o.window_end !== o.window_start ? ` – ${mailDatum(o.window_end, 'en')}` : ''} released: the payment period has passed. The order stays; pay and we agree a new date with you.`
           : `Reservering ${mailDatum(o.window_start, 'nl')}${o.window_end && o.window_end !== o.window_start ? ` – ${mailDatum(o.window_end, 'nl')}` : ''} vrijgegeven: de betaaltermijn is verstreken. De bestelling blijft staan; betaal je alsnog, dan spreken we een nieuwe datum met je af.`
       ),
-    ]);
+    );
   }
+  await env.DB.batch(statements);
 
   /* ── EN GEEN MAIL MEER — 8 oktober 2026 (punt 7.07, V21-3 = a) ─────────────
      Van 4 september tot vandaag kreeg de klant hier "Je gereserveerde
@@ -383,6 +408,14 @@ async function remindUnpaid(env) {
   const origin = env.PUBLIC_ORIGIN || 'https://visuails.com';
   const gedaan = [];
   for (const o of rows) {
+    /* ── MET DE MEETLAT — 9 november 2026 (ronde 91, C05) ─────────────────────
+       Drie databaseverzoeken per herinnering (de bestelling lezen, de
+       tijdlijnregel, het stempel) en één mail, zonder rem: vijftien open
+       proefbestellingen waren al 45 van de 50. Valt de grens midden in een
+       herinnering, dan is de mail weg en het stempel niet gezet, en krijgt de
+       klant hem morgen opnieuw. Nu stopt hij op tijd, zoals het opruimen; wat
+       blijft liggen voldoet morgennacht nog steeds aan de voorwaarde. */
+    if (!ruimte(env, { d1: 3, intern: 3 })) { noteerStop(env, 'de betaalherinneringen'); break; }
     try {
       const url = await stuurBetaallink(env, o.id, { origin, herinnering: true });
       /* Ook zonder link stempelen: de vier stille uitgangen (al betaald, geen
@@ -500,18 +533,21 @@ async function afgerondGisteren(env) {
    Een geleverde, betaalde bestelling zonder open revisie die sinds de laatste
    levering of het laatste revisieantwoord STIL_AFRONDEN_DAGEN (de
    revisietermijn) stil is, wordt afgerond: closed_at, een interne regel in
-   order_events, en deze regel in het nachtrapport. Geen mail. De voorwaarden
+   order_events, en deze regel in het nachtrapport. Sinds 9 november 2026 (K-10) ook
+   de mail "Je bestelling is afgerond" aan de klant (eenmalig). De voorwaarden
    en de reden staan bij STIL_AFRONDEN_SQL in src/lib/close.js. */
 async function stilAfronden(env) {
   const rows = (await env.DB.prepare(STIL_AFRONDEN_SQL).all())?.results || [];
   if (!rows.length) return null;
   const af = [];
   for (const o of rows) {
-    if (!ruimte(env, { d1: 3, intern: 3 })) { noteerStop(env, 'het stille afronden'); break; }
+    /* 7 en niet 3 (9 november 2026, ronde 91, K-10): rondStilAf() stuurt sindsdien de
+       afrondmail, en die leest de bestelling, claimt zijn regel en maakt een link. */
+    if (!ruimte(env, { d1: 7, intern: 7 })) { noteerStop(env, 'het stille afronden'); break; }
     if (await rondStilAf(env, o.id)) af.push(o.ref);
   }
   if (!af.length) return null;
-  return `${af.length} bestelling${af.length === 1 ? '' : 'en'} stil afgerond (${STIL_AFRONDEN_DAGEN} dagen na de laatste levering geen revisie of reactie, geen mail verstuurd): ${af.join(', ')}.`;
+  return `${af.length} bestelling${af.length === 1 ? '' : 'en'} stil afgerond (${STIL_AFRONDEN_DAGEN} dagen na de laatste levering geen revisie of reactie; de klant kreeg "Je bestelling is afgerond"): ${af.join(', ')}.`;
 }
 
 async function cancelStaleApprovals(env) {
@@ -588,6 +624,10 @@ async function cancelStaleApprovals(env) {
      krijgen hun datum eenmalig uit migrations/0058-vervallen-cancelled-at.sql. */
   const vervallen = [];
   for (const o of rows) {
+    /* Twee databaseverzoeken en een mail per bestelling; dezelfde rem als bij de
+       herinneringen (9 november 2026, ronde 91, C05). Wat blijft liggen, is
+       morgennacht nog steeds over zijn termijn. */
+    if (!ruimte(env, { d1: 2, intern: 2 })) { noteerStop(env, 'het laten vervallen'); break; }
     const [uit] = await env.DB.batch([
       env.DB.prepare(
         `UPDATE orders
@@ -1446,6 +1486,11 @@ async function grantPrepaidMonths(env, nu = new Date()) {
     `SELECT s.id, s.ref, s.plan, s.term, s.window_day, s.started_at, s.amount_cents, s.slots_json, s.cancelled_at,
             (SELECT COUNT(*) FROM subscription_months m WHERE m.subscription_id = s.id) AS maanden,
             (SELECT MAX(m.month) FROM subscription_months m WHERE m.subscription_id = s.id) AS laatste,
+            /* De toegekende maanden zelf (9 november 2026, ronde 91, C05): hier
+               stond per abonnement elke nacht een eigen SELECT "bestaat deze
+               maand al?" — één databaseverzoek per vooruitbetaald jaar per nacht,
+               op een nacht met een grens van 50. Hoogstens twaalf sleutels. */
+            (SELECT group_concat(m.month) FROM subscription_months m WHERE m.subscription_id = s.id) AS maandlijst,
             c.email, c.brand, COALESCE(NULLIF(TRIM(c.first_name), ''), c.name) AS name, ${KLANT_TAAL_SQL} AS lang
        FROM subscriptions s
        LEFT JOIN customers c ON c.id = s.customer_id
@@ -1479,10 +1524,13 @@ async function grantPrepaidMonths(env, nu = new Date()) {
     }
 
     const maand = termijnMaand(sub, nu);
-    const bestaat = await env.DB.prepare(
-      'SELECT 1 AS er FROM subscription_months WHERE subscription_id = ?1 AND month = ?2 LIMIT 1'
-    ).bind(sub.id, maand).first().catch(() => null);
-    if (bestaat) continue;
+    if (String(sub.maandlijst || '').split(',').includes(maand)) continue;
+    /* Een maand toekennen is zes à zeven databaseverzoeken (de maand, de slots,
+       het creditboek). Valt de grens daar middenin, dan staat de maand er wel en
+       de credits niet, en morgen zegt de rij hierboven "al toegekend". Dus eerst
+       kijken of het hele stuk nog past; zo niet, dan morgennacht — de termijn is
+       dan nog dezelfde maand (9 november 2026, ronde 91, C05). */
+    if (!ruimte(env, { d1: 8, intern: 8 })) { noteerStop(env, 'het toekennen van vooruitbetaalde maanden'); break; }
 
     const producten = subProducten(sub);
     /* `payment_id` blijft leeg: er hoort geen betaling bij deze maand, hij is
@@ -1551,7 +1599,7 @@ async function mailLaatsteMaand(env, o) {
               : 'You already told us you will not continue — so there is nothing to do. Use your last credits while you can.')
             : (nl ? 'Wil je daarna door? Kies dan een nieuw abonnement; je look, je modellen en alles wat je hebt laten maken blijven staan.'
               : 'Want to carry on after that? Pick a new plan; your look, your models and everything you have had made stay where they are.')),
-          mailButton(`https://visuails.com${nl ? '/nl' : ''}/account/plan`, nl ? 'Naar je abonnement' : 'Go to your plan'),
+          mailButton(studioUrl('https://visuails.com', '/plan', nl ? 'nl' : 'en'), nl ? 'Naar je abonnement' : 'Go to your plan'),
           opgezegd ? '' : mailP(`<a href="https://visuails.com${nl ? '/nl' : ''}/plans" style="color:${MAILKLEUR.head};font-weight:700">${nl ? 'Bekijk de abonnementen' : 'See the plans'} &rarr;</a>`),
           /* De vragenregel, zoals in de andere abonnementsmails (17 oktober 2026). */
           mailVragen(lang, '', { over: nl ? `mijn abonnement ${o.ref}` : `my plan ${o.ref}` }),
@@ -1715,9 +1763,11 @@ async function mailPlafondInZicht(env, o) {
   try {
     await sendMail(env, {
       to: o.email,
+      /* Lijst 87 (e06): het onderwerp onder de 60 tekens, met het belangrijkste vooraan; een
+         telefoon toont er zo'n 40. Wat erbij komt, staat in de mail zelf. */
       subject: nl
-        ? `Op ${op} komen er ${o.nieuw} credits bij — gebruik er vóór die dag ${o.boven}`
-        : `On ${op}, ${o.nieuw} credits come in — use ${o.boven} before that day`,
+        ? `Gebruik ${o.boven} credits vóór ${op}`
+        : `Use ${o.boven} credits before ${op}`,
       html: mailShell({
         lang,
         preheader: nl ? `Je kunt ${o.plafond} credits sparen; ${o.boven} vallen anders weg op ${op}.` : `You can save up to ${o.plafond} credits; otherwise ${o.boven} lapse on ${op}.`,
@@ -1843,6 +1893,9 @@ async function pauzeVraag(env, nu = new Date()) {
   if (!results.length) return '';
   const namen = [];
   for (const abo of results) {
+    /* Eerst kijken of het stempel nog past (9 november 2026, ronde 91, C05): een
+       mail zonder stempel gaat morgen nog een keer. */
+    if (!ruimte(env, { d1: 1, intern: 1 })) { noteerStop(env, 'de pauzevraag'); break; }
     if (!abo.email || !await mailPauzeVraag(env, abo)) continue;
     await env.DB.prepare("UPDATE subscriptions SET pauze_vraag_at = datetime('now') WHERE id = ?1").bind(abo.id).run();
     namen.push(abo.ref || abo.email);
@@ -1860,7 +1913,8 @@ async function mailPauzeVraag(env, o) {
     await sendMail(env, {
       to: o.email,
       /* Het nummer achteraan, zoals in de andere abonnementsmails (17 oktober 2026). */
-      subject: nl ? `Je abonnement staat ${PAUZE_MAX_MAANDEN} maanden op pauze: hervatten of opzeggen? — ${o.ref}` : `Your plan has been paused for ${PAUZE_MAX_MAANDEN} months: resume or cancel? — ${o.ref}`,
+      /* Lijst 87 (e06): korter, zodat de vraag en het nummer op een telefoon nog te zien zijn. */
+      subject: nl ? `Pauze ${PAUZE_MAX_MAANDEN} maanden: hervatten of opzeggen? — ${o.ref}` : `Paused ${PAUZE_MAX_MAANDEN} months: resume or cancel? — ${o.ref}`,
       html: mailShell({
         lang,
         preheader: nl ? 'Allebei met één klik in VISUAILS Studio. Doe je niets, dan wordt er niets afgeschreven.' : 'Both take one click in VISUAILS Studio. If you do nothing, nothing is charged.',
@@ -1870,7 +1924,7 @@ async function mailPauzeVraag(env, o) {
           mailP(nl
             ? `Je abonnement staat sinds ${sinds} op pauze. Wil je weer beelden laten maken, dan hervat je het in VISUAILS Studio; de volgende afschrijving volgt dan het gewone ritme. Wil je stoppen, dan zeg je het daar op. Doe je niets, dan blijft het op pauze en wordt er niets afgeschreven.`
             : `Your plan has been paused since ${sinds}. If you want images made again, resume it in VISUAILS Studio; the next payment then follows the usual rhythm. If you want to stop, cancel it there. If you do nothing, it stays paused and nothing is collected.`),
-          mailButton(`https://visuails.com${nl ? '/nl' : ''}/account/plan`, nl ? 'Naar je abonnement' : 'Go to your plan'),
+          mailButton(studioUrl('https://visuails.com', '/plan', nl ? 'nl' : 'en'), nl ? 'Naar je abonnement' : 'Go to your plan'),
           mailVragen(nl ? 'nl' : 'en', '', { over: nl ? `mijn abonnement ${o.ref || ''}`.trim() : `my plan ${o.ref || ''}`.trim() }),
         ].join(''),
       }),
@@ -1906,7 +1960,11 @@ async function incassoSignalen(env) {
   const abos = await env.DB.prepare(
     `SELECT s.id, s.ref, s.plan, s.term, s.status, s.pause_reason,
             s.started_at, s.created_at, s.mollie_subscription_id, s.mollie_customer_id, s.customer_id,
-            c.email, c.brand, c.name
+            c.email, c.brand, c.name,
+            /* Welke maanden er betaald zijn, in dezelfde rij (9 november 2026,
+               ronde 91, C05): de toets "deze termijn al betaald?" hieronder deed
+               per lopend maandabonnement elke nacht een eigen SELECT. */
+            (SELECT group_concat(m.month) FROM subscription_months m WHERE m.subscription_id = s.id) AS maandlijst
        FROM subscriptions s
        JOIN customers c ON c.id = s.customer_id
       WHERE s.status IN ('active', 'paused')`
@@ -1955,9 +2013,7 @@ async function incassoSignalen(env) {
       const dagen = Math.floor((nu.getTime() - begon.getTime()) / 86400000);
       const eersteMaand = String(begonOp).slice(0, 7) === maand;
       if (!eersteMaand && dagen >= 3) {
-        const heeft = await env.DB.prepare(
-          'SELECT 1 AS er FROM subscription_months WHERE subscription_id = ?1 AND month = ?2 LIMIT 1'
-        ).bind(abo.id, maand).first().catch(() => ({ er: 1 }));
+        const heeft = String(abo.maandlijst || '').split(',').includes(maand);
         if (!heeft) uitgebleven.push(`${abo.ref} (${abo.brand || abo.email})`);
       }
     }
@@ -2037,7 +2093,7 @@ async function sendReport(env, report, problems, lijst = null, nu = Date.now()) 
     lines.push('Wat er gebeurd is:', ...report.map((r) => `  · ${r}`), '');
   }
   lines.push('Dit bericht komt van visuails-cron en gaat alleen naar jou.');
-  lines.push('Het komt elke nacht, ook als er niets open staat. Komt het een ochtend niet, dan draaide de nacht niet: /admin zegt het dan bij de bewakers.');
+  lines.push('Het komt elke nacht, ook als er niets openstaat. Komt het een ochtend niet, dan draaide de nacht niet: /admin zegt het dan bij de bewakers.');
   const text = lines.join('\n');
   const onderwerp = rapportOnderwerp({ aantal: lijst?.regels?.length || 0, problemen: problems.length, fout: Boolean(lijst?.fout), nu });
 
@@ -2185,18 +2241,31 @@ async function sweepAbandonedIntake(env) {
   const oud = [...batches.entries()].filter(([naam, b]) => b.jongste && b.jongste < grens && naam !== laatsteBatch);
   if (!oud.length) return null;
 
-  /* Wie er nog naar wijst. Twee query's per batch en niet één grote IN-lijst:
-     het aantal oude batches is klein, en een LIKE per stuk is leesbaarder dan een
-     samengestelde zoekopdracht die niemand meer naleest. Wel met de meetlat: twee
-     databaseverzoeken per batch lopen op het gratis plan snel op (9.05). */
+  /* Wie er nog naar wijst: een bestelling (details_json) of de lijst van een
+     abonnee (plan_queue). */
+  /* ── ÉÉN QUERY PER HONDERD BATCHES — 9 november 2026 (ronde 91, C05) ───────
+     Twee per batch was in verslagmodus (PURGE_ENABLED = "false") een vaste
+     post van élke nacht: er gaat niets weg, dus morgen staan dezelfde batches er
+     weer, en met tien verlaten uploads at dit twintig van de 50 verzoeken op en
+     kwamen het toekennen van vooruitbetaalde maanden, de pauzevraag en het
+     stille afronden nacht na nacht niet meer aan de beurt (gemeten met
+     91/werk/c/c05-nacht.mjs). Nu dezelfde twee vragen — dezelfde LIKE op
+     details_json, dezelfde gelijkheid op plan_queue — voor een hele lijst
+     tegelijk; 100 kenmerken per query, de grens van D1 voor parameters. */
   const verlaten = [];
-  for (const [batch, b] of oud) {
-    if (!ruimte(env, { d1: 2, intern: 2 })) { noteerStop(env, 'de wachtruimte'); break; }
-    const [inOrder, inWachtrij] = await Promise.all([
-      env.DB.prepare("SELECT 1 FROM orders WHERE details_json LIKE '%' || ?1 || '%' LIMIT 1").bind(batch).first(),
-      env.DB.prepare('SELECT 1 FROM plan_queue WHERE upload_batch = ?1 LIMIT 1').bind(batch).first(),
-    ]);
-    if (!inOrder && !inWachtrij) verlaten.push([batch, b]);
+  const PER_QUERY = 100;
+  for (let i = 0; i < oud.length; i += PER_QUERY) {
+    if (!ruimte(env, { d1: 1, intern: 1 })) { noteerStop(env, 'de wachtruimte'); break; }
+    const deel = oud.slice(i, i + PER_QUERY);
+    const waarden = deel.map((_, j) => `(?${j + 1})`).join(', ');
+    const { results = [] } = await env.DB.prepare(
+      `WITH b(k) AS (VALUES ${waarden})
+       SELECT k FROM b
+        WHERE EXISTS (SELECT 1 FROM orders WHERE details_json LIKE '%' || b.k || '%')
+           OR EXISTS (SELECT 1 FROM plan_queue WHERE upload_batch = b.k)`
+    ).bind(...deel.map(([batch]) => batch)).all();
+    const genoemd = new Set((results || []).map((r) => r.k));
+    for (const [batch, b] of deel) if (!genoemd.has(batch)) verlaten.push([batch, b]);
   }
   if (!verlaten.length) return null;
 

@@ -23,7 +23,10 @@ const ok = (naam, kreeg, wil) => {
 const delen = (s) => (s.match(/\b(UNION|INTERSECT|EXCEPT)\b/gi) || []).length + 1;
 
 ok('Nu-doen: elk deel hoogstens vijf termen', NU_DOEN_SQL_DELEN.map(delen).every((n) => n <= 5), true);
-ok('Nu-doen: samen nog steeds acht soorten-rijen', NU_DOEN_SQL_DELEN.map(delen).reduce((a, b) => a + b, 0), 8);
+/* Ronde 91 (w1, 9 november 2026): een derde deel met In productie en de open PNG/WebP-verzoeken; en (w4) het deel
+   "In controle" (human_check) is weg — die rijen zijn In productie. */
+/* Lijst 87 (B16): plus "Voorrang gemist" (toeslag) in het derde deel. */
+ok('Nu-doen: samen tien soorten-rijen (acht plus In productie, Formaten en Voorrang gemist, min In controle)', NU_DOEN_SQL_DELEN.map(delen).reduce((a, b) => a + b, 0), 10);
 
 const WORTEL = fileURLToPath(new URL('..', import.meta.url));
 const te = [];

@@ -16,6 +16,7 @@ import { d1, verseDb, telling } from './lib/d1sqlite.mjs';
 import { adminGet, adminPost, weerOpenenBlok } from '../src/lib/admin.js';
 import { tasks } from '../cron/index.js';
 import { kanHeropenen, heropenBestelling, heropenNotitie, STIL_AFGEROND_NOTITIE } from '../src/lib/close.js';
+import { AFROND_MAIL_NOTITIE } from '../src/lib/afrondMail.js';
 import { leverDatumsVan, leverDatums } from '../src/lib/leverdatums.js';
 import { nuDatums, nuZin } from '../src/lib/nuzin.js';
 import { EXPIRED_FILES_SQL, UPLOAD_DAYS } from '../src/lib/retention.js';
@@ -85,7 +86,7 @@ ok('geannuleerd: nee', kanHeropenen({ closed_at: 'x', status: 'cancelled', servi
   const { status, html } = await get(`/admin/orders/${STIL}/files`);
   ok('de bestelpagina laadt', status, 200);
   const blok = (html.match(/<details class="ingeklapt weer-openen"[\s\S]*?<\/details>/) || [''])[0];
-  ok('ingeklapte knop "Weer openen"', /<summary class="btn btn-ghost btn-sm">Weer openen<\/summary>/.test(blok));
+  ok('ingeklapte knop "Weer openen"', /<summary class="btn btn-ghost btn-sm" data-rol="bevestigen">(?:<svg[^]*?<\/svg>)?Weer openen<\/summary>/.test(blok));  // knoppensysteem lijst 88/89: met rol en icoon
   ok('een gewoon formulier naar /weer-openen', new RegExp(`<form class="stack" method="post" action="/admin/orders/${STIL}/weer-openen">`).test(blok));
   ok('met een verplicht vinkje "Ja, weer openen"', /<input type="checkbox" name="ja" value="1" required> Ja, weer openen/.test(blok));
   ok('zonder script of dialoog', /onclick|onsubmit|confirm\(|<script/i.test(blok), false);
@@ -161,7 +162,8 @@ console.log('\n4 · het stille afronden telt vanaf het weer openen');
   ok('  met de gewone interne regel', telling(db, "SELECT COUNT(*) FROM order_events WHERE order_id = ? AND note = ? AND actor = 'intern'", STIL, STIL_AFGEROND_NOTITIE), 1);
   ok('  en een nieuwe wisdatum vanaf dat nieuwe closed_at',
     bronWisdatum(STIL), db.prepare(`SELECT datetime(closed_at, '+${UPLOAD_DAYS} days') AS d FROM orders WHERE id = ?`).get(STIL).d);
-  ok('  en geen mail', gezien.length, 0);
+  /* K-10 (9 november 2026): bij stil afronden gaat nu de afrondmail uit, eenmalig per bestelling. */
+  ok('  en de afrondmail, één keer (K-10)', telling(db, "SELECT COUNT(*) FROM order_events WHERE order_id = ? AND note = ? AND actor = 'intern'", STIL, AFROND_MAIL_NOTITIE), 1);
   ok('weer openen kan daarna opnieuw', (await heropenBestelling(env, STIL)).ok, true);
 }
 

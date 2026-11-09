@@ -1,4 +1,5 @@
 ---
+import { knopInhoud } from '../../data/iconen.js';
 /* Het betaalblok van een bestelling. paymentView() in account.js bepaalt de
    regels, de zin en of er een knop is; hier staat alleen de vorm. */
 import { paymentView } from '../../lib/account.js';
@@ -13,10 +14,10 @@ const v = paymentView(t, lang, order);
     <p class="st-betaal-staat">{v.line}</p>
     {/* 2.02: bij een creditsbestelling de termijnfactuur die hem dekt. */}
     {v.facturen && v.facturen.length > 0 && (
-      <p class="st-betaal-factuur">{v.factuurLabel} {v.facturen.map((f, i) => <Fragment>{i > 0 && ', '}<a class="st-link" href={f.href}>{f.label}</a></Fragment>)}</p>
+      <p class="st-betaal-factuur">{v.factuurLabel} {v.facturen.map((f, i) => <Fragment>{i > 0 && ', '}<a class="st-link k k-tekst k-klein" data-rol="downloaden" href={f.href} set:html={knopInhoud('downloaden', f.label)} /></Fragment>)}</p>
     )}
     {v.payHref && (
-      <form method="post" action={v.payHref}><button class="btn btn-primary btn-sm" type="submit">{t.payNow}</button></form>
+      <form method="post" action={v.payHref}><button class="btn btn-primary btn-sm" data-rol="doorgaan" type="submit" set:html={knopInhoud('doorgaan', t.payNow)} /></form>
     )}
   </div>
 )}

@@ -72,19 +72,23 @@ console.log('\n1 · het raster');
   check('de te late wachtrij-bestelling staat op vandaag als te laat', /is-laat[^"]*" href="\/admin\/orders\/2\/files"/.test(h), true);
 }
 
-console.log('\n2 · de aflopende lijst');
+/* Ronde 91 (w1, 9 november 2026): de lijst Aflopend rechts van het raster is weg (Lucas koos één werklijst:
+   Nu doen). De contactknoppen per bestelling ("laat het nu al weten, zonder datum te veranderen") staan sindsdien
+   op de bestelpagina, in het blok Wanneer. */
+console.log('\n2 · de aflopende lijst is weg; de contactknoppen staan op de bestelpagina');
 {
   const h = await (await get('/admin/planning')).text();
-  const volgorde = [...h.matchAll(/<li class="pl-item[^"]*" id="order-(\d+)"/g)].map((m) => Number(m[1]));
-  check('de lijst staat op volgorde van de dag: te laat, dan streefdag morgen, dan het paar', volgorde, [2, 3, 1]);
-  check('het te late item zegt hoeveel dagen', /dagen te laat|gisteren — te laat/.test(h), true);
-  check('de streefdag van een wachtrij-bestelling is binnenkomst + QUEUE_AIM_DAYS',
-    new RegExp(`id="order-3"[\\s\\S]*?pl-item-rel">${addOpenDays(vandaag, QUEUE_AIM_DAYS) === d(1) ? 'morgen' : 'over'}`).test(h), true);
-  check('elke regel heeft een klapje om te verlengen, met back=planning', (h.match(/name="back" value="planning"/g) || []).length, 3);
-  check('het datumveld begint pas bij de eerste dag die te beloven is', h.includes(`min="${firstOfferableDay(vandaag, new Set())}"`), true);
-  check('een klant zonder telefoonnummer krijgt geen WhatsApp-knop, wel mail', /Geen telefoonnummer bekend/.test(h) && /mailto:b%40example\.com|mailto:b@example\.com/.test(h), true);
-  check('een 06-nummer wordt een wa.me-link met landcode', /https:\/\/wa\.me\/31612345678\?text=/.test(h), true);
-  check('de Engelse klant krijgt Engelse tekst', /(?:Hello|Good%20morning|Good%20afternoon|Good%20evening)%20Joris/.test(h), true);
+  check('geen lijst Aflopend meer op de planning', [/<li class="pl-item/.test(h), /<h2>Aflopend<\/h2>/.test(h), /pl-zij/.test(h)], [false, false, false]);
+  check('het raster staat over de volle breedte', /<section class="pl-links is-vol"/.test(h), true);
+  const cellen = h.split('<div class="pl-dag').slice(1);
+  const dagVan3 = cellen.findIndex((c) => c.includes('href="/admin/orders/3/files"'));
+  check('de streefdag van een wachtrij-bestelling is binnenkomst + QUEUE_AIM_DAYS (de chip staat op die dag)',
+    dagVan3 >= 0 && new RegExp(`pl-dag-nr">${Number(addOpenDays(vandaag, QUEUE_AIM_DAYS).slice(8, 10))}<`).test(cellen[dagVan3]), true);
+  const b2 = await (await get('/admin/orders/2/files')).text();
+  check('een klant zonder telefoonnummer krijgt geen WhatsApp-knop, wel mail (bestelpagina)', /Geen telefoonnummer bekend/.test(b2) && /mailto:b%40example\.com|mailto:b@example\.com/.test(b2), true);
+  check('de Engelse klant krijgt Engelse tekst', /(?:Hello|Good%20morning|Good%20afternoon|Good%20evening)%20Joris/.test(b2), true);
+  const b1 = await (await get('/admin/orders/1/files')).text();
+  check('een 06-nummer wordt een wa.me-link met landcode', /https:\/\/wa\.me\/31612345678\?text=/.test(b1), true);
 }
 
 console.log('\n3 · verlengen vanaf de planning');
@@ -127,13 +131,19 @@ console.log('\n4 · het dashboard: één regel per bestelling');
      over het formulier in elke bestelregel. */
   const statusVormen = (h.match(/action="\/admin\/orders\/\d+\/status"/g) || []).length;
   const ndVormen = (h.match(/<form class="nd-knop" method="post" action="\/admin\/orders\/\d+\/status"/g) || []).length;
-  check('het statusformulier staat er nog, per bestelling', statusVormen - ndVormen, 4);
+  /* Ronde 91 (w4, 9 november 2026): het statuslijstje in de rij is weg; een stand zet je met de knoppen op de
+     bestelpagina (Oppakken, Leveren en klant mailen, Terug naar In productie). */
+  check('er staat geen statusformulier meer in de rijen', statusVormen - ndVormen, 0);
   /* Het merkmodelformulier staat sinds 29 september 2026 alleen nog op de
      klantpagina; onder elke bestelling was het dubbel. */
-  check('annuleren en verbergen ook', /orders\/1\/cancel/.test(h) && /orders\/1\/hide/.test(h), true);
+  /* Ronde 91 (w6, 9 november 2026): annuleren, verbergen en verwijderen staan alleen nog op de bestelpagina. */
+  check('annuleren en verbergen staan niet meer in de rij (wel op de bestelpagina)', /orders\/1\/cancel/.test(h) || /orders\/1\/hide/.test(h), false);
+  const b1 = await (await get('/admin/orders/1/files')).text();
+  check('  maar wel op de bestelpagina, onder Onomkeerbaar', /orders\/1\/cancel/.test(b1) && /orders\/1\/hide/.test(b1), true);
   check('  en het merkmodelformulier niet meer per bestelling', /orders\/1\/models/.test(h), false);
-  check('de zijkolom toont wat eerst af moet', /db-aflopend/.test(h) && /Eerst af/.test(h), true);
-  check('en linkt naar de planning', /href="\/admin\/planning"/.test(h), true);
+  /* Ronde 91 (w1): "Eerst af" is opgegaan in Nu doen. */
+  check('de zijkolom "Eerst af" is weg', /db-aflopend/.test(h) || /Eerst af/.test(h), false);
+  check('het menu linkt naar de planning', /href="\/admin\/planning"/.test(h), true);
   check('de kolomkoppen staan boven de lijst', /or-kop/.test(h), true);
 }
 
@@ -141,7 +151,8 @@ console.log('\n5 · de bovenbalk');
 {
   /* '/admin/agenda' stond hier tot 19 september 2026; die is in de planning
      opgegaan en stuurt nu door. */
-  for (const [pad, key] of [['/admin', 'Dashboard'], ['/admin/planning', 'Planning'], ['/admin/customers', 'Klanten'], ['/admin/log', 'Logboek'], ['/admin/vat', 'Btw']]) {
+  /* Ronde 91 (w8): de btw-controle staat niet meer in het menu (je komt er via Nu doen). */
+  for (const [pad, key] of [['/admin', 'Dashboard'], ['/admin/planning', 'Planning'], ['/admin/customers', 'Klanten'], ['/admin/log', 'Logboek']]) {
     const h = await (await get(pad)).text();
     check(`${pad} draagt de balk en wijst "${key}" aan`, new RegExp(`bar-link is-active" aria-current="page">${key}<`).test(h), true);
   }

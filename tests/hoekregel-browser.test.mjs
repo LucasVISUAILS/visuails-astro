@@ -104,6 +104,9 @@ const PAGINAS = process.env.PAGINAS ? process.env.PAGINAS.split(',') : [
   '/plans/', '/pricing/', '/gallery/', '/per-product/', '/upload-guidelines/',
   '/custom-models/', '/how-it-works/', '/studio/', '/ai-act/', '/editions/', '/video/', '/start/',
   '/start/catalog/', '/test-sample/',
+  /* ronde 92 (9 november 2026): ook de bedankpagina (daar stond het vinkje nog in de oude zachte hoek), de 404 en de
+     pagina's met een fotoblok of een Studiobrief-kaart */
+  '/thank-you/', '/404.html', '/guides/', '/hooks/', '/models/', '/catalog/classic/',
 ];
 const BREEDTES = process.env.BREEDTES ? process.env.BREEDTES.split(',').map(Number) : [1440, 900, 390];
 const VEEL = process.env.HOEK_ALLES ? 999 : 3;

@@ -22,6 +22,8 @@ import { styles } from '../src/data/styles.js';
 const uit = path.join('public', 'img', 'hal', 'rust');
 mkdirSync(uit, { recursive: true });
 const BRON = process.env.BRON || path.join('..', 'images', 'Before & After', 'Catalog Custom styles');
+/* Lijst 87 (E13) eerst vervangen, op 9 november 2026 teruggezet: Room 84 is een verzonnen merk (Lucas: alle beelden in
+   'Catalog Custom styles' zijn bruikbaar, designs en merken die niet bestaan). */
 const EIGEN = [
   ['nonstd-hoodie-model', 'NONSTD/Hoodie/On-model.jpg', 'Model in een blauwe zip-hoodie', 'Model in a blue zip hoodie'],
   ['room84-tas-model', 'Room 84/Bag/on-model.jpg', 'Model met een blauwgroene leren tas', 'Model with a teal leather bag'],
@@ -46,6 +48,11 @@ async function bronnen(p) {
 
 const rij2 = [];
 for (const [naam, pad, nl, en] of EIGEN) {
+  if (pad === null) {
+    const meta = await sharp(`public${naam}.webp`).metadata();
+    rij2.push({ src: naam, bronnen: await bronnen(naam), b: meta.width, h: meta.height, alt: { nl, en }, stijl: 'classic', soort: 'catalog' });
+    continue;
+  }
   const bron = path.join(BRON, pad);
   const doel = (b) => path.join(uit, `galerij-${naam}-${b}`);
   let b0, h0;

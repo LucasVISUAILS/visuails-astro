@@ -39,7 +39,7 @@
  * credits" in een blok over een proef van €1.
  * ═══════════════════════════════════════════════════════════════════════════ */
 import { TEST_SAMPLE } from '../data/pricing.js';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import { geleverd } from '../data/voorbeeldset.js';
 import { localizedPath } from '../i18n/ui.js';
 import NieuwTabblad from './NieuwTabblad.astro';
@@ -57,6 +57,8 @@ const PIJL_R = ikoon('pijl');
 const extern = /^https?:\/\//.test(alt.href);
 const altHref = extern || alt.href.startsWith('#') ? alt.href : lp(alt.href);
 const PIJL = ikoon('pijl-schuin');
+/* knoppensysteem: de tweede knop is Doorgaan als hij een bestelling start, anders Navigeren (lijst 88) */
+const altRol = /\/start|test-sample|^#/.test(alt.href) ? 'doorgaan' : (extern && /wa\.me/.test(alt.href) ? 'contact' : 'navigeren');
 ---
 <section class="h-proef h-in" aria-labelledby={id} data-vis-klant="proefblok" data-vis-klant-kop={`${id}-klant`}>
   <span class="h-korrel" aria-hidden="true"></span>
@@ -65,10 +67,10 @@ const PIJL = ikoon('pijl-schuin');
     <h2 id={id} class="h-kop h-proef-kop"><span class="l">{kop[0]}</span> <span class="d">{kop[1]}</span> <span class="h-een">{sample.price}</span></h2>
     <p class="h-proef-zin">{zin}</p>
     <p class="h-acties">
-      <a class="h-knop h-knop-wit" href={lp('/test-sample')} data-vis-uit>{sample.cta}<span class="o" set:html={PIJL} /></a>
+      <a class="h-knop k k-vol k-wit" data-rol="doorgaan" href={lp('/test-sample')} data-vis-uit>{sample.cta}<Fragment set:html={rolIkoon('doorgaan')} /></a>
       {extern
-        ? <a class="h-knop h-knop-lijnwit" href={altHref} target="_blank" rel="noopener">{alt.label}<NieuwTabblad lang={lang} /></a>
-        : <a class="h-knop h-knop-lijnwit" href={altHref}>{alt.label}</a>}
+        ? <a class="h-knop k k-lijn k-wit" data-rol={altRol} href={altHref} target="_blank" rel="noopener">{alt.label}{altRol !== 'contact' && <Fragment set:html={rolIkoon(altRol)} />}<NieuwTabblad lang={lang} /></a>
+        : <a class="h-knop k k-lijn k-wit" data-rol={altRol} href={altHref}>{alt.label}<Fragment set:html={rolIkoon(altRol)} /></a>}
     </p>
   </div>
   <div class="h-proef-woord" data-vis-proefklant hidden>
@@ -77,8 +79,8 @@ const PIJL = ikoon('pijl-schuin');
     <p class="h-proef-zin" data-vis-proefklant-zin data-vis-her={kb.zinHer}>{kb.zinStart}</p>
     <p class="h-proef-credits" data-vis-proefklant-credits data-vis-zin={kb.credits} hidden></p>
     <p class="h-acties">
-      <a class="h-knop h-knop-wit" href={lp('/start')} data-vis-proefklant-knop data-vis-her={k.herbestel}><span data-vis-label>{k.start}</span><span class="o" set:html={PIJL_R} /></a>
-      <a class="h-knop h-knop-lijnwit" href="/account">{k.studio}</a>
+      <a class="h-knop k k-vol k-wit" data-rol="doorgaan" href={lp('/start')} data-vis-proefklant-knop data-vis-her={k.herbestel}><span data-vis-label>{k.start}</span><Fragment set:html={rolIkoon('doorgaan')} /></a>
+      <a class="h-knop k k-lijn k-wit" data-rol="navigeren" href="/account">{k.studio}<Fragment set:html={rolIkoon('navigeren')} /></a>
     </p>
   </div>
   <ul class="h-vier" role="list" aria-hidden="true">

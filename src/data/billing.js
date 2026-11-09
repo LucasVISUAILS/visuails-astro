@@ -61,7 +61,7 @@ export const BILLING = {
     street2: 'Address line 2',
     street2Ph: 'Unit, floor, c/o',
     postal: 'Postcode',
-    postalPh: 'AB1 2CD',
+    postalPh: '1234 AB',
     postalErr: 'The postcode is missing.',
     city: 'City',
     cityErr: 'The town or city is missing.',
@@ -79,6 +79,13 @@ export const BILLING = {
     reg: 'Registration number',
     regHint: 'A Dutch business: your KVK number. Elsewhere: whatever your country registers companies with.',
     regErr: 'Add a registration number, so we can see this is a business.',
+    /* 9 november 2026 (ronde 91, K-C3): in Nederland vraagt het merkmodel het KVK-nummer
+       (verplicht) en het btw-nummer optioneel, zoals het bestelformulier. Dezelfde woorden
+       als regKvk/regKvkErr/regHintNl/regHintOther in OrderFlow.astro. */
+    regKvk: 'KVK number',
+    regKvkErr: 'A KVK number has 8 digits — you find it on your KVK extract or your invoices.',
+    regHintNl: 'VISUAILS works for businesses only: your 8-digit Chamber of Commerce (KVK) number confirms that you are ordering as a business.',
+    regHintOther: 'For example your EIN in the United States or your company number in the UK. No number? Then the business confirmation in the last step is enough.',
     optional: 'optional',
   },
   nl: {
@@ -120,6 +127,11 @@ export const BILLING = {
     reg: 'Registratienummer',
     regHint: 'Een Nederlands bedrijf: je KVK-nummer. Daarbuiten: waar jouw land bedrijven mee registreert.',
     regErr: 'Vul een registratienummer in, dan kunnen we zien dat dit zakelijk is.',
+    /* Zie de Engelse noot (K-C3). */
+    regKvk: 'KVK-nummer',
+    regKvkErr: 'Een KVK-nummer heeft 8 cijfers — je vindt het op je KVK-uittreksel of je facturen.',
+    regHintNl: 'VISUAILS werkt alleen voor bedrijven: met je KVK-nummer van acht cijfers bevestig je dat je zakelijk bestelt.',
+    regHintOther: 'Bijvoorbeeld je EIN in de Verenigde Staten of je company number in het Verenigd Koninkrijk. Geen nummer? Dan is de zakelijke bevestiging in de laatste stap genoeg.',
     optional: 'optioneel',
   },
 };

@@ -20,7 +20,7 @@
  * shot afgesneden word van onder."*
  *
  * Het nagemaakte webshopscherm noemt een VERZONNEN prijs van een verzonnen merk
- * ("JOUWMERK"), geen tarief van ons — net als in LaptopCarousel.astro, en om
+ * ("JOUWMERK", in het Engels sinds lijst 87 "YOURBRAND"), geen tarief van ons — net als in LaptopCarousel.astro, en om
  * dezelfde reden staat hij hier per taal genoteerd (tests/hardgetypt.test.mjs
  * kent de uitzondering).
  */
@@ -43,7 +43,7 @@ const nu = (set: string, i?: number) => stand.set === set && (i === undefined ||
 const T = nl
   ? { shop: { merk: 'JOUWMERK', menu: ['Nieuw', 'Denim', 'Jassen', 'Accessoires'], kruimel: 'Home / Denim', titel: 'Wide leg jeans', prijs: '€ 79,95', mandje: 'In winkelmand', verzend: 'Gratis retour binnen 30 dagen' },
       post: { naam: lifestyle.post?.naam ?? 'visuails_com', vlag: lifestyle.post?.vlag ?? '', volgen: 'Volgen', bijschrift: lifestyle.post?.bijschrift ?? [], datum: lifestyle.post?.datum ?? '', opmerking: 'Een opmerking toevoegen…', plaatsen: 'Plaatsen' } }
-  : { shop: { merk: 'JOUWMERK', menu: ['New', 'Denim', 'Jackets', 'Accessories'], kruimel: 'Home / Denim', titel: 'Wide leg jeans', prijs: '€79.95', mandje: 'Add to cart', verzend: 'Free returns within 30 days' },
+  : { shop: { merk: 'YOURBRAND', menu: ['New', 'Denim', 'Jackets', 'Accessories'], kruimel: 'Home / Denim', titel: 'Wide leg jeans', prijs: '€79.95', mandje: 'Add to cart', verzend: 'Free returns within 30 days' },
       post: { naam: lifestyle.post?.naam ?? 'visuails_com', vlag: lifestyle.post?.vlag ?? '', volgen: 'Follow', bijschrift: lifestyle.post?.bijschrift ?? [], datum: lifestyle.post?.datum ?? '', opmerking: 'Add a comment…', plaatsen: 'Post' } };
 ---
 <div class="hl-laag" aria-hidden="true">

@@ -64,7 +64,7 @@ const T = {
     onbekend: 'Credits',
     geldigTot: (d) => `geldig tot en met ${d}`,
     status: {
-      received: 'Ontvangen', in_production: 'In productie', human_check: 'Wordt nagekeken',
+      received: 'Ontvangen', in_production: 'In productie', human_check: 'In productie',
       delivered: 'Geleverd', cancelled: 'Geannuleerd',
     },
     afgerond: 'Afgerond',
@@ -101,7 +101,7 @@ const T = {
     onbekend: 'Credits',
     geldigTot: (d) => `valid up to and including ${d}`,
     status: {
-      received: 'Received', in_production: 'In production', human_check: 'Being checked',
+      received: 'Received', in_production: 'In production', human_check: 'In production',
       delivered: 'Delivered', cancelled: 'Cancelled',
     },
     afgerond: 'Completed',

@@ -5,9 +5,10 @@
  *   · het dashboard vol (de Nu-doen-lijst bovenaan, één knop per regel) en leeg
  *     ("Niets wacht op jou");
  *   · een bestelpagina met "Volgende stap: …";
- *   · een open revisiekaart (taalregel, drie vaste redenen, het tekstvak, ook
- *     met een gekozen reden) en een afgehandelde kaart met "N nieuwe beelden
- *     melden".
+ *   · een open revisie (taalregel, drie vaste redenen, het tekstvak, ook
+ *     met een gekozen reden) en een afgehandelde ronde met "N nieuwe beelden
+ *     sturen" — sinds ronde 91 (w5, 9 november 2026) op de bestelpagina: in het
+ *     vakje op het bord en in het blok Leveren, niet meer als kaarten op het dashboard.
  * Contrast ≥ 4,5:1 en tekst ≥ 11,5 px op alles wat nieuw is; geen horizontale
  * schuifbalk op 390 px. Schermafdrukken in .render/a4-d4-*.png.
  *
@@ -86,7 +87,10 @@ const vooraf = new Map();
 for (const donker of [false, true]) {
   const pre = donker ? '/donker' : '';
   vooraf.set(`${pre}/admin`, await vol('/admin', donker));
-  vooraf.set(`${pre}/admin/reden`, await vol('/admin?reden=350.keuze', donker));
+  /* Ronde 91 (w5): de revisie staat in het vakje op de bestelpagina. */
+  vooraf.set(`${pre}/admin/reden`, await vol('/admin/orders/35/files?reden=350.keuze', donker));
+  vooraf.set(`${pre}/admin/orders/35/files`, await vol('/admin/orders/35/files', donker));
+  vooraf.set(`${pre}/admin/orders/33/files`, await vol('/admin/orders/33/files', donker));
   vooraf.set(`${pre}/admin/leeg`, await leeg('/admin', donker));
   vooraf.set(`${pre}/admin/orders/36/files`, await vol('/admin/orders/36/files', donker));
 }
@@ -149,11 +153,14 @@ for (const breed of [390, 1280]) {
     ok(`${tag} dashboard: het thema klopt`, await page.evaluate(() => document.documentElement.dataset.thema || 'licht'), donker ? 'donker' : 'licht');
     const regels = await page.locator('.nd-regel').count();
     ok(`${tag} Nu doen: regels te zien`, regels >= 7, true);
-    ok(`${tag} Nu doen: één knop per regel`, await page.evaluate(() => [...document.querySelectorAll('.nd-regel')].every((li) => li.querySelectorAll('a, button').length === 1)), true);
-    ok(`${tag} Nu doen staat boven de tegels`, await page.evaluate(() => {
-      const a = document.querySelector('#nu-doen'); const b = document.querySelector('.stats');
-      return Boolean(a && b && (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING));
+    /* Ronde 91 (w1): wat er bij dezelfde bestelling óók wacht, is een stille link (geen knop) achter de regel. */
+    ok(`${tag} Nu doen: één knop per regel`, await page.evaluate(() => [...document.querySelectorAll('.nd-regel')].every((li) => li.querySelectorAll('.btn').length === 1)), true);
+    /* Ronde 91 (w6): de tegels zijn weg; Nu doen staat boven de bestellingen. */
+    ok(`${tag} Nu doen staat boven de bestellingen, geen tegels meer`, await page.evaluate(() => {
+      const a = document.querySelector('#nu-doen'); const b = document.querySelector('.or-lijst');
+      return Boolean(a && b && !document.querySelector('.stats') && (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING));
     }), true);
+    await leesbaarOk(page, '.nd-ook, .nd-ook a, .nd-ook .meta', `${tag} Nu doen: "ook" achter de regel`);
     await leesbaarOk(page, '.nd-soort', `${tag} Nu doen: soort`);
     await leesbaarOk(page, '.nd-wat .ref, .nd-wie', `${tag} Nu doen: referentie en klant`);
     await leesbaarOk(page, '.nd-wat .meta', `${tag} Nu doen: wat`);
@@ -162,18 +169,23 @@ for (const breed of [390, 1280]) {
     ok(`${tag} Nu doen: de knop valt binnen het scherm`, await page.evaluate(() => [...document.querySelectorAll('.nd-regel .btn')].every((b) => b.getBoundingClientRect().right <= window.innerWidth + 1)), true);
     await foto(page, '#nu-doen', `nudoen-${breed}-${stand}`);
 
-    /* ── de revisiekaarten ── */
+    /* ── de revisie, in het vakje op de bestelpagina (w5) ── */
+    await page.goto(`http://localhost:${PORT}${pre}/admin/orders/35/files`, { waitUntil: 'load' });
     await leesbaarOk(page, '#rev-350 .rev-taal', `${tag} revisiekaart: taalregel`);
     await leesbaarOk(page, '#rev-350 .rev-redenen .fl-chip, #rev-350 .rev-redenen .meta', `${tag} revisiekaart: vaste redenen`);
     await leesbaarOk(page, '#rev-350 .rev-label', `${tag} revisiekaart: uitleg bij het veld`);
     await leesbaarOk(page, '#rev-350 textarea', `${tag} revisiekaart: het tekstvak`);
     ok(`${tag} revisiekaart: de taalregel zegt Engels`, (await page.locator('#rev-350 .rev-taal').innerText()).trim(), 'Deze klant leest Engels — schrijf je reden in het Engels.');
     await foto(page, '#rev-350', `revisiekaart-${breed}-${stand}`);
-    await leesbaarOk(page, '#rev-o33 .rev-af-lijst li', `${tag} afgehandelde kaart: per beeld`);
-    await leesbaarOk(page, '#rev-o33 .btn', `${tag} afgehandelde kaart: meldknop`);
-    await leesbaarOk(page, '#rev-o33 .rev-taal, #rev-o33 > .meta', `${tag} afgehandelde kaart: taal en uitleg`);
-    ok(`${tag} afgehandelde kaart: "2 nieuwe beelden melden"`, (await page.locator('#rev-o33 button').innerText()).trim(), '2 nieuwe beelden melden');
-    await foto(page, '#rev-o33', `afgehandeld-${breed}-${stand}`);
+    ok(`${tag} bestelpagina met revisie: geen schuifbalk opzij`, await geenSchuif(page));
+    /* ── de afgehandelde ronde, in het blok Leveren (w5) ── */
+    await page.goto(`http://localhost:${PORT}${pre}/admin/orders/33/files`, { waitUntil: 'load' });
+    await leesbaarOk(page, '.rev-ronde .rev-af-lijst li, .rev-ronde-kop', `${tag} afgehandelde ronde: per beeld`);
+    await leesbaarOk(page, 'form.controls[action$="/announce"] .btn', `${tag} afgehandelde ronde: verstuurknop`);
+    await leesbaarOk(page, 'form.controls[action$="/announce"] .rev-taal', `${tag} afgehandelde ronde: taal`);
+    /* Ronde 91 (w7): "sturen" in plaats van "melden". */
+    ok(`${tag} afgehandelde ronde: "2 nieuwe beelden sturen"`, (await page.locator('form.controls[action$="/announce"] button').innerText()).trim(), '2 nieuwe beelden sturen');
+    await foto(page, '.rev-ronde', `afgehandeld-${breed}-${stand}`);
 
     /* ── een gekozen reden ── */
     await page.goto(`http://localhost:${PORT}${pre}/admin/reden`, { waitUntil: 'load' });

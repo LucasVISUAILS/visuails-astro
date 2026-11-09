@@ -564,7 +564,9 @@ export async function notifySubscriptionFailed(env, {
             + 'dan is er iets met de rekening van de klant.'),
         /* 7.05, moment 4: de knop met de vaste tekst (incasso mislukt). */
         await incassoContact(env, { email, brand }),
-      ].join('')
+      ].join(''),
+      /* Lijst 87 (e07): Beantwoorden mailt de klant, niet jezelf. */
+      email || '',
     );
   } catch (err) {
     console.error('[notify] incassobericht niet verstuurd voor', subRef, '—', err?.message || err);
@@ -660,7 +662,8 @@ export async function notifySubscriptionRefunded(env, {
         mailP('Twee dingen die JIJ moet doen: de creditnota uitschrijven (abonnementsfacturen '
           + 'hebben nog geen automatische creditnotaroute — zie de noot bij deze functie), en de '
           + 'klant laten weten wat er is gebeurd.'),
-      ].join('')
+      ].join(''),
+      email || '',   // lijst 87 (e07)
     );
   } catch (err) {
     console.error('[notify] restitutiebericht niet verstuurd voor', subRef, '—', err?.message || err);
@@ -694,7 +697,7 @@ export async function notifySubscriptionStarted(env, { subRef, plan, term, brand
         ? mailP(`<strong>Even nakijken:</strong> dit abonnement staat op 0% (buiten de EU), maar ${esc(twijfel)}. `
           + 'Kijk of het echt een bedrijf buiten de EU is; klopt het niet, zeg het abonnement op en laat de klant opnieuw afsluiten met het juiste land.')
         : '',
-    ].join(''));
+    ].join(''), email || '');   // lijst 87 (e07): Beantwoorden mailt de klant
   } catch (err) {
     console.error('[notify] abonnementsbericht niet verstuurd voor', subRef, '—', err?.message || err);
   }
@@ -708,7 +711,7 @@ export async function notifySubscriptionStarted(env, { subRef, plan, term, brand
 export async function notifyAboBtwNakijken(env, { customerId, email, brand, phone, plan, term, land, ipLand }) {
   try {
     const origin = env.PUBLIC_ORIGIN || 'https://visuails.com';
-    await toStudio(env, `Even nakijken: abonnement · ${brand || email || ''} · ${land} vanaf ${ipLand}`, [
+    await toStudio(env, `Even nakijken: abonnement · ${brand || email || ''} · ${land}${ipLand ? ` vanaf ${ipLand}` : ''}`, [
       /* esc(): het merk typt de klant zelf, en de regel onder de kop wordt niet
          ge-escapet (17 oktober 2026, bij de controle van alle mails). */
       h1('Een abonnement wacht op je: land buiten de EU, ip in de EU', esc(brand || email || '')),
@@ -753,7 +756,7 @@ export async function notifyAboWijziging(env, { soort, subRef, plan, brand, emai
         mailP(terug
           ? 'De klant heeft de overstap zelf teruggedraaid in Studio. Mollie schrijft weer het oude bedrag af; er hoeft niets met de hand.'
           : 'De klant is zelf overgestapt in Studio. Mollie schrijft vanaf de volgende termijn het nieuwe bedrag af, en bij die betaling krijgt hij de credits van het nieuwe plan. Er hoeft niets met de hand.'),
-      ].join(''));
+      ].join(''), email || '');   // lijst 87 (e07)
     } catch (err) {
       console.error('[notify] overstap niet gemeld voor', subRef, '—', err?.message || err);
     }
@@ -789,7 +792,7 @@ export async function notifyAboWijziging(env, { soort, subRef, plan, brand, emai
           : (prepaid
             ? 'De klant heeft zelf hervat in Studio. Het is een vooruitbetaald jaar: de nachtelijke taak kent vanaf nu weer elke maand de credits toe.'
             : 'De klant heeft zelf hervat in Studio. Mollie incasseert weer volgens het gewone ritme.')),
-    ].join(''));
+    ].join(''), email || '');   // lijst 87 (e07)
   } catch (err) {
     console.error('[notify] abonnementswijziging niet gemeld voor', subRef, '—', err?.message || err);
   }

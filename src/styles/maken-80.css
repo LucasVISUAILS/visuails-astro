@@ -30,15 +30,12 @@
 .m8-beeld img { display: block; height: calc(var(--m8-h) * var(--s, 1)); width: auto; max-width: 100%; object-fit: contain; object-position: 50% 100%; }
 .m8 .m8-naam { margin-top: 26px; display: inline-flex; align-items: center; gap: 8px; font: 450 20px/1.2 var(--h-letter); color: var(--h-inkt); }
 .m8-pijl { display: inline-flex; font-size: 16px; }
-.m8 .m8-pijl .ik-schacht, .m8 .m8-pijl .ik-kop { transition: translate .18s cubic-bezier(.25, 1, .5, 1); }
-/* levering 89 (lijst 81 D4: goed): de magneet trekt de kop weg, rustig en dan snel (ease-in, t³), de schacht 40 ms later */
-.m8 .m8-link:hover .m8-pijl .ik-kop { transition: translate .22s cubic-bezier(.55, .06, .68, .19); }
-.m8 .m8-link:hover .m8-pijl .ik-schacht { transition: translate .22s cubic-bezier(.55, .06, .68, .19) 40ms; }
+.m8 .m8-pijl .ik-a { transition: translate .26s cubic-bezier(.22, .8, .2, 1); }
+/* knoppensysteem (lijst 89): de pijl schuift in één stuk 2,5 px naar voren, zoals in elke knop (schacht en kop gingen uit elkaar) */
 .m8-pijl svg { width: 1em; height: 1em; }
 .m8 .m8-prijs { margin-top: 6px; font: 370 15px/1.4 var(--h-letter); color: var(--h-grijs, #636974); }
 .m8 .m8-link:hover .m8-naam { color: var(--h-blauw, #25508B); }
-.m8 .m8-link:hover .m8-pijl .ik-schacht { translate: -2.4px 0; }
-.m8 .m8-link:hover .m8-pijl .ik-kop { translate: 3.6px 0; }
+.m8 .m8-link:hover .m8-pijl .ik-a { translate: 2.5px 0; }
 .m8 .m8-link:focus-visible { outline: 2px solid var(--h-blauw, #25508B); outline-offset: 6px; }
 
 /* wat er verder is: één regel, klein, met de schuine streep ertussen */
@@ -92,7 +89,7 @@
 @keyframes m8-op { from { opacity: 0; transform: translateY(clamp(20px, 2.2vw, 36px)); } 60% { opacity: 1; } to { opacity: 1; transform: none; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .m8 .m8-pijl .ik-schacht, .m8 .m8-pijl .ik-kop { transition: none; }
+  .m8 .m8-pijl .ik-a { transition: none; }
   .m8.m8-dicht :is(.m8-kopgroep, .m8-dienst, .m8-ook, .m8-regel) { opacity: 1; }
   .m8.m8-open :is(.m8-kopgroep, .m8-dienst, .m8-ook, .m8-regel), .m8.m8-open .m8-beeld img { animation: none; }
 }

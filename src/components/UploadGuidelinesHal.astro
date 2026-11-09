@@ -20,7 +20,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 /* PRODUCTTROUW staat in pricing.js: deze zin wordt op drie plekken gesteld en
    tests/promises.test.mjs let erop dat hij nergens anders luidt. */
 import { TEST_SAMPLE, producttrouwDelen } from '../data/pricing.js';
@@ -109,8 +109,8 @@ const H1 = nl ? ['Zo maak je', 'goede productfoto’s.'] : ['How to shoot', 'the
       {/* De regel naar de gidsen: wie een gids leest, wil de rest ervan ook. */}
       <p class="h-ug-hub h-op" style="--d:2">{c.hub[0]}<a href={lp('/guides')}>{c.hub[1]}</a>{c.hub[2]}</p>
       <p class="h-acties h-op" style="--d:3">
-        <a class="h-knop h-knop-inkt" href={lp('/test-sample')} data-vis-uit>{sample.cta}<span class="o" set:html={ik('rechts')} /></a>
-        <a class="h-knop h-knop-lijn" href={lp('/start')} data-vis-uit>{c.ctaStart}</a>
+        <a class="h-knop k k-vol" data-rol="doorgaan" href={lp('/test-sample')} data-vis-uit>{sample.cta}<Fragment set:html={rolIkoon('doorgaan')} /></a>
+        <a class="h-knop k k-lijn" data-rol="doorgaan" href={lp('/start')} data-vis-uit>{c.ctaStart}<Fragment set:html={rolIkoon('doorgaan')} /></a>
         {/* Voor een klant (k-klant-vervang): de proef was hier de HOOFDknop, dus
             krijgt hij er een hoofdknop voor terug — "Bestel opnieuw met je look",
             of "Start een bestelling" als er nog niets geleverd is. */}
@@ -118,7 +118,7 @@ const H1 = nl ? ['Zo maak je', 'goede productfoto’s.'] : ['How to shoot', 'the
         <KlantKnop lang={lang} soort="start-naast" />
       </p>
       {/* `download`: het A4 landt in de downloadmap, niet in een nieuw tabblad. */}
-      <a class="h-link h-ug-pdf h-op" style="--d:4" href={gids.pdf} download>{c.pdf}<span class="h-cirkel h-cirkel-mini" aria-hidden="true" set:html={ik('omlaag')} /></a>
+      <a class="h-link k k-tekst h-ug-pdf h-op" data-rol="downloaden" style="--d:4" href={gids.pdf} download><Fragment set:html={rolIkoon('downloaden')} />{c.pdf}</a>
     </div>
     <KopBeeld {...BEELD} />
   </header>
@@ -152,7 +152,7 @@ const H1 = nl ? ['Zo maak je', 'goede productfoto’s.'] : ['How to shoot', 'the
         </li>
       ))}
     </ol>
-    <p class="h-ug-meer h-in"><a class="h-link" href={cat.href}>{c.parenMeer}<span class="h-cirkel h-cirkel-mini" aria-hidden="true" set:html={ik('pijl')} /></a></p>
+    <p class="h-ug-meer h-in"><a class="h-link k k-tekst" data-rol="navigeren" href={cat.href}>{c.parenMeer}<Fragment set:html={rolIkoon('navigeren')} /></a></p>
   </section>
 
   {/* ── 3 · DE VIER BLOKKEN ── dezelfde zinnen als het A4 en de checklistmail.
@@ -229,7 +229,7 @@ const H1 = nl ? ['Zo maak je', 'goede productfoto’s.'] : ['How to shoot', 'the
         </li>
       ))}
     </ol>
-    <p class="h-ug-meer h-in"><a class="h-link" href={gids.pdf} download>{c.pdf}<span class="h-cirkel h-cirkel-mini" aria-hidden="true" set:html={ik('omlaag')} /></a></p>
+    <p class="h-ug-meer h-in"><a class="h-link k k-tekst" data-rol="downloaden" href={gids.pdf} download><Fragment set:html={rolIkoon('downloaden')} />{c.pdf}</a></p>
   </section>
 
   {/* ── 6 · HET SLOT: DE PROEF ───────────────────────────────────────────── */}

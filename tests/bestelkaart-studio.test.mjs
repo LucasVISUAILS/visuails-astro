@@ -14,6 +14,7 @@ import { readFileSync } from 'node:fs';
 import { orderView, COPY } from '../src/lib/account.js';
 import { deliveryEmail } from '../src/lib/admin.js';
 import { leverDatums, leverMoment } from '../src/lib/leverdatums.js';
+import { nlDag, plusDagen as nlPlus } from '../src/lib/nlDag.js';
 import { datum as mailDatum } from '../src/lib/mailTemplate.js';
 import { REVISIE_DAGEN } from '../src/data/pricing.js';
 import { DELIVERY_DAYS } from '../src/lib/retention.js';
@@ -43,8 +44,10 @@ const kaart = (o, files = [], lang = 'nl', extra = {}) => orderView(COPY[lang], 
 {
   const nu = new Date();
   const d = leverDatums(nu);
-  ok('leverDatums: revisie = nu + REVISIE_DAGEN, bewaren = nu + DELIVERY_DAYS',
-    d.revisieTot === plus(nu.getTime(), REVISIE_DAGEN) && d.bewaarTot === plus(nu.getTime(), DELIVERY_DAYS));
+  /* 9 november 2026 (ronde 91, C02/C03): de Nederlandse dag, en voor het bewaren de
+     laatste HELE dag vóór het moment waarop de beelden verdwijnen (zie leverdatums.js). */
+  ok('leverDatums: revisie = Nederlandse dag + REVISIE_DAGEN, bewaren = laatste hele dag vóór nu + DELIVERY_DAYS',
+    d.revisieTot === nlPlus(nlDag(nu), REVISIE_DAGEN) && d.bewaarTot === nlPlus(nlDag(nu.getTime() + DELIVERY_DAYS * 864e5), -1));
   for (const lang of ['nl', 'en']) {
     const html = deliveryEmail({ order: { ...basis, lang, name: 'Mara', service: 'catalog' }, link: 'https://visuails.com/o/x', n: 2, nu });
     ok(`levermail (${lang}) noemt dezelfde revisiedatum als leverDatums()`, html.includes(mailDatum(d.revisieTot, lang)), mailDatum(d.revisieTot, lang));
@@ -58,7 +61,8 @@ const kaart = (o, files = [], lang = 'nl', extra = {}) => orderView(COPY[lang], 
   ok('Studio (EN): dezelfde twee datums', en.datums.join(' | ') === `You can request a revision until ${kort(d.revisieTot, 'en')}. | Your images stay here until ${kort(d.bewaarTot, 'en')}.`, en.datums.join(' | '));
   /* Vlak voor middernacht UTC: de mail en Studio tellen dezelfde kalenderdag. */
   const laat = leverDatums('2026-10-08 23:59:59');
-  ok('leverDatums: een D1-tijd vlak voor middernacht telt als UTC', laat.revisieTot === plus(Date.parse('2026-10-08T23:59:59Z'), REVISIE_DAGEN));
+  /* 23:59:59 UTC is 01:59:59 op 9 oktober in Nederland: die dag telt (ronde 91, C03). */
+  ok('leverDatums: een D1-tijd vlak voor middernacht UTC telt als de Nederlandse dag', laat.revisieTot === '2026-10-16', laat.revisieTot);
   ok('leverMoment: de levermail eerst, anders delivered_at', leverMoment({ delivery_mailed_at: 'a', delivered_at: 'b' }) === 'a' && leverMoment({ delivered_at: 'b' }) === 'b' && leverMoment({}) === null);
   ok('leverDatums: onleesbaar → null', leverDatums('') === null && leverDatums('gisteren') === null);
 }
@@ -113,7 +117,9 @@ ok('geen getypte termijn in de nieuwe zinnen (REVISIE_DAGEN en DELIVERY_DAYS via
     && body.indexOf('<section class="st-map">') < body.indexOf('v.windowLine') && body.indexOf('<section class="st-map">') < body.indexOf('<Betaling'));
   ok('open: de map staat er één keer (niet meer onder de kanten)', (b.match(/<section class="st-map">/g) || []).length === 1);
   ok('de knoptekst is "Downloaden (zip)" / "Download (zip)"', COPY.nl.bDownloadAll === 'Downloaden (zip)' && COPY.en.bDownloadAll === 'Download (zip)');
-  ok('dicht: de Nu-zin en de datums staan in de kop (<summary>)', /<summary class="st-bestelling-kop">[\s\S]*class="st-nu-zin"[\s\S]*class="st-nu-datum"[\s\S]*<\/summary>/.test(b));
+  /* 9 november 2026 (ronde 91, S03/S12): de datumklasse is nu een sjabloon (`st-nu-datum` plus `is-ook-in-map` als de
+     map ze ook toont); de regel zelf is gelijk gebleven: dicht staan de datums in de kop. */
+  ok('dicht: de Nu-zin en de datums staan in de kop (<summary>)', /<summary class="st-bestelling-kop">[\s\S]*class="st-nu-zin"[\s\S]*class=(?:"|\{`)st-nu-datum[\s\S]*<\/summary>/.test(b));
   ok('dicht: de ene knop staat na de <details>, binnen de kaart', /<\/details>[\s\S]*class="st-nu-knop"[\s\S]*<\/article>\s*$/.test(b));
   const css = lees('src/styles/studio.css');
   ok('open: de knop verdwijnt zonder script (details[open] + .st-nu-knop)', /\.st-bestelling-klap\[open\] \+ \.st-nu-knop \{ display: none; \}/.test(css));

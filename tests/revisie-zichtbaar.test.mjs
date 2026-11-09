@@ -42,7 +42,8 @@ console.log('\nVISUAILS — een aangevraagde revisie is zichtbaar\n');
 /* ══ 1 · DE TWEE KEUZES STAAN NAAST ELKAAR ════════════════════════════════ */
 console.log('goedkeuren en revisie staan in dezelfde rij');
 {
-  const rij = js.match(/<div class="acts">\s*\n\s*<button class="btn btn-primary"[^]*?<\/div>/);
+  // knoppensysteem lijst 88/89: Goedkeuren is nu klein (btn-sm) en draagt data-rol en het vinkje
+  const rij = js.match(/<div class="acts">\s*\n\s*<button class="btn btn-primary[^"]*"[^]*?<\/div>/);
   ok('de acts-rij is gevonden', !!rij);
   ok('  met de goedkeurknop erin', !!rij && /value="approve"/.test(rij[0]));
   ok('  én het vinkje erin', !!rij && /\$\{tik\}/.test(rij[0]),

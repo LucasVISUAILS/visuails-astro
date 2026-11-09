@@ -189,15 +189,17 @@ console.log('\nafhandelen zonder regel doet niets');
    al een toets (tests/admin.test.mjs dekt /deliver en resupersede). Wat hier
    misging was niet de route maar het ONTBREKEN van de knop ernaartoe — en dat
    is precies iets dat je in de bron vastzet. */
-console.log('\nde revisiekaart biedt de vervanging aan');
+/* Ronde 91 (w5, 9 november 2026): de revisiekaart op het dashboard is weg; de revisie staat in het vakje op het
+   bord van de bestelpagina, met Vervangen en "Geen nieuw beeld nodig" in hetzelfde vakje. */
+console.log('\nhet vakje met de revisie biedt de vervanging aan');
 {
   const bron = readFileSync(new URL('../src/lib/admin.js', import.meta.url), 'utf8');
-  const kaart = bron.slice(bron.indexOf('function revisionCard'), bron.indexOf('function orderCard'));
+  const kaart = bron.slice(bron.indexOf('WAT DE KLANT ZEI, OP HET VAKJE ZELF'), bron.indexOf('DE BRIEF: ALLES WAT DE KLANT VOOR DIT PRODUCT'));
   ok('er staat een uploadformulier naar /deliver',
-    /action="\/admin\/orders\/\$\{r\.order_id\}\/deliver"/.test(kaart), true);
+    /action="\/admin\/orders\/\$\{order\.id\}\/deliver"/.test(kaart), true);
   ok('met product en shot al ingevuld',
-    /name="product" value="\$\{esc\(r\.product_key\)\}"/.test(kaart)
-    && /name="shot" value="\$\{esc\(r\.shot\)\}"/.test(kaart), true);
+    /name="product" value="\$\{esc\(productKey\)\}"/.test(kaart)
+    && /name="shot" value="\$\{esc\(shotKey\)\}"/.test(kaart), true);
   ok('en een bestandsveld', /type="file" name="files"/.test(kaart), true);
   /* De oude knop mag blijven bestaan — soms hoeft er niets vervangen te worden —
      maar hij mag niet meer klinken alsof hij het beeld heeft aangepast. */

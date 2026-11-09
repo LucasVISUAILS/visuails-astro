@@ -1790,3 +1790,38 @@ ALTER TABLE subscriptions ADD COLUMN overstap_cents INTEGER;
 ALTER TABLE subscriptions ADD COLUMN overstap_slots_json TEXT;
 ALTER TABLE subscriptions ADD COLUMN overstap_at TEXT;
 ALTER TABLE subscriptions ADD COLUMN overstap_van TEXT;
+
+-- 0069 — drie indexen voor de schaal (9 november 2026, ronde 91, C07): zie
+-- migrations/0069-indexen-schaal.sql.
+CREATE INDEX IF NOT EXISTS idx_files_revisie ON files (reviewed_at)
+  WHERE review_state = 'revision_requested' AND superseded_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_revreq_file ON revision_requests (file_id);
+CREATE INDEX IF NOT EXISTS idx_subs_customer ON subscriptions (customer_id);
+
+-- ── MIGRATIE 0070 · DE STUDIOBRIEF VANUIT /admin — 9 november 2026 (ronde 92) ──
+--
+-- subscribers.unsubscribed_at: afgemeld (via de afmeldlink van Resend, gemeld door
+-- de webhook, of met de hand in /admin). studiobrieven: elke brief die in
+-- /admin/studiobrief is opgesteld, gepland of verstuurd. Zie
+-- migrations/0070-studiobrief.sql en src/lib/studiobriefBeheer.js.
+ALTER TABLE subscribers ADD COLUMN unsubscribed_at TEXT;
+CREATE TABLE IF NOT EXISTS studiobrieven (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  taal           TEXT    NOT NULL DEFAULT 'nl' CHECK (taal IN ('nl', 'en')),
+  onderwerp      TEXT    NOT NULL DEFAULT '',
+  voorvertoning  TEXT    NOT NULL DEFAULT '',
+  kop            TEXT    NOT NULL DEFAULT '',
+  tekst          TEXT    NOT NULL DEFAULT '',
+  knop_tekst     TEXT    NOT NULL DEFAULT '',
+  knop_link      TEXT    NOT NULL DEFAULT '',
+  html           TEXT,
+  resend_id      TEXT,
+  status         TEXT    NOT NULL DEFAULT 'concept'
+                   CHECK (status IN ('concept', 'gepland', 'verstuurd', 'fout')),
+  fout           TEXT,
+  gepland_op     TEXT,
+  verstuurd_op   TEXT,
+  gemaakt_op     TEXT    NOT NULL DEFAULT (datetime('now')),
+  bijgewerkt_op  TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_studiobrieven_status ON studiobrieven(status, gepland_op);

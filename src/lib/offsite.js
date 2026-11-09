@@ -77,6 +77,7 @@
  * ziet eruit als de site — ook op het moment dat hij blijft staan omdat de meta
  * refresh door een instelling geblokkeerd is.
  */
+import { knopInhoud } from '../data/iconen.js';
 
 const COPY = {
   nl: {
@@ -149,12 +150,13 @@ export function offsitePage({ url, name, lang = 'nl', css = '/account.css' }) {
 <meta http-equiv="refresh" content="0; url=${u}">
 <title>${esc(t.title(n))} — VISUAILS</title>
 <link rel="stylesheet" href="${esc(css)}">
+<link rel="stylesheet" href="/knoppen.css">
 </head>
 <body>
 <main>
 <h1>${esc(t.title(n))}</h1>
 <p>${esc(t.line(n))}</p>
-<p><a class="btn btn-primary" href="${u}" rel="noopener">${esc(t.cta(n))}</a></p>
+<p><a class="btn btn-primary" href="${u}" data-rol="doorgaan" rel="noopener">${knopInhoud('doorgaan', t.cta(n))}</a></p>
 <p>${esc(t.note)}</p>
 </main>
 </body>

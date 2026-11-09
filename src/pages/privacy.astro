@@ -1,4 +1,5 @@
 ---
+import { rolIkoon } from '../data/iconen.js';
 // ── IN DE HAL — 13 oktober 2026 (afvinklijst 19, alles doen) ──────────────────────────
 // De omhulling is JuridischHal.astro: de kop van de hal, een inhoud, en het document in rijen.
 // De tekst hieronder is dezelfde; alleen de s22-omhulling en haar <style> gingen eruit.
@@ -118,7 +119,7 @@ import { ontvangers, lijstRegel } from '../data/subverwerkers.js';
       <h2>2. What data we collect</h2>
       <p>We only collect what we need to produce your visuals and run our business. Depending on how you use VISUAILS, this may include:</p>
       <ul>
-        <li><strong>Product photos and images you upload</strong> — the source material we use to create your visuals. If there is a person in them, that image is covered by the <a href="/data-processing-agreement/">Data Processing Agreement</a> rather than by this policy — see §1.</li>
+        <li><strong>Product photos and images you upload</strong> — the source material we use to create your visuals. If there is a person in them, that image is covered by the <a href="/data-processing-agreement/">Data Processing Agreement</a> rather than by this policy — see §1. Photos from a phone or camera often contain the place they were taken (location data in the file). It comes along with your upload; we do not use it. If you would rather not send it, turn the location off before you share the photo.</li>
         {/* 8 oktober 2026 (o24): de lijst miste adres, land, website, KVK, de
             tevredenheidsvraag, de aanbeveling en de controle op de proef — allemaal
             dingen die de code wel bewaart (doorlichting §3b). */}
@@ -128,7 +129,7 @@ import { ontvangers, lijstRegel } from '../data/subverwerkers.js';
         <li><strong>A check on the trial order</strong> — the ‘Try VISUAILS’ trial is one per business. To keep it that way we compare a new trial order with earlier paid ones on email address, phone number and KVK or registration number, and after payment on a scrambled (salted, one-way hashed) version of the bank account you paid from. We never see or store the account number itself.</li>
         <li><strong>Your feedback, if you give it</strong> — the score and any text you leave after delivery, and which review site you click through to.</li>
         <li><strong>Permission to show your order, if you give it</strong> — after delivery we ask whether we may show your text and your images (the visuals we delivered and the product photos you sent) on visuails.com and social media, with your brand name, without it, or not at all. Both are voluntary and nothing is shown before we have checked it ourselves. Photos of someone wearing your product are never shown: you cannot give permission on behalf of the person in them. You can withdraw your permission at any time, in VISUAILS Studio or with one email; we then take your images and text off the site and social media within {termijnInWoorden(TOESTEMMING_WEG_DAGEN, 'en')}.</li>
-        <li><strong>Basic technical data</strong> — limited information needed to host and secure the website, such as a salted, one-way scrambled version of your IP address that we use to limit how often a form can be sent; we do not store the address itself. Forms can be protected against bots with Cloudflare Turnstile, which looks at technical signals from your browser and connection, such as your IP address and browser type. See our <a href="/cookie-policy/">Cookie Policy</a> for details.</li>
+        <li><strong>Basic technical data</strong> — limited information needed to host and secure the website, such as a salted, one-way scrambled version of your IP address that we use to limit how often a form can be sent; we do not store the address itself. Forms can be protected against bots with Cloudflare Turnstile, which looks at technical signals from your browser and connection, such as your IP address and browser type. Cloudflare, where the site runs, keeps logs of requests to the site for a short time (a few days), including the addresses you open (also the link to your order page or a sign-in link) and sometimes your email address; we use them only to track down errors. See our <a href="/cookie-policy/">Cookie Policy</a> for details.</li>
         <li><strong>A launch notice, if you asked for one</strong> — on a page for a service that is still in build, a separate tick box lets you ask to be emailed when it can be ordered. Ticking it is optional and never a condition of getting an answer; if you leave it, your address is used only to reply to you.</li>
         <li><strong>The Studio letter, if you signed up for it</strong> — your email address, the language you signed up in, the place on the site where you did and the moment. Nothing else: no name, no brand, and we do not track whether you open it.</li>
         {/* G2 (8 oktober 2026): de wachtlijst van de proef. Zie src/lib/proefStand.js. */}
@@ -157,7 +158,7 @@ import { ontvangers, lijstRegel } from '../data/subverwerkers.js';
       </ul>
 
       <h2>5. Processors and third parties</h2>
-      <p>To run VISUAILS we work with a small number of service providers who process data on our behalf, under agreements that require them to protect it. Named, because "an AI provider" tells you nothing you can check:</p>
+      <p>To run VISUAILS we work with a small number of service providers who process data on our behalf, under agreements that require them to protect it. Named, because “an AI provider” tells you nothing you can check:</p>
       <ul id="recipients">
         {ontvangers('en').map((o) => (
           <li><strong>{o.naam}</strong>{o.viaNaam ? `, through ${o.viaNaam}` : ''} · {o.waar} — {o.wat}.</li>
@@ -189,7 +190,7 @@ import { ontvangers, lijstRegel } from '../data/subverwerkers.js';
       <ul>
         <li><strong>Source material</strong> — the product photos, style references and other files you upload are deleted from our storage {UPLOAD_DAYS} days after your order closes. We keep our own copy of your product photos and style references for as long as your customer account exists, so that a new order keeps the same look: up to {ACCOUNT_YEARS} years after your last order. Want it gone sooner? Email us from the address of your account and we delete it; you do not need to give a reason. A new order may then turn out differently from your earlier look.</li>
         <li><strong>Delivered visuals</strong> — your finished visuals stay in VISUAILS Studio to download for {DELIVERY_DAYS} days from delivery; after that they are removed there. We keep a copy of the visuals we made in our own archive, with no end date, so that we can keep your look consistent and keep improving it. That is our working archive, not a backup for you, so keep your own copy. Want our copy gone? Email us from the address of your account and we delete it, from that archive too; you do not need to give a reason. One exception: visuals showing a real, recognisable person — your own model, for example, or someone in a worn photo — we keep only for as long as your customer account exists.</li>
-        <li><strong>Your order link</strong> — the private link you download from works for {PORTAL_TTL_DAYS} days after your order closes, then it stops. That clock starts when the order closes, not at delivery like the one above: a link that opens your files should not sit live in an inbox forever. If you need the files after it expires, email us and we will send a new link.</li>
+        <li><strong>Your order link</strong> — the link to your order page, where you download, works for {PORTAL_TTL_DAYS} days after your order closes, then it stops. That clock starts when the order closes, not at delivery like the one above: a link that opens your files should not sit live in an inbox forever. If you need the files after it expires, email us and we will send a new link.</li>
         <li><strong>Your customer account</strong> — your account in VISUAILS Studio, with your company details, your saved preferences and your order history: we delete it {ACCOUNT_YEARS} years after your last order, or {ACCOUNT_YEARS} years after you created it if you never ordered. A running subscription counts as an ongoing relationship. Invoices are the exception; see below.</li>
         <li><strong>Email and WhatsApp</strong> — the emails and WhatsApp messages we exchange with you are kept for {CORRESPONDENTIE_JAREN} years after our last contact, as with your account, and then deleted.</li>
         <li><strong>Back-ups</strong> — once a week we make a copy of our database, and we keep the {BACKUP_KEEP} most recent copies; an older copy we clear out then sits in the Google Drive bin for up to {DRIVE_PRULLENBAK_DAGEN} days. Something we delete is therefore gone from the back-ups too after {BACKUP_UITERLIJK_WEKEN} weeks at the latest.</li>
@@ -232,8 +233,8 @@ import { ontvangers, lijstRegel } from '../data/subverwerkers.js';
       <h2 data-niet-in-inhoud>Questions about your data?</h2>
       <p>We’re happy to explain anything in this policy. Reach out and we’ll get back to you.</p>
       <p class="h-acties">
-        <a class="h-knop h-knop-inkt" href="/contact/">Contact us<span class="o" aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/></svg></span></a>
-        <a class="h-knop h-knop-lijn" href={waHref("Hello VISUAILS, I have a question about privacy.")} target="_blank" rel="noopener">WhatsApp<NieuwTabblad lang={'en'} /></a>
+        <a class="h-knop k k-lijn" data-rol="navigeren" href="/contact/">Contact us<Fragment set:html={rolIkoon('navigeren')} /></a>
+        <a class="h-knop k k-lijn" data-rol="contact" href={waHref("Hello VISUAILS, I have a question about privacy.")} target="_blank" rel="noopener">WhatsApp<NieuwTabblad lang={'en'} /></a>
       </p>
     </div>
     

@@ -82,7 +82,7 @@ ok('geen ik-vorm en geen "we appen je"', !/\b(ik|mij|mijn)\b|we appen/i.test(JSO
   const proef = z({ service: 'test-sample', status: 'delivered', payment_status: 'paid', delivered_at: dagen(-1) }, { files: [lever[0]], fb: null });
   ok('proef geleverd → afgerond (V29 = a): downloaden en "Hoe vond je het?"', proef.soort === 'proef' && proef.knoppen.join() === 'downloaden,tevreden' && proef.datums[0] === COPY.nl.datumProef);
   ok('geannuleerd → geen knop', z({ status: 'cancelled' }).knoppen.length === 0);
-  ok('statuspad: wacht op betaling eerst zolang er niet betaald is', statusPad({ ...basis, status: 'received', payment_status: 'unpaid' }, { lang: 'nl' }).map((s) => s.label).join(' · ') === 'Wacht op betaling · Ontvangen · In productie · Wordt nagekeken · Geleverd');
+  ok('statuspad: wacht op betaling eerst zolang er niet betaald is', statusPad({ ...basis, status: 'received', payment_status: 'unpaid' }, { lang: 'nl' }).map((s) => s.label).join(' · ') === 'Wacht op betaling · Ontvangen · In productie · Geleverd'); /* ronde 91 (w4): zonder "Wordt nagekeken" */
   ok('statuspad: geleverd staat op "nu"', statusPad({ ...basis, status: 'delivered', payment_status: 'paid' }, { lang: 'en' }).at(-1).state === 'is-now');
   ok('eersteMistVan: "Product 2 · Hoodie" en het vak in kleine letters', JSON.stringify(eersteMistVan([{ key: 'p2', index: 2, naam: 'Hoodie', mist: ['back'] }], 'nl')) === JSON.stringify({ product: 'Product 2 · Hoodie', vak: 'achterkant' }));
   ok('eersteMistVan: onbekend (null) → niets', eersteMistVan(null) === null);
@@ -150,7 +150,8 @@ const BEELD = (id, state = 'pending') => `INSERT INTO files (id, order_id, kind,
   ok('het blok staat direct onder de kop, vóór de feiten', top > -1 && top < html.indexOf('class="facts"') && top > html.indexOf('<h1>'));
   ok('  met de zin van Studio', html.includes(COPY.nl.flowNow.awaiting_payment));
   ok('  "Nu betalen" met de betaallink uit de mail', /href="\/api\/order-pay\?ref=VIS-TEST-3001&amp;lang=nl">Nu betalen</.test(html));
-  ok('  het statuspad van Studio', html.includes('class="pad"') && html.includes('Wacht op betaling') && html.includes('Wordt nagekeken'));
+  /* Ronde 91 (w4): het statuspad heeft geen stap "Wordt nagekeken" meer. */
+  ok('  het statuspad van Studio', html.includes('class="pad"') && html.includes('Wacht op betaling') && html.includes('In productie') && !html.includes('Wordt nagekeken'));
   ok('  en de leverregel', html.includes('class="nu-lever"') && /We leveren je beelden/.test(html));
   ok('  geen script op de pagina', !/<script/i.test(html));
 }
@@ -162,9 +163,12 @@ const BEELD = (id, state = 'pending') => `INSERT INTO files (id, order_id, kind,
   const { html } = await p.get();
   const d = leverDatums(new Date());
   ok('geleverd: de zin met het aantal en de revisiedatum eronder', html.includes('Je 2 beelden staan klaar.') && html.includes(`Revisie aanvragen kan tot en met ${korteDatum(d.revisieTot, 'nl')}.`));
-  ok('  violet: "Alles goed — naar je downloads", een gewoon formulier', /<form method="post" action="" class="nu-form"><input type="hidden" name="naar" value="afgerond"><button class="btn btn-primary" type="submit" name="action" value="approve-all">Alles goed — naar je downloads<\/button>/.test(html));
-  ok('  "Eerst downloaden" als gewone link ernaast', /class="nu-link" href="\/o\/[^"]+\/zip">Eerst downloaden</.test(html));
-  ok('  "Iets aanmerken ↓" is een anker naar het raster', html.includes('href="#werk">Iets aanmerken ↓') && html.includes('id="werk"'));
+  // knoppensysteem lijst 88/89: Goedkeuren draagt data-rol="bevestigen" en het vinkje vóór de tekst
+  ok('  violet: "Alles goed — naar je downloads", een gewoon formulier', /<form method="post" action="" class="nu-form"><input type="hidden" name="naar" value="afgerond"><button class="btn btn-primary" data-rol="bevestigen" type="submit" name="action" value="approve-all"><svg[^]*?<\/svg>Alles goed — naar je downloads<\/button>/.test(html));
+  // knoppensysteem lijst 88/89: de link ernaast is een tekstlink (.k-tekst) met het download-icoon ervoor
+  ok('  "Eerst downloaden" als gewone link ernaast', /class="nu-link k k-tekst k-klein" data-rol="downloaden" href="\/o\/[^"]+\/zip"><svg[^]*?<\/svg>Eerst downloaden</.test(html));
+  // knoppensysteem lijst 88/89: de getypte ↓ is weg (het potlood is het icoon), en de link draagt data-rol vóór href
+  ok('  "Iets aanmerken" is een anker naar het raster', /data-rol="aanmerken" href="#werk">(<svg[^]*?<\/svg>)?Iets aanmerken</.test(html) && html.includes('id="werk"'));
   ok('  geen leverregel meer na de levering', !html.includes('class="nu-lever"'));
   const r = await p.post({ action: 'approve-all', naar: 'afgerond' });
   ok('"Alles goed" landt op #afgerond als de bestelling daarmee af is', r.status === 303 && /#afgerond$/.test(r.headers.get('location') || ''), r.headers.get('location'));

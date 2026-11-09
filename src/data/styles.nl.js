@@ -54,8 +54,8 @@ export const styles = [
     ],
     steps: [
       { title: 'Vind de horizon', body: 'Brede, rustige composities met ademruimte rond het product.' },
-      { title: 'Laat schaduwen rekken', body: 'Lang, laaghoekig licht voor een premium, ongehaaste sfeer.' },
-      { title: 'Laat ruimte voor tekst', body: 'Kadering die ruimte houdt voor je eigen boodschap en layout.' },
+      { title: 'Laat schaduwen rekken', body: 'Lang, laag invallend licht voor een premium, ongehaaste sfeer.' },
+      { title: 'Laat ruimte voor tekst', body: 'Kadrering die ruimte houdt voor je eigen boodschap en opmaak.' },
     ],
     grid: grid(
       ['/img/lifestyle-dunes-02.webp'],
@@ -94,7 +94,7 @@ export const styles = [
     cardDesc: 'Energieke flitsvisuals met een nightlife-/editorial-gevoel — pittig, contrastrijk, trendgedreven.',
     moodTitle: 'Hoe Flash eruitziet.',
     moodParagraphs: [
-      'Hard on-camera licht, diepe schaduwen, verzadigde kleur. De nightlife-look, confronterend van opzet.',
+      'Harde flits vanaf de camera, diepe schaduwen, verzadigde kleur. De look van het nachtleven, bewust confronterend.',
       'Verkeerd toegepast is dit licht gewoon hard. Goed toegepast is het elektrisch. Wij hebben er een discipline van gemaakt.',
     ],
     steps: [
@@ -130,7 +130,7 @@ export const styles = [
     kort: {
       kleding: 'Avondkleding, badmode en statementstukken.',
       gevoel: 'Golden hour: lage zon en warm amberlicht, een avond die goed verliep.',
-      kanalen: 'Campagnes, launches en een feed waar mensen bij willen horen.',
+      kanalen: 'Campagnes, lanceringen en een feed waar mensen bij willen horen.',
     },
     /* glow-01 (de tekst op het shirt) is weg sinds 12 oktober 2026 (afvinklijst 8, v8-glow b): glow-03 is kaart en hero. */
     heroPhoto: '/img/lifestyle-glow-03.webp',
@@ -152,7 +152,7 @@ export const styles = [
       'Editorial-merken gebruiken dit licht omdat het alles flatteert wat het raakt. Nu is het een instelling, geen locatieshoot van twee weken.',
     ],
     steps: [
-      { title: 'Het gouden uur', body: 'Warm, laaghoekig licht op elk kader, zonder uitzondering.' },
+      { title: 'Het gouden uur', body: 'Warm, laag invallend licht op elk kader, zonder uitzondering.' },
       { title: 'Een gestylede set', body: 'Kleding, props en setting die aantrekkelijk aanvoelen, zonder geposeerd te ogen.' },
       { title: 'Warme kleurafwerking', body: 'Een consistente, editorial kleurafwerking over de hele set.' },
     ],
@@ -168,11 +168,11 @@ export const styles = [
     ],
     why: [
       { title: 'Verkoopt een gevoel, niet alleen een product', body: 'De sfeer waar beauty- en fashion-kopers echt op reageren.' },
-      { title: 'Campagnekwaliteit, elke bestelling', body: 'Geen aparte \'hero shot\'-laag — deze afwerking is de standaard.' },
+      { title: 'Campagnekwaliteit, elke bestelling', body: 'Geen aparte ‘hero shot’-laag — deze afwerking is de standaard.' },
       { title: 'Eén consistente gloed', body: 'Dezelfde warmte over je hele feed, launch na launch.' },
     ],
     bestFor: ['Avondkleding, badmode en statementstukken', 'Fashion die een gevoel verkoopt', 'Campagnes en launches die sfeer nodig hebben', 'Merken die een feed bouwen waar mensen bij willen horen'],
-    whatYouGet: [SET, 'Warme, editorial golden-hour scènes', 'Hetzelfde model door je hele set', 'Campagnekwaliteit-afwerking op elke lifestylefoto'],
+    whatYouGet: [SET, 'Warme, editorial golden-hour scènes', 'Hetzelfde model door je hele set', 'Afwerking van campagnekwaliteit op elke lifestylefoto'],
   },
   {
     slug: 'phone-made',
@@ -218,7 +218,7 @@ export const styles = [
       { title: 'Meteen goed voor je feed', body: 'Je hoeft er niets meer uit te snijden — de verhouding klopt al zoals je hem krijgt.' },
     ],
     bestFor: ['Social-first merken en UGC-achtige advertenties', 'Producten die verkopen op herkenbaarheid', 'Ondernemers die eerst vertrouwen willen opbouwen, en pas daarna glans', 'Organische content die er niet als advertentie uit mag zien'],
-    whatYouGet: [SET, 'Authentieke, telefoon-echte lifestyle-scènes', 'Natuurlijke belichting met één lichtbron', 'Feed-klare uitsnedes vanaf dag één'],
+    whatYouGet: [SET, 'Echte, met-de-telefoon-gemaakte lifestylescènes', 'Natuurlijke belichting met één lichtbron', 'Feed-klare uitsnedes vanaf dag één'],
   },
   {
     slug: 'custom',
@@ -271,7 +271,7 @@ export const styles = [
       'Een heldere prijs, afgesproken voordat we beginnen',
       'Eén ontwerpbedrag op schrift; elke carrousel daarna vanaf het gewone lifestyle-tarief voor dat aantal',
       'Van jou: we gebruiken de look niet voor een ander merk',
-      'Daarna een eigen tegel in je account en in het bestelformulier',
+      'Daarna een eigen tegel in VISUAILS Studio en in het bestelformulier',
     ],
   },
 ];

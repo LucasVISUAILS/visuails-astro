@@ -17,6 +17,7 @@
  *      wel credits, en het plan op maat is een formulier met één veld.
  */
 import { readFileSync, existsSync } from 'node:fs';
+import { ABO_EXTRA_ZICHTBAAR } from '../src/data/aboZichtbaar.js';
 import { d1, verseDb, zetLook } from './lib/d1sqlite.mjs';
 import { onRequestPost } from '../functions/api/webhook/mollie.js';
 import { createSubscriptionRow, activateSubscription, monthKey } from '../src/lib/subscription.js';
@@ -204,7 +205,11 @@ console.log('\n6 · de pagina\'s');
   const html = dist('nl/plans/index.html');
   if (html) {
     ok('dist: /nl/plans draagt de regel op maat', /id="op-maat"/.test(html), true);
-    ok('dist: met de link naar het veld op /start/plan', /\/nl\/start\/plan\/?\?plan=maat#maat-credits/.test(html), true);
+    /* 9 november 2026 (ronde 91, K-14): zolang "op maat" achter "Bespreek met ons" staat
+       (ABO_EXTRA_ZICHTBAAR in src/data/aboZichtbaar.js), staat op deze regel de knop
+       en niet de link; met de vlag aan weer de link. */
+    if (ABO_EXTRA_ZICHTBAAR) ok('dist: met de link naar het veld op /start/plan', /\/nl\/start\/plan\/?\?plan=maat#maat-credits/.test(html), true);
+    else ok('dist: met "Bespreek met ons" in plaats van de link (K-14)', /id="op-maat" data-k14-bespreek/.test(html) && !/plan=maat#maat-credits/.test(html), true);
     ok('dist: en noemt de credits van Studio', html.includes(`${PLAN_CREDITS.studio}`), true);
   } else ok('dist/nl/plans is gebouwd', false, true);
 }

@@ -19,7 +19,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import AngleSketch from './order/AngleSketch.astro';
 import { SHOTS } from '../data/shots.js';
 import { ANGLES, ANGLE_GROUPS, ANGLE_COPY } from '../data/angles.js';
@@ -159,8 +159,8 @@ const BEELD = {
     <div class="h-pp-band h-in">
       <h2 id="pp-slot" class="h-kop h-h3"><span class="l">{t.slotKop[0]}</span> {t.slotKop[1]}</h2>
       <p class="h-acties">
-        <a class="h-knop h-knop-inkt" href={`${lp('/catalog')}#looks`}>{t.naarBestellen}<span class="o" set:html={ik('rechts')} /></a>
-        <a class="h-link" href={lp('/upload-guidelines')}>{t.naarGids}<span class="h-cirkel h-cirkel-klein h-cirkel-wit" aria-hidden="true" set:html={ik('pijl')} /></a>
+        <a class="h-knop k k-vol" data-rol="doorgaan" href={`${lp('/catalog')}#looks`}>{t.naarBestellen}<Fragment set:html={rolIkoon('doorgaan')} /></a>
+        <a class="h-link k k-tekst" data-rol="navigeren" href={lp('/upload-guidelines')}>{t.naarGids}<Fragment set:html={rolIkoon('navigeren')} /></a>
       </p>
     </div>
   </section>

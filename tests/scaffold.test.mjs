@@ -374,7 +374,10 @@ console.log('\nde admin-kant is bedraad');
     || (/const gok = fromPath\.shot \|\| guessed\.shot/.test(code)
       && (/slotShot \|\| \(VAK_IDS\.includes\(gok\)/.test(code)
         /* Levering 60: de vakjes van DIT product (een look heeft er twee eigen). */
-        || /slotShot \|\| \(vakIdsVoor\(order\.service, order\.details_json, product\)\.includes\(gok\)/.test(code))), true);
+        || /slotShot \|\| \(vakIdsVoor\(order\.service, order\.details_json, product\)\.includes\(gok\)/.test(code)
+        /* Ronde 91 (w9, 9 november 2026): het sleepvak van één product deelt vooraf in (sleepvakIndeling, met
+           dezelfde rangorde: keuze, pad, naam, dan volgorde); daarbuiten blijft de gok van hierboven. */
+        || /slotShot \|\| \(sleepvak \? \(sleepIndeling\.get\(file\) \|\| null\) : \(vakIdsVoor\(order\.service, order\.details_json, product\)\.includes\(gok\)/.test(code))), true);
   ok('het bronmateriaal wordt overgeslagen', /isSourcePath\(relPath\)/.test(code), true);
   ok('en dat wordt geteld en gemeld', /skippedSource/.test(code), true);
   ok('de eigen werkbestanden worden ook overgeslagen', /isScaffoldDoc\(relPath\)/.test(code), true);

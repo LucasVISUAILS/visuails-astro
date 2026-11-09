@@ -93,7 +93,7 @@ s = await scherm('details', '/account/details');
 ok('compleet: samenvatting, formulier dicht', [s.v.kort.kop, s.v.kort.regels[0], s.v.kort.mist, s.v.open], ['Dit komt op je volgende factuur', 'VOLT', '', false]);
 ok('met adres en land in de samenvatting', s.v.kort.regels.includes('Verzonnenstraat 1, 1234 AB Nergenshuizen') && s.v.kort.regels.includes('Nederland'), true);
 const pagina = lees('src/pages/account/details.astro');
-ok('details.astro: <details> met "Wijzigen" om het formulier', /<details class="st-gegevens" open=\{v\.open\}>/.test(pagina) && /\{v\.kort\.wijzig\}/.test(pagina), true);
+ok('details.astro: <details> met "Wijzigen" om het formulier', /<details class="st-gegevens" open=\{v\.open\}>/.test(pagina) && /v\.kort\.wijzig/.test(pagina), true);  // knoppensysteem lijst 88/89: de tekst gaat nu via knopInhoud('wijzigen', v.kort.wijzig)
 s = await scherm('details', '/account/details', 'noord-token');
 ok('adres mist: melding en formulier open', [s.v.kort.mist, s.v.open], ['Je adres ontbreekt nog — dat moet op je factuur.', true]);
 /* Een aanvraag (video) van de klant zonder adres: de Nu-zin zegt het. */
@@ -101,7 +101,7 @@ order(17, 2, 'video', 'received', 'unpaid', { request: 'Een korte clip van onze 
 s = await scherm('orders', '/account/orders', 'noord-token');
 const kaart = s.v.kaarten.find((k) => k.o.id === 17);
 ok('Nu-zin: "Vul je adres aan — dat moet op je factuur voor VIS-…"', kaart.view.nu.zin, 'Vul je adres aan — dat moet op je factuur voor VIS-AA170-B1C.');
-ok('met de knop naar Je gegevens', kaart.view.nu.knop, { label: 'Gegevens aanvullen', href: '/account/details' });
+ok('met de knop naar Je gegevens', kaart.view.nu.knop, { rol: 'wijzigen', label: 'Gegevens aanvullen', href: '/account/details' });  // knoppensysteem lijst 88/89: de knop draagt zijn rol
 const gewoon = s.v.kaarten.find((k) => k.o.id === 15);
 ok('een gewone bestelling krijgt die zin niet', gewoon.view.nu.soort === 'gegevensMist', false);
 

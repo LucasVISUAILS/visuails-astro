@@ -57,16 +57,24 @@ export const LAATST_BIJGEWERKT = {
      opzeggen, het spaarplafond van het nieuwe abonnement, niet vanaf een
      vooruitbetaald jaar. En "Als een afschrijving mislukt" zegt nu wat er
      gebeurt: Mollie probeert het nog een paar keer, pas daarna een pauze.
-     Nog steeds oktober, dus de waarde blijft staan. */
-  terms: '2026-10',
+     Nog steeds oktober, dus de waarde blijft staan.
+     9 november 2026 (lijst 87): §6 zegt wanneer een onbetaalde bestelling vervalt
+     (B15), §9 noemt aanbetaling en restant bij een offerte met de hand (B14), en
+     §9a zegt dat de tweede termijn uiterlijk op de 28e valt (B19). */
+  terms: '2026-11',
   /* 11 oktober 2026 (afvinklijst 2): privacy §5/§6 en verwerkersovereenkomst §8/§12
      inhoudelijk gewijzigd — ByteDance via Magnific, meldtermijn 14 dagen, eigen
      kopieën zolang het account bestaat, geleverde beelden zonder einddatum in het
      archief, back-ups "uiterlijk na N weken", mail en WhatsApp 2 jaar. Nog steeds
-     oktober, dus de maand blijft staan. */
-  privacy: '2026-10',
-  /* 15 oktober 2026: vis_in erbij (afvinklijst 31, v31-me = a). Nog oktober, dus dezelfde maand. */
-  'cookie-policy': '2026-10',
+     oktober, dus de maand blijft staan.
+     9 november 2026 (ronde 91, E17): §5 noemt nu ook e-Boekhouden (de boekhouding)
+     en VIES (de btw-controle) als ontvanger; die kregen al gegevens.
+     9 november 2026 (lijst 87): §3 noemt de logboeken die Cloudflare kort bewaart
+     (A10), en "privélink" heet "de link naar je bestelpagina" (K04). */
+  privacy: '2026-11',
+  /* 15 oktober 2026: vis_in erbij (afvinklijst 31, v31-me = a). Nog oktober, dus dezelfde maand.
+     9 november 2026 (lijst 87, K04): de tipscookie zegt "bestelpagina" in plaats van "privélink". */
+  'cookie-policy': '2026-11',
   'data-processing-agreement': '2026-10',
   /* Oktober 2026: paragraaf 4 (welke foto's verplicht zijn: voorkant, achterkant
      én één close-up; de draagfoto optioneel) en paragraaf 6 ("controle door een

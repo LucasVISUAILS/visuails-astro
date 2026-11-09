@@ -18,6 +18,7 @@
  * Zie functions/api/studiobrief.js.
  */
 import { localizedPath } from '../i18n/ui.js';
+import { rolIkoon } from '../data/iconen.js';
 
 interface Props {
   lang: 'en' | 'nl';
@@ -86,7 +87,7 @@ const c = nl ? {
     <div class="sb-veld">
       <label class="sb-sr" for={`${id}-email`}>{c.label}</label>
       <input id={`${id}-email`} type="email" name="email" required data-melding={c.melding} autocomplete="email" inputmode="email" placeholder={c.voorbeeld} />
-      <button type="submit">{c.knop}</button>
+      <button type="submit" class:list={['k', 'k-vol', vorm === 'donker' && 'k-wit']} data-rol="doorgaan">{c.knop}<Fragment set:html={rolIkoon('doorgaan')} /></button>
     </div>
     {/* Een veld dat een mens niet ziet en een bot wel invult. */}
     <p class="sb-hp" aria-hidden="true"><label>Website <input type="text" name="website_hp" tabindex="-1" autocomplete="off" /></label></p>

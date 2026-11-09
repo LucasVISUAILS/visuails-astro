@@ -119,7 +119,9 @@ const JOBS = [
     'lifestyle-phone-made-07', 'lifestyle-phone-made-08', 'lifestyle-phone-made-09',
     'lifestyle-phone-made-10', 'lifestyle-phone-made-11', 'lifestyle-phone-made-12',
     'lifestyle-phone-made-13', 'lifestyle-phone-made-14',
-    'lifestyle-flash-02', 'lifestyle-flash-03']
+    'lifestyle-flash-02', 'lifestyle-flash-03',
+    /* lijst 87 (E13): in de galerij op de plek van banners-05 */
+    'banners-12']
     .map((n) => ({ file: n, width: 760 })),
 
   /* ── EN DE KLEINSTE MAAT, WAAR HET MEESTE TE HALEN VALT ──────────────────
@@ -138,7 +140,7 @@ const JOBS = [
    *
    * HIER DOET DE 928-FAMILIE WEL MEE. Voor 760 was hij te dichtbij (zie boven);
    * voor 380 is hij dat niet. */
-  ...['banners-01', 'banners-02', 'banners-03', 'banners-04', 'banners-05', 'banners-06',
+  ...['banners-01', 'banners-02', 'banners-03', 'banners-04', 'banners-12', 'banners-06',
     'banners-07', 'banners-08', 'lifestyle-dunes-01', 'lifestyle-dunes-02', 'lifestyle-flash-01',
     'lifestyle-glow-03', 'lifestyle-glow-04',
     'lifestyle-flash-02', 'lifestyle-flash-03',
@@ -162,7 +164,7 @@ const JOBS = [
     'lifestyle-phone-made-04', 'lifestyle-phone-made-05', 'lifestyle-phone-made-06',
     'lifestyle-phone-made-07', 'lifestyle-phone-made-08', 'lifestyle-phone-made-09',
     'lifestyle-phone-made-10', 'lifestyle-phone-made-11', 'lifestyle-phone-made-12',
-    'lifestyle-phone-made-13', 'lifestyle-phone-made-14']
+    'lifestyle-phone-made-13', 'lifestyle-phone-made-14', 'banners-12']
     .map((n) => ({ file: n, width: 1560 })),
 ];
 

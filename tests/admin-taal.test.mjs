@@ -138,7 +138,8 @@ const MAG_ENGELS = [
 {
   const bron = lees('src/lib/admin.js');
   for (const woord of ['Dashboard', 'Planning', 'Agenda', 'Klanten', 'Uitloggen']) {
-    ok(`de balk noemt ${woord}`, new RegExp(`>${woord}<|'${woord}'`).test(bron));
+    // knoppensysteem lijst 88/89: Uitloggen draagt nu zijn icoon ervoor (`${rolIkoon('uitloggen')}Uitloggen<`)
+    ok(`de balk noemt ${woord}`, new RegExp(`[>}]${woord}<|'${woord}'`).test(bron));
   }
 }
 

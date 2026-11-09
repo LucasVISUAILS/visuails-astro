@@ -88,6 +88,11 @@ const post = (velden, ipAdres) => onRequestPostWachtlijst({
   let laatste;
   for (let i = 0; i < 6; i++) laatste = await post({ email: `veel${i}@voorbeeld.nl`, lang: 'nl' }, '10.9.9.9');
   ok('de snelheidsgrens: de zesde binnen tien minuten wordt geweigerd', laatste.headers.get('location').includes('wachtlijst=rate'));
+  /* Lijst 87 (A06): zonder Turnstile-sleutels geldt de strenge grens (2 per 10 minuten), dus
+     van die zes kwamen er twee binnen. De andere drie die vroeger wel binnenkwamen, nu elk van
+     een eigen ip, zodat de tellingen hieronder (7 op de lijst) blijven kloppen. */
+  ok('  zonder sleutels: alleen de eerste twee van dat ip staan erin', telling(db, "SELECT COUNT(*) FROM proef_wachtlijst WHERE email LIKE 'veel%'") === 2);
+  for (let i = 2; i < 5; i++) await post({ email: `veel${i}@voorbeeld.nl`, lang: 'nl' });
   ok('telWachtlijst telt, ook terwijl de proef dicht is', await telWachtlijst(env) === 7, String(await telWachtlijst(env)));
   ok('zonder tabel (migratie niet gedraaid): null en geen fout', await telWachtlijst({ DB: { prepare() { throw new Error('no such table'); } } }) === null);
 }
@@ -116,7 +121,7 @@ const aPost = (pad, velden) => adminPost({ request: new Request(`https://visuail
   ok('de pagina toont de stand: dicht', /Nu: <span class="pill is-warn">Dicht/.test(html));
   ok('  en het aantal wachtenden', /<strong>7<\/strong> adressen wachten/.test(html));
   ok('  maar nog geen mailknop zolang hij dicht is', !/Mail de wachtlijst/.test(html) && /Zet de proef eerst weer open/.test(html));
-  ok('  en hij staat in het menu', /href="\/admin\/proef"/.test(html) || /aria-current="page">Proef dicht of open/.test(html));
+  ok('  en hij staat in het menu', /href="\/admin\/proef"/.test(html) || /aria-current="page">€1-proef open of dicht/.test(html));
   const weiger = await mailWachtlijst(env);
   ok('mailen terwijl hij dicht is wordt geweigerd', !weiger.ok && mails.length === 0);
 

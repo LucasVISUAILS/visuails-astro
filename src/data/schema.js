@@ -152,8 +152,11 @@ function htmlToText(html) {
 // "a whole drop" used to end this sentence. It does not any more: "drop" means
 // the client’s collection going live, and using it for a work order is the
 // collision that retired the package model. See section 0 of pricing.js.
+/* 8 november 2026 (doorloop 90, F3): hier stond "built from a single product photo", terwijl het formulier per
+   product een voorkant, een achterkant en een detail vraagt (REQUIRED_SHOT_IDS in src/data/shots.js) en de FAQ
+   zegt dat één foto niet genoeg is. Zoekmachines en AI-tools citeren juist deze zin. */
 const ORG_DESCRIPTION =
-  'Product-visual studio for clothing brands and modern e-commerce: catalog, lifestyle and video visuals built from a single product photo — a whole collection in one order, or one product at a time.';
+  'Product-visual studio for clothing brands and modern e-commerce: catalog, lifestyle and video visuals made from a few phone photos of each product — a whole collection in one order, or one product at a time.';
 
 /*
  * ── DE WEBSITE ZELF, ALS KNOOP — 2 september 2026 ──────────────────────────
@@ -175,7 +178,9 @@ function websiteNode(lang) {
     name: 'VISUAILS',
     url: SITE,
     description: ORG_DESCRIPTION,
-    inLanguage: norm(lang),
+    /* Eén knoop (één @id) voor beide talen, met de Engelse beschrijving zoals de Organization hierboven: dan zegt
+       hij ook dat hij in beide talen bestaat, en niet "nl" met een Engelse zin erin (doorloop 90, S1). */
+    inLanguage: ['en', 'nl'],
     publisher: { '@id': ORG_ID },
   };
 }
@@ -807,7 +812,7 @@ const CRUMBS = {
   '/ai-act': { en: 'AI Act', nl: 'AI-verordening' },
   '/catalog': { en: 'Catalog', nl: 'Catalog' },
   '/catalog/classic': { en: 'Classic', nl: 'Classic' },
-  '/catalog/custom': { en: 'Custom Brand', nl: 'Custom Brand' },
+  '/catalog/custom': { en: 'Custom', nl: 'Custom' },
   '/compare': { en: 'Compare', nl: 'Vergelijken' },
   '/contact': { en: 'Contact', nl: 'Contact' },
   '/cookie-policy': { en: 'Cookie policy', nl: 'Cookiebeleid' },

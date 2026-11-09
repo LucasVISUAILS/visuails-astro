@@ -418,7 +418,7 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
    * alleen niet zelf af te rekenen. Zonder deze regel zou "0 betalingen" ook waar
    * zijn als de hele route halverwege was afgebroken. */
   ok('maar krijgt wel gewoon een bevestiging',
-    vague.subjects.some((s) => s.includes("We've got your request")), true, vague.subjects);
+    vague.subjects.some((s) => s.includes('We’ve got your request')), true, vague.subjects);
 
   /* ── EN EEN AANTAL BOVEN HET PLAFOND VAN HET FORMULIER — 10 september 2026 ──
    *
@@ -435,7 +435,7 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
   const teveel = await post({ ...base, products: '999' });
   ok('negenhonderd producten leveren geen betaling op', teveel.payments, 0);
   ok('  en de klant krijgt wel een bevestiging',
-    teveel.subjects.some((s) => s.includes("We've got your request")), true, teveel.subjects);
+    teveel.subjects.some((s) => s.includes('We’ve got your request')), true, teveel.subjects);
 
   const nul = await post({ ...base, products: '0' });
   ok('nul producten ook niet', nul.payments, 0);
@@ -686,6 +686,12 @@ console.log('\nen er is een ratelimiet op de bestelroute');
   let calls = [];
   globalThis.fetch = async (url, init) => {
     calls.push(String(url));
+    /* Lijst 87 (A06): zonder Turnstile-sleutels geldt de strenge grens (3 per 10
+       minuten). Deze sectie meet de gewone grens, dus met sleutels en een botcheck
+       die Cloudflare goedkeurt. */
+    if (String(url).includes('challenges.cloudflare.com')) {
+      return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'content-type': 'application/json' } });
+    }
     if (String(url).includes('mollie')) {
       return new Response(
         JSON.stringify({ id: 'tr_R', _links: { checkout: { href: 'https://pay.mollie.test/tr_R' } } }),
@@ -732,7 +738,7 @@ console.log('\nen er is een ratelimiet op de bestelroute');
       brand: 'Merk', products: '12', country: 'NL', back: '/thank-you',
       phone: '+31 6 12345678',
       business_declaration: 'yes', business_version: 'business-v1-2026-08',
-      no_vat: '1', reg_number: '99742993', ...fields };
+      no_vat: '1', reg_number: '99742993', turnstile: 'goed-token', ...fields };
     for (const [k, v] of Object.entries(all)) fd.append(k, v);
     calls = [];
     const d = db(opts);
@@ -745,6 +751,7 @@ console.log('\nen er is een ratelimiet op de bestelroute');
         MOLLIE_API_KEY: 'test_abcdefghijklmnopqrstuvwxyz0123',
         RESEND_API_KEY: 're_test', NOTIFY_EMAIL: 'hello@visuails.com',
         FROM_EMAIL: 'VISUAILS <orders@visuails.com>',
+        TURNSTILE_SITE_KEY: '0x4AAAAAAAverzonnen', TURNSTILE_SECRET_KEY: '0x4AAAAAAAgeheimverzonnen',
       },
       waitUntil: () => {},
     });

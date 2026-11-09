@@ -411,15 +411,19 @@ body.studio:not(.on-ink) .st-merk .mk-fill { fill: url(#vs-wi-snede); }
 body.studio:not(.on-ink) .st-merk { --mk-kleur: url(#vs-wi-licht); }
 /* De inktknop uit de nacht; onder de muis vult hij zich met de snede (K2). Eén verloop van twee keer
    de knop, alleen de plek schuift, langs de snede. Wit erop 6,2 : 1 of meer. */
+/* 9 november 2026 (lijst 84, A2 = b): in rust inkt, onder de muis de snede — dezelfde knop als op de site. */
 body.studio.st-hal .btn-primary {
-  background: #0F1217 linear-gradient(126.87deg, #0F1217 0%, #172945 17.5%, #1A4279 50%, #25508B 77.5%, #2D61A8 100%) -2px -2px / calc(200% + 4px) calc(200% + 4px) no-repeat;
+  background: #0F1217 linear-gradient(126.87deg, #0F1217 0%, #0F1217 50%, #1A4279 62%, #25508B 80%, #2D61A8 100%) -2px -2px / calc(200% + 4px) calc(200% + 4px) no-repeat;
   transition: background-position .36s cubic-bezier(.22, .8, .2, 1), color .2s, box-shadow .2s;
 }
 body.studio.st-hal .btn-primary:hover, body.studio.st-hal .btn-primary:focus-visible {
-  background: #0F1217 linear-gradient(126.87deg, #0F1217 0%, #172945 17.5%, #1A4279 50%, #25508B 77.5%, #2D61A8 100%) calc(100% + 2px) calc(100% + 2px) / calc(200% + 4px) calc(200% + 4px) no-repeat;
+  background: #0F1217 linear-gradient(126.87deg, #0F1217 0%, #0F1217 50%, #1A4279 62%, #25508B 80%, #2D61A8 100%) calc(100% + 2px) calc(100% + 2px) / calc(200% + 4px) calc(200% + 4px) no-repeat;
 }
 /* De link: de streep loopt het wit in (D2); onder de muis vol. Hoog contrast: de gewone streep. */
 body.studio.st-hal .st-link { text-decoration: none; background: linear-gradient(90deg, #25508B, rgb(37 80 139 / .5) 45%, rgb(37 80 139 / 0)) 0 100% / 100% 1.5px no-repeat; }
 body.studio.st-hal .st-link:hover { background-image: linear-gradient(90deg, #25508B, #25508B); }
 @media (forced-colors: active) { body.studio.st-hal .st-link { text-decoration: underline; } }
 @media (prefers-reduced-motion: reduce) { body.studio.st-hal .btn-primary { transition: none; } }
+
+/* knoppensysteem (lijst 89): uitloggen op de telefoon met het eigen icoon (de deur met de pijl eruit), naast het woord */
+body.studio.st-hal .st-mob button[data-rol="uitloggen"] { display: inline-flex; align-items: center; gap: 6px; }

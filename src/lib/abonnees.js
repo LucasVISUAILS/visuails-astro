@@ -18,7 +18,7 @@
  */
 import { termijnMaand, termijnEinde } from './subscription.js';
 import { subMaandCents, subMaandBruto } from './slots.js';
-import { creditSaldo } from './creditboek.js';
+import { saldiVoorKlanten } from './creditboek.js';
 import { planName } from '../data/planNames.js';
 import { datum as mailDatum } from './mailTemplate.js';
 
@@ -85,7 +85,7 @@ const VOLGORDE = { active: 0, paused: 1, pending: 2, cancelled: 3, canceled: 3, 
 /**
  * Alle abonnementen, met de klant, de stand, de volgende termijn, het saldo en
  * de signalen. Gesorteerd: wat geld kost eerst, dan lopend, op pauze, wachtend,
- * opgezegd. Het saldo komt uit creditSaldo(), één keer per klant.
+ * opgezegd. Het saldo komt uit saldiVoorKlanten() (dezelfde som als creditSaldo()).
  */
 export async function abonneesOverzicht(env, { nu = new Date(), limiet = 500 } = {}) {
   const { results = [] } = await env.DB.prepare(
@@ -93,11 +93,10 @@ export async function abonneesOverzicht(env, { nu = new Date(), limiet = 500 } =
        FROM subscriptions s JOIN customers c ON c.id = s.customer_id
       ORDER BY s.id DESC LIMIT ?1`
   ).bind(Number(limiet) || 500).all();
-  const saldi = new Map();
-  for (const s of results) {
-    if (saldi.has(s.customer_id)) continue;
-    saldi.set(s.customer_id, await creditSaldo(env, { customerId: s.customer_id }).catch(() => null));
-  }
+  /* Saldo en bevroren in één batch per 90 klanten (9 november 2026, ronde 91, C11):
+     hier stond creditSaldo() per klant, 763 databaseverzoeken bij 200 abonnees.
+     Dezelfde twee getallen; lukt het niet, dan nul, zoals de .catch() van toen. */
+  const saldi = await saldiVoorKlanten(env, results.map((s) => s.customer_id)).catch(() => new Map());
   const rijen = results.map((s) => {
     const saldo = saldi.get(s.customer_id);
     const signalen = aboSignalen(s, { bevroren: Number(saldo?.bevroren) || 0, nu });
@@ -113,6 +112,8 @@ export async function abonneesOverzicht(env, { nu = new Date(), limiet = 500 } =
          overstap al het nieuwe (Mollie heeft dat sinds de overstap). */
       volgendeBruto: volgende ? (overstap ? subMaandBruto({ ...s, plan: s.overstap_plan, amount_cents: s.overstap_cents, slots_json: s.overstap_slots_json }) : subMaandBruto(s)) : 0,
       maandNetto: s.status === 'active' && s.term !== 'prepaid' ? subMaandCents(s) : 0,
+      /* Aangenomen met een test_-sleutel van Mollie (8 november 2026, doorloop 90, D29). */
+      test: Number(s.testmodus) === 1,
       saldo: Math.max(0, Math.floor(Number(saldo?.saldo) || 0)),
       signalen,
       ernst: signalen.reduce((m, g) => Math.max(m, g.ernst), -1),
@@ -127,8 +128,10 @@ export async function abonneesOverzicht(env, { nu = new Date(), limiet = 500 } =
     wacht: rijen.filter((r) => r.status === 'pending').length,
     opgezegd: rijen.filter((r) => ['cancelled', 'canceled', 'ended'].includes(r.status)).length,
     aandacht: rijen.filter((r) => r.ernst >= 2).length,
-    /* Wat er per maand binnenkomt, excl. btw: alleen lopende maandincasso's. */
-    maandNetto: rijen.reduce((n, r) => n + r.maandNetto, 0),
+    /* Wat er per maand binnenkomt, excl. btw: alleen lopende maandincasso's, en geen testabonnementen (D29: twee
+       testklanten maakten "€ 1.580,00 per maand"). */
+    maandNetto: rijen.reduce((n, r) => n + (r.test ? 0 : r.maandNetto), 0),
+    test: rijen.filter((r) => r.test && r.status === 'active').length,
   };
   return { rijen, telling };
 }

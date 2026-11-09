@@ -99,15 +99,28 @@ const meter = nieuweMeter();
 const lijst = await nuDoen(metMeter(env, meter).DB);
 ok('geen fout', lijst.fout, null);
 const paren = lijst.regels.map((r) => `${r.soort}:${r.ref.slice(-2)}`);
+/* Ronde 91 (w1, 9 november 2026): één regel per bestelling, en oppakken op de dag waarop het af moet
+   (agendaUiterlijk). 38 staat er één keer, met "foto's vragen" erachter (r.daarna). 37 heeft een
+   window_start maar geen venster (geen window_end, geen attended): zo snel mogelijk, dus vandaag + 1. */
+/* Ronde 91 (w4): 32 staat op human_check ("In controle" bestaat niet meer als stand) en is dus In productie,
+   bij het werk, op de dag waarop het af moet: zes dagen geleden binnen, dus te laat en vooraan. */
+/* 9 november 2026 (ronde 91): 37 (binnen 1 uur geleden, met window_start) en 39 (3 uur geleden) moeten op dezelfde dag
+   af zolang ze op dezelfde UTC-dag binnenkwamen; dan gaat de vaste dag (37) voor. Alleen tussen 00:00 en 03:00 UTC ligt
+   39 een dag eerder en moet hij eerder af. De toets hing van het uur af waarop hij draaide; nu rekent hij dat mee. */
+const zelfdeDag = new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 10) === new Date(Date.now() - 1 * 3600e3).toISOString().slice(0, 10);
+const oppak = zelfdeDag ? ['oppakken:36', 'oppakken:38', 'oppakken:37', 'oppakken:39'] : ['oppakken:36', 'oppakken:38', 'oppakken:39', 'oppakken:37'];
 ok('de volgorde van de regels', paren, [
-  'btw:31', 'leveren:32', 'leveren:33', 'revisie:35', 'revisie:34',
-  'oppakken:37', 'oppakken:36', 'oppakken:38', 'oppakken:39', 'fotos:38', 'offerte:40', 'review:41',
+  'btw:31', 'leveren:33', 'revisie:35', 'revisie:34',
+  'productie:32', ...oppak, 'offerte:40', 'review:41',
 ]);
-ok('de soorten volgen NU_DOEN_SOORTEN', [...new Set(lijst.regels.map((r) => r.soort))], NU_DOEN_SOORTEN.filter((s) => lijst.regels.some((r) => r.soort === s)));
+ok('één regel per bestelling: 38 draagt foto’s vragen als "ook"', lijst.regels.find((r) => r.id === 38).daarna.map((d) => d.soort), ['fotos']);
+/* Oppakken en In productie staan samen, op de dag waarop het af moet (w1): als één groep vergeleken. */
+const groep = (s) => (s === 'productie' ? 'oppakken' : s);
+ok('de soorten volgen NU_DOEN_SOORTEN', [...new Set(lijst.regels.map((r) => groep(r.soort)))], [...new Set(NU_DOEN_SOORTEN.map(groep))].filter((s) => lijst.regels.some((r) => groep(r.soort) === s)));
 ok('revisies: de oudste eerst (35 vóór 34)', paren.indexOf('revisie:35') < paren.indexOf('revisie:34'));
-ok('oppakken: een vaste dag eerst, dan de oudste', paren.filter((p) => p.startsWith('oppakken')), ['oppakken:37', 'oppakken:36', 'oppakken:38', 'oppakken:39']);
+ok('oppakken: op de dag waarop het af moet, dan een vaste dag, dan de oudste', paren.filter((p) => p.startsWith('oppakken')), oppak);
 ok('foto\'s ontbreken: pas na een dag (39 is van vandaag)', paren.includes('fotos:39'), false);
-ok('foto\'s ontbreken telt twee foto\'s bij 38', lijst.regels.find((r) => r.soort === 'fotos').n, 2);
+ok('foto\'s ontbreken telt twee foto\'s bij 38', lijst.regels.find((r) => r.id === 38).daarna.find((d) => d.soort === 'fotos').n, 2);
 ok('onbetaald staat er niet in (42)', lijst.regels.some((r) => r.id === 42), false);
 ok('review al gevraagd staat er niet in (43)', lijst.regels.some((r) => r.id === 43), false);
 const nieuw = lijst.regels.find((r) => r.id === 33);
@@ -124,26 +137,33 @@ const { get, post } = await adminSessie(db, env);
 const dash = await get('/admin');
 ok('dashboard laadt', dash.status, 200);
 const h = dash.html;
-ok('de lijst staat bovenaan: vóór de tegels en vóór de bestellingen', h.indexOf('id="nu-doen"') > -1 && h.indexOf('id="nu-doen"') < h.indexOf('class="stats"') && h.indexOf('id="nu-doen"') < h.indexOf('<h2>Bestellingen'));
+/* Ronde 91 (w6, 9 november 2026): de tegels zijn weg; Nu doen staat bovenaan, vóór de bestellingen. */
+ok('de lijst staat bovenaan: vóór de bestellingen, en er zijn geen tegels meer', h.indexOf('id="nu-doen"') > -1 && !h.includes('class="stats"') && h.indexOf('id="nu-doen"') < h.indexOf('<h2>Bestellingen'));
 const items = [...h.matchAll(/<li class="nd-regel"[\s\S]*?<\/li>/g)].map((m) => m[0]);
 ok('één regel per item in de lijst', items.length, lijst.regels.length);
-ok('één knop per regel', items.map((li) => (li.match(/<a |<button /g) || []).length), items.map(() => 1));
+/* Ronde 91 (w1): wat er bij dezelfde bestelling óók wacht, staat als stille link (geen knop) achter de regel. */
+ok('één knop per regel', items.map((li) => (li.match(/<a class="btn|<button /g) || []).length), items.map(() => 1));
 ok('de regels in dezelfde volgorde als nuDoen()', items.map((li) => /VIS-ND-00(\d\d)/.exec(li)[1]), lijst.regels.map((r) => r.ref.slice(-2)));
 const knop = (id, soort) => items.find((li) => li.includes(`VIS-ND-00${id}`) && li.includes(`data-soort="${soort}"`)) || '';
 ok('btw → Beoordelen (/admin/vat)', /href="\/admin\/vat">Beoordelen</.test(knop(31, 'btw')));
-ok('In controle → Leverkeuring (bestelpagina, #melden)', /href="\/admin\/orders\/32\/files#melden">Leverkeuring</.test(knop(32, 'leveren')));
-ok('afgehandeld, niet gemeld → een echte knop "2 nieuwe beelden melden" terug naar het dashboard',
-  /<form class="nd-knop" method="post" action="\/admin\/orders\/33\/announce"><input type="hidden" name="terug" value="dashboard"><button[^>]*>2 nieuwe beelden melden<\/button><\/form>/.test(knop(33, 'leveren')));
-ok('revisie → Revisie openen (de kaart op dit dashboard)', /href="#rev-350">Revisie openen</.test(knop(35, 'revisie')) && h.includes('id="rev-350"'));
+/* Ronde 91 (w4): "In controle" is geen stand meer; 32 is In productie, met de knop naar het bord. */
+ok('een oude rij op In controle → In productie, Naar het bord (#bord)', /href="\/admin\/orders\/32\/files#bord">Naar het bord</.test(knop(32, 'productie')));
+/* Ronde 91 (w7): "sturen" in plaats van "melden". */
+ok('afgehandeld, niet gestuurd → een echte knop "2 nieuwe beelden sturen" terug naar het dashboard',
+  /<form class="nd-knop" method="post" action="\/admin\/orders\/33\/announce"><input type="hidden" name="terug" value="dashboard"><button[^>]*>2 nieuwe beelden sturen(?:<svg[^]*?<\/svg>)?<\/button><\/form>/.test(knop(33, 'leveren')));  // knoppensysteem lijst 88/89: met de pijl van Doorgaan
+/* Ronde 91 (w5): de revisie staat in het vakje op de bestelpagina, niet meer als kaart op het dashboard. */
+ok('revisie → Revisie openen (het vakje op de bestelpagina)', /href="\/admin\/orders\/35\/files#rev-350">Revisie openen</.test(knop(35, 'revisie')) && !h.includes('id="rev-350"'));
 /* Doorloop 27 (B03): Oppakken is één klik — hij zet de status zelf op In
    productie en landt op de bestelpagina. */
 ok('betaald, niet opgepakt → Oppakken: een echte knop die de status op In productie zet',
-  /<form class="nd-knop" method="post" action="\/admin\/orders\/36\/status"><input type="hidden" name="status" value="in_production"><input type="hidden" name="back" value="files"><button[^>]*>Oppakken<\/button><\/form>/.test(knop(36, 'oppakken')));
-ok('foto\'s ontbreken → Foto’s vragen (#ontbreekt)', /href="\/admin\/orders\/38\/files#ontbreekt">Foto’s vragen</.test(knop(38, 'fotos')));
+  /<form class="nd-knop" method="post" action="\/admin\/orders\/36\/status"><input type="hidden" name="status" value="in_production"><input type="hidden" name="back" value="files"><button[^>]*>Oppakken(?:<svg[^]*?<\/svg>)?<\/button><\/form>/.test(knop(36, 'oppakken')));  // knoppensysteem lijst 88/89: met de pijl van Doorgaan
+/* Ronde 91 (w1): 38 staat er één keer (Oppakken); "foto's vragen" is de link achter de regel. */
+ok('foto\'s ontbreken → "ook: foto’s vragen" (#ontbreekt) achter de regel van 38', /class="nd-ook">ook: <a href="\/admin\/orders\/38\/files#ontbreekt">foto’s vragen<\/a>/.test(knop(38, 'oppakken')));
 ok('aanvraag → Offerte maken (#offerte)', /href="\/admin\/orders\/40\/files#offerte">Offerte maken</.test(knop(40, 'offerte')));
 ok('afgerond → Review vragen, het reviewformulier in een nieuw tabblad', /action="\/admin\/orders\/41\/review-wa" target="_blank">.*Review vragen/.test(knop(41, 'review')));
 ok('de btw-chip bij de bewakers is opgegaan in de lijst', /href="\/admin\/vat">Btw-controle &middot;/.test(h), false);
-ok('de zijkolom "Eerst af" blijft (planning, tests/planning-scherm)', /Eerst af/.test(h) && /db-aflopend/.test(h));
+/* Ronde 91 (w1): "Eerst af" is opgegaan in Nu doen. */
+ok('de zijkolom "Eerst af" is weg', /Eerst af/.test(h) || /db-aflopend/.test(h), false);
 
 /* ══ 3 · HET NACHTRAPPORT ════════════════════════════════════════════════════ */
 console.log('\n3 · het nachtrapport');
@@ -152,11 +172,12 @@ console.log('\n3 · het nachtrapport');
   const uit = await RAPPORT.sendReport(env, ['iets uit het logboek'], [], lijst);
   const mail = resendMails()[0] || {};
   ok('één mail aan Lucas', resendMails().length, 1);
-  ok('onderwerp: "Vandaag · … — 12 wachten op jou"', /^Vandaag · \S+ \d{1,2} \S+ — 12 wachten op jou$/.test(mail.subject || ''), true);
-  ok('de tekst begint met NU DOEN', (mail.text || '').startsWith('NU DOEN — 12 dingen'), true);
+  ok('onderwerp: "Vandaag · … — 11 wachten op jou"', /^Vandaag · \S+ \d{1,2} \S+ — 11 wachten op jou$/.test(mail.subject || ''), true);
+  ok('de tekst begint met NU DOEN', (mail.text || '').startsWith('NU DOEN — 11 dingen'), true);
+  ok('wat er bij dezelfde bestelling ook wacht, staat eronder als "ook"', /\n {5}ook foto’s vragen · 2 foto’s ontbreken[^\n]*: https:\/\/visuails\.com\/admin\/orders\/38\/files#ontbreekt/.test(mail.text || ''), true);
   const refsMail = [...(mail.text || '').matchAll(/^\s+\d+\. .*?VIS-ND-00(\d\d)/gm)].map((m) => m[1]);
   ok('dezelfde regels in dezelfde volgorde als het dashboard', refsMail, items.map((li) => /VIS-ND-00(\d\d)/.exec(li)[1]));
-  ok('elke regel met de knop als link', /Beoordelen: https:\/\/visuails\.com\/admin\/vat/.test(mail.text) && /2 nieuwe beelden melden: https:\/\/visuails\.com\/admin\/orders\/33\/files#melden/.test(mail.text) && /Review vragen: https:\/\/visuails\.com\/admin\/orders\/41\/files#review/.test(mail.text));
+  ok('elke regel met de knop als link', /Beoordelen: https:\/\/visuails\.com\/admin\/vat/.test(mail.text) && /2 nieuwe beelden sturen: https:\/\/visuails\.com\/admin\/orders\/33\/files#melden/.test(mail.text) && /Review vragen: https:\/\/visuails\.com\/admin\/orders\/41\/files#review/.test(mail.text));
   ok('daarna het logboek', mail.text.indexOf('Wat er gebeurd is:') > mail.text.indexOf('NU DOEN'));
   ok('en niet meer "Geen mail betekent"', /Geen mail betekent/.test(mail.text), false);
   ok('sendReport geeft onderwerp en tekst terug', uit.onderwerp, mail.subject);
@@ -218,7 +239,8 @@ const stap = (html) => {
   const { status, html } = await get('/admin/orders/36/files');
   ok('bestelpagina laadt', status, 200);
   ok('de pagina begint (na de kop) met "Volgende stap:"', /^<\/h1>\s*<div class="volgende-stap"><p><strong>Volgende stap:<\/strong> Oppakken/.test(stap(html)));
-  ok('  de knop zet de status zelf (één klik), en het lijstje blijft er voor de rest', /action="\/admin\/orders\/36\/status"><input type="hidden" name="status" value="in_production">/.test(stap(html)) && /<form class="controls kop-status" id="status"/.test(html));
+  /* Ronde 91 (w4): het statuslijstje is weg; een stand zet je met de knop die erbij hoort. */
+  ok('  de knop zet de status zelf (één klik), en er is geen statuslijstje meer', /action="\/admin\/orders\/36\/status"><input type="hidden" name="status" value="in_production">/.test(stap(html)) && !/<select name="status"/.test(html));
 }
 {
   const { html } = await get('/admin/orders/38/files');
@@ -226,7 +248,7 @@ const stap = (html) => {
 }
 {
   const { html } = await get('/admin/orders/33/files');
-  ok('afgehandelde revisie: "2 nieuwe beelden melden" → #melden', /Volgende stap:<\/strong> 2 nieuwe beelden melden[\s\S]*href="#melden"/.test(stap(html)) && /<h2 id="melden">/.test(html));
+  ok('afgehandelde revisie: "2 nieuwe beelden sturen" → #melden', /Volgende stap:<\/strong> 2 nieuwe beelden sturen[\s\S]*href="#melden"/.test(stap(html)) && /<h2 id="melden">/.test(html));
 }
 {
   /* Doorloop 27 (B10): op de bestelpagina springt "Revisie openen" naar het
@@ -255,7 +277,7 @@ console.log('\n5 · melden vanuit de lijst');
   ok('terug naar het dashboard met de bevestiging', [r.status, r.location], [303, '/admin?gemeld=VIS-ND-0033&n=2']);
   ok('de klant kreeg één mail (Engels, revisie)', resendMails().filter((m) => /Your revision is ready — VIS-ND-0033/.test(m.subject)).length, 1);
   const { html } = await get(r.location);
-  ok('"VIS-ND-0033: gemeld aan de klant — 2 beelden."', html.includes('VIS-ND-0033: gemeld aan de klant &mdash; 2 beelden.'));
+  ok('"VIS-ND-0033: naar de klant gestuurd — 2 beelden."', html.includes('VIS-ND-0033: naar de klant gestuurd &mdash; 2 beelden.'));
   ok('en de regel is weg uit de lijst', /data-soort="leveren"[\s\S]{0,400}VIS-ND-0033/.test(html), false);
   const nogEens = await post('/admin/orders/33/announce', { terug: 'dashboard' });
   ok('nog een keer: niets nieuws, geen mail, terug met "niets"', nogEens.location, '/admin?gemeld=niets');

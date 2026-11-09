@@ -162,6 +162,18 @@ export function payloadZonderPersoon(payment) {
 }
 
 
+/**
+ * payment.paidAt als 'YYYY-MM-DD HH:MM:SS' in UTC, zoals datetime('now') hem schrijft,
+ * of null als hij ontbreekt, onleesbaar is of meer dan vijf minuten in de toekomst ligt
+ * (een verkeerde klok aan de andere kant mag een betaling niet in de toekomst zetten).
+ * 9 november 2026 (ronde 91, C05).
+ */
+export function betaalMoment(payment, nu = Date.now()) {
+  const t = Date.parse(String(payment?.paidAt || ''));
+  if (!Number.isFinite(t) || t > nu + 5 * 60 * 1000) return null;
+  return new Date(t).toISOString().slice(0, 19).replace('T', ' ');
+}
+
 export async function onRequestPost({ request, env, waitUntil }) {
   if (!env.MOLLIE_API_KEY) {
     console.error('[mollie-webhook] MOLLIE_API_KEY not configured');
@@ -1419,77 +1431,90 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
        "volledig terug". Zie handleOrderCancel() in src/lib/admin.js. */
     const tegoedTerug = await tegoedTeruggeboekt(env, order.id).catch(() => 0);
     const full = bruto !== null ? orderRefunded + tegoedTerug >= bruto : (cents !== null && refunded >= cents);
-    await env.DB.prepare(
-      `UPDATE orders SET refunded_cents = ?1, payment_status = ?2 WHERE id = ?3`
+    /* ── ÉÉN KEER, OOK ALS MOLLIE TWEE KEER TEGELIJK BELT — 9 november 2026 (ronde 91, B07) ──
+       `known` komt uit de SELECT bovenaan, en twee meldingen die tegelijk binnenkomen
+       lezen allebei de oude stand. Allebei gingen ze dan door naar issueCreditNote(),
+       die allebei "nog niets gecrediteerd" zagen: twee creditnota's voor één
+       terugbetaling (gemeten: € 100 terug, € 200 gecrediteerd, twee mails). De
+       UPDATE is nu de claim: alleen de melding die de stand werkelijk ophoogt, boekt
+       de tijdlijn, het logboek en de nota. D1 voert de twee UPDATE's na elkaar uit,
+       dus de tweede ziet de nieuwe stand en verandert niets. */
+    const claim = await env.DB.prepare(
+      `UPDATE orders SET refunded_cents = ?1, payment_status = ?2
+        WHERE id = ?3 AND COALESCE(refunded_cents, 0) < ?1`
     ).bind(orderRefunded, full ? 'refunded' : order.payment_status || 'paid', order.id).run();
+    const alGeboekt = Number(claim?.meta?.changes ?? 1) === 0;
+    if (alGeboekt) {
+      console.log(`[mollie-webhook] refund on ${payment.id} (${mode}): ${orderRefunded} cents already recorded by a parallel delivery — skipped`);
+    } else {
+      await env.DB.prepare(
+        `INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, 'system')`
+      ).bind(
+        order.id,
+        order.status,
+        order.lang === 'nl'
+          /* Bevestigd door Mollie. "Het volledige bedrag komt terug" klopte niet als
+             een deel als tegoed terugkwam (29 september 2026). */
+          ? `Mollie heeft de terugbetaling van ${mailBedrag(refunded, 'nl')} bevestigd.${full && tegoedTerug > 0 ? ` Samen met het tegoed van ${mailBedrag(tegoedTerug, 'nl')} is alles terug.` : full ? ' Het volledige bedrag komt terug.' : ''}`
+          : `Mollie has confirmed the refund of ${mailBedrag(refunded, 'en')}.${full && tegoedTerug > 0 ? ` Together with the ${mailBedrag(tegoedTerug, 'en')} of credit, everything is back.` : full ? ' The full amount comes back.' : ''}`
+      ).run().catch(() => {});
+      await env.DB.prepare(
+        `INSERT INTO admin_log (admin_id, admin_email, action, order_id, customer_id, detail)
+         VALUES (NULL, NULL, 'payment.refund', ?1, ?2, ?3)`
+      ).bind(order.id, order.customer_id || null,
+        `Refund recorded: ${(orderRefunded / 100).toFixed(2)} EUR of ${bruto === null ? '?' : (bruto / 100).toFixed(2)} (Mollie ${payment.id}, this payment ${(refunded / 100).toFixed(2)})`)
+        .run().catch(() => {});
 
-    await env.DB.prepare(
-      `INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, 'system')`
-    ).bind(
-      order.id,
-      order.status,
-      order.lang === 'nl'
-        /* Bevestigd door Mollie. "Het volledige bedrag komt terug" klopte niet als
-           een deel als tegoed terugkwam (29 september 2026). */
-        ? `Mollie heeft de terugbetaling van ${mailBedrag(refunded, 'nl')} bevestigd.${full && tegoedTerug > 0 ? ` Samen met het tegoed van ${mailBedrag(tegoedTerug, 'nl')} is alles terug.` : full ? ' Het volledige bedrag komt terug.' : ''}`
-        : `Mollie has confirmed the refund of ${mailBedrag(refunded, 'en')}.${full && tegoedTerug > 0 ? ` Together with the ${mailBedrag(tegoedTerug, 'en')} of credit, everything is back.` : full ? ' The full amount comes back.' : ''}`
-    ).run().catch(() => {});
-    await env.DB.prepare(
-      `INSERT INTO admin_log (admin_id, admin_email, action, order_id, customer_id, detail)
-       VALUES (NULL, NULL, 'payment.refund', ?1, ?2, ?3)`
-    ).bind(order.id, order.customer_id || null,
-      `Refund recorded: ${(orderRefunded / 100).toFixed(2)} EUR of ${bruto === null ? '?' : (bruto / 100).toFixed(2)} (Mollie ${payment.id}, this payment ${(refunded / 100).toFixed(2)})`)
-      .run().catch(() => {});
+      console.log(`[mollie-webhook] refund on ${payment.id} (${mode}): order ${known} -> ${orderRefunded} cents, ${full ? 'full' : 'partial'}`);
 
-    console.log(`[mollie-webhook] refund on ${payment.id} (${mode}): order ${known} -> ${orderRefunded} cents, ${full ? 'full' : 'partial'}`);
-
-    /*
-     * ── EN DE CREDITNOTA — 12 augustus 2026 ──────────────────────────────────
-     *
-     * Hierboven werd de terugbetaling correct geboekt en daar bleef het bij. De
-     * uitgereikte factuur stond nog op het volle bedrag, dus vanaf de eerste
-     * terugbetaling was er een factuur van bijvoorbeeld € 1.101,10 tegenover geld dat
-     * terug was. Een uitgereikte factuur pas je niet aan; je credit hem.
-     *
-     * HET DOORLOPENDE TOTAAL GAAT MEE, niet het verschil. `refunded` is Mollie's
-     * amountRefunded, en dat is een lopend totaal; issueCreditNote() telt zelf op wat er
-     * al gecrediteerd is en geeft alleen het verschil uit. Daarmee is een tweede
-     * aflevering van dezelfde melding vanzelf onschadelijk — dezelfde afspraak als bij
-     * issueInvoice(), en om dezelfde reden.
-     *
-     * BINNEN safe() EN NIET ERBUITEN. Er is op dit punt al geboekt dat er terugbetaald
-     * is, en dat is het deel dat niet verloren mag gaan. Mislukt de nota — R2 niet
-     * bereikbaar, de pdf-renderer die valt — dan blijft de rij op 'pending' met haar
-     * nummer staan en pakt de nachtelijke taak hem op. Deze webhook mag daar niet op
-     * omvallen, want dan komt Mollie hem opnieuw aanbieden en begint alles opnieuw.
-     *
-     * GEEN FACTUUR BETEKENT GEEN NOTA, en dat is de normale gang bij een proefvisual
-     * van € 1: daar wordt niet gefactureerd zolang het fiscale standpunt over die euro
-     * niet genomen is. issueCreditNote() geeft dan null terug en dat is geen fout.
-     */
-    try {
-      const note = await issueCreditNote(env, order.id, {
-        // Het totaal van de BESTELLING en niet van deze ene betaling —
-        // issueCreditNote() telt zelf op wat er al gecrediteerd is en geeft
-        // alleen het verschil uit, dus dit moet het lopende totaal zijn waar de
-        // factuur tegenover staat.
-        refundedGrossCents: orderRefunded + tegoedTerug,
-        reason: order.cancel_reason || null,
-      });
-      if (note) console.log(`[mollie-webhook] creditnota ${note.number} voor ${ref} (${note.status})`);
-      /* ── EN DE NOTA GAAT NAAR DE KLANT — 4 september 2026 ──────────────────
-         De factuur werd gemaild (mailInvoice hieronder), de creditnota niet: die
-         stond alleen in Studio. mailCreditNote() stuurt alleen een nota met
-         status 'issued' — bleef hij op 'pending' omdat de pdf niet lukte, dan
-         mailt de nachtelijke taak hem zodra die hem alsnog uitgeeft. Best effort,
-         binnen dezelfde try: de boeking hierboven is al gedaan. */
-      if (note && note.status === 'issued') {
-        const wie = await env.DB.prepare('SELECT ref, email, lang, name FROM orders WHERE id = ?1')
-          .bind(order.id).first().catch(() => null);
-        if (wie) await mailCreditNote(env, { order: wie, note });
+      /*
+       * ── EN DE CREDITNOTA — 12 augustus 2026 ──────────────────────────────────
+       *
+       * Hierboven werd de terugbetaling correct geboekt en daar bleef het bij. De
+       * uitgereikte factuur stond nog op het volle bedrag, dus vanaf de eerste
+       * terugbetaling was er een factuur van bijvoorbeeld € 1.101,10 tegenover geld dat
+       * terug was. Een uitgereikte factuur pas je niet aan; je credit hem.
+       *
+       * HET DOORLOPENDE TOTAAL GAAT MEE, niet het verschil. `refunded` is Mollie's
+       * amountRefunded, en dat is een lopend totaal; issueCreditNote() telt zelf op wat er
+       * al gecrediteerd is en geeft alleen het verschil uit. Daarmee is een tweede
+       * aflevering van dezelfde melding vanzelf onschadelijk — dezelfde afspraak als bij
+       * issueInvoice(), en om dezelfde reden.
+       *
+       * BINNEN safe() EN NIET ERBUITEN. Er is op dit punt al geboekt dat er terugbetaald
+       * is, en dat is het deel dat niet verloren mag gaan. Mislukt de nota — R2 niet
+       * bereikbaar, de pdf-renderer die valt — dan blijft de rij op 'pending' met haar
+       * nummer staan en pakt de nachtelijke taak hem op. Deze webhook mag daar niet op
+       * omvallen, want dan komt Mollie hem opnieuw aanbieden en begint alles opnieuw.
+       *
+       * GEEN FACTUUR BETEKENT GEEN NOTA, en dat is de normale gang bij een proefvisual
+       * van € 1: daar wordt niet gefactureerd zolang het fiscale standpunt over die euro
+       * niet genomen is. issueCreditNote() geeft dan null terug en dat is geen fout.
+       */
+      try {
+        const note = await issueCreditNote(env, order.id, {
+          // Het totaal van de BESTELLING en niet van deze ene betaling —
+          // issueCreditNote() telt zelf op wat er al gecrediteerd is en geeft
+          // alleen het verschil uit, dus dit moet het lopende totaal zijn waar de
+          // factuur tegenover staat.
+          refundedGrossCents: orderRefunded + tegoedTerug,
+          reason: order.cancel_reason || null,
+        });
+        if (note) console.log(`[mollie-webhook] creditnota ${note.number} voor ${ref} (${note.status})`);
+        /* ── EN DE NOTA GAAT NAAR DE KLANT — 4 september 2026 ──────────────────
+           De factuur werd gemaild (mailInvoice hieronder), de creditnota niet: die
+           stond alleen in Studio. mailCreditNote() stuurt alleen een nota met
+           status 'issued' — bleef hij op 'pending' omdat de pdf niet lukte, dan
+           mailt de nachtelijke taak hem zodra die hem alsnog uitgeeft. Best effort,
+           binnen dezelfde try: de boeking hierboven is al gedaan. */
+        if (note && note.status === 'issued') {
+          const wie = await env.DB.prepare('SELECT ref, email, lang, name FROM orders WHERE id = ?1')
+            .bind(order.id).first().catch(() => null);
+          if (wie) await mailCreditNote(env, { order: wie, note });
+        }
+      } catch (err) {
+        console.error('[mollie-webhook] creditnota niet uitgegeven voor', ref, '—', err?.message || err);
       }
-    } catch (err) {
-      console.error('[mollie-webhook] creditnota niet uitgegeven voor', ref, '—', err?.message || err);
     }
   }
 
@@ -1676,12 +1701,20 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
   //
   // Both terminal states are now excluded, which also makes the belt-and-braces
   // return above genuinely redundant rather than load-bearing.
+  /* ── HET MOMENT VAN BETALEN, NIET VAN DEZE MELDING — 9 november 2026 (ronde 91, C05) ──
+     Hier stond `paid_at = datetime('now')`: het moment waarop deze webhook draait. Mollie
+     stuurt een melding meestal binnen seconden, maar herhaalt hem bij een storing uren
+     later. De voorrangsregel ("vóór 15:00 betaald") en de factuurdatum lezen paid_at;
+     wie om 14:59:50 betaalde en wiens melding om 15:00:05 binnenkwam, kreeg een
+     werkdag later. Nu payment.paidAt van Mollie zelf (de betaling is net bij Mollie
+     opgehaald, niet uit de body), als SQLite-UTC; zonder bruikbare paidAt, of met een
+     paidAt in de toekomst, blijft het datetime('now'). */
   await env.DB.prepare(
-    `UPDATE orders SET payment_status = 'paid', payment_provider = 'mollie', payment_ref = ?1, paid_at = datetime('now'),
+    `UPDATE orders SET payment_status = 'paid', payment_provider = 'mollie', payment_ref = ?1, paid_at = COALESCE(?3, datetime('now')),
                        window_expires_at = NULL
      WHERE id = ?2 AND payment_status NOT IN ('paid', 'refunded')`
   )
-    .bind(payment.id, order.id)
+    .bind(payment.id, order.id, betaalMoment(payment))
     .run();
   /* Het verrekende tegoed afboeken, nu de rest betaald is (29 september 2026).
      Zie src/lib/tegoedVerrekening.js. Mislukt het, dan staat het in het log en
@@ -1841,8 +1874,8 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
               order.id,
               'cancelled',
               order.lang === 'en'
-                ? `A trial image was already ordered for this business (${earlier.ref}), so this one was cancelled. ${refunded ? 'The euro has been refunded.' : 'We refund the euro by hand.'}`
-                : `Voor dit bedrijf is al een proefbeeld besteld (${earlier.ref}), dus deze is geannuleerd. ${refunded ? 'De euro is teruggestort.' : 'We storten de euro met de hand terug.'}`,
+                ? `A test sample was already ordered for this business (${earlier.ref}), so this one was cancelled. ${refunded ? 'The euro has been refunded.' : 'We refund the euro by hand.'}`
+                : `Voor dit bedrijf is al een proef besteld (${earlier.ref}), dus deze is geannuleerd. ${refunded ? 'De euro is teruggestort.' : 'We storten de euro met de hand terug.'}`,
               'system'
             ).run();
           await env.DB.prepare('INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, ?4)')

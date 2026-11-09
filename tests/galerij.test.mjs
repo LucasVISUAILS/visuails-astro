@@ -101,7 +101,8 @@ console.log('\nelke foto bestaat, en geen enkele gaat op volle grootte mee');
   /* De namen met een ${i} erin zijn reeksen; die worden hier uitgeschreven zoals
      de pagina ze ook uitschrijft. Wat overblijft zijn losse bestandsnamen. */
   const reeksen = [
-    ...Array.from({ length: 8 }, (_, i) => `banners-0${i + 1}`),
+    /* lijst 87 (E13) teruggedraaid: banners-05 weer erin (verzonnen merk) */
+    ...[1, 2, 3, 4, 5, 6, 7, 8].map((n) => `banners-0${n}`),
     ...Array.from({ length: 8 }, (_, i) => `lifestyle-flash-0${i + 1}`),
     /* Glow zonder 01 sinds 12 oktober 2026 (afvinklijst 8, v8-glow b): dat beeld
        droeg tekst op het shirt en is overal weg, zoals in GalleryPage.astro. Zonder 06

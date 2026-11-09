@@ -921,7 +921,8 @@ async function boekDocument(env, c, rij) {
   const btwCode = btwCodeVoor(doc.snap.treatment, inst);
   const debiteurenId = await c.grootboek(inst.grootboek.debiteuren);
   const omzetId = await c.grootboek(omzetCodeVoor(doc.snap.treatment, inst));
-  const eersteRegel = (doc.snap.lines && doc.snap.lines[0] && doc.snap.lines[0].description) || '';
+  /* Lijst 87 (B07): een factuur kan meer regels hebben; de omschrijving van de hele bestelling staat dan apart. */
+  const eersteRegel = doc.snap.omschrijving || (doc.snap.lines && doc.snap.lines[0] && doc.snap.lines[0].description) || '';
   const omschrijving = creditnota
     ? `Creditnota ${doc.nummer}${doc.factuurnummer ? ` op ${doc.factuurnummer}` : ''}`
     : `Factuur ${doc.nummer}${eersteRegel ? ` · ${eersteRegel}` : ''}`;

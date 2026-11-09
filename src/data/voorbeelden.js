@@ -66,12 +66,15 @@ export const VOORBEELDEN = [
        vierkante uitsnede van de bron staat hier apart in public/img. Zonder dat
        zou het product aan een rand worden afgeknipt — zie objectPosition in
        Compare.astro voor de andere helft van diezelfde oplossing. */
+    /* Lijst 87 (e16, 9 november 2026): niet "die een klant instuurde". Er staat nergens dat er
+       toestemming van een klant is (zie de kop van dit bestand); dan is het geen claim maar een
+       beschrijving. Is er wél toestemming, leg die dan hier vast als commentaar (wie en wanneer). */
     en: {
-      alt: ['The raw phone photo a client sent in', 'The finished VISUAILS catalog image made from it'],
+      alt: ['A phone photo of a shirt', 'The finished VISUAILS catalog image made from it'],
       cap: 'A washed tee, flat on an office table, window light.',
     },
     nl: {
-      alt: ['De ruwe telefoonfoto die een klant instuurde', 'De afgewerkte VISUAILS-catalogfoto die daaruit is gemaakt'],
+      alt: ['Een telefoonfoto van een shirt', 'De afgewerkte VISUAILS-catalogfoto die daaruit is gemaakt'],
       cap: 'Een gewassen shirt, plat op een kantoortafel, raamlicht.',
     },
   },

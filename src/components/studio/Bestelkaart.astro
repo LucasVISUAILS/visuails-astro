@@ -1,4 +1,5 @@
 ---
+import { knopInhoud } from '../../data/iconen.js';
 /* Eén bestelling op het overzicht: kop, betaalblok (zolang er niet betaald is),
    tijdlijn, en de mededeling van de studio. Bewust niet de hele orderkaart met
    productkaarten en goedkeurknoppen — die hoort op Bestellingen; hier staat wat
@@ -23,7 +24,7 @@ const betaalKnopBoven = !!(nu && nu.knoppen && nu.knoppen.some((k) => k.form));
     <span class="st-ref">{o.ref}</span>
     <Pil status={onbetaald && Number(o.total_cents) > 0 ? 'awaiting_payment' : o.status} lang={lang} />
     <span class="st-meta">{serviceLabel(o.service, lang) || o.service}{o.product_count ? ` · ${o.product_count} ${Number(o.product_count) === 1 ? 'product' : t.fProducts.toLowerCase()}` : ''}</span>
-    <a class="st-link" href={`/account/orders?order=${o.id}#order-${o.id}`}>{t.ovOpenOrder}</a>
+    <a class="st-link k k-tekst k-klein" data-rol="navigeren" href={`/account/orders?order=${o.id}#order-${o.id}`} set:html={knopInhoud('navigeren', t.ovOpenOrder)} />
   </div>
   {nu && nu.zin && (
     <div class="st-watnu">
@@ -33,15 +34,15 @@ const betaalKnopBoven = !!(nu && nu.knoppen && nu.knoppen.some((k) => k.form));
         <div class="st-watnu-knoppen">
           {nu.knoppen.map((k, i) => (
             k.form
-              ? <form method="post" action={k.form}><button class={`btn ${i === 0 ? 'btn-primary' : 'btn-2nd'} btn-sm`} type="submit">{k.label}</button></form>
+              ? <form method="post" action={k.form}><button class={`btn ${i === 0 && k.rol !== 'navigeren' ? 'btn-primary' : 'btn-2nd'} btn-sm`} data-rol={k.rol || 'doorgaan'} type="submit" set:html={knopInhoud(k.rol || 'doorgaan', k.label)} /></form>
               : k.approveOrder
                 ? (
                   <form method="post" action="/account/review">
                     <input type="hidden" name="order" value={k.approveOrder} />
-                    <button class={`btn ${i === 0 ? 'btn-primary' : 'btn-2nd'} btn-sm`} type="submit" name="action" value="approve-order" formnovalidate>{k.label}</button>
+                    <button class={`btn ${i === 0 ? 'btn-primary' : 'btn-2nd'} btn-sm`} data-rol="bevestigen" type="submit" name="action" value="approve-order" formnovalidate set:html={knopInhoud('bevestigen', k.label)} />
                   </form>
                 )
-                : <a class={i === 0 ? 'btn btn-primary btn-sm' : 'st-link'} href={k.href}>{k.label}</a>
+                : <a class={i === 0 ? `btn ${k.rol === 'navigeren' ? 'btn-2nd' : 'btn-primary'} btn-sm` : 'st-link k k-tekst k-klein'} data-rol={k.rol || 'navigeren'} href={k.href} set:html={knopInhoud(k.rol || 'navigeren', k.label)} />
           ))}
         </div>
       )}

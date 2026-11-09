@@ -1,4 +1,5 @@
 ---
+import { knopInhoud } from '../../data/iconen.js';
 /**
  * /account/orders — Bestellingen, als Astro-pagina. Studio fase 2, 5 september 2026.
  *
@@ -67,6 +68,6 @@ const afgerondOpen = !lopend.length || afgerond.some((k) => Number(k.view.id) ==
           )}
         </Fragment>
       )
-      : <p class="st-leeg">{v.empty.text} {v.empty.clear && <a class="st-link" href="/account/orders">{v.empty.clear}</a>}</p>}
+      : <p class="st-leeg">{v.empty.text} {v.empty.clear && <a class="st-link k k-tekst k-klein" data-rol="navigeren" href="/account/orders" set:html={knopInhoud('navigeren', v.empty.clear)} />}</p>}
   </section>
 </StudioLayout>

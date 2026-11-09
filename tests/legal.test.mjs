@@ -210,8 +210,10 @@ console.log('\nde subverwerkers staan met naam, en de twee lijsten zijn gelijk')
   ok('NL idem', /\{ontvangers\('nl'\)\.map\(/.test(PRIV.nl), true);
   ok('en Magnific staat in die bron', ontvangers('en').some((o) => o.naam === 'Magnific AI, S.L.U.'), true);
   /* De datum "laatst gewijzigd" staat boven de lijst, in beide documenten. */
-  ok('EN de overeenkomst toont wanneer de lijst gewijzigd is', /\{lijstRegel\('en'\)\}/.test(DPA.en), true);
-  ok('NL idem', /\{lijstRegel\('nl'\)\}/.test(DPA.nl), true);
+  /* De overeenkomst toont de datum van de lijst MET beeld (ronde 91, E17: die heeft sinds
+     9 november 2026 een eigen datum, SUBVERWERKERS_GEWIJZIGD). */
+  ok('EN de overeenkomst toont wanneer de lijst gewijzigd is', /\{lijstRegel\('en', 'subverwerkers'\)\}/.test(DPA.en), true);
+  ok('NL idem', /\{lijstRegel\('nl', 'subverwerkers'\)\}/.test(DPA.nl), true);
   ok('EN het privacybeleid ook', /\{lijstRegel\('en'\)\}/.test(PRIV.en), true);
   ok('NL idem', /\{lijstRegel\('nl'\)\}/.test(PRIV.nl), true);
   ok('EN en Mollie, want die staat niet in de overeenkomst', PRIV.en.includes('Mollie B.V.'), true);

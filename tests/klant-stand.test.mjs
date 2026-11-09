@@ -50,7 +50,8 @@ for (const L of ['nl', 'en']) {
 }
 ok('in de maak zegt de stap: Ontvangen', standKort('inDeMaak', 'nl', { status: 'received', service: 'catalog' }) === 'Ontvangen');
 ok('  In productie', standKort('inDeMaak', 'nl', { status: 'in_production', service: 'catalog' }) === 'In productie');
-ok('  Wordt nagekeken', standKort('inDeMaak', 'nl', { status: 'human_check', service: 'catalog' }) === 'Wordt nagekeken');
+/* Ronde 91 (w4): "Wordt nagekeken" is geen stap meer; een oude rij op human_check is In productie. */
+ok('  een oude rij op human_check: In productie', standKort('inDeMaak', 'nl', { status: 'human_check', service: 'catalog' }) === 'In productie');
 ok('  en bij een aanvraag: die ligt bij ons, er wordt nog niets gemaakt', standKort('inDeMaak', 'nl', { status: 'received', service: 'lifestyle', details_json: '{"request":"eigen look"}' }) === 'Je aanvraag ligt bij ons' && standKort('inDeMaak', 'en', { status: 'received', details_json: { request: 'x' } }) === 'Your request is with us');
 ok('een onbekende soort geeft niets', standKort('bestaatniet', 'nl') === '');
 
@@ -176,7 +177,7 @@ const dist = (p) => { const f = path.join(ROOT, 'dist', p); return existsSync(f)
        het proefblok, alleen nog in de opening. */
     /* levering 80 (lijst 64, knoppen): de opening heeft geen abonnementsknop meer; een klant ziet in plaats van de
        €1-link de link naar Studio (data-vis-klant-in). De hoofdknop draagt de creditszin nog. */
-    ok('  de hoofdknop draagt de creditszin, geen data-vis-in; voor een klant de link naar Studio', !/data-vis-klant="plan"/.test(thuis) && !/data-vis-in\b/.test(thuis) && thuis.includes('data-vis-credits="Bestel met je credits · {n} over"') && /<a class="h-link" href="\/account" data-vis-klant-in hidden>/.test(thuis));
+    ok('  de hoofdknop draagt de creditszin, geen data-vis-in; voor een klant de link naar Studio', !/data-vis-klant="plan"/.test(thuis) && !/data-vis-in\b/.test(thuis) && thuis.includes('data-vis-credits="Bestel met je credits · {n} over"') && /<a class="h-link k k-tekst" data-rol="doorgaan" href="\/account" data-vis-klant-in hidden>/.test(thuis));  /* knoppensysteem lijst 88/89: de tekstlink is .k-tekst met data-rol */
     ok('  het proefblok draagt een verborgen klantversie', /data-vis-klant="proefblok"/.test(thuis) && /data-vis-proefklant hidden/.test(thuis) && thuis.includes('data-vis-her="Bestel met je look."'));
     ok('  de zwevende WhatsApp-knop draagt de zin', /class="wa-launcher"[^>]*data-vis-wa="Hallo VISUAILS, een vraag over bestelling \{ref\}:"/.test(thuis));
     for (const [pad, soort] of [['nl/how-it-works/index.html', 'herbestel'], ['nl/pricing/index.html', 'herbestel'], ['nl/upload-guidelines/index.html', 'herbestel-of-start'], ['nl/upload-guidelines/index.html', 'start-naast'], ['how-it-works/index.html', 'herbestel']]) {
@@ -214,7 +215,7 @@ else {
   const browser = metVisIn(await chromium.launch({ executablePath: browserPad() }));
   const STAND = {
     naam: 'Mara',
-    laatste: { ref: 'VIS-2041', stap: 3, stand: 'Geleverd, wacht op je goedkeuring', knop: { label: 'Bekijk je beelden', href: '/account/orders?order=7#order-7' } },
+    laatste: { ref: 'VIS-2041', stap: 2, stand: 'Geleverd, wacht op je goedkeuring', knop: { label: 'Bekijk je beelden', href: '/account/orders?order=7#order-7' } },
     herbestel: { href: '/nl/start/catalog/?bg=FFFFFF&ratio=portrait45', label: 'Catalog bestellen — Classic · wit · 4:5' },
     lopend: 'VIS-2041', abonnee: true, saldo: 48,
   };
@@ -363,7 +364,8 @@ else {
     m = await lees();
     ok('ingelogd: de melding met de stand staat er meteen', m.stand && !m.proef, JSON.stringify(m));
     ok('  "Welkom terug, Mara · VIS-2041 · Geleverd, wacht op je goedkeuring"', m.tekst === 'Welkom terug, Mara VIS-2041 · Geleverd, wacht op je goedkeuring', m.tekst);
-    ok('  de voortgang: vier stappen, Geleverd is waar hij nu is (v36-melding c)', JSON.stringify(m.stappen) === JSON.stringify(['af:Ontvangen', 'af:In productie', 'af:Nakijken', 'nu:Geleverd*']), JSON.stringify(m.stappen));
+    /* Ronde 91 (w4): drie stappen, "Nakijken" is weg. */
+    ok('  de voortgang: drie stappen, Geleverd is waar hij nu is (v36-melding c, w4)', JSON.stringify(m.stappen) === JSON.stringify(['af:Ontvangen', 'af:In productie', 'nu:Geleverd*']), JSON.stringify(m.stappen));
     ok('  de knop "Bekijk je beelden" naar de bestelkaart', m.knop && m.knop[0] === '/account/orders?order=7#order-7' && m.knop[1] === 'Bekijk je beelden', JSON.stringify(m.knop));
     ok('  linksonder, 16 px van de rand, 420 breed', m.rect && m.rect[0] === 16 && m.rect[2] === 420 && m.vh - (m.rect[1] + m.rect[3]) === 16, JSON.stringify(m.rect));
     ok('  en niet over de WhatsApp-knop', !raakt(m.rect, m.wa), JSON.stringify([m.rect, m.wa]));
@@ -460,7 +462,8 @@ else {
     const { ctx, page, lees } = await melding('/nl/', STAND, { breed: 390, hoog: 844 });
     let m = await lees();
     ok('telefoon: de stand op één rij, klein', m.stand && m.rect[0] === 12 && m.rect[2] === 366 && m.rect[3] <= 96, JSON.stringify(m.rect));
-    ok('  het pijltje is 40 × 40 en heet nog "Bekijk je beelden"', m.knop && m.knop[1] === 'Bekijk je beelden' && m.knop[2] === 40 && m.knop[3] === 40, JSON.stringify(m.knop));
+    /* knoppensysteem lijst 88/89: het rondje is 44 × 44, de normale knopmaat (was 40) */
+    ok('  het pijltje is 44 × 44 en heet nog "Bekijk je beelden"', m.knop && m.knop[1] === 'Bekijk je beelden' && m.knop[2] === 44 && m.knop[3] === 44, JSON.stringify(m.knop));
     await page.waitForTimeout(500);
     m = await lees();
     ok('  de WhatsApp-knop staat erboven, niet eroverheen', !raakt(m.rect, m.wa) && m.wa[1] + m.wa[3] <= m.rect[1], JSON.stringify([m.rect, m.wa]));

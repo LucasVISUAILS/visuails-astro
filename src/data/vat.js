@@ -122,6 +122,39 @@ export const OTHER_COUNTRIES = [
 
 const EU_IDS = new Set(EU_COUNTRIES.map(function id(c) { return c.id; }));
 
+/*
+ * ── "ERGENS ANDERS" EN ONBEKENDE CODES — 9 november 2026 (ronde 91, B11) ─────
+ *
+ * De kop van OTHER_COUNTRIES belooft dat "Ergens anders" (XX) op de lijst van een
+ * mens komt, en de kop van vatDecision() dat een land dat we niet kennen nooit
+ * vanzelf 0% wordt. Geen van beide gebeurde: XX en elke andere code buiten de
+ * EU (ZZ, LI, MC … met een zelfgebouwde POST) werden 0% "buiten de EU" en waren
+ * meteen te betalen, en de factuur drukte "XX" als land.
+ *
+ * Bekend buiten de EU zijn alleen de landen die het formulier zelf noemt. Al het
+ * andere is een land dat we niet kunnen beoordelen: eerst nakijken (vatGate()
+ * hieronder, en bepaalBedrijfEnBtw() in src/lib/subscribe.js), en niet als land op
+ * een factuur (landOpFactuur()).
+ */
+const BEKEND_BUITEN_EU = new Set(OTHER_COUNTRIES
+  .map(function id(c) { return c.id; })
+  .filter(function echt(id) { return id !== 'XX'; }));
+
+/** Ligt dit land buiten de EU en kunnen we het niet beoordelen (XX of onbekend)? */
+export function landVraagtNakijken(country) {
+  const up = String(country || '').trim().toUpperCase();
+  if (!up || up === HOME_COUNTRY || isEu(up)) return false;
+  return !BEKEND_BUITEN_EU.has(up);
+}
+
+/** De landcode zoals hij op een factuur mag: alleen een land dat we kennen,
+ *  nooit "XX" of een verzonnen code (dan blijft het bij het adres zelf). */
+export function landOpFactuur(country) {
+  const up = String(country || '').trim().toUpperCase();
+  if (!up) return null;
+  return isEu(up) || BEKEND_BUITEN_EU.has(up) ? up : null;
+}
+
 /**
  * Het land van de bezoeker om het formulier mee voor te vullen (8.06, 8 oktober
  * 2026), uit Cloudflare's `request.cf.country` — hetzelfde ip-land dat o16 al
@@ -181,11 +214,22 @@ export function countryOptions(lang) {
  * Returns `{ country, number }`. `country` is null when the string carried no
  * two-letter prefix, which is fine: the form's country field is what decides,
  * and the prefix is only a cross-check.
+ *
+ * ── FRANKRIJK: TWEE LETTERS VOORAAN ZIJN NIET ALTIJD EEN LANDCODE ─────────
+ * 9 november 2026 (lijst 87, B21). Een Frans btw-nummer is FR + twee tekens +
+ * negen cijfers, en die twee tekens mogen letters zijn. Typt de klant het zonder
+ * "FR" ("AB123456789"), dan lazen we "AB" als landcode en keurde vatFormatOk()
+ * een geldig nummer af. Geef het gekozen land mee (`land`): is dat Frankrijk en
+ * zijn de twee letters vooraan geen EU-btw-code, dan hoort alles bij het nummer.
  */
-export function normaliseVat(raw) {
+const EU_BTW_CODES = new Set(EU_COUNTRIES.flatMap(function codes(c) { return [c.id, c.vies]; }));
+export function normaliseVat(raw, land = null) {
   const clean = String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (!clean) return { country: null, number: '' };
   const m = clean.match(/^([A-Z]{2})(.+)$/);
+  if (m && String(land || '').trim().toUpperCase() === 'FR' && !EU_BTW_CODES.has(m[1])) {
+    return { country: null, number: clean };
+  }
   if (m) return { country: m[1], number: m[2] };
   return { country: null, number: clean };
 }
@@ -369,7 +413,39 @@ export const PAYMENT_DAYS = BETALEN_NA_BTW_AKKOORD;
  *
  * `reasons` is voor een mens, niet voor code. Er wordt nooit op gematcht.
  */
-export function vatGate({ country, treatment, vatValid, vatError, confirmed, hadNumber, ipCountry = '' }) {
+/*
+ * ── GEBIEDEN VAN EEN EU-LAND DIE NIET BIJ HET BTW-GEBIED HOREN — 9 november 2026 ──
+ * (lijst 87, B10) vatDecision() kijkt alleen naar het land. Maar de Canarische
+ * Eilanden, Ceuta, Melilla, Åland, Helgoland, Büsingen, Livigno, Campione d'Italia,
+ * de berg Athos en de Franse overzeese departementen horen bij een EU-land en niet
+ * bij het btw-gebied (art. 6 btw-richtlijn). Dan kwam er "Btw verlegd" op de
+ * factuur waar dat niet hoort. We herkennen ze aan de postcode, en dan gaat de
+ * bestelling met een reden op de btw-lijst. Het tarief verandert NIET vanzelf: Lucas
+ * of de boekhouder beslist op /admin/vat. Liever een keer te veel nakijken dan te weinig.
+ * Een postcode met landletters ervoor ("AX-22100", "E-35001") telt ook.
+ */
+export const BUITEN_BTW_GEBIED = Object.freeze({
+  ES: [[/^35\d{3}$/, 'de Canarische Eilanden (Las Palmas)'], [/^38\d{3}$/, 'de Canarische Eilanden (Santa Cruz de Tenerife)'],
+    [/^51\d{3}$/, 'Ceuta'], [/^52\d{3}$/, 'Melilla']],
+  FI: [[/^22\d{3}$/, 'Åland']],
+  DE: [[/^27498$/, 'Helgoland'], [/^78266$/, 'Büsingen am Hochrhein']],
+  IT: [[/^23041$/, 'Livigno'], [/^22061$/, 'Campione d’Italia']],
+  FR: [[/^97[1-6]\d{2}$/, 'een Frans overzees departement']],
+  GR: [[/^6308[67]$/, 'de berg Athos']],
+});
+
+/** Valt dit adres in een gebied van een EU-land buiten het btw-gebied? Geeft de naam, of null. */
+export function buitenBtwGebied(country, postcode) {
+  const up = String(country || '').trim().toUpperCase();
+  const lijst = BUITEN_BTW_GEBIED[up];
+  if (!lijst) return null;
+  const pc = String(postcode || '').toUpperCase().replace(/\s+/g, '').replace(/^[A-Z]{1,2}-/, '');
+  if (!pc) return null;
+  const hit = lijst.find(([re]) => re.test(pc));
+  return hit ? hit[1] : null;
+}
+
+export function vatGate({ country, treatment, vatValid, vatError, confirmed, hadNumber, ipCountry = '', postcode = '' }) {
   const up = String(country || '').trim().toUpperCase();
   const reasons = [];
   let payableNow = true;
@@ -392,6 +468,16 @@ export function vatGate({ country, treatment, vatValid, vatError, confirmed, had
   //     land (art. 44 btw-richtlijn) en de zakelijke verklaring.
   if (up && up !== HOME_COUNTRY && !isEu(up)) {
     /* bewust leeg: zie hierboven */
+  }
+
+  /* Maar niet voor "Ergens anders" of een code die we niet kennen (ronde 91, B11,
+     9 november 2026): dan staat niet vast dat het buiten de EU is. Eerst nakijken;
+     "Opgave klopt — 0% blijft staan" of "Btw alsnog rekenen" op /admin/vat. */
+  if (landVraagtNakijken(up)) {
+    reasons.push(up === 'XX'
+      ? 'Land "Ergens anders" gekozen — niet vast te stellen of het buiten de EU ligt; nakijken voordat er 0% btw wordt gerekend'
+      : `Onbekende landcode (${up}) — nakijken voordat er 0% btw wordt gerekend`);
+    payableNow = false;
   }
 
   // 1b · BUITEN DE EU GEKOZEN, MAAR BESTELD VANAF EEN IP IN DE EU — 8 oktober 2026.
@@ -428,6 +514,13 @@ export function vatGate({ country, treatment, vatValid, vatError, confirmed, had
   //     verdedigen tegenover de Belastingdienst.
   if (treatment === VAT_TREATMENT.reverseCharge && confirmed !== true) {
     reasons.push('0% verlegd zonder de bevestiging van de klant — niet via het formulier ingediend');
+    payableNow = false;
+  }
+
+  // 5 · Een adres in een gebied buiten het btw-gebied (lijst 87, B10). Zie BUITEN_BTW_GEBIED.
+  const gebied = buitenBtwGebied(up, postcode);
+  if (gebied) {
+    reasons.push(`Postcode in ${gebied}: hoort bij ${up}, maar niet bij het btw-gebied — "btw verlegd" klopt daar niet; nakijken (met je boekhouder) welk tarief en welke tekst op de factuur horen`);
     payableNow = false;
   }
 
@@ -648,7 +741,7 @@ export function vatShape(country) {
  */
 export function vatFormatOk(country, raw) {
   const up = String(country || '').trim().toUpperCase();
-  const { country: prefix, number } = normaliseVat(raw);
+  const { country: prefix, number } = normaliseVat(raw, up);
   if (!number) return null;
   if (!VAT_LENGTE[up]) return null;
 

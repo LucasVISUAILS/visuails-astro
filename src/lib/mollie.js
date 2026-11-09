@@ -163,8 +163,11 @@ export function mollieKeyProblems(env) {
  */
 export const SAMPLE_METHODS = ['ideal', 'bancontact', 'creditcard'];
 export const SAMPLE_METHODS_ZONDER_IDEAL = ['bancontact', 'creditcard'];
+/* Buiten de EU alleen de kaart (ronde 91, B13): Bancontact is een Belgische bank,
+   en de proef moet een betaler kunnen herkennen (PayPal kan dat niet). */
+export const SAMPLE_METHODS_BUITEN_EU = ['creditcard'];
 
-export async function createTestSampleMolliePayment(env, { ref, lang, successUrl, webhookUrl, grossCents, excludeIdeal = false }) {
+export async function createTestSampleMolliePayment(env, { ref, lang, successUrl, webhookUrl, grossCents, excludeIdeal = false, buitenEu = false }) {
   /* ── HET BRUTO KOMT UIT DE OFFERTE, NIET UIT AMOUNT — 19 september 2026 ──
      Tot vandaag stond hier AMOUNT.testSample.toFixed(2): precies € 1,00, wat
      de btw er per definitie IN zette. Sinds de proef € 1 exclusief btw is
@@ -182,8 +185,9 @@ export async function createTestSampleMolliePayment(env, { ref, lang, successUrl
     successUrl,
     webhookUrl,
     valueEuros: (asCents / 100).toFixed(2),
-    description: lang === 'nl' ? 'VISUAILS proef' : 'VISUAILS test sample',
-    methods: excludeIdeal ? SAMPLE_METHODS_ZONDER_IDEAL : SAMPLE_METHODS,
+    /* Met het kenmerk (8 november 2026): zo staat het op de checkout en het bankafschrift. */
+    description: `${lang === 'nl' ? 'VISUAILS proef' : 'VISUAILS test sample'}${ref ? ` ${ref}` : ''}`,
+    methods: buitenEu ? SAMPLE_METHODS_BUITEN_EU : excludeIdeal ? SAMPLE_METHODS_ZONDER_IDEAL : SAMPLE_METHODS,
   });
 }
 
@@ -207,7 +211,7 @@ export async function createTestSampleMolliePayment(env, { ref, lang, successUrl
  * found in a bank reconciliation weeks later.
  */
 export async function createOrderMolliePayment(env, {
-  ref, lang, successUrl, webhookUrl, valueEuros, grossCents, description, excludeIdeal,
+  ref, lang, successUrl, webhookUrl, valueEuros, grossCents, description, excludeIdeal, buitenEu = false,
 }) {
   const asCents = Math.round(Number(valueEuros) * 100);
   if (!Number.isFinite(asCents) || asCents !== Math.round(Number(grossCents))) {
@@ -220,7 +224,7 @@ export async function createOrderMolliePayment(env, {
   // it here gives a message that names the order instead of a raw 422.
   if (asCents < 1) throw new Error(`mollie: refusing to create a payment of ${valueEuros} for ${ref}`);
 
-  return createMolliePayment(env, { ref, lang, successUrl, webhookUrl, valueEuros, description, excludeIdeal });
+  return createMolliePayment(env, { ref, lang, successUrl, webhookUrl, valueEuros, description, excludeIdeal, buitenEu });
 }
 
 /*
@@ -248,7 +252,21 @@ export async function createOrderMolliePayment(env, {
  * middelen die wél mogen. Staat er in dit account iets niet aan, dan negeert
  * Mollie dat middel gewoon; wat overblijft is wat er is.
  */
-const NON_NL_METHODS = ['creditcard', 'bancontact', 'banktransfer', 'paypal', 'eps', 'giropay', 'sofort'];
+/* Zonder `giropay` en `sofort` — 9 november 2026 (ronde 91, B02). Mollie heeft
+   allebei uitgefaseerd (Giropay in 2024, SOFORT per 30 september 2024) en ze staan
+   niet meer in de lijst van `method` bij Create Payment. Een waarde die Mollie niet
+   kent, is in het gunstigste geval een middel dat niet verschijnt en in het
+   slechtste een 422 op élke betaling op 0% (verlegd en buiten de EU). */
+const NON_NL_METHODS = ['creditcard', 'bancontact', 'banktransfer', 'paypal', 'eps'];
+
+/* ── BUITEN DE EU OOK GEEN BANCONTACT EN EPS — 9 november 2026 (ronde 91, B13) ──
+   Bancontact (België) en EPS (Oostenrijk) werken alleen met een rekening bij een
+   bank in de EU. paymentMismatch() in src/data/vat.js noemt zo'n betaling op een
+   bestelling "buiten de EU" achteraf verdacht — dan hoort hij ook niet aangeboden
+   te worden: voorkomen in plaats van achteraf zien, zoals bij iDEAL. Een
+   overboeking blijft: die staat niet in EU_LOKALE_MIDDELEN en een buitenlandse
+   klant kan naar een IBAN overmaken. */
+const BUITEN_EU_METHODS = ['creditcard', 'paypal', 'banktransfer'];
 
 /*
  * ═══════════════════════════════════════════════════════════════════════════════
@@ -612,7 +630,7 @@ async function mollieRequest(env, method, path, body) {
 }
 
 /** The one request both creators make. */
-async function createMolliePayment(env, { ref, lang, successUrl, webhookUrl, valueEuros, description, excludeIdeal, methods }) {
+async function createMolliePayment(env, { ref, lang, successUrl, webhookUrl, valueEuros, description, excludeIdeal, buitenEu = false, methods }) {
   const key = mollieKey(env);
 
   const body = {
@@ -635,7 +653,7 @@ async function createMolliePayment(env, { ref, lang, successUrl, webhookUrl, val
   // Alleen zetten als het nodig is: een lege of onnodige witte lijst zou
   // middelen wegnemen bij gewone Nederlandse bestellingen, en dat is precies het
   // soort stille verslechtering waar niemand een melding van krijgt.
-  if (excludeIdeal) body.method = NON_NL_METHODS;
+  if (excludeIdeal) body.method = buitenEu ? BUITEN_EU_METHODS : NON_NL_METHODS;
   /* Een eigen witte lijst wint: de proef geeft er een mee (SAMPLE_METHODS). */
   if (Array.isArray(methods) && methods.length) body.method = methods;
 

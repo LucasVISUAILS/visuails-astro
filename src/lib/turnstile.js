@@ -12,9 +12,14 @@
 //
 //   1  ONZICHTBAAR. De browser vraagt het token pas bij het versturen
 //      (src/scripts/botcheck.js); een gewone bezoeker ziet niets.
-//   2  GEEN SLEUTELS, GEEN BOTCHECK. Ontbreekt TURNSTILE_SITE_KEY of
-//      TURNSTILE_SECRET_KEY, dan is alles uit en werkt elk formulier precies
-//      zoals voorheen (`uit`).
+//   2  GEEN SLEUTELS, GEEN BOTCHECK — WEL DE STRENGE GRENS. Ontbreekt
+//      TURNSTILE_SITE_KEY of TURNSTILE_SECRET_KEY, dan wordt er niets
+//      gecontroleerd (`uit`) en werkt elk formulier zoals voorheen, maar met de
+//      strenge grens van regel 3 (lijst 87, A06, 9 november 2026). Tot de
+//      sleutels er staan was een script anders zes keer zo snel als nodig:
+//      30 uploadbatches per dag in plaats van 5, 10 bestellingen per 10
+//      minuten in plaats van 3. Die strenge grenzen zijn ruim voor een echte
+//      klant. `uit` wordt niet gemarkeerd in /admin: er valt niets na te kijken.
 //   3  GEEN TOKEN IS GEEN BLOKKADE. Een adblocker, een storing, een script dat
 //      niet laadt: dan komt het formulier zonder token. Dat wordt NIET
 //      geweigerd, maar strenger begrensd en in /admin gemarkeerd (`streng`).
@@ -84,11 +89,18 @@ export async function controleerBotcheck(env, { token, ip = '', wachtMs = 3000 }
   }
 }
 
-/** Wat te doen met een stand: 'door', 'streng' of 'weiger'. */
+/** Wat te doen met een stand: 'door', 'streng' of 'weiger'.
+ *  `uit` (geen sleutels) is sinds lijst 87 (A06) ook `streng`: zie regel 2 bovenaan. */
 export function botcheckBesluit(stand) {
   if (stand === 'ongeldig') return 'weiger';
-  if (stand === 'uit' || stand === 'goed') return 'door';
+  if (stand === 'goed') return 'door';
   return 'streng';
+}
+
+/** Moet een doorgelaten inzending in /admin gemarkeerd worden? Alleen als er
+ *  echt iets te controleren viel en dat niet lukte; `uit` niet (lijst 87, A06). */
+export function botcheckMarkeren(stand) {
+  return stand !== 'uit' && botcheckBesluit(stand) === 'streng';
 }
 
 /** De zin voor /admin en de studiomail bij een gemarkeerde inzending. */

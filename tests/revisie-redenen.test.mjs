@@ -1,16 +1,19 @@
 /* VISUAILS — revisie afhandelen op één plek, in de taal van de klant (punt 4.08, V37 = a).
  *   node tests/revisie-redenen.test.mjs          (geen server, geen browser)
  *
+ * Sinds 9 november 2026 (ronde 91, lijst 85 w5 = goed) staat dit niet meer op het dashboard maar op de
+ * bestelpagina, in het vakje op het bord; de afgehandelde ronde staat in het blok Leveren en in Nu doen. Deze
+ * toets legde de kaarten op het dashboard vast en is daarop omgezet (zelfde vulling, zelfde bedoeling):
  *   1 · drie vaste redenen in één databestand (src/data/revisieRedenen.js), in
  *       NL en EN, zonder ik-vorm, binnen de lengte van het redenveld;
- *   2 · boven het redenveld staat de taal van de klant ("Deze klant leest
+ *   2 · boven het redenveld in het vakje staat de taal van de klant ("Deze klant leest
  *       Engels — schrijf je reden in het Engels."), met de drie redenen als
  *       links; één klik zet de reden in het veld, in de taal van de klant;
- *   3 · is de laatste kaart van een bestelling afgehandeld, dan blijft er één
- *       kaart met de knop "N nieuwe beelden melden" (het echte aantal); zolang er
- *       nog een kaart open is, niet;
- *   4 · de hele weg: laatste kaart afhandelen → de knop verschijnt → melden →
- *       terug op het dashboard met "gemeld aan de klant — N beelden".
+ *   3 · is de laatste open revisie van een bestelling afgehandeld, dan staat bij Leveren wat er per beeld
+ *       gedaan is, met de knop "N nieuwe beelden sturen" (het echte aantal); zolang er nog een open is, niet in
+ *       Nu doen als te versturen;
+ *   4 · de hele weg: laatste vakje afhandelen (geen mail) → de knop verschijnt → sturen →
+ *       terug op het dashboard met "naar de klant gestuurd — N beelden", één mail met de reden erin.
  * Verzonnen merken en adressen; niets hiervan bestaat.
  */
 import { d1, verseDb } from './lib/d1sqlite.mjs';
@@ -88,20 +91,22 @@ const post = async (pad, velden = {}) => {
   const res = await adminPost({ request: new Request(`https://visuails.com${pad}`, { method: 'POST', headers: { cookie: `vis_admin=${token}`, origin: 'https://visuails.com', 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(velden).toString() }), env, waitUntil() {} });
   return { status: res.status, html: await res.text(), location: res.headers.get('location') };
 };
+/* Het vakje op het bord met de revisie (id="rev-<bestand>"), tot het volgende vakje. */
 const kaart = (html, id) => {
   const i = html.indexOf(`id="${id}"`);
   if (i < 0) return '';
-  const j = html.indexOf('<div class="card', i + 10);
+  const j = html.indexOf('<div class="slot', i + 10);
   return html.slice(i, j > -1 ? j : i + 6000);
 };
+const leveren = (html) => html.slice(html.indexOf('<h2 id="melden">'), html.indexOf('<h2 id="annuleren">'));
 
-/* ══ 2 · DE TAALREGEL EN DE DRIE REDENEN ═════════════════════════════════════ */
-console.log('\n2 · de taal van de klant boven het redenveld');
+/* ══ 2 · DE TAALREGEL EN DE DRIE REDENEN, IN HET VAKJE ═══════════════════════ */
+console.log('\n2 · de taal van de klant boven het redenveld, in het vakje op het bord');
 {
-  const { status, html } = await get('/admin');
-  ok('dashboard laadt', status, 200);
+  const { status, html } = await get('/admin/orders/51/files');
+  ok('bestelpagina laadt', status, 200);
   const en = kaart(html, 'rev-510');
-  const nl = kaart(html, 'rev-520');
+  const nl = kaart((await get('/admin/orders/52/files')).html, 'rev-520');
   ok('Engelse klant: "Deze klant leest Engels — schrijf je reden in het Engels."', en.includes('<p class="rev-taal">Deze klant leest Engels &mdash; schrijf je reden in het Engels.</p>'));
   ok('Nederlandse klant: "Deze klant leest Nederlands — schrijf je reden in het Nederlands."', nl.includes('<p class="rev-taal">Deze klant leest Nederlands &mdash; schrijf je reden in het Nederlands.</p>'));
   const vorm = en.slice(en.indexOf('action="/admin/revisions/510/resolve"'));
@@ -109,56 +114,59 @@ console.log('\n2 · de taal van de klant boven het redenveld');
   ok('het redenveld is een tekstvak, verplicht, hoogstens 400 tekens', /<textarea id="fixed-510" name="fixed" maxlength="400" required/.test(vorm));
   ok('en het is leeg zolang er geen reden gekozen is', /<textarea id="fixed-510"[^>]*><\/textarea>/.test(vorm));
   for (const r of REVISIE_REDENEN) {
-    ok(`reden "${r.knop}" is een link die het veld vult`, en.includes(`<a class="fl-chip" href="/admin?reden=510.${r.id}#rev-510">${esc(r.knop)}</a>`));
+    ok(`reden "${r.knop}" is een link die het veld vult`, en.includes(`<a class="fl-chip" href="/admin/orders/51/files?reden=510.${r.id}#rev-510">${esc(r.knop)}</a>`));
   }
-  ok('de knop "Geen nieuw beeld nodig" blijft', /type="submit">Geen nieuw beeld nodig</.test(vorm));
+  // knoppensysteem lijst 88/89: de knoppen dragen hun icoon vóór de tekst
+  ok('de knop "Geen nieuw beeld nodig" blijft', /type="submit">(?:<svg[^]*?<\/svg>)?Geen nieuw beeld nodig</.test(vorm));
+  ok('en Vervangen staat in hetzelfde vakje', /action="\/admin\/orders\/51\/deliver"[\s\S]*?type="submit">(?:<svg[^]*?<\/svg>)?Vervangen</.test(en));
+  const dash = await get('/admin');
+  ok('op het dashboard staat geen revisiekaart meer', dash.html.includes('id="rev-510"'), false);
+  ok('  Nu doen "Revisie openen" springt naar het vakje op de bestelpagina', /href="\/admin\/orders\/51\/files#rev-510">Revisie openen</.test(dash.html));
 }
 {
-  const { html } = await get('/admin?reden=510.keuze');
+  const { html } = await get('/admin/orders/51/files?reden=510.keuze');
   const en = kaart(html, 'rev-510');
   ok('na één klik: de Engelse tekst staat in het veld van 510', en.includes(`>${esc(revisieReden('keuze', 'en'))}</textarea>`));
-  ok('  en niet in het veld van een andere kaart', /<textarea id="fixed-520"[^>]*><\/textarea>/.test(kaart(html, 'rev-520')));
-  const nlKlik = await get('/admin?reden=520.kleur');
+  const nlKlik = await get('/admin/orders/52/files?reden=520.kleur');
   ok('bij de Nederlandse klant: de Nederlandse tekst', kaart(nlKlik.html, 'rev-520').includes(`>${esc(revisieReden('kleur', 'nl'))}</textarea>`));
-  const gefilterd = await get('/admin?status=delivered');
-  ok('met een filter aan houdt de link het filter vast', kaart(gefilterd.html, 'rev-510').includes('href="/admin?status=delivered&amp;reden=510.kleur#rev-510"'));
-  const onzin = await get('/admin?reden=510.%3Cscript%3E');
+  ok('  en een reden voor een ander vakje vult dit veld niet', /<textarea id="fixed-520"[^>]*><\/textarea>/.test(kaart((await get('/admin/orders/52/files?reden=510.kleur')).html, 'rev-520')));
+  const onzin = await get('/admin/orders/51/files?reden=510.%3Cscript%3E');
   ok('een onbekende reden: leeg veld, geen fout', [onzin.status, /<textarea id="fixed-510"[^>]*><\/textarea>/.test(kaart(onzin.html, 'rev-510'))], [200, true]);
 }
 
-/* ══ 3 · DE KNOP IN DE KAART ═════════════════════════════════════════════════ */
-console.log('\n3 · "N nieuwe beelden melden" in de afgehandelde kaart');
+/* ══ 3 · DE KNOP BIJ LEVEREN ═════════════════════════════════════════════════ */
+console.log('\n3 · "N nieuwe beelden sturen" bij Leveren');
 {
-  const { html } = await get('/admin');
-  const af = kaart(html, 'rev-o53');
-  ok('53 (laatste kaart afgehandeld): de kaart blijft staan', af.length > 0);
-  ok('  met de knop "2 nieuwe beelden melden" (het echte aantal)', /<button class="btn btn-primary" type="submit">2 nieuwe beelden melden<\/button>/.test(af));
-  ok('  die naar dezelfde route post, terug naar het dashboard', /action="\/admin\/orders\/53\/announce"/.test(af) && /name="terug" value="dashboard"/.test(af));
+  const { html } = await get('/admin/orders/53/files');
+  const af = leveren(html);
+  ok('53 (laatste revisie afgehandeld): het blok "Deze revisieronde" staat bij Leveren', /class="rev-ronde"/.test(af));
+  ok('  met de knop "2 nieuwe beelden sturen" (het echte aantal)', /<button class="btn btn-primary btn-sm" data-rol="doorgaan" type="submit">2 nieuwe beelden sturen(?:<svg[^]*?<\/svg>)?<\/button>/.test(af));  // knoppensysteem lijst 88/89: klein in /admin, met de pijl
+  ok('  die naar de route van het versturen post', /action="\/admin\/orders\/53\/announce"/.test(af));
   ok('  met per beeld wat er gedaan is', /Product 1 &middot; [^<]+<\/strong> &mdash; nieuw beeld geüpload/.test(af) && /geen nieuw beeld nodig: &ldquo;The label is part of the product and stays visible\.&rdquo;/.test(af));
   ok('  en de taal boven het notitieveld', af.includes('Deze klant leest Engels &mdash; schrijf je notitie in het Engels.'));
-  ok('54 (nog een kaart open): geen meldknop', kaart(html, 'rev-o54'), '');
-  ok('  de open kaart van 54 staat er wel', kaart(html, 'rev-540').length > 0);
+  const dash = await get('/admin');
+  ok('in Nu doen: 53 met de knop "2 nieuwe beelden sturen", terug naar het dashboard', /action="\/admin\/orders\/53\/announce"><input type="hidden" name="terug" value="dashboard"><button[^>]*>2 nieuwe beelden sturen</.test(dash.html));
+  ok('54 (nog een open): in Nu doen als Revisie, niet als te versturen', /data-soort="revisie">[\s\S]{0,300}VIS-RR-0054/.test(dash.html) && !/action="\/admin\/orders\/54\/announce"/.test(dash.html));
 }
 
 /* ══ 4 · DE HELE WEG ═════════════════════════════════════════════════════════ */
-console.log('\n4 · laatste kaart afhandelen, melden, klaar');
+console.log('\n4 · laatste vakje afhandelen, sturen, klaar');
 {
   mails.length = 0;
   const r = await post('/admin/revisions/540/resolve', { fixed: revisieReden('kleur', 'en') });
-  ok('"Geen nieuw beeld nodig" met de Engelse reden', [r.status, r.location], [303, '/admin']);
-  const mail = mails.find((m) => /An answer to your revision — VIS-RR-0054/.test(m.subject || ''));
-  ok('de klant krijgt het antwoord in het Engels, met de reden erin', Boolean(mail) && mail.html.includes(esc(revisieReden('kleur', 'en')).replace(/&#39;/g, '&#39;')));
-  const { html } = await get('/admin');
-  const af = kaart(html, 'rev-o54');
-  ok('nu verschijnt in de kaart van 54 de knop "1 nieuw beeld melden"', /type="submit">1 nieuw beeld melden<\/button>/.test(af));
-  ok('  en de open kaart is weg', kaart(html, 'rev-540'), '');
+  ok('"Geen nieuw beeld nodig" met de Engelse reden: terug naar Leveren', [r.status, r.location], [303, '/admin/orders/54/files#melden']);
+  ok('  en er gaat nog geen mail uit (één mail per ronde, w5)', mails.length, 0);
+  const { html } = await get('/admin/orders/54/files');
+  ok('nu staat bij Leveren van 54 de knop "1 nieuw beeld sturen"', /type="submit">1 nieuw beeld sturen(?:<svg[^]*?<\/svg>)?<\/button>/.test(leveren(html)));  // knoppensysteem lijst 88/89: met de pijl
+  ok('  en het vakje is geen open revisie meer', kaart(html, 'rev-540'), '');
   mails.length = 0;
   const m = await post('/admin/orders/54/announce', { terug: 'dashboard', note: 'Both images were checked again.' });
-  ok('melden vanuit de kaart: terug naar het dashboard', [m.status, m.location], [303, '/admin?gemeld=VIS-RR-0054&n=1']);
-  ok('  één mail aan de klant ("Your revision is ready")', mails.filter((x) => /Your revision is ready — VIS-RR-0054/.test(x.subject || '')).length, 1);
+  ok('sturen vanuit Nu doen: terug naar het dashboard', [m.status, m.location], [303, '/admin?gemeld=VIS-RR-0054&n=1']);
+  const rondeMail = mails.filter((x) => /Your revision is ready — VIS-RR-0054/.test(x.subject || ''));
+  ok('  één mail aan de klant ("Your revision is ready")', rondeMail.length, 1);
+  ok('  met de reden van het beeld dat niet vervangen hoefde', (rondeMail[0]?.html || '').includes(esc(revisieReden('kleur', 'en'))));
   const na = await get(m.location);
-  ok('  "VIS-RR-0054: gemeld aan de klant — 1 beeld."', na.html.includes('VIS-RR-0054: gemeld aan de klant &mdash; 1 beeld.'));
-  ok('  en de kaart is weg', kaart(na.html, 'rev-o54'), '');
+  ok('  "VIS-RR-0054: naar de klant gestuurd — 1 beeld."', na.html.includes('VIS-RR-0054: naar de klant gestuurd &mdash; 1 beeld.'));
   ok('  de bestelling staat niet meer in Nu doen', /<li class="nd-regel"[^>]*>[\s\S]{0,300}VIS-RR-0054/.test(na.html), false);
 }
 

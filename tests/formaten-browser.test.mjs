@@ -154,7 +154,8 @@ try {
       const tag = `admin ${breed}px ${thema}`;
       ok(`${tag}: de pagina laadt`, res.status() === 200, String(res.status()));
       ok(`${tag}: twee open verzoeken met Klaar`, (await page.locator('table.files button', { hasText: 'Klaar' }).count()) === 2);
-      ok(`${tag}: "Formaten" in het menu, actief`, (await page.locator('.bar-link.is-active', { hasText: 'Formaten' }).count()) === 1);
+      /* Ronde 91 (w8): niet meer in het menu, wel in de kruimel. */
+      ok(`${tag}: "Formaten" in de kruimel`, (await page.locator('.adm-kruim b', { hasText: 'Formaten' }).count()) === 1);
       const m = await page.evaluate(METING('h1, .lede, table.files th, table.files td, table.files a, table.files .btn, .bar-link'));
       ok(`${tag}: tekst minstens 11,5 px en 4,5:1`, m.gemeten >= 8 && !m.klein.length && !m.laag.length, `${m.gemeten} · ${m.klein.concat(m.laag).slice(0, 4).join(' | ')}`);
       const scroll = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);

@@ -43,7 +43,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import { waHref } from '../data/whatsapp.js';
 import NieuwTabblad from './NieuwTabblad.astro';
 import Note from './Note.astro';
@@ -276,7 +276,7 @@ const BEELD = {
                 {g.abo && <p class="h-st-abo" data-vis-klant="niet-abonnee"><a href={lp('/plans')}>{c.aboRegel(euro(g.abo, lang))}<span set:html={ik('pijl')} /></a></p>}
                 {SERVICE_CREDITS[g.id] && <p class="h-st-tarief" data-vis-klant="abonnee" hidden><b>{SERVICE_CREDITS[g.id]} credits</b> <span>{c.perCredits}</span></p>}
                 <p class="h-st-wegen">
-                  <a class="h-knop h-knop-inkt h-knop-klein" href={l.kies} data-st-kies>{c.kies}<span class="o" set:html={ik('rechts')} /></a>
+                  <a class="h-knop k k-vol k-klein" data-rol="doorgaan" href={l.kies} data-st-kies>{c.kies}<Fragment set:html={rolIkoon('doorgaan')} /></a>
                 </p>
                 <p class="h-st-ook-links">
                   <a class="h-st-proef" href={l.proef} data-st-proef data-vis-uit>{sample.cta}</a>
@@ -332,7 +332,7 @@ const BEELD = {
         </li>
       ))}
     </ul>
-    <p class="h-st-wegen h-in"><a class="h-knop h-knop-lijn h-knop-klein" href={lp(door('video')!.bestel)}>{c.videoCta}<span class="o" set:html={ik('rechts')} /></a></p>
+    <p class="h-st-wegen h-in"><a class="h-knop k k-lijn k-klein" data-rol="doorgaan" href={lp(door('video')!.bestel)}>{c.videoCta}<Fragment set:html={rolIkoon('doorgaan')} /></a></p>
   </section>
 
   {/* ── 4 · OP MAAT ── eigen look, merkmodel en het abonnement als drie kaarten. Een
@@ -348,8 +348,8 @@ const BEELD = {
           <b class="h-st-mk-naam">{m.naam}</b>
           <p class="h-st-mk-zin">{m.zin}</p>
           {m.abo
-            ? <a class="h-link" href={lp(m.href)} data-vis-klant="plan-kies" data-vis-abo-label={m.abo} data-vis-abo="/account/plan"><span data-vis-label>{m.knop}</span><span class="h-cirkel h-cirkel-klein" aria-hidden="true" set:html={ik('rechts')} /></a>
-            : <a class="h-link" href={lp(m.href)}>{m.knop}<span class="h-cirkel h-cirkel-klein" aria-hidden="true" set:html={ik('rechts')} /></a>}
+            ? <a class="h-link k k-tekst" data-rol="doorgaan" href={lp(m.href)} data-vis-klant="plan-kies" data-vis-abo-label={m.abo} data-vis-abo="/account/plan"><span data-vis-label>{m.knop}</span><Fragment set:html={rolIkoon('doorgaan')} /></a>
+            : <a class="h-link k k-tekst" data-rol="doorgaan" href={lp(m.href)}>{m.knop}<Fragment set:html={rolIkoon('doorgaan')} /></a>}
         </li>
       ))}
     </ul>

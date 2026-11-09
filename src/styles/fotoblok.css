@@ -1,0 +1,157 @@
+/* VISUAILS — de fotoblokken (lijst 86, 9 november 2026).
+   ═══════════════════════════════════════════════════════════════════════════════════════════════════════
+   Lucas, lijst 84 (A4): *"Ik wil dat je foto's voor de background van deze kaarten gaat gebruiken en een soort
+   liquid glass ervan maakt en de foto's intense motion blur geeft op een soort VISUAILS manier. Zorg dat de
+   foto's gebruik maken van het kleurenschema […] Ik wil dat je hier ook een echt systeem in verwerkt dus dat
+   bepaalde blokken dezelfde fotoachtergrond krijgen waardoor je ze gaat herkennen als je ze weer tegenkomt."*
+   Lijst 86: glas a (een glazen plaat achter de tekst), kleur a (helemaal in Blauw uur), beweging a (langs de
+   snede, 53,13°), en de vier blokken B1 – B4 "goed".
+
+   HET SYSTEEM (src/data/fotoblok.js): één blok, één foto, op elke pagina.
+     proef   het €1-blok                         een straat in de avond, een auto die voorbijschiet
+     slot    het inktblok onderaan               de witte jas tegen beton en blauwe lucht
+     brief   de Studiobrief (voet, Editions, de gidsen)   blauw uur in de duinen
+     nf      het vlak met de V op de 404         een witte broek in de flits, in de nacht
+   De beelden maakt scripts/fotoblok.mjs uit zijn eigen foto's (bewogen, in het schema, 6 – 27 kB). Vite zet een
+   teken uit de inhoud in de naam, dus een nieuwe foto komt meteen aan.
+
+   HET GLAS: een laag inkt van 58 % die vervaagt wat eronder ligt (backdrop-filter), een lichtrand van 1 px
+   bovenin, een glans langs de snede (126,87°, zoals de knoppen) en onderin een zweem blauw licht. Tekst wit,
+   de knop wit met inkt, focus blauw licht (KLEURENSCHEMA: op inkt alleen wit).
+     · het €1-blok: de plaat over het hele blok, 16 px van de rand (op de telefoon 12);
+     · het slot: de plaat om de tekst heen (.fb-glas, in de componenten), zodat de foto rechts vrij blijft;
+       tot 900 px over de hele breedte;
+     · de Studiobrief: de plaat over het hele blok, 12 – 16 px van de rand;
+     · de 404: geen tekst op het vlak, dus geen plaat; de witte V staat op de foto.
+   Hoeken (DESIGN.md "Hoeken"): de plaat loopt concentrisch met zijn blok mee (de straal min de afstand,
+   minstens 8), tests/hoekregel-browser meet het.
+
+   ZONDER GLAS (een browser zonder backdrop-filter): de plaat wordt inkt van 80 %. HOOG CONTRAST: de foto en de
+   plaat weg, het vlak in de systeemkleur. Er beweegt niets: het blijft een stilstaand beeld.
+   tests/fotoblok-browser.test.mjs meet het contrast (wit op het lichtste punt eronder, ≥ 4,5 : 1) op elk blok,
+   op de computer en de telefoon. Dit vervangt in lijst 55 "geen glas, ook niet op het €1-blok" en "geen
+   bewogen achtergrond of sfeerfoto als vlak" (docs/KLEURENSCHEMA.md, docs/DESIGN.md), en de posterkleur op het
+   €1-blok, het slot en de 404 (src/styles/posterkleur.css: B4, E2 en het veld op de 404). */
+
+/* ── 1 · de foto's ──────────────────────────────────────────────────────────────────────────────────────
+   Eerst webp voor elke browser; waar image-set met type() bestaat, avif (de helft kleiner). Twee aparte regels:
+   in één regel voegt de minifier ze samen en valt de webp-terugval weg (gemeten in dist, 9 november 2026). */
+html body.hal .h-proef > .h-proef-woord { background: #0F1217 url("../assets/fotoblok/proef-1600.webp") 50% 50% / cover no-repeat !important; }
+html body.hal .h-lk-slot { background: #0F1217 url("../assets/fotoblok/slot-1600.webp") 50% 50% / cover no-repeat !important; box-shadow: none !important; }
+html body.hal .site-footer .sb, html body.hal .h-gd-brief, html body.hal .h-ed-brief { background: #0F1217 url("../assets/fotoblok/brief-1600.webp") 50% 50% / cover no-repeat !important; box-shadow: none !important; }
+html body.hal .h-nf-getal { background: #0F1217 url("../assets/fotoblok/nf-1600.webp") 50% 50% / cover no-repeat !important; }
+/* de telefoon: de helft zo breed (een bewogen beeld heeft geen detail om te verliezen) */
+@media (max-width: 760px) {
+  html body.hal .h-proef > .h-proef-woord { background-image: url("../assets/fotoblok/proef-800.webp") !important; }
+  html body.hal .h-lk-slot { background-image: url("../assets/fotoblok/slot-800.webp") !important; }
+  html body.hal .site-footer .sb, html body.hal .h-gd-brief, html body.hal .h-ed-brief { background-image: url("../assets/fotoblok/brief-800.webp") !important; }
+  html body.hal .h-nf-getal { background-image: url("../assets/fotoblok/nf-800.webp") !important; }
+}
+@supports (background-image: image-set(url("/favicon-16.png") type("image/png"))) {
+  html body.hal .h-proef > .h-proef-woord { background-image: image-set(url("../assets/fotoblok/proef-1600.avif") type("image/avif"), url("../assets/fotoblok/proef-1600.webp") type("image/webp")) !important; }
+  html body.hal .h-lk-slot { background-image: image-set(url("../assets/fotoblok/slot-1600.avif") type("image/avif"), url("../assets/fotoblok/slot-1600.webp") type("image/webp")) !important; }
+  html body.hal .site-footer .sb, html body.hal .h-gd-brief, html body.hal .h-ed-brief { background-image: image-set(url("../assets/fotoblok/brief-1600.avif") type("image/avif"), url("../assets/fotoblok/brief-1600.webp") type("image/webp")) !important; }
+  html body.hal .h-nf-getal { background-image: image-set(url("../assets/fotoblok/nf-1600.avif") type("image/avif"), url("../assets/fotoblok/nf-1600.webp") type("image/webp")) !important; }
+  @media (max-width: 760px) {
+    html body.hal .h-proef > .h-proef-woord { background-image: image-set(url("../assets/fotoblok/proef-800.avif") type("image/avif"), url("../assets/fotoblok/proef-800.webp") type("image/webp")) !important; }
+    html body.hal .h-lk-slot { background-image: image-set(url("../assets/fotoblok/slot-800.avif") type("image/avif"), url("../assets/fotoblok/slot-800.webp") type("image/webp")) !important; }
+    html body.hal .site-footer .sb, html body.hal .h-gd-brief, html body.hal .h-ed-brief { background-image: image-set(url("../assets/fotoblok/brief-800.avif") type("image/avif"), url("../assets/fotoblok/brief-800.webp") type("image/webp")) !important; }
+    html body.hal .h-nf-getal { background-image: image-set(url("../assets/fotoblok/nf-800.avif") type("image/avif"), url("../assets/fotoblok/nf-800.webp") type("image/webp")) !important; }
+  }
+}
+
+/* ── 2 · het glas ─────────────────────────────────────────────────────────────────────────────────────── */
+html body.hal .h-proef > .h-proef-woord::before,
+html body.hal .fb-glas,
+html body.hal .site-footer .sb::before, html body.hal .h-gd-brief::before, html body.hal .h-ed-brief::before {
+  background: linear-gradient(126.87deg, rgba(255, 255, 255, .16) 0%, rgba(255, 255, 255, 0) 38%), rgba(11, 15, 23, .58);
+  -webkit-backdrop-filter: blur(22px) saturate(150%) brightness(.82);
+  backdrop-filter: blur(22px) saturate(150%) brightness(.82);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .38), inset 0 0 0 1px rgba(255, 255, 255, .14), inset 0 -18px 36px -24px rgba(128, 167, 221, .45);
+}
+/* de plaat als vlak achter de inhoud: het blok is een eigen stapel (isolation), de plaat ligt er onderin */
+html body.hal .h-proef > .h-proef-woord::before,
+html body.hal .site-footer .sb::before, html body.hal .h-gd-brief::before, html body.hal .h-ed-brief::before {
+  content: ""; position: absolute; z-index: -1; pointer-events: none;
+}
+
+/* het €1-blok: de plaat over het hele blok, 16 px van de rand; straal 24 − 16 = 8 */
+html body.hal .h-proef > .h-proef-woord { isolation: isolate; }
+html body.hal .h-proef > .h-proef-woord::before { inset: 16px; border-radius: 8px; }
+@media (max-width: 560px) {
+  html body.hal .h-proef > .h-proef-woord::before { inset: 12px; border-radius: 12px; }
+}
+
+/* het slot: de plaat om de tekst (.fb-glas omsluit de pil, de kop, de zin en de knoppen). Hij neemt de vorm van
+   het slot over (flex, kolom, 20 px tussen), steekt 22 px rondom uit (de tekst staat waar hij stond) en is zo breed
+   als de tekst. 56 − 22 = 34 van de rand, meer dan de straal van 32: zijn hoeken zijn vrij (24, een paneel). */
+html body.hal .h-lk-slot > .fb-glas {
+  display: inherit; flex-direction: inherit; flex-wrap: inherit; align-items: inherit; gap: inherit;
+  width: fit-content; max-width: calc(100% + 44px);
+  margin: -22px; padding: 22px;
+  border-radius: var(--r-kaart, 24px);
+}
+/* tot 900 px (het slot heeft daar 28 × 20 px rand): over de hele breedte, 10 px van de rand; 32 − 10 = 22 */
+@media (max-width: 900px) {
+  html body.hal .h-lk-slot > .fb-glas {
+    align-self: stretch; width: auto; max-width: none;
+    margin: -18px -10px; padding: 18px 10px;
+    border-radius: 22px;
+  }
+}
+
+/* de Studiobrief: een kaart met de foto, de plaat erover */
+html body.hal .site-footer .sb, html body.hal .h-gd-brief, html body.hal .h-ed-brief { position: relative; isolation: isolate; border: 0 !important; }
+html body.hal .site-footer .sb { padding: 36px 40px; border-radius: var(--r-kaart, 24px); }
+html body.hal .site-footer .sb::before { inset: 12px; border-radius: 12px; }
+html body.hal .h-ed-brief { padding: 32px 36px; }
+html body.hal .h-ed-brief::before { inset: 12px; border-radius: 12px; }
+html body.hal .h-gd-brief::before { inset: 16px; border-radius: 16px; }
+@media (max-width: 900px) {
+  html body.hal.hal .h-ed-slot > .h-ed-brief::before { border-radius: 12px 12px 8px 8px; }
+}
+@media (max-width: 760px) {
+  html body.hal .site-footer .sb { padding: 26px 24px; }
+  html body.hal .h-ed-brief { padding: 26px 24px; }
+  html body.hal .h-gd-brief { padding: 28px 24px; }
+  html body.hal .h-gd-brief::before { inset: 12px; border-radius: 20px; }
+}
+/* de letters van de brief: wit (de lopende tekst 90 %), de link wit en onderstreept */
+html body.hal .site-footer .sb .sb-kop, html body.hal .h-gd-brief .sb-kop, html body.hal .h-ed-brief .sb-kop,
+html body.hal .site-footer .sb .sb-ok, html body.hal .h-gd-brief .sb-ok, html body.hal .h-ed-brief .sb-ok,
+html body.hal .site-footer .sb .sb-fout, html body.hal .h-gd-brief .sb-fout, html body.hal .h-ed-brief .sb-fout,
+html body.hal .site-footer .sb .sb-botcheck, html body.hal .h-gd-brief .sb-botcheck, html body.hal .h-ed-brief .sb-botcheck,
+html body.hal .site-footer .sb .sb-noot a, html body.hal .h-gd-brief .sb-noot a, html body.hal .h-ed-brief .sb-noot a,
+html body.hal .site-footer .sb .sb-hp, html body.hal .h-gd-brief .sb-hp, html body.hal .h-ed-brief .sb-hp { color: #FFFFFF !important; }  /* ook het lokveld (buiten beeld) */
+html body.hal .site-footer .sb .sb-zin, html body.hal .h-gd-brief .sb-zin, html body.hal .h-ed-brief .sb-zin,
+html body.hal .site-footer .sb .sb-noot, html body.hal .h-gd-brief .sb-noot, html body.hal .h-ed-brief .sb-noot { color: rgba(255, 255, 255, .9) !important; }
+/* het veld blijft wit met inkt; Aanmelden wordt wit met inkt en vult zich als de witte knop (hal.css) */
+html body.hal .site-footer .sb .sb-veld input, html body.hal .h-gd-brief .sb-veld input, html body.hal .h-ed-brief .sb-veld input { background: #FFFFFF !important; border-color: #FFFFFF !important; color: #0F1217 !important; }
+html body.hal .site-footer .sb .sb-veld button, html body.hal .h-gd-brief .sb-veld button, html body.hal .h-ed-brief .sb-veld button {
+  background: #FFFFFF linear-gradient(126.87deg, #FFFFFF 0%, #FFFFFF 33.34%, #80A7DD 66.66%, #A2B7D2 100%) -2px -2px / calc(300% + 4px) calc(300% + 4px) no-repeat !important;
+  color: #0F1217 !important;
+  transition: background-position .36s cubic-bezier(.22, .8, .2, 1);
+}
+html body.hal .site-footer .sb .sb-veld button:hover, html body.hal .h-gd-brief .sb-veld button:hover, html body.hal .h-ed-brief .sb-veld button:hover,
+html body.hal .site-footer .sb .sb-veld button:focus-visible, html body.hal .h-gd-brief .sb-veld button:focus-visible, html body.hal .h-ed-brief .sb-veld button:focus-visible {
+  background: #FFFFFF linear-gradient(126.87deg, #FFFFFF 0%, #FFFFFF 33.34%, #80A7DD 66.66%, #A2B7D2 100%) calc(100% + 2px) calc(100% + 2px) / calc(300% + 4px) calc(300% + 4px) no-repeat !important;
+}
+/* focus op een donker vlak: blauw licht */
+html body.hal .site-footer .sb :focus-visible, html body.hal .h-gd-brief :focus-visible, html body.hal .h-ed-brief :focus-visible { outline-color: #80A7DD !important; }
+@media (prefers-reduced-motion: reduce) {
+  html body.hal .site-footer .sb .sb-veld button, html body.hal .h-gd-brief .sb-veld button, html body.hal .h-ed-brief .sb-veld button { transition: none; }
+}
+
+/* ── 3 · zonder glas, en met hoog contrast ────────────────────────────────────────────────────────────── */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  html body.hal .h-proef > .h-proef-woord::before, html body.hal .fb-glas,
+  html body.hal .site-footer .sb::before, html body.hal .h-gd-brief::before, html body.hal .h-ed-brief::before { background: rgba(11, 15, 23, .8); }
+}
+@media (forced-colors: active) {
+  html body.hal .h-proef > .h-proef-woord, html body.hal .h-lk-slot, html body.hal .h-nf-getal,
+  html body.hal .site-footer .sb, html body.hal .h-gd-brief, html body.hal .h-ed-brief { background: Canvas !important; forced-color-adjust: auto; }
+  html body.hal .h-proef > .h-proef-woord::before,
+  html body.hal .site-footer .sb::before, html body.hal .h-gd-brief::before, html body.hal .h-ed-brief::before { display: none; }
+  html body.hal .fb-glas { background: none; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; }
+  html body.hal .site-footer .sb .sb-veld button, html body.hal .h-gd-brief .sb-veld button, html body.hal .h-ed-brief .sb-veld button { background: ButtonFace !important; color: ButtonText !important; }
+}

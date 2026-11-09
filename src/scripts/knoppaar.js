@@ -34,8 +34,11 @@ function meet(rij) {
   rij.classList.remove('h-los');
   if (knoppen.length < 2 || !matchMedia(SMAL).matches) { rij.classList.remove('h-passen'); return; }
   rij.classList.remove('h-passen');
+  /* knoppensysteem (lijst 88/89): meet tegen de breedte die de rij nu heeft. Een rij in een vak dat met zijn inhoud
+     meegroeit (het €1-blok) werd tijdens het meten zelf breder en "paste" dan altijd. */
+  const vak = rij.clientWidth;
   rij.classList.add('h-meet');
-  const past = rij.scrollWidth <= rij.clientWidth + 1 && knoppen.every((k) => k.scrollWidth <= k.clientWidth + 1);
+  const past = rij.scrollWidth <= vak + 1 && knoppen.every((k) => k.scrollWidth <= k.clientWidth + 1);
   rij.classList.remove('h-meet');
   rij.classList.toggle('h-passen', past);
 }
@@ -61,7 +64,8 @@ function kier(rij) {
     const rr = rij.getBoundingClientRect();
     for (let i = 0; i < knoppen.length - 1; i++) {
       const a = knoppen[i], b = knoppen[i + 1];
-      if ([a, b].some((k) => k.classList.contains('h-knop-wit') || k.classList.contains('h-knop-lijnwit'))) continue;
+      /* knoppensysteem (lijst 88): een witte knop op inkt is .k-wit (was .h-knop-wit / .h-knop-lijnwit) */
+      if ([a, b].some((k) => k.classList.contains('k-wit') || k.closest('.k-inkt'))) continue;
       const cs = getComputedStyle(a);
       if (!cs.clipPath || cs.clipPath === 'none' || getComputedStyle(b).clipPath === 'none') continue;
       const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();

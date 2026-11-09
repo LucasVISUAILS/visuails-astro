@@ -27,7 +27,7 @@
  */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import { localizedPath } from '../i18n/ui.js';
 import { WINDOW_THRESHOLD, TEST_SAMPLE } from '../data/pricing.js';
 import { PORTAL_TTL_DAYS } from '../lib/token.js';
@@ -49,7 +49,7 @@ const lp = (p: string) => localizedPath(lang, p);
 const COPY = {
   en: {
     h1: ['Every order.', 'In one place.'],
-    lede: `VISUAILS Studio holds all your orders: where each one stands, the visuals the moment they are finished, and a button on each one to approve it or say what is wrong. You sign in with your email address — we email you a code and a link, and there is no password. Every order also comes with a private link, for anyone who needs to look along without signing in. From ${WINDOW_THRESHOLD} products up there is a delivery date beside it: reserved when you order, fixed once you have paid.`,
+    lede: `VISUAILS Studio holds all your orders: where each one stands, the visuals the moment they are finished, and a button on each one to approve it or say what is wrong. You sign in with your email address — we email you a code and a link, and there is no password. Every order also has its own order page, for anyone who needs to look along without signing in. From ${WINDOW_THRESHOLD} products up there is a delivery date beside it: reserved when you order, fixed once you have paid.`,
     /* "Inloggen bovenaan" (1.11): dezelfde woorden als de link rechtsboven in
        de balk (nav_account in src/i18n/ui.js). */
     ctaLogin: 'Log in',
@@ -141,14 +141,14 @@ const COPY = {
 
   nl: {
     h1: ['Al je bestellingen.', 'Op één plek.'],
-    lede: `In VISUAILS Studio staan al je bestellingen: waar elke bestelling staat, de beelden zodra ze klaar zijn, en bij elk beeld een knop om het goed te keuren of te zeggen wat er niet klopt. Je logt in met je e-mailadres — we mailen je een code en een link, en een wachtwoord is er niet. Bij elke bestelling krijg je daarnaast een privélink, voor wie mee moet kijken zonder in te loggen. Vanaf ${WINDOW_THRESHOLD} producten staat er een leverdatum naast: gereserveerd zodra je bestelt, vast zodra je hebt betaald.`,
+    lede: `In VISUAILS Studio staan al je bestellingen: waar elke bestelling staat, de beelden zodra ze klaar zijn, en bij elk beeld een knop om het goed te keuren of te zeggen wat er niet klopt. Je logt in met je e-mailadres — we mailen je een code en een link, en een wachtwoord is er niet. Elke bestelling heeft daarnaast een eigen bestelpagina, voor wie mee moet kijken zonder in te loggen. Vanaf ${WINDOW_THRESHOLD} producten staat er een leverdatum naast: gereserveerd zodra je bestelt, vast zodra je hebt betaald.`,
     ctaLogin: 'Inloggen',
     ctaStart: 'Start een bestelling',
 
     stateH: 'Waar hij staat, zonder te vragen.',
     // Zie de noot bij de Engelse stateLede.
     /* 14 oktober 2026: "het portaal" heet overal VISUAILS Studio, en het laatste heet "Afgerond", zoals in Studio zelf (nuzin.js). */
-    stateLede: 'Studio begint bij de status van je bestelling. Vier stappen die hij doorloopt, een revisie die onderweg kan gebeuren en het afronden aan het eind — en waar jij staat is het eerste dat je ziet.',
+    stateLede: 'VISUAILS Studio begint bij de status van je bestelling. Vier stappen die hij doorloopt, een revisie die onderweg kan gebeuren en het afronden aan het eind — en waar jij staat is het eerste dat je ziet.',
     states: [
       ['Ontvangen', `Je bestelling is binnen. Vanaf ${WINDOW_THRESHOLD} producten is de leverdatum gereserveerd, en na betaling ligt hij vast.`],
       ['In productie', 'De studio werkt de map door.'],
@@ -157,7 +157,7 @@ const COPY = {
       ['Revisie — per beeld', 'Je vroeg op één beeld om een wijziging en die wordt gemaakt. Het is een toestand van dat beeld en niet van de bestelling: de rest loopt gewoon door.'],
       ['Afgerond', `Elk beeld goedgekeurd. Er valt niets meer te beslissen. De bestanden blijven ${DELIVERY_DAYS} dagen na levering te downloaden, en deze link werkt tot ${PORTAL_TTL_DAYS} dagen nadat de bestelling is afgerond.`],
     ],
-    stateNote: 'Elke wijziging wordt in een tijdlijn geschreven die je kunt lezen, met de datum erbij. Niets over je order zit alleen in ons hoofd.',
+    stateNote: 'Elke wijziging wordt in een tijdlijn geschreven die je kunt lezen, met de datum erbij. Niets over je bestelling zit alleen in ons hoofd.',
 
     galleryH: 'Beeld voor beeld goedkeuren.',
     galleryLede: 'Bij levering opent de hele bestelling als galerij. Je keurt elk beeld apart goed, of per product in één keer als je alle beelden ervan hebt bekeken en alles klopt. Vraag je op één beeld een revisie aan, dan loopt de rest van de bestelling gewoon door.',
@@ -182,7 +182,7 @@ const COPY = {
     dlManifestNote: 'We zetten hem ook in de WebP, waar de omzetting weggooide wat de modelaanbieder erin had gezet. Toch: elk programma dat een beeld opnieuw opslaat kan hem er weer uit halen, en aanbieders van systemen die al op de markt waren hebben tot 2 december 2026 om überhaupt te markeren.',
 
     logH: 'Elke goedkeuring en revisie blijft terug te lezen.',
-    logLede: 'Elke goedkeuring en elke revisie krijgt een tijdstempel en wordt bewaard bij het betreffende beeld, en je kunt de reeks op elk moment teruglezen via je eigen link. Vraag ernaar en we schrijven het voor je uit als overzicht. Er zit hier geen knop die een document genereert, en we doen ook niet alsof.',
+    logLede: 'Elke goedkeuring en elke revisie krijgt een tijdstempel en wordt bewaard bij het betreffende beeld, en je kunt de reeks op elk moment teruglezen in VISUAILS Studio of op je bestelpagina. Vraag ernaar en we schrijven het voor je uit als overzicht. Er zit hier geen knop die een document genereert, en we doen ook niet alsof.',
     logCta: 'Lees de AI Act-pagina',
 
     secH: 'Waarom er geen wachtwoord is.',
@@ -205,7 +205,7 @@ const COPY = {
 const c = COPY[lang];
 
 /* ── DE INLEIDING, OPGEKNIPT ───────────────────────────────────────────────
-   Vier zinnen: wat er in Studio staat, hoe je inlogt, de privélink, de leverdatum.
+   Vier zinnen: wat er in Studio staat, hoe je inlogt, de bestelpagina, de leverdatum.
    De eerste staat bij de kop, de andere drie elk op hun eigen kaart. Breekt een
    wijziging aan de inleiding dat in iets anders dan vier zinnen, dan stopt de bouw
    hier in plaats van stil een kaart leeg te laten. */
@@ -227,7 +227,7 @@ const naLevering = dayLabel(new Date(Date.parse(`${venster.end}T00:00:00Z`) + 86
 const H = nl ? {
   kaarten: [
     { label: c.ctaLogin, titel: 'Een code in je mail.' },
-    { label: 'Privélink', titel: 'Een link om mee te kijken.' },
+    { label: 'Bestelpagina', titel: 'Een pagina om mee te kijken.' },
     { label: 'Leverdatum' },
   ],
   staatPil: 'Status',
@@ -253,7 +253,7 @@ const H = nl ? {
 } : {
   kaarten: [
     { label: c.ctaLogin, titel: 'A code in your inbox.' },
-    { label: 'Private link', titel: 'A link to look along.' },
+    { label: 'Order page', titel: 'A page to look along.' },
     { label: 'Delivery date' },
   ],
   staatPil: 'Status',
@@ -328,8 +328,8 @@ const SLEUTEL_IKOON: (keyof typeof ICOON)[] = ['dobbel', 'vinger', 'rem', 'klok'
       {/* Inloggen bovenaan (1.11): letterlijk /account met ?lang=, nooit door lp() —
           /account heeft geen /nl-variant (tests/nav.test.mjs §11). */}
       <p class="h-acties h-op" style="--d:3">
-        <a class="h-knop h-knop-inkt" href={`/account?lang=${lang}`}>{c.ctaLogin}<span class="o" set:html={ik('pijl')} /></a>
-        <a class="h-knop h-knop-lijn" href={lp('/start')}>{c.ctaStart}</a>
+        <a class="h-knop k k-vol" data-rol="doorgaan" href={`/account?lang=${lang}`}>{c.ctaLogin}<Fragment set:html={rolIkoon('doorgaan')} /></a>
+        <a class="h-knop k k-lijn" data-rol="doorgaan" href={lp('/start')}>{c.ctaStart}<Fragment set:html={rolIkoon('doorgaan')} /></a>
       </p>
     </div>
   </header>
@@ -443,7 +443,7 @@ const SLEUTEL_IKOON: (keyof typeof ICOON)[] = ['dobbel', 'vinger', 'rem', 'klok'
         <p class="h-pil h-pil-wit"><span>{H.logPil}</span></p>
         <h2 id="sd-log" class="h-kop h-h3"><span class="l">{H.logKop[0]}</span> {H.logKop[1]}</h2>
         <p class="h-sd-zin">{c.logLede}</p>
-        <p class="h-acties"><a class="h-knop h-knop-lijn h-knop-klein" href={lp('/ai-act')}>{c.logCta}</a></p>
+        <p class="h-acties"><a class="h-knop k k-lijn k-klein" data-rol="navigeren" href={lp('/ai-act')}>{c.logCta}<Fragment set:html={rolIkoon('navigeren')} /></a></p>
       </div>
       <div class="h-sd-logboek" aria-hidden="true">
         <span class="h-sd-logboek-kop"><b>{DEMO_ORDER.ref}</b><span>{naLevering}</span><i>{H.logBadge}</i></span>

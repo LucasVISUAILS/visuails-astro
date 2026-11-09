@@ -51,7 +51,8 @@
   color: var(--ink-2);
   background: var(--surface-2);
   border: 1px solid var(--line-strong);
-  border-radius: var(--r-md);
+  /* knoppensysteem (lijst 88, kleine afwijkingen): in Studio was --r-md 10 px, op de privélink 8 px; nu overal 10 */
+  border-radius: 10px;
   cursor: pointer;
   transition: background .16s ease, color .16s ease, border-color .16s ease;
 }

@@ -1,5 +1,16 @@
 # VISUAILS — kleurenschema
 
+**Lijst 86 (9 november 2026): de fotoblokken.** Vier vaste blokken hebben een eigen foto van Lucas, bewogen langs de
+snede (53,13°, 22 % van de breedte, twee keer) en op de helderheid in Blauw uur gezet (inkt `#0B0F17` → blauw diep
+`#1A4279` → blauw uur `#25508B` → blauw licht `#80A7DD` → wit): het €1-blok (een straat in de avond), het slot onderaan
+(beton en lucht), de Studiobrief (de duinen) en de 404 (de nacht met flits, uitgesneden zodat het lichtspoor naast de V
+ligt). Eén blok, één foto, op elke pagina (`src/data/fotoblok.js`, `scripts/fotoblok.mjs`, `src/styles/fotoblok.css`).
+De tekst staat op een glazen plaat: inkt 58 % met `backdrop-filter: blur(22px) saturate(150%) brightness(.82)`, een
+lichtrand van 1 px, een glans langs de snede; zonder glas inkt 80 %; hoog contrast zonder foto. Wit erop haalt overal
+minstens 4,5 : 1 (gemeten: `tests/fotoblok-browser.test.mjs`), de V op de 404 minstens 3 : 1. Dit vervangt voor die vier
+blokken "geen glas" en "geen bewogen achtergrond of sfeerfoto als vlak", en de posterkleur (korrel, B4, E2) die er stond.
+Nergens anders glas of een bewogen foto.
+
 **Stand: 5 november 2026 (levering 89): posterkleuren met korrel, de velden op de grote plekken zonder harde randen en zonder blauwe fade, posterkleur in het klein (E1 – E7), roze `#F1B7AC` als veldkleur, het tekstlogo K5 overal, de lockup alleen in beelden en documenten, het raster voor beelden en favicon c. Zie "Levering 89" hieronder.**
 
 **Levering 86 (3 november 2026): het blauwe uur in de details. Het logo staat in de snede, een fade van blauw diep `#1A4279` via blauw uur `#25508B` naar `#2D61A8`, langs de snede van het vlagje (126,87°); onder de muis schommelt het licht. De gloed onder de knoppen is weg; de inktknop staat in de nacht en vult zich onder de muis met de snede; Bestellen staat in de snede. Kleine details (de streep van het sectielabel, de streep onder een link, de focusrand van een knop, de voortgang, de rand van een kaart onder de muis, het inktblok, het grote woordmerk onderin, het vlagje dat vult) krijgen een fade. Het favicon is wit op de snede. Zie "Levering 86: het blauwe uur in de details". Het logopakket: images/Logo/visuails-logo-86.**
@@ -62,7 +73,7 @@ stappen van de Blauw-uur-fade (`#6283AF`) en roze.
 
 | Veld | Grond | Wat | Waar op de site |
 |---|---|---|---|
-| B1 Horizon | Wit | wit boven, het blauwe uur onder, de laatste roze streep op de horizon | achter de laptop (de opening); de metro tekent hetzelfde beeld in zijn banen |
+| B1 Horizon | Wit | wit boven, het blauwe uur onder, de laatste roze streep op de horizon | achter de laptop (de opening); sinds levering 90 zit het in de video zelf (zoals op 1440 × 900), en sinds 8 november zonder korrel (Lucas: *"de grain … maakt de overloop tussen secties niet smooth"*) |
 | P2 / B2 Snede | Blauw uur | het licht langs de snede, roze waar het licht eindigt | de logoposter (HalPoster89) |
 | B4 Nacht | Inkt | een plooi van blauw uur met licht op de rand, roze rechtsonder | het €1-blok (het licht rechtsonder, weg van de tekst) en de 404 (met de witte V) |
 | B3 Golf, B5 Adem, B6 Insnede | Wit | — | (nog) niet op de site; zie `kladblok/LEVERING-89.md` |

@@ -89,7 +89,7 @@ if (!fs.existsSync(path.join(DIST, 'nl', 'index.html'))) { ok('dist/nl/index.htm
     if (n) metStuk++;
     if (n > HOOGSTENS) teVeel.push(`${path.relative(DIST, p)} (${n})`);
   }
-  ok(`in ${paginas.length} pagina's hoogstens ${HOOGSTENS} vaste stukjes (${metStuk} pagina's hebben er)`, teVeel.length === 0 && metStuk > 50, teVeel.slice(0, 5).join(', '));
+  ok(`in ${paginas.length} pagina's hoogstens ${HOOGSTENS} vaste stukjes (${metStuk} pagina's hebben er)`, teVeel.length === 0 /* sinds lijst 86 heeft het slot geen stukje meer: de meeste pagina's hebben er nu geen (9 november 2026) */, teVeel.slice(0, 5).join(', '));
 }
 
 /* ── 2 · in de browser ── */
@@ -135,7 +135,11 @@ async function slechtsteTekst(page, wortel, tekst, tekstKleur = [255, 255, 255])
   if (!el) return { r: 0, n: 0, fout: `${wortel} niet gevonden` };
   /* in het midden van het scherm, weg van de balk bovenin (die er anders overheen kan liggen) */
   /* (niet in de opening: een sprong daar start de rit) */
-  if (await page.evaluate((w) => !!document.querySelector(w).closest('.o8'), wortel)) await el.scrollIntoViewIfNeeded();
+  /* (levering 90: met het effect op de rustplek van de laptop, het podium onder de balk; verder in de baan start de video) */
+  if (await page.evaluate((w) => !!document.querySelector(w).closest('.o8') && document.documentElement.classList.contains('o8-aan'), wortel)) {
+    await page.evaluate(() => scrollTo({ top: document.querySelector('.o8-baan').getBoundingClientRect().top + scrollY - 56, behavior: 'instant' }));
+    await page.waitForFunction(() => window.__o8Stand?.().fase === 'rust' && document.querySelector('[data-o8-beeld]').complete, null, { timeout: 30000 }).catch(() => {});
+  } else if (await page.evaluate((w) => !!document.querySelector(w).closest('.o8'), wortel)) await el.scrollIntoViewIfNeeded();
   else await page.evaluate((w) => { const e = document.querySelector(w); if (!e.closest('.site-header')) e.scrollIntoView({ block: 'center' }); }, wortel);
   await page.waitForTimeout(350);
   const vak = await el.boundingBox();
@@ -226,11 +230,12 @@ async function slechtsteTekst(page, wortel, tekst, tekstKleur = [255, 255, 255])
   ok('… en een pil (999px), niet de oude zachte hoek', parseFloat(vorm) >= 20, vorm);
   await page.hover('.site-header .nav-cta'); await page.waitForTimeout(450);
   const onder = await slechtsteTekst(page, '.site-header .nav-cta', ['']);
-  ok(`… onder de muis donkerder, dus nooit slechter leesbaar (${onder.r.toFixed(2)} ≥ ${cta.r.toFixed(2)})`, onder.r >= cta.r - 0.05);
+  /* lijst 84 (A1 = c, 9 november 2026): onder de muis schuift het licht van de snede; dat mag iets lichter zijn, zolang het 4,5 haalt */
+  ok(`… onder de muis ook minstens 4,5 : 1 (${onder.r.toFixed(2)})`, onder.r >= 4.5);
   await page.mouse.move(700, 600);
-  const slot = await slechtsteTekst(page, '.h-lk-slot', [':scope > .h-kop', ':scope > .h-pil', ':scope > p:not(.h-acties)', ':scope > .h-feiten']);
+  /* E2 (het slot) VERVALLEN 9 november 2026: lijst 86 zet daar een vaste foto met glas (tests/fotoblok-browser.test.mjs meet het) */
   const slotKlasse = await page.$eval('.h-lk-slot', (e) => e.className);
-  ok(`het slot onderaan (E2, het ene inktblok): een stukje, wit erop minstens 4,5 : 1 (slechtste ${slot.r.toFixed(2)})`, / pk pk-[nt]-blok-\d/.test(` ${slotKlasse}`) && slot.r >= 4.5, slotKlasse);
+  ok('het slot onderaan heeft geen stukje meer (lijst 86: de fotoblokken)', !/ pk /.test(` ${slotKlasse} `), slotKlasse);
   /* "geleverd" en de initialen staan in Studio, /admin en het portaal; hier in een site-pagina gezet, met dezelfde css.
      Op /nl/editions/ en niet op /nl/: daar loopt het veld van de poster mee in elke foto (zie FOTO_MS), en dat meet hier niets. */
   await page.evaluate(() => {
@@ -254,9 +259,9 @@ async function slechtsteTekst(page, wortel, tekst, tekstKleur = [255, 255, 255])
   const { ctx, page } = await open({ deviceScaleFactor: 2 });
   await page.goto(`${BASIS}/nl/`, { waitUntil: 'networkidle' });
   await page.evaluate(() => document.querySelector('.h-proef').scrollIntoView({ block: 'center' })); await page.waitForTimeout(900);
-  const proef = await slechtsteTekst(page, '.h-proef > .h-proef-woord', [':scope > .h-kop', ':scope > .h-pil', ':scope > p:not(.h-acties)']);
+  /* B4 op het €1-blok VERVALLEN 9 november 2026 (lijst 86; tests/fotoblok-browser.test.mjs meet het contrast) */
   const proefKlasse = await page.$eval('.h-proef > .h-proef-woord', (e) => e.className);
-  ok(`het €1-blok (B4 Nacht): wit erop minstens 4,5 : 1 (slechtste ${proef.r.toFixed(2)})`, / pk pk-n-blok-\d/.test(` ${proefKlasse}`) && proef.r >= 4.5, proefKlasse);
+  ok('het €1-blok heeft geen stukje meer (lijst 86: de fotoblokken)', !/ pk /.test(` ${proefKlasse} `), proefKlasse);
   await ctx.close();
 }
 
@@ -264,9 +269,13 @@ async function slechtsteTekst(page, wortel, tekst, tekstKleur = [255, 255, 255])
 {
   const { ctx, page } = await open({ deviceScaleFactor: 1 });
   await page.goto(`${BASIS}/nl/`, { waitUntil: 'networkidle' });
-  const vlak = await page.$eval('.o8-vlak', (e) => getComputedStyle(e).backgroundImage);
-  ok('achter de laptop het veld B1 Horizon (een beeld met korrel), niet meer de fade alleen', /veld-b1\.webp/.test(vlak) && /korrel-128/.test(await page.$eval('.o8-vlak', (e) => getComputedStyle(e, '::after').backgroundImage)), vlak.slice(0, 120));
-  ok('… en de metro tekent hetzelfde veld in zijn banen', /texture2D\(uVeld/.test(lees('src/scripts/metro.js')) && /veld-b1-staand\.webp/.test(lees('src/scripts/metro.js')));
+  /* levering 90: met het effect zit het veld in de video (de foto is beeld 0); het vlak erboven is het wit van zijn bovenkant */
+  const vlak = await page.$eval('.o8-vlak', (e) => ({ beeld: getComputedStyle(e).backgroundImage, kleur: getComputedStyle(e).backgroundColor, aan: document.documentElement.classList.contains('o8-aan'), foto: document.querySelector('[data-o8-beeld]').currentSrc }));
+  /* 8 november 21:44: zonder korrel (Lucas: de korrel maakte de overloop tussen de secties niet glad) */
+  ok('achter de laptop het veld B1 Horizon (zonder korrel), niet meer de fade alleen',
+    vlak.aan ? (/laptop-90-\d+\.webp/.test(vlak.foto) && vlak.kleur === 'rgb(251, 253, 255)') : (/veld-b1\.webp/.test(vlak.beeld) && (await page.$eval('.o8-vlak', (e) => getComputedStyle(e, '::after').content)) === 'none'), JSON.stringify(vlak).slice(0, 200));
+  /* levering 90: de metro is weg; het veld zit in de video (scripts/laptop-video-90.py) */
+  ok('… en de video heeft hetzelfde veld erin', /^veld-b1\.webp /.test(JSON.parse(lees('src/data/laptopVideo90.json')).veld) && /public\/img\/hal\/veld-b1\.webp/.test(lees('scripts/laptop-video-90.py')));
   await ctx.close();
   /* de tekst op het veld: de naam van de stand, onder de laptop (op de telefoon staat hij onder het podium op de grond) */
   const maten = [];
@@ -282,7 +291,7 @@ async function slechtsteTekst(page, wortel, tekst, tekstKleur = [255, 255, 255])
   await page2.goto(`${BASIS}/nl/404.html`, { waitUntil: 'networkidle' });
   const v = await slechtsteTekst(page2, '.h-nf-getal', ['.h-nf-v']);
   const nk = await page2.$eval('.h-nf-getal', (e) => e.className);
-  ok(`de 404: het veld Nacht met de witte V, de V minstens 3 : 1 (slechtste ${v.r.toFixed(2)})`, / pk pk-n-blok-\d/.test(` ${nk}`) && v.r >= 3 && v.n > 200, nk);
+  ok(`de 404: de witte V (sinds lijst 86 op de vaste foto) minstens 3 : 1 (slechtste ${v.r.toFixed(2)})`, !/ pk /.test(` ${nk} `) && v.r >= 3 && v.n > 200, nk);
   await t2.ctx.close();
 }
 

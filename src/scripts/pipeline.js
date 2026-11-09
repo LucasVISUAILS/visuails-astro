@@ -222,7 +222,7 @@ import { isEigenAngleId } from '../data/angles.js';
 /* Het oordeel over een aangeleverde foto staat naast de drempels in shots.js,
    zodat het te toetsen is zonder een browser. Het METEN staat hier, want daar
    zijn de pixels — zie meetBeeld(). */
-import { keurBeeld } from '../data/shots.js';
+import { keurBeeld, jpegEindigtNetjes, JPEG_STAART } from '../data/shots.js';
 /* De lijst "wat ontbreekt" in het tussenscherm van stap 2 (2.05): dezelfde
    bron als Studio, de mails en /admin. Zonder DOM en zonder database. */
 import { ontbrekendeFotos, ontbrekendRegels } from '../lib/ontbreekt.js';
@@ -236,6 +236,8 @@ import { VAT_RATE } from '../data/pricing.js';
 /* 1.07 (8 oktober 2026): bij welk groter aantal de bestelling evenveel of minder
    kost. Alleen de regel; de som zelf geeft dit script mee (totaalBij()). */
 import { groterGoedkoper } from '../data/pricing.js';
+/* Lijst 87 (C07): de echte dag van voorrang in het formulier. */
+import { voorrangDeadline } from '../data/pricing.js';
 /* Ronde B (8 oktober 2026): wat een bestelling in credits kost — dezelfde som als
    /account/order, zodat stap 5 nooit een ander getal noemt dan wat afgaat. */
 import { creditKosten, watPast, oudsteEerst, CREDIT_DIENSTEN } from '../data/creditKosten.js';
@@ -307,6 +309,20 @@ let GATE_STEP = DEFAULT_GATE_STEP;
 let current = 1;
 let batch = '';
 let staged = []; // [{ key, name, bytes, product, shot }]
+/* De verstuursleutel van dit formulier (ronde 91, D10): gemaakt bij de eerste poging, daarna dezelfde. */
+let verstuurSleutelWaarde = '';
+function verstuurSleutel() {
+  if (!verstuurSleutelWaarde) {
+    try {
+      const b = new Uint8Array(24);
+      crypto.getRandomValues(b);
+      verstuurSleutelWaarde = [...b].map((x) => x.toString(16).padStart(2, '0')).join('');
+    } catch {
+      verstuurSleutelWaarde = `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`.slice(0, 40);
+    }
+  }
+  return verstuurSleutelWaarde;
+}
 let uploadsOff = false;
 /* ── DE DAGGRENS IS BEREIKT — 8 oktober 2026 (o05) ─────────────────────────
    /api/upload antwoordt `dag-limiet` als deze internetaansluiting vandaag het
@@ -532,6 +548,25 @@ function init(el) {
 
   form.classList.add('is-live');
   checkOpenOrder();
+  /* ── TERUG UIT DE BROWSERCACHE — 8 november 2026 (doorloop 90, B29) ───────
+     Met de terugknop van de browser op de betaalpagina komt deze pagina terug zoals hij was: de knop op
+     "Versturen…" en uitgeschakeld (hij wordt met opzet niet vrijgegeven als de pagina weggaat), en zonder het
+     blok van checkOpenOrder(), want het script draait niet opnieuw. De klant kon niets. Nu: de knop terug, en
+     het blok erbij. */
+  window.addEventListener('pageshow', (e) => {
+    if (!e.persisted) return;
+    /* Terug van de betaalpagina is een nieuw besluit: wie nu nog eens verstuurt, wil een nieuwe bestelling
+       (het blok van checkOpenOrder() biedt de oude aan). Dus een verse verstuursleutel (ronde 91, D10). */
+    verstuurSleutelWaarde = '';
+    busy = false;
+    form.classList.remove('is-sending');
+    const btn = q('[data-pl-submit]');
+    if (btn) {
+      btn.disabled = false;
+      if (btn.dataset.plLabel) knopTekst(btn, btn.dataset.plLabel);
+    }
+    checkOpenOrder();
+  });
 
   bindNav();
   bindErrors();
@@ -1190,6 +1225,16 @@ async function proefAlGehad() {
   }
 }
 
+/* Knoppensysteem (lijst 88/89): een knop draagt het icoon van zijn rol als <svg class="ik">. Wie de tekst
+   verandert, laat het icoon staan, op dezelfde plek (ervoor of erachter). */
+function knopTekst(el, tekst) {
+  if (!el) return;
+  const ik = el.querySelector(':scope > svg.ik');
+  const voor = ik && el.firstChild === ik;
+  el.textContent = tekst;
+  if (ik) { if (voor) el.prepend(ik); else el.append(ik); }
+}
+
 function bindNav() {
   qa('[data-pl-next]').forEach((b) => {
     b.type = 'button';
@@ -1369,8 +1414,15 @@ function askMissing() {
   box.hidden = false;
   if (box.tabIndex < 0) box.tabIndex = -1;
   try { box.focus({ preventScroll: true }); } catch { /* nice-to-have */ }
-  const top = box.getBoundingClientRect().top + window.scrollY - 96;
-  window.scrollTo({ top: Math.max(0, top), behavior: reduced() ? 'auto' : 'smooth' });
+  /* 8 november 2026 (doorloop 90, B21): via de knop in de zijbalk bleef het blok onder in de kolom, buiten beeld.
+     Dezelfde val als bij show() (19 september): een vloeiende scroll breekt Chrome af zodra de pagina van hoogte
+     verandert, en het blok verschijnt net. Dus na de volgende tekenbeurt in één keer. */
+  const spring = () => {
+    const top = box.getBoundingClientRect().top + window.scrollY - 96;
+    window.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
+  };
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(spring));
+  else spring();
   return false;
 }
 
@@ -1453,7 +1505,7 @@ function validateStep(n) {
   if (!bad) return true;
   showStepError(node, bad);
   if (typeof bad.setCustomValidity === 'function') {
-    bad.setCustomValidity(bad.dataset.plErrMsg || c('err.generic'));
+    bad.setCustomValidity(foutTekst(bad));
   }
   /* ── DE FOUT STAAT BIJ HET VELD, EN HET VELD KOMT IN BEELD — 19 sep 2026 ──
      Uit de doorlichting: "Kies wie het draagt" stond onderaan stap 2, twee
@@ -1464,13 +1516,21 @@ function validateStep(n) {
      visueel verborgen is (de lookkaarten) krijgt geen bubbel maar de regel
      bij het veld. */
   const anker = bad.closest('fieldset, .field, .pl-veld, [data-pl-veldgroep]') || bad.closest('label') || bad;
-  markeerVeld(anker, bad.dataset.plErrMsg || c('err.generic'));
+  markeerVeld(anker, foutTekst(bad));
   const kop = anker.querySelector('legend, h2, h3, .pl-veld-fout') || anker;
   try { kop.scrollIntoView({ block: 'center', behavior: reduced() ? 'auto' : 'smooth' }); } catch { /* ok */ }
   const zichtbaar = bad.getClientRects().length > 0 && getComputedStyle(bad).opacity !== '0';
   if (zichtbaar) bad.reportValidity();
   else { try { bad.focus({ preventScroll: true }); } catch { /* ok */ } }
   return false;
+}
+
+/** De zin bij een fout veld. Een veld dat wel is ingevuld maar de verkeerde vorm heeft (een e-mailadres zonder
+ *  .com of .nl, 8 november 2026) krijgt zijn eigen zin, als het er een heeft; anders de gewone. */
+function foutTekst(veld) {
+  const v = veld.validity || {};
+  if ((v.patternMismatch || v.typeMismatch) && veld.dataset.plErrVorm) return veld.dataset.plErrVorm;
+  return veld.dataset.plErrMsg || c('err.generic');
 }
 
 /** Eén regel met de fout, direct onder de kop van het veld of de groep. */
@@ -1494,7 +1554,7 @@ function showStepError(node, field) {
   const box = q('[data-pl-step-error]', node);
   field.setAttribute('aria-invalid', 'true');
   if (!box) return;
-  box.textContent = field.dataset.plErrMsg || c('err.generic');
+  box.textContent = foutTekst(field);
   box.hidden = false;
   // role is set here rather than in the markup on purpose: an element that is
   // role="alert" from page load announces itself the moment it is un-hidden AND
@@ -1585,6 +1645,8 @@ function bindOrder() {
      met het aantal producten; syncTotal() doet allebei via syncVoorrang(). */
   const vrng = q('input[name="voorrang"]');
   if (vrng) vrng.addEventListener('change', syncTotal);
+  /* Ronde 91 (C06): staat de agenda dicht, dan geen voorrang aanbieden. */
+  if (vrng && cfg.voorrang && cfg.voorrang.aan) vraagVoorrangAgenda();
   /* ── DE LOOKKEUZE RAAKT HET BEDRAG — 17 september 2026 ────────────────────
      Sinds vandaag telt het lopende totaal de toeslag van een eigen stijl mee
      (zie stijlToeslagNu()), en dan moet het ook opnieuw gerekend worden als die
@@ -4163,7 +4225,7 @@ function bindUploads() {
 
   const add = q('[data-pl-add]');
   if (add) {
-    add.textContent = c('pu.add');
+    knopTekst(add, c('pu.add'));
     // ONLY WHEN THE COUNT IS UNKNOWN. This button exists for the "More than N" (per-service ceiling)
     // option, where productCount() is NaN and the card list has no number to
     // follow. It was rendered at every count, and pressing it added a card
@@ -4676,7 +4738,10 @@ function buildKies(card) {
   knop.type = 'button';
   knop.className = 'btn btn-primary pu-kies-knop';
   knop.dataset.puKies = card.key;
-  knop.textContent = c('pu.kies');
+  /* knoppensysteem (lijst 88, B6): de stap van het blok, dus vol, met het icoon van uploaden */
+  knop.dataset.rol = 'uploaden';
+  knop.innerHTML = ikoon('uploaden');
+  knopTekst(knop, c('pu.kies'));
   knop.setAttribute('aria-label', `${c('pu.kies')} — ${c('pu.product', { n: card.n })}`);
 
   /* `multiple` werkt ook op een telefoon: iOS en Android laten in de fotolijst
@@ -6134,17 +6199,47 @@ function voorrangAan() {
   return !!(box && box.checked && !box.disabled);
 }
 
+/*
+ * ── EN NIET ALS DE AGENDA DICHT STAAT — 9 november 2026 (ronde 91, C06) ──────
+ *
+ * /api/order rekent geen voorrang (en geen toeslag) als een van de twee werkdagen
+ * van de belofte dicht staat in /admin/agenda. Het formulier wist dat niet en
+ * toonde het vinkje én de toeslag. Nu vraagt het /api/capacity?voorrang=1, en de
+ * agenda-poort geeft het ook mee (`voorrangOpen`). Dicht: het blok blijft staan
+ * (anders zoekt wie voorrang wil zich suf), het vinkje staat uit en een korte zin
+ * zegt waarom. Geen antwoord: niets veranderen, de server beslist toch.
+ */
+let voorrangDicht = false;
+
+function zetVoorrangDicht(dicht) {
+  if (voorrangDicht === !!dicht) return;
+  voorrangDicht = !!dicht;
+  syncTotal();
+}
+
+function vraagVoorrangAgenda() {
+  if (typeof fetch !== 'function') return;
+  fetch('/api/capacity?voorrang=1', { headers: { accept: 'application/json' } })
+    .then((r) => r.json())
+    .then((b) => { if (b && typeof b.voorrangOpen === 'boolean') zetVoorrangDicht(!b.voorrangOpen); })
+    .catch(() => {});
+}
+
 function syncVoorrang(net) {
   const blok = q('[data-pl-voorrang]');
   if (!blok || !cfg.voorrang || !cfg.voorrang.aan) return;
   const n = productCount();
   const kan = Number.isInteger(n) && n > 0 && n <= cfg.voorrang.maxProducten;
   blok.hidden = !kan;
-  qa('input, button, select', blok).forEach((el) => { el.disabled = !kan; });
-  if (!kan) {
+  const aan = kan && !voorrangDicht;
+  qa('input, button, select', blok).forEach((el) => { el.disabled = !aan; });
+  if (!aan) {
     const box = q('input[name="voorrang"]', blok);
     if (box) box.checked = false;
   }
+  blok.classList.toggle('is-dicht', voorrangDicht);
+  const dichtZin = q('[data-pl-voorrang-dicht]', blok);
+  if (dichtZin) dichtZin.hidden = !voorrangDicht;
   /* De tekst zonder bedrag staat al in de HTML (Astro rendert hem), dus die
      wordt hier ONTHOUDEN in plaats van uit cfg.copy gehaald. Reden: PIPE draagt
      de woorden die dit bestand zelf tekent, en dit is er geen van — het is een
@@ -6156,6 +6251,27 @@ function syncVoorrang(net) {
     const bedrag = voorrangBedragNu(net);
     vak.textContent = bedrag === null ? vak.dataset.plLeeg : `+ ${euro(bedrag)}`;
   }
+  /* ── DE ECHTE DAG — 9 november 2026 (lijst 87, C07) ─────────────────────────
+     "De volgende werkdag" zegt op vrijdagavond of in het weekend niet wanneer het
+     klaar is, terwijl de gewone levering dan vaak al eerder is. Nu staat de dag er:
+     dezelfde som als de server (voorrangDeadline() in pricing.js), vanaf nu. */
+  const dagZin = q('[data-pl-voorrang-dag]', blok);
+  if (dagZin) {
+    const d = aan ? voorrangDeadline(null) : null;
+    const dag = d ? voorrangDagNaam(d.datum) : '';
+    dagZin.textContent = dag ? String(dagZin.dataset.sjabloon || '').replace('{dag}', dag).replace('{uur}', String(d.uur)) : '';
+    dagZin.hidden = !dag;
+  }
+}
+
+/** 'YYYY-MM-DD' → "dinsdag 10 november" / "Tuesday 10 November", in de taal van de pagina. */
+function voorrangDagNaam(iso) {
+  try {
+    const t = new Date(`${iso}T12:00:00Z`);
+    if (Number.isNaN(t.getTime())) return '';
+    const nl = document.documentElement.lang === 'nl';
+    return new Intl.DateTimeFormat(nl ? 'nl-NL' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(t);
+  } catch { return ''; }
 }
 
 /**
@@ -7236,7 +7352,7 @@ function paintCard(card) {
      bijzetten") zodra er iets staat — dan is hij niet meer de eerste handeling. */
   if (card.kiesKnop) {
     const iets = [...SHOT_IDS, ...hoekVakIds()].some((id) => card.slots[id] && slotFilled(card, id));
-    card.kiesKnop.textContent = iets ? c('pu.kiesNog') : c('pu.kies');
+    knopTekst(card.kiesKnop, iets ? c('pu.kiesNog') : c('pu.kies'));
     card.kiesKnop.setAttribute('aria-label', `${iets ? c('pu.kiesNog') : c('pu.kies')} — ${cardLabel(card)}`);
     card.kiesKnop.classList.toggle('btn-primary', !iets);
     card.kiesKnop.classList.toggle('btn-ghost', iets);
@@ -7797,7 +7913,10 @@ function placeFile(card, id, file) {
    *
    * Alles in een `catch` die niets doet. Een meting die omvalt, mag een upload
    * die loopt niet raken. */
-  meetBeeld(file).then((maat) => {
+  /* Lijst 87 (D13): dezelfde meting maakt ook het duimpje voor /admin (zie maakDuim). */
+  const meting = meetBeeld(file);
+  s.duimP = meting.then((m) => (m && m.duim) || null, () => null);
+  meting.then((maat) => {
     if (card.slots[id] !== s || s.file !== file) return;
     const oordeel = keurBeeld(maat, extOf(file.name), file.size);
     if (!oordeel) return;
@@ -7898,6 +8017,16 @@ const UPLOAD_TRIES = 3;
 /** Oplopend, en kort: de klant kijkt naar dit vakje. */
 const RETRY_WAIT_MS = [1200, 3500];
 
+/* ── EEN VERBINDING DIE STIL HANGT — 9 november 2026 (ronde 91, D04) ──────────
+   Het verzoek had geen enkele tijdgrens. Een mobiele verbinding die blijft hangen zonder te verbreken
+   (geen fout, geen antwoord) hield het vakje eindeloos op "Versturen…" — en omdat de wachtrij één voor één
+   gaat, wachtten alle foto's erachter mee. Nagespeeld in 91/werk/d/d04-netwerk.mjs (S5): na 60 s nog
+   drie vakken op "Versturen…" en één verzoek binnen. Nu: 45 s zonder enige voortgang en zonder antwoord is
+   een weggevallen verbinding, en dan gaat het langs dezelfde weg als `network` (opnieuw proberen, dan de
+   knop). Een trage maar lopende upload heeft er geen last van: elke voortgang zet de klok terug.
+   `window.__visUploadStil` is alleen voor de toets (tests/blind91-d-wacht-op-fotos.test.mjs). */
+const UPLOAD_STIL_MS = 45000;
+
 /** Kan dit nog goed komen als we het nog eens proberen? */
 function retryableUpload(code, httpStatus) {
   if (code === 'network' || code === 'rate') return true;
@@ -7945,8 +8074,39 @@ function failSlot(card, id, s, code, body, httpStatus) {
   s.status = 'failed';
   s.pct = 0;
   s.msg = uploadError(code, body);
+  /* Lijst 87 (D11): onthouden dat de VERBINDING het was, zodat hervatNaVerbinding() dit vakje
+     vanzelf opnieuw probeert zodra de browser weer online is. */
+  s.netwerkWeg = code === 'network';
   paintSlot(card, id);
   refreshUploader();
+}
+
+/*
+ * ── VANZELF VERDER ALS DE VERBINDING TERUG IS — lijst 87 (D11), 9 november 2026 ──
+ *
+ * Na een upload die mislukte doordat de verbinding wegviel, bleven de vakken op "mislukt"
+ * staan en drukte de klant per vak op Opnieuw. Nu gaan ze vanzelf verder bij het
+ * `online`-signaal van de browser: alleen de vakken die op de verbinding strandden
+ * (`netwerkWeg`), niet een weigering van de server (te groot, verkeerd type), en niet als
+ * de opslag plat ligt of de daggrens bereikt is (dan is Opnieuw een besluit van de klant).
+ * Via retrySlot(), dus met de vooraf-controle en in de wachtrij, één voor één.
+ */
+function hervatNaVerbinding() {
+  if (uploadsOff || uploadsVol) return 0;
+  let n = 0;
+  for (const card of cards) {
+    for (const id of Object.keys(card.slots || {})) {
+      const s = card.slots[id];
+      if (!s || s.status !== 'failed' || !s.netwerkWeg || !s.file) continue;
+      s.netwerkWeg = false;
+      retrySlot(card, id);
+      n++;
+    }
+  }
+  return n;
+}
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('online', hervatNaVerbinding);
 }
 
 /**
@@ -8000,10 +8160,14 @@ function sendSlot(card, id) {
   const voor = !batch && !uploadsOff && !uploadsVol && s0 && s0.file && s0.status === 'sending'
     ? botToken(form, 'upload')
     : Promise.resolve('');
-  return voor.then((token) => verstuurSlot(card, id, token));
+  /* Het duimpje (lijst 87, D13): hoogstens DUIM_WACHT_MS wachten, dan zonder. */
+  const duimP = s0 && s0.duimP
+    ? Promise.race([s0.duimP, new Promise((r) => { window.setTimeout(() => r(null), DUIM_WACHT_MS); })]).catch(() => null)
+    : Promise.resolve(null);
+  return voor.then((token) => duimP.then((duim) => verstuurSlot(card, id, token, duim)));
 }
 
-function verstuurSlot(card, id, token) {
+function verstuurSlot(card, id, token, duim = null) {
   return new Promise((resolve) => {
     const s = card.slots[id];
     if (!s.file || s.status !== 'sending') return resolve();
@@ -8056,12 +8220,22 @@ function verstuurSlot(card, id, token) {
     // rots. The name posts separately with the order.
     fd.append('product', card.key);
     fd.append('shot', id);
+    if (duim) fd.append('duim', duim, 'duim.webp');
 
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/upload', true);
     xhr.responseType = 'text';
 
+    let waakTimer = 0;
+    let vastgelopen = false;
+    const waak = () => {
+      window.clearTimeout(waakTimer);
+      waakTimer = window.setTimeout(() => { vastgelopen = true; xhr.abort(); }, Number(window.__visUploadStil) || UPLOAD_STIL_MS);
+    };
+    xhr.addEventListener('loadend', () => window.clearTimeout(waakTimer));
+
     xhr.upload.addEventListener('progress', (e) => {
+      waak();
       if (!e.lengthComputable) return;
       s.pct = (e.loaded / e.total) * 100;
       paintSlot(card, id);
@@ -8072,7 +8246,10 @@ function verstuurSlot(card, id, token) {
       failSlot(card, id, s, 'network', null, 0);
       resolve();
     });
-    xhr.addEventListener('abort', () => resolve());
+    xhr.addEventListener('abort', () => {
+      if (vastgelopen && live() && !geweigerd()) failSlot(card, id, s, 'network', null, 0);
+      resolve();
+    });
 
     xhr.addEventListener('load', () => {
       let body = null;
@@ -8138,6 +8315,7 @@ function verstuurSlot(card, id, token) {
       resolve();
     });
 
+    waak();
     xhr.send(fd);
   });
 }
@@ -8170,9 +8348,23 @@ function extOf(name) {
  * refuses the ones past the ceiling rather than sending all of them and letting
  * the server answer 400 two hundred times.
  */
+/** Mag de server op de bytes beslissen? Ja bij een beeldtype, geen type of "zomaar bytes" (ronde 91, D06). */
+function bytesBeslissen(file) {
+  const t = String((file && file.type) || '');
+  return t === '' || /^image\//i.test(t) || /^application\/octet-stream$/i.test(t);
+}
+
 function preflight(file, queued) {
   const exts = Array.isArray(cfg.uploadExt) ? cfg.uploadExt : [];
-  if (exts.length && exts.indexOf(extOf(file.name)) === -1) return { code: 'bad-type' };
+  /* ── ZONDER (BEKENDE) EXTENSIE BESLIST DE SERVER — 9 november 2026 (ronde 91, D06) ──
+     Een echte JPEG zonder extensie (Android-galerij, gedeeld uit een chat-app) of met
+     een vreemde ("IMG_1234.jpg_large") kreeg hier "Geen beeld dat we kunnen lezen",
+     terwijl er een miniatuur van stond. /api/upload leest nu de eerste bytes en zet
+     de extensie erbij. Hier gaat zo'n bestand dus door als de browser er een
+     beeldtype aan geeft, of geen type of application/octet-stream (zonder extensie weet
+     de browser het niet, en sommige deel-apps sturen dat); een bestand met een ander
+     type (pdf, tekst) wordt nog steeds meteen geweigerd. */
+  if (exts.length && exts.indexOf(extOf(file.name)) === -1 && !bytesBeslissen(file)) return { code: 'bad-type' };
   if (!file.size) return { code: 'empty' };
   if (Number(cfg.maxFileBytes) > 0 && file.size > Number(cfg.maxFileBytes)) {
     return { code: 'too-large', max: Number(cfg.maxFileBytes) };
@@ -8222,16 +8414,26 @@ function preflight(file, queued) {
  */
 async function meetBeeld(file) {
   if (typeof createImageBitmap !== 'function' || typeof document === 'undefined') return null;
+  /* Lijst 87 (D08): eindigt een JPEG niet met zijn eindmarkering, dan is hij waarschijnlijk
+     halverwege afgebroken. Alleen een melding (keurBeeld, code 'onvolledig'); zie
+     jpegEindigtNetjes() in src/data/shots.js. Lukt het lezen niet, dan niets te melden. */
+  let onvolledig = false;
+  try {
+    const jpeg = /^image\/jpe?g$/i.test(file.type || '') || /^jpe?g$/.test(extOf(file.name || ''));
+    if (jpeg && file.size > 2) {
+      onvolledig = !jpegEindigtNetjes(new Uint8Array(await file.slice(Math.max(0, file.size - JPEG_STAART)).arrayBuffer()));
+    }
+  } catch (e) { onvolledig = false; }
   let bm = null;
   try {
     bm = await createImageBitmap(file);
   } catch (e) {
-    return null;
+    return onvolledig ? { w: 0, h: 0, mean: null, onvolledig } : null;
   }
   try {
     const w = bm.width;
     const h = bm.height;
-    if (!w || !h) return null;
+    if (!w || !h) return onvolledig ? { w: 0, h: 0, mean: null, onvolledig } : null;
 
     /* VERKLEIND METEN, en niet op ware grootte. Een foto van 24 megapixel op een
        canvas zetten om het gemiddelde uit te rekenen is honderd megabyte en een
@@ -8243,7 +8445,7 @@ async function meetBeeld(file) {
     cv.width = zij;
     cv.height = zij;
     const ctx = cv.getContext('2d', { willReadFrequently: true });
-    if (!ctx) return { w, h, mean: null };
+    if (!ctx) return { w, h, mean: null, onvolledig };
     ctx.drawImage(bm, 0, 0, zij, zij);
     const d = ctx.getImageData(0, 0, zij, zij).data;
 
@@ -8255,12 +8457,42 @@ async function meetBeeld(file) {
     for (let i = 0; i < d.length; i += 4) {
       som += (0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 255;
     }
-    return { w, h, mean: som / (d.length / 4) };
+    let duim = null;
+    try { duim = await maakDuim(bm); } catch (e) { duim = null; }
+    return { w, h, mean: som / (d.length / 4), onvolledig, duim };
   } catch (e) {
     return null;
   } finally {
     if (bm && typeof bm.close === 'function') bm.close();
   }
+}
+
+/*
+ * ── HET DUIMPJE VOOR /admin — lijst 87 (D13), 9 november 2026 ─────────────────
+ *
+ * /admin laadde voor elk duimpje het volle origineel (tot 25 MB). Nu gaat er bij elke
+ * foto een webp van hoogstens DUIM_PX langs de lange kant mee, gemaakt uit hetzelfde
+ * gedecodeerde beeld als de beeldkeuring, dus zonder een tweede keer te decoderen. Kan
+ * de browser geen webp maken (oudere Safari), dan geen duimpje: /admin toont dan het
+ * origineel, zoals eerst. De server neemt alleen een echte webp tot 256 kB aan
+ * (MAX_DUIM_BYTES in src/lib/uploads.js). De upload wacht hoogstens DUIM_WACHT_MS op
+ * het duimpje; daarna gaat de foto zonder.
+ */
+const DUIM_PX = 480;
+const DUIM_MAX_BYTES = 256 * 1024;   // = MAX_DUIM_BYTES in src/lib/uploads.js
+const DUIM_WACHT_MS = 2500;
+function maakDuim(bm) {
+  if (!bm || !bm.width || !bm.height || typeof document === 'undefined') return Promise.resolve(null);
+  const schaal = Math.min(1, DUIM_PX / Math.max(bm.width, bm.height));
+  const cv = document.createElement('canvas');
+  cv.width = Math.max(1, Math.round(bm.width * schaal));
+  cv.height = Math.max(1, Math.round(bm.height * schaal));
+  const ctx = cv.getContext('2d');
+  if (!ctx || typeof cv.toBlob !== 'function') return Promise.resolve(null);
+  ctx.drawImage(bm, 0, 0, cv.width, cv.height);
+  return new Promise((res) => {
+    cv.toBlob((b) => res(b && b.type === 'image/webp' && b.size > 0 && b.size <= DUIM_MAX_BYTES ? b : null), 'image/webp', 0.8);
+  });
 }
 
 function uploadError(code, body) {
@@ -8439,7 +8671,7 @@ function syncCredits() {
      tegoedregel volgen mee. */
   const mollie = (aan) => {
     qa('[data-pl-mollie]').forEach((el) => { el.hidden = !aan; });
-    if (submit && submit.dataset.plGewoon) submit.textContent = aan ? submit.dataset.plGewoon : (t.submit || submit.dataset.plGewoon);
+    if (submit && submit.dataset.plGewoon) knopTekst(submit, aan ? submit.dataset.plGewoon : (t.submit || submit.dataset.plGewoon));
     if (tegoedEl && tegoedEl.dataset.plGewoon) {
       tegoedEl.textContent = aan
         ? tegoedEl.dataset.plGewoon
@@ -9311,7 +9543,7 @@ function applyVanBestelling(me) {
       const noot = q('textarea[name="message"]');
       const berichtKnop = q('[data-pl-van-bericht]');
       if (noot && berichtKnop && inst.notitie) {
-        berichtKnop.textContent = c('van.berichtKnop', { ref: String(inst.ref || '') });
+        knopTekst(berichtKnop, c('van.berichtKnop', { ref: String(inst.ref || '') }));
         berichtKnop.hidden = false;
         if (!berichtKnop.dataset.plGebonden) {
           berichtKnop.dataset.plGebonden = '1';
@@ -9571,6 +9803,22 @@ function toonMerkkit(lock) {
   }
 }
 
+/* ── ALLEEN HET WOORD VAN HET LABEL — 9 november 2026 (ronde 91, S05) ──────────
+ * labelVan() las `label.textContent`, en in het label van het btw-veld staan ook het sterretje, "optioneel", het
+ * vraagteken (Uitleg.astro: een knop met "?") en de uitleg zelf (het popoverpaneel). De samenvatting werd dan
+ * "Btw-nummer optioneel?Zakelijk in een ander EU-land…: NL…". Nu tellen alleen de tekstknopen die direct in het label
+ * staan — het woord van het veld; alles in een kind-element (verplicht, optioneel, vraagteken, uitleg) valt weg.
+ * Staat het woord zelf in een element, dan een kopie zonder die vier en zonder knoppen en popovers. */
+function labelTekst(lab) {
+  if (!lab) return '';
+  const schoon = (s) => String(s || '').replace(/\*/g, '').replace(/\s+/g, ' ').trim();
+  const kaal = schoon(Array.from(lab.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent).join(' '));
+  if (kaal) return kaal;
+  const kopie = lab.cloneNode(true);
+  kopie.querySelectorAll('.req, .pl-opt, .uitleg-mark, .uitleg-paneel, [popover], button, input, select, textarea').forEach((n) => n.remove());
+  return schoon(kopie.textContent);
+}
+
 /**
  * Step 3, collapsed. Returns false if the page has no summary hooks, in which
  * case the caller falls back to the plain prefill note — every hook in this
@@ -9608,7 +9856,7 @@ function collapseBrief(me) {
   const labelVan = (key) => {
     const input = q(`input[name="${key}"], select[name="${key}"]`);
     const lab = input && input.id ? q(`label[for="${input.id}"]`) : null;
-    return lab ? lab.textContent.replace(/\*/g, '').replace(/\s+/g, ' ').trim() : key;
+    return lab ? (labelTekst(lab) || key) : key;
   };
   const regel = (delen, sep = ' · ') => {
     const t = delen.filter(Boolean).join(sep);
@@ -9877,6 +10125,8 @@ function renderGate(body) {
   }
 
   if (panel === 'ok') renderWindows(body.windows || [], { from: body.from, earlier: body.earlier, more: body.more });
+  /* Ronde 91 (C06): de poort zegt meteen of voorrang nog kan. */
+  if (typeof body.voorrangOpen === 'boolean') zetVoorrangDicht(!body.voorrangOpen);
   gateShow(panel);
 }
 
@@ -10335,6 +10585,9 @@ function renderSummary() {
      blok eronder hoort alleen bij een bestelling MET een leverdatum (ronde 9, F3). */
   const naVenster = q('[data-pl-after-window]');
   if (naVenster) naVenster.hidden = !(attended && ws);
+  /* B31 (8 november 2026): vanaf 10 producten zonder leverdatum gaat de knop niet naar Mollie. */
+  const naGeenVenster = q('[data-pl-after-nowindow]');
+  if (naGeenVenster) naGeenVenster.hidden = !(attended && !ws);
   syncWanneer(attended, ws, we);
   /* 8.06: het merk kan zonder invoer-event zijn ingevuld (opgeslagen gegevens),
      dus de verleggingszin in het zakelijk-vinkje hier nog één keer gelijkzetten. */
@@ -10500,12 +10753,27 @@ function onSubmit(e) {
   e.preventDefault();
   if (busy) return;
 
+  /* 8 november 2026 (doorloop 90, B08): na een fout in de stap waar je al stond, zette show() de focus op de kop
+     en scrolde naar boven, terwijl de melding onderaan bij het vinkje stond. Nu: staat de fout in deze stap, dan
+     blijft validateStep() het laatste woord (het veld in beeld, de melding erbij). Staat hij in een eerdere stap,
+     dan eerst daarheen en daar opnieuw nakijken, zodat de melding in de zichtbare stap staat. */
   for (let i = 1; i <= STEPS; i += 1) {
     if (!validateStep(i)) {
-      show(i);
+      if (i !== current) { show(i); validateStep(i); }
       return;
     }
   }
+
+  /* ── EERST DE FOTO'S DIE NOG ONDERWEG ZIJN — 9 november 2026 (ronde 91, D04) ────────────────────────
+     /api/order hangt de foto's aan de bestelling die OP DAT MOMENT in de opslag staan (listBatch). Wie op
+     een trage verbinding vier foto's koos, meteen doorklikte en in stap 5 op Versturen drukte, kreeg een
+     bestelling zonder één foto: de bedankpagina laadde, de uploads die nog liepen werden afgebroken, en
+     niemand zei iets. Nagespeeld in 91/werk/d/d04-netwerk.mjs (S1): vier vakken op "Versturen…", bestelling
+     met uploads=0. Doorklikken mag nog steeds (de gegevens invullen terwijl de foto's lopen is juist goed);
+     alleen het versturen wacht tot er niets meer onderweg is, met de knop op "Versturen…", en gaat dan
+     vanzelf door. Een foto die onderweg mislukt, wacht niet eeuwig: die staat dan op "mislukt" (zie
+     UPLOAD_STIL_MS) en telt niet meer als onderweg. */
+  if (pendingCount() > 0) { wachtOpFotos(); return; }
 
   busy = true;
   setError('');
@@ -10513,7 +10781,7 @@ function onSubmit(e) {
   if (btn) {
     btn.disabled = true;
     btn.dataset.plLabel = btn.textContent;
-    btn.textContent = c('submit.sending');
+    knopTekst(btn, c('submit.sending'));
   }
   form.classList.add('is-sending');
 
@@ -10521,6 +10789,14 @@ function onSubmit(e) {
   // Here and nowhere else. A hidden input would travel with a no-JS post and
   // hand the client a JSON body where a page should be.
   fd.set('mode', 'json');
+  /* ── DE VERSTUURSLEUTEL EN DE LIJST — 9 november 2026 (ronde 91, D10 en D09) ──────────────────────────
+     Eén sleutel per formulier, bij elke poging dezelfde: komt een herhaalde poging (de klant drukt na een
+     netwerkfout nog eens, of de browser herhaalt de POST zelf) bij /api/order aan, dan krijgt hij de
+     bestelling die er al is en geen tweede. Zie VERSTUUR_SLEUTEL in functions/api/order.js.
+     En de sleutels van de foto's die de klant NU heeft (`staged`): weggehaalde of vervangen foto's waarvan
+     de DELETE mislukte, gaan dan niet alsnog mee. Alleen als er een batch is; zonder batch is er niets. */
+  fd.set('verstuursleutel', verstuurSleutel());
+  if (value('upload_batch')) fd.set('upload_keys', staged.map((x) => x.key).join('\n'));
 
   /* Een ingelogde klant bestelt via /account/order (29 september 2026): alleen
      daar ziet de server de sessie, en dus het tegoed. Zie account.js. */
@@ -10537,6 +10813,30 @@ function onSubmit(e) {
     .catch(() => finishSubmit(0, null));
 }
 
+/** Versturen zodra er geen foto meer onderweg is (zie het blok in onSubmit). */
+function wachtOpFotos() {
+  busy = true;
+  const btn = q('[data-pl-submit]');
+  if (btn) {
+    btn.disabled = true;
+    btn.dataset.plLabel = btn.textContent;
+    knopTekst(btn, c('submit.sending'));
+  }
+  form.classList.add('is-sending');
+  const kijk = () => {
+    if (pendingCount() > 0) { window.setTimeout(kijk, 400); return; }
+    busy = false;
+    form.classList.remove('is-sending');
+    if (btn) {
+      btn.disabled = false;
+      if (btn.dataset.plLabel) knopTekst(btn, btn.dataset.plLabel);
+    }
+    /* Intussen teruggegaan naar een eerdere stap: dan niet alsnog versturen. */
+    if (current === STEPS) onSubmit({ preventDefault() {} });
+  };
+  window.setTimeout(kijk, 400);
+}
+
 function finishSubmit(status, body) {
   const btn = q('[data-pl-submit]');
   const release = () => {
@@ -10544,7 +10844,7 @@ function finishSubmit(status, body) {
     form.classList.remove('is-sending');
     if (btn) {
       btn.disabled = false;
-      if (btn.dataset.plLabel) btn.textContent = btn.dataset.plLabel;
+      if (btn.dataset.plLabel) knopTekst(btn, btn.dataset.plLabel);
     }
   };
 
@@ -10678,10 +10978,15 @@ function finishSubmit(status, body) {
   }
 
   if (status === 400 && body && body.error === 'email') {
-    setError(c('submit.email'));
+    /* 8 november 2026 (doorloop 90, B09): de melding ging in het foutvak van stap 5, en die stap ging meteen
+       dicht; de klant zag alleen een geselecteerd veld. Nu staat de zin bij het veld in stap 3. */
+    setError('');
     show(3);
     const email = q('input[name="email"]');
     if (email) {
+      const anker = email.closest('fieldset, .field, .pl-veld, [data-pl-veldgroep]') || email.closest('label') || email;
+      markeerVeld(anker, c('submit.email'));
+      email.setAttribute('aria-invalid', 'true');
       email.focus();
       email.select && email.select();
     }

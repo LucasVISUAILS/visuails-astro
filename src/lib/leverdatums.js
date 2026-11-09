@@ -7,8 +7,8 @@
  * admin.js), en nu de bestelkaart in Studio ook.
  *
  * DEZELFDE SOM ALS DE LEVERMAIL. De mail rekent vanaf het moment dat hij
- * verstuurd wordt: `nu + REVISIE_DAGEN dagen` en `nu + DELIVERY_DAYS dagen`,
- * als UTC-datum (`toISOString().slice(0, 10)`). Studio rekent met precies die
+ * verstuurd wordt: `nu + REVISIE_DAGEN dagen` en `nu + DELIVERY_DAYS dagen`
+ * (sinds 9 november 2026 als Nederlandse dag; zie leverDatums()). Studio rekent met precies die
  * regel vanaf hetzelfde moment, `orders.delivery_mailed_at` (en zonder die
  * kolom `delivered_at`, dat in dezelfde klik wordt gezet). Zo kan Studio nooit
  * een andere dag noemen dan de mail die de klant in zijn inbox heeft.
@@ -20,6 +20,7 @@
  */
 import { REVISIE_DAGEN } from '../data/pricing.js';
 import { DELIVERY_DAYS } from './retention.js';
+import { nlDag, plusDagen as dagPlus } from './nlDag.js';
 
 const DAG_MS = 86400000;
 
@@ -39,16 +40,29 @@ function moment(basis) {
   return Date.parse(/[zZ]|[+-]\d{2}:?\d{2}$/.test(iso) ? iso : `${iso}Z`);
 }
 
-const plusDagen = (ms, dagen) => new Date(ms + dagen * DAG_MS).toISOString().slice(0, 10);
-
 /**
  * @param {Date|string|null|undefined} basis  het moment van de levermail
  * @returns {null | { revisieTot: string, bewaarTot: string }}  ISO-datums (YYYY-MM-DD)
  */
+/* ── DE NEDERLANDSE DAG, EN DE LAATSTE HELE DAG — 9 november 2026 (ronde 91, C02/C03) ──
+   Hier stonden beide datums als UTC-datum van `moment + n dagen`. Twee fouten:
+   · revisieTot: een levering tussen 00:00 en 01:00/02:00 Nederlandse tijd telde
+     vanaf gisteren, dus "revisie tot en met" viel een dag te vroeg. Nu de
+     Nederlandse dag van de levering plus REVISIE_DAGEN (het stille afronden in
+     src/lib/close.js wacht tot die dag voorbij is).
+   · bewaarTot: de beelden verdwijnen op het MOMENT moment + DELIVERY_DAYS
+     (files.expires_at, stampDeliveryRetention in retention.js), en de zin zegt
+     "tot en met <dag>". Die dag was de dag van dat moment zelf: geleverd om 15:00,
+     dan waren ze op de laatste beloofde dag om 15:00 al weg. Nu de laatste HELE
+     Nederlandse dag vóór dat moment. Aan het wissen verandert niets; alleen de zin
+     wordt waar (Lucas, optie a). */
 export function leverDatums(basis) {
   const ms = moment(basis);
   if (!Number.isFinite(ms)) return null;
-  return { revisieTot: plusDagen(ms, REVISIE_DAGEN), bewaarTot: plusDagen(ms, DELIVERY_DAYS) };
+  return {
+    revisieTot: dagPlus(nlDag(ms), REVISIE_DAGEN),
+    bewaarTot: dagPlus(nlDag(ms + DELIVERY_DAYS * DAG_MS), -1),
+  };
 }
 
 /** Het moment waar de datums van een bestelling vanaf tellen: de levermail. */

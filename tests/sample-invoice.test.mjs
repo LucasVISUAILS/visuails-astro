@@ -271,8 +271,12 @@ console.log('\nde afgebroken proefvisual is geen openstaande vordering');
     return uit;
   };
 
+  /* 9 november 2026 (ronde 91, w6): de strook met tegels is van het dashboard af —
+     die tegels linkten naar dezelfde filters als de chips. De teller daarin was de
+     tweede plek; nu definieert alleen het filter achter de chip "onbetaald", en
+     kunnen chip en lijst dus niet meer uit elkaar lopen. */
   const tellers = na(plat, ONBETAALD);
-  ok('er zijn precies twee plekken die onbetaald definiëren', tellers.length, 2, tellers.join(' || '));
+  ok('er is precies één plek die onbetaald definieert (het filter; de tegels zijn weg)', tellers.length, 1, tellers.join(' || '));
   for (const [i, t] of tellers.entries()) {
     ok(`plek ${i + 1} sluit de proefvisual uit`, t.includes(UITSLUITING), true, t);
   }
@@ -281,7 +285,7 @@ console.log('\nde afgebroken proefvisual is geen openstaande vordering');
      — een proefvisual die geleverd is zonder betaling is geen euro die je gaat
      ophalen maar een gat in het proces, en dat wil je één keer zien. */
   const verlies = na(plat, 'status = delivered AND payment_status != paid AND total_cents > 0');
-  ok('en geleverd-onbetaald staat er twee keer', verlies.length, 2, verlies.join(' || '));
+  ok('en geleverd-onbetaald staat er één keer (het filter; de tegels zijn weg)', verlies.length, 1, verlies.join(' || '));
   for (const [i, t] of verlies.entries()) {
     ok(`plek ${i + 1} sluit de proefvisual juist niet uit`, t.includes(UITSLUITING), false, t);
   }

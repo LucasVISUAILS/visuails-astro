@@ -214,6 +214,8 @@ partij daaruit hieronder staat:
 | Google Ireland Ltd. (Google Workspace) | de mailbox hello@visuails.com, en Google Drive voor de wekelijkse back-up |
 | WhatsApp Ireland Ltd. (Meta) | klantcontact via WhatsApp Business, en bestellingen die Lucas namens een WhatsApp-klant in /admin zet |
 | Google (Business Profile) en Trustpilot | uitsluitend wanneer de klant zelf op een reviewknop klikt; wij sturen daar geen gegevens naartoe |
+| e-Boekhouden.nl B.V. (Nederland) | de boekhouding: naam, bedrijf, adres, e-mail, land, btw-nummer en bedragen van elke factuur (`src/lib/eboekhouden.js`); grondslag fiscale bewaarplicht. Toegevoegd 9 november 2026 (ronde 91, E17) |
+| Europese Commissie (VIES), Brussel | controle van een btw-nummer uit een ander EU-land: alleen land en nummer (`src/lib/vies.js`). Toegevoegd 9 november 2026 |
 
 **Welk AI-model er binnen het platform van de subverwerker wordt gebruikt, staat
 hier niet** — het wisselt. Wél staat sinds 8 oktober 2026 de MAKER erin van de

@@ -94,7 +94,9 @@ console.log('\nde bestelling uit een abonnementsweek');
 {
   const admin = lees('../src/lib/admin.js');
   /* Ronde B: 'plan' en 'credits' heten op het bord allebei "credits". */
-  ok('het bord noemt zo’n bestelling niet onbetaald', /o\.payment_status === 'plan' \? ' · abonnement'|metCreditsBetaald\(o\) \? ' · credits'/.test(admin), true);
+  /* Ronde 91 (w1, 9 november 2026): de lijst Aflopend op de planning (waar " · credits" stond) is weg; de
+     dashboardrij zegt het in de betaalkolom. */
+  ok('het bord noemt zo’n bestelling niet onbetaald', /plan: 'credits', credits: 'credits'/.test(admin), true);
 }
 
 /* ── 4 · DE MAIL BIJ EEN BETAALDE MAAND ─────────────────────────────────── */

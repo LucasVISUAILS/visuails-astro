@@ -29,6 +29,8 @@ const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
 const { db } = verseDb(new URL('../schema.sql', import.meta.url));
 const verstuurd = [];
 globalThis.fetch = async (url, init = {}) => {
+  /* De botcheck (alleen in het stuk met sleutels, lijst 87 A06): Cloudflare zegt ja. */
+  if (String(url).includes('challenges.cloudflare.com')) return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'content-type': 'application/json' } });
   verstuurd.push({ url: String(url), body: init.body ? JSON.parse(init.body) : null });
   return new Response(JSON.stringify({ id: 'x' }), { status: 200, headers: { 'content-type': 'application/json' } });
 };
@@ -37,12 +39,14 @@ const env = {
   RESEND_SEGMENT_NL: 'seg-nl', RESEND_SEGMENT_EN: 'seg-en',
 };
 let ipTeller = 1;
-function post(velden, { referer, ip } = {}) {
+function post(velden, { referer, ip, metSleutels = false } = {}) {
   const f = new FormData();
   for (const [k, v] of Object.entries(velden)) f.set(k, v);
   const headers = new Headers({ 'cf-connecting-ip': ip || `10.0.0.${ipTeller++}` });
   if (referer) headers.set('Referer', referer);
-  return onRequestPost({ request: new Request('https://visuails.com/api/studiobrief', { method: 'POST', body: f, headers }), env });
+  const e = metSleutels ? { ...env, TURNSTILE_SITE_KEY: '0x4AAAAAAAverzonnen', TURNSTILE_SECRET_KEY: '0x4AAAAAAAgeheimverzonnen' } : env;
+  if (metSleutels) f.set('turnstile', 'goed-token');
+  return onRequestPost({ request: new Request('https://visuails.com/api/studiobrief', { method: 'POST', body: f, headers }), env: e });
 }
 const rij = (email) => db.prepare('SELECT email, source FROM subscribers WHERE email = ?').get(email);
 
@@ -88,8 +92,12 @@ console.log('\n4 · wat niet mag');
   ok('een kapot adres: 400', res.status, 400);
   const ip = '10.9.9.9';
   const codes = [];
-  for (let i = 0; i < 6; i++) codes.push((await post({ email: `r${i}@x.test`, lang: 'nl', mode: 'json' }, { ip })).status);
-  ok('de zesde binnen tien minuten: 429', codes, [200, 200, 200, 200, 200, 429]);
+  for (let i = 0; i < 6; i++) codes.push((await post({ email: `r${i}@x.test`, lang: 'nl', mode: 'json' }, { ip, metSleutels: true })).status);
+  ok('met een goedgekeurde botcheck: de zesde binnen tien minuten is 429', codes, [200, 200, 200, 200, 200, 429]);
+  /* Lijst 87 (A06): zonder Turnstile-sleutels geldt de strenge grens, 2 per 10 minuten. */
+  const zonder = [];
+  for (let i = 0; i < 3; i++) zonder.push((await post({ email: `z${i}@x.test`, lang: 'nl', mode: 'json' }, { ip: '10.9.9.10' })).status);
+  ok('zonder sleutels: de derde binnen tien minuten is al 429', zonder, [200, 200, 429]);
 }
 
 console.log('\n5 · zonder JavaScript: terug naar dezelfde pagina');

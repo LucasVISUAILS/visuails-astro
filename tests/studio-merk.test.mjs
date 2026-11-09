@@ -57,7 +57,7 @@ console.log('\nde iconen');
   const lijn = (acc.match(/^const ICON_\w+ = '<svg[^\n]*';$/gm) || []).map((r) => r.slice(6, r.indexOf(' =')));
   ok('Studio: geen lijniconen meer behalve zon en maan (die nergens staan)', lijn.sort().join(',') === 'ICON_MAAN,ICON_ZON', lijn.join(','));
   ok('  de navigatie uit het kit', /const ICON_OVERVIEW = ikoon\('raster', 'i'\);/.test(acc) && /const ICON_DETAILS = ikoon\('persoon', 'i'\);/.test(acc) && /const ICON_CHECK = ikoon\('oog', 'i'\);/.test(acc));
-  ok('  ook uitloggen', /ikoon\('pijl', 'st-uit-ik'\)/.test(lees('src/layouts/StudioLayout.astro')) && !/stroke-width="1\.7"/.test(lees('src/layouts/StudioLayout.astro')));
+  ok('  ook uitloggen', /ikoon\('uitloggen', 'st-uit-ik'\)/.test(lees('src/layouts/StudioLayout.astro')) /* knoppensysteem lijst 88/89: uitloggen heeft een eigen icoon (lijst 89) */ && !/stroke-width="1\.7"/.test(lees('src/layouts/StudioLayout.astro')));
 }
 
 console.log('\nhet vinkje dat goedkeurt');

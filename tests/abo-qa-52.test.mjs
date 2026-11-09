@@ -149,7 +149,8 @@ ok('bij een abonnement dat gewoon loopt doet de knop niets', [r.headers.get('loc
 /* ── A · ABONNEES ──────────────────────────────────────────────────────── */
 console.log('\nA · Abonnees in /admin');
 pagina = await admin('/admin/abonnees');
-ok('/admin/abonnees staat in het menu', /<a class="bar-link" href="\/admin\/abonnees">Abonnees<\/a>/.test(await admin('/admin')), true);
+/* Ronde 91 (w8): Abonnees is sinds 9 november 2026 een tab van Klanten, niet meer een eigen menuregel. */
+ok('/admin/abonnees staat als tab op de klantenpagina', /<a class="fl-chip" href="\/admin\/abonnees">Abonnees<\/a>/.test(await admin('/admin/customers')), true);
 ok('  de pagina laadt, met de telling', /<h1>Abonnees<\/h1>/.test(pagina) && /lopend<\/span>/.test(pagina) && /per maand, excl\. btw/.test(pagina), true);
 const volgorde = [...pagina.matchAll(/admin\/customers\/(\d+)#abonnement/g)].map((m) => Number(m[1]));
 ok('  wat geld kost staat bovenaan (de mislukte incasso, het abonnement zonder incasso)', volgorde.slice(0, 2).sort(), [3, 4]);

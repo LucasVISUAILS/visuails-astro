@@ -70,12 +70,16 @@ import { vatFormatOk } from '../../src/data/vat.js';
 
 const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s || ''));
 
-function terug(reden, lang) {
+function terug(reden, lang, land = '') {
   const pad = lang === 'en' ? '/start/plan' : '/nl/start/plan';
+  /* 8 november 2026 (doorloop 90, B25): terug met ?fout=account stond het land weer op Nederland (de voorzet),
+     terwijl de rest was ingevuld. Wie daarna inlogde en doorging, betaalde ongemerkt 21% btw. Het land reist
+     nu mee, en het formulier zet het terug (PlanPicker, "HET LAND UIT DE URL"). */
+  const metLand = /^[A-Z]{2}$/.test(String(land || '')) ? `&land=${land}` : '';
   return new Response(null, {
     status: 303,
     headers: {
-      Location: `${pad}?fout=${encodeURIComponent(reden)}`,
+      Location: `${pad}?fout=${encodeURIComponent(reden)}${metLand}`,
       'cache-control': 'no-store',
       'referrer-policy': 'same-origin',
     },
@@ -194,7 +198,7 @@ export async function onRequestPost(context) {
     const postcode = tekst(form.get('postal_code'), 24);
     const stad = tekst(form.get('city'), 80);
     const adres = [straat, [postcode, stad].filter(Boolean).join(' ')].filter(Boolean).join('\n');
-    if (!straat || !postcode || !stad || land.length !== 2) return terug('gegevens', lang);
+    if (!straat || !postcode || !stad || land.length !== 2) return terug('gegevens', lang, land);
 
     /* ── DE VORM VAN HET BTW-NUMMER — 12 september 2026 ─────────────────────
        Dezelfde controle als op het bestelformulier (zie de noot bij vatShape()
@@ -207,7 +211,7 @@ export async function onRequestPost(context) {
        oordelen valt — geen nummer, of een land buiten de EU — en dat is geen
        reden om iemand terug te sturen. Het btw-nummer is op dit formulier
        optioneel; alleen een ingevuld nummer dat niet klopt, klopt niet. */
-    if (vatFormatOk(land, btw) === false) return terug('btw', lang);
+    if (vatFormatOk(land, btw) === false) return terug('btw', lang, land);
 
     /* ── EEN BESTAAND ADRES LOGT EERST IN — 19 oktober 2026 ──────────────────
        Hier liep tot vandaag ook een bestaande klant door, alleen op zijn e-mailadres.
@@ -222,7 +226,7 @@ export async function onRequestPost(context) {
     const bestaand = env.DB
       ? await env.DB.prepare('SELECT id FROM customers WHERE lower(email) = ?1').bind(email).first().catch(() => null)
       : null;
-    if (bestaand) return terug('account', lang);
+    if (bestaand) return terug('account', lang, land);
 
     let id = null;
     try {

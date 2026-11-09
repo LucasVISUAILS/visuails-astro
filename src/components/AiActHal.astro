@@ -6,7 +6,7 @@
  * alleen de omhulling is JuridischHal.astro, zoals bij de vier andere juridische documenten.
  */
 import JuridischHal from './JuridischHal.astro';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import NieuwTabblad from './NieuwTabblad.astro';
 import { waHref } from '../data/whatsapp.js';
 // VISUAILS — /ai-act. Rewritten 3 August 2026 from copy supplied by Lucas,
@@ -221,7 +221,7 @@ const COPY = {
     s3Items: [
       ['A ready-made sentence', 'One sentence to place under your product gallery, in your product information block or with a post, in English and Dutch. In English: “This image was created with AI from photographs of the actual product.” For a video, write “video” instead of “image”. You are free to word it differently, as long as a reader meets it at the same moment they meet the image.'],
       ['A marking in the file', `In the photos and videos we deliver we write the IPTC property DigitalSourceType, with the value ${tagNaam(LEVERTAG)}: a machine-readable line saying the image was ${TAG_WOORD[LEVERTAG].en}. Platforms and search engines can read it. If a delivered file is missing the marking, tell us and we deliver it again, with the marking. What the marking does not do is set out below, under “What we do not claim”.`],
-      ['An approval record per order', 'On an order, you approve or request a revision on each image individually in your portal, and every one of those decisions is stored against that image with the date it was made. If somebody later asks where an image came from and who signed it off, it is there and you can read it back from your own link.'],
+      ['An approval record per order', 'On an order, you approve or request a revision on each image individually in VISUAILS Studio, and every one of those decisions is stored against that image with the date it was made. If somebody later asks where an image came from and who signed it off, it is there and you can read it back in VISUAILS Studio or on your order page.'],
       ['A written summary on request', 'Source files supplied, visuals produced, dates, and confirmation that every image was checked before delivery. We write that summary ourselves. There is no button here that generates one, and we are not going to imply there is.'],
     ],
 
@@ -239,10 +239,10 @@ const COPY = {
       'Which is why we work the way we do:',
     ],
     s4Items: [
-      ['Real photographs of the front, the back and one close-up are required.', 'We do not invent your product, we re-photograph it — and a catalog set delivers a back image and a detail, so we ask for them rather than guess at a print, a seam or a logo you cannot see from the front.'],
+      ['Real photographs of the front, the back and one close-up are required.', 'We do not invent your product, we rebuild it from your photos — and a catalog set delivers a back image and a detail, so we ask for them rather than guess at a print, a seam or a logo you cannot see from the front.'],
       ['We ask about the material.', '100% cotton falls differently from polyester, and leather catches light differently. That has to be visible.'],
-      ['A worn shot is optional.', 'It makes fit and drape more accurate. Without one, the on-model photo is read from your flat photographs.'],
-      ['You approve every image', 'before it leaves your order.'],
+      ['A worn shot is optional.', 'It makes fit and drape more accurate. Without one, we build the on-model photo from your flat photographs.'],
+      ['You approve every image', 'before your order is completed.'],
     ],
 
     s5H: 'What you do when you publish',
@@ -332,7 +332,7 @@ const COPY = {
     s3Items: [
       ['Een kant-en-klare zin', 'Eén zin die je onder je productgalerij, in je productinfo-blok of bij een post plaatst, in het Nederlands en het Engels. In het Nederlands: “Dit beeld is met AI gemaakt op basis van foto’s van het echte product.” Bij een video zet je “video” in plaats van “beeld”. Je mag het anders formuleren, zolang een lezer het tegenkomt op hetzelfde moment als het beeld.'],
       ['Een markering in het bestand', `In de foto’s en video’s die we leveren zetten we de IPTC-eigenschap DigitalSourceType, met de waarde ${tagNaam(LEVERTAG)}: een machineleesbare regel die zegt dat het beeld ${TAG_WOORD[LEVERTAG].nl} is. Platforms en zoekmachines kunnen die lezen. Mist een geleverd bestand de markering, laat het ons weten; dan leveren we het opnieuw, met markering. Wat die markering níét doet, staat hieronder bij “Wat wij níét beweren”.`],
-      ['Een goedkeuringsdossier per bestelling', 'Bij een bestelling keur je in je portaal elk beeld afzonderlijk goed of vraag je een revisie aan, en elk van die beslissingen wordt bij dat beeld vastgelegd met de datum. Vraagt iemand later waar een beeld vandaan komt en wie het heeft geaccordeerd, dan staat het er en kun je het teruglezen via je eigen link.'],
+      ['Een goedkeuringsdossier per bestelling', 'Bij een bestelling keur je in VISUAILS Studio elk beeld afzonderlijk goed of vraag je een revisie aan, en elk van die beslissingen wordt bij dat beeld vastgelegd met de datum. Vraagt iemand later waar een beeld vandaan komt en wie het heeft geaccordeerd, dan staat het er en kun je het teruglezen in VISUAILS Studio of op je bestelpagina.'],
       ['Op verzoek een schriftelijk overzicht', 'Aangeleverde bronbestanden, geproduceerde beelden, data, en de bevestiging dat elk beeld vóór levering is gecontroleerd. Dat overzicht schrijven we zelf. Er zit hier geen knop die er een genereert, en we doen ook niet alsof.'],
     ],
 
@@ -350,10 +350,10 @@ const COPY = {
       'Daarom werken we zoals we werken:',
     ],
     s4Items: [
-      ['Echte foto’s van de voorkant, de achterkant en één close-up zijn verplicht.', 'We verzinnen je product niet, we fotograferen het opnieuw — en een catalogset levert een achterkantbeeld en een detail, dus vragen we die in plaats van te gokken naar een print, een naad of een logo dat je van voren niet ziet.'],
+      ['Echte foto’s van de voorkant, de achterkant en één close-up zijn verplicht.', 'We verzinnen je product niet, we maken het na vanuit jouw foto’s — en een catalogset levert een achterkantbeeld en een detail, dus vragen we die in plaats van te gokken naar een print, een naad of een logo dat je van voren niet ziet.'],
       ['We vragen naar het materiaal.', '100% katoen valt anders dan polyester, en leer vangt anders licht. Dat moet je zien.'],
-      ['Een draagfoto is optioneel.', 'Die maakt pasvorm en val nauwkeuriger. Zonder draagfoto lezen we de foto op model uit je platte foto’s.'],
-      ['Jij keurt elk beeld goed', 'voordat het je bestelling verlaat.'],
+      ['Een draagfoto is optioneel.', 'Die maakt pasvorm en val nauwkeuriger. Zonder draagfoto maken we de foto op model op basis van je platte foto’s.'],
+      ['Jij keurt elk beeld goed', 'voordat je bestelling wordt afgerond.'],
     ],
 
     s5H: 'Wat jij doet als je publiceert',
@@ -372,7 +372,7 @@ const COPY = {
     s6Items: [
       ['Wij zijn geen juristen.', 'Deze pagina is informatie, geen juridisch advies.'],
       ['Onze controle stelt je beelden niet vrij van de vermelding.', 'De uitzondering voor menselijke controle in de wet geldt voor tekst over zaken van algemeen belang, niet voor beeld. Wie anders beweert, heeft de tekst niet gelezen.'],
-      ['Het EU-icoon gebruiken maakt je niet automatisch compliant.', 'Het is een hulpmiddel uit de praktijkcode die de Commissie toereikend vond, geen keurmerk. Je mag het gebruiken; verplicht is het niet. De vermelding zelf is dat wel.'],
+      ['Met het EU-icoon voldoe je nog niet automatisch aan de wet.', 'Het is een hulpmiddel uit de praktijkcode die de Commissie toereikend vond, geen keurmerk. Je mag het gebruiken; verplicht is het niet. De vermelding zelf is dat wel.'],
       ['Een bestand wijst zichzelf niet betrouwbaar aan.', `De markering die wij zetten is een hulpmiddel, geen garantie. Elk programma dat een beeld opnieuw opslaat of omzet, bijvoorbeeld naar WebP, kan haar verwijderen, en daarmee ook wat de aanbieder van het AI-model er zelf in had gezet. Die aanbieders moeten hun eigen markering sinds ${wetDatum('art50Geldt', 'nl')} op orde hebben; wie zijn systeem al vóór die datum op de markt had, heeft tot ${wetDatum('markeringTot', 'nl')}. Reken er dus niet op dat een bestand zichzelf aanwijst. De vermelding die telt, is de zichtbare, die jij plaatst.`],
       ['Wij beweren niet dat de plicht daarmee alleen bij jou ligt.', 'Onze voorwaarden regelen wie wát doet. Welke partij de wet als gebruiksverantwoordelijke aanwijst, bepaalt de wet en niet ons contract — en daarom doen wij onze kant ook echt.'],
       ['Marktplaatsen hebben eigen beeldregels.', 'Zalando, Amazon, bol en About You stellen soms strengere eisen dan de wet, met name aan de hoofdafbeelding. Die controleer je zelf voor je eigen kanalen — we denken graag mee.'],
@@ -542,8 +542,8 @@ const waLink = waHref(c.waText);
     <h2 data-niet-in-inhoud>{c.ctaH}</h2>
     <p>{c.ctaP}</p>
     <p class="h-acties">
-      <a class="h-knop h-knop-inkt" href={lp('/contact')}>{c.ctaBtn}<span class="o" aria-hidden="true" set:html={ikoon('pijl')} /></a>
-      <a class="h-knop h-knop-lijn" href={waLink} target="_blank" rel="noopener">{c.wa}<NieuwTabblad lang={lang} /></a>
+      <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/contact')}>{c.ctaBtn}<Fragment set:html={rolIkoon('navigeren')} /></a>
+      <a class="h-knop k k-lijn" data-rol="contact" href={waLink} target="_blank" rel="noopener">{c.wa}<NieuwTabblad lang={lang} /></a>
     </p>
   </div>
 </JuridischHal>

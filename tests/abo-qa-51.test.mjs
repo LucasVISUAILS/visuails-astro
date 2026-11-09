@@ -125,8 +125,8 @@ ok('plafondInZicht: 780 boven 135, met de overstap erbij', inZicht.map((x) => [x
 const { tasks } = await import('../cron/index.js');
 mails.length = 0;
 await tasks.herinnerCredits(env, zevenVoor);
-const pm = mails.find((m) => /gebruik er vóór die dag 780/.test(m.subject || ''));
-ok('de plafondmail: onderwerp met 45 en 780', !!pm && /komen er 45 credits bij/.test(pm.subject), true);
+const pm = mails.find((m) => /^Gebruik 780 credits vóór /.test(m.subject || ''));
+ok('de plafondmail: onderwerp met 780 (lijst 87, e06: kort, de 45 staat in de tekst)', !!pm && pm.subject.length <= 60, true);
 ok('  en de tekst noemt de overstap en het nieuwe plafond', !!pm && /gaat je overstap naar Starter in: dan komen er 45 bij en kun je er 135 sparen/.test(pm.html), true);
 
 /* ── A03 · DE TERMIJN VAN DE OVERSTAP ───────────────────────────────────── */

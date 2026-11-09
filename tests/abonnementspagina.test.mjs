@@ -268,7 +268,9 @@ mails.length = 0;
 const regel = await tasks.pauzeVraag(env);
 ok('de nachttaak meldt het in het rapport', /SUB-OUD/.test(regel) && !/SUB-KORT/.test(regel), true);
 ok('de klant krijgt "hervatten of opzeggen?"', mails.filter((m) => /hervatten of opzeggen\?/.test(m.subject)).length, 1);
-ok('  met een link naar de abonnementspagina', mails.some((m) => /\/nl\/account\/plan/.test(m.html)), true);
+/* Ronde 91 (9 november 2026, E05): /nl/account/plan was een 301 die de taal liet vallen; nu rechtstreeks
+   naar /account/plan met ?lang=nl (studioUrl in src/lib/studioLink.js). */
+ok('  met een link naar de abonnementspagina', mails.some((m) => /\/account\/plan\?lang=nl/.test(m.html)), true);
 ok('pauze_vraag_at is gezet', !!db.prepare('SELECT pauze_vraag_at FROM subscriptions WHERE id = 3').get().pauze_vraag_at, true);
 mails.length = 0;
 ok('de volgende nacht: niets', [await tasks.pauzeVraag(env), mails.length], ['', 0]);

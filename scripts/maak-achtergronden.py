@@ -208,7 +208,7 @@ BEELDEN = {
     'klip-campaign':     lambda i: licht(i, 'custom-models-01.webp', 'stroom', x=.50, W=900, H=1100, sterkte=.38),
     'klip-lifestyle':    lambda i: licht(i, 'lifestyle-dunes-02.webp', 'stroom', x=.50, W=900, H=1100, sterkte=.38),
     'klip-motion':       lambda i: licht(i, 'banners-01.webp', 'stroom', x=.50, W=900, H=1100, sterkte=.38),
-    'hooks':             lambda i: licht(i, 'banners-05.webp', 'stroom', x=.84),
+    'hooks':             lambda i: licht(i, 'banners-12.webp', 'stroom', x=.84),   # lijst 87 (E13): was banners-05 ("STUDIO 95"); achter/hooks.webp is niet opnieuw gemaakt
 }
 
 if __name__ == '__main__':

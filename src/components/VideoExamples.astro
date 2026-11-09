@@ -53,7 +53,8 @@ const items = examplesFor(slug);
 
 const T = nl ? {
   pil: 'Clips',
-  h: `${name} in beweging`,
+  /* "Motion in motion" (doorloop 90, S7): bij de stijl Motion alleen "In beweging". */
+  h: /motion|beweging/i.test(name) ? 'In beweging' : `${name} in beweging`,
   lead: 'Klik om af te spelen.',
   soonLabel: 'Nog niet opgenomen',
   soonBody: 'Komt eraan:',
@@ -65,7 +66,7 @@ const T = nl ? {
   folderNote: 'Ze zitten in de map van je bestelling, naast de foto’s, met een nummer vooraan zodat je verkenner ze in deze volgorde zet. De LEESMIJ in die map legt de rest uit.',
 } : {
   pil: 'Clips',
-  h: `${name} in motion`,
+  h: /motion/i.test(name) ? 'See it move' : `${name} in motion`,
   lead: 'Click to play.',
   soonLabel: 'Not filmed yet',
   soonBody: 'Coming:',
@@ -96,7 +97,7 @@ const kopId = `vx-${slug}`;
     <header class="h-sec-kop h-in">
       <div>
         <p class="h-pil"><span>{T.pil}</span></p>
-        <h2 id={kopId} class="h-kop h-h2"><span class="l">{name}</span> {T.h.slice(name.length).trim()}.</h2>
+        <h2 id={kopId} class="h-kop h-h2">{T.h.startsWith(name) ? <><span class="l">{name}</span> {T.h.slice(name.length).trim()}.</> : <><span class="l">{T.h}</span>.</>}</h2>
       </div>
       {ietsTeSpelen && <p class="h-vs-kopzin">{T.lead}</p>}
     </header>

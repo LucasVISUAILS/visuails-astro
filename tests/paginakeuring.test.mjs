@@ -132,7 +132,8 @@ for (const f of paginas) {
   if (!/name="description"\s+content="[^"]{20,}"/.test(html)) mist.push('description');
   if (!/property="og:title"/.test(html)) mist.push('og:title');
   if (!/property="og:image"/.test(html)) mist.push('og:image');
-  if (!/rel="canonical"/.test(html)) mist.push('canonical');
+  /* de 404 heeft bewust geen canonical (lijst 87, r90-s2): een foutpagina hoort niet in de zoekmachine */
+  if (!/rel="canonical"/.test(html) && !/(^|\/)404\.html$/.test(naam)) mist.push('canonical');
   if (!/<html[^>]*\slang="/.test(html)) mist.push('lang');
   if (mist.length) meta.push(`${naam} → mist ${mist.join(', ')}`);
 }

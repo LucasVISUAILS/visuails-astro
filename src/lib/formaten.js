@@ -32,7 +32,17 @@
  * de €1-proef (een proef is één beeld om de look te zien; zie de vraag in het
  * verslag van K5), niet bij een ingetrokken levering. De privélink krijgt ze
  * niet: daar is geen account om het verzoek aan te hangen.
+ *
+ * ── EN SINDS 9 NOVEMBER 2026 OOK OP DE BESTELPAGINA (ronde 91, K-03) ─────────
+ * Die laatste zin klopte niet meer: de tabel hangt aan de BESTELLING (migratie
+ * 0065), niet aan een account. Lucas koos in lijst 85 (A3) dat alles over één
+ * bestelling op de privélink kan; portal.js toont nu dezelfde knoppen
+ * (formaatView) en zet het verzoek met vraagFormaatAan(), met het token als bewijs.
+ * De mail na "Klaar" wijst daarom ook naar de bestelpagina.
  */
+
+import { mintToken, hashToken, portalUrl } from './token.js';
+import { studioUrl } from './studioLink.js'; // ronde 91, E05
 
 export const FORMATEN = ['png', 'webp'];
 
@@ -228,14 +238,17 @@ const MAIL = {
   nl: {
     onderwerp: (f, ref) => `Je ${NAAM[f]}-bestanden staan klaar — ${ref}`,
     kop: (f) => `Je ${NAAM[f]}-bestanden staan klaar`,
-    tekst: (f) => `De beelden van deze bestelling staan nu ook als ${NAAM[f]} in je download, naast de JPG's. Dezelfde map, dezelfde bestandsnamen.`,
-    knop: 'Naar je bestelling in Studio',
+    tekst: (f) => `De beelden van deze bestelling staan nu ook als ${NAAM[f]} in je download, naast de JPG’s. Dezelfde map, dezelfde bestandsnamen.`,
+    knop: 'Naar je bestelling in VISUAILS Studio',
+    /* K-03: met een link naar de bestelpagina (zie formaatMail()). */
+    knopPagina: 'Naar je bestelpagina',
   },
   en: {
     onderwerp: (f, ref) => `Your ${NAAM[f]} files are ready — ${ref}`,
     kop: (f) => `Your ${NAAM[f]} files are ready`,
     tekst: (f) => `The images of this order are now also in your download as ${NAAM[f]}, next to the JPGs. Same folder, same file names.`,
-    knop: 'Go to your order in Studio',
+    knop: 'Go to your order in VISUAILS Studio',
+    knopPagina: 'Go to your order page',
   },
 };
 export async function formaatMail(env, id, { origin = 'https://visuails.com', sendMail, mail } = {}) {
@@ -251,7 +264,18 @@ export async function formaatMail(env, id, { origin = 'https://visuails.com', se
   /* /account/orders?order=<id>, zoals elke andere link naar één bestelling in Studio;
      /account/orders/<id> bestaat alleen voor POST (gemeten: 404). */
   const oid = Number(r.order_id);
-  const href = `${origin}/account/orders?order=${oid}${lang === 'en' ? '&lang=en' : ''}#order-${oid}`;
+  /* K-03 (9 november 2026): naar de bestelpagina (een eigen link, zoals elke
+     aankondigingsmail: de database kent alleen hashes), daar staat de download. Lukt
+     dat niet, dan zoals voorheen naar de bestelling in Studio. */
+  /* Met de taal, ook voor NL (ronde 91, E05): zonder ?lang= koos Studio de browsertaal. */
+  let href = studioUrl(origin, `/orders?order=${oid}#order-${oid}`, lang);
+  let knop = t.knop;
+  try {
+    const token = mintToken();
+    await env.DB.prepare('INSERT INTO order_tokens (order_id, token_hash) VALUES (?1, ?2)').bind(oid, await hashToken(token)).run();
+    href = portalUrl(token, origin);
+    knop = t.knopPagina;
+  } catch { /* dan Studio */ }
   try {
     await sendMail(env, {
       to: r.email,
@@ -264,7 +288,7 @@ export async function formaatMail(env, id, { origin = 'https://visuails.com', se
           mail.h1(t.kop(r.formaat), mail.kenmerk ? mail.kenmerk('bestelling', r.ref, lang) : mail.esc(r.ref)),
           mail.p(mail.greeting(r.name, lang)),
           mail.p(mail.esc(t.tekst(r.formaat))),
-          mail.button(href, t.knop),
+          mail.button(href, knop),
           mail.vragen(lang, r.ref),
         ].join(''),
       }),

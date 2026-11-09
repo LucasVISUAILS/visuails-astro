@@ -141,15 +141,21 @@ const aGet = (pad) => adminGet({ request: new Request(`https://visuails.com${pad
 const aPost = (pad, velden) => adminPost({ request: new Request(`https://visuails.com${pad}`, { method: 'POST', headers: { cookie: `vis_admin=${adminToken}`, origin: 'https://visuails.com' }, body: new URLSearchParams(velden) }), env, waitUntil() {} });
 {
   let html = await (await aGet('/admin/formaten')).text();
-  ok('de pagina staat in het menu, als actieve pagina', /<span class="bar-link is-active" aria-current="page">Formaten<\/span>/.test(html));
-  ok('  en op andere pagina\'s als link', /<a class="bar-link" href="\/admin\/formaten">Formaten<\/a>/.test(await (await aGet('/admin/proef')).text()));
+  /* Ronde 91 (w8, 9 november 2026): Formaten staat niet meer in het menu; je komt er via Nu doen
+     (de regel "PNG/WebP gevraagd"). De pagina heet zo in de kruimel. */
+  ok('de pagina heet "Formaten" in de kruimel', /<i aria-hidden="true">\/<\/i><b>Formaten<\/b>/.test(html));
+  ok('  en staat niet meer in het menu', !/<a class="bar-link" href="\/admin\/formaten">/.test(await (await aGet('/admin/proef')).text()));
   ok('open: VIS-TEST-0501 twee keer, met link naar de bestelling', (html.match(/href="\/admin\/orders\/501\/files">VIS-TEST-0501</g) || []).length === 2);
   ok('  per formaat, met het aantal geleverde beelden', /<strong>PNG<\/strong>/.test(html) && /<strong>WebP<\/strong>/.test(html) && /<span class="meta">3 beelden<\/span>/.test(html));
   /* Doorloop 27 (B31): Klaar mailt de klant meteen, dus heet de knop zo. */
-  ok('  met een knop Klaar per rij', (html.match(/>Klaar en klant mailen<\/button>/g) || []).length === 2);
+  // knoppensysteem lijst 88/89: de knop draagt de pijl van Doorgaan
+  ok('  met een knop Klaar per rij', (html.match(/>Klaar en klant mailen(?:<svg[^]*?<\/svg>)?<\/button>/g) || []).length === 2);
   ok('telOpenFormaten: 2', await telOpenFormaten(env) === 2);
   const dash = await (await aGet('/admin')).text();
-  ok('het dashboard heeft de chip "Formaten · 2"', /href="\/admin\/formaten">Formaten &middot; 2 &rarr;<\/a>/.test(dash));
+  /* 9 november 2026 (ronde 91, w1): open PNG/WebP-verzoeken staan in Nu doen, één regel per bestelling
+     met een knop naar /admin/formaten; de losse chip komt alleen nog als die lijst niet te lezen was. */
+  ok('Nu doen op het dashboard heeft de regel voor VIS-TEST-0501 met de knop naar /admin/formaten', /<li class="nd-regel[^"]*"[^>]*>[\s\S]*?VIS-TEST-0501[\s\S]*?href="\/admin\/formaten"[\s\S]*?<\/li>/.test(dash));
+  ok('  en geen losse chip "Formaten · 2" meer ernaast', /href="\/admin\/formaten">Formaten &middot; 2 &rarr;<\/a>/.test(dash) === false);
   const id = db.prepare("SELECT id FROM formaat_verzoeken WHERE order_id = 501 AND formaat = 'png'").get().id;
   const r = await aPost('/admin/formaten', { id: String(id) });
   ok('Klaar: 303 terug met een melding', r.status === 303 && r.headers.get('location') === '/admin/formaten?klaar=1&mail=ok');
@@ -161,7 +167,7 @@ const aPost = (pad, velden) => adminPost({ request: new Request(`https://visuail
   ok('  nog een keer: de datum blijft', db.prepare('SELECT klaar_at FROM formaat_verzoeken WHERE id = ?').get(id).klaar_at === '2026-10-12 08:00:00');
   ok('  in het logboek', telling(db, "SELECT COUNT(*) FROM admin_log WHERE action = 'formaat.klaar'") >= 1);
   html = await (await aGet('/admin/formaten?klaar=1')).text();
-  ok('na Klaar: één open, één onder Geleverd', (html.match(/>Klaar en klant mailen<\/button>/g) || []).length === 1 && /<h2>Geleverd<\/h2>/.test(html) && /geleverd 2026-10-12 08:00/.test(html));
+  ok('na Klaar: één open, één onder Geleverd', (html.match(/>Klaar en klant mailen(?:<svg[^]*?<\/svg>)?<\/button>/g) || []).length === 1 && /<h2>Geleverd<\/h2>/.test(html) && /geleverd 2026-10-12 08:00/.test(html));
   ok('  met "klant gemaild" erbij, geen tweede mailknop', /klant gemaild/.test(html) && !/>Klant mailen<\/button>/.test(html));
   const lijst = await formatenLijst(env);
   ok('formatenLijst: open en klaar apart', lijst.open.length === 1 && lijst.klaar.length === 1);
@@ -177,14 +183,16 @@ console.log('\nde kaart en de leesmij');
   const kaart = lees('src/components/studio/Bestelling.astro');
   const blok = kaart.slice(kaart.indexOf('{v.formaten && ('), kaart.indexOf('</form>', kaart.indexOf('{v.formaten && (')));
   ok('Bestelling.astro: een gewoon formulier (method post) naar v.formaten.action', /<form class="st-formaten" id=\{v\.formaten\.id\} method="post" action=\{v\.formaten\.action\}>/.test(blok));
-  ok('  twee submitknoppen met name="formaat"', /<button class="btn btn-2nd btn-sm" type="submit" name="formaat" value=\{k\.formaat\}>/.test(blok));
+  ok('  twee submitknoppen met name="formaat"', /<button class="btn btn-2nd btn-sm" data-rol="downloaden" type="submit" name="formaat" value=\{k\.formaat\}/.test(blok));  // knoppensysteem lijst 88/89: downloaden, met de pijl in de bak
   ok('  geen script', !/<script|onclick|addEventListener/.test(blok));
   ok('studio.css heeft de stijl', /\.st-formaten \{/.test(lees('src/styles/studio.css')) && /\.st-formaat-staat \{/.test(lees('src/styles/studio.css')));
-  ok('de privélink krijgt ze niet', !/formaten\.js|st-formaten|\/formaat\b/.test(lees('src/lib/portal.js')));
+  /* 9 november 2026 (ronde 91, K-03): Lucas koos in lijst 85 (A3) dat de privélink dé
+     bestelpagina wordt, met ook PNG/WebP aanvragen. Hier stond "de privélink krijgt ze niet". */
+  ok('de privélink (bestelpagina) krijgt ze ook, met dezelfde functies (K-03)', /from '\.\/formaten\.js'/.test(lees('src/lib/portal.js')) && /vraagFormaatAan\(env, order\.order_id, f\)/.test(lees('src/lib/portal.js')));
   const entries = [{ name: 'VISUAILS-VIS-TEST-0501/VIS-TEST-0501-p1-voorkant.jpg', bytes: 900000 }];
   const nl = deliveryReadme({ order: { ref: 'VIS-TEST-0501', brand: 'Voorbeeldlabel', lang: 'nl', service: 'catalog' }, entries });
   const en = deliveryReadme({ order: { ref: 'VIS-TEST-0501', brand: 'Voorbeeldlabel', lang: 'en', service: 'catalog' }, entries });
-  ok('LEESMIJ: één zin dat PNG of WebP in Studio aan te vragen is', /Ook PNG of WebP nodig\? Vraag het aan bij deze bestelling in Studio,\r\nop visuails\.com\/account\./.test(nl));
+  ok('LEESMIJ: één zin dat PNG of WebP in Studio aan te vragen is', /Ook PNG of WebP nodig\? Vraag het aan bij deze bestelling in\r\nVISUAILS Studio, op visuails\.com\/account\./.test(nl));
   ok('README: dezelfde zin in het Engels', /Need PNG or WebP as well\? Request it on this order in Studio, at\r\nvisuails\.com\/account\./.test(en));
   ok('  niet als png en webp er al in zitten', !/Ook PNG of WebP/.test(deliveryReadme({ order: { ref: 'X', lang: 'nl', service: 'catalog' }, entries: [{ name: 'A/01 - x/JPG/1-voorkant.jpg', bytes: 1 }, { name: 'A/01 - x/PNG/1-voorkant.png', bytes: 1 }, { name: 'A/01 - x/WEBP/1-voorkant.webp', bytes: 1 }] })));
   ok('  niet bij de proef of video', !/Ook PNG of WebP/.test(deliveryReadme({ order: { ref: 'X', lang: 'nl', service: 'test-sample' }, entries })) && !/Ook PNG of WebP/.test(deliveryReadme({ order: { ref: 'X', lang: 'nl', service: 'video' }, entries })));

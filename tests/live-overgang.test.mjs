@@ -116,7 +116,7 @@ const basis = {
 {
   const st = klaarVoorLiveStappen(basis);
   ok('vier stappen, in de volgorde 1-2-3-4', st.map((x) => x.nr), [1, 2, 3, 4]);
-  ok('stap 1: beide regels te doen', st[0].rijen.map((r) => r.staat), ['te-doen', 'te-doen']);
+  ok('stap 1: de eerste twee regels te doen (testtegoed en testcredits ontbreken in deze stand: klaar)', st[0].rijen.map((r) => r.staat), ['te-doen', 'te-doen', 'klaar', 'klaar']);
   ok('stap 1 linkt naar de klant van het proefabonnement', /href="\/admin\/customers\/117"/.test(st[0].rijen[0].uitleg), true);
   ok('stap 1 heeft de knop om ze in één keer te annuleren', /action="\/admin\/diagnose\/proef-annuleren"/.test(st[0].rijen[1].uitleg), true);
   ok('stap 2 wacht zolang de testsleutel erop staat', st[1].rijen.map((r) => r.staat), ['wacht']);

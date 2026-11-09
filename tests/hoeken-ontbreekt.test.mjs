@@ -198,7 +198,8 @@ db.exec("DELETE FROM files WHERE order_id = 601 AND r2_key LIKE 'aangeleverd/%'"
 }
 {
   const { regels, fout } = await nuDoen(env.DB, { nu: Date.parse('2026-10-12T09:00:00Z') });
-  const r = regels.find((x) => x.soort === 'fotos' && x.id === 601);
+  /* Ronde 91 (w1): één regel per bestelling — staat 601 er ook als Oppakken, dan zit "foto's ontbreken" erachter. */
+  const r = regels.flatMap((x) => [x, ...(x.daarna || [])]).find((x) => x.soort === 'fotos' && x.id === 601);
   ok('Nu-doen: een regel "foto’s ontbreken" voor deze bestelling', !fout && !!r, fout || '');
   ok('Nu-doen: de tekst noemt de driekwart', r && /^2 foto’s ontbreken \(Product 1 · Jas groen: geen driekwart, …\)$/.test(watTekst(r, Date.parse('2026-10-12T09:00:00Z'))), r ? watTekst(r) : '');
   /* De bestelpagina is /admin/orders/<id>/files (het bord), met "Volgende stap" bovenaan. */

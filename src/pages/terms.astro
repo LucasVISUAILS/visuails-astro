@@ -1,4 +1,5 @@
 ---
+import { rolIkoon } from '../data/iconen.js';
 // ── IN DE HAL — 13 oktober 2026 (afvinklijst 19, alles doen) ──────────────────────────
 // De omhulling is JuridischHal.astro: de kop van de hal, een inhoud, en het document in rijen.
 // De tekst hieronder is dezelfde; alleen de s22-omhulling en haar <style> gingen eruit.
@@ -158,6 +159,11 @@ import { bijgewerktOp } from '../data/juridischeDatums.js';
    images from termijnen.js — no typed numbers. See the NL page. */
 import { GEZICHTSZOEKERS, rosterVolledigGecontroleerd } from '../data/modelChecks.js';
 import { inWoorden, PORTRET_VERVANGEN_WEKEN } from '../data/termijnen.js';
+import { VERVAL_DAG, BETALEN_NA_BTW_AKKOORD } from '../data/termijnen.js';
+/* Section 6 says when an unpaid order lapses (list 87, B15): the nightly job
+   cancels it after VERVAL_DAG days, with an email. Number from termijnen.js. */
+const vervalDagen = inWoorden(VERVAL_DAG, 'en');
+const naAkkoordDagen = inWoorden(BETALEN_NA_BTW_AKKOORD, 'en');
 const portretZoekers = inWoorden(GEZICHTSZOEKERS.length, 'en');
 // Our standard models are named only once their check is in the log (see the NL page).
 const vasteModellenGecontroleerd = rosterVolledigGecontroleerd();
@@ -290,7 +296,7 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
           hij hier in één zin. "Times can still shift" is weg: dat zei het
           tegendeel. */}
       <p>How long an order takes depends on how you order. Individual products run in the normal turnaround: {t0} from the moment we have your photos and your notes. We do not name a delivery date for an individual product, because a date we have not reserved capacity for is not a date.</p>
-      <p>A reserved order gets {t1}. We hold that date for seven days while the payment is open; if the order is not paid by then, the date is released and the order itself stays. Once you have paid, the date is fixed and does not move.</p>
+      <p>A reserved order gets {t1}. We hold that date for seven days while the payment is open; if the order is not paid by then, the date is released and the order itself stays open for a while longer. If it is still unpaid {vervalDagen} days after you placed it (or {naAkkoordDagen} days after we checked it, where that was needed), it lapses and we email you to say so. Once you have paid, the date is fixed and does not move.</p>
       <p><strong>Force majeure.</strong> The one exception is circumstances outside our control, such as an outage of the generation platform or illness. Then we tell you straight away, propose a new date, and you may cancel the part that has not started yet free of charge.</p>
       <p>Video and other work quoted by hand is on request: the format and the delivery time are agreed in the written quote.</p>
 
@@ -299,9 +305,9 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       <ul>
         <li><strong>Source material</strong> — the photos and files you upload are deleted {UPLOAD_DAYS} days after your order closes. If you need us to keep them longer, ask in writing before then and we will agree it with you.</li>
         <li><strong>Delivered visuals</strong> — your finished visuals stay in VISUAILS Studio to download for {DELIVERY_DAYS} days from delivery; after that they are removed there. We keep a copy of the visuals we made in our own archive, with no end date, so that we can keep your look consistent and keep improving it. That is our working archive, not a backup for you, so keep your own copy. Want our copy gone? Email us from the address of your account and we delete it, from that archive too; you do not need to give a reason. Visuals showing a real, recognisable person we keep only for as long as your customer account exists (see our <a href="/privacy/">Privacy Policy</a>, §6).</li>
-        <li><strong>Your order link</strong> — the private link you download from works for {PORTAL_TTL_DAYS} days after your order closes, then it stops. If you need the files after that, email us and we will send a new link.</li>
+        <li><strong>Your order link</strong> — the link to your order page, where you download, works for {PORTAL_TTL_DAYS} days after your order closes, then it stops. If you need the files after that, email us and we will send a new link.</li>
       </ul>
-      <p>Keep your own copy of anything you rely on: after {DELIVERY_DAYS} days we cannot guarantee a re-download. Still need older images? Get in touch — we check whether they are still with us. How we handle your personal data more generally, including how that private link is protected, is set out in our <a href="/privacy/">Privacy Policy</a>.</p>
+      <p>Keep your own copy of anything you rely on: after {DELIVERY_DAYS} days we cannot guarantee a re-download. Still need older images? Get in touch — we check whether they are still with us. How we handle your personal data more generally, including how the link to your order page is protected, is set out in our <a href="/privacy/">Privacy Policy</a>.</p>
 
       <h2>8. Intellectual property &amp; usage rights</h2>
       <p>You retain all rights to your own product and brand assets — the source material you provide. Nothing here touches those.</p>
@@ -344,7 +350,7 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
            inclusief), en een gewone bestelling betaal je direct na het
            plaatsen in de checkout (besluit 1 van de doorlichting) — de
            betaallink per mail blijft voor de btw-controle en het handwerk. -->
-      <p>A test sample is a fixed {euro(AMOUNT.testSample, 'en')} excluding VAT and is charged at checkout. An order with a listed price is paid at checkout as well, straight after you place it. Where we first need to check your VAT details, or where the price is quoted by hand (video, custom work), you receive one payment link by email and in VISUAILS Studio instead. In every case you pay the amount in full; there are no instalments. We start production, and release finished files, only once that payment has reached us. A reserved delivery date is held for seven days while the payment is open, as set out in section 6.</p>
+      <p>A test sample is a fixed {euro(AMOUNT.testSample, 'en')} excluding VAT and is charged at checkout. An order with a listed price is paid at checkout as well, straight after you place it. Where we first need to check your VAT details, or where the price is quoted by hand (video, custom work), you receive one payment link by email and in VISUAILS Studio instead. You pay the amount in full. Only for work we quote by hand can the quote set out a deposit and a balance; both amounts are then stated in the quote. We start production, and release finished files, only once that payment has reached us. A reserved delivery date is held for seven days while the payment is open, as set out in section 6.</p>
 
       <h2>9a. Subscriptions</h2>
       {/* ── FROM SLOTS TO CREDITS — 20 September 2026 ───────────────────
@@ -356,7 +362,7 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 
       <p><strong>Ordering with credits.</strong> You order through the regular order form, like everyone else, and whenever you like. When you are signed in with a running subscription, you pay with your credits instead of money in the last step: at that moment the credits for that order come off your balance, and that is what tells us to make it. Delivery follows the same rules as any other order (section 6). If you choose something that cannot be paid with credits, or you do not have enough credits, you pay that order in full with money at the ordinary price; an order is never paid partly in credits and partly in money.</p>
 
-      <p><strong>How it starts.</strong> When you subscribe you pay your first month straight away, and that same payment is the transaction by which your bank issues the mandate — without it nothing can be collected later. Your first month starts there and then; the second term falls a month after it. From then on our payment provider collects the monthly amount automatically under that mandate. On the prepaid term there is no mandate and no later collection: see below.</p>
+      <p><strong>How it starts.</strong> When you subscribe you pay your first month straight away, and that same payment is the transaction by which your bank issues the mandate — without it nothing can be collected later. Your first month starts there and then; the second term falls a month after it, on or around the same day (the 28th at the latest). From then on our payment provider collects the monthly amount automatically under that mandate. On the prepaid term there is no mandate and no later collection: see below.</p>
 
       <p><strong>Two terms.</strong> The monthly term can be <strong>cancelled in any month</strong>; there is no minimum duration. The <strong>prepaid twelve-month term</strong> is paid in a single payment at the start, for which you pay fewer months than you receive; how many depends on the plan and is stated on the <a href="/plans/">plans page</a> before you pay. On that term your rate is held for twelve months, and on {planName('studio', 'en')} your Brand Model is included. A subscription already running on the former twelve-month term with a monthly collection runs on to the end of those twelve terms and then ends by itself.</p>
 
@@ -451,8 +457,8 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       <h2 data-niet-in-inhoud>Questions about these terms?</h2>
       <p>We’re happy to explain anything in these terms. Reach out and we’ll get back to you.</p>
       <p class="h-acties">
-        <a class="h-knop h-knop-inkt" href="/contact/">Contact us<span class="o" aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/></svg></span></a>
-        <a class="h-knop h-knop-lijn" href={waHref("Hello VISUAILS, I have a question about your terms.")} target="_blank" rel="noopener">WhatsApp<NieuwTabblad lang={'en'} /></a>
+        <a class="h-knop k k-lijn" data-rol="navigeren" href="/contact/">Contact us<Fragment set:html={rolIkoon('navigeren')} /></a>
+        <a class="h-knop k k-lijn" data-rol="contact" href={waHref("Hello VISUAILS, I have a question about your terms.")} target="_blank" rel="noopener">WhatsApp<NieuwTabblad lang={'en'} /></a>
       </p>
     </div>
     

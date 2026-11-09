@@ -110,7 +110,8 @@ export const catalogStyles = [
   },
   {
     slug: 'custom',
-    name: 'Custom Brand',
+    /* lijst 87 (r90-s6): één Engelse naam, zoals bij Lifestyle en Video (NL: overal "Eigen look") */
+    name: 'Custom',
     tagline: 'A catalog look that is unmistakably yours.',
     /* De lookpagina, kort (k101, 11 oktober 2026): drie korte regels onder
        vaste koppen — voor welke kleding, welk gevoel, welke kanalen. */
@@ -126,21 +127,21 @@ export const catalogStyles = [
     priceTrust: 'On request',
     priceUnit: '',
     metaPrice: 'Designed once, on request',
-    /* Custom Brand heeft geen tarief per product tot de look ontworpen is —
+    /* Custom heeft geen tarief per product tot de look ontworpen is —
        zie `cardPrice: 'Custom pricing'` hierboven. Een knop naar het gewone
        bestelformulier zou een prijs beloven die er nog niet is, dus gaat hij
        naar dezelfde aanvraag als een look op maat bij Lifestyle. */
     /* ?voor=catalog: het aanvraagformulier zet "Waar moet de look te gebruiken
        zijn?" dan op Catalogsets (doorloop 27, B16; interactions.js). */
     orderHref: '/start/custom-look/?voor=catalog',
-    orderLabel: 'Ask for a Custom Brand look',
+    orderLabel: 'Ask for a Custom look',
     heroIcon: 'bag',
     heroWidth: '26%',
     cardIcon: 'bag',
     cardWidth: '46%',
     cardPrice: 'Custom pricing',
     cardDesc: 'A catalog look designed around your brand — then every product as a four-photo set, at the regular rate.',
-    moodTitle: 'What Custom Brand feels like.',
+    moodTitle: 'What Custom feels like.',
     moodParagraphs: [
       'A signature backdrop, shadow and prop language that says this is us — before the logo does.',
     ],

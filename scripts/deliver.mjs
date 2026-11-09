@@ -469,7 +469,12 @@ try {
     const made = await convert(p.file, path.join(work, stem));
 
     if (!NO_TAG) {
-      for (const format of ['png', 'jpg', 'webp']) {
+      /* Ook het beoordeelbeeld (`review`, de webp die de klant in Studio en op de privélink
+         ziet) — 9 november 2026 (ronde 91, E19): de /ai-act-pagina belooft de markering
+         in de beelden die we leveren, en dit is het beeld dat de klant als eerste te zien
+         krijgt. Met exiftool teruggelezen: zonder deze regel droeg alleen het review-
+         bestand geen DigitalSourceType. */
+      for (const format of ['png', 'jpg', 'webp', 'review']) {
         await writeSourceType(made[format].file, AI_VALUE);
         // De tag verandert de bestandsgrootte, dus opnieuw meten — anders staat er
         // straks een maat in de database die niet die van het object is.

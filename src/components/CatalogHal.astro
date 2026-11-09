@@ -22,7 +22,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import {
   ladderFloor, euro, vatLabel, eenProductRegel, WINDOW_THRESHOLD, reviewClaim,
   TIERS, clause, RESOLUTIE, TEST_SAMPLE, CATALOG_IMAGES, levervlakken,
@@ -84,8 +84,8 @@ const COPY = {
     feiten: [`<b>From ${e(floor)}</b> per product · ${ex}`, `<b>From ${CATALOG_IMAGES} photos</b> per product`],
     wacht: `Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}: a fixed delivery date.`,
     kiesCta: 'Pick your look', prijsCta: 'See the price per product',
-    bewijsPil: 'Before and after', bewijsKop: ['One photo in.', 'A clean catalog image out.'],
-    voorLabel: 'Your photo', voorAlt: 'A raw phone photo of a t-shirt on a table before VISUAILS', naAlt: 'The same t-shirt as a clean catalog image after VISUAILS',
+    bewijsPil: 'Before and after', bewijsKop: ['A phone photo in.', 'A clean catalog image out.'],
+    voorLabel: 'Your photo', voorAlt: 'A raw phone photo of a T-shirt on a table before VISUAILS', naAlt: 'The same T-shirt as a clean catalog image after VISUAILS',
     reviewKop: 'Fast means nothing if it isn’t right.', reviewZin: 'We check colour and detail on every image before you get it.',
     check: ['Consistent lighting & angles', 'Neutral or your chosen background', 'Marketplace-ready framing', `Files at ${RESOLUTIE.standaard} px`, reviewClaim('unattended', 'en')],
     grondKop: 'Background', grond: ['White — standard', 'Custom colour — any colour you name'],
@@ -110,8 +110,8 @@ const COPY = {
     feiten: [`<b>Vanaf ${e(floor)}</b> per product · ${ex}`, `<b>Vanaf ${CATALOG_IMAGES} foto’s</b> per product`],
     wacht: `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD}: een vaste leverdatum.`,
     kiesCta: 'Kies je look', prijsCta: 'Bekijk de prijs per product',
-    bewijsPil: 'Voor en na', bewijsKop: ['Dit is een telefoonfoto.', 'Dit is wat eruit kwam.'],
-    voorLabel: 'Jouw foto', voorAlt: 'Een ruwe telefoonfoto van een t-shirt op een tafel vóór VISUAILS', naAlt: 'Hetzelfde t-shirt als een strakke catalogfoto na VISUAILS',
+    bewijsPil: 'Voor en na', bewijsKop: ['Je telefoonfoto erin.', 'Een catalogfoto eruit.'],
+    voorLabel: 'Jouw foto', voorAlt: 'Een ruwe telefoonfoto van een T-shirt op een tafel vóór VISUAILS', naAlt: 'Hetzelfde T-shirt als een strakke catalogfoto na VISUAILS',
     reviewKop: 'Snel betekent niets als het niet klopt.', reviewZin: 'Wij controleren kleur en detail van elk beeld voordat jij het krijgt.',
     check: ['Consistente belichting & hoeken', 'Neutrale of je gekozen achtergrond', 'Bijgesneden zoals marktplaatsen het willen', `Bestanden op ${RESOLUTIE.standaard} px`, reviewClaim('unattended', 'nl')],
     grondKop: 'Achtergrond', grond: ['Wit — standaard', 'Je eigen kleur — elke kleur die je opgeeft'],
@@ -152,8 +152,8 @@ const eigenVorm = (stand: string) => `<svg class="ik" viewBox="0 0 24 24" aria-h
       </h1>
       <p class="h-lede h-op" style="--d:3">{c.lede}</p>
       <p class="h-acties h-op" style="--d:4">
-        <a class="h-knop h-knop-inkt" href="#looks">{c.kiesCta}<span class="o" set:html={ik('rechts')} /></a>
-        <a class="h-knop h-knop-lijn" href={lp('/pricing')}>{c.prijsCta}</a>
+        <a class="h-knop k k-vol" data-rol="doorgaan" href="#looks">{c.kiesCta}<Fragment set:html={rolIkoon('doorgaan')} /></a>
+        <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/pricing')}>{c.prijsCta}<Fragment set:html={rolIkoon('navigeren')} /></a>
       </p>
       <ul class="h-feiten h-op" style="--d:5" role="list">
         {c.feiten.map((f, i) => <li><i set:html={ik((['label', 'doos'] as const)[i])} /><span set:html={f} /></li>)}
@@ -210,7 +210,7 @@ const eigenVorm = (stand: string) => `<svg class="ik" viewBox="0 0 24 24" aria-h
               <p class="h-st-zin">{l.zin}</p>
               {l.desc && <p class="h-st-desc">{l.desc}</p>}
               <p class="h-st-tarief"><span>{c.vanaf}</span> <b>{e(floor)}</b> <span>{c.per}</span></p>
-              <p class="h-st-wegen"><a class="h-knop h-knop-inkt h-knop-klein" href={l.kies} data-st-kies>{c.kies}<span class="o" set:html={ik('rechts')} /></a></p>
+              <p class="h-st-wegen"><a class="h-knop k k-vol k-klein" data-rol="doorgaan" href={l.kies} data-st-kies>{c.kies}<Fragment set:html={rolIkoon('doorgaan')} /></a></p>
               <p class="h-st-ook-links">
                 <a class="h-st-proef" href={l.proef} data-st-proef data-vis-uit>{sample.cta}</a>
                 <a class="h-st-meer" href={l.meer}>{c.meer}<span set:html={ik('pijl')} /></a>
@@ -249,7 +249,7 @@ const eigenVorm = (stand: string) => `<svg class="ik" viewBox="0 0 24 24" aria-h
             <p class="h-dienst-extra-zin">{eigen.tagline} <span class="h-dienst-extra-prijs">{c.opAanvraag}</span></p>
           </div>
           <p class="h-dienst-extra-wegen">
-            <a class="h-knop h-knop-lijn h-knop-klein" href={lp(String(eigen.orderHref).replace(/^\/nl(?=\/)/, ''))}>{c.eigenCta}</a>
+            <a class="h-knop k k-lijn k-klein" data-rol="doorgaan" href={lp(String(eigen.orderHref).replace(/^\/nl(?=\/)/, ''))}>{c.eigenCta}<Fragment set:html={rolIkoon('doorgaan')} /></a>
             <a class="h-st-meer" href={lp(`${basis}/catalog/custom`)}>{c.eigenMeer}<span set:html={ik('pijl')} /></a>
           </p>
         </li>
@@ -272,7 +272,7 @@ const eigenVorm = (stand: string) => `<svg class="ik" viewBox="0 0 24 24" aria-h
         <p class="h-pr-band-zin">{c.prijsRegel}</p>
         <p class="h-pr-band-zin">{c.merk[0]}<a class="h-st-link" href={lp('/custom-models')}>{c.merk[1]}</a>{c.merk[2]}</p>
       </div>
-      <a class="h-knop h-knop-lijn" href={lp('/pricing')}>{c.staffelCta}</a>
+      <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/pricing')}>{c.staffelCta}<Fragment set:html={rolIkoon('navigeren')} /></a>
     </div>
   </section>
 

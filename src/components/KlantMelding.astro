@@ -41,7 +41,7 @@
  * oriëntatiepunt (aside met een naam), zodat hij te vinden is.
  * ═══════════════════════════════════════════════════════════════════════════ */
 import { klantTekst } from '../data/klant.js';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import { TEST_SAMPLE } from '../data/pricing.js';
 import { geleverd } from '../data/voorbeeldset.js';
 import { localizedPath } from '../i18n/ui.js';
@@ -73,7 +73,7 @@ const KRUIS = ikoon('sluiten');
   <ol class="h-melding-stap" data-vis-welkom-stappen aria-label={k.stappenLabel} hidden>
     {k.stappen.map((s) => <li><i aria-hidden="true"></i><span>{s}</span></li>)}
   </ol>
-  <a class="h-knop h-knop-inkt h-knop-klein h-melding-knop" href="/account" data-vis-welkom-knop><span class="h-melding-woord" data-vis-label>{k.studio}</span><span class="o" set:html={PIJL} /></a>
+  <a class="h-knop k k-lijn k-klein h-melding-knop" data-rol="navigeren" href="/account" data-vis-welkom-knop><span class="h-melding-woord" data-vis-label>{k.studio}</span><Fragment set:html={rolIkoon('navigeren')} /></a>
   <button type="button" class="h-melding-sluit" data-vis-melding-sluit aria-label={k.sluit} set:html={KRUIS} />
 </aside>
 <aside class="h-melding h-melding-proef" data-vis-proef aria-label={k.proefLabel} hidden>
@@ -82,6 +82,6 @@ const KRUIS = ikoon('sluiten');
     <p class="h-melding-kop"><span class="l">{k.proefKop[0]}</span> {k.proefKop[1]} {s.price}</p>
     <p class="h-melding-regel h-melding-detail">{s.deliverableShort}{k.proefStaart}</p>
   </div>
-  <a class="h-knop h-knop-inkt h-knop-klein h-melding-knop" href={localizedPath(lang, '/test-sample')} data-track="melding-proef"><span class="h-melding-woord">{s.cta}</span><span class="o" set:html={PIJL} /></a>
+  <a class="h-knop k k-vol k-klein h-melding-knop" data-rol="doorgaan" href={localizedPath(lang, '/test-sample')} data-track="melding-proef"><span class="h-melding-woord">{s.cta}</span><Fragment set:html={rolIkoon('doorgaan')} /></a>
   <button type="button" class="h-melding-sluit" data-vis-melding-sluit aria-label={k.sluit} set:html={KRUIS} />
 </aside>

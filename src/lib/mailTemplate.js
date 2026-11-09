@@ -333,7 +333,9 @@ const knop = (href, label, hoek = '999px') =>
   `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
     <!-- Levering 87: een pil, zoals de knop op de site (tot levering 86: één zachte hoek linksboven).
          Outlook op Windows kent border-radius niet en toont hem recht; dat is goed zo. -->
-    <td bgcolor="${C.green}" align="center" style="background:${C.green};padding:15px 24px;border-radius:${hoek}">
+    <!-- Lijst 87 (e09): een rand van 1 px in de lijnkleur, zodat de knop niet wegvalt in een mailprogramma
+         dat alles donker maakt (Gmail). De binnenruimte 1 px kleiner, dus de knop houdt zijn maat. -->
+    <td bgcolor="${C.green}" align="center" style="background:${C.green};padding:14px 23px;border:1px solid ${C.rule};border-radius:${hoek}">
       <!-- De letter op het accent is WIT sinds 20 september: zwart op violet
            haalt 2,93:1 en is in KLEURENSCHEMA.md met zoveel woorden afgekeurd. -->
       <a href="${esc(href)}" style="font-family:${FONT};font-size:16px;font-weight:700;color:${C.onAccent};text-decoration:none;display:block">${esc(label)}</a>
@@ -347,6 +349,15 @@ const knop = (href, label, hoek = '999px') =>
    In het betaalvak niet: daar sluit de knop het vak af. */
 export const button = (href, label) =>
   `${knop(href, label)}<div style="height:20px;font-size:0;line-height:0">&nbsp;</div>`;
+
+/* ── HET KNOPPENSYSTEEM IN DE MAIL — 9 november 2026 (lijst 88, C4 = a) ─────────
+   Eén volle knop per mail: de stap die de klant nu moet zetten (button() hierboven).
+   Elke andere link is een tekstlink: onderstreept, in inkt, even groot als de knop
+   (16 px), zonder icoon (veel mailprogramma's tonen geen svg, en plaatjes staan vaak
+   uit). "Nee, zet dit terug" en een tweede reviewplek zijn zo'n link.
+   tests/knoppen-systeem.test.mjs telt per mail hoogstens één button(). */
+export const tekstLink = (href, label, { bottom = 20 } = {}) =>
+  `<p style="margin:0 0 ${bottom}px;font-family:${FONT};font-size:16px;line-height:1.5"><a href="${esc(href)}" style="font-family:${FONT};font-size:16px;font-weight:700;color:${C.green};text-decoration:underline">${esc(label)}</a></p>`;
 
 /** The amount-due panel: a mist panel with the total and the button. Sinds 14
     oktober 2026 zonder de violette rand links (violet is voor de knop).
@@ -452,10 +463,13 @@ export const linkLine = (href, label) =>
    lockup op een kaphoogte van 16 px en één kaphoogte vrije ruimte rondom; de V begint daardoor nog steeds op de
    kantlijn (16 px na de rand van het beeld). woordmerk-plaat.png blijft bestaan (met K5 erin) voor mails die al
    verstuurd zijn. */
-const letterhead = () => `
+/* 9 november 2026 (ronde 91, E02): het woordmerk linkte in elke mail naar
+   https://visuails.com, ook in een Nederlandse mail — de Engelse voorpagina. De
+   voet linkte al wél naar /nl/terms en /nl/privacy; nu doet de kop hetzelfde. */
+const letterhead = (lang) => `
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.paper}" style="background:${C.paper}">
   <tr><td style="padding:14px ${MARGE - 16}px 10px">
-    <a href="${SITE}" style="font-family:${FONT};font-size:15px;font-weight:700;letter-spacing:.12em;color:${C.ink};text-decoration:none"><img src="${SITE}/img/mail/lockup-plaat.png" width="153" height="64" alt="VISUAILS" style="display:block;border:0;outline:none;text-decoration:none;color:${C.ink}"></a>
+    <a href="${lang === 'nl' ? `${SITE}/nl` : SITE}" style="font-family:${FONT};font-size:15px;font-weight:700;letter-spacing:.12em;color:${C.ink};text-decoration:none"><img src="${SITE}/img/mail/lockup-plaat.png" width="153" height="64" alt="VISUAILS" style="display:block;border:0;outline:none;text-decoration:none;color:${C.ink}"></a>
   </td></tr>
   <!-- Levering 55 (m-kop): de lijn onder de kop begint met een violet streepje met
        een schuin eind op 53°, de snede van het merk (snede.png, 28 × 3). -->
@@ -520,7 +534,7 @@ export function shell({ lang = 'en', preheader = '', body = '' }) {
        Windows kent max-width niet en krijgt via de mso-commentaren zijn eigen
        tabel van die breedte. */ ''}<!--[if mso]><table role="presentation" width="${BREED}" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.paper}" style="width:100%;max-width:${BREED}px;background:${C.paper}">
-      <tr><td><!--tekst:uit-->${letterhead()}<!--/tekst:uit--></td></tr>
+      <tr><td><!--tekst:uit-->${letterhead(lang)}<!--/tekst:uit--></td></tr>
       <tr><td style="padding:34px ${MARGE}px 26px">${body}</td></tr>
       <tr><td>${footer(lang)}</td></tr>
     </table>

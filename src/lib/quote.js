@@ -304,7 +304,7 @@ function safeRate(vatRate) {
  * Nu telt hij alleen waar looks bestaan, en nooit meer dan er looks van twee
  * stukken in het aantal passen. Welke looks er zijn, beslist schoonLooks() in
  * looks.js; hier komt alleen het getal binnen. */
-export function quoteOrder({ service, products, looks = 0, extras = 0, hoogRes = 0, voorrang = false, vatRate = VAT_RATE, styleSurchargeCents = 0 }) {
+export function quoteOrder({ service, products, looks = 0, extras = 0, hoogRes = 0, voorrang = false, agendaDicht = false, vatRate = VAT_RATE, styleSurchargeCents = 0 }) {
   // Translate first, then decide. Both the payable test and the ladder lookup
   // below have to see the same name, or this is the same bug in a new place.
   const kind = LADDER_KEY[service] || service;
@@ -385,7 +385,10 @@ export function quoteOrder({ service, products, looks = 0, extras = 0, hoogRes =
      het bedrag in euro's, want voorrangBedragNu() in de browser rekent met
      hetzelfde getal — twee sommen die uit elkaar lopen op een cent zijn twee
      bedragen op één scherm. */
-  const voorrangKanNu = voorrangKan({ kind, products: n });
+  /* `agendaDicht` (9 november 2026, ronde 91, C06): een van de twee werkdagen van
+     de belofte staat dicht in de agenda (voorrangAgendaOpen() in pricing.js). Dan
+     geen voorrang en dus geen toeslag; de aanroeper leest de agenda, deze som niet. */
+  const voorrangKanNu = voorrangKan({ kind, products: n }) && !agendaDicht;
   const voorrangEuro = voorrang && voorrangKanNu ? voorrangBedrag(netCents / 100) : 0;
   const netMetVoorrang = netCents + cents(voorrangEuro);
 
@@ -424,6 +427,38 @@ export function quoteOrder({ service, products, looks = 0, extras = 0, hoogRes =
     grossCents: netMetVoorrang + vatCents,
     vatRate: effectiveRate,
   };
+}
+
+/**
+ * ── DE OPBOUW VAN HET BEDRAG, VOOR DE FACTUUR — 9 november 2026 (lijst 87, B07) ──
+ *
+ * Een factuur had één regel ("Catalog — 5 producten") met het hele bedrag; extra
+ * hoeken, 4K, looks en voorrang zaten erin zonder dat ze er stonden. Dit zet de som
+ * die quoteOrder() al maakt om in regels: { soort, qty, unitCents, totalCents }.
+ * functions/api/order.js bewaart ze in details_json (`opbouw`), src/lib/invoice.js
+ * drukt ze. Geen nieuwe prijzen: alles komt uit de offerte en uit pricing.js.
+ *
+ * Telt het niet precies op tot netCents (een afronding van een cent), dan null: dan
+ * blijft het één regel, zoals voorheen. Een factuur waarvan de regels niet optellen
+ * tot het subtotaal, drukt invoicePdf.js niet eens af.
+ */
+export function opbouwVan(q) {
+  if (!q || typeof q !== 'object' || !Number.isFinite(Number(q.rate))) return null;
+  const n = Number(q.products) || 0;
+  if (n < 1) return null;
+  const regel = (soort, qty, unitCents) => (qty > 0 && unitCents > 0 ? { soort, qty, unitCents, totalCents: qty * unitCents } : null);
+  const vrij = (soort, totalCents) => (totalCents > 0 ? { soort, qty: 1, unitCents: totalCents, totalCents } : null);
+  const regels = [
+    regel('producten', n, cents(Number(q.rate))),
+    regel('looks', Number(q.looks) || 0, cents(LOOK_PRIJS)),
+    regel('hoeken', Number(q.extras) || 0, cents(Number(q.extraRate) || 0)),
+    regel('hoog', Number(q.hoogRes) || 0, cents(HOOG_PER_PRODUCT)),
+    regel('eigenlook', n, Number(q.styleSurchargeCents) || 0),
+    vrij('voorrang', Number(q.voorrangCents) || 0),
+  ].filter(Boolean);
+  const som = regels.reduce((s, r) => s + r.totalCents, 0);
+  if (som !== Number(q.netCents)) return null;
+  return regels;
 }
 
 /**
@@ -596,9 +631,10 @@ export function paymentDescription(quote, lang = 'en') {
   }
   if (quote.service === 'video') {
     const k = Number(quote.products) || 1;
+    const kenmerk = quote.ref ? ` ${quote.ref}` : '';
     return nl
-      ? `VISUAILS — ${k} ${k === 1 ? 'videoclip' : 'videoclips'}`
-      : `VISUAILS — ${k} video ${k === 1 ? 'clip' : 'clips'}`;
+      ? `VISUAILS${kenmerk} — ${k} ${k === 1 ? 'videoclip' : 'videoclips'}`
+      : `VISUAILS${kenmerk} — ${k} video ${k === 1 ? 'clip' : 'clips'}`;
   }
   /* `drop` en `complete` alleen voor een bestelling van vóór 8 oktober 2026 die
      nog betaald wordt (zie OUDE_BUNDEL_DIENSTEN): die houdt haar naam op het
@@ -628,9 +664,13 @@ export function paymentDescription(quote, lang = 'en') {
   /* Een dienst die hier niet in de tabel staat, mag nooit "undefined" op een
      bankafschrift zetten (ronde 9, F39). */
   if (!what[kind]) return quote.ref ? `VISUAILS ${quote.ref}` : 'VISUAILS';
+  /* 8 november 2026, uit de proefbestelling: de checkout en het bankafschrift noemden het kenmerk niet, dus
+     een klant (of jij, bij een vraag) kon een betaling niet aan een bestelling koppelen. Met kenmerk:
+     "VISUAILS VIS-ABCD-EFG — 1 product, catalogsets". Zonder kenmerk (oude aanroepers) ongewijzigd. */
+  const kenmerk = quote.ref ? ` ${quote.ref}` : '';
   return nl
-    ? `VISUAILS — ${n} ${n === 1 ? 'product' : 'producten'}, ${what[kind]}`
-    : `VISUAILS — ${n} ${n === 1 ? 'product' : 'products'}, ${what[kind]}`;
+    ? `VISUAILS${kenmerk} — ${n} ${n === 1 ? 'product' : 'producten'}, ${what[kind]}`
+    : `VISUAILS${kenmerk} — ${n} ${n === 1 ? 'product' : 'products'}, ${what[kind]}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -16,7 +16,7 @@
    ═══════════════════════════════════════════════════════════════════════════════ */
 import HalHoe from './HalHoe.astro';
 import UitlegBalk from './UitlegBalk.astro';
-import { ikoon } from '../data/iconen.js';
+import { ikoon, rolIkoon } from '../data/iconen.js';
 import { euro, ladderFloor, levertijdDelen, videoPrijsLabel } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import { REQUIRED_SHOT_IDS, SHOTS } from '../data/shots.js';
@@ -198,7 +198,7 @@ const START = { catalog: '/start/catalog', lifestyle: '/start/lifestyle', video:
   {uitleg && <UitlegBalk slot="balk" zinnen={UITLEG_ZINNEN[dienst]} lang={lang} varianten={[{ v: dienst, zinnen: UITLEG_ZINNEN[dienst] }]} />}
   <Fragment slot="acties">
     <p class="h-acties">
-      <a class="h-knop h-knop-inkt" href={lp(START)} {...startKnop(lang)}><span data-vis-label>{h.ctaStart}</span><span class="o" set:html={ik('rechts')} /></a>
+      <a class="h-knop k k-vol" data-rol="doorgaan" href={lp(START)} {...startKnop(lang)}><span data-vis-label>{h.ctaStart}</span><Fragment set:html={rolIkoon('doorgaan')} /></a>
     </p>
     <ul class="h-feiten" role="list">
       {FEITEN.map((f, i) => <li><i set:html={ik((['label', 'klok', 'doos'] as const)[i])} /><span set:html={f} /></li>)}

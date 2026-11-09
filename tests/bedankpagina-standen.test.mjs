@@ -5,8 +5,10 @@
  * Na de terugkeer van Mollie (`/thank-you?paid=VIS-…`) kent de pagina drie
  * standen, en Lucas koos ze zo:
  *   (a) betaald;
- *   (b) bevestigen: "Je hoeft niet opnieuw te betalen", GEEN knop, de pagina
- *       vraagt zelf door en stopt na ongeveer een minuut;
+ *   (b) bevestigen: "Betaald? Dan hoef je niets te doen", GEEN knop, de pagina
+ *       vraagt zelf door en stopt na ongeveer een minuut. Kan er dan nog betaald
+ *       worden, dan komt de knop er wel (doorloop 90, B17, 8 november 2026: wie bij
+ *       Mollie terugging zonder te betalen, had nergens een knop en nog geen mail);
  *   (c) alleen als Mollie geannuleerd, verlopen of mislukt meldt: een knop om
  *       opnieuw te betalen.
  * Daaronder het blok "Zo gaat het verder" uit src/lib/verder.js.
@@ -112,8 +114,8 @@ async function open({ lang = 'nl', breedte = 1280, query, antwoord, sessie = nul
 }
 
 const T = {
-  nl: { betaald: 'Betaald — we gaan aan de slag.', bevestigd: 'Je betaling wordt bevestigd.', niet: 'De betaling is niet afgerond.', opnieuw: 'Opnieuw betalen', hoeftNiet: 'Je hoeft niet opnieuw te betalen', mailen: 'we mailen je zodra de betaling binnen is' },
-  en: { betaald: 'Paid — we are on it.', bevestigd: 'Your payment is being confirmed.', niet: 'The payment was not completed.', opnieuw: 'Pay again', hoeftNiet: 'You do not need to pay again', mailen: 'we email you as soon as the payment is in' },
+  nl: { betaald: 'Betaald — we gaan aan de slag.', bevestigd: 'Je betaling wordt bevestigd.', niet: 'De betaling is niet afgerond.', opnieuw: 'Opnieuw betalen', hoeftNiet: 'Betaald? Dan hoef je niets te doen', mailen: 'mailen we je zodra de betaling binnen is', terug: 'Ben je teruggegaan zonder te betalen' },
+  en: { betaald: 'Paid — we are on it.', bevestigd: 'Your payment is being confirmed.', niet: 'The payment was not completed.', opnieuw: 'Pay again', hoeftNiet: 'Paid? Then there is nothing to do', mailen: 'we email you as soon as the payment is in', terug: 'Went back without paying' },
 };
 
 console.log('\nVISUAILS — de bedankpagina in drie standen (1.05)\n');
@@ -145,7 +147,7 @@ for (const lang of ['nl', 'en']) {
     await p.loop(3000);
     let s = await p.lees();
     ok(`  ${breedte}px: de kop zegt "wordt bevestigd"`, s.kop, t.bevestigd);
-    ok(`  ${breedte}px: "je hoeft niet opnieuw te betalen"`, s.stand.includes(t.hoeftNiet), true);
+    ok(`  ${breedte}px: "betaald? dan hoef je niets te doen"`, s.stand.includes(t.hoeftNiet), true);
     ok(`  ${breedte}px: en GEEN knop`, s.knop, []);
     ok(`  ${breedte}px: geen vinkje zolang het niet bevestigd is`, s.vinkje, false);
     await p.schot(`${lang}-b-bevestigen-${breedte}`);
@@ -157,7 +159,8 @@ for (const lang of ['nl', 'en']) {
     s = await p.lees();
     const na = p.vragen();
     ok(`  ${breedte}px: na ongeveer een minuut stopt hij met "we mailen je"`, s.stand.includes(t.mailen), true);
-    ok(`  ${breedte}px: nog steeds geen knop`, s.knop, []);
+    ok(`  ${breedte}px: en voor wie terugging zonder te betalen`, s.stand.includes(t.terug), true);
+    ok(`  ${breedte}px: pas dan één knop "opnieuw betalen" (B17)`, s.knop, [t.opnieuw]);
     await p.loop(30000);
     ok(`  ${breedte}px: en daarna vraagt hij niets meer`, p.vragen(), na);
     ok(`  ${breedte}px: hoogstens zestien vragen in totaal (limiet 30 per minuut)`, na <= 16, true);

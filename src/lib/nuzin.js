@@ -34,6 +34,7 @@ import { SAMPLE_SERVICE, revisionRoundState } from '../data/pricing.js';
 /* leverDatumsVan(): de revisiedatum telt ook vanaf het weer openen (w2 = b, 11 okt 2026). */
 import { leverDatumsVan } from './leverdatums.js';
 import { vakNaam } from './ontbreekt.js';
+import { vandaagNL, nlDag } from './nlDag.js';
 
 /* Hoe dicht bij de grens een termijn "bijna voorbij" heet. */
 export const REVISIE_BIJNA_DAGEN = 2;
@@ -66,19 +67,24 @@ export const NU_TEKST = {
       requestPaid: 'Je offerte is betaald. We werken je aanvraag uit en laten je weten zodra er iets te bekijken is.',
       brandModel: 'We hebben je merkmodelbestelling binnen. We maken je kandidaten en laten je weten wanneer je kunt kiezen.',
       in_production: 'Onze studio maakt je beelden.',
-      human_check: 'We lopen elk beeld na voordat het naar je toe gaat.',
+      /* "Wordt nagekeken" is geen stap meer (9 november 2026, ronde 91, w4): de controle hoort bij het maken, en
+         de leverknop schrijft "Nagekeken en geleverd" op de tijdlijn. Een oude rij met deze stand leest als In productie. */
+      human_check: 'Onze studio maakt je beelden.',
       delivered: 'Je beelden staan klaar. Bekijk ze en laat het weten als er iets niet klopt.',
       closed: 'Deze bestelling is afgerond. Je beelden staan klaar om te downloaden.',
       closedExpired: 'Deze bestelling is afgerond en de downloadtermijn is voorbij. Heb je de beelden nog nodig? Stuur ons een bericht.',
       revising: 'Je revisieronde is binnen. We werken aan de beelden die je aanmerkte en laten weten wanneer ze terug zijn.',
       cancelled: 'Deze bestelling is geannuleerd. Er wordt niets voor gemaakt.',
+      /* 9 november 2026 (ronde 91, S02): geannuleerd zonder geld terug (cancel_payment 'none') houdt de geleverde
+         beelden — dan zei "Er wordt niets voor gemaakt" iets anders dan de downloads eronder. */
+      cancelledKept: 'Deze bestelling is geannuleerd. De beelden die al klaar waren, kun je hieronder nog downloaden.',
       cancelledRefunding: 'Deze bestelling is geannuleerd. Je betaling komt terug op de rekening waarmee je betaalde — afhankelijk van je bank binnen een paar werkdagen. De creditnota volgt onder Facturen zodra de terugbetaling bevestigd is.',
       cancelledRefunded: 'Deze bestelling is geannuleerd en je betaling is teruggestort. De creditnota staat onder Facturen.',
       cancelledCredit: 'Deze bestelling is geannuleerd. Het bedrag blijft als tegoed staan voor je volgende bestelling.',
     },
     /* Letterlijk gelijk aan COPY.nl.flowWindow, flowStep en de datumregels. */
     flowWindow: (from, to) => (from === to ? `Ingepland op ${from}.` : `Ingepland van ${from} tot ${to}.`),
-    stap: { awaiting_payment: 'Wacht op betaling', received: 'Ontvangen', in_production: 'In productie', human_check: 'Wordt nagekeken', delivered: 'Geleverd' },
+    stap: { awaiting_payment: 'Wacht op betaling', received: 'Ontvangen', in_production: 'In productie', human_check: 'In productie', delivered: 'Geleverd' },
     nuMist: (vak, product) => `Er ontbreekt nog een foto: ${product} · ${vak}. Voeg hem toe, dan beginnen we met alles compleet.`,
     datumRevisie: (d) => `Revisie aanvragen kan tot en met ${d}.`,
     datumBewaar: (d) => `Je beelden staan hier tot en met ${d}.`,
@@ -94,6 +100,14 @@ export const NU_TEKST = {
     teBekijkenZonderRonde: (n, clip) => (n === 1
       ? `Je ${clip ? 'clip staat' : 'beeld staat'} klaar. Klopt het, keur het dan goed.`
       : `Je ${n} ${clip ? 'clips' : 'beelden'} staan klaar. Klopt alles, keur ze dan in één keer goed.`),
+    /* 9 november 2026 (ronde 91, S11): na een herlevering zei de kop nog "Je 4 beelden staan klaar. Klopt alles,
+       keur ze dan in één keer goed." terwijl er 2 al goedgekeurd waren en 1 nieuw was. Zijn er al beelden
+       goedgekeurd, of is er een nieuw beeld na een revisie, dan zegt de zin wat er nog te doen is. */
+    teKeurenNieuw: (n, clip) => (n === 1
+      ? (clip ? 'Je nieuwe clip staat klaar. Bekijk hem en keur hem goed.' : 'Je nieuwe beeld staat klaar. Bekijk het en keur het goed.')
+      : `Je ${n} nieuwe ${clip ? 'clips' : 'beelden'} staan klaar. Bekijk ze en keur ze goed.`),
+    teKeurenNog: (n, nieuw, clip) => `Nog ${n} ${n === 1 ? (clip ? 'clip' : 'beeld') : (clip ? 'clips' : 'beelden')} om goed te keuren${nieuw > 0 ? `; ${nieuw} daarvan ${nieuw === 1 ? 'is' : 'zijn'} nieuw` : ''}.`,
+    aanmerkZin: (n) => (n === 1 ? 'Klopt er iets niet, vink het aan en schrijf erbij wat er anders moet.' : 'Klopt er iets niet, vink die aan en schrijf erbij wat er anders moet.'),
     revisieBijna: 'Je revisieronde loopt bijna af. Klopt alles, keur je beelden dan goed; klopt er iets niet, vink het aan en schrijf erbij wat er anders moet.',
     proef: 'Je proefset staat klaar om te downloaden.',
     verwijderdBijna: 'Je beelden gaan binnenkort van deze pagina. Download ze vóór die tijd.',
@@ -104,10 +118,10 @@ export const NU_TEKST = {
     knop: {
       betalen: (bedrag) => (bedrag ? `Nu betalen · ${bedrag}` : 'Nu betalen'),
       allesGoed: 'Alles goed — naar je downloads',
-      aanmerken: 'Iets aanmerken ↓',
+      aanmerken: 'Iets aanmerken',
       eerstDownloaden: 'Eerst downloaden',
       downloaden: 'Downloaden (zip)',
-      tevreden: 'Hoe vond je het? ↓',
+      tevreden: 'Hoe vond je het?',
       fotos: 'Foto’s toevoegen',
       gegevens: 'Gegevens aanvullen',
       bekijk: 'Bekijk je beelden',
@@ -122,18 +136,19 @@ export const NU_TEKST = {
       requestPaid: 'Your quote is paid. We are working out your request and will let you know as soon as there is something to look at.',
       brandModel: 'We have your brand model order. We are making your candidates and will let you know when you can choose.',
       in_production: 'Our studio is making your images.',
-      human_check: 'We go through every image before it reaches you.',
+      human_check: 'Our studio is making your images.',
       delivered: 'Your images are ready. Look them over and tell us if anything is off.',
       closed: 'This order is complete. Your images are ready to download.',
       closedExpired: 'This order is complete and the download period has ended. Still need the images? Send us a message.',
       revising: 'Your revision round is in. We are working on the images you marked and will let you know when they are back.',
       cancelled: 'This order was cancelled. Nothing is being made for it.',
+      cancelledKept: 'This order was cancelled. The images that were already finished can still be downloaded below.',
       cancelledRefunding: 'This order was cancelled. Your payment is on its way back to the account you paid from — depending on your bank, within a few working days. The credit note follows under Invoices once the refund is confirmed.',
       cancelledRefunded: 'This order was cancelled and your payment has been refunded. The credit note is under Invoices.',
       cancelledCredit: 'This order was cancelled. The amount stays with us as account balance for your next order.',
     },
     flowWindow: (from, to) => (from === to ? `Planned for ${from}.` : `Planned for ${from} – ${to}.`),
-    stap: { awaiting_payment: 'Awaiting payment', received: 'Received', in_production: 'In production', human_check: 'Being checked', delivered: 'Delivered' },
+    stap: { awaiting_payment: 'Awaiting payment', received: 'Received', in_production: 'In production', human_check: 'In production', delivered: 'Delivered' },
     nuMist: (vak, product) => `A photo is still missing: ${product} · ${vak}. Add it, so we start with everything complete.`,
     datumRevisie: (d) => `You can request a revision until ${d}.`,
     datumBewaar: (d) => `Your images stay here until ${d}.`,
@@ -146,8 +161,13 @@ export const NU_TEKST = {
     teBekijkenZonderRonde: (n, clip) => (n === 1
       ? `Your ${clip ? 'clip is' : 'image is'} ready. If it is right, approve it.`
       : `Your ${n} ${clip ? 'clips' : 'images'} are ready. If everything is right, approve them all in one go.`),
+    teKeurenNieuw: (n, clip) => (n === 1
+      ? `Your new ${clip ? 'clip' : 'image'} is ready. Look it over and approve it.`
+      : `Your ${n} new ${clip ? 'clips' : 'images'} are ready. Look them over and approve them.`),
+    teKeurenNog: (n, nieuw, clip) => `${n} ${n === 1 ? (clip ? 'clip' : 'image') : (clip ? 'clips' : 'images')} still to approve${nieuw > 0 ? `; ${nieuw} of them ${nieuw === 1 ? 'is' : 'are'} new` : ''}.`,
+    aanmerkZin: (n) => (n === 1 ? 'If something is off, tick it and write what should change.' : 'If something is off, tick those and write what should change.'),
     revisieBijna: 'Your revision round is nearly over. If everything is right, approve your images; if something is off, tick it and write what should change.',
-    proef: 'Your trial set is ready to download.',
+    proef: 'Your test sample is ready to download.',
     verwijderdBijna: 'Your images leave this page soon. Download them before then.',
     zonderScore: 'Complete — thank you. Your images are ready to download.',
 
@@ -155,10 +175,10 @@ export const NU_TEKST = {
     knop: {
       betalen: (bedrag) => (bedrag ? `Pay now · ${bedrag}` : 'Pay now'),
       allesGoed: 'All good — to your downloads',
-      aanmerken: 'Flag something ↓',
+      aanmerken: 'Flag something',
       eerstDownloaden: 'Download first',
       downloaden: 'Download (zip)',
-      tevreden: 'How did we do? ↓',
+      tevreden: 'How did we do?',
       fotos: 'Add photos',
       gegevens: 'Complete your details',
       bekijk: 'View your images',
@@ -167,12 +187,18 @@ export const NU_TEKST = {
 };
 
 const taal = (lang) => (lang === 'en' ? 'en' : 'nl');
-const vandaagIso = () => new Date().toISOString().slice(0, 10);
+/* De Nederlandse dag, niet die van UTC (9 november 2026, ronde 91, C03): de datums uit
+   leverDatumsVan() zijn sinds C-04 Nederlandse dagen; 's nachts liep dit er een dag achter. */
+const vandaagIso = () => vandaagNL();
 const dagenTot = (iso, vandaag) => Math.round((Date.parse(`${iso}T00:00:00Z`) - Date.parse(`${vandaag}T00:00:00Z`)) / 86400000);
 
 function verlopen(f, vandaag) {
   if (!f.expires_at) return false;
-  return String(f.expires_at).slice(0, 10) < vandaag;
+  /* expires_at is een UTC-moment ('YYYY-MM-DD HH:MM:SS'); `vandaag` is sinds ronde 91 de
+     Nederlandse dag, dus het moment ook als Nederlandse dag (anders 's nachts tot twee uur te vroeg weg). */
+  const ruw = String(f.expires_at);
+  const dag = nlDag(Date.parse(`${ruw.slice(0, 19).replace(' ', 'T')}Z`)) || ruw.slice(0, 10);
+  return dag < vandaag;
 }
 
 /** De geleverde beelden die nog meetellen: niet vervangen, niet verlopen. */
@@ -221,17 +247,19 @@ export function nuDatums(o, { files = [], lang = 'nl', vandaag = vandaagIso() } 
 }
 
 /**
- * Het statuspad van Studio: (Wacht op betaling ·) Ontvangen · In productie ·
- * Wordt nagekeken · Geleverd. Dezelfde stappen en woorden als progressView().
+ * Het statuspad van Studio: (Wacht op betaling ·) Ontvangen · In productie · Geleverd. Dezelfde stappen en woorden
+ * als progressView(). "Wordt nagekeken" is sinds 9 november 2026 (ronde 91, w4) geen stap meer; een bestelling die
+ * nog op human_check staat, staat op In productie.
  */
 export function statusPad(o, { lang = 'nl', bedrag } = {}) {
   const t = NU_TEKST[taal(lang)];
   if (!o || o.status === 'cancelled') return [];
-  const FLOW = ['received', 'in_production', 'human_check', 'delivered'];
+  const FLOW = ['received', 'in_production', 'delivered'];
   const heeftBedrag = bedrag === undefined ? Number(o.total_cents) > 0 : !!bedrag;
   const open = (o.status || 'received') === 'received' && String(o.payment_status || 'unpaid') !== 'paid' && heeftBedrag;
   const flow = open ? ['awaiting_payment', ...FLOW] : FLOW;
-  const nu = open ? 0 : Math.max(0, FLOW.indexOf(o.status || 'received'));
+  const stand = o.status === 'human_check' ? 'in_production' : (o.status || 'received');
+  const nu = open ? 0 : Math.max(0, FLOW.indexOf(stand));
   return flow.map((key, i) => ({ key, label: t.stap[key], state: i < nu ? 'is-done' : i === nu ? 'is-now' : 'is-todo' }));
 }
 
@@ -267,7 +295,10 @@ export function nuZin(o, ctx = {}, lang = 'nl') {
 
   if (status === 'cancelled') {
     const g = ctx.geannuleerd || '';
-    const zin = g === 'credit' ? t.flow.cancelledCredit : g === 'refunded' ? t.flow.cancelledRefunded : g === 'refunding' ? t.flow.cancelledRefunding : t.flow.cancelled;
+    /* S02 (ronde 91): zonder geld terug ('none') blijven de geleverde beelden staan (leveringIngetrokken() in
+       delivery.js); staan er nog levende, dan zegt de zin dat ze te downloaden zijn. */
+    const bewaard = !g && String(o.cancel_payment || '') === 'none' && levendeBeelden(files, vandaag).length > 0;
+    const zin = g === 'credit' ? t.flow.cancelledCredit : g === 'refunded' ? t.flow.cancelledRefunded : g === 'refunding' ? t.flow.cancelledRefunding : bewaard ? t.flow.cancelledKept : t.flow.cancelled;
     return uit('geannuleerd', zin);
   }
 
@@ -298,7 +329,14 @@ export function nuZin(o, ctx = {}, lang = 'nl') {
         const rest = dagenTot(d.revisieTot, vandaag);
         if (rest >= 0 && rest <= REVISIE_BIJNA_DAGEN) return uit('revisieBijna', t.revisieBijna, knoppen);
       }
-      return uit('teBekijken', ronde ? `${t.teBekijkenKern(levend.length, clip)} ${t.rondeZin('')}` : t.teBekijkenZonderRonde(levend.length, clip), knoppen);
+      /* S11 (ronde 91): nieuw = een vervanging na een revisie (replaced_for, uit de bestandsquery van Studio).
+         Alles nog open en niets nieuws: de zin van de eerste levering, met het aantal van alle beelden. */
+      const nieuw = open.filter((f) => f.replaced_for).length;
+      if (open.length === levend.length && !nieuw) {
+        return uit('teBekijken', ronde ? `${t.teBekijkenKern(levend.length, clip)} ${t.rondeZin('')}` : t.teBekijkenZonderRonde(levend.length, clip), knoppen);
+      }
+      const kern = nieuw === open.length ? t.teKeurenNieuw(open.length, clip) : t.teKeurenNog(open.length, nieuw, clip);
+      return uit('teBekijken', ronde ? `${kern} ${t.aanmerkZin(open.length)} ${t.rondeZin('')}` : kern, knoppen);
     }
     return uit('geleverd', t.flow.delivered, levend.length ? ['downloaden'] : []);
   }
@@ -410,7 +448,7 @@ export const STAND_KORT = {
     btw: 'We are checking your VAT details',
     revisieBijOns: 'Your revision round is with us',
     geleverd: 'Delivered',
-    proef: 'Your sample is ready',
+    proef: 'Your test sample is ready',
     inDeMaak: 'In production',
     aanvraag: 'Your request is with us',
     afgerond: 'Completed',

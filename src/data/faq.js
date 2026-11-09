@@ -103,6 +103,9 @@ import {
 import { CHANNELS, channelName } from './channels.js';
 /* Extra credits bijkopen (12 oktober 2026): dezelfde bijzin als /plans en de voorwaarden. */
 import { bijkoopRegel } from './creditKaart.js';
+/* 9 november 2026 (ronde 91, K-14): zolang "op maat" en "bijkopen" achter "Bespreek met
+   ons" staan, belooft de FAQ ze ook niet (src/data/aboZichtbaar.js, één vlag). */
+import { ABO_EXTRA_ZICHTBAAR } from './aboZichtbaar.js';
 /* Het voorbeeldpakket in de FAQ: het eerste met korting (nu 25), uit de data. */
 const VOORBEELD_PAKKET = BIJKOOP_PAKKETTEN.find((x) => BIJKOOP_KORTING_PCT[x] > 0) || BIJKOOP_PAKKETTEN[0];
 import { CATALOG_RATIOS, LIFESTYLE_RATIOS } from './ratios.js';
@@ -208,7 +211,7 @@ export function pricingFaqs(lang = 'en') {
       },
       {
         q: 'Kan ik extra credits bijkopen?',
-        a: `Ja, zolang je abonnement loopt: in VISUAILS Studio, ${bijkoopRegel('nl')}. Bij ${planName.studio} kosten ${VOORBEELD_PAKKET} credits ${ex(bijkoopPrijs(PLAN_AMOUNT.studio, PLAN_CREDITS.studio, VOORBEELD_PAKKET), 'nl')}. Je koopt hoogstens ${BIJKOOP_MAX_PER_MAAND} credits per maand bij. Bijgekochte credits gaan als eerste op, blijven ${CREDITS_GELDIG_MAANDEN} maanden geldig vanaf de aankoop en tellen niet mee voor je spaarplafond. Koop je vaak bij, dan is een groter abonnement voordeliger; dat zie je in Studio.`,
+        a: !ABO_EXTRA_ZICHTBAAR ? 'Bespreek het met ons: stuur een bericht, dan kijken we samen wat past, een keer extra of een ander aantal per maand.' : `Ja, zolang je abonnement loopt: in VISUAILS Studio, ${bijkoopRegel('nl')}. Bij ${planName.studio} kosten ${VOORBEELD_PAKKET} credits ${ex(bijkoopPrijs(PLAN_AMOUNT.studio, PLAN_CREDITS.studio, VOORBEELD_PAKKET), 'nl')}. Je koopt hoogstens ${BIJKOOP_MAX_PER_MAAND} credits per maand bij. Bijgekochte credits gaan als eerste op, blijven ${CREDITS_GELDIG_MAANDEN} maanden geldig vanaf de aankoop en tellen niet mee voor je spaarplafond. Koop je vaak bij, dan is een groter abonnement voordeliger; dat zie je in Studio.`,
       },
       {
         q: 'Waarom staat er geen leverdatum bij een kleine bestelling?',
@@ -248,7 +251,7 @@ export function pricingFaqs(lang = 'en') {
     },
     {
       q: 'Can I buy extra credits?',
-      a: `Yes, while your plan runs: in VISUAILS Studio, ${bijkoopRegel('en')}. On ${planName.studio}, ${VOORBEELD_PAKKET} credits cost ${ex(bijkoopPrijs(PLAN_AMOUNT.studio, PLAN_CREDITS.studio, VOORBEELD_PAKKET), 'en')}. You buy at most ${BIJKOOP_MAX_PER_MAAND} credits a month. Bought credits are used first, stay valid for ${CREDITS_GELDIG_MAANDEN} months from the purchase and do not count towards your savings limit. If you buy often, a bigger plan is better value; Studio shows you when.`,
+      a: !ABO_EXTRA_ZICHTBAAR ? 'Talk to us: send a message and we work out together what fits, extra credits once or a different number each month.' : `Yes, while your plan runs: in VISUAILS Studio, ${bijkoopRegel('en')}. On ${planName.studio}, ${VOORBEELD_PAKKET} credits cost ${ex(bijkoopPrijs(PLAN_AMOUNT.studio, PLAN_CREDITS.studio, VOORBEELD_PAKKET), 'en')}. You buy at most ${BIJKOOP_MAX_PER_MAAND} credits a month. Bought credits are used first, stay valid for ${CREDITS_GELDIG_MAANDEN} months from the purchase and do not count towards your savings limit. If you buy often, a bigger plan is better value; Studio shows you when.`,
     },
     {
       q: 'Why is there no delivery date on a small order?',
@@ -299,7 +302,7 @@ function algemeneGroepen(lang = 'en') {
         items: [
           {
             q: 'Wat is VISUAILS?',
-            a: 'VISUAILS maakt van een map met productfoto’s catalogsets, lifestylecarrousels en video voor een hele productlijn. Onze productie doet dat op schaal, en elke visual wordt nagekeken voordat die bij jou aankomt.',
+            a: 'VISUAILS maakt van een map met productfoto’s catalogsets, lifestylecarrousels en video voor een hele productlijn. Onze productie doet dat voor tientallen producten tegelijk, en elke visual wordt nagekeken voordat die bij jou aankomt.',
           },
           {
             // DE ENIGE PLEK waar het woord "drop" nog staat, en het gaat daar
@@ -346,7 +349,7 @@ function algemeneGroepen(lang = 'en') {
              * adressen probeert, loopt tegen zijn eigen rekening aan, en dat kan
              * hij maar beter vooraf weten dan bij de terugbetaling. */
             q: 'Ik verkoop geen kleding. Kan dat ook?',
-            a: 'De studio is op dit moment op kleding ingericht: de vaste stijlen, de modellen en de drie verplichte foto\u2019s per product (plus een optionele draagfoto) gaan allemaal uit van iets wat gedragen wordt. Verkoop je iets anders, stuur ons dan een bericht via WhatsApp of e-mail met een foto van je product erbij. Dan zeggen we eerlijk of we er iets voor kunnen betekenen \u2014 soms wel, soms niet, en dat weten we binnen \u00e9\u00e9n blik.',
+            a: 'De studio is op dit moment op kleding ingericht: de vaste stijlen, de modellen en de drie verplichte foto\u2019s per product (plus een optionele draagfoto) gaan allemaal uit van iets wat gedragen wordt. Verkoop je iets anders, stuur ons dan een bericht via WhatsApp of e-mail met een foto van je product erbij. Dan zeggen we eerlijk of we er iets voor kunnen betekenen \u2014 soms wel, soms niet, en dat zien we in \u00e9\u00e9n oogopslag.',
           },
           {
             q: 'Kan ik als bureau voor mijn klanten bestellen?',
@@ -378,7 +381,7 @@ function algemeneGroepen(lang = 'en') {
              * slotzin is letterlijk `toolClose` van /compare, zodat de twee pagina's
              * op hetzelfde eindigen in plaats van elk hun eigen slot te verzinnen. */
             q: 'Waarom zou ik dit niet zelf doen met een AI-tool?',
-            a: 'Voor een deel moet je dat ook doen. Een snelle mock-up om een idee te testen, een schets van een layout, alles wat niet bij een klant terechtkomt — daar is een tool genoeg voor, en goedkoper. Hij kost je stilletjes geld zodra de beelden naast elkaar moeten staan: de kleur verschuift bij elke run een beetje, en over een hele catalogus is dat wat een shop onsamenhangend maakt. Wat je hier koopt is alles wat er ná het genereren van een beeld gebeurt. Wij controleren elk beeld voordat het weggaat. Het model, de achtergrond en de beeldverhouding die je hebt goedgekeurd worden bewaard en bij je volgende bestelling opnieuw gebruikt. Waar een marktplaats zuiver wit eist, krijg je zuiver wit. De AI Act-regel komt bij het bestand mee. Is een tool genoeg voor wat je nodig hebt, gebruik dan de tool — en zo niet, dan is de enige test die iets waard is je eigen product.',
+            a: 'Voor een deel moet je dat ook doen. Een snelle mock-up om een idee te testen, een schets van een layout, alles wat niet bij een klant terechtkomt — daar is een tool genoeg voor, en goedkoper. Hij kost je stilletjes geld zodra de beelden naast elkaar moeten staan: de kleur verschuift bij elke poging een beetje, en over een hele catalogus is dat wat een shop onsamenhangend maakt. Wat je hier koopt is alles wat er ná het genereren van een beeld gebeurt. Wij controleren elk beeld voordat het weggaat. Het model, de achtergrond en de beeldverhouding die je hebt goedgekeurd worden bewaard en bij je volgende bestelling opnieuw gebruikt. Waar een marktplaats zuiver wit eist, krijg je zuiver wit. De AI Act-regel komt bij het bestand mee. Is een tool genoeg voor wat je nodig hebt, gebruik dan de tool — en zo niet, dan is de enige test die iets waard is je eigen product.',
             linkText: 'De eerlijke vergelijking',
             linkHref: '/compare',
           },
@@ -405,7 +408,7 @@ function algemeneGroepen(lang = 'en') {
           },
           {
             q: 'Kan ik dezelfde stijl en hetzelfde model over bestellingen heen aanhouden?',
-            a: 'Ja, en dat is grotendeels het punt. Dezelfde belichting, hoek, grade en hetzelfde model kunnen over een hele bestelling worden vastgehouden, en over de bestellingen daarna, zodat een catalogus samenhangend blijft terwijl de lijn groeit.',
+            a: 'Ja, en dat is grotendeels het punt. Dezelfde belichting, hoek, kleurbewerking en hetzelfde model kunnen over een hele bestelling worden vastgehouden, en over de bestellingen daarna, zodat een catalogus samenhangend blijft terwijl de lijn groeit.',
           },
           {
             q: 'Kan ik een model dat alleen van mij is krijgen?',
@@ -474,7 +477,7 @@ function algemeneGroepen(lang = 'en') {
           },
           {
             q: 'Is er een abonnement?',
-            a: `Ja. Een abonnement geeft je elke maand credits voor catalogsets en carrousels: ${planNames}, van ${ex(PLAN_AMOUNT.starter, 'nl')} per maand voor ${PLAN_CREDITS.starter} credits tot ${ex(PLAN_AMOUNT.brand, 'nl')} voor ${PLAN_CREDITS.brand} credits met je merkmodel inbegrepen, of een eigen aantal credits op maat. Je bestelt wanneer je wilt, via het gewone bestelformulier, en betaalt met je credits. Zolang je abonnement loopt, vervallen ze niet: je spaart tot ${CREDITS_GELDIG_MAANDEN} maanden aan credits. Je kiest maandelijks (elke maand opzegbaar) of een jaar vooruit (betaal 10, krijg 12); een vooruitbetaald jaar wordt niet terugbetaald en verlengt nooit vanzelf.`,
+            a: `Ja. Een abonnement geeft je elke maand credits voor catalogsets en carrousels: ${planNames}, van ${ex(PLAN_AMOUNT.starter, 'nl')} per maand voor ${PLAN_CREDITS.starter} credits tot ${ex(PLAN_AMOUNT.brand, 'nl')} voor ${PLAN_CREDITS.brand} credits met je merkmodel inbegrepen${ABO_EXTRA_ZICHTBAAR ? ', of een eigen aantal credits op maat' : ''}. Je bestelt wanneer je wilt, via het gewone bestelformulier, en betaalt met je credits. Zolang je abonnement loopt, vervallen ze niet: je spaart tot ${CREDITS_GELDIG_MAANDEN} maanden aan credits. Je kiest maandelijks (elke maand opzegbaar) of een jaar vooruit (betaal 10, krijg 12); een vooruitbetaald jaar wordt niet terugbetaald en verlengt nooit vanzelf.`,
           },
           {
             q: 'Kan ik mijn btw-nummer toevoegen?',
@@ -526,7 +529,7 @@ function algemeneGroepen(lang = 'en') {
           },
           {
             q: 'Zijn de visuals AI-gegenereerd?',
-            a: 'Ja, en dat zeggen we gewoon. Elke visual wordt gegenereerd uit foto’s van jouw echte product en nagekeken voordat die wordt geleverd — een gemaakt beeld, geen foto van een shoot die heeft plaatsgevonden. We beschrijven precies hoe jouw beelden gemaakt zijn. We vertellen je niet wat dat voor jouw bedrijf betekent.',
+            a: 'Ja, en dat zeggen we gewoon. Elke visual wordt gegenereerd uit foto’s van jouw echte product en nagekeken voordat die wordt geleverd — een gemaakt beeld, geen foto van een shoot die heeft plaatsgevonden. We beschrijven precies hoe jouw beelden gemaakt zijn. Wat dat juridisch voor jouw bedrijf betekent, kunnen we je niet vertellen.',
             linkText: 'Lees onze AI Act-pagina',
             linkHref: '/ai-act',
           },
@@ -564,7 +567,7 @@ function algemeneGroepen(lang = 'en') {
           /* Zie de Nederlandse tegenhangers voor waarom deze twee vragen er zijn
              en waar de antwoorden vandaan komen. */
           q: 'I do not sell clothing. Is that possible too?',
-          a: 'The studio is set up for clothing at the moment: the fixed styles, the models and the three required photos per product (plus an optional worn photo) all assume something that is worn. If you sell something else, send us a message on WhatsApp or by email with a photo of your product. We will tell you honestly whether we can do anything for it \u2014 sometimes yes, sometimes no, and we know within one look.',
+          a: 'The studio is set up for clothing at the moment: the fixed styles, the models and the three required photos per product (plus an optional worn photo) all assume something that is worn. If you sell something else, send us a message on WhatsApp or by email with a photo of your product. We will tell you honestly whether we can do anything for it \u2014 sometimes yes, sometimes no, and we can tell at a glance.',
         },
         {
           q: 'Can I order for my clients as an agency?',
@@ -747,7 +750,7 @@ function algemeneGroepen(lang = 'en') {
         },
         {
           q: 'Is there a subscription?',
-          a: `Yes. A plan gives you credits every month for catalog sets and carousels: ${planNames}, from ${ex(PLAN_AMOUNT.starter, 'en')} a month for ${PLAN_CREDITS.starter} credits up to ${ex(PLAN_AMOUNT.brand, 'en')} for ${PLAN_CREDITS.brand} credits with your Brand Model included, or your own number of credits. You order whenever you like, through the regular order form, and pay with your credits. While your plan runs, they do not expire: you save up to ${CREDITS_GELDIG_MAANDEN} months of credits. You choose monthly (cancel any month) or a year up front (pay 10, get 12); a prepaid year is not refunded and never renews by itself.`,
+          a: `Yes. A plan gives you credits every month for catalog sets and carousels: ${planNames}, from ${ex(PLAN_AMOUNT.starter, 'en')} a month for ${PLAN_CREDITS.starter} credits up to ${ex(PLAN_AMOUNT.brand, 'en')} for ${PLAN_CREDITS.brand} credits with your Brand Model included${ABO_EXTRA_ZICHTBAAR ? ', or your own number of credits' : ''}. You order whenever you like, through the regular order form, and pay with your credits. While your plan runs, they do not expire: you save up to ${CREDITS_GELDIG_MAANDEN} months of credits. You choose monthly (cancel any month) or a year up front (pay 10, get 12); a prepaid year is not refunded and never renews by itself.`,
         },
         {
           q: 'Can I add my VAT number?',
@@ -783,7 +786,7 @@ function algemeneGroepen(lang = 'en') {
         },
         {
           q: 'Are the visuals AI-generated?',
-          a: 'Yes, and we say so plainly. Every visual is generated from photographs of your real product and checked before it is delivered — a made image, not a photograph of a shoot that happened. We will describe exactly how yours were made. We will not tell you what that means for your business.',
+          a: 'Yes, and we say so plainly. Every visual is generated from photographs of your real product and checked before it is delivered — a made image, not a photograph of a shoot that happened. We will describe exactly how yours were made. We cannot tell you what that means legally for your business.',
           linkText: 'Read our AI Act page',
           linkHref: '/ai-act',
         },
@@ -1023,11 +1026,11 @@ const CATALOG_LIFESTYLE_FAQ = {
       },
       {
         q: 'Kan ik deze op Amazon, bol en Zalando gebruiken?',
-        a: 'Je geeft bij je bestelling aan waar het product verkocht wordt, en we leveren op die specificatie. Alle drie eisen ze een zuiver witte hoofdafbeelding, dus die keuze zet de achtergrond vast op #FFFFFF. Zalando eist daarnaast elk beeld in 1:1,44, dus kies je Zalando, dan staat ook de verhouding daarop vast. Alles komt als JPG, en dat nemen ze alle drie aan. Twee regels blijven van het platform zelf, en die zijn goed om te weten: bol staat geen model op de hoofdafbeelding toe, en Zalando vraagt modelbeelden die met een echte persoon zijn gefotografeerd — onze on-model shot is gegenereerd, dus we kunnen niet beloven dat Zalando hem accepteert. Wij matchen de specificaties; het platform beslist over de listing.',
+        a: 'Je geeft bij je bestelling aan waar het product verkocht wordt, en we leveren op die specificatie. Alle drie eisen ze een zuiver witte hoofdafbeelding, dus die keuze zet de achtergrond vast op #FFFFFF. Zalando eist daarnaast elk beeld in 1:1,44, dus kies je Zalando, dan staat ook de verhouding daarop vast. Alles komt als JPG, en dat nemen ze alle drie aan. Twee regels blijven van het platform zelf, en die zijn goed om te weten: bol staat geen model op de hoofdafbeelding toe, en Zalando vraagt modelbeelden die met een echte persoon zijn gefotografeerd — onze on-model shot is gegenereerd, dus we kunnen niet beloven dat Zalando hem accepteert. Wij leveren volgens hun eisen; het platform beslist of het je product plaatst.',
       },
       {
         q: 'Kan ik meer dan vier foto’s van een product krijgen?',
-        a: `Ja. In het bestelformulier kies je extra hoeken voor de hele bestelling — elk product krijgt ze — een zijkant, de binnenkant, een tweede detail — tegen het extra-fototarief voor jouw aantal (${euro(extraPhotoRate(1), 'nl')} bij één product, dalend met de trap). Schrijf erbij welke hoek je wilt; hij komt in dezelfde set.`,
+        a: `Ja. In het bestelformulier kies je extra hoeken voor de hele bestelling (elk product krijgt ze): een zijkant, de binnenkant, een tweede detail. Je betaalt het extra-fototarief voor jouw aantal (${euro(extraPhotoRate(1), 'nl')} bij één product, dalend met de trap). Schrijf erbij welke hoek je wilt; hij komt in dezelfde set.`,
       },
       {
         q: 'Is dit AI, en moet ik dat vermelden?',
@@ -1129,7 +1132,7 @@ const CATALOG_LIFESTYLE_FAQ = {
       },
       {
         q: 'Kan ik bijsturen binnen een look?',
-        a: 'Een look ligt vast op licht en grade — dat is wat tien bestellingen op één merk laat lijken. Setting, props en seizoen geef je mee in de notitie bij je bestelling, en die nemen we mee zover het binnen de look past. Alles daarbuiten is een eigen look.',
+        a: 'Een look ligt vast op licht en kleurbewerking — dat is wat tien bestellingen op één merk laat lijken. Setting, props en seizoen geef je mee in de notitie bij je bestelling, en die nemen we mee zover het binnen de look past. Alles daarbuiten is een eigen look.',
       },
       {
         q: 'Is dit AI, en moet ik dat vermelden?',

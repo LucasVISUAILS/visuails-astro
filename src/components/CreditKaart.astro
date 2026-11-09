@@ -95,7 +95,14 @@ const kopId = `${id || 'creditkaart'}-kop`;
     font-family: var(--mono2, var(--font-mono, ui-monospace, monospace));
     font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ck-inkt-2);
   }
-  .ck-aanvraag { white-space: normal; align-self: center; }
+  /* ronde 92 (op één lijn): "op aanvraag" stond midden in de rij, de andere rijen hebben hun woord op de onderlijn van het
+     getal. Een onzichtbaar getal (zonder breedte) geeft deze rij dezelfde onderlijn, dus het woord staat waar "credits" staat. */
+  .ck-aanvraag { white-space: normal; }
+  .ck-c:has(.ck-aanvraag)::before {
+    content: '0'; visibility: hidden; width: 0; margin-right: -.35rem;
+    font-family: var(--kop2, var(--font-heading, inherit)); font-weight: 500; font-stretch: 125%;
+    font-size: clamp(1.45rem, 2.4vw, 1.9rem); line-height: 1;
+  }
   .ck-naam { font-weight: 600; font-size: .95rem; }
   .ck-per { font-size: .85rem; color: var(--ck-inkt-2); }
   .ck-plannen {

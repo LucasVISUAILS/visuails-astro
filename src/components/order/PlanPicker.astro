@@ -30,12 +30,12 @@
    en de tekst noemde hem. Sinds de eerste betaling de eerste maand is, noemt de
    tekst geen bedrag meer voor de machtiging; AMOUNT blijft voor de proefvisual. */
 import NieuwTabblad from '../NieuwTabblad.astro';
-import { ikoon, IKOON } from '../../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../../data/iconen.js';
 import {
   plans, euro, vatLabel, AMOUNT, planSaving,
   CUSTOM_MONTH_ID, CUSTOM_CREDITS_MIN, CUSTOM_CREDITS_MAX, CUSTOM_CREDITS_STEP,
   customCreditsTotal, creditSaving, creditsFit, PLAN_CREDITS, PLAN_AMOUNT, SERVICE_CREDITS,
-  CREDITS_GELDIG_MAANDEN, spaarPlafond,
+  CREDITS_GELDIG_MAANDEN, spaarPlafond, VAT_RATE,
 } from '../../data/pricing.js';
 import {
   TERMS, OFFERED_TERM_IDS, monthlyCents, hasBrandModel, term as termOf,
@@ -61,6 +61,9 @@ import { BUSINESS_VERSION, currentBusiness } from '../../data/business.js';
 import { VERLEGGING_TEXT, VERLEGGING_VERSION } from '../../data/business.js';
 import { CONSENT_VERSION } from '../../data/consent.js';
 import { waHref } from '../../data/whatsapp.js';
+/* 9 november 2026 (ronde 91, K-14): het abonnement op maat achter "Bespreek met ons"
+   (lijst 85, B8). Eén vlag; zie de kop van src/data/aboZichtbaar.js. */
+import { ABO_EXTRA_ZICHTBAAR, bespreekAbo } from '../../data/aboZichtbaar.js';
 /* Zelfde vorm als in OrderFlow.astro: er is (nog) geen gedeelde constante. */
 const CONTACT_EMAIL = 'hello@visuails.com';
 /* Zonder deze regel zijn .paneel, .hoog en .knop lege klassen. */
@@ -290,7 +293,7 @@ for (const p of planList) {
          spaarplafond (12 oktober 2026): sparen tot 3 maanden, het getal per plan. */
       { t: nl ? `Sparen tot ${spaarPlafond(cr)} credits` : `Save up to ${spaarPlafond(cr)} credits`,
         sub: nl ? `${CREDITS_GELDIG_MAANDEN} maanden; zolang het loopt vervalt er niets` : `${CREDITS_GELDIG_MAANDEN} months; nothing expires while it runs` },
-      ...(tt.perks.includes('priceLock') ? [{ t: nl ? 'Prijsslot' : 'Price lock', sub: nl ? 'gaat het tarief omhoog, dan blijft het jouwe staan' : 'if the rate goes up, yours stays' }] : []),
+      ...(tt.perks.includes('priceLock') ? [{ t: nl ? 'Prijsgarantie' : 'Price lock', sub: nl ? 'gaat het tarief omhoog, dan blijft het jouwe staan' : 'if the rate goes up, yours stays' }] : []),
       { t: tt.fixed
           ? (nl ? `Looptijd ${tt.months} maanden` : `${tt.months}-month term`)
           : (nl ? 'Maandelijks opzegbaar' : 'Cancel any month'),
@@ -325,15 +328,21 @@ for (const p of planList) {
        door tot je opzegt; twaalf maanden stopt vanzelf; vooruitbetaald kent
        geen latere afschrijving en wordt nooit verlengd. */
     const excl = vatLabel('excl', lang);
+    /* ── WAT ER ECHT VAN DE REKENING GAAT — 8 november 2026 (doorloop 90, B26) ──
+       Het formulier noemde alleen bedragen excl. btw, ook bij een doorlopende machtiging. Een Nederlands bedrijf
+       betaalt 21% erbij: dat bedrag staat er nu tussen haakjes, zoals subBrutoCents() (slots.js) het rekent.
+       Met een geldig EU-btw-nummer of buiten de EU blijft het het bedrag excl. btw. */
+    const incl = (c) => euro(Math.round(c * (1 + VAT_RATE)) / 100, lang);
+    const pct = Math.round(VAT_RATE * 100);
     const verleng = tt.prepaid
       ? (nl
-        ? `Je betaalt nu ${euro(prepayTotalCents(p.id) / 100, lang)} ${excl} voor ${tt.months} maanden. Daarna schrijven we niets meer af, en het jaar wordt niet vanzelf verlengd.`
-        : `You pay ${euro(prepayTotalCents(p.id) / 100, lang)} ${excl} now for ${tt.months} months. Nothing is charged after that, and the year does not renew by itself.`)
+        ? `Je betaalt nu ${euro(prepayTotalCents(p.id) / 100, lang)} ${excl} (${incl(prepayTotalCents(p.id))} met ${pct}% btw in Nederland) voor ${tt.months} maanden. Daarna schrijven we niets meer af, en het jaar wordt niet vanzelf verlengd.`
+        : `You pay ${euro(prepayTotalCents(p.id) / 100, lang)} ${excl} (${incl(prepayTotalCents(p.id))} with ${pct}% VAT in the Netherlands) now for ${tt.months} months. Nothing is charged after that, and the year does not renew by itself.`)
       /* De tak voor de tussentermijn (12 maanden, maandelijks geïncasseerd) is
          weg met die termijn: 6.04, 8 oktober 2026. */
       : (nl
-        ? `Na deze eerste maand schrijven we elke maand automatisch ${euro(cents / 100, lang)} ${excl} af, tot je opzegt. Opzeggen kan elke maand, zelf in VISUAILS Studio.`
-        : `After this first month we charge ${euro(cents / 100, lang)} ${excl} automatically every month until you cancel. You can cancel any month, yourself, in VISUAILS Studio.`);
+        ? `Na deze eerste maand schrijven we elke maand automatisch ${euro(cents / 100, lang)} ${excl} af (${incl(cents)} met ${pct}% btw in Nederland), tot je opzegt. Opzeggen kan elke maand, zelf in VISUAILS Studio.`
+        : `After this first month we charge ${euro(cents / 100, lang)} ${excl} (${incl(cents)} with ${pct}% VAT in the Netherlands) automatically every month until you cancel. You can cancel any month, yourself, in VISUAILS Studio.`);
     varianten.push({
       plan: p.id, term: t, naam: planName(p.id, lang), kop: kopVan(p.id), verleng,
       bedrag: euro(cents / 100, lang),
@@ -406,7 +415,7 @@ const gratisTekst = (taal: 'nl' | 'en') => {
 
 const c = nl ? {
   /* 15 oktober 2026: wie al een abonnement heeft, krijgt hier geen tweede aangeboden. */
-  abo: { kop: 'Je hebt al een abonnement.', zin: 'Overstappen naar een ander plan, credits bijkopen of pauzeren doe je in VISUAILS Studio.', knop: 'Naar je abonnement' },
+  abo: { kop: 'Je hebt al een abonnement.', zin: 'Overstappen naar een ander abonnement, credits bijkopen of pauzeren doe je in VISUAILS Studio.', knop: 'Naar je abonnement' },
   h: 'Je abonnement',
   lede: 'Kies hoeveel credits je elke maand wilt. Je besteedt ze aan catalogsets en carrousels, wanneer je wilt.',
   voordelen: [
@@ -460,11 +469,11 @@ const c = nl ? {
   sumMaatBeelden: 'catalogsets',
   nuH: 'Wat er nu gebeurt',
   nu: [
-    'Je betaalt je eerste maand via Mollie. Met die betaling geeft je bank ook de machtiging af voor de maanden erna.',
+    'Je betaalt je eerste maand via Mollie. Met die betaling geef je ook de machtiging af voor de maanden erna.',
     'Je credits staan meteen klaar.',
     'Je bestelt via het gewone formulier, wanneer je wilt, en betaalt met je credits.',
   ],
-  mandateNote: 'Een machtiging laat je bank ons maandelijks incasseren (SEPA), zoals bij een energieleverancier. Je geeft hem af met de betaling van je eerste maand en kunt hem altijd intrekken.',
+  mandateNote: 'Met een machtiging mogen wij het maandbedrag via je bank incasseren (SEPA), zoals bij een energieleverancier. Je geeft hem af met de betaling van je eerste maand en kunt hem altijd intrekken.',
   /* "Naar de machtiging" klopte niet voor het vooruitbetaalde jaar, dat er
      geen heeft (1 oktober 2026). Betalen doe je bij alle drie. */
   submit: 'Doorgaan naar betalen',
@@ -688,6 +697,10 @@ const termijnen = OFFERED_TERM_IDS.map((id) => {
 /* Wat op de kaart staat: naam, maandbedrag en één regel feiten. De jaarprijs
    staat er alleen als hij afwijkt — bij precies één plan (zie discountMonths in
    plans.js); twee keer hetzelfde bedrag laat de jaartermijn zinloos lijken. */
+const bespreek = bespreekAbo(lang);
+/* K-14: bij een lopend abonnement noemt de regel bijkopen alleen als het in beeld staat. */
+const aboZin = ABO_EXTRA_ZICHTBAAR ? c.abo.zin
+  : (nl ? 'Overstappen naar een ander abonnement of pauzeren doe je in VISUAILS Studio.' : 'Switching plans or pausing is done in VISUAILS Studio.');
 const kaarten = planList.map((p) => {
   const maand = monthlyCents(p.id, 'monthly');
   const besp = planSaving(p.id);
@@ -738,8 +751,8 @@ const kaarten = planList.map((p) => {
     </header>
 
     <div class="ps-abonnee" data-vis-klant="abonnee" hidden role="status">
-      <p class="lopend"><b>{c.abo.kop}</b> {c.abo.zin}</p>
-      <p class="acties"><a class="knop knop-inkt" href="/account/plan">{c.abo.knop}</a></p>
+      <p class="lopend"><b>{c.abo.kop}</b> {aboZin}</p>
+      <p class="acties"><a class="knop knop-lijn" data-rol="navigeren" href="/account/plan">{c.abo.knop}<Fragment set:html={rolIkoon('navigeren')} /></a></p>
     </div>
 
     {/* foutTekst blijft staan voor het geval deze pagina ooit wél per verzoek
@@ -814,6 +827,11 @@ const kaarten = planList.map((p) => {
                 </label>
               ))}
 
+              {/* K-14 (9 november 2026): met de vlag uit staat op de plek van de vierde
+                  kaart "Bespreek met ons", zodat de klant drie plannen en één knop ziet.
+                  Geen radio: er valt hier niets te kiezen, alleen te vragen. */}
+              {ABO_EXTRA_ZICHTBAAR ? (
+              <Fragment>
               {/* ── DE VIERDE OPTIE — 1 september 2026 ──────────────────────
                   Een radio zoals de andere drie; de drie velden staan eronder en
                   verschijnen zodra hij aanstaat. De prijs staat er niet als
@@ -831,7 +849,17 @@ const kaarten = planList.map((p) => {
                 <span class="ps-plan-facts"><span class="ps-plan-feit"><span class="ps-sum-i" set:html={CHECK} />{c.maatFacts}</span></span>
                 <span class="ps-plan-vol" data-ps-vol hidden>{c.plekVol}</span>
               </label>
+              </Fragment>
+              ) : (
+              <div class="ps-plan ps-bespreek" data-k14-bespreek>
+                <span class="ps-plan-line">{bespreek.zin}</span>
+                <p><a class="knop knop-lijn" data-rol="contact" href={bespreek.href} target="_blank" rel="noopener">{bespreek.knop}<NieuwTabblad lang={lang} /></a></p>
+              </div>
+              )}
             </div>
+
+            {ABO_EXTRA_ZICHTBAAR && (
+            <Fragment>
 
             {/* ── ÉÉN VELD: CREDITS PER MAAND — 23 september 2026 ───────────
                 Hier stonden drie velden (producten, carrousels, clips). Een
@@ -856,8 +884,10 @@ const kaarten = planList.map((p) => {
             <details class="ps-look">
               <summary>{c.maatCustomH}</summary>
               <p>{c.maatCustomBody}</p>
-              <p><a class="knop knop-lijn" href={lp('/start/custom-look')}>{c.maatCustomCta}</a></p>
+              <p><a class="knop knop-lijn" data-rol="doorgaan" href={lp('/start/custom-look')}>{c.maatCustomCta}<Fragment set:html={rolIkoon('doorgaan')} /></a></p>
             </details>
+            </Fragment>
+            )}
           </fieldset>
 
           {/* ── 2 · DE TERMIJN ─────────────────────────────────────────────
@@ -1201,7 +1231,7 @@ const kaarten = planList.map((p) => {
               ))}
               <p class="ps-verlengv" data-plan={CUSTOM_MONTH_ID} data-term="monthly">{c.verlengMaat}</p>
             </div>
-            <button class="knop knop-inkt ps-verzend" type="submit">{c.submit}</button>
+            <button class="knop knop-inkt k-groot ps-verzend" data-rol="doorgaan" type="submit">{c.submit}<Fragment set:html={rolIkoon('doorgaan')} /></button>
             <p class="ps-sum-meta">{c.cancelNote}</p>
           </fieldset>
         </aside>
@@ -1526,6 +1556,15 @@ const kaarten = planList.map((p) => {
     var credits = qs.get('credits');
     var veld = document.querySelector('[data-ps-credits]');
     if (veld && credits && /^\d{1,3}$/.test(credits)) veld.value = credits;
+    /* HET LAND UIT DE URL (8 november 2026, doorloop 90, B25): terug van de server met ?fout= en het land dat de
+       klant koos. Alleen twee hoofdletters, en alleen een land dat in de lijst staat. */
+    var land = qs.get('land');
+    var landSel = document.querySelector('[data-ps-geg] [name="country"]');
+    if (landSel && land && /^[A-Z]{2}$/.test(land) && landSel.value !== land
+        && Array.prototype.some.call(landSel.options, function (o) { return o.value === land; })) {
+      landSel.value = land;
+      landSel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
   })();
 
   /* ── DE PLAAT VAN HET PLAN OP MAAT — 23 september 2026 ────────────────────
@@ -1745,6 +1784,10 @@ const kaarten = planList.map((p) => {
   }
   .ps-plan input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
   .ps-plan:hover { border-color: var(--line-strong); }
+  /* K-14: de kaart "Bespreek met ons" is geen keuze; geen hand en geen hover-rand. */
+  .ps-bespreek { cursor: default; align-content: center; gap: .8rem; }
+  .ps-bespreek:hover { border-color: var(--line); }
+  .ps-bespreek p { margin: 0; }
   .ps-plan:has(input:checked) { border-color: var(--kies, var(--accent)); background: var(--accent-soft); }
   .ps-plan:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
   .ps-plan-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .2rem .6rem; }

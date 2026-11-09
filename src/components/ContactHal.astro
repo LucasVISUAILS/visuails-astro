@@ -17,7 +17,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import { waHref, WHATSAPP_DISPLAY } from '../data/whatsapp.js';
 import { VOORKEUR_COPY } from '../data/contactvoorkeur.js';
 import NieuwTabblad from './NieuwTabblad.astro';
@@ -194,7 +194,7 @@ const BEELD = {
         <h3 class="h-ct-vak-kop">{c.waKop}</h3>
         <p class="h-ct-groot">{WHATSAPP_DISPLAY}</p>
         <p class="h-ct-klein">{c.waP}</p>
-        <p class="h-acties"><a class="h-knop h-knop-inkt" href={waHref(c.waTekst)} target="_blank" rel="noopener" {...waKlant(lang)}>{c.waCta}<span class="o" set:html={PIJL} /><NieuwTabblad lang={lang} /></a></p>
+        <p class="h-acties"><a class="h-knop k k-lijn" data-rol="contact" href={waHref(c.waTekst)} target="_blank" rel="noopener" {...waKlant(lang)}>{c.waCta}<NieuwTabblad lang={lang} /></a></p>
       </div>
 
       <div class="h-ct-vak">
@@ -278,7 +278,7 @@ const BEELD = {
         </div>
 
         <div data-botcheck-plek></div>
-        <p class="h-acties ct-verstuur"><button type="submit" class="h-knop h-knop-inkt">{c.vVerstuur}<span class="o" set:html={PIJL} /></button></p>
+        <p class="h-acties ct-verstuur"><button type="submit" class="h-knop k k-vol" data-rol="doorgaan">{c.vVerstuur}<Fragment set:html={rolIkoon('doorgaan')} /></button></p>
         <p class="ct-privacy">{c.vPrivacy[0]}<a href={lp('/privacy')}>{c.vPrivacy[1]}</a>{c.vPrivacy[2]}</p>
         <p class="ct-faq">{c.vFaq[0]}<a href={lp('/faq')}>{c.vFaq[1]}</a>{c.vFaq[2]}</p>
       </form>

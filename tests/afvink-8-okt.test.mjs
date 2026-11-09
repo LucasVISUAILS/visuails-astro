@@ -333,8 +333,9 @@ console.log('\no05 · de klant ziet bij de daggrens één uitleg met WhatsApp en
         await pg.addStyleTag({ content: '.pl-step { display: block !important; }' });
         ok('  en is zichtbaar zodra de stap open is', await blok.isVisible(), true);
         ok('  met een WhatsApp-knop naar wa.me en een mailknop', [
-          /^https:\/\/wa\.me\/\d+\?text=/.test(await blok.locator('a.knop-inkt').getAttribute('href') || ''),
-          /^mailto:hello@visuails\.com\?subject=/.test(await blok.locator('a.knop-lijn').getAttribute('href') || ''),
+          /* knoppensysteem lijst 88/89: contact is altijd een lijnknop (WhatsApp met het officiële icoon, mail met de envelop) */
+          /^https:\/\/wa\.me\/\d+\?text=/.test(await blok.locator('a.knop-lijn[href^="https://wa.me"]').getAttribute('href') || ''),
+          /^mailto:hello@visuails\.com\?subject=/.test(await blok.locator('a.knop-lijn[href^="mailto:"]').getAttribute('href') || ''),
         ], [true, true]);
         ok('  en de tekst noemt WhatsApp', woord.test(await blok.innerText()), true);
         ok('  het vakje zegt het ook', await pg.locator('.pu-slot').first().getAttribute('data-state'), 'failed');

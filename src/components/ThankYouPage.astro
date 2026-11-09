@@ -37,7 +37,7 @@
  * leest voordat je iets anders leest.
  */
 import { waHref } from '../data/whatsapp.js';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import NieuwTabblad from './NieuwTabblad.astro';
 /* AMOUNT erbij: de annuleringstekst noemt het teruggestorte bedrag van de
    proefvisual, en dat is een prijs — die hoort uit pricing.js te komen. */
@@ -184,11 +184,11 @@ const c = nl ? {
   guide: 'Lees hoe je aanlevert',
   guidePdf: 'Fotogids als pdf',
   extraH: 'Meer hoeken, nauwkeuriger resultaat',
-  extraB: 'Met meer foto’s raken we pasvorm, kleur en detail de eerste keer beter. Close-ups van de stof en een gedragen foto voeg je gratis toe.',
+  extraB: 'Met meer foto’s raken we pasvorm, kleur en detail de eerste keer beter. Close-ups van de stof en een draagfoto voeg je gratis toe.',
   /* Punt 2.05, V31-3 = a (8 oktober 2026): nasturen gaat in Studio, per vak. */
   extraCta: 'Foto’s toevoegen in VISUAILS Studio',
   sourceQ: 'Nog één ding — hoe heb je ons gevonden?',
-  cancelP1: `Uit onze administratie blijkt dat er al een proef naar je bedrijf is gegaan. Er is er één per bedrijf, dus deze tweede aanvraag is geannuleerd — en het betaalde bedrag is onderweg terug naar de rekening waarvandaan je betaalde. Dat duurt meestal een paar werkdagen.`,
+  cancelP1: `Uit onze administratie blijkt dat er al een proef naar je bedrijf is gegaan. Er is er één per bedrijf, dus deze tweede aanvraag is geannuleerd — en het betaalde bedrag is onderweg terug naar de rekening waarmee je betaalde. Dat duurt meestal een paar werkdagen.`,
   cancelP2: 'Klopt dat niet — een collega bestelde zonder het te zeggen, of de eerste proef kwam nooit aan — reageer dan op de bevestigingsmail en we lossen het met de hand op.',
   cancelP3: 'Klaar voor het echte werk? De diensten beginnen bij de prijs per product, zonder minimum.',
   cancelCta: 'Bekijk de diensten',
@@ -278,11 +278,11 @@ const bronnen = nl
           <p class="lopend">{c.cancelP1}</p>
           <p class="lopend">{c.cancelP2}</p>
           <p class="lopend ty-cancelled-next">{c.cancelP3}</p>
-          <p class="acties ty-act"><a class="knop knop-inkt" href={lp('/start')}>{c.cancelCta}</a></p>
+          <p class="acties ty-act"><a class="knop knop-inkt" data-rol="doorgaan" href={lp('/start')}>{c.cancelCta}<Fragment set:html={rolIkoon('doorgaan')} /></a></p>
         </div>
         <div class="ty-cancelled" data-ty-afgezegd role="status" tabindex="-1" hidden>
           <p class="lopend" data-ty-hand-p data-ty-hand-terug={c.handPTerug}>{c.handP}</p>
-          <p class="acties ty-act"><a class="knop knop-inkt" href={lp('/contact')}>{c.handCta}</a></p>
+          <p class="acties ty-act"><a class="knop knop-lijn" data-rol="navigeren" href={lp('/contact')}>{c.handCta}<Fragment set:html={rolIkoon('navigeren')} /></a></p>
         </div>
 
         <div class="ty-now ty-hide-when-cancelled">
@@ -315,7 +315,7 @@ const bronnen = nl
             <li data-ty-verder-lever data-ty-verder-datum={VERDER_ALT.datum} data-ty-verder-datum-volgt={VERDER_ALT.datumVolgt} data-ty-verder-voorrang={VERDER_ALT.voorrang}>{VERDER.regels[1]}</li>
             <li data-ty-verder-stil data-ty-verder-onbetaald={VERDER_ALT.onbetaald} data-ty-verder-credits={VERDER_ALT.credits}>{VERDER.regels[2]}</li>
           </ol>
-          <p class="acties ty-act"><a href={`/account?lang=${lang}`} class="knop knop-inkt" data-ty-cta data-ty-cta-request={c.ctaRequest}>{c.cta}</a></p>
+          <p class="acties ty-act"><a href={`/account?lang=${lang}`} class="knop knop-inkt" data-rol="doorgaan" data-ty-cta data-ty-cta-request={c.ctaRequest}>{c.cta}<Fragment set:html={rolIkoon('doorgaan')} /></a></p>
           <p class="ty-signin" data-ty-signin data-ty-signin-request={c.signinRequest}>{c.signin}</p>
         </div>
       </div>
@@ -407,7 +407,7 @@ const bronnen = nl
             staat per product welk vak nog leeg is, en een foto komt meteen in
             het goede vak. Zonder account logt de klant in met de code uit zijn
             mail. */}
-        <a href="/account/orders" class="knop knop-lijn" data-track="ty-extra-photos">{c.extraCta}</a>
+        <a href="/account/orders" class="knop knop-lijn" data-rol="toevoegen" data-track="ty-extra-photos"><Fragment set:html={rolIkoon('toevoegen')} />{c.extraCta}</a>
       </div>
       <div class="source-ask" data-source-ask>
         <span class="source-q">{c.sourceQ}</span>

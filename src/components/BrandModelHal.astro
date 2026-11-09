@@ -24,7 +24,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import { waHref } from '../data/whatsapp.js';
 import { AMOUNT, euro, vatLabel, WINDOW_THRESHOLD } from '../data/pricing.js';
 import { ROSTER, rosterWoord, telwoord } from '../data/models.js';
@@ -279,7 +279,7 @@ const COPY = {
     waText: 'Hallo VISUAILS, ik wil graag een merkmodel bespreken.',
     heroAlt: 'Eén merkmodel-portret, vóór zes gezichten uit de vaste reeks',
     /* Zie de Engelse tegenhanger. */
-    castShared: 'Vaste reeks',
+    castShared: 'Gedeelde bibliotheek',
     castYours: 'Jouw merkmodel',
     castNote: 'Een voorbeeld — dat van jou staat hier niet op.',
     trust: [
@@ -333,7 +333,8 @@ const COPY = {
     dirH: 'Negen vertrekpunten om op te reageren.',
     dirLead: 'Vertrekpunten, geen menu. We ontwerpen twee of drie richtingen op basis van jouw referenties.',
 
-    outH: 'Echt geleverd werk, geen mock-up.',
+    /* Lijst 87 (e15): gelijk aan het Engels, zonder "geleverd" */
+    outH: 'Echt resultaat, geen mock-up.',
     outAlt: 'Een voorbeeld van een VISUAILS merkmodel',
 
     procH: 'Hoe een merkmodel tot stand komt',
@@ -362,7 +363,7 @@ const COPY = {
       warm: 'Warm', approachable: 'Toegankelijk', editorial: 'Editorial', elegant: 'Elegant',
       refined: 'Verfijnd', classic: 'Klassiek', sporty: 'Sportief', energetic: 'Energiek',
       confident: 'Zelfverzekerd', modern: 'Modern', natural: 'Natuurlijk', bold: 'Gedurfd',
-      statement: 'Statement', soft: 'Zacht', understated: 'Ingetogen', clean: 'Clean',
+      statement: 'Statement', soft: 'Zacht', understated: 'Ingetogen', clean: 'Strak',
       contemporary: 'Eigentijds', sharp: 'Scherp',
     },
 
@@ -438,13 +439,13 @@ const wa = waHref(c.waText);
 /* Koppen in twee tonen. "Jouw model, niet <em>een</em> model." had een nadruk op
    "een"; in de hal draagt de tweede toon die nadruk. */
 const KOP = nl ? {
-  h1: [c.h1a, c.h1b], uit: ['Echt geleverd werk,', 'geen mock-up.'], wat: ['Jouw model,', 'niet een model.'],
+  h1: [c.h1a, c.h1b], uit: ['Echt resultaat,', 'geen mock-up.'], wat: ['Jouw model,', 'niet een model.'],
   proces: ['Hoe een merkmodel', 'tot stand komt.'], richting: ['Negen vertrekpunten', 'om op te reageren.'], slot: [c.ctaH1, c.ctaEm],
-  procesPil: 'Zo gaat het', richtingPil: 'Richtingen', kostPil: c.costSetupLabel, geleverdPil: 'Geleverd',
+  procesPil: 'Zo gaat het', richtingPil: 'Richtingen', kostPil: c.costSetupLabel, geleverdPil: 'Voorbeelden',
 } : {
   h1: [c.h1a, c.h1b], uit: ['Real output,', 'not a mock-up.'], wat: ['Your model,', 'not a model.'],
   proces: ['How a Brand Model', 'comes together.'], richting: ['Nine starting points,', 'to argue with.'], slot: [c.ctaH1, c.ctaEm],
-  procesPil: 'How it goes', richtingPil: 'Directions', kostPil: c.costSetupLabel, geleverdPil: 'Delivered',
+  procesPil: 'How it goes', richtingPil: 'Directions', kostPil: c.costSetupLabel, geleverdPil: 'Examples',
 };
 const DRIE = (n: number) => String(n).padStart(2, '0');
 const vasteReeksGecontroleerd = rosterVolledigGecontroleerd();
@@ -472,8 +473,8 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
       <h1 class="h-kop h-h1 h-op" style="--d:1"><span class="l">{KOP.h1[0]}</span> <span>{KOP.h1[1]}</span></h1>
       <p class="h-lede h-op" style="--d:2">{c.lead}</p>
       <p class="h-acties h-op" style="--d:3">
-        <a class="h-knop h-knop-inkt" href={lp('/start/brand-model')}>{c.ctaPrimary}<span class="o" set:html={ik('rechts')} /></a>
-        <a class="h-knop h-knop-lijn" href={lp('/models')}>{c.libAllCta}</a>
+        <a class="h-knop k k-vol" data-rol="doorgaan" href={lp('/start/brand-model')}>{c.ctaPrimary}<Fragment set:html={rolIkoon('doorgaan')} /></a>
+        <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/models')}>{c.libAllCta}<Fragment set:html={rolIkoon('navigeren')} /></a>
       </p>
       <ul class="h-feiten h-op" style="--d:4" role="list">
         {c.trust.map((t) => <li><span><b>{t[0]}</b> {t[1]}</span></li>)}
@@ -496,7 +497,7 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
     </figure>
   </header>
 
-  {/* ── 2 · ECHT GELEVERD WERK ──────────────────────────────────────────── */}
+  {/* ── 2 · ECHT RESULTAAT (lijst 87, e15: was "echt geleverd werk") ──────── */}
   <section class="h-sec h-bm-uit-sec" aria-labelledby="bm-uit-h">
     <header class="h-sec-kop h-in">
       <div>
@@ -523,7 +524,7 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
           {c.props.map((p) => <li><b>{p[0]}</b><span>{p[1]}</span></li>)}
         </ul>
         <p class="h-bm-regel"><b>{c.fitWhereH}</b> {c.fitWhere.map((w) => w[0]).join(' · ')}</p>
-        <p class="h-bm-regel">{c.genKort} <a class="h-link" href={lp('/compare#ai-tools')}>{c.genCta}<span class="h-cirkel h-cirkel-mini" set:html={ik('pijl')} /></a></p>
+        <p class="h-bm-regel">{c.genKort} <a class="h-link k k-tekst" data-rol="navigeren" href={lp('/compare#ai-tools')}>{c.genCta}<Fragment set:html={rolIkoon('navigeren')} /></a></p>
       </div>
       <aside class="h-bm-kost h-in" style="--d:1" aria-labelledby="bm-kost">
         <h2 id="bm-kost" class="h-kop h-h3">{c.costH}</h2>
@@ -602,7 +603,7 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
         <h2 id="bm-bieb" class="h-kop h-h3">{c.libH}</h2>
         <p class="h-bm-zin">{c.libNote}</p>
       </div>
-      <a class="h-knop h-knop-lijn" href={lp('/models')}>{c.libAllCta}</a>
+      <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/models')}>{c.libAllCta}<Fragment set:html={rolIkoon('navigeren')} /></a>
     </div>
   </section>
 
@@ -610,12 +611,15 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
   <section class="h-sec h-lk-slot-sec" aria-labelledby="bm-slot">
     <div class="h-lk-slot h-in">
       <span class="h-korrel" aria-hidden="true"></span>
-      <h2 id="bm-slot" class="h-kop h-h2"><span class="l">{KOP.slot[0]}</span> {KOP.slot[1]}</h2>
-      <p class="h-acties">
-        <a class="h-knop h-knop-inkt" href={lp('/start/brand-model')}>{c.ctaStart}<span class="o" set:html={ik('rechts')} /></a>
-        <a class="h-knop h-knop-lijn" href={lp('/pricing')}>{c.ctaPricing}</a>
-      </p>
-      <ServiceSwitch current={['brand-model']} lang={lang} class="h-lk-diensten" />
+      {/* lijst 86 (9 november 2026): de glazen plaat om de tekst, op de foto van het slot (src/styles/fotoblok.css) */}
+      <div class="fb-glas">
+        <h2 id="bm-slot" class="h-kop h-h2"><span class="l">{KOP.slot[0]}</span> {KOP.slot[1]}</h2>
+        <p class="h-acties k-inkt">
+          <a class="h-knop k k-vol" data-rol="doorgaan" href={lp('/start/brand-model')}>{c.ctaStart}<Fragment set:html={rolIkoon('doorgaan')} /></a>
+          <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/pricing')}>{c.ctaPricing}<Fragment set:html={rolIkoon('navigeren')} /></a>
+        </p>
+        <ServiceSwitch current={['brand-model']} lang={lang} class="h-lk-diensten" />
+      </div>
     </div>
   </section>
 </div>

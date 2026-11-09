@@ -10,7 +10,7 @@
  * sectiekop met pil en tweetonige kop, de vragen als nevelkaarten.
  * ═══════════════════════════════════════════════════════════════════════════ */
 import Disclose from './Disclose.astro';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import { localizedPath } from '../i18n/ui.js';
 import { SERVICE_FAQ_NAMES } from '../data/faq.js';
 
@@ -32,7 +32,7 @@ const PIJL = ikoon('pijl-schuin');
       <p class="h-pil"><span>{nl ? 'Vragen' : 'Questions'}</span></p>
       <h2 id={id} class="h-kop h-h2"><span class="l">{nl ? 'Vragen over' : 'Questions about'}</span> {naam}.</h2>
     </div>
-    <a class="h-link" href={`${lp('/faq')}#${dienst}`}>{meer}<span class="h-cirkel h-cirkel-klein" aria-hidden="true" set:html={PIJL} /></a>
+    <a class="h-link k k-tekst" data-rol="navigeren" href={`${lp('/faq')}#${dienst}`}>{meer}<Fragment set:html={rolIkoon('navigeren')} /></a>
   </header>
   <div class="h-vragen-lijst h-in">
     {faqs.slice(0, TOON).map((f) => <Disclose summary={f.q} tone="plain"><p>{f.a}</p></Disclose>)}

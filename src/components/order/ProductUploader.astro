@@ -122,7 +122,7 @@ const COPY = {
 const t = COPY[lang];
 /* De werkplaats (levering 59, afvinklijst 36 b-stap2): één product tegelijk, met onderaan
    Vorig en Volgend product. Alleen zichtbaar onder body.werkplaats (werkplaats.css). */
-import { ikoon } from '../../data/iconen.js';
+import { ikoon, rolIkoon } from '../../data/iconen.js';
 const wkPu = lang === 'nl'
   ? { vorige: 'Vorig product', volgende: 'Volgend product', van: 'Product {i} van {n}' }
   : { vorige: 'Previous product', volgende: 'Next product', van: 'Product {i} of {n}' };
@@ -199,7 +199,7 @@ const hint = lang === 'nl'
 
       {/* Verborgen tot pipeline.js weet of hij iets kan: hij telt mee met het
           aantal in stap 1 (zie syncAddKnop). */}
-      <p class="pu-add-row"><button type="button" class="btn btn-ghost pu-add" data-pl-add hidden>{k.addProduct}</button></p>
+      <p class="pu-add-row"><button type="button" class="btn btn-ghost pu-add" data-rol="toevoegen" data-pl-add hidden><Fragment set:html={rolIkoon('toevoegen')} />{k.addProduct}</button></p>
 
       <p class="pu-swap">
         <button type="button" class="pu-link" data-pu-switch="folder">{k.toFolder}</button>
@@ -247,8 +247,8 @@ const hint = lang === 'nl'
       <ul class="pu-missing-lijst" data-pl-missing-list></ul>
       <p class="pu-sub-lead">{k.laterLead}</p>
       <p class="pu-missing-btns">
-        <button type="button" class="btn btn-primary" data-pl-missing-fix>{k.missingFix}</button>
-        <button type="button" class="btn btn-ghost" data-pl-missing-go>{k.missingGo}</button>
+        <button type="button" class="btn btn-primary" data-rol="toevoegen" data-pl-missing-fix><Fragment set:html={rolIkoon('toevoegen')} />{k.missingFix}</button>
+        <button type="button" class="btn btn-ghost" data-rol="doorgaan" data-pl-missing-go>{k.missingGo}<Fragment set:html={rolIkoon('doorgaan')} /></button>
       </p>
     </div>
 
@@ -270,8 +270,8 @@ const hint = lang === 'nl'
       <h3 class="pu-sub-h">{t.limietH}</h3>
       <p>{t.limietBody}</p>
       <p class="pu-limiet-btns">
-        <a href={waHref(t.limietWaText)} target="_blank" rel="noopener" class="knop knop-inkt">{t.limietWa}</a>
-        <a href={`mailto:hello@visuails.com?subject=${encodeURIComponent(t.limietMailSubject)}&body=${encodeURIComponent(t.limietMailBody)}`} class="knop knop-lijn">{t.limietMail}</a>
+        <a href={waHref(t.limietWaText)} target="_blank" rel="noopener" class="knop knop-lijn" data-rol="contact">{t.limietWa}</a>
+        <a href={`mailto:hello@visuails.com?subject=${encodeURIComponent(t.limietMailSubject)}&body=${encodeURIComponent(t.limietMailBody)}`} class="knop knop-lijn" data-rol="contact"><Fragment set:html={rolIkoon('mail')} />{t.limietMail}</a>
       </p>
       <p class="pu-limiet-alt">{WHATSAPP_DISPLAY} · hello@visuails.com</p>
     </div>

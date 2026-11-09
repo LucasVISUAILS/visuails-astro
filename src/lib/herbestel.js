@@ -19,6 +19,7 @@
  *
  * Geen DOM, geen database.
  */
+import { knopInhoud } from '../data/iconen.js';
 import { getStyle } from '../data/styles.js';
 import { getCatalogStyle } from '../data/catalogStyles.js';
 import { achtergrondNaam } from '../data/backgrounds.js';
@@ -137,7 +138,7 @@ export function herbestelHtml(k, esc) {
   const regel = [k.proef ? k.vanaf : '', k.credits].filter(Boolean).join(' · ');
   return `<section class="herbestel" aria-labelledby="herbestel-h">
   <h2 id="herbestel-h">${esc(k.kop)}</h2>
-  <p class="herbestel-knop"><a class="btn${k.proef ? ' btn-primary' : ''}" href="${esc(k.href)}">${esc(k.label)}</a></p>
+  <p class="herbestel-knop"><a class="btn${k.proef ? ' btn-primary' : ''}" data-rol="doorgaan" href="${esc(k.href)}">${knopInhoud('doorgaan', k.label)}</a></p>
   ${k.proef && k.delen.length ? `<p class="herbestel-delen">${esc(k.delen.join(' · '))}</p>` : ''}
   ${regel ? `<p class="herbestel-regel">${esc(regel)}</p>` : ''}
   <p class="herbestel-uitleg">${esc(k.uitleg)}</p>

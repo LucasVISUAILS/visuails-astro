@@ -1,4 +1,5 @@
 ---
+import { knopInhoud } from '../../../data/iconen.js';
 /**
  * /account/plan/return — terug van Mollie na het afgeven van het mandaat.
  * 6 september 2026: de laatste route van Studio die nog uit account.js kwam.
@@ -26,7 +27,7 @@ const { t, lang, customer, thema, navDicht } = st;
 >
   <section class="st-blok" aria-label={t.planHeading}>
     <div class="st-kaart-vlak st-terug">
-      <a class="btn btn-primary" href={v.ctaHref}>{v.cta}</a>
+      <a class="btn btn-primary" data-rol="doorgaan" href={v.ctaHref} set:html={knopInhoud('doorgaan', v.cta)} />
     </div>
   </section>
 </StudioLayout>

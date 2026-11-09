@@ -95,7 +95,8 @@ for (const [p, pre] of [['index.html', ''], ['nl/index.html', '/nl']]) {
   for (const dienst of ['catalog', 'lifestyle', 'video']) {
     ok(`${pre || 'en'}: dienstbeeld ${dienst} → ${pre}/${dienst}/`, maken.includes(`href="${pre}/${dienst}/"`));
   }
-  ok(`${pre || 'en'}: "Start een bestelling" → ${pre}/start/`, h.includes(`class="h-knop h-knop-inkt" href="${pre}/start/"`));
+  // knoppensysteem lijst 88/89: de inktknop heet nu .h-knop.k.k-vol en draagt data-rol vóór href
+  ok(`${pre || 'en'}: "Start een bestelling" → ${pre}/start/`, h.includes(`class="h-knop k k-vol" data-rol="doorgaan" href="${pre}/start/"`));
   ok(`${pre || 'en'}: geen knop rechtstreeks naar een formulier`, !/href="(?:\/nl)?\/start\/(?:catalog|lifestyle)\/"/.test(h));
   ok(`${pre || 'en'}: geen ?zie= meer`, !h.includes('?zie='));
 }

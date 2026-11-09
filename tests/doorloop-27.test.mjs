@@ -44,10 +44,12 @@ console.log('\nB03 · B10 · Nu doen');
   const r = { id: 7, soort: 'oppakken', extra: null };
   ok('dashboard: Oppakken post de status In productie', [knopVoor(r).post, knopVoor(r).href, knopVoor(r).velden], [true, '/admin/orders/7/status', { status: 'in_production', back: 'files' }]);
   ok('bestelpagina: ook één klik', !!knopVoor(r, 'bestelling').post);
-  ok('nachtrapport (een mail): een link naar het lijstje', [knopVoor(r, 'rapport', 'https://x').href, !!knopVoor(r, 'rapport').post], ['https://x/admin/orders/7/files#status', false]);
+  /* Ronde 91 (w4): het statuslijstje (#status) is weg; de link opent de bestelpagina, met Oppakken bovenaan. */
+  ok('nachtrapport (een mail): een link naar de bestelpagina', [knopVoor(r, 'rapport', 'https://x').href, !!knopVoor(r, 'rapport').post], ['https://x/admin/orders/7/files', false]);
   const rv = { id: 7, soort: 'revisie', extra: 350 };
   ok('Revisie openen op de bestelpagina springt naar het vakje', knopVoor(rv, 'bestelling').href, '#rev-350');
-  ok('  en op het dashboard naar de kaart', knopVoor(rv, 'dashboard').href, '#rev-350');
+  /* Ronde 91 (w5): de kaart op het dashboard is weg; ook van daar naar het vakje op de bestelpagina. */
+  ok('  en op het dashboard naar het vakje op de bestelpagina', knopVoor(rv, 'dashboard').href, '/admin/orders/7/files#rev-350');
   ok('het werkbordvakje met een revisie draagt die id', /id="rev-\$\{f\.id\}"/.test(lees('src/lib/admin.js')));
 }
 

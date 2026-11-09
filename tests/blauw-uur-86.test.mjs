@@ -155,14 +155,19 @@ console.log('\n3c · het deelplaatje en de fotogids in de letters van de site');
 /* ── 4 · de knoppen, in de bron ── */
 console.log('\n4 · de knoppen');
 ok('de gloed weg bij alle knoppen (h-knop::before), ook de schaduw onder Bestellen', /html body\.hal \.h-knop::before \{ content: none; display: none; \}/.test(blok) && /\.nav-cta[^{]*\{\n  background: #1A4279 linear-gradient[^}]*box-shadow: none !important;/.test(blok));
-ok('K2 · de inktknop: nacht in rust, onder de muis en met de toets de snede, langs de snede geschoven', /html body\.hal \.h-knop-inkt \{\n  background: #0F1217 linear-gradient\(126\.87deg, #0F1217 0%, #172945 17\.5%, #1A4279 50%, #25508B 77\.5%, #2D61A8 100%\) -2px -2px \/ calc\(200% \+ 4px\) calc\(200% \+ 4px\) no-repeat;/.test(blok)
-  && /html body\.hal \.h-knop-inkt:hover, html body\.hal \.h-knop-inkt:focus-visible \{\n  background: #0F1217 linear-gradient\([^)]*\) calc\(100% \+ 2px\) calc\(100% \+ 2px\)/.test(blok));
+/* knoppensysteem lijst 88/89: de inktknop staat sinds het knoppensysteem in src/styles/knoppen.css (.k-vol, --knop-inkt van lijst 84 A2 b) */
+const knoppenCss = lees('src/styles/knoppen.css');
+ok('K2 · de inktknop: inkt in rust, onder de muis en met de toets de snede, langs de snede geschoven', /background: var\(--k-inkt\) var\(--knop-inkt\) -2px -2px \/ calc\(200% \+ 4px\) calc\(200% \+ 4px\) no-repeat;/.test(knoppenCss)
+  && /background: var\(--k-inkt\) var\(--knop-inkt\) calc\(100% \+ 2px\) calc\(100% \+ 2px\)/.test(knoppenCss));
 ok('K1 · Bestellen in de snede; onder de muis schuift het licht door de knop', /#1A4279 0%, #25508B 27\.5%, #2D61A8 50%, #25508B 72\.5%, #1A4279 100%\) -2px -2px/.test(blok) && /\.container\.nav \.nav-cta:focus-visible/.test(blok));
-ok('K3 · de lijnknop: onder de muis een ring van 1 px in de snede (masker), op het inktblok niet', /\.h-knop-lijn::after \{ content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px;/.test(blok) && /mask: linear-gradient\(#000 0 0\) content-box exclude, linear-gradient\(#000 0 0\);/.test(blok) && /\.h-lk-slot \.h-knop-lijn::after, html body\.hal \.h-proef \.h-knop-lijn::after \{ content: none; \}/.test(blok));
+/* knoppensysteem lijst 88/89: de lijnknop krijgt onder de muis het vlak en een lijn in inkt (lijst 88 regel 1); de ring in de snede is weg */
+ok('K3 · de lijnknop: onder de muis het vlak #F4F5F7 en de lijn in inkt', /:is\(\.k, \.btn, \.knop\):hover:not\(#k\), :is\(\.k, \.btn, \.knop\):focus-visible:not\(#k\) \{ background: var\(--k-vlak\); box-shadow: inset 0 0 0 1\.5px var\(--k-inkt\);/.test(knoppenCss));
 const paar = lees('src/scripts/knoppaar.js');
-ok('K4 · de kier: het script zet de lucht alleen in de strook van de kier, niet op inkt of bij een witte knop', /const LUCHT = 'linear-gradient\(180deg, #25508B 0%, #2D61A8 100%\)';/.test(paar) && /rij\.closest\('\.h-lk-slot, \.h-proef-woord'\)/.test(paar) && /h-knop-wit'\) \|\| k\.classList\.contains\('h-knop-lijnwit'\)/.test(paar) && /ra\.right - rr\.left - rij\.clientLeft - snede - 1/.test(paar) && !/addEventListener\('resize'/.test(paar));
-ok('D3 · de focusrand van een knop in de snede (2 px, 2 px buiten de knop); hoog contrast de gewone rand', /\.h-knop:focus-visible \{ outline: 2px solid transparent; outline-offset: 2px; \}/.test(blok) && /\.h-knop:focus-visible::after \{ content: ""; position: absolute; inset: -4px;/.test(blok) && /@media \(forced-colors: active\) \{\n  html body\.hal \.h-knop:focus-visible \{ outline: 2px solid CanvasText; \}/.test(blok));
-ok('minder beweging: geen overgang op de knoppen, kaarten en Bestellen', /@media \(prefers-reduced-motion: reduce\) \{\n  html body\.hal \.h-knop-inkt, html body\.hal \.h-knop-wit, html body\.hal \.h-knop-lijn::after,/.test(blok));
+ok('K4 · de kier: het script zet de lucht alleen in de strook van de kier, niet op inkt of bij een witte knop', /const LUCHT = 'linear-gradient\(180deg, #25508B 0%, #2D61A8 100%\)';/.test(paar) && /rij\.closest\('\.h-lk-slot, \.h-proef-woord'\)/.test(paar) && /k\.classList\.contains\('k-wit'\) \|\| k\.closest\('\.k-inkt'\)/.test(paar) && /ra\.right - rr\.left - rij\.clientLeft - snede - 1/.test(paar) && !/addEventListener\('resize'/.test(paar));
+/* knoppensysteem lijst 88/89: de focusrand is 2 px blauw uur, 2 px buiten de knop (SPEC: #25508B offset 2, op inkt #80A7DD) */
+ok('D3 · de focusrand van een knop: 2 px blauw uur, 2 px buiten de knop; op inkt blauw licht', /:is\(\.k, \.btn, \.knop\):focus-visible:not\(#k\) \{ outline: 2px solid var\(--k-blauw\); outline-offset: 2px; \}/.test(knoppenCss) && /outline-color: var\(--k-blauw-licht\)/.test(knoppenCss));
+/* knoppensysteem lijst 88/89: de knop zelf staat bij minder beweging stil in knoppen.css */
+ok('minder beweging: geen overgang op de knoppen, kaarten en Bestellen', /@media \(prefers-reduced-motion: reduce\) \{\n  \[data-rol\] \.ik \.ik-a \{ transition: none !important; transform: none !important; \}\n  :is\(\.k, \.btn, \.knop\):not\(#k\) \{ transition: none; \}/.test(knoppenCss) && /@media \(prefers-reduced-motion: reduce\) \{\n  html body\.hal \.h-knop-inkt, html body\.hal \.h-knop-wit, html body\.hal \.h-knop-lijn::after,/.test(blok));
 
 /* ── 5 · in de browser ── */
 console.log('\n5 · in de browser');
@@ -220,16 +225,18 @@ try {
     ok('geen gloed onder een knop (::before is weg)', gloed === 0, String(gloed));
 
     /* K2: de inktknop */
-    const K = '.o8-acties .h-knop-inkt';
+    const K = '.o8-acties .h-knop.k-vol';  // knoppensysteem lijst 88/89: de inktknop heet .k-vol
     await page.locator(K).scrollIntoViewIfNeeded();
     await page.mouse.move(5, 5); await page.waitForTimeout(500);
     /* levering 87: de knop is een pil, dus de hoeken van zijn vak liggen erbuiten; meet binnen de ronde uiteinden */
     const rust = [await pixel(page, K, 0.05, 0.5), await pixel(page, K, 0.9, 0.62)];
     /* levering 87: als pil valt de hoek linksboven weg; het donkerste zichtbare punt is het linker uiteinde (#172945 op 17,5 %) */
-    ok('K2 · in rust de nacht: inkt links, blauw rechtsonder', dichtbij(rust[0], '#0F1217', 28) && isBlauw(rust[1]) && rust[1][2] < 140, rust.join(' · '));
+    /* 9 november 2026 (lijst 84, A2 = b): in rust gewoon inkt, overal (was: de nacht, inkt links en blauw rechtsonder) */
+    ok('K2 · in rust inkt, van links tot rechtsonder (lijst 84, A2 = b)', dichtbij(rust[0], '#0F1217', 14) && dichtbij(rust[1], '#0F1217', 14), rust.join(' · '));
     await page.hover(K); await page.waitForTimeout(700);
     const muis = [await pixel(page, K, 0.15, 0.2), await pixel(page, K, 0.5, 0.15), await pixel(page, K, 0.995, 0.5), await pixel(page, K, 0.5, 0.995)];
-    ok('… onder de muis helemaal blauw (de snede), ook aan het linker uiteinde', muis.every(isBlauw) && lum(muis[0]) < lum(muis[1]), muis.join(' · '));
+    /* onder de muis de snede: vanuit de hoek rechtsonder blauw, naar links toe donkerder (de tweede helft van het verloop) */
+    ok('… onder de muis de snede: blauw, het lichtst rechtsonder, naar links donkerder', muis.slice(1).every(isBlauw) && !dichtbij(muis[0], '#0F1217', 12) && lum(muis[0]) < lum(muis[1]) && lum(muis[1]) < lum(muis[2]), muis.join(' · '));
     ok('… en geen haarlijn inkt aan de rechter- of onderrand', muis.slice(2).every((p) => !dichtbij(p, '#0F1217', 12)), muis.slice(2).join(' · '));
     const wit = await page.evaluate((k) => { const c = getComputedStyle(document.querySelector(k)); return c.color; }, K);
     ok('… de letters blijven wit (6,2 : 1 of meer op elke stop)', wit === 'rgb(255, 255, 255)', wit);
@@ -237,12 +244,13 @@ try {
     /* K1: Bestellen */
     const C = '.site-header .nav-cta';
     await page.mouse.move(5, 600); await page.waitForTimeout(700);
-    const c1 = [await pixel(page, C, 0.14, 0.5), await pixel(page, C, 0.86, 0.5)];
+    /* knoppensysteem lijst 88/89: Bestellen draagt nu de pijl uit het kit rechts in het midden; meet erboven (20 % van de hoogte) */
+    const c1 = [await pixel(page, C, 0.14, 0.2), await pixel(page, C, 0.86, 0.2)];
     await page.hover(C); await page.waitForTimeout(800);
-    const c2 = [await pixel(page, C, 0.14, 0.5), await pixel(page, C, 0.86, 0.5)];
-    /* levering 89 (lijst 82, E3): een stukje snede met korrel, de gloed rechts achter de pijl; onder de muis wordt alleen
-       de grond donkerder (de tekst gemeten in tests/posterkleur-89-browser.test.mjs) */
-    ok('K1 · Bestellen (levering 89, E3): een stukje snede, de gloed rechts; onder de muis donkerder', c1.every(isBlauw) && c2.every(isBlauw) && lum(c1[1]) > lum(c1[0]) && lum(c2[0]) < lum(c1[0]) && lum(c2[1]) < lum(c1[1]), `${c1.join(' · ')} → ${c2.join(' · ')}`);
+    const c2 = [await pixel(page, C, 0.14, 0.2), await pixel(page, C, 0.86, 0.2)];
+    /* 9 november 2026 (lijst 84, A1 = c): de snede, schoon — geen stukje met korrel meer. In rust rechts lichter; onder de
+       muis schuift het licht door de knop, dan is links het lichtst. */
+    ok('K1 · Bestellen (lijst 84, A1 = c): de snede schoon; onder de muis schuift het licht door de knop', c1.every(isBlauw) && c2.every(isBlauw) && lum(c1[1]) > lum(c1[0]) && lum(c2[0]) > lum(c2[1]) && !(await page.$eval(C, (e) => e.classList.contains('pk'))), `${c1.join(' · ')} → ${c2.join(' · ')}`);
     const schaduw = await page.evaluate((c) => getComputedStyle(document.querySelector(c)).boxShadow, C);
     ok('… zonder gloed eronder (alleen een laag binnen de knop)', schaduw === 'none' || schaduw.split(/,(?![^(]*\))/).every((d) => d.includes('inset')), schaduw);
 
@@ -252,19 +260,15 @@ try {
     await page.evaluate((k) => document.querySelector(k).focus(), K);
     await page.waitForTimeout(500);
     const ring = await page.evaluate((k) => { const e = document.querySelector(k); const a = getComputedStyle(e, '::after'); return { fv: e.matches(':focus-visible'), inhoud: a.content, inset: a.top, bg: a.backgroundImage.slice(0, 40), outline: getComputedStyle(e).outlineColor }; }, K);
-    ok('D3 · met de toets: een rand in de snede 2 px buiten de knop, geen blauwe outline', ring.fv && ring.inhoud === '""' && ring.inset === '-4px' && ring.bg.startsWith('linear-gradient(126.87deg') && ring.outline === 'rgba(0, 0, 0, 0)', JSON.stringify(ring));
-    const r = await page.locator(K).boundingBox();
-    const buf = await page.screenshot({ clip: { x: r.x - 6, y: r.y - 6, width: r.width + 12, height: r.height + 12 } });
-    const { data, info } = await sharp(buf).raw().toBuffer({ resolveWithObject: true });
-    /* het rechte stuk van de rand (de knop is een pil: de uiteinden buigen naar beneden) */
-    const eind = Math.round(info.width * r.height / 2 / (r.width + 12)) + 16;
-    const rand = []; for (let x = eind; x < info.width - eind; x += 7) { const i = (3 * info.width + x) * info.channels; rand.push([data[i], data[i + 1], data[i + 2]]); }
-    ok('… gemeten: de rand boven de knop is blauw, van donker naar licht', rand.filter(isBlauw).length >= rand.length * 0.8 && lum(rand[rand.length - 1]) > lum(rand[0]), `${rand[0]} → ${rand[rand.length - 1]}`);
+    // knoppensysteem lijst 88/89: de focusrand is een outline van 2 px blauw uur, 2 px buiten de knop (geen ring in de snede meer)
+    const ring2 = await page.evaluate((k) => { const e = document.querySelector(k); const c = getComputedStyle(e); return { fv: e.matches(':focus-visible'), kleur: c.outlineColor, dik: c.outlineWidth, af: c.outlineOffset, stijl: c.outlineStyle }; }, K);
+    ok('D3 · met de toets: 2 px blauw uur, 2 px buiten de knop', ring2.fv && ring2.kleur === 'rgb(37, 80, 139)' && ring2.dik === '2px' && ring2.af === '2px' && ring2.stijl === 'solid', JSON.stringify(ring2));
 
     /* D6: het inktblok */
     const proef = await page.evaluate(() => getComputedStyle(document.querySelector('.h-proef > .h-proef-woord')).backgroundImage);
     /* levering 89 (lijst 78 C2): het €1-blok is het veld B4 Nacht, een stukje nacht met korrel, het licht rechtsonder */
-    ok('D6 · het €1-blok (levering 89): het veld Nacht met korrel, het licht rechtsonder', /\/img\/stuk\/korrel-128\.webp/.test(proef) && /\/img\/stuk\/n-blok-\d\.webp/.test(proef), proef.slice(0, 160));
+    /* lijst 86 (9 november 2026): het €1-blok heeft zijn vaste foto (fotoblok.css); tests/fotoblok-browser meet het */
+    ok('D6 · het €1-blok: de vaste foto van lijst 86', /\/_astro\/proef-1600\.[\w-]+\.(avif|webp)/.test(proef), proef.slice(0, 160));
     const tekst = await page.evaluate(() => { const blok = document.querySelector('.h-proef > .h-proef-woord'); const br = blok.getBoundingClientRect(); return [...blok.querySelectorAll('p, h1, h2, span, a')].filter((e) => e.textContent.trim() && e.getBoundingClientRect().width).map((e) => { const g = document.createRange(); g.selectNodeContents(e); const r = g.getBoundingClientRect(); return { x: (r.right - br.left) / br.width, y: (r.bottom - br.top) / br.height, kleur: getComputedStyle(e).color }; }); });  /* de tekst zelf, niet zijn vak: sinds levering 87 loopt het vak van een korte zin tot de rand (h-1r) */
     /* het lichtste punt onder tekst: de rechteronderhoek van het verste tekstvak, op de fade */
     const t = Math.max(...tekst.filter((e) => /255, 255, 255/.test(e.kleur)).map((e) => { const b = 0.8 * e.x + 0.6 * e.y; return b / 1.4; }));
@@ -293,13 +297,11 @@ try {
       ok('… gemeten: in de kier blauw, bovenaan blauw uur en onderaan lichter', isBlauw(kb) && isBlauw(ko) && lum(ko) > lum(kb), `${kb} → ${ko}`);
       ok('… en niet buiten de kier (naast het paar staat de grond)', !isBlauw(ka) && lum(ka) > 0.8, String(ka));
       /* K3: de lijnknop onder de muis */
-      const L = `${rij} > .h-knop-lijn`;
-      const voor = await page.evaluate((s) => getComputedStyle(document.querySelector(s), '::after').opacity, L);
+      // knoppensysteem lijst 88/89: onder de muis het vlak #F4F5F7 en de lijn in inkt (de ring in de snede is weg)
+      const L = `${rij} > .h-knop.k-lijn`;
       await page.hover(L); await page.waitForTimeout(600);
-      const na = await page.evaluate((s) => getComputedStyle(document.querySelector(s), '::after').opacity, L);
-      const lr = await page.locator(L).first().boundingBox();
-      const rr = await blauwste(page, lr.x + lr.width * 0.6, lr.y + 0.5, 1, 4);
-      ok('K3 · de lijnknop: onder de muis wordt de haarlijn de snede', voor === '0' && na === '1' && isBlauw(rr), `${voor} → ${na} · ${rr}`);
+      const na = await page.evaluate((s) => { const c = getComputedStyle(document.querySelector(s)); return [c.backgroundColor, c.boxShadow]; }, L);
+      ok('K3 · de lijnknop: onder de muis het vlak en de lijn in inkt', na[0] === 'rgb(244, 245, 247)' && /rgb\(15, 18, 23\) 0px 0px 0px 1\.5px inset/.test(na[1]), na.join(' · '));
     }
     await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(700);
     const tel = await page.evaluate(() => [...document.querySelectorAll('.h-acties')].filter((r) => 'hKier' in r.dataset).every((r) => r.classList.contains('h-passen') || getComputedStyle(r.querySelector('.h-knop')).clipPath !== 'none'));
@@ -312,13 +314,13 @@ try {
     await page.evaluate(() => document.querySelector('.h-lk-slot').scrollIntoView()); await page.waitForTimeout(300);
     const slot = await page.evaluate(() => { const s = document.querySelector('.h-lk-slot'); const r = s.querySelector('.h-acties'); return { bg: getComputedStyle(s).backgroundImage, kier: 'hKier' in r.dataset, svc: getComputedStyle(s.querySelector('.svcsw-a')).backgroundImage }; });
     /* levering 89 (lijst 82, E2): het ene inktblok is een stukje nacht of snede met korrel (posterkleur.js) */
-    ok('D6 · het slot onderaan (levering 89, E2): een stukje nacht of snede met korrel; K4 niet op het inktblok; de links daar wit', /korrel-128\.webp/.test(slot.bg) && /\/img\/stuk\/[nt]-blok-\d\.webp/.test(slot.bg) && !slot.kier && /255, 255, 255/.test(slot.svc), JSON.stringify(slot).slice(0, 260));
-    const K = '.h-lk-slot .h-knop-inkt';
+    ok('D6 · het slot onderaan (lijst 86: de vaste foto); K4 niet op het inktblok; de links daar wit', /slot-1600\.[\w-]+\.(avif|webp)|data:image\/avif/.test(slot.bg) && !slot.kier && /255, 255, 255/.test(slot.svc), JSON.stringify(slot).slice(0, 260));
+    const K = '.h-lk-slot .h-knop.k-vol';  // knoppensysteem lijst 88/89: de volle knop op inkt is wit, onder de muis mist (#E6E8EC)
     await page.locator(K).scrollIntoViewIfNeeded(); await page.mouse.move(5, 5); await page.waitForTimeout(400);
     const a = await pixel(page, K, 0.15, 0.2);
     await page.hover(K); await page.waitForTimeout(700);
     const b = await pixel(page, K, 0.15, 0.2), kl = await page.evaluate((k) => getComputedStyle(document.querySelector(k)).color, K);
-    ok('de witte knop op het inktblok vult zich met blauw licht, de letters blijven inkt', dichtbij(a, '#FFFFFF', 4) && isBlauw(b) && b[0] > 110 && kl === 'rgb(15, 18, 23)', `${a} → ${b} · ${kl}`);
+    ok('de witte knop op het inktblok wordt onder de muis mist (#E6E8EC), de letters blijven inkt', dichtbij(a, '#FFFFFF', 4) && dichtbij(b, '#E6E8EC', 6) && kl === 'rgb(15, 18, 23)', `${a} → ${b} · ${kl}`);
     await ctx.close();
   }
   {
@@ -351,7 +353,7 @@ try {
   }
   {
     const { ctx, page } = await open('/nl/', { stil: true });
-    const t = await page.evaluate(() => [getComputedStyle(document.querySelector('.h-knop-inkt')).transitionDuration, getComputedStyle(document.querySelector('.site-header .nav-cta')).transitionDuration]);
+    const t = await page.evaluate(() => [getComputedStyle(document.querySelector('.h-knop.k-vol')).transitionDuration,  /* knoppensysteem lijst 88/89 */ getComputedStyle(document.querySelector('.site-header .nav-cta')).transitionDuration]);
     ok('minder beweging: de knop vult en het licht schuift zonder overgang', t.every((d) => d.split(',').every((x) => parseFloat(x) === 0)), t.join(' · '));
     await ctx.close();
   }

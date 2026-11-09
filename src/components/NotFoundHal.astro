@@ -9,13 +9,12 @@
  */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import { waHref } from '../data/whatsapp.js';
 import NieuwTabblad from './NieuwTabblad.astro';
 import HalBeweging from './HalBeweging.astro';
 import { waKlant } from '../data/klant.js';
 import { localizedPath } from '../i18n/ui.js';
-import { kies, pkKlasse } from '../data/stukken.js';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -66,14 +65,15 @@ const PIJL_R = ikoon('pijl');
       <h1 class="h-kop h-h1 h-op" style="--d:1"><span class="l">{c.h1[0]}</span> <span>{c.h1[1]}</span></h1>
       <p class="h-lede h-op" style="--d:2">{c.lead}</p>
       <p class="h-acties h-op" style="--d:3">
-        <a class="h-knop h-knop-inkt" href={lp('/')}>{c.home}<span class="o" set:html={PIJL_R} /></a>
-        <a class="h-knop h-knop-lijn" href={lp('/start')}>{c.start}</a>
-        <a class="h-knop h-knop-lijn" href={waHref(c.waTekst)} target="_blank" rel="noopener" {...waKlant(lang)}>{c.wa}<NieuwTabblad lang={lang} /></a>
+        <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/')}>{c.home}<Fragment set:html={rolIkoon('navigeren')} /></a>
+        <a class="h-knop k k-lijn" data-rol="doorgaan" href={lp('/start')}>{c.start}<Fragment set:html={rolIkoon('doorgaan')} /></a>
+        <a class="h-knop k k-lijn" data-rol="contact" href={waHref(c.waTekst)} target="_blank" rel="noopener" {...waKlant(lang)}>{c.wa}<NieuwTabblad lang={lang} /></a>
       </p>
     </div>
-    {/* Levering 89 (lijst 78 C4): het vlak naast de kop is het veld Nacht met de witte V; het getal staat in het
-        label boven de kop. Een stukje nacht met korrel (posterkleur.css), zonder harde rand. */}
-    <div class:list={['h-nf-getal h-groot h-in', pkKlasse(kies('nacht', `404:${lang}`))]} aria-hidden="true">
+    {/* Levering 89 (lijst 78 C4): het vlak naast de kop met de witte V; het getal staat in het label boven de kop.
+        Sinds lijst 86 (9 november 2026, B4) een vaste foto: de nacht met flits, bewogen langs de snede, in Blauw
+        uur (src/styles/fotoblok.css). Geen stukje posterkleur meer. */}
+    <div class="h-nf-getal h-groot h-in" aria-hidden="true">
       <svg class="h-nf-v" viewBox="0 0 702 813.25" focusable="false"><use href="#markglyph" width="702" height="813.25" /></svg>
     </div>
   </header>

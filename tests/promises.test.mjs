@@ -315,8 +315,15 @@ console.log('\n/terms §9 beschrijft geen betaalregeling die niet bestaat');
   for (const p of ['src/pages/terms.astro', 'src/pages/nl/terms.astro']) {
     const body = codeOnly(read(p));
     check(`${p.replace('src/pages/', '')} belooft geen termijnen`,
-      /50\s*%|50\/50|in twee delen|in two parts|first instalment|eerste termijn|aanbetaling/i.test(body), false);
+      /50\s*%|50\/50|in twee delen|in two parts|first instalment|eerste termijn/i.test(body), false);
+    /* Lijst 87 (B14, 9 november 2026): een offerte met de hand kan in /admin wel een
+       aanbetaling en een restant krijgen (quote_kind 'aanbetaling' in src/lib/admin.js),
+       en §9 zegt dat nu. Alleen in die vorm: gekoppeld aan de offerte met de hand. */
+    const noemt = /aanbetaling|deposit/i.test(body);
+    check(`${p.replace('src/pages/', '')} noemt een aanbetaling alleen bij een offerte met de hand`,
+      !noemt || /met de hand offreren, kan de offerte een aanbetaling en een restant noemen|work we quote by hand can the quote set out a deposit and a balance/.test(body), true);
   }
+  check('en /admin kent die aanbetaling ook echt', /quote_kind === 'aanbetaling'/.test(read('src/lib/admin.js')), true);
   // En de code die dit zou moeten kunnen, kan het nog steeds niet — dus de tekst mag
   // het ook niet zeggen. Gaat dit ooit gebouwd worden, dan wordt DEZE regel rood en
   // dat is precies het moment om de tekst weer aan te passen.
@@ -715,7 +722,7 @@ console.log('\nde levertijdbelofte is in beide talen dezelfde belofte');
      "bevestigen voordat je betaalt" beschreef een tussenstap die er niet is.
      Wat vastligt: de datum, zodra de bestelling binnen is. */
   check('en zegt dat het vastligt zodra je bestelt', /reserve for you the moment your order is in/i.test(en), true);
-  check('nl zegt dat het vastligt zodra je bestelt', /vastleggen zodra je bestelling binnen is/i.test(nl), true);
+  check('nl zegt dat hij gereserveerd wordt zodra je bestelt (taalronde 92: vastleggen gebeurt pas na betaling)', /reserveren zodra je bestelling binnen is/i.test(nl), true);
 
   /* ── HET STREVEN IS EEN STREVEN, IN BEIDE TALEN ───────────────────────────
    *

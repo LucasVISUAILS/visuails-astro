@@ -71,14 +71,45 @@ export function paginaZonderCommentaar(html) {
   return werk.replace(/\u0000(\d+)\u0000/g, (_, i) => stukken[Number(i)]);
 }
 
+/* ── EN DE VASTE BESTANDEN UIT public/ — 9 november 2026 (ronde 91, A05) ─────
+ *
+ * Deze stap liep alleen over HTML. De stylesheets en het ene script met een vaste
+ * naam komen ongewijzigd uit public/ in dist/, en waren voor de helft werknotitie:
+ * admin.css 48 %, account.css 58 %, portal.css 53 % commentaar, samen ruim 250 kB,
+ * met citaten van Lucas erin — voor iedereen te lezen op visuails.com/account.css.
+ * Dezelfde reden als hierboven, dus dezelfde stap.
+ *
+ * Met esbuild en alleen `minifyWhitespace`: een echte parser (een "/*" in een
+ * tekenreeks blijft staan) die commentaar en witruimte weghaalt en verder niets
+ * herschrijft — geen kleuren, geen samengevoegde regels, geen omlaag-vertaalde
+ * syntaxis (geen `target`). Lukt het parsen niet, dan blijft het bestand zoals het
+ * was. De bron in public/ blijft staan; de toetsen lezen die. */
+export const VASTE_BESTANDEN = ['admin.css', 'account.css', 'portal.css', 'feedback.css', 'admin-voorvertoning.css', 'admin-voorvertoning.js'];
+
+/** Eén vast bestand zonder commentaar; bij een parsefout ongewijzigd. */
+export function bestandZonderCommentaar(naam, inhoud) {
+  try {
+    return transformSync(inhoud, { loader: naam.endsWith('.css') ? 'css' : 'js', legalComments: 'none', minifyWhitespace: true, logLevel: 'silent' }).code;
+  } catch {
+    return inhoud;
+  }
+}
+
 export async function commentaarUitDeBouw(distDir) {
-  let paginas = 0, bytes = 0;
+  let paginas = 0, bytes = 0, bestanden = 0;
   for (const p of await htmlBestanden(distDir)) {
     const voor = await readFile(p, 'utf8');
     const na = paginaZonderCommentaar(voor);
     if (na !== voor) { await writeFile(p, na, 'utf8'); paginas += 1; bytes += voor.length - na.length; }
   }
-  return { paginas, bytes };
+  for (const naam of VASTE_BESTANDEN) {
+    const p = join(distDir, naam);
+    let voor;
+    try { voor = await readFile(p, 'utf8'); } catch { continue; }
+    const na = bestandZonderCommentaar(naam, voor);
+    if (na !== voor) { await writeFile(p, na, 'utf8'); bestanden += 1; bytes += voor.length - na.length; }
+  }
+  return { paginas, bytes, bestanden };
 }
 
 export default function commentaarUitDePagina() {
@@ -87,7 +118,7 @@ export default function commentaarUitDePagina() {
     hooks: {
       'astro:build:done': async ({ dir, logger }) => {
         const uit = await commentaarUitDeBouw(fileURLToPath(dir));
-        logger.info(`commentaar: ${uit.paginas} pagina's, ${Math.round(uit.bytes / 1024)} kB werknotities eruit`);
+        logger.info(`commentaar: ${uit.paginas} pagina's en ${uit.bestanden} vaste bestanden, ${Math.round(uit.bytes / 1024)} kB werknotities eruit`);
       },
     },
   };

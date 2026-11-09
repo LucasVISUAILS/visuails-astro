@@ -37,7 +37,8 @@ ok('/terms NL en EN lezen het revisiebeleid uit (§10)',
   /revisiebeleid\('nl'\)\.map/.test(lees('src/pages/nl/terms.astro')) && /revisiebeleid\('en'\)\.map/.test(lees('src/pages/terms.astro')));
 ok('geen eigen kopie van de zin in /terms',
   /geldt dan als aanvaard|counts as accepted/.test(lees('src/pages/nl/terms.astro') + lees('src/pages/terms.astro')), false);
-ok('de voorwaarden staan op oktober 2026', LAATST_BIJGEWERKT.terms, '2026-10');
+/* Lijst 87 (9 november 2026): de voorwaarden kregen in november weer een wijziging; oktober of later. */
+ok('de voorwaarden staan op oktober 2026 of later', LAATST_BIJGEWERKT.terms >= '2026-10', true);
 
 /* Gebouwd? Dan ook op de pagina zelf. */
 for (const [pad, zin] of [['dist/nl/terms/index.html', 'De levering geldt dan als aanvaard'], ['dist/terms/index.html', 'The delivery then counts as accepted']]) {

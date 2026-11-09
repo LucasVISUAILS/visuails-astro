@@ -22,7 +22,7 @@
 import { lookCopy } from '../data/looks.js';
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import {
   ladderFloor, euro, vatLabel, eenProductRegel, WINDOW_THRESHOLD, TIERS, clause, TEST_SAMPLE, LIFESTYLE_IMAGES, levervlakken, LOOK_PRIJS,
 } from '../data/pricing.js';
@@ -164,8 +164,8 @@ const DRIE = (n: number) => String(n).padStart(2, '0');
       </h1>
       <p class="h-lede h-op" style="--d:3">{c.lede}</p>
       <p class="h-acties h-op" style="--d:4">
-        <a class="h-knop h-knop-inkt" href="#looks">{c.kiesCta}<span class="o" set:html={ik('rechts')} /></a>
-        <a class="h-knop h-knop-lijn" href={lp('/pricing')}>{c.prijsCta}</a>
+        <a class="h-knop k k-vol" data-rol="doorgaan" href="#looks">{c.kiesCta}<Fragment set:html={rolIkoon('doorgaan')} /></a>
+        <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/pricing')}>{c.prijsCta}<Fragment set:html={rolIkoon('navigeren')} /></a>
       </p>
       <ul class="h-feiten h-op" style="--d:5" role="list">
         {c.feiten.map((f, i) => <li><i set:html={ik((['label', 'doos'] as const)[i])} /><span set:html={f} /></li>)}
@@ -198,7 +198,7 @@ const DRIE = (n: number) => String(n).padStart(2, '0');
         </li>
       ))}
     </ul>
-    <p class="h-ls-rij-voet h-in"><a class="h-link" href={lp('/gallery')}>{c.rijCta}<span class="h-cirkel h-cirkel-klein" aria-hidden="true" set:html={ik('pijl')} /></a></p>
+    <p class="h-ls-rij-voet h-in"><a class="h-link k k-tekst" data-rol="navigeren" href={lp('/gallery')}>{c.rijCta}<Fragment set:html={rolIkoon('navigeren')} /></a></p>
   </section>
 
   {/* ── 3 · DE LOOKS ── de kaarten van /start; id="looks" voor de knoppen. */}
@@ -221,7 +221,7 @@ const DRIE = (n: number) => String(n).padStart(2, '0');
               <h3 class="h-st-naam">{l.naam}</h3>
               <p class="h-st-zin">{l.zin}</p>
               <p class="h-st-tarief"><span>{c.vanaf}</span> <b>{e(floor)}</b> <span>{c.per}</span></p>
-              <p class="h-st-wegen"><a class="h-knop h-knop-inkt h-knop-klein" href={l.kies} data-st-kies>{c.kies}<span class="o" set:html={ik('rechts')} /></a></p>
+              <p class="h-st-wegen"><a class="h-knop k k-vol k-klein" data-rol="doorgaan" href={l.kies} data-st-kies>{c.kies}<Fragment set:html={rolIkoon('doorgaan')} /></a></p>
               <p class="h-st-ook-links">
                 <a class="h-st-proef" href={l.proef} data-st-proef data-vis-uit>{sample.cta}</a>
                 <a class="h-st-meer" href={l.meer}>{c.meer}<span set:html={ik('pijl')} /></a>
@@ -240,7 +240,7 @@ const DRIE = (n: number) => String(n).padStart(2, '0');
             <p class="h-dienst-extra-zin">{eigen.tagline} <span class="h-dienst-extra-prijs">{nl ? 'Op aanvraag' : 'On request'}</span></p>
           </div>
           <p class="h-dienst-extra-wegen">
-            <a class="h-knop h-knop-lijn h-knop-klein" href={lp(String(eigen.orderHref).replace(/^\/nl(?=\/)/, ''))}>{c.eigenCta}</a>
+            <a class="h-knop k k-lijn k-klein" data-rol="doorgaan" href={lp(String(eigen.orderHref).replace(/^\/nl(?=\/)/, ''))}>{c.eigenCta}<Fragment set:html={rolIkoon('doorgaan')} /></a>
             <a class="h-st-meer" href={lp(`${basis}/lifestyle/custom`)}>{c.eigenMeer}<span set:html={ik('pijl')} /></a>
           </p>
         </li>
@@ -281,7 +281,7 @@ const DRIE = (n: number) => String(n).padStart(2, '0');
         <h3 class="h-kop h-h3">{c.prijsKop}</h3>
         <p class="h-pr-band-zin">{c.prijsRegel}</p>
       </div>
-      <a class="h-knop h-knop-lijn" href={lp('/pricing')}>{c.staffelCta}</a>
+      <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/pricing')}>{c.staffelCta}<Fragment set:html={rolIkoon('navigeren')} /></a>
     </div>
 
     <a class="h-ls-model h-in" href={`${lp('/custom-models')}#standard`}>

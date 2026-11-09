@@ -36,6 +36,8 @@ import { stampUploadRetention, clearUploadRetention, DELIVERY_DAYS } from './ret
 import { SAMPLE_SERVICE } from '../data/pricing.js';
 /* De revisietermijn, voor het stille afronden onderaan (3.03). */
 import { REVISIE_DAGEN } from '../data/pricing.js';
+/* 9 november 2026 (ronde 91, K-10): bij afronden één vaste mail, eenmalig. */
+import { mailAfgerond } from './afrondMail.js';
 
 /**
  * Rond de bestelling af als élk levend leveringsbeeld is goedgekeurd.
@@ -133,6 +135,13 @@ export async function maybeCloseOrder(env, orderId) {
       console.error('[close] bewaartermijn niet gestempeld voor bestelling', orderId, '—', err?.message || err);
     }
 
+    /* ── "JE BESTELLING IS AFGEROND" — 9 november 2026 (ronde 91, K-10) ───────
+       De klant keurde net alles goed: één mail met tot wanneer hij kan downloaden
+       en de reviewknoppen (src/lib/afrondMail.js, eenmalig). Niet bij de proef: die
+       is af bij levering en zijn levermail zegt het al. Mislukt hij, dan blijft de
+       bestelling gewoon afgerond. */
+    if (!proef) await mailAfgerond(env, orderId, { reden: 'goedgekeurd', nu: new Date() }).catch(() => false);
+
     return true;
   } catch (err) {
     console.error('[close] afronden overgeslagen voor bestelling', orderId, '—', err?.message || err);
@@ -174,7 +183,9 @@ export async function maybeCloseOrder(env, orderId) {
  *     de levermailbewaker meldt hem al in het nachtrapport;
  *   · verborgen bestellingen (testwerk).
  *
- * STIL: geen mail aan de klant. De regel in order_events heeft actor 'intern'
+ * STIL: tot 9 november 2026 geen mail aan de klant; sinds ronde 91 (K-10, lijst 85
+ * A6) krijgt hij "Je bestelling is afgerond" (src/lib/afrondMail.js, eenmalig).
+ * De regel in order_events heeft actor 'intern'
  * (een werkregel, niet voor de tijdlijn van de klant; zie admin.js), en het
  * nachtrapport noemt de kenmerken. Omkeerbaar: closed_at leeg maken heropent.
  *
@@ -187,11 +198,18 @@ export async function maybeCloseOrder(env, orderId) {
 export const STIL_AFRONDEN_DAGEN = REVISIE_DAGEN;
 
 /** Het merkteken van de regel in order_events, ook om hem terug te vinden. */
-export const STIL_AFGEROND_NOTITIE = `Stil afgerond: ${REVISIE_DAGEN} dagen na de laatste levering geen revisie en geen reactie. Er ging geen mail uit.`;
+export const STIL_AFGEROND_NOTITIE = `Stil afgerond: ${REVISIE_DAGEN} dagen na de laatste levering geen revisie en geen reactie. De klant krijgt de mail "Je bestelling is afgerond".`;
 
 /** Hoeveel bestellingen per nacht hoogstens (de meetlat van de cron telt mee). */
 export const STIL_AFRONDEN_LIMIET = 25;
 
+/* ── DE NEDERLANDSE DAG VAN "LAATSTE" — 9 november 2026 (ronde 91, C03) ─────────
+   leverDatums() noemt sinds vandaag de Nederlandse dag van de levering + REVISIE_DAGEN.
+   Een levering om 00:30 Nederlandse tijd staat hier als 23:30 UTC van de dag ervoor;
+   zonder correctie ging de bestelling dan dicht op de ochtend van de laatste
+   beloofde dag. `+2 hours` legt de UTC-tijd op de Nederlandse dag in de zomer en
+   een uur later in de winter: nooit te vroeg, hooguit een nacht later. De nacht
+   draait om 03:10 UTC, dan is date('now') ook in Nederland vandaag. */
 export const STIL_AFRONDEN_SQL = `
   SELECT id, ref FROM (
     SELECT o.id, o.ref,
@@ -210,7 +228,7 @@ export const STIL_AFRONDEN_SQL = `
        AND NOT EXISTS (SELECT 1 FROM files f WHERE f.order_id = o.id AND f.kind = 'delivery'
                          AND f.superseded_at IS NULL AND f.review_state = 'revision_requested')
   )
-  WHERE laatste <> '' AND date(laatste, '+${REVISIE_DAGEN} days') < date('now')
+  WHERE laatste <> '' AND date(laatste, '+2 hours', '+${REVISIE_DAGEN} days') < date('now')
   ORDER BY id
   LIMIT ${STIL_AFRONDEN_LIMIET}`;
 
@@ -238,6 +256,8 @@ export async function rondStilAf(env, orderId) {
   } catch (err) {
     console.error('[close] bewaartermijn niet gestempeld voor bestelling', orderId, '—', err?.message || err);
   }
+  /* K-10: de afrondmail, ook bij stil afronden (eenmalig; zie afrondMail.js). */
+  await mailAfgerond(env, orderId, { reden: 'stil' }).catch(() => false);
   return true;
 }
 

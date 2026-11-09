@@ -1,4 +1,5 @@
 ---
+import { knopInhoud, rolIkoon } from '../../data/iconen.js';
 /* De volledige bestelkaart op Bestellingen. Klapt in (native <details>, geen
    script): de kop draagt kenmerk, dienst · aantal, de vier stappen als stippen
    en de statuspil, en daaronder de Nu-zin en (bij een geleverde bestelling) de
@@ -18,6 +19,11 @@ import Product from './Product.astro';
 import Beeld from './Beeld.astro';
 import { formaatMelding } from '../../lib/formaten.js';
 const { t, lang, v, order, events = [], files = [] } = Astro.props;
+/* 9 november 2026 (ronde 91, S03 en S12): op het afrondscherm staan de datums ook in de map ("Je beelden staan hier
+   tot en met …", bij de proef "Bij de proef zit geen revisieronde…"), en de open kaart toonde ze dan twee keer onder
+   elkaar: in de kop en in de map. Dicht staan ze in de kop (daar is de map niet te zien), open alleen in de map —
+   studio.css verbergt de kopregels met `.st-bestelling-klap[open] .st-nu-datum.is-ook-in-map`. */
+const datumsInMap = !!(v.afrondScherm && v.folder && v.datums.length > 0);
 ---
 <article class="st-kaart-vlak st-bestelling">
 <details class="st-bestelling-klap" id={`order-${v.id}`} open={v.openNow}>
@@ -37,7 +43,7 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
     {v.nu && v.nu.zin && (
       <span class="st-nu">
         <span class="st-nu-zin">{v.nu.zin}</span>
-        {v.datums.map((d) => <span class="st-nu-datum">{d}</span>)}
+        {v.datums.map((d) => <span class={`st-nu-datum${datumsInMap ? ' is-ook-in-map' : ''}`}>{d}</span>)}
       </span>
     )}
   </summary>
@@ -51,8 +57,8 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
     <div class={v.afrondScherm ? 'st-afrond' : 'st-afrond-niet'} id={v.afrondScherm ? `afgerond-${v.id}` : undefined}>
     {v.folder && (
       <section class="st-map">
-        <div class="st-map-tekst"><h3>{v.folder.h}</h3><p>{v.folder.body}</p>{v.afrondScherm && v.datums.length > 0 && <p class="st-map-datum">{v.datums.join(' ')}</p>}{v.folder.note && <p class="st-meta">{v.folder.note}</p>}</div>
-        {v.folder.href && <a class="btn btn-primary btn-sm" href={v.folder.href}>{v.folder.cta}</a>}
+        <div class="st-map-tekst"><h3>{v.folder.h}</h3><p>{v.folder.body}</p>{datumsInMap && <p class="st-map-datum">{v.datums.join(' ')}</p>}{v.folder.note && <p class="st-meta">{v.folder.note}</p>}</div>
+        {v.folder.href && <a class="btn btn-primary" data-rol="downloaden" href={v.folder.href} set:html={knopInhoud('downloaden', v.folder.cta)} />}
       </section>
     )}
     {/* k401 (11 oktober 2026): jpg is de standaard; png en webp vraag je hier
@@ -65,7 +71,7 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
         <div class="st-formaten-knoppen">
           {v.formaten.knoppen.map((k) => k.staat
             ? <span class={`st-formaat-staat${k.klaar ? ' is-klaar' : ''}`}>{k.staat}</span>
-            : <button class="btn btn-2nd btn-sm" type="submit" name="formaat" value={k.formaat}>{k.label}</button>)}
+            : <button class="btn btn-2nd btn-sm" data-rol="downloaden" type="submit" name="formaat" value={k.formaat} set:html={knopInhoud('downloaden', k.label)} />)}
         </div>
         {Number(Astro.url.searchParams.get('order')) === Number(v.id) && formaatMelding(Astro.url.searchParams.get('formaat'), lang) && (
           <p class={`st-meta st-formaten-melding${Astro.url.searchParams.get('formaat') === 'fout' ? ' is-warn' : ''}`} role="status">{formaatMelding(Astro.url.searchParams.get('formaat'), lang)}</p>
@@ -78,12 +84,12 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
     {v.herbestel && (
       <section class="st-herbestel" aria-label={v.herbestel.kop}>
         <h3>{v.herbestel.kop}</h3>
-        <a class={`btn ${v.herbestel.proef ? 'btn-primary' : 'btn-2nd'} btn-sm`} href={v.herbestel.href}>{v.herbestel.label}</a>
+        <a class={`btn ${v.herbestel.proef ? 'btn-primary' : 'btn-2nd'} btn-sm`} data-rol="doorgaan" href={v.herbestel.href} set:html={knopInhoud('doorgaan', v.herbestel.label)} />
         {v.herbestel.proef && v.herbestel.delen.length > 0 && <p class="st-meta">{v.herbestel.delen.join(' · ')}</p>}
         {(v.herbestel.proef || v.herbestel.credits) && <p class="st-herbestel-regel">{[v.herbestel.proef ? v.herbestel.vanaf : '', v.herbestel.credits].filter(Boolean).join(' · ')}</p>}
         <p class="st-meta">{v.herbestel.uitleg}</p>
         {v.herbestelAlles && (
-          <p class="st-herbestel-alles"><a class="st-link" href={v.herbestelAlles.href}>{v.herbestelAlles.label} →</a> <span class="st-meta">{v.herbestelAlles.uitleg}</span></p>
+          <p class="st-herbestel-alles"><a class="st-link k k-tekst k-klein" data-rol="navigeren" href={v.herbestelAlles.href} set:html={knopInhoud('navigeren', v.herbestelAlles.label)} /> <span class="st-meta">{v.herbestelAlles.uitleg}</span></p>
         )}
       </section>
     )}
@@ -124,7 +130,7 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
           <span class="sr-only">{v.fotos.cta}</span>
           <input type="file" name="fotos" multiple required data-melding={lang === 'nl' ? 'Kies eerst een of meer foto’s van je product — daar maken we de beelden van.' : 'Choose one or more photos of your product first — that is what we make the images from.'} accept=".jpg,.jpeg,.png,.webp,.avif,.heic,.heif,image/jpeg,image/png,image/webp,image/avif,image/heic" />
         </label>
-        <button class={`btn ${v.fotos.leeg ? 'btn-primary' : 'btn-2nd'} btn-sm`} type="submit">{v.fotos.cta}</button>
+        <button class={`btn ${v.fotos.leeg ? 'btn-primary' : 'btn-2nd'} btn-sm`} data-rol="uploaden" type="submit" set:html={knopInhoud('uploaden', v.fotos.cta)} />
         <p class="st-meta">{v.fotos.hint}</p>
       </form>
     ) : (() => {
@@ -164,7 +170,7 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
                   </label>
                   <details class="st-vak-weg">
                     <summary>{x.wegLabel}</summary>
-                    <button class="btn btn-ghost btn-sm" type="submit" name="weg" value={String(x.id)} aria-label={x.wegAria} formnovalidate>{x.wegJa}</button>
+                    <button class="btn btn-ghost btn-sm" data-rol="terugnemen" type="submit" name="weg" value={String(x.id)} aria-label={x.wegAria} formnovalidate set:html={knopInhoud('terugnemen', x.wegJa)} />
                   </details>
                 </li>
               ))}
@@ -197,7 +203,7 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
               {v.fotos.compleet.map(product)}
             </details>
           )}
-          <button class="btn btn-primary btn-sm" type="submit">{v.fotos.cta}</button>
+          <button class="btn btn-primary btn-sm" data-rol="uploaden" type="submit" set:html={knopInhoud('uploaden', v.fotos.cta)} />
           <p class="st-meta">{v.fotos.hint}</p>
         </form>
       );
@@ -215,7 +221,7 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
     {v.allesGoed && (
       <form class="st-keur-bestelling" method="post" action="/account/review">
         <input type="hidden" name="order" value={v.id} />
-        <button class="btn btn-2nd btn-sm" type="submit" name="action" value="approve-order" formnovalidate>{v.allesGoed.label}</button>
+        <button class="btn btn-2nd btn-sm" data-rol="bevestigen" type="submit" name="action" value="approve-order" formnovalidate set:html={knopInhoud('bevestigen', v.allesGoed.label)} />
         <p class="st-meta">{v.allesGoed.note}</p>
       </form>
     )}
@@ -262,7 +268,7 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
         <h3>{v.ronde.h}</h3>
         <p class="st-ronde-waarschuwing">{v.ronde.warn}</p>
         <p class="st-meta">{v.ronde.after}</p>
-        <button class="btn btn-primary" type="submit">{v.ronde.send}</button>
+        <button class="btn btn-primary" data-rol="aanmerken" type="submit" set:html={knopInhoud('aanmerken', v.ronde.send)} />
         <div class="st-beleid" set:html={v.ronde.beleidHtml} />
       </form>
     )}
@@ -271,14 +277,14 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
         alle instellingen" hier (bij een geleverde staat hij bij "Meer producten
         in deze look?"). */}
     {!v.herbestel && v.herbestelAlles && (
-      <p class="st-herbestel-alles"><a class="st-link" href={v.herbestelAlles.href}>{v.herbestelAlles.label} →</a> <span class="st-meta">{v.herbestelAlles.uitleg}</span></p>
+      <p class="st-herbestel-alles"><a class="st-link k k-tekst k-klein" data-rol="navigeren" href={v.herbestelAlles.href} set:html={knopInhoud('navigeren', v.herbestelAlles.label)} /> <span class="st-meta">{v.herbestelAlles.uitleg}</span></p>
     )}
     {/* Eén vaste weg naar een mens, onder elke bestelling (ronde 8, S-B17). */}
     {v.contact && (
       <p class="st-contact">
         <span class="st-contact-h">{v.contact.h}</span>
-        <a href={v.contact.wa.href} rel="noopener" target="_blank">{v.contact.wa.label}<NieuwTabblad lang={lang} /></a>
-        <a href={v.contact.mail.href}>{v.contact.mail.label}</a>
+        <a class="k k-tekst k-klein" data-rol="contact" href={v.contact.wa.href} rel="noopener" target="_blank">{v.contact.wa.label}<NieuwTabblad lang={lang} /></a>
+        <a class="k k-tekst k-klein" data-rol="contact" href={v.contact.mail.href}><Fragment set:html={rolIkoon('mail')} />{v.contact.mail.label}</a>
         <span class="st-meta">{v.contact.note}</span>
       </p>
     )}
@@ -289,8 +295,8 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
 {v.nu && v.nu.knop && (
   <div class="st-nu-knop">
     {v.nu.knop.form
-      ? <form method="post" action={v.nu.knop.form}><button class="btn btn-primary btn-sm" type="submit">{v.nu.knop.label}</button></form>
-      : <a class="btn btn-primary btn-sm" href={v.nu.knop.href}>{v.nu.knop.label}</a>}
+      ? <form method="post" action={v.nu.knop.form}><button class={`btn ${v.nu.knop.rol === 'navigeren' ? 'btn-2nd' : 'btn-primary'} btn-sm`} data-rol={v.nu.knop.rol || 'doorgaan'} type="submit" set:html={knopInhoud(v.nu.knop.rol || 'doorgaan', v.nu.knop.label)} /></form>
+      : <a class={`btn ${v.nu.knop.rol === 'navigeren' ? 'btn-2nd' : 'btn-primary'} btn-sm`} data-rol={v.nu.knop.rol || 'navigeren'} href={v.nu.knop.href} set:html={knopInhoud(v.nu.knop.rol || 'navigeren', v.nu.knop.label)} />}
   </div>
 )}
 </article>

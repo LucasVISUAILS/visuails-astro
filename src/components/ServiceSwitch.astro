@@ -110,6 +110,12 @@ const lp = (p: string) => localizedPath(lang, p);
   .svcsw-k { color: var(--ink-3); }
   .svcsw-i { display: inline-flex; align-items: baseline; gap: .5rem; }
   .svcsw-dot { color: var(--line-strong); }
+  /* ronde 92: als de rij op de telefoon afbreekt, begon de tweede regel met een losse punt ("· Brand Model"). Daar
+     laten we de punten weg; de onderstreepte namen en een ruimere tussenruimte scheiden ze al. */
+  @media (max-width: 560px) {
+    .svcsw { column-gap: .9rem; }
+    .svcsw-dot { display: none; }
+  }
   .svcsw-a {
     color: var(--ink-2);
     text-decoration: underline;

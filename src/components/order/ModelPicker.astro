@@ -45,6 +45,7 @@ import { ROSTER, TRAITS, modelId, MODEL_ANY } from '../../data/models.js';
 // over — zie de noot bij ROSTER_COUNT in src/data/models.js.
 import { rosterWoord } from '../../data/models.js';
 import { localizedPath } from '../../i18n/ui.js';
+import { rolIkoon } from '../../data/iconen.js';
 
 import Disclose from '../Disclose.astro';
 
@@ -187,7 +188,7 @@ const COPY = {
     kiesErr: 'Kies wie het draagt — of kies de eerste tegel, dan kiezen wij er een.',
     why: 'Over deze gezichten',
     whyP: [
-      `Deze ${rosterWoord('nl')} modellen gebruiken we voor al onze klanten. Een gezicht dat je hier kiest, kan volgende maand bij een ander merk staan, net zoals bij een stockmodel. Voor de meeste catalogi is dat prima — een koper beoordeelt het kledingstuk.`,
+      `Deze ${rosterWoord('nl')} modellen gebruiken we voor al onze klanten. Een gezicht dat je hier kiest, kan volgende maand bij een ander merk staan. Voor de meeste catalogi is dat prima — een koper beoordeelt het kledingstuk.`,
       'Wil je het gezicht liever exclusief, dan wordt een merkmodel één keer ontworpen, voor jou, en nergens anders gebruikt. Dat is een apart product met een eigen prijs, en je hoeft dat nu niet te beslissen: een standaardgezicht vandaag houdt je niet tegen om later naar een eigen model te gaan.',
     ],
     brandCta: 'Wat een merkmodel is',
@@ -350,7 +351,7 @@ const thumbSet = (m) => {
         op vier Nederlandse pagina's, tot 18 augustus 2026. Een reparatie op één
         plek terwijl hetzelfde patroon nog ergens anders staat, is geen reparatie.
         Sectie 10 van tests/nav.test.mjs bewaakt het nu over de hele bron. */}
-    <a href={`/account?lang=${lang}`} class="btn btn-ghost mp-signin-btn">{c.ownSignIn}</a>
+    <a href={`/account?lang=${lang}`} class="k k-tekst mp-signin-btn" data-rol="doorgaan">{c.ownSignIn}<Fragment set:html={rolIkoon('doorgaan')} /></a>
   </p>
 
   <p class="pl-model-note">{c.anyNote}</p>

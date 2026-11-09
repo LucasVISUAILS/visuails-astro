@@ -1,4 +1,5 @@
 ---
+import { knopInhoud } from '../../data/iconen.js';
 /**
  * /account/invoices — Facturen, als Astro-pagina. Studio fase 2, 5 september 2026.
  * Gegevens: invoicesView() in account.js (dezelfde bron als het oude
@@ -57,7 +58,7 @@ const { t, lang, customer, thema, navDicht } = st;
                   <td data-label={t.invDate}>{r.date}</td>
                   <td data-label={t.invOrder}>{r.ref}</td>
                   <td class="is-bedrag" data-label={t.invAmount}>{r.amount}</td>
-                  <td class="is-actie">{r.href ? <a class="btn btn-ghost btn-sm" href={r.href}>{t.invDownload}</a> : <span class="st-meta">{r.state}</span>}</td>
+                  <td class="is-actie">{r.href ? <a class="btn btn-ghost btn-sm" data-rol="downloaden" href={r.href} set:html={knopInhoud('downloaden', t.invDownload)} /> : <span class="st-meta">{r.state}</span>}</td>
                 </tr>
               ))}
             </tbody>

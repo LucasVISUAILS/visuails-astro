@@ -91,8 +91,8 @@ ok('en geen enkele hoek vraagt om een keuze: leeg is overgeslagen',
 /* ── WELKE REGELS TELLEN MEE, EN WAAROM NIET ALLEMAAL ──────────────────────
  *
  * Niet elke zin met het woord "telefoonfoto" is een BELOFTE over wat je moet
- * opsturen. De alt-tekst bij het voor/na-beeld ("De ruwe telefoonfoto die een
- * klant instuurde") beschrijft één foto omdat er op dat beeld één foto staat —
+ * opsturen. De alt-tekst bij het voor/na-beeld ("Een telefoonfoto van een
+ * shirt", sinds lijst 87) beschrijft één foto omdat er op dat beeld één foto staat —
  * daar hoort geen telwoord bij en het zou onzin zijn er twee van te maken.
  *
  * De eerste versie van deze toets nam ze wél mee en ging drie keer rood op

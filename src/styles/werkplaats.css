@@ -181,13 +181,16 @@ html body.werkplaats.hal .of-werk .wk-blok-aantal > .pl-qty { display: grid; gap
 html body.werkplaats.hal .of-werk .wk-blok-aantal .pl-qty > label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 html body.werkplaats.hal .of-werk .wk-blok-aantal .pl-qty-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; margin: 0 0 0 -6px; }
 html body.werkplaats.hal .of-werk .wk-blok-aantal .pl-qty-n {
-  field-sizing: content; width: auto; min-width: .7ch; max-width: 2.6ch; height: auto; min-height: 0; margin: 0; padding: 0 6px; border: 0; border-radius: 999px;
+  /* Lijst 87 (r90-s12): het tikvlak 44 px breed in plaats van 23. De binnenruimte 16,5 px in plaats van 6 en
+     een marge van −10,5 px ernaast: het cijfer en het woord staan precies waar ze stonden (16,5 − 10,5 = 6),
+     alleen het vlak dat je kunt aantikken groeit (23 + 2 × 10,5 = 44). */
+  field-sizing: content; width: auto; min-width: .7ch; max-width: calc(2.6ch + 21px); height: auto; min-height: 0; margin: 0 -10.5px; padding: 0 16.5px; border: 0; border-radius: 999px;
   background: none; box-shadow: none; text-align: left;
   font: 700 36px/1.1 var(--h-kopletter, var(--h-letter)); letter-spacing: -.01em; color: var(--h-inkt); font-variant-numeric: tabular-nums;
   -moz-appearance: textfield; appearance: textfield;
 }
 /* zonder field-sizing (Firefox, oudere Safari): twee cijfers breed */
-@supports not (field-sizing: content) { html body.werkplaats.hal .of-werk .wk-blok-aantal .pl-qty-n { width: 1.25em; } }
+@supports not (field-sizing: content) { html body.werkplaats.hal .of-werk .wk-blok-aantal .pl-qty-n { width: calc(1.25em + 21px); } }
 html body.werkplaats.hal .of-werk .wk-blok-aantal .pl-qty-n:hover { box-shadow: inset 0 -1px 0 var(--h-lijn-sterk); }
 html body.werkplaats.hal .of-werk .wk-blok-aantal .pl-qty-n:focus-visible { outline: 2px solid var(--h-blauw); outline-offset: 2px; }
 html body.werkplaats.hal .of-werk .wk-blok-aantal .pl-qty-n::-webkit-outer-spin-button,

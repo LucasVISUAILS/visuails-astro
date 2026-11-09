@@ -44,6 +44,7 @@
  * functie niet per ongeluk te bouwen.
  */
 
+import { knopInhoud } from '../data/iconen.js';
 import { serviceLabel } from '../data/services.js';
 import { REVIEW_PLATFORMS, REVIEW_VOORKEUR, parsePlatforms, SCORE_HIGH, SCORE_MAX } from '../data/reviews.js';
 import { TOESTEMMING_WEG_DAGEN, termijnInWoorden } from '../data/termijnen.js';
@@ -487,7 +488,7 @@ function platformButtons(t, action, hidden, clicked, lang = 'nl', { groot = fals
   return lijst.map((p, i) => `<form method="post" action="${esc(action)}" target="_blank" rel="noopener"${i ? ' class="fb-ook"' : ''}>
     ${hidden}<input type="hidden" name="fb" value="click">
     <input type="hidden" name="platform" value="${esc(p.id)}">
-    <button class="${i === 0 ? `btn ${groot ? 'btn-primary' : 'btn-ghost'}` : 'btn-quiet fb-link'}" type="submit">${esc(i === 0 ? t.platform(p.name) : t.platformOok(p.name))}${nieuwTabbladHtml(lang)}</button>
+    <button class="${i === 0 ? `btn ${groot ? 'btn-primary' : 'btn-ghost'}` : 'btn-quiet fb-link k k-tekst k-klein'}" data-rol="${i === 0 ? 'doorgaan' : 'navigeren'}" type="submit">${knopInhoud(i === 0 ? 'doorgaan' : 'navigeren', i === 0 ? t.platform(p.name) : t.platformOok(p.name))}${nieuwTabbladHtml(lang)}</button>
   </form>`).join('') + (clicked.length ? '' : `<span class="fb-hint">${esc(t.platformNote)}</span>`);
 }
 
@@ -516,7 +517,7 @@ function toestemmingForm(t, action, hidden, lang) {
       ${groep('toon_beelden', t.toonBeelden)}
       <p class="fb-hint">${esc(t.toonNoot(termijnInWoorden(TOESTEMMING_WEG_DAGEN, lang)))}</p>
     </div>
-    <button class="btn btn-primary fb-btn-sm" type="submit">${esc(t.quoteSend)}</button>
+    <button class="btn btn-primary fb-btn-sm" data-rol="doorgaan" type="submit">${knopInhoud('doorgaan', t.quoteSend)}</button>
   </form>`;
 }
 
@@ -544,7 +545,7 @@ function naVersturen(t, action, hidden, fb, clicked, lang) {
       ${heeftKeuze && !fb.ingetrokken_at ? `<p class="fb-hint">${esc(t.toonStaat(t.toon[toonWaarde(tt)], t.toon[toonWaarde(tb)]))}</p>` : ''}
       ${magIets && !fb.ingetrokken_at ? `<form class="fb-again" method="post" action="${esc(action)}">
         ${hidden}<input type="hidden" name="fb" value="intrekken">
-        <button class="btn-quiet" type="submit">${esc(t.intrekken)}</button>
+        <button class="btn btn-quiet btn-sm" data-rol="terugnemen" type="submit">${knopInhoud('terugnemen', t.intrekken)}</button>
       </form>` : ''}
     </div>`;
 }
@@ -591,7 +592,7 @@ export function feedbackBlock({ lang = 'nl', action, hidden = '', feedback = nul
   // staat. Zelfde argument als de undo op een goedgekeurd beeld in portal.js.
   const again = `<form class="fb-again" method="post" action="${esc(action)}">
     ${hidden}<input type="hidden" name="fb" value="reset">
-    <button class="btn-quiet" type="submit">${esc(t.changeScore)}</button>
+    <button class="btn btn-quiet btn-sm" data-rol="wijzigen" type="submit">${knopInhoud('wijzigen', t.changeScore)}</button>
   </form>`;
 
   const head = `<h3 id="${kid}">${esc(t.done)}</h3>
@@ -635,7 +636,7 @@ export function feedbackBlock({ lang = 'nl', action, hidden = '', feedback = nul
         <h4>${esc(t.fixH)}</h4>
         <p class="fb-lede">${esc(t.fixLede)}</p>
         <textarea name="note" rows="3" placeholder="${esc(t.fixPlaceholder)}" maxlength="2000" required></textarea>
-        <button class="btn btn-primary" type="submit">${esc(t.fixSend)}</button>
+        <button class="btn btn-primary" data-rol="doorgaan" type="submit">${knopInhoud('doorgaan', t.fixSend)}</button>
       </form>`;
 
   return `<section class="fb" aria-labelledby="${kid}">

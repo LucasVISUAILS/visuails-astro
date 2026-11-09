@@ -12,7 +12,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import HalVragen from './HalVragen.astro';
 import Disclose from './Disclose.astro';
 import HalBeweging from './HalBeweging.astro';
@@ -434,8 +434,8 @@ const BEELD = {
       <h1 class="h-kop h-h1 h-op" style="--d:1"><span class="l">{tonen(c.h1)[0]}</span> <span>{tonen(c.h1)[1]}</span></h1>
       <p class="h-lede h-op" style="--d:2">{c.lead}</p>
       <p class="h-acties h-op" style="--d:3">
-        <a class="h-knop h-knop-inkt" href={lp('/contact')}>{c.ctaPrimary}<span class="o" set:html={ik('rechts')} /></a>
-        <a class="h-knop h-knop-lijn" href={lp('/pricing')}>{c.ctaPrices}</a>
+        <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/contact')}>{c.ctaPrimary}<Fragment set:html={rolIkoon('navigeren')} /></a>
+        <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/pricing')}>{c.ctaPrices}<Fragment set:html={rolIkoon('navigeren')} /></a>
       </p>
       <ul class="h-feiten h-vd-feiten h-op" style="--d:4" role="list">
         {feiten.map(([sterk, rest]) => <li><span><b>{sterk}</b> {rest}</span></li>)}
@@ -489,7 +489,7 @@ const BEELD = {
         <p set:html={c.prijsVariant} />
         <p class="h-vd-vast"><b>{c.prijsNietH}</b> {c.prijsNiet}</p>
         <p class="h-acties">
-          <a class="h-knop h-knop-inkt" href={lp('/contact')}>{c.prijsCta}<span class="o" set:html={ik('rechts')} /></a>
+          <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/contact')}>{c.prijsCta}<Fragment set:html={rolIkoon('navigeren')} /></a>
         </p>
       </div>
     </div>
@@ -502,14 +502,17 @@ const BEELD = {
   <section class="h-sec h-lk-slot-sec" aria-labelledby="hk-slot">
     <div class="h-lk-slot h-in">
       <span class="h-korrel" aria-hidden="true"></span>
-      <p class="h-pil h-pil-wit"><span>{H.slotPil}</span></p>
-      <h2 id="hk-slot" class="h-kop h-h2"><span class="l">{tonen(c.ctaH)[0]}</span> {tonen(c.ctaH)[1]}</h2>
-      <p class="h-vd-slot-zin">{c.ctaP}</p>
-      <p class="h-acties">
-        <a class="h-knop h-knop-inkt" href={lp('/contact')}>{c.ctaPrimary}<span class="o" set:html={ik('rechts')} /></a>
-        <a class="h-knop h-knop-lijn" href={lp('/pricing')}>{c.ctaPrices}</a>
-      </p>
-      <p class="h-vd-belofte">{c.beloofte}</p>
+      {/* lijst 86 (9 november 2026): de glazen plaat om de tekst, op de foto van het slot (src/styles/fotoblok.css) */}
+      <div class="fb-glas">
+        <p class="h-pil h-pil-wit"><span>{H.slotPil}</span></p>
+        <h2 id="hk-slot" class="h-kop h-h2"><span class="l">{tonen(c.ctaH)[0]}</span> {tonen(c.ctaH)[1]}</h2>
+        <p class="h-vd-slot-zin">{c.ctaP}</p>
+        <p class="h-acties k-inkt">
+          <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/contact')}>{c.ctaPrimary}<Fragment set:html={rolIkoon('navigeren')} /></a>
+          <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/pricing')}>{c.ctaPrices}<Fragment set:html={rolIkoon('navigeren')} /></a>
+        </p>
+        <p class="h-vd-belofte">{c.beloofte}</p>
+      </div>
     </div>
   </section>
 </div>

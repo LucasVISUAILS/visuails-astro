@@ -25,7 +25,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import ServiceSwitch from './ServiceSwitch.astro';
 import Compare from './Compare.astro';
 import Disclose from './Disclose.astro';
@@ -213,18 +213,21 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
   <section class="h-sec h-lk-slot-sec" aria-labelledby="lk-slot-h">
     <div class="h-lk-slot h-in">
       <span class="h-korrel" aria-hidden="true"></span>
-      <p class="h-pil h-pil-wit"><span>{c.slotPil}</span></p>
-      <h2 id="lk-slot-h" class="h-kop h-h2"><span class="l">{c.slot[0]}</span> {c.slot[1]}</h2>
-      <ul class="h-feiten" role="list">
-        {feiten.map((f) => <li><span>{f}</span></li>)}
-      </ul>
-      {queue && <p class="h-lk-queue">{queue}</p>}
-      <p class="h-acties">
-        <a class="h-knop h-knop-inkt" href={kies.href}>{kies.label}<span class="o" set:html={ik('rechts')} /></a>
-        <a class="h-knop h-knop-lijn" href={proef.href} data-vis-uit>{proef.label}</a>
-        <KlantKnop lang={lang} soort="herbestel" />
-      </p>
-      <ServiceSwitch current={dienst} lang={lang} class="h-lk-diensten" />
+      {/* lijst 86 (9 november 2026): de glazen plaat om de tekst, op de foto van het slot (src/styles/fotoblok.css) */}
+      <div class="fb-glas">
+        <p class="h-pil h-pil-wit"><span>{c.slotPil}</span></p>
+        <h2 id="lk-slot-h" class="h-kop h-h2"><span class="l">{c.slot[0]}</span> {c.slot[1]}</h2>
+        <ul class="h-feiten" role="list">
+          {feiten.map((f) => <li><span>{f}</span></li>)}
+        </ul>
+        {queue && <p class="h-lk-queue">{queue}</p>}
+        <p class="h-acties k-inkt">
+          <a class="h-knop k k-vol" data-rol="doorgaan" href={kies.href}>{kies.label}<Fragment set:html={rolIkoon('doorgaan')} /></a>
+          <a class="h-knop k k-lijn" data-rol="doorgaan" href={proef.href} data-vis-uit>{proef.label}<Fragment set:html={rolIkoon('doorgaan')} /></a>
+          <KlantKnop lang={lang} soort="herbestel" />
+        </p>
+        <ServiceSwitch current={dienst} lang={lang} class="h-lk-diensten" />
+      </div>
     </div>
   </section>
 </div>

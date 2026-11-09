@@ -44,11 +44,11 @@
  *
  * Astro maakt hier zelf een uitzondering voor de pagina in de ROOT (dist/404.html
  * staat er wel als plat bestand), maar niet voor een genestelde. Vandaar deze kopie.
- * De map blijft bestaan: hij staat op `noindex` en kost niets, en hem weghalen zou een
- * werkende URL breken die misschien ergens gedeeld is.
+ * Sinds lijst 87 (r90-s2, 9 november 2026) gaat de map daarna weg: /nl/404/ gaf een gewone
+ * pagina (200) naast de echte 404. Een 404-pagina is geen adres dat iemand deelt.
  */
 
-import { readFile, writeFile, readdir, stat, copyFile, access } from 'node:fs/promises';
+import { readFile, writeFile, readdir, stat, copyFile, access, rm } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -172,6 +172,10 @@ async function flattenDutch404(distDir) {
     return false;
   }
   await copyFile(from, join(distDir, 'nl', '404.html'));
+  /* Lijst 87 (r90-s2, 9 november 2026): de map zelf weg. /nl/404/ was een gewone pagina met
+     status 200 naast de echte 404, met dezelfde titel en omschrijving. Wat overblijft is
+     nl/404.html, zoals de Engelse 404.html; die haalt src/lib/vaste404.js op als /nl/404. */
+  await rm(join(distDir, 'nl', '404'), { recursive: true, force: true });
   return true;
 }
 

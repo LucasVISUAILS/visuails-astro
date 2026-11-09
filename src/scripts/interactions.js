@@ -16,6 +16,7 @@
 // rather than retyped so the browser refuses exactly what the endpoint refuses
 // — see tsPreflight(). /start reads the same three facts out of its config
 // blob; this page has no blob, so it reads them straight from the source.
+import { ikoon } from '../data/iconen.js';
 import { MAX_FILE_BYTES, MAX_BATCH_FILES, typeFor } from '../lib/uploads.js';
 import { normalizePhone } from '../lib/payer.js';
 import { MELDING_SLEUTEL, PROEF_WEG_DAGEN } from '../data/cookies.js';
@@ -56,8 +57,11 @@ const I18N = {
     tyPaidNoteCredits: 'There is nothing left for you to do.',
     /* Punt 1.05 (8 oktober 2026): de tussenstand. Geen knop — wie net betaald
        heeft, mag hier niet de indruk krijgen dat het nog een keer moet. */
-    tyCheckingNote: 'You do not need to pay again. This page updates itself.',
-    tyCheckingSlow: 'This is taking longer than usual. There is nothing you need to do: we email you as soon as the payment is in. Stopped it yourself? The payment link is in your confirmation email.',
+    /* 8 november 2026 (doorloop 90, B17): hier stond "You do not need to pay again", ook voor wie bij Mollie terugging
+       zonder te betalen. Nu alleen voor wie betaald heeft. */
+    tyCheckingNote: 'Paid? Then there is nothing to do. This page updates itself.',
+    tyCheckingSlow: 'This is taking longer than usual. Paid? Then we email you as soon as the payment is in.',
+    tyCheckingSlowPay: 'This is taking longer than usual. Paid? Then we email you as soon as the payment is in. Went back without paying, or did it not work? Pay here.',
     tyUnpaidFlow: 'Nothing is being made yet: we start as soon as the payment is in. Your photos and choices are saved with the order.',
     tyUnpaidNote: 'Cancelled, declined or expired — nothing has been charged. Your order is saved: pay now, or later through the link in your email.',
     tyRetryCta: 'Pay again',
@@ -65,7 +69,7 @@ const I18N = {
     tsSending: 'Uploading…',
     tsDone: 'Uploaded',
     tsRemove: 'Remove',
-    tsNeedFile: 'Add at least one product photo — we cannot make a sample without one.',
+    tsNeedFile: 'Add at least one product photo — we cannot make a test sample without one.',
     tsWaiting: 'One moment — your photos are still uploading.',
     // Said when an upload failed for a reason the visitor cannot act on — a
     // dead bucket, a 404, a rate limit, a connection that dropped. Same promise
@@ -99,8 +103,9 @@ const I18N = {
     tyPayCta: 'Rond de betaling af',
     tyPaidNote: 'Je hoeft niets meer te doen.',
     tyPaidNoteCredits: 'Je hoeft niets meer te doen.',
-    tyCheckingNote: 'Je hoeft niet opnieuw te betalen. Deze pagina werkt zichzelf bij.',
-    tyCheckingSlow: 'Dit duurt langer dan normaal. Je hoeft niets te doen: we mailen je zodra de betaling binnen is. Zelf afgebroken? De betaallink staat in je bevestigingsmail.',
+    tyCheckingNote: 'Betaald? Dan hoef je niets te doen. Deze pagina werkt zichzelf bij.',
+    tyCheckingSlow: 'Dit duurt langer dan normaal. Betaald? Dan mailen we je zodra de betaling binnen is.',
+    tyCheckingSlowPay: 'Dit duurt langer dan normaal. Betaald? Dan mailen we je zodra de betaling binnen is. Ben je teruggegaan zonder te betalen, of lukte het niet? Betaal dan hier.',
     tyUnpaidFlow: 'Er wordt nog niets gemaakt: we beginnen zodra de betaling binnen is. Je foto’s en keuzes staan bewaard bij de bestelling.',
     tyUnpaidNote: 'Afgebroken, geweigerd of verlopen — er is niets afgeschreven. Je bestelling staat bewaard: betaal nu, of later via de link in je mail.',
     tyRetryCta: 'Opnieuw betalen',
@@ -108,7 +113,7 @@ const I18N = {
     tsSending: 'Uploaden…',
     tsDone: 'Geüpload',
     tsRemove: 'Verwijderen',
-    tsNeedFile: 'Voeg minstens één productfoto toe — zonder foto kunnen we geen sample maken.',
+    tsNeedFile: 'Voeg minstens één productfoto toe — zonder foto kunnen we geen proef maken.',
     tsWaiting: 'Momentje — je foto’s worden nog geüpload.',
     tsOffNote: 'Deze upload is niet doorgekomen. Stuur het formulier gerust op, dan mailen we je voor de foto’s.',
     tsErr: {
@@ -1268,7 +1273,7 @@ function initThankYou() {
     if (mailCel && !mailCel.textContent.trim()) (mailCel.closest('.ty-row') || mailCel).hidden = true;
     /* B15 (doorloop 27): "Bekijk je aanvraag", zoals in de mail. */
     const cta = document.querySelector('[data-ty-cta]');
-    if (cta && cta.dataset.tyCtaRequest) cta.textContent = cta.dataset.tyCtaRequest;
+    if (cta && cta.dataset.tyCtaRequest) { const ik = cta.querySelector('svg.ik'); cta.textContent = cta.dataset.tyCtaRequest; if (ik) cta.append(ik); }  /* het icoon van de rol blijft staan */
     /* En de zin eronder zegt "aanvraag" (afvinklijst 27, k-bedank). */
     const inlog = document.querySelector('[data-ty-signin]');
     if (inlog && inlog.dataset.tySigninRequest) inlog.textContent = inlog.dataset.tySigninRequest;
@@ -1383,6 +1388,8 @@ function initThankYou() {
     knop.href = `/api/order-pay?ref=${encodeURIComponent(ref)}&lang=${pageLang() === 'nl' ? 'nl' : 'en'}`;
     knop.rel = 'noopener';
     knop.textContent = d.tyPayCta;
+    knop.dataset.rol = 'doorgaan';  /* knoppensysteem: betalen is Doorgaan, met de pijl erachter */
+    knop.insertAdjacentHTML('beforeend', ikoon('pijl'));
     wrap.append(note, knop);
     if (stand) { stand.append(wrap); stand.hidden = false; } else box.append(wrap);
     verderOnbetaald();
@@ -1460,11 +1467,38 @@ function zetWhatsappTekst(soort, ref) {
   a.setAttribute('href', `${basis}?text=${encodeURIComponent(sjabloon.replace('{ref}', ref))}`);
 }
 
+/* Het laatste antwoord van order-status: kon er nog betaald worden? (B17, 8 november 2026.) */
+let tyBetaalbaar = false;
+
+/* De betaalknop onder de noot, één keer. */
+function zetBetaalknop(ref, noot, d) {
+  if (document.querySelector('.ty-pay-cta')) return;
+  const wrap = document.createElement('p');
+  wrap.className = 'ty-pay-cta';
+  const knop = document.createElement('a');
+  knop.className = 'knop knop-inkt';
+  knop.href = `/api/order-pay?ref=${encodeURIComponent(ref)}&lang=${pageLang() === 'nl' ? 'nl' : 'en'}`;
+  knop.textContent = d.tyRetryCta;
+  knop.dataset.rol = 'doorgaan';
+  knop.insertAdjacentHTML('beforeend', ikoon('pijl'));
+  wrap.append(knop);
+  noot.after(wrap);
+}
+
 function verifyPaid(ref, noot, d, attempt = 0) {
   const DELAYS = [0, 2000, 3000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000];
   if (attempt >= DELAYS.length) return;
-  /* De minuut is om zonder dat Mollie iets meldde: stoppen, zonder knop. */
-  const opgeven = () => { noot.textContent = d.tyCheckingSlow; };
+  /* ── DE MINUUT IS OM — 8 november 2026 (doorloop 90, B17) ──────────────────
+     Hier stond alleen "Zelf afgebroken? De betaallink staat in je bevestigingsmail." Maar wie bij Mollie
+     teruggaat zonder te betalen, laat de betaling open staan: Mollie meldt niets tot hij verloopt, en de
+     bevestiging met de betaallink wacht op die melding (zie order.js, "ÉÉN MAIL NA HET BETALEN"). Die klant
+     had dus nergens een knop. Na een minuut zonder bericht, en als er nog betaald kan worden: de knop erbij,
+     met de zin dat hij alleen voor wie níet betaalde is. Eerder niet: een trage bank zou anders twee keer
+     betaald worden. */
+  const opgeven = () => {
+    noot.textContent = tyBetaalbaar && d.tyCheckingSlowPay ? d.tyCheckingSlowPay : d.tyCheckingSlow;
+    if (tyBetaalbaar) zetBetaalknop(ref, noot, d);
+  };
   const verder = () => {
     if (attempt + 1 < DELAYS.length) verifyPaid(ref, noot, d, attempt + 1);
     else opgeven();
@@ -1474,6 +1508,7 @@ function verifyPaid(ref, noot, d, attempt = 0) {
       .then((r) => (r.ok ? r.json() : null))
       .then((s) => {
         if (!s) { verder(); return; }
+        tyBetaalbaar = !!s.payable && !s.paid && !s.cancelled;
         const kop = document.querySelector('[data-ty-title]');
         const balk = document.querySelector('[data-ty-bar]');
         if (s.paid) {
@@ -1498,14 +1533,7 @@ function verifyPaid(ref, noot, d, attempt = 0) {
         const stil = document.querySelector('[data-ty-verder-stil]');
         if (stil && stil.dataset.tyVerderOnbetaald) stil.textContent = stil.dataset.tyVerderOnbetaald;
         if (balk) balk.setAttribute('data-ty-pay-state', '');
-        const wrap = document.createElement('p');
-        wrap.className = 'ty-pay-cta';
-        const knop = document.createElement('a');
-        knop.className = 'knop knop-inkt';
-        knop.href = `/api/order-pay?ref=${encodeURIComponent(ref)}&lang=${pageLang() === 'nl' ? 'nl' : 'en'}`;
-        knop.textContent = d.tyRetryCta;
-        wrap.append(knop);
-        noot.after(wrap);
+        zetBetaalknop(ref, noot, d);
       })
       .catch(() => verder());
   }, DELAYS[attempt]);

@@ -18,7 +18,9 @@ import ModelKeuze from '../../../components/order/ModelKeuze.astro';
     {/* Stap 2, boven de productkaarten — zie ModelKeuze.astro. De slot
         heet "model" en staat in OrderFlow bij stap 2; waar dit blok in
         deze bron staat maakt dus niet uit voor waar het terechtkomt. */}
-    <ModelKeuze slot="model" lang="nl" soort="lifestyle" />
+    {/* 9 november 2026 (lijst 87, K01): ook hier staat "Wij kiezen" standaard aan, zoals bij
+        Catalog en de €1-proef — één lijn op alle formulieren. Terugzetten = `verplicht={false}` weghalen. */}
+    <ModelKeuze slot="model" lang="nl" soort="lifestyle" verplicht={false} />
     {/* slot="look" — de look staat nu BOVEN het aantal en niet als negende
         blok in stap 1. Zie de noot bij <slot name="look" /> in
         OrderFlow.astro voor de meting die dat besliste. */}

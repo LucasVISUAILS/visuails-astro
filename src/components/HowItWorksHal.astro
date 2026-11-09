@@ -25,7 +25,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import Compare from './Compare.astro';
 import Note from './Note.astro';
 import Disclose from './Disclose.astro';
@@ -75,7 +75,7 @@ const COPY = {
     stappen: [
       { naam: fase('bestellen').h, zin: 'Your photos, the look and a delivery date, in one form.', bij: `Sent in · ${REQUIRED_SHOT_IDS.length} required · phone` },
       { naam: fase('maken').h, zin: 'One matching series per product, checked before you see it.', bij: `Delivered · ${CATALOG_IMAGES} images · ${RESOLUTIE.standaard} px`, link: ['See more work', '/gallery'] },
-      { naam: 'You approve', zin: 'Approve each image or ask for a revision. Download straight away.', link: ['Look inside the portal', '/studio'] },
+      { naam: 'You approve', zin: 'Approve each image or ask for a revision. Download straight away.', link: ['Look inside VISUAILS Studio', '/studio'] },
     ],
     goedgekeurd: (n: number) => `${n} of ${n} approved`,
     dienstenH: 'Per service',
@@ -131,7 +131,7 @@ const COPY = {
       ['Marketplaces', 'Zalando, Amazon, bol.com'],
     ],
     faqCta: 'Read the FAQ',
-    faqGuides: `longer reads in the <a href="${lp('/guides')}">guides</a>.`,
+    faqGuides: `or find longer reads in the <a href="${lp('/guides')}">guides</a>.`,
 
     proefKop: ['One of your own products,', 'for'] as [string, string],
     /* 14 oktober 2026: "as a set or a carousel" uit de kop naar de zin — de kop liep op een telefoon over drie regels. */
@@ -140,7 +140,7 @@ const COPY = {
   },
   nl: {
     pil: 'Hoe het werkt',
-    h1: ['Één map erin.', 'Een bestelling eruit.'],
+    h1: ['Één map erin.', 'Een hele set eruit.'],
     lead: 'Stuur je productfoto’s. Wij maken de beelden, controleren ze allemaal, en jij keurt ze beeld voor beeld goed.',
     ctaStart: 'Start een bestelling',
     loopPil: 'Je bestelling',
@@ -148,7 +148,7 @@ const COPY = {
     stappen: [
       { naam: fase('bestellen').h, zin: 'Je foto’s, de look en een leverdatum, in één formulier.', bij: `Ingestuurd · ${REQUIRED_SHOT_IDS.length} verplicht · telefoon` },
       { naam: fase('maken').h, zin: 'Eén kloppende serie per product, nagekeken voordat jij hem ziet.', bij: `Geleverd · ${CATALOG_IMAGES} beelden · ${RESOLUTIE.standaard} px`, link: ['Meer werk zien', '/gallery'] },
-      { naam: 'Je keurt goed', zin: 'Keur elk beeld goed of vraag een revisie. Meteen downloaden.', link: ['Het portaal van binnen', '/studio'] },
+      { naam: 'Je keurt goed', zin: 'Keur elk beeld goed of vraag een revisie. Meteen downloaden.', link: ['Zo ziet VISUAILS Studio eruit', '/studio'] },
     ],
     goedgekeurd: (n: number) => `${n} van ${n} goedgekeurd`,
     dienstenH: 'Per dienst',
@@ -167,7 +167,7 @@ const COPY = {
     regelsH: 'De vier regels waar de planning op draait',
     agendaKnop: 'Bekijk de agenda',
     regels: [
-      ['Geteld in producten, niet in orders', `Een studiodag houdt ${PRODUCTS_PER_DAY} producten; een vastgezette datum beslaat ${WINDOW_DAYS} open studiodagen achter elkaar.`],
+      ['Geteld in producten, niet in bestellingen', `Een studiodag heeft ruimte voor ${PRODUCTS_PER_DAY} producten; een vastgezette datum beslaat ${WINDOW_DAYS} open studiodagen achter elkaar.`],
       ['Ruimte voor kleine bestellingen', `${QUEUE_FLOOR_PER_DAY} van elke ${PRODUCTS_PER_DAY} blijven vrij voor kleine bestellingen.`],
       [`Omvang beslist, bij ${WINDOW_THRESHOLD} producten`, `Vanaf ${WINDOW_THRESHOLD} producten houdt een bestelling een vastgelegde datum. Kleinere bestellingen volgen de normale doorlooptijd.`],
       ['Niets wordt twee keer beloofd', 'Een datum die al bezet is, verdwijnt meteen uit de kiezer.'],
@@ -183,7 +183,7 @@ const COPY = {
     handPil: 'Nagekeken',
     handKop: ['Gemaakt met AI.', 'Tot in detail nagekeken.'],   // 25 okt: "Nagekeken tot op het detail." (653 px op 56 px) brak in drie regels; dit is 549 px in een kolom van 604
     handZin: 'Elk beeld wordt in de studio nagekeken tegen je foto voordat jij het ziet.',
-    chips: ['Professionele editing & retouche', 'Kleurcorrectie naar je merk', reviewClaim('attended', 'nl')],
+    chips: ['Professionele nabewerking en retouche', 'Kleurcorrectie naar je merk', reviewClaim('attended', 'nl')],
     beforeAlt: 'Het T-shirt zoals het werd ingestuurd: een telefoonfoto op een houten tafel',
     afterAlt: 'Hetzelfde T-shirt, afgewerkt op lichtgrijs en nagekeken',
 
@@ -204,7 +204,7 @@ const COPY = {
       ['Marktplaatsen', 'Zalando, Amazon, bol'],
     ],
     faqCta: 'Lees de FAQ',
-    faqGuides: `langere stukken bij de <a href="${lp('/guides')}">gidsen</a>.`,
+    faqGuides: `of lees langere stukken bij de <a href="${lp('/guides')}">gidsen</a>.`,
 
     proefKop: ['Één product van jezelf,', 'voor'] as [string, string],
     /* 14 oktober 2026: "als set of carrousel" uit de kop naar de zin — de kop liep op een telefoon over drie regels. */
@@ -227,8 +227,8 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
       <h1 class="h-kop h-h1 h-op" style="--d:1"><span class="l">{c.h1[0]}</span> <span>{c.h1[1]}</span></h1>
       <p class="h-lede h-op" style="--d:2">{c.lead}</p>
       <p class="h-acties h-op" style="--d:3">
-        <a class="h-knop h-knop-inkt" href={lp('/start')} data-track="hiw-start">{c.ctaStart}<span class="o" set:html={ik('rechts')} /></a>
-        <a class="h-knop h-knop-lijn" href={lp('/test-sample')} data-vis-uit>{sample.cta}</a>
+        <a class="h-knop k k-vol" data-rol="doorgaan" href={lp('/start')} data-track="hiw-start">{c.ctaStart}<Fragment set:html={rolIkoon('doorgaan')} /></a>
+        <a class="h-knop k k-lijn" data-rol="doorgaan" href={lp('/test-sample')} data-vis-uit>{sample.cta}<Fragment set:html={rolIkoon('doorgaan')} /></a>
         <KlantKnop lang={lang} soort="herbestel" />
       </p>
     </div>
@@ -280,7 +280,7 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
               </figure>
             )}
           </div>
-          {s.link && <a class="h-link h-hw-stap-link" href={lp(s.link[1])}>{s.link[0]}<span class="h-cirkel h-cirkel-mini" set:html={ik('pijl')} /></a>}
+          {s.link && <a class="h-link k k-tekst h-hw-stap-link" data-rol="navigeren" href={lp(s.link[1])}>{s.link[0]}<Fragment set:html={rolIkoon('navigeren')} /></a>}
           {i < 2 && <span class="h-brug" aria-hidden="true" set:html={ik('rechts')} />}
         </li>
       ))}
@@ -391,7 +391,7 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
       </div>
     </div>
     <p class="h-hw-meer h-in">
-      <a class="h-link" href={lp('/faq')}>{c.faqCta}<span class="h-cirkel h-cirkel-mini" set:html={ik('pijl')} /></a>
+      <a class="h-link k k-tekst" data-rol="navigeren" href={lp('/faq')}>{c.faqCta}<Fragment set:html={rolIkoon('navigeren')} /></a>
       <span set:html={c.faqGuides} />
     </p>
     {/* vatNote() één keer per pagina, bij de enige prijs (de proef hieronder). */}

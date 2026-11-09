@@ -123,7 +123,7 @@ export const videoStyles = [
     ),
     craft: [
       { title: 'Verhaal in één adem', body: 'Eén moment — onthulling, gebruik of sfeer — in enkele seconden.' },
-      { title: 'Scène-continuïteit', body: 'Sets, licht en modellen matchen je lifestyle-stills.' },
+      { title: 'Scène-continuïteit', body: 'Sets, licht en modellen sluiten aan op je lifestylefoto’s.' },
       { title: 'Geregisseerd voor 9:16', body: 'Getimed voor 9:16. 1:1, 16:9 of een andere verhouding op aanvraag.' },
       { title: 'Beweging met manieren', body: 'Vloeiend en doelbewust — duur, niet druk.' },
     ],
@@ -164,10 +164,10 @@ export const videoStyles = [
     cardDesc: 'Campagnestukken met meerdere shots, gebouwd rond jouw briefing. Prijs per project.',
     moodTitle: 'Hoe Campaign eruitziet.',
     moodParagraphs: [
-      'De volledige productie: meerdere shots, een verhaallijn, montages gesneden om een launch te laten landen.',
+      'De volledige productie: meerdere shots, een verhaallijn, gemonteerd om een lancering kracht bij te zetten.',
     ],
     steps: [
-      { title: 'Bepaal wat de campagne omvat', body: 'Shots en bestanden afgesproken via WhatsApp.' },
+      { title: 'Bepaal wat de campagne omvat', body: 'Shots en bestanden vooraf afgesproken in de offerte.' },
       { title: 'Film de hele reeks', body: 'Meerdere shots in één film, met dezelfde kleurzetting, zodat het één verhaal is.' },
       { title: 'Lever', body: 'Standaard verticaal 9:16. Andere verhoudingen en de levertijd spreken we af in de offerte.' },
     ],
@@ -176,18 +176,18 @@ export const videoStyles = [
       ['bottle', 'sneaker', 'jar', 'bag', 'bottle', 'sneaker', 'jar', 'bag', 'bottle']
     ),
     craft: [
-      { title: 'Jouw idee, serieus genomen', body: 'Shotlijst en verhaal gebouwd op jouw launch, geen template.' },
+      { title: 'Jouw idee, serieus genomen', body: 'Shotlijst en verhaal gebouwd op jouw lancering, geen sjabloon.' },
       { title: 'Opbouw met meerdere shots', body: 'Openers, details, hoofdmomenten, eindkaarten — in volgorde gezet.' },
       { title: 'Monteren, kleurcorrectie, leveren', body: 'Eén gedeelde kleurafwerking, in de formaten uit de offerte.' },
       { title: 'Een vaste prijs, vooraf', body: 'Afgesproken via WhatsApp. Jij keurt goed voordat we beginnen.' },
     ],
     why: [
       { title: 'Eén partner voor de hele campagne', body: 'Stills, beweging en elke versie, uit één gesprek.' },
-      { title: 'Eén grade', body: 'Consistente kleur en sfeer over de hele campagne.' },
+      { title: 'Eén kleurbewerking', body: 'Consistente kleur en sfeer over de hele campagne.' },
       { title: 'Geprijsd voordat je je vastlegt', body: 'Een heldere offerte, afgesproken voordat er werk begint.' },
     ],
     bestFor: [
-      'Productlaunches en seizoensdrops',
+      'Productlanceringen en seizoensdrops',
       'Merkfilms en winkelcampagnes',
       'Campagnes die stills en film omvatten',
       'Teams die één partner voor alles nodig hebben',
@@ -195,7 +195,7 @@ export const videoStyles = [
     whatYouGet: [
       'Een campagnefilm met meerdere shots, van tevoren helemaal afgesproken',
       'Verticaal 9:16; andere verhoudingen afgesproken in de offerte',
-      'Eén grade over je hele campagne',
+      'Eén kleurbewerking over je hele campagne',
       'Een heldere, afgesproken prijs voordat het werk begint',
     ],
   },
@@ -219,7 +219,7 @@ export const videoStyles = [
     cardDesc: 'Je eigen concept, tempo en look — een video die helemaal is gebouwd op wat jij ons vertelt.',
     moodTitle: 'Hoe een eigen look eruitziet.',
     moodParagraphs: [
-      'Voorbij de drie formaten — een videoconcept gebouwd op jouw verhaal, jouw tempo, jouw look.',
+      'Voorbij de drie vaste videostijlen — een videoconcept gebouwd op jouw verhaal, jouw tempo, jouw look.',
     ],
     steps: [
       { title: 'Jij vertelt', body: 'Vertel ons het idee en waar het moet draaien.' },
@@ -229,7 +229,7 @@ export const videoStyles = [
     craft: [
       { title: 'Gebouwd op jouw idee', body: 'Geen template — het concept begint bij wat jij vertelt en de referenties die je stuurt.' },
       { title: 'Afgekaderd voordat we beginnen', body: 'Shots, lengte en opleverformaten vooraf afgesproken, helder geprijsd.' },
-      { title: 'Eén grade', body: 'Standaard verticaal 9:16, andere verhoudingen op aanvraag — allemaal met één look.' },
+      { title: 'Eén kleurbewerking', body: 'Standaard verticaal 9:16, andere verhoudingen op aanvraag — allemaal met één look.' },
       { title: 'Consistent met je stills', body: 'Kleur en sfeer afgestemd op je catalogus- en lifestyle-set.' },
     ],
     why: [
@@ -239,7 +239,7 @@ export const videoStyles = [
     ],
     bestFor: [
       'Ideeën die de drie formaten niet dekken',
-      'Launches met een specifiek verhaal te vertellen',
+      'Lanceringen met een eigen verhaal',
       'Merken die een kenmerkende motion-stijl willen',
       'Alles wat we per project afspreken en op een offerte zetten',
     ],

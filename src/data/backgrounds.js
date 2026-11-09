@@ -150,8 +150,8 @@ export const COPY = {
     hint: 'Kies de ondergrond waarop je producten staan. Heb je al productfoto’s, kies dan wat die gebruiken — dat is precies het punt: de nieuwe moeten eruitzien alsof ze naast de oude horen.',
     recommendedH: 'Wat wij aanraden',
     customH: 'Je eigen kleur',
-    customHint: 'Plak de hexwaarde die je huidige foto’s gebruiken, of kies hem. We renderen tegen exact deze waarde.',
-    warn: 'Donkerder dan we zouden aanraden. Het wordt mooi, met twee gevolgen die je moet weten: Amazon accepteert het niet als hoofdafbeelding, en een donkere ondergrond verbergt de schaduw die een koper vertelt dat het product een echt voorwerp is. Zeg het maar, dan draaien we het gewoon zo.',
+    customHint: 'Plak de hexwaarde die je huidige foto’s gebruiken, of kies hem. We gebruiken precies deze waarde.',
+    warn: 'Donkerder dan we zouden aanraden. Het wordt mooi, met twee gevolgen die je moet weten: Amazon accepteert het niet als hoofdafbeelding, en een donkere ondergrond verbergt de schaduw die een koper vertelt dat het product een echt voorwerp is. Wil je het toch, dan maken we het gewoon zo.',
     matchNote: 'Weet je niet welke die van jou is? Stuur één bestaande productfoto mee met je bestelling, dan lezen wij de waarde eraf.',
   },
 };

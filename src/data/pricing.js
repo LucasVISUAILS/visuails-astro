@@ -1687,6 +1687,17 @@ export function feestdagenNL(jaar) {
  * feestdagen, zoals de voorwaarden het beloven.
  */
 export function voorrangDeadline(betaaldIso) {
+  const w = voorrangWerkdagen(betaaldIso);
+  return w ? { datum: w.klaar, uur: VOORRANG.klaarUur } : null;
+}
+
+/**
+ * De twee werkdagen waar een voorrangsbelofte op leunt, als 'YYYY-MM-DD': `start`
+ * (vandaag als het een werkdag is en vóór 15:00, anders de eerstvolgende werkdag)
+ * en `klaar` (de werkdag daarna: de leverdag). Dezelfde som als voorrangDeadline(),
+ * die hem sinds 9 november 2026 hier ophaalt.
+ */
+export function voorrangWerkdagen(betaaldIso) {
   const t = new Date(betaaldIso ? String(betaaldIso).replace(' ', 'T') + (/Z|[+-]\d\d:?\d\d$/.test(String(betaaldIso)) ? '' : 'Z') : Date.now());
   if (Number.isNaN(t.getTime())) return null;
   const delen = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
@@ -1701,7 +1712,23 @@ export function voorrangDeadline(betaaldIso) {
   const vandaagTelt = werkdag(dag) && Number(delen.hour) < VOORRANG.bestelVoorUur;
   if (!vandaagTelt) dag = volgende(dag);
   const klaar = volgende(dag);
-  return { datum: klaar.toISOString().slice(0, 10), uur: VOORRANG.klaarUur };
+  return { start: dag.toISOString().slice(0, 10), klaar: klaar.toISOString().slice(0, 10) };
+}
+
+/**
+ * ── GEEN VOORRANG ALS DE AGENDA DICHT STAAT — 9 november 2026 (ronde 91, C06) ──
+ * De kop van VOORRANG zegt dat voorrang "niet wordt aangeboden als de agenda vol
+ * zit", maar niets keek ernaar: met een dichtgezette week (vakantie, een shoot)
+ * kon een klant voorrang kopen die de studio niet kon waarmaken, en dan gaat de
+ * toeslag terug. Lucas koos (optie a): niet aanbieden als een van de twee werkdagen
+ * waar de belofte op leunt dicht staat. `dicht` is een Set (of lijst) van
+ * 'YYYY-MM-DD' uit blackout_days; `moment` is nu (of het betaalmoment).
+ */
+export function voorrangAgendaOpen(dicht, moment = null) {
+  const w = voorrangWerkdagen(moment);
+  if (!w) return true;
+  const set = dicht instanceof Set ? dicht : new Set(dicht || []);
+  return !set.has(w.start) && !set.has(w.klaar);
 }
 
 /**
@@ -1741,10 +1768,27 @@ export function heeftVoorrang(bron) {
 }
 
 /** De zin die overal staat als een bestelling voorrang heeft. */
-export function voorrangZin(lang) {
-  return lang === 'nl'
-    ? `Voorrang — geleverd uiterlijk de volgende werkdag om ${VOORRANG.klaarUur}:00, of de toeslag komt terug`
-    : `Priority — delivered by ${VOORRANG.klaarUur}:00 the next working day, or the surcharge comes back`;
+export function voorrangZin(lang, betaaldIso = null) {
+  /* ── 8 november 2026 (doorloop 90, B11) ───────────────────────────────────────
+     Een testbestelling met voorrang, betaald op zondagavond: de klant las overal "uiterlijk de volgende werkdag om
+     17:00" (maandag), /admin zei terecht dinsdag 10 november (na 15:00, en zondag is geen werkdag). Wie die zin
+     letterlijk neemt, vraagt maandag om 17:01 de toeslag terug. Nu: met de betaaldatum de echte dag uit
+     voorrangDeadline(); zonder (de bedankpagina, vóór het betalen) de regel met de grens van 15:00 erin. */
+  const nl = lang === 'nl';
+  const d = betaaldIso ? voorrangDeadline(betaaldIso) : null;
+  if (d) {
+    let dag = d.datum;
+    try {
+      dag = new Intl.DateTimeFormat(nl ? 'nl-NL' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })
+        .format(new Date(`${d.datum}T12:00:00Z`));
+    } catch { /* dan de datum zelf */ }
+    return nl
+      ? `Voorrang — geleverd uiterlijk ${dag} om ${d.uur}:00, of de toeslag komt terug`
+      : `Priority — delivered by ${d.uur}:00 on ${dag}, or the surcharge comes back`;
+  }
+  return nl
+    ? `Voorrang — geleverd uiterlijk de volgende werkdag om ${VOORRANG.klaarUur}:00 als je op een werkdag vóór ${VOORRANG.bestelVoorUur}:00 betaalt (anders de werkdag daarna), of de toeslag komt terug`
+    : `Priority — delivered by ${VOORRANG.klaarUur}:00 the next working day when you pay on a working day before ${VOORRANG.bestelVoorUur}:00 (otherwise the working day after), or the surcharge comes back`;
 }
 
 /** Mag deze bestelling voorrang kopen? Buiten de grenzen wordt hij niet getoond. */
@@ -2479,7 +2523,7 @@ export const TIERS = {
        maken. */
     queue: {
       en: 'Standard turnaround — estimated delivery, no fixed date.',
-      nl: 'Standaard levertijd, geen vaste opleverdatum',
+      nl: 'Standaard levertijd, geen vaste leverdatum',
     },
     // ELKE BESTELLING GEEFT TOEGANG TOT HET DASHBOARD, sinds augustus 2026.
     //
@@ -2557,7 +2601,7 @@ export const TIERS = {
        je betaalt" beschreef een tussenstap die er niet meer is. */
     turnaround: {
       en: 'A delivery date we reserve for you the moment your order is in.',
-      nl: 'Een leverdatum die we voor je vastleggen zodra je bestelling binnen is.',
+      nl: 'Een leverdatum die we voor je reserveren zodra je bestelling binnen is.',
     },
     /* De korte vorm houdt de vastgelegde datum en laat het streven weg. Dat is
        met opzet: in twee regels is er geen ruimte voor een nuance, en dan hoort

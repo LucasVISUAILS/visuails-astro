@@ -26,6 +26,10 @@
 
 > **Posterkleur, velden en het logo: 5 november 2026 (levering 89).** Zie de paragraaf hieronder.
 
+> **Gewoon de video: 8 november 2026 (levering 90).** De metro, de rit en het WebGL-doek van de opening zijn weg: de
+> opening speelt alleen nog een video, met het veld B1 erin (sinds de avond van 8 november zonder korrel, in 1,87 s). Wat
+> hieronder over de metro staat is geschiedenis; de lat blijft. Alles in `docs/RUST-80.md` §16.
+
 ---
 
 ## Posterkleur, velden en het logo — 5 november 2026 (levering 89)
@@ -66,6 +70,8 @@ scrolt (hoogstens 8 px en 1,2°), de kaarten van Wat we maken en de stappen van 
 pijl van een knop beweegt met een zachte versnelling in plaats van in stappen. Minder beweging: niets.
 
 ## De metro en de lat — 4 november 2026 (levering 88)
+
+*(Sinds levering 90 is de metro weg: zie boven. De lat geldt nog.)*
 
 Lijst 76 en 77. **De metro**: na de laptop valt het blauwe uur in tien schuine banen op de snede (53,13°) naar beneden
 weg, van rechts naar links als één golf die met de laptop meeloopt, met een sluiter van 0,07 s; dan is het wit en komt Wat
@@ -162,7 +168,9 @@ muis) en blauw licht `#80A7DD` (alleen op inkt). In global.css is `--accent` ink
 
 Een kaart is wit met een haarlijn. Eén inktblok per pagina, afgesneden op 53° (het €1-blok,
 of het slot onderaan). Geen verloop als vlak, geen glas, geen bewogen achtergrond, geen
-warme kleur. Het logo staat stil; sinds levering 86 staat het in de snede en schommelt onder de
+warme kleur — behalve op de vier fotoblokken van lijst 86 (9 november 2026: het €1-blok, het slot, de Studiobrief en de
+404 hebben een vaste, bewogen foto in Blauw uur en een glazen plaat achter de tekst; zie `docs/KLEURENSCHEMA.md` bovenaan
+en `src/styles/fotoblok.css`). Het logo staat stil; sinds levering 86 staat het in de snede en schommelt onder de
 muis het licht (3,6 s). Het palet van schema A (19 – 23 oktober, violet `#4400FF`) en de tabel
 hieronder (20 september) zijn daarmee afgeschreven en blijven staan als verantwoording.
 

@@ -1,4 +1,5 @@
 ---
+import { knopInhoud } from '../../data/iconen.js';
 /* Eén stijl op Je vaste look: de kaart klapt in tot een samenvatting (gezicht ·
    achtergrond · look · verhouding · kanalen) en klapt uit tot het formulier
    met de keuzes. `name="bk"` op de <details>: open je de ene, dan sluit de
@@ -112,6 +113,6 @@ const { t, k } = Astro.props;
       </fieldset>
     )}
 
-    <div class="st-rij is-acties"><button class="btn btn-primary" type="submit">{t.lockSave}</button></div>
+    <div class="st-rij is-acties"><button class="btn btn-primary" data-rol="bevestigen" type="submit" set:html={knopInhoud('bevestigen', t.lockSave)} /></div>
   </form>
 </details>

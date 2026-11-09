@@ -12,8 +12,8 @@ const CHEAPEST = Object.keys(PLAN_AMOUNT).reduce((a, b) => (PLAN_AMOUNT[b] < PLA
 
 const description =
   `Elke maand credits voor catalogsets en carrousels; je bestelt wanneer je wilt. Vanaf ` +
-  `${euro(PLAN_AMOUNT[CHEAPEST], 'nl')} per maand voor ${PLAN_CREDITS[CHEAPEST]} credits, ` +
-  `of kies je eigen aantal. ${vatLabel('excl', 'nl')}.`;
+  `${euro(PLAN_AMOUNT[CHEAPEST], 'nl')} per maand ${vatLabel('excl', 'nl')} voor ${PLAN_CREDITS[CHEAPEST]} credits, ` +
+  `of kies je eigen aantal.`;
 ---
 
 <Layout huid="hal" title="Abonnementen — elke maand credits | VISUAILS" description={description}>

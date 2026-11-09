@@ -38,9 +38,12 @@ export const META_LIMIT = 152;
  * @returns {string}
  */
 export function metaDescription(parts, limit = META_LIMIT, keep = 2) {
+  /* 8 november 2026 (doorloop 90, S3): een deel dat met een kleine letter begint ("from €39 / product"), kwam na
+     de punt van het vorige deel te staan: "… catalog style. from €39". Elk deel begint nu met een hoofdletter. */
   const clean = parts
     .map((p) => String(p ?? '').trim().replace(/\.+$/, ''))
-    .filter(Boolean);
+    .filter(Boolean)
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1));
   const build = (n) => clean.slice(0, n).join('. ') + '.';
   let used = clean.length;
   while (used > keep && build(used).length > limit) used -= 1;

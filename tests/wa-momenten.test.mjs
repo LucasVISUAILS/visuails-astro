@@ -81,7 +81,8 @@ const knoppenNl = contactKnoppen(waLink('betaling', sanne), { wie: 'VOLT', email
 ok('knoppen NL: Bel vóór App, en Mail met dezelfde tekst', knoppenNl.indexOf('Bel VOLT') < knoppenNl.indexOf('App VOLT') && new RegExp(`mailto:sanne@voorbeeld-volt\\.test\\?subject=x&body=${GROET_NL_URL}%20Sanne`).test(knoppenNl));
 const knoppenDe = contactKnoppen(waLink('betaling', lena), { wie: 'MUSTER' });
 ok('knoppen DE: App vóór Bel', knoppenDe.indexOf('App MUSTER') < knoppenDe.indexOf('Bel MUSTER'));
-ok('Bellen is de violette knop bij NL, appen bij DE', /btn btn-primary btn-sm" href="tel:/.test(knoppenNl) && /btn btn-primary btn-sm" href="https:\/\/wa\.me/.test(knoppenDe));
+// knoppensysteem lijst 88/89: contact is altijd een lijnknop (geen vol meer); welke eerst komt, zegt de volgorde hierboven
+ok('Bellen en appen zijn lijnknoppen met data-rol="contact"', /btn btn-ghost btn-sm" data-rol="contact" href="tel:/.test(knoppenNl) && /btn btn-ghost btn-sm" data-rol="contact" href="https:\/\/wa\.me/.test(knoppenDe) && !/btn-primary/.test(knoppenNl + knoppenDe));
 
 /* ══ 2 · DE PLEKKEN ═════════════════════════════════════════════════════════ */
 console.log('\n2 · de plekken');
@@ -135,8 +136,9 @@ const get = async (pad) => {
 {
   const { status, html } = await get('/admin');
   ok('dashboard laadt', status, 200);
-  const zij = html.slice(html.indexOf('class="db-zij"'));
-  ok('zijkolom "wacht op betaling": de twee bestellingen met "dag N van 14"', /class="db-wacht"/.test(zij) && zij.includes('VIS-TEST-0011') && zij.includes(`dag 5 van ${VERVAL_DAG}`) && zij.includes(`dag 2 van ${VERVAL_DAG}`));
+  /* Ronde 91 (w6): geen zijkolom meer; dit staat onder de lijst, bij de bewakers. */
+  const zij = html.slice(html.indexOf('class="db-rand"'));
+  ok('onder de lijst "wacht op betaling": de twee bestellingen met "dag N van 14"', /class="db-wacht"/.test(zij) && zij.includes('VIS-TEST-0011') && zij.includes(`dag 5 van ${VERVAL_DAG}`) && zij.includes(`dag 2 van ${VERVAL_DAG}`));
   ok('  met Bel/App/Mail', /class="db-wacht"[\s\S]*href="tel:\+31612345678"[\s\S]*wa\.me\/31612345678[\s\S]*mailto:sanne@voorbeeld-volt\.test/.test(zij));
 }
 {

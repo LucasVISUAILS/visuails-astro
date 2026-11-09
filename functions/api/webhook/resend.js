@@ -16,8 +16,18 @@
 //   · een gebeurtenis die ons niet aangaat (sent, delivered, opened) → 200;
 //   · dubbele aflevering → 200 (de UNIQUE op event_id vangt hem);
 //   · elke andere databasefout → 500, zodat Svix het opnieuw probeert.
+//
+// ── EN SINDS 9 november 2026 (ronde 92): AFMELDINGEN VOOR DE STUDIOBRIEF ──────
+//
+// Wie onderaan een Studiobrief op afmelden klikt, meldt zich af bij Resend; Resend
+// meldt dat als `contact.updated` met `unsubscribed: true` (en een verwijderd
+// contact als `contact.deleted`). Dezelfde webhook, hetzelfde secret, dezelfde
+// handtekening: in Resend vink je bij deze webhook die twee events erbij aan. De
+// stand komt in subscribers.unsubscribed_at — zie src/lib/studiobriefBeheer.js en
+// /admin/studiobrief.
 
 import { verifySvix, parseBounce, recordBounce } from '../../../src/lib/bounces.js';
+import { parseContactEvent, verwerkContactEvent } from '../../../src/lib/studiobriefBeheer.js';
 
 export async function onRequestPost({ request, env }) {
   const secret = env?.RESEND_WEBHOOK_SECRET;
@@ -43,6 +53,20 @@ export async function onRequestPost({ request, env }) {
     payload = JSON.parse(raw);
   } catch {
     return new Response('bad json', { status: 400 });
+  }
+
+  /* Een contactbericht (9 november 2026, ronde 92): afgemeld of weer aangemeld.
+     Een dubbele aflevering verandert niets (de eerste afmelddatum blijft). */
+  const contact = parseContactEvent(payload);
+  if (contact) {
+    try {
+      const n = await verwerkContactEvent(env, contact);
+      console.log(`[resend-webhook] ${contact.type}: ${contact.afgemeld ? 'afgemeld' : 'aangemeld'} (${n} rij${n === 1 ? '' : 'en'})`);
+      return new Response(n ? 'recorded' : 'ignored', { status: 200 });
+    } catch (err) {
+      console.error('[resend-webhook] afmelding niet weggeschreven —', err?.message || err);
+      return new Response('storage error', { status: 500 });
+    }
   }
 
   const bounce = parseBounce(payload);

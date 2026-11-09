@@ -1,4 +1,5 @@
 ---
+import { knopInhoud } from '../../data/iconen.js';
 /* De andere lopende bestellingen op het overzicht, als compacte rij. Elke rij
    draagt dezelfde Nu-zin als de kaart van die bestelling (punt 3.01: uit
    watNuView() in account.js, dus uit nuZin()); zonder die staat de zin van de
@@ -21,9 +22,9 @@ const nuVan = (o) => {
         <span class="st-ref">{o.ref}</span>
         <Pil status={weergaveStatus(o)} lang={lang} />
         <span class="st-meta">{serviceLabel(o.service, lang) || o.service} · {nuVan(o)}</span>
-        <a class="st-link" href={`/account/orders?order=${o.id}#order-${o.id}`}>{t.ovOpenOrder}</a>
+        <a class="st-link k k-tekst k-klein" data-rol="navigeren" href={`/account/orders?order=${o.id}#order-${o.id}`} set:html={knopInhoud('navigeren', t.ovOpenOrder)} />
       </li>
     ))}
   </ul>
-  {orders.length > 6 && <p class="st-meta st-meer"><a class="st-link" href="/account/orders">{t.ovViewAll}</a></p>}
+  {orders.length > 6 && <p class="st-meta st-meer"><a class="st-link k k-tekst k-klein" data-rol="navigeren" href="/account/orders" set:html={knopInhoud('navigeren', t.ovViewAll)} /></p>}
 </div>

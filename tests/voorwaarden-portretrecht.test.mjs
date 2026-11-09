@@ -66,7 +66,8 @@ for (const [taal, pad, kop, merk, k5, k6] of [
   }
 }
 ok('de woorden: drie / three, twee weken / two weeks', [inWoorden(3, 'nl'), inWoorden(3, 'en'), inWoorden(2, 'nl'), inWoorden(2, 'en')], ['drie', 'three', 'twee', 'two']);
-ok('de voorwaarden staan op oktober 2026', LAATST_BIJGEWERKT.terms, '2026-10');
+/* Lijst 87 (9 november 2026): de voorwaarden kregen in november weer een wijziging; oktober of later. */
+ok('de voorwaarden staan op oktober 2026 of later', LAATST_BIJGEWERKT.terms >= '2026-10', true);
 
 /* Gebouwd? Dan de zinnen zoals de klant ze leest. */
 for (const [pad, zin] of [

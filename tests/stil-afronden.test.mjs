@@ -13,6 +13,7 @@
 import { d1, verseDb, telling } from './lib/d1sqlite.mjs';
 import { tasks } from '../cron/index.js';
 import { STIL_AFRONDEN_DAGEN, STIL_AFGEROND_NOTITIE } from '../src/lib/close.js';
+import { AFROND_MAIL_NOTITIE } from '../src/lib/afrondMail.js';
 import { REVISIE_DAGEN } from '../src/data/pricing.js';
 
 let goed = 0, fout = 0;
@@ -97,11 +98,15 @@ ok('en niet bij een open bestelling',
 
 ok('het nachtrapport noemt het aantal en de kenmerken',
   /^3 bestellingen stil afgerond .*VIS-NACHT-ERNA, VIS-ABO, VIS-OUD-ANTWOORD\.$/.test(regel || ''), true);
-ok('en zegt dat er geen mail uitging', /geen mail/.test(regel || ''), true);
-ok('er ging geen mail (geen enkele fetch)', gezien.length, 0);
+/* 9 november 2026 (ronde 91, K-10): sinds Lucas' keuze in lijst 85 (A6) krijgt de klant
+   bij stil afronden de mail "Je bestelling is afgerond"; hier stond "geen mail". */
+ok('en zegt dat de klant de afrondmail kreeg', /Je bestelling is afgerond/.test(regel || ''), true);
+ok('één afrondmail per afgeronde bestelling (K-10)', gezien.filter((u) => /resend/.test(u)).length, 3);
+ok('  met de interne regel die hem eenmalig maakt', telling(db, "SELECT COUNT(*) FROM order_events WHERE note = ? AND actor = 'intern'", AFROND_MAIL_NOTITIE), 3);
 
 const tweede = await tasks.stilAfronden(env);
 ok('een tweede nacht doet niets en meldt niets', tweede, null);
+ok('  en mailt niet nog eens', gezien.filter((u) => /resend/.test(u)).length, 3);
 ok('en schrijft geen tweede regel',
   telling(db, 'SELECT COUNT(*) FROM order_events WHERE note = ?', STIL_AFGEROND_NOTITIE), 3);
 

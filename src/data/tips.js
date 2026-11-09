@@ -44,7 +44,8 @@ export const TIPS = {
     },
     levering: 'Tip: keur je beelden per stuk goed. Klopt er iets niet, vraag dan één revisieronde aan: alles wat je wilt aanpassen, in één keer.',
     abonnement: 'Tip: zolang je abonnement loopt, spaar je tot drie maanden aan credits. Je bestelt via het gewone formulier en betaalt in stap 5 met credits.',
-    privelink: 'Tip: deze link opent je bestelling zonder inloggen. Deel hem alleen met wie je vertrouwt.',
+    /* 9 november 2026 (ronde 91, K-03): de privélink is "je bestelpagina". */
+    privelink: 'Tip: dit is je bestelpagina. Deze link opent je bestelling zonder inloggen; deel hem alleen met wie je vertrouwt.',
   },
   en: {
     begrepen: 'Got it',
@@ -62,7 +63,7 @@ export const TIPS = {
     },
     levering: 'Tip: approve your images one by one. Is something not right? Ask for one revision round: everything you want changed, in one go.',
     abonnement: 'Tip: while your plan runs, you save up to three months of credits. You order through the usual form and pay with credits in step 5.',
-    privelink: 'Tip: this link opens your order without signing in. Only share it with people you trust.',
+    privelink: 'Tip: this is your order page. This link opens your order without signing in; only share it with people you trust.',
   },
 };
 

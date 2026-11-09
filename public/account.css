@@ -1194,10 +1194,16 @@ details.ask .btn { margin-top: .6rem; }
 .ronde { margin: 1.2rem 0 0; padding: 1.2rem 0 0; border: 0; border-radius: 0; background: none; box-shadow: inset 0 1px 0 var(--line); }
 .ronde h3 { margin: 0 0 .5rem; font-size: 1rem; font-weight: 700; color: var(--ink); }
 .ronde p { margin: 0 0 .6rem; font-size: .88rem; line-height: 1.55; color: var(--ink-3); max-width: 62ch; }
-/* De waarschuwing is het enige dat de klant vóór de klik moet begrijpen, dus hij
-   krijgt de amberkleur die dit dashboard al gebruikt voor "let op" en niet voor
-   "er ging iets mis". */
-.ronde-warn { color: var(--ink, #0F1116); background: rgb(229 180 92 / .16); border-radius: var(--r-klein); padding: .7rem .9rem; }
+/* De waarschuwing is het enige dat de klant vóór de klik moet begrijpen.
+   9 november 2026 (ronde 91, S10): hier stond een amberen vlak (rgb(229 180 92 / .16)), en het kleurenschema kent
+   geen warme kleur (docs/KLEURENSCHEMA.md, lijst 55 warm a). "Aandacht" is blauw op vlak: het vlak van de
+   revisiestand (--st-rev-fill, licht #F4F5F7), tekst in inkt (#0F1217, 17,2:1 op #F4F5F7) en een streep in blauw uur
+   (--st-rev-ink, licht #25508B). Donker: #122039 met tekst #F4F5F7 en streep #80A7DD. */
+.ronde-warn {
+  color: var(--ink, #0F1217); background: var(--st-rev-fill, #F4F5F7);
+  border-left: 2px solid var(--st-rev-ink, #25508B); border-radius: 0 var(--r-klein) var(--r-klein) 0;
+  padding: .7rem .9rem;
+}
 /* Afgerond: de haarlijn wordt groen in plaats van dat er een groene doos komt. */
 .ronde.is-done { box-shadow: inset 0 1px 0 rgb(143 209 79 / .5); }
 
@@ -1225,7 +1231,7 @@ details.ask .btn { margin-top: .6rem; }
    adreswijziging: het is één handeling met één uitkomst, en een navigatie
    ernaast nodigt uit om weg te klikken halverwege iets wat niet terug kan.
 
-   Geen eigen kleuren, geen eigen doos. De ene amberlijn van .ronde-warn
+   Geen eigen kleuren, geen eigen doos. De ene blauwe streep van .ronde-warn (amber tot ronde 91, S10)
    hierboven is het enige accent dat deze pagina nodig heeft — hij zegt al wat
    er te weten valt, en hij zegt het hier voor de tweede keer. */
 /* Ronde 8: .authcard (420px, verderop) won het van deze regel, en de

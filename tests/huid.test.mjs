@@ -257,9 +257,10 @@ console.log('\nde huid staat op elke gebouwde pagina, op twee na');
     const GROEPEN = ['start', 'pricing', 'plans', 'per-product', 'catalog', 'catalog/classic', 'catalog/custom', 'lifestyle', 'lifestyle/dunes', 'lifestyle/flash', 'lifestyle/glow', 'lifestyle/phone-made', 'lifestyle/custom', 'test-sample', 'start/catalog', 'start/lifestyle', 'start/plan', 'start/brand-model', 'start/custom-look', 'start/video', 'thank-you', 'how-it-works', 'models', 'custom-models', 'compare', 'guides', 'faq', 'upload-guidelines', 'about', 'contact', 'video', 'video/motion', 'video/lifestyle', 'video/campaign', 'video/custom', 'hooks', 'editions', 'gallery', 'studio', 'terms', 'privacy', 'cookie-policy', 'data-processing-agreement', 'ai-act'].flatMap((p) => [`/${p}/`, `/nl/${p}/`]);
     /* De openingen met een beeld staan sinds afvinklijst 21 op de pagina's zelf. Sinds 14 oktober
        2026 weer twee voorbeelden: de uitleg in beweging (afvinklijst 24), los en op de voorpagina. */
-    const VOORBEELDEN = ['uitleg', 'voorpagina'].flatMap((p) => [`/voorbeeld/${p}/`, `/nl/voorbeeld/${p}/`]);
-    /* /nl/404/ is de map die Astro van nl/404.astro bouwt (zie scripts/sitemap-and-404.mjs). */
-    const HAL = ['/', '/nl/', ...GROEPEN, ...VOORBEELDEN, '/nl/404/'].sort();
+    /* Lijst 87 (9 november 2026): de twee voorbeelden zijn weg (r90-i1), en de map /nl/404/ ook (r90-s2;
+       scripts/sitemap-and-404.mjs laat alleen nl/404.html staan). */
+    const VOORBEELDEN = [];
+    const HAL = ['/', '/nl/', ...GROEPEN, ...VOORBEELDEN].sort();
     check('alleen de pagina\'s in de hal missen de kantige huid', zonder, HAL);
     check('en dat is omdat ze de hal dragen', HAL.map((p) => /<body[^>]*class="[^"]*\bhal\b/.test(readFileSync(`dist${p}index.html`, 'utf8'))), HAL.map(() => true));
   }

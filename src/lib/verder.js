@@ -19,7 +19,7 @@
  * pagina laden dit bestand allemaal.
  */
 import { turnaround, voorrangZin, heeftVoorrang } from '../data/pricing.js';
-import { esc, p as mailP, datum as mailDatum, C as MAILKLEUR } from './mailTemplate.js';
+import { esc, p as mailP, datum as mailDatum, C as MAILKLEUR, tekstLink as mailLink } from './mailTemplate.js';
 
 /* De levertijdzin uit pricing.js, als bijzin: "zo snel mogelijk (vaak binnen
    een dag, soms een paar dagen)". Eerste letter klein, punt eraf. */
@@ -34,10 +34,15 @@ const T = {
     fotos: 'We kijken eerst je foto’s na. Ontbreekt er iets, dan laten we het je weten.',
     ontbreekt: 'Er ontbreken nog foto’s:',
     ontbreektNa: 'Voeg ze toe bij deze bestelling in VISUAILS Studio (log in met dit e-mailadres), dan beginnen we met alles compleet.',
+    /* 9 november 2026 (ronde 91, K-02): met een link naar de bestelpagina hoeft de klant
+       niet meer in te loggen; hij vult het lege vak daar zelf. */
+    ontbreektNaLink: 'Voeg ze toe op je bestelpagina, dan beginnen we met alles compleet. Inloggen hoeft niet.',
+    fotosKnop: 'Foto’s toevoegen',
     zsm: () => `We leveren je beelden ${bijzin(turnaround('unattended', 'nl'))}, en we kijken elk beeld na voordat het bij je komt.`,
-    datum: (d) => `We maken je beelden op je leverdatum: ${d}. We kijken elk beeld na voordat het bij je komt.`,
+    /* 8 november 2026 (doorloop 90, B36): "We maken je beelden op je leverdatum" las alsof we dan pas beginnen. */
+    datum: (d) => `Je beelden komen op je leverdatum: ${d}. We kijken elk beeld na voordat het bij je komt.`,
     datumVolgt: 'Je leverdatum staat nog niet vast; die spreken we met je af. We kijken elk beeld na voordat het bij je komt.',
-    voorrang: () => `${voorrangZin('nl')}. We kijken elk beeld na voordat het bij je komt.`,
+    voorrang: (betaald) => `${voorrangZin('nl', betaald)}. We kijken elk beeld na voordat het bij je komt.`,
     /* Afvinklijst 22 (Lucas, 14 oktober 2026): de stilte tot de levering mag niet lezen als "je staat er
        alleen voor". Dus "mailen we pas weer" (geen statusmails, overzicht §21) in plaats van "hoor je pas weer van
        ons"; wij melden ons als er iets mis is of als we twijfelen, en de klant mag tussendoor altijd. */
@@ -62,10 +67,13 @@ const T = {
     fotos: 'We check your photos first. If anything is missing, we let you know.',
     ontbreekt: 'Some photos are still missing:',
     ontbreektNa: 'Add them to this order in VISUAILS Studio (sign in with this email address), so we start with everything complete.',
+    /* K-02: zie de Nederlandse noot. */
+    ontbreektNaLink: 'Add them on your order page, so we start with everything complete. No need to sign in.',
+    fotosKnop: 'Add photos',
     zsm: () => `We deliver your order ${bijzin(turnaround('unattended', 'en'))}, and we check every image before it reaches you.`,
-    datum: (d) => `We make your images on your delivery date: ${d}. We check every image before it reaches you.`,
+    datum: (d) => `Your images arrive on your delivery date: ${d}. We check every image before it reaches you.`,
     datumVolgt: 'Your delivery date is not fixed yet; we agree it with you. We check every image before it reaches you.',
-    voorrang: () => `${voorrangZin('en')}. We check every image before it reaches you.`,
+    voorrang: (betaald) => `${voorrangZin('en', betaald)}. We check every image before it reaches you.`,
     stil: 'unless something is wrong or we’re unsure: then we get in touch with you. A question or another photo? Just message or email us.',
     factuur: {
       bijgevoegd: 'You get another email when your images are ready. Until then we send nothing —',
@@ -95,7 +103,8 @@ export function verderKop(lang = 'nl') {
 export function leveringVan(order = {}) {
   const o = order || {};
   if (o.window_start) return { soort: 'datum', van: String(o.window_start), tot: String(o.window_end || o.window_start) };
-  if (heeftVoorrang(o.details && typeof o.details === 'object' ? o.details : o)) return { soort: 'voorrang' };
+  /* Met de betaaldatum, als die er is: dan noemt de regel de echte dag (doorloop 90, B11). */
+  if (heeftVoorrang(o.details && typeof o.details === 'object' ? o.details : o)) return o.paid_at ? { soort: 'voorrang', betaald: String(o.paid_at) } : { soort: 'voorrang' };
   if (o.tier === 'attended') return { soort: 'datum-volgt' };
   return { soort: 'zsm' };
 }
@@ -131,7 +140,7 @@ export function leverregel({ lang = 'nl', levering = { soort: 'zsm' }, datumTeks
   const t = T[taal(lang)];
   const l = levering || { soort: 'zsm' };
   if (l.soort === 'datum') return t.datum(datumTekst || leverdagen(l.van, l.tot, lang));
-  if (l.soort === 'voorrang') return t.voorrang();
+  if (l.soort === 'voorrang') return t.voorrang(l.betaald || null);
   if (l.soort === 'datum-volgt') return t.datumVolgt;
   return t.zsm();
 }
@@ -177,7 +186,8 @@ const NUM = (n) => `<span style="display:inline-block;min-width:32px;font-family
 
 /**
  * Het blok als mail-HTML (mailTemplate-blokken).
- * @param {Parameters<typeof zoGaatHetVerder>[0]} opts
+ * @param {Parameters<typeof zoGaatHetVerder>[0] & { fotosLink?: string }} opts
+ *   fotosLink (K-02): de bestelpagina met #fotos; dan staat de knop "Foto's toevoegen" bij wat ontbreekt.
  */
 export function verderBlokHtml(opts = {}) {
   const lang = taal(opts.lang);
@@ -188,11 +198,14 @@ export function verderBlokHtml(opts = {}) {
     const laatste = i === b.regels.length - 1;
     delen.push(mailP(`${NUM(i + 1)} ${esc(regel)}`, { bottom: laatste ? 18 : 6 }));
     if (i === 0 && b.ontbreekt.length) {
-      /* Ingesprongen onder regel 1, waar hij bij hoort. */
+      /* Ingesprongen onder regel 1, waar hij bij hoort. K-02 (9 november 2026): met
+         `fotosLink` (de bestelpagina, …#fotos) zegt hij "op je bestelpagina" en staat
+         de knop "Foto's toevoegen" eronder; zonder link de oude weg via Studio. */
+      const link = String(opts.fotosLink || '');
       delen.push(`<div style="padding-left:22px">${mailP(
-        `<strong>${esc(t.ontbreekt)}</strong><br>${b.ontbreekt.map((r) => esc(r)).join(' <br>')} <br>${esc(t.ontbreektNa)}`,
-        { bottom: 6 },
-      )}</div>`);
+        `<strong>${esc(t.ontbreekt)}</strong><br>${b.ontbreekt.map((r) => esc(r)).join(' <br>')} <br>${esc(link ? t.ontbreektNaLink : t.ontbreektNa)}`,
+        { bottom: link ? 12 : 6 },
+      )}${link ? mailLink(link, t.fotosKnop, { bottom: 12 }) : ''}</div>`);  /* knoppensysteem: de mail heeft al een knop, dit is een tekstlink */
     }
   });
   return delen.join('');

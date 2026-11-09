@@ -31,7 +31,7 @@
 // Rate-limited per ip, zodat niemand de Mollie-sleutel als betalingen-fabriek
 // kan gebruiken.
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from '../../src/lib/ratelimit.js';
-import { createOrderMolliePayment } from '../../src/lib/mollie.js';
+import { createOrderMolliePayment, isTestmodus } from '../../src/lib/mollie.js';
 import { centsToMollieValue, paymentDescription, isPayableService, ladderKey } from '../../src/lib/quote.js';
 import { SAMPLE_SERVICE } from '../../src/data/pricing.js';
 import { REVIEW } from '../../src/data/vat.js';
@@ -56,7 +56,8 @@ export async function onRequestGet({ request, env, waitUntil }) {
   if (!env?.DB || !env.MOLLIE_API_KEY) return naarBedankpagina;
 
   let o = null;
-  const KOLOMMEN = 'id, ref, lang, service, product_count, total_cents, vat_cents, vat_rate, payment_status, status, details_json';
+  /* `vat_treatment` erbij: buiten de EU een eigen lijst betaalmiddelen (ronde 91, B13). */
+  const KOLOMMEN = 'id, ref, lang, service, product_count, total_cents, vat_cents, vat_rate, vat_treatment, payment_status, status, details_json';
   try {
     try {
       o = await env.DB.prepare(`SELECT ${KOLOMMEN}, review_state FROM orders WHERE ref = ?1`).bind(ref).first();
@@ -72,6 +73,19 @@ export async function onRequestGet({ request, env, waitUntil }) {
   if (o.status === 'cancelled') return naarBedankpagina;
   if (String(o.payment_status || 'unpaid') !== 'unpaid') return naarBedankpagina;
   if (!PAYABLE_REVIEW.has(String(o.review_state || ''))) return naarBedankpagina;
+  /* ── EEN PROEFBESTELLING BETAAL JE NIET MET ECHT GELD — 9 november 2026 (ronde 91, B08) ──
+     Aangenomen met een test_-sleutel (testmodus = 1) betekent: factuur uit de
+     PROEF-reeks, en die gaat niet naar e-Boekhouden (zie issueInvoice()). Staat de
+     live-sleutel er inmiddels in, dan maakte deze link toch een echte betaling aan
+     — de betaallink uit de bevestigingsmail van een proefbestelling werkt nog. Een
+     eigen kleine vraag: zonder migratie 0046 bestaat de kolom niet, en dan is er
+     ook geen proefbestelling. */
+  const proefRij = await env.DB.prepare('SELECT testmodus FROM orders WHERE id = ?1')
+    .bind(o.id).first().catch(() => null);
+  if (Number(proefRij?.testmodus) === 1 && !isTestmodus(env)) {
+    console.warn('[order-pay] proefbestelling', o.ref, 'niet te betalen met de live-sleutel');
+    return naarBedankpagina;
+  }
   /* Een eigen look ('custom') heeft geen vaste prijs, maar na een offerte uit
      admin wél een bedrag en review_state 'approved'. De offertemail linkt
      hierheen (zie src/lib/betaallink.js), dus die moet hier ook door. */
@@ -100,6 +114,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
       webhookUrl: `${url.origin}/api/webhook/mollie`,
       /* Bij 0% geen iDEAL — dezelfde regel als op de drie andere betaalpaden. */
       excludeIdeal: Number(o.vat_rate) === 0,
+      buitenEu: o.vat_treatment === 'outside_scope',
     });
     const checkout = payment?._links?.checkout?.href || null;
     if (checkout) return redirect(checkout);

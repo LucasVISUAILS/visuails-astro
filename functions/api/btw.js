@@ -27,7 +27,7 @@ export async function onRequestPost({ request, env }) {
   if (!cc || land === HOME_COUNTRY || vatFormatOk(land, nummer) !== true) return antwoord('onbekend');
   const gate = await checkRate(env, { ip: clientIp(request), action: 'btw-check', limit: 12, windowSeconds: 600 });
   if (!gate.allowed) return antwoord('onbekend');
-  const { number } = normaliseVat(nummer);
+  const { number } = normaliseVat(nummer, land);
   const vies = await checkVat(cc, number, null).catch(() => null);
   if (!vies || !vies.ok) return antwoord('onbekend');
   return antwoord(vies.valid ? 'geldig' : 'ongeldig');

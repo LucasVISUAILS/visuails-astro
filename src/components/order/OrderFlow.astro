@@ -1,6 +1,6 @@
 ---
 import { TIPS } from '../../data/tips.js';
-import { ikoon, IKOON } from '../../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../../data/iconen.js';
 import { waHref, WHATSAPP_DISPLAY } from '../../data/whatsapp.js';
 import NieuwTabblad from '../NieuwTabblad.astro';
 /* Het adres staat als tekst in schema.js en de voettekst; hier één constante. */
@@ -206,7 +206,9 @@ const lp = (p: string) => localizedPath(lang, p);
  *    hierboven. Twee keer dezelfde vraag in één formulier leest als een fout.
  *  · "Nog iets wat we moeten weten" — op catalog staan de per-productvelden er
  *    al; een open vak eronder is de plek waar niemand iets invult en waar jij
- *    toch elke keer even moet kijken.
+ *    toch elke keer even moet kijken. (Sinds 9 november 2026 staat dit veld er
+ *    bij catalog wél, op Lucas' keuze in lijst 85 — C2 = a; zie de noot bij het
+ *    veld in stap 3.)
  *
  * Lifestyle en video houden alle drie: daar bepaalt "wie draagt dit?" hoe de
  * scène gestyled wordt, en dáár kán een look wél een volledige outfit zijn.
@@ -554,6 +556,8 @@ const PIPE = {
       let: {
         'te-donker': 'This one is quite dark. We can work with it, but a brighter shot comes back better.',
         'te-dun': 'Heavily compressed — you may see blocking in the flat areas. If you have the original, that one is better.',
+        /* Lijst 87 (D08): een JPEG zonder eindmarkering, waarschijnlijk halverwege afgebroken. */
+        onvolledig: 'This photo looks incomplete: the end of the file is missing. Choose it again.',
       },
     },
     s3: {
@@ -677,7 +681,7 @@ const PIPE = {
       ratioAfwijkVeel: '{n} beelden — zie de productkaarten in stap 2',
       look: 'Complete looks',
       lookN: '{n} × {price}',
-      net: `Orderbedrag (${vatLabel('excl', 'nl')})`,
+      net: `Bestelbedrag (${vatLabel('excl', 'nl')})`,
       pay: 'Je betaalt bij Mollie',
       payGross: '{gross} incl. {pct}% btw',
       payOutside: '{net} — geen Nederlandse btw buiten de EU',
@@ -727,6 +731,7 @@ const PIPE = {
       let: {
         'te-donker': 'Deze is behoorlijk donker. We kunnen ermee werken, maar een lichtere foto komt beter terug.',
         'te-dun': 'Ver gecomprimeerd — je ziet mogelijk blokjes in de vlakken. Heb je het origineel, dan is dat beter.',
+        onvolledig: 'Deze foto lijkt onvolledig: het einde van het bestand ontbreekt. Kies hem opnieuw.',
       },
     },
     s3: {
@@ -1372,6 +1377,10 @@ const FORM = {
       email: 'Email',
       emailHint: 'Where the confirmation and the files go.',
       emailErr: 'We need an email address to send the confirmation to.',
+      /* 8 nov 2026: hello@visuails ging door (de browser vindt naam@domein zonder punt goed); de bevestiging kwam dan nooit aan. */
+      emailVorm: 'This email address looks incomplete. Check the part after the @, for example name@yourbrand.com.',
+      /* Lijst 87 (B08): naam en adres komen op de factuur, en die drukt alleen Latijnse letters. */
+      latijnsVorm: 'Please use Latin letters (a to z) here: this goes on the invoice.',
       phone: 'Phone or WhatsApp',
       /* ── VERPLICHT SINDS 11 SEPTEMBER 2026 ────────────────────────────────
          Lucas: *"Ik wil daarnaast over de gehele website telefoonnummer voor
@@ -1385,6 +1394,8 @@ const FORM = {
          belt Nederlandse klanten en appt de rest, en de vijf momenten van 7.05
          (betaling, foto's, mail, incasso, review) vallen eronder. */
       phoneErr: 'Fill in a number we can reach you on — we get in touch if anything comes up with your order.',
+      /* 8 nov 2026: 'abc' ging door tot het versturen; nu al bij stap 3. Minstens 8 cijfers, zoals normalizePhone (payer.js). */
+      phoneVorm: 'That does not look like a phone number yet. Use digits, for example +31 6 12345678.',
       phoneHint: 'We get in touch if anything comes up with your order.',
       website: 'Website or shop link',
       country: 'Country',
@@ -1402,7 +1413,7 @@ const FORM = {
       street2: 'Address line 2',
       street2Ph: 'Unit, floor, c/o',
       postal: 'Postcode',
-      postalPh: 'AB1 2CD',
+      postalPh: '1234 AB',
       postalErr: 'The postcode is missing.',
       city: 'City',
       cityErr: 'The town or city is missing.',
@@ -1420,7 +1431,7 @@ const FORM = {
       viesZonder: 'Order without a VAT number (with VAT)',
       /* Doorloop 27 (B41): al een proef op dit adres, al bij het verlaten van stap 3. */
       proefAlKop: 'You’ve already had your test sample.',
-      proefAl: ['It is one per business, and this email address or phone number already has one. Nothing has been ordered. ', 'Order normally', ' from a single product, or ', 'send us a message', ' if the first sample never arrived.'],
+      proefAl: ['It is one per business, and this email address, phone number or registration number already has one. Nothing has been ordered. ', 'Order normally', ' from a single product, or ', 'send us a message', ' if the first sample never arrived.'],
       /* o03, 8 oktober 2026: Cloudflare zei uitdrukkelijk dat de botcheck niet
          klopte. Er is niets aangemaakt of afgeschreven. */
       refuseBotcheck: 'We could not confirm that this order came from a person, so it was not sent and nothing was charged. Try again in a moment, or place the order with us directly:',
@@ -1485,8 +1496,10 @@ const FORM = {
       opnieuw: 'Start again',
     },
     open: {
-      h: 'This order is already placed',
-      body: 'You pressed back on the payment page. Your order exists and has not been paid yet — pay it here without filling anything in again. Reference:',
+      /* 8 november 2026 (doorloop 90, B30): de tekst zei "you pressed back", ook als je dat niet deed (een ander
+         formulier in hetzelfde tabblad). Nu wat zeker is: er staat in dit tabblad een bestelling open. */
+      h: 'You have an order that is not paid yet',
+      body: 'Placed in this tab in the last hour and not paid yet. Pay it here without filling anything in again. Reference:',
       pay: 'Pay this order',
       new: 'Start a new order instead',
     },
@@ -1495,10 +1508,14 @@ const FORM = {
       lead: 'Read it back. Nothing has been created yet, and nothing has been charged.',
       afterH: 'What happens after you press the button',
       afterWindow: 'Your reserved delivery date is held for seven days while you pay.',
+      /* 8 november 2026 (doorloop 90, B31): vanaf 10 producten zonder leverdatum ging je niet naar Mollie maar naar
+         de bedankpagina met de betaalknop, terwijl hier stond dat je meteen naar Mollie gaat. */
+      afterNoWindow: 'No delivery date chosen? Then the next page has the payment button, and we agree the date with you.',
       afterEu: 'Ordering from elsewhere in the EU without a VAT number? Then we check your details first, and the link follows by email within one working day.',
       after: [
         'You go straight to the payment page (Mollie). Production starts once the payment is in.',
-        'Your confirmation with the reference and the same payment link arrives by email — pay later if you prefer.',
+        /* B19 (8 november 2026): de bevestiging wacht op de uitkomst bij Mollie; wie meteen betaalt, krijgt alleen de betaalmail. */
+        'Not paying straight away? Your confirmation with the reference and a payment link follows by email, so you can pay later.',
         'Every order lands in VISUAILS Studio, where you approve and download image by image — a standard order too. The direct link is in your email as well.',
       ],
       payNote: 'No card details here — you pay on the next page through Mollie (iDEAL, Bancontact or card).',
@@ -1657,7 +1674,7 @@ const FORM = {
       countErr: 'Kies eerst hoeveel producten.',
       more: `Meer dan ${maxProducts} producten`,
       totalLabel: 'Totaal tot nu toe',
-      netLabel: `Orderbedrag (${vatLabel('excl', 'nl')})`,
+      netLabel: `Bestelbedrag (${vatLabel('excl', 'nl')})`,
       vatLead: vatLead('nl'),
       vatDetail: vatDetail('nl'),
       displayNote: 'Dit rekent je browser uit. Op de factuur rekenen wij het opnieuw uit, met dezelfde prijs per product.',
@@ -1717,7 +1734,7 @@ const FORM = {
       lead: 'Genoeg om een factuur te maken en je te kunnen bereiken.',
       savedH: 'Je opgeslagen gegevens',
       savedEdit: 'Aanpassen voor deze bestelling',
-      savedHint: 'Alleen voor deze bestelling. Wil je ze definitief wijzigen, pas ze dan aan in je account.',
+      savedHint: 'Alleen voor deze bestelling. Wil je ze definitief wijzigen, pas ze dan aan in VISUAILS Studio.',
       firstName: 'Voornaam',
       firstErr: 'Vul je voornaam in — die komt op de factuur.',
       lastName: 'Achternaam',
@@ -1727,9 +1744,14 @@ const FORM = {
       email: 'E-mail',
       emailHint: 'Hier komen de bevestiging en de bestanden binnen.',
       emailErr: 'We hebben een e-mailadres nodig om de bevestiging naartoe te sturen.',
+      /* 8 nov 2026: hello@visuails ging door (de browser vindt naam@domein zonder punt goed); de bevestiging kwam dan nooit aan. */
+      emailVorm: 'Dit e-mailadres lijkt niet compleet. Kijk naar het deel na de @, bijvoorbeeld naam@jouwmerk.nl.',
+      latijnsVorm: 'Schrijf dit in Latijnse letters (a tot z): het komt op de factuur.',
       phone: 'Telefoon of WhatsApp',
       /* Zie de Engelse noot. */
       phoneErr: 'Vul een nummer in waarop we je kunnen bereiken — we nemen contact met je op als er iets met je bestelling is.',
+      /* 8 nov 2026: 'abc' ging door tot het versturen; nu al bij stap 3. Minstens 8 cijfers, zoals normalizePhone (payer.js). */
+      phoneVorm: 'Dat lijkt nog geen telefoonnummer. Gebruik cijfers, bijvoorbeeld +31 6 12345678.',
       phoneHint: 'We nemen contact met je op als er iets met je bestelling is.',
       website: 'Website of shoplink',
       country: 'Land',
@@ -1762,7 +1784,7 @@ const FORM = {
       viesOngeldig: 'Dit nummer staat niet in de Europese btw-controle (VIES). Kijk het even na. Klopt het toch? Dan controleren we het met de hand en krijg je de betaallink binnen een werkdag.',
       viesZonder: 'Bestel zonder btw-nummer (met btw)',
       proefAlKop: 'Je hebt VISUAILS al geprobeerd.',
-      proefAl: ['Er is één proef per bedrijf, en op dit e-mailadres of telefoonnummer staat er al een. Er is niets besteld. ', 'Bestel gewoon', ' vanaf één product, of ', 'stuur ons een bericht', ' als de eerste proef nooit aankwam.'],
+      proefAl: ['Er is één proef per bedrijf, en op dit e-mailadres, telefoonnummer of KVK-nummer staat er al een. Er is niets besteld. ', 'Bestel gewoon', ' vanaf één product, of ', 'stuur ons een bericht', ' als de eerste proef nooit aankwam.'],
       noVat: 'Ik heb geen btw-nummer',
       vatHint: 'Zakelijk in een ander EU-land: we controleren hem bij VIES, en klopt hij, dan rekenen we geen Nederlandse btw.',
       reg: 'Registratienummer',
@@ -1779,7 +1801,7 @@ const FORM = {
     s4: {
       h: 'Levertijd',
       lead: 'We kijken in de echte agenda. Wat je hier ziet, houden we ook vrij.',
-      checking: 'Agenda checken…',
+      checking: 'Agenda bekijken…',
       queueH: 'Deze bestelling heeft geen vastgezette leverdatum nodig',
       /* 'onder dat aantal' verwees naar niets op dit scherm — 3 sep 2026. */
       queueBody: `Bestellingen tot en met ${WINDOW_THRESHOLD - 1} producten maken we in de volgorde waarin ze binnenkomen — ${turnaround('unattended', 'nl').charAt(0).toLowerCase()}${turnaround('unattended', 'nl').slice(1)}.`,
@@ -1793,10 +1815,10 @@ const FORM = {
       tooLargeBody: 'Per leverdatum houden we ruimte voor maximaal',
       tooLargeTail: 'producten. Meer dan dat zijn twee leverdata en een gesprek. Stuur dit en we plannen het samen.',
       invalidH: 'Kies eerst hoeveel producten',
-      invalidBody: 'Ga een stap terug en kies een aantal — zonder aantal kunnen we de agenda niet checken.',
+      invalidBody: 'Ga een stap terug en kies een aantal — zonder aantal kunnen we de agenda niet bekijken.',
       unavailableH: 'De agenda gaf geen antwoord',
       unavailableBody: 'Dat is ons probleem, niet dat van jou. Probeer opnieuw, of stuur de bestelling en we bevestigen een leverdatum per e-mail.',
-      retry: 'Opnieuw checken',
+      retry: 'Opnieuw proberen',
       lostH: 'Die leverdatum is weg terwijl je dit invulde',
       lostBody: 'Er is niets aangemaakt en niets in rekening gebracht. Kies hieronder een andere datum en verstuur opnieuw.',
       nojs: 'Zonder JavaScript kunnen we de agenda niet vanaf deze pagina checken. Verstuur het formulier, dan komen we op schrift met een leverdatum terug — tot die tijd staat er geen datum vast.',
@@ -1815,8 +1837,8 @@ const FORM = {
       opnieuw: 'Opnieuw beginnen',
     },
     open: {
-      h: 'Deze bestelling staat al klaar',
-      body: 'Je ging terug vanaf de betaalpagina. Je bestelling bestaat al en is nog niet betaald — reken hem hier af zonder alles opnieuw in te vullen. Kenmerk:',
+      h: 'Je hebt een bestelling die nog niet betaald is',
+      body: 'In dit tabblad geplaatst, het afgelopen uur, en nog niet betaald. Reken hem hier af zonder alles opnieuw in te vullen. Kenmerk:',
       pay: 'Deze bestelling betalen',
       new: 'Toch een nieuwe bestelling beginnen',
     },
@@ -1825,19 +1847,20 @@ const FORM = {
       lead: 'Lees het terug. Er is nog niets aangemaakt en er is nog niets in rekening gebracht.',
       afterH: 'Wat er gebeurt nadat je op de knop drukt',
       afterWindow: 'Je vastgezette leverdatum blijft zeven dagen voor je staan terwijl je betaalt.',
+      afterNoWindow: 'Geen leverdatum gekozen? Dan staat de betaalknop op de volgende pagina, en de leverdatum spreken we met je af.',
       /* O16 (ronde 9): alleen voor een ander EU-land — een klant buiten de EU las
          hem ook, en voor hem klopt hij niet. syncReg() in pipeline.js zet hem aan. */
       afterEu: 'Bestel je elders in de EU zonder btw-nummer, dan kijken we eerst kort naar je gegevens; de link volgt dan per mail, binnen een werkdag.',
       after: [
         'Je gaat meteen door naar de betaalpagina (Mollie). We beginnen zodra de betaling binnen is.',
-        'Je bevestiging met de referentie en dezelfde betaallink komt per mail — later betalen kan dus ook.',
+        'Betaal je niet meteen? Dan volgt je bevestiging met de referentie en een betaallink per mail, dus later betalen kan ook.',
         'Elke bestelling komt in VISUAILS Studio, waar je beeld voor beeld goedkeurt en downloadt — ook een standaardbestelling. De rechtstreekse link staat ook in je mail.',
       ],
       payNote: 'Hier vul je geen kaartgegevens in — betalen doe je op de volgende pagina via Mollie (iDEAL, Bancontact of creditcard).',
       submit: 'Bestellen en betalen',
       legal: ['Door deze bestelling te versturen ga je akkoord met onze ', ' en ', '.'],
       legalTerms: 'algemene voorwaarden',
-      legalPrivacy: 'privacyverklaring',
+      legalPrivacy: 'privacybeleid',
       lostH: 'Je bestelling staat er — de leverdatum niet',
       lostBody: 'Je bestelling kwam binnen net nadat die leverdatum volliep. Er gaat niets verloren en we factureren niets: je bestelling staat bij ons geregistreerd met haar referentie, en we komen op schrift terug met de eerste leverdatum die past.',
       lostGo: 'Naar de bevestiging',
@@ -1950,6 +1973,10 @@ const WK = lang === 'nl' ? {
   voorrang: 'Voorrang',
   voorrangTerm: 'de grenzen van voorrang',
   voorrangZin: `Bovenaan de lijst. Betaal je op een werkdag vóór ${VOORRANG.bestelVoorUur}:00, dan is het de volgende werkdag om ${VOORRANG.klaarUur}:00 klaar. Halen we dat niet, dan krijg je de toeslag terug.`,
+  /* Ronde 91 (C06): als de agenda dicht staat op een van de twee werkdagen van de belofte. */
+  voorrangDicht: 'Nu niet te kiezen: de studio is dicht op de eerstvolgende werkdagen, dus die levertijd halen we niet. De gewone levering blijft staan.',
+  /* Lijst 87 (C07): de echte dag, uit voorrangDeadline() (pricing.js), zodat je in het weekend ziet wat je koopt. */
+  voorrangDag: 'Betaal je nu, dan is het uiterlijk {dag} om {uur}:00 klaar.',
   eigenStijl: 'Op aanvraag',
   krijgKop: 'Wat je krijgt',
   hoekNoot: ['Achtergrond per hoek.', 'Tik op het vierkantje. Geldt voor de hele bestelling.'],
@@ -1981,7 +2008,7 @@ const WK = lang === 'nl' ? {
   inloggen: ['Al eerder besteld?', 'Log in', ', dan staan je gegevens klaar.'],
   s2: {
     l: 'Je foto’s.', h: 'Eén product tegelijk.',
-    zin: 'Vier foto’s met je telefoon is genoeg. De tips lopen onderin mee.',
+    zin: 'Drie foto’s met je telefoon zijn genoeg: de voorkant, de achterkant en een detail. De tips lopen onderin mee.',
     tipsTerug: 'Toon de tips weer',
     tipsLabel: 'Tips voor je foto’s', tip: 'Tip',
     tipVolgende: 'Volgende tip', tipPauze: 'Pauzeer de tips', tipSpeel: 'Laat de tips lopen', tipWeg: 'Tips verbergen',
@@ -2022,6 +2049,9 @@ const WK = lang === 'nl' ? {
   voorrang: 'Priority',
   voorrangTerm: 'the limits of priority',
   voorrangZin: `Top of the list. Pay on a working day before ${VOORRANG.bestelVoorUur}:00 and it is ready by ${VOORRANG.klaarUur}:00 the next working day. If we do not make it, the surcharge comes back.`,
+  /* Ronde 91 (C06): see the Dutch counterpart. */
+  voorrangDicht: 'Not available right now: the studio is closed on the next working days, so we cannot make that deadline. Normal delivery still applies.',
+  voorrangDag: 'Pay now and it is ready by {uur}:00 on {dag} at the latest.',
   eigenStijl: 'On request',
   krijgKop: 'What you get',
   hoekNoot: ['Background per angle.', 'Tap the little square. It applies to the whole order.'],
@@ -2053,7 +2083,8 @@ const WK = lang === 'nl' ? {
   inloggen: ['Ordered before?', 'Sign in', ' and your details are filled in.'],
   s2: {
     l: 'Your photos.', h: 'One product at a time.',
-    zin: 'Four phone photos is enough. The tips run along at the bottom.',
+    /* 8 november 2026 (doorloop 90, F3): drie verplichte vakken (src/data/shots.js), de draagfoto mag erbij. */
+    zin: 'Three phone photos are enough: the front, the back and a detail. The tips run along at the bottom.',
     tipsTerug: 'Show the tips again',
     tipsLabel: 'Tips for your photos', tip: 'Tip',
     tipVolgende: 'Next tip', tipPauze: 'Pause the tips', tipSpeel: 'Let the tips run', tipWeg: 'Hide the tips',
@@ -2452,6 +2483,13 @@ const config = {
 const configJson = JSON.stringify(config).replace(/</g, '\\u003c');
 
 const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
+/* ── NAAM EN ADRES IN LATIJNSE LETTERS — 9 november 2026 (lijst 87, B08) ──────
+   De factuur-pdf heeft alleen de standaardletters (winAnsi() in src/lib/invoicePdf.js):
+   Arabisch, Chinees of Cyrillisch schrift werd daar "????". Een buitenlandse zakelijke
+   klant heeft bijna altijd een Latijnse schrijfwijze; het formulier vraagt erom. Cijfers,
+   leestekens, accenten en emoji mogen (emoji vallen op de factuur stil weg). Een browser
+   die \p{…} in een pattern niet kent, slaat het pattern over: dan gaat het zoals vroeger. */
+const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
 ---
 
 {/* ── SECTIE 22 OM HET FORMULIER HEEN — 7 september 2026 ────────────────────
@@ -2556,7 +2594,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
       <p class="pl-lost-body" data-pl-van-wat></p>
       <p class="pl-lost-body pl-concept-noot">{f.van.noot}</p>
       <div class="pl-open-acts">
-        <button type="button" class="knop" data-pl-van-sluit>{f.van.sluit}</button>
+        <button type="button" class="knop" data-rol="sluiten" data-pl-van-sluit>{f.van.sluit}</button>
       </div>
     </div>
     <div class="pl-lost pl-open pl-concept" data-pl-concept hidden role="status" tabindex="-1">
@@ -2567,16 +2605,16 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
           uit zijn account; "die vul je straks opnieuw in" klopte voor hem niet. */}
       <p class="pl-lost-body pl-concept-noot" data-acct="out">{f.concept.noot}</p>
       <div class="pl-open-acts">
-        <button type="button" class="knop knop-inkt" data-pl-concept-verder>{f.concept.verder}</button>
-        <button type="button" class="knop" data-pl-concept-opnieuw>{f.concept.opnieuw}</button>
+        <button type="button" class="knop knop-inkt" data-rol="doorgaan" data-pl-concept-verder>{f.concept.verder}<Fragment set:html={rolIkoon('doorgaan')} /></button>
+        <button type="button" class="knop" data-rol="terugnemen" data-pl-concept-opnieuw><Fragment set:html={rolIkoon('terugnemen')} />{f.concept.opnieuw}</button>
       </div>
     </div>
     <div class="pl-lost pl-open" data-pl-open hidden role="status">
       <h2 class="pl-lost-h">{f.open.h}</h2>
       <p class="pl-lost-body">{f.open.body} <b data-pl-open-ref></b></p>
       <div class="pl-open-acts">
-        <a class="knop knop-inkt" data-pl-open-pay href="#">{f.open.pay}</a>
-        <button type="button" class="knop" data-pl-open-new>{f.open.new}</button>
+        <a class="knop knop-inkt" data-rol="doorgaan" data-pl-open-pay href="#">{f.open.pay}<Fragment set:html={rolIkoon('doorgaan')} /></a>
+        <button type="button" class="knop" data-rol="doorgaan" data-pl-open-new>{f.open.new}<Fragment set:html={rolIkoon('doorgaan')} /></button>
       </div>
     </div>
 
@@ -2637,7 +2675,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
       {/* 1.06 (8 oktober 2026): na de code terug in DIT formulier, met de look
           die in de adresbalk stond (die leest /account/login uit de Referer).
           Zie formulierTerug() in src/lib/account.js. */}
-      <a href={`/account/login?lang=${lang}&terug=${encodeURIComponent(Astro.url.pathname)}`} class="knop knop-inkt pl-signin-cta">{f.signInCta}</a>
+      <a href={`/account/login?lang=${lang}&terug=${encodeURIComponent(Astro.url.pathname)}`} class="knop knop-inkt pl-signin-cta" data-rol="doorgaan">{f.signInCta}<Fragment set:html={rolIkoon('doorgaan')} /></a>
     </aside>
 
     {/* De vierde rail-ingang is 'Levertijd' / 'Timing', en die stap bestaat niet
@@ -2894,8 +2932,8 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
         <h3 class="pl-sub-h">{f.s1.moreH}</h3>
         <p>{f.s1.moreBody}</p>
         <p class="pl-more-btns">
-          <a href={waHref(f.s1.moreWaText)} target="_blank" rel="noopener" class="knop knop-inkt">{f.s1.moreWa}<NieuwTabblad lang={lang} /></a>
-          <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(f.s1.moreMailSubject)}&body=${encodeURIComponent(f.s1.moreMailBody)}`} class="knop knop-lijn">{f.s1.moreMail}</a>
+          <a href={waHref(f.s1.moreWaText)} target="_blank" rel="noopener" class="knop knop-lijn" data-rol="contact">{f.s1.moreWa}<NieuwTabblad lang={lang} /></a>
+          <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(f.s1.moreMailSubject)}&body=${encodeURIComponent(f.s1.moreMailBody)}`} class="knop knop-lijn" data-rol="contact"><Fragment set:html={rolIkoon('mail')} />{f.s1.moreMail}</a>
         </p>
         <p class="pl-more-alt">{WHATSAPP_DISPLAY} · {CONTACT_EMAIL}</p>
         <button type="button" class="pl-qty-back" data-pl-qty-back>{f.s1.moreBack}</button>
@@ -3157,6 +3195,10 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
                 <span class="pl-voorrang-bedrag wk-niet-credits" data-pl-alleen-credits hidden>{f.s1.nietMetCredits}</span>
               </span>
             </label>
+            {/* Ronde 91 (C06): /api/capacity?voorrang=1 zegt of de agenda open staat; zo niet, dan staat het vinkje uit en zegt dit waarom. */}
+            <p class="pl-voorrang-dicht" data-pl-voorrang-dicht role="status" hidden>{WK.voorrangDicht}</p>
+            {/* Lijst 87 (C07): de echte dag en het uur, ingevuld door syncVoorrang() in pipeline.js. */}
+            <p class="pl-voorrang-dag" data-pl-voorrang-dag data-sjabloon={WK.voorrangDag} hidden></p>
           </div>
           )}
       </WkBlok>
@@ -3235,7 +3277,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
 
       <div class="pl-nav">
         <span></span>
-        <button type="button" class="knop knop-inkt" data-pl-next>{f.next}</button>
+        <button type="button" class="knop knop-inkt k-groot" data-rol="doorgaan" data-pl-next>{f.next}<Fragment set:html={rolIkoon('doorgaan')} /></button>
       </div>
       {/* ── "KOM JE ER NIET UIT? APP ONS" — 8 oktober 2026 (1.08) ───────────
           Onder elke stap één rustige regel: een gewone wa.me-link, zonder
@@ -3313,8 +3355,8 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
       <p class="pl-step-err" id="pl-err-2" data-pl-step-error hidden></p>
 
       <div class="pl-nav">
-        <button type="button" class="knop knop-lijn" data-pl-back>{f.back}</button>
-        <button type="button" class="knop knop-inkt" data-pl-next>{f.next}</button>
+        <button type="button" class="knop knop-lijn" data-rol="terug" data-pl-back><Fragment set:html={rolIkoon('terug')} />{f.back}</button>
+        <button type="button" class="knop knop-inkt k-groot" data-rol="doorgaan" data-pl-next>{f.next}<Fragment set:html={rolIkoon('doorgaan')} /></button>
       </div>
       <p class="pl-appons">{f.appOns.vraag} <a href={appOnsHref(2)} data-pl-appons="2" target="_blank" rel="noopener">{f.appOns.link}<NieuwTabblad lang={lang} /></a></p>
     </section>
@@ -3328,7 +3370,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
       <div class="pl-saved" data-pl-saved hidden>
         <p class="pl-saved-h">{f.s3.savedH}</p>
         <ul class="pl-saved-list" data-pl-saved-list></ul>
-        <button type="button" class="knop knop-lijn pl-saved-edit" data-pl-saved-edit>{f.s3.savedEdit}</button>
+        <button type="button" class="knop knop-lijn pl-saved-edit" data-rol="wijzigen" data-pl-saved-edit><Fragment set:html={rolIkoon('wijzigen')} />{f.s3.savedEdit}</button>
         <p class="hint pl-saved-hint">{f.s3.savedHint}</p>
       </div>
 
@@ -3346,11 +3388,11 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
       <div class="row-2">
         <div class="field">
           <label for="pl-first">{f.s3.firstName} <span class="req">*</span></label>
-          <input class="input" type="text" id="pl-first" name="first_name" autocomplete="given-name" required data-pl-req="1" data-pl-err-msg={f.s3.firstErr} />
+          <input class="input" type="text" id="pl-first" name="first_name" autocomplete="given-name" required data-pl-req="1" data-pl-err-msg={f.s3.firstErr} pattern={LATIJNS} data-pl-err-vorm={f.s3.latijnsVorm} />
         </div>
         <div class="field">
           <label for="pl-last">{f.s3.lastName} <span class="req">*</span></label>
-          <input class="input" type="text" id="pl-last" name="last_name" autocomplete="family-name" required data-pl-req="1" data-pl-err-msg={f.s3.lastErr} />
+          <input class="input" type="text" id="pl-last" name="last_name" autocomplete="family-name" required data-pl-req="1" data-pl-err-msg={f.s3.lastErr} pattern={LATIJNS} data-pl-err-vorm={f.s3.latijnsVorm} />
         </div>
       </div>
 
@@ -3363,23 +3405,24 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
       <div class="row-2">
         <div class="field">
           <label for="pl-brand">{f.s3.brand} <span class="req">*</span></label>
-          <input class="input" type="text" id="pl-brand" name="brand" autocomplete="organization" required data-pl-req="1" data-pl-err-msg={f.s3.brandErr} />
+          <input class="input" type="text" id="pl-brand" name="brand" autocomplete="organization" required data-pl-req="1" data-pl-err-msg={f.s3.brandErr} pattern={LATIJNS} data-pl-err-vorm={f.s3.latijnsVorm} />
         </div>
         <div class="field">
           <label for="pl-web">{f.s3.website} <span class="pl-opt">{f.optional}</span></label>
-          <input class="input" type="url" id="pl-web" name="website" placeholder="https://" autocomplete="url" />
+          {/* type="text" (8 november 2026, doorloop 90, B28): bij type="url" weigerde de browser "merk.nl" met een eigen melding in de taal van de browser. Zie BrandModelBrief: de link wordt door een mens geopend. */}
+          <input class="input" type="text" inputmode="url" id="pl-web" name="website" placeholder={lang === 'nl' ? 'jouwmerk.nl' : 'yourbrand.com'} maxlength="200" autocomplete="url" />
         </div>
       </div>
 
       <div class="row-2">
         <div class="field">
           <label for="pl-email">{f.s3.email} <span class="req">*</span></label>
-          <input class="input" type="email" id="pl-email" name="email" autocomplete="email" required data-pl-req="1" data-pl-err-msg={f.s3.emailErr} />
+          <input class="input" type="email" id="pl-email" name="email" autocomplete="email" required data-pl-req="1" pattern="[^@\s]+@[^@\s]+\.[^@\s]{2,}" data-pl-err-msg={f.s3.emailErr} data-pl-err-vorm={f.s3.emailVorm} />
           <span class="hint">{f.s3.emailHint}</span>
         </div>
         <div class="field">
           <label for="pl-phone">{f.s3.phone} <span class="req">*</span></label>
-          <input class="input" type="tel" id="pl-phone" name="phone" autocomplete="tel" placeholder="+31 6 …" required data-pl-req="1" data-pl-err-msg={f.s3.phoneErr} />
+          <input class="input" type="tel" id="pl-phone" name="phone" autocomplete="tel" placeholder="+31 6 …" required data-pl-req="1" pattern="[\d\s\+\(\)\.\-\/]*(\d[\d\s\+\(\)\.\-\/]*){8,}" data-pl-err-msg={f.s3.phoneErr} data-pl-err-vorm={f.s3.phoneVorm} />
           <span class="hint">{f.s3.phoneHint}</span>
         </div>
       </div>
@@ -3423,11 +3466,11 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
       <div class="row-2">
         <div class="field">
           <label for="pl-street">{f.s3.street} <span class="req">*</span></label>
-          <input class="input" type="text" id="pl-street" name="address_line1" autocomplete="address-line1" required data-pl-req="1" data-pl-err-msg={f.s3.streetErr} placeholder={f.s3.streetPh} />
+          <input class="input" type="text" id="pl-street" name="address_line1" autocomplete="address-line1" required data-pl-req="1" data-pl-err-msg={f.s3.streetErr} placeholder={f.s3.streetPh} pattern={LATIJNS} data-pl-err-vorm={f.s3.latijnsVorm} />
         </div>
         <div class="field">
           <label for="pl-street2">{f.s3.street2} <span class="pl-opt">{f.optional}</span></label>
-          <input class="input" type="text" id="pl-street2" name="address_line2" autocomplete="address-line2" placeholder={f.s3.street2Ph} />
+          <input class="input" type="text" id="pl-street2" name="address_line2" autocomplete="address-line2" placeholder={f.s3.street2Ph} pattern={LATIJNS} data-pl-err-vorm={f.s3.latijnsVorm} />
         </div>
       </div>
 
@@ -3453,7 +3496,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
         </div>
         <div class="field">
           <label for="pl-city">{f.s3.city} <span class="req">*</span></label>
-          <input class="input" type="text" id="pl-city" name="city" autocomplete="address-level2" required data-pl-req="1" data-pl-err-msg={f.s3.cityErr} />
+          <input class="input" type="text" id="pl-city" name="city" autocomplete="address-level2" required data-pl-req="1" data-pl-err-msg={f.s3.cityErr} pattern={LATIJNS} data-pl-err-vorm={f.s3.latijnsVorm} />
         </div>
       </div>
 
@@ -3473,7 +3516,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
         </div>
         <div class="field">
           <label for="pl-region">{f.s3.region} <span class="pl-opt">{f.optional}</span></label>
-          <input class="input" type="text" id="pl-region" name="region" autocomplete="address-level1" />
+          <input class="input" type="text" id="pl-region" name="region" autocomplete="address-level1" pattern={LATIJNS} data-pl-err-vorm={f.s3.latijnsVorm} />
           <span class="hint">{f.s3.regionHint}</span>
         </div>
       </div>
@@ -3634,17 +3677,22 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
         </div>
       ))}
 
-      {!isCatalog && (
+      {/* 9 november 2026 (ronde 91, K-C2): het notitieveld staat nu ook bij Catalog. Lucas
+          koos in lijst 85 (C2 = a): een klant met een vraag over één product kon die
+          nergens kwijt behalve WhatsApp, terwijl stap 5 zegt "of de notities die je erover
+          schreef". Zelfde veld, zelfde naam (`message`), zelfde grens van 2000 tekens; het
+          komt in details_json en daarmee in /admin ("Bericht van de klant"), de werkmap en
+          de studiomail, zoals bij Lifestyle. De vier vragen van ORDER_QUESTIONS hierboven
+          blijven weg bij Catalog (de noot bij isCatalog bovenaan). */}
       <div class="field">
         <label for="pl-msg">{f.s3.message} <span class="pl-opt">{f.optional}</span></label>
-        <textarea class="textarea" id="pl-msg" name="message"></textarea>
+        <textarea class="textarea" id="pl-msg" name="message" maxlength="2000"></textarea>
         <span class="hint">{f.s3.messageHint}</span>
         {/* Levering 58 (v36-bericht = a): na "Opnieuw bestellen met alle instellingen"
             zet pipeline.js hier het bericht van de vorige bestelling klaar, als knop.
             Het gaat niet vanzelf mee: het ging vaak over die ene levering. */}
-        <button type="button" class="knop knop-lijn pl-van-bericht" data-pl-van-bericht hidden></button>
+        <button type="button" class="knop knop-lijn pl-van-bericht" data-rol="toevoegen" data-pl-van-bericht hidden><Fragment set:html={rolIkoon('toevoegen')} /></button>
       </div>
-      )}
 
       {isSample && (
         <div class="pl-weigering pl-proef-al" data-pl-proef-al role="status" tabindex="-1" hidden>
@@ -3654,8 +3702,8 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
       <p class="pl-step-err" id="pl-err-3" data-pl-step-error hidden></p>
 
       <div class="pl-nav">
-        <button type="button" class="knop knop-lijn" data-pl-back>{f.back}</button>
-        <button type="button" class="knop knop-inkt" data-pl-next>{f.next}</button>
+        <button type="button" class="knop knop-lijn" data-rol="terug" data-pl-back><Fragment set:html={rolIkoon('terug')} />{f.back}</button>
+        <button type="button" class="knop knop-inkt k-groot" data-rol="doorgaan" data-pl-next>{f.next}<Fragment set:html={rolIkoon('doorgaan')} /></button>
       </div>
       <p class="pl-appons">{f.appOns.vraag} <a href={appOnsHref(3)} data-pl-appons="3" target="_blank" rel="noopener">{f.appOns.link}<NieuwTabblad lang={lang} /></a></p>
     </section>
@@ -3711,7 +3759,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
         <div class="pl-gate-panel" data-pl-gate="unavailable" hidden>
           <h3 class="pl-gate-h">{f.s4.unavailableH}</h3>
           <p class="pl-gate-body">{f.s4.unavailableBody}</p>
-          <button type="button" class="knop knop-lijn" data-pl-gate-retry>{f.s4.retry}</button>
+          <button type="button" class="knop knop-lijn" data-rol="doorgaan" data-pl-gate-retry>{f.s4.retry}<Fragment set:html={rolIkoon('doorgaan')} /></button>
         </div>
       </div>
 
@@ -3720,8 +3768,8 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
       <p class="pl-step-err" id="pl-err-4" data-pl-step-error hidden></p>
 
       <div class="pl-nav">
-        <button type="button" class="knop knop-lijn" data-pl-back>{f.back}</button>
-        <button type="button" class="knop knop-inkt" data-pl-next>{f.next}</button>
+        <button type="button" class="knop knop-lijn" data-rol="terug" data-pl-back><Fragment set:html={rolIkoon('terug')} />{f.back}</button>
+        <button type="button" class="knop knop-inkt k-groot" data-rol="doorgaan" data-pl-next>{f.next}<Fragment set:html={rolIkoon('doorgaan')} /></button>
       </div>
       <p class="pl-appons">{f.appOns.vraag} <a href={appOnsHref(4)} data-pl-appons="4" target="_blank" rel="noopener">{f.appOns.link}<NieuwTabblad lang={lang} /></a></p>
     </section>
@@ -3750,13 +3798,13 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
       <div class="pl-lost" data-pl-lost hidden role="alert">
         <h3 class="pl-lost-h">{f.s5.lostH}</h3>
         <p class="pl-lost-body">{f.s5.lostBody}</p>
-        <button type="button" class="knop knop-inkt" data-pl-lost-go>{f.s5.lostGo}</button>
+        <button type="button" class="knop knop-inkt" data-rol="doorgaan" data-pl-lost-go>{f.s5.lostGo}<Fragment set:html={rolIkoon('doorgaan')} /></button>
       </div>
 
       <div class="pl-after">
         <h3 class="pl-sub-h">{f.s5.afterH}</h3>
         <ul class="pl-after-list">
-          {f.s5.after.map((t, i) => <li data-pl-mollie={i < 2 ? '' : undefined}>{t}{i === 0 && <span data-pl-after-window hidden> {f.s5.afterWindow}</span>}{i === 1 && <span data-pl-after-eu> {f.s5.afterEu}</span>}</li>)}
+          {f.s5.after.map((t, i) => <li data-pl-mollie={i < 2 ? '' : undefined}>{t}{i === 0 && <span data-pl-after-window hidden> {f.s5.afterWindow}</span>}{i === 0 && <span data-pl-after-nowindow hidden> {f.s5.afterNoWindow}</span>}{i === 1 && <span data-pl-after-eu> {f.s5.afterEu}</span>}</li>)}
           {/* 1.07: wanneer de beelden komen en hoelang de revisieronde openstaat.
               Zonder script de gewone levertijd; syncWanneer() zet de gekozen datum
               of voorrang erin. De proef heeft geen revisieronde. */}
@@ -3876,8 +3924,8 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
       <div class="pl-botcheck" data-botcheck-plek></div>
 
       <div class="pl-submit-row">
-        <button type="button" class="knop knop-lijn pl-back-inline" data-pl-back>{f.back}</button>
-        <button type="submit" class="knop knop-inkt" data-pl-submit>{f.s5.submit}</button>
+        <button type="button" class="knop knop-lijn pl-back-inline" data-rol="terug" data-pl-back><Fragment set:html={rolIkoon('terug')} />{f.back}</button>
+        <button type="submit" class="knop knop-inkt k-groot" data-rol="doorgaan" data-pl-submit>{f.s5.submit}<Fragment set:html={rolIkoon('doorgaan')} /></button>
       </div>
 
       {/* THE TERMS, AT THE MOMENT THE CONTRACT IS FORMED.
@@ -3922,7 +3970,7 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
     {werk && (
       <div class="wk-onder" data-wk-onder>
         <p class="wk-onder-som"><b data-pl-total>—</b><span data-wk-onder-zin>{vatLabel('excl', lang)}</span></p>
-        <button type="button" class="wk-verder wk-verder-onder" data-pl-next data-wk-verder><span>{WK.verderKort}</span><span class="wk-verder-i" set:html={ikoon('pijl')} /></button>
+        <button type="button" class="wk-verder wk-verder-onder k k-vol k-groot" data-rol="doorgaan" data-pl-next data-wk-verder><span>{WK.verderKort}</span><Fragment set:html={rolIkoon('doorgaan')} /></button>
       </div>
     )}
 
@@ -4002,8 +4050,8 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
   <h2 class="hoog hoog-2">{f.footH}</h2>
   <p class="lopend">{f.footBody}</p>
   <div class="acties">
-    <a href={lp('/test-sample')} class="knop knop-inkt">{f.footCta}</a>
-    <a href={waHref(f.footWaText)} target="_blank" rel="noopener" class="knop knop-lijn">{f.footWa}<NieuwTabblad lang={lang} /></a>
+    <a href={lp('/test-sample')} class="knop knop-inkt" data-rol="doorgaan">{f.footCta}<Fragment set:html={rolIkoon('doorgaan')} /></a>
+    <a href={waHref(f.footWaText)} target="_blank" rel="noopener" class="knop knop-lijn" data-rol="contact">{f.footWa}<NieuwTabblad lang={lang} /></a>
   </div>
 </section>
 </>
@@ -5488,6 +5536,12 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
   .pl-voorrang-t b { font-size: .98rem; font-weight: 500; }
   .pl-voorrang-bedrag { margin-left: auto; font-family: var(--font-mono); font-size: .82rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
   .pl-voorrang:has(input:checked) { border-color: var(--line-strong); }
+  /* Ronde 91 (C06): agenda dicht. De rij grijs, de zin eronder op volle kleur zodat hij leesbaar blijft. */
+  .pl-voorrang.is-dicht .pl-voorrang-rij { opacity: .5; cursor: not-allowed; }
+  .pl-voorrang-dicht { margin: .6rem 0 0; font-size: .86rem; line-height: 1.45; color: var(--ink); max-width: 56ch; }
+  .pl-voorrang-dicht[hidden] { display: none; }
+  .pl-voorrang-dag { margin: .6rem 0 0; font-size: .86rem; line-height: 1.45; color: var(--ink); max-width: 56ch; }
+  .pl-voorrang-dag[hidden] { display: none; }
   .pl-voorrang:has(input:checked) .pl-voorrang-bedrag { color: var(--ink); }
   .pl-voorrang .hint { display: block; margin-top: .35rem; margin-left: 1.85rem; font-size: .84rem; max-width: 52ch; }
   /* Dubbele klasse: Disclose.astro zet zelf `.dc-plain .dc-label { 1.05rem }`

@@ -151,7 +151,8 @@ export const COPY = {
        Drie echt geleverde merkmodellen, en één regel die zegt dat die van hem
        er juist NIET bij staat — want dat is precies wat hij koopt. */
     bewijsH: 'Brand models we made',
-    bewijsNoot: 'Three we delivered.',
+    /* Lijst 87 (e15): geen "we delivered"; het zijn voorbeelden (zie BrandModelBrief.astro). */
+    bewijsNoot: 'Three examples.',
 
     stepsLabel: 'Steps',
     next: 'Continue',
@@ -220,7 +221,7 @@ export const COPY = {
     lead: 'Eén keer ontworpen, voor jouw merk, en nergens anders gebruikt.',
 
     bewijsH: 'Merkmodellen die we maakten',
-    bewijsNoot: 'Drie die we leverden.',
+    bewijsNoot: 'Drie voorbeelden.',
 
     stepsLabel: 'Stappen',
     next: 'Verder',
@@ -276,7 +277,7 @@ export const COPY = {
     ],
     legal: ['Door te betalen ga je akkoord met onze ', ' en ', '.'],
     legalTerms: 'algemene voorwaarden',
-    legalPrivacy: 'privacyverklaring',
+    legalPrivacy: 'privacybeleid',
     submit: 'Betalen en starten',
     payNote: 'Je gaat naar Mollie om te betalen. Er wordt niets gebouwd voordat de betaling binnen is.',
     businessErr: 'Vink dit aan om te bevestigen dat je zakelijk bestelt.',

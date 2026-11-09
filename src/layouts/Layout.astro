@@ -1,6 +1,6 @@
 ---
 import { WA_CHROME, WHATSAPP_DISPLAY, waHref } from '../data/whatsapp.js';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 /* k-klant-wa (14 okt 2026): een ingelogde klant met een lopende bestelling krijgt
    het kenmerk in zijn WhatsApp-bericht — interactions.js vult het in, alleen op een
    pagina die /account/me toch al vraagt. */
@@ -22,6 +22,11 @@ import Note from '../components/Note.astro';
 import '../styles/global.css';
 /* levering 89: posterkleur in het klein en de velden op de grote plekken (lijst 82 E, lijst 78 C) */
 import '../styles/posterkleur.css';
+/* lijst 86 (9 november 2026): de fotoblokken — het €1-blok, het slot, de Studiobrief en de 404 met een vaste,
+   bewogen foto in Blauw uur en een glazen plaat (src/data/fotoblok.js, scripts/fotoblok.mjs) */
+import '../styles/fotoblok.css';
+/* het knoppensysteem (lijst 88 + 89, 9 november 2026): de ene bron voor elke knop (src/styles/knoppen.css) */
+import '../styles/knoppen.css';
 // Self-hosted Archivo (Fontsource) — served from our own build instead of
 // Google's servers (AVG/GDPR-clean, no third-party connection). font-display
 // is 'swap' by default in Fontsource, matching the old &display=swap.
@@ -118,7 +123,6 @@ import HuidKantig from '../components/HuidKantig.astro';
 import Woordmerk from '../components/Woordmerk.astro';
 /* De bovenbalk draagt in de hal het V-merk (14 oktober 2026), het woordmerk de footer. */
 import VMerk from '../components/VMerk.astro';
-import { kies, pkKlasse } from '../data/stukken.js';
 import Voorlader80 from '../components/Voorlader80.astro';
 import KlantMelding from '../components/KlantMelding.astro';
 import { WOORDMERK, WOORDMERK_LIJNEN, WOORDMERK_SNEDE as WS, WOORDMERK_UITLOOP as WU } from '../data/woordmerk.js';
@@ -136,6 +140,9 @@ interface Props {
   voorlader?: boolean;
   ogImage?: string;
   noindex?: boolean;
+  /** Lijst 87 (r90-s2, 9 november 2026): de 404. Die heeft geen eigen adres (er is geen /404/),
+   *  dus geen canonical en geen taallinks; de taalknop gaat naar de voorpagina, / en /nl/. */
+  foutpagina?: boolean;
   /** Opt this page onto the espresso ground (section 17's rebuild). Per-page
    *  rather than global on purpose: 60-odd pages were composed for a light
    *  ground and go dark with no other change, which is a regression that
@@ -190,7 +197,7 @@ interface Props {
 // `noindex, nofollow, noarchive` as a meta tag AND an x-robots-tag response
 // header, because a portal URL contains a token and a meta tag alone is only
 // read by something that parses HTML. See src/lib/portal.js.
-const { title: titelRuw, description, ogImage: ogEigen, noindex = false, ground = 'paper', huid = 'kantig', werkplaats = false, voorlader = false } = Astro.props;
+const { title: titelRuw, description, ogImage: ogEigen, noindex = false, foutpagina = false, ground = 'paper', huid = 'kantig', werkplaats = false, voorlader = false } = Astro.props;
 /* ── DE PAGINATITEL IN ÉÉN VORM — levering 58, 17 oktober 2026 (afvinklijst 37, b-titels) ──
    "Overal Onderwerp | VISUAILS, ook in het Nederlands." Er stonden drie vormen door elkaar:
    "Pricing — … | VISUAILS", "Start an order — VISUAILS" en "VISUAILS — Contact us". De twee
@@ -265,6 +272,8 @@ const t = useTranslations(lang);
 const wa = WA_CHROME[lang] || WA_CHROME.en;
 const lp = (p: string) => localizedPath(lang, p);   // localize a base path for this language
 const base = stripLang(path);                        // language-neutral path (for switcher + hreflang)
+/* De taalknop: op de 404 naar de voorpagina in de andere taal (lijst 87, r90-s2). */
+const taalBase = foutpagina ? '/' : base;
 
 /* Elke ingang draagt zijn eigen href sinds 9 augustus 2026 — zie de noot bij
    NAV_SOON in src/i18n/ui.js. Hier stond een map() die drie parallelle lijsten
@@ -502,8 +511,8 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <title>{title}</title>
   <meta name="description" content={description} />
-  <link rel="canonical" href={canonical} />
-  {alternates.map((a) => <link rel="alternate" hreflang={a.hreflang} href={a.href} />)}
+  {!foutpagina && <link rel="canonical" href={canonical} />}
+  {!foutpagina && alternates.map((a) => <link rel="alternate" hreflang={a.hreflang} href={a.href} />)}
   <meta name="robots" content={noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large'} />
   {/* --bg-0, by hand. verify2 §6 allowlists `theme-color`, so this is the one
       palette value in the codebase that no check can see drift — it is listed
@@ -521,7 +530,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:image" content={ogImageAbs} />
-  <meta property="og:url" content={canonical} />
+  {!foutpagina && <meta property="og:url" content={canonical} />}
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="VISUAILS" />
   <meta property="og:locale" content={ogLocale[lang]} />
@@ -1050,7 +1059,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
             dus klik, Escape en klik-ernaast werken zoals bij de andere drie. */}
         <div class="lang-switch nav-taal-klein" role="group" aria-label={t('lang_label')} data-acct="out">
           {switchLangs.filter((l) => l !== lang).map((l) => (
-            <a href={localizedPath(l, base)} hreflang={l} class="ls" aria-label={localeNames[l] === 'NL' ? 'Nederlands' : localeNames[l] === 'EN' ? 'English' : localeNames[l]}>{localeNames[l]}</a>
+            <a href={localizedPath(l, taalBase)} hreflang={l} class="ls" aria-label={localeNames[l] === 'NL' ? 'Nederlands' : localeNames[l] === 'EN' ? 'English' : localeNames[l]}>{localeNames[l]}</a>
           ))}
         </div>
         <div class="nav-account-in has-menu nav-ik" data-acct="in" hidden>
@@ -1063,7 +1072,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
             <div class="lang-switch nav-ik-taal" role="group" aria-label={acct.taal}>
               <span class="nav-ik-taal-l" aria-hidden="true">{acct.taal}</span>
               {switchLangs.map((l) => (
-                <a href={localizedPath(l, base)} hreflang={l} class:list={['ls', l === lang && 'on']} aria-current={l === lang ? 'true' : undefined}>{localeNames[l]}</a>
+                <a href={localizedPath(l, taalBase)} hreflang={l} class:list={['ls', l === lang && 'on']} aria-current={l === lang ? 'true' : undefined}>{localeNames[l]}</a>
               ))}
             </div>
             {/* A form, not a link: signing out is a state change and it has to be
@@ -1099,7 +1108,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
             taalneutrale pad, dus dit klopt in beide talen zonder een tweede
             controle. */}
         {/* Levering 89 (lijst 82, E3): Bestellen bovenin is een stukje snede met korrel (posterkleur.css), vast per pagina. */}
-        <a href={lp('/start')} class:list={['btn', 'nav-cta', base === '/' ? 'btn-ghost' : 'btn-primary', huid === 'hal' && pkKlasse(kies('knop', base))]}>{t('nav_start')}</a>
+        <a href={lp('/start')} class:list={['btn', 'nav-cta', base === '/' ? 'btn-ghost' : 'btn-primary']} data-rol="doorgaan">{t('nav_start')}<Fragment set:html={rolIkoon('doorgaan')} /></a>
         <button class="menu-toggle" aria-label={t('nav_open')} aria-expanded="false" aria-controls="mobile-nav"><span></span></button>
       </div>
     </div>
@@ -1203,7 +1212,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
 
           Wat écht altijd in beeld moet, is één deur. Deze drie horen bij de
           lijst en scrollen dus mee. */}
-      <a href={waHref(wa.order)} class="btn btn-wa btn-block mobile-wa" target="_blank" rel="noopener" {...waKlant(lang)}>{t('mob_chat')}<NieuwTabblad lang={lang} /></a>
+      <a href={waHref(wa.order)} class="btn btn-wa btn-block mobile-wa" data-rol="contact" target="_blank" rel="noopener" {...waKlant(lang)}>{t('mob_chat')}<NieuwTabblad lang={lang} /></a>
       {/* data-vis-uit (15 oktober 2026): een klant ziet de €1-proef nergens meer. */}
       <span class="mobile-cta-hint" data-vis-uit>{t('mob_notsure')} <a href={lp('/test-sample')}>{t('mob_try')}</a></span>
 
@@ -1228,14 +1237,14 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
         </div>
         <div class="lang-switch mobile-lang" role="group" aria-label={t('lang_label')}>
           {switchLangs.map((l) => (
-            <a href={localizedPath(l, base)} hreflang={l} class:list={['ls', l === lang && 'on']} aria-current={l === lang ? 'true' : undefined}>{localeNames[l]}</a>
+            <a href={localizedPath(l, taalBase)} hreflang={l} class:list={['ls', l === lang && 'on']} aria-current={l === lang ? 'true' : undefined}>{localeNames[l]}</a>
           ))}
         </div>
       </div>
     </div>
 
     <div class="mobile-cta">
-      <a href={lp('/start')} class="btn btn-primary btn-block btn-lg">{t('nav_start')}</a>
+      <a href={lp('/start')} class="btn btn-primary btn-block" data-rol="doorgaan">{t('nav_start')}<Fragment set:html={rolIkoon('doorgaan')} /></a>
     </div>
   </div>
   )}
@@ -1463,7 +1472,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
               onder een adres en een telefoonnummer, waar ze als vierde contactweg
               lazen. Hier zijn ze wat ze zijn — het merk, elders. */}
           <div class="footer-act">
-            <a class="btn btn-primary btn-sm" href={lp('/start')}>{t('foot_cta')}</a>
+            <a class="btn btn-primary" data-rol="doorgaan" href={lp('/start')}>{t('foot_cta')}<Fragment set:html={rolIkoon('doorgaan')} /></a>
             <ul class="foot-social">
               {/* o26, 8 oktober 2026: het label zegt dat er een tabblad opengaat — zie src/data/nieuwTabblad.js. */}
               <li><a href={waHref()} target="_blank" rel="noopener me" aria-label={metNieuwTabblad('WhatsApp', lang)}></a></li>
@@ -2890,8 +2899,15 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      ver onder de 44px). Wat lucht om elke regel, alleen waar een vinger het
      doet — op een desktop blijft de lijst even compact. */
   @media (pointer: coarse) {
-    .footer-col li > a, .footer-col li > .mi-off { display: inline-block; padding-block: .45rem; }
+    /* Lijst 87 (r90-s12): .6rem in plaats van .45rem, een regel van 19,5 px wordt zo 38,7 px hoog (was 33,9). */
+    .footer-col li > a, .footer-col li > .mi-off { display: inline-block; padding-block: .6rem; }
     .footer-col ul { gap: .1rem; }
+  }
+  /* Lijst 87 (r90-s12): ook zonder aanraakscherm (een smal venster, een pen) minstens 24 px om aan te tikken.
+     3 px binnenruimte boven en onder, en dezelfde 3 px als negatieve marge: 19,5 + 6 = 25,5 px, en er
+     verschuift niets. */
+  @media not (pointer: coarse) {
+    .footer-col li > a { display: inline-block; padding-block: 3px; margin-block: -3px; }
   }
 
   /* ── DE TINT KOMT ALS LAATSTE, EN DAT IS GEEN DETAIL ───────────────────────

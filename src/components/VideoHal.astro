@@ -21,7 +21,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import '@fontsource-variable/urbanist/index.css';
 import '../styles/hal.css';
-import { ikoon, IKOON } from '../data/iconen.js';
+import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import HalLaptop from './HalLaptop.astro';
 import HalVragen from './HalVragen.astro';
 import HalHoeDienst from './HalHoeDienst.astro';
@@ -344,7 +344,7 @@ const COPY = {
     whereH: 'Waar je het gebruikt',
     where: [
       ['Reels, TikTok & Shorts', 'waar alles beweegt.'],
-      ['Betaalde ads', 'hogere kijktijd en doorklik.'],
+      ['Betaalde advertenties', 'hogere kijktijd en doorklik.'],
       ['Productpagina’s', 'een autoplay-clip naast de stills.'],
       ['E-mail & landingspagina’s', 'beweging in het eerste beeld dat iemand ziet.'],
     ],
@@ -484,8 +484,8 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
       </h1>
       <p class="h-lede h-op" style="--d:3">{c.lead}</p>
       <p class="h-acties h-op" style="--d:4">
-        <a class="h-knop h-knop-inkt" href="#looks">{c.kiesCta}<span class="o" set:html={ik('rechts')} /></a>
-        <a class="h-knop h-knop-lijn" href={lp('/pricing')}>{c.ctaPrices}</a>
+        <a class="h-knop k k-vol" data-rol="doorgaan" href="#looks">{c.kiesCta}<Fragment set:html={rolIkoon('doorgaan')} /></a>
+        <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/pricing')}>{c.ctaPrices}<Fragment set:html={rolIkoon('navigeren')} /></a>
       </p>
       <ul class="h-feiten h-vd-feiten h-op" style="--d:5" role="list">
         {feiten.map(([sterk, rest], i) => <li><i set:html={ik((['film', 'klok', 'check'] as const)[i] || 'check')} /><span><b>{sterk}</b> {rest}</span></li>)}
@@ -529,10 +529,10 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
             <p class="h-st-tarief"><b>{kindPrice(s.slug)}</b></p>
             <p class="h-st-wegen">
               {opAanvraag && (s.slug === 'motion' || s.slug === 'lifestyle')
-                ? <a class="h-knop h-knop-lijn h-knop-klein" href={lp(`${basis}/video/${s.slug}`)}>{nl ? `Ontdek ${s.name}` : `Explore ${s.name}`}</a>
+                ? <a class="h-knop k k-lijn k-klein" data-rol="navigeren" href={lp(`${basis}/video/${s.slug}`)}>{nl ? `Ontdek ${s.name}` : `Explore ${s.name}`}<Fragment set:html={rolIkoon('navigeren')} /></a>
                 : s.ctaExternal
-                  ? <a class="h-knop h-knop-inkt h-knop-klein" href={s.ctaHref} target="_blank" rel="noopener">{s.ctaLabel}<span class="o" set:html={ik('rechts')} /><NieuwTabblad lang={lang} /></a>
-                  : <a class="h-knop h-knop-inkt h-knop-klein" href={s.ctaHref}>{s.ctaLabel}<span class="o" set:html={ik('rechts')} /></a>}
+                  ? <a class="h-knop k k-lijn k-klein" data-rol="contact" href={s.ctaHref} target="_blank" rel="noopener">{s.ctaLabel}<NieuwTabblad lang={lang} /></a>
+                  : <a class="h-knop k k-vol k-klein" data-rol="doorgaan" href={s.ctaHref}>{s.ctaLabel}<Fragment set:html={rolIkoon('doorgaan')} /></a>}
             </p>
             {!(opAanvraag && (s.slug === 'motion' || s.slug === 'lifestyle')) && (
               <p class="h-st-ook-links"><a class="h-st-meer" href={lp(`${basis}/video/${s.slug}`)}>{nl ? `Ontdek ${s.name}` : `Explore ${s.name}`}<span set:html={ik('pijl')} /></a></p>
@@ -553,8 +553,8 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
             {/* Sinds B14b (15 oktober 2026) gaat de eigen look naar het formulier op deze site,
                 niet meer naar WhatsApp: geen nieuw tabblad. */}
             {eigen.ctaExternal
-              ? <a class="h-knop h-knop-lijn h-knop-klein" href={eigen.ctaHref} target="_blank" rel="noopener">{eigen.ctaLabel}<NieuwTabblad lang={lang} /></a>
-              : <a class="h-knop h-knop-lijn h-knop-klein" href={eigen.ctaHref}>{eigen.ctaLabel}</a>}
+              ? <a class="h-knop k k-lijn k-klein" data-rol="contact" href={eigen.ctaHref} target="_blank" rel="noopener">{eigen.ctaLabel}<NieuwTabblad lang={lang} /></a>
+              : <a class="h-knop k k-lijn k-klein" data-rol="doorgaan" href={eigen.ctaHref}>{eigen.ctaLabel}<Fragment set:html={rolIkoon('doorgaan')} /></a>}
             <a class="h-st-meer" href={lp(`${basis}/video/custom`)}>{H.eigenMeer}<span set:html={ik('pijl')} /></a>
           </p>
         </li>
@@ -584,8 +584,8 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
         <p set:html={c.buyQuote} />
         {!opAanvraag && <p class="h-vd-vast"><b>{c.buyFlatH}</b> {c.buyFlat}</p>}
         <p class="h-acties">
-          <a class="h-knop h-knop-inkt" href={lp('/start/video')}>{c.buyCta}<span class="o" set:html={ik('rechts')} /></a>
-          <a class="h-knop h-knop-lijn" href={c.waQuote} target="_blank" rel="noopener">{c.waQuoteLabel}<NieuwTabblad lang={lang} /></a>
+          <a class="h-knop k k-vol" data-rol="doorgaan" href={lp('/start/video')}>{c.buyCta}<Fragment set:html={rolIkoon('doorgaan')} /></a>
+          <a class="h-knop k k-lijn" data-rol="contact" href={c.waQuote} target="_blank" rel="noopener">{c.waQuoteLabel}<NieuwTabblad lang={lang} /></a>
         </p>
       </div>
     </div>
@@ -602,13 +602,16 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
   <section class="h-sec h-lk-slot-sec" aria-labelledby="vd-slot">
     <div class="h-lk-slot h-in">
       <span class="h-korrel" aria-hidden="true"></span>
-      <p class="h-pil h-pil-wit"><span>{H.slotPil}</span></p>
-      <h2 id="vd-slot" class="h-kop h-h2"><span class="l">{tonen(c.ctaH)[0]}</span> {tonen(c.ctaH)[1]}</h2>
-      <p class="h-vd-slot-zin">{c.ctaP}</p>
-      <p class="h-acties">
-        <a class="h-knop h-knop-inkt" href={lp('/start/video')}>{c.ctaPrimary}<span class="o" set:html={ik('rechts')} /></a>
-        <a class="h-knop h-knop-lijn" href={lp('/contact')}>{c.ctaSecondary}</a>
-      </p>
+      {/* lijst 86 (9 november 2026): de glazen plaat om de tekst, op de foto van het slot (src/styles/fotoblok.css) */}
+      <div class="fb-glas">
+        <p class="h-pil h-pil-wit"><span>{H.slotPil}</span></p>
+        <h2 id="vd-slot" class="h-kop h-h2"><span class="l">{tonen(c.ctaH)[0]}</span> {tonen(c.ctaH)[1]}</h2>
+        <p class="h-vd-slot-zin">{c.ctaP}</p>
+        <p class="h-acties">
+          <a class="h-knop k k-vol" data-rol="doorgaan" href={lp('/start/video')}>{c.ctaPrimary}<Fragment set:html={rolIkoon('doorgaan')} /></a>
+          <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/contact')}>{c.ctaSecondary}<Fragment set:html={rolIkoon('navigeren')} /></a>
+        </p>
+      </div>
     </div>
   </section>
 </div>

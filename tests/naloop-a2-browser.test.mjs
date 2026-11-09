@@ -269,7 +269,7 @@ for (const [pad, sel, regel, naam] of VIER) {
 /* ── 5 · STYLEPICKER: "GEKOZEN BIJ DE LOOK" ──────────────────────────────── */
 console.log('\n5 · StylePicker zegt "Gekozen bij de look"');
 for (const [taal, pad, want] of [
-  ['nl', '/nl/start/lifestyle/?style=dunes', 'Gekozen bij de look. Hier veranderen kan met één klik.'],
+  ['nl', '/nl/start/lifestyle/?style=dunes', 'Gekozen op de pagina van de look. Hier veranderen kan met één klik.'],
   ['en', '/start/lifestyle/?style=dunes', 'Picked from the looks. Changing it here is one click.'],
 ]) {
   for (const breed of [390, 1280]) {

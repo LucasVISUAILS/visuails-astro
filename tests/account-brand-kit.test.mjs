@@ -632,7 +632,8 @@ const EVENTS = [
 {
   const r = await get('/account', { events: EVENTS });
   const p = progressView(r.st.t, r.st.lang, r.view.featured, r.st.eventsByOrder.get(r.view.featured.id) || []);
-  check('the overview leads with one order and its timeline', r.view.featured?.id === 91 && p.steps.length === 4);
+  /* Ronde 91 (w4, 9 november 2026): drie stappen — "Being checked" is geen eigen stap meer. */
+  check('the overview leads with one order and its timeline', r.view.featured?.id === 91 && p.steps.length === 3);
   check('with a sentence about what happens now, not a column value',
     p.now.startsWith('Our studio is making your images') && !/in_production/.test(p.now));
   check('and the four steps, with the current one marked',
@@ -671,7 +672,7 @@ const EVENTS = [
   const kaartVan = (r, id) => r.view.kaarten.find((k) => k.o.id === id).view;
   for (const o of ORDERS) {
     const r = await get(`/account/orders?order=${o.id}`, { events: EVENTS });
-    check(`order ${o.id} carries a timeline`, kaartVan(r, o.id).progress.steps.length === 4 && kaartVan(r, o.id).openNow === true);
+    check(`order ${o.id} carries a timeline`, kaartVan(r, o.id).progress.steps.length === 3 && kaartVan(r, o.id).openNow === true);
   }
   const delivered = await get('/account/orders?order=90', { events: EVENTS });
   check('the delivered one says the images are ready',

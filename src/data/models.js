@@ -177,7 +177,7 @@ export const TRAITS = {
     warm: 'Warm', approachable: 'Toegankelijk', editorial: 'Editorial', elegant: 'Elegant',
     refined: 'Verfijnd', classic: 'Klassiek', sporty: 'Sportief', energetic: 'Energiek',
     confident: 'Zelfverzekerd', modern: 'Modern', natural: 'Natuurlijk', bold: 'Gedurfd',
-    statement: 'Statement', soft: 'Zacht', understated: 'Ingetogen', clean: 'Clean',
+    statement: 'Statement', soft: 'Zacht', understated: 'Ingetogen', clean: 'Strak',
     contemporary: 'Eigentijds', sharp: 'Scherp',
   },
 };

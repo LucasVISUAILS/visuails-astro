@@ -263,6 +263,11 @@ try {
     const stand = async (f) => {
       await page.evaluate((f) => { const r = document.querySelector('.w8-regel'); scrollTo(0, r.getBoundingClientRect().top + scrollY - innerHeight * f); }, f);
       await page.waitForTimeout(450);
+      /* zonder grafische kaart duurt een schermbeeld bij de logoposter (WebGL) hier ± 200 ms: wacht tot de regel bij deze
+         plek is bijgewerkt (twee beelden) en de kleur is aangekomen (geen overgang meer onderweg), niet op de klok */
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+      await page.waitForFunction(() => { const grijs = !!document.querySelector('.w8-grijs');
+        return [...document.querySelectorAll('.w8-w')].every((w) => getComputedStyle(w).color === (grijs && !w.classList.contains('aan') ? 'rgb(99, 105, 116)' : 'rgb(15, 18, 23)')); }, null, { timeout: 4000 }).catch(() => {});
       return page.evaluate(() => [...document.querySelectorAll('.w8-w')].map((w) => (getComputedStyle(w).color === 'rgb(15, 18, 23)' ? 1 : 0)).join(''));
     };
     const s = [await stand(0.92), await stand(0.62), await stand(0.4)];

@@ -1,4 +1,5 @@
 ---
+import { halV } from '../data/beeldVersie.js';
 /* ═══════════════════════════════════════════════════════════════════════════════
    WAT WE MAKEN — levering 80, 1 november 2026 (lijst 64, s-maken)
    ═══════════════════════════════════════════════════════════════════════════════
@@ -42,7 +43,8 @@ const BEELD = [
 const ALT = lang === 'nl'
   ? ['Blauwe zip-hoodie van NON/STD, uitgeknipt met zijn schaduw', 'Zwarte jeans met opdruk van NON/STD, uitgeknipt met zijn schaduw', 'Witte sokken met logo van NON/STD, uitgeknipt met hun schaduw']
   : ['Blue NON/STD zip hoodie, cut out with its shadow', 'Black printed NON/STD jeans, cut out with its shadow', 'White NON/STD logo socks, cut out with their shadow'];
-const srcset = (n: string, maten: number[], ext: string) => maten.map((b) => `/img/hal/rust/${n}-${b}.${ext} ${b}w`).join(', ');
+/* ?v= achter elk beeld (lijst 87, C16): zie src/data/beeldVersie.js. */
+const srcset = (n: string, maten: number[], ext: string) => maten.map((b) => `${halV(`/img/hal/rust/${n}-${b}.${ext}`)} ${b}w`).join(', ');
 ---
 <section class="m8" id="maken" aria-labelledby="m8-kop">
   <div class="m8-kopgroep">
@@ -59,7 +61,7 @@ const srcset = (n: string, maten: number[], ext: string) => maten.map((b) => `/i
             <span class="m8-beeld" style={`--s:${B.schaal}`}>
               <picture>
                 <source type="image/avif" srcset={srcset(B.naam, B.maten, 'avif')} sizes={sizes} />
-                <img src={`/img/hal/rust/${B.naam}-720.webp`} srcset={srcset(B.naam, B.maten, 'webp')} sizes={sizes} width={B.b} height={B.h} alt={ALT[i]} loading="lazy" decoding="async" />
+                <img src={halV(`/img/hal/rust/${B.naam}-720.webp`)} srcset={srcset(B.naam, B.maten, 'webp')} sizes={sizes} width={B.b} height={B.h} alt={ALT[i]} loading="lazy" decoding="async" />
               </picture>
             </span>
             <span class="m8-naam">{naam}<span class="m8-pijl" aria-hidden="true" set:html={ik('pijl')} /></span>
