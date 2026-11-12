@@ -213,13 +213,13 @@ const leespagina = categorie === 'catalog' ? '/catalog' : '/lifestyle';
     margin-top: clamp(1.4rem, 2.6vw, 1.9rem);
     padding-bottom: .9rem;
     border-bottom: 1px solid var(--line);
-    font-size: .95rem;
+    font-size: var(--h-t-klein);
   }
   .sr1 + .sr1 { margin-top: .9rem; }
-  .sr1-l { font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+  .sr1-l { font-size: var(--h-t-label); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
   .sr1-naam { color: var(--ink); font-weight: 600; text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; }
   .sr1-naam:hover { text-decoration-color: var(--ink); }
-  .sr1-waar { font-size: .82rem; color: var(--ink-3); }
+  .sr1-waar { font-size: var(--h-t-fijn); color: var(--ink-3); }
 
   /* De keuzelijst draagt de inkt van de pagina en niet die van het besturings-
      systeem: een <select> erft standaard een eigen achtergrond en die valt op
@@ -242,7 +242,7 @@ const leespagina = categorie === 'catalog' ? '/catalog' : '/lifestyle';
   .sr1-keuze:hover { border-color: var(--ink); }
   .sr1-keuze:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
   /* iOS zoomt in op velden onder 16 px (1 oktober 2026); zie stijl22.css. */
-  @media (max-width: 760px), (pointer: coarse) { .sr1-keuze { font-size: 16px; } }
+  @media (max-width: 760px), (pointer: coarse) { .sr1-keuze { font-size: var(--h-t-lopend); } }
 
   /* ── HET VOORBEELD BIJ DE KEUZE ─────────────────────────────────────────
      Klein: dit is een regel in een formulier en niet de stijlpagina. Wat het
@@ -272,9 +272,9 @@ const leespagina = categorie === 'catalog' ? '/catalog' : '/lifestyle';
   }
   /* 13px in --ink-2 en niet --ink-3: deze zin staat naast een foto en moet
      gelezen kunnen worden, niet aangevoeld. */
-  .sr1-vb-tag { font-size: .82rem; line-height: 1.35; color: var(--ink-2); min-width: 0; }
+  .sr1-vb-tag { font-size: var(--h-t-fijn); line-height: 1.35; color: var(--ink-2); min-width: 0; }
 
-  .sr1-r { margin-left: auto; font-size: .85rem; color: var(--ink-3); }
+  .sr1-r { margin-left: auto; font-size: var(--h-t-fijn); color: var(--ink-3); }
   .sr1-r a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
   .sr1-r a:hover { color: var(--ink); }
   /* Raakvlak 24 px hoog in plaats van 16 (1 oktober 2026); onzichtbaar, zie .pijl in stijl22.css. */

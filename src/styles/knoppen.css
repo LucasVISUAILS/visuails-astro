@@ -118,7 +118,7 @@
 
 /* ── C · de maat ─────────────────────────────────────────────────────────────────────────────────── */
 :is(.k, .btn, .knop):is(.k-klein, .btn-sm):not(.k-tekst):not(#k) { --k-h: 36px; --k-p: 15px; --k-pi: 12px; --k-ik: 15px; --k-gat: 7px; --k-l: 13.5px; }
-:is(.k, .btn, .knop).k-groot:not(.k-tekst):not(#k) { --k-h: 52px; --k-p: 24px; --k-pi: 20px; --k-ik: 20px; --k-gat: 10px; --k-l: 16px; }
+:is(.k, .btn, .knop).k-groot:not(.k-tekst):not(#k) { --k-h: 52px; --k-p: 24px; --k-pi: 20px; --k-ik: 20px; --k-gat: 10px; --k-l: 15px; }   /* lijst 93 B2 a: knoppen 15 en 13,5 (was 16); groot is alleen hoger */
 :is(.k, .btn, .knop).k-tekst.k-klein:not(#k) { --k-l: 13.5px; --k-ik: 15px; }
 /* een lange tekst op een smal scherm breekt binnen de pil in plaats van de pagina breder te maken */
 @media (max-width: 600px) {

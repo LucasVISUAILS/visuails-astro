@@ -181,7 +181,7 @@ const { realLabel, builtLabel, keys, note } = Astro.props;
     max-width: calc(100% - 16px);
     padding: 3px 6px;
     background: var(--bg);
-    font-size: .72rem;
+    font-size: var(--h-t-label);
     line-height: 1.25;
     color: var(--ink-2);
   }
@@ -203,7 +203,7 @@ const { realLabel, builtLabel, keys, note } = Astro.props;
     padding: 8px;
   }
   .an-real-lab {
-    font-size: .72rem;
+    font-size: var(--h-t-label);
     line-height: 1.25;
     text-align: center;
     color: var(--bg);
@@ -252,11 +252,11 @@ const { realLabel, builtLabel, keys, note } = Astro.props;
   .is-checked::before { top: 0; left: 0; border-top-width: 2px; border-left-width: 2px; }
   .is-checked::after { right: 0; bottom: 0; border-right-width: 2px; border-bottom-width: 2px; }
 
-  .an-key-t { font-size: .95rem; font-weight: 600; color: var(--ink); }
+  .an-key-t { font-size: var(--h-t-klein); font-weight: 600; color: var(--ink); }
   .an-key-b {
     grid-column: 2;
     margin-top: .3rem;
-    font-size: .85rem;
+    font-size: var(--h-t-fijn);
     line-height: 1.55;
     color: var(--ink-2);
     max-width: 46ch;
@@ -266,7 +266,7 @@ const { realLabel, builtLabel, keys, note } = Astro.props;
     margin-top: 1.4rem;
     padding-top: .8rem;
     border-top: 1px solid var(--line);
-    font-size: .82rem;
+    font-size: var(--h-t-fijn);
     line-height: 1.6;
     color: var(--ink-3);
     max-width: 62ch;

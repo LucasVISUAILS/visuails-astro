@@ -41,8 +41,12 @@ ok('gewoon de video: geen WebGL, geen doek, geen metro (alleen schermvlak.js voo
 ok('het wiel wordt afgevangen vóór zacht scrollen (capture, niet passief), en zacht scrollen kan gestopt worden',
   /window\.addEventListener\('wheel', opWiel, \{ passive: false, capture: true \}\)/.test(opening) && /window\.__visZachtStop = stop;/.test(zacht) && /__visZachtStop\?\.\(\)/.test(opening));
 /* 8 november 21:44 (Lucas: "kan toch wel sneller (tussen de 1.5 en 2.5 seconden …)"): 60 per seconde op 1 ×, 1,87 s */
-ok('60 per seconde op gewone snelheid (1,87 s), nog een scroll haalt in (1,6 ×); wat sleept voorbij 400 px maakt hem af',
-  V90.snelheid === 1 && V90.beelden / V90.fps >= 1.5 && V90.beelden / V90.fps <= 2.5 && /const INHAAL = 1\.6;/.test(opening) && /const DREMPEL = 8, SLEEP = 400;/.test(opening));
+/* levering 93 (lijst 90, B2 b en B3 a): de video op 1,4 s (1,336 ×); elke scroll terwijl het loopt een tree sneller (1,8 · 3 · 4 ×) */
+const duur93 = V90.beelden / V90.fps / V90.snelheid;
+ok('60 per seconde op 1,336 × (1,4 s), een scroll versnelt zacht (1,8 · 3 · 4 ×); wat sleept voorbij 400 px maakt hem af',
+  Math.abs(V90.snelheid - 1.336) < 1e-9 && duur93 >= 1.3 && duur93 <= 1.5 && /const TREDEN = \[1\.8, 3, 4\], GLIJ = 0\.18;/.test(opening) && /const DREMPEL = 8, SLEEP = 400;/.test(opening));
+ok('na de video zinkt het veld (480 ms, ease-in) en springt de pagina naar Wat we maken (lijst 90, B1 c)',
+  /const ZINK = 480, WIT = 60, TERUG = 380;/.test(opening) && /function spring\(\)/.test(opening) && /\.o8\.o8-weg :is\(\.o8-vlak, \.o8-foto\) \{ opacity: 0; \}/.test(css));
 ok('de video: 112 beelden op 60 per seconde, 2944 × 1248, de klep staat de eerste 7 beelden stil', V90.beelden === 112 && V90.fps === 60 && V90.b === 2944 && V90.h === 1248 && V90.stilTot === 7);
 /* de maat en het aantal beelden uit de mp4 zelf (moov → trak met hdlr 'vide' → tkhd en stsz), zonder ffprobe (op Lucas'
    computer staat geen ffmpeg) */
@@ -84,7 +88,8 @@ ok('de overgang: de winkel en de foto vervagen samen in de video (120 ms, de fot
   /html\.o8-aan \.o8\.o8-winkel-uit \.o8-beeld \{ opacity: 0; visibility: hidden; transition: opacity \.12s linear, visibility 0s \.12s; \}/.test(css)
   && /\.o8\.o8-winkel-uit \.o8-sc \{ opacity: 0; visibility: hidden; transition: opacity \.12s/.test(css)
   && /uitTimer = window\.setTimeout\(fotoWeg, UIT \+ 40\);/.test(opening) && /const UIT = 120/.test(opening) && 120 <= (V90.stilTot + 1) / V90.fps * 1000);
-ok('geen korrel achter de laptop: niet in de video, niet op het vlak (8 november 21:44)', /zonder korrel/.test(V90.veld) && !/\.o8-vlak::after/.test(css));
+/* levering 94: het veld is weg (VELD=wit), dus ook geen korrel */
+ok('geen korrel achter de laptop: niet in de video, niet op het vlak (8 november 21:44)', /zonder korrel|^wit/.test(V90.veld) && !/\.o8-vlak::after/.test(css));
 ok('… nooit een video bovenop die nog een ander beeld toont (eerst zoeken, dan tonen), en terug pas wisselen als de foto weer op is',
   /function opBeeld\(sp: Speler, j: number, f: \(\) => void\)/.test(opening) && /function naFotoOp\(/.test(opening) && /naFotoOp\(\(\) => rustig\(heenOpNul\)\)/.test(opening));
 ok('het vak van de foto en de video op hele pixels (dan zet de browser ze precies gelijk neer)', /@supports \(width: round\(1px, 1px\)\)/.test(css) && /--o8-fwh: round\(var\(--o8-fw\), 2px\)/.test(css));
@@ -141,10 +146,10 @@ async function verschil(a, b, vanaf, zonder = []) {
 try {
   const { ctx, page } = await open({ viewport: { width: 1440, height: 900 } });
   const m = await page.evaluate(() => {
-    const kop = document.querySelector('.o8-kop').getBoundingClientRect();
-    return { aan: document.documentElement.classList.contains('o8-aan'), boven: kop.top - 56, sw: document.documentElement.scrollWidth, vw: document.documentElement.clientWidth };
+    /* levering 94: de laptop staat onder Wat we maken (alleenLaptop), zonder kop */
+    return { aan: document.documentElement.classList.contains('o8-aan'), alleen: document.querySelector('.o8').classList.contains('o8-alleen'), sw: document.documentElement.scrollWidth, vw: document.documentElement.clientWidth };
   });
-  ok('het effect staat aan (html.o8-aan), de kop met ruimte erboven, niets zijwaarts', m.aan && m.boven >= 40 && m.sw <= m.vw, JSON.stringify(m));
+  ok('het effect staat aan (html.o8-aan), alleen de laptop, niets zijwaarts', m.aan && m.alleen && m.sw <= m.vw, JSON.stringify(m));
   await wacht(page, 1200);
   const rust = await page.evaluate(() => ({ cls: document.querySelector('.o8').className, s: window.__o8Stand?.() }));
   ok('bij het laden beweegt niets: in rust, de foto op, de winkel aan', !!rust.s && rust.s.fase === 'rust' && !/o8-onderweg|o8-winkel-uit|o8-speelt/.test(rust.cls), JSON.stringify({ fase: rust.s?.fase, cls: rust.cls }));
@@ -206,8 +211,9 @@ try {
   await page.waitForFunction(() => window.__o8Stand().fase === 'klaar', null, { timeout: LANG }).catch(() => {});
   await wacht(page, 600);
   const c = await stand();
-  ok('zonder verdere invoer aan het eind: beeld 111, de foto weg, de pagina los, Wat we maken nog onder het scherm',
-    c.fase === 'klaar' && c.beeld === 111 && c.fotoWeg && c.vast === -1 && c.m8top >= 900 - 2, JSON.stringify({ fase: c.fase, beeld: c.beeld, foto: c.fotoWeg, vast: c.vast, m8top: c.m8top }));
+  /* levering 94: onder de laptop staat geen Wat we maken meer (die staat erboven), dus geen zinken en geen sprong: de pagina los */
+  ok('zonder verdere invoer aan het eind: beeld 111, de foto weg, de pagina los (geen sprong: Wat we maken staat erboven)',
+    c.fase === 'klaar' && c.beeld === 111 && c.fotoWeg && c.vast === -1 && !(c.springY >= 0), JSON.stringify({ fase: c.fase, beeld: c.beeld, foto: c.fotoWeg, vast: c.vast, springY: c.springY }));
   const log = await page.evaluate(() => { const l = window.__log; window.__log = []; return { l, zoek: window.__zoek }; });
   const heen = log.l.filter((r) => r[0] === 'speelt');
   ok('… de video speelde vooruit tot het eind en zocht niet één keer', heen.length > 5 && heen.every((r, i) => i === 0 || r[2] >= heen[i - 1][2]) && log.zoek === 0, JSON.stringify({ n: heen.length, zoek: log.zoek, beelden: heen.filter((_, i) => i % 10 === 0).map((r) => r[2]) }));
@@ -222,13 +228,12 @@ try {
   ok('… de foto vervaagde in de video terwijl de klep nog stilstond (geen harde wissel)', teVroeg.length === 0 && heen.some((r) => r[7]), JSON.stringify({ tussen: tussen.length, teVroeg: teVroeg.slice(0, 3), nietTeMeten: stil }));
   ok('… de pagina stond vast tot het eind', heen.filter((r) => r[6] >= 0).every((r) => Math.abs(r[5] - r[6]) <= 120), JSON.stringify(heen.slice(0, 3)));
 
-  /* verder scrollen: Wat we maken schuift over het stilstaande veld */
-  for (let k = 0; k < 4; k++) { await page.mouse.wheel(0, 200); await wacht(page, 350); }
-  await page.waitForFunction(() => document.querySelector('.m8').classList.contains('m8-open'), null, { timeout: 15000 }).catch(() => {});
+  /* Wat we maken staat er al (levering 93); een beetje verder scrollen kan gewoon */
+  const yVoor = (await stand()).y;
+  for (let k = 0; k < 2; k++) { await page.mouse.wheel(0, 120); await wacht(page, 350); }
   await wacht(page, 400);
   const sch = await stand();
-  ok('daarna scrol je gewoon verder: Wat we maken schuift erover (open, boven het podium), de laptop blijft aan het eind',
-    sch.fase === 'klaar' && /m8-open/.test(sch.m8) && sch.m8top < 900 && Math.abs(sch.podium - 56) <= 2, JSON.stringify({ fase: sch.fase, m8: sch.m8, m8top: sch.m8top, podium: sch.podium }));
+  ok('daarna scrol je gewoon verder (de pagina loopt mee)', sch.fase === 'klaar' && sch.y > yVoor, JSON.stringify({ fase: sch.fase, y: sch.y, yVoor }));
 
   /* terug: omhoog tot in de rustzone */
   await page.waitForFunction(() => window.__o8Stand().terugKlaar, null, { timeout: LANG }).catch(() => {});
@@ -266,7 +271,7 @@ try {
   await page.mouse.wheel(0, 100);
   await wacht(page, 150);
   const f = await stand();
-  ok('nog een scroll omlaag terwijl hij speelt: hij haalt in (1,6 ×), de pagina blijft vast', (f.fase === 'speelt' && Math.abs(f.snel - 1.6) < 1e-9 && f.vast >= 0 && Math.abs(f.y - f.vast) <= 1) || f.fase === 'klaar', JSON.stringify({ fase: f.fase, snel: f.snel, y: f.y, vast: f.vast, top0 }));
+  ok('nog een scroll omlaag terwijl hij speelt: een tree sneller (1,8 ×, het tempo glijdt erheen), de pagina blijft vast', (f.fase === 'speelt' && f.doelTempo >= 1.8 && f.snel > 1 && f.vast >= 0 && Math.abs(f.y - f.vast) <= 1) || f.fase === 'klaar', JSON.stringify({ fase: f.fase, doel: f.doelTempo, snel: f.snel, y: f.y, vast: f.vast, top0 }));
   /* een grote sleep met de schuifbalk maakt hem af */
   if (f.fase === 'speelt') {
     await page.evaluate((y) => scrollTo({ top: y + 800, behavior: 'instant' }), f.vast);
@@ -283,11 +288,11 @@ try {
   await page.waitForFunction(() => +getComputedStyle(document.querySelector('[data-o8-beeld]')).opacity >= 0.999, null, { timeout: 8000 }).catch(() => {});
   const h = await stand();
   ok('helemaal naar boven: meteen de beginstand (in rust, de foto en de winkel op)', h.fase === 'rust' && !/o8-winkel-uit|o8-onderweg|o8-speelt/.test(h.cls) && h.foto === 1, JSON.stringify({ fase: h.fase, cls: h.cls, foto: h.foto }));
-  /* een sprong naar #maken (het menu): meteen de eindstand */
-  await page.evaluate(() => { const m = document.getElementById('maken'); scrollTo({ top: m.getBoundingClientRect().top + scrollY - 56, behavior: 'instant' }); });
+  /* een sprong voorbij de laptop (levering 94: naar de galerij, #looks, die nu onder de laptop staat): meteen de eindstand */
+  await page.evaluate(() => { const m = document.getElementById('looks'); scrollTo({ top: m.getBoundingClientRect().top + scrollY - 56, behavior: 'instant' }); });
   await page.waitForFunction(() => window.__o8Stand().fase === 'klaar', null, { timeout: 15000 }).catch(() => {}); await wacht(page, 400);
   const k0 = await stand();
-  ok('een sprong naar Wat we maken: meteen de eindstand, Wat we maken open, niets speelt', k0.fase === 'klaar' && /m8-open/.test(k0.m8) && k0.vast === -1, JSON.stringify({ fase: k0.fase, m8: k0.m8 }));
+  ok('een sprong voorbij de laptop: meteen de eindstand, niets speelt', k0.fase === 'klaar' && k0.vast === -1, JSON.stringify({ fase: k0.fase, vast: k0.vast }));
   await page.evaluate(() => scrollTo({ top: 0, behavior: 'instant' })); await wacht(page, 500);
 
   /* k1: de streepjes, met de laptop op zijn plek */
@@ -316,9 +321,10 @@ try {
       return { aan: document.documentElement.classList.contains('o8-aan'), extra: b.offsetHeight - p.offsetHeight - u, uit: u, sw: document.documentElement.scrollWidth, vw: document.documentElement.clientWidth,
         video: document.querySelectorAll('.o8-video:not([hidden])').length, foto: document.querySelector('[data-o8-beeld]').currentSrc.replace(/^.*\/img/, '') }; });
     ok(`${naam}: geen baan, geen effect en geen video, de foto van altijd, niets zijwaarts`, !r.aan && r.extra <= 1 && r.sw <= r.vw && r.video === 0 && !/laptop-90-/.test(r.foto), JSON.stringify(r));
-    ok(`${naam}: het blauwe uur loopt onder het podium uit in de grond (96 – 180 px)`, r.uit >= 96 && r.uit <= 180, JSON.stringify(r));
+    /* levering 94: geen kleuren meer achter de laptop, dus ook geen uitloop van het blauwe uur */
+    ok(`${naam}: geen uitloop van het blauwe uur onder het podium (het veld is weg): de baan is het podium`, Math.abs(r.extra + r.uit) <= 1, JSON.stringify(r));
     /* geen harde rand onder het podium: in de marge (geen foto, geen tekst) van rij tot rij hoogstens 6 op 255 */
-    await p2.addStyleTag({ content: '.o8-foto, header, .o8-stand, #cc-bar, .wa-launcher, .m8 * { visibility: hidden !important; }' });
+    await p2.addStyleTag({ content: '.o8-foto, header, .o8-stand, #cc-bar, .wa-launcher, .m8 *, .g8 * { visibility: hidden !important; }' });
     const onder = await p2.evaluate(() => { const po = document.querySelector('.o8-podium'); const y = Math.round(po.getBoundingClientRect().bottom + scrollY - innerHeight * 0.5); scrollTo(0, y); return Math.round(po.getBoundingClientRect().bottom); });
     await wacht(p2, 400);
     const strook = { x: 2, y: Math.max(0, onder - 60), width: 14, height: 300 };

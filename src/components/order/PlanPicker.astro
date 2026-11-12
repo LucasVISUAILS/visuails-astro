@@ -1729,8 +1729,8 @@ const kaarten = planList.map((p) => {
     display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem clamp(1.2rem, 3vw, 2.6rem);
   }
   .ps-voordelen li { display: grid; gap: .3rem; align-content: start; padding-top: .8rem; border-top: 1px solid var(--line-strong); }
-  .ps-voordelen b { font-weight: 700; font-size: 1.02rem; color: var(--ink); }
-  .ps-voordelen span { font-size: .92rem; line-height: 1.5; color: var(--ink-2); max-width: 38ch; }
+  .ps-voordelen b { font-weight: 700; font-size: var(--h-t-lopend); color: var(--ink); }
+  .ps-voordelen span { font-size: var(--h-t-klein); line-height: 1.5; color: var(--ink-2); max-width: 38ch; }
   @media (max-width: 48rem) { .ps-voordelen { grid-template-columns: 1fr; } }
 
   /* ── HET RASTER: KEUZES LINKS, DE PLAAT RECHTS ─────────────────────────────
@@ -1765,9 +1765,9 @@ const kaarten = planList.map((p) => {
   .ps-n {
     display: inline-grid; place-items: center; width: 1.6rem; height: 1.6rem;
     border-radius: 50%; border: 1px solid var(--line-strong);
-    font-family: var(--font-body, inherit); font-size: .8rem; font-weight: 700; color: var(--ink-3);
+    font-family: var(--font-body, inherit); font-size: var(--h-t-fijn); font-weight: 700; color: var(--ink-3);
   }
-  .ps-hint { color: var(--ink-2); font-size: .92rem; margin: 0; max-width: 60ch; }
+  .ps-hint { color: var(--ink-2); font-size: var(--h-t-klein); margin: 0; max-width: 60ch; }
 
   /* ── DE PLANKAARTEN: TWEE NAAST ELKAAR ─────────────────────────────────────
      De radio is er nog (toetsenbord, formulier) maar tekent niet mee; de kaart
@@ -1794,29 +1794,29 @@ const kaarten = planList.map((p) => {
   .ps-plan-naam { font-family: var(--font-heading); font-weight: 800; font-size: 1.35rem; letter-spacing: -0.01em; color: var(--ink); }
   .ps-plan-prijs { white-space: nowrap; font-variant-numeric: tabular-nums; }
   .ps-plan-prijs b { font-weight: 800; font-size: 1.1rem; color: var(--ink); }
-  .ps-plan-prijs small { margin-left: .2rem; font-size: .8rem; color: var(--ink-3); }
+  .ps-plan-prijs small { margin-left: .2rem; font-size: var(--h-t-fijn); color: var(--ink-3); }
   /* Op de gekozen kaart (6% accent) haalde --ink-3 maar 4,46 : 1 (axe, volledige
      controle 15 oktober 2026); --ink-2 haalt het ruim. */
   .ps-plan:has(input:checked) .ps-plan-prijs small { color: var(--ink-2); }
-  .ps-plan-line { color: var(--ink-2); font-size: .93rem; line-height: 1.5; }
+  .ps-plan-line { color: var(--ink-2); font-size: var(--h-t-klein); line-height: 1.5; }
   /* ── WAT JE KRIJGT EN WAT JE BESPAART, OP DE KAART — 23 september 2026 ───
      Was één grijze regel "12 producten · 2 clips" en daaronder "Zelf te
      verdelen · € 1.158", wat las als een tweede prijs. Nu: elk feit op een
      eigen regel met een vinkje, en de besparing onder een lijn. --ink-2 en
      niet --ink-3: dit is wat je koopt, dat hoort gelezen te worden. */
   .ps-plan-facts { display: grid; gap: .2rem; margin-top: .2rem; }
-  .ps-plan-feit { display: grid; grid-template-columns: 16px 1fr; gap: .5rem; align-items: start; font-size: .9rem; line-height: 1.45; color: var(--ink-2); }
+  .ps-plan-feit { display: grid; grid-template-columns: 16px 1fr; gap: .5rem; align-items: start; font-size: var(--h-t-klein); line-height: 1.45; color: var(--ink-2); }
   .ps-plan-feit .ps-sum-i :global(svg) { margin-top: .2rem; width: 14px; height: 14px; }
-  .ps-plan-voordeel { margin-top: .45rem; padding-top: .6rem; border-top: 1px solid var(--line); font-size: .88rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .ps-plan-voordeel { margin-top: .45rem; padding-top: .6rem; border-top: 1px solid var(--line); font-size: var(--h-t-fijn); color: var(--ink-2); font-variant-numeric: tabular-nums; }
   .ps-plan-voordeel b { color: var(--ink); font-weight: 700; }
-  .ps-plan-jaar { font-size: .84rem; color: var(--accent-bright, var(--accent)); }
+  .ps-plan-jaar { font-size: var(--h-t-fijn); color: var(--accent-bright, var(--accent)); }
   /* De beschikbaarheid (24 september 2026). Geen violet: dit is informatie,
      geen actie. Een vol plan blijft leesbaar maar is zichtbaar niet te kiezen. */
-  .ps-plek { margin: 1.5rem 0 1.25rem; padding: .75rem 1rem; border: 1px solid var(--line); border-radius: 999px; font-size: .95rem; color: var(--ink-2); }
+  .ps-plek { margin: 1.5rem 0 1.25rem; padding: .75rem 1rem; border: 1px solid var(--line); border-radius: 999px; font-size: var(--h-t-klein); color: var(--ink-2); }
   .ps-plek.is-deels, .ps-plek.is-niets { color: var(--ink); border-color: currentColor; }
-  .ps-plan-vol { display: inline-block; align-self: flex-start; justify-self: start; width: fit-content; margin-top: .45rem; padding: .15rem .55rem; border: 1px solid currentColor; border-radius: var(--hoek-knop); font-size: .8rem; font-weight: 600; color: var(--ink); }
+  .ps-plan-vol { display: inline-block; align-self: flex-start; justify-self: start; width: fit-content; margin-top: .45rem; padding: .15rem .55rem; border: 1px solid currentColor; border-radius: var(--hoek-knop); font-size: var(--h-t-fijn); font-weight: 600; color: var(--ink); }
   .ps-plan-vol[hidden] { display: none; }
-  .ps-plan-plekken { display: inline-block; justify-self: start; width: fit-content; margin-top: .45rem; font-size: .8rem; font-weight: 600; color: var(--ink); }
+  .ps-plan-plekken { display: inline-block; justify-self: start; width: fit-content; margin-top: .45rem; font-size: var(--h-t-fijn); font-weight: 600; color: var(--ink); }
   .ps-plan-plekken[hidden] { display: none; }
   .ps-plan.is-vol { opacity: .6; }
   .ps-plan.is-vol input { cursor: not-allowed; }
@@ -1844,7 +1844,7 @@ const kaarten = planList.map((p) => {
   }
   .plan-form:has(input[name="plan"][value="maat"]:checked) .maat-velden { display: flex; }
   .maat-veld { display: grid; gap: .3rem; flex: 1 1 10rem; }
-  .maat-veld label { font-size: .74rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+  .maat-veld label { font-size: var(--h-t-label); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
   .maat-veld input[type="number"] {
     width: 100%; padding: .6rem .9rem;
     border-radius: 999px; border: 1px solid var(--line-strong);
@@ -1852,13 +1852,13 @@ const kaarten = planList.map((p) => {
   }
   .maat-veld input[type="number"]::placeholder { color: var(--ink-4); }
   .maat-veld input[type="number"]:focus-visible { border-color: var(--accent); outline: none; }
-  .maat-hint { flex: 1 1 100%; margin: .2rem 0 0; font-size: .86rem; line-height: 1.55; color: var(--ink-2); }
+  .maat-hint { flex: 1 1 100%; margin: .2rem 0 0; font-size: var(--h-t-fijn); line-height: 1.55; color: var(--ink-2); }
 
   .ps-look { margin-top: .2rem; }
-  .ps-look > summary { cursor: pointer; font-size: .92rem; color: var(--ink-2); list-style: none; text-decoration: underline; text-underline-offset: 3px; }
+  .ps-look > summary { cursor: pointer; font-size: var(--h-t-klein); color: var(--ink-2); list-style: none; text-decoration: underline; text-underline-offset: 3px; }
   .ps-look > summary::-webkit-details-marker { display: none; }
   .ps-look > summary:hover { color: var(--ink); }
-  .ps-look p { margin: .7rem 0 0; font-size: .92rem; line-height: 1.6; color: var(--ink-2); max-width: 64ch; }
+  .ps-look p { margin: .7rem 0 0; font-size: var(--h-t-klein); line-height: 1.6; color: var(--ink-2); max-width: 64ch; }
 
   /* ── DE TERMIJN: TWEE KEUZES NAAST ELKAAR ─────────────────────────────── */
   /* ── DRIE IN PLAATS VAN TWEE — 10 september 2026 ─────────────────────────
@@ -1868,7 +1868,7 @@ const kaarten = planList.map((p) => {
      elkaar en de derde over de volle breedte eronder, waar hij de ruimte heeft
      om die zin uit te schrijven. Onder 34rem staan ze alle drie onder elkaar. */
   .ps-verklaringen { display: grid; gap: .6rem; margin: 0; padding-top: 1rem; border-top: 1px solid var(--lijn); }
-  .ps-consent { display: flex; gap: .6rem; align-items: flex-start; font-size: .84rem; line-height: 1.5; color: var(--inkt-2); cursor: pointer; }
+  .ps-consent { display: flex; gap: .6rem; align-items: flex-start; font-size: var(--h-t-fijn); line-height: 1.5; color: var(--inkt-2); cursor: pointer; }
   .ps-consent input { margin-top: .2rem; }
   /* 8.06: de verleggingszin als eerste regel in het zakelijk-vinkje (EU met btw-nummer). */
   .ps-consent .ps-verlegd { display: block; margin-bottom: .4rem; color: var(--inkt); }
@@ -1895,10 +1895,10 @@ const kaarten = planList.map((p) => {
      in ModelPicker.astro, waar dezelfde fout stond. */
   .ps-term-label {
     padding: .12rem .5rem; border-radius: 999px; background: var(--accent); color: var(--on-accent, #FFFFFF);
-    font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap;
+    font-size: var(--h-t-label); font-weight: 800; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap;
   }
-  .ps-term-sub { font-size: .88rem; line-height: 1.5; color: var(--ink-2); }
-  .ps-term-maat { display: none; margin: 0; font-size: .86rem; color: var(--ink-3); }
+  .ps-term-sub { font-size: var(--h-t-fijn); line-height: 1.5; color: var(--ink-2); }
+  .ps-term-maat { display: none; margin: 0; font-size: var(--h-t-fijn); color: var(--ink-3); }
   .plan-form:has(input[name="plan"][value="maat"]:checked) .ps-terms { opacity: .45; }
   .plan-form:has(input[name="plan"][value="maat"]:checked) .ps-term-maat { display: block; }
 
@@ -1906,7 +1906,7 @@ const kaarten = planList.map((p) => {
      Kleur en inkt komen van `.plaat-vol.lime-plate` in global.css; hier alleen
      de indeling. Eén variant zichtbaar, gekozen door de radio's. */
   .ps-sum { padding: clamp(1.4rem, 2.6vw, 2rem); border-radius: var(--r-kaart); display: grid; gap: 1.1rem; }
-  .ps-sum-label { margin: 0; font-size: .74rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+  .ps-sum-label { margin: 0; font-size: var(--h-t-label); font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
 
   /* ── DE BEELDSTROOK OP DE PLAAT ─────────────────────────────────────────
      Vierkant en op één rij, dezelfde vorm als het overzicht op het
@@ -1932,9 +1932,9 @@ const kaarten = planList.map((p) => {
   .ps-tegel-naam { font-size: .75rem; line-height: 1.25; color: var(--ink-2); text-align: center; overflow-wrap: anywhere; }
   /* --ink-2 en niet --ink-3: op limoen is 66% zwart al randje, en dit is de
      regel die zegt wat je per product krijgt — precies wat gelezen moet worden. */
-  .ps-tegels-noot { margin: .6rem 0 0; font-size: .86rem; line-height: 1.45; color: var(--ink-2); }
+  .ps-tegels-noot { margin: .6rem 0 0; font-size: var(--h-t-fijn); line-height: 1.45; color: var(--ink-2); }
   .ps-tegelblok { padding-top: 1rem; border-top: 1px solid var(--line); }
-  .ps-tegels-klein { margin-top: .3rem; font-size: .82rem; color: var(--ink-2); }
+  .ps-tegels-klein { margin-top: .3rem; font-size: var(--h-t-fijn); color: var(--ink-2); }
   .ps-sumv { display: grid; gap: .9rem; }
   @supports selector(:has(input)) {
     .ps-sumv { display: none; }
@@ -1947,12 +1947,12 @@ const kaarten = planList.map((p) => {
     .plan-form:has([name="plan"][value="maat"]:checked) .ps-sumv[data-plan="maat"] { display: grid; }
   }
   .ps-sum-naam { margin: 0; font-size: clamp(1.9rem, 3vw, 2.4rem); line-height: 1; }
-  .ps-sum-kop { margin: -.4rem 0 0; font-size: 1rem; color: var(--ink-2); }
+  .ps-sum-kop { margin: -.4rem 0 0; font-size: var(--h-t-lopend); color: var(--ink-2); }
   .ps-bedrag { --bedrag-maat: clamp(2.4rem, 4.5vw, 3.2rem); gap: .2rem; }
-  .ps-bedrag .bedrag-eenheid { font-size: .88rem; }
-  .ps-sum-h { margin: .2rem 0 0; font-size: .74rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); display: flex; align-items: center; gap: .4rem; }
+  .ps-bedrag .bedrag-eenheid { font-size: var(--h-t-fijn); }
+  .ps-sum-h { margin: .2rem 0 0; font-size: var(--h-t-label); font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); display: flex; align-items: center; gap: .4rem; }
   .ps-sum-list { list-style: none; margin: -.3rem 0 0; padding: 0; display: grid; gap: .5rem; }
-  .ps-sum-list li { display: grid; grid-template-columns: 18px 1fr; gap: .6rem; font-size: .93rem; line-height: 1.5; color: var(--ink-2); }
+  .ps-sum-list li { display: grid; grid-template-columns: 18px 1fr; gap: .6rem; font-size: var(--h-t-klein); line-height: 1.5; color: var(--ink-2); }
   .ps-sum-list b { color: var(--ink); font-weight: 700; }
   .ps-sum-sub { color: var(--ink-3); }
   /* :global(svg) — het vinkje komt via set:html binnen en krijgt daardoor het
@@ -1963,16 +1963,16 @@ const kaarten = planList.map((p) => {
   .ps-sum-i :global(svg) { width: 16px; height: 16px; margin-top: .25rem; fill: none; stroke: var(--ink); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
   /* Direct onder het bedrag sinds 23 september 2026: wat het kost en wat het
      scheelt horen bij elkaar, en niet een lange lijst uit elkaar. */
-  .ps-sum-los { margin: 0; padding: .75rem 0; border-block: 1px solid var(--line); font-size: .95rem; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: .2rem .6rem; align-items: baseline; }
+  .ps-sum-los { margin: 0; padding: .75rem 0; border-block: 1px solid var(--line); font-size: var(--h-t-klein); color: var(--ink-2); display: flex; flex-wrap: wrap; gap: .2rem .6rem; align-items: baseline; }
   .ps-sum-los b { color: var(--ink); font-size: 1.05rem; }
-  .ps-sum-budget { margin: 0; font-size: .88rem; line-height: 1.5; color: var(--ink-2); }
-  .ps-sum-maatsub { margin: -.4rem 0 0; font-size: .9rem; line-height: 1.5; color: var(--ink-2); }
+  .ps-sum-budget { margin: 0; font-size: var(--h-t-fijn); line-height: 1.5; color: var(--ink-2); }
+  .ps-sum-maatsub { margin: -.4rem 0 0; font-size: var(--h-t-klein); line-height: 1.5; color: var(--ink-2); }
   .ps-sum-vb { list-style: none; margin: 0; padding: 0; display: grid; gap: .45rem; }
-  .ps-sum-vb li { display: grid; grid-template-columns: 1fr auto; gap: .1rem .8rem; padding: .55rem 0; border-top: 1px solid var(--line); font-size: .92rem; }
+  .ps-sum-vb li { display: grid; grid-template-columns: 1fr auto; gap: .1rem .8rem; padding: .55rem 0; border-top: 1px solid var(--line); font-size: var(--h-t-klein); }
   .ps-vb-n { color: var(--ink); font-weight: 700; }
   .ps-vb-b { text-align: right; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
   .ps-vb-b small { font-weight: 400; color: var(--ink-3); }
-  .ps-vb-i { grid-column: 1 / -1; font-size: .82rem; color: var(--ink-3); }
+  .ps-vb-i { grid-column: 1 / -1; font-size: var(--h-t-fijn); color: var(--ink-3); }
   /* ── STAP 5 · BEVESTIGEN — 23 september 2026 ──────────────────────────────
      Een licht vlak met een lijn, dezelfde grond als de kaarten links: het is
      een stap van het formulier, en geen tweede plaat. De knop is inkt op
@@ -1980,11 +1980,11 @@ const kaarten = planList.map((p) => {
   .ps-af { padding: clamp(1.3rem, 2.4vw, 1.8rem); border: 1px solid var(--line); border-radius: var(--r-kaart); background: var(--paper-2); }
   .ps-bevestig { gap: 1rem; }
   .ps-nu { display: grid; gap: .6rem; }
-  .ps-nu-list { margin: 0; padding: 0 0 0 1.2rem; display: grid; gap: .4rem; font-size: .9rem; line-height: 1.5; color: var(--ink-2); }
+  .ps-nu-list { margin: 0; padding: 0 0 0 1.2rem; display: grid; gap: .4rem; font-size: var(--h-t-klein); line-height: 1.5; color: var(--ink-2); }
   .ps-nu-list li::marker { font-weight: 800; color: var(--ink); }
   .ps-sum .btn-block { width: 100%; margin-top: .2rem; }
-  .ps-sum-meta { margin: 0; font-size: .86rem; line-height: 1.5; color: var(--ink-2); }
-  .ps-verleng p { margin: 0; font-size: .9rem; line-height: 1.5; color: var(--ink); text-wrap: pretty; }
+  .ps-sum-meta { margin: 0; font-size: var(--h-t-fijn); line-height: 1.5; color: var(--ink-2); }
+  .ps-verleng p { margin: 0; font-size: var(--h-t-klein); line-height: 1.5; color: var(--ink); text-wrap: pretty; }
   .ps-verlengv { display: none; }
   @supports selector(:has(input)) {
     .ps-verleng-alg { display: none; }
@@ -2005,13 +2005,13 @@ const kaarten = planList.map((p) => {
   .ps-geg-drie { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr) minmax(0, 1fr); }
   .ps-veld { display: grid; gap: .3rem; min-width: 0; }
   .ps-veld-breed { grid-column: 1 / -1; }
-  .ps-veld > span { font-size: .84rem; font-weight: 600; color: var(--ink-2); }
-  .ps-veld small { font-size: .8rem; line-height: 1.45; color: var(--ink-2); }
-  .ps-veld-label { font-size: .84rem; font-weight: 600; color: var(--ink-2); }
+  .ps-veld > span { font-size: var(--h-t-fijn); font-weight: 600; color: var(--ink-2); }
+  .ps-veld small { font-size: var(--h-t-fijn); line-height: 1.45; color: var(--ink-2); }
+  .ps-veld-label { font-size: var(--h-t-fijn); font-weight: 600; color: var(--ink-2); }
   .ps-opt { font-style: normal; font-weight: 400; color: var(--ink-2); }
-  .ps-consent.ps-klein { font-size: .82rem; margin-top: .15rem; }
+  .ps-consent.ps-klein { font-size: var(--h-t-fijn); margin-top: .15rem; }
   .ps-veld input, .ps-veld select {
-    font: inherit; font-size: .95rem; color: var(--ink);
+    font: inherit; font-size: var(--h-t-klein); color: var(--ink);
     background: var(--surface, #fff);
     border: 1px solid var(--line-strong); border-radius: 999px;
     padding: .55rem .7rem; min-height: 44px; width: 100%;
@@ -2019,9 +2019,9 @@ const kaarten = planList.map((p) => {
   .ps-veld input:focus-visible, .ps-veld select:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
   /* iOS zoomt in op velden onder 16 px (1 oktober 2026); zie stijl22.css. */
   @media (max-width: 760px), (pointer: coarse) {
-    .ps-veld input, .ps-veld select { font-size: 16px; }
+    .ps-veld input, .ps-veld select { font-size: var(--h-t-lopend); }
   }
-  .ps-geg-slot { margin: .4rem 0 0; font-size: .86rem; line-height: 1.6; color: var(--ink-2); }
+  .ps-geg-slot { margin: .4rem 0 0; font-size: var(--h-t-fijn); line-height: 1.6; color: var(--ink-2); }
   /* De honeypot: uit beeld, niet uit de boom weggehaald met display:none — een
      bot die het formulier parseert vindt hem dan alsnog, en dat is de bedoeling. */
   .ps-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
@@ -2029,7 +2029,7 @@ const kaarten = planList.map((p) => {
   /* `.ps-ingelogd` stond hier: de losse regel onder een lege stap 4. Die regel
      staat nu boven de INGEVULDE velden en heet .ps-uitacct. */
   .ps-uitacct {
-    margin: .5rem 0 0; font-size: .86rem; line-height: 1.55; color: var(--ink-2);
+    margin: .5rem 0 0; font-size: var(--h-t-fijn); line-height: 1.55; color: var(--ink-2);
     /* Een accentstreepje ervoor: het is de enige regel in dit blok die over de
        herkomst van de waarden gaat, en niet over een veld. */
     padding-left: .7rem; border-left: 2px solid var(--accent);
@@ -2051,13 +2051,13 @@ const kaarten = planList.map((p) => {
   /* De contactvoorkeur: dezelfde pillen als in het bestelformulier, want het is
      dezelfde vraag met dezelfde twee antwoorden. */
   .ps-voorkeur { border: 0; padding: 0; margin: 0 0 1.1rem; }
-  .ps-voorkeur legend { padding: 0; font-size: .82rem; font-weight: 600; color: var(--ink-2); }
+  .ps-voorkeur legend { padding: 0; font-size: var(--h-t-fijn); font-weight: 600; color: var(--ink-2); }
   .ps-voorkeur-rij { display: flex; flex-wrap: wrap; gap: .5rem .9rem; margin: .45rem 0 .4rem; }
   .ps-voorkeur-optie {
     display: inline-flex; align-items: center; gap: .45rem;
     min-height: 44px; padding: 0 .8rem 0 .6rem;
     border: 1px solid var(--line-strong); border-radius: var(--hoek-knop);
-    font-size: .9rem; cursor: pointer;
+    font-size: var(--h-t-klein); cursor: pointer;
   }
   .ps-voorkeur-optie input { accent-color: var(--accent); width: 15px; height: 15px; flex: none; }
   .ps-voorkeur-optie:hover { border-color: var(--accent-line); }

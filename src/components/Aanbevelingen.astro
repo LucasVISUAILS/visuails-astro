@@ -174,7 +174,7 @@ const kaarten = items.map((r: Aanbeveling) => ({
   }
   .ab-citaat { margin: 0; }
   .ab-citaat p {
-    margin: 0; font-size: 1.04rem; line-height: 1.55; color: var(--inkt);
+    margin: 0; font-size: var(--h-t-lopend); line-height: 1.55; color: var(--inkt);
     text-wrap: pretty; overflow-wrap: break-word; hyphens: auto;
   }
   .ab-wie { display: flex; align-items: center; gap: .75rem; margin: 0; padding-top: 1rem; border-top: 1px solid var(--lijn); }
@@ -182,7 +182,7 @@ const kaarten = items.map((r: Aanbeveling) => ({
   .ab-wie-t { display: grid; gap: .3rem; min-width: 0; }
   .ab-naam {
     font-family: var(--kop2); font-weight: 500; font-stretch: 125%;
-    font-size: .92rem; line-height: 1.2; letter-spacing: -.005em; text-transform: uppercase;
+    font-size: var(--h-t-klein); line-height: 1.2; letter-spacing: -.005em; text-transform: uppercase;
     overflow-wrap: anywhere;
   }
   .ab-meta { color: var(--inkt-2); }

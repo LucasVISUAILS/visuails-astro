@@ -94,10 +94,10 @@ ok('en de Nederlandse ook', UITGETYPT.test('Laatst bijgewerkt: augustus 2026'), 
 
 console.log('\n2 · de vorm van de regel');
 /* Lijst 87 (9 november 2026): /terms staat nu op november; de vorm toetsen we op /ai-act, dat oktober bleef. */
-ok('Engels', bijgewerktOp('ai-act', 'en'), 'Last updated: October 2026');
-ok('Nederlands, met een kleine maand', bijgewerktOp('ai-act', 'nl'), 'Laatst bijgewerkt: oktober 2026');
+ok('Engels', bijgewerktOp('ai-act', 'en'), 'Last updated: November 2026');
+ok('Nederlands, met een kleine maand', bijgewerktOp('ai-act', 'nl'), 'Laatst bijgewerkt: november 2026');
 ok('met een achtervoegsel', bijgewerktOp('data-processing-agreement', 'en', 'Article 28 GDPR'),
-  'Last updated: October 2026 · Article 28 GDPR');
+  'Last updated: November 2026 · Article 28 GDPR');
 let wierp = false;
 try { bijgewerktOp('bestaat-niet', 'en'); } catch { wierp = true; }
 ok('een onbekend document werpt in plaats van iets leegs te tonen', wierp, true);

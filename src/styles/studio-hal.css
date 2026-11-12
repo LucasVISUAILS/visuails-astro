@@ -93,7 +93,7 @@ body.studio.st-hal .st-meta { font-size: .84375rem; }
    Studio een werkscherm is. */
 body.studio.st-hal .btn {
   min-height: 42px; padding: 0 1.15rem; border-radius: var(--hoek-knop);
-  font-family: var(--h-letter); font-size: .875rem; font-weight: 600;
+  font-family: var(--h-letter); font-size: var(--h-t-klein); font-weight: 600;
   background: #FFFFFF; color: #0F1217; box-shadow: inset 0 0 0 1.5px #C5C8CF;
   transition: background .2s, box-shadow .2s, transform .25s cubic-bezier(.22, .8, .2, 1);
 }
@@ -104,8 +104,8 @@ body.studio.st-hal .btn-sm { min-height: 36px; padding: 0 .95rem; font-size: .84
 @media (pointer: coarse) { body.studio.st-hal .btn { min-height: 46px; } body.studio.st-hal .btn-sm { min-height: 42px; } }
 
 /* De statuspil: het label van de hal, met de stip. */
-body.studio.st-hal .stand { min-height: 26px; padding: 0 .7rem 0 .6rem; border-radius: 999px; font-family: var(--h-letter); font-size: .8125rem; font-weight: 600; }
-body.studio.st-hal .credits-pil { min-height: 26px; padding: 0 .7rem; font-size: .8125rem; }
+body.studio.st-hal .stand { min-height: 26px; padding: 0 .7rem 0 .6rem; border-radius: 999px; font-family: var(--h-letter); font-size: var(--h-t-fijn); font-weight: 600; }
+body.studio.st-hal .credits-pil { min-height: 26px; padding: 0 .7rem; font-size: var(--h-t-fijn); }
 
 /* ── DE ZIJBALK: LICHT ─────────────────────────────────────────────────────
    Nevel, zoals de zijbalk in het voorbeeldscherm op /studio. Het actieve item
@@ -115,16 +115,16 @@ body.studio.st-hal .st-side { padding: 1.25rem 1rem; gap: 1.5rem; }
 body.studio.st-hal .st-side-kop { padding: .35rem .75rem .25rem; }
 body.studio.st-hal .st-merk { --merk-h: 19.6px; color: #0F1217; } /* 112 px breed; dicht 26 px hoog, alleen de V (studio.css) */
 body.studio.st-hal .is-dicht .st-merk { --merk-h: 26px; }
-body.studio.st-hal .st-sub { font-size: .8125rem; color: #636974; }
+body.studio.st-hal .st-sub { font-size: var(--h-t-fijn); color: #636974; }
 body.studio.st-hal .st-nav { gap: 4px; }
 body.studio.st-hal .st-navlink { min-height: 44px; padding: 0 .9rem; border-radius: var(--hoek-knop); font-size: .9375rem; font-weight: 450; color: #0F1217; }
 body.studio.st-hal .st-navlink:hover { background: rgb(11 15 23 / .05); color: #0F1217; }
 body.studio.st-hal .st-navlink.is-actief { background: #FFFFFF; color: #0F1217; font-weight: 600; box-shadow: inset 0 0 0 1px #E6E8EC; }
 body.studio.st-hal .st-navlink .i { width: 18px; height: 18px; }
 body.studio.st-hal .st-side-voet { border-top: 1px solid #E6E8EC; }
-body.studio.st-hal .st-wie-letter { width: 34px; height: 34px; background: #FFFFFF; color: #0F1217; box-shadow: inset 0 0 0 1px #E6E8EC; font-size: .8125rem; }
-body.studio.st-hal .st-wie-naam { font-size: .875rem; color: #0F1217; }
-body.studio.st-hal .st-wie-mail { font-size: .8125rem; color: #636974; }
+body.studio.st-hal .st-wie-letter { width: 34px; height: 34px; background: #FFFFFF; color: #0F1217; box-shadow: inset 0 0 0 1px #E6E8EC; font-size: var(--h-t-fijn); }
+body.studio.st-hal .st-wie-naam { font-size: var(--h-t-fijn); color: #0F1217; }
+body.studio.st-hal .st-wie-mail { font-size: var(--h-t-fijn); color: #636974; }
 body.studio.st-hal .st-uit { min-height: 44px; padding: 0 .9rem; border-radius: var(--hoek-knop); font-size: .9375rem; color: #0F1217; }
 body.studio.st-hal .st-uit:hover { background: rgb(11 15 23 / .05); color: #0F1217; }
 /* Dichtgeklapt (breed scherm): een kolom van 76 px, zodat het item een rondje
@@ -143,11 +143,11 @@ body.studio.st-hal .st-uit:hover { background: rgb(11 15 23 / .05); color: #0F12
 body.studio.st-hal .st-balk { background: #FFFFFF; border-bottom: 1px solid transparent; }
 body.studio.st-hal .st-klap { width: 40px; height: 40px; border-radius: 999px; color: #0F1217; box-shadow: inset 0 0 0 1px #E6E8EC; }
 body.studio.st-hal .st-klap:hover { background: #F4F5F7; color: #0F1217; }
-body.studio.st-hal .st-kruim { font-size: .875rem; color: #636974; }
+body.studio.st-hal .st-kruim { font-size: var(--h-t-fijn); color: #636974; }
 body.studio.st-hal .st-kruim b { font-weight: 600; color: #0F1217; }
 body.studio.st-hal .st-kruim i, body.studio.st-hal .st-vl-punt { color: #636974; } /* scheidingstekens ook 5,3:1, niet --ink-4 */
 body.studio.st-hal .st-taal { padding: 3px; border-radius: 999px; background: #F4F5F7; box-shadow: none; }
-body.studio.st-hal .st-taal > * { min-width: 40px; height: 34px; border-radius: 999px; font-size: .8125rem; font-weight: 600; color: #0F1217; }
+body.studio.st-hal .st-taal > * { min-width: 40px; height: 34px; border-radius: 999px; font-size: var(--h-t-fijn); font-weight: 600; color: #0F1217; }
 body.studio.st-hal .st-taal > [aria-current] { background: #FFFFFF; color: #0F1217; box-shadow: none; }
 body.studio.st-hal .st-stand { width: 40px; height: 40px; border-radius: 999px; color: #0F1217; box-shadow: inset 0 0 0 1px #E6E8EC; }
 body.studio.st-hal .st-stand:hover { background: #F4F5F7; color: #0F1217; }
@@ -157,14 +157,14 @@ body.studio.st-hal .st-stand:hover { background: #F4F5F7; color: #0F1217; }
    40 px en geen 64. De lede in inkt 3. */
 body.studio.st-hal .st-top { padding: 2.25rem var(--st-pad) 0; gap: 1rem 1.25rem; }
 body.studio.st-hal .st-h1 { font-family: var(--h-letter); font-weight: 450; font-size: 2.5rem; line-height: 1.1; letter-spacing: -.025em; color: #0F1217; }
-body.studio.st-hal .st-lede { margin-top: .5rem; font-size: 1rem; color: #636974; }
+body.studio.st-hal .st-lede { margin-top: .5rem; font-size: var(--h-t-lopend); color: #636974; }
 body.studio.st-hal .st-top-actie { min-height: 48px; padding: 0 1.4rem; font-size: .9375rem; }
 body.studio.st-hal .st-main { padding: 2rem var(--st-pad) 4rem; gap: 2.5rem; }
 
 /* ── DE BLOKKEN EN KAARTEN ─────────────────────────────────────────────── */
 body.studio.st-hal .st-blok { gap: 1rem; }
 body.studio.st-hal .st-blok-kop h2 { font-family: var(--h-letter); font-size: 1.25rem; font-weight: 600; letter-spacing: -.01em; color: #0F1217; }
-body.studio.st-hal .st-blok-kop .st-link { font-size: .875rem; }
+body.studio.st-hal .st-blok-kop .st-link { font-size: var(--h-t-fijn); }
 body.studio.st-hal .st-kaart-vlak:not(.st-cijfers) { border: 1px solid #E6E8EC; border-radius: var(--r-kaart); background: #FFFFFF; }
 /* ── "NOG GEEN ABONNEMENT" BLIJFT DONKER — 14 oktober 2026 (doorloop 27, B13) ──
    De regel hierboven maakt elke kaart wit. .st-geenabo (studio.css) zet witte
@@ -181,7 +181,7 @@ body.studio.st-hal .st-link { color: #25508B; text-decoration-color: rgb(37 80 1
 body.studio.st-hal .st-kaart-vlak.st-cijfers { gap: 1rem; }
 body.studio.st-hal .st-cijfer { padding: 1.25rem 1.4rem; border-radius: var(--r-kaart); border-color: #E6E8EC; gap: .35rem .5rem; }
 body.studio.st-hal a.st-cijfer:hover { border-color: #0F1217; }
-body.studio.st-hal .st-cijfer-label { font-size: .875rem; font-weight: 450; letter-spacing: 0; text-transform: none; color: #0F1217; }
+body.studio.st-hal .st-cijfer-label { font-size: var(--h-t-fijn); font-weight: 450; letter-spacing: 0; text-transform: none; color: #0F1217; }
 body.studio.st-hal .st-cijfer-label::first-letter { text-transform: uppercase; }
 body.studio.st-hal .st-cijfer-n { font-weight: 450; font-size: 2.25rem; letter-spacing: -.03em; }
 body.studio.st-hal .st-cijfer .i { width: 18px; height: 18px; color: #9FA3AC; }
@@ -190,7 +190,7 @@ body.studio.st-hal .st-cijfer .i { width: 18px; height: 18px; color: #9FA3AC; }
 body.studio.st-hal .st-order { padding: 1.5rem 1.6rem; gap: 1.1rem; }
 body.studio.st-hal .st-ref { font-weight: 600; letter-spacing: 0; }
 body.studio.st-hal .st-watnu-zin { font-size: 1.0625rem; line-height: 1.5; color: #0F1217; }
-body.studio.st-hal .st-watnu-datums { font-size: .875rem; }
+body.studio.st-hal .st-watnu-datums { font-size: var(--h-t-fijn); }
 body.studio.st-hal .st-lopend li { padding: .95rem 1.6rem; }
 body.studio.st-hal .st-activiteit li { padding: 1rem 1.6rem; }
 body.studio.st-hal .st-nogmeer-kop { font-weight: 600; color: #0F1217; }
@@ -202,13 +202,13 @@ body.studio.st-hal .st-stap.is-now::before { background: linear-gradient(90deg, 
 body.studio.st-hal .st-stip { width: 14px; height: 14px; border: 2px solid #C5C8CF; background: #FFFFFF; }
 body.studio.st-hal .st-stap.is-done .st-stip { background: #0F1217; border-color: #0F1217; }
 body.studio.st-hal .st-stap.is-now .st-stip { background: #0F1217; border-color: #0F1217; outline: 3px solid #E6E8EC; outline-offset: 1px; box-shadow: none; }
-body.studio.st-hal .st-stap-label { font-size: .8125rem; color: #636974; }
+body.studio.st-hal .st-stap-label { font-size: var(--h-t-fijn); color: #636974; }
 body.studio.st-hal .st-stap.is-done .st-stap-label { color: #0F1217; }
 body.studio.st-hal .st-stap.is-now .st-stap-label { color: #0F1217; }
 body.studio.st-hal .st-mini-stip { width: 8px; height: 8px; background: #E6E8EC; }
 body.studio.st-hal .st-mini-stip.is-done { background: #0F1217; }
 body.studio.st-hal .st-mini-stip.is-now { background: #0F1217; outline: 2px solid #E6E8EC; }
-body.studio.st-hal .st-details > summary { font-size: .875rem; color: #0F1217; }
+body.studio.st-hal .st-details > summary { font-size: var(--h-t-fijn); color: #0F1217; }
 
 /* De strook laatst geleverde beelden: beelden met een hoek van 16. */
 body.studio.st-hal .st-strook { grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: .75rem; }
@@ -217,7 +217,7 @@ body.studio.st-hal .st-strook a:hover { }
 
 /* ── BESTELLINGEN ───────────────────────────────────────────────────────── */
 body.studio.st-hal .st-filters { gap: .5rem; }
-body.studio.st-hal .st-filter { min-height: 38px; padding: 0 1rem; border: 0; box-shadow: inset 0 0 0 1px #E6E8EC; font-size: .875rem; color: #0F1217; }
+body.studio.st-hal .st-filter { min-height: 38px; padding: 0 1rem; border: 0; box-shadow: inset 0 0 0 1px #E6E8EC; font-size: var(--h-t-fijn); color: #0F1217; }
 body.studio.st-hal a.st-filter:hover { background: #F4F5F7; color: #0F1217; }
 body.studio.st-hal .st-filter.is-actief { background: #0F1217; color: #FFFFFF; box-shadow: none; }
 /* De vier tabs van het abonnement (15 oktober 2026): altijd op één rij. Op een
@@ -226,15 +226,15 @@ body.studio.st-hal .st-filter.is-actief { background: #0F1217; color: #FFFFFF; b
 body.studio.st-hal .st-abo-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 2px; margin: -2px; }
 body.studio.st-hal .st-abo-tabs::-webkit-scrollbar { display: none; }
 body.studio.st-hal .st-abo-tabs .st-filter { flex: 0 0 auto; white-space: nowrap; }
-@media (max-width: 400px) { body.studio.st-hal .st-abo-tabs { gap: .3rem; } body.studio.st-hal .st-abo-tabs .st-filter { padding: 0 .6rem; font-size: .8125rem; } }
+@media (max-width: 400px) { body.studio.st-hal .st-abo-tabs { gap: .3rem; } body.studio.st-hal .st-abo-tabs .st-filter { padding: 0 .6rem; font-size: var(--h-t-fijn); } }
 body.studio.st-hal .st-bestellingen { gap: 1.25rem; }
 body.studio.st-hal .st-bestelling-kop { padding: 1.25rem 1.6rem; min-height: 72px; border-radius: var(--r-kaart); }
 body.studio.st-hal .st-bestelling-klap[open] .st-bestelling-kop { border-radius: var(--r-kaart) var(--r-kaart) 0 0; }
-body.studio.st-hal .st-bestelling-kop .st-ref { font-size: 1rem; }
+body.studio.st-hal .st-bestelling-kop .st-ref { font-size: var(--h-t-lopend); }
 body.studio.st-hal .st-bestelling-meta { font-size: .9375rem; }
 body.studio.st-hal .st-bestelling-body { padding: 1.4rem 1.6rem 1.6rem; gap: 1.25rem; }
-body.studio.st-hal .st-nu-zin { font-size: 1rem; line-height: 1.5; }
-body.studio.st-hal .st-nu-datum { font-size: .875rem; }
+body.studio.st-hal .st-nu-zin { font-size: var(--h-t-lopend); line-height: 1.5; }
+body.studio.st-hal .st-nu-datum { font-size: var(--h-t-fijn); }
 body.studio.st-hal .st-nu-knop { padding: 0 1.6rem 1.4rem; }
 body.studio.st-hal .st-bit-money { color: #25508B; }
 
@@ -242,7 +242,7 @@ body.studio.st-hal .st-bit-money { color: #25508B; }
    revisieronde versturen"): 13 px was in ronde 9 de stilte van een werkscherm;
    in Urbanist leest dat als een voetnoot. 16 px en 600. */
 body.studio.st-hal :is(.st-product-kolom, .st-kant, .st-map, .st-ronde, .st-herbestel, .st-fotos, .st-vakform) h3,
-body.studio.st-hal .st-h3 { font-family: var(--h-letter); font-size: 1rem; font-weight: 600; letter-spacing: -.005em; color: #0F1217; }
+body.studio.st-hal .st-h3 { font-family: var(--h-letter); font-size: var(--h-t-lopend); font-weight: 600; letter-spacing: -.005em; color: #0F1217; }
 
 /* De paginakop in twee tonen, zoals elke kop in de hal: "Welkom terug," in
    kop-licht (#6E6E6E, 5,1:1) en de naam in inkt.
@@ -307,7 +307,7 @@ body.studio.st-hal .st-uit-ik { width: 16px; height: 16px; flex: none; }
 
 /* De statuspil: een plaatje met één zachte hoek, de naam in de vaste
    breedte-letter, in hoofdletters, zonder bolletje (v35-pillen a op de site). */
-body.studio.st-hal .stand, body.studio.st-hal .credits-pil { gap: .35rem; min-height: 26px; padding: 0 .6rem; border-radius: 999px; font: 600 11.5px/1.2 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; letter-spacing: .06em; text-transform: uppercase; }
+body.studio.st-hal .stand, body.studio.st-hal .credits-pil { gap: .35rem; min-height: 26px; padding: 0 .6rem; border-radius: 999px; font: 600 var(--h-t-label)/1.2 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; letter-spacing: .06em; text-transform: uppercase; }
 body.studio.st-hal .stand::before { display: none; }
 body.studio .stand:has(.st-vink3)::before { display: none; }
 

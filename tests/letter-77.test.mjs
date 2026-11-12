@@ -113,7 +113,7 @@ try {
       /* de maat van de kop vanaf het eerste beeld, tot alles geladen is */
       await page.addInitScript(() => {
         window.__maten = [];
-        const kijk = () => { const k = document.querySelector('.o8-kop, .lb-kop, .t-kop, .o-kop'); if (k) window.__maten.push(Math.round(parseFloat(getComputedStyle(k).fontSize) * 10) / 10); };
+        const kijk = () => { const k = document.querySelector('#b94-h1, .o8-kop, .lb-kop, .t-kop, .o-kop');   /* levering 94: de kop van de bannervideo */ if (k) window.__maten.push(Math.round(parseFloat(getComputedStyle(k).fontSize) * 10) / 10); };
         document.addEventListener('DOMContentLoaded', kijk);
         document.fonts.addEventListener('loadingdone', kijk);
         window.addEventListener('load', () => { kijk(); setTimeout(kijk, 600); });
@@ -126,8 +126,8 @@ try {
         const cs = (e) => getComputedStyle(e);
         /* levering 80: de titel staat in het midden (HalOpening80.astro), altijd op twee regels; "binnen zijn
            vak" is: binnen het venster */
-        const k = document.querySelector('.o8-kop'), tekst = { getBoundingClientRect: () => ({ right: document.documentElement.clientWidth }) };
-        const regels = (e) => { const tops = new Set(); for (const s of e.querySelectorAll('.o8-r')) { const rg = document.createRange(); rg.selectNodeContents(s); for (const q of rg.getClientRects()) if (q.width > 1) tops.add(Math.round(q.top)); } return tops.size; };
+        const k = document.querySelector('#b94-h1'), tekst = { getBoundingClientRect: () => ({ right: document.documentElement.clientWidth }) };
+        const regels = (e) => { const tops = new Set(); for (const s of e.querySelectorAll('span')) { const rg = document.createRange(); rg.selectNodeContents(s); for (const q of rg.getClientRects()) if (q.width > 1) tops.add(Math.round(q.top)); } return tops.size; };
         const koppen = [...document.querySelectorAll('.h-kop')];
         return {
           body: cs(document.body).fontFamily.split(',')[0].replace(/"/g, ''),

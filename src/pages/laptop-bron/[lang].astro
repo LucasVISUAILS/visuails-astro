@@ -18,7 +18,12 @@ export function getStaticPaths() {
   return [{ params: { lang: 'nl' } }, { params: { lang: 'en' } }];
 }
 const lang = Astro.params.lang === 'nl' ? 'nl' : 'en';
-const standen = alleStanden(lang);
+/* LAPTOP_PRODUCT=nonstd: de catalog met de drie producten van NONSTD (levering 94, alleen voor de schermen van de opening) */
+const product = process.env.LAPTOP_PRODUCT === 'nonstd' ? 'nonstd' : 'standaard';
+const standen = alleStanden(lang, undefined, { product }).flatMap((s) =>
+  /* levering 94: van elke productpagina ook de schermen met beeld 2 – 4 groot (de klant klikt in de laptop op een beeldje) */
+  product === 'nonstd' && s.set === 'catalog' ? [s, ...[1, 2, 3].map((beeld) => ({ ...s, beeld }))] : [s]);
+const vakNaam = (s: any) => standNaam(lang, s) + (s.beeld ? `-b${s.beeld}` : '');
 ---
 <Layout title="Laptopbron | VISUAILS" description="Bron van de laptopstanden; geen pagina van de site." noindex huid="hal">
   <style is:global>
@@ -30,10 +35,10 @@ const standen = alleStanden(lang);
     .hl-bron .hl-laag { opacity: 1; --hl-k: 1; }
   </style>
   {standen.map((s) => (
-    <div class="hl hl-leeft hl-bron" data-bron-stand={standNaam(lang, s)}>
+    <div class="hl hl-leeft hl-bron" data-bron-stand={vakNaam(s)}>
       <div class="hl-doos">
         <img class="hl-foto" src="/img/hal/pov-2304-doorzichtig.webp" width="2304" height="1296" alt="" />
-        <HalLaptopSchermen lang={lang} stand={s} />
+        <HalLaptopSchermen lang={lang} stand={s} product={product} />
       </div>
     </div>
   ))}

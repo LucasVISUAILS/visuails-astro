@@ -41,11 +41,13 @@ for (const [pad, taal] of [['index.html', 'en'], ['nl/index.html', 'nl']]) {
   const h = fs.readFileSync(path.join(DIST, pad), 'utf8');
   const tekst = (s) => s.replace(/<[^>]+>/g, ' ').replace(/&#39;|&rsquo;|’/g, '’').replace(/\s+/g, ' ').trim();
   const h1 = (/<h1\b[\s\S]*?<\/h1>/.exec(h) || [''])[0];
-  ok(`${taal}: één h1, de titel in twee regels (lijst 64: "Zoals jij hem ziet")`, (h.match(/<h1\b/g) || []).length === 1 && /<h1\b[^>]*class="[^"]*\bo8-kop\b/.test(h1)
-    && tekst(h1) === (taal === 'nl' ? 'Jouw merk, zoals jij het ziet.' : 'Your brand, as you see it.'), tekst(h1));
+  /* levering 94 (lijst 92, kop a): de h1 staat in de bannervideo */
+  ok(`${taal}: één h1, de titel in twee regels (lijst 92: "Je merk groeit. Je beelden groeien mee.")`, (h.match(/<h1\b/g) || []).length === 1 && /<h1\b[^>]*class="[^"]*\bb94-kop\b/.test(h1)
+    && tekst(h1) === (taal === 'nl' ? 'Je merk groeit. Je beelden groeien mee.' : 'Your brand grows. Your visuals keep up.'), tekst(h1));
   const plek = (re) => { const m = re.exec(h); return m ? m.index : -1; };
-  const volg = [plek(/class="o8"|class="o8 /), plek(/<section class="m8" id="maken"/), plek(/<section class="g8" id="looks"/), plek(/<section class="p9"/), plek(/<section class="w8"/), plek(/class="h-sec h-weten v-weten/), plek(/<section class="h-proef/)];
-  ok(`${taal}: de volgorde: opening, Wat we maken, galerij, poster, Hoe het werkt, Meer weten, €1-blok`, volg.every((x, i) => x > 0 && (i === 0 || x > volg[i - 1])), volg.join(' '));
+  /* levering 94 (lijst 92, laptop b): de bannervideo, Wat we maken, dan de laptop */
+  const volg = [plek(/<section class="b94"/), plek(/<section class="m8" id="maken"/), plek(/class="o8 o8-alleen"/), plek(/<section class="g8" id="looks"/), plek(/<section class="p9"/), plek(/<section class="w8"/), plek(/class="h-sec h-weten v-weten/), plek(/<section class="h-proef/)];
+  ok(`${taal}: de volgorde: banner, Wat we maken, laptop, galerij, poster, Hoe het werkt, Meer weten, €1-blok`, volg.every((x, i) => x > 0 && (i === 0 || x > volg[i - 1])), volg.join(' '));
   ok(`${taal}:   de oude opening, de looks en de lange Hoe het werkt zijn weg`, !/data-lb-podium|class="h-sec h-looks|class="h-sec o-hoe/.test(h));
   /* Wat we maken: de vanafprijzen uit de code, de links bestaan */
   const m8 = h.slice(plek(/<section class="m8"/), plek(/<section class="g8"/));
@@ -73,7 +75,7 @@ for (const [pad, taal] of [['index.html', 'en'], ['nl/index.html', 'nl']]) {
   const w8 = h.slice(plek(/<section class="w8"/), plek(/class="h-sec h-weten/));
   ok(`${taal}: Hoe het werkt: drie stappen in één regel, de levertijd uit de code`, (w8.match(/class="w8-stap(?: h-1[rk])?"/g) || []).length === 3 && tekst(w8).includes(traag ? `${snel}, ${traag}.` : `${snel}.`) && bestaat((/class="w8-link" href="([^"]+)"/.exec(w8) || [, '/x'])[1]), tekst(w8).slice(0, 160));
   /* lijst 64, knoppen: de klant ziet andere knoppen */
-  const acties = (/<p class="o8-acties">[\s\S]*?<\/p>/.exec(h) || [''])[0];
+  const acties = (/<p class="b94-knop"[^>]*>[\s\S]*?<\/p>/.exec(h) || [''])[0];
   ok(`${taal}: de €1-link alleen voor wie nog niet bestelde; een klant ziet de link naar Studio`, /href="[^"]*test-sample[^"]*" data-vis-uit/.test(acties) && /href="\/account" data-vis-klant-in hidden/.test(acties), acties.slice(0, 400));
   /* het laadscherm alleen hier */
   ok(`${taal}: het laadscherm: de klasse vóór de eerste verf, het V-merk, de noodrem`, h.indexOf("classList.add('vl8-aan')") > 0 && h.indexOf("classList.add('vl8-aan')") < h.indexOf('<body') && /<div class="vl8" id="vl8"/.test(h) && /getoond\?open\(\):ruim\(\)|getoond \? open\(\) : ruim\(\)/.test(h));
@@ -131,6 +133,8 @@ const dicht = (a, b, d = 1.5) => Math.abs(a - b) <= d;
 console.log('\n2 · de balk');
 {
   const { ctx, page, fouten } = await open('/nl/');
+  /* levering 94: helemaal bovenaan is de balk weg (lijst 92); een klein stukje omlaag staat hij er */
+  await page.evaluate(() => scrollTo(0, 40)); await page.waitForTimeout(500);
   const b = await page.evaluate(() => { const k = document.querySelector('.site-header'), n = k.querySelector('.nav'); const r = k.getBoundingClientRect(), c = getComputedStyle(k); return { top: r.top, w: r.width, h: n.getBoundingClientRect().height, bg: c.backgroundColor, glas: c.backdropFilter || c.webkitBackdropFilter }; });
   ok('56 px hoog over de hele breedte, de grond op 72 % met vervaging (vloeibaar glas)', b.top === 0 && b.w === 1440 && dicht(b.h, 56, 0.5) && /rgba\(251, 252, 255, 0\.72\)/.test(b.bg) && /blur\(20px\)/.test(b.glas), JSON.stringify(b));
   await page.locator('.site-header .nav-trigger').first().hover();
@@ -151,7 +155,7 @@ for (const [breed, hoog] of [[1440, 900], [1920, 1080], [390, 844]]) {
   console.log(`\n3 · ${breed} × ${hoog}`);
   const { ctx, page, fouten } = await open('/nl/', { breed, hoog });
   const m = await page.evaluate(() => {
-    const kop = document.querySelector('.o8-kop');
+    const kop = document.querySelector('#b94-h1');   /* levering 94: de kop van de bannervideo */
     /* de kop van het €1-blok telt niet: daar staat de reuzen-€1 in */
     const koppen = [...document.querySelectorAll('.h-voor h2')].filter((e) => e.offsetParent && !e.classList.contains('sr-only') && !e.classList.contains('h-proef-kop')).map((e) => { const fs = parseFloat(getComputedStyle(e).fontSize), lh = parseFloat(getComputedStyle(e).lineHeight) || fs; return [e.textContent.trim().slice(0, 30), Math.round(e.getBoundingClientRect().height / lh)]; });
     const klein = [];
@@ -160,7 +164,8 @@ for (const [breed, hoog] of [[1440, 900], [1920, 1080], [390, 844]]) {
     return { sw: document.documentElement.scrollWidth, vw: document.documentElement.clientWidth, fs: parseFloat(getComputedStyle(kop).fontSize), regels: Math.round(kop.getBoundingClientRect().height / (parseFloat(getComputedStyle(kop).fontSize) * 0.92)), koppen, klein };
   });
   ok('niets zijwaarts', m.sw <= m.vw, `${m.sw} > ${m.vw}`);
-  ok(`de titel op twee regels, ${breed >= 1100 ? '104 px' : 'tussen 30 en 76 px'}`, m.regels === 2 && (breed >= 1100 ? dicht(m.fs, 104, 0.5) : m.fs >= 30 && m.fs <= 76), JSON.stringify([m.fs, m.regels]));
+  /* levering 94: de kop is zo groot als zijn kolom toelaat, hoogstens 96 px (op de telefoon 56) */
+  ok(`de titel op twee regels, ${breed >= 1100 ? 'tussen 60 en 96 px' : 'tussen 24 en 56 px'}`, m.regels === 2 && (breed >= 1100 ? m.fs >= 60 && m.fs <= 96 : m.fs >= 24 && m.fs <= 56), JSON.stringify([m.fs, m.regels]));
   ok('elke kop hoogstens twee regels', m.koppen.every(([, r]) => r <= 2), JSON.stringify(m.koppen.filter(([, r]) => r > 2)));
   ok('geen tekst kleiner dan 11,5 px', m.klein.length === 0, m.klein.slice(0, 4).join(' | '));
   if (breed >= 1100) {

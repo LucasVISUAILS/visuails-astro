@@ -154,7 +154,7 @@ if (!background(DEFAULT_ID) || background(DEFAULT_ID).hex.toUpperCase() !== '#FF
 
   .pl-ch { margin-top: clamp(1.6rem, 3vw, 2.2rem); max-width: var(--pl-measure); }
   .pl-ch .pl-sub-h { margin-bottom: .35rem; }
-  .pl-ch-lead { font-size: .88rem; color: var(--ink-2); line-height: 1.6; max-width: 66ch; }
+  .pl-ch-lead { font-size: var(--h-t-fijn); color: var(--ink-2); line-height: 1.6; max-width: 66ch; }
 
   /* Two columns, not the background picker's four: every tile here carries a
      sentence of platform rules, and four of those side by side is a wall. */
@@ -177,7 +177,7 @@ if (!background(DEFAULT_ID) || background(DEFAULT_ID).hex.toUpperCase() !== '#FF
   .ch-more { position: absolute; top: .6rem; right: .6rem; }
   .ch-row { display: flex; align-items: center; gap: .5rem; }
   .ch-row input { accent-color: var(--accent); width: 16px; height: 16px; flex: none; }
-  .ch-name { font-size: .92rem; font-weight: 600; color: var(--ink); line-height: 1.25; }
+  .ch-name { font-size: var(--h-t-klein); font-weight: 600; color: var(--ink); line-height: 1.25; }
   /* The constraint, stated on the tile before it is chosen rather than only in
      the warning after. A customer scanning the six should be able to see which
      three take the colour choice away. */
@@ -193,9 +193,9 @@ if (!background(DEFAULT_ID) || background(DEFAULT_ID).hex.toUpperCase() !== '#FF
     color: var(--ink-3);
     font-variant-numeric: tabular-nums;
   }
-  .ch-note { font-size: .76rem; color: var(--ink-3); line-height: 1.5; }
+  .ch-note { font-size: var(--h-t-label); color: var(--ink-3); line-height: 1.5; }
 
-  .pl-ch-hint { margin-top: .7rem; font-size: .82rem; color: var(--ink-3); line-height: 1.55; max-width: 70ch; }
+  .pl-ch-hint { margin-top: .7rem; font-size: var(--h-t-fijn); color: var(--ink-3); line-height: 1.55; max-width: 70ch; }
 
   /* The three panels share one shape and differ only in border colour, because
      they are three registers of the same voice: a rule, an option, a caution.
@@ -207,7 +207,7 @@ if (!background(DEFAULT_ID) || background(DEFAULT_ID).hex.toUpperCase() !== '#FF
     border: 1px solid var(--line-strong);
     border-radius: var(--r-klein);
     background: var(--paper-2);
-    font-size: .84rem;
+    font-size: var(--h-t-fijn);
     line-height: 1.6;
     color: var(--ink-2);
     max-width: 70ch;
@@ -228,14 +228,14 @@ if (!background(DEFAULT_ID) || background(DEFAULT_ID).hex.toUpperCase() !== '#FF
   .pl-why > summary {
     width: max-content;
     cursor: pointer;
-    font-size: .8rem;
+    font-size: var(--h-t-fijn);
     color: var(--accent-bright);
     text-decoration: underline;
     text-underline-offset: 3px;
     border-radius: 999px;
   }
   .pl-why > summary:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
-  .pl-why > p { margin-top: .5rem; font-size: .82rem; color: var(--ink-3); line-height: 1.55; max-width: 70ch; }
+  .pl-why > p { margin-top: .5rem; font-size: var(--h-t-fijn); color: var(--ink-3); line-height: 1.55; max-width: 70ch; }
 
   @media (max-width: 700px) { .ch-grid { grid-template-columns: 1fr; } }
   @media (prefers-reduced-motion: reduce) { .ch-opt { transition: none; } }

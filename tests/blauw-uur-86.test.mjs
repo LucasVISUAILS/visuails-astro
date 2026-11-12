@@ -215,6 +215,8 @@ async function blauwste(page, x, y, w = 1, h = 6) {
 try {
   {
     const { ctx, page, fouten } = await open('/nl/');
+    /* levering 94: helemaal bovenaan is de balk weg (lijst 92); een klein stukje omlaag staat hij er */
+    await page.evaluate(() => scrollTo(0, 40)); await page.waitForTimeout(500);
     const logo = await page.evaluate(() => { const v = document.querySelector('.site-header .hal-vm-balk'); const f = v.querySelector('.mk-fill'), k = v.querySelector('.mk-kleur'); return [getComputedStyle(f).fill, getComputedStyle(k).fill]; });
     ok('het V-merk in de balk: in de snede, de schommel naar het licht', logo[0] === 'url("#vs-v-snede")' && logo[1] === 'url("#vs-v-licht")', logo.join(' · '));
     const p1 = await pixel(page, '.site-header .hal-vm-balk', 0.12, 0.08), p2 = await pixel(page, '.site-header .hal-vm-balk', 0.954, 0.246);
@@ -225,7 +227,13 @@ try {
     ok('geen gloed onder een knop (::before is weg)', gloed === 0, String(gloed));
 
     /* K2: de inktknop */
-    const K = '.o8-acties .h-knop.k-vol';  // knoppensysteem lijst 88/89: de inktknop heet .k-vol
+    /* levering 94: de inktknop van de opening staat in de bannervideo; daar wordt hij wit op een donker beeld (k-wit). Voor
+       deze meting de video stil en de knop in zijn gewone stand (inkt) */
+    const K = '[data-b94-knop] .h-knop.k-vol';  // knoppensysteem lijst 88/89: de inktknop heet .k-vol
+    await page.evaluate(() => { scrollTo(0, 0); window.__b94Stil = true; const v = document.querySelector('[data-b94-video]'); v.pause(); v.currentTime = 0; document.querySelectorAll('[data-b94-knop], [data-b94-knop] .k-vol').forEach((e) => e.classList.remove('k-wit')); });
+    /* de cookiebalk ligt op 1440 × 900 over de knop rechtsonder in de banner */
+    await page.addStyleTag({ content: '#cc-bar { display: none !important; }' });
+    await page.waitForTimeout(300);
     await page.locator(K).scrollIntoViewIfNeeded();
     await page.mouse.move(5, 5); await page.waitForTimeout(500);
     /* levering 87: de knop is een pil, dus de hoeken van zijn vak liggen erbuiten; meet binnen de ronde uiteinden */
@@ -242,6 +250,7 @@ try {
     ok('… de letters blijven wit (6,2 : 1 of meer op elke stop)', wit === 'rgb(255, 255, 255)', wit);
 
     /* K1: Bestellen */
+    await page.evaluate(() => scrollTo(0, 40)); await page.waitForTimeout(500);   /* de balk terug (levering 94) */
     const C = '.site-header .nav-cta';
     await page.mouse.move(5, 600); await page.waitForTimeout(700);
     /* knoppensysteem lijst 88/89: Bestellen draagt nu de pijl uit het kit rechts in het midden; meet erboven (20 % van de hoogte) */

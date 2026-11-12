@@ -2131,7 +2131,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   /* Sectie 21 (5 september 2026): de navigatie in kleine mono-kapitalen, zoals
      op Komma en Lue — de tweede stem van de site, naast de koppen in Hanken. De
      hoeken zijn recht; de pil is met de rest van sectie 20 verdwenen. */
-  .nav-links > li > a, .nav-trigger { border-radius: 999px; display: inline-flex; align-items: center; gap: .35rem; padding: .55rem .7rem; font-family: var(--font-mono); font-stretch: 82%; font-size: .72rem; font-weight: 400; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); background: none; border: none; cursor: pointer; transition: color var(--dur-1) var(--ease); }
+  .nav-links > li > a, .nav-trigger { border-radius: 999px; display: inline-flex; align-items: center; gap: .35rem; padding: .55rem .7rem; font-family: var(--font-mono); font-stretch: 82%; font-size: var(--h-t-label); font-weight: 400; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); background: none; border: none; cursor: pointer; transition: color var(--dur-1) var(--ease); }
   .nav-links > li > a:hover, .nav-trigger:hover { color: var(--ink); }
   .nav-links > li > a[aria-current="page"] { color: var(--ink); }
   .nav-actions { display: flex; align-items: center; gap: .6rem; }
@@ -2139,7 +2139,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      text link so it never competes with nav_start's button weight. Hidden at
      the mobile breakpoint alongside .btn/.lang-switch below; the drawer
      carries its own copy (.mobile-account-link). */
-  .nav-account-link { font-family: var(--font-mono); font-stretch: 82%; font-size: .72rem; font-weight: 400; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); padding: .55rem .4rem; transition: color var(--dur-1) var(--ease); }
+  .nav-account-link { font-family: var(--font-mono); font-stretch: 82%; font-size: var(--h-t-label); font-weight: 400; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); padding: .55rem .4rem; transition: color var(--dur-1) var(--ease); }
   .nav-account-link:hover, .nav-account-link[aria-current="page"] { color: var(--ink); }
 
   /* ---- the signed-in chrome ------------------------------------------------
@@ -2162,7 +2162,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      the smallest of the three tokens, because it is the smallest thing here;
      nothing on this site is allowed a square corner. */
   .nav-signout-btn {
-    font: inherit; font-size: .78rem; font-weight: 500; letter-spacing: .02em;
+    font: inherit; font-size: var(--h-t-label); font-weight: 500; letter-spacing: .02em;
     color: var(--ink-3); background: none; border: 0; cursor: pointer;
     padding: .5rem .45rem; border-radius: 999px;
     text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px;
@@ -2173,7 +2173,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .mobile-account-in:not([hidden]) { display: flex; }
   .mobile-account-in .mobile-account-link { color: var(--ink); }
   .mobile-signout { margin: 0; }
-  .mobile-signout .nav-signout-btn { font-size: .9rem; }
+  .mobile-signout .nav-signout-btn { font-size: var(--h-t-klein); }
   .has-menu { position: relative; }
   .nav-menu { position: absolute; top: calc(100% + 10px); left: 0; min-width: 470px; background: var(--menu-surface); border: 1px solid var(--line); padding: .6rem; display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease), visibility var(--dur-2) var(--ease); box-shadow: 6px 6px 0 0 rgb(var(--scrim) / 0.16); border-radius: var(--r-kaart); }
   .has-menu:hover .nav-menu, .has-menu:focus-within .nav-menu, .has-menu.menu-open .nav-menu { opacity: 1; visibility: visible; transform: translateY(0); }
@@ -2210,7 +2210,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      niemand opviel. Nu de labelmaat van de rest van de site, en --ink-2: --ink-3 kwam op dit
      vlak nog steeds maar op 3,79:1 uit. Nagemeten, niet geschat. */
   .mi-groep-kop {
-    margin: .55rem .85rem .3rem; font-family: var(--font-mono); font-size: .72rem;
+    margin: .55rem .85rem .3rem; font-family: var(--font-mono); font-size: var(--h-t-label);
     font-stretch: 82%; letter-spacing: .08em; text-transform: uppercase;
     color: var(--ink-2); border-bottom: 1px solid var(--line); padding-bottom: .45rem;
   }
@@ -2233,12 +2233,12 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      zelf laden bevat, is een lade waarin je zoekt. */
   .mobile-group {
     margin: 1.4rem 0 .2rem; font-family: var(--font-display);
-    font-size: .8rem; letter-spacing: .1em; text-transform: uppercase;
+    font-size: var(--h-t-fijn); letter-spacing: .1em; text-transform: uppercase;
     color: var(--ink-3);
   }
   .nav-menu a:hover, .nav-menu a[aria-current="page"] { background: var(--surface-2); }
-  .nav-menu .mi-title { color: var(--ink); font-weight: 600; font-size: .92rem; }
-  .nav-menu .mi-desc { color: var(--ink-3); font-size: .8rem; line-height: 1.4; }
+  .nav-menu .mi-title { color: var(--ink); font-weight: 600; font-size: var(--h-t-klein); }
+  .nav-menu .mi-desc { color: var(--ink-3); font-size: var(--h-t-fijn); line-height: 1.4; }
 
   /* ── HET "BINNENKORT"-LABEL ────────────────────────────────────────────────
      Eén klasse voor alle drie de plekken waar de menu-items staan (dropdown,
@@ -2266,7 +2266,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .mi-soon {
     display: inline-block; margin-left: .45rem;
     font-style: normal; font-weight: 600;
-    font-size: .72rem; letter-spacing: .08em; text-transform: uppercase;
+    font-size: var(--h-t-label); letter-spacing: .08em; text-transform: uppercase;
     color: var(--ink-3);
     padding: .1rem .35rem;
     border: 1px solid var(--line-strong); border-radius: 999px;
@@ -2293,7 +2293,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .lang-switch { display: inline-flex; align-items: center; background: none; border: 0; padding: 0; border-radius: 0; }
   /* .74rem en niet .7: dit is een KNOP en hij stond op 11,2 pixels, onder de
      ondergrens van dit project. Zie de noot bij .mi-soon hierboven. */
-  .lang-switch .ls { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 38px; min-height: 40px; font-family: var(--font-mono); font-stretch: 82%; font-size: .74rem; font-weight: 400; letter-spacing: .08em; color: color-mix(in srgb, var(--ink) 62%, transparent); padding: 4px 7px; transition: color var(--dur-1) var(--ease); }
+  .lang-switch .ls { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 38px; min-height: 40px; font-family: var(--font-mono); font-stretch: 82%; font-size: var(--h-t-label); font-weight: 400; letter-spacing: .08em; color: color-mix(in srgb, var(--ink) 62%, transparent); padding: 4px 7px; transition: color var(--dur-1) var(--ease); }
   /* Het streepje tussen de twee, en niet een gat: zonder scheiding lezen "EN"
      en "NL" als één woord van vier letters. 11px hoog, dus kleiner dan de
      letters — een scheiding en geen kader. */
@@ -2411,7 +2411,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     color: var(--ink); box-shadow: inset 0 -1px 0 var(--line);
   }
   .mobile-lijst-klein > a,
-  .mobile-lijst-klein > .mi-off { font-size: 1rem; font-family: var(--font-body); color: var(--ink-2); padding: .6rem 0; }
+  .mobile-lijst-klein > .mi-off { font-size: var(--h-t-lopend); font-family: var(--font-body); color: var(--ink-2); padding: .6rem 0; }
   .mobile-lijst > a[aria-current="page"] { color: var(--accent-bright, var(--ink)); }
   /* De laatste regel van een groep draagt geen lijn: de kop van de volgende
      groep is de scheiding, en twee scheidingen boven elkaar is een streep te
@@ -2422,7 +2422,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .mobile-rij { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.2rem; }
   .mobile-rij a {
     padding: .5rem .9rem; border: 1px solid var(--line-strong); border-radius: 999px;
-    font-family: var(--font-mono); font-size: .74rem; letter-spacing: .06em; text-transform: uppercase;
+    font-family: var(--font-mono); font-size: var(--h-t-label); letter-spacing: .06em; text-transform: uppercase;
     color: var(--ink-2);
   }
   .mobile-rij a[aria-current="page"] { border-color: var(--ink); color: var(--ink); }
@@ -2431,7 +2431,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .mobile-cta { padding: .9rem 0 max(.9rem, env(safe-area-inset-bottom)); border-top: 1px solid var(--line); flex: 0 0 auto; }
   .mobile-wa { margin-top: 1.4rem; }
   .mobile-cta .btn { font-size: 1.05rem; }
-  .mobile-cta-hint { margin-top: .1rem; text-align: center; font-size: .86rem; color: var(--ink-3); }
+  .mobile-cta-hint { margin-top: .1rem; text-align: center; font-size: var(--h-t-fijn); color: var(--ink-3); }
   /* ── 138×16 WAS HET RAAKVLAK, EN 24×24 IS DE ONDERGRENS ──────────────────
      Gemeten 21 augustus 2026 op elke mobiele breedte: deze link — "Probeer een
      proefvisual · €1", de goedkoopste manier om ja te zeggen — was zestien
@@ -2442,7 +2442,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      wél meeneemt. De regelafstand eromheen vangt de extra hoogte op, dus er
      schuift niets. WCAG 2.2 SC 2.5.8. */
   .mobile-cta-hint a { display: inline-block; padding-block: .45rem; color: var(--accent-bright); font-weight: 600; }
-  .mobile-account-link { display: flex; align-items: center; justify-content: center; min-height: 44px; margin-top: .9rem; font-size: .95rem; font-weight: 600; color: var(--ink-2); }
+  .mobile-account-link { display: flex; align-items: center; justify-content: center; min-height: 44px; margin-top: .9rem; font-size: var(--h-t-klein); font-weight: 600; color: var(--ink-2); }
   /* Niet meer `fixed`: hij staat in de kop van de lade, tegenover het
      merkteken en op de plek waar de burgerknop stond waar je net op drukte. Dat
      was de grootste inconsistentie van de oude lade — je opende het menu
@@ -2879,7 +2879,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      te luisteren. */
   @media (max-width: 53.75em) { .footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem 1.5rem; } }
   @media (max-width: 32.5em) { .footer-grid { grid-template-columns: 1fr; } }
-  .footer-brand p { color: var(--ink-3); font-size: .9rem; margin-top: .8rem; max-width: 34ch; }
+  .footer-brand p { color: var(--ink-3); font-size: var(--h-t-klein); margin-top: .8rem; max-width: 34ch; }
   /* WAS h5, on every page, which made all 84 skip h2→h5 (and /404 skip h1→h5).
      The styling never depended on the level — it is applied by class now, so
      the heading level tells the truth and nothing moves a pixel. */
@@ -2893,7 +2893,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      ring, the hover — is in global.css beside the icon masks it depends on. */
   .footer-col ul.foot-social, .footer-act ul.foot-social { flex-direction: row; gap: .5rem; list-style: none; margin: 0; padding: 0; display: flex; }
   .footer-col a,
-  .footer-col .mi-off { color: var(--ink-2); font-size: .92rem; }
+  .footer-col .mi-off { color: var(--ink-2); font-size: var(--h-t-klein); }
   /* Op een aanraakscherm zijn zestien links van 16px hoog onder elkaar een
      loterij (doorlichting 4 september 2026: elke footerlink 16px, tikdoel
      ver onder de 44px). Wat lucht om elke regel, alleen waar een vinger het
@@ -2942,7 +2942,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   /* Staat het veld al op de pagina zelf (/guides, /editions), dan niet nog eens
      onderaan: twee keer hetzelfde formulier op één scherm is aandringen. */
   body:has(main form[data-studiobrief]) .footer-brief { display: none; }
-  .footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; margin-top: 2.5rem; padding-top: 1.5rem; padding-bottom: clamp(1.6rem, 3vw, 2.6rem); box-shadow: inset 0 1px 0 var(--line); color: var(--ink-faint); font-size: .82rem; }
+  .footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; margin-top: 2.5rem; padding-top: 1.5rem; padding-bottom: clamp(1.6rem, 3vw, 2.6rem); box-shadow: inset 0 1px 0 var(--line); color: var(--ink-faint); font-size: var(--h-t-fijn); }
   /* ── 24 PIXELS, WANT DAT IS DE ONDERGRENS ────────────────────────────────
      Deze links waren 21px hoog: op .82rem tekst is dat de regelhoogte en verder
      niets. WCAG 2.2 vraagt in 2.5.8 (niveau AA) om een raakvlak van minstens 24
@@ -2997,7 +2997,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     display: inline-flex; align-items: center; justify-content: center;
     width: 48px; height: 48px; padding: 0;
     background: var(--surface); border: 1px solid var(--line-strong); color: var(--ink);
-    font-size: .88rem; font-weight: 600; line-height: 1; white-space: nowrap;
+    font-size: var(--h-t-fijn); font-weight: 600; line-height: 1; white-space: nowrap;
     transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease), bottom var(--dur-3) var(--ease); border-radius: var(--r-md); }
   .wa-launcher:hover { border-color: var(--ink-3); background: var(--surface-2); }
   /* fill, no stroke — the mark is a solid glyph now, not an outlined bubble.

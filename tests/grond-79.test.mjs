@@ -124,6 +124,8 @@ for (const [breed, hoog] of [[1440, 900], [390, 844]]) {
     await page.goto(BASIS + pad, { waitUntil: 'load' });
     await page.addStyleTag({ content: '#cc-bar, .wa-launcher, .wa-dock { display: none !important; }' });
     await page.evaluate(() => document.fonts.ready);
+    /* (levering 94) staat het eerste vak onder het scherm, dan eerst daarheen */
+    await page.evaluate((sel) => { const e = document.querySelector(sel); if (e && e.getBoundingClientRect().top > innerHeight) scrollTo(0, e.getBoundingClientRect().top + scrollY - 56); }, punten[0][0]);
     await page.waitForTimeout(500);
     const vakken = await page.evaluate((punten) => punten.map(([s, fx, fy]) => { const e = document.querySelector(s); if (!e) return null; const q = e.getBoundingClientRect(); return [Math.round(q.left + fx * q.width), Math.round(q.top + fy * q.height)]; }), punten);
     const png = await page.screenshot();
@@ -135,8 +137,10 @@ for (const [breed, hoog] of [[1440, 900], [390, 844]]) {
   /* levering 87 (fade f2): de fade loopt van wit naar blauw uur over het hele scherm en begint halverwege de titel
      al een tikje; naast de titel meten we daarom op 40 %. De titel staat lager, dus het vak begint achter de balk:
      boven de titel meten we onder de balk (12 %) */
-  const op = await meet('/nl/', [['.o8-held', 0.03, 0.40], ['.o8-held', 0.97, 0.40], ['.o8-held', 0.50, 0.12]]);
-  ok('  de opening: naast en boven de titel is het exact de grond (#FBFCFF)', exact(op), JSON.stringify(op));
+  /* levering 94: de opening is de bannervideo; de laptop staat onder Wat we maken, op de grond (het veld is weg). Gemeten
+     links en rechts naast de laptop, halverwege de hoogte van het podium */
+  const op = await meet('/nl/', [['.o8-podium', 0.01, 0.5], ['.o8-podium', 0.99, 0.5], ['.o8-podium', 0.01, 0.15]]);
+  ok('  de laptop: naast hem is het exact de grond (#FBFCFF)', exact(op), JSON.stringify(op));
   /* de laptop op /catalog: linksboven in de foto en onder de hand links (niet onder een ballon: op de
      telefoon staat "Wat jij stuurt" onderaan in het midden) */
   const dienst = await meet('/nl/catalog/', [['.hl-doos', 0.27, 0.08], ['.hl-doos', 0.45, 0.97]]);

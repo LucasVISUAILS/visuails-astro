@@ -193,6 +193,13 @@ const settles = (page, fn) => page.waitForFunction(fn, undefined, { timeout: 500
  */
 const openMenu = async (page) => {
   await page.waitForFunction(() => document.readyState === 'complete');
+  /* Levering 94: op de voorpagina is de balk weg zolang je helemaal bovenaan staat (lijst 92, op een breed scherm).
+     Een bezoeker scrolt eerst, dus de test doet dat ook. */
+  if (await page.evaluate(() => document.documentElement.classList.contains('b94-boven'))) {
+    await page.evaluate(() => scrollTo(0, 40));
+    await page.waitForFunction(() => !document.documentElement.classList.contains('b94-boven'));
+    await page.waitForTimeout(350);
+  }
   for (let attempt = 0; attempt < 3; attempt++) {
     await page.click('.nav-trigger');
     try {
@@ -568,7 +575,9 @@ console.log('\ngeen tekst ligt over andere tekst heen');
         return false;
       };
       const els = [...hero.querySelectorAll('h1, h2, p, span, strong, li, dt, dd')]
-        .filter((el) => draagtTekst(el) && !inDichteVouw(el) && !onzichtbaar(el) && !opScheefVlak(el))
+        /* levering 94: de bannerkop staat er twee keer op dezelfde plek (de gatlaag en de vullaag van het negatief, HalBanner94);
+           de vullaag is aria-hidden en hoort er bewust bovenop */
+        .filter((el) => draagtTekst(el) && !inDichteVouw(el) && !onzichtbaar(el) && !opScheefVlak(el) && !el.closest('[aria-hidden="true"]'))
         /* ── PER REGEL, NIET DE OMHULLENDE — 13 oktober 2026 ──────────────────
            Een <strong> die over twee regels loopt, heeft als rechthoek de omhullende
            van beide regels: de volle breedte, twee regels hoog. Een tweede <strong>

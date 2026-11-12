@@ -75,13 +75,21 @@ export const LAATST_BIJGEWERKT = {
   /* 15 oktober 2026: vis_in erbij (afvinklijst 31, v31-me = a). Nog oktober, dus dezelfde maand.
      9 november 2026 (lijst 87, K04): de tipscookie zegt "bestelpagina" in plaats van "privélink". */
   'cookie-policy': '2026-11',
-  'data-processing-agreement': '2026-10',
+  /* 9 november 2026 (ronde 91): de tekst is aangepast. "Jouw eigen portaal" heet nu VISUAILS Studio (§7 / §8), en
+     "binnen 24 uur … ook als we dan nog niet alles weten" (§11, NL) is herschreven. Er zijn geen nieuwe plichten. De
+     lijst van §8 (partijen met beeld) bleef gelijk: zie SUBVERWERKERS_GEWIJZIGD in subverwerkers.js. Toch een andere
+     tekst, dus een andere maand (test:juridischedatums, 12 november). */
+  'data-processing-agreement': '2026-11',
   /* Oktober 2026: paragraaf 4 (welke foto's verplicht zijn: voorkant, achterkant
      én één close-up; de draagfoto optioneel) en paragraaf 6 ("controle door een
      specialist", "AI-model" in de IPTC-uitleg) zijn inhoudelijk gewijzigd.
      11 oktober 2026 (kiptc = a): de markering noemt nu de waarde
-     trainedAlgorithmicMedia, en video's doen mee. */
-  'ai-act': '2026-10',
+     trainedAlgorithmicMedia, en video's doen mee.
+     9 november 2026 (ronde 91): de tekst is aangepast. "Portaal" heet nu VISUAILS Studio, "we fotograferen het
+     opnieuw" is nu "we maken het na vanuit jouw foto's", de foto op model "maken we op basis van" je platte foto's,
+     en goedkeuren gebeurt "voordat je bestelling wordt afgerond". Er zijn geen nieuwe plichten, maar het is een andere
+     tekst. */
+  'ai-act': '2026-11',
 };
 
 const MAANDEN = {

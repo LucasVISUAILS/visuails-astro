@@ -94,6 +94,8 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
     });
     page.on('requestfailed', (r) => {
       const u = new URL(r.url()).pathname;
+      /* een video die nog binnenkomt als de pagina dichtgaat, wordt afgebroken: dat is geen fout (levering 94, de bannervideo) */
+      if (/\.mp4$/.test(u) && /ERR_ABORTED/.test(r.failure()?.errorText || '')) return;
       if (!BUITEN.test(u)) gevonden.push(`${w}px ${pad} — verzoek mislukt: ${u}`);
     });
     page.on('response', (r) => {

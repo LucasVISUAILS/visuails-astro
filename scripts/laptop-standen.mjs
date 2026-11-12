@@ -92,7 +92,15 @@ try {
   const browser = await chromium.launch({ executablePath: process.env.CHROME || browserPad() });
   for (const lang of ['nl', 'en']) {
     const page = await browser.newPage({ viewport: { width: FOTO.w, height: FOTO.h }, deviceScaleFactor: DPR });
-    await page.goto(`${basis}/laptop-bron/${lang}/`, { waitUntil: 'load' });
+    /* astro dev laadt de pagina soms nog één keer opnieuw (nieuwe afhankelijkheden, 12 november 2026): dan opnieuw */
+    for (let poging = 0; ; poging++) {
+      await page.goto(`${basis}/laptop-bron/${lang}/`, { waitUntil: 'load' });
+      await page.waitForTimeout(1500);
+      let klaar = false;
+      try { klaar = await page.evaluate(() => !!document.querySelector('[data-bron-stand]')); } catch { /* opnieuw geladen */ }
+      if (klaar) break;
+      if (poging >= 6) break;
+    }
     await page.evaluate(async () => {
       await document.fonts.ready;
       await Promise.all([...document.images].map((img) => {

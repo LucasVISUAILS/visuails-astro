@@ -164,7 +164,8 @@ for (const [breed, hoog] of [[1440, 900], [390, 844]]) {
   const telefoon = breed < 600;
   for (const [pad, wortel, blok, tekst] of PLEKKEN) {
     const { ctx, page } = await open({ viewport: { width: breed, height: hoog }, deviceScaleFactor: 2, ...(telefoon ? { isMobile: true, hasTouch: true } : {}) });
-    await page.goto(`${BASIS}${pad}`, { waitUntil: 'networkidle' });
+    /* levering 94: op de voorpagina laadt de bannervideo (14 MB, zonder bereikverzoeken bij deze testserver) door; dan 'load' */
+    await page.goto(`${BASIS}${pad}`, { waitUntil: 'networkidle', timeout: 20000 }).catch(() => page.waitForTimeout(500));
     const bg = await page.$eval(wortel, (e) => getComputedStyle(e).backgroundImage);
     const naam = new RegExp(`/_astro/${blok}-${telefoon ? 800 : 1600}\\.[\\w-]+\\.(avif|webp)`);
     const t = await slechtsteTekst(page, wortel, tekst.map((s) => `${wortel} ${s}`.replace(wortel + ' ', '')), [255, 255, 255]);

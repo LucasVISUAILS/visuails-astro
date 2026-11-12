@@ -577,7 +577,7 @@ const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
   }
   .hold-status-label {
     margin: 0;
-    font-size: .72rem; font-weight: 700; letter-spacing: .09em;
+    font-size: var(--h-t-label); font-weight: 700; letter-spacing: .09em;
     text-transform: uppercase; color: var(--ink-3);
   }
   .hold-status-word {
@@ -592,7 +592,7 @@ const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
   .hold-status-body {
     margin: .8rem 0 0;
     color: var(--ink-2);
-    font-size: .98rem;
+    font-size: var(--h-t-klein);
     line-height: 1.65;
     max-width: 66ch;
   }
@@ -609,13 +609,13 @@ const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
     border-bottom: 1px solid var(--line);
   }
   .hold-fact dt {
-    font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+    font-size: var(--h-t-label); font-weight: 700; letter-spacing: .08em;
     text-transform: uppercase; color: var(--ink-3);
   }
-  .hold-fact dd { margin: 0; color: var(--ink-2); font-size: .95rem; line-height: 1.6; }
+  .hold-fact dd { margin: 0; color: var(--ink-2); font-size: var(--h-t-klein); line-height: 1.6; }
 
-  .hold-vat { margin-top: .9rem; font-size: .78rem; color: var(--ink-3); line-height: 1.55; max-width: 62ch; }
-  .hold-more { margin-top: .9rem; font-size: .9rem; }
+  .hold-vat { margin-top: .9rem; font-size: var(--h-t-label); color: var(--ink-3); line-height: 1.55; max-width: 62ch; }
+  .hold-more { margin-top: .9rem; font-size: var(--h-t-klein); }
   .hold-more a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
 
   .hold-form {
@@ -625,7 +625,7 @@ const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
     background: var(--surface);
   }
   .hold-fields { margin-top: 1.4rem; }
-  .hold-opt { font-weight: 500; font-size: .78rem; color: var(--ink-3); text-transform: lowercase; }
+  .hold-opt { font-weight: 500; font-size: var(--h-t-label); color: var(--ink-3); text-transform: lowercase; }
   .hold-submit { margin-top: .6rem; }
 
   /* De intake: een eigen blok binnen het formulier, met een lijn erboven zodat
@@ -636,18 +636,18 @@ const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
      de lijn erboven, niet erdoorheen) moet hij eruit: float + volle breedte is
      de enige manier die overal werkt. De lead erna zet de float weer stil. */
   .hold-intake-h { float: left; width: 100%; padding: 1.4rem 0 0; margin: 0; border-top: 1px solid var(--line-strong); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; color: var(--ink); }
-  .hold-intake-lead { clear: both; margin: .5rem 0 1.1rem; color: var(--ink-3); font-size: .92rem; line-height: 1.55; max-width: 62ch; }
+  .hold-intake-lead { clear: both; margin: .5rem 0 1.1rem; color: var(--ink-3); font-size: var(--h-t-klein); line-height: 1.55; max-width: 62ch; }
   .hold-intake .row-2 { align-items: end; }
   .hold-intake .field + .field, .hold-intake .row-2 + .field, .hold-intake .field + .row-2 { margin-top: 1rem; }
-  .hold-intake .hint { display: block; margin-top: .35rem; font-size: .8rem; color: var(--ink-3); line-height: 1.5; max-width: 62ch; }
-  .hold-intake-after { margin: 1.2rem 0 0; padding: .9rem 1rem; border: 1px dashed var(--line-strong); border-radius: var(--r-klein); color: var(--ink-2); font-size: .9rem; line-height: 1.6; max-width: 66ch; }
+  .hold-intake .hint { display: block; margin-top: .35rem; font-size: var(--h-t-fijn); color: var(--ink-3); line-height: 1.5; max-width: 62ch; }
+  .hold-intake-after { margin: 1.2rem 0 0; padding: .9rem 1rem; border: 1px dashed var(--line-strong); border-radius: var(--r-klein); color: var(--ink-2); font-size: var(--h-t-klein); line-height: 1.6; max-width: 66ch; }
 
   .hold-next-list { list-style: none; margin: 1.1rem 0 0; padding: 0; border-top: 1px solid var(--line); }
   .hold-next-list li {
     padding: .85rem 0;
     border-bottom: 1px solid var(--line);
     color: var(--ink-2);
-    font-size: .95rem;
+    font-size: var(--h-t-klein);
     line-height: 1.6;
   }
 

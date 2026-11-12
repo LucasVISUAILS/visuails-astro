@@ -1,0 +1,296 @@
+---
+/**
+ * VISUAILS — de bannervideo bovenaan de voorpagina (levering 94, 12 november 2026, lijst 92). Het waarom staat in
+ * src/data/banner94.js; de opmaak in src/styles/banner-94.css.
+ *
+ * DE TEKST IS EEN VENSTER OP DE VIDEO. Alle tekst in de banner (de kop, de stap, de balkjes, de zin, het hoekje) toont de
+ * video zelf, als negatief in blauw uur, tot op de pixel (Lucas: "echt precies op de randjes en pixels na"). Twee lagen,
+ * elk met een kopie van de tekst:
+ *   het gat     (mix-blend-mode: multiply): witte grond, zwarte letters      → de video, met de letters eruit gesneden (zwart)
+ *   de vulling  (mix-blend-mode: screen):   het effect × [witte letters op zwart] → het effect, alleen in de letters
+ * Zwart × iets = zwart en zwart + iets = iets: in de letters staat dus precies het effect, ernaast precies de video. Het effect
+ * rekent de videokaart (WebGL: het negatief, de kaart uit banner94.js), alleen bij een nieuw beeld (24 keer per seconde).
+ * Zonder WebGL doet een canvas met een svg-filter hetzelfde; zonder script staat de tekst gewoon in inkt op het witte begin.
+ * De knop Bestellen is een vlak: die kiest per stuk inkt of wit, naar het beeld eronder.
+ *
+ * WAT ER NIET HAPERT. Er speelt één video: 1920 breed op een scherm dat meer dan 1400 beeldpunten breed tekent, anders 1280.
+ * Hij pauzeert zodra de banner uit beeld is en speelt niet bij "minder beweging". Faststart: hij begint te spelen voordat hij
+ * binnen is (de eerste halve seconde is wit).
+ */
+import '../styles/banner-94.css';
+import { BANNER, HOOFDSTUKKEN, DUUR, kaartTabel, KAART, KAART_DEEL } from '../data/banner94.js';
+import { IKOON, rolIkoon } from '../data/iconen.js';
+import { createHash } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+
+interface Props {
+  lang: 'en' | 'nl';
+  knop: { label: string; href: string; attrs?: Record<string, string> };
+  /* de €1-proef naast Bestellen (alleen voor wie niet is ingelogd) en, voor een klant, de link naar Studio: zoals in de
+     opening tot levering 93 (lijst 64, knoppen; tests/klant-stand) */
+  link?: { label: string; href: string };
+  klantLink?: { label: string; href: string };
+}
+const { lang, knop, link, klantLink } = Astro.props as Props;
+const T = BANNER[lang];
+/* het teken achter de bestanden: verandert de video, dan haalt elke browser hem opnieuw (/img/* staat zeven dagen) */
+const h = createHash('sha1');
+for (const f of ['banner-1280.mp4', 'banner-1920.mp4', 'poster-1280.webp', 'poster-1920.webp', 'licht.bin']) {
+  const p = path.join(process.cwd(), 'public', 'img', 'hal', 'banner', f);
+  if (existsSync(p)) h.update(readFileSync(p));
+}
+const V = h.digest('hex').slice(0, 10);
+const pad = (f: string) => `/img/hal/banner/${f}?v=${V}`;
+
+/* de svg-kaart voor het reservepad (feComponentTransfer verdeelt 0 – 1 in gelijke stukken: 21 punten) */
+const tab = kaartTabel();
+const reeks = (k: number) => Array.from({ length: 21 }, (_, i) => (tab[Math.round(i / 20 * 255) * 3 + k] / 255).toFixed(4)).join(' ');
+const STAPPEN = T.stappen;
+const nr = (i: number) => `0${i + 1} / 0${STAPPEN.length}`;
+---
+<svg width="0" height="0" class="b94-defs" aria-hidden="true" focusable="false"><defs>
+  <filter id="b94-neg" color-interpolation-filters="sRGB">
+    <feColorMatrix in="SourceGraphic" type="matrix" values="-1 0 0 0 1  0 -1 0 0 1  0 0 -1 0 1  0 0 0 1 0" result="neg" />
+    <feColorMatrix in="neg" type="matrix" values=".2126 .7152 .0722 0 0  .2126 .7152 .0722 0 0  .2126 .7152 .0722 0 0  0 0 0 1 0" result="l" />
+    <feComponentTransfer in="l" result="kaart"><feFuncR type="table" tableValues={reeks(0)} /><feFuncG type="table" tableValues={reeks(1)} /><feFuncB type="table" tableValues={reeks(2)} /></feComponentTransfer>
+    <feComposite in="kaart" in2="neg" operator="arithmetic" k1="0" k2={String(KAART_DEEL)} k3={(1 - KAART_DEEL).toFixed(2)} k4="0" />
+  </filter>
+</defs></svg>
+<section class="b94" data-b94 data-v={V} data-licht={pad('licht.bin')} aria-labelledby="b94-h1">
+  <video class="b94-video" data-b94-video muted playsinline loop preload="metadata" poster={pad('poster-1280.webp')}
+         data-klein={pad('banner-1280.mp4')} data-groot={pad('banner-1920.mp4')} aria-label={T.video}></video>
+
+  {(['gat', 'vul'] as const).map((laag) => (
+    <div class={`b94-laag b94-${laag}`} aria-hidden={laag === 'vul' ? 'true' : undefined} data-b94-laag={laag}>
+      {laag === 'vul' && <canvas class="b94-effect" data-b94-effect></canvas>}
+      <div class="b94-tekst">
+        <p class="b94-hoek">{T.hoek}</p>
+        <div class="b94-onder">
+          <div class="b94-kopvak">
+          {laag === 'gat'
+            ? <h1 id="b94-h1" class="b94-kop" aria-label={T.kop.join(' ')}><span aria-hidden="true">{T.kop[0]}</span><span aria-hidden="true">{T.kop[1]}</span></h1>
+            : <p class="b94-kop"><span>{T.kop[0]}</span><span>{T.kop[1]}</span></p>}
+          </div>
+          <div class="b94-rechts">
+            <p class="b94-stap" data-b94-stap aria-live={laag === 'gat' ? 'polite' : undefined}>
+              <span class="b94-nr" data-b94-nr>{nr(0)} · {STAPPEN[0][0]}</span>
+              <span class="b94-tx" data-b94-tx>{STAPPEN[0][1]}</span>
+            </p>
+            <div class="b94-voortgang">
+              <span class="b94-balkjes">{STAPPEN.map(() => <span class="b94-bj"><i><b data-b94-vul></b></i></span>)}</span>
+              <span class="b94-pauze-ik" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path class="b94-p-uit" fill-rule="evenodd" d={IKOON.pauze} /><path class="b94-p-aan" fill-rule="evenodd" d={IKOON.afspelen} /></svg></span>
+            </div>
+            <p class="b94-zin">{T.zin}</p>
+            <span class="b94-knop-plek" data-b94-knop-plek></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  ))}
+
+  {/* wat je kunt aanklikken, boven de lagen: de balkjes, de pauzeknop en Bestellen */}
+  <div class="b94-bedien" data-b94-bedien>
+    {STAPPEN.map(([naam], i) => <button type="button" class="b94-ga" data-b94-ga={i} aria-label={T.naar(i + 1, naam)}></button>)}
+    <button type="button" class="b94-pauze" data-b94-pauze aria-pressed="false" aria-label={T.pauze} data-uit={T.pauze} data-aan={T.speel}></button>
+  </div>
+  <p class="b94-knop" data-b94-knop>
+    <a class="h-knop k k-vol" data-rol="doorgaan" href={knop.href} {...(knop.attrs || {})}><span data-vis-label>{knop.label}</span><Fragment set:html={rolIkoon('doorgaan')} /></a>
+    {link && <a class="h-link k k-tekst" data-rol="doorgaan" href={link.href} data-vis-uit>{link.label}<Fragment set:html={rolIkoon('doorgaan')} /></a>}
+    {klantLink && <a class="h-link k k-tekst" data-rol="doorgaan" href={klantLink.href} data-vis-klant-in hidden>{klantLink.label}<Fragment set:html={rolIkoon('doorgaan')} /></a>}
+  </p>
+
+  <script type="application/json" data-b94-data set:html={JSON.stringify({
+    hoofdstukken: HOOFDSTUKKEN, duur: DUUR, stappen: STAPPEN, label: T.stap, kaart: kaartTabel(), deel: KAART_DEEL, kaartStops: KAART,
+  })} />
+</section>
+
+<script>
+  type Data = { hoofdstukken: number[]; duur: number; stappen: string[][]; kaart: number[]; deel: number };
+  let ruim: (() => void) | null = null, loopt: HTMLElement | null = null;
+  function start() {
+    const sec = document.querySelector<HTMLElement>('[data-b94]');
+    /* astro:page-load komt ook bij het eerste laden: dezelfde banner niet twee keer starten (twee programma's op één videokaart) */
+    if (sec && sec === loopt) return;
+    ruim?.(); ruim = null; loopt = sec;
+    if (!sec) { document.documentElement.classList.remove('b94-boven'); return; }
+    const data = JSON.parse(sec.querySelector('[data-b94-data]')!.textContent || '{}') as Data;
+    const vid = sec.querySelector<HTMLVideoElement>('[data-b94-video]')!;
+    let doek = sec.querySelector<HTMLCanvasElement>('[data-b94-effect]')!;
+    const knop = sec.querySelector<HTMLElement>('[data-b94-knop]')!;
+    const pauze = sec.querySelector<HTMLButtonElement>('[data-b94-pauze]')!;
+    const html = document.documentElement;
+    const minder = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const weg: (() => void)[] = [];
+    const opV = (t: string, f: () => void) => { vid.addEventListener(t, f); weg.push(() => vid.removeEventListener(t, f)); };
+    const op = <K extends keyof WindowEventMap>(t: K, f: (e: WindowEventMap[K]) => void, o?: AddEventListenerOptions) => { window.addEventListener(t, f as EventListener, o); weg.push(() => window.removeEventListener(t, f as EventListener, o)); };
+
+    /* ── de bovenbalk: weg zolang de pagina helemaal bovenaan staat, terug zodra je scrolt (lijst 92, zijn notitie) ── */
+    const balk = () => html.classList.toggle('b94-boven', window.scrollY < 4);
+    balk(); op('scroll', balk, { passive: true });
+
+    /* ── de video: 1920 als het scherm meer dan 1400 beeldpunten breed tekent, anders 1280 ── */
+    const groot = sec.clientWidth * Math.min(2, window.devicePixelRatio || 1) > 1400;
+    vid.src = (groot ? vid.dataset.groot : vid.dataset.klein) || '';
+    vid.preload = 'auto';
+    opV('error', () => { sec.classList.add('b94-geen'); });
+    let handPauze = minder;
+    /* weigert de browser het afspelen (geen autoplay, stroombesparing), dan staat de knop op afspelen: de bezoeker start hem zelf */
+    const speel = () => { if (!handPauze && zicht) vid.play().catch(() => { handPauze = true; zetPauze(); }); };
+    let zicht = false;
+    const io = new IntersectionObserver(([e]) => { zicht = e.isIntersecting; if (zicht) speel(); else vid.pause(); }, { threshold: 0.1 });
+    io.observe(sec); weg.push(() => io.disconnect());
+    const zetPauze = () => {
+      pauze.setAttribute('aria-pressed', String(handPauze));
+      pauze.setAttribute('aria-label', handPauze ? pauze.dataset.aan || '' : pauze.dataset.uit || '');
+      sec.classList.toggle('b94-stil', handPauze);
+    };
+    zetPauze();
+    pauze.addEventListener('click', () => { handPauze = !handPauze; zetPauze(); if (handPauze) vid.pause(); else speel(); });
+
+    /* ── de stap en de balkjes (alle kopieën) ── */
+    const nrs = [...sec.querySelectorAll<HTMLElement>('[data-b94-nr]')], txs = [...sec.querySelectorAll<HTMLElement>('[data-b94-tx]')];
+    const stappen = [...sec.querySelectorAll<HTMLElement>('[data-b94-stap]')];
+    const vullen = [...sec.querySelectorAll<HTMLElement>('[data-b94-vul]')];
+    const H = data.hoofdstukken, N = H.length;
+    let hs = 0;
+    function stapBij() {
+      const t = vid.currentTime, d = vid.duration || data.duur;
+      let i = 0; while (i + 1 < N && t >= H[i + 1]) i++;
+      if (i !== hs) {
+        hs = i;
+        const nrTekst = `0${i + 1} / 0${N} · ${data.stappen[i][0]}`;
+        nrs.forEach((n) => { n.textContent = nrTekst; }); txs.forEach((n) => { n.textContent = data.stappen[i][1]; });
+        if (!minder) stappen.forEach((s) => { s.classList.remove('b94-wissel'); void s.offsetWidth; s.classList.add('b94-wissel'); });
+      }
+      vullen.forEach((b, k) => {
+        const j = k % N, a = H[j], e = j + 1 < N ? H[j + 1] : d;
+        b.style.transform = `scaleX(${(t <= a ? 0 : t >= e ? 1 : (t - a) / (e - a)).toFixed(4)})`;
+      });
+    }
+    sec.querySelectorAll<HTMLButtonElement>('[data-b94-ga]').forEach((b) => b.addEventListener('click', () => { vid.currentTime = H[+(b.dataset.b94Ga || 0)] + 0.02; tekenNu(); }));
+
+    /* ── het effect: WebGL (het negatief en de kaart in één tekening), anders een canvas met het svg-filter ── */
+    let gl: WebGLRenderingContext | null = null, prog: WebGLProgram | null = null, uDek: WebGLUniformLocation | null = null, vTex: WebGLTexture | null = null;
+    try { gl = doek.getContext('webgl', { premultipliedAlpha: false, antialias: false, preserveDrawingBuffer: false }) as WebGLRenderingContext | null; } catch { gl = null; }
+    /* Zonder echte videokaart (SwiftShader, de software-tekenaar van Chrome) gaat elk videobeeld als textuur via het geheugen
+       en wacht de tekenaar ("GPU stall due to ReadPixels"). Daar is het canvas met het svg-filter lichter. */
+    if (gl) {
+      const info = gl.getExtension('WEBGL_debug_renderer_info');
+      const naam = String(info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
+      if (/SwiftShader|llvmpipe|Software/i.test(naam)) { gl.getExtension('WEBGL_lose_context')?.loseContext(); gl = null; }
+    }
+    let g2: CanvasRenderingContext2D | null = null;
+    if (gl) {
+      const sh = (t: number, s: string) => { const x = gl!.createShader(t)!; gl!.shaderSource(x, s); gl!.compileShader(x); return x; };
+      prog = gl.createProgram()!;
+      gl.attachShader(prog, sh(gl.VERTEX_SHADER, 'attribute vec2 p; varying vec2 uv; void main(){ uv = p * 0.5 + 0.5; gl_Position = vec4(p, 0.0, 1.0); }'));
+      gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, `precision mediump float; varying vec2 uv; uniform sampler2D v; uniform sampler2D k; uniform vec4 dek;
+        void main(){ vec3 c = texture2D(v, dek.xy + uv * dek.zw).rgb; vec3 n = 1.0 - c; float l = dot(n, vec3(.2126, .7152, .0722));
+        vec3 m = texture2D(k, vec2(l * 255.0 / 256.0 + 0.5 / 256.0, 0.5)).rgb; gl_FragColor = vec4(mix(n, m, ${data.deel.toFixed(3)}), 1.0); }`));
+      gl.linkProgram(prog);
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { gl = null; }
+    }
+    if (gl && prog) {
+      gl.useProgram(prog);
+      const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+      const loc = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+      const tex = (eenheid: number) => { const t = gl!.createTexture()!; gl!.activeTexture(gl!.TEXTURE0 + eenheid); gl!.bindTexture(gl!.TEXTURE_2D, t);
+        for (const [p, w] of [[gl!.TEXTURE_WRAP_S, gl!.CLAMP_TO_EDGE], [gl!.TEXTURE_WRAP_T, gl!.CLAMP_TO_EDGE], [gl!.TEXTURE_MIN_FILTER, gl!.LINEAR], [gl!.TEXTURE_MAG_FILTER, gl!.LINEAR]]) gl!.texParameteri(gl!.TEXTURE_2D, p, w);
+        return t; };
+      const kTex = tex(1);
+      const rgba = new Uint8Array(256 * 4); for (let i = 0; i < 256; i++) { rgba.set(data.kaart.slice(i * 3, i * 3 + 3), i * 4); rgba[i * 4 + 3] = 255; }
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, rgba);
+      vTex = tex(0);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+      gl.uniform1i(gl.getUniformLocation(prog, 'v'), 0); gl.uniform1i(gl.getUniformLocation(prog, 'k'), 1);
+      uDek = gl.getUniformLocation(prog, 'dek');
+    } else {
+      /* een canvas dat al webgl was, geeft geen 2d meer: dan een nieuw */
+      g2 = doek.getContext('2d');
+      if (!g2) { const nieuw = doek.cloneNode(false) as HTMLCanvasElement; doek.replaceWith(nieuw); doek = nieuw; g2 = doek.getContext('2d'); }
+      doek.classList.add('b94-svg');
+    }
+    function maat() {
+      const r = sec.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+      const w = Math.max(1, Math.round(r.width * dpr)), hh = Math.max(1, Math.round(r.height * dpr));
+      if (doek.width !== w || doek.height !== hh) { doek.width = w; doek.height = hh; }
+      /* Bestellen staat op zijn plek in de tekst */
+      const p = sec.querySelector<HTMLElement>('.b94-gat [data-b94-knop-plek]')!.getBoundingClientRect();
+      knop.style.left = `${Math.round(p.left - r.left)}px`; knop.style.top = `${Math.round(p.top - r.top)}px`;
+      /* de plek in de tekst is zo hoog als de knoppen (met de €1-link eronder als hij niet meer naast Bestellen past) */
+      const hk = `${Math.ceil(knop.getBoundingClientRect().height)}px`;
+      sec.querySelectorAll<HTMLElement>('[data-b94-knop-plek]').forEach((e) => { if (e.style.height !== hk) e.style.height = hk; });
+      knop.style.width = `${Math.round(sec.querySelector<HTMLElement>('.b94-gat .b94-rechts')!.getBoundingClientRect().width)}px`;
+      /* de aanklikbare balkjes en de pauzeknop boven hun tekening */
+      const bj = [...sec.querySelectorAll<HTMLElement>('.b94-gat .b94-bj')], ga = [...sec.querySelectorAll<HTMLElement>('[data-b94-ga]')];
+      bj.forEach((b, i) => { const q = b.getBoundingClientRect(); Object.assign(ga[i].style, { left: `${q.left - r.left}px`, top: `${q.top - r.top - 8}px`, width: `${q.width}px`, height: `${q.height + 16}px` }); });
+      const pk = sec.querySelector<HTMLElement>('.b94-gat .b94-pauze-ik')!.getBoundingClientRect();
+      Object.assign(pauze.style, { left: `${pk.left - r.left - 10}px`, top: `${pk.top - r.top - 10}px`, width: `${pk.width + 20}px`, height: `${pk.height + 20}px` });
+    }
+    /* het stuk van de video dat de banner toont (object-fit: cover), in breukdelen van de video */
+    function dek(): [number, number, number, number] {
+      const vw = vid.videoWidth || 16, vh = vid.videoHeight || 9, A = doek.width / doek.height, Av = vw / vh;
+      return A > Av ? [0, (1 - Av / A) / 2, 1, Av / A] : [(1 - A / Av) / 2, 0, A / Av, 1];
+    }
+    function teken() {
+      if (vid.readyState < 2) return;
+      if (gl && prog) {
+        gl.viewport(0, 0, doek.width, doek.height);
+        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, vTex);
+        try { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, vid); } catch { return; }
+        gl.useProgram(prog);
+        gl.uniform4fv(uDek, dek());
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      } else if (g2) {
+        const [x, y, w, h] = dek(), vw = vid.videoWidth, vh = vid.videoHeight;
+        g2.drawImage(vid, x * vw, y * vh, w * vw, h * vh, 0, 0, doek.width, doek.height);
+      }
+    }
+    /* ── Bestellen: een vlak, per stuk inkt of wit naar het beeld eronder (met speling, en 0,8 s vasthouden).
+       De helderheid komt uit de lichtkaart (licht.bin: per kwart seconde 16 × 9 vakjes, lineair, 0 – 255), niet uit de video
+       zelf: elk beeld van de videokaart teruglezen liet de GPU wachten ("GPU stall due to ReadPixels"). */
+    let licht: Uint8Array | null = null;
+    if (sec.dataset.licht) fetch(sec.dataset.licht).then((r) => (r.ok ? r.arrayBuffer() : null)).then((b) => { if (b) { licht = new Uint8Array(b); knopKleur(); } }).catch(() => {});
+    let wit = false, sinds = 0;
+    function knopKleur() {
+      if (!licht) return;
+      const KW = 16, KH = 9, n = Math.floor(licht.length / (KW * KH)); if (!n) return;
+      const f = Math.min(n - 1, Math.max(0, Math.floor(vid.currentTime * 4)));
+      const [x, y, w, h] = dek(), r = sec.getBoundingClientRect(), q = knop.getBoundingClientRect();
+      /* de knop in breukdelen van de video (object-fit: cover) */
+      const ux0 = x + (q.left - r.left) / r.width * w, ux1 = x + (q.right - r.left) / r.width * w;
+      const uy0 = y + (q.top - r.top) / r.height * h, uy1 = y + (q.bottom - r.top) / r.height * h;
+      const c0 = Math.max(0, Math.floor(ux0 * KW)), c1 = Math.min(KW, Math.ceil(ux1 * KW)), r0 = Math.max(0, Math.floor(uy0 * KH)), r1 = Math.min(KH, Math.ceil(uy1 * KH));
+      if (c1 <= c0 || r1 <= r0) return;
+      let s = 0; for (let rr = r0; rr < r1; rr++) for (let cc = c0; cc < c1; cc++) s += licht[f * KW * KH + rr * KW + cc];
+      const Y = s / ((r1 - r0) * (c1 - c0)) / 255, nu = performance.now();
+      if (nu - sinds > 800 && ((!wit && Y < 0.15) || (wit && Y > 0.25))) { wit = !wit; sinds = nu; knop.classList.toggle('k-wit', wit); knop.querySelector('.k-vol')?.classList.toggle('k-wit', wit); }
+    }
+    function tekenNu() { teken(); stapBij(); knopKleur(); }
+    /* per nieuw videobeeld (24 keer per seconde, niet 60) */
+    let actief = true;
+    const rv = 'requestVideoFrameCallback' in HTMLVideoElement.prototype;
+    const lus = () => { if (!actief) return; tekenNu(); if (rv) (vid as any).requestVideoFrameCallback(lus); else requestAnimationFrame(lus); };
+    if (rv) (vid as any).requestVideoFrameCallback(lus); else requestAnimationFrame(lus);
+    weg.push(() => { actief = false; });
+    opV('loadeddata', () => { maat(); tekenNu(); });
+    opV('seeked', tekenNu);
+    const ro = new ResizeObserver(() => { maat(); tekenNu(); }); ro.observe(sec); weg.push(() => ro.disconnect());
+    document.fonts?.ready.then(() => { maat(); tekenNu(); });
+    maat();
+    sec.classList.add('b94-aan');
+
+    /* ── Wat we maken direct eronder: dicht zolang hij onder het scherm is, open zodra hij voor een vijfde in beeld komt ── */
+    let maken = sec.nextElementSibling as HTMLElement | null; while (maken && maken.tagName === 'SCRIPT') maken = maken.nextElementSibling as HTMLElement | null;
+    if (maken && maken.classList.contains('m8') && !minder && maken.getBoundingClientRect().top > window.innerHeight) {
+      maken.classList.remove('m8-open'); maken.classList.add('m8-dicht');
+      const mio = new IntersectionObserver(([e]) => { if (e.isIntersecting && maken) { maken.style.setProperty('--m8-begin', '0ms'); maken.classList.remove('m8-dicht'); maken.classList.add('m8-open'); mio.disconnect(); } }, { threshold: 0.2 });
+      mio.observe(maken); weg.push(() => mio.disconnect());
+    }
+    ruim = () => { weg.forEach((f) => f()); vid.pause(); html.classList.remove('b94-boven'); loopt = null; };
+    (window as any).__b94Stand = () => ({ src: vid.currentSrc, gl: !!gl, gepauzeerd: vid.paused, hand: handPauze, stap: hs, t: vid.currentTime, boven: html.classList.contains('b94-boven'), knopWit: wit });
+  }
+  start();
+  document.addEventListener('astro:page-load', start);
+</script>

@@ -47,7 +47,8 @@ ok('/knoppen.css wordt niet lang bewaard (no-cache, zoals admin.css)', /\/knoppe
 
 /* ── 3 · wat de laag vastlegt ── */
 ok('drie maten: 36, 44, 52', /--k-h: 44px/.test(css) && /--k-h: 36px/.test(css) && /--k-h: 52px/.test(css));
-ok('letter 13,5 · 15 · 16, DM Sans 600', /--k-l: 15px/.test(css) && /--k-l: 13\.5px/.test(css) && /--k-l: 16px/.test(css) && /font: 600 var\(--k-l\)/.test(css) && /'DM Sans'/.test(css));
+/* lijst 93 (B2 a): knoppen 15 en 13,5; de grote knop is alleen hoger (52), zijn letter 15 (was 16) */
+ok('letter 13,5 · 15 (ook groot), DM Sans 600', /--k-l: 15px/.test(css) && /--k-l: 13\.5px/.test(css) && !/--k-l: 16px/.test(css) && /font: 600 var\(--k-l\)/.test(css) && /'DM Sans'/.test(css));
 ok('icoon 15 · 18 · 20', /--k-ik: 18px/.test(css) && /--k-ik: 15px/.test(css) && /--k-ik: 20px/.test(css));
 ok('altijd een pil', /border-radius: 999px/.test(css));
 ok('focus 2 px blauw uur, 2 px buiten; op inkt blauw licht', /outline: 2px solid var\(--k-blauw\); outline-offset: 2px/.test(css) && /outline-color: var\(--k-blauw-licht\)/.test(css));

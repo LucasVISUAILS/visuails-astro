@@ -183,7 +183,7 @@
   /* Martian Mono is een brede letter; 12px in kapitalen leest hier als 14px in
      een gewone schreefloze. Kleiner dan 11,5px staat er nergens iets. */
   .s22 .mono, .s22 .etiket { font-family: var(--mono2); font-size: .75rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; line-height: 1.45; }
-  .s22 .mini { font-size: .72rem; }
+  .s22 .mini { font-size: var(--h-t-label); }
   .s22 .etiket { color: var(--inkt-2); }
   .s22 .kamer .etiket, .s22 .poster .etiket { color: rgb(244 245 247 / .66); }
   .s22 .lopend { max-width: 34em; text-wrap: pretty; color: var(--inkt-2); }
@@ -257,7 +257,7 @@
      `transparent` staat hier en niet bij .knop-lijn, want het is de bodem van de
      hele familie: wie een variant toevoegt zonder vulling hoort niet ineens een
      systeemgrijs te krijgen. De varianten hieronder winnen op volgorde. */
-  .s22 .knop { background: transparent; display: inline-flex; align-items: center; gap: .6em; min-height: 46px; padding: 0 1.5rem; border-radius: var(--hoek-knop); border: 1px solid currentColor; font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; transition: background-color .25s var(--uit), color .25s var(--uit), border-color .25s var(--uit); }
+  .s22 .knop { background: transparent; display: inline-flex; align-items: center; gap: .6em; min-height: 46px; padding: 0 1.5rem; border-radius: var(--hoek-knop); border: 1px solid currentColor; font-family: var(--mono2); font-size: var(--h-t-label); font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; transition: background-color .25s var(--uit), color .25s var(--uit), border-color .25s var(--uit); }
   /* ── OP EEN TELEFOON MAG EEN KNOP AFBREKEN — 17 september 2026 ──────────
      `white-space: nowrap` hierboven staat er zodat een knop van twee woorden
      niet na het eerste woord breekt. Op een breed scherm klopt dat. Op een
@@ -306,7 +306,7 @@
   .s22 .knop-wit:hover { background: var(--inkt); border-color: var(--inkt); color: var(--vel); }
   .s22 .knop-lijn { color: var(--inkt); }
   .s22 .knop-lijn:hover { background: var(--inkt); color: var(--vel); }
-  .s22 .pijl { display: inline-flex; align-items: center; gap: .5em; font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; }
+  .s22 .pijl { display: inline-flex; align-items: center; gap: .5em; font-family: var(--mono2); font-size: var(--h-t-label); font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; }
   .s22 .pijl::after { content: "→"; transition: transform .3s var(--uit); }
   .s22 .pijl:hover::after { }
   /* ── HET RAAKVLAK IS GROTER DAN DE LETTER — 7 september 2026 ──────────────
@@ -881,7 +881,7 @@
   }
   /* Naloop A2 (8 okt 2026): de ene uitlegregel onder de tegels ("Eén product
      kost …"), rustig zoals op /start (.st-ladder). */
-  .s22.thuis .kiezer .vp-eenproduct { margin: clamp(1.2rem, 2.4vw, 1.6rem) 0 0; max-width: 62rem; font-size: .92rem; line-height: 1.6; color: var(--inkt-2); text-wrap: pretty; }
+  .s22.thuis .kiezer .vp-eenproduct { margin: clamp(1.2rem, 2.4vw, 1.6rem) 0 0; max-width: 62rem; font-size: var(--h-t-klein); line-height: 1.6; color: var(--inkt-2); text-wrap: pretty; }
 
   /* De lookstrook loopt tot de rand van het paneel door; de kaart die half in
      beeld staat, is het teken dat er meer is. Zie Stijlstrook.astro. */
@@ -923,13 +923,13 @@
   .s22.thuis .dd-uitleg { display: grid; gap: .45rem; justify-items: start; align-content: start; }
   .s22.thuis .dd-nr { margin: 0; font-size: .75rem; letter-spacing: .06em; color: var(--inkt-3); }
   .s22.thuis .dd-woord { margin: 0; font-family: var(--kop2); font-weight: 500; font-stretch: 125%; text-transform: uppercase; font-size: clamp(1.25rem, 2.1vw, 1.7rem); line-height: 1.05; letter-spacing: -.01em; color: var(--inkt); text-wrap: balance; }
-  .s22.thuis .dd-zin { margin: 0; font-size: .97rem; line-height: 1.55; color: var(--inkt-2); max-width: 34ch; text-wrap: pretty; }
+  .s22.thuis .dd-zin { margin: 0; font-size: var(--h-t-klein); line-height: 1.55; color: var(--inkt-2); max-width: 34ch; text-wrap: pretty; }
   .s22.thuis .dd-uitleg .pijl { margin-top: .3rem; }
   /* 01 · de telefoonfoto: één vierkant op dezelfde hoogte als de beelden van 02. */
   .s22.thuis .dd-in { margin: 0; display: grid; gap: .55rem; justify-items: start; }
   .s22.thuis .dd-in :is(img, picture) { display: block; width: var(--dd-hoog); height: var(--dd-hoog); object-fit: cover; border-radius: calc(var(--ronding, 12px) - 4px); overflow: hidden; }
   .s22.thuis .dd-in picture img { width: 100%; height: 100%; object-fit: cover; }
-  .s22.thuis .dd-in figcaption, .s22.thuis .dd-vorm-maat { font-size: .74rem; letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-2); }
+  .s22.thuis .dd-in figcaption, .s22.thuis .dd-vorm-maat { font-size: var(--h-t-label); letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-2); }
   .s22.thuis .dd { --dd-hoog: clamp(10rem, 15vw, 13.5rem); }
   .s22.thuis .dd-uit { min-width: 0; width: 100%; max-width: 46rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: .9rem; }
   .s22.thuis .dd-balk { display: flex; align-items: center; gap: .8rem; border-bottom: 1px solid var(--lijn); }
@@ -939,7 +939,7 @@
     position: relative; display: grid; gap: .15rem; min-height: 44px; padding: .5rem 0 .75rem;
     color: var(--inkt-3); text-decoration: none; white-space: nowrap;
   }
-  .s22.thuis .dd-tab-naam { font-family: var(--kop2); font-weight: 600; font-stretch: 112%; font-size: 1rem; letter-spacing: .01em; text-transform: uppercase; }
+  .s22.thuis .dd-tab-naam { font-family: var(--kop2); font-weight: 600; font-stretch: 112%; font-size: var(--h-t-lopend); letter-spacing: .01em; text-transform: uppercase; }
   .s22.thuis .dd-tab-prijs { font-family: var(--mono2); font-size: .75rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; }
   .s22.thuis .dd-tab:hover { color: var(--inkt-2); }
   .s22.thuis .dd-tab.is-nu { color: var(--inkt); }
@@ -972,7 +972,7 @@
   .s22.thuis .dd-beeld picture img { display: block; width: 100%; height: 100%; object-fit: cover; }
   .s22.thuis .dd-dia-lifestyle .dd-beeld > * { aspect-ratio: 4 / 5; flex: 0 1 auto; }
   .s22.thuis .dd-dia-video .dd-beeld > * { aspect-ratio: 9 / 16; background: var(--s22-donker); }
-  .s22.thuis .dd-krijg { margin: 0; font-size: .95rem; line-height: 1.5; color: var(--inkt-2); }
+  .s22.thuis .dd-krijg { margin: 0; font-size: var(--h-t-klein); line-height: 1.5; color: var(--inkt-2); }
   .s22.thuis .dd-krijg .etiket { margin-right: .3rem; }
   .s22.thuis .dd-link { margin: 0; }
 
@@ -1000,8 +1000,8 @@
     /* Drie tabbladen en de pauzeknop passen op 390 px naast elkaar, mits de
        namen een maat kleiner zijn en de tussenruimte krapper. */
     .s22.thuis .dd-tabs { gap: .9rem; }
-    .s22.thuis .dd-tab-naam { font-size: .86rem; }
-    .s22.thuis .dd-tab-prijs { font-size: .72rem; }
+    .s22.thuis .dd-tab-naam { font-size: var(--h-t-fijn); }
+    .s22.thuis .dd-tab-prijs { font-size: var(--h-t-label); }
   }
   @media (prefers-reduced-motion: reduce) {
     .s22.thuis .dd.dd-auto .dd-tab.is-nu .dd-tab-loop { animation: none; transform: scaleX(1); }
@@ -1018,7 +1018,7 @@
   .s22.thuis .gz-foto { display: block; aspect-ratio: 4 / 5; overflow: hidden; border-radius: calc(var(--ronding, 12px) - 4px); background: var(--paper-2, #E6E7EA); }
   .s22.thuis .gz-foto img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s var(--uit); }
   .s22.thuis .gz-rij a:hover img { }
-  .s22.thuis .gz-rij .mono { font-size: .72rem; color: var(--inkt-2); }
+  .s22.thuis .gz-rij .mono { font-size: var(--h-t-label); color: var(--inkt-2); }
   @media (max-width: 900px) { .s22.thuis .gz { grid-template-columns: minmax(0, 1fr); } }
 
   /* ── 7 · EDITIONS ─────────────────────────────────────────────────────────
@@ -1052,7 +1052,7 @@
   }
   .s22.thuis .vw-lijst li:last-child { border-bottom: 1px solid var(--lijn); }
   .s22.thuis .vw-wie { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; text-transform: uppercase; font-size: clamp(1.05rem, 1.8vw, 1.4rem); line-height: 1.1; letter-spacing: -.01em; }
-  .s22.thuis .vw-wat { margin: 0; font-size: .98rem; }
+  .s22.thuis .vw-wat { margin: 0; font-size: var(--h-t-klein); }
   .s22.thuis .vw-link { justify-self: end; }
   @media (max-width: 900px) {
     .s22.thuis .vw-lijst li { grid-template-columns: minmax(0, 1fr); gap: .5rem; }
@@ -1460,7 +1460,7 @@
     display: flex; align-items: center; gap: 1rem;
   }
   .s22 .hero.hero-split .hero-links .koppen { flex: 0 0 auto; }
-  .s22 .hero.hero-split .hero-zin { margin: 0; font-size: 1rem; line-height: 1.5; }
+  .s22 .hero.hero-split .hero-zin { margin: 0; font-size: var(--h-t-lopend); line-height: 1.5; }
   .s22 .hero.hero-split .hero-links::before { content: none; }
   .s22 .hero.hero-split .hero-beeld { grid-column: 2; min-width: 0; }
 
@@ -1499,7 +1499,7 @@
   /* Op een telefoon dezelfde as, alleen krijgen de knoppen de volle breedte
      (de siteregel voor .acties onder 700) en staat de zin iets kleiner. */
   @media (max-width: 700px) {
-    .s22 .hero.hero-split.hero-stapel .hero-zin { font-size: 1rem; max-width: 42ch; }
+    .s22 .hero.hero-split.hero-stapel .hero-zin { font-size: var(--h-t-lopend); max-width: 42ch; }
     .s22 .hero.hero-split.hero-stapel .hero-acties { width: 100%; }
     /* Een knop die de volle breedte krijgt, houdt zijn label links — `.knop` is
        een inline-flex zonder justify-content, en dat valt pas op als hij van
@@ -1553,12 +1553,12 @@
   .s22 .koppen { display: flex; }
   .s22 .koppen li + li { margin-left: -12px; }
   .s22 .koppen img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid var(--wit); }
-  .s22 .hero-zin { font-size: .92rem; color: var(--inkt-2); }
+  .s22 .hero-zin { font-size: var(--h-t-klein); color: var(--inkt-2); }
 
   .s22 .hero-clip { position: absolute; z-index: 2; right: clamp(1.25rem, 5vw, 4rem); bottom: clamp(3rem, 8vw, 6rem); width: min(32%, 260px); aspect-ratio: 16 / 10; border-radius: calc(var(--ronding) - 12px); overflow: hidden; background: var(--inkt); display: grid; place-items: center; }
   .s22 .hero-clip img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .62; }
-  .s22 .hero-clip .rond { position: relative; width: 40px; height: 40px; font-size: .72rem; }
-  .s22 .hero-clip .mono { position: absolute; left: .85rem; bottom: .75rem; font-size: .72rem; color: var(--vel); }
+  .s22 .hero-clip .rond { position: relative; width: 40px; height: 40px; font-size: var(--h-t-label); }
+  .s22 .hero-clip .mono { position: absolute; left: .85rem; bottom: .75rem; font-size: var(--h-t-label); color: var(--vel); }
 
   /* Geen tussenruimte en geen bovenhoeken: de maatlijn is de voortzetting van
      het witte vlak waar de hero in oplost. Zie de noot bij .hero. */
@@ -1573,7 +1573,7 @@
      strook is geen kaart maar de voet van de opening — hij hoort bij de grond en
      draagt er dus dezelfde kleur. */
   .s22 .maatlijn { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: clamp(.6rem, 2vw, 1.5rem); margin: 0; padding: clamp(.9rem, 2vw, 1.4rem) clamp(1.25rem, 5vw, 4rem) clamp(1.3rem, 2.6vw, 1.9rem); border-radius: 0 0 var(--ronding) var(--ronding); background: var(--vel); color: var(--inkt); }
-  .s22 .maatlijn li { display: grid; gap: .3rem; padding-left: 1rem; border-left: 1px solid var(--lijn); font-size: .82rem; color: var(--inkt-2); }
+  .s22 .maatlijn li { display: grid; gap: .3rem; padding-left: 1rem; border-left: 1px solid var(--lijn); font-size: var(--h-t-fijn); color: var(--inkt-2); }
   .s22 .maatlijn li:first-child { border-left: 0; padding-left: 0; }
   .s22 .maatlijn .nr { color: var(--inkt-2); }
 
@@ -1631,13 +1631,13 @@
      kopie, want dat is een vastgelegd concept en geen levende pagina. */
   .s22 .kaart-pil { position: absolute; z-index: 1; inset-inline: .6rem; bottom: .6rem; display: flex; align-items: center; justify-content: space-between; gap: .6rem; background: var(--wit); color: var(--inkt); border-radius: 999px; padding: .45rem .45rem .45rem 1rem; }
   .s22 .kaart-tekst { display: grid; min-width: 0; }
-  .s22 .kaart-tekst b { font-weight: 500; font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .s22 .kaart-tekst .mono { font-size: .72rem; color: var(--inkt-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .s22 .kaart-tekst b { font-weight: 500; font-size: var(--h-t-fijn); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .s22 .kaart-tekst .mono { font-size: var(--h-t-label); color: var(--inkt-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* De pijl in de cirkel is WIT en niet zwart sinds 20 september: zwart op
      violet is 2,93:1 en staat in KLEURENSCHEMA.md bij de afgekeurde paren. */
-  .s22 .rond { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 50%; background: var(--geel); color: var(--op-geel); display: grid; place-items: center; font-size: .9rem; transition: transform .3s var(--uit); }
+  .s22 .rond { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 50%; background: var(--geel); color: var(--op-geel); display: grid; place-items: center; font-size: var(--h-t-klein); transition: transform .3s var(--uit); }
   .s22 .kaart:hover .rond { }
-  .s22 .kaart-wat { font-size: .95rem; color: var(--inkt-2); }
+  .s22 .kaart-wat { font-size: var(--h-t-klein); color: var(--inkt-2); }
 
   /* ── DE VIERDE TEGEL: EEN DEUR ─────────────────────────────────────────────
      10 september 2026. Zie de noot in Voorpagina.astro voor waarom hij geen
@@ -1666,7 +1666,7 @@
      niet op om het te vullen: ze zeggen wat er achter de tegel zit, wat precies
      de vraag is die "bekijk alle diensten" oproept. */
   .s22 .deur-lijst { display: grid; margin-top: .3rem; }
-  .s22 .deur-item { font-size: .92rem; line-height: 1; padding: .55rem 0; color: rgb(244 245 247 / .78); border-top: 1px solid rgb(244 245 247 / .16); }
+  .s22 .deur-item { font-size: var(--h-t-klein); line-height: 1; padding: .55rem 0; color: rgb(244 245 247 / .78); border-top: 1px solid rgb(244 245 247 / .16); }
   .s22 .deur-item:first-child { border-top: 0; padding-top: .1rem; }
   /* De pil op deze tegel is wit op zwart; de cirkel daarin doet gewoon mee met
      de andere tegels — violet met een witte pijl. De omkering die hier stond
@@ -1718,7 +1718,7 @@
   .s22 .werk img { width: auto; max-width: 100%; max-height: 62svh; border-radius: calc(var(--ronding) - 10px); }
   .s22 .werk figcaption { margin-top: .8rem; }
   .s22 .draad { display: grid; gap: .9rem; padding-inline: clamp(.5rem, 2vw, 1.5rem); border-left: 1px solid var(--geel); }
-  .s22 .draad li { display: flex; align-items: baseline; gap: .6rem; font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; }
+  .s22 .draad li { display: flex; align-items: baseline; gap: .6rem; font-family: var(--mono2); font-size: var(--h-t-label); font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; }
   .s22 .draad b { color: var(--geel-letter); }
 
   /* ── DE STAPPEN ───────────────────────────────────────────────────────────*/
@@ -1732,10 +1732,10 @@
      horen — gemeten op alle drie de breedtes. Een kop die zijn eigen inhoud
      bijna raakt leest niet als kop maar als eerste regel. */
   .s22 .groepen { display: grid; grid-template-columns: var(--a) var(--b); gap: clamp(.5rem, 1.2vw, .9rem); margin-bottom: clamp(1rem, 2vw, 1.4rem); }
-  .s22 .groep { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; padding-bottom: .55rem; border-bottom: 1px solid var(--inkt); }
+  .s22 .groep { font-family: var(--mono2); font-size: var(--h-t-label); font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; padding-bottom: .55rem; border-bottom: 1px solid var(--inkt); }
   .s22 .rij { display: grid; grid-template-columns: repeat(7, 1fr); gap: clamp(.5rem, 1.2vw, .9rem); }
   .s22 .rij li { display: grid; gap: .55rem; }
-  .s22 .rij .mono { font-size: .72rem; color: var(--inkt-2); }
+  .s22 .rij .mono { font-size: var(--h-t-label); color: var(--inkt-2); }
   .s22 .kaart-stil { aspect-ratio: 4 / 5; }
 
   /* ── HET OPENINGSBEELD VAN EEN DIENSTPAGINA IS LIGGEND — 8 september 2026 ──
@@ -1779,7 +1779,7 @@
   .s22 .extras { display: grid; gap: .7rem; margin-top: clamp(2rem, 4vw, 3rem); }
   .s22 .set-extras-kop + .extras { margin-top: 0; }
   .s22 .extras li { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem 1.2rem; padding-top: .8rem; border-top: 1px solid var(--lijn); }
-  .s22 .extras span { font-size: .95rem; color: var(--inkt-2); }
+  .s22 .extras span { font-size: var(--h-t-klein); color: var(--inkt-2); }
 
   /* ── TARIEVEN ─────────────────────────────────────────────────────────────*/
   .s22 .tabellen { display: grid; gap: clamp(2.5rem, 6vw, 4.5rem); }
@@ -1793,12 +1793,12 @@
   .s22 .lijst tbody th { font-weight: 400; }
   .s22 .lijst tbody th a { text-decoration: underline; text-underline-offset: .2em; text-decoration-color: var(--lijn-sterk); }
   .s22 .tarief { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(.95rem, 1.5vw, 1.15rem); font-variant-numeric: tabular-nums; }
-  .s22 .abo-regel { display: block; font-size: .82rem; color: var(--inkt-2); }
+  .s22 .abo-regel { display: block; font-size: var(--h-t-fijn); color: var(--inkt-2); }
   /* De tariefstrip op de voorpagina (19 september 2026): drie vanaf-prijzen op
      een rij, één regel voor het abonnement. De tabellen staan op /pricing. */
   .s22 .tarief-strip { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(1rem, 2.4vw, 2rem); }
   .s22 .tarief-strip li { display: grid; gap: .35rem; padding: 1.1rem 0 1.2rem; border-top: 1px solid var(--lijn); }
-  .s22 .tarief-soort { font-size: .95rem; color: var(--inkt); text-decoration: none; }
+  .s22 .tarief-soort { font-size: var(--h-t-klein); color: var(--inkt); text-decoration: none; }
   .s22 a.tarief-soort { text-decoration: underline; text-underline-offset: .2em; text-decoration-color: var(--lijn-sterk); }
   .s22 .tarief-van { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: .45rem; }
   .s22 .tarief-van .tarief { font-size: clamp(1.6rem, 2.6vw, 2.2rem); }
@@ -1828,7 +1828,7 @@
   .s22 .beloften b { font-weight: 500; }
   .s22 .cast { display: grid; grid-template-columns: repeat(10, 1fr); gap: clamp(.4rem, 1vw, .8rem); margin-bottom: clamp(2rem, 4vw, 3rem); }
   .s22 .cast a { display: grid; gap: .5rem; }
-  .s22 .cast .mono { font-size: .72rem; color: var(--inkt-2); }
+  .s22 .cast .mono { font-size: var(--h-t-label); color: var(--inkt-2); }
   .s22 .vragen li { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .6rem 1.5rem; padding: clamp(.9rem, 2vw, 1.35rem) 0; border-top: 1px solid var(--lijn); }
   .s22 .vragen li span:first-child { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 2vw, 1.5rem); text-transform: uppercase; letter-spacing: -.01em; }
 
@@ -1912,7 +1912,7 @@
      is een keuze en geen veldkop: lopende letter, gewoon gewicht. Zie
      `.pl-voorrang` in OrderFlow.astro (19 september 2026). */
   .s22.s22 .field > label.pl-voorrang-rij {
-    font-family: var(--tekst2); font-size: .98rem; font-stretch: 100%;
+    font-family: var(--tekst2); font-size: var(--h-t-klein); font-stretch: 100%;
     letter-spacing: 0; text-transform: none; font-weight: 400;
   }
   /* ── HET STERRETJE WAS 2,13:1 — 20 september 2026 ───────────────────────
@@ -1926,14 +1926,14 @@
      is — het hoort dus gewoon leesbaar te zijn. Vet in de inktkleur valt even
      goed op en is 15:1. */
   .s22.s22 .req { color: var(--inkt); font-weight: 700; }
-  .s22.s22 .hint { font-size: .8rem; color: var(--inkt-2); }
+  .s22.s22 .hint { font-size: var(--h-t-fijn); color: var(--inkt-2); }
   /* `background-color` en niet `background`. De verkorte vorm wist
      background-image, en dat is precies waar het pijltje van een <select> in
      zit — dezelfde val die global.css twee keer eerder heeft opgelopen en
      waarvan de noot daar zegt dat de lege 2,4rem eruitzag als opzet. */
   .s22.s22 :where(.input, .textarea, .select) {
     background-color: var(--wit); border: 1px solid var(--lijn-sterk); border-radius: 999px;
-    color: var(--inkt); font-family: var(--tekst2); font-size: .95rem; padding: .8rem 1rem;
+    color: var(--inkt); font-family: var(--tekst2); font-size: var(--h-t-klein); padding: .8rem 1rem;
   }
   .s22.s22 .select { padding-right: 2.4rem; }
   /* ── 16 PX OP EEN TELEFOON — 1 oktober 2026 ───────────────────────────────
@@ -1941,7 +1941,7 @@
      erin tikt, en zoomt daarna niet terug. Het contactformulier stond op
      15,2 px (.95rem). Gevonden met de Web Interface Guidelines van Vercel. */
   @media (max-width: 760px), (pointer: coarse) {
-    .s22.s22 :where(.input, .textarea, .select) { font-size: 16px; }
+    .s22.s22 :where(.input, .textarea, .select) { font-size: var(--h-t-lopend); }
   }
   .s22.s22 .opt-title, .s22.s22 .opt-desc { font-family: var(--tekst2); text-transform: none; letter-spacing: normal; }
   .s22.s22 :where(.input, .textarea)::placeholder { color: var(--inkt-3); }
@@ -1960,7 +1960,7 @@
   .s22.s22 .opt:has(input:checked) { border-color: var(--kies, var(--inkt)); background: var(--surface); box-shadow: inset 0 0 0 1px var(--kies, var(--inkt)); }
   .s22.s22 .opt input { accent-color: var(--accent); }
   .s22.s22 .opt .opt-title { color: var(--inkt); font-weight: 600; }
-  .s22.s22 .opt .opt-desc { color: var(--inkt-2); font-size: .82rem; }
+  .s22.s22 .opt .opt-desc { color: var(--inkt-2); font-size: var(--h-t-fijn); }
 
   /* ── GEEN PILLEN MEER, WANT HET ZIJN GEEN KNOPPEN — 1 oktober 2026 ────────
      Vier omkaderde pillen onderaan de voorpagina lazen als vier knoppen. Een
@@ -1968,7 +1968,7 @@
      "De vorm"); dit zijn feiten. Dezelfde vorm als .feiten hieronder, op één
      rij en in de lichte inkt van de donkere grond. */
   .s22 .trustlijn { display: flex; flex-wrap: wrap; gap: .5rem 1.8rem; padding: clamp(2rem, 4vw, 3rem) var(--x) 0; }
-  .s22 .trustlijn li { position: relative; padding-left: 1.4rem; font-size: .9rem; line-height: 1.5; color: rgb(244 245 247 / .72); }
+  .s22 .trustlijn li { position: relative; padding-left: 1.4rem; font-size: var(--h-t-klein); line-height: 1.5; color: rgb(244 245 247 / .72); }
   .s22 .trustlijn li::before { content: ""; position: absolute; left: .15rem; top: .4em; width: .58rem; height: .3rem; border-left: 1.75px solid currentColor; border-bottom: 1.75px solid currentColor; transform: rotate(-45deg); }
   /* De regel met een deur (de naam → /about): onderstreept, en 24 px hoog om
      op te tikken zonder dat de rij hoger wordt. */
@@ -1986,7 +1986,7 @@
   .feiten { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; gap: .45rem; }
   .feiten > li {
     position: relative; padding: 0 0 0 1.55rem; border: 0; border-radius: 0; background: none;
-    font-family: var(--tekst2, var(--font-body)); font-size: .95rem; font-stretch: 100%; line-height: 1.5;
+    font-family: var(--tekst2, var(--font-body)); font-size: var(--h-t-klein); font-stretch: 100%; line-height: 1.5;
     letter-spacing: normal; text-transform: none; color: var(--inkt-2, var(--ink-2));
   }
   .feiten > li::before {
@@ -2080,7 +2080,7 @@
     .s22 .rij, .s22 .cast { display: flex; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: .6rem; }
     .s22 .rij li, .s22 .cast li { flex: 0 0 42%; scroll-snap-align: start; }
     .s22 .cast li { flex-basis: 30%; }
-    .s22 .lijst th, .s22 .lijst td { padding: .6rem .35rem; font-size: .88rem; }
+    .s22 .lijst th, .s22 .lijst td { padding: .6rem .35rem; font-size: var(--h-t-fijn); }
     .s22 .abo-regel { display: none; }
   }
   @media (max-width: 560px) {
@@ -2304,7 +2304,7 @@ body:has(.s22) .site-header .brand-glyph { --mk-line-ink: currentColor; }
 }
 /* Zelfde reden, één laag dieper: een lang label ("per product · excl. btw")
    mag zijn eigen kolom niet oprekken. */
-.s22.s22 .trust-item { display: grid; gap: .15rem; align-content: start; font-size: .92rem; color: var(--inkt-2); min-width: 0; }
+.s22.s22 .trust-item { display: grid; gap: .15rem; align-content: start; font-size: var(--h-t-klein); color: var(--inkt-2); min-width: 0; }
 .s22.s22 .trust-item strong { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: 1.05rem; color: var(--inkt); }
 .s22.s22 .trust-label { font-family: var(--mono2); font-size: .75rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-2); }
 
@@ -2325,14 +2325,14 @@ body:has(.s22) .site-header .brand-glyph { --mk-line-ink: currentColor; }
 
    Één ding blijft wél staan: de omkering in een donkere kamer. Zonder die
    regel is dit inkt op inkt (gemeten op /plans, 7 september, 1,0:1). */
-.s22.s22 .svcsw { gap: .35rem .9rem; font-size: .8rem; }
+.s22.s22 .svcsw { gap: .35rem .9rem; font-size: var(--h-t-fijn); }
 .s22.s22 .svcsw-k {
-  font-family: var(--mono2); font-size: .72rem; font-stretch: 82%;
+  font-family: var(--mono2); font-size: var(--h-t-label); font-stretch: 82%;
   letter-spacing: .05em; text-transform: uppercase; color: var(--inkt-3);
 }
 .s22.s22 .svcsw-a {
   display: inline; padding: .3rem 0; border: 0; border-radius: 0;
-  font-family: var(--tekst2); font-size: .88rem; letter-spacing: 0; text-transform: none;
+  font-family: var(--tekst2); font-size: var(--h-t-fijn); letter-spacing: 0; text-transform: none;
   color: var(--inkt-2);
   text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 3px;
   transition: color .25s var(--uit), text-decoration-color .25s var(--uit);
@@ -2350,7 +2350,7 @@ body:has(.s22) .site-header .brand-glyph { --mk-line-ink: currentColor; }
 
 /* De schuifvergelijking: ronde hoeken en de greep in het accent. */
 .s22.s22 .cmp { border-radius: calc(var(--ronding) - 8px); overflow: hidden; }
-.s22.s22 .cmp-tag { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; border-radius: 999px; }
+.s22.s22 .cmp-tag { font-family: var(--mono2); font-size: var(--h-t-label); font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; border-radius: 999px; }
 /* VOOR / NA: licht op donker, altijd — 23 september 2026. De pil nam `--scrim` (donker) met
    `--ink` (ook donker) over en was onleesbaar (Lucas' schermafdruk). Het label ligt op een
    foto, dus hangt het niet aan het thema maar aan zichzelf: bijna zwart, met vel erop. */
@@ -2373,11 +2373,11 @@ body:has(.s22) .site-header .brand-glyph { --mk-line-ink: currentColor; }
    van de tabel, want dat zijn koppen. */
 .s22.s22 :is(.tierc-head h2, .tierc-kolkop) { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; text-transform: uppercase; letter-spacing: -.01em; }
 .s22.s22 .tierc-l, .s22.s22 .tierc-beide { font-family: var(--mono2); font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-3); }
-.s22.s22 .tierc-l { font-size: .72rem; }
+.s22.s22 .tierc-l { font-size: var(--h-t-label); }
 /* Gestapeld op een telefoon is het rijlabel de kop van het blokje en niet meer
    de rand van een tabel; zie de media query in TierCompare.astro. */
-@media (max-width: 760px) { .s22.s22 .tierc-l { font-size: .82rem; color: var(--inkt); } }
-.s22.s22 .tierc-kolnaam { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-3); }
+@media (max-width: 760px) { .s22.s22 .tierc-l { font-size: var(--h-t-fijn); color: var(--inkt); } }
+.s22.s22 .tierc-kolnaam { font-family: var(--mono2); font-size: var(--h-t-label); font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-3); }
 
 /* De stijlenrijen: kaarten met dezelfde ronding als elders, labels in mono. */
 .s22.s22 .sr img { border-radius: calc(var(--ronding) - 10px); }
@@ -2390,7 +2390,7 @@ body:has(.s22) .site-header .brand-glyph { --mk-line-ink: currentColor; }
 .s22.s22 .sr-k-vak { border-radius: calc(var(--ronding) - 10px); }
 .s22.s22 .sr-k-vak img { border-radius: 0; }
 .s22.s22 .sr-alt-h { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; text-transform: uppercase; letter-spacing: -.01em; }
-.s22.s22 .sr-alt-sub { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-2); }
+.s22.s22 .sr-alt-sub { font-family: var(--mono2); font-size: var(--h-t-label); font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-2); }
 /* ── "PAST BIJ" IS GEEN ETIKET MAAR EEN OPSOMMING — 8 september 2026 ────────
    .sr-best stond in dezelfde regel als .sr-alt-sub en kreeg dus dezelfde
    behandeling: mono, 11,52px, in kapitalen, met letterafstand. Dat werkt voor
@@ -2403,13 +2403,13 @@ body:has(.s22) .site-header .brand-glyph { --mk-line-ink: currentColor; }
    is dat de prijs waard, voor een zin niet.
    Het ETIKET blijft mono — dat is één woordgroep en die hoort als kopje te
    lezen. De opsomming erachter krijgt de leesletter. */
-.s22.s22 .sr-best { font-family: var(--tekst2); font-size: .84rem; font-stretch: normal; letter-spacing: normal; text-transform: none; line-height: 1.55; color: var(--inkt-2); }
-.s22.s22 .sr-best-l { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-3); margin-right: .4rem; }
+.s22.s22 .sr-best { font-family: var(--tekst2); font-size: var(--h-t-fijn); font-stretch: normal; letter-spacing: normal; text-transform: none; line-height: 1.55; color: var(--inkt-2); }
+.s22.s22 .sr-best-l { font-family: var(--mono2); font-size: var(--h-t-label); font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-3); margin-right: .4rem; }
 
 /* Knoppen die uit de oude opmaak komen en binnen deze stijl staan, krijgen de
    pil van deze stijl — anders staat er een hoekige knop tussen ronde. */
-.s22.s22 .btn { border-radius: var(--hoek-knop); font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; min-height: 46px; }
-.s22.s22 .link-arrow { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; }
+.s22.s22 .btn { border-radius: var(--hoek-knop); font-family: var(--mono2); font-size: var(--h-t-label); font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; min-height: 46px; }
+.s22.s22 .link-arrow { font-family: var(--mono2); font-size: var(--h-t-label); font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; }
 
 /* De kleine labels van StyleRows stonden op 9,3 tot 10,9px. Binnen deze stijl
    staat niets onder 11,5px — zie de meting van 7 september. */
@@ -2419,7 +2419,7 @@ body:has(.s22) .site-header .brand-glyph { --mk-line-ink: currentColor; }
   font-stretch: 82%;
   letter-spacing: .04em;
 }
-.s22.s22 .sr-etiket { font-size: .72rem; }
+.s22.s22 .sr-etiket { font-size: var(--h-t-label); }
 
 /* ── HET CONTACTBLAD VAN DE LOOKS — 10 september 2026 ───────────────────────
    De vier looks staan sinds vandaag in een raster in plaats van in rijen (zie
@@ -2428,7 +2428,7 @@ body:has(.s22) .site-header .brand-glyph { --mk-line-ink: currentColor; }
    van een look zonder foto staat in mono — het is een etiket ("foto volgt") en
    geen tekst om te lezen. */
 .s22.s22 .sr-t-h { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; text-transform: uppercase; letter-spacing: -.01em; }
-.s22.s22 .sr-t-leeg { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; color: var(--inkt-3); }
+.s22.s22 .sr-t-leeg { font-family: var(--mono2); font-size: var(--h-t-label); font-stretch: 82%; letter-spacing: .04em; color: var(--inkt-3); }
 /* Het beeld in een tegel houdt de ronding van deze stijl; de haarlijn eronder
    is de tint van de look en blijft recht. */
 .s22.s22 .sr-t-beeld { border-radius: calc(var(--ronding) - 10px); }

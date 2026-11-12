@@ -18,7 +18,7 @@
 }
 .m8-kopgroep { text-align: center; display: flex; flex-direction: column; align-items: center; }
 .m8 .m8-kop.h-kop { margin: 0; font: 700 clamp(32px, 4.44vw, 64px)/.92 var(--h-kopletter); letter-spacing: -.01em; text-transform: uppercase; color: var(--h-inkt); text-wrap: balance; }
-.m8 .m8-zin { --h-maat: 26em; margin: 18px 0 0; max-width: 26em; font: 370 clamp(16px, 1.25vw, 18px)/1.5 var(--h-letter); color: var(--h-grijs, #636974); text-wrap: pretty; }
+.m8 .m8-zin { --h-maat: 26em; margin: 18px 0 0; max-width: 26em; font: 370 clamp(17px, 1.32vw, 19px)/1.5 var(--h-letter); color: var(--h-grijs, #636974); text-wrap: pretty; }
 
 /* .m8 ervoor (levering 88): .h-pagina ul zette de 64 px op 0, en dan raakte de broek de zin erboven */
 .m8 .m8-rij { margin: 64px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
@@ -29,7 +29,7 @@
 .m8-beeld > picture { display: contents; }
 .m8-beeld img { display: block; height: calc(var(--m8-h) * var(--s, 1)); width: auto; max-width: 100%; object-fit: contain; object-position: 50% 100%; }
 .m8 .m8-naam { margin-top: 26px; display: inline-flex; align-items: center; gap: 8px; font: 450 20px/1.2 var(--h-letter); color: var(--h-inkt); }
-.m8-pijl { display: inline-flex; font-size: 16px; }
+.m8-pijl { display: inline-flex; font-size: var(--h-t-lopend); }
 .m8 .m8-pijl .ik-a { transition: translate .26s cubic-bezier(.22, .8, .2, 1); }
 /* knoppensysteem (lijst 89): de pijl schuift in één stuk 2,5 px naar voren, zoals in elke knop (schacht en kop gingen uit elkaar) */
 .m8-pijl svg { width: 1em; height: 1em; }
@@ -40,21 +40,21 @@
 
 /* wat er verder is: één regel, klein, met de schuine streep ertussen */
 .m8 .m8-ook { --h-maat: none; margin: 36px auto 0; max-width: none; display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 6px 0; font: 370 15px/1.5 var(--h-letter); color: var(--h-grijs, #636974); }
-.m8-ook-kop { margin-right: 14px; font: 500 11.5px/1 var(--h-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--h-grijs, #636974); }
+.m8-ook-kop { margin-right: 14px; font: 600 var(--h-t-label)/1 var(--h-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--h-grijs, #636974); }
 .m8 .m8-ook a { color: var(--h-inkt); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, var(--h-inkt) 32%, transparent); }
 .m8 .m8-ook a:hover { color: var(--h-blauw, #25508B); text-decoration-color: currentColor; }
 /* wat één product kost: één regel eronder, nog kleiner (13 px, grijs 5,3 : 1) */
-.m8 .m8-regel.h-onderregel { --h-maat: none; display: block; margin: 10px auto 0; max-width: none; text-align: center; font: 370 13px/1.5 var(--h-letter); color: var(--h-grijs, #636974); }
+.m8 .m8-regel.h-onderregel { --h-maat: none; display: block; margin: 10px auto 0; max-width: none; text-align: center; font: 370 var(--h-t-fijn)/1.5 var(--h-letter); color: var(--h-grijs, #636974); }
 .m8 .m8-ook a + a::before { content: ""; display: inline-block; vertical-align: -1px; width: 1.5px; height: 12px; margin: 0 12px; background: var(--h-grijs, #636974); opacity: .55; transform: skewX(-37deg); }
 
 @media (max-width: 700px) {
   .m8.m8 { --m8-h: clamp(110px, 30vw, 160px); }
   .m8 .m8-rij { gap: 12px; margin-top: 36px; }
   .m8 .m8-naam { margin-top: 16px; font-size: 15px; gap: 5px; }
-  .m8-pijl { font-size: 13px; }
-  .m8 .m8-prijs { font-size: 12.5px; }
-  .m8 .m8-ook { margin-top: 32px; font-size: 14px; }
-  .m8 .m8-regel.h-onderregel { max-width: 30ch; font-size: 12.5px; text-wrap: balance; }
+  .m8-pijl { font-size: var(--h-t-fijn); }
+  .m8 .m8-prijs { font-size: var(--h-t-label); }
+  .m8 .m8-ook { margin-top: 32px; font-size: var(--h-t-fijn); }
+  .m8 .m8-regel.h-onderregel { max-width: 30ch; font-size: var(--h-t-label); text-wrap: balance; }
   .m8-ook-kop { flex-basis: 100%; margin: 0 0 6px; text-align: center; }
 }
 

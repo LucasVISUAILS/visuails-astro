@@ -525,7 +525,7 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
 
   .bm-price-hero { margin-top: 1.4rem; display: flex; align-items: baseline; gap: .5rem; }
   .bm-price-hero strong { font-size: clamp(1.6rem, 3vw, 2.1rem); color: var(--ink); letter-spacing: -.01em; }
-  .bm-price-hero span { font-size: .82rem; color: var(--ink-3); }
+  .bm-price-hero span { font-size: var(--h-t-fijn); color: var(--ink-3); }
 
   /* ── DE DRIE GEZICHTEN BIJ HET BEDRAG ───────────────────────────────────
      Vlak onder de prijs en niet ergens verderop: het bedrag en het bewijs
@@ -539,7 +539,7 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
   .bm-bewijs { margin: 1.6rem 0 0; display: grid; gap: .5rem; justify-items: start; }
   .bm-bewijs-h {
     font-family: var(--font-mono);
-    font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3);
+    font-size: var(--h-t-label); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3);
   }
   .bm-bewijs-rij {
     display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
@@ -550,7 +550,7 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
     display: block; border: 1px solid var(--line); border-radius: var(--r-klein);
     background: var(--ghost);
   }
-  .bm-bewijs-noot { margin: 0; max-width: 30rem; font-size: .84rem; line-height: 1.5; color: var(--ink-2); }
+  .bm-bewijs-noot { margin: 0; max-width: 30rem; font-size: var(--h-t-fijn); line-height: 1.5; color: var(--ink-2); }
 
   /* ── DE STAPPENBALK ──────────────────────────────────────────────────────
      Alleen zichtbaar als het script draait: zonder script is er geen stap om
@@ -561,11 +561,11 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
     display: flex; flex-wrap: wrap; gap: .3rem 1.1rem;
     list-style: none; padding: 0; margin: 0 0 1.6rem;
   }
-  .bm-rail-item { display: inline-flex; align-items: center; gap: .45rem; font-size: .82rem; color: var(--ink-3); }
+  .bm-rail-item { display: inline-flex; align-items: center; gap: .45rem; font-size: var(--h-t-fijn); color: var(--ink-3); }
   .bm-rail-n {
     display: inline-grid; place-items: center;
     width: 1.35rem; height: 1.35rem; border-radius: 50%;
-    border: 1px solid var(--line-strong); font-size: .72rem; line-height: 1;
+    border: 1px solid var(--line-strong); font-size: var(--h-t-label); line-height: 1;
   }
   .bm-rail-item[aria-current='step'] { color: var(--ink); }
   .bm-rail-item[aria-current='step'] .bm-rail-n { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
@@ -602,12 +602,12 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
   .bm-track:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
   .bm-track input { accent-color: var(--accent); width: 16px; height: 16px; flex: none; margin-top: .18rem; }
   .bm-track-body { display: flex; flex-direction: column; gap: .3rem; }
-  .bm-track-h { font-weight: 700; color: var(--ink); font-size: .98rem; }
-  .bm-track-p { color: var(--ink-2); font-size: .86rem; line-height: 1.55; }
-  .bm-same { margin-top: 1rem; font-size: .84rem; color: var(--ink-2); line-height: 1.6; max-width: 62ch; }
+  .bm-track-h { font-weight: 700; color: var(--ink); font-size: var(--h-t-klein); }
+  .bm-track-p { color: var(--ink-2); font-size: var(--h-t-fijn); line-height: 1.55; }
+  .bm-same { margin-top: 1rem; font-size: var(--h-t-fijn); color: var(--ink-2); line-height: 1.6; max-width: 62ch; }
 
   .bm-set { border: 0; padding: 0; margin: 1.6rem 0 0; min-width: 0; }
-  .bm-legend { font-size: .92rem; font-weight: 700; color: var(--ink); padding: 0; margin-bottom: .6rem; }
+  .bm-legend { font-size: var(--h-t-klein); font-weight: 700; color: var(--ink); padding: 0; margin-bottom: .6rem; }
 
   /* Chips rather than a <select>: every option here is one or two words, and a
      row of them is readable in a glance where a dropdown hides nine of the ten.
@@ -620,7 +620,7 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
     border: 1px solid var(--line-strong);
     border-radius: 999px;
     background: var(--surface);
-    font-size: .88rem; color: var(--ink);
+    font-size: var(--h-t-klein); color: var(--ink);
     cursor: pointer;
     transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
   }
@@ -629,12 +629,12 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
   .bm-chip:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
   .bm-chip input { accent-color: var(--accent); width: 15px; height: 15px; flex: none; }
 
-  .bm-hint { font-size: .8rem; color: var(--ink-3); line-height: 1.55; max-width: 62ch; margin: .15rem 0 .45rem; display: block; }
+  .bm-hint { font-size: var(--h-t-fijn); color: var(--ink-3); line-height: 1.55; max-width: 62ch; margin: .15rem 0 .45rem; display: block; }
   .bm-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 0 1rem; }
   .req { color: var(--accent-bright); }
-  .bm-opt { font-size: .74rem; color: var(--ink-3); font-weight: 400; letter-spacing: .02em; }
+  .bm-opt { font-size: var(--h-t-label); color: var(--ink-3); font-weight: 400; letter-spacing: .02em; }
 
-  .bm-check { display: flex; gap: .55rem; align-items: flex-start; margin-top: .6rem; font-size: .84rem; color: var(--ink-2); line-height: 1.55; cursor: pointer; }
+  .bm-check { display: flex; gap: .55rem; align-items: flex-start; margin-top: .6rem; font-size: var(--h-t-fijn); color: var(--ink-2); line-height: 1.55; cursor: pointer; }
   .bm-check input { accent-color: var(--accent); width: 15px; height: 15px; flex: none; margin-top: .18rem; }
   .field:has(.bm-check input:checked) input[data-bm-vat] { opacity: .45; }
   /* 8.06: de verleggingszin als eerste regel in het zakelijk-vinkje (EU met btw-nummer). */
@@ -648,12 +648,12 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
   }
   .bm-total-l { font-weight: 700; color: var(--ink); }
   .bm-total-a { font-weight: 700; color: var(--ink); font-size: 1.15rem; text-align: right; }
-  .bm-total-v { grid-column: 1 / -1; font-size: .78rem; color: var(--ink-3); }
+  .bm-total-v { grid-column: 1 / -1; font-size: var(--h-t-label); color: var(--ink-3); }
 
   .bm-summary { margin-top: 1.8rem; }
   .bm-sum-list { display: grid; grid-template-columns: minmax(9rem, auto) 1fr; gap: .5rem 1.1rem; margin: 0; }
-  .bm-sum-list dt { font-size: .8rem; color: var(--ink-3); }
-  .bm-sum-list dd { margin: 0; font-size: .86rem; color: var(--ink-2); line-height: 1.55; }
+  .bm-sum-list dt { font-size: var(--h-t-fijn); color: var(--ink-3); }
+  .bm-sum-list dd { margin: 0; font-size: var(--h-t-fijn); color: var(--ink-2); line-height: 1.55; }
   .bm-sum-list dd[data-empty] { color: var(--ink-3); font-style: italic; }
 
   .bm-after { margin-top: 2rem; padding-top: 1.6rem; border-top: 1px solid var(--line); }
@@ -663,9 +663,9 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
   .bm-consents { margin-top: 2rem; display: flex; flex-direction: column; gap: .8rem; }
   .bm-submit { margin-top: 1.6rem; }
 
-  .bm-legal { margin-top: .9rem; font-size: .8rem; color: var(--ink-3); line-height: 1.6; max-width: 64ch; }
+  .bm-legal { margin-top: .9rem; font-size: var(--h-t-fijn); color: var(--ink-3); line-height: 1.6; max-width: 64ch; }
   .bm-legal a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 2px; }
-  .bm-paynote { margin-top: .6rem; font-size: .8rem; color: var(--ink-3); line-height: 1.6; max-width: 64ch; }
+  .bm-paynote { margin-top: .6rem; font-size: var(--h-t-fijn); color: var(--ink-3); line-height: 1.6; max-width: 64ch; }
 
   .bm-nav { display: flex; gap: .7rem; margin-top: 2.2rem; flex-wrap: wrap; }
 

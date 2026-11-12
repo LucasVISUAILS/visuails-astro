@@ -272,13 +272,13 @@ const C = nl
     background: var(--surface-2);
     box-shadow: inset 0 -1px 0 var(--line);
   }
-  .fb-mark { font-size: .72rem; font-weight: 700; letter-spacing: .2em; color: var(--ink); }
+  .fb-mark { font-size: var(--h-t-label); font-weight: 700; letter-spacing: .2em; color: var(--ink); }
   .fb-side {
-    font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    font-size: var(--h-t-label); font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
     padding: .18rem .5rem; border-radius: 999px;
     background: var(--accent); color: var(--accent-on);
   }
-  .fb-badge { margin-left: auto; font-size: .72rem; color: var(--ink-3); }
+  .fb-badge { margin-left: auto; font-size: var(--h-t-label); color: var(--ink-3); }
 
   .fb-body { padding: 1rem; display: grid; gap: .8rem; }
 
@@ -294,38 +294,38 @@ const C = nl
   .fb-card.is-rev { border-color: var(--warn-ink, #C9A227); }
 
   .fb-head { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
-  .fb-h { margin: 0; font-size: .8rem; font-weight: 600; color: var(--ink); }
+  .fb-h { margin: 0; font-size: var(--h-t-fijn); font-weight: 600; color: var(--ink); }
   .fb-count {
     margin: 0 0 0 auto;
-    font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    font-size: var(--h-t-label); font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
     /* Klei-als-tekst en niet klei — zie de noot bij `.fb-pill.is-rev`. */
     color: var(--flag-ink, #25508B);
   }
   .fb-cap {
-    margin: 0; font-size: .72rem; font-weight: 600; letter-spacing: .08em;
+    margin: 0; font-size: var(--h-t-label); font-weight: 600; letter-spacing: .08em;
     text-transform: uppercase; color: var(--ink-3);
   }
-  .fb-fine { margin: 0; font-size: .72rem; line-height: 1.55; color: var(--ink-3); }
+  .fb-fine { margin: 0; font-size: var(--h-t-label); line-height: 1.55; color: var(--ink-3); }
 
   /* ── DE REVISIE ───────────────────────────────────────────────────────────*/
   .fb-rev { display: grid; gap: .35rem; }
   .fb-rev-top {
     margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .55rem;
-    font-size: .72rem; color: var(--ink-3);
+    font-size: var(--h-t-label); color: var(--ink-3);
   }
   .fb-rev-top b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
   .fb-rev-what { color: var(--ink-2); }
-  .fb-rev-when { margin-left: auto; font-size: .72rem; font-variant-numeric: tabular-nums; }
+  .fb-rev-when { margin-left: auto; font-size: var(--h-t-label); font-variant-numeric: tabular-nums; }
   .fb-said {
     margin: 0; padding: .1rem 0 .1rem .55rem;
     box-shadow: inset 2px 0 0 var(--warn-ink, #C9A227);
-    font-size: .72rem; line-height: 1.5; font-style: italic; color: var(--ink-2);
+    font-size: var(--h-t-label); line-height: 1.5; font-style: italic; color: var(--ink-2);
   }
   .fb-acts { display: flex; flex-wrap: wrap; gap: .3rem; }
   /* Geen echte knoppen — zie de kop. */
   .fb-btn {
     display: inline-block;
-    font-size: .72rem; font-weight: 600;
+    font-size: var(--h-t-label); font-weight: 600;
     padding: .26rem .55rem;
     border: 1px solid var(--line-strong); border-radius: var(--hoek-knop);
     color: var(--ink-2); white-space: nowrap;
@@ -334,10 +334,10 @@ const C = nl
 
   /* ── DE TABEL ─────────────────────────────────────────────────────────────*/
   .fb-tblwrap { overflow-x: auto; }
-  .fb-tbl { width: 100%; border-collapse: collapse; font-size: .72rem; }
+  .fb-tbl { width: 100%; border-collapse: collapse; font-size: var(--h-t-label); }
   .fb-tbl th {
     text-align: left; padding: 0 .7rem .45rem 0;
-    font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    font-size: var(--h-t-label); font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
     color: var(--ink-3); white-space: nowrap;
     box-shadow: inset 0 -1px 0 var(--line);
   }
@@ -358,7 +358,7 @@ const C = nl
 
   .fb-pill {
     display: inline-block;
-    font-size: .72rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+    font-size: var(--h-t-label); font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
     padding: .18rem .5rem; border-radius: 999px;
     border: 1px solid var(--line-strong); color: var(--ink-3);
     white-space: nowrap;
@@ -390,10 +390,10 @@ const C = nl
     border-radius: var(--r-klein);
   }
   .fb-swap { display: flex; align-items: center; gap: .45rem; flex-wrap: wrap; }
-  .fb-arrow { color: var(--ink-3); font-size: .78rem; }
-  .fb-yours { margin: 0; font-size: .72rem; line-height: 1.45; color: var(--ink-2); }
+  .fb-arrow { color: var(--ink-3); font-size: var(--h-t-label); }
+  .fb-yours { margin: 0; font-size: var(--h-t-label); line-height: 1.45; color: var(--ink-2); }
   /* De twee tijdstempels dragen dezelfde kleur, en dat is de bewijsvoering: het
      oog ziet dat het één gebeurtenis is voordat de zin eronder het uitlegt.
      Dezelfde keuze, met dezelfde reden, als in FigGate. */
-  .fb-stamp { margin: 0; font-size: .72rem; color: var(--accent-text); font-variant-numeric: tabular-nums; }
+  .fb-stamp { margin: 0; font-size: var(--h-t-label); color: var(--accent-text); font-variant-numeric: tabular-nums; }
 </style>

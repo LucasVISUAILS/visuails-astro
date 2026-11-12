@@ -301,13 +301,13 @@ const C = nl
     background: var(--surface-2);
     box-shadow: inset 0 -1px 0 var(--line);
   }
-  .fg-mark { font-family: var(--font-display); font-weight: 900; font-size: .78rem; letter-spacing: .16em; color: var(--ink); }
+  .fg-mark { font-family: var(--font-display); font-weight: 900; font-size: var(--h-t-label); letter-spacing: .16em; color: var(--ink); }
   .fg-ref { font-size: .75rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
   /* Het woord "voorbeeld" hoort in beeld te staan en niet alleen in de tekst
      ernaast: een schermafdruk wordt gedeeld zonder zijn pagina. */
   .fg-badge {
     margin-left: auto;
-    font-size: .72rem; letter-spacing: .04em;
+    font-size: var(--h-t-label); letter-spacing: .04em;
     color: var(--ink-3);
     padding: .18rem .5rem;
     border: 1px solid var(--line); border-radius: 999px;  /* rechtsboven in het scherm (24), 14 en 11 van de rand */
@@ -315,8 +315,8 @@ const C = nl
 
   .fg-body { padding: .9rem; display: grid; gap: .8rem; }
   .fg-head { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
-  .fg-h { margin: 0; font-size: .9rem; font-weight: 700; color: var(--ink); }
-  .fg-tally { margin: 0; font-size: .74rem; color: var(--ink-3); }
+  .fg-h { margin: 0; font-size: var(--h-t-klein); font-weight: 700; color: var(--ink); }
+  .fg-tally { margin: 0; font-size: var(--h-t-label); color: var(--ink-3); }
 
   /* Vier tegels op één rij zodra het past, en anders twee. Onder de 22rem één,
      want een foto van tachtig pixels breed bewijst niets. */
@@ -338,8 +338,8 @@ const C = nl
   .fg-tile.is-rev img { box-shadow: inset 0 0 0 2px var(--warn-ink, #C9A227); }
   .fg-tile.is-open img { box-shadow: inset 0 0 0 1px var(--line-strong); }
   .fg-tile-body { display: grid; gap: .18rem; }
-  .fg-cap { font-size: .74rem; color: var(--ink-2); }
-  .fg-state { font-size: .72rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  .fg-cap { font-size: var(--h-t-label); color: var(--ink-2); }
+  .fg-state { font-size: var(--h-t-label); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
   /* Goedgekeurd als dezelfde pil als in FigDash (.fd-ok-u) en het echte scherm — 14 oktober 2026,
      Lucas: "De Goedkeuren knoppen zijn niet consistent." */
   .fg-state.is-ok {
@@ -357,19 +357,19 @@ const C = nl
   .fg-said {
     margin: .15rem 0 0; padding-left: .45rem;
     box-shadow: inset 2px 0 0 var(--line-strong);
-    font-size: .74rem; line-height: 1.5; font-style: italic; color: var(--ink-3);
+    font-size: var(--h-t-label); line-height: 1.5; font-style: italic; color: var(--ink-3);
   }
 
   /* Goedkeuren boven, het vinkje "Deze aanmerken" eronder: zo staat het in FigDash en op het echte scherm. */
   .fg-acts { display: grid; gap: .3rem; margin-top: .15rem; }
   .fg-acts .fg-btn { text-align: center; }
-  .fg-pick { display: inline-flex; align-items: center; gap: .35rem; padding: .1rem 0; font-size: .72rem; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+  .fg-pick { display: inline-flex; align-items: center; gap: .35rem; padding: .1rem 0; font-size: var(--h-t-label); font-weight: 600; color: var(--ink-2); white-space: nowrap; }
   .fg-box { inline-size: .68rem; block-size: .68rem; flex: none; border-radius: 2px; box-shadow: inset 0 0 0 1px var(--line-strong); background-repeat: no-repeat; background-position: center; background-size: 80%; }
   /* Geen echte knoppen — zie de kop. Een <span> die eruitziet als een knop is hier
      het eerlijke element: er is niets om aan te klikken. */
   .fg-btn {
     display: inline-block;
-    font-size: .72rem; font-weight: 600; letter-spacing: .02em;
+    font-size: var(--h-t-label); font-weight: 600; letter-spacing: .02em;
     padding: .26rem .5rem;
     border: 1px solid var(--line-strong); border-radius: var(--hoek-knop);
     color: var(--ink-2); white-space: nowrap;
@@ -383,11 +383,11 @@ const C = nl
     border: 1px solid var(--line);
     border-radius: var(--r-kaart);
   }
-  .fg-ask-l { margin: 0; font-size: .74rem; color: var(--ink-3); }
+  .fg-ask-l { margin: 0; font-size: var(--h-t-label); color: var(--ink-3); }
   .fg-ask-field {
     margin: 0; width: 100%;
     padding: .45rem .55rem;
-    font-size: .74rem; line-height: 1.55; color: var(--ink-2);
+    font-size: var(--h-t-label); line-height: 1.55; color: var(--ink-2);
     background: var(--surface);
     border: 1px solid var(--line-strong); border-radius: 999px;
   }
@@ -395,7 +395,7 @@ const C = nl
      mee, 24 - 10,5 (25 oktober 2026; was lichte hoeken langs een rechte rand). */
   .fg-ask .fg-btn { border-radius: 999px; }
 
-  .fg-fine { margin: 0; font-size: .74rem; line-height: 1.55; color: var(--ink-3); }
+  .fg-fine { margin: 0; font-size: var(--h-t-label); line-height: 1.55; color: var(--ink-3); }
 
   /* ── DE MAP ──────────────────────────────────────────────────────────────
      Drie kolommen: waarom, wat erin zit, en de knop. Onder de 30rem worden het er
@@ -413,16 +413,16 @@ const C = nl
     .fg-folder { grid-template-columns: 1fr; }
     .fg-folder-btn { text-align: center; }
   }
-  .fg-folder-h { margin: 0 0 .15rem; font-size: .78rem; font-weight: 700; color: var(--ink); }
+  .fg-folder-h { margin: 0 0 .15rem; font-size: var(--h-t-label); font-weight: 700; color: var(--ink); }
   .fg-folder-n { margin: 0; font-size: .75rem; line-height: 1.55; color: var(--ink-2); }
-  .fg-folder-m { margin: .25rem 0 0; font-size: .74rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .fg-folder-m { margin: .25rem 0 0; font-size: var(--h-t-label); color: var(--ink-3); font-variant-numeric: tabular-nums; }
 
   /* Monospace, want dit zijn paden en geen woorden — dan is uitlijning informatie
      en niet toeval. */
   .fg-tree {
     list-style: none; margin: 0; padding: 0; display: grid; gap: .2rem;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: .72rem; line-height: 1.45; color: var(--ink-3);
+    font-size: var(--h-t-label); line-height: 1.45; color: var(--ink-3);
     white-space: nowrap;
   }
   .fg-tree-dir { color: var(--ink-2); font-weight: 600; }

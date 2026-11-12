@@ -94,3 +94,5 @@
 # ── 9 november 2026 · moet weg (levering 90: de opening is nu gewoon de video laptop-90-*; de oude doek-, metro- en videobestanden laadt geen pagina meer, en de twee oude toetsen staan niet meer in de keten, dus test:ketenvolledig valt om zolang ze er zijn) ──
 
 # ── 9 november 2026 · moet weg (levering 91/92, lijst 87: I1 de voorbeeldpagina's weg, met een 301 naar de echte pagina) ──
+
+# ── 12 november 2026 · moet weg (levering 94: de laptop op de voorpagina toont drie productpagina's van NONSTD; deze schermen van de broek laadt niets meer) ──

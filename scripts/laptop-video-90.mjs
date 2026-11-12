@@ -41,7 +41,7 @@ const X264 = ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', '17', '-x264-par
    één (twee) verversing(en): geen haperend ritme. De browser speelt hem op gewone snelheid (1 ×). Tot nu 24 per seconde op 1,5 ×. */
 const FPS = 60;
 const IN = ['-framerate', String(FPS), '-i', path.join(werk, 'beeld', '%03d.png')];
-const schaal = (b) => `scale=${b}:${hoogte(b)}:flags=lanczos:out_color_matrix=bt709:out_range=tv,format=yuv420p`;
+const schaal = (b) => `scale=${b}:${hoogte(b)}:flags=lanczos+accurate_rnd+full_chroma_int:out_color_matrix=bt709:out_range=tv,format=yuv420p`;
 
 const maten = {};
 /* ALLEEN_FOTO=1: de video's blijven, alleen de foto's (beeld 0 uit de bestaande video's) en de json opnieuw */
@@ -69,7 +69,9 @@ for (const b of process.env.ALLEEN_JSON === '1' ? [] : MATEN) {
   console.log(b, '×', hoogte(b), JSON.stringify(maten[b]));
 }
 fs.writeFileSync(path.join('src', 'data', 'laptopVideo90.json'), JSON.stringify({
-  bron: meta.bron, b: meta.b, h: meta.h, fps: FPS, beelden: meta.beelden, maten: MATEN, snelheid: 1,
+  bron: meta.bron, b: meta.b, h: meta.h, fps: FPS, beelden: meta.beelden, maten: MATEN,
+  /* levering 93 (lijst 90, B2 b): 1,4 s in plaats van 1,87 s */
+  snelheid: 1.336,
   /* beeld 0 tot en met 7 staat de klep nog stil (de gemiddelde beweging per beeld onder 0,3 op 255): daarin vervaagt de winkel
      (op 60 per seconde 133 ms; de winkel en de foto vervagen in 120 ms) */
   stilTot: 7,

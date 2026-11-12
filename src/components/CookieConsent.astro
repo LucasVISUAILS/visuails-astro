@@ -130,8 +130,8 @@ const t = useTranslations(lang);
     gap: clamp(1rem, 3vw, 2.5rem);
     flex-wrap: wrap;
   }
-  .cc-copy { margin: 0; flex: 1 1 26rem; min-width: 0; font-size: .875rem; line-height: 1.5; color: var(--ink-2); }
-  .cc-copy b { display: block; color: var(--ink); font-size: .95rem; margin-bottom: .15rem; }
+  .cc-copy { margin: 0; flex: 1 1 26rem; min-width: 0; font-size: var(--h-t-klein); line-height: 1.5; color: var(--ink-2); }
+  .cc-copy b { display: block; color: var(--ink); font-size: var(--h-t-klein); margin-bottom: .15rem; }
   .cc-copy a { color: var(--accent-text); text-decoration: underline; text-underline-offset: 2px; }
 
   .cc-actions { display: flex; align-items: center; gap: var(--gap-actions); flex-wrap: wrap; }
@@ -140,7 +140,7 @@ const t = useTranslations(lang);
   .cc-btn {
     min-height: 42px;
     padding: 0 1.1rem;
-    font-size: .875rem;
+    font-size: var(--h-t-klein);
     font-weight: 700;
     background: var(--btn-ghost-fill);
     color: var(--ink);
@@ -159,7 +159,7 @@ const t = useTranslations(lang);
      answer. It opens a panel; it does not consent to anything. */
   .cc-link {
     background: none; border: 0; padding: .4rem .2rem; cursor: pointer;
-    font-size: .85rem; font-weight: 600; color: var(--ink-3);
+    font-size: var(--h-t-fijn); font-weight: 600; color: var(--ink-3);
     text-decoration: underline; text-underline-offset: 3px;
   }
   .cc-link:hover, .cc-link:focus-visible { color: var(--ink); }
@@ -204,14 +204,14 @@ const t = useTranslations(lang);
   .cc-dialog::backdrop { background: rgb(var(--scrim) / 0.72); }
   .cc-prefs { padding: clamp(1.4rem, 3vw, 2rem); display: flex; flex-direction: column; gap: 1.1rem; }
   .cc-prefs h2 { margin: 0; font-size: 1.25rem; color: var(--ink); }
-  .cc-prefs-intro { margin: 0; font-size: .875rem; line-height: 1.55; color: var(--ink-3); }
+  .cc-prefs-intro { margin: 0; font-size: var(--h-t-klein); line-height: 1.55; color: var(--ink-3); }
   .cc-row {
     display: flex; align-items: flex-start; justify-content: space-between; gap: 1.2rem;
     padding-top: 1.1rem; box-shadow: inset 0 1px 0 var(--line);
   }
-  .cc-row b { color: var(--ink); font-size: .95rem; }
-  .cc-row p { margin: .3rem 0 0; font-size: .84rem; line-height: 1.5; color: var(--ink-3); max-width: 42ch; }
-  .cc-always { flex: 0 0 auto; font-size: .78rem; font-weight: 700; color: var(--ink-3); padding-top: .15rem; white-space: nowrap; }
+  .cc-row b { color: var(--ink); font-size: var(--h-t-klein); }
+  .cc-row p { margin: .3rem 0 0; font-size: var(--h-t-fijn); line-height: 1.5; color: var(--ink-3); max-width: 42ch; }
+  .cc-always { flex: 0 0 auto; font-size: var(--h-t-label); font-weight: 700; color: var(--ink-3); padding-top: .15rem; white-space: nowrap; }
   .cc-check {
     flex: 0 0 auto; width: 22px; height: 22px; margin-top: .1rem;
     accent-color: var(--accent); cursor: pointer;

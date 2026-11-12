@@ -171,7 +171,8 @@ const dist = (p) => { const f = path.join(ROOT, 'dist', p); return existsSync(f)
        kop en één zin, HalOpening.astro); die twee staan er voor iedereen. */
     /* levering 79: de opening is de laptop over de hele breedte (HalLaptopBreed.astro; in 78 de tablet) */
     /* levering 80: de opening van HalOpening80 (de titel en de zin); de €1-link is voor een klant de link naar Studio */
-    ok('  de kop en de zin van de opening staan er voor iedereen', /<h1 id="h-h1" class="o8-kop h-kop"(?![^>]*data-vis-uit)[^>]*>/.test(thuis) && /<p class="o8-zin[^"]*"(?![^>]*data-vis-uit)[^>]*>/.test(thuis));
+    /* levering 94: de opening is de bannervideo (HalBanner94.astro); zijn kop en zin staan er voor iedereen */
+    ok('  de kop en de zin van de opening staan er voor iedereen', /<h1 id="b94-h1" class="b94-kop"(?![^>]*data-vis-uit)[^>]*>/.test(thuis) && /<p class="b94-zin[^"]*"(?![^>]*data-vis-uit)[^>]*>/.test(thuis));
     ok('  de oude welkomstregel bovenin is weg', !/class="h-welkom"/.test(thuis));
     /* 14 oktober 2026 (v26-proefblok a): de abonnementsknop staat niet meer in
        het proefblok, alleen nog in de opening. */

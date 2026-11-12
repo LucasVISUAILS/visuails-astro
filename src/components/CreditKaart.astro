@@ -79,7 +79,7 @@ const kopId = `${id || 'creditkaart'}-kop`;
     font-size: .75rem; letter-spacing: .04em; text-transform: uppercase;
     color: var(--ck-inkt-2);
   }
-  .ck-kern { margin: 0 0 1rem; font-weight: 600; font-size: .98rem; line-height: 1.45; text-wrap: pretty; }
+  .ck-kern { margin: 0 0 1rem; font-weight: 600; font-size: var(--h-t-klein); line-height: 1.45; text-wrap: pretty; }
   .ck-lijst { list-style: none; margin: 0; padding: 0; display: grid; }
   .ck-lijst li {
     display: grid; grid-template-columns: 7.2rem minmax(0, 1fr); grid-template-rows: auto auto;
@@ -103,11 +103,11 @@ const kopId = `${id || 'creditkaart'}-kop`;
     font-family: var(--kop2, var(--font-heading, inherit)); font-weight: 500; font-stretch: 125%;
     font-size: clamp(1.45rem, 2.4vw, 1.9rem); line-height: 1;
   }
-  .ck-naam { font-weight: 600; font-size: .95rem; }
-  .ck-per { font-size: .85rem; color: var(--ck-inkt-2); }
+  .ck-naam { font-weight: 600; font-size: var(--h-t-klein); }
+  .ck-per { font-size: var(--h-t-fijn); color: var(--ck-inkt-2); }
   .ck-plannen {
     list-style: none; margin: 1rem 0 0; padding: .9rem 0 0; border-top: 1px solid var(--ck-lijn);
-    display: grid; gap: .35rem; font-size: .9rem; line-height: 1.45;
+    display: grid; gap: .35rem; font-size: var(--h-t-klein); line-height: 1.45;
   }
   .ck-saldo { margin: 1rem 0 0; padding-top: .9rem; border-top: 1px solid var(--ck-lijn); font-weight: 600; }
   @media (max-width: 560px) {

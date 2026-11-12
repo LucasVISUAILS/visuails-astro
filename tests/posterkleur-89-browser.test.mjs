@@ -272,10 +272,11 @@ async function slechtsteTekst(page, wortel, tekst, tekstKleur = [255, 255, 255])
   /* levering 90: met het effect zit het veld in de video (de foto is beeld 0); het vlak erboven is het wit van zijn bovenkant */
   const vlak = await page.$eval('.o8-vlak', (e) => ({ beeld: getComputedStyle(e).backgroundImage, kleur: getComputedStyle(e).backgroundColor, aan: document.documentElement.classList.contains('o8-aan'), foto: document.querySelector('[data-o8-beeld]').currentSrc }));
   /* 8 november 21:44: zonder korrel (Lucas: de korrel maakte de overloop tussen de secties niet glad) */
-  ok('achter de laptop het veld B1 Horizon (zonder korrel), niet meer de fade alleen',
-    vlak.aan ? (/laptop-90-\d+\.webp/.test(vlak.foto) && vlak.kleur === 'rgb(251, 253, 255)') : (/veld-b1\.webp/.test(vlak.beeld) && (await page.$eval('.o8-vlak', (e) => getComputedStyle(e, '::after').content)) === 'none'), JSON.stringify(vlak).slice(0, 200));
-  /* levering 90: de metro is weg; het veld zit in de video (scripts/laptop-video-90.py) */
-  ok('… en de video heeft hetzelfde veld erin', /^veld-b1\.webp /.test(JSON.parse(lees('src/data/laptopVideo90.json')).veld) && /public\/img\/hal\/veld-b1\.webp/.test(lees('scripts/laptop-video-90.py')));
+  /* levering 94 (Lucas, 12 november 07:50: "Verwijder de kleuren achter de laptop"): achter de laptop de grond, geen veld;
+     de video is op die grond gemaakt (laptop-video-90.py met VELD=wit) */
+  ok('achter de laptop de grond (#FBFCFF), geen veld meer',
+    vlak.beeld === 'none' && vlak.kleur === 'rgb(251, 252, 255)', JSON.stringify(vlak).slice(0, 200));
+  ok('… en de video is op de grond gemaakt', /^wit /.test(JSON.parse(lees('src/data/laptopVideo90.json')).veld) && /VELD == 'wit'/.test(lees('scripts/laptop-video-90.py')));
   await ctx.close();
   /* de tekst op het veld: de naam van de stand, onder de laptop (op de telefoon staat hij onder het podium op de grond) */
   const maten = [];

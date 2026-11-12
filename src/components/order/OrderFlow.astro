@@ -4096,7 +4096,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     text-transform: uppercase; color: var(--inkt);
   }
   /* De stappenbalk: mono, zoals elk etiket in deze stijl. */
-  .of :global(.pl-rail-t) { font-family: var(--mono2); font-stretch: 82%; font-size: .72rem; }
+  .of :global(.pl-rail-t) { font-family: var(--mono2); font-stretch: 82%; font-size: var(--h-t-label); }
   .of :global(.pl-rail-n) { font-family: var(--mono2); font-stretch: 82%; font-weight: 400; }
   .of :global(.pl-rail-item.is-current) { background: var(--tint); color: var(--inkt); }
 
@@ -4166,11 +4166,11 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     background: var(--wit);
   }
   .pl-signin > div { flex: 1 1 22rem; }
-  .pl-signin-h { margin: 0; font-weight: 700; color: var(--ink); font-size: .98rem; }
+  .pl-signin-h { margin: 0; font-weight: 700; color: var(--ink); font-size: var(--h-t-klein); }
   /* .3rem was 5px na de regelhoogte — gemeten met kladblok/te-dicht.mjs. Op
      de kaart die als eerste ding op het bestelformulier staat, is dat te krap:
      de vraag en het antwoord lezen dan als één regel. */
-  .pl-signin-body { margin: .6rem 0 0; font-size: .88rem; line-height: 1.55; color: var(--ink-3); }
+  .pl-signin-body { margin: .6rem 0 0; font-size: var(--h-t-fijn); line-height: 1.55; color: var(--ink-3); }
   .pl-signin-cta { flex: 0 0 auto; }
   @media (max-width: 560px) { .pl-signin-cta { width: 100%; } }
 
@@ -4299,10 +4299,10 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     text-align: left; cursor: pointer;
   }
   .pl-combi-knop:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; border-radius: 999px; }
-  .pl-combi-woord { font-weight: 600; font-size: .95rem; }
+  .pl-combi-woord { font-weight: 600; font-size: var(--h-t-klein); }
   .pl-combi-prijs {
     flex: 1; min-width: 0;
-    font-family: var(--font-mono); font-size: .78rem; letter-spacing: .04em;
+    font-family: var(--font-mono); font-size: var(--h-t-label); letter-spacing: .04em;
     color: var(--ink-2);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
@@ -4439,7 +4439,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
      were filled in" is neither a review claim nor a delivery window, so it
      gets no rule/colour from that system — reaching for it here would be the
      decorative use colorize.md explicitly bans. */
-  .pl-prefill-note { font-size: .82rem; font-style: italic; margin-top: .35rem; }
+  .pl-prefill-note { font-size: var(--h-t-fijn); font-style: italic; margin-top: .35rem; }
 
   /* ---- the collapsed brief step (August 2026) ------------------------------
      A returning customer who saved their details gets this instead of six
@@ -4456,9 +4456,9 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     border: 1px solid var(--line); background: var(--surface-2, var(--surface));
     border-radius: var(--r-kaart); max-width: 62ch;
   }
-  .pl-saved-h { margin: 0; font-size: .78rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3); }
+  .pl-saved-h { margin: 0; font-size: var(--h-t-label); font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3); }
   .pl-saved-list { list-style: none; margin: .6rem 0 0; padding: 0; display: grid; gap: .2rem; }
-  .pl-saved-list li { font-size: .96rem; color: var(--ink); overflow-wrap: anywhere; }
+  .pl-saved-list li { font-size: var(--h-t-klein); color: var(--ink); overflow-wrap: anywhere; }
   .pl-saved-edit { margin-top: .9rem; }
   .pl-saved-hint { margin-top: .6rem; }
 
@@ -4481,7 +4481,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
   .pl-tegoed {
     margin: 1.2rem 0 0; padding: .75rem 1rem; max-width: 64ch;
     border: 1px solid var(--line); border-radius: var(--r-klein);
-    font-size: .94rem; line-height: 1.5; color: var(--ink);
+    font-size: var(--h-t-klein); line-height: 1.5; color: var(--ink);
   }
   /* De creditregel (ronde B): dezelfde vorm als het tegoed, met de kopregel
      iets zwaarder, want dat is de zin waar een abonnee op stuurt. Met credits
@@ -4492,13 +4492,13 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     color: var(--ink);
   }
   .pl-credits.is-credits { border-color: var(--ink); }
-  .pl-credits-kop { margin: 0; font-size: 1rem; line-height: 1.5; font-weight: 600; }
+  .pl-credits-kop { margin: 0; font-size: var(--h-t-lopend); line-height: 1.5; font-weight: 600; }
   .pl-credits-regels { list-style: none; margin: .4rem 0 0; padding: 0; }
   .pl-credits-regels:empty { display: none; }
   /* :global, want pipeline.js maakt de regels pas na het laden (zonder het
      scope-attribuut van deze component). */
-  .pl-credits-regels :global(li) { margin: .3rem 0 0; font-size: .92rem; line-height: 1.55; color: var(--ink-2); }
-  .pl-credits-bij { margin: .5rem 0 0; font-size: .92rem; line-height: 1.55; color: var(--ink); }
+  .pl-credits-regels :global(li) { margin: .3rem 0 0; font-size: var(--h-t-klein); line-height: 1.55; color: var(--ink-2); }
+  .pl-credits-bij { margin: .5rem 0 0; font-size: var(--h-t-klein); line-height: 1.55; color: var(--ink); }
   .pl-credits-bij a { white-space: nowrap; }
   .pl-save-offer {
     margin: 1.4rem 0 0; padding: .9rem 0 0;
@@ -4513,18 +4513,18 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
      The box grows so the token still reads as a rounded square. The radius
      itself is not touched here — it comes off the scale, as everything does. */
   .pl-save-row input { flex: 0 0 auto; width: 22px; height: 22px; margin-top: .05rem; accent-color: var(--accent); }
-  .pl-save-label { font-size: .94rem; color: var(--ink); }
+  .pl-save-label { font-size: var(--h-t-klein); color: var(--ink); }
   .pl-save-hint { margin-top: .5rem; }
 
   .pl-sub-h { font-size: 1.05rem; line-height: 1.3; }
-  .pl-opt { font-weight: 500; font-size: .78rem; color: var(--ink-3); text-transform: lowercase; }
+  .pl-opt { font-weight: 500; font-size: var(--h-t-label); color: var(--ink-3); text-transform: lowercase; }
 
   /* Het vinkje onder het btw-veld. ONDER en niet ernaast: het is geen tweede
      vraag maar het antwoord "niet van toepassing" op de vraag erboven, en
      ernaast zou het op een telefoon een kolom worden die nergens past. */
   .pl-check {
     display: flex; align-items: center; gap: .5rem;
-    margin-top: .45rem; font-size: .86rem; font-weight: 400; color: var(--ink-2);
+    margin-top: .45rem; font-size: var(--h-t-fijn); font-weight: 400; color: var(--ink-2);
     text-transform: none; letter-spacing: 0; cursor: pointer;
   }
   /* Geen eigen maat: global.css tekent het vakje al (18px, vierkant, met een
@@ -4551,9 +4551,9 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
      De radio zelf blijft in de tabvolgorde en krijgt gewoon zijn focusring —
      hem verstoppen achter de kaart is hoe een toetsenbordgebruiker de selectie
      kwijtraakt. Vandaar :focus-within op de kaart en niet display:none. */
-  .pl-total-flat { margin-top: 1.4rem; padding: .9rem 1.1rem; border: 1px solid var(--line-strong); background: var(--surface); font-size: .95rem; color: var(--ink-2); }
+  .pl-total-flat { margin-top: 1.4rem; padding: .9rem 1.1rem; border: 1px solid var(--line-strong); background: var(--surface); font-size: var(--h-t-klein); color: var(--ink-2); }
   .pl-total-flat strong { color: var(--ink); font-size: 1.15rem; }
-  .pl-total-flat-btw { font-family: var(--font-mono); font-size: .78rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); margin-right: .2rem; }
+  .pl-total-flat-btw { font-family: var(--font-mono); font-size: var(--h-t-label); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); margin-right: .2rem; }
 
   .pl-kind-row { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
   @media (max-width: 34em) { .pl-kind-row { grid-template-columns: 1fr; } }
@@ -4568,13 +4568,13 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
   .pl-kind:has(input:checked) { border-color: var(--kies, var(--accent)); background: var(--accent-soft); }
   .pl-kind input { margin: 0 0 .35rem; }
   .pl-kind-name { font-weight: 600; color: var(--ink); }
-  .pl-kind-gets { font-size: .88rem; color: var(--ink-3); }
+  .pl-kind-gets { font-size: var(--h-t-fijn); color: var(--ink-3); }
 
   .pl-noscript,
   .pl-note {
     margin: 0 0 clamp(1.6rem, 3vw, 2.2rem);
     padding: 1.05rem 1.25rem;
-    font-size: .95rem;
+    font-size: var(--h-t-klein);
     line-height: 1.55;
     max-width: 78ch;
   }
@@ -4619,13 +4619,13 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
   }
   .pl-rail-item.is-done { cursor: pointer; color: var(--ink-2); }
   .pl-rail-item.is-current { background: var(--accent-soft); color: var(--ink); }
-  .pl-rail-n { font-family: var(--font-display); font-weight: 800; font-size: .8rem; }
-  .pl-rail-t { font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; font-weight: 600; }
+  .pl-rail-n { font-family: var(--font-display); font-weight: 800; font-size: var(--h-t-fijn); }
+  .pl-rail-t { font-size: var(--h-t-label); letter-spacing: .06em; text-transform: uppercase; font-weight: 600; }
 
   /* Prose under a control: an aside for someone still deciding, not another
      thing to answer. Some of it arrives through set:html and so carries no
      scope attribute — :global() on the descendant is what reaches the anchors. */
-  .pl-panel-note { margin-top: .55rem; font-size: .86rem; color: var(--ink-3); line-height: 1.55; }
+  .pl-panel-note { margin-top: .55rem; font-size: var(--h-t-fijn); color: var(--ink-3); line-height: 1.55; }
   .pl-panel-note :global(a) { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
   .pl-fieldset .pl-sub-h { margin-bottom: .9rem; }
 
@@ -4637,14 +4637,14 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
   .pl-why > summary {
     width: max-content;
     cursor: pointer;
-    font-size: .8rem;
+    font-size: var(--h-t-fijn);
     color: var(--accent-bright);
     text-decoration: underline;
     text-underline-offset: 3px;
     border-radius: 999px;
   }
   .pl-why > summary:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
-  .pl-why > p { margin-top: .5rem; font-size: .82rem; color: var(--ink-3); line-height: 1.55; max-width: 70ch; }
+  .pl-why > p { margin-top: .5rem; font-size: var(--h-t-fijn); color: var(--ink-3); line-height: 1.55; max-width: 70ch; }
 
   /* Every block in step 1 moves in one interval, so the count field, the
      outfit field, the total and the levels table read as one column of
@@ -4661,7 +4661,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     border-top: 1px solid var(--line-strong);
   }
   .pl-form.is-live .pl-total { display: block; }
-  .pl-total-label { display: block; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .pl-total-label { display: block; font-size: var(--h-t-label); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
 
   /* Three rows, and the third is the one a client reads as the total — so it
      is the one that gets the display face. The first two are the same size as
@@ -4669,7 +4669,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
      setting the net figure large would be the "big number, asterisk, plus VAT
      in small type" trick with better typography. */
   .pl-total-lines { margin: .8rem 0 0; }
-  .pl-total-vatnote { margin: .8rem 0 0; font-size: .78rem; line-height: 1.55; color: var(--ink-3); max-width: 62ch; }
+  .pl-total-vatnote { margin: .8rem 0 0; font-size: var(--h-t-label); line-height: 1.55; color: var(--ink-3); max-width: 62ch; }
   .pl-total-row {
     display: grid;
     grid-template-columns: 1fr auto;
@@ -4677,8 +4677,8 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     align-items: baseline;
     padding: .45rem 0;
   }
-  .pl-total-row dt { font-size: .9rem; color: var(--ink-3); }
-  .pl-total-row dd { margin: 0; font-size: .95rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .pl-total-row dt { font-size: var(--h-t-klein); color: var(--ink-3); }
+  .pl-total-row dd { margin: 0; font-size: var(--h-t-klein); color: var(--ink-2); font-variant-numeric: tabular-nums; }
   .pl-total-row.is-gross { border-top: 1px solid var(--line); padding-top: .8rem; margin-top: .3rem; }
   .pl-total-row.is-gross dt { color: var(--ink); font-weight: 500; }
   .pl-total-row.is-gross dd {
@@ -4687,7 +4687,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     color: var(--ink);
   }
 
-  .pl-total-note { margin-top: .8rem; font-size: .85rem; color: var(--ink-3); line-height: 1.5; }
+  .pl-total-note { margin-top: .8rem; font-size: var(--h-t-fijn); color: var(--ink-3); line-height: 1.5; }
   /* ── DE LADDERREGEL, NET ZO RUSTIG ALS DE BESPARINGSREGEL — 8 okt 2026 ────
      Lucas bij 1.07: *"subtiel en niet overheersend en salesachtig"*. Vroeger
      stond deze regel in een gesignaleerd kader; nu dezelfde toon als
@@ -4695,7 +4695,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
      tekstkleur, alleen de bedragen vet (pipeline.js zet die als <b>). */
   .pl-total-rung {
     margin-top: .7rem;
-    font-size: .86rem;
+    font-size: var(--h-t-fijn);
     line-height: 1.55;
     color: var(--ink-2);
     max-width: 62ch;
@@ -4709,7 +4709,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     margin-top: .7rem;
     padding-top: .7rem;
     border-top: 1px solid var(--line);
-    font-size: .86rem;
+    font-size: var(--h-t-fijn);
     line-height: 1.55;
     color: var(--ink-2);
     max-width: 62ch;
@@ -4721,7 +4721,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
      knopvorm — hij zet alleen het aantal. */
   .pl-total-besparing {
     margin-top: .7rem;
-    font-size: .86rem;
+    font-size: var(--h-t-fijn);
     line-height: 1.55;
     color: var(--ink-2);
     max-width: 62ch;
@@ -4741,9 +4741,9 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
   }
   .pl-total-besparing :global(.pl-besparing-knop:hover) { color: var(--ink); }
   .pl-total-besparing :global(.pl-besparing-knop:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }
-  .pl-inbegrepen { margin: .9rem 0 0; font-size: .86rem; line-height: 1.55; color: var(--ink-2); max-width: 62ch; }
+  .pl-inbegrepen { margin: .9rem 0 0; font-size: var(--h-t-fijn); line-height: 1.55; color: var(--ink-2); max-width: 62ch; }
   .pl-total-first,
-  .pl-total-display { margin-top: .6rem; font-size: .82rem; color: var(--ink-3); line-height: 1.5; max-width: 62ch; }
+  .pl-total-display { margin-top: .6rem; font-size: var(--h-t-fijn); color: var(--ink-3); line-height: 1.5; max-width: 62ch; }
   .pl-total-display { font-style: italic; }
 
   /* The two service levels. One rule between them: no floating cards, no
@@ -4771,7 +4771,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
   .level.is-current { background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent); }
 
   .level-h { font-size: 1.15rem; line-height: 1.25; text-wrap: balance; }
-  .level-band { margin-top: .3rem; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .level-band { margin-top: .3rem; font-size: var(--h-t-label); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
   .level-facts { margin-top: 1.2rem; border-top: 1px solid var(--line); }
   /* min-height is the same class of problem it solved on the doors this block
      replaced: the two fact lists sit either side of a vertical rule and the
@@ -4803,15 +4803,15 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
   /* 11,7px in plaats van 10,9 — de ondergrens van de keuring is 11,5px, en dit
      is het label dat zegt WAT de regel ernaast belooft. */
   .level-row dt {
-    font-size: .73rem; font-weight: 700; letter-spacing: .08em;
+    font-size: var(--h-t-label); font-weight: 700; letter-spacing: .08em;
     text-transform: uppercase; color: var(--ink-3);
   }
-  .level-row dd { margin: 0; font-size: .9rem; color: var(--ink-2); line-height: 1.5; }
+  .level-row dd { margin: 0; font-size: var(--h-t-klein); color: var(--ink-2); line-height: 1.5; }
 
   /* Written by pipeline.js, so it is empty without JS — where both columns
      already say everything and a sentence naming one of them would be a claim
      about a count nothing has read. */
-  .pl-level-note { margin-top: .9rem; font-size: .9rem; color: var(--ink-2); line-height: 1.6; max-width: 70ch; }
+  .pl-level-note { margin-top: .9rem; font-size: var(--h-t-klein); color: var(--ink-2); line-height: 1.6; max-width: 70ch; }
   .pl-level-note:empty { display: none; }
 
   /* ── Step 2 · material ────────────────────────────────────────────────────
@@ -4841,9 +4841,9 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
      for statements of process. */
   .pl-gate-panel.is-queue { border-color: var(--signal); background: var(--paper-2); }
   .pl-gate-h { font-size: 1.15rem; line-height: 1.3; text-wrap: balance; }
-  .pl-gate-claim { margin-top: .6rem; font-weight: 700; color: var(--signal-ink); font-size: .95rem; }
-  .pl-gate-body { margin-top: .7rem; color: var(--ink-3); font-size: .95rem; line-height: 1.6; max-width: 64ch; }
-  .pl-gate-foot { margin-top: 1rem; font-size: .85rem; color: var(--ink-3); }
+  .pl-gate-claim { margin-top: .6rem; font-weight: 700; color: var(--signal-ink); font-size: var(--h-t-klein); }
+  .pl-gate-body { margin-top: .7rem; color: var(--ink-3); font-size: var(--h-t-klein); line-height: 1.6; max-width: 64ch; }
+  .pl-gate-foot { margin-top: 1rem; font-size: var(--h-t-fijn); color: var(--ink-3); }
   .pl-gate-panel .knop { margin-top: 1.2rem; }
   .pl-gate-checking {
     margin: 0;
@@ -4909,7 +4909,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
   .pl-windows :global(.pl-dag-mnd),
   .pl-windows :global(.pl-dag-tot) {
     font-family: var(--font-mono);
-    font-size: .72rem;
+    font-size: var(--h-t-label);
     letter-spacing: .05em;
     text-transform: uppercase;
     color: var(--ink-3);
@@ -4933,7 +4933,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     justify-content: space-between;
     gap: .8rem;
     font-family: var(--font-mono);
-    font-size: .78rem;
+    font-size: var(--h-t-label);
     letter-spacing: .04em;
     text-transform: uppercase;
     color: var(--ink-3);
@@ -4955,10 +4955,10 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     margin: 0;
     padding-top: .8rem;
     border-top: 1px solid var(--line);
-    font-size: .9rem;
+    font-size: var(--h-t-klein);
     color: var(--ink);
   }
-  .pl-windows :global(.pl-kal-leegzin) { grid-column: 1 / -1; margin: 0; font-size: .9rem; color: var(--ink-3); }
+  .pl-windows :global(.pl-kal-leegzin) { grid-column: 1 / -1; margin: 0; font-size: var(--h-t-klein); color: var(--ink-3); }
 
   /* ── Step 5 · confirm ─────────────────────────────────────────────────────
      :empty is not defensive tidying. renderSummary() fills this on arrival; on
@@ -4982,14 +4982,14 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
   .pl-summary :global(dt) {
     padding: .8rem 1rem .8rem 0;
     border-bottom: 1px solid var(--line);
-    font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+    font-size: var(--h-t-label); font-weight: 700; letter-spacing: .08em;
     text-transform: uppercase; color: var(--ink-3);
   }
   .pl-summary :global(dd) {
     margin: 0;
     padding: .8rem 0;
     border-bottom: 1px solid var(--line);
-    font-size: .95rem; color: var(--ink); line-height: 1.5;
+    font-size: var(--h-t-klein); color: var(--ink); line-height: 1.5;
   }
 
   /* ── DE MELDING NA EEN WEIGERING VAN DE SERVER ─────────────────────────
@@ -5003,7 +5003,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     border: 1px solid var(--warn);
     background: var(--paper-2);
     color: var(--warn-ink);
-    font-size: .95rem;
+    font-size: var(--h-t-klein);
     line-height: 1.55;
     max-width: 64ch;
   }
@@ -5017,7 +5017,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
   /* ── WAT VIES ZEGT (B05, doorloop 27) ── onder het btw-veld, zodra het veld
      verlaten is. Gewone tekst bij gevonden, de waarschuwingskleur bij niet
      gevonden, met de uitweg als tekstknop. */
-  .pl-vies { margin: .5rem 0 .2rem; font-size: .86rem; line-height: 1.5; color: var(--ink-2); max-width: 60ch; }
+  .pl-vies { margin: .5rem 0 .2rem; font-size: var(--h-t-fijn); line-height: 1.5; color: var(--ink-2); max-width: 60ch; }
   /* De zin zelf in de tekstmaat van de hal (5–7 woorden per regel); de knop eronder. */
   .pl-vies [data-pl-vies-tekst] { display: block; max-width: var(--h-maat, 60ch); margin-bottom: .2rem; }
   .pl-vies[hidden] { display: none; }
@@ -5032,7 +5032,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     border: 1px solid var(--warn);
     background: var(--paper-2);
     color: var(--warn-ink);
-    font-size: .95rem;
+    font-size: var(--h-t-klein);
     line-height: 1.55;
   }
 
@@ -5043,7 +5043,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     background: var(--paper-2);
   }
   .pl-lost-h { font-size: 1.1rem; line-height: 1.3; color: var(--signal-ink); }
-  .pl-lost-body { margin-top: .7rem; color: var(--ink-2); font-size: .95rem; line-height: 1.6; max-width: 64ch; }
+  .pl-lost-body { margin-top: .7rem; color: var(--ink-2); font-size: var(--h-t-klein); line-height: 1.6; max-width: 64ch; }
   .pl-lost .knop { margin-top: 1.2rem; }
   .pl-open { margin: 0 0 1.4rem; }
   .pl-open-acts { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.2rem; }
@@ -5053,13 +5053,13 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
   /* Rules, not numerals. What happens after an order is a list of facts, and
      numbering them would imply the client has four things left to do. */
   .pl-after-list { list-style: none; margin: .9rem 0 0; padding: 0; border-top: 1px solid var(--line); }
-  .pl-after-list li { padding: .85rem 0; border-bottom: 1px solid var(--line); color: var(--ink-2); font-size: .95rem; line-height: 1.6; }
+  .pl-after-list li { padding: .85rem 0; border-bottom: 1px solid var(--line); color: var(--ink-2); font-size: var(--h-t-klein); line-height: 1.6; }
   /* Under the button, at the size a legal line is read rather than skimmed:
      small, but not the 11px grey that says "we would rather you did not". */
-  .pl-legal { margin-top: .9rem; font-size: .8rem; color: var(--ink-3); line-height: 1.6; max-width: 64ch; }
+  .pl-legal { margin-top: .9rem; font-size: var(--h-t-fijn); color: var(--ink-3); line-height: 1.6; max-width: 64ch; }
   .pl-legal a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 2px; }
 
-  .pl-pay-note { margin-top: 1.1rem; font-size: .9rem; color: var(--ink-3); max-width: 64ch; line-height: 1.6; }
+  .pl-pay-note { margin-top: 1.1rem; font-size: var(--h-t-klein); color: var(--ink-3); max-width: 64ch; line-height: 1.6; }
 
   /* The waiver. Bordered, because it is the one thing on this step that is a
      declaration rather than a description, and it has to be findable again in a
@@ -5078,7 +5078,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     cursor: pointer;
   }
   .pl-consent input { accent-color: var(--accent); width: 17px; height: 17px; flex: none; margin-top: .15rem; }
-  .pl-consent span { font-size: .86rem; line-height: 1.6; color: var(--ink-2); }
+  .pl-consent span { font-size: var(--h-t-fijn); line-height: 1.6; color: var(--ink-2); }
   .pl-consent:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
   /* 8.06: de verleggingszin als eerste regel in het zakelijk-vinkje (EU met btw-nummer). */
   .pl-consent .pl-verlegd { display: block; margin-bottom: .45rem; color: var(--ink); }
@@ -5102,7 +5102,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
   .pl-form.is-live .pl-nav { display: flex; }
   /* 1.08: "Kom je er niet uit? App ons" — één rustige regel onder de knoppen,
      in de gewone tekstkleur, geen knop en geen icoon. */
-  .pl-appons { margin: 1rem 0 0; font-size: .86rem; line-height: 1.55; color: var(--ink-2); }
+  .pl-appons { margin: 1rem 0 0; font-size: var(--h-t-fijn); line-height: 1.55; color: var(--ink-2); }
   .pl-appons a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
   .pl-appons a:hover { text-decoration-thickness: 2px; }
 
@@ -5132,7 +5132,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     border: 1px solid var(--signal);
     background: var(--paper-2);
     color: var(--signal-ink);
-    font-size: .95rem;
+    font-size: var(--h-t-klein);
     line-height: 1.55;
     max-width: 78ch;
   }
@@ -5146,7 +5146,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
   }
   .shared-item { border-top: 1px solid var(--line-strong); padding-top: 1.2rem; }
   .shared-item h3 { font-size: 1.1rem; }
-  .shared-item p { margin-top: .55rem; font-size: .95rem; color: var(--ink-3); line-height: 1.6; }
+  .shared-item p { margin-top: .55rem; font-size: var(--h-t-klein); color: var(--ink-3); line-height: 1.6; }
 
   .start-foot {
     display: grid;
@@ -5248,10 +5248,10 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     background: var(--surface);
   }
   .pl-svc-name { font-weight: 600; color: var(--ink); }
-  .pl-svc-gets { font-size: .86rem; color: var(--ink-3); }
+  .pl-svc-gets { font-size: var(--h-t-fijn); color: var(--ink-3); }
   .pl-svc-change {
     margin-left: auto;
-    font-size: .82rem;
+    font-size: var(--h-t-fijn);
     color: var(--accent-bright);
     text-decoration: underline;
     text-underline-offset: 3px;
@@ -5285,7 +5285,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     border: 0;
     background: none;
     font: inherit;
-    font-size: .84rem;
+    font-size: var(--h-t-fijn);
     color: var(--accent-bright);
     text-decoration: underline;
     text-underline-offset: 3px;
@@ -5312,7 +5312,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
      dat is precies waar een fieldset voor is — maar het kader eromheen zou hem
      tot een eigen blok maken naast de velden waar hij bij hoort. */
   .pl-voorkeur { border: 0; padding: 0; margin: 0 0 1.1rem; }
-  .pl-voorkeur-h { padding: 0; font-size: .82rem; font-weight: 600; color: var(--ink-2); }
+  .pl-voorkeur-h { padding: 0; font-size: var(--h-t-fijn); font-weight: 600; color: var(--ink-2); }
   .pl-voorkeur-rij { display: flex; flex-wrap: wrap; gap: .5rem .9rem; margin-top: .45rem; }
   /* Het hele label is het raakvlak en niet alleen het bolletje: 44 pixels hoog,
      zodat een duim hem raakt zonder te mikken. */
@@ -5320,7 +5320,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     display: inline-flex; align-items: center; gap: .45rem;
     min-height: 44px; padding: 0 .8rem 0 .6rem;
     border: 1px solid var(--line-strong); border-radius: var(--hoek-knop);
-    font-size: .9rem; cursor: pointer;
+    font-size: var(--h-t-klein); cursor: pointer;
     transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
   }
   .pl-voorkeur-optie input { accent-color: var(--accent); width: 15px; height: 15px; flex: none; }
@@ -5340,9 +5340,9 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     background: var(--surface);
     max-width: var(--pl-measure);
   }
-  .pl-more > p { margin-top: .5rem; font-size: .92rem; line-height: 1.6; color: var(--ink-2); max-width: 62ch; }
+  .pl-more > p { margin-top: .5rem; font-size: var(--h-t-klein); line-height: 1.6; color: var(--ink-2); max-width: 62ch; }
   .pl-more-btns { display: flex; flex-wrap: wrap; gap: .6rem; }
-  .pl-more-alt { font-size: .82rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .pl-more-alt { font-size: var(--h-t-fijn); color: var(--ink-3); font-variant-numeric: tabular-nums; }
 
   /* ── De beeldstrook op de bevestiging ─────────────────────────────────── */
   .pl-sum-strip {
@@ -5363,10 +5363,10 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
   .pl-sum-strip :global(.pl-sum-thumb.is-ratio) { width: auto; max-width: 84px; background: var(--surface-2); }
   .pl-sum-strip :global(.pl-sum-thumb.is-bg img) { mix-blend-mode: multiply; }
   .pl-sum-strip :global(.pl-sum-cap) {
-    font-size: .72rem; line-height: 1.25; color: var(--ink-3); text-align: center;
+    font-size: var(--h-t-label); line-height: 1.25; color: var(--ink-3); text-align: center;
     max-width: 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .pl-sum-strip :global(.pl-sum-more) { font-size: .78rem; color: var(--ink-3); align-self: center; }
+  .pl-sum-strip :global(.pl-sum-more) { font-size: var(--h-t-label); color: var(--ink-3); align-self: center; }
 
   /* ── The error state ──────────────────────────────────────────────────────
      There was none. Pressing Continue with nothing chosen left the step
@@ -5380,7 +5380,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
      kader: hij staat ín de vraag en niet naast de knop. */
   .pl-form :global(.pl-veld-fout) {
     margin: .3rem 0 .6rem;
-    font-size: .88rem;
+    font-size: var(--h-t-fijn);
     line-height: 1.5;
     color: var(--warn-ink);
   }
@@ -5391,7 +5391,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     border-radius: var(--r-klein);
     background: var(--paper-2);
     color: var(--warn-ink);
-    font-size: .92rem;
+    font-size: var(--h-t-klein);
     line-height: 1.55;
   }
   /* The field itself, so the message and the control agree about which one is
@@ -5416,7 +5416,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
   }
   .pl-total-label {
     display: block;
-    font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+    font-size: var(--h-t-label); font-weight: 700; letter-spacing: .08em;
     text-transform: uppercase; color: var(--ink-3);
   }
   .pl-total-figure { display: flex; align-items: baseline; gap: .55rem; flex-wrap: wrap; }
@@ -5430,7 +5430,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
   }
   /* BRIEF-14: no price is printed without saying which side of VAT it is on.
      Small, but never absent, and never further away than this. */
-  .pl-total-excl { font-size: .76rem; color: var(--ink-3); }
+  .pl-total-excl { font-size: var(--h-t-label); color: var(--ink-3); }
 
   /* ── The levels table, folded ─────────────────────────────────────────────
      120 words copied verbatim from /pricing, in front of every visitor. The
@@ -5526,32 +5526,32 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
   .pl-meeropties-kop::after { content: "+"; grid-column: 2; grid-row: 1 / span 2; align-self: center; font-weight: 600; font-size: 1.15rem; }
   .pl-meeropties[open] > .pl-meeropties-kop::after { content: "−"; }
   .pl-meeropties-t { font-weight: 600; }
-  .pl-meeropties-sub { color: var(--ink-3, currentColor); font-size: .92rem; }
+  .pl-meeropties-sub { color: var(--ink-3, currentColor); font-size: var(--h-t-klein); }
   .pl-meeropties-body { padding: 0 1.1rem 1.1rem; display: grid; gap: clamp(1rem, 2vw, 1.4rem); }
   .pl-meeropties-body > :global(*) { margin-top: 0; }
   .pl-voorrang { margin-top: clamp(1.2rem, 2.4vw, 1.8rem); padding: 1rem 1.1rem; border: 1px solid var(--line); border-radius: var(--r-kaart); }
   .pl-voorrang-rij { display: flex; align-items: flex-start; gap: .7rem; cursor: pointer; }
   .pl-voorrang-rij input { margin-top: .25rem; flex: 0 0 auto; }
   .pl-voorrang-t { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; width: 100%; }
-  .pl-voorrang-t b { font-size: .98rem; font-weight: 500; }
-  .pl-voorrang-bedrag { margin-left: auto; font-family: var(--font-mono); font-size: .82rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .pl-voorrang-t b { font-size: var(--h-t-klein); font-weight: 500; }
+  .pl-voorrang-bedrag { margin-left: auto; font-family: var(--font-mono); font-size: var(--h-t-fijn); color: var(--ink-2); font-variant-numeric: tabular-nums; }
   .pl-voorrang:has(input:checked) { border-color: var(--line-strong); }
   /* Ronde 91 (C06): agenda dicht. De rij grijs, de zin eronder op volle kleur zodat hij leesbaar blijft. */
   .pl-voorrang.is-dicht .pl-voorrang-rij { opacity: .5; cursor: not-allowed; }
-  .pl-voorrang-dicht { margin: .6rem 0 0; font-size: .86rem; line-height: 1.45; color: var(--ink); max-width: 56ch; }
+  .pl-voorrang-dicht { margin: .6rem 0 0; font-size: var(--h-t-fijn); line-height: 1.45; color: var(--ink); max-width: 56ch; }
   .pl-voorrang-dicht[hidden] { display: none; }
-  .pl-voorrang-dag { margin: .6rem 0 0; font-size: .86rem; line-height: 1.45; color: var(--ink); max-width: 56ch; }
+  .pl-voorrang-dag { margin: .6rem 0 0; font-size: var(--h-t-fijn); line-height: 1.45; color: var(--ink); max-width: 56ch; }
   .pl-voorrang-dag[hidden] { display: none; }
   .pl-voorrang:has(input:checked) .pl-voorrang-bedrag { color: var(--ink); }
-  .pl-voorrang .hint { display: block; margin-top: .35rem; margin-left: 1.85rem; font-size: .84rem; max-width: 52ch; }
+  .pl-voorrang .hint { display: block; margin-top: .35rem; margin-left: 1.85rem; font-size: var(--h-t-fijn); max-width: 52ch; }
   /* Dubbele klasse: Disclose.astro zet zelf `.dc-plain .dc-label { 1.05rem }`
      en `.dc-plain { padding: 1.1rem 0 }` met dezelfde specificiteit, en wint
      dan op volgorde. De uitklapper is hier een bijzin ónder de optie, niet een
      kop ernaast — dus kleiner dan "Voorrang bij levering" erboven. */
   .pl-voorrang.pl-voorrang :global(details) { margin-left: 1.85rem; }
   .pl-voorrang.pl-voorrang :global(.dc-plain) { border-top: 0; padding: .45rem 0 0; }
-  .pl-voorrang.pl-voorrang :global(.dc-plain .dc-label) { font-size: .86rem; font-weight: 500; color: var(--ink-2); }
-  .pl-voorrang.pl-voorrang :global(.dc-plain .dc-body) { font-size: .86rem; color: var(--ink-2); }
+  .pl-voorrang.pl-voorrang :global(.dc-plain .dc-label) { font-size: var(--h-t-fijn); font-weight: 500; color: var(--ink-2); }
+  .pl-voorrang.pl-voorrang :global(.dc-plain .dc-body) { font-size: var(--h-t-fijn); color: var(--ink-2); }
   .pl-voorrang.pl-voorrang :global(.dc-plain:last-of-type) { border-bottom: 0; }
   @media (max-width: 620px) {
     .pl-voorrang-bedrag { margin-left: 0; flex-basis: 100%; }
@@ -5573,7 +5573,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     border-radius: 0 var(--r-sm, 8px) var(--r-sm, 8px) 0;
     max-width: var(--pl-measure);
   }
-  .pl-kit-kop { margin: 0; font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+  .pl-kit-kop { margin: 0; font-size: var(--h-t-label); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
   .pl-kit-lijst {
     display: flex; flex-wrap: wrap; gap: .3rem 1.2rem;
     margin: .5rem 0 0; padding: 0; list-style: none;
@@ -5587,13 +5587,13 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
      "GezichtAva" zonder spatie ertussen, omdat de `gap` niet aankwam.
      Dezelfde val als in FigPipeline.astro en addBrandModels(); dit is de derde
      keer dat dit project erin loopt, vandaar deze noot. */
-  .pl-kit-lijst :global(li) { display: flex; align-items: baseline; gap: .4rem; font-size: .9rem; }
-  .pl-kit-lijst :global(.pl-kit-l) { font-size: .78rem; color: var(--ink-3); }
+  .pl-kit-lijst :global(li) { display: flex; align-items: baseline; gap: .4rem; font-size: var(--h-t-klein); }
+  .pl-kit-lijst :global(.pl-kit-l) { font-size: var(--h-t-label); color: var(--ink-3); }
   .pl-kit-lijst :global(b) { color: var(--ink); font-weight: 600; }
   .pl-kit-knop {
     margin: .6rem 0 0; padding: 0;
     background: none; border: 0; cursor: pointer;
-    font: inherit; font-size: .82rem; color: var(--ink-2);
+    font: inherit; font-size: var(--h-t-fijn); color: var(--ink-2);
     text-decoration: underline; text-underline-offset: 3px;
   }
   .pl-kit-knop:hover { color: var(--ink); }

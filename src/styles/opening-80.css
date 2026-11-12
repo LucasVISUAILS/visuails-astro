@@ -43,12 +43,12 @@ html.o8-aan { --o8-Z: 48px; --o8-R: calc(100svh - 56px); --o8-mist: clamp(96px, 
 .o8-kop .o8-r { display: block; }
 .o8 .o8-zin { --h-maat: 20em; margin: 26px 0 0; max-width: 20em; font: 370 clamp(17px, 1.32vw, 19px)/1.5 var(--h-letter); color: var(--h-inkt); text-wrap: pretty; }
 /* de feiten onder de knoppen: klein, grijs (5,15 : 1 op de grond), met een schuine streep ertussen */
-.o8 .o8-feiten { margin: 22px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 0; font: 500 14px/1.4 var(--h-letter); color: var(--h-grijs, #636974); }
+.o8 .o8-feiten { margin: 22px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 0; font: 500 var(--h-t-fijn)/1.4 var(--h-letter); color: var(--h-grijs, #636974); }
 .o8 .o8-feiten li { display: inline; max-width: none !important; }
 .o8 .o8-feiten li + li::before { content: ""; display: inline-block; vertical-align: -1px; width: 1.5px; height: 12px; margin: 0 12px; background: currentColor; opacity: .55; transform: skewX(-37deg); }
 .o8 .o8-feiten b { font-weight: 600; color: var(--h-inkt); }
 .o8 .o8-acties { margin: 34px 0 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px 26px; }
-.o8 .o8-acties .h-link { font: 500 16px/1.3 var(--h-letter); }
+.o8 .o8-acties .h-link { font: 500 var(--h-t-klein)/1.3 var(--h-letter); }
 .o8-tekst { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
 
 /* ── het podium met de laptop ───────────────────────────────────────────── */
@@ -227,3 +227,36 @@ html.o8-aan .o8.o8-winkel-uit .o8-feiten, html.o8-aan .o8.o8-speelt .o8-feiten {
   .o8 .o8-feiten { flex-direction: column; align-items: center; gap: 4px; }
   .o8 .o8-feiten li + li::before { content: none; }
 }
+
+/* ── LEVERING 93 · HET VELD ZINKT WEG — 10 november 2026 (lijst 90, B1 c) ─────────────────────────────
+   Na de video zinkt het veld (de video en het vlak erachter) weg; de animatie zit in HalOpening80.astro (Web Animations, zodat
+   een scroll hem kan versnellen). Daarna blijft het weg (o8-weg) tot je terug omhoog scrolt: dan komt het terug. */
+html.o8-aan .o8.o8-weg :is(.o8-vlak, .o8-foto) { opacity: 0; }
+
+/* ── LEVERING 94 · DE CLIP IN DE VIDEOSTAND — 12 november 2026 (lijst 92) ──────────────────────────────────────────
+   De videostand speelt de clip uit de bannervideo (vanaf de kap op), het scherm vult hij precies (1600 × 1034, zoals de
+   andere standen); de poster eronder is zijn eerste beeld. Als de laptop onder Wat we maken staat (o8-alleen), heeft hij geen
+   eigen kop: de baan begint met wat ruimte erboven. */
+.o8-sc .o8-st-clip { position: absolute; inset: 0; opacity: 0; transition: opacity .45s cubic-bezier(.16, 1, .3, 1); }
+.o8-sc .o8-st-clip.is-nu { opacity: 1; }
+.o8-sc .o8-st-clip picture, .o8-sc .o8-clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.o8.o8-alleen { padding-top: clamp(48px, 8vw, 120px); }
+@media (prefers-reduced-motion: reduce) { .o8-sc .o8-st-clip { transition: none; } }
+
+/* levering 94 (Lucas, 12 november 07:50: "Verwijder de kleuren achter de laptop"): onder Wat we maken staat de laptop op de
+   grond van de site, zonder het veld (de video zelf is ook op die grond gemaakt: laptop-video-90.py met VELD=wit) */
+.o8.o8-alleen .o8-vlak { background: var(--h-grond, #FBFCFF); }
+
+/* levering 94: het scherm aanklikken. Een laag boven het laptopscherm (de foto ligt over de schermen heen, dus het scherm zelf
+   krijgt geen muis); de knoppen liggen op de beeldjes en de voorgestelde producten van een productpagina. Alleen als de winkel
+   echt staat (niet tijdens de video van de laptop). */
+.o8-klik { position: absolute; z-index: 3; }
+.o8.o8-speelt .o8-klik, .o8.o8-winkel-uit .o8-klik, .o8:not([data-stand="catalog"]) .o8-klik > * { display: none; }
+.o8-klik-knop { position: absolute; appearance: none; border: 0; padding: 0; margin: 0; background: none; cursor: pointer; border-radius: 4px; }
+.o8-klik-knop:focus-visible { outline: 2px solid var(--h-blauw, #25508B); outline-offset: 2px; }
+/* (en zonder het effect, op de telefoon en bij minder beweging: geen uitloop van het blauwe uur onder de laptop) */
+html:not(.o8-aan) .o8.o8-alleen .o8-baan::after { content: none; display: none; }
+/* (de streepjes, de naam van de stand en de pauzeknop stonden wit op het blauwe veld; op de grond zijn ze inkt, het
+   ingedrukte streepje grijs met de klok in inkt: inkt 18,6 : 1, grijs #636974 5,52 : 1 op #FBFCFF) */
+.o8.o8-alleen .o8-stand { --o8-c: var(--h-inkt, #0F1217); --o8-c2: #636974; }
+.o8.o8-alleen .o8-kies[aria-pressed="true"] .o8-k-streep { background: rgba(15, 18, 23, .22); }

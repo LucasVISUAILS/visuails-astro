@@ -55,6 +55,7 @@ import { catalogStyles as catalogEn } from '../data/catalogStyles.js';
 import { catalogStyles as catalogNl } from '../data/catalogStyles.nl.js';
 import { LEVERTAG, TAG_WOORD, tagNaam } from '../lib/iptc.js';
 import HalOpening80 from './HalOpening80.astro';
+import HalBanner94 from './HalBanner94.astro';
 import HalGalerij80 from './HalGalerij80.astro';
 import HalPoster89 from './HalPoster89.astro';
 import HalMaken80 from './HalMaken80.astro';
@@ -243,8 +244,11 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
       Eerst groot wat VISUAILS is, met een uitgeknipt model; onderaan steekt de laptop het beeld in.
       Eén scroll: de laptop helemaal in beeld. Nog één: de video, de winkel klapt mee dicht, en Wat we
       maken glijdt omhoog (HalOpening80.astro, docs/RUST-80.md). Vervangt HalLaptopBreed (79). */}
-  <HalOpening80 lang={lang} kop={c.titel80 as [string, string]} zin={c.zin80} feiten={c.feiten as string[]}
-    knop={{ label: c.ctaStart, href: lp('/start'), attrs: startKnop(lang) }}
+  {/* ── DE BANNERVIDEO — levering 94 (Lucas, 12 november 2026, lijst 92) ──────────────────────────────────────────
+      Zijn montage over de hele breedte, de kop groot linksonder, rechts de uitleg per stap; alle tekst als venster op de
+      video, in negatief met blauw uur (HalBanner94.astro, src/data/banner94.js). De laptop staat sinds deze levering onder
+      Wat we maken (lijst 92, laptop b). */}
+  <HalBanner94 lang={lang} knop={{ label: c.ctaStart, href: lp('/start'), attrs: startKnop(lang) }}
     link={{ label: c.proefLink80, href: lp('/test-sample') }}
     klantLink={{ label: KLANT[lang].studio, href: '/account' }} />
 
@@ -254,6 +258,10 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
       link (HalMaken80.astro). Was (76 – 79): het productvel met tabs. De opening glijdt na de video
       hierheen en zet hem in het midden van het scherm. */}
   <HalMaken80 lang={lang} kop={c.makenKop[0]} zin={c.makenKop[1]} diensten={c.diensten as string[][]} ookKop={c.ookKop} ook={c.ook as string[][]} eenProduct={c.eenProduct} />
+
+  {/* ── DE LAPTOP — sinds levering 94 onder Wat we maken (lijst 92, laptop b), zonder eigen kop: de webshop, het bericht en
+      de clip uit de bannervideo in het scherm, met zijn telefoonfoto K3 bij de clip. Eén scroll speelt hem dicht. */}
+  <HalOpening80 lang={lang} alleenLaptop />
 
   {/* Hoe het werkt met de animaties (HalHoe.astro, 78 – 79) staat niet meer op de voorpagina (lijst 64,
       s-hoe en s-categorie): hij verhuist later naar /catalog, /lifestyle en /video. De opmaak die hier

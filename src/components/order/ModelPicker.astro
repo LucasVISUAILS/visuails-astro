@@ -369,7 +369,7 @@ const thumbSet = (m) => {
      needs an aspect ratio and a colour chip does not. */
   .pl-model { margin-top: clamp(1.6rem, 3vw, 2.2rem); max-width: var(--pl-measure); }
   .pl-model .pl-sub-h { margin-bottom: .35rem; }
-  .pl-model-lead { font-size: .88rem; color: var(--ink-2); line-height: 1.6; max-width: 66ch; }
+  .pl-model-lead { font-size: var(--h-t-fijn); color: var(--ink-2); line-height: 1.6; max-width: 66ch; }
 
   .mp-grid {
     display: grid;
@@ -445,9 +445,9 @@ const thumbSet = (m) => {
   .mp-opt-any:hover .mp-thumb-merk, .mp-opt-any:focus-within .mp-thumb-merk { filter: none; opacity: 1; }
   .mp-row { display: flex; align-items: center; gap: .4rem; }
   .mp-row input { accent-color: var(--accent); width: 15px; height: 15px; flex: none; }
-  .mp-name { font-size: .8rem; color: var(--ink); line-height: 1.25; }
+  .mp-name { font-size: var(--h-t-fijn); color: var(--ink); line-height: 1.25; }
   /* 11,7px in plaats van 10,9 — de ondergrens van de keuring is 11,5px. */
-  .mp-traits { font-size: .73rem; color: var(--ink-3); line-height: 1.35; }
+  .mp-traits { font-size: var(--h-t-label); color: var(--ink-3); line-height: 1.35; }
 
   /* A brand's OWN face, injected by pipeline.js from /account/me — these tiles
      do not exist in this component's markup and cannot, because the roster is
@@ -465,7 +465,7 @@ const thumbSet = (m) => {
     border-radius: var(--r-klein);
     background: var(--surface);
     box-shadow: inset 3px 0 0 var(--accent), inset 0 1px 0 rgb(255 255 255 / 0.05);
-    font-size: .9rem; line-height: 1.5; color: var(--ink-2);
+    font-size: var(--h-t-klein); line-height: 1.5; color: var(--ink-2);
   }
   .mp-signin > span { flex: 1 1 20rem; }
   .mp-signin-btn { flex: 0 0 auto; }
@@ -564,7 +564,7 @@ const thumbSet = (m) => {
        `--accent` en niet `--accent-bright`: #D2E04A op #111 is een contrast van
        ruim 11:1, en dat is dezelfde lime als de knoppen. */
     color: var(--accent);
-    font-size: .73rem;
+    font-size: var(--h-t-label);
     font-weight: 700;
     letter-spacing: .06em;
     text-transform: uppercase;
@@ -572,7 +572,7 @@ const thumbSet = (m) => {
     pointer-events: none;
   }
 
-  .pl-model-note { margin-top: .7rem; font-size: .82rem; color: var(--ink-3); line-height: 1.55; max-width: 70ch; }
+  .pl-model-note { margin-top: .7rem; font-size: var(--h-t-fijn); color: var(--ink-3); line-height: 1.55; max-width: 70ch; }
 
   /* Restated rather than inherited: Astro scopes a component's styles to that
      component, so BackgroundPicker's copies of these do not reach here. */
@@ -587,14 +587,14 @@ const thumbSet = (m) => {
   .pl-why > summary {
     width: max-content;
     cursor: pointer;
-    font-size: .8rem;
+    font-size: var(--h-t-fijn);
     color: var(--accent-bright);
     text-decoration: underline;
     text-underline-offset: 3px;
     border-radius: 999px;
   }
   .pl-why > summary:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
-  .pl-why > p { margin-top: .5rem; font-size: .82rem; color: var(--ink-3); line-height: 1.55; max-width: 70ch; }
+  .pl-why > p { margin-top: .5rem; font-size: var(--h-t-fijn); color: var(--ink-3); line-height: 1.55; max-width: 70ch; }
   .pl-why a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 2px; }
 
   /* Eleven tiles do not divide evenly into anything, so the breakpoints are
@@ -691,14 +691,14 @@ const thumbSet = (m) => {
      regels van twee woorden, en de vraag hier is wie het draagt en niet welke
      kenmerken hij heeft. Ze staan nog in de rastervorm, op de proefpagina. */
   .mp-grid.is-strook .mp-traits { display: none; }
-  .mp-grid.is-strook .mp-name { font-size: .72rem; line-height: 1.2; }
+  .mp-grid.is-strook .mp-name { font-size: var(--h-t-label); line-height: 1.2; }
   /* "Wij kiezen voor jou" is op tegelmaat drie regels en maakt daarmee élke
      tegel in de rij drie regels hoog — flexitems zijn even hoog. In deze vorm
      draagt hij daarom de korte naam; de volledige zin staat een regel lager,
      in de uitleg die verschijnt zodra je hem kiest. */
   .mp-grid.is-strook .mp-opt-any .mp-name { font-size: 0; }
   .mp-grid.is-strook .mp-opt-any .mp-name::after {
-    content: attr(data-kort); font-size: .72rem; line-height: 1.2;
+    content: attr(data-kort); font-size: var(--h-t-label); line-height: 1.2;
   }
   /* Het bolletje van de radio is op deze maat groter dan de naam ernaast; de
      tegel zelf toont de keuze al met zijn rand en zijn vulling. Verborgen en
@@ -727,7 +727,7 @@ const thumbSet = (m) => {
     display: block;
     margin: .7rem 0 0; padding: 0;
     background: none; box-shadow: none; border-radius: 0;
-    font-size: .82rem; color: var(--ink-3);
+    font-size: var(--h-t-fijn); color: var(--ink-3);
   }
   .pl-model:has(.is-strook) .mp-signin > span { flex: none; }
   /* De knop wordt een tekstlink in dezelfde regel: dezelfde bestemming, maar
@@ -747,7 +747,7 @@ const thumbSet = (m) => {
      gekozen heeft. */
   .pl-model:has(.is-strook) .pl-model-note { display: none; }
   .pl-model:has(.is-strook):has(.mp-opt-any input:checked) .pl-model-note {
-    display: block; margin-top: .6rem; font-size: .82rem;
+    display: block; margin-top: .6rem; font-size: var(--h-t-fijn);
   }
   .mp-traits { overflow-wrap: anywhere; }
   @media (prefers-reduced-motion: reduce) { .mp-opt { transition: none; } }

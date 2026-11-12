@@ -566,11 +566,11 @@ const GEZICHTEN = ['/img/lifestyle-flash-03.webp', '/img/model-aaron-w380.webp',
     border-bottom: 1px solid var(--line);
     background: var(--paper);
   }
-  .fd-mark { font-weight: 800; letter-spacing: .1em; font-size: .78rem; }
+  .fd-mark { font-weight: 800; letter-spacing: .1em; font-size: var(--h-t-label); }
   /* De mock-upmelding staat in de balk en niet onder de figuur: wie de tour
      begint hoort te weten dat het een voorbeeld is voordat hij iets aanwijst. */
   .fd-badge {
-    margin-left: auto; font-size: .74rem; line-height: 1.35; color: var(--ink-3);
+    margin-left: auto; font-size: var(--h-t-label); line-height: 1.35; color: var(--ink-3);
     padding: .2rem .5rem; border: 1px solid var(--line); border-radius: 999px;  /* rechtsboven in het scherm (24), 16 en 11 van de rand */
   }
 
@@ -610,8 +610,8 @@ const GEZICHTEN = ['/img/lifestyle-flash-03.webp', '/img/model-aaron-w380.webp',
      wordt gekozen met .fd-tab:nth-of-type(n), en een <span> is de eerste van zijn
      soort — dan stond "Facturen" als actief naast "Overzicht". */
   .fd-rust { display: grid; gap: .1rem; padding: .55rem .7rem; border-radius: var(--r-klein); border: 1px solid transparent; cursor: default; }
-  .fd-tab-n { font-size: .88rem; font-weight: 700; color: var(--ink-2); }
-  .fd-tab-s { font-size: .74rem; line-height: 1.35; color: var(--ink-3); }
+  .fd-tab-n { font-size: var(--h-t-fijn); font-weight: 700; color: var(--ink-2); }
+  .fd-tab-s { font-size: var(--h-t-label); line-height: 1.35; color: var(--ink-3); }
   .fd-tab:hover { background: var(--ghost); }
 
   /* De aangewezen tab, en het bijbehorende paneel. `:has()` leest de stand van
@@ -669,13 +669,13 @@ const GEZICHTEN = ['/img/lifestyle-flash-03.webp', '/img/model-aaron-w380.webp',
     border: 1px solid var(--line); border-radius: var(--r-klein); background: var(--surface);
   }
   .fd-tile b { font-size: 1.3rem; line-height: 1; }
-  .fd-tile span { font-size: .76rem; color: var(--ink-2); }
+  .fd-tile span { font-size: var(--h-t-label); color: var(--ink-2); }
 
   .fd-card {
     margin-top: .8rem; padding: .85rem;
     border: 1px solid var(--line); border-radius: var(--r-kaart); background: var(--surface);
   }
-  .fd-ref { margin: 0 0 .6rem; font-size: .78rem; letter-spacing: .06em; color: var(--ink-3); }
+  .fd-ref { margin: 0 0 .6rem; font-size: var(--h-t-label); letter-spacing: .06em; color: var(--ink-3); }
 
   /* Zoals het echte betaalblok (.st-betaal): een vulling in de kaart, geen rand.
      Hier stond een violette streep links — een gekleurde zijrand, die het schema
@@ -685,10 +685,10 @@ const GEZICHTEN = ['/img/lifestyle-flash-03.webp', '/img/model-aaron-w380.webp',
     border-radius: var(--r-kaart);
     background: var(--surface-2);
   }
-  .fd-payrow { display: flex; justify-content: space-between; gap: 1rem; font-size: .8rem; color: var(--ink-3); }
+  .fd-payrow { display: flex; justify-content: space-between; gap: 1rem; font-size: var(--h-t-fijn); color: var(--ink-3); }
   .fd-payrow span:last-child { font-variant-numeric: tabular-nums; }
   .fd-payrow.is-total { color: var(--ink); font-weight: 700; }
-  .fd-paystate { margin: .35rem 0 .1rem; font-size: .76rem; color: var(--ink-2); }
+  .fd-paystate { margin: .35rem 0 .1rem; font-size: var(--h-t-label); color: var(--ink-2); }
 
   /* Een knop die geen knop is. <span> en niet <button>, zodat er niets te
      klikken valt en een schermlezer hem niet als handeling aankondigt — het is
@@ -697,9 +697,9 @@ const GEZICHTEN = ['/img/lifestyle-flash-03.webp', '/img/model-aaron-w380.webp',
     display: inline-flex; align-items: center; justify-content: center;
     width: max-content; padding: .35rem .8rem; border-radius: var(--hoek-knop);
     background: var(--accent); color: var(--accent-on);
-    font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    font-size: var(--h-t-label); font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
   }
-  .fd-fakebtn.is-sm { width: 100%; padding: .32rem .45rem; font-size: .72rem; border-radius: 999px; }
+  .fd-fakebtn.is-sm { width: 100%; padding: .32rem .45rem; font-size: var(--h-t-label); border-radius: 999px; }
   .fd-fakebtn.is-line { background: none; color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line-strong); }
   .fd-fakebtn.is-quiet { background: none; color: var(--ink-3); box-shadow: inset 0 0 0 1px var(--line); }
 
@@ -710,7 +710,7 @@ const GEZICHTEN = ['/img/lifestyle-flash-03.webp', '/img/model-aaron-w380.webp',
      component voor bestaat — zie de kop van dit bestand. */
   .fd-pick {
     display: inline-flex; align-items: center; gap: .3rem; width: 100%;
-    padding: .32rem .1rem; font-size: .72rem; color: var(--ink-2);
+    padding: .32rem .1rem; font-size: var(--h-t-label); color: var(--ink-2);
     letter-spacing: .04em; text-transform: uppercase; font-weight: 700;
   }
   .fd-box {
@@ -727,10 +727,10 @@ const GEZICHTEN = ['/img/lifestyle-flash-03.webp', '/img/model-aaron-w380.webp',
     border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line-strong);
   }
 
-  .fd-now { margin: .8rem 0 0; font-size: .82rem; color: var(--ink-2); }
+  .fd-now { margin: .8rem 0 0; font-size: var(--h-t-fijn); color: var(--ink-2); }
   .fd-win { color: var(--ink-3); }
   .fd-flow { list-style: none; display: grid; grid-auto-flow: column; gap: 0; margin: .7rem 0 0; padding: 0; }
-  .fd-step { position: relative; display: grid; gap: .35rem; font-size: .74rem; color: var(--ink-3); }
+  .fd-step { position: relative; display: grid; gap: .35rem; font-size: var(--h-t-label); color: var(--ink-3); }
   .fd-dot {
     width: 9px; height: 9px; border-radius: 50%; position: relative; z-index: 1;
     background: var(--surface); box-shadow: inset 0 0 0 2px var(--line-strong);
@@ -774,7 +774,7 @@ const GEZICHTEN = ['/img/lifestyle-flash-03.webp', '/img/model-aaron-w380.webp',
     }
   }
 
-  .fd-h4 { margin: 1rem 0 .4rem; font-size: .74rem; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; }
+  .fd-h4 { margin: 1rem 0 .4rem; font-size: var(--h-t-label); letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; }
   /* Vier duimnagels, geen vier foto’s: op volle breedte werden ze 195px breed en
      dan 244px hoog, waardoor dit paneel 200px langer werd dan de andere drie. */
   .fd-strip {
@@ -787,9 +787,9 @@ const GEZICHTEN = ['/img/lifestyle-flash-03.webp', '/img/model-aaron-w380.webp',
   .fd-strip img { aspect-ratio: 4 / 5; }
 
   .fd-prodhead { display: flex; align-items: center; gap: .7rem; }
-  .fd-prodhead > span { display: grid; gap: .1rem; font-size: .86rem; }
+  .fd-prodhead > span { display: grid; gap: .1rem; font-size: var(--h-t-fijn); }
   .fd-cover { width: 46px; aspect-ratio: 4 / 5; flex: 0 0 auto; }
-  .fd-sub { font-size: .72rem; color: var(--ink-3); }
+  .fd-sub { font-size: var(--h-t-label); color: var(--ink-3); }
 
   .fd-cols { display: grid; gap: 1rem; margin-top: .6rem; }
   @container fd (min-width: 43.75em) { .fd-cols { grid-template-columns: minmax(0, 3fr) minmax(0, 1fr); } }
@@ -801,18 +801,18 @@ const GEZICHTEN = ['/img/lifestyle-flash-03.webp', '/img/model-aaron-w380.webp',
   @container fd (min-width: 35em) { .fd-shots { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
   .fd-shot { display: grid; gap: .25rem; align-content: start; }
   .fd-shot img { aspect-ratio: 4 / 5; }
-  .fd-cap { font-size: .74rem; color: var(--ink-2); }
+  .fd-cap { font-size: var(--h-t-label); color: var(--ink-2); }
   .fd-upload { aspect-ratio: 4 / 5; }
 
   /* Vier tegels nu: "geen voorkeur" plus drie gezichten. Zelfde volgorde en
      zelfde labels als het echte scherm — zie de noot in de layout. */
   .fd-faces { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; max-width: 28rem; }
-  .fd-face { display: grid; gap: .18rem; padding: .3rem; border: 1px solid var(--line); border-radius: var(--r-klein); font-size: .74rem; color: var(--ink-3); align-content: start; }
+  .fd-face { display: grid; gap: .18rem; padding: .3rem; border: 1px solid var(--line); border-radius: var(--r-klein); font-size: var(--h-t-label); color: var(--ink-3); align-content: start; }
   .fd-face.is-on { border-color: var(--kies, var(--accent)); color: var(--ink); }
   .fd-face img { aspect-ratio: 3 / 4; }
   .fd-face > span:first-of-type { font-weight: 600; color: var(--ink-2); }
   .fd-face.is-on > span:first-of-type { color: var(--ink); }
-  .fd-face-sub { font-size: .72rem; line-height: 1.35; color: var(--ink-3); }
+  .fd-face-sub { font-size: var(--h-t-label); line-height: 1.35; color: var(--ink-3); }
   /* "Alleen van jou" in de accentkleur, net als in het dashboard: dat label is
      het verschil tussen een gezicht uit onze bibliotheek en een gezicht dat
      niemand anders gebruikt. */
@@ -827,16 +827,16 @@ const GEZICHTEN = ['/img/lifestyle-flash-03.webp', '/img/model-aaron-w380.webp',
      is hoe het echte scherm ze tekent, en een aangevinkt kanaal draagt zijn
      verplichte achtergrondkleur mee. */
   .fd-chs { display: flex; flex-wrap: wrap; gap: .35rem; }
-  .fd-ch { display: inline-flex; align-items: center; gap: .35rem; padding: .28rem .55rem; border: 1px solid var(--line); border-radius: var(--hoek-knop); font-size: .74rem; color: var(--ink-3); }
+  .fd-ch { display: inline-flex; align-items: center; gap: .35rem; padding: .28rem .55rem; border: 1px solid var(--line); border-radius: var(--hoek-knop); font-size: var(--h-t-label); color: var(--ink-3); }
   .fd-ch.is-on { border-color: var(--kies, var(--accent)); color: var(--ink); }
   .fd-ch-hex { font-size: .75rem; font-weight: 600; padding: .12rem .35rem; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); }
-  .fd-fine { margin: .5rem 0 0; font-size: .74rem; line-height: 1.5; color: var(--ink-3); max-width: 44ch; }
+  .fd-fine { margin: .5rem 0 0; font-size: var(--h-t-label); line-height: 1.5; color: var(--ink-3); max-width: 44ch; }
 
   .fd-sws { display: flex; flex-wrap: wrap; gap: .5rem; }
   .fd-sw {
     display: grid; gap: .2rem; width: 5.5rem; padding: .35rem;
     border: 1px solid var(--line); border-radius: var(--r-klein);
-    font-size: .74rem; color: var(--ink-2); text-align: center;
+    font-size: var(--h-t-label); color: var(--ink-2); text-align: center;
   }
   .fd-sw.is-on { border-color: var(--kies, var(--accent)); }
   .fd-sw svg { display: block; width: 100%; height: 28px; border-radius: 3px; }
@@ -845,13 +845,13 @@ const GEZICHTEN = ['/img/lifestyle-flash-03.webp', '/img/model-aaron-w380.webp',
   .fd-fields { display: grid; gap: .5rem; }
   @container fd (min-width: 38.75em) { .fd-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .fd-field { display: grid; gap: .2rem; }
-  .fd-flabel { font-size: .74rem; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+  .fd-flabel { font-size: var(--h-t-label); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
   .fd-fvalue {
-    padding: .45rem .6rem; font-size: .82rem; color: var(--ink);
+    padding: .45rem .6rem; font-size: var(--h-t-fijn); color: var(--ink);
     border: 1px solid var(--line-strong); border-radius: 999px; background: var(--paper-2);
   }
 
-  .fd-note { margin: .8rem 0 0; font-size: .78rem; line-height: 1.5; color: var(--ink-3); max-width: 60ch; }
+  .fd-note { margin: .8rem 0 0; font-size: var(--h-t-label); line-height: 1.5; color: var(--ink-3); max-width: 60ch; }
 
   /* ---- geen :has(), en dan? ------------------------------------------------
      Alle vier de panelen onder elkaar, met hun tabnaam als kopje. Niet mooi,
@@ -908,7 +908,7 @@ const GEZICHTEN = ['/img/lifestyle-flash-03.webp', '/img/model-aaron-w380.webp',
     display: inline-flex; align-items: center; justify-content: center; gap: .3rem;
     padding: .32rem .45rem; border-radius: 999px;
     background: color-mix(in srgb, var(--accent) 10%, var(--surface)); color: var(--accent-text);
-    font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    font-size: var(--h-t-label); font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
     transition: opacity .3s, transform .5s cubic-bezier(.34, 1.4, .5, 1);
   }
   .fd-ok-u svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -938,7 +938,7 @@ const GEZICHTEN = ['/img/lifestyle-flash-03.webp', '/img/model-aaron-w380.webp',
     background-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); transition-delay: 3s;
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 8.5l3.2 3L13 4.5' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
   }
-  .fd[data-uitleg] .fd-fakefield { display: flex; align-items: center; padding: 0 .55rem; font-size: .72rem; color: var(--ink-2); }
+  .fd[data-uitleg] .fd-fakefield { display: flex; align-items: center; padding: 0 .55rem; font-size: var(--h-t-label); color: var(--ink-2); }
   .fd[data-uitleg-staat]:not(.u-s4) .fd-veld-u { clip-path: inset(0 100% 0 0); }
   .fd:not([data-uitleg-staat="klaar"]).u-s4 .fd-veld-u { animation: fd-typ 1.1s steps(30, end) 3.2s both; }
   /* Na de ronde is het vinkje weer leeg: het beeld is aangepast. */

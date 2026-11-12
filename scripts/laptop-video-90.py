@@ -77,6 +77,12 @@ if KORREL > 0:
     ka = (K[..., 3:4] / 255.0) * KORREL
     F = F * (1 - ka) + K[..., :3] * ka
 F = np.clip(F, 0, 255).astype(np.float32)
+# levering 94 (Lucas, 12 november 07:50: "Verwijder de kleuren achter de laptop"): VELD=wit zet in plaats van het veld de grond
+# van de site eronder, (250, 252, 255): dat is in H.264 (BT.709, beperkt bereik) precies te maken en tekent in Chromium als de
+# grond #FBFCFF op één na in rood (zie scratchpad/94/banner-kleur.py: 251 kan niet exact).
+VELD = os.environ.get('VELD', 'b1')
+if VELD == 'wit':
+    F = np.empty_like(F); F[...] = (250.0, 252.0, 255.0)
 cv2.imwrite(f'{werk}/veld.png', cv2.cvtColor(np.rint(F).astype(np.uint8), cv2.COLOR_RGB2BGR))
 
 
@@ -173,10 +179,89 @@ def uitknippen(I):
     return a, np.clip(Okleur, 0, 255)
 
 
+def uitknippen93(I):
+    """Levering 93 (10 november 2026). Lucas: "Er zijn een soort grijze plekken te vinden om de armen en handen heen bij de
+    laptop en ook tijdens het afspelen." Twee oorzaken, nagemeten in beeld 0:
+    - de kern was alles onder L 150: een randpixel die half huid en half lichte grond is (L 100 – 150), bleef zo ondoorzichtig
+      staan met zijn grijze mengkleur, en op het blauwe veld werd dat een grijze rand om de arm;
+    - de bron heeft om de vingers en de onderkant van de arm een lichte, warme rand (bijv. 248, 232, 230): lichter dan de grond,
+      maar niet de grond. Naast een wit vlakje telde dat als scherm (ondoorzichtig): de witte vlekjes onder de vingers.
+    Nu: de kern is echt donker (L < 90) plus de grote schermen; alles wat lichter is dan de grond en niet bij een groot scherm
+    hoort, is grond; de zachte rand mengt de kleur van de dichtstbijzijnde donkere pixel met het veld, met een kleine knijp
+    (KNIJP) zodat er geen lichte waas om de huid blijft.
+    Uit: a (dekking), O (kleur van de voorgrond), scherm (0 – 1: hoeveel van de pixel scherm is)."""
+    L = I.mean(2)
+    GL = G.mean(2)
+    dG = np.abs(I - G).max(2)
+    donker = L < DONKER
+    wit = I.min(2) >= 248
+    n_w, lab_w, st_w, _ = cv2.connectedComponentsWithStats(wit.astype(np.uint8), connectivity=8)
+    groot = np.zeros(n_w, bool)
+    if n_w > 1: groot[1:] = st_w[1:, cv2.CC_STAT_AREA] >= GROOT_SCHERM
+    schermwit = groot[lab_w]
+    # het gebied van een scherm: alles wat licht is en met het witte vlak samenhangt binnen de donkere rand van het toestel
+    # (een scherm is niet overal ≥ 248: bij de bovenrand en in de beweging lijkt het soms op de grond). Een rand die door de
+    # beweging zo licht wordt dat het gebied naar de grond lekt (veel groter dan het witte vlak), telt niet: dan alleen het wit.
+    licht_ = L >= 160
+    n_l, lab_l = cv2.connectedComponents(licht_.astype(np.uint8), connectivity=4)
+    scherm = schermwit.copy()
+    if n_l > 1:
+        opp = np.bincount(lab_l.ravel(), minlength=n_l)
+        wit_in = np.bincount(lab_l.ravel(), weights=schermwit.ravel().astype(np.float64), minlength=n_l)
+        goed = (wit_in > 0) & (opp <= 1.5 * wit_in + 5000); goed[0] = False
+        scherm |= goed[lab_l]
+    # de lichte ring tussen de rand van het toestel en het scherm (de lens): tot 6 px naast het scherm, waar het scherm
+    # dichterbij is dan de grond buiten het toestel
+    rond = cv2.dilate(scherm.astype(np.uint8), np.ones((13, 13), np.uint8)).astype(bool)
+    buiten = ((dG <= 6) | (L >= GL - 10)) & ~rond
+    dichtbij = rond & (ndi.distance_transform_edt(~scherm) < ndi.distance_transform_edt(~buiten))
+    zone = scherm | (dichtbij & ~donker)
+    kern = donker | schermwit | zone
+    # grond: wat (bijna) de grond is, en alles wat lichter is dan de grond buiten een scherm
+    grond = ~kern & ((dG <= 6) | (L >= GL - 10))
+    zacht = ~(grond | kern)
+    idx = ndi.distance_transform_edt(~donker, return_distances=False, return_indices=True)
+    Od = I[idx[0], idx[1]]                                   # de dichtstbijzijnde echt donkere pixel
+    OL = Od.mean(2)
+    a = np.zeros((H, W), np.float32)
+    a[kern] = 1.0
+    az = np.clip((GL - L) / np.maximum(GL - OL, 12.0), 0, 1)
+    az = np.clip((az - KNIJP) / (1 - KNIJP), 0, 1)
+    a[zacht] = az[zacht]
+    O = np.where(donker[..., None], I, Od)                   # de rand krijgt de kleur van de huid of het toestel ernaast
+    # het scherm: hoeveel van de pixel scherm is, gemeten tegen het donkerste van de rand ernaast (de kern van de rand van het
+    # toestel, binnen 7 px). Ook de grijze mengpixels aan de binnenkant van de rand (L 25 – 90) tellen mee: bij een wit scherm
+    # waren ze de zachte overgang, bij een scherm dat uit staat werden ze een lichte lijn langs de rand.
+    Lmin = np.minimum(ndi.minimum_filter(L, size=15), OL)     # (midden in het scherm: de rand van het toestel verderop)
+    rand = np.stack([Lmin, Lmin, Lmin * 1.05 + 1], 2)
+    gebied = zone | schermwit | (dichtbij & donker)
+    s = np.zeros((H, W), np.float32)
+    s[gebied] = np.clip((L - Lmin) / np.maximum(255.0 - Lmin, 1.0), 0, 1)[gebied]
+    O = np.where(gebied[..., None], I, O)
+    a[gebied] = 1.0
+    return a, np.clip(O, 0, 255), s, rand
+
+
+# levering 93: de schermen staan uit (Lucas: "een echte donkere grijze/zwarte kleur van wanneer die schermen echt uit gaan")
+DONKER = float(os.environ.get('DONKER', '90'))
+GROOT_SCHERM = int(os.environ.get('GROOT_SCHERM', '20000'))
+KNIJP = float(os.environ.get('KNIJP', '0.08'))
+_uit = os.environ.get('SCHERM_UIT', '#16181E').lstrip('#')
+SCHERM_UIT = np.array([int(_uit[k:k + 2], 16) for k in (0, 2, 4)], np.float32) if _uit else None
+NIEUW = os.environ.get('UITKNIP', '93') == '93'
+
 schermen0 = None
-for i in range(0, 1 if ALLEEN_BEELD0 else LAATSTE + 1):
+REEKS = [int(x) for x in os.environ['BEELDEN'].split(',')] if os.environ.get('BEELDEN') else range(0, 1 if ALLEEN_BEELD0 else LAATSTE + 1)
+for i in REEKS:
     I = alle[i].astype(np.float32)
-    a, O = uitknippen(I)
+    if NIEUW:
+        a, O, sch, rand = uitknippen93(I)
+        if SCHERM_UIT is not None:
+            # wit wordt de kleur van een uitgezet scherm; de mengpixels naar de rand van het toestel mengen mee
+            Ouit = sch[..., None] * SCHERM_UIT + (1 - sch[..., None]) * rand
+            O = np.where((sch > 0)[..., None], Ouit, O)
+    else:
+        a, O = uitknippen(I)
     uit = a[..., None] * O + (1 - a[..., None]) * F
     rgb = np.rint(np.clip(uit, 0, 255)).astype(np.uint8)
     cv2.imwrite(f'{werk}/beeld/{i:03d}.png', cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR))
@@ -220,6 +305,6 @@ for i in range(0, 1 if ALLEEN_BEELD0 else LAATSTE + 1):
 
 json.dump({'bron': 'kladblok/levering-90/21_9_laptop-90.mp4 (Lucas, 8 november 2026); scripts/laptop-video-90.py en -90.mjs (levering 90)',
            'b': W, 'h': H, 'fps': 24, 'beelden': LAATSTE + 1, 'grond_video': '#F1F4FB',
-           'veld': 'veld-b1.webp zoals op 1440 × 900 (podium 1440 × 844, foto 120,5 %, midden)' + (f', korrel-256 op {KORREL}' if KORREL > 0 else ', zonder korrel'),
+           'veld': ('wit (250, 252, 255): de grond van de site, levering 94' if VELD == 'wit' else 'veld-b1.webp zoals op 1440 × 900 (podium 1440 × 844, foto 120,5 %, midden)' + (f', korrel-256 op {KORREL}' if KORREL > 0 else ', zonder korrel')),
            'schermen': schermen0}, open(f'{werk}/video.json', 'w'), ensure_ascii=False)
 print('klaar', LAATSTE + 1, 'beelden')

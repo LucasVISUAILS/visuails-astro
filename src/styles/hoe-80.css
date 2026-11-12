@@ -12,8 +12,8 @@
 .w8-stap + .w8-stap { position: relative; padding-left: 1.08em; }
 /* de snede in het midden van de 1,08 em: onderaan op .24 em, door de schuinte (tan 37° × .78 = .59 em) bovenaan op .83 em */
 .w8-stap + .w8-stap::before { content: ""; position: absolute; left: .24em; bottom: .02em; width: .08em; height: .78em; background: var(--h-inkt); transform: skewX(-37deg); transform-origin: 0 100%; }
-.w8-nr { margin: 0 0 12px .06em; font: 500 11.5px/1 var(--h-mono); letter-spacing: .08em; color: var(--h-grijs, #636974); }
-.w8 .w8-onder { --h-maat: none; margin: 34px auto 0; max-width: none; font: 370 clamp(16px, 1.25vw, 18px)/1.5 var(--h-letter); color: var(--h-grijs, #636974); }
+.w8-nr { margin: 0 0 12px .06em; font: 600 var(--h-t-label)/1 var(--h-mono); letter-spacing: .08em; color: var(--h-grijs, #636974); }
+.w8 .w8-onder { --h-maat: none; margin: 34px auto 0; max-width: none; font: 370 clamp(17px, 1.32vw, 19px)/1.5 var(--h-letter); color: var(--h-grijs, #636974); }
 .w8 .w8-link { margin-left: 10px; color: var(--h-inkt); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, var(--h-inkt) 32%, transparent); }
 .w8 .w8-link:hover { color: var(--h-blauw, #25508B); text-decoration-color: currentColor; }
 

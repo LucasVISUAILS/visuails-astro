@@ -39,16 +39,16 @@ export const STAND_BREEDTES = [1000, 1600, 2304];
 export const STAND_MAP = '/img/hal/stand';
 
 /** De reeks zoals de schermen hem tonen: wat er van elke set echt is. */
-export function halReeks(lang) {
-  const [catalog, lifestyle, video] = laptopReeks(lang);
+export function halReeks(lang, opties = {}) {
+  const [catalog, lifestyle, video] = laptopReeks(lang, opties);
   const cat = catalog.beelden.filter((b) => isEcht(b.src));
   const life = lifestyle.beelden.filter((b) => isEcht(b.src) || b.plaat);
   return { catalog, lifestyle, video, cat, life };
 }
 
 /** Alle standen in volgorde, voor deze sets. */
-export function alleStanden(lang, sets = ['catalog', 'lifestyle', 'video']) {
-  const { catalog, lifestyle, video, cat, life } = halReeks(lang);
+export function alleStanden(lang, sets = ['catalog', 'lifestyle', 'video'], opties = {}) {
+  const { catalog, lifestyle, video, cat, life } = halReeks(lang, opties);
   return [
     ...cat.map((b, i) => ({ set: 'catalog', i, fon: b.fon ?? catalog.fon, duur: catalog.duur })),
     ...life.map((_, i) => ({ set: 'lifestyle', i, fon: lifestyle.fon, duur: lifestyle.duur })),

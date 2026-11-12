@@ -267,15 +267,15 @@ const vasteRegel = lang === 'nl'
     padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
   }
 
-  .pl-hoeken-h { margin: 0; font-size: .95rem; font-weight: 700; color: var(--ink); }
+  .pl-hoeken-h { margin: 0; font-size: var(--h-t-klein); font-weight: 700; color: var(--ink); }
   /* Geen marge meer bovenaan: sinds 10 september staat er niets meer boven dit
      blok — de vier vaste opnames en de uitleg zijn /per-product geworden. */
   .pl-hoeken-h2 { display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem .8rem; margin-top: 0; }
-  .pl-hoeken-uit { margin-left: auto; font-size: .85rem; }
-  .pl-hoeken-tarief { font-family: var(--font-mono); font-size: .74rem; letter-spacing: .04em; color: var(--ink-3); font-weight: 400; }
+  .pl-hoeken-uit { margin-left: auto; font-size: var(--h-t-fijn); }
+  .pl-hoeken-tarief { font-family: var(--font-mono); font-size: var(--h-t-label); letter-spacing: .04em; color: var(--ink-3); font-weight: 400; }
   /* .6rem en niet .3rem: bij .3rem stond er vijf pixels tussen deze zin en het
      blok erboven, en kladblok/te-dicht.mjs telt alles onder acht als plakken. */
-  .pl-hoeken-hint { display: block; margin: .6rem 0 0; font-size: .84rem; line-height: 1.6; color: var(--ink-3); max-width: 58ch; }
+  .pl-hoeken-hint { display: block; margin: .6rem 0 0; font-size: var(--h-t-fijn); line-height: 1.6; color: var(--ink-3); max-width: 58ch; }
   /* Zelfde maat en kleur als de hint erboven — het is dezelfde soort zin: iets
      dat je leest terwijl je kiest, niet iets dat je moet beantwoorden. De marge
      is ruimer omdat hij onder de laatste groep tegels komt en niet onder een
@@ -288,7 +288,7 @@ const vasteRegel = lang === 'nl'
   .pl-hoek-groep { margin-top: clamp(1.1rem, 2.2vw, 1.5rem); }
   .pl-hoek-groep-h {
     margin: 0 0 .5rem; font-family: var(--font-mono);
-    font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3);
+    font-size: var(--h-t-label); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3);
   }
   /* TWEE OP EEN TELEFOON EN VIER OP EEN SCHERM, en dat zijn geen willekeurige
      getallen: elke groep TELT er vier, dus vier naast elkaar is precies één
@@ -341,7 +341,7 @@ const vasteRegel = lang === 'nl'
      tegel, dus zonder dit zakt een korte zin naar het midden van de ruimte die
      de langste buurtegel opeist — vier namen naast elkaar op vier hoogtes. */
   .pl-hoek-t { display: grid; align-content: start; gap: .15rem; padding: 0 .7rem .7rem; }
-  .pl-hoek-naam { font-size: .88rem; color: var(--ink); }
+  .pl-hoek-naam { font-size: var(--h-t-fijn); color: var(--ink); }
 
   /* Vol: de vier zijn op. De overige tegels blijven staan en blijven leesbaar —
      ze zijn alleen niet meer aan te vinken. Verdwijnen zou de klant laten zoeken
@@ -351,14 +351,14 @@ const vasteRegel = lang === 'nl'
   .pl-hoek-rooster > li.is-vol .pl-hoek-box:hover { border-color: var(--line-strong); }
 
   .pl-hoek-note { display: block; }
-  .pl-hoek-note .input { width: 100%; font-size: .84rem; }
+  .pl-hoek-note .input { width: 100%; font-size: var(--h-t-fijn); }
   /* iOS zoomt in op velden onder 16 px (1 oktober 2026); zie stijl22.css. */
-  @media (max-width: 760px), (pointer: coarse) { .pl-hoek-note .input { font-size: 16px; } }
+  @media (max-width: 760px), (pointer: coarse) { .pl-hoek-note .input { font-size: var(--h-t-lopend); } }
 
   .pl-hoeken-som {
     margin: clamp(1rem, 2vw, 1.4rem) 0 0; padding-top: .8rem;
     border-top: 1px solid var(--line);
-    font-size: .88rem; color: var(--ink-2);
+    font-size: var(--h-t-fijn); color: var(--ink-2);
   }
   .pl-hoeken-som b { color: var(--ink); }
 </style>

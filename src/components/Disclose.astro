@@ -113,11 +113,11 @@ const {
     padding-right: 1.6rem;
     position: relative;
   }
-  .dc-label { font-weight: 600; color: var(--ink); font-size: .98rem; line-height: 1.4; }
+  .dc-label { font-weight: 600; color: var(--ink); font-size: var(--h-t-klein); line-height: 1.4; }
   /* The current answer, when there is one. Lighter than the label because it is
      the value and not the question, and it must never out-weigh the thing it
      answers to. */
-  .dc-live { margin-left: auto; font-size: .86rem; color: var(--ink-3); text-align: right; }
+  .dc-live { margin-left: auto; font-size: var(--h-t-fijn); color: var(--ink-3); text-align: right; }
   .dc-live:empty { display: none; }
 
   /* Plus to minus. A rotating chevron would be the reflex; the arithmetic
@@ -152,7 +152,7 @@ const {
   /* Set on the body rather than on the component, so a caller can put anything
      inside — a list, a figure, a fieldset — without inheriting prose rules it
      did not ask for. */
-  .dc-body :global(p) { color: var(--ink-2); font-size: .92rem; line-height: 1.65; }
+  .dc-body :global(p) { color: var(--ink-2); font-size: var(--h-t-klein); line-height: 1.65; }
   .dc-body :global(p + p) { margin-top: .7rem; }
 
   /* PANEL — bordered, for a stack of short answers. What /faq and the

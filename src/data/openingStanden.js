@@ -12,23 +12,45 @@
    Een stand zonder schermbeeld valt weg in plaats van leeg te staan (zoals in standenVoor). Het
    telefoonscherm wisselt alleen als een stand een eigen telefoonfoto heeft (…-tel). */
 import { alleStanden, standNaam } from './halStanden.js';
+import { laptopSlides } from './laptopSlides.js';
+import KLIK from './openingKlik.json' with { type: 'json' };
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 
 export const SCHERM_MAP = '/img/hal/opening/scherm';
+/* de duur van de clip in de videostand (13,958 s: 335 beelden op 24 per seconde) */
+export const CLIP_MS = 13958;
 const opSchijf = (p) => existsSync(path.join(process.cwd(), 'public', p));
 
 /** [{ naam, set, i, duur, lap, tel }] — lap en tel zonder extensie (.avif en .webp liggen ernaast). */
 export function openingStanden(lang) {
   let tel = '/img/hal/opening/scherm-telefoon';
   const uit = [];
-  for (const s of alleStanden(lang)) {
+  /* levering 94 (Lucas, 07:50: "begin de dia slide op de laptop met de video, daarna catalog en dan lifestyle"), en de
+     catalog met de hoodie (laptopSlides.js) */
+  const volgorde = ['video', 'catalog', 'lifestyle'];
+  const producten = laptopSlides(lang, { product: 'nonstd' }).catalog.producten || [];
+  const standen = alleStanden(lang, volgorde, { product: 'nonstd' }).sort((a, b) => volgorde.indexOf(a.set) - volgorde.indexOf(b.set));
+  for (const s of standen) {
     const naam = standNaam(lang, s);
     const lap = `${SCHERM_MAP}/${naam}`;
     if (!opSchijf(`${lap}.webp`)) continue;
     if (opSchijf(`${SCHERM_MAP}/${naam}-tel.webp`)) tel = `${SCHERM_MAP}/${naam}-tel`;
-    uit.push({ naam, set: s.set, i: s.i, duur: s.duur, lap, tel });
+    /* levering 94 (lijst 92, Lucas: "De video mag trouwens op de video categorie komen te staan bij de laptop … Knip de video
+       echter wel vanaf dat de persoon de kap op zet en de wereld om hem heen veranderd"): de videostand speelt zijn clip
+       (12,79 – 26,75 s van de bannervideo, 1600 × 1034, scripts/banner-94.md). De stand duurt zo lang als de clip; het
+       schermbeeld is het eerste beeld (de poster). De telefoon toont zijn foto K3 als voorfoto (…-video-0-tel). */
+    const clip = s.set === 'video' && opSchijf(`${SCHERM_MAP}/video-clip.mp4`) ? `${SCHERM_MAP}/video-clip.mp4` : '';
+    /* levering 94 (08:08 – 08:11): een productpagina weet welk product hij is, heeft de schermen met beeld 2 – 4 groot (…-b1 – b3),
+       en de plekken waarop je klikt (openingKlik.json: de beeldjes en de voorgestelde producten, in breukdelen van het scherm) */
+    const extra = {};
+    if (s.set === 'catalog' && producten[s.i]) {
+      extra.product = producten[s.i].naam;
+      extra.beelden = [1, 2, 3].map((k) => `${lap}-b${k}`).filter((b) => opSchijf(`${b}.webp`));
+      extra.klik = (KLIK[lang === 'nl' ? 'nl' : 'en'] || {})[`catalog-${s.i}`] || [];
+    }
+    uit.push({ naam, set: s.set, i: s.i, duur: clip ? CLIP_MS : s.duur, lap, tel, mp4: clip, ...extra });
   }
   return uit;
 }

@@ -82,7 +82,7 @@ html body.hal.hal .h-voor .h-pv-klip .h-speel { top: 50%; width: 64px; height: 6
 html body.hal.hal .h-voor .h-pv-klip .h-speel::after { content: none; }
 /* de knopjes: dezelfde vorm als de tabs van Hoe het werkt (opening.css .o-tabs), met de snede ertussen */
 html body.hal.hal .h-voor .h-pv-keus { display: flex; flex: none; --h: 40px; --loop: 30px; --kier: 3.6px; }
-html body.hal.hal .h-voor .h-pv-keus button { height: var(--h); border: 0; background: var(--h-vlak, #F4F5F7); color: var(--h-inkt); font: 600 14.5px/1 var(--h-letter); cursor: pointer;
+html body.hal.hal .h-voor .h-pv-keus button { height: var(--h); border: 0; background: var(--h-vlak, #F4F5F7); color: var(--h-inkt); font: 600 var(--h-t-klein)/1 var(--h-letter); cursor: pointer;
   padding: 0 calc(var(--loop) * .55 + 14px); white-space: nowrap; transition: background-color .16s steps(2, end); }
 html body.hal.hal .h-voor .h-pv-keus button:first-child { border-radius: 999px; padding-left: 18px; clip-path: polygon(0 0, 100% 0, calc(100% - var(--loop)) 100%, 0 100%); }
 html body.hal.hal .h-voor .h-pv-keus button:not(:first-child) { margin-left: calc(var(--kier) - var(--loop)); clip-path: polygon(var(--loop) 0, 100% 0, calc(100% - var(--loop)) 100%, 0 100%); }
@@ -142,7 +142,7 @@ html body.hal.hal .h-voor .h-wt-rijen a { display: grid; grid-template-columns: 
 html body.hal.hal .h-voor .h-wt-rijen b { font: 500 var(--v-naam)/1.1 var(--h-letter); font-stretch: var(--h-smal, 80%); letter-spacing: -.01em; }
 html body.hal.hal .h-voor .h-wt-detail { font: 500 var(--v-klein)/1.5 var(--h-letter); color: var(--h-grijs, #636974); }
 html body.hal.hal .h-voor .h-wt-getal { font-weight: 600; color: var(--h-inkt); white-space: nowrap; }
-html body.hal.hal .h-voor .h-wt-detail i { display: inline-block; margin-right: 8px; padding: 4px 6px; border-radius: 999px; background: var(--h-vlak, #F4F5F7); font: 600 11.5px/1 var(--h-mono, 'IBM Plex Mono', monospace); font-style: normal; letter-spacing: .04em; color: var(--h-inkt); vertical-align: 1px; }
+html body.hal.hal .h-voor .h-wt-detail i { display: inline-block; margin-right: 8px; padding: 4px 6px; border-radius: 999px; background: var(--h-vlak, #F4F5F7); font: 600 var(--h-t-label)/1 var(--h-mono, 'IBM Plex Mono', monospace); font-style: normal; letter-spacing: .04em; color: var(--h-inkt); vertical-align: 1px; }
 html body.hal.hal .h-voor .h-wt-rijen .h-cirkel { flex: none; background: var(--h-vlak, #F4F5F7); transition: transform .24s steps(2, end); }
 /* onder de muis: de regel erboven wordt sterker en het pijltje springt (het merk springt, het glijdt niet) */
 html body.hal.hal .h-voor .h-wt-rijen > li:hover { box-shadow: inset 0 1px 0 var(--h-lijn-sterk, #C5C8CF); }
@@ -159,7 +159,7 @@ html body.hal.hal .h-voor > .h-proef .h-een { font-size: clamp(134.8px, 13vw, 17
 
 /* de regel eronder: tekst met een vinkje, zonder vlak erachter (in een rij geen vlak, de ontwerptaal) */
 html body.hal.hal .h-voor > .h-vertrouwen { gap: 10px 30px; margin-top: 40px; }
-html body.hal.hal .h-voor > .h-vertrouwen li { padding: 0; background: none; font-size: 14px; }
+html body.hal.hal .h-voor > .h-vertrouwen li { padding: 0; background: none; font-size: var(--h-t-fijn); }
 html body.hal.hal .h-voor > .h-vertrouwen i { width: 22px; height: 22px; background: var(--h-vlak, #F4F5F7); }
 
 /* ── tablet en telefoon ─────────────────────────────────────────────────────── */
@@ -173,7 +173,7 @@ html body.hal.hal .h-voor > .h-vertrouwen i { width: 22px; height: 22px; backgro
   html body.hal.hal .h-voor .h-pv-beeld, html body.hal.hal .h-voor .h-lp-podium.h-pv-beeld { height: auto; width: 100%; }
   html body.hal.hal .h-voor .h-pv-rest { gap: 18px; }
   html body.hal.hal .h-voor .h-pv-keus { --loop: 24px; }
-  html body.hal.hal .h-voor .h-pv-keus button { padding: 0 calc(var(--loop) * .55 + 8px); font-size: 14px; }
+  html body.hal.hal .h-voor .h-pv-keus button { padding: 0 calc(var(--loop) * .55 + 8px); font-size: var(--h-t-klein); }
   html body.hal.hal .h-voor .h-pv-keus button:first-child { padding-left: 14px; }
   html body.hal.hal .h-voor .h-pv-keus button:last-child { padding-right: 14px; }
   html body.hal.hal .h-voor .h-lp-keus { flex-wrap: nowrap; gap: 8px; }

@@ -31,7 +31,7 @@ import { localizedPath } from '../i18n/ui.js';
 
 const HELE = '/img/laptop/voor_heel.webp';
 
-export function laptopSlides(lang = 'nl') {
+export function laptopSlides(lang = 'nl', { product = 'standaard' } = {}) {
   const nl = lang === 'nl';
   const lp = (p) => localizedPath(lang, p);
 
@@ -74,6 +74,52 @@ export function laptopSlides(lang = 'nl') {
       },
     ],
   };
+
+  /* ── DE HOODIE IN DE OPENING — 12 november 2026 (levering 94) ──────────────────────────────────────
+     Lucas, 07:46: "Ik wil dat je de roze broek in de laptop vervangt met … NONSTD\\Hoodie, deze hoodie. Zorg ervoor dat de
+     achtergrond van de shop in de laptop dezelfde achtergrond heeft zodat de producten er mooi in verwerkt worden."
+     Alleen de laptop van de voorpagina (openingStanden.js, product 'hoodie'); de andere laptops hebben vaste foto's van de
+     broek (public/img/hal/stand/) en blijven zo tot die opnieuw gemaakt worden. De vier beelden staan op (251, 252, 255),
+     de grond van de site: de winkel krijgt diezelfde grond (.sc-shop.sc-wit in hal.css). Eén telefoonfoto (Phone.png):
+     de hoodie plat op beton. */
+  if (product === 'nonstd') {
+    /* 08:08: "Ik wil deze foto's veranderen naar een sectie "Voorgestelde producten". Hier staan de sokken en de broek die
+       ook in de map staan … De klant kan hier dan op klikken en de andere producten bekijken." Drie productpagina's (de
+       hoodie, de broek, de sokken), elk met de andere twee als voorgestelde producten; in de opening is elke pagina een
+       stand, en een klik op een voorgesteld product gaat naar zijn stand. De prijzen zijn verzonnen, van een verzonnen
+       winkel (de hoodie € 129,95: Lucas, 08:01, "Wat meer premium geprijsd"; de broek en de sokken: mijn voorstel).
+       `fon`: de telefoonfoto van dat product (Phone.png in zijn map; die van de broek en de sokken kwamen om 08:19).
+       `kleur`: de drie kleurbolletjes, per product (08:19: "Denk er ook aan om de kleuren correct toe te passen en te
+       varieren"): de eerste is de kleur van het product op de foto (gemeten), de andere twee passen bij dat product. */
+    const P = (naam, nlNaam, enNaam, prijsNl, prijsEn, kruimelNl, kruimelEn, fon, kleur, beelden) => ({ naam, titel: nl ? nlNaam : enNaam, prijs: nl ? prijsNl : prijsEn, kruimel: nl ? kruimelNl : kruimelEn, fon, kleur, beelden });
+    const B = (src, vul, nlAlt, enAlt) => ({ src, vul, alt: nl ? nlAlt : enAlt });
+    const producten = [
+      P('hoodie', 'Zip hoodie', 'Zip hoodie', '€ 129,95', '€129.95', 'Home / Hoodies', 'Home / Hoodies', '/img/hoodie-voor.webp', ['#465692', '#2B2B33', '#8C909A'], [
+        B('/img/hoodie-na-front.webp', 'contain', 'De hoodie recht van voren op wit', 'The hoodie straight on against white'),
+        B('/img/hoodie-na-achter.webp', 'contain', 'Dezelfde hoodie van achteren', 'The same hoodie from the back'),
+        /* 07:59: "De on-model mag wel zijn eigen achtergrond behouden omdat dit zo bedoeld was": de foto uit de map zelf
+           (On-model.jpg, niet die uit Site/), vult zijn vak, van boven (het hoofd blijft heel) */
+        B('/img/hoodie-na-model.webp', 'boven', 'De hoodie gedragen door een model', 'The hoodie worn by a model'),
+        B('/img/hoodie-na-detail.webp', 'cover', 'Close-up van de capuchon, de rits en het label', 'Close-up of the hood, the zip and the label')]),
+      P('broek', 'Logo jeans', 'Logo jeans', '€ 149,95', '€149.95', 'Home / Denim', 'Home / Denim', '/img/nonstd-broek-voor.webp', ['#322F3A', '#4F6385', '#C3C9D4'], [
+        B('/img/nonstd-broek-front.webp', 'contain', 'De jeans recht van voren op wit', 'The jeans straight on against white'),
+        B('/img/nonstd-broek-achter.webp', 'contain', 'Dezelfde jeans van achteren', 'The same jeans from the back'),
+        B('/img/nonstd-broek-model.webp', 'boven', 'De jeans gedragen door een model', 'The jeans worn by a model'),
+        B('/img/nonstd-broek-detail.webp', 'cover', 'Close-up van het logo en het koord', 'Close-up of the logo and the drawstring')]),
+      P('sokken', 'Logo sokken', 'Logo socks', '€ 24,95', '€24.95', 'Home / Accessoires', 'Home / Accessories', '/img/nonstd-sokken-voor.webp', ['#E4E3DE', '#2B2B33', '#9AA0AA'], [
+        B('/img/nonstd-sokken-front.webp', 'contain', 'De sokken gekruist op wit', 'The socks crossed against white'),
+        B('/img/nonstd-sokken-achter.webp', 'contain', 'De sokken naast elkaar', 'The socks side by side'),
+        B('/img/nonstd-sokken-model.webp', 'boven', 'De sokken gedragen, in slippers', 'The socks worn, with slides'),
+        B('/img/nonstd-sokken-detail.webp', 'cover', 'Close-up van het logo op de sok', 'Close-up of the logo on the sock')]),
+    ];
+    catalog.product = 'nonstd';
+    catalog.producten = producten;
+    catalog.fon = producten[0].fon;
+    catalog.alt = nl ? 'Drie productpagina’s van een webshop, elk met de vier catalogbeelden van één product'
+                     : 'Three product pages of a web shop, each with the four catalog images of one product';
+    /* één stand per product: het eerste beeld staat groot */
+    catalog.beelden = producten.map((p) => ({ ...p.beelden[0], naam: p.titel, product: p.naam, fon: p.fon || undefined }));
+  }
 
   const lifestyle = {
     fon: HELE, duur: 2600,
@@ -169,7 +215,7 @@ export function laptopSlides(lang = 'nl') {
 }
 
 /* De hele reeks, in de volgorde waarin de voorpagina hem afspeelt. */
-export function laptopReeks(lang = 'nl') {
-  const s = laptopSlides(lang);
+export function laptopReeks(lang = 'nl', opties = {}) {
+  const s = laptopSlides(lang, opties);
   return [s.catalog, s.lifestyle, s.video];
 }

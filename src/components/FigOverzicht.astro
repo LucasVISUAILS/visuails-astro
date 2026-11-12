@@ -201,13 +201,13 @@ const C = nl
     background: var(--surface-2);
     box-shadow: inset 0 -1px 0 var(--line);
   }
-  .fo-mark { font-family: var(--font-display); font-weight: 900; font-size: .78rem; letter-spacing: .16em; color: var(--ink); }
+  .fo-mark { font-family: var(--font-display); font-weight: 900; font-size: var(--h-t-label); letter-spacing: .16em; color: var(--ink); }
   .fo-kant { font-size: .75rem; color: var(--ink-2); }
   /* Het woord "voorbeeld" hoort in beeld te staan en niet alleen in de tekst
      ernaast: een schermafdruk wordt gedeeld zonder zijn pagina. */
   .fo-badge {
     margin-left: auto;
-    font-size: .72rem; letter-spacing: .04em; color: var(--ink-3);
+    font-size: var(--h-t-label); letter-spacing: .04em; color: var(--ink-3);
     padding: .18rem .5rem;
     border: 1px solid var(--line); border-radius: 999px;
   }
@@ -223,7 +223,7 @@ const C = nl
   .fo-body { padding: .9rem; display: flex; flex-direction: column; gap: .85rem; }
 
   .fo-kop { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
-  .fo-ref { margin: 0; font-size: .82rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .fo-ref { margin: 0; font-size: var(--h-t-fijn); font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
   .fo-wat { margin: 0; font-size: .75rem; color: var(--ink-3); }
 
   /* ── DE STATUSREGEL ───────────────────────────────────────────────────────
@@ -234,7 +234,7 @@ const C = nl
     list-style: none; margin: 0; padding: 0;
     display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .35rem;
   }
-  .fo-stap { display: grid; gap: .3rem; font-size: .72rem; color: var(--ink-3); }
+  .fo-stap { display: grid; gap: .3rem; font-size: var(--h-t-label); color: var(--ink-3); }
   .fo-stip { display: block; height: 3px; border-radius: 999px; background: var(--line); }
   .fo-stap.is-klaar .fo-stip { background: color-mix(in srgb, var(--accent) 62%, var(--line)); }
   .fo-stap.is-klaar { color: var(--ink-2); }
@@ -248,9 +248,9 @@ const C = nl
     border: 1px solid var(--line); border-radius: 999px;
     background: var(--surface-2);
   }
-  .fo-datum-l { font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
-  .fo-datum-v { font-size: .88rem; color: var(--ink); font-variant-numeric: tabular-nums; }
-  .fo-datum-f { font-size: .72rem; color: var(--ink-3); margin-left: auto; }
+  .fo-datum-l { font-size: var(--h-t-label); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+  .fo-datum-v { font-size: var(--h-t-fijn); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .fo-datum-f { font-size: var(--h-t-label); color: var(--ink-3); margin-left: auto; }
 
   /* ── padding: 0, EN DAT IS GEEN OPSCHONING ───────────────────────────────
      global.css §"section { padding-block: clamp(4.5rem, 9vw, 9rem) }" is een
@@ -264,8 +264,8 @@ const C = nl
      en niet impliciet klopt. */
   .fo-wacht { display: flex; flex-direction: column; gap: .55rem; padding: 0; }
   .fo-wacht-kop { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
-  .fo-h { margin: 0; font-size: .9rem; font-weight: 700; color: var(--ink); }
-  .fo-sub { margin: 0; font-size: .74rem; color: var(--ink-3); }
+  .fo-h { margin: 0; font-size: var(--h-t-klein); font-weight: 700; color: var(--ink); }
+  .fo-sub { margin: 0; font-size: var(--h-t-label); color: var(--ink-3); }
 
   /* Vier op een rij zodra het past, anders twee, en onder de 20rem één: een
      foto van tachtig pixels breed bewijst niets. */
@@ -285,8 +285,8 @@ const C = nl
   /* Wat wacht is lichter dan wat af is: de tegels die nog een handeling van je
      vragen mogen niet wegvallen tegen de zeven die dat niet doen. */
   .fo-tegel.is-ok img { opacity: .72; }
-  .fo-cap { font-size: .74rem; color: var(--ink-2); }
-  .fo-staat { font-size: .72rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  .fo-cap { font-size: var(--h-t-label); color: var(--ink-2); }
+  .fo-staat { font-size: var(--h-t-label); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
   .fo-staat.is-ok { color: var(--accent-text); }
   .fo-staat.is-wacht { color: var(--ink-2); }
   /* De donkere klei-waarde en niet --warn-ink: die meet als TEKST op wit
@@ -297,12 +297,12 @@ const C = nl
   /* Geen echte knoppen — zie de kop van dit bestand. */
   .fo-btn {
     display: inline-block;
-    font-size: .72rem; font-weight: 600; letter-spacing: .02em;
+    font-size: var(--h-t-label); font-weight: 600; letter-spacing: .02em;
     padding: .3rem .55rem;
     border: 1px solid var(--line-strong); border-radius: var(--hoek-knop);
     color: var(--ink-2); white-space: nowrap;
   }
   .fo-btn.is-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-on); }
 
-  .fo-fijn { margin: 0; font-size: .74rem; line-height: 1.55; color: var(--ink-3); }
+  .fo-fijn { margin: 0; font-size: var(--h-t-label); line-height: 1.55; color: var(--ink-3); }
 </style>

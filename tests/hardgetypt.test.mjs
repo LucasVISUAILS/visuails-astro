@@ -101,6 +101,8 @@ const TOEGESTAAN = {
   /* 15 oktober 2026: de getekende webshop staat sinds levering 48b in de bron van de
      laptopstanden (HalLaptopSchermen.astro); HalLaptop.astro toont alleen nog foto's. */
   'src/components/HalLaptopSchermen.astro': [2, `${VOORBEELD}: de prijs op de getekende webshop van een klant (JOUWMERK), NL en EN`],
+  /* levering 94: de nagemaakte winkel in de laptop van de voorpagina heeft drie producten van NONSTD, elk met een prijs (NL en EN) */
+  'src/data/laptopSlides.js': [6, `${VOORBEELD}: de prijzen van de hoodie, de jeans en de sokken in de getekende webshop (NONSTD), NL en EN`],
 };
 
 const telt = telling();

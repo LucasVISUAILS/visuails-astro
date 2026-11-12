@@ -236,7 +236,7 @@ const BEELD_MINI = { src: '/img/lifestyle-phone-made-07.webp', w: 2400, h: 1792,
   .h-fmt-raster { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 56px; align-items: start; }
   .h-fmt-lede { max-width: 18em; font-size: 18px; line-height: 1.5; color: var(--h-inkt-2); }
   /* var(--h-maat): vijf tot zeven woorden per regel, zoals de rest van de hal (14 oktober 2026; 24em gaf er tien). */
-  .h-fmt-klein { margin-top: 16px; max-width: var(--h-maat, 16.5em); font-size: 14px; line-height: 1.5; color: var(--h-inkt-3); }
+  .h-fmt-klein { margin-top: 16px; max-width: var(--h-maat, 16.5em); font-size: var(--h-t-fijn); line-height: 1.5; color: var(--h-inkt-3); }
 
   .h-fmt-vlak { background: var(--h-nevel); border-radius: var(--r-kaart); padding: 28px; display: grid; gap: 20px; }
   /* kaal: het vlak over de hele breedte, de balk alleen voortgang en pauze (zoals Hoe het werkt) */
@@ -252,7 +252,7 @@ const BEELD_MINI = { src: '/img/lifestyle-phone-made-07.webp', w: 2400, h: 1792,
        onderhoeken ligt (concentrisch, 24 - 12), net als op de telefoon */
     .h-fmt-kaal .h-fmt-waar { width: auto; border-radius: 999px; }
   }
-  .h-fmt-alleen { margin-left: 10px; font: 600 11.5px/1 var(--h-mono, 'IBM Plex Mono', monospace); letter-spacing: .08em; text-transform: uppercase; color: var(--h-inkt); }
+  .h-fmt-alleen { margin-left: 10px; font: 600 var(--h-t-label)/1 var(--h-mono, 'IBM Plex Mono', monospace); letter-spacing: .08em; text-transform: uppercase; color: var(--h-inkt); }
 
   /* ── DE TIJD ── --t0 is het moment van de klik: tijdens de uitleg --u-klik (de
      cursor is dan bij de knop), bij een eigen klik meteen. Bij de klik verdwijnt
@@ -265,7 +265,7 @@ const BEELD_MINI = { src: '/img/lifestyle-phone-made-07.webp', w: 2400, h: 1792,
   .h-fmt-knoppen { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
   .h-fmt-knop {
     height: 40px; padding: 0 18px; border-radius: var(--hoek-knop); border: 0; cursor: pointer;
-    background: #fff; color: var(--h-inkt); font: 600 14px/1 var(--h-letter); font-variant-numeric: tabular-nums;
+    background: #fff; color: var(--h-inkt); font: 600 var(--h-t-klein)/1 var(--h-letter); font-variant-numeric: tabular-nums;
     transition: background-color .25s var(--t0), color .25s var(--t0), transform .35s var(--h-veer);
   }
   .h-fmt-knop[aria-pressed="true"] { background: var(--h-inkt); color: #fff; }
@@ -318,7 +318,7 @@ const BEELD_MINI = { src: '/img/lifestyle-phone-made-07.webp', w: 2400, h: 1792,
      label onderaan in het kleine vak en op de telefoon over de hele breedte, zodat het
      altijd in beide onderhoeken ligt en niet van de lengte van de tekst afhangt. */
   .h-fmt-maat { position: absolute; left: 12px; top: 12px; height: 34px; padding: 0 14px; border-radius: 999px; display: inline-flex; align-items: center; font: 600 17px/1 var(--h-letter); color: var(--h-inkt); font-variant-numeric: tabular-nums; }
-  .h-fmt-waar { position: absolute; left: 12px; right: 12px; bottom: 12px; width: max-content; max-width: calc(100% - 24px); min-height: 32px; padding: 7px 14px; border-radius: 999px; display: inline-flex; align-items: center; font: 500 14px/1.3 var(--h-letter); color: var(--h-inkt); }
+  .h-fmt-waar { position: absolute; left: 12px; right: 12px; bottom: 12px; width: max-content; max-width: calc(100% - 24px); min-height: 32px; padding: 7px 14px; border-radius: 999px; display: inline-flex; align-items: center; font: 500 var(--h-t-fijn)/1.3 var(--h-letter); color: var(--h-inkt); }
 
   .h-fmt-mini .h-fmt-waar { width: auto; border-radius: 999px; }
 
@@ -326,7 +326,7 @@ const BEELD_MINI = { src: '/img/lifestyle-phone-made-07.webp', w: 2400, h: 1792,
   .h-fmt-rij { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
   .h-fmt-rij li {
     min-height: 36px; padding: 8px 14px; border-radius: var(--r-klein); background: #fff; max-width: 100%;
-    font: 500 14px/1.3 var(--h-letter); color: var(--h-inkt);
+    font: 500 var(--h-t-fijn)/1.3 var(--h-letter); color: var(--h-inkt);
     opacity: 0; transform: translateY(10px) scale(.96);
     transition: opacity .2s var(--t0), transform .2s var(--t0);
   }
@@ -342,7 +342,7 @@ const BEELD_MINI = { src: '/img/lifestyle-phone-made-07.webp', w: 2400, h: 1792,
   @media (max-width: 640px) {
     .h-fmt-vlak { border-radius: var(--r-kaart); padding: 16px; gap: 16px; }
     .h-fmt-knop { height: 38px; padding: 0 14px; font-size: 13.5px; }
-    .h-fmt-waar, .h-fmt-mini .h-fmt-waar { width: auto; font-size: 13px; left: 8px; right: 8px; bottom: 8px; max-width: calc(100% - 16px); padding: 6px 10px; border-radius: 999px; }
+    .h-fmt-waar, .h-fmt-mini .h-fmt-waar { width: auto; font-size: var(--h-t-fijn); left: 8px; right: 8px; bottom: 8px; max-width: calc(100% - 16px); padding: 6px 10px; border-radius: 999px; }
     .h-fmt-maat { font-size: 15px; height: 30px; left: 8px; top: 8px; border-radius: 999px; }
     .h-fmt-kader, .h-fmt-mini { border-radius: var(--r-kaart); }
   }

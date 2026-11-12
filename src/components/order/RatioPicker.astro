@@ -232,11 +232,11 @@ const tiles = [...LIFESTYLE_RATIOS, ...CHANNEL_RATIOS].map((r: any) => ({
   .ratio-shape img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
   .ratio:has(input:checked) .ratio-shape { border-color: var(--kies, var(--accent)); background: var(--surface); }
 
-  .ratio-label { margin-top: .45rem; font-family: var(--font-display); font-weight: 800; font-size: 1rem; color: var(--ink); font-variant-numeric: tabular-nums; }
-  .ratio-name { font-size: .84rem; color: var(--ink-2); }
-  .ratio-use { font-size: .78rem; line-height: 1.4; color: var(--ink-3); text-wrap: balance; }
+  .ratio-label { margin-top: .45rem; font-family: var(--font-display); font-weight: 800; font-size: var(--h-t-lopend); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .ratio-name { font-size: var(--h-t-fijn); color: var(--ink-2); }
+  .ratio-use { font-size: var(--h-t-label); line-height: 1.4; color: var(--ink-3); text-wrap: balance; }
   .ratio-tag {
-    margin-top: .2rem; font-size: .73rem; letter-spacing: .04em; text-transform: uppercase;
+    margin-top: .2rem; font-size: var(--h-t-label); letter-spacing: .04em; text-transform: uppercase;
     padding: .1rem .4rem; border-radius: 999px;
     background: var(--accent-soft); color: var(--ink-2);
   }
