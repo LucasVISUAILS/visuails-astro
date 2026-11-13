@@ -17,6 +17,13 @@
 > Wat historie is, is als historie gemarkeerd: "Twee ingetrokken paletten" en
 > "Section 21" staan er om de REDENERING, niet om de waarden.
 >
+> **Knoppen: 13 november 2026 (levering 97, lijst 96 B1 a en B2 a).** Alles wat je aanklikt is SCHERP (hoeken 0):
+> elke knop, de icoonknoppen (pijlen, pauze, sluiten), het taal- en menuknopje, WhatsApp, Bestellen. Onder de muis
+> schuift blauw uur van links naar rechts door een volle knop (Bestellen: blauw diep), de pijl schuift 3 px; de
+> lijnknop krijgt het vlak en een lijn in inkt. Wat iets aangeeft of kiest blijft een pil: chips, filters, tabbladen,
+> statuspillen, de stappen van het formulier, de kleurbolletjes, en de velden. De bron is `src/styles/knoppen.css`
+> (sectie I). Waar hieronder "wat je bedient is een pil" staat, geldt dat sinds levering 97 alleen nog voor die laatste groep.
+>
 > **Hoeken: 4 november 2026 (levering 87).** De paragraaf "Hoeken" onder Foundations
 > is de regel van nu: wat je bedient is een pil, twee knoppen naast elkaar zijn één pil
 > met de snede ertussen, kaarten 24, grote vlakken 32, tegels 12, het inktblok houdt

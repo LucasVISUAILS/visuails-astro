@@ -21,6 +21,8 @@ import path from 'node:path';
 export const SCHERM_MAP = '/img/hal/opening/scherm';
 /* de duur van de clip in de videostand (13,958 s: 335 beelden op 24 per seconde) */
 export const CLIP_MS = 13958;
+/* levering 96: hoe lang een foto van de galerij staat */
+export const FOTO_MS = 3000;
 const opSchijf = (p) => existsSync(path.join(process.cwd(), 'public', p));
 
 /** [{ naam, set, i, duur, lap, tel }] — lap en tel zonder extensie (.avif en .webp liggen ernaast). */
@@ -47,10 +49,15 @@ export function openingStanden(lang) {
     const extra = {};
     if (s.set === 'catalog' && producten[s.i]) {
       extra.product = producten[s.i].naam;
-      extra.beelden = [1, 2, 3].map((k) => `${lap}-b${k}`).filter((b) => opSchijf(`${b}.webp`));
-      extra.klik = (KLIK[lang === 'nl' ? 'nl' : 'en'] || {})[`catalog-${s.i}`] || [];
+      /* levering 96 (lijst 97, A4): de vier foto's als galerij die je scrolt, op de plek die het script mat (galerij) */
+      const k = (KLIK[lang === 'nl' ? 'nl' : 'en'] || {})[`catalog-${s.i}`] || [];
+      extra.beelden = (producten[s.i].galerij || []).filter((g) => opSchijf(`${g}.webp`));
+      extra.galerij = k.find((q) => q.galerij) || null;
+      extra.klik = k.filter((q) => !q.galerij);
+      /* vier foto's van 3 s: na de laatste het volgende product (lijst 97, notitie) */
+      extra.duur = extra.beelden.length * FOTO_MS;
     }
-    uit.push({ naam, set: s.set, i: s.i, duur: clip ? CLIP_MS : s.duur, lap, tel, mp4: clip, ...extra });
+    uit.push({ naam, set: s.set, i: s.i, duur: clip ? CLIP_MS : s.duur, lap, tel, mp4: clip, ...extra, ...(extra.duur ? {} : { duur: clip ? CLIP_MS : s.duur }) });
   }
   return uit;
 }

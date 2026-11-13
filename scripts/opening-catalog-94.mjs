@@ -82,17 +82,10 @@ try {
         const f = (n) => Math.round(n * 10000) / 10000;
         const rechthoek = (e) => { const q = e.getBoundingClientRect(); return { x: f((q.left - s.left) / s.width), y: f((q.top - s.top) / s.height), b: f(q.width / s.width), h: f(q.height / s.height) }; };
         return [...[...v.querySelectorAll('[data-klik-beeld]')].map((e) => ({ beeld: +e.getAttribute('data-klik-beeld'), ...rechthoek(e) })),
-          ...[...v.querySelectorAll('[data-klik]')].map((e) => ({ naar: e.getAttribute('data-klik'), ...rechthoek(e) }))];
+          ...[...v.querySelectorAll('[data-klik]')].map((e) => ({ naar: e.getAttribute('data-klik'), ...rechthoek(e) })),
+          /* levering 96: waar de foto staat; in de opening ligt daar de galerij die je scrolt */
+          ...[...v.querySelectorAll('[data-galerij]')].map((e) => ({ galerij: true, ...rechthoek(e) }))];
       });
-      /* de schermen met beeld 2 – 4 groot */
-      for (const k of [1, 2, 3]) {
-        const n2 = `${naam}-b${k}`, vak2 = await page.$(`[data-bron-stand="${n2}"]`);
-        if (!vak2) throw new Error(`geen stand ${n2}`);
-        await page.evaluate((n) => { for (const v of document.querySelectorAll('[data-bron-stand]')) v.style.display = v.getAttribute('data-bron-stand') === n ? '' : 'none'; }, n2);
-        await vak2.scrollIntoViewIfNeeded();
-        await vak2.evaluate((v) => { v.querySelector('.hl-scherm-fon').style.visibility = 'hidden'; v.querySelector('.hl-scherm-lap').style.visibility = 'visible'; });
-        await (await vak2.$('.hl-scherm-lap')).screenshot({ path: path.join(WERK, `${n2}-laptop.png`) });
-      }
       await page.evaluate((n) => { for (const v of document.querySelectorAll('[data-bron-stand]')) v.style.display = v.getAttribute('data-bron-stand') === n ? '' : 'none'; }, naam);
       if (FON[i]) {
         await vak.evaluate((v) => { v.querySelector('.hl-scherm-fon').style.visibility = 'visible'; v.querySelector('.hl-scherm-lap').style.visibility = 'hidden'; });
@@ -109,7 +102,9 @@ try {
 const kb = (n) => `${(n / 1024).toFixed(0)} kB`;
 for (const lang of ['nl', 'en']) {
   for (const ext of ['webp', 'avif']) for (const n of [`${lang}-catalog-3`, `${lang}-catalog-3-tel`]) fs.rmSync(path.join(MAP, `${n}.${ext}`), { force: true });
-  for (const naam of Array.from({ length: AANTAL }, (_, i) => [`${lang}-catalog-${i}`, ...[1, 2, 3].map((k) => `${lang}-catalog-${i}-b${k}`)]).flat()) {
+  /* levering 96: de schermen met beeld 2 – 4 groot (…-b1 – b3) zijn weg; de galerij neemt hun plek in */
+  for (const naam of Array.from({ length: AANTAL }, (_, i) => `${lang}-catalog-${i}-b`).flatMap((n) => [1, 2, 3].map((k) => `${n}${k}`))) for (const ext of ['webp', 'avif']) fs.rmSync(path.join(MAP, `${naam}.${ext}`), { force: true });
+  for (const naam of Array.from({ length: AANTAL }, (_, i) => `${lang}-catalog-${i}`)) {
     for (const [soort, w, achter] of [['laptop', 1600, ''], ['telefoon', 540, '-tel']]) {
       if (soort === 'telefoon' && /-b\d$/.test(naam)) continue;
       const bron = path.join(WERK, `${naam}-${soort}.png`);

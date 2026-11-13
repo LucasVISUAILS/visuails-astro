@@ -80,7 +80,7 @@ for (const p of PAGINAS) {
      plan". Dat is een ander bedrag (aboVanafPerProduct, het voordeligste tarief per
      credit) en hoort niet bij de ladder: apart nagelopen hieronder. */
   const ABO = /^\s*per\s+product\s+(?:met\s+een\s+abonnement|with\s+a\s+plan)/i;
-  const alle = [...t.matchAll(/\b(?:vanaf|from)\s+(€\s?[\d.,]+)(?!\s*(?:per\s+(?:maand|month|hook)|\/\s*(?:maand|month)))/gi)];
+  const alle = [...t.matchAll(/\b(?:vanaf|from)\s+(€\s?[\d.,]+)(?![\d.,])(?!\s*(?:per\s+(?:maand|month|hook)|\/\s*(?:maand|month)))/gi)];
   const isAbo = (m) => ABO.test(t.slice(m.index + m[0].length, m.index + m[0].length + 60));
   const vanaf = alle.filter((m) => !isAbo(m)).map((m) => m[1].replace(/\s/g, ''));
   const abo = alle.filter(isAbo).map((m) => m[1].replace(/\s/g, ''));

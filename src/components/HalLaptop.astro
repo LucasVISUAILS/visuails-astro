@@ -39,7 +39,7 @@ import { laptopReeks } from '../data/laptopSlides.js';
 import { ikoon, IKOON } from '../data/iconen.js';
 import { FOTO, SCHERMEN, inFoto } from '../data/halLaptop.js';
 import { RESOLUTIE } from '../data/pricing.js';
-import { standenVoor, standPad, standSrcset } from '../data/halStanden.js';
+import { standenVoor, standPad, standSrcset, HAL_OPTIES } from '../data/halStanden.js';
 /* ?v= achter elk beeld (lijst 87, C16): zie src/data/beeldVersie.js. */
 import { halV, halSrcsetV } from '../data/beeldVersie.js';
 
@@ -51,7 +51,8 @@ interface Props { lang: 'en' | 'nl'; sets?: SetNaam[] }
 const { lang, sets = ['catalog', 'lifestyle', 'video'] } = Astro.props as Props;
 const nl = lang === 'nl';
 
-const [catalog, lifestyle, video] = laptopReeks(lang);
+/* levering 98 (lijst 99): de reeks van NON/STD, dezelfde als de standen (HAL_OPTIES) */
+const [catalog, lifestyle, video] = laptopReeks(lang, HAL_OPTIES);
 /* De standen, elk als kant-en-klare foto (src/data/halStanden.js). Een stand
    zonder foto valt weg; zonder een enkele staat er alleen de foto. */
 const standen = standenVoor(lang, sets);
@@ -63,12 +64,12 @@ const SET = {
 };
 
 const T = nl
-  ? { stuur: 'Wat jij stuurt', stuurWat: 'Een paar telefoonfoto’s', krijg: 'Wat je terugkrijgt',
+  ? { stuur: 'Wat jij stuurt', stuurWat: 'Een paar foto’s', krijg: 'Wat je terugkrijgt',
       vorige: 'Vorig beeld', volgende: 'Volgend beeld', pauze: 'Zet de beelden stil', speel: 'Laat de beelden lopen',
       van: (a: number, b: number) => `${a} / ${b}`,
       uitleg: 'Een voorbeeld. Je krijgt de losse bestanden en gebruikt ze waar je wilt.',
       fotoAlt: 'Een hand houdt een laptop met een webshoppagina, een andere hand een telefoon met de foto die je instuurt' }
-  : { stuur: 'What you send', stuurWat: 'A few phone photos', krijg: 'What you get back',
+  : { stuur: 'What you send', stuurWat: 'A few photos', krijg: 'What you get back',
       vorige: 'Previous image', volgende: 'Next image', pauze: 'Pause the images', speel: 'Play the images',
       van: (a: number, b: number) => `${a} / ${b}`,
       uitleg: 'An example. You get the files and use them wherever you like.',

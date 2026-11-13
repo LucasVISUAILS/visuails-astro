@@ -12,13 +12,17 @@
    ═══════════════════════════════════════════════════════════════════════════════ */
 import '../styles/hoe-80.css';
 import { localizedPath } from '../i18n/ui.js';
+import TelefoonClip from './TelefoonClip.astro';
+import SectieKop from './SectieKop.astro';
 
-interface Props { lang: 'nl' | 'en'; titel: string; stappen: string[]; levertijd: string; link: string; }
-const { lang, titel, stappen, levertijd, link } = Astro.props;
+interface Props { lang: 'nl' | 'en'; titel: string; stappen: string[]; levertijd: string; link: string; kop?: string; }
+const { lang, titel, stappen, levertijd, link, kop } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
 ---
-<section class="w8" aria-labelledby="w8-kop" data-w8>
-  <h2 id="w8-kop" class="sr-only">{titel}</h2>
+<section class:list={['w8', kop && 'sk-s']} aria-labelledby="w8-kop" data-w8>
+  {kop ? <SectieKop id="w8-kop" label={titel} kop={kop} /> : <h2 id="w8-kop" class="sr-only">{titel}</h2>}
+  {/* levering 95 (lijst 94 C1 a): de telefoonclip boven de drie stappen, zodat je ziet hoe weinig "jij stuurt" is */}
+  <TelefoonClip lang={lang} product="jeans" class="w8-clip" />
   <ol class="w8-regel" role="list">
     {stappen.map((s, i) => (
       <li class="w8-stap"><span class="w8-nr" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span><span class="w8-woord">{`${s}${i === stappen.length - 1 ? '.' : ''}`.split(' ').map((w, j, a) => <><span class="w8-w">{w}</span>{j < a.length - 1 ? ' ' : ''}</>)}</span></li>

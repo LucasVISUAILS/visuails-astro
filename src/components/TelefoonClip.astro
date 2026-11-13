@@ -1,0 +1,44 @@
+---
+/**
+ * VISUAILS — de telefoonclip (levering 95, 13 november 2026, lijst 94 C1 a).
+ * Lucas: "Je kan de telefoon clip op het begin van de video wellicht ook wel op uitleg plekken over de hele website hier en
+ * daar gebruiken als het nut heeft met een ander telefoonfoto erin om aan te tonen hoe makkelijk het is om te beginnen. Alleen
+ * toevoegen wanneer het waarde toevoegt." Lijst 94 C1 a: bij Hoe het werkt op de voorpagina (de jeans) en op /test-sample (de
+ * sokken). Zijn notitie: "Zorg ervoor dat de foto's echt goed in de telefoon zijn verwerkt tot op de pixel na", uit de hele clip
+ * (C1 telefoon.mov) waarin de foto echt gemaakt wordt.
+ *
+ * Gemaakt met kladblok/levering-95/telefoonclip (het scherm volgt de telefoon beeld voor beeld: een homografie per beeld uit de
+ * bovenkant van de telefoon; de zoeker gemeten op een tiende pixel; tijdens de zwaai schuift de foto in beeld, bij de sluiter
+ * wordt hij even zwart, daarna staat hij in het rondje linksonder). Het wit is zuiver wit: de clip ligt met multiply op de grond.
+ * Hij speelt alleen in beeld en niet bij "minder beweging" (dan de foto).
+ */
+interface Props { lang: 'nl' | 'en'; product: 'jeans' | 'sokken'; class?: string }
+const { lang, product, class: klasse } = Astro.props as Props;
+const ALT = {
+  nl: { jeans: 'Een hand houdt een telefoon omhoog en maakt een foto van een jeans op de vloer', sokken: 'Een hand houdt een telefoon omhoog en maakt een foto van een paar sokken op de vloer' },
+  en: { jeans: 'A hand holds up a phone and takes a photo of a pair of jeans on the floor', sokken: 'A hand holds up a phone and takes a photo of a pair of socks on the floor' },
+};
+---
+<figure class:list={['tclip', klasse]} data-tclip>
+  <video muted loop playsinline preload="none" width="720" height="900" poster={`/img/hal/telefoon/clip-${product}.webp`}
+         data-src={`/img/hal/telefoon/clip-${product}.mp4`} aria-label={ALT[lang][product]}></video>
+</figure>
+<style>
+  .tclip { margin: 0 auto; width: var(--tclip-b, clamp(180px, 18vw, 260px)); aspect-ratio: 4 / 5; mix-blend-mode: multiply; }
+  .tclip video { display: block; width: 100%; height: 100%; object-fit: cover; }
+  :global(.h-ts-clip) { margin: 8px auto clamp(32px, 3.4vw, 48px); }
+</style>
+<script>
+  function tclip() {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    document.querySelectorAll<HTMLElement>('[data-tclip]:not([data-tclip-aan])').forEach((f) => {
+      f.dataset.tclipAan = '1';
+      const v = f.querySelector('video')!;
+      new IntersectionObserver(([e]) => {
+        if (e.isIntersecting) { if (!v.src) v.src = v.dataset.src || ''; v.play().catch(() => {}); } else v.pause();
+      }, { threshold: 0.3 }).observe(f);
+    });
+  }
+  tclip();
+  document.addEventListener('astro:page-load', tclip);
+</script>

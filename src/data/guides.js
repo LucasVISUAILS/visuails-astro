@@ -64,13 +64,13 @@ export function guides(lang = 'en') {
   const vanaf = LADDER.catalog[LADDER.catalog.length - 1][0];
 
   const rijen = l === 'nl' ? [
-    ['Zo fotografeer je je product met je telefoon', 'De hoeken, het licht en de achtergrond. Lees dit vóór je bestelt.', '/upload-guidelines', 'Checklist'],
+    ['Zo fotografeer je je product', 'De hoeken, het licht en de achtergrond. Lees dit vóór je bestelt.', '/upload-guidelines', 'Checklist'],
     ['Van foto naar publicatie — hoe het werkt', 'Van je foto tot het afgewerkte beeld.', '/how-it-works', 'Proces'],
     ['AI-tools of een studio die het voor je doet', 'Wanneer een AI-tool genoeg is, en wanneer niet.', '/compare', 'Vergelijk'],
     ['Wat productvisuals echt kosten', `Catalog vanaf ${catInstap}, lifestyle vanaf ${lifeInstap}, dalend tot ${catVloer} en ${lifeVloer}; ${videoNl}. Alles ${vatLabel('excl', 'nl')}.`, '/pricing', 'Prijzen'],
     ['Vragen, beantwoord', 'Betaling, btw, modellen, levering en revisies.', '/faq', 'FAQ'],
   ] : [
-    ['How to photograph your product with your phone', 'The angles, the light and the background. Read this before you order.', '/upload-guidelines', 'Checklist'],
+    ['How to photograph your product', 'The angles, the light and the background. Read this before you order.', '/upload-guidelines', 'Checklist'],
     ['From photo to publish — how it works', 'From your photo to the finished image.', '/how-it-works', 'Process'],
     ['AI tools vs a done-for-you studio', 'When an AI tool is enough, and when it is not.', '/compare', 'Compare'],
     ['What product visuals actually cost', `Catalog from ${catInstap}, lifestyle from ${lifeInstap}, falling to ${catVloer} and ${lifeVloer}; ${videoEn}. All ${vatLabel('excl', 'en')}.`, '/pricing', 'Pricing'],

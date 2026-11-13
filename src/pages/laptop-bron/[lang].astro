@@ -10,7 +10,7 @@
  */
 import Layout from '../../layouts/Layout.astro';
 import HalLaptopSchermen from '../../components/HalLaptopSchermen.astro';
-import { alleStanden, standNaam } from '../../data/halStanden.js';
+import { alleStanden, standNaam, HAL_OPTIES } from '../../data/halStanden.js';
 import '../../styles/hal.css';
 
 export function getStaticPaths() {
@@ -18,11 +18,12 @@ export function getStaticPaths() {
   return [{ params: { lang: 'nl' } }, { params: { lang: 'en' } }];
 }
 const lang = Astro.params.lang === 'nl' ? 'nl' : 'en';
-/* LAPTOP_PRODUCT=nonstd: de catalog met de drie producten van NONSTD (levering 94, alleen voor de schermen van de opening) */
-const product = process.env.LAPTOP_PRODUCT === 'nonstd' ? 'nonstd' : 'standaard';
-const standen = alleStanden(lang, undefined, { product }).flatMap((s) =>
-  /* levering 94: van elke productpagina ook de schermen met beeld 2 – 4 groot (de klant klikt in de laptop op een beeldje) */
-  product === 'nonstd' && s.set === 'catalog' ? [s, ...[1, 2, 3].map((beeld) => ({ ...s, beeld }))] : [s]);
+/* LAPTOP_PRODUCT=nonstd: de catalog met de drie producten van NONSTD (levering 94, alleen voor de schermen van de opening).
+   LAPTOP_PRODUCT=hal (levering 98, scripts/laptop-standen.mjs): de laptop op /catalog, /lifestyle en /video, met HAL_OPTIES.
+   Zonder: de oude winkel met de roze broek (scripts/opening-reeks.mjs). */
+const opties = process.env.LAPTOP_PRODUCT === 'nonstd' ? { product: 'nonstd' as const } : process.env.LAPTOP_PRODUCT === 'hal' ? HAL_OPTIES : { product: 'standaard' as const };
+/* levering 96 (lijst 97): geen schermen met beeld 2 – 4 groot meer; de foto's zijn in de opening een galerij die je scrolt */
+const standen = alleStanden(lang, undefined, opties);
 const vakNaam = (s: any) => standNaam(lang, s) + (s.beeld ? `-b${s.beeld}` : '');
 ---
 <Layout title="Laptopbron | VISUAILS" description="Bron van de laptopstanden; geen pagina van de site." noindex huid="hal">
@@ -38,7 +39,7 @@ const vakNaam = (s: any) => standNaam(lang, s) + (s.beeld ? `-b${s.beeld}` : '')
     <div class="hl hl-leeft hl-bron" data-bron-stand={vakNaam(s)}>
       <div class="hl-doos">
         <img class="hl-foto" src="/img/hal/pov-2304-doorzichtig.webp" width="2304" height="1296" alt="" />
-        <HalLaptopSchermen lang={lang} stand={s} product={product} />
+        <HalLaptopSchermen lang={lang} stand={s} opties={opties} />
       </div>
     </div>
   ))}

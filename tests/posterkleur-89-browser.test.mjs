@@ -225,9 +225,9 @@ async function slechtsteTekst(page, wortel, tekst, tekstKleur = [255, 255, 255])
   const { ctx, page } = await open({ deviceScaleFactor: 2 });
   await page.goto(`${BASIS}/nl/editions/`, { waitUntil: 'networkidle' });
   const cta = await slechtsteTekst(page, '.site-header .nav-cta', ['']);
-  ok(`Bestellen bovenin (E3, een pil): wit op het stukje minstens 4,5 : 1 (slechtste ${cta.r.toFixed(2)})`, cta.r >= 4.5 && cta.n > 50, cta.fout || '');
+  ok(`Bestellen bovenin (E3, scherp sinds levering 97): wit op het stukje minstens 4,5 : 1 (slechtste ${cta.r.toFixed(2)})`, cta.r >= 4.5 && cta.n > 50, cta.fout || '');
   const vorm = await page.$eval('.site-header .nav-cta', (e) => getComputedStyle(e).borderTopLeftRadius);
-  ok('… en een pil (999px), niet de oude zachte hoek', parseFloat(vorm) >= 20, vorm);
+  ok('… en scherp (levering 97, lijst 96 B1 a: hoeken 0)', parseFloat(vorm) === 0, vorm);
   await page.hover('.site-header .nav-cta'); await page.waitForTimeout(450);
   const onder = await slechtsteTekst(page, '.site-header .nav-cta', ['']);
   /* lijst 84 (A1 = c, 9 november 2026): onder de muis schuift het licht van de snede; dat mag iets lichter zijn, zolang het 4,5 haalt */
@@ -276,7 +276,7 @@ async function slechtsteTekst(page, wortel, tekst, tekstKleur = [255, 255, 255])
      de video is op die grond gemaakt (laptop-video-90.py met VELD=wit) */
   ok('achter de laptop de grond (#FBFCFF), geen veld meer',
     vlak.beeld === 'none' && vlak.kleur === 'rgb(251, 252, 255)', JSON.stringify(vlak).slice(0, 200));
-  ok('… en de video is op de grond gemaakt', /^wit /.test(JSON.parse(lees('src/data/laptopVideo90.json')).veld) && /VELD == 'wit'/.test(lees('scripts/laptop-video-90.py')));
+  ok('… en de video is op de grond gemaakt', /^(wit|puur wit)/.test(JSON.parse(lees('src/data/laptopVideo90.json')).veld) && /VELD == '(wit|puur)'/.test(lees('scripts/laptop-video-90.py')));
   await ctx.close();
   /* de tekst op het veld: de naam van de stand, onder de laptop (op de telefoon staat hij onder het podium op de grond) */
   const maten = [];

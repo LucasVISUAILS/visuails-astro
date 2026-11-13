@@ -27,7 +27,8 @@
    hier bewust niet of zonder die kracht.
 
    DE MATEN (lijst 88, C1 = a): klein 36 · normaal 44 · groot 52 px. Letter DM Sans 600: 13,5 · 15 · 16 px.
-   Binnenruimte 15 · 20 · 24 (aan de icoonkant 12 · 16 · 20). Icoon 15 · 18 · 20 px. Altijd een pil (999px).
+   Binnenruimte 15 · 20 · 24 (aan de icoonkant 12 · 16 · 20). Icoon 15 · 18 · 20 px. Sinds levering 97 (lijst 96, B1 a "strak" en B2 a "alles wat klikt"): altijd scherp,
+   hoeken 0. Was: altijd een pil (999px).
    Op een aanraakscherm is een kleine knop en een tekstlink minstens 44 hoog om op te tikken, met een
    onzichtbare rand (::after) en zonder dat het beeld verspringt.
    ═══════════════════════════════════════════════════════════════════════════════════════════════════ */
@@ -41,7 +42,11 @@
   --k-blauw: #25508B;         /* blauw uur: de focusrand, een tekstlink onder de muis */
   --k-blauw-licht: #80A7DD;   /* blauw licht: hetzelfde op inkt */
   /* de inktknop (lijst 84, A2 b): in rust inkt, onder de muis vult hij zich vanuit de hoek rechtsonder met de snede */
-  --knop-inkt: linear-gradient(126.87deg, #0F1217 0%, #0F1217 50%, #1A4279 62%, #25508B 80%, #2D61A8 100%);
+  --knop-inkt: linear-gradient(126.87deg, #0F1217 0%, #0F1217 50%, #1A4279 62%, #25508B 80%, #2D61A8 100%);   /* niet meer gebruikt (levering 97) */
+  /* levering 97 (lijst 96, B1 a "strak"): onder de muis schuift blauw uur van links naar rechts door de knop. De strook
+     is twee keer de knop: links blauw uur, rechts inkt; in rust staat hij rechts (je ziet inkt), onder de muis links. */
+  --k-schuif: linear-gradient(90deg, #25508B 0 50%, #0F1217 50% 100%);
+  --k-schuif-wit: linear-gradient(90deg, #E6E8EC 0 50%, #FFFFFF 50% 100%);
   --k-letter: 'DM Sans', 'Urbanist Variable', 'Urbanist', ui-sans-serif, system-ui, sans-serif;
   --k-gaan: .26s cubic-bezier(.22, .8, .2, 1);
 }
@@ -66,7 +71,7 @@
   /* --k-paar-l / --k-paar-r: wat een knoppaar met de snede ertussen extra vraagt (hal.css, "TWEE KNOPPEN WORDEN ÉÉN VORM") */
   padding: 0 calc(var(--k-pr, var(--k-p)) + var(--k-paar-r, 0px)) 0 calc(var(--k-pl, var(--k-p)) + var(--k-paar-l, 0px));
   border: 0;
-  border-radius: 999px;
+  border-radius: 0;
   font: 600 var(--k-l) / 1.2 var(--k-letter);
   font-stretch: normal;
   letter-spacing: -.005em;
@@ -100,17 +105,17 @@
 
 :is(.k, .btn, .knop):is(.k-vol, .btn-primary, .knop-inkt):not(#k) {
   color: var(--k-wit); box-shadow: none;
-  background: var(--k-inkt) var(--knop-inkt) -2px -2px / calc(200% + 4px) calc(200% + 4px) no-repeat;
+  background: var(--k-inkt) var(--k-schuif) 100% 0 / 200% 100% no-repeat;
 }
 :is(.k, .btn, .knop):is(.k-vol, .btn-primary, .knop-inkt):hover:not(#k), :is(.k, .btn, .knop):is(.k-vol, .btn-primary, .knop-inkt):focus-visible:not(#k) {
   color: var(--k-wit); box-shadow: none;
-  background: var(--k-inkt) var(--knop-inkt) calc(100% + 2px) calc(100% + 2px) / calc(200% + 4px) calc(200% + 4px) no-repeat;
+  background: var(--k-blauw) var(--k-schuif) 0 0 / 200% 100% no-repeat;
 }
 
 /* de tekstlink: geen vlak, onderstreept, de schuine pijl erachter */
 :is(.k, .btn, .knop).k-tekst:not(#k) {
   --k-h: 32px; --k-p: 2px; --k-pi: 2px; --k-ik: 16px; --k-gat: 7px;
-  min-height: var(--k-h); padding: 0 2px; border-radius: 999px; justify-content: flex-start; text-align: left;
+  min-height: var(--k-h); padding: 0 2px; border-radius: 0; justify-content: flex-start; text-align: left;
   background: none; box-shadow: none; color: var(--k-inkt);
   text-decoration: underline; text-decoration-color: rgb(15 18 23 / .3); text-decoration-thickness: 1.5px; text-underline-offset: 4px;
 }
@@ -142,10 +147,10 @@
   color: var(--k-wit); background: rgb(255 255 255 / .14); box-shadow: inset 0 0 0 1.5px var(--k-wit);
 }
 :is(.k-inkt, html[data-thema="donker"]) :is(.k, .btn, .knop):is(.k-vol, .btn-primary, .knop-inkt):not(#k), :is(.k, .btn, .knop).k-wit:is(.k-vol, .btn-primary, .knop-inkt):not(#k) {
-  color: var(--k-inkt); background: var(--k-wit); box-shadow: none;
+  color: var(--k-inkt); background: var(--k-wit) var(--k-schuif-wit) 100% 0 / 200% 100% no-repeat; box-shadow: none;
 }
 :is(.k-inkt, html[data-thema="donker"]) :is(.k, .btn, .knop):is(.k-vol, .btn-primary, .knop-inkt):is(:hover, :focus-visible):not(#k), :is(.k, .btn, .knop).k-wit:is(.k-vol, .btn-primary, .knop-inkt):is(:hover, :focus-visible):not(#k) {
-  color: var(--k-inkt); background: var(--k-mist); box-shadow: none;
+  color: var(--k-inkt); background: var(--k-mist) var(--k-schuif-wit) 0 0 / 200% 100% no-repeat; box-shadow: none;
 }
 :is(.k-inkt, html[data-thema="donker"]) :is(.k, .btn, .knop).k-tekst:not(#k), :is(.k, .btn, .knop).k-tekst.k-wit:not(#k) {
   color: var(--k-wit); background: none; box-shadow: none; text-decoration-color: rgb(255 255 255 / .45);
@@ -161,7 +166,7 @@
 /* ── F · de beweging (lijst 89): alleen het bewegende deel van het icoon (.ik-a), 0,26 s, zonder stuiteren.
    Hij blijft staan zolang de muis erop staat (of de toets), en gaat terug als hij eraf gaat. ─────────── */
 [data-rol] .ik .ik-a { transition: transform var(--k-gaan); transform-box: fill-box; transform-origin: center; }
-[data-rol]:is(:hover, :focus-visible) :is(.ik-pijl, .ik-uitloggen) .ik-a { transform: translateX(2.5px); }      /* doorgaan, uitloggen: naar voren / de deur uit */
+[data-rol]:is(:hover, :focus-visible) :is(.ik-pijl, .ik-uitloggen) .ik-a { transform: translateX(3px); }      /* levering 97: 3 px (lijst 96, B1 a) */      /* doorgaan, uitloggen: naar voren / de deur uit */
 [data-rol]:is(:hover, :focus-visible) .ik-pijl-links .ik-a { transform: translateX(-2.5px); }                     /* terug */
 [data-rol]:is(:hover, :focus-visible) .ik-pijl-schuin .ik-a { transform: translate(2px, -2px); }                  /* naar elders: schuin omhoog */
 [data-rol]:is(:hover, :focus-visible) .ik-downloaden .ik-a { transform: translateY(2.5px); }                      /* de pijl zakt in de bak */
@@ -199,3 +204,33 @@ html[data-thema="donker"] .k-zeker[open] > summary:not(#k) { background: rgb(255
 
 /* ── H · aanmerken is een vinkvak, geen knop (lijst 88, rollen 4): het krijgt wel hetzelfde potlood ─────── */
 :is(label.st-vink, label.pick) .ik { display: inline-block; width: 15px; height: 15px; flex: none; fill: currentColor; vertical-align: -2px; margin-right: 6px; }
+
+/* ── I · SCHERP, OVERAL WAT KLIKT — levering 97, 13 november 2026 (lijst 96: B1 a "strak", B2 a "alles wat klikt") ──────
+   Lucas, 01:47: "de knoppen die nu allemaal rond zijn gaan aanpassen naar 0, dus scherpe hoeken … duidelijk en subtiel".
+   Alles wat je aanklikt is scherp: de knoppen hierboven, en de knoppen die op hun eigen plek nog rond werden gezet — de
+   icoonknoppen (pijlen, pauze, sluiten), het taal- en het menuknopje, de WhatsApp-knop, Bestellen bovenin, de
+   cookieknoppen, de rijen in het menu, Studio. Wat iets AANGEEFT blijft rond: statuspillen, chips ("binnenkort"), de
+   kleurbolletjes, de sluiter in de catalogusanimatie. Dat is het verschil tussen een knop en een etiket.
+   Kracht: :not(#k):not(#k) en !important, omdat de plekken zelf (hal.css, studio-hal.css, werkplaats.css) hun ronde
+   hoeken met !important of een lange keten zetten. ─────────────────────────────────────────────────────────────────── */
+:is(.k, .btn, .knop, .h-knop, .h-mini-knop, .h-lv-knop, .knop-inkt, .cc-btn, .nav-cta, .nav-trigger, .nav-taal-klein .ls,
+    .nav-ik-item, .nav-ik-taal, .nav-ik-taal .ls, .menu-toggle, .mobile-close, .wa-launcher, .wa-launcher-label, .m8-pijl,
+    .o8-pauze, .b94-pauze, .h-melding-sluit, .h-rest-pijl, .h-look-pijl, .h-cirkel, .h-knop .o, .h-brug, .st-taal, .st-taal > *,
+    .st-navlink, .st-uit, .pu-rail-knop, .pu-slot-btn, .o8-klik-knop, .source-btn, [data-wk-eigen-zet]):not(#k):not(#k) { border-radius: 0 !important; }
+/* de focusrand volgt de vorm */
+:is(.m8-pijl, .m8-stip button, .b94-ga, .b94-pauze, .o8-pauze, .menu-toggle, .wa-launcher):focus-visible:not(#k):not(#k) { border-radius: 0 !important; }
+/* Bestellen bovenin (en onderaan het menu op de telefoon): blauw uur; onder de muis schuift blauw diep van links naar
+   rechts door de knop (was: het licht dat schuin door de knop schoof). Wit erop 8,1 : 1 en 10,6 : 1. */
+html body.hal .site-header :is(.nav-cta, .container.nav .nav-cta):not(#k):not(#k), html body.hal .mobile-nav .mobile-cta .btn-primary:not(#k):not(#k) {
+  background: #25508B linear-gradient(90deg, #1A4279 0 50%, #25508B 50% 100%) 100% 0 / 200% 100% no-repeat !important;
+  transition: background-position .32s cubic-bezier(.22, .8, .2, 1) !important;
+}
+html body.hal .site-header :is(.nav-cta, .container.nav .nav-cta):is(:hover, :focus-visible):not(#k):not(#k),
+html body.hal .mobile-nav .mobile-cta .btn-primary:is(:hover, :focus-visible):not(#k):not(#k) {
+  background: #1A4279 linear-gradient(90deg, #1A4279 0 50%, #25508B 50% 100%) 0 0 / 200% 100% no-repeat !important;
+}
+:is(.k, .btn, .knop):is(.k-vol, .btn-primary, .knop-inkt):not(#k) { transition: background-position .32s cubic-bezier(.22, .8, .2, 1), color .2s, box-shadow .2s; }
+@media (prefers-reduced-motion: reduce) {
+  :is(.k, .btn, .knop):is(.k-vol, .btn-primary, .knop-inkt):not(#k),
+  html body.hal .site-header :is(.nav-cta, .container.nav .nav-cta):not(#k):not(#k), html body.hal .mobile-nav .mobile-cta .btn-primary:not(#k):not(#k) { transition: none !important; }
+}

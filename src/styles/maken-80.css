@@ -1,6 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
    WAT WE MAKEN — levering 80, 1 november 2026 (HalMaken80.astro)
    ═══════════════════════════════════════════════════════════════════════════════
+   Sinds levering 95 (13 november 2026) vijf kaarten in een baan; zie HalMaken80.astro. De oude rij met drie uitgeknipte
+   producten is weg; de maten hieronder over de kop en de regels gelden nog.
    DE MATEN (docs/RUST-80.md):
    - de kop in hoofdletters zoals de galerij, clamp(32, 4,44 vw, 64), de zin eronder 370 in grijs;
    - drie kolommen tussen de marges (hoogstens 1280), 24 px ertussen; de producten op één lijn, de rij
@@ -21,22 +23,56 @@
 .m8 .m8-zin { --h-maat: 26em; margin: 18px 0 0; max-width: 26em; font: 370 clamp(17px, 1.32vw, 19px)/1.5 var(--h-letter); color: var(--h-grijs, #636974); text-wrap: pretty; }
 
 /* .m8 ervoor (levering 88): .h-pagina ul zette de 64 px op 0, en dan raakte de broek de zin erboven */
-.m8 .m8-rij { margin: 64px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
-.m8-dienst { margin: 0; padding: 0; min-width: 0; }
-.m8 .m8-link { display: flex; flex-direction: column; align-items: center; text-align: center; color: var(--h-inkt); text-decoration: none; border-radius: 3px; }
-/* het product: onderaan op de lijn, zo hoog als de rij × zijn schaal */
-.m8-beeld { display: flex; align-items: flex-end; justify-content: center; width: 100%; height: var(--m8-h); }
-.m8-beeld > picture { display: contents; }
-.m8-beeld img { display: block; height: calc(var(--m8-h) * var(--s, 1)); width: auto; max-width: 100%; object-fit: contain; object-position: 50% 100%; }
-.m8 .m8-naam { margin-top: 26px; display: inline-flex; align-items: center; gap: 8px; font: 450 20px/1.2 var(--h-letter); color: var(--h-inkt); }
-.m8-pijl { display: inline-flex; font-size: var(--h-t-lopend); }
-.m8 .m8-pijl .ik-a { transition: translate .26s cubic-bezier(.22, .8, .2, 1); }
-/* knoppensysteem (lijst 89): de pijl schuift in één stuk 2,5 px naar voren, zoals in elke knop (schacht en kop gingen uit elkaar) */
-.m8-pijl svg { width: 1em; height: 1em; }
-.m8 .m8-prijs { margin-top: 6px; font: 370 15px/1.4 var(--h-letter); color: var(--h-grijs, #636974); }
-.m8 .m8-link:hover .m8-naam { color: var(--h-blauw, #25508B); }
-.m8 .m8-link:hover .m8-pijl .ik-a { translate: 2.5px 0; }
-.m8 .m8-link:focus-visible { outline: 2px solid var(--h-blauw, #25508B); outline-offset: 6px; }
+.m8 .m8-carrousel { margin: 56px 0 0; }
+/* ── DE KAARTEN (levering 95, lijst 95 A1 a) ─────────────────────────────────────────────────────────────────
+   Zonder script: een rij die je opzij schuift. Met script (.m8-aan): de baan, de gekozen kaart groot in het midden.
+   De kaart: 4 : 5, hoeken 18 px (zoals de bovenbalk en het vlak in de banner), het beeld vult hem. De hoodie staat op de
+   grond van de site (Lucas: "mag gewoon wit blijven zodat het op de achtergrond van de website aansluit"), op 84 % van de
+   kaart; hooks en de eigen look als icoon op een witte kaart met een haarlijn (een kaart is wit met een haarlijn; geen vlak
+   direct op de grond, tests/grond-79). */
+.m8 .m8-baan { --m8-w: clamp(220px, 28vw, 360px); margin: 0; padding: 0 var(--m8-m) 8px; list-style: none; display: grid; grid-auto-flow: column; grid-auto-columns: var(--m8-w); gap: 20px;
+  overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; margin-inline: calc(-1 * var(--m8-m)); }
+.m8 .m8-baan::-webkit-scrollbar { display: none; }
+.m8-dienst { margin: 0; padding: 0; min-width: 0; scroll-snap-align: center; }
+.m8 .m8-kaart { position: relative; display: block; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 18px; background: var(--h-grond, #FBFCFF); color: var(--h-inkt); text-decoration: none; }
+.m8-kaart > picture { display: contents; }
+.m8-kaart img, .m8-kaart video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.m8-kaart img.m8-prod { inset: 8% 8% 8%; width: 84%; height: 84%; object-fit: contain; }
+.m8-k3 .m8-kaart, .m8-k4 .m8-kaart { background: var(--h-wit, #FFFFFF); box-shadow: inset 0 0 0 1px var(--h-lijn, #E6E8EC); }
+.m8-ikoon { position: absolute; inset: 0; display: grid; place-items: center; color: var(--h-inkt); }
+.m8-ikoon svg { width: 28%; height: auto; fill: currentColor; }
+.m8 .m8-kaart:focus-visible { outline: 2px solid var(--h-blauw, #25508B); outline-offset: 4px; }
+.m8 .m8-onder { margin: 14px 0 0; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.m8 .m8-naam { font: 600 var(--h-t-lopend)/1.3 var(--h-letter); color: var(--h-inkt); }
+.m8 .m8-prijs { font: 400 var(--h-t-fijn)/1.4 var(--h-letter); color: var(--h-grijs, #636974); }
+
+/* met script: de baan */
+.m8-aan .m8-baan { position: relative; display: block; overflow: visible; height: calc(var(--m8-w) * 1.25); padding: 0; margin-inline: 0; touch-action: pan-y; }
+.m8-aan .m8-dienst { position: absolute; left: 50%; top: 0; width: var(--m8-w);
+  transform: translateX(-50%) translateX(var(--x, 0px)) scale(var(--s, 1)); transform-origin: 50% 50%; opacity: var(--o, 1);
+  transition: transform .55s cubic-bezier(.22, 1, .36, 1), opacity .55s cubic-bezier(.22, 1, .36, 1); }
+.m8-aan .m8-onder { display: none; }
+.m8-aan .m8-dienst[aria-hidden="true"] { pointer-events: none; }
+.m8-aan .m8-dienst.m8-sprong { transition: none; }
+.m8 { overflow-x: clip; }
+
+/* onder de kaart: de naam, één zin, de prijs, de knop en een link */
+.m8 .m8-info { margin: 28px auto 0; max-width: 34em; display: grid; justify-items: center; gap: 6px; text-align: center; }
+.m8 .m8-info-naam { margin: 0; font: 600 24px/1.2 var(--h-letter); color: var(--h-inkt); }
+.m8 .m8-info-zin { --h-maat: none; margin: 0; max-width: 34ch; font: 400 var(--h-t-klein)/1.5 var(--h-letter); color: var(--h-inkt); text-wrap: balance; }
+.m8 .m8-info-prijs { --h-maat: none; margin: 0; font: 400 var(--h-t-fijn)/1.4 var(--h-letter); color: var(--h-grijs, #636974); }
+.m8 .m8-knoppen { margin: 12px 0 0; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 20px; }
+.m8 .m8-nav { margin: 26px 0 0; display: flex; align-items: center; justify-content: center; gap: 14px; }
+.m8 .m8-nav[hidden], .m8 .m8-info[hidden] { display: none; }
+.m8 .m8-pijl { width: 44px; height: 44px; padding: 0; border-radius: 999px; border: 1px solid var(--h-lijn, #E6E8EC); background: var(--h-wit, #FFFFFF); color: var(--h-inkt); display: grid; place-items: center; cursor: pointer; transition: border-color .2s; }
+.m8 .m8-pijl:hover { border-color: var(--h-lijn-sterk, #C5C8CF); }
+.m8 .m8-pijl svg { width: 16px; height: 16px; fill: currentColor; }
+.m8 .m8-stip { display: flex; gap: 2px; }
+.m8 .m8-stip button { width: 28px; height: 44px; padding: 0; border: 0; background: none; cursor: pointer; display: grid; place-items: center; }
+.m8 .m8-stip i { display: block; width: 18px; height: 2px; background: var(--h-lijn-sterk, #C5C8CF); transition: background-color .3s, width .3s; }
+.m8 .m8-stip button[aria-current="true"] i { width: 24px; background: var(--h-inkt); }
+.m8 .m8-pijl:focus-visible, .m8 .m8-stip button:focus-visible { outline: 2px solid var(--h-blauw, #25508B); outline-offset: 2px; border-radius: 999px; }
+@media (prefers-reduced-motion: reduce) { .m8-aan .m8-dienst { transition: none; } }
 
 /* wat er verder is: één regel, klein, met de schuine streep ertussen */
 .m8 .m8-ook { --h-maat: none; margin: 36px auto 0; max-width: none; display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 6px 0; font: 370 15px/1.5 var(--h-letter); color: var(--h-grijs, #636974); }
@@ -48,48 +84,69 @@
 .m8 .m8-ook a + a::before { content: ""; display: inline-block; vertical-align: -1px; width: 1.5px; height: 12px; margin: 0 12px; background: var(--h-grijs, #636974); opacity: .55; transform: skewX(-37deg); }
 
 @media (max-width: 700px) {
-  .m8.m8 { --m8-h: clamp(110px, 30vw, 160px); }
-  .m8 .m8-rij { gap: 12px; margin-top: 36px; }
-  .m8 .m8-naam { margin-top: 16px; font-size: 15px; gap: 5px; }
-  .m8-pijl { font-size: var(--h-t-fijn); }
-  .m8 .m8-prijs { font-size: var(--h-t-label); }
+  .m8 .m8-carrousel { margin-top: 36px; }
+  .m8 .m8-info-naam { font-size: 20px; }
   .m8 .m8-ook { margin-top: 32px; font-size: var(--h-t-fijn); }
   .m8 .m8-regel.h-onderregel { max-width: 30ch; font-size: var(--h-t-label); text-wrap: balance; }
   .m8-ook-kop { flex-basis: 100%; margin: 0 0 6px; text-align: center; }
 }
 
-/* ── DE SECTIE OPENT (levering 85, 3 november 2026; lijst 71) ────────────────────────────────────────────────
-   Lucas: "Daarna met de zelfde snappy feeling de volgende sectie openen met een animatie", in lijst 71 "zacht" (D), en
-   daarna: "eerst de pagina wit [...] en dat dan de services omhoog komen alsof je nog op dezelfde sectie zit". Na de
-   video springt de pagina hierheen terwijl alles in beeld wit is, en de sectie komt omhoog op de plek waar de laptop
-   stond: eerst de kop, dan de drie producten na elkaar (40 ms), dan de regels eronder; elk 0,4 s, 20 – 36 px omhoog
-   (2,2 vw), de dekking vol na 60 %, zacht uitlopend. Omhoog schuiven is hier zijn uitdrukkelijke wens; de rest van de
-   site komt zacht in beeld zonder te schuiven (levering 75).
-   - .m8-dicht zet het script (HalOpening80.astro) alleen als de inhoud van de sectie onder het scherm staat: zonder
-     script, bij minder beweging en als de sectie al in beeld staat, staat alles er gewoon;
-   - .m8-open met --m8-begin: na de video 60 ms (een witte tel), anders 0 (de sectie voor een vijfde in beeld: de
-     telefoon, de schuifbalk, een toets). --i is de plek in de rij (HalMaken80.astro). */
-.m8.m8-dicht :is(.m8-kopgroep, .m8-dienst, .m8-ook, .m8-regel) { opacity: 0; }
-.m8.m8-open :is(.m8-kopgroep, .m8-dienst, .m8-ook, .m8-regel) {
+/* ── DE SECTIE OPENT (levering 85, lijst 71; sinds levering 95 als één geheel) ──────────────────────────────────
+   Na de video springt de pagina hierheen en de sectie komt zacht omhoog: eerst de kop, dan de kaarten als één baan,
+   dan de regels eronder; elk 0,4 s, 20 – 36 px omhoog. De kaarten zelf staan op hun plek in de baan (transform), daarom
+   beweegt de baan als geheel en niet elke kaart (anders zou de opening hun plek overschrijven).
+   - .m8-dicht zet het script (HalOpening80/HalBanner94) alleen als de sectie onder het scherm staat: zonder script, bij
+     minder beweging en als de sectie al in beeld staat, staat alles er gewoon. */
+.m8.m8-dicht :is(.m8-kopgroep, .sk, .m8-carrousel, .m8-ook, .m8-regel) { opacity: 0; }
+.m8.m8-open :is(.m8-kopgroep, .sk, .m8-carrousel, .m8-ook, .m8-regel) {
   animation: m8-op .4s cubic-bezier(.22, .8, .2, 1) backwards;
   animation-delay: calc(var(--m8-begin, 0ms) + var(--m8-na, 0ms));
 }
-.m8.m8-open .m8-dienst { --m8-na: calc(40ms + var(--i, 0) * 40ms); }
-/* ANTI-GRAVITY (levering 89, lijst 81 D1: goed). De producten komen gewichtloos aan, elk op zijn eigen manier: het
-   lichtste eerst (de sokken), het zwaarste het laatst (de jeans), elk met een kleine helling die het naar zijn
-   zwaartepunt rechttrekt (de hoodie −1,4°, de jeans 0,9°, de sokken −1,9°), om zijn voet (50 % 100 %). Ze komen tot
-   stilstand zonder na te veren (ease-out-quart, 0,9 s). De naam en de prijs komen mee met de rij, zonder helling. */
-.m8.m8-open .m8-dienst { animation-duration: .9s; animation-timing-function: cubic-bezier(.25, 1, .5, 1); }
-.m8.m8-open .m8-dienst:nth-child(1) { --m8-na: 90ms; --ag-r: -1.4deg; }
-.m8.m8-open .m8-dienst:nth-child(2) { --m8-na: 150ms; --ag-r: .9deg; }
-.m8.m8-open .m8-dienst:nth-child(3) { --m8-na: 40ms; --ag-r: -1.9deg; }
-.m8.m8-open .m8-beeld img { transform-origin: 50% 100%; animation: m8-hel .9s cubic-bezier(.25, 1, .5, 1) backwards; animation-delay: calc(var(--m8-begin, 0ms) + var(--m8-na, 0ms)); }
-@keyframes m8-hel { from { transform: rotate(var(--ag-r, 0deg)); } to { transform: none; } }
+.m8.m8-open .m8-carrousel { --m8-na: 80ms; animation-duration: .6s; animation-timing-function: cubic-bezier(.25, 1, .5, 1); }
 .m8.m8-open :is(.m8-ook, .m8-regel) { --m8-na: 160ms; }
 @keyframes m8-op { from { opacity: 0; transform: translateY(clamp(20px, 2.2vw, 36px)); } 60% { opacity: 1; } to { opacity: 1; transform: none; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .m8 .m8-pijl .ik-a { transition: none; }
-  .m8.m8-dicht :is(.m8-kopgroep, .m8-dienst, .m8-ook, .m8-regel) { opacity: 1; }
-  .m8.m8-open :is(.m8-kopgroep, .m8-dienst, .m8-ook, .m8-regel), .m8.m8-open .m8-beeld img { animation: none; }
+  .m8.m8-dicht :is(.m8-kopgroep, .sk, .m8-carrousel, .m8-ook, .m8-regel) { opacity: 1; }
+  .m8.m8-open :is(.m8-kopgroep, .sk, .m8-carrousel, .m8-ook, .m8-regel) { animation: none; }
 }
+
+/* ── levering 96 (lijst 96, C1 b): de kaart in het midden kantelt licht mee met de muis (HalMaken80.astro), hoogstens 4° ── */
+.m8.m8-aan .m8-kaart { transform: perspective(900px) rotateX(var(--m8-rx, 0deg)) rotateY(var(--m8-ry, 0deg)); transition: transform .35s cubic-bezier(.22, 1, .36, 1); }
+@media (prefers-reduced-motion: reduce) { .m8.m8-aan .m8-kaart { transform: none; } }
+
+/* ── levering 96 (lijst 96 C1 b, lijst 98): de catalogusanimatie op de kaart Productfoto's (src/scripts/catalogkaart96.js).
+   De catalogus zoals Lucas' voorbeeld: twee kolommen, de naam in hoofdletters in IBM Plex Mono met veel ruimte tussen de
+   letters (12 px, de labelmaat), de prijs met EUR, een zwarte balk zonder ronding. De grond is die van de foto's. ── */
+.m8 .c96 { position: absolute; inset: 0; z-index: 1; overflow: hidden; background: #FBFDFF; opacity: 0; pointer-events: none; color: #121218; }
+.m8 .c96.c96-aan { opacity: 1; }
+.m8 .c96 picture { display: block; }
+.m8 .c96 img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; }
+.m8 .c96 .c96-foto img { object-fit: cover; }
+.c96-zoeker { position: absolute; inset: 7%; }
+.c96-zoeker i { position: absolute; width: 8%; aspect-ratio: 1; border: 2px solid #fff; }
+.c96-zoeker i:nth-child(1) { left: 0; top: 0; border-right: 0; border-bottom: 0; }
+.c96-zoeker i:nth-child(2) { right: 0; top: 0; border-left: 0; border-bottom: 0; }
+.c96-zoeker i:nth-child(3) { left: 0; bottom: 0; border-right: 0; border-top: 0; }
+.c96-zoeker i:nth-child(4) { right: 0; bottom: 0; border-left: 0; border-top: 0; }
+.c96-sluiter { position: absolute; left: 50%; bottom: 5%; width: 13%; aspect-ratio: 1; margin-left: -6.5%; border-radius: 50%; border: 3px solid #fff; box-sizing: border-box; }
+.c96-sluiter::after { content: ""; position: absolute; inset: 12%; border-radius: 50%; background: #fff; }
+.c96-flits { position: absolute; inset: 0; background: #fff; opacity: 0; }
+.c96-vel { position: absolute; left: 0; right: 0; top: 0; padding: 7% 7% 9%; opacity: 0; }
+.c96-raster { display: grid; grid-template-columns: 1fr 1fr; gap: 8% 7%; }
+.c96-p { min-width: 0; }
+.c96-b { position: relative; aspect-ratio: 4 / 5; }
+.c96-n, .c96-e { margin: 0; font: 500 var(--h-t-label, 12px)/1.35 var(--h-mono); letter-spacing: .14em; text-transform: uppercase; overflow-wrap: anywhere; }
+.c96-n { margin-top: 6px; }
+.c96-e { margin-top: 4px; letter-spacing: .1em; }
+.c96-alles { margin: 10% auto 0; width: 62%; padding: 11px 0; background: #121218; color: #fff; text-align: center; font: 500 var(--h-t-label, 12px)/1 var(--h-mono); letter-spacing: .2em; text-transform: uppercase; }
+.c96-groot { position: absolute; inset: 0; transform-origin: 0 0; opacity: 0; background: #FBFDFF; }
+.c96-groot > picture { position: absolute; inset: 0; }
+.m8 .c96 .c96-g2 img { object-fit: cover; }
+.c96-g1, .c96-g2 { opacity: 0; }
+.c96-pijl { position: absolute; right: 5%; top: 50%; width: 34px; height: 34px; margin-top: -17px; display: grid; place-items: center; background: #fff; box-shadow: inset 0 0 0 1px #E6E8EC; opacity: 0; }
+.c96-pijl svg { width: 14px; height: 14px; }
+.c96-muis { position: absolute; left: 0; top: 0; width: 22px; height: 22px; opacity: 0; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .25)); }
+.c96-muis svg { display: block; width: 100%; height: 100%; }
+.c96-lbl { position: absolute; left: 6%; bottom: 5%; font: 600 var(--h-t-label, 12px)/1 var(--h-mono); letter-spacing: .08em; text-transform: uppercase; opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .m8 .c96 { display: none; } }

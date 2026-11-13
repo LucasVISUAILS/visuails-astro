@@ -143,7 +143,11 @@ function meet(buiten) {
       uit.knoppen++;
       const half = Math.min(r.width, r.height) / 2 - 0.75;
       const gesneden = cs.clipPath && cs.clipPath !== 'none';   // in een rij met de snede: de kanten van de snede zijn 0
-      if ((!nz.length && !gesneden) || nz.some((v) => v < half)) uit.geenPil.push(`${naam(el)} ${Math.round(r.width)}x${Math.round(r.height)}: ${rr.map((v) => Math.round(v * 10) / 10).join('/')}`);
+      /* levering 97 (lijst 96, B1 a en B2 a): een KNOP is scherp (hoeken 0); chips, pillen en velden blijven een pil */
+      /* wat iets aangeeft of kiest uit een rij blijft een pil: chips, filters (h-gl-pil), tabbladen (h-faq-tab), de stappen van het
+         formulier (pl-rail-item) en de kleurbolletjes (wk-kleur); velden ook */
+      const isKnop = !/^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName) && !/(^|\s)(h-chip|h-pil|chip|pill|stand|h-gl-pil|h-faq-tab|pl-rail-item|wk-kleur)(\s|$)/.test(el.className || '') && !el.matches('[data-pl-qty-set], [data-wk-vorm]');   /* de keuzes voor het aantal en de vorm: keuzechips */
+      if (isKnop ? nz.length > 0 : ((!nz.length && !gesneden) || nz.some((v) => v < half))) uit.geenPil.push(`${naam(el)} ${Math.round(r.width)}x${Math.round(r.height)}: ${rr.map((v) => Math.round(v * 10) / 10).join('/')}`);
     }
     if (!nz.length) continue;
     const lo = Math.min(...nz); const hi = Math.max(...rr);
@@ -216,7 +220,7 @@ try {
       const { gezien, groot, fout, zacht, knoppen, geenPil } = await page.evaluate(meet, BUITEN);
       totaal += gezien; grootTotaal += groot; knopTotaal += knoppen;
       check(`${p} op ${w}: ${groot} objecten, nergens de oude zachte hoek`, zacht.length === 0, zacht.slice(0, VEEL).join(' · '));
-      check(`${p} op ${w}: ${knoppen} knoppen en velden, elk een pil`, geenPil.length === 0, geenPil.slice(0, VEEL).join(' · '));
+      check(`${p} op ${w}: ${knoppen} knoppen en velden: knoppen scherp, chips en velden een pil`, geenPil.length === 0, geenPil.slice(0, VEEL).join(' · '));
       check(`${p} op ${w}: ${gezien} in een vlak, de hoek volgt het vlak`, fout.length === 0, fout.slice(0, VEEL).join(' · '));
     }
     await ctx.close();

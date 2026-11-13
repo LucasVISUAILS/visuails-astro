@@ -1,0 +1,57 @@
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
+   DE VASTE OPBOUW VAN DE VOORPAGINA — levering 96, 13 november 2026 (lijst 96, A1 a en A2 a; SectieKop.astro)
+   DE MATEN (op 1440, gemeten naar Setless, niet overgenomen):
+   - één kolom van hoogstens 1200 px: de marge is max(20 px, (100vw − 1200) / 2), 120 px op 1440;
+   - lucht: 128 px boven en onder op 1440, nooit minder dan 72 px (clamp(72, 8,89 vw, 128));
+   - de kop: VISUAILS Display 700 in hoofdletters, clamp(32, 4,44 vw, 64), links; hoogstens twee regels;
+   - het label: IBM Plex Mono 600, 12 px (var(--h-t-label)), in grijs; de streep 14 × 2 px in inkt, schuin op 53°;
+   - de haarlijn: 1 px lijn onder kop en label, 20 px lucht erboven, 48 px eronder tot de inhoud.
+   ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+.h-voor { counter-reset: sk 1; }   /* de banner is 01: de eerste sectiekop is 02 */
+.h-voor {
+  --sk-m: max(20px, calc((100vw - 1200px) / 2));
+  --sk-lucht: clamp(72px, 8.89vw, 128px);
+}
+.sk {
+  counter-increment: sk;
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 16px 40px;
+  padding-bottom: 20px; margin-bottom: 48px; border-bottom: 1px solid var(--h-lijn, #E6E8EC);
+  text-align: left;
+}
+.sk-tekst { display: grid; gap: 14px; min-width: 0; }
+html body.hal .sk .sk-kop.h-kop {
+  margin: 0; font: 700 clamp(32px, 4.44vw, 64px)/.92 var(--h-kopletter); letter-spacing: -.01em; text-transform: uppercase;
+  color: var(--h-inkt, #0F1217); text-wrap: balance;
+}
+.sk-zin { margin: 0; max-width: 30em; font: 400 clamp(16px, 1.32vw, 19px)/1.5 var(--h-letter); color: var(--h-grijs, #636974); text-wrap: pretty; }
+.sk-lbl {
+  margin: 0; flex: none; display: inline-flex; align-items: center; gap: 10px; white-space: nowrap;
+  font: 600 var(--h-t-label, 12px)/1.3 var(--h-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--h-grijs, #636974);
+}
+.sk-lbl i { display: inline-block; width: 14px; height: 2px; background: var(--h-inkt, #0F1217); transform: skewX(-37deg); }
+.sk-nr::before { content: counter(sk, decimal-leading-zero) " · "; color: var(--h-inkt, #0F1217); }
+@media (max-width: 640px) {
+  .sk { flex-direction: column; align-items: flex-start; margin-bottom: 32px; }
+  .sk-lbl { order: -1; }
+}
+
+/* ── het kader van elke sectie met een sectiekop: één kolom, één lucht ── */
+html body.hal.hal .h-voor > .sk-s { padding: var(--sk-lucht) var(--sk-m); box-sizing: border-box; }
+html body.hal.hal .h-voor > .sk-s + .sk-s { padding-top: 0; }
+
+/* Wat we maken: de kop links in de kolom, de baan eronder over de breedte van de kolom */
+html body.hal.hal .h-voor > .m8.sk-s { padding: var(--sk-lucht) var(--sk-m); }
+.m8.sk-s .m8-carrousel { margin-top: 0; }
+/* De looks: de rijen blijven over de hele breedte, alleen de kop in de kolom */
+html body.hal.hal .h-voor > .g8.sk-s { padding: var(--sk-lucht) 0; }
+.g8.sk-s .sk { margin-left: var(--sk-m); margin-right: var(--sk-m); }
+.g8.sk-s .g8-rijen { margin-top: 0; }
+/* Hoe het werkt: de kop zichtbaar (was alleen voor een schermlezer), de clip en de stappen eronder in het midden */
+html body.hal.hal .h-voor > .w8.sk-s { padding: var(--sk-lucht) var(--sk-m); text-align: center; }
+/* Nog vragen?: de kop boven, de rijen eronder over de kolom */
+html body.hal.hal .h-voor > .v-weten.sk-s { display: block; padding: var(--sk-lucht) var(--sk-m); }
+html body.hal.hal .h-voor > .v-weten.sk-s .v-weten-rijen { margin-top: 0; }
+
+/* ── het slot (lijst 96, A2 a): een einde aan de pagina, met de knoppen ── */
+.slot96-knoppen { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; }
+.slot96-zin { --h-maat: 34em; margin: 0 0 28px; max-width: 34em; font: 400 clamp(16px, 1.32vw, 19px)/1.5 var(--h-letter); color: var(--h-inkt, #0F1217); text-wrap: pretty; }

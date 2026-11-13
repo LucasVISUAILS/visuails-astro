@@ -154,12 +154,16 @@ console.log('\n3c · het deelplaatje en de fotogids in de letters van de site');
 
 /* ── 4 · de knoppen, in de bron ── */
 console.log('\n4 · de knoppen');
-ok('de gloed weg bij alle knoppen (h-knop::before), ook de schaduw onder Bestellen', /html body\.hal \.h-knop::before \{ content: none; display: none; \}/.test(blok) && /\.nav-cta[^{]*\{\n  background: #1A4279 linear-gradient[^}]*box-shadow: none !important;/.test(blok));
+ok('de gloed weg bij alle knoppen (h-knop::before), ook de schaduw onder Bestellen', /html body\.hal \.h-knop::before \{ content: none; display: none; \}/.test(blok) && /\.nav-cta[^{]*\{\n  color: #FFFFFF !important; box-shadow: none !important;/.test(blok));
 /* knoppensysteem lijst 88/89: de inktknop staat sinds het knoppensysteem in src/styles/knoppen.css (.k-vol, --knop-inkt van lijst 84 A2 b) */
 const knoppenCss = lees('src/styles/knoppen.css');
-ok('K2 · de inktknop: inkt in rust, onder de muis en met de toets de snede, langs de snede geschoven', /background: var\(--k-inkt\) var\(--knop-inkt\) -2px -2px \/ calc\(200% \+ 4px\) calc\(200% \+ 4px\) no-repeat;/.test(knoppenCss)
-  && /background: var\(--k-inkt\) var\(--knop-inkt\) calc\(100% \+ 2px\) calc\(100% \+ 2px\)/.test(knoppenCss));
-ok('K1 · Bestellen in de snede; onder de muis schuift het licht door de knop', /#1A4279 0%, #25508B 27\.5%, #2D61A8 50%, #25508B 72\.5%, #1A4279 100%\) -2px -2px/.test(blok) && /\.container\.nav \.nav-cta:focus-visible/.test(blok));
+/* levering 97 (lijst 96, B1 a "strak"): onder de muis schuift blauw uur van links naar rechts door de knop (was: de snede vanuit de hoek) */
+ok('K2 · de inktknop: inkt in rust; onder de muis en met de toets schuift blauw uur van links naar rechts (levering 97)', /background: var\(--k-inkt\) var\(--k-schuif\) 100% 0 \/ 200% 100% no-repeat;/.test(knoppenCss)
+  && /background: var\(--k-blauw\) var\(--k-schuif\) 0 0 \/ 200% 100% no-repeat;/.test(knoppenCss));
+/* levering 98 (lijst 99, A4): de snede is uit hal.css; Bestellen staat in knoppen.css (sectie I) */
+ok('K1 · Bestellen: blauw uur; onder de muis en met de toets schuift blauw diep van links naar rechts (knoppen.css)', /\.nav-cta, \.container\.nav \.nav-cta\):not\(#k\):not\(#k\)[^{]*\{\n  background: #25508B linear-gradient\(90deg, #1A4279 0 50%, #25508B 50% 100%\) 100% 0 \/ 200% 100% no-repeat !important;/.test(knoppenCss)
+  && /:is\(:hover, :focus-visible\):not\(#k\):not\(#k\)[\s\S]*?background: #1A4279 linear-gradient\(90deg, #1A4279 0 50%, #25508B 50% 100%\) 0 0 \/ 200% 100% no-repeat !important;/.test(knoppenCss)
+  && !/#25508B 27\.5%, #2D61A8 50%, #25508B 72\.5%/.test(blok));
 /* knoppensysteem lijst 88/89: de lijnknop krijgt onder de muis het vlak en een lijn in inkt (lijst 88 regel 1); de ring in de snede is weg */
 ok('K3 · de lijnknop: onder de muis het vlak #F4F5F7 en de lijn in inkt', /:is\(\.k, \.btn, \.knop\):hover:not\(#k\), :is\(\.k, \.btn, \.knop\):focus-visible:not\(#k\) \{ background: var\(--k-vlak\); box-shadow: inset 0 0 0 1\.5px var\(--k-inkt\);/.test(knoppenCss));
 const paar = lees('src/scripts/knoppaar.js');
@@ -227,10 +231,9 @@ try {
     ok('geen gloed onder een knop (::before is weg)', gloed === 0, String(gloed));
 
     /* K2: de inktknop */
-    /* levering 94: de inktknop van de opening staat in de bannervideo; daar wordt hij wit op een donker beeld (k-wit). Voor
-       deze meting de video stil en de knop in zijn gewone stand (inkt) */
-    const K = '[data-b94-knop] .h-knop.k-vol';  // knoppensysteem lijst 88/89: de inktknop heet .k-vol
-    await page.evaluate(() => { scrollTo(0, 0); window.__b94Stil = true; const v = document.querySelector('[data-b94-video]'); v.pause(); v.currentTime = 0; document.querySelectorAll('[data-b94-knop], [data-b94-knop] .k-vol').forEach((e) => e.classList.remove('k-wit')); });
+    /* levering 95 (lijst 94, A4): de inktknop van de banner staat op het witte vlak en is altijd zwart. De video stil */
+    const K = '.b94-knop .h-knop.k-vol';  // knoppensysteem lijst 88/89: de inktknop heet .k-vol
+    await page.evaluate(() => { scrollTo(0, 0); const v = document.querySelector('[data-b94-video]'); v.pause(); v.currentTime = 0; });
     /* de cookiebalk ligt op 1440 × 900 over de knop rechtsonder in de banner */
     await page.addStyleTag({ content: '#cc-bar { display: none !important; }' });
     await page.waitForTimeout(300);
@@ -244,7 +247,8 @@ try {
     await page.hover(K); await page.waitForTimeout(700);
     const muis = [await pixel(page, K, 0.15, 0.2), await pixel(page, K, 0.5, 0.15), await pixel(page, K, 0.995, 0.5), await pixel(page, K, 0.5, 0.995)];
     /* onder de muis de snede: vanuit de hoek rechtsonder blauw, naar links toe donkerder (de tweede helft van het verloop) */
-    ok('… onder de muis de snede: blauw, het lichtst rechtsonder, naar links donkerder', muis.slice(1).every(isBlauw) && !dichtbij(muis[0], '#0F1217', 12) && lum(muis[0]) < lum(muis[1]) && lum(muis[1]) < lum(muis[2]), muis.join(' · '));
+    /* levering 97: onder de muis is de hele knop blauw uur (het blauw is van links naar rechts doorgeschoven) */
+    ok('… onder de muis blauw uur, van links tot rechts (levering 97)', muis.every((p) => dichtbij(p, '#25508B', 14)), muis.join(' · '));
     ok('… en geen haarlijn inkt aan de rechter- of onderrand', muis.slice(2).every((p) => !dichtbij(p, '#0F1217', 12)), muis.slice(2).join(' · '));
     const wit = await page.evaluate((k) => { const c = getComputedStyle(document.querySelector(k)); return c.color; }, K);
     ok('… de letters blijven wit (6,2 : 1 of meer op elke stop)', wit === 'rgb(255, 255, 255)', wit);
@@ -259,7 +263,8 @@ try {
     const c2 = [await pixel(page, C, 0.14, 0.2), await pixel(page, C, 0.86, 0.2)];
     /* 9 november 2026 (lijst 84, A1 = c): de snede, schoon — geen stukje met korrel meer. In rust rechts lichter; onder de
        muis schuift het licht door de knop, dan is links het lichtst. */
-    ok('K1 · Bestellen (lijst 84, A1 = c): de snede schoon; onder de muis schuift het licht door de knop', c1.every(isBlauw) && c2.every(isBlauw) && lum(c1[1]) > lum(c1[0]) && lum(c2[0]) > lum(c2[1]) && !(await page.$eval(C, (e) => e.classList.contains('pk'))), `${c1.join(' · ')} → ${c2.join(' · ')}`);
+    /* levering 97: in rust blauw uur; onder de muis schuift blauw diep van links naar rechts door de knop */
+    ok('K1 · Bestellen (levering 97): blauw uur; onder de muis blauw diep, van links tot rechts', c1.every((p) => dichtbij(p, '#25508B', 14)) && c2.every((p) => dichtbij(p, '#1A4279', 14)) && !(await page.$eval(C, (e) => e.classList.contains('pk'))), `${c1.join(' · ')} → ${c2.join(' · ')}`);
     const schaduw = await page.evaluate((c) => getComputedStyle(document.querySelector(c)).boxShadow, C);
     ok('… zonder gloed eronder (alleen een laag binnen de knop)', schaduw === 'none' || schaduw.split(/,(?![^(]*\))/).every((d) => d.includes('inset')), schaduw);
 

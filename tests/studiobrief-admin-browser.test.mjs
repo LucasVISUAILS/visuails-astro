@@ -127,9 +127,11 @@ const hoeken = (page) => page.evaluate(() => {
   const r = (el) => { const cs = getComputedStyle(el); return [cs.borderTopLeftRadius, cs.borderTopRightRadius, cs.borderBottomRightRadius, cs.borderBottomLeftRadius].map(parseFloat); };
   const zicht = (s) => [...document.querySelectorAll(s)].filter((el) => el.getClientRects().length);
   const kaarten = zicht('main .card').map(r);
-  const pillen = zicht('main .btn, main .sb-veld input:not([type=checkbox]):not([type=radio]), main .pill').map((el) => {
+  /* levering 97 (lijst 96, B1 a en B2 a): een knop is scherp (hoeken 0); velden en pillen blijven een pil */
+  const pillen = [...zicht('main .btn').map((el) => r(el).every((x) => x === 0)),
+    ...zicht('main .sb-veld input:not([type=checkbox]):not([type=radio]), main .pill').map((el) => {
     const h = el.getBoundingClientRect().height; return r(el).every((x) => x >= h / 2 - 0.5);
-  });
+  })];
   return {
     kaarten: kaarten.length, kaart24: kaarten.every((k) => k.every((x) => x === 24)),
     pillen: pillen.length, allePil: pillen.every(Boolean),
@@ -155,7 +157,7 @@ try {
       ok(`${tag}: geen horizontale schuif`, await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
       const h = await hoeken(page);
       ok(`${tag}: ${h.kaarten} kaarten, alle vier de hoeken 24`, h.kaarten >= 3 && h.kaart24);
-      ok(`${tag}: ${h.pillen} knoppen, velden en pillen zijn een pil`, h.pillen >= 8 && h.allePil);
+      ok(`${tag}: ${h.pillen} knoppen scherp, velden en pillen een pil`, h.pillen >= 8 && h.allePil);
       ok(`${tag}: nergens een vorm met één afwijkende hoek`, !h.eenZachteHoek);
       /* Het frame laadt lui: eerst in beeld halen. */
       await page.locator('iframe.sb-voorbeeld').scrollIntoViewIfNeeded();

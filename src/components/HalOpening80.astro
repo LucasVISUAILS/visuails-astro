@@ -105,10 +105,10 @@ const pct = (q: number[][]) => {
 const T = nl
   ? { groep: 'De voorbeeldschermen', pauze: 'Zet de beelden stil', speel: 'Laat de beelden lopen',
       laptop: 'Twee handen houden een laptop met de webshop van een merk en een telefoon met de telefoonfoto van hetzelfde product', laden: 'De video laadt',
-      sectie: 'Je beelden in je eigen webshop, op je feed en in je video', bekijk: 'Bekijk', beeld: 'Beeld' }
+      sectie: 'Je beelden in je eigen webshop, op je feed en in je video', bekijk: 'Bekijk', beeld: 'Beeld', concept: 'NON/STD is een conceptmerk, bedacht door VISUAILS.' }
   : { groep: 'The example screens', pauze: 'Pause the images', speel: 'Play the images',
       laptop: 'Two hands hold a laptop showing a brand’s web shop and a phone with the phone photo of the same product', laden: 'The video is loading',
-      sectie: 'Your visuals in your own web shop, on your feed and in your video', bekijk: 'View', beeld: 'Image' };
+      sectie: 'Your visuals in your own web shop, on your feed and in your video', bekijk: 'View', beeld: 'Image', concept: 'NON/STD is a concept brand, created by VISUAILS.' };
 /* LEVERING 90: de video's van Lucas' verbeterde video, met het veld erin (scripts/laptop-video-90.py en -90.mjs). De foto
    op het effect is beeld 0 van die video, in dezelfde breedtes: het script kiest de video in de breedte van de foto. */
 const VIDEO_MATEN = VIDEO90.maten as number[];
@@ -192,10 +192,12 @@ const VIDEO_V = vh.digest('hex').slice(0, 10);
         </div>
         <p class="o8-stand-naam" data-o8-naam aria-hidden="true">{SET[eerste.set]}</p>
         <button type="button" class="o8-pauze" data-o8-pauze aria-pressed="false" aria-label={T.pauze} data-uit={T.pauze} data-aan={T.speel}><svg class="ik" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="o8-p-uit" fill-rule="evenodd" d={IKOON.pauze} /><path class="ik-m" d={IKOON['pauze-m']} /><path class="o8-p-aan" fill-rule="evenodd" d={IKOON.afspelen} /></svg></button>
+        {/* levering 96 (lijst 97, A5 c): het conceptmerk, klein maar leesbaar, onder de strepen */}
+        {alleenLaptop && <span class="o8-concept">{T.concept}</span>}
       </div>
     )}
     <script type="application/json" data-o8-data set:html={JSON.stringify({
-      standen: standen.map((s: any) => ({ set: s.set, duur: s.duur, lap: s.lap, tel: s.tel, mp4: s.mp4 || '', product: s.product || '', beelden: s.beelden || [], klik: s.klik || [] })), sets: SET,
+      standen: standen.map((s: any) => ({ set: s.set, duur: s.duur, lap: s.lap, tel: s.tel, mp4: s.mp4 || '', product: s.product || '', beelden: s.beelden || [], klik: s.klik || [], galerij: s.galerij || null })), sets: SET,
       producten: PRODUCTEN, woorden: { bekijk: T.bekijk, beeld: T.beeld },
       video: { maten: VIDEO_MATEN, fps: VIDEO90.fps, beelden: VIDEO90.beelden, b: VIDEO90.b, h: VIDEO90.h, stil: STIL, stil90: VIDEO90.schermen, snelheid: VIDEO90.snelheid, stilTot: VIDEO90.stilTot },
     })} />
@@ -205,7 +207,7 @@ const VIDEO_V = vh.digest('hex').slice(0, 10);
 
 <script>
   import { cssMatrix, RUIMER } from '../scripts/schermvlak.js';
-  type Stand = { set: string; duur: number; lap: string; tel: string; mp4?: string; product?: string; beelden?: string[]; klik?: { naar?: string; beeld?: number; x: number; y: number; b: number; h: number }[] };
+  type Stand = { set: string; duur: number; lap: string; tel: string; mp4?: string; product?: string; beelden?: string[]; klik?: { naar?: string; beeld?: number; x: number; y: number; b: number; h: number }[]; galerij?: { x: number; y: number; b: number; h: number } | null };
   type Q = number[][] | null;
   type Data = { standen: Stand[]; sets: Record<string, string>; producten?: Record<string, string>; woorden?: { bekijk: string; beeld: string }; video: { maten: number[]; fps: number; beelden: number; b: number; h: number; stil: [Q, Q]; stil90: [Q, Q]; snelheid: number; stilTot: number } };
   type Speler = { v: HTMLVideoElement; kan: boolean; blob: string; terug: boolean; b: number };
@@ -318,6 +320,9 @@ const VIDEO_V = vh.digest('hex').slice(0, 10);
         v.className = 'o8-clip'; v.muted = true; v.playsInline = true; v.preload = 'auto'; v.loop = false;
         v.poster = `${s.lap}.webp?v=${ver}`; v.src = `${s.mp4}?v=${ver}`; v.setAttribute('aria-hidden', 'true');
         d.append(v); clips.set(k, v);
+        /* levering 96 (lijst 97, notitie: "de video op de laptop [gaat] automatisch naar de catalog voorbeelden wanneer hij klaar
+           is"): ook als de bezoeker nog niet bewoog of met de muis op de laptop staat */
+        v.addEventListener('ended', () => { if (clips.get(nu) === v && loopt && !vast) { bewogen = true; gaNaar(nu + 1); toestand(); } });
         const p = new Promise<void>((r) => { if (v.readyState >= 2) r(); else { v.addEventListener('loadeddata', () => r(), { once: true }); v.addEventListener('error', () => r(), { once: true }); } });
         return { el: d as HTMLElement, img: m.img, p: Promise.all([klaar(m.img), p]).then(() => {}) };
       };
@@ -346,17 +351,65 @@ const VIDEO_V = vh.digest('hex').slice(0, 10);
       };
       /* ── levering 94: het scherm aanklikken (de beeldjes en de voorgestelde producten van een productpagina) ── */
       const klikLaag = $('[data-o8-klik]');
-      const varianten = new Map<string, { el: HTMLElement; img: HTMLImageElement; p: Promise<void> }>();
-      const toonBeeld = (k: number) => {
-        const s = lijst[nu]; if (!s) return;
-        const basis = laps.get(nu);
-        if (k === 0 || !s.beelden?.[k - 1]) { varianten.forEach((v) => v.el.classList.remove('is-nu')); basis?.el.classList.add('is-nu'); zetKlik(0); return; }
-        const sleutel = `${nu}-${k}`;
-        let v = varianten.get(sleutel);
-        if (!v) { const m = maak(s.beelden[k - 1], 1600, 1034); lap.append(m.el); v = { ...m, p: klaar(m.img) }; varianten.set(sleutel, v); }
-        const deze = nu;
-        v.p.then(() => { if (nu !== deze) return; varianten.forEach((w, n) => w.el.classList.toggle('is-nu', n === sleutel)); basis?.el.classList.remove('is-nu'); zetKlik(k); });
+      /* ── levering 96 (lijst 97, A4): de foto's van de productpagina als galerij ──────────────────────────────────────────
+         Lucas: "als de klant op het scherm met de muis staat [kan hij] scrollen naar de volgende foto van het product als een
+         echte productpagina. Als de klant niet op de pagina zit met de muis scrollt de pagina zelf naar de volgende foto", en
+         (notitie) "als alle 4 de foto's zijn geweest [komt] het volgende product automatisch tevoorschijn".
+         De galerij ligt in het laptopscherm (dus in zijn perspectief) op de plek van de foto (openingKlik.json, galerij). Vanzelf:
+         de foto volgt de streep van de stand (vier foto's van 3 s); na de vierde gaat de streep naar het volgende product. Met de
+         muis op de foto: het wieltje gaat per foto (vastklikken); bij de eerste of de laatste scrollt de pagina gewoon door. De
+         muis eraf: de streep gaat verder vanaf de foto die er staat. Bij minder beweging schuift hij zonder glijden. */
+      const gal = document.createElement('div'); gal.className = 'o8-gal'; gal.hidden = true; gal.setAttribute('aria-hidden', 'true'); lap.append(gal);
+      let galNu = 0, galVan = -1, galStrook: HTMLElement | null = null;
+      const per = () => { const s = lijst[nu]; return (s?.duur || 12000) / Math.max(1, s?.beelden?.length || 1); };
+      const streepAnim = () => (kiezers[nu]?.querySelector('i') as HTMLElement | null)?.getAnimations?.()[0] || null;
+      const galBouw = () => {
+        const s = lijst[nu];
+        if (!s?.galerij || !s.beelden?.length) { gal.hidden = true; galVan = -1; return; }
+        if (galVan !== nu) {
+          galVan = nu;
+          Object.assign(gal.style, { left: `${s.galerij.x * 100}%`, top: `${s.galerij.y * 100}%`, width: `${s.galerij.b * 100}%`, height: `${s.galerij.h * 100}%` });
+          galStrook = document.createElement('div'); galStrook.className = 'o8-gal-strook'; galStrook.style.height = `${s.beelden.length * 100}%`;
+          galStrook.append(...s.beelden.map((g, i) => {
+            const pic = document.createElement('picture'); const src = document.createElement('source'); src.type = 'image/avif'; src.srcset = `${g}.avif?v=${ver}`;
+            const img = document.createElement('img'); img.width = 880; img.height = 1100; img.alt = ''; img.decoding = 'async'; img.src = `${g}.webp?v=${ver}`; if (i > 1) img.loading = 'lazy';
+            pic.append(src, img); return pic;
+          }));
+          gal.replaceChildren(galStrook);
+        }
+        gal.hidden = false; galZet(0, false);
       };
+      const galZet = (k: number, glij = true) => {
+        const s = lijst[nu]; const n = s?.beelden?.length || 0; if (!galStrook || !n) return;
+        galNu = Math.max(0, Math.min(n - 1, k));
+        galStrook.style.transition = glij && !stil ? '' : 'none';
+        galStrook.style.transform = `translateY(${(-galNu * 100) / n}%)`;
+        klikLaag?.querySelectorAll<HTMLButtonElement>('[data-beeld]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.beeld) === galNu)));
+      };
+      /* de streep zet de foto (vanzelf) */
+      const galKlok = () => {
+        if (lijst[nu]?.galerij && !gal.hidden && !erboven) { const a = streepAnim(); const t = Number(a?.currentTime ?? 0); const k = Math.floor(t / per()); if (k !== galNu && k < (lijst[nu].beelden?.length || 0)) galZet(k); }
+      };
+      setInterval(galKlok, 200);
+      /* de streep naar de foto die er staat (na een klik, of als de muis eraf gaat) */
+      const galStreep = () => { const a = streepAnim(); if (a) try { a.currentTime = galNu * per(); } catch { /* geen animatie */ } };
+      const toonBeeld = (k: number) => { galZet(k); galStreep(); };
+      /* het wieltje op de foto: per foto, met een korte pauze zodat één veeg één foto is */
+      let wielRust = 0, wielSom = 0;
+      const opFoto = (e: MouseEvent) => {
+        const s = lijst[nu]; if (!klikLaag || !s?.galerij || gal.hidden) return false;
+        const q = klikLaag.getBoundingClientRect(), x = (e.clientX - q.left) / q.width, y = (e.clientY - q.top) / q.height;
+        return x >= s.galerij.x && x <= s.galerij.x + s.galerij.b && y >= s.galerij.y && y <= s.galerij.y + s.galerij.h;
+      };
+      klikLaag?.addEventListener('wheel', (e) => {
+        if (!opFoto(e)) return;
+        const n = lijst[nu].beelden?.length || 0, rich = Math.sign(e.deltaY);
+        if (!rich || (rich > 0 && galNu >= n - 1) || (rich < 0 && galNu <= 0)) return;   /* aan het eind: de pagina scrollt door */
+        e.preventDefault();
+        const nuT = performance.now(); if (nuT < wielRust) return;
+        wielSom += Math.abs(e.deltaY); if (wielSom < 30) return;
+        wielSom = 0; wielRust = nuT + 520; bewogen = true; galZet(galNu + rich);
+      }, { passive: false });
       const zetKlik = (groot: number) => {
         if (!klikLaag) return;
         const s = lijst[nu];
@@ -367,7 +420,7 @@ const VIDEO_V = vh.digest('hex').slice(0, 10);
             b.setAttribute('aria-label', `${data.woorden?.bekijk || ''} ${data.producten?.[q.naar] || q.naar}`.trim());
             b.addEventListener('click', () => { const j = lijst.findIndex((x: { product?: string }) => x.product === q.naar); if (j >= 0) { bewogen = true; gaNaar(j); toestand(); } });
           } else {
-            const k = q.beeld ?? 0;
+            const k = q.beeld ?? 0; b.dataset.beeld = String(k);
             b.setAttribute('aria-label', `${data.woorden?.beeld || ''} ${k + 1} / 4`);
             b.setAttribute('aria-pressed', String(k === groot));
             b.addEventListener('click', () => { bewogen = true; toonBeeld(k); });
@@ -377,7 +430,7 @@ const VIDEO_V = vh.digest('hex').slice(0, 10);
       };
       const toon = (k: number) => {
         nu = (k + lijst.length) % lijst.length; const s = lijst[nu]; o8.dataset.stand = s.set;
-        varianten.forEach((v) => v.el.classList.remove('is-nu')); zetKlik(0);
+        zetKlik(0); galBouw();
         laps.forEach((v, j) => v.el.classList.toggle('is-nu', j === nu));
         clips.forEach((v, j) => { if (j === nu) { try { v.currentTime = 0; } catch { /* nog niet geladen */ } } });
         fons.forEach((v, t) => v.el.classList.toggle('is-nu', t === s.tel));
@@ -400,7 +453,7 @@ const VIDEO_V = vh.digest('hex').slice(0, 10);
       });
       pauze.hidden = stil;
       pauze.addEventListener('click', () => { loopt = !loopt; toestand(); });
-      const op = () => { erboven = true; toestand(); }, af = () => { erboven = false; toestand(); };
+      const op = () => { erboven = true; toestand(); }, af = () => { erboven = false; galStreep(); toestand(); };
       lap.addEventListener('pointerenter', op); lap.addEventListener('pointerleave', af);
       if (klikLaag) { klikLaag.addEventListener('pointerenter', op); klikLaag.addEventListener('pointerleave', af); }
       const io = new IntersectionObserver(([e]) => { zicht = e.isIntersecting; toestand(); }, { threshold: 0.35 });

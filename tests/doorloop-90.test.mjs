@@ -198,7 +198,7 @@ console.log('\nA · de publieke site');
   const op = lees('src/styles/opening-80.css');
   ok('F1: de Studiobrief op Editions is weer inkt in de witte kaart', /html body\.hal \.h-lk-slot \.h-ed-brief \.sb-kop \{ color: var\(--h-inkt\); \}/.test(hal));
   ok('F3: de structured data belooft niet meer één foto', !/'Product-visual studio[^']*single product photo/.test(lees('src/data/schema.js')) && /made from a few phone photos of each product/.test(lees('src/data/schema.js')));
-  ok('F3: stap 2 zegt drie foto\'s, zoals de verplichte vakken', /Three phone photos are enough: the front, the back and a detail\./.test(flow) && /Drie foto’s met je telefoon zijn genoeg: de voorkant, de achterkant en een detail\./.test(flow));
+  ok('F3: stap 2 zegt drie foto\'s, zoals de verplichte vakken', /Three photos are enough: the front, the back and a detail\./.test(flow) && /Drie foto’s zijn genoeg: de voorkant, de achterkant en een detail\./.test(flow));
   ok('F3: Catalog EN niet meer "One photo in."', !/'One photo in\.'/.test(lees('src/components/CatalogHal.astro')));
   ok('S1: de WebSite-knoop in beide talen', /inLanguage: \['en', 'nl'\],/.test(lees('src/data/schema.js')));
   ok('S3: elk deel van een meta-beschrijving begint met een hoofdletter', /\.map\(\(p\) => p\.charAt\(0\)\.toUpperCase\(\) \+ p\.slice\(1\)\);/.test(lees('src/data/meta.js')));

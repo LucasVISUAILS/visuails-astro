@@ -50,14 +50,15 @@ ok('drie maten: 36, 44, 52', /--k-h: 44px/.test(css) && /--k-h: 36px/.test(css) 
 /* lijst 93 (B2 a): knoppen 15 en 13,5; de grote knop is alleen hoger (52), zijn letter 15 (was 16) */
 ok('letter 13,5 · 15 (ook groot), DM Sans 600', /--k-l: 15px/.test(css) && /--k-l: 13\.5px/.test(css) && !/--k-l: 16px/.test(css) && /font: 600 var\(--k-l\)/.test(css) && /'DM Sans'/.test(css));
 ok('icoon 15 · 18 · 20', /--k-ik: 18px/.test(css) && /--k-ik: 15px/.test(css) && /--k-ik: 20px/.test(css));
-ok('altijd een pil', /border-radius: 999px/.test(css));
+/* levering 97 (lijst 96, B1 a "strak", B2 a "alles wat klikt"): scherp, hoeken 0; ook de icoonknoppen, het taal- en menuknopje, WhatsApp en Bestellen */
+ok('altijd scherp (levering 97): de knop 0, de tekstlink 0, en sectie I zet alles wat klikt op 0', /justify-content: center;[\s\S]*?border-radius: 0;/.test(css) && /\.k-tekst:not\(#k\) \{[^}]*border-radius: 0;/.test(css) && /\.menu-toggle[\s\S]*?\.wa-launcher[\s\S]*?:not\(#k\):not\(#k\) \{ border-radius: 0 !important; \}/.test(css) && !/border-radius: 999px/.test(css.replace(/\/\*[\s\S]*?\*\//g, '')));
 ok('focus 2 px blauw uur, 2 px buiten; op inkt blauw licht', /outline: 2px solid var\(--k-blauw\); outline-offset: 2px/.test(css) && /outline-color: var\(--k-blauw-licht\)/.test(css));
-ok('vol: inkt met de snede onder de muis (--knop-inkt)', /--knop-inkt: linear-gradient\(126\.87deg, #0F1217 0%, #0F1217 50%, #1A4279 62%, #25508B 80%, #2D61A8 100%\)/.test(css));
+ok('vol: inkt; onder de muis schuift blauw uur van links naar rechts (--k-schuif, levering 97)', /--k-schuif: linear-gradient\(90deg, #25508B 0 50%, #0F1217 50% 100%\)/.test(css) && /var\(--k-schuif\) 100% 0 \/ 200% 100%/.test(css) && /var\(--k-schuif\) 0 0 \/ 200% 100%/.test(css));
 ok('lijn: wit met inset 1,5 px #C5C8CF', /inset 0 0 0 1\.5px var\(--k-lijn\)/.test(css) && /--k-lijn: #C5C8CF/.test(css));
 ok('op inkt: lijn wit 6 % met witte lijn 45 %', /rgb\(255 255 255 \/ \.06\); box-shadow: inset 0 0 0 1\.5px rgb\(255 255 255 \/ \.45\)/.test(css));
 ok('aanraakscherm: kleine knop minstens 44 (onzichtbare rand van 4 px boven en onder)', /@media \(pointer: coarse\)[\s\S]*inset: -4px 0/.test(css));
 ok('de beweging: .26s cubic-bezier(.22,.8,.2,1), alleen .ik-a', /--k-gaan: \.26s cubic-bezier\(\.22, \.8, \.2, 1\)/.test(css) && /\.ik \.ik-a \{ transition: transform var\(--k-gaan\)/.test(css));
-ok('per icoon de beweging uit lijst 89', [/\.ik-pijl, \.ik-uitloggen\) \.ik-a \{ transform: translateX\(2\.5px\)/, /\.ik-pijl-links \.ik-a \{ transform: translateX\(-2\.5px\)/, /\.ik-pijl-schuin \.ik-a \{ transform: translate\(2px, -2px\)/,
+ok('per icoon de beweging uit lijst 89 (de pijl 3 px sinds levering 97)', [/\.ik-pijl, \.ik-uitloggen\) \.ik-a \{ transform: translateX\(3px\)/, /\.ik-pijl-links \.ik-a \{ transform: translateX\(-2\.5px\)/, /\.ik-pijl-schuin \.ik-a \{ transform: translate\(2px, -2px\)/,
   /\.ik-downloaden \.ik-a \{ transform: translateY\(2\.5px\)/, /\.ik-uploaden \.ik-a \{ transform: translateY\(-2\.5px\)/, /\.ik-potlood \.ik-a \{ transform: rotate\(-12deg\)/, /\.ik-plus \.ik-a \{ transform: rotate\(90deg\)/,
   /\.ik-ongedaan \.ik-a \{ transform: rotate\(-28deg\)/, /\.ik-mail \.ik-a \{ transform: translateY\(-1\.5px\) scaleY\(\.82\)/, /\.ik-verwijderen \.ik-a \{ transform: translateY\(-1\.5px\) rotate\(-10deg\)/, /:active \.ik-vink \.ik-a \{ transform: scale\(\.82\); transition-duration: \.08s/].every((r) => r.test(css)));
 ok('minder beweging: geen transform', /prefers-reduced-motion: reduce\)[\s\S]*transform: none !important/.test(css));

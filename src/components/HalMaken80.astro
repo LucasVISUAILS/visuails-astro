@@ -1,76 +1,221 @@
 ---
+import SectieKop from './SectieKop.astro';
 import { halV } from '../data/beeldVersie.js';
 /* ═══════════════════════════════════════════════════════════════════════════════
-   WAT WE MAKEN — levering 80, 1 november 2026 (lijst 64, s-maken)
+   WAT WE MAKEN — levering 80, 1 november 2026 (lijst 64, s-maken); als vijf kaarten sinds levering 95 (13 november 2026)
    ═══════════════════════════════════════════════════════════════════════════════
-   Lucas: "Echt heel weinig informatie geven en de klant meer te weten laten komen wanneer hij voor een
-   categorie kiest." Dus per dienst alleen: één uitgeknipt product met zijn schaduw, de naam, de vanafprijs
-   (uit de code) en de link naar de categoriepagina. Daaronder klein wat er verder is.
-   Was (76 – 79): het productvel met tabs, één groot beeld, prijs, knop en de regel over één product.
+   Lucas (13 november, 00:46): "Ik wil de categorie kaarten een beetje zoals het voorbeeld met de kleurrijke platen hebben.
+   Voeg dan ook hooks en beeld op maat toe. De klant kan dan zonder overdonderd te worden kiezen wat hij nodig heeft." En:
+   "Zorg dat alles mooi consistent oogt en rust geeft met een minimalistische interface." Lijst 95: A1 a (één kaart groot in
+   het midden, de buren kleiner ernaast), A2 a (lifestyle: de vrouw in de duinen, vol beeld), A3 a ("Eigen look"), en zijn
+   notities: de hoodie op de grond van de site en iets groter, volle beelden (niets uitgeknipt), video = het stilstaande
+   beeld met de sneeuw bij de waterval als naadloze lus, hooks nog zonder video, de eigen look "geen foto maar meer een soort
+   op maat gemaakt en overleggen met ons". Geen kleurverloop en geen glas zoals in zijn voorbeeld: dat past niet in het
+   kleurenschema; de rust komt van één grote kaart tegelijk en weinig tekst.
 
-   De producten zijn NON/STD uit zijn map Catalog Custom styles, uitgeknipt met de schaduw
-   (scripts/uitknippen.py, scripts/rust-beelden.mjs): de hoodie voor productfoto's, de jeans voor
-   lifestyle, de sokken voor video. Ze staan op één lijn, elk zo hoog dat ze even zwaar ogen.
-
-   De opening springt na de video naar deze sectie en zet hem in het midden van het scherm (doel2 in
-   HalOpening80.astro): daarom past hij op 1440 × 900 helemaal onder de balk. Dan komt de sectie omhoog op de plek
-   waar de laptop stond (levering 85, lijst 71; de beweging in maken-80.css, het moment in HalOpening80.astro); --i is
-   de plek in de rij.
+   ZONDER SCRIPT staan de vijf kaarten in een rij die je opzij schuift (scroll-snap), elk met zijn naam en prijs eronder.
+   MET SCRIPT (.m8-aan) staan ze in een ronde baan: de gekozen kaart groot in het midden, de buren op 78 %, de kaarten
+   daarna op 62 % en half zo licht; altijd twee links en twee rechts. Eronder alleen de naam, één zin, de prijs en de knop naar de dienst.
+   Klik een kaart, de pijlen of de streepjes, de pijltjestoetsen, of veeg. Een klik op de kaart in het midden opent de dienst.
+   De video speelt alleen als hij de gekozen kaart is en in beeld staat, en niet bij "minder beweging".
    ═══════════════════════════════════════════════════════════════════════════════ */
 import '../styles/maken-80.css';
+import { laptopSlides } from '../data/laptopSlides.js';
+import { openingVersie } from '../data/openingStanden.js';
 import { localizedPath } from '../i18n/ui.js';
-import { ikoon } from '../data/iconen.js';
+import { ikoon, IKOON } from '../data/iconen.js';
 
 interface Props {
   lang: 'nl' | 'en';
   kop: string;
   zin: string;
-  diensten: string[][];         /* [naam, prijs, href, …] uit COPY.diensten */
+  diensten: string[][];         /* [naam, prijs, href, zin, knop] uit COPY.diensten: productfoto's, lifestyle, video, hooks, eigen look */
   ookKop: string;
   ook: string[][];              /* [naam, href] */
   eenProduct?: string;          /* wat één product kost (afvinklijst 5): klein onder wat er verder is */
+  label?: string;               /* levering 96: met een label de vaste sectiekop (SectieKop.astro) */
 }
-const { lang, kop, zin, diensten, ookKop, ook, eenProduct } = Astro.props;
+const { lang, kop, zin, diensten, ookKop, ook, eenProduct, label } = Astro.props;
+const nl = lang === 'nl';
 const lp = (p: string) => localizedPath(lang, p);
-const ik = (n: string) => ikoon(n);
-/* per dienst het product en hoe hoog het staat (in delen van de rijhoogte, zodat ze even zwaar ogen:
-   gemeten op het oppervlak van het product zonder schaduw) */
-const BEELD = [
-  { naam: 'hoodie', b: 1564, h: 1811, maten: [480, 720, 960], schaal: 0.92 },
-  { naam: 'jeans', b: 1246, h: 1887, maten: [480, 720, 960], schaal: 1 },
-  { naam: 'sokken', b: 1277, h: 1655, maten: [480, 720, 960], schaal: 0.84 },
-];
-const ALT = lang === 'nl'
-  ? ['Blauwe zip-hoodie van NON/STD, uitgeknipt met zijn schaduw', 'Zwarte jeans met opdruk van NON/STD, uitgeknipt met zijn schaduw', 'Witte sokken met logo van NON/STD, uitgeknipt met hun schaduw']
-  : ['Blue NON/STD zip hoodie, cut out with its shadow', 'Black printed NON/STD jeans, cut out with its shadow', 'White NON/STD logo socks, cut out with their shadow'];
-/* ?v= achter elk beeld (lijst 87, C16): zie src/data/beeldVersie.js. */
-const srcset = (n: string, maten: number[], ext: string) => maten.map((b) => `${halV(`/img/hal/rust/${n}-${b}.${ext}`)} ${b}w`).join(', ');
+const T = nl
+  ? { vorige: 'Vorige', volgende: 'Volgende', baan: 'Wat we maken', kaart: (i: number, n: number, naam: string) => `${naam}, ${i} van ${n}`,
+      chip: ['Foto', 'Foto', 'Video', 'Video', 'Op maat'],
+      alt: ['Blauwe zip-hoodie van NON/STD', 'Een vrouw in een zwarte leren jas en lange leren rok in de duinen, bij het blauwe uur', 'Een man in een bordeauxrode jas met kap staat stil voor een waterval terwijl het sneeuwt'] }
+  : { vorige: 'Previous', volgende: 'Next', baan: 'What we make', kaart: (i: number, n: number, naam: string) => `${naam}, ${i} of ${n}`,
+      chip: ['Photo', 'Photo', 'Video', 'Video', 'Made to measure'],
+      alt: ['Blue NON/STD zip hoodie', 'A woman in a black leather jacket and long leather skirt in the dunes at blue hour', 'A man in a burgundy hooded jacket stands still in front of a waterfall while it snows'] };
+/* levering 96 (lijst 96 C1 b, lijst 98): de catalogusanimatie op de kaart Productfoto's (src/scripts/catalogkaart96.js). De
+   namen en prijzen zijn die van de verzonnen winkel NON/STD (laptopSlides.js); de herkleuringen: scripts/catalogus-kleuren-96.py */
+const NS: any[] = (laptopSlides(lang, { product: 'nonstd' }).catalog as any).producten || [];
+const nsP = (naam: string) => NS.find((p) => p.naam === naam) || { titel: naam, prijs: '' };
+const K = nl ? { blauw: 'blauw', zwart: 'zwart', indigo: 'indigo', wit: 'wit' } : { blauw: 'blue', zwart: 'black', indigo: 'indigo', wit: 'white' };
+const CAT = '/img/hal/maken/catalogus/';
+const CAT96 = {
+  /* de versie achter elk beeld (zoals de opening, tests/letter-77): verandert een beeld, dan haalt elke browser hem opnieuw */
+  v: openingVersie(),
+  foto: `${CAT}foto`, voor: '/img/hal/opening/galerij/hoodie-0', achter: '/img/hal/opening/galerij/hoodie-1', detail: '/img/hal/opening/galerij/hoodie-3',
+  zes: ([['hoodie', 'hoodie-blauw', 'blauw'], ['hoodie', 'hoodie-zwart', 'zwart'], ['broek', 'jeans-zwart', 'zwart'], ['broek', 'jeans-indigo', 'indigo'], ['sokken', 'sokken-wit', 'wit'], ['sokken', 'sokken-zwart', 'zwart']] as [string, string, keyof typeof K][])
+    .map(([p, b, k]) => ({ src: `${CAT}${b}`, naam: `${nsP(p).titel} [${K[k]}]`, prijs: `${nsP(p).prijs.replace('€ ', '€')} EUR` })),
+  woorden: nl ? { voor: 'Voorkant', cat: 'Catalogus', achter: 'Achterkant', detail: 'Detail', alles: 'Bekijk alles' } : { voor: 'Front', cat: 'Catalogue', achter: 'Back', detail: 'Detail', alles: 'View all' },
+};
+const srcset = (n: string, maten: number[], ext: string, map = 'rust') => maten.map((b) => `${halV(`/img/hal/${map}/${n}-${b}.${ext}`)} ${b}w`).join(', ');
+const SIZES = '(max-width: 700px) 62vw, 340px';
+/* alleen "Bekijk …": een bestelknop gaat nooit rechtstreeks naar een formulier (de vaste regel, tests/start-looks); bestellen
+   doe je op de pagina van de dienst of met "Start een bestelling" in de banner */
+const data = diensten.map(([naam, prijs, href, z, knop]) => ({ naam, prijs, zin: z, knop, href: lp(href) }));
 ---
-<section class="m8" id="maken" aria-labelledby="m8-kop">
+<section class:list={['m8', label && 'sk-s']} id="maken" aria-labelledby="m8-kop">
+  {label ? <SectieKop id="m8-kop" label={label} kop={kop} zin={zin} /> : (
   <div class="m8-kopgroep">
     <h2 id="m8-kop" class="h-kop m8-kop">{kop}</h2>
     <p class="m8-zin">{zin}</p>
-  </div>
-  <ul class="m8-rij" role="list">
-    {diensten.map(([naam, prijs, href], i) => {
-      const B = BEELD[i];
-      const sizes = `(max-width: 700px) 30vw, ${Math.round(340 * B.schaal * B.b / B.h)}px`;
-      return (
-        <li class="m8-dienst" style={`--i:${i}`}>
-          <a href={lp(href)} class="m8-link">
-            <span class="m8-beeld" style={`--s:${B.schaal}`}>
+  </div>)}
+  <div class="m8-carrousel" data-m8 role="region" aria-roledescription={nl ? 'carrousel' : 'carousel'} aria-label={T.baan}>
+    <ul class="m8-baan" role="list" data-m8-baan>
+      {diensten.map(([naam, prijs, href], i) => (
+        <li class={`m8-dienst m8-k${i}`} style={`--i:${i}`} data-m8-kaart={i}>
+          <a href={lp(href)} class="m8-kaart" data-m8-link aria-label={T.kaart(i + 1, diensten.length, naam)}>
+            {i === 0 && (
               <picture>
-                <source type="image/avif" srcset={srcset(B.naam, B.maten, 'avif')} sizes={sizes} />
-                <img src={halV(`/img/hal/rust/${B.naam}-720.webp`)} srcset={srcset(B.naam, B.maten, 'webp')} sizes={sizes} width={B.b} height={B.h} alt={ALT[i]} loading="lazy" decoding="async" />
+                <source type="image/avif" srcset={srcset('hoodie', [480, 720, 960], 'avif')} sizes={SIZES} />
+                <img class="m8-prod" src={halV(`/img/hal/rust/hoodie-720.webp`)} srcset={srcset('hoodie', [480, 720, 960], 'webp')} sizes={SIZES} width="1564" height="1811" alt={T.alt[0]} loading="lazy" decoding="async" />
               </picture>
-            </span>
-            <span class="m8-naam">{naam}<span class="m8-pijl" aria-hidden="true" set:html={ik('pijl')} /></span>
-            <span class="m8-prijs">{prijs}</span>
+            )}
+            {i === 0 && <span class="c96" data-m8-cat data-d={JSON.stringify(CAT96)} aria-hidden="true"></span>}
+            {i === 1 && (
+              <picture>
+                <source type="image/avif" srcset={srcset('lifestyle', [480, 720, 1080], 'avif', 'maken')} sizes={SIZES} />
+                <img src={halV('/img/hal/maken/lifestyle-720.webp')} srcset={srcset('lifestyle', [480, 720, 1080], 'webp', 'maken')} sizes={SIZES} width="1080" height="1350" alt={T.alt[1]} loading="lazy" decoding="async" />
+              </picture>
+            )}
+            {i === 2 && (
+              <video class="m8-video" data-m8-video muted loop playsinline preload="none" poster={halV('/img/hal/maken/video-poster-720.webp')}
+                     data-klein={halV('/img/hal/maken/video-720.mp4')} data-groot={halV('/img/hal/maken/video-1080.mp4')} aria-label={T.alt[2]}></video>
+            )}
+            {i > 2 && <span class="m8-ikoon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path fill-rule="evenodd" d={IKOON[i === 3 ? 'afspelen' : 'potlood']} /></svg></span>}
           </a>
+          <p class="m8-onder"><span class="m8-naam">{naam}</span><span class="m8-prijs">{prijs}</span></p>
         </li>
-      );
-    })}
-  </ul>
+      ))}
+    </ul>
+    <div class="m8-info" aria-live="polite" data-m8-info hidden>
+      <h3 class="m8-info-naam" data-m8-naam></h3>
+      <p class="m8-info-zin" data-m8-zin></p>
+      <p class="m8-info-prijs" data-m8-prijs></p>
+      <p class="m8-knoppen">
+        <a class="h-knop k k-vol" data-rol="doorgaan" data-m8-knop href={data[0].href}><span data-m8-knoptekst>{data[0].knop}</span><Fragment set:html={ikoon('pijl')} /></a>
+      </p>
+    </div>
+    <div class="m8-nav" data-m8-nav hidden>
+      <button type="button" class="m8-pijl" data-m8-r="-1" aria-label={T.vorige}><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path fill-rule="evenodd" d={IKOON['pijl-links']} /></svg></button>
+      <div class="m8-stip">{diensten.map(([naam], i) => <button type="button" data-m8-ga={i} aria-label={naam}><i></i></button>)}</div>
+      <button type="button" class="m8-pijl" data-m8-r="1" aria-label={T.volgende}><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path fill-rule="evenodd" d={IKOON.pijl} /></svg></button>
+    </div>
+    <script type="application/json" data-m8-data set:html={JSON.stringify(data)} />
+  </div>
   <p class="m8-ook"><span class="m8-ook-kop">{ookKop}</span>{ook.map(([naam, href]) => <a href={lp(href)}>{naam}</a>)}</p>
   {eenProduct && <p class="h-onderregel m8-regel">{eenProduct}</p>}
 </section>
+
+<script>
+  import { catalogKaart } from '../scripts/catalogkaart96.js';
+  type D = { naam: string; prijs: string; zin: string; knop: string; href: string };
+  function m8() {
+    const c = document.querySelector<HTMLElement>('[data-m8]');
+    if (!c || c.dataset.m8Aan) return;
+    c.dataset.m8Aan = '1';
+    const data = JSON.parse(c.querySelector('[data-m8-data]')!.textContent || '[]') as D[];
+    const baan = c.querySelector<HTMLElement>('[data-m8-baan]')!;
+    const kaarten = [...c.querySelectorAll<HTMLElement>('[data-m8-kaart]')];
+    const links = [...c.querySelectorAll<HTMLAnchorElement>('[data-m8-link]')];
+    const info = c.querySelector<HTMLElement>('[data-m8-info]')!, nav = c.querySelector<HTMLElement>('[data-m8-nav]')!;
+    const stip = [...c.querySelectorAll<HTMLButtonElement>('[data-m8-ga]')];
+    const vid = c.querySelector<HTMLVideoElement>('[data-m8-video]');
+    const minder = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const catLaag = c.querySelector<HTMLElement>('[data-m8-cat]');
+    const cat = catLaag ? catalogKaart(catLaag, JSON.parse(catLaag.dataset.d || '{}')) : null;
+    const n = kaarten.length;
+    let nu = 0, zicht = false;
+    c.classList.add('m8-aan'); info.hidden = false; nav.hidden = false;
+
+    function zet() {
+      /* de kaart in het midden: 34 % van de baan (70 % op de telefoon), tussen 240 en 420 px; 4 : 5. Levering 96 (lijst 96,
+         C1 b met Lucas' notitie: "groter"): was 28 %, 62 %, 220 – 360. */
+      const bw = baan.clientWidth || 1000, w = Math.round(Math.min(420, Math.max(240, bw * (bw < 700 ? .7 : .34))));
+      baan.style.setProperty('--m8-w', `${w}px`);
+      const g = Math.max(16, Math.round(w * .07));
+      kaarten.forEach((k, i) => {
+        /* rond: twee kaarten links, twee rechts. Een kaart die van de ene naar de andere kant springt, glijdt niet door het
+           midden maar verschijnt meteen op zijn nieuwe plek (zonder overgang) */
+        const d = ((i - nu + n + Math.floor(n / 2)) % n) - Math.floor(n / 2), a = Math.abs(d), s = a === 0 ? 1 : a === 1 ? .78 : .62;
+        const vorig = Number(k.dataset.m8D ?? d); k.dataset.m8D = String(d);
+        k.classList.toggle('m8-sprong', Math.abs(vorig - d) > 1);
+        const x = a === 0 ? 0 : Math.sign(d) * (w / 2 + w * .78 / 2 + g + (a > 1 ? w * .78 / 2 + w * .62 / 2 + g : 0));
+        k.style.setProperty('--x', `${x}px`); k.style.setProperty('--s', String(s));
+        k.style.setProperty('--o', a > 2 ? '0' : a === 2 ? '.5' : '1');
+        k.style.zIndex = String(10 - a);
+        k.classList.toggle('m8-nu', a === 0);
+        k.setAttribute('aria-hidden', a > 2 ? 'true' : 'false');
+        links[i].tabIndex = a > 2 ? -1 : 0;
+        if (a === 0) links[i].setAttribute('aria-current', 'true'); else links[i].removeAttribute('aria-current');
+      });
+      stip.forEach((s, i) => s.setAttribute('aria-current', i === nu ? 'true' : 'false'));
+      const d = data[nu];
+      c.querySelector('[data-m8-naam]')!.textContent = d.naam;
+      c.querySelector('[data-m8-zin]')!.textContent = d.zin;
+      c.querySelector('[data-m8-prijs]')!.textContent = d.prijs;
+      const knop = c.querySelector<HTMLAnchorElement>('[data-m8-knop]')!; knop.href = d.href;
+      c.querySelector('[data-m8-knoptekst]')!.textContent = d.knop;
+      speel();
+    }
+    function speel() {
+      /* levering 96: de catalogusanimatie speelt als de kaart Productfoto's gekozen is en in beeld staat */
+      if (cat) { if (!minder && zicht && kaarten[0].classList.contains('m8-nu')) cat.speel(); else cat.stop(); }
+      if (!vid) return;
+      const moet = !minder && zicht && kaarten[2].classList.contains('m8-nu');
+      if (moet) {
+        if (!vid.src) { const groot = kaarten[2].getBoundingClientRect().width * Math.min(2, devicePixelRatio || 1) > 760; vid.src = (groot ? vid.dataset.groot : vid.dataset.klein) || ''; }
+        vid.play().catch(() => {});
+      } else vid.pause();
+    }
+    const naar = (i: number) => { nu = (i + n) % n; zet(); };
+    /* een klik op een kaart aan de zijkant kiest hem; een klik op de kaart in het midden opent de dienst */
+    links.forEach((l, i) => l.addEventListener('click', (e) => { if (i !== nu) { e.preventDefault(); naar(i); } }));
+    c.querySelectorAll<HTMLButtonElement>('[data-m8-r]').forEach((p) => p.addEventListener('click', () => naar(nu + Number(p.dataset.m8R))));
+    stip.forEach((s, i) => s.addEventListener('click', () => naar(i)));
+    c.addEventListener('keydown', (e) => {
+      if ((e.target as HTMLElement).closest('.m8-info')) return;
+      if (e.key === 'ArrowRight') { naar(nu + 1); e.preventDefault(); }
+      if (e.key === 'ArrowLeft') { naar(nu - 1); e.preventDefault(); }
+    });
+    let x0: number | null = null, y0 = 0;
+    baan.addEventListener('pointerdown', (e) => { x0 = e.clientX; y0 = e.clientY; });
+    baan.addEventListener('pointerup', (e) => {
+      if (x0 !== null && Math.abs(e.clientX - x0) > 40 && Math.abs(e.clientX - x0) > Math.abs(e.clientY - y0)) {
+        naar(nu + (e.clientX < x0 ? 1 : -1));
+        /* geen klik op de kaart na een veeg */
+        const stop = (ev: Event) => { ev.preventDefault(); ev.stopPropagation(); };
+        baan.addEventListener('click', stop, { capture: true, once: true }); setTimeout(() => baan.removeEventListener('click', stop, { capture: true }), 0);
+      }
+      x0 = null;
+    });
+    /* levering 96 (lijst 96, C1 b): de kaart in het midden kantelt licht mee met de muis, hoogstens 4°. Alleen met een
+       muis (fijne aanwijzer), nooit bij minder beweging; de muis eraf zet hem recht. */
+    if (!minder && matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      links.forEach((l, i) => {
+        l.addEventListener('pointermove', (e) => {
+          if (i !== nu) return;
+          const r = l.getBoundingClientRect(), px = (e.clientX - r.left) / r.width - .5, py = (e.clientY - r.top) / r.height - .5;
+          l.style.setProperty('--m8-ry', `${(px * 8).toFixed(2)}deg`); l.style.setProperty('--m8-rx', `${(-py * 8).toFixed(2)}deg`);
+        });
+        l.addEventListener('pointerleave', () => { l.style.removeProperty('--m8-ry'); l.style.removeProperty('--m8-rx'); });
+      });
+    }
+    new IntersectionObserver(([e]) => { zicht = e.isIntersecting; speel(); }, { threshold: 0.2 }).observe(baan);
+    new ResizeObserver(zet).observe(baan);
+    zet();
+  }
+  m8();
+  document.addEventListener('astro:page-load', m8);
+</script>

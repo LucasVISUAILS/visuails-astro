@@ -106,8 +106,9 @@ for (const breed of [1440, 390]) {
     const maat = echte.filter((k) => { const m = MATEN.find((x) => x === Math.round(k.minH)); if (!m) return true; const extra = k.h - m; const regels = (k.h - 12) / k.regel; /* op een telefoon breekt een lange tekst: n regels plus 6 px boven en onder */
       return !(Math.abs(extra) < 1 || (breed === 390 && Math.round(regels) >= 2 && Math.abs(regels - Math.round(regels)) < 0.1)); });
     ok(`${n}: elke knop 36, 44 of 52 hoog`, maat.length === 0, maat.slice(0, 5).map((k) => `${k.tekst} ${k.h}/${k.minH}`).join(' · '));
-    const geenPil = echte.filter((k) => !k.paar && k.rad + 0.5 < Math.min(k.h / 2, 18));
-    ok(`${n}: elke knop een pil`, geenPil.length === 0, geenPil.slice(0, 4).map((k) => `${k.tekst} ${k.rad}`).join(' · '));
+    /* levering 97 (lijst 96, B1 a "strak"): elke knop scherp, hoeken 0 (was: elke knop een pil) */
+    const nietScherp = echte.filter((k) => k.rad > 0.5);
+    ok(`${n}: elke knop scherp (hoeken 0)`, nietScherp.length === 0, nietScherp.slice(0, 4).map((k) => `${k.tekst} ${k.rad}`).join(' · '));
     const gewicht = knoppen.filter((k) => /\b(k|btn|knop)\b/.test(k.cls) && k.gewicht !== '600');
     ok(`${n}: letter 600`, gewicht.length === 0, gewicht.slice(0, 4).map((k) => `${k.tekst} ${k.gewicht}`).join(' · '));
     const klein = knoppen.filter((k) => /\b(k|btn|knop)\b/.test(k.cls) && k.letter < 11.5);

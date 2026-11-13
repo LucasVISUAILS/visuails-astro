@@ -68,7 +68,8 @@ ok(`  elke foto heeft de verhouding van de laptopfoto (${FOTO.w} × ${FOTO.h}) e
 const los = fs.readdirSync(MAP).filter((f) => !verwacht.includes(f.replace(/\.(webp|avif)$/, '')));
 ok('  er liggen geen standen die niet meer in de reeks zitten', los.length === 0, los.join(', '));
 const afdrukken = alleStanden('nl').filter((s) => s.set === 'catalog').map((s) => crypto.createHash('md5').update(fs.readFileSync(path.join(MAP, `${standNaam('nl', s)}-1000.webp`))).digest('hex'));
-ok('  de vier catalogstanden zijn vier verschillende foto\'s', new Set(afdrukken).size === afdrukken.length && afdrukken.length === 4, String(afdrukken.length));
+/* levering 98 (lijst 99): drie standen, een per product van NON/STD (was: vier beelden van de roze broek) */
+ok('  de drie catalogstanden (hoodie, jeans, sokken) zijn drie verschillende foto\'s', new Set(afdrukken).size === afdrukken.length && afdrukken.length === 3, String(afdrukken.length));
 
 /* ── 2 · HOREN DE FOTO'S BIJ DE BRON? ───────────────────────────────────────── */
 console.log('\n2 · de foto\'s horen bij de bron');

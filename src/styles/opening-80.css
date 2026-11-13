@@ -244,8 +244,12 @@ html.o8-aan .o8.o8-weg :is(.o8-vlak, .o8-foto) { opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .o8-sc .o8-st-clip { transition: none; } }
 
 /* levering 94 (Lucas, 12 november 07:50: "Verwijder de kleuren achter de laptop"): onder Wat we maken staat de laptop op de
-   grond van de site, zonder het veld (de video zelf is ook op die grond gemaakt: laptop-video-90.py met VELD=wit) */
+   grond van de site, zonder het veld (de video: laptop-video-90.py met VELD=puur, zie hieronder) */
 .o8.o8-alleen .o8-vlak { background: var(--h-grond, #FBFCFF); }
+/* levering 95 (Lucas, 12 november 20:50: "hier zie ik dat de laptop achtergrond grijzig is"): (250, 252, 255) in de video
+   tekende in zijn Chrome op Windows als #F9FAFE. Nu is het veld zuiver wit (VELD=puur, Y 235: in elke decoder 255) en ligt
+   de laptop met multiply op de grond: wit maal de grond is precies de grond. De laptop wordt hoogstens 1,6 % donkerder. */
+.o8.o8-alleen .o8-foto { mix-blend-mode: multiply; }
 
 /* levering 94: het scherm aanklikken. Een laag boven het laptopscherm (de foto ligt over de schermen heen, dus het scherm zelf
    krijgt geen muis); de knoppen liggen op de beeldjes en de voorgestelde producten van een productpagina. Alleen als de winkel
@@ -260,3 +264,16 @@ html:not(.o8-aan) .o8.o8-alleen .o8-baan::after { content: none; display: none; 
    ingedrukte streepje grijs met de klok in inkt: inkt 18,6 : 1, grijs #636974 5,52 : 1 op #FBFCFF) */
 .o8.o8-alleen .o8-stand { --o8-c: var(--h-inkt, #0F1217); --o8-c2: #636974; }
 .o8.o8-alleen .o8-kies[aria-pressed="true"] .o8-k-streep { background: rgba(15, 18, 23, .22); }
+
+/* ── levering 96 (lijst 97, A4): de galerij in het laptopscherm (HalOpening80.astro). Hij ligt in het scherm, dus in zijn
+   perspectief, op de plek van de foto; de strook schuift per foto (0,6 s, uitlopend). Het beeldje van de foto die er staat
+   krijgt een lijn in inkt, zoals op de productpagina. ── */
+.o8-sc .o8-gal { position: absolute; z-index: 2; overflow: hidden; background: #FBFDFF; }
+.o8-sc .o8-gal-strook { display: flex; flex-direction: column; width: 100%; transition: transform .6s cubic-bezier(.22, 1, .36, 1); will-change: transform; }
+.o8-sc .o8-gal-strook picture { flex: 1 1 0; min-height: 0; position: relative; }
+.o8-sc .o8-gal-strook img { width: 100%; height: 100%; object-fit: cover; }
+.o8:not([data-stand="catalog"]) .o8-gal { display: none; }
+.o8-klik-knop[data-beeld][aria-pressed="true"] { box-shadow: 0 0 0 1.5px #121218; border-radius: 0; }
+@media (prefers-reduced-motion: reduce) { .o8-sc .o8-gal-strook { transition: none; } }
+/* het conceptmerk (lijst 97, A5 c): als tekst die je echt leest onder de laptop */
+.o8-concept { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 8px; width: max-content; max-width: calc(100vw - 40px); text-align: center; font: 400 var(--h-t-fijn, 13.5px)/1.5 var(--h-letter); color: var(--h-grijs, #636974); }

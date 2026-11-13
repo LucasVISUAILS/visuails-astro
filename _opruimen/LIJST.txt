@@ -96,3 +96,9 @@
 # ── 9 november 2026 · moet weg (levering 91/92, lijst 87: I1 de voorbeeldpagina's weg, met een 301 naar de echte pagina) ──
 
 # ── 12 november 2026 · moet weg (levering 94: de laptop op de voorpagina toont drie productpagina's van NONSTD; deze schermen van de broek laadt niets meer) ──
+
+# ── 13 november 2026 · moet weg (levering 95: Bestellen in de banner is altijd zwart, de lichtkaart leest niets meer; Wat we maken toont de hoodie, de duinen en de sneeuwvideo in plaats van de uitgeknipte jeans en sokken) ──
+
+# ── 13 november 2026 · moet weg (levering 96: de foto's van de productpagina's in de laptop zijn een galerij die je scrolt; de schermen met beeld 2 – 4 groot zijn niet meer nodig) ──
+
+# ── 13 november 2026 · moet weg (levering 98: de laptops op /catalog, /lifestyle en /video tonen NON/STD; drie standen per set in plaats van vier) ──

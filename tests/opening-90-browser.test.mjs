@@ -88,8 +88,9 @@ ok('de overgang: de winkel en de foto vervagen samen in de video (120 ms, de fot
   /html\.o8-aan \.o8\.o8-winkel-uit \.o8-beeld \{ opacity: 0; visibility: hidden; transition: opacity \.12s linear, visibility 0s \.12s; \}/.test(css)
   && /\.o8\.o8-winkel-uit \.o8-sc \{ opacity: 0; visibility: hidden; transition: opacity \.12s/.test(css)
   && /uitTimer = window\.setTimeout\(fotoWeg, UIT \+ 40\);/.test(opening) && /const UIT = 120/.test(opening) && 120 <= (V90.stilTot + 1) / V90.fps * 1000);
-/* levering 94: het veld is weg (VELD=wit), dus ook geen korrel */
-ok('geen korrel achter de laptop: niet in de video, niet op het vlak (8 november 21:44)', /zonder korrel|^wit/.test(V90.veld) && !/\.o8-vlak::after/.test(css));
+/* levering 94: het veld is weg (VELD=wit), dus ook geen korrel; levering 95: zuiver wit (VELD=puur), met multiply op de grond */
+ok('geen korrel achter de laptop: niet in de video, niet op het vlak (8 november 21:44)', /zonder korrel|^wit|^puur wit/.test(V90.veld) && !/\.o8-vlak::after/.test(css));
+ok('… en de laptop ligt met multiply op de grond, zodat het witte veld in elke browser precies de grond is (levering 95)', /\.o8\.o8-alleen \.o8-foto \{ mix-blend-mode: multiply; \}/.test(css));
 ok('… nooit een video bovenop die nog een ander beeld toont (eerst zoeken, dan tonen), en terug pas wisselen als de foto weer op is',
   /function opBeeld\(sp: Speler, j: number, f: \(\) => void\)/.test(opening) && /function naFotoOp\(/.test(opening) && /naFotoOp\(\(\) => rustig\(heenOpNul\)\)/.test(opening));
 ok('het vak van de foto en de video op hele pixels (dan zet de browser ze precies gelijk neer)', /@supports \(width: round\(1px, 1px\)\)/.test(css) && /--o8-fwh: round\(var\(--o8-fw\), 2px\)/.test(css));

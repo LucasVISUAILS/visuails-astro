@@ -191,7 +191,16 @@ console.log('\ngeen rij op de homepage is verticaal scrollbaar');
        (.h-pv-keus), zoals de maten op een productpagina. Dezelfde eis: alle drie bereikbaar. */
     /* Levering 80 (1 november 2026): Wat we maken is drie uitgeknipte producten naast elkaar (.m8-rij, HalMaken80.astro);
        ze passen op elk scherm, ook op de telefoon. */
-      const rail = document.querySelector('.h-pagina .m8-rij') || document.querySelector('.h-pagina .h-strook') || document.querySelector('.h-pagina .h-dk') || document.querySelector('.h-pagina .h-pv-keus') || document.querySelector('.s22 .kaarten');
+      /* Levering 95 (13 november 2026): Wat we maken is een baan met vijf kaarten (.m8-baan). Met script staan ze op hun
+         plek in de baan en bereik je elke kaart met de pijlen, de streepjes of een veeg (geen scrollbalk, dus ook niets dat
+         omhoog of omlaag kan scrollen); zonder script is het een veegrij. Bereikbaar = elke kaart heeft een streepje. */
+      const baan = document.querySelector('.h-pagina .m8-carrousel.m8-aan .m8-baan');
+      if (baan) {
+        const n = baan.children.length, stip = document.querySelectorAll('.m8-carrousel [data-m8-ga]').length;
+        const st = getComputedStyle(baan);
+        return { aantal: n, schuift: 0, onbereikbaar: stip === n && st.overflowY !== 'auto' && st.overflowY !== 'scroll' ? 0 : n };
+      }
+      const rail = document.querySelector('.h-pagina .m8-baan') || document.querySelector('.h-pagina .m8-rij') || document.querySelector('.h-pagina .h-strook') || document.querySelector('.h-pagina .h-dk') || document.querySelector('.h-pagina .h-pv-keus') || document.querySelector('.s22 .kaarten');
       if (!rail) return null;
       const r = rail.getBoundingClientRect();
       const items = [...rail.children].map((el) => el.getBoundingClientRect());

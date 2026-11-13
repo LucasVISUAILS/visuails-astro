@@ -28,26 +28,37 @@ import { SCHERMEN, matrix3d } from '../data/halLaptop.js';
 import { halReeks } from '../data/halStanden.js';
 import { isEcht } from '../lib/beeldAanwezig.js';
 import '../styles/hal.css';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 
-interface Props { lang: 'en' | 'nl'; stand: { set: string; i: number; fon: string; beeld?: number }; product?: 'standaard' | 'nonstd' }
-const { lang, stand, product = 'standaard' } = Astro.props as Props;
+/* opties: wat laptopSlides.js toont (levering 98): { product: 'nonstd' } voor de opening, HAL_OPTIES (halStanden.js) voor de
+   laptop op /catalog, /lifestyle en /video, {} voor de oude winkel met de roze broek */
+interface Props { lang: 'en' | 'nl'; stand: { set: string; i: number; fon: string; beeld?: number }; opties?: { product?: 'standaard' | 'nonstd'; reeks?: 'standaard' | 'nonstd' } }
+const { lang, stand, opties = {} } = Astro.props as Props;
+const product = opties.product ?? 'standaard';
 const nl = lang === 'nl';
-const { lifestyle, cat, life } = halReeks(lang, { product });
+const { lifestyle, video, cat, life } = halReeks(lang, opties);
 /* levering 94: de winkel van NONSTD (laptopSlides.js, product 'nonstd'): per stand de pagina van één product, met de andere
    twee onder "Voorgestelde producten". Prijzen en namen: verzonnen, van een verzonnen winkel (zie laptopSlides.js). */
 const nonstd = product === 'nonstd';
-const producten: any[] = nonstd ? (halReeks(lang, { product }).catalog as any).producten : [];
+const producten: any[] = nonstd ? (halReeks(lang, opties).catalog as any).producten : [];
 const pNu = nonstd && stand.set === 'catalog' ? producten[stand.i] : producten[0];
 const voorgesteld = nonstd ? producten.filter((p) => p !== pNu) : [];
 /* welk beeld groot staat (08:11: de klant kan in de laptop op een beeldje klikken; elk beeld is een eigen scherm) */
 const groot = stand.beeld ?? 0;
 const echt = (b: { src: string }) => isEcht(b.src);
-const KLIP = { src: '/img/hal/sfeer-9x16.webp', w: 648, h: 1152 };
-const KLIP_VAAG = { src: '/img/hal/sfeer-9x16-vaag.webp', w: 180, h: 320 };
+/* levering 98 (lijst 99, A3 a): met reeks 'nonstd' de clip van de wijnrode jas (laptopSlides.js, video.klip) */
+const KLIP = (video as any).klip ?? { src: '/img/hal/sfeer-9x16.webp', w: 648, h: 1152 };
+const KLIP_VAAG = (video as any).klipVaag ?? { src: '/img/hal/sfeer-9x16-vaag.webp', w: 180, h: 320 };
 const L = SCHERMEN.laptop, F = SCHERMEN.fon;
 const fonnen = [...new Set([stand.fon])];
 const nu = (set: string, i?: number) => stand.set === set && (i === undefined || stand.i === i);
 
+/* levering 96: de woorden van de winkel van NON/STD (verzonnen winkel; lijst 97) en het getekende logo */
+const N = nl
+  ? { nav: ['Hoodies', 'Denim', 'Accessoires', 'Zoeken'], account: 'Account', mand: 'Mand (0)', rijen: ['A · Details', 'B · Materiaal en zorg', 'C · Maattabel'], maat: 'Kies je maat', kleur: 'Kleur', mandje: 'In winkelmand', bezorg: 'Bezorgopties', standaard: 'Standaard bezorging', concept: 'is een conceptmerk, bedacht door VISUAILS' }
+  : { nav: ['Hoodies', 'Denim', 'Accessories', 'Search'], account: 'Account', mand: 'Bag (0)', rijen: ['A · Details', 'B · Materials and care', 'C · Size guide'], maat: 'Select size', kleur: 'Colour', mandje: 'Add to bag', bezorg: 'Delivery options', standaard: 'Standard delivery', concept: 'is a concept brand, created by VISUAILS' };
+const LOGO = nonstd ? readFileSync(path.join(process.cwd(), 'public', 'img', 'hal', 'nonstd-logo.svg'), 'utf8').replace('<svg ', '<svg class="ns-logo" ').replace('stroke-width="2"', 'stroke-width="1.3"') : '';
 const T = nl
   ? { shop: { merk: 'JOUWMERK', menu: ['Nieuw', nonstd ? 'Hoodies' : 'Denim', nonstd ? 'Denim' : 'Jassen', 'Accessoires'], kruimel: nonstd ? pNu.kruimel : 'Home / Denim', titel: nonstd ? pNu.titel : 'Wide leg jeans', prijs: nonstd ? pNu.prijs : '€ 79,95', mandje: 'In winkelmand', verzend: 'Gratis retour binnen 30 dagen', meer: 'Voorgestelde producten' },
       post: { naam: lifestyle.post?.naam ?? 'visuails_com', vlag: lifestyle.post?.vlag ?? '', volgen: 'Volgen', bijschrift: lifestyle.post?.bijschrift ?? [], datum: lifestyle.post?.datum ?? '', opmerking: 'Een opmerking toevoegen…', plaatsen: 'Plaatsen' } }
@@ -58,27 +69,36 @@ const T = nl
   <div class="hl-scherm hl-scherm-lap" style={`transform:${matrix3d(L)}`}>
     {/* De webshop (catalog), met de foto's op hun eigen verhouding: 1:1 */}
     {nonstd ? (
-      /* de winkel van NONSTD: één productpagina, het eerste beeld groot, de andere twee producten eronder (data-klik: de
-         plek die de opening aanklikbaar maakt, scripts/opening-catalog-94.mjs meet hem) */
-      <div class:list={['sc sc-shop sc-wit', nu('catalog') && 'is-nu']}>
-        <div class="sc-top"><b>{T.shop.merk}</b>{T.shop.menu.map((m) => <span>{m}</span>)}<i class="sc-ic"></i><i class="sc-ic sc-ic-z"></i></div>
-        <div class="sc-wrap">
-          <div class="sc-th">{pNu.beelden.map((b: any, i: number) => <img data-klik-beeld={i} class:list={[i === groot && 'is-nu', b.vul === 'contain' && 'sc-heel', b.vul === 'boven' && 'sc-boven']} src={b.src} alt="" width="760" height="760" />)}</div>
-          <div class="sc-hoofd">{pNu.beelden.slice(groot, groot + 1).map((b: any) => <img class:list={['is-nu', b.vul === 'contain' && 'sc-heel', b.vul === 'boven' && 'sc-boven']} src={b.src} alt="" width="760" height="760" />)}</div>
-          <div class="sc-info">
-            <p class="sc-kr">{T.shop.kruimel}</p>
-            <p class="sc-h1">{T.shop.titel}</p>
-            <p class="sc-prijs">{T.shop.prijs}</p>
-            <p class="sc-kl">{pNu.kleur.map((k: string) => <i style={`background:${k}`}></i>)}</p>
-            <p class="sc-mt"><span>XS</span><span class="aan">S</span><span>M</span><span>L</span></p>
-            <p class="sc-knop">{T.shop.mandje}</p>
-            <p class="sc-klein">{T.shop.verzend}</p>
-            <p class="sc-meer-kop">{T.shop.meer}</p>
-            <p class="sc-meer">{voorgesteld.map((p: any) => (
-              <span data-klik={p.naam}><i><img class:list={[p.beelden[0].vul === 'contain' && 'sc-heel']} src={p.beelden[0].src} alt="" width="760" height="760" /></i><b>{p.titel}</b><em>{p.prijs}</em></span>
+      /* de winkel van NON/STD — levering 96 (lijst 97, Lucas: "meer dit gevoel … iets meer persoonlijkheid", met een
+         productpagina van Margiela als voorbeeld; alleen de opbouw). Alles in één typemachineletter (IBM Plex Mono), het
+         getekende logo in het midden (alleen de lijn: public/img/hal/nonstd-logo.svg, overgetrokken van de vilten letters op
+         de hoodie), de foto in 4 : 5 (niets afgesneden), rijen met haarlijnen, een zwarte balk zonder ronding. De grond is
+         precies de grond van de productfoto's (#FBFDFF, gemeten). In de opening wordt de foto een galerij die je scrolt
+         (data-galerij: scripts/opening-catalog-94.mjs meet waar hij staat). data-klik(-beeld): de aanklikbare plekken. */
+      <div class:list={['sc sc-shop sc-ns', nu('catalog') && 'is-nu']}>
+        <div class="ns-top"><p class="ns-nav"><b>≡</b>{N.nav.map((m) => <span>{m}</span>)}</p><Fragment set:html={LOGO} /><p class="ns-nav ns-rechts"><span>{N.account}</span><span>{N.mand}</span></p></div>
+        <div class="ns-wrap">
+          <div class="ns-th">{pNu.galerij.map((g: string, i: number) => <img data-klik-beeld={i} src={`${g}.webp`} alt="" width="880" height="1100" />)}</div>
+          <div class="ns-foto"><div class="ns-hoofd" data-galerij><img src={`${pNu.galerij[0]}.webp`} alt="" width="880" height="1100" /></div></div>
+          <div class="ns-info">
+            <p class="ns-kr"><span>{pNu.kruimel.split(' / ').slice(1).join('')}</span><span>{pNu.titel}</span></p>
+            <p class="ns-h1">{pNu.titel}</p>
+            <p class="ns-prijs">{pNu.prijs}</p>
+            <p class="ns-tx">{pNu.over}</p>
+            <div class="ns-rijen">
+              {N.rijen.map((r) => <p class="ns-rij"><span><i>◆</i>{r}</span><em>»</em></p>)}
+              <p class="ns-rij"><span>{N.maat} »</span><span class="ns-mt"><span>XS</span><span class="aan">S</span><span>M</span><span>L</span></span></p>
+              <p class="ns-rij"><span>{N.kleur} · {pNu.kleurNaam}</span><span class="ns-kl">{pNu.kleur.map((k: string) => <i style={`background:${k}`}></i>)}</span></p>
+            </div>
+            <p class="ns-knop">{N.mandje}</p>
+            <p class="ns-bez">{N.bezorg}<span>{N.standaard}</span><span>{T.shop.verzend}</span></p>
+            <p class="ns-meer-kop">{T.shop.meer}</p>
+            <p class="ns-meer">{voorgesteld.map((p: any) => (
+              <span data-klik={p.naam}><i><img src={`${p.galerij[0]}.webp`} alt="" width="880" height="1100" /></i><b>{p.titel}</b><em>{p.prijs}</em></span>
             ))}</p>
           </div>
         </div>
+        <p class="ns-concept"><b>NON/STD</b> {N.concept}</p>
       </div>
     ) : (
     <div class:list={['sc sc-shop', nu('catalog') && 'is-nu']}>

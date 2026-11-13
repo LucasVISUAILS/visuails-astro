@@ -1,4 +1,5 @@
 ---
+import SectieKop from './SectieKop.astro';
 /* ═══════════════════════════════════════════════════════════════════════════════
    DE GALERIJ — levering 80, 1 november 2026 (vervangt "Kies een look" op de voorpagina)
    ═══════════════════════════════════════════════════════════════════════════════
@@ -26,8 +27,8 @@ import { styles as lifestyleNl } from '../data/styles.nl.js';
 import { catalogStyles as catalogEn } from '../data/catalogStyles.js';
 import { catalogStyles as catalogNl } from '../data/catalogStyles.nl.js';
 
-interface Props { lang: 'nl' | 'en'; kop: string; zin: string; }
-const { lang, kop, zin } = Astro.props;
+interface Props { lang: 'nl' | 'en'; kop: string; zin: string; label?: string; }
+const { lang, kop, zin, label } = Astro.props;
 const nl = lang === 'nl';
 const lp = (p: string) => localizedPath(lang, p);
 const lifestyle = nl ? lifestyleNl : lifestyleEn;
@@ -57,11 +58,12 @@ const rijen = (GALERIJ.rijen as any[][]).map((rij) => rij.map((it) => {
   };
 }));
 ---
-<section class="g8" id="looks" aria-labelledby="g8-kop" data-g8>
+<section class:list={['g8', label && 'sk-s']} id="looks" aria-labelledby="g8-kop" data-g8>
+  {label ? <SectieKop id="g8-kop" label={label} kop={kop} zin={zin} /> : (
   <div class="g8-kopgroep">
     <h2 id="g8-kop" class="h-kop g8-kop">{kop}</h2>
     <p class="g8-zin">{zin}</p>
-  </div>
+  </div>)}
   <div class="g8-rijen">
     {rijen.map((rij, r) => (
       <div class="g8-rij" data-g8-rij={r}>

@@ -17,6 +17,9 @@
 .w8 .w8-link { margin-left: 10px; color: var(--h-inkt); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, var(--h-inkt) 32%, transparent); }
 .w8 .w8-link:hover { color: var(--h-blauw, #25508B); text-decoration-color: currentColor; }
 
+/* de telefoonclip boven de stappen (levering 95) */
+.w8 .w8-clip { margin-bottom: clamp(32px, 3.4vw, 48px); }
+
 @media (max-width: 700px) {
   .w8-regel { flex-direction: column; align-items: center; row-gap: 22px; font-size: clamp(28px, 9vw, 40px); }
   .w8-stap { align-items: center; }

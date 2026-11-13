@@ -24,6 +24,8 @@
  *      (en .avif): de foto met de schermen erin, voor het deelplaatje (make-og.mjs) en
  *      voor als er geen enkele stand is (HalLaptop.astro). Sinds 20 oktober 2026; eerst
  *      was dat een los gemaakte foto, en de bron lag eronder (nu pov-2304.webp).
+ *   Sinds levering 98 (13 november 2026) met LAPTOP_PRODUCT=hal: de winkel, de foto's op model en de clip van NON/STD
+ *   (HAL_OPTIES in src/data/halStanden.js).
  *   6. Schrijft de vingerafdruk van de bron naar src/data/halStanden.bron.json.
  *   Sinds levering 79 (1 november 2026) zonder achtergrond: de foto onder de schermen is
  *   public/img/hal/pov-2304-doorzichtig.webp (scripts/wit-naar-doorzichtig.py), dus de standen
@@ -69,7 +71,7 @@ fs.mkdirSync(MAP, { recursive: true });
 
 console.log('\nVISUAILS — laptopstanden fotograferen\n');
 const dev = spawn(process.platform === 'win32' ? 'npx.cmd' : 'npx', ['astro', 'dev', '--port', String(POORT), '--host', '127.0.0.1'], {
-  cwd: WORTEL, env: { ...process.env, LAPTOP_BRON: '1', ASTRO_TELEMETRY_DISABLED: '1' }, stdio: ['ignore', 'pipe', 'pipe'], shell: process.platform === 'win32',
+  cwd: WORTEL, env: { ...process.env, LAPTOP_BRON: '1', LAPTOP_PRODUCT: 'hal', ASTRO_TELEMETRY_DISABLED: '1' }, stdio: ['ignore', 'pipe', 'pipe'], shell: process.platform === 'win32',
 });
 let log = '';
 dev.stdout.on('data', (d) => { log += d; });

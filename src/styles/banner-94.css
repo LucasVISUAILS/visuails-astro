@@ -1,25 +1,28 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   VISUAILS — DE BANNERVIDEO (levering 94, 12 november 2026, lijst 92)
+   VISUAILS — DE BANNERVIDEO (levering 94, 12 november 2026, lijst 92; opnieuw opgezet in levering 95, lijst 94)
    Het waarom: src/data/banner94.js en HalBanner94.astro.
 
    DE MATEN (uitgerekend, niet op het oog):
    - de rand: 3,3 vw (48 px op 1440), nooit minder dan 20 px. Breder dan de rest van de site (1080), zoals Lucas vroeg.
    - de kop: VISUAILS Display 700, zo groot dat de langste regel zijn kolom vult (zie .b94-kop), hoogstens 96 px.
-   - rechts: één kolom van clamp(280px, 26vw, 400px). Tekst 15 px (de stap én de zin, lijst 93 C2),
-     het nummer 12 px mono (lijst 93: label 12). Tussen de blokken 16 px, tussen nummer en zin 6 px.
+   - het witte vlak rechtsonder: clamp(320px, 27vw, 400px) breed, 22 px binnenrand, hoeken 18 px (zoals de bovenbalk).
+     Tekst 15 px (de stap, de zin), de nummers en het hoekje 12 px mono, de zin van de stap 13,5 px.
    - onderaan 3,6 vw (52 px op 1440), nooit minder dan 24 px.
    ═══════════════════════════════════════════════════════════════════════════ */
 .b94 {
   --b94-rand: max(20px, 3.3vw);
   --b94-onder: max(24px, 3.6vw);
+  --b94-paneel: clamp(320px, 27vw, 400px);
+  --b94-tussen: max(24px, 4vw);
   position: relative; isolation: isolate; overflow: hidden;
-  height: 100svh; min-height: 560px; max-height: 1200px;
+  height: 100svh; min-height: 600px; max-height: 1200px;
   background: var(--h-grond, #FBFCFF);
 }
 .b94-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.b94-beeld { position: absolute; inset: 0; overflow: hidden; isolation: isolate; background: var(--h-grond, #FBFCFF); }
 .b94-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; z-index: 0; }
 
-/* de twee lagen: het gat en de vulling (zie de kop van HalBanner94.astro) */
+/* de twee lagen van de kop: het gat en de vulling (zie de kop van HalBanner94.astro) */
 .b94-laag { position: absolute; inset: 0; z-index: 1; isolation: isolate; pointer-events: none; }
 .b94-gat { mix-blend-mode: multiply; }
 .b94-gat .b94-tekst { background: #FFFFFF; color: #000000; }
@@ -27,78 +30,90 @@
 .b94-vul .b94-tekst { background: #000000; color: #FFFFFF; mix-blend-mode: multiply; }
 .b94-effect { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .b94-effect.b94-svg { filter: url(#b94-neg); }
-/* zonder script (of zonder video): de tekst gewoon in inkt, geen vulling */
+/* zonder script (of zonder video): de kop gewoon in inkt, geen vulling */
 .b94:not(.b94-aan) .b94-vul, .b94.b94-geen .b94-vul { display: none; }
 .b94:not(.b94-aan) .b94-gat, .b94.b94-geen .b94-gat { mix-blend-mode: normal; }
 .b94:not(.b94-aan) .b94-gat .b94-tekst, .b94.b94-geen .b94-gat .b94-tekst { background: none; color: var(--h-inkt, #0F1217); }
 
 .b94-tekst { position: absolute; inset: 0; }
-.b94-hoek {
-  position: absolute; left: var(--b94-rand); top: max(20px, 2.6vw); margin: 0;
-  font: 600 var(--h-t-label)/1.3 var(--h-mono); letter-spacing: .08em; text-transform: uppercase;
+/* De kop vult zijn kolom precies: de langste regel is --b94-em breed (gemeten in Chromium op 13 november 2026, zie
+   tests/_kopmaat95.mjs; met 1 % speling). Zo is hij zo groot als past, nooit groter dan 96 px, en altijd twee regels. */
+.b94 { --b94-em: 11.06; }
+html[lang="en"] .b94 { --b94-em: 11.33; }
+.b94-kopvak {
+  position: absolute; left: var(--b94-rand); bottom: var(--b94-onder);
+  width: calc(100% - 2 * var(--b94-rand) - var(--b94-paneel) - var(--b94-tussen));
+  container-type: inline-size; min-width: 0;
 }
-.b94-onder {
-  position: absolute; left: var(--b94-rand); right: var(--b94-rand); bottom: var(--b94-onder);
-  display: grid; grid-template-columns: minmax(0, 1fr) clamp(280px, 26vw, 400px); gap: max(24px, 4vw); align-items: end;
-}
-/* De kop vult zijn kolom precies: de langste regel is --b94-em breed (gemeten in Chromium, 12 november 2026: NL "Je beelden
-   groeien mee." 11,679 em, EN "Your visuals keep up." 10,328 em; met 1 % speling). Zo is hij zo groot als past, nooit groter
-   dan 96 px, en altijd twee regels. Op 1440: kolom 914 px, NL 77 px, EN 87 px. */
-.b94 { --b94-em: 11.8; }
-html[lang="en"] .b94 { --b94-em: 10.44; }
-.b94-kopvak { container-type: inline-size; min-width: 0; }
 .b94-kop {
   margin: 0; font: 700 min(96px, calc(100cqw / var(--b94-em)))/.9 var(--h-kopletter); text-transform: uppercase; letter-spacing: -.012em;
 }
 .b94-kop span { display: block; white-space: nowrap; width: max-content; }
-.b94-rechts { display: grid; gap: 16px; justify-items: start; min-width: 0; }
-.b94-stap { margin: 0; display: grid; gap: 6px; min-height: 3.9em; align-content: end; }
-.b94-nr { font: 600 var(--h-t-label)/1.2 var(--h-mono); letter-spacing: .08em; text-transform: uppercase; }
-.b94-tx { font: 600 var(--h-t-klein)/1.35 var(--h-letter); text-wrap: balance; }
-.b94-stap.b94-wissel { animation: b94-in .32s var(--h-zacht, cubic-bezier(.22, .8, .2, 1)); }
-@keyframes b94-in { from { opacity: 0; transform: translateY(6px); } }
-.b94-voortgang { display: flex; align-items: center; gap: 14px; width: 100%; }
-.b94-balkjes { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
-.b94-bj { display: block; padding: 8px 0; }
-.b94-bj i { display: block; position: relative; height: 2px; overflow: hidden; }
-.b94-bj i::before { content: ""; position: absolute; inset: 0; background: currentColor; opacity: .28; }
-.b94-bj b { position: absolute; inset: 0; transform-origin: 0 50%; transform: scaleX(0); background: currentColor; }
-.b94-pauze-ik { display: block; width: 18px; height: 18px; flex: none; }
-.b94-pauze-ik svg { display: block; width: 100%; height: 100%; fill: currentColor; }
+
+/* ── het witte vlak (lijst 94, A2 a): alles wat je moet lezen, in inkt ── */
+.b94-paneel {
+  position: absolute; z-index: 3; right: var(--b94-rand); bottom: var(--b94-onder); width: var(--b94-paneel); box-sizing: border-box;
+  display: grid; gap: 16px; padding: 20px 22px 22px;
+  background: var(--h-wit, #FFFFFF); color: var(--h-inkt, #0F1217); border-radius: 18px; box-shadow: 0 0 0 1px var(--h-lijn, #E6E8EC);
+}
+.b94-paneel-kop { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.b94-hoek { margin: 0; font: 600 var(--h-t-label)/1.3 var(--h-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--h-inkt-2, #3A3F49); }
+.b94-pauze {
+  flex: none; display: grid; place-items: center; width: 36px; height: 36px; margin: -8px -8px -8px 0; padding: 0; border: 0; border-radius: 999px;
+  background: none; color: var(--h-inkt, #0F1217); cursor: pointer; transition: background-color .2s;
+}
+.b94-pauze:hover { background: var(--h-vak, #F4F5F7); }
+.b94-pauze svg { width: 18px; height: 18px; fill: currentColor; }
 .b94-p-aan { display: none; }
 .b94.b94-stil .b94-p-uit { display: none; }
 .b94.b94-stil .b94-p-aan { display: inline; }
-.b94-zin { margin: 0; font: 400 var(--h-t-klein)/1.5 var(--h-letter); max-width: 34ch; }   /* lijst 93, C2: de zin 15, net als de stap */
-.b94-knop-plek { display: block; height: 44px; width: 1px; }
 
-/* wat je aanklikt (boven de lagen; het script zet ze op de plek van hun tekening) */
-.b94-bedien { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
-.b94-ga, .b94-pauze { position: absolute; pointer-events: auto; appearance: none; border: 0; padding: 0; margin: 0; background: none; cursor: pointer; border-radius: 6px; }
-.b94-ga:focus-visible, .b94-pauze:focus-visible { outline: 2px solid var(--h-blauw, #25508B); outline-offset: 2px; }
-.b94-knop { position: absolute; z-index: 3; margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; width: clamp(280px, 26vw, 400px); left: calc(100% - var(--b94-rand) - clamp(280px, 26vw, 400px)); bottom: var(--b94-onder); }
-/* de tekstlinks naast Bestellen volgen het beeld eronder zoals de knop (k-wit: wit op donker) */
-.b94-knop.k-wit .k-tekst { color: #FFFFFF; }
-.b94.b94-aan .b94-knop { bottom: auto; }
+/* de vijf stappen (lijst 94, A3 a): de namen altijd; de huidige in inkt, met zijn zin en een balkje */
+.b94-stappen { list-style: none; margin: 0; padding: 0; display: grid; }
+.b94-st { display: grid; grid-template-columns: 30px minmax(0, 1fr); column-gap: 6px; border-top: 1px solid var(--h-lijn, #E6E8EC); }
+.b94-st:first-child { border-top: 0; }
+.b94-ga {
+  grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; align-items: baseline; width: 100%; min-height: 36px; padding: 8px 0; margin: 0;
+  border: 0; background: none; text-align: left; cursor: pointer; color: var(--h-inkt-3, #636974); transition: color .25s;
+}
+.b94-ga:hover { color: var(--h-inkt, #0F1217); }
+.b94-nr { font: 600 var(--h-t-label)/1.5 var(--h-mono); letter-spacing: .06em; }
+.b94-naam { font: 600 var(--h-t-klein)/1.4 var(--h-letter); }
+.b94-tx { display: none; grid-column: 2; margin: -4px 0 0; font: 400 var(--h-t-fijn)/1.5 var(--h-letter); color: var(--h-inkt, #0F1217); text-wrap: pretty; }
+.b94-bj { display: none; grid-column: 2; position: relative; height: 2px; margin: 8px 0 10px; background: var(--h-lijn, #E6E8EC); overflow: hidden; }
+.b94-bj b { position: absolute; inset: 0; transform-origin: 0 50%; transform: scaleX(0); background: var(--h-inkt, #0F1217); }
+.b94-st.b94-nu .b94-ga { color: var(--h-inkt, #0F1217); }
+.b94-st.b94-nu .b94-tx, .b94-st.b94-nu .b94-bj { display: block; }
+.b94-ga:focus-visible, .b94-pauze:focus-visible { outline: 2px solid var(--h-blauw, #25508B); outline-offset: 2px; border-radius: 6px; }
 
-/* de bovenbalk: weg zolang de voorpagina helemaal bovenaan staat (het script zet html.b94-boven); met de toets erin komt hij terug */
-body.hal .site-header { transition: opacity .3s var(--h-zacht, ease), transform .3s var(--h-zacht, ease); }
-/* Alleen op een breed scherm: op de telefoon blijft de balk staan, anders zit het menu verstopt tot je scrolt (12 november,
-   test:a11y kon de menuknop op 390 px niet aanklikken: de video lag erover) */
+.b94-zin { margin: 0; padding-top: 14px; border-top: 1px solid var(--h-lijn, #E6E8EC); font: 400 var(--h-t-klein)/1.5 var(--h-letter); text-wrap: pretty; }
+/* Bestellen: altijd zwart (lijst 94, A4) */
+.b94-knop { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; }
+
+/* ── de bovenbalk helemaal bovenaan (lijst 94, A1 b): zonder wit en zonder randen (de lichtlijn boven en de lijn onder),
+   alleen de vervaging van het glas (hal.css, "de balk van vloeibaar glas"). Zodra je scrolt het gewone glas. ── */
+html.b94-boven body.hal .site-header { background: transparent !important; box-shadow: none !important; }
+/* De WhatsApp-knop (rechtsonder, 20 px van de rand, 52 px) viel op een breed scherm over de hoek van het witte vlak. Hij
+   blijft altijd staan (tests/telefoon-58); het vlak en de kop staan daarom op een breed scherm hoger: 92 px van de onderkant
+   (20 + 52 + 20). */
 @media (min-width: 761px) {
-  html.b94-boven body.hal .site-header:not(:focus-within) { opacity: 0; transform: translateY(-14px); pointer-events: none; }
+  .b94 { --b94-onder: max(92px, 5vw, var(--b94-cc, 0px)); min-height: 720px; }   /* --b94-cc: de cookiebalk (HalBanner94.astro, levering 97) */   /* het vlak is ± 540 hoog: 720 houdt het onder de balk (56) */
 }
 
-/* telefoon en smal: alles onder elkaar, de kop boven de uitleg */
+/* telefoon en smal: eerst het beeld (met de kop), dan de uitleg op de grond, dan de knop */
 @media (max-width: 760px) {
-  .b94 { min-height: 600px; }
-  .b94-onder { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .b94 { height: auto; min-height: 0; max-height: none; }
+  .b94-beeld { position: relative; inset: auto; height: max(380px, 62svh); }
+  .b94-kopvak { width: calc(100% - 2 * var(--b94-rand)); bottom: 22px; }
   .b94-kop { font-size: min(56px, calc(100cqw / var(--b94-em))); }
-  .b94-zin { max-width: none; }
-  .b94-knop { left: var(--b94-rand); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .b94-stap.b94-wissel { animation: none; }
-  body.hal .site-header { transition: none; }
+  .b94-paneel {
+    position: static; width: auto; padding: 22px var(--b94-rand) 40px; padding-left: max(var(--b94-rand), env(safe-area-inset-left, 0px)); padding-right: max(var(--b94-rand), env(safe-area-inset-right, 0px));
+    background: none; box-shadow: none; border-radius: 0;
+  }
 }
 /* de kop in 700: de algemene regel voor h1 in de hal (gewicht 450) won van het font hierboven (letter-77 mat 450) */
 html body.hal .b94 .b94-kop { font-weight: 700; }
+/* hoog contrast: geen glas, ook bovenaan niet (zoals hal.css) */
+@media (prefers-contrast: more) {
+  html.b94-boven body.hal .site-header { background: var(--h-grond, #FBFCFF) !important; }
+}

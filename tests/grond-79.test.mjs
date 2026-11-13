@@ -87,6 +87,9 @@ for (const [breed, hoog] of [[1440, 900], [390, 844]]) {
   const fouten = [];
   for (const pad of PAGINAS) {
     await page.goto(BASIS + pad, { waitUntil: 'load' });
+    /* levering 95 (lijst 94, A1 b): op de voorpagina is de balk helemaal bovenaan doorzichtig (alleen vervaging, op de
+       video); zodra je scrolt is hij weer glas. Daarom een paar pixels scrollen. */
+    await page.evaluate(() => scrollTo(0, 12));
     await page.waitForTimeout(150);
     const r = await page.evaluate(() => {
       const rgb = (s) => { const m = s && s.match(/rgba?\(([^)]+)\)/); if (!m) return null; const v = m[1].split(',').map((x) => parseFloat(x)); return { r: v[0], g: v[1], b: v[2], a: v.length > 3 ? v[3] : 1 }; };

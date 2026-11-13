@@ -83,6 +83,12 @@ F = np.clip(F, 0, 255).astype(np.float32)
 VELD = os.environ.get('VELD', 'b1')
 if VELD == 'wit':
     F = np.empty_like(F); F[...] = (250.0, 252.0, 255.0)
+# levering 95 (Lucas, 12 november 20:50: "hier zie ik dat de laptop achtergrond grijzig is"): (250, 252, 255) tekent niet in
+# elke browser gelijk (zijn Chrome op Windows: #F9FAFE). VELD=puur zet zuiver wit: dat valt in elke decoder op 255 (het ligt
+# op de rand van het bereik), en de site legt de video met mix-blend-mode: multiply op de grond. Wit maal de grond is de grond,
+# precies; de laptop zelf wordt hoogstens 1,6 % donkerder (251/255 in rood).
+if VELD == 'puur':
+    F = np.empty_like(F); F[...] = 255.0
 cv2.imwrite(f'{werk}/veld.png', cv2.cvtColor(np.rint(F).astype(np.uint8), cv2.COLOR_RGB2BGR))
 
 
@@ -305,6 +311,6 @@ for i in REEKS:
 
 json.dump({'bron': 'kladblok/levering-90/21_9_laptop-90.mp4 (Lucas, 8 november 2026); scripts/laptop-video-90.py en -90.mjs (levering 90)',
            'b': W, 'h': H, 'fps': 24, 'beelden': LAATSTE + 1, 'grond_video': '#F1F4FB',
-           'veld': ('wit (250, 252, 255): de grond van de site, levering 94' if VELD == 'wit' else 'veld-b1.webp zoals op 1440 × 900 (podium 1440 × 844, foto 120,5 %, midden)' + (f', korrel-256 op {KORREL}' if KORREL > 0 else ', zonder korrel')),
+           'veld': ('puur wit, op de site met multiply op de grond (levering 95)' if VELD == 'puur' else 'wit (250, 252, 255): de grond van de site, levering 94' if VELD == 'wit' else 'veld-b1.webp zoals op 1440 × 900 (podium 1440 × 844, foto 120,5 %, midden)' + (f', korrel-256 op {KORREL}' if KORREL > 0 else ', zonder korrel')),
            'schermen': schermen0}, open(f'{werk}/video.json', 'w'), ensure_ascii=False)
 print('klaar', LAATSTE + 1, 'beelden')

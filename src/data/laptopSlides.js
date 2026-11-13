@@ -31,7 +31,7 @@ import { localizedPath } from '../i18n/ui.js';
 
 const HELE = '/img/laptop/voor_heel.webp';
 
-export function laptopSlides(lang = 'nl', { product = 'standaard' } = {}) {
+export function laptopSlides(lang = 'nl', { product = 'standaard', reeks = 'standaard' } = {}) {
   const nl = lang === 'nl';
   const lp = (p) => localizedPath(lang, p);
 
@@ -91,7 +91,15 @@ export function laptopSlides(lang = 'nl', { product = 'standaard' } = {}) {
        `fon`: de telefoonfoto van dat product (Phone.png in zijn map; die van de broek en de sokken kwamen om 08:19).
        `kleur`: de drie kleurbolletjes, per product (08:19: "Denk er ook aan om de kleuren correct toe te passen en te
        varieren"): de eerste is de kleur van het product op de foto (gemeten), de andere twee passen bij dat product. */
-    const P = (naam, nlNaam, enNaam, prijsNl, prijsEn, kruimelNl, kruimelEn, fon, kleur, beelden) => ({ naam, titel: nl ? nlNaam : enNaam, prijs: nl ? prijsNl : prijsEn, kruimel: nl ? kruimelNl : kruimelEn, fon, kleur, beelden });
+    const P = (naam, nlNaam, enNaam, prijsNl, prijsEn, kruimelNl, kruimelEn, fon, kleur, beelden) => ({ naam, titel: nl ? nlNaam : enNaam, prijs: nl ? prijsNl : prijsEn, kruimel: nl ? kruimelNl : kruimelEn, fon, kleur, beelden,
+      /* levering 96 (lijst 97): de galerij in 4 : 5 (scripts/opening-galerij-96.py), de beschrijving en de kleur bij naam */
+      galerij: [0, 1, 2, 3].map((k) => `/img/hal/opening/galerij/${naam}-${k}`), ...(OVER[naam] || {}) });
+    /* de tekst van de verzonnen winkel (lijst 97, A3 a: zoals Margiela, zonder getallen) */
+    const OVER = {
+      hoodie: { kleurNaam: nl ? 'Vervaagd blauw' : 'Faded blue', over: nl ? 'Zware zip hoodie, met de hand vervaagd van indigo naar lavendel. Vilten letters op de borst, het logo geborduurd op de capuchon.' : 'Heavy zip hoodie, hand-faded from indigo to lavender. Felt letters on the chest, the logo embroidered on the hood.' },
+      broek: { kleurNaam: nl ? 'Zwart gewassen' : 'Washed black', over: nl ? 'Wijde jeans, zwart gewassen en naar onderen vervaagd. Vilten letters met studs, een koord in de taille.' : 'Wide jeans, washed black and faded towards the hem. Felt letters with studs, a drawcord at the waist.' },
+      sokken: { kleurNaam: nl ? 'Gebroken wit' : 'Off-white', over: nl ? 'Hoge sportsokken in gebroken wit, met het monogram ingebreid en het logo rond de boord.' : 'Tall sports socks in off-white, the monogram knitted in and the logo around the cuff.' },
+    };
     const B = (src, vul, nlAlt, enAlt) => ({ src, vul, alt: nl ? nlAlt : enAlt });
     const producten = [
       P('hoodie', 'Zip hoodie', 'Zip hoodie', '€ 129,95', '€129.95', 'Home / Hoodies', 'Home / Hoodies', '/img/hoodie-voor.webp', ['#465692', '#2B2B33', '#8C909A'], [
@@ -210,6 +218,36 @@ export function laptopSlides(lang = 'nl', { product = 'standaard' } = {}) {
     href: lp('/video'),
     alt: nl ? 'Een verticale clip, gesneden voor Reels en TikTok' : 'A vertical clip, cut for Reels and TikTok',
   };
+
+  /* ── DE ANDERE LAPTOPS MET NON/STD — levering 98, 13 november 2026 (lijst 99, ronde 100) ───────────────────────────
+     De laptop op /catalog, /lifestyle en /video (HalLaptop.astro, met HAL_OPTIES uit halStanden.js) toonde nog de roze
+     broek; alleen de voorpagina toonde NON/STD. Lucas koos:
+       A1 a · /catalog: de winkel van NON/STD, zoals op de voorpagina (product 'nonstd' hierboven);
+       A2 a · /lifestyle: de foto's op model van NON/STD (On-model.jpg uit zijn map), elk met de telefoonfoto van dat product;
+       A3 a, met zijn notitie: "In de telefoon hoort de wijnrode jas te zitten tijdens de video." De clip is daarom ook die
+              van de jas (de clip van de voorpagina, video-clip.mp4, het beeld op 5,6 s in 9 : 16: de hele jas met de V), en
+              de telefoon de telefoonfoto van de jas (dezelfde als in de opening, …-video-0-tel).
+     De opening van de voorpagina vraagt alleen product 'nonstd' en verandert dus niet. */
+  if (reeks === 'nonstd' && catalog.producten) {
+    const op = (naam) => catalog.producten.find((p) => p.naam === naam);
+    lifestyle.beelden = ['hoodie', 'broek', 'sokken'].map((naam) => {
+      const p = op(naam);
+      return { src: p.beelden[2].src, naam: p.titel, alt: p.beelden[2].alt, fon: p.fon };
+    });
+    lifestyle.fon = lifestyle.beelden[0].fon;
+    lifestyle.fonAlt = nl ? 'Telefoonfoto van de klant: het product plat op de vloer' : "The customer’s phone photo: the product flat on the floor";
+    lifestyle.alt = nl ? 'Foto’s op model van de hoodie, de jeans en de sokken van NON/STD, als carrousel in een nagebouwd social-bericht'
+                       : 'On-model photos of the NON/STD hoodie, jeans and socks as a carousel in a mocked-up social post';
+    /* het tweede zinnetje zei "vier beelden"; hier staan drie producten (geen getal: het klopt dan altijd) */
+    lifestyle.post = { ...lifestyle.post, bijschrift: nl
+      ? ['Een paar telefoonfoto’s erin. Een hele carrousel eruit.', 'Zelfde look, elk product, klaar om te plaatsen.']
+      : ['A few phone photos in. A whole carousel out.', 'Same look, every product, ready to post.'] };
+    video.klip = { src: '/img/hal/video-jas-9x16.webp', w: 582, h: 1034 };
+    video.klipVaag = { src: '/img/hal/video-jas-9x16-vaag.webp', w: 180, h: 320 };
+    video.fon = '/img/jas-voor.webp';
+    video.fonAlt = nl ? 'Telefoonfoto van de klant: de wijnrode jas plat op een houten vloer' : "The customer’s phone photo: the burgundy jacket flat on a wooden floor";
+    video.alt = nl ? 'Een verticale clip van de wijnrode jas bij een waterval in de sneeuw' : 'A vertical clip of the burgundy jacket by a waterfall in the snow';
+  }
 
   return { catalog, lifestyle, video };
 }

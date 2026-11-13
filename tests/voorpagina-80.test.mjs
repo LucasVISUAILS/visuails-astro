@@ -24,7 +24,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { buildStaat } from './lib/build.mjs';
 import { browserPad } from '../scripts/lib/browserpad.mjs';
-import { euro, ladderFloor, levertijdDelen } from '../src/data/pricing.js';
+import { euro, ladderFloor, levertijdDelen, AMOUNT } from '../src/data/pricing.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = path.join(ROOT, 'dist');
@@ -41,23 +41,25 @@ for (const [pad, taal] of [['index.html', 'en'], ['nl/index.html', 'nl']]) {
   const h = fs.readFileSync(path.join(DIST, pad), 'utf8');
   const tekst = (s) => s.replace(/<[^>]+>/g, ' ').replace(/&#39;|&rsquo;|’/g, '’').replace(/\s+/g, ' ').trim();
   const h1 = (/<h1\b[\s\S]*?<\/h1>/.exec(h) || [''])[0];
-  /* levering 94 (lijst 92, kop a): de h1 staat in de bannervideo */
-  ok(`${taal}: één h1, de titel in twee regels (lijst 92: "Je merk groeit. Je beelden groeien mee.")`, (h.match(/<h1\b/g) || []).length === 1 && /<h1\b[^>]*class="[^"]*\bb94-kop\b/.test(h1)
-    && tekst(h1) === (taal === 'nl' ? 'Je merk groeit. Je beelden groeien mee.' : 'Your brand grows. Your visuals keep up.'), tekst(h1));
+  /* levering 94 (lijst 92, kop a): de h1 staat in de bannervideo; levering 95 (lijst 94, A5 a): de nieuwe kop */
+  ok(`${taal}: één h1, de titel in twee regels (lijst 94: "Jij maakt de kleding. Wij maken de beelden.")`, (h.match(/<h1\b/g) || []).length === 1 && /<h1\b[^>]*class="[^"]*\bb94-kop\b/.test(h1)
+    && tekst(h1) === (taal === 'nl' ? 'Jij maakt de kleding. Wij maken de beelden.' : 'You make the clothes. We make the visuals.'), tekst(h1));
   const plek = (re) => { const m = re.exec(h); return m ? m.index : -1; };
   /* levering 94 (lijst 92, laptop b): de bannervideo, Wat we maken, dan de laptop */
-  const volg = [plek(/<section class="b94"/), plek(/<section class="m8" id="maken"/), plek(/class="o8 o8-alleen"/), plek(/<section class="g8" id="looks"/), plek(/<section class="p9"/), plek(/<section class="w8"/), plek(/class="h-sec h-weten v-weten/), plek(/<section class="h-proef/)];
-  ok(`${taal}: de volgorde: banner, Wat we maken, laptop, galerij, poster, Hoe het werkt, Meer weten, €1-blok`, volg.every((x, i) => x > 0 && (i === 0 || x > volg[i - 1])), volg.join(' '));
+  /* levering 96 (lijst 96, A2 a): Hoe het werkt direct na Wat we maken, de €1-proef voor de vragen, het slot als einde */
+  const volg = [plek(/<section class="b94"/), plek(/<section class="m8 sk-s" id="maken"/), plek(/<section class="w8 sk-s"/), plek(/class="o8 o8-alleen"/), plek(/<section class="g8 sk-s" id="looks"/), plek(/<section class="p9"/), plek(/<section class="h-proef/), plek(/class="h-sec h-weten v-weten sk-s/), plek(/<section class="slot96 sk-s"/)];
+  ok(`${taal}: de volgorde: banner, Wat we maken, Hoe het werkt, laptop, galerij, poster, €1-blok, Meer weten, slot`, volg.every((x, i) => x > 0 && (i === 0 || x > volg[i - 1])), volg.join(' '));
   ok(`${taal}:   de oude opening, de looks en de lange Hoe het werkt zijn weg`, !/data-lb-podium|class="h-sec h-looks|class="h-sec o-hoe/.test(h));
   /* Wat we maken: de vanafprijzen uit de code, de links bestaan */
-  const m8 = h.slice(plek(/<section class="m8"/), plek(/<section class="g8"/));
+  const m8 = h.slice(plek(/<section class="m8[ "]/), plek(/<section class="w8[ "]/));
   const vanaf = taal === 'nl' ? 'vanaf' : 'from';
-  ok(`${taal}: Wat we maken: drie diensten met hun vanafprijs uit de code (${euro(ladderFloor('catalog'), taal)}, ${euro(ladderFloor('lifestyle'), taal)})`,
-    (m8.match(/class="m8-dienst[" ]/g) || []).length === 3 && m8.includes(`${vanaf} ${euro(ladderFloor('catalog'), taal)}`) && m8.includes(`${vanaf} ${euro(ladderFloor('lifestyle'), taal)}`));
+  /* levering 95 (lijst 95, A1 a): vijf kaarten, met hooks en de eigen look */
+  ok(`${taal}: Wat we maken: vijf kaarten met hun vanafprijs uit de code (${euro(ladderFloor('catalog'), taal)}, ${euro(ladderFloor('lifestyle'), taal)}, ${euro(AMOUNT.hooks, taal)})`,
+    (m8.match(/class="m8-dienst[" ]/g) || []).length === 5 && m8.includes(`${vanaf} ${euro(ladderFloor('catalog'), taal)}`) && m8.includes(`${vanaf} ${euro(ladderFloor('lifestyle'), taal)}`) && m8.includes(`${vanaf} ${euro(AMOUNT.hooks, taal)}`));
   const m8links = [...m8.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
   ok(`${taal}:   alle links in Wat we maken bestaan (${m8links.length})`, m8links.length >= 7 && m8links.every(bestaat), m8links.filter((l) => !bestaat(l)).join(' '));
   /* de galerij */
-  const g8 = h.slice(plek(/<section class="g8"/), plek(/<section class="p9"/));
+  const g8 = h.slice(plek(/<section class="g8[ "]/), plek(/<section class="p9"/));
   /* de build zet een style-attribuut om in een klasse (vs-…): daarom [^"]* na g8-tegel */
   const tegels = [...g8.matchAll(/<a class="g8-tegel[^"]*" href="([^"]+)"[^>]*>/g)];
   const echt = tegels.filter((m) => !/data-g8-kopie/.test(m[0]));
@@ -67,19 +69,19 @@ for (const [pad, taal] of [['index.html', 'en'], ['nl/index.html', 'nl']]) {
   ok(`${taal}:   elk beeld en elke veeg staat in public (${new Set(bronnen).size})`, bronnen.length > 40 && bronnen.every((b) => fs.existsSync(path.join(ROOT, 'public', b))), bronnen.filter((b) => !fs.existsSync(path.join(ROOT, 'public', b))).slice(0, 3).join(' '));
   /* de poster */
   /* levering 89: de logoposter (HalPoster89, lijst 81 C1) in plaats van HalPoster80 */
-  const p8 = h.slice(plek(/<section class="p9"/), plek(/<section class="w8"/));
+  const p8 = h.slice(plek(/<section class="p9"/), plek(/<section class="h-proef/));
   ok(`${taal}: de poster: het V-merk uit de sprite (#markglyph), de regel als h2, de foto en de look bestaan`, /<use href="#markglyph"/.test(p8) && /<h2 id="p9-kop"/.test(p8)
     && ['', '-w1200', '-w1560'].every((s) => fs.existsSync(path.join(ROOT, 'public', `img/lifestyle-phone-made-04${s}.webp`))) && bestaat((/class="p9-look" href="([^"]+)"/.exec(p8) || [, '/x'])[1]));
   /* Hoe het werkt, kort: de levertijd uit de code */
   const [snel, traag] = levertijdDelen('unattended', taal);
-  const w8 = h.slice(plek(/<section class="w8"/), plek(/class="h-sec h-weten/));
+  const w8 = h.slice(plek(/<section class="w8[ "]/), plek(/class="o8 o8-alleen"/));
   ok(`${taal}: Hoe het werkt: drie stappen in één regel, de levertijd uit de code`, (w8.match(/class="w8-stap(?: h-1[rk])?"/g) || []).length === 3 && tekst(w8).includes(traag ? `${snel}, ${traag}.` : `${snel}.`) && bestaat((/class="w8-link" href="([^"]+)"/.exec(w8) || [, '/x'])[1]), tekst(w8).slice(0, 160));
   /* lijst 64, knoppen: de klant ziet andere knoppen */
   const acties = (/<p class="b94-knop"[^>]*>[\s\S]*?<\/p>/.exec(h) || [''])[0];
   ok(`${taal}: de €1-link alleen voor wie nog niet bestelde; een klant ziet de link naar Studio`, /href="[^"]*test-sample[^"]*" data-vis-uit/.test(acties) && /href="\/account" data-vis-klant-in hidden/.test(acties), acties.slice(0, 400));
   /* het laadscherm alleen hier */
   ok(`${taal}: het laadscherm: de klasse vóór de eerste verf, het V-merk, de noodrem`, h.indexOf("classList.add('vl8-aan')") > 0 && h.indexOf("classList.add('vl8-aan')") < h.indexOf('<body') && /<div class="vl8" id="vl8"/.test(h) && /getoond\?open\(\):ruim\(\)|getoond \? open\(\) : ruim\(\)/.test(h));
-  ok(`${taal}:   koppen in de nieuwe secties hebben de kopletter-klasse`, ['m8-kop', 'g8-kop', 'p9-kop'].every((k) => new RegExp(`class="h-kop ${k}"`).test(h)));
+  ok(`${taal}:   koppen in de nieuwe secties hebben de kopletter-klasse`, ['sk-kop', 'p9-kop'].every((k) => new RegExp(`class="h-kop ${k}"`).test(h)) && (h.match(/class="h-kop sk-kop"/g) || []).length === 5);
 }
 {
   const h = fs.readFileSync(path.join(DIST, 'pricing/index.html'), 'utf8');

@@ -56,8 +56,9 @@ for (const f of bestanden) {
 ok('de mono-labels in één stem: 12 px in 600 (lijst 93, B2 a)', mono500.length === 0, mono500.slice(0, 4).join(' | '));
 
 const b = fs.readFileSync(path.join(ROOT, 'src', 'styles', 'banner-94.css'), 'utf8');
-ok('de banner volgt (lijst 93, C2): de stap en de zin 15, het nummer en het hoekje 12',
-  /\.b94-tx \{ font: 600 var\(--h-t-klein\)/.test(b) && /\.b94-zin \{[^}]*font: 400 var\(--h-t-klein\)/.test(b) && /\.b94-nr \{ font: 600 var\(--h-t-label\)/.test(b) && /font: 600 var\(--h-t-label\)\/1\.3 var\(--h-mono\)/.test(b));
+/* levering 95 (lijst 94): de stappen op het witte vlak; de naam en de zin 15, de zin van de stap 13,5, het nummer en het hoekje 12 */
+ok('de banner volgt (lijst 93 C2, lijst 94): de naam van de stap en de zin 15, de zin van de stap 13,5, het nummer en het hoekje 12',
+  /\.b94-naam \{ font: 600 var\(--h-t-klein\)/.test(b) && /\.b94-zin \{[^}]*font: 400 var\(--h-t-klein\)/.test(b) && /\.b94-tx \{[^}]*font: 400 var\(--h-t-fijn\)/.test(b) && /\.b94-nr \{ font: 600 var\(--h-t-label\)/.test(b) && /\.b94-hoek \{[^}]*font: 600 var\(--h-t-label\)\/1\.3 var\(--h-mono\)/.test(b));
 
 console.log(`\n${goed} goed, ${fout} fout`);
 process.exit(fout ? 1 : 0);

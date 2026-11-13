@@ -9,6 +9,10 @@
    pauzeknop bij de balkjes, beter gespatieerd, de bovenbalk weg als de pagina helemaal bovenaan staat; en het negatief met
    wat blauw uur erin, "een mix van negatief en warmtebeeld maar niet het gele en alle andere te intense warmte kleuren".
 
+   Levering 95 (lijst 94, A5 a): "Maar je bent toch geen kledingmerk?" Daarom zegt de kop nu wie wat doet. En (zijn
+   notitie): "Het maakt niet uit hoe klanten foto's maken dus haal telefoonfoto's weg en maak er gewoon "foto's" van. Hoe
+   beter de camera is hoe beter de resultaten zullen zijn."
+
    De hoofdstukken: de knippen in de video, gemeten met ffmpeg (scene > 0,2): 4,25 · 6,75 · 9,33 · 14,42 s. */
 
 export const HOOFDSTUKKEN = [0, 4.25, 6.75, 9.33, 14.42];
@@ -16,11 +20,11 @@ export const DUUR = 26.75;
 
 export const BANNER = {
   nl: {
-    kop: ['Je merk groeit.', 'Je beelden groeien mee.'],
-    zin: 'VISUAILS maakt productfoto’s, lifestyle en video voor kledingmerken. Jij stuurt een paar foto’s van je product, wij doen de rest.',
-    hoek: 'Voorbeeld · van telefoonfoto tot campagne',
+    kop: ['Jij maakt de kleding.', 'Wij maken de beelden.'],
+    zin: 'Stuur een paar foto’s van je product. Je krijgt productfoto’s, lifestyle en video terug, klaar voor je winkel en je advertenties.',
+    hoek: 'Voorbeeld · van foto tot campagne',
     stappen: [
-      ['Jouw foto', 'Je fotografeert je product met je telefoon.'],
+      ['Jouw foto', 'Je fotografeert je product. Hoe beter de camera, hoe beter het resultaat.'],
       ['Productfoto’s', 'Wij maken er productfoto’s van, op de achtergrondkleur van je winkel.'],
       ['Details', 'Close-ups van de stof, de sluiting en de afwerking.'],
       ['On-model', 'Gedragen door een model dat bij je merk past.'],
@@ -29,14 +33,14 @@ export const BANNER = {
     stap: 'Stap',
     pauze: 'Zet de video stil', speel: 'Laat de video lopen',
     naar: (i, naam) => `Naar stap ${i}: ${naam}`,
-    video: 'Video: een telefoonfoto van een jas wordt productfoto’s, details, on-model en een campagne bij een waterval',
+    video: 'Video: een foto van een jas wordt productfoto’s, details, on-model en een campagne bij een waterval',
   },
   en: {
-    kop: ['Your brand grows.', 'Your visuals keep up.'],
-    zin: 'VISUAILS makes product photos, lifestyle and video for fashion brands. You send a few photos of your product, we do the rest.',
-    hoek: 'Example · from phone photo to campaign',
+    kop: ['You make the clothes.', 'We make the visuals.'],
+    zin: 'Send a few photos of your product. You get product photos, lifestyle and video back, ready for your shop and your ads.',
+    hoek: 'Example · from photo to campaign',
     stappen: [
-      ['Your photo', 'You photograph your product with your phone.'],
+      ['Your photo', 'You photograph your product. The better the camera, the better the result.'],
       ['Product photos', 'We turn it into product photos, on your shop’s background colour.'],
       ['Details', 'Close-ups of the fabric, the fastening and the finish.'],
       ['On-model', 'Worn by a model who suits your brand.'],
@@ -45,7 +49,7 @@ export const BANNER = {
     stap: 'Step',
     pauze: 'Pause the video', speel: 'Play the video',
     naar: (i, naam) => `Go to step ${i}: ${naam}`,
-    video: 'Video: a phone photo of a jacket becomes product photos, details, on-model shots and a campaign at a waterfall',
+    video: 'Video: a photo of a jacket becomes product photos, details, on-model shots and a campaign at a waterfall',
   },
 };
 

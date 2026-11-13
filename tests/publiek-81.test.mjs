@@ -69,7 +69,7 @@ for (const dienst of ['catalog', 'lifestyle', 'video']) {
 }
 for (const p of ['index.html', 'nl/index.html']) {
   const h = lees(p);
-  ok(`${p}: de voorpagina heeft Hoe het werkt kort, niet de lange met de animaties`, !/data-o-hoe/.test(h) && /<section class="w8"/.test(h));
+  ok(`${p}: de voorpagina heeft Hoe het werkt kort, niet de lange met de animaties`, !/data-o-hoe/.test(h) && /<section class="w8[ "]/.test(h)   /* levering 96: class="w8 sk-s" (de vaste sectiekop) */);
 }
 {
   const vp = fs.readFileSync(path.join(ROOT, 'src/components/VoorpaginaHal.astro'), 'utf8');

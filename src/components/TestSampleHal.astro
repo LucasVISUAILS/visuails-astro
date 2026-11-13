@@ -180,6 +180,7 @@ const c = nl ? {
 const ICOON = { check: 'vink', rechts: 'pijl' } as const;
 const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
 const DRIE = (n: number) => String(n).padStart(2, '0');
+import TelefoonClip from './TelefoonClip.astro';
 ---
 <div class="h-pagina h-ts">
 
@@ -291,6 +292,8 @@ const DRIE = (n: number) => String(n).padStart(2, '0');
         <p class="h-pil h-pil-wit"><span>{c.hoePil}</span></p>
         <h2 id="ts-hoe" class="h-kop h-h2"><span class="l">{c.hoeKop[0]}</span> {c.hoeKop[1]}</h2>
       </header>
+      {/* levering 95 (lijst 94 C1 a): de telefoonclip, met de sokken */}
+      <TelefoonClip lang={lang} product="sokken" class="h-ts-clip" />
       <ol class="h-st-stappen h-ts-stappen" role="list">
         {c.stappen.map(([kop, tekst], i) => (
           <li class="h-st-stap" style={`--d:${i}`}>

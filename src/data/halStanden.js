@@ -38,8 +38,12 @@ import path from 'node:path';
 export const STAND_BREEDTES = [1000, 1600, 2304];
 export const STAND_MAP = '/img/hal/stand';
 
+/** Wat de laptop op /catalog, /lifestyle en /video toont (levering 98, lijst 99): de winkel, de foto's op model en de clip
+    van NON/STD (zie laptopSlides.js, reeks 'nonstd'). De opening van de voorpagina vraagt zelf { product: 'nonstd' }. */
+export const HAL_OPTIES = Object.freeze({ product: 'nonstd', reeks: 'nonstd' });
+
 /** De reeks zoals de schermen hem tonen: wat er van elke set echt is. */
-export function halReeks(lang, opties = {}) {
+export function halReeks(lang, opties = HAL_OPTIES) {
   const [catalog, lifestyle, video] = laptopReeks(lang, opties);
   const cat = catalog.beelden.filter((b) => isEcht(b.src));
   const life = lifestyle.beelden.filter((b) => isEcht(b.src) || b.plaat);
@@ -47,11 +51,11 @@ export function halReeks(lang, opties = {}) {
 }
 
 /** Alle standen in volgorde, voor deze sets. */
-export function alleStanden(lang, sets = ['catalog', 'lifestyle', 'video'], opties = {}) {
+export function alleStanden(lang, sets = ['catalog', 'lifestyle', 'video'], opties = HAL_OPTIES) {
   const { catalog, lifestyle, video, cat, life } = halReeks(lang, opties);
   return [
     ...cat.map((b, i) => ({ set: 'catalog', i, fon: b.fon ?? catalog.fon, duur: catalog.duur })),
-    ...life.map((_, i) => ({ set: 'lifestyle', i, fon: lifestyle.fon, duur: lifestyle.duur })),
+    ...life.map((b, i) => ({ set: 'lifestyle', i, fon: b.fon ?? lifestyle.fon, duur: lifestyle.duur })),
     { set: 'video', i: 0, fon: video.fon, duur: video.duur },
   ].filter((s) => sets.includes(s.set));
 }

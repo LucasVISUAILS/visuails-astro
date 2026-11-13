@@ -657,6 +657,55 @@ body.hal .hal-wm-reus { display: block; width: calc(100% - 48px); height: auto; 
 .hal .sc-meer b { font-size: 16px; font-weight: 500; color: #121218; }
 .hal .sc-meer em { font-style: normal; font-size: 15px; color: #5a5a66; }
 .hal .sc-shop.sc-wit .sc-kl i { box-shadow: inset 0 0 0 1px rgba(18, 18, 24, .12); }
+
+/* ═══ DE WINKEL VAN NON/STD — levering 96 (lijst 97; HalLaptopSchermen.astro). Het scherm is 1600 × 1034. ═══
+   Zoals de productpagina van Margiela (alleen de opbouw): alles in IBM Plex Mono 500, het getekende logo in het midden van de
+   balk (62 px hoog), de foto in 4 : 5 (656 × 820), rechts de informatie met haarlijnen, een zwarte balk zonder ronding.
+   De grond is #FBFDFF: precies de grond van de productfoto's (gemeten in de hoeken van alle zes), dus geen naad.
+   Dit zijn de kleuren van de winkel van een klant, niet van VISUAILS (de ontwerptaal: "de laptopschermen tonen de winkel van
+   een klant en houden hun eigen kleuren"); daarom staat dit blok hier en niet onder levering 86. */
+.hal .sc-shop.sc-ns { --ns-g: #FBFDFF; --ns-i: #121218; --ns-z: #6A6E78; --ns-l: #E3E4E8; background: var(--ns-g); color: var(--ns-i); font: 500 15px/1.55 var(--h-mono); letter-spacing: .01em; }
+.hal .sc-ns p { margin: 0; }
+.hal .sc-ns .ns-top { height: 96px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 48px; border-bottom: 1px solid var(--ns-l); text-transform: uppercase; font-size: 13.5px; letter-spacing: .08em; }
+.hal .sc-ns .ns-nav { display: flex; gap: 22px; align-items: center; }
+.hal .sc-ns .ns-nav b { font-weight: 500; font-size: 20px; letter-spacing: 0; }
+.hal .sc-ns .ns-rechts { justify-content: flex-end; gap: 26px; }
+.hal .sc-ns .ns-logo { display: block; height: 62px; width: auto; }
+.hal .sc-ns .ns-wrap { display: grid; grid-template-columns: 96px minmax(0, 1fr) 500px; gap: 0 40px; padding: 36px 48px 0; }
+.hal .sc-ns .ns-th { display: grid; gap: 10px; align-content: start; }
+.hal .sc-ns .ns-th img { width: 96px; height: 120px; object-fit: cover; display: block; background: var(--ns-g); box-shadow: inset 0 0 0 1px var(--ns-l); }
+.hal .sc-ns .ns-foto { display: flex; justify-content: center; }
+.hal .sc-ns .ns-hoofd { width: 656px; height: 820px; overflow: hidden; background: var(--ns-g); }
+.hal .sc-ns .ns-hoofd img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.hal .sc-ns .ns-info { padding-top: 6px; display: grid; align-content: start; }
+.hal .sc-ns .ns-kr { font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ns-z); margin-bottom: 18px; }
+.hal .sc-ns .ns-kr span + span::before { content: '▸ '; margin-left: 10px; }
+.hal .sc-ns .ns-h1 { font-size: 22px; letter-spacing: .06em; text-transform: uppercase; }
+.hal .sc-ns .ns-prijs { font-size: 17px; margin: 4px 0 16px; }
+.hal .sc-ns .ns-tx { font-size: 14px; max-width: 44ch; margin-bottom: 12px; }
+.hal .sc-ns .ns-rijen { margin-top: 8px; border-top: 1px solid var(--ns-l); }
+.hal .sc-ns .ns-rij { display: flex; justify-content: space-between; align-items: center; height: 44px; border-bottom: 1px solid var(--ns-l); font-size: 14px; }
+.hal .sc-ns .ns-rij i { font-style: normal; font-size: 12px; margin-right: 10px; }
+.hal .sc-ns .ns-rij em { font-style: normal; }
+.hal .sc-ns .ns-mt { display: flex; gap: 22px; }
+.hal .sc-ns .ns-mt span { color: var(--ns-z); }
+.hal .sc-ns .ns-mt span.aan { color: var(--ns-i); text-decoration: underline; text-underline-offset: 5px; }
+.hal .sc-ns .ns-kl { display: flex; gap: 10px; align-items: center; }
+.hal .sc-ns .ns-kl i { width: 26px; height: 26px; display: block; box-shadow: inset 0 0 0 1px rgba(18, 18, 24, .14); }
+.hal .sc-ns .ns-kl i:first-child { outline: 1.5px solid var(--ns-i); outline-offset: 3px; }
+.hal .sc-ns .ns-knop { margin-top: 20px; height: 56px; background: var(--ns-i); color: #fff; display: grid; place-items: center; text-transform: uppercase; letter-spacing: .14em; font-size: 14.5px; }
+.hal .sc-ns .ns-bez { margin-top: 16px; font-size: 13.5px; }
+.hal .sc-ns .ns-bez span { display: block; padding-left: 26px; color: var(--ns-z); }
+.hal .sc-ns .ns-meer-kop { margin-top: 20px; font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; }
+.hal .sc-ns .ns-meer { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 12px; }
+.hal .sc-ns .ns-meer span { display: grid; gap: 2px; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+.hal .sc-ns .ns-meer i { display: block; width: 104px; height: 130px; background: var(--ns-g); margin-bottom: 8px; }
+.hal .sc-ns .ns-meer img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.hal .sc-ns .ns-meer b { font-weight: 500; }
+.hal .sc-ns .ns-meer em { font-style: normal; color: var(--ns-z); }
+.hal .sc-ns .ns-concept { position: absolute; left: 0; right: 0; bottom: 0; height: 40px; line-height: 40px; padding: 0 48px; border-top: 1px solid var(--ns-l); background: var(--ns-g); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--ns-z); }
+.hal .sc-ns .ns-concept b { font-weight: 500; color: var(--ns-i); }
+
 /* Hier stond tot 15 oktober 2026 een uitzondering voor telefoons: geen mix-blend-mode,
    want elk gemengd beeld maakte in de schuine laag een eigen tekenvlak dat flikkerde
    (14 oktober). Sinds de set op lichtgrijs staat mengt er nergens meer iets, dus de
@@ -4292,9 +4341,6 @@ html body.hal .h-form-bedankt .ty-check { border-radius: 24.7% 4px 4px 4px; }
 .hal .h-knop-lijnwit:hover { background: #fff; color: var(--h-inkt); }
 /* De pijl in twee delen die onder de muis uit elkaar schoven (schacht terug, kop door) is weg: sinds het knoppensysteem
    (lijst 89) beweegt alleen het bewegende deel van het icoon, in één stuk, en dat staat in src/styles/knoppen.css. */
-/* de knop in de balk: violet, één zachte hoek, de pijl wit en los */
-body.hal .site-header .nav-cta { border-radius: 999px !important; } /* 25 okt: concentrisch met de ronde balk (18 − 7) */
-body.hal .site-header .nav-cta:hover { background: var(--h-inkt) !important; transform: none; }
 /* de knoppen van de formulieren en de kleine knop in de lookkaart */
 body.hal .btn { border-radius: var(--hoek-knop); }
 .hal .h-mini-knop { border-radius: 999px; }
@@ -4366,7 +4412,6 @@ body.hal .hal-wm-reus { color: var(--h-inkt); }
   body.hal .site-header .container.nav { padding-right: 3px; }
   /* 25 oktober 2026: de balk is nu 18 px rond (de balk van glas), de knop ligt 3 px van
      de rand en is daar concentrisch: 18 − 3 = 15 px rechts, links licht. */
-  body.hal .site-header .nav-cta { border-radius: 999px !important; }
 }
 
 /* ══ TWEE KNOPPEN WORDEN ÉÉN VORM, MET DE SNEDE ERTUSSEN ══════════════════════
@@ -5118,10 +5163,6 @@ html body.hal .h-knop-lijnwit:hover, html body.hal .h-lk-slot .h-knop-lijn:hover
 @media (prefers-reduced-motion: reduce) { html body.hal .h-knop, html body.hal .h-knop::before { transition: none; } }
 @media (forced-colors: active) { html body.hal .h-knop::before { display: none; } }
 
-/* ── Bestellen in de balk: de ene blauwe knop, met een zachte gloed eronder ──────── */
-body.hal .site-header .nav-cta { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), 0 6px 18px -8px rgba(37, 80, 139, .75) !important;
-  transition: background-color .22s cubic-bezier(.22, .8, .2, 1), box-shadow .32s cubic-bezier(.22, .8, .2, 1) !important; }
-body.hal .site-header .nav-cta:hover { background: var(--h-blauw-diep) !important; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), 0 8px 24px -6px rgba(37, 80, 139, .9) !important; }
 
 /* ── glas op wat boven de pagina zweeft ─────────────────────────────────────────
    De balk had het al (levering 74, eerder vandaag). Nu ook zijn uitklapmenu's, de
@@ -5266,9 +5307,6 @@ html body.hal .site-header .lang-switch, html body.hal .site-header .lang-switch
 html body.hal .site-header .nav-taal-klein .ls { border-radius: 999px !important; }
 html body.hal .site-header .nav-taal-klein .ls { width: 40px; height: 40px; }
 html body.hal .site-header .nav-ik-knop { width: 40px; height: 40px; }
-html body.hal .site-header .nav-cta, html body.hal .site-header .container.nav .nav-cta {
-  border-radius: 999px !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), 0 6px 16px -8px rgba(37, 80, 139, .7) !important; }
 /* de uitklapmenu's en de WhatsApp-knop: hetzelfde glas en dezelfde schaduw, zodat alles wat zweeft
    één familie is */
 html body.hal .site-header .nav-menu { border-radius: 24px !important; background: rgba(255, 255, 255, .88) !important;
@@ -5309,7 +5347,6 @@ html body.hal .site-header .nav-taal-klein .ls, html body.hal .site-header .nav-
 html body.hal .site-header .lang-switch { background: rgba(255, 255, 255, .7); }
 html body.hal .site-header .nav-taal-klein .ls:hover, html body.hal .site-header .nav-ik-knop:hover,
 html body.hal .site-header .nav-ik-knop[aria-expanded="true"] { background: var(--h-wit); box-shadow: none; }
-html body.hal .site-header .nav-cta, html body.hal .site-header .container.nav .nav-cta { box-shadow: 0 6px 16px -10px rgba(37, 80, 139, .6) !important; }
 html body.hal .site-header .nav-menu { background: rgba(241, 242, 244, .94) !important;
   box-shadow: 0 18px 44px -18px rgba(15, 18, 23, .26) !important; }
 html body.hal .wa-launcher { background: rgba(230, 232, 236, .56); -webkit-backdrop-filter: blur(22px) saturate(1.6); backdrop-filter: blur(22px) saturate(1.6);
@@ -6017,19 +6054,14 @@ html body.hal .h-knop-lijn:hover { --h-rand: #25508B; box-shadow: inset 0 0 0 1p
 /* op het inktblok blijft de lijnknop wit */
 html body.hal .h-lk-slot .h-knop-lijn::after, html body.hal .h-proef .h-knop-lijn::after { content: none; }
 
-/* ── K1 · Bestellen in de snede ─────────────────────────────────────────────────────────
-   De ene blauwe knop bovenin (en onderaan het menu op de telefoon). In rust de snede; onder de
-   muis schuift het licht door de knop: een verloop van twee keer de knop (diep, uur, het licht,
-   uur, diep) waarvan alleen de plek schuift. Geen schaduw eronder. Wit erop 6,2 : 1 of meer. */
-html body.hal .site-header .nav-cta, html body.hal .site-header .container.nav .nav-cta, html body.hal .mobile-nav .mobile-cta .btn-primary {
-  background: #1A4279 linear-gradient(126.87deg, #1A4279 0%, #25508B 27.5%, #2D61A8 50%, #25508B 72.5%, #1A4279 100%) -2px -2px / calc(200% + 4px) calc(200% + 4px) no-repeat !important;
-  color: #FFFFFF !important; box-shadow: none !important;
-  transition: background-position .5s cubic-bezier(.22, .8, .2, 1) !important;
-}
+/* ── K1 · Bestellen ────────────────────────────────────────────────────────────────────────
+   Levering 98 (lijst 99, A4): hier stond de snede die schuin door de knop schoof. Sinds levering 97 zet
+   src/styles/knoppen.css (sectie I) Bestellen: blauw uur, onder de muis schuift blauw diep van links naar rechts.
+   Wat hier nog geldt: wit erop en geen schaduw, ook onder de muis en met de toets. */
+html body.hal .site-header .nav-cta, html body.hal .site-header .container.nav .nav-cta, html body.hal .mobile-nav .mobile-cta .btn-primary,
 html body.hal .site-header .nav-cta:hover, html body.hal .site-header .nav-cta:focus-visible, html body.hal .site-header .container.nav .nav-cta:hover,
 html body.hal .site-header .container.nav .nav-cta:focus-visible,
 html body.hal .mobile-nav .mobile-cta .btn-primary:hover, html body.hal .mobile-nav .mobile-cta .btn-primary:focus-visible {
-  background: #1A4279 linear-gradient(126.87deg, #1A4279 0%, #25508B 27.5%, #2D61A8 50%, #25508B 72.5%, #1A4279 100%) calc(100% + 2px) calc(100% + 2px) / calc(200% + 4px) calc(200% + 4px) no-repeat !important;
   color: #FFFFFF !important; box-shadow: none !important;
 }
 
@@ -6428,3 +6460,4 @@ html body.hal .sb .sb-veld { align-items: center; }
 /* knoppensysteem (kleine afwijkingen): de keuzeknoppen van de formaten en de galerij zonder de rand van de browser
    (2px outset), ook waar ze als <button> met .sk-k staan. /voorbeeld/uitleg bestaat niet meer; de regel blijft voor de component. */
 .hal button.h-fmt-knop, .hal button.h-gl-pil, .hal button.sk-k { border: 0; }
+
